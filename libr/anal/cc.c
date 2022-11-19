@@ -72,7 +72,16 @@ R_API bool r_anal_cc_set(RAnal *anal, const char *expr) {
 }
 
 R_API bool r_anal_cc_once(RAnal *anal) {
-	return sdb_add (DB, "warn", "once", 0);
+	R_CRITICAL_ENTER (anal);
+	bool res = sdb_add (DB, "warn", "once", 0);
+	R_CRITICAL_LEAVE (anal);
+	return res;
+}
+
+R_API void r_anal_cc_reset(RAnal *anal) {
+	R_CRITICAL_ENTER (anal);
+	sdb_reset (DB);
+	R_CRITICAL_LEAVE (anal);
 }
 
 R_API void r_anal_cc_get_json(RAnal *anal, PJ *pj, const char *name) {
@@ -196,9 +205,12 @@ R_API void r_anal_cc_set_self(RAnal *anal, const char *convention, const char *s
 
 R_API const char *r_anal_cc_error(RAnal *anal, const char *convention) {
 	r_return_val_if_fail (anal && convention, NULL);
+	R_CRITICAL_ENTER (anal);
 	r_strf_var (query, 64, "cc.%s.error", convention);
 	const char *error = sdb_const_get (DB, query, 0);
-	return error? r_str_constpool_get (&anal->constpool, error): NULL;
+	const char * res = error? r_str_constpool_get (&anal->constpool, error): NULL;
+	R_CRITICAL_LEAVE (anal);
+	return res;
 }
 
 R_API void r_anal_cc_set_error(RAnal *anal, const char *convention, const char *error) {

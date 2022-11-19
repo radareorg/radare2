@@ -30,9 +30,9 @@ static const struct {
 	{ "hamdist", R_HASH_HAMDIST },
 	{ "pcprint", R_HASH_PCPRINT },
 	{ "mod255", R_HASH_MOD255 },
-	// {"base64", R_HASH_BASE64},
-	// {"base91", R_HASH_BASE91},
-	// {"punycode", R_HASH_PUNYCODE},
+	// { "base64", R_HASH_BASE64},
+	// { "base91", R_HASH_BASE91},
+	// { "punycode", R_HASH_PUNYCODE},
 	{ "luhn", R_HASH_LUHN },
 	{ "ssdeep", R_HASH_SSDEEP },
 
@@ -359,7 +359,7 @@ R_API void r_hash_do_spice(RHash *ctx, ut64 algo, int loops, R_NULLABLE RHashSee
 	free (buf);
 }
 
-R_API R_MUSTUSE char *r_hash_to_string(R_NULLABLE RHash *ctx, const char *name, const ut8 *data, int len) {
+R_API R_MUSTUSE char *r_hash_tostring(R_NULLABLE RHash *ctx, const char *name, const ut8 *data, int len) {
 	r_return_val_if_fail (name && len >= 0, NULL);
 	ut64 algo = r_hash_name_to_bits (name);
 	char *digest_hex = NULL;

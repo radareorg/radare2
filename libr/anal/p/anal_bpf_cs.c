@@ -10,7 +10,7 @@
 #define CSINC BPF
 #define CSINC_MODE \
 	((a->config->bits == 32)? CS_MODE_BPF_CLASSIC: CS_MODE_BPF_EXTENDED) \
-	| ((a->config->big_endian)? CS_MODE_BIG_ENDIAN: CS_MODE_LITTLE_ENDIAN)
+	| ((R_ARCH_CONFIG_IS_BIG_ENDIAN (a->config))? CS_MODE_BIG_ENDIAN: CS_MODE_LITTLE_ENDIAN)
 #include "capstone.inc"
 
 #define OP(n) insn->detail->bpf.operands[n]
@@ -34,11 +34,11 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 	int n = cs_disasm (handle, (ut8*)buf, len, addr, 1, &insn);
 	if (n < 1) {
 		op->type = R_ANAL_OP_TYPE_ILL;
-		if (mask & R_ANAL_OP_MASK_DISASM) {
+		if (mask & R_ARCH_OP_MASK_DISASM) {
 			op->mnemonic = strdup ("invalid");
 		}
 	} else {
-		if (mask & R_ANAL_OP_MASK_DISASM) {
+		if (mask & R_ARCH_OP_MASK_DISASM) {
 			op->mnemonic = r_str_newf ("%s%s%s",
 				insn->mnemonic,
 				insn->op_str[0]? " ": "",
@@ -175,7 +175,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 				break;
 			}
 
-			if (mask & R_ANAL_OP_MASK_ESIL) {
+			if (mask & R_ARCH_OP_MASK_ESIL) {
 				analop_esil(a, op, insn, addr);
 			}
 		}

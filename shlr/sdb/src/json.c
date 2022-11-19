@@ -1,7 +1,8 @@
 /* sdb - MIT - Copyright 2012-2022 - pancake */
 
 #include <stdarg.h>
-#include "sdb.h"
+#include "sdb/sdb.h"
+
 #include "json/rangstr.c"
 #include "json/js0n.c"
 #include "json/path.c"

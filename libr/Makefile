@@ -114,7 +114,6 @@ libr.${EXT_AR}: .libr2
 ifeq (1,$(WITH_GPL))
 E+=../shlr/grub/libgrubfs.${EXT_AR}
 endif
-E+=../shlr/yxml/libyxml.${EXT_AR}
 E+=../shlr/ar/libr_ar.${EXT_AR}
 E+=../shlr/winkd/libr_winkd.${EXT_AR}
 E+=../shlr/qnx/lib/libqnxr.${EXT_AR}
@@ -187,15 +186,14 @@ install-includes:
 		done ; \
 	done)
 	${INSTALL_DIR} "${DESTDIR}${INCLUDEDIR}/libr/sdb"
-	(cd ../shlr/sdb/src && for FILE in *.h ; do \
+	(cd ../shlr/sdb/include/sdb && for FILE in *.h ; do \
 		${INSTALL_DATA} $$FILE "${DESTDIR}${INCLUDEDIR}/libr/sdb/$$FILE" ; \
 	done)
-	${INSTALL_DIR} "${DESTDIR}${INCLUDEDIR}/libr/r_util"
-	(cd include/r_util && for FILE in * ; do \
-		${INSTALL_DATA} $$FILE "${DESTDIR}${INCLUDEDIR}/libr/r_util/$$FILE" ; done)
-	${INSTALL_DIR} "${DESTDIR}${INCLUDEDIR}/libr/r_crypto"
-	(cd include/r_crypto && for FILE in * ; do \
-		${INSTALL_DATA} $$FILE "${DESTDIR}${INCLUDEDIR}/libr/r_crypto/$$FILE" ; done)
+	for a in r_util r_crypto r_anal ; do \
+	${INSTALL_DIR} "${DESTDIR}${INCLUDEDIR}/libr/$$a" ; \
+	(cd include/$$a && for FILE in * ; do \
+		${INSTALL_DATA} $$FILE "${DESTDIR}${INCLUDEDIR}/libr/$$a/$$FILE" ; done) ; \
+	done
 
 symstall install-symlink:
 	@cd .. && \
@@ -204,7 +202,7 @@ symstall install-symlink:
 		"${DESTDIR}${LIBDIR}/pkgconfig" \
 		"${DESTDIR}${LIBDIR}/radare2/${VERSION}" ; \
 	rm -rf "${DESTDIR}${INCLUDEDIR}/libr" && ln -fs "${PWD}/include" "${DESTDIR}${INCLUDEDIR}/libr" ; \
-	rm -rf "${DESTDIR}${INCLUDEDIR}/libr/sdb" && ln -fs "${PWD}/../shlr/sdb/src" "${DESTDIR}${INCLUDEDIR}/libr/sdb" ; \
+	rm -rf "${DESTDIR}${INCLUDEDIR}/libr/sdb" && ln -fs "${PWD}/../shlr/sdb/include/sdb" "${DESTDIR}${INCLUDEDIR}/libr/sdb" ; \
 	$(MAKE) install-pkgconfig-symlink ; \
 	$(foreach lib,${LIBS}, \
 	  ln -fs "${PWD}/$(lib)/libr_$(lib).${EXT_SO}" \
@@ -236,7 +234,7 @@ install: install-includes install-pkgconfig
 	  ${INSTALL_LIB} "$$lib" "${DESTDIR}${LIBDIR}/$$lib"; \
 	fi
 	# object archives
-	@for FILE in `find * -type f -iname "*.${EXT_AR}" | grep -v fs/p` ; do \
+	@for FILE in `find * -type f -iname "*.${EXT_AR}" | grep -v dis.a | grep -v fs/p` ; do \
 	  echo " ${DESTDIR}${LIBDIR}/$$FILE"; ${INSTALL_DATA} $$FILE "${DESTDIR}${LIBDIR}" ; done || true
 	# plugins
 	@${INSTALL_DIR} "${DESTDIR}${LIBDIR}/radare2/${VERSION}"

@@ -433,24 +433,24 @@ static int cmd_hash(void *data, const char *input) {
 }
 
 static RHashHashHandlers hash_handlers[] = {
-	{"md4", handle_md4},
-	{"md5", handle_md5},
-	{"sha1", handle_sha1},
-	{"sha256", handle_sha256},
-	{"sha512", handle_sha512},
-	{"adler32", handle_adler32},
-	{"xor", handle_xor},
-	{"xorpair", handle_xorpair},
-	{"entropy", handle_entropy},
-	{"parity", handle_parity},
-	{"hamdist", handle_hamdist},
-	{"pcprint", handle_pcprint},
-	{"mod255", handle_mod255},
-	{"xxhash", handle_xxhash},
-	{"luhn", handle_luhn},
-	{"ssdeep", handle_ssdeep},
+	{ "md4", handle_md4},
+	{ "md5", handle_md5},
+	{ "sha1", handle_sha1},
+	{ "sha256", handle_sha256},
+	{ "sha512", handle_sha512},
+	{ "adler32", handle_adler32},
+	{ "xor", handle_xor},
+	{ "xorpair", handle_xorpair},
+	{ "entropy", handle_entropy},
+	{ "parity", handle_parity},
+	{ "hamdist", handle_hamdist},
+	{ "pcprint", handle_pcprint},
+	{ "mod255", handle_mod255},
+	{ "xxhash", handle_xxhash},
+	{ "luhn", handle_luhn},
+	{ "ssdeep", handle_ssdeep},
 
-	{"crc8smbus", handle_crc8_smbus},
+	{ "crc8smbus", handle_crc8_smbus},
 #if R_HAVE_CRC8_EXTRA
 	{ /* CRC-8/CDMA2000     */ "crc8cdma2000", handle_crc8_cdma2000},
 	{ /* CRC-8/DARC         */ "crc8darc", handle_crc8_darc},
@@ -464,11 +464,11 @@ static RHashHashHandlers hash_handlers[] = {
 #endif /* #if R_HAVE_CRC8_EXTRA */
 
 #if R_HAVE_CRC15_EXTRA
-	{"crc15can", handle_crc15_can},
+	{ "crc15can", handle_crc15_can},
 #endif /* #if R_HAVE_CRC15_EXTRA */
 
-	{"crc16", handle_crc16},
-	{"crc16hdlc", handle_crc16_hdlc},
+	{ "crc16", handle_crc16},
+	{ "crc16hdlc", handle_crc16_hdlc},
 	{ /* CRC-16/USB         */ "crc16usb", handle_crc16_usb},
 	{ /* CRC-16/CCITT-FALSE */ "crc16citt", handle_crc16_citt},
 #if R_HAVE_CRC16_EXTRA
@@ -495,12 +495,12 @@ static RHashHashHandlers hash_handlers[] = {
 #endif /* #if R_HAVE_CRC16_EXTRA */
 
 #if R_HAVE_CRC24
-	{"crc24", handle_crc24},
+	{ "crc24", handle_crc24},
 #endif /* #if R_HAVE_CRC24 */
 
-	{"crc32", handle_crc32},
-	{"crc32c", handle_crc32c},
-	{"crc32ecma267", handle_crc32_ecma_267},
+	{ "crc32", handle_crc32},
+	{ "crc32c", handle_crc32c},
+	{ "crc32ecma267", handle_crc32_ecma_267},
 #if R_HAVE_CRC32_EXTRA
 	{ /* CRC-32/BZIP2       */ "crc32bzip2", handle_crc32_bzip2 },
 	{ /* CRC-32D            */ "crc32d", handle_crc32d },
@@ -521,9 +521,9 @@ static RHashHashHandlers hash_handlers[] = {
 	{ /* CRC-64/XZ          */ "crc64xz", handle_crc64_xz },
 	{ /* CRC-64/ISO         */ "crc64iso", handle_crc64_iso },
 #endif /* #if R_HAVE_CRC64_EXTRA */
-	{"fletcher8", handle_fletcher8},
-	{"fletcher16", handle_fletcher16},
-	{"fletcher32", handle_fletcher32},
-	{"fletcher64", handle_fletcher64},
+	{ "fletcher8", handle_fletcher8},
+	{ "fletcher16", handle_fletcher16},
+	{ "fletcher32", handle_fletcher32},
+	{ "fletcher64", handle_fletcher64},
 	{NULL, NULL},
 };

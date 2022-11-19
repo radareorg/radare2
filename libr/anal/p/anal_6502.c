@@ -314,7 +314,7 @@ static int _6502_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 		return -1;
 	}
 
-	if (mask & R_ANAL_OP_MASK_DISASM) {
+	if (mask & R_ARCH_OP_MASK_DISASM) {
 		(void) _6502Disass (addr, op, data, len);
 	}
 
@@ -939,7 +939,7 @@ static bool set_reg_profile(RAnal *anal) {
 	return r_reg_set_profile_string (anal->reg, p);
 }
 
-static int esil_6502_init(RAnalEsil *esil) {
+static int esil_6502_init(REsil *esil) {
 	if (esil->anal && esil->anal->reg) {		//initial values
 		r_reg_set_value (esil->anal->reg, r_reg_get (esil->anal->reg, "pc", -1), 0x0000);
 		r_reg_set_value (esil->anal->reg, r_reg_get (esil->anal->reg, "sp", -1), 0xff);
@@ -951,7 +951,7 @@ static int esil_6502_init(RAnalEsil *esil) {
 	return true;
 }
 
-static int esil_6502_fini(RAnalEsil *esil) {
+static int esil_6502_fini(REsil *esil) {
 	return true;
 }
 

@@ -154,13 +154,13 @@ R_API void r_string_appendf(RString *a, const char *fmt, ...) {
 	}
 	if (p) {
 		(void)vsnprintf (p, ret, fmt, ap);
+		r_string_append (a, p);
+		if (myp) {
+			free (p);
+		}
 	}
 	va_end (ap2);
 	va_end (ap);
-	r_string_append (a, p);
-	if (myp) {
-		free (p);
-	}
 }
 
 #if 0

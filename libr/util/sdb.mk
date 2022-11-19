@@ -1,4 +1,5 @@
-SDBPATH=../../shlr/sdb/src/
+SDBPATH=$(SHLR)/sdb/src/
+SDBINCDIR=$(SHLR)/sdb/include
 SDBLIB=${SDBPATH}/libsdb.a
 EXTRA_TARGETS+=${SDBLIB}
 EXTRA_PRE+=$(SDBLIB)
@@ -16,7 +17,7 @@ SDB_OBJS+=ht_uu.o
 SDB_OBJS+=ht_up.o
 SDB_OBJS+=ht_pp.o
 SDB_OBJS+=ht_pu.o
-SDB_OBJS+=sdbht.o
+SDB_OBJS+=ht.o
 SDB_OBJS+=json.o
 SDB_OBJS+=text.o
 SDB_OBJS+=lock.o
@@ -39,7 +40,7 @@ SDBOBJS=$(addprefix ${SDBPATH},${SDB_OBJS})
 
 OBJS+=$(SDBOBJS)
 
-CFLAGS+=-I$(SDBPATH)
+CFLAGS+=-I$(SDBINCDIR)
 
 $(SDBLIB):
 	$(MAKE) -C ../../shlr sdbs

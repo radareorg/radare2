@@ -199,13 +199,13 @@ R_API char *r_syscmd_ls(const char *input, int cons_width) {
 	if (!path || !*path) {
 		path = ".";
 	} else if (!strncmp (path, "~/", 2)) {
-		homepath = r_str_home (path + 2);
+		homepath = r_file_home (path + 2);
 		if (homepath) {
 			path = (const char *)homepath;
 		}
 	} else if (*path == '$') {
 		if (!strncmp (path + 1, "home", 4) || !strncmp (path + 1, "HOME", 4)) {
-			homepath = r_str_home ((strlen (path) > 5)? path + 6: NULL);
+			homepath = r_file_home ((strlen (path) > 5)? path + 6: NULL);
 			if (homepath) {
 				path = (const char *)homepath;
 			}
@@ -425,7 +425,7 @@ R_API char *r_syscmd_join(const char *file1, const char *file2) {
 	}
 	if (file1) {
 		if ((p1 = strchr (file1, ' '))) {
-			p1 = p1 + 1;
+			p1++;
 		} else {
 			p1 = file1;
 		}
@@ -447,14 +447,14 @@ R_API char *r_syscmd_join(const char *file1, const char *file2) {
 		char *data = NULL;
 		RListIter *iter1, *iter2;
 		if (!data1 || !data2) {
-			eprintf ("No such files or directory\n");
+			R_LOG_ERROR ("No such files or directory");
 		} else {
 			list1 = r_str_split_list (data1, "\n",  0);
 			list2 = r_str_split_list (data2, "\n", 0);
 
 			char *str1, *str2;
 			r_list_foreach (list1, iter1, str1) {
-				char *field = strdup (str1);			// extract comman field
+				char *field = strdup (str1); // extract comman field
 				char *end = strchr (field, ' ');
 				if (end) {
 					*end = '\0';

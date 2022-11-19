@@ -12,7 +12,7 @@ address: 0x0
 opcode: add 0x1
 esilcost: 0
 disasm: add 0x1
-pseudo: 0x1 += 
+pseudo: 0x1 +=
 mnemonic: add
 description: add src to dst (32-bit)
 mask: ffffffffffffffff

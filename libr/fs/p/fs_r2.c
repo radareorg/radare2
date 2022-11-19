@@ -29,12 +29,12 @@ static RList *__cfg(RFSRoot *root, const char *path);
 static RList *__flags(RFSRoot *root, const char *path);
 
 static Routes routes[] = {
-	{"/cfg", &__cfg, &__cfg_cat, &__cfg_write },
-	{"/flags", &__flags, &__flags_cat, NULL},
-	{"/version", NULL, &__version, NULL},
-	{"/seek", NULL, &__seek_cat, &__seek_write },
-	{"/bsize", NULL, &__bsize_cat, &__bsize_write },
-	{"/", &__root},
+	{ "/cfg", &__cfg, &__cfg_cat, &__cfg_write },
+	{ "/flags", &__flags, &__flags_cat, NULL},
+	{ "/version", NULL, &__version, NULL},
+	{ "/seek", NULL, &__seek_cat, &__seek_write },
+	{ "/bsize", NULL, &__bsize_cat, &__bsize_write },
+	{ "/", &__root},
 	{NULL, NULL}
 };
 

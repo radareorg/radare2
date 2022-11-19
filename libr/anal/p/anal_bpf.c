@@ -711,8 +711,8 @@ static int bpf_opasm (RAnal *a, ut64 pc, const char *str, ut8 *outbuf, int outsi
 	(op)->ptrsize = (size);
 
 #define NEW_SRC_DST(op) \
-	src = r_vector_push ((op)->srcs, NULL); \
-	dst = r_vector_push ((op)->dsts, NULL);
+	src = r_vector_push (&(op)->srcs, NULL); \
+	dst = r_vector_push (&(op)->dsts, NULL);
 
 #define SET_REG_SRC_DST(op, _src, _dst) \
 	NEW_SRC_DST ((op)); \
@@ -725,19 +725,19 @@ static int bpf_opasm (RAnal *a, ut64 pc, const char *str, ut8 *outbuf, int outsi
 	src->imm = (_imm);
 
 #define SET_A_SRC(op) \
-	src = r_vector_push ((op)->srcs, NULL); \
+	src = r_vector_push (&(op)->srcs, NULL); \
 	src->reg = r_reg_get (anal->reg, "A", R_REG_TYPE_GPR);
 
 #define SET_A_DST(op) \
-	dst = r_vector_push ((op)->dsts, NULL); \
+	dst = r_vector_push (&(op)->dsts, NULL); \
 	dst->reg = r_reg_get (anal->reg, "A", R_REG_TYPE_GPR);
 
 // (k) >= 0 must also be true, but the value is already unsigned
 #define INSIDE_M(k) ((k) < 16)
 
 /*
-static bool bpf_int_exit(RAnalEsil *esil, ut32 interrupt, void *user);
-RAnalEsilInterruptHandler ih = { 0, NULL, NULL, &bpf_int_exit, NULL };
+static bool bpf_int_exit(REsil *esil, ut32 interrupt, void *user);
+REsilInterruptHandler ih = { 0, NULL, NULL, &bpf_int_exit, NULL };
 */
 
 static const char *M[] = {
@@ -771,7 +771,7 @@ static int bpf_anal (RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 	op->addr = addr;
 
 	r_strbuf_init (&op->esil);
-	if (mask & R_ANAL_OP_MASK_DISASM) {
+	if (mask & R_ARCH_OP_MASK_DISASM) {
 		(void)disassemble (op, addr, data, len);
 	}
 
@@ -1158,12 +1158,12 @@ static bool set_reg_profile (RAnal *anal) {
 }
 
 /*
-static bool bpf_int_exit(RAnalEsil *esil, ut32 interrupt, void *user) {
+static bool bpf_int_exit(REsil *esil, ut32 interrupt, void *user) {
 	int syscall;
 	ut64 r0;
 	if (!esil || (interrupt != 0x0))
 		return false;
-	r_anal_esil_reg_read (esil, "R0", &r0, NULL);
+	r_esil_reg_read (esil, "R0", &r0, NULL);
 	if (r0 == 0) {
 		esil->anal->cb_printf ("; BPF result: DROP value: %d\n", (int)r0);
 		eprintf ("BPF result: DROP value: %d\n", (int)r0);
@@ -1174,16 +1174,16 @@ static bool bpf_int_exit(RAnalEsil *esil, ut32 interrupt, void *user) {
 	return true;
 }
 
-static int esil_bpf_init(RAnalEsil *esil) {
+static int esil_bpf_init(REsil *esil) {
 	if (!esil) {
 		return false;
 	}
-	RAnalEsilInterrupt *intr = r_anal_esil_interrupt_new (esil, 0, &ih);
-	r_anal_esil_set_interrupt (esil, intr);
+	REsilInterrupt *intr = r_esil_interrupt_new (esil, 0, &ih);
+	r_esil_set_interrupt (esil, intr);
 	return true;
 }
 
-static int esil_bpf_fini(RAnalEsil *esil) {
+static int esil_bpf_fini(REsil *esil) {
 	return true;
 }
 */

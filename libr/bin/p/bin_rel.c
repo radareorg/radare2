@@ -243,7 +243,7 @@ static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadadd
 	if (rel->hdr.module_version == 3) {
 		if (r_buf_fread_at (bf->buf, 0x40, (void *)&rel->v3, "3I", 1) == -1) {
 			free (rel);
-			return NULL;
+			return false;
 		}
 	}
 
@@ -543,7 +543,7 @@ static RBinReloc *patch_reloc(RBin *b, const LoadedRel *rel, const RelReloc *rel
 
 static RList *patch_relocs(RBin *b) {
 	if (!b->iob.io->cached) {
-		eprintf ("Warning: run r2 with -e bin.cache=true to fix relocations in disassembly\n");
+		R_LOG_WARN ("run r2 with -e bin.cache=true to fix relocations in disassembly");
 		return NULL;
 	}
 

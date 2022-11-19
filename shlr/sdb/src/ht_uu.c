@@ -1,7 +1,7 @@
 /* sdb - MIT - Copyright 2018-2022 - ret2libc, pancake */
 
-#include "sdb.h"
-#include "ht_uu.h"
+#include "sdb/sdb.h"
+#include "sdb/ht_uu.h"
 #include "ht.inc"
 
 // creates a default HtUU that has strings as keys

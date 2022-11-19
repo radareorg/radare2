@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2009-2020 - pancake, nibble, dso */
+/* radare2 - LGPL - Copyright 2009-2022 - pancake, nibble, dso */
 
 #include "bin_elf.inc"
 

@@ -6,6 +6,7 @@ extern "C" {
 #endif
 
 #include <r_types.h>
+#include <r_th.h>
 #include <r_util/pj.h>
 #include <r_util/r_graph.h>
 #include <r_util/r_hex.h>
@@ -20,8 +21,8 @@ extern "C" {
 #include <r_util/r_sys.h>
 #include <r_util/r_file.h>
 #include <r_vector.h>
-#include <sdb.h>
-#include <ht_up.h>
+#include <sdb/sdb.h>
+#include <sdb/ht_up.h>
 
 #include <stdio.h>
 #include <sys/types.h>
@@ -81,6 +82,11 @@ typedef struct r_cons_bind_t {
 	RConsFlush cb_flush;
 	RConsGrepCallback cb_grep;
 } RConsBind;
+
+typedef struct {
+	const char *name;
+	const char *script;
+} RConsTheme;
 
 typedef struct r_cons_grep_t {
 	char strings[R_CONS_GREP_WORDS][R_CONS_GREP_WORD_SIZE];
@@ -391,8 +397,6 @@ typedef struct r_cons_context_t {
 	char *buffer; // TODO: replace with RStrBuf
 	size_t buffer_len;
 	size_t buffer_sz;
-	RStrBuf *error; // r_cons_eprintf / r_cons_errstr / r_cons_errmode
-	int errmode;
 	bool breaked;
 	bool was_breaked;
 	bool unbreakable;
@@ -509,7 +513,10 @@ typedef struct r_cons_t {
 	int click_y;
 	bool show_vals;		// show which section in Vv
 	// TODO: move into instance? + avoid unnecessary copies
+	RThreadLock *lock;
 	RConsCursorPos cpos;
+	int backup_fd;
+	int backup_fdn;
 } RCons;
 
 #define R_CONS_KEY_F1 0xf1
@@ -750,7 +757,6 @@ typedef struct r_cons_canvas_line_style_t {
 #define ARROW_LEFT 9
 #endif
 
-
 #ifdef R_API
 R_API void r_cons_image(const ut8 *buf, int bufsz, int width, int mode);
 R_API RConsCanvas* r_cons_canvas_new(int w, int h);
@@ -758,7 +764,7 @@ R_API void r_cons_canvas_free(RConsCanvas *c);
 R_API void r_cons_canvas_clear(RConsCanvas *c);
 R_API void r_cons_canvas_print(RConsCanvas *c);
 R_API void r_cons_canvas_print_region(RConsCanvas *c);
-R_API char *r_cons_canvas_to_string(RConsCanvas *c);
+R_API char *r_cons_canvas_tostring(RConsCanvas *c);
 R_API void r_cons_canvas_attr(RConsCanvas *c,const char *attr);
 R_API void r_cons_canvas_write(RConsCanvas *c, const char *_s);
 R_API bool r_cons_canvas_gotoxy(RConsCanvas *c, int x, int y);
@@ -775,6 +781,7 @@ R_API void r_cons_canvas_line_back_edge(RConsCanvas *c, int x, int y, int x2, in
 
 R_API RCons *r_cons_new(void);
 R_API RCons *r_cons_singleton(void);
+R_API const RConsTheme *r_cons_themes(void);
 R_API void r_cons_chop(void);
 R_API RConsContext *r_cons_context(void);
 R_API RCons *r_cons_free(void);
@@ -848,11 +855,6 @@ R_API void r_cons_context_break_pop(RConsContext *context, bool sig);
 R_API char *r_cons_editor(const char *file, const char *str);
 R_API void r_cons_reset(void);
 R_API void r_cons_reset_colors(void);
-R_API char *r_cons_errstr(void);
-R_API void r_cons_errmode(int mode);
-R_API void r_cons_errmodes(const char *mode);
-R_API int r_cons_eprintf(const char *format, ...);
-R_API void r_cons_eflush(void);
 R_API void r_cons_print_clear(void);
 R_API void r_cons_echo(const char *msg);
 R_API void r_cons_zero(void);

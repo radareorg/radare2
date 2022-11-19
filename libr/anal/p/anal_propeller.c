@@ -12,7 +12,7 @@
 static int propeller_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
 	if (len < 4) {
 		op->type = R_ANAL_OP_TYPE_ILL;
-		if (mask & R_ANAL_OP_MASK_DISASM) {
+		if (mask & R_ARCH_OP_MASK_DISASM) {
 			op->mnemonic = strdup ("invalid");
 		}
 		return op->size = 0;
@@ -26,7 +26,7 @@ static int propeller_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int
 
 	if (ret < 0) {
 		op->type = R_ANAL_OP_TYPE_ILL;
-		if (mask & R_ANAL_OP_MASK_DISASM) {
+		if (mask & R_ARCH_OP_MASK_DISASM) {
 			op->mnemonic = strdup ("invalid");
 		}
 		return op->size = ret;
@@ -34,7 +34,7 @@ static int propeller_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int
 
 	op->addr = addr;
 
-	if (mask & R_ANAL_OP_MASK_DISASM) {
+	if (mask & R_ARCH_OP_MASK_DISASM) {
 		if (cmd.prefix[0] && cmd.operands[0]) {
 			op->mnemonic = r_str_newf ("%s %s %s", cmd.prefix, cmd.instr, cmd.operands);
 		} else if (cmd.operands[0]) {

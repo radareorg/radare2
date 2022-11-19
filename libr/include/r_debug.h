@@ -443,7 +443,7 @@ R_API bool r_debug_start(RDebug *dbg, const char *cmd);
 
 /* reason we stopped */
 R_API RDebugReasonType r_debug_stop_reason(RDebug *dbg);
-R_API const char *r_debug_reason_to_string(int type);
+R_API const char *r_debug_reason_tostring(int type);
 
 /* wait for another event */
 R_API RDebugReasonType r_debug_wait(RDebug *dbg, RBreakpointItem **bp);
@@ -485,6 +485,7 @@ R_API ut64 r_debug_get_baddr(RDebug *dbg, const char *file);
 
 /* send signals */
 R_API void r_debug_signal_init(RDebug *dbg);
+R_API void r_debug_signal_fini(RDebug *dbg);
 R_API int r_debug_signal_send(RDebug *dbg, int num);
 R_API int r_debug_signal_what(RDebug *dbg, int num);
 R_API int r_debug_signal_resolve(RDebug *dbg, const char *signame);

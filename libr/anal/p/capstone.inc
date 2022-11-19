@@ -14,8 +14,20 @@
 #define CSINC_ARCH CSINC_ARCH_(CSINC)
 #define CSINC_ARCH_(y) TOKEN_PASTE(CS_ARCH_, y)
 
-static csh init_capstone (RAnal *a) {
+static void initcs(csh ud) {
+	cs_opt_mem mem = {
+		.malloc = malloc,
+		.calloc = calloc,
+		.realloc = realloc,
+		.free = free,
+		.vsnprintf = vsnprintf,
+	};
+	cs_option (ud, CS_OPT_MEM, (size_t)&mem);
+}
+
+static csh init_capstone(RAnal *a) {
 	int mode = (CSINC_MODE);
+	initcs (a->cs_handle);
 	if (mode != a->cs_omode || a->config->bits != a->cs_obits) {
 		if (a->cs_handle != 0) {
 			cs_close (&a->cs_handle);

@@ -17,7 +17,7 @@ R_API bool r_skyline_add(RSkyline *skyline, RInterval itv, void *user) {
 	// `slot` is the index of the first RSkylineItem with part->itv.addr >= new_part.itv.addr
 	size_t slot;
 	r_vector_lower_bound (skyline_vec, new_part.itv.addr, slot, CMP_BEGIN_GTE_PART);
-	const bool is_last = slot == r_vector_len (skyline_vec);
+	const bool is_last = slot == r_vector_length (skyline_vec);
 	bool is_inside_prev_part = false;
 	if (slot) {
 		RSkylineItem *prev_part = r_vector_index_ptr (skyline_vec, slot - 1);
@@ -39,7 +39,7 @@ R_API bool r_skyline_add(RSkyline *skyline, RInterval itv, void *user) {
 		while (part && r_itv_include (new_part.itv, part->itv)) {
 			// Remove `part` that fits in `new_part`
 			r_vector_remove_at (skyline_vec, slot, NULL);
-			part = slot < r_vector_len (skyline_vec) ? r_vector_index_ptr (skyline_vec, slot) : NULL;
+			part = slot < r_vector_length (skyline_vec) ? r_vector_index_ptr (skyline_vec, slot) : NULL;
 		}
 		if (part && r_itv_overlap (new_part.itv, part->itv)) {
 			// Chop start of last `part` that intersects `new_part`
@@ -55,7 +55,7 @@ R_API bool r_skyline_add(RSkyline *skyline, RInterval itv, void *user) {
 R_API const RSkylineItem *r_skyline_get_item_intersect(RSkyline *skyline, ut64 addr, ut64 len) {
 	r_return_val_if_fail (skyline, NULL);
 	RVector *skyline_vec = &skyline->v;
-	size_t i, l = r_vector_len (skyline_vec);
+	size_t i, l = r_vector_length (skyline_vec);
 	r_vector_lower_bound (skyline_vec, addr, i, CMP_END_GTE_PART);
 	if (i == l) {
 		return false;

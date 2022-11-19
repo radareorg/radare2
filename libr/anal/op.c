@@ -4,63 +4,6 @@
 #include <r_util.h>
 #include <r_list.h>
 
-R_API RAnalOp *r_anal_op_new(void) {
-	RAnalOp *op = R_NEW (RAnalOp);
-	r_anal_op_init (op);
-	return op;
-}
-
-R_API RList *r_anal_op_list_new(void) {
-	RList *list = r_list_new ();
-	if (list) {
-		list->free = &r_anal_op_free;
-	}
-	return list;
-}
-
-R_API void r_anal_op_init(RAnalOp *op) {
-	if (op) {
-		memset (op, 0, sizeof (*op));
-		op->addr = UT64_MAX;
-		op->jump = UT64_MAX;
-		op->fail = UT64_MAX;
-		op->ptr = UT64_MAX;
-		op->refptr = 0;
-		op->val = UT64_MAX;
-		op->disp = UT64_MAX;
-
-		op->srcs = r_vector_new (sizeof (RAnalValue), NULL, NULL);
-		op->dsts = r_vector_new (sizeof (RAnalValue), NULL, NULL);
-		r_vector_reserve (op->srcs, 3);
-		r_vector_reserve (op->dsts, 1);
-	}
-}
-
-R_API void r_anal_op_fini(RAnalOp *op) {
-	if (!op) {
-		return;
-	}
-	r_vector_free (op->srcs);
-	r_vector_free (op->dsts);
-	op->srcs = NULL;
-	op->dsts = NULL;
-	r_list_free (op->access);
-	op->access = NULL;
-	r_strbuf_fini (&op->opex);
-	r_strbuf_fini (&op->esil);
-	r_anal_switch_op_free (op->switch_op);
-	op->switch_op = NULL;
-	R_FREE (op->mnemonic);
-}
-
-R_API void r_anal_op_free(void *_op) {
-	if (!_op) {
-		return;
-	}
-	r_anal_op_fini (_op);
-	memset (_op, 0, sizeof (RAnalOp));
-	free (_op);
-}
 
 static int defaultCycles(RAnalOp *op) {
 	switch (op->type) {
@@ -88,36 +31,87 @@ static int defaultCycles(RAnalOp *op) {
 	}
 }
 
+#if 1
+// XXX deprecate!! or at least call  r_arch_bath tradition
 R_API int r_anal_opasm(RAnal *anal, ut64 addr, const char *s, ut8 *outbuf, int outlen) {
-	if (anal && outbuf && outlen > 0 && anal->cur && anal->cur->opasm) {
+	int ret = 0;
+	if (outlen > 0 && anal->arch->session) {
+		RAnalOp *op = r_anal_op_new ();
+		r_anal_op_set_mnemonic (op, addr, s);
+		if (!r_arch_encode (anal->arch, op, 0)) {
+			int ret = r_arch_info (anal->arch, R_ANAL_ARCHINFO_INV_OP_SIZE);
+			if (ret < 1) {
+				ret = r_arch_info (anal->arch, R_ANAL_ARCHINFO_ALIGN);
+				if (ret < 1) {
+					ret = 1;
+				}
+			}
+		}
+		int finlen = R_MIN (outlen, op->size);
+		ret = op->size;
+		if (op->bytes && finlen > 0) {
+			memcpy (outbuf, op->bytes, finlen);
+		} else {
+			r_anal_op_free (op);
+			return -1;
+		}
+		r_anal_op_free (op);
+		/* consider at least 1 byte to be part of the opcode */
+	} else if (anal && outbuf && outlen > 0 && anal->cur && anal->cur->opasm) {
 		// use core binding to set asm.bits correctly based on the addr
 		// this is because of the hassle of arm/thumb
-		int ret = anal->cur->opasm (anal, addr, s, outbuf, outlen);
+		ret = anal->cur->opasm (anal, addr, s, outbuf, outlen);
 		/* consider at least 1 byte to be part of the opcode */
-		return ret;
 	}
-	return 0;
+	return ret;
 }
+#endif
 
 R_API int r_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len, RAnalOpMask mask) {
 	r_anal_op_init (op);
 	r_return_val_if_fail (anal && op && len > 0, -1);
 
+	// use core binding to set asm.bits correctly based on the addr
+	// this is because of the hassle of arm/thumb
+	// this causes the reg profile to be invalidated
+	if (anal && anal->coreb.archbits) {
+		anal->coreb.archbits (anal->coreb.core, addr);
+	}
+	const int pcalign = anal->config->pcalign;
+	if (pcalign && (addr % pcalign)) {
+		op->type = R_ANAL_OP_TYPE_ILL;
+		op->addr = addr;
+		op->size = 1;
+		return -1;
+	}
 	int ret = R_MIN (2, len);
-	if (len > 0 && anal->cur && anal->cur->op) {
-		// use core binding to set asm.bits correctly based on the addr
-		// this is because of the hassle of arm/thumb
-		// this causes the reg profile to be invalidated
-		if (anal && anal->coreb.archbits) {
-			anal->coreb.archbits (anal->coreb.core, addr);
-		}
-		const int pcalign = anal->config->pcalign;
-		if (pcalign && (addr % pcalign)) {
+	if (len > 0 && anal->arch->session) {
+		r_anal_op_set_bytes (op, addr, data, len);
+		bool bret = r_arch_decode (anal->arch, op, mask);
+		if (!bret) {
 			op->type = R_ANAL_OP_TYPE_ILL;
-			op->addr = addr;
-			op->size = 1;
-			return -1;
+			op->size = r_anal_archinfo (anal, R_ANAL_ARCHINFO_INV_OP_SIZE);
+			if (op->size < 0) {
+				op->size = 1;
+			}
 		}
+#if 0
+		// r_arch_op_to_analop (op, &archop);
+		// ret = anal->arch->op (anal, op, addr, data, len, mask);
+		if (ret < 1) {
+			op->type = R_ANAL_OP_TYPE_ILL;
+			op->size = r_anal_archinfo (anal, R_ANAL_ARCHINFO_INV_OP_SIZE);
+			if (op->size < 0) {
+				op->size = 1;
+			}
+		}
+#endif
+		op->addr = addr;
+		/* consider at least 1 byte to be part of the opcode */
+		if (op->nopcode < 1) {
+			op->nopcode = 1;
+		}
+	} else if (len > 0 && anal->cur && anal->cur->op) {
 		ret = anal->cur->op (anal, op, addr, data, len, mask);
 		if (ret < 1) {
 			op->type = R_ANAL_OP_TYPE_ILL;
@@ -139,12 +133,12 @@ R_API int r_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 			op->cycles = defaultCycles (op);
 		}
 	}
-	if (!op->mnemonic && (mask & R_ANAL_OP_MASK_DISASM)) {
+	if (!op->mnemonic && (mask & R_ARCH_OP_MASK_DISASM)) {
 		if (anal->verbose) {
-			R_LOG_WARN ("unhandled R_ANAL_OP_MASK_DISASM in r_anal_op");
+			R_LOG_WARN ("unhandled R_ARCH_OP_MASK_DISASM in r_anal_op");
 		}
 	}
-	if (mask & R_ANAL_OP_MASK_HINT) {
+	if (mask & R_ARCH_OP_MASK_HINT) {
 		RAnalHint *hint = r_anal_hint_get (anal, addr);
 		if (hint) {
 			r_anal_op_hint (op, hint);
@@ -154,6 +148,7 @@ R_API int r_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 	return ret;
 }
 
+#if 0
 R_API RAnalOp *r_anal_op_copy(RAnalOp *op) {
 	RAnalOp *nop = R_NEW0 (RAnalOp);
 	if (!nop) {
@@ -169,8 +164,11 @@ R_API RAnalOp *r_anal_op_copy(RAnalOp *op) {
 	} else {
 		nop->mnemonic = NULL;
 	}
-	nop->srcs = r_vector_clone (op->srcs);
-	nop->dsts = r_vector_clone (op->dsts);
+R_LOG_ERROR ("Cannot clone an op");
+#if 0
+	&op->srcs = r_vector_clone (&op->srcs);
+	&op->dsts = r_vector_clone (&op->dsts);
+#endif
 	if (op->access) {
 		RListIter *it;
 		RAnalValue *val;
@@ -184,6 +182,7 @@ R_API RAnalOp *r_anal_op_copy(RAnalOp *op) {
 	r_strbuf_copy (&nop->esil, &op->esil);
 	return nop;
 }
+#endif
 
 R_API bool r_anal_op_nonlinear(int t) {
 	t &= R_ANAL_OP_TYPE_MASK;
@@ -230,10 +229,11 @@ R_API bool r_anal_op_ismemref(int t) {
 	}
 }
 
+#define OPTYPES_COUNT 62
 static struct optype {
 	const int type;
 	const char *name;
-} optypes[] = {
+} optypes[OPTYPES_COUNT] = {
 	{ R_ANAL_OP_TYPE_IO, "io" },
 	{ R_ANAL_OP_TYPE_ACMP, "acmp" },
 	{ R_ANAL_OP_TYPE_ADD, "add" },
@@ -308,7 +308,14 @@ R_API int r_anal_optype_from_string(const char *type) {
 	return -1;
 }
 
-R_API const char *r_anal_optype_to_string(int t) {
+R_API const char *r_anal_optype_index(int idx) {
+	if (idx < 0 || idx >= OPTYPES_COUNT) {
+		return NULL;
+	}
+	return optypes[idx].name;
+}
+
+R_API const char *r_anal_optype_tostring(int t) {
 	bool once = true;
 repeat:
 	// TODO: delete
@@ -392,16 +399,16 @@ R_API const char *r_anal_op_to_esil_string(RAnal *anal, RAnalOp *op) {
 }
 
 // TODO: use esil here?
-R_API char *r_anal_op_to_string(RAnal *anal, RAnalOp *op) {
+R_API char *r_anal_op_tostring(RAnal *anal, RAnalOp *op) {
 	RAnalBlock *bb;
 	RAnalFunction *f;
 	char *cstr, ret[128];
-	RAnalValue *dst = r_vector_index_ptr (op->dsts, 0);
-	RAnalValue *src0 = r_vector_index_ptr (op->srcs, 0);
-	RAnalValue *src1 = r_vector_index_ptr (op->srcs, 1);
-	char *r0 = r_anal_value_to_string (dst);
-	char *a0 = r_anal_value_to_string (src0);
-	char *a1 = r_anal_value_to_string (src1);
+	RAnalValue *dst = r_vector_at (&op->dsts, 0);
+	RAnalValue *src0 = r_vector_at (&op->srcs, 0);
+	RAnalValue *src1 = r_vector_at (&op->srcs, 1);
+	char *r0 = r_anal_value_tostring (dst);
+	char *a0 = r_anal_value_tostring (src0);
+	char *a1 = r_anal_value_tostring (src1);
 	if (!r0) {
 		r0 = strdup ("?");
 	}
@@ -418,7 +425,7 @@ R_API char *r_anal_op_to_string(RAnal *anal, RAnalOp *op) {
 		break;
 	case R_ANAL_OP_TYPE_CJMP:
 		if ((bb = r_anal_bb_from_offset (anal, op->addr))) {
-			cstr = r_anal_cond_to_string (bb->cond);
+			cstr = r_anal_cond_tostring (bb->cond);
 			snprintf (ret, sizeof (ret), "if (%s) goto 0x%"PFMT64x, cstr, op->jump);
 			free (cstr);
 		} else {
@@ -459,7 +466,7 @@ R_API char *r_anal_op_to_string(RAnal *anal, RAnalOp *op) {
 	case R_ANAL_OP_TYPE_CCALL:
 		f = r_anal_get_fcn_in (anal, op->jump, R_ANAL_FCN_TYPE_NULL);
 		if ((bb = r_anal_bb_from_offset (anal, op->addr))) {
-			cstr = r_anal_cond_to_string (bb->cond);
+			cstr = r_anal_cond_tostring (bb->cond);
 			if (f) {
 				snprintf (ret, sizeof (ret), "if (%s) %s()", cstr, f->name);
 			} else {
@@ -537,7 +544,7 @@ R_API char *r_anal_op_to_string(RAnal *anal, RAnalOp *op) {
 		break;
 	case R_ANAL_OP_TYPE_CRET:
 		if ((bb = r_anal_bb_from_offset (anal, op->addr))) {
-			cstr = r_anal_cond_to_string (bb->cond);
+			cstr = r_anal_cond_tostring (bb->cond);
 			snprintf (ret, sizeof (ret), "if (%s) ret", cstr);
 			free (cstr);
 		} else {
@@ -600,14 +607,13 @@ R_API const char *r_anal_stackop_tostring(int s) {
 	return "unk";
 }
 
-R_API const char *r_anal_op_family_to_string(int n) {
+R_API const char *r_anal_op_family_tostring(int n) {
 	switch (n) {
 	case R_ANAL_OP_FAMILY_UNKNOWN: return "unk";
 	case R_ANAL_OP_FAMILY_CPU: return "cpu";
 	case R_ANAL_OP_FAMILY_SECURITY: return "sec";
 	case R_ANAL_OP_FAMILY_FPU: return "fpu";
-	case R_ANAL_OP_FAMILY_MMX: return "mmx";
-	case R_ANAL_OP_FAMILY_SSE: return "sse";
+	case R_ANAL_OP_FAMILY_VEC: return "vec";
 	case R_ANAL_OP_FAMILY_PRIV: return "priv";
 	case R_ANAL_OP_FAMILY_THREAD: return "thrd";
 	case R_ANAL_OP_FAMILY_CRYPTO: return "crpt";
@@ -621,21 +627,21 @@ struct op_family {
 	const char *name;
 	int id;
 };
+
 static const struct op_family of[] = {
-	{"cpu", R_ANAL_OP_FAMILY_CPU},
-	{"fpu", R_ANAL_OP_FAMILY_FPU},
-	{"mmx", R_ANAL_OP_FAMILY_MMX},
-	{"sse", R_ANAL_OP_FAMILY_SSE},
-	{"priv", R_ANAL_OP_FAMILY_PRIV},
-	{"virt", R_ANAL_OP_FAMILY_VIRT},
-	{"crpt", R_ANAL_OP_FAMILY_CRYPTO},
-	{"io", R_ANAL_OP_FAMILY_IO},
-	{"sec", R_ANAL_OP_FAMILY_SECURITY},
-	{"thread", R_ANAL_OP_FAMILY_THREAD},
+	{ "cpu", R_ANAL_OP_FAMILY_CPU},
+	{ "fpu", R_ANAL_OP_FAMILY_FPU},
+	{ "vec", R_ANAL_OP_FAMILY_VEC},
+	{ "priv", R_ANAL_OP_FAMILY_PRIV},
+	{ "virt", R_ANAL_OP_FAMILY_VIRT},
+	{ "crypto", R_ANAL_OP_FAMILY_CRYPTO},
+	{ "io", R_ANAL_OP_FAMILY_IO},
+	{ "sec", R_ANAL_OP_FAMILY_SECURITY},
+	{ "thread", R_ANAL_OP_FAMILY_THREAD},
 };
 
 R_API int r_anal_op_family_from_string(const char *f) {
-	int i;
+	size_t i;
 	for (i = 0; i < sizeof (of) / sizeof (of[0]); i ++) {
 		if (!strcmp (f, of[i].name)) {
 			return of[i].id;
@@ -690,14 +696,16 @@ R_API int r_anal_op_reg_delta(RAnal *anal, ut64 addr, const char *name) {
 	anal->iob.read_at (anal->iob.io, addr, buf, sizeof (buf));
 	RAnalOp op = {0};
 	RAnalValue *dst = NULL;
-	if (r_anal_op (anal, &op, addr, buf, sizeof (buf), R_ANAL_OP_MASK_ALL) > 0) {
-		dst = r_vector_index_ptr (op.dsts, 0);
+	if (r_anal_op (anal, &op, addr, buf, sizeof (buf), R_ARCH_OP_MASK_ALL) > 0) {
+		dst = r_vector_at (&op.dsts, 0);
 		if (dst && dst->reg && dst->reg->name && (!name || !strcmp (dst->reg->name, name))) {
-			if (r_vector_len (op.srcs)) {
-				return ((RAnalValue*)r_vector_index_ptr (op.srcs, 0))->delta;
+			if (r_vector_length (&op.srcs) > 0) {
+				r_anal_op_fini (&op);
+				return ((RAnalValue*)r_vector_at (&op.srcs, 0))->delta;
 			}
 		}
 	}
+	r_anal_op_fini (&op);
 	return 0;
 }
 

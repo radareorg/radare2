@@ -5,7 +5,7 @@ CMDS=
 EXPECT_ERR=<<EOF
 INFO: REL module ID 00000001
 INFO: REL version 3
-Warning: run r2 with -e bin.cache=true to fix relocations in disassembly
+WARN: run r2 with -e bin.cache=true to fix relocations in disassembly
 EOF
 RUN
 
@@ -16,13 +16,13 @@ CMDS=iS
 EXPECT=<<EOF
 [Sections]
 
-nth paddr       size vaddr       vsize perm name
-------------------------------------------------
-0   0x000000d0  0xa0 0x805000d0   0xa0 -rwx text_1
-1   0x00000170   0x4 0x80500170    0x4 -rw- data_2
-2   0x00000174   0x4 0x80500174    0x4 -rw- data_3
-3   0x00000178  0x34 0x80500178   0x34 -rw- data_4
-4   0x00000000   0x4 0x80500380    0x4 -rw- bss
+nth paddr       size vaddr       vsize perm type name
+-----------------------------------------------------
+0   0x000000d0  0xa0 0x805000d0   0xa0 -rwx ---- text_1
+1   0x00000170   0x4 0x80500170    0x4 -rw- ---- data_2
+2   0x00000174   0x4 0x80500174    0x4 -rw- ---- data_3
+3   0x00000178  0x34 0x80500178   0x34 -rw- ---- data_4
+4   0x00000000   0x4 0x80500380    0x4 -rw- ---- bss
 
 EOF
 RUN
@@ -43,6 +43,7 @@ DEBUG: imp 4: 2 relocs
 DEBUG: imp 5: 2 relocs
 DEBUG: imp 6: 7 relocs
 DEBUG: imp 7: 16 relocs
+DEBUG: bin object have no information
 ERROR: Imports from other REL (00000002) not yet implemented
 ERROR: Imports from other REL (00000003) not yet implemented
 ERROR: Imports from other REL (00000004) not yet implemented

@@ -1568,6 +1568,7 @@ static int cmd_wt(RCore *core, const char *input) {
 		}
 		case 'f': // "wtf"
 			switch (input[1]) {
+			case '\0':
 			case '?': // "wtf?"
 				r_core_cmd_help_match (core, help_msg_wt, "wtf", true);
 				ret = 1;
@@ -1860,7 +1861,7 @@ static int cmd_wa(void *data, const char *input) {
 				RAnalOp analop;
 				ut64 at = core->offset;
 repeat:
-				if (!r_anal_op (core->anal, &analop, at, core->block + delta, core->blocksize - delta, R_ANAL_OP_MASK_BASIC)) {
+				if (!r_anal_op (core->anal, &analop, at, core->block + delta, core->blocksize - delta, R_ARCH_OP_MASK_BASIC)) {
 					R_LOG_DEBUG ("Invalid instruction?");
 					r_anal_op_fini (&analop);
 					r_asm_code_free (acode);
@@ -1878,7 +1879,7 @@ repeat:
 				input++;
 			} else if (input[0] == 'i') { // "wai"
 				RAnalOp analop;
-				if (!r_anal_op (core->anal, &analop, core->offset, core->block, core->blocksize, R_ANAL_OP_MASK_BASIC)) {
+				if (!r_anal_op (core->anal, &analop, core->offset, core->block, core->blocksize, R_ARCH_OP_MASK_BASIC)) {
 					R_LOG_DEBUG ("Invalid instruction?");
 					r_anal_op_fini (&analop);
 					r_asm_code_free (acode);
@@ -2150,11 +2151,11 @@ static int cmd_ws(void *data, const char *input) {
 				r_io_write_at (core->io, core->offset, lenbuf, 1);
 				break;
 			case 2:
-				r_write_ble16 (lenbuf, len, core->anal->config->big_endian);
+				r_write_ble16 (lenbuf, len, R_ARCH_CONFIG_IS_BIG_ENDIAN (core->anal->config));
 				r_io_write_at (core->io, core->offset, lenbuf, 2);
 				break;
 			case 4:
-				r_write_ble32 (lenbuf, len, core->anal->config->big_endian);
+				r_write_ble32 (lenbuf, len, R_ARCH_CONFIG_IS_BIG_ENDIAN (core->anal->config));
 				r_io_write_at (core->io, core->offset, lenbuf, 4);
 				break;
 			}

@@ -15,6 +15,7 @@ typedef struct {
 
 #define R_STRBUF_SAFEGET(sb) (r_strbuf_get (sb) ? r_strbuf_get (sb) : "")
 R_API RStrBuf *r_strbuf_new(const char *s);
+R_API RStrBuf *r_strbuf_newf(const char *fmt, ...);
 R_API const char *r_strbuf_set(RStrBuf *sb, const char *s); // return = the string or NULL on fail
 R_API bool r_strbuf_slice(RStrBuf *sb, int from, int len);
 R_API bool r_strbuf_setbin(RStrBuf *sb, const ut8 *s, size_t len);

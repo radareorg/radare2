@@ -1,6 +1,6 @@
 /* Public Domain */
 
-#include "buffer.h"
+#include "sdb/buffer.h"
 
 void buffer_init(buffer *s, BufferOp op, int fd, char *buf, ut32 len) {
 	s->x = buf;

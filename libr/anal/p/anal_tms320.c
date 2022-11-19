@@ -27,7 +27,7 @@ int tms320_c55x_plus_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *_buf, in
 	}
 	op->size = ins_len;
 	op->addr = addr;
-	if (mask & R_ANAL_OP_MASK_DISASM) {
+	if (mask & R_ARCH_OP_MASK_DISASM) {
 		op->mnemonic = strdup (engine.syntax);
 	}
 
@@ -167,14 +167,14 @@ static int tms320c64x_analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, i
 	int n = cs_disasm (handle, (const ut8*)buf, len, addr, 1, &insn);
 	if (n < 1) {
 		op->type = R_ANAL_OP_TYPE_ILL;
-		if (mask & R_ANAL_OP_MASK_DISASM) {
+		if (mask & R_ARCH_OP_MASK_DISASM) {
 			op->mnemonic = strdup ("invalid");
 		}
 	} else {
-		if (mask & R_ANAL_OP_MASK_OPEX) {
+		if (mask & R_ARCH_OP_MASK_OPEX) {
 			opex (&op->opex, handle, insn);
 		}
-		if (mask & R_ANAL_OP_MASK_DISASM) {
+		if (mask & R_ARCH_OP_MASK_DISASM) {
 			// this is a bug in capstone, disassembling needs to use detail=off to avoid appending the instruction suffix
 			cs_insn *deinsn = NULL;
 			cs_option (handle, CS_OPT_DETAIL, CS_OPT_OFF);
@@ -300,7 +300,7 @@ static bool match(const char * str, const char *token) {
 
 int tms320_c54x_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
 	op->size = tms320_dasm (&engine, buf, len);
-	if (mask & R_ANAL_OP_MASK_DISASM) {
+	if (mask & R_ARCH_OP_MASK_DISASM) {
 		op->mnemonic = strdup (engine.syntax);
 	}
 	return op->size;
@@ -313,7 +313,7 @@ int tms320_c55x_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 	op->size = tms320_dasm (&engine, buf, len);
 	op->type = R_ANAL_OP_TYPE_NULL;
 
-	if (mask & R_ANAL_OP_MASK_DISASM) {
+	if (mask & R_ARCH_OP_MASK_DISASM) {
 		op->mnemonic = strdup (str);
 	}
 
@@ -405,12 +405,12 @@ RAnalPlugin r_anal_plugin_tms320 = {
 #if CAPSTONE_HAS_TMS320C64X
 	.cpus = "c54x,c55x,c55x+,c64x",
 	.desc = "TMS320 DSP family (c54x,c55x,c55x+,c64x)",
+	.mnemonics = &cs_mnemonics,
 #else
 	.cpus = "c54x,c55x,c55x+",
 	.desc = "TMS320 DSP family (c54x,c55x,c55x+)",
 #endif
 	.op = &tms320_op,
-	.mnemonics = &cs_mnemonics,
 };
 
 #ifndef R2_PLUGIN_INCORE

@@ -61,6 +61,7 @@ typedef struct r_ascii_graph_t {
 	int is_instep;
 	bool is_tiny;
 	bool is_dis;
+	bool is_handmade;
 	int edgemode;
 	int mode;
 	bool is_callgraph;
@@ -96,6 +97,11 @@ typedef struct r_ascii_graph_t {
 	RAGraphHits ghits;
 } RAGraph;
 
+typedef struct r_ascii_graph_transition_callbacks_t {
+	char *(*get_title)(void *data);
+	char *(*get_body)(void *data);
+} RAGraphTransitionCBs;
+
 #ifdef R_API
 R_API RAGraph *r_agraph_new(RConsCanvas *can);
 R_API void r_agraph_free(RAGraph *g);
@@ -114,7 +120,7 @@ R_API Sdb *r_agraph_get_sdb(RAGraph *g);
 R_API void r_agraph_foreach(RAGraph *g, RANodeCallback cb, void *user);
 R_API void r_agraph_foreach_edge(RAGraph *g, RAEdgeCallback cb, void *user);
 R_API void r_agraph_set_curnode(RAGraph *g, RANode *node);
-R_API RAGraph *create_agraph_from_graph(const RGraph/*<RGraphNodeInfo>*/ *graph);
+R_API RAGraph *r_agraph_new_from_graph(const RGraph *graph, RAGraphTransitionCBs *cbs);
 #endif
 
 #ifdef __cplusplus

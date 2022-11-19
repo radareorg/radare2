@@ -24,7 +24,7 @@ static int riscv_opasm(RAnal *a, ut64 addr, const char *str, ut8 *outbuf, int ou
 	}
 	ut8 *opbuf = outbuf;
 	int ret = riscv_assemble (str, addr, opbuf);
-	if (a->config->big_endian) {
+	if (R_ARCH_CONFIG_IS_BIG_ENDIAN (a->config)) {
 		ut8 *buf = opbuf;
 		ut8 tmp = buf[0];
 		buf[0] = buf[3];
@@ -349,7 +349,7 @@ static int riscv_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 	op->addr = addr;
 	op->type = R_ANAL_OP_TYPE_UNK;
 	op->size = 4;
-	bool be = anal->config->big_endian;
+	const bool be = R_ARCH_CONFIG_IS_BIG_ENDIAN (anal->config);
 	if (len < 2) {
 		op->size = 2;
 		return -1;
@@ -374,7 +374,7 @@ static int riscv_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 	if (!o || !o->name) {
 		return op->size;
 	}
-	if (mask & R_ANAL_OP_MASK_DISASM) {
+	if (mask & R_ARCH_OP_MASK_DISASM) {
 		op->mnemonic = riscv_disassemble (anal, addr, data, len);
 		if (!op->mnemonic) {
 			op->mnemonic = strdup ("invalid");
@@ -703,10 +703,10 @@ static int riscv_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 				"c.lw", "c.lwsp", "c.li", "c.lui")) {
 		op->type = R_ANAL_OP_TYPE_LOAD;
 	}
-	if (mask & R_ANAL_OP_MASK_VAL && args.num) {
+	if (mask & R_ARCH_OP_MASK_VAL && args.num) {
 		int i, j = 1;
 		RAnalValue *dst, *src;
-		dst = r_vector_push (op->dsts, NULL);
+		dst = r_vector_push (&op->dsts, NULL);
 		char *argf = strdup (o->args);
 		char *comma = strtok (argf, ",");
 		if (comma && strchr (comma, '(')) {
@@ -719,7 +719,7 @@ static int riscv_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 			dst->reg = r_reg_get (anal->reg, args.arg[0], -1);
 		}
 		for (i = 0; j < args.num; i++, j++) {
-			src = r_vector_push (op->srcs, NULL);
+			src = r_vector_push (&op->srcs, NULL);
 			comma = strtok (NULL, ",");
 			if (comma && strchr (comma, '(')) {
 				src->delta = (st64)r_num_get (NULL, args.arg[j]);

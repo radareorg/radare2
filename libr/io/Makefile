@@ -27,7 +27,7 @@ ifeq (${BUILD_OS},dragonfly)
 endif
 
 .PHONY: pre pos
-pre: libr_io.${EXT_SO} libr_io.${EXT_AR}
+pre: libr_io.$(EXT_SO) libr_io.$(EXT_AR)
 	@$(MAKE) -C p
 	$(MAKE) pos
 

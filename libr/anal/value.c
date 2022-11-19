@@ -26,7 +26,12 @@ R_API RAnalValue *r_anal_value_copy(RAnalValue *ov) {
 
 // TODO: move into .h as #define free
 R_API void r_anal_value_free(RAnalValue *value) {
-	free (value);
+	if (value) {
+		r_unref (value->seg);
+		r_unref (value->reg);
+		r_unref (value->regdelta);
+		free (value);
+	}
 #if 0
 	ut64 pval = (ut64)(size_t)value;
 	if (pval && pval != UT64_MAX) {
@@ -79,7 +84,20 @@ R_API int r_anal_value_set_ut64(RAnal *anal, RAnalValue *val, ut64 num) {
 	return false;							//is this necessary
 }
 
-R_API char *r_anal_value_to_string(RAnalValue *value) {
+R_API const char *r_anal_value_type_tostring(RAnalValue *value) {
+	if (value->type == R_ANAL_VAL_REG) {
+		return "reg";
+	}
+	if (value->type == R_ANAL_VAL_MEM) {
+		return "mem";
+	}
+	if (value->type == R_ANAL_VAL_IMM) {
+		return "imm";
+	}
+	return "unk";
+}
+
+R_API char *r_anal_value_tostring(RAnalValue *value) {
 	char *out = NULL;
 	if (value) {
 		out = r_str_new ("");

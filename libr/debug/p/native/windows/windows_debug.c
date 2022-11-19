@@ -1359,7 +1359,7 @@ RList *w32_desc_list(int pid) {
 
 	DWORD handleCount = 0;
 	int res = GetProcessHandleCount (ph, &handleCount);
-	printf ("handlecount = %d %d\n", res, handleCount);
+	printf ("handlecount = %d %d\n", res, (int)handleCount);
 	handleInfo->HandleCount = handleCount;
 
 	for (i = 0; i < handleCount; i++) {

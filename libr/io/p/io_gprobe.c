@@ -961,7 +961,7 @@ static int gprobe_getdeviceid(struct gport *port, ut8 index) {
 		goto fail;
 	}
 
-	char *s = r_buf_to_string (reply);
+	char *s = r_buf_tostring (reply);
 	if (s) {
 		printf ("%s\n", s);
 		free (s);

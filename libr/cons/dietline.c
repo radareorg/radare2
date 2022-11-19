@@ -558,33 +558,29 @@ R_API bool r_line_hist_save(const char *file) {
 	r_return_val_if_fail (file && *file, false);
 	int i;
 	bool ret = false;
-	char *path = r_str_home (file);
-	if (path) {
-		char *p = (char *) r_str_lastbut (path, R_SYS_DIR[0], NULL);	// TODO: use fs
-		if (p) {
-			*p = 0;
-			if (!r_sys_mkdirp (path)) {
-				if (r_sandbox_check (R_SANDBOX_GRAIN_FILES)) {
-					R_LOG_ERROR ("Could not save history into %s", path);
-				}
-				goto end;
+	char *p = (char *) r_str_lastbut (file, R_SYS_DIR[0], NULL);
+	if (p) {
+		*p = 0;
+		if (!r_sys_mkdirp (file)) {
+			if (r_sandbox_check (R_SANDBOX_GRAIN_FILES)) {
+				R_LOG_ERROR ("Could not save history into %s", file);
 			}
-			*p = R_SYS_DIR[0];
+			goto end;
 		}
-		FILE *fd = r_sandbox_fopen (path, "w");
-		if (fd) {
-			if (I.history.data) {
-				for (i = 0; i < I.history.index; i++) {
-					fputs (I.history.data[i], fd);
-					fputs ("\n", fd);
-				}
-				ret = true;
+		*p = R_SYS_DIR[0];
+	}
+	FILE *fd = r_sandbox_fopen (file, "w");
+	if (fd) {
+		if (I.history.data) {
+			for (i = 0; i < I.history.index; i++) {
+				fputs (I.history.data[i], fd);
+				fputs ("\n", fd);
 			}
-			fclose (fd);
+			ret = true;
 		}
+		fclose (fd);
 	}
 end:
-	free (path);
 	return ret;
 }
 
@@ -732,7 +728,7 @@ static void selection_widget_select(void) {
 }
 
 static void selection_widget_update(void) {
-	int argc = r_pvector_len (&I.completion.args);
+	int argc = r_pvector_length (&I.completion.args);
 	const char **argv = (const char **)r_pvector_data (&I.completion.args);
 	if (argc == 0 || (argc == 1 && I.buffer.length >= strlen (argv[0]))) {
 		selection_widget_erase ();
@@ -770,7 +766,7 @@ R_API void r_line_autocomplete(void) {
 	if (I.completion.run) {
 		I.completion.opt = false;
 		I.completion.run (&I.completion, &I.buffer, I.prompt_type, I.completion.run_user);
-		argc = r_pvector_len (&I.completion.args);
+		argc = r_pvector_length (&I.completion.args);
 		argv = (const char **)r_pvector_data (&I.completion.args);
 		opt = I.completion.opt;
 	}
@@ -1861,7 +1857,8 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 								I.buffer.index = 0;
 								break;
 							}
-							r_cons_readchar ();
+							r_cons_readchar (); // should be '5'
+							ch = r_cons_readchar ();
 						}
 #if __WINDOWS__
 						else {
@@ -1876,15 +1873,11 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 							break;
 						case 0x44:
 							// previous word
-							for (i = I.buffer.index; i > 0; i--) {
-								if (I.buffer.data[i] == ' ') {
-									I.buffer.index = i - 1;
-									break;
-								}
-							}
-							if (I.buffer.data[i] != ' ') {
-								I.buffer.index = 0;
-							}
+							i = I.buffer.index;
+							do {
+								i--;
+							} while (i > 0 && I.buffer.data[i-1] != ' ');
+							I.buffer.index = i;
 							break;
 						case 0x42:
 							// end

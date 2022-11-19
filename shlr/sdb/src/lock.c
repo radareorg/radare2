@@ -1,10 +1,7 @@
 /* sdb - MIT - Copyright 2012-2022 - pancake */
 
 #include <fcntl.h>
-#include "sdb.h"
-#if __wasi__ || EMSCRIPTEN || __MINGW32__
-static int getpid(void) { return 0; }
-#endif
+#include "sdb/sdb.h"
 
 SDB_API bool sdb_lock_file(const char *f, char *buf, size_t buf_size) {
 	size_t len;
@@ -29,7 +26,11 @@ SDB_API bool sdb_lock(const char *s) {
 	if (fd == -1) {
 		return false;
 	}
+#if __wasi__ || EMSCRIPTEN || __MINGW32__
+	char *pid = sdb_itoa (rand (), 10, pidstr, sizeof (pidstr));
+#else
 	char *pid = sdb_itoa (getpid (), 10, pidstr, sizeof (pidstr));
+#endif
 	if (pid) {
 		if ((write (fd, pid, strlen (pid)) < 0)
 			|| (write (fd, "\n", 1) < 0)) {

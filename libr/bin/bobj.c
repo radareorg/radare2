@@ -228,7 +228,6 @@ static void filter_classes(RBinFile *bf, RList *list) {
 
 static RRBTree *list2rbtree(RList *relocs) {
 	RRBTree *tree = r_crbtree_new (free);
-
 	if (tree) {
 		RListIter *it;
 		RBinReloc *reloc;
@@ -417,7 +416,7 @@ R_API int r_bin_object_set_items(RBinFile *bf, RBinObject *bo) {
 		bo->mem = p->mem (bf);
 	}
 	if (bo->info && bin->filter_rules & (R_BIN_REQ_INFO | R_BIN_REQ_SYMBOLS | R_BIN_REQ_IMPORTS)) {
-		bo->lang = isSwift? R_BIN_NM_SWIFT: r_bin_load_languages (bf);
+		bo->lang = isSwift? R_BIN_LANG_SWIFT: r_bin_load_languages (bf);
 	}
 	return true;
 }

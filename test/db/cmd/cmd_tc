@@ -23,6 +23,7 @@ RUN
 
 NAME=tc3
 FILE=bins/mach0/objc-employee
+ARGS=-e bin.types=true
 CMDS=ic*
 EXPECT=<<EOF
 fs classes
@@ -57,6 +58,7 @@ RUN
 
 NAME=tc4
 FILE=bins/mach0/objc-employee
+ARGS=-e bin.types=true
 CMDS=.ic*;tc
 EXPECT=<<EOF
 struct Employee {
@@ -285,7 +287,10 @@ RUN
 
 NAME=tc4 iOS14 arm64
 FILE=bins/mach0/objc-employee-ios14-arm64
-CMDS=.ic*;tc
+ARGS=-e bin.types=true
+CMDS=<<EOF
+.ic*;tc
+EOF
 EXPECT=<<EOF
 struct Employee {
   struct objc_class *isa;
@@ -513,7 +518,10 @@ RUN
 
 NAME=tc4 iOS14 arm64e
 FILE=bins/mach0/objc-employee-ios14-arm64e
-CMDS=.ic*;tc
+ARGS=-e bin.types=true
+CMDS=<<EOF
+.ic*;tc
+EOF
 EXPECT=<<EOF
 struct Employee {
   struct objc_class *isa;

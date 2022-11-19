@@ -270,36 +270,39 @@ R_API ut8* r_core_transform_op(RCore *core, const char *arg, char op) {
 	} else {
 		if (isnum) {
 			ut64 n = r_num_math (core->num, arg);
-			bool be = r_config_get_i (core->config, "cfg.bigendian");
+			bool be = r_config_get_b (core->config, "cfg.bigendian");
 			free (str);
+			len = 0;
 			str = calloc (8, 1);
-			switch (numsize) {
-			case 1:
-				if (n > UT8_MAX) {
-					R_LOG_ERROR ("%d doesnt fit in ut8.max", n);
-					goto beach;
+			if (R_LIKELY (str)) {
+				switch (numsize) {
+				case 1:
+					if (n > UT8_MAX) {
+						R_LOG_ERROR ("%d doesnt fit in ut8.max", n);
+						goto beach;
+					}
+					str[0] = n;
+					break;
+				case 2:
+					if (n > UT16_MAX) {
+						R_LOG_ERROR ("%d doesnt fit in ut16.max", n);
+						goto beach;
+					}
+					r_write_ble16 (str, n, be);
+					break;
+				case 4:
+					if (n > UT32_MAX) {
+						R_LOG_ERROR ("%d doesnt fit in ut32.max", n);
+						goto beach;
+					}
+					r_write_ble32 (str, n, be);
+					break;
+				case 8:
+					r_write_ble64 (str, n, be);
+					break;
 				}
-				str[0] = n;
-				break;
-			case 2:
-				if (n > UT16_MAX) {
-					R_LOG_ERROR ("%d doesnt fit in ut16.max", n);
-					goto beach;
-				}
-				r_write_ble16 (str, n, be);
-				break;
-			case 4:
-				if (n > UT32_MAX) {
-					R_LOG_ERROR ("%d doesnt fit in ut32.max", n);
-					goto beach;
-				}
-				r_write_ble32 (str, n, be);
-				break;
-			case 8:
-				r_write_ble64 (str, n, be);
-				break;
+				len = numsize;
 			}
-			len = numsize;
 		}
 		for (i = j = 0; i < core->blocksize; i++) {
 			switch (op) {
@@ -381,10 +384,14 @@ R_API void r_core_seek_arch_bits(RCore *core, ut64 addr) {
 	const char *arch = NULL;
 	r_core_arch_bits_at (core, addr, &bits, &arch);
 	if (bits) {
-		r_config_set_i (core->config, "asm.bits", bits);
+		if (bits != core->anal->config->bits) {
+			r_config_set_i (core->config, "asm.bits", bits);
+		}
 	}
 	if (arch) {
-		r_config_set (core->config, "asm.arch", arch);
+		if (core->anal->config->arch && strcmp (arch, core->anal->config->arch)) {
+			r_config_set (core->config, "asm.arch", arch);
+		}
 	}
 }
 
@@ -524,8 +531,11 @@ R_API int r_core_shift_block(RCore *core, ut64 addr, ut64 b_size, st64 dist) {
 }
 
 R_API int r_core_block_read(RCore *core) {
+	int res = -1;
+	R_CRITICAL_ENTER (core);
 	if (core && core->block) {
-		return r_io_read_at (core->io, core->offset, core->block, core->blocksize);
+		res = r_io_read_at (core->io, core->offset, core->block, core->blocksize);
 	}
-	return -1;
+	R_CRITICAL_LEAVE (core);
+	return res;
 }

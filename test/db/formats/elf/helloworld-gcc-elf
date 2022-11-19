@@ -48,7 +48,7 @@ NAME=x86 - init_array detection2
 FILE=bins/elf/analysis/x86-helloworld-gcc
 CMDS=iS~init_array
 EXPECT=<<EOF
-18  0x0000059c    0x4 0x0804959c    0x4 -rw- .init_array
+18  0x0000059c    0x4 0x0804959c    0x4 -rw- INIT_ARRAY  .init_array
 EOF
 RUN
 
@@ -250,7 +250,10 @@ RUN
 
 NAME=flags spaces
 FILE=bins/elf/analysis/x86-helloworld-gcc
-CMDS=fs
+ARGS=-e bin.types=true
+CMDS=<<EOF
+fs
+EOF
 EXPECT=<<EOF
     0 * classes
     5 * format
@@ -266,6 +269,7 @@ RUN
 
 NAME=flags spaces after analysis
 FILE=bins/elf/analysis/x86-helloworld-gcc
+ARGS=-e bin.types=true
 CMDS=<<EOF
 aa;fs *;fs
 afl~?
@@ -287,7 +291,10 @@ RUN
 
 NAME=flags spaces after analysis again
 FILE=bins/elf/analysis/x86-helloworld-gcc
-CMDS=s entry0+4; af;fs *;fs
+ARGS=-e bin.types=true
+CMDS=<<EOF
+s entry0+4; af;fs *;fs
+EOF
 EXPECT=<<EOF
     0 * classes
     5 * format
@@ -416,7 +423,10 @@ RUN
 
 NAME=flags (total)
 FILE=bins/elf/analysis/x86-helloworld-gcc
-CMDS=f~?
+ARGS=-e bin.types=true
+CMDS=<<EOF
+f~?
+EOF
 EXPECT=<<EOF
 111
 EOF
@@ -424,8 +434,12 @@ RUN
 
 NAME=flags
 FILE=bins/elf/analysis/x86-helloworld-gcc
-CMDS=f
+ARGS=-e bin.types=true
+CMDS=<<EOF
+f
+EOF
 EXPECT=<<EOF
+0x00000000 52 elf_header
 0x00000000 0 section.
 0x00000000 17 section..comment
 0x00000000 262 section..shstrtab
@@ -433,7 +447,6 @@ EXPECT=<<EOF
 0x00000000 599 section..strtab
 0x00000000 0 segment.GNU_STACK
 0x00000000 0 sym..comment
-0x00000000 52 elf_header
 0x00000034 32 elf_phdr
 0x000001fc 74 elf_strtab
 0x000006c5 262 elf_shstrtab
@@ -551,7 +564,7 @@ EXPECT=<<EOF
   {
     "offset": 134513408,
     "esil": "ebp,ebp,^=,$z,zf,:=,$p,pf,:=,31,$s,sf,:=,0,cf,:=,0,of,:=",
-    "refptr": false,
+    "refptr": 0,
     "fcn_addr": 0,
     "fcn_last": 0,
     "size": 2,
@@ -574,7 +587,7 @@ EXPECT=<<EOF
   {
     "offset": 134513410,
     "esil": "esp,[4],esi,=,4,esp,+=",
-    "refptr": false,
+    "refptr": 0,
     "fcn_addr": 0,
     "fcn_last": 0,
     "size": 1,
@@ -590,7 +603,7 @@ EXPECT=<<EOF
   {
     "offset": 134513411,
     "esil": "esp,ecx,=",
-    "refptr": false,
+    "refptr": 0,
     "fcn_addr": 0,
     "fcn_last": 0,
     "size": 2,
@@ -607,7 +620,7 @@ EXPECT=<<EOF
     "offset": 134513413,
     "val": 4294967280,
     "esil": "4294967280,esp,&=,$z,zf,:=,$p,pf,:=,31,$s,sf,:=,0,cf,:=,0,of,:=",
-    "refptr": false,
+    "refptr": 0,
     "fcn_addr": 0,
     "fcn_last": 0,
     "size": 3,

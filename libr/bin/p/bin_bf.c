@@ -60,18 +60,27 @@ static RBinInfo *info(RBinFile *bf) {
 	return ret;
 }
 
+// TODO: test with all these programs http://brainfuck.org
 static bool check_buffer(RBinFile *bf, RBuffer *buf) {
 	r_return_val_if_fail (buf, false);
 
-	ut8 tmp[16];
-	int read_length = r_buf_read_at (buf, 0, tmp, sizeof (tmp));
-	if (read_length <= 0) {
+	ut8 tmp[64] = {0};
+	int read_length = r_buf_read_at (buf, 0, tmp, sizeof (tmp) - 1);
+	if (read_length < 12) {
 		return false;
 	}
 
 	const ut8 *p = (const ut8 *)tmp;
-	int i;
-	for (i = 0; i < read_length; i++) {
+	int i = 0;
+	bool inbracket = p[0] == '[';
+	if (inbracket) {
+		p = (const ut8*)strchr ((const char *)p + 1, ']');
+		if (!p) {
+			return false;
+		}
+		i = p - tmp;
+	}
+	for (; i < read_length; i++) {
 		switch (p[i]) {
 		case '+':
 		case '-':
@@ -82,6 +91,7 @@ static bool check_buffer(RBinFile *bf, RBuffer *buf) {
 		case ',':
 		case '.':
 		case ' ':
+		case '\t':
 		case '\n':
 		case '\r':
 			break;
@@ -93,6 +103,7 @@ static bool check_buffer(RBinFile *bf, RBuffer *buf) {
 }
 
 static RList *entries(RBinFile *bf) {
+	r_return_val_if_fail (bf, NULL);
 	RList *ret;
 	RBinAddr *ptr = NULL;
 

@@ -1,9 +1,10 @@
 include ../config.mk
 
 CFLAGS:=-g $(CFLAGS)
-OBJ=cdb.o buffer.o cdb_make.o ls.o sdbht.o ht_uu.o sdb.o num.o base64.o match.o
+OBJ=cdb.o buffer.o cdb_make.o ls.o ht.o ht_uu.o sdb.o num.o base64.o match.o
 OBJ+=json.o ns.o lock.o util.o disk.o query.o array.o fmt.o journal.o text.o
 OBJ+=dict.o ht_pp.o ht_up.o ht_pu.o set.o diff.o
+CFLAGS+=-I ../include
 SOBJ=$(subst .o,.o.o,${OBJ})
 WITHPIC?=1
 BIN=sdb${EXT_EXE}
@@ -21,19 +22,19 @@ json.o: json/api.c json/js0n.c json/path.c json/rangstr.c json/indent.c
 install:
 	$(MAKE) -C .. install
 
-sdb_version.h:
-	$(MAKE) -C .. src/sdb_version.h
+../include/sdb/version.h:
+	$(MAKE) -C .. include/sdb/version.h
 
-shared: sdb_version.h
+shared: ../include/sdb/version.h
 	$(MAKE) libsdb${SOVER}
 
-static: sdb_version.h
+static: ../include/sdb/version.h
 	$(MAKE) libsdb$(EXT_AR)
 
-sdb_objs: sdb_version.h
+sdb_objs: ../include/sdb/version.h
 	$(MAKE) ${OBJ}
 
-sdb_objs2: sdb_version.h
+sdb_objs2: ../include/sdb/version.h
 	$(MAKE) ${SOBJ}
 
 libsdb.lib libsdb$(EXT_AR): sdb_objs
@@ -58,7 +59,7 @@ ifneq ($(SILENT),)
 endif
 	$(CC) ${LDFLAGS} $(LDFLAGS_SHARED) -o $@ ${SOBJ}
 
-bin_deps: sdb_version.h
+bin_deps: ../include/sdb/version.h
 	$(MAKE) libsdb.a main.o
 
 bin $(BIN): bin_deps

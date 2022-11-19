@@ -39,7 +39,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 		return 2;
 	}
 	RStrBuf *buf_global = r_strbuf_new ("");
-	memcpy (bytes, buf, 6); // TODO handle thumb
+	memcpy (bytes, buf, R_MIN (6, len)); // TODO handle thumb
 
 	/* prepare disassembler */
 	memset (&disasm_obj, '\0', sizeof (struct disassemble_info));
@@ -49,7 +49,6 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 		*options = 0;
 	}
 	op->size = 2;
-	//r_asm_op_set_asm (op, "");
 	disasm_obj.disassembler_options = options;
 	disasm_obj.buffer = bytes;
 	disasm_obj.read_memory_func = &s390_buffer_read_memory;
@@ -58,7 +57,6 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 	disasm_obj.print_address_func = &generic_print_address_func;
 	disasm_obj.endian = 0; // !a->big_endian;
 	disasm_obj.fprintf_func = &generic_fprintf_func;
-	disasm_obj.stream = stdout;
 	disasm_obj.buffer_vma = addr;
 	disasm_obj.stream = buf_global;
 	disasm_obj.application_data = buf_global;

@@ -23,7 +23,8 @@ static const char *help_msg_f[] = {
 	"f","","list flags (will only list flags from selected flagspaces)",
 	"f?","flagname","check if flag exists or not, See ?? and ?!",
 	"f."," [*[*]]","list local per-function flags (*) as r2 commands",
-	"f.","blah=$$+12","set local function label named 'blah'",
+	"f.","blah=$$+12","set local function label named 'blah' (f.blah@$$+12)",
+	"f.","-blah","delete local function label named 'blah'",
 	"f."," fname","list all local labels for the given function",
 	"f,","","table output for flags",
 	"f*","","list flags in r commands",
@@ -42,8 +43,8 @@ static const char *help_msg_f[] = {
 	"fc","[?][name] [color]","set color for given flag",
 	"fC"," [name] [cmt]","set comment for given flag",
 	"fd","[?] addr","return flag+delta",
+	"fe"," [name]","create flag name.#num# enumerated flag. (f.ex: fe foo @@= 1 2 3 4)",
 	"fe-","","resets the enumerator counter",
-	"fe"," [name]","create flag name.#num# enumerated flag. See fe?",
 	"ff"," ([glob])","distance in bytes to reach the next flag (see sn/sp)",
 	"fi"," [size] | [from] [to]","show flags in current block or range",
 	"fg","[*] ([prefix])","construct a graph with the flag names",
@@ -812,7 +813,9 @@ static int cmd_flag(void *data, const char *input) {
 rep:
 	switch (*input) {
 	case 'f': // "ff"
-		if (input[1] == 's') { // "ffs"
+		if (input[1] == '?') { // "ff?"
+			r_core_cmd_help_match (core, help_msg_f, "ff", false);
+		} else if (input[1] == 's') { // "ffs"
 			int delta = flag_to_flag (core, input + 2);
 			if (delta > 0) {
 				r_cons_printf ("0x%08"PFMT64x"\n", core->offset + delta);
@@ -833,7 +836,7 @@ rep:
 			flagenum = 0;
 			break;
 		default:
-			eprintf ("Usage: fe[-| name] @@= 1 2 3 4\n");
+			r_core_cmd_help_match (core, help_msg_f, "fe", false);
 			break;
 		}
 		break;
@@ -1077,7 +1080,9 @@ rep:
 	case '.': // "f."
 		input = r_str_trim_head_ro (input + 1) - 1;
 		if (input[1]) {
-			if (input[1] == '*' || input[1] == 'j') {
+			if (input[1] == '?') {
+				r_core_cmd_help_match (core, help_msg_f, "f.", false);
+			} else if (input[1] == '*' || input[1] == 'j') {
 				if (input[2] == '*') {
 					print_function_labels (core->anal, NULL, input[1]);
 				} else {
@@ -1200,13 +1205,13 @@ rep:
 		break;
 	case 's': // "fs"
 		switch (input[1]) {
-		case '?':
+		case '?': // "fs?"
 			r_core_cmd_help (core, help_msg_fs);
 			break;
 		case '+': // "fs+"
 			r_flag_space_push (core->flags, r_str_trim_head_ro (input + 2));
 			break;
-		case 'r':
+		case 'r': // "fsr"
 			if (input[2] == ' ') {
 				char *newname = r_str_trim_dup (input + 3);
 				r_str_trim (newname);
@@ -1216,10 +1221,10 @@ rep:
 				eprintf ("Usage: fsr [newname]\n");
 			}
 			break;
-		case 's':
+		case 's': // "fss"
 			flag_space_stack_list (core->flags, input[2]);
 			break;
-		case '-':
+		case '-': // "fs-"
 			switch (input[2]) {
 			case '*':
 				r_flag_space_unset (core->flags, NULL);
@@ -1247,7 +1252,7 @@ rep:
 			free (name);
 			break;
 		}
-		case 'm':
+		case 'm': // "fsm"
 			{ RFlagItem *f;
 			ut64 off = core->offset;
 			if (input[2] == ' ') {
@@ -1257,7 +1262,7 @@ rep:
 			if (f) {
 				f->space = r_flag_space_cur (core->flags);
 			} else {
-				eprintf ("Cannot find any flag at 0x%"PFMT64x".\n", off);
+				R_LOG_ERROR ("Cannot find any flag at 0x%"PFMT64x, off);
 			}
 			}
 			break;
@@ -1284,7 +1289,7 @@ rep:
 			__flag_graph (core, r_str_trim_head_ro (input + 1), 0);
 			break;
 		default:
-			eprintf ("Usage: fg[*] ([prefix])\n");
+			r_core_cmd_help_match (core, help_msg_f, "fg", false);
 			break;
 		}
 		break;
@@ -1346,7 +1351,7 @@ rep:
 						r_flag_item_set_color (fi, NULL);
 					}
 				} else {
-					eprintf ("Unknown flag '%s'\n", arg);
+					R_LOG_ERROR ("Unknown flag '%s'", arg);
 				}
 			} else {
 				const RList *list = r_flag_get_list (core->flags, core->offset);
@@ -1378,20 +1383,20 @@ rep:
 							r_flag_item_set_comment (item, dec);
 							free (dec);
 						} else {
-							eprintf ("Failed to decode base64-encoded string\n");
+							R_LOG_ERROR ("Failed to decode base64-encoded string");
 						}
 					} else {
 						r_flag_item_set_comment (item, q + 1);
 					}
 				} else {
-					eprintf ("Cannot find flag with name '%s'\n", p);
+					R_LOG_ERROR ("Cannot find flag with name '%s'", p);
 				}
 			} else {
 				item = r_flag_get_i (core->flags, r_num_math (core->num, p));
 				if (item && item->comment) {
 					r_cons_println (item->comment);
 				} else {
-					eprintf ("Cannot find item\n");
+					R_LOG_ERROR ("Cannot find item");
 				}
 			}
 			free (p);
@@ -1405,9 +1410,11 @@ rep:
 	case 'O': // "fO"
 		flag_ordinals (core, input + 1);
 		break;
-	case 'r':
-		if (input[1] == ' ' && input[2]) {
-			RFlagItem *item;
+	case 'r': // "fr"
+		if (input[1] == '?') {
+			r_core_cmd_help_match (core, help_msg_f, "fr", false);
+		} else if (input[1] == ' ' && input[2]) {
+			RFlagItem *item = NULL;
 			char *old = str + 1;
 			char *new = strchr (old, ' ');
 			if (new) {
@@ -1423,10 +1430,11 @@ rep:
 			}
 			if (item) {
 				if (!r_flag_rename (core->flags, item, new)) {
-					eprintf ("Invalid name\n");
+					R_LOG_ERROR ("Invalid name");
 				}
 			} else {
-				eprintf ("Usage: fr [[old]] [new]\n");
+				R_LOG_ERROR ("Cannot find flag with given name");
+				// r_core_cmd_help_match (core, help_msg_f, "fr", false);
 			}
 		}
 		break;
@@ -1457,7 +1465,7 @@ rep:
 			}
 			break;
 		}
-		eprintf ("Usage: fN [[name]] [[realname]]\n");
+		r_core_cmd_help_match (core, help_msg_f, "fN", false);
 		break;
 	case '\0':
 	case 'n': // "fn" "fnj"
@@ -1473,6 +1481,12 @@ rep:
 				input++;
 				break;
 			}
+		}
+		if (input[0] && input[1] == '?') {
+			char cmd[3] = "fn";
+			cmd[1] = input[0];
+			r_core_cmd_help_match (core, help_msg_f, cmd, false);
+			break;
 		}
 		if (input[0] && input[1] == '.') {
 			const int mode = input[2];

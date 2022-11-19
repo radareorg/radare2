@@ -13,7 +13,6 @@ LINK+=-g
 endif
 
 LIBR:=$(abspath $(dir $(lastword $(MAKEFILE_LIST))))
-# /libr
 
 ALL?=
 CFLAGS:=-I$(LIBR) -I$(LIBR)/include $(CFLAGS)

@@ -1,0 +1,30 @@
+NAME=aflxj
+FILE=bins/elf/analysis/linux_x64_endbr64
+CMDS=<<EOF
+aaa
+aflxj @ 0x00005ec0
+EOF
+EXPECT=<<EOF
+{"address":24256,"name":"fcn.00005ec0","xrefs":{"main":[22075]},"address":24256,"name":"fcn.00005ec0","xrefs":{"fcn.00007360":[29561]},"address":24256,"name":"fcn.00005ec0","xrefs":{"fcn.00007840":[30909]},"address":24256,"name":"fcn.00005ec0","xrefs":{"fcn.00007c50":[31977]},"address":24256,"name":"fcn.00005ec0","xrefs":{"fcn.00009ca0":[40914]}}
+EOF
+RUN
+
+FILE=bins/elf/analysis/ls-linux-x86_64-zlul
+CMDS=<<EOF
+aa
+aflxj @ 0x004021f0
+EOF
+EXPECT=<<EOF
+{"address":4202992,"name":"sym.imp.free","xrefs":{"main":[4207990]},"address":4202992,"name":"sym.imp.free","xrefs":{"fcn.00404de0":[4214527]},"address":4202992,"name":"sym.imp.free","xrefs":{"fcn.00404ff0":[4215018]},"address":4202992,"name":"sym.imp.free","xrefs":{"fcn.00407cb0":[4228794]},"address":4202992,"name":"sym.imp.free","xrefs":{"fcn.0040b260":[4240299]},"address":4202992,"name":"sym.imp.free","xrefs":{"fcn.0040b4a0":[4240660]},"address":4202992,"name":"sym.imp.free","xrefs":{"fcn.0040ba60":[4242332]},"address":4202992,"name":"sym.imp.free","xrefs":{"fcn.0040ce40":[4247435]},"address":4202992,"name":"sym.imp.free","xrefs":{"fcn.0040e580":[4253321]}}
+EOF
+RUN
+
+FILE=bins/elf/analysis/ls-linux-x86_64-zlul
+CMDS=<<EOF
+aa
+aflxj @ 0x004021c0
+EOF
+EXPECT=<<EOF
+{"address":4202944,"name":"sym.imp.getenv","xrefs":{"main":[4205091]},"address":4202944,"name":"sym.imp.getenv","xrefs":{"fcn.0040c830":[4245672]}}
+EOF
+RUN

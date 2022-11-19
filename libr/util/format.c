@@ -668,7 +668,7 @@ static void r_print_format_hex(const RPrint* p, int endian, int mode, const char
 				if (elem > -1) {
 					elem--;
 				}
-				i +=4;
+				i += 4;
 			}
 			p->cb_printf (" ]");
 		}
@@ -722,7 +722,7 @@ static void r_print_format_int(const RPrint* p, int endian, int mode, const char
 		if (size == -1) {
 			p->cb_printf ("%"PFMT64d, addr);
 		} else {
-			p->cb_printf ("[ ");
+			p->cb_printf ("[");
 			while (size--) {
 				updateAddr (buf + i, size - i, endian, &addr, NULL);
 				if (elem == -1 || elem == 0) {
@@ -955,7 +955,7 @@ static int r_print_format_10bytes(const RPrint* p, int mode, const char *setval,
 		for (; j < 10; j++) {
 			p->cb_printf (", %d", buf[j]);
 		}
-		p->cb_printf ("]");
+		p->cb_printf (" ]");
 		return 0;
 	}
 	return 0;
@@ -998,7 +998,7 @@ static int r_print_format_hexpairs(const RPrint* p, int endian, int mode, const 
 		for (; j < 10; j++) {
 			p->cb_printf (", %d", buf[j]);
 		}
-		p->cb_printf ("]");
+		p->cb_printf (" ]");
 		if (MUSTSEEJSON) {
 			p->cb_printf ("}");
 		}
@@ -2025,8 +2025,7 @@ static char *get_format_type(const char fmt, const char arg) {
 //TODO PJ
 #define MINUSONE ((void*)(size_t)-1)
 #define ISSTRUCT (tmp == '?' || (tmp == '*' && *(arg+1) == '?'))
-R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
-		const char *formatname, int mode, const char *setval, char *ofield) {
+R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len, const char *formatname, int mode, const char *setval, char *ofield) {
 	int nargs, i, j, invalid, nexti, idx, times, otimes, endian, isptr = 0;
 	const int old_bits = (p && p->config)? p->config->bits: 32;
 	int p_bits = old_bits;
@@ -2034,7 +2033,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 	ut64 addr = 0, addr64 = 0, seeki = 0;
 	// XXX delete global
 	static R_TH_LOCAL int slide = 0, oldslide = 0, ident = 4;
-	char namefmt[32], *field = NULL;
+	char namefmt[128], *field = NULL;
 	const char *arg = NULL;
 	const char *fmt = NULL;
 	bool fmt_owned = false;
@@ -2047,7 +2046,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 	if (!formatname) {
 		return 0;
 	}
-	fmt = sdb_get (p->formats, formatname, NULL);
+	fmt = p? sdb_get (p->formats, formatname, NULL): NULL;
 	if (fmt) {
 		fmt_owned = true;
 	} else {
@@ -2077,7 +2076,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 		return 0;
 	}
 	memcpy (buf, b, len);
-	endian = (p && p->config)? p->config->big_endian: R_SYS_ENDIAN;
+	endian = (p && p->config)? R_ARCH_CONFIG_IS_BIG_ENDIAN (p->config): R_SYS_ENDIAN;
 
 	if (ofield && ofield != MINUSONE) {
 		field = strdup (ofield);
@@ -2232,7 +2231,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 					addr = addr64;
 				}
 			} else {
-				R_LOG_DEBUG ("format string is too large for this buffer");
+				R_LOG_WARN ("format string (%s) is too large for this buffer (%d, %d)", formatname, i + fs, len);
 				goto beach;
 			}
 

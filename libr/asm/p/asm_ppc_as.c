@@ -12,8 +12,8 @@ static int assemble(RAsm *a, RAsmOp *op, const char *buf) {
 	char *as = "";
 #endif
 	char cmd_opt[4096];
-	snprintf (cmd_opt, sizeof (cmd_opt), "-mregnames -a%d %s",
-		a->config->bits, a->config->big_endian ? "-be" : "-le");
+	snprintf (cmd_opt, sizeof (cmd_opt), "-mregnames -a%d %s", a->config->bits,
+		R_ARCH_CONFIG_IS_BIG_ENDIAN (a->config) ? "-be" : "-le");
 	return binutils_assemble (a, op, buf, as, ASSEMBLER, "", cmd_opt);
 }
 

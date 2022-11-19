@@ -131,8 +131,11 @@ R_API int r_str_bits(char *strout, const ut8 *buf, int len, const char *bitz) {
 
 R_API const char *r_str_sysbits(const int v) {
 	switch (v) {
+	case R_SYS_BITS_4: return "4";
 	case R_SYS_BITS_8: return "8";
+	case R_SYS_BITS_4 | R_SYS_BITS_8: return "4,8";
 	case R_SYS_BITS_16: return "16";
+	case R_SYS_BITS_27: return "27";
 	case R_SYS_BITS_32: return "32";
 	case R_SYS_BITS_64: return "64";
 	case R_SYS_BITS_16 | R_SYS_BITS_32: return "16,32";
@@ -257,7 +260,7 @@ R_API void r_str_case(char *str, bool up) {
 	}
 }
 
-R_API R_MUSTUSE char *r_str_home(const char *str) {
+R_API R_MUSTUSE char *r_file_home(const char *str) {
 	char *dst, *home = r_sys_getenv (R_SYS_HOME);
 	size_t length;
 	if (!home) {
@@ -673,7 +676,7 @@ R_API const char *r_str_nstr(const char *s, const char *find, int slen) {
 }
 
 // Returns a new heap-allocated copy of str.
-// XXX what's the diff with r_str_dup ?
+// XXX what's the diff with strdup ?
 R_API char *r_str_new(const char *str) {
 	return str? strdup (str): NULL;
 }
@@ -850,13 +853,6 @@ R_API char *r_str_ndup(const char *ptr, int len) {
 	return out;
 }
 
-// TODO: deprecate?
-R_API char *r_str_dup(char *ptr, const char *string) {
-	char *str = r_str_new (string);
-	free (ptr); // in case ptr == string
-	return str;
-}
-
 R_API char *r_str_prepend(char *ptr, const char *string) {
 	int slen, plen;
 	if (!ptr) {
@@ -874,6 +870,7 @@ R_API char *r_str_prepend(char *ptr, const char *string) {
 }
 
 R_API char *r_str_appendlen(char *ptr, const char *string, int slen) {
+	r_return_val_if_fail (string, NULL);
 	char *msg = r_str_newlen (string, slen);
 	char *ret = r_str_append (ptr, msg);
 	free (msg);
@@ -1953,6 +1950,30 @@ R_API size_t r_str_ansi_nlen(const char *str, size_t slen) {
 		i += chlen;
 	}
 	return len; // len > 0 ? len: 1;
+}
+
+// remove ansi escape codes from string, decolorizing it
+R_API size_t r_str_ansi_strip(char *str) {
+	size_t i = 0;
+	while (str[i]) {
+		size_t chlen = __str_ansi_length (str + i);
+		if (chlen > 1) {
+			r_str_cpy (str + i + 1, str + i + chlen);
+		}
+		i++;
+	}
+	return i;
+}
+
+// insert a string into another string, supports ansi control chars
+R_API char *r_str_insert(R_OWN char *src, int pos, const char *str) {
+	char *a = r_str_ndup (src, pos);
+	char *b = strdup (src + pos + r_str_ansi_len (str));
+	char *r = r_str_newf ("%s%s%s", a, str, b);
+	free (a);
+	free (b);
+	free (src);
+	return r;
 }
 
 R_API size_t r_str_ansi_len(const char *str) {
@@ -3261,9 +3282,19 @@ R_API char *r_str_wrap(const char *str, int w) {
 	}
 	size_t r_size = 8 * strlen (str);
 	r = ret = malloc (r_size);
+	if (!r) {
+		return NULL;
+	}
 	char *end = r + r_size;
 	int cw = 0;
 	while (*str && r + 1 < end) {
+		size_t ansilen = __str_ansi_length (str);
+		if (ansilen > 1) {
+			memcpy (r, str, ansilen);
+			str += ansilen;
+			r += ansilen;
+			continue;
+		}
 		if (*str == '\t') {
 			// skip
 		} else if (*str == '\r') {
@@ -3989,5 +4020,25 @@ R_API bool r_str_startswith(const char *str, const char *needle) {
 		return true;
 	}
 	return !strncmp (str, needle, strlen (needle));
+}
+
+R_API void r_str_fixspaces(char *str) {
+	// add space after commas
+	char *os = strdup (str);
+	int i, j;
+	for (i = j = 0; os[i]; i++,j++) {
+		char ch = os[i];
+		str[j] = ch;
+		if (ch == ',') {
+			j++;
+			str[j] = ' ';
+			while (os[i + 1] == ' ') {
+				i++;
+			}
+		}
+	}
+	str[j] = 0;
+	free (os);
+	r_str_trim_tail (str);
 }
 

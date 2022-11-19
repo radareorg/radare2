@@ -1,4 +1,6 @@
-all: r2r-tests unit_tests
+RUNTEST=r2r -L -o results.json
+
+all: r2r-tests
 
 arm.v35:
 	${RUNTEST} db/extras/asm/arm.v35_64
@@ -12,9 +14,8 @@ evm:
 fuzz/targets:
 	git clone --depth 1 https://github.com/radareorg/radare2-fuzztargets fuzz/targets
 
-RUNTEST=r2r -L -o results.json
-
 r2r-tests: bins
+	$(MAKE) unit-tests
 	${RUNTEST}
 
 fuzz-tests: bins
@@ -51,6 +52,7 @@ yara: bins
 	${RUNTEST} db/extras/cmd/yara
 
 clean:
+	$(MAKE) -C unit clean
 	rm -rf tmp
 
 rc:
@@ -70,8 +72,8 @@ install:
 
 uninstall:
 
-unit unit_tests: bins
+unit unit-tests: bins
 	$(MAKE) rc
 	$(MAKE) -C unit run
 
-.PHONY: all clean unit install uninstall r2r-tests fuzz-tests keystone swf dwarf yara
+.PHONY: all clean unit install uninstall r2r-tests fuzz-tests keystone swf dwarf yara unit-tests

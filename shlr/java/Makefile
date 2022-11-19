@@ -25,7 +25,7 @@ CFLAGS+=-DMINGW32=1
 endif
 # CFLAGS+=-g
 
-CFLAGS:=-I../../libr/include -I../../libr/include/sdb $(CFLAGS)
+CFLAGS:=-I../../libr/include $(CFLAGS)
 LDFLAGS+=-L../../libr/util
 OBJS=code.o class.o ops.o
 

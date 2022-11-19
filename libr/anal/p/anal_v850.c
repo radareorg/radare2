@@ -175,7 +175,7 @@ static int v850e0_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int le
 	if (ret < 1) {
 		return ret;
 	}
-	if (mask & R_ANAL_OP_MASK_DISASM) {
+	if (mask & R_ARCH_OP_MASK_DISASM) {
 		if (R_STR_ISNOTEMPTY (cmd.operands)) {
 			op->mnemonic = r_str_newf ("%s %s", cmd.instr, cmd.operands);
  		} else {
@@ -531,7 +531,7 @@ static int v850_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 	if (op->size < 2) {
 		op->size = 2;
 	}
-	if (mask & R_ANAL_OP_MASK_ESIL) {
+	if (mask & R_ARCH_OP_MASK_ESIL) {
 		r_strbuf_set (&op->esil, inst.esil);
 	}
 	if (inst.op) {
@@ -567,7 +567,7 @@ static int v850_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 		break;
 	}
 	op->size = inst.size;
-	if (mask & R_ANAL_OP_MASK_DISASM) {
+	if (mask & R_ARCH_OP_MASK_DISASM) {
 		if (anal->config->syntax == R_ARCH_SYNTAX_ATT) {
 			op->mnemonic = r_str_replace (inst.text, "[r", "[%r", -1);
 			op->mnemonic = r_str_replace (op->mnemonic, " r", " %r", -1);

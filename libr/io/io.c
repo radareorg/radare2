@@ -1,7 +1,7 @@
 /* radare2 - LGPL - Copyright 2008-2022 - condret, pancake, alvaro_fe */
 
 #include <r_io.h>
-#include <sdb.h>
+#include <sdb/sdb.h>
 #include <config.h>
 
 R_LIB_VERSION (r_io);

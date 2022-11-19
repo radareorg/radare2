@@ -44,6 +44,14 @@ R_API void r_log_show_ts(bool ts) {
 	rlog->show_ts = ts;
 }
 
+R_API RLogLevel r_log_get_level(void) {
+	return rlog->level;
+}
+
+R_API RLogLevel r_log_get_traplevel(void) {
+	return rlog->traplevel;
+}
+
 R_API void r_log_set_level(RLogLevel level) {
 	r_log_init ();
 	rlog->level = level;
@@ -192,10 +200,13 @@ R_API void r_log_message(RLogLevel level, const char *origin, const char *func, 
 	va_end (ap);
 }
 
-R_API void r_log_add_callback(RLogCallback cb) {
+R_API void r_log_add_callback(RLogCallback cb, void *user) {
 	r_log_init ();
 	if (!rlog->cbs) {
 		rlog->cbs = r_list_new ();
+	}
+	if (user) {
+		rlog->user = user;
 	}
 	if (!r_list_contains (rlog->cbs, cb)) {
 		r_list_append (rlog->cbs, cb);

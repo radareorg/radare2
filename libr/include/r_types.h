@@ -86,6 +86,7 @@
 #define R_PERM_PRIV	16
 #define R_PERM_ACCESS	32
 #define R_PERM_CREAT	64
+#define R_PERM_RELOC	128
 
 
 // HACK to fix capstone-android-mips build
@@ -153,6 +154,8 @@
 #else
 #  define UNUSED_FUNCTION(x) UNUSED_ ## x
 #endif
+
+#define R_UNUSED_RESULT(x) if ((x)) {}
 
 #if defined (__FreeBSD__) || defined (__FreeBSD_kernel__)
 #define __KFBSD__ 1

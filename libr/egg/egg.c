@@ -93,9 +93,9 @@ R_API bool r_egg_add(REgg *a, REggPlugin *foo) {
 	return true;
 }
 
-R_API char *r_egg_to_string(REgg *egg) {
+R_API char *r_egg_tostring(REgg *egg) {
 	r_return_val_if_fail (egg, NULL);
-	return r_buf_to_string (egg->buf);
+	return r_buf_tostring (egg->buf);
 }
 
 R_API void r_egg_free(REgg *egg) {
@@ -338,7 +338,7 @@ R_API bool r_egg_assemble_asm(REgg *egg, char **asm_list) {
 		r_asm_set_bits (egg->rasm, egg->bits);
 		r_asm_set_big_endian (egg->rasm, egg->endian);
 		r_asm_set_syntax (egg->rasm, R_ARCH_SYNTAX_INTEL);
-		code = r_buf_to_string (egg->buf);
+		code = r_buf_tostring (egg->buf);
 		asmcode = r_asm_massemble (egg->rasm, code);
 		if (asmcode) {
 			if (asmcode->len > 0) {
@@ -397,11 +397,11 @@ R_API RBuffer *r_egg_get_bin(REgg *egg) {
 //R_API int r_egg_dump (REgg *egg, const char *file) { }
 
 R_API char *r_egg_get_source(REgg *egg) {
-	return r_buf_to_string (egg->src);
+	return r_buf_tostring (egg->src);
 }
 
 R_API char *r_egg_get_assembly(REgg *egg) {
-	return r_buf_to_string (egg->buf);
+	return r_buf_tostring (egg->buf);
 }
 
 R_API void r_egg_append(REgg *egg, const char *src) {

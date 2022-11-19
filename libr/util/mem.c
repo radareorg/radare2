@@ -347,7 +347,7 @@ R_API void r_mem_free(void *p) {
 	free (p);
 }
 
-R_API void r_mem_memzero(void *dst, size_t l) {
+R_API void r_mem_zero(void *dst, size_t l) {
 #ifdef _MSC_VER
 	RtlSecureZeroMemory (dst, l);
 #elif __MINGW32__

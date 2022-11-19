@@ -17,7 +17,7 @@ static int cr16_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 	op->size = ret;
 
 	op->addr = addr;
-	if (mask & R_ANAL_OP_MASK_DISASM) {
+	if (mask & R_ARCH_OP_MASK_DISASM) {
 		op->mnemonic = r_str_newf ("%s %s", cmd.instr, cmd.operands);
 	}
 

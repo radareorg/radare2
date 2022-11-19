@@ -2,9 +2,9 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include "rangstr.h"
-#include "json.h"
-#include "../sdb.h"
+#include "sdb/rangstr.h"
+#include "sdb/json.h"
+#include "sdb/sdb.h"
 
 Rangstr json_find (const char *s, Rangstr *rs);
 int test_main () {

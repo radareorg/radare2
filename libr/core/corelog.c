@@ -23,11 +23,27 @@ R_API int r_core_log_list(RCore *core, int n, int nth, char fmt) {
 				pj_ks (pj, "msg", str);
 				pj_end (pj);
 				break;
+			case 'J':
+				pj_o (pj);
+				pj_kn (pj, "id", id);
+				if (*str == '{') {
+					pj_k (pj, "obj");
+					pj_raw (pj, str);
+				} else {
+					pj_ks (pj, "msg", str);
+				}
+				pj_end (pj);
+				break;
 			case 't':
 				r_cons_println (str);
 				break;
 			case '*':
-				r_cons_printf ("\"T %s\"\n", str);
+				{
+					char *b = r_base64_encode_dyn (str, -1);
+					r_cons_printf ("T base64:%s\n", b);
+					free (b);
+				}
+				// r_cons_printf ("\"T %s\"\n", str);
 				break;
 			default:
 				r_cons_printf ("%d %s\n", id, str);

@@ -137,6 +137,8 @@ R_API bool r_th_getname(RThread *th, char *name, size_t len) {
 	return true;
 }
 
+#if 0
+// disabled because its not really useful and hard to compile
 R_API bool r_th_setaffinity(RThread *th, int cpuid) {
 #if !WANT_THREADS || defined(__wasi__) || defined(_WASI_EMULATED_SIGNAL)
 	return true;
@@ -148,11 +150,12 @@ R_API bool r_th_setaffinity(RThread *th, int cpuid) {
 	cpu_set_t c;
 	CPU_ZERO(&c);
 	CPU_SET(cpuid, &c);
-
+#if 0
 	if (sched_setaffinity (th->tid, sizeof (c), &c) != 0) {
 		R_LOG_ERROR ("Failed to set cpu affinity");
 		return false;
 	}
+#endif
 #endif
 #elif __FreeBSD__ || __DragonFly__
 	cpuset_t c;
@@ -204,6 +207,7 @@ R_API bool r_th_setaffinity(RThread *th, int cpuid) {
 #endif
 	return true;
 }
+#endif
 
 R_API RThread *r_th_new(RThreadFunction fun, void *user, int delay) {
 	RThread *th = R_NEW0 (RThread);
@@ -250,7 +254,7 @@ R_API bool r_th_kill(RThread *th, bool force) {
 // enable should be bool and th->ready must be protected with locks
 R_API bool r_th_start(RThread *th, int enable) {
 	bool ret = true;
-	enable = false; /// R2_580. remove the enable bit imho
+	enable = false;
 	if (enable) {
 		R_LOG_WARN ("r_th_start.enable should be removed");
 		if (!r_th_is_running (th)) {

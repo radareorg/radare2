@@ -372,8 +372,7 @@ static int tcc_peekc_slow(TCCState *s1, BufferedFile *bf) {
 	return CH_EOF;
 }
 
-/* return the current character, handling end of block if necessary
-   (but not stray) */
+/* return the current character, handling end of block if necessary (but not stray) */
 ST_FUNC int handle_eob(TCCState *s1) {
 	return tcc_peekc_slow (s1, s1->file);
 }
@@ -415,8 +414,7 @@ static void handle_stray(TCCState *s1) {
 	}
 }
 
-/* skip the stray and handle the \\n case. Output an error if
-   incorrect char after the stray */
+/* skip the stray and handle the \\n case. Output an error if incorrect char after the stray */
 static int handle_stray1(TCCState *s1, uint8_t *p) {
 	int c;
 
@@ -438,9 +436,7 @@ parse_stray:
 	return c;
 }
 
-/* input with '\[\r]\n' handling. Note that this function cannot
-   handle other characters after '\', so you cannot call it inside
-   strings or comments */
+/* input with '\[\r]\n' handling. Note that this function cannot handle other characters after '\', so you cannot call it inside strings or comments */
 static void minp(TCCState *s1) {
 	inp (s1);
 	if (s1->ch == '\\') {
@@ -668,8 +664,7 @@ add_char:
 	return p;
 }
 
-/* skip block of text until #else, #elif or #endif. skip also pairs of
-   #if/#endif */
+/* skip block of text until #else, #elif or #endif. skip also pairs of #if/#endif */
 static void preprocess_skip(TCCState *s1) {
 	int a, start_of_line, c, in_warn_or_error;
 	uint8_t *p;
@@ -767,10 +762,7 @@ the_end:
 
 /* ParseState handling */
 
-/* XXX: currently, no include file info is stored. Thus, we cannot display
-   accurate messages if the function or data definition spans multiple
-   files */
-
+/* XXX: currently, no include file info is stored. Thus, we cannot display accurate messages if the function or data definition spans multiple files */
 /* save current parse state in 's' */
 ST_FUNC void save_parse_state(TCCState *s1, ParseState *s) {
 	s->line_num = s1->file->line_num;
@@ -788,8 +780,7 @@ ST_FUNC void restore_parse_state(ParseState *s) {
 }
 */
 
-/* return the number of additional 'ints' necessary to store the
-   token */
+/* return the number of additional 'ints' necessary to store the token */
 static inline int tok_ext_size(TCCState *s1, int t) {
 	switch (t) {
 	/* 4 bytes */
@@ -941,8 +932,7 @@ ST_FUNC void tok_str_add_tok(TCCState *s1, TokenString *s) {
 	tok_str_add2 (s, s1->tok, &s1->tokc);
 }
 
-/* get a token from an integer array and increment pointer
-   accordingly. we code it as a macro to avoid pointer aliasing. */
+/* get a token from an integer array and increment pointer accordingly. we code it as a macro to avoid pointer aliasing. */
 static inline void TOK_GET(int *t, const int **pp, CValue *cv) {
 	const int *p = *pp;
 	int n, *tab;
@@ -1787,8 +1777,7 @@ static void bn_zero(unsigned int *bn) {
 	}
 }
 
-/* parse number in null terminated string 'p' and return it in the
-   current token */
+/* parse number in null terminated string 'p' and return it in the current token */
 static void parse_number(TCCState *s1, const char *p) {
 	int b, t, shift, frac_bits, s, exp_val, ch;
 	char *q;
@@ -2535,8 +2524,7 @@ keep_tok_flags:
 #endif
 }
 
-/* find a symbol and return its associated structure. 's' is the top
-   of the symbol stack */
+/* find a symbol and return its associated structure. 's' is the top of the symbol stack */
 static Sym *sym_find2(Sym *s, int v) {
 	while (s) {
 		if (s->v == v) {
@@ -2547,8 +2535,7 @@ static Sym *sym_find2(Sym *s, int v) {
 	return NULL;
 }
 
-/* return next token without macro substitution. Can read input from
-   macro_ptr buffer */
+/* return next token without macro substitution. Can read input from macro_ptr buffer */
 static void next_nomacro_spc(TCCState *s1) {
 	if (s1->macro_ptr) {
 redo:
@@ -2672,9 +2659,9 @@ static char const ab_month_name[12][4] = {
 };
 
 /* do macro substitution of current token with macro 's' and add
-   result to (s1->tok_str,tok_len). 'nested_list' is the list of all
-   macros we got inside to avoid recursing. Return non zero if no
-   substitution needs to be done */
+ * result to (s1->tok_str,tok_len). 'nested_list' is the list of all
+ * macros we got inside to avoid recursing. Return non zero if no
+substitution needs to be done */
 static int macro_subst_tok(TCCState *s1, TokenString *tok_str, Sym **nested_list, Sym *s, struct macro_level **can_read_stream) {
 	Sym *args, *sa, *sa1;
 	int mstr_allocated, parlevel, *mstr, t, t1, spc;
@@ -2858,7 +2845,7 @@ redo:
 }
 
 /* handle the '##' operator. Return NULL if no '##' seen. Otherwise
-   return the resulting string (which must be freed). */
+ * return the resulting string (which must be freed). */
 static inline int *macro_twosharps(TCCState *s1, const int *macro_str) {
 	const int *ptr;
 	int t;
@@ -2939,8 +2926,8 @@ static inline int *macro_twosharps(TCCState *s1, const int *macro_str) {
 
 
 /* do macro substitution of macro_str and add result to
-   (tok_str,tok_len). 'nested_list' is the list of all macros we got
-   inside to avoid recursing. */
+ * (tok_str,tok_len). 'nested_list' is the list of all macros we got
+ * inside to avoid recursing. */
 static void macro_subst(TCCState *s1, TokenString *tok_str, Sym **nested_list, const int *macro_str, struct macro_level **can_read_stream) {
 	Sym *s;
 	int *macro_str1;
@@ -3077,7 +3064,7 @@ redo:
 }
 
 /* push back current token and set current token to 'last_tok'. Only
-   identifier case handled for labels. */
+ * identifier case handled for labels. */
 ST_INLN void unget_tok(TCCState *s1, int last_tok) {
 	int i, n;
 	int *q;
@@ -3100,8 +3087,7 @@ ST_INLN void unget_tok(TCCState *s1, int last_tok) {
 }
 
 
-/* better than nothing, but needs extension to handle '-E' option
-   correctly too */
+/* better than nothing, but needs extension to handle '-E' option correctly too */
 ST_FUNC void preprocess_init(TCCState *s1) {
 	s1->include_stack_ptr = s1->include_stack;
 	/* XXX: move that before to avoid having to initialize

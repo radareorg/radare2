@@ -6,7 +6,7 @@
 #include "pyc_magic.h"
 
 // avoiding using r2 internals asserts
-#define if_true_return(cond,ret) if (cond){return(ret);}
+#define if_true_return(cond,ret) if (cond) { return (ret); }
 
 // TODO: kill globals
 static R_TH_LOCAL ut32 magic_int;
@@ -763,7 +763,7 @@ static pyc_object *copy_object(pyc_object *object) {
 			break;
 		case TYPE_TUPLE:
 		case TYPE_SMALL_TUPLE:
-			copy->data = r_list_clone (object->data);
+			copy->data = r_list_clone (object->data, NULL);
 			break;
 		case TYPE_INT:
 		case TYPE_INT64:

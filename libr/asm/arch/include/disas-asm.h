@@ -448,7 +448,7 @@ static inline int generic_fprintf_func(void *stream, const char *format, ...) { 
 
 #define DECLARE_GENERIC_PRINT_ADDRESS_FUNC_NOGLOBALS() \
 static inline void generic_print_address_func(bfd_vma address, struct disassemble_info *info) { \
-	RStrBuf *sb = info->application_data; \
+	RStrBuf *sb = (RStrBuf *)info->stream; \
 	if (!sb) { \
 		return; \
 	} \

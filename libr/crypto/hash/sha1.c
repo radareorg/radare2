@@ -38,7 +38,7 @@
 
 #define SHA_ROT(X, n) (((X) << (n)) | ((X) >> (32 - (n))))
 
-static void shaHashBlock(R_SHA_CTX *ctx) {
+static void shaHashBlock(RHashShaContext *ctx) {
 	int t;
 	unsigned int A, B, C, D, E, TEMP;
 
@@ -77,7 +77,7 @@ static void shaHashBlock(R_SHA_CTX *ctx) {
 	ctx->H[4] += E;
 }
 
-void r_SHA1_Init(R_SHA_CTX *ctx) {
+R_IPI void r_sha1_init(RHashShaContext *ctx) {
 	int i;
 
 	ctx->lenW = 0;
@@ -95,7 +95,7 @@ void r_SHA1_Init(R_SHA_CTX *ctx) {
 	}
 }
 
-void r_SHA1_Update(R_SHA_CTX *ctx, const void *_dataIn, int len) {
+R_IPI void r_sha1_update(RHashShaContext *ctx, const void *_dataIn, int len) {
 	const ut8 *dataIn = _dataIn;
 	int i;
 
@@ -112,7 +112,7 @@ void r_SHA1_Update(R_SHA_CTX *ctx, const void *_dataIn, int len) {
 	}
 }
 
-void r_SHA1_Final(ut8 hashout[20], R_SHA_CTX *ctx) {
+R_IPI void r_sha1_final(ut8 hashout[20], RHashShaContext *ctx) {
 	ut8 pad0x80 = 0x80;
 	ut8 pad0x00 = 0x00;
 	ut8 padlen[8];
@@ -128,11 +128,11 @@ void r_SHA1_Final(ut8 hashout[20], R_SHA_CTX *ctx) {
 	padlen[6] = (ut8) ((ctx->sizeLo >> 8) & 255);
 	padlen[7] = (ut8) ((ctx->sizeLo >> 0) & 255);
 
-	r_SHA1_Update (ctx, &pad0x80, 1);
+	r_sha1_update (ctx, &pad0x80, 1);
 	while (ctx->lenW != 56) {
-		r_SHA1_Update (ctx, &pad0x00, 1);
+		r_sha1_update (ctx, &pad0x00, 1);
 	}
-	r_SHA1_Update (ctx, padlen, 8);
+	r_sha1_update (ctx, padlen, 8);
 
 	/* Output hash */
 	for (i = 0; i < 20; i++) {
@@ -141,5 +141,5 @@ void r_SHA1_Final(ut8 hashout[20], R_SHA_CTX *ctx) {
 	}
 
 	/* Re-initialize the context (also zeroizes contents) */
-	r_SHA1_Init (ctx);
+	r_sha1_init (ctx);
 }

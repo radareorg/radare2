@@ -17,27 +17,27 @@ typedef struct r_asm_lm32_csr_t {
 #define  RAsmLm32CsrNumber	21
 
 static const RAsmLm32Csr RAsmLm32Csrs[RAsmLm32CsrNumber] = {
-	{0x00, "IE"},
-	{0x01, "IM"},
-	{0x02, "IP"},
-	{0x03, "ICC"},
-	{0x04, "DCC"},
-	{0x05, "CC"},
-	{0x06, "CFG"},
-	{0x07, "EBA"},
-	{0x08, "DC"},
-	{0x09, "DEBA"},
-	{0x0a, "CFG2"},
-	{0x0e, "JTX"},
-	{0x0f, "JRX"},
-	{0x10, "BP0"},
-	{0x11, "BP1"},
-	{0x12, "BP2"},
-	{0x13, "BP3"},
-	{0x18, "WP0"},
-	{0x19, "WP1"},
-	{0x1a, "WP2"},
-	{0x1b, "WP3"},
+	{0x00, "IE" },
+	{0x01, "IM" },
+	{0x02, "IP" },
+	{0x03, "ICC" },
+	{0x04, "DCC" },
+	{0x05, "CC" },
+	{0x06, "CFG" },
+	{0x07, "EBA" },
+	{0x08, "DC" },
+	{0x09, "DEBA" },
+	{0x0a, "CFG2" },
+	{0x0e, "JTX" },
+	{0x0f, "JRX" },
+	{0x10, "BP0" },
+	{0x11, "BP1" },
+	{0x12, "BP2" },
+	{0x13, "BP3" },
+	{0x18, "WP0" },
+	{0x19, "WP1" },
+	{0x1a, "WP2" },
+	{0x1b, "WP3" },
 };
 
 typedef struct r_asm_lm32_reg_t {
@@ -48,45 +48,45 @@ typedef struct r_asm_lm32_reg_t {
 #define RAsmLm32RegNumber	39
 
 static const RAsmLm32Reg RAsmLm32Regs[RAsmLm32RegNumber] = {
-	{0x00, "r0"},
-	{0x00, "zero"},
-	{0x01, "r1"},
-	{0x02, "r2"},
-	{0x03, "r3"},
-	{0x04, "r4"},
-	{0x05, "r5"},
-	{0x06, "r6"},
-	{0x07, "r7"},
-	{0x08, "r8"},
-	{0x09, "r9"},
-	{0x0a, "r10"},
-	{0x0b, "r11"},
-	{0x0c, "r12"},
-	{0x0d, "r13"},
-	{0x0e, "r14"},
-	{0x0f, "r15"},
-	{0x10, "r16"},
-	{0x11, "r17"},
-	{0x12, "r18"},
-	{0x13, "r19"},
-	{0x14, "r20"},
-	{0x15, "r21"},
-	{0x16, "r22"},
-	{0x17, "r23"},
-	{0x18, "r24"},
-	{0x19, "r25"},
-	{0x1a, "gp"},
-	{0x1a, "r26"},
-	{0x1b, "fp"},
-	{0x1b, "r27"},
-	{0x1c, "sp"},
-	{0x1c, "r28"},
-	{0x1d, "ra"},
-	{0x1d, "r29"},
-	{0x1e, "ea"},
-	{0x1e, "r30"},
-	{0x1f, "ba"},
-	{0x1f, "r31"},
+	{0x00, "r0" },
+	{0x00, "zero" },
+	{0x01, "r1" },
+	{0x02, "r2" },
+	{0x03, "r3" },
+	{0x04, "r4" },
+	{0x05, "r5" },
+	{0x06, "r6" },
+	{0x07, "r7" },
+	{0x08, "r8" },
+	{0x09, "r9" },
+	{0x0a, "r10" },
+	{0x0b, "r11" },
+	{0x0c, "r12" },
+	{0x0d, "r13" },
+	{0x0e, "r14" },
+	{0x0f, "r15" },
+	{0x10, "r16" },
+	{0x11, "r17" },
+	{0x12, "r18" },
+	{0x13, "r19" },
+	{0x14, "r20" },
+	{0x15, "r21" },
+	{0x16, "r22" },
+	{0x17, "r23" },
+	{0x18, "r24" },
+	{0x19, "r25" },
+	{0x1a, "gp" },
+	{0x1a, "r26" },
+	{0x1b, "fp" },
+	{0x1b, "r27" },
+	{0x1c, "sp" },
+	{0x1c, "r28" },
+	{0x1d, "ra" },
+	{0x1d, "r29" },
+	{0x1e, "ea" },
+	{0x1e, "r30" },
+	{0x1f, "ba" },
+	{0x1f, "r31" },
 };
 
 typedef enum r_asm_lm32_instr_type_t {
@@ -179,70 +179,70 @@ typedef struct r_asm_lm32_opcode {
 #define RAsmLm32OpcodeNumber	0x40
 
 static const RAsmLm32Opcode RAsmLm32OpcodeList[RAsmLm32OpcodeNumber] = {
-	{reg_imm5, "srui"}, //0x00
-	{reg_imm16_zeroextend, "nori"}, //0x01
-	{reg_imm16_signextend, "muli"}, //0x02
-	{reg_imm16_signextend, "sh"}, //0x03
-	{reg_imm16_signextend, "lb"}, //0x04
-	{reg_imm5, "sri"}, //0x05
-	{reg_imm16_zeroextend, "xori"}, //0x06
-	{reg_imm16_signextend, "lh"}, //0x07
-	{reg_imm16_zeroextend, "andi"}, //0x08
-	{reg_imm16_zeroextend, "xnori"}, //0x09
-	{reg_imm16_signextend, "lw"}, //0x0a
-	{reg_imm16_signextend, "lhu"}, //0x0b
-	{reg_imm16_signextend, "sb"}, //0x0c
-	{reg_imm16_signextend, "addi"}, //0x0d
-	{reg_imm16_zeroextend, "ori"}, //0x0e
-	{reg_imm5, "sli"}, //0x0f
-	{reg_imm16_signextend, "lbu"}, //0x10
-	{reg_imm16_shift2_signextend, "be"}, //0x11
-	{reg_imm16_shift2_signextend, "bg"}, //0x12
-	{reg_imm16_shift2_signextend, "bge"}, //0x13
-	{reg_imm16_shift2_signextend, "bgeu"}, //0x14
-	{reg_imm16_shift2_signextend, "bgu"}, //0x15
-	{reg_imm16_signextend, "sw"}, //0x16
-	{reg_imm16_shift2_signextend, "bne"}, //0x17
-	{reg_imm16_zeroextend, "andhi"}, //0x18
-	{reg_imm16_signextend, "cmpei"}, //0x19
-	{reg_imm16_signextend, "cmpgi"}, //0x1a
-	{reg_imm16_signextend, "cmpgei"}, //0x1b
-	{reg_imm16_zeroextend, "cmpgeui"}, //0x1c
-	{reg_imm16_zeroextend, "cmpgui"}, //0x1d
-	{reg_imm16_zeroextend, "orhi"}, //0x1e
-	{reg_imm16_signextend, "cmpnei"}, //0x1f
-	{three_regs, "sru"}, //0x20
-	{three_regs, "nor"}, //0x21
-	{three_regs, "mul"}, //0x22
-	{three_regs, "divu"}, //0x23
-	{csr_reg, "rcsr"}, //0x24
-	{three_regs, "sr"}, //0x25
-	{three_regs, "xor"}, //0x26
-	{three_regs, "div"}, //0x27
-	{three_regs, "and"}, //0x28
-	{three_regs, "xnor"}, //0x29
-	{reserved, "reserved"}, //0x2a
-	{raise_instr, "raise"}, //0x2b (break, scall)
-	{two_regs, "sextb"}, //0x2c
-	{three_regs, "add"}, //0x2d
-	{three_regs, "or"}, //0x2e
-	{three_regs, "sl"}, //0x2f
-	{one_reg, "b"}, //0x30
-	{three_regs, "modu"}, //0x31
-	{three_regs, "sub"}, //0x32
-	{reserved, "reserved"}, //0x33
-	{reg_csr, "wcsr"}, //0x34
-	{three_regs, "mod"}, //0x35
-	{one_reg, "call"}, //0x36
-	{two_regs, "sexth"}, //0x37
-	{imm26, "bi"}, //0x38
-	{three_regs, "cmpe"}, //0x39
-	{three_regs, "cmpg"}, //0x3a
-	{three_regs, "cmpge"}, //0x3b
-	{three_regs, "cmpgeu"}, //0x3c
-	{three_regs, "cmpgu"}, //0x3d
-	{imm26, "calli"}, //0x3e
-	{three_regs, "cmpne"}, //0x3f
+	{reg_imm5, "srui" }, //0x00
+	{reg_imm16_zeroextend, "nori" }, //0x01
+	{reg_imm16_signextend, "muli" }, //0x02
+	{reg_imm16_signextend, "sh" }, //0x03
+	{reg_imm16_signextend, "lb" }, //0x04
+	{reg_imm5, "sri" }, //0x05
+	{reg_imm16_zeroextend, "xori" }, //0x06
+	{reg_imm16_signextend, "lh" }, //0x07
+	{reg_imm16_zeroextend, "andi" }, //0x08
+	{reg_imm16_zeroextend, "xnori" }, //0x09
+	{reg_imm16_signextend, "lw" }, //0x0a
+	{reg_imm16_signextend, "lhu" }, //0x0b
+	{reg_imm16_signextend, "sb" }, //0x0c
+	{reg_imm16_signextend, "addi" }, //0x0d
+	{reg_imm16_zeroextend, "ori" }, //0x0e
+	{reg_imm5, "sli" }, //0x0f
+	{reg_imm16_signextend, "lbu" }, //0x10
+	{reg_imm16_shift2_signextend, "be" }, //0x11
+	{reg_imm16_shift2_signextend, "bg" }, //0x12
+	{reg_imm16_shift2_signextend, "bge" }, //0x13
+	{reg_imm16_shift2_signextend, "bgeu" }, //0x14
+	{reg_imm16_shift2_signextend, "bgu" }, //0x15
+	{reg_imm16_signextend, "sw" }, //0x16
+	{reg_imm16_shift2_signextend, "bne" }, //0x17
+	{reg_imm16_zeroextend, "andhi" }, //0x18
+	{reg_imm16_signextend, "cmpei" }, //0x19
+	{reg_imm16_signextend, "cmpgi" }, //0x1a
+	{reg_imm16_signextend, "cmpgei" }, //0x1b
+	{reg_imm16_zeroextend, "cmpgeui" }, //0x1c
+	{reg_imm16_zeroextend, "cmpgui" }, //0x1d
+	{reg_imm16_zeroextend, "orhi" }, //0x1e
+	{reg_imm16_signextend, "cmpnei" }, //0x1f
+	{three_regs, "sru" }, //0x20
+	{three_regs, "nor" }, //0x21
+	{three_regs, "mul" }, //0x22
+	{three_regs, "divu" }, //0x23
+	{csr_reg, "rcsr" }, //0x24
+	{three_regs, "sr" }, //0x25
+	{three_regs, "xor" }, //0x26
+	{three_regs, "div" }, //0x27
+	{three_regs, "and" }, //0x28
+	{three_regs, "xnor" }, //0x29
+	{reserved, "reserved" }, //0x2a
+	{raise_instr, "raise" }, //0x2b (break, scall)
+	{two_regs, "sextb" }, //0x2c
+	{three_regs, "add" }, //0x2d
+	{three_regs, "or" }, //0x2e
+	{three_regs, "sl" }, //0x2f
+	{one_reg, "b" }, //0x30
+	{three_regs, "modu" }, //0x31
+	{three_regs, "sub" }, //0x32
+	{reserved, "reserved" }, //0x33
+	{reg_csr, "wcsr" }, //0x34
+	{three_regs, "mod" }, //0x35
+	{one_reg, "call" }, //0x36
+	{two_regs, "sexth" }, //0x37
+	{imm26, "bi" }, //0x38
+	{three_regs, "cmpe" }, //0x39
+	{three_regs, "cmpg" }, //0x3a
+	{three_regs, "cmpge" }, //0x3b
+	{three_regs, "cmpgeu" }, //0x3c
+	{three_regs, "cmpgu" }, //0x3d
+	{imm26, "calli" }, //0x3e
+	{three_regs, "cmpne" }, //0x3f
 };
 
 typedef struct r_asm_lm32_instruction {

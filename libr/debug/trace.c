@@ -60,7 +60,7 @@ R_API bool r_debug_trace_ins_before(RDebug *dbg) {
 	if (!dbg->cur_op) {
 		return false;
 	}
-	if (!r_anal_op (dbg->anal, dbg->cur_op, pc, buf_pc, sizeof (buf_pc), R_ANAL_OP_MASK_VAL)) {
+	if (!r_anal_op (dbg->anal, dbg->cur_op, pc, buf_pc, sizeof (buf_pc), R_ARCH_OP_MASK_VAL)) {
 		r_anal_op_free (dbg->cur_op);
 		dbg->cur_op = NULL;
 		return false;
@@ -70,7 +70,7 @@ R_API bool r_debug_trace_ins_before(RDebug *dbg) {
 	r_list_foreach_safe (dbg->cur_op->access, it, it_tmp, val) {
 		switch (val->type) {
 		case R_ANAL_VAL_REG:
-			if (!(val->access & R_ANAL_ACC_W)) {
+			if (!(val->access & R_PERM_W)) {
 				r_list_delete (dbg->cur_op->access, it);
 			}
 			break;
@@ -81,7 +81,7 @@ R_API bool r_debug_trace_ins_before(RDebug *dbg) {
 				break;
 			}
 
-			if (val->access & R_ANAL_ACC_W) {
+			if (val->access & R_PERM_W) {
 				// resolve memory address
 				ut64 addr = 0;
 				addr += val->delta;
@@ -114,7 +114,7 @@ R_API bool r_debug_trace_ins_after(RDebug *dbg) {
 	// Add reg/mem write change
 	r_debug_reg_sync (dbg, R_REG_TYPE_ALL, false);
 	r_list_foreach (dbg->cur_op->access, it, val) {
-		if (!(val->access & R_ANAL_ACC_W)) {
+		if (!(val->access & R_PERM_W)) {
 			continue;
 		}
 
@@ -166,7 +166,7 @@ R_API int r_debug_trace_pc(RDebug *dbg, ut64 pc) {
 		return false;
 	}
 	(void)dbg->iob.read_at (dbg->iob.io, pc, buf, sizeof (buf));
-	if (r_anal_op (dbg->anal, &op, pc, buf, sizeof (buf), R_ANAL_OP_MASK_ESIL) < 1) {
+	if (r_anal_op (dbg->anal, &op, pc, buf, sizeof (buf), R_ARCH_OP_MASK_ESIL) < 1) {
 		R_LOG_ERROR ("trace_pc: cannot get opcode size at 0x%"PFMT64x, pc);
 		return false;
 	}
@@ -179,7 +179,7 @@ R_API void r_debug_trace_op(RDebug *dbg, RAnalOp *op) {
 	static ut64 oldpc = UT64_MAX; // Must trace the previously traced instruction
 	if (dbg->trace->enabled) {
 		if (dbg->anal->esil) {
-			r_anal_esil_trace_op (dbg->anal->esil, op);
+			r_esil_trace_op (dbg->anal->esil, op);
 		} else {
 			if (dbg->verbose) {
 				R_LOG_ERROR ("Run aeim to get dbg->anal->esil initialized");

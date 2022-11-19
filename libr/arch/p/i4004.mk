@@ -1,0 +1,9 @@
+OBJ_I4004=arch_i4004.o
+
+STATIC_OBJ+=${OBJ_I4004}
+TARGET_I4004=arch_i4004.${EXT_SO}
+
+ALL_TARGETS+=${TARGET_I4004}
+
+${TARGET_I4004}: ${OBJ_I4004}
+	${CC} $(call libname,arch_i4004) ${CFLAGS} -o arch_i4004.${EXT_SO} ${OBJ_I4004}

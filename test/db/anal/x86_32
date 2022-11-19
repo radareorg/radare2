@@ -3428,7 +3428,7 @@ address: 0x0
 opcode: nop
 esilcost: 0
 disasm: nop
-pseudo: no 
+pseudo: no
 mnemonic: nop
 description: no operation
 mask: ff

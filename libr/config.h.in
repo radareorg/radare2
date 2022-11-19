@@ -3,7 +3,7 @@
 
 #define R_DEBUG 0
 #define R_RTDEBUG 1
-#define WANT_THREADS 1
+#define WANT_THREADS @WANT_THREADS@
 
 /* inlined APIs */
 #define R_INLINE 0

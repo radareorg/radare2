@@ -1,12 +1,14 @@
 NAME=pdc @ main ioli0x0
 FILE=bins/elf/ioli/crackme0x00
 CMDS=<<EOF
+e scr.color=0
 aaa
-pdc @ main~str.250382
+pdc @ main~250382
 pdc @ main~strcmp
 EOF
 EXPECT=<<EOF
         dword [s2] = str.250382 // [0x804858f:4]=0x33303532 // "250382" // const char *s2
+        // int strcmp("", "250382")
         sym.imp.strcmp  ()
         // int strcmp("", "250382")
 EOF
@@ -103,7 +105,7 @@ int entry0 (int esi, int edx) {
     loc_0x40200f:
         si = 3
         fcn.00402000  ()
-         // do {
+        do {
     loc_0x402018:
         push  (0)
         push  ("LABEL") // 0x40100e // (pstr 0x0040100e) "LABEL"
@@ -145,8 +147,9 @@ int entry0 (int esi, int edx) {
         push  (0)
         dword [ExitProcess]  () // 0x403084 // reloc.kernel32.dll_ExitProcess
         // VOID ExitProcess(NULL)
-         // (break)
+        break;
 }
+
 EOF
 RUN
 

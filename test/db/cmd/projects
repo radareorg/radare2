@@ -152,7 +152,7 @@ af test
 afF @ test
 pdf
 P+import2 > /dev/null
-Pc import2~afF
+PS*import2~afF
 P-import2
 rm .tmp
 EOF
@@ -175,7 +175,7 @@ cat .tmp/testexp/rc.r2 | grep base64
 rmdir -p .tmp/testexp
 EOF
 EXPECT=<<EOF
-"e bin.debase64 = false"
+"e bin.str.debase64 = false"
 CCu base64:IlNvbWUgb3RoZXIgdGVzdCI= @ 0x00404890
 EOF
 RUN
@@ -269,8 +269,8 @@ af
 afvr edi blahblah typeR @ 0x10002d8d
 afvb 8 ImageHandle blah @ 0x10002d8d
 P+ var > /dev/null
-Pc var~ImageHandle
-Pc var~blahblah
+PS*var~ImageHandle
+PS*var~blahblah
 rm .tmp/var
 EOF
 EXPECT=<<EOF
@@ -288,8 +288,8 @@ e dir.projects = .tmp/
 tk zoby  =  type
 tl char @ 0x0
 P+ types > /dev/null
-Pc types~?link.,symlink,unlink
-Pc types~?zoby
+PS*types~?link.,symlink,unlink
+PS*types~?zoby
 EOF
 EXPECT=<<EOF
 10
@@ -320,7 +320,7 @@ e prj.vc=false
 fV 49 0x400410
 fV 50 0x400412
 P+ vmarks > /dev/null
-Pc vmarks~fV
+PS*vmarks~fV
 P- vmarks > /dev/null
 EOF
 EXPECT=<<EOF
@@ -337,11 +337,11 @@ tk char **=type
 tk type.char **=**z
 tk type.char **.size=64
 P+ ctypes > /dev/null
-Pc ctypes~?char **
+PS* ctypes~?char **
 "td struct Foo { int bar; int x; int y; };"
 P+ ctypes > /dev/null
-Pc ctypes~?char **
-Pc ctypes~?Foo
+PS* ctypes~?char **
+PS* ctypes~?Foo
 P- ctypes > /dev/null
 EOF
 EXPECT=<<EOF
@@ -388,7 +388,7 @@ o
 P- ulumulu
 P+ ulumulu > /dev/null
 PS*~^o
-Px
+Pc
 o--
 o
 Po ulumulu > /dev/null
@@ -776,15 +776,16 @@ NAME=Check Pc\'s return value
 FILE=bins/elf/analysis/main
 ARGS=-A -eprj.vc=false -edir.projects=.tmp/
 CMDS=<<EOF
+P- hello
 Pc aabb
 ?v $?
 P+ hello
-Pc hello >/dev/null
+Pc
 ?v $?
 EOF
 EXPECT=<<EOF
-0x1
 0x0
+0x1
 EOF
 RUN
 
@@ -796,7 +797,7 @@ e prj.vc=false
 P- hjkl
 P+ hjkl
 Pi~!/
-Px
+Pc
 Pi
 EOF
 EXPECT=<<EOF

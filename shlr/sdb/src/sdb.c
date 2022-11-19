@@ -3,7 +3,7 @@
 #include <fcntl.h>
 #include <errno.h>
 #include <sys/stat.h>
-#include "sdb.h"
+#include "sdb/sdb.h"
 
 #if 0
 static inline SdbKv *kv_at(HtPP *ht, HtPPBucket *bt, ut32 i) {

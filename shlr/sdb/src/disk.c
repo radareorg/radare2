@@ -3,7 +3,7 @@
 #include <fcntl.h>
 #include <errno.h>
 #include <sys/stat.h>
-#include "sdb.h"
+#include "sdb/sdb.h"
 
 #if __SDB_WINDOWS__
 

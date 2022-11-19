@@ -50,40 +50,40 @@ R_API char *r_bin_demangle_plugin(RBin *bin, const char *name, const char *str) 
 R_API int r_bin_demangle_type(const char *str) {
 	if (str && *str) {
 		if (!strcmp (str, "swift")) {
-			return R_BIN_NM_SWIFT;
+			return R_BIN_LANG_SWIFT;
 		}
 		if (!strcmp (str, "java")) {
-			return R_BIN_NM_JAVA;
+			return R_BIN_LANG_JAVA;
 		}
 		if (!strcmp (str, "kotlin")) {
-			return R_BIN_NM_KOTLIN;
+			return R_BIN_LANG_KOTLIN;
 		}
 		if (!strcmp (str, "groovy")) {
-			return R_BIN_NM_GROOVY;
+			return R_BIN_LANG_GROOVY;
 		}
 		if (!strcmp (str, "dart")) {
-			return R_BIN_NM_DART;
+			return R_BIN_LANG_DART;
 		}
 		if (!strcmp (str, "objc")) {
-			return R_BIN_NM_OBJC;
+			return R_BIN_LANG_OBJC;
 		}
 		if (!strcmp (str, "pascal") || !strcmp (str, "freepascal")) {
-			return R_BIN_NM_PASCAL;
+			return R_BIN_LANG_PASCAL;
 		}
 		if (!strcmp (str, "cxx") || !strcmp (str, "c++")) {
-			return R_BIN_NM_CXX;
+			return R_BIN_LANG_CXX;
 		}
 		if (!strcmp (str, "dlang")) {
-			return R_BIN_NM_DLANG;
+			return R_BIN_LANG_DLANG;
 		}
 		if (!strcmp (str, "msvc")) {
-			return R_BIN_NM_MSVC;
+			return R_BIN_LANG_MSVC;
 		}
 		if (!strcmp (str, "rust")) {
-			return R_BIN_NM_RUST;
+			return R_BIN_LANG_RUST;
 		}
 	}
-	return R_BIN_NM_NONE;
+	return R_BIN_LANG_NONE;
 }
 
 R_API char *r_bin_demangle(RBinFile *bf, const char *def, const char *str, ut64 vaddr, bool libs) {
@@ -131,9 +131,9 @@ R_API char *r_bin_demangle(RBinFile *bf, const char *def, const char *str, ut64 
 	}
 	if (!strncmp (str, "__", 2)) {
 		if (str[2] == 'T') {
-			type = R_BIN_NM_SWIFT;
+			type = R_BIN_LANG_SWIFT;
 		} else {
-			type = R_BIN_NM_CXX;
+			type = R_BIN_LANG_CXX;
 		//	str++;
 		}
 	}
@@ -146,14 +146,14 @@ R_API char *r_bin_demangle(RBinFile *bf, const char *def, const char *str, ut64 
 	}
 	char *demangled = NULL;
 	switch (type) {
-	case R_BIN_NM_JAVA: demangled = r_bin_demangle_java (str); break;
-	case R_BIN_NM_RUST: demangled = r_bin_demangle_rust (bf, str, vaddr); break;
-	case R_BIN_NM_OBJC: demangled = r_bin_demangle_objc (NULL, str); break;
-	case R_BIN_NM_SWIFT: demangled = r_bin_demangle_swift (str, bin? bin->demangle_usecmd: false, trylib); break;
-	case R_BIN_NM_CXX: demangled = r_bin_demangle_cxx (bf, str, vaddr); break;
-	case R_BIN_NM_PASCAL: demangled = r_bin_demangle_freepascal (str); break;
-	case R_BIN_NM_MSVC: demangled = r_bin_demangle_msvc (str); break;
-	case R_BIN_NM_DLANG: demangled = r_bin_demangle_plugin (bin, "dlang", str); break;
+	case R_BIN_LANG_JAVA: demangled = r_bin_demangle_java (str); break;
+	case R_BIN_LANG_RUST: demangled = r_bin_demangle_rust (bf, str, vaddr); break;
+	case R_BIN_LANG_OBJC: demangled = r_bin_demangle_objc (NULL, str); break;
+	case R_BIN_LANG_SWIFT: demangled = r_bin_demangle_swift (str, bin? bin->demangle_usecmd: false, trylib); break;
+	case R_BIN_LANG_CXX: demangled = r_bin_demangle_cxx (bf, str, vaddr); break;
+	case R_BIN_LANG_PASCAL: demangled = r_bin_demangle_freepascal (str); break;
+	case R_BIN_LANG_MSVC: demangled = r_bin_demangle_msvc (str); break;
+	case R_BIN_LANG_DLANG: demangled = r_bin_demangle_plugin (bin, "dlang", str); break;
 	}
 	if (libs && demangled && lib) {
 		char *d = r_str_newf ("%s_%s", lib, demangled);

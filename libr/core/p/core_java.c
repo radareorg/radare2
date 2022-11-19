@@ -1,11 +1,10 @@
-/* radare - Apache - Copyright 2014-2020 - dso, pancake */
+/* radare - Apache - Copyright 2014-2022 - dso, pancake */
 
 #include <r_types.h>
 #include <r_lib.h>
 #include <r_cmd.h>
 #include <r_core.h>
 #include <r_cons.h>
-#include <string.h>
 #include <r_anal.h>
 
 #include "../../../shlr/java/ops.h"
@@ -15,7 +14,6 @@
 #define DO_THE_DBG 0
 #undef IFDBG
 #define IFDBG if (DO_THE_DBG)
-
 
 typedef struct found_idx_t {
 	ut16 idx;
@@ -1661,7 +1659,7 @@ static int r_cmd_java_resolve_cp_address(RBinJavaObj *obj, ut16 idx) {
 
 static int r_cmd_java_resolve_cp_to_key(RBinJavaObj *obj, ut16 idx) {
 	if (obj && idx) {
-		char *str = r_bin_java_resolve_cp_idx_to_string (obj, idx);
+		char *str = r_bin_java_resolve_cp_idx_tostring (obj, idx);
 		r_cons_println (str);
 		free (str);
 	}

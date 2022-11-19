@@ -892,7 +892,7 @@ address: 0x568
 opcode: push {r3, lr}
 esilcost: 24
 disasm: push {r3, lr}
-pseudo: push (r3, lr) 
+pseudo: push (r3, lr)
 mnemonic: push
 mask: ffffffff
 prefix: 0

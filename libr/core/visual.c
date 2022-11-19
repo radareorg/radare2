@@ -27,6 +27,8 @@ static R_TH_LOCAL int currentFormat = 0;
 static R_TH_LOCAL int current0format = 0;
 static R_TH_LOCAL char numbuf[32] = {0};
 static R_TH_LOCAL int numbuf_i = 0;
+static R_TH_LOCAL bool splitView = false;
+static R_TH_LOCAL ut64 splitPtr = UT64_MAX;
 
 typedef struct {
 	int x;
@@ -229,7 +231,7 @@ static const char *__core_visual_print_command(RCore *core) {
 			return tab->name + 1;
 		}
 	}
-	if (r_config_get_i (core->config, "scr.dumpcols")) {
+	if (r_config_get_b (core->config, "scr.dumpcols")) {
 		free (core->stkcmd);
 		core->stkcmd = r_str_new (stackPrintCommand (core));
 		return printfmtColumns[PIDX];
@@ -367,9 +369,6 @@ static const char *help_msg_visual_fn[] = {
 	NULL
 };
 
-static bool splitView = false;
-static ut64 splitPtr = UT64_MAX;
-
 #undef USE_THREADS
 #define USE_THREADS 1
 
@@ -501,7 +500,7 @@ R_API bool r_core_visual_hud(RCore *core) {
 	char *f = r_str_newf (R_JOIN_3_PATHS ("%s", R2_HUD, "main"),
 		r_sys_prefix (NULL));
 	int use_color = core->print->flags & R_PRINT_FLAGS_COLOR;
-	char *homehud = r_str_home (R2_HOME_HUD);
+	char *homehud = r_xdg_datadir ("hud");
 	bool ready = false;
 	char *res = NULL;
 	r_cons_context ()->color_mode = use_color;
@@ -556,7 +555,7 @@ R_API void r_core_visual_jump(RCore *core, ut8 ch) {
 }
 
 // TODO: merge with r_cons_cmd_help
-R_API void r_core_visual_append_help(RStrBuf *p, const char *title, const char **help) {
+R_API void r_core_visual_append_help(RStrBuf *p, const char *title, const char * const * help) {
 	RCons *cons = r_cons_singleton ();
 	bool use_color = cons->context->color_mode;
 	const char
@@ -1227,7 +1226,7 @@ static ut64 prevop_addr(RCore *core, ut64 addr) {
 	r_io_read_at (core->io, base, buf, sizeof (buf));
 	for (i = 0; i < sizeof (buf); i++) {
 		ret = r_anal_op (core->anal, &op, base + i,
-			buf + i, sizeof (buf) - i, R_ANAL_OP_MASK_BASIC);
+			buf + i, sizeof (buf) - i, R_ARCH_OP_MASK_BASIC);
 		if (ret) {
 			len = op.size;
 			if (len < 1) {
@@ -1739,6 +1738,103 @@ char *getcommapath(RCore *core) {
 	return cwd;
 }
 
+static void visual_textlogs(RCore *core) {
+	int index = 1;
+	while (true) {
+		int log_level = r_log_get_level ();
+		r_cons_clear00 ();
+		int notch = r_config_get_i (core->config, "scr.notch");
+		while (notch-- > 0) {
+			r_cons_newline ();
+		}
+		const char *vi = r_config_get (core->config, "cmd.vprompt");
+		if (R_STR_ISNOTEMPTY (vi)) {
+			r_core_cmd0 (core, vi);
+		}
+#define TEXTLOGS_TITLE "[q] [visual-text-logs] Move with [jk] `i` to insert `-` trim logs [+-] idx %d log.level = %d"
+		if (r_config_get_i (core->config, "scr.color") > 0) {
+			r_cons_printf (Color_YELLOW "" TEXTLOGS_TITLE "\n"Color_RESET, index, log_level);
+		} else {
+			r_cons_printf (TEXTLOGS_TITLE "\n", index, log_level);
+		}
+		r_core_cmdf (core, "Tv %d", index);
+		r_cons_printf ("--\n");
+		char *s = r_core_cmd_strf (core, "Tm %d~{}", index);
+		r_str_trim (s);
+		if (R_STR_ISEMPTY (s)) {
+			free (s);
+			s = r_core_cmd_strf (core, "Tm %d", index);
+		}
+		int w = r_cons_get_size (NULL);
+		s = r_str_wrap (s, w);
+		r_cons_printf ("%s\n", s);
+		free (s);
+		r_cons_visual_flush ();
+		char ch = (ut8)r_cons_readchar ();
+		ch = r_cons_arrow_to_hjkl (ch);
+		switch (ch) {
+		case 'q':
+			return;
+		case 'i':
+			r_core_cmdf (core, "T `?ie message`");
+			break;
+		case 'j':
+			index++;
+			break;
+		case 'J':
+			index += 10;
+			break;
+		case '+':
+			if (log_level <= R_LOGLVL_LAST) {
+				r_log_set_level (log_level + 1);
+			}
+			break;
+		case '-':
+			if (log_level > 0) {
+				r_log_set_level (log_level - 1);
+			}
+			break;
+		case '=':
+			{ // TODO: edit
+				r_core_visual_showcursor (core, true);
+				const char *buf = NULL;
+				#define I core->cons
+				const char *cmd = r_config_get (core->config, "cmd.vprompt");
+				r_line_set_prompt ("cmd.vprompt> ");
+				I->line->contents = strdup (cmd);
+				buf = r_line_readline ();
+				I->line->contents = NULL;
+				(void)r_config_set (core->config, "cmd.vprompt", buf);
+				r_core_visual_showcursor (core, false);
+			}
+			break;
+		case '!':
+			r_core_cmdf (core, "T-%d", index);
+			break;
+		case 'k':
+			if (index > 1) {
+				index--;
+			} else {
+				index = 1;
+			}
+			break;
+		case '0':
+			index = 0;
+			break;
+		case 'K':
+			if (index > 10) {
+				index -= 10;
+			} else {
+				index = 1;
+			}
+			break;
+		case ':':
+			r_core_visual_prompt_input (core);
+			break;
+		}
+	}
+}
+
 static void visual_comma(RCore *core) {
 	bool mouse_state = __holdMouseState (core);
 	ut64 addr = core->offset + (core->print->cur_enabled? core->print->cur: 0);
@@ -1815,7 +1911,7 @@ static ut64 insoff(RCore *core, int delta) {
 
 static void nextOpcode(RCore *core) {
 	ut64 opaddr = insoff (core, core->print->cur);
-	RAnalOp *aop = r_core_anal_op (core, opaddr, R_ANAL_OP_MASK_BASIC);
+	RAnalOp *aop = r_core_anal_op (core, opaddr, R_ARCH_OP_MASK_BASIC);
 	RPrint *p = core->print;
 	if (aop) {
 		p->cur += aop->size;
@@ -2600,7 +2696,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 				r_cons_enable_mouse (true);
 			}
 			do {
-				op = r_core_anal_op (core, core->offset + core->print->cur, R_ANAL_OP_MASK_BASIC);
+				op = r_core_anal_op (core, core->offset + core->print->cur, R_ARCH_OP_MASK_BASIC);
 				if (op) {
 					if (op->type == R_ANAL_OP_TYPE_JMP ||
 					op->type == R_ANAL_OP_TYPE_CJMP ||
@@ -2912,7 +3008,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			}
 			break;
 		case 'T':
-			visual_closetab (core);
+			visual_textlogs (core);
 			break;
 		case 'n':
 			r_core_seek_next (core, r_config_get (core->config, "scr.nkey"));
@@ -4401,7 +4497,7 @@ R_API void r_core_visual_disasm_down(RCore *core, RAsmOp *op, int *cols) {
 		size_t bufsize = maxopsize > -1? R_MAX (maxopsize, 32): 32;
 		ut8 *buf = calloc (bufsize, sizeof (ut8));
 		if (!buf) {
-			r_cons_eprintf ("Cannot allocate %d byte(s)\n", (int)bufsize);
+			R_LOG_ERROR ("Cannot allocate %d byte(s)", (int)bufsize);
 			return;
 		};
 		ut64 orig = core->offset;

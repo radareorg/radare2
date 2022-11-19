@@ -1,0 +1,20 @@
+NAME=pFp
+FILE=bins/cert/myStore.p12
+CMDS=<<EOF
+b $s
+pFp
+?e --
+pFpj
+EOF
+EXPECT=<<EOF
+signedData
+  Version: v0
+  Digest Algorithms:
+  Certificates: 0
+  SignerInfos:
+
+--
+{"Version":0,"Certificates":[],"CRL":[],"SignerInfos":[]}
+EOF
+RUN
+

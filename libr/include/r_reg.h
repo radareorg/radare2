@@ -1,12 +1,13 @@
 #ifndef R2_REG_H
 #define R2_REG_H
 
-struct r_arch_config_t;
 #include <r_types.h>
-#include <r_arch.h>
+#include <r_util/r_ref.h>
 #include <r_list.h>
 #include <r_util/r_hex.h>
 #include <r_util/r_assert.h>
+
+#define R_REG_USE_VEC 1
 
 #ifdef __cplusplus
 extern "C" {
@@ -22,9 +23,10 @@ typedef enum {
 	R_REG_TYPE_GPR,
 	R_REG_TYPE_DRX,
 	R_REG_TYPE_FPU,
-	R_REG_TYPE_MMX,
-	R_REG_TYPE_XMM,
-	R_REG_TYPE_YMM,
+	R_REG_TYPE_VEC64, // MMX
+	R_REG_TYPE_VEC128, // XMM
+	R_REG_TYPE_VEC256, // YMM
+	R_REG_TYPE_VEC512, // ZMM
 	R_REG_TYPE_FLG,
 	R_REG_TYPE_SEG,
 	R_REG_TYPE_LAST,
@@ -104,6 +106,7 @@ typedef struct r_reg_item_t {
 	char *comment;
 	int index;
 	int arena; /* in which arena is this reg living */
+	R_REF_TYPE;
 } RRegItem;
 
 typedef struct r_reg_arena_t {
@@ -116,10 +119,12 @@ typedef struct r_reg_set_t {
 	RList *pool;      /* RRegArena */
 	RList *regs;      /* RRegItem */
 	HtPP *ht_regs;    /* name:RRegItem */
-	RListIter *cur;
+	RListIter *cur;   /* RRegArenaIter */
 	int maskregstype; /* which type of regs have this reg set (logic mask with RRegisterType  R_REG_TYPE_XXX) */
-} RRegSet;
+} RRegSet; // Rename to RegGroup, because Set can be confusing with the 'set' keyword
 
+struct r_arch_config_t;
+#include <r_arch.h>
 typedef struct r_reg_t {
 	char *profile;
 	char *reg_profile_cmt;
@@ -161,8 +166,9 @@ R_API char *r_reg_parse_gdb_profile(const char *profile);
 R_API bool r_reg_is_readonly(RReg *reg, RRegItem *item);
 
 R_API RRegSet *r_reg_regset_get(RReg *r, int type);
+R_API RRegSet *r_reg_regset_clone(RRegSet *r);
 R_API ut64 r_reg_getv(RReg *reg, const char *name);
-R_API ut64 r_reg_setv(RReg *reg, const char *name, ut64 val);
+R_API bool r_reg_setv(RReg *reg, const char *name, ut64 val);
 R_API const char *r_reg_32_to_64(RReg *reg, const char *rreg32);
 R_API const char *r_reg_64_to_32(RReg *reg, const char *rreg64);
 R_API const char *r_reg_get_name_by_type(RReg *reg, const char *name);
@@ -227,6 +233,7 @@ R_API bool r_reg_set_bytes(RReg *reg, int type, const ut8 *buf, const int len);
 R_API bool r_reg_read_regs(RReg *reg, ut8 *buf, const int len);
 R_API int r_reg_arena_set_bytes(RReg *reg, const char *str);
 R_API RRegArena *r_reg_arena_new(int size);
+R_API RRegArena *r_reg_arena_clone(RRegArena *a);
 R_API void r_reg_arena_free(RRegArena *ra);
 R_API void r_reg_fit_arena(RReg *reg);
 R_API void r_reg_arena_swap(RReg *reg, int copy);
@@ -237,7 +244,7 @@ R_API void r_reg_arena_zero(RReg *reg);
 R_API ut8 *r_reg_arena_peek(RReg *reg, int *len);
 R_API void r_reg_arena_poke(RReg *reg, const ut8 *buf, int len);
 R_API ut8 *r_reg_arena_dup(RReg *reg, const ut8 *source);
-R_API const char *r_reg_cond_to_string(int n);
+R_API const char *r_reg_cond_tostring(int n);
 R_API int r_reg_cond_from_string(const char *str);
 R_API void r_reg_arena_shrink(RReg *reg);
 

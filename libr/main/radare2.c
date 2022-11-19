@@ -131,7 +131,7 @@ static int main_help(int line) {
 		" -j           use json for -v, -L and maybe others\n"
 		" -k [OS/kern] set asm.os (linux, macos, w32, netbsd, ...)\n"
 		" -l [lib]     load plugin file\n"
-		" -L           list supported IO plugins\n"
+		" -L, -LL      list supported IO plugins (-LL list core plugins)\n"
 		" -m [addr]    map file at given address (loadaddr)\n"
 		" -M           do not demangle symbol names\n"
 		" -n, -nn      do not load RBin info (-nn only load bin structures)\n"
@@ -157,42 +157,46 @@ static int main_help(int line) {
 		" -z, -zz      do not load strings or load them even in raw\n");
 	}
 	if (line == 2) {
-		char *datahome = r_str_home (R2_HOME_DATADIR);
-		const char *dirPrefix = r_sys_prefix (NULL);
-		printf (
-		"Scripts:\n"
-		" system          ${R2_PREFIX}/share/radare2/radare2rc\n"
-		" user            ~/.radare2rc " R_JOIN_2_PATHS ("~", R2_HOME_RC) " (and " R_JOIN_3_PATHS ("~", R2_HOME_RC_DIR,"") ")\n"
-		" file            ${filename}.r2\n"
-		"Plugins:\n"
-		" binrc           " R_JOIN_4_PATHS ("~", R2_HOME_BINRC, "bin-<format>",  "") " (elf, elf64, mach0, ..)\n"
-		" R2_LIBR_PLUGINS " R_JOIN_2_PATHS ("%s", R2_PLUGINS) "\n"
-		" R2_USER_PLUGINS " R_JOIN_2_PATHS ("~", R2_HOME_PLUGINS) "\n"
-		" R2_USER_ZIGNS   " R_JOIN_2_PATHS ("~", R2_HOME_ZIGNS) "\n"
+		char *datahome = r_xdg_datadir (NULL);
+		const char *dirPrefix = R2_PREFIX;
+		RStrBuf *sb = r_strbuf_new ("");
+
+		r_strbuf_append (sb, "Scripts:\n");
+		r_strbuf_appendf (sb, " system          %s/share/radare2/radare2rc\n", dirPrefix);
+		r_strbuf_append (sb, " user            ~/.radare2rc ${XDG_CONFIG_DIR:=~/.local/share/}/radare2/radare2rc{.d/}\n");
+		r_strbuf_append (sb, " file            ${filename}.r2\n");
+		r_strbuf_append (sb, "Plugins:\n");
+		r_strbuf_appendf (sb, " R2_LIBR_PLUGINS " R_JOIN_2_PATHS ("%s", R2_PLUGINS) "\n"
+		" R2_USER_PLUGINS ${XDG_DATA_DIR:=~/.local/share/radare2}/plugins\n"
+		" R2_USER_ZIGNS   ${XDG_DATA_DIR:=~/.local/share/radare2}/zigns\n"
 		"Environment:\n"
 		" R2_COLOR        sets the initial value for 'scr.color'. set to 0 for no color\n"
 		" R2_DEBUG        if defined, show error messages and crash signal.\n"
 		" R2_DEBUG_ASSERT set a breakpoint when hitting an assert.\n"
 		" R2_IGNVER       load plugins ignoring the specified version. (be careful)\n"
-		" R2_MAGICPATH    " R_JOIN_2_PATHS ("%s", R2_SDB_MAGIC) "\n"
-		" R2_NOPLUGINS    do not load r2 shared plugins\n"
-		" R2_HISTORY      " R2_HOME_HISTORY "\n"
-		" R2_RCFILE       ~/.radare2rc (user preferences, batch script)\n" // TOO GENERIC
+		" R2_MAGICPATH    %s/"R2_SDB_MAGIC"\n"
+		" R2_NOPLUGINS    do not load r2 shared plugins\n", dirPrefix, dirPrefix);
+		r_strbuf_append (sb, " R2_HISTORY      ${XDG_CACHE_DIR:=~/.cache/radare2}/history\n");
+		r_strbuf_append (sb, " R2_RCFILE       ~/.radare2rc (user preferences, batch script)\n" // TOO GENERIC
 		" R2_CURL         set to '1' to use system curl program instead of r2 apis\n"
-		" R2_RDATAHOME    %s\n" // TODO: rename to RHOME R2HOME?
+		);
+		r_strbuf_appendf (sb, " R2_DATA_HOME    %s\n"
 		" R2_VERSION      contains the current version of r2\n"
 		" R2_LOG_LEVEL    numeric value of the max level of messages to show\n"
 		" R2_LOG_FILE     dump all logs to a file\n"
-#if 0
-		" R2_COLOR     \n"
-#endif
 		"Paths:\n"
 		" R2_INCDIR    "R2_INCDIR"\n"
 		" R2_LIBDIR    "R2_LIBDIR"\n"
 		" R2_LIBEXT    "R_LIB_EXT"\n"
 		" R2_PREFIX    "R2_PREFIX"\n"
-		, dirPrefix, datahome, dirPrefix);
+		, datahome);
 		free (datahome);
+
+		char *helpmsg = r_strbuf_drain (sb);
+		if (helpmsg) {
+			printf ("%s", helpmsg);
+			free (helpmsg);
+		}
 	}
 	return 0;
 }
@@ -206,15 +210,15 @@ static int main_print_var(const char *var_name) {
 	char *incdir = strdup (R2_INCDIR);
 	char *libdir = strdup (R2_LIBDIR);
 #endif
-	char *confighome = r_str_home (R2_HOME_CONFIGDIR);
-	char *datahome = r_str_home (R2_HOME_DATADIR);
-	char *cachehome = r_str_home (R2_HOME_CACHEDIR);
-	char *homeplugins = r_str_home (R2_HOME_PLUGINS);
-	char *homezigns = r_str_home (R2_HOME_ZIGNS);
+	char *confighome = r_xdg_configdir (NULL);
+	char *datahome = r_xdg_datadir (NULL);
+	char *cachehome = r_xdg_cachedir (NULL);
+	char *homeplugins = r_xdg_datadir ("plugins");
+	char *homezigns = r_xdg_datadir ("zigns");
 	char *plugins = r_str_r2_prefix (R2_PLUGINS);
 	char *magicpath = r_str_r2_prefix (R2_SDB_MAGIC);
-	char *historyhome = r_str_home (R2_HOME_HISTORY);
-	struct radare2_var_t {
+	char *historyhome = r_xdg_cachedir ("history");
+	struct {
 		const char *name;
 		const char *value;
 	} r2_vars[] = {
@@ -224,13 +228,13 @@ static int main_print_var(const char *var_name) {
 		{ "R2_INCDIR", incdir },
 		{ "R2_LIBDIR", libdir },
 		{ "R2_LIBEXT", R_LIB_EXT },
-		{ "R2_RCONFIGHOME", confighome },
 		{ "R2_RDATAHOME", datahome },
 		{ "R2_HISTORY", historyhome },
-		{ "R2_RCACHEHOME", cachehome },
+		{ "R2_CONFIG_HOME", confighome }, // from xdg
+		{ "R2_CACHE_HOME", cachehome }, //  fro xdg
 		{ "R2_LIBR_PLUGINS", plugins },
 		{ "R2_USER_PLUGINS", homeplugins },
-		{ "R2_USER_ZIGNS", homezigns },
+		{ "R2_ZIGNS_HOME", homezigns },
 		{ NULL, NULL }
 	};
 	int delta = 0;
@@ -306,7 +310,7 @@ beach:
 }
 
 static bool mustSaveHistory(RConfig *c) {
-	if (!r_config_get_i (c, "scr.hist.save")) {
+	if (!r_config_get_b (c, "scr.hist.save")) {
 		return false;
 	}
 	if (!r_cons_is_interactive ()) {
@@ -408,6 +412,7 @@ typedef struct {
 	ut64 baddr;
 	RCore *core;
 	int do_analysis;
+	RThread *th_bin;
 } ThreadData;
 
 static void perform_analysis(RCore *r, int do_analysis) {
@@ -421,10 +426,16 @@ static void perform_analysis(RCore *r, int do_analysis) {
 }
 
 static RThreadFunctionRet th_analysis(RThread *th) {
+	ThreadData *td = (ThreadData*)th->user;
+	if (td->th_bin) {
+		R_LOG_INFO ("waiting for rbin parsing");
+		r_th_wait (td->th_bin);
+		r_th_free (td->th_bin);
+		td->th_bin = NULL;
+	}
 	R_LOG_INFO ("loading binary information in background");
 	r_cons_thready ();
 	r_cons_new ();
-	ThreadData *td = (ThreadData*)th->user;
 	perform_analysis (td->core, td->do_analysis);
 	R_FREE (th->user);
 	R_LOG_INFO ("bin.load done");
@@ -485,6 +496,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 	ut64 baddr = UT64_MAX;
 	ut64 seek = UT64_MAX;
 	bool do_list_io_plugins = false;
+	bool do_list_core_plugins = false;
 	char *file = NULL;
 	char *pfile = NULL;
 	const char *asmarch = NULL;
@@ -528,6 +540,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 	char *envprofile = r_run_get_environ_profile (env);
 
 	if (r_sys_getenv_asbool ("R2_DEBUG")) {
+		r_log_set_level (R_LOGLVL_DEBUG);
 		char *sysdbg = r_sys_getenv ("R2_DEBUG_TOOL");
 		char *fmt = (sysdbg && *sysdbg)
 			? strdup (sysdbg)
@@ -559,6 +572,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 	r->r_main_ragg2 = r_main_ragg2;
 	r->r_main_rasm2 = r_main_rasm2;
 	r->r_main_rax2 = r_main_rax2;
+	r->r_main_ravc2 = r_main_ravc2;
 	r->r_main_r2pm = r_main_r2pm;
 
 	r->io->envprofile = envprofile;
@@ -713,7 +727,11 @@ R_API int r_main_radare2(int argc, const char **argv) {
 			r_lib_open (r->lib, opt.arg);
 			break;
 		case 'L':
-			do_list_io_plugins = true;
+			if (do_list_io_plugins) {
+				do_list_core_plugins = true;
+			} else {
+				do_list_io_plugins = true;
+			}
 			break;
 		case 'm':
 			r_config_set_i (r->config, "io.va", 1);
@@ -729,6 +747,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 				load_bin = LOAD_BIN_NOTHING;
 			} else if (load_bin == LOAD_BIN_NOTHING) { // second n => "-nn"
 				load_bin = LOAD_BIN_STRUCTURES_ONLY;
+				r_config_set_b (r->config, "bin.types", true);
 			}
 			r_config_set_b (r->config, "file.info", false);
 			break;
@@ -928,6 +947,15 @@ R_API int r_main_radare2(int argc, const char **argv) {
 		goto beach;
 	}
 
+	if (do_list_core_plugins) {
+		r_core_cmd0 (r, "Lc");
+		r_cons_flush ();
+		LISTS_FREE ();
+		free (pfile);
+		R_FREE (debugbackend);
+		free (envprofile);
+		return 0;
+	}
 	if (do_list_io_plugins) {
 		if (r_config_get_b (r->config, "cfg.plugins")) {
 			r_core_loadlibs (r, R_CORE_LOADLIBS_ALL, NULL);
@@ -1047,7 +1075,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 		r_config_set_b (r->config, "bin.strings", false);
 		break;
 	case 2:
-		r_config_set_b (r->config, "bin.rawstr", true);
+		r_config_set_b (r->config, "bin.str.raw", true);
 		break;
 	}
 	if (zflag > 3) {
@@ -1061,7 +1089,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 		r_config_set_b (r->config, "scr.utf8", false);
 	}
 
-	char *histpath = r_str_home (".cache/radare2/history");
+	char *histpath = r_file_home (".cache/radare2/history");
 	if (histpath) {
 		r_line_hist_load (histpath);
 		free (histpath);
@@ -1097,9 +1125,9 @@ R_API int r_main_radare2(int argc, const char **argv) {
 		r_cons_set_raw (false);
 #if __UNIX__
 		// TODO: keep flags :?
-		(void)freopen ("/dev/tty", "rb", stdin);
-		(void)freopen ("/dev/tty", "w", stdout);
-		(void)freopen ("/dev/tty", "w", stderr);
+		R_UNUSED_RESULT (freopen ("/dev/tty", "rb", stdin));
+		R_UNUSED_RESULT (freopen ("/dev/tty", "w", stdout));
+		R_UNUSED_RESULT (freopen ("/dev/tty", "w", stderr));
 #else
 		R_LOG_ERROR ("Cannot reopen stdin without UNIX");
 		free (buf);
@@ -1237,9 +1265,13 @@ R_API int r_main_radare2(int argc, const char **argv) {
 					R_FREE (path);
 				}
 #elif __WINDOWS__
-				char *f2 = r_acp_to_utf8 (f);
-				free (f);
-				f = f2;
+				char *acpfile = r_acp_to_utf8 (f);
+				// backslashes must be escaped because they are unscaped when parsing the uri
+				char *r = r_str_replace (acpfile, "\\", "\\\\", true);
+				if (r) {
+					acpfile = r;
+				}
+				file = r_str_newf ("dbg://%s", acpfile);
 #else
 				if (f) {
 					char *escaped_path = r_str_arg_escape (f);
@@ -1334,7 +1366,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 									td->baddr = baddr;
 									td->core = r;
 									th_bin = r_th_new (th_binload, td, false);
-									r_th_start (th_bin, false);
+									r_th_start (th_bin, true);
 								} else {
 									binload (r, filepath, baddr);
 								}
@@ -1466,15 +1498,20 @@ R_API int r_main_radare2(int argc, const char **argv) {
 			if (fi) {
 				r_core_seek (r, fi->offset, true);
 			} else {
-				if (o) {
+				fi = r_flag_get (r->flags, "section.0.__TEXT.__text");
+				if (fi) {
+					r_core_seek (r, fi->offset, true);
+				} else if (o) {
 					RList *sections = r_bin_get_sections (r->bin);
 					RListIter *iter;
 					RBinSection *s;
 					r_list_foreach (sections, iter, s) {
 						if (s->perm & R_PERM_X) {
 							ut64 addr = s->vaddr? s->vaddr: s->paddr;
-							r_core_seek (r, addr, true);
-							break;
+							if (addr) {
+								r_core_seek (r, addr, true);
+								break;
+							}
 						}
 					}
 				}
@@ -1545,17 +1582,14 @@ R_API int r_main_radare2(int argc, const char **argv) {
 	}
 	if (do_analysis > 0) {
 		if (threaded) {
-			if (th_bin) {
-				r_th_wait (th_bin);
-				r_th_free (th_bin);
-				th_bin = NULL;
-			}
 			ThreadData *td = R_NEW0 (ThreadData);
+			td->th_bin = th_bin;
 			td->do_analysis = do_analysis;
 			td->core = r;
 			R_LOG_INFO ("Running analysis level %d in background", do_analysis);
 			th_ana = r_th_new (th_analysis, td, false);
 			r_th_start (th_ana, false);
+			th_bin = NULL;
 		} else {
 			perform_analysis (r, do_analysis);
 		}
@@ -1595,6 +1629,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 	if (sandbox) {
 		r_config_set_b (r->config, "cfg.sandbox", true);
 	}
+	R_CRITICAL_ENTER (r);
 	if (quiet) {
 		r_config_set_b (r->config, "scr.wheel", false);
 		r_config_set_b (r->config, "scr.interactive", false);
@@ -1611,6 +1646,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 			R_LOG_ERROR ("Cannot open '%s'", patchfile);
 		}
 	}
+	R_CRITICAL_LEAVE (r);
 	if ((patchfile && !quiet) || !patchfile) {
 		if (zerosep) {
 			r_cons_zero ();
@@ -1701,7 +1737,11 @@ R_API int r_main_radare2(int argc, const char **argv) {
 	}
 
 	if (mustSaveHistory (r->config)) {
-		r_line_hist_save (R2_HOME_HISTORY);
+		char *history_file = r_xdg_cachedir ("history");
+		if (history_file) {
+			r_line_hist_save (history_file);
+			free (history_file);
+		}
 	}
 
 	ret = r->rc;
@@ -1713,6 +1753,7 @@ beach:
 	if (th_bin) {
 		r_th_wait (th_bin);
 		r_th_free (th_bin);
+		th_bin = NULL;
 	}
 	if (th_ana) {
 		r_th_wait (th_ana);

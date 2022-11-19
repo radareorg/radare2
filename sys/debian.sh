@@ -10,6 +10,9 @@ fi
 if [ "${ARCH}" = "x86_64" ]; then
   ARCH=amd64
 fi
+if [ "${ARCH}" = "aarch64" ]; then
+  ARCH=arm64
+fi
 
 echo "[debian] preparing radare2 package..."
 PKGDIR=dist/debian/radare2/root
@@ -22,7 +25,7 @@ rm -rf "${PKGDIR}" "${DEVDIR}"
 
 export CFLAGS="-Wno-cpp -Wno-unused-result ${CFLAGS} -O2"
 # build
-./configure --prefix=/usr --with-checks-level=0
+./configure --prefix=/usr --with-checks-level=0 $*
 [ $? != 0 ] && exit 1
 make -j4
 [ $? != 0 ] && exit 1

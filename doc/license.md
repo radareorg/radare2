@@ -85,7 +85,6 @@ should be copied to `./plugins.cfg` before calling `./configure-plugins` to take
 * shlr/sdb: MIT
 * shlr/qnx: GPL (will be moved to extras soon)
 * shlr/grub: GPL (used by some fs plugins)
-* shlr/yxml: BSD
 * shlr/lz4: simplified BSD license
 * shlr/mpc: BSD3
 

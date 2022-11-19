@@ -26,6 +26,7 @@
 #include <r_bin.h>
 #include <r_hash.h>
 #include <r_util.h>
+#include <rvc.h>
 #include <r_util/r_print.h>
 #include <r_crypto.h>
 #include <r_bind.h>
@@ -210,7 +211,7 @@ typedef struct r_core_visual_tab_t {
 	int current3format;
 	int current4format;
 	int current5format;
-	int dumpCols;
+	bool dumpCols;
 	char name[32]; // XXX leak because no  r_core_visual_tab_free
 	// TODO: cursor and such
 } RCoreVisualTab;
@@ -244,21 +245,10 @@ typedef struct r_core_tasks_t {
 	bool oneshot_running;
 } RCoreTaskScheduler;
 
-typedef enum {
-	VC_RVC,
-	VC_GIT
-} VcType;
-
-typedef struct {
-	char *path;
-	VcType type;
-	Sdb *db;
-} Rvc;
-
 typedef struct r_core_project_t {
 	char *name;
 	char *path;
-	Rvc *rvc;
+	struct r_vc_t *rvc; // Rvc *rvc;
 } RProject;
 
 R_API RProject *r_project_new(void);
@@ -369,10 +359,12 @@ struct r_core_t {
 	bool marks_init;
 	ut64 marks[UT8_MAX + 1];
 	RThreadChannel *chan; // query
+	RThreadLock *lock;
 	bool in_log_process; // false;
 	RMainCallback r_main_radare2;
 	// int (*r_main_radare2)(int argc, char **argv);
 	int (*r_main_rafind2)(int argc, const char **argv);
+	int (*r_main_ravc2)(int argc, const char **argv);
 	int (*r_main_r2pm)(int argc, const char **argv);
 	int (*r_main_radiff2)(int argc, const char **argv);
 	int (*r_main_rabin2)(int argc, const char **argv);
@@ -488,7 +480,7 @@ R_API void r_core_visual_toggle_decompiler_disasm(RCore *core, bool for_graph, b
 R_API void r_core_visual_applyDisMode(RCore *core, int disMode);
 R_API void r_core_visual_applyHexMode(RCore *core, int hexMode);
 R_API int r_core_visual_refs(RCore *core, bool xref, bool fcnInsteadOfAddr);
-R_API void r_core_visual_append_help(RStrBuf *p, const char *title, const char **help);
+R_API void r_core_visual_append_help(RStrBuf *p, const char *title, const char * const *help);
 R_API bool r_core_prevop_addr(RCore* core, ut64 start_addr, int numinstrs, ut64* prev_addr);
 R_API ut64 r_core_prevop_addr_force(RCore *core, ut64 start_addr, int numinstrs);
 R_API bool r_core_visual_hudstuff(RCore *core);
@@ -636,7 +628,7 @@ R_API RGraph/*<RGraphNodeInfo>*/ *r_core_anal_importxrefs(RCore *core);
 R_API void r_core_anal_callgraph(RCore *core, ut64 addr, int fmt);
 R_API int r_core_anal_refs(RCore *core, const char *input);
 R_API void r_core_agraph_print(RCore *core, int use_utf, const char *input);
-R_API bool r_core_esil_cmd(RAnalEsil *esil, const char *cmd, ut64 a1, ut64 a2);
+R_API bool r_core_esil_cmd(REsil *esil, const char *cmd, ut64 a1, ut64 a2);
 R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr, ut64 *prev_addr, bool stepOver);
 R_API bool r_core_esil_step_back(RCore *core);
 R_API ut64 r_core_anal_get_bbaddr(RCore *core, ut64 addr);
@@ -690,12 +682,12 @@ R_API RList *r_core_asm_back_disassemble_byte(RCore *core, ut64 addr, int len, u
 R_API ut32 r_core_asm_bwdis_len(RCore* core, int* len, ut64* start_addr, ut32 l);
 
 
-enum pdu_condition {
-	//esil,
-	instruction,
-	opcode
+enum r_pdu_condition_t {
+	//pdu_esil,
+	pdu_instruction,
+	pdu_opcode
 };
-R_API int r_core_print_disasm(RCore *core, ut64 addr, ut8 *buf, int len, int count, enum pdu_condition pdu_condition_type, const void *pdu_condition, bool count_bytes, bool json, PJ *pj, RAnalFunction *pdf);
+R_API int r_core_print_disasm(RCore *core, ut64 addr, ut8 *buf, int len, int count, enum r_pdu_condition_t pdu_condition_type, const void *pdu_condition, bool count_bytes, bool json, PJ *pj, RAnalFunction *pdf);
 R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int len, int lines, PJ *pj);
 R_API int r_core_print_disasm_instructions_with_buf(RCore *core, ut64 address, ut8 *buf, int nb_bytes, int nb_opcodes);
 R_API int r_core_print_disasm_instructions(RCore *core, int nb_bytes, int nb_opcodes);
@@ -865,6 +857,7 @@ R_API void r_core_undo_down(RCore *core);
 /* logs */
 typedef int (*RCoreLogCallback)(RCore *core, int count, const char *message);
 R_API void r_core_log_free(RCoreLog *log);
+R_API void r_core_log_view(RCore *core, int num);
 R_API void r_core_log_init(RCoreLog *log);
 R_API char *r_core_log_get(RCore *core, int index);
 R_API RCoreLog *r_core_log_new(void);

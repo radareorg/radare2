@@ -84,7 +84,7 @@ static bool __core_patch_bracket(RCore *core, const char *str, ut64 *noff) {
 		str = p;
 	}
 
-	s = r_buf_to_string (b);
+	s = r_buf_tostring (b);
 	r_egg_load (core->egg, s, 0);
 	free (s);
 

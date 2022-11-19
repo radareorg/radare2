@@ -30,7 +30,6 @@ r_asm_sources = [
   #join_paths('arch','i8080','i8080dis.c'),
 #join_paths('arch','lanai','gnu','lanai-dis.c'),
 #  join_paths('arch','lanai','gnu','lanai-opc.c'),
-  join_paths('arch','v810','v810_disas.c'),
   # join_paths('arch','whitespace','wsdis.c'),
   #join_paths('arch','z80','expressions.c'),
   # join_paths('arch','z80','z80.c'),
@@ -45,7 +44,6 @@ r_asm_inc = [
     join_paths('arch','include'),
     join_paths('arch'),
     join_paths('arch','h8300'),
-    join_paths('arch','v810'),
   )
 ]
 

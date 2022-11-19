@@ -32,11 +32,11 @@ else
   libsdb_name = 'sdb'
 endif
 
-# Create sdb_version.h
+# Create include/sdb/version.h
 conf_data = configuration_data()
 conf_data.set_quoted('SDB_VERSION', sdb_version, description : 'From config.mk')
 configure_file(
-  output : 'sdb_version.h',
+  output : 'version.h',
   configuration : conf_data,
   install_dir : join_paths(get_option('includedir'), 'sdb')
 )
@@ -65,12 +65,12 @@ libsdb_sources = [
   'src/num.c',
   'src/query.c',
   'src/sdb.c',
-  'src/sdbht.c',
+  'src/ht.c',
   'src/util.c',
   'src/text.c'
 ]
 
-sdb_inc = include_directories(['.', 'src'])
+sdb_inc = include_directories(['.', 'include'])
 rpath_lib = ''
 rpath_exe = ''
 if get_option('local') and get_option('default_library') == 'shared'
@@ -99,21 +99,21 @@ sdb_dep = declare_dependency(
 
 if not meson.is_subproject()
   include_files = [
-    'src/buffer.h',
-    'src/cdb.h',
-    'src/cdb_make.h',
-    'src/config.h',
-    'src/dict.h',
-    'src/ht_inc.h',
-    'src/ht_pp.h',
-    'src/ht_up.h',
-    'src/ht_uu.h',
-    'src/ht_up.h',
-    'src/ls.h',
-    'src/sdb.h',
-    'src/sdbht.h',
-    'src/set.h',
-    'src/types.h'
+    'include/sdb/buffer.h',
+    'include/sdb/cdb.h',
+    'include/sdb/cdb_make.h',
+    'include/sdb/config.h',
+    'include/sdb/dict.h',
+    'include/sdb/ht_inc.h',
+    'include/sdb/ht_pp.h',
+    'include/sdb/ht_up.h',
+    'include/sdb/ht_uu.h',
+    'include/sdb/ht_up.h',
+    'include/sdb/ls.h',
+    'include/sdb/sdb.h',
+    'include/sdb/ht.h',
+    'include/sdb/set.h',
+    'include/sdb/types.h'
   ]
   install_headers(include_files, subdir: 'sdb')
 endif

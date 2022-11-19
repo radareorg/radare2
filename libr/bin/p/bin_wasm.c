@@ -12,7 +12,7 @@
 
 static inline void *vector_at(RPVector *vec, ut64 n) {
 	// If the file is corrupted, the section may not have as many entries as it should
-	if (n < r_pvector_len (vec)) {
+	if (n < r_pvector_length (vec)) {
 		return r_pvector_at (vec, n);
 	}
 	return NULL;
@@ -144,7 +144,7 @@ alloc_err:
 
 static inline ut32 first_ord_not_import(RBinWasmObj *bin, ut32 kind) {
 	RPVector *imps = r_bin_wasm_get_imports_kind (bin, kind);
-	return imps? r_pvector_len (imps): 0;
+	return imps? r_pvector_length (imps): 0;
 }
 
 static const char *import_typename(ut32 kind) {

@@ -30,6 +30,8 @@ ARG_DISABLE WANT_THREADS threads disable use of thread apis ;
 (( useful for static builds . see sys/static.sh ))
 ARG_DISABLE LOADLIBS loadlibs disable loading plugins ;
 
+ARG_ENABLE R_CRITICAL_ENABLED threadsafety enable mutexes in critical code paths ;
+
 ARG_WITHOUT WANT_DYLINK dylink disable support for dynamic loading of plugins ;
 ARG_WITHOUT HAVE_FORK fork disable fork ;
 ARG_WITHOUT WANT_PTRACE_WRAP ptrace-wrap build ptrace-wrap support needed for the iaito debugger on Linux ;
@@ -41,6 +43,7 @@ IFNOT WANT_GPERF {
 }
 
 ARG_WITH WITH_LIBR libr build libr.a and libr.dylib ;
+ARG_WITH WITH_STATIC_THEMES static-themes default themes are compiled and fallback if not available on disk ;
 
 (( CAPSTONE ))
 ARG_WITH USE_CS5 capstone5 build next branch of capstone5 (default) ;
@@ -274,6 +277,7 @@ SUBDIRS ./config-user.mk
 	libr/include/r_userconf.h
 	pkgcfg/r_io.pc
 	pkgcfg/r_magic.pc
+	pkgcfg/r_esil.pc
 	pkgcfg/r_asm.pc
 	pkgcfg/r_bin.pc
 	pkgcfg/r_anal.pc

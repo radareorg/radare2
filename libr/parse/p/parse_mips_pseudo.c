@@ -256,102 +256,102 @@ static bool subvar(RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *data
 	char *tstr = strdup (data);
 	RAnal *anal = p->analb.anal;
 
-	if (!p->varlist) {
-		free (tstr);
-		return false;
-	}
-	RList *bpargs = p->varlist (f, 'b');
-	RList *spargs = p->varlist (f, 's');
-	const bool ucase = IS_UPPER (*tstr);
-	RAnalVarField *var;
-	r_list_foreach (spargs, iter, var) {
-		st64 delta = p->get_ptr_at
-			? p->get_ptr_at (f, var->delta, addr)
-			: ST64_MAX;
-		if (delta == ST64_MAX && var->field) {
-			delta = var->delta;
-		} else if (delta == ST64_MAX) {
-			continue;
-		}
-		const char *reg = NULL;
-		if (p->get_reg_at) {
-			reg = p->get_reg_at (f, var->delta, addr);
-		}
-		if (!reg) {
-			reg = anal->reg->name[R_REG_NAME_SP];
-		}
-		char *tmpf;
-		//TODO: honor asm pseudo
-		if (R_ABS (delta) < 10) {
-			tmpf = "%d(%s)";
-		} else if (delta > 0) {
-			tmpf = "0x%x(%s)";
-		} else {
-			tmpf = "-0x%x(%s)";
-		}
-		oldstr = r_str_newf (tmpf, R_ABS (delta), reg);
-		if (ucase) {
-			char *comma = strchr (oldstr, ',');
-			if (comma) {
-				*comma = 0;
-				r_str_case (oldstr, true);
-				*comma = ',';
+	if (f && p->varlist) {
+		RList *bpargs = p->varlist (f, 'b');
+		RList *spargs = p->varlist (f, 's');
+		const bool ucase = IS_UPPER (*tstr);
+		RAnalVarField *var;
+		r_list_foreach (spargs, iter, var) {
+			st64 delta = p->get_ptr_at
+				? p->get_ptr_at (f, var->delta, addr)
+				: ST64_MAX;
+			if (delta == ST64_MAX && var->field) {
+				delta = var->delta;
+			} else if (delta == ST64_MAX) {
+				continue;
 			}
-		}
-		if (strstr (tstr, oldstr)) {
-			char *newstr = (p->localvar_only)
-				? r_str_newf ("(%s)", var->name)
-				: r_str_newf ("%s%s(%s)", delta > 0 ? "" : "-", var->name, reg);
-			tstr = r_str_replace (tstr, oldstr, newstr, 1);
-			free (newstr);
-			free (oldstr);
-			break;
-		}
-		free (oldstr);
-	}
-	r_list_foreach (bpargs, iter, var) {
-		char *tmpf = NULL;
-		st64 delta = p->get_ptr_at
-			? p->get_ptr_at (f, var->delta, addr)
-			: ST64_MAX;
-		if (delta == ST64_MAX && var->field) {
-			delta = var->delta + f->bp_off;
-		} else if (delta == ST64_MAX) {
-			continue;
-		}
-		const char *reg = NULL;
-		if (p->get_reg_at) {
-			reg = p->get_reg_at (f, var->delta, addr);
-		}
-		if (!reg) {
-			reg = anal->reg->name[R_REG_NAME_BP];
-		}
-		if (R_ABS (delta) < 10) {
-			tmpf = "%d(%s)";
-		} else if (delta > 0) {
-			tmpf = "0x%x(%s)";
-		} else {
-			tmpf = "-0x%x(%s)";
-		}
-		oldstr = r_str_newf (tmpf, R_ABS (delta), reg);
-		if (ucase) {
-			char *comma = strchr (oldstr, ',');
-			if (comma) {
-				*comma = 0;
-				r_str_case (oldstr, true);
-				*comma = ',';
+			const char *reg = NULL;
+			if (p->get_reg_at) {
+				reg = p->get_reg_at (f, var->delta, addr);
 			}
-		}
-		if (strstr (tstr, oldstr)) {
-			char *newstr = (p->localvar_only)
-				? r_str_newf ("(%s)", var->name)
-				: r_str_newf ("%s%s(%s)", delta > 0 ? "" : "-", var->name, reg);
-			tstr = r_str_replace (tstr, oldstr, newstr, 1);
-			free (newstr);
+			if (!reg) {
+				reg = anal->reg->name[R_REG_NAME_SP];
+			}
+			char *tmpf;
+			//TODO: honor asm pseudo
+			if (R_ABS (delta) < 10) {
+				tmpf = "%d(%s)";
+			} else if (delta > 0) {
+				tmpf = "0x%x(%s)";
+			} else {
+				tmpf = "-0x%x(%s)";
+			}
+			oldstr = r_str_newf (tmpf, R_ABS (delta), reg);
+			if (ucase) {
+				char *comma = strchr (oldstr, ',');
+				if (comma) {
+					*comma = 0;
+					r_str_case (oldstr, true);
+					*comma = ',';
+				}
+			}
+			if (strstr (tstr, oldstr)) {
+				char *newstr = (p->localvar_only)
+					? r_str_newf ("(%s)", var->name)
+					: r_str_newf ("%s%s(%s)", delta > 0 ? "" : "-", var->name, reg);
+				tstr = r_str_replace (tstr, oldstr, newstr, 1);
+				free (newstr);
+				free (oldstr);
+				break;
+			}
 			free (oldstr);
-			break;
 		}
-		free (oldstr);
+		r_list_foreach (bpargs, iter, var) {
+			char *tmpf = NULL;
+			st64 delta = p->get_ptr_at
+				? p->get_ptr_at (f, var->delta, addr)
+				: ST64_MAX;
+			if (delta == ST64_MAX && var->field) {
+				delta = var->delta + f->bp_off;
+			} else if (delta == ST64_MAX) {
+				continue;
+			}
+			const char *reg = NULL;
+			if (p->get_reg_at) {
+				reg = p->get_reg_at (f, var->delta, addr);
+			}
+			if (!reg) {
+				reg = anal->reg->name[R_REG_NAME_BP];
+			}
+			if (R_ABS (delta) < 10) {
+				tmpf = "%d(%s)";
+			} else if (delta > 0) {
+				tmpf = "0x%x(%s)";
+			} else {
+				tmpf = "-0x%x(%s)";
+			}
+			oldstr = r_str_newf (tmpf, R_ABS (delta), reg);
+			if (ucase) {
+				char *comma = strchr (oldstr, ',');
+				if (comma) {
+					*comma = 0;
+					r_str_case (oldstr, true);
+					*comma = ',';
+				}
+			}
+			if (strstr (tstr, oldstr)) {
+				char *newstr = (p->localvar_only)
+					? r_str_newf ("(%s)", var->name)
+					: r_str_newf ("%s%s(%s)", delta > 0 ? "" : "-", var->name, reg);
+				tstr = r_str_replace (tstr, oldstr, newstr, 1);
+				free (newstr);
+				free (oldstr);
+				break;
+			}
+			free (oldstr);
+		}
+		r_list_free (bpargs);
+		r_list_free (spargs);
 	}
 	bool ret = true;
 	if (len > strlen (tstr)) {
@@ -361,8 +361,6 @@ static bool subvar(RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *data
 		ret = false;
 	}
 	free (tstr);
-	r_list_free (bpargs);
-	r_list_free (spargs);
 	return ret;
 }
 

@@ -239,7 +239,7 @@ static int or1k_op(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *data, int len, R
 		insn_to_op (a, op, addr, insn_descr, NULL, insn);
 		line = insn_to_str (a, addr, insn_descr, NULL, insn);
 	}
-	if (mask & R_ANAL_OP_MASK_DISASM) {
+	if (mask & R_ARCH_OP_MASK_DISASM) {
 		if (line) {
 			op->mnemonic = line;
 			line = NULL;

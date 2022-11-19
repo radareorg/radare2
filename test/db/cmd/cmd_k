@@ -28,7 +28,7 @@ RUN
 
 NAME=3: test kj
 FILE=bins/elf/ioli/crackme0x03
-ARGS=-A
+ARGS=-A -e bin.types=true
 CMDS=<<EOF
 kj~{}
 EOF

@@ -1,7 +1,7 @@
 /* Copyright radare2 - 2014-2022 - pancake, ret2libc */
 
 #include <r_core.h>
-#include <r_util/r_graph_drawable.h>
+#include <r_util.h>
 
 static R_TH_LOCAL int mousemode = 0;
 static R_TH_LOCAL int disMode = 0;
@@ -3208,6 +3208,9 @@ static void agraph_set_zoom(RAGraph *g, int v) {
  * (callgraph, CFG, etc.), set the default layout for these nodes and center
  * the screen on the selected one */
 static bool agraph_reload_nodes(RAGraph *g, RCore *core, RAnalFunction *fcn) {
+	if (g->is_handmade) {
+		return true;
+	}
 	r_agraph_reset (g);
 	return reload_nodes (g, core, fcn);
 }
@@ -3364,7 +3367,7 @@ static bool check_changes(RAGraph *g, int is_interactive, RCore *core, RAnalFunc
 	int oldpos[2] = {
 		0, 0
 	};
-	if (g->update_seek_on && r_config_get_i (core->config, "graph.few")) {
+	if (g->update_seek_on && core && r_config_get_i (core->config, "graph.few")) {
 		g->need_reload_nodes = true;
 	}
 	if (g->need_reload_nodes && core) {
@@ -3525,7 +3528,7 @@ static int agraph_print(RAGraph *g, int is_interactive, RCore *core, RAnalFuncti
 			g->can = _can;
 			char *s = strdup (r_cons_singleton()->context->buffer);
 			r_cons_pop ();
-			cmd_agfb3 (core, s, w-40, 2);
+			cmd_agfb3 (core, s, w - 40, 2);
 			free (s);
 			g->can->h /= 4;
 			r_cons_flush ();
@@ -3553,17 +3556,14 @@ static int agraph_refresh(struct agraph_refresh_data *grd) {
 	RAGraph *g = grd->g;
 	RAnalFunction *f = NULL;
 	RAnalFunction **fcn = grd->fcn;
-
 	if (!fcn) {
 		return agraph_print (g, grd->fs, core, NULL);
 	}
-
 	// allow to change the current function during debugging
 	if (g->is_instep && r_config_get_b (core->config, "cfg.debug")) {
 		// seek only when the graph node changes
 		const char *pc = r_reg_get_name (core->dbg->reg, R_REG_NAME_PC);
-		RRegItem *r = r_reg_get (core->dbg->reg, pc, -1);
-		ut64 addr = r_reg_get_value (core->dbg->reg, r);
+		ut64 addr = r_reg_getv (core->dbg->reg, pc);
 		RANode *acur = get_anode (g->curnode);
 
 		addr = r_anal_get_bbaddr (core->anal, addr);
@@ -3751,7 +3751,8 @@ R_API RANode *r_agraph_add_node(const RAGraph *g, const char *title, const char 
 	}
 
 	res->title = title? r_str_trunc_ellipsis (title, 255) : strdup ("");
-	res->body = body? strdup (body): strdup ("");
+	res->body = (body && strlen (body))? r_str_endswith (body, "\n")?
+		strdup (body): r_str_newf ("%s\n", body): strdup ("");	//XXX
 	res->layer = -1;
 	res->pos_in_layer = -1;
 	res->is_dummy = false;
@@ -4135,7 +4136,7 @@ static void nextword(RCore *core, RAGraph *g, const char *word) {
 			gh->word_nth = 0;
 		}
 
-		struct r_agraph_location *pos = r_vector_index_ptr (&gh->word_list, gh->word_nth);
+		struct r_agraph_location *pos = r_vector_at (&gh->word_list, gh->word_nth);
 		gh->word_nth++;
 		if (pos) {
 			can->sx = -pos->x + can->w / 2;
@@ -5033,14 +5034,8 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 	return !is_error;
 }
 
-/**
- * @brief Create RAGraph from generic RGraph with RGraphNodeInfo as node data
- *
- * @param graph <RGraphNodeInfo>
- * @return RAGraph* NULL if failure
- */
-R_API RAGraph *create_agraph_from_graph(const RGraph/*<RGraphNodeInfo>*/ *graph) {
-	r_return_val_if_fail (graph, NULL);
+R_API RAGraph *r_agraph_new_from_graph(const RGraph *graph, RAGraphTransitionCBs *cbs) {
+	r_return_val_if_fail (graph && cbs && cbs->get_title && cbs->get_body, NULL);
 
 	RAGraph *result_agraph = r_agraph_new (r_cons_canvas_new (1, 1));
 	if (!result_agraph) {
@@ -5060,8 +5055,11 @@ R_API RAGraph *create_agraph_from_graph(const RGraph/*<RGraphNodeInfo>*/ *graph)
 	RGraphNode *node;
 	// Traverse the list, create new ANode for each Node
 	r_list_foreach (graph->nodes, iter, node) {
-		RGraphNodeInfo *info = node->data;
-		RANode *a_node = r_agraph_add_node (result_agraph, info->title, info->body, NULL);
+		char *title = cbs->get_title (node->data);
+		char *body = cbs->get_body (node->data);
+		RANode *a_node = r_agraph_add_node (result_agraph, title, body, NULL);
+		R_FREE (title);
+		R_FREE (body);
 		if (!a_node) {
 			goto failure;
 		}

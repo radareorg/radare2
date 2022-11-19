@@ -235,7 +235,7 @@ bool test_r_interval_tree_delete() {
 	}
 
 	while (!r_pvector_empty (&contained_entries)) {
-		TestEntry *entry = r_pvector_remove_at (&contained_entries, rand () % r_pvector_len (&contained_entries));
+		TestEntry *entry = r_pvector_remove_at (&contained_entries, rand () % r_pvector_length (&contained_entries));
 		RIntervalNode *node = r_interval_tree_node_at_data (&tree, entry->start, entry);
 		mu_assert_notnull (node, "node not null");
 

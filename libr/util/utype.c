@@ -2,7 +2,6 @@
 
 #include <r_util.h>
 
-// R2_580 - return bool instead of int
 R_API bool r_type_set(Sdb *TDB, ut64 at, const char *field, ut64 val) {
 	const char *kind;
 	char var[128];
@@ -23,14 +22,10 @@ R_API bool r_type_set(Sdb *TDB, ut64 at, const char *field, ut64 val) {
 }
 
 R_API RTypeKind r_type_kind(Sdb *TDB, const char *name) {
-	r_return_val_if_fail (TDB && name, -1);
-	if (R_STR_ISEMPTY (name)) {
-		// XXX should assert too
-		return -1;
-	}
+	r_return_val_if_fail (TDB && R_STR_ISNOTEMPTY (name), -1);
 	const char *type = sdb_const_get (TDB, name, 0);
 	if (!type) {
-		return -1;
+		return R_TYPE_INVALID;
 	}
 	if (!strcmp (type, "enum")) {
 		return R_TYPE_ENUM;
@@ -47,17 +42,17 @@ R_API RTypeKind r_type_kind(Sdb *TDB, const char *name) {
 	if (!strcmp (type, "typedef")) {
 		return R_TYPE_TYPEDEF;
 	}
-	return -1;
+	return R_TYPE_INVALID;
 }
 
-R_API RList* r_type_get_enum(Sdb *TDB, const char *name) {
+R_API RList *r_type_get_enum(Sdb *TDB, const char *name) {
 	char *p, var[130];
 	int n;
 
 	if (r_type_kind (TDB, name) != R_TYPE_ENUM) {
 		return NULL;
 	}
-	RList *res = r_list_new ();
+	RList *res = r_list_newf ((RListFree) r_type_enum_free);
 	snprintf (var, sizeof (var), "enum.%s", name);
 	for (n = 0; (p = sdb_array_get (TDB, var, n, NULL)); n++) {
 		RTypeEnum *member = R_NEW0 (RTypeEnum);
@@ -71,14 +66,22 @@ R_API RList* r_type_get_enum(Sdb *TDB, const char *name) {
 					r_list_append (res, member);
 				} else {
 					free (member);
-					free (var2);
 				}
+				free (var2);
 			} else {
 				free (member);
 			}
 		}
 	}
 	return res;
+}
+
+R_API void r_type_enum_free(RTypeEnum *member) {
+	if (member) {
+		free (member->name);
+		free (member->val);
+		free (member);
+	}
 }
 
 R_API char *r_type_enum_member(Sdb *TDB, const char *name, const char *member, ut64 val) {
@@ -276,7 +279,7 @@ R_API char *r_type_get_struct_memb(Sdb *TDB, const char *type, int offset) {
 }
 
 // XXX this function is slow!
-R_API RList* r_type_get_by_offset(Sdb *TDB, ut64 offset) {
+R_API RList *r_type_get_by_offset(Sdb *TDB, ut64 offset) {
 	RList *offtypes = r_list_new ();
 	SdbList *ls = sdb_foreach_list (TDB, true);
 	SdbListIter *lsi;
@@ -481,7 +484,7 @@ R_API char *r_type_format(Sdb *TDB, const char *t) {
 			return strdup (fmt);
 		}
 	} else if (!strcmp (kind, "struct") || !strcmp (kind, "union")) {
-		return fmt_struct_union(TDB, var, false);
+		return fmt_struct_union (TDB, var, false);
 	}
 	if (!strcmp (kind, "typedef")) {
 		snprintf (var2, sizeof (var2), "typedef.%s", t);
@@ -601,15 +604,13 @@ static inline bool is_function(const char *name) {
 }
 
 static R_OWN char *type_func_try_guess(Sdb *TDB, R_NONNULL char *name) {
-	if (strlen(name) < MIN_MATCH_LEN) {
+	if (strlen (name) < MIN_MATCH_LEN) {
 		return NULL;
 	}
-
-	const char *res = sdb_const_get(TDB, name, NULL);
-	if (is_function(res)) {
-		return strdup(name);
+	const char *res = sdb_const_get (TDB, name, NULL);
+	if (is_function (res)) {
+		return strdup (name);
 	}
-
 	return NULL;
 }
 

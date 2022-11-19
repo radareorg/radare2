@@ -7,11 +7,7 @@ extern "C" {
 
 #include "r_log.h"
 
-#define R_STATIC_ASSERT(x)\
-	switch (0) {\
-	case 0:\
-	case (x):;\
-	}
+#define R_STATIC_ASSERT(x) switch (0) { case 0: case (x):; }
 
 R_API void r_assert_log(RLogLevel level, const char *origin, const char *fmt, ...) R_PRINTF_CHECK(3, 4);
 

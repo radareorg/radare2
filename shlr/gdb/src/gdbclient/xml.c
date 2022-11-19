@@ -227,11 +227,7 @@ static int gdbr_parse_target_xml(libgdbr_t *g, char *xml_data, ut64 len) {
 			_write_flag_bits (flag_bits, tmpflag);
 		}
 		packed_size = 0;
-		if (tmpreg->size >= 64 &&
-			(strstr (tmpreg->type, "fpu") ||
-				strstr (tmpreg->type, "mmx") ||
-				strstr (tmpreg->type, "xmm") ||
-				strstr (tmpreg->type, "ymm"))) {
+		if (tmpreg->size >= 64 && (strstr (tmpreg->type, "fpu") || r_str_startswith (tmpreg->type, "vec"))) {
 			packed_size = tmpreg->size / 8;
 		}
 		profile_len += snprintf (profile + profile_len, 128,
@@ -762,7 +758,7 @@ static RList *_extract_regs(char *regstr, RList *flags, char *pc_alias) {
 				typegroup = "gpr";
 			// Includes avx.512
 			} else if ((tmp1 = strstr (regstr, "avx")) && tmp1 < feature_end) {
-				typegroup = "ymm";
+				typegroup = "vec256";
 			} else if ((tmp1 = strstr (regstr, "mpx")) && tmp1 < feature_end) {
 				typegroup = "seg";
 			// - arm
@@ -773,10 +769,10 @@ static RList *_extract_regs(char *regstr, RList *flags, char *pc_alias) {
 			} else if ((tmp1 = strstr (regstr, "vfp")) && tmp1 < feature_end) {
 				typegroup = "fpu";
 			} else if ((tmp1 = strstr (regstr, "iwmmxt")) && tmp1 < feature_end) {
-				typegroup = "xmm";
+				typegroup = "vec128";
 			// -- Aarch64
 			} else if ((tmp1 = strstr (regstr, "sve")) && tmp1 < feature_end) {
-				typegroup = "ymm";
+				typegroup = "vec256";
 			} else {
 				typegroup = "gpr";
 			}
@@ -820,11 +816,11 @@ static RList *_extract_regs(char *regstr, RList *flags, char *pc_alias) {
 			if (r_str_startswith (tmp1, "float")) {
 				regtype = "fpu";
 			} else if (r_str_startswith (tmp1, "mmx")) {
-				regtype = "mmx";
+				regtype = "vec64";
 			} else if (r_str_startswith (tmp1, "sse")) {
-				regtype = "xmm";
+				regtype = "vec128";
 			} else if (r_str_startswith (tmp1, "vector")) {
-				regtype = "ymm";
+				regtype = "vec256";
 			} else if (r_str_startswith (tmp1, "system")) {
 				regtype = "seg";
 			}

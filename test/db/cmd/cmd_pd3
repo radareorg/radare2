@@ -1,0 +1,21 @@
+NAME=Cd4middle
+FILE=bins/elf/before-after-main
+CMDS=<<EOF
+pd 2
+e asm.flags.right=1
+?e --
+pd 2
+EOF
+EXPECT=<<EOF
+            ;-- section..text:
+            ;-- .text:
+            ;-- entry0:
+            ;-- _start:
+            0x08048370      31ed           xor ebp, ebp                ; [13] -r-x section size 805 named .text
+            0x08048372      5e             pop esi
+--
+            0x08048370      31ed           xor ebp, ebp                ;-- entry0, section..text, sym..text, sym._start 
+            0x08048372      5e             pop esi
+EOF
+RUN
+

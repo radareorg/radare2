@@ -12,10 +12,10 @@ jobs:
     runs-on: ubuntu-20.04
     steps:
     - name: Checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
     - name: Installing with symlinks
       run: sys/wasi.sh
-    - uses: actions/upload-artifact@v2
+    - uses: actions/upload-artifact@v3
       with:
         name: linux-wasi
         path: radare2-*-wasi.zip
@@ -26,7 +26,7 @@ jobs:
     runs-on: ubuntu-20.04
     steps:
     - name: Checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
     - name: Installing the musl runtime
       run: |
         sudo apt-get --assume-yes update
@@ -39,7 +39,7 @@ jobs:
         make -C binr/blob
         tar cJvf r2-static.tar.xz r2-static
     - name: Pub
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v3
       with:
         name: linux-static
         path: r2-static.tar.xz
@@ -49,13 +49,13 @@ jobs:
     runs-on: ubuntu-18.04
     steps:
     - name: Checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
     - name: Packaging for Debian
       run: |
         export CFLAGS="-Werror"
         sys/debian.sh
     - name: Pub
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v3
       with:
         name: linux-acr-deb-64
         path: dist/debian/*/*.deb
@@ -64,7 +64,7 @@ jobs:
     runs-on: ubuntu-18.04
     steps:
     - name: Checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
     - name: Packaging for 32bit Debian
       run: |
         sudo apt --assume-yes update
@@ -74,7 +74,7 @@ jobs:
         export ARCH=i386
         sys/debian.sh
     - name: Pub
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v3
       with:
         name: linux-acr-deb-32
         path: dist/debian/*/*.deb
@@ -85,7 +85,7 @@ jobs:
 #    container: centos:8
 #    steps:
 #    - name: Checkout
-#      uses: actions/checkout@v2
+#      uses: actions/checkout@v3
 #    - name: Prepare Skeleton
 #      run: |
 #        mkdir -p SOURCES SPECS
@@ -94,7 +94,7 @@ jobs:
 #    - name: rpmbuild
 #      uses: robertdebock/rpmbuild-action@1.1.1
 #    - name: Pub
-#      uses: actions/upload-artifact@v2
+#      uses: actions/upload-artifact@v3
 #      with:
 #        name: linux-meson-rpm
 #        path: RPMS/*/*.rpm *.rpm dist/rpm/*.rpm
@@ -104,7 +104,7 @@ jobs:
 #    container: centos:8
 #    steps:
 #    - name: Checkout
-#      uses: actions/checkout@v2
+#      uses: actions/checkout@v3
 #    - name: Install tools for CentOS:8
 #      run: |
 #        yum install -y patch unzip git gcc make python38 python38-pip rpm-build rpmdevtools wget
@@ -124,7 +124,7 @@ jobs:
 #        cd -
 #        rpmbuild -ba radare2.spec
 #    - name: Pub
-#      uses: actions/upload-artifact@v2
+#      uses: actions/upload-artifact@v3
 #      with:
 #        name: centos-meson-rpm
 #        path: rpmbuild/RPMS/*/*.rpm
@@ -133,10 +133,10 @@ jobs:
 
   # macOS
   macos-acr-x64:
-    runs-on: macos-latest
+    runs-on: macos-11
     steps:
     - name: Checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
     - name: Packaging
       run: dist/macos/build-pkg.sh
 #    - name: Building Radare2
@@ -144,7 +144,7 @@ jobs:
 #        export CFLAGS="-O2" # -Werror -Wno-unused-result -Wno-unicode -Wno-unneeded-internal-declaration"
 #        sys/install.sh && make -C dist/macos
     - name: Pub
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v3
       with:
         path: dist/macos/*.pkg
         name: macos-acr-x64
@@ -153,37 +153,37 @@ jobs:
      runs-on: macos-12
      steps:
      - name: Checkout
-       uses: actions/checkout@v2
+       uses: actions/checkout@v3
      - name: Packaging
        env:
          ARCHFLAGS: '-arch arm64'
        run: export CC="gcc -arch arm64" ; dist/macos/build-pkg.sh
      - name: Pub
-       uses: actions/upload-artifact@v2
+       uses: actions/upload-artifact@v3
        with:
          path: dist/macos/*.pkg
          name: macos-acr-m1
   ios-cydia32:
     if: contains(github.ref, 'master') || contains(github.ref, 'ci-')
-    runs-on: macos-latest
+    runs-on: macos-11
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - name: Install pkg-config/ldid2 with Homebrew
       run: brew install pkg-config ldid
     - name: Create cydia32 package
       run: ./sys/ios-cydia32.sh
     - name: List sys/cydia
       run: ls -lahR ./dist/cydia
-    - uses: actions/upload-artifact@v2
+    - uses: actions/upload-artifact@v3
       with:
         name: ios-cydia32
         path: ./dist/cydia/radare2/radare2-arm32_*_iphoneos-arm.deb
 
   ios-cydia:
     if: contains(github.ref, 'master') || contains(github.ref, 'ci-')
-    runs-on: macos-latest
+    runs-on: macos-11
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - name: Install pkg-config/ldid2 with Homebrew
       run: brew install pkg-config ldid
     - name: Create cydia package
@@ -195,7 +195,7 @@ jobs:
         zip -r /tmp/r2ios-sdk.zip *
         popd
         mv /tmp/r2ios-sdk.zip .
-    - uses: actions/upload-artifact@v2
+    - uses: actions/upload-artifact@v3
       with:
         name: ios-cydia
         path: |
@@ -210,7 +210,7 @@ jobs:
     strategy:
       fail-fast: false
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - name: Install dependencies
       run: |
         sudo apt-get --assume-yes update
@@ -220,7 +220,7 @@ jobs:
         sys/android-ndk-install.sh
         sys/android-build.sh arm64
         ls -l
-    - uses: actions/upload-artifact@v2
+    - uses: actions/upload-artifact@v3
       with:
         name: android-acr-aarch64
         path: radare2*android*aarch64.tar.gz
@@ -231,7 +231,7 @@ jobs:
     strategy:
       fail-fast: false
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - name: Install dependencies
       run: |
         sudo apt-get --assume-yes update
@@ -241,7 +241,7 @@ jobs:
         sys/android-ndk-install.sh 16 arm
         sys/android-build.sh arm
         ls -l
-    - uses: actions/upload-artifact@v2
+    - uses: actions/upload-artifact@v3
       with:
         name: android-acr-arm
         path: radare2*android*arm.tar.gz
@@ -256,7 +256,7 @@ jobs:
       #  name: [x86_64, arm, aarch64]
         name: [x86_64]
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - name: Install dependencies
       run: |
         sudo apt-get --assume-yes update
@@ -271,7 +271,7 @@ jobs:
         cd /tmp
         rm -rf android-dir/include android-dir/lib
         tar --transform 's/android-dir/data\/data\/org.radareorg.radare2installer/g' -czvf radare2-android-${{ matrix.name }}.tar.gz android-dir/
-    - uses: actions/upload-artifact@v2
+    - uses: actions/upload-artifact@v3
       with:
         name: android-meson-${{ matrix.name }}
         path: /tmp/radare2-android-${{ matrix.name }}.tar.gz
@@ -283,23 +283,23 @@ jobs:
     runs-on: windows-2019
     steps:
     - name: Win configure Pagefile
-      uses: al-cheb/configure-pagefile-action@v1.2
+      uses: al-cheb/configure-pagefile-action@v1.3
       with:
           minimum-size: 16GB
           maximum-size: 16GB
           disk-root: "C:"
     - name: Checkout
-      uses: actions/checkout@v2
-    - uses: actions/setup-python@v2
-#      with:
-#        python-version: '3.7'
+      uses: actions/checkout@v3
+    - uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
         pip install git+https://github.com/frida/meson.git@f7f25b19a8d71cebf8e2934733eb041eb6862eee
         pip install ninja r2pipe wget
     - name: Extract r2 version
-      run: echo "##[set-output name=branch;]$( cd sys;python version.py )"
+      run: echo "{branch}={`sys/version.py -n`}" >> $GITHUB_OUTPUT
       id: r2v
     - name: Build with meson + ninja
       shell: pwsh
@@ -309,17 +309,17 @@ jobs:
         ninja -C build -j1 install
     - name: Create zip artifact
       run: 7z a radare2-${{ steps.r2v.outputs.branch }}-w32.zip $PWD\radare2-${{ steps.r2v.outputs.branch }}-w32
-#    - uses: actions/checkout@v2
+#    - uses: actions/checkout@v3
 #      with:
 #        repository: radareorg/radare2-win-installer
 #        path: ./radare2-win-installer
 #    - name: Extract r2 version
-#      run: echo "##[set-output name=branch;]$( python sys\\version.py )"
+#      run: echo "{branch}={`sys/version.py -n`}" >> $GITHUB_OUTPUT
 #      id: extract_version
 #    - name: Create installer
 #      shell: pwsh
 #      run: iscc radare2-win-installer\radare2.iss /DRadare2Location=..\radare2-install\* /DLicenseLocation=..\COPYING.LESSER /DIcoLocation=radare2.ico /DMyAppVersion=${{ steps.extract_version.outputs.branch }}
-    - uses: actions/upload-artifact@v2
+    - uses: actions/upload-artifact@v3
       with:
         name: w32-meson
         path: |
@@ -329,16 +329,16 @@ jobs:
     runs-on: windows-2022
     steps:
     - name: Win configure Pagefile
-      uses: al-cheb/configure-pagefile-action@v1.2
+      uses: al-cheb/configure-pagefile-action@v1.3
       with:
           minimum-size: 16GB
           maximum-size: 16GB
           disk-root: "C:"
     - name: Checkout
-      uses: actions/checkout@v2
-    - uses: actions/setup-python@v2
-#      with:
-#        python-version: '3.7'
+      uses: actions/checkout@v3
+    - uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
     - name: Preparing nmake
       uses: ilammy/msvc-dev-cmd@v1
       with:
@@ -363,7 +363,7 @@ jobs:
       run: |
         cd prefix\bin
         r2blob -v
-    - uses: actions/upload-artifact@v2
+    - uses: actions/upload-artifact@v3
       continue-on-error: true
       with:
         name: w64-static-2022
@@ -373,16 +373,16 @@ jobs:
     runs-on: windows-2019
     steps:
     - name: Win configure Pagefile
-      uses: al-cheb/configure-pagefile-action@v1.2
+      uses: al-cheb/configure-pagefile-action@v1.3
       with:
           minimum-size: 16GB
           maximum-size: 16GB
           disk-root: "C:"
     - name: Checkout
-      uses: actions/checkout@v2
-    - uses: actions/setup-python@v2
-#      with:
-#        python-version: '3.7'
+      uses: actions/checkout@v3
+    - uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
     - name: Preparing nmake
       uses: ilammy/msvc-dev-cmd@v1
       with:
@@ -393,7 +393,7 @@ jobs:
         pip install git+https://github.com/frida/meson.git@f7f25b19a8d71cebf8e2934733eb041eb6862eee
         pip install ninja r2pipe wget r2env
     - name: Extract r2 version
-      run: echo "##[set-output name=branch;]$( cd sys;python version.py )"
+      run: echo "{branch}={`sys/version.py -n`}" >> $GITHUB_OUTPUT
       id: r2v
     - name: Build with meson + ninja
       shell: cmd
@@ -413,7 +413,7 @@ jobs:
         cd prefix\bin
         dir
         7z a r2blob-${{ steps.r2v.outputs.branch }}-w64.zip r2blob.static.exe
-    - uses: actions/upload-artifact@v2
+    - uses: actions/upload-artifact@v3
       continue-on-error: true
       with:
         name: w64-static
@@ -423,16 +423,16 @@ jobs:
     runs-on: windows-2019
     steps:
     - name: Win configure Pagefile
-      uses: al-cheb/configure-pagefile-action@v1.2
+      uses: al-cheb/configure-pagefile-action@v1.3
       with:
           minimum-size: 16GB
           maximum-size: 16GB
           disk-root: "C:"
     - name: Checkout
-      uses: actions/checkout@v2
-    - uses: actions/setup-python@v2
-#      with:
-#        python-version: '3.7'
+      uses: actions/checkout@v3
+    - uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
     - name: Preparing nmake
       uses: ilammy/msvc-dev-cmd@v1
       with:
@@ -443,7 +443,7 @@ jobs:
         pip install git+https://github.com/frida/meson.git@f7f25b19a8d71cebf8e2934733eb041eb6862eee
         pip install ninja r2pipe wget
     - name: Extract r2 version
-      run: echo "##[set-output name=branch;]$( cd sys; python version.py )"
+      run: echo "{branch}={`sys/version.py -n`}" >> $GITHUB_OUTPUT
       id: r2v
     - name: Build with meson + ninja
       shell: pwsh
@@ -456,14 +456,14 @@ jobs:
         ninja -C build install
     - name: Create zip artifact
       run: 7z a radare2-${{ steps.r2v.outputs.branch }}-w64.zip $PWD\radare2-${{ steps.r2v.outputs.branch }}-w64
-#    - uses: actions/checkout@v2
+#    - uses: actions/checkout@v3
 #      with:
 #        repository: radareorg/radare2-win-installer
 #        path: ./radare2-win-installer
 #    - name: Create installer
 #      shell: pwsh
 #      run: iscc radare2-win-installer\radare2.iss /DRadare2Location=..\radare2-install\* /DLicenseLocation=..\COPYING.LESSER /DIcoLocation=radare2.ico /DMyAppVersion=${{ steps.extract_version.outputs.branch }}
-    - uses: actions/upload-artifact@v2
+    - uses: actions/upload-artifact@v3
       with:
         name: w64-meson
         path: |
@@ -475,7 +475,7 @@ jobs:
 #  freebsd:
 #    runs-on: macos-10.15
 #    steps:
-#    - uses: actions/checkout@v2
+#    - uses: actions/checkout@v3
 #    - name: Build r2 in FreeBSD
 #      id: build
 #      uses: vmactions/freebsd-vm@v0.1.6
@@ -498,7 +498,7 @@ jobs:
 #          rm -rf * .git*
 #          cp /tmp/radare2-freebsd.tgz .
 #          echo DATE: ; date
-#    - uses: actions/upload-artifact@v2
+#    - uses: actions/upload-artifact@v3
 #      with:
 #        name: freebsd
 #        path: radare2-freebsd.tgz
@@ -532,11 +532,18 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           fetch-depth: 0 # Download all git history and tags
       - name: Check if is a release
-        run: git describe --exact-match --tags ${{ github.sha }} | awk 'BEGIN{tag="-";r="no"}/^[0-9]+\.[0-9]+/{tag=$0;r="yes"};END{print "::set-output name=is::"r;print "::set-output name=tag::"tag}'
+        run: |
+          TAG="`git describe --exact-match --tags ${{ github.sha }} || true`"
+          if [ -n "$TAG" ]; then
+            echo "{tag}={$TAG}" >> $GITHUB_OUTPUT
+            echo "{is}={yes}" >> $GITHUB_OUTPUT
+          else
+            echo "{is}={no}" >> $GITHUB_OUTPUT
+          fi
         id: release
 
   release:
@@ -546,11 +553,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           fetch-depth: 0 # Download all git history and tags
       - name: Extract r2 version
-        run: echo "##[set-output name=branch;]$( cd sys;python version.py )"
+        run: echo "{branch}={`sys/version.py -n`}" >> $GITHUB_OUTPUT
         id: r2v
       - name: Prepare release notes
         run: ./sys/release-notes.sh | tee ./RELEASE_NOTES.md

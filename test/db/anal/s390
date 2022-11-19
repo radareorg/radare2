@@ -135,7 +135,7 @@ EXPECT=<<EOF
   {
     "opcode": "la r4, 8(r15)",
     "disasm": "la r4, 8(r15)",
-    "pseudo": "la r4, 8 (r15) ",
+    "pseudo": "la r4, 8 (r15)",
     "description": "Load Address",
     "mnemonic": "la",
     "mask": "ffffffff",

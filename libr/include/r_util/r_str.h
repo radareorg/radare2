@@ -54,8 +54,9 @@ typedef struct r_charset_t {
 
 #define R_STR_ISEMPTY(x) (!(x) || !*(x))
 #define R_STR_ISNOTEMPTY(x) ((x) && *(x))
-#define R_STR_DUP(x) ((x) ? strdup ((x)) : NULL)
-#define r_str_array(x,y) ((y>=0 && y<(sizeof (x)/sizeof (*x)))?x[y]:"")
+// XXX must deprecate
+#define R_STR_DUP(x) (((x) != NULL) ? strdup ((x)) : NULL)
+#define r_str_array(x,y) ((y >= 0 && y < (sizeof (x) / sizeof (*(x))))?(x)[(y)]: "")
 R_API RCharset *r_charset_new(void);
 R_API void r_charset_free(RCharset *charset);
 R_API RCharsetRune *r_charset_rune_new(const ut8 *ch, const ut8 *hx);
@@ -128,6 +129,7 @@ R_API int r_str_arg_unescape(char *arg);
 R_API char **r_str_argv(const char *str, int *_argc);
 R_API void r_str_argv_free(char **argv);
 R_API char *r_str_new(const char *str);
+R_API void r_str_fixspaces(char *str);
 R_API int r_snprintf(char *string, int len, const char *fmt, ...) R_PRINTF_CHECK(3, 4);
 R_API bool r_str_is_ascii(const char *str);
 R_API char *r_str_nextword(char *s, char ch);
@@ -146,6 +148,7 @@ R_API bool r_str_is_true(const char *s);
 R_API bool r_str_is_false(const char *s);
 R_API bool r_str_is_bool(const char *val);
 R_API const char *r_str_ansi_chrn(const char *str, size_t n);
+R_API size_t r_str_ansi_strip(char *str);
 R_API size_t r_str_ansi_len(const char *str);
 R_API size_t r_str_ansi_nlen(const char *str, size_t len);
 R_API int r_str_ansi_trim(char *str, int str_len, int n);
@@ -154,11 +157,13 @@ R_API char *r_str_ansi_crop(const char *str, unsigned int x, unsigned int y, uns
 R_API int r_str_word_count(const char *string);
 R_API size_t r_str_char_count(const char *string, char ch);
 R_API char *r_str_word_get0set(char *stra, int stralen, int idx, const char *newstr, int *newlen);
+R_API char *r_str_insert(char *src, int pos, const char *str);
 R_API int r_str_word_set0(char *str);
 R_API int r_str_word_set0_stack(char *str);
 R_API const char *r_str_word_get0(const char *str, int idx);
 R_API char *r_str_word_get_first(const char *string);
 R_API void r_str_trim(char *str);
+R_API void r_str_trim_emptylines(char *str);
 R_API int r_str_ntrim(char *str, int n);
 R_API char *r_str_wrap(const char *str, int w);
 R_API char *r_str_trim_dup(const char *str);
@@ -186,7 +191,6 @@ R_API const char *r_str_get(const char *str);
 R_API const char *r_str_get_fail(const char *str, const char *failstr);
 R_API const char *r_str_getf(const char *str);
 R_API char *r_str_ndup(const char *ptr, int len);
-R_API char *r_str_dup(char *ptr, const char *string);
 R_API int r_str_inject(char *begin, char *end, char *str, int maxlen);
 R_API int r_str_delta(char *p, char a, char b);
 R_API void r_str_filter(char *str, int len);
@@ -230,8 +234,6 @@ R_API char *r_str_utf16_encode(const char *s, int len);
 R_API char *r_str_escape_utf8_for_json(const char *s, int len);
 R_API char *r_str_escape_utf8_for_json_strip(const char *buf, int buf_size);
 R_API char *r_str_encoded_json(const char *buf, int buf_size, int encoding);
-R_API R_MUSTUSE char *r_str_home(const char *str); // R2_580 : rename to r_file_home() ?
-// R2_580: implement r_file_homef() for format string purposes
 R_API R_MUSTUSE char *r_str_r2_prefix(const char *str);
 R_API size_t r_str_nlen(const char *s, int n);
 R_API size_t r_str_nlen_w(const char *s, int n);

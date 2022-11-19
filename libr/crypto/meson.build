@@ -41,7 +41,7 @@ r_crypto_sources += files(
 r_crypto_deps = [r_util_dep]
 
 if use_sys_xxhash
-  r_crypto_deps += files(sys_xxhash)
+  r_crypto_deps += sys_xxhash
 else
   r_crypto_sources += files('hash/xxhash.c')
 endif
@@ -51,8 +51,6 @@ if use_sys_openssl
 else
   r_crypto_sources += files('hash/md4.c', 'hash/md5.c', 'hash/sha1.c', 'hash/sha2.c')
 endif
-
-r_crypto_sources += r_crypto_sources
 
 r_crypto = library('r_crypto', r_crypto_sources,
   include_directories: [platform_inc],

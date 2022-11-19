@@ -1,14 +1,15 @@
+/* radare - LGPL - Copyright 2007-2020 - pancake, ret2libc */
+
 #include <r_core.h>
-#include <r_util/r_graph_drawable.h>
+#include <r_util.h>
 
 R_API void r_graph_free_node_info(void *ptr) {
-	if (!ptr) {
-		return;
+	if (ptr) {
+		RGraphNodeInfo *info = ptr;
+		free (info->body);
+		free (info->title);
+		free (info);
 	}
-	RGraphNodeInfo *info = ptr;
-	free (info->body);
-	free (info->title);
-	free (info);
 }
 
 R_API RGraphNodeInfo *r_graph_create_node_info(const char *title, const char *body, ut64 offset) {

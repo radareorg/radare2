@@ -370,8 +370,8 @@ static void GH(print_arena_stats)(RCore *core, GHT m_arena, MallocState *main_ar
 		r_cons_newline ();
 	}
 
-	PRINT_GA ("  }\n");
-	PRINT_GA ("  binmap = {");
+	PRINT_GA ("}\n");
+	PRINT_GA (" binmap = { ");
 
 	for (i = 0; i < BINMAPSIZE; i++) {
 		if (i) {
@@ -445,17 +445,14 @@ static bool GH(r_resolve_main_arena)(RCore *core, GHT *m_arena) {
 	}
 
 	if (libc_addr_sta == GHT_MAX || libc_addr_end == GHT_MAX) {
-		if (r_config_get_b (core->config, "cfg.debug")) {
-			R_LOG_WARN ("Can't find glibc mapped in memory (see dm)");
-		} else {
-			R_LOG_WARN ("Can't find arena mapped in memory (see om)");
-		}
+		const char *cmd = r_config_get_b (core->config, "cfg.debug")? "dm": "om";
+		R_LOG_WARN ("Can't find arena mapped in memory (see %s)", cmd);
 		return false;
 	}
 
 	GH(get_brks) (core, &brk_start, &brk_end);
 	if (brk_start == GHT_MAX || brk_end == GHT_MAX) {
-		eprintf ("No Heap section\n");
+		R_LOG_ERROR ("No heap section found");
 		return false;
 	}
 
@@ -699,7 +696,7 @@ static int GH(print_double_linked_list_bin)(RCore *core, MallocState *main_arena
 
 	GH(get_brks) (core, &brk_start, &brk_end);
 	if (brk_start == GHT_MAX || brk_end == GHT_MAX) {
-		eprintf ("No Heap section\n");
+		R_LOG_ERROR ("No heap section found");
 		return -1;
 	}
 
@@ -799,7 +796,7 @@ static int GH(print_single_linked_list_bin)(RCore *core, MallocState *main_arena
 
 	GH(get_brks) (core, &brk_start, &brk_end);
 	if (brk_start == GHT_MAX || brk_end == GHT_MAX) {
-		eprintf ("No Heap section\n");
+		R_LOG_ERROR ("No heap section found");
 		free (cnk);
 		return 0;
 	}
@@ -998,7 +995,7 @@ static void GH (print_tcache_instance)(RCore *core, GHT m_arena, MallocState *ma
 	GHT fc_offset = GH (tcache_chunk_size) (core, brk_start);
 	initial_brk = brk_start + fc_offset;
 	if (brk_start == GHT_MAX || brk_end == GHT_MAX || initial_brk == GHT_MAX) {
-		eprintf ("No heap section\n");
+		R_LOG_ERROR ("No heap section found");
 		return;
 	}
 
@@ -1089,7 +1086,7 @@ static void GH(print_heap_segment)(RCore *core, MallocState *main_arena,
 	}
 
 	if (brk_start == GHT_MAX || brk_end == GHT_MAX || initial_brk == GHT_MAX) {
-		eprintf ("No Heap section\n");
+		R_LOG_ERROR ("No heap section");
 		return;
 	}
 

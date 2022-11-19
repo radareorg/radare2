@@ -3,7 +3,7 @@
 #include <r_cons.h>
 #include <r_util/r_print.h>
 #include <r_util/r_json.h>
-#include <sdb.h>
+#include <sdb/sdb.h>
 
 #define I(x) r_cons_singleton ()->x
 
@@ -603,7 +603,7 @@ R_API void r_cons_grepbuf(void) {
 		return;
 	}
 
-	if ((!len || !buf || !*buf) && (grep->json || grep->less)) {
+	if ((!len || R_STR_ISEMPTY (buf)) && (grep->json || grep->less)) {
 		grep->json = false;
 		grep->hud = false;
 		grep->less = 0;
@@ -649,6 +649,7 @@ R_API void r_cons_grepbuf(void) {
 		len = cons->context->buffer_len;
 		r_json_free (node);
 		free (a);
+		free (s);
 		goto continuation;
 	}
 	if (grep->json) {

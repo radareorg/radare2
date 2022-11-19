@@ -65,13 +65,13 @@ R_API bool r_parse_use(RParse *p, const char *name);
 
 /* action */
 R_API bool r_parse_parse(RParse *p, const char *data, char *str);
+R_API char *r_parse_instruction(RParse *p, const char *data);
 R_API bool r_parse_assemble(RParse *p, char *data, char *str); // XXX deprecate, unused and probably useless, related to write-hack
 R_API bool r_parse_filter(RParse *p, ut64 addr, RFlag *f, RAnalHint *hint, char *data, char *str, int len, bool big_endian);
 R_API bool r_parse_subvar(RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *data, char *str, int len);
 R_API char *r_parse_immtrim(char *opstr);
 
 /* c */
-// why we have anal scoped things in rparse
 R_API char *r_parse_c_string(RAnal *anal, const char *code, char **error_msg);
 R_API char *r_parse_c_file(RAnal *anal, const char *path, const char *dir, char **error_msg);
 R_API void r_parse_c_reset(RParse *p);
@@ -94,6 +94,8 @@ extern RParsePlugin r_parse_plugin_x86_pseudo;
 extern RParsePlugin r_parse_plugin_z80_pseudo;
 extern RParsePlugin r_parse_plugin_tms320_pseudo;
 extern RParsePlugin r_parse_plugin_v850_pseudo;
+extern RParsePlugin r_parse_plugin_bpf_pseudo;
+extern RParsePlugin r_parse_plugin_evm_pseudo;
 #endif
 
 #ifdef __cplusplus

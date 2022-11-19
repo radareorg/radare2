@@ -52,7 +52,14 @@ R_API RVector *r_vector_new(size_t elem_size, RVectorFree free, void *free_user)
 	return vec;
 }
 
-static void vector_free_elems(RVector *vec) {
+R_API void r_vector_fini(RVector *vec) {
+	r_return_if_fail (vec);
+	r_vector_clear (vec);
+	vec->free = NULL;
+	vec->free_user = NULL;
+}
+
+static inline void vector_free_elems(RVector *vec) {
 	if (vec->free) {
 		while (vec->len > 0) {
 			vec->free (r_vector_index_ptr (vec, --vec->len), vec->free_user);
@@ -60,13 +67,6 @@ static void vector_free_elems(RVector *vec) {
 	} else {
 		vec->len = 0;
 	}
-}
-
-R_API void r_vector_fini(RVector *vec) {
-	r_return_if_fail (vec);
-	r_vector_clear (vec);
-	vec->free = NULL;
-	vec->free_user = NULL;
 }
 
 R_API void r_vector_clear(RVector *vec) {
@@ -158,6 +158,9 @@ R_API void *r_vector_insert(RVector *vec, size_t index, void *x) {
 
 R_API void *r_vector_insert_range(RVector *vec, size_t index, void *first, size_t count) {
 	r_return_val_if_fail (vec && index <= vec->len, NULL);
+	if (count < 1) {
+		return NULL;
+	}
 	if (vec->len + count > vec->capacity) {
 		RESIZE_OR_RETURN_NULL (R_MAX (NEXT_VECTOR_CAPACITY, vec->len + count));
 	}
@@ -220,12 +223,12 @@ R_API void *r_vector_shrink(RVector *vec) {
 }
 
 R_API void *r_vector_flush(RVector *vec) {
-       r_return_val_if_fail (vec, NULL);
-       r_vector_shrink (vec);
-       void *r = vec->a;
-       vec->a = NULL;
-       vec->capacity = vec->len = 0;
-       return r;
+	r_return_val_if_fail (vec, NULL);
+	r_vector_shrink (vec);
+	void *r = vec->a;
+	vec->a = NULL;
+	vec->capacity = vec->len = 0;
+	return r;
 }
 
 // pvector
@@ -305,14 +308,13 @@ R_API void r_pvector_remove_data(RPVector *vec, void *x) {
 	if (!el) {
 		return;
 	}
-
 	size_t index = el - (void **)vec->v.a;
 	r_vector_remove_at (&vec->v, index, NULL);
 }
 
 R_API void *r_pvector_pop(RPVector *vec) {
 	r_return_val_if_fail (vec, NULL);
-	if (r_pvector_len (vec) < 1) {
+	if (r_pvector_length (vec) < 1) {
 		return NULL;
 	}
 	void *r = r_pvector_at (vec, vec->v.len - 1);
@@ -322,7 +324,7 @@ R_API void *r_pvector_pop(RPVector *vec) {
 
 R_API void *r_pvector_pop_front(RPVector *vec) {
 	r_return_val_if_fail (vec, NULL);
-	if (r_pvector_len (vec) < 1) {
+	if (r_pvector_length (vec) < 1) {
 		return NULL;
 	}
 	void *r = r_pvector_at (vec, 0);

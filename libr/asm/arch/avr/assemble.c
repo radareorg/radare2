@@ -11,8 +11,8 @@ typedef struct {
 static int search_instruction(RAnal *a, AvrToken *tok, int args);
 // char instr[3][MAX_TOKEN_SIZE], int args);
 /* the next few functions and structures uses for detecting
-   AVR special regs, like X+, -Y, Z+3 in st(d), ld(d) and
-   (e)lpm instructions */
+ * AVR special regs, like X+, -Y, Z+3 in st(d), ld(d) and
+ * (e)lpm instructions */
 struct _specialregs {
 	char reg[4];
 	int operandType;
@@ -22,7 +22,7 @@ typedef struct _specialregs specialregs;
 #define REGS_TABLE 9
 
 /* gets the number from string
-   duplicate from asm_x86_nz.c -- may be create a generic function? */
+ * duplicate from asm_x86_nz.c -- may be create a generic function? */
 static int getnum(const char *s) {
 	if (!s || !*s) {
 		return 0;
@@ -35,9 +35,9 @@ static int getnum(const char *s) {
 
 // radare tolower instruction in rasm, so we use 'x' instead of 'X' etc.
 specialregs RegsTable[REGS_TABLE] = {
-	{"-x", OPERAND_XP}, {"x", OPERAND_X}, {"x+", OPERAND_XP},
-	{"-y", OPERAND_YP}, {"y", OPERAND_Y}, {"y+", OPERAND_YP},
-	{"-z", OPERAND_ZP}, {"z", OPERAND_Z}, {"z+", OPERAND_ZP},
+	{ "-x", OPERAND_XP}, { "x", OPERAND_X}, { "x+", OPERAND_XP},
+	{ "-y", OPERAND_YP}, { "y", OPERAND_Y}, { "y+", OPERAND_YP},
+	{ "-z", OPERAND_ZP}, { "z", OPERAND_Z}, { "z+", OPERAND_ZP},
 };
 
 
@@ -294,8 +294,8 @@ uint16_t packDataByMask(uint16_t data, uint16_t mask) {
 }
 
 /* this function searches from instruction in instructionSet table
-   (see avr_disasm.h for more info)
-   returns index of the instruction in the table */
+ * (see avr_disasm.h for more info)
+ * returns index of the instruction in the table */
 static int search_instruction(RAnal *a, AvrToken *tok, int args) {
 	int i, op1 = 0, op2 = 0;
 

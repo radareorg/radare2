@@ -1,6 +1,6 @@
 /* sdb - MIT - Copyright 2015-2016 - pancake */
 
-#include "sdb.h"
+#include "sdb/sdb.h"
 #include <ctype.h>
 
 static inline int haveSuffix(const char *glob, int glob_len, const char *sfx) {

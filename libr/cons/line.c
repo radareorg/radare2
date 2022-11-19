@@ -17,7 +17,7 @@ R_API RLine *r_line_new(void) {
 	I.contents = NULL;
 	I.enable_vi_mode = false;
 	I.clipboard = NULL;
-	I.kill_ring = r_list_newf (NULL);
+	I.kill_ring = r_list_newf (free);
 	I.kill_ring_ptr = -1;
 #if __WINDOWS__
 	I.vtmode = r_cons_is_vtcompat ();
@@ -71,7 +71,7 @@ R_API void r_line_completion_push(RLineCompletion *completion, const char *str) 
 	if (completion->quit) {
 		return;
 	}
-	if (r_pvector_len (&completion->args) < completion->args_limit) {
+	if (r_pvector_length (&completion->args) < completion->args_limit) {
 		char *s = strdup (str);
 		if (s) {
 			r_pvector_push (&completion->args, (void *)s);

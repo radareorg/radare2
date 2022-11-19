@@ -2,6 +2,11 @@
 
 cd "$(dirname $0)"/..
 
+# (git grep -e '_[a-z][a-z](' libr | grep -v '{'| grep c:) && exit 1
+# TODO  : also check for '{0x'
+(git grep '\t{"' libr | grep -v strcmp | grep -v format | grep -v '{",' | grep -v esil | grep c:) && exit 1
+(git grep '"},' libr | grep -v strcmp | grep -v format | grep -v '"},' | grep -v '"}{' | grep -v esil | grep -v anal/p | grep c:) && exit 1
+(git grep '^\ \ \ ' libr | grep -v '/arch/' | grep -v dotnet | grep -v mangl | grep c:) && exit 1
 (git grep 'TODO' libr | grep R_LOG_INFO) && exit 1
 ( git grep r_config_set libr binr | grep -e '"fal' -e '"tru') && exit 1
 # find calls without (
@@ -26,7 +31,6 @@ cd "$(dirname $0)"/..
 
 (git grep eprintf libr| grep -i error | grep -v '/native/' | grep -v spp | grep -v cons) && exit 1
 
-# (git grep strbuf_appendf libr | grep -v '%') && exit 1
 (git grep appendf libr | grep '"' | grep -v '%') && exit 1
 (git grep strbuf_setf libr | grep '"' | grep -v '%') && exit 1
 (git grep 'strbuf_append (' libr | grep '"' | grep '%') && exit 1
@@ -41,6 +45,7 @@ cd "$(dirname $0)"/..
 ( git grep '){$' libr| grep if) && exit 1
 (git grep -e 'sizeof(' -e 'for(' -e 'while(' -e 'if(' libr | grep -v :static | grep -v :R_API | grep c:) && exit 1
 ( git grep 'else$' libr | grep -v '#' | grep '}' | grep 'c:') && exit 1
+( git grep 'return(' libr | grep -v R_API | grep -v static | grep -v define | grep c:) && exit 1
 # ( git grep if' (' libr| grep ')$'| grep -v '//'|grep -v '#' | grep c:) && exit 1
 # ( git grep strcmp | grep '== 0') && exit 1
 # ( git grep strncmp | grep '== 0') && exit 1 ## must use r_str_startswith
@@ -73,7 +78,7 @@ cd "$(dirname $0)"/..
 # git grep -e "`printf '\x09static'`" libr | grep -v R_TH_LOCAL|grep -v const | grep -v '(' && exit 1
 # (git grep 'XXX' libr) # && exit 1 # use r_str_startswith()
 # (git grep 'strncmp' libr) # && exit 1 # use r_str_startswith()
-# (git grep 'eprintf' libr | grep 'Warning:') # && exit 1
+(git grep 'eprintf' libr | grep 'Warning:') # && exit 1
 # (git grep 'eprintf' | grep 'Usage:' | grep -v sys/) # && exit 1
 
 exit 0

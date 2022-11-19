@@ -174,18 +174,17 @@ void file_mdump(RMagic *ms, struct r_magic *m) {
 /*VARARGS*/
 void file_magwarn(struct r_magic_set *ms, const char *f, ...) {
 	va_list va;
-
-	/* cuz we use stdout for most, stderr here */
-	(void) fflush(stdout);
-
-	if (ms->file)
-		(void) eprintf ("%s, %lu: ", ms->file,
-		    (unsigned long)ms->line);
-	(void) eprintf ("Warning: ");
-	va_start(va, f);
-	(void) vfprintf (stderr, f, va);
-	va_end(va);
-	(void) fputc('\n', stderr);
+	RStrBuf *sb = r_strbuf_new ("");
+	if (R_STR_ISNOTEMPTY (ms->file)) {
+		r_strbuf_appendf (sb, "%s, %lu: ",
+			ms->file, (unsigned long)ms->line);
+	}
+	va_start (va, f);
+	r_strbuf_vappendf (sb, f, va);
+	va_end (va);
+	char *msg = r_strbuf_drain (sb);
+	R_LOG_WARN ("%s", msg);
+	free (msg);
 }
 
 const char *file_fmttime(ut32 v, int local, char *pp) {

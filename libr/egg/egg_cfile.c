@@ -18,7 +18,7 @@ struct cEnv_t {
 
 static char* r_egg_cfile_getCompiler(void) {
 	size_t i;
-	const char *compilers[] = {"llvm-gcc", "clang", "gcc"};
+	const char *compilers[] = { "llvm-gcc", "clang", "gcc" };
 	char *output = r_sys_getenv ("CC");
 
 	if (output) {
@@ -223,7 +223,7 @@ static bool r_egg_cfile_parseCompiled(const char *file) {
 	buffer = r_str_replace (buffer, "rodata", "text", false);
 	buffer = r_str_replace (buffer, "get_pc_thunk.bx", "__getesp__", true);
 
-	const char *words[] = {".cstring", "size", "___main", "section", "__alloca", "zero", "cfi"};
+	const char *words[] = { ".cstring", "size", "___main", "section", "__alloca", "zero", "cfi" };
 	size_t i;
 	for (i = 0; i < 7; i++) {
 		r_str_stripLine (buffer, words[i]);
@@ -325,7 +325,7 @@ R_API char* r_egg_cfile_parser(const char *file, const char *arch, const char *o
 	}
 
 	size_t i;
-	const char *extArray[] = {"bin", "tmp", "s", "o"};
+	const char *extArray[] = { "bin", "tmp", "s", "o" };
 	for (i = 0; i < 4; i++) {
 		free (fileExt);
 		if (!(fileExt = r_str_newf ("%s.%s", file, extArray[i]))) {

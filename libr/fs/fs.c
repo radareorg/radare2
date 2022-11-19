@@ -530,19 +530,19 @@ static int fs_parhook(void* disk, void* ptr, void* closure) {
 
 static RFSPartitionType partitions[] = {
 	/* LGPL code */
-	{"dos", &fs_part_dos, fs_parhook},
+	{ "dos", &fs_part_dos, fs_parhook},
 #if USE_GRUB
 	/* WARNING GPL code */
 #if !__EMSCRIPTEN__
 // wtf for some reason is not available on emscripten
-	{"msdos", &grub_msdos_partition_map, grub_parhook},
+	{ "msdos", &grub_msdos_partition_map, grub_parhook},
 #endif
-	{"apple", &grub_apple_partition_map, grub_parhook},
-	{"sun", &grub_sun_partition_map, grub_parhook},
-	{"sunpc", &grub_sun_pc_partition_map, grub_parhook},
-	{"amiga", &grub_amiga_partition_map, grub_parhook},
-	{"bsdlabel", &grub_bsdlabel_partition_map, grub_parhook},
-	{"gpt", &grub_gpt_partition_map, grub_parhook},
+	{ "apple", &grub_apple_partition_map, grub_parhook},
+	{ "sun", &grub_sun_partition_map, grub_parhook},
+	{ "sunpc", &grub_sun_pc_partition_map, grub_parhook},
+	{ "amiga", &grub_amiga_partition_map, grub_parhook},
+	{ "bsdlabel", &grub_bsdlabel_partition_map, grub_parhook},
+	{ "gpt", &grub_gpt_partition_map, grub_parhook},
 #endif
 	// XXX: In BURG all bsd partition map are in bsdlabel
 	//{ "openbsdlabel", &grub_openbsd_partition_map },

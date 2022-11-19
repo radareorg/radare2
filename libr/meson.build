@@ -5,7 +5,13 @@ no_user_plugins = get_option('plugins') == ''
 esil_plugins = [ 'dummy' ]
 asm_plugins = [ 'null' ]
 anal_plugins = [ 'null' ]
-arch_plugins = [ 'null' ]
+arch_plugins = [ 'null',
+  'sh',
+  'jdh8',
+  'i4004',
+  'rsp',
+  'amd29k',
+]
 bin_plugins = [ 'any' ]
 bin_ldr_plugins = [ 'ldr_linux' ]
 bin_xtr_plugins = [ 'xtr_sep64' ]
@@ -22,7 +28,6 @@ parse_plugins = [ 'att2intel' ]
 if get_option('nogpl')
   user_plugins += ['nogrub']
 endif
-
 
 # This must be splitted in meson.builds for each module
 # meson split is results in 1 empty element when splitting an empty string :facepalm:
@@ -69,7 +74,8 @@ if not no_user_plugins
     parse_plugins += [ 'arm_pseudo' ]
   endif
   if user_plugins.contains('v850')
-    anal_plugins += [ 'v850', 'v810' ]
+    anal_plugins += [ 'v850' ]
+    arch_plugins += [ 'v810' ]
     parse_plugins += [ 'v850_pseudo' ]
   endif
   if user_plugins.contains('wasm')
@@ -134,7 +140,6 @@ anal_plugins += [
   'mcs96',
   '8051',
   'alpha',
-  'amd29k',
   # 'arc',
   'arm_cs',
   'avr',
@@ -143,14 +148,12 @@ anal_plugins += [
   'bpf_cs',
   'chip8',
   'cr16',
-  'bpf',
   'cris',
   'dalvik',
   'ebc',
   'evm_cs',
   'gb',
   'h8300',
-  'i4004',
   'i8080',
   'java',
   'kvx',
@@ -160,7 +163,6 @@ anal_plugins += [
   'm68k_cs',
   'm68k_gnu',
   'm680x_cs',
-  'malbolge',
   'mcore',
   'mips_cs',
   'msp430',
@@ -171,14 +173,11 @@ anal_plugins += [
   'propeller',
   'riscv',
   'riscv_cs',
-  'rsp',
-  'sh',
   'snes',
   'sparc_cs',
   's390_cs',
   'tms320',
   'tricore',
-  'v810',
   'v850',
   'vax',
   'wasm',
@@ -412,6 +411,8 @@ endif
 
 parse_plugins += [
   '6502_pseudo',
+  'bpf_pseudo',
+  'evm_pseudo',
   'arm_pseudo',
   'avr_pseudo',
   'chip8_pseudo',
@@ -432,9 +433,11 @@ endif
 
 include_files = [
   'include/r2naked.h',
+  'include/rvc.h',
   'include/r_agraph.h',
   'include/r_anal.h',
   'include/r_arch.h',
+  'include/r_esil.h',
   'include/r_asm.h',
   'include/r_bin.h',
   'include/r_bin_dwarf.h',
@@ -552,6 +555,17 @@ r_crypto_files = [
   'include/r_crypto/r_sm4.h'
 ]
 install_headers(r_crypto_files, install_dir: join_paths(r2_incdir, 'r_crypto'))
+
+r_anal_files = [
+  'include/r_anal/op.h',
+  'include/r_anal/hint.h',
+]
+install_headers(r_anal_files, install_dir: join_paths(r2_incdir, 'r_anal'))
+
+r_esil_files = [
+  'include/r_esil.h',
+]
+install_headers(r_esil_files, install_dir: join_paths(r2_incdir, 'r_esil'))
 
 sflib_common_files = [
   join_paths('include/sflib/common/sftypes.h'),

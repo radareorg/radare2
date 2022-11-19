@@ -77,7 +77,7 @@ static inline bool r_vector_empty(const RVector *vec) {
 R_API void r_vector_clear(RVector *vec);
 
 // returns the length of the vector
-static inline size_t r_vector_len(const RVector *vec) {
+static inline size_t r_vector_length(const RVector *vec) {
 	r_return_val_if_fail (vec, 0);
 	return vec->len;
 }
@@ -85,7 +85,14 @@ static inline size_t r_vector_len(const RVector *vec) {
 // returns a pointer to the offset inside the array where the element of the index lies.
 static inline void *r_vector_index_ptr(RVector *vec, size_t index) {
 	r_return_val_if_fail (vec && index < vec->capacity, NULL);
-	return (char *)vec->a + vec->elem_size * index;
+	return (char *)vec->a + (vec->elem_size * index);
+}
+
+static inline void *r_vector_at(RVector *vec, int index) {
+	if (vec && index >= 0 && (size_t)index < vec->capacity) {
+		return (char *)vec->a + (vec->elem_size * index);
+	}
+	return NULL;
 }
 
 // helper function to assign an element of size vec->elem_size from elem to p.
@@ -198,8 +205,8 @@ R_API void r_pvector_clear(RPVector *vec);
 // free the vector and call vec->v.free on every element.
 R_API void r_pvector_free(RPVector *vec);
 
-// TODO: rename to r_pvector_length () for consistency
-static inline size_t r_pvector_len(const RPVector *vec) {
+// TODO: rename to r_pvector_lengthgth () for consistency
+static inline size_t r_pvector_length(const RPVector *vec) {
 	r_return_val_if_fail (vec, 0);
 	return vec->v.len;
 }
@@ -215,7 +222,7 @@ static inline void r_pvector_set(RPVector *vec, size_t index, void *e) {
 }
 
 static inline bool r_pvector_empty(RPVector *vec) {
-	return r_pvector_len (vec) == 0;
+	return r_pvector_length (vec) == 0;
 }
 
 // returns a pointer to the offset inside the array where the element of the index lies.

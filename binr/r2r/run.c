@@ -212,7 +212,7 @@ R_API R2RSubprocess *r2r_subprocess_start(
 			NULL, NULL, TRUE, CREATE_UNICODE_ENVIRONMENT, env,
 			NULL, &start_info, &proc_info)) {
 		free (env);
-		eprintf ("CreateProcess failed: %#x\n", (int)GetLastError ());
+		R_LOG_ERROR ("CreateProcess failed: %#x", (int)GetLastError ());
 		goto error;
 	}
 	free (env);
@@ -415,7 +415,9 @@ static RThread *sigchld_thread;
 
 static void handle_sigchld(int sig) {
 	ut8 b = 1;
-	(void)write (sigchld_pipe[1], &b, 1);
+	if (write (sigchld_pipe[1], &b, 1) != 1) {
+		return;
+	}
 }
 
 static RThreadFunctionRet sigchld_th(RThread *th) {
@@ -502,7 +504,9 @@ R_API bool r2r_subprocess_init(void) {
 R_API void r2r_subprocess_fini(void) {
 	r_sys_signal (SIGCHLD, SIG_IGN);
 	ut8 b = 0;
-	(void)write (sigchld_pipe[1], &b, 1);
+	if (write (sigchld_pipe[1], &b, 1) != 1) {
+		// nothing relevant here
+	}
 	close (sigchld_pipe [1]);
 	r_th_wait (sigchld_thread);
 	close (sigchld_pipe [0]);
@@ -743,7 +747,9 @@ R_API void r2r_subprocess_kill(R2RSubprocess *proc) {
 }
 
 R_API void r2r_subprocess_stdin_write(R2RSubprocess *proc, const ut8 *buf, size_t buf_size) {
-	(void)write (proc->stdin_fd, buf, buf_size);
+	if (write (proc->stdin_fd, buf, buf_size) != buf_size) {
+		// another ignored result
+	}
 	close (proc->stdin_fd);
 	proc->stdin_fd = -1;
 }
@@ -880,6 +886,7 @@ static R2RProcessOutput *run_r2_test(R2RRunConfig *config, ut64 timeout_ms, cons
 	RPVector args;
 	r_pvector_init (&args, NULL);
 	r_pvector_push (&args, "-escr.utf8=0");
+	r_pvector_push (&args, "-ebin.types=false");
 	r_pvector_push (&args, "-escr.color=0");
 	r_pvector_push (&args, "-escr.interactive=0");
 	r_pvector_push (&args, "-N");
@@ -918,7 +925,7 @@ static R2RProcessOutput *run_r2_test(R2RRunConfig *config, ut64 timeout_ms, cons
 #else
 	size_t env_size = load_plugins ? 0 : 1;
 #endif
-	R2RProcessOutput *out = runner (config->r2_cmd, args.v.a, r_pvector_len (&args), envvars, envvals, env_size, timeout_ms, user);
+	R2RProcessOutput *out = runner (config->r2_cmd, args.v.a, r_pvector_length (&args), envvars, envvals, env_size, timeout_ms, user);
 	r_pvector_clear (&args);
 #if __WINDOWS__
 	free (wcmds);
@@ -989,11 +996,11 @@ R_API bool r2r_check_cmd_test(R2RProcessOutput *out, R2RCmdTest *test) {
 #define JQ_CMD "jq"
 
 R_API bool r2r_check_jq_available(void) {
-	const char *args[] = {"."};
+	const char *args[] = { "." };
 	const char *invalid_json = "this is not json lol";
 	R2RSubprocess *proc = r2r_subprocess_start (JQ_CMD, args, 1, NULL, NULL, 0);
 	if (!proc) {
-		eprintf ("Cnnot start subprocess\n");
+		R_LOG_ERROR ("Cannot start subprocess");
 		return false;
 	}
 	r2r_subprocess_stdin_write (proc, (const ut8 *)invalid_json, strlen (invalid_json));
@@ -1032,7 +1039,7 @@ R_API bool r2r_check_json_test(R2RProcessOutput *out, R2RJsonTest *test) {
 	if (!out || out->ret != 0 || !out->out || !out->err || out->timeout) {
 		return false;
 	}
-	const char *args[] = {"."};
+	const char *args[] = { "." };
 	R2RSubprocess *proc = r2r_subprocess_start (JQ_CMD, args, 1, NULL, NULL, 0);
 	r2r_subprocess_stdin_write (proc, (const ut8 *)out->out, strlen (out->out));
 	r2r_subprocess_wait (proc, UT64_MAX);
@@ -1082,7 +1089,7 @@ R_API R2RAsmTestOutput *r2r_run_asm_test(R2RRunConfig *config, R2RAsmTest *test)
 	r_strbuf_init (&cmd_buf);
 	if (test->mode & R2R_ASM_TEST_MODE_ASSEMBLE) {
 		r_pvector_push (&args, test->disasm);
-		R2RSubprocess *proc = r2r_subprocess_start (config->rasm2_cmd, args.v.a, r_pvector_len (&args), NULL, NULL, 0);
+		R2RSubprocess *proc = r2r_subprocess_start (config->rasm2_cmd, args.v.a, r_pvector_length (&args), NULL, NULL, 0);
 		if (!r2r_subprocess_wait (proc, config->timeout_ms)) {
 			r2r_subprocess_kill (proc);
 			out->as_timeout = true;
@@ -1120,7 +1127,7 @@ rip:
 		}
 		r_pvector_push (&args, "-d");
 		r_pvector_push (&args, hex);
-		R2RSubprocess *proc = r2r_subprocess_start (config->rasm2_cmd, args.v.a, r_pvector_len (&args), NULL, NULL, 0);
+		R2RSubprocess *proc = r2r_subprocess_start (config->rasm2_cmd, args.v.a, r_pvector_length (&args), NULL, NULL, 0);
 		if (!r2r_subprocess_wait (proc, config->timeout_ms)) {
 			r2r_subprocess_kill (proc);
 			out->disas_timeout = true;

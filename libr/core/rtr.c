@@ -731,12 +731,12 @@ R_API void r_core_rtr_add(RCore *core, const char *_input) {
 			const char *name;
 			int protocol;
 		} uris[7] = {
-			{"tcp", RTR_PROTOCOL_TCP},
-			{"udp", RTR_PROTOCOL_UDP},
-			{"rap", RTR_PROTOCOL_RAP},
-			{"r2p", RTR_PROTOCOL_RAP},
-			{"http", RTR_PROTOCOL_HTTP},
-			{"unix", RTR_PROTOCOL_UNIX},
+			{ "tcp", RTR_PROTOCOL_TCP},
+			{ "udp", RTR_PROTOCOL_UDP},
+			{ "rap", RTR_PROTOCOL_RAP},
+			{ "r2p", RTR_PROTOCOL_RAP},
+			{ "http", RTR_PROTOCOL_HTTP},
+			{ "unix", RTR_PROTOCOL_UNIX},
 			{NULL, 0}
 		};
 		char *s = r_str_ndup (input, pikaboo - input);
@@ -1000,8 +1000,10 @@ R_API void r_core_rtr_cmd(RCore *core, const char *input) {
 				RT->input = strdup (input + 1);
 				//RapThread rt = { core, strdup (input + 1) };
 				rapthread = r_th_new (r_core_rtr_rap_thread, RT, false);
+#if 0
 				int cpuaff = (int)r_config_get_i (core->config, "cfg.cpuaffinity");
 				r_th_setaffinity (rapthread, cpuaff);
+#endif
 				r_th_setname (rapthread, "rapthread");
 				r_th_start (rapthread, false);
 				R_LOG_INFO ("Background rap server started");
@@ -1148,7 +1150,7 @@ static void rtr_cmds_client_close(uv_tcp_t *client, bool remove) {
 	rtr_cmds_context *context = loop->data;
 	if (remove) {
 		size_t i;
-		for (i = 0; i < r_pvector_len (&context->clients); i++) {
+		for (i = 0; i < r_pvector_length (&context->clients); i++) {
 			if (r_pvector_at (&context->clients, i) == client) {
 				r_pvector_remove_at (&context->clients, i);
 				break;
@@ -1326,7 +1328,7 @@ beach:
 #else
 
 R_API int r_core_rtr_cmds(RCore *core, const char *port) {
-	unsigned char buf[4097];
+	ut8 buf[4097];
 	RSocket *ch = NULL;
 	int i, ret;
 	char *str;

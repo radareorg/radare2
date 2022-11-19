@@ -1205,7 +1205,7 @@ static int cmd_cmp(void *data, const char *input) {
 					// nothing to do here
 				}
 			} else if (input[1] == '~' && input[2] == '/') {
-				char *homepath = r_str_home (input + 3);
+				char *homepath = r_file_home (input + 3);
 				if (homepath) {
 					if (*homepath) {
 						free (oldcwd);

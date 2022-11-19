@@ -551,7 +551,7 @@ static int h8300_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 		return ret;
 	}
 
-	if (mask & R_ANAL_OP_MASK_DISASM) {
+	if (mask & R_ARCH_OP_MASK_DISASM) {
 		op->mnemonic = r_str_newf ("%s %s", cmd.instr, cmd.operands);
 	}
 
@@ -675,7 +675,7 @@ static int h8300_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 		op->type = R_ANAL_OP_TYPE_UNK;
 		break;
 	};
-	if (mask & R_ANAL_OP_MASK_ESIL) {
+	if (mask & R_ARCH_OP_MASK_ESIL) {
 		analop_esil(anal, op, addr, buf);
 	}
 	return ret;

@@ -237,7 +237,7 @@ static int r_core_rtr_http_run(RCore *core, int launch, int browse, const char *
 		if (allow && *allow) {
 			bool accepted = false;
 			const char *allows_host;
-			char *p, *peer = r_socket_to_string (rs->s);
+			char *p, *peer = r_socket_tostring (rs->s);
 			char *allows = strdup (allow);
 			//eprintf ("Firewall (%s)\n", allows);
 			int i, count = r_str_split (allows, ',');
@@ -271,7 +271,7 @@ static int r_core_rtr_http_run(RCore *core, int launch, int browse, const char *
 			r_socket_http_response (rs, 401, "", 0, NULL);
 		}
 		if (r_config_get_b (core->config, "http.verbose")) {
-			char *peer = r_socket_to_string (rs->s);
+			char *peer = r_socket_tostring (rs->s);
 			http_logf (core, "[HTTP] %s %s\n", peer, rs->path);
 			free (peer);
 		}

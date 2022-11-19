@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include "rangstr.h"
+#include "sdb/rangstr.h"
 
 /* public sdb api */
 char *api_json_get (const char *s, const char *p) {

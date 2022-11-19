@@ -80,7 +80,7 @@ static void op_fillval(RAnalOp *op, csh handle, cs_insn *insn) {
 	case R_ANAL_OP_TYPE_LOAD:
 		if (INSOP (0).type == SPARC_OP_MEM) {
 			ZERO_FILL (reg);
-			val = r_vector_push (op->srcs, NULL);
+			val = r_vector_push (&op->srcs, NULL);
 			val->reg = &reg;
 			parse_reg_name (val->reg, handle, insn, 0);
 			val->delta = INSOP(0).mem.disp;
@@ -89,7 +89,7 @@ static void op_fillval(RAnalOp *op, csh handle, cs_insn *insn) {
 	case R_ANAL_OP_TYPE_STORE:
 		if (INSOP (1).type == SPARC_OP_MEM) {
 			ZERO_FILL (reg);
-			val = r_vector_push (op->dsts, NULL);
+			val = r_vector_push (&op->dsts, NULL);
 			val->reg = &reg;
 			parse_reg_name (val->reg, handle, insn, 1);
 			val->delta = INSOP(1).mem.disp;
@@ -134,10 +134,10 @@ performed in big-endian byte order.
 	if (n < 1) {
 		op->type = R_ANAL_OP_TYPE_ILL;
 	} else {
-		if (mask & R_ANAL_OP_MASK_OPEX) {
+		if (mask & R_ARCH_OP_MASK_OPEX) {
 			opex (&op->opex, handle, insn);
 		}
-		if (mask & R_ANAL_OP_MASK_DISASM) {
+		if (mask & R_ARCH_OP_MASK_DISASM) {
 			op->mnemonic = r_str_newf ("%s%s%s",
 					insn->mnemonic, insn->op_str[0]? " ": "",
 					insn->op_str);
@@ -325,7 +325,7 @@ performed in big-endian byte order.
 			op->type = R_ANAL_OP_TYPE_DIV;
 			break;
 		}
-		if (mask & R_ANAL_OP_MASK_VAL) {
+		if (mask & R_ARCH_OP_MASK_VAL) {
 			op_fillval (op, handle, insn);
 		}
 		cs_free (insn, n);

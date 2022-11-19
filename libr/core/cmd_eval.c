@@ -54,13 +54,13 @@ static const char *help_msg_ec[] = {
 	"Vars:", "", "",
 	"colors:", "", "rgb:000, red, green, blue, #ff0000, ...",
 	"e scr.color", "=0", "use more colors (0: no color 1: ansi 16, 2: 256, 3: 16M)",
-	"$DATADIR/radare2/cons", "", R_JOIN_2_PATHS ("~", R2_HOME_THEMES) " ./",
+	"$DATADIR/radare2/cons", "", "~/.local/share/radare2/cons", // XXX should be themes
 	NULL
 };
 
 static const char *help_msg_eco[] = {
 	"Usage: eco[jc] [theme]", "", "load theme (cf. Path and dir.prefix)",
-	"eco", "", "list available themes",
+	"eco", "", "list available themes (See e dir.themes)",
 	"eco.", "", "display current theme name",
 	"eco*", "", "show current theme script",
 	"eco!", "", "edit and reload current theme",
@@ -68,7 +68,7 @@ static const char *help_msg_eco[] = {
 	"ecoq", "", "list available themes without showing the current one",
 	"ecoj", "", "list available themes in JSON",
 	"Path:", "", "",
-	"$DATADIR/radare2/cons", "", R_JOIN_2_PATHS ("~", R2_HOME_THEMES) " ./",
+	"$DATADIR/radare2/cons", "", "~/.local/share/radare2/cons", // XXX should be themes
 	NULL
 };
 
@@ -128,11 +128,13 @@ static bool nextpal_item(RCore *core, PJ *pj, int mode, const char *file) {
 		break;
 	case 'n': // next
 		if (core->theme && !strcmp (core->theme, "default")) {
-			core->theme = r_str_dup (core->theme, fn);
+			free (core->theme);
+			core->theme = strdup (fn);
 			getNext = false;
 		}
 		if (getNext) {
-			core->theme = r_str_dup (core->theme, fn);
+			free (core->theme);
+			core->theme = strdup (fn);
 			getNext = false;
 			return false;
 		} else if (core->theme) {
@@ -140,7 +142,8 @@ static bool nextpal_item(RCore *core, PJ *pj, int mode, const char *file) {
 				getNext = true;
 			}
 		} else {
-			core->theme = r_str_dup (core->theme, fn);
+			free (core->theme);
+			core->theme = strdup (fn);
 			return false;
 		}
 		break;
@@ -151,48 +154,70 @@ static bool nextpal_item(RCore *core, PJ *pj, int mode, const char *file) {
 static bool cmd_load_theme(RCore *core, const char *_arg) {
 	bool failed = false;
 	char *path;
-	if (!_arg || !*_arg) {
+	if (R_STR_ISEMPTY (_arg)) {
 		return false;
 	}
-	if (!r_str_cmp (_arg, "default", strlen (_arg))) {
-		core->theme = r_str_dup (core->theme, _arg);
+	if (!strcmp (_arg, "default")) {
+		if (_arg != core->theme) {
+			free (core->theme);
+			core->theme = strdup (_arg);
+		}
 		r_cons_pal_init (core->cons->context);
 		return true;
 	}
 	char *arg = strdup (_arg);
 
-	char *tmp = r_str_newf (R_JOIN_2_PATHS (R2_HOME_THEMES, "%s"), arg);
-	char *home = tmp ? r_str_home (tmp) : NULL;
-	free (tmp);
+	// system themes directory
+	char *home = r_xdg_datadir ("cons");
 
-	tmp = r_str_newf (R_JOIN_2_PATHS (R2_THEMES, "%s"), arg);
+	// system themes directory
+	char *tmp = r_str_newf (R_JOIN_2_PATHS (R2_THEMES, "%s"), arg);
 	path = tmp ? r_str_r2_prefix (tmp) : NULL;
 	free (tmp);
 
 	if (load_theme (core, home)) {
-		core->theme = r_str_dup (core->theme, arg);
+		free (core->theme);
+		core->theme = strdup (arg);
 		free (core->themepath);
 		core->themepath = home;
 		home = NULL;
 	} else {
 		if (load_theme (core, path)) {
-			core->theme = r_str_dup (core->theme, arg);
+			free (core->theme);
+			core->theme = strdup (arg);
 			free (core->themepath);
 			core->themepath = path;
 			path = NULL;
 		} else {
 			if (load_theme (core, arg)) {
-				core->theme = r_str_dup (core->theme, arg);
+				free (core->theme);
+				core->theme = strdup (arg);
 				free (core->themepath);
 				core->themepath = arg;
 				arg = NULL;
 			} else {
-				char *absfile = r_file_abspath (arg);
-				R_LOG_ERROR ("eco: cannot open colorscheme profile (%s)", absfile);
-				free (absfile);
 				failed = true;
 			}
 		}
+	}
+	if (failed) {
+#if WITH_STATIC_THEMES
+		const RConsTheme *theme = r_cons_themes ();
+		while (theme && theme->name) {
+			if (!strcmp (theme->name, arg)) {
+				r_core_cmd0 (core, theme->script);
+				free (arg);
+				failed = false;
+				break;
+			}
+			theme++;
+		}
+		if (failed) {
+			R_LOG_ERROR ("eco: cannot open colorscheme profile (%s)", arg);
+		}
+#else
+		R_LOG_ERROR ("eco: cannot open colorscheme profile (%s)", arg);
+#endif
 	}
 	free (home);
 	free (path);
@@ -221,7 +246,7 @@ R_API RList *r_core_list_themes(RCore *core) {
 	getNext = false;
 	char *tmp = strdup ("default");
 	r_list_append (list, tmp);
-	char *path = r_str_home (R2_HOME_THEMES R_SYS_DIR);
+	char *path = r_xdg_datadir ("cons");
 	if (path) {
 		list_themes_in_path (list, path);
 		R_FREE (path);
@@ -251,7 +276,7 @@ static void nextpal(RCore *core, int mode) {
 		}
 		pj_a (pj);
 	}
-	char *home = r_str_home (R2_HOME_THEMES R_SYS_DIR);
+	char *home = r_xdg_datadir ("cons");
 
 	getNext = false;
 	// spaguetti!
@@ -374,6 +399,18 @@ R_API void r_core_echo(RCore *core, const char *input) {
 	}
 }
 
+static bool is_static_theme(const char *th) {
+	const RConsTheme *theme = r_cons_themes ();
+	while (theme && theme->name) {
+		const char *tn = theme->name;
+		if (!strcmp (th, tn)) {
+			return true;
+		}
+		theme++;
+	}
+	return false;
+}
+
 static int cmd_eval(void *data, const char *input) {
 	RCore *core = (RCore *)data;
 	switch (input[0]) {
@@ -486,7 +523,23 @@ static int cmd_eval(void *data, const char *input) {
 				RList *themes_list = r_core_list_themes (core);
 				RListIter *th_iter;
 				const char *th;
+				const RConsTheme *themes = r_cons_themes ();
+				const RConsTheme *theme = themes;
+				while (theme && theme->name) {
+					const char *th = theme->name;
+					if (input[2] == 'q') {
+						r_cons_printf ("%s\n", th);
+					} else if (core->theme && !strcmp (core->theme, th)) {
+						r_cons_printf ("- %s\n", th);
+					} else {
+						r_cons_printf ("  %s\n", th);
+					}
+					theme++;
+				}
 				r_list_foreach (themes_list, th_iter, th) {
+					if (is_static_theme (th)) {
+						continue;
+					}
 					if (input[2] == 'q') {
 						r_cons_printf ("%s\n", th);
 					} else if (core->theme && !strcmp (core->theme, th)) {
@@ -652,12 +705,12 @@ static int cmd_eval(void *data, const char *input) {
 			eprintf ("  ed    : ${cfg.editor} ~/.radare2rc\n");
 			eprintf ("  ed-   : rm ~/.radare2rc\n");
 		} else if (input[1] == '-') {
-			char *file = r_str_home (".radare2rc");
+			char *file = r_file_home (".radare2rc");
 			r_cons_printf ("rm %s\n", file);
 			// r_file_rm (file);
 			free (file);
 		} else {
-			char *file = r_str_home (".radare2rc");
+			char *file = r_file_home (".radare2rc");
 			if (r_cons_is_interactive ()) {
 				r_file_touch (file);
 				char * res = r_cons_editor (file, NULL);

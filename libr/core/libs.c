@@ -37,8 +37,8 @@ CB (debug, dbg)
 CB (bp, dbg->bp)
 CB (lang, lang)
 CB (anal, anal)
-#define r_anal_esil_add r_anal_esil_plugin_add
-CB (anal_esil, anal->esil)
+#define r_esil_add r_esil_plugin_add
+CB (esil, anal->esil)
 CB (asm, rasm)
 CB (parse, parser)
 CB (bin, bin)
@@ -80,7 +80,7 @@ static void __loadSystemPlugins(RCore *core, int where, const char *path) {
 		free (p);
 	}
 	if (where & R_CORE_LOADLIBS_HOME) {
-		char *hpd = r_str_home (R2_HOME_PLUGINS);
+		char *hpd = r_xdg_datadir ("plugins");
 		if (hpd) {
 			r_lib_opendir (core->lib, hpd);
 			free (hpd);
@@ -104,7 +104,7 @@ R_API void r_core_loadlibs_init(RCore *core) {
 	DF (BP, "debugger breakpoint plugins", bp);
 	DF (LANG, "language plugins", lang);
 	DF (ANAL, "analysis plugins", anal);
-	DF (ESIL, "esil emulation plugins", anal_esil);
+	DF (ESIL, "esil emulation plugins", esil);
 	DF (ASM, "(dis)assembler plugins", asm);
 	DF (PARSE, "parsing plugins", parse);
 	DF (BIN, "bin plugins", bin);
@@ -143,7 +143,7 @@ R_API bool r_core_loadlibs(RCore *core, int where, const char *path) {
 		return false;
 	}
 	// load script plugins
-	char *homeplugindir = r_str_home (R2_HOME_PLUGINS);
+	char *homeplugindir = r_xdg_datadir ("plugins");
 	RList *files = r_sys_dir (homeplugindir);
 	RListIter *iter;
 	char *file;

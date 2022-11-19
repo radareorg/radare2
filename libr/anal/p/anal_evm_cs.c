@@ -51,7 +51,6 @@ static int evm_add_push_to_db(RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 	ut64 next_cmd_addr = 0;
 	ut64 dst_addr = 0;
 	size_t i, push_size;
-	char key[16] = { 0 }, value[16] = { 0 };
 
 	push_size = op->id - EVM_INS_PUSH1;
 	next_cmd_addr = addr + push_size + 2;
@@ -62,25 +61,15 @@ static int evm_add_push_to_db(RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 	}
 
 	if (evm_ai) {
-		snprintf (key, sizeof (key) - 1, "%08" PFMT64x, (ut64)next_cmd_addr);
-		snprintf (value, sizeof (value) - 1, "%08" PFMT64x, (ut64)dst_addr);
-		sdb_set (evm_ai->pushs_db, key, value, 0);
+		sdb_num_nset (evm_ai->pushs_db, next_cmd_addr, dst_addr, 0);
 	}
 
 	return 0;
 }
 
 static ut64 evm_get_jmp_addr(ut64 addr) {
-	char key[16] = { 0 };
-	const char *value;
 	ut64 ret = -1;
-
-	snprintf (key, sizeof (key) - 1, "%08x", (unsigned)addr);
-	value = sdb_const_get (evm_ai->pushs_db, key, 0);
-
-	if (value) {
-		sscanf (value, "%08" PFMT64x, &ret);
-	}
+	ret = sdb_num_nget (evm_ai->pushs_db, addr, 0);
 	return ret;
 }
 
@@ -104,12 +93,12 @@ static int analop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, 
 	n = cs_disasm (hndl, (ut8 *)buf, len, addr, 1, &insn);
 	opsize = 1;
 	if (n < 1 || insn->size < 1) {
-		if (mask & R_ANAL_OP_MASK_DISASM) {
+		if (mask & R_ARCH_OP_MASK_DISASM) {
 			op->mnemonic = strdup ("invalid");
 		}
 		goto beach;
 	}
-	if (mask & R_ANAL_OP_MASK_DISASM) {
+	if (mask & R_ARCH_OP_MASK_DISASM) {
 		if (!r_str_cmp (insn->op_str, "0x", 2)) {
 			str = r_str_newf ("%s%s%s", insn->mnemonic, insn->op_str[0]? " ": "", insn->op_str);
 		} else {
@@ -227,6 +216,9 @@ static int analop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, 
 		break;
 	case EVM_INS_PUSH1:
 		esilprintf (op, "0x%s,sp,=[1],32,sp,+=", insn->op_str);
+		op->type = R_ANAL_OP_TYPE_PUSH;
+		evm_add_push_to_db (op, addr, buf, len);
+		break;
 	case EVM_INS_PUSH2:
 	case EVM_INS_PUSH3:
 	case EVM_INS_PUSH4:
@@ -308,15 +300,15 @@ static int analop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, 
 beach:
 	set_opdir (op);
 #if 0
-	if (insn && mask & R_ANAL_OP_MASK_OPEX) {
+	if (insn && mask & R_ARCH_OP_MASK_OPEX) {
 		opex (&op->opex, hndl, insn);
 	}
-	if (mask & R_ANAL_OP_MASK_ESIL) {
+	if (mask & R_ARCH_OP_MASK_ESIL) {
 		if (analop_esil (anal, op, addr, buf, len, &hndl, insn) != 0) {
 			r_strbuf_fini (&op->esil);
 		}
 	}
-	if (mask & R_ANAL_OP_MASK_VAL) {
+	if (mask & R_ARCH_OP_MASK_VAL) {
 		op_fillval (anal, op, &hndl, insn);
 	}
 #endif
@@ -352,7 +344,10 @@ static int evm_anal_init(void *user) {
 }
 
 static int evm_anal_fini(void *user) {
-	R_FREE (evm_ai);
+	if (evm_ai) {
+		sdb_free (evm_ai->pushs_db);
+		R_FREE (evm_ai);
+	}
 	return true;
 }
 

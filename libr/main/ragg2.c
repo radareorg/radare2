@@ -57,7 +57,7 @@ static void __load_plugins(REggState *es) {
 	}
 
 	// load plugins from the home directory
-	char *homeplugindir = r_str_home (R2_HOME_PLUGINS);
+	char *homeplugindir = r_xdg_datadir ("plugins");
 	r_lib_opendir (es->l, homeplugindir);
 	free (homeplugindir);
 

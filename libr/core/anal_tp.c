@@ -6,14 +6,14 @@
 #include <r_core.h>
 #define LOOP_MAX 10
 
-static bool anal_emul_init(RCore *core, RConfigHold *hc, RDebugTrace **dt, RAnalEsilTrace **et) {
+static bool anal_emul_init(RCore *core, RConfigHold *hc, RDebugTrace **dt, REsilTrace **et) {
 	if (!core->anal->esil) {
 		return false;
 	}
 	*dt = core->dbg->trace;
 	*et = core->anal->esil->trace;
 	core->dbg->trace = r_debug_trace_new ();
-	core->anal->esil->trace = r_anal_esil_trace_new (core->anal->esil);
+	core->anal->esil->trace = r_esil_trace_new (core->anal->esil);
 	r_config_hold (hc, "esil.romem", "dbg.trace", "esil.nonull", "dbg.follow", NULL);
 	r_config_set_b (core->config, "esil.romem", true);
 	r_config_set_b (core->config, "dbg.trace", true);
@@ -29,11 +29,11 @@ static bool anal_emul_init(RCore *core, RConfigHold *hc, RDebugTrace **dt, RAnal
 	return (core->dbg->trace && core->anal->esil->trace);
 }
 
-static void anal_emul_restore(RCore *core, RConfigHold *hc, RDebugTrace *dt, RAnalEsilTrace *et) {
+static void anal_emul_restore(RCore *core, RConfigHold *hc, RDebugTrace *dt, REsilTrace *et) {
 	r_config_hold_restore (hc);
 	r_config_hold_free (hc);
 	r_debug_trace_free (core->dbg->trace);
-	r_anal_esil_trace_free (core->anal->esil->trace);
+	r_esil_trace_free (core->anal->esil->trace);
 	core->anal->esil->trace = et;
 	core->dbg->trace = dt;
 }
@@ -148,7 +148,7 @@ static void __var_retype(RAnal *anal, RAnalVar *var, const char *vname, const ch
 
 static void get_src_regname(RCore *core, ut64 addr, char *regname, int size) {
 	RAnal *anal = core->anal;
-	RAnalOp *op = r_core_anal_op (core, addr, R_ANAL_OP_MASK_VAL | R_ANAL_OP_MASK_ESIL);
+	RAnalOp *op = r_core_anal_op (core, addr, R_ARCH_OP_MASK_VAL | R_ARCH_OP_MASK_ESIL);
 	if (!op || r_strbuf_is_empty (&op->esil)) {
 		r_anal_op_free (op);
 		return;
@@ -357,12 +357,12 @@ static void type_match(RCore *core, char *fcn_name, ut64 addr, ut64 baddr, const
 			if (instr_addr < baddr) {
 				break;
 			}
-			RAnalOp *op = r_core_anal_op (core, instr_addr, R_ANAL_OP_MASK_BASIC | R_ANAL_OP_MASK_VAL);
+			RAnalOp *op = r_core_anal_op (core, instr_addr, R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_VAL);
 			if (!op) {
 				r_anal_op_free (op);
 				break;
 			}
-			RAnalOp *next_op = r_core_anal_op (core, instr_addr + op->size, R_ANAL_OP_MASK_BASIC | R_ANAL_OP_MASK_VAL);
+			RAnalOp *next_op = r_core_anal_op (core, instr_addr + op->size, R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_VAL);
 			if (!next_op || (j != idx && (next_op->type == R_ANAL_OP_TYPE_CALL
 							|| next_op->type == R_ANAL_OP_TYPE_JMP))) {
 				r_anal_op_free (op);
@@ -464,7 +464,7 @@ static bool fast_step(RCore *core, RAnalOp *aop) {
 #if SLOW_STEP
 	return r_core_esil_step (core, UT64_MAX, NULL, NULL, false);
 #else
-	RAnalEsil *esil = core->anal->esil;
+	REsil *esil = core->anal->esil;
 	const char *e = R_STRBUF_SAFEGET (&aop->esil);
 	if (R_STR_ISEMPTY (e)) {
 		return false;
@@ -490,11 +490,11 @@ static bool fast_step(RCore *core, RAnalOp *aop) {
 	if (aop->size < 1 || ret < 1) {
 		return false;
 	}
-	// r_anal_esil_parse (esil, e);
+	// r_esil_parse (esil, e);
 #if 1
 	RReg *reg = core->dbg->reg;
 	core->dbg->reg = core->anal->reg;
-	r_anal_esil_set_pc (esil, aop->addr);
+	r_esil_set_pc (esil, aop->addr);
 	r_debug_trace_op (core->dbg, aop); // calls esil.parse() internally
 	core->dbg->reg = reg;
 #else
@@ -503,13 +503,13 @@ static bool fast_step(RCore *core, RAnalOp *aop) {
 	// select next instruction
 	const char *pcname = r_reg_get_name (core->anal->reg, R_REG_NAME_PC);
 	r_reg_setv (core->anal->reg, pcname, aop->addr + aop->size);
-	r_anal_esil_stack_free (esil);
+	r_esil_stack_free (esil);
 	return true;
 #endif
 }
 
 R_API void r_core_anal_type_match(RCore *core, RAnalFunction *fcn) {
-	const int op_tions = R_ANAL_OP_MASK_BASIC | R_ANAL_OP_MASK_VAL | R_ANAL_OP_MASK_ESIL | R_ANAL_OP_MASK_HINT;
+	const int op_tions = R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_VAL | R_ARCH_OP_MASK_ESIL | R_ARCH_OP_MASK_HINT;
 	RAnalBlock *bb;
 	RListIter *it;
 	RAnalOp aop = {0};
@@ -534,7 +534,7 @@ R_API void r_core_anal_type_match(RCore *core, RAnalFunction *fcn) {
 		return;
 	}
 	RDebugTrace *dt = NULL;
-	RAnalEsilTrace *et = NULL;
+	REsilTrace *et = NULL;
 	if (!anal_emul_init (core, hc, &dt, &et) || !fcn) {
 		anal_emul_restore (core, hc, dt, et);
 		return;
@@ -551,7 +551,7 @@ R_API void r_core_anal_type_match(RCore *core, RAnalFunction *fcn) {
 	dtrace->ht = ht_pp_new_size (fcn->ninstr, opt.dupvalue, opt.freefn, opt.calcsizeV);
 	dtrace->ht->opt = opt;
 
-	const bool be = core->rasm->config->big_endian;
+	const bool be = R_ARCH_CONFIG_IS_BIG_ENDIAN (core->rasm->config);
 	char *fcn_name = NULL;
 	char *ret_type = NULL;
 	bool str_flag = false;
@@ -647,7 +647,7 @@ repeat:
 			Sdb *trace = anal->esil->trace->db;
 			cur_idx = sdb_num_get (trace, "idx", 0);
 			RAnalVar *var = r_anal_get_used_function_var (anal, aop.addr);
-			RAnalOp *next_op = r_core_anal_op (core, addr + ret, R_ANAL_OP_MASK_BASIC); // | _VAL ?
+			RAnalOp *next_op = r_core_anal_op (core, addr + ret, R_ARCH_OP_MASK_BASIC); // | _VAL ?
 			ut32 type = aop.type & R_ANAL_OP_TYPE_MASK;
 			if (aop.type == R_ANAL_OP_TYPE_CALL || aop.type & R_ANAL_OP_TYPE_UCALL) {
 				char *full_name = NULL;
@@ -696,7 +696,7 @@ repeat:
 					if (!strcmp (fcn_name, "__stack_chk_fail")) {
 						r_strf_var (query, 32, "%d.addr", cur_idx - 1);
 						ut64 mov_addr = sdb_num_get (trace, query, 0);
-						RAnalOp *mop = r_core_anal_op (core, mov_addr, R_ANAL_OP_MASK_VAL | R_ANAL_OP_MASK_BASIC);
+						RAnalOp *mop = r_core_anal_op (core, mov_addr, R_ARCH_OP_MASK_VAL | R_ARCH_OP_MASK_BASIC);
 						if (mop) {
 							RAnalVar *mopvar = r_anal_get_used_function_var (anal, mop->addr);
 							ut32 vt = mop->type & R_ANAL_OP_TYPE_MASK;
@@ -783,14 +783,17 @@ repeat:
 
 					// Check exit status of jmp branch
 					for (i = 0; i < MAX_INSTR ; i++) {
-						jmp_op = r_core_anal_op (core, jmp_addr, R_ANAL_OP_MASK_BASIC);
+						jmp_op = r_core_anal_op (core, jmp_addr, R_ARCH_OP_MASK_BASIC);
 						if (!jmp_op) {
+							r_anal_op_free (jmp_op);
+							r_anal_op_fini (&aop);
 							break;
 						}
 						if ((jmp_op->type == R_ANAL_OP_TYPE_RET && r_anal_block_contains (jmpbb, jmp_addr))
 								|| jmp_op->type == R_ANAL_OP_TYPE_CJMP) {
 							jmp = true;
 							r_anal_op_free (jmp_op);
+							r_anal_op_fini (&aop);
 							break;
 						}
 						jmp_addr += jmp_op->size;
@@ -866,6 +869,7 @@ repeat:
 out_function:
 	R_FREE (ret_reg);
 	R_FREE (ret_type);
+	r_anal_op_fini (&aop);
 	r_cons_break_pop();
 	free (bblist);
 	anal_emul_restore (core, hc, dt, et);

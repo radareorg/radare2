@@ -2,7 +2,7 @@
 
 #include <r_core.h>
 
-static const char *help_msg_at[] = {
+static RCoreHelpMessage help_msg_at = {
 	"Usage: [.][#]<cmd>[*] [`cmd`] [@ addr] [~grep] [|syscmd] [>[>]file]", "", "",
 	"0", "", "alias for 's 0'",
 	"0x", "addr", "alias for 's 0x..'",
@@ -58,7 +58,7 @@ static const char *help_msg_at[] = {
 	NULL
 };
 
-static const char *help_msg_at_at[] = {
+static RCoreHelpMessage help_msg_at_at = {
 	"@@", "", " # foreach iterator command:",
 	"x", " @@ sym.*", "run 'x' over all flags matching 'sym.' in current flagspace",
 	"x", " @@.file", "run 'x' over the offsets specified in the file (one offset per line)",
@@ -79,7 +79,7 @@ static const char *help_msg_at_at[] = {
 	NULL
 };
 
-static const char *help_msg_at_at_at[] = {
+static RCoreHelpMessage help_msg_at_at_at = {
 	"@@@", "", " # foreach offset+size iterator command:",
 	"x", " @@@=", "[addr] [size] ([addr] [size] ...)",
 	"x", " @@@C:cmd", "comments matching",
@@ -217,7 +217,19 @@ static const char *help_msg_root[] = {
 	NULL
 };
 
-static const char *help_msg_question_e[] = {
+static RCoreHelpMessage help_msg_question_i = {
+	"Usage: ?e[=bdgnpst] arg", "print/echo things", "",
+	"?i", " ([prompt])", "inquery the user and save that text into the yank clipboard (y)",
+	"?ie", " [msg]", "same as ?i, but prints the output, useful for oneliners",
+	"?iy", " [question]", "dialog yes/no with default Yes",
+	"?if", " [math-expr]", "evaluates math expression returns true if result is zero",
+	"?in", " [question]", "dialog yes/no with default No",
+	"?im", " [msg]", "like ?ie, but using RCons.message (clear-screen + press-any-key)",
+	"?ik", "", "press any key",
+	"?ip", " ([path])", "interactive hud mode to find files in given path",
+	NULL
+};
+static RCoreHelpMessage help_msg_question_e = {
 	"Usage: ?e[=bdgnpst] arg", "print/echo things", "",
 	"?e", "", "echo message with newline",
 	"?e=", " 32", "progress bar at 32 percentage",
@@ -233,7 +245,7 @@ static const char *help_msg_question_e[] = {
 	NULL
 };
 
-static const char *help_msg_question[] = {
+static RCoreHelpMessage help_msg_question = {
 	"Usage: ?[?[?]] expression", "", "",
 	"?!", " [cmd]", "run cmd if $? == 0",
 	"?", " eip-0x804800", "show all representation result for this math expr",
@@ -1304,6 +1316,9 @@ static int cmd_help(void *data, const char *input) {
 			R_LOG_ERROR ("Not running in interactive mode");
 		} else {
 			switch (input[1]) {
+			case '?': // "?i?"
+				r_core_cmd_help (core, help_msg_question_i);
+				break;
 			case 'f': // "?if"
 				r_core_return_value (core, !r_num_conditional (core->num, input + 2));
 				eprintf ("%s\n", r_str_bool (!core->num->value));
@@ -1312,7 +1327,28 @@ static int cmd_help(void *data, const char *input) {
 				r_cons_message (input + 2);
 				break;
 			case 'p': // "?ip"
-				r_core_return_value (core, r_core_yank_hud_path (core, input + 2, 0) == true);
+				{
+					const bool interactive = r_config_get_b (core->config, "scr.interactive");
+					if (interactive) {
+						r_core_return_value (core, r_core_yank_hud_path (core, input + 2, 0) == true);
+					} else {
+						R_LOG_WARN ("?ip requires scr.interactive=true");
+					}
+				}
+				break;
+			case 'e': // "?ie"
+				{
+				char foo[1024];
+				r_cons_flush ();
+				for (input+=2; *input == ' '; input++);
+				// TODO: r_cons_input()
+				snprintf (foo, sizeof (foo) - 1, "%s: ", input);
+				r_line_set_prompt (foo);
+				r_cons_fgets (foo, sizeof (foo), 0, NULL);
+				foo[sizeof (foo) - 1] = 0;
+				r_cons_printf ("%s\n", foo);
+				r_core_return_value (core, 0);
+				}
 				break;
 			case 'k': // "?ik"
 				 r_cons_any_key (NULL);

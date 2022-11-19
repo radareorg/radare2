@@ -2,7 +2,7 @@
 
 #include <r_anal.h>
 #include <r_lib.h>
-#include <ht_uu.h>
+#include <sdb/ht_uu.h>
 #include <capstone/capstone.h>
 #include <capstone/arm.h>
 #include <r_util/r_assert.h>
@@ -11,6 +11,7 @@
 
 typedef char RStringShort[32];
 
+static int init(void* user);
 static R_TH_LOCAL HtUU *ht_itblock = NULL;
 static R_TH_LOCAL HtUU *ht_it = NULL;
 
@@ -1319,6 +1320,9 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 		r_strbuf_setf (&op->esil, "%s,%s,*,0,-,%s,=",
 			REG64 (2), REG64 (1), REG64 (0));
 		break;
+#if CS_API_MAJOR > 4
+	case ARM64_INS_ADDG:
+#endif
 	case ARM64_INS_ADD:
 	case ARM64_INS_ADC: // Add with carry.
 		OPCALL ("+");
@@ -2086,7 +2090,7 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 		if (ISPREINDEX64 ()) {
 			// "stp x2, x3, [x8, 0x20]!
 			// "32,x8,+=,x2,x8,=[8],x3,x8,8,+,=[8]",
-			r_strbuf_setf(&op->esil,
+			r_strbuf_setf (&op->esil,
 					"%" PFMT64d ",%s,%c=,%s,%s,=[%d],%s,%s,%d,+,=[%d]",
 					abs, MEMBASE64 (2), sign,
 					REG64 (0), MEMBASE64 (2), size,
@@ -3277,7 +3281,7 @@ static void anop64(csh handle, RAnalOp *op, cs_insn *insn) {
 		op->family = R_ANAL_OP_FAMILY_PRIV;
 #endif
 	} else if (cs_insn_group (handle, insn, ARM64_GRP_NEON)) {
-		op->family = R_ANAL_OP_FAMILY_MMX;
+		op->family = R_ANAL_OP_FAMILY_VEC;
 	} else if (cs_insn_group (handle, insn, ARM64_GRP_FPARMV8)) {
 		op->family = R_ANAL_OP_FAMILY_FPU;
 	} else {
@@ -3303,6 +3307,9 @@ static void anop64(csh handle, RAnalOp *op, cs_insn *insn) {
 
 	switch (insn->id) {
 #if CS_API_MAJOR > 4
+	case ARM64_INS_UDF:
+		op->type = R_ANAL_OP_TYPE_ILL;
+		break;
 	case ARM64_INS_PACDA:
 	case ARM64_INS_PACDB:
 	case ARM64_INS_PACDZA:
@@ -3387,6 +3394,9 @@ static void anop64(csh handle, RAnalOp *op, cs_insn *insn) {
 		op->cycles = 4;
 		op->type = R_ANAL_OP_TYPE_MUL;
 		break;
+#if CS_API_MAJOR > 4
+	case ARM64_INS_ADDG:
+#endif
 	case ARM64_INS_ADD:
 		if (ISREG64 (0) && REGID64 (0) == ARM64_REG_SP) {
 			op->stackop = R_ANAL_STACK_INC;
@@ -3398,7 +3408,7 @@ static void anop64(csh handle, RAnalOp *op, cs_insn *insn) {
 				op->stackptr = -IMM64 (2);
 			}
 			op->val = op->stackptr;
-		} else {
+		} else if (REGID64 (0) == ARM64_REG_SP) {
 			op->stackop = R_ANAL_STACK_RESET;
 			op->stackptr = 0;
 		}
@@ -3630,6 +3640,10 @@ static void anop64(csh handle, RAnalOp *op, cs_insn *insn) {
 		}
 		break;
 #if CS_API_MAJOR > 4
+	case ARM64_INS_IRG:
+		op->family = R_ANAL_OP_FAMILY_SECURITY;
+		op->type = R_ANAL_OP_TYPE_MOV;
+		break;
 	case ARM64_INS_BLRAA:
 	case ARM64_INS_BLRAAZ:
 	case ARM64_INS_BLRAB:
@@ -3687,7 +3701,8 @@ static void anop64(csh handle, RAnalOp *op, cs_insn *insn) {
 		op->fail = addr+op->size;
 		break;
 	case ARM64_INS_BR:
-		op->type = R_ANAL_OP_TYPE_UJMP; // RJMP ?
+		// op->type = R_ANAL_OP_TYPE_UJMP; // RJMP ?
+		op->type = R_ANAL_OP_TYPE_RJMP;
 		op->eob = true;
 		break;
 	case ARM64_INS_B:
@@ -3711,6 +3726,7 @@ static void anop64(csh handle, RAnalOp *op, cs_insn *insn) {
 
 static void anal_itblock(cs_insn *insn) {
 	size_t i, size =  r_str_nlen (insn->mnemonic, 5);
+	init (NULL);
 	ht_uu_update (ht_itblock, insn->address,  size);
 	for (i = 1; i < size; i++) {
 		switch (insn->mnemonic[i]) {
@@ -3728,6 +3744,7 @@ static void anal_itblock(cs_insn *insn) {
 }
 
 static void check_itblock(cs_insn *insn) {
+	init (NULL);
 	size_t x;
 	bool found;
 	ut64 itlen = ht_uu_find (ht_itblock, insn->address, &found);
@@ -3764,11 +3781,11 @@ static void anop32(RAnal *a, csh handle, RAnalOp *op, cs_insn *insn, bool thumb,
 		op->family = R_ANAL_OP_FAMILY_VIRT;
 #endif
 	} else if (cs_insn_group (handle, insn, ARM_GRP_NEON)) {
-		op->family = R_ANAL_OP_FAMILY_MMX;
+		op->family = R_ANAL_OP_FAMILY_VEC;
 	} else if (cs_insn_group (handle, insn, ARM_GRP_FPARMV8)) {
 		op->family = R_ANAL_OP_FAMILY_FPU;
 	} else if (cs_insn_group (handle, insn, ARM_GRP_THUMB2DSP)) {
-		op->family = R_ANAL_OP_FAMILY_MMX;
+		op->family = R_ANAL_OP_FAMILY_VEC;
 	} else {
 		op->family = R_ANAL_OP_FAMILY_CPU;
 	}
@@ -4212,7 +4229,7 @@ jmp $$ + 4 + ( [delta] * 2 )
 		insn->detail->arm.update_flags = 0;
 		free (op->mnemonic);
 		op->mnemonic = r_str_newf ("%s%s%s%s",
-			r_anal_optype_to_string (op->type),
+			r_anal_optype_tostring (op->type),
 			cc_name (itcond),
 			insn->op_str[0]? " ": "",
 			insn->op_str);
@@ -4224,19 +4241,25 @@ static bool is_valid(arm_reg reg) {
 	return reg != ARM_REG_INVALID;
 }
 
+// XXX this function is a disaster
 static int parse_reg_name(RReg *reg, RRegItem **reg_base, RRegItem **reg_delta, csh handle, cs_insn *insn, int reg_num) {
 	cs_arm_op armop = INSOP (reg_num);
 	switch (armop.type) {
 	case ARM_OP_REG:
+		r_unref (*reg_base);
 		*reg_base = r_reg_get (reg, cs_reg_name (handle, armop.reg), R_REG_TYPE_ALL);
 		break;
 	case ARM_OP_MEM:
 		if (is_valid (armop.mem.base) && is_valid (armop.mem.index)) {
+			r_unref (*reg_base);
+			r_unref (*reg_delta);
 			*reg_base = r_reg_get (reg, cs_reg_name (handle, armop.mem.base), R_REG_TYPE_ALL);
 			*reg_delta = r_reg_get (reg, cs_reg_name (handle, armop.mem.index), R_REG_TYPE_ALL);
 		} else if (is_valid (armop.mem.base)) {
+			r_unref (*reg_base);
 			*reg_base = r_reg_get (reg, cs_reg_name (handle, armop.mem.base), R_REG_TYPE_ALL);
 		} else if (is_valid (armop.mem.index)) {
+			r_unref (*reg_base);
 			*reg_base = r_reg_get (reg, cs_reg_name (handle, armop.mem.index), R_REG_TYPE_ALL);
 		}
 		break;
@@ -4309,7 +4332,10 @@ static void set_opdir(RAnalOp *op) {
 	}
 }
 
-static void set_src_dst(RAnalValue *val, RReg *reg, csh *handle, cs_insn *insn, int x, int bits) {
+static void set_src_dst(RReg *reg, RAnalValue *val, csh *handle, cs_insn *insn, int x, int bits) {
+	if (!val) {
+		return;
+	}
 	cs_arm_op armop = INSOP (x);
 	cs_arm64_op arm64op = INSOP64 (x);
 	if (bits == 64) {
@@ -4348,10 +4374,10 @@ static void set_src_dst(RAnalValue *val, RReg *reg, csh *handle, cs_insn *insn, 
 }
 
 static void create_src_dst(RAnalOp *op) {
-	r_vector_push (op->srcs, NULL);
-	r_vector_push (op->srcs, NULL);
-	r_vector_push (op->srcs, NULL);
-	r_vector_push (op->dsts, NULL);
+	r_vector_push (&op->srcs, NULL);
+	r_vector_push (&op->srcs, NULL);
+	r_vector_push (&op->srcs, NULL);
+	r_vector_push (&op->dsts, NULL);
 }
 
 static void op_fillval(RAnal *anal, RAnalOp *op, csh handle, cs_insn *insn, int bits) {
@@ -4397,9 +4423,9 @@ static void op_fillval(RAnal *anal, RAnalOp *op, csh handle, cs_insn *insn, int 
 			break;
 		}
 		for (j = 0; j < 3; j++, i++) {
-			set_src_dst (r_vector_index_ptr (op->srcs, j), anal->reg, &handle, insn, i, bits);
+			set_src_dst (anal->reg, r_vector_at (&op->srcs, j), &handle, insn, i, bits);
 		}
-		set_src_dst (r_vector_index_ptr (op->dsts, 0), anal->reg, &handle, insn, 0, bits);
+		set_src_dst (anal->reg, r_vector_at (&op->dsts, 0), &handle, insn, 0, bits);
 		break;
 	case R_ANAL_OP_TYPE_STORE:
 		if (count > 2) {
@@ -4415,9 +4441,9 @@ static void op_fillval(RAnal *anal, RAnalOp *op, csh handle, cs_insn *insn, int 
 				}
 			}
 		}
-		set_src_dst (r_vector_index_ptr (op->dsts, 0), anal->reg, &handle, insn, --count, bits);
+		set_src_dst (anal->reg, r_vector_at (&op->dsts, 0), &handle, insn, --count, bits);
 		for (j = 0; j < 3 && j < count; j++) {
-			set_src_dst (r_vector_index_ptr (op->srcs, j), anal->reg, &handle, insn, j, bits);
+			set_src_dst (anal->reg, r_vector_at (&op->srcs, j), &handle, insn, j, bits);
 		}
 		break;
 	default:
@@ -4431,11 +4457,27 @@ static void op_fillval(RAnal *anal, RAnalOp *op, csh handle, cs_insn *insn, int 
 	}
 }
 
+static inline bool is_valid_mnemonic(const char *m) {
+	return !r_str_startswith (m, "hint") && !r_str_startswith (m, "udf");
+}
+
+static void initcs(csh ud) {
+	cs_opt_mem mem = {
+		.malloc = malloc,
+		.calloc = calloc,
+		.realloc = realloc,
+		.free = free,
+		.vsnprintf = vsnprintf,
+	};
+	cs_option (ud, CS_OPT_MEM, (size_t)&mem);
+}
+
 static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
+	R_CRITICAL_ENTER (a);
 	cs_insn *insn = NULL;
 	int mode = (a->config->bits == 16)? CS_MODE_THUMB: CS_MODE_ARM;
 	int n, ret;
-	mode |= (a->config->big_endian)? CS_MODE_BIG_ENDIAN: CS_MODE_LITTLE_ENDIAN;
+	mode |= R_ARCH_CONFIG_IS_BIG_ENDIAN (a->config)? CS_MODE_BIG_ENDIAN: CS_MODE_LITTLE_ENDIAN;
 	if (R_STR_ISNOTEMPTY (a->config->cpu)) {
 		if (strstr (a->config->cpu, "cortex")) {
 			mode |= CS_MODE_MCLASS;
@@ -4444,37 +4486,34 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 			mode |= CS_MODE_V8;
 		}
 	}
-	if (a->config->bits != 64 && R_STR_ISNOTEMPTY (a->config->features) &&
-		strstr (a->config->features, "v8")) {
-		mode |= CS_MODE_V8;
-	}
 	if (mode != a->cs_omode || a->config->bits != a->cs_obits) {
 		if (a->cs_handle != 0) {
 			cs_close (&a->cs_handle);
-			a->cs_handle = 0;
 		}
 		a->cs_omode = mode;
 		a->cs_obits = a->config->bits;
 	}
 	op->size = (a->config->bits == 16)? 2: 4;
 	op->addr = addr;
+	initcs (a->cs_handle);
 	if (a->cs_handle == 0) {
 		ret = (a->config->bits == 64)?
 			cs_open (CS_ARCH_ARM64, mode, &a->cs_handle):
 			cs_open (CS_ARCH_ARM, mode, &a->cs_handle);
-		cs_option (a->cs_handle, CS_OPT_DETAIL, CS_OPT_ON);
 		if (ret != CS_ERR_OK) {
 			R_LOG_ERROR ("Capstone failed: cs_open(CS_ARCH_ARM%s, %x, ...): %s",
 				(a->config->bits == 64) ? "64" : "", mode, cs_strerror (ret));
-			a->cs_handle = 0;
+			cs_close (&a->cs_handle); // sets cs_handle to 0
+			R_CRITICAL_LEAVE (a);
 			return -1;
 		}
+		cs_option (a->cs_handle, CS_OPT_DETAIL, CS_OPT_ON);
 	}
-
+	// TODO: use csh handle = init_capstone (a);
 	n = cs_disasm (a->cs_handle, (ut8*)buf, len, addr, 1, &insn);
-	if (n > 0 && !(insn->mnemonic[0] == 'h' && insn->mnemonic[1] == 'i' &&
-		insn->mnemonic[2] == 'n' && insn->mnemonic[3] == 't')) {
-		if (mask & R_ANAL_OP_MASK_DISASM) {
+	if (n > 0 && is_valid_mnemonic (insn->mnemonic)) {
+		if (mask & R_ARCH_OP_MASK_DISASM) {
+			free (op->mnemonic);
 			op->mnemonic = r_str_newf ("%s%s%s",
 				insn->mnemonic,
 				insn->op_str[0]? " ": "",
@@ -4487,54 +4526,55 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 		op->id = insn->id;
 		if (a->config->bits == 64) {
 			anop64 (a->cs_handle, op, insn);
-			if (mask & R_ANAL_OP_MASK_OPEX) {
+			if (mask & R_ARCH_OP_MASK_OPEX) {
 				opex64 (&op->opex, a->cs_handle, insn);
 			}
-			if (mask & R_ANAL_OP_MASK_ESIL) {
+			if (mask & R_ARCH_OP_MASK_ESIL) {
 				analop64_esil (a, op, addr, buf, len, &a->cs_handle, insn);
 			}
 		} else {
 			anop32 (a, a->cs_handle, op, insn, thumb, (ut8*)buf, len);
-			if (mask & R_ANAL_OP_MASK_OPEX) {
+			if (mask & R_ARCH_OP_MASK_OPEX) {
 				opex (&op->opex, a->cs_handle, insn);
 			}
-			if (mask & R_ANAL_OP_MASK_ESIL) {
+			if (mask & R_ARCH_OP_MASK_ESIL) {
 				analop_esil (a, op, addr, buf, len, &a->cs_handle, insn, thumb);
 			}
 		}
 		set_opdir (op);
-		if (mask & R_ANAL_OP_MASK_VAL) {
+		if (mask & R_ARCH_OP_MASK_VAL) {
 			op_fillval (a, op, a->cs_handle, insn, a->config->bits);
 		}
 		cs_free (insn, n);
 	} else {
+		cs_free (insn, n);
 		op->size = 4;
 		op->type = R_ANAL_OP_TYPE_ILL;
 		if (len < 4) {
-			if (mask & R_ANAL_OP_MASK_DISASM) {
+			if (mask & R_ARCH_OP_MASK_DISASM) {
+				free (op->mnemonic);
 				op->mnemonic = strdup ("invalid");
 			}
+			R_CRITICAL_LEAVE (a);
 			return -1;
 		}
 		hackyArmAnal (a, op, buf, len);
-		if (mask & R_ANAL_OP_MASK_DISASM) {
+		if (mask & R_ARCH_OP_MASK_DISASM) {
 			if (hackyArmAsm (a, op, buf, len) < 1) {
+				free (op->mnemonic);
 				op->mnemonic = strdup ("invalid");
 			} else if (op->type == R_ANAL_OP_TYPE_ILL) {
 				op->type = R_ANAL_OP_TYPE_UNK;	//this is because hackyArmAnal and hackyArmAsm work differently
 			}
 		}
 	}
-#if 0
-	cs_close (cs_handle);
-	cs_handle = 0;
-#endif
+	R_CRITICAL_LEAVE (a);
 	return op->size;
 }
 
 static char *arm_mnemonics(RAnal *a, int id, bool json) {
 	int mode = (a->config->bits == 16)? CS_MODE_THUMB: CS_MODE_ARM;
-	mode |= (a->config->big_endian)? CS_MODE_BIG_ENDIAN: CS_MODE_LITTLE_ENDIAN;
+	mode |= R_ARCH_CONFIG_IS_BIG_ENDIAN (a->config)? CS_MODE_BIG_ENDIAN: CS_MODE_LITTLE_ENDIAN;
 	if (R_STR_ISNOTEMPTY (a->config->cpu)) {
 		if (strstr (a->config->cpu, "cortex")) {
 			mode |= CS_MODE_MCLASS;
@@ -4543,14 +4583,9 @@ static char *arm_mnemonics(RAnal *a, int id, bool json) {
 			mode |= CS_MODE_V8;
 		}
 	}
-	if (a->config->bits != 64 && R_STR_ISNOTEMPTY (a->config->features) &&
-		strstr (a->config->features, "v8")) {
-		mode |= CS_MODE_V8;
-	}
 	if (mode != a->cs_omode || a->config->bits != a->cs_obits) {
 		if (a->cs_handle != 0) {
 			cs_close (&a->cs_handle);
-			a->cs_handle = 0;
 		}
 		a->cs_omode = mode;
 		a->cs_obits = a->config->bits;
@@ -4652,7 +4687,7 @@ static ut8 *anal_mask(RAnal *anal, int size, const ut8 *data, ut64 at) {
 	ret = malloc (size);
 	memset (ret, 0xff, size);
 
-	const bool be = anal->config->big_endian;
+	const bool be = R_ARCH_CONFIG_IS_BIG_ENDIAN (anal->config);
 	while (idx < size) {
 		hint = r_anal_hint_get (anal, at + idx);
 		if (hint) {
@@ -4662,7 +4697,7 @@ static ut8 *anal_mask(RAnal *anal, int size, const ut8 *data, ut64 at) {
 			free (hint);
 		}
 
-		if ((oplen = analop (anal, op, at + idx, data + idx, size - idx, R_ANAL_OP_MASK_BASIC)) < 1) {
+		if ((oplen = analop (anal, op, at + idx, data + idx, size - idx, R_ARCH_OP_MASK_BASIC)) < 1) {
 			break;
 		}
 		if (op->ptr != UT64_MAX || op->jump != UT64_MAX) {
@@ -4765,7 +4800,7 @@ static ut8 *anal_mask(RAnal *anal, int size, const ut8 *data, ut64 at) {
 static RList *anal_preludes(RAnal *anal) {
 #define KW(d,ds,m,ms) r_list_append (l, r_search_keyword_new((const ut8*)d,ds,(const ut8*)m, ms, NULL))
 	RList *l = r_list_newf ((RListFree)r_search_keyword_free);
-	if (anal->config->big_endian) {
+	if (R_ARCH_CONFIG_IS_BIG_ENDIAN (anal->config)) {
 		switch (anal->config->bits) {
 		case 16:
 			KW ("\xb5\x00", 2, "\xff\x0f", 2);

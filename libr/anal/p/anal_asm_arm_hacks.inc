@@ -221,7 +221,7 @@ static int hackyArmAsm(RAnal *a, RAnalOp *op, const ut8 *buf, int len) {
 	char *buf_asm = NULL;
 	// Hacky support for ARMv8.5
 	if (a->config->bits == 64 && len >= 4) {
-		ut32 insn = r_read_ble32 (buf, a->config->big_endian);
+		ut32 insn = r_read_ble32 (buf, R_ARCH_CONFIG_IS_BIG_ENDIAN (a->config));
 		int insn_class = (insn >> 25) & 0xf;
 		switch (insn_class) {
 		// Data Processing -- Register

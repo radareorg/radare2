@@ -2,7 +2,7 @@
 #define R2_LIST_H
 
 #include <r_types.h>
-#include <sdb.h>
+#include <sdb/sdb.h>
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -102,7 +102,9 @@ R_API void r_list_iter_to_top(RList *list, RListIter *iter);
 R_API void *r_list_pop(RList *list);
 R_API void *r_list_pop_head(RList *list);
 R_API void r_list_reverse(RList *list);
-R_API RList *r_list_clone(const RList *list);
+//R_API RList *r_list_clone(const RList *list, );
+typedef void *(*RListClone)(void *);
+R_API RList *r_list_clone(const RList *list, RListClone clone);
 R_API char *r_list_to_str(RList *list, char ch);
 
 /* hashlike api */

@@ -1,6 +1,6 @@
 /* sdb - MIT - Copyright 2019 - thestr4ng3r */
 
-#include "sdb.h"
+#include "sdb/sdb.h"
 
 SDB_API int sdb_diff_format(char *str, int size, const SdbDiff *diff) {
 	int r = 0;

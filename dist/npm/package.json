@@ -13,6 +13,10 @@
     "type": "git",
     "url": "git+https://github.com/radareorg/radare2.git"
   },
+  "engines": {
+    "node": ">=16",
+    "npm": ">=7"
+  },
   "keywords": [
     "radare2"
   ],

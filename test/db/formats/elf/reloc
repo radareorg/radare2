@@ -159,5 +159,58 @@ ret
 0x0800007c  e8fc ffff ff55 89e5 6800 0000 00e8 fcff  .....U..h.......
 0x0800008c  ffff 31c0 c9c3 5589 e568 0f00 0000 e8fc  ..1...U..h......
 0x0800009c  ffff ff58 c9c3                           ...X..
+
+NAME=ELF: relocs init array
+FILE=bins/elf/r2pay-arm64.so
+CMDS=<<EOF
+s section..init_array
+pd 10
+pd 1 @ 0x0800009f
+EOF
+EXPECT=<<EOF
+call __fentry__
+push ebp
+mov ebp, esp
+push 0
+call printk
+xor eax, eax
+leave
+ret
+push ebp
+mov ebp, esp
+push 0xf
+call printk
+pop eax
+leave
+ret
+- offset -  7C7D 7E7F 8081 8283 8485 8687 8889 8A8B  CDEF0123456789AB
+0x0800007c  e8fc ffff ff55 89e5 6800 0000 00e8 fcff  .....U..h.......
+0x0800008c  ffff 31c0 c9c3 5589 e568 0f00 0000 e8fc  ..1...U..h......
+0x0800009c  ffff ff58 c9c3                           ...X..
+EOF
+RUN
+
+NAME=ELF: relocs r2pay
+FILE=bins/elf/r2pay-arm64.so
+ARGS=-e bin.cache=true
+CMDS=<<EOF
+s section..init_array
+pd 10
+pd 1 @ 0x0800009f
+EOF
+EXPECT=<<EOF
+            ;-- section..init_array:
+            ;-- segment.LOAD1:
+            0x00126510      .qword 0x0000000000005a6c ; sym..datadiv_decode9958896245423089702 ; [13] -rw- section size 728 named .init_array
+            0x00126518      .qword 0x0000000000005a80 ; sym..datadiv_decode10476194973746341988
+            0x00126520      .qword 0x00000000000efddc ; sym..datadiv_decode16323044921667855934
+            0x00126528      .qword 0x0000000000009080 ; entry.init0
+            0x00126530      .qword 0x0000000000077d14 ; entry.init1
+            0x00126538      .qword 0x00000000000f22e0 ; sym..datadiv_decode667225052219618748
+            0x00126540      .qword 0x00000000000f22e4 ; sym..datadiv_decode8132880250332170398
+            0x00126548      .qword 0x00000000000f22e8 ; sym..datadiv_decode3655886617018729963
+            0x00126550      .qword 0x00000000000f22ec ; sym..datadiv_decode16406252260792032531
+            0x00126558      .qword 0x00000000000f22f0 ; sym..datadiv_decode13403071575248320347
+            0x0800009f                     unaligned
 EOF
 RUN

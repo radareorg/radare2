@@ -1,6 +1,6 @@
 /* sdb - MIT - Copyright 2017-2022 - pancake */
 
-#include "sdb.h"
+#include "sdb/sdb.h"
 
 SDB_API dict *dict_new(ut32 size, dict_freecb f) {
 	dict *m = (dict *)calloc (1, sizeof (dict));

@@ -68,7 +68,7 @@ static int rabin_show_help(int v) {
 		" -x              extract bins contained in file\n"
 		" -X [fmt] [f] .. package in fat or zip the given files and bins contained in file\n"
 		" -z              strings (from data section)\n"
-		" -zz             strings (from raw bins [e bin.rawstr=1])\n"
+		" -zz             strings (from raw bins [e bin.str.raw=1])\n"
 		" -zzz            dump raw strings to stdout (for huge files)\n"
 		" -Z              guess size of binary program\n"
 		);
@@ -76,11 +76,11 @@ static int rabin_show_help(int v) {
 	if (v) {
 		printf ("Environment:\n"
 		" RABIN2_CHARSET:   e cfg.charset      # set default value charset for -z strings\n"
-		" RABIN2_DEBASE64:  e bin.debase64     # try to debase64 all strings\n"
+		" RABIN2_DEBASE64:  e bin.str.debase64 # try to debase64 all strings\n"
 		" RABIN2_DEMANGLE=0:e bin.demangle     # do not demangle symbols\n"
 		" RABIN2_DMNGLRCMD: e bin.demanglercmd # try to purge false positives\n"
 		" RABIN2_LANG:      e bin.lang         # assume lang for demangling\n"
-		" RABIN2_MAXSTRBUF: e bin.maxstrbuf    # specify maximum buffer size\n"
+		" RABIN2_MAXSTRBUF: e bin.str.maxbuf    # specify maximum buffer size\n"
 		" RABIN2_NOPLUGINS: 1|0|               # do not load shared plugins (speedup loading)\n"
 		" RABIN2_PDBSERVER: e pdb.server       # use alternative PDB server\n"
 		" RABIN2_PREFIX:    e bin.prefix       # prefix symbols/sections/relocs with a specific string\n"
@@ -519,7 +519,7 @@ static int __lib_bin_ldr_dt(RLibPlugin *pl, void *p, void *u) {
 
 static void setup_trylib_from_environment(RBin *bin, int type) {
 	bool trylib = false;
-	if (type == R_BIN_NM_SWIFT) {
+	if (type == R_BIN_LANG_SWIFT) {
 		trylib = true;
 		char *swiftlib = r_sys_getenv ("RABIN2_TRYLIB");
 		if (swiftlib) {
@@ -534,12 +534,12 @@ static char *__demangleAs(RBin *bin, int type, const char *file) {
 	bool syscmd = bin->demangle_usecmd;
 	char *res = NULL;
 	switch (type) {
-	case R_BIN_NM_CXX: res = r_bin_demangle_cxx (NULL, file, 0); break;
-	case R_BIN_NM_JAVA: res = r_bin_demangle_java (file); break;
-	case R_BIN_NM_OBJC: res = r_bin_demangle_objc (NULL, file); break;
-	case R_BIN_NM_SWIFT: res = r_bin_demangle_swift (file, syscmd, bin->demangle_trylib); break;
-	case R_BIN_NM_MSVC: res = r_bin_demangle_msvc (file); break;
-	case R_BIN_NM_RUST: res = r_bin_demangle_rust (NULL, file, 0); break;
+	case R_BIN_LANG_CXX: res = r_bin_demangle_cxx (NULL, file, 0); break;
+	case R_BIN_LANG_JAVA: res = r_bin_demangle_java (file); break;
+	case R_BIN_LANG_OBJC: res = r_bin_demangle_objc (NULL, file); break;
+	case R_BIN_LANG_SWIFT: res = r_bin_demangle_swift (file, syscmd, bin->demangle_trylib); break;
+	case R_BIN_LANG_MSVC: res = r_bin_demangle_msvc (file); break;
+	case R_BIN_LANG_RUST: res = r_bin_demangle_rust (NULL, file, 0); break;
 	default:
 		R_LOG_ERROR ("Unsupported demangler");
 		break;
@@ -587,7 +587,7 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 	bin = core.bin;
 
 	if (!(tmp = r_sys_getenv ("RABIN2_NOPLUGINS"))) {
-		char *homeplugindir = r_str_home (R2_HOME_PLUGINS);
+		char *homeplugindir = r_xdg_datadir ("plugins");
 		char *plugindir = r_str_r2_prefix (R2_PLUGINS);
 		char *extrasdir = r_str_r2_prefix (R2_EXTRAS);
 		char *bindingsdir = r_str_r2_prefix (R2_BINDINGS);
@@ -647,7 +647,7 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 		free (tmp);
 	}
 	if ((tmp = r_sys_getenv ("RABIN2_MAXSTRBUF"))) {
-		r_config_set (core.config, "bin.maxstrbuf", tmp);
+		r_config_set (core.config, "bin.str.maxbuf", tmp);
 		free (tmp);
 	}
 	if ((tmp = r_sys_getenv ("RABIN2_STRFILTER"))) {
@@ -659,7 +659,7 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 		free (tmp);
 	}
 	if ((tmp = r_sys_getenv ("RABIN2_DEBASE64"))) {
-		r_config_set (core.config, "bin.debase64", tmp);
+		r_config_set (core.config, "bin.str.debase64", tmp);
 		free (tmp);
 	}
 	if ((tmp = r_sys_getenv ("RABIN2_PDBSERVER"))) {
@@ -764,13 +764,14 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 		case 'P':
 			if (is_active (R_BIN_REQ_PDB)) {
 				set_action (R_BIN_REQ_PDB_DWNLD);
+				unset_action (R_BIN_REQ_PDB);
 			} else {
 				set_action (R_BIN_REQ_PDB);
 			}
 			break;
 		case 'D':
-			if (argv[opt.ind] && argv[opt.ind+1] && \
-				(!argv[opt.ind+1][0] || !strcmp (argv[opt.ind+1], "all"))) {
+			if (argv[opt.ind] && argv[opt.ind + 1] && \
+				(!argv[opt.ind + 1][0] || !strcmp (argv[opt.ind + 1], "all"))) {
 				r_config_set (core.config, "bin.lang", argv[opt.ind]);
 				r_config_set_b (core.config, "bin.demangle", true);
 				opt.ind += 2;
@@ -849,9 +850,9 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 			break;
 		case 'N':
 			tmp = strchr (opt.arg, ':');
-			r_config_set (core.config, "bin.minstr", opt.arg);
+			r_config_set (core.config, "bin.str.min", opt.arg);
 			if (tmp) {
-				r_config_set (core.config, "bin.maxstr", tmp + 1);
+				r_config_set (core.config, "bin.str.max", tmp + 1);
 			}
 			break;
 		case 'h':
@@ -1008,7 +1009,7 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 	if (rawstr == 2) {
 		unset_action (R_BIN_REQ_STRINGS);
 	}
-	r_config_set_i (core.config, "bin.rawstr", rawstr);
+	r_config_set_i (core.config, "bin.str.raw", rawstr);
 
 	if (!file) {
 		R_LOG_ERROR ("Missing file");
@@ -1084,8 +1085,8 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 			return 1;
 		}
 	}
-	bin->minstrlen = r_config_get_i (core.config, "bin.minstr");
-	bin->maxstrbuf = r_config_get_i (core.config, "bin.maxstrbuf");
+	bin->minstrlen = r_config_get_i (core.config, "bin.str.min");
+	bin->maxstrbuf = r_config_get_i (core.config, "bin.str.maxbuf");
 
 	r_bin_force_plugin (bin, forcebin);
 	r_bin_load_filter (bin, action);
@@ -1130,13 +1131,12 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 		r_core_fini (&core);
 		return 0;
 	}
-#define isradjson (rad==R_MODE_JSON&&actions>0)
+#define isradjson ((rad == R_MODE_JSON) && (actions > 0))
 #define run_action(n,x,y) {\
 	if (action & (x)) {\
 		if (isradjson) { pj_k (pj, n); } \
 		if (!r_core_bin_info (&core, y, pj, rad, va, &filter, chksum)) {\
 			R_LOG_ERROR ("Missing bin header %s", n);\
-			if (isradjson) { pj_b (pj, false); }\
 		};\
 	}\
 }

@@ -33,20 +33,11 @@
  * GPL.
  */
 
-#ifndef SHA1_H
-#define SHA1_H
+#ifndef R_SHA1_H
+#define R_SHA1_H
 
-#if 0
-typedef struct {
-  unsigned int H[5];
-  unsigned int W[80];
-  int lenW;
-  unsigned int sizeHi,sizeLo;
-} SHA_CTX;
-#endif
-
-void r_SHA1_Init(R_SHA_CTX *ctx);
-void r_SHA1_Update(R_SHA_CTX *ctx, const void *dataIn, int len);
-void r_SHA1_Final(unsigned char hashout[20], R_SHA_CTX *ctx);
+R_IPI void r_sha1_init(RHashShaContext *ctx);
+R_IPI void r_sha1_update(RHashShaContext *ctx, const void *dataIn, int len);
+R_IPI void r_sha1_final(unsigned char hashout[20], RHashShaContext *ctx);
 
 #endif

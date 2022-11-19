@@ -718,35 +718,35 @@ print_insn_arg (const char *d,
 	struct regname { char * name; int value; };
 	static const struct regname names[] =
 	  {
-	    {"%sfc", 0x000}, {"%dfc", 0x001}, {"%cacr", 0x002},
-	    {"%tc",  0x003}, {"%itt0",0x004}, {"%itt1", 0x005},
-	    {"%dtt0",0x006}, {"%dtt1",0x007}, {"%buscr",0x008},
-	    {"%rgpiobar", 0x009}, {"%acr4",0x00c},
-	    {"%acr5",0x00d}, {"%acr6",0x00e}, {"%acr7", 0x00f},
-	    {"%usp", 0x800}, {"%vbr", 0x801}, {"%caar", 0x802},
-	    {"%msp", 0x803}, {"%isp", 0x804},
-	    {"%pc", 0x80f},
+	    { "%sfc", 0x000}, { "%dfc", 0x001}, { "%cacr", 0x002},
+	    { "%tc",  0x003}, { "%itt0",0x004}, { "%itt1", 0x005},
+	    { "%dtt0",0x006}, { "%dtt1",0x007}, { "%buscr",0x008},
+	    { "%rgpiobar", 0x009}, { "%acr4",0x00c},
+	    { "%acr5",0x00d}, { "%acr6",0x00e}, { "%acr7", 0x00f},
+	    { "%usp", 0x800}, { "%vbr", 0x801}, { "%caar", 0x802},
+	    { "%msp", 0x803}, { "%isp", 0x804},
+	    { "%pc", 0x80f},
 	    /* Reg c04 is sometimes called flashbar or rambar.
 	       Reg c05 is also sometimes called rambar.  */
-	    {"%rambar0", 0xc04}, {"%rambar1", 0xc05},
+	    { "%rambar0", 0xc04}, { "%rambar1", 0xc05},
 
 	    /* reg c0e is sometimes called mbar2 or secmbar.
 	       reg c0f is sometimes called mbar.  */
-	    {"%mbar0", 0xc0e}, {"%mbar1", 0xc0f},
+	    { "%mbar0", 0xc0e}, { "%mbar1", 0xc0f},
 
 	    /* Should we be calling this psr like we do in case 'Y'?  */
-	    {"%mmusr",0x805},
+	    { "%mmusr",0x805},
 
-	    {"%urp", 0x806}, {"%srp", 0x807}, {"%pcr", 0x808},
+	    { "%urp", 0x806}, { "%srp", 0x807}, { "%pcr", 0x808},
 
 	    /* Fido added these.  */
-	    {"%cac", 0xffe}, {"%mbo", 0xfff}
+	    { "%cac", 0xffe}, { "%mbo", 0xfff}
 	};
 	/* Alternate names for v4e (MCF5407/5445x/MCF547x/MCF548x), at least.  */
 	static const struct regname names_v4e[] =
 	  {
-	    {"%asid",0x003}, {"%acr0",0x004}, {"%acr1",0x005},
-	    {"%acr2",0x006}, {"%acr3",0x007}, {"%mmubar",0x008},
+	    { "%asid",0x003}, { "%acr0",0x004}, { "%acr1",0x005},
+	    { "%acr2",0x006}, { "%acr3",0x007}, { "%mmubar",0x008},
 	  };
 	unsigned int arch_mask;
 

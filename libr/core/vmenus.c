@@ -121,7 +121,7 @@ static int wordpos(const char *esil, int n) {
 	return (size_t)(w - esil);
 }
 
-static void showreg(RAnalEsil *esil, const char *rn, const char *desc) {
+static void showreg(REsil *esil, const char *rn, const char *desc) {
 	ut64 nm = 0;
 	int sz = 0;
 	r_cons_printf ("%s 0x%08"PFMT64x" (%d) ; %s\n", rn, nm, sz, desc);
@@ -151,10 +151,10 @@ R_API bool r_core_visual_esil(RCore *core, const char *input) {
 		return false;
 	}
 	r_reg_arena_push (core->anal->reg);
-	RAnalEsil *esil = r_anal_esil_new (20, 0, addrsize);
-	r_anal_esil_setup (esil, core->anal, false, false, false);
+	REsil *esil = r_esil_new (20, 0, addrsize);
+	r_esil_setup (esil, core->anal, false, false, false);
 	// esil->anal = core->anal;
-	r_anal_esil_set_pc (esil, core->offset);
+	r_esil_set_pc (esil, core->offset);
 	char *expr = NULL;
 	bool refresh = false;
 	for (;;) {
@@ -172,7 +172,7 @@ R_API bool r_core_visual_esil(RCore *core, const char *input) {
 			// bool use_color = core->print->flags & R_PRINT_FLAGS_COLOR;
 			(void) r_asm_disassemble (core->rasm, &asmop, buf, sizeof (ut64));
 			analop.type = -1;
-			(void)r_anal_op (core->anal, &analop, core->offset, buf, sizeof (ut64), R_ANAL_OP_MASK_ESIL);
+			(void)r_anal_op (core->anal, &analop, core->offset, buf, sizeof (ut64), R_ARCH_OP_MASK_ESIL);
 			analopType = analop.type & R_ANAL_OP_TYPE_MASK;
 			r_cons_printf ("r2's esil debugger:\n\n");
 			const char *vi = r_config_get (core->config, "cmd.vprompt");
@@ -228,7 +228,7 @@ R_API bool r_core_visual_esil(RCore *core, const char *input) {
 			free (r);
 		}
 		r_cons_printf ("esil stack:\n");
-		r_anal_esil_dumpstack (esil);
+		r_esil_dumpstack (esil);
 		if (!input) {
 			r_anal_op_fini (&analop);
 		}
@@ -247,20 +247,20 @@ R_API bool r_core_visual_esil(RCore *core, const char *input) {
 		case 'n':
 		case 'P':
 			x = 0;
-			r_anal_esil_free (esil);
-			esil = r_anal_esil_new (20, 0, addrsize);
+			r_esil_free (esil);
+			esil = r_esil_new (20, 0, addrsize);
 			esil->anal = core->anal;
 			r_core_cmd0 (core, "so+1");
-			r_anal_esil_set_pc (esil, core->offset);
+			r_esil_set_pc (esil, core->offset);
 			break;
 		case 'N':
 		case 'p':
 			x = 0;
-			r_anal_esil_free (esil);
-			esil = r_anal_esil_new (20, 0, addrsize);
+			r_esil_free (esil);
+			esil = r_esil_new (20, 0, addrsize);
 			esil->anal = core->anal;
 			r_core_cmd0 (core, "so-1");
-			r_anal_esil_set_pc (esil, core->offset);
+			r_esil_set_pc (esil, core->offset);
 			break;
 		case '=':
 		{ // TODO: edit
@@ -301,7 +301,7 @@ R_API bool r_core_visual_esil(RCore *core, const char *input) {
 			// eprintf ("step ((%s))\n", word);
 			// r_sys_usleep (500);
 			x = R_MIN (x + 1, nbits - 1);
-			r_anal_esil_runword (esil, word);
+			r_esil_runword (esil, word);
 			break;
 		case 'S':
 			R_LOG_WARN ("TODO: esil step back :D");
@@ -352,7 +352,7 @@ R_API bool r_core_visual_esil(RCore *core, const char *input) {
 beach:
 	free (expr);
 	r_reg_arena_pop (core->anal->reg);
-	r_anal_esil_free (esil);
+	r_esil_free (esil);
 	free (word);
 	free (ginput);
 	return true;
@@ -381,7 +381,7 @@ R_API bool r_core_visual_bit_editor(RCore *core) {
 		bool use_color = core->print->flags & R_PRINT_FLAGS_COLOR;
 		(void) r_asm_disassemble (core->rasm, &asmop, buf, sizeof (ut64));
 		analop.type = -1;
-		(void)r_anal_op (core->anal, &analop, core->offset, buf, sizeof (ut64), R_ANAL_OP_MASK_ESIL);
+		(void)r_anal_op (core->anal, &analop, core->offset, buf, sizeof (ut64), R_ARCH_OP_MASK_ESIL);
 		analopType = analop.type & R_ANAL_OP_TYPE_MASK;
 		r_cons_printf ("r2's bit editor: (=pfb 3b4b formatting)\n\n");
 		r_cons_printf ("offset: 0x%08"PFMT64x"\n"Color_RESET, core->offset + cur);
@@ -2400,9 +2400,11 @@ static void config_visual_hit(RCore *core, const char *name, int editor) {
 	} else {
 // XXX: must use config_set () to run callbacks!
 		if (editor) {
-			char * buf = r_core_editor (core, NULL, node->value);
-			node->value = r_str_dup (node->value, buf);
-			free (buf);
+			char *buf = r_core_editor (core, NULL, node->value);
+			if (buf) {
+				free (node->value);
+				node->value = buf;
+			}
 		} else {
 			// FGETS AND SO
 			r_cons_printf ("New value (old=%s): \n", node->value);
@@ -2414,7 +2416,7 @@ static void config_visual_hit(RCore *core, const char *name, int editor) {
 			r_cons_set_raw (1);
 			r_cons_show_cursor (false);
 			r_config_set (core->config, name, buf);
-			//node->value = r_str_dup (node->value, buf);
+			//node->value = strdup (node->value, buf);
 		}
 	}
 }
@@ -3774,7 +3776,7 @@ R_API void r_core_seek_next(RCore *core, const char *type) {
 	bool found = false;
 	if (strstr (type, "opc")) {
 		RAnalOp aop;
-		if (r_anal_op (core->anal, &aop, core->offset, core->block, core->blocksize, R_ANAL_OP_MASK_BASIC)) {
+		if (r_anal_op (core->anal, &aop, core->offset, core->block, core->blocksize, R_ARCH_OP_MASK_BASIC)) {
 			next = core->offset + aop.size;
 			found = true;
 		} else {
@@ -3853,7 +3855,7 @@ static void handleHints(RCore *core) {
 	//TODO extend for more anal hints
 	int i = 0;
 	char ch[64] = {0};
-	const char *lines[] = {"[dh]- Define anal hint:"
+	const char *lines[] = { "[dh]- Define anal hint:"
 		," b [16,32,64]     set bits hint"
 		, NULL};
 	for (i = 0; lines[i]; i++) {
@@ -4051,7 +4053,7 @@ onemoretime:
 		{
 			char *man = NULL;
 			/* check for manpage */
-			RAnalOp *op = r_core_anal_op (core, off, R_ANAL_OP_MASK_BASIC);
+			RAnalOp *op = r_core_anal_op (core, off, R_ARCH_OP_MASK_BASIC);
 			if (op) {
 				if (op->jump != UT64_MAX) {
 					RFlagItem *item = r_flag_get_i (core->flags, op->jump);
@@ -4087,7 +4089,7 @@ onemoretime:
 		}
 		// TODO: get the aligned instruction even if the cursor is in the middle of it.
 		int rc = r_anal_op (core->anal, &op, off,
-			core->block + off - core->offset, 32, R_ANAL_OP_MASK_BASIC);
+			core->block + off - core->offset, 32, R_ARCH_OP_MASK_BASIC);
 		if (rc < 1) {
 			R_LOG_ERROR ("analyzing opcode at 0x%08"PFMT64x, off);
 		} else {
@@ -4177,7 +4179,7 @@ onemoretime:
 			RAnalOp op;
 			ut64 size;
 			if (r_anal_op (core->anal, &op, off, core->block+delta,
-					core->blocksize-delta, R_ANAL_OP_MASK_BASIC)) {
+					core->blocksize-delta, R_ARCH_OP_MASK_BASIC)) {
 				size = off - fcn->addr + op.size;
 				r_anal_function_resize (fcn, size);
 			}
@@ -4360,7 +4362,7 @@ onemoretime:
 		RAnalVar *var = NULL;
 		for (try_off = start_off; try_off < start_off + incr*16; try_off += incr) {
 			r_anal_op_free (op);
-			op = r_core_anal_op (core, try_off, R_ANAL_OP_MASK_ALL);
+			op = r_core_anal_op (core, try_off, R_ARCH_OP_MASK_ALL);
 			if (!op) {
 				break;
 			}

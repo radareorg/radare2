@@ -134,8 +134,8 @@ static RList* sections(RBinFile *bf) {
 		if (!(ptr = R_NEW0 (RBinSection))) {
 			break;
 		}
-		if (sections[i].name[0]) {
-			ptr->name = strdup ((char*)sections[i].name);
+		if (R_STR_ISNOTEMPTY (sections[i].name)) {
+			ptr->name = strdup ((const char*)sections[i].name);
 		} else {
 			ptr->name = strdup ("");
 		}

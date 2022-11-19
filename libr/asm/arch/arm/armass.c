@@ -52,7 +52,7 @@ static int strcmpnull(const char *a, const char *b) {
 	return (a && b) ? strcmp (a, b) : -1;
 }
 
-// static const char *const arm_shift[] = {"lsl", "lsr", "asr", "ror"};
+// static const char *const arm_shift[] = { "lsl", "lsr", "asr", "ror" };
 
 static ArmOp ops[] = {
 	{ "adc", 0xa000, TYPE_ARI },
@@ -136,18 +136,18 @@ static ArmOp ops[] = {
 	{ "teq", 0x3001, TYPE_TST },
 	{ "tst", 0x1001, TYPE_TST },
 
-	{"lsr", 0x3000a0e1, TYPE_SHFT},
-	{"asr", 0x5000a0e1, TYPE_SHFT},
-	{"lsl", 0x1000a0e1, TYPE_SHFT},
-	{"ror", 0x7000a0e1, TYPE_SHFT},
+	{ "lsr", 0x3000a0e1, TYPE_SHFT},
+	{ "asr", 0x5000a0e1, TYPE_SHFT},
+	{ "lsl", 0x1000a0e1, TYPE_SHFT},
+	{ "ror", 0x7000a0e1, TYPE_SHFT},
 
-	{"rev16", 0xb00fbf06, TYPE_REV},
-	{"revsh", 0xb00fff06, TYPE_REV},
-	{"rev",   0x300fbf06, TYPE_REV},
-	{"rbit",  0x300fff06, TYPE_REV},
+	{ "rev16", 0xb00fbf06, TYPE_REV},
+	{ "revsh", 0xb00fff06, TYPE_REV},
+	{ "rev",   0x300fbf06, TYPE_REV},
+	{ "rbit",  0x300fff06, TYPE_REV},
 
-	{"mrc", 0x100010ee, TYPE_COPROC},
-	{"setend", 0x000001f1, TYPE_ENDIAN},
+	{ "mrc", 0x100010ee, TYPE_COPROC},
+	{ "setend", 0x000001f1, TYPE_ENDIAN},
 	{ "clz", 0x000f6f01, TYPE_CLZ},
 	{ "neg", 0x7000, TYPE_NEG },
 
@@ -6482,10 +6482,10 @@ return 0;
 	// INVALID thisplay("str r1, [pc, r2]");
 	// INVALID thisplay("str r1, [sp, r2]");
 #if 0
-   0:   8991            ldrh    r1, [r2, #12]
-   2:   7b11            ldrb    r1, [r2, #12]
-   4:   8191            strh    r1, [r2, #12]
-   6:   7311            strb    r1, [r2, #12]
+	   0:   8991            ldrh    r1, [r2, #12]
+	   2:   7b11            ldrb    r1, [r2, #12]
+	   4:   8191            strh    r1, [r2, #12]
+	   6:   7311            strb    r1, [r2, #12]
 #endif
 	thisplay("ldrh r1, [r2, 8]"); // aligned to 4
 	thisplay("ldrh r1, [r3, 8]"); // aligned to 4
@@ -6543,8 +6543,8 @@ return 0;
 	display("pop {pc}");
 #endif
 
-   //10ab4:       00047e30        andeq   r7, r4, r0, lsr lr
-   //10ab8:       00036e70        andeq   r6, r3, r0, ror lr
+	   //10ab4:       00047e30        andeq   r7, r4, r0, lsr lr
+	   //10ab8:       00036e70        andeq   r6, r3, r0, ror lr
 
 	display("andeq r7, r4, r0, lsr lr");
 	display("andeq r6, r3, r0, ror lr");

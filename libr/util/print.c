@@ -361,6 +361,7 @@ R_API RPrint* r_print_free(RPrint *p) {
 	R_FREE (p->lines_cache);
 	R_FREE (p->row_offsets);
 	r_charset_free (p->charset);
+	r_unref (p->config);
 	free (p);
 	return NULL;
 }
@@ -564,8 +565,7 @@ R_API char* r_print_hexpair(RPrint *p, const char *str, int n) {
 			if (p->nbcolor > 0) {
 				// colorize N first bytes only
 				// used for op+arg in disasm hexpairs
-				lastcol = (i < p->nbcolor)
-					? color_0x00: color_0x7f;
+				lastcol = (i < p->nbcolor) ? color_0x00: color_0x7f;
 			} else if (s[0] == '0' && s[1] == '0') {
 				lastcol = color_0x00;
 			} else if (s[0] == '7' && s[1] == 'f') {
@@ -577,11 +577,7 @@ R_API char* r_print_hexpair(RPrint *p, const char *str, int n) {
 				if (ch == -1) {
 					break;
 				}
-				if (IS_PRINTABLE (ch)) {
-					lastcol = color_text;
-				} else {
-					lastcol = color_other;
-				}
+				lastcol = IS_PRINTABLE (ch) ? color_text: color_other;
 			}
 			memcat (d, lastcol);
 		}
@@ -1061,7 +1057,7 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 	bool printValue = true;
 	bool oPrintValue = true;
 	bool isPxr = (p && p->flags & R_PRINT_FLAGS_REFS);
-	bool be = p->config? p->config->big_endian: R_SYS_ENDIAN;
+	bool be = p->config? R_ARCH_CONFIG_IS_BIG_ENDIAN (p->config): R_SYS_ENDIAN;
 
 	for (i = j = 0; i < len; i += (stride? stride: inc)) {
 		if (p && p->cons && p->cons->context && p->cons->context->breaked) {
@@ -1655,7 +1651,7 @@ R_API void r_print_c(RPrint *p, const ut8 *str, int len) {
 			p->cb_printf ("\n");
 		}
 	}
-	p->cb_printf (" };\n");
+	p->cb_printf ("};\n");
 }
 
 // HACK :D
@@ -2418,7 +2414,7 @@ R_API int r_print_jsondump(RPrint *p, const ut8 *buf, int len, int wordsize) {
 	}
 	int i, words = (len / bytesize);
 	p->cb_printf ("[");
-	bool be = p->config? p->config->big_endian: R_SYS_ENDIAN;
+	bool be = p->config? R_ARCH_CONFIG_IS_BIG_ENDIAN (p->config): R_SYS_ENDIAN;
 	for (i = 0; i < words; i++) {
 		switch (wordsize) {
 		case 8: {
@@ -2453,9 +2449,9 @@ R_API void r_print_hex_from_bin(RPrint *p, char *bin_str) {
 	if (!len) {
 		return;
 	}
-	ut64 n, *buf = malloc (sizeof (ut64) * ((len + 63) / 64));
+	ut64 n, *buf = calloc (sizeof (ut64), ((len + 63) / 64));
 	if (!buf) {
-		eprintf ("allocation failed\n");
+		R_LOG_ERROR ("allocation failed");
 		return;
 	}
 	if (!p) {
@@ -2524,7 +2520,7 @@ R_API void r_print_graphline(RPrint *print, const ut8 *buf, size_t len) {
 		// const char *chars = "_.,-^'";
 		size_t i;
 		for (i = 0; i < len; i++) {
-			print->cb_printf ("%c", chars[buf[i]/50]);
+			print->cb_printf ("%c", chars[buf[i] / 50]);
 		}
 	}
 	print->cb_printf ("\n");

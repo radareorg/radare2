@@ -210,7 +210,7 @@ EXPECT=<<EOF
 0x0045a8c0 132 flirt.__sigsetjmp
 0x0045abc0 6232 flirt._quicksort
 0x0045c620 19 flirt.__libc_secure_getenv
-0x0045ce30 10673 flirt.group_number
+0x0045ce30 10704 flirt.group_number
 0x0045f800 13172 flirt._IO_vfprintf_internal
 0x00462b80 976 flirt.hack_digit
 0x00465a50 11033 flirt.___printf_fp

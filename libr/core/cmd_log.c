@@ -1,11 +1,11 @@
 /* radare - LGPL - Copyright 2009-2022 - pancake */
 
-#include <string.h>
 #include "r_config.h"
 #include "r_cons.h"
 #include "r_core.h"
 
 bool rasm2_list(RCore *core, const char *arch, int fmt);
+bool ranal2_list(RCore *core, const char *arch, int fmt);
 
 static const char *help_msg_La[] = {
 	"Usage:", "La[qj]", " # asm/anal plugin list",
@@ -21,25 +21,28 @@ static const char *help_msg_L[] = {
 	"L",  "", "show this help",
 	"L", " blah."R_LIB_EXT, "load plugin file",
 	"L-", "duk", "unload core plugin by name",
-	"La", "[qj]", "list asm/anal plugins (see: aL, e asm.arch=" "??" ")",
-	"Lc", "", "list core plugins (see",
+	"La", "[qj]", "list analysis plugins",
+	"LA", "[qj]", "list arch plugins",
+	"Lb", "[qj]", "list bin plugins",
+	"Lc", "", "list core plugins",
 	"Ld", "", "list debug plugins (dL)",
 	"LD", "[j]", "list supported decompilers (e cmd.pdc=?)",
 	"Le", "", "list esil plugins",
 	"Lg", "", "list egg plugins",
 	"Lh", "", "list hash plugins (ph)",
 	"Li", "[j]", "list bin plugins (iL)",
-	"Lt", "[j]", "list color themes (eco)",
 	"Ll", "[j]", "list lang plugins (#!)",
 	"LL", "", "lock screen",
 	"Lm", "[j]", "list fs plugins (mL)",
 	"Lo", "", "list io plugins (oL)",
 	"Lp", "[j]", "list parser plugins (e asm.parser=?)",
+	"Ls", "[qj]", "list assembler plugins",
+	"Lt", "[j]", "list color themes (eco)",
 	NULL
 };
 
 static const char *help_msg_T[] = {
-	"Usage:", "T", "[-][ num|msg]",
+	"Usage:", "T", "[-][ num|msg] # text-log utility with timestamps",
 	"T", "", "list all Text log messages",
 	"T", " message", "add new log message",
 	"T", " 123", "list log from 123",
@@ -50,7 +53,6 @@ static const char *help_msg_T[] = {
 	"Tl", "", "get last log message id",
 	"Tj", "", "list in json format",
 	"Tm", " [idx]", "display log messages without index",
-	"Ts", "", "list files in current directory (see pwd, cd)",
 	"TT", "", "enter into the text log chat console",
 	"T=", "[.]", "pull logs from remote r2 instance specified by http.sync",
 	"T=&", "", "start background thread syncing with the remote server",
@@ -82,9 +84,13 @@ static void screenlock(RCore *core) {
 	do {
 		r_cons_clear00 ();
 		r_cons_printf ("Retries: %d\n", tries);
-		r_cons_printf ("Locked ts: %s\n", r_time_to_string (begin));
+		char *begstr = r_time_tostring (begin);
+		r_cons_printf ("Locked ts: %s\n", begstr);
+		free (begstr);
 		if (last != UT64_MAX) {
-			r_cons_printf ("Last try: %s\n", r_time_to_string (last));
+			char *endstr = r_time_tostring (last);
+			r_cons_printf ("Last try: %s\n", endstr);
+			free (endstr);
 		}
 		r_cons_newline ();
 		r_cons_flush ();
@@ -213,8 +219,42 @@ static int log_callback_r2(RCore *core, int count, const char *line) {
 }
 
 static int log_callback_all(RCore *log, int count, const char *line) {
-	r_cons_printf ("%d %s\n", count, line);
+	r_cons_printf ("%.2d %s\n", count, line);
 	return 0;
+}
+
+R_API void r_core_log_view(RCore *core, int num) {
+	if (num < 1) {
+		num = 1;
+	}
+	int i;
+	for (i = num - 3; i < num + 3; i++) {
+		r_cons_printf ("%s", (num == i)? "* ": "  ");
+		if (i < 1) {
+			r_cons_printf ("   ^\n");
+			continue;
+		}
+		if (i >= core->log->last) {
+			r_cons_printf ("   $\n");
+			continue;
+		}
+		if (i < core->log->first) {
+			r_cons_printf ("   ^\n");
+			continue;
+		}
+		const char *msg = r_strpool_get_i (core->log->sp, i);
+		if (msg) {
+			char *m = r_str_ndup (msg, 60);
+			char *nl = strchr (m, '\n');
+			if (nl) {
+				*nl = 0;
+			}
+			r_cons_printf ("%.2d %s\n", i, m);
+			free (m);
+		} else {
+			r_cons_printf ("%.2d ..\n", i);
+		}
+	}
 }
 
 static int cmd_log(void *data, const char *input) {
@@ -248,8 +288,11 @@ static int cmd_log(void *data, const char *input) {
 			}
 		}
 		break;
+	case 'v': // "Tv"
+		r_core_log_view (core, (int)r_num_math (core->num, input + 2));
+		break;
 	case 'l': // "Tl"
-		r_cons_printf ("%d\n", core->log->last - 1);
+		r_cons_printf ("%.2d\n", core->log->last - 1);
 		break;
 	case '-': //  "T-"
 		r_core_log_del (core, n);
@@ -305,7 +348,18 @@ static int cmd_log(void *data, const char *input) {
 		if (n > 0 || *input == '0') {
 			r_core_log_list (core, n, n2, *input);
 		} else {
-			r_core_log_add (core, input + 1);
+			const char *arg = r_str_trim_head_ro (input + 1);
+			if (r_str_startswith (arg, "base64:")) {
+				ut8 *s = r_base64_decode_dyn (arg + 7, -1);
+				if (s) {
+					r_core_log_add (core, (const char *)s);
+					free (s);
+				} else {
+					R_LOG_ERROR ("Invalid base64 stream");
+				}
+			} else {
+				r_core_log_add (core, arg);
+			}
 		}
 		break;
 	case 'm': // "Tm"
@@ -368,11 +422,31 @@ static int cmd_plugins(void *data, const char *input) {
 		}
 		break;
 	case 'a': // "La"
-		if (input[1] == '?') {
+		if (input[1] == '?') { // "La?"
 			r_core_cmd_help (core, help_msg_La);
-		} else {
-			// r_core_cmd0 (core, "e asm.arch=??");
+		} else { // asm plugins
+			ranal2_list (core, NULL, input[1]);
+			// r_core_cmd0 (core, "e anal.arch=??");
+		}
+		break;
+	case 's': // "Ls"
+		if (input[1] == '?') { // "Ls?"
+			r_core_cmd_help_match (core, help_msg_L, "Ls", true);
+		} else { // asm plugins
+			 // r_core_cmd0 (core, "e asm.arch=??");
 			rasm2_list (core, NULL, input[1]);
+		}
+		break;
+	case 'A': // "LA"
+		if (input[1] == '?') {
+			// r_core_cmd_help (core, help_msg_LA);
+		} else {
+			RListIter *iter;
+			RArchPlugin *item;
+			r_list_foreach (core->anal->arch->plugins, iter, item) {
+				eprintf ("%s\n", item->name);
+			}
+			// r_core_cmd0 (core, "e asm.arch=??");
 		}
 		break;
 	case 'p': // "Lp"

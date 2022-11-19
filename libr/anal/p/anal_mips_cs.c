@@ -26,13 +26,13 @@ static R_TH_LOCAL ut64 t9_pre = UT64_MAX;
 	}
 
 #define CREATE_SRC_DST_3(op) \
-	src0 = r_vector_push ((op)->srcs, NULL);\
-	src1 = r_vector_push ((op)->srcs, NULL);\
-	dst = r_vector_push ((op)->dsts, NULL);
+	src0 = r_vector_push (&(op)->srcs, NULL);\
+	src1 = r_vector_push (&(op)->srcs, NULL);\
+	dst = r_vector_push (&(op)->dsts, NULL);
 
 #define CREATE_SRC_DST_2(op) \
-	src0 = r_vector_push ((op)->srcs, NULL);\
-	dst = r_vector_push ((op)->dsts, NULL);
+	src0 = r_vector_push (&(op)->srcs, NULL);\
+	dst = r_vector_push (&(op)->dsts, NULL);
 
 #define SET_SRC_DST_3_REGS(op) \
 	CREATE_SRC_DST_3 (op);\
@@ -695,7 +695,7 @@ static void op_fillval(RAnal *anal, RAnalOp *op, csh *handle, cs_insn *insn) {
 	case R_ANAL_OP_TYPE_LOAD:
 		if (OPERAND(1).type == MIPS_OP_MEM) {
 			ZERO_FILL (reg);
-			src0 = r_vector_push (op->srcs, NULL);
+			src0 = r_vector_push (&op->srcs, NULL);
 			src0->reg = &reg;
 			parse_reg_name (src0->reg, *handle, insn, 1);
 			src0->delta = OPERAND(1).mem.disp;
@@ -704,7 +704,7 @@ static void op_fillval(RAnal *anal, RAnalOp *op, csh *handle, cs_insn *insn) {
 	case R_ANAL_OP_TYPE_STORE:
 		if (OPERAND(1).type == MIPS_OP_MEM) {
 			ZERO_FILL (reg);
-			dst = r_vector_push (op->dsts, NULL);
+			dst = r_vector_push (&op->dsts, NULL);
 			dst->reg = &reg;
 			parse_reg_name (dst->reg, *handle, insn, 1);
 			dst->delta = OPERAND(1).mem.disp;
@@ -788,7 +788,7 @@ static void set_opdir(RAnalOp *op) {
 }
 
 static int get_capstone_mode (RAnal *anal) {
-	int mode = anal->config->big_endian? CS_MODE_BIG_ENDIAN: CS_MODE_LITTLE_ENDIAN;
+	int mode = R_ARCH_CONFIG_IS_BIG_ENDIAN (anal->config)? CS_MODE_BIG_ENDIAN: CS_MODE_LITTLE_ENDIAN;
 	const char *cpu = anal->config->cpu;
 	if (R_STR_ISNOTEMPTY (cpu)) {
 		if (!strcmp (cpu, "micro")) {
@@ -834,13 +834,13 @@ static int analop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, 
 	op->size = 4;
 	n = cs_disasm (hndl, buf, len, addr, 1, &insn);
 	if (n < 1 || insn->size < 1) {
-		if (mask & R_ANAL_OP_MASK_DISASM) {
+		if (mask & R_ARCH_OP_MASK_DISASM) {
 			op->mnemonic = strdup ("invalid");
 			opsize = 4;
 		}
 		goto beach;
 	}
-	if (mask & R_ANAL_OP_MASK_DISASM) {
+	if (mask & R_ARCH_OP_MASK_DISASM) {
 		op->mnemonic = r_str_newf ("%s%s%s",
 			insn->mnemonic,
 			insn->op_str[0]?" ":"",
@@ -1156,15 +1156,15 @@ static int analop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, 
 	}
 beach:
 	set_opdir (op);
-	if (insn && mask & R_ANAL_OP_MASK_OPEX) {
+	if (insn && mask & R_ARCH_OP_MASK_OPEX) {
 		opex (&op->opex, hndl, insn);
 	}
-	if (mask & R_ANAL_OP_MASK_ESIL) {
+	if (mask & R_ARCH_OP_MASK_ESIL) {
 		if (analop_esil (anal, op, addr, buf, len, &hndl, insn) != 0) {
 			r_strbuf_fini (&op->esil);
 		}
 	}
-	if (mask & R_ANAL_OP_MASK_VAL) {
+	if (mask & R_ARCH_OP_MASK_VAL) {
 		op_fillval (anal, op, &hndl, insn);
 	}
 	cs_free (insn, n);
@@ -1288,7 +1288,7 @@ static RList *anal_preludes(RAnal *anal) {
 
 static int mips_cs_opasm(RAnal *anal, ut64 addr, const char *s, ut8 *buf, int len) {
 	int ret = mips_assemble (s, addr, buf);
-	if (anal->config->big_endian) {
+	if (R_ARCH_CONFIG_IS_BIG_ENDIAN (anal->config)) {
 		ut8 tmp = buf[0];
 		buf[0] = buf[3];
 		buf[3] = tmp;

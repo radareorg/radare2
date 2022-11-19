@@ -153,9 +153,11 @@ windist:
 	mkdir -p "${WINDIST}/share/doc/radare2"
 	mkdir -p "${WINDIST}/include/libr/sdb"
 	mkdir -p "${WINDIST}/include/libr/r_util"
+	mkdir -p "${WINDIST}/include/libr/r_anal"
 	@echo "${C}[WINDIST] Copying development files${R}"
-	cp -f shlr/sdb/src/*.h "${WINDIST}/include/libr/sdb/"
+	cp -f shlr/sdb/include/*.h "${WINDIST}/include/libr/sdb/"
 	cp -f libr/include/r_util/*.h "${WINDIST}/include/libr/r_util/"
+	cp -f libr/include/r_anal/*.h "${WINDIST}/include/libr/r_anal/"
 	cp -f libr/include/*.h "${WINDIST}/include/libr"
 	#mkdir -p "${WINDIST}/include/libr/sflib"
 	@cp -f doc/fortunes.* "${WINDIST}/share/doc/radare2"
@@ -230,10 +232,8 @@ install: install-doc install-man install-www install-pkgconfig
 	$(MAKE) -C binr install
 	$(MAKE) -C shlr install
 	for DIR in ${DATADIRS} ; do $(MAKE) -C "$$DIR" install ; done
-	cd "$(DESTDIR)$(LIBDIR)/radare2/" ;\
-		rm -f last ; ln -fs $(VERSION) last
-	cd "$(DESTDIR)$(DATADIR)/radare2/" ;\
-		rm -f last ; ln -fs $(VERSION) last
+	cd "$(DESTDIR)$(LIBDIR)/radare2/" && rm -f last && ln -fs $(VERSION) last
+	cd "$(DESTDIR)$(DATADIR)/radare2/" && rm -f last && ln -fs $(VERSION) last
 	rm -rf "${DESTDIR}${DATADIR}/radare2/${VERSION}/hud"
 	mkdir -p "${DESTDIR}${DATADIR}/radare2/${VERSION}/hud"
 	mkdir -p "${DESTDIR}${BINDIR}"
@@ -285,10 +285,8 @@ symstall install-symlink: install-man-symlink install-doc-symlink install-pkgcon
 	ln -fs "${PWD}/doc/hud" "${DESTDIR}${DATADIR}/radare2/${VERSION}/hud/main"
 	#mkdir -p "${DESTDIR}${DATADIR}/radare2/${VERSION}/flag"
 	#ln -fs $(PWD)/libr/flag/d/tags.r2 "${DESTDIR}${DATADIR}/radare2/${VERSION}/flag/tags.r2"
-	cd "$(DESTDIR)$(LIBDIR)/radare2/" ;\
-		rm -f last ; ln -fs $(VERSION) last
-	cd "$(DESTDIR)$(DATADIR)/radare2/" ;\
-		rm -f last ; ln -fs $(VERSION) last
+	cd "$(DESTDIR)$(LIBDIR)/radare2/" && rm -f last && ln -fs $(VERSION) last
+	cd "$(DESTDIR)$(DATADIR)/radare2/" && rm -f last && ln -fs $(VERSION) last
 	mkdir -p "${DESTDIR}${DATADIR}/radare2/${VERSION}/"
 	$(SHELL) ./configure-plugins --rm-static $(DESTDIR)/$(LIBDIR)/radare2/last/
 
@@ -396,7 +394,7 @@ shot:
 		radare.org:/srv/http/radareorg/get/shot
 
 tests test:
-	$(MAKE) -C test
+	$(MAKE) -j -C test
 
 macos-sign:
 	$(MAKE) -C binr/radare2 macos-sign
@@ -409,6 +407,9 @@ osx-pkg:
 
 quality:
 	./sys/shellcheck.sh
+
+ctags:
+	@ctags **/*.c **/*.h > /dev/null
 
 menu nconfig:
 	./sys/menu.sh || true

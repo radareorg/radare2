@@ -786,8 +786,12 @@ R_API bool r_io_bank_read_at(RIO *io, const ut32 bankid, ut64 addr, ut8 *buf, in
 		const ut64 buf_off = R_MAX (addr, r_io_submap_from (sm)) - addr;
 		const int read_len = R_MIN (r_io_submap_to ((&fake_sm)),
 					     r_io_submap_to (sm)) - (addr + buf_off) + 1;
-		const ut64 paddr = addr + buf_off - r_io_map_from (map) + map->delta;
-		ret &= (r_io_fd_read_at (io, map->fd, paddr, &buf[buf_off], read_len) == read_len);
+		if (map->perm & R_PERM_RELOC) {
+			ret &= map->reloc_map->read (io, map, addr + buf_off, &buf[buf_off], read_len);
+		} else {
+			const ut64 paddr = addr + buf_off - r_io_map_from (map) + map->delta;
+			ret &= (r_io_fd_read_at (io, map->fd, paddr, &buf[buf_off], read_len) == read_len);
+		}
 		// check return value here?
 		node = r_rbnode_next (node);
 		sm = node ? (RIOSubMap *)node->data : NULL;
@@ -828,8 +832,12 @@ R_API bool r_io_bank_write_at(RIO *io, const ut32 bankid, ut64 addr, const ut8 *
 		const ut64 buf_off = R_MAX (addr, r_io_submap_from (sm)) - addr;
 		const int write_len = R_MIN (r_io_submap_to ((&fake_sm)),
 					     r_io_submap_to (sm)) - (addr + buf_off) + 1;
-		const ut64 paddr = addr + buf_off - r_io_map_from (map) + map->delta;
-		ret &= (r_io_fd_write_at (io, map->fd, paddr, &buf[buf_off], write_len) == write_len);
+		if (map->perm & R_PERM_RELOC) {
+			ret &= map->reloc_map->write (io, map, addr + buf_off, &buf[buf_off], write_len);
+		} else {
+			const ut64 paddr = addr + buf_off - r_io_map_from (map) + map->delta;
+			ret &= (r_io_fd_write_at (io, map->fd, paddr, &buf[buf_off], write_len) == write_len);
+		}
 		// check return value here?
 		node = r_rbnode_next (node);
 		sm = node ? (RIOSubMap *)node->data : NULL;
@@ -867,6 +875,9 @@ R_API int r_io_bank_read_from_submap_at(RIO *io, const ut32 bankid, ut64 addr, u
 		return -1;
 	}
 	const int read_len = R_MIN (len, r_io_submap_to (sm) - addr + 1);
+	if (map->perm & R_PERM_RELOC) {
+		return map->reloc_map->read (io, map, addr, buf, read_len);
+	}
 	const ut64 paddr = addr - r_io_map_from (map) + map->delta;
 	return r_io_fd_read_at (io, map->fd, paddr, buf, read_len);
 }
@@ -901,6 +912,9 @@ R_API int r_io_bank_write_to_submap_at(RIO *io, const ut32 bankid, ut64 addr, co
 		return -1;
 	}
 	const int write_len = R_MIN (len, r_io_submap_to (sm) - addr + 1);
+	if (map->perm & R_PERM_RELOC) {
+		return map->reloc_map->write (io, map, addr, buf, write_len);
+	}
 	const ut64 paddr = addr - r_io_map_from (map) + map->delta;
 	return r_io_fd_write_at (io, map->fd, paddr, buf, write_len);
 }

@@ -19,7 +19,7 @@ if not capstone_dep.found() or not get_option('use_sys_capstone')
     patches_files = []
     # NOTE: when you update CS_TIP or CS_BRA, also update them in shlr/Makefile
     if capstone_version == 'v5'
-      CS_TIP = '0d0e684358afd0889b98deaf3941caa9c6855cae'
+      CS_TIP = '087889dddb545923613d8416af70e35eecfef70c'
       CS_BRA = 'next'
       patches_files = [
         'fix-x86-16.patch',
@@ -32,7 +32,7 @@ if not capstone_dep.found() or not get_option('use_sys_capstone')
         'capstone-include.patch'
       ]
     elif capstone_version == 'v4'
-      CS_TIP = 'a7cac8352f7397aa73bb2e2dcc1b6cdb2e1b8461'
+      CS_TIP = '1d230532840a37ac032c6ab80128238fc930c6c1'
       CS_BRA = 'v4'
       patches_files = [
         'capstone-calloc.patch',
@@ -483,21 +483,4 @@ libmpc = static_library('r2mpc', mpc_files,
 mpc_dep = declare_dependency(
   link_with: libmpc,
   include_directories: mpc_inc
-)
-
-# handle yxml dependency
-yxml_files = [
-  'yxml/yxml.c'
-]
-
-yxml_inc = [platform_inc, include_directories(['yxml'])]
-
-libyxml = static_library('r2yxml', yxml_files,
-  include_directories: yxml_inc,
-  implicit_include_directories: false
-)
-
-yxml_dep = declare_dependency(
-  link_with: libyxml,
-  include_directories: yxml_inc
 )

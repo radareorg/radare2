@@ -1,0 +1,394 @@
+NAME=search constructed strings
+FILE=bins/mach0/iGoat-Swift.arm_64.1
+CMDS=<<EOF
+/az 2
+EOF
+EXPECT=<<EOF
+0x100024380 5yJj
+0x1000c9484 iGoat
+0x1000c9494 Empty entry!!
+0x1000c9588 Incorrect!
+0x1000c99e0 Try Harder!
+0x1000c9ae8 b@nkP@ssword123b@nkP@ssword123
+0x1000c9d88 encrypted
+0x1000c9ec0 myencrytionkey
+0x1000ca02c myencrytionkey
+0x1000ca278 Success
+0x1000ca5cc Dismiss
+0x1000caad4 opacity
+0x1000cac30 fade
+0x1000caeec path
+0x1000cafec circleMask
+0x1000d0f20 statusBarWindow
+0x1000d3d48 menu
+0x1000d3e34 iGoat
+0x1000d3ed4 contactNumber
+0x1000d3f68 message
+0x1000d4020 Message "
+0x1000d406c " sent to
+0x1000d40c4 iGoat
+0x1000d4758 <br/><br/>
+0x1000d4980 <br/><br/>
+0x1000d4a40 <hr>
+0x1000d4a90 </hr
+0x1000d4bf8 name
+0x1000d4c60 description
+0x1000d4cd8 hints
+0x1000d4dd4 creditsFile
+0x1000d4e48 solution
+0x1000d8458 msg
+0x1000d8480 checksum
+0x1000d8a20 POST
+0x1000d8cd4 iGoat
+0x1000d9184 dollar!
+0x1000d922c }}
+0x1000d92ec iGoat
+0x1000d9424 JohnDoe@yap.com
+0x1000d944c YapKeyEmail
+0x1000d9470 iGoat
+0x1000d94bc TheUnknown
+0x1000d94dc YapKeyPassword
+0x1000d9504 iGoat
+0x1000d9638 FailedSuccess!
+0x1000d9668 iGoat
+0x1000d9728 YapKeyEmail
+0x1000d974c iGoat
+0x1000d981c YapKeyPassword
+0x1000d9844 iGoat
+0x1000da588 Start
+0x1000da644 Introduction
+0x1000db37c firstNam
+0x1000db424 lastName
+0x1000db75c POST
+0x1000db788 Content-Type
+0x1000db7b4 Accept
+0x1000db7c8 close
+0x1000db7d8 Connection
+0x1000dbae8 X-Goat-Secure
+0x1000dbc50 Error
+0x1000dbc90 Owned
+0x1000dcacc Error
+0x1000dcd5c Error
+0x1000dcd88 Error
+0x1000dced0 1634
+0x1000dcf0c 1634
+0x1000dcf24 926
+0x1000dcf48 926
+0x1000dcf58 iGoat
+0x1000dcf68 Verified!!
+0x1000dd5e8 ccNo: %@
+0x1000dd708 cvvNo: %@
+0x1000dd82c pinNo: %@
+0x1000dd864 Success
+0x1000de490 iGoat
+0x1000decbc X-Goat-Secure
+0x1000deda4 Error
+0x1000dee00 Owned
+0x1000deecc &password=
+0x1000df2b8 articles.sqlite
+0x1000df400 Snap!
+0x1000df644 ' AND premium=0
+0x1000dfc34 iGoat
+0x1000dfc44 Empty entry!!
+0x1000e0120 %02hhx
+0x1000e206c AboutCell
+0x1000e2a20 Main
+0x1000e2e70 About iGoat
+0x1000e2ff0 Articles
+0x1000e3094 Cell
+0x1000e3148 Cell
+0x1000e3710 Sentinel
+0x1000e372c txt
+0x1000e37d8 Sentinel
+0x1000e37f4 txt
+0x1000e3fdc Cydia.app
+0x1000e400c bash
+0x1000e4078 sshd
+0x1000e40a8 apt
+0x1000e40d0 Sentinel.txt
+0x1000e41f4 CoreData
+0x1000e4800 Error
+0x1000e4810 Fields empty
+0x1000e48b8 Success
+0x1000e4954 FailediGoat
+0x1000e4a1c User
+0x1000e4d88 User
+0x1000e4df0 john@test.com
+0x1000e4e34 coredbpassword
+0x1000e56d0 hide
+0x1000e5738 show
+0x1000e5944 iGoat
+0x1000e5b20 iGoat
+0x1000e5d08 iGoat
+0x1000e615c Credentials
+0x1000e6180 plist
+0x1000e6244 User
+0x1000e631c Password
+0x1000e651c Message
+0x1000e9a90 iGoat
+0x1000e9aa0 taoGi
+0x1000e9e20 SaveUser
+0x1000e9f74 SaveUser
+0x1000ea2c8 FailSuccess
+0x1000ea2f0 iGoat
+0x1000ea344 Error
+0x1000ea354 Fields empty
+0x1000eb7a8 Success
+0x1000ebad4 iGoat
+0x1000ebb18 root
+0x1000ebb58 root
+0x1000ebb9c iGoat
+0x1000ebbac Congratulations
+0x1000ec040 &message=
+0x1000ec8f0 Error:
+0x1000ed460 Content-Type
+0x1000ed498 Accept
+0x1000ed4b4 token=key
+0x1000ed554 POST
+0x1000eda6c Error
+0x1000edcb8 Passcode:
+0x1000edd10 Success
+0x1000edd68 Fail
+0x1000edd74 Try Again!!
+0x1000eeba4 Error:
+0x1000ef080 0123456789
+0x1000f0010 iGoat
+0x1000f0020 Empty entry!!
+0x1000f0744 Success!
+0x1000f07c8 er!!
+0x1000f07d4 Try HardiGoat
+0x1000f083c Success!!
+0x1000f12b4 PRAGMA key = '
+0x1000f231c FailedSuccess
+0x1000f2348 iGoat
+0x1000f2450 John Doe
+0x1000f249c 911
+0x1000f2cc4 John Doe
+0x1000f2d10 911
+0x1000f2e1c 53cr3tP
+0x1000f2e38 PIN
+0x1000f2ff0 Error
+0x1000f3000 Enter details!
+0x1000f3064 PIN
+0x1000f3224 Success
+0x1000f3260 Invalid!
+0x1000f3274 Try harder!!
+0x1000f5278 name
+0x1000f52e0 description
+0x1000f5368 exercises
+0x1000f56c8 Assets.plist
+0x1000f5980 name
+0x1000f59ec name
+0x1000f5d70 iGoat
+0x1000f5dd0 iGoat
+0x1000f6918 couchbasedb
+0x1000f6a4c documentID
+0x1000f6e58 documentID
+0x1000f71b4 FailedSuccess!
+0x1000f71e4 iGoat
+0x1000f72e8 documentID
+0x1000f7ca8 Jane Roe
+0x1000f7ce4 Female
+0x1000f7d04 Cancer
+0x1000f833c Jane Roe
+0x1000f8378 Female
+0x1000f8398 Cancer
+0x1000f84d0 Plist Storage
+0x1000f87d8 Error
+0x1000f891c User
+0x1000f89b4 Password
+0x1000f8a3c Invalid!
+0x1000f8a50 Try little bit.
+0x1000f8b90 Success
+0x1000f9474 iGoat_Swift.
+0x1000f9764 V:|[childView]|
+0x1000f9890 childVie
+0x1000f9b80 |[childView]|
+0x1000f9c58 childVie
+0x1000fb248 FailedSuccess!
+0x1000fb278 iGoat
+0x1000fc8a0 Hints
+0x1000fd18c <html>
+0x1000fd488 )</h2>
+0x1000fd4bc </body></html>
+0x1000ffdd4 token=key
+0x1000ffe78 POST
+0x1000fff10 content-
+0x1000fff28 type
+0x1000fff54 accept
+0x100100554 Error
+0x100100aa4 SecretPass
+0x100100e20 Success!
+0x100100e6c er!!..
+0x100100e7c Try Hard
+0x100100ea4 iGoat
+0x100101774 User
+0x1001c87f8 meemst
+0x1001c8974 meemst
+
+EOF
+RUN
+NAME=search constructed strings
+FILE=bins/mach0/iGoat-Swift.arm_64.1
+CMDS=<<EOF
+/az 8
+EOF
+EXPECT=<<EOF
+0x1000c9494 Empty entry!!
+0x1000c9588 Incorrect!
+0x1000c99e0 Try Harder!
+0x1000c9ae8 b@nkP@ssword123b@nkP@ssword123
+0x1000c9d88 encrypted
+0x1000c9ec0 myencrytionkey
+0x1000ca02c myencrytionkey
+0x1000cafec circleMask
+0x1000d0f20 statusBarWindow
+0x1000d3ed4 contactNumber
+0x1000d4020 Message "
+0x1000d406c " sent to
+0x1000d4758 <br/><br/>
+0x1000d4980 <br/><br/>
+0x1000d4c60 description
+0x1000d4dd4 creditsFile
+0x1000d9424 JohnDoe@yap.com
+0x1000d944c YapKeyEmail
+0x1000d94bc TheUnknown
+0x1000d94dc YapKeyPassword
+0x1000d9638 FailedSuccess!
+0x1000d9728 YapKeyEmail
+0x1000d981c YapKeyPassword
+0x1000da644 Introduction
+0x1000db788 Content-Type
+0x1000db7d8 Connection
+0x1000dbae8 X-Goat-Secure
+0x1000dcf68 Verified!!
+0x1000dd708 cvvNo: %@
+0x1000dd82c pinNo: %@
+0x1000decbc X-Goat-Secure
+0x1000deecc &password=
+0x1000df2b8 articles.sqlite
+0x1000df644 ' AND premium=0
+0x1000dfc44 Empty entry!!
+0x1000e206c AboutCell
+0x1000e2e70 About iGoat
+0x1000e3fdc Cydia.app
+0x1000e40d0 Sentinel.txt
+0x1000e4810 Fields empty
+0x1000e4954 FailediGoat
+0x1000e4df0 john@test.com
+0x1000e4e34 coredbpassword
+0x1000e615c Credentials
+0x1000ea2c8 FailSuccess
+0x1000ea354 Fields empty
+0x1000ebbac Congratulations
+0x1000ec040 &message=
+0x1000ed460 Content-Type
+0x1000ed4b4 token=key
+0x1000edcb8 Passcode:
+0x1000edd74 Try Again!!
+0x1000ef080 0123456789
+0x1000f0020 Empty entry!!
+0x1000f07d4 Try HardiGoat
+0x1000f083c Success!!
+0x1000f12b4 PRAGMA key = '
+0x1000f231c FailedSuccess
+0x1000f3000 Enter details!
+0x1000f3274 Try harder!!
+0x1000f52e0 description
+0x1000f5368 exercises
+0x1000f56c8 Assets.plist
+0x1000f6918 couchbasedb
+0x1000f6a4c documentID
+0x1000f6e58 documentID
+0x1000f71b4 FailedSuccess!
+0x1000f72e8 documentID
+0x1000f84d0 Plist Storage
+0x1000f8a50 Try little bit.
+0x1000f9474 iGoat_Swift.
+0x1000f9764 V:|[childView]|
+0x1000f9b80 |[childView]|
+0x1000fb248 FailedSuccess!
+0x1000fd4bc </body></html>
+0x1000ffdd4 token=key
+0x100100aa4 SecretPass
+
+EOF
+RUN
+
+NAME=search constructed strings with less false positives
+FILE=bins/mach0/iGoat-Swift.arm_64.1
+CMDS=<<EOF
+/azq 8
+EOF
+EXPECT=<<EOF
+0x1000c9494 Empty entry!!
+0x1000c9588 Incorrect!
+0x1000c99e0 Try Harder!
+0x1000c9ae8 b@nkP@ssword123b@nkP@ssword123
+0x1000c9d88 encrypted
+0x1000c9ec0 myencrytionkey
+0x1000ca02c myencrytionkey
+0x1000cafec circleMask
+0x1000d0f20 statusBarWindow
+0x1000d3ed4 contactNumber
+0x1000d4020 Message "
+0x1000d4c60 description
+0x1000d4dd4 creditsFile
+0x1000d9424 JohnDoe@yap.com
+0x1000d944c YapKeyEmail
+0x1000d94bc TheUnknown
+0x1000d94dc YapKeyPassword
+0x1000d9638 FailedSuccess!
+0x1000d9728 YapKeyEmail
+0x1000d981c YapKeyPassword
+0x1000da644 Introduction
+0x1000db788 Content-Type
+0x1000db7d8 Connection
+0x1000dbae8 X-Goat-Secure
+0x1000dcf68 Verified!!
+0x1000decbc X-Goat-Secure
+0x1000df2b8 articles.sqlite
+0x1000dfc44 Empty entry!!
+0x1000e206c AboutCell
+0x1000e2e70 About iGoat
+0x1000e3fdc Cydia.app
+0x1000e40d0 Sentinel.txt
+0x1000e4810 Fields empty
+0x1000e4954 FailediGoat
+0x1000e4df0 john@test.com
+0x1000e4e34 coredbpassword
+0x1000e615c Credentials
+0x1000ea2c8 FailSuccess
+0x1000ea354 Fields empty
+0x1000ebbac Congratulations
+0x1000ed460 Content-Type
+0x1000ed4b4 token=key
+0x1000edcb8 Passcode:
+0x1000edd74 Try Again!!
+0x1000ef080 0123456789
+0x1000f0020 Empty entry!!
+0x1000f07d4 Try HardiGoat
+0x1000f083c Success!!
+0x1000f12b4 PRAGMA key = '
+0x1000f231c FailedSuccess
+0x1000f3000 Enter details!
+0x1000f3274 Try harder!!
+0x1000f52e0 description
+0x1000f5368 exercises
+0x1000f56c8 Assets.plist
+0x1000f6918 couchbasedb
+0x1000f6a4c documentID
+0x1000f6e58 documentID
+0x1000f71b4 FailedSuccess!
+0x1000f72e8 documentID
+0x1000f84d0 Plist Storage
+0x1000f8a50 Try little bit.
+0x1000f9474 iGoat_Swift.
+0x1000f9764 V:|[childView]|
+0x1000fb248 FailedSuccess!
+0x1000ffdd4 token=key
+0x100100aa4 SecretPass
+
+EOF
+RUN
+

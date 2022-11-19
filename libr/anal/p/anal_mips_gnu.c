@@ -1,19 +1,13 @@
 /* radare - LGPL - Copyright 2010-2022 - pancake */
 
-#include <string.h>
-#include <r_types.h>
 #include <r_lib.h>
 #include <r_asm.h>
 #include <r_anal.h>
 #include "disas-asm.h"
 #include "opcode/mips.h"
 
-static R_TH_LOCAL unsigned long Offset = 0;
-static R_TH_LOCAL RStrBuf *buf_global = NULL;
-static R_TH_LOCAL ut8 bytes[8] = { 0 };
 static R_TH_LOCAL char *pre_cpu = NULL;
-static R_TH_LOCAL char *pre_features = NULL;
-static R_TH_LOCAL int mips_mode = 0;
+static R_TH_LOCAL ut64 t9_pre = UT64_MAX;
 
 static int symbol_at_address(bfd_vma addr, struct disassemble_info *info) {
 	return 0;
@@ -24,21 +18,21 @@ static void memory_error_func(int status, bfd_vma memaddr, struct disassemble_in
 }
 
 static int mips_buffer_read_memory(bfd_vma memaddr, bfd_byte *myaddr, unsigned int length, struct disassemble_info *info) {
-	int delta = (memaddr - Offset);
+	int delta = (memaddr - info->buffer_vma);
 	if (delta < 0) {
 		return -1; // disable backward reads
 	}
 	if ((delta + length) > 4) {
 		return -1;
 	}
+	ut8 *bytes = info->buffer;
 	memcpy (myaddr, bytes + delta, length);
 	return 0;
 }
 
-DECLARE_GENERIC_PRINT_ADDRESS_FUNC ()
-DECLARE_GENERIC_FPRINTF_FUNC ()
+DECLARE_GENERIC_PRINT_ADDRESS_FUNC_NOGLOBALS ()
+DECLARE_GENERIC_FPRINTF_FUNC_NOGLOBALS ()
 
-static R_TH_LOCAL ut64 t9_pre = UT64_MAX;
 #define REG_BUF_MAX 32
 // ESIL macros:
 
@@ -1121,19 +1115,15 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, gnu_insn *insn) {
 }
 
 static int disassemble(RAnal *a, RAnalOp *op, const ut8 *buf, int len) {
+	ut8 bytes[8] = { 0 };
 	struct disassemble_info disasm_obj = { 0 };
 	if (len < 4) {
 		return -1;
 	}
-	Offset = op->addr;
-	buf_global = r_strbuf_new ("");
-	memcpy (&bytes, buf, R_MIN (len, 8));
+	RStrBuf *sb = r_strbuf_new ("");
+	memcpy (&bytes, buf, R_MIN (len, sizeof (bytes)));
 
 	const char *cpu = a->config->cpu;
-	if ((cpu != pre_cpu) && (a->config->features != pre_features)) {
-		free (disasm_obj.disassembler_options);
-		memset (&disasm_obj, '\0', sizeof (struct disassemble_info));
-	}
 
 	/* prepare disassembler */
 	if (cpu && (!pre_cpu || !strcmp (cpu, pre_cpu))) {
@@ -1161,45 +1151,42 @@ static int disassemble(RAnal *a, RAnalOp *op, const ut8 *buf, int len) {
 			// Fallback for default config
 			disasm_obj.mach = bfd_mach_mips_loongson_2f;
 		}
-		pre_cpu = r_str_dup (pre_cpu, cpu);
+		free (pre_cpu);
+		pre_cpu = strdup (cpu);
 	} else {
 		disasm_obj.mach = bfd_mach_mips_loongson_2f;
 	}
 
-	const char *features = a->config->features;
-	if (features && (!pre_features || !strcmp (features, pre_features))) {
-		free (disasm_obj.disassembler_options);
-		if (strstr (features, "n64")) {
-			disasm_obj.disassembler_options = r_str_new ("abi=n64");
-		} else if (strstr (features, "n32")) {
-			disasm_obj.disassembler_options = r_str_new ("abi=n32");
-		} else if (strstr (features, "o32")) {
-			disasm_obj.disassembler_options = r_str_new ("abi=o32");
-		}
-		pre_features = r_str_dup (pre_features, features);
+	const char *abi = a->config->abi;
+	// const char *features = a->config->features;
+	disasm_obj.disassembler_options = NULL;
+	if (R_STR_ISNOTEMPTY (abi)) {
+		// n32, n64, o32
+		disasm_obj.disassembler_options = r_str_newf ("abi=%s", abi);
 	}
 
-	mips_mode = a->config->bits;
-	disasm_obj.arch = CPU_LOONGSON_2F;
+	const ut64 addr = op->addr;
+	disasm_obj.arch = CPU_LOONGSON_2F; // XXX should be different see .mach
 	disasm_obj.buffer = (ut8 *)&bytes;
 	disasm_obj.read_memory_func = &mips_buffer_read_memory;
 	disasm_obj.symbol_at_address_func = &symbol_at_address;
 	disasm_obj.memory_error_func = &memory_error_func;
 	disasm_obj.print_address_func = &generic_print_address_func;
-	disasm_obj.buffer_vma = Offset;
+	disasm_obj.buffer_vma = addr;
 	disasm_obj.buffer_length = 4;
-	disasm_obj.endian = !a->config->big_endian;
+	disasm_obj.endian = !R_ARCH_CONFIG_IS_BIG_ENDIAN (a->config);
 	disasm_obj.fprintf_func = &generic_fprintf_func;
-	disasm_obj.stream = stdout;
+	disasm_obj.stream = sb;
 	op->size = (disasm_obj.endian == BFD_ENDIAN_LITTLE)
-		? print_insn_little_mips ((bfd_vma)Offset, &disasm_obj)
-		: print_insn_big_mips ((bfd_vma)Offset, &disasm_obj);
+		? print_insn_little_mips ((bfd_vma)addr, &disasm_obj)
+		: print_insn_big_mips ((bfd_vma)addr, &disasm_obj);
 	if (op->size == -1) {
 		op->mnemonic = strdup ("(data)");
+		r_strbuf_free (sb);
 	} else {
-		op->mnemonic = r_strbuf_drain (buf_global);
-		buf_global = NULL;
+		op->mnemonic = r_strbuf_drain (sb);
 	}
+	free (disasm_obj.disassembler_options);
 	return op->size;
 }
 
@@ -1212,7 +1199,7 @@ static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, R
 	if (!op) {
 		return oplen;
 	}
-	if (mask & R_ANAL_OP_MASK_DISASM) {
+	if (mask & R_ARCH_OP_MASK_DISASM) {
 		op->addr = addr;
 		disassemble (anal, op, b, len);
 	}
@@ -1221,7 +1208,7 @@ static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, R
 	op->size = oplen;
 	op->addr = addr;
 	// Be endian aware
-	opcode = r_read_ble32 (b, anal->config->big_endian);
+	opcode = r_read_ble32 (b, R_ARCH_CONFIG_IS_BIG_ENDIAN (anal->config));
 
 	// eprintf ("MIPS: %02x %02x %02x %02x (after endian: big=%d)\n", buf[0], buf[1], buf[2], buf[3], anal->big_endian);
 	if (opcode == 0) {
@@ -1602,7 +1589,7 @@ static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, R
 		case 15: // lui
 			insn.id = MIPS_INS_LUI;
 			snprintf ((char *)insn.i_reg.imm, REG_BUF_MAX, "0x%" PFMT32x, imm);
-			dst = r_vector_push (op->dsts, NULL);
+			dst = r_vector_push (&op->dsts, NULL);
 			dst->reg = r_reg_get (anal->reg, mips_reg_decode (rt), R_REG_TYPE_GPR);
 			// TODO: currently there is no way for the macro to get access to this register
 			op->val = imm;
@@ -1610,10 +1597,10 @@ static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, R
 		case 9: // addiu
 			insn.id = MIPS_INS_ADDIU;
 			op->type = R_ANAL_OP_TYPE_ADD;
-			dst = r_vector_push (op->dsts, NULL);
+			dst = r_vector_push (&op->dsts, NULL);
 			dst->reg = r_reg_get (anal->reg, mips_reg_decode (rt), R_REG_TYPE_GPR);
 			// TODO: currently there is no way for the macro to get access to this register
-			src = r_vector_push (op->srcs, NULL);
+			src = r_vector_push (&op->srcs, NULL);
 			src->reg = r_reg_get (anal->reg, mips_reg_decode (rs), R_REG_TYPE_GPR);
 			op->val = imm; // Beware: this one is signed... use `?vi $v`
 			if (rs == 0) {
@@ -1727,12 +1714,12 @@ static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, R
 		// family = 'I';
 	}
 
-	if (mask & R_ANAL_OP_MASK_ESIL) {
+	if (mask & R_ARCH_OP_MASK_ESIL) {
 		if (analop_esil (anal, op, addr, &insn)) {
 			r_strbuf_fini (&op->esil);
 		}
 	}
-	if (mask & R_ANAL_OP_MASK_VAL) {
+	if (mask & R_ARCH_OP_MASK_VAL) {
 		// TODO: add op_fillval (anal, op, &insn);
 	}
 	return oplen;
@@ -1931,6 +1918,7 @@ RAnalPlugin r_anal_plugin_mips_gnu = {
 	.name = "mips.gnu",
 	.desc = "MIPS code analysis plugin",
 	.license = "LGPL3",
+	.cpus = "mips64r2,mips32r2,mips64,mips32,loongson3a,gs464,gs464e,gs264e,loongson2e,loongson2f,mips32/64",
 	.arch = "mips",
 	.bits = 32,
 	.esil = true,

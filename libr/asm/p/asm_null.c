@@ -11,7 +11,6 @@ RAsmPlugin r_asm_plugin_null = {
 	.bits = 8 | 16 | 32 | 64,
 	.endian = R_SYS_ENDIAN_NONE,
 	.desc = "no disassemble",
-	.disassemble = NULL,
 	.assemble = NULL,
 };
 
