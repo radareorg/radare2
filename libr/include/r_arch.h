@@ -130,7 +130,6 @@ typedef struct r_arch_plugin_t {
 	ut32 endian;
 	ut32 bits;
 	ut32 addr_bits;
-	bool esil;
 	RArchPluginInitCallback init;
 	RArchPluginInitCallback fini;
 	RArchPluginInfoCallback info;
