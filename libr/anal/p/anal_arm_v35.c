@@ -2609,9 +2609,13 @@ static char *mnemonics(RAnal *a, int id, bool json) {
 		}
 		return name? strdup (name): NULL;
 	}
-	RStrBuf *buf = r_strbuf_new ("");
+	PJ *pj = NULL;
+	RStrBuf *sb = NULL;
 	if (json) {
-		r_strbuf_append (buf, "[");
+		pj = pj_new ();
+		pj_a (pj);
+	} else {
+		sb = r_strbuf_new ("");
 	}
 	for (i = 1; ; i++) {
 		const char *op = v35_insn_name (i);
@@ -2619,20 +2623,18 @@ static char *mnemonics(RAnal *a, int id, bool json) {
 			break;
 		}
 		if (json) {
-			r_strbuf_append (buf, "\"");
-		}
-		r_strbuf_append (buf, op);
-		if (json) {
-			if (v35_insn_name (i + 1)) {
-				r_strbuf_append (buf, "\",");
-			} else {
-				r_strbuf_append (buf, "\"]\n");
-			}
+			pj_s (pj, op);
 		} else {
-			r_strbuf_append (buf, "\n");
+			r_strbuf_append (sb, op);
+			r_strbuf_append (sb, "\n");
 		}
 	}
-	return r_strbuf_drain (buf);
+	if (json) {
+		pj_end (pj);
+		return pj_drain (pj);
+	}
+	return r_strbuf_drain (sb);
+
 }
 
 RAnalPlugin r_anal_plugin_arm_v35 = {
