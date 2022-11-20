@@ -1186,13 +1186,6 @@ R_API bool r_asm_modify(RAsm *a, ut8 *buf, int field, ut64 val) {
 	return (a->cur && a->cur->modify) ? a->cur->modify (a, buf, field, val): false;
 }
 
-R_API int r_asm_get_offset(RAsm *a, int type, int idx) { // link to rbin
-	if (a && a->binb.bin && a->binb.get_offset) {
-		return a->binb.get_offset (a->binb.bin, type, idx);
-	}
-	return -1;
-}
-
 R_API char *r_asm_describe(RAsm *a, const char* str) {
 	return (a && a->pair)? sdb_get (a->pair, str, 0): NULL;
 }
