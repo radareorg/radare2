@@ -363,7 +363,6 @@ RArchPlugin r_arch_plugin_i4004 = {
 	.endian = R_SYS_ENDIAN_BIG,
 	.bits = R_SYS_BITS_4,
 	.addr_bits = R_SYS_BITS_12,
-	.esil = false,
 	.author = "pancake, condret",
 	.decode = &i4004_decode,
 	.encode = &i4004_encode,

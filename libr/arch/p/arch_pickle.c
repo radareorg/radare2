@@ -950,7 +950,6 @@ static char *pickle_mnemonics(RArchSession *s, int id, bool json) {
 RArchPlugin r_arch_plugin_pickle = {
 	.name = "pickle",
 	.desc = "Python Pickle Machine Disassembler",
-	.esil = false,
 	.license = "BSD",
 	.arch = "pickle",
 	.bits = 8, // not sure

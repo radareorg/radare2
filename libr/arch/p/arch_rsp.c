@@ -784,7 +784,6 @@ RArchPlugin r_arch_plugin_rsp = {
 	.desc = "RSP code analysis plugin",
 	.license = "LGPL3",
 	.arch = "rsp",
-	.esil = true,
 	.bits = 32,
 	.decode = &rsp_op,
 	.info = &archinfo,
