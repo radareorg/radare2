@@ -1582,7 +1582,7 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 		FPOPCALL ("*");
 		break;
 	case ARM64_INS_FNMUL:
-		FPOPCALL_NEGATE("*");
+		FPOPCALL_NEGATE ("*");
 		break;
 	case ARM64_INS_FMADD:
 		r_strbuf_setf (&op->esil, "%d,DUP,%s,F2D,%d,%s,F2D,F*,%d,%s,F2D,F+,D2F,%s,=",
