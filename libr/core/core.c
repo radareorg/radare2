@@ -3193,10 +3193,7 @@ R_API bool r_core_init(RCore *core) {
 		core->asmqjmps = R_NEWS (ut64, core->asmqjmps_size);
 	}
 
-	r_bin_bind (core->bin, &(core->rasm->binb));
 	r_bin_bind (core->bin, &(core->anal->binb));
-	r_bin_bind (core->bin, &(core->anal->binb));
-
 	r_io_bind (core->io, &(core->search->iob));
 	r_io_bind (core->io, &(core->print->iob));
 	r_io_bind (core->io, &(core->anal->iob));
