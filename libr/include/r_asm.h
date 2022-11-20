@@ -66,8 +66,7 @@ typedef struct r_asm_t {
 	_RAsmPlugin *cur; // disassemble .. should be RArchPlugin DEPRECATE
 	_RAsmPlugin *acur; // assemble DEPRECATE
 	RList *plugins;
-	RBinBind binb;
-	RAnalBind analb;
+	RAnalBind analb; // Should be RArchBind instead, but first we need to move all the anal plugins
 	RParse *ifilter;
 	RParse *ofilter;
 	Sdb *pair;
