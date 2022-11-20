@@ -700,7 +700,6 @@ RArchPlugin r_arch_plugin_amd29k = {
 	.arch = "amd29k",
 	.bits = R_SYS_BITS_32,
 	.addr_bits = R_SYS_BITS_32,
-	.esil = false,
 	.info = archinfo,
 	.decode = &decode,
 	.regs = regs,

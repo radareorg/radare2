@@ -1323,7 +1323,6 @@ RArchPlugin r_arch_plugin_sh = {
 	.bits = 32,
 	.decode = &decode,
 	.regs = regs,
-	.esil = true
 };
 
 #ifndef R2_PLUGIN_INCORE

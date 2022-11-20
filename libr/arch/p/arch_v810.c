@@ -459,7 +459,6 @@ RArchPlugin r_arch_plugin_v810 = {
 	.license = "LGPL3",
 	.arch = "v810",
 	.bits = 32,
-	.esil = true,
 	.decode = v810_decode,
 	.regs = v810_regs,
 };
