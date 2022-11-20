@@ -1646,11 +1646,29 @@ static void __cursor_right(RCore *core) {
 	}
 }
 
+// copypasta from visual
+static ut64 insoff(RCore *core, int delta) {
+	int minop = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_MIN_OP_SIZE);
+	int maxop = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_MAX_OP_SIZE);
+	ut64 addr = core->offset + delta; // should be core->print->cur
+	RAnalBlock *bb = r_anal_bb_from_offset (core->anal, addr - minop);
+	if (bb) {
+		ut64 res = r_anal_bb_opaddr_at (bb, addr - minop);
+		if (res != UT64_MAX) {
+			if (res < addr && addr - res <= maxop) {
+				return res;
+			}
+		}
+	}
+	return addr;
+}
+
 static void __cursor_up(RCore *core) {
 	RPrint *print = core->print;
-	ut64 addr, oaddr = core->offset + print->cur;
-	if (r_core_prevop_addr (core, oaddr, 1, &addr)) {
-		const int delta = oaddr - addr;
+	ut64 addr = 0;
+	ut64 opaddr = insoff (core, core->print->cur);
+	if (r_core_prevop_addr (core, opaddr, 1, &addr)) {
+		const int delta = opaddr - addr;
 		print->cur -= delta;
 	} else {
 		print->cur -= 4;
@@ -6533,14 +6551,11 @@ static void __handle_tab(RCore *core) {
 // copypasta from visual
 static void prevOpcode(RCore *core) {
 	RPrint *p = core->print;
-	ut64 addr, oaddr = core->offset + core->print->cur;
-	if (r_core_prevop_addr (core, oaddr, 1, &addr)) {
-		const int delta = oaddr - addr;
-		if (delta < 1) {
-			p->cur -= 4;
-		} else {
-			p->cur -= delta;
-		}
+	ut64 addr = 0;
+	ut64 opaddr = insoff (core, core->print->cur);
+	if (r_core_prevop_addr (core, opaddr, 1, &addr)) {
+		const int delta = opaddr - addr;
+		p->cur -= delta;
 	} else {
 		p->cur -= 4;
 	}
@@ -6792,7 +6807,12 @@ virtualmouse:
 		} else if (core->print->cur_enabled) {
 			RPanel *cp = __get_cur_panel (core->panels);
 			if (cp) {
-				__direction_panels_cursor_cb (core, DOWN);
+				if (cur->model->directionCb) {
+					cur->model->directionCb (core, (int)DOWN);
+					break;
+				} else {
+					__direction_panels_cursor_cb (core, DOWN);
+				}
 			}
 			nextOpcode (core);
 		} else {
@@ -6809,6 +6829,10 @@ virtualmouse:
 			RPanel *cp = __get_cur_panel (core->panels);
 			if (cp) {
 				if (strstr (cp->model->cmd, "pd")) {
+					if (cur->model->directionCb) {
+						cur->model->directionCb (core, (int)UP);
+						break;
+					}
 					int op = cp->view->curpos;
 					prevOpcode (core);
 					if (op == cp->view->curpos) {
