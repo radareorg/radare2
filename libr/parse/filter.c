@@ -148,7 +148,7 @@ static bool filter(RParse *p, ut64 addr, RFlag *f, RAnalHint *hint, char *data, 
 	RAnalFunction *fcn;
 	RFlagItem *flag;
 	ut64 off;
-	const int bits = p->analb.anal->config->bits;
+	const int bits = p->analb.anal->config->bits; /// if we move this api into r_asm, we can use a->config->bits directly
 	const int seggrn = p->analb.anal->config->seggrn;
 	bool x86 = false;
 	bool arm = false;
@@ -569,7 +569,7 @@ static bool filter(RParse *p, ut64 addr, RFlag *f, RAnalHint *hint, char *data, 
 	if (data != str) {
 		strncpy (str, data, len);
 	} else {
-		eprintf ("Invalid str/data inputs\n");
+		R_LOG_ERROR ("Invalid str/data inputs");
 	}
 	return false;
 }
@@ -588,7 +588,13 @@ R_API bool r_parse_filter(RParse *p, ut64 addr, RFlag *f, RAnalHint *hint, char 
 	return false;
 }
 
-// easier to use, should replace r_parse_filter(), but its not using rflag, analhint, endian, etc
+// r_asm_filter()
+// r_asm_parse()
+// r_asm_subvar()
+// r_asm_replace()
+
+// R2_580 - easier to use, should replace r_asm_filter(), but its not using rflag, analhint, endian, etc
+// this function is unused, but there's data we are missing, like the analhint.. that we must ensure that is called before calling this. so we need more tests for this.
 R_API char *r_parse_filter_dup(RParse *p, ut64 addr, const char *opstr) {
 	const size_t out_len = 256;
 	char *in = strdup (opstr);

@@ -1081,16 +1081,16 @@ static int full_insn_size(tms320_dasm_t *dasm) {
  */
 
 int tms320_dasm(tms320_dasm_t * dasm, const ut8 * stream, int len) {
-	init_dasm(dasm, stream, len);
+	init_dasm (dasm, stream, len);
 
-	if (tms320_f_get_cpu(dasm) != TMS320_F_CPU_C55X_PLUS) {
-		if (lookup_insn_head(dasm) && decode_insn_head(dasm)) {
+	if (tms320_f_get_cpu (dasm) != TMS320_F_CPU_C55X_PLUS) {
+		if (lookup_insn_head (dasm) && decode_insn_head (dasm)) {
 			if (dasm->length > len) {
 				dasm->status |= TMS320_S_INVAL;
 			}
 		}
 	} else {
-		c55x_plus_disassemble(dasm, stream, len);
+		c55x_plus_disassemble (dasm, stream, len);
 	}
 
 	if (strstr (dasm->syntax, "invalid")) {

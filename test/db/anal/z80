@@ -11,3 +11,64 @@ EXPECT=<<EOF
 0x00000016    3      7 fcn.00000016
 EOF
 RUN
+
+NAME=z80: Basic search for functions
+ARGS=-a z80
+FILE=bins/elf/ioli/crackme0x00
+CMDS=<<EOF
+e asm.arch = z80
+pd 20
+e asm.pseudo=true
+pd 20
+EOF
+EXPECT=<<EOF
+        :   ;-- section..text:
+        :   ;-- .text:
+        :   ;-- entry0:
+        :   ;-- _start:
+        :   0x08048360      31ed5e         ld sp, 0x5eed               ; [13] -r-x section size 484 named .text
+        :   0x08048363      89             adc a, c
+        :   0x08048364      e1             pop hl
+        :   0x08048365      83             add a, e
+        :   0x08048366      e4f050         call po, 0x50f0
+        :   0x08048369      54             ld d, h
+        :   0x0804836a      52             ld d, d
+        :   0x0804836b      68             ld l, b
+        `=< 0x0804836c      1085           djnz 0x85
+            0x0804836e      04             inc b
+            0x0804836f      08             ex af, af'
+            0x08048370      68             ld l, b
+            0x08048371      a0             and b
+            0x08048372      84             add a, h
+            0x08048373      04             inc b
+            0x08048374      08             ex af, af'
+            0x08048375      51             ld d, c
+            0x08048376      56             ld d, [hl]
+            0x08048377      68             ld l, b
+            0x08048378      14             inc d
+        :   ;-- section..text:
+        :   ;-- .text:
+        :   ;-- entry0:
+        :   ;-- _start:
+        :   0x08048360      31ed5e         sp = 0x5eed                 ; [13] -r-x section size 484 named .text
+        :   0x08048363      89             a = a + c
+        :   0x08048364      e1             pop hl
+        :   0x08048365      83             a = a + e
+        :   0x08048366      e4f050         call po 0x50f0
+        :   0x08048369      54             d = h
+        :   0x0804836a      52             d = d
+        :   0x0804836b      68             l = b
+        `=< 0x0804836c      1085           djnz 0x85
+            0x0804836e      04             inc b
+            0x0804836f      08             swap(af af)
+            0x08048370      68             l = b
+            0x08048371      a0             b = b &
+            0x08048372      84             a = a + h
+            0x08048373      04             inc b
+            0x08048374      08             swap(af af)
+            0x08048375      51             d = c
+            0x08048376      56             d = [hl]
+            0x08048377      68             l = b
+            0x08048378      14             inc d
+EOF
+RUN
