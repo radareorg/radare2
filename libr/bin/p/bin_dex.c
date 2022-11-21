@@ -1490,7 +1490,7 @@ static void parse_class(RBinFile *bf, RBinDexClass *c, int class_index, int *met
 		if (cls->super) {
 			char *sk;
 			RListIter *iter;
-			rbin->cb_printf ("  Superclass        : '\n");
+			rbin->cb_printf ("  Superclass        : '");
 			r_list_foreach (cls->super, iter, sk) {
 				rbin->cb_printf ("%s%s", iter->n? ",": "", sk);
 			}
