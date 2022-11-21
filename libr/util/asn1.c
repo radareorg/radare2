@@ -71,10 +71,12 @@ static RASN1Object *asn1_parse_header(const ut8 *buffer_base, const ut8 *buffer,
 		obj->length = (ut32) length8;
 		obj->sector = buffer + 2;
 	}
-	if (obj->tag == TAG_BITSTRING && obj->sector[0] == 0) {
+	obj->bitlength = 8 * obj->length;
+	if (obj->tag == TAG_BITSTRING) {
 		if (obj->length > 0) {
-			obj->sector++; // real sector starts + 1
 			obj->length--;
+			obj->bitlength = obj->length * 8 - obj->sector[0];
+			obj->sector++; // real sector starts + 1
 		}
 	}
 	if (obj->length > length) {
@@ -513,8 +515,14 @@ R_API char *r_asn1_object_tostring(RASN1Object *obj, ut32 depth, RStrBuf *sb, PJ
 	case 0: // verbose default
 	default:
 		r_strbuf_appendf (sb, "%4"PFMT64d"  ", obj->offset);
-		r_strbuf_appendf (sb, "%4u:%2d: %s %-20s: %s\n", obj->length,
-			depth, obj->form ? "cons" : "prim", name, string);
+		r_strbuf_appendf (sb, "%4u:%2d: %s %-20s: %s", obj->length,
+			depth, obj->form? "cons": "prim", name, string);
+		// We may have a bit length diffrent than the length
+		if (obj->length * 8 != obj->bitlength) {
+			r_strbuf_appendf (sb, " (%u bits)\n", obj->bitlength);
+		} else {
+			r_strbuf_append (sb, "\n");
+		}
 		if (obj->list.objects) {
 			for (i = 0; i < obj->list.length; i++) {
 				r_asn1_object_tostring (obj->list.objects[i], depth + 1, sb, pj, fmtmode);
