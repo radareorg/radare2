@@ -65,6 +65,8 @@ typedef struct r_asm_t {
 	RArchSession *dcur; // decode current
 	_RAsmPlugin *cur; // disassemble .. should be RArchPlugin DEPRECATE
 	_RAsmPlugin *acur; // assemble DEPRECATE
+	// RArchSession *cur;
+	// RArchSession *acur;
 	RList *plugins;
 	RAnalBind analb; // Should be RArchBind instead, but first we need to move all the anal plugins
 	RParse *ifilter;
@@ -91,14 +93,9 @@ typedef struct r_asm_plugin_t {
 	void *user; // user data pointer
 	int bits;
 	int endian;
-	bool (*init)(void *user);
-	bool (*fini)(void *user);
 
 	RAsmAssembleCallback assemble;
 	RArchPluginEncodeCallback encode;
-	RAsmModifyCallback modify;
-	char *(*mnemonics)(RAsm *a, int id, bool json);
-	const char *features;
 } RAsmPlugin;
 
 #ifdef R_API
@@ -135,7 +132,7 @@ R_API ut8 *r_asm_from_string(RAsm *a, ut64 addr, const char *b, int *l);
 R_API bool r_asm_sub_names_input(RAsm *a, const char *f);
 R_API bool r_asm_sub_names_output(RAsm *a, const char *f);
 R_API char *r_asm_describe(RAsm *a, const char* str);
-R_API RList* r_asm_get_plugins(RAsm *a);
+R_API const RList* r_asm_get_plugins(RAsm *a);
 R_API void r_asm_list_directives(void);
 R_API SdbGperf *r_asm_get_gperf(const char *k);
 R_API RList *r_asm_cpus(RAsm *a);
