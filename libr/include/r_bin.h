@@ -901,8 +901,10 @@ extern RBinPlugin r_bin_plugin_dmp64;
 extern RBinPlugin r_bin_plugin_pyc;
 extern RBinPlugin r_bin_plugin_off;
 extern RBinPlugin r_bin_plugin_tic;
+extern RBinPlugin r_bin_plugin_lua;
 extern RBinPlugin r_bin_plugin_hunk;
 extern RBinPlugin r_bin_plugin_xalz;
+extern RBinPlugin r_bin_plugin_lua;
 
 #ifdef __cplusplus
 }

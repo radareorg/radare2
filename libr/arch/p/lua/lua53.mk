@@ -1,0 +1,10 @@
+OBJ_LUA53=anal_lua53.o
+
+STATIC_OBJ+=$(OBJ_LUA53)
+TARGET_LUA53=anal_lua53.${EXT_SO}
+
+ALL_TARGETS+=${TARGET_LUA53}
+
+${TARGET_LUA53}: ${OBJ_LUA53}
+	${CC} $(LDFLAGS) ${CFLAGS} $(call libname,anal_lua53) $(CS_CFLAGS) \
+		-o anal_lua53.${EXT_SO} ${OBJ_LUA53} $(CS_LDFLAGS)
