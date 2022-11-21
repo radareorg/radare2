@@ -9,15 +9,6 @@ static void plugin_free(void *p) {
 	// XXX
 }
 
-static void _decoder_free_cb(HtPPKv *kv) {
-	free (kv->key);
-	RArchDecoder *decoder = (RArchDecoder *)kv->value;
-	if (decoder->p->fini) {
-		decoder->p->fini (decoder->user);
-	}
-	free (decoder);
-}
-
 R_API RArch *r_arch_new(void) {
 	RArch *a = R_NEW0 (RArch);
 	if (!a) {
@@ -25,12 +16,6 @@ R_API RArch *r_arch_new(void) {
 	}
 	a->plugins = r_list_newf ((RListFree)plugin_free);
 	if (!a->plugins) {
-		free (a);
-		return NULL;
-	}
-	a->decoders = ht_pp_new (NULL, _decoder_free_cb, NULL);
-	if (!a->decoders) {
-		r_list_free (a->plugins);
 		free (a);
 		return NULL;
 	}
@@ -45,26 +30,29 @@ R_API RArch *r_arch_new(void) {
 static ut32 _rate_compat(RArchPlugin *p, RArchConfig *cfg, const char *name) {
 	ut32 bits;
 	switch (cfg->bits) {
-	case 64:
-		bits = R_SYS_BITS_64;
-		break;
-	case 32:
-		bits = R_SYS_BITS_32;
-		break;
-	case 27:
-		bits = R_SYS_BITS_27;
-		break;
-	case 16:
-		bits = R_SYS_BITS_16;
-		break;
-	case 12:
-		bits = R_SYS_BITS_12;
+	case 4:
+		bits = R_SYS_BITS_4;
 		break;
 	case 8:
 		bits = R_SYS_BITS_8;
 		break;
-	case 4:
-		bits = R_SYS_BITS_4;
+	case 12:
+		bits = R_SYS_BITS_12;
+		break;
+	case 16:
+		bits = R_SYS_BITS_16;
+		break;
+	case 24:
+		bits = R_SYS_BITS_24;
+		break;
+	case 27:
+		bits = R_SYS_BITS_27;
+		break;
+	case 32:
+		bits = R_SYS_BITS_32;
+		break;
+	case 64:
+		bits = R_SYS_BITS_64;
 		break;
 	default:
 		bits = UT32_MAX;
@@ -129,27 +117,6 @@ R_API bool r_arch_use(RArch *arch, RArchConfig *config, const char *name) {
 	r_unref (arch->cfg);
 	arch->cfg = config;
 	r_ref (arch->cfg);
-	r_unref (oconfig);
-#endif
-#if 0
-	// the res is boilerplate imho
-
-	const char *dname = config->decoder ? config->decoder: _find_bestmatch (arch->plugins, config, name);
-	if (!dname) {
-		return false;
-	}
-	RArchConfig *oconfig = arch->cfg;
-	r_unref (arch->cfg);
-	arch->cfg = config;
-	r_ref (arch->cfg);
-	if (!r_arch_use_decoder (arch, dname)) {
-		r_unref (arch->cfg);
-		arch->cfg = oconfig;
-		r_ref (oconfig);
-		r_unref (config);
-		arch->current = NULL;
-		return false;
-	}
 	r_unref (oconfig);
 #endif
 	return true;
@@ -285,46 +252,17 @@ R_API bool r_arch_add(RArch *a, RArchPlugin *ap) {
 	return !!r_list_append (a->plugins, ap);
 }
 
-static bool _pick_any_decoder_as_current(void *user, const char *dname, const void *dec) {
-	RArch *arch = (RArch *)user;
-	arch->current = (RArchDecoder *)dec;
-	return false;
-}
-
 R_API bool r_arch_del(RArch *arch, const char *name) {
 	r_return_val_if_fail (arch && arch->plugins && name, false);
 	if (arch->current && !strcmp (arch->current->p->name, name)) {
 		arch->current = NULL;
-	}
-	if (arch->decoders) {
-		ht_pp_delete (arch->decoders, name);
-	}
-	RListIter *iter;
-	RArchPlugin *p;
-	r_list_foreach (arch->plugins, iter, p) {
-		if (!strcmp (name, p->name)) {
-			r_list_delete (arch->plugins, iter);
-			if (!arch->current) {
-				ht_pp_foreach (arch->decoders, (HtPPForeachCallback)_pick_any_decoder_as_current, arch);
-				if (arch->cfg && arch->cfg->decoder) {
-					free (arch->cfg->decoder);
-					if (arch->current) {
-						arch->cfg->decoder = strdup (arch->current->p->name);
-						//also update arch here?
-					} else {
-						arch->cfg->decoder = NULL;
-					}
-				}
-			}
-			return true;
-		}
 	}
 	return false;
 }
 
 R_API void r_arch_free(RArch *arch) {
 	if (arch) {
-		ht_pp_free (arch->decoders);
+		// ht_pp_free (arch->decoders);
 		r_list_free (arch->plugins);
 		r_unref (arch->cfg);
 		free (arch);
