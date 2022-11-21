@@ -719,7 +719,7 @@ static bool gb_custom_daa(REsil *esil) {
 }
 
 static int gb_anop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len, RAnalOpMask mask) {
-	int ilen = gbOpLength (gb_op[data[0]].type);
+	const int ilen = gbOpLength (gb_op[data[0]].type);
 	if (ilen > len) {
 		op->type = R_ANAL_OP_TYPE_ILL;
 		op->size = 0;
@@ -732,8 +732,7 @@ static int gb_anop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 	op->type = R_ANAL_OP_TYPE_UNK;
 	op->size = ilen;
 	op->nopcode = 1;
-	switch (data[0])
-	{
+	switch (data[0]) {
 		case 0x00:
 		case 0x40:
 		case 0x49:

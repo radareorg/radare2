@@ -9,12 +9,12 @@
 
 #include <h8300_disas.h>
 
-#define emit(frag) r_strbuf_appendf(&op->esil, frag)
-#define emitf(...) r_strbuf_appendf(&op->esil, __VA_ARGS__)
+#define emit(frag) r_strbuf_appendf (&op->esil, frag)
+#define emitf(...) r_strbuf_appendf (&op->esil, __VA_ARGS__)
 //setting the appropriate flags, NOTE: semicolon included
 #define setZ r_strbuf_append (&op->esil, ",$z,Z,:=") //zero flag
 #define setN r_strbuf_append (&op->esil, ",15,$s,N,=") //negative(sign) flag
-#define setV(val) r_strbuf_appendf(&op->esil, ",%s,V,=", val) //overflow flag
+#define setV(val) r_strbuf_appendf (&op->esil, ",%s,V,=", val) //overflow flag
 #define setC_B r_strbuf_append (&op->esil, ",7,$c,C,:=") //carry flag for byte op
 #define setC_W r_strbuf_append (&op->esil, ",15,$c,C,:=") //carryflag for word op
 #define setCb_B r_strbuf_append (&op->esil, ",7,$b,C,:=") //borrow flag for byte
@@ -33,8 +33,8 @@
 //work around for z flag
 //internally r=0xff on incr. stored as 0x100, which doesn't raise the z flag
 //NOTE - use the mask and setZ at last, mask will affect other flags
-#define mask() r_strbuf_appendf(&op->esil, ",0xffff,r%u,&=",rd());
-#define maskB(a) r_strbuf_appendf(&op->esil, ",0xff,r%u%c,&=",rdB(a));
+#define mask() r_strbuf_appendf (&op->esil, ",0xffff,r%u,&=",rd());
+#define maskB(a) r_strbuf_appendf (&op->esil, ",0xff,r%u%c,&=",rdB(a));
 
 //immediate values are always 2nd byte
 #define imm buf[1]
@@ -94,7 +94,7 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf) {
 	switch (opcode >> 4) {
 	case H8300_CMP_4BIT:
 		//acc. to manual this is how it's done, could use == in esil
-		r_strbuf_appendf(&op->esil, "0x%02x,r%u%c,-", imm, rdB(0));
+		r_strbuf_appendf (&op->esil, "0x%02x,r%u%c,-", imm, rdB(0));
 		//setZ
 		setV("%o");
 		setN;
@@ -104,7 +104,7 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf) {
 		setZ;
 		return 0;
 	case H8300_OR_4BIT:
-		r_strbuf_appendf(&op->esil, "0x%02x,r%u%c,|=", imm, rdB(0));
+		r_strbuf_appendf (&op->esil, "0x%02x,r%u%c,|=", imm, rdB(0));
 		//setZ
 		setV("0");
 		setN;
@@ -112,7 +112,7 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf) {
 		setZ;
 		return 0;
 	case H8300_XOR_4BIT:
-		r_strbuf_appendf(&op->esil, "0x%02x,r%u%c,^=", imm, rdB(0));
+		r_strbuf_appendf (&op->esil, "0x%02x,r%u%c,^=", imm, rdB(0));
 		//setZ
 		setN;
 		setV("0");
@@ -120,7 +120,7 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf) {
 		setZ;
 		return 0;
 	case H8300_AND_4BIT:
-		r_strbuf_appendf(&op->esil, "0x%02x,r%u%c,&=", imm, rdB(0));
+		r_strbuf_appendf (&op->esil, "0x%02x,r%u%c,&=", imm, rdB(0));
 		//setZ
 		setN;
 		setV("0");
@@ -128,7 +128,7 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf) {
 		setZ;
 		return 0;
 	case H8300_ADD_4BIT:
-		r_strbuf_appendf(&op->esil, "0x%02x,r%u%c,+=", imm, rdB(0));
+		r_strbuf_appendf (&op->esil, "0x%02x,r%u%c,+=", imm, rdB(0));
 		//setZ
 		setV("%o");
 		setN;
@@ -138,7 +138,7 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf) {
 		setZ;
 		return 0;
 	case H8300_ADDX_4BIT:
-		r_strbuf_appendf(&op->esil, "0x%02x,C,+,r%u%c,+= ", imm, rdB(0));
+		r_strbuf_appendf (&op->esil, "0x%02x,C,+,r%u%c,+= ", imm, rdB(0));
 		//setZ
 		setV("%o");
 		setN;
@@ -149,7 +149,7 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf) {
 		return 0;
 	case H8300_SUBX_4BIT:
 		//Rd – imm – C → Rd
-		r_strbuf_appendf(&op->esil, "0x%02x,r%u%c,-=,C,r%u%c,-=", imm, rdB(0), rdB(0));
+		r_strbuf_appendf (&op->esil, "0x%02x,r%u%c,-=,C,r%u%c,-=", imm, rdB(0), rdB(0));
 		//setZ
 		setV("%o");
 		setN;
@@ -173,25 +173,25 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf) {
 	case H8300_SLEEP: /* TODO */
 		return 0;
 	case H8300_STC:
-		r_strbuf_appendf(&op->esil, "ccr,r%u%c,=", rdB(1));
+		r_strbuf_appendf (&op->esil, "ccr,r%u%c,=", rdB(1));
 		return 0;
 	case H8300_LDC:
-		r_strbuf_appendf(&op->esil, "r%u%c,ccr,=", rdB(1));
+		r_strbuf_appendf (&op->esil, "r%u%c,ccr,=", rdB(1));
 		return 0;
 	case H8300_ORC:
-		r_strbuf_appendf(&op->esil, "0x%02x,ccr,|=", imm);
+		r_strbuf_appendf (&op->esil, "0x%02x,ccr,|=", imm);
 		return 0;
 	case H8300_XORC:
-		r_strbuf_appendf(&op->esil, "0x%02x,ccr,^=", imm);
+		r_strbuf_appendf (&op->esil, "0x%02x,ccr,^=", imm);
 		return 0;
 	case H8300_ANDC:
-		r_strbuf_appendf(&op->esil, "0x%02x,ccr,&=", imm);
+		r_strbuf_appendf (&op->esil, "0x%02x,ccr,&=", imm);
 		return 0;
 	case H8300_LDC_2:
-		r_strbuf_appendf(&op->esil, "0x%02x,ccr,=", imm);
+		r_strbuf_appendf (&op->esil, "0x%02x,ccr,=", imm);
 		return 0;
 	case H8300_ADDB_DIRECT:
-		r_strbuf_appendf(&op->esil, "r%u%c,r%u%c,+=", rsB(), rdB(1));
+		r_strbuf_appendf (&op->esil, "r%u%c,r%u%c,+=", rsB(), rdB(1));
 		setH_B;
 		setV("%o");
 		setC_B ;
@@ -210,7 +210,7 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf) {
 		setZ;
 		return 0;
 	case H8300_INC:
-		r_strbuf_appendf(&op->esil, "1,r%u%c,+=", rdB(1));
+		r_strbuf_appendf (&op->esil, "1,r%u%c,+=", rdB(1));
 		//setZ
 		setV("%o") ;
 		setN;
@@ -230,7 +230,7 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf) {
 		setZ;
 		return 0;
 	case H8300_MOV_2:
-		r_strbuf_appendf(&op->esil, "r%u,r%u,=", rs(), rd());
+		r_strbuf_appendf (&op->esil, "r%u,r%u,=", rs(), rd());
 		//setZ
 		setN;
 		mask();
@@ -259,7 +259,7 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf) {
 	case H8300_ROTR: /*TODO*/
 		return 0;
 	case H8300_OR:
-		r_strbuf_appendf(&op->esil, "r%u%c,r%u%c,|=", rsB(), rdB(1));
+		r_strbuf_appendf (&op->esil, "r%u%c,r%u%c,|=", rsB(), rdB(1));
 		//setZ
 		setV("0");
 		setN;
@@ -267,7 +267,7 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf) {
 		setZ;
 		return 0;
 	case H8300_XOR:
-		r_strbuf_appendf(&op->esil, "r%u%c,r%u%c,^=", rsB(), rdB(1));
+		r_strbuf_appendf (&op->esil, "r%u%c,r%u%c,^=", rsB(), rdB(1));
 		//setZ
 		setV("0") ;
 		setN;
@@ -275,7 +275,7 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf) {
 		setZ;
 		return 0;
 	case H8300_AND:
-		r_strbuf_appendf(&op->esil, "r%u%c,r%u%c,&=", rsB(), rdB(1));
+		r_strbuf_appendf (&op->esil, "r%u%c,r%u%c,&=", rsB(), rdB(1));
 		//setZ
 		setV("0");
 		setN;
@@ -284,7 +284,7 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf) {
 		return 0;
 	case H8300_NOT_NEG:
 		if ((buf[1] & 0xf0) == 0x80) { //NEG
-			r_strbuf_appendf(&op->esil, "r%u%c,0,-,r%u%c,=", rdB(1), rdB(1));
+			r_strbuf_appendf (&op->esil, "r%u%c,0,-,r%u%c,=", rdB(1), rdB(1));
 			//setZ
 			setHb_B;
 			setV("%o") ;
@@ -293,7 +293,7 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf) {
 			maskB(1);
 			setZ;
 		} else if ((buf[1] & 0xf0) == 0x00) { //NOT
-			r_strbuf_appendf(&op->esil, "r%u%c,!=", rdB(1));
+			r_strbuf_appendf (&op->esil, "r%u%c,!=", rdB(1));
 			//setZ
 			setV("0");
 			setN;
@@ -302,7 +302,7 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf) {
 		}
 		return 0;
 	case H8300_SUB_1:
-		r_strbuf_appendf(&op->esil, "r%u%c,r%u%c,-=", rsB(), rdB(1));
+		r_strbuf_appendf (&op->esil, "r%u%c,r%u%c,-=", rsB(), rdB(1));
 		//setZ
 		setHb_B;
 		setV("%o");
@@ -329,11 +329,11 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf) {
 		setZ;
 		return 0;
 	case H8300_SUBS:
-		r_strbuf_appendf(&op->esil, "%d,r%u,-=",
+		r_strbuf_appendf (&op->esil, "%d,r%u,-=",
 			( (buf[1] & 0xf0) == 0x80) ? 2 : 1, rd());
 		return 0;
 	case H8300_CMP_1:
-		r_strbuf_appendf(&op->esil, "r%u%c,r%u%c,-", rsB(), rdB(1));
+		r_strbuf_appendf (&op->esil, "r%u%c,r%u%c,-", rsB(), rdB(1));
 		//setZ
 		setHb_B;
 		setV("%o");
@@ -343,7 +343,7 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf) {
 		setZ;
 		return 0;
 	case H8300_CMP_2:
-		r_strbuf_appendf(&op->esil, "r%u,r%u,-", rs(), rd());
+		r_strbuf_appendf (&op->esil, "r%u,r%u,-", rs(), rd());
 		//setZ
 		setHb_W;
 		setV("%o");
@@ -354,7 +354,7 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf) {
 		return 0;
 	case H8300_SUBX:
 		//Rd – (Rs) – C → Rd
-		r_strbuf_appendf(&op->esil, "r%u%c,r%u%c,-=,C,r%u%c,-=",
+		r_strbuf_appendf (&op->esil, "r%u%c,r%u%c,-=,C,r%u%c,-=",
 			rsB(), rdB(1), rdB(1));
 		//setZ
 		setHb_B;
@@ -367,7 +367,7 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf) {
 	case H8300_DAS: /*TODO*/
 		return 0;
 	case H8300_BRA:
-		r_strbuf_appendf(&op->esil, "0x%02x,pc,+=", buf[1]);
+		r_strbuf_appendf (&op->esil, "0x%02x,pc,+=", buf[1]);
 		return 0;
 	case H8300_BRN:
 		r_strbuf_append (&op->esil,",");
