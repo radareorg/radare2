@@ -68,7 +68,7 @@ RArchPlugin r_arch_plugin_malbolge = {
 	.desc = "Malbolge analysis plugin",
 	.arch = "malbolge",
 	.license = "LGPL3",
-	.bits = 32,
+	.bits = R_SYS_BITS_PACK1 (32),
 	.decode = &mal_decode,
 };
 

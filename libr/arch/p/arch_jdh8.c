@@ -23,7 +23,7 @@ RArchPlugin r_arch_plugin_jdh8 = {
 	.desc = "jdh-8 toy architecture",
 	.license = "LGPL3",
 	.arch = "jdh8",
-	.bits = 16,
+	.bits = R_SYS_BITS_PACK1 (16),
 	.endian = R_SYS_ENDIAN_LITTLE,
 	.decode = &decode,
 };

@@ -68,7 +68,7 @@ typedef struct r_asm_t {
 	// RArchSession *cur;
 	// RArchSession *acur;
 	RList *plugins;
-	RAnalBind analb; // Should be RArchBind instead, but first we need to move all the anal plugins
+	RAnalBind analb; // Should be RArchBind instead, but first we need to move all the anal plugins.. well not really we can kill it imho
 	RParse *ifilter;
 	RParse *ofilter;
 	Sdb *pair;
