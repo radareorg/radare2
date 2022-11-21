@@ -84,3 +84,15 @@ EXPECT=<<EOF
 }
 EOF
 RUN
+
+NAME=pFa BIT_STRING with number of unused bits
+FILE=-
+CMDS=<<EOF
+wx 030801016e500dc00000
+pFa
+EOF
+EXPECT=<<EOF
+   0     7: 0: prim BIT_STRING          : 016e500dc00000 (55 bits)
+
+EOF
+RUN
