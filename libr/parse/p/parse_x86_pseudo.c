@@ -158,14 +158,14 @@ static int replace(int argc, char *argv[], char *newstr) {
 		}
 	}
 
-	/* TODO: this is slow */
-	if (newstr) {
-		newstr[0] = '\0';
-		for (i = 0; i < argc; i++) {
-			strcat (newstr, argv[i]);
-			strcat (newstr, (i == 0 || i == argc - 1)? " ": ",");
-		}
+	RStrBuf *sb = r_strbuf_new ("");
+	for (i = 0; i < argc; i++) {
+		r_strbuf_append (sb, argv[i]);
+		r_strbuf_append (sb, (i == argc - 1)?"":" ");
 	}
+	char *sbs = r_strbuf_drain (sb);
+	strcpy (newstr, sbs);
+	free (sbs);
 	return false;
 }
 
@@ -214,7 +214,7 @@ static int parse(RParse *p, const char *data, char *str) {
 			*ptr++ = '\0';
 			for (++ptr; ptr < end ; ptr++) {
 				if (*ptr != ')' && *ptr != ' ') {
-		//			ptr++;
+					//			ptr++;
 					break;
 				}
 			}
@@ -358,6 +358,7 @@ static void mk_reg_str(const char *regname, int delta, bool sign, bool att, char
 	r_strbuf_free (sb);
 }
 
+// static char *subvar(RParse *p, RAnalFunction *f, RAnalOp *op) {
 static bool subvar(RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *data, char *str, int len) {
 	RAnal *anal = p->analb.anal;
 	RListIter *bpargiter, *spiter;
