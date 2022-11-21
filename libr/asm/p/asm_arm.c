@@ -115,7 +115,6 @@ RAsmPlugin r_asm_plugin_arm = {
 	.name = "arm",
 	.desc = "Custom THUMB, ARM32, AARCH64 assembler for radare2",
 	.cpus = ",v8,cortex",
-	.features = "v8",
 	.license = "BSD",
 	.arch = "arm",
 	.bits = 16 | 32 | 64,

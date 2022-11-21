@@ -830,7 +830,7 @@ R_API RList* /*<RIOMap*>*/ r_core_get_boundaries_prot(RCore *core, int protectio
 R_API int r_core_patch(RCore *core, const char *patch);
 
 R_API void r_core_hack_help(const RCore *core);
-R_API int r_core_hack(RCore *core, const char *op);
+R_API bool r_core_hack(RCore *core, const char *op);
 R_API bool r_core_dump(RCore *core, const char *file, ut64 addr, ut64 size, int append);
 R_API void r_core_diff_show(RCore *core, RCore *core2);
 R_API void r_core_diff_show_json(RCore *core, RCore *core2);

@@ -18,7 +18,7 @@ R_API int r_mem_count(const ut8 **addr) {
 }
 
 // R2580 return bool
-R_API int r_mem_eq(ut8 *a, ut8 *b, int len) {
+R_API bool r_mem_eq(ut8 *a, ut8 *b, int len) {
 	register int i;
 	for (i = 0; i < len; i++) {
 		if (a[i] != b[i]) {
@@ -126,7 +126,7 @@ R_API ut64 r_mem_get_num(const ut8 *b, int size) {
 }
 
 // TODO: SEE: R_API ut64 r_reg_get_value(RReg *reg, RRegItem *item) { .. dupped code?
-R_API int r_mem_set_num(ut8 *dest, int dest_size, ut64 num) {
+R_API bool r_mem_set_num(ut8 *dest, int dest_size, ut64 num) {
 	// LITTLE ENDIAN is the default for streams
 	switch (dest_size) {
 	case 1:
