@@ -17,6 +17,7 @@ r_arch_sources = [
   'p/sh/gnu/sh-dis.c',
   'p/arch_v810.c',
   'p/v810/v810_disas.c',
+  'p/arch_riscv.c'
 ]
 
 # must be deleted when anal refactor is done
