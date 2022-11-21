@@ -1237,7 +1237,8 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 				{
 					dst = getarg (&gop, 0, 0, NULL, NULL);
 					rs = INSOP (0).size;
-					esilprintf (op, "%s,[%d],%s,=,%d,%s,+=", sp, rs, dst, rs, sp);
+					// esilprintf (op, "%s,[%d],%s,=,%d,%s,+=", sp, rs, dst, rs, sp);
+					esilprintf (op, "%s,[%d],%d,%s,+=,%s,=", sp, rs, rs, sp, dst);
 					free (dst);
 					break;
 				}
