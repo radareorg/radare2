@@ -82,6 +82,7 @@ typedef struct r_asn1_object_t {
 	ut8 tag; /* tag type */
 	const ut8 *sector; /* Sector containing data */
 	ut32 length; /* Sector Length */
+	ut32 bitlength; /* Sector length in bits */
 	ut64 offset; /* Object offset */
 	RASN1List list; /* List of objects contained in the sector */
 } RASN1Object;
