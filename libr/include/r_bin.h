@@ -509,7 +509,7 @@ typedef struct r_bin_section_t {
 typedef struct r_bin_class_t {
 	char *name;
 	// TODO: char *module;
-	char *super;
+	RList *super; // list of char*
 	char *visibility_str; // XXX only used by java
 	int index;
 	ut64 addr;

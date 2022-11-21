@@ -3454,7 +3454,28 @@ static void classdump_c(RCore *r, RBinClass *c) {
 
 static void classdump_objc(RCore *r, RBinClass *c) {
 	if (c->super) {
-		r_cons_printf ("@interface %s : %s\n{\n", c->name, c->super);
+		int n = 0;
+		r_cons_printf ("@interface %s :", c->name);
+		const char *sk;
+		RListIter *iter;
+		r_list_foreach (c->super, iter, sk) {
+			switch (n) {
+			case 0:
+				r_cons_printf (" %s", sk);
+				break;
+			case 1:
+				r_cons_printf ("< %s", sk);
+				break;
+			default:
+				r_cons_printf (", %s", sk);
+				break;
+			}
+		}
+		if (r_list_length (c->super) > 1) {
+			r_cons_printf (" >\n{\n");
+		} else {
+			r_cons_printf ("\n{\n");
+		}
 	} else {
 		r_cons_printf ("@interface %s\n{\n", c->name);
 	}
@@ -3586,9 +3607,11 @@ static int bin_classes(RCore *r, PJ *pj, int mode) {
 		} else if (IS_MODE_SIMPLEST (mode)) {
 			r_cons_printf ("%s\n", c->name);
 		} else if (IS_MODE_SIMPLE (mode)) {
+			char *supers = r_str_list_join (c->super, ", ");
 			r_cons_printf ("0x%08"PFMT64x" [0x%08"PFMT64x" - 0x%08"PFMT64x"] %s %s%s%s\n",
 				c->addr, at_min, at_max, r_bin_lang_tostring (c->lang), c->name, c->super ? " " : "",
-				r_str_get (c->super));
+				r_str_get (supers));
+			free (supers);
 		} else if (IS_MODE_CLASSDUMP (mode)) {
 			if (c) {
 				RBinFile *bf = r_bin_cur (r->bin);
@@ -3607,14 +3630,17 @@ static int bin_classes(RCore *r, PJ *pj, int mode) {
 		} else if (IS_MODE_RAD (mode)) {
 			char *n = __filterShell (name);
 			r_cons_printf ("\"f class.%s = 0x%"PFMT64x"\"\n", n, at_min);
-			free (n);
 			if (c->super) {
-				char *cn = c->name; // __filterShell (c->name);
-				char *su = c->super; // __filterShell (c->super);
-				r_cons_printf ("\"f super.%s.%s = %d\"\n",
-						cn, su, c->index);
-				// free (cn);
-				// free (su);
+				char *cn = c->name;
+				RListIter *iter;
+				const char *sk;
+				r_list_foreach (c->super, iter, sk) {
+					char *fsk = strdup (sk);
+					r_name_filter (fsk, -1);
+					r_cons_printf ("\"f super.%s.%s = %d\"\n",
+							cn, fsk, c->index);
+					free (fsk);
+				}
 			}
 			r_list_foreach (c->methods, iter2, sym) {
 				char *mflags = r_core_bin_method_flags_str (sym->method_flags, mode);
@@ -3662,6 +3688,7 @@ static int bin_classes(RCore *r, PJ *pj, int mode) {
 				}
 			}
 			r_cons_printf ("};\"\n");
+			free (n);
 		} else if (IS_MODE_JSON (mode)) {
 			pj_o (pj);
 			pj_ks (pj, "classname", c->name);
@@ -3673,7 +3700,13 @@ static int bin_classes(RCore *r, PJ *pj, int mode) {
 			pj_ki (pj, "index", c->index);
 			if (c->super) {
 				pj_ks (pj, "visibility", r_str_get (c->visibility_str));
-				pj_ks (pj, "super", c->super);
+				RListIter *iter;
+				const char *sk;
+				pj_ka (pj, "super");
+				r_list_foreach (c->super, iter, sk) {
+					pj_s (pj, sk);
+				}
+				pj_end (pj);
 			}
 			pj_ka (pj, "methods");
 			r_list_foreach (c->methods, iter2, sym) {
@@ -3723,7 +3756,9 @@ static int bin_classes(RCore *r, PJ *pj, int mode) {
 			r_cons_printf ("0x%08"PFMT64x" [0x%08"PFMT64x" - 0x%08"PFMT64x"] %6"PFMT64d" %s class %d %s",
 				c->addr, at_min, at_max, (at_max - at_min), cl, c->index, c->name);
 			if (c->super) {
-				r_cons_printf (" :: %s\n", c->super);
+				char *csv = r_str_list_join (c->super, ", ");
+				r_cons_printf (" :: %s\n", csv);
+				free (csv);
 			} else {
 				r_cons_newline ();
 			}
