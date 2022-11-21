@@ -44,6 +44,14 @@ R_API bool r_arch_session_decode(RArchSession *ai, RAnalOp *op, RArchDecodeMask 
 	return false;
 }
 
+R_API bool r_arch_session_patch(RArchSession *ai, RAnalOp *op, RArchEncodeMask mask) {
+	RArchPluginEncodeCallback encode = R_UNWRAP3 (ai, plugin, encode);
+	if (encode != NULL) {
+		return encode (ai, op, mask);
+	}
+	return false;
+}
+
 R_API bool r_arch_session_encode(RArchSession *ai, RAnalOp *op, RArchEncodeMask mask) {
 	RArchPluginEncodeCallback encode = R_UNWRAP3 (ai, plugin, encode);
 	if (encode != NULL) {

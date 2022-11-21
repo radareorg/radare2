@@ -116,6 +116,7 @@ typedef char *(*RArchPluginRegistersCallback)(RArchSession *ai);
 typedef char *(*RArchPluginMnemonicsCallback)(RArchSession *s, int id, bool json);
 typedef bool (*RArchPluginDecodeCallback)(RArchSession *s, struct r_anal_op_t *op, RArchDecodeMask mask);
 typedef bool (*RArchPluginEncodeCallback)(RArchSession *s, struct r_anal_op_t *op, RArchEncodeMask mask);
+typedef bool (*RArchPluginPluginCallback)(RArchSession *s, struct r_anal_op_t *op, RArchEncodeMask mask);
 typedef bool (*RArchPluginInitCallback)(RArchSession *s);
 typedef bool (*RArchPluginFiniCallback)(RArchSession *s);
 
@@ -136,6 +137,7 @@ typedef struct r_arch_plugin_t {
 	RArchPluginRegistersCallback regs;
 	RArchPluginEncodeCallback encode;
 	RArchPluginDecodeCallback decode;
+	RArchPluginEncodeCallback patch;
 	RArchPluginMnemonicsCallback mnemonics;
 //TODO: reenable this later
 //	bool (*esil_init)(REsil *esil);
@@ -159,6 +161,7 @@ R_API bool r_arch_encode(RArch *a, RAnalOp *op, RArchEncodeMask mask);
 R_API RArchSession *r_arch_session(RArch *arch, RArchConfig *cfg, RArchPlugin *ap);
 R_API bool r_arch_session_decode(RArchSession *ai, RAnalOp *op, RArchDecodeMask mask);
 R_API bool r_arch_session_encode(RArchSession *ai, RAnalOp *op, RArchEncodeMask mask);
+R_API bool r_arch_session_patch(RArchSession *ai, RAnalOp *op, RArchEncodeMask mask);
 R_API int r_arch_session_info(RArchSession *ai, int q);
 
 // arch.c
