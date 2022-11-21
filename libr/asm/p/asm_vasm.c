@@ -29,7 +29,7 @@ RAsmPlugin r_asm_plugin_vasm = {
 	.author = "http://sun.hasenbraten.de/vasm/",
 	.bits = 8 | 16 | 32 | 64,
 	.endian = R_SYS_ENDIAN_LITTLE,
-	.assemble = &assemble
+// 	.assemble = &assemble
 };
 
 #ifndef R2_PLUGIN_INCORE

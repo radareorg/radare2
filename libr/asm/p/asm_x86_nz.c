@@ -5217,7 +5217,7 @@ RAsmPlugin r_asm_plugin_x86_nz = {
 	.arch = "x86",
 	.bits = 16 | 32 | 64,
 	.endian = R_SYS_ENDIAN_LITTLE,
-	.assemble = &assemble
+	// .assemble = &assemble
 };
 
 #ifndef R2_PLUGIN_INCORE

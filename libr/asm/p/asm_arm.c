@@ -120,7 +120,6 @@ RAsmPlugin r_asm_plugin_arm = {
 	.arch = "arm",
 	.bits = 16 | 32 | 64,
 	.endian = R_SYS_ENDIAN_LITTLE | R_SYS_ENDIAN_BIG,
-	.assemble = &assemble,
 	.encode = &encode,
 };
 

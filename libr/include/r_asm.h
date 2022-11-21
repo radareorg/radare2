@@ -94,10 +94,9 @@ typedef struct r_asm_plugin_t {
 	bool (*init)(void *user);
 	bool (*fini)(void *user);
 
-	RAsmAssembleCallback assemble;
-	RArchPluginEncodeCallback encode;
+	RArchPluginEncodeCallback encode; // move all those plugs into arch
 	RAsmModifyCallback modify;
-	char *(*mnemonics)(RAsm *a, int id, bool json);
+	char *(*mnemonics)(RAsm *a, int id, bool json); // imho this shou
 	const char *features;
 } RAsmPlugin;
 

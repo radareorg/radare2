@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2020 eagleoflqj */
+/* radare - LGPL - Copyright 2020-2022 eagleoflqj */
 
 #include <r_lib.h>
 #include "../binutils_as.h"
@@ -11,10 +11,9 @@ static int assemble(RAsm *a, RAsmOp *op, const char *buf) {
 #else
 	char *as = "";
 #endif
-	char cmd_opt[4096];
-	snprintf (cmd_opt, sizeof (cmd_opt), "-mregnames -a%d %s", a->config->bits,
+	char *opts = r_str_newf ("-mregnames -a%d %s", a->config->bits,
 		R_ARCH_CONFIG_IS_BIG_ENDIAN (a->config) ? "-be" : "-le");
-	return binutils_assemble (a, op, buf, as, ASSEMBLER, "", cmd_opt);
+	return binutils_encode (a, op, buf, as, ASSEMBLER, "", opts);
 }
 
 RAsmPlugin r_asm_plugin_ppc_as = {
@@ -25,7 +24,7 @@ RAsmPlugin r_asm_plugin_ppc_as = {
 	.license = "LGPL3",
 	.bits = 32 | 64,
 	.endian = R_SYS_ENDIAN_LITTLE | R_SYS_ENDIAN_BIG,
-	.assemble = &assemble,
+// 	.encode = &encode,
 };
 
 #ifndef R2_PLUGIN_INCORE

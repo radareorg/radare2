@@ -1,6 +1,7 @@
 /* radare - LGPL - Copyright 2018-2021 - pancake */
 
 #include <r_asm.h>
+// XXX deprecate
 
 R_API RAsmOp *r_asm_op_new(void) {
 	return R_NEW0 (RAsmOp);

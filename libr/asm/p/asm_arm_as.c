@@ -6,9 +6,10 @@
 #define ASSEMBLER32 "R2_ARM32_AS"
 #define ASSEMBLER64 "R2_ARM64_AS"
 
-static int assemble(RAsm *a, RAsmOp *op, const char *buf) {
+static bool encode(RArchSession *a, RAnalOp *op, ut32 mask) {
+	const ut8 *const buf = op->mnemonic;
 	const int bits = a->config->bits;
-	char *as = "";
+	const char *as = "";
 #if __arm__
 	if (bits <= 32) {
 		as = "as";
@@ -18,13 +19,14 @@ static int assemble(RAsm *a, RAsmOp *op, const char *buf) {
 		as = "as";
 	}
 #endif
-	char cmd_opt[4096];
+	char cmd_opt[16];
 	snprintf (cmd_opt, sizeof (cmd_opt), "%s %s",
 		bits == 16 ? "-mthumb" : "",
 		R_ARCH_CONFIG_IS_BIG_ENDIAN (a->config) ? "-EB" : "-EL");
-	return binutils_assemble (a, op, buf, as,
+	bool ret = binutils_encode (a, op, buf, as,
 		bits == 64 ? ASSEMBLER64 : ASSEMBLER32,
 		bits <= 32 ? ".syntax unified\n" : "", cmd_opt);
+	return ret > 0;
 }
 
 RAsmPlugin r_asm_plugin_arm_as = {
@@ -35,7 +37,7 @@ RAsmPlugin r_asm_plugin_arm_as = {
 	.license = "LGPL3",
 	.bits = 16 | 32 | 64,
 	.endian = R_SYS_ENDIAN_LITTLE | R_SYS_ENDIAN_BIG,
-	.assemble = &assemble,
+	.encode = &encode,
 };
 
 #ifndef R2_PLUGIN_INCORE
