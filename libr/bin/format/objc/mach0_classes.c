@@ -1189,7 +1189,8 @@ void MACH0_(get_class_t)(mach0_ut p, RBinFile *bf, RBinClass *klass, bool dupe, 
 
 	klass->addr = c.isa;
 	if (c.superclass) {
-		klass->super = get_class_name (c.superclass, bf);
+		klass->super = r_list_newf (free);
+		r_list_append (klass->super, get_class_name (c.superclass, bf));
 	} else if (relocs) {
 		struct reloc_t reloc_at_class_addr;
 		reloc_at_class_addr.addr = p + sizeof (mach0_ut);
@@ -1200,7 +1201,8 @@ void MACH0_(get_class_t)(mach0_ut p, RBinFile *bf, RBinClass *klass, bool dupe, 
 			char *target_class_name = (char*) ((struct reloc_t*) found->data)->name;
 			if (r_str_startswith (target_class_name, _objc_class)) {
 				target_class_name += _objc_class_len;
-				klass->super = strdup (target_class_name);
+				klass->super = r_list_newf (free);
+				r_list_append (klass->super, strdup (target_class_name));
 			}
 		}
 	}
@@ -1208,7 +1210,7 @@ void MACH0_(get_class_t)(mach0_ut p, RBinFile *bf, RBinClass *klass, bool dupe, 
 
 #if SWIFT_SUPPORT
 	if (q (c.data + n_value) & 7) {
-		eprintf ("This is a Swift class\n");
+		R_LOG_DEBUG ("This is a Swift class");
 	}
 #endif
 	if (!is_meta_class && !dupe) {
@@ -1616,9 +1618,10 @@ static RList *MACH0_(parse_categories)(RBinFile *bf, RSkipList *relocs, objc_cac
 			if (cpar) {
 				*cpar = 0;
 			}
+			r_list_free (klass->super);
+			klass->super = r_list_newf (free);
+			r_list_append (klass->super, super);
 		//	char *name = strdup (super + idx);
-			free (klass->super);
-			klass->super = super;
 		//	free (klass->name);
 		//	klass->name = name;
 		}

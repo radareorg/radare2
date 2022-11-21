@@ -4217,8 +4217,8 @@ icg Hello
 icg no_match
 EOF
 EXPECT=<<EOF
-agn java/lang/Object
 agn Hello
+agn java/lang/Object
 age java/lang/Object Hello
 agn Hello
 EOF

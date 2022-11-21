@@ -1300,41 +1300,51 @@ static int cmd_info(void *data, const char *input) {
 			} else if (input[1] == ',') { // "ic,"
 				// ic,
 				cmd_ic_comma (core, input);
-			} else if (input[1] == 'g') {
+			} else if (input[1] == 'g') { // "icg"
 				RBinClass *cls;
-				RListIter *iter;
+				RListIter *iter, *iter2;
 				RBinObject *obj = r_bin_cur_object (core->bin);
 				if (!obj) {
 					break;
 				}
 				bool fullGraph = true;
 				const char *match = r_str_trim_head_ro (input + 2);
-				if (*match) {
+				if (R_STR_ISNOTEMPTY (match)) {
 					r_list_foreach (obj->classes, iter, cls) {
-					    if (cls->super && strstr (cls->super, match)) {
-							r_cons_printf ("agn %s\n", cls->super);
-							r_cons_printf ("agn %s\n", cls->name);
-							r_cons_printf ("age %s %s\n", cls->super, cls->name);
-						} else if (strstr (cls->name, match)) {
-							r_cons_printf ("agn %s\n", cls->name);
+						char *sk;
+						if (!match || !strstr (cls->name, match)) {
+							continue;
+						}
+						r_cons_printf ("agn %s\n", cls->name);
+						if (cls->super) {
+							r_list_foreach (cls->super, iter2, sk) {
+								if (match && strstr (sk, match)) {
+									r_cons_printf ("agn %s\n", sk);
+									r_cons_printf ("age %s %s\n", sk, cls->name);
+								}
+							}
 						}
 					}
 				} else if (fullGraph) {
 					r_list_foreach (obj->classes, iter, cls) {
-						if (cls->super) {
-							r_cons_printf ("agn %s\n", cls->super);
-							r_cons_printf ("agn %s\n", cls->name);
-							r_cons_printf ("age %s %s\n", cls->super, cls->name);
-						} else {
-							r_cons_printf ("agn %s\n", cls->name);
+						const char *sk;
+						r_cons_printf ("agn %s\n", cls->name);
+						r_list_foreach (cls->super, iter2, sk) {
+							r_cons_printf ("agn %s\n", sk);
+							r_cons_printf ("age %s %s\n", sk, cls->name);
 						}
 					}
 				} else {
 					r_list_foreach (obj->classes, iter, cls) {
-						if (cls->super && !strstr (cls->super, "NSObject")) {
-							r_cons_printf ("agn %s\n", cls->super);
+						char *sk;
+						RListIter *iter;
+						r_list_foreach (cls->super, iter, sk) {
+							if (strstr (sk, "NSObject")) {
+								continue;
+							}
+							r_cons_printf ("agn %s\n", sk);
 							r_cons_printf ("agn %s\n", cls->name);
-							r_cons_printf ("age %s %s\n", cls->super, cls->name);
+							r_cons_printf ("age %s %s\n", sk, cls->name);
 						}
 					}
 				}
