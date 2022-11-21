@@ -8,6 +8,7 @@ anal_plugins = [ 'null' ]
 arch_plugins = [ 'null',
   'sh',
   'jdh8',
+  'riscv',
   'i4004',
   'rsp',
   'amd29k',
@@ -100,10 +101,6 @@ if not no_user_plugins
     anal_plugins += [ 'dalvik' ]
     parse_plugins += [ 'dalvik_pseudo' ]
   endif
-  if user_plugins.contains('riscv')
-    anal_plugins += [ 'riscv' ]
-    parse_plugins += [ 'riscv_pseudo' ]
-  endif
   if user_plugins.contains('loongarch')
     anal_plugins += [ 'loongarch_gnu' ]
   endif
@@ -171,7 +168,6 @@ anal_plugins += [
   'pic',
   'ppc_cs',
   'propeller',
-  'riscv',
   'riscv_cs',
   'snes',
   'sparc_cs',
