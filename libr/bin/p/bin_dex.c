@@ -1467,7 +1467,10 @@ static void parse_class(RBinFile *bf, RBinDexClass *c, int class_index, int *met
 	cls->addr = dex->header.class_offset + (class_index * DEX_CLASS_SIZE);
 	cls->methods = r_list_new ();
 	const char *super = dex_class_super_name (dex, c);
-	cls->super = super? strdup (super): NULL;
+	if (super) {
+		cls->super = r_list_newf (free);
+		r_list_append (cls->super, strdup (super));
+	}
 	if (!cls->methods) {
 		free (cls);
 		goto beach;
@@ -1484,7 +1487,15 @@ static void parse_class(RBinFile *bf, RBinDexClass *c, int class_index, int *met
 		rbin->cb_printf ("  Class descriptor  : '%s;'\n", cls->name);
 		rbin->cb_printf ("  Access flags      : 0x%04x (%s)\n", c->access_flags,
 				r_str_get (cls->visibility_str));
-		rbin->cb_printf ("  Superclass        : '%s'\n", cls->super);
+		if (cls->super) {
+			char *sk;
+			RListIter *iter;
+			rbin->cb_printf ("  Superclass        : '");
+			r_list_foreach (cls->super, iter, sk) {
+				rbin->cb_printf ("%s%s", iter->n? ",": "", sk);
+			}
+			rbin->cb_printf ("'\n");
+		}
 		rbin->cb_printf ("  Interfaces        -\n");
 	}
 
