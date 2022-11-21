@@ -50,16 +50,16 @@ static char *replace(int argc, const char *argv[]) {
 					r_strbuf_appendf (sb, "%c", ops[i].str[j]);
 				}
 			}
-			return r_strbuf_drain (sb);;
+			return r_strbuf_drain (sb);
 		}
 	}
 
 	RStrBuf *sb = r_strbuf_new ("");
 	for (i = 0; i < argc; i++) {
 		r_strbuf_append (sb, argv[i]);
-		r_strbuf_append (sb, (i == argc - 1)?"":" ");
+		r_strbuf_append (sb, (i == argc - 1)? "": " ");
 	}
-	return r_strbuf_drain (sb);;
+	return r_strbuf_drain (sb);
 }
 
 static int parse(RParse *p, const char *data, char *str) {
