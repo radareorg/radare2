@@ -1,3 +1,16 @@
+NAME=disasm cmp ascii
+FILE=-
+CMDS=<<EOF
+e asm.arch=x86
+wx 3c6f 3d1027
+pd 2
+EOF
+EXPECT=<<EOF
+            0x00000000      3c6f           cmp al, 0x6f                ; 'o'
+            0x00000002      3d10270000     cmp eax, 0x2710             ; '\x10\''
+EOF
+RUN
+
 NAME=infinite x/i disasm bug
 FILE=-
 CMDS=<<EOF
@@ -185,7 +198,7 @@ call 0x3535
 EOF
 RUN
 
-NAME=unaligned arm code
+NAME=unaligned thumb code
 FILE=-
 CMDS=<<EOF
 wx 00000000
