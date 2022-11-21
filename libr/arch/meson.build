@@ -6,6 +6,8 @@ r_arch_sources = [
   'arch_session.c',
   'arch_cond.c',
   'arch_value.c',
+  'p/arch_wasm.c',
+# included ^ 'p/wasm/wasm.c',
   'p/arch_null.c',
   'p/arch_i4004.c',
   'p/arch_amd29k.c',

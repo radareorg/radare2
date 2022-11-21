@@ -1,32 +1,40 @@
 /* radare2 - LGPL - Copyright 2017-2022 - pancake, xvilka, deroad */
 
-#define R_LOG_ORIGIN "anal.wasm"
+#define R_LOG_ORIGIN "arch.wasm"
 
 #include <r_lib.h>
 #include <r_asm.h>
 #include <r_anal.h>
+#include "../../bin/format/wasm/wasm.h" // move into wasm/wasm_bin.h
+#if 1
 #undef R_IPI
 #define R_IPI static
-#include "../../bin/format/wasm/wasm.h"
-#include "../arch/wasm/wasm.c"
+#include "wasm/wasm.c"
+#else
+#include "wasm/wasm.h"
+#endif
 
 #define WASM_STACK_SIZE 256
+#define USE_ANAL_HINTS 0
 
+#if USE_ANAL_HINTS
 static ut64 scope_hint = UT64_MAX;
 static ut64 addr_old = UT64_MAX;
+#endif
 
 // finds the address of the call function (essentially where to jump to).
-static ut64 get_cf_offset(RAnal *anal, const ut8 *data, int len) {
+static ut64 get_cf_offset(RArch *a, const ut8 *data, int len) {
 	ut32 fcn_id;
-	if (!anal->binb.bin) {
+	if (!a->binb.bin) {
 		return UT64_MAX;
 	}
 	if (len < 2 || !read_u32_leb128 (&data[1], &data[len - 1], &fcn_id)) {
 		return UT64_MAX;
 	}
-	return anal->binb.get_offset (anal->binb.bin, 'f', fcn_id);
+	return a->binb.get_offset (a->binb.bin, 'f', fcn_id);
 }
 
+#if USE_ANAL_HINTS
 static bool advance_till_scope_end(RAnal* anal, RAnalOp *op, ut64 address, ut32 expected_type, ut32 depth, bool use_else) {
 	ut8 buffer[16];
 	ut8 *ptr = buffer;
@@ -55,7 +63,8 @@ static bool advance_till_scope_end(RAnal* anal, RAnalOp *op, ut64 address, ut32 
 				op->type = expected_type;
 				op->jump = address + 1; // else size == 1
 				return true;
-			} else if (wopop == WASM_OP_END && depth > 0) {
+			}
+			if (wopop == WASM_OP_END && depth > 0) {
 				// let's wait till i get the final depth
 				depth--;
 			} else if (wopop == WASM_OP_END && !depth) {
@@ -68,15 +77,27 @@ static bool advance_till_scope_end(RAnal* anal, RAnalOp *op, ut64 address, ut32 
 	}
 	return false;
 }
+#endif
 
-static int wasm_opasm(RAnal *a, ut64 addr, const char *str, ut8 *outbuf, int outsize) {
-	return wasm_asm (str, outbuf, outsize);
+static bool wasm_encode(RArchSession *se, RAnalOp *op, RArchEncodeMask mask) {
+	ut8 outbuf[32];
+	int ret = wasm_asm (op->mnemonic, outbuf, sizeof (outbuf));
+	if (ret > 0) {
+		r_anal_op_set_bytes (op, op->addr, outbuf, ret);
+		return true;
+	}
+	return false;
 }
 
 // analyzes the wasm opcode.
-static int wasm_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len, RAnalOpMask mask) {
+static bool wasm_decode(RArchSession *a, RAnalOp *op, RArchDecodeMask mask) {
+	ut64 addr = op->addr;
+	const ut8* data = op->bytes;
+	const int len = op->size;
 	WasmOp wop = {{0}};
+#if USE_ANAL_HINTS
 	RAnalHint *hint = NULL;
+#endif
 	int ret = wasm_dis (&wop, data, len);
 	if (mask & R_ARCH_OP_MASK_DISASM) {
 		op->mnemonic = strdup (wop.txt);
@@ -104,9 +125,11 @@ static int wasm_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 		return -1;
 	}
 
+#if USE_ANAL_HINTS
 	if (addr_old == addr && (wop.type != WASM_TYPE_OP_CORE || wop.op.core != WASM_OP_END)) {
 		goto anal_end;
 	}
+#endif
 
 	switch (wop.type) {
 	case WASM_TYPE_OP_CORE:
@@ -114,21 +137,26 @@ static int wasm_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 		/* Calls here are using index instead of address */
 		case WASM_OP_LOOP:
 			op->type = R_ANAL_OP_TYPE_NOP;
+#if USE_ANAL_HINTS
 			if (!(hint = r_anal_hint_get (anal, addr))) {
 				scope_hint--;
 				r_anal_hint_set_opcode (anal, scope_hint, "loop");
 				r_anal_hint_set_jump (anal, scope_hint, addr);
 			}
+#endif
 			break;
 		case WASM_OP_BLOCK:
 			op->type = R_ANAL_OP_TYPE_NOP;
+#if USE_ANAL_HINTS
 			if (!(hint = r_anal_hint_get (anal, addr))) {
 				scope_hint--;
 				r_anal_hint_set_opcode (anal, scope_hint, "block");
 				r_anal_hint_set_jump (anal, scope_hint, addr);
 			}
+#endif
 			break;
 		case WASM_OP_IF:
+#if USE_ANAL_HINTS
 			if (!(hint = r_anal_hint_get (anal, addr))) {
 				scope_hint--;
 				r_anal_hint_set_opcode (anal, scope_hint, "if");
@@ -141,18 +169,29 @@ static int wasm_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 				op->jump = hint->jump;
 				op->fail = addr + op->size;
 			}
+#else
+				op->type = R_ANAL_OP_TYPE_CJMP;
+				op->jump = UT64_MAX; // XXX
+				op->fail = addr + op->size;
+#endif
 			break;
 		case WASM_OP_ELSE:
 			// get if and set hint.
+#if USE_ANAL_HINTS
 			if (!(hint = r_anal_hint_get (anal, addr))) {
 				advance_till_scope_end (anal, op, addr + op->size, R_ANAL_OP_TYPE_JMP, 0, true);
 			} else {
 				op->type = R_ANAL_OP_TYPE_JMP;
 				op->jump = hint->jump;
 			}
+#else
+			op->type = R_ANAL_OP_TYPE_JMP;
+			op->jump = UT64_MAX;
+#endif
 			break;
 		case WASM_OP_BR:
 			{
+#if USE_ANAL_HINTS
 				RAnalHint *hint2 = NULL;
 				ut32 val;
 				read_u32_leb128 (data + 1, data + len, &val);
@@ -178,9 +217,11 @@ static int wasm_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 					}
 				}
 				r_anal_hint_free (hint2);
+#endif
 			}
 			break;
 		case WASM_OP_BRIF:
+#if USE_ANAL_HINTS
 			{
 				RAnalHint *hint2 = NULL;
 				ut32 val;
@@ -211,10 +252,16 @@ static int wasm_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 				}
 				r_anal_hint_free (hint2);
 			}
+#else
+				op->type = R_ANAL_OP_TYPE_CJMP;
+				op->jump = UT64_MAX;
+				op->fail = addr + op->size;
+#endif
 			break;
 		case WASM_OP_END:
 			{
 				op->type = R_ANAL_OP_TYPE_NOP;
+#if USE_ANAL_HINTS
 				if (scope_hint < UT64_MAX) {
 					hint = r_anal_hint_get (anal, scope_hint);
 					if (hint && !strncmp ("loop", hint->opcode, 4)) {
@@ -243,6 +290,10 @@ static int wasm_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 						op->type = R_ANAL_OP_TYPE_RET;
 					}
 				}
+#else
+				op->eob = true;
+				op->type = R_ANAL_OP_TYPE_RET;
+#endif
 			}
 			break;
 		case WASM_OP_I32REMS:
@@ -343,7 +394,7 @@ static int wasm_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 		case WASM_OP_CALL:
 		case WASM_OP_CALLINDIRECT:
 			op->type = R_ANAL_OP_TYPE_CALL;
-			op->jump = get_cf_offset (anal, data, len);
+			op->jump = get_cf_offset (a->arch, data, len);
 			op->fail = addr + op->size;
 			if (op->jump != UT64_MAX) {
 				op->ptr = op->jump;
@@ -435,21 +486,24 @@ static int wasm_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 			break;
 		}
 	default:
+		goto anal_end;
 		break;
 	}
 
 anal_end:
-	addr_old = addr;
 	free (wop.txt);
+#if USE_ANAL_HINTS
+	addr_old = addr;
 	r_anal_hint_free (hint);
+#endif
 	return op->size;
 }
 
-static int archinfo(RAnal *a, int q) {
+static int archinfo(RArchSession *cfg, ut32 q) {
 	return 1;
 }
 
-static char *get_reg_profile(RAnal *anal) {
+static char *regs(RArchSession *s) {
 	return strdup (
 		"=PC	pc\n"
 		"=BP	bp\n"
@@ -464,23 +518,22 @@ static char *get_reg_profile(RAnal *anal) {
 	);
 }
 
-RAnalPlugin r_anal_plugin_wasm = {
+RArchPlugin r_arch_plugin_wasm = {
 	.name = "wasm",
 	.desc = "WebAssembly analysis plugin",
 	.license = "LGPL3",
 	.arch = "wasm",
-	.bits = 64,
-	.archinfo = archinfo,
-	.get_reg_profile = get_reg_profile,
-	.op = &wasm_op,
-	.opasm = &wasm_opasm,
-	.esil = true
+	.bits = R_SYS_BITS_PACK (64),
+	.info = archinfo,
+	.regs = regs,
+	.decode = &wasm_decode,
+	.encode = &wasm_encode,
 };
 
 #ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_ANAL,
-	.data = &r_anal_plugin_wasm,
+	.type = R_LIB_TYPE_ARCH,
+	.data = &r_arch_plugin_wasm,
 	.version = R2_VERSION
 };
 #endif

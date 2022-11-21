@@ -1690,7 +1690,6 @@ extern RAnalPlugin r_anal_plugin_tms320;
 extern RAnalPlugin r_anal_plugin_tricore;
 extern RAnalPlugin r_anal_plugin_v850;
 extern RAnalPlugin r_anal_plugin_vax;
-extern RAnalPlugin r_anal_plugin_wasm;
 extern RAnalPlugin r_anal_plugin_ws;
 extern RAnalPlugin r_anal_plugin_x86;
 extern RAnalPlugin r_anal_plugin_x86_cs;

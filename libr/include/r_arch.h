@@ -250,6 +250,7 @@ extern RArchPlugin r_arch_plugin_jdh8;
 extern RArchPlugin r_arch_plugin_pickle;
 extern RArchPlugin r_arch_plugin_sh;
 extern RArchPlugin r_arch_plugin_v810;
+extern RArchPlugin r_arch_plugin_wasm;
 extern RArchPlugin r_arch_plugin_rsp;
 
 #ifdef __cplusplus
