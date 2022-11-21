@@ -1282,7 +1282,8 @@ static int disassemble(RArch *a, RAnalOp *op, const ut8 *buf, int len) {
 		op->size = print_insn_shb ((bfd_vma)addr, &disasm_obj);
 	}
 	if (op->size == -1) {
-		op->mnemonic = strdup ("(data)");
+		free (op->mnemonic);
+		op->mnemonic = strdup ("invalid");
 		r_strbuf_free (sb);
 	} else {
 		op->mnemonic = r_strbuf_drain (sb);
