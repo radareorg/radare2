@@ -1222,6 +1222,8 @@ static int cmd_wr(void *data, const char *input) {
 	return 0;
 }
 
+#if 0
+// RAsm.modify() was unused therefor this is kind of attempt to move the asmhacks into the arch plugins
 static int cmd_wA(void *data, const char *input) {
 	RCore *core = (RCore *)data;
 	int len;
@@ -1252,6 +1254,7 @@ static int cmd_wA(void *data, const char *input) {
 	}
 	return 0;
 }
+#endif
 
 static char *__current_filename(RCore *core) {
 	RIOMap *map = r_io_map_get_at (core->io, core->offset);
@@ -2229,9 +2232,11 @@ static int cmd_write(void *data, const char *input) {
 	case 'r': // "wr"
 		cmd_wr (core, input + 1);
 		break;
+#if 0
 	case 'A': // "wA"
 		cmd_wA (core, input + 1);
 		break;
+#endif
 	case ' ': // "w"
 	case '+': // "w+"
 	{
