@@ -4156,9 +4156,13 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 		return;
 	}
 	const int opType = ds->analop.type & R_ANAL_OP_TYPE_MASK;
-	bool canHaveChar = opType == R_ANAL_OP_TYPE_MOV;
-	if (!canHaveChar) {
-		canHaveChar = opType == R_ANAL_OP_TYPE_PUSH;
+	bool canHaveChar = false;
+	switch (opType) {
+	case R_ANAL_OP_TYPE_PUSH:
+	case R_ANAL_OP_TYPE_MOV:
+	case R_ANAL_OP_TYPE_CMP:
+		canHaveChar = true;
+		break;
 	}
 
 	ds->chref = 0;
@@ -4383,7 +4387,7 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 				ds_comment (ds, true, "; -1");
 			} else if (((char)refaddr > 0) && refaddr >= '!' && refaddr <= '~') {
 				char ch = refaddr;
-				if (canHaveChar && ch != ds->chref) {
+				if (ch != ds->chref && canHaveChar) {
 					ds_begin_comment (ds);
 					ds_comment (ds, true, "; '%c'", ch);
 				}
