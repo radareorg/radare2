@@ -184,12 +184,6 @@ static inline int r_asm_pseudo_incbin(RAsmOp *op, char *input) {
 	return count;
 }
 
-static void plugin_free(RAsmPlugin *p) {
-	if (p && p->fini) {
-		p->fini (NULL);
-	}
-}
-
 R_API RAsm *r_asm_new(void) {
 	int i;
 	RAsm *a = R_NEW0 (RAsm);
@@ -197,7 +191,7 @@ R_API RAsm *r_asm_new(void) {
 		return NULL;
 	}
 	a->dataalign = 1;
-	a->plugins = r_list_newf ((RListFree)plugin_free);
+	a->plugins = r_list_newf (NULL);
 	if (!a->plugins) {
 		free (a);
 		return NULL;
@@ -247,9 +241,6 @@ R_API void r_asm_free(RAsm *a) {
 	if (!a) {
 		return;
 	}
-	if (a->cur && a->cur->fini) {
-		a->cur->fini (a->cur->user);
-	}
 	// r_unref (a->config);
 	if (a->plugins) {
 		r_list_free (a->plugins);
@@ -270,9 +261,6 @@ R_API void r_asm_set_user_ptr(RAsm *a, void *user) {
 R_API bool r_asm_add(RAsm *a, RAsmPlugin *foo) {
 	if (!foo->name) {
 		return false;
-	}
-	if (foo->init) {
-		foo->init (a->user);
 	}
 	if (r_asm_is_valid (a, foo->name)) {
 		return false;
@@ -1182,15 +1170,18 @@ fail:
 	return NULL;
 }
 
+#if 0
+// XXX this is unused code!
 R_API bool r_asm_modify(RAsm *a, ut8 *buf, int field, ut64 val) {
 	return (a->cur && a->cur->modify) ? a->cur->modify (a, buf, field, val): false;
 }
+#endif
 
 R_API char *r_asm_describe(RAsm *a, const char* str) {
 	return (a && a->pair)? sdb_get (a->pair, str, 0): NULL;
 }
 
-R_API RList* r_asm_get_plugins(RAsm *a) {
+R_API const RList* r_asm_get_plugins(RAsm *a) {
 	return a->plugins;
 }
 
@@ -1248,9 +1239,7 @@ R_API int r_asm_syntax_from_string(const char *name) {
 
 R_API char *r_asm_mnemonics(RAsm *a, int id, bool json) {
 	r_return_val_if_fail (a && a->cur, NULL);
-	if (a->cur->mnemonics) {
-		return a->cur->mnemonics (a, id, json);
-	}
+	// should use rarch instead!.. but for now ranal.mnemonics is calling arch.mnemonics..
 	if (a->analb.anal && a->analb.mnemonics) {
 		return a->analb.mnemonics (a->analb.anal, id, json);
 	}
@@ -1258,16 +1247,14 @@ R_API char *r_asm_mnemonics(RAsm *a, int id, bool json) {
 }
 
 R_API int r_asm_mnemonics_byname(RAsm *a, const char *name) {
-	r_return_val_if_fail (a && a->cur, 0);
-	if (a->cur->mnemonics) {
-		int i;
-		for (i = 0; i < 1024; i++) {
-			char *n = a->cur->mnemonics (a, i, false);
-			if (n && !strcmp (n, name)) {
-				return i;
-			}
-			free (n);
+	r_return_val_if_fail (a && a->cur && name, 0);
+	int i;
+	for (i = 0; i < 9000; i++) {
+		char *n = r_asm_mnemonics (a, i, false);
+		if (n && !strcmp (n, name)) {
+			return i;
 		}
+		free (n);
 	}
 	return 0;
 }
