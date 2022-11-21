@@ -1123,15 +1123,13 @@ R_API R_MUSTUSE char* r_str_replace_thunked(char *str, char *clean, int *thunk, 
 	return str;
 }
 
-// R580 - return void to avoid confusion imho
-R_API char *r_str_replace_in(char *str, ut32 sz, const char *key, const char *val, int g) {
-	r_return_val_if_fail (str && key && val, NULL);
+R_API void r_str_replace_in(char *str, ut32 sz, const char *key, const char *val, int g) {
+	r_return_if_fail (str && key && val);
 	char *heaped = r_str_replace (strdup (str), key, val, g);
 	if (heaped) {
 		strncpy (str, heaped, sz);
 		free (heaped);
 	}
-	return str;
 }
 
 R_API int r_str_unescape(char *buf) {
@@ -3744,7 +3742,17 @@ R_API char *r_str_from_ut64(ut64 val) {
 		i++;
 	}
 	while (i < 8 && *v) {
+#if 1
 		str[i++] = *v++;
+#else
+		// WIP: experimental behaviour
+		if (IS_PRINTABLE (*v)) {
+			str[i++] = *v;
+		} else {
+//			break;
+		}
+		v++;
+#endif
 	}
 	return str;
 }

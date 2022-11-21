@@ -4170,7 +4170,7 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 		ds->chref = (char)v;
 		if (ds->immstr) {
 			char *str = r_str_from_ut64 (r_read_ble64 (&v, be));
-			if (str && *str) {
+			if (R_STR_ISNOTEMPTY (str)) {
 				bool printable = true;
 				const char *ptr = str;
 				for (; *ptr ; ptr++) {
@@ -4183,6 +4183,7 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 				}
 				if (canHaveChar && printable) {
 					char *s = r_str_escape (str);
+					s = r_str_replace (s, "'", "\\'", true);
 					ds_begin_comment (ds);
 					ds_comment (ds, true, "; '%s'", s);
 					free (s);
@@ -4190,10 +4191,10 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 			}
 			free (str);
 		} else {
-			if (canHaveChar && (char)v > 0 && v >= '!' && v <= '~') {
+			if (canHaveChar && (char)v > 0 && v >= (int)'!' && v <= (int)'~') {
 				ds_begin_comment (ds);
 				aligned = true;
-				ds_comment (ds, true, "; '%c'", (char)v);
+				ds_comment (ds, true, "; 1'%c'", (char)v);
 			}
 		}
 	}
@@ -4385,11 +4386,11 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 			if (refaddr == UT64_MAX || refaddr == UT32_MAX) {
 				ds_begin_comment (ds);
 				ds_comment (ds, true, "; -1");
-			} else if (((char)refaddr > 0) && refaddr >= '!' && refaddr <= '~') {
-				char ch = refaddr;
+			} else if (((char)refaddr > 0) && refaddr >= (int)'!' && refaddr <= (int)'~') {
+				int ch = refaddr;
 				if (ch != ds->chref && canHaveChar) {
 					ds_begin_comment (ds);
-					ds_comment (ds, true, "; '%c'", ch);
+					ds_comment (ds, true, "; 2'%c'", ch);
 				}
 			} else if (refaddr > 10) {
 				if ((st64)refaddr < 0) {
