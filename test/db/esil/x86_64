@@ -571,3 +571,18 @@ EXPECT=<<EOF
 0x42424242
 EOF
 RUN
+
+NAME=push rsp,,pop rsp
+FILE=-
+ARGS=-a x86
+CMDS=<<EOF
+e io.cache=true
+aei
+aeim
+ar rip=0 ; "wa push rsp ; pop rsp" @ 0 ; ?en rsp before : ; ?v rsp ; 2aes  ; ?en rsp after  : ; ?v rsp
+EOF
+EXPECT=<<EOF
+rsp before :0x178000
+rsp after  :0x178000
+EOF
+RUN

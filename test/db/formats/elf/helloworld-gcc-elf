@@ -586,7 +586,7 @@ EXPECT=<<EOF
   },
   {
     "offset": 134513410,
-    "esil": "esp,[4],esi,=,4,esp,+=",
+    "esil": "esp,[4],4,esp,+=,esi,=",
     "refptr": 0,
     "fcn_addr": 0,
     "fcn_last": 0,
