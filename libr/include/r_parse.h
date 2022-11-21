@@ -38,18 +38,20 @@ typedef struct r_parse_t {
 	RAnalBind analb;
 	RFlagGetAtAddr flag_get; // XXX
 	RAnalLabelAt label_get;
-} RParse;
+} RParse; // TODO rename to RAsmParseState
 
 typedef struct r_parse_plugin_t {
 	char *name;
 	char *desc;
-	bool (*init)(RParse *p, void *user);
-	int (*fini)(RParse *p, void *user);
+	bool (*init)(RParse *p, void *user); // returns an RAsmParseState*
+	int (*fini)(RParse *p, void *user); // receives the asmparsestate
+
 	int (*parse)(RParse *p, const char *data, char *str);
-	bool (*assemble)(RParse *p, char *data, char *str);
+	// UNUSED bool (*assemble)(RParse *p, char *data, char *str);
 	int (*filter)(RParse *p, ut64 addr, RFlag *f, char *data, char *str, int len, bool big_endian);
 	bool (*subvar)(RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *data, char *str, int len);
-	int (*replace)(int argc, const char *argv[], char *newstr);
+	// int (*replace)(int argc, const char *argv[], char *newstr); // rename to pseudo!
+	// int (*pseudo)(int argc, const char *argv[], char *newstr); // rename to pseudo!
 } RParsePlugin;
 
 #ifdef R_API

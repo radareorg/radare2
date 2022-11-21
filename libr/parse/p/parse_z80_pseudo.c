@@ -5,8 +5,8 @@
 #include <r_anal.h>
 #include <r_parse.h>
 
-static int replace(int argc, const char *argv[], char *newstr) {
-	int i,j,k;
+static char *replace(int argc, const char *argv[]) {
+	int i, j;
 	struct {
 		const char *op;
 		const char *str;
@@ -39,40 +39,49 @@ static int replace(int argc, const char *argv[], char *newstr) {
 
 	for (i = 0; ops[i].op; i++) {
 		if (!strcmp (ops[i].op, argv[0])) {
-			if (newstr) {
-				for (j = k = 0; ops[i].str[j] != '\0'; j++, k++) {
-					if (ops[i].str[j]>='1' && ops[i].str[j]<='9') {
-						const char *w = argv[ ops[i].str[j]-'0' ];
-						if (w) {
-							strcpy (newstr+k, w);
-							k += strlen(w)-1;
-						}
-					} else {
-						newstr[k] = ops[i].str[j];
+			RStrBuf *sb = r_strbuf_new ("");
+			for (j = 0; ops[i].str[j] != '\0'; j++) {
+				if (ops[i].str[j]>='1' && ops[i].str[j] <= '9') {
+					const char *w = argv[ ops[i].str[j] - '0' ];
+					if (w) {
+						r_strbuf_append (sb, w);
 					}
+				} else {
+					r_strbuf_appendf (sb, "%c", ops[i].str[j]);
 				}
-				newstr[k]='\0';
 			}
-			return true;
+			return r_strbuf_drain (sb);;
 		}
 	}
 
-	/* TODO: this is slow */
-	if (newstr) {
-		newstr[0] = '\0';
-		for (i = 0; i < argc; i++) {
-			strcat (newstr, argv[i]);
-			strcat (newstr, (i == 0 || i== argc - 1)?" ":", ");
-		}
+	RStrBuf *sb = r_strbuf_new ("");
+	for (i = 0; i < argc; i++) {
+		r_strbuf_append (sb, argv[i]);
+		r_strbuf_append (sb, (i == argc - 1)?"":" ");
 	}
+	return r_strbuf_drain (sb);;
+}
 
-	return false;
+static int parse(RParse *p, const char *data, char *str) {
+	int argc = 0;
+	char *args = strdup (data);
+	args = r_str_replace (args, ",", " ", true);
+	args = r_str_replace (args, "  ", " ", true);
+	const char **argv = (const char **)r_str_argv (args, &argc);
+	char *res = replace (argc, argv);
+	free (args);
+	if (!res) {
+		return false;
+	}
+	strcpy (str, res); // XXX
+	free (res);
+	return true;
 }
 
 RParsePlugin r_parse_plugin_z80_pseudo = {
 	.name = "z80.pseudo",
 	.desc = "z80 pseudo syntax",
-	.replace = replace,
+	.parse = parse, // parse actually converts the string into asm.pseudo
 };
 
 #ifndef R2_PLUGIN_INCORE
