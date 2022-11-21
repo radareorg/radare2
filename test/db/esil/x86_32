@@ -2492,3 +2492,17 @@ aes
 aer?eflags
 EOF
 RUN
+
+NAME=push esp,,pop esp
+FILE=-
+ARGS=-a x86 -b 32
+CMDS=<<EOF
+aei
+aeim
+ar eip=0 ; wa push esp,,pop esp @ 0 ; ?en esp before : ; dr?esp ; 2aes  ; ?en esp after  : ; dr?esp
+EOF
+EXPECT=<<EOF
+esp before :0x00178000
+esp after  :0x00178000
+EOF
+RUN
