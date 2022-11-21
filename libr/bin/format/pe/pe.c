@@ -3329,6 +3329,7 @@ char* PE_(r_bin_pe_get_arch)(RBinPEObj* pe) {
 		break;
 	case PE_IMAGE_FILE_MACHINE_POWERPC:
 	case PE_IMAGE_FILE_MACHINE_POWERPCFP:
+	case PE_IMAGE_FILE_MACHINE_POWERPCBE:
 		arch = strdup ("ppc");
 		break;
 	case PE_IMAGE_FILE_MACHINE_EBC:
@@ -4003,6 +4004,7 @@ char* PE_(r_bin_pe_get_machine)(RBinPEObj* pe) {
 		case PE_IMAGE_FILE_MACHINE_MIPSFPU16: machine = "Mips FPU 16"; break;
 		case PE_IMAGE_FILE_MACHINE_POWERPC: machine = "PowerPC"; break;
 		case PE_IMAGE_FILE_MACHINE_POWERPCFP: machine = "PowerPC FP"; break;
+		case PE_IMAGE_FILE_MACHINE_POWERPCBE: machine = "PowerPC BE"; break;
 		case PE_IMAGE_FILE_MACHINE_R10000: machine = "R10000"; break;
 		case PE_IMAGE_FILE_MACHINE_R3000: machine = "R3000"; break;
 		case PE_IMAGE_FILE_MACHINE_R4000: machine = "R4000"; break;
@@ -4356,14 +4358,16 @@ int PE_(r_bin_pe_is_pie)(RBinPEObj* pe) {
 }
 
 int PE_(r_bin_pe_is_big_endian)(RBinPEObj* pe) {
-	ut16 arch;
 	if (!pe || !pe->nt_headers) {
 		return false;
 	}
-	arch = pe->nt_headers->file_header.Machine;
-	if (arch == PE_IMAGE_FILE_MACHINE_I386 ||
-	arch == PE_IMAGE_FILE_MACHINE_AMD64) {
+	const ut16 arch = pe->nt_headers->file_header.Machine;
+	switch (arch) {
+	case PE_IMAGE_FILE_MACHINE_I386:
+	case PE_IMAGE_FILE_MACHINE_AMD64:
 		return false;
+	case PE_IMAGE_FILE_MACHINE_POWERPCBE:
+		return true;
 	}
 	return HASCHR (PE_IMAGE_FILE_BYTES_REVERSED_HI);
 }
