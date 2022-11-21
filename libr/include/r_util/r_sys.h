@@ -15,6 +15,7 @@
 extern "C" {
 #endif
 
+// no need for an enum or type here, its just 1:1
 #define R_SYS_BITS_8	1
 #define R_SYS_BITS_16	2
 #define R_SYS_BITS_32	4
@@ -23,6 +24,22 @@ extern "C" {
 #define R_SYS_BITS_27	16
 #define R_SYS_BITS_4	32
 #define R_SYS_BITS_12	64
+
+typedef ut64 RSysBits;
+
+#define R_SYS_BITS_SIZE 8
+#define R_SYS_BITS_MASK 0xff
+#define R_SYS_BITS_PACK(x) (RSysBits)(x)
+#define R_SYS_BITS_PACK1(x) (RSysBits)(x)
+#define R_SYS_BITS_PACK2(x,y) (RSysBits)((x) | ((y)<<R_SYS_BITS_SIZE))
+#define R_SYS_BITS_PACK3(x,y,z) (RSysBits)((x) | ((y)<<R_SYS_BITS_SIZE) | ((z) << (R_SYS_BITS_SIZE*2)))
+#define R_SYS_BITS_PACK4(x,y,z,q) (RSysBits)((x) | ((y)<<R_SYS_BITS_SIZE) | ((z) << (R_SYS_BITS_SIZE*2)) | ((q) << (R_SYS_BITS_SIZE*3)) )
+#define R_SYS_BITS_CHECK(x, y) (bool)( \
+	(((x) & R_SYS_BITS_MASK) == (y)) || \
+	((((x) >> R_SYS_BITS_SIZE) & R_SYS_BITS_MASK) == (y)) || \
+	((((x) >> (R_SYS_BITS_SIZE*2)) & R_SYS_BITS_MASK) == (y)) || \
+	((((x) >> (R_SYS_BITS_SIZE*3)) & R_SYS_BITS_MASK) == (y)) \
+)
 
 typedef struct {
 	char *sysname;

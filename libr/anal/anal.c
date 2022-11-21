@@ -236,8 +236,10 @@ R_API bool r_anal_use(RAnal *anal, const char *name) {
 		if (res) {
 			r_anal_set_reg_profile (anal, NULL);
 			return true;
+#if 0
 		} else {
 			anal->arch->current = NULL;
+#endif
 		}
 	}
 	RListIter *it;

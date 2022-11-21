@@ -4,6 +4,7 @@
 #define R2_ARCH_H
 
 #include <r_util.h>
+#include <r_bin.h>
 #include <r_anal/op.h>
 
 #ifdef __cplusplus
@@ -88,15 +89,13 @@ typedef struct r_arch_decoder_t {
 
 typedef struct r_arch_t {
 	RList *plugins;	       // all plugins
+	RBinBind binb; // required for java, dalvik, wasm and pyc plugin... pending refactor
 	struct r_arch_session_t *session;
-	// HtPP *ht_plugins; faster resolution by name
-#if 1
-	struct r_arch_instance_t *cur; // this var must deprecate current!
+#if 0
 	RArchDecoder *current; // currently used decoder
-	HtPP *decoders;        // as decoders instantiated plugins
+#endif
 	RArchConfig *cfg;      // global / default config
 	bool autoselect;
-#endif
 } RArch;
 
 typedef struct r_arch_session_t {
@@ -129,8 +128,8 @@ typedef struct r_arch_plugin_t {
 	char *version;
 	char *cpus;
 	ut32 endian;
-	ut32 bits;
-	ut32 addr_bits;
+	RSysBits bits;
+	RSysBits addr_bits;
 	RArchPluginInitCallback init;
 	RArchPluginInitCallback fini;
 	RArchPluginInfoCallback info;
