@@ -12,7 +12,7 @@ static const char *help_msg_w[] = {
 	"wa","[?] push ebp","write opcode, separated by ';' (use '\"' around the command)",
 	"waf"," f.asm","assemble file and write bytes",
 	"waF"," f.asm","assemble file and write bytes and show 'wx' op with hexpair bytes of assembled code",
-	"wao","[?] op","modify opcode (change conditional of jump. nop, etc)",
+	"wao","[?] op","modify opcode (change conditional of jump. nop, etc) (RArch.patch)",
 	"wA","[?] r 0","alter/modify opcode at current seek (see wA?)",
 	"wb"," 011001","write bits in bit big endian",
 	"wB","[-]0xVALUE","set or unset bits with given value",
@@ -56,18 +56,6 @@ static const char *help_msg_wa[] = {
 	"waF"," f.asm","assemble file and write bytes and show 'wx' op with hexpair bytes of assembled code",
 	"waF*"," f.asm","assemble file and show 'wx' op with hexpair bytes of assembled code",
 	"wao?", "", "show help for assembler operation on current opcode (hack)",
-	NULL
-};
-
-static const char *help_msg_wA[] = {
-	"Usage:", " wA", "[type] [value]",
-	"Types", "", "",
-	"r", "", "raw write value",
-	"v", "", "set value (taking care of current address)",
-	"d", "", "destination register",
-	"0", "", "1st src register",
-	"1", "", "2nd src register",
-	"Example:",  "wA r 0", "# e800000000",
 	NULL
 };
 
@@ -1223,6 +1211,18 @@ static int cmd_wr(void *data, const char *input) {
 }
 
 #if 0
+static const char *help_msg_wA[] = {
+	"Usage:", " wA", "[type] [value]",
+	"Types", "", "",
+	"r", "", "raw write value",
+	"v", "", "set value (taking care of current address)",
+	"d", "", "destination register",
+	"0", "", "1st src register",
+	"1", "", "2nd src register",
+	"Example:",  "wA r 0", "# e800000000",
+	NULL
+};
+
 // RAsm.modify() was unused therefor this is kind of attempt to move the asmhacks into the arch plugins
 static int cmd_wA(void *data, const char *input) {
 	RCore *core = (RCore *)data;

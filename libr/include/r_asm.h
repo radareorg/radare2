@@ -65,6 +65,8 @@ typedef struct r_asm_t {
 	RArchSession *dcur; // decode current
 	_RAsmPlugin *cur; // disassemble .. should be RArchPlugin DEPRECATE
 	_RAsmPlugin *acur; // assemble DEPRECATE
+	// RArchSession *cur;
+	// RArchSession *acur;
 	RList *plugins;
 	RAnalBind analb; // Should be RArchBind instead, but first we need to move all the anal plugins
 	RParse *ifilter;
