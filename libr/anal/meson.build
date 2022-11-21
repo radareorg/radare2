@@ -104,7 +104,6 @@ r_anal_sources = [
   'p/anal_ppc_gnu.c',
   'p/anal_propeller.c',
   'p/anal_pyc.c',
-  'p/anal_riscv.c',
   'p/anal_riscv_cs.c',
   'p/anal_s390_cs.c',
   'p/anal_s390_gnu.c',
