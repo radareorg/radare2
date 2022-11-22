@@ -346,7 +346,7 @@ static int riscv_decode(RArchSession *s, RAnalOp *op, RArchDecodeMask mask) {
 	const int no_alias = 1;
 	riscv_args_t args = {0};
 	ut64 word = 0;
-	int xlen = s->config->bits;
+	const int xlen = s->config->bits;
 	op->type = R_ANAL_OP_TYPE_UNK;
 	op->size = 4;
 	const bool be = R_ARCH_CONFIG_IS_BIG_ENDIAN (s->config);
