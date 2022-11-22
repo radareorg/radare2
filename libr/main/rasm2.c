@@ -177,10 +177,16 @@ static const char *has_esil(RAsmState *as, const char *name) {
 	return "__";
 }
 
+static int sizetsort(const void *a, const void *b) {
+	size_t sa = (size_t)a;
+	size_t sb = (size_t)b;
+	return sa - sb;
+}
+
 static void rarch2_list(RAsmState *as, const char *arch) {
-	char bits[32];
+	int i;
 	RArchPlugin *h;
-	RListIter *iter;
+	RListIter *iter, *iter2;
 	const char *feat2, *feat;
 	PJ *pj = NULL;
 	if (as->json) {
@@ -190,28 +196,19 @@ static void rarch2_list(RAsmState *as, const char *arch) {
 	r_list_foreach (as->anal->arch->plugins, iter, h) {
 		feat = "_d";
 		feat2 = "e";
-		bits[0] = 0;
-		if (h->bits == 27) {
-			strcat (bits, "27");
-		} else if (h->bits == 0) {
-			strcat (bits, "any");
-		} else {
-			if (h->bits & 4) {
-				strcat (bits, "4 ");
+		ut64 bits = h->bits;
+		RList *bitslist = r_list_newf (NULL);
+		for (i = 0; i < 8; i++) {
+			ut8 bit = (bits & 0xFF); // TODO: use the macros
+			if (bit) {
+				r_list_append (bitslist, (void*)(size_t)bit);
+			} else {
+				break;
 			}
-			if (h->bits & 8) {
-				strcat (bits, "8 ");
-			}
-			if (h->bits & 16) {
-				strcat (bits, "16 ");
-			}
-			if (h->bits & 32) {
-				strcat (bits, "32 ");
-			}
-			if (h->bits & 64) {
-				strcat (bits, "64 ");
-			}
+			bits >>= 8; // TODO: use the macros
 		}
+		r_list_sort (bitslist, sizetsort);
+		char *bitstr = r_num_list_join (bitslist, " ");
 		if (as->quiet) {
 			printf ("%s\n", h->name);
 		} else if (as->json) {
@@ -219,8 +216,10 @@ static void rarch2_list(RAsmState *as, const char *arch) {
 			pj_ks (pj, "name", h->name);
 			pj_k (pj, "bits");
 			pj_a (pj);
-			pj_i (pj, 32);
-			pj_i (pj, 64);
+			void *k;
+			r_list_foreach (bitslist, iter2, k) {
+				pj_i (pj, (int)(size_t)k);
+			}
 			pj_end (pj);
 			pj_ks (pj, "license", r_str_get_fail (h->license, "unknown"));
 			pj_ks (pj, "description", h->desc);
@@ -228,7 +227,7 @@ static void rarch2_list(RAsmState *as, const char *arch) {
 			pj_end (pj);
 		} else {
 			printf ("%s%s %-11s %-11s %-7s %s",
-					feat, feat2, bits, h->name,
+					feat, feat2, bitstr, h->name,
 					r_str_get_fail (h->license, "unknown"), h->desc);
 			if (h->author) {
 				printf (" (by %s)", h->author);
@@ -238,6 +237,8 @@ static void rarch2_list(RAsmState *as, const char *arch) {
 			}
 			printf ("\n");
 		}
+		r_list_free (bitslist);
+		free (bitstr);
 	}
 	if (as->json) {
 		pj_end (pj);
