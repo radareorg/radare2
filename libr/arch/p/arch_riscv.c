@@ -950,7 +950,7 @@ RArchPlugin r_arch_plugin_riscv = {
 	.bits = R_SYS_BITS_PACK2 (32, 64),
 	.encode = &riscv_encode,
 	.decode = &riscv_decode,
-	.info = info,
+	.info = &info,
 	.regs = &get_reg_profile,
 };
 
