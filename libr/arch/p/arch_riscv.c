@@ -331,7 +331,7 @@ static char *riscv_disassemble(RArchSession *s, ut64 addr, const ut8 *buf, int l
 	return NULL;
 }
 
-static int riscv_decode(RArchSession *s, RAnalOp *op, RArchDecodeMask mask) {
+static bool riscv_decode(RArchSession *s, RAnalOp *op, RArchDecodeMask mask) {
 	ut64 addr = op->addr;
 	const ut8 *buf = op->bytes;
 	int len = op->size;
@@ -729,7 +729,7 @@ static int riscv_decode(RArchSession *s, RAnalOp *op, RArchDecodeMask mask) {
 		}
 		free (argf);
 	}
-	return op->size;
+	return op->size > 0;
 }
 
 static char *get_reg_profile(RArchSession *s) {
@@ -928,7 +928,7 @@ static char *get_reg_profile(RArchSession *s) {
 	return R_STR_ISNOTEMPTY (p)? strdup (p): NULL;
 }
 
-static int info(RArchSession *s, int q) {
+static int info(RArchSession *s, ut32 q) {
 	switch (q) {
 	case R_ANAL_ARCHINFO_ALIGN:
 		return 0;
@@ -941,6 +941,7 @@ static int info(RArchSession *s, int q) {
 	}
 	return 0;
 }
+
 RArchPlugin r_arch_plugin_riscv = {
 	.name = "riscv",
 	.desc = "RISC-V analysis plugin",
