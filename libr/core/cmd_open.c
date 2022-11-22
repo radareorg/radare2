@@ -544,6 +544,7 @@ static void cmd_omfg(RCore *core, const char *input) {
 		: r_str_rwx (input) : 7;
 	ut32 mapid;
 	if (!r_id_storage_get_lowest (core->io->maps, &mapid)) {
+		r_core_cmd0 (core, "omm");
 		return;
 	}
 	switch (*input) {
