@@ -28,7 +28,6 @@ install:
 		rm -f "${DESTDIR}${BINDIR}/$$BINARY" ; \
 		${INSTALL_PROGRAM} "$$BINARY/$$BINARY$(EXT_EXE)" "${DESTDIR}${BINDIR}/$$BINARY$(EXT_EXE)" ; \
 	done
-	${INSTALL_SCRIPT} "$(BTOP)/r2pm/r2pm.sh" "${DESTDIR}${BINDIR}/r2pm.sh"
 	rm -rf "${DESTDIR}${DATADIR}/radare2/${VERSION}/r2pm"
 	-cd "${DESTDIR}${BINDIR}" && rm -f r2 ; ln -fs radare2 r2 ; ln -fs radare2 r2p
 ifeq ($(WITHPIC),1)
@@ -48,7 +47,6 @@ symstall install-symlink:
 	mkdir -p "${DESTDIR}${BINDIR}" && \
 	for BINARY in ${BINS} ; do ln -fs "${BTOP}/$$BINARY/$$BINARY" "${DESTDIR}${BINDIR}/$$BINARY" ; done
 	cd .. && ln -fs "${BTOP}/r2pm/r2pm" "${DESTDIR}${BINDIR}/r2pm"
-	cd .. && ln -fs "${BTOP}/r2pm/r2pm.sh" "${DESTDIR}${BINDIR}/r2pm.sh"
 	cd .. && rm -rf "${DESTDIR}${DATADIR}/radare2/${VERSION}/r2pm"
 	cd .. && mkdir -p "${DESTDIR}${DATADIR}/radare2/${VERSION}/"
 	-cd .. && ln -fs "${DESTDIR}${BINDIR}/radare2" "${DESTDIR}${BINDIR}/r2"
