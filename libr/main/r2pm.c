@@ -9,29 +9,6 @@
 
 static int r2pm_install(RList *targets, bool uninstall, bool clean, bool force, bool global);
 
-static int r_main_r2pm_sh(int argc, const char **argv) {
-#if __WINDOWS__
-	R_LOG_ERROR ("r2pm.sh: not implemented");
-	return 1;
-#else
-	int i;
-	char *r2pm_sh = r_file_path ("r2pm.sh");
-	if (*r2pm_sh != '/') {
-		free (r2pm_sh);
-		return 1;
-	}
-	RStrBuf *sb = r_strbuf_new (r2pm_sh);
-	free (r2pm_sh);
-	for (i = 1; i < argc; i++) {
-		r_strbuf_appendf (sb, " %s", argv[i]);
-	}
-	char *cmd = r_strbuf_drain (sb);
-	int res = cmd? r_sandbox_system (cmd, 0): -1;
-	free (cmd);
-	return res;
-#endif
-}
-
 static const char *helpmsg = \
 "Usage: r2pm [-flags] [pkgs...]\n"\
 "Commands:\n"\
@@ -748,7 +725,7 @@ static void r2pm_varprint(const char *name) {
 	}
 }
 
-static int r_main_r2pm_c(int argc, const char **argv) {
+R_API int r_main_r2pm(int argc, const char **argv) {
 	bool havetoflush = false;
 	if (!r_cons_is_initialized ()) {
 		havetoflush = true;
@@ -944,12 +921,4 @@ static int r_main_r2pm_c(int argc, const char **argv) {
 		return 0;
 	}
 	return 1;
-}
-
-R_API int r_main_r2pm(int argc, const char **argv) {
-	bool use_sh_impl = r_sys_getenv_asbool ("R2PM_LEGACY");
-	if (use_sh_impl) {
-		return r_main_r2pm_sh (argc, argv);
-	}
-	return r_main_r2pm_c (argc, argv);
 }
