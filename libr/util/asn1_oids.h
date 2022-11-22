@@ -8,7 +8,7 @@ extern "C" {
 const struct r_oid_list_t {
 	const char* const oid;
 	const char* const name;
-} X509OIDList [] = {
+} X509OIDList[] = {
 	{ "0.2.262.1.10", "Telesec" },
 	{ "0.2.262.1.10.0", "extension" },
 	{ "0.2.262.1.10.1", "mechanism" },
@@ -1053,6 +1053,12 @@ const struct r_oid_list_t {
 	{ "1.2.840.114021.4.1", "identrusOCSP" },
 	{ "1.3.101.1.4", "thawte-ce" },
 	{ "1.3.101.1.4.1", "strongExtranet" },
+	{ "1.3.101.110", "id-X25519" },
+	{ "1.3.101.111", "id-X448" },
+	{ "1.3.101.112", "id-Ed25519" },
+	{ "1.3.101.113", "id-Ed448" },
+	{ "1.3.101.114", "id-Ed25519ph" },
+	{ "1.3.101.115", "id-Ed448ph" },
 	{ "1.3.12.2.1011.7.1", "decEncryptionAlgorithm" },
 	{ "1.3.12.2.1011.7.1.2", "decDEA" },
 	{ "1.3.12.2.1011.7.2", "decHashAlgorithm" },
@@ -2357,7 +2363,7 @@ const struct r_oid_list_t {
 	{ "2.54.1775.6", "tunneling" },
 	{ "2.54.1775.7", "setQualifier" },
 	{ "2.54.1775.99", "setData" },
-	{0, 0}
+	{ 0, 0 }
 };
 
 #ifdef __cplusplus
