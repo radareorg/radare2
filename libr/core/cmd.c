@@ -5891,14 +5891,15 @@ R_API char *r_core_cmd_strf(RCore *core, const char *fmt, ...) {
 
 /* return: pointer to a buffer with the output of the command */
 R_API char *r_core_cmd_str(RCore *core, const char *cmd) {
-	if (*cmd != '"' && strchr (cmd, '>')) {
+	r_return_val_if_fail (core, NULL);
+	if (cmd && *cmd != '"' && strchr (cmd, '>')) {
 		r_core_cmd0 (core, cmd);
 		return strdup ("");
 	}
 	r_cons_push ();
 	core->cons->context->noflush = true;
 	core->cons->context->cmd_str_depth++;
-	if (r_core_cmd (core, cmd, 0) == -1) {
+	if (cmd && r_core_cmd (core, cmd, 0) == -1) {
 		//eprintf ("Invalid command: %s\n", cmd);
 		if (--core->cons->context->cmd_str_depth == 0) {
 			core->cons->context->noflush = false;
