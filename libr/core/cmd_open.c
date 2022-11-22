@@ -544,7 +544,11 @@ static void cmd_omfg(RCore *core, const char *input) {
 		: r_str_rwx (input) : 7;
 	ut32 mapid;
 	if (!r_id_storage_get_lowest (core->io->maps, &mapid)) {
-		r_core_cmd0 (core, "omm");
+		ut32 fd = r_io_fd_get_current (core->io);
+		RIODesc *desc = r_io_desc_get (core->io, fd);
+		if (desc) {
+			r_core_cmd0 (core, "omm");
+		}
 		return;
 	}
 	switch (*input) {
@@ -1064,7 +1068,9 @@ static void cmd_open_map(RCore *core, const char *input) {
 		}
 		break;
 	case 'm': // "omm"
-		{
+		if (input[2] == '?') {
+			r_core_cmd_help_match (core, help_msg_om, "omm", false);
+		} else {
 			ut32 fd = input[2]? r_num_math (core->num, input + 2): r_io_fd_get_current (core->io);
 			RIODesc *desc = r_io_desc_get (core->io, fd);
 			if (desc) {
@@ -1074,7 +1080,7 @@ static void cmd_open_map(RCore *core, const char *input) {
 					r_io_map_set_name (map, desc->name);
 				}
 			} else {
-				r_core_cmd_help_match (core, help_msg_om, "omm", false);
+				R_LOG_DEBUG ("Cannot find any fd to map");
 			}
 		}
 		break;
