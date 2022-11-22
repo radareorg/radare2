@@ -686,14 +686,16 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 			}
 			return 0;
 		case 'r': // $r
-			if (str[2] == '{') {
+			if (str[2] == '{' || str[2] == ':') {
 				bptr = strdup (str + 3);
-				ptr = strchr (bptr, '}');
-				if (!ptr) {
-					free (bptr);
-					break;
+				if (str[2] == '{') {
+					ptr = strchr (bptr, '}');
+					if (!ptr) {
+						free (bptr);
+						break;
+					}
+					*ptr = 0;
 				}
-				*ptr = 0;
 				if (r_config_get_b (core->config, "cfg.debug")) {
 					if (r_debug_reg_sync (core->dbg, R_REG_TYPE_GPR, false)) {
 						RRegItem *r = r_reg_get (core->dbg->reg, bptr, -1);
