@@ -3,9 +3,9 @@
 #include <r_lib.h>
 #include <r_asm.h>
 #include <r_arch.h>
-#include "../../asm/arch/riscv/riscv-opc.c"
-#include "../../asm/arch/riscv/riscv.c"
-#include "../../asm/arch/riscv/riscvasm.c"
+#include "riscv/riscv-opc.c"
+#include "riscv/riscv.c"
+#include "riscv/riscvasm.c"
 #define RISCVARGSMAX (8)
 #define RISCVARGSIZE (64)
 #define RISCVARGN(x) ((x)->arg[(x)->num++])
@@ -76,13 +76,13 @@ static void get_riscv_args(riscv_args_t *args, const char *d, insn_t l, ut64 pc)
 				RISCVPRINTF ("%d", rd);
 				break;
 			case 's':
-				snprintf (RISCVARGN (args), RISCVARGSIZE , "%d", rs1);
+				RISCVPRINTF ("%d", rs1);
 				break;
 			case 't':
-				snprintf (RISCVARGN (args), RISCVARGSIZE , "%d", (int) EXTRACT_OPERAND (RS2, l));
+				RISCVPRINTF ("%d", (int) EXTRACT_OPERAND (RS2, l));
 				break;
 			case 'j':
-				snprintf (RISCVARGN (args), RISCVARGSIZE , "%d", (int) EXTRACT_OPERAND (CUSTOM_IMM, l));
+				RISCVPRINTF ("%d", (int) EXTRACT_OPERAND (CUSTOM_IMM, l));
 				break;
 			}
 			break;
@@ -91,79 +91,73 @@ static void get_riscv_args(riscv_args_t *args, const char *d, insn_t l, ut64 pc)
 			switch (*d) {
 			case 's': /* RS1 x8-x15 */
 			case 'w': /* RS1 x8-x15 */
-				snprintf (RISCVARGN (args), RISCVARGSIZE , "%s",
-						riscv_gpr_names[EXTRACT_OPERAND (CRS1S, l) + 8]);
+				RISCVPRINTF ("%s", riscv_gpr_names[EXTRACT_OPERAND (CRS1S, l) + 8]);
 				break;
 			case 't': /* RS2 x8-x15 */
 			case 'x': /* RS2 x8-x15 */
-				snprintf (RISCVARGN (args), RISCVARGSIZE , "%s",
-						riscv_gpr_names[EXTRACT_OPERAND (CRS2S, l) + 8]);
+				RISCVPRINTF ("%s", riscv_gpr_names[EXTRACT_OPERAND (CRS2S, l) + 8]);
 				break;
 			case 'U': /* RS1, constrained to equal RD in CI format*/
-				snprintf (RISCVARGN (args), RISCVARGSIZE , "%s", riscv_gpr_names[rd]);
+				RISCVPRINTF ("%s", riscv_gpr_names[rd]);
 				break;
 			case 'c': /* RS1, constrained to equal sp */
-				snprintf (RISCVARGN (args), RISCVARGSIZE , "%s", riscv_gpr_names[X_SP]);
+				RISCVPRINTF ("%s", riscv_gpr_names[X_SP]);
 				break;
 			case 'V': /* RS2 */
-				snprintf (RISCVARGN (args), RISCVARGSIZE , "%s",
-						riscv_gpr_names[EXTRACT_OPERAND (CRS2, l)]);
+				RISCVPRINTF ("%s", riscv_gpr_names[EXTRACT_OPERAND (CRS2, l)]);
 				break;
 			case 'i':
-				snprintf (RISCVARGN (args), RISCVARGSIZE , "%d", (int)EXTRACT_RVC_SIMM3 (l));
+				RISCVPRINTF ("%d", (int)EXTRACT_RVC_SIMM3 (l));
 				break;
 			case 'j':
-				snprintf (RISCVARGN (args), RISCVARGSIZE , "%d", (int)EXTRACT_RVC_IMM (l));
+				RISCVPRINTF ("%d", (int)EXTRACT_RVC_IMM (l));
 				break;
 			case 'k':
-				snprintf (RISCVARGN (args), RISCVARGSIZE , "%d", (int)EXTRACT_RVC_LW_IMM (l));
+				RISCVPRINTF ("%d", (int)EXTRACT_RVC_LW_IMM (l));
 				break;
 			case 'l':
-				snprintf (RISCVARGN (args), RISCVARGSIZE , "%d", (int)EXTRACT_RVC_LD_IMM (l));
+				RISCVPRINTF ("%d", (int)EXTRACT_RVC_LD_IMM (l));
 				break;
 			case 'm':
-				snprintf (RISCVARGN (args), RISCVARGSIZE , "%d", (int)EXTRACT_RVC_LWSP_IMM (l));
+				RISCVPRINTF ("%d", (int)EXTRACT_RVC_LWSP_IMM (l));
 				break;
 			case 'n':
-				snprintf (RISCVARGN (args), RISCVARGSIZE , "%d", (int)EXTRACT_RVC_LDSP_IMM (l));
+				RISCVPRINTF ("%d", (int)EXTRACT_RVC_LDSP_IMM (l));
 				break;
 			case 'K':
-				snprintf (RISCVARGN (args), RISCVARGSIZE , "%d", (int)EXTRACT_RVC_ADDI4SPN_IMM (l));
+				RISCVPRINTF ("%d", (int)EXTRACT_RVC_ADDI4SPN_IMM (l));
 				break;
 			case 'L':
-				snprintf (RISCVARGN (args), RISCVARGSIZE , "%d", (int)EXTRACT_RVC_ADDI16SP_IMM (l));
+				RISCVPRINTF ("%d", (int)EXTRACT_RVC_ADDI16SP_IMM (l));
 				break;
 			case 'M':
-				snprintf (RISCVARGN (args), RISCVARGSIZE , "%d", (int)EXTRACT_RVC_SWSP_IMM (l));
+				RISCVPRINTF ("%d", (int)EXTRACT_RVC_SWSP_IMM (l));
 				break;
 			case 'N':
-				snprintf (RISCVARGN (args), RISCVARGSIZE , "%d", (int)EXTRACT_RVC_SDSP_IMM (l));
+				RISCVPRINTF ("%d", (int)EXTRACT_RVC_SDSP_IMM (l));
 				break;
 			case 'p':
 				target = EXTRACT_RVC_B_IMM (l) + pc;
-				snprintf (RISCVARGN (args), RISCVARGSIZE , "0x%"PFMT64x, (ut64) target);
+				RISCVPRINTF ("0x%"PFMT64x, (ut64) target);
 				break;
 			case 'a':
 				target = EXTRACT_RVC_J_IMM (l) + pc;
-				snprintf (RISCVARGN (args), RISCVARGSIZE , "0x%"PFMT64x, (ut64)target);
+				RISCVPRINTF ("0x%"PFMT64x, (ut64)target);
 				break;
 			case 'u':
-				snprintf (RISCVARGN (args), RISCVARGSIZE , "0x%x",
-						(int) (EXTRACT_RVC_IMM (l) & (RISCV_BIGIMM_REACH - 1)));
+				RISCVPRINTF ("0x%x", (int) (EXTRACT_RVC_IMM (l) & (RISCV_BIGIMM_REACH - 1)));
 				break;
 			case '>':
-				snprintf (RISCVARGN (args), RISCVARGSIZE , "0x%x", (int) EXTRACT_RVC_IMM (l) & 0x3f);
+				RISCVPRINTF ("0x%x", (int) EXTRACT_RVC_IMM (l) & 0x3f);
 				break;
 			case '<':
-				snprintf (RISCVARGN (args), RISCVARGSIZE , "0x%x", (int) EXTRACT_RVC_IMM (l) & 0x1f);
+				RISCVPRINTF ("0x%x", (int) EXTRACT_RVC_IMM (l) & 0x1f);
 				break;
 			case 'T': /* floating-point RS2 */
-				snprintf (RISCVARGN (args), RISCVARGSIZE , "%s",
-						riscv_fpr_names[EXTRACT_OPERAND (CRS2, l)]);
+				RISCVPRINTF ("%s", riscv_fpr_names[EXTRACT_OPERAND (CRS2, l)]);
 				break;
 			case 'D': /* floating-point RS2 x8-x15 */
-				snprintf (RISCVARGN (args), RISCVARGSIZE , "%s",
-						riscv_fpr_names[EXTRACT_OPERAND (CRS2S, l) + 8]);
+				RISCVPRINTF ("%s", riscv_fpr_names[EXTRACT_OPERAND (CRS2S, l) + 8]);
 				break;
 			}
 			break;
@@ -181,15 +175,13 @@ static void get_riscv_args(riscv_args_t *args, const char *d, insn_t l, ut64 pc)
 			break;
 		case 'b':
 		case 's':
-			snprintf (RISCVARGN (args), RISCVARGSIZE , "%s", riscv_gpr_names[rs1]);
+			RISCVPRINTF ("%s", riscv_gpr_names[rs1]);
 			break;
 		case 't':
-			snprintf (RISCVARGN (args), RISCVARGSIZE , "%s",
-					riscv_gpr_names[EXTRACT_OPERAND (RS2, l)]);
+			RISCVPRINTF ("%s", riscv_gpr_names[EXTRACT_OPERAND (RS2, l)]);
 			break;
 		case 'u':
-			snprintf (RISCVARGN (args), RISCVARGSIZE , "0x%x",
-					(unsigned) EXTRACT_UTYPE_IMM (l) >> RISCV_IMM_BITS);
+			RISCVPRINTF ("0x%x", (unsigned) EXTRACT_UTYPE_IMM (l) >> RISCV_IMM_BITS);
 			break;
 
 		case 'm':
@@ -208,43 +200,43 @@ static void get_riscv_args(riscv_args_t *args, const char *d, insn_t l, ut64 pc)
 			break;
 		case 'o':
 		case 'j':
-			snprintf (RISCVARGN (args), RISCVARGSIZE , "%d", (int) EXTRACT_ITYPE_IMM (l));
+			RISCVPRINTF ("%d", (int) EXTRACT_ITYPE_IMM (l));
 			break;
 		case 'q':
-			snprintf (RISCVARGN (args), RISCVARGSIZE , "%d", (int) EXTRACT_STYPE_IMM (l));
+			RISCVPRINTF ("%d", (int) EXTRACT_STYPE_IMM (l));
 			break;
 		case 'a':
 			target = EXTRACT_UJTYPE_IMM (l) + pc;
-			snprintf (RISCVARGN (args), RISCVARGSIZE , "0x%"PFMT64x, (ut64)target);
+			RISCVPRINTF ("0x%"PFMT64x, (ut64)target);
 			break;
 		case 'p':
 			target = EXTRACT_SBTYPE_IMM (l) + pc;
-			snprintf (RISCVARGN (args), RISCVARGSIZE , "0x%"PFMT64x, (ut64)target);
+			RISCVPRINTF ("0x%"PFMT64x, (ut64)target);
 			break;
 		case 'd':
-			snprintf (RISCVARGN (args), RISCVARGSIZE , "%s", riscv_gpr_names[rd]);
+			RISCVPRINTF ("%s", riscv_gpr_names[rd]);
 			break;
 		case 'z':
-			snprintf (RISCVARGN (args), RISCVARGSIZE , "%s", riscv_gpr_names[0]);
+			RISCVPRINTF ("%s", riscv_gpr_names[0]);
 			break;
 		case '>':
-			snprintf (RISCVARGN (args), RISCVARGSIZE , "0x%x", (int) EXTRACT_OPERAND (SHAMT, l));
+			RISCVPRINTF ("0x%x", (int) EXTRACT_OPERAND (SHAMT, l));
 			break;
 		case '<':
-			snprintf (RISCVARGN (args), RISCVARGSIZE , "0x%x", (int) EXTRACT_OPERAND (SHAMTW, l));
+			RISCVPRINTF ("0x%x", (int) EXTRACT_OPERAND (SHAMTW, l));
 			break;
 		case 'S':
 		case 'U':
-			snprintf (RISCVARGN (args), RISCVARGSIZE , "%s", riscv_fpr_names[rs1]);
+			RISCVPRINTF ("%s", riscv_fpr_names[rs1]);
 			break;
 		case 'T':
-			snprintf (RISCVARGN (args), RISCVARGSIZE , "%s", riscv_fpr_names[EXTRACT_OPERAND (RS2, l)]);
+			RISCVPRINTF ("%s", riscv_fpr_names[EXTRACT_OPERAND (RS2, l)]);
 			break;
 		case 'D':
-			snprintf (RISCVARGN (args), RISCVARGSIZE , "%s", riscv_fpr_names[rd]);
+			RISCVPRINTF ("%s", riscv_fpr_names[rd]);
 			break;
 		case 'R':
-			snprintf (RISCVARGN (args), RISCVARGSIZE , "%s", riscv_fpr_names[EXTRACT_OPERAND (RS3, l)]);
+			RISCVPRINTF ("%s", riscv_fpr_names[EXTRACT_OPERAND (RS3, l)]);
 			break;
 		case 'E':
 			{
@@ -253,22 +245,22 @@ static void get_riscv_args(riscv_args_t *args, const char *d, insn_t l, ut64 pc)
 				switch (csr) {
 #define DECLARE_CSR(name, num) case num: csr_name = #name; break;
 #undef RISCV_ENCODING_H
-#include "../../asm/arch/riscv/riscv-opc.h"
+#include "riscv/riscv-opc.h"
 #undef DECLARE_CSR
 				}
 				if (csr_name) {
-					snprintf (RISCVARGN (args), RISCVARGSIZE , "%s", csr_name);
+					RISCVPRINTF ("%s", csr_name);
 				} else {
-					snprintf (RISCVARGN (args), RISCVARGSIZE , "0x%x", csr);
+					RISCVPRINTF ("0x%x", csr);
 				}
 				break;
 			}
 		case 'Z':
-			snprintf (RISCVARGN (args), RISCVARGSIZE , "%d", rs1);
+			RISCVPRINTF ("%d", rs1);
 			break;
 		default:
 			/* xgettext:c-format */
-			snprintf (RISCVARGN (args), RISCVARGSIZE , "# internal error, undefined modifier (%c)", *d);
+			RISCVPRINTF ("# internal error, undefined modifier (%c)", *d);
 			return;
 		}
 	}
