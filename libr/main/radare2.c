@@ -1109,7 +1109,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 			free (debugbackend);
 			return 1;
 		}
-		if (r_sys_chdir (argv[opt.ind])) {
+		if (!r_sys_chdir (argv[opt.ind])) {
 			R_LOG_ERROR ("Cannot open directory");
 			LISTS_FREE ();
 			free (pfile);
