@@ -871,3 +871,17 @@ R_API bool r_num_segaddr(ut64 addr, ut64 sb, int sg, ut32 *a, ut32 *b) {
 	}
 	return *a <= 0xffff && *b <= 0xffff;
 }
+
+// wont work for 64bit but thats by design
+R_API char *r_num_list_join(RList *str, const char *sep) {
+	r_return_val_if_fail (str && sep, NULL);
+	RListIter *iter;
+	RStrBuf *sb = r_strbuf_new ("");
+	r_list_foreach_iter (str, iter) {
+		if (r_strbuf_length (sb) != 0) {
+			r_strbuf_append (sb, sep);
+		}
+		r_strbuf_appendf (sb, "%d", (int)(size_t)iter->data);
+	}
+	return r_strbuf_drain (sb);
+}
