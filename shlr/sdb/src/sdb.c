@@ -775,7 +775,7 @@ typedef struct {
 
 static bool sdb_foreach_match_cb(void *user, const char *k, const char *v) {
 	_match_sdb_user *o = (_match_sdb_user*)user;
-	SdbKv tkv = {0};
+	SdbKv tkv = {{0}};
 	tkv.base.key = (char *)k;
 	tkv.base.value = (char *)v;
 	if (sdbkv_match (&tkv, o->expr)) {
