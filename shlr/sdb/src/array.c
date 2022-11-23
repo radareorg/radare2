@@ -24,8 +24,8 @@ static const char *Aindexof(const char *str, int idx) {
 }
 
 static int astrcmp(const char *a, const char *b) {
-	register char va = *a;
-	register char vb = *b;
+	char va = *a;
+	char vb = *b;
 	for (;;) {
 		if (va == '\0' || va == SDB_RS) {
 			if (vb == '\0' || vb == SDB_RS) {

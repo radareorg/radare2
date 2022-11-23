@@ -45,7 +45,7 @@ CFLAGS+=-Wsign-compare
 # some old gcc doesnt support this
 # CFLAGS+=-Wmissing-field-initializers
 #CFLAGS+=-O3
-CFLAGS+=-g -Wall -O0
+# CFLAGS+=-g -Wall -O0
 #CFLAGS+=-g
 #LDFLAGS+=-g -flto
 
