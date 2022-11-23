@@ -1,10 +1,11 @@
 include ../config.mk
 
-CFLAGS:=-g $(CFLAGS)
+# CFLAGS:=-g $(CFLAGS)
 OBJ=cdb.o buffer.o cdb_make.o ls.o ht.o ht_uu.o sdb.o num.o base64.o match.o
 OBJ+=json.o ns.o lock.o util.o disk.o query.o array.o fmt.o journal.o text.o
 OBJ+=dict.o ht_pp.o ht_up.o ht_pu.o set.o diff.o
-CFLAGS+=-I ../include
+SDB_CFLAGS+=-I../include
+SDB_CXXFLAGS+=-I../include
 SOBJ=$(subst .o,.o.o,${OBJ})
 WITHPIC?=1
 BIN=sdb${EXT_EXE}
@@ -77,7 +78,7 @@ mrproper clean:
 ifneq ($(SILENT),)
 	@echo LD $<
 endif
-	$(CC) $(LDFLAGS) -c $(CFLAGS) -o $@ $<
+	$(CC) $(LDFLAGS) -c $(CFLAGS) $(SDB_CFLAGS) -o $@ $<
 
 S=$
 
@@ -85,14 +86,14 @@ S=$
 ifneq ($(SILENT),)
 	@echo CC $<
 endif
-	$(CC) -c ${CPPFLAGS} ${CFLAGS} ${CFLAGS_SHARED} -o $@ $<
+	$(CC) -c ${CPPFLAGS} ${CFLAGS} $(SDB_CFLAGS) ${CFLAGS_SHARED} -o $@ $<
 
 %.o.o: %.c
 ifneq ($(SILENT),)
 	@echo CC PIC $<
 endif
 	@mv `echo $<|sed -e 's,\.c$S,\.d,g'` $<.tmp 2>/dev/null || true
-	$(CC) -c ${CPPFLAGS} ${CFLAGS} ${CFLAGS_SHARED} -o $@ $<
+	$(CC) -c ${CPPFLAGS} ${CFLAGS} $(SDB_CFLAGS) ${CFLAGS_SHARED} -o $@ $<
 	@mv `echo $<|sed -e 's,\.c$S,\.d,g'` `echo $<|sed -e 's,\.c$S,\._d,g'` 2>/dev/null || true
 	@mv $<.tmp `echo $<|sed -e 's,\.c$S,\.d,g'` 2>/dev/null ||true
 
