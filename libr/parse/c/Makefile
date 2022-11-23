@@ -12,7 +12,7 @@ CFLAGS+=-I../../include
 
 CFLAGS+=-fstrict-aliasing
 CFLAGS+=-I../../libr/include
-CFLAGS+=-Wall -g
+# CFLAGS+=-Wall -g
 LDFLAGS+=-shared
 ifeq (${OSNAME},darwin)
 SOEXT?=dylib
