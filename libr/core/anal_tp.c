@@ -780,6 +780,13 @@ repeat:
 					RAnalOp *jmp_op = {0};
 					ut64 jmp_addr = next_op->jump;
 					RAnalBlock *jmpbb = r_anal_function_bbget_in (anal, fcn, jmp_addr);
+					RAnalBlock jbb = {0};
+					if (jmpbb) {
+						// the bb can be invalidated in the loop below, causing
+					        // a crash, so we copy that into a stack ghosty struct
+						jbb.addr = jmpbb->addr;
+						jbb.size = jmpbb->size;
+					}
 
 					// Check exit status of jmp branch
 					for (i = 0; i < MAX_INSTR ; i++) {
@@ -789,7 +796,7 @@ repeat:
 							r_anal_op_fini (&aop);
 							break;
 						}
-						if ((jmp_op->type == R_ANAL_OP_TYPE_RET && r_anal_block_contains (jmpbb, jmp_addr))
+						if ((jmp_op->type == R_ANAL_OP_TYPE_RET && r_anal_block_contains (&jbb, jmp_addr))
 								|| jmp_op->type == R_ANAL_OP_TYPE_CJMP) {
 							jmp = true;
 							r_anal_op_free (jmp_op);
