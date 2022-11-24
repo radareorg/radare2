@@ -31,7 +31,7 @@ static const char *help_msg_L[] = {
 	"Lg", "", "list egg plugins",
 	"Lh", "", "list hash plugins (ph)",
 	"Li", "[j]", "list bin plugins (iL)",
-	"Ll", "[j]", "list lang plugins (#!)",
+	"Ll", "[qj]", "list lang plugins (#!)",
 	"LL", "", "lock screen",
 	"Lm", "[j]", "list fs plugins (mL)",
 	"Lo", "", "list io plugins (oL)",
@@ -497,10 +497,16 @@ static int cmd_plugins(void *data, const char *input) {
 		}
 		break;
 	case 'l': // "Ll"
-		if (input[1] == 'j') {
-			r_core_cmd0 (core, "#!?j");
+		if (input[1] == 'j') { // "Llj" "#!?j"
+			r_lang_list (core->lang, 'j');
+		} else if (input[1] == 'q') { // "Llq" "#!?q"
+			r_lang_list (core->lang, 'q');
+		} else if (input[1] == ',') { // "Ll,"
+			r_lang_list (core->lang, ','); // TODO: take table query as argument
+		} else if (input[1] == '?') { // "Ll?"
+			r_cons_printf ("Usage: Ll[jq] - list r_lang plugins\n");
 		} else {
-			r_core_cmd0 (core, "#!");
+			r_lang_list (core->lang, 0);
 		}
 		break;
 	case 'L': // "LL"

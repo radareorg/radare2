@@ -8,6 +8,7 @@ const char *help_msg_hash[] = {
 	"#!", "", "list all available interpreters",
 	"#!?", "", "show this help message",
 	"#!?j", "", "list all available interpreters in JSON",
+	"#!?q", "", "list all available lang plugin names (See Ll?)",
 	"#!v?", "", "show vlang script example",
 	"#!python?", "", "show python script example",
 	"#!python", "", "run python commandline",
@@ -405,10 +406,14 @@ static int cmd_hash_bang(RCore *core, const char *input) {
 					R_LOG_ERROR ("scr.interactive required to run the rlang prompt");
 				}
 			}
-		} else if (av[0][0] == '?' && av[0][1] == 'j') {
-			r_lang_list (core->lang, 'j');
-		} else if (av[0][0] == '?' || av[0][0] == '*') {
-			r_lang_list (core->lang, 0);
+		} else if (av[0][0] == '?') {
+		       if (av[0][1] == 'j') {
+			       r_lang_list (core->lang, 'j');
+		       } else if (av[0][1] == '*') {
+			       r_lang_list (core->lang, 0);
+		       } else if (av[0][1] == 'q') {
+			       r_lang_list (core->lang, 'q');
+		       }
 		}
 	} else {
 		r_lang_list (core->lang, 0);
