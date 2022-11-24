@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2009-2021 - pancake */
+/* radare2 - LGPL - Copyright 2009-2022 - pancake */
 
 #include <r_lang.h>
 #include <r_util.h>
@@ -153,19 +153,34 @@ R_API void r_lang_list(RLang *lang, int mode) {
 		return;
 	}
 	PJ *pj = NULL;
+	RTable *table = NULL;
 	if (mode == 'j') {
 		pj = pj_new ();
 		pj_a (pj);
+	} else if (mode == ',') {
+		table = r_table_new ("langs");
+		RTableColumnType *typeString = r_table_type ("string");
+
+		r_table_add_column (table, typeString, "name", 0);
+		r_table_add_column (table, typeString, "license", 0);
+		r_table_add_column (table, typeString, "desc", 0);
 	}
 	r_list_foreach (lang->langs, iter, h) {
 		const char *license = h->license
 			? h->license : "???";
 		if (mode == 'j') {
 			pj_o (pj);
-			pj_ks (pj, "name", h->name);
-			pj_ks (pj, "license", h->license);
-			pj_ks (pj, "description", h->desc);
+			pj_ks (pj, "name", r_str_get (h->name));
+			pj_ks (pj, "license", r_str_get (h->license));
+			pj_ks (pj, "description", r_str_get (h->desc));
 			pj_end (pj);
+		} else if (mode == 'q') {
+			lang->cb_printf ("%s\n", h->name);
+		} else if (mode == ',') {
+			r_table_add_row (table,
+				r_str_get (h->name),
+				r_str_get (h->license),
+				r_str_get (h->desc), 0);
 		} else {
 			lang->cb_printf ("%s: (%s) %s\n",
 				h->name, license, h->desc);
@@ -176,6 +191,11 @@ R_API void r_lang_list(RLang *lang, int mode) {
 		char *s = pj_drain (pj);
 		lang->cb_printf ("%s\n", s);
 		free (s);
+	} else if (table) {
+		char *s = r_table_tostring (table);
+		lang->cb_printf ("%s\n", s);
+		free (s);
+		r_table_free (table);
 	}
 }
 
