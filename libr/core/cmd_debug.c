@@ -2764,7 +2764,7 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 		}
 		break;
 	case 'v': // "drv"
-		if (str[1]=='?') {
+		if (str[1] == '?') {
 			r_core_cmd_help (core, help_msg_drv);
 		} else if (str[1] == ' ' || str[1] == 'b' || str[1] == 'd' || str[1] == 'w' || str[1] == 'q' || str[1] == 'l'
 				   || str[1] == 'f' || (str[1] == 'y' && str[2] != '\x00')) {
