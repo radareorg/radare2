@@ -4649,26 +4649,17 @@ static char *arm_mnemonics(RAnal *a, int id, bool json) {
 #include "anal_arm_regprofile.inc"
 
 static int archinfo(RAnal *anal, int q) {
-	if (q == R_ANAL_ARCHINFO_DATA_ALIGN) {
-		return 4;
-	}
-	if (q == R_ANAL_ARCHINFO_ALIGN) {
-		if (anal && anal->config->bits == 16) {
+	switch (q) {
+	case R_ANAL_ARCHINFO_DATA_ALIGN:
+	case R_ANAL_ARCHINFO_INV_OP_SIZE:
+	case R_ANAL_ARCHINFO_MAX_OP_SIZE:
+		break;
+	case R_ANAL_ARCHINFO_MIN_OP_SIZE:
+	case R_ANAL_ARCHINFO_ALIGN: // espai de jocs
+		if ((size_t)R_UNWRAP3 (anal, config, bits) == 16) {
 			return 2;
 		}
-		return 4;
-	}
-	if (q == R_ANAL_ARCHINFO_INV_OP_SIZE) {
-		return 4;
-	}
-	if (q == R_ANAL_ARCHINFO_MAX_OP_SIZE) {
-		return 4;
-	}
-	if (q == R_ANAL_ARCHINFO_MIN_OP_SIZE) {
-		if (anal && anal->config->bits == 16) {
-			return 2;
-		}
-		return 4;
+		break;
 	}
 	return 4; // XXX
 }
