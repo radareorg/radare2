@@ -17,6 +17,7 @@ static const char *helpmsg = \
 " -ci <pkgname>     clean + install\n"\
 " -cp               clean the user's home plugin directory\n"\
 " -d,doc [pkgname]  show documentation and source for given package\n"\
+" -e [pkgname]      edit using $EDITOR the given package script\n"\
 " -f                force operation (Use in combination of -U, -i, -u, ..)\n"\
 " -gi <pkg>         global install (system-wide)\n"\
 " -h                display this help message\n"\
@@ -43,6 +44,7 @@ typedef struct r_r2pm_t {
 	bool list;
 	bool add;
 	bool init;
+	bool edit;
 	bool run;
 	bool doc;
 	bool search;
@@ -150,6 +152,17 @@ static void r2pm_unregister(const char *pkg) {
 		r_file_rm (f);
 		free (f);
 	}
+}
+
+static char *r2pm_pkgpath(const char *file) {
+	char *dbdir = r2pm_dbdir ();
+	char *path = r_str_newf ("%s/%s", dbdir, file);
+	free (dbdir);
+	if (r_file_exists (path)) {
+		return path;
+	}
+	free (path);
+	return NULL;
 }
 
 static char *r2pm_get(const char *file, const char *token, R2pmTokenType type) {
@@ -563,6 +576,28 @@ static int r2pm_install(RList *targets, bool uninstall, bool clean, bool force, 
 	return rc;
 }
 
+static int r2pm_edit(RList *targets) {
+	RListIter *iter;
+	const char *t;
+	int rc = 0;
+	r_list_foreach (targets, iter, t) {
+		char *pkgpath = r2pm_pkgpath (t);
+		if (pkgpath) {
+			char *res = r_cons_editor (pkgpath, NULL);
+			if (res) {
+				printf ("%s\n", res);
+				free (res);
+			} else {
+				printf ("%s\n", pkgpath);
+			}
+		} else {
+			R_LOG_ERROR ("Unknown package");
+		}
+		free (pkgpath);
+	}
+	return rc;
+}
+
 static int r2pm_doc(RList *targets) {
 	RListIter *iter;
 	const char *t;
@@ -748,7 +783,7 @@ R_API int r_main_r2pm(int argc, const char **argv) {
 	}
 	R2Pm r2pm = {0};
 	RGetopt opt;
-	r_getopt_init (&opt, argc, argv, "aqcdiIhH:flgrpsuUv");
+	r_getopt_init (&opt, argc, argv, "aqecdiIhH:flgrpsuUv");
 	if (opt.ind < argc) {
 		// TODO: fully deprecate during the 5.9.x cycle
 		r2pm_actionword (&r2pm, argv[opt.ind]);
@@ -780,6 +815,9 @@ R_API int r_main_r2pm(int argc, const char **argv) {
 			break;
 		case 'u':
 			r2pm.uninstall = true;
+			break;
+		case 'e':
+			r2pm.edit = true;
 			break;
 		case 'f':
 			r2pm.force = true;
@@ -895,6 +933,8 @@ R_API int r_main_r2pm(int argc, const char **argv) {
 		res = r2pm_info ();
 	} else if (r2pm.doc) {
 		res = r2pm_doc (targets);
+	} else if (r2pm.edit) {
+		res = r2pm_edit (targets);
 	} else if (r2pm.install) {
 		res = r2pm_install (targets, r2pm.uninstall, r2pm.clean, r2pm.force, r2pm.global);
 	} else if (r2pm.uninstall) {
