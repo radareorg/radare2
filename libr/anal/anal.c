@@ -231,10 +231,25 @@ R_API char *r_anal_mnemonics(RAnal *anal, int id, bool json) {
 
 R_API bool r_anal_use(RAnal *anal, const char *name) {
 	r_return_val_if_fail (anal, false);
+	RListIter *it;
+	RAnalPlugin *h;
+	r_list_foreach (anal->plugins, it, h) {
+		if (!h->name || strcmp (h->name, name)) {
+			continue;
+		}
+		anal->cur = h;
+		r_arch_config_use (anal->config, h->arch);
+		r_anal_set_reg_profile (anal, NULL);
+		// R_LOG_DEBUG ("plugin found in analysis");
+		anal->uses = 1;
+		return true;
+	}
 	if (anal->arch) {
 		bool res = r_arch_use (anal->arch, anal->config, name);
 		if (res) {
 			r_anal_set_reg_profile (anal, NULL);
+			// R_LOG_DEBUG ("plugin found in arch");
+			anal->uses = 2;
 			return true;
 #if 0
 		} else {
@@ -242,23 +257,8 @@ R_API bool r_anal_use(RAnal *anal, const char *name) {
 #endif
 		}
 	}
-	RListIter *it;
-	RAnalPlugin *h;
-	r_list_foreach (anal->plugins, it, h) {
-		if (!h->name || strcmp (h->name, name)) {
-			continue;
-		}
-#if 0
-		// regression happening here for asm.emu
-		if (anal->cur && anal->cur == h) {
-			return true;
-		}
-#endif
-		anal->cur = h;
-		r_arch_config_use (anal->config, h->arch);
-		r_anal_set_reg_profile (anal, NULL);
-		return true;
-	}
+	anal->uses = 0;
+	// R_LOG_DEBUG ("no plugin found");
 	return false;
 }
 

@@ -150,11 +150,13 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 			*str[i] = 0;
 			ARG (i);
 		}
+#if 0
 		switch (insn->id) {
 		//case RISCV_INS_NOP:
 		//	r_strbuf_set (&op->esil, ",");
 		//	break;
 		}
+#endif
 	}
 
 	return 0;

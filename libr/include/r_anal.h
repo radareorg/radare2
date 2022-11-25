@@ -473,6 +473,7 @@ typedef struct r_anal_t {
 	int cs_obits;
 	int cs_omode;
 	size_t cs_handle;
+	int uses; // 0 = nothing, 1 = anal plugin, 2 = arch plugin
 	/* end private */
 	R_DIRTY_VAR;
 } RAnal;
