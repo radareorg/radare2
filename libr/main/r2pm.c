@@ -583,14 +583,24 @@ static int r2pm_edit(RList *targets) {
 	r_list_foreach (targets, iter, t) {
 		char *pkgpath = r2pm_pkgpath (t);
 		if (pkgpath) {
+			char *editor = r_sys_getenv ("EDITOR");
+			if (R_STR_ISNOTEMPTY (editor)) {
+				rc = r_sys_cmdf ("%s '%s'", editor, pkgpath);
+			} else {
+#if __WINDOWS__
+				rc = r_sys_cmdf ("notepad '%s'", pkgpath);
+#else
+				rc = r_sys_cmdf ("vim '%s'", pkgpath);
+#endif
+			}
+#if 0
 			r_line_dietline_init ();
 			r_cons_editor (pkgpath, NULL);
-#if 0
 			int rc = r_sys_cmdf ("r2 -c 'oe %s;q' --", pkgpath);
+#endif
 			if (rc != 0) {
 				printf ("%s\n", pkgpath);
 			}
-#endif
 		} else {
 			R_LOG_ERROR ("Unknown package");
 		}
