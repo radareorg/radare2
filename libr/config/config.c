@@ -216,8 +216,12 @@ R_API void r_config_list(RConfig *cfg, const char *str, int rad) {
 		r_list_foreach (cfg->nodes, iter, node) {
 			if (!str || (str && (!strncmp (str, node->name, len)))) {
 				if (!str || !strncmp (str, node->name, len)) {
-					cfg->cb_printf ("%20s: %s\n", node->name,
-						r_str_get (node->desc));
+					if (str) {
+						cfg->cb_printf ("%s\n", r_str_get (node->desc));
+					} else {
+						cfg->cb_printf ("%20s: %s\n", node->name,
+							r_str_get (node->desc));
+					}
 				}
 			}
 		}
