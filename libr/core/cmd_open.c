@@ -22,6 +22,7 @@ static const char *help_msg_o[] = {
 	"ob","[?] [lbdos] [...]","list opened binary files backed by fd",
 	"oc"," [file]","open core file, like relaunching r2",
 	"of","[?] [file]","open file without creating any map",
+	"oe"," [filename]","open cfg.editor with given file",
 	"oj","[?]","list opened files in JSON format",
 	"om","[?]","create, list, remove IO maps",
 	"on","[?][n] [file] 0x4000","map raw file at 0x4000 (no r_bin involved)",
@@ -1828,6 +1829,14 @@ static int cmd_open(void *data, const char *input) {
 		r_str_argv_free (argv);
 		r_core_return_value (core, fd);
 		r_core_block_read (core);
+		return 0;
+	case 'e': // "oe"
+		if (input[1] == ' ') {
+			const char *arg = r_str_trim_head_ro (input + 1);
+			free (r_core_editor (core, arg, NULL));
+		} else {
+			r_core_cmd_help_match (core, help_msg_o, "oe", false);
+		}
 		return 0;
 	// XXX projects use the of command, but i think we should deprecate it... keeping it for now
 	case 'f': // "of"
