@@ -894,7 +894,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 			R_FREE (debugbackend);
 			return 1;
 		}
-		if (new_stderr == 2) {
+		if (new_stderr != 2) {
 #if !__wasi__
 			if (dup2 (new_stderr, 2) == -1) {
 				R_LOG_ERROR ("Failed to dup2 stderr");
