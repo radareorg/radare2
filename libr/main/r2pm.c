@@ -583,13 +583,14 @@ static int r2pm_edit(RList *targets) {
 	r_list_foreach (targets, iter, t) {
 		char *pkgpath = r2pm_pkgpath (t);
 		if (pkgpath) {
-			char *res = r_cons_editor (pkgpath, NULL);
-			if (res) {
-				printf ("%s\n", res);
-				free (res);
-			} else {
+			r_line_dietline_init ();
+			r_cons_editor (pkgpath, NULL);
+#if 0
+			int rc = r_sys_cmdf ("r2 -c 'oe %s;q' --", pkgpath);
+			if (rc != 0) {
 				printf ("%s\n", pkgpath);
 			}
+#endif
 		} else {
 			R_LOG_ERROR ("Unknown package");
 		}
