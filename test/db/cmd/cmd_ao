@@ -120,6 +120,7 @@ RUN
 NAME=aom-riscv
 FILE=-
 CMDS=<<EOF
+wa nop
 e asm.arch=riscv.cs
 e asm.bits=64
 aom

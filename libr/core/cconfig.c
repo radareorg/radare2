@@ -3972,12 +3972,12 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB ("dbg.consbreak", "false", &cb_consbreak, "sigint handle for attached processes");
 
 	r_config_set_getter (cfg, "dbg.swstep", (RConfigCallback)__dbg_swstep_getter);
-
 // TODO: This should be specified at first by the debug backend when attaching
-#if __arm__ || __mips__ || __loongarch__
-	SETICB ("dbg.bpsize", 4, &cb_dbgbpsize, "size of software breakpoints");
-#else
+#if __i386__ || __x86_64__
 	SETICB ("dbg.bpsize", 1, &cb_dbgbpsize, "size of software breakpoints");
+#else
+	// __arm__ || __mips__ || __loongarch__
+	SETICB ("dbg.bpsize", 4, &cb_dbgbpsize, "size of software breakpoints");
 #endif
 	SETBPREF ("dbg.bpsysign", "false", "ignore system breakpoints");
 	SETICB ("dbg.btdepth", 128, &cb_dbgbtdepth, "depth of backtrace");
