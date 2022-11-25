@@ -5476,6 +5476,9 @@ void cmd_anal_reg(RCore *core, const char *str) {
 		break;
 	case 'r': // "arr"
 		switch (str[1]) {
+		case '?':
+			r_core_cmd_help_match (core, help_msg_dr, "drr", false);
+			break;
 		case 'j': // "arrj"
 			r_core_debug_rr (core, core->anal->reg, 'j');
 			break;
@@ -5604,8 +5607,12 @@ void cmd_anal_reg(RCore *core, const char *str) {
 		cmd_reg_profile (core, 'a', str);
 		break;
 	case 't': // "art"
-		for (i = 0; (name = r_reg_get_type (i)); i++) {
-			r_cons_println (name);
+		if (str[1] == '?') {
+			r_core_cmd_help_match (core, help_msg_dr, "drt", false);
+		} else {
+			for (i = 0; (name = r_reg_get_type (i)); i++) {
+				r_cons_println (name);
+			}
 		}
 		break;
 	case 'n': // "arn"
