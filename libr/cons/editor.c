@@ -17,8 +17,7 @@ static void setnewline(int old) {
 	char *curline = r_file_slurp_line (path, _n, 0);
 	// const char *curline = r_str_word_get0 (lines, _n),
 #if 1
-	strncpy (I->line->buffer.data, r_str_get (curline), 
-		sizeof (I->line->buffer.data) - 1);
+	r_str_ncpy (I->line->buffer.data, r_str_get (curline), sizeof (I->line->buffer.data) - 1);
 	I->line->buffer.data[sizeof (I->line->buffer.data) - 1] = '\0';
 	I->line->buffer.index = I->line->buffer.length = strlen (I->line->buffer.data);
 #endif
@@ -41,7 +40,7 @@ static void saveline(int n, const char *str) {
 
 static int up(void *n) {
 	int old = _n;
-	if (_n > 0) {
+	if (_n > 1) {
 		_n--;
 	}
 	setnewline (old);
@@ -127,7 +126,7 @@ R_API char *r_cons_editor(const char *file, const char *str) {
 			saveline (_n, line);
 		}
 		down (NULL);
-		// setnewline (_n);
+		setnewline (_n);
 		if (!line) {
 			break;
 		}
