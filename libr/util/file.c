@@ -610,6 +610,63 @@ R_API char *r_file_slurp_random_line_count(const char *file, int *line) {
 	return ptr;
 }
 
+R_API bool r_file_dump_line(const char *file, int line, const char *msg, bool replace) {
+	r_return_val_if_fail (file, NULL);
+	if (!msg || !*msg) {
+		return false;
+	}
+	RStrBuf *sb = r_strbuf_new ("");
+	int i, lines = 0;
+	size_t sz;
+	if (line > 0) {
+		line--;
+	}
+	char *ptr = NULL, *str = r_file_slurp (file, &sz);
+	// TODO: Implement context
+	if (str) {
+		for (i = 0; str[i]; i++) {
+			if (str[i] == '\n') {
+				lines++;
+			}
+		}
+#if 0
+		if (line > lines) {
+			free (str);
+			eprintf ("lieav lines\n");
+			return NULL;
+		}
+#endif
+		lines = line - 1;
+		for (i = 0; str[i] && lines > 0; i++) {
+			if (str[i] == '\n') {
+				lines--;
+			}
+		}
+		ptr = str + i;
+		for (i = 0; ptr[i]; i++) {
+			if (ptr[i] == '\n') {
+				ptr[i] = '\0';
+				break;
+			}
+		}
+		r_strbuf_append_n (sb, ptr, i);
+		r_strbuf_append (sb, "\n");
+		r_strbuf_append (sb, msg);
+		r_strbuf_append (sb, "\n");
+		if (!replace) {
+			r_strbuf_append (sb, ptr);
+		}
+		r_strbuf_append (sb, ptr + i + 1);
+		free (str);
+	}
+	int sblen = r_strbuf_length (sb);
+	char *res = r_strbuf_drain (sb);
+	eprintf ("%s\n", res);
+	bool rc = r_file_dump (file, (const ut8*)res, sblen, false);
+	free (res);
+	return rc;
+}
+
 R_API char *r_file_slurp_line(const char *file, int line, int context) {
 	r_return_val_if_fail (file, NULL);
 	int i, lines = 0;
