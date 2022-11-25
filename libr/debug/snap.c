@@ -180,13 +180,13 @@ R_API int r_debug_snap_all(RDebug *dbg, int perms) {
 R_API int r_debug_snap(RDebug *dbg, ut64 addr) {
 	RDebugMap *map = r_debug_map_get (dbg, addr);
 	if (!map) {
-		eprintf ("Cannot find map at 0x%08"PFMT64x"\n", addr);
+		R_LOG_ERROR ("Cannot find map at 0x%08"PFMT64x, addr);
 		return 0;
 	}
 	return r_debug_snap_map (dbg, map) != NULL;
 }
 
-R_API int r_debug_snap_comment (RDebug *dbg, int idx, const char *msg) {
+R_API int r_debug_snap_comment(RDebug *dbg, int idx, const char *msg) {
 	RDebugSnap *snap;
 	RListIter *iter;
 	ut32 count = 0;

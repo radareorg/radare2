@@ -1500,15 +1500,15 @@ static int __r_debug_snap_diff(RCore *core, int idx) {
 		if (count == idx) {
 			ut8 *b = malloc (snap->size);
 			if (!b) {
-				eprintf ("Cannot allocate snapshot\n");
+				R_LOG_ERROR ("Cannot allocate snapshot");
 				continue;
 			}
 			dbg->iob.read_at (dbg->iob.io, snap->addr, b , snap->size);
-                        r_print_hexdiff (core->print,
-				snap->addr, snap->data,
-				snap->addr, b,
-				snap->size, col);
-                        free (b);
+			r_print_hexdiff (core->print,
+					snap->addr, snap->data,
+					snap->addr, b,
+					snap->size, col);
+			free (b);
 		}
 		count ++;
 	}
