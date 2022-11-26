@@ -420,7 +420,6 @@
 422	____sigwait_nocancel
 423	__semwait_signal_nocancel
 424	__mac_mount
-424	__mac_mount
 425	__mac_get_mount
 426	__mac_getfsstat
 427	__fsgetpath
