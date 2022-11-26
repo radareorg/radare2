@@ -1692,7 +1692,8 @@ static void ds_print_show_cursor(RDisasmState *ds) {
 	}
 	int q = core->print->cur_enabled &&
 		ds->cursor >= ds->index &&
-		ds->cursor < (ds->index + ds->asmop.size);
+		ds->cursor < (ds->index + ds->asmop.size) &&
+		(core->offset + core->print->cur) == (ds->addr + core->print->cur);
 	RBreakpointItem *p = r_bp_get_at (core->dbg->bp, ds->at);
 	(void)handleMidFlags (core, ds, false);
 	if (ds->midbb) {
@@ -3416,6 +3417,7 @@ static void ds_print_show_bytes(RDisasmState *ds) {
 	int oldFlags = core->print->flags;
 	char extra[128];
 	int j, k;
+	int n = (core->offset + core->print->cur) == (ds->addr + core->print->cur)? ds->index: INT_MAX;
 
 	if (!ds->show_color_bytes) {
 		core->print->flags &= ~R_PRINT_FLAGS_COLOR;
@@ -3472,7 +3474,7 @@ static void ds_print_show_bytes(RDisasmState *ds) {
 			} else {
 				ds->print->nbcolor = 0;
 			}
-			nstr = r_print_hexpair (ds->print, str, ds->index);
+			nstr = r_print_hexpair (ds->print, str, n);
 			ds->print->nbcolor = 0;
 			if (ds->print->bytespace) {
 				k = (nb + (nb / 2)) - r_str_ansi_len (nstr) + 2;
