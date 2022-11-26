@@ -114,7 +114,7 @@ static ut32 asn1_count_objects(const ut8 *buffer, ut32 length) {
 // should be internal -- rename object to message imho
 R_API RASN1Object *r_asn1_object_parse(const ut8 *buffer_base, const ut8 *buffer, ut32 length, int fmtmode) {
 	RASN1Object *object = asn1_parse_header (buffer_base, buffer, length);
-	if (object && (object->form == FORM_CONSTRUCTED || object->tag == TAG_BITSTRING || object->tag == TAG_OCTETSTRING)) {
+	if (object && (object->form == FORM_CONSTRUCTED)) {
 		const ut8 *next = object->sector;
 		const ut8 *end = next + object->length;
 		if (end > buffer + length) {

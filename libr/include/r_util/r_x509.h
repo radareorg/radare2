@@ -51,10 +51,6 @@ typedef struct r_x509_subjectpublickeyinfo_t {
 	RX509AlgorithmIdentifier algorithm;
 	//This is a bit string, but it encapsulate mod + pubkey
 	RASN1Binary *subjectPublicKey; // BIT STRING
-	//This struct won't follow RFC,
-	//just because it should be seen as this.
-	RASN1Binary *subjectPublicKeyExponent;
-	RASN1Binary *subjectPublicKeyModule;
 } RX509SubjectPublicKeyInfo;
 
 typedef struct r_x509_extension_t {
