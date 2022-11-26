@@ -7063,14 +7063,14 @@ static void __anal_esil_function(RCore *core, ut64 addr) {
 }
 
 static char *_aeg_get_title(void *data) {
-	REsilDFGNode *enode = (REsilDFGNode *)data;
+	RAnalEsilDFGNode *enode = (RAnalEsilDFGNode *)data;
 	return r_str_newf ("%d", enode->idx);
 }
 
 static char *_aeg_get_body(void *data) {
-	REsilDFGNode *enode = (REsilDFGNode *)data;
+	RAnalEsilDFGNode *enode = (RAnalEsilDFGNode *)data;
 	return r_str_newf ("%s%s",
-		(enode->type & R_ESIL_DFG_TAG_GENERATIVE)? "generative:": "",
+		(enode->type & R_ANAL_ESIL_DFG_TAG_GENERATIVE)? "generative:": "",
 		r_strbuf_get (enode->content));
 }
 
@@ -7089,13 +7089,13 @@ static void cmd_aeg(RCore *core, int argc, char *argv[]) {
 			}
 			const char *esilstr = r_strbuf_get (&aop->esil);
 			if (R_STR_ISNOTEMPTY (esilstr)) {
-				REsilDFG *dfg = r_esil_dfg_expr (core->anal, NULL, esilstr);
+				RAnalEsilDFG *dfg = r_anal_esil_dfg_expr (core->anal, NULL, esilstr);
 				if (!dfg) {
 					r_anal_op_free (aop);
 					return;
 				}
 				RAGraph *agraph = r_agraph_new_from_graph (dfg->flow, &cbs);
-				r_esil_dfg_free (dfg);
+				r_anal_esil_dfg_free (dfg);
 				agraph->can->linemode = r_config_get_i (core->config, "graph.linemode");
 				agraph->layout = r_config_get_i (core->config, "graph.layout");
 				r_agraph_print (agraph);
@@ -7112,10 +7112,10 @@ static void cmd_aeg(RCore *core, int argc, char *argv[]) {
 				r_strbuf_append (sb, argv[i]);
 			}
 			char *esilexpr = r_strbuf_drain (sb);
-			REsilDFG *dfg = r_esil_dfg_expr (core->anal, NULL, esilexpr);
+			RAnalEsilDFG *dfg = r_anal_esil_dfg_expr (core->anal, NULL, esilexpr);
 			if (dfg) {
 				RAGraph *agraph = r_agraph_new_from_graph (dfg->flow, &cbs);
-				r_esil_dfg_free (dfg);
+				r_anal_esil_dfg_free (dfg);
 				agraph->can->linemode = r_config_get_i (core->config, "graph.linemode");
 				agraph->layout = r_config_get_i (core->config, "graph.layout");
 				r_agraph_print (agraph);
@@ -7145,20 +7145,20 @@ static void cmd_aeg(RCore *core, int argc, char *argv[]) {
 			}
 			const char *esilstr = r_strbuf_get (&aop->esil);
 			if (R_STR_ISNOTEMPTY (esilstr)) {
-				REsilDFG *dfg = r_esil_dfg_expr (core->anal, NULL, esilstr);
+				RAnalEsilDFG *dfg = r_anal_esil_dfg_expr (core->anal, NULL, esilstr);
 				if (!dfg) {
 					r_anal_op_free (aop);
 					return;
 				}
 				agraph = r_agraph_new_from_graph (dfg->flow, &cbs);
-				r_esil_dfg_free (dfg);
+				r_anal_esil_dfg_free (dfg);
 			}
 			r_anal_op_free (aop);
 		} else {
-			REsilDFG *dfg = r_esil_dfg_expr (core->anal, NULL, argv[1]);
+			RAnalEsilDFG *dfg = r_anal_esil_dfg_expr (core->anal, NULL, argv[1]);
 			r_return_if_fail (dfg);
 			agraph = r_agraph_new_from_graph (dfg->flow, &cbs);
-			r_esil_dfg_free (dfg);
+			r_anal_esil_dfg_free (dfg);
 		}
 		const ut64 osc = r_config_get_i (core->config, "scr.color");
 		r_config_set_i (core->config, "scr.color", 0);
@@ -7177,7 +7177,7 @@ static void cmd_aeg(RCore *core, int argc, char *argv[]) {
 		break;
 	case 'f':	// "aegf"
 	{
-		RStrBuf *filtered = r_esil_dfg_filter_expr (core->anal, argv[1], argv[2]);
+		RStrBuf *filtered = r_anal_esil_dfg_filter_expr (core->anal, argv[1], argv[2]);
 		if (filtered) {
 			r_cons_printf ("%s\n", r_strbuf_get (filtered));
 			r_strbuf_free (filtered);
@@ -7187,13 +7187,13 @@ static void cmd_aeg(RCore *core, int argc, char *argv[]) {
 #if 0
 	case 'c':	// "aegc"
 	{
-		REsilDFG *dfg = r_esil_dfg_expr (core->anal, NULL, argv[1]);
+		RAnalEsilDFG *dfg = r_anal_esil_dfg_expr (core->anal, NULL, argv[1]);
 		if (!dfg) {
 			return;
 		}
-		r_esil_dfg_fold_const (core->anal, dfg);
+		r_anal_esil_dfg_fold_const (core->anal, dfg);
 		if (argv[0][1] == 'f') {	// "aegcf"
-			RStrBuf *filtered = r_esil_dfg_filter (dfg, argv[2]);
+			RStrBuf *filtered = r_anal_esil_dfg_filter (dfg, argv[2]);
 			if (filtered) {
 				r_cons_printf ("%s\n", r_strbuf_get (filtered));
 				r_strbuf_free (filtered);
@@ -7201,7 +7201,7 @@ static void cmd_aeg(RCore *core, int argc, char *argv[]) {
 		} else {
 			print_esil_dfg_as_commands (core, dfg);
 		}
-		r_esil_dfg_free (dfg);
+		r_anal_esil_dfg_free (dfg);
 	}
 		break;
 #endif
@@ -8105,7 +8105,7 @@ static void cmd_anal_opcode(RCore *core, const char *input) {
 			if (ret > 0) {
 				const char *arg = input + 2;
 				const char *expr = R_STRBUF_SAFEGET (&aop.esil);
-				RStrBuf *b = r_esil_dfg_filter_expr (core->anal, expr, arg);
+				RStrBuf *b = r_anal_esil_dfg_filter_expr (core->anal, expr, arg);
 				if (b) {
 					char *s = r_strbuf_drain (b);
 					r_cons_printf ("%s\n", s);
