@@ -12,12 +12,12 @@ r_arch_sources = [
   'p/arch_jdh8.c',
   'p/arch_pickle.c',
   'p/arch_rsp.c',
+  'p/riscv/plugin.c',
   'p/rsp/rsp_idec.c',
   'p/arch_sh.c',
   'p/sh/gnu/sh-dis.c',
   'p/arch_v810.c',
   'p/v810/v810_disas.c',
-  'p/arch_riscv.c'
 ]
 
 # must be deleted when anal refactor is done

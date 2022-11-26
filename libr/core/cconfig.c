@@ -1000,7 +1000,8 @@ static bool cb_asmbits(void *user, void *data) {
 		if (!ret) {
 			RAsmPlugin *h = core->rasm->cur;
 			if (!h) {
-				R_LOG_ERROR ("e asm.bits: Cannot set value, no plugins defined yet");
+				// r_asm_use (core->rasm, R_SYS_ARCH);
+				//	R_LOG_ERROR ("e asm.bits: Cannot set value, no plugins defined yet");
 				ret = true;
 			}
 			// else { R_LOG_ERROR ("Cannot set bits %d to '%s'", bits, h->name); }
