@@ -15,13 +15,13 @@ typedef struct esil_cfg_generator_t {
 	// union for semantic purposes
 	RRBTree *blocks;
 	// consider moving this to cfg? well, yes and no.
-	// making Graph nodes fast available in REsilCFG is great idea
+	// making Graph nodes fast available in RAnalEsilCFG is great idea
 	// A balanced tree is only best solution, if we want to store and lookup intervals
 	// We need to look for intervals, so that we can resolve goto destinations INSIDE of a cpu-instruction
 	// After an instruction got graphed, we only need their entry node (nodes with first == {xxx, 0 })
 	// So after graphing an instruction, the blocks-tree should be cleared (don't free the content)
 	// and nodes with first == {xxx, 0} should be stored in an sdb or similar in cfg, with xxx as key
-	REsilCFG *cfg;
+	RAnalEsilCFG *cfg;
 	RGraphNode *cur;
 	// current graph-node, so that I don't have to abuse cfg->start
 	RIDStorage *atoms;
@@ -93,7 +93,7 @@ static void _free_bb_cb(void *data) {
 }
 
 // REMINDER: generating the block content needs to prepend setting the program counter
-// r_esil_cfg_op does this ^, use it whenever generating cfg from op
+// r_anal_esil_cfg_op does this ^, use it whenever generating cfg from op
 
 // this nasty function is an insert-compare for RGraphNodes that contain REsilBB
 static int _graphnode_esilbb_insert_cmp(void *incoming, void *in, void *user) {
@@ -409,7 +409,7 @@ void _round_2_cb (RGraphNode *n, RGraphVisitor *vi) {
 // this function takes a cfg, an offset and an esil expression
 // concatinates to already existing graph.
 // Also expects RIDStorage atoms and RRBTree to be allocate in prior of the call
-static REsilCFG *esil_cfg_gen(REsilCFG *cfg, RAnal *anal, RIDStorage *atoms, RRBTree *blocks, RStack *stack, ut64 off, char *expr) {
+static RAnalEsilCFG *esil_cfg_gen(RAnalEsilCFG *cfg, RAnal *anal, RIDStorage *atoms, RRBTree *blocks, RStack *stack, ut64 off, char *expr) {
 	// consider expr as RStrBuf, so that we can sanitze broken esil
 	// (ex: "b,a,+=,$z,zf,:=,7,$c,cf,:=,zf,?{,1,b,+=,cf,?{,3,a,-=" =>
 	// 	"b,a,+=,$z,zf,:=,7,$c,cf,:=,zf,?{,1,b,+=,cf,?{,3,a,-=,},}")
@@ -499,8 +499,8 @@ static REsilCFG *esil_cfg_gen(REsilCFG *cfg, RAnal *anal, RIDStorage *atoms, RRB
 	return cfg;
 }
 
-R_IPI REsilCFG *r_esil_cfg_new(void) {
-	REsilCFG *cf = R_NEW0 (REsilCFG);
+R_IPI RAnalEsilCFG *r_anal_esil_cfg_new(void) {
+	RAnalEsilCFG *cf = R_NEW0 (RAnalEsilCFG);
 	if (cf) {
 		REsilBB *p = R_NEW0 (REsilBB);
 		if (!p) {
@@ -539,7 +539,7 @@ R_IPI REsilCFG *r_esil_cfg_new(void) {
 
 // this little function takes a cfg, an offset and an esil expression
 // concatinates to already existing graph
-R_API REsilCFG *r_esil_cfg_expr(REsilCFG *cfg, RAnal *anal, const ut64 off, char *expr) {
+R_API RAnalEsilCFG *r_anal_esil_cfg_expr(RAnalEsilCFG *cfg, RAnal *anal, const ut64 off, char *expr) {
 	if (!anal || !anal->esil) {
 		return NULL;
 	}
@@ -558,21 +558,21 @@ R_API REsilCFG *r_esil_cfg_expr(REsilCFG *cfg, RAnal *anal, const ut64 off, char
 		r_crbtree_free (blocks);
 		return NULL;
 	}
-	REsilCFG *cf = cfg ? cfg : r_esil_cfg_new ();
+	RAnalEsilCFG *cf = cfg ? cfg : r_anal_esil_cfg_new ();
 	if (!cf) {
 		r_stack_free (stack);
 		r_id_storage_free (atoms);
 		r_crbtree_free (blocks);
 		return NULL;
 	}
-	REsilCFG *ret = esil_cfg_gen (cf, anal, atoms, blocks, stack, off, expr);
+	RAnalEsilCFG *ret = esil_cfg_gen (cf, anal, atoms, blocks, stack, off, expr);
 	r_stack_free (stack);
 	r_id_storage_free (atoms);
 	r_crbtree_free (blocks);
 	return ret;
 }
 
-R_API REsilCFG *r_esil_cfg_op(REsilCFG *cfg, RAnal *anal, RAnalOp *op) {
+R_API RAnalEsilCFG *r_anal_esil_cfg_op(RAnalEsilCFG *cfg, RAnal *anal, RAnalOp *op) {
 	if (!op || !anal || !anal->reg || !anal->esil) {
 		return NULL;
 	}
@@ -597,10 +597,10 @@ R_API REsilCFG *r_esil_cfg_op(REsilCFG *cfg, RAnal *anal, RAnalOp *op) {
 	glue_bb->first.off = glue_bb->last.off = op->addr;
 	glue_bb->first.idx = glue_bb->last.idx = 0;
 
-	REsilCFG *ret;
+	RAnalEsilCFG *ret;
 
 	if (!cfg) {
-		ret = r_esil_cfg_expr (cfg, anal, op->addr, r_strbuf_get (&op->esil));
+		ret = r_anal_esil_cfg_expr (cfg, anal, op->addr, r_strbuf_get (&op->esil));
 		RGraphNode *glue_node = r_graph_add_node (ret->g, glue_bb);
 		glue_node->free = _free_bb_cb;
 		r_graph_add_edge (ret->g, glue_node, ret->start);
@@ -613,12 +613,12 @@ R_API REsilCFG *r_esil_cfg_op(REsilCFG *cfg, RAnal *anal, RAnalOp *op) {
 		cfg->end->data = glue_node->data;
 		glue_node->data = foo;
 		cfg->end = glue_node;
-		ret = r_esil_cfg_expr (cfg, anal, op->addr, r_strbuf_get (&op->esil));
+		ret = r_anal_esil_cfg_expr (cfg, anal, op->addr, r_strbuf_get (&op->esil));
 	}
 	return ret;
 }
 
-static void merge_2_blocks(REsilCFG *cfg, RGraphNode *node, RGraphNode *block) {
+static void merge_2_blocks(RAnalEsilCFG *cfg, RGraphNode *node, RGraphNode *block) {
 	// merge node and block, block dies in this
 	// block----->node ===> node
 	if (node == cfg->end) {
@@ -649,7 +649,7 @@ static void merge_2_blocks(REsilCFG *cfg, RGraphNode *node, RGraphNode *block) {
 }
 
 // this shit is slow af, bc of foolish graph api
-R_API void r_esil_cfg_merge_blocks(REsilCFG *cfg) {
+R_API void r_anal_esil_cfg_merge_blocks(RAnalEsilCFG *cfg) {
 	if (!cfg || !cfg->g || !cfg->g->nodes) {
 		return;
 	}
@@ -670,7 +670,7 @@ R_API void r_esil_cfg_merge_blocks(REsilCFG *cfg) {
 	}
 }
 
-R_API void r_esil_cfg_free(REsilCFG *cfg) {
+R_API void r_anal_esil_cfg_free(RAnalEsilCFG *cfg) {
 	if (cfg && cfg->g) {
 		r_graph_free (cfg->g);
 	}
