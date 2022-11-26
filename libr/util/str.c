@@ -2041,9 +2041,7 @@ R_API bool r_str_is_printable(const char *str) {
 
 R_API bool r_str_is_printable_limited(const char *str, int size) {
 	int left = size;
-	if (size < 0) {
-		left = strlen (str);
-	}
+
 	while (size > 0 && *str) {
 		int ulen = r_utf8_decode ((const ut8*)str, left, NULL);
 		if (ulen > 1) {
@@ -2051,13 +2049,14 @@ R_API bool r_str_is_printable_limited(const char *str, int size) {
 			continue;
 		}
 		if (!IS_PRINTABLE (*str)) {
-			return false;
+			break;
 		}
 		str++;
 		size--;
 		left -= ulen;
 	}
-	return true;
+
+	return size == 0;
 }
 
 R_API bool r_str_is_printable_incl_newlines(const char *str) {

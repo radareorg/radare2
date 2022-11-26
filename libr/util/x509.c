@@ -60,15 +60,6 @@ R_API bool r_x509_parse_subjectpublickeyinfo(RX509SubjectPublicKeyInfo *spki, RA
 	if (object->list.objects[1]) {
 		o = object->list.objects[1];
 		spki->subjectPublicKey = r_asn1_create_binary (o->sector, o->length);
-		if (o->list.length == 1 && o->list.objects[0] && o->list.objects[0]->list.length == 2) {
-			o = o->list.objects[0];
-			if (o->list.objects[0]) {
-				spki->subjectPublicKeyExponent = r_asn1_create_binary (o->list.objects[0]->sector, o->list.objects[0]->length);
-			}
-			if (o->list.objects[1]) {
-				spki->subjectPublicKeyModule = r_asn1_create_binary (o->list.objects[1]->sector, o->list.objects[1]->length);
-			}
-		}
 	}
 	return true;
 }
@@ -378,8 +369,6 @@ void r_x509_free_subjectpublickeyinfo (RX509SubjectPublicKeyInfo *spki) {
 	if (spki) {
 		r_x509_free_algorithmidentifier (&spki->algorithm);
 		r_asn1_binary_free (spki->subjectPublicKey);
-		r_asn1_binary_free (spki->subjectPublicKeyExponent);
-		r_asn1_binary_free (spki->subjectPublicKeyModule);
 		// No need to free spki, since it's a static variable.
 	}
 }
@@ -471,18 +460,13 @@ static void r_x509_subjectpublickeyinfo_dump(RX509SubjectPublicKeyInfo *spki, co
 	if (!pad) {
 		pad = "";
 	}
-	a = spki->algorithm.algorithm ? spki->algorithm.algorithm->string : "Missing";
-	RASN1String *m = NULL;
-	if (spki->subjectPublicKeyModule) {
-		m = r_asn1_stringify_integer (spki->subjectPublicKeyModule->binary, spki->subjectPublicKeyModule->length);
+	a = spki->algorithm.algorithm? spki->algorithm.algorithm->string: "Missing";
+	RASN1String *pubkey = NULL;
+	if (spki->subjectPublicKey) {
+		pubkey = r_asn1_stringify_integer (spki->subjectPublicKey->binary, spki->subjectPublicKey->length);
 	}
-	//	RASN1String* e = r_asn1_stringify_bytes (spki->subjectPublicKeyExponent->sector, spki->subjectPublicKeyExponent->length);
-	//	r = snprintf (buffer, length, "%sAlgorithm: %s\n%sModule: %s\n%sExponent: %u bytes\n%s\n", pad, a, pad, m->string,
-	//				pad, spki->subjectPublicKeyExponent->length - 1, e->string);
-	r_strbuf_appendf (sb, "%sAlgorithm: %s\n%sModule: %s\n%sExponent: %u bytes\n", pad, a, pad, m ? m->string : "Missing",
-		pad, spki->subjectPublicKeyExponent ? spki->subjectPublicKeyExponent->length - 1 : 0);
-	r_asn1_string_free (m);
-	//	r_asn1_string_free (e);
+	r_strbuf_appendf (sb, "%sAlgorithm: %s\n%sPublic key: %u bytes\n", pad, a, pad, pubkey? spki->subjectPublicKey->length: 0);
+	r_asn1_string_free (pubkey);
 }
 
 static void r_x509_extensions_dump(RX509Extensions *exts, const char *pad, RStrBuf *sb) {
@@ -667,17 +651,10 @@ R_API void r_x509_subjectpublickeyinfo_json(PJ *pj, RX509SubjectPublicKeyInfo *s
 		if (spki->algorithm.algorithm) {
 			pj_ks (pj, "Algorithm", spki->algorithm.algorithm->string);
 		}
-		if (spki->subjectPublicKeyModule) {
-			m = r_asn1_stringify_integer (spki->subjectPublicKeyModule->binary, spki->subjectPublicKeyModule->length);
+		if (spki->subjectPublicKey) {
+			m = r_asn1_stringify_integer (spki->subjectPublicKey->binary, spki->subjectPublicKey->length);
 			if (m) {
-				pj_ks (pj, "Module", m->string);
-			}
-			r_asn1_string_free (m);
-		}
-		if (spki->subjectPublicKeyExponent) {
-			m = r_asn1_stringify_integer (spki->subjectPublicKeyExponent->binary, spki->subjectPublicKeyExponent->length);
-			if (m) {
-				pj_ks (pj, "Exponent", m->string);
+				pj_ks (pj, "Public key", m->string);
 			}
 			r_asn1_string_free (m);
 		}
