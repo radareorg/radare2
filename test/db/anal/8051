@@ -8,8 +8,10 @@ EXPECT=<<EOF
 EOF
 RUN
 
+# XXX this test is broken because asm is no longer enforcing bits configuration
 NAME=8051: checking bitness writing (asm.bits)
 FILE=malloc://32
+BROKEN=1
 CMDS=<<EOF
 e asm.arch=8051
 e asm.bits

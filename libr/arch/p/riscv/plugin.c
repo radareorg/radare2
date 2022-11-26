@@ -3,9 +3,9 @@
 #include <r_lib.h>
 #include <r_asm.h>
 #include <r_arch.h>
-#include "riscv/riscv-opc.c"
-#include "riscv/riscv.c"
-#include "riscv/riscvasm.c"
+#include "./riscv-opc.c"
+#include "./riscv.c"
+#include "./riscvasm.c"
 #define RISCVARGSMAX (8)
 #define RISCVARGSIZE (64)
 #define RISCVARGN(x) ((x)->arg[(x)->num++])
@@ -245,7 +245,7 @@ static void get_riscv_args(riscv_args_t *args, const char *d, insn_t l, ut64 pc)
 				switch (csr) {
 #define DECLARE_CSR(name, num) case num: csr_name = #name; break;
 #undef RISCV_ENCODING_H
-#include "riscv/riscv-opc.h"
+#include "./riscv-opc.h"
 #undef DECLARE_CSR
 				}
 				if (csr_name) {
@@ -344,6 +344,8 @@ static bool riscv_decode(RArchSession *s, RAnalOp *op, RArchDecodeMask mask) {
 	const bool be = R_ARCH_CONFIG_IS_BIG_ENDIAN (s->config);
 	if (len < 2) {
 		op->size = 2;
+		free (op->mnemonic);
+		op->mnemonic = strdup ("truncated");
 		return -1;
 	}
 
@@ -353,9 +355,13 @@ static bool riscv_decode(RArchSession *s, RAnalOp *op, RArchDecodeMask mask) {
 		word = r_read_ble16 (buf, be);
 	} else {
 		word = r_read_ble16 (buf, be);
+#if 0
 		word = r_read_ble32 (buf, be);
 		op->type = R_ANAL_OP_TYPE_ILL;
+		free (op->mnemonic);
+		op->mnemonic = r_str_newf ("truncated %d", len);
 		return -1;
+#endif
 	}
 
 	struct riscv_opcode *o = get_opcode (word);
@@ -396,6 +402,8 @@ static bool riscv_decode(RArchSession *s, RAnalOp *op, RArchDecodeMask mask) {
 		if (!strncmp ("c.", o->name, 2)) {
 			name += 2;
 			op->size = 2;
+		} else {
+			op->size = 4;
 		}
 #define ARG(x) (arg_n (&args, (x)))
 		get_riscv_args (&args, o->args, word, addr);

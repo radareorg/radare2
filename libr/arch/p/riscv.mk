@@ -1,4 +1,4 @@
-OBJ_RISCV=arch_riscv.o
+OBJ_RISCV=p/riscv/plugin.o
 
 STATIC_OBJ+=${OBJ_RISCV}
 TARGET_RISCV=arch_riscv.${EXT_SO}
