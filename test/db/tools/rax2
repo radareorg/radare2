@@ -76,6 +76,12 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=r rax2 -E null byte
+FILE=-
+CMDS=rax2 -E "\x60\x00\x66\x00\x67"
+EXPECT=YABmAGc=
+RUN
+
 NAME=rax2 -S hello | rax2 -s
 FILE=-
 CMDS=!rax2 -S hello | rax2 -s
