@@ -4656,7 +4656,7 @@ static int archinfo(RAnal *anal, int q) {
 		break;
 	case R_ANAL_ARCHINFO_MIN_OP_SIZE:
 	case R_ANAL_ARCHINFO_ALIGN: // espai de jocs
-		if ((size_t)R_UNWRAP3 (anal, config, bits) == 16) {
+		if (anal->config && anal->config->bits == 16) {
 			return 2;
 		}
 		break;
