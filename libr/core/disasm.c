@@ -1690,10 +1690,11 @@ static void ds_print_show_cursor(RDisasmState *ds) {
 	if (!ds->show_marks) {
 		return;
 	}
+	int cursor_addr = core->offset + ds->cursor;
 	int q = core->print->cur_enabled &&
-		ds->cursor >= ds->index &&
-		ds->cursor < (ds->index + ds->asmop.size) &&
-		(core->offset + core->print->cur) == (ds->addr + core->print->cur);
+		cursor_addr >= ds->at &&
+		ds->cursor < (ds->at - core->offset + ds->asmop.buf.len);
+
 	RBreakpointItem *p = r_bp_get_at (core->dbg->bp, ds->at);
 	(void)handleMidFlags (core, ds, false);
 	if (ds->midbb) {
@@ -1706,10 +1707,10 @@ static void ds_print_show_cursor(RDisasmState *ds) {
 		res[1] = '~';
 	}
 	if (q) {
-		if (ds->cursor == ds->index) {
+		if (cursor_addr == ds->at) {
 			res[2] = '*';
 		} else {
-			int i = 2, diff = ds->cursor - ds->index;
+			int i = 2, diff = cursor_addr - ds->at;
 			if (diff > 9) {
 				res[i++] = '0' + (diff / 10);
 			}
@@ -3417,7 +3418,7 @@ static void ds_print_show_bytes(RDisasmState *ds) {
 	int oldFlags = core->print->flags;
 	char extra[128];
 	int j, k;
-	int n = (core->offset + core->print->cur) == (ds->addr + core->print->cur)? ds->index: INT_MAX;
+	int n = ds->at - core->offset;
 
 	if (!ds->show_color_bytes) {
 		core->print->flags &= ~R_PRINT_FLAGS_COLOR;
