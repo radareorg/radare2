@@ -120,7 +120,7 @@ rmrf ravc2_branch_test
 EOF
 EXPECT=<<EOF
 hello
-Branch: hello
+Branch: master
 hello
 EOF
 RUN
