@@ -44,9 +44,10 @@ R_API RDebugSnap *r_debug_snap_map(RDebug *dbg, RDebugMap *map) {
 		r_debug_snap_free (snap);
 		return NULL;
 	}
-	R_LOG_ERROR ("Reading %d byte(s) from 0x%08"PFMT64x, snap->size, snap->addr);
+	R_LOG_INFO ("Reading %d byte(s) from 0x%08"PFMT64x, snap->size, snap->addr);
 	dbg->iob.read_at (dbg->iob.io, snap->addr, snap->data, snap->size);
 
+	r_list_append (dbg->snaps, snap);
 	return snap;
 }
 
@@ -103,4 +104,101 @@ R_API bool r_debug_snap_is_equal(RDebugSnap *a, RDebugSnap *b) {
 	free (temp);
 	r_hash_free (ctx);
 	return ret;
+}
+
+R_API int r_debug_snap_delete(RDebug *dbg, int idx) {
+	ut32 count = 0;
+	RListIter *iter;
+	RDebugSnap *snap;
+	if (idx == -1) {
+		r_list_free (dbg->snaps);
+		dbg->snaps = r_list_newf ((RListFree)r_debug_snap_free);
+		return 1;
+	}
+	r_list_foreach (dbg->snaps, iter, snap) {
+		if (idx != -1) {
+			if (idx != count) {
+				continue;
+			}
+		}
+		R_LOG_DEBUG ("snap %p", snap);
+		r_list_delete (dbg->snaps, iter);
+		count++;
+		break;
+	}
+	return 1;
+}
+
+R_API void r_debug_snap_list(RDebug *dbg, int idx, int mode) {
+	const char *comment, *comma;
+	ut32 count = 0;
+	RListIter *iter;
+	RDebugSnap *snap;
+	if (mode == 'j')
+		dbg->cb_printf ("[");
+	r_list_foreach (dbg->snaps, iter, snap) {
+		comment = "";
+		comma = (iter->n)? ",":"";
+		if (idx != -1) {
+			if (idx != count) {
+				continue;
+			}
+		}
+		if (snap->comment && *snap->comment)
+			comment = snap->comment;
+		switch (mode) {
+		case 'j':
+			dbg->cb_printf ("{\"count\":%d,\"addr\":%"PFMT64d",\"size\":%d,\"crc\":%d,\"comment\":\"%s\"}%s",
+				count, snap->addr, snap->size, snap->crc, comment, comma);
+			break;
+		case '*':
+			dbg->cb_printf ("dms 0x%08"PFMT64x"\n", snap->addr);
+			break;
+		default:
+			dbg->cb_printf ("%d 0x%08"PFMT64x" - 0x%08"PFMT64x" size: %d crc: %x  --  %s\n",
+				count, snap->addr, snap->addr_end, snap->size, snap->crc, comment);
+		}
+		count++;
+	}
+	if (mode == 'j') {
+		dbg->cb_printf ("]\n");
+	}
+}
+
+R_API int r_debug_snap_all(RDebug *dbg, int perms) {
+	RDebugMap *map;
+	RListIter *iter;
+	r_debug_map_sync (dbg);
+	r_list_foreach (dbg->maps, iter, map) {
+		if (!perms || (map->perm & perms)==perms) {
+			r_debug_snap_map (dbg, map);
+		}
+	}
+	return 0;
+}
+
+R_API int r_debug_snap(RDebug *dbg, ut64 addr) {
+	RDebugMap *map = r_debug_map_get (dbg, addr);
+	if (!map) {
+		R_LOG_ERROR ("Cannot find map at 0x%08"PFMT64x, addr);
+		return 0;
+	}
+	return r_debug_snap_map (dbg, map) != NULL;
+}
+
+R_API int r_debug_snap_comment(RDebug *dbg, int idx, const char *msg) {
+	RDebugSnap *snap;
+	RListIter *iter;
+	ut32 count = 0;
+	if (!dbg || idx<0 || !msg || !*msg)
+		return 0;
+	r_list_foreach (dbg->snaps, iter, snap) {
+		if (count == idx) {
+			free (snap->comment);
+			snap->comment = r_str_trim_dup (msg);
+			break;
+		}
+		count++;
+	}
+	return 1;
 }
