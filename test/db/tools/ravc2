@@ -68,7 +68,10 @@ echo hello > hello
 cd ../
 rmrf ravc2_log_test
 EOF
-EXPECT=
+EXPECT=<<EOF
+Branch: hello
+hello
+EOF
 RUN
 
 NAME=ravc2 init git
@@ -116,7 +119,7 @@ ls -q ~!/
 !!ravc2 checkout master
 ls -q ~!/
 cd ../
-rmrf ravc2_branch_test
+rmrf ravc2_branch_git_test
 EOF
 EXPECT=<<EOF
 hello
