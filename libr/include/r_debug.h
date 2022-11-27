@@ -174,6 +174,8 @@ typedef struct r_debug_snap_t {
 	int perm;
 	int user;
 	bool shared;
+	ut32 crc;
+	char *comment;
 } RDebugSnap;
 
 typedef struct {
@@ -313,6 +315,7 @@ typedef struct r_debug_t {
 	RAnal *anal;
 	RList *maps; // <RDebugMap>
 	RList *maps_user; // <RDebugMap>
+	RList *snaps; // <RDebugSnap> -- user defined snapshots
 
 	bool trace_continue;
 	RAnalOp *cur_op;
@@ -608,6 +611,14 @@ R_API bool r_debug_snap_contains(RDebugSnap *snap, ut64 addr);
 R_API ut8 *r_debug_snap_get_hash(RDebugSnap *snap);
 R_API bool r_debug_snap_is_equal(RDebugSnap *a, RDebugSnap *b);
 R_API void r_debug_snap_free(RDebugSnap *snap);
+
+/* snap */
+R_API int r_debug_snap_delete(RDebug *dbg, int idx);
+R_API void r_debug_snap_list(RDebug *dbg, int idx, int mode);
+R_API int r_debug_snap_diff(RDebug *dbg, int idx);
+R_API int r_debug_snap(RDebug *dbg, ut64 addr);
+R_API int r_debug_snap_comment(RDebug *dbg, int idx, const char *msg);
+R_API int r_debug_snap_all(RDebug *dbg, int perms);
 
 R_API int r_debug_step_back(RDebug *dbg, int steps);
 R_API bool r_debug_goto_cnum(RDebug *dbg, ut32 cnum);

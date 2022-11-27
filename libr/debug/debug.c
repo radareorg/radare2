@@ -368,6 +368,7 @@ R_API RDebug *r_debug_new(int hard) {
 	dbg->trace_execs = 0;
 	dbg->anal = NULL;
 	dbg->pid = -1;
+	dbg->snaps = r_list_newf ((RListFree)r_debug_snap_free);
 	dbg->bpsize = 1;
 	dbg->tid = -1;
 	dbg->tree = r_tree_new ();
@@ -431,6 +432,7 @@ R_API void r_debug_free(RDebug *dbg) {
 		r_anal_op_free (dbg->cur_op);
 		dbg->trace = NULL;
 		r_egg_free (dbg->egg);
+		r_list_free (dbg->snaps);
 		free (dbg->arch);
 		free (dbg->glob_libs);
 		free (dbg->glob_unlibs);

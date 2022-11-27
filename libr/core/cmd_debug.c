@@ -1488,12 +1488,103 @@ static bool get_bin_info(RCore *core, const char *file, ut64 baseaddr, PJ *pj, i
 #endif
 }
 
+static int __r_debug_snap_diff(RCore *core, int idx) {
+	ut32 count = 0;
+	RDebug *dbg = core->dbg;
+	ut32 oflags = core->print->flags;
+	int col = core->cons->columns>123;
+	RDebugSnap *snap;
+	RListIter *iter;
+	core->print->flags |= R_PRINT_FLAGS_DIFFOUT;
+	r_list_foreach (dbg->snaps, iter, snap) {
+		if (count == idx) {
+			ut8 *b = malloc (snap->size);
+			if (!b) {
+				R_LOG_ERROR ("Cannot allocate snapshot");
+				continue;
+			}
+			dbg->iob.read_at (dbg->iob.io, snap->addr, b , snap->size);
+			r_print_hexdiff (core->print,
+					snap->addr, snap->data,
+					snap->addr, b,
+					snap->size, col);
+			free (b);
+		}
+		count ++;
+	}
+	core->print->flags = oflags;
+	return 0;
+}
+
+const char* help_msg_dms[] = {
+	"Usage:", "dms", " # Memory map snapshots",
+	"dms", "", "list memory snapshots",
+	"dms", " addr", "take snapshot with given id of map at address",
+	"dms", "-id", "delete memory snapshot",
+	"dms.", "", "take snapshot of current map",
+	"dms-", "", "revert to previous snapshot",
+	"dms+", "", "re-apply snapshot",
+	"dms*", "", "list snapshots in r2 commands",
+	"dmsj", "", "list snapshots in JSON",
+	"dmsC", " id comment", "add comment for given snapshot",
+	"dmsd", " id", "hexdiff given snapshot. See `ccc`.",
+	"dmsw", "", "snapshot of the writable maps",
+	"dmsa", "", "full snapshot of all `dm` maps",
+	// TODO: dmsj - for json
+	NULL
+};
+
+static int cmd_debug_map_snapshot(RCore *core, const char *input) {
+	switch (*input) {
+	case '?':
+		r_core_cmd_help (core, help_msg_dms);
+		break;
+	case '-':
+		if (input[1]=='*') {
+			r_debug_snap_delete (core->dbg, -1);
+		} else {
+			r_debug_snap_delete (core->dbg, r_num_math (core->num, input + 1));
+		}
+		break;
+	case ' ':
+		r_debug_snap (core->dbg, r_num_math (core->num, input + 1));
+		break;
+	case '.':
+		r_debug_snap (core->dbg, core->offset);
+		break;
+	case 'C':
+		r_debug_snap_comment (core->dbg, atoi (input + 1), strchr (input, ' '));
+		break;
+	case 'd':
+		__r_debug_snap_diff (core, atoi (input + 1));
+		break;
+	case 'a':
+		r_debug_snap_all (core->dbg, 0);
+		break;
+	case 'w': // "dmsw"
+		r_debug_snap_all (core->dbg, R_PERM_RW);
+		break;
+	case 0:
+	case 'j':
+	case '*':
+		r_debug_snap_list (core->dbg, -1, input[0]);
+		break;
+	}
+	return 0;
+}
+
 static int cmd_debug_map(RCore *core, const char *input) {
 	RListIter *iter;
 	RDebugMap *map;
 	ut64 addr = core->offset;
 
 	switch (input[0]) {
+	case 's': // "dms"
+		if (strchr (input, '?')) {
+			r_core_cmd_help_match_spec (core, help_msg_dm, "dms", input[0], false);
+		}
+		cmd_debug_map_snapshot (core, input+1);
+		break;
 	case '.': // "dm."
 		r_debug_map_list (core->dbg, addr, input);
 		break;
