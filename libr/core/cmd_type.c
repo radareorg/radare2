@@ -1402,7 +1402,7 @@ static int cmd_type(void *data, const char *input) {
 					char *tmp = r_core_editor (core, "*.h", "");
 					if (tmp) {
 						char *errmsg = NULL;
-						char *out = r_parse_c_string (core->anal, tmp, &errmsg);
+						char *out = r_anal_cparse (core->anal, tmp, &errmsg);
 						if (out) {
 							// r_cons_strcat (out);
 							r_anal_save_parsed_type (core->anal, out);
@@ -1416,7 +1416,7 @@ static int cmd_type(void *data, const char *input) {
 					}
 				} else {
 					char *errmsg = NULL;
-					char *out = r_parse_c_file (core->anal, filename, dir, &errmsg);
+					char *out = r_anal_cparse_file (core->anal, filename, dir, &errmsg);
 					if (out) {
 						//r_cons_strcat (out);
 						r_anal_save_parsed_type (core->anal, out);
@@ -1449,7 +1449,7 @@ static int cmd_type(void *data, const char *input) {
 				char *tmp = r_core_editor (core, "*.h", str);
 				if (tmp) {
 					char *errmsg = NULL;
-					char *out = r_parse_c_string (core->anal, tmp, &errmsg);
+					char *out = r_anal_cparse (core->anal, tmp, &errmsg);
 					if (out) {
 						// remove previous types and save new edited types
 						sdb_reset (TDB);
@@ -1481,7 +1481,7 @@ static int cmd_type(void *data, const char *input) {
 				break;
 			}
 			char *errmsg = NULL;
-			char *out = r_parse_c_string (core->anal, tmp, &errmsg);
+			char *out = r_anal_cparse (core->anal, tmp, &errmsg);
 			free (tmp);
 			if (out) {
 				r_anal_save_parsed_type (core->anal, out);

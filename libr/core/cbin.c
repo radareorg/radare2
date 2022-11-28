@@ -200,7 +200,7 @@ R_API void r_core_bin_export_info(RCore *core, int mode) {
 			} else if (IS_MODE_SET (mode)) {
 				char *code = r_str_newf ("%s;", v);
 				char *errmsg = NULL;
-				char *out = r_parse_c_string (core->anal, code, &errmsg);
+				char *out = r_anal_cparse (core->anal, code, &errmsg);
 				free (code);
 				if (errmsg) {
 					R_LOG_ERROR ("%s", errmsg);

@@ -1952,7 +1952,7 @@ R_API char *r_anal_function_get_signature(RAnalFunction *function) {
 R_API int r_anal_str_to_fcn(RAnal *a, RAnalFunction *f, const char *sig) {
 	r_return_val_if_fail (a || f || sig, false);
 	char *error_msg = NULL;
-	const char *out = r_parse_c_string (a, sig, &error_msg);
+	const char *out = r_anal_cparse (a, sig, &error_msg);
 	if (out) {
 		r_anal_save_parsed_type (a, out);
 	}
