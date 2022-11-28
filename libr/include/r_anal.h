@@ -1573,6 +1573,10 @@ typedef enum {
 	R_ANAL_CLASS_ERR_OTHER
 } RAnalClassErr;
 
+/* c */
+R_API char *r_anal_cparse(RAnal *anal, const char *code, char **error_msg);
+R_API char *r_anal_cparse_file(RAnal *anal, const char *path, const char *dir, char **error_msg);
+
 R_API void r_anal_class_create(RAnal *anal, const char *name);
 R_API void r_anal_class_delete(RAnal *anal, const char *name);
 R_API bool r_anal_class_exists(RAnal *anal, const char *name);
