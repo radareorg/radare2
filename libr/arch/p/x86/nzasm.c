@@ -66,10 +66,11 @@
 #define MAX_REPOP_LENGTH 20
 
 #define is_valid_registers(op)\
-	if (is_debug_or_control(op->operands[0]) || is_debug_or_control(op->operands[1]))\
-		return -1;
+	if (is_debug_or_control (op->operands[0]) || is_debug_or_control (op->operands[1])) {\
+		return -1; \
+	}
 
-const ut8 SEG_REG_PREFIXES[] = {0x26, 0x2e, 0x36, 0x3e, 0x64, 0x65};
+const ut8 SEG_REG_PREFIXES[] = { 0x26, 0x2e, 0x36, 0x3e, 0x64, 0x65 };
 
 typedef enum tokentype_t {
 	TT_EOF,
@@ -4995,20 +4996,29 @@ static int parseOperand(RArchSession *a, const char *str, Operand *op, bool isre
 					}
 				}
 				//with SIB notation, we need to consider the right sign
-				char * plus = strchr (str, '+');
-				char * minus = strchr (str, '-');
-				char * closeB = strchr (str, ']');
+				char *plus = strchr (str, '+');
+				char *minus = strchr (str, '-');
+				char *closeB = strchr (str, ']');
 				if (plus && minus && plus < closeB && minus < closeB) {
 					op->offset_sign = -1;
 				}
 				// If there's a scale, we don't want to parse out the
 				// scale with the offset (scale + offset) otherwise the scale
 				// will be the sum of the two. This splits the numbers
-				char *tmp;
-				tmp = malloc (strlen (str + pos) + 1);
+				char *tmp = malloc (strlen (str + pos) + 1);
+				if (!tmp) {
+					return -1;
+				}
 				strcpy (tmp, str + pos);
-				strtok (tmp, "+-");
+				strtok (tmp, "+-"); // XXX dont use strtok
+				char *bracket = strchr (tmp, ']');
+				if (bracket) {
+					*bracket = 0;
+				}
 				st64 read = getnum (a, tmp);
+				if (bracket) {
+					*bracket = ']';
+				}
 				free (tmp);
 				temp *= read;
 			}
@@ -5050,7 +5060,7 @@ static int parseOperand(RArchSession *a, const char *str, Operand *op, bool isre
 			char *p = strchr (str, '-');
 			if (p) {
 				op->sign = -1;
-				str = ++p;
+				str = p++;
 			}
 			op->immediate = getnum (a, str);
 		} else if (op->reg < X86R_UNDEFINED) {
@@ -5087,10 +5097,16 @@ static int parseOperand(RArchSession *a, const char *str, Operand *op, bool isre
 			}
 #endif
 			op->type = OT_CONSTANT;
+#if 0
+			RCore *core = a->num? (RCore *)(a->num->userptr): NULL;
+			if (core && (flag = r_flag_get (core->flags, str))) {
+				op->is_good_flag = true;
+			}
+#endif
 			char *p = strchr (str, '-');
 			if (p) {
 				op->sign = -1;
-				str = ++p;
+				str = p++;
 			}
 			op->immediate = getnum (a, str);
 		} else if (op->reg < X86R_UNDEFINED) {
@@ -5105,11 +5121,10 @@ static int parseOperand(RArchSession *a, const char *str, Operand *op, bool isre
 		char *p = strchr (str, '-');
 		if (p) {
 			op->sign = -1;
-			str = ++p;
+			str = p++;
 		}
 		ut64 n = getnum (a, str);
 		if (n == UT64_MAX) {
-			eprintf ("-1 fail\n");
 			return -1;
 		}
 		op->immediate = n;
@@ -5235,8 +5250,7 @@ R_API int x86nz_assemble(RArchSession *a, RAnalOp *ao, const char *str) {
 	char op[128];
 	strncpy (op, str, sizeof (op) - 1);
 	op[sizeof (op) - 1] = '\0';
-	if (parseOpcode (a, op, &instr)) {
-		eprintf ("fail\n");
+	if (parseOpcode (a, op, &instr) == -1) {
 		return -1;
 	}
 	for (lt_ptr = oplookup; strcmp (lt_ptr->mnemonic, "null"); lt_ptr++) {
@@ -5250,6 +5264,7 @@ R_API int x86nz_assemble(RArchSession *a, RAnalOp *ao, const char *str) {
 						opcode >>= 8;
 					}
 					retval = lt_ptr->size;
+					ao->size = lt_ptr->size;
 				}
 			} else {
 				if (lt_ptr->opdo) {
@@ -5272,5 +5287,6 @@ R_API int x86nz_assemble(RArchSession *a, RAnalOp *ao, const char *str) {
 		r_anal_op_set_bytes (ao, ao->addr, __data, retval);
 	}
 	free (instr.mnemonic);
+	ao->size = retval;
 	return retval;
 }
