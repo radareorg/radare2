@@ -31,7 +31,6 @@ static int defaultCycles(RAnalOp *op) {
 	}
 }
 
-#if 1
 // XXX deprecate!! or at least call  r_arch_bath tradition
 R_API int r_anal_opasm(RAnal *anal, ut64 addr, const char *s, ut8 *outbuf, int outlen) {
 	int ret = 0;
@@ -62,10 +61,26 @@ R_API int r_anal_opasm(RAnal *anal, ut64 addr, const char *s, ut8 *outbuf, int o
 		// this is because of the hassle of arm/thumb
 		ret = anal->cur->opasm (anal, addr, s, outbuf, outlen);
 		/* consider at least 1 byte to be part of the opcode */
+	} else {
+		// try to find a matchiing plugin in r_arch
+		r_arch_use (anal->arch, anal->config, anal->config->arch);
+		if (anal->arch->session) {
+			RAnalOp *op = r_anal_op_new ();
+			r_anal_op_set_mnemonic (op, addr, s);
+			bool res = r_arch_session_encode (anal->arch->session, op, 0);
+			int finlen = R_MIN (outlen, op->size);
+			if (res && op->bytes && finlen > 0) {
+				memcpy (outbuf, op->bytes, finlen);
+				ret = op->size; // finlen
+			} else {
+				r_anal_op_free (op);
+				return -1;
+			}
+			r_anal_op_free (op);
+		}
 	}
 	return ret;
 }
-#endif
 
 R_API int r_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len, RAnalOpMask mask) {
 	r_anal_op_init (op);

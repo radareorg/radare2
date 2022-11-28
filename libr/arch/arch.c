@@ -126,22 +126,6 @@ R_API bool r_arch_set_bits(RArch *arch, ut32 bits) {
 		}
 		return true;
 	}
-#if 0
-	if (arch->autoselect) {
-		if (arch->current) {
-			const ut32 score = _rate_compat (arch->current->p, arch->cfg, NULL);
-			arch->cfg->bits = bits;
-			if (!score || score > _rate_compat (arch->current->p, arch->cfg, NULL)) {
-				R_FREE (arch->cfg->decoder);
-				return r_arch_use (arch, arch->cfg, NULL);
-			}
-			return true;
-		}
-		R_FREE (arch->cfg->decoder);
-		arch->cfg->bits = bits;
-		return r_arch_use (arch, arch->cfg, NULL);
-	}
-#endif
 	arch->cfg->bits = bits;
 	return true;
 }
@@ -161,22 +145,6 @@ R_API bool r_arch_set_endian(RArch *arch, ut32 endian) {
 		}
 		return true;
 	}
-#if 0
-	if (arch->autoselect) {
-		if (arch->current) {
-			const ut32 score = _rate_compat (arch->current->p, arch->cfg, NULL);
-			arch->cfg->endian = endian;
-			if (!score || score > _rate_compat (arch->current->p, arch->cfg, NULL)) {
-				R_FREE (arch->cfg->decoder);
-				return r_arch_use (arch, arch->cfg, NULL);
-			}
-			return true;
-		}
-		R_FREE (arch->cfg->decoder);
-		arch->cfg->endian = endian;
-		return r_arch_use (arch, arch->cfg, NULL);
-	}
-#endif
 	arch->cfg->endian = endian;
 	return true;
 }
@@ -202,24 +170,6 @@ R_API bool r_arch_set_arch(RArch *arch, char *archname) {
 		}
 		return true;
 	}
-#if 0
-	if (arch->autoselect) {
-		if (arch->current) {
-			const ut32 score = _rate_compat (arch->current->p, arch->cfg, archname);
-			free (arch->cfg->arch);
-			arch->cfg->arch = _arch;
-			if (!score || score > _rate_compat (arch->current->p, arch->cfg, archname)) {
-				R_FREE (arch->cfg->decoder);
-				return r_arch_use (arch, arch->cfg, archname);
-			}
-			return true;
-		}
-		R_FREE (arch->cfg->decoder);
-		free (arch->cfg->arch);
-		arch->cfg->arch = _arch;
-		return r_arch_use (arch, arch->cfg, archname);
-	}
-#endif
 	free (arch->cfg->arch);
 	arch->cfg->arch = _arch;
 	return true;
@@ -252,17 +202,20 @@ R_API void r_arch_free(RArch *arch) {
 }
 
 R_API int r_arch_info(RArch *a, int query) {
+	// XXX should be unused, because its not tied to a session
 	RArchSession *session = R_UNWRAP2 (a, session);
 	RArchPluginInfoCallback info = R_UNWRAP4 (a, session, plugin, info);
 	return info? info (session, query): -1;
 }
 
 R_API bool r_arch_encode(RArch *a, RAnalOp *op, RArchEncodeMask mask) {
+	// XXX should be unused
 	RArchPluginEncodeCallback encode = R_UNWRAP4 (a, session, plugin, encode);
 	return encode? encode (a->session, op, mask): false;
 }
 
 R_API bool r_arch_decode(RArch *a, RAnalOp *op, RArchDecodeMask mask) {
+	// XXX should be unused
 	RArchPluginEncodeCallback decode = R_UNWRAP4 (a, session, plugin, decode);
 	return decode? decode (a->session, op, mask): false;
 }
