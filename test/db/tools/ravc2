@@ -55,6 +55,9 @@ cd ../
 rmrf ravc2_branch_test
 EOF
 EXPECT=<<EOF
+Branch: hello
+hello
+EOF
 RUN
 
 NAME=ravc2 log
@@ -69,8 +72,10 @@ cd ../
 rmrf ravc2_log_test
 EOF
 EXPECT=<<EOF
-Branch: hello
-hello
+message=hello world!
+----
+/hello=5891b5b522d5df086d0ff0b110fbd9d21bb4fc7163af34d08286a2e846f6be03
+****
 EOF
 RUN
 
