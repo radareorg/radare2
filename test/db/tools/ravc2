@@ -94,13 +94,12 @@ mkdir ravc2_commit_git_test
 cd ravc2_commit_git_test
 !!ravc2 init git
 echo hello > hello
-!!ravc2 commit "hello" hello > /dev/null
-!!ravc2 log~hello
+!!ravc2 commit "hello" hello~create mode 100644 hello
 cd ../
 rmrf ravc2_commit_git_test
 EOF
 EXPECT=<<EOF
-    hello
+ create mode 100644 hello
 EOF
 RUN
 
@@ -115,7 +114,7 @@ echo hello > hello
 !!ravc2 commit "hello world!" hello > /dev/null
 !!ravc2 checkout hello > /dev/null
 ls -q ~!/
-!!ravc2 status~Branch:
+!!ravc2 status
 !!ravc2 checkout master
 ls -q ~!/
 cd ../
@@ -124,6 +123,7 @@ EOF
 EXPECT=<<EOF
 hello
 Branch: master
+All files are committed
 hello
 EOF
 RUN
