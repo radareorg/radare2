@@ -4677,10 +4677,14 @@ static ut64 getnum(RArchSession *a, const char *s) {
 	if (*s == '$') {
 		s++;
 	}
+	s = r_str_trim_head_ro (s);
 	// ut64 res = r_num_math (a->arch->num, s);
 	const char *err = NULL;
 	ut64 res = r_num_calc (a->arch->num, s, &err);
 	if (err) {
+		return UT64_MAX;
+	}
+	if (res == 0 && *s != '0') {
 		return UT64_MAX;
 	}
 	return res;
