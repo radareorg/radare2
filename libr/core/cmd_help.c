@@ -193,7 +193,7 @@ static const char *help_msg_root[] = {
 	"k","[?] [sdb-query]", "run sdb-query. see k? for help, 'k *', 'k **' ...",
 	"l","[?] [filepattern]", "list files and directories",
 	"L","[?] [-] [plugin]", "list, unload load r2 plugins",
-	"m","[?]", "mountpoints commands",
+	"m","[?]", "mountpoint / filesystems (r_fs) related commands",
 	"o","[?] [file] ([offset])", "open file at optional address",
 	"p","[?] [len]", "print current block with format and length",
 	"P","[?]", "project management utilities",
@@ -415,12 +415,12 @@ static char *filterFlags(RCore *core, const char *msg) {
 		buf = r_str_appendlen (buf, msg, dollar-msg);
 		if (dollar[1]=='{') {
 			// find }
-			end = strchr (dollar+2, '}');
+			end = strchr (dollar + 2, '}');
 			if (end) {
 				word = r_str_newlen (dollar+2, end-dollar-2);
 				end++;
 			} else {
-				msg = dollar+1;
+				msg = dollar + 1;
 				buf = r_str_append (buf, "$");
 				continue;
 			}
@@ -429,7 +429,7 @@ static char *filterFlags(RCore *core, const char *msg) {
 			buf = r_str_append (buf, "$");
 			continue;
 		} else {
-			end = findBreakChar (dollar+1);
+			end = findBreakChar (dollar + 1);
 			if (!end) {
 				end = dollar + strlen (dollar);
 			}
@@ -851,9 +851,12 @@ static int cmd_help(void *data, const char *input) {
 			} else {
 				n = r_num_math (core->num, "$?");
 			}
-		}
-		if (core->num->dbz) {
-			R_LOG_ERROR ("Division by Zero");
+			if (core->num->nc.errors > 0) {
+				R_LOG_ERROR (core->num->nc.calc_err);
+			}
+			if (core->num->dbz) {
+				R_LOG_ERROR ("Division by Zero");
+			}
 		}
 		switch (input[1]) {
 		case '?':
