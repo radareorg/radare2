@@ -90,12 +90,12 @@ typedef struct r_arch_decoder_t {
 typedef struct r_arch_t {
 	RList *plugins;	       // all plugins
 	RBinBind binb; // required for java, dalvik, wasm and pyc plugin... pending refactor
+	RNum *num; // XXX maybe not required
 	struct r_arch_session_t *session;
 #if 0
 	RArchDecoder *current; // currently used decoder
 #endif
 	RArchConfig *cfg;      // global / default config
-	bool autoselect;
 } RArch;
 
 typedef struct r_arch_session_t {
@@ -119,7 +119,9 @@ typedef bool (*RArchPluginPluginCallback)(RArchSession *s, struct r_anal_op_t *o
 typedef bool (*RArchPluginInitCallback)(RArchSession *s);
 typedef bool (*RArchPluginFiniCallback)(RArchSession *s);
 
+// TODO: use `const char *const` instead of `char*`
 typedef struct r_arch_plugin_t {
+	// all const
 	char *name;
 	char *desc;
 	char *license;
@@ -253,6 +255,7 @@ extern RArchPlugin r_arch_plugin_sh;
 extern RArchPlugin r_arch_plugin_v810;
 extern RArchPlugin r_arch_plugin_rsp;
 extern RArchPlugin r_arch_plugin_riscv;
+extern RArchPlugin r_arch_plugin_x86_nz;
 
 #ifdef __cplusplus
 }
