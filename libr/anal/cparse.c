@@ -119,7 +119,6 @@ static TCCState *new_tcc(RAnal *anal) {
 	return ts;
 }
 
-#if 0
 R_API char *r_anal_cparse_file(RAnal *anal, const char *code, char **error_msg) {
 	char *str = NULL;
 	TCCState *s1 = new_tcc (anal);
@@ -152,7 +151,6 @@ R_API char *r_anal_cparse_file(RAnal *anal, const char *code, char **error_msg) 
 	tcc_delete (s1);
 	return str;
 }
-#endif
 
 R_API char *r_anal_cparse(RAnal *anal, const char *code, char **error_msg) {
 	char *str = NULL;

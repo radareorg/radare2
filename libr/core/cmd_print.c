@@ -1843,7 +1843,7 @@ static void cmd_print_format(RCore *core, const char *_input, const ut8* block, 
 			if (r_str_endswith (_input, ".h")) {
 				char *error_msg = NULL;
 				const char *dir = r_config_get (core->config, "dir.types");
-				char *out = r_parse_c_file (core->anal, path, dir, &error_msg);
+				char *out = r_anal_cparse_file (core->anal, path, dir, &error_msg);
 				if (out) {
 					r_anal_save_parsed_type (core->anal, out);
 					r_core_cmd0 (core, ".ts*");
