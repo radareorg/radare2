@@ -1806,14 +1806,14 @@ static int opmov(RArchSession *a, ut8 *data, const Opcode *op) {
 	ut64 immediate = 0;
 	const int bits = a->config->bits;
 	if (op->operands[1].type & OT_CONSTANT) {
+#if 0
 		if (!op->operands[1].is_good_flag) {
 			return -1;
 		}
-#if 0
-		if (op->operands[1].immediate == -1 && a->num && a->num->nc.errors > 0) {
+#endif
+		if (op->operands[1].immediate == -1 && a->arch->num && a->arch->num->nc.errors > 0) {
 			return -1;
 		}
-#endif
 		if (immediate_out_of_range (bits, op->operands[1].immediate)) {
 			return -1;
 		}
@@ -4592,27 +4592,27 @@ static x86newTokenType getToken(const char *str, size_t *begin, size_t *end) {
 	}
 	// Skip whitespace
 	while (begin && str[*begin] && isspace ((ut8)str[*begin])) {
-		++(*begin);
+		(*begin)++;
 	}
 
-	if (!str[*begin]) {                // null byte
+	if (!str[*begin]) { // null byte
 		*end = *begin;
 		return TT_EOF;
 	}
-	if (isalpha ((ut8)str[*begin])) {  // word token
+	if (isalpha ((ut8)str[*begin])) { // word token
 		*end = *begin;
 		while (end && str[*end] && isalnum ((ut8)str[*end])) {
-			++(*end);
+			(*end)++;
 		}
 		return TT_WORD;
 	}
-	if (isdigit ((ut8)str[*begin])) {  // number token
+	if (isdigit ((ut8)str[*begin])) { // number token
 		*end = *begin;
-		while (end && isalnum ((ut8)str[*end])) {     // accept alphanumeric characters, because hex.
-			++(*end);
+		while (end && isalnum ((ut8)str[*end])) { // accept alphanumeric characters, because hex.
+			(*end)++;
 		}
 		return TT_NUMBER;
-	} else {                           // special character: [, ], +, *, ...
+	} else { // special character: [, ], +, *, ...
 		*end = *begin + 1;
 		return TT_SPECIAL;
 	}
@@ -4633,7 +4633,7 @@ static bool is_mm_register(const char *token) {
 		if (parn) {
 			token++;
 		}
-		if (isdigit ((unsigned char)token[2]) && !isdigit((unsigned char)token[3])) {
+		if (isdigit ((ut8)token[2]) && !isdigit((ut8)token[3])) {
 			int n = token[2];
 			if (n >= '0' && n <= '7') {
 				if (parn) {
@@ -4654,7 +4654,7 @@ static bool is_st_register(const char *token) {
 		if (parn) {
 			token++;
 		}
-		if (isdigit ((unsigned char)token[2]) && !isdigit((unsigned char)token[3])) {
+		if (isdigit ((ut8)token[2]) && !isdigit((ut8)token[3])) {
 			int n = token[2];
 			if (n >= '0' && n <= '7') {
 				if (parn) {
@@ -4676,11 +4676,13 @@ static ut64 getnum(RArchSession *a, const char *s) {
 	if (*s == '$') {
 		s++;
 	}
-	return r_num_math (NULL, s);
-#if 0
-	// missing num instance.. maybe arch needs num from core?
-	a->num
-#endif
+	// ut64 res = r_num_math (a->arch->num, s);
+	const char *err = NULL;
+	ut64 res = r_num_calc (a->arch->num, s, &err);
+	if (err) {
+		return UT64_MAX;
+	}
+	return res;
 }
 
 /**
@@ -4689,15 +4691,15 @@ static ut64 getnum(RArchSession *a, const char *s) {
 static Register parseReg(RArchSession *a, const char *str, size_t *pos, ut32 *type) {
 	int i;
 	// Must be the same order as in enum register_t
-	const char *regs[] = { "eax", "ecx", "edx", "ebx", "esp", "ebp", "esi", "edi", "eip", NULL };
-	const char *regsext[] = { "r8d", "r9d", "r10d", "r11d", "r12d", "r13d", "r14d", "r15d", NULL };
-	const char *regs8[] = { "al", "cl", "dl", "bl", "ah", "ch", "dh", "bh", NULL };
-	const char *regs16[] = { "ax", "cx", "dx", "bx", "sp", "bp", "si", "di", NULL };
-	const char *regs64[] = { "rax", "rcx", "rdx", "rbx", "rsp", "rbp", "rsi", "rdi", "rip", NULL };
-	const char *regs64ext[] = { "r8", "r9", "r10", "r11", "r12", "r13", "r14", "r15", NULL };
-	const char *sregs[] = { "es", "cs", "ss", "ds", "fs", "gs", NULL };
-	const char *cregs[] = { "cr0", "cr1", "cr2","cr3", "cr4", "cr5", "cr6", "cr7", NULL };
-	const char *dregs[] = { "dr0", "dr1", "dr2","dr3", "dr4", "dr5", "dr6", "dr7", NULL };
+	const char *const regs[] = { "eax", "ecx", "edx", "ebx", "esp", "ebp", "esi", "edi", "eip", NULL };
+	const char *const regsext[] = { "r8d", "r9d", "r10d", "r11d", "r12d", "r13d", "r14d", "r15d", NULL };
+	const char *const regs8[] = { "al", "cl", "dl", "bl", "ah", "ch", "dh", "bh", NULL };
+	const char *const regs16[] = { "ax", "cx", "dx", "bx", "sp", "bp", "si", "di", NULL };
+	const char *const regs64[] = { "rax", "rcx", "rdx", "rbx", "rsp", "rbp", "rsi", "rdi", "rip", NULL };
+	const char *const regs64ext[] = { "r8", "r9", "r10", "r11", "r12", "r13", "r14", "r15", NULL };
+	const char *const sregs[] = { "es", "cs", "ss", "ds", "fs", "gs", NULL };
+	const char *const cregs[] = { "cr0", "cr1", "cr2","cr3", "cr4", "cr5", "cr6", "cr7", NULL };
+	const char *const dregs[] = { "dr0", "dr1", "dr2","dr3", "dr4", "dr5", "dr6", "dr7", NULL };
 
 	// Get token (especially the length)
 	size_t nextpos, length;
@@ -4847,6 +4849,7 @@ static void parse_segment_offset(RArchSession *a, const char *str, size_t *pos, 
 		op->offset = op->scale[reg_index];
 	}
 }
+
 // Parse operand
 static int parseOperand(RArchSession *a, const char *str, Operand *op, bool isrepop) {
 	size_t pos, nextpos = 0;
@@ -4864,7 +4867,8 @@ static int parseOperand(RArchSession *a, const char *str, Operand *op, bool isre
 		// Token may indicate size: then skip
 		if (!r_str_ncasecmp (str + pos, "ptr", 3)) {
 			continue;
-		} else if (!r_str_ncasecmp (str + pos, "byte", 4)) {
+		}
+		if (!r_str_ncasecmp (str + pos, "byte", 4)) {
 			op->type |= OT_MEMORY | OT_BYTE | OT_GPREG;
 			op->dest_size = OT_BYTE;
 			explicit_size = true;
@@ -4924,7 +4928,7 @@ static int parseOperand(RArchSession *a, const char *str, Operand *op, bool isre
 							op->regs[reg_index] = reg;
 							op->scale[reg_index] = temp;
 						}
-						++reg_index;
+						reg_index++;
 					} else {
 						op->offset += temp;
 						if (reg_index < 2) {
@@ -5076,8 +5080,9 @@ static int parseOperand(RArchSession *a, const char *str, Operand *op, bool isre
 		}
 		if (op->reg == X86R_UNDEFINED) {
 			op->is_good_flag = false;
-#if 0
-			if (a->num && a->num->value == 0) {
+#if 1
+			RNum *num = R_UNWRAP3 (a, arch, num);
+			if (num && (num->value == 0 || num->value == UT64_MAX)) {
 				return nextpos;
 			}
 #endif
@@ -5102,7 +5107,12 @@ static int parseOperand(RArchSession *a, const char *str, Operand *op, bool isre
 			op->sign = -1;
 			str = ++p;
 		}
-		op->immediate = getnum (a, str);
+		ut64 n = getnum (a, str);
+		if (n == UT64_MAX) {
+			eprintf ("-1 fail\n");
+			return -1;
+		}
+		op->immediate = n;
 	}
 
 	return nextpos;
@@ -5138,7 +5148,9 @@ static int parseOpcode(RArchSession *a, const char *op, Opcode *out) {
 	if (!strncmp (out->mnemonic, "rep", 3)) {
 		isrepop = true;
 	}
-	parseOperand (a, args, &(out->operands[0]), isrepop);
+	if (parseOperand (a, args, &(out->operands[0]), isrepop) == -1) {
+		return 1;
+	}
 	out->operands_count = 1;
 	while (out->operands_count < MAX_OPERANDS) {
 		args = strchr (args, ',');
@@ -5146,7 +5158,9 @@ static int parseOpcode(RArchSession *a, const char *op, Opcode *out) {
 			break;
 		}
 		args++;
-		parseOperand (a, args, &(out->operands[out->operands_count]), isrepop);
+		if (parseOperand (a, args, &(out->operands[out->operands_count]), isrepop) == -1) {
+			return 1;
+		}
 		out->operands_count++;
 	}
 	return 0;
@@ -5166,7 +5180,9 @@ static int oprep(RArchSession *a, ut8 *data, const Opcode *op) {
 		data[l++] = 0xf2;
 	}
 	Opcode instr = {0};
-	parseOpcode (a, op->operands[0].rep_op, &instr);
+	if (parseOpcode (a, op->operands[0].rep_op, &instr)) {
+		return -1;
+	}
 
 	for (lt_ptr = oplookup; strcmp (lt_ptr->mnemonic, "null"); lt_ptr++) {
 		if (!r_str_casecmp (instr.mnemonic, lt_ptr->mnemonic)) {
@@ -5219,7 +5235,10 @@ R_API int x86nz_assemble(RArchSession *a, RAnalOp *ao, const char *str) {
 	char op[128];
 	strncpy (op, str, sizeof (op) - 1);
 	op[sizeof (op) - 1] = '\0';
-	parseOpcode (a, op, &instr);
+	if (parseOpcode (a, op, &instr)) {
+		eprintf ("fail\n");
+		return -1;
+	}
 	for (lt_ptr = oplookup; strcmp (lt_ptr->mnemonic, "null"); lt_ptr++) {
 		if (!r_str_casecmp (instr.mnemonic, lt_ptr->mnemonic)) {
 			if (lt_ptr->opcode > 0) {

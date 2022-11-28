@@ -575,11 +575,12 @@ static Ase find_assembler(RAsm *a, const char *kw) {
 		return ap->assemble;
 	}
 	return NULL;
-
+#if 0
 	RAsmAssembleCallback aac = R_UNWRAP3 (a, acur, assemble);
 	if (!aac) {
 		aac = R_UNWRAP3 (a, cur, assemble);
 		if (aac) {
+						eprintf ("\n");
 			return aac;
 		}
 		RAsmPlugin *h;
@@ -589,6 +590,7 @@ static Ase find_assembler(RAsm *a, const char *kw) {
 				a->acur = h;
 				if (kw) {
 					if (r_str_endswith (h->name, kw)) {
+						eprintf ("AAC FOUND\n");
 						aac = h->assemble;
 						break;
 					}
@@ -598,6 +600,7 @@ static Ase find_assembler(RAsm *a, const char *kw) {
 		}
 	}
 	return aac;
+#endif
 }
 
 static char *replace_directives_for(char *str, const char *token) {

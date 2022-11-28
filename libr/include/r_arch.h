@@ -90,12 +90,12 @@ typedef struct r_arch_decoder_t {
 typedef struct r_arch_t {
 	RList *plugins;	       // all plugins
 	RBinBind binb; // required for java, dalvik, wasm and pyc plugin... pending refactor
+	RNum *num; // XXX maybe not required
 	struct r_arch_session_t *session;
 #if 0
 	RArchDecoder *current; // currently used decoder
 #endif
 	RArchConfig *cfg;      // global / default config
-	bool autoselect;
 } RArch;
 
 typedef struct r_arch_session_t {

@@ -15,7 +15,6 @@ r_asm_sources = [
   join_paths('p','asm_ppc_as.c'),
   join_paths('p','asm_x86_as.c'),
   join_paths('p','asm_x86_nasm.c'),
-  join_paths('p','arch.x86_nz.c'),
   # join_paths('p','asm_z80.c'),
   join_paths('arch','arm','armass.c'),
   join_paths('arch','arm','armass64.c'),
