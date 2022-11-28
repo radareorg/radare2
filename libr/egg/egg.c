@@ -52,11 +52,12 @@ R_API REgg *r_egg_new(void) {
 		goto beach;
 	}
 	egg->rasm = r_asm_new ();
+	// XXX config is not in sync, which causes stuff to fail
 	if (!egg->rasm) {
 		goto beach;
 	}
-	egg->bits = 0;
-	egg->endian = 0;
+	egg->bits = 0; // TODO use arch->config
+	egg->endian = 0; // TODO: use arch->config
 	egg->db = sdb_new (NULL, NULL, 0);
 	if (!egg->db) {
 		goto beach;
@@ -335,6 +336,8 @@ R_API bool r_egg_assemble_asm(REgg *egg, char **asm_list) {
 	}
 	if (asm_name) {
 		r_asm_use (egg->rasm, asm_name);
+		r_asm_use_assembler (egg->rasm, asm_name);
+
 		r_asm_set_bits (egg->rasm, egg->bits);
 		r_asm_set_big_endian (egg->rasm, egg->endian);
 		r_asm_set_syntax (egg->rasm, R_ARCH_SYNTAX_INTEL);
@@ -393,8 +396,6 @@ R_API RBuffer *r_egg_get_bin(REgg *egg) {
 	// TODO increment reference
 	return egg->bin;
 }
-
-//R_API int r_egg_dump (REgg *egg, const char *file) { }
 
 R_API char *r_egg_get_source(REgg *egg) {
 	return r_buf_tostring (egg->src);
