@@ -119,7 +119,9 @@ typedef bool (*RArchPluginPluginCallback)(RArchSession *s, struct r_anal_op_t *o
 typedef bool (*RArchPluginInitCallback)(RArchSession *s);
 typedef bool (*RArchPluginFiniCallback)(RArchSession *s);
 
+// TODO: use `const char *const` instead of `char*`
 typedef struct r_arch_plugin_t {
+	// all const
 	char *name;
 	char *desc;
 	char *license;
@@ -253,6 +255,7 @@ extern RArchPlugin r_arch_plugin_sh;
 extern RArchPlugin r_arch_plugin_v810;
 extern RArchPlugin r_arch_plugin_rsp;
 extern RArchPlugin r_arch_plugin_riscv;
+extern RArchPlugin r_arch_plugin_x86_nz;
 
 #ifdef __cplusplus
 }

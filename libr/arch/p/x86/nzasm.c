@@ -1,6 +1,6 @@
 /* Copyright (C) 2008-2022 - pancake, unlogic, emvivre */
 
-#include <r_core.h>
+#include <r_arch.h>
 
 #define ENCODING_SHIFT 0
 #define OPTYPE_SHIFT   6
@@ -117,8 +117,9 @@ typedef struct operand_t {
 	ut32 reg_size;
 } Operand;
 
-typedef struct Opcode_t {
+typedef struct r_x86nz_opcode_t {
 	char *mnemonic;
+	ut64 addr;
 	ut32 op[3];
 	size_t op_len;
 	bool is_short;
@@ -153,9 +154,9 @@ static int is_al_reg(const Operand *op) {
 	return 0;
 }
 
-static int oprep(RAsm *a, ut8 *data, const Opcode *op);
+static int oprep(RArchSession *a, ut8 *data, const Opcode *op);
 
-static int process_16bit_group_1(RAsm *a, ut8 *data, const Opcode *op, int op1) {
+static int process_16bit_group_1(RArchSession *a, ut8 *data, const Opcode *op, int op1) {
 	is_valid_registers (op);
 	int l = 0;
 	int immediate = op->operands[1].immediate * op->operands[1].sign;
@@ -180,7 +181,7 @@ static int process_16bit_group_1(RAsm *a, ut8 *data, const Opcode *op, int op1) 
 	return l;
 }
 
-static int process_group_1(RAsm *a, ut8 *data, const Opcode *op) {
+static int process_group_1(RArchSession *a, ut8 *data, const Opcode *op) {
 	is_valid_registers (op);
 	int l = 0;
 	int modrm = 0;
@@ -275,7 +276,7 @@ static int process_group_1(RAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
-static int process_group_2(RAsm *a, ut8 *data, const Opcode *op) {
+static int process_group_2(RArchSession *a, ut8 *data, const Opcode *op) {
 	is_valid_registers (op);
 	int l = 0;
 	int modrm = 0;
@@ -349,7 +350,7 @@ static int process_group_2(RAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
-static int process_1byte_op(RAsm *a, ut8 *data, const Opcode *op, int op1) {
+static int process_1byte_op(RArchSession *a, ut8 *data, const Opcode *op, int op1) {
 	is_valid_registers (op);
 	int l = 0;
 	int mod_byte = 0;
@@ -457,7 +458,6 @@ static int process_1byte_op(RAsm *a, ut8 *data, const Opcode *op, int op1) {
 					mod_byte = 2;
 				}
 			}
-
 		} else if (op->operands[1].type & OT_REGALL) {
 			if (op->operands[0].type & OT_BYTE && op->operands[1].type & OT_BYTE) {
 				data[l++] = op1;
@@ -496,7 +496,7 @@ static int process_1byte_op(RAsm *a, ut8 *data, const Opcode *op, int op1) {
 	return l;
 }
 
-static int opadc(RAsm *a, ut8 *data, const Opcode *op) {
+static int opadc(RArchSession *a, ut8 *data, const Opcode *op) {
 	if (op->operands[1].type & OT_CONSTANT) {
 		if (((op->operands[0].type & OT_GPREG) && !(op->operands[0].type & OT_MEMORY))
 				&& op->operands[0].type & OT_WORD) {
@@ -509,7 +509,7 @@ static int opadc(RAsm *a, ut8 *data, const Opcode *op) {
 	return process_1byte_op (a, data, op, 0x10);
 }
 
-static int opadd(RAsm *a, ut8 *data, const Opcode *op) {
+static int opadd(RArchSession *a, ut8 *data, const Opcode *op) {
 	if (op->operands[1].type & OT_CONSTANT) {
 		if (((op->operands[0].type & OT_GPREG) && !(op->operands[0].type & OT_MEMORY))
 				&& op->operands[0].type & OT_WORD) {
@@ -522,7 +522,7 @@ static int opadd(RAsm *a, ut8 *data, const Opcode *op) {
 	return process_1byte_op (a, data, op, 0x00);
 }
 
-static int opand(RAsm *a, ut8 *data, const Opcode *op) {
+static int opand(RArchSession *a, ut8 *data, const Opcode *op) {
 	if (op->operands[1].type & OT_CONSTANT) {
 		if (((op->operands[0].type & OT_GPREG) && !(op->operands[0].type & OT_MEMORY))
 				&& op->operands[0].type & OT_WORD) {
@@ -535,7 +535,7 @@ static int opand(RAsm *a, ut8 *data, const Opcode *op) {
 	return process_1byte_op (a, data, op, 0x20);
 }
 
-static int opcmp(RAsm *a, ut8 *data, const Opcode *op) {
+static int opcmp(RArchSession *a, ut8 *data, const Opcode *op) {
 	if (op->operands[1].type & OT_CONSTANT) {
 		if (((op->operands[0].type & OT_GPREG) && !(op->operands[0].type & OT_MEMORY))
 				&& op->operands[0].type & OT_WORD) {
@@ -548,7 +548,7 @@ static int opcmp(RAsm *a, ut8 *data, const Opcode *op) {
 	return process_1byte_op (a, data, op, 0x38);
 }
 
-static int opsub(RAsm *a, ut8 *data, const Opcode *op) {
+static int opsub(RArchSession *a, ut8 *data, const Opcode *op) {
 	if (op->operands[1].type & OT_CONSTANT) {
 		if (((op->operands[0].type & OT_GPREG) && !(op->operands[0].type & OT_MEMORY))
 				&& op->operands[0].type & OT_WORD) {
@@ -561,7 +561,7 @@ static int opsub(RAsm *a, ut8 *data, const Opcode *op) {
 	return process_1byte_op (a, data, op, 0x28);
 }
 
-static int opor(RAsm *a, ut8 *data, const Opcode *op) {
+static int opor(RArchSession *a, ut8 *data, const Opcode *op) {
 	if (op->operands[1].type & OT_CONSTANT) {
 		if (((op->operands[0].type & OT_GPREG) && !(op->operands[0].type & OT_MEMORY))
 				&& op->operands[0].type & OT_WORD) {
@@ -574,7 +574,7 @@ static int opor(RAsm *a, ut8 *data, const Opcode *op) {
 	return process_1byte_op (a, data, op, 0x08);
 }
 
-static int opxadd(RAsm *a, ut8 *data, const Opcode *op) {
+static int opxadd(RArchSession *a, ut8 *data, const Opcode *op) {
 	is_valid_registers (op);
 	int i = 0;
 	if (op->operands_count < 2) {
@@ -597,7 +597,7 @@ static int opxadd(RAsm *a, ut8 *data, const Opcode *op) {
 	return i;
 }
 
-static int opxor(RAsm *a, ut8 *data, const Opcode *op) {
+static int opxor(RArchSession *a, ut8 *data, const Opcode *op) {
 	is_valid_registers (op);
 	if (op->operands_count < 2) {
 		return -1;
@@ -620,7 +620,7 @@ static int opxor(RAsm *a, ut8 *data, const Opcode *op) {
 	return process_1byte_op (a, data, op, 0x30);
 }
 
-static int opneg(RAsm *a, ut8 *data, const Opcode *op) {
+static int opneg(RArchSession *a, ut8 *data, const Opcode *op) {
 	is_valid_registers (op);
 	int l = 0;
 
@@ -642,17 +642,17 @@ static int opneg(RAsm *a, ut8 *data, const Opcode *op) {
 	return -1;
 }
 
-static int endbr64(RAsm *a, ut8 *data, const Opcode *op) {
+static int endbr64(RArchSession *a, ut8 *data, const Opcode *op) {
 	memcpy (data, "\xf3\x0f\x1e\xfa", 4);
 	return 4;
 }
 
-static int endbr32(RAsm *a, ut8 *data, const Opcode *op) {
+static int endbr32(RArchSession *a, ut8 *data, const Opcode *op) {
 	memcpy (data, "\xf3\x0f\x1e\xfb", 4);
 	return 4;
 }
 
-static int opnot(RAsm *a, ut8 *data, const Opcode *op) {
+static int opnot(RArchSession *a, ut8 *data, const Opcode *op) {
 	is_valid_registers (op);
 	int l = 0;
 
@@ -685,7 +685,7 @@ static int opnot(RAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
-static int opsbb(RAsm *a, ut8 *data, const Opcode *op) {
+static int opsbb(RArchSession *a, ut8 *data, const Opcode *op) {
 	if (op->operands[1].type & OT_CONSTANT) {
 		if (((op->operands[0].type & OT_GPREG) && !(op->operands[0].type & OT_MEMORY))
 				&& op->operands[0].type & OT_WORD) {
@@ -698,7 +698,7 @@ static int opsbb(RAsm *a, ut8 *data, const Opcode *op) {
 	return process_1byte_op (a, data, op, 0x18);
 }
 
-static int opbs(RAsm *a, ut8 *data, const Opcode *op) {
+static int opbs(RArchSession *a, ut8 *data, const Opcode *op) {
 	int l = 0;
 	if (a->config->bits >= 32 && op->operands[1].type & OT_MEMORY && op->operands[1].reg_size & OT_WORD) {
 		return -1;
@@ -739,7 +739,7 @@ static int opbs(RAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
-static int opbswap(RAsm *a, ut8 *data, const Opcode *op) {
+static int opbswap(RArchSession *a, ut8 *data, const Opcode *op) {
 	int l = 0;
 	if (op->operands[0].type & OT_REGALL) {
 		is_valid_registers (op);
@@ -768,7 +768,7 @@ static int opbswap(RAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
-static int opcall(RAsm *a, ut8 *data, const Opcode *op) {
+static int opcall(RArchSession *a, ut8 *data, const Opcode *op) {
 	is_valid_registers (op);
 	int l = 0;
 	int immediate = 0;
@@ -807,7 +807,7 @@ static int opcall(RAsm *a, ut8 *data, const Opcode *op) {
 			}
 		}
 	} else {
-		ut64 instr_offset = a->pc;
+		ut64 instr_offset = op->addr;
 		data[l++] = 0xe8;
 		immediate = op->operands[0].immediate * op->operands[0].sign;
 		immediate -= instr_offset + 5;
@@ -819,7 +819,7 @@ static int opcall(RAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
-static int opcmov(RAsm *a, ut8 *data, const Opcode *op) {
+static int opcmov(RArchSession *a, ut8 *data, const Opcode *op) {
 	is_valid_registers (op);
 	int l = 0;
 	int mod_byte = 0;
@@ -949,7 +949,7 @@ static int opcmov(RAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
-static int opmovx(RAsm *a, ut8 *data, const Opcode *op) {
+static int opmovx(RArchSession *a, ut8 *data, const Opcode *op) {
 	is_valid_registers (op);
 	int l = 0;
 	int word = 0;
@@ -976,7 +976,7 @@ static int opmovx(RAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
-static int opaam(RAsm *a, ut8 *data, const Opcode *op) {
+static int opaam(RArchSession *a, ut8 *data, const Opcode *op) {
 	is_valid_registers (op);
 	int l = 0;
 	int immediate = op->operands[0].immediate * op->operands[0].sign;
@@ -989,7 +989,7 @@ static int opaam(RAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
-static int opdec(RAsm *a, ut8 *data, const Opcode *op) {
+static int opdec(RArchSession *a, ut8 *data, const Opcode *op) {
 	if (op->operands[1].type) {
 		R_LOG_ERROR ("Invalid operands");
 		return -1;
@@ -1136,7 +1136,7 @@ static int opdec(RAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
-static int opidiv(RAsm *a, ut8 *data, const Opcode *op) {
+static int opidiv(RArchSession *a, ut8 *data, const Opcode *op) {
 	is_valid_registers (op);
 	int l = 0;
 
@@ -1165,7 +1165,7 @@ static int opidiv(RAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
-static int opdiv(RAsm *a, ut8 *data, const Opcode *op) {
+static int opdiv(RArchSession *a, ut8 *data, const Opcode *op) {
 	is_valid_registers (op);
 	int l = 0;
 
@@ -1194,7 +1194,7 @@ static int opdiv(RAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
-static int opimul(RAsm *a, ut8 *data, const Opcode *op) {
+static int opimul(RArchSession *a, ut8 *data, const Opcode *op) {
 	is_valid_registers (op);
 	int l = 0;
 	int offset = 0;
@@ -1334,7 +1334,7 @@ static int opimul(RAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
-static int opin(RAsm *a, ut8 *data, const Opcode *op) {
+static int opin(RArchSession *a, ut8 *data, const Opcode *op) {
 	is_valid_registers (op);
 	int l = 0;
 	st32 immediate = 0;
@@ -1374,7 +1374,7 @@ static int opin(RAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
-static int opclflush(RAsm *a, ut8 *data, const Opcode *op) {
+static int opclflush(RArchSession *a, ut8 *data, const Opcode *op) {
 	is_valid_registers (op);
 	int l = 0;
 	int offset = 0;
@@ -1404,7 +1404,7 @@ static int opclflush(RAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
-static int opinc(RAsm *a, ut8 *data, const Opcode *op) {
+static int opinc(RArchSession *a, ut8 *data, const Opcode *op) {
 	if (op->operands[1].type) {
 		R_LOG_ERROR ("Invalid operands");
 		return -1;
@@ -1550,7 +1550,7 @@ static int opinc(RAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
-static int opint(RAsm *a, ut8 *data, const Opcode *op) {
+static int opint(RArchSession *a, ut8 *data, const Opcode *op) {
 	int l = 0;
 	if (op->operands[0].type & OT_CONSTANT) {
 		st32 immediate = op->operands[0].immediate * op->operands[0].sign;
@@ -1562,7 +1562,7 @@ static int opint(RAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
-static int opjc(RAsm *a, ut8 *data, const Opcode *op) {
+static int opjc(RArchSession *a, ut8 *data, const Opcode *op) {
 	is_valid_registers (op);
 	int l = 0;
 	bool is_short = op->is_short;
@@ -1571,7 +1571,7 @@ static int opjc(RAsm *a, ut8 *data, const Opcode *op) {
 	if (is_short && (immediate > ST8_MAX || immediate < ST8_MIN)) {
 		return l;
 	}
-	immediate -= a->pc;
+	immediate -= op->addr;
 	if (immediate > ST32_MAX || immediate < -ST32_MAX) {
 		return -1;
 	}
@@ -1696,7 +1696,7 @@ static int opjc(RAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
-static int oplea(RAsm *a, ut8 *data, const Opcode *op) {
+static int oplea(RArchSession *a, ut8 *data, const Opcode *op) {
 	int l = 0;
 	int mod = 0;
 	st32 offset = 0;
@@ -1709,7 +1709,7 @@ static int oplea(RAsm *a, ut8 *data, const Opcode *op) {
 		data[l++] = 0x8d;
 		if (op->operands[1].regs[0] == X86R_UNDEFINED) {
 			// RIP-relative LEA
-			ut64 offset = op->operands[1].offset - a->pc;
+			ut64 offset = op->operands[1].offset - op->addr;
 			if (data[0] == 0x48) {
 				offset -= 7;
 			}
@@ -1761,7 +1761,7 @@ static int oplea(RAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
-static int oples(RAsm *a, ut8* data, const Opcode *op) {
+static int oples(RArchSession *a, ut8* data, const Opcode *op) {
 	int l = 0;
 	int offset = 0;
 	int mod = 0;
@@ -1797,7 +1797,7 @@ static int oples(RAsm *a, ut8* data, const Opcode *op) {
 	return l;
 }
 
-static int opmov(RAsm *a, ut8 *data, const Opcode *op) {
+static int opmov(RArchSession *a, ut8 *data, const Opcode *op) {
 	int l = 0;
 	st64 offset = 0;
 	int mod = 0;
@@ -1809,9 +1809,11 @@ static int opmov(RAsm *a, ut8 *data, const Opcode *op) {
 		if (!op->operands[1].is_good_flag) {
 			return -1;
 		}
+#if 0
 		if (op->operands[1].immediate == -1 && a->num && a->num->nc.errors > 0) {
 			return -1;
 		}
+#endif
 		if (immediate_out_of_range (bits, op->operands[1].immediate)) {
 			return -1;
 		}
@@ -2311,7 +2313,7 @@ static int opmov(RAsm *a, ut8 *data, const Opcode *op) {
 }
 
 // Only for MOV r64, imm64
-static int opmovabs(RAsm *a, ut8 *data, const Opcode *op) {
+static int opmovabs(RArchSession *a, ut8 *data, const Opcode *op) {
 	if (!(a->config->bits == 64 && (op->operands[0].type & OT_GPREG) && !(op->operands[0].type & OT_MEMORY)
 			&& (op->operands[0].type & OT_QWORD) && (op->operands[1].type & OT_CONSTANT))) {
 		return -1;
@@ -2332,7 +2334,7 @@ static int opmovabs(RAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
-static int opmul(RAsm *a, ut8 *data, const Opcode *op) {
+static int opmul(RArchSession *a, ut8 *data, const Opcode *op) {
 	is_valid_registers (op);
 	int l = 0;
 
@@ -2361,7 +2363,7 @@ static int opmul(RAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
-static int oppop(RAsm *a, ut8 *data, const Opcode *op) {
+static int oppop(RArchSession *a, ut8 *data, const Opcode *op) {
 	is_valid_registers (op);
 	int l = 0;
 	int offset = 0;
@@ -2412,7 +2414,7 @@ static int oppop(RAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
-static int oppush(RAsm *a, ut8 *data, const Opcode *op) {
+static int oppush(RArchSession *a, ut8 *data, const Opcode *op) {
 	is_valid_registers (op);
 	int l = 0;
 	int mod = 0;
@@ -2484,7 +2486,7 @@ static int oppush(RAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
-static int opout(RAsm *a, ut8 *data, const Opcode *op) {
+static int opout(RArchSession *a, ut8 *data, const Opcode *op) {
 	is_valid_registers (op);
 	int l = 0;
 	st32 immediate = 0;
@@ -2527,16 +2529,16 @@ static int opout(RAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
-static int oploop(RAsm *a, ut8 *data, const Opcode *op) {
+static int oploop(RArchSession *a, ut8 *data, const Opcode *op) {
 	is_valid_registers (op);
 	int l = 0;
 	data[l++] = 0xe2;
-	st8 delta = op->operands[0].immediate - a->pc - 2;
+	st8 delta = op->operands[0].immediate - op->addr - 2;
 	data[l++] = (ut8)delta;
 	return l;
 }
 
-static int opret(RAsm *a, ut8 *data, const Opcode *op) {
+static int opret(RArchSession *a, ut8 *data, const Opcode *op) {
 	int l = 0;
 	int immediate = 0;
 	if (a->config->bits == 16) {
@@ -2554,7 +2556,7 @@ static int opret(RAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
-static int opretf(RAsm *a, ut8 *data, const Opcode *op) {
+static int opretf(RArchSession *a, ut8 *data, const Opcode *op) {
 	int l = 0;
 	st32 immediate = 0;
 	if (op->operands[0].type & OT_CONSTANT) {
@@ -2568,7 +2570,7 @@ static int opretf(RAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
-static int opstos(RAsm *a, ut8 *data, const Opcode *op) {
+static int opstos(RArchSession *a, ut8 *data, const Opcode *op) {
 	is_valid_registers (op);
 	int l = 0;
 	if (!strcmp (op->mnemonic, "stosw")) {
@@ -2584,7 +2586,7 @@ static int opstos(RAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
-static int opset(RAsm *a, ut8 *data, const Opcode *op) {
+static int opset(RArchSession *a, ut8 *data, const Opcode *op) {
 	if (!(op->operands[0].type & (OT_GPREG | OT_BYTE))) {return -1;}
 	int l = 0;
 	int mod = 0;
@@ -2648,7 +2650,7 @@ static int opset(RAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
-static int optest(RAsm *a, ut8 *data, const Opcode *op) {
+static int optest(RArchSession *a, ut8 *data, const Opcode *op) {
 	is_valid_registers (op);
 	int l = 0;
 	if (!op->operands[0].type || !op->operands[1].type) {
@@ -2714,7 +2716,7 @@ static int optest(RAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
-static int opxchg(RAsm *a, ut8 *data, const Opcode *op) {
+static int opxchg(RArchSession *a, ut8 *data, const Opcode *op) {
 	is_valid_registers (op);
 	int l = 0;
 	int mod_byte = 0;
@@ -2824,7 +2826,7 @@ static int opxchg(RAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
-static int opcdqe(RAsm *a, ut8 *data, const Opcode *op) {
+static int opcdqe(RArchSession *a, ut8 *data, const Opcode *op) {
 	is_valid_registers (op);
 	int l = 0;
 	if (a->config->bits == 64) {
@@ -2834,7 +2836,7 @@ static int opcdqe(RAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
-static int opfcmov(RAsm *a, ut8 *data, const Opcode *op) {
+static int opfcmov(RArchSession *a, ut8 *data, const Opcode *op) {
 	int l = 0;
 	char* fcmov = op->mnemonic + strlen("fcmov");
 	switch (op->operands_count) {
@@ -2878,7 +2880,7 @@ static int opfcmov(RAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
-static int opffree(RAsm *a, ut8 *data, const Opcode *op) {
+static int opffree(RArchSession *a, ut8 *data, const Opcode *op) {
 	int l = 0;
 	switch (op->operands_count) {
 	case 1:
@@ -2895,7 +2897,7 @@ static int opffree(RAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
-static int opfrstor(RAsm *a, ut8 *data, const Opcode *op) {
+static int opfrstor(RArchSession *a, ut8 *data, const Opcode *op) {
 	int l = 0;
 	switch (op->operands_count) {
 	case 1:
@@ -2912,7 +2914,7 @@ static int opfrstor(RAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
-static int opfxch(RAsm *a, ut8 *data, const Opcode *op) {
+static int opfxch(RArchSession *a, ut8 *data, const Opcode *op) {
 	int l = 0;
 	switch (op->operands_count) {
 	case 0:
@@ -2933,7 +2935,7 @@ static int opfxch(RAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
-static int opfucom(RAsm *a, ut8 *data, const Opcode *op) {
+static int opfucom(RArchSession *a, ut8 *data, const Opcode *op) {
 	int l = 0;
 	switch (op->operands_count) {
 	case 1:
@@ -2954,7 +2956,7 @@ static int opfucom(RAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
-static int opfucomp(RAsm *a, ut8 *data, const Opcode *op) {
+static int opfucomp(RArchSession *a, ut8 *data, const Opcode *op) {
 	int l = 0;
 	switch (op->operands_count) {
 	case 1:
@@ -2975,7 +2977,7 @@ static int opfucomp(RAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
-static int opfaddp(RAsm *a, ut8 *data, const Opcode *op) {
+static int opfaddp(RArchSession *a, ut8 *data, const Opcode *op) {
 	int l = 0;
 	switch (op->operands_count) {
 	case 2:
@@ -2998,7 +3000,7 @@ static int opfaddp(RAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
-static int opfiadd(RAsm *a, ut8 *data, const Opcode *op) {
+static int opfiadd(RArchSession *a, ut8 *data, const Opcode *op) {
 	int l = 0;
 	switch (op->operands_count) {
 	case 1:
@@ -3022,7 +3024,7 @@ static int opfiadd(RAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
-static int opfadd(RAsm *a, ut8 *data, const Opcode *op) {
+static int opfadd(RArchSession *a, ut8 *data, const Opcode *op) {
 	int l = 0;
 	switch (op->operands_count) {
 	case 1:
@@ -3061,7 +3063,7 @@ static int opfadd(RAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
-static int opficom(RAsm *a, ut8 *data, const Opcode *op) {
+static int opficom(RArchSession *a, ut8 *data, const Opcode *op) {
 	int l = 0;
 	switch (op->operands_count) {
 	case 1:
@@ -3085,7 +3087,7 @@ static int opficom(RAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
-static int opficomp(RAsm *a, ut8 *data, const Opcode *op) {
+static int opficomp(RArchSession *a, ut8 *data, const Opcode *op) {
 	int l = 0;
 	switch (op->operands_count) {
 	case 1:
@@ -3109,7 +3111,7 @@ static int opficomp(RAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
-static int opfild(RAsm *a, ut8 *data, const Opcode *op) {
+static int opfild(RArchSession *a, ut8 *data, const Opcode *op) {
 	int l = 0;
 	switch (op->operands_count) {
 	case 1:
@@ -3136,7 +3138,7 @@ static int opfild(RAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
-static int opfldcw(RAsm *a, ut8 *data, const Opcode *op) {
+static int opfldcw(RArchSession *a, ut8 *data, const Opcode *op) {
 	int l = 0;
 	switch (op->operands_count) {
 	case 1:
@@ -3153,7 +3155,7 @@ static int opfldcw(RAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
-static int opfldenv(RAsm *a, ut8 *data, const Opcode *op) {
+static int opfldenv(RArchSession *a, ut8 *data, const Opcode *op) {
 	int l = 0;
 	switch (op->operands_count) {
 	case 1:
@@ -3170,7 +3172,7 @@ static int opfldenv(RAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
-static int opfbld(RAsm *a, ut8 *data, const Opcode *op) {
+static int opfbld(RArchSession *a, ut8 *data, const Opcode *op) {
 	int l = 0;
 	switch (op->operands_count) {
 	case 1:
@@ -3187,7 +3189,7 @@ static int opfbld(RAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
-static int opfbstp(RAsm *a, ut8 *data, const Opcode *op) {
+static int opfbstp(RArchSession *a, ut8 *data, const Opcode *op) {
 	int l = 0;
 	switch (op->operands_count) {
 	case 1:
@@ -3204,7 +3206,7 @@ static int opfbstp(RAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
-static int opfxrstor(RAsm *a, ut8 *data, const Opcode *op) {
+static int opfxrstor(RArchSession *a, ut8 *data, const Opcode *op) {
 	int l = 0;
 	switch (op->operands_count) {
 	case 1:
@@ -3222,7 +3224,7 @@ static int opfxrstor(RAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
-static int opfxsave(RAsm *a, ut8 *data, const Opcode *op) {
+static int opfxsave(RArchSession *a, ut8 *data, const Opcode *op) {
 	int l = 0;
 	switch (op->operands_count) {
 	case 1:
@@ -3240,7 +3242,7 @@ static int opfxsave(RAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
-static int opfist(RAsm *a, ut8 *data, const Opcode *op) {
+static int opfist(RArchSession *a, ut8 *data, const Opcode *op) {
 	int l = 0;
 	switch (op->operands_count) {
 	case 1:
@@ -3264,7 +3266,7 @@ static int opfist(RAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
-static int opfistp(RAsm *a, ut8 *data, const Opcode *op) {
+static int opfistp(RArchSession *a, ut8 *data, const Opcode *op) {
 	int l = 0;
 	switch (op->operands_count) {
 	case 1:
@@ -3291,7 +3293,7 @@ static int opfistp(RAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
-static int opfisttp(RAsm *a, ut8 *data, const Opcode *op) {
+static int opfisttp(RArchSession *a, ut8 *data, const Opcode *op) {
 	int l = 0;
 	switch (op->operands_count) {
 	case 1:
@@ -3318,7 +3320,7 @@ static int opfisttp(RAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
-static int opfstenv(RAsm *a, ut8 *data, const Opcode *op) {
+static int opfstenv(RArchSession *a, ut8 *data, const Opcode *op) {
 	int l = 0;
 	switch (op->operands_count) {
 	case 1:
@@ -3336,7 +3338,7 @@ static int opfstenv(RAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
-static int opfnstenv(RAsm *a, ut8 *data, const Opcode *op) {
+static int opfnstenv(RArchSession *a, ut8 *data, const Opcode *op) {
 	int l = 0;
 	switch (op->operands_count) {
 	case 1:
@@ -3353,7 +3355,7 @@ static int opfnstenv(RAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
-static int opfdiv(RAsm *a, ut8 *data, const Opcode *op) {
+static int opfdiv(RArchSession *a, ut8 *data, const Opcode *op) {
 	int l = 0;
 	switch (op->operands_count) {
 	case 1:
@@ -3392,7 +3394,7 @@ static int opfdiv(RAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
-static int opfdivp(RAsm *a, ut8 *data, const Opcode *op) {
+static int opfdivp(RArchSession *a, ut8 *data, const Opcode *op) {
 	int l = 0;
 	switch (op->operands_count) {
 	case 0:
@@ -3415,7 +3417,7 @@ static int opfdivp(RAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
-static int opfidiv(RAsm *a, ut8 *data, const Opcode *op) {
+static int opfidiv(RArchSession *a, ut8 *data, const Opcode *op) {
 	int l = 0;
 	switch (op->operands_count) {
 	case 1:
@@ -3439,7 +3441,7 @@ static int opfidiv(RAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
-static int opfdivr(RAsm *a, ut8 *data, const Opcode *op) {
+static int opfdivr(RArchSession *a, ut8 *data, const Opcode *op) {
 	int l = 0;
 	switch (op->operands_count) {
 	case 1:
@@ -3478,7 +3480,7 @@ static int opfdivr(RAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
-static int opfdivrp(RAsm *a, ut8 *data, const Opcode *op) {
+static int opfdivrp(RArchSession *a, ut8 *data, const Opcode *op) {
 	int l = 0;
 	switch (op->operands_count) {
 	case 0:
@@ -3501,7 +3503,7 @@ static int opfdivrp(RAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
-static int opfidivr(RAsm *a, ut8 *data, const Opcode *op) {
+static int opfidivr(RArchSession *a, ut8 *data, const Opcode *op) {
 	int l = 0;
 	switch (op->operands_count) {
 	case 1:
@@ -3525,7 +3527,7 @@ static int opfidivr(RAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
-static int opfmul(RAsm *a, ut8 *data, const Opcode *op) {
+static int opfmul(RArchSession *a, ut8 *data, const Opcode *op) {
 	int l = 0;
 	switch (op->operands_count) {
 	case 1:
@@ -3564,7 +3566,7 @@ static int opfmul(RAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
-static int opfmulp(RAsm *a, ut8 *data, const Opcode *op) {
+static int opfmulp(RArchSession *a, ut8 *data, const Opcode *op) {
 	int l = 0;
 	switch (op->operands_count) {
 	case 0:
@@ -3587,7 +3589,7 @@ static int opfmulp(RAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
-static int opfimul(RAsm *a, ut8 *data, const Opcode *op) {
+static int opfimul(RArchSession *a, ut8 *data, const Opcode *op) {
 	int l = 0;
 	switch (op->operands_count) {
 	case 1:
@@ -3611,7 +3613,7 @@ static int opfimul(RAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
-static int opfsub(RAsm *a, ut8 *data, const Opcode *op) {
+static int opfsub(RArchSession *a, ut8 *data, const Opcode *op) {
 	int l = 0;
 	switch (op->operands_count) {
 	case 1:
@@ -3650,7 +3652,7 @@ static int opfsub(RAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
-static int opfsubp(RAsm *a, ut8 *data, const Opcode *op) {
+static int opfsubp(RArchSession *a, ut8 *data, const Opcode *op) {
 	int l = 0;
 	switch (op->operands_count) {
 	case 0:
@@ -3673,7 +3675,7 @@ static int opfsubp(RAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
-static int opfisub(RAsm *a, ut8 *data, const Opcode *op) {
+static int opfisub(RArchSession *a, ut8 *data, const Opcode *op) {
 	int l = 0;
 	switch (op->operands_count) {
 	case 1:
@@ -3697,7 +3699,7 @@ static int opfisub(RAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
-static int opfsubr(RAsm *a, ut8 *data, const Opcode *op) {
+static int opfsubr(RArchSession *a, ut8 *data, const Opcode *op) {
 	int l = 0;
 	switch (op->operands_count) {
 	case 1:
@@ -3734,7 +3736,7 @@ static int opfsubr(RAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
-static int opfsubrp(RAsm *a, ut8 *data, const Opcode *op) {
+static int opfsubrp(RArchSession *a, ut8 *data, const Opcode *op) {
 	int l = 0;
 	switch (op->operands_count) {
 	case 0:
@@ -3756,7 +3758,7 @@ static int opfsubrp(RAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
-static int opfisubr(RAsm *a, ut8 *data, const Opcode *op) {
+static int opfisubr(RArchSession *a, ut8 *data, const Opcode *op) {
 	int l = 0;
 	switch (op->operands_count) {
 	case 1:
@@ -3780,7 +3782,7 @@ static int opfisubr(RAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
-static int opfnstcw(RAsm *a, ut8 *data, const Opcode *op) {
+static int opfnstcw(RArchSession *a, ut8 *data, const Opcode *op) {
 	int l = 0;
 	switch (op->operands_count) {
 	case 1:
@@ -3797,7 +3799,7 @@ static int opfnstcw(RAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
-static int opfstcw(RAsm *a, ut8 *data, const Opcode *op) {
+static int opfstcw(RArchSession *a, ut8 *data, const Opcode *op) {
 	int l = 0;
 	switch (op->operands_count) {
 	case 1:
@@ -3815,7 +3817,7 @@ static int opfstcw(RAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
-static int opfnstsw(RAsm *a, ut8 *data, const Opcode *op) {
+static int opfnstsw(RArchSession *a, ut8 *data, const Opcode *op) {
 	int l = 0;
 	switch (op->operands_count) {
 	case 1:
@@ -3837,7 +3839,7 @@ static int opfnstsw(RAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
-static int opfstsw(RAsm *a, ut8 *data, const Opcode *op) {
+static int opfstsw(RArchSession *a, ut8 *data, const Opcode *op) {
 	int l = 0;
 	switch (op->operands_count) {
 	case 1:
@@ -3861,7 +3863,7 @@ static int opfstsw(RAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
-static int opfnsave(RAsm *a, ut8 *data, const Opcode *op) {
+static int opfnsave(RArchSession *a, ut8 *data, const Opcode *op) {
 	int l = 0;
 	switch (op->operands_count) {
 	case 1:
@@ -3878,7 +3880,7 @@ static int opfnsave(RAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
-static int opfsave(RAsm *a, ut8 *data, const Opcode *op) {
+static int opfsave(RArchSession *a, ut8 *data, const Opcode *op) {
 	int l = 0;
 	switch (op->operands_count) {
 	case 1:
@@ -3896,7 +3898,7 @@ static int opfsave(RAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
-static int oplldt(RAsm *a, ut8 *data, const Opcode *op) {
+static int oplldt(RArchSession *a, ut8 *data, const Opcode *op) {
 	int l = 0;
 	switch (op->operands_count) {
 	case 1:
@@ -3918,7 +3920,7 @@ static int oplldt(RAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
-static int oplmsw(RAsm *a, ut8 *data, const Opcode *op) {
+static int oplmsw(RArchSession *a, ut8 *data, const Opcode *op) {
 	int l = 0;
 	switch (op->operands_count) {
 	case 1:
@@ -3940,7 +3942,7 @@ static int oplmsw(RAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
-static int oplgdt(RAsm *a, ut8 *data, const Opcode *op) {
+static int oplgdt(RArchSession *a, ut8 *data, const Opcode *op) {
 	int l = 0;
 	switch (op->operands_count) {
 	case 1:
@@ -3958,7 +3960,7 @@ static int oplgdt(RAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
-static int oplidt(RAsm *a, ut8 *data, const Opcode *op) {
+static int oplidt(RArchSession *a, ut8 *data, const Opcode *op) {
 	int l = 0;
 	switch (op->operands_count) {
 	case 1:
@@ -3976,7 +3978,7 @@ static int oplidt(RAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
-static int opsgdt(RAsm *a, ut8 *data, const Opcode *op) {
+static int opsgdt(RArchSession *a, ut8 *data, const Opcode *op) {
 	int l = 0;
 	switch (op->operands_count) {
 	case 1:
@@ -3994,7 +3996,7 @@ static int opsgdt(RAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
-static int opstmxcsr(RAsm *a, ut8 *data, const Opcode *op) {
+static int opstmxcsr(RArchSession *a, ut8 *data, const Opcode *op) {
 	int l = 0;
 	switch (op->operands_count) {
 	case 1:
@@ -4012,7 +4014,7 @@ static int opstmxcsr(RAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
-static int opstr(RAsm *a, ut8 *data, const Opcode *op) {
+static int opstr(RArchSession *a, ut8 *data, const Opcode *op) {
 	int l = 0;
 	switch (op->operands_count) {
 	case 1:
@@ -4034,7 +4036,7 @@ static int opstr(RAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
-static int opsidt(RAsm *a, ut8 *data, const Opcode *op) {
+static int opsidt(RArchSession *a, ut8 *data, const Opcode *op) {
 	int l = 0;
 	switch (op->operands_count) {
 	case 1:
@@ -4052,7 +4054,7 @@ static int opsidt(RAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
-static int opsldt(RAsm *a, ut8 *data, const Opcode *op) {
+static int opsldt(RArchSession *a, ut8 *data, const Opcode *op) {
 	int l = 0;
 	switch (op->operands_count) {
 	case 1:
@@ -4073,7 +4075,7 @@ static int opsldt(RAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
-static int opsmsw(RAsm *a, ut8 *data, const Opcode *op) {
+static int opsmsw(RArchSession *a, ut8 *data, const Opcode *op) {
 	int l = 0;
 	switch (op->operands_count) {
 	case 1:
@@ -4094,7 +4096,7 @@ static int opsmsw(RAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
-static int opverr(RAsm *a, ut8 *data, const Opcode *op) {
+static int opverr(RArchSession *a, ut8 *data, const Opcode *op) {
 	int l = 0;
 	switch (op->operands_count) {
 	case 1:
@@ -4116,7 +4118,7 @@ static int opverr(RAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
-static int opverw(RAsm *a, ut8 *data, const Opcode *op) {
+static int opverw(RArchSession *a, ut8 *data, const Opcode *op) {
 	int l = 0;
 	switch (op->operands_count) {
 	case 1:
@@ -4138,7 +4140,7 @@ static int opverw(RAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
-static int opvmclear(RAsm *a, ut8 *data, const Opcode *op) {
+static int opvmclear(RArchSession *a, ut8 *data, const Opcode *op) {
 	int l = 0;
 	switch (op->operands_count) {
 	case 1:
@@ -4157,7 +4159,7 @@ static int opvmclear(RAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
-static int opvmon(RAsm *a, ut8 *data, const Opcode *op) {
+static int opvmon(RArchSession *a, ut8 *data, const Opcode *op) {
 	int l = 0;
 	switch (op->operands_count) {
 	case 1:
@@ -4176,7 +4178,7 @@ static int opvmon(RAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
-static int opvmptrld(RAsm *a, ut8 *data, const Opcode *op) {
+static int opvmptrld(RArchSession *a, ut8 *data, const Opcode *op) {
 	int l = 0;
 	switch (op->operands_count) {
 	case 1:
@@ -4195,7 +4197,7 @@ static int opvmptrld(RAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
-static int opvmptrst(RAsm *a, ut8 *data, const Opcode *op) {
+static int opvmptrst(RArchSession *a, ut8 *data, const Opcode *op) {
 	int l = 0;
 	switch (op->operands_count) {
 	case 1:
@@ -4215,14 +4217,14 @@ static int opvmptrst(RAsm *a, ut8 *data, const Opcode *op) {
 }
 
 typedef struct lookup_t {
-	char mnemonic[12];
+	const char mnemonic[12];
 	int only_x32;
-	int (*opdo)(RAsm*, ut8*, const Opcode*);
+	int (*opdo)(RArchSession*, ut8*, const Opcode*);
 	ut64 opcode;
 	int size;
 } LookupTable;
 
-LookupTable oplookup[] = {
+static const LookupTable oplookup[] = {
 	{ "aaa", 0, NULL, 0x37, 1},
 	{ "aad", 0, NULL, 0xd50a, 2},
 	{ "aam", 0, opaam, 0},
@@ -4667,20 +4669,24 @@ static bool is_st_register(const char *token) {
 	return false;
 }
 
-static ut64 getnum(RAsm *a, const char *s) {
+static ut64 getnum(RArchSession *a, const char *s) {
 	if (!s) {
 		return 0;
 	}
 	if (*s == '$') {
 		s++;
 	}
-	return r_num_math (a->num, s);
+	return r_num_math (NULL, s);
+#if 0
+	// missing num instance.. maybe arch needs num from core?
+	a->num
+#endif
 }
 
 /**
  * Get the register at position pos in str. Increase pos afterwards.
  */
-static Register parseReg(RAsm *a, const char *str, size_t *pos, ut32 *type) {
+static Register parseReg(RArchSession *a, const char *str, size_t *pos, ut32 *type) {
 	int i;
 	// Must be the same order as in enum register_t
 	const char *regs[] = { "eax", "ecx", "edx", "ebx", "esp", "ebp", "esi", "edi", "eip", NULL };
@@ -4820,8 +4826,7 @@ static Register parseReg(RAsm *a, const char *str, size_t *pos, ut32 *type) {
 	return X86R_UNDEFINED;
 }
 
-static void parse_segment_offset(RAsm *a, const char *str, size_t *pos,
-		Operand *op, int reg_index) {
+static void parse_segment_offset(RArchSession *a, const char *str, size_t *pos, Operand *op, int reg_index) {
 	int nextpos = *pos;
 	char *c = strchr (str + nextpos, ':');
 	if (c) {
@@ -4843,7 +4848,7 @@ static void parse_segment_offset(RAsm *a, const char *str, size_t *pos,
 	}
 }
 // Parse operand
-static int parseOperand(RAsm *a, const char *str, Operand *op, bool isrepop) {
+static int parseOperand(RArchSession *a, const char *str, Operand *op, bool isrepop) {
 	size_t pos, nextpos = 0;
 	x86newTokenType last_type;
 	int size_token = 1;
@@ -4934,8 +4939,7 @@ static int parseOperand(RAsm *a, const char *str, Operand *op, bool isrepop) {
 					// Something to do here?
 					// Seems we are just ignoring '*' or assuming it implicitly.
 				}
-			}
-			else if (last_type == TT_WORD) {
+			} else if (last_type == TT_WORD) {
 				ut32 reg_type = 0;
 
 				// We can't multiply registers
@@ -4977,8 +4981,7 @@ static int parseOperand(RAsm *a, const char *str, Operand *op, bool isrepop) {
 				if (!(reg_type & OT_GPREG)) {
 					op->type = 0;	// Make the result invalid
 				}
-			}
-			else {
+			} else {
 				char *p = strchr (str, '+');
 				op->offset_sign = 1;
 				if (!p) {
@@ -5006,7 +5009,8 @@ static int parseOperand(RAsm *a, const char *str, Operand *op, bool isrepop) {
 				temp *= read;
 			}
 		}
-	} else if (last_type == TT_WORD) {   // register
+	} else if (last_type == TT_WORD) { // register
+#if 0
 		nextpos = pos;
 		RFlagItem *flag;
 
@@ -5049,7 +5053,47 @@ static int parseOperand(RAsm *a, const char *str, Operand *op, bool isrepop) {
 			strncpy (op->rep_op, str, MAX_REPOP_LENGTH - 1);
 			op->rep_op[MAX_REPOP_LENGTH - 1] = '\0';
 		}
-	} else {	// immediate
+#else
+		nextpos = pos;
+
+		if (isrepop) {
+			op->is_good_flag = false;
+			strncpy (op->rep_op, str, MAX_REPOP_LENGTH - 1);
+			op->rep_op[MAX_REPOP_LENGTH - 1] = '\0';
+			return nextpos;
+		}
+
+		op->reg = parseReg (a, str, &nextpos, &op->type);
+
+		op->extended = false;
+		if (op->reg > 8) {
+			op->extended = true;
+			op->reg -= 9;
+		}
+		if (op->type & OT_REGTYPE & OT_SEGMENTREG) {
+			parse_segment_offset (a, str, &nextpos, op, reg_index);
+			return nextpos;
+		}
+		if (op->reg == X86R_UNDEFINED) {
+			op->is_good_flag = false;
+#if 0
+			if (a->num && a->num->value == 0) {
+				return nextpos;
+			}
+#endif
+			op->type = OT_CONSTANT;
+			char *p = strchr (str, '-');
+			if (p) {
+				op->sign = -1;
+				str = ++p;
+			}
+			op->immediate = getnum (a, str);
+		} else if (op->reg < X86R_UNDEFINED) {
+			strncpy (op->rep_op, str, MAX_REPOP_LENGTH - 1);
+			op->rep_op[MAX_REPOP_LENGTH - 1] = '\0';
+		}
+#endif
+	} else { // immediate
 		// We don't know the size, so let's just set no size flag.
 		op->type = OT_CONSTANT;
 		op->sign = 1;
@@ -5064,7 +5108,7 @@ static int parseOperand(RAsm *a, const char *str, Operand *op, bool isrepop) {
 	return nextpos;
 }
 
-static int parseOpcode(RAsm *a, const char *op, Opcode *out) {
+static int parseOpcode(RArchSession *a, const char *op, Opcode *out) {
 	out->has_bnd = false;
 	bool isrepop = false;
 	if (!strncmp (op, "bnd ", 4)) {
@@ -5108,9 +5152,9 @@ static int parseOpcode(RAsm *a, const char *op, Opcode *out) {
 	return 0;
 }
 
-static int oprep(RAsm *a, ut8 *data, const Opcode *op) {
+static int oprep(RArchSession *a, ut8 *data, const Opcode *op) {
 	int l = 0;
-	LookupTable *lt_ptr;
+	const LookupTable *lt_ptr;
 	int retval;
 
 	if (!strcmp (op->mnemonic, "rep")
@@ -5163,14 +5207,16 @@ static int oprep(RAsm *a, ut8 *data, const Opcode *op) {
 	return -1;
 }
 
-static int assemble(RAsm *a, RAsmOp *ao, const char *str) {
+R_API int x86nz_assemble(RArchSession *a, RAnalOp *ao, const char *str) {
 	ut8 __data[32] = {0};
 	ut8 *data = __data;
-	char op[128];
-	LookupTable *lt_ptr;
+	const LookupTable *lt_ptr;
 	int retval = -1;
 	Opcode instr = {0};
+	instr.addr = ao->addr;
 
+	// XXX remove fixed size buffers!
+	char op[128];
 	strncpy (op, str, sizeof (op) - 1);
 	op[sizeof (op) - 1] = '\0';
 	parseOpcode (a, op, &instr);
@@ -5204,26 +5250,8 @@ static int assemble(RAsm *a, RAsmOp *ao, const char *str) {
 		}
 	}
 	if (retval > 0) {
-		r_asm_op_set_buf (ao, __data, retval);
+		r_anal_op_set_bytes (ao, ao->addr, __data, retval);
 	}
 	free (instr.mnemonic);
 	return retval;
 }
-
-RAsmPlugin r_asm_plugin_x86_nz = {
-	.name = "x86.nz",
-	.desc = "x86 handmade assembler",
-	.license = "LGPL3",
-	.arch = "x86",
-	.bits = 16 | 32 | 64,
-	.endian = R_SYS_ENDIAN_LITTLE,
-	.assemble = &assemble
-};
-
-#ifndef R2_PLUGIN_INCORE
-R_API RLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_ASM,
-	.data = &r_asm_plugin_x86_nz,
-	.version = R2_VERSION
-};
-#endif

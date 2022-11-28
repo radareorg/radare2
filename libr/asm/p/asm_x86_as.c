@@ -6,6 +6,7 @@
 #define ASSEMBLER "R2_X86_AS"
 
 static int assemble(RAsm *a, RAsmOp *op, const char *buf) {
+	eprintf ("Doing the gas\n");
 #if __i386__ || __x86_64__
 	const char *as = "as";
 #else

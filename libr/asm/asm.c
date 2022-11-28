@@ -361,7 +361,7 @@ R_API bool r_asm_use(RAsm *a, const char *name) {
 			a->cur = h;
 			return true;
 		}
-		if (dotname && h->arch && !strcmp (dotname,  h->arch)) {
+		if (dotname && h->arch && !strcmp (dotname, h->arch)) {
 			char *arch = r_str_ndup (name, vv - name);
 #if 0
 			r_arch_config_set_cpu (a->config, arch);
@@ -402,7 +402,7 @@ R_API bool r_asm_use(RAsm *a, const char *name) {
 	a->pair = NULL;
 #endif
 	if (strcmp (name, "null")) {
-		return r_asm_use (a, "null"); // x86.nz");
+		return r_asm_use (a, "null");
 	}
 	return false;
 }
@@ -570,6 +570,12 @@ static bool assemblerMatches(RAsm *a, RAsmPlugin *h, const char *ends_with) {
 }
 
 static Ase find_assembler(RAsm *a, const char *kw) {
+	RAsmPlugin *ap = R_UNWRAP2 (a, acur);
+	if (ap && ap->assemble && !strcmp (ap->arch, a->config->arch)) {
+		return ap->assemble;
+	}
+	return NULL;
+
 	RAsmAssembleCallback aac = R_UNWRAP3 (a, acur, assemble);
 	if (!aac) {
 		aac = R_UNWRAP3 (a, cur, assemble);
@@ -1098,10 +1104,12 @@ R_API RAsmCode *r_asm_massemble(RAsm *a, const char *assembly) {
 							off += (acode->code_align - (off % acode->code_align));
 						}
 						char *food = r_str_newf ("0x%"PFMT64x, off);
-						ht_pp_insert (a->flags, ptr_start, food);
-						r_asm_code_set_equ (acode, p, food);
+						if (food) {
+							ht_pp_insert (a->flags, ptr_start, food);
+							r_asm_code_set_equ (acode, p, food);
+							free (food);
+						}
 						free (p);
-						free (food);
 					}
 					//}
 					ptr_start = ptr + 1;
