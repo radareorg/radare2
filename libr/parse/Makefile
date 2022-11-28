@@ -20,7 +20,7 @@ foo:
 CFLAGS+=-DR2_PLUGIN_INCORE
 -include ${STATIC_PARSE_PLUGINS}
 STATIC_OBJS=$(subst ..,p/..,$(subst parse_,p/parse_,$(STATIC_OBJ)))
-OBJS=parse.o filter.o code.o ${STATIC_OBJS}
+OBJS=parse.o filter.o ${STATIC_OBJS}
 # OBJS+=c/tccgen.o c/tccpp.o c/libtcc.o
 
 pre:
@@ -32,14 +32,5 @@ plugins:
 	@cd p && ${MAKE} all
 
 .PHONY: sdb-sync sync-sdb sdbclean
-tcc-sync sync-tcc:
-	rm -rf _
-	git clone --depth 1 git://repo.or.cz/tinycc.git _
-	cd _ ; ./configure --prefix=${PREFIX}
-	mkdir -p tcc
-	for FILE in ${CFILES} ${HFILES} ; do cp -f _/$$FILE tcc ; done
-	cp -f _/VERSION _/COPYING _/stab.def tcc
-	git add tcc
-	rm -rf _
 
 include ../rules.mk

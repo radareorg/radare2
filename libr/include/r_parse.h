@@ -11,7 +11,7 @@
 extern "C" {
 #endif
 
-R_LIB_VERSION_HEADER(r_parse);
+R_LIB_VERSION_HEADER (r_parse);
 
 typedef RList* (*RAnalVarList)(RAnalFunction *fcn, int kind);
 
@@ -72,11 +72,6 @@ R_API bool r_parse_assemble(RParse *p, char *data, char *str); // XXX deprecate,
 R_API bool r_parse_filter(RParse *p, ut64 addr, RFlag *f, RAnalHint *hint, char *data, char *str, int len, bool big_endian);
 R_API bool r_parse_subvar(RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *data, char *str, int len);
 R_API char *r_parse_immtrim(char *opstr);
-
-/* c */
-R_API char *r_parse_c_string(RAnal *anal, const char *code, char **error_msg);
-R_API char *r_parse_c_file(RAnal *anal, const char *path, const char *dir, char **error_msg);
-R_API void r_parse_c_reset(RParse *p);
 
 /* plugin pointers */
 extern RParsePlugin r_parse_plugin_6502_pseudo;

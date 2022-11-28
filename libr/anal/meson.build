@@ -10,6 +10,7 @@ r_anal_sources = [
   'cc.c',
   'class.c',
   'cond.c',
+  'cparse.c',
   'codemeta.c',
   'cycles.c',
   'data.c',
@@ -213,6 +214,13 @@ incdirs += [
 endif
 
 r_anal_sources += r_anal_d_sources
+
+# tcc
+tcc_files = [
+  'c/libtcc.c',
+  'c/tccgen.c',
+  'c/tccpp.c'
+]
 
 r_anal_inc = [
   platform_inc,
