@@ -187,15 +187,19 @@ static void rarch2_list(RAsmState *as, const char *arch) {
 	int i;
 	RArchPlugin *h;
 	RListIter *iter, *iter2;
-	const char *feat2, *feat;
+	const char *feat;
 	PJ *pj = NULL;
 	if (as->json) {
 		pj = pj_new ();
 		pj_a (pj);
 	}
 	r_list_foreach (as->anal->arch->plugins, iter, h) {
-		feat = "_d";
-		feat2 = "e";
+		feat = "___";
+		if (h->encode) {
+			feat = h->decode? "ade": "a__";
+		} else {
+			feat = "_de";
+		}
 		ut64 bits = h->bits;
 		RList *bitslist = r_list_newf (NULL);
 		for (i = 0; i < 8; i++) {
@@ -226,9 +230,8 @@ static void rarch2_list(RAsmState *as, const char *arch) {
 			pj_ks (pj, "features", feat);
 			pj_end (pj);
 		} else {
-			printf ("%s%s %-11s %-11s %-7s %s",
-					feat, feat2, bitstr, h->name,
-					r_str_get_fail (h->license, "unknown"), h->desc);
+			printf ("%s %-11s %-11s %-7s %s", feat, bitstr, h->name,
+				r_str_get_fail (h->license, "unknown"), h->desc);
 			if (h->author) {
 				printf (" (by %s)", h->author);
 			}
