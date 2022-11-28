@@ -22,7 +22,7 @@ typedef struct _specialregs specialregs;
 #define REGS_TABLE 9
 
 /* gets the number from string
- * duplicate from asm_x86_nz.c -- may be create a generic function? */
+ * duplicate from arch.x86_nz.c -- may be create a generic function? */
 static int getnum(const char *s) {
 	if (!s || !*s) {
 		return 0;

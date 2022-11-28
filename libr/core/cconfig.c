@@ -600,6 +600,7 @@ static bool cb_archarch_getter(RCore *core, RConfigNode *node) {
 	return true;
 }
 
+#if 0
 static bool cb_archautoselect(void *user, void *data) {
 	RCore *core = (RCore *)user;
 	RConfigNode *node = (RConfigNode *)data;
@@ -608,7 +609,6 @@ static bool cb_archautoselect(void *user, void *data) {
 	return true;
 }
 
-#if 0
 static bool cb_analcpu(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
@@ -3530,7 +3530,7 @@ R_API int r_core_config_init(RCore *core) {
 	n = NODECB ("arch.arch", "null", &cb_archarch);
 	SETDESC (n, "select the architecture to use");
 	r_config_set_getter (cfg, "arch.arch", (RConfigCallback)cb_archarch_getter);
-	SETCB ("arch.autoselect", "false", &cb_archautoselect, "automagically select matching decoder on arch related config changes (has no effect atm)");
+	// SETCB ("arch.autoselect", "false", &cb_archautoselect, "automagically select matching decoder on arch related config changes (has no effect atm)");
 	SETICB ("asm.lines.maxref", 0, &cb_analmaxrefs, "maximum number of reflines to be analyzed and displayed in asm.lines with pd");
 
 	SETCB ("anal.jmp.tbl", "true", &cb_anal_jmptbl, "analyze jump tables in switch statements");

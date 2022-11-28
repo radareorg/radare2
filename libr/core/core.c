@@ -3196,6 +3196,8 @@ R_API bool r_core_init(RCore *core) {
 	}
 
 	r_bin_bind (core->bin, &(core->anal->binb));
+	r_bin_bind (core->bin, &(core->anal->arch->binb));
+	core->anal->arch->num = core->num;
 	r_io_bind (core->io, &(core->search->iob));
 	r_io_bind (core->io, &(core->print->iob));
 	r_io_bind (core->io, &(core->anal->iob));
@@ -4109,7 +4111,7 @@ R_API RBuffer *r_core_syscall(RCore *core, const char *name, const char *args) {
 	RBuffer *b = NULL;
 	char code[1024];
 
-	//arch check
+	// arch check
 	if (strcmp (core->anal->cur->arch, "x86")) {
 		R_LOG_ERROR ("architecture not yet supported!");
 		return 0;
