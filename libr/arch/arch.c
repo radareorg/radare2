@@ -19,6 +19,7 @@ R_API RArch *r_arch_new(void) {
 		free (a);
 		return NULL;
 	}
+	a->num = r_num_new (NULL, NULL, NULL);
 	a->cfg = r_arch_config_new ();
 	ut32 i = 0;
 	while (arch_static_plugins[i]) {
