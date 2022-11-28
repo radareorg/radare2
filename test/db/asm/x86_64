@@ -1294,3 +1294,6 @@ aB "ror byte[rax-0x2a], 1" d048d6
 aB "ror byte[rax-0x2a], 0x2a" c048d62a
 aB "ror byte[rax], 0x2a" c048d62a
 aB "ror byte[r15-0x2a], 1" 41d04fd6
+
+ad "mov rdx, [rip+0x17792]" 488b0592770100
+a "mov rdx, [0x17792+rip]" 488b0592770100

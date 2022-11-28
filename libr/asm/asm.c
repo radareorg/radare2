@@ -413,9 +413,11 @@ R_DEPRECATE R_API void r_asm_set_cpu(RAsm *a, const char *cpu) {
 	r_arch_config_set_cpu (a->config, cpu);
 }
 
+#if 0
 static bool has_bits(RAsmPlugin *h, int bits) {
 	return (h && h->bits && (bits & h->bits));
 }
+#endif
 
 R_DEPRECATE R_API int r_asm_set_bits(RAsm *a, int bits) {
 	a->config->bits = bits;
@@ -552,6 +554,7 @@ R_API int r_asm_disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 
 typedef int (*Ase)(RAsm *a, RAsmOp *op, const char *buf);
 
+#if 0
 static bool assemblerMatches(RAsm *a, RAsmPlugin *h, const char *ends_with) {
 	const char *arch = R_UNWRAP3 (a, config, arch);
 	if (!a || !h->arch || !h->assemble || !has_bits (h, a->config->bits)) {
@@ -568,6 +571,7 @@ static bool assemblerMatches(RAsm *a, RAsmPlugin *h, const char *ends_with) {
 	}
 	return false;
 }
+#endif
 
 static Ase find_assembler(RAsm *a, const char *kw) {
 	RAsmPlugin *ap = R_UNWRAP2 (a, acur);
