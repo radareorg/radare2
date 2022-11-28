@@ -1,21 +1,17 @@
-/* radare - LGPL - Copyright 2016-2018 pancake */
+/* radare - LGPL - Copyright 2016-2022 pancake */
 
-#include "r_lib.h"
-#include "r_core.h"
-#include "r_lang.h"
+#include <r_lang.h>
 
 static int lang_rust_file(RLang *lang, const char *file) {
 	void *lib;
-	char *a, *cc, *p, name[512];
+	char *a, *cc, *p;
 	const char *libpath, *libname;
 
-	if (strlen (file) > (sizeof (name) - 10)) {
-		return false;
-	}
+	char *name;
 	if (!strstr (file, ".rs")) {
-		sprintf (name, "%s.rs", file);
+		name = r_str_newf ("%s.rs", file);
 	} else {
-		strcpy (name, file);
+		name = strdup (file);
 	}
 	if (!r_file_exists (name)) {
 		eprintf ("file not found (%s)\n", name);
@@ -26,7 +22,7 @@ static int lang_rust_file(RLang *lang, const char *file) {
 	if (a) {
 		*a = 0;
 		libpath = name;
-		libname = a+1;
+		libname = a + 1;
 	} else {
 		libpath = ".";
 		libname = name;
@@ -45,6 +41,7 @@ static int lang_rust_file(RLang *lang, const char *file) {
 	free (cc);
 	if (r_sandbox_system (cmd, 1) != 0) {
 		free (cmd);
+		free (name);
 		return false;
 	}
 	free (cmd);
@@ -65,6 +62,7 @@ static int lang_rust_file(RLang *lang, const char *file) {
 	}
 	r_file_rm (path); // remove lib
 	free (path);
+	free (name);
 	return 0;
 }
 
