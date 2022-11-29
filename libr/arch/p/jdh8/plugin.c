@@ -2,7 +2,7 @@
 
 #include <r_anal.h>
 #include <r_lib.h>
-#include "./jdh8/jdh8dis.c"
+#include "./jdh8dis.c"
 
 static bool decode(RArchSession *s, RAnalOp *op, RArchDecodeMask mask) {
 	int dlen = 0;

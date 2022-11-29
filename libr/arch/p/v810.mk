@@ -1,4 +1,4 @@
-OBJ_V810=arch_v810.o
+OBJ_V810=p/v810/plugin.o
 
 STATIC_OBJ+=${OBJ_V810}
 OBJ_V810+=p/v810/v810_disas.o

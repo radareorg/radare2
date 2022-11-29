@@ -1,4 +1,4 @@
-OBJ_SH=arch_sh.o
+OBJ_SH=p/sh/plugin.o
 OBJ_SH+=p/sh/gnu/sh-dis.o
 
 STATIC_OBJ+=$(OBJ_SH)

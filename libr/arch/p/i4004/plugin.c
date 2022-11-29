@@ -1,11 +1,11 @@
 /* radare - LGPL - Copyright 2016-2022 - pancake, condret */
 
 #include <r_arch.h>
-#include "./i4004/gperfdb.c"
+#include "./gperfdb.c"
 
 static char *i4004_regs(RArchSession *a) {
 	const char *p =
-#include "i4004/regs.h"
+#include "./regs.h"
 		;
 	return strdup (p);
 }

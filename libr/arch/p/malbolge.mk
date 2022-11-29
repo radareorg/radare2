@@ -1,4 +1,4 @@
-OBJ_MALBOLGE=arch_malbolge.o
+OBJ_MALBOLGE=p/malbolge/plugin.o
 
 STATIC_OBJ+=${OBJ_MALBOLGE}
 TARGET_MALBOLGE=arch_malbolge.${EXT_SO}
