@@ -6,11 +6,11 @@
 
 /* DEPRECATE ?? */
 #include "wine-arm.h"
-#include "../asm/arch/arm/asm-arm.h"
-#include "../asm/arch/arm/winedbg/be_arm.h"
+#include "../arch/p/arm/asm-arm.h"
+#include "../arch/p/arm/winedbg/be_arm.h"
 #include "./anal_arm_hacks.inc"
 #include "disas-asm.h"
-#include "../../asm/arch/arm/gnu/opcode-arm.h"
+#include "../../arch/p/arm/gnu/opcode-arm.h"
 
 static R_TH_LOCAL char *oldcpu = NULL;
 static R_TH_LOCAL int oldcpucode = 0;

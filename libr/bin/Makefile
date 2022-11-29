@@ -8,7 +8,7 @@ R2DEPS=r_util r_io r_socket r_magic r_syscall r_cons r_crypto r_fs
 
 pre: $(LIBSO) $(LIBAR)
 	$(MAKE) -C p
-	$(MAKE) -C d
+	-$(MAKE) -j4 -C d
 
 CFLAGS+=-DR2_PLUGIN_INCORE -Iformat -Imangling
 

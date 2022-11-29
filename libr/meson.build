@@ -7,6 +7,7 @@ asm_plugins = [ 'null' ]
 anal_plugins = [ 'null' ]
 arch_plugins = [ 'null',
   'sh',
+  'arm',
   'jdh8',
   'riscv',
   'i4004',
@@ -69,8 +70,8 @@ if not no_user_plugins
     io_plugins += [ 'r2web' ]
   endif
   if user_plugins.contains('arm')
-    asm_plugins += [ 'arm' ]
     anal_plugins += [ 'arm_cs' ]
+    arch_plugins += [ 'arm' ]
     bp_plugins += [ 'arm' ]
     parse_plugins += [ 'arm_pseudo' ]
   endif
@@ -123,7 +124,6 @@ if no_user_plugins
 
 asm_plugins += [
   'arm_as',
-  'arm',
   'ppc_as',
   'x86_as',
   'x86_nasm',

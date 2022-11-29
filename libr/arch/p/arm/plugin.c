@@ -1,10 +1,11 @@
-/* radare2 - BSD - Copyright 2013-2022 - pancake */
+/* Copyright (C) 2008-2022 - pancake */
 
+#include <r_arch.h>
 #include <r_asm.h>
 #include <r_lib.h>
 #include <sdb/ht_uu.h>
-#include "cs_version.h"
-#include "../arch/arm/asm-arm.h"
+#include "./cs_version.h"
+#include "./asm-arm.h"
 
 bool arm64ass(const char *str, ut64 addr, ut32 *op);
 
@@ -15,17 +16,17 @@ static bool encode(RArchSession *s, RAnalOp *op, ut32 mask) {
 	ut32 opcode = UT32_MAX;
 	if (bits == 64) {
 		if (!arm64ass (op->mnemonic, op->addr, &opcode)) {
-			return -1;
+			return false;
 		}
 	} else {
 		opcode = armass_assemble (op->mnemonic, op->addr, is_thumb);
 		if (bits != 32 && bits != 16) {
 			R_LOG_ERROR ("ARM assembler only supports 16 or 32 bits");
-			return -1;
+			return false;
 		}
 	}
 	if (opcode == UT32_MAX) {
-		return -1;
+		return false;
 	}
 	ut8 opbuf[4];
 	const bool be = R_ARCH_CONFIG_IS_BIG_ENDIAN (s->config);
@@ -56,9 +57,10 @@ static bool encode(RArchSession *s, RAnalOp *op, ut32 mask) {
 	}
 	r_anal_op_set_bytes (op, op->addr, opbuf, opsize);
 	// r_strbuf_setbin (&op->buf, opbuf, opsize);
-	return opsize;
+	return true;
 }
 
+#if 0
 // old api
 static int assemble(RAsm *a, RAsmOp *op, const char *buf) {
 	const int bits = a->config->bits;
@@ -110,23 +112,23 @@ static int assemble(RAsm *a, RAsmOp *op, const char *buf) {
 // XXX. thumb endian assembler needs no swap
 	return opsize;
 }
+#endif
 
-RAsmPlugin r_asm_plugin_arm = {
+RArchPlugin r_arch_plugin_arm = {
 	.name = "arm",
-	.desc = "Custom THUMB, ARM32, AARCH64 assembler for radare2",
-	.cpus = ",v8,cortex",
-	.license = "BSD",
+	.desc = "custom thumb, arm32 and arm64 assembler",
+	.author = "pancake",
+	.license = "LGPL3",
 	.arch = "arm",
-	.bits = 16 | 32 | 64,
+	.bits = R_SYS_BITS_PACK3 (16, 32, 64),
 	.endian = R_SYS_ENDIAN_LITTLE | R_SYS_ENDIAN_BIG,
-	.assemble = &assemble, // DEPRECATE
 	.encode = &encode,
 };
 
 #ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_ASM,
-	.data = &r_asm_plugin_arm,
+	.type = R_LIB_TYPE_ARCH,
+	.data = &r_arch_plugin_arm,
 	.version = R2_VERSION
 };
 #endif

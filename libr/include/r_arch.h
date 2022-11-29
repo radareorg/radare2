@@ -257,6 +257,7 @@ extern RArchPlugin r_arch_plugin_rsp;
 extern RArchPlugin r_arch_plugin_riscv;
 extern RArchPlugin r_arch_plugin_x86_nz;
 extern RArchPlugin r_arch_plugin_any_as;
+extern RArchPlugin r_arch_plugin_arm;
 
 #ifdef __cplusplus
 }
