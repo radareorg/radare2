@@ -1,4 +1,4 @@
-OBJ_PYPICK=arch_pickle.o
+OBJ_PYPICK=p/pickle/plugin.o
 
 STATIC_OBJ+=$(OBJ_PYPICK)
 TARGET_PYPICK=arch_pickle.${EXT_SO}
