@@ -1,8 +1,10 @@
 include ../config.mk
 
 NAME=r_egg
-R2DEPS=r_asm r_syscall r_util r_parse r_anal
+R2DEPS=r_asm r_syscall r_util r_parse
 R2DEPS+=r_flag r_cons r_reg r_lang r_arch
+
+R2DEPS+=r_esil r_anal r_crypto r_search
 ## XXX r_anal is a temporary dependency to make r_asm work with r_arch
 
 OBJS=egg.o egg_lang.o

@@ -50,7 +50,7 @@ r_arch_static = static_library('r_arch_static', r_arch_sources,
   c_args: library_cflags,
   dependencies: [
     r_util_static_dep,
-    capstone_static_dep,
+    capstone_dep,
   ],
   install: true,
   implicit_include_directories: false,
