@@ -5759,14 +5759,11 @@ static ut64 initializeEsil(RCore *core) {
 		}
 	}
 	esil->exectrap = exectrap;
-	RList *entries = r_bin_get_entries (core->bin);
-	RBinAddr *entry = NULL;
-	RBinInfo *info = NULL;
+	const RList *entries = r_bin_get_entries (core->bin);
 	if (entries && !r_list_empty (entries)) {
-		entry = (RBinAddr *)r_list_pop_head (entries);
-		info = r_bin_get_info (core->bin);
+		RBinAddr *entry = (RBinAddr *)r_list_get_n (entries, 0);
+		RBinInfo *info = r_bin_get_info (core->bin);
 		addr = info->has_va? entry->vaddr: entry->paddr;
-		r_list_push (entries, entry);
 	} else {
 		addr = core->offset;
 	}
