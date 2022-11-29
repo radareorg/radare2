@@ -277,7 +277,7 @@ static int rabin_dump_symbols(RBin *bin, int len) {
 	return true;
 }
 
-static bool __dumpSections(RBin *bin, const char *scnname, const char *output, const char *file) {
+static bool __dumpSections(RBin *bin, const char *scnname, const char *output, const char *file, bool raw) {
 	RList *sections;
 	RListIter *iter;
 	RBinSection *section;
@@ -319,8 +319,12 @@ static bool __dumpSections(RBin *bin, const char *scnname, const char *output, c
 			if (strcmp (output, file)) {
 				r_file_dump (output, buf, section->size, 0);
 			} else {
-				r_hex_bin2str (buf, section->size, ret);
-				printf ("%s\n", ret);
+				if (raw) {
+					write (1, buf, section->size);
+				} else {
+					r_hex_bin2str (buf, section->size, ret);
+					printf ("%s\n", ret);
+				}
 			}
 			free (buf);
 			free (ret);
@@ -383,7 +387,7 @@ static int rabin_do_operation(RBin *bin, const char *op, int rad, const char *ou
 			if (!ptr2) {
 				goto _rabin_do_operation_error;
 			}
-			if (!__dumpSections (bin, ptr2, output, file)) {
+			if (!__dumpSections (bin, ptr2, output, file, rad)) {
 				goto error;
 			}
 			break;
