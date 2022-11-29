@@ -1444,7 +1444,7 @@ static inline bool is_initfini(RBinAddr *entry) {
 
 static int bin_entry(RCore *r, PJ *pj, int mode, ut64 laddr, int va, bool inifin) {
 	char str[R_FLAG_NAME_SIZE];
-	RList *entries = r_bin_get_entries (r->bin);
+	const RList *entries = r_bin_get_entries (r->bin);
 	RListIter *iter;
 	RBinAddr *entry = NULL;
 	int i = 0, init_i = 0, fini_i = 0, preinit_i = 0;
@@ -2360,7 +2360,7 @@ static void select_flag_space(RCore *core, RBinSymbol *symbol) {
 
 static int bin_symbols(RCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at, const char *name, bool exponly, const char *args) {
 	RBinInfo *info = r_bin_get_info (r->bin);
-	RList *entries = r_bin_get_entries (r->bin);
+	const RList *entries = r_bin_get_entries (r->bin);
 	RBinSymbol *symbol;
 	RBinAddr *entry;
 	RListIter *iter;

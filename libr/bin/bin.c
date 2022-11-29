@@ -664,7 +664,7 @@ R_API RBinAddr *r_bin_get_sym(RBin *bin, int sym) {
 }
 
 // XXX: those accessors are redundant
-R_API RList *r_bin_get_entries(RBin *bin) {
+R_API const RList *r_bin_get_entries(RBin *bin) {
 	r_return_val_if_fail (bin, NULL);
 	RBinObject *o = r_bin_cur_object (bin);
 	return o ? o->entries : NULL;

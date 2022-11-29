@@ -4294,9 +4294,8 @@ static bool isSkippable(RBinSymbol *s) {
 }
 
 R_API int r_core_anal_all(RCore *core) {
-	RList *list;
+	const RList *list;
 	RListIter *iter;
-	RFlagItem *item;
 	RAnalFunction *fcni;
 	RBinAddr *binmain;
 	RBinAddr *entry;
@@ -4306,7 +4305,7 @@ R_API int r_core_anal_all(RCore *core) {
 
 	/* Analyze Functions */
 	/* Entries */
-	item = r_flag_get (core->flags, "entry0");
+	RFlagItem *item = r_flag_get (core->flags, "entry0");
 	if (item) {
 		r_core_af (core, item->offset, "entry0", anal_calls);
 	} else {
