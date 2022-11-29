@@ -1,8 +1,9 @@
 include ../config.mk
 
 NAME=r_egg
-R2DEPS=r_asm r_syscall r_util r_parse r_reg r_lang r_arch
-R2DEPS+=r_flag r_cons
+R2DEPS=r_asm r_syscall r_util r_parse r_anal
+R2DEPS+=r_flag r_cons r_reg r_lang r_arch
+## XXX r_anal is a temporary dependency to make r_asm work with r_arch
 
 OBJS=egg.o egg_lang.o
 OBJS+=emit_x86.o
@@ -12,10 +13,10 @@ OBJS+=emit_esil.o
 OBJS+=emit_trace.o
 OBJS+=egg_cfile.o
 
-all: ${LIBSO} ${LIBAR}
+all: $(LIBSO) $(LIBAR)
 
 P=p/
-include ${STATIC_EGG_PLUGINS}
+include $(STATIC_EGG_PLUGINS)
 include $(STOP)/java/deps.mk
 
 ifneq (${STATIC_OBJ},)

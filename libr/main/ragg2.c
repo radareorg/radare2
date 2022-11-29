@@ -31,9 +31,11 @@ static REggState *__es_new(void) {
 }
 
 static void __es_free(REggState *es) {
-	r_egg_free (es->e);
-	r_lib_free (es->l);
-	free (es);
+	if (eg) {
+		r_egg_free (es->e);
+		r_lib_free (es->l);
+		free (es);
+	}
 }
 
 /* egg callback */

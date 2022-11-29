@@ -19,6 +19,7 @@ r_egg = library('r_egg', r_egg_sources,
   c_args: library_cflags,
   dependencies: [
     r_util_dep,
+    r_arch_dep,
     r_asm_dep,
     r_syscall_dep,
     mpc_dep
