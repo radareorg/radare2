@@ -140,6 +140,7 @@ RUN
 
 NAME=rasm2 #1167 3
 FILE=-
+BROKEN=1
 REQUIRE=gas linux x86
 BROKEN=1
 CMDS=!rasm2 -s att -a x86.as -b 64 "test %rbx, %rax" 
@@ -148,7 +149,18 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=rasm2 -s att -a x86.as -b 64 movq %rdx, %rax
+BROKEN=1
+FILE=-
+REQUIRE=gas linux x86
+CMDS=!rasm2 -s att -a x86.as -b 64 "movq %rdx, %rax"
+EXPECT=<<EOF
+4889d0
+EOF
+RUN
+
 NAME=rasm2 #1167 4
+BROKEN=1
 FILE=-
 REQUIRE=gas linux x86
 CMDS=!rasm2 -s intel -a x86.as -b 64 "test rax, rbx" 
@@ -158,6 +170,7 @@ EOF
 RUN
 
 NAME=rasm2 #1167 5
+BROKEN=1
 FILE=-
 REQUIRE=gas linux x86
 CMDS=!rasm2 -s att -a x86.as -b 64 "add \$33, %rbx"
@@ -167,6 +180,7 @@ EOF
 RUN
 
 NAME=rasm2 #1167 6
+BROKEN=1
 FILE=-
 REQUIRE=gas linux x86
 CMDS=!rasm2 -s intel -a x86.as -b 64 "add rbx, 33" 
@@ -326,14 +340,6 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=rasm2 -s att -a x86.as -b 64 movq %rdx, %rax
-FILE=-
-REQUIRE=gas linux x86
-CMDS=!rasm2 -s att -a x86.as -b 64 "movq %rdx, %rax"
-EXPECT=<<EOF
-4889d0
-EOF
-RUN
 
 NAME=rasm2 -v~commit?"
 FILE=-
