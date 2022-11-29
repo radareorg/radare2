@@ -19,7 +19,7 @@ LDFLAGS+=$(LINK)
 .PHONY: all main plugins libs ${EXTRA_CLEAN}
 
 main:
-	$(MAKE) -C d
+	$(MAKE) -j 4 -C d
 	$(MAKE) all
 
 plugins: ${LIBSO} ${LIBAR}
@@ -81,7 +81,7 @@ tests-esil:
 .PHONY: do doclean
 
 do:
-	$(MAKE) -C ../asm/arch/arm/v35arm64
+	$(MAKE) -C ../arch/p/arm/v35arm64
 	$(MAKE) -C d
 
 doclean:

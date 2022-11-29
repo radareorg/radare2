@@ -5,8 +5,6 @@
 #include <r_util.h>
 #include <r_list.h>
 
-#define aprintf(format, ...) if (anal->verbose) eprintf (format, __VA_ARGS__)
-
 #define JMPTBL_MAXSZ 512
 
 static void apply_case(RAnal *anal, RAnalBlock *block, ut64 switch_addr, ut64 offset_sz, ut64 case_addr, ut64 id, ut64 case_addr_loc) {
@@ -59,11 +57,11 @@ static inline void analyze_new_case(RAnal *anal, RAnalFunction *fcn, RAnalBlock 
 			if (block) {
 				if (block->addr != ip) {
 					st64 d = block->addr - ip;
-					R_LOG_ERROR ("Cannot find basic block for switch case at 0x%08"PFMT64x" bbdelta = %d", ip, (int)R_ABS (d));
+					R_LOG_WARN ("Cannot find basic block for switch case at 0x%08"PFMT64x" bbdelta = %d", ip, (int)R_ABS (d));
 					block = NULL;
 					return;
 				} else {
-					R_LOG_ERROR ("Inconsistent basicblock storage issue at 0x%08"PFMT64x, ip);
+					R_LOG_WARN ("Inconsistent basicblock storage issue at 0x%08"PFMT64x, ip);
 				}
 			} else {
 				R_LOG_ERROR ("Major disaster at 0x%08"PFMT64x, ip);
@@ -82,15 +80,15 @@ R_API bool try_walkthrough_casetbl(RAnal *anal, RAnalFunction *fcn, RAnalBlock *
 		jmptbl_size = JMPTBL_MAXSZ;
 	}
 	if (jmptbl_loc == UT64_MAX) {
-		aprintf ("Warning: Invalid JumpTable location 0x%08" PFMT64x "\n", jmptbl_loc);
+		R_LOG_DEBUG ("Invalid JumpTable location 0x%08" PFMT64x, jmptbl_loc);
 		return false;
 	}
 	if (casetbl_loc == UT64_MAX) {
-		aprintf ("Warning: Invalid CaseTable location 0x%08" PFMT64x "\n", jmptbl_loc);
+		R_LOG_DEBUG ("Invalid CaseTable location 0x%08" PFMT64x, jmptbl_loc);
 		return false;
 	}
 	if (jmptbl_size < 1 || jmptbl_size > ST32_MAX) {
-		aprintf ("Warning: Invalid JumpTable size at 0x%08" PFMT64x "\n", ip);
+		R_LOG_DEBUG ("Invalid JumpTable size at 0x%08" PFMT64x, ip);
 		return false;
 	}
 	ut64 jmpptr, case_idx, jmpptr_idx;
@@ -172,11 +170,11 @@ R_API bool try_walkthrough_jmptbl(RAnal *anal, RAnalFunction *fcn, RAnalBlock *b
 		jmptbl_size = JMPTBL_MAXSZ;
 	}
 	if (jmptbl_loc == UT64_MAX) {
-		aprintf ("Warning: Invalid JumpTable location 0x%08"PFMT64x"\n", jmptbl_loc);
+		R_LOG_DEBUG ("Invalid JumpTable location 0x%08"PFMT64x, jmptbl_loc);
 		return false;
 	}
 	if (jmptbl_size < 1 || jmptbl_size > ST32_MAX) {
-		aprintf ("Warning: Invalid JumpTable size at 0x%08"PFMT64x"\n", ip);
+		R_LOG_DEBUG ("Invalid JumpTable size at 0x%08"PFMT64x, ip);
 		return false;
 	}
 	ut64 jmpptr, offs;
@@ -460,7 +458,7 @@ R_API bool try_get_jmptbl_info(RAnal *anal, RAnalFunction *fcn, ut64 addr, RAnal
 	}
 	// predecessor must be a conditional jump
 	if (!prev_bb || !prev_bb->jump || !prev_bb->fail) {
-		aprintf ("Warning: [anal.jmp.tbl] Missing predecesessor cjmp bb at 0x%08"PFMT64x"\n", addr);
+		R_LOG_DEBUG ("[anal.jmp.tbl] Missing predecesessor cjmp bb at 0x%08"PFMT64x, addr);
 		return false;
 	}
 

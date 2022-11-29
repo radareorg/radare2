@@ -7,6 +7,9 @@ r_arch_sources = [
   'arch_cond.c',
   'arch_value.c',
   'p/null/plugin.c',
+  'p/arm/plugin.c',
+  'p/arm/armass.c',
+  'p/arm/armass64.c',
   'p/any_as/plugin.c',
   'p/i4004/plugin.c',
   'p/amd29k/plugin.c',
@@ -29,7 +32,8 @@ r_arch = library('r_arch', r_arch_sources,
   c_args: library_cflags,
   dependencies: [
     r_util_dep,
-    r_reg_dep
+    r_reg_dep,
+    capstone_dep,
   ],
   install: true,
   implicit_include_directories: false,
@@ -44,7 +48,10 @@ if get_option('blob')
 r_arch_static = static_library('r_arch_static', r_arch_sources,
   include_directories: [platform_inc, arch_inc],
   c_args: library_cflags,
-  dependencies: [r_util_static_dep],
+  dependencies: [
+    r_util_static_dep,
+    capstone_static_dep,
+  ],
   install: true,
   implicit_include_directories: false,
 )

@@ -811,7 +811,7 @@ dump_qualifier_sequence (const aarch64_opnd_qualifier_t *qualifier)
 {
   int i;
   printf ("####  ");
-  for (i = 0; i < AARCH64_MAX_OPND_NUM; i++, ++qualifier)
+  for (i = 0; i < AARCH64_MAX_OPND_NUM; i++, qualifier++)
     printf ("%s,", aarch64_get_qualifier_name (*qualifier));
   printf ("\n");
 }
@@ -889,7 +889,7 @@ aarch64_find_best_match (const aarch64_inst *inst,
     stop_at = num_opnds - 1;
 
   /* For each pattern.  */
-  for (i = 0; i < AARCH64_MAX_QLF_SEQ_NUM; ++i, ++qualifiers_list)
+  for (i = 0; i < AARCH64_MAX_QLF_SEQ_NUM; ++i, qualifiers_list++)
     {
       int j;
       qualifiers = *qualifiers_list;
@@ -913,7 +913,7 @@ aarch64_find_best_match (const aarch64_inst *inst,
 	  break;
 	}
 
-      for (j = 0; j < num_opnds && j <= stop_at; ++j, ++qualifiers)
+      for (j = 0; j < num_opnds && j <= stop_at; j++, qualifiers++)
 	{
 	  if (inst->operands[j].qualifier == AARCH64_OPND_QLF_NIL)
 	    {
@@ -959,9 +959,9 @@ aarch64_find_best_match (const aarch64_inst *inst,
 	dump_qualifier_sequence (qualifiers);
 #endif
 
-      for (j = 0; j <= stop_at; ++j, ++qualifiers)
+      for (j = 0; j <= stop_at; j++, qualifiers++)
 	ret[j] = *qualifiers;
-      for (; j < AARCH64_MAX_OPND_NUM; ++j)
+      for (; j < AARCH64_MAX_OPND_NUM; j++)
 	ret[j] = AARCH64_OPND_QLF_NIL;
 
       DEBUG_TRACE ("SUCCESS");
