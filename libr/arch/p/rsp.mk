@@ -1,5 +1,4 @@
-OBJ_RSP=arch_rsp.o
-#RSP_ROOT=$(LIBR)/asm/arch/rsp
+OBJ_RSP=p/rsp/plugin.o
 CFLAGS+=-Iarch
 
 STATIC_OBJ+=${OBJ_RSP}

@@ -7,7 +7,7 @@
 #include <r_arch.h>
 #include <r_util.h>
 
-#include "v810/v810_disas.h"
+#include "./v810_disas.h"
 
 enum {
 	V810_FLAG_CY = 1,
