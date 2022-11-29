@@ -4866,12 +4866,12 @@ static RList *foreach3list(RCore *core, char type, const char *glob) {
 	case 'e': // @@@e
 		{
 			RBinAddr *entry;
-			RList *elist = r_bin_get_entries (core->bin);
+			const RList *elist = r_bin_get_entries (core->bin);
 			r_list_foreach (elist, iter, entry) {
 				ut64 addr = va? entry->vaddr: entry->paddr;
 				append_item (list, NULL, addr, UT64_MAX);
 			}
-			r_list_free (elist);
+			// NOUAF r_list_free (elist);
 		}
 		break;
 	case 't': // @@@t
