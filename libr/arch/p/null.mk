@@ -1,4 +1,4 @@
-OBJ_NULL=arch_null.o
+OBJ_NULL=p/null/plugin.o
 
 TARGET_NULL=arch_null.${EXT_SO}
 STATIC_OBJ+=${OBJ_NULL}

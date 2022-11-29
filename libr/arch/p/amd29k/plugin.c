@@ -626,7 +626,7 @@ void amd29k_instr_print(char *string, int string_size, ut64 address, amd29k_inst
 
 static char *regs(RArchSession *s) {
 	const char * const p =
-#include "amd29k/regs.h"
+#include "./regs.h"
 	;
 	return strdup (p);
 }

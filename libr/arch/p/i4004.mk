@@ -1,4 +1,4 @@
-OBJ_I4004=arch_i4004.o
+OBJ_I4004=p/i4004/plugin.o
 
 STATIC_OBJ+=${OBJ_I4004}
 TARGET_I4004=arch_i4004.${EXT_SO}

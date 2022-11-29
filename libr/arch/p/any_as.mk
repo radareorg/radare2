@@ -1,4 +1,4 @@
-OBJ_ANYAS=p/as/plugin.o
+OBJ_ANYAS=p/any_as/plugin.o
 
 STATIC_OBJ+=${OBJ_ANYAS}
 TARGET_ANYAS=arch_as.${EXT_SO}

@@ -8,6 +8,7 @@ CFLAGS:=-I.. -I$(LTOP)/asm/arch/include -DR2_PLUGIN_INCORE -Iarch -I$(TOP)/shlr 
 
 .PHONY: pre
 pre: libr_arch.$(EXT_SO) libr_arch.$(EXT_AR)
+	$(MAKE) -C ../asm/arch/arm/v35arm64
 	$(MAKE) -C p
 
 include $(STATIC_ARCH_PLUGINS)

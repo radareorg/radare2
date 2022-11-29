@@ -1215,7 +1215,7 @@ static int (*first_nibble_decode[])(RArch*,RAnalOp*,ut16) = {
 
 static char *regs(RArchSession *s) {
 	const char * const p =
-#include "sh/regs.h"
+#include "./regs.h"
 	;
 	return strdup (p);
 }
@@ -1328,7 +1328,7 @@ RArchPlugin r_arch_plugin_sh = {
 
 #ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_ANAL,
+	.type = R_LIB_TYPE_ARCH,
 	.data = &r_arch_plugin_sh,
 	.version = R2_VERSION
 };

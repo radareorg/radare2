@@ -1,4 +1,4 @@
-OBJ_JDH8=arch_jdh8.o
+OBJ_JDH8=p/jdh8/plugin.o
 
 STATIC_OBJ+=${OBJ_JDH8}
 TARGET_JDH8=arch_jdh8.${EXT_SO}

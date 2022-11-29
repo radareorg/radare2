@@ -8,7 +8,7 @@
 #include <r_types.h>
 #include <r_lib.h>
 #include <r_anal.h>
-#include "rsp/rsp_idec.h"
+#include "./rsp_idec.h"
 
 static RStrBuf *disassemble(RStrBuf *buf_asm, rsp_instruction *r_instr) {
 	int i;

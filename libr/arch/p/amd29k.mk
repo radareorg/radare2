@@ -1,4 +1,4 @@
-OBJ_AMD29K=arch_amd29k.o
+OBJ_AMD29K=p/amd29k/plugin.o
 
 STATIC_OBJ+=${OBJ_AMD29K}
 TARGET_AMD29K=arch_amd29k.${EXT_SO}
