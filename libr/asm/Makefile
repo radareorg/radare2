@@ -8,16 +8,13 @@ CURDIR=p/
 
 include $(TOP)/libr/config.mk
 
-include p/capstone.mk
 LDFLAGS+=${CS_LDFLAGS}
 include $(STOP)/java/deps.mk
-include $(STOP)/capstone.mk
 
 .PHONY: alle plugins
 
 alle:
 	$(MAKE) gperfs
-	$(MAKE) -C arch/arm/v35arm64
 	$(MAKE) plugins
 
 SDB_PATH=../../../shlr/sdb

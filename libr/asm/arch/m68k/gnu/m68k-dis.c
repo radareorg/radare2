@@ -22,7 +22,7 @@
 #include "mybfd.h"
 #include "disas-asm.h"
 // #include "disassemble.h"
-#include "../../arm/gnu/floatformat.h"
+#include "../../../arch/p/arm/gnu/floatformat.h"
 #include "libiberty.h"
 #include "opintl.h"
 // #include "cpu-m68k.h"

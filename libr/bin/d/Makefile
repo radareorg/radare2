@@ -27,7 +27,7 @@ DLLS+=setup4 setupx shell sound spooler storage sysclass sysdetmg
 DLLS+=sysdm sysedit system systhunk tapi tapiaddr
 DLLS+=toolhelp typelib umdm16 user ver whlp16t win32s16
 DLLS+=win87em winaspi winnet16 winoldap winsock winspl16 wpsapd wpsuni
-DLLS+=wpsunire wsasrv
+# XXX DLLS+=wpsunire wsasrv
 DLL_SDB=$(addsuffix .sdb,$(addprefix dll/,$(DLLS)))
 
 all: $(DLL_SDB)
@@ -57,7 +57,7 @@ symstall install-symlink:
 	done
 
 $(DLL_SDB):
-	$(SDB) $@ = < $@.txt
+	-$(SDB) $@ = < $@.txt
 
 uninstall:
 	rm -rf "$P"
