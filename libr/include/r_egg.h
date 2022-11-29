@@ -97,6 +97,7 @@ typedef struct r_egg_t {
 	RList *list;
 	//RList *shellcodes; // XXX is plugins nao?
 	RAsm *rasm;
+	RAnal *anal;/// XXX this is temporary hack until asm can use arch
 	RSyscall *syscall;
 	REggLang lang;
 	Sdb *db;
