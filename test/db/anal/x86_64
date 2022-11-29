@@ -729,19 +729,6 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=raw aac with maps (using a PIC bin)
-FILE=bins/elf/libmagic.so
-ARGS=-n -m 0x80000 -a arm -b 16 -e cfg.bigendian=false
-CMDS=<<EOF
-aac
-e search.in=io.maps
-afl~?
-EOF
-EXPECT=<<EOF
-94
-EOF
-RUN
-
 NAME=aav without vinfun
 FILE=bins/elf/analysis/mipsbe-busybox
 CMDS=<<EOF
@@ -767,19 +754,6 @@ EXPECT=<<EOF
 1
 EOF
 RUN
-
-NAME=aav thumb detection
-FILE=bins/firmware/armthumb.bin
-ARGS=-aarm -b32
-CMDS=<<EOF
-aav
-f
-EOF
-EXPECT=<<EOF
-0x0000000d 4 aav.0x0000000d
-EOF
-RUN
-
 
 NAME=sym is not fcn
 FILE=bins/mach0/mach0-i386
@@ -1697,25 +1671,6 @@ EXPECT=<<EOF
 EOF
 RUN
 
-
-NAME=no string on cbz
-FILE=malloc://8096
-CMDS=<<EOF
-e asm.arch=arm
-e asm.bits=64
-e cfg.bigendian=false
-e emu.str=true
-wv 0x52800015
-wv 0x340000b5 @ 4
-w hello @ 0x18
-pd 2
-EOF
-EXPECT=<<EOF
-            0x00000000      15008052       mov w21, 0
-        ,=< 0x00000004      b5000034       cbz w21, 0x18               ; likely
-EOF
-RUN
-
 NAME=No function
 FILE=malloc://0x50
 CMDS=aftm
@@ -1836,18 +1791,6 @@ EXPECT=<<EOF
 int category
 int fd
 unsigned long request
-EOF
-RUN
-
-NAME=Function definition
-FILE=bins/elf/arm1.bin
-CMDS=<<EOF
-afr @ main
-s 0x000082cc
-pd 1~?*xmalloc
-EOF
-EXPECT=<<EOF
-1
 EOF
 RUN
 

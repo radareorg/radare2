@@ -135,7 +135,9 @@ bool test_file_slurp(void) {
 
 	f = open (test_file, O_WRONLY, S_IRWXU);
 	mu_assert_neq (f, -1, "cannot reopen empty file");
-	write (f, some_words, strlen (some_words));
+	size_t len = strlen (some_words);
+	size_t res = write (f, some_words, len);
+	mu_assert_eq (res, len, "size and length must be the same");
 	close (f);
 
 	content = r_file_slurp (test_file, &s);

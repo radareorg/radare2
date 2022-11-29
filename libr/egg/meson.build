@@ -20,6 +20,8 @@ r_egg = library('r_egg', r_egg_sources,
   dependencies: [
     r_util_dep,
     r_anal_dep,
+    r_search_dep,
+    r_crypto_dep,
     r_arch_dep,
     r_asm_dep,
     r_syscall_dep,

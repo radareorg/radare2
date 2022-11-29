@@ -2308,7 +2308,7 @@ static void search_hit_at(RCore *core, struct search_parameters *param, RCoreAsm
 				free (s);
 			}
 		} else {
-			r_cons_printf ("0x%08"PFMT64x "   # %i: %s\n", hit->addr, hit->len, hit->code);
+			r_cons_printf ("0x%08"PFMT64x "   # %i: %s\n", hit->addr, hit->len, r_str_get (hit->code));
 		}
 		break;
 	}

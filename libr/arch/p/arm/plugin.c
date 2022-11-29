@@ -114,12 +114,29 @@ static int assemble(RAsm *a, RAsmOp *op, const char *buf) {
 }
 #endif
 
+static int archinfo(RArchSession *a, ut32 q) {
+	switch (q) {
+	case R_ANAL_ARCHINFO_DATA_ALIGN:
+	case R_ANAL_ARCHINFO_INV_OP_SIZE:
+	case R_ANAL_ARCHINFO_MAX_OP_SIZE:
+		break;
+	case R_ANAL_ARCHINFO_MIN_OP_SIZE:
+	case R_ANAL_ARCHINFO_ALIGN:
+		if (a->config && a->config->bits == 16) {
+			return 2;
+		}
+		break;
+	}
+	return 4; // XXX
+}
+
 RArchPlugin r_arch_plugin_arm = {
 	.name = "arm",
 	.desc = "custom thumb, arm32 and arm64 assembler",
 	.author = "pancake",
 	.license = "LGPL3",
 	.arch = "arm",
+	.info = archinfo,
 	.bits = R_SYS_BITS_PACK3 (16, 32, 64),
 	.endian = R_SYS_ENDIAN_LITTLE | R_SYS_ENDIAN_BIG,
 	.encode = &encode,
