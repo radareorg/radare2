@@ -657,12 +657,12 @@ static bool print_label(void *user, const void *k, const void *v) {
 	return true;
 }
 
-static int rasm_asm(RAsmState *as, const char *buf, ut64 offset, ut64 len, int bits, int bin, bool use_spp, bool hexwords) {
+static bool rasm_asm(RAsmState *as, const char *buf, ut64 offset, ut64 len, int bits, int bin, bool use_spp, bool hexwords) {
 	RAsmCode *acode;
 	int i, j, ret = 0;
 	r_asm_set_pc (as->a, offset);
 	if (!(acode = r_asm_rasm_assemble (as->a, buf, use_spp))) {
-		return 0;
+		return false;
 	}
 	if (acode->len) {
 		ret = acode->len;
@@ -670,7 +670,7 @@ static int rasm_asm(RAsmState *as, const char *buf, ut64 offset, ut64 len, int b
 			if ((ret = write (1, acode->bytes, acode->len)) != acode->len) {
 				R_LOG_ERROR ("Failed to write buffer");
 				r_asm_code_free (acode);
-				return 0;
+				return false;
 			}
 		} else {
 			int b = acode->len;

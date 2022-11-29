@@ -87,8 +87,6 @@ static RNumCalcValue expr(RNum *num, RNumCalc *nc, int get) {
 	RNumCalcValue left = term (num, nc, get);
 	for (;;) {
 		switch (nc->curr_tok) {
-		// TOKEN (RNCSHL, Nshl);
-		// TOKEN (RNCSHR, Nshr);
 		case RNCSHL: left = Nshl (left, term (num, nc, 1)); break;
 		case RNCSHR: left = Nshr (left, term (num, nc, 1)); break;
 		case RNCROL: left = Nrol (left, term (num, nc, 1)); break;
@@ -147,9 +145,11 @@ static RNumCalcValue prim(RNum *num, RNumCalc *nc, int get) {
 		//double& v = table[nc->string_value];
 		r_str_trim (nc->string_value);
 		v = Nset (r_num_get (num, nc->string_value));
+#if 0
 		if (num && num->nc.errors > 0) {
 			return v;
 		}
+#endif
 		get_token (num, nc);
 		if (nc->curr_tok  == RNCASSIGN) {
 			v = expr (num, nc, 1);
@@ -251,11 +251,16 @@ static int cin_get_num(RNum *num, RNumCalc *nc, RNumCalcValue *n) {
 		}
 	}
 	str[i] = 0;
+#if 1
+	*n = Nset (r_num_get (num, str));
+#else
 	ut64 v = r_num_get (num, str);
 	if (num && num->nc.errors > 0) {
 		return 0;
 	}
 	*n = Nset (v);
+#endif
+
 	if (IS_DIGIT (*str) && strchr (str, '.')) {
 		if (sscanf (str, "%lf", &d) < 1) {
 			return 0;
