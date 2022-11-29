@@ -290,7 +290,7 @@ static bool __dumpSections(RBin *bin, const char *scnname, const char *output, c
 	}
 
 	r_list_foreach (sections, iter, section) {
-		if (!strcmp (scnname, section->name)) {
+		if (r_str_glob (section->name, scnname)) {
 			if (!(buf = malloc (section->size))) {
 				return false;
 			}
