@@ -39,6 +39,7 @@ help () {
 cfg=./plugins.cfg
 
 if [ ! -f "$cfg" ]; then
+  echo "configure-plugins: Copying dist/plugins-cfg/plugins.def.cfg"
   cp -f dist/plugins-cfg/plugins.def.cfg plugins.cfg
 fi
 
