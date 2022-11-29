@@ -216,16 +216,15 @@ static int process_group_1(RArchSession *a, ut8 *data, const Opcode *op) {
 	}
 	immediate = op->operands[1].immediate * op->operands[1].sign;
 
-	if (op->operands[0].type & OT_DWORD
-			|| op->operands[0].type & OT_QWORD) {
-		if (op->operands[1].immediate < 128) {
+	ut32 op0type = op->operands[0].type;
+	if (op0type & OT_DWORD || op0type & OT_QWORD) {
+		if ((st64)op->operands[1].immediate < 128) {
 			data[l++] = 0x83;
-		} else if (op->operands[0].reg != X86R_EAX
-				|| op->operands[0].type & OT_MEMORY) {
+		} else if (op->operands[0].reg != X86R_EAX || op->operands[0].type & OT_MEMORY) {
 			data[l++] = 0x81;
 		}
-	} else if (op->operands[0].type & OT_BYTE) {
-		if (op->operands[1].immediate > 255) {
+	} else if (op0type & OT_BYTE) {
+		if ((st64)op->operands[1].immediate > 255) {
 			R_LOG_ERROR ("Immediate exceeds bounds");
 			return -1;
 		}
@@ -268,8 +267,7 @@ static int process_group_1(RArchSession *a, ut8 *data, const Opcode *op) {
 	}
 
 	data[l++] = immediate;
-	if ((immediate > 127 || immediate < -128)
-			&& (op->operands[0].type & (OT_DWORD | OT_QWORD))) {
+	if ((immediate > 127 || immediate < -128) && (op->operands[0].type & (OT_DWORD | OT_QWORD))) {
 		data[l++] = immediate >> 8;
 		data[l++] = immediate >> 16;
 		data[l++] = immediate >> 24;
@@ -4670,7 +4668,8 @@ static bool is_st_register(const char *token) {
 	return false;
 }
 
-static ut64 getnum(RArchSession *a, const char *s) {
+static ut64 getnum(RArchSession *a, const char *s, bool *berr) {
+	*berr = false;
 	if (!s) {
 		return 0;
 	}
@@ -4682,11 +4681,14 @@ static ut64 getnum(RArchSession *a, const char *s) {
 	const char *err = NULL;
 	ut64 res = r_num_calc (a->arch->num, s, &err);
 	if (err) {
+		*berr = true;
 		return UT64_MAX;
 	}
+#if 0
 	if (res == 0 && *s != '0') {
 		return UT64_MAX;
 	}
+#endif
 	return res;
 }
 
@@ -4815,7 +4817,11 @@ static Register parseReg(RArchSession *a, const char *str, size_t *pos, ut32 *ty
 			R_LOG_ERROR ("Expected register number '%s'", str + *pos);
 			return X86R_UNDEFINED;
 		}
-		reg = getnum (a, token + *pos);
+		bool berr = false;
+		reg = getnum (a, token + *pos, &berr);
+		if (berr) {
+			return X86R_UNDEFINED;
+		}
 		// st and mm go up to 7, xmm up to 15
 		if ((reg > 15) || ((*type & (OT_FPUREG | OT_MMXREG) & ~OT_REGALL) && reg > 7))   {
 			R_LOG_ERROR ("Too large register index!");
@@ -4850,12 +4856,16 @@ static void parse_segment_offset(RArchSession *a, const char *str, size_t *pos, 
 			op->offset_sign = -1;
 			nextpos ++;
 		}
-		op->scale[reg_index] = getnum (a, str + nextpos);
+		bool berr;
+		op->scale[reg_index] = getnum (a, str + nextpos, &berr);
+		if (berr) {
+			return;
+		}
 		op->offset = op->scale[reg_index];
 	}
 }
 
-// Parse operand
+// Parse operand, should return bool. but its returning nextpos
 static int parseOperand(RArchSession *a, const char *str, Operand *op, bool isrepop) {
 	size_t pos, nextpos = 0;
 	x86newTokenType last_type;
@@ -5019,7 +5029,11 @@ static int parseOperand(RArchSession *a, const char *str, Operand *op, bool isre
 				if (bracket) {
 					*bracket = 0;
 				}
-				st64 read = getnum (a, tmp);
+				bool berr;
+				st64 read = getnum (a, tmp, &berr);
+				if (berr) {
+					return -1;
+				}
 				if (bracket) {
 					*bracket = ']';
 				}
@@ -5112,7 +5126,11 @@ static int parseOperand(RArchSession *a, const char *str, Operand *op, bool isre
 				op->sign = -1;
 				str = p++;
 			}
-			op->immediate = getnum (a, str);
+			bool berr;
+			op->immediate = getnum (a, str, &berr);
+			if (berr) {
+				return -1;
+			}
 		} else if (op->reg < X86R_UNDEFINED) {
 			strncpy (op->rep_op, str, MAX_REPOP_LENGTH - 1);
 			op->rep_op[MAX_REPOP_LENGTH - 1] = '\0';
@@ -5122,25 +5140,25 @@ static int parseOperand(RArchSession *a, const char *str, Operand *op, bool isre
 		// We don't know the size, so let's just set no size flag.
 		op->type = OT_CONSTANT;
 		op->sign = 1;
-		char *p = strchr (str, '-');
+		const char *p = strchr (str, '-');
 		if (p) {
 			op->sign = -1;
-			str = p++;
+			str = ++p;
 		}
-		ut64 n = getnum (a, str);
-		if (n == UT64_MAX) {
+		bool berr;
+		ut64 n = getnum (a, str, &berr);
+		if (berr) {
 			return -1;
 		}
 		op->immediate = n;
 	}
-
 	return nextpos;
 }
 
 static int parseOpcode(RArchSession *a, const char *op, Opcode *out) {
 	out->has_bnd = false;
 	bool isrepop = false;
-	if (!strncmp (op, "bnd ", 4)) {
+	if (r_str_startswith (op, "bnd ")) {
 		out->has_bnd = true;
 		op += 4;
 	}
@@ -5168,7 +5186,7 @@ static int parseOpcode(RArchSession *a, const char *op, Opcode *out) {
 		isrepop = true;
 	}
 	if (parseOperand (a, args, &(out->operands[0]), isrepop) == -1) {
-		return 1;
+		return -1;
 	}
 	out->operands_count = 1;
 	while (out->operands_count < MAX_OPERANDS) {
@@ -5178,7 +5196,7 @@ static int parseOpcode(RArchSession *a, const char *op, Opcode *out) {
 		}
 		args++;
 		if (parseOperand (a, args, &(out->operands[out->operands_count]), isrepop) == -1) {
-			return 1;
+			return -1;
 		}
 		out->operands_count++;
 	}
@@ -5199,7 +5217,7 @@ static int oprep(RArchSession *a, ut8 *data, const Opcode *op) {
 		data[l++] = 0xf2;
 	}
 	Opcode instr = {0};
-	if (parseOpcode (a, op->operands[0].rep_op, &instr)) {
+	if (parseOpcode (a, op->operands[0].rep_op, &instr) == -1) {
 		return -1;
 	}
 
@@ -5252,8 +5270,7 @@ R_API int x86nz_assemble(RArchSession *a, RAnalOp *ao, const char *str) {
 
 	// XXX remove fixed size buffers!
 	char op[128];
-	strncpy (op, str, sizeof (op) - 1);
-	op[sizeof (op) - 1] = '\0';
+	r_str_ncpy (op, str, sizeof (op) - 1);
 	if (parseOpcode (a, op, &instr) == -1) {
 		return -1;
 	}
