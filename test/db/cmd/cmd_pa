@@ -1,5 +1,6 @@
 # x86.nz no longer have access to RFlag/RNum
 NAME=asm/callflag
+BROKEN=1
 FILE=-
 CMDS=<<EOF
 e asm.arch=x86
