@@ -11241,9 +11241,17 @@ static void cmd_anal_aad(RCore *core, const char *input) {
 }
 
 static bool archIsThumbable(RCore *core) {
-	RAsm *as = core ? core->rasm : NULL;
-	if (as && as->cur && as->config->bits <= 32 && as->cur->name) {
-		return strstr (as->cur->name, "arm");
+	RArchConfig *ac = R_UNWRAP4 (core, anal, arch, cfg);
+	if (ac && ac->bits <= 32) {
+		// XXX for some reason this is null
+		if (!strcmp (ac->arch, "arm")) {
+			return true;
+		}
+		if (core->anal->cur) {
+			if (!strcmp (core->anal->cur->arch, "arm")) {
+				return true;
+			}
+		}
 	}
 	return false;
 }
@@ -11251,7 +11259,7 @@ static bool archIsThumbable(RCore *core) {
 static void _CbInRangeAav(RCore *core, ut64 from, ut64 to, int vsize, void *user) {
 	bool asterisk = user;
 	int arch_align = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_ALIGN);
-	bool vinfun = r_config_get_i (core->config, "anal.vinfun");
+	bool vinfun = r_config_get_b (core->config, "anal.vinfun");
 	int searchAlign = r_config_get_i (core->config, "search.align");
 	int align = (searchAlign > 0)? searchAlign: arch_align;
 	if (align > 1) {

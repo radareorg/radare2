@@ -27,7 +27,7 @@ DLLS+=setup4 setupx shell sound spooler storage sysclass sysdetmg
 DLLS+=sysdm sysedit system systhunk tapi tapiaddr
 DLLS+=toolhelp typelib umdm16 user ver whlp16t win32s16
 DLLS+=win87em winaspi winnet16 winoldap winsock winspl16 wpsapd wpsuni
-# XXX DLLS+=wpsunire wsasrv
+DLLS+=wpsunire wsasrv
 DLL_SDB=$(addsuffix .sdb,$(addprefix dll/,$(DLLS)))
 
 all: $(DLL_SDB)
@@ -35,7 +35,7 @@ all: $(DLL_SDB)
 clean:
 	rm -f dll/*.sdb
 
-.PHONY: all clean install install-symlink symstall
+.PHONY: all clean install install-symlink symstall uninstall
 
 FORMATS=dex macho elf32 elf64 elf_enums pe32 trx mz zip
 

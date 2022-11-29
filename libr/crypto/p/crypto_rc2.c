@@ -168,12 +168,10 @@ static void rc2_dcrypt(struct rc2_state *state, const ut8 *inbuf, ut8 *outbuf, i
 }
 
 static void rc2_crypt(struct rc2_state *state, const ut8 *inbuf, ut8 *outbuf, int buflen) {
-	int i;
-	char data_block[BLOCK_SIZE] = {0};
-	int idx = 0;
-
 	char crypted_block[BLOCK_SIZE] = {0};
+	char data_block[BLOCK_SIZE] = {0};
 	char *ptr = (char *) outbuf;
+	int i, idx = 0;
 
 	// divide it into blocks of BLOCK_SIZE
 	for (i = 0; i < buflen; i++) {
@@ -187,12 +185,15 @@ static void rc2_crypt(struct rc2_state *state, const ut8 *inbuf, ut8 *outbuf, in
 		}
 	}
 
-	if (idx % 8) {
-		while (idx % 8) {
-			data_block[idx++] = 0;
+	size_t mod = idx % BLOCK_SIZE;
+	if (mod) {
+		while (idx % BLOCK_SIZE) {
+			mod = idx % BLOCK_SIZE;
+			data_block[mod] = 0;
+			idx++;
 		}
 		rc2_crypt8 (state, (const ut8 *) data_block, (ut8 *) crypted_block);
-		strncpy (ptr, crypted_block, 8);
+		r_str_ncpy (ptr, crypted_block, BLOCK_SIZE);
 	}
 }
 
