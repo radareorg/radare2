@@ -301,7 +301,7 @@ R_API RASN1String *r_asn1_stringify_oid(const ut8* buffer, ut32 length) {
 				return newstr (X509OIDList[i].name);
 			}
 		}
-		++i;
+		i++;
 	} while (X509OIDList[i].oid && X509OIDList[i].name);
 	RASN1String* asn1str = r_asn1_create_string (str, true, ASN1_OID_LEN);
 	if (!asn1str) {

@@ -24,7 +24,8 @@ R_API int r_print_pack7bit(const char *src, char *dest) {
 		sprintf (tmp, "%x", (ch1 & 0x0F));
 		dest[j++] = tmp[0];
 		dest[j++] = '\0';
-		if (7 == ++shift) {
+		shift++;
+		if (7 == shift) {
 			shift = 0;
 			i++;
 		}

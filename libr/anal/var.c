@@ -321,7 +321,8 @@ R_API RList *r_anal_var_deserialize(const char *ser) {
 		if ((!v->delta && nxt == ser) || *nxt != ':') {
 			goto bad_serial;
 		}
-		ser = ++nxt;
+		nxt++;
+		ser = nxt;
 
 		// name
 		int i;
@@ -335,7 +336,8 @@ R_API RList *r_anal_var_deserialize(const char *ser) {
 		if (!v->name) {
 			goto bad_serial;
 		}
-		ser = ++nxt;
+		nxt++;
+		ser = nxt;
 
 		// type
 		for (i = 0; *nxt && *nxt != ','; i++) {

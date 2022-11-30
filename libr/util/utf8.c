@@ -635,7 +635,7 @@ R_API char *r_utf16_to_utf8_l(const wchar_t *wc, int len) {
 	WideCharToMultiByte (CP_UTF8, 0, wc, len, rutf8, csize, NULL, NULL);
 #if 0
 	if ((csize = WideCharToMultiByte (CP_UTF8, 0, wc, len, NULL, 0, NULL, NULL))) {
-		++csize;
+		csize++;
 		if ((rutf8 = malloc (csize))) {
 			WideCharToMultiByte (CP_UTF8, 0, wc, len, rutf8, csize, NULL, NULL);
 			if (len != -1) {
@@ -676,7 +676,7 @@ R_API char *r_utf8_to_acp_l(const char *str, int len) {
 	int wcsize, csize;
 	if ((wcsize = MultiByteToWideChar (CP_UTF8, 0, str, len, NULL, 0))) {
 		wchar_t *rutf16;
-		++wcsize;
+		wcsize++;
 		if ((rutf16 = (wchar_t *)calloc (wcsize, sizeof (wchar_t)))) {
 			MultiByteToWideChar (CP_UTF8, 0, str, len, rutf16, wcsize);
 			if (len != -1) {

@@ -202,7 +202,8 @@ static void parse_grep_expression(const char *str) {
 					ptr++;
 				}
 				if (*ptr == ':') {
-					grep->sort_row = atoi (++ptr);
+					ptr++;
+					grep->sort_row = atoi (ptr);
 					ptr++;
 				}
 				break;
@@ -211,7 +212,8 @@ static void parse_grep_expression(const char *str) {
 				grep->amp = 1;
 				break;
 			case '<':
-				grep->zoom = atoi (++ptr);
+				ptr++;
+				grep->zoom = atoi (ptr);
 				//grep->zoomy = atoi (arg);
 				break;
 			case '+':

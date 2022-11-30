@@ -275,7 +275,7 @@ R_API void *r_skiplist_get_n(RSkipList *list, int n) {
 		if (count == n) {
 			return data;
 		}
-		++count;
+		count++;
 	}
 	return NULL;
 }
