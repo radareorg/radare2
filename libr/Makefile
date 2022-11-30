@@ -99,7 +99,7 @@ _libr.${EXT_AR}: .libr
 
 libr.${EXT_AR}: $(wildcard */libr_*.${EXT_AR}) ../shlr/libr_shlr.${EXT_AR}
 	ar -rcT libr.${EXT_AR} $^
-	du -hs new.a
+	du -hs libr.${EXT_AR}
 
 # this is an alternative implementation using only ar -x, 
 # its also possible with `libtool -static -o new.a old1.a old2.a`

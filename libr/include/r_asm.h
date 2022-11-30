@@ -159,20 +159,12 @@ R_API void r_asm_op_set_buf(RAsmOp *op, const ut8 *str, int len);
 R_API ut8 *r_asm_op_get_buf(RAsmOp *op);
 
 /* plugin pointers */
-extern RAsmPlugin r_asm_plugin_arm_as;
-extern RAsmPlugin r_asm_plugin_arm;
 extern RAsmPlugin r_asm_plugin_null;
-extern RAsmPlugin r_asm_plugin_h8300;
-extern RAsmPlugin r_asm_plugin_nios2;
-extern RAsmPlugin r_asm_plugin_pic;
+extern RAsmPlugin r_asm_plugin_arm_as;
 extern RAsmPlugin r_asm_plugin_ppc_as;
 extern RAsmPlugin r_asm_plugin_sparc_gnu;
-extern RAsmPlugin r_asm_plugin_tricore;
-extern RAsmPlugin r_asm_plugin_v810;
-extern RAsmPlugin r_asm_plugin_v850;
 extern RAsmPlugin r_asm_plugin_x86_as;
 extern RAsmPlugin r_asm_plugin_x86_nasm;
-extern RAsmPlugin r_asm_plugin_vasm;
 
 #endif
 

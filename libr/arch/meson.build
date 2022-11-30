@@ -11,6 +11,7 @@ r_arch_sources = [
   'p/arm/armass.c',
   'p/arm/armass64.c',
   'p/any_as/plugin.c',
+  'p/any_vasm/plugin.c',
   'p/i4004/plugin.c',
   'p/amd29k/plugin.c',
   'p/jdh8/plugin.c',
