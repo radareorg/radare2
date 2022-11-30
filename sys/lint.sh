@@ -10,6 +10,7 @@ cd "$(dirname $0)"/..
 # NAME=use void on functions without parameters
 (git grep -e ^R_API -e ^static libr | grep -e '[a-z]() {' -e '[a-z]();') && exit 1
 
+(git grep '|Usage' libr) && exit 1
 # (git grep -e '_[a-z][a-z](' libr | grep -v '{'| grep c:) && exit 1
 # TODO  : also check for '{0x'
 (git grep '\t{"' libr | grep -v strcmp | grep -v format | grep -v '{",' | grep -v esil | grep c:) && exit 1
