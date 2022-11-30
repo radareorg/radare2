@@ -8,6 +8,8 @@ anal_plugins = [ 'null' ]
 arch_plugins = [ 'null',
   'sh',
   'arm',
+  'any_as',
+  'any_vasm',
   'jdh8',
   'riscv',
   'i4004',
