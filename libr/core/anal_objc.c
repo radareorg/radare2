@@ -82,7 +82,7 @@ static void objc_analyze(RCore *core) {
 	R_LOG_INFO ("Analyzing code to find selref references");
 	r_core_cmd0 (core, "aar");
 	if (!strcmp ("arm", r_config_get (core->config, "asm.arch"))) {
-		const bool emu_lazy = r_config_get_i (core->config, "emu.lazy");
+		const bool emu_lazy = r_config_get_b (core->config, "emu.lazy");
 		r_config_set_b (core->config, "emu.lazy", true);
 		r_core_cmd0 (core, "aae");
 		r_config_set_b (core->config, "emu.lazy", emu_lazy);
