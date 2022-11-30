@@ -745,6 +745,8 @@ typedef struct r_anal_esil_dfg_t {
 	RGraphNode *cur;
 	RGraphNode *old;
 	REsil *esil;
+	bool use_map_info;
+	bool use_maps;
 	bool malloc_failed;
 } RAnalEsilDFG;
 
@@ -1620,12 +1622,12 @@ R_API SdbGperf *r_anal_get_gperf_cc(const char *k);
 R_API SdbGperf *r_anal_get_gperf_types(const char *k);
 
 R_API RAnalEsilDFGNode *r_anal_esil_dfg_node_new(RAnalEsilDFG *edf, const char *c);
-R_API RAnalEsilDFG *r_anal_esil_dfg_new(RAnal *anal);
+R_API RAnalEsilDFG *r_anal_esil_dfg_new(RAnal *anal, bool use_map_info, bool use_maps);
 R_API void r_anal_esil_dfg_free(RAnalEsilDFG *dfg);
-R_API RAnalEsilDFG *r_anal_esil_dfg_expr(RAnal *anal, RAnalEsilDFG *dfg, const char *expr);
+R_API RAnalEsilDFG *r_anal_esil_dfg_expr(RAnal *anal, RAnalEsilDFG *dfg, const char *expr, bool use_map_info, bool use_maps);
 R_API void r_anal_esil_dfg_fold_const(RAnal *anal, RAnalEsilDFG *dfg);
 R_API RStrBuf *r_anal_esil_dfg_filter(RAnalEsilDFG *dfg, const char *reg);
-R_API RStrBuf *r_anal_esil_dfg_filter_expr(RAnal *anal, const char *expr, const char *reg);
+R_API RStrBuf *r_anal_esil_dfg_filter_expr(RAnal *anal, const char *expr, const char *reg, bool use_map_info, bool use_maps);
 R_API bool r_anal_esil_dfg_reg_is_const(RAnalEsilDFG *dfg, const char *reg);
 R_API RList *r_anal_types_from_fcn(RAnal *anal, RAnalFunction *fcn);
 

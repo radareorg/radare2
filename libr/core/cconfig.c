@@ -4160,6 +4160,8 @@ R_API int r_core_config_init(RCore *core) {
 	SETBPREF ("esil.stats", "false", "statistics from ESIL emulation stored in sdb");
 	SETBPREF ("esil.nonull", "false", "prevent memory read, memory write at null pointer");
 	SETCB ("esil.mdev.range", "", &cb_mdevrange, "specify a range of memory to be handled by cmd.esil.mdev");
+	SETBPREF ("esil.dfg.mapinfo", "false", "use mapinfo for esil dfg");
+	SETBPREF ("esil.dfg.maps", "false", "set ro maps for esil dfg");
 
 	/* json encodings */
 	n = NODECB ("cfg.json.str", "none", &cb_jsonencoding);
