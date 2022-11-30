@@ -860,7 +860,7 @@ static int cmd_help(void *data, const char *input) {
 		}
 		switch (input[1]) {
 		case '?':
-			r_cons_printf ("|Usage: ?v[id][ num]  # Show value\n"
+			r_cons_printf ("Usage: ?v[id][ num]  # Show value\n"
 				"|?vx number  -> show 8 digit padding in hex\n"
 				"|?vi1 200    -> 1 byte size value (char)\n"
 				"|?vi2 0xffff -> 2 byte size value (short)\n"

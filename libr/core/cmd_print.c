@@ -5259,7 +5259,7 @@ static bool cmd_pi(RCore *core, const char *input, int len, int l, ut8 *block) {
 	}
 	switch (ch) {
 	case '?':
-		// r_cons_printf ("|Usage: pi[defj] [num]\n");
+		// r_cons_printf ("Usage: pi[defj] [num]\n");
 		r_core_cmd_help (core, help_msg_pi);
 		break;
 	case 'u': // "piu" disasm until given optype
@@ -5949,7 +5949,7 @@ static int cmd_print(void *data, const char *input) {
 		}
 		if (input[1] == 'e') { // "pae"
 			if (input[2] == '?') {
-				r_cons_printf ("|Usage: pae [asm]       print ESIL expression of the given assembly expression\n");
+				r_cons_printf ("Usage: pae [asm]       print ESIL expression of the given assembly expression\n");
 			} else {
 				int printed = 0;
 				int bufsz;
@@ -5979,7 +5979,7 @@ static int cmd_print(void *data, const char *input) {
 			}
 		} else if (input[1] == 'D') { // "paD"
 			if (input[2] == '?') {
-				r_cons_printf ("|Usage: paD [hex]       print assembly expression from hexpairs and show hexpairs\n");
+				r_cons_printf ("Usage: paD [hex]       print assembly expression from hexpairs and show hexpairs\n");
 			} else {
 				r_core_cmdf (core, "pdi@x:%s", input + 2);
 			}
@@ -5987,7 +5987,7 @@ static int cmd_print(void *data, const char *input) {
 			switch (input[2]) {
 			case 'e': // "pade"
 				if (input[3] == '?') {
-					r_cons_printf ("|Usage: pade [hex]       print ESIL expression from hexpairs\n");
+					r_cons_printf ("Usage: pade [hex]       print ESIL expression from hexpairs\n");
 				} else {
 					int printed = 0;
 					int bufsz;
@@ -6023,7 +6023,7 @@ static int cmd_print(void *data, const char *input) {
 				r_core_cmd_help_match (core, help_msg_pa, "pad", false);
 				break;
 			default:
-				r_cons_printf ("|Usage: pa[edD] [asm|hex]  print (dis)assembled\n");
+				r_cons_printf ("Usage: pa[edD] [asm|hex]  print (dis)assembled\n");
 				break;
 			}
 		} else if (input[1] == '?') {
@@ -6053,7 +6053,7 @@ static int cmd_print(void *data, const char *input) {
 	break;
 	case 'b': { // "pb"
 		if (input[1] == '?') {
-			r_cons_printf ("|Usage: p[bB] [len] ([skip])  ; see also pB and pxb\n");
+			r_cons_printf ("Usage: p[bB] [len] ([skip])  ; see also pB and pxb\n");
 		} else if (l != 0) {
 			int from, to;
 			const int size = len * 8;
@@ -6098,7 +6098,7 @@ static int cmd_print(void *data, const char *input) {
 		break;
 	case 'B': { // "pB"
 		if (input[1] == '?') {
-			r_cons_printf ("|Usage: p[bB] [len]       bitstream of N bytes\n");
+			r_cons_printf ("Usage: p[bB] [len]       bitstream of N bytes\n");
 		} else if (l != 0) {
 			int size;
 			char *buf;
@@ -6145,7 +6145,7 @@ static int cmd_print(void *data, const char *input) {
 			}
 			break;
 		case '?': // "pi?"
-			r_cons_printf ("|Usage: p[iI][df] [len]   print N instructions/bytes"
+			r_cons_printf ("Usage: p[iI][df] [len]   print N instructions/bytes"
 				"(f=func) (see pi? and pdi)\n");
 			break;
 		default:
@@ -6953,7 +6953,7 @@ static int cmd_print(void *data, const char *input) {
 		break;
 	case 'm': // "pm"
 		if (input[1] == '?') {
-			r_cons_printf ("|Usage: pm [file|directory]\n"
+			r_cons_printf ("Usage: pm [file|directory]\n"
 				"| r_magic will use given file/dir as reference\n"
 				"| output of those magic can contain expressions like:\n"
 				"|   foo@0x40   # use 'foo' magic file on address 0x40\n"
@@ -6976,7 +6976,7 @@ static int cmd_print(void *data, const char *input) {
 		break;
 	case 'u': // "pu"
 		if (input[1] == '?') {
-			r_cons_printf ("|Usage: pu[w] [len]       print N url"
+			r_cons_printf ("Usage: pu[w] [len]       print N url"
 				"encoded bytes (w=wide)\n");
 		} else {
 			if (l > 0) {
@@ -7768,7 +7768,7 @@ static int cmd_print(void *data, const char *input) {
 	case '2': // "p2"
 		if (l) {
 			if (input[1] == '?') {
-				r_cons_printf ("|Usage: p2 [number of bytes representing tiles]\n"
+				r_cons_printf ("Usage: p2 [number of bytes representing tiles]\n"
 					"NOTE: Only full tiles will be printed\n");
 			} else {
 				RConsContext *c = core->cons->context;
@@ -7950,7 +7950,7 @@ static int cmd_print(void *data, const char *input) {
 		break;
 	case 'K': // "pK"
 		if (input[1] == '?') {
-			r_cons_printf ("|Usage: pK [len]       print key in randomart mosaic\n");
+			r_cons_printf ("Usage: pK [len]       print key in randomart mosaic\n");
 		} else if (l > 0) {
 			len = len > core->blocksize? core->blocksize: len;
 			int w, h;
