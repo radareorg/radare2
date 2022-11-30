@@ -2,6 +2,7 @@
 
 #include <string.h>
 #include "sdb/ls.h"
+#include "sdb/heap.h"
 
 #if 0
   1 128= 7s / 32
@@ -154,7 +155,7 @@ SDB_API void ls_delete(SdbList *list, SdbListIter *iter) {
 		list->free (iter->data);
 		iter->data = NULL;
 	}
-	free (iter);
+	sdb_gh_free (iter);
 }
 
 SDB_API bool ls_delete_data(SdbList *list, void *ptr) {
@@ -209,7 +210,7 @@ SDB_API void ls_free(SdbList *list) {
 	}
 	ls_destroy (list);
 	list->free = NULL;
-	free (list);
+	sdb_gh_free (list);
 }
 
 SDB_API SdbListIter *ls_append(SdbList *list, void *data) {
@@ -269,7 +270,7 @@ SDB_API void *ls_pop(SdbList *list) {
 				list->tail->n = NULL;
 			}
 			data = iter->data;
-			free (iter);
+			sdb_gh_free (iter);
 			list->length--;
 		}
 		return data;
@@ -359,7 +360,7 @@ SDB_API void *ls_pop_head(SdbList *list) {
 				list->head->p = NULL;
 			}
 			data = iter->data;
-			free (iter);
+			sdb_gh_free (iter);
 		}
 		list->length--;
 		return data;
@@ -388,7 +389,7 @@ SDB_API int ls_del_n(SdbList *list, int n) {
 				it->p->n = it->n;
 				it->n->p = it->p;
 			}
-			free (it);
+			sdb_gh_free (it);
 			list->length--;
 			return true;
 		}

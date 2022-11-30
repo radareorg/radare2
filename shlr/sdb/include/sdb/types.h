@@ -1,5 +1,5 @@
-#ifndef TYPES_H
-#define TYPES_H
+#ifndef SDB_TYPES_H
+#define SDB_TYPES_H
 
 #include <sys/types.h>
 #include <stdbool.h>
@@ -96,13 +96,13 @@ extern "C" {
 // TODO: deprecate R_NEW
 #ifndef R_NEW
 //it means we are within sdb
-#define R_NEW(x) (x*)malloc(sizeof(x))
+#define R_NEW(x) (x*)sdb_gh_malloc(sizeof(x))
 #endif
 #ifndef R_NEW0
-#define R_NEW0(x) (x*)calloc(1, sizeof(x))
+#define R_NEW0(x) (x*)sdb_gh_calloc(1, sizeof(x))
 #endif
 #ifndef R_FREE
-#define R_FREE(x) { free (x); x = NULL; }
+#define R_FREE(x) { sdb_gh_free (x); x = NULL; }
 #endif
 #define UT32_MAX ((ut32)0xffffffff)
 #define UT64_MAX ((ut64)(0xffffffffffffffffLL))
@@ -152,6 +152,8 @@ static inline void ut32_unpack(char s[4], ut32 *u) {
 	result += (ut8) s[0];
 	*u = result;
 }
+
+SDB_API char *sdb_strdup(const char *s);
 
 #ifdef __cplusplus
 }

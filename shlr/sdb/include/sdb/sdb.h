@@ -18,6 +18,7 @@ extern "C" {
 #include "cdb_make.h"
 #include "version.h"
 #include "rangstr.h"
+#include "heap.h"
 
 /* Key value sizes */
 #define SDB_MIN_VALUE 1
@@ -163,6 +164,7 @@ SDB_API SdbList *sdb_foreach_list(Sdb* s, bool sorted);
 SDB_API SdbList *sdb_foreach_list_filter(Sdb* s, SdbForeachCallback filter, bool sorted);
 SDB_API SdbList *sdb_foreach_match(Sdb* s, const char *expr, bool sorted);
 
+SDB_API int sdb_main(int argc, const char **argv);
 SDB_API bool sdb_query(Sdb* s, const char *cmd);
 SDB_API int sdb_queryf(Sdb* s, const char *fmt, ...);
 SDB_API int sdb_query_lines(Sdb *s, const char *cmd);

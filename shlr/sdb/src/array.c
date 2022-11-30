@@ -98,10 +98,10 @@ SDB_API char *sdb_array_get(Sdb *s, const char *key, int idx, ut32 *cas) {
 	if (!idx) {
 		n = strchr ((char *)str, SDB_RS);
 		if (!n) {
-			return strdup (str);
+			return sdb_strdup (str);
 		}
 		len = n - str;
-		o = (char *)malloc (len + 1);
+		o = (char *)sdb_gh_malloc (len + 1);
 		if (!o) {
 			return NULL;
 		}
@@ -116,10 +116,10 @@ SDB_API char *sdb_array_get(Sdb *s, const char *key, int idx, ut32 *cas) {
 	}
 	n = strchr ((char *)p, SDB_RS);
 	if (!n) {
-		return strdup (p);
+		return sdb_strdup (p);
 	}
 	len = n - p;
-	o = (char *)malloc (len + 1);
+	o = (char *)sdb_gh_malloc (len + 1);
 	if (o) {
 		memcpy (o, p, len);
 		o[len] = 0;
@@ -155,7 +155,7 @@ SDB_API int sdb_array_insert(Sdb *s, const char *key, int idx, const char *val, 
 	if (SZT_ADD_OVFCHK (lval, lstr_tmp) || SZT_ADD_OVFCHK (lval + lstr_tmp, 2)) {
 		return false;
 	}
-	x = (char *)malloc (lval + lstr_tmp + 2);
+	x = (char *)sdb_gh_malloc (lval + lstr_tmp + 2);
 	if (!x) {
 		return false;
 	}
@@ -169,9 +169,9 @@ SDB_API int sdb_array_insert(Sdb *s, const char *key, int idx, const char *val, 
 		x[lval] = SDB_RS;
 		memcpy (x + lval + 1, str, lstr + 1);
 	} else {
-		char *nstr = (char *)malloc (lstr + 1);
+		char *nstr = (char *)sdb_gh_malloc (lstr + 1);
 		if (!nstr) {
-			free (x);
+			sdb_gh_free (x);
 			return false;
 		}
 		memcpy (nstr, str, lstr + 1);
@@ -187,11 +187,11 @@ SDB_API int sdb_array_insert(Sdb *s, const char *key, int idx, const char *val, 
 			x[lnstr + lval + 1] = SDB_RS;
 			// TODO: this strlen hurts performance
 			memcpy (x + lval + 2 + lnstr, ptr, lptr); //strlen (ptr)+1);
-			free (nstr);
+			sdb_gh_free (nstr);
 		} else {
 			// this is not efficient
-			free (nstr);
-			free (x);
+			sdb_gh_free (nstr);
+			sdb_gh_free (x);
 			// fallback for empty buckets
 			return sdb_array_set (s, key, idx, val, cas);
 		}
@@ -246,7 +246,7 @@ SDB_API int sdb_array_add_sorted(Sdb *s, const char *key, const char *val, ut32 
 	if (i > 1) {
 		qsort (vals, i, sizeof (ut64*), cstring_cmp);
 	}
-	nstr_p = nstr = (char *)malloc (lstr + lval + 3);
+	nstr_p = nstr = (char *)sdb_gh_malloc (lstr + lval + 3);
 	if (!nstr) {
 		return 1;
 	}
@@ -279,7 +279,7 @@ SDB_API int sdb_array_add_sorted(Sdb *s, const char *key, const char *val, ut32 
 		*(--nstr_p) = '\0';
 	}
 	sdb_set_owned (s, key, nstr, cas);
-	free (vals);
+	sdb_gh_free (vals);
 	return 0;
 }
 
@@ -318,7 +318,7 @@ SDB_API bool sdb_array_append(Sdb *s, const char *key, const char *val,
 	cas = kas;
 	if (str && *str && str_len > 0) {
 		int val_len = strlen (val);
-		char *newval = (char *)malloc (str_len + val_len + 2);
+		char *newval = (char *)sdb_gh_malloc (str_len + val_len + 2);
 		if (!newval) {
 			return false;
 		}
@@ -356,7 +356,7 @@ SDB_API int sdb_array_set(Sdb *s, const char *key, int idx, const char *val,
 	lval = strlen (val);
 	if (idx > len) {
 		int ret, i, ilen = idx-len;
-		char *newkey = (char *)malloc (ilen + lval + 1);
+		char *newkey = (char *)sdb_gh_malloc (ilen + lval + 1);
 		if (!newkey) {
 			return 0;
 		}
@@ -365,14 +365,14 @@ SDB_API int sdb_array_set(Sdb *s, const char *key, int idx, const char *val,
 		}
 		memcpy (newkey + i, val, lval + 1);
 		ret = sdb_array_insert (s, key, -1, newkey, cas);
-		free (newkey);
+		sdb_gh_free (newkey);
 		return ret;
 	}
 	//lstr = strlen (str);
 	ptr = (char*)Aindexof (str, idx);
 	if (ptr) {
 		int diff = ptr - str;
-		char *nstr = (char *)malloc (lstr + lval + 2);
+		char *nstr = (char *)sdb_gh_malloc (lstr + lval + 2);
 		if (!nstr) {
 			return false;
 		}
@@ -386,7 +386,7 @@ SDB_API int sdb_array_set(Sdb *s, const char *key, int idx, const char *val,
 			strcpy (ptr + lval + 1, usr);
 		}
 		int ret = sdb_set (s, key, nstr, cas);
-		free (nstr);
+		sdb_gh_free (nstr);
 		return ret;
 	}
 	return 0;
@@ -458,7 +458,7 @@ SDB_API int sdb_array_delete(Sdb *s, const char *key, int idx, ut32 cas) {
 	char *p, *n, *str = sdb_get (s, key, 0);
 	p = str;
 	if (!str || !*str) {
-		free (str);
+		sdb_gh_free (str);
 		return 0;
 	}
 	if (idx < 0) {
@@ -469,7 +469,7 @@ SDB_API int sdb_array_delete(Sdb *s, const char *key, int idx, ut32 cas) {
 		if ( (n = strchr (p, SDB_RS)) ) {
 			p = n + 1;
 		} else {
-			free (str);
+			sdb_gh_free (str);
 			return 0;
 		}
 	}
@@ -558,7 +558,7 @@ SDB_API bool sdb_array_prepend (Sdb *s, const char *key, const char *val, ut32 c
 	cas = kas;
 	if (str && *str) {
 		int val_len = strlen (val);
-		char *newval = (char *)malloc (str_len + val_len + 2);
+		char *newval = (char *)sdb_gh_malloc (str_len + val_len + 2);
 		if (!newval) {
 			return false;
 		}
@@ -587,7 +587,7 @@ SDB_API ut64 sdb_array_pop_num(Sdb *s, const char *key, ut32 *cas) {
 		*cas = 0;
 	}
 	ret = sdb_atoi (a);
-	free (a);
+	sdb_gh_free (a);
 	return ret;
 }
 
@@ -604,7 +604,7 @@ SDB_API char *sdb_array_pop_head(Sdb *s, const char *key, ut32 *cas) {
 	ut32 kas;
 	char *end, *str = sdb_get (s, key, &kas);
 	if (!str || !*str) {
-		free (str);
+		sdb_gh_free (str);
 		return NULL;
 	}
 	if (cas && *cas != kas) {
@@ -624,7 +624,7 @@ SDB_API char *sdb_array_pop_tail(Sdb *s, const char *key, ut32 *cas) {
 	ut32 kas;
 	char *end, *str = sdb_get (s, key, &kas);
 	if (!str || !*str) {
-		free (str);
+		sdb_gh_free (str);
 		return NULL;
 	}
 	if (cas && *cas != kas) {
@@ -638,7 +638,7 @@ SDB_API char *sdb_array_pop_tail(Sdb *s, const char *key, ut32 *cas) {
 	}
 	sdb_set_owned (s, key, str, 0);
 	// XXX: probably wrong
-	return strdup (end);
+	return sdb_strdup (end);
 }
 
 SDB_API void sdb_array_sort(Sdb *s, const char *key, ut32 cas) {
@@ -649,7 +649,7 @@ SDB_API void sdb_array_sort(Sdb *s, const char *key, ut32 cas) {
 		return;
 	}
 	if (!*str) {
-		free (str);
+		sdb_gh_free (str);
 		return;
 	}
 	strs = sdb_fmt_array (str);
@@ -670,7 +670,7 @@ SDB_API void sdb_array_sort(Sdb *s, const char *key, ut32 cas) {
 		*nstr = '\0';
 	}
 	sdb_set_owned (s, key, str, cas);
-	free (strs);
+	sdb_gh_free (strs);
 }
 
 SDB_API void sdb_array_sort_num(Sdb *s, const char *key, ut32 cas) {
@@ -681,20 +681,20 @@ SDB_API void sdb_array_sort_num(Sdb *s, const char *key, ut32 cas) {
 		return;
 	}
 	if (!*str) {
-		free (str);
+		sdb_gh_free (str);
 		return;
 	}
 	ut64 *nums = sdb_fmt_array_num (str);
-	free (str);
+	sdb_gh_free (str);
 	if (!nums) {
 		return;
 	}
 
 	qsort (nums + 1, (int)*nums, sizeof (ut64), int_cmp);
 
-	nstr = (char *)malloc (*nums + 1);
+	nstr = (char *)sdb_gh_malloc (*nums + 1);
 	if (!nstr) {
-		free (nums);
+		sdb_gh_free (nums);
 		return;
 	}
 	memset (nstr, 'q', *nums);
@@ -703,7 +703,7 @@ SDB_API void sdb_array_sort_num(Sdb *s, const char *key, ut32 cas) {
 	ret = sdb_fmt_tostr (nums + 1, nstr);
 	sdb_set_owned (s, key, ret, cas);
 
-	free (nstr);
-	free (nums);
+	sdb_gh_free (nstr);
+	sdb_gh_free (nums);
 	return;
 }

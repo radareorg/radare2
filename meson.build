@@ -474,6 +474,7 @@ sdb_files = [
   'shlr/sdb/src/num.c',
   'shlr/sdb/src/query.c',
   'shlr/sdb/src/sdb.c',
+  'shlr/sdb/src/heap.c',
   'shlr/sdb/src/ht.c',
   'shlr/sdb/src/util.c',
   'shlr/sdb/src/text.c'

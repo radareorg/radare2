@@ -1,7 +1,8 @@
-#ifndef __SDB_HT_H
-#define __SDB_HT_H
+#ifndef SDB_HT_H
+#define SDB_HT_H
 
 #include "ht_pp.h"
+#include "heap.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -57,4 +58,4 @@ SDB_API SdbKv* sdb_ht_find_kvp(HtPP* ht, const char* key, bool* found);
 }
 #endif
 
-#endif // __SDB_HT_H
+#endif // SDB_HT_H

@@ -66,7 +66,7 @@ SDB_IPI char *rangstr_dup(Rangstr *rs) {
 		return NULL;
 	}
 	int len = rangstr_length (rs);
-	char *p = (char *)malloc (len + 1);
+	char *p = (char *)sdb_gh_malloc (len + 1);
 	if (p) {
 		memcpy (p, rs->p + rs->f, len);
 		p[len] = 0;

@@ -44,6 +44,9 @@ wasi wasm: $(WASI_SDK)
 test:
 	${MAKE} -C test
 
+heap:
+	CFLAGS=-DUSE_SDB_HEAP=1 $(MAKE) -C src all
+
 asan:
 	$(MAKE) include/sdb/version.h
 	CC=gcc LDFLAGS="$(CFLAGS_ASAN)" CFLAGS="$(CFLAGS_ASAN)" ${MAKE} -C src all

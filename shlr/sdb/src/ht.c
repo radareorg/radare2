@@ -3,12 +3,12 @@
 #include "sdb/ht.h"
 
 void sdbkv_fini(SdbKv *kv) {
-	free (kv->base.key);
-	free (kv->base.value);
+	sdb_gh_free (kv->base.key);
+	sdb_gh_free (kv->base.value);
 }
 
 SDB_API HtPP* sdb_ht_new(void) {
-	HtPP *ht = ht_pp_new ((HtPPDupValue)strdup, (HtPPKvFreeFunc)sdbkv_fini, (HtPPCalcSizeV)strlen);
+	HtPP *ht = ht_pp_new ((HtPPDupValue)sdb_strdup, (HtPPKvFreeFunc)sdbkv_fini, (HtPPCalcSizeV)strlen);
 	if (ht) {
 		ht->opt.elem_size = sizeof (SdbKv);
 	}
@@ -20,11 +20,11 @@ static bool sdb_ht_internal_insert(HtPP* ht, const char* key, const char* value,
 		return false;
 	}
 	SdbKv kvp = {{ 0 }};
-	kvp.base.key = strdup (key);
+	kvp.base.key = sdb_strdup (key);
 	if (!kvp.base.key) {
 		goto err;
 	}
-	kvp.base.value = strdup (value);
+	kvp.base.value = sdb_strdup (value);
 	if (!kvp.base.value) {
 		goto err;
 	}
@@ -34,8 +34,8 @@ static bool sdb_ht_internal_insert(HtPP* ht, const char* key, const char* value,
 	return ht_pp_insert_kv (ht, (HtPPKv*)&kvp, update);
 
  err:
-	free (kvp.base.key);
-	free (kvp.base.value);
+	sdb_gh_free (kvp.base.key);
+	sdb_gh_free (kvp.base.value);
 	return false;
 }
 
