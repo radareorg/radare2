@@ -60,7 +60,7 @@ else
 	PREFIX=/usr
 fi
 # CFGARGS=--disable-loadlibs
-CFGARGS=--without-openssl
+# CFGARGS=--without-openssl
 DOCFG=1
 if [ 1 = "${DOCFG}" ]; then
 	# build
