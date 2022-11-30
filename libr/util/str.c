@@ -2374,7 +2374,8 @@ R_API bool r_str_glob(const char* str, const char *glob) {
 	}
 	char* begin = strchr (glob, '^');
 	if (begin) {
-		glob = begin++;
+		begin++;
+		glob = begin;
 	}
 	while (*str) {
 		if (!*glob) {
