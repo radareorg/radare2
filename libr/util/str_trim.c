@@ -269,7 +269,7 @@ R_API int r_str_ansi_trim(char *str, int str_len, int n) {
 					i += 18;
 				}
 			} else if (ch2 == '[') {
-				for (++i; (i < str_len) && str[i] && str[i] != 'J' && str[i] != 'm' && str[i] != 'H';
+				for (i++; (i < str_len) && str[i] && str[i] != 'J' && str[i] != 'm' && str[i] != 'H';
 					i++) {
 					;
 				}

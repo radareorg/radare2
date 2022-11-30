@@ -7923,15 +7923,16 @@ static int cmd_print(void *data, const char *input) {
 		break;
 	case 'k': // "pk"
 		if (input[1] == '?') {
-			r_cons_printf ("|Usage: pk [len]       print key in randomart\n");
-			r_cons_printf ("|Usage: pkill [process-name]\n");
+			r_cons_printf ("Usage: pk [len]       print key in randomart\n");
+			r_cons_printf ("Usage: pkill [process-name]\n");
 		} else if (!strncmp (input, "kill", 4)) {
 			RListIter *iter;
 			RDebugPid *pid;
 			const char *arg = strchr (input, ' ');
 			RList *pids = (core->dbg->h && core->dbg->h->pids)
 			? core->dbg->h->pids (core->dbg, 0): NULL;
-			if (arg && *++arg) {
+			if (R_STR_ISNOTEMPTY (arg)) {
+				arg++;
 				r_list_foreach (pids, iter, pid) {
 					if (strstr (pid->path, arg)) {
 						r_cons_printf ("dk 9 %d\n", pid->pid);

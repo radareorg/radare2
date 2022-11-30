@@ -529,7 +529,7 @@ R_API RList *r_core_asm_bwdisassemble(RCore *core, ut64 addr, int n, int len) {
 		asmlen = strlen (c->assembly);
 		for (ii = 0; ii < asmlen; ii++) {
 			if (c->assembly[ii] == '\n') {
-				++numinstr;
+				numinstr++;
 			}
 		}
 		r_asm_code_free (c);

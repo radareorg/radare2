@@ -1015,18 +1015,18 @@ static int parse(RMagic *ms, struct r_magic_entry **mentryp, ut32 *nmentryp, con
 	m->lineno = lineno;
 
 	if (*l == '&') {  /* m->cont_level == 0 checked below. */
-		++l;            /* step over */
+		l++;            /* step over */
 		m->flag |= OFFADD;
 	}
 	if (*l == '(') {
-		++l;		/* step over */
+		l++;		/* step over */
 		m->flag |= INDIR;
 		if (m->flag & OFFADD) {
 			m->flag = (m->flag & ~OFFADD) | INDIROFFADD;
 		}
 
 		if (*l == '&') {  /* m->cont_level == 0 checked below */
-			++l;            /* step over */
+			l++;            /* step over */
 			m->flag |= OFFADD;
 		}
 	}
@@ -1137,7 +1137,7 @@ static int parse(RMagic *ms, struct r_magic_entry **mentryp, ut32 *nmentryp, con
 	EATAB;
 
 	if (*l == 'u') {
-		++l;
+		l++;
 		m->flag |= UNSIGNED;
 	}
 
@@ -1159,7 +1159,7 @@ static int parse(RMagic *ms, struct r_magic_entry **mentryp, ut32 *nmentryp, con
 		} else if (ms->flags & R_MAGIC_CHECK) {
 			file_magwarn (ms, "'~' invalid for string types");
 		}
-		++l;
+		l++;
 	}
 	m->str_range = 0;
 	m->str_flags = 0;
@@ -1167,7 +1167,7 @@ static int parse(RMagic *ms, struct r_magic_entry **mentryp, ut32 *nmentryp, con
 	if ((op = get_op (*l)) != -1) {
 		if (!MAGIC_IS_STRING (m->type)) {
 			ut64 val;
-			++l;
+			l++;
 			m->mask_op |= op;
 			val = (ut64)strtoull (l, &t, 0);
 			l = t;
@@ -1176,7 +1176,7 @@ static int parse(RMagic *ms, struct r_magic_entry **mentryp, ut32 *nmentryp, con
 		}
 		else if (op == FILE_OPDIVIDE) {
 			int have_range = 0;
-			while (!isspace ((ut8)*++l)) {
+			for (l++; !isspace (*l); l++) {
 				switch (*l) {
 				case '0':  case '1':  case '2':
 				case '3':  case '4':  case '5':
@@ -1248,22 +1248,22 @@ static int parse(RMagic *ms, struct r_magic_entry **mentryp, ut32 *nmentryp, con
 	case '^':
 	case '=':
   		m->reln = *l;
-  		++l;
+  		l++;
 		if (*l == '=') {
 		   /* HP compat: ignore &= etc. */
-		   ++l;
+		   l++;
 		}
 		break;
 	case '!':
 		m->reln = *l;
-		++l;
+		l++;
 		break;
 	default:
   		m->reln = '=';	/* the default relation */
 		if (*l == 'x' && ((isascii((ut8)l[1]) &&
 				isspace ((ut8)l[1])) || !l[1])) {
 			m->reln = *l;
-			++l;
+			l++;
 		}
 		break;
 	}
@@ -1285,11 +1285,11 @@ static int parse(RMagic *ms, struct r_magic_entry **mentryp, ut32 *nmentryp, con
 	 */
 	EATAB;
 	if (l[0] == '\b') {
-		++l;
+		l++;
 		m->flag |= NOSPACE;
 	} else if ((l[0] == '\\') && (l[1] == 'b')) {
-		++l;
-		++l;
+		l++;
+		l++;
 		m->flag |= NOSPACE;
 	}
 	for (i = 0; (m->desc[i++] = *l++) != '\0' && i < sizeof (m->desc);) {}
@@ -1969,7 +1969,8 @@ static char *mkdbname(const char *fn, int strip) {
 	if (strip) {
 		const char *p;
 		if ((p = strrchr (fn, '/'))) {
-			fn = ++p;
+			p++;
+			fn = p;
 		}
 	}
 	fnlen = strlen (fn);

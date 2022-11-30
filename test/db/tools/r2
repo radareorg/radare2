@@ -1,26 +1,3 @@
-NAME=no preincrement/predecrement in 3rd part of for statement
-# Bad: for (;; ++i, --j)
-# Good: for (;; i++, j--)
-FILE=-
-# TODO: multiline
-CMDS="!git grep \"for[[:space:]]*([^;)]*;[^;)]*;\([^,)(]*,\)*[[:space:]]*\(++\|--\)[[:space:]]*[[:alpha:]_][[:alnum:]_]*[[:space:]]*[,)]\" -- .. :!db/tools/r2 :!../shlr/** :!../libr/asm/arch/** :!../**/mangling/cxx/cp-demangle.c"
-EXPECT=<<EOF
-EOF
-EXPECT_ERR=<<EOF
-EOF
-RUN
-
-NAME=use void on functions without parameters
-# Bad: static void foo() {
-# Good: static void foo(void) {
-FILE=-
-CMDS="!git grep -e ^R_API -e ^static ../libr | grep -e '[a-z]() {' -e '[a-z]();'"
-EXPECT=<<EOF
-EOF
-EXPECT_ERR=<<EOF
-EOF
-RUN
-
 NAME=r2 --
 FILE=bins/elf/bomb
 CMDS=r2 -s main -qcs bins/elf/bomb

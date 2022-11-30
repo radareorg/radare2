@@ -2715,7 +2715,7 @@ redo:
 			if (s1->macro_ptr) {
 				p = s1->macro_ptr;
 				while (is_space (t = *p) || TOK_LINEFEED == t) {
-					++p;
+					p++;
 				}
 				if (t == 0 && can_read_stream) {
 					/* end of macro stream: we must look at the token
@@ -2886,10 +2886,13 @@ static inline int *macro_twosharps(TCCState *s1, const int *macro_str) {
 				macro_str1.len = start_of_nosubsts;
 			}
 			/* given 'a##b', skip '##' */
-			t = *++ptr;
+			ptr++;
+			t = *ptr;
 			/* given 'a##b', remove nosubsts preceding 'b' */
-			while (t == TOK_NOSUBST)
-				t = *++ptr;
+			while (t == TOK_NOSUBST) {
+				ptr++;
+				t = *ptr;
+			}
 			if (t && t != TOK_TWOSHARPS) {
 				CValue cval;
 				TOK_GET (&t, &ptr, &cval);
