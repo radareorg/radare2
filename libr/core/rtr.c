@@ -55,7 +55,7 @@ R_API void r_core_wait(RCore *core) {
 }
 
 static void http_logf(RCore *core, const char *fmt, ...) {
-	bool http_log_enabled = r_config_get_i (core->config, "http.log");
+	bool http_log_enabled = r_config_get_b (core->config, "http.log");
 	va_list ap;
 	va_start (ap, fmt);
 	if (http_log_enabled) {
@@ -96,7 +96,7 @@ static char *rtrcmd(TextLog T, const char *str) {
 static void showcursor(RCore *core, int x) {
 	if (core && core->vmode) {
 		r_cons_show_cursor (x);
-		r_cons_enable_mouse (x? r_config_get_i (core->config, "scr.wheel"): false);
+		r_cons_enable_mouse (x? r_config_get_b (core->config, "scr.wheel"): false);
 	} else {
 		r_cons_enable_mouse (false);
 	}
@@ -420,7 +420,7 @@ static int r_core_rtr_gdb_cb(libgdbr_t *g, void *core_ptr, const char *cmd,
 			break;
 		case 'r': // dr
 			r_debug_reg_sync (core->dbg, R_REG_TYPE_ALL, false);
-			be = r_config_get_i (core->config, "cfg.bigendian");
+			be = r_config_get_b (core->config, "cfg.bigendian");
 			if (isspace ((ut8)cmd[2])) { // dr reg
 				const char *name, *val_ptr;
 				char new_cmd[128] = {0};
