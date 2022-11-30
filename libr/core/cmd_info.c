@@ -692,8 +692,7 @@ static int cmd_info(void *data, const char *input) {
 			} else {
 				RBININFO ("exports", R_CORE_BIN_ACC_EXPORTS, input + 1, 0);
 			}
-			while (*(++input)) ;
-			input--;
+			input = input + strlen (input) - 1;
 			break;
 		}
 		case 't': // "it"
@@ -827,11 +826,7 @@ static int cmd_info(void *data, const char *input) {
 
 
 			}
-			//we move input until get '\0'
-			while (*(++input)) {};
-			//input-- because we are inside a while that does input++
-			// oob read if not input--
-			input--;
+			input = input + strlen (input) - 1;
 			break;
 		case 'H': // "iH"
 			if (input[1] == 'H') { // "iHH"
@@ -912,8 +907,7 @@ static int cmd_info(void *data, const char *input) {
 					RBININFO ("symbols", R_CORE_BIN_ACC_SYMBOLS, input + 1, (obj && obj->symbols)? r_list_length (obj->symbols): 0);
 				}
 			}
-			while (*(++input)) ;
-			input--;
+			input = input + strlen (input) - 1;
 			r_list_free (objs);
 			break;
 		}

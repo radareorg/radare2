@@ -1445,7 +1445,7 @@ R_API int r_cons_get_cursor(int *rows) {
 					i += 18;
 				}
 			} else if (ch2 == '[') {
-				for (++i; str[i] && str[i] != 'J' && str[i] != 'm' && str[i] != 'H'; i++) {
+				for (i++; str[i] && str[i] != 'J' && str[i] != 'm' && str[i] != 'H'; i++) {
 					;
 				}
 			}

@@ -1629,7 +1629,8 @@ R_API void r_print_raw(RPrint *p, ut64 addr, const ut8 *buf, int len, int offlin
 			}
 			p->cb_printf ("\n");
 			linenum++;
-			o = ++q;
+			q++;
+			o = q;
 			i++;
 		} while (!mustbreak);
 		break;
@@ -1644,7 +1645,8 @@ R_API void r_print_c(RPrint *p, const ut8 *str, int len) {
 	len);
 	for (i = 0; !r_print_is_interrupted () && i < len;) {
 		r_print_byte (p, (ut64)i, "0x%02x", i, str[i]);
-		if (++i < len) {
+		i++;
+		if (i < len) {
 			p->cb_printf (", ");
 		}
 		if (!(i % inc)) {
@@ -2216,7 +2218,7 @@ R_API char* r_print_colorize_opcode(RPrint *print, char *p, const char *reg, con
 #define STRIP_ANSI 1
 #if STRIP_ANSI
 			/* skip until 'm' */
-			for (++i; p[i] && p[i] != 'm'; i++) {
+			for (i++; p[i] && p[i] != 'm'; i++) {
 				o[j] = p[i];
 			}
 			j--;

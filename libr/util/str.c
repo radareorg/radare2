@@ -2374,7 +2374,8 @@ R_API bool r_str_glob(const char* str, const char *glob) {
 	}
 	char* begin = strchr (glob, '^');
 	if (begin) {
-		glob = ++begin;
+		begin++;
+		glob = begin;
 	}
 	while (*str) {
 		if (!*glob) {
@@ -2382,12 +2383,14 @@ R_API bool r_str_glob(const char* str, const char *glob) {
 		}
 		switch (*glob) {
 		case '*':
-			if (!*++glob) {
+			glob++;
+			if (!*glob) {
 				return true;
 			}
 			// Advance glob an additional time if it is a '**'
 			if (*glob == '*') {
-				if (!*++glob) {
+				glob++;
+				if (!*glob) {
 					return true;
 				}
 			}
@@ -2428,7 +2431,9 @@ R_API bool r_str_glob(const char* str, const char *glob) {
 			glob++;
 		}
 	}
-	while (*glob == '*') { ++glob; }
+	while (*glob == '*') {
+		glob++;
+	}
 	return ((*glob == '$' && !*glob++)  || !*glob);
 }
 
@@ -3492,7 +3497,7 @@ R_API bool r_str_isnumber(const char *str) {
 		return false;
 	}
 
-	while (*++str) {
+	for (str++; *str; str++) {
 		if (!IS_DIGIT (*str)) {
 			return false;
 		}

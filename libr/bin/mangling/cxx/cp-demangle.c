@@ -3771,13 +3771,13 @@ d_clone_suffix (struct d_info *di, struct demangle_component *encoding)
     {
       pend += 2;
       while (IS_LOWER (*pend) || *pend == '_')
-	++pend;
+	pend++;
     }
   while (*pend == '.' && IS_DIGIT (pend[1]))
     {
       pend += 2;
       while (IS_DIGIT (*pend))
-	++pend;
+	pend++;
     }
   d_advance (di, pend - suffix);
   n = d_make_name (di, suffix, pend - suffix);
@@ -3875,7 +3875,7 @@ d_substitution (struct d_info *di, int prefix)
 	    }
 	  while (c != '_');
 
-	  ++id;
+	  id++;
 	}
 
       if (id >= (unsigned int) di->next_sub)
@@ -4457,7 +4457,7 @@ d_pack_length (const struct demangle_component *dc)
   while (dc && dc->type == DEMANGLE_COMPONENT_TEMPLATE_ARGLIST
 	 && d_left (dc))
     {
-      ++count;
+      count++;
       dc = d_right (dc);
     }
   return count;
@@ -4482,7 +4482,7 @@ d_args_length (struct d_print_info *dpi, const struct demangle_component *dc)
 	  count += d_pack_length (a);
 	}
       else
-	++count;
+	count++;
     }
   return count;
 }
@@ -4719,7 +4719,7 @@ d_print_comp_inner (struct d_print_info *dpi, int options,
 	    adpm[i].mod = typed_name;
 	    adpm[i].printed = 0;
 	    adpm[i].templates = dpi->templates;
-	    ++i;
+	    i++;
 
 	    if (!is_fnqual_component_type (typed_name->type))
 	      break;
@@ -4758,7 +4758,7 @@ d_print_comp_inner (struct d_print_info *dpi, int options,
 		adpm[i - 1].mod = typed_name;
 		adpm[i - 1].printed = 0;
 		adpm[i - 1].templates = dpi->templates;
-		++i;
+		i++;
 
 		typed_name = d_left (typed_name);
 	      }
@@ -5230,7 +5230,7 @@ d_print_comp_inner (struct d_print_info *dpi, int options,
 		adpm[i].next = dpi->modifiers;
 		dpi->modifiers = &adpm[i];
 		pdpm->printed = 1;
-		++i;
+		i++;
 	      }
 
 	    pdpm = pdpm->next;

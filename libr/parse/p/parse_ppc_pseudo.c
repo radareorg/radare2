@@ -1647,7 +1647,7 @@ static int parse(RParse *p, const char *data, char *str) {
 		}
 		if (ptr) {
 			*ptr = '\0';
-			for (++ptr; *ptr == ' '; ptr++) {
+			for (ptr++; *ptr == ' '; ptr++) {
 				//nothing to see here
 			}
 			strncpy (w0, buf, WSZ - 1);
@@ -1657,7 +1657,7 @@ static int parse(RParse *p, const char *data, char *str) {
 			ptr = strchr (ptr, ',');
 			if (ptr) {
 				*ptr = '\0';
-				for (++ptr; *ptr == ' '; ptr++) {
+				for (ptr++; *ptr == ' '; ptr++) {
 					//nothing to see here
 				}
 				strncpy (w1, optr, WSZ - 1);
@@ -1666,7 +1666,7 @@ static int parse(RParse *p, const char *data, char *str) {
 				ptr = strchr (ptr, ',');
 				if (ptr) {
 					*ptr = '\0';
-					for (++ptr; *ptr == ' '; ptr++) {
+					for (ptr++; *ptr == ' '; ptr++) {
 						//nothing to see here
 					}
 					strncpy (w2, optr, WSZ - 1);
@@ -1676,7 +1676,7 @@ static int parse(RParse *p, const char *data, char *str) {
 					ptr = strchr (ptr, ',');
 					if (ptr) {
 						*ptr = '\0';
-						for (++ptr; *ptr == ' '; ptr++) {
+						for (ptr++; *ptr == ' '; ptr++) {
 							//nothing to see here
 						}
 						strncpy (w3, optr, WSZ - 1);
@@ -1686,7 +1686,7 @@ static int parse(RParse *p, const char *data, char *str) {
 						ptr = strchr (ptr, ',');
 						if (ptr) {
 							*ptr = '\0';
-							for (++ptr; *ptr == ' '; ptr++) {
+							for (ptr++; *ptr == ' '; ptr++) {
 								//nothing to see here
 							}
 							strncpy (w4, optr, WSZ - 1);

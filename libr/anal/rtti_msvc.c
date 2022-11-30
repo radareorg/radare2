@@ -438,7 +438,8 @@ R_API char *r_anal_rtti_msvc_demangle_class_name(RVTableContext *context, const 
 	char *ret = context->anal->binb.demangle (NULL, "msvc", name, 0, false);
 	if (ret && *ret) {
 		char *n = strchr (ret, ' ');
-		if (n && *(++n)) {
+		n++;
+		if (R_STR_ISNOTEMPTY (n)) {
 			char *tmp = strdup (n);
 			free (ret);
 			ret = tmp;

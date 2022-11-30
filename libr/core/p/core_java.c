@@ -1383,11 +1383,12 @@ static int r_cmd_java_handle_set_flags(RCore *core, const char *input) {
 		? r_cmd_java_get_input_num_value (core, p)
 		: (ut64)-1;
 	p = r_cmd_java_strtok (p + 1, ' ', -1);
-	if (!p || !*p) {
+	if (R_STR_ISEMPTY (p)) {
 		r_cmd_java_print_cmd_help (JAVA_CMDS + SET_ACC_FLAGS_IDX);
 		return true;
 	}
-	const char f_type = p && *p? r_cmd_java_is_valid_java_mcf (*(++p)): '?';
+	p++;
+	const char f_type = r_cmd_java_is_valid_java_mcf (*p);
 
 	int flag_value = r_cmd_java_is_valid_input_num_value (core, p)? r_cmd_java_get_input_num_value (core, p): -1;
 
