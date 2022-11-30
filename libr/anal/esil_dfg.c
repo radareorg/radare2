@@ -516,9 +516,11 @@ static RGraphNode *_edf_uninitialized_mem_get(RAnalEsilDFG *dfg, ut64 addr, ut32
 	free (content);
 	dfg->idx++;
 	mem_node->type = R_ANAL_ESIL_DFG_TAG_VAR | R_ANAL_ESIL_DFG_TAG_MEM;
-	RIOMap *map = dfg->iob.map_get_at (dfg->iob.io, addr);
-	if (map && !(map->perm & R_PERM_W)) {
-		mem_node->type |= R_ANAL_ESIL_DFG_TAG_CONST;
+	if (dfg->use_map_info) {
+		RIOMap *map = dfg->iob.map_get_at (dfg->iob.io, addr);
+		if (map && !(map->perm & R_PERM_W)) {
+			mem_node->type |= R_ANAL_ESIL_DFG_TAG_CONST;
+		}
 	}
 	RGraphNode *mem_gnode = r_graph_add_node (dfg->flow, mem_node);
 	r_graph_add_edge (dfg->flow, orig_mem_gnode, mem_gnode);
@@ -1417,21 +1419,35 @@ static bool edf_consume_1_use_old_new_push_1(REsil *esil, const char *op_string,
 static bool _dfg_mem_read (REsil *esil, ut64 addr, ut8 *buf, int len) {
 	RAnalEsilDFG *dfg = (RAnalEsilDFG *)esil->user;
 	addr &= esil->addrmask;
+	if (dfg->use_maps) {
+		RIOMap *map = dfg->iob.map_get_at (dfg->iob.io, addr);
+		if (map && (map->perm & R_PERM_RW) == R_PERM_R) {
+			return dfg->iob.read_at (dfg->iob.io, addr, buf, len);
+		}
+	}
 	return (dfg->iob.fd_read_at (dfg->iob.io, dfg->fd, addr, buf, len) > 0);
 }
 
 static bool _dfg_mem_write (REsil *esil, ut64 addr, const ut8 *buf, int len) {
 	RAnalEsilDFG *dfg = (RAnalEsilDFG *)esil->user;
 	addr &= esil->addrmask;
+	if (dfg->use_maps) {
+		RIOMap *map = dfg->iob.map_get_at (dfg->iob.io, addr);
+		if (map && (map->perm & R_PERM_RW) == R_PERM_R) {
+			return true;
+		}
+	}
 	return (dfg->iob.fd_write_at (dfg->iob.io, dfg->fd, addr, buf, len) > 0);
 }
 
-R_API RAnalEsilDFG *r_anal_esil_dfg_new(RAnal* anal) {
+R_API RAnalEsilDFG *r_anal_esil_dfg_new(RAnal* anal, bool use_map_info, bool use_maps) {
 	r_return_val_if_fail (anal && anal->reg, NULL);
 	RAnalEsilDFG *dfg = R_NEW0 (RAnalEsilDFG);
 	if (!dfg) {
 		return NULL;
 	}
+	dfg->use_map_info = use_map_info;
+	dfg->use_maps = use_maps;
 	if (anal->iob.io) {
 		const bool autofd = anal->iob.io->autofd;
 		anal->iob.io->autofd = false;
@@ -1533,7 +1549,7 @@ R_API void r_anal_esil_dfg_free(RAnalEsilDFG *dfg) {
 	}
 }
 
-R_API RAnalEsilDFG *r_anal_esil_dfg_expr(RAnal *anal, RAnalEsilDFG *dfg, const char *expr) {
+R_API RAnalEsilDFG *r_anal_esil_dfg_expr(RAnal *anal, RAnalEsilDFG *dfg, const char *expr, bool use_map_info, bool use_maps) {
 	if (!expr) {
 		return NULL;
 	}
@@ -1543,7 +1559,7 @@ R_API RAnalEsilDFG *r_anal_esil_dfg_expr(RAnal *anal, RAnalEsilDFG *dfg, const c
 	}
 	esil->anal = anal;
 
-	RAnalEsilDFG *edf = dfg ? dfg : r_anal_esil_dfg_new (anal);
+	RAnalEsilDFG *edf = dfg ? dfg : r_anal_esil_dfg_new (anal, use_map_info, use_maps);
 	if (!edf) {
 		r_esil_free (esil);
 		return NULL;
@@ -1938,11 +1954,12 @@ R_API RStrBuf *r_anal_esil_dfg_filter(RAnalEsilDFG *dfg, const char *reg) {
 	return filter_gnode_expr (dfg, resolve_me);
 }
 
-R_API RStrBuf *r_anal_esil_dfg_filter_expr(RAnal *anal, const char *expr, const char *reg) {
+R_API RStrBuf *r_anal_esil_dfg_filter_expr(RAnal *anal, const char *expr, const char *reg,
+	bool use_map_info, bool use_maps) {
 	if (!reg) {
 		return NULL;
 	}
-	RAnalEsilDFG *dfg = r_anal_esil_dfg_expr (anal, NULL, expr);
+	RAnalEsilDFG *dfg = r_anal_esil_dfg_expr (anal, NULL, expr, use_map_info, use_maps);
 	if (!dfg) {
 		return NULL;
 	}
