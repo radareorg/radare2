@@ -660,8 +660,8 @@ static RDisasmState *ds_init(RCore *core) {
 	ds->show_color_args = r_config_get_i (core->config, "scr.color.args");
 	ds->colorop = r_config_get_b (core->config, "scr.color.ops");
 	ds->show_utf8 = r_config_get_i (core->config, "scr.utf8");
-	ds->acase = r_config_get_i (core->config, "asm.ucase");
-	ds->capitalize = r_config_get_i (core->config, "asm.capitalize");
+	ds->acase = r_config_get_b (core->config, "asm.ucase");
+	ds->capitalize = r_config_get_b (core->config, "asm.capitalize");
 	ds->atabs = r_config_get_i (core->config, "asm.tabs");
 	ds->atabsonce = r_config_get_b (core->config, "asm.tabs.once");
 	ds->atabsoff = r_config_get_i (core->config, "asm.tabs.off");
@@ -6840,14 +6840,14 @@ R_API int r_core_print_disasm_all(RCore *core, ut64 addr, int l, int len, int mo
 R_API int r_core_disasm_pdi_with_buf(RCore *core, ut64 address, ut8 *buf, ut32 nb_opcodes, ut32 nb_bytes, int fmt) {
 	bool show_offset = r_config_get_b (core->config, "asm.offset");
 	bool show_bytes = r_config_get_b (core->config, "asm.bytes");
-	int decode = r_config_get_i (core->config, "asm.decode");
+	bool decode = r_config_get_b (core->config, "asm.decode");
 	bool subnames = r_config_get_b (core->config, "asm.sub.names");
-	int show_color = r_config_get_i (core->config, "scr.color");
-	bool asm_ucase = r_config_get_i (core->config, "asm.ucase");
+	bool show_color = r_config_get_i (core->config, "scr.color") > 0;
+	bool asm_ucase = r_config_get_b (core->config, "asm.ucase");
 	bool asm_instr = r_config_get_i (core->config, "asm.instr");
-	int esil = r_config_get_i (core->config, "asm.esil");
-	int flags = r_config_get_i (core->config, "asm.flags");
-	bool asm_immtrim = r_config_get_i (core->config, "asm.imm.trim");
+	bool esil = r_config_get_b (core->config, "asm.esil");
+	bool flags = r_config_get_b (core->config, "asm.flags");
+	bool asm_immtrim = r_config_get_b (core->config, "asm.imm.trim");
 	int i = 0, j, ret, err = 0;
 	ut64 addr = core->offset;
 	const char *color_reg = R_CONS_COLOR_DEF (reg, Color_YELLOW);

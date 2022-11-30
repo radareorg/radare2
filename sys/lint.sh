@@ -74,6 +74,9 @@ cd "$(dirname $0)"/..
  diff -ru /tmp/.a /tmp/.b
 ) || exit 1
 
+# TODO: detect bool foo = RConfig.get_i ("boolvar"); -> must use get_b()
+#(git grep 'get_i (' | grep bool)
+
 # pending cleanups
 # ( git grep 'desc = "[A-Z]' ) && exit 1
 # git grep -e "`printf '\x09static'`" libr | grep -v R_TH_LOCAL|grep -v const | grep -v '(' && exit 1

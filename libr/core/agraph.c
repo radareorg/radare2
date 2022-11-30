@@ -192,7 +192,7 @@ static void rotateAsmemu(RCore *core) {
 
 static void showcursor(RCore *core, int x) {
 	if (!x) {
-		int wheel = r_config_get_i (core->config, "scr.wheel");
+		bool wheel = r_config_get_b (core->config, "scr.wheel");
 		if (wheel) {
 			r_cons_enable_mouse (true);
 		}
@@ -2102,11 +2102,11 @@ static char *get_body(RCore *core, ut64 addr, int size, int opts) {
 	r_config_hold (hc, "asm.lines", "asm.bytes",
 		"asm.cmt.col", "asm.marks", "asm.offset",
 		"asm.comments", "asm.cmt.right", "asm.lines.bb", NULL);
-	const bool o_comments = r_config_get_i (core->config, "graph.comments");
-	const bool o_cmtright = r_config_get_i (core->config, "graph.cmtright");
-	const bool o_bytes = r_config_get_i (core->config, "graph.bytes");
-	const bool o_flags_in_bytes = r_config_get_i (core->config, "asm.flags.inbytes");
-	const bool o_graph_offset = r_config_get_i (core->config, "graph.offset");
+	const bool o_comments = r_config_get_b (core->config, "graph.comments");
+	const bool o_cmtright = r_config_get_b (core->config, "graph.cmtright");
+	const bool o_bytes = r_config_get_b (core->config, "graph.bytes");
+	const bool o_flags_in_bytes = r_config_get_b (core->config, "asm.flags.inbytes");
+	const bool o_graph_offset = r_config_get_b (core->config, "graph.offset");
 	int o_cursor = core->print->cur_enabled;
 	if (opts & BODY_COMMENTS) {
 		r_core_visual_toggle_decompiler_disasm (core, true, false);
@@ -2147,7 +2147,7 @@ static char *get_body(RCore *core, ut64 addr, int size, int opts) {
 	if (R_STR_ISNOTEMPTY (bbcmd)) {
 		cmd = bbcmd;
 	}
-	if (r_config_get_i (core->config, "graph.aeab")) {
+	if (r_config_get_b (core->config, "graph.aeab")) {
 		body = r_core_cmd_strf (core, "%s 0x%08"PFMT64x, "aeab", addr);
 	} else {
 		body = r_core_cmd_strf (core, "%s %d @ 0x%08"PFMT64x, cmd, size, addr);
@@ -2235,7 +2235,7 @@ static void get_bbupdate(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 		r_list_sort (fcn->bbs, (RListComparator) bbcmp);
 	}
 
-	shortcuts = r_config_get_i (core->config, "graph.nodejmps");
+	shortcuts = r_config_get_b (core->config, "graph.nodejmps");
 	r_list_foreach (fcn->bbs, iter, bb) {
 		if (bb->addr == UT64_MAX) {
 			continue;
@@ -2403,7 +2403,7 @@ static int get_bbnodes(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 		char *color = (bb->color.r || bb->color.g || bb->color.b)? r_cons_rgb_str (NULL, -1, &bb->color): NULL;
 		RANode *node = r_agraph_add_node (g, title, body, color);
 		free (color);
-		shortcuts = g->is_interactive ? r_config_get_i (core->config, "graph.nodejmps") : false;
+		shortcuts = g->is_interactive ? r_config_get_b (core->config, "graph.nodejmps") : false;
 
 		if (shortcuts) {
 			shortcut = r_core_add_asmqjmp (core, bb->addr);
@@ -3367,7 +3367,7 @@ static bool check_changes(RAGraph *g, int is_interactive, RCore *core, RAnalFunc
 	int oldpos[2] = {
 		0, 0
 	};
-	if (g->update_seek_on && core && r_config_get_i (core->config, "graph.few")) {
+	if (g->update_seek_on && core && r_config_get_b (core->config, "graph.few")) {
 		g->need_reload_nodes = true;
 	}
 	if (g->need_reload_nodes && core) {
@@ -3384,7 +3384,7 @@ static bool check_changes(RAGraph *g, int is_interactive, RCore *core, RAnalFunc
 		agraph_update_title (core, g, fcn);
 	}
 	if (core && core->config) {
-		if (r_config_get_i (core->config, "graph.trace")) {
+		if (r_config_get_b (core->config, "graph.trace")) {
 			// fold all bbs not traced
 			fold_asm_trace (core, g);
 		}
@@ -3540,7 +3540,7 @@ static int agraph_print(RAGraph *g, int is_interactive, RCore *core, RAnalFuncti
 
 static void check_function_modified(RCore *core, RAnalFunction *fcn) {
 	if (r_anal_function_was_modified (fcn)) {
-		if (r_config_get_i (core->config, "anal.onchange")
+		if (r_config_get_b (core->config, "anal.onchange")
 			|| r_cons_yesno ('y', "Function was modified. Reanalyze? (Y/n)")) {
 			r_anal_function_update_analysis (fcn);
 		}
@@ -3603,7 +3603,7 @@ static int agraph_refresh(struct agraph_refresh_data *grd) {
 
 	int res = agraph_print (g, grd->fs, core, *fcn);
 
-	if (r_config_get_i (core->config, "scr.scrollbar")) {
+	if (r_config_get_b (core->config, "scr.scrollbar")) {
 		r_core_print_scrollbar (core);
 	}
 
@@ -3619,7 +3619,7 @@ static void agraph_set_need_reload_nodes(struct agraph_refresh_data *grd) {
 }
 
 static void agraph_toggle_speed(RAGraph *g, RCore *core) {
-	const int alt = r_config_get_i (core->config, "graph.scroll");
+	const int alt = r_config_get_b (core->config, "graph.scroll");
 	g->movspeed = g->movspeed == DEFAULT_SPEED? alt: DEFAULT_SPEED;
 }
 
@@ -4113,14 +4113,14 @@ static bool toggle_bb(RCore *core, ut64 addr) {
 
 static char *get_graph_string(RCore *core, RAGraph *g) {
 	int c = r_config_get_i (core->config, "scr.color");
-	int u = r_config_get_i (core->config, "scr.utf8");
+	bool u = r_config_get_b (core->config, "scr.utf8");
 	r_config_set_i (core->config, "scr.color", 0);
 	r_config_set_i (core->config, "scr.utf8", 0);
 	r_core_visual_graph (core, g, NULL, false);
 	char *s = strdup (r_cons_get_buffer ());
 	r_cons_reset ();
 	r_config_set_i (core->config, "scr.color", c);
-	r_config_set_i (core->config, "scr.utf8", u);
+	r_config_set_b (core->config, "scr.utf8", u);
 	return s;
 }
 
@@ -4267,7 +4267,7 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 			return false;
 		}
 	}
-	can->linemode = r_config_get_i (core->config, "graph.linemode");
+	can->linemode = r_config_get_b (core->config, "graph.linemode");
 	can->color = r_config_get_i (core->config, "scr.color");
 
 	if (!g) {
@@ -4301,7 +4301,7 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 		agraph_set_zoom (g, graph_zoom);
 	}
 	g->show_node_titles = r_config_get_i (core->config, "graph.ntitles");
-	g->show_node_body = r_config_get_i (core->config, "graph.body");
+	g->show_node_body = r_config_get_b (core->config, "graph.body");
 	g->show_node_bubble = r_config_get_i (core->config, "graph.bubble");
 	g->on_curnode_change = (RANodeCallback) seek_to_node;
 	g->on_curnode_change_data = core;
@@ -4348,7 +4348,7 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 
 	while (!exit_graph && !is_error && !r_cons_is_breaked ()) {
 		w = r_cons_get_size (&h);
-		invscroll = r_config_get_i (core->config, "graph.invscroll");
+		invscroll = r_config_get_b (core->config, "graph.invscroll");
 		ret = agraph_refresh (grd);
 
 		if (!ret) {

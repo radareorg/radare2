@@ -5927,7 +5927,7 @@ static void demo_begin(RCore *core, RConsCanvas *can) {
 }
 
 static void demo_end(RCore *core, RConsCanvas *can) {
-	bool utf8 = r_config_get_i (core->config, "scr.utf8");
+	bool utf8 = r_config_get_b (core->config, "scr.utf8");
 	r_config_set_b (core->config, "scr.utf8", false);
 	RPanel *cur = __get_cur_panel (core->panels);
 	cur->view->refresh = true;
@@ -6010,7 +6010,7 @@ static void __panels_refresh(RCore *core) {
 		return;
 	}
 	RStrBuf *title = r_strbuf_new (" ");
-	bool utf8 = r_config_get_i (core->config, "scr.utf8");
+	bool utf8 = r_config_get_b (core->config, "scr.utf8");
 	if (firstRun) {
 		r_config_set_b (core->config, "scr.utf8", false);
 	}
