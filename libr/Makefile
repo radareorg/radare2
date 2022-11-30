@@ -96,9 +96,14 @@ endif
 _libr.${EXT_AR}: .libr
 	-${AR} -rs $@ .libr/*.o
 
-# this code should be in do-ar-sh not inlined here..
 
-.libr2: $(wildcard */libr_*.${EXT_AR}) ../shlr/libr_shlr.${EXT_AR}
+libr.${EXT_AR}: $(wildcard */libr_*.${EXT_AR}) ../shlr/libr_shlr.${EXT_AR}
+	ar -rcT libr.${EXT_AR} $^
+	du -hs new.a
+
+# this is an alternative implementation using only ar -x, 
+# its also possible with `libtool -static -o new.a old1.a old2.a`
+.libr2old: $(wildcard */libr_*.${EXT_AR}) ../shlr/libr_shlr.${EXT_AR}
 	rm -rf .libr2
 	mkdir -p .libr2
 	-for LIB in $^ ; do \
@@ -108,7 +113,7 @@ _libr.${EXT_AR}: .libr
 		( cd .libr2/$$BN ; pwd ; du -hs ../../$$LIB; ${AR} -x ../../$$LIB ) ; \
 	done
 
-libr.${EXT_AR}: .libr2
+libr2.${EXT_AR}: .libr2old
 	-${AR} -rs $@ .libr2/*/*.o
 
 ifeq (1,$(WITH_GPL))
