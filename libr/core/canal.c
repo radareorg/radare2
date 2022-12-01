@@ -1390,6 +1390,10 @@ static char *core_anal_graph_label(RCore *core, RAnalBlock *bb, int opts) {
 				filestr = r_file_slurp_line (file, line, 0);
 				if (filestr) {
 					int flen = strlen (filestr);
+					if (idx < 0 || ST32_ADD_OVFCHK (idx, flen + 8)) {
+						R_LOG_WARN ("integer overflow detected");
+						break;
+					}
 					cmdstr = realloc (cmdstr, idx + flen + 8);
 					memcpy (cmdstr + idx, filestr, flen);
 					idx += flen;
