@@ -24,9 +24,19 @@ static int get_instruction_size(RPrint *p, ut64 at) {
 
 static void print_c_instructions(RPrint *p, ut64 addr, const ut8 *buf, int len) {
 	const char *fmtstr = bits_to_c_code_fmtstr (8);
+	const char *namenm = p->codevarname;
+	char *namesz = NULL;
+	if (R_STR_ISEMPTY (namenm)) {
+		namenm = "buffer";
+		namesz = strdup ("_BUFFER_SIZE");
+	} else {
+		namesz = r_str_newf ("_%s_SIZE", namenm);
+		r_str_case (namesz, true);
+	}
 
-	p->cb_printf ("#define _BUFFER_SIZE %d\n", len);
-	p->cb_printf ("const uint8_t buffer[_BUFFER_SIZE] = {\n");
+	p->cb_printf ("#define %s %d\n", namesz, len);
+	p->cb_printf ("const uint8_t %s[%s] = {\n", namenm, namesz);
+	free (namesz);
 
 	const int orig_align = p->coreb.cfggeti (p->coreb.core, "asm.cmt.col") - 40;
 	size_t k, i = 0;
@@ -76,8 +86,18 @@ static void print_c_code(RPrint *p, ut64 addr, const ut8 *buf, int len, int ws, 
 	len /= ws;
 
 	if (headers) {
-		p->cb_printf ("#define _BUFFER_SIZE %d\n", len);
-		p->cb_printf ("const uint%d_t buffer[_BUFFER_SIZE] = {", bits);
+		const char *namenm = p->codevarname;
+		char *namesz = NULL;
+		if (R_STR_ISEMPTY (namenm)) {
+			namenm = "buffer";
+			namesz = strdup ("_BUFFER_SIZE");
+		} else {
+			namesz = r_str_newf ("_%s_SIZE", namenm);
+			r_str_case (namesz, true);
+		}
+		p->cb_printf ("#define %s %d\n", namesz, len);
+		p->cb_printf ("const uint%d_t %s[%s] = {", bits, namenm, namesz);
+		free (namesz);
 	}
 
 	for (i = 0; !r_print_is_interrupted () && i < len; i++) {

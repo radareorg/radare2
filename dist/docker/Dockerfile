@@ -70,6 +70,9 @@ RUN DEBIAN_FRONTEND=noninteractive dpkg --add-architecture i386 && \
   bison \
   pkg-config \
   make \
+  python3 \
+  python3-pip \
+  sudo \
   glib-2.0 \
   libc6:i386 \
   libncurses5:i386 \

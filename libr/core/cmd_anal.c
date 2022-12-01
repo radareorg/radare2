@@ -171,7 +171,7 @@ static const char *help_msg_aa[] = {
 	"aaFa", " [sym*]", "same as aaF but uses af/a2f instead of af+/afb+ (slower but more accurate)",
 	"aai", "[j]", "show info of all analysis parameters",
 	"aaj", " ", "analyze all jumps",
-	"aan", "[?][gr]", "autoname functions (aang = golang, aanr = noreturn propagation)",
+	"aan", "[?][fgr]", "autoname functions (aang = golang, aanr = noreturn propagation, aanf = afna@@F)",
 	"aao", "", "analyze all objc references",
 	"aap", "", "find and analyze function preludes",
 	"aar", "[?] [len]", "analyze len bytes of instructions for references",
@@ -11663,6 +11663,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 		case '?':
 			r_core_cmd_help (core, help_msg_aan);
 			break;
+		case 'f': // "aanf" same as "aan" but more friendly
 		default: // "aan"
 			r_core_anal_autoname_all_fcns (core);
 		}

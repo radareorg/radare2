@@ -1468,6 +1468,14 @@ static bool cb_timezone(void *user, void *data) {
 	return true;
 }
 
+static bool cb_codevar(void *user, void *data) {
+	RCore *core = (RCore*) user;
+	RConfigNode *node = (RConfigNode*) data;
+	free (core->print->codevarname);
+	core->print->codevarname = strdup (node->value);
+	return true;
+}
+
 static bool cb_cfgcorelog(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
@@ -3805,6 +3813,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETBPREF ("prj.alwasyprompt", "false", "even when the project is already saved, ask the user to save the project when qutting");
 
 	/* cfg */
+	SETCB ("cfg.codevar", "", &cb_codevar, "define alternative variable name for `pc` (print-code) subcommands");
 	n = SETCB ("cfg.charset", "", &cb_cfgcharset, "specify encoding to use when printing strings");
 	update_cfgcharsets_options (core, n);
 	SETBPREF ("cfg.r2wars", "false", "enable some tweaks for the r2wars game");
