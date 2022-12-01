@@ -747,9 +747,14 @@ static inline bool write_op(char *opstr, ut8 *outbuf) {
 
 static bool pickle_encode(RArchSession *s, RAnalOp *op, RArchEncodeMask mask) {
 	const char *str = op->mnemonic;
-	ut8 _outbuf[64];
+	// some ops can be huge, but they should always be smaller then the mnemonics
+	int outsz = strlen (str);
+	ut8 *_outbuf = malloc (outsz);
+	if (!_outbuf) {
+		return false;
+	}
 	ut8 *outbuf = _outbuf;
-	int outsz = sizeof (_outbuf);
+
 	r_return_val_if_fail (str && *str && outsz > 0 && outbuf, -1);
 	int wlen = 0;
 	char *opstr = strdup (str); // get a non-const str to manipulate
@@ -883,16 +888,20 @@ static bool pickle_encode(RArchSession *s, RAnalOp *op, RArchEncodeMask mask) {
 			wlen = -1;
 		}
 	}
-	if (wlen > 0) {
-		free (op->bytes);
-		op->bytes = malloc (wlen);
-		memcpy (op->bytes, _outbuf, wlen);
-		op->size = wlen;
-	} else {
-		op->size = 1;
-	}
 	free (opstr);
-	return true;
+
+	if (wlen > 0) {
+		r_return_val_if_fail (wlen <= outsz, false);
+		free (op->bytes);
+		op->bytes = realloc (_outbuf, wlen);
+		if (op->bytes) {
+			op->size = wlen;
+			return true;
+		}
+	}
+	op->size = 1;
+	free (_outbuf);
+	return false;
 }
 
 static int pickle_info(RArchSession *s, ut32 q) {
