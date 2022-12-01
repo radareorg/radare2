@@ -152,6 +152,7 @@ jobs:
         make tests
   linux-static-meson:
     if: contains(github.ref, 'master') || contains(github.ref, 'ci-')
+    continue-on-error: true
     runs-on: ubuntu-20.04
     steps:
     - name: Checkout
