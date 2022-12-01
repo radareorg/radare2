@@ -232,6 +232,7 @@ R_API bool r_anal_use(RAnal *anal, const char *name) {
 	r_return_val_if_fail (anal, false);
 	RListIter *it;
 	RAnalPlugin *h;
+	// r_anal plugins
 	r_list_foreach (anal->plugins, it, h) {
 		if (!h->name || strcmp (h->name, name)) {
 			continue;
@@ -243,20 +244,27 @@ R_API bool r_anal_use(RAnal *anal, const char *name) {
 		anal->uses = 1;
 		return true;
 	}
+	// r_arch plugins
 	if (anal->arch) {
-		bool res = r_arch_use (anal->arch, anal->config, name);
-		if (res) {
+		if (r_arch_use (anal->arch, anal->config, name)) {
+			const char *pname = R_UNWRAP5 (anal, arch, session, plugin, name);
 			r_anal_set_reg_profile (anal, NULL);
 			// R_LOG_DEBUG ("plugin found in arch");
 			anal->uses = 2;
-			return true;
-#if 0
-		} else {
-			anal->arch->current = NULL;
-#endif
+			if (pname && !strstr (name, pname)) {
+				return true;
+			}
 		}
 	}
 	anal->uses = 0;
+	char *dot = strchr (name, '.');
+	if (dot) {
+		char *sname = strdup (name);
+		sname[dot - name] = 0;
+		bool res = r_anal_use (anal, sname);
+		free (sname);
+		return res;
+	}
 	// R_LOG_DEBUG ("no plugin found");
 	return false;
 }
@@ -484,7 +492,7 @@ R_API void r_anal_purge(RAnal *anal) {
 	r_anal_purge_imports (anal);
 }
 
-// XXX deprecate
+// XXX deprecate. use r_arch_info() when all anal plugs get moved
 R_API R_DEPRECATE int r_anal_archinfo(RAnal *anal, int query) {
 	r_return_val_if_fail (anal, -1);
 	switch (query) {
@@ -810,6 +818,7 @@ R_API void r_anal_remove_import(RAnal *anal, const char *imp) {
 }
 
 R_API void r_anal_purge_imports(RAnal *anal) {
+	r_return_if_fail (anal);
 	r_list_purge (anal->imports);
 	R_DIRTY (anal);
 }
