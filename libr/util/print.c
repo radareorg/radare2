@@ -1640,9 +1640,18 @@ R_API void r_print_raw(RPrint *p, ut64 addr, const ut8 *buf, int len, int offlin
 
 R_API void r_print_c(RPrint *p, const ut8 *str, int len) {
 	int i, inc = p->width / 6;
-	p->cb_printf ("#define _BUFFER_SIZE %d\n"
-	"unsigned char buffer[_BUFFER_SIZE] = {\n",
-	len);
+	const char *namenm = p->codevarname;
+	char *namesz = NULL;
+	if (R_STR_ISEMPTY (namenm)) {
+		namenm = "buffer";
+		namesz = strdup ("_BUFFER_SIZE");
+	} else {
+		namesz = r_str_newf ("_%s_SIZE", namenm);
+		r_str_case (namesz, true);
+	}
+
+	p->cb_printf ("#define %s %d\n"
+	"unsigned char %s[%s] = {\n", namesz, len, namenm, namesz);
 	for (i = 0; !r_print_is_interrupted () && i < len;) {
 		r_print_byte (p, (ut64)i, "0x%02x", i, str[i]);
 		i++;
@@ -1654,6 +1663,7 @@ R_API void r_print_c(RPrint *p, const ut8 *str, int len) {
 		}
 	}
 	p->cb_printf ("};\n");
+	free (namesz);
 }
 
 // HACK :D
