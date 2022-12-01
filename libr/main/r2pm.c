@@ -194,6 +194,7 @@ static char *r2pm_get(const char *file, const char *token, R2pmTokenType type) {
 					*nl = 0;
 				}
 			}
+			descptr = (char *)r_str_trim_head_ro (descptr);
 			if (*descptr == '"') {
 				descptr++;
 			}
@@ -510,6 +511,36 @@ static int r2pm_uninstall_pkg(const char *pkg) {
 	return res;
 }
 
+static bool download(const char *url, const char *outfile) {
+	/// XXX add support for windows powershell download
+	char *tool = r_file_path ("curl");
+	int res = 1;
+	R_LOG_INFO ("download: %s into %s", url, outfile);
+	if (tool && *tool == '/') {
+		res = r_sys_cmdf ("%s -sfL -o '%s' '%s'", tool, outfile, url);
+		free (tool);
+		return res == 0;
+	}
+	free (tool);
+	tool = r_file_path ("wget");
+	if (tool && *tool == '/') {
+		res = r_sys_cmdf ("%s -qO '%s' '%s'", tool, outfile, url);
+		free (tool);
+		return res == 0;
+	}
+	return false;
+}
+
+static bool unzip(const char *file, const char *dir) {
+	if (r_str_endswith (file, ".tgz") || r_str_endswith (file, ".tar.gz")) {
+		return 0 == r_sys_cmdf ("tar xzvf '%s' -C '%s'", file, dir);
+	}
+	if (r_str_endswith (file, ".zip")) {
+		return 0 == r_sys_cmdf ("unzip '%s' -d '%s'", file, dir);
+	}
+	return false;
+}
+
 static int r2pm_clone(const char *pkg) {
 	char *pkgdir = r2pm_gitdir ();
 	char *srcdir = r_file_new (pkgdir, pkg, NULL);
@@ -529,15 +560,18 @@ static int r2pm_clone(const char *pkg) {
 			git_clone (srcdir, url);
 			free (url);
 		} else {
-			eprintf ("TARBAL\n");
 			char *url = r2pm_get (pkg, "\nR2PM_TGZ", TT_TEXTLINE);
-			bool use_c_impl = false;
-			if (use_c_impl) {
-				eprintf ("JEJEJ\n");
-				R_LOG_TODO ("wget tarball from '%s'", url);
+			const char *filename = r_file_basename (url);
+			char *outfile = r_str_newf ("%s/%s", srcdir, filename);
+			r_sys_mkdirp (srcdir);
+			if (download (url, outfile)) {
+				if (unzip (outfile, srcdir)) {
+					eprintf ("download and unzip works!\n");
+				} else {
+					eprintf ("unzip failed\n");
+				}
 			} else {
-				eprintf ("wtf\n");
-				// TODO. run wget
+				eprintf ("download failed\n");
 			}
 			free (srcdir);
 			free (url);
