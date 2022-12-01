@@ -1,13 +1,13 @@
 NAME=ravc2 init
 FILE=-
 CMDS=<<EOF
-mkdir ravc2_init_test
-cd ravc2_init_test
+mkdir ravc2_init_rvc_test
+cd ravc2_init_rvc_test
 !!ravc2 init rvc
 lr
 !!ravc2 status
 cd ../
-rmrf ravc2_init_test
+rmrf ravc2_init_rvc_test
 EOF
 EXPECT=<<EOF
 ./.rvc
@@ -79,7 +79,9 @@ message=hello world!
 EOF
 RUN
 
-NAME=ravc2 init git
+
+NAME=ravc2 ig
+FILE=-
 CMDS=<<EOF
 mkdir ravc2_init_git_test
 cd ravc2_init_git_test
@@ -90,45 +92,5 @@ rmrf ravc2_init_git_test
 EOF
 EXPECT=<<EOF
                 ./                 ../               .git/
-EOF
-RUN
-
-NAME=ravc2 commit git
-CMDS=<<EOF
-mkdir ravc2_commit_git_test
-cd ravc2_commit_git_test
-!!ravc2 init git
-echo hello > hello
-!!ravc2 commit "hello" hello~create mode 100644 hello
-cd ../
-rmrf ravc2_commit_git_test
-EOF
-EXPECT=<<EOF
- create mode 100644 hello
-EOF
-RUN
-
-
-NAME=ravc2 branch git
-CMDS=<<EOF
-mkdir ravc2_branch_git_test
-cd ravc2_branch_git_test
-!!ravc2 init git
-!!ravc2 branch hello
-echo hello > hello
-!!ravc2 commit "hello world!" hello > /dev/null
-!!ravc2 checkout hello > /dev/null
-ls -q ~!/
-!!ravc2 status
-!!ravc2 checkout master
-ls -q ~!/
-cd ../
-rmrf ravc2_branch_git_test
-EOF
-EXPECT=<<EOF
-hello
-Branch: master
-All files are committed
-hello
 EOF
 RUN
