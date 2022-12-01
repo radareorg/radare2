@@ -56,6 +56,10 @@ typedef struct r_r2pm_t {
 } R2Pm;
 
 static int git_pull(const char *dir, bool reset) {
+	if (!r_file_is_directory (dir)) {
+		R_LOG_ERROR ("Directory '%s' does not exist", dir);
+		return -1;
+	}
 	if (reset) {
 		char *s = r_str_newf ("cd %s && git clean -xdf && git reset --hard @~2 && git checkout", dir);
 		R_UNUSED_RESULT (r_sandbox_system (s, 1));
@@ -415,7 +419,14 @@ static int r2pm_install_pkg(const char *pkg, bool global) {
 		free (srcdir);
 		return 1;
 	}
-	eprintf ("script (%s)", script);
+	eprintf ("script (%s)\n", script);
+	char *pkgdir = r_str_newf ("%s/%s", srcdir, pkg);
+	if (!r_file_is_directory (pkgdir)) {
+		R_LOG_ERROR ("Cannot find directory: %s", pkgdir);
+		free (pkgdir);
+		return 1;
+	}
+	free (pkgdir);
 	char *s = r_str_newf ("cd '%s/%s'\nexport MAKE=make\nR2PM_FAIL(){\n  echo $@\n}\n%s", srcdir, pkg, script);
 	int res = r_sandbox_system (s, 1);
 	free (s);
@@ -518,11 +529,14 @@ static int r2pm_clone(const char *pkg) {
 			git_clone (srcdir, url);
 			free (url);
 		} else {
+			eprintf ("TARBAL\n");
 			char *url = r2pm_get (pkg, "\nR2PM_TGZ", TT_TEXTLINE);
 			bool use_c_impl = false;
 			if (use_c_impl) {
+				eprintf ("JEJEJ\n");
 				R_LOG_TODO ("wget tarball from '%s'", url);
 			} else {
+				eprintf ("wtf\n");
 				// TODO. run wget
 			}
 			free (srcdir);
