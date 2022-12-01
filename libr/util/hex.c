@@ -263,36 +263,24 @@ R_API char *r_hex_from_js(const char *code) {
 		return NULL;
 	}
 
-	char * str = r_str_ndup (start + 1, end - start - 1);
+	size_t slen = end - start;
+	char *str = r_str_ndup (start + 1, slen - 1);
 
 	/* assuming base64 input, output will always be shorter */
-	ut8 *b64d = malloc (end - start);
+	ut8 *b64d = malloc (slen);
 	if (!b64d) {
 		free (str);
 		return NULL;
 	}
 
-	r_base64_decode (b64d, str, end - start - 1);
-	if (!b64d) {
-		free (str);
-		free (b64d);
-		return NULL;
-	}
-
-	// TODO: use r_str_bin2hex
-	int i, len = strlen ((const char *)b64d);
-	char * out = malloc (len * 2 + 1);
-	if (!out) {
-		free (str);
-		free (b64d);
-		return NULL;
-	}
-	for (i = 0; i < len; i++) {
-		sprintf (&out[i * 2], "%02x", b64d[i]);
-	}
-	out[len * 2] = '\0';
-
+	int olen = r_base64_decode (b64d, str, slen - 1);
 	free (str);
+	if (!b64d) {
+		free (b64d);
+		return NULL;
+	}
+
+	char * out = r_hex_bin2strdup (b64d, olen);
 	free (b64d);
 	return out;
 }
