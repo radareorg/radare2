@@ -89,6 +89,12 @@ if [ "$1" = makedeb ]; then
 	onlymakedeb=1
 fi
 
+if [ "$1" = "--shell" ]; then
+	echo "Entering the ios-cydia shell"
+	${SHELL}
+	exit 0
+fi
+
 if [ $onlymakedeb = 1 ]; then
 	makeDeb
 else

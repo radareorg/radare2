@@ -101,7 +101,7 @@ libr.${EXT_AR}: $(wildcard */libr_*.${EXT_AR}) ../shlr/libr_shlr.${EXT_AR}
 	ar -rcT libr.${EXT_AR} $^
 	du -hs libr.${EXT_AR}
 
-# this is an alternative implementation using only ar -x, 
+# this is an alternative implementation using only ar -x
 # its also possible with `libtool -static -o new.a old1.a old2.a`
 .libr2old: $(wildcard */libr_*.${EXT_AR}) ../shlr/libr_shlr.${EXT_AR}
 	rm -rf .libr2
@@ -138,13 +138,23 @@ else
 LIBR_LDFLAGS=-shared
 endif
 
-libr.${EXT_SO}: .libr2
+libr2.${EXT_SO}: .libr2
 ifeq (${COMPILER},emscripten)
 	echo nothing to do here
 else
 	$(CC) -fvisibility=hidden $(MLFLAGS) ${LINK} ${CFLAGS} ${CPPFLAGS} ${LDFLAGS} $(LIBR_LDFLAGS) -o libr.${EXT_SO}  \
 		.libr2/*/*.o \
 		../shlr/gdb/lib/libgdbr.${EXT_AR} ../shlr/java/libr_java.${EXT_AR} \
+		../shlr/libr_shlr.${EXT_AR} ../shlr/mpc/libmpc.${EXT_AR} $(E) \
+		../libr/util/libr_util.${EXT_AR}
+endif
+
+libr.${EXT_SO}: libr.${EXT_AR}
+ifeq (${COMPILER},emscripten)
+	echo nothing to do here
+else
+	$(CC) -fvisibility=hidden $(MLFLAGS) ${LINK} ${CFLAGS} ${CPPFLAGS} ${LDFLAGS} $(LIBR_LDFLAGS) -o libr.${EXT_SO}  \
+		libr.${EXT_AR} ../shlr/gdb/lib/libgdbr.${EXT_AR} ../shlr/java/libr_java.${EXT_AR} \
 		../shlr/libr_shlr.${EXT_AR} ../shlr/mpc/libmpc.${EXT_AR} $(E) \
 		../libr/util/libr_util.${EXT_AR}
 endif
