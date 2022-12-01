@@ -21,14 +21,14 @@ RUN
 
 NAME=ravc2 commit
 CMDS=<<EOF
-mkdir ravc2_commit_test
-cd ravc2_commit_test
+mkdir ravc2_commit_git_test
+cd ravc2_commit_git_test
 !!ravc2 init rvc
 echo hello > hello
 !!ravc2 commit "hello world!" hello
 !!ravc2 log~!author~!time~!hash
 cd ../
-rmrf ravc2_commit_test
+rmrf ravc2_commit_git_test
 EOF
 EXPECT=<<EOF
 message=hello world!
@@ -80,7 +80,7 @@ EOF
 RUN
 
 
-NAME=ravc2 ig
+NAME=ravc2 init git
 FILE=-
 CMDS=<<EOF
 mkdir ravc2_init_git_test
@@ -92,5 +92,42 @@ rmrf ravc2_init_git_test
 EOF
 EXPECT=<<EOF
                 ./                 ../               .git/
+EOF
+RUN
+
+
+NAME=ravc2 commit git
+CMDS=<<EOF
+mkdir ravc2_git_commit_test
+cd ravc2_git_commit_test
+!!ravc2 init git
+echo hello > hello
+!!ravc2 commit "hello world!" hello > /dev/null
+!!ravc2 log~hello
+cd ../
+rmrf ravc2_git_commit_test
+EOF
+EXPECT=<<EOF
+    hello world!
+EOF
+RUN
+
+
+NAME=ravc2 branch git
+CMDS=<<EOF
+mkdir ravc2_git_branch_test
+cd ravc2_git_branch_test
+!!ravc2 init git
+!!touch hello
+!!ravc2 commit hello hello > /dev/null
+!!ravc2 branch hello
+#we branch twice to ensure the order of the branches
+!!ravc2 branch~hello
+!!ravc2 branch~master
+rmrf ravc2_git_branch_test
+EOF
+EXPECT=<<EOF
+hello
+master
 EOF
 RUN
