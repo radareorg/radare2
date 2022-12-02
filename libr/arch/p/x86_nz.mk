@@ -1,4 +1,4 @@
-OBJ_X86NZ=p/x86/plugin.o
+OBJ_X86NZ=p/x86_nz/plugin.o
 
 STATIC_OBJ+=${OBJ_X86NZ}
 TARGET_X86NZ=arch_x86_nz.${EXT_SO}
