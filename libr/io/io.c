@@ -33,7 +33,6 @@ R_API void r_io_init(RIO* io) {
 R_API void r_io_free(RIO *io) {
 	if (io) {
 		r_io_fini (io);
-		r_cache_free (io->buffer);
 		free (io);
 	}
 }

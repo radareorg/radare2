@@ -7135,14 +7135,8 @@ R_API int r_core_disasm_pde(RCore *core, int nb_opcodes, int mode) {
 	}
 	REsil *esil = core->anal->esil;
 	RPVector ocache = core->io->cache;
-	RCache *ocacheb = core->io->buffer;
 	const int ocached = core->io->cached;
 	if (ocache.v.a) {
-		if (ocacheb && ocacheb->len) {
-			RCache *c = r_cache_new ();
-			r_cache_set (c, ocacheb->base, ocacheb->buf, ocacheb->len);
-			core->io->buffer = c;
-		}
 		RPVector *vec = (RPVector *)r_vector_clone ((RVector *)&ocache);
 		vec->v.free = NULL;
 		core->io->cache = *vec;
@@ -7266,7 +7260,6 @@ R_API int r_core_disasm_pde(RCore *core, int nb_opcodes, int mode) {
 		RIOCache *c = (RIOCache *)*it;
 		r_skyline_add (&core->io->cache_skyline, c->itv, c);
 	}
-	core->io->buffer = ocacheb;
 	core->io->cached = ocached;
 	r_config_hold_restore (chold);
 	r_config_hold_free (chold);
