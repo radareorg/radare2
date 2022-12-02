@@ -37,11 +37,16 @@ static ut32 _rate_compat(RArchPlugin *p, RArchConfig *cfg, const char *name) {
 	if (cfg->arch && !strcmp (p->arch, cfg->arch)) {
 		score += 50;
 	}
-	if (R_SYS_BITS_CHECK (p->bits, bits)) {
-		score += (!!score) * 30;
-	}
-	if (p->endian & cfg->endian) {
-		score += (!!score) * 20;
+	if (score > 0) {
+		if (strstr (p->name, ".nz")) {
+			score += 50;
+		}
+		if (R_SYS_BITS_CHECK (p->bits, bits)) {
+			score += (!!score) * 30;
+		}
+		if (p->endian & cfg->endian) {
+			score += (!!score) * 20;
+		}
 	}
 	return score;
 }
@@ -53,12 +58,9 @@ static RArchPlugin *find_bestmatch(RArch *arch, RArchConfig *cfg, const char *na
 	RArchPlugin *p;
 	r_list_foreach (arch->plugins, iter, p) {
 		const ut32 score = _rate_compat (p, cfg, name);
-		if (score > best_score) {
+		if (score > 0 && score > best_score) {
 			best_score = score;
 			ap = p;
-		}
-		if (score >= 100) {
-			break;
 		}
 	}
 	return ap;

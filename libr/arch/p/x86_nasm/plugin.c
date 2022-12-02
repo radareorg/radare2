@@ -3,24 +3,22 @@
 #include <r_lib.h>
 #include <r_asm.h>
 
-// static i// nt assemble(RAsm *a, RAsmOp *op, const char *buf) {
-
 static bool encode(RArchSession *a, RAnalOp *op, RArchEncodeMask mask) {
 	char *ipath, *opath;
 	if (a->config->syntax != R_ARCH_SYNTAX_INTEL) {
-		R_LOG_ERROR ("asm.x86.nasm does not support non-intel syntax");
-		return -1;
+		R_LOG_ERROR ("asm.x86.nasm only support intel syntax");
+		return false;
 	}
 
 	int ifd = r_file_mkstemp ("r_nasm", &ipath);
 	if (ifd == -1) {
-		return -1;
+		return false;
 	}
 
 	int ofd = r_file_mkstemp ("r_nasm", &opath);
 	if (ofd == -1) {
 		free (ipath);
-		return -1;
+		return false;
 	}
 
 	const char *buf = op->mnemonic;
@@ -31,7 +29,7 @@ static bool encode(RArchSession *a, RAnalOp *op, RArchEncodeMask mask) {
 		int wlen = write (ifd, asm_buf, slen);
 		free (asm_buf);
 		if (slen != wlen) {
-			return -1;
+			return false;
 		}
 	}
 
@@ -51,7 +49,7 @@ static bool encode(RArchSession *a, RAnalOp *op, RArchEncodeMask mask) {
 	free (ipath);
 	free (opath);
 
-	return op->size;
+	return true;
 }
 
 RArchPlugin r_arch_plugin_x86_nasm = {

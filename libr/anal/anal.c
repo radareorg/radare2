@@ -232,6 +232,7 @@ R_API bool r_anal_use(RAnal *anal, const char *name) {
 	r_return_val_if_fail (anal, false);
 	RListIter *it;
 	RAnalPlugin *h;
+	// r_anal plugins
 	r_list_foreach (anal->plugins, it, h) {
 		if (!h->name || strcmp (h->name, name)) {
 			continue;
@@ -484,7 +485,7 @@ R_API void r_anal_purge(RAnal *anal) {
 	r_anal_purge_imports (anal);
 }
 
-// XXX deprecate
+// XXX deprecate. use r_arch_info() when all anal plugs get moved
 R_API R_DEPRECATE int r_anal_archinfo(RAnal *anal, int query) {
 	r_return_val_if_fail (anal, -1);
 	switch (query) {
@@ -810,6 +811,7 @@ R_API void r_anal_remove_import(RAnal *anal, const char *imp) {
 }
 
 R_API void r_anal_purge_imports(RAnal *anal) {
+	r_return_if_fail (anal);
 	r_list_purge (anal->imports);
 	R_DIRTY (anal);
 }
