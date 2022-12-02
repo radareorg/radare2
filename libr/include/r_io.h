@@ -520,11 +520,6 @@ R_API void r_io_desc_cache_fini_all(RIO *io);
 R_API RList *r_io_desc_cache_list(RIODesc *desc);
 R_API int r_io_desc_extend(RIODesc *desc, ut64 size);
 
-/* io/buffer.c */
-R_API int r_io_buffer_read(RIO* io, ut64 addr, ut8* buf, int len);
-R_API int r_io_buffer_load(RIO* io, ut64 addr, int len);
-R_API void r_io_buffer_close(RIO* io);
-
 /* io/fd.c */
 R_API int r_io_fd_open(RIO *io, const char *uri, int flags, int mode);
 R_API bool r_io_fd_close(RIO *io, int fd);
