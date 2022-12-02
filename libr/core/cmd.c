@@ -4569,7 +4569,7 @@ ignore:
 		cmd = r_str_trim_nc (cmd);
 		if (ptr2) {
 			if (strlen (ptr + 1) == 13 && strlen (ptr2 + 1) == 6 &&
-				r_str_startswith (ptr + 1, "0x") && 
+				r_str_startswith (ptr + 1, "0x") &&
 				r_str_startswith (ptr2 + 1, "0x")) {
 				/* 0xXXXX:0xYYYY */
 			} else if (strlen (ptr + 1) == 9 && strlen (ptr2 + 1) == 4) {
