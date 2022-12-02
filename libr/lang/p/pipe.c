@@ -32,7 +32,7 @@ static HANDLE hPipeInOut = NULL;
 static HANDLE hproc = NULL;
 #define PIPE_BUF_SIZE 8192
 
-static void lang_pipe_run_win(RLang *lang) {
+static void lang_pipe_run_win(RLangSession *s) {
 	CHAR buf[PIPE_BUF_SIZE];
 	BOOL bSuccess = TRUE;
 	int i, res = 0;
@@ -288,7 +288,7 @@ static bool lang_pipe_run(RLangSession *s, const char *code, int len) {
 				goto cleanup;
 			}
 		}
-		lang_pipe_run_win (lang);
+		lang_pipe_run_win (s);
 	}
 cleanup:
 	CloseHandle (hConnected);
