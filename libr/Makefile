@@ -119,6 +119,7 @@ libr.o:
 
 libr.${EXT_AR}: libr.o
 	$(AR) -rs $@ libr.o
+	$(RANLIB) $@
 
 #libr.${EXT_AR}: .libr2
 #	-${AR} -rs $@ .libr2/*/*.o

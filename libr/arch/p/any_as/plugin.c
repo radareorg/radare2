@@ -1,7 +1,18 @@
 /* Copyright (C) 2008-2022 - pancake */
 
 #include <r_arch.h>
+#include "binutils_as.c"
 
+static const char *getcpu(RArchSession *s) {
+	const char *cpu = s->config->cpu;
+	if (!cpu) {
+		return R_SYS_ARCH;
+	}
+	return cpu;
+}
+
+#define ASSEMBLER32 "R2_ARM32_AS"
+#define ASSEMBLER64 "R2_ARM64_AS"
 static bool as_encode(RArchSession *s, RAnalOp *op, RArchEncodeMask mask) {
 	int len = 0;
 	char *gas = r_sys_getenv ("RASM2_AS");
@@ -9,17 +20,64 @@ static bool as_encode(RArchSession *s, RAnalOp *op, RArchEncodeMask mask) {
 		// TODO: find in PATH
 		gas = strdup ("as");
 	}
-	char *cmd = r_str_newf (
-		"%s -o a.out /dev/stdin <<__\n%s\n__\n"
-		"rabin2 -rO 'd/S/*text' a.out; rm -f a.out\n",
-		gas, op->mnemonic);
-	ut8 *out = (ut8 *)r_sys_cmd_str (cmd, NULL, &len);
-	if (out) {
-		r_anal_op_set_bytes (op, op->addr, out, len);
-		free (out);
+	const char *cpu = getcpu (s);
+	if (!strcmp (cpu, "ppc")) {
+		char cmd_opt[4096];
+		snprintf (cmd_opt, sizeof (cmd_opt), "-mregnames -a%d %s", s->config->bits,
+			R_ARCH_CONFIG_IS_BIG_ENDIAN (s->config) ? "-be" : "-le");
+		// TODO the R2_PPC_AS arg should be removed
+		return binutils_assemble (s, op, op->mnemonic, gas, "R2_PPC_AS", "", cmd_opt);
+#if __linux__
+	} else if (!strcmp (cpu, "arm")) {
+		const int bits = s->config->bits;
+		char cmd_opt[4096];
+		snprintf (cmd_opt, sizeof (cmd_opt), "%s %s",
+			bits == 16 ? "-mthumb" : "",
+			R_ARCH_CONFIG_IS_BIG_ENDIAN (s->config) ? "-EB" : "-EL");
+		return binutils_assemble (s, op, op->mnemonic, gas,
+			bits == 64 ? ASSEMBLER64 : ASSEMBLER32,
+			bits <= 32 ? ".syntax unified\n" : "", cmd_opt);
+#endif
+	} else if (!strcmp (cpu, "gas")) { // x86 alternative
+		char *cmd = r_str_newf (
+			"gas /dev/stdin -o /dev/stdout <<__\n"
+			"BITS %i\nORG 0x%"PFMT64x"\n%s\n__",
+			s->config->bits, op->addr, op->mnemonic);
+		ut8 *out = (ut8 *)r_sys_cmd_str (cmd, "", &len);
+		if (out) {
+			r_anal_op_set_bytes (op, op->addr, out, len);
+			free (out);
+		}
+		op->size = len;
+	} else if (!strcmp (cpu, "x86")) {
+		// macos-arm64  NO
+		const char *syntaxstr = "";
+		switch (s->config->syntax) {
+		case R_ARCH_SYNTAX_INTEL:
+			syntaxstr = ".intel_syntax noprefix\n";
+			break;
+		case R_ARCH_SYNTAX_ATT:
+			syntaxstr = ".att_syntax\n";
+			break;
+		}
+		char header[4096];
+		snprintf (header, sizeof (header), "%s.code%i\n", // .org 0x%"PFMT64x"\n"
+			syntaxstr, s->config->bits);
+		return binutils_assemble (s, op, op->mnemonic, gas, NULL, header, "");
+	} else {
+		// macos-arm64  YES
+		char *cmd = r_str_newf (
+			"%s -o a.out /dev/stdin <<__\n%s\n__\n"
+			"rabin2 -rO 'd/S/*text' a.out; rm -f a.out\n",
+			gas, op->mnemonic);
+		ut8 *out = (ut8 *)r_sys_cmd_str (cmd, NULL, &len);
+		if (out) {
+			r_anal_op_set_bytes (op, op->addr, out, len);
+			free (out);
+		}
+		free (cmd);
 	}
 	op->size = len;
-	free (cmd);
 	return len > 0;
 }
 

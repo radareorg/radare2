@@ -2,13 +2,13 @@
 
 #include "binutils_as.h"
 
-int binutils_assemble(RAsm *a, RAsmOp *op, const char *buf, const char *as, const char *env, const char *header, const char *cmd_opt) {
+int binutils_assemble(RArchSession *arch, RAnalOp *op, const char *buf, const char *as, const char *env, const char *header, const char *cmd_opt) {
 	char *user_as = r_sys_getenv (env);
 	if (user_as) {
 		as = user_as;
 	}
 	if (R_STR_ISEMPTY (as)) {
-		R_LOG_ERROR ("Please set %s env to define a %s assembler program", env, a->cur->arch);
+		R_LOG_ERROR ("Please set %s env to define a %s assembler program", env, arch->arch);
 		return 1;
 	}
 
@@ -62,7 +62,8 @@ int binutils_assemble(RAsm *a, RAsmOp *op, const char *buf, const char *as, cons
 		} else {
 			len = (int)(size_t)(end - begin - 9);
 			if (len > 0) {
-				r_strbuf_setbin (&op->buf, begin + 9, len);
+				// r_strbuf_setbin (&op->buf, begin + 9, len);
+				r_anal_op_set_bytes (op, op->addr, begin + 9, len);
 			} else {
 				len = 0;
 			}
@@ -72,7 +73,9 @@ int binutils_assemble(RAsm *a, RAsmOp *op, const char *buf, const char *as, cons
 		R_LOG_ERROR ("running: %s", cmd);
 	}
 beach:
-	close (ofd);
+	if (ofd != -1) {
+		close (ofd);
+	}
 skip_ofd:
 	close (ifd);
 
