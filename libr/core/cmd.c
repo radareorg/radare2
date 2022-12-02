@@ -238,6 +238,7 @@ static RCoreHelpMessage help_msg_b = {
 	"b", "+3", "increase blocksize by 3",
 	"b", "-16", "decrease blocksize by 16",
 	"b*", "", "display current block size in r2 command",
+	"b64:", "AA=", "receive a base64 string that is executed without evaluating special chars",
 	"bf", " foo", "set block size to flag size",
 	"bj", "", "display block size information in JSON",
 	"bm", " 1M", "set max block size",
@@ -2416,10 +2417,10 @@ static int cmd_bsize(void *data, const char *input) {
 			int len = 0;
 			char *cmd = (char *)sdb_decode (input + 3, &len);
 			cmd[len] = 0;
-			r_core_cmd0 (core, cmd);
+			r_core_cmd_call (core, cmd);
 			free (cmd);
 		} else {
-			eprintf ("Usage: b64:P2UgaGVsbG8K - decode base64 and run command\n");
+			r_core_cmd_help_match (core, help_msg_b, "b64:", false);
 		}
 		break;
 	case 'm': // "bm"
@@ -3589,6 +3590,8 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 			// XXX: do not flush here, we need r_cons_push () and r_cons_pop()
 			r_cons_flush ();
 			// XXX: we must import register flags in C
+			// r_core_cmd_subst (core, ".dr*");
+			// r_core_cmd_subst (core, cr);
 			(void)r_core_cmd0 (core, ".dr*");
 			(void)r_core_cmd0 (core, cr);
 		}
@@ -4566,8 +4569,8 @@ ignore:
 		cmd = r_str_trim_nc (cmd);
 		if (ptr2) {
 			if (strlen (ptr + 1) == 13 && strlen (ptr2 + 1) == 6 &&
-				!strncmp (ptr + 1, "0x", 2) &&
-				!strncmp (ptr2 + 1, "0x", 2)) {
+				r_str_startswith (ptr + 1, "0x") && 
+				r_str_startswith (ptr2 + 1, "0x")) {
 				/* 0xXXXX:0xYYYY */
 			} else if (strlen (ptr + 1) == 9 && strlen (ptr2 + 1) == 4) {
 				/* XXXX:YYYY */
@@ -5922,6 +5925,11 @@ R_API char *r_core_cmd_strf(RCore *core, const char *fmt, ...) {
 	free (cmd);
 	va_end (ap);
 	return ret;
+}
+
+// run an r2 command without evaluating any special character
+R_API int r_core_cmd_call(RCore *core, const char *cmd) {
+	return r_cmd_call (core->rcmd, cmd);
 }
 
 /* return: pointer to a buffer with the output of the command */

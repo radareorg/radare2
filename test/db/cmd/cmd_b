@@ -19,3 +19,22 @@ EXPECT=<<EOF
 {"blocksize":100,"blocksize_limit":52428800}
 EOF
 RUN
+
+NAME=b64
+FILE=-
+CMDS=<<EOF
+b64?
+"p6es ?e hello;?e world"
+b64:`_`
+p6ds P2UgaGVsbG87P2Ugd29ybGQ=
+`p6ds P2UgaGVsbG87P2Ugd29ybGQ=`
+EOF
+EXPECT=<<EOF
+| b64:AA=  receive a base64 string that is executed without evaluating special chars
+P2UgaGVsbG87P2Ugd29ybGQ=
+hello;?e world
+?e hello;?e world
+hello
+world
+EOF
+RUN
