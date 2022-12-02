@@ -96,14 +96,10 @@ endif
 _libr.${EXT_AR}: .libr
 	-${AR} -rs $@ .libr/*.o
 
-
-libr.${EXT_AR}: $(wildcard */libr_*.${EXT_AR}) ../shlr/libr_shlr.${EXT_AR}
-	ar -rcT libr.${EXT_AR} $^
-	du -hs libr.${EXT_AR}
-
-# this is an alternative implementation using only ar -x
-# its also possible with `libtool -static -o new.a old1.a old2.a`
-.libr2old: $(wildcard */libr_*.${EXT_AR}) ../shlr/libr_shlr.${EXT_AR}
+# ifeq ($(shell type libtool),)
+ifeq (1,1)
+# XXX this is not correct. libtool is required for static builds for now
+.libr2: $(wildcard */libr_*.${EXT_AR}) ../shlr/libr_shlr.${EXT_AR}
 	rm -rf .libr2
 	mkdir -p .libr2
 	-for LIB in $^ ; do \
@@ -113,8 +109,27 @@ libr.${EXT_AR}: $(wildcard */libr_*.${EXT_AR}) ../shlr/libr_shlr.${EXT_AR}
 		( cd .libr2/$$BN ; pwd ; du -hs ../../$$LIB; ${AR} -x ../../$$LIB ) ; \
 	done
 
-libr2.${EXT_AR}: .libr2old
-	-${AR} -rs $@ .libr2/*/*.o
+ifeq ($(shell uname),Darwin)
+WHOLEFLAG=-all_load
+else
+WHOLEFLAG=-Wl,--whole-archive
+endif
+libr.o:
+	$(CC) -r -nostdlib $(WHOLEFLAG) -o libr.o $(wildcard */libr_*.${EXT_AR}) ../shlr/libr_shlr.${EXT_AR}
+
+libr.${EXT_AR}: libr.o
+	$(AR) -rs $@ libr.o
+
+#libr.${EXT_AR}: .libr2
+#	-${AR} -rs $@ .libr2/*/*.o
+else
+
+libr.${EXT_AR}: $(wildcard */libr_*.${EXT_AR}) ../shlr/libr_shlr.${EXT_AR}
+	libtool -static -o libr.${EXT_AR} $^
+	# ar -rcT libr.${EXT_AR} $^
+	du -hs libr.${EXT_AR}
+endif
+
 
 ifeq (1,$(WITH_GPL))
 E+=../shlr/grub/libgrubfs.${EXT_AR}

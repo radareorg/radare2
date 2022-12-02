@@ -181,6 +181,7 @@ endif
 clean:
 	rm -f libr/libr.a libr/libr.dylib libr/include/r_version.h
 	rm -rf libr/.libr
+	rm `find * | grep arm | grep dis.a$$`
 	for DIR in shlr libr binr ; do $(MAKE) -C "$$DIR" clean ; done
 	-rm -f `find . -type f -name '*.d'`
 	rm -f `find . -type f -name '*.o'`
