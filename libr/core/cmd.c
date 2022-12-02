@@ -77,6 +77,7 @@ static RCoreHelpMessage help_msg_dollar = {
 
 static RCoreHelpMessage help_msg_l = {
 	"Usage:", "l[erls] [arg]", "Internal less (~..) and file listing (!ls)",
+	"lu", " [path]", "same as #!lua",
 	"ll", " [path]", "same as ls -l",
 	"lr", " [path]", "same as ls -r",
 	"ls", " [-e,-l,-j,-q] [path]", "list files in current or given directory",
@@ -1510,6 +1511,18 @@ static int cmd_l(void *data, const char *input) { // "l"
 			break;
 		}
 		cmd_lr (core, arg);
+		break;
+	case 'u': // "lu"(a) - short for #!lua
+		{
+			const char *arg = strchr (input, ' ');
+			if (arg) {
+				char *cmd = r_str_newf ("#!lua %s", r_str_trim_head_ro (arg + 1));
+				r_core_cmd0 (core, cmd);
+				free (cmd);
+			} else {
+				r_core_cmd0 (core, "#!lua");
+			}
+		}
 		break;
 	case 's': // "ls"
 		if (input[1] == '?') {
