@@ -7,7 +7,7 @@
 #include "r_lang.h"
 
 #if __UNIX__
-static int lang_cpipe_file(RLang *lang, const char *file) {
+static int lang_cpipe_file(RLangSession *lang, const char *file) {
 	char *a, *cc, *p, name[512];
 	const char *libpath, *libname;
 
@@ -66,12 +66,7 @@ static int lang_cpipe_file(RLang *lang, const char *file) {
 	return 0;
 }
 
-static int lang_cpipe_init(void *user) {
-	// TODO: check if "valac" is found in path
-	return true;
-}
-
-static bool lang_cpipe_run(RLang *lang, const char *code, int len) {
+static bool lang_cpipe_run(RLangSession *session, const char *code, int len) {
 	FILE *fd = r_sandbox_fopen (".tmp.c", "w");
 	if (!fd) {
 		R_LOG_ERROR ("Cannot open .tmp.c");
@@ -84,7 +79,7 @@ static bool lang_cpipe_run(RLang *lang, const char *code, int len) {
 	fputs (code, fd);
 	fputs ("\n}\n", fd);
 	fclose (fd);
-	lang_cpipe_file (lang, ".tmp.c");
+	lang_cpipe_file (session, ".tmp.c");
 	r_file_rm (".tmp.c");
 	return true;
 }
@@ -96,8 +91,6 @@ static RLangPlugin r_lang_plugin_cpipe = {
 	.author = "pancake",
 	.license = "LGPL",
 	.run = lang_cpipe_run,
-	.init = (void*)lang_cpipe_init,
-	.fini = NULL,
 	.run_file = (void*)lang_cpipe_file,
 };
 #else

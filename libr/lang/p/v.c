@@ -1,11 +1,9 @@
 /* radare - LGPL - Copyright 2019-2022 pancake */
 
-#include "r_lib.h"
-#include "r_core.h"
+#include <r_core.h>
 
-static const char *r2v_sym = "r2v__entry";
-
-static bool lang_v_file(RLang *lang, const char *file);
+static const char *const r2v_sym = "r2v__entry";
+static bool lang_v_file(RLangSession *lang, const char *file);
 
 static const char *r2v_head = \
 	"module r2v\n"
@@ -107,7 +105,7 @@ static void runlib(void *user, const char *lib) {
 	}
 }
 
-static bool __run(RLang *lang, const char *code, int len) {
+static bool __run(RLangSession *s, const char *code, int len) {
 	r_file_rm (".tmp.v");
 	FILE *fd = r_sandbox_fopen (".tmp.v", "w");
 	if (fd) {
@@ -124,7 +122,7 @@ static bool __run(RLang *lang, const char *code, int len) {
 			fputs ("}\n", fd);
 		}
 		fclose (fd);
-		lang_v_file (lang, ".tmp.v");
+		lang_v_file (s, ".tmp.v");
 		r_sandbox_system ("v -gc boehm -shared -o .tmp.v."R_LIB_EXT" .tmp.v", 1);
 	//	runlib (lang->user, ".tmp.v."R_LIB_EXT);
 		//r_file_rm (".tmp.v");
@@ -135,8 +133,8 @@ static bool __run(RLang *lang, const char *code, int len) {
 	return false;
 }
 
-static bool lang_v_file(RLang *lang, const char *file) {
-	if (!lang || R_STR_ISEMPTY (file)) {
+static bool lang_v_file(RLangSession *s, const char *file) {
+	if (!s || R_STR_ISEMPTY (file)) {
 		return false;
 	}
 	if (!r_str_endswith (file, ".v")) {
@@ -144,7 +142,7 @@ static bool lang_v_file(RLang *lang, const char *file) {
 	}
 	if (strcmp (file, ".tmp.v")) {
 		char *code = r_file_slurp (file, NULL);
-		bool r = __run (lang, code, -1);
+		bool r = __run (s, code, -1);
 		free (code);
 		return r;
 	}
@@ -161,14 +159,15 @@ static bool lang_v_file(RLang *lang, const char *file) {
 		return false;
 	}
 	free (buf);
-	runlib (lang->user, lib);
+	RCore *core = (RCore*)s->lang->user;
+	runlib (core, lib);
 	r_file_rm (lib);
 	free (lib);
 	return 0;
 }
 
-static bool lang_v_run(RLang *lang, const char *code, int len) {
-	return __run (lang, code, len);
+static bool lang_v_run(RLangSession *s, const char *code, int len) {
+	return __run (s, code, len);
 }
 
 #define r_lang_v_example ""\

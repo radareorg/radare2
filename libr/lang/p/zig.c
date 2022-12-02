@@ -2,7 +2,7 @@
 
 #include <r_core.h>
 
-static bool lang_zig_file(RLang *lang, const char *file) {
+static bool lang_zig_file(RLangSession *s, const char *file) {
 	const char *libpath, *libname;
 
 	if (!r_file_exists (file)) {
@@ -46,7 +46,7 @@ static bool lang_zig_file(RLang *lang, const char *file) {
 		void (*fcn)(RCore *);
 		fcn = r_lib_dl_sym (lib, "entry");
 		if (fcn) {
-			fcn (lang->user);
+			fcn (s->lang->user);
 		} else {
 			R_LOG_ERROR ("Cannot find 'entry' symbol in library");
 		}
@@ -70,7 +70,7 @@ static bool lang_zig_init(void *user) {
 	return true;
 }
 
-static bool lang_zig_run(RLang *lang, const char *code, int len) {
+static bool lang_zig_run(RLangSession *s, const char *code, int len) {
 	const char *file = "_tmp.zig";
 	FILE *fd = r_sandbox_fopen (file, "w");
 	if (fd) {
@@ -90,7 +90,7 @@ static bool lang_zig_run(RLang *lang, const char *code, int len) {
 		fputs (code, fd);
 		fputs (zig_footer, fd);
 		fclose (fd);
-		lang_zig_file (lang, file);
+		lang_zig_file (s, file);
 		r_file_rm (file);
 	} else {
 		R_LOG_ERROR ("Cannot open %s", file);

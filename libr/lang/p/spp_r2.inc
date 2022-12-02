@@ -147,10 +147,10 @@ static TAG_CALLBACK(spp_r2_system) {
 	if (!state->echo[state->ifl]) {
 		return 0;
 	}
-	char *str = r_sys_cmd_str (buf, NULL, NULL);
-	if (str) {
-		r_cons_printf ("%s", str);
-		free (str);
+	char *msg = r_sys_cmd_str (buf, NULL, NULL);
+	if (msg) {
+		r_cons_printf ("%s", msg);
+		free (msg);
 	}
 	return 0;
 }

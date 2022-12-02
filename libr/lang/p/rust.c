@@ -2,7 +2,7 @@
 
 #include <r_lang.h>
 
-static int lang_rust_file(RLang *lang, const char *file) {
+static int lang_rust_file(RLangSession *s, const char *file) {
 	void *lib;
 	char *a, *cc, *p;
 	const char *libpath, *libname;
@@ -52,7 +52,7 @@ static int lang_rust_file(RLang *lang, const char *file) {
 		void (*fcn)(RCore *);
 		fcn = r_lib_dl_sym (lib, "entry");
 		if (fcn) {
-			fcn (lang->user);
+			fcn (s->lang->user);
 		} else {
 			R_LOG_ERROR ("Cannot find 'entry' symbol in library");
 		}
@@ -71,7 +71,7 @@ static int lang_rust_init(void *user) {
 	return true;
 }
 
-static bool lang_rust_run(RLang *lang, const char *code, int len) {
+static bool lang_rust_run(RLangSession *s, const char *code, int len) {
 	FILE *fd = r_sandbox_fopen ("_tmp.rs", "w");
 	if (!fd) {
 		R_LOG_ERROR ("Cannot open _tmp.rs");
@@ -111,7 +111,7 @@ static bool lang_rust_run(RLang *lang, const char *code, int len) {
 	fputs (code, fd);
 	fputs (rust_footer, fd);
 	fclose (fd);
-	lang_rust_file (lang, "_tmp.rs");
+	lang_rust_file (s, "_tmp.rs");
 	r_file_rm ("_tmp.rs");
 	return true;
 }
