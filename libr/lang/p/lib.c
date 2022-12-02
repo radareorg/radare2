@@ -1,14 +1,8 @@
-/* radare - LPGL - Copyright 2017-2020 condret */
+/* radare - LPGL - Copyright 2017-2022 condret */
 
-#include <r_lib.h>
-#include <r_core.h>
 #include <r_lang.h>
 
-static bool lang_lib_init(RLang *user) {
-	return true;
-}
-
-static bool lang_lib_file_run(RLang *user, const char *file) {
+static bool lang_lib_file_run(RLangSession *user, const char *file) {
 	char *libpath;
 	void *lib;
 	if (!(libpath = r_str_new (file))) {
@@ -32,7 +26,7 @@ static bool lang_lib_file_run(RLang *user, const char *file) {
 		void (*fcn)(RCore *);
 		fcn = r_lib_dl_sym (lib, "entry");
 		if (fcn) {
-			fcn (user->user);
+			fcn (user->user_data);
 		} else {
 			R_LOG_ERROR ("Cannot find 'entry' symbol in library");
 		}
@@ -48,6 +42,5 @@ static RLangPlugin r_lang_plugin_lib = {
 	.ext = R_LIB_EXT,
 	.desc = "Load libs directly into r2",
 	.license = "LGPL",
-	.init = lang_lib_init,
 	.run_file = lang_lib_file_run,
 };

@@ -16,7 +16,7 @@ static bool lang_c_set_argv(RLang *lang, int argc, const char **argv) {
 	return true;
 }
 
-static int lang_c_file(RLang *lang, const char *file) {
+static int lang_c_file(RLangSession *s, const char *file) {
 	char *a, *cc, *p, name[512];
 	const char *libpath, *libname;
 	void *lib;
@@ -72,7 +72,7 @@ static int lang_c_file(RLang *lang, const char *file) {
 		void (*fcn)(RCore *, int argc, const char **argv);
 		fcn = r_lib_dl_sym (lib, "entry");
 		if (fcn) {
-			fcn (lang->user, ac, av);
+			fcn (s->lang->user, ac, av);
 			ac = 0;
 			av = NULL;
 		} else {
@@ -92,7 +92,7 @@ static int lang_c_init(void *user) {
 	return true;
 }
 
-static bool lang_c_run(RLang *lang, const char *code, int len) {
+static bool lang_c_run(RLangSession *s, const char *code, int len) {
 	FILE *fd = r_sandbox_fopen (".tmp.c", "w");
 	if (!fd) {
 		R_LOG_ERROR ("Cannot open .tmp.c");
@@ -102,7 +102,7 @@ static bool lang_c_run(RLang *lang, const char *code, int len) {
 	fputs (code, fd);
 	fputs ("\n}\n", fd);
 	fclose (fd);
-	lang_c_file (lang, ".tmp.c");
+	lang_c_file (s, ".tmp.c");
 	r_file_rm (".tmp.c");
 	return true;
 }

@@ -20,14 +20,6 @@ R_LIB_VERSION(r_lang);
 #include "p/go.c"    // hardcoded
 #include "p/lib.c"
 
-static R_TH_LOCAL RLang *__lang = NULL;
-
-R_API void r_lang_plugin_free(RLangPlugin *p) {
-	if (p && p->fini) {
-		p->fini (__lang);
-	}
-}
-
 R_API RLang *r_lang_new(void) {
 	RLang *lang = R_NEW0 (RLang);
 	if (!lang) {
@@ -39,12 +31,12 @@ R_API RLang *r_lang_new(void) {
 		r_lang_free (lang);
 		return NULL;
 	}
-	lang->langs->free = (RListFree)r_lang_plugin_free;
 	lang->defs = r_list_new ();
 	if (!lang->defs) {
 		r_lang_free (lang);
 		return NULL;
 	}
+	lang->sessions = r_list_newf (free);
 	lang->defs->free = (RListFree)r_lang_def_free;
 	lang->cb_printf = (PrintfCallback)printf;
 #if HAVE_SYSTEM
@@ -67,10 +59,10 @@ R_API RLang *r_lang_new(void) {
 
 R_API void r_lang_free(RLang *lang) {
 	if (lang) {
-		__lang = NULL;
 		r_lang_undef (lang, NULL);
 		r_list_free (lang->langs);
 		r_list_free (lang->defs);
+		r_list_free (lang->sessions);
 		// TODO: remove langs plugins
 		free (lang);
 	}
@@ -128,17 +120,21 @@ R_API void r_lang_undef(RLang *lang, const char *name) {
 }
 
 R_API bool r_lang_setup(RLang *lang) {
-	if (lang && lang->cur && lang->cur->setup) {
-		return lang->cur->setup (lang);
+	RLangPlugin *p = R_UNWRAP3 (lang, session, plugin);
+	if (p && p->setup) {
+		return p->setup (lang->session);
 	}
 	return false;
 }
 
 R_API bool r_lang_add(RLang *lang, RLangPlugin *foo) {
 	if (foo && (!r_lang_get_by_name (lang, foo->name))) {
+#if 0
+		// we want an init when adding the plugin
 		if (foo->init) {
 			foo->init (lang);
 		}
+#endif
 		r_list_append (lang->langs, foo);
 		return true;
 	}
@@ -160,7 +156,6 @@ R_API void r_lang_list(RLang *lang, int mode) {
 	} else if (mode == ',') {
 		table = r_table_new ("langs");
 		RTableColumnType *typeString = r_table_type ("string");
-
 		r_table_add_column (table, typeString, "name", 0);
 		r_table_add_column (table, typeString, "license", 0);
 		r_table_add_column (table, typeString, "desc", 0);
@@ -228,26 +223,72 @@ R_API RLangPlugin *r_lang_get_by_name(RLang *lang, const char *name) {
 	return NULL;
 }
 
-R_API bool r_lang_use(RLang *lang, const char *name) {
-	RLangPlugin *h = r_lang_get_by_name (lang, name);
-	if (h) {
-		lang->cur = h;
+R_API RLangSession *r_lang_session(RLang *lang, RLangPlugin *h) {
+	r_return_val_if_fail (lang && h, NULL);
+	RLangSession *session = R_NEW0 (RLangSession);
+	if (session) {
+		session->lang = lang;
+		session->plugin = h;
+		if (h->init) {
+			session->plugin_data = h->init (session);
+		}
+	}
+	return session;
+}
+
+R_API bool r_lang_unuse(RLang *lang) {
+	RLangSession *s = lang->session;
+	if (s) {
+		// TODO: call fini and remove it from the sessions list
+		r_list_delete_data (lang->sessions, s);
+		RLangPlugin *plugin = s->plugin;
+		if (plugin->fini) {
+			plugin->fini (s);
+		}
+		free (s);
+		lang->session = NULL;
 		return true;
 	}
 	return false;
 }
 
+R_API bool r_lang_use_plugin(RLang *lang, RLangPlugin *h) {
+	r_return_val_if_fail (lang && h, false);
+	RListIter *iter;
+	RLangSession *s;
+	r_list_foreach (lang->sessions, iter, s) {
+		if (h == s->plugin) {
+			lang->session = s;
+			return true;
+		}
+	}
+	s = r_lang_session (lang, h);
+	if (s) {
+		lang->session = s;
+		r_list_append (lang->sessions, s);
+		return true;
+	}
+	return false;
+}
+
+R_API bool r_lang_use(RLang *lang, const char *name) {
+	RLangPlugin *h = r_lang_get_by_name (lang, name);
+	return h? r_lang_use_plugin (lang, h): false;
+}
+
 // TODO: store in r_lang and use it from the plugin?
 R_API bool r_lang_set_argv(RLang *lang, int argc, char **argv) {
-	if (lang->cur && lang->cur->set_argv) {
-		return lang->cur->set_argv (lang, argc, argv);
+	RLangPlugin *p = R_UNWRAP3 (lang, session, plugin);
+	if (p && p->set_argv) {
+		return p->set_argv (lang->session, argc, argv);
 	}
 	return false;
 }
 
 R_API bool r_lang_run(RLang *lang, const char *code, int len) {
-	if (lang->cur && lang->cur->run) {
-		return lang->cur->run (lang, code, len);
+	RLangPlugin *p = R_UNWRAP3 (lang, session, plugin);
+	if (p && p->run) {
+		return p->run (lang->session, code, len);
 	}
 	return false;
 }
@@ -258,20 +299,21 @@ R_API bool r_lang_run_string(RLang *lang, const char *code) {
 
 R_API bool r_lang_run_file(RLang *lang, const char *file) {
 	bool ret = false;
-	if (lang->cur) {
-		if (!lang->cur->run_file) {
-			if (lang->cur->run) {
+	RLangPlugin *p = R_UNWRAP3 (lang, session, plugin);
+	if (p) {
+		if (p->run_file) {
+			ret = p->run_file (lang->session, file);
+		} else {
+			if (p->run) {
 				size_t len;
 				char *code = r_file_slurp (file, &len);
 				if (!code) {
 					R_LOG_ERROR ("Could not open '%s'", file);
 					return 0;
 				}
-				ret = lang->cur->run (lang, code, (int)len);
+				ret = lang->session->plugin->run (lang->session, code, (int)len);
 				free (code);
 			}
-		} else {
-			ret = lang->cur->run_file (lang, file);
 		}
 	}
 	return ret;
@@ -279,17 +321,18 @@ R_API bool r_lang_run_file(RLang *lang, const char *file) {
 
 /* TODO: deprecate or make it more modular .. reading from stdin in a lib?!? wtf */
 R_API bool r_lang_prompt(RLang *lang) {
+	r_return_val_if_fail (lang, false);
 	char buf[1024];
 	const char *p;
 
-	if (!lang || !lang->cur) {
+	if (!lang || !lang->session) {
 		return false;
 	}
 
-	if (lang->cur->prompt) {
-		if (lang->cur->prompt (lang)) {
-			return true;
-		}
+	RLangSession *s = lang->session;
+	RLangPlugin *plugin = R_UNWRAP2 (s, plugin);
+	if (plugin && plugin->prompt && plugin->prompt (s)) {
+		return true;
 	}
 	/* init line */
 	RLine *line = r_line_singleton ();
@@ -304,7 +347,7 @@ R_API bool r_lang_prompt(RLang *lang) {
 	/* foo */
 	for (;;) {
 		r_cons_flush ();
-		snprintf (buf, sizeof (buf)-1, "%s> ", lang->cur->name);
+		snprintf (buf, sizeof (buf)-1, "%s> ", plugin->name);
 		r_line_set_prompt (buf);
 #if 0
 		printf ("%s> ", lang->cur->name);
@@ -354,9 +397,9 @@ R_API bool r_lang_prompt(RLang *lang) {
 					"  !command - run system command\n"
 					"  . file   - interpret file\n"
 					"  q	- quit prompt\n");
-			eprintf ("%s example:\n", lang->cur->name);
-			if (lang->cur->help) {
-				eprintf ("%s", *lang->cur->help);
+			eprintf ("%s example:\n", plugin->name);
+			if (plugin->help) {
+				eprintf ("%s", *plugin->help);
 			}
 			if (!r_list_empty (lang->defs)) {
 				eprintf ("variables:\n");
