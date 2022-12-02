@@ -13,7 +13,6 @@ r_asm_sources = [
   '../arch/p/arm/gnu/floatformat.c',
   join_paths('p','asm_ppc_as.c'),
   join_paths('p','asm_x86_as.c'),
-  join_paths('p','asm_x86_nasm.c'),
   # join_paths('p','asm_z80.c'),
 #join_paths('arch','arm','winedbg','be_arm.c'),
   join_paths('arch','avr','avr_disasm.c'),

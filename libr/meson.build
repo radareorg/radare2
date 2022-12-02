@@ -127,8 +127,7 @@ if no_user_plugins
 asm_plugins += [
   'arm_as',
   'ppc_as',
-  'x86_as',
-  'x86_nasm',
+  'x86_as'
 ]
 
 # TODO: add the pyc plugin for meson builds too
