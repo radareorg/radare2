@@ -20,7 +20,6 @@ R_API void r_io_cache_init(RIO *io) {
 	r_return_if_fail (io);
 	r_pvector_init (&io->cache, (RPVectorFree)cache_item_free);
 	r_skyline_init (&io->cache_skyline);
-	io->buffer = r_cache_new ();
 	io->cached = 0;
 }
 
@@ -28,8 +27,6 @@ R_API void r_io_cache_fini(RIO *io) {
 	r_return_if_fail (io);
 	r_pvector_fini (&io->cache);
 	r_skyline_fini (&io->cache_skyline);
-	r_cache_free (io->buffer);
-	io->buffer = NULL;
 	io->cached = 0;
 }
 

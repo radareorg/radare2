@@ -121,7 +121,6 @@ typedef struct r_io_t {
 	RIDStorage *files;	// RIODescs accessible by their fd
 	RIDStorage *maps;	// RIOMaps accessible by their id
 	RIDStorage *banks;	// RIOBanks accessible by their id
-	RCache *buffer;
 	RPVector cache;
 	RSkyline cache_skyline;
 	ut8 *write_mask;
