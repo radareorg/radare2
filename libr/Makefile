@@ -114,7 +114,7 @@ WHOLEFLAG=-all_load
 else
 WHOLEFLAG=-Wl,--whole-archive
 endif
-libr.o:
+libr.o: ../shlr/libr_shlr.${EXT_AR}
 	$(CC) -r -nostdlib $(WHOLEFLAG) -o libr.o $(wildcard */libr_*.${EXT_AR}) ../shlr/libr_shlr.${EXT_AR}
 
 libr.${EXT_AR}: libr.o
