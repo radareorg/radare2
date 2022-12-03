@@ -6,6 +6,6 @@ includedir=${prefix}/include
 Name: r_egg
 Description: radare foundation libraries
 Version: @VERSION@
-Requires: r_asm r_syscall r_util r_parse r_reg r_flag r_cons
+Requires: r_asm r_syscall r_util r_reg r_flag r_cons
 Libs: -L${libdir} -lr_egg
 Cflags: -I${includedir}/libr

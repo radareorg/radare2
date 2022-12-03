@@ -294,7 +294,6 @@ SUBDIRS ./config-user.mk
 	pkgcfg/r_util.pc
 	pkgcfg/r_search.pc
 	pkgcfg/r_bp.pc
-	pkgcfg/r_parse.pc
 	pkgcfg/r_fs.pc
 	pkgcfg/r_egg.pc
 	pkgcfg/r_crypto.pc
