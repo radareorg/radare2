@@ -1,4 +1,4 @@
-OBJ_WASMPSEUDO+=parse_wasm_pseudo.o
+OBJ_WASMPSEUDO+=$(LIBR)/arch/p/pseudo/wasm_pseudo.o
 
 TARGET_WASMPSEUDO=parse_wasm_pseudo.${EXT_SO}
 STATIC_OBJ+=${OBJ_WASMPSEUDO}

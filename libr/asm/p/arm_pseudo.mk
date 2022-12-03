@@ -1,4 +1,4 @@
-OBJ_ARMPSEUDO+=parse_arm_pseudo.o
+OBJ_ARMPSEUDO+=$(LIBR)/arch/p/arm/pseudo.o
 
 TARGET_ARMPSEUDO=parse_arm_pseudo.${EXT_SO}
 STATIC_OBJ+=${OBJ_ARMPSEUDO}

@@ -1,4 +1,4 @@
-OBJ_6502PSEUDO+=parse_6502_pseudo.o
+OBJ_6502PSEUDO+=$(LIBR)/arch/p/pseudo/6502_pseudo.o
 
 TARGET_6502PSEUDO=parse_6502_pseudo.${EXT_SO}
 STATIC_OBJ+=${OBJ_6502PSEUDO}

@@ -1,4 +1,4 @@
-OBJ_X86PSEUDO+=parse_x86_pseudo.o
+OBJ_X86PSEUDO+=$(LIBR)/arch/p/x86_nz/pseudo.o
 
 TARGET_X86PSEUDO=parse_x86_pseudo.${EXT_SO}
 STATIC_OBJ+=${OBJ_X86PSEUDO}
