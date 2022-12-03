@@ -30,7 +30,6 @@ LDFLAGS+=-L../../libr/core -lr_core
 LDFLAGS+=-L../../libr/anal -lr_anal
 LDFLAGS+=-L../../libr/crypto -lr_crypto
 LDFLAGS+=-L../../libr/flag -lr_flag
-LDFLAGS+=-L../../libr/parse -lr_parse
 LDFLAGS+=-L../../libr/fs -lr_fs
 LDFLAGS+=-L../../libr/magic -lr_magic
 LDFLAGS+=-L../../libr/syscall -lr_syscall
