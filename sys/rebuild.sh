@@ -97,7 +97,7 @@ RebuildZip() {
 
 RebuildTcc() {
 	Rebuild shlr/tcc
-	Rebuild libr/parse
+	Rebuild libr/asm
 }
 
 case "$1" in

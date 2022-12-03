@@ -601,7 +601,6 @@ subdir('libr/arch')
 subdir('libr/fs')
 subdir('libr/bin')
 subdir('libr/config')
-subdir('libr/parse')
 subdir('libr/lang')
 subdir('libr/asm')
 subdir('libr/esil')
@@ -634,7 +633,6 @@ if meson.is_subproject()
       r_io_dep,
       r_lang_dep,
       r_magic_dep,
-      r_parse_dep,
       r_reg_dep,
       r_search_dep,
       r_socket_dep,

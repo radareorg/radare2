@@ -52,7 +52,6 @@ LINK+=$(LIBR)/flag/libr_flag.a
 LINK+=$(LIBR)/syscall/libr_syscall.a
 LINK+=$(LIBR)/egg/libr_egg.a
 LINK+=$(LIBR)/fs/libr_fs.a
-LINK+=$(LIBR)/parse/libr_parse.a
 LINK+=$(LIBR)/bin/libr_bin.a
 LINK+=$(LIBR)/asm/libr_asm.a
 LINK+=$(LIBR)/search/libr_search.a

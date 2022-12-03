@@ -18,7 +18,7 @@ static const char *directives[] = {
 	".else", ".set", ".get", NULL
 };
 
-static const RAsmPlugin * const asm_static_plugins[] = { R_ASM_STATIC_PLUGINS };
+static const RAsmPlugin * const asm_static_plugins[] = { NULL }; //  asm plugins are deprecated
 
 /* pseudo.c - private api */
 static int r_asm_pseudo_align(RAsmCode *acode, RAsmOp *op, const char *input) {

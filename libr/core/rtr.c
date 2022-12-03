@@ -213,7 +213,7 @@ static char *rtr_dir_files(const char *path) {
 	return r_str_append (ptr, "</body></html>\n");
 }
 
-#if __UNIX__
+#if __UNIX__ && !__wasi__
 static void dietime(int sig) {
 	eprintf ("It's Time To Die!\n");
 	exit (0);

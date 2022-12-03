@@ -83,9 +83,6 @@ RLang:
 RMagic:
   - libr/magic/**/*
 
-RParse:
-  - libr/parse/**/*
-
 RReg:
   - libr/reg/**/*
 

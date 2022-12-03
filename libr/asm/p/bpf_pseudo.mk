@@ -1,4 +1,4 @@
-OBJ_BPF_PSEUDO+=parse_bpf_pseudo.o
+OBJ_BPF_PSEUDO+=$(LIBR)/arch/p/pseudo/bpf_pseudo.o
 
 TARGET_BPF_PSEUDO=parse_bpf_pseudo.${EXT_SO}
 STATIC_OBJ+=${OBJ_BPF_PSEUDO}

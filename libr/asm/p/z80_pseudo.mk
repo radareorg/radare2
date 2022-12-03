@@ -1,4 +1,4 @@
-OBJ_Z80PSEUDO+=parse_z80_pseudo.o
+OBJ_Z80PSEUDO+=$(LIBR)/arch/p/pseudo/z80_pseudo.o
 
 TARGET_Z80PSEUDO=parse_z80_pseudo.${EXT_SO}
 STATIC_OBJ+=${OBJ_Z80PSEUDO}

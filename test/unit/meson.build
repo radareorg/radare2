@@ -87,7 +87,6 @@ if get_option('enable_tests')
         r_reg_dep,
         r_syscall_dep,
         r_anal_dep,
-        r_parse_dep,
         r_egg_dep,
         r_search_dep,
         r_crypto_dep,
