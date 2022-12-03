@@ -55,7 +55,6 @@ typedef struct {
 	char *value;
 } RAsmEqu;
 
-#define _RAsmPlugin struct r_asm_plugin_t
 typedef struct r_asm_t {
 	RArch *arch;
 	RArchConfig *config;
@@ -63,8 +62,10 @@ typedef struct r_asm_t {
 	void *user;
 	RArchSession *ecur; // encode current
 	RArchSession *dcur; // decode current
-	_RAsmPlugin *cur; // disassemble .. should be RArchPlugin DEPRECATE
-	_RAsmPlugin *acur; // assemble DEPRECATE
+	void *cur; // deprecate
+	void *acur; // deprecate
+//	_RAsmPlugin *cur; // disassemble .. should be RArchPlugin DEPRECATE
+//	_RAsmPlugin *acur; // assemble DEPRECATE
 	// RArchSession *cur;
 	// RArchSession *acur;
 	RList *plugins;
@@ -76,12 +77,14 @@ typedef struct r_asm_t {
 	RNum *num;
 	int dataalign;
 	HtPP *flags;
-	bool pseudo;
+	bool pseudo; // should be implicit by RParse
+	RParse *parse;
 } RAsm;
 
 typedef bool (*RAsmModifyCallback)(RAsm *a, ut8 *buf, int field, ut64 val);
 typedef int (*RAsmAssembleCallback)(RAsm *a, RAsmOp *op, const char *buf);
 
+#if 0
 typedef struct r_asm_plugin_t {
 	const char *name;
 	const char *arch;
@@ -97,6 +100,7 @@ typedef struct r_asm_plugin_t {
 	RAsmAssembleCallback assemble;
 	RArchPluginEncodeCallback encode;
 } RAsmPlugin;
+#endif
 
 #ifdef R_API
 /* asm.c */
@@ -111,6 +115,8 @@ R_API bool r_asm_is_valid(RAsm *a, const char *name);
 
 R_API bool r_asm_use(RAsm *a, const char *name);
 R_API bool r_asm_use_assembler(RAsm *a, const char *name);
+
+// this is in archconfig
 R_API bool r_asm_set_arch(RAsm *a, const char *name, int bits);
 R_API int r_asm_set_bits(RAsm *a, int bits);
 R_API void r_asm_set_cpu(RAsm *a, const char *cpu);
@@ -120,7 +126,7 @@ R_API bool r_asm_set_syntax(RAsm *a, int syntax); // This is in RArchConfig
 R_API int r_asm_syntax_from_string(const char *name);
 R_API int r_asm_set_pc(RAsm *a, ut64 pc);
 R_API int r_asm_disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len);
-R_API int r_asm_assemble(RAsm *a, RAsmOp *op, const char *buf);
+// R_API int r_asm_assemble(RAsm *a, RAsmOp *op, const char *buf);
 R_API RAsmCode* r_asm_mdisassemble(RAsm *a, const ut8 *buf, int len);
 R_API RAsmCode* r_asm_mdisassemble_hexstr(RAsm *a, RParse *p, const char *hexstr);
 R_API RAsmCode* r_asm_massemble(RAsm *a, const char *buf);
@@ -157,14 +163,6 @@ R_API int r_asm_op_set_hex(RAsmOp *op, const char *str);
 R_API int r_asm_op_set_hexbuf(RAsmOp *op, const ut8 *buf, int len);
 R_API void r_asm_op_set_buf(RAsmOp *op, const ut8 *str, int len);
 R_API ut8 *r_asm_op_get_buf(RAsmOp *op);
-
-/* plugin pointers */
-extern RAsmPlugin r_asm_plugin_null;
-extern RAsmPlugin r_asm_plugin_arm_as;
-extern RAsmPlugin r_asm_plugin_ppc_as;
-extern RAsmPlugin r_asm_plugin_sparc_gnu;
-extern RAsmPlugin r_asm_plugin_x86_as;
-extern RAsmPlugin r_asm_plugin_x86_nasm;
 
 #endif
 

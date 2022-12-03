@@ -39,7 +39,7 @@ CB (lang, lang)
 CB (anal, anal)
 #define r_esil_add r_esil_plugin_add
 CB (esil, anal->esil)
-CB (asm, rasm)
+// CB (asm, rasm)
 CB (parse, parser)
 CB (bin, bin)
 CB (egg, egg)
@@ -105,7 +105,7 @@ R_API void r_core_loadlibs_init(RCore *core) {
 	DF (LANG, "language plugins", lang);
 	DF (ANAL, "analysis plugins", anal);
 	DF (ESIL, "esil emulation plugins", esil);
-	DF (ASM, "(dis)assembler plugins", asm);
+	// DF (ASM, "(dis)assembler plugins", asm);
 	DF (PARSE, "parsing plugins", parse);
 	DF (BIN, "bin plugins", bin);
 	DF (EGG, "egg plugins", egg);

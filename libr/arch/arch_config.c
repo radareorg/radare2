@@ -57,6 +57,20 @@ R_API bool r_arch_config_set_bits(RArchConfig *config, int bits) {
 	return is_valid;
 }
 
+R_API bool r_arch_config_set_syntax(RArchConfig *config, int syntax) {
+	switch (syntax) {
+	case R_ARCH_SYNTAX_REGNUM:
+	case R_ARCH_SYNTAX_INTEL:
+	case R_ARCH_SYNTAX_MASM:
+	case R_ARCH_SYNTAX_ATT:
+	case R_ARCH_SYNTAX_JZ:
+		config->syntax = syntax;
+		return true;
+	default:
+		return false;
+	}
+}
+
 R_API RArchConfig *r_arch_config_clone(RArchConfig *c) {
 	r_return_val_if_fail (c, NULL);
 	RArchConfig *ac = R_NEW0 (RArchConfig);

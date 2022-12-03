@@ -18,8 +18,6 @@ static const char *directives[] = {
 	".else", ".set", ".get", NULL
 };
 
-static const RAsmPlugin * const asm_static_plugins[] = { NULL }; //  asm plugins are deprecated
-
 /* pseudo.c - private api */
 static int r_asm_pseudo_align(RAsmCode *acode, RAsmOp *op, const char *input) {
 	acode->code_align = r_num_math (NULL, input);
@@ -185,7 +183,6 @@ static inline int r_asm_pseudo_incbin(RAsmOp *op, char *input) {
 }
 
 R_API RAsm *r_asm_new(void) {
-	int i;
 	RAsm *a = R_NEW0 (RAsm);
 	if (!a) {
 		return NULL;
@@ -197,9 +194,7 @@ R_API RAsm *r_asm_new(void) {
 		return NULL;
 	}
 	a->config = r_arch_config_new ();
-	for (i = 0; asm_static_plugins[i]; i++) {
-		r_asm_add (a, (RAsmPlugin*)asm_static_plugins[i]);
-	}
+	a->parse = r_parse_new ();
 	return a;
 }
 
@@ -252,66 +247,15 @@ R_API void r_asm_set_user_ptr(RAsm *a, void *user) {
 	a->user = user;
 }
 
-R_API bool r_asm_add(RAsm *a, RAsmPlugin *foo) {
-	if (!foo->name) {
-		return false;
-	}
-	if (r_asm_is_valid (a, foo->name)) {
-		return false;
-	}
-	r_list_append (a->plugins, foo);
-	return true;
-}
-
-R_API int r_asm_del(RAsm *a, const char *name) {
-	/* TODO: Implement r_asm_del */
-	return false;
-}
-
-R_API bool r_asm_is_valid(RAsm *a, const char *name) {
-	// r_return_val_if_fail (a && name, false);
-	if (a && R_STR_ISNOTEMPTY (name)) {
-		RAsmPlugin *h;
-		RListIter *iter;
-		r_list_foreach (a->plugins, iter, h) {
-			if (!strcmp (h->name, name)) {
-				return true;
-			}
-		}
-	}
-	return false;
-}
-
 R_API bool r_asm_use_assembler(RAsm *a, const char *name) {
 	r_return_val_if_fail (a && name, false);
-	RAsmPlugin *h;
-	RListIter *iter;
-	if (R_STR_ISNOTEMPTY (name)) {
-		r_list_foreach (a->plugins, iter, h) {
-			if (h->assemble && !strcmp (h->name, name)) {
-				a->acur = h;
-				// r_unref (a->ecur);
-				// a->ecur = a->ecur = r_arch_use (a->arch); // create a new instance for `ecur`
-				return true;
-			}
-		}
-	}
+	// TODO not implemented
 	a->acur = NULL;
 	return false;
 }
 
-static void load_asm_descriptions(RAsm *a, RAsmPlugin *p) {
-	const char *arch;
-
-	if (a->config->arch && (!p || !strcmp (p->name, "null"))) {
-		arch = a->config->arch;
-	} else if (p && !strcmp (p->name, "r2ghidra")) {
-		arch = p->name;
-	} else if (p) {
-		arch = p->arch;
-	} else {
-		arch = a->config->cpu;
-	}
+static void load_asm_descriptions(RAsm *a) {
+	const char *arch = a->config->cpu;
 #if HAVE_GPERF
 	SdbGperf *gp = r_asm_get_gperf (arch);
 	if (gp) {
@@ -343,7 +287,6 @@ R_API bool r_asm_use(RAsm *a, const char *name) {
 	}
 	r_arch_config_use (a->config, name);
 	r_asm_use_assembler (a, name);
-	RAsmPlugin *h;
 	RListIter *iter;
 	char *dotname = strdup (name);
 	char *vv = strchr (dotname, '.');
@@ -352,10 +295,13 @@ R_API bool r_asm_use(RAsm *a, const char *name) {
 	} else {
 		R_FREE (dotname);
 	}
+#if 0
+	RAsmPlugin *h;
 	r_list_foreach (a->plugins, iter, h) {
 		if (!strcmp (h->name, name)) {
 			if (!a->cur || (a->cur && h->arch && strcmp (a->cur->arch, h->arch))) {
-				load_asm_descriptions (a, h);
+				a->cur = h;
+				load_asm_descriptions (a);
 				r_asm_set_cpu (a, NULL);
 			}
 			a->cur = h;
@@ -369,29 +315,17 @@ R_API bool r_asm_use(RAsm *a, const char *name) {
 			r_asm_set_cpu (a, arch);
 #endif
 			a->cur = h;
-			load_asm_descriptions (a, h);
+			load_asm_descriptions (a);
 			free (arch);
 			return true;
 		}
-#if 0
-			} else if (!strcmp (name, h->name)) {
-#if 0
-				r_arch_config_set_cpu (a->config, NULL);
-#else
-				h->arch = name; // leaks wtf is this shit
-				r_asm_set_cpu (a, NULL);
-#endif
-				a->cur = h;
-				load_asm_descriptions (a, h);
-				return true;
-			}
-#endif
 	}
+#endif
 	if (a->analb.anal) {
 		if (a->analb.use (a->analb.anal, name)) {
-			load_asm_descriptions (a, NULL);
-			a->cur = NULL;
-			a->acur = NULL;
+			load_asm_descriptions (a);
+			//a->cur = NULL;
+			// a->acur = NULL;
 			return true;
 		}
 		R_LOG_ERROR ("Cannot find '%s' asm/arch/anal plugin. See rasm2 -L, -LL or -LLL", name);
@@ -413,27 +347,15 @@ R_DEPRECATE R_API void r_asm_set_cpu(RAsm *a, const char *cpu) {
 	r_arch_config_set_cpu (a->config, cpu);
 }
 
-#if 0
-static bool has_bits(RAsmPlugin *h, int bits) {
-	return (h && h->bits && (bits & h->bits));
-}
-#endif
-
 R_DEPRECATE R_API int r_asm_set_bits(RAsm *a, int bits) {
 	a->config->bits = bits;
 	return true;
-#if 0
-	if (has_bits (a->cur, bits)) {
-		a->config->bits = bits; // TODO : use OR? :)
-		return true;
-	}
-	return false;
-#endif
 }
 
 R_API bool r_asm_set_big_endian(RAsm *a, bool b) {
 	r_return_val_if_fail (a, false);
 	a->config->endian = R_SYS_ENDIAN ? R_SYS_ENDIAN_BIG: R_SYS_ENDIAN_LITTLE; // default is host endian
+#if 0
 	if (a->cur) {
 		switch (a->cur->endian) {
 		case R_SYS_ENDIAN_NONE:
@@ -450,28 +372,14 @@ R_API bool r_asm_set_big_endian(RAsm *a, bool b) {
 			a->config->endian = R_SYS_ENDIAN_BIG;
 			break;
 		default:
-			R_LOG_WARN ("RAsmPlugin doesn't specify endianness");
+			R_LOG_WARN ("no endianness specified");
 			break;
 		}
 	} else {
-		a->config->endian = b ? R_SYS_ENDIAN_BIG: R_SYS_ENDIAN_LITTLE;
 	}
+#endif
+	a->config->endian = b ? R_SYS_ENDIAN_BIG: R_SYS_ENDIAN_LITTLE;
 	return R_ARCH_CONFIG_IS_BIG_ENDIAN (a->config);
-}
-
-R_API bool r_asm_set_syntax(RAsm *a, int syntax) {
-	// TODO: move into r_arch ?
-	switch (syntax) {
-	case R_ARCH_SYNTAX_REGNUM:
-	case R_ARCH_SYNTAX_INTEL:
-	case R_ARCH_SYNTAX_MASM:
-	case R_ARCH_SYNTAX_ATT:
-	case R_ARCH_SYNTAX_JZ:
-		a->config->syntax = syntax;
-		return true;
-	default:
-		return false;
-	}
 }
 
 R_API int r_asm_set_pc(RAsm *a, ut64 pc) {
@@ -554,59 +462,6 @@ R_API int r_asm_disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 
 typedef int (*Ase)(RAsm *a, RAsmOp *op, const char *buf);
 
-#if 0
-static bool assemblerMatches(RAsm *a, RAsmPlugin *h, const char *ends_with) {
-	const char *arch = R_UNWRAP3 (a, config, arch);
-	if (!a || !h->arch || !h->assemble || !has_bits (h, a->config->bits)) {
-		return false;
-	}
-	const char *cur_arch = R_UNWRAP3 (a, cur, arch);
-	if (!strcmp (h->arch, arch)) {
-		if (ends_with) {
-			return r_str_endswith (h->name, ends_with);
-		}
-		if ((cur_arch && r_str_startswith (cur_arch, h->arch))) {
-			return true;
-		}
-	}
-	return false;
-}
-#endif
-
-static Ase find_assembler(RAsm *a, const char *kw) {
-	RAsmPlugin *ap = R_UNWRAP2 (a, acur);
-	if (ap && ap->assemble && !strcmp (ap->arch, a->config->arch)) {
-		return ap->assemble;
-	}
-	return NULL;
-#if 0
-	RAsmAssembleCallback aac = R_UNWRAP3 (a, acur, assemble);
-	if (!aac) {
-		aac = R_UNWRAP3 (a, cur, assemble);
-		if (aac) {
-						eprintf ("\n");
-			return aac;
-		}
-		RAsmPlugin *h;
-		RListIter *iter;
-		r_list_foreach (a->plugins, iter, h) {
-			if (assemblerMatches (a, h, kw)) {
-				a->acur = h;
-				if (kw) {
-					if (r_str_endswith (h->name, kw)) {
-						eprintf ("AAC FOUND\n");
-						aac = h->assemble;
-						break;
-					}
-				}
-				break;
-			}
-		}
-	}
-	return aac;
-#endif
-}
-
 static char *replace_directives_for(char *str, const char *token) {
 	RStrBuf *sb = r_strbuf_new ("");
 	char *p = NULL;
@@ -675,7 +530,7 @@ R_API RAnalOp *r_asm_assemble2(RAsm *a, const char *str) {
 }
 
 // returns instruction size
-R_API int r_asm_assemble(RAsm *a, RAsmOp *op, const char *buf) {
+static int r_asm_assemble(RAsm *a, RAsmOp *op, const char *buf) {
 	r_return_val_if_fail (a && op && buf, 0);
 	int ret = 0;
 	char *b = strdup (buf);
@@ -685,7 +540,10 @@ R_API int r_asm_assemble(RAsm *a, RAsmOp *op, const char *buf) {
 	if (a->ifilter) {
 		r_parse_parse (a->ifilter, buf, b);
 	}
+
+	eprintf ("ZD%c", 10);
 	r_str_case (b, false); // to-lower
+#if 0
 	r_asm_op_init (op);
 	Ase ase = find_assembler (a, NULL);
 	if (!ase) {
@@ -700,28 +558,26 @@ R_API int r_asm_assemble(RAsm *a, RAsmOp *op, const char *buf) {
 		}
 	}
 	if (!ase && a->analb.anal) {
-		// disassemble using the analysis plugin if found
 		ase = NULL;
-		RAnalOp aop;
-		a->analb.opinit (&aop);
+#else
+	if (a->analb.anal) {
+#endif
+		// disassemble using the analysis plugin if found
+		//RAnalOp aop;
+		//a->analb.opinit (&aop);
 		ut8 buf[256] = {0};
+		// XXX we shuold use just RArch and ecur/dcur
 		ret = a->analb.encode (a->analb.anal, a->pc, b, buf, sizeof (buf));
 		if (ret > 0) {
+			// r_anal_op_set_bytes (op, op->addr, buf, R_MIN (ret, sizeof (buf)));
 			r_strbuf_setbin (&op->buf, buf, R_MIN (ret, sizeof (buf)));
 		} // else fail to assemble
-		a->analb.opfini (&aop);
+		// a->analb.opfini (&aop);
+#if 0
 	} else if (ase) {
 		/* find callback if no assembler support in current plugin */
 		ret = ase (a, op, b);
-	}
-	// XXX delete this block, the ase thing should be setting asm, buf and hex
-	if (op && ret > 0) {
-		op->size = ret; // XXX shouldn't be necessary
-		r_asm_op_set_asm (op, b); // XXX ase should be updating this already, isn't?
-		ut8 *opbuf = (ut8*)r_strbuf_get (&op->buf);
-		if (opbuf) {
-			r_asm_op_set_buf (op, opbuf, ret);
-		}
+#endif
 	}
 	free (b);
 	return ret;

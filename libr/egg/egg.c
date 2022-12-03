@@ -84,11 +84,11 @@ beach:
 R_API bool r_egg_add(REgg *a, REggPlugin *foo) {
 	r_return_val_if_fail (a && foo, false);
 	RListIter *iter;
-	RAsmPlugin *h;
 	// TODO: cache foo->name length and use memcmp instead of strcmp
 	if (!foo->name) {
 		return false;
 	}
+	REggPlugin *h;
 	r_list_foreach (a->plugins, iter, h) {
 		if (!strcmp (h->name, foo->name)) {
 			return false;
@@ -345,7 +345,8 @@ R_API bool r_egg_assemble_asm(REgg *egg, char **asm_list) {
 		r_asm_use_assembler (egg->rasm, asm_name);
 		r_asm_set_bits (egg->rasm, egg->bits);
 		r_asm_set_big_endian (egg->rasm, egg->endian);
-		r_asm_set_syntax (egg->rasm, R_ARCH_SYNTAX_INTEL);
+		// r_asm_set_syntax (egg->rasm, R_ARCH_SYNTAX_INTEL);
+		r_arch_config_set_syntax (egg->rasm->config, R_ARCH_SYNTAX_INTEL);
 		code = r_buf_tostring (egg->buf);
 		asmcode = r_asm_massemble (egg->rasm, code);
 		if (asmcode) {

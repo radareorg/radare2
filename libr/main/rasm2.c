@@ -322,7 +322,6 @@ static void rasm2_list(RAsmState *as, const char *arch) {
 	int i;
 	char bits[32];
 	const char *feat2, *feat;
-	RAsmPlugin *h;
 	RListIter *iter;
 	PJ *pj = pj_new ();
 	if (!pj) {
@@ -331,6 +330,8 @@ static void rasm2_list(RAsmState *as, const char *arch) {
 	if (as->json) {
 		pj_a (pj);
 	}
+#if 0
+	RAsmPlugin *h;
 	r_list_foreach (as->a->plugins, iter, h) {
 		if (arch) {
 			if (h->cpus && !strcmp (arch, h->name)) {
@@ -398,6 +399,7 @@ static void rasm2_list(RAsmState *as, const char *arch) {
 			}
 		}
 	}
+#endif
 	if (as->json) {
 		pj_end (pj);
 		printf ("%s\n", pj_string (pj));
@@ -707,19 +709,19 @@ static bool rasm_asm(RAsmState *as, const char *buf, ut64 offset, ut64 len, int 
 	return (ret > 0);
 }
 
-/* asm callback */
-static int __lib_asm_cb(RLibPlugin *pl, void *user, void *data) {
-	RAsmPlugin *hand = (RAsmPlugin *)data;
-	RAsmState *as = (RAsmState *)user;
-	r_asm_add (as->a, hand);
-	return true;
-}
-
 /* anal callback */
 static int __lib_anal_cb(RLibPlugin *pl, void *user, void *data) {
 	RAnalPlugin *hand = (RAnalPlugin *)data;
 	RAsmState *as = (RAsmState *)user;
 	r_anal_add (as->anal, hand);
+	return true;
+}
+
+/* arch callback */
+static int __lib_arch_cb(RLibPlugin *pl, void *user, void *data) {
+	RArchPlugin *hand = (RArchPlugin *)data;
+	RAsmState *as = (RAsmState *)user;
+	r_arch_add (as->anal->arch, hand);
 	return true;
 }
 
@@ -749,11 +751,12 @@ static void __load_plugins(RAsmState *as) {
 		free (tmp);
 		return;
 	}
-	r_lib_add_handler (as->l, R_LIB_TYPE_ASM, "(dis)assembly plugins", &__lib_asm_cb, NULL, as);
+	// r_lib_add_handler (as->l, R_LIB_TYPE_ASM, "(dis)assembly plugins", &__lib_asm_cb, NULL, as);
 	r_lib_add_handler (as->l, R_LIB_TYPE_ANAL, "analysis/emulation plugins", &__lib_anal_cb, NULL, as);
+	r_lib_add_handler (as->l, R_LIB_TYPE_ARCH, "architecture plugins", &__lib_arch_cb, NULL, as);
 
 	char *path = r_sys_getenv (R_LIB_ENV);
-	if (path && *path) {
+	if (R_STR_ISNOTEMPTY (path)) {
 		r_lib_opendir (as->l, path);
 	}
 

@@ -552,7 +552,7 @@ R_API R_DEPRECATE RAnalVar *r_anal_get_used_function_var(RAnal *anal, ut64 addr)
 typedef RAnalFunction *(* RAnalGetFcnIn)(RAnal *anal, ut64 addr, int type);
 typedef RAnalHint *(* RAnalGetHint)(RAnal *anal, ut64 addr);
 typedef char *(* RAnalMnemonics)(RAnal *anal, int id, bool json);
-typedef int (* RAnalEncode)(RAnal *anal, ut64 addr, const char *s, const ut8 *data, int len);
+typedef int (* RAnalEncode)(RAnal *anal, ut64 addr, const char *s, ut8 *data, int len);
 typedef int (* RAnalDecode)(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len, RAnalOpMask mask);
 typedef void (* RAnalOpInit)(RAnalOp *op);
 typedef void (* RAnalOpFini)(RAnalOp *op);
