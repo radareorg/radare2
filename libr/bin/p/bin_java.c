@@ -1,11 +1,14 @@
 /* radare - LGPL - Copyright 2009-2022 - pancake, nibble, Adam Pridgen <dso@rice.edu || adam.pridgen@thecoverofnight.com> */
 
+#define R_LOG_ORIGIN "bin.java"
+
 #include <r_bin.h>
 #include "../../shlr/java/class.h"
 #include "../../shlr/java/code.h"
 
 #define IFDBG_BIN_JAVA if (0)
 
+// XXX we need to refactor rbin i guess to get rid of this
 static R_TH_LOCAL Sdb *DB = NULL;
 
 static void add_bin_obj_to_sdb(RBinJavaObj *bin);
@@ -23,7 +26,7 @@ static int init(void *user) {
 }
 
 static int fini(void *user) {
-	IFDBG_BIN_JAVA eprintf ("Calling plugin fini = %d.\n", DB? 1: 0);
+	R_LOG_DEBUG ("Calling plugin fini = %d", DB? 1: 0);
 	if (!DB) {
 		IFDBG_BIN_JAVA eprintf ("plugin DB already uninited.\n");
 	} else {
