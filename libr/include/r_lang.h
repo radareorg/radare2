@@ -25,7 +25,7 @@ typedef struct r_lang_t {
 	struct r_lang_session_t *session;
 } RLang;
 
-typedef struct r_lang_session_t RLangSession;
+typedef struct r_lang_session_t _RLangSession;
 
 typedef struct r_lang_plugin_t {
 	const char *name;
@@ -36,13 +36,13 @@ typedef struct r_lang_plugin_t {
 	const char *license;
 	const char **help;
 	const char *ext;
-	void *(*init)(RLangSession *s);
-	bool (*setup)(RLangSession *s);
-	bool (*fini)(RLangSession *s);
-	bool (*prompt)(RLangSession *s);
-	bool (*run)(RLangSession *s, const char *code, int len);
-	bool (*run_file)(RLangSession *s, const char *file);
-	int (*set_argv)(RLangSession *s, int argc, char **argv);
+	void *(*init)(_RLangSession *s);
+	bool (*setup)(_RLangSession *s);
+	bool (*fini)(_RLangSession *s);
+	bool (*prompt)(_RLangSession *s);
+	bool (*run)(_RLangSession *s, const char *code, int len);
+	bool (*run_file)(_RLangSession *s, const char *file);
+	int (*set_argv)(_RLangSession *s, int argc, char **argv);
 } RLangPlugin;
 
 typedef struct r_lang_def_t {
