@@ -5940,19 +5940,21 @@ R_API char *r_core_cmd_str(RCore *core, const char *cmd) {
 		return strdup ("");
 	}
 	r_cons_push ();
-	core->cons->context->noflush = true;
-	core->cons->context->cmd_str_depth++;
-	if (cmd && r_core_cmd (core, cmd, 0) == -1) {
-		//eprintf ("Invalid command: %s\n", cmd);
+	if (core->cons) {
+		core->cons->context->noflush = true;
+		core->cons->context->cmd_str_depth++;
+		if (cmd && r_core_cmd (core, cmd, 0) == -1) {
+			//eprintf ("Invalid command: %s\n", cmd);
+			if (--core->cons->context->cmd_str_depth == 0) {
+				core->cons->context->noflush = false;
+				r_cons_flush ();
+			}
+			r_cons_pop ();
+			return NULL;
+		}
 		if (--core->cons->context->cmd_str_depth == 0) {
 			core->cons->context->noflush = false;
-			r_cons_flush ();
 		}
-		r_cons_pop ();
-		return NULL;
-	}
-	if (--core->cons->context->cmd_str_depth == 0) {
-		core->cons->context->noflush = false;
 	}
 	r_cons_filter ();
 	const char *static_str = r_cons_get_buffer ();

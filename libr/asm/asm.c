@@ -547,7 +547,6 @@ static int r_asm_assemble(RAsm *a, RAsmOp *op, const char *buf) {
 		r_parse_parse (a->ifilter, buf, b);
 	}
 
-	eprintf ("ZD%c", 10);
 	r_str_case (b, false); // to-lower
 #if 0
 	r_asm_op_init (op);

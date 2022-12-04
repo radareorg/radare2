@@ -31,7 +31,9 @@ FILE=-
 CMDS=<<EOF
 !!rasm2 -L~4004
 EOF
-EXPECT=
+EXPECT=<<EOF
+ade 4           i4004       LGPL3   i4004 decoder plugin (by pancake, condret)
+EOF
 RUN
 
 NAME=rasm2 arm asm/dis endian
