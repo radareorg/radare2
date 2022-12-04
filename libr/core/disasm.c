@@ -5914,7 +5914,7 @@ toro:
 				RAsmOp ao; /* disassemble for the vm .. */
 				int os = core->rasm->config->syntax;
 				// r_asm_set_syntax (core->rasm, R_ARCH_SYNTAX_INTEL);
-				r_arch_config_set_syntax (core->anal->config, R_ARCH_SYNTAX_INTEL);
+				r_arch_config_set_syntax (core->rasm->config, R_ARCH_SYNTAX_INTEL);
 				r_asm_disassemble (core->rasm, &ao, ds_bufat (ds), ds_left (ds) + 5);
 				// r_asm_set_syntax (core->rasm, os);
 				r_arch_config_set_syntax (core->anal->config, os);

@@ -318,95 +318,6 @@ static void ranal2_list(RAsmState *as, const char *arch) {
 	pj_free (pj);
 }
 
-static void rasm2_list(RAsmState *as, const char *arch) {
-	int i;
-	char bits[32];
-	const char *feat2, *feat;
-	RListIter *iter;
-	PJ *pj = pj_new ();
-	if (!pj) {
-		return;
-	}
-	if (as->json) {
-		pj_a (pj);
-	}
-#if 0
-	RAsmPlugin *h;
-	r_list_foreach (as->a->plugins, iter, h) {
-		if (arch) {
-			if (h->cpus && !strcmp (arch, h->name)) {
-				char *c = strdup (h->cpus);
-				int n = r_str_split (c, ',');
-				for (i = 0; i < n; i++) {
-					printf ("%s\n", r_str_word_get0 (c, i));
-				}
-				free (c);
-				break;
-			}
-		} else {
-			bits[0] = 0;
-			if (h->bits == 27) {
-				strcat (bits, "27");
-			} else if (h->bits == 0) {
-				strcat (bits, "any");
-			} else {
-				if (h->bits & 4) {
-					strcat (bits, "4 ");
-				}
-				if (h->bits & 8) {
-					strcat (bits, "8 ");
-				}
-				if (h->bits & 16) {
-					strcat (bits, "16 ");
-				}
-				if (h->bits & 32) {
-					strcat (bits, "32 ");
-				}
-				if (h->bits & 64) {
-					strcat (bits, "64 ");
-				}
-			}
-			feat = "__";
-			if (h->assemble) {
-				feat = "a_";
-			}
-			feat2 = has_esil (as, h->name);
-			if (as->quiet) {
-				printf ("%s\n", h->name);
-			} else if (as->json) {
-				pj_o (pj);
-				pj_ks (pj, "name", h->name);
-				pj_k (pj, "bits");
-				pj_a (pj);
-				pj_i (pj, 32);
-				pj_i (pj, 64);
-				pj_end (pj);
-				pj_ks (pj, "license", r_str_get_fail (h->license, "unknown"));
-				pj_ks (pj, "description", h->desc);
-				pj_ks (pj, "features", feat);
-				pj_end (pj);
-			} else {
-				printf ("%s%s %-11s %-11s %-7s %s",
-					feat, feat2, bits, h->name,
-					r_str_get_fail (h->license, "unknown"), h->desc);
-				if (h->author) {
-					printf (" (by %s)", h->author);
-				}
-				if (h->version) {
-					printf (" v%s", h->version);
-				}
-				printf ("\n");
-			}
-		}
-	}
-#endif
-	if (as->json) {
-		pj_end (pj);
-		printf ("%s\n", pj_string (pj));
-		pj_free (pj);
-	}
-}
-
 static int rasm_show_help(int v) {
 	if (v < 2) {
 		printf ("Usage: rasm2 [-ACdDehLBvw] [-a arch] [-b bits] [-o addr] [-s syntax]\n"
@@ -812,7 +723,6 @@ R_API int r_main_rasm2(int argc, const char *argv[]) {
 	const char *file = NULL;
 	bool list_plugins = false;
 	bool list_anal_plugins = false;
-	bool list_arch_plugins = false;
 	bool isbig = false;
 	bool rad = false;
 	bool use_spp = false;
@@ -903,7 +813,7 @@ R_API int r_main_rasm2(int argc, const char *argv[]) {
 			break;
 		case 'L':
 			if (list_anal_plugins) {
-				list_arch_plugins = true;
+				// ignored
 			} else if (list_plugins) {
 				list_anal_plugins = true;
 			} else {
@@ -942,7 +852,7 @@ R_API int r_main_rasm2(int argc, const char *argv[]) {
 					__as_free (as);
 					return 1;
 				}
-				r_asm_set_syntax (as->a, syntax);
+				r_arch_config_set_syntax (as->a->config, syntax);
 			}
 			break;
 		case 'v':
@@ -968,18 +878,13 @@ R_API int r_main_rasm2(int argc, const char *argv[]) {
 		ret = rasm_show_help (help > 1? 2: 0);
 		goto beach;
 	}
-	if (list_arch_plugins) {
-		rarch2_list (as, opt.argv[opt.ind]);
-		ret = 1;
-		goto beach;
-	}
 	if (list_anal_plugins) {
 		ranal2_list (as, opt.argv[opt.ind]);
 		ret = 1;
 		goto beach;
 	}
 	if (list_plugins) {
-		rasm2_list (as, opt.argv[opt.ind]);
+		rarch2_list (as, opt.argv[opt.ind]);
 		ret = 1;
 		goto beach;
 	}

@@ -3194,9 +3194,9 @@ static void search_similar_pattern(RCore *core, int count, struct search_paramet
 
 static bool isArm(RCore *core) {
 	RAsm *as = core ? core->rasm : NULL;
-	if (as && as->cur && as->cur->arch) {
-		if (r_str_startswith (as->cur->arch, "arm")) {
-			if (as->cur->bits < 64) {
+	if (as && as->config && as->config->arch) {
+		if (r_str_startswith (as->config->arch, "arm")) {
+			if (as->config->bits < 64) {
 				return true;
 			}
 		}

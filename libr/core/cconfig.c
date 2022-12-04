@@ -131,100 +131,6 @@ static const char *has_esil(RCore *core, const char *name) {
 	return "__";
 }
 
-// copypasta from binr/rasm2/rasm2.c
-bool rasm2_list(RCore *core, const char *arch, int fmt) {
-	int i;
-	const char *feat2, *feat;
-	RAsm *a = core->rasm;
-	char *bits = NULL;
-	RAsmPlugin *h;
-	RListIter *iter;
-	bool any = false;
-	PJ *pj = NULL;
-	if (fmt == 'j') {
-		pj = pj_new ();
-		if (!pj) {
-			return false;
-		}
-		pj_o (pj);
-	}
-	r_list_foreach (a->plugins, iter, h) {
-		if (arch && *arch) {
-			if (h->cpus && !strcmp (arch, h->name)) {
-				char *c = strdup (h->cpus);
-				int n = r_str_split (c, ',');
-				for (i = 0; i < n; i++) {
-					r_cons_println (r_str_word_get0 (c, i));
-					any = true;
-				}
-				free (c);
-				break;
-			}
-		} else {
-			RStrBuf *sb = r_strbuf_new ("");
-			if (h->bits & 8) {
-				r_strbuf_append (sb, "8");
-			}
-			if (h->bits & 16) {
-				r_strbuf_appendf (sb, "%s16", sb->len? ",": "");
-			}
-			if (h->bits & 32) {
-				r_strbuf_appendf (sb, "%s32", sb->len? ",": "");
-			}
-			if (h->bits & 64) {
-				r_strbuf_appendf (sb, "%s64", sb->len? ",": "");
-			}
-			if (!h->bits) {
-				r_strbuf_appendf (sb, "%s0", sb->len? ",": "");
-			}
-			bits = r_strbuf_drain (sb);
-			feat = "__";
-			if (h->assemble) {
-				feat = "a_";
-			}
-			feat2 = has_esil (core, h->name);
-			if (fmt == 'q') {
-				r_cons_println (h->name);
-			} else if (fmt == 'j') {
-				const char *license = "GPL";
-				pj_k (pj, h->name);
-				pj_o (pj);
-				pj_k (pj, "bits");
-				pj_a (pj);
-				if (h->bits & 8) {
-					pj_i (pj, 8);
-				}
-				if (h->bits & 16) {
-					pj_i (pj, 16);
-				}
-				if (h->bits & 32) {
-					pj_i (pj, 32);
-				}
-				if (h->bits & 64) {
-					pj_i (pj, 64);
-				}
-				pj_end (pj);
-				pj_ks (pj, "license", license);
-				pj_ks (pj, "description", h->desc);
-				pj_ks (pj, "features", feat);
-				pj_end (pj);
-			} else {
-				r_cons_printf ("%s%s  %-11s  %-11s %-7s %s\n",
-						feat, feat2, bits, h->name,
-						r_str_get_fail (h->license, "unknown"), h->desc);
-			}
-			any = true;
-			free (bits);
-		}
-	}
-	if (fmt == 'j') {
-		pj_end (pj);
-		r_cons_println (pj_string (pj));
-		pj_free (pj);
-	}
-	return any;
-}
-
 // more copypasta
 bool ranal2_list(RCore *core, const char *arch, int fmt) {
 	int i;
@@ -728,7 +634,7 @@ static bool cb_asmassembler(void *user, void *data) {
 	if (*node->value == '?') {
 		if (strlen (node->value) > 1 && node->value[1] == '?') {
 			/* print more verbose help instead of plain option values */
-			rasm2_list (core, NULL, node->value[1]);
+			ranal2_list (core, NULL, node->value[1]);
 			return false;
 		}
 		RConfigNode* asm_arch_node = r_config_node_get (core->config, "asm.arch");
@@ -756,7 +662,6 @@ static void update_cmdpdc_options(RCore *core, RConfigNode *node) {
 }
 
 static void update_asmcpu_options(RCore *core, RConfigNode *node) {
-	RAsmPlugin *h;
 	RListIter *iter;
 	r_return_if_fail (core && core->rasm);
 	const char *arch = r_config_get (core->config, "asm.arch");
@@ -764,7 +669,8 @@ static void update_asmcpu_options(RCore *core, RConfigNode *node) {
 		return;
 	}
 	r_config_node_purge_options (node);
-	r_list_foreach (core->rasm->plugins, iter, h) {
+	RArchPlugin *h;
+	r_list_foreach (core->anal->arch->plugins, iter, h) {
 		if (h->cpus && !strcmp (arch, h->name)) {
 			char *c = strdup (h->cpus);
 			int i, n = r_str_split (c, ',');
@@ -789,7 +695,6 @@ static bool cb_asmcpu(void *user, void *data) {
 		// XXX not working const char *asm_arch = core->anal->config->arch;
 		const char *asm_arch = r_config_get (core->config, "asm.arch");
 		/* print verbose help instead of plain option listing */
-		rasm2_list (core, asm_arch, node->value[1]);
 		ranal2_list (core, asm_arch, node->value[1]);
 		return 0;
 	}
@@ -804,11 +709,11 @@ static bool cb_asmcpu(void *user, void *data) {
 }
 
 static void update_asmarch_options(RCore *core, RConfigNode *node) {
-	RAsmPlugin *h;
+	RArchPlugin *h;
 	RListIter *iter;
 	if (core && node && core->rasm) {
 		r_config_node_purge_options (node);
-		r_list_foreach (core->rasm->plugins, iter, h) {
+		r_list_foreach (core->anal->arch->plugins, iter, h) {
 			if (h->name) {
 				SETOPTIONS (node, h->name, NULL);
 			}
@@ -818,7 +723,7 @@ static void update_asmarch_options(RCore *core, RConfigNode *node) {
 
 static void update_asmbits_options(RCore *core, RConfigNode *node) {
 	if (core && core->rasm && core->rasm->cur && node) {
-		int bits = core->rasm->cur->bits;
+		int bits = core->rasm->config->bits;
 		int i;
 		r_config_node_purge_options (node);
 		for (i = 1; i <= bits; i <<= 1) {
@@ -846,7 +751,7 @@ static bool cb_asmarch(void *user, void *data) {
 		update_asmarch_options (core, node);
 		if (strlen (node->value) > 1 && node->value[1] == '?') {
 			/* print more verbose help instead of plain option values */
-			rasm2_list (core, NULL, node->value[1]);
+			ranal2_list (core, NULL, node->value[1]);
 			return false;
 		} else {
 			print_node_options (node);
@@ -863,7 +768,7 @@ static bool cb_asmarch(void *user, void *data) {
 	//free the old value
 	char *asm_cpu = strdup (r_config_get (core->config, "asm.cpu"));
 	if (core->rasm->cur) {
-		const char *new_asm_cpu = core->rasm->cur->cpus;
+		const char *new_asm_cpu = core->rasm->config->cpu;
 		if (R_STR_ISNOTEMPTY (new_asm_cpu)) {
 			char *nac = strdup (new_asm_cpu);
 			char *comma = strchr (nac, ',');
@@ -879,7 +784,7 @@ static bool cb_asmarch(void *user, void *data) {
 			// the given asm.cpu setup, but we can ignore for now
 			// r_config_set (core->config, "asm.cpu", "");
 		}
-		bits = core->rasm->cur->bits;
+		bits = core->rasm->config->bits;
 		if (8 & bits) {
 			bits = 8;
 		} else if (16 & bits) {
@@ -894,9 +799,9 @@ static bool cb_asmarch(void *user, void *data) {
 	snprintf (asmparser, sizeof (asmparser), "%s.pseudo", node->value);
 	r_config_set (core->config, "asm.parser", asmparser);
 
-	if (core->rasm->cur && core->anal && core->anal->cur && !(core->anal->cur->bits & core->anal->config->bits)) {
+	if (core->rasm->cur && core->anal && core->anal->cur && !(core->anal->config->bits & core->anal->config->bits)) {
 		r_config_set_i (core->config, "asm.bits", bits);
-	} else if (core->rasm->cur && core->anal && core->anal->cur && !(core->rasm->cur->bits & core->anal->config->bits)) {
+	} else if (core->rasm->cur && core->anal && core->anal->cur && !(core->rasm->config->bits & core->anal->config->bits)) {
 		r_config_set_i (core->config, "asm.bits", bits);
 	}
 
@@ -997,6 +902,7 @@ static bool cb_asmbits(void *user, void *data) {
 	}
 	if (bits > 0) {
 		ret = r_asm_set_bits (core->rasm, bits);
+#if 0
 		if (!ret) {
 			RAsmPlugin *h = core->rasm->cur;
 			if (!h) {
@@ -1006,13 +912,14 @@ static bool cb_asmbits(void *user, void *data) {
 			}
 			// else { R_LOG_ERROR ("Cannot set bits %d to '%s'", bits, h->name); }
 		}
+#endif
 		if (!r_anal_set_bits (core->anal, bits)) {
 			R_LOG_ERROR ("asm.arch: Cannot setup '%d' bits analysis engine", bits);
 			ret = false;
 		}
 	}
 	if (core->dbg && core->anal && core->anal->cur) {
-		r_debug_set_arch (core->dbg, core->anal->cur->arch, bits);
+		r_debug_set_arch (core->dbg, core->anal->config->arch, bits);
 		const bool load_from_debug = r_config_get_b (core->config, "cfg.debug");
 		if (load_from_debug) {
 			if (core->dbg->h && core->dbg->h->reg_profile) {
@@ -1388,7 +1295,7 @@ static bool cb_asmsyntax(void *user, void *data) {
 		if (syntax == -1) {
 			return false;
 		}
-		r_asm_set_syntax (core->rasm, syntax);
+		r_arch_config_set_syntax (core->rasm->config, syntax);
 	}
 	return true;
 }

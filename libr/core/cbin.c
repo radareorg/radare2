@@ -4551,7 +4551,7 @@ R_API bool r_core_bin_update_arch_bits(RCore *r) {
 	if (r->rasm) {	//XXX: refactor when RArch is done
 		bits = r->rasm->config->bits;
 		if (r->rasm->cur) {
-			arch = r->rasm->cur->arch;
+			arch = r->rasm->config->arch;
 		}
 	}
 	if (!arch && r->anal && r->anal->cur) {

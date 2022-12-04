@@ -2071,9 +2071,7 @@ R_API char *cmd_syscall_dostr(RCore *core, st64 n, ut64 addr) {
 		// XXX this is a hack to make syscall args work on x86-32 and x86-64
 		// we need to shift sn first.. which is bad, but needs to be redesigned
 		int regidx = i;
-		if (core->rasm->config->bits == 32 &&
-			((core->rasm->cur && !strcmp (core->rasm->cur->arch, "x86")) ||
-			(core->anal->cur && !strcmp (core->anal->cur->arch , "x86")))) {
+		if (core->rasm->config->bits == 32 && !strcmp (core->rasm->config->arch, "x86")) {
 			regidx++;
 		}
 		ut64 arg = r_debug_arg_get (core->dbg, cc, regidx);
@@ -12829,7 +12827,7 @@ static int cmd_anal(void *data, const char *input) {
 		case 'j':
 		case 'q':
 		case 0:
-			rasm2_list (core, NULL, input[1]);
+			ranal2_list (core, NULL, input[1]);
 			break;
 		default:
 			// help

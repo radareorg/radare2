@@ -256,6 +256,12 @@ R_API bool r_asm_use_assembler(RAsm *a, const char *name) {
 
 static void load_asm_descriptions(RAsm *a) {
 	const char *arch = a->config->cpu;
+	if (!arch) {
+		arch = a->config->arch;
+	}
+	if (!arch) {
+		return;
+	}
 #if HAVE_GPERF
 	SdbGperf *gp = r_asm_get_gperf (arch);
 	if (gp) {
@@ -287,7 +293,6 @@ R_API bool r_asm_use(RAsm *a, const char *name) {
 	}
 	r_arch_config_use (a->config, name);
 	r_asm_use_assembler (a, name);
-	RListIter *iter;
 	char *dotname = strdup (name);
 	char *vv = strchr (dotname, '.');
 	if (vv) {
@@ -296,6 +301,7 @@ R_API bool r_asm_use(RAsm *a, const char *name) {
 		R_FREE (dotname);
 	}
 #if 0
+	RListIter *iter;
 	RAsmPlugin *h;
 	r_list_foreach (a->plugins, iter, h) {
 		if (!strcmp (h->name, name)) {
@@ -707,11 +713,11 @@ static int parse_asm_directive(RAsm *a, RAsmOp *op, RAsmCode *acode, char *ptr_s
 	} else if (r_str_startswith (ptr, ".fill ")) {
 		ret = r_asm_pseudo_fill (op, ptr + 6);
 	} else if (r_str_startswith (ptr, ".kernel ")) {
-		r_syscall_setup (a->syscall, a->cur->arch, a->config->bits, asmcpu, ptr + 8);
+		r_syscall_setup (a->syscall, a->config->arch, a->config->bits, asmcpu, ptr + 8);
 	} else if (r_str_startswith (ptr, ".cpu ")) {
 		r_asm_set_cpu (a, ptr + 5);
 	} else if (r_str_startswith (ptr, ".os ")) {
-		r_syscall_setup (a->syscall, a->cur->arch, a->config->bits, asmcpu, ptr + 4);
+		r_syscall_setup (a->syscall, a->config->arch, a->config->bits, asmcpu, ptr + 4);
 	} else if (r_str_startswith (ptr, ".hex ")) {
 		ret = r_asm_op_set_hex (op, ptr + 5);
 	} else if ((r_str_startswith (ptr, ".int16 ")) || r_str_startswith (ptr, ".short ")) {
@@ -902,7 +908,7 @@ R_API RAsmCode *r_asm_massemble(RAsm *a, const char *assembly) {
 				continue;
 			}
 			// XXX TODO remove arch-specific hacks
-			const char *cur_arch = R_UNWRAP3 (a, cur, arch);
+			const char *cur_arch = R_UNWRAP3 (a, config, arch);
 			if (cur_arch && r_str_startswith (cur_arch, "avr")) {
 				for (ptr_start = buf_token; *ptr_start && isavrseparator (*ptr_start); ptr_start++);
 			} else {
@@ -1164,8 +1170,8 @@ R_API RList *r_asm_cpus(RAsm *a) {
 	RListIter *iter;
 	char *item;
 	// get asm plugin
-	RList *list = (a->cur && a->cur->cpus)
-		? r_str_split_duplist (a->cur->cpus, ",", 0)
+	RList *list = (a->config && a->config->cpu)
+		? r_str_split_duplist (a->config->cpu, ",", 0)
 		: r_list_newf (free);
 	// get anal plugin
 	if (a->analb.anal && a->analb.anal->cur && a->analb.anal->cur->cpus) {
