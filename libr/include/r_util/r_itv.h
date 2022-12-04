@@ -11,7 +11,6 @@ extern "C" {
 // Precondition: 0 <= size < 2**64 and addr + size <= 2**64
 // range is [], [10, 5) => 10 <= x < (10 + 5)
 typedef struct r_interval_t {
-	// public:
 	ut64 addr;
 	ut64 size;
 } RInterval;

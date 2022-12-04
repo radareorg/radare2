@@ -10,6 +10,8 @@
 #include "r_skyline.h"
 #include <r_util/r_w32dw.h>
 
+#define	USE_NEW_IO_CACHE_API	0
+
 #define R_IO_SEEK_SET 0
 #define R_IO_SEEK_CUR 1
 #define R_IO_SEEK_END 2
@@ -103,6 +105,13 @@ typedef struct r_io_undo_w_t {
 	size_t len;  /* length */
 } RIOUndoWrite;
 
+#if USE_NEW_IO_CACHE_API
+typedef struct r_io_cache_t {
+	RPVector *vec;
+	RRBTree *tree;
+} RIOCache;
+#endif
+
 typedef struct r_io_t {
 	struct r_io_desc_t *desc; // XXX deprecate... we should use only the fd integer, not hold a weak pointer
 	ut64 off;
@@ -121,8 +130,12 @@ typedef struct r_io_t {
 	RIDStorage *files;	// RIODescs accessible by their fd
 	RIDStorage *maps;	// RIOMaps accessible by their id
 	RIDStorage *banks;	// RIOBanks accessible by their id
+#if USE_NEW_IO_CACHE_API
+	RIOCache *cache;
+#else
 	RPVector cache;
 	RSkyline cache_skyline;
+#endif
 	ut8 *write_mask;
 	int write_mask_len;
 	ut64 mask;
@@ -484,7 +497,7 @@ R_API bool r_io_desc_resize(RIODesc *desc, ut64 newsize);
 R_API ut64 r_io_desc_size(RIODesc *desc);
 R_API bool r_io_desc_is_blockdevice(RIODesc *desc);
 R_API bool r_io_desc_is_chardevice(RIODesc *desc);
-R_API bool r_io_desc_exchange(RIO *io, int fd, int fdx);	//this should get 2 descs
+R_API bool r_io_desc_exchange(RIO *io, int fd, int fdx);
 R_API bool r_io_desc_is_dbg(RIODesc *desc);
 R_API int r_io_desc_get_pid(RIODesc *desc);
 R_API int r_io_desc_get_tid(RIODesc *desc);
@@ -504,8 +517,16 @@ R_API void r_io_cache_init(RIO *io);
 R_API void r_io_cache_fini(RIO *io);
 R_API bool r_io_cache_list(RIO *io, int rad);
 R_API void r_io_cache_reset(RIO *io, int set);
+#if USE_NEW_IO_CACHE_API
+R_API bool r_io_cache_write_at(RIO *io, ut64 addr, const ut8 *buf, int len);
+R_API bool r_io_cache_read_at(RIO *io, ut64 addr, ut8 *buf, int len);
+R_API RIOCache *r_io_cache_clone(RIO *io);
+R_API void r_io_cache_replace(RIO *io, RIOCache *cache);
+#else
 R_API bool r_io_cache_write(RIO *io, ut64 addr, const ut8 *buf, int len);
 R_API bool r_io_cache_read(RIO *io, ut64 addr, ut8 *buf, int len);
+#endif
+
 
 /* io/p_cache.c */
 R_API bool r_io_desc_cache_init(RIODesc *desc);
