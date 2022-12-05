@@ -592,15 +592,23 @@ RUN
 NAME=ij.gron.grep
 FILE=bins/elf/crackme
 CMDS=<<EOF
-ij~{=}opsz
+aiaj~{=}opsz
 EOF
-EXPECT=
+EXPECT=<<EOF
+json.minopsz = 1;
+json.maxopsz = 16;
+json.invopsz = 1;
+EOF
 RUN
 
 NAME=ij.gron.grep.two
 FILE=bins/elf/crackme
 CMDS=<<EOF
-ij~{=}~opsz
+aiaj~{=}~opsz
 EOF
-EXPECT=
+EXPECT=<<EOF
+json.minopsz = 1;
+json.maxopsz = 16;
+json.invopsz = 1;
+EOF
 RUN

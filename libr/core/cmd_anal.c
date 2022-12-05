@@ -6120,7 +6120,7 @@ static void cmd_anal_info(RCore *core, const char *input) {
 		cmd_address_info (core, input, 0);
 		break;
 	case 'a': // "aia"
-		if (input[2] == 'j') {
+		if (input[1] == 'j') { // "aiaj"
 			PJ *pj = pj_new ();
 			pj_o (pj);
 			int v = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_MIN_OP_SIZE);
