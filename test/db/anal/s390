@@ -1,17 +1,23 @@
 NAME=offs390 bininfo
 FILE=bins/s390/zos/prueba/prueba
 CMDS=<<EOF
+-a
+aia
+?e --
 i
 EOF
 EXPECT=<<EOF
+s390
+minopsz 2
+maxopsz 6
+invopsz 2
+dtalign 1
+pcalign 1
+--
 fd       3
 file     bins/s390/zos/prueba/prueba
 size     0x11000
 humansz  68K
-minopsz  2
-maxopsz  6
-invopsz  2
-pcalign  1
 mode     r-x
 format   off
 iorw     false

@@ -255,9 +255,9 @@ R_API bool r_asm_use_assembler(RAsm *a, const char *name) {
 }
 
 static void load_asm_descriptions(RAsm *a) {
-	const char *arch = a->config->cpu;
-	if (!arch) {
-		arch = a->config->arch;
+	const char *arch = a->config->arch;
+	if (!arch || !strcmp (arch, "any")) {
+		arch = a->config->cpu;
 	}
 	if (!arch) {
 		return;
@@ -334,7 +334,7 @@ R_API bool r_asm_use(RAsm *a, const char *name) {
 			// a->acur = NULL;
 			return true;
 		}
-		R_LOG_ERROR ("Cannot find '%s' asm/arch/anal plugin. See rasm2 -L, -LL or -LLL", name);
+		R_LOG_ERROR ("Cannot find '%s' asm/arch/anal plugin. See rasm2 -L or -LL", name);
 	}
 #if 0
 	// check if its a valid analysis plugin

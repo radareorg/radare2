@@ -8132,7 +8132,7 @@ static void cmd_anal_opcode(RCore *core, const char *input) {
 				r_cons_println (d);
 				free (d);
 			} else {
-				eprintf ("Unknown mnemonic\n");
+				R_LOG_ERROR ("Unknown mnemonic");
 			}
 		} else {
 			eprintf ("Use: aod[?a] ([opcode])    describe current, [given] or all mnemonics\n");
