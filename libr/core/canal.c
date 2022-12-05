@@ -3899,11 +3899,7 @@ R_API int r_core_anal_search(RCore *core, ut64 from, ut64 to, ut64 ref, int mode
 	int arch = -1;
 	if (core->rasm->config->bits == 64) {
 		// speedup search
-		if (core->rasm->cur) {
-			if (r_str_startswith (core->rasm->config->arch, "arm")) {
-				arch = R2_ARCH_ARM64;
-			}
-		} else if (core->rasm->config) {
+		if (core->rasm->config) {
 			if (r_str_startswith (core->rasm->config->arch, "arm")) {
 				arch = R2_ARCH_ARM64;
 			}

@@ -45,7 +45,7 @@ $(EXTRA_CLEAN):
 
 include ${STATIC_PARSE_PLUGINS}
 STATIC_OBJS=$(subst ..,p/..,$(subst parse_,p/parse_,$(STATIC_OBJ)))
-OBJS=${STATIC_OBJS} asm.o acode.o aop.o aplugs.o filter.o parse.o
+OBJS=${STATIC_OBJS} asm.o acode.o aop.o agperf.o filter.o parse.o
 OBJS+=${SHARED2_OBJ}
 
 

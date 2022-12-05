@@ -250,7 +250,6 @@ R_API void r_asm_set_user_ptr(RAsm *a, void *user) {
 R_API bool r_asm_use_assembler(RAsm *a, const char *name) {
 	r_return_val_if_fail (a && name, false);
 	// TODO not implemented
-	a->acur = NULL;
 	return false;
 }
 
@@ -1129,7 +1128,7 @@ R_API char *r_asm_mnemonics(RAsm *a, int id, bool json) {
 }
 
 R_API int r_asm_mnemonics_byname(RAsm *a, const char *name) {
-	r_return_val_if_fail (a && a->cur && name, 0);
+	r_return_val_if_fail (a && name, 0);
 	int i;
 	for (i = 0; i < 9000; i++) {
 		char *n = r_asm_mnemonics (a, i, false);

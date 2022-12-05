@@ -722,7 +722,7 @@ static void update_asmarch_options(RCore *core, RConfigNode *node) {
 }
 
 static void update_asmbits_options(RCore *core, RConfigNode *node) {
-	if (core && core->rasm && core->rasm->cur && node) {
+	if (core && core->rasm && node) {
 		int bits = core->rasm->config->bits;
 		int i;
 		r_config_node_purge_options (node);
@@ -767,6 +767,7 @@ static bool cb_asmarch(void *user, void *data) {
 	//we should strdup here otherwise will crash if any r_config_set
 	//free the old value
 	char *asm_cpu = strdup (r_config_get (core->config, "asm.cpu"));
+#if 0
 	if (core->rasm->cur) {
 		const char *new_asm_cpu = core->rasm->config->cpu;
 		if (R_STR_ISNOTEMPTY (new_asm_cpu)) {
@@ -796,12 +797,13 @@ static bool cb_asmarch(void *user, void *data) {
 		}
 		update_asmbits_options (core, r_config_node_get (core->config, "asm.bits"));
 	}
+#endif
 	snprintf (asmparser, sizeof (asmparser), "%s.pseudo", node->value);
 	r_config_set (core->config, "asm.parser", asmparser);
 
-	if (core->rasm->cur && core->anal && core->anal->cur && !(core->anal->config->bits & core->anal->config->bits)) {
+	if (core->anal->cur && !(core->anal->config->bits & core->anal->config->bits)) {
 		r_config_set_i (core->config, "asm.bits", bits);
-	} else if (core->rasm->cur && core->anal && core->anal->cur && !(core->rasm->config->bits & core->anal->config->bits)) {
+	} else if (core->anal->cur && !(core->rasm->config->bits & core->anal->config->bits)) {
 		r_config_set_i (core->config, "asm.bits", bits);
 	}
 
