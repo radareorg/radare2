@@ -246,22 +246,6 @@ static void r_core_file_info(RCore *core, PJ *pj, int mode) {
 				pj_ks (pj, "referer", desc->referer);
 			}
 		}
-		int v = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_MIN_OP_SIZE);
-		if (v > 0) {
-			pj_ki (pj, "minopsz", v);
-		}
-		v = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_MAX_OP_SIZE);
-		if (v > 0) {
-			pj_ki (pj, "maxopsz", v);
-		}
-		v = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_INV_OP_SIZE);
-		if (v > 0) {
-			pj_ki (pj, "invopsz", v);
-		}
-		v = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_ALIGN);
-		if (v > 0) {
-			pj_ki (pj, "pcalign", v);
-		}
 		pj_ki (pj, "block", core->blocksize);
 		if (binfile) {
 			if (binfile->curxtr) {
@@ -292,22 +276,6 @@ static void r_core_file_info(RCore *core, PJ *pj, int mode) {
 				r_num_units (humansz, sizeof (humansz), fsz);
 				pair ("humansz", humansz);
 			}
-		}
-		int v = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_MIN_OP_SIZE);
-		if (v > 0) {
-			pair ("minopsz", r_strf ("%d", v));
-		}
-		v = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_MAX_OP_SIZE);
-		if (v > 0) {
-			pair ("maxopsz", r_strf ("%d", v));
-		}
-		v = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_INV_OP_SIZE);
-		if (v > 0) {
-			pair ("invopsz", r_strf ("%d", v));
-		}
-		v = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_ALIGN);
-		if (v > 0) {
-			pair ("pcalign", r_strf ("%d", v));
 		}
 		if (desc) {
 			pair ("mode", r_str_rwx_i (desc->perm & R_PERM_RWX));
