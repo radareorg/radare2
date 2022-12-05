@@ -490,12 +490,15 @@ R_API R_DEPRECATE int r_anal_archinfo(RAnal *anal, int query) {
 	r_return_val_if_fail (anal, -1);
 	// this check wont be needed when all the anal plugs move to archland
 	const char *const a = anal->arch->session->config->arch;
-	const char *const b = anal->cur->name;
+	const char *const b = anal->config->arch;
+	// const char *const b = anal->cur->name;
+	// eprintf ("%s %s\n", a,b);
 	if (!strcmp (a, b)) {
 		int res = r_arch_info (anal->arch, query);
 		if (res != -1) {
 			return res;
 		}
+		return res;
 	}
 	// this is the anal archinfo fallback
 	if (anal->cur && anal->cur->archinfo) {
