@@ -739,12 +739,15 @@ static void update_asmbits_options(RCore *core, RConfigNode *node) {
 static bool cb_asmarch(void *user, void *data) {
 	char asmparser[32];
 	RCore *core = (RCore *) user;
+	r_return_val_if_fail (core && core->anal, false);
 	RConfigNode *node = (RConfigNode *) data;
-	int bits = R_SYS_BITS;
-	if (!*node->value || !core || !core->rasm) {
+
+	if (R_STR_ISEMPTY (node->value)) {
 		return false;
 	}
-	if (core && core->anal && core->anal->config->bits) {
+
+	int bits = R_SYS_BITS;
+	if (core->anal->config && core->anal->config->bits) {
 		bits = core->anal->config->bits;
 	}
 	if (*node->value == '?') {
