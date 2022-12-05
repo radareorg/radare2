@@ -487,6 +487,8 @@ R_API void r_anal_purge(RAnal *anal) {
 
 // XXX deprecate. use r_arch_info() when all anal plugs get moved
 R_API R_DEPRECATE int r_anal_archinfo(RAnal *anal, int query) {
+	return r_arch_info (anal->arch, query);
+#if 0
 	r_return_val_if_fail (anal, -1);
 	switch (query) {
 	case R_ANAL_ARCHINFO_MIN_OP_SIZE:
@@ -505,6 +507,7 @@ R_API R_DEPRECATE int r_anal_archinfo(RAnal *anal, int query) {
 		break;
 	}
 	return -1;
+#endif
 }
 
 R_API bool r_anal_is_aligned(RAnal *anal, const ut64 addr) {
