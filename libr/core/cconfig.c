@@ -58,12 +58,11 @@ static int compareName(const RAnalFunction *a, const RAnalFunction *b) {
 }
 
 static int compareNameLen(const RAnalFunction *a, const RAnalFunction *b) {
-	size_t la, lb;
 	if (!a || !b || !a->name || !b->name) {
 		return 0;
 	}
-	la = strlen (a->name);
-	lb = strlen (a->name);
+	size_t la = strlen (a->name);
+	size_t lb = strlen (a->name);
 	return (la > lb) - (la < lb);
 }
 

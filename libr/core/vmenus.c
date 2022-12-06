@@ -338,7 +338,7 @@ R_API bool r_core_visual_esil(RCore *core, const char *input) {
 					cmd[0] = '\0';
 				}
 				r_core_cmd0 (core, cmd);
-				if (!cmd[0]) {
+				if (!*cmd) {
 					break;
 				}
 				r_cons_flush ();
@@ -376,17 +376,20 @@ R_API bool r_core_visual_bit_editor(RCore *core) {
 	}
 	memcpy (buf, core->block + cur, sizeof (ut64));
 	for (;;) {
-		RAsmOp asmop;
+		RAnalOp asmop;
+		// RAsmOp asmop;
 		r_cons_clear00 ();
 		bool use_color = core->print->flags & R_PRINT_FLAGS_COLOR;
-		(void) r_asm_disassemble (core->rasm, &asmop, buf, sizeof (ut64));
+		r_anal_op_set_bytes (&asmop, core->offset + cur, buf, sizeof (ut64));
+		// bool is_valid = r_arch_decode (core->anal->arch, &asmop, R_ARCH_OP_MASK_DISASM);
+		// (void) r_asm_disassemble (core->rasm, &asmop, buf, sizeof (ut64));
 		analop.type = -1;
-		(void)r_anal_op (core->anal, &analop, core->offset, buf, sizeof (ut64), R_ARCH_OP_MASK_ESIL);
+		(void)r_anal_op (core->anal, &analop, core->offset, buf, sizeof (ut64), R_ARCH_OP_MASK_ESIL | R_ARCH_OP_MASK_DISASM);
 		analopType = analop.type & R_ANAL_OP_TYPE_MASK;
 		r_cons_printf ("r2's bit editor: (=pfb 3b4b formatting)\n\n");
 		r_cons_printf ("offset: 0x%08"PFMT64x"\n"Color_RESET, core->offset + cur);
 		{
-			char *op_hex = r_asm_op_get_hex (&asmop);
+			char *op_hex = r_hex_bin2strdup (asmop.bytes, asmop.size);
 			char *res = r_print_hexpair (core->print, op_hex, -1);
 			r_cons_printf ("hex: %s\n"Color_RESET, res);
 			free (res);
@@ -398,7 +401,7 @@ R_API bool r_core_visual_bit_editor(RCore *core) {
 			r_cons_printf ("shift: >> %d << %d\n", word, (asmop.size * 8) - word - 1);
 		}
 		{
-			char *op = colorize_asm_string (core, r_asm_op_get_asm (&asmop), analopType, core->offset);
+			char *op = colorize_asm_string (core, asmop.mnemonic, analopType, core->offset);
 			r_cons_printf (Color_RESET"asm: %s\n"Color_RESET, op);
 			free (op);
 		}
@@ -517,7 +520,7 @@ R_API bool r_core_visual_bit_editor(RCore *core) {
 		case 'Q':
 		case 'q':
 			{
-				char *op_hex = r_asm_op_get_hex (&asmop);
+				char *op_hex = r_hex_bin2strdup (asmop.bytes, asmop.size);
 				char *res = r_print_hexpair (core->print, op_hex, -1);
 				r_core_cmdf (core, "wx %02x%02x%02x%02x", buf[0], buf[1], buf[2], buf[3]);
 				free (res);
@@ -643,7 +646,7 @@ R_API bool r_core_visual_bit_editor(RCore *core) {
 			}
 			break;
 		}
-		r_asm_op_fini (&asmop);
+		r_anal_op_fini (&asmop);
 	}
 	return true;
 }
