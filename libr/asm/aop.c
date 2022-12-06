@@ -64,8 +64,9 @@ R_API int r_asm_op_set_hex(RAnalOp *op, const char *str) {
 			free (op->bytes);
 			op->bytes = bin;
 			op->size = len;
+		} else {
+			free (bin);
 		}
-		free (bin);
 		return len;
 	}
 	return 0;
