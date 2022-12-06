@@ -25,7 +25,7 @@ R_API bool r_project_rename(RProject *p, const char *newname) {
 	p->path = newprjdir;
 	free (p->name);
 	p->name = strdup (newname);
-	return false;
+	return true;
 }
 
 R_API bool r_project_is_git(RProject *p) {
