@@ -15,7 +15,7 @@ R_API bool r_project_rename(RProject *p, const char *newname) {
 		return false;
 	}
 	char *newprjdir = r_file_new (p->path, "..", newname, NULL);
-	if (r_file_exists (newprjdir)) {
+	if (r_file_is_directory (newprjdir)) {
 		R_LOG_ERROR ("Cannot rename project");
 		free (newprjdir);
 		return false;
