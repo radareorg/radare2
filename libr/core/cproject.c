@@ -30,6 +30,7 @@ R_API bool r_project_rename(RProject *p, const char *newname) {
 			return true;
 		}
 	}
+	free (newprjdir);
 	return false;
 }
 
