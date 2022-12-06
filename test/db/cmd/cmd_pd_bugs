@@ -9,7 +9,7 @@ pd 2
 EOF
 EXPECT=<<EOF
             0x100003ac0     .string "\xbf\n" ; len=3
-            0x100003ac3                     unaligned
+            0x100003ac3      f9             unaligned
 EOF
 RUN
 
