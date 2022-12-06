@@ -3899,11 +3899,7 @@ R_API int r_core_anal_search(RCore *core, ut64 from, ut64 to, ut64 ref, int mode
 	int arch = -1;
 	if (core->rasm->config->bits == 64) {
 		// speedup search
-		if (core->rasm->cur) {
-			if (r_str_startswith (core->rasm->cur->name, "arm")) {
-				arch = R2_ARCH_ARM64;
-			}
-		} else if (core->rasm->config) {
+		if (core->rasm->config) {
 			if (r_str_startswith (core->rasm->config->arch, "arm")) {
 				arch = R2_ARCH_ARM64;
 			}
@@ -5020,11 +5016,11 @@ static bool esilbreak_reg_write(REsil *esil, const char *name, ut64 *val) {
 			}
 		}
 	}
-	if (core->rasm && core->rasm->cur && core->rasm->config && core->rasm->config->bits == 32 && strstr (core->rasm->cur->name, "arm")) {
+	if (core->rasm && core->rasm->config && core->rasm->config->bits == 32 && strstr (core->rasm->config->arch, "arm")) {
 		if ((!(at & 1)) && r_io_is_valid_offset (anal->iob.io, at, 0)) { //  !core->anal->opt.noncode)) {
 			add_string_ref (anal->coreb.core, esil->address, at);
 		}
-	} else if (core->anal && core->anal->config && core->anal->config->bits == 32 && strstr (core->anal->cur->name, "arm")) {
+	} else if (core->anal && core->anal->config && core->anal->config->bits == 32 && strstr (core->anal->config->arch, "arm")) {
 		if ((!(at & 1)) && r_io_is_valid_offset (anal->iob.io, at, 0)) { //  !core->anal->opt.noncode)) {
 			add_string_ref (anal->coreb.core, esil->address, at);
 		}

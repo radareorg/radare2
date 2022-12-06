@@ -488,21 +488,23 @@ R_API void r_anal_purge(RAnal *anal) {
 // XXX deprecate. use r_arch_info() when all anal plugs get moved
 R_API R_DEPRECATE int r_anal_archinfo(RAnal *anal, int query) {
 	r_return_val_if_fail (anal, -1);
-	switch (query) {
-	case R_ANAL_ARCHINFO_MIN_OP_SIZE:
-	case R_ANAL_ARCHINFO_MAX_OP_SIZE:
-	case R_ANAL_ARCHINFO_INV_OP_SIZE:
-	case R_ANAL_ARCHINFO_ALIGN:
-		{
+	// this check wont be needed when all the anal plugs move to archland
+	// const char *const b = anal->cur->name;
+	// eprintf ("%s %s\n", a,b);
+	if (anal->uses == 2 && anal->arch->session) {
+		const char *const a = anal->arch->session? anal->arch->session->config->arch: "";
+		const char *const b = anal->config->arch;
+		if (!strcmp (a, b)) {
 			int res = r_arch_info (anal->arch, query);
 			if (res != -1) {
 				return res;
 			}
+			return res;
 		}
-		if (anal->cur && anal->cur->archinfo) {
-			return anal->cur->archinfo (anal, query);
-		}
-		break;
+	}
+	// this is the anal archinfo fallback
+	if (anal->cur && anal->cur->archinfo) {
+		return anal->cur->archinfo (anal, query);
 	}
 	return -1;
 }

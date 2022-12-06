@@ -182,6 +182,7 @@ R_API bool r_arch_set_arch(RArch *arch, char *archname);
 // aconfig.c
 R_API void r_arch_config_use(RArchConfig *config, R_NULLABLE const char *arch);
 R_API void r_arch_config_set_cpu(RArchConfig *config, R_NULLABLE const char *cpu);
+R_API bool r_arch_config_set_syntax(RArchConfig *config, int syntax);
 R_API bool r_arch_config_set_bits(RArchConfig *c, int bits);
 R_API RArchConfig *r_arch_config_new(void);
 R_API RArchConfig *r_arch_config_clone(RArchConfig *c);

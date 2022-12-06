@@ -207,6 +207,7 @@ static const RCoreHelpMessage help_msg_aflx = {
 static const char *help_msg_ai[] = {
 	"Usage:", "ai", "[j*] [sz] # analysis/address information/imports",
 	"ai", " @addr", "show address information",
+	"aia", "", "show architecture specific information instruction size and alignment details",
 	"aii", " [namespace]", "global import (like afii, but global)",
 	"aii", "-", "delete all global imports",
 	"aij", " @addr", "show address information in JSON format",
@@ -2071,9 +2072,7 @@ R_API char *cmd_syscall_dostr(RCore *core, st64 n, ut64 addr) {
 		// XXX this is a hack to make syscall args work on x86-32 and x86-64
 		// we need to shift sn first.. which is bad, but needs to be redesigned
 		int regidx = i;
-		if (core->rasm->config->bits == 32 &&
-			((core->rasm->cur && !strcmp (core->rasm->cur->arch, "x86")) ||
-			(core->anal->cur && !strcmp (core->anal->cur->arch , "x86")))) {
+		if (core->rasm->config->bits == 32 && !strcmp (core->rasm->config->arch, "x86")) {
 			regidx++;
 		}
 		ut64 arg = r_debug_arg_get (core->dbg, cc, regidx);
@@ -6120,6 +6119,57 @@ static void cmd_anal_info(RCore *core, const char *input) {
 	case ' ':
 		cmd_address_info (core, input, 0);
 		break;
+	case 'a': // "aia"
+		if (input[1] == 'j') { // "aiaj"
+			PJ *pj = pj_new ();
+			pj_o (pj);
+			int v = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_MIN_OP_SIZE);
+			if (v > 0) {
+				pj_ki (pj, "minopsz", v);
+			}
+			v = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_MAX_OP_SIZE);
+			if (v > 0) {
+				pj_ki (pj, "maxopsz", v);
+			}
+			v = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_INV_OP_SIZE);
+			if (v > 0) {
+				pj_ki (pj, "invopsz", v);
+			}
+			v = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_DATA_ALIGN);
+			if (v > 0) {
+				pj_ki (pj, "dtalign", v);
+			}
+			v = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_ALIGN);
+			if (v > 0) {
+				pj_ki (pj, "pcalign", v);
+			}
+			pj_end (pj);
+			char *s = pj_drain (pj);
+			r_cons_printf ("%s\n", s);
+			free (s);
+		} else {
+			int v = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_MIN_OP_SIZE);
+			if (v > 0) {
+				r_cons_printf ("minopsz %d\n", v);
+			}
+			v = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_MAX_OP_SIZE);
+			if (v > 0) {
+				r_cons_printf ("maxopsz %d\n", v);
+			}
+			v = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_INV_OP_SIZE);
+			if (v > 0) {
+				r_cons_printf ("invopsz %d\n", v);
+			}
+			v = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_DATA_ALIGN);
+			if (v > 0) {
+				r_cons_printf ("dtalign %d\n", v);
+			}
+			v = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_ALIGN);
+			if (v > 0) {
+				r_cons_printf ("pcalign %d\n", v);
+			}
+		}
+		break;
 	case 'i': // "aii"
 		// global imports
 		if (input[1]) {
@@ -8082,7 +8132,7 @@ static void cmd_anal_opcode(RCore *core, const char *input) {
 				r_cons_println (d);
 				free (d);
 			} else {
-				eprintf ("Unknown mnemonic\n");
+				R_LOG_ERROR ("Unknown mnemonic");
 			}
 		} else {
 			eprintf ("Use: aod[?a] ([opcode])    describe current, [given] or all mnemonics\n");
@@ -12829,7 +12879,7 @@ static int cmd_anal(void *data, const char *input) {
 		case 'j':
 		case 'q':
 		case 0:
-			rasm2_list (core, NULL, input[1]);
+			ranal2_list (core, NULL, input[1]);
 			break;
 		default:
 			// help

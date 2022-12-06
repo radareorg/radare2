@@ -6,7 +6,7 @@ r_asm_sources = [
   'acode.c',
   'parse.c',
   'filter.c',
-  'aplugs.c',
+  'agperf.c',
   '../arch/p/pseudo/z80_pseudo.c',
   '../arch/p/pseudo/wasm_pseudo.c',
   '../arch/p/pseudo/v850_pseudo.c',

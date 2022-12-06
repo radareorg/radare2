@@ -199,9 +199,6 @@ EXPECT=<<EOF
 fd       3
 file     malloc://1024
 humansz  1K
-minopsz  1
-maxopsz  16
-invopsz  1
 mode     rwx
 format   any
 iorw     true
@@ -217,9 +214,6 @@ EXPECT=<<EOF
 fd       3
 file     malloc://1024
 humansz  1K
-minopsz  1
-maxopsz  16
-invopsz  1
 mode     rwx
 format   any
 iorw     true
@@ -235,9 +229,6 @@ EXPECT=<<EOF
 file     malloc://1024
 size     0x400
 humansz  1K
-minopsz  1
-maxopsz  16
-invopsz  1
 mode     rwx
 format   any
 iorw     true
@@ -559,9 +550,6 @@ json.core.size = 7441;
 json.core.humansz = "7.3K";
 json.core.iorw = false;
 json.core.mode = "r-x";
-json.core.minopsz = 1;
-json.core.maxopsz = 16;
-json.core.invopsz = 1;
 json.core.block = 256;
 json.core.format = "elf64";
 json.bin = {};
@@ -604,23 +592,23 @@ RUN
 NAME=ij.gron.grep
 FILE=bins/elf/crackme
 CMDS=<<EOF
-ij~{=}opsz
+aiaj~{=}opsz
 EOF
 EXPECT=<<EOF
-json.core.minopsz = 1;
-json.core.maxopsz = 16;
-json.core.invopsz = 1;
+json.minopsz = 1;
+json.maxopsz = 16;
+json.invopsz = 1;
 EOF
 RUN
 
 NAME=ij.gron.grep.two
 FILE=bins/elf/crackme
 CMDS=<<EOF
-ij~{=}~opsz
+aiaj~{=}~opsz
 EOF
 EXPECT=<<EOF
-json.core.minopsz = 1;
-json.core.maxopsz = 16;
-json.core.invopsz = 1;
+json.minopsz = 1;
+json.maxopsz = 16;
+json.invopsz = 1;
 EOF
 RUN

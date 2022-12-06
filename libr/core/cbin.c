@@ -4486,25 +4486,23 @@ R_API bool r_core_bin_set_arch_bits(RCore *r, const char *name, const char *_arc
 		}
 	}
 	/* Check if the arch name is a valid name */
-	if (!r_asm_is_valid (r->rasm, arch)) {
-		bool found_anal_plugin = false;
-		if (arch && r->anal && r->anal->plugins) {
-			RAnalPlugin *anal_plugin;
-			RListIter *iter;
-			r_list_foreach (r->anal->plugins, iter, anal_plugin) {	//XXX: fix this properly after 5.8
-				if (!anal_plugin->arch) {
-					continue;
-				}
-				if (!strcmp (anal_plugin->arch, arch)) {
-					found_anal_plugin = true;
-					break;
-				}
+	bool found_anal_plugin = false;
+	if (arch && r->anal && r->anal->plugins) {
+		RAnalPlugin *anal_plugin;
+		RListIter *iter;
+		r_list_foreach (r->anal->plugins, iter, anal_plugin) {	//XXX: fix this properly after 5.8
+			if (!anal_plugin->arch) {
+				continue;
+			}
+			if (!strcmp (anal_plugin->arch, arch)) {
+				found_anal_plugin = true;
+				break;
 			}
 		}
-		if (!found_anal_plugin) {
-			free (arch);
-			return false;
-		}
+	}
+	if (!found_anal_plugin) {
+		free (arch);
+		return false;
 	}
 	if (!strcmp (arch, "null")) {
 		free (arch);
@@ -4544,24 +4542,17 @@ R_API bool r_core_bin_set_arch_bits(RCore *r, const char *name, const char *_arc
 }
 
 R_API bool r_core_bin_update_arch_bits(RCore *r) {
-	RBinFile *binfile = NULL;
-	const char *name = NULL, *arch = NULL;
-	ut16 bits = 0;
+	int bits = 0;
 	if (!r) {
 		return 0;
 	}
-	if (r->rasm) {	//XXX: refactor when RArch is done
-		bits = r->rasm->config->bits;
-		if (r->rasm->cur) {
-			arch = r->rasm->cur->arch;
-		}
-	}
+	const char *arch = NULL;
 	if (!arch && r->anal && r->anal->cur) {
 		bits = r->anal->config->bits;
 		arch = r->anal->cur->arch;
 	}
-	binfile = r_bin_cur (r->bin);
-	name = binfile ? binfile->file : NULL;
+	RBinFile *binfile = r_bin_cur (r->bin);
+	const char *name = binfile ? binfile->file : NULL;
 	if (r->anal && binfile && binfile->curxtr) {
 		r_anal_hint_clear (r->anal);
 	}

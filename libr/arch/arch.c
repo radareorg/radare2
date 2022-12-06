@@ -197,7 +197,6 @@ R_API bool r_arch_del(RArch *arch, const char *name) {
 
 R_API void r_arch_free(RArch *arch) {
 	if (arch) {
-		// ht_pp_free (arch->decoders);
 		r_list_free (arch->plugins);
 		r_unref (arch->cfg);
 		free (arch);

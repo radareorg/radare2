@@ -4,7 +4,6 @@
 #include "r_cons.h"
 #include "r_core.h"
 
-bool rasm2_list(RCore *core, const char *arch, int fmt);
 bool ranal2_list(RCore *core, const char *arch, int fmt);
 
 static const char *help_msg_La[] = {
@@ -433,20 +432,19 @@ static int cmd_plugins(void *data, const char *input) {
 		if (input[1] == '?') { // "Ls?"
 			r_core_cmd_help_match (core, help_msg_L, "Ls", true);
 		} else { // asm plugins
-			 // r_core_cmd0 (core, "e asm.arch=??");
-			rasm2_list (core, NULL, input[1]);
+			// rasm2_list (core, NULL, input[1]);
+			ranal2_list (core, NULL, input[1]);
 		}
 		break;
-	case 'A': // "LA"
+	case 'A': // "LA" // list arch plugins
 		if (input[1] == '?') {
-			// r_core_cmd_help (core, help_msg_LA);
+			r_core_cmd_help_match (core, help_msg_L, "LA", true);
 		} else {
 			RListIter *iter;
 			RArchPlugin *item;
 			r_list_foreach (core->anal->arch->plugins, iter, item) {
 				eprintf ("%s\n", item->name);
 			}
-			// r_core_cmd0 (core, "e asm.arch=??");
 		}
 		break;
 	case 'p': // "Lp"
