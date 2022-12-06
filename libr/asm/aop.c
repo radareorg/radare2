@@ -34,9 +34,10 @@ R_API char *r_asm_op_get_hex(RAnalOp *op) {
 	return str;
 }
 
-R_API char *r_asm_op_get_asm(RAnalOp *op) {
+// XXX
+R_DEPRECATE R_API char *r_asm_op_get_asm(RAnalOp *op) {
 	r_return_val_if_fail (op, NULL);
-	return strdup (op->mnemonic);
+	return op->mnemonic;
 }
 
 R_API ut8 *r_asm_op_get_buf(RAnalOp *op) {
