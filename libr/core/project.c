@@ -737,7 +737,8 @@ R_API bool r_core_project_save(RCore *core, const char *prj_name) {
 		free (cwd);
 	}
 	// LEAK : not always in heap free (prj_name);
-	free (prj_dir);
+	free (core->prj->path);
+	core->prj->path = prj_dir;
 	if (scr_null) {
 		r_config_set_b (core->config, "scr.null", true);
 	}

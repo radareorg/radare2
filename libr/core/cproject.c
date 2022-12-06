@@ -15,16 +15,22 @@ R_API bool r_project_rename(RProject *p, const char *newname) {
 		return false;
 	}
 	char *newprjdir = r_file_new (p->path, "..", newname, NULL);
-	if (r_file_exists (newprjdir)) {
+	if (r_file_is_directory (newprjdir)) {
 		R_LOG_ERROR ("Cannot rename project");
 		free (newprjdir);
 		return false;
 	}
-	r_file_move (p->path, newprjdir);
-	free (p->path);
-	p->path = newprjdir;
-	free (p->name);
-	p->name = strdup (newname);
+	if (r_file_move (p->path, newprjdir)) {
+		char *new_name = strdup (newname);
+		if (new_name) {
+			free (p->path);
+			free (p->name);
+			p->path = newprjdir;
+			p->name = new_name;
+			return true;
+		}
+	}
+	free (newprjdir);
 	return false;
 }
 
