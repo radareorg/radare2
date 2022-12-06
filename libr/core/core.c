@@ -2485,7 +2485,7 @@ R_API char *r_core_anal_hasrefs_to_depth(RCore *core, ut64 value, PJ *pj, int de
 				r_strbuf_appendf (s, "%sW%s ", c, cend);
 			}
 			if (type & R_ANAL_ADDR_TYPE_EXEC) {
-				RAsmOp op;
+				RAnalOp op;
 				ut8 buf[32];
 				r_strbuf_appendf (s, "%sX%s ", c, cend);
 				/* instruction disassembly */
@@ -3672,21 +3672,25 @@ R_API int r_core_seek_align(RCore *core, ut64 align, int times) {
 }
 
 R_API char *r_core_op_str(RCore *core, ut64 addr) {
-	RAsmOp op = {0};
-	ut8 buf[64];
+	RAnalOp op;
+	r_anal_op_init (&op);
 	r_asm_set_pc (core->rasm, addr);
+	ut8 buf[64];
+	// TODO: use archinfo to avoid readingn 64bytes always
 	r_io_read_at (core->io, addr, buf, sizeof (buf));
 	int ret = r_asm_disassemble (core->rasm, &op, buf, sizeof (buf));
-	char *str = (ret > 0)? strdup (r_strbuf_get (&op.buf_asm)): NULL;
-	r_asm_op_fini (&op);
+	char *str = (ret > 0)? strdup (op.mnemonic): NULL;
+	r_anal_op_fini (&op);
 	return str;
 }
 
 R_API RAnalOp *r_core_op_anal(RCore *core, ut64 addr, RAnalOpMask mask) {
 	ut8 buf[64];
 	RAnalOp *op = R_NEW (RAnalOp);
-	r_io_read_at (core->io, addr, buf, sizeof (buf));
-	r_anal_op (core->anal, op, addr, buf, sizeof (buf), mask);
+	if (op) {
+		r_io_read_at (core->io, addr, buf, sizeof (buf));
+		r_anal_op (core->anal, op, addr, buf, sizeof (buf), mask);
+	}
 	return op;
 }
 

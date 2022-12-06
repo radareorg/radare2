@@ -1612,7 +1612,7 @@ static void __fix_cursor_down(RCore *core) {
 		int i = 0;
 		//XXX: ugly hack
 		for (i = 0; i < 2; i++) {
-			RAsmOp op;
+			RAnalOp op;
 			int sz = r_asm_disassemble (core->rasm,
 					&op, core->block, 32);
 			if (sz < 1) {
@@ -2816,7 +2816,7 @@ static void __direction_disassembly_cb(void *user, int direction) {
 			r_core_block_read (core);
 			__set_panel_addr (core, cur, core->offset);
 		} else {
-			RAsmOp op;
+			RAnalOp op;
 			r_core_visual_disasm_down (core, &op, &cols);
 			r_core_seek (core, core->offset + cols, true);
 			__set_panel_addr (core, cur, core->offset);

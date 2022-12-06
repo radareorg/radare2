@@ -257,6 +257,7 @@ typedef struct r_anal_op_t {
 	RAnalHint hint;
 	RAnalDataType datatype;
 	int vliw; // begin of opcode block.
+	int payload; // used for instructions like dalvik's switch-payload
 } RAnalOp;
 
 R_API void r_anal_op_free(void *_op);

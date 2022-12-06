@@ -1166,7 +1166,7 @@ R_API void r_core_visual_seek_animation(RCore *core, ut64 addr) {
 }
 
 static void setprintmode(RCore *core, int n) {
-	RAsmOp op;
+	RAnalOp op;
 
 	if (n > 0) {
 		core->printidx = R_ABS ((core->printidx + 1) % NPF);
@@ -1938,7 +1938,7 @@ static void cursor_nextrow(RCore *core, bool use_ocur) {
 	RPrint *p = core->print;
 	ut32 roff, next_roff;
 	int row, sz, delta;
-	RAsmOp op;
+	RAnalOp op;
 
 	cursor_ocur (core, use_ocur);
 	if (PIDX == 1) { // DISASM
@@ -2095,7 +2095,7 @@ static void cursor_prevrow(RCore *core, bool use_ocur) {
 				prev_roff = 0;
 				prev_sz = 1;
 			} else {
-				RAsmOp op;
+				RAnalOp op;
 				prev_roff = 0;
 				r_core_seek (core, prev_addr, true);
 				prev_sz = r_asm_disassemble (core->rasm, &op,
@@ -2160,7 +2160,7 @@ static bool fix_cursor(RCore *core) {
 			r_core_seek_delta (core, p->cur);
 			reset_print_cur (p);
 		} else if ((!cur_is_visible && is_close) || !off_is_visible) {
-			RAsmOp op;
+			RAnalOp op;
 			int sz = r_asm_disassemble (core->rasm,
 				&op, core->block, 32);
 			if (sz < 1) {
@@ -3280,7 +3280,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 							times = distance;
 						}
 						while (times--) {
-							RAsmOp op;
+							RAnalOp op;
 							if (isDisasmPrint (core->printidx)) {
 								r_core_visual_disasm_down (core, &op, &cols);
 								r_asm_op_fini (&op);
@@ -3310,7 +3310,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 				}
 			} else {
 				if (core->print->screen_bounds > 1 && core->print->screen_bounds >= core->offset) {
-					RAsmOp op;
+					RAnalOp op;
 					ut64 addr = UT64_MAX;
 					if (isDisasmPrint (core->printidx)) {
 						if (core->print->screen_bounds == core->offset) {
@@ -4481,7 +4481,7 @@ R_API void r_core_visual_disasm_up(RCore *core, int *cols) {
 	}
 }
 
-R_API void r_core_visual_disasm_down(RCore *core, RAsmOp *op, int *cols) {
+R_API void r_core_visual_disasm_down(RCore *core, RAnalOp *op, int *cols) {
 	int midflags = r_config_get_i (core->config, "asm.flags.middle");
 	const bool midbb = r_config_get_i (core->config, "asm.bbmiddle");
 	RAnalFunction *f = NULL;

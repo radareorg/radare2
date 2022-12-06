@@ -584,7 +584,7 @@ out_free_argv:
 }
 
 static int cmd_cmp_disasm(RCore *core, const char *input, int mode) {
-	RAsmOp op, op2;
+	RAnalOp op, op2;
 	int i, j;
 	char colpad[80];
 	int hascolor = r_config_get_i (core->config, "scr.color");
@@ -629,20 +629,18 @@ static int cmd_cmp_disasm(RCore *core, const char *input, int mode) {
 				buf + j, core->blocksize - j);
 
 			// show output
-			bool iseq = r_strbuf_equals (&op.buf_asm, &op2.buf_asm);
+			bool iseq = !strcmp (op.mnemonic, op2.mnemonic);
 			memset (colpad, ' ', sizeof (colpad));
 			{
-				int pos = strlen (r_strbuf_get (&op.buf_asm));
+				int pos = strlen (op.mnemonic);
 				pos = (pos > cols)? 0: cols - pos;
 				colpad[pos] = 0;
 			}
 			if (hascolor) {
 				r_cons_print (iseq? pal->graph_true: pal->graph_false);
 			}
-			r_cons_printf (" 0x%08"PFMT64x "  %s %s",
-				core->offset + i, r_strbuf_get (&op.buf_asm), colpad);
-			r_cons_printf ("%c 0x%08"PFMT64x "  %s\n",
-				iseq? '=': '!', off + j, r_strbuf_get (&op2.buf_asm));
+			r_cons_printf (" 0x%08"PFMT64x "  %s %s", core->offset + i, op.mnemonic, colpad);
+			r_cons_printf ("%c 0x%08"PFMT64x "  %s\n", iseq? '=': '!', off + j, op2.mnemonic);
 			if (hascolor) {
 				r_cons_print (Color_RESET);
 			}
@@ -669,21 +667,19 @@ static int cmd_cmp_disasm(RCore *core, const char *input, int mode) {
 				buf + j, core->blocksize - j);
 
 			// show output
-			bool iseq = r_strbuf_equals (&op.buf_asm, &op2.buf_asm); // (!strcmp (op.buf_asm, op2.buf_asm));
+			bool iseq = !strcmp (op.mnemonic, op2.mnemonic);
 			if (iseq) {
 				r_cons_printf (" 0x%08"PFMT64x "  %s\n",
-					core->offset + i, r_strbuf_get (&op.buf_asm));
+					core->offset + i, op.mnemonic);
 			} else {
 				if (hascolor) {
 					r_cons_print (pal->graph_false);
 				}
-				r_cons_printf ("-0x%08"PFMT64x "  %s\n",
-					core->offset + i, r_strbuf_get (&op.buf_asm));
+				r_cons_printf ("-0x%08"PFMT64x "  %s\n", core->offset + i, op.mnemonic);
 				if (hascolor) {
 					r_cons_print (pal->graph_true);
 				}
-				r_cons_printf ("+0x%08"PFMT64x "  %s\n",
-					off + j, r_strbuf_get (&op2.buf_asm));
+				r_cons_printf ("+0x%08"PFMT64x "  %s\n", off + j, op2.mnemonic);
 				if (hascolor) {
 					r_cons_print (Color_RESET);
 				}

@@ -1217,14 +1217,14 @@ static RList *construct_rop_gadget(RCore *core, ut64 addr, ut8 *buf, int buflen,
 		char *opst = aop.mnemonic;
 		if (!opst) {
 			R_LOG_ERROR ("Missing mnemonic after disasm with '%s'", core->anal->cur->name);
-			RAsmOp asmop;
+			RAnalOp asmop;
 			r_asm_set_pc (core->rasm, addr);
 			if (r_asm_disassemble (core->rasm, &asmop, buf + idx, buflen - idx) < 0) {
 				valid = false;
 				goto ret;
 			}
 			opst = strdup (r_asm_op_get_asm (&asmop));
-			r_asm_op_fini (&asmop);
+			r_anal_op_fini (&asmop);
 		}
 		if (!r_str_ncasecmp (opst, "invalid", strlen ("invalid")) ||
 		    !r_str_ncasecmp (opst, ".byte", strlen (".byte"))) {
@@ -1328,7 +1328,7 @@ static void print_rop(RCore *core, RList *hitlist, PJ *pj, int mode) {
 		pj_o (pj);
 		pj_ka (pj, "opcodes");
 		r_list_foreach (hitlist, iter, hit) {
-			RAsmOp asmop;
+			RAnalOp asmop;
 			ut8 *buf = malloc (hit->len);
 			if (!buf) {
 				return;
@@ -1349,7 +1349,7 @@ static void print_rop(RCore *core, RList *hitlist, PJ *pj, int mode) {
 			pj_ks (pj, "type", r_anal_optype_tostring (analop.type));
 			pj_end (pj);
 			free (buf);
-			r_asm_op_fini (&asmop);
+			r_anal_op_fini (&asmop);
 			r_anal_op_fini (&analop);
 		}
 		pj_end (pj);
@@ -1371,7 +1371,7 @@ static void print_rop(RCore *core, RList *hitlist, PJ *pj, int mode) {
 		r_cons_printf ("0x%08"PFMT64x ":",
 			((RCoreAsmHit *) hitlist->head->data)->addr);
 		r_list_foreach (hitlist, iter, hit) {
-			RAsmOp asmop;
+			RAnalOp asmop;
 			ut8 *buf = malloc (hit->len);
 			r_io_read_at (core->io, hit->addr, buf, hit->len);
 			r_asm_set_pc (core->rasm, hit->addr);
@@ -1393,7 +1393,7 @@ static void print_rop(RCore *core, RList *hitlist, PJ *pj, int mode) {
 				r_cons_printf (" %s;", r_asm_op_get_asm (&asmop));
 			}
 			free (buf);
-			r_asm_op_fini (&asmop);
+			r_anal_op_fini (&asmop);
 			r_anal_op_fini (&analop);
 		}
 		if (db && hit) {
@@ -1406,7 +1406,7 @@ static void print_rop(RCore *core, RList *hitlist, PJ *pj, int mode) {
 	default:
 		// Print gadgets with new instruction on a new line.
 		r_list_foreach (hitlist, iter, hit) {
-			RAsmOp asmop;
+			RAnalOp asmop;
 			const char *comment = rop_comments? r_meta_get_string (core->anal, R_META_TYPE_COMMENT, hit->addr): NULL;
 			if (hit->len < 0) {
 				R_LOG_ERROR ("Invalid hit length here");
@@ -1451,7 +1451,7 @@ static void print_rop(RCore *core, RList *hitlist, PJ *pj, int mode) {
 			free (asm_op_hex);
 			free (buf);
 			r_anal_op_fini (&analop);
-			r_asm_op_fini (&asmop);
+			r_anal_op_fini (&asmop);
 		}
 		if (db && hit) {
 			const ut64 addr = ((RCoreAsmHit *) hitlist->head->data)->addr;
@@ -1627,7 +1627,7 @@ static int r_core_search_rop(RCore *core, RInterval search_itv, int opt, const c
 			prev = 0;
 			// Start at just before the first end gadget.
 			for (i = next - ropdepth; i < (delta - max_inst_size_x86) && max_count; i += increment) {
-				RAsmOp asmop;
+				RAnalOp asmop;
 				if (increment == 1) {
 					// give in-boundary instructions a shot
 					if (i < prev - max_inst_size_x86) {
@@ -1672,11 +1672,11 @@ static int r_core_search_rop(RCore *core, RInterval search_itv, int opt, const c
 						from + i, buf, delta, i, grep, regexp,
 						rx_list, end_gadget, badstart);
 					if (!hitlist) {
-						r_asm_op_fini (&asmop);
+						r_anal_op_fini (&asmop);
 						continue;
 					}
 					if (align && (0 != ((from + i) % align))) {
-						r_asm_op_fini (&asmop);
+						r_anal_op_fini (&asmop);
 						continue;
 					}
 					if (gadgetSdb) {
@@ -1686,7 +1686,7 @@ static int r_core_search_rop(RCore *core, RInterval search_itv, int opt, const c
 						char *headAddr = r_str_newf ("%"PFMT64x, hit->addr);
 						if (!headAddr) {
 							result = false;
-							r_asm_op_fini (&asmop);
+							r_anal_op_fini (&asmop);
 							goto bad;
 						}
 
@@ -1695,7 +1695,7 @@ static int r_core_search_rop(RCore *core, RInterval search_itv, int opt, const c
 							if (!addr) {
 								free (headAddr);
 								result = false;
-								r_asm_op_fini (&asmop);
+								r_anal_op_fini (&asmop);
 								goto bad;
 							}
 							sdb_concat (gadgetSdb, headAddr, addr, 0);
@@ -1719,12 +1719,12 @@ static int r_core_search_rop(RCore *core, RInterval search_itv, int opt, const c
 					if (max_count > 0) {
 						max_count--;
 						if (max_count < 1) {
-							r_asm_op_fini (&asmop);
+							r_anal_op_fini (&asmop);
 							break;
 						}
 					}
 				}
-				r_asm_op_fini (&asmop);
+				r_anal_op_fini (&asmop);
 				if (increment != 1) {
 					i = next;
 				}
@@ -2159,14 +2159,13 @@ static void do_ref_search(RCore *core, ut64 addr,ut64 from, ut64 to, struct sear
 	RList *list = r_anal_xrefs_get (core->anal, addr);
 	if (list) {
 		r_list_foreach (list, iter, ref) {
-			RAsmOp asmop;
+			RAnalOp asmop;
 			r_io_read_at (core->io, ref->addr, buf, size);
 			r_asm_set_pc (core->rasm, ref->addr);
 			r_asm_disassemble (core->rasm, &asmop, buf, size);
 			fcn = r_anal_get_fcn_in (core->anal, ref->addr, 0);
 			RAnalHint *hint = r_anal_hint_get (core->anal, ref->addr);
-			r_parse_filter (core->parser, ref->addr, core->flags, hint, r_strbuf_get (&asmop.buf_asm),
-				str, sizeof (str), be);
+			r_parse_filter (core->parser, ref->addr, core->flags, hint, asmop.mnemonic, str, sizeof (str), be);
 			r_anal_hint_free (hint);
 			const char *comment = r_meta_get_string (core->anal, R_META_TYPE_COMMENT, ref->addr);
 			char *print_comment = NULL;
@@ -2189,7 +2188,7 @@ static void do_ref_search(RCore *core, ut64 addr,ut64 from, ut64 to, struct sear
 				}
 			}
 			free (buf_fcn);
-			r_asm_op_fini (&asmop);
+			r_anal_op_fini (&asmop);
 		}
 	}
 	r_list_free (list);
@@ -2209,22 +2208,26 @@ static void cmd_search_aF(RCore *core, const char *input) {
 	r_list_foreach (core->anal->fcns, iter, fcn) {
 		r_list_foreach (fcn->bbs, iter2, bb) {
 			ut8 *bbdata = malloc (bb->size);
+			if (!bbdata) {
+				break;
+			}
 			r_io_read_at (core->io, bb->addr, bbdata, bb->size);
 			// eprintf ("0x08%"PFMT64x"%c", bb->addr, 10);
 			int i;
 			for (i = 0; i < bb->ninstr; i++) {
 				ut64 addr = bb->addr + bb->op_pos[i];
 				ut8 *idata = bbdata + bb->op_pos[i];
-				RAsmOp asmop = {0};
+				RAnalOp asmop;
+				r_anal_op_init (&asmop);
 				size_t left = bb->size - bb->op_pos[i];
 				int ret = r_asm_disassemble (core->rasm, &asmop, idata, left);
 				if (ret  < 1) {
-					r_asm_op_fini (&asmop);
+					r_anal_op_fini (&asmop);
 					break;
 				}
 				char *s = NULL;
 				if (quiet) {
-					s = strdup (r_strbuf_get (&asmop.buf_asm));
+					s = strdup (asmop.mnemonic);
 				} else {
 					s = r_core_cmd_strf (core, "pi 1 @ 0x%"PFMT64x, addr);
 				}
@@ -2233,7 +2236,7 @@ static void cmd_search_aF(RCore *core, const char *input) {
 					r_cons_printf ("0x%08"PFMT64x" %s: %s\n", addr, fcn->name, s);
 				}
 				free (s);
-				r_asm_op_fini (&asmop);
+				r_anal_op_fini (&asmop);
 			}
 			free (bbdata);
 		}
@@ -3626,15 +3629,16 @@ static void __core_cmd_search_asm_byteswap(RCore *core, int nth) {
 		return;
 	}
 	for (i = 0; i <= 0xff; i++) {
-		RAsmOp asmop;
+		RAnalOp asmop;
 		buf[nth] = i;
+		r_anal_op_init (&asmop);
 		if (r_asm_disassemble (core->rasm, &asmop, buf, sizeof (buf)) > 0) {
-			const char *asmstr = r_strbuf_get (&asmop.buf_asm);
+			const char *asmstr = asmop.mnemonic;
 			if (!strstr (asmstr, "invalid") && !strstr (asmstr, "unaligned")) {
 				r_cons_printf ("%02x  %s\n", i, asmstr);
 			}
 		}
-		r_asm_op_fini (&asmop);
+		r_anal_op_fini (&asmop);
 	}
 }
 
