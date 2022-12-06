@@ -6708,7 +6708,7 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 }
 
 R_API int r_core_print_disasm_all(RCore *core, ut64 addr, int l, int len, int mode) {
-	const int scr_color = r_config_get_i (core->config, "scr.color");
+	const bool scr_color = r_config_get_i (core->config, "scr.color");
 	int i, ret, count = 0;
 	ut8 *buf = core->block;
 	char str[128];
@@ -6736,12 +6736,6 @@ R_API int r_core_print_disasm_all(RCore *core, ut64 addr, int l, int len, int mo
 	const bool be = R_ARCH_CONFIG_IS_BIG_ENDIAN (core->rasm->config);
 	int minopsz = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_MIN_OP_SIZE);
 	int opalign = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_ALIGN);
-	if (minopsz < 1) {
-		minopsz = 1;
-	}
-	if (opalign < 1) {
-		opalign = 1;
-	}
 	r_cons_break_push (NULL, NULL);
 	for (i = 0; i < l; i += minopsz) {
 		RAsmOp asmop;
@@ -6777,7 +6771,7 @@ R_API int r_core_print_disasm_all(RCore *core, ut64 addr, int l, int len, int mo
 			case 'i':
 				r_parse_filter (core->parser, ds->vat, core->flags, ds->hint, r_asm_op_get_asm (&asmop),
 						str, sizeof (str), be);
-				if (scr_color > 0) {
+				if (scr_color) {
 					RAnalOp aop;
 					RAnalFunction *f = fcnIn (ds, ds->vat, R_ANAL_FCN_TYPE_NULL);
 					r_anal_op (core->anal, &aop, addr, buf+i, l-i, R_ARCH_OP_MASK_ALL);
@@ -6886,13 +6880,6 @@ R_API int r_core_disasm_pdi_with_buf(RCore *core, ut64 address, ut8 *buf, ut32 n
 	int midbb = r_config_get_i (core->config, "asm.bbmiddle");
 	int minopsz = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_MIN_OP_SIZE);
 	int opalign = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_ALIGN);
-	// TODO: archinfo shuold never return-1 when all plugs get moved into arch
-	if (minopsz < 1) {
-		minopsz = 1;
-	}
-	if (opalign < 1) {
-		opalign = 1;
-	}
 	int opinc = (minopsz < opalign)? opalign: minopsz;
 	bool asmmarks = r_config_get_i (core->config, "asm.marks");
 	r_config_set_b (core->config, "asm.marks", false);
@@ -7167,10 +7154,9 @@ R_API int r_core_disasm_pde(RCore *core, int nb_opcodes, int mode) {
 	r_config_set_b (core->config, "io.cache", true);
 	r_config_set_b (core->config, "asm.lines", false);
 	const char *strip = r_config_get (core->config, "asm.strip");
-	int max_op_size = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_MAX_OP_SIZE);
+	const int max_op_size = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_MAX_OP_SIZE);
 	int min_op_size = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_MIN_OP_SIZE);
 	min_op_size = min_op_size > 0 ? min_op_size : 1;
-	max_op_size = max_op_size < min_op_size? min_op_size: 1;
 	const ut64 read_len = max_op_size > 0 ? max_op_size : 32;
 	size_t buf_sz = 0x100, block_sz = 0, block_instr = 0;
 	ut64 block_start = r_reg_get_value (reg, pc);
