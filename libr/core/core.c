@@ -3154,7 +3154,6 @@ R_API bool r_core_init(RCore *core) {
 	// RAnal.new() doesnt initializes this field. but it should be refcounted
 	core->anal->print = core->print;
 	r_anal_set_bits (core->anal, 32); // core->rasm->config->bits);
-	r_anal_bind (core->anal, &core->rasm->analb);
 	core->gadgets = r_list_newf ((RListFree)r_core_gadget_free);
 	core->anal->ev = core->ev;
 	core->anal->log = r_core_anal_log;
@@ -3163,6 +3162,7 @@ R_API bool r_core_init(RCore *core) {
 	core->anal->cb.on_fcn_new = on_fcn_new;
 	core->anal->cb.on_fcn_delete = on_fcn_delete;
 	core->anal->cb.on_fcn_rename = on_fcn_rename;
+	r_anal_bind (core->anal, &core->rasm->analb);
 	core->print->sdb_types = core->anal->sdb_types;
 	core->rasm->syscall = r_syscall_ref (core->anal->syscall); // BIND syscall anal/asm
 	r_anal_set_user_ptr (core->anal, core);
