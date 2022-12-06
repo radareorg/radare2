@@ -486,11 +486,12 @@ R_API void r_anal_purge(RAnal *anal) {
 }
 
 // XXX deprecate. use r_arch_info() when all anal plugs get moved
+// XXX this function should NEVER return -1. it should provide all valid values, even if the delegate does not
 R_API R_DEPRECATE int r_anal_archinfo(RAnal *anal, int query) {
 	r_return_val_if_fail (anal, -1);
 	// this check wont be needed when all the anal plugs move to archland
 	// const char *const b = anal->cur->name;
-	// eprintf ("%s %s\n", a,b);
+	// eprintf ("%s %s\n", a, b);
 	if (anal->uses == 2 && anal->arch->session) {
 		const char *const a = anal->arch->session? anal->arch->session->config->arch: "";
 		const char *const b = anal->config->arch;

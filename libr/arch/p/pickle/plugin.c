@@ -252,7 +252,7 @@ static inline char *get_line(const ut8 *buf, int len) {
 }
 
 static inline char *get_two_lines(const ut8 *buf, int len) {
-	const char * const rep = " \x00";
+	const char * const rep = " \x00"; // XXX this x00 is implicit in "" as terminator
 	int i, cnt = 0;
 	char *out = malloc (len);
 	if (out) {
@@ -320,7 +320,7 @@ static inline void set_mnemonic_str(RAnalOp *op, const char *n, const ut8 *buf, 
 	char *trunc = "";
 	size_t readlen = op->ptrsize;
 	if (op->ptrsize > max) {
-		trunc = "<truncated>";
+		trunc = "truncated";
 		readlen = max;
 	}
 	char *str = r_str_escape_raw ((ut8 *)buf, readlen);
@@ -554,6 +554,7 @@ static bool pickle_decode(RArchSession *s, RAnalOp *op, RAnalOpMask mask) {
 		op->mnemonic = strdup (opstr);
 		op->size = 1;
 	} else {
+		op->mnemonic = strdup ("invalid");
 		// bad opcode, must be at bad addr
 		op->type = R_ANAL_OP_TYPE_ILL;
 		return false;
