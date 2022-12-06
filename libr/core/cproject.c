@@ -20,12 +20,17 @@ R_API bool r_project_rename(RProject *p, const char *newname) {
 		free (newprjdir);
 		return false;
 	}
-	r_file_move (p->path, newprjdir);
-	free (p->path);
-	p->path = newprjdir;
-	free (p->name);
-	p->name = strdup (newname);
-	return true;
+	if (r_file_move (p->path, newprjdir)) {
+		char *new_name = strdup (newname);
+		if (new_name) {
+			free (p->path);
+			free (p->name);
+			p->path = newprjdir;
+			p->name = new_name;
+			return true;
+		}
+	}
+	return false;
 }
 
 R_API bool r_project_is_git(RProject *p) {
