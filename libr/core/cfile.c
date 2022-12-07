@@ -827,12 +827,11 @@ beach:
 		// load companion dwarf files
 		char *macdwarf = r_str_newf ("%s.dSYM/Contents/Resources/DWARF/%s", filenameuri, filenameuri);
 		if (r_file_exists (macdwarf)) {
-			RBinObject *obj = r_bin_cur_object (r->bin);
-			ut64 nbaddr = obj? obj->baddr: baddr;
-			r_core_cmd_callf (r, "oba 0x%"PFMT64x" %s", nbaddr, macdwarf);
-			r_core_cmd_call (r, "ob--");
-			// r_core_bin_load (r, macdwarf, nbaddr);
-			// TODO: merge last two objects to sync metadata
+			// RBinObject *obj = r_bin_cur_object (r->bin);
+			// ut64 nbaddr = obj? obj->baddr: baddr;
+			r_core_cmd_callf (r, "o %s", macdwarf);
+			r_core_cmd_call (r, "obm-");
+			// r_core_cmd_callf (r, "o-."); // causes uaf
 		}
 		free (macdwarf);
 	}

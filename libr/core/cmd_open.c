@@ -440,7 +440,7 @@ static void cmd_open_bin(RCore *core, const char *input) {
 		} else if (input[2] == '-') {
 			RBinFile *bf = r_bin_cur (core->bin);
 			int current = bf? bf->id: 0;
-			if (current > 0) {
+			if (current >= 0) {
 				r_core_cmd_callf (core, "ob-%d", current);
 				r_core_cmd_callf (core, "ob %d", current -1);
 			}
@@ -454,12 +454,13 @@ static void cmd_open_bin(RCore *core, const char *input) {
 			id = (*value && r_is_valid_input_num_value (core->num, value)) ?
 					r_get_input_num_value (core->num, value) : UT32_MAX;
 			RBinFile *bf = r_bin_file_find_by_id (core->bin, id);
-			if (!bf) {
+			if (bf) {
+				int bfid = bf->id;
+				if (!r_core_bin_delete (core, bfid)) {
+					R_LOG_ERROR ("Cannot find an RBinFile associated with id %d", bfid);
+				}
+			} else {
 				R_LOG_ERROR ("Invalid binid");
-				break;
-			}
-			if (!r_core_bin_delete (core, bf->id)) {
-				R_LOG_ERROR ("Cannot find an RBinFile associated with that id");
 			}
 		}
 		break;
