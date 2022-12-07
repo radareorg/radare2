@@ -1149,11 +1149,18 @@ R_API RList *r_bin_file_get_symbols(RBinFile *bf) {
 	return o? o->symbols: NULL;
 }
 
-#if R2_580
 R_API RBinFile *r_bin_file_open(RBin *bin, const char *file, RBinFileOptions *opt) {
 	if (r_bin_open (bin, file, opt)) {
 		return r_bin_cur (bin);
 	}
 	return NULL;
 }
-#endif
+
+// TODO Improve this API
+R_API void r_bin_file_merge(RBinFile *dst, RBinFile *src) {
+	// merge imports
+	// merge dbginfo
+	sdb_merge (dst->o->kv, src->o->kv);
+	sdb_merge (dst->sdb_addrinfo, src->sdb_addrinfo);
+	sdb_merge (dst->sdb_info, src->sdb_info);
+}

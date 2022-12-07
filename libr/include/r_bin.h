@@ -783,6 +783,7 @@ R_API bool r_bin_file_set_cur_by_id(RBin *bin, ut32 bin_id);
 R_API bool r_bin_file_set_cur_by_name(RBin *bin, const char *name);
 R_API ut64 r_bin_file_delete_all(RBin *bin);
 R_API bool r_bin_file_delete(RBin *bin, ut32 bin_id);
+R_API void r_bin_file_merge(RBinFile *bo, RBinFile *b);
 R_API RList *r_bin_file_compute_hashes(RBin *bin, ut64 limit);
 R_API RList *r_bin_file_set_hashes(RBin *bin, RList *new_hashes);
 R_API RBinPlugin *r_bin_file_cur_plugin(RBinFile *binfile);
