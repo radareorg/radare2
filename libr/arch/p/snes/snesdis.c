@@ -5,7 +5,7 @@
 #include <r_anal.h>
 #include <r_lib.h>
 #include <string.h>
-#include "snes_op_table.h"
+#include "optable.h"
 
 static int snesDisass(int M_flag, int X_flag, ut64 pc, RAnalOp *op, const ut8 *buf, int len) {
 	snes_op_t *s_op = &snes_op[buf[0]];

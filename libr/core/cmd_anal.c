@@ -7706,7 +7706,7 @@ static void cmd_anal_esil(RCore *core, const char *input, bool verbose) {
 			r_esil_free (esil);
 			core->anal->esil = NULL;
 			break;
-		case 0: //lolololol
+		case 0: // "aei"
 			r_esil_free (esil);
 			esil = core->anal->esil = esil_new_setup (core);
 			if (!esil) {
