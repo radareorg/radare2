@@ -1650,7 +1650,6 @@ R_API const char *r_anal_global_get_type(RAnal *anal, ut64 addr);
 R_API bool r_anal_is_dirty(RAnal *anal);
 /* plugin pointers */
 extern RAnalPlugin r_anal_plugin_null;
-extern RAnalPlugin r_anal_plugin_6502;
 extern RAnalPlugin r_anal_plugin_6502_cs;
 extern RAnalPlugin r_anal_plugin_8051;
 extern RAnalPlugin r_anal_plugin_alpha;
@@ -1688,7 +1687,6 @@ extern RAnalPlugin r_anal_plugin_ppc_gnu;
 extern RAnalPlugin r_anal_plugin_propeller;
 extern RAnalPlugin r_anal_plugin_riscv_cs;
 extern RAnalPlugin r_anal_plugin_sh;
-extern RAnalPlugin r_anal_plugin_snes;
 extern RAnalPlugin r_anal_plugin_sparc_cs;
 extern RAnalPlugin r_anal_plugin_sparc_gnu;
 extern RAnalPlugin r_anal_plugin_s390_cs;

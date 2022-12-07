@@ -38,7 +38,6 @@ r_anal_sources = [
   'var.c',
   'vtable.c',
   'xrefs.c',
-  'p/anal_6502.c',
   'p/anal_6502_cs.c',
   'p/anal_8051.c',
 
@@ -112,7 +111,6 @@ r_anal_sources = [
   '../asm/arch/s390/gnu/s390-opc.c',
   '../asm/arch/sparc/gnu/sparc-dis.c',
   '../asm/arch/sparc/gnu/sparc-opc.c',
-  'p/anal_snes.c',
   'p/anal_lm32.c',
   'p/anal_sparc_cs.c',
   'p/anal_sparc_gnu.c',

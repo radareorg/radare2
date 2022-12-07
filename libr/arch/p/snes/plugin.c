@@ -5,12 +5,13 @@
 #include <r_lib.h>
 #include <r_asm.h>
 #include <r_anal.h>
-#include "../arch/snes/snes_op_table.h"
+#include "optable.h"
 
 struct snes_asm_flags {
 	unsigned char M;
 	unsigned char X;
 };
+
 static R_TH_LOCAL struct snes_asm_flags snesflags = {0};
 
 static char *snes_disass(ut64 pc, const ut8 *buf, int len) {
@@ -21,7 +22,7 @@ static char *snes_disass(ut64 pc, const ut8 *buf, int len) {
 	if (len < op_len) {
 		return 0;
 	}
-	const char *buf_asm = "invalid";
+	const char * buf_asm = "invalid";
 	r_strf_buffer (64);
 	switch (s_op->len) {
 	case SNES_OP_8BIT:
@@ -64,8 +65,13 @@ static char *snes_disass(ut64 pc, const ut8 *buf, int len) {
 	return strdup (buf_asm);
 }
 
-static int snes_anop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len, RAnalOpMask mask) {
-	op->size = snes_op_get_size(snesflags.M, snesflags.X, &snes_op[data[0]]);
+static int snes_anop(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
+	ut64 addr = op->addr;
+	ut8 *data = op->bytes;
+	int len = op->size;
+	// RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len, RAnalOpMask mask) {
+
+	op->size = snes_op_get_size (snesflags.M, snesflags.X, &snes_op[data[0]]);
 	if (op->size > len) {
 		return op->size = 0;
 	}
@@ -297,19 +303,19 @@ static int snes_anop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 	return op->size;
 }
 
-RAnalPlugin r_anal_plugin_snes = {
+RArchPlugin r_arch_plugin_snes = {
 	.name = "snes",
 	.desc = "SNES analysis plugin",
 	.license = "LGPL3",
-	.arch = "snes",
-	.bits = 8 | 16,
-	.op = &snes_anop,
+	.arch = "snes", // modified 6502 ?
+	.bits = R_SYS_BITS_PACK2 (8, 16),
+	.decode = snes_anop,
 };
 
 #ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_ANAL,
-	.data = &r_anal_plugin_snes,
+	.type = R_LIB_TYPE_ARCH,
+	.data = &r_arch_plugin_snes,
 	.version = R2_VERSION
 };
 #endif

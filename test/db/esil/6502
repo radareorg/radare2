@@ -2,6 +2,7 @@ NAME=op: brk
 FILE=malloc://0x10000
 CMDS=<<EOF
 e asm.arch=6502;e asm.bits=8; aei
+ar sp=0xff
 ae 0xc000,0xfffe,=[2]
 ar C=1
 wx 00ea
@@ -2025,6 +2026,7 @@ NAME=op: jsr $abcd
 FILE=malloc://0x200
 CMDS=<<EOF
 e asm.arch=6502; e asm.bits=8; aei
+ar sp=0xff
 ar pc=0x0180
 s 0x0180
 wx 20cdab
@@ -2057,6 +2059,7 @@ NAME=op: pha
 FILE=malloc://0x200
 CMDS=<<EOF
 e asm.arch=6502; e asm.bits=8; aei
+ar sp=0xff
 ar a=0x81
 wx 48
 aes; ar sp; pu 1 @0x1ff
@@ -2071,6 +2074,7 @@ NAME=op: php
 FILE=malloc://0x200
 CMDS=<<EOF
 e asm.arch=6502; e asm.bits=8; aei
+dr sp=0xff
 ar flags=0x82
 wx 08
 aes; ar sp; pu 1 @0x1ff

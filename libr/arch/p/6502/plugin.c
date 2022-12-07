@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2019-2020 - condret, riq */
+/* radare - LGPL - Copyright 2019-2022 - condret, riq, pancake */
 
 /* 6502 info taken from http://unusedino.de/ec64/technical/aay/c64/bchrt651.htm
  *
@@ -13,9 +13,8 @@
 #include <r_lib.h>
 #include <r_asm.h>
 #include <r_anal.h>
-#include "../arch/snes/snes_op_table.h"
-
-#include "../arch/6502/6502dis.inc"
+#include "../snes/optable.h"
+#include "./6502dis.inc"
 
 enum {
 	_6502_FLAGS_C = (1 << 0),
@@ -307,11 +306,15 @@ static void _6502_anal_esil_flags(RAnalOp *op, ut8 data0) {
 	r_strbuf_setf (&op->esil, "%d,%c,=", enabled, flag);
 }
 
-static int _6502_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len, RAnalOpMask mask) {
+static bool _6502_op(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
+	ut64 addr = op->addr;
+	ut8 *data = op->bytes;
+	int len = op->size;
+	// ut64 addr, const ut8 *data, int len, RAnalOpMask mask) {
 	char addrbuf[64];
 	const int buffsize = sizeof (addrbuf) - 1;
 	if (len < 1) {
-		return -1;
+		return false;
 	}
 
 	if (mask & R_ARCH_OP_MASK_DISASM) {
@@ -911,11 +914,11 @@ static int _6502_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 		_6502_anal_esil_mov (op, data[0]);
 		break;
 	}
-	return op->size;
+	return true;
 }
 
-static bool set_reg_profile(RAnal *anal) {
-	char *p =
+static char *regs(RArchSession *as) {
+	const char *const p =
 		"=PC	pc\n"
 		"=SP	sp\n"
 		"=A0	y\n"
@@ -936,9 +939,11 @@ static bool set_reg_profile(RAnal *anal) {
 		"gpr	N	.1	.31	0\n"
 		"gpr	sp	.8	4	0\n"
 		"gpr	pc	.16	5	0\n";
-	return r_reg_set_profile_string (anal->reg, p);
+	return strdup (p);
 }
 
+#if 0
+// XXX this is wrong. but maybe we must have a way to expose that info to core
 static int esil_6502_init(REsil *esil) {
 	if (esil->anal && esil->anal->reg) {		//initial values
 		r_reg_set_value (esil->anal->reg, r_reg_get (esil->anal->reg, "pc", -1), 0x0000);
@@ -954,24 +959,26 @@ static int esil_6502_init(REsil *esil) {
 static int esil_6502_fini(REsil *esil) {
 	return true;
 }
+#endif
 
-RAnalPlugin r_anal_plugin_6502 = {
+RArchPlugin r_arch_plugin_6502 = {
 	.name = "6502",
 	.desc = "6502/NES analysis plugin",
 	.license = "LGPL3",
 	.arch = "6502",
 	.bits = 8,
-	.op = &_6502_op,
-	.set_reg_profile = &set_reg_profile,
-	.esil = true,
-	.esil_init = esil_6502_init,
-	.esil_fini = esil_6502_fini,
+	.decode = &_6502_op,
+	.regs = regs,
+#if 0
+	.esil_init = esil_6502_init, // XXX
+	.esil_fini = esil_6502_fini, // XXX
+#endif
 };
 
 #ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_ANAL,
-	.data = &r_anal_plugin_6502,
+	.type = R_LIB_TYPE_ARCH,
+	.data = &r_arch_plugin_6502,
 	.version = R2_VERSION
 };
 #endif

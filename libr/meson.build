@@ -8,6 +8,8 @@ anal_plugins = [ 'null' ]
 arch_plugins = [ 'null',
   'sh',
   'arm',
+  '6502',
+  'snes',
   'any_as',
   'any_vasm',
   'jdh8',
@@ -126,7 +128,6 @@ if no_user_plugins
 
 # TODO: add the pyc plugin for meson builds too
 anal_plugins += [
-  '6502',
   '6502_cs',
   'mcs96',
   '8051',
@@ -163,7 +164,6 @@ anal_plugins += [
   'ppc_cs',
   'propeller',
   'riscv_cs',
-  'snes',
   'sparc_cs',
   's390_cs',
   'tms320',
