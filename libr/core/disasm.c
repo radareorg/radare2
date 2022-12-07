@@ -2711,6 +2711,7 @@ static int ds_disassemble(RDisasmState *ds, ut8 *buf, int len) {
 			switch (meta->type) {
 			case R_META_TYPE_STRING:
 				r_anal_op_set_mnemonic (&ds->asmop, ds->asmop.addr,
+					r_strf (".string \"%s%s\"", meta->str, tail));
 				r_anal_op_set_mnemonic (&ds->analop, ds->analop.addr,
 					r_strf (".string \"%s%s\"", meta->str, tail));
 				break;
@@ -3490,7 +3491,7 @@ static void ds_print_show_bytes(RDisasmState *ds) {
 			pad[j] = '\0';
 			str = strdup ("");
 		} else {
-			str = r_asm_op_get_hex (&ds->analop);
+			str = r_asm_op_get_hex (&ds->asmop);
 			if (r_str_ansi_len (str) > nb) {
 				char *p = (char *)r_str_ansi_chrn (str, nb);
 				if (p)  {
