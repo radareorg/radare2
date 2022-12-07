@@ -6381,7 +6381,6 @@ static bool handle_backwards_disasm(RCore *core, int *nb_opcodes, int *nb_bytes)
  * Set to 0 the parameter you don't use */
 R_API int r_core_print_disasm_instructions(RCore *core, int nb_bytes, int nb_opcodes) {
 	const ut64 ocore_offset = core->offset;
-	eprintf ("ii\n");
 	int ret = -1;
 	if (handle_backwards_disasm (core, &nb_opcodes, &nb_bytes)) {
 		ret = r_core_print_disasm_instructions_with_buf (core, core->offset, NULL, nb_bytes, nb_opcodes);
