@@ -584,10 +584,10 @@ static const char *help_msg_afC[] = {
 static const char *help_msg_afi[] = {
 	"Usage:", "afi[jlp*]", " <addr>",
 	"afi", "", "show information of the function",
-	"afii", "[-][import]", "show/add/delete imports used in function",
 	"afi.", "", "show function name in current offset",
 	"afi*", "", "function, variables and arguments",
 	"afij", "", "function info in json format",
+	"afii", "[-][import]", "show/add/delete imports used in function",
 	"afil", "", "verbose function info",
 	"afip", "", "show whether the function is pure or not",
 	"afiq", "", "show quite few info about the function",
@@ -4559,13 +4559,16 @@ static int cmd_af(RCore *core, const char *input) {
 				}
 			}
 			break;
-		default:
+		case ' ':
+		case 0:
 			{
 				const char *arg = input[2]? input + 2: "";
 				const char *sec = "\x01";
 				r_core_anal_fcn_list (core, arg, sec);
 			}
 			break;
+		default:
+			r_core_cmd_help (core, help_msg_afi);
 		}
 		break;
 	case 'l': // "afl"
