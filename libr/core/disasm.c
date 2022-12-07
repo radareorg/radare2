@@ -146,6 +146,7 @@ typedef struct {
 	bool show_flags;
 	bool bblined;
 	bool show_bytes;
+	bool show_bytes_align;
 	bool show_bytes_right;
 	bool show_bytes_opcolor;
 	bool show_reloff;
@@ -750,6 +751,7 @@ static RDisasmState *ds_init(RCore *core) {
 	ds->show_offseg = r_config_get_b (core->config, "asm.offset.segment");
 	ds->show_flags = r_config_get_b (core->config, "asm.flags");
 	ds->show_bytes = r_config_get_b (core->config, "asm.bytes");
+	ds->show_bytes_align = r_config_get_i (core->config, "asm.bytes.align");
 	ds->show_bytes_right = r_config_get_i (core->config, "asm.bytes.right");
 	ds->show_bytes_opcolor = r_config_get_i (core->config, "asm.bytes.opcolor");
 	ds->show_optype = r_config_get_i (core->config, "asm.optype");
@@ -3504,7 +3506,11 @@ static void ds_print_show_bytes(RDisasmState *ds) {
 			str = nstr;
 		}
 	}
-	r_cons_printf ("%s%s %s", pad, str, extra);
+	if (ds->show_bytes_align) {
+		r_cons_printf ("%s%s%s  ", (*extra)? extra + 1: extra, str, pad);
+	} else {
+		r_cons_printf ("%s%s %s", pad, str, extra);
+	}
 	free (str);
 	core->print->flags = oldFlags;
 }
