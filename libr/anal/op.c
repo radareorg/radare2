@@ -96,7 +96,16 @@ R_API int r_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 	if (pcalign && (addr % pcalign)) {
 		op->type = R_ANAL_OP_TYPE_ILL;
 		op->addr = addr;
-		op->size = 1;
+		op->size = pcalign - (addr % pcalign);
+		r_anal_op_set_mnemonic (op, addr, "unaligned");
+		if (op->size > len) {
+			ut8 *fakedata = malloc (op->size);
+			memcpy (fakedata, data, len);
+			r_anal_op_set_bytes (op, addr, fakedata, op->size);
+			free (fakedata);
+		} else {
+			r_anal_op_set_bytes (op, addr, data, op->size);
+		}
 		return -1;
 	}
 	int ret = R_MIN (2, len);

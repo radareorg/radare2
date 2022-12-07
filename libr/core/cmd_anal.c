@@ -2228,7 +2228,7 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 	}
 	}
 	for (i = idx = ret = 0; idx < len && (!nops || (nops && i < nops)); i++, idx += ret) {
-		RAsmOp asmop = {0};
+		RAnalOp asmop = {0};
 		addr = core->offset + idx;
 		r_asm_set_pc (core->rasm, addr);
 		hint = r_anal_hint_get (core->anal, addr);
@@ -8814,8 +8814,7 @@ static char *get_buf_asm(RCore *core, ut64 from, ut64 addr, RAnalFunction *fcn, 
 	char str[512];
 	const int size = 12;
 	ut8 buf[12];
-	RAsmOp asmop = {0};
-	char *buf_asm = NULL;
+	RAnalOp asmop = {0};
 	bool asm_subvar = r_config_get_b (core->config, "asm.sub.var");
 	bool be = R_ARCH_CONFIG_IS_BIG_ENDIAN (core->rasm->config);
 	core->parser->pseudo = r_config_get_b (core->config, "asm.pseudo");
@@ -8828,29 +8827,27 @@ static char *get_buf_asm(RCore *core, ut64 from, ut64 addr, RAnalFunction *fcn, 
 	r_io_read_at (core->io, addr, buf, size);
 	r_asm_set_pc (core->rasm, addr);
 	r_asm_disassemble (core->rasm, &asmop, buf, size);
-	int ba_len = r_strbuf_length (&asmop.buf_asm) + 128;
+	int ba_len = strlen (asmop.mnemonic) + 128;
 	char *ba = malloc (ba_len);
-	strcpy (ba, r_strbuf_get (&asmop.buf_asm));
+	strcpy (ba, asmop.mnemonic);
 	if (asm_subvar) {
 		core->parser->get_ptr_at = r_anal_function_get_var_stackptr_at;
 		core->parser->get_reg_at = r_anal_function_get_var_reg_at;
 		core->parser->get_op_ireg = get_op_ireg;
-		r_parse_subvar (core->parser, fcn, addr, asmop.size,
-				ba, ba, sizeof (asmop.buf_asm));
+		r_parse_subvar (core->parser, fcn, addr, asmop.size, ba, ba, ba_len);
 	}
 	RAnalHint *hint = r_anal_hint_get (core->anal, addr);
-	r_parse_filter (core->parser, addr, core->flags, hint,
-			ba, str, sizeof (str), be);
+	r_parse_filter (core->parser, addr, core->flags, hint, ba, str, sizeof (str), be);
 	r_anal_hint_free (hint);
-	r_asm_op_set_asm (&asmop, ba);
+	r_anal_op_set_mnemonic (&asmop, asmop.addr, ba);
 	free (ba);
+	char *buf_asm = NULL;
 	if (color && has_color) {
 		buf_asm = r_print_colorize_opcode (core->print, str,
 				core->cons->context->pal.reg, core->cons->context->pal.num, false, fcn ? fcn->addr : 0);
 	} else {
 		buf_asm = r_str_new (str);
 	}
-	r_strbuf_fini (&asmop.buf_asm);
 	return buf_asm;
 }
 
@@ -9227,7 +9224,7 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 				axfm (core);
 				break;
 			}
-			RAsmOp asmop;
+			RAnalOp asmop;
 			RList *list = NULL;
 			RAnalRef *ref;
 			RListIter *iter;
@@ -9687,7 +9684,7 @@ static void cmd_anal_hint(RCore *core, const char *input) {
 				addr = core->offset;
 			}
 			r_str_trim (type);
-			RAsmOp asmop;
+			RAnalOp asmop;
 			RAnalOp op = {0};
 			ut8 code[128] = {0};
 			(void)r_io_read_at (core->io, core->offset, code, sizeof (code));

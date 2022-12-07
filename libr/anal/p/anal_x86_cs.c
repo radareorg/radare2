@@ -1224,13 +1224,17 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 				{
 					// handle CALLPOP sequence: 'CALL $$ + 5; POP REG'
 					ut8 buf[5] = {0};
-					const ut8 data[] = { 0xe8, 0, 0, 0, 0 };
-					a->read_at (a, addr - 5, buf, sizeof (buf));
-					if (!memcmp (buf, data, sizeof (buf))) {
-						dst = getarg (&gop, 0, 0, NULL, NULL);
-						esilprintf (op, "0x%"PFMT64x",%s,=", addr, dst);
-						free (dst);
-						break;
+					if (a->read_at) {
+						const ut8 data[] = { 0xe8, 0, 0, 0, 0 };
+						a->read_at (a, addr - 5, buf, sizeof (buf));
+						if (!memcmp (buf, data, sizeof (buf))) {
+							dst = getarg (&gop, 0, 0, NULL, NULL);
+							esilprintf (op, "0x%"PFMT64x",%s,=", addr, dst);
+							free (dst);
+							break;
+						}
+					} else {
+						R_LOG_DEBUG ("This shouldnt happen");
 					}
 				}
 			default:

@@ -296,7 +296,7 @@ static int cmd_seek_opcode_backward(RCore *core, int numinstr) {
 			if (prev_addr == UT64_MAX || prev_addr >= core->offset) {
 				break;
 			}
-			RAsmOp op = {0};
+			RAnalOp op = {0};
 			r_core_seek (core, prev_addr, true);
 			r_asm_disassemble (core->rasm, &op, core->block, 32);
 			if (op.size < mininstrsize) {

@@ -154,7 +154,7 @@ R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut6
 					match = (val != UT64_MAX && val >= usrimm && val <= usrimm2);
 				}
 				if (match) {
-					RAsmOp op;
+					RAnalOp op;
 					if (!(hit = r_core_asm_hit_new ())) {
 						r_list_purge (hits);
 						R_FREE (hits);
@@ -168,7 +168,7 @@ R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut6
 					}
 					r_asm_disassemble (core->rasm, &op, buf + addrbytes * idx,
 					      core->blocksize - addrbytes * idx);
-					hit->code = r_str_new (r_strbuf_get (&op.buf_asm));
+					hit->code = strdup (op.mnemonic);
 					r_asm_op_fini (&op);
 					idx = (matchcount)? tidx + 1: idx + 1;
 					matchcount = 0;
@@ -188,7 +188,7 @@ R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut6
 				opst = strdup (r_strbuf_get (&analop.esil));
 				r_anal_op_fini (&analop);
 			} else {
-				RAsmOp op;
+				RAnalOp op;
 				if (!(len = r_asm_disassemble (
 					      core->rasm, &op,
 					      buf + addrbytes * idx,
@@ -199,7 +199,7 @@ R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut6
 					continue;
 				}
 				//opsz = op.size;
-				opst = strdup (r_strbuf_get (&op.buf_asm));
+				opst = strdup (op.mnemonic);
 				r_asm_op_fini (&op);
 			}
 			if (opst) {
@@ -372,7 +372,7 @@ static int handle_forward_disassemble(RCore* core, RList *hits, ut8* buf, ut64 l
 
 	r_asm_set_pc (core->rasm, current_instr_addr);
 	while (tmp_current_buf_pos < len && temp_instr_addr < end_addr) {
-		RAsmOp op;
+		RAnalOp op;
 		temp_instr_len = len - tmp_current_buf_pos;
 		IFDBG eprintf("Current position: %"PFMT64d" instr_addr: 0x%"PFMT64x"\n", tmp_current_buf_pos, temp_instr_addr);
 		temp_instr_len = r_asm_disassemble (core->rasm, &op, buf+tmp_current_buf_pos, temp_instr_len);
@@ -540,7 +540,7 @@ R_API RList *r_core_asm_bwdisassemble(RCore *core, ut64 addr, int n, int len) {
 	at = addr - idx / addrbytes;
 	r_asm_set_pc (core->rasm, at);
 	for (hit_count = 0; hit_count < n; hit_count++) {
-		RAsmOp op;
+		RAnalOp op;
 		int instrlen = r_asm_disassemble (core->rasm, &op,
 			buf + len - addrbytes * (addr - at), addrbytes * (addr - at));
 		add_hit_to_hits (hits, at, instrlen, true);
@@ -584,7 +584,7 @@ static RList *r_core_asm_back_disassemble_all(RCore *core, ut64 addr, ut64 len, 
 	}
 
 	do {
-		RAsmOp op;
+		RAnalOp op;
 		if (r_cons_is_breaked ()) {
 			break;
 		}
@@ -665,7 +665,7 @@ static RList *r_core_asm_back_disassemble(RCore *core, ut64 addr, int len, ut64 
 	next_buf_pos = len + extra_padding - 1;
 	current_instr_addr = addr - 1;
 	do {
-		RAsmOp op;
+		RAnalOp op;
 		if (r_cons_is_breaked ()) {
 			break;
 		}
@@ -681,14 +681,14 @@ static RList *r_core_asm_back_disassemble(RCore *core, ut64 addr, int len, ut64 
 			eprintf ("==== current_instr_bytes: %s ",hex_str);
 
 			if (current_instr_len > 0) {
-				eprintf("op.buf_asm: %s\n", r_strbuf_get (&op.buf_asm));
+				eprintf ("op.buf_asm: %s\n", op.mnemonic);
 			} else {
-				eprintf("op.buf_asm: <invalid>\n");
+				eprintf ("op.buf_asm: <invalid>\n");
 			}
 			free (hex_str);
 		}
 		// disassembly invalid
-		if (current_instr_len == 0 || strstr (r_strbuf_get (&op.buf_asm), "invalid")) {
+		if (current_instr_len == 0 || strstr (op.mnemonic, "invalid")) {
 			if (current_instr_len == 0) {
 				current_instr_len = 1;
 			}

@@ -809,7 +809,7 @@ static int step_until_inst(RCore *core, const char *instr, bool regex) {
 	}
 	r_cons_break_push (NULL, NULL);
 	for (;;) {
-		RAsmOp asmop;
+		RAnalOp asmop;
 		if (r_cons_is_breaked ()) {
 			break;
 		}
@@ -835,18 +835,18 @@ static int step_until_inst(RCore *core, const char *instr, bool regex) {
 			if (regex) {
 				if (r_regex_match (instr, "e", buf_asm)) {
 					R_LOG_INFO ("Stop");
-					r_asm_op_fini (&asmop);
+					r_anal_op_fini (&asmop);
 					break;
 				}
 			} else {
 				if (strstr (buf_asm, instr)) {
 					R_LOG_INFO ("Stop");
-					r_asm_op_fini (&asmop);
+					r_anal_op_fini (&asmop);
 					break;
 				}
 			}
 		}
-		r_asm_op_fini (&asmop);
+		r_anal_op_fini (&asmop);
 	}
 	r_cons_break_pop ();
 	return true;

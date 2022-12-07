@@ -211,6 +211,6 @@ EXPECT=<<EOF
             0x00126548      .qword 0x00000000000f22e8 ; sym..datadiv_decode3655886617018729963
             0x00126550      .qword 0x00000000000f22ec ; sym..datadiv_decode16406252260792032531
             0x00126558      .qword 0x00000000000f22f0 ; sym..datadiv_decode13403071575248320347
-            0x0800009f                     unaligned
+            0x0800009f      ff             unaligned
 EOF
 RUN

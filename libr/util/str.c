@@ -1975,6 +1975,7 @@ R_API char *r_str_insert(R_OWN char *src, int pos, const char *str) {
 }
 
 R_API size_t r_str_ansi_len(const char *str) {
+	r_return_val_if_fail (str, 0);
 	return r_str_ansi_nlen (str, 0);
 }
 

@@ -16,24 +16,14 @@ extern "C" {
 
 R_LIB_VERSION_HEADER(r_asm);
 
-// XXX should be using RArchOp !!!
-typedef struct r_asm_op_t {
-	int size; // instruction size (must be deprecated. just use buf.len
-	int bitsize; // instruction size in bits (or 0 if fits in 8bit bytes) // wtf why dupe this field? :D
-	int payload; // size of payload (opsize = (size-payload))
-	// But this is pretty slow..so maybe we should add some accessors
-	RStrBuf buf;
-	RStrBuf buf_asm;
-	RBuffer *buf_inc; // must die
-} RAsmOp;
-
 typedef struct r_asm_code_t {
 #if 1
 	int len;
 	ut8 *bytes;
 	char *assembly;
 #else
-	RAsmOp op; // we have those fields already inside RAsmOp
+	// imho this asmcode should contain multiple archops
+	RAnalOp op; // we have those fields already inside RAnalOp
 #endif
 	RList *equs; // TODO: must be a hash
 	ut64 code_offset;
@@ -98,8 +88,8 @@ R_API bool r_asm_set_big_endian(RAsm *a, bool big_endian);
 R_API bool r_asm_set_syntax(RAsm *a, int syntax); // This is in RArchConfig
 R_API int r_asm_syntax_from_string(const char *name);
 R_API int r_asm_set_pc(RAsm *a, ut64 pc);
-R_API int r_asm_disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len);
-// R_API int r_asm_assemble(RAsm *a, RAsmOp *op, const char *buf);
+R_API int r_asm_disassemble(RAsm *a, RAnalOp *op, const ut8 *buf, int len);
+// R_API int r_asm_assemble(RAsm *a, RAnalOp *op, const char *buf);
 R_API RAsmCode* r_asm_mdisassemble(RAsm *a, const ut8 *buf, int len);
 R_API RAsmCode* r_asm_mdisassemble_hexstr(RAsm *a, RParse *p, const char *hexstr);
 R_API RAsmCode* r_asm_massemble(RAsm *a, const char *buf);
@@ -124,18 +114,18 @@ R_API char *r_asm_code_equ_replace(RAsmCode *code, char *str);
 R_API char* r_asm_code_get_hex(RAsmCode *acode);
 
 /* op.c XXX deprecate we have RArchOp which does the same */
-R_API RAsmOp *r_asm_op_new(void);
-R_API void r_asm_op_init(RAsmOp *op);
-R_API void r_asm_op_free(RAsmOp *op);
-R_API void r_asm_op_fini(RAsmOp *op);
-R_API char *r_asm_op_get_hex(RAsmOp *op);
-R_API char *r_asm_op_get_asm(RAsmOp *op);
-R_API int r_asm_op_get_size(RAsmOp *op);
-R_API void r_asm_op_set_asm(RAsmOp *op, const char *str);
-R_API int r_asm_op_set_hex(RAsmOp *op, const char *str);
-R_API int r_asm_op_set_hexbuf(RAsmOp *op, const ut8 *buf, int len);
-R_API void r_asm_op_set_buf(RAsmOp *op, const ut8 *str, int len);
-R_API ut8 *r_asm_op_get_buf(RAsmOp *op);
+R_API RAnalOp *r_asm_op_new(void);
+R_API void r_asm_op_init(RAnalOp *op);
+R_API void r_asm_op_free(RAnalOp *op);
+R_API void r_asm_op_fini(RAnalOp *op);
+R_API char *r_asm_op_get_hex(RAnalOp *op);
+R_API char *r_asm_op_get_asm(RAnalOp *op);
+R_API int r_asm_op_get_size(RAnalOp *op);
+R_API void r_asm_op_set_asm(RAnalOp *op, const char *str);
+R_API int r_asm_op_set_hex(RAnalOp *op, const char *str);
+R_API int r_asm_op_set_hexbuf(RAnalOp *op, const ut8 *buf, int len);
+R_API void r_asm_op_set_buf(RAnalOp *op, const ut8 *str, int len);
+R_API ut8 *r_asm_op_get_buf(RAnalOp *op);
 
 #endif
 

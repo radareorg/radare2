@@ -167,7 +167,7 @@ R_API bool r_core_visual_esil(RCore *core, const char *input) {
 		if (input) {
 			expr = strdup (input);
 		} else {
-			RAsmOp asmop;
+			RAnalOp asmop;
 			memcpy (buf, core->block, sizeof (ut64));
 			// bool use_color = core->print->flags & R_PRINT_FLAGS_COLOR;
 			(void) r_asm_disassemble (core->rasm, &asmop, buf, sizeof (ut64));
@@ -377,7 +377,7 @@ R_API bool r_core_visual_bit_editor(RCore *core) {
 	memcpy (buf, core->block + cur, sizeof (ut64));
 	for (;;) {
 		RAnalOp asmop;
-		// RAsmOp asmop;
+		// RAnalOp asmop;
 		r_cons_clear00 ();
 		bool use_color = core->print->flags & R_PRINT_FLAGS_COLOR;
 		r_anal_op_set_bytes (&asmop, core->offset + cur, buf, sizeof (ut64));

@@ -6510,7 +6510,7 @@ static int cmd_print(void *data, const char *input) {
 		case 'l': // "pdl"
 			processed_cmd = true;
 			{
-				RAsmOp asmop;
+				RAnalOp asmop;
 				int j, ret;
 				if (!l) {
 					l = len;
@@ -6994,7 +6994,7 @@ static int cmd_print(void *data, const char *input) {
 			if (input[1] == 'A') { // "pcA"
 				r_cons_printf ("sub_0x%08"PFMT64x ":\n", core->offset);
 				for (i = 0; i < len; i++) {
-					RAsmOp asmop = {
+					RAnalOp asmop = {
 						0
 					};
 					(void) r_asm_disassemble (core->rasm, &asmop, buf + i, len - i);
@@ -7007,7 +7007,7 @@ static int cmd_print(void *data, const char *input) {
 						r_cons_printf ("%s0x%02x", j? ", ": "", buf[i]);
 						i++;
 					}
-					r_cons_printf ("  // %s\n", r_strbuf_get (&asmop.buf_asm));
+					r_cons_printf ("  // %s\n", asmop.mnemonic);
 					i--;
 					r_asm_op_fini (&asmop);
 				}
