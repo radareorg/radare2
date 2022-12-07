@@ -400,6 +400,13 @@ static void cmd_open_bin(RCore *core, const char *input) {
 	case '-': // "ob-"
 		if (input[2] == '*') {
 			r_bin_file_delete_all (core->bin);
+		} else if (input[2] == '-') {
+			RBinFile *bf = r_bin_cur (core->bin);
+			int current = bf? bf->id: 0;
+			if (current > 0) {
+				r_core_cmd_callf (core, "ob-%d", current);
+				r_core_cmd_callf (core, "ob %d", current -1);
+			}
 		} else {
 			ut32 id;
 			value = r_str_trim_head_ro (input + 2);
