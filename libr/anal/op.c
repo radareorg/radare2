@@ -4,6 +4,16 @@
 #include <r_util.h>
 #include <r_list.h>
 
+R_API ut64 r_anal_block_ninstr(RAnalBlock *block, int pos) {
+	r_return_val_if_fail (block, UT64_MAX);
+	if (pos < 1) {
+		return block->addr;
+	}
+	if (pos > block->ninstr) {
+		return UT64_MAX;
+	}
+	return block->addr + block->op_pos[pos - 1];
+}
 
 static int defaultCycles(RAnalOp *op) {
 	switch (op->type) {

@@ -882,6 +882,7 @@ R_API void r_anal_block_set_size(RAnalBlock *block, ut64 size);
 // Set the address and size of the block.
 // This can fail (and return false) if there is already another block at the new address
 R_API bool r_anal_block_relocate(RAnalBlock *block, ut64 addr, ut64 size);
+R_API ut64 r_anal_block_ninstr(RAnalBlock *block, int pos);
 
 R_API RAnalBlock *r_anal_get_block_at(RAnal *anal, ut64 addr);
 R_API bool r_anal_blocks_foreach_in(RAnal *anal, ut64 addr, RAnalBlockCb cb, void *user);
