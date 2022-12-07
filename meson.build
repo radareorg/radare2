@@ -523,7 +523,7 @@ sdb_dep = declare_dependency(
   include_directories: sdb_inc
 )
 
-sdb_exe = executable('sdb', ['shlr/sdb/src/main.c'] + sdb_files,
+sdb_exe = executable('sdb', ['shlr/sdb/src/entry.c'] + sdb_files,
   include_directories: [
     include_directories('shlr/sdb/include')
   ],
