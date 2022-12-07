@@ -112,7 +112,7 @@ R_API bool r_core_dump(RCore *core, const char *file, ut64 addr, ut64 size, int 
 
 R_API ut8* r_core_transform_op(RCore *core, const char *arg, char op) {
 	int i, j;
-	st64 len;
+	ut64 len;
 	char *str = NULL;
 	ut8 *buf = (ut8 *)malloc (core->blocksize);
 	if (!buf) {
@@ -149,13 +149,14 @@ R_API ut8* r_core_transform_op(RCore *core, const char *arg, char op) {
 			if (!str) {
 				goto beach;
 			}
-			len = r_hex_str2bin (arg, (ut8 *)str);
+			int xlen = r_hex_str2bin (arg, (ut8 *)str);
 			// Output is invalid if there was just a single nibble,
 			// but in that case, len is negative (-1).
-			if (len <= 0) {
+			if (xlen <= 0) {
 				R_LOG_ERROR ("Invalid hexpair string");
 				goto beach;
 			}
+			len = xlen;
 		} else {  // use clipboard as key
 			const ut8 *tmp = r_buf_data (core->yank_buf, &len);
 			str = r_mem_dup (tmp, len);
