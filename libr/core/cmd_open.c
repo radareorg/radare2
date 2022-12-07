@@ -55,6 +55,8 @@ static const char *help_msg_o_[] = {
 	"o-*","","close all opened files",
 	"o-!","","close all files except the current one",
 	"o-3","","close fd=3",
+	"o-$","","close last fd",
+	"o-.","","close current fd",
 	NULL
 };
 
@@ -2112,6 +2114,21 @@ static int cmd_open(void *data, const char *input) {
 		switch (input[1]) {
 		case '!': // "o-!"
 			r_core_file_close_all_but (core);
+			break;
+		case '$': // "o-$"
+			R_LOG_TODO ("o-$: close last fd is not implemented");
+			break;
+		case '.': // "o-."
+			{
+				RBinFile *bf = r_bin_cur (core->bin);
+				if (bf && bf->fd >= 0) {
+					core->bin->cur = NULL;
+					int fd = bf->fd;
+					if (!r_io_fd_close (core->io, fd)) {
+						R_LOG_ERROR ("Unable to find file descriptor %d", fd);
+					}
+				}
+			}
 			break;
 		case '*': // "o-*"
 			r_io_close_all (core->io);
