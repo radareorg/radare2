@@ -112,7 +112,7 @@ R_API bool r_core_dump(RCore *core, const char *file, ut64 addr, ut64 size, int 
 
 R_API ut8* r_core_transform_op(RCore *core, const char *arg, char op) {
 	int i, j;
-	ut64 len;
+	st64 len;
 	char *str = NULL;
 	ut8 *buf = (ut8 *)malloc (core->blocksize);
 	if (!buf) {
@@ -145,7 +145,7 @@ R_API ut8* r_core_transform_op(RCore *core, const char *arg, char op) {
 		if (arg && !isnum) {  // parse arg for key
 			// r_hex_str2bin() is guaranteed to output maximum half the
 			// input size, or 1 byte if there is just a single nibble.
-			str = (char *)malloc ((strlen (arg) / 2) + 1);
+			str = (char *)malloc (((strlen (arg) + 2) / 2) + 1);
 			if (!str) {
 				goto beach;
 			}
