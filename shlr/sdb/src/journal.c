@@ -62,13 +62,13 @@ SDB_API int sdb_journal_load(Sdb *s) {
 		return 0;
 	}
 	lseek (fd, 0, SEEK_SET);
-	str = (char *)malloc (sz + 1);
+	str = (char *)sdb_gh_malloc (sz + 1);
 	if (!str) {
 		return 0;
 	}
 	rr = read (fd, str, sz);
 	if (rr < 0) {
-		free (str);
+		sdb_gh_free (str);
 		return 0;
 	}
 	str[sz] = 0;
@@ -86,7 +86,7 @@ SDB_API int sdb_journal_load(Sdb *s) {
 		}
 		cur = ptr + 1;
 	}
-	free (str);
+	sdb_gh_free (str);
 	return changes;
 }
 

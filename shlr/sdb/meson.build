@@ -52,6 +52,8 @@ libsdb_sources = [
   'src/diff.c',
   'src/disk.c',
   'src/fmt.c',
+  'src/heap.c',
+  'src/main.c',
   'src/ht_uu.c',
   'src/ht_up.c',
   'src/ht_pp.c',
@@ -70,7 +72,8 @@ libsdb_sources = [
   'src/text.c'
 ]
 
-sdb_inc = include_directories(['include'])
+# . = b/version.h
+sdb_inc = include_directories(['.', 'include'])
 rpath_lib = ''
 rpath_exe = ''
 if get_option('local') and get_option('default_library') == 'shared'
@@ -104,6 +107,7 @@ if not meson.is_subproject()
     'include/sdb/cdb_make.h',
     'include/sdb/config.h',
     'include/sdb/dict.h',
+    'include/sdb/heap.h',
     'include/sdb/ht_inc.h',
     'include/sdb/ht_pp.h',
     'include/sdb/ht_up.h',
@@ -118,7 +122,7 @@ if not meson.is_subproject()
   install_headers(include_files, subdir: 'sdb')
 endif
 
-sdb_exe = executable('sdb', join_paths('src','main.c'),
+sdb_exe = executable('sdb', join_paths('src','entry.c'),
   include_directories: sdb_inc,
   link_with: [link_with],
   install: not meson.is_subproject(),
@@ -127,7 +131,7 @@ sdb_exe = executable('sdb', join_paths('src','main.c'),
 )
 
 if meson.is_cross_build()
-  sdb_native_exe = executable('sdb_native', join_paths('src','main.c'),
+  sdb_native_exe = executable('sdb_native', join_paths('src','entry.c'),
     include_directories: sdb_inc,
     link_with: [link_with],
     install: false,

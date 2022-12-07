@@ -94,19 +94,19 @@ static inline HT_(Kv) *next_kv(HtName_(Ht) *ht, HT_(Kv) *kv) {
 // hashfunction - the function that does the hashing, must not be null.
 // comparator - the function to check if values are equal, if NULL, just checks
 // == (for storing ints).
-// keydup - function to duplicate to key (eg strdup), if NULL just does strup.
+// keydup - function to duplicate to key (eg sdb_strdup), if NULL just does strup.
 // valdup - same as keydup, but for values but if NULL just assign
 // pair_free - function for freeing a keyvaluepair - if NULL just does free.
 // calcsize - function to calculate the size of a value. if NULL, just stores 0.
 static HtName_(Ht)* internal_ht_new(ut32 size, ut32 prime_idx, HT_(Options) *opt) {
-	HtName_(Ht)* ht = (HtName_(Ht)*)calloc (1, sizeof (*ht));
+	HtName_(Ht)* ht = (HtName_(Ht)*)sdb_gh_calloc (1, sizeof (*ht));
 	if (SDB_LIKELY (ht)) {
 		ht->size = size;
 		ht->count = 0;
 		ht->prime_idx = prime_idx;
-		ht->table = (HT_(Bucket)*)calloc (ht->size, sizeof (*ht->table));
+		ht->table = (HT_(Bucket)*)sdb_gh_calloc (ht->size, sizeof (*ht->table));
 		if (!ht->table) {
-			free (ht);
+			sdb_gh_free (ht);
 			return NULL;
 		}
 		ht->opt = *opt;
@@ -136,10 +136,10 @@ SDB_API void Ht_(free)(HtName_(Ht)* ht) {
 					ht->opt.freefn (kv);
 				}
 			}
-			free (bt->arr);
+			sdb_gh_free (bt->arr);
 		}
-		free (ht->table);
-		free (ht);
+		sdb_gh_free (ht->table);
+		sdb_gh_free (ht);
 	}
 }
 
@@ -199,7 +199,7 @@ static HT_(Kv) *reserve_kv(HtName_(Ht) *ht, const KEY_TYPE key, const int key_le
 
 	if (bt->count + 1 >= bt->size) {
 		bt->size = (bt->count + 5) * 2;
-		HT_(Kv) *newkvarr = (HT_(Kv)*)realloc (bt->arr, (bt->size) * ht->opt.elem_size);
+		HT_(Kv) *newkvarr = (HT_(Kv)*)sdb_gh_realloc (bt->arr, (bt->size) * ht->opt.elem_size);
 		if (SDB_LIKELY (newkvarr)) {
 			bt->arr = newkvarr;
 		} else {

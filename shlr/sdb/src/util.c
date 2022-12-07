@@ -121,7 +121,7 @@ SDB_API char *sdb_itoa(ut64 n, int base, char *os, int oslen) {
 	}
 	if (!n) {
 		if (!os) {
-			return strdup ("0");
+			return sdb_strdup ("0");
 		}
 		if (sl > 1) {
 			memcpy (os, "0", 2);
@@ -145,7 +145,7 @@ SDB_API char *sdb_itoa(ut64 n, int base, char *os, int oslen) {
 		s[i--] = '0';
 	}
 	if (!os) {
-		return strdup (s + i + 1);
+		return sdb_strdup (s + i + 1);
 	}
 	if (copy_string) {
 		// unnecessary memmove in case we use the return value

@@ -11,6 +11,7 @@ EXTRA_PRE+=$(SDBLIB)
 SDB_OBJS=
 SDB_OBJS+=buffer.o
 SDB_OBJS+=cdb.o
+SDB_OBJS+=heap.o
 SDB_OBJS+=set.o
 SDB_OBJS+=cdb_make.o
 SDB_OBJS+=ht_uu.o

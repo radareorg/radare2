@@ -79,7 +79,7 @@ static inline bool compareString(const char *a, const char *b, int blen, int fla
 			else ret = strstr2 (a, b, blen);
 		}
 	}
-	free (aa);
+	sdb_gh_free (aa);
 	return ret;
 }
 

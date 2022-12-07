@@ -30,7 +30,7 @@ int test_glossary(char *buf) {
 	char *s= api_json_set (buf, path, "patata");
 	if (s) {
 		printf ("%s\n", s);
-		free (s);
+		sdb_gh_free (s);
 	} else printf ("set failed\n");
 }
 {
@@ -38,7 +38,7 @@ int test_glossary(char *buf) {
 	char *s= api_json_get (buf, path);
 	if (s) {
 		printf ("%s\n", s);
-		free (s);
+		sdb_gh_free (s);
 	} else printf ("set failed\n");
 }
 {
@@ -46,7 +46,7 @@ int test_glossary(char *buf) {
 	char *s= api_json_get (buf, path);
 	if (s) {
 		printf ("%s\n", s);
-		free (s);
+		sdb_gh_free (s);
 	} else printf ("set failed\n");
 }
 return 0;
@@ -69,7 +69,7 @@ int main(int argc, char **argv) {
 	char *s = api_json_set (buf, path, "patata");
 	if (s) {
 		printf ("%s\n", s);
-		free (s);
+		sdb_gh_free (s);
 	} else printf ("set failed\n");
 #endif
 //printf ("%s\n", str); return 0;

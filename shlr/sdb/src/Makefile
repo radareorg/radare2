@@ -3,7 +3,7 @@ include ../config.mk
 # CFLAGS:=-g $(CFLAGS)
 OBJ=cdb.o buffer.o cdb_make.o ls.o ht.o ht_uu.o sdb.o num.o base64.o match.o
 OBJ+=json.o ns.o lock.o util.o disk.o query.o array.o fmt.o journal.o text.o
-OBJ+=dict.o ht_pp.o ht_up.o ht_pu.o set.o diff.o
+OBJ+=dict.o ht_pp.o ht_up.o ht_pu.o set.o diff.o heap.o main.o
 SDB_CFLAGS+=-I../include
 SDB_CXXFLAGS+=-I../include
 SOBJ=$(subst .o,.o.o,${OBJ})
@@ -61,16 +61,16 @@ endif
 	$(CC) ${LDFLAGS} $(LDFLAGS_SHARED) -o $@ ${SOBJ}
 
 bin_deps: ../include/sdb/version.h
-	$(MAKE) libsdb.a main.o
+	$(MAKE) libsdb.a entry.o
 
 bin $(BIN): bin_deps
 ifneq ($(SILENT),)
 	@echo BIN ${BIN}
 endif
-	$(CC) ${LDFLAGS} -o ${BIN} main.o ${OBJ}
+	$(CC) ${LDFLAGS} -o ${BIN} entry.o ${OBJ}
 
 mrproper clean:
-	rm -rf ${OBJ} ${SOBJ} main.o libsdb.a a.out ${BIN} sdb.dSYM
+	rm -rf ${OBJ} ${SOBJ} entry.o libsdb.a a.out ${BIN} sdb.dSYM
 	rm -rf *.d *._d json/*.d json/*._d *.sdb *.db *.dylib *.dll *.so *.so.*
 
 # rules #

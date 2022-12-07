@@ -474,6 +474,8 @@ sdb_files = [
   'shlr/sdb/src/num.c',
   'shlr/sdb/src/query.c',
   'shlr/sdb/src/sdb.c',
+  'shlr/sdb/src/main.c',
+  'shlr/sdb/src/heap.c',
   'shlr/sdb/src/ht.c',
   'shlr/sdb/src/util.c',
   'shlr/sdb/src/text.c'
@@ -495,6 +497,7 @@ sdb_inc_files = [
   'shlr/sdb/include/sdb/buffer.h',
   'shlr/sdb/include/sdb/cdb.h',
   'shlr/sdb/include/sdb/set.h',
+  'shlr/sdb/include/sdb/heap.h',
   'shlr/sdb/include/sdb/cdb_make.h',
   'shlr/sdb/include/sdb/config.h',
   'shlr/sdb/include/sdb/dict.h',
@@ -522,7 +525,7 @@ sdb_dep = declare_dependency(
   include_directories: sdb_inc
 )
 
-sdb_exe = executable('sdb', ['shlr/sdb/src/main.c'] + sdb_files,
+sdb_exe = executable('sdb', ['shlr/sdb/src/entry.c'] + sdb_files,
   include_directories: [
     include_directories('shlr/sdb/include')
   ],

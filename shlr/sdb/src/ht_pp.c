@@ -8,7 +8,7 @@ static HtName_(Ht)* internal_ht_default_new(ut32 size, ut32 prime_idx, HT_(DupVa
 	HT_(Options) opt = {
 		.cmp = (HT_(ListComparator))strcmp,
 		.hashfn = (HT_(HashFunction))sdb_hash,
-		.dupkey = (HT_(DupKey))strdup,
+		.dupkey = (HT_(DupKey))sdb_strdup,
 		.dupvalue = valdup,
 		.calcsizeK = (HT_(CalcSizeK))strlen,
 		.calcsizeV = calcsizeV,
@@ -24,7 +24,7 @@ SDB_API HtName_(Ht)* Ht_(new)(HT_(DupValue) valdup, HT_(KvFreeFunc) pair_free, H
 }
 
 static void free_kv_key(HT_(Kv) *kv) {
-	free (kv->key);
+	sdb_gh_free (kv->key);
 }
 
 // creates a default HtPP that has strings as keys but does not dup, nor free the values
