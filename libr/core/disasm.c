@@ -18,11 +18,16 @@
 #define ds_bufat(ds)  ((ds)->buf + ds_offset (ds))
 #define ds_left(ds)   ((ds)->len - ds_offset (ds))
 
-#define DEBUG_DISASM 0
-
 // ugly globals but meh
 static R_TH_LOCAL ut64 emustack_min = 0LL;
 static R_TH_LOCAL ut64 emustack_max = 0LL;
+static R_TH_LOCAL ut64 lastaddr = UT64_MAX;
+static R_TH_LOCAL char *hint_syntax = NULL;
+static R_TH_LOCAL RFlagItem sfi = {0};
+
+// global cache
+static R_TH_LOCAL ut64 Goaddr = UT64_MAX;
+static R_TH_LOCAL char *Gsection = NULL; // maybe as a fixed array size is less racy, but still incorrect as its not guarded and its global
 
 static const char* r_vline_a[] = {
 	"|",  // LINE_VERT
@@ -76,7 +81,8 @@ static const char* r_vline_uc[] = {
 
 // TODO: what about using bit shifting and enum for keys? see libr/util/bitmap.c
 // the problem of this is that the fields will be more opaque to bindings, but we will earn some bits
-typedef struct {
+// imho this should be moved to RAsm
+typedef struct r_disasm_state_t {
 	RCore *core;
 	char str[1024], strsub[1024];
 	bool immtrim;
@@ -96,6 +102,7 @@ typedef struct {
 	int atabsoff;
 	int decode;
 	bool pseudo;
+	bool sparse;
 	bool subnames;
 	bool interactive;
 	bool subjmp;
@@ -137,13 +144,16 @@ typedef struct {
 	bool show_emu_ssa;
 	bool show_section;
 	int show_section_col;
-	bool flags_inline;
 	bool show_section_perm;
 	bool show_section_name;
 	bool show_symbols;
 	int show_symbols_col;
 	bool show_offseg;
 	bool show_flags;
+	bool flags_inline;
+	RSpace *flagspace_ports;
+	bool asm_flags_right;
+	int midflags;
 	bool bblined;
 	bool show_bytes;
 	bool show_bytes_align;
@@ -182,7 +192,6 @@ typedef struct {
 	RStrEnc strenc;
 	int cursor;
 	int show_comment_right_default;
-	RSpace *flagspace_ports;
 	bool show_flag_in_bytes;
 	int lbytes;
 	int show_comment_right;
@@ -199,11 +208,9 @@ typedef struct {
 	int vliw_count;
 	bool show_varaccess;
 	bool show_vars;
-	bool asm_flags_right;
 	bool show_fcnsig;
 	bool hinted_line;
 	int show_varsum;
-	int midflags;
 	bool midbb;
 	bool midcursor;
 	bool show_noisy_comments;
@@ -446,39 +453,46 @@ static void get_bits_comment(RCore *core, RAnalFunction *f, char *cmt, int cmt_s
 	}
 }
 
-R_API const char *r_core_get_section_name(RCore *core, ut64 addr) {
-	static R_TH_LOCAL char section[128] = "";
-	static R_TH_LOCAL ut64 oaddr = UT64_MAX;
-	if (oaddr == addr) {
-		return section;
+R_API const char *r_core_get_section_name(struct r_core_t *core, ut64 addr) {
+	if (addr == UT64_MAX) {
+		return NULL;
+	}
+	if (Gsection && Goaddr == addr) {
+		return Gsection;
 	}
 	if (r_config_get_b (core->config, "cfg.debug")) {
 		char *rv = r_core_cmd_strf (core, "dmi.@0x%08"PFMT64x, addr);
 		if (rv) {
 			r_str_replace_char (rv, '\n', ' ');
-			r_str_ncpy (section, rv, sizeof (section) - 1);
-			return section;
+			free (Gsection);
+			Gsection = r_str_trim_dup (rv);
+			return Gsection;
 		}
 		return NULL;
 	}
 	RBinObject *bo = r_bin_cur_object (core->bin);
 	RBinSection *s = bo? r_bin_get_section_at (bo, addr, core->io->va): NULL;
 	if (s && s->name && *s->name) {
-		snprintf (section, sizeof (section) - 1, "%10s ", s->name);
+		free (Gsection);
+		Gsection = r_str_newf ("%10s ", s->name);
 	} else {
 		RListIter *iter;
 		RDebugMap *map;
-		*section = 0;
+		R_FREE (Gsection);
 		r_list_foreach (core->dbg->maps, iter, map) {
 			if (addr >= map->addr && addr < map->addr_end) {
 				const char *mn = r_str_lchr (map->name, '/');
-				r_str_ncpy (section, mn? mn + 1: map->name, sizeof (section));
+				Gsection = strdup (mn? mn + 1: map->name);
 				break;
 			}
 		}
 	}
-	oaddr = addr;
-	return section;
+	Goaddr = addr;
+	return Gsection;
+}
+
+static const char *get_section_name(RDisasmState *ds) {
+	return r_core_get_section_name (ds->core, ds->at);
 }
 
 static void ds_comment_align(RDisasmState *ds) {
@@ -488,7 +502,7 @@ static void ds_comment_align(RDisasmState *ds) {
 		}
 		return;
 	}
-	const char *sn = ds->show_section ? r_core_get_section_name (ds->core, ds->at) : "";
+	const char *sn = ds->show_section ? get_section_name (ds) : "";
 	ds_align_comment (ds);
 	r_cons_print (COLOR_RESET (ds));
 	ds_print_pre (ds, true);
@@ -884,8 +898,6 @@ static RDisasmState *ds_init(RCore *core) {
 	return ds;
 }
 
-static R_TH_LOCAL ut64 lastaddr = UT64_MAX;
-
 static void ds_reflines_fini(RDisasmState *ds) {
 	RAnal *anal = ds->core->anal;
 	r_list_free (anal->reflines);
@@ -1214,7 +1226,6 @@ static void ds_build_op_str(RDisasmState *ds, bool print_color) {
 }
 
 R_API RAnalHint *r_core_hint_begin(RCore *core, RAnalHint* hint, ut64 at) {
-	static R_TH_LOCAL char *hint_syntax = NULL;
 	r_anal_hint_free (hint);
 	hint = r_anal_hint_get (core->anal, at);
 	if (hint_syntax) {
@@ -2885,14 +2896,13 @@ static void ds_print_lines_left(RDisasmState *ds) {
 			str = strdup (map? r_str_rwx_i (map->perm): "---");
 		}
 		if (ds->show_section_name) {
-			str = r_str_appendf (str, " %s", r_core_get_section_name (core, ds->at));
+			str = r_str_appendf (str, " %s", get_section_name (ds));
 		}
 		char *sect = str? str: strdup ("");
 		printCol (ds, sect, ds->show_section_col, ds->color_reg);
 		free (sect);
 	}
 	if (ds->show_symbols) {
-		static R_TH_LOCAL RFlagItem sfi = {0};
 		const char *name = "";
 		int delta = 0;
 		if (ds->fcn) {
@@ -2971,7 +2981,6 @@ static void ds_print_offset(RDisasmState *ds) {
 	}
 	r_print_set_screenbounds (core->print, at);
 	if (ds->show_offset) {
-		static R_TH_LOCAL RFlagItem sfi = {0};
 		const char *label = NULL;
 		int delta = -1;
 		bool show_trace = false;
@@ -4852,7 +4861,7 @@ static void ds_print_bbline(RDisasmState *ds) {
 		}
 		ds_print_pre (ds, true);
 		if (ds->show_section && ds->line_col) {
-			const char *sn = r_core_get_section_name (ds->core, ds->at);
+			const char *sn = get_section_name (ds);
 			size_t snl = strlen (sn) + 4;
 			r_cons_printf ("%s", r_str_pad (' ', R_MAX (10, snl - 1)));
 		}
@@ -5761,23 +5770,15 @@ toro:
 			}
 		} else {
 			int left = ds_left (ds);
-#if DEBUG_DISASM
-			eprintf ("BEFORE ds_disassemble:\n");
-			eprintf ("ds->index=%#x len=%#x left=%#x\n", ds->index, len, left);
-			eprintf ("ds->addr=%#" PFMT64x " ds->at=%#" PFMT64x " ds->count=%#x ds->lines=%#x\n", ds->addr, ds->at, ds->count, ds->lines);
-#endif
+			R_LOG_DEBUG ("BEFORE: ds->index=%#x len=%#x left=%#x ds->addr=%#" PFMT64x " ds->at=%#" PFMT64x " ds->count=%#x ds->lines=%#x",
+				ds->index, len, left, ds->addr, ds->at, ds->count, ds->lines);
 			if (left < max_op_size && !count_bytes) {
-#if DEBUG_DISASM
-				eprintf ("Not enough bytes to disassemble, going to retry.\n");
-#endif
+				R_LOG_DEBUG ("Not enough bytes to disassemble, going to retry");
 				goto retry;
 			}
 			ret = ds_disassemble (ds, (ut8 *)ds_bufat (ds), left);
-#if DEBUG_DISASM
-			eprintf ("AFTER ds_disassemble:\n");
-			eprintf ("ret=%d len=%#x left=%#x ", ret, len, left);
-			eprintf ("ds->addr=%#" PFMT64x " ds->at=%#" PFMT64x " ds->count=%#x ds->lines=%#x\n", ds->addr, ds->at, ds->count, ds->lines);
-#endif
+			R_LOG_DEBUG ("AFTER: ret=%d len=%#x left=%#x ds->addr=%#" PFMT64x " ds->at=%#" PFMT64x " ds->count=%#x ds->lines=%#x",
+				ret, len, left, ds->addr, ds->at, ds->count, ds->lines);
 			if (ret == -31337) {
 				inc = ds->oplen; // minopsz maybe? or we should add invopsz
 				continue;
@@ -5820,7 +5821,6 @@ toro:
 			ds->at -= skip_bytes_flag;
 		}
 		if (ds->pdf) {
-			static R_TH_LOCAL bool sparse = false;
 			RAnalBlock *bb = r_anal_function_bbget_in (core->anal, ds->pdf, ds->at);
 			if (!bb) {
 				for (inc = 1; inc < ds->oplen; inc++) {
@@ -5829,13 +5829,13 @@ toro:
 						break;
 					}
 				}
-				if (!sparse) {
+				if (!ds->sparse) {
 					r_cons_printf ("..\n");
-					sparse = true;
+					ds->sparse = true;
 				}
 				continue;
 			}
-			sparse = false;
+			ds->sparse = false;
 		}
 		ds_control_flow_comments (ds);
 		ds_adistrick_comments (ds);
@@ -6063,9 +6063,7 @@ toro:
 		ds->at = ds->addr = ds->at + inc;
 		ds->index = 0;
 	retry:
-#if DEBUG_DISASM
-		eprintf ("Retrying. ds->at,ds->addr=%#" PFMT64x ", ds->index=%d\n", ds->at, ds->index);
-#endif
+		R_LOG_DEBUG ("Retrying. ds->at,ds->addr=%#" PFMT64x ", ds->index=%d", ds->at, ds->index);
 		if (len < max_op_size) {
 			ds->len = len = max_op_size + 32;
 		}
