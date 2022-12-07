@@ -1573,7 +1573,7 @@ static void ds_atabs_option(RDisasmState *ds) {
 		return;
 	}
 	RStrBuf *sb = r_strbuf_new ("");
-	char *b, *ob = (ds->opstr)? strdup (ds->opstr): strdup (ds->asmop.mnemonic);
+	char *b, *ob = (ds->opstr)? strdup (ds->opstr): strdup (r_asm_op_get_asm (&ds->asmop));
 	for (b = ob; b && *b; b++, i++) {
 		r_strbuf_append_n (sb, b, 1);
 		if (*b == '(' || *b == '[') {
@@ -3366,6 +3366,7 @@ static bool ds_print_meta_infos(RDisasmState *ds, ut8* buf, int len, int idx, in
 					r_cons_drop (1);
 				}
 				ds->oplen = ds->analop.size = (int)mi_size;
+				ds->oplen = ds->asmop.size = (int)mi_size;
 				R_FREE (ds->line);
 				R_FREE (ds->refline);
 				R_FREE (ds->refline2);
@@ -4040,17 +4041,16 @@ static void ds_print_asmop_payload(RDisasmState *ds, const ut8 *buf) {
 			break;
 		}
 	}
-	if (ds->analop.payload != 0) {
-		// XXX this was moved from asm to anal and i think its unused. but should be used
-		r_cons_printf ("\n; .. payload of %d byte(s)", ds->analop.payload);
+	if (ds->asmop.payload != 0) {
+		r_cons_printf ("\n; .. payload of %d byte(s)", ds->asmop.payload);
 		if (ds->showpayloads) {
-			int mod = ds->analop.payload % ds->core->rasm->dataalign;
+			int mod = ds->asmop.payload % ds->core->rasm->dataalign;
 			int x;
-			for (x = 0; x < ds->analop.payload; x++) {
+			for (x = 0; x < ds->asmop.payload; x++) {
 				r_cons_printf ("\n        0x%02x", buf[ds->oplen + x]);
 			}
 			for (x = 0; x < mod; x++) {
-				r_cons_printf ("\n        0x%02x ; alignment", buf[ds->oplen + ds->analop.payload + x]);
+				r_cons_printf ("\n        0x%02x ; alignment", buf[ds->oplen + ds->asmop.payload + x]);
 			}
 		}
 	}
@@ -5705,16 +5705,11 @@ toro:
 		// ds_update_pc (ds, ds->at);
 		r_asm_set_pc (core->rasm, ds->at);
 		ds_update_ref_lines (ds);
-		r_anal_op_fini (&ds->analop);
-		int res = r_anal_op (core->anal, &ds->analop, ds->at, ds_bufat (ds), ds_left (ds), R_ARCH_OP_MASK_ALL | R_ARCH_OP_MASK_ESIL);
-		if (res == -1) {
-			int erropsz = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_INV_OP_SIZE);
-			// if its an alignment issue just adjust the size
-			r_anal_op_set_bytes (&ds->analop, ds->at, ds_bufat (ds), erropsz);
-		}
+		r_anal_op (core->anal, &ds->analop, ds->at, ds_bufat (ds), ds_left (ds), R_ARCH_OP_MASK_ALL);
 		if (ds_must_strip (ds)) {
 			inc = ds->analop.size;
 			// inc = ds->asmop.payload + (ds->asmop.payload % ds->core->rasm->dataalign);
+			r_anal_op_fini (&ds->analop);
 			continue;
 		}
 		if (!ds->show_comment_right) {
@@ -6083,7 +6078,8 @@ toro:
 		if (skip_bytes_bb && skip_bytes_bb < inc) {
 			inc = skip_bytes_bb;
 		}
-		inc += ds->analop.payload + (ds->analop.payload % ds->core->rasm->dataalign);
+		inc += ds->asmop.payload + (ds->asmop.payload % ds->core->rasm->dataalign);
+		r_anal_op_fini (&ds->analop);
 	}
 	r_anal_op_fini (&ds->analop);
 
@@ -6543,14 +6539,14 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 			int ba_len = strlen (asmop.mnemonic) + 128;
 			char *ba = malloc (ba_len);
 			if (ba) {
-				strcpy (ba, asmop.mnemonic);
+				strcpy (ba, r_asm_op_get_asm (&asmop));
 				r_parse_subvar (core->parser, f, at, ds->analop.size,
 						ba, ba, ba_len);
-				r_anal_op_set_mnemonic (&asmop, asmop.addr, ba);
+				r_asm_op_set_asm (&asmop, ba);
 				free (ba);
 			}
 		}
-		ds->oplen = asmop.size;
+		ds->oplen = r_asm_op_get_size (&asmop);
 		ds->at = at;
 		skip_bytes_flag = handleMidFlags (core, ds, false);
 		if (ds->midbb) {
@@ -6569,7 +6565,7 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 			}
 		}
 		{
-			char *aop = strdup (asmop.mnemonic);
+			char *aop = r_asm_op_get_asm (&asmop);
 			char *buf = malloc (strlen (aop) + 128);
 			if (buf) {
 				strcpy (buf, aop);
@@ -6577,7 +6573,7 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 				r_parse_filter (core->parser, ds->vat, core->flags, ds->hint, buf,
 					str, sizeof (str) - 1, be);
 				str[sizeof (str) - 1] = '\0';
-				r_anal_op_set_mnemonic (&asmop, asmop.addr, buf);
+				r_asm_op_set_asm (&asmop, buf);
 				free (buf);
 			}
 		}
@@ -6715,8 +6711,8 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 		}
 
 		pj_end (pj);
-		i += ds->oplen + asmop.payload + (ds->analop.payload % ds->core->rasm->dataalign); // bytes
-		k += ds->oplen + asmop.payload + (ds->analop.payload % ds->core->rasm->dataalign); // delta from addr
+		i += ds->oplen + asmop.payload + (ds->asmop.payload % ds->core->rasm->dataalign); // bytes
+		k += ds->oplen + asmop.payload + (ds->asmop.payload % ds->core->rasm->dataalign); // delta from addr
 		j++; // instructions
 		line++;
 
@@ -7030,13 +7026,17 @@ toro:
 			if (show_bytes) {
 				r_cons_printf ("%18s%02x  ", "", buf[i]);
 			}
-			r_cons_println ("invalid"); // ???");
+			r_cons_println ("invalid");
 		} else {
 			if (show_bytes) {
 				char *op_hex = r_asm_op_get_hex (&asmop);
-				r_cons_printf ("%20s  ", op_hex);
-				free (op_hex);
+				if (op_hex) {
+					r_cons_printf ("%20s  ", op_hex);
+					free (op_hex);
+				}
 			}
+			asmop.size = ret;
+			ret = asmop.size;
 			if (!asm_instr) {
 				r_cons_newline ();
 			} else if (!asm_immtrim && (decode || esil)) {
@@ -7048,7 +7048,7 @@ toro:
 					buf + addrbytes * i, nb_bytes - addrbytes * i, R_ARCH_OP_MASK_ALL);
 				tmpopstr = r_anal_op_tostring (core->anal, &analop);
 				if (fmt == 'e') { // pie
-					char *esil = (R_STRBUF_SAFEGET (&analop.esil));
+					const char *esil = R_STRBUF_SAFEGET (&analop.esil);
 					r_cons_println (esil);
 				} else {
 					if (decode) {
