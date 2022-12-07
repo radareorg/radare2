@@ -71,6 +71,7 @@ static const char *help_msg_CL[] = {
 	"CL*", "", "same as above but in r2 commands format",
 	"CL.", "", "show list all code line information (virtual address <-> source file:line)",
 	"CL-", "*", "remove all the cached codeline information",
+	"CLL", "", "show source code line reading from file",
 	"CL", " addr file:line", "register new file:line source details, r2 will slurp the line",
 	"CL", " addr base64:text", "register new source details for given address using base64",
 	NULL
@@ -330,19 +331,30 @@ static int cmd_meta_lineinfo(RCore *core, const char *input) {
 		r_core_cmd_help (core, help_msg_CL);
 		return 0;
 	}
-	if (*p == '-') {
+	if (*p == 'L') { // "CLL"
+		ut64 at = core->offset;
+		if (p[1] == ' ') {
+			at = r_num_math (core->num, p + 2);
+		}
+		char *text = r_bin_addr2text (core->bin, at, 0);
+		if (R_STR_ISNOTEMPTY (text)) {
+			r_cons_printf ("0x%08"PFMT64x"  %s\n", at, text);
+		}
+		return 0;
+	}
+	if (*p == '-') { // "CL-"
 		p++;
 		remove = true;
 	}
-	if (*p == 'j') {
+	if (*p == 'j') { // "CLj"
 		p++;
 		use_json = true;
 	}
-	if (*p == '.') {
+	if (*p == '.') { // "CL."
 		p++;
 		offset = core->offset;
 	}
-	if (*p == ' ') {
+	if (*p == ' ') { // "CL "
 		p = r_str_trim_head_ro (p + 1);
 		char *arg = strchr (p, ' ');
 		if (!arg) {
