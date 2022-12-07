@@ -1,7 +1,6 @@
 // https://github.com/YeonwooSung/MemoryAllocation
 
 #include <stdio.h>
-#include <sys/time.h>
 #include <stdbool.h>
 #include <math.h>
 #include <stdint.h>
@@ -25,9 +24,9 @@ SDB_API char *sdb_strdup(const char *s) {
 #if __SDB_WINDOWS__
 #include <windows.h>
 #else
-#include <sys/mman.h>
 #include <unistd.h>
-
+#include <sys/mman.h>
+#include <sys/time.h>
 
 // Size 16
 typedef struct free_list {
