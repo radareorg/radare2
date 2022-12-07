@@ -233,6 +233,7 @@ static const char *help_msg_ab[] = {
 	"abf", " [addr]", "address of incoming (from) basic blocks",
 	"abj", " [addr]", "display basic block information in JSON",
 	"abl", "[?] [.-cqj]", "list all basic blocks",
+	"abo", "", "list opcode offsets of current basic block",
 	"abx", " [hexpair-bytes]", "analyze N bytes",
 	"abt", "[?] [addr] [num]", "find num paths from current offset to addr",
 	NULL
@@ -552,6 +553,7 @@ static const char *help_msg_afb[] = {
 	"afbj", " [addr]", "show basic blocks information in json",
 	"afbr", "", "show addresses of instructions which leave the function",
 	"afbt", "", "show basic blocks of current function in a table",
+	"afbo", "", "list addresses of each instruction for every basic block in function (see abo)",
 	"afB", " [bits]", "define asm.bits for the given function",
 	NULL
 };
@@ -3837,6 +3839,31 @@ static void __core_cmd_anal_fcn_allstats(RCore *core, const char *input) {
 	r_core_seek (core, oseek, true);
 	r_list_free (dbs);
 }
+static void _abo(RAnalBlock *bb) {
+	int i;
+	for (i = 0; i <= bb->ninstr; i++) {
+		ut64 at = r_anal_block_ninstr (bb, i);
+		r_cons_printf ("0x%08"PFMT64x"\n", at);
+	}
+}
+
+static void abo(RCore *core) {
+	RAnalBlock *bb = r_anal_get_block_at (core->anal, core->offset);
+	if (bb) {
+		_abo (bb);
+	}
+}
+
+static void afbo(RCore *core) {
+	RAnalFunction *f = r_anal_get_function_at (core->anal, core->offset);
+	if (f) {
+		RListIter *iter;
+		RAnalBlock *bb;
+		r_list_foreach (f->bbs, iter, bb) {
+			_abo (bb);
+		}
+	}
+}
 
 R_API char *fcnshowr(RAnalFunction *function) {
 	RAnal *a = function->anal;
@@ -4938,6 +4965,9 @@ static int cmd_af(RCore *core, const char *input) {
 		switch (input[2]) {
 		case '-': // "afb-"
 			anal_fcn_del_bb (core, r_str_trim_head_ro (input + 3));
+			break;
+		case 'o': // "afbo"
+			afbo (core);
 			break;
 		case 'e': // "afbe"
 			anal_bb_edge (core, r_str_trim_head_ro (input + 3));
@@ -12804,6 +12834,9 @@ static int cmd_anal(void *data, const char *input) {
 			break;
 		case 'a': // "aba"
 			r_core_cmdf (core, "aeab%s", input + 1);
+			break;
+		case 'o': // "abo"
+			abo (core);
 			break;
 		case 'e': // "aeb"
 			r_core_cmdf (core, "aeb%s", input + 2);
