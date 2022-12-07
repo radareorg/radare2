@@ -6880,7 +6880,7 @@ R_API int r_core_disasm_pdi_with_buf(RCore *core, ut64 address, ut8 *buf, ut32 n
 	i = 0;
 	j = 0;
 	RAnalMetaItem *meta = NULL;
-	RAnalOp asmop;
+	RAnalOp asmop = {0};
 toro:
 	if (!check_end (nb_opcodes, nb_bytes, addrbytes * i, j)) {
 		// fix infinite loop
@@ -7003,7 +7003,6 @@ toro:
 					free (op_hex);
 				}
 			}
-			eprintf ("%d %d\n", asmop.size, ret);
 			asmop.size = ret;
 			ret = asmop.size;
 			if (!asm_instr) {
@@ -7034,7 +7033,6 @@ toro:
 					r_cons_println (opstr);
 				}
 				free (tmpopstr);
-				r_anal_op_fini (&analop);
 			} else {
 				char opstr[128] = {
 					0
@@ -7069,7 +7067,6 @@ toro:
 						r_print_color_op_type (core->print, aop.type),
 						asm_str);
 					free (asm_str);
-					r_anal_op_fini (&aop);
 				} else {
 					r_cons_println (asm_str);
 				}
