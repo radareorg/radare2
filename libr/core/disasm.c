@@ -2656,9 +2656,9 @@ static int ds_disassemble(RDisasmState *ds, ut8 *buf, int len) {
 	}
 	r_anal_op_fini (&ds->asmop);
 	ret = r_asm_disassemble (core->rasm, &ds->asmop, buf, len);
-	if (ds->asmop.size < 1) {
-		ds->asmop.size = 1;
-	}
+		if (len > ds->asmop.size) {
+			len = ds->asmop.size;
+		}
 	if (!ds->asmop.bytes) {
 		// this happens only when the instruction is truncated
 		r_anal_op_set_bytes (&ds->asmop, ds->at, buf, len);
@@ -6747,6 +6747,7 @@ R_API int r_core_print_disasm_all(RCore *core, ut64 addr, int l, int len, int mo
 		}
 		ret = r_asm_disassemble (core->rasm, &asmop, buf + i, l - i);
 		if (ret < 1) {
+			ret = asmop.size;
 			switch (mode) {
 			case 'j':
 			case '=':
@@ -6952,9 +6953,7 @@ toro:
 		r_asm_set_pc (core->rasm, addr + i);
 		ret = r_asm_disassemble (core->rasm, &asmop, buf + addrbytes * i,
 			nb_bytes - addrbytes * i);
-		if (!asmop.mnemonic || !strstr (asmop.mnemonic, "unaligned")) {
-			ret = asmop.size;
-		}
+		ret = asmop.size;
 		if (midflags || midbb) {
 			RDisasmState ds = {
 				.oplen = ret,
