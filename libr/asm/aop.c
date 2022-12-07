@@ -28,7 +28,7 @@ R_DEPRECATE R_API void r_asm_op_fini(RAnalOp *op) {
 // accessors
 R_API char *r_asm_op_get_hex(RAnalOp *op) {
 	r_return_val_if_fail (op && op->bytes, NULL);
-	int size = op->size;
+	const int size = op->size;
 	char* str = calloc (size + 1, 2);
 	r_hex_bin2str (op->bytes, size, str);
 	return str;

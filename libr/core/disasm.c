@@ -1024,7 +1024,7 @@ static void __replaceImports(RDisasmState *ds) {
 static char *get_op_ireg(void *user, ut64 addr) {
 	RCore *core = (RCore *)user;
 	char *res = NULL;
-	RAnalOp *op = r_core_anal_op (core, addr, R_ARCH_OP_MASK_BASIC);
+	RAnalOp *op = r_core_anal_op (core, addr, R_ARCH_OP_MASK_ALL); // BASIC);
 	if (op && op->ireg) {
 		res = strdup (op->ireg);
 	}
@@ -2779,23 +2779,20 @@ static int ds_disassemble(RDisasmState *ds, ut8 *buf, int len) {
 		if (!ds->count_bytes && ds->tries > 0) {
 			ds->at = core->rasm->pc;
 			ds->index = ds->at - ds->addr;
-#if DEBUG_DISASM
-			eprintf ("ds_disassemble set ds->at to %#"PFMT64x"\n", ds->at);
-#endif
+			R_LOG_DEBUG ("ds_disassemble set ds->at to %#"PFMT64x, ds->at);
 			ds->tries--;
 			return ret;
 		}
 #endif
 		ds->lastfail = 1;
 		ds->analop.size = (ds->hint && ds->hint->size) ? ds->hint->size : 1;
-		ds->oplen = ds->analop.size;
 	} else {
 		ds->lastfail = 0;
 		ds->analop.size = (ds->hint && ds->hint->size)
 				? ds->hint->size
 				: ds->analop.size;
-		ds->oplen = ds->analop.size;
 	}
+	ds->oplen = ds->analop.size;
 	if (ds->pseudo) {
 #if 1
 		r_parse_parse (core->parser, ds->opstr
