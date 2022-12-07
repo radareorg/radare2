@@ -315,7 +315,7 @@ R_API bool r_io_bank_map_priorize(RIO *io, const ut32 bankid, const ut32 mapid) 
 	}
 	return false;
 found:
-	if (iter == bank->maprefs->tail) {	//tail is top
+	if (iter == bank->maprefs->tail) { // tail is top
 		return r_io_map_get_by_ref (io, mapref) ? true : false;
 	}
 	RIOSubMap *sm = r_io_submap_new (io, mapref);

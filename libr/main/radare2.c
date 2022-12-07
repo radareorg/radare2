@@ -1486,8 +1486,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 			r_config_set (r->config, "asm.os", asmos);
 		}
 
-		debug = r->io->desc && iod && (r->io->desc->fd == iod->fd) && iod->plugin && \
-			iod->plugin->isdbg;
+		debug = r->io->desc && iod && (r->io->desc->fd == iod->fd) && iod->plugin && iod->plugin->isdbg;
 		if (debug) {
 			r_core_setup_debugger (r, debugbackend, baddr == UT64_MAX);
 		}

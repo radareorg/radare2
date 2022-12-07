@@ -501,7 +501,7 @@ static const ut8 *parse_line_header_source(RBinFile *bf, const ut8 *buf, const u
 					if (include_dir && include_dir[0] != '/') {
 						comp_dir = sdb_get (bf->sdb_addrinfo, "DW_AT_comp_dir", 0);
 						if (comp_dir) {
-							include_dir = r_str_newf("%s/%s/", comp_dir, include_dir);
+							include_dir = r_str_newf ("%s/%s/", comp_dir, include_dir);
 						}
 					}
 				} else {
@@ -746,7 +746,7 @@ static const ut8 *parse_ext_opcode(const RBin *bin, const ut8 *obuf,
 		if (binfile && binfile->sdb_addrinfo && hdr->file_names) {
 			int fnidx = regs->file - 1;
 			if (fnidx >= 0 && fnidx < hdr->file_names_count) {
-				add_sdb_addrline(binfile->sdb_addrinfo, regs->address,
+				add_sdb_addrline (binfile->sdb_addrinfo, regs->address,
 						hdr->file_names[fnidx].name, regs->line, mode, print);
 			}
 		}
