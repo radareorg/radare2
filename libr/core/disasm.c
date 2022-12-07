@@ -2659,6 +2659,11 @@ static int ds_disassemble(RDisasmState *ds, ut8 *buf, int len) {
 	if (ds->asmop.size < 1) {
 		ds->asmop.size = 1;
 	}
+	if (!ds->asmop.bytes) {
+		// this happens only when the instruction is truncated
+		r_anal_op_set_bytes (&ds->asmop, ds->at, buf, len);
+	}
+	
 	// handle meta here //
 	if (!ds->asm_meta) {
 		size_t i = 0;
@@ -2765,23 +2770,19 @@ static int ds_disassemble(RDisasmState *ds, ut8 *buf, int len) {
 		if (!ds->count_bytes && ds->tries > 0) {
 			ds->at = core->rasm->pc;
 			ds->index = ds->at - ds->addr;
-#if DEBUG_DISASM
-			eprintf ("ds_disassemble set ds->at to %#"PFMT64x"\n", ds->at);
-#endif
 			ds->tries--;
 			return ret;
 		}
 #endif
 		ds->lastfail = 1;
 		ds->asmop.size = (ds->hint && ds->hint->size) ? ds->hint->size : 1;
-		ds->oplen = ds->asmop.size;
 	} else {
 		ds->lastfail = 0;
 		ds->asmop.size = (ds->hint && ds->hint->size)
 				? ds->hint->size
 				: r_asm_op_get_size (&ds->asmop);
-		ds->oplen = ds->asmop.size;
 	}
+	ds->oplen = ds->asmop.size;
 	if (ds->pseudo) {
 #if 1
 		r_parse_parse (core->parser, ds->opstr
@@ -5619,7 +5620,6 @@ toro:
 			// TODO: check for ds->analop.type and ret
 			ds->dest = ds->analop.jump;
 		}
-		r_anal_op_fini (&ds->analop);
 	} else {
 		/* highlight eip */
 		const char *pc = core->anal->reg->name[R_REG_NAME_PC];
@@ -5679,7 +5679,6 @@ toro:
 		if (ds_must_strip (ds)) {
 			inc = ds->analop.size;
 			// inc = ds->asmop.payload + (ds->asmop.payload % ds->core->rasm->dataalign);
-			r_anal_op_fini (&ds->analop);
 			continue;
 		}
 		if (!ds->show_comment_right) {
@@ -5727,7 +5726,6 @@ toro:
 				inc = 0; //delta;
 				ds->index = 0;
 				of = f;
-				r_anal_op_fini (&ds->analop);
 				if (count_bytes) {
 					break;
 				}
@@ -5737,7 +5735,6 @@ toro:
 				r_io_read_at (core->io, ds->addr, buf, len);
 				inc = 0; //delta;
 				ds->index = 0;
-				r_anal_op_fini (&ds->analop);
 			}
 			continue;
 		}
@@ -5755,7 +5752,6 @@ toro:
 				// could be struct with a bitfield entry
 				inc = (type_bitsize >> 3) + (!!(type_bitsize & 0x7));
 				free (fmt);
-				r_anal_op_fini (&ds->analop);
 				continue;
 			}
 		} else {
@@ -5771,7 +5767,6 @@ toro:
 #endif
 				goto retry;
 			}
-
 			ret = ds_disassemble (ds, (ut8 *)ds_bufat (ds), left);
 #if DEBUG_DISASM
 			eprintf ("AFTER ds_disassemble:\n");
@@ -5780,19 +5775,18 @@ toro:
 #endif
 			if (ret == -31337) {
 				inc = ds->oplen; // minopsz maybe? or we should add invopsz
-				r_anal_op_fini (&ds->analop);
 				continue;
 			}
 		}
 
 		ds_atabs_option (ds);
 		if (ds->analop.addr != ds->at) {
-			r_anal_op_fini (&ds->analop);
 			r_anal_op (core->anal, &ds->analop, ds->at, ds_bufat (ds), ds_left (ds), R_ARCH_OP_MASK_ALL);
 		}
 		if (ret < 1) {
 			r_strbuf_fini (&ds->analop.esil);
 			r_strbuf_init (&ds->analop.esil);
+			ds->asmop.type = R_ANAL_OP_TYPE_ILL;
 			ds->analop.type = R_ANAL_OP_TYPE_ILL;
 		}
 		if (ds->hint) {
@@ -5830,7 +5824,6 @@ toro:
 						break;
 					}
 				}
-				r_anal_op_fini (&ds->analop);
 				if (!sparse) {
 					r_cons_printf ("..\n");
 					sparse = true;
@@ -5919,7 +5912,6 @@ toro:
 				r_asm_disassemble (core->rasm, &ao, ds_bufat (ds), ds_left (ds) + 5);
 				// r_asm_set_syntax (core->rasm, os);
 				r_arch_config_set_syntax (core->anal->config, os);
-				r_anal_op_fini (&ao);
 			}
 			if (mi_type == R_META_TYPE_FORMAT) {
 				if ((ds->show_comments || ds->show_usercomments) && ds->show_comment_right) {
@@ -5961,7 +5953,6 @@ toro:
 				r_asm_disassemble (core->rasm, &ao, ds_bufat (ds), ds_left (ds) + 5);
 				// r_asm_set_syntax (core->rasm, os);
 				r_arch_config_set_syntax (core->anal->config, os);
-				r_anal_op_fini (&ao);
 			}
 			if (ds->show_bytes_right && ds->show_bytes) {
 				ds_comment (ds, true, "");
@@ -6054,7 +6045,6 @@ toro:
 			inc = skip_bytes_bb;
 		}
 		inc += ds->asmop.payload + (ds->asmop.payload % ds->core->rasm->dataalign);
-		r_anal_op_fini (&ds->analop);
 	}
 	r_anal_op_fini (&ds->analop);
 
@@ -6641,8 +6631,10 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 			const char *comment = r_meta_get_string (core->anal, R_META_TYPE_COMMENT, at);
 			if (comment) {
 				char *b64comment = sdb_encode ((const ut8*)comment, -1);
-				pj_ks (pj, "comment", b64comment);
-				free (b64comment);
+				if (b64comment) {
+					pj_ks (pj, "comment", b64comment);
+					free (b64comment);
+				}
 			}
 		}
 		/* add refs */
@@ -6960,7 +6952,9 @@ toro:
 		r_asm_set_pc (core->rasm, addr + i);
 		ret = r_asm_disassemble (core->rasm, &asmop, buf + addrbytes * i,
 			nb_bytes - addrbytes * i);
-		ret = asmop.size;
+		if (!asmop.mnemonic || !strstr (asmop.mnemonic, "unaligned")) {
+			ret = asmop.size;
+		}
 		if (midflags || midbb) {
 			RDisasmState ds = {
 				.oplen = ret,
