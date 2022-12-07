@@ -80,6 +80,7 @@ static RCoreHelpMessage help_msg_l = {
 	"lu", " [path]", "same as #!lua",
 	"ll", " [path]", "same as ls -l",
 	"lr", " [path]", "same as ls -r",
+	"li", "", "list source of current function (like gdb's 'list' command)",
 	"ls", " [-e,-l,-j,-q] [path]", "list files in current or given directory",
 	"ls", " -e [path]", "list files using emojis",
 	"ls", " -l [path]", "same as ll (list files with details)",
@@ -1505,6 +1506,9 @@ static int cmd_l(void *data, const char *input) { // "l"
 		} else {
 			r_core_cmd_help_match (core, help_msg_l, "le", true);
 		}
+		break;
+	case 'i':
+		r_core_cmd0 (core, "CLL@@c:afbo");
 		break;
 	case 'r': // "lr"
 		if (input[1] == '?') {
