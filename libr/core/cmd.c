@@ -5932,6 +5932,16 @@ R_API int r_core_cmd_call(RCore *core, const char *cmd) {
 	return r_cmd_call (core->rcmd, cmd);
 }
 
+R_API int r_core_cmd_callf(RCore *core, const char *fmt, ...) {
+	va_list ap;
+	va_start (ap, fmt);
+	char *cmd = r_str_newvf (fmt, ap);
+	int res = r_cmd_call (core->rcmd, cmd);
+	free (cmd);
+	va_end (ap);
+	return res;
+}
+
 /* return: pointer to a buffer with the output of the command */
 R_API char *r_core_cmd_str(RCore *core, const char *cmd) {
 	r_return_val_if_fail (core, NULL);
