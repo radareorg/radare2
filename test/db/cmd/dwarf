@@ -1,3 +1,33 @@
+NAME="open companion file for macho dwarf"
+FILE=bins/mach0/dwarf/a.out
+CMDS=<<EOF
+CL
+EOF
+EXPECT=<<EOF
+file: /Users/pancake/hello.c
+line: 2
+addr: 0x100003f64
+file: /Users/pancake/hello.c
+line: 5
+addr: 0x100003f80
+file: /Users/pancake/hello.c
+line: 0
+addr: 0x100003f78
+file: /Users/pancake/hello.c
+line: 0
+addr: 0x100003f6c
+file: /Users/pancake/hello.c
+line: 3
+addr: 0x100003f74
+file: /Users/pancake/hello.c
+line: 6
+addr: 0x100003f90
+file: /Users/pancake/hello.c
+line: 6
+addr: 0x100003f88
+EOF
+RUN
+
 NAME="pdf dwarf invalid main for analysis not found (aa)"
 FILE=bins/src/dwarftest
 CMDS=<<EOF
