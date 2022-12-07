@@ -16,6 +16,12 @@ e asm.flags.middle=2
 f dat.sym = 2
 pi 4
 pdi 4
+e asm.flags.middle=1
+?e midflags=1
+pdi 4
+e asm.flags.middle=0
+?e midflags=0
+pdi 4
 EOF
 EXPECT=<<EOF
 push rbp
@@ -27,6 +33,16 @@ push r15
 0x00000002   dat.sym:
 0x00000002                 89e5  mov ebp, esp
 0x00000004                 4157  push r15
+midflags=1
+0x00000000                   55  push rbp
+0x00000001               4889e5  mov rbp, rsp
+0x00000004                 4157  push r15
+0x00000006                 4156  push r14
+midflags=0
+0x00000000                   55  push rbp
+0x00000001               4889e5  mov rbp, rsp
+0x00000004                 4157  push r15
+0x00000006                 4156  push r14
 EOF
 RUN
 

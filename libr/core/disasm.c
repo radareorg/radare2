@@ -6990,10 +6990,12 @@ toro:
 				skip_bytes_bb = handleMidBB (core, &ds);
 			}
 			if (skip_bytes_flag && midflags > R_MIDFLAGS_SHOW) {
-				asmop.size = ret = skip_bytes_flag;
+				// asmop.size = ret = skip_bytes_flag;
+				ret = skip_bytes_flag;
 			}
 			if (skip_bytes_bb && skip_bytes_bb < ret) {
-				asmop.size = ret = skip_bytes_bb;
+				// asmop.size = ret = skip_bytes_bb;
+				ret = skip_bytes_bb;
 			}
 		}
 		if (fmt == 'C') {
@@ -7021,7 +7023,6 @@ toro:
 				r_cons_printf ("%20s  ", op_hex);
 				free (op_hex);
 			}
-			ret = asmop.size;
 			if (!asm_instr) {
 				r_cons_newline ();
 			} else if (!asm_immtrim && (decode || esil)) {

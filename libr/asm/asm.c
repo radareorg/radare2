@@ -38,6 +38,7 @@ static int r_asm_pseudo_string(RAnalOp *op, char *input, int zero) {
 	}
 	len = r_str_unescape (input) + zero;
 	r_anal_op_set_mnemonic (op, op->addr, input);
+	r_anal_op_set_bytes (op, op->addr, (const ut8*)input, len + 1);
 	return len;
 }
 
