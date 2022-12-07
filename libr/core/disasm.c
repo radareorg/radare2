@@ -1573,7 +1573,7 @@ static void ds_atabs_option(RDisasmState *ds) {
 		return;
 	}
 	RStrBuf *sb = r_strbuf_new ("");
-	char *b, *ob = (ds->opstr)? strdup (ds->opstr): strdup (r_asm_op_get_asm (&ds->asmop));
+	char *b, *ob = (ds->opstr)? strdup (ds->opstr): strdup (ds->asmop.mnemonic);
 	for (b = ob; b && *b; b++, i++) {
 		r_strbuf_append_n (sb, b, 1);
 		if (*b == '(' || *b == '[') {
@@ -2186,7 +2186,7 @@ static void ds_show_comments_describe(RDisasmState *ds) {
 	/* respect asm.describe */
 	char *desc = NULL;
 	if (ds->asm_describe && !ds->has_description) {
-		char *op, *locase = strdup (r_asm_op_get_asm (&ds->asmop));
+		char *op, *locase = strdup (ds->asmop.mnemonic);
 		if (!locase) {
 			return;
 		}
@@ -2704,17 +2704,21 @@ static int ds_disassemble(RDisasmState *ds, ut8 *buf, int len) {
 			}
 			int sz = R_MIN (16, meta_size);
 			ds->asmop.size = sz;
-			r_asm_op_set_hexbuf (&ds->asmop, buf, sz);
+			ds->analop.size = sz;
+			r_asm_op_set_hexbuf (&ds->analop, buf, sz);
 			const char *tail = (meta_size > 16)? "...": "";
 			r_strf_buffer (256);
 			switch (meta->type) {
 			case R_META_TYPE_STRING:
 				r_anal_op_set_mnemonic (&ds->asmop, ds->asmop.addr,
+				r_anal_op_set_mnemonic (&ds->analop, ds->analop.addr,
 					r_strf (".string \"%s%s\"", meta->str, tail));
 				break;
 			default: {
-				char *op_hex = r_asm_op_get_hex (&ds->asmop);
-				r_anal_op_set_mnemonic (&ds->asmop, ds->asmop.addr,
+				char *op_hex = r_asm_op_get_hex (&ds->analop);
+				r_anal_op_set_mnemonic (&ds->asmop, ds->analop.addr,
+					r_strf (".hex %s%s", op_hex, tail));
+				r_anal_op_set_mnemonic (&ds->analop, ds->analop.addr,
 					r_strf (".hex %s%s", op_hex, tail));
 				const bool be = R_ARCH_CONFIG_IS_BIG_ENDIAN (core->rasm->config);
 				int immbase = (ds->hint && ds->hint->immbase)? ds->hint->immbase: 0;
@@ -2723,24 +2727,30 @@ static int ds_disassemble(RDisasmState *ds, ut8 *buf, int len) {
 					ds->analop.val = r_read_ble16 (buf, be);
 					r_anal_op_set_mnemonic (&ds->asmop, ds->asmop.addr,
 						r_strf (".word 0x%04hx%s", (ut16)ds->analop.val, tail));
+					r_anal_op_set_mnemonic (&ds->analop, ds->analop.addr,
+						r_strf (".word 0x%04hx%s", (ut16)ds->analop.val, tail));
 					break;
 				case 4:
 					ds->analop.val = r_read_ble32 (buf, be);
 					switch (immbase) {
 					case 10:
 						r_anal_op_set_mnemonic (&ds->asmop, ds->asmop.addr, r_strf (".int32 %d%s", (st32)ds->analop.val, tail));
+						r_anal_op_set_mnemonic (&ds->analop, ds->analop.addr, r_strf (".int32 %d%s", (st32)ds->analop.val, tail));
 						break;
 					case 32:
 						r_anal_op_set_mnemonic (&ds->asmop, ds->asmop.addr, r_strf (".ipaddr 0x%08x%s", (ut32)ds->analop.val, tail));
+						r_anal_op_set_mnemonic (&ds->analop, ds->analop.addr, r_strf (".ipaddr 0x%08x%s", (ut32)ds->analop.val, tail));
 						break;
 					default:
 						r_anal_op_set_mnemonic (&ds->asmop, ds->asmop.addr, r_strf (".dword 0x%08x%s", (ut32)ds->analop.val, tail));
+						r_anal_op_set_mnemonic (&ds->analop, ds->analop.addr, r_strf (".dword 0x%08x%s", (ut32)ds->analop.val, tail));
 						break;
 					}
 					break;
 				case 8:
 					ds->analop.val = r_read_ble64 (buf, be);
 					r_anal_op_set_mnemonic (&ds->asmop, ds->asmop.addr, r_strf (".qword 0x%016"PFMT64x"%s", ds->analop.val, tail));
+					r_anal_op_set_mnemonic (&ds->analop, ds->analop.addr, r_strf (".qword 0x%016"PFMT64x"%s", ds->analop.val, tail));
 					break;
 				}
 				free (op_hex);
@@ -3278,12 +3288,14 @@ static bool ds_print_meta_infos(RDisasmState *ds, ut8* buf, int len, int idx, in
 		case R_META_TYPE_HIDE:
 			r_cons_printf ("(%"PFMT64d" bytes hidden)", mi_size);
 			ds->asmop.size = mi_size;
+			ds->analop.size = mi_size;
 			ds->oplen = mi_size;
 			ret = true;
 			break;
 		case R_META_TYPE_RUN:
 			r_core_cmdf (core, "%s @ 0x%"PFMT64x, mi->str, ds->at);
 			ds->asmop.size = mi_size;
+			ds->analop.size = mi_size;
 			ds->oplen = mi_size;
 			ret = true;
 			break;
@@ -3333,6 +3345,7 @@ static bool ds_print_meta_infos(RDisasmState *ds, ut8* buf, int len, int idx, in
 			}
 			core->print->flags |= R_PRINT_FLAGS_HEADER;
 			ds->asmop.size = (int)size - (node->start - ds->at);
+			ds->analop.size = (int)size - (node->start - ds->at);
 			R_FREE (ds->line);
 			R_FREE (ds->line_col);
 			R_FREE (ds->refline);
@@ -3351,7 +3364,7 @@ static bool ds_print_meta_infos(RDisasmState *ds, ut8* buf, int len, int idx, in
 				if (len_after > len_before && buf && cons_buf[len_after - 1] == '\n') {
 					r_cons_drop (1);
 				}
-				ds->oplen = ds->asmop.size = (int)mi_size;
+				ds->oplen = ds->analop.size = (int)mi_size;
 				R_FREE (ds->line);
 				R_FREE (ds->refline);
 				R_FREE (ds->refline2);
@@ -3477,7 +3490,7 @@ static void ds_print_show_bytes(RDisasmState *ds) {
 			pad[j] = '\0';
 			str = strdup ("");
 		} else {
-			str = r_asm_op_get_hex (&ds->asmop);
+			str = r_asm_op_get_hex (&ds->analop);
 			if (r_str_ansi_len (str) > nb) {
 				char *p = (char *)r_str_ansi_chrn (str, nb);
 				if (p)  {
@@ -4026,16 +4039,17 @@ static void ds_print_asmop_payload(RDisasmState *ds, const ut8 *buf) {
 			break;
 		}
 	}
-	if (ds->asmop.payload != 0) {
-		r_cons_printf ("\n; .. payload of %d byte(s)", ds->asmop.payload);
+	if (ds->analop.payload != 0) {
+		// XXX this was moved from asm to anal and i think its unused. but should be used
+		r_cons_printf ("\n; .. payload of %d byte(s)", ds->analop.payload);
 		if (ds->showpayloads) {
-			int mod = ds->asmop.payload % ds->core->rasm->dataalign;
+			int mod = ds->analop.payload % ds->core->rasm->dataalign;
 			int x;
-			for (x = 0; x < ds->asmop.payload; x++) {
+			for (x = 0; x < ds->analop.payload; x++) {
 				r_cons_printf ("\n        0x%02x", buf[ds->oplen + x]);
 			}
 			for (x = 0; x < mod; x++) {
-				r_cons_printf ("\n        0x%02x ; alignment", buf[ds->oplen + ds->asmop.payload + x]);
+				r_cons_printf ("\n        0x%02x ; alignment", buf[ds->oplen + ds->analop.payload + x]);
 			}
 		}
 	}
