@@ -548,6 +548,8 @@ beach:
 
 	return buf;
 }
+
+#if 0
 // TODO DWARF 5 line header parsing, very different from ver. 4
 // Because this function needs ability to parse a lot of FORMS just like debug info
 // I'll complete this function after completing debug_info parsing and merging
@@ -574,12 +576,13 @@ static const ut8 *parse_line_header_source_dwarf5(RBinFile *bf, const ut8 *buf, 
 
 	return NULL;
 }
+#endif
 
 static const ut8 *parse_line_header(
 	RBinFile *bf, const ut8 *buf, const ut8 *buf_end,
 	RBinDwarfLineHeader *hdr, int mode, PrintfCallback print) {
 
-	r_return_val_if_fail(hdr && bf && buf, NULL);
+	r_return_val_if_fail (hdr && bf && buf, NULL);
 
 	hdr->is_64bit = false;
 	hdr->unit_length = READ32 (buf);
@@ -654,6 +657,7 @@ static const ut8 *parse_line_header(
 	// for now we skip
 	if (hdr->version == 5) {
 		tmp_buf += hdr->header_length;
+		R_LOG_WARN ("DWARF5 format is not yet supported by radare2, please contribute");
 		return tmp_buf;
 	}
 
@@ -665,7 +669,7 @@ static const ut8 *parse_line_header(
 	if (hdr->version <= 4) {
 		buf = parse_line_header_source (bf, buf, buf_end, hdr, sdb, mode, print);
 	} else { // because Version 5 source files are very different
-		buf = parse_line_header_source_dwarf5 (bf, buf, buf_end, hdr, sdb, mode);
+		// dwarf5 parsing is not supported
 	}
 
 	return buf;
