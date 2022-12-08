@@ -101,6 +101,8 @@ static RCoreHelpMessage help_msg_j = {
 	"Usage:", "j[:o]in", "run command with json facilities or join two files",
 	"j:", "?e", "run '?e' command and show the result stats in json",
 	"ji:", "[cmd]", "run command and indent it as json like (cmd~{})",
+	"js", " [expr]", "run given javascript expression",
+	"js:", "[file]", "interpret javascript file",
 	"join", " f1 f2", "join the contents of two files",
 	NULL
 };
@@ -1567,6 +1569,20 @@ static int cmd_join(void *data, const char *input) { // "join"
 		r_cons_printf ("%s\n", indented);
 		free (indented);
 		free (res);
+		return R_CMD_RC_SUCCESS;
+	}
+	if (input[0] == 's') {
+		if (input[1] == ':') {
+			r_core_cmdf (core, ". %s", input + 1);
+		} else if (input[1] == ' ') {
+			if (r_lang_use (core->lang, "mujs")) {
+				r_lang_run (core->lang, input + 1, -1);
+			} else {
+				r_core_cmdf (core, "#!pipe node -e '%s'", input + 1);
+			}
+		} else {
+			r_core_cmd_help_match (core, help_msg_j, "js", false);
+		}
 		return R_CMD_RC_SUCCESS;
 	}
 	if (input[0] == ':') {

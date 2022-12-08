@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2021 - pancake, nibble */
+/* radare - LGPL - Copyright 2009-2022 - pancake, nibble */
 
 #include <r_core.h>
 
@@ -9,12 +9,10 @@ const char *help_msg_hash[] = {
 	"#!?", "", "show this help message",
 	"#!?j", "", "list all available interpreters in JSON",
 	"#!?q", "", "list all available lang plugin names (See Ll?)",
-	"#!v?", "", "show vlang script example",
-	"#!python?", "", "show python script example",
-	"#!python", "", "run python commandline",
-	"#!python", " foo.py", "run foo.py python script (same as '. foo.py')",
-	//"#!python <<EOF        get python code until 'EOF' mark\n"
-	"#!python", " arg0 a1 <<q", "set arg0 and arg1 and read until 'q'",
+	"#!<lang>?", "", "show help for <lang> (v, python, mujs, ..)",
+	"#!<lang>", " [file]", "interpret the given file with lang plugin",
+	"#!<lang>", "", "enter interactive prompt for given language plugin",
+	"#!pipe", " node -e 'console.log(123)''", "run program with arguments inside an r2pipe environment",
 	NULL
 };
 
