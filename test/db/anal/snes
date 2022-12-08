@@ -46,6 +46,7 @@ snes
 minopsz 1
 maxopsz 3
 invopsz 1
+dtalign 1
 pcalign 1
 0x00400000 
 0x00400039 
