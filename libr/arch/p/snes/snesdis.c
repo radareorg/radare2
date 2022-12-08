@@ -13,7 +13,7 @@ static int snesDisass(int M_flag, int X_flag, ut64 pc, RAnalOp *op, const ut8 *b
 	if (len < op_len) {
 		return 0;
 	}
-	switch (s_op->len) {
+	switch (s_op->flags) {
 	case SNES_OP_8BIT:
 		op->mnemonic = r_str_newf ("%s", s_op->name);
 		break;

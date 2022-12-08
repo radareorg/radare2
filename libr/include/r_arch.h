@@ -81,20 +81,11 @@ typedef enum {
 #define R_ANAL_OP_MASK_DISASM = 16, // It fills RAnalop->mnemonic // should be RAnalOp->disasm // only from r_core_anal_op()
 #define R_ANAL_OP_MASK_ALL   = 1 | 2 | 4 | 8 | 16
 
-typedef struct r_arch_decoder_t {
-	struct r_arch_plugin_t *p;
-	void *user;
-	ut32 refctr;
-} RArchDecoder;
-
 typedef struct r_arch_t {
 	RList *plugins;	       // all plugins
 	RBinBind binb; // required for java, dalvik, wasm and pyc plugin... pending refactor
 	RNum *num; // XXX maybe not required
 	struct r_arch_session_t *session;
-#if 0
-	RArchDecoder *current; // currently used decoder
-#endif
 	RArchConfig *cfg;      // global / default config
 } RArch;
 
@@ -109,13 +100,14 @@ typedef struct r_arch_session_t {
 
 typedef ut32 RArchDecodeMask;
 typedef ut32 RArchEncodeMask; // syntax ?
+typedef ut32 RArchModifyMask; // syntax ?
 
 typedef int (*RArchPluginInfoCallback)(RArchSession *cfg, ut32 query);
 typedef char *(*RArchPluginRegistersCallback)(RArchSession *ai);
 typedef char *(*RArchPluginMnemonicsCallback)(RArchSession *s, int id, bool json);
 typedef bool (*RArchPluginDecodeCallback)(RArchSession *s, struct r_anal_op_t *op, RArchDecodeMask mask);
 typedef bool (*RArchPluginEncodeCallback)(RArchSession *s, struct r_anal_op_t *op, RArchEncodeMask mask);
-typedef bool (*RArchPluginPluginCallback)(RArchSession *s, struct r_anal_op_t *op, RArchEncodeMask mask);
+typedef bool (*RArchPluginModifyCallback)(RArchSession *s, struct r_anal_op_t *op, RArchModifyMask mask);
 typedef bool (*RArchPluginInitCallback)(RArchSession *s);
 typedef bool (*RArchPluginFiniCallback)(RArchSession *s);
 
@@ -138,7 +130,7 @@ typedef struct r_arch_plugin_t {
 	RArchPluginRegistersCallback regs;
 	RArchPluginEncodeCallback encode;
 	RArchPluginDecodeCallback decode;
-	RArchPluginEncodeCallback patch;
+	RArchPluginModifyCallback patch;
 	RArchPluginMnemonicsCallback mnemonics;
 //TODO: reenable this later
 //	bool (*esil_init)(REsil *esil);
@@ -162,7 +154,7 @@ R_API bool r_arch_encode(RArch *a, RAnalOp *op, RArchEncodeMask mask);
 R_API RArchSession *r_arch_session(RArch *arch, RArchConfig *cfg, RArchPlugin *ap);
 R_API bool r_arch_session_decode(RArchSession *ai, RAnalOp *op, RArchDecodeMask mask);
 R_API bool r_arch_session_encode(RArchSession *ai, RAnalOp *op, RArchEncodeMask mask);
-R_API bool r_arch_session_patch(RArchSession *ai, RAnalOp *op, RArchEncodeMask mask);
+R_API bool r_arch_session_patch(RArchSession *ai, RAnalOp *op, RArchModifyMask mask);
 R_API int r_arch_session_info(RArchSession *ai, int q);
 
 // arch.c
