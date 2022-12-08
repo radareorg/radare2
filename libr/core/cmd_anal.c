@@ -2239,7 +2239,7 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 		(void)r_asm_disassemble (core->rasm, &asmop, buf + idx, len - idx);
 		esilstr = R_STRBUF_SAFEGET (&op.esil);
 		opexstr = R_STRBUF_SAFEGET (&op.opex);
-		char *mnem = strdup (r_asm_op_get_asm (&asmop));
+		char *mnem = strdup (r_str_get (r_asm_op_get_asm (&asmop)));
 		char *sp = strchr (mnem, ' ');
 		if (sp) {
 			*sp = 0;
@@ -6157,50 +6157,30 @@ static void cmd_anal_info(RCore *core, const char *input) {
 			PJ *pj = pj_new ();
 			pj_o (pj);
 			int v = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_MIN_OP_SIZE);
-			if (v > 0) {
-				pj_ki (pj, "minopsz", v);
-			}
+			pj_ki (pj, "minopsz", v);
 			v = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_MAX_OP_SIZE);
-			if (v > 0) {
-				pj_ki (pj, "maxopsz", v);
-			}
+			pj_ki (pj, "maxopsz", v);
 			v = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_INV_OP_SIZE);
-			if (v > 0) {
-				pj_ki (pj, "invopsz", v);
-			}
+			pj_ki (pj, "invopsz", v);
 			v = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_DATA_ALIGN);
-			if (v > 0) {
-				pj_ki (pj, "dtalign", v);
-			}
+			pj_ki (pj, "dtalign", v);
 			v = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_ALIGN);
-			if (v > 0) {
-				pj_ki (pj, "pcalign", v);
-			}
+			pj_ki (pj, "pcalign", v);
 			pj_end (pj);
 			char *s = pj_drain (pj);
 			r_cons_printf ("%s\n", s);
 			free (s);
 		} else {
 			int v = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_MIN_OP_SIZE);
-			if (v > 0) {
-				r_cons_printf ("minopsz %d\n", v);
-			}
+			r_cons_printf ("minopsz %d\n", v);
 			v = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_MAX_OP_SIZE);
-			if (v > 0) {
-				r_cons_printf ("maxopsz %d\n", v);
-			}
+			r_cons_printf ("maxopsz %d\n", v);
 			v = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_INV_OP_SIZE);
-			if (v > 0) {
-				r_cons_printf ("invopsz %d\n", v);
-			}
+			r_cons_printf ("invopsz %d\n", v);
 			v = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_DATA_ALIGN);
-			if (v > 0) {
-				r_cons_printf ("dtalign %d\n", v);
-			}
+			r_cons_printf ("dtalign %d\n", v);
 			v = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_ALIGN);
-			if (v > 0) {
-				r_cons_printf ("pcalign %d\n", v);
-			}
+			r_cons_printf ("pcalign %d\n", v);
 		}
 		break;
 	case 'i': // "aii"

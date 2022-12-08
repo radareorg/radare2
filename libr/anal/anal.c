@@ -485,6 +485,14 @@ R_API void r_anal_purge(RAnal *anal) {
 	r_anal_purge_imports (anal);
 }
 
+
+static int default_archinfo(int res, int q) {
+	if (res < 1) {
+		return 1;
+	}
+	return res;
+}
+
 // XXX deprecate. use r_arch_info() when all anal plugs get moved
 // XXX this function should NEVER return -1. it should provide all valid values, even if the delegate does not
 R_API R_DEPRECATE int r_anal_archinfo(RAnal *anal, int query) {
@@ -497,17 +505,15 @@ R_API R_DEPRECATE int r_anal_archinfo(RAnal *anal, int query) {
 		const char *const b = anal->config->arch;
 		if (!strcmp (a, b)) {
 			int res = r_arch_info (anal->arch, query);
-			if (res != -1) {
-				return res;
-			}
-			return res;
+			return default_archinfo (res, query);
 		}
 	}
+	int res = -1;
 	// this is the anal archinfo fallback
 	if (anal->cur && anal->cur->archinfo) {
-		return anal->cur->archinfo (anal, query);
+		res = anal->cur->archinfo (anal, query);
 	}
-	return -1;
+	return default_archinfo (res, query);
 }
 
 R_API bool r_anal_is_aligned(RAnal *anal, const ut64 addr) {

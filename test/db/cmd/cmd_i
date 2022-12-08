@@ -245,7 +245,7 @@ nth paddr vaddr bind type size lib name
 e cfg.bigendian=false
 e asm.bits=64
 e asm.dwarf=false
-e asm.pcalign=0
+e asm.pcalign=1
 fs imports
 fs symbols
 fs exports
@@ -293,7 +293,7 @@ block    0x100
 e cfg.bigendian=false
 e asm.bits=64
 e asm.dwarf=false
-e asm.pcalign=0
+e asm.pcalign=1
 baddr    0x0
 binsz    1024
 bits     64
@@ -314,7 +314,7 @@ va       false
 e cfg.bigendian=false
 e asm.bits=64
 e asm.dwarf=false
-e asm.pcalign=0
+e asm.pcalign=1
 EOF
 RUN
 
