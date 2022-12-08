@@ -191,6 +191,7 @@ static const char *help_msg_p[] = {
 	"pv", "[?][ejh] [mode]", "show value of given size (1, 2, 4, 8)",
 	"pwd", "", "display current working directory",
 	"px", "[?][owq] [len]", "hexdump of N bytes (o=octal, w=32bit, q=64bit)",
+	"py", "([-:file]) [expr]", "print clipboard (yp) run python script (py:file) oneliner `py print(1)` or stdin slurp `py-`",
 	"pz", "[?] [len]", "print zoom view (see pz? for help)",
 	NULL
 };
@@ -7192,6 +7193,47 @@ static int cmd_print(void *data, const char *input) {
 			char *res = r_print_stereogram_bytes (block, core->blocksize);
 			r_print_stereogram_print (core->print, res);
 			free (res);
+		}
+		break;
+	case 'y': // "py"
+		switch (input[1]) {
+		case '?':
+			r_core_cmd_help_match (core, help_msg_p, "py", false);
+			break;
+		case '-':
+			if (r_config_get_b (core->config, "scr.interactive")) {
+				int sz;
+				char *data = r_stdin_slurp (&sz);
+				if (data) {
+					const char *const fn = ".tmp.py";
+					r_file_dump (fn, (ut8*)data, sz, false);
+					r_core_cmd_callf (core, ". %s", fn);
+					r_file_rm (fn);
+					free (data);
+				}
+			} else {
+				R_LOG_ERROR ("requires interactive shell");
+			}
+			break;
+		case ':':
+			r_core_cmd_callf (core, "#!python %s", input + 2);
+			break;
+		case ' ':
+			{
+				char *data = (char *)r_str_trim_head_ro (input + 2);
+				int sz = strlen (data);
+				if (R_STR_ISNOTEMPTY (data)) {
+					const char *const fn = ".tmp.py";
+					if (r_file_dump (fn, (ut8*)data, sz, false)) {
+						r_core_cmd_callf (core, ". %s", fn);
+					}
+					r_file_rm (fn);
+				}
+			}
+			break;
+		case 0:
+			r_core_cmd_call (core, "yp");
+			break;
 		}
 		break;
 	case 'o': // "po"
