@@ -390,13 +390,21 @@ static int cmd_hash_bang(RCore *core, const char *input) {
 			if (ac > 1) {
 				if (!strcmp (av[1], "-e")) {
 					char *run_str = strstr (input + 2, "-e") + 2;
-					r_lang_run_string (core->lang, run_str);
+					if (run_str) {
+						r_lang_run_file (core->lang, run_str);
+					} else {
+						R_LOG_ERROR ("Invalid file name");
+					}
 				} else {
 					if (r_lang_set_argv (core->lang, ac - 1, &av[1])) {
 						r_lang_run_file (core->lang, av[1]);
 					} else {
 						char *run_str = strstr (input + 2, av[1]);
-						r_lang_run_file (core->lang, run_str);
+						if (run_str) {
+							r_lang_run_file (core->lang, run_str);
+						} else {
+							R_LOG_ERROR ("Invalid file name");
+						}
 					}
 				}
 			} else {
