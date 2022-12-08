@@ -737,6 +737,7 @@ static bool is_entry_flag(RFlagItem *f) {
 }
 
 static bool __core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int depth) {
+	const bool verbose = r_config_get_b (core->config, "scr.interactive") && r_config_get_b (core->config, "scr.prompt");
 	if (depth < 0) {
 //		printf ("Too deep for 0x%08"PFMT64x"\n", at);
 //		r_sys_backtrace ();
@@ -875,7 +876,9 @@ static bool __core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int de
 						// TODO: ensure next address is function after padding (nop or trap or wat)
 						// XXX noisy for test cases because we want to clear the stderr
 						r_cons_clear_line (1);
-						loganal (fcn->addr, at, 10000 - depth);
+						if (verbose) {
+							loganal (fcn->addr, at, 10000 - depth);
+						}
 						next = next_append (next, &nexti, at);
 					}
 				}
@@ -4540,6 +4543,7 @@ R_API void r_core_anal_stats_free(RCoreAnalStats *s) {
 }
 
 R_API RList* r_core_anal_cycles(RCore *core, int ccl) {
+	const bool verbose = r_config_get_b (core->config, "scr.interactive") && r_config_get_b (core->config, "scr.prompt");
 	ut64 addr = core->offset;
 	int depth = 0;
 	RAnalOp *op = NULL;
@@ -4553,14 +4557,17 @@ R_API RList* r_core_anal_cycles(RCore *core, int ccl) {
 	r_cons_break_push (NULL, NULL);
 	while (cf && !r_cons_is_breaked ()) {
 		if ((op = r_core_anal_op (core, addr, R_ARCH_OP_MASK_BASIC)) && (op->cycles) && (ccl > 0)) {
-			r_cons_clear_line (1);
-			eprintf ("%i -- ", ccl);
+			if (verbose) {
+				r_cons_clear_line (1);
+			}
 			addr += op->size;
 			switch (op->type) {
 			case R_ANAL_OP_TYPE_JMP:
 				addr = op->jump;
 				ccl -= op->cycles;
-				loganal (op->addr, addr, depth);
+				if (verbose) {
+					loganal (op->addr, addr, depth);
+				}
 				break;
 			case R_ANAL_OP_TYPE_UJMP:
 			case R_ANAL_OP_TYPE_MJMP:
@@ -4570,7 +4577,9 @@ R_API RList* r_core_anal_cycles(RCore *core, int ccl) {
 			case R_ANAL_OP_TYPE_IRCALL:
 				ch = R_NEW0 (RAnalCycleHook);
 				ch->addr = op->addr;
-				eprintf ("0x%08"PFMT64x" > ?\r", op->addr);
+				if (verbose) {
+					eprintf ("0x%08"PFMT64x" > ?\r", op->addr);
+				}
 				ch->cycles = ccl;
 				r_list_append (hooks, ch);
 				ch = NULL;
@@ -4596,7 +4605,9 @@ R_API RList* r_core_anal_cycles(RCore *core, int ccl) {
 				r_list_push (cf->hooks, ch);
 				ch = NULL;
 				addr = op->jump;
-				loganal (op->addr, addr, depth);
+				if (verbose) {
+					loganal (op->addr, addr, depth);
+				}
 				break;
 			case R_ANAL_OP_TYPE_UCJMP:
 			case R_ANAL_OP_TYPE_UCCALL:
@@ -4606,7 +4617,9 @@ R_API RList* r_core_anal_cycles(RCore *core, int ccl) {
 				r_list_append (hooks, ch);
 				ch = NULL;
 				ccl -= op->failcycles;
-				eprintf ("0x%08"PFMT64x" > ?\r", op->addr);
+				if (verbose) {
+					eprintf ("0x%08"PFMT64x" > ?\r", op->addr);
+				}
 				break;
 			case R_ANAL_OP_TYPE_CCALL:
 				ch = R_NEW0 (RAnalCycleHook);
@@ -4623,7 +4636,9 @@ R_API RList* r_core_anal_cycles(RCore *core, int ccl) {
 				}
 				ccl -= op->cycles;
 				addr = op->jump;
-				loganal (op->addr, addr, depth - 1);
+				if (verbose) {
+					loganal (op->addr, addr, depth - 1);
+				}
 				break;
 			case R_ANAL_OP_TYPE_RET:
 				ch = R_NEW0 (RAnalCycleHook);
@@ -4632,12 +4647,16 @@ R_API RList* r_core_anal_cycles(RCore *core, int ccl) {
 					ccl -= op->cycles;
 					ch->cycles = ccl;
 					r_list_push (prev->hooks, ch);
-					eprintf ("0x%08"PFMT64x" < 0x%08"PFMT64x"\r", prev->naddr, op->addr);
+					if (verbose) {
+						eprintf ("0x%08"PFMT64x" < 0x%08"PFMT64x"\r", prev->naddr, op->addr);
+					}
 				} else {
 					ch->addr = op->addr;
 					ch->cycles = ccl;
 					r_list_append (hooks, ch);
-					eprintf ("? < 0x%08"PFMT64x"\r", op->addr);
+					if (verbose) {
+						eprintf ("? < 0x%08"PFMT64x"\r", op->addr);
+					}
 				}
 				ch = NULL;
 				while (!ch && cf) {
@@ -4661,18 +4680,24 @@ R_API RList* r_core_anal_cycles(RCore *core, int ccl) {
 					ch->addr = prev->naddr;
 					ch->cycles = ccl - op->cycles;
 					r_list_push (prev->hooks, ch);
-					eprintf ("0x%08"PFMT64x" < 0x%08"PFMT64x"\r", prev->naddr, op->addr);
+					if (verbose) {
+						eprintf ("0x%08"PFMT64x" < 0x%08"PFMT64x"\r", prev->naddr, op->addr);
+					}
 				} else {
 					ch->addr = op->addr;
 					ch->cycles = ccl - op->cycles;
 					r_list_append (hooks, ch);
-					eprintf ("? < 0x%08"PFMT64x"\r", op->addr);
+					if (verbose) {
+						eprintf ("? < 0x%08"PFMT64x"\r", op->addr);
+					}
 				}
 				ccl -= op->failcycles;
 				break;
 			default:
 				ccl -= op->cycles;
-				eprintf ("0x%08"PFMT64x"\r", op->addr);
+				if (verbose) {
+					eprintf ("0x%08"PFMT64x"\r", op->addr);
+				}
 				break;
 			}
 		} else {

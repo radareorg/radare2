@@ -1,12 +1,72 @@
 NAME=snes
 FILE=bins/snes/speed_test_v51.sfc
-ARGS=-b16 -a snes
 CMDS=<<EOF
+i
 e anal.hasnext=true
+-a
+-b
+aia
 afr
+aflq~:0..10
+# aflc returns different on different machines. but it was wrong before, so thats a smol improvement at least
+EOF
+EXPECT=<<EOF
+fd       3
+file     bins/snes/speed_test_v51.sfc
+size     0x10000
+humansz  64K
+mode     r-x
+format   sfc
+iorw     false
+block    0x100
+type     ROM
+arch     snes
+baddr    0xffffffffffffffff
+binsz    65536
+bits     16
+canary   false
+retguard false
+crypto   false
+endian   little
+havecode true
+laddr    0x0
+linenum  false
+lsyms    false
+machine  Super NES / Super Famicom
+nx       false
+os       snes
+pic      false
+relocs   false
+sanitize false
+static   true
+stripped false
+va       true
+snes
+16
+minopsz 1
+maxopsz 3
+invopsz 1
+pcalign 1
+0x00400000 
+0x00400039 
+0x00408399 
+0x0040839c 
+0x0040839f 
+0x004083a2 
+0x004083a5 
+0x004083a8 
+0x004083ab 
+0x004083ae 
+EOF
+RUN
+
+NAME=snes2
+FILE=bins/snes/speed_test_v51.sfc
+CMDS=<<EOF
+aac
 aflc
 EOF
 EXPECT=<<EOF
-226
+20
 EOF
 RUN
