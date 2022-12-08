@@ -1572,10 +1572,10 @@ static int cmd_join(void *data, const char *input) { // "join"
 		free (res);
 		return R_CMD_RC_SUCCESS;
 	}
-	if (input[0] == 's') {
-		if (input[1] == ':') {
-			r_core_cmdf (core, ". %s", input + 1);
-		} else if (input[1] == '-') {
+	if (input[0] == 's') { // "js"
+		if (input[1] == ':' || input[1] == '.') { // "js:"
+			r_core_cmdf (core, ". %s", input + 2);
+		} else if (input[1] == '-') { // "js-"
 			if (r_config_get_b (core->config, "scr.interactive")) {
 				int sz;
 				char *data = r_stdin_slurp (&sz);
@@ -1592,7 +1592,7 @@ static int cmd_join(void *data, const char *input) { // "join"
 			} else {
 				R_LOG_ERROR ("requires scr.interactive");
 			}
-		} else if (input[1] == ' ') {
+		} else if (input[1] == ' ') { // "js "
 			if (r_lang_use (core->lang, "mujs")) {
 				r_lang_run (core->lang, input + 1, -1);
 			} else {
