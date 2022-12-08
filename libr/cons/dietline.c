@@ -1905,10 +1905,10 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 						}
 						r_cons_set_raw (1);
 						break;
-					case 0x37:	// HOME xrvt-unicode
+					case 0x37: // HOME xrvt-unicode
 						r_cons_readchar ();
 						break;
-					case 0x48:	// HOME
+					case 0x48: // HOME
 						if (I.sel_widget) {
 							selection_widget_up (I.sel_widget->options_len - 1);
 							selection_widget_draw ();
@@ -1916,10 +1916,10 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 						}
 						I.buffer.index = 0;
 						break;
-					case 0x34:	// END
-					case 0x38:	// END xrvt-unicode
+					case 0x34: // END
+					case 0x38: // END xrvt-unicode
 						r_cons_readchar ();
-					case 0x46:	// END
+					case 0x46: // END
 						if (I.sel_widget) {
 							selection_widget_down (I.sel_widget->options_len - 1);
 							selection_widget_draw ();
