@@ -123,7 +123,6 @@ r_anal_sources = [
   'p/anal_ws.c',
   # join_paths('arch/whitespace/wsdis.c'),
   'p/anal_x86_cs.c',
-  'p/anal_xap.c',
   'p/anal_xcore_cs.c',
   'p/anal_xtensa.c',
   'p/anal_z80.c',
