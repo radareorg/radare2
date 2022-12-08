@@ -31,6 +31,24 @@ R_LIB_VERSION_HEADER (r_lib);
 #define R_LIB_EXT "so"
 #endif
 
+typedef enum r_plugin_status_t {
+	R_PLUGIN_STATUS_BROKEN = 0,
+	R_PLUGIN_STATUS_INCOMPLETE = 1,
+	R_PLUGIN_STATUS_BASIC = 2,
+	R_PLUGIN_STATUS_OK = 3,
+	R_PLUGIN_STATUS_GOOD= 4,
+	R_PLUGIN_STATUS_COMPLETE = 5,
+} RPluginStatus;
+
+typedef struct r_plugin_meta_t {
+	char *name;
+	char *desc;
+	char *author;
+	char *version;
+	char *license;
+	RPluginStatus status;
+} RPluginMeta;
+
 /* store list of loaded plugins */
 typedef struct r_lib_plugin_t {
 	int type;
@@ -38,9 +56,13 @@ typedef struct r_lib_plugin_t {
 	void *data; /* user pointer */
 	struct r_lib_handler_t *handler;
 	void *dl_handler; // DL HANDLER
+	void (*free)(void *data);
+#if 0
 	char *author;
 	char *version;
-	void (*free)(void *data);
+	char *license;
+	RLibStatus status;
+#endif
 } RLibPlugin;
 
 /* store list of initialized plugin handlers */
