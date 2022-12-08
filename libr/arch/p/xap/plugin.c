@@ -1,11 +1,8 @@
-/* radare - LGPL - Copyright 2008-2016 - pancake */
+/* radare - LGPL - Copyright 2008-2016,2022 - pancake */
 
-#include <string.h>
-#include <r_types.h>
 #include <r_lib.h>
-#include <r_asm.h>
-#include <r_anal.h>
-#include "../asm/arch/xap/dis.c"
+#include <r_arch.h>
+#include "./dis.c"
 
 static int label_off(struct directive *d) {
 	int off = d->d_operand;
@@ -37,13 +34,15 @@ static inline ut16 i2ut16(struct instruction *in) {
 	return *((uint16_t*)in);
 }
 
-static int xap_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *bytes, int len, RAnalOpMask mask) {
+static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
+	const ut64 addr = op->addr;
+	const ut8 *bytes = op->bytes;
 	struct instruction *in = (struct instruction *)bytes;
 	ut16 lol, ins;
 	struct directive d = {{0}};
 	struct state s = {0};
 
-	if (!anal || !op) {
+	if (!op) {
 		return 2;
 	}
 
@@ -213,20 +212,21 @@ static int xap_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *bytes, int len
 	return op->size;
 }
 
-RAnalPlugin r_anal_plugin_xap = {
+RArchPlugin r_arch_plugin_xap = {
 	.name = "xap",
 	.desc = "XAP code analysis plugin",
 	.license = "LGPL3",
+	.author = "pancake",
 	.arch = "xap",
-	.bits = 16,
+	.bits = R_SYS_BITS_PACK1 (16),
 	.endian = R_SYS_ENDIAN_LITTLE,
-	.op = &xap_op,
+	.decode = &decode,
 };
 
 #ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_ANAL,
-	.data = &r_anal_plugin_xap,
+	.type = R_LIB_TYPE_ARCH,
+	.data = &r_arch_plugin_xap,
 	.version = R2_VERSION
 };
 #endif

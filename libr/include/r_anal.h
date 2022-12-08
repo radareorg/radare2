@@ -1702,7 +1702,6 @@ extern RAnalPlugin r_anal_plugin_x86_cs;
 extern RAnalPlugin r_anal_plugin_x86_im;
 extern RAnalPlugin r_anal_plugin_x86_simple;
 extern RAnalPlugin r_anal_plugin_x86_udis;
-extern RAnalPlugin r_anal_plugin_xap;
 extern RAnalPlugin r_anal_plugin_xcore_cs;
 extern RAnalPlugin r_anal_plugin_xtensa;
 extern RAnalPlugin r_anal_plugin_arm_v35;

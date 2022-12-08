@@ -255,6 +255,7 @@ extern RArchPlugin r_arch_plugin_x86_nz;
 extern RArchPlugin r_arch_plugin_x86_nasm;
 extern RArchPlugin r_arch_plugin_snes;
 extern RArchPlugin r_arch_plugin_6502;
+extern RArchPlugin r_arch_plugin_xap;
 
 #ifdef __cplusplus
 }
