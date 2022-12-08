@@ -1065,7 +1065,7 @@ static void ds_build_op_str(RDisasmState *ds, bool print_color) {
 	}
 	if (!ds->opstr) {
 		// asmop works, analop fails hard
-		ds->opstr = strdup (r_asm_op_get_asm (&ds->asmop));
+		ds->opstr = strdup (r_str_get (r_asm_op_get_asm (&ds->asmop)));
 	}
 	/* initialize */
 	core->parser->subrel = r_config_get_i (core->config, "asm.sub.rel");
