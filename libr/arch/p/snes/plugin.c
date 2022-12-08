@@ -8,8 +8,8 @@
 #include "optable.h"
 
 struct snes_asm_flags {
-	unsigned char M;
-	unsigned char X;
+	ut8 M;
+	ut8 X;
 };
 
 static R_TH_LOCAL struct snes_asm_flags snesflags = {0};
@@ -22,9 +22,9 @@ static char *snes_disass(ut64 pc, const ut8 *buf, int len) {
 	if (len < op_len) {
 		return 0;
 	}
-	const char * buf_asm = "invalid";
+	const char *buf_asm = "invalid";
 	r_strf_buffer (64);
-	switch (s_op->len) {
+	switch (s_op->flags) {
 	case SNES_OP_8BIT:
 		buf_asm = s_op->name;
 		break;
@@ -65,15 +65,32 @@ static char *snes_disass(ut64 pc, const ut8 *buf, int len) {
 	return strdup (buf_asm);
 }
 
-static int snes_anop(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
-	ut64 addr = op->addr;
-	ut8 *data = op->bytes;
-	int len = op->size;
-	// RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len, RAnalOpMask mask) {
+static int snes_info(RArchSession *as, ut32 q) {
+	switch (q) {
+	case R_ANAL_ARCHINFO_ALIGN:
+		return 1;
+	case R_ANAL_ARCHINFO_MAX_OP_SIZE:
+		// some ops accept newline terminated strings of arbitrary len...
+		return 3;
+	case R_ANAL_ARCHINFO_INV_OP_SIZE:
+		return 1;
+	case R_ANAL_ARCHINFO_MIN_OP_SIZE:
+		return 1;
+	}
+	return -1;
+}
 
-	op->size = snes_op_get_size (snesflags.M, snesflags.X, &snes_op[data[0]]);
-	if (op->size > len) {
-		return op->size = 0;
+static bool snes_anop(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
+	const ut64 addr = op->addr;
+	const ut8 *data = op->bytes;
+	const int len = op->size;
+
+	int opsize = snes_op_get_size (snesflags.M, snesflags.X, &snes_op[data[0]]);
+	op->size = opsize;
+	if (opsize > len) {
+		r_anal_op_set_mnemonic (op, addr, "truncated");
+		op->size = 1;
+		return false;
 	}
 	op->nopcode = 1;
 	op->addr = addr;
@@ -182,6 +199,10 @@ static int snes_anop(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 	// ror
 	case 0x66: case 0x6a: case 0x6e: case 0x76: case 0x7e:
 		op->type = R_ANAL_OP_TYPE_ROR;
+		break;
+	// sei
+	case 0x78:
+		op->type = R_ANAL_OP_TYPE_MOV;
 		break;
 	// sbc
 	case 0xe1: case 0xe3: case 0xe5: case 0xe7: case 0xe9: case 0xed:
@@ -300,16 +321,18 @@ static int snes_anop(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 		}
 		break;
 	}
-	return op->size;
+	return true;
 }
 
 RArchPlugin r_arch_plugin_snes = {
 	.name = "snes",
 	.desc = "SNES analysis plugin",
 	.license = "LGPL3",
+	.author = "pancake",
 	.arch = "snes", // modified 6502 ?
 	.bits = R_SYS_BITS_PACK2 (8, 16),
 	.decode = snes_anop,
+	.info = snes_info,
 };
 
 #ifndef R2_PLUGIN_INCORE

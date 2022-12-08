@@ -274,10 +274,15 @@ R_API bool r_core_hack(RCore *core, const char *op) {
 	}
 #if R2_580
 	// TODO: call RArch.patch() if available, otherwise just do this hack until all anal plugs are moved to arch
+	// r_arch_patch (aop, 0);
 	RArchSession *acur = R_UNWRAP3 (core, rasm, acur);
 	if (acur && acur->plugin->patch) {
 		RAnalOp *aop = r_anal_op_new ();
 		r_anal_op_set_mnemonic (aop, core->offset, op);
+		r_anal_op_set_bytes (aop, core->offset, r_mem_dup (core->block, core->blocksize), core->blocksize);
+#if 0
+		r_arch_session_patch (core->anal->arch, aop, 0);
+#endif
 		bool res = acur->plugin->patch (acur, aop, 0);
 		if (res) {
 			// ... r_io_write_at ()
