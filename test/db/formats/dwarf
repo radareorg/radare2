@@ -677,3 +677,23 @@ WARN: run r2 with -e bin.cache=true to fix relocations in disassembly
 WARN: DWARF5 format is not yet supported by radare2, please contribute
 EOF
 RUN
+
+NAME=test dwarf4 code listing
+FILE=bins/elf/dwarf/hello-dwarf4
+CMDS=<<EOF
+s main
+af
+# TODO .add test for dir.source
+cd bins/elf/dwarf
+list
+CLL
+EOF
+EXPECT=<<EOF
+0x00001149  int main() {
+0x00001151  	printf ("Hello World\n");
+0x00001160  	printf ("How Are You?\n");
+0x00001174  }
+0x00001149  int main() {
+0x00001149  int main() {
+EOF
+RUN

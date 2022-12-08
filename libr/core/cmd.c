@@ -1507,7 +1507,7 @@ static int cmd_l(void *data, const char *input) { // "l"
 			r_core_cmd_help_match (core, help_msg_l, "le", true);
 		}
 		break;
-	case 'i':
+	case 'i': // "li"
 		r_core_cmd0 (core, "CLL@@c:afbo");
 		break;
 	case 'r': // "lr"
