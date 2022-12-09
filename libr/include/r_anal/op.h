@@ -261,6 +261,7 @@ typedef struct r_anal_op_t {
 	int payload; // used for instructions like dalvik's switch-payload
 } RAnalOp;
 
+R_API RAnalOp *r_anal_op_clone(RAnalOp *op);
 R_API void r_anal_op_free(void *_op);
 R_API bool r_anal_op_nonlinear(int t);
 R_API void r_anal_op_init(RAnalOp *op);
