@@ -20,6 +20,9 @@ R_LIB_VERSION(r_lang);
 #include "p/go.c"    // hardcoded
 #include "p/lib.c"
 
+// always in!
+#include "p/mujs/plugin.c"
+
 R_API RLang *r_lang_new(void) {
 	RLang *lang = R_NEW0 (RLang);
 	if (!lang) {
@@ -53,6 +56,7 @@ R_API RLang *r_lang_new(void) {
 	r_lang_add (lang, &r_lang_plugin_go);
 	r_lang_add (lang, &r_lang_plugin_spp);
 	r_lang_add (lang, &r_lang_plugin_lib);
+	r_lang_add (lang, &r_lang_plugin_mujs);
 
 	return lang;
 }

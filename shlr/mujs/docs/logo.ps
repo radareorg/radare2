@@ -1,0 +1,47 @@
+%!
+<</PageSize[512 512]>>setpagedevice
+
+% #323330 = 50 51 48
+% #F0DB4F = 240 219 79
+% #4386b5 = 67 134 181
+
+/cG { 50 255 div 51 255 div 48 255 div setrgbcolor } def
+/cY { 240 255 div 219 255 div 79 255 div setrgbcolor } def
+/cB { 67 255 div 134 255 div 181 255 div setrgbcolor } def
+
+% fill background with yellow
+cY
+0 0 moveto 512 0 lineto 512 512 lineto 0 512 lineto closepath fill
+
+% move logo to lower right corner
+512 0.2 mul 0 translate
+0.8 0.8 scale
+
+% center logo
+0.875 0.875 scale
+32 32 translate
+
+% draw electrons and nucleus
+cG
+gsave
+	256 256 translate
+
+	16 setlinewidth
+	gsave 0 rotate .5 1 scale 0 0 232 0 360 arc stroke grestore
+	gsave 60 rotate .5 1 scale 0 0 232 0 360 arc stroke grestore
+	gsave 120 rotate .5 1 scale 0 0 232 0 360 arc stroke grestore
+
+	0 0 96 0 360 arc fill
+grestore
+
+% draw yellow 'JS' text in center of nucleus
+cY
+gsave
+	/SourceSansPro-Bold findfont 128 scalefont setfont
+	256 256 moveto
+	(JS)
+	dup stringwidth pop -2 div -44 rmoveto
+	show
+grestore
+
+showpage

@@ -9,7 +9,7 @@ cd `dirname $PWD/$0` ; cd ..
 OLD_LDFLAGS="${LDFLAGS}"
 unset LDFLAGS
 
-export CC="emcc -Os -s WASM=1 -s SIDE_MODULE=1"
+export CC="emcc -Os -s WASM=1 -s SIDE_MODULE=1 -sSUPPORT_LONGJMP=emscripten"
 export AR="emar"
 
 CFGFLAGS="./configure --prefix=/usr --disable-debugger --with-compiler=wasm --with-static-themes --with-libr"

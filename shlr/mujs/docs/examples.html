@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html>
+<head>
+<link href="style.css" rel="stylesheet">
+<title>MuJS Examples</title>
+</head>
+
+<body>
+
+<header>
+<h1>MuJS Examples</h1>
+</header>
+
+<nav>
+<a href="introduction.html">Introduction</a>
+<a href="reference.html">Reference</a>
+<a href="examples.html">Examples</a>
+<a href="license.html">License</a>
+<a href="http://git.ghostscript.com/?p=mujs.git;a=summary">Source</a>
+<a href="https://bugs.ghostscript.com/">Bugs</a>
+</nav>
+
+<article>
+
+<h2>A stand-alone interpreter</h2>
+
+<pre>
+#include &lt;stdio.h&gt;
+#include &lt;mujs.h&gt;
+
+int main(int argc, char **argv)
+{
+	char line[256];
+	js_State *J = js_newstate(NULL, NULL, JS_STRICT);
+	while (fgets(line, sizeof line, stdin))
+		js_dostring(J, line);
+	js_freestate(J);
+}
+</pre>
+
+<h2>Hello, world!</h2>
+
+<pre>
+#include &lt;stdio.h&gt;
+#include &lt;mujs.h&gt;
+
+static void hello(js_State *J)
+{
+	const char *name = js_tostring(J, 1);
+	printf("Hello, %s!\n", name);
+	js_pushundefined(J);
+}
+
+int main(int argc, char **argv)
+{
+	js_State *J = js_newstate(NULL, NULL, JS_STRICT);
+
+	js_newcfunction(J, hello, "hello", 1);
+	js_setglobal(J, "hello");
+
+	js_dostring(J, "hello('world');");
+
+	js_freestate(J);
+}
+</pre>
+
+<h2>Configuration file</h2>
+
+<pre>
+js_dofile(J, "config.js")
+
+js_getglobal(J, "foo");
+foo = js_tonumber(J, -1);
+js_pop(J, 1);
+</pre>
+
+<h2>Object manipulation</h2>
+
+<pre>
+// t = { foo: 42, bar: true }
+
+js_newobject(J);
+{
+	js_pushnumber(J, 42);
+	js_setproperty(J, -2, "foo");
+	js_pushboolean(J, 1);
+	js_setproperty(J, -2, "bar");
+}
+js_setglobal(J, "t");
+</pre>
+
+<h2>Callbacks from C to JS (by name)</h2>
+
+<pre>
+static int call_callback(js_State *J, const char *arg1, int arg2)
+{
+	int result;
+
+	/* Find the function to call. */
+	js_getglobal(J, "my_callback");
+
+	/* Push arguments to function. */
+	js_pushnull(J); /* the 'this' object to use */
+	js_pushstring(J, arg1);
+	js_pushnumber(J, arg2);
+
+	/* Call function and check for exceptions. */
+	if (js_pcall(J, 2)) {
+		fprintf(stderr, "an exception occurred in the javascript callback\n");
+		js_pop(J, 1);
+		return -1;
+	}
+
+	/* Retrieve return value. */
+	result = js_tonumber(J, -1);
+	js_pop(J, 1);
+
+	return result;
+}
+</pre>
+
+<h2>Callbacks from C to JS</h2>
+
+<pre>
+const char *handle = NULL; /* handle to stowed away js function */
+
+static void set_callback(js_State *J)
+{
+	if (handle)
+		js_unref(J, handle); /* delete old function */
+	js_copy(J, 1);
+	handle = js_ref(J); /* stow the js function in the registry */
+}
+
+static void call_callback(js_State *J, int arg1, int arg2)
+{
+	js_getregistry(J, handle); /* retrieve the js function from the registry */
+	js_pushnull(J);
+	js_pushnumber(J, arg1);
+	js_pushnumber(J, arg2);
+	js_pcall(J, 2);
+	js_pop(J, 1);
+}
+</pre>
+
+<h2>Complete userdata example</h2>
+
+<pre>
+#include &lt;stdio.h&gt;
+#include &lt;mujs.h&gt;
+
+#define TAG "File"
+
+static void new_File(js_State *J)
+{
+	FILE *file;
+
+	if (js_isundefined(J, 1)) {
+		file = stdin;
+	} else {
+		const char *filename = js_tostring(J, 1);
+		file = fopen(filename, "r");
+		if (!file)
+			js_error(J, "cannot open file: '%s'", filename);
+	}
+
+	js_currentfunction(J);
+	js_getproperty(J, -1, "prototype");
+	js_newuserdata(J, TAG, file);
+}
+
+static void File_prototype_readByte(js_State *J)
+{
+	FILE *file = js_touserdata(J, 0, TAG);
+	js_pushnumber(J, getc(file));
+}
+
+static void File_prototype_readLine(js_State *J)
+{
+	char line[256], *s;
+	FILE *file = js_touserdata(J, 0, TAG);
+	s = fgets(line, sizeof line, file);
+	if (s)
+		js_pushstring(J, line);
+	else
+		js_pushnull(J);
+}
+
+static void File_prototype_close(js_State *J)
+{
+	FILE *file = js_touserdata(J, 0, TAG);
+	fclose(file);
+	js_pushundefined(J);
+}
+
+void initfile(js_State *J)
+{
+	js_getglobal(J, "Object");
+	js_getproperty(J, -1, "prototype");	// File.prototype.[[Prototype]] = Object.prototype
+	js_newuserdata(J, TAG, stdin);		// File.prototype.[[Userdata]] = stdin
+	{
+		js_newcfunction(J, File_prototype_readByte, "File.prototype.readByte", 0);
+		js_defproperty(J, -2, "readByte", JS_DONTENUM);
+
+		js_newcfunction(J, File_prototype_readLine, "File.prototype.readLine", 0);
+		js_defproperty(J, -2, "readLine", JS_DONTENUM);
+
+		js_newcfunction(J, File_prototype_close, "File.prototype.close", 0);
+		js_defproperty(J, -2, "close", JS_DONTENUM);
+	}
+	js_newcconstructor(J, new_File, new_File, "File", 1);
+	js_defglobal(J, "File", JS_DONTENUM);
+}
+</pre>
+
+</article>
+
+<footer>
+<a href="http://artifex.com"><img src="artifex-logo.png" align="right"></a>
+Copyright &copy; 2013-2017 Artifex Software Inc.
+</footer>
+
+</body>
+</html>

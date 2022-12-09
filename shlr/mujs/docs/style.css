@@ -1,0 +1,40 @@
+h1, nav, footer { font-family: sans-serif; }
+
+a { text-decoration: none; }
+a:hover { text-decoration: underline; }
+h2 { font-size: 1.25rem; }
+h3 { font-size: 1.12rem; }
+ul li { list-style-type: circle; }
+pre, table, ol, dl { margin-left: 2rem; }
+li { margin: 0; }
+th, td { text-align: left; vertical-align: top; }
+
+body { margin: 0; }
+h1 {
+	font-weight: normal;
+	margin: 0;
+	padding: 1rem 2rem;
+}
+header{
+	color: white;
+	background: no-repeat;
+	background-color: #36648b;
+	background-image: url("mujs-logo.png");
+	background-position: top right;
+	min-height: 72px;
+}
+nav {
+	padding: 0.75rem 2rem;
+	background-color: #ddd;
+	no-text-transform: uppercase;
+}
+nav a { color: #303030; padding-right: 2rem; }
+article {
+	max-width: 50rem;
+	margin: 2rem;
+}
+footer {
+	background-color: #ddd;
+	color: #303030;
+	padding: 1rem 2rem;
+}

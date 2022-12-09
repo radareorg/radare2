@@ -1,0 +1,139 @@
+#!/bin/sh
+
+usage() {
+	[ "${1-}" ] && { to=2; >&$to printf "Error: %s\n" "$1"; } || to=1
+	>&$to echo "Usage: ${0##*/} [OPTIONS] test-file | test-dir"
+	>&$to echo "Run test-262 ES5 test file or directory (at the test262 dir)."
+	>&$to echo "  -s          Print source code of failed tests."
+	>&$to echo "  -p          Print every test name before running it"
+	>&$to echo "  -f          Display full paths and full stack trace when possible"
+	>&$to echo "  -l file.js  Load file.js after the harness and before the test (up to one)"
+	>&$to echo "  -m MUJS     MUJS is [path/to/]mujs binary to test"
+	>&$to echo "                Default is $(dirname "$0")/../build/release/mujs or mujs at \$PATH"
+	>&$to echo "  -b          Don't skip known bad (crashing/hanging) tests"
+	>&$to echo "  -B          Run only known bad tests"
+	exit $((to-1))
+}
+
+KNOWN_BAD="
+	--hang-with-sta.js:
+	S15.1.3.2_A2.5_T1.js
+	S15.1.3.1_A2.5_T1.js
+
+	--Hang-(or-taking-more-than-few-seconds):
+	15.4.4.18-3-14.js
+	15.4.4.20-3-14.js
+	S15.4.4.10_A3_T2.js
+	S15.4.4.10_A3_T1.js
+	15.4.4.19-3-29.js
+	15.4.4.19-3-28.js
+	15.4.4.19-3-8.js
+	15.4.4.19-3-14.js
+	S15.4.4.8_A3_T3.js
+	15.4.4.22-3-9.js
+	15.4.4.22-3-7.js
+	15.4.4.22-3-25.js
+	15.4.4.22-3-14.js
+	15.4.4.21-3-14.js
+	15.4.4.15-3-28.js
+	15.4.4.15-3-14.js
+	15.4.4.15-3-7.js
+	15.4.4.15-3-25.js
+	15.4.4.15-3-9.js
+"
+
+SKIP_KNOWN=yes  # "yes": skip bad  "no": don't skip  "neg": run only bad
+PRINT_ALL=
+EXTRA_ARGS=
+mujs= lopt=
+
+while getopts bBfhl:ps o; do
+	case $o in
+		h) usage ;;
+		b) SKIP_KNOWN=no ;;
+		B) SKIP_KNOWN=neg ;;
+		p) PRINT_ALL=yes ;;
+		s) EXTRA_ARGS="$EXTRA_ARGS -s" ;;
+		f) EXTRA_ARGS="$EXTRA_ARGS -f" ;;
+		l) [ "$OPTARG" ] && lopt=$OPTARG || usage "empty file for -l" ;;
+		m) mujs=$OPTARG;;
+		*) usage "unknown option -$o" ;;
+	esac
+done
+shift $((OPTIND-1))
+[ $# = 1 ] || usage "expecting one file/dir"
+
+BAD=
+if [ "$SKIP_KNOWN" != no ]; then
+	for b in $KNOWN_BAD; do
+		BAD="$BAD $b "
+	done
+fi
+
+find_root() {
+	ROOT=$1
+	n=0
+	while ! [ -e "$ROOT"/test/harness/sta.js ]; do
+		ROOT=$ROOT/..
+		n=$((n+1))
+		[ $n -lt 10 ] || usage "can't find test-suite root"
+	done
+}
+
+if [ -d "$1" ]; then
+	find_root "$1"
+
+	if [ "$ROOT" = "$1" ]; then
+		FILES_CMD='find "$1/test/suite" -name "*.js" | sort -V'
+	else
+		FILES_CMD='find "$1" -name "*.js" | sort -V'
+	fi
+else
+	find_root "$(dirname "$1")"
+	FILES_CMD='printf "%s\n" "$1"'
+fi
+
+if ! [ "$mujs" ]; then
+	# try to use a recently built mujs rather than a global one
+	mujs=$(dirname "$0")/../build/release/mujs
+	[ -e "$mujs" ] || mujs=mujs
+fi
+jsharness=$(dirname "$0")/test262-harness.js
+
+total=0
+skipped=0
+failed=0
+
+eval "$FILES_CMD" | (
+	while IFS= read -r f && [ "$f" ]; do
+		total=$((total+1))
+		base=${f##*/}
+
+		case $BAD in *" $base "*) bad=yes;; *) bad=no;; esac
+
+		case $bad-$SKIP_KNOWN in
+		yes-yes)
+			skipped=$((skipped+1))
+			printf "[Skipping: $base]\n\n"
+			;;
+		no-neg)  # not known bad and running only bad - don't print anything
+			skipped=$((skipped+1))
+			;;
+		*)
+			[ "$PRINT_ALL" ] && echo "Testing: $f"
+			if ! "$mujs" -- "$jsharness" $EXTRA_ARGS ${lopt:+-l "$lopt"} "$ROOT" "$f" 2>&1; then
+				failed=$((failed+1))
+				echo
+			fi
+		esac
+	done
+
+	if [ $total -gt 1 ]; then
+		printf "Total: $total\n"
+		printf "Pass:  %${#total}s\n" $((total - skipped - failed))
+		printf "Skip:  %${#total}s\n" $skipped
+		printf "Fail:  %${#total}s\n" $failed
+	fi
+
+	[ "$failed" = 0 ]
+)

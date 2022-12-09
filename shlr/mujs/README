@@ -1,0 +1,52 @@
+MuJS: an embeddable Javascript interpreter in C.
+
+ABOUT
+
+MuJS is a lightweight Javascript interpreter designed for embedding in
+other software to extend them with scripting capabilities.
+
+LICENSE
+
+MuJS is Copyright 2013-2017 Artifex Software, Inc.
+
+Permission to use, copy, modify, and/or distribute this software for any
+purpose with or without fee is hereby granted, provided that the above
+copyright notice and this permission notice appear in all copies.
+
+The software is provided "as is" and the author disclaims all warranties with
+regard to this software including all implied warranties of merchantability
+and fitness. In no event shall the author be liable for any special, direct,
+indirect, or consequential damages or any damages whatsoever resulting from
+loss of use, data or profits, whether in an action of contract, negligence
+or other tortious action, arising out of or in connection with the use or
+performance of this software.
+
+COMPILING
+
+If you are building from source you can either use the provided Unix Makefile:
+
+	make release
+
+Or compile the source with your preferred compiler:
+
+	cc -O2 -c one.c -o libmujs.o
+
+INSTALLING
+
+To install the MuJS command line interpreter, static library and header file:
+
+	make prefix=/usr/local install
+
+DOWNLOAD
+
+The latest development source is available directly from the git repository:
+
+	git clone http://git.ghostscript.com/mujs.git
+
+REPORTING BUGS AND PROBLEMS
+
+Report bugs on the ghostscript bugzilla, with MuJS as the selected component.
+
+	http://bugs.ghostscript.com/
+
+The MuJS developers hang out on IRC in the #mupdf channel on irc.freenode.net.

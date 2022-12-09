@@ -1,0 +1,719 @@
+<!DOCTYPE html>
+<html>
+<head>
+<link href="style.css" rel="stylesheet">
+<title>MuJS Reference</title>
+</head>
+
+<body>
+
+<header>
+<h1>MuJS Reference</h1>
+</header>
+
+<nav>
+<a href="introduction.html">Introduction</a>
+<a href="reference.html">Reference</a>
+<a href="examples.html">Examples</a>
+<a href="license.html">License</a>
+<a href="http://git.ghostscript.com/?p=mujs.git;a=summary">Source</a>
+<a href="https://bugs.ghostscript.com/">Bugs</a>
+</nav>
+
+<article>
+
+<h2>Introduction</h2>
+
+<p>
+MuJS is a library, written in clean and simple C.
+Being an extension library, MuJS has no notion of a main program: it only works embedded in a host client program.
+The host program can invoke functions to execute Javascript code, read and write Javascript variables, and register C functions to be called by Javascript.
+
+<p>
+The MuJS distribution includes a sample host program called "mujs", which uses the MuJS library to offer a standalone Javascript interpreter for interactive or batch use.
+
+<p>
+This reference manual assumes that you are already familiar with the Javascript language, in particular the type system and object prototype mechanisms.
+
+<h2>Basic Concepts</h2>
+
+<h3>Values and Types</h3>
+
+<p>
+There are six basic types in Javascript: undefined, null, boolean, number, string and object.
+
+<p>
+Each object also has a class: object, array, function, userdata, regular expression, etc.
+
+<p>
+Javascript can call functions written in C provided by the host program, as well as other Javascript functions.
+
+<p>
+Objects with the userdata class are provided to allow arbitrary C data to be attached to Javascript objects.
+A userdata object has a pointer to a block of raw memory, which is managed by the host.
+Userdata values cannot be created or modified in Javascript, only through the C API.
+This guarantees the integrity of data owned by the host program.
+
+<p>
+Custom properties on userdata objects can be implemented using getter and setter property accessor functions.
+
+<p>
+Numbers are represented using double precision floating point values.
+
+<p>
+Strings in the C interface are zero-terminated byte arrays in WTF-8 encoding.
+This allows both arbitrary 16-bit values (as required by Javascript) and also
+extended code points for the full 21-bit Unicode range.
+These extended characters will mostly work as expected in Javascript.
+
+<p>
+If you have Javascript code that expects to work with UTF-16 surrogate pairs,
+you will need to manually convert any extended characters to surrogate pairs
+and back when passing strings between C and Javascript.
+
+<p>
+The U+0000 character is encoded as the two-byte sequence <C0 80>, same as in
+modified UTF-8.
+
+<h3>Environments</h3>
+
+<p>
+Each function executes within an environment which defines which variables are accessible.
+This is a chain of all environment records in scope, with the global environment at the top.
+Each environment record in MuJS is represented as an object with the null prototype, including the global environment object.
+
+<p>
+The registry is a hidden environment record which is only accessible to C.
+This is where Javascript values and objects that should only be accessible to C functions may be stored.
+
+<h3>Error Handling</h3>
+
+<p>
+All Javascript actions start from C code in the host program calling a function from the MuJS library.
+Whenever an exception is thrown during the compilation or execution of Javascript, control returns to the host, which can take appropriate measures (such as printing an error message).
+C code can also throw exceptions by calling functions to create an error object and return control to Javascript.
+
+<p>
+Internally, MuJS uses the C longjmp facility to handle errors.
+A protected environment uses setjmp to set a recovery point.
+The try statement in Javascript creates such a recovery point, as does calling js_dostring, js_dofile, js_ploadstring, js_ploadfile,
+js_pcall and js_pconstruct.
+
+<p>
+When an error occurs or an exception is thrown from Javascript, it does a long jump to the most recent active recovery point.
+
+<p>
+If an error occurs outside any protected environment, MuJS first calls the panic function and then calls abort, thus exiting the host application.
+Your panic function can avoid this exit by never returning (for example by doing a long jump to your own recovery point outside MuJS).
+
+<h3>Garbage Collection</h3>
+
+<p>
+MuJS performs automatic memory management using a basic mark-and-sweep collector.
+Collection is automatically triggered when enough allocations have accumulated.
+You can also force a collection pass from C.
+
+<p>
+Userdata objects have an associated C finalizer function that is called when
+the corresponding object is freed.
+
+<h3>The Stack</h3>
+
+<p>
+MuJS uses a virtual stack to pass values to and from C.
+Each element in this stack represents a Javascript value (null, number, string, etc).
+
+<p>
+Whenever Javascript calls C, the called function gets a new stack.
+This stack initially contains the this value and any arguments passed to the function.
+When the C function returns, the top value on the stack is passed back to the caller as the return value.
+
+<p>
+The stack values are accessed using stack indices.
+Index 0 always contains the this value, and function arguments are index 1 and up.
+Negative indices count down from the top of the stack, so index -1 is the top of the index and index -2 is the one below that.
+
+<h2>The Application Program Interface</h2>
+
+<h3>State</h3>
+
+<pre>
+typedef struct js_State js_State;
+</pre>
+
+<p>
+The interpreter state is bundled up in the opaque struct js_State.
+This state contains the value stacks, protected environments, and environment records.
+
+<pre>
+js_State *js_newstate(js_Alloc alloc, void *context, int flags);
+</pre>
+
+<p>
+Create a new state using the allocator function and allocator context.
+Pass NULL to use the default allocator.
+
+<p>
+The available flags:
+
+<ul>
+<li>JS_STRICT: compile and run code using ES5 strict mode.
+</ul>
+
+<pre>
+void js_freestate(js_State *J);
+</pre>
+
+<p>
+Destroy the state and free all dynamic memory used by the state.
+
+<h3>Allocator</h3>
+
+<p>
+The interpreter uses a host provided function for all memory allocation needs:
+
+<pre>
+typedef void *(*js_Alloc)(void *memctx, void *ptr, int size);
+</pre>
+
+<p>
+When size is zero, the allocator should behave like free and return NULL.
+When size is not zero, the allocator should behave like realloc.
+The allocator should return NULL if it cannot fulfill the request.
+The default allocator uses malloc, realloc and free.
+
+<h3>Panic</h3>
+
+<pre>
+typedef void (*js_Panic)(js_State *J);
+
+js_Panic js_atpanic(js_State *J, js_Panic panic);
+</pre>
+
+Set a new panic function, and return the old one.
+
+<h3>Report</h3>
+
+<pre>
+typedef void (*js_Report)(js_State *J, const char *message);
+
+void js_setreport(js_State *J, js_Report report);
+</pre>
+
+<p>
+Set a callback function for reporting various warnings
+and garbage collection statistics.
+
+<p>
+The report function must <i>not</i> throw an exception
+or call any other MuJS function except js_getcontext().
+
+<h3>Garbage collection</h3>
+
+<pre>
+js_gc(js_State *J, int report);
+</pre>
+
+<p>
+Force a garbage collection pass.
+If the report argument is non-zero, send a summary of garbage collection statistics to
+the report callback function.
+
+<h3>Loading and compiling scripts</h3>
+
+<p>
+A script is compiled by calling js_loadstring or js_loadfile.
+The result of a successful compilation is a function on the top of the stack.
+This function can then be executed with js_call.
+
+<pre>
+void js_loadstring(js_State *J, const char *filename, const char *source);
+void js_loadfile(js_State *J, const char *filename);
+</pre>
+
+<p>
+Compile the script and push the resulting function.
+
+<pre>
+int js_ploadstring(js_State *J, const char *filename, const char *source);
+int js_ploadfile(js_State *J, const char *filename);
+</pre>
+
+Like js_loadstring/js_loadfile but in a protected environment.
+In case of success, return 0 with the result as a function on the stack.
+In case of failure, return 1 with the error object on the stack.
+
+<h3>Calling functions</h3>
+
+<pre>
+void js_call(js_State *J, int n);
+</pre>
+
+<p>
+To call a function, you must use the following protocol:
+1) push the function to call onto the stack,
+2) push the this value to be used by the function,
+3) push the arguments to the function in order,
+4) finally, call js_call with the number of arguments pushed in step 3.
+
+<p>
+Pop the function, the this value, and all arguments;
+execute the function;
+then push the return value from the function.
+
+<pre>
+void js_construct(js_State *J, int n);
+</pre>
+
+<p>
+The construct function implements the 'new' expression in Javascript.
+This is similar to js_call, but without pushing a this value:
+1) push the constructor function to call onto the stack,
+2) push the arguments to the constructor function in order,
+3) finally, call js_construct with the number of arguments pushed in step 2.
+
+<pre>
+int js_pcall(js_State *J, int n);
+int js_pconstruct(js_State *J, int n);
+</pre>
+
+<p>
+Like js_call and js_construct but in a protected environment.
+In case of success, return 0 with the result on the stack.
+In case of failure, return 1 with the error object on the stack.
+
+<h3>Script helpers</h3>
+
+<p>
+There are two convenience functions for loading and executing code.
+
+<pre>
+int js_dostring(js_State *J, const char *source);
+</pre>
+
+<p>
+Compile and execute the script in the zero-terminated string in source argument.
+If any errors occur, call the report callback function and return 1.
+Return 0 on success.
+
+<pre>
+int js_dofile(js_State *J, const char *filename);
+</pre>
+
+<p>
+Load the script from the file with the given filename, then compile and execute it.
+If any errors occur, call the report callback function and return 1.
+Return 0 on success.
+
+<h3>Protected environments</h3>
+
+<p>
+The js_try macro pushes a new protected environment and calls setjmp.
+If it returns true, an error has occurred. The protected environment has been popped
+and the error object is located on the top of the stack.
+
+<p>
+At the end of the code you want to run in the protected environment you must call
+js_endtry in order to pop the protected environment. Note: you should <i>not</i> call
+js_endtry when an error has occurred and you are in the true-branch of js_try.
+
+<p>
+Since the macro is a wrapper around setjmp, the usual
+<a href="http://pubs.opengroup.org/onlinepubs/007908799/xsh/setjmp.html">restrictions</a> apply.
+Use the following example as a guide for how to use js_try:
+
+<pre>
+if (js_try(J)) {
+	fprintf(stderr, "error: %s", js_trystring(J, -1, "Error"));
+	js_pop(J, 1);
+	return;
+}
+do_some_stuff();
+js_endtry(J);
+</pre>
+
+<p>
+Most of the time you shouldn't need to worry about protected environments.
+The functions prefixed with 'p' (js_pcall, js_ploadstring, etc) handle setting
+up the protected environment and return simple error codes.
+
+<h3>Errors</h3>
+
+<pre>
+void js_throw(js_State *J);
+</pre>
+
+<p>
+Pop the error object on the top of the stack and return control flow to the most recent protected environment.
+
+<pre>
+void js_newerror(js_State *J, const char *message);
+void js_newevalerror(js_State *J, const char *message);
+void js_newrangeerror(js_State *J, const char *message);
+void js_newreferenceerror(js_State *J, const char *message);
+void js_newsyntaxerror(js_State *J, const char *message);
+void js_newtypeerror(js_State *J, const char *message);
+void js_newurierror(js_State *J, const char *message);
+</pre>
+
+<p>
+Push a new error object on the stack.
+
+<pre>
+void js_error(js_State *J, const char *fmt, ...);
+void js_evalerror(js_State *J, const char *fmt, ...);
+void js_rangeerror(js_State *J, const char *fmt, ...);
+void js_referenceerror(js_State *J, const char *fmt, ...);
+void js_syntaxerror(js_State *J, const char *fmt, ...);
+void js_typeerror(js_State *J, const char *fmt, ...);
+void js_urierror(js_State *J, const char *fmt, ...);
+</pre>
+
+<p>
+Wrapper to push a new error object on the stack using a printf formatting string and call js_throw.
+
+<h3>Stack manipulation</h3>
+
+<pre>
+int js_gettop(js_State *J);
+void js_pop(js_State *J, int n);
+void js_rot(js_State *J, int n);
+void js_copy(js_State *J, int idx);
+void js_remove(js_State *J, int idx);
+void js_insert(js_State *J, int idx);
+void js_replace(js_State* J, int idx);
+</pre>
+
+<h3>Comparisons and arithmetic</h3>
+
+<pre>
+void js_concat(js_State *J);
+int js_compare(js_State *J, int *okay);
+int js_equal(js_State *J);
+int js_strictequal(js_State *J);
+int js_instanceof(js_State *J);
+</pre>
+
+<p>
+The equivalent of the '+', comparison, and instanceof operators.
+The okay argument to js_compare is set to 0 if any of the values are NaN, otherwise it is set to 1.
+
+</pre>
+
+<h3>Primitive values</h3>
+
+<pre>
+void js_pushundefined(js_State *J);
+void js_pushnull(js_State *J);
+void js_pushboolean(js_State *J, int v);
+void js_pushnumber(js_State *J, double v);
+void js_pushstring(js_State *J, const char *v);
+void js_pushliteral(js_State *J, const char *v);
+</pre>
+
+<p>
+Push primitive values.
+js_pushstring makes a copy of the string, so it may be freed or changed after passing it in.
+js_pushliteral keeps a pointer to the string, so it must not be changed or freed after passing it in.
+
+<pre>
+int js_isdefined(js_State *J, int idx);
+int js_isundefined(js_State *J, int idx);
+int js_isnull(js_State *J, int idx);
+int js_isboolean(js_State *J, int idx);
+int js_isnumber(js_State *J, int idx);
+int js_isstring(js_State *J, int idx);
+int js_isprimitive(js_State *J, int idx);
+</pre>
+
+<p>
+Test if a primitive value is of a given type.
+
+<pre>
+int js_toboolean(js_State *J, int idx);
+double js_tonumber(js_State *J, int idx);
+int js_tointeger(js_State *J, int idx);
+int js_toint32(js_State *J, int idx);
+unsigned int js_touint32(js_State *J, int idx);
+short js_toint16(js_State *J, int idx);
+unsigned short js_touint16(js_State *J, int idx);
+const char *js_tostring(js_State *J, int idx);
+</pre>
+
+<p>
+Convert the value at the given index into a C value.
+If the value is an object, invoke the toString and/or valueOf methods to do the conversion.
+
+<p>
+The conversion may <i>change the actual value in the stack</i>!
+
+<p>
+There is no guarantee that the pointer returned by js_tostring will be valid after
+the corresponding value is removed from the stack.
+
+<p>
+Note that the toString and valueOf methods that may be invoked by these functions
+can throw exceptions. If you want to catch and ignore exceptions, use the following
+functions instead. The 'error' argument is the default value that will be returned
+if a toString/valueOf method throws an exception.
+
+<pre>
+int js_tryboolean(js_State *J, int idx, int error);
+double js_trynumber(js_State *J, int idx, double error);
+int js_tryinteger(js_State *J, int idx, int error);
+const char *js_trystring(js_State *J, int idx, const char *error);
+</pre>
+
+<h3>Objects</h3>
+
+<pre>
+enum {
+	JS_REGEXP_G = 1,
+	JS_REGEXP_I = 2,
+	JS_REGEXP_M = 4,
+};
+
+void js_newobject(js_State *J);
+void js_newarray(js_State *J);
+void js_newboolean(js_State *J, int v);
+void js_newnumber(js_State *J, double v);
+void js_newstring(js_State *J, const char *v);
+void js_newregexp(js_State *J, const char *pattern, int flags);
+</pre>
+
+<p>
+Create and push objects on the stack.
+
+<pre>
+int js_isobject(js_State *J, int idx);
+int js_isarray(js_State *J, int idx);
+int js_iscallable(js_State *J, int idx);
+int js_isregexp(js_State *J, int idx);
+</pre>
+
+<p>
+Test the type and class of an object on the stack.
+
+<h3>Properties</h3>
+
+<p>
+The property functions all work on an object.
+If the stack slot referenced by the index does not contain an object, they will throw an error.
+
+<pre>
+enum {
+	JS_READONLY = 1,
+	JS_DONTENUM = 2,
+	JS_DONTCONF = 4,
+};
+</pre>
+
+<p>
+Property attribute bit-mask values.
+
+<pre>
+int js_hasproperty(js_State *J, int idx, const char *name);
+</pre>
+
+<p>
+If the object has a property with the given name, return 1 and push the value of the property; otherwise return 0 and leave the stack untouched.
+
+<pre>
+void js_getproperty(js_State *J, int idx, const char *name);
+</pre>
+
+<p>
+Push the value of the named property of the object.
+If the object does not have the named property, push undefined instead.
+
+<pre>
+void js_setproperty(js_State *J, int idx, const char *name);
+</pre>
+
+<p>
+Pop a value from the top of the stack and set the value of the named property of the object.
+
+<pre>
+void js_defproperty(js_State *J, int idx, const char *name, int atts);
+</pre>
+
+<p>
+Pop a value from the top of the stack and set the value of the named property of the object.
+Also define the property attributes.
+
+<pre>
+void js_defaccessor(js_State *J, int idx, const char *name, int atts);
+</pre>
+
+<p>
+Define the getter and setter attributes of a property on the object.
+Pop the two getter and setter functions from the stack.
+Use null instead of a function object if you want to leave any of the functions unset.
+
+<pre>
+void js_delproperty(js_State *J, int idx, const char *name);
+</pre>
+
+<p>
+Delete the named property from the object.
+
+<h3>Array properties</h3>
+
+<pre>
+int js_getlength(js_State *J, int idx);
+void js_setlength(js_State *J, int idx, int len);
+</pre>
+
+<p>
+Wrappers to get and set the "length" property of an object.
+
+<pre>
+int js_hasindex(js_State *J, int idx, int i);
+void js_getindex(js_State *J, int idx, int i);
+void js_setindex(js_State *J, int idx, int i);
+void js_delindex(js_State *J, int idx, int i);
+</pre>
+
+<p>
+These array index functions functions are simple wrappers around the equivalent property functions.
+They convert the numeric index to a string to use as the property name.
+
+<h3>Globals</h3>
+
+<pre>
+void js_pushglobal(js_State *J);
+</pre>
+
+<p>
+Push the object representing the global environment record.
+
+<pre>
+void js_getglobal(js_State *J, const char *name);
+void js_setglobal(js_State *J, const char *name);
+void js_defglobal(js_State *J, const char *name, int atts);
+</pre>
+
+<p>
+Wrappers around js_pushglobal and js_get/set/defproperty to read and write the values of global variables.
+
+<h3>C Functions</h3>
+
+<pre>
+void js_newcfunction(js_State *J, js_CFunction fun, const char *name, int length);
+</pre>
+
+<p>
+Push a function object wrapping a C function pointer.
+
+<p>
+The length argument is the number of arguments to the function.
+If the function is called with fewer arguments, the argument list will be padded with undefined.
+
+<pre>
+void js_newcconstructor(js_State *J,
+	js_CFunction fun, js_CFunction con,
+	const char *name, int length);
+</pre>
+
+<p>
+Pop the object to set as the "prototype" property for the constructor function object.
+Push a function object wrapping a C function pointer, allowing for separate function pointers for regular calls and 'new' operator calls.
+
+<pre>
+void js_currentfunction(js_State *J);
+</pre>
+
+<p>
+Push the currently executing function object.
+
+<h3>Userdata</h3>
+
+<pre>
+typedef void (*js_Finalize)(js_State *J, void *data);
+typedef int (*js_HasProperty)(js_State *J, void *data, const char *name);
+typedef int (*js_Put)(js_State *J, void *data, const char *name);
+typedef int (*js_Delete)(js_State *J, void *data, const char *name);
+
+void js_newuserdata(js_State *J, const char *tag, void *data,
+	js_Finalize finalize);
+
+void js_newuserdatax(js_State *J, const char *tag, void *data,
+	js_HasProperty has,
+	js_Put put,
+	js_Delete delete,
+	js_Finalize finalize);
+</pre>
+
+<p>
+Pop an object from the top of the stack to use as the internal prototype property for the new object.
+Push a new userdata object wrapping a pointer to C memory.
+The userdata object is tagged using a string, to represent the type of the C memory.
+
+<p>
+The finalize callback, if it is not NULL, will be called when the object is
+freed by the garbage collector.
+
+<p>
+The extended function also has callback functions for overriding property accesses.
+If these are set, they can be used to override accesses to certain properties.
+Any property accesses that are not overridden will be handled as usual in the runtime.
+The "HasProperty" callback should push a value and return true if it wants to
+handle the property, otherwise it should do nothing and return false. "Put"
+should read the top value and return true if it wants to handle the property.
+Likewise, "Delete" should return true if it wants to handle the property.
+
+<pre>
+int js_isuserdata(js_State *J, int idx, const char *tag);
+</pre>
+
+<p>
+Test if an object is a userdata object with the given type tag string.
+
+<pre>
+void *js_touserdata(js_State *J, int idx, const char *tag);
+</pre>
+
+<p>
+Return the wrapped pointer from a userdata object.
+If the object is undefined or null, return NULL.
+If the object is not a userdata object with the given type tag string, throw a type error.
+
+<h3>Registry</h3>
+
+<p>
+The registry can be used to store references to Javascript objects accessible from C,
+but hidden from Javascript to prevent tampering.
+
+<pre>
+void js_getregistry(js_State *J, const char *name);
+void js_setregistry(js_State *J, const char *name);
+void js_delregistry(js_State *J, const char *name);
+</pre>
+
+<p>
+Access properties on the hidden registry object.
+
+<pre>
+const char *js_ref(js_State *J);
+</pre>
+
+<p>
+WIP: Pop a value from the stack and store it in the registry using a new unique property name.
+Return the property name.
+
+<pre>
+void js_unref(js_State *J, const char *ref);
+</pre>
+
+<p>
+WIP: Delete the reference from the registry.
+
+</article>
+
+<footer>
+<a href="http://artifex.com"><img src="artifex-logo.png" align="right"></a>
+Copyright &copy; 2013-2017 Artifex Software Inc.
+</footer>
+
+</body>
+</html>

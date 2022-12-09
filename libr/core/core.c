@@ -3127,6 +3127,7 @@ R_API bool r_core_init(RCore *core) {
 	core->lang = r_lang_new ();
 	core->lang->cmd_str = (char *(*)(void *, const char *))r_core_cmd_str;
 	core->lang->cmdf = (int (*)(void *, const char *, ...))r_core_cmdf;
+	core->lang->callf = (int (*)(void *, const char *, ...))r_core_cmd_callf;
 	r_core_bind_cons (core);
 	core->table = NULL;
 	core->lang->cb_printf = r_cons_printf;

@@ -12,6 +12,7 @@ R_LIB_VERSION_HEADER(r_lang);
 
 typedef char* (*RCoreCmdStrCallback)(void* core, const char *s);
 typedef int (*RCoreCmdfCallback)(void* core, const char *s, ...);
+typedef int (*RCoreCallfCallback)(void* core, const char *s, ...);
 
 typedef struct r_lang_t {
 	// struct r_lang_plugin_t *cur;
@@ -19,8 +20,9 @@ typedef struct r_lang_t {
 	RList *defs;
 	RList *langs;
 	PrintfCallback cb_printf;
-	RCoreCmdStrCallback cmd_str;
 	RCoreCmdfCallback cmdf;
+	RCoreCallfCallback callf;
+	RCoreCmdStrCallback cmd_str;
 	RList *sessions;
 	struct r_lang_session_t *session;
 } RLang;
@@ -28,6 +30,7 @@ typedef struct r_lang_t {
 typedef struct r_lang_session_t _RLangSession;
 
 typedef struct r_lang_plugin_t {
+	// use RPluginMeta
 	const char *name;
 	const char *alias;
 	const char *desc;

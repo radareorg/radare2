@@ -29,7 +29,7 @@ if [ ! -d "$WASI_SDK" ]; then
 fi
 
 export CFLAGS="-D_WASI_EMULATED_SIGNAL -O2 -D__wasi__=1"
-export CFLAGS="${CFLAGS} -D_WASI_EMULATED_PROCESS_CLOCKS=1"
+export CFLAGS="${CFLAGS} -D_WASI_EMULATED_PROCESS_CLOCKS=1 -sSUPPORT_LONGJMP=wasm"
 
 cp -f dist/plugins-cfg/plugins.wasi.cfg plugins.cfg
 
