@@ -4,17 +4,6 @@
 #include <r_util.h>
 #include <r_list.h>
 
-R_API ut64 r_anal_block_ninstr(RAnalBlock *block, int pos) {
-	r_return_val_if_fail (block, UT64_MAX);
-	if (pos < 1) {
-		return block->addr;
-	}
-	if (pos > block->ninstr) {
-		return UT64_MAX;
-	}
-	return block->addr + block->op_pos[pos - 1];
-}
-
 static int defaultCycles(RAnalOp *op) {
 	switch (op->type) {
 	case R_ANAL_OP_TYPE_PUSH:
@@ -182,42 +171,6 @@ R_API int r_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 	}
 	return ret;
 }
-
-#if 0
-R_API RAnalOp *r_anal_op_copy(RAnalOp *op) {
-	RAnalOp *nop = R_NEW0 (RAnalOp);
-	if (!nop) {
-		return NULL;
-	}
-	*nop = *op;
-	if (op->mnemonic) {
-		nop->mnemonic = strdup (op->mnemonic);
-		if (!nop->mnemonic) {
-			free (nop);
-			return NULL;
-		}
-	} else {
-		nop->mnemonic = NULL;
-	}
-R_LOG_ERROR ("Cannot clone an op");
-#if 0
-	&op->srcs = r_vector_clone (&op->srcs);
-	&op->dsts = r_vector_clone (&op->dsts);
-#endif
-	if (op->access) {
-		RListIter *it;
-		RAnalValue *val;
-		RList *naccess = r_list_newf ((RListFree)r_anal_value_free);
-		r_list_foreach (op->access, it, val) {
-			r_list_append (naccess, r_anal_value_copy (val));
-		}
-		nop->access = naccess;
-	}
-	r_strbuf_init (&nop->esil);
-	r_strbuf_copy (&nop->esil, &op->esil);
-	return nop;
-}
-#endif
 
 R_API bool r_anal_op_nonlinear(int t) {
 	t &= R_ANAL_OP_TYPE_MASK;

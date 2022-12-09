@@ -20,7 +20,11 @@ R_API bool r_anal_op_set_mnemonic(RAnalOp *op, ut64 addr, const char *s) {
 R_API bool r_anal_op_set_bytes(RAnalOp *op, ut64 addr, const ut8* data, int size) {
 	if (op) {
 		op->addr = addr;
-		free (op->bytes);
+		if (op->weakbytes) {
+			op->weakbytes = false;
+		} else {
+			free (op->bytes);
+		}
 		op->bytes = r_mem_dup (data, size);
 		op->size = size;
 		return true;
@@ -36,9 +40,35 @@ R_API RAnalOp *r_anal_op_new(void) {
 
 R_API RAnalOp *r_anal_op_clone(RAnalOp *op) {
 	RAnalOp *nop = R_NEW0 (RAnalOp);
-	memcpy (nop, op, sizeof (RAnalOp));
+	if (!nop) {
+		return NULL;
+	}
+	*nop = *op;
+	if (op->mnemonic) {
+		nop->mnemonic = strdup (op->mnemonic);
+		if (!nop->mnemonic) {
+			free (nop);
+			return NULL;
+		}
+	} else {
+		nop->mnemonic = NULL;
+	}
+	nop->srcs = r_vector_clone (op->srcs);
+	nop->dsts = r_vector_clone (op->dsts);
+	if (op->access) {
+		RListIter *it;
+		RArchValue *val;
+		RList *naccess = r_list_newf ((RListFree)r_arch_value_free);
+		r_list_foreach (op->access, it, val) {
+			r_list_append (naccess, r_arch_value_copy (val));
+		}
+		nop->access = naccess;
+	}
+	r_strbuf_init (&nop->esil);
+	r_strbuf_copy (&nop->esil, &op->esil);
 	return nop;
 }
+
 
 R_API RList *r_anal_op_list_new(void) {
 	RList *list = r_list_new ();
@@ -141,37 +171,6 @@ R_API void r_arch_op_free(void *_op) {
 	}
 	r_arch_op_fini (_op);
 	free (_op);
-}
-
-R_API RAnalOp *r_arch_op_copy(RAnalOp *op) {
-	RAnalOp *nop = R_NEW0 (RAnalOp);
-	if (!nop) {
-		return NULL;
-	}
-	*nop = *op;
-	if (op->mnemonic) {
-		nop->mnemonic = strdup (op->mnemonic);
-		if (!nop->mnemonic) {
-			free (nop);
-			return NULL;
-		}
-	} else {
-		nop->mnemonic = NULL;
-	}
-	nop->srcs = r_vector_clone (op->srcs);
-	nop->dsts = r_vector_clone (op->dsts);
-	if (op->access) {
-		RListIter *it;
-		RArchValue *val;
-		RList *naccess = r_list_newf ((RListFree)r_arch_value_free);
-		r_list_foreach (op->access, it, val) {
-			r_list_append (naccess, r_arch_value_copy (val));
-		}
-		nop->access = naccess;
-	}
-	r_strbuf_init (&nop->esil);
-	r_strbuf_copy (&nop->esil, &op->esil);
-	return nop;
 }
 
 static struct optype {

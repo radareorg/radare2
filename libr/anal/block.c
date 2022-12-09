@@ -5,6 +5,17 @@
 
 #define unwrap(rbnode) container_of (rbnode, RAnalBlock, _rb)
 
+R_API ut64 r_anal_block_ninstr(RAnalBlock *block, int pos) {
+	r_return_val_if_fail (block, UT64_MAX);
+	if (pos < 1) {
+		return block->addr;
+	}
+	if (pos > block->ninstr) {
+		return UT64_MAX;
+	}
+	return block->addr + block->op_pos[pos - 1];
+}
+
 static void __max_end(RBNode *node) {
 	RAnalBlock *block = unwrap (node);
 	block->_max_end = block->addr + block->size;
