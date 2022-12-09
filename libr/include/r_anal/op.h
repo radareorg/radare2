@@ -2,6 +2,7 @@
 #define R2_ANAL_OP_H
 
 #include <r_reg.h>
+#include <r_arch.h>
 #include <r_anal/hint.h>
 
 #ifdef __cplusplus
@@ -245,9 +246,9 @@ typedef struct r_anal_op_t {
 	int ptrsize;    /* f.ex: zero extends for 8, 16 or 32 bits only */
 	st64 stackptr;  /* stack pointer */
 	int refptr;     /* if (0) ptr = "reference" else ptr = "load memory of refptr bytes" */
-	RVector/*RAnalValue*/ srcs;
-	RVector/*RAnalValue*/ dsts;
-	RList *access; /* RAnalValue access information */
+	RVector/*RArchValue*/ srcs;
+	RVector/*RArchValue*/ dsts;
+	RList *access; /* RArchValue access information */
 	RStrBuf esil;
 	RStrBuf opex;
 	const char *reg; /* destination register rename to dreg or dst_reg */
@@ -280,6 +281,16 @@ R_API int r_anal_op_hint(RAnalOp *op, RAnalHint *hint);
 R_API RAnalSwitchOp *r_anal_switch_op_new(ut64 addr, ut64 min_val, ut64 max_val, ut64 def_val);
 R_API void r_anal_switch_op_free(RAnalSwitchOp *swop);
 R_API RAnalCaseOp* r_anal_switch_op_add_case(RAnalSwitchOp *swop, ut64 addr, ut64 value, ut64 jump);
+
+// value.c
+R_API RArchValue *r_anal_value_new(void);
+R_API void r_anal_value_free(RArchValue *value);
+R_API RArchValue *r_anal_value_clone(RArchValue *ov);
+R_API RArchValue *r_anal_value_new_from_string(const char *str);
+R_API st64 r_anal_value_eval(RArchValue *value);
+R_API char *r_anal_value_tostring(RArchValue *value);
+R_API const char *r_anal_value_type_tostring(RArchValue *value);
+R_API void r_anal_value_free(RArchValue *value);
 
 #ifdef __cplusplus
 }

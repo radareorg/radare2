@@ -53,14 +53,18 @@ R_API RAnalOp *r_anal_op_clone(RAnalOp *op) {
 	} else {
 		nop->mnemonic = NULL;
 	}
-	nop->srcs = r_vector_clone (op->srcs);
-	nop->dsts = r_vector_clone (op->dsts);
+#if 0
+	nop->srcs = r_vector_clone (&op->srcs);
+	nop->dsts = r_vector_clone (&op->dsts);
+#else
+	r_vector_copy (&nop->srcs, &op->srcs);
+#endif
 	if (op->access) {
 		RListIter *it;
 		RArchValue *val;
-		RList *naccess = r_list_newf ((RListFree)r_arch_value_free);
+		RList *naccess = r_list_newf ((RListFree)r_anal_value_free);
 		r_list_foreach (op->access, it, val) {
-			r_list_append (naccess, r_arch_value_copy (val));
+			r_list_append (naccess, r_anal_value_clone(val));
 		}
 		nop->access = naccess;
 	}
@@ -89,8 +93,8 @@ R_API void r_anal_op_init(RAnalOp *op) {
 		op->val = UT64_MAX;
 		op->disp = UT64_MAX;
 
-		r_vector_init (&op->srcs, sizeof (RAnalValue), NULL, NULL);
-		r_vector_init (&op->dsts, sizeof (RAnalValue), NULL, NULL);
+		r_vector_init (&op->srcs, sizeof (RArchValue), NULL, NULL);
+		r_vector_init (&op->dsts, sizeof (RArchValue), NULL, NULL);
 #if 0
 		r_vector_reserve (&op->srcs, 3);
 		r_vector_reserve (&op->dsts, 1);

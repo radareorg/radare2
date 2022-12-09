@@ -126,8 +126,8 @@ R_API RAnalCond *r_anal_cond_new_from_op(RAnalOp *op) {
 		return NULL;
 	}
 	// TODO: use r_ref
-	cond->arg[0] = r_anal_value_copy (src0);
-	cond->arg[1] = r_anal_value_copy (src1);
+	cond->arg[0] = r_anal_value_clone (src0);
+	cond->arg[1] = r_anal_value_clone (src1);
 	return cond;
 }
 

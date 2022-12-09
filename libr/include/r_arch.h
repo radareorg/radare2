@@ -5,6 +5,37 @@
 
 #include <r_util.h>
 #include <r_bin.h>
+#include <r_reg.h>
+typedef enum {
+	R_ANAL_VAL_REG,
+	R_ANAL_VAL_MEM,
+	R_ANAL_VAL_IMM,
+} RArchValueType;
+#define RAnalValueType RArchValueType
+
+#define USE_REG_NAMES 0
+
+// base + reg + regdelta * mul + delta
+typedef struct r_arch_value_t {
+	RArchValueType type;
+	int access; // rename to `perm` and use R_PERM_R | _W | _X
+	int absolute; // if true, unsigned cast is used
+	int memref; // is memory reference? which size? 1, 2 ,4, 8
+	ut64 base ; // numeric address
+	st64 delta; // numeric delta
+	st64 imm; // immediate value
+	int mul; // multiplier (reg*4+base)
+#if USE_REG_NAMES
+	const char *seg;
+	const char *reg;
+	const char *regdelta;
+#else
+	// XXX can be invalidated if regprofile changes causing an UAF
+	RRegItem *seg; // segment selector register
+	RRegItem *reg; // register item reference
+	RRegItem *regdelta; // register index used
+#endif
+} RArchValue;
 #include <r_anal/op.h>
 
 #ifdef __cplusplus
@@ -182,36 +213,6 @@ R_API RArchConfig *r_arch_config_new(void);
 R_API RArchConfig *r_arch_config_clone(RArchConfig *c);
 R_API void r_arch_config_free(RArchConfig *);
 
-typedef enum {
-	R_ANAL_VAL_REG,
-	R_ANAL_VAL_MEM,
-	R_ANAL_VAL_IMM,
-} RArchValueType;
-#define RAnalValueType RArchValueType
-
-#define USE_REG_NAMES 0
-
-// base + reg + regdelta * mul + delta
-typedef struct r_arch_value_t {
-	RArchValueType type;
-	int access; // rename to `perm` and use R_PERM_R | _W | _X
-	int absolute; // if true, unsigned cast is used
-	int memref; // is memory reference? which size? 1, 2 ,4, 8
-	ut64 base ; // numeric address
-	st64 delta; // numeric delta
-	st64 imm; // immediate value
-	int mul; // multiplier (reg*4+base)
-#if USE_REG_NAMES
-	const char *seg;
-	const char *reg;
-	const char *regdelta;
-#else
-	// XXX can be invalidated if regprofile changes causing an UAF
-	RRegItem *seg; // segment selector register
-	RRegItem *reg; // register item reference
-	RRegItem *regdelta; // register index used
-#endif
-} RArchValue;
 // backward compat
 #define RAnalValue RArchValue
 R_API RArchValue *r_arch_value_new(void);

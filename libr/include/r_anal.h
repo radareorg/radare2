@@ -574,7 +574,7 @@ typedef struct r_anal_bind_t {
 
 typedef struct r_anal_cond_t {
 	int type; // filled by CJMP opcode
-	RAnalValue *arg[2]; // filled by CMP opcode
+	RArchValue *arg[2]; // filled by CMP opcode
 } RAnalCond;
 
 typedef struct r_anal_bb_t {
@@ -821,6 +821,8 @@ int * (r_anal_compare) (RAnalFunction , RAnalFunction );
 /*----------------------------------------------------------------------------------------------*/
 
 #ifdef R_API
+R_API ut64 r_anal_value_to_ut64(RAnal *anal, RArchValue *val);
+R_API int r_anal_value_set_ut64(RAnal *anal, RArchValue *val, ut64 num);
 /* --------- */ /* REFACTOR */ /* ---------- */
 R_API RListRange* r_listrange_new(void);
 R_API void r_listrange_free(RListRange *s);
@@ -1256,17 +1258,6 @@ R_API size_t r_anal_diff_fingerprint_fcn(RAnal *anal, RAnalFunction *fcn);
 R_API bool r_anal_diff_bb(RAnal *anal, RAnalFunction *fcn, RAnalFunction *fcn2);
 R_API int r_anal_diff_fcn(RAnal *anal, RList *fcns, RList *fcns2);
 R_API int r_anal_diff_eval(RAnal *anal);
-
-/* value.c */
-R_API RAnalValue *r_anal_value_new(void);
-R_API RAnalValue *r_anal_value_copy(RAnalValue *ov);
-R_API RAnalValue *r_anal_value_new_from_string(const char *str);
-R_API st64 r_anal_value_eval(RAnalValue *value);
-R_API char *r_anal_value_tostring(RAnalValue *value);
-R_API const char *r_anal_value_type_tostring(RAnalValue *value);
-R_API ut64 r_anal_value_to_ut64(RAnal *anal, RAnalValue *val);
-R_API int r_anal_value_set_ut64(RAnal *anal, RAnalValue *val, ut64 num);
-R_API void r_anal_value_free(RAnalValue *value);
 
 R_API RAnalCond *r_anal_cond_new(void);
 R_API RAnalCond *r_anal_cond_new_from_op(RAnalOp *op);
