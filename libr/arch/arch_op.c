@@ -20,7 +20,11 @@ R_API bool r_anal_op_set_mnemonic(RAnalOp *op, ut64 addr, const char *s) {
 R_API bool r_anal_op_set_bytes(RAnalOp *op, ut64 addr, const ut8* data, int size) {
 	if (op) {
 		op->addr = addr;
-		free (op->bytes);
+		if (op->weakbytes) {
+			op->weakbytes = false;
+		} else {
+			free (op->bytes);
+		}
 		op->bytes = r_mem_dup (data, size);
 		op->size = size;
 		return true;
@@ -36,9 +40,39 @@ R_API RAnalOp *r_anal_op_new(void) {
 
 R_API RAnalOp *r_anal_op_clone(RAnalOp *op) {
 	RAnalOp *nop = R_NEW0 (RAnalOp);
-	memcpy (nop, op, sizeof (RAnalOp));
+	if (!nop) {
+		return NULL;
+	}
+	*nop = *op;
+	if (op->mnemonic) {
+		nop->mnemonic = strdup (op->mnemonic);
+		if (!nop->mnemonic) {
+			free (nop);
+			return NULL;
+		}
+	} else {
+		nop->mnemonic = NULL;
+	}
+#if 0
+	nop->srcs = r_vector_clone (&op->srcs);
+	nop->dsts = r_vector_clone (&op->dsts);
+#else
+	r_vector_copy (&nop->srcs, &op->srcs);
+#endif
+	if (op->access) {
+		RListIter *it;
+		RArchValue *val;
+		RList *naccess = r_list_newf ((RListFree)r_anal_value_free);
+		r_list_foreach (op->access, it, val) {
+			r_list_append (naccess, r_anal_value_clone(val));
+		}
+		nop->access = naccess;
+	}
+	r_strbuf_init (&nop->esil);
+	r_strbuf_copy (&nop->esil, &op->esil);
 	return nop;
 }
+
 
 R_API RList *r_anal_op_list_new(void) {
 	RList *list = r_list_new ();
@@ -59,8 +93,8 @@ R_API void r_anal_op_init(RAnalOp *op) {
 		op->val = UT64_MAX;
 		op->disp = UT64_MAX;
 
-		r_vector_init (&op->srcs, sizeof (RAnalValue), NULL, NULL);
-		r_vector_init (&op->dsts, sizeof (RAnalValue), NULL, NULL);
+		r_vector_init (&op->srcs, sizeof (RArchValue), NULL, NULL);
+		r_vector_init (&op->dsts, sizeof (RArchValue), NULL, NULL);
 #if 0
 		r_vector_reserve (&op->srcs, 3);
 		r_vector_reserve (&op->dsts, 1);
@@ -77,7 +111,9 @@ R_API void r_anal_op_fini(RAnalOp *op) {
 	r_vector_fini (&op->dsts);
 	r_list_free (op->access);
 	op->access = NULL;
-	R_FREE (op->bytes);
+	if (!op->weakbytes) {
+		R_FREE (op->bytes);
+	}
 	r_strbuf_fini (&op->opex);
 	r_strbuf_fini (&op->esil);
 	r_anal_switch_op_free (op->switch_op);
@@ -139,37 +175,6 @@ R_API void r_arch_op_free(void *_op) {
 	}
 	r_arch_op_fini (_op);
 	free (_op);
-}
-
-R_API RAnalOp *r_arch_op_copy(RAnalOp *op) {
-	RAnalOp *nop = R_NEW0 (RAnalOp);
-	if (!nop) {
-		return NULL;
-	}
-	*nop = *op;
-	if (op->mnemonic) {
-		nop->mnemonic = strdup (op->mnemonic);
-		if (!nop->mnemonic) {
-			free (nop);
-			return NULL;
-		}
-	} else {
-		nop->mnemonic = NULL;
-	}
-	nop->srcs = r_vector_clone (op->srcs);
-	nop->dsts = r_vector_clone (op->dsts);
-	if (op->access) {
-		RListIter *it;
-		RArchValue *val;
-		RList *naccess = r_list_newf ((RListFree)r_arch_value_free);
-		r_list_foreach (op->access, it, val) {
-			r_list_append (naccess, r_arch_value_copy (val));
-		}
-		nop->access = naccess;
-	}
-	r_strbuf_init (&nop->esil);
-	r_strbuf_copy (&nop->esil, &op->esil);
-	return nop;
 }
 
 static struct optype {

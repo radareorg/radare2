@@ -115,6 +115,11 @@ R_API RVector *r_vector_clone(RVector *vec) {
 	return ret;
 }
 
+R_API bool r_vector_copy(RVector *d, RVector *s) {
+	r_return_val_if_fail (d && s, NULL);
+	return vector_clone (d, s);
+}
+
 R_API void r_vector_assign(RVector *vec, void *p, void *elem) {
 	r_return_if_fail (vec && p && elem);
 	memcpy (p, elem, vec->elem_size);

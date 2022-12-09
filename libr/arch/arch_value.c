@@ -7,6 +7,38 @@
 R_API RArchValue *r_arch_value_new(void) { //macro for this ?
 	return R_NEW0 (RArchValue);
 }
+
+// TODO: move into .h as #define free
+R_API void r_anal_value_free(RArchValue *value) {
+	if (value) {
+		r_unref (value->seg);
+		r_unref (value->reg);
+		r_unref (value->regdelta);
+		free (value);
+	}
+#if 0
+	ut64 pval = (ut64)(size_t)value;
+	if (pval && pval != UT64_MAX) {
+		/* TODO: free RRegItem objects? */
+		free (value);
+	}
+#endif
+}
+
+R_API RAnalValue *r_anal_value_clone(RAnalValue *ov) {
+	r_return_val_if_fail (ov, NULL);
+
+	RAnalValue *v = R_NEW0 (RAnalValue);
+	if (!v) {
+		return NULL;
+	}
+
+	memcpy (v, ov, sizeof (RAnalValue));
+	// reference to reg and regdelta should be kept
+	return v;
+}
+
+
 #if 0
 
 R_API RArchValue *r_arch_value_copy(RArchValue *ov) {
