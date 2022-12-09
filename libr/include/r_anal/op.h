@@ -223,8 +223,9 @@ typedef struct r_anal_op_t {
 	ut32 type;	/* type of opcode */
 	RAnalOpPrefix prefix;	/* type of opcode prefix (rep,lock,..) */
 	ut32 type2;	/* used by java */
-	RAnalStackOp stackop;	/* operation on stack? */
-	_RAnalCond cond;	/* condition type */
+	RAnalStackOp stackop; /* operation on stack? */
+	_RAnalCond cond; /* condition type */
+	bool weakbytes;
 	ut8 *bytes;     /* can be null, but is used for encoding and decoding, malloc of `size` */
 	int size;       /* size in bytes of opcode */
 	int nopcode;    /* number of bytes representing the opcode (not the arguments) TODO: find better name */

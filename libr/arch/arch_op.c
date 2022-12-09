@@ -77,7 +77,9 @@ R_API void r_anal_op_fini(RAnalOp *op) {
 	r_vector_fini (&op->dsts);
 	r_list_free (op->access);
 	op->access = NULL;
-	R_FREE (op->bytes);
+	if (!op->weakbytes) {
+		R_FREE (op->bytes);
+	}
 	r_strbuf_fini (&op->opex);
 	r_strbuf_fini (&op->esil);
 	r_anal_switch_op_free (op->switch_op);
