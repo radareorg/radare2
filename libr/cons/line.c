@@ -86,7 +86,9 @@ R_API void r_line_completion_set(RLineCompletion *completion, int argc, const ch
 	r_return_if_fail (completion && (argc >= 0));
 	r_line_completion_clear (completion);
 	if (argc > completion->args_limit) {
-		R_LOG_WARN ("Maximum completion capacity reached, increase scr.maxtab");
+		argc = completion->args_limit;
+		R_LOG_DEBUG ("Maximum completion capacity reached, increase scr.maxtab (%d %d)",
+				argc, completion->args_limit);
 	}
 	size_t count = R_MIN (argc, completion->args_limit);
 	r_pvector_reserve (&completion->args, count);
