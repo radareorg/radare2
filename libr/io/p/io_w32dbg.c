@@ -7,7 +7,7 @@
 #include <r_cons.h>
 #include <r_util.h>
 
-#if __WINDOWS__
+#if R2__WINDOWS__
 
 #include <windows.h>
 #include <tlhelp32.h>

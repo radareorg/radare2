@@ -404,7 +404,7 @@ static int r2pm_install_pkg(const char *pkg, bool global) {
 	char *srcdir = r2pm_gitdir ();
 	r2pm_setenv ();
 	R_LOG_DEBUG ("Entering %s", srcdir);
-#if __WINDOWS__
+#if R2__WINDOWS__
 	char *script = r2pm_get (pkg, "\nR2PM_INSTALL_WINDOWS() {\n", TT_CODEBLOCK);
 	if (!script) {
 		R_LOG_ERROR ("This package does not have R2PM_INSTALL_WINDOWS instructions");
@@ -483,7 +483,7 @@ static int r2pm_uninstall_pkg(const char *pkg) {
 	R_LOG_INFO ("Uninstalling %s", pkg);
 	char *srcdir = r2pm_gitdir ();
 	r2pm_setenv ();
-#if __WINDOWS__
+#if R2__WINDOWS__
 	char *script = r2pm_get (pkg, "\nR2PM_UNINSTALL_WINDOWS() {\n", TT_CODEBLOCK);
 	if (!script) {
 		R_LOG_ERROR ("This package does not have R2PM_UNINSTALL_WINDOWS instructions");
@@ -635,7 +635,7 @@ static int r2pm_edit(RList *targets) {
 			if (R_STR_ISNOTEMPTY (editor)) {
 				rc = r_sys_cmdf ("%s '%s'", editor, pkgpath);
 			} else {
-#if __WINDOWS__
+#if R2__WINDOWS__
 				rc = r_sys_cmdf ("notepad '%s'", pkgpath);
 #else
 				rc = r_sys_cmdf ("vim '%s'", pkgpath);

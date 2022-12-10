@@ -92,7 +92,7 @@ static int __parseMouseEvent(void) {
 }
 
 R_API int r_cons_arrow_to_hjkl(int ch) {
-#if __WINDOWS__
+#if R2__WINDOWS__
 	if (I->vtmode != 2) {
 		if (I->is_arrow) {
 			switch (ch) {
@@ -405,7 +405,7 @@ R_API int r_cons_any_key(const char *msg) {
 
 extern void resizeWin(void);
 
-#if __WINDOWS__
+#if R2__WINDOWS__
 static int __cons_readchar_w32(ut32 usec) {
 	int ch = 0;
 	BOOL ret;
@@ -597,7 +597,7 @@ R_API void r_cons_switchbuf(bool active) {
 	bufactive = active;
 }
 
-#if !__WINDOWS__
+#if !R2__WINDOWS__
 extern volatile sig_atomic_t sigwinchFlag;
 #endif
 
@@ -611,7 +611,7 @@ R_API int r_cons_readchar(void) {
 		return ch;
 	}
 	r_cons_set_raw (1);
-#if __WINDOWS__
+#if R2__WINDOWS__
 	return __cons_readchar_w32 (0);
 #elif __wasi__
 	void *bed = r_cons_sleep_begin ();

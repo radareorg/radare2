@@ -6,7 +6,7 @@
 #include <string.h>
 #include <stdlib.h>
 
-#if __WINDOWS__
+#if R2__WINDOWS__
 #include <windows.h>
 #define printf(...) r_cons_win_printf (false, __VA_ARGS__)
 #define USE_UTF8 1
@@ -231,7 +231,7 @@ R_API int r_line_dietline_init(void) {
 #if USE_UTF8
 /* read utf8 char into 's', return the length in bytes */
 static int r_line_readchar_utf8(ut8 *s, int slen) {
-#if __WINDOWS__
+#if R2__WINDOWS__
 	return r_line_readchar_win (s, slen);
 #else
 	// TODO: add support for w32
@@ -273,7 +273,7 @@ static int r_line_readchar_utf8(ut8 *s, int slen) {
 }
 #endif
 
-#if __WINDOWS__
+#if R2__WINDOWS__
 static int r_line_readchar_win(ut8 *s, int slen) { // this function handle the input in console mode
 	INPUT_RECORD irInBuf = { {0} };
 	BOOL ret;
@@ -865,7 +865,7 @@ R_API void r_line_autocomplete(void) {
 	if (argc > 1 && I.echo) {
 		const int sep = 3;
 		int slen, col = 10;
-#ifdef __WINDOWS__
+#ifdef R2__WINDOWS__
 		r_cons_win_printf (false, "%s%s\n", I.prompt, I.buffer.data);
 #else
 		printf ("%s%s\n", I.prompt, I.buffer.data);
@@ -1429,7 +1429,7 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 		}
 		buf[utflen] = 0;
 #else
-#if __WINDOWS__
+#if R2__WINDOWS__
 		{
 			int len = r_line_readchar_win ((ut8 *)buf, sizeof (buf));
 			if (len < 1) {
@@ -1554,7 +1554,7 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 			I.buffer.length = 0;
 			I.buffer.index = 0;
 			break;
-#if __WINDOWS__
+#if R2__WINDOWS__
 		case 22:// ^V - Paste from windows clipboard
 		{
 			HANDLE hClipBoard;
@@ -1647,7 +1647,7 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 			}
 			break;
 		case 27: // esc-5b-41-00-00 alt/meta key
-#if __WINDOWS__
+#if R2__WINDOWS__
 			// always skip escape
 			memmove (buf, buf + 1, strlen ((char *)buf));
 #if 0
@@ -1720,7 +1720,7 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 				}
 				break;
 			default:
-#if !__WINDOWS__
+#if !R2__WINDOWS__
 				if (I.vtmode == 2) {
 					buf[1] = r_cons_readchar_timeout (50);
 					if (buf[1] == -1) { // alt+e
@@ -1860,7 +1860,7 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 							r_cons_readchar (); // should be '5'
 							ch = r_cons_readchar ();
 						}
-#if __WINDOWS__
+#if R2__WINDOWS__
 						else {
 							ch = buf[2];
 						}

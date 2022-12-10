@@ -3,7 +3,7 @@
 
 #include <r_list.h>
 
-#if __WINDOWS__
+#if R2__WINDOWS__
 #define R_SYS_DEVNULL "nul"
 #else
 #include <errno.h>
@@ -73,7 +73,7 @@ R_API int r_sys_arch_id(const char *arch);
 R_API bool r_sys_arch_match(const char *archstr, const char *arch);
 R_API RList *r_sys_dir(const char *path);
 R_API void r_sys_perror_str(const char *fun);
-#if __WINDOWS__
+#if R2__WINDOWS__
 #define r_sys_mkdir_failed() (GetLastError () != ERROR_ALREADY_EXISTS)
 #else
 #define r_sys_mkdir_failed() (errno != EEXIST)
@@ -97,7 +97,7 @@ R_API bool r_sys_chdir(const char *s);
 R_API bool r_sys_aslr(int val);
 R_API int r_sys_thp_mode(void);
 R_API int r_sys_cmd_str_full(const char *cmd, const char *input, int ilen, char **output, int *len, char **sterr);
-#if __WINDOWS__
+#if R2__WINDOWS__
 #ifdef UNICODE
 #define W32_TCHAR_FSTR "%S"
 #define W32_TCALL(name) name"W"
@@ -127,7 +127,7 @@ R_API char *r_sys_cmd_strf(const char *cmd, ...) R_PRINTF_CHECK(1, 2);
 R_API void r_sys_backtrace(void);
 R_API bool r_sys_tts(const char *txt, bool bg);
 
-#if __WINDOWS__
+#if R2__WINDOWS__
 #  define r_sys_breakpoint() { __debugbreak  (); }
 #else
 #if __GNUC__ && !defined(__TINYC__)

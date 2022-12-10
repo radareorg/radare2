@@ -1286,7 +1286,7 @@ R_API bool r_core_run_script(RCore *core, const char *file) {
 			ret = lang_run_file (core, core->lang, file);
 		} else {
 // XXX this is an ugly hack, we need to use execve here and specify args properly
-#if __WINDOWS__
+#if R2__WINDOWS__
 #define cmdstr(x) r_str_newf (x" %s", file);
 #else
 #define cmdstr(x) r_str_newf (x" '%s'", file);
@@ -1301,7 +1301,7 @@ R_API bool r_core_run_script(RCore *core, const char *file) {
 					free (cmd);
 					ret = 1;
 				} else if (!strcmp (ext, "exe")) {
-#if __WINDOWS__
+#if R2__WINDOWS__
 					char *cmd = r_str_newf ("%s", file);
 #else
 					char *cmd = cmdstr ("wine");
@@ -1410,7 +1410,7 @@ R_API bool r_core_run_script(RCore *core, const char *file) {
 						}
 					}
 					if (fp) {
-#if __WINDOWS__
+#if R2__WINDOWS__
 						char *cmd = r_str_newf ("%s %s", fp, file);
 #else
 						char *cmd = r_str_newf ("%s '%s'", fp, file);
@@ -3212,7 +3212,7 @@ static char *unescape_special_chars(const char *s, const char *special_chars) {
 	return dst;
 }
 
-#if __WINDOWS__
+#if R2__WINDOWS__
 #include <tchar.h>
 #define __CLOSE_DUPPED_PIPES() \
 		close (1);             \
@@ -3400,7 +3400,7 @@ R_API int r_core_cmd_pipe(RCore *core, char *radare_cmd, char *shell_cmd) {
 		}
 		close (stdout_fd);
 	}
-#elif __WINDOWS__
+#elif R2__WINDOWS__
 	r_w32_cmd_pipe (core, radare_cmd, shell_cmd);
 #else
 #ifdef _MSC_VER

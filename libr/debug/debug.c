@@ -1273,7 +1273,7 @@ repeat:
 	if (reason != R_DEBUG_REASON_DEAD) {
 		ret = dbg->tid;
 	}
-#if __WINDOWS__
+#if R2__WINDOWS__
 	if (reason == R_DEBUG_REASON_NEW_LIB ||
 		reason == R_DEBUG_REASON_EXIT_LIB ||
 		reason == R_DEBUG_REASON_NEW_TID ||
@@ -1283,7 +1283,7 @@ repeat:
 	}
 #endif
 	if (reason == R_DEBUG_REASON_EXIT_PID) {
-#if __WINDOWS__
+#if R2__WINDOWS__
 		dbg->pid = -1;
 #elif __linux__
 		r_debug_bp_update (dbg);
@@ -1338,7 +1338,7 @@ repeat:
 			}
 		}
 	}
-#if __WINDOWS__
+#if R2__WINDOWS__
 	r_cons_break_pop ();
 #endif
 
@@ -1364,7 +1364,7 @@ R_API int r_debug_continue(RDebug *dbg) {
 	return r_debug_continue_kill (dbg, 0); //dbg->reason.signum);
 }
 
-#if __WINDOWS__
+#if R2__WINDOWS__
 R_API int r_debug_continue_pass_exception(RDebug *dbg) {
 	return r_debug_continue_kill (dbg, DBG_EXCEPTION_NOT_HANDLED);
 }
@@ -1724,7 +1724,7 @@ R_API ut64 r_debug_get_baddr(RDebug *dbg, const char *file) {
 	if (!r_debug_attach (dbg, pid)) {
 		return 0LL;
 	}
-#if __WINDOWS__
+#if R2__WINDOWS__
 	ut64 base;
 	bool ret = r_io_desc_get_base (dbg->iob.io->desc, &base);
 	if (ret) {
@@ -1737,7 +1737,7 @@ R_API ut64 r_debug_get_baddr(RDebug *dbg, const char *file) {
 	r_debug_map_sync (dbg);
 	char *abspath = r_sys_pid_to_path (pid);
 	if (file) {
-#if !__WINDOWS__
+#if !R2__WINDOWS__
 		if (!abspath) {
 			abspath = r_file_abspath (file);
 		}

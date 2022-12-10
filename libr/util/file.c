@@ -35,7 +35,7 @@
 
 static int file_stat(const char *file, struct stat* const pStat) {
 	r_return_val_if_fail (file && pStat, -1);
-#if __WINDOWS__
+#if R2__WINDOWS__
 	wchar_t *wfile = r_utf8_to_utf16 (file);
 	if (!wfile) {
 		return -1;
@@ -93,7 +93,7 @@ R_API bool r_file_truncate(const char *filename, ut64 newsize) {
 	if (fd == -1) {
 		return false;
 	}
-#if defined(_MSC_VER) || __WINDOWS__
+#if defined(_MSC_VER) || R2__WINDOWS__
 	int r = _chsize (fd, newsize);
 #else
 	int r = ftruncate (fd, newsize);
@@ -238,7 +238,7 @@ R_API char *r_file_abspath_rel(const char *cwd, const char *file) {
 		if (cwd && *file != '/') {
 			ret = r_str_newf ("%s" R_SYS_DIR "%s", cwd, file);
 		}
-#elif __WINDOWS__
+#elif R2__WINDOWS__
 		// Network path
 		if (!strncmp (file, "\\\\", 2)) {
 			return strdup (file);
@@ -309,7 +309,7 @@ R_API char *r_file_path(const char *bin) {
 			? r_file_abspath (bin): NULL;
 	}
 	char *path_env = (char *)r_sys_getenv ("PATH");
-#if __WINDOWS__
+#if R2__WINDOWS__
 	if (!r_str_endswith (bin, ".exe")) {
 		extension = ".exe";
 	}
@@ -340,7 +340,7 @@ R_API char *r_stdin_slurp(int *sz) {
 #if __wasi__
 #warning r_stdin_slurp not available for wasi
 	return NULL;
-#elif __UNIX__ || __WINDOWS__
+#elif __UNIX__ || R2__WINDOWS__
 	int i, ret, newfd;
 	if ((newfd = dup (0)) < 0) {
 		return NULL;
@@ -870,7 +870,7 @@ R_API bool r_file_move(const char *src, const char *dst) {
 		char *a = r_str_escape (src);
 		char *b = r_str_escape (dst);
 		char *input = r_str_newf ("\"%s\" \"%s\"", a, b);
-#if __WINDOWS__
+#if R2__WINDOWS__
 		int rc = r_sys_cmdf ("move %s", input);
 #else
 		int rc = r_sys_cmdf ("mv %s", input);
@@ -888,7 +888,7 @@ R_API bool r_file_rm(const char *file) {
 		return false;
 	}
 	if (r_file_is_directory (file)) {
-#if __WINDOWS__
+#if R2__WINDOWS__
 		LPTSTR file_ = r_sys_conv_utf8_to_win (file);
 		bool ret = RemoveDirectory (file_);
 
@@ -898,7 +898,7 @@ R_API bool r_file_rm(const char *file) {
 		return !rmdir (file);
 #endif
 	} else {
-#if __WINDOWS__
+#if R2__WINDOWS__
 		LPTSTR file_ = r_sys_conv_utf8_to_win (file);
 		bool ret = DeleteFile (file_);
 
@@ -931,7 +931,7 @@ R_API char *r_file_readlink(const char *path) {
 }
 
 R_API int r_file_mmap_write(const char *file, ut64 addr, const ut8 *buf, int len) {
-#if __WINDOWS__
+#if R2__WINDOWS__
 	HANDLE fh = INVALID_HANDLE_VALUE;
 	DWORD written = 0;
 	LPTSTR file_ = NULL;
@@ -991,7 +991,7 @@ err_r_file_mmap_write:
 }
 
 R_API int r_file_mmap_read(const char *file, ut64 addr, ut8 *buf, int len) {
-#if __WINDOWS__
+#if R2__WINDOWS__
 	HANDLE fm = NULL, fh = INVALID_HANDLE_VALUE;
 	LPTSTR file_ = NULL;
 	int ret = -1;
@@ -1064,7 +1064,7 @@ static RMmap *r_file_mmap_unix(RMmap *m, int fd) {
 	}
 	return m;
 }
-#elif __WINDOWS__
+#elif R2__WINDOWS__
 static RMmap *r_file_mmap_windows(RMmap *m, const char *file) {
 	LPTSTR file_ = r_sys_conv_utf8_to_win (file);
 	bool success = false;
@@ -1113,7 +1113,7 @@ static RMmap *file_mmap_other(RMmap *m) {
 #endif
 
 R_API RMmap *r_file_mmap_arch(RMmap *mmap, const char *filename, int fd) {
-#if __WINDOWS__
+#if R2__WINDOWS__
 	(void)fd;
 	return r_file_mmap_windows (mmap, filename);
 #elif __UNIX__
@@ -1163,7 +1163,7 @@ R_API RMmap *r_file_mmap(const char *file, bool rw, ut64 base) {
 	}
 #if __UNIX__
 	return r_file_mmap_unix (m, fd);
-#elif __WINDOWS__
+#elif R2__WINDOWS__
 	close (fd);
 	m->fd = -1;
 	return r_file_mmap_windows (m, file);
@@ -1176,7 +1176,7 @@ R_API void r_file_mmap_free(RMmap *m) {
 	if (!m) {
 		return;
 	}
-#if __WINDOWS__
+#if R2__WINDOWS__
 	if (m->fm != INVALID_HANDLE_VALUE) {
 		CloseHandle (m->fm);
 	}
@@ -1246,7 +1246,7 @@ R_API int r_file_mkstemp(R_NULLABLE const char *prefix, char **oname) {
 	if (!prefix) {
 		prefix = "r2";
 	}
-#if __WINDOWS__
+#if R2__WINDOWS__
 	LPTSTR name = NULL;
 	char *path = r_file_tmpdir ();
 	if (!path) {
@@ -1296,7 +1296,7 @@ err_r_file_mkstemp:
 }
 
 R_API char *r_file_tmpdir(void) {
-#if __WINDOWS__
+#if R2__WINDOWS__
 	LPTSTR tmpdir;
 	char *path = NULL;
 	DWORD len = 0;
@@ -1362,7 +1362,7 @@ R_API bool r_file_copy(const char *src, const char *dst) {
 	/* TODO: Use NO_CACHE for iOS dyldcache copying */
 #if HAVE_COPYFILE_H
 	return copyfile (src, dst, 0, COPYFILE_DATA | COPYFILE_XATTR) != -1;
-#elif __WINDOWS__
+#elif R2__WINDOWS__
 	PTCHAR s = r_sys_conv_utf8_to_win (src);
 	PTCHAR d = r_sys_conv_utf8_to_win (dst);
 	if (!s || !d) {
@@ -1546,7 +1546,7 @@ R_API bool r_file_is_executable(const char *file) {
 	if (buf.st_mode & 0111) {
 		return is_executable_header (file);
 	}
-#elif __WINDOWS__
+#elif R2__WINDOWS__
 	const char *ext = r_file_extension (file);
 	if (ext) {
 		return !strcmp (ext, "exe") || !strcmp (ext, "com") || !strcmp (ext, "bat");

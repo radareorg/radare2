@@ -22,7 +22,7 @@ extern "C" {
  * Paths pointing into the webroot are an exception: For reaching the webroot, .. and absolute
  * path are ok.
  */
-#if __WINDOWS__
+#if R2__WINDOWS__
 R_API HANDLE r_sandbox_opendir(const char *path, WIN32_FIND_DATAW *entry);
 #else
 #include <dirent.h>

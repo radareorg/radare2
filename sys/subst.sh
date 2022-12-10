@@ -7,7 +7,8 @@ if [ -z "$a" ]; then
 fi
 #[ -z "$a" ] && a="r_str_chop "
 #[ -z "$b" ] && b="r_str_trim "
-WHERE="libr binr shlr"
+WHERE="libr binr shlr mk sys"
+# WHERE="mk sys"
 git grep "$a" ${WHERE} | less -R
 if [ -n "$b" ]; then
 	FILES=`git grep "$a" ${WHERE} | cut -d : -f 1 | uniq `

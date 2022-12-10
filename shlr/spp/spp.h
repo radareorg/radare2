@@ -47,12 +47,12 @@
   #endif
   typedef int socklen_t;
   #undef USE_SOCKETS
-  #define __WINDOWS__ 1
+  #define R2__WINDOWS__ 1
   #undef __UNIX__
   #undef R2__BSD__
 #endif
 
-#if __WINDOWS__ || __WIN32__ || __MINGW32__
+#if R2__WINDOWS__ || __WIN32__ || __MINGW32__
 #include <io.h>
 #define popen    _popen
 #define pclose   _pclose

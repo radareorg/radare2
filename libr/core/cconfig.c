@@ -928,7 +928,7 @@ static bool cb_asmbits(void *user, void *data) {
 		if (load_from_debug) {
 			if (core->dbg->h && core->dbg->h->reg_profile) {
 // XXX. that should depend on the plugin, not the host os
-#if __WINDOWS__
+#if R2__WINDOWS__
 #if !defined(_WIN64)
 				core->dbg->bits = R_SYS_BITS_32;
 #else
@@ -2450,7 +2450,7 @@ static bool cb_scrhighlight(void *user, void *data) {
 	return true;
 }
 
-#if __WINDOWS__
+#if R2__WINDOWS__
 static bool scr_vtmode(void *user, void *data) {
 	RConfigNode *node = (RConfigNode *) data;
 	if (r_str_is_true (node->value)) {
@@ -3335,7 +3335,7 @@ R_API int r_core_config_init(RCore *core) {
 	/* dir.prefix is used in other modules, set it first */
 	{
 		char *pfx = r_sys_getenv("R2_PREFIX");
-#if __WINDOWS__
+#if R2__WINDOWS__
 		const char *invoke_dir = r_sys_prefix (NULL);
 		if (!pfx && invoke_dir) {
 			pfx = strdup (invoke_dir);
@@ -3735,7 +3735,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB ("cfg.corelog", "false", &cb_cfgcorelog, "log changes using the T api needed for realtime syncing");
 	SETBPREF ("cfg.newtab", "false", "show descriptions in command completion");
 	p = r_sys_getenv ("EDITOR");
-#if __WINDOWS__
+#if R2__WINDOWS__
 	r_config_set (cfg, "cfg.editor", r_str_get_fail (p, "notepad"));
 #else
 	r_config_set (cfg, "cfg.editor", r_str_get_fail (p, "vi"));
@@ -3977,7 +3977,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF ("http.referer", "", "csfr protection if set");
 	SETBPREF ("http.dirlist", "false", "enable directory listing");
 	SETPREF ("http.allow", "", "only accept clients from the comma separated IP list");
-#if __WINDOWS__
+#if R2__WINDOWS__
 	r_config_set (cfg, "http.browser", "start");
 #else
 	if (r_file_exists ("/usr/bin/openURL")) { // iOS ericautils
@@ -4004,7 +4004,7 @@ R_API int r_core_config_init(RCore *core) {
 		SETPREF ("http.homeroot", www, "http home root directory");
 		free (www);
 	}
-#if __WINDOWS__
+#if R2__WINDOWS__
 	{
 		char *wwwroot = r_str_newf ("%s\\share\\www", r_sys_prefix (NULL));
 		SETPREF ("http.root", wwwroot, "http root directory");
@@ -4108,7 +4108,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETICB ("scr.pagesize", 1, &cb_scrpagesize, "flush in pages when scr.linesleep is != 0");
 	SETCB ("scr.flush", "false", &cb_scrflush, "force flush to console in realtime (breaks scripting)");
 	SETBPREF ("scr.slow", "true", "do slow stuff on visual mode like RFlag.get_at(true)");
-#if __WINDOWS__
+#if R2__WINDOWS__
 	SETICB ("scr.vtmode", r_cons_singleton ()->vtmode? 1: 0,
 		&scr_vtmode, "use VT sequences on Windows (0: Disable, 1: Shell, 2: Visual)");
 #else

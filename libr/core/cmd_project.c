@@ -142,7 +142,7 @@ static int cmd_project(void *data, const char *input) {
 			if (R_STR_ISNOTEMPTY (r_str_trim_head_ro (input + 1))) {
 				r_sys_cmdf ("%s", input + 1);
 			} else {
-#if __WINDOWS__
+#if R2__WINDOWS__
 				r_sys_cmdf ("cmd");
 #else
 				r_sys_cmdf ("sh");

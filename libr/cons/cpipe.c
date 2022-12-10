@@ -15,7 +15,7 @@ static bool __dupDescriptor(int fd, int fdn) {
 	}
 #if __wasi__
 	return false;
-#elif __WINDOWS__
+#elif R2__WINDOWS__
 	I->backup_fd = 2002 - (fd - 2); // windows xp has 2048 as limit fd
 	return _dup2 (fdn, I->backup_fd) != -1;
 #else

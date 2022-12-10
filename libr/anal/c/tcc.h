@@ -48,7 +48,7 @@
 #define TCC_ASSERT(ex)
 #endif
 
-#ifndef __WINDOWS__
+#ifndef R2__WINDOWS__
 # include <unistd.h>
 # include <sys/time.h>
 # ifndef __HAIKU__
@@ -677,7 +677,7 @@ enum tcc_token {
 
 #define TOK_UIDENT TOK_DEFINE
 
-#ifdef __WINDOWS__
+#ifdef R2__WINDOWS__
 #define IS_DIRSEP(c) (c == '/' || c == '\\')
 #define IS_ABSPATH(p) (IS_DIRSEP(p[0]) || (p[0] && p[1] == ':' && IS_DIRSEP(p[2])))
 #define PATHCMP stricmp
@@ -689,7 +689,7 @@ enum tcc_token {
 # define strtoll _strtoi64
 # define strtoull _strtoui64
 #endif
-#else // ifdef __WINDOWS__
+#else // ifdef R2__WINDOWS__
 #define IS_DIRSEP(c) (c == '/')
 #define IS_ABSPATH(p) IS_DIRSEP(p[0])
 #define PATHCMP strcmp

@@ -4,7 +4,7 @@
 #include <r_types.h>
 #include <string.h>
 #include <stdlib.h>
-#if __WINDOWS__
+#if R2__WINDOWS__
 #include <search.h>
 #endif
 

@@ -1703,7 +1703,7 @@ repeat:
 	return ret;
 }
 
-#if __WINDOWS__
+#if R2__WINDOWS__
 void SetWindow(int Width, int Height) {
 	COORD coord;
 	coord.X = Width;
@@ -2673,7 +2673,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 		}
 	} else {
 		switch (ch) {
-#if __WINDOWS__
+#if R2__WINDOWS__
 		case 0xf5:
 			SetWindow (81, 25);
 			break;
@@ -4538,7 +4538,7 @@ R_API void r_core_visual_disasm_down(RCore *core, RAnalOp *op, int *cols) {
 	}
 }
 
-#ifdef __WINDOWS__
+#ifdef R2__WINDOWS__
 
 static bool is_mintty(RCons *cons) {
 	return cons->term_xterm;
@@ -4701,7 +4701,7 @@ dodo:
 							if (!ch56 || (chrs[2] = r_cons_readchar ()) == '~') {
 								chrs_read += ch56;
 								flush_stdin ();
-#ifndef __WINDOWS__
+#ifndef R2__WINDOWS__
 							// Following seems to fix an issue where scrolling slows
 							// down to a crawl for some terminals after some time
 							// mashing the up and down arrow keys

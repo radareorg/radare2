@@ -23,7 +23,7 @@ R_API ut64 r_time_now(void) {
 }
 
 R_API ut64 r_time_now_mono(void) {
-#if __WINDOWS__
+#if R2__WINDOWS__
 	LARGE_INTEGER f;
 	if (!QueryPerformanceFrequency (&f)) {
 		return 0;
@@ -51,7 +51,7 @@ R_API ut64 r_time_now_mono(void) {
 }
 
 R_API R_MUSTUSE char *r_time_stamp_to_str(time_t timeStamp) {
-#if __WINDOWS__
+#if R2__WINDOWS__
 	time_t rawtime;
 	struct tm *tminfo;
 	rawtime = (time_t)timeStamp;
@@ -191,7 +191,7 @@ R_API char *r_time_tostring(ut64 ts) {
 }
 
 R_API char *r_asctime_r(const struct tm *tm, char *buf) {
-#if __WINDOWS__
+#if R2__WINDOWS__
 	errno_t err = asctime_s (buf, ASCTIME_BUF_MAXLEN, tm);
 	return err? NULL: buf;
 #else
@@ -200,7 +200,7 @@ R_API char *r_asctime_r(const struct tm *tm, char *buf) {
 }
 
 R_API char *r_ctime_r(const time_t *timer, char *buf) {
-#if __WINDOWS__
+#if R2__WINDOWS__
 	errno_t err = ctime_s (buf, ASCTIME_BUF_MAXLEN, timer);
 	return err? NULL: buf;
 #else

@@ -226,7 +226,7 @@ R_API int r_sandbox_system(const char *x, int n) {
 		eprintf ("sandbox: system call disabled\n");
 		return -1;
 	}
-#if __WINDOWS__
+#if R2__WINDOWS__
 	return system (x);
 #elif LIBC_HAVE_FORK
 #if LIBC_HAVE_SYSTEM
@@ -365,7 +365,7 @@ R_API int r_sandbox_open(const char *path, int perm, int mode) {
 	R_SANDBOX_GUARD (R_SANDBOX_GRAIN_DISK, -1);
 	char *epath = expand_home (path);
 	int ret = -1;
-#if __WINDOWS__
+#if R2__WINDOWS__
 	if (!strcmp (path, "/dev/null")) {
 		path = "NUL";
 	}
@@ -377,7 +377,7 @@ R_API int r_sandbox_open(const char *path, int perm, int mode) {
 			return -1;
 		}
 	}
-#if __WINDOWS__
+#if R2__WINDOWS__
 	{
 		DWORD flags = 0;
 		if (perm & O_RANDOM) {
@@ -433,9 +433,9 @@ R_API int r_sandbox_open(const char *path, int perm, int mode) {
 		}
 		free (wepath);
 	}
-#else // __WINDOWS__
+#else // R2__WINDOWS__
 	ret = open (epath, perm, mode);
-#endif // __WINDOWS__
+#endif // R2__WINDOWS__
 	free (epath);
 	return ret;
 }
@@ -459,7 +459,7 @@ R_API FILE *r_sandbox_fopen(const char *path, const char *mode) {
 		epath = expand_home (path);
 	}
 	if ((strchr (mode, 'w') || strchr (mode, 'a') || r_file_is_regular (epath))) {
-#if __WINDOWS__
+#if R2__WINDOWS__
 		wchar_t *wepath = r_utf8_to_utf16 (epath);
 		if (!wepath) {
 			free (epath);
@@ -474,9 +474,9 @@ R_API FILE *r_sandbox_fopen(const char *path, const char *mode) {
 		ret = _wfopen (wepath, wmode);
 		free (wmode);
 		free (wepath);
-#else // __WINDOWS__
+#else // R2__WINDOWS__
 		ret = fopen (epath, mode);
-#endif // __WINDOWS__
+#endif // R2__WINDOWS__
 	}
 	free (epath);
 	return ret;
@@ -510,7 +510,7 @@ R_API int r_sandbox_kill(int pid, int sig) {
 #endif
 	return -1;
 }
-#if __WINDOWS__
+#if R2__WINDOWS__
 R_API HANDLE r_sandbox_opendir(const char *path, WIN32_FIND_DATAW *entry) {
 	r_return_val_if_fail (path, NULL);
 	R_SANDBOX_GUARD (R_SANDBOX_GRAIN_FILES | R_SANDBOX_GRAIN_DISK, NULL);

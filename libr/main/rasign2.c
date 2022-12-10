@@ -40,7 +40,7 @@ static RCore *opencore(const char *fname) {
 	r_core_loadlibs (c, R_CORE_LOADLIBS_ALL, NULL);
 	r_config_set_b (c->config, "scr.interactive", false);
 	if (fname) {
-#if __WINDOWS__
+#if R2__WINDOWS__
 		char *winf = r_acp_to_utf8 (fname);
 		rfile = r_core_file_open (c, winf, 0, 0);
 		free (winf);

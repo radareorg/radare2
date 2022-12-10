@@ -132,7 +132,7 @@ R_API RList* r_io_open_many(RIO* io, const char* uri, int perm, int mode) {
 	return desc_list;
 }
 
-#if __WINDOWS__
+#if R2__WINDOWS__
 R_API bool r_io_reopen(RIO* io, int fd, int perm, int mode) {
 	RIODesc	*old, *new;
 	char *uri;

@@ -14,7 +14,7 @@ static int execvp(const char *a, char **b) {return -1;}
 #define __SIG_IGN 0
 #endif
 
-#if __WINDOWS__
+#if R2__WINDOWS__
 struct r2r_subprocess_t {
 	HANDLE stdin_write;
 	HANDLE stdout_read;
@@ -816,7 +816,7 @@ static R2RProcessOutput *subprocess_runner(const char *file, const char *args[],
 	return out;
 }
 
-#if __WINDOWS__
+#if R2__WINDOWS__
 static char *convert_win_cmds(const char *cmds) {
 	char *r = malloc (strlen (cmds) + 1);
 	if (!r) {
@@ -898,7 +898,7 @@ static R2RProcessOutput *run_r2_test(R2RRunConfig *config, ut64 timeout_ms, cons
 		}
 	}
 	r_pvector_push (&args, "-Qc");
-#if __WINDOWS__
+#if R2__WINDOWS__
 	char *wcmds = convert_win_cmds (cmds);
 	r_pvector_push (&args, wcmds);
 #else
@@ -909,25 +909,25 @@ static R2RProcessOutput *run_r2_test(R2RRunConfig *config, ut64 timeout_ms, cons
 	}
 
 	const char *envvars[] = {
-#if __WINDOWS__
+#if R2__WINDOWS__
 		"ANSICON",
 #endif
 		"R2_NOPLUGINS"
 	};
 	const char *envvals[] = {
-#if __WINDOWS__
+#if R2__WINDOWS__
 		"1",
 #endif
 		"1"
 	};
-#if __WINDOWS__
+#if R2__WINDOWS__
 	size_t env_size = load_plugins ? 1 : 2;
 #else
 	size_t env_size = load_plugins ? 0 : 1;
 #endif
 	R2RProcessOutput *out = runner (config->r2_cmd, args.v.a, r_pvector_length (&args), envvars, envvals, env_size, timeout_ms, user);
 	r_pvector_clear (&args);
-#if __WINDOWS__
+#if R2__WINDOWS__
 	free (wcmds);
 #endif
 	return out;
@@ -1257,7 +1257,7 @@ static bool require_check(const char *require) {
 #endif
 	}
 	if (strstr (require, "windows")) {
-#if __WINDOWS__
+#if R2__WINDOWS__
 		res &= true;
 #else
 		res = false;

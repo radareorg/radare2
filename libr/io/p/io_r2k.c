@@ -6,7 +6,7 @@
 #include <r_util.h>
 #include <sys/types.h>
 
-#if __WINDOWS__
+#if R2__WINDOWS__
 #include "io_r2k_windows.h"
 #elif defined (__linux__) && !defined (__GNU__)
 #include "io_r2k_linux.h"
@@ -16,7 +16,7 @@ int r2k_struct; // dummy
 #endif
 
 int r2k__write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
-#if __WINDOWS__
+#if R2__WINDOWS__
 	//eprintf("writing to: 0x%"PFMT64x" len: %x\n",io->off, count);
 	return WriteKernelMemory (io->off, buf, count);
 #elif defined (__linux__) && !defined (__GNU__)
@@ -38,7 +38,7 @@ int r2k__write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
 }
 
 static int r2k__read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
-#if __WINDOWS__
+#if R2__WINDOWS__
 	return ReadKernelMemory (io->off, buf, count);
 #elif defined (__linux__) && !defined (__GNU__)
 	switch (r2k_struct.beid) {
@@ -61,7 +61,7 @@ static int r2k__read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 }
 
 static bool r2k__close(RIODesc *fd) {
-#if __WINDOWS__
+#if R2__WINDOWS__
 	if (gHandleDriver) {
 		CloseHandle (gHandleDriver);
 		StartStopService (TEXT ("r2k"),TRUE);
@@ -90,7 +90,7 @@ static char *r2k__system(RIO *io, RIODesc *fd, const char *cmd) {
 		return NULL;
 	}
 	if (r_str_startswith (cmd, "mod")) {
-#if __WINDOWS__
+#if R2__WINDOWS__
 		GetSystemModules (io);
 #endif
 	} else {
@@ -107,7 +107,7 @@ static char *r2k__system(RIO *io, RIODesc *fd, const char *cmd) {
 static RIODesc *r2k__open(RIO *io, const char *pathname, int rw, int mode) {
 	if (r_str_startswith (pathname, "r2k://")) {
 		rw |= R_PERM_WX;
-#if __WINDOWS__
+#if R2__WINDOWS__
 		RIOW32 *w32 = R_NEW0 (RIOW32);
 		if (!w32 || !Init (pathname + 6)) {
 			R_LOG_ERROR ("r2k__open: Error cant init driver: %s", pathname + 6);

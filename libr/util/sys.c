@@ -73,7 +73,7 @@ extern char **environ;
 # define Sleep sleep
 #endif
 #endif
-#if __WINDOWS__
+#if R2__WINDOWS__
 # include <io.h>
 # include <winbase.h>
 # include <signal.h>
@@ -151,7 +151,7 @@ R_API int r_sys_fork(void) {
 		return false;
 	}
 #if HAVE_FORK
-#if __WINDOWS__
+#if R2__WINDOWS__
 	return -1;
 #else
 	return fork ();
@@ -161,7 +161,7 @@ R_API int r_sys_fork(void) {
 #endif
 }
 
-#if __WINDOWS__
+#if R2__WINDOWS__
 R_API int r_sys_sigaction(int *sig, void(*handler)(int)) {
 	return -1;
 }
@@ -231,7 +231,7 @@ R_API void r_sys_exit(int status, bool nocleanup) {
 }
 
 R_API int r_sys_truncate(const char *file, int sz) {
-#if __WINDOWS__
+#if R2__WINDOWS__
 	int fd = r_sandbox_open (file, O_RDWR, 0644);
 	if (fd == -1) {
 		return false;
@@ -254,7 +254,7 @@ R_API int r_sys_truncate(const char *file, int sz) {
 
 R_API RList *r_sys_dir(const char *path) {
 	RList *list = NULL;
-#if __WINDOWS__
+#if R2__WINDOWS__
 	WIN32_FIND_DATAW entry;
 	char *cfname;
 	HANDLE fh = r_sandbox_opendir (path, &entry);
@@ -430,7 +430,7 @@ R_API int r_sys_setenv(const char *key, const char *value) {
 		return 0;
 	}
 	return setenv (key, value, 1);
-#elif __WINDOWS__
+#elif R2__WINDOWS__
 	LPTSTR key_ = r_sys_conv_utf8_to_win (key);
 	LPTSTR value_ = r_sys_conv_utf8_to_win (value);
 	int ret = SetEnvironmentVariable (key_, value_);
@@ -482,7 +482,7 @@ static int checkcmd(const char *c) {
 #endif
 
 R_API int r_sys_crash_handler(const char *cmd) {
-#ifndef __WINDOWS__
+#ifndef R2__WINDOWS__
 	int sig[] = { SIGINT, SIGSEGV, SIGBUS, SIGQUIT, SIGHUP, 0 };
 	if (!checkcmd (cmd)) {
 		return false;
@@ -502,7 +502,7 @@ R_API int r_sys_crash_handler(const char *cmd) {
 }
 
 R_API char *r_sys_getenv(const char *key) {
-#if __WINDOWS__
+#if R2__WINDOWS__
 	DWORD dwRet;
 	LPTSTR envbuf = NULL, key_ = NULL, tmp_ptr;
 	char *val = NULL;
@@ -563,7 +563,7 @@ R_API int r_sys_getenv_asint(const char *key) {
 }
 
 R_API char *r_sys_getdir(void) {
-#if __WINDOWS__
+#if R2__WINDOWS__
 	return _getcwd (NULL, 0);
 #else
 #ifdef __GLIBC__
@@ -801,7 +801,7 @@ R_API int r_sys_cmd_str_full(const char *cmd, const char *input, int ilen, char 
 	}
 	return false;
 }
-#elif __WINDOWS__
+#elif R2__WINDOWS__
 R_API int r_sys_cmd_str_full(const char *cmd, const char *input, int ilen, char **output, int *len, char **sterr) {
 	return r_sys_cmd_str_full_w32 (cmd, input, ilen, output, len, sterr);
 }
@@ -870,7 +870,7 @@ R_API bool r_sys_mkdir(const char *dir) {
 	if (r_sandbox_enable (0)) {
 		return false;
 	}
-#if __WINDOWS__
+#if R2__WINDOWS__
 	LPTSTR dir_ = r_sys_conv_utf8_to_win (dir);
 
 	ret = CreateDirectory (dir_, NULL) != 0;
@@ -892,7 +892,7 @@ R_API bool r_sys_mkdirp(const char *dir) {
 	if (*ptr == slash) {
 		ptr++;
 	}
-#if __WINDOWS__
+#if R2__WINDOWS__
 	{
 		char *p = strstr (ptr, ":\\");
 		if (p) {
@@ -935,7 +935,7 @@ R_API void r_sys_perror_str(const char *fun) {
 #undef perror
 	perror (fun);
 #pragma pop_macro("perror")
-#elif __WINDOWS__
+#elif R2__WINDOWS__
 	LPTSTR lpMsgBuf;
 	DWORD dw = GetLastError();
 
@@ -1103,7 +1103,7 @@ R_API int r_sys_run_rop(const ut8 *buf, int len) {
 	return 0;
 }
 
-#if __WINDOWS__
+#if R2__WINDOWS__
 // w32 specific API
 R_API char *r_w32_handle_to_path(HANDLE processHandle) {
 	const DWORD maxlength = MAX_PATH;
@@ -1186,7 +1186,7 @@ R_API char *r_w32_handle_to_path(HANDLE processHandle) {
 #endif
 
 R_API char *r_sys_pid_to_path(int pid) {
-#if __WINDOWS__
+#if R2__WINDOWS__
 	HANDLE processHandle = OpenProcess (PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, pid);
 	if (!processHandle) {
 		// eprintf ("r_sys_pid_to_path: Cannot open process.\n");
@@ -1272,7 +1272,7 @@ R_API void r_sys_set_environ(char **e) {
 }
 
 R_API char *r_sys_whoami(void) {
-#if __WINDOWS__
+#if R2__WINDOWS__
 	char buf[256];
 	DWORD buf_sz = sizeof (buf);
 	if (!GetUserName ((LPSTR)buf, (LPDWORD)&buf_sz) ) {
@@ -1298,7 +1298,7 @@ R_API char *r_sys_whoami(void) {
 }
 
 R_API int r_sys_uid(void) {
-#if __WINDOWS__
+#if R2__WINDOWS__
 #pragma message ("r_sys_uid not implemented for windows")
 	char buf[32];
 	DWORD buf_sz = sizeof (buf);
@@ -1319,7 +1319,7 @@ R_API int r_sys_getpid(void) {
 	return 0;
 #elif __UNIX__
 	return getpid ();
-#elif __WINDOWS__
+#elif R2__WINDOWS__
 	return (int)GetCurrentProcessId ();
 #else
 #pragma message ("r_sys_getpid not implemented for this platform")
@@ -1348,7 +1348,7 @@ R_API bool r_sys_tts(const char *txt, bool bg) {
 
 R_API const char *r_sys_prefix(const char *pfx) {
 	if (!prefix) {
-#if __WINDOWS__
+#if R2__WINDOWS__
 		prefix = r_sys_get_src_dir_w32 ();
 		if (!prefix) {
 			prefix = strdup (R2_PREFIX);
@@ -1378,7 +1378,7 @@ R_API RSysInfo *r_sys_info(void) {
 			return si;
 		}
 	}
-#elif __WINDOWS__
+#elif R2__WINDOWS__
 	HKEY key;
 	DWORD type;
 	DWORD size;

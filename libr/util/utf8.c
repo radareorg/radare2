@@ -619,7 +619,7 @@ R_API int r_isprint(const RRune c) {
 	return true;
 }
 
-#if __WINDOWS__
+#if R2__WINDOWS__
 R_API char *r_utf16_to_utf8_l(const wchar_t *wc, int len) {
 	if (!wc) {
 		return NULL;
@@ -718,7 +718,7 @@ R_API char *r_acp_to_utf8_l(const char *str, int len) {
 	return NULL;
 }
 
-#endif // __WINDOWS__
+#endif // R2__WINDOWS__
 
 R_API int r_utf_block_idx(RRune ch) {
 	const int last = R_UTF_BLOCKS_COUNT;

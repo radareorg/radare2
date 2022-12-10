@@ -142,7 +142,7 @@ R_API int r_main_r2agent(int argc, const char **argv) {
 				// TODO: show page here?
 				int pid = atoi (rs->path + 11);
 				if (pid > 0) {
-#if __WINDOWS__
+#if R2__WINDOWS__
 					r_sandbox_kill (pid, 0);
 #else
 					r_sandbox_kill (pid, SIGKILL);

@@ -5,7 +5,7 @@
 #include <r_util/r_assert.h>
 #define I r_cons_singleton ()
 
-#if __WINDOWS__
+#if R2__WINDOWS__
 
 static void __fill_tail(int cols, int lines) {
 	lines++;

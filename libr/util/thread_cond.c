@@ -14,7 +14,7 @@ R_API RThreadCond *r_th_cond_new(void) {
 		free (cond);
 		return NULL;
 	}
-#elif __WINDOWS__
+#elif R2__WINDOWS__
 	r_w32_InitializeConditionVariable (&cond->cond);
 #endif
 	return cond;
@@ -23,7 +23,7 @@ R_API RThreadCond *r_th_cond_new(void) {
 R_API void r_th_cond_signal(RThreadCond *cond) {
 #if HAVE_PTHREAD
 	pthread_cond_signal (&cond->cond);
-#elif __WINDOWS__
+#elif R2__WINDOWS__
 	r_w32_WakeConditionVariable (&cond->cond);
 #endif
 }
@@ -31,7 +31,7 @@ R_API void r_th_cond_signal(RThreadCond *cond) {
 R_API void r_th_cond_signal_all(RThreadCond *cond) {
 #if HAVE_PTHREAD
 	pthread_cond_broadcast (&cond->cond);
-#elif __WINDOWS__
+#elif R2__WINDOWS__
 	r_w32_WakeAllConditionVariable (&cond->cond);
 #endif
 }
@@ -39,7 +39,7 @@ R_API void r_th_cond_signal_all(RThreadCond *cond) {
 R_API void r_th_cond_wait(RThreadCond *cond, RThreadLock *lock) {
 #if HAVE_PTHREAD
 	pthread_cond_wait (&cond->cond, &lock->lock);
-#elif __WINDOWS__
+#elif R2__WINDOWS__
 	r_w32_SleepConditionVariableCS (&cond->cond, &lock->lock, INFINITE);
 #endif
 }
@@ -50,7 +50,7 @@ R_API void r_th_cond_free(RThreadCond *cond) {
 	}
 #if HAVE_PTHREAD
 	pthread_cond_destroy (&cond->cond);
-#elif __WINDOWS__
+#elif R2__WINDOWS__
 	// TODO destroy the condition variable here
 #endif
 	free (cond);

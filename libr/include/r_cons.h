@@ -36,7 +36,7 @@ extern "C" {
 #include <sys/ioctl.h>
 #include <sys/socket.h>
 #endif
-#if __WINDOWS__
+#if R2__WINDOWS__
 #include <windows.h>
 #include <wincon.h>
 #include <winuser.h>
@@ -477,7 +477,7 @@ typedef struct r_cons_t {
 	void *user; // Used by <RCore*>
 #if __UNIX__ && !__wasi__
 	struct termios term_raw, term_buf;
-#elif __WINDOWS__
+#elif R2__WINDOWS__
 	DWORD term_raw, term_buf, term_xterm;
 	UINT old_cp;
 	bool bCtrl;
@@ -604,7 +604,7 @@ typedef struct r_cons_t {
 #define RCOLOR(a, r, g, b, bgr, bgg, bgb, id16) (RColor) {0, a, r, g, b, bgr, bgg, bgb, id16}
 #endif
 #define RColor_NULL       RCOLOR(0x00,     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, -1)
-#if __WINDOWS__
+#if R2__WINDOWS__
 #define RColor_BLACK      RCOLOR(ALPHA_FG, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,  0)
 #define RColor_BGBLACK    RCOLOR(ALPHA_BG, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,  0)
 #define RColor_RED        RCOLOR(ALPHA_FG, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00,  1)
@@ -811,7 +811,7 @@ R_API void r_cons_break_timeout(int timeout);
 R_API int r_cons_pipe_open(const char *file, int fdn, int append);
 R_API void r_cons_pipe_close(int fd);
 
-#if __WINDOWS__
+#if R2__WINDOWS__
 R_API int r_cons_is_vtcompat(void);
 R_API void r_cons_w32_clear(void);
 R_API void r_cons_w32_gotoxy(int fd, int x, int y);

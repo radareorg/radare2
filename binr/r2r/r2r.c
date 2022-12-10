@@ -214,7 +214,7 @@ int main(int argc, char **argv) {
 	bool get_bins = true;
 	int ret = 0;
 
-#if __WINDOWS__
+#if R2__WINDOWS__
 	UINT old_cp = GetConsoleOutputCP ();
 	{
 		HANDLE streams[] = { GetStdHandle (STD_OUTPUT_HANDLE), GetStdHandle (STD_ERROR_HANDLE) };
@@ -558,7 +558,7 @@ coast:
 beach:
 	free (json_test_file);
 	free (fuzz_dir);
-#if __WINDOWS__
+#if R2__WINDOWS__
 	if (old_cp) {
 		(void)SetConsoleOutputCP (old_cp);
 		// chcp doesn't pick up the code page switch for some reason
@@ -661,7 +661,7 @@ static RThreadFunctionRet worker_th(RThread *th) {
 
 static void print_diff(const char *actual, const char *expected, bool diffchar, const char *regexp) {
 	RDiff *d = r_diff_new ();
-#ifdef __WINDOWS__
+#ifdef R2__WINDOWS__
 	d->diff_cmd = "git diff --no-index";
 #endif
 	char *output = (char *)actual;
@@ -857,7 +857,7 @@ static void print_state_counts(R2RState *state) {
 }
 
 static void print_state(R2RState *state, ut64 prev_completed) {
-#if __WINDOWS__
+#if R2__WINDOWS__
 	setvbuf (stdout, NULL, _IOFBF, 8192);
 #endif
 	print_new_results (state, prev_completed);
@@ -874,7 +874,7 @@ static void print_state(R2RState *state, ut64 prev_completed) {
 	printf (" ");
 	print_state_counts (state);
 	fflush (stdout);
-#if __WINDOWS__
+#if R2__WINDOWS__
 	setvbuf (stdout, NULL, _IONBF, 0);
 #endif
 }
@@ -908,7 +908,7 @@ static void interact(R2RState *state) {
 	}
 
 	bool use_fancy_stuff = !r_cons_is_windows ();
-#if __WINDOWS__
+#if R2__WINDOWS__
 	// XXX move to rcons
 	(void)SetConsoleOutputCP (65001); // UTF-8
 #endif

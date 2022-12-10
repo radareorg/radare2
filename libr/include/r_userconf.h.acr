@@ -46,7 +46,7 @@ extern "C" {
 #define R2_FLAGS "@FLAGS@"
 #define R2_HUD "@HUD@"
 #else
-#if __WINDOWS__ || _MSC_VER
+#if R2__WINDOWS__ || _MSC_VER
 #define R2_PREFIX "."
 #define R2_ETCDIR "etc"
 #define R2_LIBDIR "lib"

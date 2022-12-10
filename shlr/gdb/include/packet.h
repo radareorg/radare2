@@ -7,7 +7,7 @@
 #include <stdlib.h>
 #include "libgdbr.h"
 #include <stdio.h>
-#if __WINDOWS__
+#if R2__WINDOWS__
 #include <windows.h>
 #if !defined(_MSC_VER)
 #include <winsock.h>
