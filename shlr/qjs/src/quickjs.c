@@ -6641,7 +6641,7 @@ static void build_backtrace(JSContext *ctx, JSValueConst error_obj,
             prepare = JS_GetProperty(ctx, ctx->error_ctor,
                                      JS_ATOM_prepareStackTrace);
             if (!JS_IsUndefined(prepare)) {
-                JSValueConst args[] = {
+                JSValueConst args[2] = {
                     error_obj,
                     str,
                 };
