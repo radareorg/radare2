@@ -129,7 +129,8 @@ static inline int64_t min_int64(int64_t a, int64_t b)
 /* WARNING: undefined if a = 0 */
 static inline int clz32(unsigned int a)
 {
-#ifdef _MSC_VER
+#if 1
+	// def _MSC_VER
     unsigned long idx;
     _BitScanReverse(&idx, a);
     return 31 ^ idx;
