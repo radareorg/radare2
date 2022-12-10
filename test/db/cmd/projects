@@ -810,7 +810,8 @@ FILE=bins/elf/analysis/main
 ARGS=-A -eprj.vc=false -edir.projects=.tmp/
 CMDS=<<EOF
 Ps hello
-Ps world
+P3
 EOF
-EXPECT=<<EOF
+RUN
+EXPECT_ERR=<<EOF
 EOF
