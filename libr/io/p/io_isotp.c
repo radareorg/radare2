@@ -143,6 +143,7 @@ RIOPlugin r_io_plugin_isotp = {
 #else
 RIOPlugin r_io_plugin_isotp = {
 	.name = "isotp",
+	.license = "MIT",
 	.desc = "shared memory resources (not for this platform)",
 };
 #endif
