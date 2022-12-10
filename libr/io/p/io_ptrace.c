@@ -7,7 +7,7 @@
 #include <r_cons.h>
 #include <r_debug.h>
 
-#if DEBUGGER && (__linux__ || __BSD__ || defined(__serenity__))
+#if DEBUGGER && (__linux__ || R2__BSD__ || defined(__serenity__))
 
 #include <sys/ptrace.h>
 #include <sys/types.h>

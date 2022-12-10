@@ -18,7 +18,7 @@
 #include <mach/task.h>
 #include <mach/task_info.h>
 void macosx_debug_regions (RIO *io, task_t task, mach_vm_address_t address, int max);
-#elif __BSD__
+#elif R2__BSD__
 #if __FreeBSD__
 #include <sys/sysctl.h>
 #include <sys/user.h>
@@ -241,7 +241,7 @@ static int update_self_regions(RIO *io, int pid) {
 	fclose (fd);
 
 	return true;
-#elif __BSD__
+#elif R2__BSD__
 	return bsd_proc_vmmaps(io, pid);
 #elif __HAIKU__
 	image_info ii;
@@ -711,7 +711,7 @@ void macosx_debug_regions(RIO *io, task_t task, mach_vm_address_t address, int m
 		}
 	}
 }
-#elif __BSD__
+#elif R2__BSD__
 bool bsd_proc_vmmaps(RIO *io, int pid) {
 #if __FreeBSD__
 	size_t size;
