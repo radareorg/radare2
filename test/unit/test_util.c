@@ -116,7 +116,7 @@ bool test_autonames(void) {
 
 bool test_file_slurp(void) {
 
-#ifdef __WINDOWS__
+#ifdef R2__WINDOWS__
 #define S_IRWXU _S_IREAD | _S_IWRITE
 #endif
 

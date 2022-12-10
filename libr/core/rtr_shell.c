@@ -71,7 +71,7 @@ TODO:
 				break;
 			case 'i':
 				{
-#if __UNIX__
+#if R2__UNIX__
 #define COLORFLAGS (core->print->flags & R_PRINT_FLAGS_COLOR)
 #else
 #define COLORFLAGS 0
@@ -111,7 +111,7 @@ TODO:
 					eprintf ("Press <enter> to return to Visual mode.\n");
 					do {
 						char buf[1024];
-#if __UNIX__
+#if R2__UNIX__
 						r_line_set_prompt (Color_RESET":> ");
 #else
 						r_line_set_prompt (":> ");

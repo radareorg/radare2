@@ -1,6 +1,6 @@
 /* radare2 - LGPL - Copyright 2013-2020 - pancake */
 
-#if __UNIX__
+#if R2__UNIX__
 #include <unistd.h>
 #elif R2__WINDOWS__
 #include <windows.h>
@@ -103,7 +103,7 @@ int r_sys_setenv(const char *key, const char *value) {
 	if (!key) {
 		return 0;
 	}
-#if __UNIX__
+#if R2__UNIX__
 	if (!value) {
 		unsetenv (key);
 		return 0;
@@ -162,7 +162,7 @@ err_r_sys_get_env:
 }
 
 int r_sys_getpid() {
-#if __UNIX__
+#if R2__UNIX__
 	return getpid();
 #elif R2__WINDOWS__
 	return GetCurrentProcessId();

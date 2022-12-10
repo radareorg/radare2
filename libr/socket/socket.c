@@ -117,7 +117,7 @@ R_API bool r_socket_is_connected(RSocket *s) {
 #endif
 }
 
-#if __UNIX__
+#if R2__UNIX__
 static bool __connect_unix(RSocket *s, const char *file) {
 	struct sockaddr_un addr;
 	int sock = socket (PF_UNIX, SOCK_STREAM, 0);
@@ -239,7 +239,7 @@ R_API bool r_socket_spawn(RSocket *s, const char *cmd, unsigned int timeout) {
 	if (!sock) {
 		return false;
 	}
-#if __UNIX__
+#if R2__UNIX__
 	r_sys_sleep (4);
 	r_sys_usleep (timeout);
 
@@ -270,11 +270,11 @@ R_API bool r_socket_connect(RSocket *s, const char *host, const char *port, int 
 	if (proto == R_SOCKET_PROTO_NONE) {
 		proto = R_SOCKET_PROTO_DEFAULT;
 	}
-#if __UNIX__
+#if R2__UNIX__
 	r_sys_signal (SIGPIPE, SIG_IGN);
 #endif
 	if (proto == R_SOCKET_PROTO_UNIX) {
-#if __UNIX__
+#if R2__UNIX__
 		if (!__connect_unix (s, host)) {
 			return false;
 		}
@@ -485,7 +485,7 @@ R_API int r_socket_close(RSocket *s) {
 		return false;
 	}
 	if (s->fd != R_INVALID_SOCKET) {
-#if __UNIX__
+#if R2__UNIX__
 		shutdown (s->fd, SHUT_RDWR);
 #endif
 #if R2__WINDOWS__
@@ -540,7 +540,7 @@ R_API bool r_socket_listen(RSocket *s, const char *port, const char *certfile) {
 	struct linger linger = {0};
 
 	if (s->proto == R_SOCKET_PROTO_UNIX) {
-#if __UNIX__
+#if R2__UNIX__
 		return __listen_unix (s, port);
 #endif
 		return false;
@@ -609,7 +609,7 @@ R_API bool r_socket_listen(RSocket *s, const char *port, const char *certfile) {
 #endif
 		return false;
 	}
-#if __UNIX__
+#if R2__UNIX__
 	r_sys_signal (SIGPIPE, SIG_IGN);
 #endif
 	if (s->proto == R_SOCKET_PROTO_TCP) {
@@ -712,13 +712,13 @@ R_API RSocket *r_socket_accept_timeout(RSocket *s, unsigned int timeout) {
 
 // Only applies to read in UNIX
 R_API bool r_socket_block_time(RSocket *s, bool block, int sec, int usec) {
-#if __UNIX__
+#if R2__UNIX__
 	int ret, flags;
 #endif
 	if (!s) {
 		return false;
 	}
-#if __UNIX__
+#if R2__UNIX__
 	flags = fcntl (s->fd, F_GETFL, 0);
 	if (flags < 0) {
 		return false;
@@ -766,7 +766,7 @@ R_API int r_socket_ready(RSocket *s, int secs, int usecs) {
 R_API char *r_socket_tostring(RSocket *s) {
 #if R2__WINDOWS__
 	return r_str_newf ("fd%d", (int)(size_t)s->fd);
-#elif __UNIX__
+#elif R2__UNIX__
 	char *str = NULL;
 	struct sockaddr sa;
 	socklen_t sl = sizeof (sa);
@@ -790,7 +790,7 @@ R_API char *r_socket_tostring(RSocket *s) {
 /* Read/Write functions */
 R_API int r_socket_write(RSocket *s, const void *buf, int len) {
 	int ret, delta = 0;
-#if __UNIX__
+#if R2__UNIX__
 	r_sys_signal (SIGPIPE, SIG_IGN);
 #endif
 	for (;;) {

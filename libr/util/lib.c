@@ -35,7 +35,7 @@ R_API int r_lib_types_get_i(const char *str) {
 R_API void *r_lib_dl_open(const char *libname) {
 	void *ret = NULL;
 #if WANT_DYLINK
-#if __UNIX__
+#if R2__UNIX__
 	if (libname) {
 #if __linux__
 		ret = dlopen (libname, RTLD_NOW);
@@ -74,7 +74,7 @@ R_API void *r_lib_dl_open(const char *libname) {
 
 R_API void *r_lib_dl_sym(void *handler, const char *name) {
 #if WANT_DYLINK
-#if __UNIX__
+#if R2__UNIX__
 	return dlsym (handler, name);
 #elif R2__WINDOWS__
 	return GetProcAddress (handler, name);
@@ -87,7 +87,7 @@ R_API void *r_lib_dl_sym(void *handler, const char *name) {
 }
 
 R_API int r_lib_dl_close(void *handler) {
-#if __UNIX__ && WANT_DYLINK
+#if R2__UNIX__ && WANT_DYLINK
 	return dlclose (handler);
 #else
 	return handler? 0: -1;
@@ -132,7 +132,7 @@ err:
 #if __APPLE__
 	char *env = r_sys_getenv ("DYLD_LIBRARY_PATH");
 	env = r_str_append (env, ":/lib:/usr/lib:/usr/local/lib");
-#elif __UNIX__
+#elif R2__UNIX__
 	char *env = r_sys_getenv ("LD_LIBRARY_PATH");
 	env = r_str_append (env, ":/lib:/usr/lib:/usr/local/lib");
 #endif

@@ -18,7 +18,7 @@
 /* operating system */
 #undef R2__BSD__
 #undef __KFBSD__
-#undef __UNIX__
+#undef R2__UNIX__
 #undef R2__WINDOWS__
 
 #define R_MODE_PRINT 0x000
@@ -174,23 +174,23 @@
 #endif
 
 #ifdef __HAIKU__
-# define __UNIX__ 1
+# define R2__UNIX__ 1
 #endif
 
 #undef HAVE_PTY
 #if EMSCRIPTEN || __wasi__ || defined(__serenity__)
 #define HAVE_PTY 0
 #else
-#define HAVE_PTY __UNIX__ && LIBC_HAVE_FORK && !__sun
+#define HAVE_PTY R2__UNIX__ && LIBC_HAVE_FORK && !__sun
 #endif
 
 #if defined(EMSCRIPTEN) || defined(__wasi__) || defined(__linux__) || defined(__APPLE__) || defined(__GNU__) || defined(__ANDROID__) || defined(__QNX__) || defined(__sun) || defined(__HAIKU__) || defined(__serenity__) || defined(__vinix__)
   #define R2__BSD__ 0
-  #define __UNIX__ 1
+  #define R2__UNIX__ 1
 #endif
 #if __KFBSD__ || defined(__NetBSD__) || defined(__OpenBSD__) || defined(__FreeBSD__) || defined(__DragonFly__)
   #define R2__BSD__ 1
-  #define __UNIX__ 1
+  #define R2__UNIX__ 1
 #endif
 #if R2__WINDOWS__ || _WIN32
   #ifdef _MSC_VER
@@ -204,7 +204,7 @@
   typedef int socklen_t;
   #undef USE_SOCKETS
   #define R2__WINDOWS__ 1
-  #undef __UNIX__
+  #undef R2__UNIX__
   #undef R2__BSD__
 #endif
 #if R2__WINDOWS__ || _WIN32
@@ -392,7 +392,7 @@ static inline void *r_new_copy(int size, void *data) {
 #define r_sys_perror(x) r_sys_perror_str(x);
 #endif
 
-#if __UNIX__
+#if R2__UNIX__
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>

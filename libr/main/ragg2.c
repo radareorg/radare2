@@ -166,7 +166,7 @@ static int openfile(const char *f, int x) {
 			return -1;
 		}
 	}
-#if __UNIX__ && !__wasi__
+#if R2__UNIX__ && !__wasi__
 	if (x) {
 		fchmod (fd, 0755);
 	}

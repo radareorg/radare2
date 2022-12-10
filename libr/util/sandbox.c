@@ -85,7 +85,7 @@ R_API bool r_sandbox_check_path(const char *path) {
 	if (*path == '/') {
 		return false;
 	}
-#if __UNIX__
+#if R2__UNIX__
 	char ch;
 	if (readlink (path, &ch, 1) != -1) {
 		return false;
@@ -505,7 +505,7 @@ R_API int r_sandbox_kill(int pid, int sig) {
 	if (G_enabled) {
 		return -1;
 	}
-#if HAVE_SYSTEM && __UNIX__
+#if HAVE_SYSTEM && R2__UNIX__
 	return kill (pid, sig);
 #endif
 	return -1;
@@ -545,7 +545,7 @@ R_API bool r_sys_stop(void) {
 	if (G_enabled) {
 		return false;
 	}
-#if __UNIX__
+#if R2__UNIX__
 	return !r_sandbox_kill (0, SIGTSTP);
 #else
 	return false;

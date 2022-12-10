@@ -16,7 +16,7 @@ ONELIB=0
 CC_AR=$(AR) q ${LIBAR}
 PARTIALLD=$(CC) -nostdlib -Wl,--whole-archive -Wl,--no-entry
 PIC_CFLAGS=-fPIC
-CFLAGS+=-MD -D__UNIX__=1
+CFLAGS+=-MD -DR2__UNIX__=1
 CFLAGS_INCLUDE=-I
 LDFLAGS_LINK=-l
 LDFLAGS_LINKPATH=-L

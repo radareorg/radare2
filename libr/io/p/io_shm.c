@@ -5,8 +5,8 @@
 #include <sys/types.h>
 
 #if __ANDROID__ || EMSCRIPTEN
-#undef __UNIX__
-#define __UNIX__ 0
+#undef R2__UNIX__
+#define R2__UNIX__ 0
 #endif
 
 // linux requires -lrt for this, but still it seems to not work as expected
@@ -14,7 +14,7 @@
 // make this work across all unixes without adding extra depenencies
 #define USE_SHM_OPEN 0
 
-#if __UNIX__ && !defined (__QNX__) && !defined (__HAIKU__)
+#if R2__UNIX__ && !defined (__QNX__) && !defined (__HAIKU__)
 #include <sys/ipc.h>
 #include <sys/shm.h>
 #include <sys/mman.h>

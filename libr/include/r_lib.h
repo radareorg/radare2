@@ -4,7 +4,7 @@
 #include "r_types.h"
 #include "r_list.h"
 
-#if __UNIX__ && WANT_DYLINK
+#if R2__UNIX__ && WANT_DYLINK
 #include <dlfcn.h>
 #endif
 

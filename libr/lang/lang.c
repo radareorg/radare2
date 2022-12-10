@@ -13,7 +13,7 @@ R_LIB_VERSION(r_lang);
 #include "p/vala.c"  // hardcoded
 #include "p/rust.c"  // hardcoded
 #include "p/zig.c"   // hardcoded
-#if __UNIX__
+#if R2__UNIX__
 #include "p/cpipe.c" // hardcoded
 #endif
 #endif
@@ -41,7 +41,7 @@ R_API RLang *r_lang_new(void) {
 	lang->defs->free = (RListFree)r_lang_def_free;
 	lang->cb_printf = (PrintfCallback)printf;
 #if HAVE_SYSTEM
-#if __UNIX__
+#if R2__UNIX__
 	r_lang_add (lang, &r_lang_plugin_c);
 	r_lang_add (lang, &r_lang_plugin_cpipe);
 #endif

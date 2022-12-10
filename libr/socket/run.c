@@ -31,7 +31,7 @@
 #include <mach-o/nlist.h>
 #endif
 
-#if __UNIX__
+#if R2__UNIX__
 #include <sys/ioctl.h>
 #ifndef __wasi__
 #include <sys/resource.h>
@@ -73,7 +73,7 @@ static void dyn_init(void) {
 	if (!dyn_forkpty) {
 		dyn_forkpty = r_lib_dl_sym (NULL, "forkpty");
 	}
-#if __UNIX__
+#if R2__UNIX__
 	// attempt to fall back on libutil if we failed to load anything
 	if (!(dyn_openpty && dyn_login_tty && dyn_forkpty)) {
 		void *libutil;
@@ -187,7 +187,7 @@ R_API void r_run_free(RRunProfile *r) {
 	}
 }
 
-#if __UNIX__
+#if R2__UNIX__
 static void set_limit(int n, int a, ut64 b) {
 #ifndef __wasi__
 	if (n) {
@@ -478,7 +478,7 @@ static bool handle_redirection(const char *cmd, bool in, bool out, bool err) {
 	if (cmd[0] == '"') {
 #ifdef __wasi__
 		R_LOG_ERROR ("Cannot create pipe");
-#elif __UNIX__
+#elif R2__UNIX__
 		if (in) {
 			int pipes[2];
 			if (pipe (pipes) != -1) {
@@ -930,7 +930,7 @@ R_API bool r_run_config_env(RRunProfile *p) {
 	if (p->_aslr != -1) {
 		setASLR (p, p->_aslr);
 	}
-#if __UNIX__ && !__wasi__ && !defined(__serenity__)
+#if R2__UNIX__ && !__wasi__ && !defined(__serenity__)
 	set_limit (p->_docore, RLIMIT_CORE, RLIM_INFINITY);
 	if (p->_maxfd) {
 		set_limit (p->_maxfd, RLIMIT_NOFILE, p->_maxfd);
@@ -1028,7 +1028,7 @@ R_API bool r_run_config_env(RRunProfile *p) {
 	if (p->_r2sleep != 0) {
 		r_sys_sleep (p->_r2sleep);
 	}
-#if __UNIX__ && !__wasi__
+#if R2__UNIX__ && !__wasi__
 	if (p->_chroot) {
 		if (chdir (p->_chroot) == -1) {
 			R_LOG_ERROR ("Cannot chdir to chroot in %s", p->_chroot);
@@ -1067,7 +1067,7 @@ R_API bool r_run_config_env(RRunProfile *p) {
 		}
 	}
 #endif
-#if __UNIX__ && !__wasi__
+#if R2__UNIX__ && !__wasi__
 	if (p->_setuid) {
 		ret = setgroups (0, NULL);
 		if (ret < 0) {
@@ -1164,7 +1164,7 @@ R_API bool r_run_config_env(RRunProfile *p) {
 	if (p->_timeout) {
 #if __wasi__
 		// do nothing
-#elif __UNIX__
+#elif R2__UNIX__
 		int mypid = r_sys_getpid ();
 		if (!r_sys_fork ()) {
 			int use_signal = p->_timeout_sig;
@@ -1291,7 +1291,7 @@ R_API bool r_run_start(RRunProfile *p) {
 			setsid ();
 #endif
 			if (p->_timeout) {
-#if __UNIX__
+#if R2__UNIX__
 				int mypid = r_sys_getpid ();
 				if (!r_sys_fork ()) {
 					int use_signal = p->_timeout_sig;
@@ -1313,7 +1313,7 @@ R_API bool r_run_start(RRunProfile *p) {
 #endif
 			}
 #endif
-#if __UNIX__ && !__wasi__
+#if R2__UNIX__ && !__wasi__
 			close (0);
 			close (1);
 			char *bin_sh = r_file_binsh ();
@@ -1350,7 +1350,7 @@ R_API bool r_run_start(RRunProfile *p) {
 				return false;
 			}
 		}
-#if __UNIX__
+#if R2__UNIX__
 		// XXX HACK close all non-tty fds
 		{ int i;
 			for (i = 3; i < 1024; i++) {
@@ -1381,7 +1381,7 @@ R_API bool r_run_start(RRunProfile *p) {
 #endif
 
 		if (p->_nice) {
-#if __UNIX__ && !defined(__HAIKU__) && !defined(__serenity__) && !__wasi__
+#if R2__UNIX__ && !defined(__HAIKU__) && !defined(__serenity__) && !__wasi__
 			if (nice (p->_nice) == -1) {
 				return false;
 			}

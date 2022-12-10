@@ -58,7 +58,7 @@ int proc_pidpath(int pid, void * buffer, ut32 buffersize);
 //#  include <libproc.h>
 # endif
 #endif
-#if __UNIX__
+#if R2__UNIX__
 # include <sys/utsname.h>
 # include <sys/stat.h>
 # include <errno.h>
@@ -363,7 +363,7 @@ R_API int r_sys_sleep(int secs) {
 	rqtp.tv_sec = secs;
 	rqtp.tv_nsec = 0;
 	return clock_nanosleep (CLOCK_MONOTONIC, 0, &rqtp, NULL);
-#elif __UNIX__
+#elif R2__UNIX__
 	return sleep (secs);
 #else
 	Sleep (secs * 1000); // W32
@@ -377,7 +377,7 @@ R_API int r_sys_usleep(int usecs) {
 	rqtp.tv_sec = usecs / 1000000;
 	rqtp.tv_nsec = (usecs - (rqtp.tv_sec * 1000000)) * 1000;
 	return clock_nanosleep (CLOCK_MONOTONIC, 0, &rqtp, NULL);
-#elif __UNIX__
+#elif R2__UNIX__
 #if defined(__GLIBC__) && defined(__GLIBC_MINOR__) && (__GLIBC__ <= 2) && (__GLIBC_MINOR__ <= 2)
 	// Old versions of GNU libc return void for usleep
 	usleep (usecs);
@@ -394,7 +394,7 @@ R_API int r_sys_usleep(int usecs) {
 }
 
 R_API int r_sys_clearenv(void) {
-#if __UNIX__
+#if R2__UNIX__
 #if __APPLE__ && !HAVE_ENVIRON
 	/* do nothing */
 	if (!env) {
@@ -424,7 +424,7 @@ R_API int r_sys_setenv(const char *key, const char *value) {
 	if (!key) {
 		return 0;
 	}
-#if __UNIX__
+#if R2__UNIX__
 	if (!value) {
 		unsetenv (key);
 		return 0;
@@ -446,7 +446,7 @@ R_API int r_sys_setenv(const char *key, const char *value) {
 #endif
 }
 
-#if __UNIX__
+#if R2__UNIX__
 static char *crash_handler_cmd = NULL;
 
 static void signal_handler(int signum) {
@@ -628,7 +628,7 @@ R_API bool r_sys_aslr(int val) {
 	return ret;
 }
 
-#if __UNIX__ && HAVE_SYSTEM
+#if R2__UNIX__ && HAVE_SYSTEM
 R_API int r_sys_cmd_str_full(const char *cmd, const char *input, int ilen, char **output, int *len, char **sterr) {
 	if (!r_sandbox_check (R_SANDBOX_GRAIN_EXEC)) {
 		return false;
@@ -824,7 +824,7 @@ R_API int r_sys_cmdf(const char *fmt, ...) {
 }
 
 R_API int r_sys_cmdbg(const char *str) {
-#if __UNIX__
+#if R2__UNIX__
 	int pid = r_sys_fork ();
 	if (pid == -1) {
 		return -1;
@@ -930,7 +930,7 @@ R_API bool r_sys_mkdirp(const char *dir) {
 }
 
 R_API void r_sys_perror_str(const char *fun) {
-#if __UNIX__
+#if R2__UNIX__
 #pragma push_macro("perror")
 #undef perror
 	perror (fun);
@@ -1024,7 +1024,7 @@ R_API int r_sys_run(const ut8 *buf, int len) {
 	//r_mem_protect (ptr, sz, "rwx"); // try, ignore if fail
 	cb = (int (*)())ptr;
 #if USE_FORK
-#if __UNIX__
+#if R2__UNIX__
 	pid = r_sys_fork ();
 #else
 	pid = -1;
@@ -1071,7 +1071,7 @@ R_API int r_sys_run_rop(const ut8 *buf, int len) {
 	}
 	memcpy (bufptr, buf, len);
 #if USE_FORK
-#if __UNIX__
+#if R2__UNIX__
 	pid_t pid = r_sys_fork ();
 #else
 	pid = -1;
@@ -1317,7 +1317,7 @@ R_API int r_sys_uid(void) {
 R_API int r_sys_getpid(void) {
 #if __wasi__
 	return 0;
-#elif __UNIX__
+#elif R2__UNIX__
 	return getpid ();
 #elif R2__WINDOWS__
 	return (int)GetCurrentProcessId ();
@@ -1365,7 +1365,7 @@ R_API const char *r_sys_prefix(const char *pfx) {
 }
 
 R_API RSysInfo *r_sys_info(void) {
-#if __UNIX__
+#if R2__UNIX__
 	struct utsname un = {{0}};
 	if (uname (&un) != -1) {
 		RSysInfo *si = R_NEW0 (RSysInfo);

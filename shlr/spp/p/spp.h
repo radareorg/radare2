@@ -3,7 +3,7 @@
 #ifndef INCLUDE_P_SPP_H
 #define INCLUDE_P_SPP_H
 
-#if __UNIX__
+#if R2__UNIX__
 #include <unistd.h>
 #endif
 

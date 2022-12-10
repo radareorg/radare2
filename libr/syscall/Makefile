@@ -4,7 +4,7 @@ NAME=r_syscall
 R2DEPS=r_util
 
 OBJS=syscall.o ioports.o splugs.o
-CFLAGS+=-D__UNIX__ -Wall
+CFLAGS+=-DR2__UNIX__ -Wall
 
 ifeq (${HAVE_GPERF},1)
 OBJS+=d/darwin-arm-32.o

@@ -302,7 +302,7 @@ static bool __resize(RIO *io, RIODesc *fd, ut64 size) {
 	return r_io_def_mmap_truncate (mmo, size);
 }
 
-#if __UNIX__
+#if R2__UNIX__
 static bool __is_blockdevice(RIODesc *desc) {
 	r_return_val_if_fail (desc && desc->data, false);
 	RIOMMapFileObj *mmo = desc->data;
@@ -326,7 +326,7 @@ RIOPlugin r_io_plugin_default = {
 	.seek = __lseek,
 	.write = __write,
 	.resize = __resize,
-#if __UNIX__
+#if R2__UNIX__
 	.is_blockdevice = __is_blockdevice,
 #endif
 };

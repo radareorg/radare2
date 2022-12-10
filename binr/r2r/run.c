@@ -1250,7 +1250,7 @@ static bool require_check(const char *require) {
 		res &= r_file_exists ("/usr/bin/as");
 	}
 	if (strstr (require, "unix")) {
-#if __UNIX__
+#if R2__UNIX__
 		res &= true;
 #else
 		res = false;

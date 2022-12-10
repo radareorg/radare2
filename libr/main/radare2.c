@@ -1123,7 +1123,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 		char *buf = r_stdin_slurp (&sz);
 		eprintf ("^D\n");
 		r_cons_set_raw (false);
-#if __UNIX__
+#if R2__UNIX__
 		// TODO: keep flags :?
 		R_UNUSED_RESULT (freopen ("/dev/tty", "rb", stdin));
 		R_UNUSED_RESULT (freopen ("/dev/tty", "w", stdout));
@@ -1243,7 +1243,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 					free (pfile);
 					pfile = strdup ("dbg://");
 				}
-#if __UNIX__
+#if R2__UNIX__
 				/* implicit ./ to make unix behave like windows */
 				if (f) {
 					char *path, *escaped_path;
@@ -1594,7 +1594,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 		}
 	}
 #if UNCOLORIZE_NONTTY
-#if __UNIX__
+#if R2__UNIX__
 	if (!r_cons_is_tty ()) {
 		r_config_set_i (r->config, "scr.color", COLOR_MODE_DISABLED);
 	}

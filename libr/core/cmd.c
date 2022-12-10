@@ -3,7 +3,7 @@
 #define INTERACTIVE_MAX_REP 1024
 
 #include <r_core.h>
-#if __UNIX__
+#if R2__UNIX__
 #include <sys/utsname.h>
 #ifndef __wasi__
 #include <pwd.h>
@@ -3338,7 +3338,7 @@ err_r_w32_cmd_pipe:
 #endif
 
 R_API int r_core_cmd_pipe(RCore *core, char *radare_cmd, char *shell_cmd) {
-#if __UNIX__ && !__wasi__ && HAVE_FORK
+#if R2__UNIX__ && !__wasi__ && HAVE_FORK
 	int stdout_fd, fds[2];
 	int child;
 #endif
@@ -3369,7 +3369,7 @@ R_API int r_core_cmd_pipe(RCore *core, char *radare_cmd, char *shell_cmd) {
 	}
 #if !HAVE_FORK
 	// nothing
-#elif __UNIX__
+#elif R2__UNIX__
 	r_str_trim_head (radare_cmd);
 	r_str_trim_head (shell_cmd);
 
@@ -5778,7 +5778,7 @@ R_API int r_core_cmd_lines(RCore *core, const char *lines) {
 	}
 	size_t line_count = r_str_char_count(lines, '\n');
 
-#if __UNIX__
+#if R2__UNIX__
 	const bool istty = r_cons_is_tty ();
 #else
 	const bool istty = true;

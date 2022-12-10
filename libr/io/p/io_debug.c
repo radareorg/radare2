@@ -14,7 +14,7 @@
 #define MAGIC_EXIT 123
 
 #include <signal.h>
-#if __UNIX__
+#if R2__UNIX__
 #include <sys/ptrace.h>
 #include <sys/types.h>
 #include <sys/wait.h>
@@ -295,7 +295,7 @@ static void handle_posix_redirection(RRunProfile *rp, posix_spawn_file_actions_t
 	}
 }
 
-// __UNIX__ (not windows)
+// R2__UNIX__ (not windows)
 static int fork_and_ptraceme_for_mac(RIO *io, int bits, const char *cmd) {
 	pid_t p = -1;
 	posix_spawn_file_actions_t fileActions;

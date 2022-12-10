@@ -1444,7 +1444,7 @@ R_API char *r_str_escape_sh(const char *buf) {
 	char *q = new_buf;
 	while (*p) {
 		switch (*p) {
-#if __UNIX__
+#if R2__UNIX__
 		case '$':
 		case '`':
 #endif

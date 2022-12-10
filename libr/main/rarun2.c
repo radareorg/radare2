@@ -5,7 +5,7 @@
 #include <r_main.h>
 #include <r_socket.h>
 
-#if __UNIX__ && HAVE_PTY
+#if R2__UNIX__ && HAVE_PTY
 static void fwd(int sig) {
 	/* do nothing? send kill signal to remote process */
 }
@@ -35,7 +35,7 @@ R_API int r_main_rarun2(int argc, const char **argv) {
 	}
 	const char *file = argv[1];
 	if (!strcmp (file, "-t")) {
-#if __UNIX__ && HAVE_PTY
+#if R2__UNIX__ && HAVE_PTY
 		rarun2_tty ();
 		return 0;
 #else

@@ -3,7 +3,7 @@
 #include <r_socket.h>
 #include <r_util/r_sandbox.h>
 
-#if __UNIX__ && !__wasi__
+#if R2__UNIX__ && !__wasi__
 
 #include <errno.h>
 #include <string.h>
@@ -59,7 +59,7 @@ R_API int r_socket_connect_serial(RSocket *sock, const char *path, int speed, in
 	return fd;
 }
 
-#else // __UNIX__
+#else // R2__UNIX__
 
 R_API int r_socket_connect_serial(RSocket *sock, const char *path, int speed, int parity) {
 	return -1;

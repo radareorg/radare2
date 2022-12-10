@@ -12,7 +12,7 @@
 #include <r_cons.h>
 #include <r_debug.h>
 
-#if __UNIX__
+#if R2__UNIX__
 #include <errno.h>
 #include <fcntl.h>
 #include <string.h>
@@ -21,7 +21,7 @@
 #endif
 #endif
 
-#if __UNIX__
+#if R2__UNIX__
 #include <signal.h>
 #endif
 

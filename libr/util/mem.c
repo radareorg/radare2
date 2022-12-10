@@ -1,7 +1,7 @@
 /* radare - LGPL - Copyright 2007-2022 - pancake */
 
 #include <r_util.h>
-#if __UNIX__
+#if R2__UNIX__
 #include <sys/mman.h>
 #endif
 
@@ -262,7 +262,7 @@ R_API const ut8 *r_mem_mem_aligned(const ut8 *haystack, int hlen, const ut8 *nee
 R_API bool r_mem_protect(void *ptr, int size, const char *prot) {
 #if __wasi__
 	return false;
-#elif __UNIX__
+#elif R2__UNIX__
 	int p = 0;
 	if (strchr (prot, 'x')) {
 		p |= PROT_EXEC;
@@ -373,7 +373,7 @@ R_API void *r_mem_mmap_resize(RMmap *m, ut64 newsize) {
 	if (m->buf) {
 		UnmapViewOfFile (m->buf);
 	}
-#elif __UNIX__ && !__wasi__
+#elif R2__UNIX__ && !__wasi__
 	if (munmap (m->buf, m->len) != 0) {
 		return NULL;
 	}

@@ -3916,7 +3916,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF ("cmd.cprompt", "", "column visual prompt commands");
 	SETPREF ("cmd.gprompt", "", "graph visual prompt commands");
 	SETPREF ("cmd.hit", "", "run when a search hit is found");
-#if __UNIX__
+#if R2__UNIX__
 	SETPREF ("cmd.usr1", "", "run when SIGUSR1 signal is received");
 	SETPREF ("cmd.usr2", "", "run when SIGUSR2 signal is received");
 #endif

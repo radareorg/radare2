@@ -8,7 +8,7 @@
 
 static RCore *core = NULL;
 
-#if __UNIX__
+#if R2__UNIX__
 
 // XXX check if its already opened
 static RCoreFile *openself(void) {
