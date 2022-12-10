@@ -807,8 +807,8 @@ RUN
 
 NAME=Rename
 FILE=bins/elf/analysis/main
-ARGS=-A -eprj.vc=false -edir.projects=.tmp/
 CMDS=<<EOF
+e prj.vc = false
 Ps hello
 Ps world
 EOF
