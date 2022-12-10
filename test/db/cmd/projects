@@ -804,3 +804,13 @@ EXPECT=<<EOF
 hjkl
 EOF
 RUN
+
+NAME=Rename
+FILE=bins/elf/analysis/main
+ARGS=-A -eprj.vc=false -edir.projects=.tmp/
+CMDS=<<EOF
+Ps hello
+Ps world
+EOF
+EXPECT=<<EOF
+EOF
