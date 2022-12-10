@@ -1,7 +1,7 @@
 #ifndef R_SIGNAL_H
 #define R_SIGNAL_H
 
-#if __UNIX__
+#if R2__UNIX__
 #include <signal.h>
 #endif
 
@@ -17,7 +17,7 @@ R_API const char* r_signal_tostring(int code);
 R_API const char *r_signal_to_human(int signum);
 
 // XXX this function should be portable, not-unix specific
-#if __UNIX__
+#if R2__UNIX__
 R_API void r_signal_sigmask(int how, const sigset_t *newmask, sigset_t *oldmask);
 #endif
 

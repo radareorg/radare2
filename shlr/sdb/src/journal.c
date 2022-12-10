@@ -2,7 +2,7 @@
 
 #include "sdb/sdb.h"
 #include <fcntl.h>
-#if __UNIX__ || __MINGW32__
+#if R2__UNIX__ || __MINGW32__
 #include <unistd.h>
 #endif
 

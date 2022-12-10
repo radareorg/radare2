@@ -209,7 +209,7 @@ R_API char *r_ctime_r(const time_t *timer, char *buf) {
 }
 
 static int get_time_correction(void) {
-#if __UNIX__
+#if R2__UNIX__
 	struct my_timezone {
 		int tz_minuteswest;     /* minutes west of Greenwich */
 		int tz_dsttime;         /* type of DST correction */

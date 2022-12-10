@@ -31,11 +31,11 @@
 
 #if defined(EMSCRIPTEN) || defined(__linux__) || defined(__APPLE__) || defined(__GNU__) || defined(__ANDROID__) || defined(__QNX__)
   #define R2__BSD__ 0
-  #define __UNIX__ 1
+  #define R2__UNIX__ 1
 #endif
 #if __KFBSD__ || defined(__NetBSD__) || defined(__OpenBSD__)
   #define R2__BSD__ 1
-  #define __UNIX__ 1
+  #define R2__UNIX__ 1
 #endif
 #if __WIN32__ || __CYGWIN__ || MINGW32
   #define __addr_t_defined
@@ -48,7 +48,7 @@
   typedef int socklen_t;
   #undef USE_SOCKETS
   #define R2__WINDOWS__ 1
-  #undef __UNIX__
+  #undef R2__UNIX__
   #undef R2__BSD__
 #endif
 

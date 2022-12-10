@@ -340,7 +340,7 @@ R_API void r_cons_context_break_push(RConsContext *context, RConsBreak cb, void 
 		return;
 	}
 	if (r_stack_is_empty (context->break_stack)) {
-#if __UNIX__
+#if R2__UNIX__
 		if (!C->unbreakable) {
 			if (sig && r_cons_context_is_main ()) {
 				r_sys_signal (SIGINT, __break_signal);
@@ -371,7 +371,7 @@ R_API void r_cons_context_break_pop(RConsContext *context, bool sig) {
 		break_stack_free (b);
 	} else {
 		//there is not more elements in the stack
-#if __UNIX__ && !__wasi__
+#if R2__UNIX__ && !__wasi__
 		if (sig && r_cons_context_is_main ()) {
 			if (!C->unbreakable) {
 				r_sys_signal (SIGINT, SIG_IGN);
@@ -461,7 +461,7 @@ R_API int r_cons_get_cur_line(void) {
 	}
 	curline = info.dwCursorPosition.Y - info.srWindow.Top;
 #endif
-#if __UNIX__ && !__wasi__
+#if R2__UNIX__ && !__wasi__
 	char buf[8];
 	struct termios save,raw;
 	// flush the Arrow keys escape keys which was messing up the output
@@ -493,7 +493,7 @@ R_API void r_cons_break_timeout(int timeout) {
 R_API void r_cons_break_end(void) {
 	C->breaked = false;
 	I->timeout = 0;
-#if __UNIX__ && !__wasi__
+#if R2__UNIX__ && !__wasi__
 	if (!C->unbreakable) {
 		r_sys_signal (SIGINT, SIG_IGN);
 	}
@@ -539,7 +539,7 @@ static BOOL __w32_control(DWORD type) {
 	}
 	return false;
 }
-#elif __UNIX__
+#elif R2__UNIX__
 volatile sig_atomic_t sigwinchFlag;
 static void resize(int sig) {
 	sigwinchFlag = 1;
@@ -667,7 +667,7 @@ R_API RCons *r_cons_new(void) {
 #endif
 #if EMSCRIPTEN || __wasi__
 	/* do nothing here :? */
-#elif __UNIX__
+#elif R2__UNIX__
 	tcgetattr (0, &I->term_buf);
 	memcpy (&I->term_raw, &I->term_buf, sizeof (I->term_raw));
 	I->term_raw.c_iflag &= ~(BRKINT|PARMRK|ISTRIP|INLCR|IGNCR|ICRNL|IXON);
@@ -1476,7 +1476,7 @@ R_API bool r_cons_is_windows(void) {
 R_API bool r_cons_is_tty(void) {
 #if EMSCRIPTEN || __wasi__
 	return false;
-#elif __UNIX__
+#elif R2__UNIX__
 	struct winsize win = {0};
 	const char *tty;
 	struct stat sb;
@@ -1608,7 +1608,7 @@ R_API int r_cons_get_size(int *rows) {
 #elif EMSCRIPTEN || __wasi__
 	I->columns = 80;
 	I->rows = 23;
-#elif __UNIX__
+#elif R2__UNIX__
 	struct winsize win = {0};
 	if (isatty (0) && !ioctl (0, TIOCGWINSZ, &win)) {
 		if ((!win.ws_col) || (!win.ws_row)) {
@@ -1777,7 +1777,7 @@ R_API void r_cons_set_raw(bool is_raw) {
 	}
 #if EMSCRIPTEN || __wasi__
 	/* do nothing here */
-#elif __UNIX__
+#elif R2__UNIX__
 	// enforce echo off
 	if (is_raw) {
 		I->term_raw.c_lflag &= ~(ECHO|ECHONL|ICANON|ISIG|IEXTEN);
@@ -1845,7 +1845,7 @@ smcup: disable terminal scrolling (fullscreen mode)
 rmcup: enable terminal scrolling (normal mode)
 #endif
 R_API bool r_cons_set_cup(bool enable) {
-#if __UNIX__
+#if R2__UNIX__
 	const char *code = enable
 		? "\x1b[?1049h" "\x1b" "7\x1b[?47h"
 		: "\x1b[?1049l" "\x1b[?47l" "\x1b" "8";

@@ -95,7 +95,7 @@ static void path_left_free_kv(HtPPKv *kv) {
 }
 
 static bool r2r_chdir(const char *argv0) {
-#if __UNIX__
+#if R2__UNIX__
 	if (r_file_is_directory ("db")) {
 		return true;
 	}
@@ -1101,7 +1101,7 @@ static void replace_cmd_kv_file(const char *path, ut64 line_begin, ut64 line_end
 		return;
 	}
 	if (r_file_dump (path, (const ut8 *)newc, -1, false)) {
-#if __UNIX__ && !(__wasi__ || __EMSCRIPTEN__)
+#if R2__UNIX__ && !(__wasi__ || __EMSCRIPTEN__)
 		sync ();
 #endif
 	} else {

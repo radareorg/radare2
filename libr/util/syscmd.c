@@ -12,7 +12,7 @@
 R_TH_LOCAL RList *dirstack = NULL;
 
 static char *showfile(char *res, const int nth, const char *fpath, const char *name, int printfmt, bool needs_newline) {
-#if __UNIX__
+#if R2__UNIX__
 	struct stat sb;
 #endif
 	const char *n = fpath;
@@ -42,7 +42,7 @@ static char *showfile(char *res, const int nth, const char *fpath, const char *n
 	// TODO: escape non-printable chars in filenames
 	// TODO: Implement more real info in ls -l
 	// TODO: handle suid
-#if __UNIX__
+#if R2__UNIX__
 	if (lstat (n, &sb) != -1) {
 		ut32 ifmt = sb.st_mode & S_IFMT;
 		uid = sb.st_uid;
@@ -86,7 +86,7 @@ static char *showfile(char *res, const int nth, const char *fpath, const char *n
 		const char *icon = eANY;
 		if (isdir) {
 			icon = eDIR;
-#if __UNIX__
+#if R2__UNIX__
 		} else if ((sb.st_mode & S_IFMT) == S_IFLNK) {
 			const char *eLNK = "📎";
 			icon = eLNK;

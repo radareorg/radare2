@@ -68,7 +68,7 @@ R_API const char* r_signal_tostring(int code) {
 	return NULL;
 }
 
-#if __UNIX__
+#if R2__UNIX__
 R_API void r_signal_sigmask(int how, const sigset_t *newmask, sigset_t *oldmask) {
 #if HAVE_PTHREAD
 	pthread_sigmask (how, newmask, oldmask);
@@ -77,7 +77,7 @@ R_API void r_signal_sigmask(int how, const sigset_t *newmask, sigset_t *oldmask)
 #endif
 
 R_API const char *r_signal_to_human(int signum) {
-#if __UNIX__
+#if R2__UNIX__
 	switch (signum) {
 	case SIGALRM: return "Alarm Clock";
 	case SIGBUS: return "Bus Error";

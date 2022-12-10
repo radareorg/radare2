@@ -11,7 +11,7 @@ extern "C" {
 
 R_LIB_VERSION_HEADER (r_socket);
 
-#if __UNIX__
+#if R2__UNIX__
 #include <netinet/in.h>
 #include <sys/un.h>
 #include <poll.h>
@@ -28,7 +28,7 @@ R_LIB_VERSION_HEADER (r_socket);
 #include <openssl/err.h>
 #endif
 
-#if __UNIX__
+#if R2__UNIX__
 #include <netinet/tcp.h>
 #endif
 
@@ -100,7 +100,7 @@ R_API bool r_socket_connect(RSocket *s, const char *host, const char *port, int 
 R_API int r_socket_connect_serial(RSocket *sock, const char *path, int speed, int parity);
 #define r_socket_connect_tcp(a, b, c, d) r_socket_connect (a, b, c, R_SOCKET_PROTO_TCP, d)
 #define r_socket_connect_udp(a, b, c, d) r_socket_connect (a, b, c, R_SOCKET_PROTO_UDP, d)
-#if __UNIX__
+#if R2__UNIX__
 #define r_socket_connect_unix(a, b) r_socket_connect (a, b, b, R_SOCKET_PROTO_UNIX, 0)
 #else
 #define r_socket_connect_unix(a, b) (false)

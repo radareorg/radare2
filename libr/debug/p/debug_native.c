@@ -24,7 +24,7 @@ bool linux_generate_corefile(RDebug *dbg, RBuffer *dest);
 
 #include "native/bt.c"
 
-#if __UNIX__
+#if R2__UNIX__
 # include <errno.h>
 # if !defined (__HAIKU__) && !defined (__sun)
 #  include <sys/ptrace.h>

@@ -130,7 +130,7 @@ static void env(const char *s, int f) {
 #endif
 
 static bool lang_pipe_run(RLangSession *s, const char *code, int len) {
-#if __UNIX__
+#if R2__UNIX__
 	int safe_in = dup (0);
 	int child, ret;
 	int input[2];

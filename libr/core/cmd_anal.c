@@ -7656,7 +7656,7 @@ static void cmd_anal_esil(RCore *core, const char *input, bool verbose) {
 					envp[i] = arg;
 				}
 				envp[i] = 0;
-#if __UNIX__
+#if R2__UNIX__
 				if (strstr (input, "$env")) {
 					extern char **environ;
 					cmd_debug_stack_init (core, argc, argv, environ);

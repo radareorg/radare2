@@ -241,7 +241,7 @@ static void striptrim(RList *list) {
 }
 
 static void r2pm_upgrade(bool force) {
-#if __UNIX__
+#if R2__UNIX__
 	char *s = r_sys_cmd_str ("radare2 -qcq -- 2>&1 | grep r2pm | sed -e 's,$,;,g'", NULL, 0);
 	r_str_trim (s);
 	RList *list = r_str_split_list (s, "\n", -1);

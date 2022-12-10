@@ -7,7 +7,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
-#if __UNIX__
+#if R2__UNIX__
 #include <unistd.h>
 #endif
 #include <stdio.h>

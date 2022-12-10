@@ -6,7 +6,7 @@
 #include <string.h>
 #include <sys/stat.h>
 
-#if __UNIX__
+#if R2__UNIX__
 static bool chmodr(const char *, int recursive);
 static bool parsemode(const char *);
 static void recurse(const char *path, int rec, bool(*fn)(const char *,int));
@@ -16,7 +16,7 @@ static mode_t mode = 0;
 #endif
 
 R_API bool r_file_chmod(const char *file, const char *mod, int recursive) {
-#if __UNIX__
+#if R2__UNIX__
 	oper = '=';
 	mode = 0;
 	if (!parsemode (mod)) {
@@ -28,7 +28,7 @@ R_API bool r_file_chmod(const char *file, const char *mod, int recursive) {
 #endif
 }
 
-#if __UNIX__
+#if R2__UNIX__
 /* copied from sbase/chmod.c (suckless.org) */
 static bool chmodr(const char *path, int rflag) {
 	struct stat st;

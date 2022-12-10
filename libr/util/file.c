@@ -8,7 +8,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <r_lib.h>
-#if __UNIX__
+#if R2__UNIX__
 #include <sys/time.h>
 #include <sys/mman.h>
 #include <limits.h>
@@ -25,7 +25,7 @@
 #include <process.h>
 #endif
 
-#if __UNIX__ && !defined(__serenity__)
+#if R2__UNIX__ && !defined(__serenity__)
 #define RDWR_FLAGS O_RDWR | O_SYNC
 #else
 #define RDWR_FLAGS O_RDWR
@@ -234,7 +234,7 @@ R_API char *r_file_abspath_rel(const char *cwd, const char *file) {
 	if (!strncmp (file, "~/", 2) || !strncmp (file, "~\\", 2)) {
 		ret = r_file_home (file + 2);
 	} else {
-#if __UNIX__
+#if R2__UNIX__
 		if (cwd && *file != '/') {
 			ret = r_str_newf ("%s" R_SYS_DIR "%s", cwd, file);
 		}
@@ -264,7 +264,7 @@ R_API char *r_file_abspath_rel(const char *cwd, const char *file) {
 	if (!ret) {
 		ret = strdup (file);
 	}
-#if __UNIX__ && !__wasi__
+#if R2__UNIX__ && !__wasi__
 	char *abspath = realpath (ret, NULL);
 	if (abspath) {
 		free (ret);
@@ -340,7 +340,7 @@ R_API char *r_stdin_slurp(int *sz) {
 #if __wasi__
 #warning r_stdin_slurp not available for wasi
 	return NULL;
-#elif __UNIX__ || R2__WINDOWS__
+#elif R2__UNIX__ || R2__WINDOWS__
 	int i, ret, newfd;
 	if ((newfd = dup (0)) < 0) {
 		return NULL;
@@ -913,7 +913,7 @@ R_API bool r_file_rm(const char *file) {
 R_API char *r_file_readlink(const char *path) {
 	r_return_val_if_fail (!R_STR_ISEMPTY (path), false);
 	if (!r_sandbox_enable (0)) {
-#if __UNIX__
+#if R2__UNIX__
 		int ret;
 		char pathbuf[4096] = {0};
 		strncpy (pathbuf, path, sizeof (pathbuf) - 1);
@@ -962,7 +962,7 @@ err_r_file_mmap_write:
 	return ret;
 #elif __wasi__ || EMSCRIPTEN
 	return -1;
-#elif __UNIX__
+#elif R2__UNIX__
 	int fd = r_sandbox_open (file, RDWR_FLAGS, 0644);
 	const int pagesize = getpagesize ();
 	int mmlen = len + pagesize;
@@ -1027,7 +1027,7 @@ err_r_file_mmap_read:
 	return ret;
 #elif __wasi__ || EMSCRIPTEN
 	return 0;
-#elif __UNIX__
+#elif R2__UNIX__
 	int fd = r_sandbox_open (file, O_RDONLY, 0644);
 	const int pagesize = 4096;
 	int mmlen = len+pagesize;
@@ -1053,7 +1053,7 @@ err_r_file_mmap_read:
 static RMmap *r_file_mmap_unix(RMmap *m, int fd) {
 	return NULL;
 }
-#elif __UNIX__
+#elif R2__UNIX__
 static RMmap *r_file_mmap_unix(RMmap *m, int fd) {
 	ut8 empty = m->len == 0;
 	m->buf = mmap (NULL, (empty?BS:m->len) ,
@@ -1116,7 +1116,7 @@ R_API RMmap *r_file_mmap_arch(RMmap *mmap, const char *filename, int fd) {
 #if R2__WINDOWS__
 	(void)fd;
 	return r_file_mmap_windows (mmap, filename);
-#elif __UNIX__
+#elif R2__UNIX__
 	(void)filename;
 	return r_file_mmap_unix (mmap, fd);
 #else
@@ -1161,7 +1161,7 @@ R_API RMmap *r_file_mmap(const char *file, bool rw, ut64 base) {
 		R_FREE (m);
 		return NULL;
 	}
-#if __UNIX__
+#if R2__UNIX__
 	return r_file_mmap_unix (m, fd);
 #elif R2__WINDOWS__
 	close (fd);
@@ -1192,7 +1192,7 @@ R_API void r_file_mmap_free(RMmap *m) {
 		return;
 	}
 	free (m->filename);
-#if __UNIX__ && !__wasi__
+#if R2__UNIX__ && !__wasi__
 	munmap (m->buf, m->len);
 #endif
 	close (m->fd);
@@ -1516,7 +1516,7 @@ R_API RList* r_file_glob(const char *_globbed_path, int maxdepth) {
 	return files;
 }
 
-#if __UNIX__
+#if R2__UNIX__
 static bool is_executable_header(const char *file) {
 	bool ret = false;
 	int osz = 0;
@@ -1538,7 +1538,7 @@ static bool is_executable_header(const char *file) {
 #endif
 R_API bool r_file_is_executable(const char *file) {
 	bool ret = false;
-#if __UNIX__
+#if R2__UNIX__
 	struct stat buf = {0};
 	if (stat (file, &buf) != 0) {
 		return false;

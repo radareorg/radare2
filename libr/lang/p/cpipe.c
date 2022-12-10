@@ -6,7 +6,7 @@
 #include "r_core.h"
 #include "r_lang.h"
 
-#if __UNIX__
+#if R2__UNIX__
 static int lang_cpipe_file(RLangSession *lang, const char *file) {
 	char *a, *cc, *p, name[512];
 	const char *libpath, *libname;

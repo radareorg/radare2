@@ -102,35 +102,35 @@ TH_LIBS=
 endif
 
 ifeq (${OSTYPE},bsd)
-CFLAGS+=-D__UNIX__=1
+CFLAGS+=-DR2__UNIX__=1
 EXT_AR=a
 EXT_SO=so
 EXT_EXE=
 TH_LIBS=-lpthread
 endif
 ifeq (${OSTYPE},qnx)
-CFLAGS+=-D__UNIX__=1
+CFLAGS+=-DR2__UNIX__=1
 EXT_AR=a
 EXT_SO=so
 EXT_EXE=
 TH_LIBS=
 endif
 ifeq (${OSTYPE},gnulinux)
-CFLAGS+=-D__UNIX__=1
+CFLAGS+=-DR2__UNIX__=1
 EXT_AR=a
 EXT_SO=so
 EXT_EXE=
 TH_LIBS=-lpthread
 endif
 ifeq (${OSTYPE},haiku)
-CFLAGS+=-D__UNIX__=1
+CFLAGS+=-DR2__UNIX__=1
 EXT_AR=a
 EXT_SO=so
 EXT_EXE=
 TH_LIBS=
 endif
 ifeq (${OSTYPE},darwin)
-CFLAGS+=-D__UNIX__=1
+CFLAGS+=-DR2__UNIX__=1
 EXT_AR=a
 EXT_SO=dylib
 EXT_EXE=
@@ -143,21 +143,21 @@ TH_LIBS=-lpthread
 endif
 endif
 ifeq (${OSTYPE},android)
-CFLAGS+=-D__UNIX__=1
+CFLAGS+=-DR2__UNIX__=1
 EXT_AR=a
 EXT_SO=so
 EXT_EXE=
 TH_LIBS=
 endif
 ifeq (${OSTYPE},solaris)
-CFLAGS+=-D__UNIX__=1
+CFLAGS+=-DR2__UNIX__=1
 EXT_AR=a
 EXT_SO=so
 EXT_EXE=
 TH_LIBS=
 endif
 ifeq (${OSTYPE},serenityos)
-CFLAGS+=-D__UNIX__=1
+CFLAGS+=-DR2__UNIX__=1
 EXT_AR=a
 EXT_SO=so
 EXT_EXE=

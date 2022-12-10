@@ -4,7 +4,7 @@
 
 #include <r_core.h>
 #include <config.h>
-#if __UNIX__
+#if R2__UNIX__
 #include <signal.h>
 #endif
 
@@ -2995,7 +2995,7 @@ static bool cbcore(void *user, int type, const char *origin, const char *msg) {
 	return false;
 }
 
-#if __UNIX__
+#if R2__UNIX__
 static R_TH_LOCAL RCore *Gcore = NULL;
 
 static void cmdusr1(int p) {
@@ -3016,7 +3016,7 @@ static void cmdusr2(int p) {
 #endif
 
 R_API bool r_core_init(RCore *core) {
-#if __UNIX__
+#if R2__UNIX__
 	Gcore = core;
 	r_sys_signal (SIGUSR1, cmdusr1);
 	r_sys_signal (SIGUSR2, cmdusr2);

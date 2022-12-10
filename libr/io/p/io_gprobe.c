@@ -20,7 +20,7 @@
 #include <windows.h>
 #else
 
-#if __UNIX__
+#if R2__UNIX__
 #include <errno.h>
 #include <fcntl.h>
 #endif
@@ -83,7 +83,7 @@ enum {
 	GPROBE_RUN_CODE_2 = 0x54,
 };
 
-#if __UNIX__
+#if R2__UNIX__
 static ut8 gprobe_checksum_i2c(const ut8 *p, unsigned int size, ut8 initial) {
 	ut8 res = initial;
 	unsigned int k;
@@ -1118,7 +1118,7 @@ static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 		gprobe->gport.name = pathname + strlen ("gprobe://");
 
 		if (r_str_startswith (gprobe->gport.name, "i2c-")) {
-#if __UNIX__
+#if R2__UNIX__
 			gprobe->gport.send_request = gprobe_send_request_i2c;
 			gprobe->gport.get_reply = gprobe_get_reply_i2c;
 			gprobe->gport.frame = gprobe_frame_i2c;
