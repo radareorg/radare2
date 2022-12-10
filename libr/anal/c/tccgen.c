@@ -629,10 +629,10 @@ static void type_to_str(TCCState *s1, char *buf, int buf_size, CType *type, cons
 	bt = t & VT_BTYPE;
 	buf[0] = '\0';
 	if (t & VT_CONSTANT) {
-		pstrcat (buf, buf_size, "const ");
+		strcat2 (buf, buf_size, "const ");
 	}
 	if (t & VT_VOLATILE) {
-		pstrcat (buf, buf_size, "volatile ");
+		strcat2 (buf, buf_size, "volatile ");
 	}
 	switch (bt) {
 	case VT_VOID:
@@ -685,11 +685,11 @@ static void type_to_str(TCCState *s1, char *buf, int buf_size, CType *type, cons
 	case VT_LDOUBLE:
 		tstr = "long double";
 add_tstr:
-		pstrcat (buf, buf_size, tstr);
+		strcat2 (buf, buf_size, tstr);
 		if ((t & VT_UNSIGNED) && (bt != VT_INT8) &&
 		    (bt != VT_INT16) && (bt != VT_INT32) &&
 		    (bt != VT_INT64)) {
-			pstrcat (buf, buf_size, "unsigned ");
+			strcat2 (buf, buf_size, "unsigned ");
 		}
 		break;
 	case VT_ENUM:
@@ -702,27 +702,27 @@ add_tstr:
 		} else {
 			tstr = "enum";
 		}
-		pstrcat (buf, buf_size, tstr);
+		strcat2 (buf, buf_size, tstr);
 		v = type->ref->v & ~SYM_STRUCT;
 		if (v < SYM_FIRST_ANOM) {
-			pstrcat (buf, buf_size, " ");
-			pstrcat (buf, buf_size, get_tok_str (s1, v, NULL));
+			strcat2 (buf, buf_size, " ");
+			strcat2 (buf, buf_size, get_tok_str (s1, v, NULL));
 		}
 		break;
 	case VT_FUNC:
 		s = type->ref;
 		type_to_str (s1, buf, buf_size, &s->type, varstr);
-		pstrcat (buf, buf_size, "(");
+		strcat2 (buf, buf_size, "(");
 		sa = s->next;
 		while (sa) {
 			type_to_str (s1, buf1, sizeof (buf1), &sa->type, NULL);
-			pstrcat (buf, buf_size, buf1);
+			strcat2 (buf, buf_size, buf1);
 			sa = sa->next;
 			if (sa) {
-				pstrcat (buf, buf_size, ", ");
+				strcat2 (buf, buf_size, ", ");
 			}
 		}
-		pstrcat (buf, buf_size, ")");
+		strcat2 (buf, buf_size, ")");
 		goto no_var;
 	case VT_PTR:
 		s = type->ref;
@@ -731,15 +731,15 @@ add_tstr:
 		} else {
 			r_str_ncpy (buf1, "*", sizeof (buf1));
 			if (varstr) {
-				pstrcat (buf1, sizeof (buf1), varstr);
+				strcat2 (buf1, sizeof (buf1), varstr);
 			}
 			type_to_str (s1, buf, buf_size, &s->type, buf1);
 		}
 		goto no_var;
 	}
 	if (varstr) {
-		pstrcat (buf, buf_size, " ");
-		pstrcat (buf, buf_size, varstr);
+		strcat2 (buf, buf_size, " ");
+		strcat2 (buf, buf_size, varstr);
 	}
 no_var:
 	;

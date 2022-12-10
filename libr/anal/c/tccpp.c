@@ -1351,14 +1351,14 @@ read_name:
 include_syntax:
 						tcc_error (s1, "'#include' expects \"FILENAME\" or <FILENAME>");
 					}
-					pstrcat (buf, sizeof (buf), (char *) s1->tokc.cstr->data);
+					strcat2 (buf, sizeof (buf), (char *) s1->tokc.cstr->data);
 					next (s1);
 				}
 				c = '\"';
 			} else {
 				int len;
 				while (s1->tok != TOK_LINEFEED) {
-					pstrcat (buf, sizeof (buf), get_tok_str (s1, s1->tok, &s1->tokc));
+					strcat2 (buf, sizeof (buf), get_tok_str (s1, s1->tok, &s1->tokc));
 					next (s1);
 				}
 				len = strlen (buf);
@@ -1409,10 +1409,10 @@ include_syntax:
 					path = s1->sysinclude_paths[i - s1->nb_include_paths];
 				}
 				r_str_ncpy (buf1, path, sizeof (buf1));
-				pstrcat (buf1, sizeof (buf1), "/");
+				strcat2 (buf1, sizeof (buf1), "/");
 			}
 
-			pstrcat (buf1, sizeof (buf1), buf);
+			strcat2 (buf1, sizeof (buf1), buf);
 
 			if (s1->tok == TOK_INCLUDE_NEXT) {
 				for (f = s1->include_stack_ptr; f >= s1->include_stack; f--) {

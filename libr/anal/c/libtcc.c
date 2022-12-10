@@ -42,7 +42,7 @@ static char *normalize_slashes(char *path) {
 #endif
 
 /* strcat and truncate. */
-PUB_FUNC char *pstrcat(char *buf, int buf_size, const char *s) {
+PUB_FUNC char *strcat2(char *buf, int buf_size, const char *s) {
 	int len = strlen (buf);
 	if (len < buf_size) {
 		r_str_ncpy (buf + len, s, buf_size - len);

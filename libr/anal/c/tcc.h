@@ -745,7 +745,7 @@ static inline int tcc_nerr(TCCState *s1) {
 #define AFF_PREPROCESS      0x0004 /* preprocess file */
 
 /* public functions currently used by the tcc main function */
-PUB_FUNC char *pstrcat(char *buf, int buf_size, const char *s);
+PUB_FUNC char *strcat2(char *buf, int buf_size, const char *s);
 PUB_FUNC char *pstrncpy(char *out, const char *in, size_t num);
 PUB_FUNC char *tcc_basename(const char *name);
 PUB_FUNC char *tcc_fileextension (const char *name);

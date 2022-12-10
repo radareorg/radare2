@@ -6,6 +6,7 @@ const char *help_msg_hash[] = {
 	"Usage:", "#!<interpreter>", "[<args>] [<file] [<<eof]",
 	"#", "", "comment - do nothing",
 	"#!", "", "list all available interpreters",
+	"#!!", "", "reset rlang session context (see js!)",
 	"#!?", "", "show this help message",
 	"#!?j", "", "list all available interpreters in JSON",
 	"#!?q", "", "list all available lang plugin names (See Ll?)",
@@ -432,6 +433,10 @@ static int cmd_hash(void *data, const char *input) {
 	RCore *core = (RCore *)data;
 
 	if (*input == '!') {
+		if (input[1] == '!') {
+			r_lang_setup (core->lang);
+			return 0;
+		}
 		return cmd_hash_bang (core, input);
 	}
 	if (*input == '?') {

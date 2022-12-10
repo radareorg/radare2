@@ -1,0 +1,26 @@
+diff --git a/shlr/qjs/src/quickjs.c b/shlr/qjs/src/quickjs.c
+index 7a69323791..a8e8ae96fd 100644
+--- a/shlr/qjs/src/quickjs.c
++++ b/shlr/qjs/src/quickjs.c
+@@ -55,7 +55,7 @@
+ 
+ #define OPTIMIZE         1
+ #define SHORT_OPCODES    1
+-#if defined(EMSCRIPTEN) || defined(_MSC_VER)
++#if defined(EMSCRIPTEN) || defined(_MSC_VER) || defined(__APPLE__)
+ #define DIRECT_DISPATCH  0
+ #else
+ #define DIRECT_DISPATCH  1
+@@ -32773,8 +32773,10 @@ static JSValue js_create_function(JSContext *ctx, JSFunctionDef *fd)
+             }
+         } else {
+             b->vardefs = (void *)((uint8_t*)b + vardefs_offset);
+-            memcpy(b->vardefs, fd->args, fd->arg_count * sizeof(fd->args[0]));
+-            memcpy(b->vardefs + fd->arg_count, fd->vars, fd->var_count * sizeof(fd->vars[0]));
++	    if (fd->arg_count > 0) {
++		    memcpy(b->vardefs, fd->args, fd->arg_count * sizeof(fd->args[0]));
++		    memcpy(b->vardefs + fd->arg_count, fd->vars, fd->var_count * sizeof(fd->vars[0]));
++	    }
+         }
+         b->var_count = fd->var_count;
+         b->arg_count = fd->arg_count;

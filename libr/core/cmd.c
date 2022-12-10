@@ -103,6 +103,7 @@ static RCoreHelpMessage help_msg_j = {
 	"ji:", "[cmd]", "run command and indent it as json like (cmd~{})",
 	"js", " [expr]", "run given javascript expression",
 	"js-", "", "read from stdin until ^D",
+	"js!", "", "reset js vm (same as #!!)",
 	"js:", "[file]", "interpret javascript file",
 	"join", " f1 f2", "join the contents of two files",
 	NULL
@@ -1575,13 +1576,15 @@ static int cmd_join(void *data, const char *input) { // "join"
 	if (input[0] == 's') { // "js"
 		if (input[1] == ':' || input[1] == '.') { // "js:"
 			r_core_cmdf (core, ". %s", input + 2);
+		} else if (input[1] == '!') { // "js!"
+			r_lang_setup (core->lang);
 		} else if (input[1] == '-') { // "js-"
 			if (r_config_get_b (core->config, "scr.interactive")) {
 				int sz;
 				char *data = r_stdin_slurp (&sz);
 				if (data) {
 					char *code = r_str_newf ("(function() { %s })()", data);
-					if (r_lang_use (core->lang, "mujs")) {
+					if (r_lang_use (core->lang, "qjs")) {
 						r_lang_run (core->lang, code, sz);
 					} else {
 						R_LOG_ERROR ("Requires mujs");
@@ -1593,7 +1596,7 @@ static int cmd_join(void *data, const char *input) { // "join"
 				R_LOG_ERROR ("requires scr.interactive");
 			}
 		} else if (input[1] == ' ') { // "js "
-			if (r_lang_use (core->lang, "mujs")) {
+			if (r_lang_use (core->lang, "qjs")) {
 				r_lang_run (core->lang, input + 1, -1);
 			} else {
 				r_core_cmdf (core, "#!pipe node -e '%s'", input + 1);
