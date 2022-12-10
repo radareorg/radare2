@@ -42194,7 +42194,7 @@ static JSValue js_math_random(JSContext *ctx, JSValueConst this_val,
 }
 
 static double qjs_ceil(double x) {
-	return cel(x);
+	return ceil(x);
 }
 static double qjs_floor(double x) {
 	return floor(x);
