@@ -13,7 +13,7 @@
 #define Timercmp timercmp
 #endif
 
-#if __WINDOWS__
+#if R2__WINDOWS__
 #include <cfgmgr32.h>
 #include <setupapi.h>
 #include <tchar.h>
@@ -45,7 +45,7 @@
 /* serial port code adapted from git://sigrok.org/libserialport */
 struct gport {
 	const char *name;
-#if __WINDOWS__
+#if R2__WINDOWS__
 	HANDLE hdl;
 	COMMTIMEOUTS timeouts;
 	OVERLAPPED write_ovl;
@@ -181,7 +181,7 @@ static int i2c_open(struct gport *port) {
 #endif
 
 static int sp_close(struct gport *port) {
-#if __WINDOWS__
+#if R2__WINDOWS__
 	/* Returns non-zero upon success, 0 upon failure. */
 	if (CloseHandle (port->hdl) == 0) {
 		return -1;
@@ -208,7 +208,7 @@ static int sp_close(struct gport *port) {
 	return 0;
 }
 
-#if __WINDOWS__
+#if R2__WINDOWS__
 /* To be called after port receive buffer is emptied. */
 static int restart_wait(struct gport *port) {
 	DWORD wait_result;
@@ -237,7 +237,7 @@ static int restart_wait(struct gport *port) {
 #endif
 
 static int sp_open(struct gport *port) {
-#if __WINDOWS__
+#if R2__WINDOWS__
 	int ret;
 	DWORD errors;
 	char *escaped_port_name;
@@ -373,7 +373,7 @@ static int sp_open(struct gport *port) {
 #endif
 }
 
-#if __WINDOWS__
+#if R2__WINDOWS__
 /* Restart wait operation if buffer was emptied. */
 static int restart_wait_if_needed(struct gport *port, unsigned int bytes_read) {
 	DWORD errors;
@@ -399,7 +399,7 @@ static int restart_wait_if_needed(struct gport *port, unsigned int bytes_read) {
 
 static int sp_blocking_read(struct gport *port, void *buf,
 			     size_t count, unsigned int timeout_ms) {
-#if __WINDOWS__
+#if R2__WINDOWS__
 	DWORD bytes_read = 0;
 
 	/* Set timeout. */
@@ -503,7 +503,7 @@ static int sp_blocking_read(struct gport *port, void *buf,
 }
 
 static int sp_flush(struct gport *port) {
-#if __WINDOWS__
+#if R2__WINDOWS__
 	/* Returns non-zero upon success, 0 upon failure. */
 	if (PurgeComm (port->hdl, PURGE_RXCLEAR) == 0) {
 		return -1;
@@ -521,7 +521,7 @@ static int sp_flush(struct gport *port) {
 	return 0;
 }
 
-#if __WINDOWS__
+#if R2__WINDOWS__
 static int await_write_completion(struct gport *port) {
 	DWORD bytes_written;
 	BOOL result;
@@ -541,7 +541,7 @@ static int await_write_completion(struct gport *port) {
 
 static int sp_blocking_write(struct gport *port, const void *buf,
 			      size_t count, unsigned int timeout_ms) {
-#if __WINDOWS__
+#if R2__WINDOWS__
 	DWORD bytes_written = 0;
 
 	if (await_write_completion (port)) {

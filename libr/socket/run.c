@@ -515,7 +515,7 @@ static bool handle_redirection(const char *cmd, bool in, bool out, bool err) {
 		flag |= in ? O_RDONLY : 0;
 		flag |= out ? O_WRONLY | O_CREAT : 0;
 		flag |= err ? O_WRONLY | O_CREAT : 0;
-#ifdef __WINDOWS__
+#ifdef R2__WINDOWS__
 		mode = _S_IREAD | _S_IWRITE;
 #else
 		mode = S_IRUSR | S_IWUSR;
@@ -807,7 +807,7 @@ static int redirect_socket_to_stdio(RSocket *sock) {
 	return 0;
 }
 
-#if __WINDOWS__
+#if R2__WINDOWS__
 static RThreadFunctionRet exit_process(RThread *th) {
 	exit (0);
 }
@@ -1120,7 +1120,7 @@ R_API bool r_run_config_env(RRunProfile *p) {
 	}
 #endif
 	if (p->_r2preload) {
-#if __WINDOWS__
+#if R2__WINDOWS__
 		R_LOG_ERROR ("r2preload is not supported in this platform");
 #else
 		if (!p->_preload) {
@@ -1130,7 +1130,7 @@ R_API bool r_run_config_env(RRunProfile *p) {
 #endif
 	}
 	if (p->_libpath) {
-#if __WINDOWS__
+#if R2__WINDOWS__
 		R_LOG_ERROR ("libpath is not supported in this platform");
 #elif __HAIKU__
 		char *orig = r_sys_getenv ("LIBRARY_PATH");
@@ -1146,7 +1146,7 @@ R_API bool r_run_config_env(RRunProfile *p) {
 	}
 	if (p->_preload) {
 		char *ps = r_str_list_join (p->_preload, ":");
-#if __WINDOWS__
+#if R2__WINDOWS__
 		R_LOG_WARN ("The preload directive doesn't work on windows");
 #elif __APPLE__
 		// 10.6
@@ -1266,7 +1266,7 @@ R_API bool r_run_start(RRunProfile *p) {
 			eprintf ("PID: Cannot determine pid with 'system' directive. Use 'program'.\n");
 		}
 		if (p->_daemon) {
-#if __WINDOWS__
+#if R2__WINDOWS__
 	//		eprintf ("PID: Cannot determine pid with 'system' directive. Use 'program'.\n");
 #else
 			pid_t child = r_sys_fork ();
@@ -1390,7 +1390,7 @@ R_API bool r_run_start(RRunProfile *p) {
 #endif
 		}
 		if (p->_daemon) {
-#if __WINDOWS__
+#if R2__WINDOWS__
 			R_LOG_ERROR ("PID: Cannot determine pid with 'system' directive. Use 'program'");
 #else
 			pid_t child = r_sys_fork ();

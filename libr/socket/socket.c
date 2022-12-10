@@ -95,7 +95,7 @@ R_API bool r_socket_is_connected(RSocket *s) {
 	if (!r_sandbox_check (R_SANDBOX_GRAIN_SOCKET)) {
 		return false;
 	}
-#if __WINDOWS__
+#if R2__WINDOWS__
 	char buf[2];
 	r_socket_block_time (s, false, 0, 0);
 #ifdef _MSC_VER
@@ -255,7 +255,7 @@ R_API bool r_socket_spawn(RSocket *s, const char *cmd, unsigned int timeout) {
 
 R_API bool r_socket_connect(RSocket *s, const char *host, const char *port, int proto, unsigned int timeout) {
 	r_return_val_if_fail (s, false);
-#if __WINDOWS__
+#if R2__WINDOWS__
 #define gai_strerror gai_strerrorA
 	WSADATA wsadata;
 
@@ -384,7 +384,7 @@ R_API bool r_socket_connect(RSocket *s, const char *host, const char *port, int 
 				s->sa.sin_port = htons (s->port);
 				if (bind (s->fd, (struct sockaddr *)&s->sa, sizeof (s->sa)) < 0) {
 					r_sys_perror ("bind");
-#ifdef __WINDOWS__
+#ifdef R2__WINDOWS__
 					closesocket (s->fd);
 #else
 					close (s->fd);
@@ -488,7 +488,7 @@ R_API int r_socket_close(RSocket *s) {
 #if __UNIX__
 		shutdown (s->fd, SHUT_RDWR);
 #endif
-#if __WINDOWS__
+#if R2__WINDOWS__
 		// https://msdn.microsoft.com/en-us/library/windows/desktop/ms740481(v=vs.85).aspx
 		shutdown (s->fd, SD_SEND);
 		if (r_socket_ready (s, 0, 250)) {
@@ -548,7 +548,7 @@ R_API bool r_socket_listen(RSocket *s, const char *port, const char *certfile) {
 	if (!r_sandbox_check (R_SANDBOX_GRAIN_SOCKET)) {
 		return false;
 	}
-#if __WINDOWS__
+#if R2__WINDOWS__
 	WSADATA wsadata;
 	if (WSAStartup (MAKEWORD (1, 1), &wsadata) == SOCKET_ERROR) {
 		R_LOG_ERROR ("WSAStartup failed");
@@ -729,7 +729,7 @@ R_API bool r_socket_block_time(RSocket *s, bool block, int sec, int usec) {
 	if (ret < 0) {
 		return false;
 	}
-#elif __WINDOWS__
+#elif R2__WINDOWS__
 	ioctlsocket (s->fd, FIONBIO, (u_long FAR*)&block);
 #endif
 	if (sec > 0 || usec > 0) {
@@ -764,7 +764,7 @@ R_API int r_socket_ready(RSocket *s, int secs, int usecs) {
 }
 
 R_API char *r_socket_tostring(RSocket *s) {
-#if __WINDOWS__
+#if R2__WINDOWS__
 	return r_str_newf ("fd%d", (int)(size_t)s->fd);
 #elif __UNIX__
 	char *str = NULL;

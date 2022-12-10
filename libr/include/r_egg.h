@@ -140,7 +140,7 @@ EOF
 #define R_EGG_OS_DEFAULT R_EGG_OS_OSX
 #define R_EGG_OS_NAME "darwin"
 #define R_EGG_FORMAT_DEFAULT "mach0"
-#elif __WINDOWS__
+#elif R2__WINDOWS__
 #define R_EGG_OS_DEFAULT R_EGG_OS_W32
 #define R_EGG_OS_NAME "windows"
 #define R_EGG_FORMAT_DEFAULT "pe"

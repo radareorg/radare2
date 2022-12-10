@@ -152,7 +152,7 @@ static void __break_signal(int sig) {
 }
 
 static inline void __cons_write_ll(const char *buf, int len) {
-#if __WINDOWS__
+#if R2__WINDOWS__
 	if (I->vtmode) {
 		(void) write (I->fdout, buf, len);
 	} else {
@@ -454,7 +454,7 @@ R_API void r_cons_line(int x, int y, int x2, int y2, int ch) {
 
 R_API int r_cons_get_cur_line(void) {
 	int curline = 0;
-#if __WINDOWS__
+#if R2__WINDOWS__
 	CONSOLE_SCREEN_BUFFER_INFO info;
 	if (!GetConsoleScreenBufferInfo (GetStdHandle (STD_OUTPUT_HANDLE), &info)) {
 		return 0;
@@ -529,7 +529,7 @@ R_API void r_cons_sleep_end(void *user) {
 	R_CRITICAL_LEAVE (I);
 }
 
-#if __WINDOWS__
+#if R2__WINDOWS__
 static HANDLE h;
 static BOOL __w32_control(DWORD type) {
 	if (type == CTRL_C_EVENT) {
@@ -578,7 +578,7 @@ R_API bool r_cons_enable_mouse(const bool enable) {
 	if ((I->mouse && enable) || (!I->mouse && !enable)) {
 		return I->mouse;
 	}
-#if __WINDOWS__
+#if R2__WINDOWS__
 	if (I->vtmode == 2) {
 #endif
 		const char *click = enable
@@ -594,7 +594,7 @@ R_API bool r_cons_enable_mouse(const bool enable) {
 		}
 		I->mouse = enable;
 		return enabled;
-#if __WINDOWS__
+#if R2__WINDOWS__
 	}
 	DWORD mode;
 	HANDLE h;
@@ -659,7 +659,7 @@ R_API RCons *r_cons_new(void) {
 	r_cons_get_size (&I->pagesize);
 	I->num = NULL;
 	I->null = 0;
-#if __WINDOWS__
+#if R2__WINDOWS__
 	I->old_cp = GetConsoleOutputCP ();
 	I->vtmode = r_cons_is_vtcompat ();
 #else
@@ -676,7 +676,7 @@ R_API RCons *r_cons_new(void) {
 	I->term_raw.c_cflag |= CS8;
 	I->term_raw.c_cc[VMIN] = 1; // Solaris stuff hehe
 	r_sys_signal (SIGWINCH, resize);
-#elif __WINDOWS__
+#elif R2__WINDOWS__
 	h = GetStdHandle (STD_INPUT_HANDLE);
 	GetConsoleMode (h, &I->term_buf);
 	I->term_raw = 0;
@@ -695,7 +695,7 @@ R_API RCons *r_cons_new(void) {
 }
 
 R_API RCons *r_cons_free(void) {
-#if __WINDOWS__
+#if R2__WINDOWS__
 	r_cons_enable_mouse (false);
 	if (I->old_cp) {
 		(void)SetConsoleOutputCP (I->old_cp);
@@ -760,7 +760,7 @@ R_API int r_cons_eof(void) {
 }
 
 R_API void r_cons_gotoxy(int x, int y) {
-#if __WINDOWS__
+#if R2__WINDOWS__
 	r_cons_w32_gotoxy (1, x, y);
 #else
 	r_cons_printf ("\x1b[%d;%dH", y, x);
@@ -790,7 +790,7 @@ R_API void r_cons_fill_line(void) {
 }
 
 R_API void r_cons_clear_line(int std_err) {
-#if __WINDOWS__
+#if R2__WINDOWS__
 	if (I->vtmode) {
 		fprintf (std_err? stderr: stdout,"%s", R_CONS_CLEAR_LINE);
 	} else {
@@ -822,7 +822,7 @@ R_API void r_cons_reset_colors(void) {
 
 R_API void r_cons_clear(void) {
 	I->lines = 0;
-#if __WINDOWS__
+#if R2__WINDOWS__
 	r_cons_w32_clear ();
 #else
 	r_cons_strcat (Color_RESET R_CONS_CLEAR_SCREEN);
@@ -1168,7 +1168,7 @@ R_API void r_cons_visual_flush(void) {
 	r_cons_highlight (I->highlight);
 	if (!I->null) {
 /* TODO: this ifdef must go in the function body */
-#if __WINDOWS__
+#if R2__WINDOWS__
 		if (I->vtmode) {
 			r_cons_visual_write (C->buffer);
 		} else {
@@ -1202,7 +1202,7 @@ R_API void r_cons_print_fps(int col) {
 	if (col < 1) {
 		col = 12;
 	}
-#ifdef __WINDOWS__
+#ifdef R2__WINDOWS__
 	if (I->vtmode) {
 		eprintf ("\x1b[0;%dH[%d FPS] \n", w - col, fps);
 	} else {
@@ -1417,7 +1417,7 @@ and break json output appending extra chars.
 this code now is managed into output.c:118 at function r_cons_w32_print
 now the console color is reset with each \n (same stuff do it here but in correct place ... i think)
 
-#if __WINDOWS__
+#if R2__WINDOWS__
 	r_cons_reset_colors();
 #else
 	r_cons_strcat (Color_RESET_ALL"\n");
@@ -1463,7 +1463,7 @@ R_API int r_cons_get_cursor(int *rows) {
 }
 
 R_API bool r_cons_is_windows(void) {
-#if __WINDOWS__
+#if R2__WINDOWS__
 	return true;
 #else
 	char *e = r_sys_getenv ("WSL_INTEROP");
@@ -1498,7 +1498,7 @@ R_API bool r_cons_is_tty(void) {
 		return false;
 	}
 	return true;
-#elif __WINDOWS__
+#elif R2__WINDOWS__
 	HANDLE hOut = GetStdHandle (STD_OUTPUT_HANDLE);
 	if (GetFileType (hOut) == FILE_TYPE_CHAR) {
 		DWORD unused;
@@ -1511,7 +1511,7 @@ R_API bool r_cons_is_tty(void) {
 #endif
 }
 
-#if __WINDOWS__
+#if R2__WINDOWS__
 static int __xterm_get_cur_pos(int *xpos) {
 	int ypos = 0;
 	const char *get_pos = R_CONS_GET_CURSOR_POSITION;
@@ -1589,7 +1589,7 @@ static bool __xterm_get_size(void) {
 
 // XXX: if this function returns <0 in rows or cols expect MAYHEM
 R_API int r_cons_get_size(int *rows) {
-#if __WINDOWS__
+#if R2__WINDOWS__
 	CONSOLE_SCREEN_BUFFER_INFO csbi;
 	bool ret = GetConsoleScreenBufferInfo (GetStdHandle (STD_OUTPUT_HANDLE), &csbi);
 	if (ret) {
@@ -1674,7 +1674,7 @@ R_API int r_cons_get_size(int *rows) {
 	return R_MAX (0, I->columns);
 }
 
-#if __WINDOWS__
+#if R2__WINDOWS__
 R_API int r_cons_is_vtcompat(void) {
 	DWORD major;
 	DWORD minor;
@@ -1732,13 +1732,13 @@ R_API int r_cons_is_vtcompat(void) {
 #endif
 
 R_API void r_cons_show_cursor(int cursor) {
-#if __WINDOWS__
+#if R2__WINDOWS__
 	if (I->vtmode) {
 #endif
 		if (write (1, cursor ? "\x1b[?25h" : "\x1b[?25l", 6) != 6) {
 			C->breaked = true;
 		}
-#if __WINDOWS__
+#if R2__WINDOWS__
 	} else {
 		static R_TH_LOCAL HANDLE hStdout = NULL;
 		static R_TH_LOCAL DWORD size = -1;
@@ -1785,7 +1785,7 @@ R_API void r_cons_set_raw(bool is_raw) {
 	} else {
 		tcsetattr (0, TCSANOW, &I->term_buf);
 	}
-#elif __WINDOWS__
+#elif R2__WINDOWS__
 	if (is_raw) {
 		if (I->term_xterm) {
 			r_sandbox_system ("stty raw -echo", 1);
@@ -1808,7 +1808,7 @@ R_API void r_cons_set_raw(bool is_raw) {
 
 R_API void r_cons_set_utf8(bool b) {
 	I->use_utf8 = b;
-#if __WINDOWS__
+#if R2__WINDOWS__
 	if (b) {
 		if (IsValidCodePage (CP_UTF8)) {
 			if (!SetConsoleOutputCP (CP_UTF8)) {
@@ -1854,7 +1854,7 @@ R_API bool r_cons_set_cup(bool enable) {
 		return false;
 	}
 	fflush (stdout);
-#elif __WINDOWS__
+#elif R2__WINDOWS__
 	if (I->vtmode) {
 		if (enable) {
 			const char *code = enable // xterm + xterm-color
@@ -1898,7 +1898,7 @@ R_API void r_cons_set_last_interactive(void) {
 }
 
 R_API void r_cons_set_title(const char *str) {
-#if __WINDOWS__
+#if R2__WINDOWS__
 #  if defined(_UNICODE)
 	wchar_t* wstr = r_utf8_to_utf16_l (str, strlen (str));
 	if (wstr) {

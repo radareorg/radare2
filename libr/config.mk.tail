@@ -94,7 +94,7 @@ ifneq ($(OSTYPE),mingw32)
 CFLAGS+=-g
 endif
 ifeq (${OSTYPE},windows)
-CFLAGS+=-D__WINDOWS__=1
+CFLAGS+=-DR2__WINDOWS__=1
 EXT_AR=lib
 EXT_SO=dll
 EXT_EXE=.exe

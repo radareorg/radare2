@@ -41,7 +41,7 @@
 #if __sun
 #include <sys/types.h>
 #else
-#if DEBUGGER && HAVE_PTRACE && !__WINDOWS__
+#if DEBUGGER && HAVE_PTRACE && !R2__WINDOWS__
 #include <sys/ptrace.h>
 #endif
 #endif
@@ -137,7 +137,7 @@ typedef struct r_io_t {
 	RCoreBind coreb;
 	// TODO Wrap ... well its more like a proxy, should unify across OS instead of using separate apis
 	bool want_ptrace_wrap;
-#if __WINDOWS__
+#if R2__WINDOWS__
 	RW32Dw *dbgwrap;
 #endif
 #if USE_PTRACE_WRAP

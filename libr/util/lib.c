@@ -49,7 +49,7 @@ R_API void *r_lib_dl_open(const char *libname) {
 	if (!ret && __has_debug) {
 		R_LOG_ERROR ("r_lib_dl_open failed %s (%s)", libname, dlerror ());
 	}
-#elif __WINDOWS__
+#elif R2__WINDOWS__
 	LPTSTR libname_;
 	if (libname && *libname) {
 		libname_ = r_sys_conv_utf8_to_win (libname);
@@ -76,7 +76,7 @@ R_API void *r_lib_dl_sym(void *handler, const char *name) {
 #if WANT_DYLINK
 #if __UNIX__
 	return dlsym (handler, name);
-#elif __WINDOWS__
+#elif R2__WINDOWS__
 	return GetProcAddress (handler, name);
 #else
 	return NULL;
@@ -95,7 +95,7 @@ R_API int r_lib_dl_close(void *handler) {
 }
 
 R_API char *r_lib_path(const char *libname) {
-#if __WINDOWS__
+#if R2__WINDOWS__
 	char *tmp = r_str_newf ("%s." R_LIB_EXT, libname);
 	if (!tmp) {
 		return NULL;
@@ -359,7 +359,7 @@ R_API int r_lib_open_ptr(RLib *lib, const char *file, void *handler, RLibStruct 
 R_API bool r_lib_opendir(RLib *lib, const char *path) {
 #if WANT_DYLINK
 	r_return_val_if_fail (lib && path, false);
-#if __WINDOWS__
+#if R2__WINDOWS__
 	wchar_t file[1024];
 	WIN32_FIND_DATAW dir;
 	HANDLE fh;
@@ -379,7 +379,7 @@ R_API bool r_lib_opendir(RLib *lib, const char *path) {
 	if (!path) {
 		return false;
 	}
-#if __WINDOWS__
+#if R2__WINDOWS__
 	wcpath = r_utf8_to_utf16 (path);
 	if (!wcpath) {
 		return false;

@@ -6,7 +6,7 @@ static R_TH_LOCAL char *lpTmpBuffer = NULL;
 
 #define SIZE_BUF 0x5800 * 2
 
-#if __WINDOWS__
+#if R2__WINDOWS__
 #ifdef _MSC_VER
 #pragma comment(lib, "user32.lib")
 #endif
@@ -45,7 +45,7 @@ void bochs_reset_buffer(libbochs_t* b) {
 }
 
 bool bochs_cmd_stop(libbochs_t * b) {
-#if __WINDOWS__
+#if R2__WINDOWS__
 	HMODULE hKernel;
 	unsigned int ExitCode;
 	char buffer[] = {
@@ -69,7 +69,7 @@ bool bochs_cmd_stop(libbochs_t * b) {
 }
 
 bool bochs_wait(libbochs_t *b) {
-#if __WINDOWS__
+#if R2__WINDOWS__
 	int times = 100;
 	DWORD dwRead, aval, leftm;
 	bochs_reset_buffer(b);
@@ -118,7 +118,7 @@ void bochs_send_cmd(libbochs_t* b, const char *cmd, bool bWait) {
 	char *cmdbuff = r_str_newf ("%s\n", cmd);
 	bochs_reset_buffer (b);
 	size_t cmdlen = strlen (cmdbuff);
-#if __WINDOWS__
+#if R2__WINDOWS__
 	DWORD dwWritten;
 	if (!WriteFile (b->hWritePipeOut, cmdbuff, cmdlen, &dwWritten, NULL)) {
 #else
@@ -167,7 +167,7 @@ int bochs_read(libbochs_t* b, ut64 addr, int count, ut8 * buf) {
 
 void bochs_close(libbochs_t* b) {
 	b->isRunning = false;
-#if __WINDOWS__
+#if R2__WINDOWS__
 	CloseHandle (b->hReadPipeIn);
 	CloseHandle (b->hReadPipeOut);
 	CloseHandle (b->hWritePipeIn);
@@ -197,7 +197,7 @@ bool bochs_open(libbochs_t* b, const char * pathBochs, const char * pathConfig) 
 		R_FREE (b->data);
 		return false;
 	}
-#if __WINDOWS__
+#if R2__WINDOWS__
 	struct _SECURITY_ATTRIBUTES PipeAttributes;
 	char commandline[1024];
 	PipeAttributes.nLength = 12;

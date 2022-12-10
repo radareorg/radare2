@@ -2,7 +2,7 @@
 #define WINDOWS_HEAP_H
 
 #include <r_types.h>
-#if !__WINDOWS__
+#if !R2__WINDOWS__
 #warning do nothing
 #else
 

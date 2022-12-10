@@ -179,7 +179,7 @@ R_API int r_core_rtr_http_stop(RCore *u) {
 	const char *port;
 	RSocket* sock;
 
-#if __WINDOWS__
+#if R2__WINDOWS__
 	r_socket_http_server_set_breaked (&r_cons_context ()->breaked);
 #endif
 	if (((size_t)u) > 0xff) {

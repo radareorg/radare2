@@ -49,7 +49,7 @@ R_LIB_VERSION_HEADER (r_socket);
 #endif
 
 typedef struct {
-#if __WINDOWS__
+#if R2__WINDOWS__
 	HANDLE pipe;
 	HANDLE child;
 #else

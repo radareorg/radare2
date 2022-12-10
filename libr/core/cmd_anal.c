@@ -9803,7 +9803,7 @@ static void agraph_print_node(RANode *n, void *user) {
 static char *getViewerPath(void) {
 	int i;
 	const char *viewers[] = {
-#if __WINDOWS__
+#if R2__WINDOWS__
 		"explorer",
 #else
 		"open",

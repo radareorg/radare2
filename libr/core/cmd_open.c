@@ -1916,7 +1916,7 @@ static int cmd_open(void *data, const char *input) {
 				{
 					const char *sp = strchr (input, ' ');
 					if (sp) {
-#if __WINDOWS__
+#if R2__WINDOWS__
 						r_sys_cmdf ("start %s", sp + 1);
 #else
 						if (r_file_exists ("/usr/bin/xdg-open")) {

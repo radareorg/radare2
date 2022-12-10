@@ -276,7 +276,7 @@ R_API bool r_mem_protect(void *ptr, int size, const char *prot) {
 	if (mprotect (ptr, size, p) == -1) {
 		return false;
 	}
-#elif __WINDOWS__
+#elif R2__WINDOWS__
 	int r, w, x;
 	DWORD p = PAGE_NOACCESS;
 	r = strchr (prot, 'r')? 1: 0;
@@ -363,7 +363,7 @@ R_API void r_mem_zero(void *dst, size_t l) {
 }
 
 R_API void *r_mem_mmap_resize(RMmap *m, ut64 newsize) {
-#if __WINDOWS__
+#if R2__WINDOWS__
 	if (m->fm != INVALID_HANDLE_VALUE) {
 		CloseHandle (m->fm);
 	}

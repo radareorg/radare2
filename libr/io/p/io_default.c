@@ -22,7 +22,7 @@ static int __io_posix_open(const char *file, int perm, int mode) {
 	if (r_file_is_directory (file)) {
 		return -1;
 	}
-#if __WINDOWS__
+#if R2__WINDOWS__
 	// probably unnecessary to have this ifdef nowadays windows is posix enough
 	if (perm & R_PERM_W) {
 		fd = r_sandbox_open (file, O_RDWR, 0);

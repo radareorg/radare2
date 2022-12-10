@@ -53,7 +53,7 @@
 
 #if WANT_THREADS
 
-#if __WINDOWS__
+#if R2__WINDOWS__
 #undef HAVE_PTHREAD
 #define HAVE_PTHREAD 0
 #define R_TH_TID HANDLE

@@ -19,7 +19,7 @@
 #undef R2__BSD__
 #undef __KFBSD__
 #undef __UNIX__
-#undef __WINDOWS__
+#undef R2__WINDOWS__
 
 #define R_MODE_PRINT 0x000
 #define R_MODE_RADARE 0x001
@@ -167,7 +167,7 @@
   #define restrict
   #define strcasecmp stricmp
   #define strncasecmp strnicmp
-  #define __WINDOWS__ 1
+  #define R2__WINDOWS__ 1
 
   #include <time.h>
   static inline struct tm *gmtime_r(const time_t *t, struct tm *r) { return (gmtime_s(r, t))? NULL : r; }
@@ -192,7 +192,7 @@
   #define R2__BSD__ 1
   #define __UNIX__ 1
 #endif
-#if __WINDOWS__ || _WIN32
+#if R2__WINDOWS__ || _WIN32
   #ifdef _MSC_VER
   /* Must be included before windows.h */
   #include <winsock2.h>
@@ -203,11 +203,11 @@
   #endif
   typedef int socklen_t;
   #undef USE_SOCKETS
-  #define __WINDOWS__ 1
+  #define R2__WINDOWS__ 1
   #undef __UNIX__
   #undef R2__BSD__
 #endif
-#if __WINDOWS__ || _WIN32
+#if R2__WINDOWS__ || _WIN32
   #define __addr_t_defined
   #include <windows.h>
 #endif
@@ -269,7 +269,7 @@ extern "C" {
 
 // TODO: FS or R_SYS_DIR ??
 #undef FS
-#if __WINDOWS__
+#if R2__WINDOWS__
 #define FS '\\'
 #define R_SYS_DIR "\\"
 #define R_SYS_ENVSEP ";"
@@ -319,7 +319,7 @@ typedef int (*PrintfCallback)(const char *str, ...) R_PRINTF_CHECK(1, 2);
 #elif R_INLINE
   #define R_API inline
 #else
-  #if __WINDOWS__
+  #if R2__WINDOWS__
     #define R_API __declspec(dllexport)
   #elif defined(__GNUC__) && __GNUC__ >= 4
     #define R_API __attribute__((visibility("default")))
@@ -423,13 +423,13 @@ static inline void *r_new_copy(int size, void *data) {
 
 #define R_FREE(x) { free((void *)x); x = NULL; }
 
-#if __WINDOWS__
+#if R2__WINDOWS__
 #define HAVE_REGEXP 0
 #else
 #define HAVE_REGEXP 1
 #endif
 
-#if __WINDOWS__
+#if R2__WINDOWS__
 #define PFMT64x "I64x"
 #define PFMT64d "I64d"
 #define PFMT64u "I64u"
@@ -521,7 +521,7 @@ static inline void *r_new_copy(int size, void *data) {
 # else
 # define R_SYS_BASE ((ut64)0x1000)
 # endif
-#elif __WINDOWS__
+#elif R2__WINDOWS__
 # define R_SYS_BASE ((ut64)0x01001000)
 #else // linux, bsd, ...
 # if __arm__ || __arm64__
@@ -691,7 +691,7 @@ typedef enum {
 #define R_SYS_OS "darwin"
 #elif defined (__linux__)
 #define R_SYS_OS "linux"
-#elif defined (__WINDOWS__)
+#elif defined (R2__WINDOWS__)
 #define R_SYS_OS "windows"
 #elif defined (__NetBSD__ )
 #define R_SYS_OS "netbsd"

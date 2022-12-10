@@ -9,7 +9,7 @@
 #include <r_list.h> // radare linked list
 #include <r_skiplist.h> // skiplist
 #include <r_th.h>
-#if !__WINDOWS__
+#if !R2__WINDOWS__
 #include <dirent.h>
 #include <signal.h>
 #endif

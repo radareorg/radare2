@@ -21,7 +21,7 @@ static struct {
 	{ "SIGPWR", SIGPWR },
 	{ "SIGPOLL", SIGPOLL },
 #endif
-#if !__WINDOWS__
+#if !R2__WINDOWS__
 	{ "SIGHUP", SIGHUP },
 	{ "SIGQUIT", SIGQUIT },
 	{ "SIGTRAP", SIGTRAP },

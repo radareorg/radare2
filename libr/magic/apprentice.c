@@ -582,7 +582,7 @@ static int apprentice_load(RMagic *ms, struct r_magic **magicp, ut32 *nmagicp, c
 	struct r_magic_entry *marray;
 	struct stat st;
 	int errs = 0;
-#if __WINDOWS__
+#if R2__WINDOWS__
 	HANDLE hdir;
 	WIN32_FIND_DATAW entry;
 	wchar_t dir[MAX_PATH];
@@ -613,7 +613,7 @@ static int apprentice_load(RMagic *ms, struct r_magic **magicp, ut32 *nmagicp, c
 			free (marray);
 			return  -1;
 		}
-#if __WINDOWS__ && !defined(__CYGWIN__)
+#if R2__WINDOWS__ && !defined(__CYGWIN__)
 		if ((wcpath = r_utf8_to_utf16 (fn))) {
 			swprintf (dir, _countof (dir), L"%ls\\*.*", wcpath);
 			hdir = FindFirstFileW (dir, &entry);

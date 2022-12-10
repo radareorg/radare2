@@ -3,14 +3,14 @@
 #include "r_lib.h"
 #include "r_core.h"
 #include "r_lang.h"
-#if __WINDOWS__
+#if R2__WINDOWS__
 #include <windows.h>
 #endif
 #ifdef _MSC_VER
 #include <process.h>
 #endif
 
-#if __WINDOWS__
+#if R2__WINDOWS__
 static HANDLE myCreateChildProcess(const char *szCmdline) {
 	PROCESS_INFORMATION piProcInfo = {0};
 	STARTUPINFO siStartInfo = {0};
@@ -240,7 +240,7 @@ static bool lang_pipe_run(RLangSession *s, const char *code, int len) {
 #endif
 	return true;
 #else
-#if __WINDOWS__
+#if R2__WINDOWS__
 	char *r2pipe_var = r_str_newf ("R2PIPE_IN%x", _getpid ());
 	char *r2pipe_paz = r_str_newf ("\\\\.\\pipe\\%s", r2pipe_var);
 	LPTSTR r2pipe_paz_ = r_sys_conv_utf8_to_win (r2pipe_paz);

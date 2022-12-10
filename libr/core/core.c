@@ -1310,14 +1310,14 @@ static void autocomplete_process_path(RLineCompletion *completion, const char *s
 	}
 #endif
 	lpath = r_str_new (path);
-#if __WINDOWS__
+#if R2__WINDOWS__
 	r_str_replace_ch (lpath, '/', '\\', true);
 #endif
 	p = (char *)r_str_last (lpath, R_SYS_DIR);
 	if (p) {
 		*p = 0;
 		if (p == lpath) { // /xxx
-#if __WINDOWS__
+#if R2__WINDOWS__
 			dirname = strdup ("\\.\\");
 #else
 			dirname = r_str_new (R_SYS_DIR);
@@ -1334,7 +1334,7 @@ static void autocomplete_process_path(RLineCompletion *completion, const char *s
 			dirname = r_str_newf ("%s%s", lpath, R_SYS_DIR);
 		} else { // xxx/yyy
 			char *fmt = ".%s%s%s";
-#if __WINDOWS__
+#if R2__WINDOWS__
 			if (strchr (path, ':')) {
 				fmt = "%.0s%s%s";
 			}
@@ -2754,7 +2754,7 @@ static void __init_autocomplete_default(RCore* core) {
 		"rafind2", "cd", "ls", "lua", "on", "wf", "rm", "wF", "wp", "Sd", "Sl", "to", "pm",
 		"/m", "zos", "zfd", "zfs", "zfz", "cat", "wta", "wtf", "wxf", "dml", "dd", "dd+",
 		"vi", "vim", "nvi", "neovim", "nvim", "nano",
-#if __WINDOWS__
+#if R2__WINDOWS__
 		"notepad",
 #endif
 		"less", "head", "tail", NULL
@@ -2930,7 +2930,7 @@ R_API RFlagItem *r_core_flag_get_by_spaces(RFlag *f, ut64 off) {
 		NULL);
 }
 
-#if __WINDOWS__
+#if R2__WINDOWS__
 // XXX move to rcons?
 static int win_eprintf(const char *format, ...) {
 	va_list ap;
@@ -3054,7 +3054,7 @@ R_API bool r_core_init(RCore *core) {
 	core->print->offname = r_core_print_offname;
 	core->print->offsize = r_core_print_offsize;
 	core->print->cb_printf = r_cons_printf;
-#if __WINDOWS__
+#if R2__WINDOWS__
 	// XXX R2_580 deprecate this callback? we have the rlog apis
 	core->print->cb_eprintf = win_eprintf;
 #endif

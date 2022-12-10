@@ -4,7 +4,7 @@
 #include <r_lib.h>
 #include <r_core.h>
 
-#if __linux__ ||  __APPLE__ || __WINDOWS__ || __NetBSD__ || __KFBSD__ || __OpenBSD__ || __serenity__
+#if __linux__ ||  __APPLE__ || R2__WINDOWS__ || __NetBSD__ || __KFBSD__ || __OpenBSD__ || __serenity__
 #define DEBUGGER_SUPPORTED 1
 #else
 #define DEBUGGER_SUPPORTED 0
@@ -39,7 +39,7 @@
 #include <mach-o/nlist.h>
 #endif
 
-#if __WINDOWS__
+#if R2__WINDOWS__
 #include <windows.h>
 #include <tlhelp32.h>
 #include <winbase.h>
@@ -47,7 +47,7 @@
 #include <r_util/r_w32dw.h>
 #endif
 
-#if __WINDOWS__
+#if R2__WINDOWS__
 typedef struct {
 	HANDLE hnd;
 	ut64 winbase;
@@ -504,7 +504,7 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 			if (pid == -1) {
 				return NULL;
 			}
-#if __WINDOWS__
+#if R2__WINDOWS__
 			sprintf (uri, "w32dbg://%d", pid);
 			_plugin = r_io_plugin_resolve (io, (const char *)uri, false);
 			if (!_plugin || !_plugin->open) {
@@ -538,7 +538,7 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 				return NULL;
 			}
 			ret = _plugin->open (io, uri, rw, mode);
-#if __WINDOWS__
+#if R2__WINDOWS__
 			if (ret) {
 				RCore *c = io->coreb.core;
 				RW32Dw *wrap = (RW32Dw *)ret->data;

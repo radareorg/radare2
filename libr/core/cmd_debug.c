@@ -43,7 +43,7 @@ static const char *help_msg_d[] = {
 	"ds", "[?]", "step, over, source line",
 	"dt", "[?]", "display instruction traces",
 	"dw", " <pid>", "block prompt until pid dies",
-#if __WINDOWS__
+#if R2__WINDOWS__
 	"dW", "", "list process windows",
 	"dWi", "", "identify window under cursor",
 #endif
@@ -133,7 +133,7 @@ static const char *help_msg_dc[] = {
 	"dcb", "", "continue back until breakpoint",
 	"dcc", "", "continue until call (use step into)",
 	"dccu", "", "continue until unknown call (call reg)",
-#if __WINDOWS__
+#if R2__WINDOWS__
 	"dce", "", "continue execution (pass exception to program)",
 #endif
 	"dcf", "", "continue until fork (TODO)",
@@ -1368,9 +1368,9 @@ beach:
 static int cmd_dbg_map_heap_glibc_32(RCore *core, const char *input);
 static int cmd_dbg_map_heap_glibc_64(RCore *core, const char *input);
 #endif // __linux__ && __GNU_LIBRARY__ && __GLIBC__ && __GLIBC_MINOR__
-#if __WINDOWS__
+#if R2__WINDOWS__
 static int cmd_debug_map_heap_win(RCore *core, const char *input);
-#endif // __WINDOWS__
+#endif // R2__WINDOWS__
 
 
 static ut64 addroflib(RCore *core, const char *libname) {
@@ -1435,7 +1435,7 @@ static int r_debug_heap(RCore *core, const char *input) {
 		}
 #endif
 	} else {
-#if __WINDOWS__
+#if R2__WINDOWS__
 		cmd_debug_map_heap_win (core, input + 1);
 #else
 		R_LOG_WARN ("MALLOC algorithm not supported");
@@ -1971,7 +1971,7 @@ static int cmd_debug_map(RCore *core, const char *input) {
 
 #if __linux__ && __GNU_LIBRARY__ && __GLIBC__ && __GLIBC_MINOR__
 #include "linux_heap_glibc.c"
-#elif __WINDOWS__
+#elif R2__WINDOWS__
 #include "windows_heap.c"
 #endif
 
@@ -3484,7 +3484,7 @@ static void core_cmd_dbi(RCore *core, const char *input, const ut64 idx) {
 	}
 }
 
-#if __WINDOWS__
+#if R2__WINDOWS__
 #include "../debug/p/native/windows/windows_message.h"
 #endif
 
@@ -3937,7 +3937,7 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 			break;
 		}
 		break;
-#if __WINDOWS__
+#if R2__WINDOWS__
 	case 'W': // "dbW"
 		if (input[2] == ' ') {
 			if (r_w32_add_winmsg_breakpoint (core->dbg, input + 3)) {
@@ -4564,7 +4564,7 @@ static int cmd_debug_continue(RCore *core, const char *input) {
 			}
 			break;
 		}
-#if __WINDOWS__
+#if R2__WINDOWS__
 	case 'e': // "dce"
 		if (input[2] == '?') {
 			eprintf ("Usage: dce: pass windows exceptions\n");
@@ -5842,7 +5842,7 @@ static int cmd_debug(void *data, const char *input) {
 			break;
 		}
 		break;
-#if __WINDOWS__
+#if R2__WINDOWS__
 	case 'W': // "dW"
 		if (input[1] == 'i') {
 			r_w32_identify_window ();

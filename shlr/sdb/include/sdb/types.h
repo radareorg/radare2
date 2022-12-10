@@ -42,7 +42,7 @@ extern "C" {
 #define __MINGW__ 1
 #endif
 
-#if defined __WIN32__ || __MINGW__ > 0 || __WINDOWS__ > 0 || _MSC_VER > 0
+#if defined __WIN32__ || __MINGW__ > 0 || R2__WINDOWS__ > 0 || _MSC_VER > 0
 #define __SDB_WINDOWS__ 1
 #undef DIRSEP
 #define DIRSEP '\\'

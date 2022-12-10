@@ -3,7 +3,7 @@
 #include <r_types.h>
 #include <r_util.h>
 
-#if __WINDOWS__
+#if R2__WINDOWS__
 #include <windows.h>
 #include <stdio.h>
 #include <tchar.h>

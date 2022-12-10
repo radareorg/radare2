@@ -1382,7 +1382,7 @@ void winkd_break(void *arg) {
 }
 
 int winkd_break_read(WindCtx *ctx) {
-#if __WINDOWS__ && !defined(_MSC_VER)
+#if R2__WINDOWS__ && !defined(_MSC_VER)
 	static BOOL WINAPI (*w32_CancelIoEx)(HANDLE, LPOVERLAPPED) = NULL;
 	if (!w32_CancelIoEx) {
 		w32_CancelIoEx = (BOOL WINAPI (*)(HANDLE, LPOVERLAPPED))

@@ -286,7 +286,7 @@ R_API char *r_core_sysenv_begin(RCore *core, const char *cmd) {
 	return ret;
 }
 
-#if !__linux__ && !__WINDOWS__
+#if !__linux__ && !R2__WINDOWS__
 static ut64 get_base_from_maps(RCore *core, const char *file) {
 	RDebugMap *map;
 	RListIter *iter;
@@ -361,7 +361,7 @@ static int r_core_file_do_load_for_debug(RCore *r, ut64 baseaddr, R_NULLABLE con
 	r_debug_select (r->dbg, r_io_fd_get_pid (r->io, fd),
 			r_io_fd_get_tid (r->io, fd));
 #if !__linux__
-#if !__WINDOWS__
+#if !R2__WINDOWS__
 	baseaddr = get_base_from_maps (r, filenameuri);
 #endif
 	if (baseaddr != UT64_MAX) {
@@ -491,7 +491,7 @@ static bool try_loadlib(RCore *core, const char *lib, ut64 addr) {
 
 R_API bool r_core_file_loadlib(RCore *core, const char *lib, ut64 libaddr) {
 	const char *dirlibs = r_config_get (core->config, "dir.libs");
-#ifdef __WINDOWS__
+#ifdef R2__WINDOWS__
 	char *libdir = r_str_r2_prefix (R2_LIBDIR);
 	if (!libdir) {
 		libdir = strdup (R2_LIBDIR);
@@ -505,7 +505,7 @@ R_API bool r_core_file_loadlib(RCore *core, const char *lib, ut64 libaddr) {
 	const char *ldlibrarypath[] = {
 		dirlibs,
 		libdir,
-#ifndef __WINDOWS__
+#ifndef R2__WINDOWS__
 		"/usr/local/lib",
 		"/usr/lib",
 		"/lib",
@@ -516,7 +516,7 @@ R_API bool r_core_file_loadlib(RCore *core, const char *lib, ut64 libaddr) {
 	const char * *libpath = (const char * *) &ldlibrarypath;
 
 	bool ret = false;
-#ifdef __WINDOWS__
+#ifdef R2__WINDOWS__
 	if (strlen (lib) >= 3 && lib[1] == ':' && lib[2] == '\\') {
 #else
 	if (*lib == '/') {

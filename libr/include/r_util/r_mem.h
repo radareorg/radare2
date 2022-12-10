@@ -12,7 +12,7 @@ typedef struct r_mmap_t {
 	int fd;
 	int rw;
 	char *filename;
-#if __WINDOWS__
+#if R2__WINDOWS__
 	HANDLE fh;
 	HANDLE fm;
 #endif

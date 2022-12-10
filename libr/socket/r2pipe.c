@@ -24,7 +24,7 @@ Usage Example:
 #define R2P_INPUT(x) (((R2Pipe*)(x)->data)->input[0])
 #define R2P_OUTPUT(x) (((R2Pipe*)(x)->data)->output[1])
 
-#if __WINDOWS__
+#if R2__WINDOWS__
 #define NO_CHILD 0
 #else
 #define NO_CHILD -1
@@ -36,7 +36,7 @@ Usage Example:
 #define HAVE_R2PIPE 1
 #endif
 
-#if !__WINDOWS__
+#if !R2__WINDOWS__
 static void env(const char *s, int f) {
 	char *a = r_str_newf ("%d", f);
 	r_sys_setenv (s, a);
@@ -58,7 +58,7 @@ R_API int r2pipe_write(R2Pipe *r2pipe, const char *str) {
 	}
 	memcpy (cmd, str, len - 1);
 	strcpy (cmd + len - 2, "\n");
-#if __WINDOWS__
+#if R2__WINDOWS__
 	DWORD dwWritten = -1;
 	WriteFile (r2pipe->pipe, cmd, len, &dwWritten, NULL);
 	ret = (dwWritten == len);
@@ -85,7 +85,7 @@ R_API char *r2pipe_read(R2Pipe *r2pipe) {
 	if (!buf) {
 		return NULL;
 	}
-#if __WINDOWS__
+#if R2__WINDOWS__
 	BOOL bSuccess = FALSE;
 	DWORD dwRead = 0;
 	// TODO: handle > 4096 buffers here
@@ -137,7 +137,7 @@ R_API int r2pipe_close(R2Pipe *r2pipe) {
 		}
 	}
 	*/
-#if __WINDOWS__
+#if R2__WINDOWS__
 	if (r2pipe->pipe) {
 		CloseHandle (r2pipe->pipe);
 		r2pipe->pipe = NULL;
@@ -170,7 +170,7 @@ R_API int r2pipe_close(R2Pipe *r2pipe) {
 	return 0;
 }
 
-#if HAVE_R2PIPE && __WINDOWS__
+#if HAVE_R2PIPE && R2__WINDOWS__
 static int w32_createPipe(R2Pipe *r2pipe, const char *cmd) {
 	CHAR buf[1024];
 	r2pipe->pipe = CreateNamedPipe (TEXT ("\\\\.\\pipe\\R2PIPE_IN"),
@@ -265,7 +265,7 @@ R_API R2Pipe *r2pipe_open(const char *cmd) {
 		r2p->child = NO_CHILD;
 		return r2p_open_spawn (r2p, cmd);
 	}
-#if __WINDOWS__
+#if R2__WINDOWS__
 	w32_createPipe (r2p, cmd);
 	r2p->child = r2p->pipe;
 #else

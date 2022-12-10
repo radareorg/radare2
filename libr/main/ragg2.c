@@ -171,7 +171,7 @@ static int openfile(const char *f, int x) {
 		fchmod (fd, 0755);
 	}
 #endif
-#if _MSC_VER || __WINDOWS__
+#if _MSC_VER || R2__WINDOWS__
 	int r = _chsize (fd, 0);
 #else
 	int r = ftruncate (fd, 0);
@@ -361,7 +361,7 @@ R_API int r_main_ragg2(int argc, const char **argv) {
 		case 'F':
 #if __APPLE__
 			format = "mach0";
-#elif __WINDOWS__
+#elif R2__WINDOWS__
 			format = "pe";
 #else
 			format = "elf";

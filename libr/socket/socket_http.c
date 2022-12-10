@@ -3,7 +3,7 @@
 #include <r_socket.h>
 #include <r_util.h>
 
-#if __WINDOWS__
+#if R2__WINDOWS__
 #include <wininet.h>
 #endif
 
@@ -131,7 +131,7 @@ exit:
 	return res;
 }
 
-#if __WINDOWS__
+#if R2__WINDOWS__
 static char *http_get_w32(const char *url, int *code, int *rlen) {
 	HINTERNET hInternet = InternetOpenA ("radare2 "R2_VERSION, INTERNET_OPEN_TYPE_DIRECT, NULL, NULL, 0);
 	if (!hInternet) {
@@ -217,7 +217,7 @@ static char *socket_http_get_recursive(const char *url, int *code, int *rlen, ut
 		return res;
 	}
 	free (curl_env);
-#if __WINDOWS__
+#if R2__WINDOWS__
 	return http_get_w32 (url, code, rlen);
 #else
 	RSocket *s;

@@ -19,7 +19,7 @@ R_API RLine *r_line_new(void) {
 	I.clipboard = NULL;
 	I.kill_ring = r_list_newf (free);
 	I.kill_ring_ptr = -1;
-#if __WINDOWS__
+#if R2__WINDOWS__
 	I.vtmode = r_cons_is_vtcompat ();
 #else
 	I.vtmode = 2;

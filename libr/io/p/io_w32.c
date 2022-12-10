@@ -3,7 +3,7 @@
 #include "r_io.h"
 #include "r_lib.h"
 
-#if __WINDOWS__
+#if R2__WINDOWS__
 #include <sys/types.h>
 
 typedef struct {
