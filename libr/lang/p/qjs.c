@@ -2,7 +2,6 @@
 
 #define CONFIG_BIGNUM 0
 
-#define _XOPEN_SOURCE 
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -199,7 +198,7 @@ static bool lang_quickjs_run(RLangSession *s, const char *code, int len) {
 static bool lang_quickjs_file(RLangSession *s, const char *file) {
 	QjsContext *k = s->plugin_data;
 	bool rc = false;
-	char *code = r_file_slurp (file, NULL); 
+	char *code = r_file_slurp (file, NULL);
 	if (code) {
 		rc = eval (k->ctx, code) == 0;
 		free (code);
