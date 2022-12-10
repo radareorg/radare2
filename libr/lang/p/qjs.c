@@ -12,7 +12,7 @@
 #include <r_config.h>
 #include <r_lang.h>
 
-#define countof(x) (sizeof(x) / sizeof((x)[0]))
+#define countof(x) (sizeof (x) / sizeof ((x)[0]))
 
 #include "quickjs.h"
 
