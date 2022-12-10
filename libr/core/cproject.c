@@ -21,8 +21,10 @@ R_API bool r_project_rename(RProject *p, const char *newname) {
 		free (p->name);
 		p->path = new_prjdir;
 		p->name = new_name;
-		rvc_close (p->rvc, true);
-		p->rvc = NULL;
+		if (p->rvc) {
+			rvc_close (p->rvc, true);
+			p->rvc = NULL;
+		}
 		return true;
 	}
 	free (new_prjdir);
