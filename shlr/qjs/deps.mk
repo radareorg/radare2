@@ -9,7 +9,6 @@ else
 QJSFILES+=quickjs.c
 QJSFILES+=cutils.c
 QJSFILES+=libregexp.c
-QJSFILES+=unicode_gen.c
 QJSFILES+=libunicode.c
 ifeq ($(QJS_LIBC),1)
 QJSFILES+=quickjs-libc.c
