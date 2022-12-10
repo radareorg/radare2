@@ -47,7 +47,7 @@ R_API RList *r_w32_dbg_maps(RDebug *);
 #define NTSTATUS int
 #endif
 
-#elif __BSD__
+#elif R2__BSD__
 #include "native/bsd/bsd_debug.h"
 #include "native/procfs.h"
 
@@ -123,7 +123,7 @@ static bool r_debug_native_step(RDebug *dbg) {
 	return xnu_step (dbg);
 #elif __WINDOWS__
 	return w32_step (dbg);
-#elif __BSD__
+#elif R2__BSD__
 	int ret = ptrace (PT_STEP, dbg->pid, (caddr_t)1, 0);
 	if (ret != 0) {
 		r_sys_perror ("native-singlestep");
@@ -165,7 +165,7 @@ static bool r_debug_native_detach(RDebug *dbg, int pid) {
 	return xnu_detach (dbg, pid);
 #elif __WINDOWS__
 	return w32_detach (dbg, pid);
-#elif __BSD__
+#elif R2__BSD__
 	return ptrace (PT_DETACH, pid, NULL, 0);
 #else
 	return r_debug_ptrace (dbg, PTRACE_DETACH, pid, NULL, (r_ptrace_data_t)(size_t)0);
@@ -189,7 +189,7 @@ static bool r_debug_native_continue_syscall(RDebug *dbg, int pid, int num) {
 #if __linux__
 	linux_set_options (dbg, pid);
 	return r_debug_ptrace (dbg, PTRACE_SYSCALL, pid, 0, 0);
-#elif __BSD__
+#elif R2__BSD__
 	ut64 pc = r_debug_reg_get (dbg, "PC");
 	errno = 0;
 	return ptrace (PTRACE_SYSCALL, pid, (void*)(size_t)pc, 0) == 0;
@@ -199,7 +199,7 @@ static bool r_debug_native_continue_syscall(RDebug *dbg, int pid, int num) {
 #endif
 }
 
-#if !__WINDOWS__ && !__APPLE__ && !__BSD__
+#if !__WINDOWS__ && !__APPLE__ && !R2__BSD__
 /* Callback to trigger SIGINT signal */
 static void interrupt_process(RDebug *dbg) {
 	r_debug_kill (dbg, dbg->pid, dbg->tid, SIGINT);
@@ -221,7 +221,7 @@ static bool r_debug_native_continue(RDebug *dbg, int pid, int tid, int sig) {
 	return xnu_continue (dbg, pid, tid, sig);
 #elif __WINDOWS__
 	return w32_continue (dbg, pid, tid, sig);
-#elif __BSD__
+#elif R2__BSD__
 	void *data = (void*)(size_t)((sig != -1) ? sig : dbg->reason.signum);
 	ut64 pc = r_debug_reg_get (dbg, "PC");
 	return ptrace (PTRACE_CONT, pid, (void*)(size_t)pc, (int)(size_t)data) == 0;

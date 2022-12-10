@@ -30,11 +30,11 @@
 #endif
 
 #if defined(EMSCRIPTEN) || defined(__linux__) || defined(__APPLE__) || defined(__GNU__) || defined(__ANDROID__) || defined(__QNX__)
-  #define __BSD__ 0
+  #define R2__BSD__ 0
   #define __UNIX__ 1
 #endif
 #if __KFBSD__ || defined(__NetBSD__) || defined(__OpenBSD__)
-  #define __BSD__ 1
+  #define R2__BSD__ 1
   #define __UNIX__ 1
 #endif
 #if __WIN32__ || __CYGWIN__ || MINGW32
@@ -49,7 +49,7 @@
   #undef USE_SOCKETS
   #define __WINDOWS__ 1
   #undef __UNIX__
-  #undef __BSD__
+  #undef R2__BSD__
 #endif
 
 #if __WINDOWS__ || __WIN32__ || __MINGW32__

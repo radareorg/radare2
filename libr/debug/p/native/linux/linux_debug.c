@@ -1235,7 +1235,7 @@ bool linux_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 			};
 			ret = r_debug_ptrace (dbg, PTRACE_GETREGSET, pid, (void*)(size_t)1, &io);
 			// ret = ptrace (PTRACE_GETREGSET, pid, (void*)(size_t)(NT_PRSTATUS), NULL); // &io);
-#elif __BSD__ && (__POWERPC__ || __sparc__)
+#elif R2__BSD__ && (__POWERPC__ || __sparc__)
 			ret = r_debug_ptrace (dbg, PTRACE_GETREGS, pid, &regs, NULL);
 #else
 			/* linux -{arm/mips/riscv/x86/x86_64} */

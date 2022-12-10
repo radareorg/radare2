@@ -25,8 +25,8 @@ R_LIB_VERSION_HEADER(r_debug);
 
 /* hack to fix compilation of debugger on BSD systems */
 /* This needs some testing (netbsd, freebsd, openbsd, kfreebsd) */
-#if __BSD__ || defined(__serenity__)
-#if __BSD__
+#if R2__BSD__ || defined(__serenity__)
+#if R2__BSD__
 #include <machine/reg.h>
 #endif
 

@@ -182,7 +182,7 @@ err_fork:
 
 #if (__APPLE__ && __POWERPC__) || !__APPLE__
 
-#if __APPLE__ || __BSD__
+#if __APPLE__ || R2__BSD__
 static void inferior_abort_handler(int pid) {
 	R_LOG_ERROR ("Inferior received signal SIGABRT. Executing BKPT");
 }
@@ -196,7 +196,7 @@ static void trace_me(void) {
 	if (ptrace (PT_TRACE_ME, 0, 0, 0) != 0) {
 		r_sys_perror ("ptrace-traceme");
 	}
-#elif __APPLE__ || __BSD__
+#elif __APPLE__ || R2__BSD__
 	/* we can probably remove this #if..as long as PT_TRACE_ME is redefined for OSX in r_debug.h */
 	r_sys_signal (SIGABRT, inferior_abort_handler);
 	if (ptrace (PT_TRACE_ME, 0, 0, 0) != 0) {
