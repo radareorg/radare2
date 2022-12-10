@@ -67,9 +67,11 @@
 #define MALLOC_OVERHEAD  8
 #endif
 
+#if 0
 #if !defined(_WIN32)
 /* define it if printf uses the RNDN rounding mode instead of RNDNA */
 #define CONFIG_PRINTF_RNDN
+#endif
 #endif
 
 /* dump object free */
@@ -10913,9 +10915,9 @@ static int JS_ToInt64SatFree(JSContext *ctx, int64_t *pres, JSValue val)
             if (isnan(d)) {
                 *pres = 0;
             } else {
-                if (d < INT64_MIN)
+                if (d < (double)INT64_MIN)
                     *pres = INT64_MIN;
-                else if (d > INT64_MAX)
+                else if (d > (double)INT64_MAX)
                     *pres = INT64_MAX;
                 else
                     *pres = (int64_t)d;
