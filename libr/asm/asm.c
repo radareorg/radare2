@@ -605,7 +605,7 @@ R_API RAsmCode* r_asm_mdisassemble(RAsm *a, const ut8 *buf, int len) {
 	if (!acode) {
 		return NULL;
 	}
-	RStrBuf *buf_asm = r_strbuf_new (NULL);
+	RStrBuf *sb = r_strbuf_new (NULL);
 	acode->bytes = r_mem_dup (buf, len);
 
 	for (idx = 0; idx + addrbytes <= len; idx += (addrbytes * ret)) {
@@ -625,11 +625,13 @@ R_API RAsmCode* r_asm_mdisassemble(RAsm *a, const ut8 *buf, int len) {
 				op.mnemonic = newtext;
 			}
 		}
-		r_strbuf_append (buf_asm, op.mnemonic);
-		r_strbuf_append (buf_asm, "\n");
+		if (op.mnemonic) {
+			r_strbuf_append (sb, op.mnemonic);
+			r_strbuf_append (sb, "\n");
+		}
 		r_anal_op_fini (&op);
 	}
-	acode->assembly = r_strbuf_drain (buf_asm);
+	acode->assembly = r_strbuf_drain (sb);
 	acode->len = idx;
 	return acode;
 }
