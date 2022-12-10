@@ -807,9 +807,13 @@ R_API int r_socket_write(RSocket *s, const void *buf, int len) {
 			}
 		} else /* block */
 #endif
-		{
-			ret = send (s->fd, (char *)buf+delta, b, 0);
+		if (s->proto == R_SOCKET_PROTO_SERIAL) {
+			ret = write (s->fd, (char *)buf + delta, b);
+			eprintf ("SERIAL WRITE %d\n", ret);
+		} else {
+			ret = send (s->fd, (char *)buf + delta, b, 0);
 		}
+		eprintf ("EDNEND msaybe write for serial %d\n", ret);
 		//if (ret == 0) return -1;
 		if (ret < 1) {
 			break;
@@ -867,6 +871,9 @@ R_API int r_socket_read(RSocket *s, unsigned char *buf, int len) {
 		return SSL_read (s->sfd, buf, len);
 	}
 #endif
+	if (s->proto == R_SOCKET_PROTO_SERIAL) {
+		return read (s->fd, (char *)buf, len);
+	}
 	return recv (s->fd, (char *)buf, len, 0);
 }
 
