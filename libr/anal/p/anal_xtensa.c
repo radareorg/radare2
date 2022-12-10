@@ -836,7 +836,7 @@ static void esil_load_relative(xtensa_isa isa, xtensa_opcode opcode, xtensa_form
 	//          a2, // push data reg
 	//          = // assign to data reg
 
-	offset = - ((offset | 0xFFFF0000) << 2);
+	offset = - (st64)((offset | 0xFFFF0000) << 2);
 
 	r_strbuf_appendf (
 		&op->esil,
