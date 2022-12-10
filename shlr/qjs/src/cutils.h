@@ -126,14 +126,17 @@ static inline int64_t min_int64(int64_t a, int64_t b)
         return b;
 }
 
+extern size_t r_num_bit_count(unsigned int val);
+
 /* WARNING: undefined if a = 0 */
 static inline int clz32(unsigned int a)
 {
-#if 1
-	// def _MSC_VER
+#ifdef _MSC_VER
     unsigned long idx;
     _BitScanReverse(&idx, a);
     return 31 ^ idx;
+#elif defined(__TINYC__)
+    return r_num_bit_count(a); // XXX
 #else
     return __builtin_clz(a);
 #endif
