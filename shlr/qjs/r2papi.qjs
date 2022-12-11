@@ -1,0 +1,134 @@
+G.__esModule = true;
+G.NativePointer = G.R2Api = void 0;
+;
+;
+;
+;
+;
+;
+;
+var R2Api = /** @class */ (function () {
+    function R2Api(r2) {
+        this.r2 = r2;
+    }
+    R2Api.prototype.clearScreen = function () {
+        this.r2.cmd("!clear");
+    };
+    R2Api.prototype.getRegisters = function () {
+        // this.r2.log("winrar" + JSON.stringify(JSON.parse(this.r2.cmd("drj")),null, 2) );
+        return this.cmdj("drj");
+    };
+    R2Api.prototype.setRegisters = function (obj) {
+        for (var _i = 0, _a = Object.keys(obj); _i < _a.length; _i++) {
+            var r = _a[_i];
+            var v = obj[r];
+            this.r2.cmd("dr " + r + "=" + v);
+        }
+    };
+    R2Api.prototype.analyzeProgram = function () {
+        this.r2.cmd("aa");
+    };
+    R2Api.prototype.hex = function (s) {
+        return this.r2.cmd("?v " + s).trim();
+    };
+    R2Api.prototype.step = function () {
+        this.r2.cmd("ds");
+        return this;
+    };
+    R2Api.prototype.stepOver = function () {
+        this.r2.cmd("dso");
+        return this;
+    };
+    R2Api.prototype.math = function (expr) {
+        return +this.r2.cmd("?v " + expr);
+    };
+    R2Api.prototype.searchString = function (s) {
+        var res = this.cmdj("/j " + s);
+        return res;
+    };
+    R2Api.prototype.binInfo = function () {
+        try {
+            return this.cmdj("ij~{bin}");
+        }
+        catch (e) {
+            return {};
+        }
+    };
+    R2Api.prototype.skip = function () {
+        this.r2.cmd("dss");
+    };
+    R2Api.prototype.ptr = function (s) {
+        return new NativePointer(this, s);
+    };
+    R2Api.prototype.cmd = function (s) {
+        return this.r2.cmd(s);
+    };
+    R2Api.prototype.cmdj = function (s) {
+        return JSON.parse(this.cmd(s));
+    };
+    R2Api.prototype.log = function (s) {
+        return this.r2.log(s);
+    };
+    R2Api.prototype.clippy = function (msg) {
+        this.r2.log(this.r2.cmd("?E " + msg));
+    };
+    R2Api.prototype.ascii = function (msg) {
+        this.r2.log(this.r2.cmd("?ea " + msg));
+    };
+    R2Api.prototype.listFunctions = function () {
+        return this.cmdj("aflj");
+    };
+    R2Api.prototype.listFlags = function () {
+        return this.cmdj("fj");
+    };
+    return R2Api;
+}());
+G.R2Api = R2Api;
+var NativePointer = /** @class */ (function () {
+    function NativePointer(api, s) {
+        this.api = api;
+        // this.api.r2.log("NP " + s);
+        this.addr = "" + s;
+    }
+    NativePointer.prototype.readByteArray = function (len) {
+        return JSON.parse(this.api.cmd("p8j ".concat(len, "@").concat(this.addr)));
+    };
+    NativePointer.prototype.add = function (a) {
+        this.addr = this.api.cmd("?v ".concat(this.addr, " + ").concat(a));
+        return this;
+    };
+    NativePointer.prototype.sub = function (a) {
+        this.addr = this.api.cmd("?v ".concat(this.addr, " - ").concat(a));
+        return this;
+    };
+    NativePointer.prototype.writeCString = function (s) {
+        this.api.cmd("\"w " + s + "\"");
+        return this;
+    };
+    NativePointer.prototype.readCString = function () {
+        return JSON.parse(this.api.cmd("psj@".concat(this.addr))).string;
+    };
+    NativePointer.prototype.instruction = function () {
+        var op = this.api.cmdj("aoj@".concat(this.addr))[0];
+        return op;
+    };
+    NativePointer.prototype.analyzeFunction = function () {
+        this.api.cmd("af@" + this.addr);
+    };
+    NativePointer.prototype.name = function () {
+        return this.api.cmd("fd " + this.addr).trim();
+    };
+    NativePointer.prototype.basicBlock = function () {
+        var bb = this.api.cmdj("abj@" + this.addr);
+        return bb;
+    };
+    NativePointer.prototype.functionBasicBlocks = function () {
+        var bbs = this.api.cmdj("afbj@" + this.addr);
+        return bbs;
+    };
+    NativePointer.prototype.xrefs = function () {
+        return this.api.cmdj("axtj@" + this.addr);
+    };
+    return NativePointer;
+}());
+G.NativePointer = NativePointer;

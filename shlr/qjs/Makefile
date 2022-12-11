@@ -36,6 +36,23 @@ src:
 	sed -i -e 's/CONFIG_VERSION/"$(QJS_VERSION)"/' src/quickjs.c
 	git add src
 
+r2papi.c:
+#	npm i r2papi
+	sed -e 's,exports,G,g' \
+		< $(shell npm bin)/../r2papi/index.js \
+		| grep -v 'use strict' \
+		> r2papi.qjs
+	npx minify --help > /dev/null npm i minify
+	npx minify --js < r2papi.qjs > r2papi.mini.qjs
+	npx uglify-js --help > /dev/null || npm i uglify-js
+	npx uglify-js --no-annotations --toplevel --validate -c < r2papi.mini.qjs > r2papi.tiny.qjs
+	@ls -l r2papi.qjs
+	@ls -l r2papi.mini.qjs
+	@ls -l r2papi.tiny.qjs
+	echo 'const char *const r2papi_qjs = "" \\' > r2papi.c
+	r2 -fqcpcc r2papi.tiny.qjs | grep -v ^const >> r2papi.c
+	rm -f r2papi.mini.qjs r2papi.tiny.qjs
+
 repl.c:
 	# goto this s
 	# 19K https://www.toptal.com/developers/javascript-minifier
