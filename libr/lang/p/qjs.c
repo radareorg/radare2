@@ -14,6 +14,7 @@
 #define countof(x) (sizeof (x) / sizeof ((x)[0]))
 
 #include "quickjs.h"
+#include "../r2papi.c"
 
 typedef struct {
 	JSContext *ctx;
@@ -212,11 +213,13 @@ static void register_helpers(JSContext *ctx) {
 	JS_SetPropertyStr (ctx, global_obj, "print", // write + newline
 			JS_NewCFunction (ctx, js_print, "print", 1));
 	eval (ctx, "function dir(x) {"
-			"console.log(JSON.stringify(x).replace(/,/g,',\\n '));"
-			"for (var i in x) {console.log(i);}}");
-	eval(ctx, "var console = { log:print, error:print, debug:print };");
-	eval(ctx, "var r2 = { log:r2log, cmd:r2cmd, cmdj:(x)=>JSON.parse(r2cmd(x))};");
-	eval(ctx, "var global = globalThis; var G = globalThis;");
+		"console.log(JSON.stringify(x).replace(/,/g,',\\n '));"
+		"for (var i in x) {console.log(i);}}");
+	eval (ctx, "var console = { log:print, error:print, debug:print };");
+	eval (ctx, "var r2 = { log:r2log, cmd:r2cmd, cmdj:(x)=>JSON.parse(r2cmd(x))};");
+	eval (ctx, "var global = globalThis; var G = globalThis;");
+	eval (ctx, r2papi_qjs);
+	eval (ctx, "G.R=new R2Api(r2);");
 }
 
 static JSContext *JS_NewCustomContext(JSRuntime *rt) {
