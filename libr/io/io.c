@@ -269,27 +269,6 @@ R_API bool r_io_read_at(RIO *io, ut64 addr, ut8 *buf, int len) {
 	return internal_r_io_read_at (io, addr, buf, len);
 }
 
-// Returns true iff all reads on mapped regions are successful and complete.
-// Unmapped regions are filled with io->Oxff in both physical and virtual modes.
-// Use this function if you want to ignore gaps or do not care about the number
-// of read bytes.
-R_API bool r_io_read_at_mapped(RIO *io, ut64 addr, ut8 *buf, int len) {
-	bool ret;
-	r_return_val_if_fail (io && buf, false);
-	if (io->ff) {
-		memset (buf, io->Oxff, len);
-	}
-	if (io->va) {
-		ret = r_io_vread_at (io, addr, buf, len);
-	} else {
-		ret = r_io_pread_at (io, addr, buf, len) > 0;
-	}
-	if (io->cached & R_PERM_R) {
-		(void)r_io_cache_read(io, addr, buf, len);
-	}
-	return ret;
-}
-
 // For both virtual and physical mode, returns the number of bytes of read
 // prefix.
 // Returns -1 on error.

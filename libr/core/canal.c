@@ -5819,7 +5819,7 @@ R_IPI int r_core_search_value_in_range(RCore *core, bool relative, RInterval sea
 		if (r_cons_is_breaked ()) {
 			goto beach;
 		}
-		bool res = r_io_read_at_mapped (core->io, from, buf, size);
+		bool res = r_io_read_at (core->io, from, buf, size);
 		if (!res || !memcmp (buf, "\xff\xff\xff\xff", 4) || !memcmp (buf, "\x00\x00\x00\x00", 4)) {
 			if (!isValidAddress (core, from)) {
 				ut64 next = from;

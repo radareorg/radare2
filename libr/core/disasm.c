@@ -7112,7 +7112,7 @@ static bool read_ahead(RIO *io, ut8 **buf, size_t *buf_sz, ut64 address, size_t 
 		*buf_sz = new_sz;
 		*buf = tmp;
 	}
-	return r_io_read_at_mapped (io, address, *buf + offset_into_buf, bytes_to_read);
+	return r_io_read_at (io, address, *buf + offset_into_buf, bytes_to_read);
 }
 
 R_API int r_core_disasm_pde(RCore *core, int nb_opcodes, int mode) {
