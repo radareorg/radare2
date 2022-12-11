@@ -42,12 +42,19 @@ repl.c:
 	# ??K
 	npx minify --help > /dev/null npm i minify
 	npx minify --js < repl.qjs > mini.qjs
+	echo "`du -hs repl.qjs|awk '{print $$1}'` => `du -hs mini.qjs|awk '{print $$1}'`"
 	# 20K uglify
 	npx uglify-js --help > /dev/null || npm i uglify-js
 	npx uglify-js --no-annotations --toplevel --validate -c < mini.qjs > tiny.qjs
+	@ls -l mini.qjs
+	@ls -l tiny.qjs
+	echo "`du -hs mini.qjs|awk '{print $$1}'` => `du -hs tiny.qjs|awk '{print $$1}'`"
 	npx minify --help > /dev/null npm i minify
 	npx minify --js < tiny.qjs > mini.qjs
-	r2 -fqcpcc mini.qjs | sed -e 's,unsigned char cstr,char repl_qjs,' > repl.c
+	echo "`du -hs tiny.qjs|awk '{print $$1}'` => `du -hs mini.qjs|awk '{print $$1}'`"
+	# echo 'const char *const repl_qjs = {' > repl.c
+	echo 'const char *const repl_qjs = "" \\' > repl.c
+	r2 -fqcpcc mini.qjs | grep -v ^const >> repl.c
 
 lang_qjs.${EXT_SO}: src repl.c
 	# $(MAKE) CFLAGS_OPT="-Oz -DCONFIG_VERSION=\\\"0.1\\\"" -C $(QJS_NAME) libquickjs.a
