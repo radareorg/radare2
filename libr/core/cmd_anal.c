@@ -5890,7 +5890,7 @@ R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr,
 				}
 			}
 		}
-		(void) r_io_read_at_mapped (core->io, addr, code, sizeof (code));
+		(void) r_io_read_at (core->io, addr, code, sizeof (code));
 		// TODO: sometimes this is dupe
 		ret = r_anal_op (core->anal, &op, addr, code, sizeof (code), R_ARCH_OP_MASK_ESIL | R_ARCH_OP_MASK_HINT);
 		// if type is JMP then we execute the next N instructions

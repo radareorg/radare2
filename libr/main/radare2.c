@@ -1594,8 +1594,8 @@ R_API int r_main_radare2(int argc, const char **argv) {
 			count ++;
 			r_sys_usleep (200000);
 		}
+		eprintf ("\n");
 	}
-	eprintf("\n");
 	if (do_analysis > 0) {
 		if (threaded) {
 			ThreadData *td = R_NEW0 (ThreadData);
