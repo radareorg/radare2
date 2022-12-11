@@ -125,7 +125,7 @@ static JSValue js_os_read_write(JSContext *ctx, JSValueConst this_val, int argc,
 	int fd;
 	uint64_t pos, len;
 	size_t size;
-	ssize_t ret;
+	int ret;
 	uint8_t *buf;
 
 	if (JS_ToInt32(ctx, &fd, argv[0]))

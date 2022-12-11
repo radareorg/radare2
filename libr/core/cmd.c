@@ -104,6 +104,7 @@ static RCoreHelpMessage help_msg_j = {
 	"js", " [expr]", "run given javascript expression",
 	"js-", "", "read from stdin until ^D",
 	"js!", "", "reset js vm (same as #!!)",
+	"js:", "", "enter the interactive repl with autocompletion and colors",
 	"js:", "[file]", "interpret javascript file",
 	"join", " f1 f2", "join the contents of two files",
 	NULL
@@ -1563,6 +1564,8 @@ static int cmd_l(void *data, const char *input) { // "l"
 	return 0;
 }
 
+#include "../../shlr/qjs/repl.c"
+
 static int cmd_join(void *data, const char *input) { // "join"
 	RCore *core = (RCore *)data;
 	if (r_str_startswith (input, "i:")) {
@@ -1575,7 +1578,19 @@ static int cmd_join(void *data, const char *input) { // "join"
 	}
 	if (input[0] == 's') { // "js"
 		if (input[1] == ':' || input[1] == '.') { // "js:"
-			r_core_cmdf (core, ". %s", input + 2);
+			if (input[2]) {
+				r_core_cmdf (core, ". %s", input + 2);
+			} else {
+				if (r_config_get_b (core->config, "scr.interactive")) {
+					if (r_lang_use (core->lang, "qjs")) {
+						r_lang_run (core->lang, repl_qjs, strlen (repl_qjs));
+					} else {
+						R_LOG_ERROR ("Requires lang.qjs");
+					}
+				} else {
+					R_LOG_ERROR ("Requires scr.interactive");
+				}
+			}
 		} else if (input[1] == '!') { // "js!"
 			r_lang_setup (core->lang);
 		} else if (input[1] == '-') { // "js-"
