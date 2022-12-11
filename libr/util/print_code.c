@@ -177,15 +177,14 @@ R_API void r_print_code(RPrint *p, ut64 addr, const ut8 *buf, int len, char lang
 				case '\n':
 					p->cb_printf ("\\n");
 					break;
+				case '"':
+					p->cb_printf ("\\\"");
+					break;
 				default:
-					if (IS_PRINTABLE (buf[i])) {
-						if (buf[i] == '"') {
-							p->cb_printf ("\\\"");
-						} else {
-							p->cb_printf ("%c", buf[i]);
-						}
+					if (IS_PRINTABLE (ch)) {
+						p->cb_printf ("%c", buf[i]);
 					} else {
-						p->cb_printf ("\\x%02x", buf[i]);
+						p->cb_printf ("\"\"\\x%02x\"\"", buf[i]);
 						col += 3;
 					}
 					break;

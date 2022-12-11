@@ -1,15 +1,15 @@
-const char *const repl_qjs = ""\
+const char *const repl_qjs = "" \
   "import(\"os\").catch(console.error).then((os=>{!function(g){g.o"\
   "s=os;let running=!0;const Object=g.Object,String=g.String,Arr"\
   "ay=g.Array,Date=g.Date,Math=g.Math,isFinite=g.isFinite,parseF"\
   "loat=g.parseFloat,config_numcalc=!1,has_jscalc=\"function\"==ty"\
   "peof Fraction,has_bignum=\"function\"==typeof BigFloat,colors={"\
-  "none:\"\x1b[0m\",black:\"\x1b[30m\",red:\"\x1b[31m\",green:\"\x1b[32"\
-  "m\",yellow:\"\x1b[33m\",blue:\"\x1b[34m\",magenta:\"\x1b[35m\",cyan:"\
-  "\"\x1b[36m\",white:\"\x1b[37m\",gray:\"\x1b[30;1m\",grey:\"\x1b[30;1"\
-  "m\",bright_red:\"\x1b[31;1m\",bright_green:\"\x1b[32;1m\",bright_y"\
-  "ellow:\"\x1b[33;1m\",bright_blue:\"\x1b[34;1m\",bright_magenta:\"\x1b"\
-  "[35;1m\",bright_cyan:\"\x1b[36;1m\",bright_white:\"\x1b[37;1m\"};l"\
+  "none:\"""\x1b""[0m\",black:\"""\x1b""[30m\",red:\"""\x1b""[31m\",green:\"""\x1b""[32"\
+  "m\",yellow:\"""\x1b""[33m\",blue:\"""\x1b""[34m\",magenta:\"""\x1b""[35m\",cyan:"\
+  "\"""\x1b""[36m\",white:\"""\x1b""[37m\",gray:\"""\x1b""[30;1m\",grey:\"""\x1b""[30;1"\
+  "m\",bright_red:\"""\x1b""[31;1m\",bright_green:\"""\x1b""[32;1m\",bright_y"\
+  "ellow:\"""\x1b""[33;1m\",bright_blue:\"""\x1b""[34;1m\",bright_magenta:\"""\x1b"""\
+  "[35;1m\",bright_cyan:\"""\x1b""[36;1m\",bright_white:\"""\x1b""[37;1m\"};l"\
   "et styles;styles=config_numcalc?{default:\"black\",comment:\"whi"\
   "te\",string:\"green\",regex:\"cyan\",number:\"green\",keyword:\"blue\""\
   ",function:\"gray\",type:\"magenta\",identifier:\"yellow\",error:\"br"\
@@ -45,7 +45,7 @@ const char *const repl_qjs = ""\
   "let n,o;for(o=r;o<e.length;){const r=t[n=o];for(;++o<e.length"\
   "&&t[o]===r;);write(colors[styles[r]||\"default\"]),write(e.subs"\
   "tring(n,o)),write(colors.none)}}function print_csi(e,r){write"\
-  "(\"\x1b[\"+(1!==e?e:\"\")+r)}function move_cursor(e){let r;if(0<e"\
+  "(\"""\x1b""[\"+(1!==e?e:\"\")+r)}function move_cursor(e){let r;if(0<e"\
   ")for(;0!==e;)term_cursor_x===term_width-1?(write(\"\\n\"),term_c"\
   "ursor_x=0,e--):(print_csi(r=Math.min(term_width-1-term_cursor"\
   "_x,e),\"C\"),e-=r,term_cursor_x+=r);else for(e=-e;0!==e;)0===te"\
@@ -58,7 +58,7 @@ const char *const repl_qjs = ""\
   "_color_text(e=mexpr?mexpr+\"\\n\"+cmd:cmd,e.length-cmd.length,co"\
   "lorize_js(e)[2]):write(cmd)):write(cmd.substring(last_cursor_"\
   "pos)),0==(term_cursor_x=(term_cursor_x+ucs_length(cmd))%term_"\
-  "width)&&write(\" \\b\"),write(\"\x1b[J\"),last_cmd=cmd,last_cursor"\
+  "width)&&write(\" \\b\"),write(\"""\x1b""[J\"),last_cmd=cmd,last_cursor"\
   "_pos=cmd.length),cursor_pos>last_cursor_pos?move_cursor(ucs_l"\
   "ength(cmd.substring(last_cursor_pos,cursor_pos))):cursor_pos<"\
   "last_cursor_pos&&move_cursor(-ucs_length(cmd.substring(cursor"\
@@ -151,24 +151,24 @@ const char *const repl_qjs = ""\
   "gth);for(i+=2,c=Math.max(1,Math.floor((term_width+1)/i)),l=Ma"\
   "th.ceil(u.length/c),write(\"\\n\"),a=0;a<l;a++){for(s=0;s<c&&!(("\
   "r=s*l+a)>=u.length);s++)e=u[r],s!==c-1&&(e=e.padEnd(i)),write"\
-  "(e);write(\"\\n\")}readline_print_prompt()}}}const commands={\"\x01"\
-  "\":beginning_of_line,\"\x02\":backward_char,\"\x03\":control_c,\"\x04"\
-  "\":control_d,\"\x05\":end_of_line,\"\x06\":forward_char,\"\x07\":abo"\
+  "(e);write(\"\\n\")}readline_print_prompt()}}}const commands={\"""\x01"""\
+  "\":beginning_of_line,\"""\x02""\":backward_char,\"""\x03""\":control_c,\"""\x04"""\
+  "\":control_d,\"""\x05""\":end_of_line,\"""\x06""\":forward_char,\"""\x07""\":abo"\
   "rt,\"\\b\":backward_delete_char,\"\\t\":completion,\"\\n\":accept_line"\
-  ",\"\\v\":kill_line,\"\\r\":accept_line,\"\x0e\":next_history,\"\x10\":p"\
-  "revious_history,\"\x11\":quoted_insert,\"\x12\":alert,\"\x13\":aler"\
-  "t,\"\x14\":transpose_chars,\"\x17\":backward_kill_word,\"\x18\":res"\
-  "et,\"\x19\":yank,\"\x1bOA\":previous_history,\"\x1bOB\":next_histor"\
-  "y,\"\x1bOC\":forward_char,\"\x1bOD\":backward_char,\"\x1bOF\":forwa"\
-  "rd_word,\"\x1bOH\":backward_word,\"\x1b[1;5C\":forward_word,\"\x1b"\
-  "[1;5D\":backward_word,\"\x1b[1~\":beginning_of_line,\"\x1b[3~\":de"\
-  "lete_char,\"\x1b[4~\":end_of_line,\"\x1b[5~\":history_search_back"\
-  "ward,\"\x1b[6~\":history_search_forward,\"\x1b[A\":previous_histo"\
-  "ry,\"\x1b[B\":next_history,\"\x1b[C\":forward_char,\"\x1b[D\":backw"\
-  "ard_char,\"\x1b[F\":end_of_line,\"\x1b[H\":beginning_of_line,\"\x1b"\
-  "\x7f\":backward_kill_word,\"\x1bb\":backward_word,\"\x1bd\":kill_w"\
-  "ord,\"\x1bf\":forward_word,\"\x1bk\":backward_kill_line,\"\x1bl\":d"\
-  "owncase_word,\"\x1bt\":transpose_words,\"\x1bu\":upcase_word,\"\x7f"\
+  ",\"\\v\":kill_line,\"\\r\":accept_line,\"""\x0e""\":next_history,\"""\x10""\":p"\
+  "revious_history,\"""\x11""\":quoted_insert,\"""\x12""\":alert,\"""\x13""\":aler"\
+  "t,\"""\x14""\":transpose_chars,\"""\x17""\":backward_kill_word,\"""\x18""\":res"\
+  "et,\"""\x19""\":yank,\"""\x1b""OA\":previous_history,\"""\x1b""OB\":next_histor"\
+  "y,\"""\x1b""OC\":forward_char,\"""\x1b""OD\":backward_char,\"""\x1b""OF\":forwa"\
+  "rd_word,\"""\x1b""OH\":backward_word,\"""\x1b""[1;5C\":forward_word,\"""\x1b"""\
+  "[1;5D\":backward_word,\"""\x1b""[1~\":beginning_of_line,\"""\x1b""[3~\":de"\
+  "lete_char,\"""\x1b""[4~\":end_of_line,\"""\x1b""[5~\":history_search_back"\
+  "ward,\"""\x1b""[6~\":history_search_forward,\"""\x1b""[A\":previous_histo"\
+  "ry,\"""\x1b""[B\":next_history,\"""\x1b""[C\":forward_char,\"""\x1b""[D\":backw"\
+  "ard_char,\"""\x1b""[F\":end_of_line,\"""\x1b""[H\":beginning_of_line,\"""\x1b"""\
+  """\x7f""\":backward_kill_word,\"""\x1b""b\":backward_word,\"""\x1b""d\":kill_w"\
+  "ord,\"""\x1b""f\":forward_word,\"""\x1b""k\":backward_kill_line,\"""\x1b""l\":d"\
+  "owncase_word,\"""\x1b""t\":transpose_words,\"""\x1b""u\":upcase_word,\"""\x7f"""\
   "\":backward_delete_char};function dupstr(e,r){let t=\"\";for(;0<"\
   "r--;)t+=e;return t}let readline_keys,readline_state,readline_"\
   "cb;function readline_print_prompt(){write(prompt),term_cursor"\
@@ -182,7 +182,7 @@ const char *const repl_qjs = ""\
   "prompt+=colors.yellow),prompt+=ps1,show_colors&&(prompt+=colo"\
   "rs.none)}readline_print_prompt(),update(),readline_state=0}fu"\
   "nction handle_char(e){var r=String.fromCodePoint(e);switch(re"\
-  "adline_state){case 0:\"\x1b\"===r?(readline_keys=r,readline_sta"\
+  "adline_state){case 0:\"""\x1b""\"===r?(readline_keys=r,readline_sta"\
   "te=1):handle_key(r);break;case 1:readline_keys+=r,readline_st"\
   "ate=\"[\"===r?2:\"O\"===r?3:(handle_key(readline_keys),0);break;c"\
   "ase 2:readline_keys+=r,\";\"===r||\"0\"<=r&&r<=\"9\"||(handle_key(r"\
@@ -248,7 +248,7 @@ const char *const repl_qjs = ""\
   "Max),0;if(has_bignum&&\"mode\"===e)return\"\"===(t=r.substring(e."\
   "length+1).trim())?write(\"Running mode=\"+eval_mode+\"\\n\"):\"std\""\
   "===t||\"math\"===t?eval_mode=t:write(\"Invalid mode\\n\"),0;if(\"cl"\
-  "ear\"===e)write(\"\x1b[H\x1b[J\");else if(\"c\"===e)show_colors=!s"\
+  "ear\"===e)write(\"""\x1b""[H""\x1b""[J\");else if(\"c\"===e)show_colors=!s"\
   "how_colors;else{if(\"q\"===e)return running=!1,1;if(has_jscalc&"\
   "&\"a\"===e)algebraicMode=!0;else{if(!has_jscalc||\"n\"!==e)return"\
   " write(\"Unknown directive: \"+e+\"\\n\"),0;algebraicMode=!1}}}}re"\
