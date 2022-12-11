@@ -3340,7 +3340,8 @@ R_API void r_core_fini(RCore *c) {
 	r_anal_free (c->anal);
 	r_asm_free (c->rasm);
 	c->rasm = NULL;
-	c->print = r_print_free (c->print);
+	r_print_free (c->print);
+	c->print = NULL;
 	c->bin = (r_bin_free (c->bin), NULL);
 	c->dbg = (r_debug_free (c->dbg), NULL);
 	c->io = (r_io_free (c->io), NULL);

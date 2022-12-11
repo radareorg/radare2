@@ -346,12 +346,13 @@ R_API RPrint* r_print_new(void) {
 	return p;
 }
 
-R_API RPrint* r_print_free(RPrint *p) {
+R_API void r_print_free(RPrint *p) {
 	if (!p) {
-		return NULL;
+		return;
 	}
 	sdb_free (p->formats);
 	p->formats = NULL;
+	free (p->spinmsg);
 	R_FREE (p->strconv_mode);
 	if (p->zoom) {
 		free (p->zoom->buf);
@@ -363,7 +364,6 @@ R_API RPrint* r_print_free(RPrint *p) {
 	r_charset_free (p->charset);
 	r_unref (p->config);
 	free (p);
-	return NULL;
 }
 
 // dummy setter can be removed
@@ -1671,6 +1671,42 @@ R_API void r_print_c(RPrint *p, const ut8 *str, int len) {
 static R_TH_LOCAL RPrint staticp = {
 	.cb_printf = libc_printf
 };
+
+R_API void r_print_spinbar(RPrint *p, const char *msg) {
+	r_return_if_fail (p);
+	p->spinpos++;
+	const char *a[6] = {
+		"/", "-", "\\", "|",
+	};
+#if 0
+	const char *_a[6] = {
+		"_", ".", "-", "`", "-", "."
+	};
+	const char *u[] = {
+		"⠇", "⢰" , "⢸"
+		"⢹",
+		"⣰",
+	};
+	const char *n[10] = {
+		"⣿", // 0
+		"⢺", // 1
+		"⣝", // 2
+		"⡑", // 3
+		"⢳", // 4
+		"⣯", // 6
+		"⡝", // 7
+		"⣭", // 8
+		"⢻", // 9
+	};
+#endif
+	int x = p->spinpos % 4; // 6;
+	if (msg) {
+		free (p->spinmsg);
+		p->spinmsg = strdup (msg);
+	}
+	eprintf (R_CONS_CLEAR_LINE"\r[%s] %s", a[x], r_str_get (p->spinmsg));
+	fflush (stderr);
+}
 
 /* TODO: handle screen width */
 R_API void r_print_progressbar(RPrint *p, int pc, int _cols) {

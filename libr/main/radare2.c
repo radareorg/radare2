@@ -1579,6 +1579,23 @@ R_API int r_main_radare2(int argc, const char **argv) {
 		}
 		free (s);
 	}
+	if (r_config_get_b (r->config, "scr.demo")) {
+		int count = 0;
+		while (true) {
+			const char *msg = "Preparing installation...";
+			if (count > 17) {
+				break;
+			} else if (count > 15) {
+				msg = "DONE!";
+			} else if (count > 10) {
+				msg = "Everything looks good.";
+			}
+			r_print_spinbar (r->print, msg);
+			count ++;
+			r_sys_usleep (200000);
+		}
+	}
+	eprintf("\n");
 	if (do_analysis > 0) {
 		if (threaded) {
 			ThreadData *td = R_NEW0 (ThreadData);

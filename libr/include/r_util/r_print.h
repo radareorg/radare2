@@ -166,6 +166,8 @@ typedef struct r_print_t {
 
 	// segmented memory addressing
 	int nbcolor;
+	int spinpos;
+	char *spinmsg;
 } RPrint;
 
 #ifdef R_API
@@ -180,7 +182,7 @@ R_API void r_print_set_is_interrupted_cb(RPrintIsInterruptedCallback cb);
 R_API char *r_print_hexpair(RPrint *p, const char *str, int idx);
 R_API void r_print_hex_from_bin(RPrint *p, char *bin_str);
 R_API RPrint *r_print_new(void);
-R_API RPrint *r_print_free(RPrint *p);
+R_API void r_print_free(RPrint *p);
 R_API bool r_print_mute(RPrint *p, int x);
 R_API void r_print_set_flags(RPrint *p, int _flags);
 R_API void r_print_unset_flags(RPrint *p, int flags);
@@ -241,6 +243,7 @@ R_API void r_print_zoom(RPrint *p, RPrintZoomCallback cb, void *cbarg, ut64 from
 R_API void r_print_zoom_buf(RPrint *p, RPrintZoomCallback cb, void *cbarg, ut64 from, ut64 to, int len, int maxlen);
 R_API void r_print_progressbar(RPrint *pr, int pc, int _cols);
 R_API void r_print_progressbar_with_count(RPrint *pr, unsigned int pc, unsigned int total, int _cols, bool reset_line);
+R_API void r_print_spinbar(RPrint *p, const char *msg);
 R_API void r_print_portionbar(RPrint *p, const ut64 *portions, int n_portions);
 R_API void r_print_rangebar(RPrint *p, ut64 startA, ut64 endA, ut64 min, ut64 max, int cols);
 R_API char *r_print_randomart(const ut8 *dgst_raw, ut32 dgst_raw_len, ut64 addr);
