@@ -73,21 +73,13 @@ static JSValue r2cmd(JSContext *ctx, JSValueConst this_val, int argc, JSValueCon
 	QjsContext *k = JS_GetRuntimeOpaque (rt);
 	size_t plen;
 	const char *n = JS_ToCStringLen2 (ctx, &plen, argv[0], false);
-	char *ret = k->core->lang->cmd_str (k->core, n);
+	char *ret = NULL;
+	if (R_STR_ISNOTEMPTY (n)) {
+		ret = k->core->lang->cmd_str (k->core, n);
+	}
+	JS_FreeValue (ctx, argv[0]);
 	return JS_NewString (ctx, r_str_get (ret));
 }
-
-static JSValue r2cmdj(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
-	JSRuntime *rt = JS_GetRuntime (ctx);
-	QjsContext *k = JS_GetRuntimeOpaque (rt);
-	size_t plen;
-	const char *n = JS_ToCStringLen2 (ctx, &plen, argv[0], false);
-	char *ret = k->core->lang->cmd_str (k->core, n);
-	JSValue ns = JS_NewString (ctx, r_str_get (ret));
-	return ns;
-}
-
-
 
 static JSValue js_write(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
 	int i;
@@ -148,7 +140,7 @@ static JSValue js_os_read_write(JSContext *ctx, JSValueConst this_val, int argc,
 
 static const JSCFunctionListEntry js_r2_funcs[] = {
 	JS_CFUNC_DEF ("cmd", 1, r2cmd),
-	JS_CFUNC_DEF ("cmdj", 1, r2cmdj),
+	// JS_CFUNC_DEF ("cmdj", 1, r2cmdj), // can be implemented in js
 	JS_CFUNC_DEF ("log", 1, r2log),
 	JS_CFUNC_DEF ("error", 1, r2error),
 };
@@ -176,11 +168,10 @@ static int js_os_init(JSContext *ctx, JSModuleDef *m) {
 }
 
 JSModuleDef *js_init_module_os(JSContext *ctx, const char *module_name) {
-	JSModuleDef *m;
-	m = JS_NewCModule(ctx, module_name, js_os_init);
-	if (!m)
-		return NULL;
-	JS_AddModuleExportList(ctx, m, js_os_funcs, countof(js_os_funcs));
+	JSModuleDef *m = JS_NewCModule(ctx, module_name, js_os_init);
+	if (m) {
+		JS_AddModuleExportList(ctx, m, js_os_funcs, countof(js_os_funcs));
+	}
 	return m;
 }
 
@@ -215,6 +206,7 @@ static void register_helpers(JSContext *ctx) {
 		"for (var i in x) {console.log(i);}}");
 	eval (ctx, "var console = { log:print, error:print, debug:print };");
 	eval (ctx, "var r2 = { log:r2log, cmd:r2cmd, cmdj:(x)=>JSON.parse(r2cmd(x))};");
+	eval (ctx, "r2.call = (x) => r2.cmd('\"\"' + x);");
 	eval (ctx, "var global = globalThis; var G = globalThis;");
 	eval (ctx, r2papi_qjs);
 	eval (ctx, "G.R=new R2Api(r2);");
