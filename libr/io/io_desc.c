@@ -201,15 +201,8 @@ R_API int r_io_desc_read(RIODesc *desc, ut8 *buf, int len) {
 		return -1;
 	}
 	ut64 seek = r_io_desc_seek (desc, 0LL, R_IO_SEEK_CUR);
-	if (desc->io->cachemode) {
-		if (seek != UT64_MAX && r_io_cache_at (desc->io, seek)) {
-			return r_io_cache_read (desc->io, seek, buf, len);
-		}
-	}
 	int ret = r_io_plugin_read (desc, buf, len);
-	if (ret > 0 && desc->io->cachemode) {
-		r_io_cache_write (desc->io, seek, buf, len);
-	} else if ((ret > 0) && desc->io && (desc->io->p_cache & 1)) {
+	if ((ret > 0) && desc->io && (desc->io->p_cache & 1)) {
 		ret = r_io_desc_cache_read (desc, seek, buf, ret);
 	}
 	return ret;
