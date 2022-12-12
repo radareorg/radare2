@@ -114,7 +114,7 @@ typedef enum {
 
 typedef struct r_arch_t {
 	RList *plugins;	       // all plugins
-	RBinBind binb; // required for java, dalvik, wasm and pyc plugin... pending refactor
+	RBinBind binb; // required for java, dalvik, wasm, pickle and pyc plugin... pending refactor
 	RNum *num; // XXX maybe not required
 	struct r_arch_session_t *session;
 	RArchConfig *cfg;      // global / default config
