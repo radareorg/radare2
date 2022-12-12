@@ -378,18 +378,10 @@ R_API bool r_io_cache_write_at(RIO *io, ut64 addr, ut8 *buf, int len) {
 
 R_API bool r_io_cache_read_at(RIO *io, ut64 addr, ut8 *buf, int len) {
 	r_return_val_if_fail (io && buf && (len > 0), false);
-	bool ret = true;
-	if (io->va) {
-		ret = r_io_bank_read_at (io, io->bank, addr, buf, len);
-	} else if (io->desc) {
-		ret = (r_io_desc_read_at (io->desc, addr, buf, len) > 0);
-	}
-	if (!ret) {
-		return false;
-	}
 	RInterval itv = (RInterval){addr, len};
 	RRBNode *node = _find_entry_ci_node (io->cache->tree, &itv);
 	IOCacheItem *ci = node? (IOCacheItem *)node->data: NULL;
+	const bool ret = !!ci;
 	while (ci && r_itv_overlap (ci->tree_itv[0], itv)) {
 		node = r_rbnode_next (node);
 		RInterval its = r_itv_intersect (ci->tree_itv[0], itv);
@@ -398,7 +390,7 @@ R_API bool r_io_cache_read_at(RIO *io, ut64 addr, ut8 *buf, int len) {
 			r_itv_size (its));
 		ci = node? (IOCacheItem *)node->data: NULL;
 	}
-	return true;
+	return ret;
 }
 
 R_API bool r_io_cache_at(RIO *io, ut64 addr) {
