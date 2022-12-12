@@ -3,23 +3,24 @@
 #include <r_lang.h>
 #include <r_util.h>
 
-R_LIB_VERSION(r_lang);
+R_LIB_VERSION (r_lang);
 
-#include "p/spp.c"   // hardcoded
+#include "p/spp.c"
 #if HAVE_SYSTEM
-#include "p/pipe.c"  // hardcoded
-#include "p/c.c"     // hardcoded
-#include "p/v.c"     // hardcoded
-#include "p/vala.c"  // hardcoded
-#include "p/rust.c"  // hardcoded
-#include "p/zig.c"   // hardcoded
+#include "p/pipe.c"
+#include "p/c.c"
+#include "p/v.c"
+#include "p/vala.c"
+#include "p/rust.c"
+#include "p/zig.c"
 #if R2__UNIX__
-#include "p/cpipe.c" // hardcoded
+#include "p/cpipe.c"
 #endif
 #endif
-#include "p/go.c"    // hardcoded
+#include "p/go.c"
 #include "p/lib.c"
 #include "p/qjs.c"
+#include "p/tsc.c"
 
 R_API RLang *r_lang_new(void) {
 	RLang *lang = R_NEW0 (RLang);
@@ -55,6 +56,7 @@ R_API RLang *r_lang_new(void) {
 	r_lang_add (lang, &r_lang_plugin_spp);
 	r_lang_add (lang, &r_lang_plugin_lib);
 	r_lang_add (lang, &r_lang_plugin_qjs);
+	r_lang_add (lang, &r_lang_plugin_tsc);
 
 	return lang;
 }
