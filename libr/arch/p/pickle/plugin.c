@@ -160,10 +160,11 @@ static const struct opmap op_name_map[] = {
 	{ "readonly_buffer", '\x98' }
 };
 
-static inline bool valid_offset(RAnal *a, ut64 addr) {
-	if (a) {
-		RIOIsValidOff validoff = a->iob.io? a->iob.is_valid_offset: NULL;
-		if (validoff && !validoff (a->iob.io, addr, 0)) {
+static inline bool valid_offset(RArch *a, ut64 addr) {
+	RBin *bin = R_UNWRAP2 (a, binb.bin);
+	if (bin) {
+		RIOIsValidOff validoff = bin->iob.is_valid_offset;
+		if (validoff && !validoff (bin->iob.io, addr, 0)) {
 			return false;
 		}
 	}
@@ -181,7 +182,7 @@ static inline bool handle_int(RAnalOp *op, const char *name, int sz, const ut8 *
 	return false;
 }
 
-static inline int handle_long(RAnal *a, RAnalOp *op, const char *name, int sz, const ut8 *buf, int buflen) {
+static inline int handle_long(RArch *a, RAnalOp *op, const char *name, int sz, const ut8 *buf, int buflen) {
 	r_return_val_if_fail (sz == 1 || sz == 4, -1);
 	op->sign = true;
 
@@ -332,15 +333,9 @@ static inline void set_mnemonic_str(RAnalOp *op, const char *n, const ut8 *buf, 
 	}
 }
 
-static bool cnt_str(RAnal *a, RAnalOp *op, const char *name, int sz, const ut8 *buf, int buflen) {
+static bool cnt_str(RArch *a, RAnalOp *op, const char *name, int sz, const ut8 *buf, int buflen) {
 	if (sz <= buflen && sz <= sizeof (op->val)) {
-		if (buf[3] == 0xff || buf[2] == 0xff) {
-			return false;
-		}
 		op->ptrsize = r_mem_get_num (buf, sz);
-		if (op->ptrsize + 4 >= buflen) {
-			return false;
-		}
 		op->size = op->nopcode + sz + op->ptrsize;
 		op->ptr = op->addr + sz + op->nopcode;
 		if (valid_offset (a, op->addr + op->size - 1)) {
@@ -362,7 +357,7 @@ static bool pickle_decode(RArchSession *s, RAnalOp *op, RAnalOpMask mask) {
 		return false;
 	}
 	const ut8 *buf = op->bytes;
-	RAnal *a = NULL; // s->arch;
+	RArch *a = s->arch; // s->arch;
 	int len = op->size;
 	// all opcodes are 1 byte, some have arbitrarily large strings as args
 	op->nopcode = 1;
