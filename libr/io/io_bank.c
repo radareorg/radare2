@@ -792,6 +792,8 @@ R_API bool r_io_bank_read_at(RIO *io, const ut32 bankid, ut64 addr, ut8 *buf, in
 			const ut64 paddr = addr + buf_off - r_io_map_from (map) + map->delta;
 			ret &= (r_io_fd_read_at (io, map->fd, paddr, &buf[buf_off], read_len) == read_len);
 		}
+		// this should be only done when the underlying maps has changed (read call can cause resize!
+		node = _find_entry_submap_node (bank, &fake_sm);
 		// check return value here?
 		node = r_rbnode_next (node);
 		sm = node ? (RIOSubMap *)node->data : NULL;
