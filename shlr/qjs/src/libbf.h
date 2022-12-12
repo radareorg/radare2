@@ -27,7 +27,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#if !defined(_MSC_VER) && INTPTR_MAX >= INT64_MAX
+#if !defined(_MSC_VER) && !defined(__TINYC__) && INTPTR_MAX >= INT64_MAX
 #define LIMB_LOG2_BITS 6
 #else
 #define LIMB_LOG2_BITS 5

@@ -1,7 +1,7 @@
 include ../../libr/config.mk
 # include $(SHLR)/qjs/config.mk
 LINK_QJS_ARCHIVE=0
-QJS_BIGNUM=1
+QJS_BIGNUM=0
 QJS_LIBC=0
 
 ifeq ($(LINK_QJS_ARCHIVE),1)
