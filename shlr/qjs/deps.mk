@@ -1,6 +1,7 @@
 include ../../libr/config.mk
 # include $(SHLR)/qjs/config.mk
 LINK_QJS_ARCHIVE=0
+QJS_BIGNUM=0
 QJS_LIBC=0
 
 ifeq ($(LINK_QJS_ARCHIVE),1)
@@ -13,8 +14,14 @@ QJSFILES+=libunicode.c
 ifeq ($(QJS_LIBC),1)
 QJSFILES+=quickjs-libc.c
 endif
+ifeq ($(QJS_BIGNUM),1)
+QJSFILES+=libbf.c
+endif
 endif
 
 QJS_FILES=$(addprefix $(SHLR)/qjs/src/,$(QJSFILES))
 QJS_OBJS=$(subst .c,.o,$(QJS_FILES))
 CFLAGS+=-I$(SHLR)/qjs/src
+ifeq ($(QJS_BIGNUM),1)
+CFLAGS+=-DCONFIG_BIGNUM=$(QJS_BIGNUM)
+endif

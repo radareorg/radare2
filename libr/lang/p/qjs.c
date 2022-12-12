@@ -1,7 +1,5 @@
 /* radare - LGPL - Copyright 2020-2022 pancake */
 
-#define CONFIG_BIGNUM 0
-
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
