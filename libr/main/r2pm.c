@@ -328,9 +328,13 @@ static void r2pm_setenv(void) {
 	free (gdir);
 
 	char *pd = r_sys_cmd_str ("radare2 -H R2_USER_PLUGINS", NULL, NULL);
-	r_str_trim (pd);
-	r_sys_setenv ("R2_USER_PLUGINS", pd);
-	free (pd);
+	if (pd) {
+		if (R_STR_ISNOTEMPTY (pd)) {
+			r_str_trim (pd);
+			r_sys_setenv ("R2_USER_PLUGINS", pd);
+		}
+		free (pd);
+	}
 
 	char *r2_prefix = r_xdg_datadir ("prefix");
 	r_sys_setenv ("R2PM_PREFIX", r2_prefix);
