@@ -1,4 +1,4 @@
-const char *const r2papi_qjs = "" \
+const char *const js_r2papi_qjs = "" \
   "function t(t){this.r2=t}G.__esModule=!0,G.NativePointer=G.R2A"\
   "pi=void 0,t.prototype.clearScreen=function(){this.r2.cmd(\"!cl"\
   "ear\")},t.prototype.getRegisters=function(){return this.cmdj(\""\
