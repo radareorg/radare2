@@ -1564,7 +1564,7 @@ static int cmd_l(void *data, const char *input) { // "l"
 	return 0;
 }
 
-#include "../../shlr/qjs/repl.c"
+#include "../../shlr/qjs/js_repl.c"
 
 static int cmd_join(void *data, const char *input) { // "join"
 	RCore *core = (RCore *)data;
@@ -1583,7 +1583,7 @@ static int cmd_join(void *data, const char *input) { // "join"
 			} else {
 				if (r_config_get_b (core->config, "scr.interactive")) {
 					if (r_lang_use (core->lang, "qjs")) {
-						r_lang_run (core->lang, repl_qjs, strlen (repl_qjs));
+						r_lang_run (core->lang, js_repl_qjs, strlen (js_repl_qjs));
 					} else {
 						R_LOG_ERROR ("Requires lang.qjs");
 					}

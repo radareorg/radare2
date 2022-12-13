@@ -23,6 +23,10 @@ QJS_LIBS+=-lr_core -lr_config -lr_cons
 
 QJS_VERSION=$(shell cat src/VERSION.txt)
 
+JS_CFILES:=js_repl.c js_r2papi.c js_require.c
+
+all: src $(JS_CFILES)
+
 src:
 	$(MAKE) $(QJS_NAME)
 	rm -rf src
@@ -36,30 +40,27 @@ src:
 	sed -i -e 's/CONFIG_VERSION/"$(QJS_VERSION)"/' src/quickjs.c
 	git add src
 
-r2papi.c:
-#	npm i r2papi
+js_r2papi.c:
+#	npm i js_r2papi
 	sed -e 's,exports,G,g' \
-		< $(shell npm bin)/../r2papi/index.js \
+		< $(shell npm bin)/../js_r2papi/index.js \
 		| grep -v 'use strict' \
-		> r2papi.qjs
+		> js_r2papi.qjs
 	npx minify --help > /dev/null npm i minify
-	npx minify --js < r2papi.qjs > r2papi.mini.qjs
+	npx minify --js < js_r2papi.qjs > js_r2papi.mini.qjs
 	npx uglify-js --help > /dev/null || npm i uglify-js
-	npx uglify-js --no-annotations --toplevel --validate -c < r2papi.mini.qjs > r2papi.tiny.qjs
-	@ls -l r2papi.qjs
-	@ls -l r2papi.mini.qjs
-	@ls -l r2papi.tiny.qjs
-	echo 'const char *const r2papi_qjs = "" \\' > r2papi.c
-	r2 -fqcpcc r2papi.tiny.qjs | grep -v ^const >> r2papi.c
-	rm -f r2papi.mini.qjs r2papi.tiny.qjs
+	npx uglify-js --no-annotations --toplevel --validate -c < js_r2papi.mini.qjs > js_r2papi.tiny.qjs
+	@ls -l js_r2papi.qjs
+	@ls -l js_r2papi.mini.qjs
+	@ls -l js_r2papi.tiny.qjs
+	echo 'const char *const js_r2papi_qjs = "" \\' > js_r2papi.c
+	r2 -fqcpcc js_r2papi.tiny.qjs | grep -v ^const >> js_r2papi.c
+	rm -f js_r2papi.mini.qjs js_r2papi.tiny.qjs
 
-repl.c:
-	# goto this s
-	# 19K https://www.toptal.com/developers/javascript-minifier
-	# ??K
+js_require.c:
 	npx minify --help > /dev/null npm i minify
-	npx minify --js < repl.qjs > mini.qjs
-	echo "`du -hs repl.qjs|awk '{print $$1}'` => `du -hs mini.qjs|awk '{print $$1}'`"
+	npx minify --js < js_require.qjs > mini.qjs
+	echo "`du -hs js_require.qjs|awk '{print $$1}'` => `du -hs mini.qjs|awk '{print $$1}'`"
 	# 20K uglify
 	npx uglify-js --help > /dev/null || npm i uglify-js
 	npx uglify-js --no-annotations --toplevel --validate -c < mini.qjs > tiny.qjs
@@ -69,11 +70,31 @@ repl.c:
 	npx minify --help > /dev/null npm i minify
 	npx minify --js < tiny.qjs > mini.qjs
 	echo "`du -hs tiny.qjs|awk '{print $$1}'` => `du -hs mini.qjs|awk '{print $$1}'`"
-	# echo 'const char *const repl_qjs = {' > repl.c
-	echo 'const char *const repl_qjs = "" \\' > repl.c
-	r2 -fqcpcc mini.qjs | grep -v ^const >> repl.c
+	# echo 'const char *const js_require_qjs = {' > js_require.c
+	echo 'const char *const js_require_qjs = "" \\' > js_require.c
+	r2 -fqcpcc mini.qjs | grep -v ^const >> js_require.c
 
-lang_qjs.${EXT_SO}: src repl.c
+js_repl.c:
+	# goto this s
+	# 19K https://www.toptal.com/developers/javascript-minifier
+	# ??K
+	npx minify --help > /dev/null npm i minify
+	npx minify --js < js_repl.qjs > mini.qjs
+	echo "`du -hs js_repl.qjs|awk '{print $$1}'` => `du -hs mini.qjs|awk '{print $$1}'`"
+	# 20K uglify
+	npx uglify-js --help > /dev/null || npm i uglify-js
+	npx uglify-js --no-annotations --toplevel --validate -c < mini.qjs > tiny.qjs
+	@ls -l mini.qjs
+	@ls -l tiny.qjs
+	echo "`du -hs mini.qjs|awk '{print $$1}'` => `du -hs tiny.qjs|awk '{print $$1}'`"
+	npx minify --help > /dev/null npm i minify
+	npx minify --js < tiny.qjs > mini.qjs
+	echo "`du -hs tiny.qjs|awk '{print $$1}'` => `du -hs mini.qjs|awk '{print $$1}'`"
+	# echo 'const char *const js_repl_qjs = {' > js_repl.c
+	echo 'const char *const js_repl_qjs = "" \\' > js_repl.c
+	r2 -fqcpcc mini.qjs | grep -v ^const >> js_repl.c
+
+lang_qjs.${EXT_SO}: src js_repl.c js_require.c
 	# $(MAKE) CFLAGS_OPT="-Oz -DCONFIG_VERSION=\\\"0.1\\\"" -C $(QJS_NAME) libquickjs.a
 #-Wl,-exported_symbols_list,symbols.lst
 	-$(CC) -flto -D 'CONFIG_VERSION="$(VERSION)"' -g -Oz -Wl,-dead_strip -std=c99 $(DUK_CFLAGS) -I quickjs $(QJS_CFLAGS) $(CFLAGS) -fPIC $(LDFLAGS_LIB) \

@@ -12,7 +12,7 @@
 #define countof(x) (sizeof (x) / sizeof ((x)[0]))
 
 #include "quickjs.h"
-#include "../r2papi.c"
+#include "../js_r2papi.c"
 
 typedef struct {
 	JSContext *ctx;
@@ -77,7 +77,7 @@ static JSValue r2cmd(JSContext *ctx, JSValueConst this_val, int argc, JSValueCon
 	if (R_STR_ISNOTEMPTY (n)) {
 		ret = k->core->lang->cmd_str (k->core, n);
 	}
-	JS_FreeValue (ctx, argv[0]);
+	// JS_FreeValue (ctx, argv[0]);
 	return JS_NewString (ctx, r_str_get (ret));
 }
 
@@ -119,9 +119,10 @@ static JSValue js_os_read_write(JSContext *ctx, JSValueConst this_val, int argc,
 	int ret;
 	uint8_t *buf;
 
-	if (JS_ToInt32(ctx, &fd, argv[0]))
+	if (JS_ToInt32 (ctx, &fd, argv[0])) {
 		return JS_EXCEPTION;
-	if (JS_ToIndex(ctx, &pos, argv[2]))
+	}
+	if (JS_ToIndex (ctx, &pos, argv[2]))
 		return JS_EXCEPTION;
 	if (JS_ToIndex(ctx, &len, argv[3]))
 		return JS_EXCEPTION;
@@ -201,6 +202,7 @@ static void register_helpers(JSContext *ctx) {
 			JS_NewCFunction (ctx, js_flush, "flush", 1));
 	JS_SetPropertyStr (ctx, global_obj, "print", // write + newline
 			JS_NewCFunction (ctx, js_print, "print", 1));
+	eval (ctx, "setTimeout = (x,y) => x();");
 	eval (ctx, "function dir(x) {"
 		"console.log(JSON.stringify(x).replace(/,/g,',\\n '));"
 		"for (var i in x) {console.log(i);}}");
@@ -208,7 +210,7 @@ static void register_helpers(JSContext *ctx) {
 	eval (ctx, "var r2 = { log:r2log, cmd:r2cmd, cmdj:(x)=>JSON.parse(r2cmd(x))};");
 	eval (ctx, "r2.call = (x) => r2.cmd('\"\"' + x);");
 	eval (ctx, "var global = globalThis; var G = globalThis;");
-	eval (ctx, r2papi_qjs);
+	eval (ctx, js_r2papi_qjs);
 	eval (ctx, "G.R=new R2Api(r2);");
 }
 
@@ -240,8 +242,12 @@ static void eval_jobs(JSContext *ctx) {
 }
 
 static bool eval(JSContext *ctx, const char *code) {
+	if (R_STR_ISEMPTY (code)) {
+		return false;
+	}
 	// set raw console
-			r_cons_set_raw (true);
+	// only for repl!
+	r_cons_set_raw (true);
 	JSValue v = JS_Eval (ctx, code, strlen (code), "-", 0);
 	if (JS_IsException (v)) {
 		js_std_dump_error (ctx);

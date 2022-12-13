@@ -1576,6 +1576,5 @@ R_API bool r_file_is_newer(const char *f1, const char *f2) {
 	}
 	long a = a1.st_mtime;
 	long b = a2.st_mtime;
-	eprintf ("(%d\n(%d\n", a1.st_mtime, a2.st_mtime);
-	return b > a; // a2.st_mtime > a1.st_mtime;
+	return a > b;
 }
