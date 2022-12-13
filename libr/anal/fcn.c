@@ -84,6 +84,7 @@ static int read_ahead(ReadAhead *ra, RAnal *anal, ut64 addr, ut8 *buf, int len) 
 	return len;
 }
 
+// R2_590 R_API bool r_anal_function_resize(RAnalFunction *fcn, int newsize) {
 R_API int r_anal_function_resize(RAnalFunction *fcn, int newsize) {
 	RAnal *anal = fcn->anal;
 	RAnalBlock *bb;
@@ -1184,7 +1185,6 @@ repeat:
 					gotoBeach (R_ANAL_RET_END);
 				}
 			}
-			ret = r_anal_function_bb (anal, fcn, op->jump, depth);
 			int tc = anal->opt.tailcall_delta;
 			if (tc) {
 				int diff = op->jump - op->addr;
@@ -1194,6 +1194,7 @@ repeat:
 					gotoBeach (R_ANAL_RET_END);
 				}
 			}
+			ret = r_anal_function_bb (anal, fcn, op->jump, depth);
 			goto beach;
 #endif
 			break;
@@ -1235,30 +1236,52 @@ repeat:
 			if (bb->cond) {
 				bb->cond->type = op->cond;
 			}
-			if (anal->opt.jmptbl) {
-				if (op->ptr != UT64_MAX) {
-					ut64 table_size, default_case;
-					table_size = anal->cmpval + 1;
-					default_case = op->fail; // is this really default case?
-					if (anal->cmpval != UT64_MAX && default_case != UT64_MAX && (op->reg || op->ireg)) {
-						// TODO -1
-						if (op->ireg) {
-							ret = try_walkthrough_jmptbl (anal, fcn, bb, depth, op->addr, 0, op->ptr, op->ptr, anal->config->bits >> 3, table_size, default_case, ret);
-						} else { // op->reg
-							ret = walkthrough_arm_jmptbl_style (anal, fcn, bb, depth, op->addr, op->ptr, anal->config->bits >> 3, table_size, default_case, ret);
-						}
-						// check if op->jump and op->fail contain jump table location
-						// clear jump address, because it's jump table location
-						if (op->jump == op->ptr) {
-							op->jump = UT64_MAX;
-						} else if (op->fail == op->ptr) {
-							op->fail = UT64_MAX;
-						}
-						anal->cmpval = UT64_MAX;
+#if 1
+			if (op->ptr != UT64_MAX) {
+				ut64 table_size, default_case;
+				table_size = anal->cmpval + 1;
+				default_case = op->fail; // is this really default case?
+				if (anal->cmpval != UT64_MAX && default_case != UT64_MAX && (op->reg || op->ireg)) {
+					// TODO -1
+					if (op->ireg) {
+						ret = try_walkthrough_jmptbl (anal, fcn, bb, depth, op->addr, 0, op->ptr, op->ptr, anal->config->bits >> 3, table_size, default_case, ret);
+					} else { // op->reg
+						ret = walkthrough_arm_jmptbl_style (anal, fcn, bb, depth, op->addr, op->ptr, anal->config->bits >> 3, table_size, default_case, ret);
 					}
 				}
+				// check if op->jump and op->fail contain jump table location
+				// clear jump address, because it's jump table location
+				if (op->jump == op->ptr) {
+					op->jump = UT64_MAX;
+				} else if (op->fail == op->ptr) {
+					op->fail = UT64_MAX;
+				}
 			}
-			int saved_stack = fcn->stack;
+#else
+				anal->cmpval = UT64_MAX;
+				if (anal->opt.jmptbl && op->ptr != UT64_MAX) {
+				ut64 table_size, default_case;
+				table_size = anal->cmpval + 1;
+				default_case = op->fail; // is this really default case?
+				if (anal->cmpval != UT64_MAX && default_case != UT64_MAX && (op->reg || op->ireg)) {
+					// TODO -1
+					if (op->ireg) {
+						ret = try_walkthrough_jmptbl (anal, fcn, bb, depth, op->addr, 0, op->ptr, op->ptr, anal->config->bits >> 3, table_size, default_case, ret);
+					} else { // op->reg
+						ret = walkthrough_arm_jmptbl_style (anal, fcn, bb, depth, op->addr, op->ptr, anal->config->bits >> 3, table_size, default_case, ret);
+					}
+					// check if op->jump and op->fail contain jump table location
+					// clear jump address, because it's jump table location
+					if (op->jump == op->ptr) {
+						op->jump = UT64_MAX;
+					} else if (op->fail == op->ptr) {
+						op->fail = UT64_MAX;
+					}
+					anal->cmpval = UT64_MAX;
+				}
+			}
+#endif
+			const int saved_stack = fcn->stack;
 			// TODO: depth -1 in here
 			r_anal_function_bb (anal, fcn, op->jump, depth);
 			fcn->stack = saved_stack;
@@ -1266,13 +1289,12 @@ repeat:
 			fcn->stack = saved_stack;
 
 			// XXX breaks mips analysis too !op->delay
+			// break;
 			// this will be all x86, arm (at least)
 			// without which the analysis is really slow,
 			// presumably because each opcode would get revisited
 			// (and already covered by a bb) many times
 			goto beach;
-			// For some reason, branch delayed code (MIPS) needs to continue
-			break;
 		case R_ANAL_OP_TYPE_UCALL:
 		case R_ANAL_OP_TYPE_RCALL:
 		case R_ANAL_OP_TYPE_ICALL:

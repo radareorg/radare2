@@ -15,7 +15,7 @@ aa
 aflxj @ 0x004021f0
 EOF
 EXPECT=<<EOF
-{"address":4202992,"name":"sym.imp.free","xrefs":{"main":[4207990]},"address":4202992,"name":"sym.imp.free","xrefs":{"fcn.00404de0":[4214527]},"address":4202992,"name":"sym.imp.free","xrefs":{"fcn.00404ff0":[4215018]},"address":4202992,"name":"sym.imp.free","xrefs":{"fcn.00407cb0":[4228794]},"address":4202992,"name":"sym.imp.free","xrefs":{"fcn.0040b260":[4240299]},"address":4202992,"name":"sym.imp.free","xrefs":{"fcn.0040b4a0":[4240660]},"address":4202992,"name":"sym.imp.free","xrefs":{"fcn.0040ba60":[4242332]},"address":4202992,"name":"sym.imp.free","xrefs":{"fcn.0040ce40":[4247435]},"address":4202992,"name":"sym.imp.free","xrefs":{"fcn.0040e580":[4253321]}}
+{"address":4202992,"name":"sym.imp.free","xrefs":{"main":[4207990]},"address":4202992,"name":"sym.imp.free","xrefs":{"fcn.00404de0":[4214527]},"address":4202992,"name":"sym.imp.free","xrefs":{"fcn.00404ff0":[4215018]},"address":4202992,"name":"sym.imp.free","xrefs":{"fcn.00407cb0":[4228794]},"address":4202992,"name":"sym.imp.free","xrefs":{"fcn.0040b260":[4240299]},"address":4202992,"name":"sym.imp.free","xrefs":{"fcn.0040b4a0":[4240660]},"address":4202992,"name":"sym.imp.free","xrefs":{"fcn.0040ba60":[4242332]},"address":4202992,"name":"sym.imp.free","xrefs":{"fcn.0040ce40":[4247435]},"address":4202992,"name":"sym.imp.free","xrefs":{"fcn.0040ea80":[4253321]}}
 EOF
 RUN
 

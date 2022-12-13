@@ -14756,7 +14756,8 @@ static int cmd_anal(void *data, const char *input) {
 	case 'b': // "ab"
 		switch (input[1]) {
 		case '.': // "ab."
-			r_core_cmd_call (core, "ab $$");
+			// r_core_cmd_call (core, "ab $$");
+			r_core_cmd_call (core, "afbi");
 			break;
 		case 'a': // "aba"
 			r_core_cmdf (core, "aeab%s", input + 1);
