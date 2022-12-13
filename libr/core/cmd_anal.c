@@ -9936,7 +9936,7 @@ static void cmd_agraph_node(RCore *core, const char *input) {
 					body = newbody;
 				} else {
 					free (body);
-					body = strdup ("");;
+					body = strdup ("");
 				}
 			}
 			body = r_str_append (body, "\n");
