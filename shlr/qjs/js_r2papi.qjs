@@ -1,5 +1,5 @@
 G.__esModule = true;
-G.NativePointer = G.R2Api = void 0;
+G.Base64 = G.NativePointer = G.R2Papi = void 0;
 ;
 ;
 ;
@@ -7,46 +7,46 @@ G.NativePointer = G.R2Api = void 0;
 ;
 ;
 ;
-var R2Api = /** @class */ (function () {
-    function R2Api(r2) {
+var R2Papi = /** @class */ (function () {
+    function R2Papi(r2) {
         this.r2 = r2;
     }
-    R2Api.prototype.clearScreen = function () {
+    R2Papi.prototype.clearScreen = function () {
         this.r2.cmd("!clear");
     };
-    R2Api.prototype.getRegisters = function () {
+    R2Papi.prototype.getRegisters = function () {
         // this.r2.log("winrar" + JSON.stringify(JSON.parse(this.r2.cmd("drj")),null, 2) );
         return this.cmdj("drj");
     };
-    R2Api.prototype.setRegisters = function (obj) {
+    R2Papi.prototype.setRegisters = function (obj) {
         for (var _i = 0, _a = Object.keys(obj); _i < _a.length; _i++) {
             var r = _a[_i];
             var v = obj[r];
             this.r2.cmd("dr " + r + "=" + v);
         }
     };
-    R2Api.prototype.analyzeProgram = function () {
+    R2Papi.prototype.analyzeProgram = function () {
         this.r2.cmd("aa");
     };
-    R2Api.prototype.hex = function (s) {
+    R2Papi.prototype.hex = function (s) {
         return this.r2.cmd("?v " + s).trim();
     };
-    R2Api.prototype.step = function () {
+    R2Papi.prototype.step = function () {
         this.r2.cmd("ds");
         return this;
     };
-    R2Api.prototype.stepOver = function () {
+    R2Papi.prototype.stepOver = function () {
         this.r2.cmd("dso");
         return this;
     };
-    R2Api.prototype.math = function (expr) {
+    R2Papi.prototype.math = function (expr) {
         return +this.r2.cmd("?v " + expr);
     };
-    R2Api.prototype.searchString = function (s) {
+    R2Papi.prototype.searchString = function (s) {
         var res = this.cmdj("/j " + s);
         return res;
     };
-    R2Api.prototype.binInfo = function () {
+    R2Papi.prototype.binInfo = function () {
         try {
             return this.cmdj("ij~{bin}");
         }
@@ -54,36 +54,36 @@ var R2Api = /** @class */ (function () {
             return {};
         }
     };
-    R2Api.prototype.skip = function () {
+    R2Papi.prototype.skip = function () {
         this.r2.cmd("dss");
     };
-    R2Api.prototype.ptr = function (s) {
+    R2Papi.prototype.ptr = function (s) {
         return new NativePointer(this, s);
     };
-    R2Api.prototype.cmd = function (s) {
+    R2Papi.prototype.cmd = function (s) {
         return this.r2.cmd(s);
     };
-    R2Api.prototype.cmdj = function (s) {
+    R2Papi.prototype.cmdj = function (s) {
         return JSON.parse(this.cmd(s));
     };
-    R2Api.prototype.log = function (s) {
+    R2Papi.prototype.log = function (s) {
         return this.r2.log(s);
     };
-    R2Api.prototype.clippy = function (msg) {
+    R2Papi.prototype.clippy = function (msg) {
         this.r2.log(this.r2.cmd("?E " + msg));
     };
-    R2Api.prototype.ascii = function (msg) {
+    R2Papi.prototype.ascii = function (msg) {
         this.r2.log(this.r2.cmd("?ea " + msg));
     };
-    R2Api.prototype.listFunctions = function () {
+    R2Papi.prototype.listFunctions = function () {
         return this.cmdj("aflj");
     };
-    R2Api.prototype.listFlags = function () {
+    R2Papi.prototype.listFlags = function () {
         return this.cmdj("fj");
     };
-    return R2Api;
+    return R2Papi;
 }());
-G.R2Api = R2Api;
+G.R2Papi = R2Papi;
 var NativePointer = /** @class */ (function () {
     function NativePointer(api, s) {
         this.api = api;
@@ -132,3 +132,15 @@ var NativePointer = /** @class */ (function () {
     return NativePointer;
 }());
 G.NativePointer = NativePointer;
+var Base64 = /** @class */ (function () {
+    function Base64() {
+    }
+    Base64.encode = function (x) {
+        return (0, G.b64)(x);
+    };
+    Base64.decode = function (x) {
+        return (0, G.b64)(x, true);
+    };
+    return Base64;
+}());
+G.Base64 = Base64;

@@ -42,8 +42,9 @@ src:
 
 js_r2papi.c:
 #	npm i js_r2papi
+	mkdir -p $(shell npm bin)
 	sed -e 's,exports,G,g' \
-		< $(shell npm bin)/../js_r2papi/index.js \
+		< $(shell npm bin)/../r2papi/index.js \
 		| grep -v 'use strict' \
 		> js_r2papi.qjs
 	npx minify --help > /dev/null npm i minify
