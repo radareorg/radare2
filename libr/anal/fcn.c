@@ -1,5 +1,7 @@
 /* radare - LGPL - Copyright 2010-2022 - nibble, alvaro, pancake */
 
+#define R_LOG_ORIGIN "fcn"
+
 #include <r_anal.h>
 #include <r_parse.h>
 #include <r_util.h>
@@ -1113,17 +1115,22 @@ repeat:
 				bb->fail = UT64_MAX;
 			}
 			// -1
+			{ // check if destination is a prelude, so we assume that's a tailcall
+				ut8 buf[32];
+				(void)anal->iob.read_at (anal->iob.io, op->jump, (ut8 *) buf, sizeof (buf));
+				if (r_anal_is_prelude (anal, buf, sizeof (buf))) {
+					R_LOG_DEBUG ("tail call jump found at 0x%08"PFMT64x, op->addr);
+					(void) r_anal_xrefs_set (anal, op->addr, op->jump, R_ANAL_REF_TYPE_JUMP | R_ANAL_REF_TYPE_EXEC);
+					fcn_recurse (anal, fcn, op->jump, anal->opt.bb_max_size, depth - 1);
+					op->jump = UT64_MAX;
+					gotoBeach (R_ANAL_RET_END);
+				}
+			}
 			ret = r_anal_function_bb (anal, fcn, op->jump, depth);
 			int tc = anal->opt.tailcall;
 			if (tc) {
 				int diff = op->jump - op->addr;
-				if (tc < 0) {
-					ut8 buf[32];
-					(void)anal->iob.read_at (anal->iob.io, op->jump, (ut8 *) buf, sizeof (buf));
-					if (r_anal_is_prelude (anal, buf, sizeof (buf))) {
-						fcn_recurse (anal, fcn, op->jump, anal->opt.bb_max_size, depth - 1);
-					}
-				} else if (R_ABS (diff) > tc) {
+				if (tc > 0 && R_ABS (diff) > tc) {
 					(void) r_anal_xrefs_set (anal, op->addr, op->jump, R_ANAL_REF_TYPE_CALL | R_ANAL_REF_TYPE_EXEC);
 					fcn_recurse (anal, fcn, op->jump, anal->opt.bb_max_size, depth - 1);
 					gotoBeach (R_ANAL_RET_END);
