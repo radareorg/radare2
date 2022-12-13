@@ -9924,15 +9924,20 @@ static void cmd_agraph_node(RCore *core, const char *input) {
 		if (n_args > 1) {
 			body = strdup (args[1]);
 			if (strncmp (body, "base64:", B_LEN) == 0) {
-				body = r_str_replace (body, "\\n", "", true);
-				newbody = (char *)r_base64_decode_dyn (body + B_LEN, -1);
-				free (body);
-				if (!newbody) {
-					R_LOG_ERROR ("Cannot allocate buffer");
-					r_str_argv_free (args);
-					break;
+				if (body[B_LEN]) {
+					body = r_str_replace (body, "\\n", "", true);
+					newbody = (char *)r_base64_decode_dyn (body + B_LEN, -1);
+					free (body);
+					if (!newbody) {
+						R_LOG_ERROR ("Invalid base64 string in agn (%s)", body+B_LEN);
+						r_str_argv_free (args);
+						break;
+					}
+					body = newbody;
+				} else {
+					free (body);
+					body = strdup ("");;
 				}
-				body = newbody;
 			}
 			body = r_str_append (body, "\n");
 			if (n_args > 2) {

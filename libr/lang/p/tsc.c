@@ -6,7 +6,7 @@
 
 #include "../js_require.c"
 
-const char *const js_entrypoint_qjs = "Gmain(requirejs,global,{r2:r2})";
+const char *const js_entrypoint_qjs = "Gmain(requirejs,global,{r2:r2,R2Papi:R2Papi,R2Pipe:r2,Base64:Base64})";
 #if 0
 	"requirejs (['asan'], function (foo) {\n"\
 	"  foo.main(r2);\n" \
@@ -21,7 +21,7 @@ static bool lang_tsc_file(RLangSession *s, const char *file) {
 		return false;
 	}
 	if (!r_file_exists (file)) {
-		R_LOG_WARN ("file does tno exist");
+		R_LOG_WARN ("file does not exist");
 		return false;
 	}
 	char *js_ofile = strdup (file);
@@ -31,7 +31,7 @@ static bool lang_tsc_file(RLangSession *s, const char *file) {
 	int rc = 0;
 	/// check of ofile exists and its newer than file
 	if (!r_file_is_newer (qjs_ofile, file)) {
-		rc = r_sys_cmdf ("tsc --outFile %s --lib es2020,dom --moduleResolution node --module amd %s", js_ofile, file);
+		rc = r_sys_cmdf ("tsc --target es2020 --outFile %s --lib es2020,dom --moduleResolution node --module amd %s", js_ofile, file);
 		if (rc == 0) {
 			char *js_ifile = r_file_slurp (js_ofile, NULL);
 			RStrBuf *sb = r_strbuf_new ("var Gmain;");
@@ -46,7 +46,9 @@ static bool lang_tsc_file(RLangSession *s, const char *file) {
 			free (s);
 			r_file_rm (js_ofile);
 		}
-	} else { eprintf ("no need to compile\n"); }
+	} else {
+		R_LOG_DEBUG ("no need to compile");
+	}
 	if (rc == 0) {
 		r_lang_use (s->lang, "qjs");
 		rc = r_lang_run_file (s->lang, qjs_ofile)? 0: -1;
