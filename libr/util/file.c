@@ -1562,3 +1562,20 @@ R_API const char *r_file_extension(const char *str) {
 	}
 	return NULL;
 }
+
+// returns true if both files exist and f2 is modified after f1 (aka f2 > newer-than > f1)
+R_API bool r_file_is_newer(const char *f1, const char *f2) {
+	struct stat a1, a2;
+	if (stat (f1, &a1) == -1) {
+		eprintf ("no\n");
+		return false;
+	}
+	if (stat (f2, &a2) == -1) {
+		eprintf ("no 2\n");
+		return false;
+	}
+	long a = a1.st_mtime;
+	long b = a2.st_mtime;
+	eprintf ("(%d\n(%d\n", a1.st_mtime, a2.st_mtime);
+	return b > a; // a2.st_mtime > a1.st_mtime;
+}
