@@ -373,7 +373,7 @@ typedef struct r_anal_options_t {
 	bool norevisit;
 	int recont; // continue on recurse analysis mode
 	int noncode;
-	int nopskip; // skip nops at the beginning of functions
+	bool nopskip; // skip nops at the beginning of functions
 	int hpskip; // skip `mov reg,reg` and `lea reg,[reg]`
 	int jmptbl; // analyze jump tables
 	int nonull;
