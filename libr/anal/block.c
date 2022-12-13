@@ -50,9 +50,12 @@ static int __bb_addr_cmp(const void *incoming, const RBNode *in_tree, void *user
 #define D if (anal && anal->verbose)
 
 R_API void r_anal_block_ref(RAnalBlock *bb) {
-	// 0-refd must already be freed.
-	r_return_if_fail (bb->ref > 0);
-	bb->ref++;
+	// XXX we have R_REF for this
+	if (bb) {
+		// 0-refd must already be freed.
+		r_return_if_fail (bb->ref > 0);
+		bb->ref++;
+	}
 }
 
 #define DFLT_NINSTR 3
@@ -109,6 +112,9 @@ R_API void r_anal_block_reset(RAnal *a) {
 }
 
 R_API RAnalBlock *r_anal_get_block_at(RAnal *anal, ut64 addr) {
+	if (addr == UT64_MAX) {
+		return NULL;
+	}
 	RBNode *node = r_rbtree_find (anal->bb_tree, &addr, __bb_addr_cmp, NULL);
 	return node? unwrap (node): NULL;
 }
@@ -420,105 +426,90 @@ R_API void r_anal_block_unref(RAnalBlock *bb) {
 	}
 }
 
-R_API bool r_anal_block_successor_addrs_foreach(RAnalBlock *block, RAnalAddrCb cb, void *user) {
-#define CB_ADDR(addr) do { \
-		if (addr == UT64_MAX) { \
-			break; \
-		} \
-		if (!cb (addr, user)) { \
-			return false; \
-		} \
-	} while (0);
-
-	CB_ADDR (block->jump);
-	CB_ADDR (block->fail);
+R_API void r_anal_block_successor_addrs_foreach(RAnalBlock *block, RAnalAddrCb cb, void *user) {
+	cb (block->jump, user);
+	cb (block->fail, user);
 	if (block->switch_op && block->switch_op->cases) {
 		RListIter *iter;
 		RAnalCaseOp *caseop;
 		r_list_foreach (block->switch_op->cases, iter, caseop) {
-			CB_ADDR (caseop->jump);
+			cb (caseop->jump, user);
 		}
 	}
-
-	return true;
-#undef CB_ADDR
 }
 
 typedef struct r_anal_block_recurse_context_t {
 	RAnal *anal;
-	RPVector/*<RAnalBlock>*/ to_visit;
+	RList *to_visit;
 	HtUP *visited;
 } RAnalBlockRecurseContext;
+
+static RAnalBlockRecurseContext *recurse_context_new(RAnalBlock *block) {
+	RAnalBlockRecurseContext *ctx = R_NEW0 (RAnalBlockRecurseContext);
+	ctx->anal = block->anal;
+	ctx->to_visit = r_list_newf (NULL);
+	ctx->visited = ht_up_new0 (); // XXX we only use the key here, this can be a set
+	ht_up_insert (ctx->visited, block->addr, NULL);
+	return ctx;
+}
+
+static void recurse_context_free(RAnalBlockRecurseContext *ctx) {
+	if (ctx) {
+		ht_up_free (ctx->visited);
+		r_list_free (ctx->to_visit);
+		free (ctx);
+	}
+}
 
 static bool block_recurse_successor_cb(ut64 addr, void *user) {
 	RAnalBlockRecurseContext *ctx = user;
 	if (ht_up_find_kv (ctx->visited, addr, NULL)) {
 		// already visited
 		return true;
+		//return false;
 	}
 	ht_up_insert (ctx->visited, addr, NULL);
 	RAnalBlock *block = r_anal_get_block_at (ctx->anal, addr);
 	if (!block) {
+		r_list_push (ctx->to_visit, block);
 		return true;
 	}
-	r_pvector_push (&ctx->to_visit, block);
+	// always return true, otherwise the foreach stops
 	return true;
+	// return false;
 }
 
 R_API bool r_anal_block_recurse(RAnalBlock *block, RAnalBlockCb cb, void *user) {
 	bool breaked = false;
-	RAnalBlockRecurseContext ctx;
-	ctx.anal = block->anal;
-	r_pvector_init (&ctx.to_visit, NULL);
-	ctx.visited = ht_up_new0 ();
-	if (!ctx.visited) {
-		goto beach;
-	}
+	RAnalBlockRecurseContext *ctx = recurse_context_new (block);
+	r_list_append (ctx->to_visit, block);
 
-	ht_up_insert (ctx.visited, block->addr, NULL);
-	r_pvector_push (&ctx.to_visit, block);
-
-	while (!r_pvector_empty (&ctx.to_visit)) {
-		RAnalBlock *cur = r_pvector_pop (&ctx.to_visit);
+	while (!r_list_empty (ctx->to_visit)) {
+		RAnalBlock *cur = r_list_pop (ctx->to_visit);
 		breaked = !cb (cur, user);
 		if (breaked) {
 			break;
 		}
-		r_anal_block_successor_addrs_foreach (cur, block_recurse_successor_cb, &ctx);
+		r_anal_block_successor_addrs_foreach (cur, block_recurse_successor_cb, ctx);
 	}
-
-beach:
-	ht_up_free (ctx.visited);
-	r_pvector_clear (&ctx.to_visit);
+	recurse_context_free (ctx);
 	return !breaked;
 }
 
 R_API bool r_anal_block_recurse_followthrough(RAnalBlock *block, RAnalBlockCb cb, void *user) {
 	bool breaked = false;
-	RAnalBlockRecurseContext ctx;
-	ctx.anal = block->anal;
-	r_pvector_init (&ctx.to_visit, NULL);
-	ctx.visited = ht_up_new0 ();
-	if (!ctx.visited) {
-		goto beach;
-	}
-
-	ht_up_insert (ctx.visited, block->addr, NULL);
-	r_pvector_push (&ctx.to_visit, block);
-
-	while (!r_pvector_empty (&ctx.to_visit)) {
-		RAnalBlock *cur = r_pvector_pop (&ctx.to_visit);
-		bool b = !cb (cur, user);
-		if (b) {
-			breaked = true;
+	RAnalBlockRecurseContext *ctx = recurse_context_new (block);
+	r_list_append (ctx->to_visit, block);
+	while (!r_list_empty (ctx->to_visit)) {
+		RAnalBlock *cur = r_list_pop (ctx->to_visit);
+		if (cur && cb (cur, user)) {
+			r_anal_block_successor_addrs_foreach (cur, block_recurse_successor_cb, ctx);
 		} else {
-			r_anal_block_successor_addrs_foreach (cur, block_recurse_successor_cb, &ctx);
+			breaked = true;
 		}
+		// eprintf ("tovisit %d\n", r_list_length (ctx->to_visit));
 	}
-
-beach:
-	ht_up_free (ctx.visited);
-	r_pvector_clear (&ctx.to_visit);
+	recurse_context_free (ctx);
 	return !breaked;
 }
 
@@ -778,6 +769,9 @@ static void noreturn_successor_free(HtUPKv *kv) {
 }
 
 static bool noreturn_successors_cb(RAnalBlock *block, void *user) {
+	if (!block) {
+		return false;
+	}
 	HtUP *succs = user;
 	NoreturnSuccessor *succ = R_NEW0 (NoreturnSuccessor);
 	if (!succ) {
@@ -791,6 +785,9 @@ static bool noreturn_successors_cb(RAnalBlock *block, void *user) {
 }
 
 static bool noreturn_successors_reachable_cb(RAnalBlock *block, void *user) {
+	if (!block) {
+		return false;
+	}
 	HtUP *succs = user;
 	NoreturnSuccessor *succ = ht_up_find (succs, block->addr, NULL);
 	if (succ) {
@@ -895,12 +892,18 @@ typedef struct {
 } AutomergeCtx;
 
 static bool count_successors_cb(ut64 addr, void *user) {
+	if (addr == UT64_MAX) {
+		return true;
+	}
 	AutomergeCtx *ctx = user;
 	ctx->cur_succ_count++;
 	return true;
 }
 
 static bool automerge_predecessor_successor_cb(ut64 addr, void *user) {
+	if (addr == UT64_MAX) {
+		return true;
+	}
 	AutomergeCtx *ctx = user;
 	ctx->cur_succ_count++;
 	RAnalBlock *block = ht_up_find (ctx->blocks, addr, NULL);
@@ -923,6 +926,9 @@ static bool automerge_predecessor_successor_cb(ut64 addr, void *user) {
 }
 
 static bool automerge_get_predecessors_cb(void *user, ut64 k) {
+	if (k == UT64_MAX) {
+		return true;
+	}
 	AutomergeCtx *ctx = user;
 	const RAnalFunction *fcn = (const RAnalFunction *)(size_t)k;
 	RListIter *it;
