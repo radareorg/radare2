@@ -48,7 +48,7 @@ static int __read(RIO *io, RIODesc *desc, ut8 *buf, int count) {
 				memcpy (mal->buf + osz, mem, c);
 				io->coreb.cmdf (io->coreb.core, "f nread_%d %d %d",
 					sdat->count, c, mal->size);
-				io->coreb.cmdf (io->coreb.core, "omr 1 %d", mal->size);
+				// io->coreb.cmdf (io->coreb.core, "omr 1 %d", mal->size);
 				sdat->count++;
 			}
 			free (mem);
@@ -134,6 +134,9 @@ static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 		}
 		r_socket_block_time (data->sc, false, 0, 0);
 		free (host);
+	}
+	if (io->va) {
+		R_LOG_WARN ("This is a raw stream and growing io plugin, You may disable io.va to not depend on maps");
 	}
 	return r_io_desc_new (io, &r_io_plugin_socket, pathname, R_PERM_RW | rw, mode, mal);
 }
