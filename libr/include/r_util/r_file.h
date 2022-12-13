@@ -68,6 +68,7 @@ R_API bool r_file_move(const char *src, const char *dst);
 R_API RList* r_file_glob(const char *globbed_path, int maxdepth);
 R_API RMmap *r_file_mmap_arch(RMmap *map, const char *filename, int fd);
 R_API RList *r_file_lsrf(const char *dir);
+R_API bool r_file_is_newer(const char *f1, const char *f2);
 R_API bool r_file_rm_rf(const char *dir);
 R_API R_MUSTUSE char *r_file_home(const char *str);
 // R2_580: implement r_file_homef() for format string purposes
