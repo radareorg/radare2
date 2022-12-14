@@ -983,36 +983,37 @@ static const char *help_msg_av[] = {
 
 static const char *help_msg_ax[] = {
 	"Usage:", "ax[?d-l*]", " # see also 'afx?'",
+	"ax", " addr [at]", "add code ref pointing to addr (from curseek)",
 	"ax", "", "list refs",
 	"ax*", "", "output radare commands",
-	"ax", " addr [at]", "add code ref pointing to addr (from curseek)",
 	"ax-", " [at]", "clean all refs/refs from addr",
 	"ax-*", "", "clean all refs/refs",
 	"ax.", " [addr]", "find data/code references from and to this address",
 	"axc", " addr [at]", "add generic code ref",
 	"axC", " addr [at]", "add code call ref",
 	"axd", " addr [at]", "add data ref",
+	"axF", " [flg-glob]", "find data/code references of flags",
 	"axf", "[?] [addr]", "find data/code references from this address",
 	"axff[j]", " [addr]", "find data/code references from this function",
-	"axF", " [flg-glob]", "find data/code references of flags",
 	"axg", " [addr]", "show xrefs graph to reach current function",
 	"axg*", " [addr]", "show xrefs graph to given address, use .axg*;aggv",
 	"axgj", " [addr]", "show xrefs graph to reach current function in json format",
-	"axj", "", "list refs in json format",
-	"axl", "[cq]", "list xrefs (axlc = count, axlq = quiet)",
+	"axj", "", "add jmp reference", // list refs in json format",
+	"axl", "[jcq]", "list xrefs (axlc = count, axlq = quiet, axlj = json)",
 	"axm", " addr [at]", "copy data/code references pointing to addr to also point to curseek (or at)",
 	"axq", "", "list refs in quiet/human-readable format",
 	"axr", " addr [at]", "add data-read ref",
+	"axs", " addr [at]", "add string ref",
 	"axt", "[?] [addr]", "find data/code references to this address",
 	"axv", "[?] [addr]", "list local variables read-write-exec references",
 	"axw", " addr [at]", "add data-write ref",
-	"axs", " addr [at]", "add string ref",
 	NULL
 };
 
 static const char *help_msg_axl[]= {
-	"Usage:", "axl[cq]", "show global xrefs",
+	"Usage:", "axl[jcq]", "show global xrefs",
 	"axl", "", "list all xrefs",
+	"axlj", "", "list xrefs in json format",
 	"axlc", "", "count how many xrefs are registered",
 	"axlq", "", "list xrefs in quiet mode (axq)",
 	NULL
@@ -8962,7 +8963,6 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 		}
 		break;
 	case '\0': // "ax"
-	case 'j': // "axj"
 	case 'q': // "axq"
 	case '*': // "ax*"
 	case ',': // "ax,"
@@ -9021,6 +9021,9 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 		switch (input[1]) {
 		case '?':
 			r_core_cmd_help (core, help_msg_axl);
+			break;
+		case 'j':
+			r_anal_xrefs_list (core->anal, 'j', "");
 			break;
 		case 'c':
 			{
@@ -9350,6 +9353,7 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 	case 'c': // "axc"
 	case 'r': // "axr"
 	case 'w': // "axw"
+	case 'j': // "axj"
 	case 'd': // "axd"
 	case 's': // "axs"
 	case ' ': // "ax "
