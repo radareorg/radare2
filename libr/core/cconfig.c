@@ -240,10 +240,18 @@ static bool cb_anal_jmpretpoline(void *user, void *data) {
 	core->anal->opt.retpoline = node->i_value;
 	return true;
 }
+
 static bool cb_anal_jmptailcall(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
 	core->anal->opt.tailcall = node->i_value;
+	return true;
+}
+
+static bool cb_anal_jmptailcall_delta(void *user, void *data) {
+	RCore *core = (RCore*) user;
+	RConfigNode *node = (RConfigNode*) data;
+	core->anal->opt.tailcall_delta = node->i_value;
 	return true;
 }
 
@@ -3400,7 +3408,8 @@ R_API int r_core_config_init(RCore *core) {
 	NULL);
 	SETI ("anal.timeout", 0, "stop analyzing after a couple of seconds");
 	SETCB ("anal.jmp.retpoline", "true", &cb_anal_jmpretpoline, "analyze retpolines, may be slower if not needed");
-	SETICB ("anal.jmp.tailcall", 0, &cb_anal_jmptailcall, "consume a branch as a call if delta is big");
+	SETCB ("anal.jmp.tailcall", "true", &cb_anal_jmptailcall, "consume a branch as a call if delta is a function");
+	SETICB ("anal.jmp.tailcall.delta", 0, &cb_anal_jmptailcall_delta, "consume a branch as a call if delta is big");
 
 	SETCB ("anal.armthumb", "false", &cb_analarmthumb, "aae computes arm/thumb changes (lot of false positives ahead)");
 	SETCB ("anal.delay", "true", &cb_anal_delay, "enable delay slot analysis if supported by the architecture");

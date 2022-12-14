@@ -774,7 +774,33 @@ R_API RList *r_anal_preludes(RAnal *anal) {
 	return NULL;
 }
 
-R_API bool r_anal_is_prelude(RAnal *anal, const ut8 *data, int len) {
+R_API bool r_anal_is_prelude(RAnal *anal, ut64 addr, const ut8 *data, int len) {
+	r_return_val_if_fail (anal, false);
+	if (addr == UT64_MAX) {
+		return false;
+	}
+	ut8 *owned = NULL;
+	RFlagItem *flag = anal->flag_get (anal->flb.f, addr); // XXX should get a list
+	if (flag) {
+		if (r_str_startswith (flag->name, "func.")) {
+			return true;
+		}
+		if (r_str_startswith (flag->name, "fcn.")) {
+			return true;
+		}
+		if (r_str_startswith (flag->name, "sym.")) {
+			return true;
+		}
+	}
+	if (!data) {
+		const int maxis = r_anal_archinfo (anal, R_ANAL_ARCHINFO_MAX_OP_SIZE);
+		owned = malloc (maxis);
+		if (!data) {
+			return false;
+		}
+		data = owned;
+		(void)anal->iob.read_at (anal->iob.io, addr, (ut8 *) owned, maxis);
+	}
 	RList *l = r_anal_preludes (anal);
 	if (l) {
 		RSearchKeyword *kw;
@@ -783,11 +809,13 @@ R_API bool r_anal_is_prelude(RAnal *anal, const ut8 *data, int len) {
 			int ks = kw->keyword_length;
 			if (len >= ks && !memcmp (data, kw->bin_keyword, ks)) {
 				r_list_free (l);
+				free (owned);
 				return true;
 			}
 		}
 		r_list_free (l);
 	}
+	free (owned);
 	return false;
 }
 
