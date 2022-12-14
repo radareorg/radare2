@@ -380,7 +380,8 @@ typedef struct r_anal_options_t {
 	bool pushret; // analyze push+ret as jmp
 	bool armthumb; //
 	bool delay;
-	int tailcall;
+	bool tailcall;
+	int tailcall_delta;
 	bool retpoline;
 	bool propagate_noreturn;
 	bool recursive_noreturn; // anal.rnr
@@ -1537,7 +1538,7 @@ R_API void r_anal_rtti_print_all(RAnal *anal, int mode);
 R_API void r_anal_rtti_recover_all(RAnal *anal);
 
 R_API RList *r_anal_preludes(RAnal *anal);
-R_API bool r_anal_is_prelude(RAnal *anal, const ut8 *data, int len);
+R_API bool r_anal_is_prelude(RAnal *anal, ut64 addr, const ut8 *data, int len);
 
 /* classes */
 typedef struct r_anal_method_t {
