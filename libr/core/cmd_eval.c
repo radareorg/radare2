@@ -4,9 +4,7 @@
 #include <stdbool.h>
 #include "r_core.h"
 
-static R_TH_LOCAL bool getNext = false;
-
-static const char *help_msg_e[] = {
+static RCoreHelpMessage help_msg_e = {
 	"Usage:", "e [var[=value]]", "Evaluable vars",
 	"e","?asm.bytes", "show description",
 	"e", "??", "list config vars with description",
@@ -36,7 +34,7 @@ static const char *help_msg_e[] = {
 	NULL
 };
 
-static const char *help_msg_ec[] = {
+static RCoreHelpMessage help_msg_ec = {
 	"Usage ec[s?] [key][[=| ]fg] [bg]", "", "",
 	"ec", " [key]", "list all/key color keys",
 	"ec*", "", "same as above, but using r2 commands",
@@ -58,7 +56,7 @@ static const char *help_msg_ec[] = {
 	NULL
 };
 
-static const char *help_msg_eco[] = {
+static RCoreHelpMessage help_msg_eco = {
 	"Usage: eco[jc] [theme]", "", "load theme (cf. Path and dir.prefix)",
 	"eco", "", "list available themes (See e dir.themes)",
 	"eco.", "", "display current theme name",
@@ -130,16 +128,16 @@ static bool nextpal_item(RCore *core, PJ *pj, int mode, const char *file) {
 		if (core->theme && !strcmp (core->theme, "default")) {
 			free (core->theme);
 			core->theme = strdup (fn);
-			getNext = false;
+			core->get_next = false;
 		}
-		if (getNext) {
+		if (core->get_next) {
 			free (core->theme);
 			core->theme = strdup (fn);
-			getNext = false;
+			core->get_next = false;
 			return false;
 		} else if (core->theme) {
 			if (!strcmp (core->theme, fn)) {
-				getNext = true;
+				core->get_next = true;
 			}
 		} else {
 			free (core->theme);
@@ -243,7 +241,7 @@ R_API char *r_core_get_theme(RCore *core) {
 
 R_API RList *r_core_list_themes(RCore *core) {
 	RList *list = r_list_newf (free);
-	getNext = false;
+	core->get_next = false;
 	char *tmp = strdup ("default");
 	r_list_append (list, tmp);
 	char *path = r_xdg_datadir ("cons");
@@ -278,7 +276,7 @@ static void nextpal(RCore *core, int mode) {
 	}
 	char *home = r_xdg_datadir ("cons");
 
-	getNext = false;
+	core->get_next = false;
 	// spaguetti!
 	if (home) {
 		files = r_sys_dir (home);
@@ -360,7 +358,7 @@ static void nextpal(RCore *core, int mode) {
 
 done:
 	free (path);
-	if (getNext) {
+	if (core->get_next) {
 		R_FREE (core->theme);
 		nextpal (core, mode);
 		r_list_free (files);

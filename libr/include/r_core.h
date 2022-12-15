@@ -307,12 +307,13 @@ struct r_core_t {
 	bool cfglog; // cfg.corelog
 	int cmdrepeat; // cmd.repeat
 	const char *cmdtimes; // cmd.times
-	R_DEPRECATE bool cmd_in_backticks; // whether currently executing a cmd out of backticks
+	R_DEPRECATE bool cmd_in_backticks; // R2_590 whether currently executing a cmd out of backticks
 	int rtr_n;
 	RCoreRtrHost rtr_host[RTR_MAX_HOSTS];
 	ut64 *asmqjmps;
 	int asmqjmps_count;
 	int asmqjmps_size;
+	bool get_next; // move to core options
 	bool is_asmqjmps_letter;
 	bool keep_asmqjmps;
 	RCoreVisual visual;
