@@ -249,7 +249,7 @@ R_API void r_xml_free(RXml *x) {
 R_API RXmlRet r_xml_parse(RXml *x, int _ch) {
 	/* Ensure that characters are in the range of 0..255 rather than -126..125.
 	 * All character comparisons are done with positive integers. */
-	ut8 ch = (ut8 )(_ch + 256) & 0xff;
+	ut32 ch = (ut32)(_ch + 256) & 0xff;
 	if (!ch) {
 		return R_XML_ESYN;
 	}
