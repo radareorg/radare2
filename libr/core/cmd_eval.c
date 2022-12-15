@@ -1,8 +1,17 @@
 /* radare2 - LGPL - Copyright 2009-2022 - pancake */
 
-#include <stddef.h>
-#include <stdbool.h>
-#include "r_core.h"
+#include <r_core.h>
+
+static RCoreHelpMessage help_message_ecH = {
+	"Usage ecH[iw-?]","","",
+	"ecHi","[color]","highlight current instruction with 'color' background",
+	"ecHw","[word] [color]","highlight 'word ' in current instruction with 'color' background",
+	"ecH","","list all the highlight rules",
+	"ecH.","","show highlight rule in current offset",
+	"ecH-","*","remove all the highlight hints",
+	"ecH-","","remove all highlights on current instruction",
+	NULL
+};
 
 static RCoreHelpMessage help_msg_e = {
 	"Usage:", "e [var[=value]]", "Evaluable vars",
@@ -20,7 +29,7 @@ static RCoreHelpMessage help_msg_e = {
 	"e*", "", "dump config vars in r commands",
 	"e!", "a", "invert the boolean value of 'a' var",
 	"ec", "[?] [k] [color]", "set color for given key (prompt, offset, ...)",
-	"ee", "var", "open editor to change the value of var",
+	"ee", " [var]", "open cfg.editor to change the value of var",
 	"ed", "", "open editor to change the ~/.radare2rc",
 	"ej", "", "list config vars in JSON",
 	"eJ", "", "list config vars in verbose JSON",
@@ -111,9 +120,12 @@ static void cmd_eval_table(RCore *core, const char *input) {
 	}
 	r_table_free (t);
 }
+
 static bool nextpal_item(RCore *core, PJ *pj, int mode, const char *file) {
 	const char *fn = r_str_lchr (file, '/');
-	if (!fn) fn = file;
+	if (!fn) {
+		fn = file;
+	}
 	switch (mode) {
 	case 'j': // json
 		pj_s (pj, fn);
@@ -135,14 +147,13 @@ static bool nextpal_item(RCore *core, PJ *pj, int mode, const char *file) {
 			core->theme = strdup (fn);
 			core->get_next = false;
 			return false;
-		} else if (core->theme) {
-			if (!strcmp (core->theme, fn)) {
-				core->get_next = true;
-			}
-		} else {
-			free (core->theme);
+		}
+		if (!core->theme) {
 			core->theme = strdup (fn);
 			return false;
+		}
+		if (!strcmp (core->theme, fn)) {
+			core->get_next = true;
 		}
 		break;
 	}
@@ -211,10 +222,10 @@ static bool cmd_load_theme(RCore *core, const char *_arg) {
 			theme++;
 		}
 		if (failed) {
-			R_LOG_ERROR ("eco: cannot open colorscheme profile (%s)", arg);
+			R_LOG_ERROR ("cannot open '%s' colorscheme", arg);
 		}
 #else
-		R_LOG_ERROR ("eco: cannot open colorscheme profile (%s)", arg);
+		R_LOG_ERROR ("cannot open '%s' colorscheme", arg);
 #endif
 	}
 	free (home);
@@ -291,12 +302,6 @@ static void nextpal(RCore *core, int mode) {
 							r_list_free (files);
 							return;
 						}
-#if 0
-						eprintf ("%s %s %s\n",
-							r_str_get (nfn),
-							r_str_get (core->theme),
-							r_str_get (fn));
-#endif
 						if (nfn && !strcmp (nfn, core->theme)) {
 							r_list_free (files);
 							files = NULL;
@@ -335,12 +340,6 @@ static void nextpal(RCore *core, int mode) {
 							r_list_free (files);
 							return;
 						}
-#if 0
-						eprintf ("%s %s %s\n",
-							r_str_get (nfn),
-							r_str_get (core->theme),
-							r_str_get (fn));
-#endif
 						if (nfn && !strcmp (nfn, core->theme)) {
 							free (core->theme);
 							core->theme = strdup (fn);
@@ -368,7 +367,7 @@ done:
 		//nextpal (core, mode);
 	} else if (mode == 'n' || mode == 'p') {
 		if (R_STR_ISNOTEMPTY (core->theme)) {
-			r_core_cmdf (core, "eco %s", core->theme);
+			r_core_cmd_callf (core, "eco %s", core->theme);
 		}
 	}
 	r_list_free (files);
@@ -435,7 +434,7 @@ static int cmd_eval(void *data, const char *input) {
 				}
 			}
 		} else {
-			eprintf ("Usage: et [varname]  ; show type of eval var\n");
+			r_core_cmd_help_match (core, help_msg_e, "et", false);
 		}
 		break;
 	case 'n': // "en" "env"
@@ -443,18 +442,21 @@ static int cmd_eval(void *data, const char *input) {
 			r_core_cmd_help_match_spec (core, help_msg_e, "en", 0, false);
 			break;
 		} else if (!strchr (input, '=')) {
-			char *var, *p;
-			var = strchr (input, ' ');
-			if (var) while (*var==' ') var++;
-			p = r_sys_getenv (var);
+			const char *var = strchr (input, ' ');
+			if (var) {
+				var = r_str_trim_head_ro (var);
+			}
+			char *p = r_sys_getenv (var);
 			if (p) {
 				r_cons_println (p);
 				free (p);
 			} else {
 				char **e = r_sys_get_environ ();
-				while (e && *e) {
-					r_cons_println (*e);
-					e++;
+				if (e != NULL) {
+					while (*e) {
+						r_cons_println (*e);
+						e++;
+					}
 				}
 			}
 		} else if (strlen (input) > 3) {
@@ -487,7 +489,7 @@ static int cmd_eval(void *data, const char *input) {
 		r_config_list (core->config, NULL, 'j');
 		break;
 	case 'v': // verbose
-		r_config_list (core->config, input + 1, 'v');
+		r_config_list (core->config, r_str_trim_head_ro (input + 1), 'v');
 		break;
 	case 'q': // quiet list of eval keys
 		r_config_list (core->config, NULL, 'q');
@@ -504,7 +506,7 @@ static int cmd_eval(void *data, const char *input) {
 			if (input[2] == 'j') {
 				nextpal (core, 'j');
 			} else if (input[2] == '*') {
-				r_core_cmdf (core, "cat %s", core->themepath);
+				r_core_cmd_callf (core, "cat %s", core->themepath);
 			} else if (input[2] == '!') {
 				char *res = r_core_editor (core, core->themepath, NULL);
 				free (res);
@@ -587,19 +589,8 @@ static int cmd_eval(void *data, const char *input) {
 			int delta = (input[2])? 3: 2;
 			char** argv = r_str_argv (r_str_trim_head_ro (input + delta), &argc);
 			switch (input[2]) {
-			case '?': {
-				const char *helpmsg[] = {
-					"Usage ecH[iw-?]","","",
-					"ecHi","[color]","highlight current instruction with 'color' background",
-					"ecHw","[word] [color]","highlight 'word ' in current instruction with 'color' background",
-					"ecH","","list all the highlight rules",
-					"ecH.","","show highlight rule in current offset",
-					"ecH-","*","remove all the highlight hints",
-					"ecH-","","remove all highlights on current instruction",
-					NULL
-				};
-				r_core_cmd_help (core, helpmsg);
-				}
+			case '?':
+				r_core_cmd_help (core, help_message_ecH);
 				r_str_argv_free (argv);
 				return false;
 			case '-': // ecH-
@@ -704,9 +695,10 @@ static int cmd_eval(void *data, const char *input) {
 			eprintf ("  ed-   : rm ~/.radare2rc\n");
 		} else if (input[1] == '-') {
 			char *file = r_file_home (".radare2rc");
-			r_cons_printf ("rm %s\n", file);
-			// r_file_rm (file);
-			free (file);
+			if (file) {
+				r_file_rm (file);
+				free (file);
+			}
 		} else {
 			char *file = r_file_home (".radare2rc");
 			if (r_cons_is_interactive ()) {
@@ -735,7 +727,7 @@ static int cmd_eval(void *data, const char *input) {
 				r_config_set (core->config, input2, p);
 			}
 		} else {
-			eprintf ("Usage: ee varname # use $EDITOR to edit this config value\n");
+			r_core_cmd_help_match (core, help_msg_e, "ee", false);
 		}
 		break;
 	case '!': // "e!"
@@ -765,7 +757,7 @@ static int cmd_eval(void *data, const char *input) {
 				R_LOG_ERROR ("cannot find key '%s'", key);
 			}
 		} else {
-			eprintf ("Usage: er [key]  # make an eval key PERMANENTLY read only\n");
+			r_core_cmd_help_match (core, help_msg_e, "er", false);
 		}
 		break;
 	case ':': // "e:"
@@ -780,7 +772,7 @@ static int cmd_eval(void *data, const char *input) {
 			r_config_list (core->config, input + 1, 0);
 		} else {
 			// XXX we cant do "e cmd.gprompt=dr=", because the '=' is a token, and quotes dont affect him
-			r_config_eval (core->config, input + 1, false);
+			r_config_eval (core->config, r_str_trim_head_ro (input + 1), false);
 		}
 		break;
 	}

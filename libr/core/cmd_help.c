@@ -119,7 +119,7 @@ static ut32 vernum(const char *s) {
 	return res;
 }
 
-static const char *help_msg_percent[] = {
+static RCoreHelpMessage help_msg_percent = {
 	"Usage:", "%[name[=value]]", "Set each NAME to VALUE in the environment",
 	"%", "", "list all environment variables",
 	"%", "SHELL", "prints SHELL value",
@@ -131,7 +131,7 @@ static const char *help_msg_percent[] = {
 // because they can be replaced by commands in the given
 // command.. we should only expose the most essential and
 // unidirectional ones.
-static const char *help_msg_env[] = {
+static RCoreHelpMessage help_msg_env = {
 	"\nEnvironment:", "", "",
 	"R2_FILE", "", "file name",
 	"R2_OFFSET", "", "10base offset 64bit value",
@@ -151,7 +151,7 @@ static const char *help_msg_env[] = {
 	NULL
 };
 
-static const char *help_msg_exclamation[] = {
+static RCoreHelpMessage help_msg_exclamation = {
 	"Usage:", "!<cmd>", "  Run given command as in system(3)",
 	"!", "", "list all historic commands",
 	"!", "ls", "execute 'ls' in shell",
@@ -169,7 +169,7 @@ static const char *help_msg_exclamation[] = {
 	NULL
 };
 
-static const char *help_msg_root[] = {
+static RCoreHelpMessage help_msg_root = {
 	"%var", "=value", "alias for 'env' command",
 	"*", "[?] off[=[0x]value]", "pointer read/write data/values (see ?v, wx, wv)",
 	"(macro arg0 arg1)",  "", "manage scripting macros",
@@ -296,7 +296,7 @@ static RCoreHelpMessage help_msg_question = {
 	NULL
 };
 
-static const char *help_msg_question_v[] = {
+static RCoreHelpMessage help_msg_question_v = {
 	"Usage: ?v [$.]","","",
 	"flag", "", "offset of flag",
 	"$", "{ev}", "get value of eval config variable",
@@ -354,7 +354,7 @@ static const char *help_msg_question_v[] = {
 	NULL
 };
 
-static const char *help_msg_question_V[] = {
+static RCoreHelpMessage help_msg_question_V = {
 	"Usage: ?V[jq]","","",
 	"?V", "", "show version information",
 	"?V0", "", "show major version",
@@ -367,7 +367,7 @@ static const char *help_msg_question_V[] = {
 	NULL
 };
 
-static const char *help_msg_greater_sign[] = {
+static RCoreHelpMessage help_msg_greater_sign = {
 	"Usage:", "[cmd]>[file]", "redirects console from 'cmd' output to 'file'",
 	"[cmd] > [file]", "", "redirect STDOUT of 'cmd' to 'file'",
 	"[cmd] > $alias", "", "save the output of the command as an alias (see $?)",
@@ -377,7 +377,7 @@ static const char *help_msg_greater_sign[] = {
 	NULL
 };
 
-static const char *help_msg_intro[] = {
+static RCoreHelpMessage help_msg_intro = {
 	"Usage: [.][times][cmd][~grep][@[@iter]addr!size][|>pipe] ; ...", "", "",
 	"Append '?' to any char command to get detailed help", "", "",
 	"Prefix with number to repeat command N times (f.ex: 3x)", "", "",
@@ -402,6 +402,18 @@ static const char* findBreakChar(const char *s) {
 		s++;
 	}
 	return s;
+}
+
+// XXX This is an experimental test and must be implemented in RCons directly
+static void colormessage(RCore *core, const char *msg) {
+	size_t msglen = strlen (msg);
+	const char *pad = r_str_pad (' ', msglen + 5);
+	r_cons_gotoxy (10, 10); r_cons_printf (Color_BGBLUE"%s", pad);
+	r_cons_gotoxy (10, 11); r_cons_printf (Color_BGBLUE"%s", pad);
+	r_cons_gotoxy (10, 12); r_cons_printf (Color_BGBLUE"%s", pad);
+	r_cons_gotoxy (12, 11); r_cons_printf (Color_BGBLUE""Color_WHITE"%s", msg);
+	r_cons_gotoxy (0, 0);
+	r_cons_printf (Color_RESET);
 }
 
 static char *filterFlags(RCore *core, const char *msg) {
@@ -678,7 +690,7 @@ static int cmd_help(void *data, const char *input) {
 		if (input[1] == ' ') {
 			r_cons_printf ("0x%08x\n", (ut32)r_str_hash (input + 2));
 		} else {
-			eprintf ("Usage: ?h [string-to-hash]\n");
+			r_core_cmd_help_match (core, help_msg_question, "?h", false);
 		}
 		break;
 	case 'F': // "?F"
@@ -1154,6 +1166,9 @@ static int cmd_help(void *data, const char *input) {
 		}
 		case 'c': // "?ec" column
 			r_cons_column (r_num_math (core->num, input + 2));
+			break;
+		case 'v':
+			colormessage (core, input + 2);
 			break;
 		case 'g': { // "?eg" gotoxy
 			int x = atoi (input + 2);
