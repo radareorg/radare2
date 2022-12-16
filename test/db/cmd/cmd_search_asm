@@ -392,3 +392,30 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=match ins1 followed by ins2 in linear disasm with json output
+FILE=bins/mach0/iGoat-Swift.arm_64.1
+CMDS=<<EOF
+e search.in=range
+e search.from=0x100007e0c
+e search.to=0x100007eec
+"/adj add;ret"
+EOF
+EXPECT=<<EOF
+[{"offset":4294999692,"len":8,"code":"add sp, sp, 0x40; ret"},{"offset":4294999780,"len":8,"code":"add sp, sp, 0x30; ret"}]
+EOF
+RUN
+
+NAME=match ins1 followed by ins2 in linear disasm with json output (cfg.json.num=hex)
+FILE=bins/mach0/iGoat-Swift.arm_64.1
+CMDS=<<EOF
+e search.in=range
+e search.from=0x100007e0c
+e search.to=0x100007eec
+e cfg.json.num=hex
+"/adj add;ret"
+EOF
+EXPECT=<<EOF
+[{"offset":"0x100007e8c","len":8,"code":"add sp, sp, 0x40; ret"},{"offset":"0x100007ee4","len":8,"code":"add sp, sp, 0x30; ret"}]
+EOF
+RUN
+

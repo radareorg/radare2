@@ -211,6 +211,32 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=/j search (cfg.json.num=hex search.show=true)
+FILE=malloc://1024
+CMDS=<<EOF
+e cfg.json.num=hex
+e search.show=true
+wx 666f6f005c
+/j foo
+EOF
+EXPECT=<<EOF
+[{"offset":"0x0","type":"string","data":"foo\\"}]
+EOF
+RUN
+
+NAME=/j search (cfg.json.num=hex search.show=false)
+FILE=malloc://1024
+CMDS=<<EOF
+e cfg.json.num=hex
+e search.show=false
+wx 666f6f005c
+/j foo
+EOF
+EXPECT=<<EOF
+[{"offset":"0x0","len":3}]
+EOF
+RUN
+
 NAME=/! search
 FILE=malloc://1024
 CMDS=<<EOF
@@ -461,6 +487,37 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=Rop search json
+FILE=malloc://1024
+CMDS=<<EOF
+e asm.arch=x86
+e anal.arch=x86
+e asm.bits=32
+"wa add esp,8;pop ebx; pop ebp; ret"
+/Rj
+q
+EOF
+EXPECT=<<EOF
+[{"opcodes":[{"offset":0,"size":3,"opcode":"add esp, 8","type":"add"},{"offset":3,"size":1,"opcode":"pop ebx","type":"pop"},{"offset":4,"size":1,"opcode":"pop ebp","type":"pop"},{"offset":5,"size":1,"opcode":"ret","type":"ret"}],"retaddr":5,"size":6},{"opcodes":[{"offset":1,"size":2,"opcode":"les ecx, [eax]","type":"null"},{"offset":3,"size":1,"opcode":"pop ebx","type":"pop"},{"offset":4,"size":1,"opcode":"pop ebp","type":"pop"},{"offset":5,"size":1,"opcode":"ret","type":"ret"}],"retaddr":5,"size":5},{"opcodes":[{"offset":2,"size":3,"opcode":"or byte [ebx + 0x5d], bl","type":"or"},{"offset":5,"size":1,"opcode":"ret","type":"ret"}],"retaddr":5,"size":4}]
+EOF
+RUN
+
+NAME=Rop search json (cfg.json.num=hex)
+FILE=malloc://1024
+CMDS=<<EOF
+e asm.arch=x86
+e anal.arch=x86
+e asm.bits=32
+e cfg.json.num=hex
+"wa add esp,8;pop ebx; pop ebp; ret"
+/Rj
+q
+EOF
+EXPECT=<<EOF
+[{"opcodes":[{"offset":"0x0","size":3,"opcode":"add esp, 8","type":"add"},{"offset":"0x3","size":1,"opcode":"pop ebx","type":"pop"},{"offset":"0x4","size":1,"opcode":"pop ebp","type":"pop"},{"offset":"0x5","size":1,"opcode":"ret","type":"ret"}],"retaddr":5,"size":6},{"opcodes":[{"offset":"0x1","size":2,"opcode":"les ecx, [eax]","type":"null"},{"offset":"0x3","size":1,"opcode":"pop ebx","type":"pop"},{"offset":"0x4","size":1,"opcode":"pop ebp","type":"pop"},{"offset":"0x5","size":1,"opcode":"ret","type":"ret"}],"retaddr":5,"size":5},{"opcodes":[{"offset":"0x2","size":3,"opcode":"or byte [ebx + 0x5d], bl","type":"or"},{"offset":"0x5","size":1,"opcode":"ret","type":"ret"}],"retaddr":5,"size":4}]
+EOF
+RUN
+
 NAME=Rop search w/ regexp
 FILE=malloc://1024
 CMDS=<<EOF
@@ -656,6 +713,18 @@ wx 0x12345678aabbccddeeff12345678
 EOF
 EXPECT=<<EOF
 [{"offset":0,"value":2018915346},{"offset":10,"value":2018915346}]
+EOF
+RUN
+
+NAME=/V4j search 4 byte with json (cfg.json.num=hex)
+FILE=-
+CMDS=<<EOF
+e cfg.json.num=hex
+wx 0x12345678aabbccddeeff12345678
+/V4j 0x78563412 0x78563420
+EOF
+EXPECT=<<EOF
+[{"offset":"0x0","value":"0x78563412"},{"offset":"0xa","value":"0x78563412"}]
 EOF
 RUN
 
