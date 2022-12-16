@@ -666,7 +666,7 @@ static int _cb_hit_sz(RSearchKeyword *kw, int klen, void *user, ut64 addr) {
 
 		if (param->outmode == R_MODE_JSON) {
 			pj_o (param->pj);
-			pj_kN (param->pj, "offset", base_addr + addr);
+			pj_kn (param->pj, "offset", base_addr + addr);
 			pj_ks (param->pj, "type", type);
 			pj_ks (param->pj, "data", s);
 			pj_end (param->pj);
@@ -680,7 +680,7 @@ static int _cb_hit_sz(RSearchKeyword *kw, int klen, void *user, ut64 addr) {
 	} else if (kw) {
 		if (param->outmode == R_MODE_JSON) {
 			pj_o (param->pj);
-			pj_kN (param->pj, "offset", base_addr + addr);
+			pj_kn (param->pj, "offset", base_addr + addr);
 			pj_ki (param->pj, "len", klen);
 			pj_end (param->pj);
 		} else {
@@ -1343,7 +1343,7 @@ static void print_rop(RCore *core, RList *hitlist, PJ *pj, int mode) {
 				r_list_append (ropList, (void *) opstr_n);
 			}
 			pj_o (pj);
-			pj_kN (pj, "offset", hit->addr);
+			pj_kn (pj, "offset", hit->addr);
 			pj_ki (pj, "size", hit->len);
 			pj_ks (pj, "opcode", r_asm_op_get_asm (&asmop));
 			pj_ks (pj, "type", r_anal_optype_tostring (analop.type));
@@ -2283,7 +2283,7 @@ static void search_hit_at(RCore *core, struct search_parameters *param, RCoreAsm
 	switch (param->outmode) {
 	case R_MODE_JSON:
 		pj_o (param->pj);
-		pj_kN (param->pj, "offset", hit->addr);
+		pj_kn (param->pj, "offset", hit->addr);
 		pj_ki (param->pj, "len", hit->len);
 		pj_ks (param->pj, "code", hit->code);
 		pj_end (param->pj);
@@ -3222,8 +3222,8 @@ void _CbInRangeSearchV(RCore *core, ut64 from, ut64 to, int vsize, void *user) {
 		r_cons_printf ("0x%"PFMT64x ": 0x%"PFMT64x"\n", from, to);
 	} else {
 		pj_o (param->pj);
-		pj_kN (param->pj, "offset", from);
-		pj_kN (param->pj, "value", to);
+		pj_kn (param->pj, "offset", from);
+		pj_kn (param->pj, "value", to);
 		pj_end (param->pj);
 	}
 	r_core_cmdf (core, "f %s.value.0x%08"PFMT64x" %d = 0x%08"PFMT64x, prefix, to, vsize, to); // flag at value of hit
