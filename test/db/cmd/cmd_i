@@ -2940,6 +2940,17 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=iSj (cfg.json.num=hex)
+FILE=bins/elf/analysis/x86-helloworld-gcc
+CMDS=<<EOF
+e cfg.json.num=hex
+iSj
+EOF
+EXPECT=<<EOF
+[{"name":"","size":0,"vsize":0,"type":"NULL","perm":"----","paddr":"0x0","vaddr":"0x0"},{"name":".interp","size":19,"vsize":19,"type":"PROGBITS","perm":"-r--","paddr":"0x134","vaddr":"0x8048134"},{"name":".note.ABI-tag","size":32,"vsize":32,"type":"NOTE","perm":"-r--","paddr":"0x148","vaddr":"0x8048148"},{"name":".note.gnu.build-id","size":36,"vsize":36,"type":"NOTE","perm":"-r--","paddr":"0x168","vaddr":"0x8048168"},{"name":".gnu.hash","size":32,"vsize":32,"type":"GNU_HASH","perm":"-r--","paddr":"0x18c","vaddr":"0x804818c"},{"name":".dynsym","size":80,"vsize":80,"type":"DYNSYM","perm":"-r--","paddr":"0x1ac","vaddr":"0x80481ac"},{"name":".dynstr","size":74,"vsize":74,"type":"STRTAB","perm":"-r--","paddr":"0x1fc","vaddr":"0x80481fc"},{"name":".gnu.version","size":10,"vsize":10,"type":"GNU_VERSYM","perm":"-r--","paddr":"0x246","vaddr":"0x8048246"},{"name":".gnu.version_r","size":32,"vsize":32,"type":"GNU_VERNEED","perm":"-r--","paddr":"0x250","vaddr":"0x8048250"},{"name":".rel.dyn","size":8,"vsize":8,"type":"REL","perm":"-r--","paddr":"0x270","vaddr":"0x8048270"},{"name":".rel.plt","size":24,"vsize":24,"type":"REL","perm":"-r--","paddr":"0x278","vaddr":"0x8048278"},{"name":".init","size":35,"vsize":35,"type":"PROGBITS","perm":"-r-x","paddr":"0x290","vaddr":"0x8048290"},{"name":".plt","size":64,"vsize":64,"type":"PROGBITS","perm":"-r-x","paddr":"0x2c0","vaddr":"0x80482c0"},{"name":".text","size":404,"vsize":404,"type":"PROGBITS","perm":"-r-x","paddr":"0x300","vaddr":"0x8048300"},{"name":".fini","size":20,"vsize":20,"type":"PROGBITS","perm":"-r-x","paddr":"0x494","vaddr":"0x8048494"},{"name":".rodata","size":21,"vsize":21,"type":"PROGBITS","perm":"-r--","paddr":"0x4a8","vaddr":"0x80484a8"},{"name":".eh_frame_hdr","size":44,"vsize":44,"type":"PROGBITS","perm":"-r--","paddr":"0x4c0","vaddr":"0x80484c0"},{"name":".eh_frame","size":176,"vsize":176,"type":"PROGBITS","perm":"-r--","paddr":"0x4ec","vaddr":"0x80484ec"},{"name":".init_array","size":4,"vsize":4,"type":"INIT_ARRAY","perm":"-rw-","paddr":"0x59c","vaddr":"0x804959c"},{"name":".fini_array","size":4,"vsize":4,"type":"FINI_ARRAY","perm":"-rw-","paddr":"0x5a0","vaddr":"0x80495a0"},{"name":".jcr","size":4,"vsize":4,"type":"PROGBITS","perm":"-rw-","paddr":"0x5a4","vaddr":"0x80495a4"},{"name":".dynamic","size":232,"vsize":232,"type":"DYNAMIC","perm":"-rw-","paddr":"0x5a8","vaddr":"0x80495a8"},{"name":".got","size":4,"vsize":4,"type":"PROGBITS","perm":"-rw-","paddr":"0x690","vaddr":"0x8049690"},{"name":".got.plt","size":24,"vsize":24,"type":"PROGBITS","perm":"-rw-","paddr":"0x694","vaddr":"0x8049694"},{"name":".data","size":8,"vsize":8,"type":"PROGBITS","perm":"-rw-","paddr":"0x6ac","vaddr":"0x80496ac"},{"name":".bss","size":0,"vsize":4,"type":"NOBITS","perm":"-rw-","paddr":"0x6b4","vaddr":"0x80496b4"},{"name":".comment","size":17,"vsize":17,"type":"PROGBITS","perm":"----","paddr":"0x6b4","vaddr":"0x0"},{"name":".shstrtab","size":262,"vsize":262,"type":"STRTAB","perm":"----","paddr":"0x6c5","vaddr":"0x0"},{"name":".symtab","size":1104,"vsize":1104,"type":"SYMTAB","perm":"----","paddr":"0xc7c","vaddr":"0x0"},{"name":".strtab","size":599,"vsize":599,"type":"STRTAB","perm":"----","paddr":"0x10cc","vaddr":"0x0"}]
+EOF
+RUN
+
 NAME=iSSj
 FILE=bins/elf/analysis/x86-helloworld-gcc
 CMDS=iSSj

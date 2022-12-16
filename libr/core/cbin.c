@@ -3136,8 +3136,8 @@ static int bin_sections(RCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at,
 					R_LOG_ERROR ("Section at 0x%08"PFMT64x" larger than bin.hashlimit", section->paddr);
 				}
 			}
-			pj_kN (pj, "paddr", section->paddr);
-			pj_kN (pj, "vaddr", addr);
+			pj_kn (pj, "paddr", section->paddr);
+			pj_kn (pj, "vaddr", addr);
 			pj_end (pj);
 		} else {
 			char *hashstr = NULL, str[128];
