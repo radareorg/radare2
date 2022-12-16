@@ -107,7 +107,7 @@ e scr.interactive=false
 e dir.projects = bins/other/projects
 CC hello world
 C*
-Po test > /dev/null
+P test > /dev/null
 C*
 EOF
 EXPECT=<<EOF
@@ -191,7 +191,7 @@ CC "Second comment" @ 0x00404800
 P+ testset > /dev/null
 C- @ 0x00404890
 C- @ 0x00404800
-Po project.r2
+P project.r2
 cat .tmp/testset/rc.r2 | grep CC
 rmdir -p .tmp/testset
 EOF
@@ -228,7 +228,7 @@ echo Saved `pu 3 @ 0xc000`
 # Ps resetc64
 pu 3 @2
 pu 3 @0xc000
-Po resetc64
+P resetc64
 echo Loaded `pu 3 @ 0xc000`
 pu 3 @0xc000
 EOF
@@ -249,7 +249,7 @@ e asm.flags = false
 e asm.emu = true
 e dir.projects = .tmp/
 P+ emu > /dev/null
-Po emu
+P emu
 CC-
 om `o~[0]` 0
 pd 1
@@ -365,7 +365,7 @@ t- char **
 t- Foo
 tk~?char **
 tk~?Foo
-Po costom_types > /dev/null
+P costom_types > /dev/null
 tk~?char **
 tk~?Foo
 P- costom_types > /dev/null
@@ -391,7 +391,7 @@ PS*~^o
 Pc
 o--
 o
-Po ulumulu > /dev/null
+P ulumulu > /dev/null
 ?e files:
 o
 ?e count:
@@ -423,7 +423,7 @@ CMDS=<<EOF
 e prj.vc=false
 e dir.projects = .tmp/
 # Ps blub > /dev/null
-Po blub > /dev/null
+P blub > /dev/null
 i~format
 EOF
 EXPECT=<<EOF
@@ -440,7 +440,7 @@ e scr.interactive=false
 aa
 P+ beer
 e scr.interactive=false
-Po beer
+P beer
 echo Info: `Pi~Info`
 aflc
 e scr.interactive=false
@@ -538,7 +538,7 @@ P- hund
 P+ hund > /dev/null
 CC-$$
 e prj.name= # close current project
-Po hund > /dev/null
+P hund > /dev/null
 pd 4
 om*
 ?e --
@@ -674,7 +674,7 @@ e dir.projects = .tmp/
 e asm.arch=x86
 e asm.bits=16
 P+ sun > /dev/null
-Po sun > /dev/null
+P sun > /dev/null
 e asm.arch
 e asm.bits
 EOF
@@ -691,7 +691,7 @@ e prj.vc=false
 e dir.projects = .tmp/
 P+ namedprj > /dev/null
 e prj.name=
-Po namedprj > /dev/null
+P namedprj > /dev/null
 e prj.name
 rm .tmp/namedprj
 EOF
@@ -706,9 +706,9 @@ CMDS=<<EOF
 e prj.vc=false
 e dir.projects = .tmp/
 P+ stupid > /dev/null
-Po stupid > /dev/null
+P stupid > /dev/null
 P+ stupid > /dev/null
-Po stupid > /dev/null
+P stupid > /dev/null
 e prj.name
 EOF
 EXPECT=<<EOF
@@ -727,7 +727,7 @@ e dir.projects = .tmp/
 wx 5031c0e801000000c3b801000000c3
 af
 P+ dream > /dev/null
-Po dream > /dev/null
+P dream > /dev/null
 axq
 EOF
 EXPECT=<<EOF
@@ -742,7 +742,7 @@ CMDS=<<EOF
 e prj.vc=false
 e dir.projects = .tmp/
 P+ bininfo > /dev/null
-Po bininfo
+P bininfo
 i~?
 ie~?
 ii~?
@@ -763,7 +763,7 @@ e dir.projects = .tmp/
 s main > /dev/null
 CC test
 P+ lapa > /dev/null
-Po lapa
+P lapa
 pd 1 ~test
 rm .tmp/
 EOF
