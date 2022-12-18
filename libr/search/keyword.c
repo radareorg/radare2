@@ -26,20 +26,6 @@ R_API RSearchKeyword* r_search_keyword_new_hexstr(const char *xs, const char *da
 	return k;
 }
 
-R_API RSearchKeyword* r_search_keyword_new_hexstr(const char *xs, const char *data) {
-	char *s = strdup (xs);
-	char *m = strchr (s, ' ');
-	int mlen = 0;
-	if (m) {
-		*m++ = 0;
-		mlen = r_hex_str2bin (m, (ut8*)m);
-	}
-	int slen = r_hex_str2bin (s, (ut8*)s);
-	RSearchKeyword *k = r_search_keyword_new ((const ut8*)s, slen, (const ut8*)m, mlen, data);
-	free (s);
-	return k;
-}
-
 R_API RSearchKeyword* r_search_keyword_new(const ut8 *kwbuf, int kwlen, const ut8 *bmbuf, int bmlen, const char *data) {
 	RSearchKeyword *kw;
 	if (kwlen < 1 || bmlen < 0) {
