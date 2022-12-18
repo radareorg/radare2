@@ -60,6 +60,16 @@ R_API bool r_arch_session_encode(RArchSession *ai, RAnalOp *op, RArchEncodeMask 
 	return false;
 }
 
+R_API RList *r_arch_session_preludes(RArchSession *s) {
+	if (s) {
+		RArchPluginPreludesCallback preludes = R_UNWRAP3 (s, plugin, preludes);
+		if (preludes != NULL) {
+			return preludes (s);
+		}
+	}
+	return NULL;
+}
+
 R_API int r_arch_session_info(RArchSession *s, int query) {
 	if (!s) {
 		return -1;

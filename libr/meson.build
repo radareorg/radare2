@@ -10,6 +10,7 @@ arch_plugins = [ 'null',
   'arm',
   '6502',
   'snes',
+  'v850',
   'any_as',
   'any_vasm',
   'jdh8',
@@ -81,8 +82,7 @@ if not no_user_plugins
     parse_plugins += [ 'arm_pseudo' ]
   endif
   if user_plugins.contains('v850')
-    anal_plugins += [ 'v850' ]
-    arch_plugins += [ 'v810' ]
+    arch_plugins += [ 'v810', 'v850' ]
     parse_plugins += [ 'v850_pseudo' ]
   endif
   if user_plugins.contains('wasm')
@@ -169,7 +169,6 @@ anal_plugins += [
   's390_cs',
   'tms320',
   'tricore',
-  'v850',
   'vax',
   'wasm',
   'ws',

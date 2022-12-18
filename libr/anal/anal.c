@@ -768,7 +768,23 @@ R_API void r_anal_bind(RAnal *anal, RAnalBind *b) {
 }
 
 R_API RList *r_anal_preludes(RAnal *anal) {
-	if (anal->cur && anal->cur->preludes ) {
+	if (anal->uses == 2 && anal->arch->session) {
+		const char *const a = anal->arch->session? anal->arch->session->config->arch: "";
+		const char *const b = anal->config->arch;
+		if (!strcmp (a, b)) {
+			RList *l = r_list_newf ((RListFree)r_search_keyword_free);
+			RList *ap = r_arch_session_preludes (anal->arch->session);
+			RListIter *iter;
+			char *s;
+			r_list_foreach (ap, iter, s) {
+				r_list_append (l, r_search_keyword_new_hexstr (s, NULL));
+			}
+			r_list_free (ap);
+			return l;
+		}
+		return NULL;
+	}
+	if (anal->cur && anal->cur->preludes) {
 		return anal->cur->preludes (anal);
 	}
 	return NULL;
