@@ -618,12 +618,12 @@ static RList* entries(RBinFile *bf) {
 	if (!ret) {
 		return NULL;
 	}
-	ut64 pa = Elf_(r_bin_elf_get_entry_offset) (obj);
-	if (pa != UT64_MAX) {
+	ut64 paddr = Elf_(r_bin_elf_get_entry_offset) (obj);
+	if (paddr != UT64_MAX) {
 		if (!(ptr = R_NEW0 (RBinAddr))) {
 			return ret;
 		}
-		ptr->paddr = pa;
+		ptr->paddr = paddr;
 		ptr->vaddr = Elf_(r_bin_elf_p2v) (obj, ptr->paddr);
 		ptr->hpaddr = 0x18;  // e_entry offset in ELF header
 		ptr->hvaddr = UT64_MAX;
