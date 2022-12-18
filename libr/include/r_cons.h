@@ -315,6 +315,7 @@ typedef struct r_cons_canvas_t {
 	int sy; // scrolly
 	int color;
 	int linemode; // 0 = diagonal , 1 = square
+	char *bgcolor;
 } RConsCanvas;
 
 #define RUNECODE_MIN 0xc8 // 200
@@ -560,8 +561,7 @@ typedef struct r_cons_t {
 #define Color_RESET_TERMINAL  "\x1b" "c\x1b(K\x1b[0m\x1b[J\x1b[?25h"
 #define Color_RESET      "\x1b[0m" /* reset all */
 #define Color_RESET_NOBG "\x1b[27;22;24;25;28;39m"  /* Reset everything except background (order is important) */
-#define Color_RESET_BG   "\x1b[49m"
-#define Color_RESET_ALL  "\x1b[0m\x1b[49m"
+#define Color_RESET_BG   "\x1b[49m" // this is black background, not reset
 #define Color_BLACK      "\x1b[30m"
 #define Color_BGBLACK    "\x1b[40m"
 #define Color_RED        "\x1b[31m"
@@ -767,6 +767,7 @@ R_API void r_cons_canvas_print_region(RConsCanvas *c);
 R_API char *r_cons_canvas_tostring(RConsCanvas *c);
 R_API void r_cons_canvas_attr(RConsCanvas *c,const char *attr);
 R_API void r_cons_canvas_write(RConsCanvas *c, const char *_s);
+R_API void r_cons_canvas_background(RConsCanvas *c, const char *color);
 R_API bool r_cons_canvas_gotoxy(RConsCanvas *c, int x, int y);
 R_API void r_cons_canvas_goto_write(RConsCanvas *c,int x,int y, const char *s);
 R_API void r_cons_canvas_box(RConsCanvas *c, int x, int y, int w, int h, const char *color);

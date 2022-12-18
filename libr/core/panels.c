@@ -5978,6 +5978,7 @@ static void __panel_print(RCore *core, RConsCanvas *can, RPanel *panel, int colo
 		return;
 	}
 	panel->view->refresh = panel->model->type == PANEL_TYPE_MENU;
+	r_cons_canvas_background (can, panel->model->bgcolor);
 	r_cons_canvas_fill (can, panel->view->pos.x, panel->view->pos.y, panel->view->pos.w, panel->view->pos.h, ' ');
 	if (panel->model->type == PANEL_TYPE_MENU) {
 		__menu_panel_print (can, panel, panel->view->sx, panel->view->sy, panel->view->pos.w, panel->view->pos.h);
@@ -5992,6 +5993,7 @@ static void __panel_print(RCore *core, RConsCanvas *can, RPanel *panel, int colo
 	} else {
 		r_cons_canvas_box (can, panel->view->pos.x, panel->view->pos.y, w, h, core->cons->context->pal.graph_box);
 	}
+	r_cons_canvas_background (can, Color_RESET);
 }
 
 static void __panels_refresh(RCore *core) {
@@ -6020,17 +6022,19 @@ static void __panels_refresh(RCore *core) {
 
 	//TODO use getPanel
 	for (i = 0; i < panels->n_panels; i++) {
-		if (i != panels->curnode) {
+// XXX commentedfixes a glitch
+//		if (i != panels->curnode) {
 			__panel_print (core, can, __get_panel (panels, i), 0);
-		}
+//		}
 	}
 	if (panels->mode == PANEL_MODE_MENU) {
 		__panel_print (core, can, __get_cur_panel (panels), 0);
 	} else {
 		__panel_print (core, can, __get_cur_panel (panels), 1);
 	}
+	// draw menus
 	for (i = 0; i < panels->panels_menu->n_refresh; i++) {
-		__panel_print (core, can, panels->panels_menu->refreshPanels[i], 1);
+		__panel_print (core, can, panels->panels_menu->refreshPanels[i], 0);
 	}
 	(void) r_cons_canvas_gotoxy (can, -can->sx, -can->sy);
 	r_cons_canvas_fill (can, -can->sx, -can->sy, w, 1, ' ');
@@ -6100,7 +6104,7 @@ static void __panels_refresh(RCore *core) {
 
 	if (firstRun) {
 		if (core->panels_root->n_panels < 2) {
-			if (r_config_get_i (core->config, "scr.demo")) {
+			if (r_config_get_b (core->config, "scr.demo")) {
 				demo_begin (core, can);
 			}
 		}

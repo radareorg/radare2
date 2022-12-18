@@ -375,6 +375,7 @@ static RCoreHelpMessage help_msg_v = {
 	"Usage:", "v[*i]", "",
 	"v", "", "open visual panels",
 	"v", " test", "load saved layout with name test",
+	"ve", " [fg] [bg]", "define foreground and background for current panel",
 	"v.", " [file]", "load visual script (also known as slides)",
 	"v=", " test", "save current layout with name test",
 	"vi", " test", "open the file test in 'cfg.editor'",
@@ -2770,6 +2771,22 @@ static int cmd_panels(void *data, const char *input) {
 			r_core_panels_load (core, input + 1);
 		}
 		r_config_set (core->config, "scr.layout", input + 1);
+		return true;
+	}
+	if (*input == 'e') {
+#define getpanel(x,y) ((x) && (y) < 16)? (x)->panel[y]: NULL
+		RPanel *pan = getpanel (core->panels, core->panels->curnode);
+#undef getpanel
+		if (pan) {
+			char *r = r_cons_pal_parse (r_str_trim_head_ro (input + 2), NULL);
+			if (r) {
+				free (pan->model->bgcolor);
+				pan->model->bgcolor = r_str_newf (Color_RESET"%s", r);
+				free (r);
+			} else {
+				R_LOG_ERROR ("Invalid color %sXXX"Color_RESET, r);
+			}
+		}
 		return true;
 	}
 	if (*input == '=') {
