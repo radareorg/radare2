@@ -2,8 +2,8 @@
 
 #include <r_lib.h>
 #include <r_anal.h>
-#include "../arch/v850/v850dis.h"
-#include "../arch/v850/v850e0.h"
+#include "v850dis.h"
+#include "v850e0.h"
 
 // Format I
 #define F1_REG1(instr) ((instr) & 0x1F)
@@ -158,7 +158,7 @@ static void clear_flags(RAnalOp *op, int flags) {
 	}
 }
 
-static int v850e0_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
+static int v850e0_op(RArchSession *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
 	ut8 opcode = 0;
 	const char *reg1 = NULL;
 	const char *reg2 = NULL;
@@ -517,10 +517,15 @@ static int cpumodel_from_string(const char *s) {
 	return num? num: DEFAULT_CPU_MODEL;
 }
 
-static int v850_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
-	int cpumodel = cpumodel_from_string (anal->config->cpu);
+static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
+	const ut64 addr = op->addr;
+	const ut8 *buf = op->bytes;
+	const int len = op->size;
+// static int v850_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
+	int cpumodel = cpumodel_from_string (as->config->cpu);
 	if (cpumodel == V850_CPU_E0) {
-		return v850e0_op (anal, op, addr, buf, len, mask);
+		//  RAnal *anal = ((RCore*)(as->user))->anal;
+		return v850e0_op (as, op, op->addr, buf, len, mask);
 	}
 #if 0
 	cpumodel |= V850_CPU_OPTION_ALIAS;
@@ -568,7 +573,7 @@ static int v850_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 	}
 	op->size = inst.size;
 	if (mask & R_ARCH_OP_MASK_DISASM) {
-		if (anal->config->syntax == R_ARCH_SYNTAX_ATT) {
+		if (as->config->syntax == R_ARCH_SYNTAX_ATT) {
 			op->mnemonic = r_str_replace (inst.text, "[r", "[%r", -1);
 			op->mnemonic = r_str_replace (op->mnemonic, " r", " %r", -1);
 			op->mnemonic = r_str_replace (op->mnemonic, "(r", "(%r", -1);
@@ -581,7 +586,7 @@ static int v850_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 	return inst.size;
 }
 
-static char *get_reg_profile(RAnal *anal) {
+static char *regs(RArchSession *s) {
 	const char *p =
 		"=PC	pc\n"
 		"=SP	sp\n"
@@ -681,6 +686,14 @@ static char *get_reg_profile(RAnal *anal) {
 	return strdup (p);
 }
 
+static RList *preludes(RArchSession *as) {
+	RList *l = r_list_newf (free);
+	r_list_append (l, r_str_newf ("8007 f0ff"));
+	r_list_append (l, r_str_newf ("501a630f f0ffff0f"));
+	return l;
+}
+
+#if 0
 static RList *anal_preludes(RAnal *anal) {
 #define KW(d,ds,m,ms) r_list_append (l, r_search_keyword_new((const ut8*)d,ds,(const ut8*)m, ms, NULL))
 	RList *l = r_list_newf ((RListFree)r_search_keyword_free);
@@ -688,8 +701,9 @@ static RList *anal_preludes(RAnal *anal) {
 	KW ("\x50\x1a\x63\x0f", 4, "\xf0\xff\xff\x0f", 4);
 	return l;
 }
+#endif
 
-static int archinfo(RAnal *anal, int q) {
+static int archinfo(RArchSession *as, ut32 q) {
 	switch (q) {
 	case R_ANAL_ARCHINFO_ALIGN:
 	case R_ANAL_ARCHINFO_DATA_ALIGN:
@@ -702,34 +716,37 @@ static int archinfo(RAnal *anal, int q) {
 	return 0;
 }
 
-static int v850_opasm(RAnal *anal, ut64 addr, const char *s, ut8 *buf, int len) {
-	r_return_val_if_fail (anal && s && buf && len >= 0, -1);
-	if (!strcmp (s, "nop")) {
-		memset (buf, 0, R_MIN (len, 2));
+static bool encode(RArchSession *s, RAnalOp *op, ut32 mask) {
+//	ut64 addr, const char *s, ut8 *buf, int len) {
+// static int v850_opasm(RAnal *anal, ut64 addr, const char *s, ut8 *buf, int len) {
+	r_return_val_if_fail (s && op, false);
+	const char *str = op->mnemonic;
+	if (!strcmp (str, "nop")) {
+		r_anal_op_set_bytes (op, op->addr, (const ut8* const)"\x00\x00", 2);
+		// memset (op->bytes, 0, R_MIN (op->size, 2));
 		return 2;
 	}
 	return 0;
 }
 
-RAnalPlugin r_anal_plugin_v850 = {
+RArchPlugin r_arch_plugin_v850 = {
 	.name = "v850",
 	.desc = "V850 code analysis plugin",
 	.license = "MIT",
-	.preludes = anal_preludes,
+	.preludes = preludes,
 	.cpus = "e0,0,e,e1,e2,e2v3,e3v5,all",
 	.arch = "v850",
 	.bits = 32,
-	.op = v850_op,
-	.opasm = v850_opasm,
-	.esil = true,
-	.archinfo = archinfo,
-	.get_reg_profile = get_reg_profile,
+	.encode = encode, // op = v850_op,
+	.decode = decode,//  .opasm = v850_opasm,
+	.info = archinfo,
+	.regs = regs,
 };
 
 #ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_ANAL,
-	.data = &r_anal_plugin_v850,
+	.type = R_LIB_TYPE_ARCH,
+	.data = &r_arch_plugin_v850,
 	.version = R2_VERSION
 };
 #endif

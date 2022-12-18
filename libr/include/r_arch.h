@@ -139,6 +139,7 @@ typedef char *(*RArchPluginMnemonicsCallback)(RArchSession *s, int id, bool json
 typedef bool (*RArchPluginDecodeCallback)(RArchSession *s, struct r_anal_op_t *op, RArchDecodeMask mask);
 typedef bool (*RArchPluginEncodeCallback)(RArchSession *s, struct r_anal_op_t *op, RArchEncodeMask mask);
 typedef bool (*RArchPluginModifyCallback)(RArchSession *s, struct r_anal_op_t *op, RArchModifyMask mask);
+typedef RList *(*RArchPluginPreludesCallback)(RArchSession *s);
 typedef bool (*RArchPluginInitCallback)(RArchSession *s);
 typedef bool (*RArchPluginFiniCallback)(RArchSession *s);
 
@@ -165,6 +166,7 @@ typedef struct r_arch_plugin_t {
 	RArchPluginDecodeCallback decode;
 	RArchPluginModifyCallback patch;
 	RArchPluginMnemonicsCallback mnemonics;
+	RArchPluginPreludesCallback preludes;
 //TODO: reenable this later? maybe it should be called reset() or setenv().. but esilinit/fini
        // 	seems to specific to esil and those functions may want to do moreo things like io stuff
 //	bool (*esil_init)(REsil *esil);
@@ -189,6 +191,7 @@ R_API bool r_arch_session_decode(RArchSession *ai, RAnalOp *op, RArchDecodeMask 
 R_API bool r_arch_session_encode(RArchSession *ai, RAnalOp *op, RArchEncodeMask mask);
 R_API bool r_arch_session_patch(RArchSession *ai, RAnalOp *op, RArchModifyMask mask);
 R_API int r_arch_session_info(RArchSession *ai, int q);
+R_API RList *r_arch_session_preludes(RArchSession *ai);
 
 // arch.c
 R_API RArch *r_arch_new(void);
