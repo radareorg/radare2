@@ -142,23 +142,12 @@ static RBinAddr* binsym(RBinFile *bf, int sym) {
 }
 
 static bool is_wordable_section(const char *name) {
-	if (!strcmp (name, ".init_array")) {
-		return true;
-	}
-	if (!strcmp (name, ".fini_array")) {
-		return true;
-	}
-	if (!strcmp (name, ".data.rel.ro")) {
-		return true;
-	}
-	if (!strcmp (name, ".dynamic")) {
-		return true;
-	}
-	if (!strcmp (name, ".got")) {
-		return true;
-	}
-	if (strstr (name, ".rela.")) {
-		return true;
+	char *sections[] = {".init_array", ".fini_array", ".data.rel.ro", ".dynamic", ".got", ".rela."};
+	int i;
+	for (i = 0; i < R_ARRAY_SIZE(sections); i++) {
+		if (!strcmp (name, sections[i])) {
+			return true;
+		}
 	}
 	return false;
 }
