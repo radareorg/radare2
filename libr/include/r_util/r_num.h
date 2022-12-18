@@ -94,6 +94,10 @@ R_API void *r_num_dup(ut64 n);
 R_API double r_num_cos(double a);
 R_API double r_num_sin(double a);
 R_API size_t r_num_bit_count(ut32 val);
+R_API size_t r_num_bit_clz32(ut32 val);
+R_API size_t r_num_bit_clz64(ut64 val);
+R_API size_t r_num_bit_ctz32(ut32 val);
+R_API size_t r_num_bit_ctz64(ut64 val);
 R_API double r_num_get_float(RNum *num, const char *str);
 
 static inline st64 r_num_abs(st64 num) {

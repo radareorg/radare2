@@ -26,7 +26,20 @@ static int r_rand(int mod) {
 }
 
 // This function count bits set on 32bit words
-R_API size_t r_num_bit_count(ut32 val) {
+R_API size_t r_num_bit_clz32(ut32 val) { // CLZ
+	val = val - ((val >> 1) & 0x55555555);
+	val = (val & 0x33333333) + ((val >> 2) & 0x33333333);
+	return (((val + (val >> 4)) & 0x0F0F0F0F) * 0x01010101) >> 24;
+}
+
+R_API size_t r_num_bit_clz64(ut64 val) { // CLZ
+	val = val - ((val >> 1) & 0x5555555555555555);
+	val = (val & 0x3333333333333333) + ((val >> 2) & 0x3333333333333333);
+	return (((val + (val >> 4)) & 0x0F0F0F0F0F0F0F0F) * 0x0101010101010101) >> 24;
+}
+
+R_API size_t r_num_bit_count(ut32 val) { // CLZ
+	return r_num_bit_clz32 (val);
 	/* visual studio doesnt supports __buitin_clz */
 #if defined(_MSC_VER) || defined(__TINYC__)
 	size_t count = 0;
@@ -37,6 +50,18 @@ R_API size_t r_num_bit_count(ut32 val) {
 #else
 	return val? __builtin_clz (val): 0;
 #endif
+}
+
+R_API size_t r_num_bit_ctz64(ut64 val) { // CTZ
+	const ut64 m = 0x0101010101010101ULL;
+	val ^= val - 1;
+	return (unsigned)(((ut64)((val & (m - 1)) * m)) >> 56);
+}
+
+R_API size_t r_num_bit_ctz32(ut32 val) { // CTZ
+	// FROM shlr/lz4/lz4.c
+	const ut32 m = 0x01010101;
+	return (unsigned)((((val - 1) ^ val) & (m - 1)) * m) >> 24;
 }
 
 R_API void r_num_irand(void) {
