@@ -936,6 +936,12 @@ R_API char *r_str_appendch(char *x, char y) {
 }
 
 R_API R_MUSTUSE char* r_str_replace_all(char *str, const char *key, const char *val) {
+	if (strstr (val, key)) {
+		// XXX value cant contain the key otherwise we go into infinite loop
+		R_LOG_ERROR ("RStr.replaceAll() value can't contain key");
+		free (str);
+		return NULL;
+	}
 	char *res = str;
 	while (strstr (str, key)) {
 		res = r_str_replace (str, key, val, true);
@@ -2108,6 +2114,38 @@ R_API const char *r_str_ansi_chrn(const char *str, size_t n) {
 		}
 	}
 	return str + li;
+}
+
+#if 0
+// modify string in place removing escape chars that modify the background color
+R_API void r_str_ansi_filterbg(char *str) {
+	char *d = str;
+	while (*str) {
+		if (*str == 0x1b && str[1] == '[') {
+			if (str[2] == '4') { // \x1b[4#m
+				str += 4;
+			} else if (str[2] == '1' && str[3] == '0') { // \x1b[104#m
+				str += 5;
+			} else if (str[2] == '4' && str[3] == '8' && str[4] == ';') { // 256 bgcolor
+				char *end = strchr (str + 4, 'm');
+				if (end) {
+					str = end;
+				}
+			}
+		}
+		str++;
+	}
+}
+#endif
+
+// replace \x1b[0m with \x[0m + bgcolor
+R_API char *r_str_ansi_resetbg(const char *str, const char *bgcolor) {
+	char *res = strdup (str);
+	char * resetbg = r_str_newf ("\x1b[0m%s", bgcolor);
+	res = r_str_replace_all (res, "\x1b[0m", "(ºvº)");
+	res = r_str_replace_all (res, "(ºvº)", resetbg);
+	free (resetbg);
+	return res;
 }
 
 /*

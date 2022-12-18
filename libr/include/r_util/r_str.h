@@ -153,6 +153,7 @@ R_API size_t r_str_ansi_len(const char *str);
 R_API size_t r_str_ansi_nlen(const char *str, size_t len);
 R_API int r_str_ansi_trim(char *str, int str_len, int n);
 R_API int r_str_ansi_filter(char *str, char **out, int **cposs, int len);
+R_API char *r_str_ansi_resetbg(const char *str, const char *bgcolor);
 R_API char *r_str_ansi_crop(const char *str, unsigned int x, unsigned int y, unsigned int x2, unsigned int y2);
 R_API int r_str_word_count(const char *string);
 R_API size_t r_str_char_count(const char *string, char ch);

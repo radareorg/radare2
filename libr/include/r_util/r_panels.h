@@ -41,6 +41,7 @@ typedef struct r_panel_model_t {
 	RPanelType type;
 	char *cmd;
 	char *title;
+	char *bgcolor;
 	ut64 baseAddr;
 	ut64 addr;
 	bool cache;

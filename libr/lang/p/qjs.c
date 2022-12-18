@@ -225,7 +225,7 @@ static void register_helpers(JSContext *ctx) {
 			JS_NewCFunction (ctx, r2log, "r2log", 1));
 	JS_SetPropertyStr (ctx, global_obj, "write",
 			JS_NewCFunction (ctx, js_write, "write", 1));
-	JS_SetPropertyStr (ctx, global_obj, "flush", // write + newline
+	JS_SetPropertyStr (ctx, global_obj, "flush", // fflush stdout
 			JS_NewCFunction (ctx, js_flush, "flush", 1));
 	JS_SetPropertyStr (ctx, global_obj, "print", // write + newline
 			JS_NewCFunction (ctx, js_print, "print", 1));

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2013-2021 - pancake */
+/* radare - LGPL - Copyright 2013-2022 - pancake */
 
 #include <r_cons.h>
 #include <r_util/r_assert.h>
@@ -156,6 +156,7 @@ R_API void r_cons_canvas_free(RConsCanvas *c) {
 		}
 		free (c->b);
 	}
+	free (c->bgcolor);
 	free (c->bsize);
 	free (c->blen);
 	ht_up_free (c->attrs);
@@ -226,6 +227,7 @@ R_API RConsCanvas *r_cons_canvas_new(int w, int h) {
 	if (!c) {
 		return NULL;
 	}
+	c->bgcolor = strdup (Color_RESET);
 	c->bsize = NULL;
 	c->blen = NULL;
 	int i = 0;
@@ -278,11 +280,17 @@ beach:
 	return NULL;
 }
 
-R_API void r_cons_canvas_write(RConsCanvas *c, const char *s) {
-	if (!c || !s || !*s || !R_BETWEEN (0, c->y, c->h - 1) || !R_BETWEEN (0, c->x, c->w - 1)) {
+R_API void r_cons_canvas_write(RConsCanvas *c, const char *_s) {
+	if (!c || !_s || !*_s || !R_BETWEEN (0, c->y, c->h - 1) || !R_BETWEEN (0, c->x, c->w - 1)) {
 		return;
 	}
-
+#if 1
+	char *os = r_str_ansi_resetbg (strdup (_s), c->bgcolor);
+	const char *s = os;
+#else
+	char *os = NULL;
+	const char *s = _s;
+#endif
 	char ch;
 	int left, slen, attr_len, piece_len;
 	int orig_x = c->x, attr_x = c->x;
@@ -324,10 +332,9 @@ R_API void r_cons_canvas_write(RConsCanvas *c, const char *s) {
 		if (attr_len > 0 && attr_x < c->blen[c->y]) {
 			__stampAttribute (c, c->y * c->w + attr_x, attr_len);
 		}
-
 		s = s_part;
 		if (ch == '\n') {
-			c->attr = Color_RESET;
+			c->attr = c->bgcolor;
 			__stampAttribute (c, c->y * c->w + attr_x, 0);
 			c->y++;
 			s++;
@@ -344,6 +351,14 @@ R_API void r_cons_canvas_write(RConsCanvas *c, const char *s) {
 	} while (*s && !r_cons_is_breaked ());
 	r_cons_break_pop ();
 	c->x = orig_x;
+	free (os);
+}
+
+R_API void r_cons_canvas_background(RConsCanvas *c, const char *color) {
+	if (color) {
+		free (c->bgcolor);
+		c->bgcolor = strdup (color);
+	}
 }
 
 R_API char *r_cons_canvas_tostring(RConsCanvas *c) {
