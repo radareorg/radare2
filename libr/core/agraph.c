@@ -337,6 +337,23 @@ static void tiny_RANode_print(const RAGraph *g, const RANode *n, int cur) {
 	}
 }
 
+static char *get_node_bgcolor(int color, int cur) {
+//	return r_str_newf ("%s", Color_BGRED);
+#if 1
+	RCons *cons = r_cons_singleton ();
+	if (color == -1) {
+		return cur ? cons->context->pal.graph_box2 : cons->context->pal.graph_box;
+	}
+	return color
+		? (color == R_ANAL_DIFF_TYPE_MATCH
+			? cons->context->pal.graph_diff_match
+			: color == R_ANAL_DIFF_TYPE_UNMATCH
+				? cons->context->pal.graph_diff_unmatch
+				: cons->context->pal.graph_diff_new)
+		: cons->context->pal.graph_diff_unknown;
+#endif
+}
+
 static char *get_node_color(int color, int cur) {
 	RCons *cons = r_cons_singleton ();
 	if (color == -1) {
@@ -372,6 +389,9 @@ static void normal_RANode_print(const RAGraph *g, const RANode *n, int cur) {
 	}
 	if (y < -1) {
 		delta_y = R_MIN (n->h - BORDER_HEIGHT - 1, -y - MARGIN_TEXT_Y);
+	}
+	if (g->show_node_bubble) {
+		r_cons_canvas_bgfill (g->can, n->x, n->y, n->w, n->h, get_node_bgcolor (color, cur));
 	}
 	/* print the title */
 	if (showTitle) {
@@ -437,14 +457,16 @@ static void normal_RANode_print(const RAGraph *g, const RANode *n, int cur) {
 
 	// TODO: check if node is traced or not and show proper color
 	// This info must be stored inside RANode* from RCore*
+	const char *nc = get_node_color (color, cur);
 	if (g->show_node_bubble) {
-		r_cons_canvas_circle (g->can, n->x, n->y, n->w, n->h, get_node_color (color, cur));
+		r_cons_canvas_bgfill (g->can, n->x, n->y, n->w, n->h, get_node_bgcolor (color, cur));
+		// r_cons_canvas_circle (g->can, n->x, n->y, n->w, n->h, get_node_color (color, cur));
 	} else {
-		r_cons_canvas_box (g->can, n->x, n->y, n->w, n->h, get_node_color (color, cur));
+		r_cons_canvas_box (g->can, n->x, n->y, n->w, n->h, nc);
 	}
 	if (n->color) {
 		const char *pad = r_str_pad ('#', n->w);
-		char *f = r_str_newf ("%s%s%s", n->color, pad, Color_RESET);
+		char *f = r_str_newf ("%s%s%s%s", n->color, pad, Color_RESET, nc);
 		G (n->x, n->y);
 		W (f);
 		free (f);
@@ -2133,13 +2155,10 @@ static char *get_body(RCore *core, ut64 addr, int size, int opts) {
 	r_config_set_b (core->config, "asm.bbmiddle", false);
 	core->print->cur_enabled = false;
 
-	if (opts & BODY_OFFSETS || opts & BODY_SUMMARY || o_graph_offset) {
-		r_config_set_i (core->config, "asm.offset", true);
-	} else {
-		r_config_set_i (core->config, "asm.offset", false);
-	}
+	const bool asm_offset = (opts & BODY_OFFSETS || opts & BODY_SUMMARY || o_graph_offset);
+	r_config_set_b (core->config, "asm.offset", asm_offset);
 
-	bool html = r_config_get_b (core->config, "scr.html");
+	const bool html = r_config_get_b (core->config, "scr.html");
 	r_config_set_b (core->config, "scr.html", false);
 
 	const char *cmd = (opts & BODY_SUMMARY)? "pds": "pD";
@@ -2153,7 +2172,10 @@ static char *get_body(RCore *core, ut64 addr, int size, int opts) {
 		body = r_core_cmd_strf (core, "%s %d @ 0x%08"PFMT64x, cmd, size, addr);
 	}
 	r_config_set_i (core->config, "scr.html", html);
-
+	// r_cons_canvas_bgfill (g->can, n->x, n->y, n->w, n->h, get_node_bgcolor (color, cur));
+	// body = r_str_ansi_crop (body, 0, 0, 40, 20);
+	// body = r_str_ansi_resetbg (body, Color_BGRED); // color);
+	// r_str_ansi_filter (body, NULL, NULL, -1);
 	// restore original options
 	core->print->cur_enabled = o_cursor;
 	r_config_hold_restore (hc);
@@ -2205,6 +2227,8 @@ static char *get_bb_body(RCore *core, RAnalBlock *b, int opts, RAnalFunction *fc
 			}
 		}
 	}
+	// body = r_str_ansi_resetbg (body, Color_BGRED); // color);
+	// r_cons_canvas_bgfill (g->can, n->x, n->y, n->w, n->h, get_node_bgcolor (color, cur));
 	return body;
 }
 
@@ -2243,6 +2267,7 @@ static void get_bbupdate(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 		char *body = get_bb_body (core, bb, mode2opts (g), fcn, emu, saved_gp, saved_arena, saved_arena_size);
 		char *title = get_title (bb->addr);
 
+		// r_cons_canvas_bgfill (g->can, n->x, n->y, n->w, n->h, get_node_bgcolor (color, cur));
 		if (shortcuts) {
 			shortcut = r_core_add_asmqjmp (core, bb->addr);
 			if (shortcut) {
@@ -2401,6 +2426,7 @@ static int get_bbnodes(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 		char *body = get_bb_body (core, bb, mode2opts (g), fcn, emu, saved_gp, saved_arena, saved_arena_size);
 		char *title = get_title (bb->addr);
 		char *color = (bb->color.r || bb->color.g || bb->color.b)? r_cons_rgb_str (NULL, -1, &bb->color): NULL;
+
 		RANode *node = r_agraph_add_node (g, title, body, color);
 		free (color);
 		shortcuts = g->is_interactive ? r_config_get_b (core->config, "graph.nodejmps") : false;
@@ -4886,10 +4912,12 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 		case '&':
 			{
 			RIOUndos *undo = r_io_sundo (core->io, core->offset);
-			r_io_sundo_redo (core->io);
-			char *c = r_str_newf ("agraph.edge.0x%"PFMT64x"_0x%"PFMT64x".highlight", undo->off, core->offset);
-			sdb_set (g->db, c, "true", 0);
-			free (c);
+			if (undo) {
+				r_io_sundo_redo (core->io);
+				char *c = r_str_newf ("agraph.edge.0x%"PFMT64x"_0x%"PFMT64x".highlight", undo->off, core->offset);
+				sdb_set (g->db, c, "true", 0);
+				free (c);
+			}
 			}
 			break;
 		case 'w':
