@@ -618,6 +618,27 @@ R_API void r_cons_canvas_fill(RConsCanvas *c, int x, int y, int w, int h, char c
 	free (row);
 }
 
+R_API void r_cons_canvas_bgfill(RConsCanvas *c, int x, int y, int w, int h, const char *color) {
+	int i;
+	const char *pad = r_str_pad (' ', w + 2);
+	char *bgcolor = strdup (color);
+	char *col = strstr (bgcolor, "\x1b[3");
+	if (col) {
+		col[2] = '4';
+	} else {
+		free (bgcolor);
+		bgcolor = strdup (Color_BGBLUE);
+	}
+	char *row = r_str_newf ("%s%s"Color_RESET, bgcolor, pad);
+	for (i = 0; i < h; i++) {
+		if (G (x, y + i)) {
+			W (row);
+		}
+	}
+	free (row);
+	free (bgcolor);
+}
+
 R_API void r_cons_canvas_line(RConsCanvas *c, int x, int y, int x2, int y2, RCanvasLineStyle *style) {
 	if (c->linemode) {
 		r_cons_canvas_line_square (c, x, y, x2, y2, style);
