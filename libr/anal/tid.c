@@ -21,6 +21,11 @@ R_API bool r_anal_tid_kill(RAnal *anal, int tid) {
 	return false;
 }
 
+R_API int r_anal_tid_usemap(RAnal *anal, int map) {
+	// TODO
+	return 0;
+}
+
 R_API int r_anal_tid_add(RAnal *anal, int map) {
 	r_return_val_if_fail (anal, -1);
 	if (map < 1) {
@@ -33,12 +38,13 @@ R_API int r_anal_tid_add(RAnal *anal, int map) {
 		return -1;
 	}
 	at->map = map;
-	int tid = 1;
+	int tid = 0;
 	r_list_foreach (anal->threads, iter, th) {
 		if (th->id > tid) {
-			tid = th->id + 1;
+			tid = th->id;
 		}
 	}
+	tid++;
 	at->reg = r_reg_clone (anal->reg);
 	at->id = tid;
 	at->birth = r_time_now ();

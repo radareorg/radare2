@@ -3125,13 +3125,15 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 				}
 				r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, pcbits, pj, 'j', use_color);
 				char *s = pj_drain (pj);
-				r_cons_printf ("%s\n", s);
-				free (s);
+				if (s) {
+					r_cons_printf ("%s\n", s);
+					free (s);
+				}
 			} else {
 				r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, pcbits, NULL, 0, use_color);
 			}
 		} else {
-			R_LOG_ERROR ("cannot retrieve registers from pid %d", core->dbg->pid);
+			R_LOG_ERROR ("Cannot retrieve registers from pid %d", core->dbg->pid);
 		}
 		break;
 	case ' ': // "dr"

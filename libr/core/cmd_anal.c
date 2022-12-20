@@ -5285,6 +5285,7 @@ static void __anal_reg_list(RCore *core, int type, int bits, char mode) {
 		}
 	}
 	RReg *hack = core->dbg->reg;
+	core->dbg->reg = core->anal->reg;
 	const char *use_color;
 	int use_colors = r_config_get_i (core->config, "scr.color");
 	if (use_colors) {
@@ -5390,7 +5391,7 @@ void cmd_anal_reg(RCore *core, const char *str) {
 #endif
 	int size = 0, i, type = R_REG_TYPE_GPR;
 	int use_colors = r_config_get_i (core->config, "scr.color");
-	const char *use_color;
+	const char *use_color = NULL;
 	const char *name;
 	char *arg;
 
@@ -5398,8 +5399,6 @@ void cmd_anal_reg(RCore *core, const char *str) {
 #define ConsP(x) (core->cons && core->cons->context->pal.x)? core->cons->context->pal.x
 		use_color = ConsP (creg)
 		: Color_BWHITE;
-	} else {
-		use_color = NULL;
 	}
 	switch (str[0]) {
 	case 'l': // "arl"
@@ -12809,13 +12808,20 @@ static int cmd_apt(RCore *core, const char *input) {
 		r_core_cmd_help_match (core, help_msg_ap, "apt", false);
 		break;
 	case '=':
-		r_anal_tid_select (core->anal, atoi (input + 2));
+	case ' ':
+		r_anal_tid_select (core->anal, atoi (input + 1));
+		core->dbg->reg = core->anal->reg;
 		break;
 	case '+':
-		r_anal_tid_add (core->anal, atoi (input + 2));
+		{
+			int tid = r_anal_tid_add (core->anal, atoi (input + 1));
+			if (tid != -1) {
+				core->anal->thread = tid;
+			}
+		}
 		break;
 	case '-':
-		r_anal_tid_kill (core->anal, atoi (input + 2));
+		r_anal_tid_kill (core->anal, atoi (input + 1));
 		break;
 	case 0:
 		{
@@ -12824,7 +12830,7 @@ static int cmd_apt(RCore *core, const char *input) {
 			r_list_foreach (core->anal->threads, iter, t) {
 				const int diff = (r_time_now () - t->birth) / 1000000;
 				const char cur = (t->id == core->anal->thread)? '*': '-';
-				r_cons_printf ("%c %d %ds elapsed\n", cur, t->map, diff);
+				r_cons_printf ("%c %d map=%d age=%ds\n", cur, t->id, t->map, diff);
 			}
 		}
 		break;
@@ -12838,21 +12844,36 @@ static int cmd_anal(void *data, const char *input) {
 	ut32 tbs = core->blocksize;
 	switch (input[0]) {
 	case 'p': // "ap"
-		if (input[1] == '?') {
+		switch (input[1]) {
+		case '?':
 			r_core_cmd_help (core, help_msg_ap);
-		} else {
-			switch (input[1]) {
-			case 't':
-				cmd_apt (core, input + 2);
-				break;
-			case ' ':
-			case 0:
-				match_prelude (core, r_str_trim_head_ro (input));
-				break;
-			default:
-				r_core_cmd_help (core, help_msg_ap);
-				break;
+			break;
+		case 'l': // "apl"
+			// list function preludes
+			{
+				RSearchKeyword *k;
+				RListIter *iter;
+				RList *list = r_anal_preludes (core->anal);
+				r_list_foreach (list, iter, k) {
+					char *hex0 = r_hex_bin2strdup (k->bin_keyword, k->keyword_length);
+					char *hex1 = r_hex_bin2strdup (k->bin_binmask, k->binmask_length);
+					// XXX must add an align field
+					r_cons_printf ("ap+ %s %s\n", hex0, hex1);
+					free (hex0);
+					free (hex1);
+				}
 			}
+			break;
+		case 't': // "apt"
+			cmd_apt (core, input + 2);
+			break;
+		case ' ':
+		case 0:
+			match_prelude (core, r_str_trim_head_ro (input));
+			break;
+		default:
+			r_core_cmd_help (core, help_msg_ap);
+			break;
 		}
 		break;
 	case '8':  // "a8"
