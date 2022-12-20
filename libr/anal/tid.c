@@ -52,6 +52,25 @@ R_API int r_anal_tid_add(RAnal *anal, int map) {
 	return tid;
 }
 
+R_API RAnalThread *r_anal_tid_get(RAnal *anal, int tid) {
+	r_return_val_if_fail (anal, NULL);
+	if (tid < 1) {
+		return NULL;
+	}
+	RListIter *iter;
+	RAnalThread *th;
+	r_list_foreach (anal->threads, iter, th) {
+		if (th->id == tid) {
+			return th;
+		}
+	}
+	return NULL;
+}
+
+R_API void r_anal_thread_free(RAnalThread *t) {
+
+}
+
 R_API bool r_anal_tid_select(RAnal *anal, int tid) {
 	r_return_val_if_fail (anal, false);
 	if (tid < 1) {
@@ -62,7 +81,12 @@ R_API bool r_anal_tid_select(RAnal *anal, int tid) {
 	r_list_foreach (anal->threads, iter, th) {
 		if (th->id == tid) {
 			anal->thread = tid;
-			anal->reg = th->reg;
+			RReg *or = anal->reg;
+			if (th->reg) {
+				r_ref (th->reg);
+				anal->reg = th->reg;
+			}
+			r_unref (or);
 			return true;
 		}
 	}

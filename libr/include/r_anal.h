@@ -865,11 +865,6 @@ R_API void r_anal_block_reset(RAnal *a);
 // This will fail if the range overlaps any existing blocks.
 R_API RAnalBlock *r_anal_create_block(RAnal *anal, ut64 addr, ut64 size);
 
-R_API bool r_anal_tid_kill(RAnal *anal, int tid);
-R_API int r_anal_tid_add(RAnal *anal, int map);
-R_API bool r_anal_tid_select(RAnal *anal, int tid);
-
-
 static inline bool r_anal_block_contains(RAnalBlock *bb, ut64 addr) {
 	return addr >= bb->addr && addr < bb->addr + bb->size;
 }
@@ -1654,6 +1649,13 @@ R_API bool r_anal_global_rename(RAnal *anal, ut64 addr, const char *new_name);
 R_API const char *r_anal_global_get_type(RAnal *anal, ut64 addr);
 /*return anal->is_dirty and sets it to false*/
 R_API bool r_anal_is_dirty(RAnal *anal);
+
+// threads
+R_API bool r_anal_tid_kill(RAnal *anal, int tid);
+R_API RAnalThread *r_anal_tid_get(RAnal *anal, int tid);
+R_API int r_anal_tid_add(RAnal *anal, int map);
+R_API bool r_anal_tid_select(RAnal *anal, int tid);
+
 /* plugin pointers */
 extern RAnalPlugin r_anal_plugin_null;
 extern RAnalPlugin r_anal_plugin_6502_cs;
