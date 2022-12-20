@@ -318,6 +318,7 @@ R_API RReg *r_reg_init(RReg *reg) {
 	r_reg_arena_push (reg);
 	r_reg_hasbits_clear (reg);
 	for (i = 0; i < R_REG_TYPE_LAST; i++) {
+		memset (&reg->regset[i], 0, sizeof (RRegSet));
 		reg->regset[i].cur = r_list_tail (reg->regset[i].pool);
 	}
 	return reg;
@@ -372,16 +373,37 @@ R_API void r_reg_set_copy(RRegSet *d, RRegSet *s) {
 	d->ht_regs = pp;
 }
 
+
+static inline char *dups(const char *x) {
+	return x? strdup (x): NULL;
+}
+
+#if 0
+R_API RReg *r_reg_clone(RReg *reg) {
+	int i;
+	RReg *r = R_NEW0 (RReg);
+	r->profile = dups (reg->profile);
+	r->reg_profile_cmt = dups (reg->reg_profile_cmt);
+	r->reg_profile_str = dups (reg->reg_profile_str);
+	for (i = 0; i < R_REG_NAME_LAST; i++) {
+		r->name[i] = dups (reg->name[i]);
+	}
+	for (i = 0; i < R_REG_TYPE_LAST; i++) {
+		r->regset[i] = r_reg_set_clone (reg->regset[i]);
+	}
+	return r;
+}
+#endif
 R_API RReg *r_reg_clone(RReg *r) {
 	RListIter *iter;
 	RRegItem *reg;
 	int i;
 	RReg *rr = R_NEW0 (RReg);
-	rr->profile = strdup (r->profile);
-	rr->reg_profile_cmt = strdup (r->reg_profile_cmt);
-	rr->reg_profile_str = strdup (r->reg_profile_str);
+	rr->profile = dups (r->profile);
+	rr->reg_profile_cmt = dups (r->reg_profile_cmt);
+	rr->reg_profile_str = dups (r->reg_profile_str);
 	for (i = 0; i < R_REG_NAME_LAST; i++) {
-		rr->name[i] = strdup (r->name[i]);
+		rr->name[i] = dups (r->name[i]);
 		r_reg_set_copy (&rr->regset[i], &r->regset[i]);
 	}
 	rr->iters = r->iters;
@@ -390,10 +412,12 @@ R_API RReg *r_reg_clone(RReg *r) {
 	rr->hasbits = r->hasbits;
 	r_ref (r->config);
 	rr->config = r->config;
+	r->allregs = r_list_newf (NULL);
 	r_list_foreach (r->allregs, iter, reg) {
 		RRegItem *ri = r_reg_item_clone (reg);
 		r_list_append (rr->allregs, ri);
 	}
+	r->roregs = r_list_newf (NULL);
 	r_list_foreach (r->roregs, iter, reg) {
 		RRegItem *ri = r_reg_item_clone (reg);
 		r_list_append (rr->roregs, ri);

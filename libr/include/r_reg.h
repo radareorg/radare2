@@ -143,6 +143,7 @@ typedef struct r_reg_t {
 R_API bool r_reg_hasbits_check(RReg *reg, int size);
 R_API bool r_reg_hasbits_use(RReg *reg, int size);
 R_API void r_reg_hasbits_clear(RReg *reg);
+R_API RReg *r_reg_clone(RReg *reg);
 
 typedef struct r_reg_flags_t {
 	bool s; // sign, negative number (msb)
