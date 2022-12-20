@@ -110,6 +110,7 @@ R_API RAnal *r_anal_new(void) {
 	r_event_hook (anal->zign_spaces.event, R_SPACE_EVENT_COUNT, zign_count_for, NULL);
 	r_event_hook (anal->zign_spaces.event, R_SPACE_EVENT_RENAME, zign_rename_for, NULL);
 	r_anal_hint_storage_init (anal);
+	anal->threads = r_list_newf (free);
 	r_interval_tree_init (&anal->meta, r_meta_item_free);
 	anal->sdb_types = sdb_ns (anal->sdb, "types", 1);
 	anal->sdb_fmts = sdb_ns (anal->sdb, "spec", 1);
@@ -177,6 +178,7 @@ R_API void r_anal_free(RAnal *a) {
 	r_reg_free (a->reg);
 	ht_up_free (a->dict_refs);
 	ht_up_free (a->dict_xrefs);
+	r_list_free (a->threads);
 	r_list_free (a->leaddrs);
 	sdb_free (a->sdb);
 	if (a->esil) {

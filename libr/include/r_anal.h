@@ -397,6 +397,13 @@ typedef struct r_anal_hint_cb_t {
 	void (*on_bits) (struct r_anal_t *a, ut64 addr, int bits, bool set);
 } RHintCb;
 
+typedef struct r_anal_thread_t {
+	int id;
+	int map; // tls map id
+	ut64 birth;
+	RReg *reg;
+} RAnalThread;
+
 typedef struct r_anal_t {
 	RArchConfig *config;
 	int lineswidth; // asm.lines.width
@@ -475,6 +482,8 @@ typedef struct r_anal_t {
 	int cs_omode;
 	size_t cs_handle;
 	int uses; // 0 = nothing, 1 = anal plugin, 2 = arch plugin
+	int thread; // see apt command
+	RList *threads;
 	/* end private */
 	R_DIRTY_VAR;
 } RAnal;
@@ -855,6 +864,11 @@ R_API void r_anal_block_reset(RAnal *a);
 // Create one block covering the given range.
 // This will fail if the range overlaps any existing blocks.
 R_API RAnalBlock *r_anal_create_block(RAnal *anal, ut64 addr, ut64 size);
+
+R_API bool r_anal_tid_kill(RAnal *anal, int tid);
+R_API int r_anal_tid_add(RAnal *anal, int map);
+R_API bool r_anal_tid_select(RAnal *anal, int tid);
+
 
 static inline bool r_anal_block_contains(RAnalBlock *bb, ut64 addr) {
 	return addr >= bb->addr && addr < bb->addr + bb->size;

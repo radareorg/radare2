@@ -9,6 +9,7 @@ r_anal_sources = [
   'jmptbl.c',
   'cc.c',
   'class.c',
+  'tid.c',
   'cond.c',
   'cparse.c',
   'codemeta.c',
