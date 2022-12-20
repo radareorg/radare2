@@ -45,6 +45,7 @@ typedef struct r_search_keyword_t {
 	bool icase; // ignore case
 	int type;
 	ut64 last; // last hit hint
+	int align; // per-keyword alignment rule
 } RSearchKeyword;
 
 typedef struct r_search_uds_t {

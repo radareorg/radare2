@@ -168,6 +168,9 @@ R_API void r_reg_fit_arena(RReg *reg) {
 }
 
 R_API RRegArena *r_reg_arena_clone(RRegArena *a) {
+	if (!a) {
+		return NULL;
+	}
 	RRegArena *na = R_NEW0 (RRegArena);
 	if (na && a && a->bytes && a->size > 0) {
 		na->bytes = r_mem_dup (a->bytes, a->size);
