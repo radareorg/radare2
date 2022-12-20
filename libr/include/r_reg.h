@@ -138,6 +138,7 @@ typedef struct r_reg_t {
 	int bits_default;
 	ut64 hasbits;
 	struct r_arch_config_t *config;
+	R_REF_TYPE;
 } RReg;
 
 R_API bool r_reg_hasbits_check(RReg *reg, int size);

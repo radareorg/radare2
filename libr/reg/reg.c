@@ -305,6 +305,7 @@ R_API void r_reg_free(RReg *reg) {
 
 R_API RReg *r_reg_init(RReg *reg) {
 	r_return_val_if_fail (reg, NULL);
+	r_ref_init (reg, &r_reg_free);
 	size_t i;
 	for (i = 0; i < R_REG_TYPE_LAST; i++) {
 		memset (&reg->regset[i], 0, sizeof (RRegSet));
