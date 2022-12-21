@@ -694,6 +694,5 @@ EXPECT=<<EOF
 0x00001160  	printf ("How Are You?\n");
 0x00001174  }
 0x00001149  int main() {
-0x00001149  int main() {
 EOF
 RUN
