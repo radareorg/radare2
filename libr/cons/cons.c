@@ -1334,7 +1334,7 @@ club:
 
 R_API int r_cons_printf(const char *format, ...) {
 	va_list ap;
-	if (!format || !*format) {
+	if (R_STR_ISEMPTY (format)) {
 		return -1;
 	}
 	va_start (ap, format);
