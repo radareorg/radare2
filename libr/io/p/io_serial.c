@@ -5,12 +5,14 @@
 #include <r_cons.h>
 
 #include "../io_memory.h"
+#include "../io_stream.h"
 
 #define SERIALURI "serial://"
 #define SERIALURI_EXAMPLE "serial:///dev/ttyS0:115200:1"
 
 typedef struct {
 	RSocket *sc;
+	RIOStream *ios;
 	int count;
 } RIOSocketData;
 
@@ -96,6 +98,7 @@ static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 		free_socketdata (data);
 		return NULL;
 	}
+	data->ios = r_io_stream_new ();
 	mal->data = data;
 	mal->buf = calloc (1, 1);
 	if (!mal->buf) {
@@ -139,6 +142,12 @@ static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 	return r_io_desc_new (io, &r_io_plugin_serial, pathname, R_PERM_RW | rw, mode, mal);
 }
 
+static char *__system(RIO *io, RIODesc *desc, const char *cmd) {
+	RIOMalloc *mal = (RIOMalloc*)desc->data;
+	RIOSocketData *data = (RIOSocketData*)mal->data;
+	return r_io_stream_system (data->ios, cmd);
+}
+
 RIOPlugin r_io_plugin_serial = {
 	.name = "serial",
 	.desc = "Connect to a serial port (" SERIALURI_EXAMPLE ")",
@@ -150,6 +159,7 @@ RIOPlugin r_io_plugin_serial = {
 	.seek = io_memory_lseek,
 	.check = __check,
 	.write = __write,
+	.system = __system,
 };
 
 #ifndef R2_PLUGIN_INCORE

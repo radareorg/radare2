@@ -27,7 +27,7 @@ R_API bool r_strbuf_append_n(RStrBuf *sb, const char *s, size_t l);
 R_API bool r_strbuf_prepend(RStrBuf *sb, const char *s);
 R_API bool r_strbuf_appendf(RStrBuf *sb, const char *fmt, ...) R_PRINTF_CHECK(2, 3);
 R_API bool r_strbuf_vappendf(RStrBuf *sb, const char *fmt, va_list ap);
-R_API char *r_strbuf_get(RStrBuf *sb);
+R_API char *r_strbuf_get(RStrBuf *sb); // rename to _tostring ()
 R_API char *r_strbuf_drain(RStrBuf *sb);
 R_API char *r_strbuf_drain_nofree(RStrBuf *sb);
 R_API bool r_strbuf_replace(RStrBuf *sb, const char *key, const char *val);
