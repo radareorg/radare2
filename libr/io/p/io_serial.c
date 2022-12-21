@@ -27,8 +27,10 @@ static int __write(RIO *io, RIODesc *desc, const ut8 *buf, int count) {
 	RIOMalloc *mal = (RIOMalloc*)desc->data;
 	int ret = -1;
 	if (mal) {
-		r_cons_break_push (NULL, NULL);
-		RSocket *s = ((RIOSocketData*)(mal->data))->sc;
+		RIOSocketData *data = (RIOSocketData*)(mal->data);
+		RSocket *s = data->sc;
+		RIOStream *ios = data->ios;
+		r_io_stream_write (ios, buf, count);
 		// ret = r_socket_write (s, buf, count);
 		ret = write (s->fd, buf, count);
 		if (ret == -1) {
@@ -54,6 +56,7 @@ static int __read(RIO *io, RIODesc *desc, ut8 *buf, int count) {
 				R_LOG_DEBUG ("serial.read: %d", c);
 			}
 			if (c > 0) {
+				r_io_stream_read (sdat->ios, mem, c);
 				int osz = mal->size;
 				io_memory_resize (io, desc, mal->size + c);
 				memcpy (mal->buf + osz, mem, c);

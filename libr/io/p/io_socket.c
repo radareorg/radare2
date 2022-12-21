@@ -27,7 +27,6 @@ static int __write(RIO *io, RIODesc *desc, const ut8 *buf, int count) {
 	RIOMalloc *mal = (RIOMalloc*)desc->data;
 	if (mal) {
 		RIOSocketData *data = (RIOSocketData*)(mal->data);
-		r_cons_break_push (NULL, NULL);
 		RSocket *s = data->sc;
 		RIOStream *ios = data->ios;
 		r_io_stream_write (ios, buf, count);
@@ -47,7 +46,6 @@ static int __read(RIO *io, RIODesc *desc, ut8 *buf, int count) {
 		if (mem) {
 			int c = r_socket_read (s, mem, 4096);
 			if (c > 0) {
-			eprintf ("LREAD\n");
 				r_io_stream_read (sdat->ios, mem, c);
 				int osz = mal->size;
 				io_memory_resize (io, desc, mal->size + c);
@@ -61,7 +59,11 @@ static int __read(RIO *io, RIODesc *desc, ut8 *buf, int count) {
 		}
 		r_cons_break_pop ();
 		mal->offset = addr;
-		return io_memory_read (io, desc, buf, count);
+		if (sdat->ios && sdat->ios->buf) {
+			return r_buf_read_at (sdat->ios->buf, mal->offset, buf, count);
+		}
+		return -1;
+		// return io_memory_read (io, desc, buf, count);
 	}
 	return -1;
 }
