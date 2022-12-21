@@ -10,9 +10,8 @@ static char *stream_art(RIOStream *s) {
 	RListIter *iter;
 	RIOStreamItem *si;
 	RStrBuf *sb = r_strbuf_new ("");
-	r_strbuf_appendf (sb, "             ");
-	r_strbuf_appendf (sb, ".---------[ host ]-----------.      .---------[ dest ]-----------.\n");
-	int ohost = -1;
+	r_strbuf_append (sb, "             ");
+	r_strbuf_append (sb, ".---------[ host ]-----------.      .---------[ dest ]-----------.\n");
 	int i, j;
 	bool firstline = true;
 	r_list_foreach (s->log, iter, si) {
@@ -20,14 +19,15 @@ static char *stream_art(RIOStream *s) {
 		if (si->size < 1) {
 			continue;
 		}
-		r_strbuf_appendf (sb, "             ");
-		r_strbuf_appendf (sb, "|                            |      |                            |\n");
+		r_strbuf_append (sb, "             ");
+		r_strbuf_append (sb, "|                            |      |                            |\n");
 		for (i = 0; i < si->size;) {
-			r_strbuf_appendf (sb, "0x%08"PFMT64x" %c ", si->host? saddr: daddr, si->host? '>': '<');
+			ut64 at = i + (si->host? saddr: daddr);
+			r_strbuf_appendf (sb, "0x%08"PFMT64x" %c ", at, si->host? '>': '<');
 			if (si->host) {
-				r_strbuf_appendf (sb, "|");
+				r_strbuf_append (sb, "|");
 			} else {
-				r_strbuf_appendf (sb, "|                            |");
+				r_strbuf_append (sb, "|                            |");
 				if (firstline) {
 					r_strbuf_append (sb, " <--- |");
 				} else {
@@ -36,7 +36,6 @@ static char *stream_art(RIOStream *s) {
 			}
 			// hex
 			int oi = i;
-			int oj = j;
 			for (j = 0; j < 8 && i < si->size; j++, i++) {
 				if ((j % 4) == 0) {
 					r_strbuf_append (sb, " ");
@@ -48,21 +47,20 @@ static char *stream_art(RIOStream *s) {
 				if ((j % 4) == 0) {
 					r_strbuf_append (sb, " ");
 				}
-				r_strbuf_appendf (sb, "  ");
+				r_strbuf_append (sb, "  ");
 			}
-			r_strbuf_appendf (sb, " ");
+			r_strbuf_append (sb, " ");
 			// asc
 			i = oi;
-			j = oj;
 			for (j = 0; j < 8 && i < si->size; j++, i++) {
 				char ch = IS_PRINTABLE (si->data[i])? si->data[i]: '.';
 				r_strbuf_appendf (sb, "%c", ch);
 			}
 			// padding
 			for (; j < 8; j++) {
-				r_strbuf_appendf (sb, " ");
+				r_strbuf_append (sb, " ");
 			}
-			r_strbuf_appendf (sb, " ");
+			r_strbuf_append (sb, " ");
 			if (si->host) {
 				if (firstline) {
 					if (si->host) {
@@ -75,9 +73,9 @@ static char *stream_art(RIOStream *s) {
 				}
 			}
 			if (si->host) {
-				r_strbuf_appendf (sb, "|                            |\n");
+				r_strbuf_append (sb, "|                            |\n");
 			} else {
-				r_strbuf_appendf (sb, "|\n");
+				r_strbuf_append (sb, "|\n");
 			}
 			firstline = false;
 		}
@@ -87,12 +85,11 @@ static char *stream_art(RIOStream *s) {
 		} else {
 			daddr += si->size;
 		}
-		ohost = si->host;
 	}
-	r_strbuf_appendf (sb, "             ");
-	r_strbuf_appendf (sb, "|                            |      |                            |\n");
-	r_strbuf_appendf (sb, "             ");
-	r_strbuf_appendf (sb, "`----------------------------'      '----------------------------'\n");
+	r_strbuf_append (sb, "             ");
+	r_strbuf_append (sb, "|                            |      |                            |\n");
+	r_strbuf_append (sb, "             ");
+	r_strbuf_append (sb, "`----------------------------'      '----------------------------'\n");
 	r_strbuf_appendf (sb, "Sent %"PFMT64d" bytes. Received %"PFMT64d" bytes.", saddr, daddr);
 	return r_strbuf_drain (sb);
 }
@@ -170,7 +167,7 @@ R_API RIOStream *r_io_stream_new(void) {
 }
 
 static bool add_item(RIOStream *s, const ut8 *data, size_t len, bool host) {
-	R_LOG_DEBUG ("add stream slice %d\n", host);
+	R_LOG_DEBUG ("add stream slice %d", host);
 	RIOStreamItem *is = R_NEW0 (RIOStreamItem);
 	if (is) {
 		is->host = host;
@@ -205,6 +202,22 @@ R_API char *r_io_stream_system(RIOStream *s, const char *cmd) {
 	int i, count = 0;
 	ut64 addr = 0;
 	switch (*cmd) {
+	case '*':
+		r_list_foreach (s->log, iter, si) {
+			if (s->mode == R_PERM_R && si->host) {
+				continue;
+			}
+			if (s->mode == R_PERM_W && !si->host) {
+				continue;
+			}
+			r_strbuf_append (sb, "wx+");
+			for (i = 0; i < si->size; i++) {
+				r_strbuf_appendf (sb, "%02x", si->data[i]);
+			}
+			r_strbuf_append (sb, "\n");
+			count++;
+		}
+		break;
 	case 'f':
 		r_list_foreach (s->log, iter, si) {
 			if (s->mode == R_PERM_R && si->host) {
@@ -225,7 +238,7 @@ R_API char *r_io_stream_system(RIOStream *s, const char *cmd) {
 				for (i = 0; i < si->size; i++) {
 					r_strbuf_appendf (sb, " %02x", si->data[i]);
 				}
-				r_strbuf_appendf (sb, "\n");
+				r_strbuf_append (sb, "\n");
 			}
 		} else {
 			char *o = stream_art (s);
@@ -247,12 +260,14 @@ R_API char *r_io_stream_system(RIOStream *s, const char *cmd) {
 		break;
 	default:
 	case '?':
-		r_strbuf_appendf (sb, "Usage: :[cmd ..]\n");
-		r_strbuf_appendf (sb, ":f         # print flags for current mode\n");
-		r_strbuf_appendf (sb, ":r         # only show the read ops\n");
-		r_strbuf_appendf (sb, ":w         # only show the write ops\n");
-		r_strbuf_appendf (sb, ":rw        # show read and write ops\n");
-		r_strbuf_appendf (sb, ":p         # print communication in ascii-art\n");
+		r_strbuf_append (sb, "Usage: :[cmd ..]\n");
+		r_strbuf_append (sb, ":f         # print flags for current mode\n");
+		r_strbuf_append (sb, ":*         # show write commands to fill the buffer\n");
+		r_strbuf_append (sb, ":r         # only show the read ops\n");
+		r_strbuf_append (sb, ":w         # only show the write ops\n");
+		r_strbuf_append (sb, ":rw        # show read and write ops\n");
+		r_strbuf_append (sb, ":p         # print two column ascii art of the communication\n");
+		r_strbuf_append (sb, ":px        # print (H)ost/(D)est communication in hex per line\n");
 		break;
 	}
 	return r_strbuf_drain (sb);

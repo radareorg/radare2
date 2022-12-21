@@ -156,6 +156,8 @@ static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 static char *__system(RIO *io, RIODesc *desc, const char *cmd) {
 	RIOMalloc *mal = (RIOMalloc*)desc->data;
 	RIOSocketData *data = (RIOSocketData*)mal->data;
+	ut8 buf[1024];
+	__read (io, desc, buf, sizeof (buf));
 	return r_io_stream_system (data->ios, cmd);
 }
 
