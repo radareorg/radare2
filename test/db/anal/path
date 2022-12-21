@@ -79,10 +79,10 @@ afi~nins
 ?vi opcount
 EOF
 EXPECT=<<EOF
-15
+14
 --
-15
-537
-537
+14
+421
+421
 EOF
 RUN
