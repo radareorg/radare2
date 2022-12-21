@@ -3840,15 +3840,18 @@ static void __core_cmd_anal_fcn_allstats(RCore *core, const char *input) {
 	}
 	r_table_query (t, (*input)?input + 1: "");
 	char *ts = isJson? r_table_tojson(t): r_table_tostring (t);
-	r_cons_printf ("%s%s", ts, isJson ? "\n" : "");
-	free (ts);
+	if (ts) {
+		r_cons_printf ("%s%s", ts, isJson ? "\n" : "");
+		free (ts);
+	}
 	r_table_free (t);
 	r_core_seek (core, oseek, true);
 	r_list_free (dbs);
 }
+
 static void _abo(RAnalBlock *bb) {
 	int i;
-	for (i = 0; i <= bb->ninstr; i++) {
+	for (i = 0; i < bb->ninstr; i++) {
 		ut64 at = r_anal_block_ninstr (bb, i);
 		r_cons_printf ("0x%08"PFMT64x"\n", at);
 	}

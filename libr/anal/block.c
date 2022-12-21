@@ -5,6 +5,7 @@
 
 #define unwrap(rbnode) container_of (rbnode, RAnalBlock, _rb)
 
+// rename to instr_at
 R_API ut64 r_anal_block_ninstr(RAnalBlock *block, int pos) {
 	r_return_val_if_fail (block, UT64_MAX);
 	if (pos < 1) {
@@ -13,6 +14,7 @@ R_API ut64 r_anal_block_ninstr(RAnalBlock *block, int pos) {
 	if (pos > block->ninstr) {
 		return UT64_MAX;
 	}
+	// ensure pos is > 0 because first check is pos < 1
 	return block->addr + block->op_pos[pos - 1];
 }
 
