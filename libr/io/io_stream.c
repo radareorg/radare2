@@ -229,6 +229,7 @@ R_API char *r_io_stream_system(RIOStream *s, const char *cmd) {
 			r_strbuf_appendf (sb, "f msg.%d.%s %"PFMT64d" %d\n",
 				count, si->host? "w": "r", addr, si->size);
 			count++;
+			addr += si->size;
 		}
 		break;
 	case 'p':
