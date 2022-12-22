@@ -304,6 +304,7 @@ static bool lang_quickjs_file(RLangSession *s, const char *file) {
 	if (code) {
 		rc = eval (k->ctx, code) == 0;
 		free (code);
+		rc = true;
 	}
 	return rc;
 }
