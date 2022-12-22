@@ -19,7 +19,7 @@
 .Op Fl r Ar rarun2
 .Op Fl R Ar rr2rule
 .Op Fl s Ar addr
-.Op Fl 0AdDwntLquvVxX
+.Op Fl 0AdDjwntLquvVxX
 .Ar -|--|=|file
 .Sh DESCRIPTION
 radare2 is a command-line hexadecimal editor.
@@ -56,6 +56,8 @@ Enable debug mode. Set cfg.debug=true
 Set configuration eval variable key=value. For example \-e scr.color=false
 .It Fl f
 Blocksize = file size
+.It Fl j
+Run QJS script if an argument is passed or enter the qjs shell if no file is specified
 .It Fl i Ar file
 Run script file. After the file is loaded
 .It Fl I Ar file

@@ -913,6 +913,15 @@ R_API int r_main_radare2(int argc, const char **argv) {
 			}
 		}
 	}
+	if (json) {
+		if (opt.ind < argc) {
+			r_core_cmd_callf (r, "js:%s", argv[opt.ind]);
+		} else {
+			r_core_cmd_call (r, "js:");
+		}
+		r_core_free (r);
+		return 0;
+	}
 	{
 		const char *dbg_profile = r_config_get (r->config, "dbg.profile");
 		if (dbg_profile && *dbg_profile) {

@@ -1381,31 +1381,30 @@ R_API bool r_core_run_script(RCore *core, const char *file) {
 					ret = 1;
 				} else if (!strcmp (ext, "qjs")) {
 					if (r_lang_use (core->lang, "qjs")) {
-						r_lang_run_file (core->lang, file);
+						ret = r_lang_run_file (core->lang, file);
 					} else {
 						R_LOG_ERROR ("r2pm -ci rlang-qjs");
+						ret = false;
 					}
-					ret = 1;
 				} else if (!strcmp (ext, "wren")) {
 					if (r_lang_use (core->lang, "wren")) {
-						r_lang_run_file (core->lang, file);
+						ret = r_lang_run_file (core->lang, file);
 					} else {
 						R_LOG_ERROR ("r2pm -ci rlang-wren");
+						ret = false;
 					}
-					ret = 1;
 				} else if (!strcmp (ext, "tiny")) {
 					if (r_lang_use (core->lang, "tiny")) {
-						r_lang_run_file (core->lang, file);
+						ret = r_lang_run_file (core->lang, file);
 					} else {
 						R_LOG_ERROR ("r2pm -ci rlang-tiny");
+						ret = false;
 					}
-					ret = 1;
 				} else if (!strcmp (ext, "pl")) {
 					char *cmd = cmdstr ("perl");
 					r_lang_use (core->lang, "pipe");
-					lang_run_file (core, core->lang, cmd);
+					ret = lang_run_file (core, core->lang, cmd);
 					free (cmd);
-					ret = 1;
 				} else if (!strcmp (ext, "py")) {
 					char *fp = r_file_path ("python3");
 					if (!fp) {
@@ -1421,17 +1420,17 @@ R_API bool r_core_run_script(RCore *core, const char *file) {
 						char *cmd = r_str_newf ("%s '%s'", fp, file);
 #endif
 						r_lang_use (core->lang, "pipe");
-						lang_run_file (core, core->lang, cmd);
+						ret = lang_run_file (core, core->lang, cmd);
 						free (cmd);
-						ret = 1;
 						free (fp);
 					} else {
 						R_LOG_ERROR ("Cannot find python in PATH");
+						ret = false;
 					}
 				} else {
 					if (r_file_is_executable (file)) {
 						r_core_cmdf (core, "#!pipe %s%s", (*file=='/')?"":"./", file);
-						ret = 1;
+						ret = true;
 					} else {
 						ret = r_core_cmd_file (core, file);
 					}
@@ -1583,7 +1582,12 @@ static int cmd_join(void *data, const char *input) { // "join"
 	if (input[0] == 's') { // "js"
 		if (input[1] == ':' || input[1] == '.') { // "js:"
 			if (input[2]) {
-				r_core_cmdf (core, ". %s", input + 2);
+				if (r_lang_use (core->lang, "qjs")) {
+					const char *fn = r_str_trim_head_ro (input + 2);
+					if (!r_lang_run_file (core->lang, fn)) {
+						R_LOG_ERROR ("Cannot find %s", fn);
+					}
+				}
 			} else {
 				if (r_config_get_b (core->config, "scr.interactive")) {
 					if (r_lang_use (core->lang, "qjs")) {
