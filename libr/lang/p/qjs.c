@@ -1,13 +1,7 @@
 /* radare - LGPL - Copyright 2020-2022 pancake */
 
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
-#include <time.h>
 #include <r_lib.h>
 #include <r_core.h>
-#include <r_config.h>
-#include <r_lang.h>
 
 #define countof(x) (sizeof (x) / sizeof ((x)[0]))
 
@@ -119,7 +113,9 @@ static JSValue js_write(JSContext *ctx, JSValueConst this_val, int argc, JSValue
 		if (!str) {
 			return JS_EXCEPTION;
 		}
-		fwrite (str, 1, len, stdout);
+		if (len > 0) {
+			fwrite (str, 1, len, stdout);
+		}
 		JS_FreeCString (ctx, str);
 	}
 	return JS_UNDEFINED;
