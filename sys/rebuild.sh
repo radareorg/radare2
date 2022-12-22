@@ -46,6 +46,14 @@ RebuildSpp() {
 	Rebuild libr/lang
 }
 
+RebuildQJS() {
+	rm -f shlr/qjs/js_repl.c
+	make -C shlr/qjs
+	Rebuild libr/lang
+	touch libr/core/cmd.c
+	make -C libr/core
+}
+
 RebuildJava() {
 	Rebuild shlr/java
 	Rebuild libr/bin
@@ -111,6 +119,7 @@ tcc)    RebuildTcc ; ;;
 bin)    RebuildBin ; ;;
 zip)    RebuildZip ; ;;
 java)   RebuildJava ; ;;
+qjs)    RebuildQJS ; ;;
 iosdbg) RebuildIOSDebug ; ;;
 capstone|cs) RebuildCapstone ; ;;
 *)
