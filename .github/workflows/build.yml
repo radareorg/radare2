@@ -299,7 +299,8 @@ jobs:
         pip install git+https://github.com/frida/meson.git@f7f25b19a8d71cebf8e2934733eb041eb6862eee
         pip install ninja r2pipe wget
     - name: Extract r2 version
-      run: echo "{branch}={`sys/version.py -n`}" >> $GITHUB_OUTPUT
+      shell: bash
+      run: echo "branch=`sys/version.py -n`" >> $GITHUB_OUTPUT
       id: r2v
     - name: Build with meson + ninja
       shell: pwsh
@@ -314,7 +315,7 @@ jobs:
 #        repository: radareorg/radare2-win-installer
 #        path: ./radare2-win-installer
 #    - name: Extract r2 version
-#      run: echo "{branch}={`sys/version.py -n`}" >> $GITHUB_OUTPUT
+#      run: echo "branch=`sys/version.py -n`" >> $GITHUB_OUTPUT
 #      id: extract_version
 #    - name: Create installer
 #      shell: pwsh
@@ -393,7 +394,8 @@ jobs:
         pip install git+https://github.com/frida/meson.git@f7f25b19a8d71cebf8e2934733eb041eb6862eee
         pip install ninja r2pipe wget r2env
     - name: Extract r2 version
-      run: echo "{branch}={`sys/version.py -n`}" >> $GITHUB_OUTPUT
+      shell: bash
+      run: echo "branch=`sys/version.py -n`" >> $GITHUB_OUTPUT
       id: r2v
     - name: Build with meson + ninja
       shell: cmd
@@ -443,7 +445,8 @@ jobs:
         pip install git+https://github.com/frida/meson.git@f7f25b19a8d71cebf8e2934733eb041eb6862eee
         pip install ninja r2pipe wget
     - name: Extract r2 version
-      run: echo "{branch}={`sys/version.py -n`}" >> $GITHUB_OUTPUT
+      shell: bash
+      run: echo "branch=`sys/version.py -n`" >> $GITHUB_OUTPUT
       id: r2v
     - name: Build with meson + ninja
       shell: pwsh
@@ -539,10 +542,10 @@ jobs:
         run: |
           TAG="`git describe --exact-match --tags ${{ github.sha }} || true`"
           if [ -n "$TAG" ]; then
-            echo "{tag}={$TAG}" >> $GITHUB_OUTPUT
-            echo "{is}={yes}" >> $GITHUB_OUTPUT
+            echo "tag=$TAG" >> $GITHUB_OUTPUT
+            echo "is=yes" >> $GITHUB_OUTPUT
           else
-            echo "{is}={no}" >> $GITHUB_OUTPUT
+            echo "is=no" >> $GITHUB_OUTPUT
           fi
         id: release
 
@@ -557,7 +560,8 @@ jobs:
         with:
           fetch-depth: 0 # Download all git history and tags
       - name: Extract r2 version
-        run: echo "{branch}={`sys/version.py -n`}" >> $GITHUB_OUTPUT
+        shell: bash
+        run: echo "branch=`sys/version.py -n`" >> $GITHUB_OUTPUT
         id: r2v
       - name: Prepare release notes
         run: ./sys/release-notes.sh | tee ./RELEASE_NOTES.md
