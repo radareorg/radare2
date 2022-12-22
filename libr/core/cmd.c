@@ -1073,7 +1073,9 @@ static int cmd_rap_run(void *data, const char *input) {
 	char *res = r_io_system (core->io, input);
 	if (res) {
 		int ret = atoi (res);
-		r_cons_printf ("%s\n", res);
+		if (ret == 0 && *res) {
+			r_cons_printf ("%s\n", res);
+		}
 		free (res);
 		r_core_return_value (core, ret);
 		return ret;

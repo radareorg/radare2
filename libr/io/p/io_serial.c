@@ -5,12 +5,14 @@
 #include <r_cons.h>
 
 #include "../io_memory.h"
+#include "../io_stream.h"
 
 #define SERIALURI "serial://"
 #define SERIALURI_EXAMPLE "serial:///dev/ttyS0:115200:1"
 
 typedef struct {
 	RSocket *sc;
+	RIOStream *ios;
 	int count;
 } RIOSocketData;
 
@@ -25,8 +27,10 @@ static int __write(RIO *io, RIODesc *desc, const ut8 *buf, int count) {
 	RIOMalloc *mal = (RIOMalloc*)desc->data;
 	int ret = -1;
 	if (mal) {
-		r_cons_break_push (NULL, NULL);
-		RSocket *s = ((RIOSocketData*)(mal->data))->sc;
+		RIOSocketData *data = (RIOSocketData*)(mal->data);
+		RSocket *s = data->sc;
+		RIOStream *ios = data->ios;
+		r_io_stream_write (ios, buf, count);
 		// ret = r_socket_write (s, buf, count);
 		ret = write (s->fd, buf, count);
 		if (ret == -1) {
@@ -52,6 +56,7 @@ static int __read(RIO *io, RIODesc *desc, ut8 *buf, int count) {
 				R_LOG_DEBUG ("serial.read: %d", c);
 			}
 			if (c > 0) {
+				r_io_stream_read (sdat->ios, mem, c);
 				int osz = mal->size;
 				io_memory_resize (io, desc, mal->size + c);
 				memcpy (mal->buf + osz, mem, c);
@@ -96,6 +101,7 @@ static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 		free_socketdata (data);
 		return NULL;
 	}
+	data->ios = r_io_stream_new ();
 	mal->data = data;
 	mal->buf = calloc (1, 1);
 	if (!mal->buf) {
@@ -139,6 +145,14 @@ static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 	return r_io_desc_new (io, &r_io_plugin_serial, pathname, R_PERM_RW | rw, mode, mal);
 }
 
+static char *__system(RIO *io, RIODesc *desc, const char *cmd) {
+	RIOMalloc *mal = (RIOMalloc*)desc->data;
+	RIOSocketData *data = (RIOSocketData*)mal->data;
+	ut8 buf[1024];
+	__read (io, desc, buf, sizeof (buf));
+	return r_io_stream_system (data->ios, cmd);
+}
+
 RIOPlugin r_io_plugin_serial = {
 	.name = "serial",
 	.desc = "Connect to a serial port (" SERIALURI_EXAMPLE ")",
@@ -150,6 +164,7 @@ RIOPlugin r_io_plugin_serial = {
 	.seek = io_memory_lseek,
 	.check = __check,
 	.write = __write,
+	.system = __system,
 };
 
 #ifndef R2_PLUGIN_INCORE
