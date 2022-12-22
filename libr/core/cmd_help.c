@@ -860,6 +860,10 @@ static int cmd_help(void *data, const char *input) {
 			const char *space = strchr (input, ' ');
 			if (space) {
 				n = r_num_math (core->num, space + 1);
+			} else if (input[1] == ':') {
+				n = r_num_math (core->num, input + 2);
+			} else if (input[1] && input[2] == ':') {
+				n = r_num_math (core->num, input + 3);
 			} else {
 				n = r_num_math (core->num, "$?");
 			}
