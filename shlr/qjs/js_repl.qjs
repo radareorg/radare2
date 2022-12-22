@@ -139,7 +139,10 @@ import('os').catch(console.error).then((os) => {
       term_fd = 0; // std.in.fileno();
 
       /* get the terminal size */
-      term_width = +r2cmd('?vi:$c');
+      term_width = +r2cmd('?vi $c');
+      if (term_width < 1) {
+        term_width = 80;
+      }
 
       term_read_buf = new Uint8Array(64);
       cmd_start();
@@ -156,7 +159,9 @@ import('os').catch(console.error).then((os) => {
 
     function term_read_handler () {
       const l = os.read(term_fd, term_read_buf.buffer, 0, term_read_buf.length);
-      for (let i = 0; i < l; i++) { handle_byte(term_read_buf[i]); }
+      for (let i = 0; i < l; i++) {
+	handle_byte(term_read_buf[i]);
+      }
     }
 
     function handle_byte (c) {
@@ -240,7 +245,7 @@ import('os').catch(console.error).then((os) => {
     function move_cursor (delta) {
       let l;
       if (delta > 0) {
-        while (delta !== 0) {
+        while (delta > 0) {
           if (term_cursor_x === (term_width - 1)) {
             write('\n'); /* translated to CRLF */
             term_cursor_x = 0;
@@ -254,7 +259,7 @@ import('os').catch(console.error).then((os) => {
         }
       } else {
         delta = -delta;
-        while (delta !== 0) {
+        while (delta > 0) {
           if (term_cursor_x === 0) {
             print_csi(1, 'A'); /* up */
             print_csi(term_width - 1, 'C'); /* right */
@@ -807,7 +812,6 @@ import('os').catch(console.error).then((os) => {
 
     function handle_key (keys) {
       let fun;
-      // console.log("HANDLE KEY " ,keys.charCodeAt(0));
 
       if (quote_flag) {
         if (ucs_length(keys) === 1) { insert(keys); }
@@ -815,7 +819,6 @@ import('os').catch(console.error).then((os) => {
       } else if ((fun = commands[keys])) {
         this_fun = fun;
         const res = fun(keys);
-        // console.log("FUNKEYS ", fun, res);
         switch (res) {
           case -1:
             readline_cb(cmd);
@@ -1153,7 +1156,6 @@ import('os').catch(console.error).then((os) => {
 
     function eval_and_print (expr) {
       let result;
-
       try {
         if (eval_mode === 'math') { expr = '"use math"; void 0;' + expr; }
         const now = (new Date()).getTime();
@@ -1185,11 +1187,10 @@ import('os').catch(console.error).then((os) => {
     }
 
     function cmd_start () {
-    // console.log("cmd startr");
       if (!config_numcalc) {
-        if (has_jscalc) { console.log('QJSCalc - Type "\\h" for help'); } else { console.log('QuickJS - Type "\\h" for help'); }
+        const tool = (has_jscalc)? 'QJSCalc': 'QuickJS';
+        console.log(tool, '- Type "\\h" for help');
       }
-      // console.log("PRE");
 
       if (has_bignum) {
         log2_10 = Math.log(10) / Math.log(2);
@@ -1201,7 +1202,6 @@ import('os').catch(console.error).then((os) => {
           g.algebraicMode = config_numcalc;
         }
       }
-      // console.log("pre");
 
       cmd_readline_start();
     }
@@ -1383,7 +1383,9 @@ import('os').catch(console.error).then((os) => {
         }
 
         let i1 = i;
-        while (i1 < n && str[i1] === ' ') { i1++; }
+        while (i1 < n && str[i1] === ' ') {
+          i1++;
+        }
 
         if (i1 < n && str[i1] === '(') {
           style = 'function';
