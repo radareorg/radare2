@@ -496,21 +496,22 @@ run_command(py3_exe, '-c', 'with open("shlr/sdb/include/sdb/version.h", "w") as 
 sdb_inc_files = [
   'shlr/sdb/include/sdb/buffer.h',
   'shlr/sdb/include/sdb/cdb.h',
-  'shlr/sdb/include/sdb/set.h',
-  'shlr/sdb/include/sdb/heap.h',
   'shlr/sdb/include/sdb/cdb_make.h',
   'shlr/sdb/include/sdb/config.h',
   'shlr/sdb/include/sdb/dict.h',
+  'shlr/sdb/include/sdb/heap.h',
+  'shlr/sdb/include/sdb/ht.h',
   'shlr/sdb/include/sdb/ht_inc.h',
   'shlr/sdb/include/sdb/ht_pp.h',
+  'shlr/sdb/include/sdb/ht_pu.h',
   'shlr/sdb/include/sdb/ht_up.h',
   'shlr/sdb/include/sdb/ht_uu.h',
-  'shlr/sdb/include/sdb/ht_pu.h',
   'shlr/sdb/include/sdb/ls.h',
+  'shlr/sdb/include/sdb/rangstr.h',
   'shlr/sdb/include/sdb/sdb.h',
-  'shlr/sdb/include/sdb/ht.h',
+  'shlr/sdb/include/sdb/set.h',
+  'shlr/sdb/include/sdb/types.h',
   'shlr/sdb/include/sdb/version.h',
-  'shlr/sdb/include/sdb/types.h'
 ]
 install_headers(sdb_inc_files, install_dir: join_paths(r2_incdir, 'sdb'))
 
