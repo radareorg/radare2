@@ -412,7 +412,7 @@ static int r2pm_install_pkg(const char *pkg, bool global) {
 	if (qjs_script) {
 		int res = 0;
 		const char *const argv[5] = { "radare2", "-j", "-e", qjs_script, NULL };
-#if R2__UNIX__
+#if R2__UNIX__ && !defined(__wasi__)
 		int child = fork ();
 		if (child == -1) {
 			eprintf ("Cannot find radare2 in PATH");
