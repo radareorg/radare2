@@ -408,6 +408,32 @@ static int r2pm_install_pkg(const char *pkg, bool global) {
 	char *srcdir = r2pm_gitdir ();
 	r2pm_setenv ();
 	R_LOG_DEBUG ("Entering %s", srcdir);
+	char *qjs_script = r2pm_get (pkg, "\nR2PM_INSTALL_QJS() {\n", TT_CODEBLOCK);
+	if (qjs_script) {
+		int res = 0;
+		const char *const argv[5] = { "radare2", "-j", "-e", qjs_script, NULL };
+#if R2__UNIX__
+		int child = fork ();
+		if (child == -1) {
+			eprintf ("Cannot find radare2 in PATH");
+			return -1;
+		}
+		if (child) {
+			int status;
+			res = waitpid (child, &status, 0);
+		} else {
+			execv (argv[0], (char *const*) argv);
+			exit (1);
+		}
+#else
+		eprintf ("r2pm.QJS support is experimental\n");
+		res = 1;
+#endif
+		// run script!
+		free (qjs_script);
+		free (srcdir);
+		return res;
+	}
 #if R2__WINDOWS__
 	char *script = r2pm_get (pkg, "\nR2PM_INSTALL_WINDOWS() {\n", TT_CODEBLOCK);
 	if (!script) {
