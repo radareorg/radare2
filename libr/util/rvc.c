@@ -123,7 +123,7 @@ R_API bool rvc_checkout(Rvc *vc, const char *bname) {
 }
 
 R_API bool rvc_save(Rvc *vc) {
-	r_return_val_if_fail (vc, NULL);
+	r_return_val_if_fail (vc, false);
 	RvcPluginSave s = R_UNWRAP3 (vc, p, save);
 	return s? s (vc): false;
 }

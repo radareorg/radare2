@@ -231,9 +231,9 @@ R_API int r_time_beats(ut64 ts, int *sub) {
 	int time_correction = get_time_correction ();
 	seconds -= time_correction;
 	seconds %= 86400;
-	ut64 beats = ((seconds / 86.4) * 100) / 100;
+	ut64 beats = (ut64)((seconds / 86.4) * 100) / 100;
 	if (beats >= 1000) {
-		return R_ABS (beats - 1000);
+		return (int) R_ABS (beats - 1000);
 	}
 	return beats;
 }

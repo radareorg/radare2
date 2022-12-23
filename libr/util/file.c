@@ -611,7 +611,7 @@ R_API char *r_file_slurp_random_line_count(const char *file, int *line) {
 }
 
 R_API bool r_file_dump_line(const char *file, int line, const char *msg, bool replace) {
-	r_return_val_if_fail (file, NULL);
+	r_return_val_if_fail (file, false);
 	if (!msg || !*msg) {
 		return false;
 	}

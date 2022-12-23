@@ -116,7 +116,7 @@ R_API RVector *r_vector_clone(RVector *vec) {
 }
 
 R_API bool r_vector_copy(RVector *d, RVector *s) {
-	r_return_val_if_fail (d && s, NULL);
+	r_return_val_if_fail (d && s, false);
 	return vector_clone (d, s);
 }
 
