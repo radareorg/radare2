@@ -772,13 +772,12 @@ R_API void r_cons_print_clear(void) {
 }
 
 R_API void r_cons_fill_line(void) {
-	char *p, white[1024];
+	char white[1024];
 	int cols = I->columns - 1;
 	if (cols < 1) {
 		return;
 	}
-	p = (cols >= sizeof (white))
-		?  malloc (cols + 1): white;
+	char *p = (cols >= sizeof (white))?  malloc (cols + 1): white;
 	if (p) {
 		memset (p, ' ', cols);
 		p[cols] = 0;

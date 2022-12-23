@@ -60,8 +60,13 @@ bool bochs_cmd_stop(libbochs_t * b) {
 	};
 	hKernel = GetModuleHandle (TEXT ("kernel32"));
 	FARPROC apiOffset = (FARPROC)GetProcAddress (hKernel, "GenerateConsoleCtrlEvent");
-	*((DWORD *)&buffer[20]) = (DWORD *)(size_t)apiOffset; // XXX
-	ExitCode = RunRemoteThread_(b, (const ut8*)&buffer, 0x1Eu, 0, &ExitCode) && ExitCode;
+#if sizeof(DWORD) == 4
+	*((DWORD *)&buffer[20]) = (DWORD)(size_t)apiOffset;
+#else
+#warning this bochs shellcode is 32bit only
+	*((DWORD *)&buffer[20]) = 0;
+#endif
+	ExitCode = RunRemoteThread_ (b, (const ut8*)&buffer, 0x1Eu, 0, &ExitCode) && ExitCode;
 	return ExitCode;
 #else
 	return 0;
