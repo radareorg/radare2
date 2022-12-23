@@ -53,11 +53,11 @@ Start in debugger mode
 .It Fl D Ar dbg.backend
 Enable debug mode. Set cfg.debug=true
 .It Fl e Ar k=v
-Set configuration eval variable key=value. For example \-e scr.color=false
+Set configuration eval variable key=value. For example \-e scr.color=false. When -e is passed after -j, it will set the script source to run instead of setting eval vars.
 .It Fl f
 Blocksize = file size
 .It Fl j
-Run QJS script if an argument is passed or enter the qjs shell if no file is specified
+Run QJS script if an argument is passed or enter the qjs shell if no file is specified. You can evaluate expressions when passing the -e flag after the -j.
 .It Fl i Ar file
 Run script file. After the file is loaded
 .It Fl I Ar file

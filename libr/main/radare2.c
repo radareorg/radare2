@@ -608,6 +608,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 	bool load_l = true;
 	char *debugbackend = strdup ("native");
 	const char *project_name = NULL;
+	const char *qjs_script = NULL;
 
 	RGetopt opt;
 	r_getopt_init (&opt, argc, argv, "=02AjMCwxfF:H:hm:e:nk:NdqQs:p:b:B:a:Lui:I:l:P:R:r:c:D:vVSzuXt");
@@ -681,11 +682,16 @@ R_API int r_main_radare2(int argc, const char **argv) {
 			}
 			break;
 		case 'e':
-			if (!strcmp (opt.arg, "q")) {
-				r_core_cmd0 (r, "eq");
+			if (json) {
+				// eval qjs script here!
+				qjs_script = opt.arg;
 			} else {
-				r_config_eval (r->config, opt.arg, false);
-				r_list_append (evals, (void*)opt.arg);
+				if (!strcmp (opt.arg, "q")) {
+					r_core_cmd0 (r, "eq");
+				} else {
+					r_config_eval (r->config, opt.arg, false);
+					r_list_append (evals, (void*)opt.arg);
+				}
 			}
 			break;
 		case 'f':
@@ -914,7 +920,9 @@ R_API int r_main_radare2(int argc, const char **argv) {
 		}
 	}
 	if (json) {
-		if (opt.ind < argc) {
+		if (qjs_script) {
+			r_core_cmd_callf (r, "js %s", qjs_script);
+		} else if (opt.ind < argc) {
 			r_core_cmd_callf (r, "js:%s", argv[opt.ind]);
 		} else {
 			r_core_cmd_call (r, "js:");
