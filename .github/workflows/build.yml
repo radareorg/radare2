@@ -20,6 +20,19 @@ jobs:
         name: linux-wasi
         path: radare2-*-wasi.zip
 
+  # Source Tarballs
+  tarball:
+    runs-on: ubuntu-20.04
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+    - name: Creating zip and tarball
+      run: sys/tarball.sh
+    - uses: actions/upload-artifact@v3
+      with:
+        name: tarball
+        path: radare2-*.*
+
   # Linux
   linux-static:
     if: contains(github.ref, 'master') || contains(github.ref, 'ci-')
@@ -589,6 +602,24 @@ jobs:
           asset_path: dist/artifacts/linux-acr-deb-64/radare2/radare2_${{ steps.r2v.outputs.branch }}_amd64.deb
           asset_name: radare2_${{ steps.r2v.outputs.branch }}_amd64.deb
           asset_content_type: application/vnd.debian.binary-package
+      - name: Upload prefetched tarball (source)
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: dist/artifacts/tarball/radare2/radare2-${{ steps.r2v.outputs.branch }}.tar.xz
+          asset_name: radare2-${{ steps.r2v.outputs.branch }}.tar.xz
+          asset_content_type: application/x-txz
+      - name: Upload prefetched zip (source)
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: dist/artifacts/tarball/radare2/radare2-${{ steps.r2v.outputs.branch }}.zip
+          asset_name: radare2-${{ steps.r2v.outputs.branch }}.zip
+          asset_content_type: application/x-zip
       - name: Upload asset for Debian (i386)
         uses: actions/upload-release-asset@v1
         env:
