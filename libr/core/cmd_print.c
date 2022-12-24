@@ -309,6 +309,7 @@ static const char *help_msg_pdp[] = {
 static const char *help_msg_ph[] = {
 	"Usage:", "ph", " [algorithm] ([size])",
 	"ph", " md5", "compute md5 hash of current block",
+	"ph", ":md5", "same as 'ph md5' (colon acts as a space)",
 	"ph", " sha1 32 @ 0x1000", "calculate sha1 of 32 bytes starting at 0x1000",
 	"ph", "", "list available hash plugins",
 	"phj", "", "list available hash plugins in json",
@@ -3420,6 +3421,9 @@ static bool cmd_print_ph(RCore *core, const char *input) {
 	if (*input == '=') {
 		algolist (0);
 		return true;
+	}
+	if (*input == ':') {
+		input++;
 	}
 	input = r_str_trim_head_ro (input);
 	ptr = strchr (input, ' ');

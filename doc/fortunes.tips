@@ -11,7 +11,7 @@ Enable asm.trace to see the tracing information inside the disassembly
 Change the registers of the child process in this way: 'dr eax=0x333'
 Check your IO plugins with 'r2 -L'
 Change the size of the file with the 'r' (resize) command
-Calculate checksums for the current block with the commands starting with '#' (#md5, #crc32, #all, ..)
+Calculate current basic block checksum with the ph command (ph md5, ph crc32, ..)
 Use +,-,*,/ to change the size of the block
 Change the block size with 'b <block-size>'. In visual mode you can also enter radare2 command pressing the ':' key (like vi does)
 If you want to open the file in read-write mode, invoke r2 with '-w'
