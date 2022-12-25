@@ -61,7 +61,7 @@ static ut64 baddr(RBinFile *bf) {
 		// if this is an arm64 kernel: check mask and return known
 		// base address. see libmach for definitions.
 		if (o->is_kernel) {
-			return 0xffffffff80000000ULL;
+			return 0xffffffffc0080000ULL;
 		}
 		return 0x10000ULL;
 	case MAGIC_AMD64:
