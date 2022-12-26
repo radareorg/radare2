@@ -1179,21 +1179,20 @@ static void arm_opcode_parse(ArmOpcode *ao, const char *str) {
 	}
 }
 
-static inline int arm_opcode_cond(ArmOpcode *ao, int delta) {
+static inline int arm_cond(char *cond_str) {
 	const char *conds[] = {
 		"eq", "ne", "cs", "cc", "mi", "pl", "vs", "vc",
 		"hi", "ls", "ge", "lt", "gt", "le", "al", "nv", 0
 	};
-	int i, cond = 14; // 'always' is default
-	char *c = ao->op+delta;
+	int i;
+
 	for (i = 0; conds[i]; i++) {
-		if (!strcmpnull (c, conds[i])) {
-			cond = i;
-			break;
+		if (!strcmpnull (cond_str, conds[i])) {
+			return i;
 		}
 	}
-	ao->o |= cond << 4;
-	return cond;
+
+	return -1;
 }
 
 static st32 thumb_getoffset(char *label, ut64 cur) {
@@ -5896,14 +5895,26 @@ static int findyz(int x, int *y, int *z) {
 }
 
 static int arm_assemble(ArmOpcode *ao, ut64 off, const char *str) {
-	int i, j, ret, reg, a, b;
+	int cond, ret, reg, a, b, i, j;
 	int coproc, opc;
 	bool rex = false;
 	int shift, low, high;
 	for (i = 0; ops[i].name; i++) {
 		if (!strncmp (ao->op, ops[i].name, strlen (ops[i].name))) {
+			/* This can be useful when handling cases such as blt or ble
+			 * where strncmp might mistaken blt or ble as bl with conditional
+			 * t or e */
+			cond = 14; // 'always' is default
+			if (*(ao->op + strlen (ops[i].name))) {
+				cond = arm_cond (ao->op + strlen (ops[i].name));
+				if (cond < 0) {
+					continue;
+				}
+			}
+
 			ao->o = ops[i].code;
-			arm_opcode_cond (ao, strlen(ops[i].name));
+			ao->o |= cond << 4;
+
 			if (ao->a[0] || ops[i].type == TYPE_BKP) {
 				switch (ops[i].type) {
 				case TYPE_MEM:
@@ -6230,12 +6241,12 @@ static int arm_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 					int y, z;
 					b = getnum (ao->a[1]);
 					if (b >= 0 && b <= 0xff) {
-						ao->o = 0x50e3;
+						ao->o |= 0xe2;
 						// TODO: if (b>255) -> automatic multiplier
 						ao->o |= (a << 8);
 						ao->o |= ((b & 0xff) << 24);
 					} else if (findyz (b, &y, &z)) {
-						ao->o = 0x50e3;
+						ao->o |= 0xe2;
 						ao->o |= (y << 24);
 						ao->o |= (z << 16);
 					} else {
