@@ -119,6 +119,7 @@ static RCoreHelpMessage help_msg_dash = {
 	"-c", " cpu", "same as r2 -e asm.cpu=",
 	"-e", " k=v", "same as r2 -b or e asm.bits",
 	"-f", "", "block size = file size (b $s)",
+	"-j", "", "enter the js: repl",
 	"-i", " [file]", "same as . [file], to run a script",
 	"-s", " [addr]", "same as r2 -e asm.cpu=",
 	"--", "", "seek one block backward. Same as s-- (see `b` command)",
@@ -1736,6 +1737,9 @@ static int cmd_stdin(void *data, const char *input) {
 			} else {
 				r_core_cmdf (core, "e asm.bits=%s", arg);
 			}
+			break;
+		case 'j': // "-j"
+			r_core_cmd_call (core, "js:");
 			break;
 		case 'c': // "-c"
 			r_core_cmdf (core, "e asm.cpu=%s", arg);
