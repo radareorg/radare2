@@ -399,80 +399,6 @@ static void r2pm_setenv(void) {
 	free (python);
 }
 
-static int r2pm_install_pkg(const char *pkg, bool global) {
-	R_LOG_INFO ("Starting install for %s", pkg);
-	char *deps = r2pm_get (pkg, "\nR2PM_DEPS ", TT_TEXTLINE);
-	if (deps) {
-		char *dep;
-		RListIter *iter;
-		RList *l = r_str_split_list (deps, " ", 0);
-		r_list_foreach (l, iter, dep) {
-			r2pm_install_pkg (dep, false); // XXX get current pkg global value
-		}
-	}
-	char *srcdir = r2pm_gitdir ();
-	r2pm_setenv ();
-	R_LOG_DEBUG ("Entering %s", srcdir);
-	char *qjs_script = r2pm_get (pkg, "\nR2PM_INSTALL_QJS() {\n", TT_CODEBLOCK);
-	if (qjs_script) {
-		int res = 0;
-		const char *const argv[5] = { "radare2", "-j", "-e", qjs_script, NULL };
-#if R2__UNIX__ && !defined(__wasi__)
-		int child = fork ();
-		if (child == -1) {
-			eprintf ("Cannot find radare2 in PATH");
-			return -1;
-		}
-		if (child) {
-			int status;
-			res = waitpid (child, &status, 0);
-		} else {
-			execv (argv[0], (char *const*) argv);
-			exit (1);
-		}
-#else
-		eprintf ("r2pm.QJS support is experimental\n");
-		res = 1;
-#endif
-		// run script!
-		free (qjs_script);
-		free (srcdir);
-		return res;
-	}
-#if R2__WINDOWS__
-	char *script = r2pm_get (pkg, "\nR2PM_INSTALL_WINDOWS() {\n", TT_CODEBLOCK);
-	if (!script) {
-		R_LOG_ERROR ("This package does not have R2PM_INSTALL_WINDOWS instructions");
-		return 1;
-	}
-	char *s = r_str_newf ("cd %s && cd %s && %s", srcdir, pkg, script);
-	int res = r_sandbox_system (s, 1);
-	free (s);
-#else
-	char *script = r2pm_get (pkg, "\nR2PM_INSTALL() {\n", TT_CODEBLOCK);
-	if (!script) {
-		R_LOG_ERROR ("Cannot find the R2PM_INSTALL() {} script block for '%s'", pkg);
-		free (srcdir);
-		return 1;
-	}
-	eprintf ("script (%s)\n", script);
-	char *pkgdir = r_str_newf ("%s/%s", srcdir, pkg);
-	if (!r_file_is_directory (pkgdir)) {
-		R_LOG_ERROR ("Cannot find directory: %s", pkgdir);
-		free (pkgdir);
-		return 1;
-	}
-	free (pkgdir);
-	char *s = r_str_newf ("cd '%s/%s'\nexport MAKE=make\nR2PM_FAIL(){\n  echo $@\n}\n%s", srcdir, pkg, script);
-	int res = r_sandbox_system (s, 1);
-	free (s);
-	if (res == 0) {
-		r2pm_register (pkg, global);
-	}
-#endif
-	free (srcdir);
-	return res;
-}
 
 static int r2pm_doc_pkg(const char *pkg) {
 	char *docstr = r2pm_get (pkg, "\nR2PM_DOC=\"", TT_ENDQUOTE);
@@ -620,6 +546,85 @@ static int r2pm_clone(const char *pkg) {
 	}
 	free (srcdir);
 	return 0;
+}
+
+static int r2pm_install_pkg(const char *pkg, bool global) {
+	R_LOG_INFO ("Starting install for %s", pkg);
+	char *deps = r2pm_get (pkg, "\nR2PM_DEPS ", TT_TEXTLINE);
+	if (deps) {
+		char *dep;
+		RListIter *iter;
+		RList *l = r_str_split_list (deps, " ", 0);
+		r_list_foreach (l, iter, dep) {
+			if (r2pm_clone (dep) == 0) {
+				r2pm_install_pkg (dep, false); // XXX get current pkg global value
+			} else {
+				R_LOG_ERROR ("Cannot clone %s", dep);
+			}
+		}
+	}
+	char *srcdir = r2pm_gitdir ();
+	r2pm_setenv ();
+	R_LOG_DEBUG ("Entering %s", srcdir);
+	char *qjs_script = r2pm_get (pkg, "\nR2PM_INSTALL_QJS() {\n", TT_CODEBLOCK);
+	if (qjs_script) {
+		int res = 0;
+		const char *const argv[5] = { "radare2", "-j", "-e", qjs_script, NULL };
+#if R2__UNIX__ && !defined(__wasi__)
+		int child = fork ();
+		if (child == -1) {
+			eprintf ("Cannot find radare2 in PATH");
+			return -1;
+		}
+		if (child) {
+			int status;
+			res = waitpid (child, &status, 0);
+		} else {
+			execv (argv[0], (char *const*) argv);
+			exit (1);
+		}
+#else
+		eprintf ("r2pm.QJS support is experimental\n");
+		res = 1;
+#endif
+		// run script!
+		free (qjs_script);
+		free (srcdir);
+		return res;
+	}
+#if R2__WINDOWS__
+	char *script = r2pm_get (pkg, "\nR2PM_INSTALL_WINDOWS() {\n", TT_CODEBLOCK);
+	if (!script) {
+		R_LOG_ERROR ("This package does not have R2PM_INSTALL_WINDOWS instructions");
+		return 1;
+	}
+	char *s = r_str_newf ("cd %s && cd %s && %s", srcdir, pkg, script);
+	int res = r_sandbox_system (s, 1);
+	free (s);
+#else
+	char *script = r2pm_get (pkg, "\nR2PM_INSTALL() {\n", TT_CODEBLOCK);
+	if (!script) {
+		R_LOG_ERROR ("Cannot find the R2PM_INSTALL() {} script block for '%s'", pkg);
+		free (srcdir);
+		return 1;
+	}
+	eprintf ("script (%s)\n", script);
+	char *pkgdir = r_str_newf ("%s/%s", srcdir, pkg);
+	if (!r_file_is_directory (pkgdir)) {
+		R_LOG_ERROR ("Cannot find directory: %s", pkgdir);
+		free (pkgdir);
+		return 1;
+	}
+	free (pkgdir);
+	char *s = r_str_newf ("cd '%s/%s'\nexport MAKE=make\nR2PM_FAIL(){\n  echo $@\n}\n%s", srcdir, pkg, script);
+	int res = r_sandbox_system (s, 1);
+	free (s);
+	if (res == 0) {
+		r2pm_register (pkg, global);
+	}
+#endif
+	free (srcdir);
+	return res;
 }
 
 static bool r2pm_have_packages(void) {
