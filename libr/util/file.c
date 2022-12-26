@@ -220,7 +220,7 @@ R_API ut64 r_file_size(const char *str) {
 
 R_API bool r_file_is_abspath(const char *file) {
 	r_return_val_if_fail (!R_STR_ISEMPTY (file), 0);
-	return ((*file && file[1]==':') || *file == '/');
+	return ((*file && file[1] == ':') || *file == '/');
 }
 
 R_API char *r_file_abspath_rel(const char *cwd, const char *file) {
@@ -320,15 +320,17 @@ R_API char *r_file_path(const char *bin) {
 			ptr = strchr (str, R_SYS_ENVSEP[0]);
 			if (ptr) {
 				*ptr = '\0';
-				file = r_str_newf (R_JOIN_2_PATHS ("%s", "%s%s"), str, bin, extension);
-				if (r_file_exists (file)) {
-					free (path);
-					free (path_env);
-					return file;
-				}
-				str = ptr + 1;
-				free (file);
 			}
+			file = r_str_newf (R_JOIN_2_PATHS ("%s", "%s%s"), str, bin, extension);
+			if (r_file_exists (file)) {
+				free (path);
+				free (path_env);
+				return file;
+			}
+			if (ptr) {
+				str = ptr + 1;
+			}
+			free (file);
 		} while (ptr);
 	}
 	free (path_env);
