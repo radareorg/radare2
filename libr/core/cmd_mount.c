@@ -137,7 +137,8 @@ static void cmd_mount_ls(RCore *core, const char *input) {
 				if (isJSON) {
 					pj_o (pj);
 					pj_ks (pj, "path", root->path);
-					pj_ks (pj, "type", "mountpoint");
+					pj_kn (pj, "delta", root->delta);
+					pj_ks (pj, "type", root->p->name);
 					pj_end (pj);
 				} else {
 					r_cons_printf ("m %s\n", root->path); //  (root->path && root->path[0]) ? root->path + 1: "");
