@@ -160,6 +160,7 @@ static const char *help_msg_wv[] = {
 	"wv2", " 234", "write unsigned short (2 bytes) with this number",
 	"wv4", " 1 2 3", "write N space-separated dword (4 bytes)",
 	"wv8", " 234", "write qword (8 bytes) with this number",
+	"wvp", " 934", "write 4 or 8 byte pointer, depending on asm.bits",
 	"wvf", " 3.14", "write float value (4 bytes)",
 	"wvF", " 3.14", "write double value (8 bytes)",
 	"wvG", " 3.14", "write long double value (10/16 bytes)",
@@ -458,8 +459,12 @@ static void cmd_write_value(RCore *core, const char *input) {
 	bool be = r_config_get_b (core->config, "cfg.bigendian");
 
 	r_core_return_value (core, R_CMD_RC_SUCCESS);
+	char op = input[0];
+	if (op == 'p') {
+		op = (r_config_get_i (core->config, "asm.bits") == 64)? '8': '4';
+	}
 
-	switch (input[0]) {
+	switch (op) {
 	case '?': // "wv?"
 		r_core_cmd_help (core, help_msg_wv);
 		return;

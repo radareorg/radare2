@@ -534,7 +534,7 @@ static const char *help_msg_pv[] = {
 	"pv2", "", "print 2 bytes in memory",
 	"pv4", "", "print 4 bytes in memory",
 	"pv8", "", "print 8 bytes in memory",
-	"pv8", "", "print 8 bytes in memory",
+	"pvp", "", "print 4 or 8 bytes depending on asm.bits"
 	"pve", " [1234] ([bsize])", "print value with any endian (1234, ",
 	"pvz", "", "print value as string (alias for ps)",
 	NULL
@@ -3488,6 +3488,9 @@ static void cmd_print_pv(RCore *core, const char *input, bool useBytes) {
 	int type = 'v';
 	bool fixed_size = true;
 	switch (input[0]) {
+	case 'p': // "pvp"
+		input++;
+		break;
 	case '1': // "pv1"
 		n = 1;
 		input++;
