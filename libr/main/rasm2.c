@@ -484,6 +484,7 @@ static int rasm_disasm(RAsmState *as, ut64 addr, const char *buf, int len, int b
 	} else {
 		clen = r_hex_str2bin (buf, NULL);
 		if ((int)clen < 1 || !(data = malloc (clen))) {
+			R_LOG_WARN ("Invalid hexpair string");
 			ret = 0;
 			goto beach;
 		}
