@@ -2119,10 +2119,10 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 	}
 	case ARM64_INS_LDP: // ldp x29, x30, [sp], 0x10
 	{
-		int disp = (int)MEMDISP64 (2);
+		const int disp = (int)MEMDISP64 (2);
 		char sign = (disp >= 0)? '+': '-';
-		ut64 abs = (disp >= 0)? MEMDISP64 (2): (ut64)(-MEMDISP64 (2));
-		int size = REGSIZE64 (0);
+		ut64 abs = (ut64)((disp >= 0)? MEMDISP64 (2): (st64)(-disp));
+		const int size = REGSIZE64 (0);
 		// Pre-index case
 		// x2,x8,32,+,=[8],x3,x8,32,+,8,+,=[8]
 		if (ISPREINDEX64 ()) {
