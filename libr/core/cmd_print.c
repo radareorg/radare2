@@ -534,7 +534,7 @@ static const char *help_msg_pv[] = {
 	"pv2", "", "print 2 bytes in memory",
 	"pv4", "", "print 4 bytes in memory",
 	"pv8", "", "print 8 bytes in memory",
-	"pvp", "", "print 4 or 8 bytes depending on asm.bits"
+	"pvp", "", "print 4 or 8 bytes depending on asm.bits",
 	"pve", " [1234] ([bsize])", "print value with any endian (1234, ",
 	"pvz", "", "print value as string (alias for ps)",
 	NULL
