@@ -4,9 +4,9 @@
 #include "r_core.h"
 #include "r_lang.h"
 
-#include "../js_require.c"
+// #include "../js_require.c"
 
-const char *const js_entrypoint_qjs = "Gmain(requirejs,global,{r2:r2,R2Papi:R2Papi,R2Pipe:r2,Base64:Base64})";
+const char *const js_entrypoint_qjs = "Gmain(requirejs,global,{r2:r2,R:R,NativePointer:NativePointer,R2Papi:R2Papi,R2Pipe:R2Pipe,Base64:Base64})";
 #if 0
 	"requirejs (['asan'], function (foo) {\n"\
 	"  foo.main(r2);\n" \
@@ -24,14 +24,13 @@ static bool lang_tsc_file(RLangSession *s, const char *file) {
 		R_LOG_WARN ("file does not exist");
 		return false;
 	}
-	char *js_ofile = strdup (file);
-	js_ofile = r_str_replace (js_ofile, ".ts", ".js", 0);
-	char *qjs_ofile = strdup (file);
-	qjs_ofile = r_str_replace (qjs_ofile, ".ts", ".qjs", 0);
+	char *js_ofile = r_str_replace (strdup (file), ".ts", ".js", 0);
+	char *qjs_ofile = r_str_replace (strdup (file), ".ts", ".qjs", 0);
 	int rc = 0;
 	/// check of ofile exists and its newer than file
 	if (!r_file_is_newer (qjs_ofile, file)) {
-		rc = r_sys_cmdf ("tsc --target es2020 --outFile %s --lib es2020,dom --moduleResolution node --module amd %s", js_ofile, file);
+		// TODO: compile to stdout and remove the need of another tmp file
+		rc = r_sys_cmdf ("tsc --target es2020 --allowJs --outFile %s --lib es2020,dom --moduleResolution node --module amd %s", js_ofile, file);
 		if (rc == 0) {
 			char *js_ifile = r_file_slurp (js_ofile, NULL);
 			RStrBuf *sb = r_strbuf_new ("var Gmain;");
@@ -39,6 +38,9 @@ static bool lang_tsc_file(RLangSession *s, const char *file) {
 			js_ifile = r_str_replace (js_ifile,
 				"function (require, exports, r2papi_1) {",
 				"Gmain=function (require, exports, r2papi_1) {", 1);
+			js_ifile = r_str_replace (js_ifile,
+				", function (require, exports, index_1) {",
+				", Gmain=function (require, exports, index_1) {", 1);
 			r_strbuf_append (sb, js_ifile);
 			r_strbuf_append (sb, js_entrypoint_qjs);
 			char *s = r_strbuf_drain (sb);
@@ -49,6 +51,7 @@ static bool lang_tsc_file(RLangSession *s, const char *file) {
 	} else {
 		R_LOG_DEBUG ("no need to compile");
 	}
+	// TODO: use r_lang_run_string() and avoid the need of the intermediate qjs file
 	if (rc == 0) {
 		r_lang_use (s->lang, "qjs");
 		rc = r_lang_run_file (s->lang, qjs_ofile)? 0: -1;
