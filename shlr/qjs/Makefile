@@ -42,9 +42,17 @@ src:
 
 js_r2papi.c:
 #	npm i js_r2papi
+	printf "Using r2papi version: "
+	-jq .version node_modules/r2papi/package.json
 	mkdir -p $(shell npm bin)
-	sed -e 's,exports,G,g' \
-		< $(shell npm bin)/../r2papi/index.js \
+
+	cat	$(shell npm bin)/../r2papi/index.js \
+		$(shell npm bin)/../r2papi/shell.js \
+		> $(shell npm bin)/../r2papi/entrypoint.js
+	sed \
+		-e 's,exports,G,g' \
+		-e 's,require(,G;//,g' \
+		< $(shell npm bin)/../r2papi/entrypoint.js \
 		| grep -v 'use strict' \
 		> js_r2papi.qjs
 	npx minify --help > /dev/null npm i minify
@@ -54,7 +62,7 @@ js_r2papi.c:
 	@ls -l js_r2papi.qjs
 	@ls -l js_r2papi.mini.qjs
 	@ls -l js_r2papi.tiny.qjs
-	echo 'const char *const js_r2papi_qjs = "" \\' > js_r2papi.c
+	echo 'static const char *const js_r2papi_qjs = "" \\' > js_r2papi.c
 	r2 -fqcpcc js_r2papi.tiny.qjs | grep -v ^const >> js_r2papi.c
 	rm -f js_r2papi.mini.qjs js_r2papi.tiny.qjs
 
@@ -71,8 +79,7 @@ js_require.c:
 	npx minify --help > /dev/null npm i minify
 	npx minify --js < tiny.qjs > mini.qjs
 	echo "`du -hs tiny.qjs|awk '{print $$1}'` => `du -hs mini.qjs|awk '{print $$1}'`"
-	# echo 'const char *const js_require_qjs = {' > js_require.c
-	echo 'const char *const js_require_qjs = "" \\' > js_require.c
+	echo 'static const char *const js_require_qjs = "" \\' > js_require.c
 	r2 -fqcpcc mini.qjs | grep -v ^const >> js_require.c
 
 js_repl.c:
@@ -91,8 +98,7 @@ js_repl.c:
 	npx minify --help > /dev/null npm i minify
 	npx minify --js < tiny.qjs > mini.qjs
 	echo "`du -hs tiny.qjs|awk '{print $$1}'` => `du -hs mini.qjs|awk '{print $$1}'`"
-	# echo 'const char *const js_repl_qjs = {' > js_repl.c
-	echo 'const char *const js_repl_qjs = "" \\' > js_repl.c
+	echo 'static const char *const js_repl_qjs = "" \\' > js_repl.c
 	r2 -fqcpcc mini.qjs | grep -v ^const >> js_repl.c
 
 lang_qjs.${EXT_SO}: src js_repl.c js_require.c

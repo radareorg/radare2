@@ -6,6 +6,7 @@
 #define countof(x) (sizeof (x) / sizeof ((x)[0]))
 
 #include "quickjs.h"
+#include "../js_require.c"
 #include "../js_r2papi.c"
 
 typedef struct {
@@ -233,8 +234,11 @@ static void register_helpers(JSContext *ctx) {
 	eval (ctx, "var r2 = { log:r2log, cmd:r2cmd, cmdj:(x)=>JSON.parse(r2cmd(x))};");
 	eval (ctx, "r2.call = (x) => r2.cmd('\"\"' + x);");
 	eval (ctx, "var global = globalThis; var G = globalThis;");
+	eval (ctx, js_require_qjs);
 	eval (ctx, js_r2papi_qjs);
-	eval (ctx, "G.R=new R2Papi(r2);");
+	eval (ctx, "var require = requirejs;");
+	eval (ctx, "G.R2Pipe=() => R.r2;");
+	eval (ctx, "R=G.R=new R2Papi(r2);");
 }
 
 static JSContext *JS_NewCustomContext(JSRuntime *rt) {

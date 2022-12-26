@@ -278,45 +278,45 @@ const char *const js_repl_qjs = "" \
   "t(dupstr(\"    \",level),readline_handle_cmd)}catch(r){console."\
   "error(\"ERROR\",r)}}function readline_handle_cmd(r){handle_cmd("\
   "r),cmd_readline_start()}function handle_cmd(r){if(null===r)re"\
-  "turn\"\";if(\"?\"===r)return help();var e=extract_directive(r);if"\
-  "(0<e.length){if(!handle_directive(e,r))return;r=r.substring(e"\
-  ".length+1)}\"\"!==r&&(e=colorize_js(r=mexpr?mexpr+\"\\n\"+r:r),pst"\
-  "ate=e[0],level=e[1],pstate?mexpr=r:(mexpr=\"\",has_bignum?BigFl"\
-  "oatEnv.setPrec(eval_and_print.bind(null,r),prec,expBits):eval"\
-  "_and_print(r),level=0))}function colorize_js(r){let e,t,n;con"\
-  "st o=r.length;let i,s=\"\",c=0,a=1;const l=[];function _(r){s+="\
-  "r}function u(){return s.substring(s.length-1)}function d(){va"\
-  "r r=u();return s=s.substring(0,s.length-1),r}function f(r,e){"\
-  "for(;l.length<r;)l.push(\"default\");for(;l.length<e;)l.push(i)"\
-  "}for(e=0;e<o;){switch(i=null,n=e,t=r[e++]){case\" \":case\"\\t\":c"\
-  "ase\"\\r\":case\"\\n\":continue;case\"+\":case\"-\":if(e<o&&r[e]===t){e"\
-  "++;continue}a=1;continue;case\"/\":if(e<o&&\"*\"===r[e]){for(i=\"c"\
-  "omment\",_(\"/\"),e++;e<o-1;e++)if(\"*\"===r[e]&&\"/\"===r[e+1]){e+="\
-  "2,d();break}break}if(e<o&&\"/\"===r[e]){for(i=\"comment\",e++;e<o"\
-  "&&\"\\n\"!==r[e];e++);break}if(a){for(i=\"regex\",_(\"/\");e<o;)if(\""\
-  "\\n\"!==(t=r[e++]))if(\"\\\\\"!==t)if(\"[\"!==u())if(\"[\"!==t){if(\"/\"="\
-  "==t){for(d();e<o&&is_word(r[e]);)e++;break}}else _(\"[\"),\"[\"!="\
-  "=r[e]&&\"]\"!==r[e]||e++;else\"]\"===t&&d();else e<o&&e++;else i="\
-  "\"error\";a=0;break}a=1;continue;case\"'\":case'\"':case\"`\":(funct"\
-  "ion(n){for(i=\"string\",_(n);e<o;)if(\"\\n\"!==(t=r[e++])){if(\"\\\\\""\
-  "===t){if(e>=o)break;e++}else if(t===n){d();break}}else i=\"err"\
-  "or\"})(t),a=0;break;case\"(\":case\"[\":case\"{\":a=1,c++,_(t);conti"\
-  "nue;case\")\":case\"]\":case\"}\":if((a=0)<c&&is_balanced(u(),t)){c"\
-  "--,d();continue}i=\"error\";break;default:if(is_digit(t)){for(i"\
-  "=\"number\";e<o&&(is_word(r[e])||\".\"===r[e]&&(e===o-1||\".\"!==r["\
-  "e+1]));)e++;a=0}else{if(!is_word(t)&&\"$\"!==t){a=1;continue}!f"\
-  "unction(){for(a=1;e<o&&is_word(r[e]);)e++;var t=\"|\"+r.substri"\
-  "ng(n,e)+\"|\";if(0<=\"|break|case|catch|continue|debugger|defaul"\
-  "t|delete|do|else|finally|for|function|if|in|instanceof|new|re"\
-  "turn|switch|this|throw|try|typeof|while|with|class|const|enum"\
-  "|import|export|extends|super|implements|interface|let|package"\
-  "|private|protected|public|static|yield|undefined|null|true|fa"\
-  "lse|Infinity|NaN|eval|arguments|await|\".indexOf(t))return i=\""\
-  "keyword\",0<=\"|this|super|undefined|null|true|false|Infinity|N"\
-  "aN|arguments|\".indexOf(t)&&(a=0);let s=e;for(;s<o&&\" \"===r[s]"\
-  ";)s++;s<o&&\"(\"===r[s]?i=\"function\":0<=\"|void|var|\".indexOf(t)"\
-  "?i=\"type\":(i=\"identifier\",a=0)}()}}i&&f(n,e)}return f(o,o),[s"\
-  ",c,l]}config_numcalc&&(g.execCmd=function(r){switch(r){case\"d"\
-  "ec\":hex_mode=!1;break;case\"hex\":hex_mode=!0;break;case\"num\":a"\
-  "lgebraicMode=!1;break;case\"alg\":algebraicMode=!0}});try{termI"\
-  "nit()}catch(r){console.error(r)}}(globalThis)}));\n";
+  "turn\"\";if(\"?\"===r||\"h\"===r)return help();var e=extract_direct"\
+  "ive(r);if(0<e.length){if(!handle_directive(e,r))return;r=r.su"\
+  "bstring(e.length+1)}\"\"!==r&&(e=colorize_js(r=mexpr?mexpr+\"\\n\""\
+  "+r:r),pstate=e[0],level=e[1],pstate?mexpr=r:(mexpr=\"\",has_big"\
+  "num?BigFloatEnv.setPrec(eval_and_print.bind(null,r),prec,expB"\
+  "its):eval_and_print(r),level=0))}function colorize_js(r){let "\
+  "e,t,n;const o=r.length;let i,s=\"\",c=0,a=1;const l=[];function"\
+  " _(r){s+=r}function u(){return s.substring(s.length-1)}functi"\
+  "on d(){var r=u();return s=s.substring(0,s.length-1),r}functio"\
+  "n f(r,e){for(;l.length<r;)l.push(\"default\");for(;l.length<e;)"\
+  "l.push(i)}for(e=0;e<o;){switch(i=null,n=e,t=r[e++]){case\" \":c"\
+  "ase\"\\t\":case\"\\r\":case\"\\n\":continue;case\"+\":case\"-\":if(e<o&&r["\
+  "e]===t){e++;continue}a=1;continue;case\"/\":if(e<o&&\"*\"===r[e])"\
+  "{for(i=\"comment\",_(\"/\"),e++;e<o-1;e++)if(\"*\"===r[e]&&\"/\"===r["\
+  "e+1]){e+=2,d();break}break}if(e<o&&\"/\"===r[e]){for(i=\"comment"\
+  "\",e++;e<o&&\"\\n\"!==r[e];e++);break}if(a){for(i=\"regex\",_(\"/\");"\
+  "e<o;)if(\"\\n\"!==(t=r[e++]))if(\"\\\\\"!==t)if(\"[\"!==u())if(\"[\"!==t"\
+  "){if(\"/\"===t){for(d();e<o&&is_word(r[e]);)e++;break}}else _(\""\
+  "[\"),\"[\"!==r[e]&&\"]\"!==r[e]||e++;else\"]\"===t&&d();else e<o&&e+"\
+  "+;else i=\"error\";a=0;break}a=1;continue;case\"'\":case'\"':case\""\
+  "`\":(function(n){for(i=\"string\",_(n);e<o;)if(\"\\n\"!==(t=r[e++])"\
+  "){if(\"\\\\\"===t){if(e>=o)break;e++}else if(t===n){d();break}}el"\
+  "se i=\"error\"})(t),a=0;break;case\"(\":case\"[\":case\"{\":a=1,c++,_"\
+  "(t);continue;case\")\":case\"]\":case\"}\":if((a=0)<c&&is_balanced("\
+  "u(),t)){c--,d();continue}i=\"error\";break;default:if(is_digit("\
+  "t)){for(i=\"number\";e<o&&(is_word(r[e])||\".\"===r[e]&&(e===o-1|"\
+  "|\".\"!==r[e+1]));)e++;a=0}else{if(!is_word(t)&&\"$\"!==t){a=1;co"\
+  "ntinue}!function(){for(a=1;e<o&&is_word(r[e]);)e++;var t=\"|\"+"\
+  "r.substring(n,e)+\"|\";if(0<=\"|break|case|catch|continue|debugg"\
+  "er|default|delete|do|else|finally|for|function|if|in|instance"\
+  "of|new|return|switch|this|throw|try|typeof|while|with|class|c"\
+  "onst|enum|import|export|extends|super|implements|interface|le"\
+  "t|package|private|protected|public|static|yield|undefined|nul"\
+  "l|true|false|Infinity|NaN|eval|arguments|await|\".indexOf(t))r"\
+  "eturn i=\"keyword\",0<=\"|this|super|undefined|null|true|false|I"\
+  "nfinity|NaN|arguments|\".indexOf(t)&&(a=0);let s=e;for(;s<o&&\""\
+  " \"===r[s];)s++;s<o&&\"(\"===r[s]?i=\"function\":0<=\"|void|var|\".i"\
+  "ndexOf(t)?i=\"type\":(i=\"identifier\",a=0)}()}}i&&f(n,e)}return "\
+  "f(o,o),[s,c,l]}config_numcalc&&(g.execCmd=function(r){switch("\
+  "r){case\"dec\":hex_mode=!1;break;case\"hex\":hex_mode=!0;break;ca"\
+  "se\"num\":algebraicMode=!1;break;case\"alg\":algebraicMode=!0}});"\
+  "try{termInit()}catch(r){console.error(r)}}(globalThis)}));\n";

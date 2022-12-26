@@ -1,5 +1,8 @@
+// r2papi main file
 G.__esModule = true;
 G.Base64 = G.NativePointer = G.R2Papi = void 0;
+var shell_js_1 = G;//"./shell.js");
+;
 ;
 ;
 ;
@@ -11,12 +14,35 @@ var R2Papi = /** @class */ (function () {
     function R2Papi(r2) {
         this.r2 = r2;
     }
+    R2Papi.prototype.getShell = function () {
+        return new shell_js_1.R2PapiShell(this);
+    };
+    R2Papi.prototype.printAt = function (msg, x, y) {
+        // see pg, but pg is obrken :D
+    };
     R2Papi.prototype.clearScreen = function () {
         this.r2.cmd("!clear");
+    };
+    R2Papi.prototype.getConfig = function (key) {
+        return this.r2.call("e " + key).trim();
+    };
+    R2Papi.prototype.setConfig = function (key, val) {
+        this.r2.call("e " + key + "=" + val);
     };
     R2Papi.prototype.getRegisters = function () {
         // this.r2.log("winrar" + JSON.stringify(JSON.parse(this.r2.cmd("drj")),null, 2) );
         return this.cmdj("drj");
+    };
+    R2Papi.prototype.enumerateThreads = function () {
+        // TODO: use apt/dpt to list threads at iterate over them to get the registers
+        var regs0 = this.cmdj("drj");
+        var thread0 = {
+            context: regs0,
+            id: 0,
+            state: "waiting",
+            selected: true
+        };
+        return [thread0];
     };
     R2Papi.prototype.setRegisters = function (obj) {
         for (var _i = 0, _a = Object.keys(obj); _i < _a.length; _i++) {
@@ -46,6 +72,14 @@ var R2Papi = /** @class */ (function () {
         var res = this.cmdj("/j " + s);
         return res;
     };
+    R2Papi.prototype.searchBytes = function (data) {
+        function num2hex(data) {
+            return (data & 0xff).toString(16);
+        }
+        var s = data.map(num2hex).join('');
+        var res = this.cmdj("/xj " + s);
+        return res;
+    };
     R2Papi.prototype.binInfo = function () {
         try {
             return this.cmdj("ij~{bin}");
@@ -54,11 +88,20 @@ var R2Papi = /** @class */ (function () {
             return {};
         }
     };
+    R2Papi.prototype.enumerateModules = function () {
+        return this.callj("dmmj");
+    };
     R2Papi.prototype.skip = function () {
         this.r2.cmd("dss");
     };
     R2Papi.prototype.ptr = function (s) {
-        return new NativePointer(this, s);
+        return new NativePointer(s, this);
+    };
+    R2Papi.prototype.call = function (s) {
+        return this.r2.call(s);
+    };
+    R2Papi.prototype.callj = function (s) {
+        return JSON.parse(this.call(s));
     };
     R2Papi.prototype.cmd = function (s) {
         return this.r2.cmd(s);
@@ -85,25 +128,109 @@ var R2Papi = /** @class */ (function () {
 }());
 G.R2Papi = R2Papi;
 var NativePointer = /** @class */ (function () {
-    function NativePointer(api, s) {
-        this.api = api;
+    function NativePointer(s, api) {
+        if (api === undefined) {
+            this.api = G.R;
+        }
+        else {
+            this.api = api;
+        }
         // this.api.r2.log("NP " + s);
-        this.addr = "" + s;
+        this.addr = ("" + s).trim();
     }
     NativePointer.prototype.readByteArray = function (len) {
         return JSON.parse(this.api.cmd("p8j ".concat(len, "@").concat(this.addr)));
     };
+    NativePointer.prototype.and = function (a) {
+        this.addr = this.api.call("?v ".concat(this.addr, " & ").concat(a)).trim();
+        return this;
+    };
+    NativePointer.prototype.or = function (a) {
+        this.addr = this.api.call("?v ".concat(this.addr, " | ").concat(a)).trim();
+        return this;
+    };
     NativePointer.prototype.add = function (a) {
-        this.addr = this.api.cmd("?v ".concat(this.addr, " + ").concat(a));
+        this.addr = this.api.call("?v ".concat(this.addr, "+").concat(a)).trim();
         return this;
     };
     NativePointer.prototype.sub = function (a) {
-        this.addr = this.api.cmd("?v ".concat(this.addr, " - ").concat(a));
+        this.addr = this.api.call("?v ".concat(this.addr, "-").concat(a)).trim();
+        return this;
+    };
+    NativePointer.prototype.writeByteArray = function (data) {
+        this.api.cmd("wx " + data.join(""));
+        return this;
+    };
+    NativePointer.prototype.writeAssembly = function (instruction) {
+        this.api.cmd("\"wa ".concat(instruction, " @ ").concat(this.addr));
         return this;
     };
     NativePointer.prototype.writeCString = function (s) {
         this.api.cmd("\"w " + s + "\"");
         return this;
+    };
+    NativePointer.prototype.isNull = function () {
+        return +this.addr === 0;
+    };
+    NativePointer.prototype.compare = function (a) {
+        if (typeof a === "string" || typeof a === "number") {
+            a = new NativePointer(a);
+        }
+        return a.addr === this.addr;
+    };
+    NativePointer.prototype.pointsToNull = function () {
+        return this.readPointer().compare(0);
+    };
+    NativePointer.prototype.toString = function () {
+        return this.addr.trim();
+    };
+    NativePointer.prototype.writePointer = function (p) {
+        var cmd = (+this.api.getConfig("asm.bits") === 64) ? "wv8" : "wv4";
+        this.api.cmd("".concat(cmd, " ").concat(p, "@").concat(this));
+        // 5.8.2 this.call("wvp " + p.addr);
+    };
+    NativePointer.prototype.readPointer = function () {
+        if (+this.api.getConfig("asm.bits") === 64) {
+            return new NativePointer(this.api.call("pv8@" + this.addr));
+        }
+        else {
+            return new NativePointer(this.api.call("pv4@" + this.addr));
+        }
+    };
+    NativePointer.prototype.readU8 = function () {
+        return +this.api.cmd("pv1@\"".concat(this.addr));
+    };
+    NativePointer.prototype.readU16 = function () {
+        return +this.api.cmd("pv2@\"".concat(this.addr));
+    };
+    NativePointer.prototype.readU32 = function () {
+        return +this.api.cmd("pv4@\"".concat(this.addr));
+    };
+    NativePointer.prototype.readU64 = function () {
+        // XXX: use bignum or 
+        return +this.api.cmd("pv8@\"".concat(this.addr));
+    };
+    NativePointer.prototype.writeInt = function (n) {
+        return +this.api.cmd("wv4 ".concat(n, "@").concat(this.addr));
+    };
+    NativePointer.prototype.writeU8 = function (n) {
+        this.api.cmd("wv1 ".concat(n, "@").concat(this.addr));
+        return true;
+    };
+    NativePointer.prototype.writeU16 = function (n) {
+        this.api.cmd("wv2 ".concat(n, "@").concat(this.addr));
+        return true;
+    };
+    NativePointer.prototype.writeU32 = function (n) {
+        this.api.cmd("wv4 ".concat(n, "@").concat(this.addr));
+        return true;
+    };
+    NativePointer.prototype.writeU64 = function (n) {
+        this.api.cmd("wv8 ".concat(n, "@").concat(this.addr));
+        return true;
+    };
+    NativePointer.prototype.readInt = function () {
+        return +this.api.cmd("pv4@\"".concat(this.addr));
     };
     NativePointer.prototype.readCString = function () {
         return JSON.parse(this.api.cmd("psj@".concat(this.addr))).string;
@@ -144,3 +271,85 @@ var Base64 = /** @class */ (function () {
     return Base64;
 }());
 G.Base64 = Base64;
+// shell utilities on top of r2pipe
+G.__esModule = true;
+G.R2PapiShell = void 0;
+var R2PapiShell = /** @class */ (function () {
+    function R2PapiShell(papi) {
+        this.rp = papi;
+    }
+    /**
+    * Create a new directory in the host system, if the opational recursive argument is set to
+    * true it will create all the necessary subdirectories instead of just the specified one.
+    */
+    R2PapiShell.prototype.mkdir = function (file, recursive) {
+        if (recursive === true) {
+            this.rp.call("mkdir -p ".concat(file));
+        }
+        else {
+            this.rp.call("mkdir ".concat(file));
+        }
+        return true;
+    };
+    /**
+    * Deletes a file
+    */
+    R2PapiShell.prototype.unlink = function (file) {
+        this.rp.call("rm ".concat(file));
+        return true;
+    };
+    /**
+    * Change current directory
+    */
+    R2PapiShell.prototype.chdir = function (path) {
+        this.rp.call("cd ".concat(path));
+        return true;
+    };
+    R2PapiShell.prototype.ls = function () {
+        return this.rp.call("ls -q").trim().split('\n');
+    };
+    R2PapiShell.prototype.fileExists = function (path) {
+        // TODO
+        return false;
+    };
+    /**
+    * Opens an URL or application
+    * calls `xdg-open` on linux, `start` on windows, `open` on Mac
+    */
+    R2PapiShell.prototype.open = function (arg) {
+        this.rp.call("open ".concat(arg));
+    };
+    R2PapiShell.prototype.system = function (cmd) {
+        this.rp.call("!".concat(cmd));
+        return 0;
+    };
+    R2PapiShell.prototype.run = function (path) {
+        this.rp.call("rm ".concat(path));
+        return 0;
+    };
+    R2PapiShell.prototype.mount = function (fstype, path) {
+        this.rp.call("m ".concat(fstype, " ").concat(path));
+        return true;
+    };
+    R2PapiShell.prototype.umount = function (path) {
+        this.rp.call("m-".concat(path));
+    };
+    R2PapiShell.prototype.chdir2 = function (path) {
+        if (path === undefined) {
+            path = "/";
+        }
+        this.rp.call("mdq ".concat(path));
+        return true;
+    };
+    R2PapiShell.prototype.ls2 = function (path) {
+        if (path === undefined) {
+            path = "/";
+        }
+        return this.rp.call("mdq ".concat(path)).trim().split('\n');
+    };
+    R2PapiShell.prototype.enumerateMountpoints = function () {
+        return this.rp.cmdj("mlj");
+    };
+    return R2PapiShell;
+}());
+G.R2PapiShell = R2PapiShell;

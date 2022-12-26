@@ -1,4 +1,4 @@
-const char *const js_require_qjs = "" \
+static const char *const js_require_qjs = "" \
   "var requirejs,require,define;!function(global,setTimeout){var"\
   " req,s,head,baseElement,dataMain,src,interactiveScript,curren"\
   "tlyAddingScript,mainScript,subPath,version=\"2.3.6\",commentReg"\
