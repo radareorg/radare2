@@ -7,13 +7,33 @@
 // #include "../js_require.c"
 
 const char *const js_entrypoint_qjs = "Gmain(requirejs,global,{r2:r2,R:R,NativePointer:NativePointer,R2Papi:R2Papi,R2Pipe:R2Pipe,Base64:Base64})";
-#if 0
-	"requirejs (['asan'], function (foo) {\n"\
-	"  foo.main(r2);\n" \
-	"});\n"
-;
-#endif
-// console.log("foo", foo.main);
+
+static char *patch_entrypoint(char *input) {
+	char *in = strdup (input);
+	char *output = r_str_replace (input,
+			"function (require, exports, r2papi_1) {",
+			"Gmain=function (require, exports, r2papi_1) {", 1);
+	if (input != output || strcmp (in, output)) {
+		free (in);
+		return output;
+	}
+	output = r_str_replace (input,
+			", function (require, exports, index_1) {",
+			", Gmain=function (require, exports, index_1) {", 1);
+	if (input != output || strcmp (in, output)) {
+		free (in);
+		return output;
+	}
+	output = r_str_replace (input,
+			", function (require, exports) {",
+			", Gmain=function (require, exports) {", 1);
+	if (input != output || strcmp (in, output)) {
+		free (in);
+		return output;
+	}
+	free (input);
+	return NULL;
+}
 
 static bool lang_tsc_file(RLangSession *s, const char *file) {
 	if (!r_str_endswith (file, ".ts")) {
@@ -35,12 +55,12 @@ static bool lang_tsc_file(RLangSession *s, const char *file) {
 			char *js_ifile = r_file_slurp (js_ofile, NULL);
 			RStrBuf *sb = r_strbuf_new ("var Gmain;");
 			r_strbuf_append (sb, js_require_qjs);
-			js_ifile = r_str_replace (js_ifile,
-				"function (require, exports, r2papi_1) {",
-				"Gmain=function (require, exports, r2papi_1) {", 1);
-			js_ifile = r_str_replace (js_ifile,
-				", function (require, exports, index_1) {",
-				", Gmain=function (require, exports, index_1) {", 1);
+			js_ifile = patch_entrypoint (js_ifile);
+			if (!js_ifile) {
+				R_LOG_ERROR ("Cannot find entrypoint");
+				r_strbuf_free (sb);
+				return false;
+			}
 			r_strbuf_append (sb, js_ifile);
 			r_strbuf_append (sb, js_entrypoint_qjs);
 			char *s = r_strbuf_drain (sb);
