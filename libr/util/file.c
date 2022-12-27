@@ -1569,11 +1569,9 @@ R_API const char *r_file_extension(const char *str) {
 R_API bool r_file_is_newer(const char *f1, const char *f2) {
 	struct stat a1, a2;
 	if (stat (f1, &a1) == -1) {
-		eprintf ("no\n");
 		return false;
 	}
 	if (stat (f2, &a2) == -1) {
-		eprintf ("no 2\n");
 		return false;
 	}
 	long a = a1.st_mtime;

@@ -9,6 +9,9 @@
 #include "../js_require.c"
 #include "../js_r2papi.c"
 
+static R_TH_LOCAL JSContext *Gctx = NULL;
+static R_TH_LOCAL JSValue Gfunc;
+
 typedef struct {
 	JSContext *ctx;
 	JSRuntime *r;
@@ -88,6 +91,85 @@ static JSValue b64(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst
 	free (ret);
 	return v;
 }
+
+static int r2plugin_core_call(void *_core, const char *input) {
+	// RCore *core = _core;
+	JSValueConst args[1] = {
+		JS_NewString (Gctx, input)
+	};
+	JSValue res = JS_Call (Gctx, Gfunc, JS_UNDEFINED, countof (args), args);
+	return JS_ToBool (Gctx, res) == 1;
+}
+
+static JSValue r2plugin_core(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
+	JSRuntime *rt = JS_GetRuntime (ctx);
+	QjsContext *k = JS_GetRuntimeOpaque (rt);
+	RCore *core = k->core;
+	if (argc != 2) {
+		return JS_ThrowRangeError(ctx, "r2plugin expects two arguments");
+	}
+
+	JSValueConst args[1] = {
+		JS_NewString (ctx, "POP"),
+	};
+	JSValue res = JS_Call (ctx, argv[1], JS_UNDEFINED, countof (args), args);
+
+	// check if res is an object
+	if (!JS_IsObject (res)) {
+		return JS_ThrowRangeError(ctx, "r2plugin function must return an object");
+	}
+
+	RCorePlugin *ap = R_NEW0 (RCorePlugin);
+	JSValue name = JS_GetPropertyStr (ctx, res, "name");
+	size_t namelen;
+	const char *nameptr = JS_ToCStringLen2 (ctx, &namelen, name, false);
+	if (nameptr) {
+		ap->name = strdup (nameptr);
+	}
+	JSValue desc = JS_GetPropertyStr (ctx, res, "desc");
+	const char *descptr = JS_ToCStringLen2 (ctx, &namelen, desc, false);
+	if (descptr) {
+		ap->desc = strdup (descptr);
+	}
+	JSValue license = JS_GetPropertyStr (ctx, res, "license");
+	const char *licenseptr = JS_ToCStringLen2 (ctx, &namelen, license, false);
+	if (licenseptr) {
+		ap->license = strdup (licenseptr);
+	}
+	JSValue func = JS_GetPropertyStr (ctx, res, "call");
+	Gctx = ctx; // XXX dont do globals
+	Gfunc = func;
+
+	ap->call = r2plugin_core_call;
+
+	RLibStruct *lib = R_NEW0 (RLibStruct);
+	lib->type = R_LIB_TYPE_CORE;
+	lib->data = ap;
+	lib->version = R2_VERSION;
+
+	r_lib_open_ptr (core->lib, "qjs", NULL, lib);
+
+	// ret = k->core->pluginAdd (k->core, n);
+// 	r_core_plugin_add (core, ap);
+	return JS_NewBool (ctx, true);
+}
+
+static JSValue r2plugin(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
+	size_t plen;
+	const char *n = JS_ToCStringLen2 (ctx, &plen, argv[0], false);
+	if (R_STR_ISNOTEMPTY (n)) {
+		if (!strcmp (n, "core")) {
+			// { name: string, call: function, license: string, desc: string }
+			// JSValue val =
+			return r2plugin_core (ctx, this_val, argc, argv);
+		} else {
+			// invalid throw exception here
+			return JS_ThrowRangeError(ctx, "invalid r2plugin type");
+		}
+	}
+	return JS_NewBool (ctx, false);
+}
+
 static JSValue r2cmd(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
 	JSRuntime *rt = JS_GetRuntime (ctx);
 	QjsContext *k = JS_GetRuntimeOpaque (rt);
@@ -218,6 +300,8 @@ static void register_helpers(JSContext *ctx) {
 			JS_NewCFunction (ctx, b64, "b64", 1));
 	JS_SetPropertyStr (ctx, global_obj, "r2cmd",
 			JS_NewCFunction (ctx, r2cmd, "r2cmd", 1));
+	JS_SetPropertyStr (ctx, global_obj, "r2plugin",
+			JS_NewCFunction (ctx, r2plugin, "r2plugin", 1));
 	JS_SetPropertyStr (ctx, global_obj, "r2log",
 			JS_NewCFunction (ctx, r2log, "r2log", 1));
 	JS_SetPropertyStr (ctx, global_obj, "write",

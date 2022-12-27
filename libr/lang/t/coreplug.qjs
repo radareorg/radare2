@@ -1,0 +1,24 @@
+
+
+const { log } = console;
+
+function examplePlugin() {
+	function coreCall(input) {
+		if (input.startsWith("test")) {
+			log("This is a QJS test");
+			return true;
+		}
+		return false;
+	}
+	return {
+		name: "qjs-example",
+		desc: "Example QJS plugin (type 'test') in the r2 shell",
+		call: coreCall,
+	};
+}
+
+log("Installing the `qjs-example` core plugin");
+log("Type 'test' to confirm it works");
+r2plugin("core", examplePlugin);
+log(r2cmd("Lc"));
+
