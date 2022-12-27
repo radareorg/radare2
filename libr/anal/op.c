@@ -413,7 +413,7 @@ R_API char *r_anal_op_tostring(RAnal *anal, RAnalOp *op) {
 		break;
 	case R_ANAL_OP_TYPE_CJMP:
 		if ((bb = r_anal_bb_from_offset (anal, op->addr))) {
-			cstr = r_anal_cond_tostring (bb->cond);
+			cstr = bb->cond? r_anal_cond_tostring (bb->cond): strdup ("$z");
 			snprintf (ret, sizeof (ret), "if (%s) goto 0x%"PFMT64x, cstr, op->jump);
 			free (cstr);
 		} else {
@@ -454,7 +454,7 @@ R_API char *r_anal_op_tostring(RAnal *anal, RAnalOp *op) {
 	case R_ANAL_OP_TYPE_CCALL:
 		f = r_anal_get_fcn_in (anal, op->jump, R_ANAL_FCN_TYPE_NULL);
 		if ((bb = r_anal_bb_from_offset (anal, op->addr))) {
-			cstr = r_anal_cond_tostring (bb->cond);
+			cstr = bb->cond? r_anal_cond_tostring (bb->cond): strdup ("$z");
 			if (f) {
 				snprintf (ret, sizeof (ret), "if (%s) %s()", cstr, f->name);
 			} else {
@@ -532,7 +532,7 @@ R_API char *r_anal_op_tostring(RAnal *anal, RAnalOp *op) {
 		break;
 	case R_ANAL_OP_TYPE_CRET:
 		if ((bb = r_anal_bb_from_offset (anal, op->addr))) {
-			cstr = r_anal_cond_tostring (bb->cond);
+			cstr = bb->cond? r_anal_cond_tostring (bb->cond): strdup ("$z");
 			snprintf (ret, sizeof (ret), "if (%s) ret", cstr);
 			free (cstr);
 		} else {
