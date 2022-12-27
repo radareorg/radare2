@@ -30624,9 +30624,9 @@ typedef struct CodeContext {
     JSAtom atom;
 } CodeContext;
 
-#define M2(op1, op2)            ((op1) | ((op2) << 8))
-#define M3(op1, op2, op3)       ((op1) | ((op2 & 0xff) << 8) | ((op3 & 0xff) << 16))
-#define M4(op1, op2, op3, op4)  ((op1) | ((unsigned char)(op2 & 0xff) << 8) | ((unsigned char)(op3 & 0xff) << 16) | ((unsigned char)(op4 & 0xff) << 24))
+#define M2(op1, op2)            (uint32_t)((op1) | ((op2) << 8))
+#define M3(op1, op2, op3)       (uint32_t)((op1) | ((op2 & 0xff) << 8) | ((op3 & 0xff) << 16))
+#define M4(op1, op2, op3, op4)  (uint32_t)((op1) | ((uint32_t)(op2 & 0xff) << 8) | ((uint32_t)(op3 & 0xff) << 16) | ((uint32_t)(op4 & 0xff) << 24))
 
 static BOOL code_match(CodeContext *s, int pos, ...)
 {
