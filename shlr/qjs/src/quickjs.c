@@ -48500,7 +48500,8 @@ static JSValue js_date_constructor(JSContext *ctx, JSValueConst new_target,
     // Date(y, mon, d, h, m, s, ms)
     JSValue rv;
     int i, n;
-    double a, val;
+    double a = 0;
+    double val = 0;
 
     if (JS_IsUndefined(new_target)) {
         /* invoked as function */
