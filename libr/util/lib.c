@@ -189,10 +189,10 @@ static bool __lib_dl_check_filename(const char *file) {
 R_API int r_lib_run_handler(RLib *lib, RLibPlugin *plugin, RLibStruct *symbol) {
 	RLibHandler *h = plugin->handler;
 	if (h && h->constructor) {
-		IFDBG eprintf ("PLUGIN LOADED %p fcn %p\n", h, h->constructor);
+		R_LOG_DEBUG ("PLUGIN LOADED %p fcn %p", h, h->constructor);
 		return h->constructor (plugin, h->user, symbol->data);
 	}
-	IFDBG R_LOG_ERROR ("Cannot find plugin constructor");
+	R_LOG_DEBUG ("Cannot find plugin constructor");
 	return -1;
 }
 
