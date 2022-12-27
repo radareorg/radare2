@@ -1,4 +1,4 @@
-const char *const js_repl_qjs = "" \
+static const char *const js_repl_qjs = "" \
   "import(\"os\").catch(console.error).then((os=>{!function(g){g.o"\
   "s=os;let running=!0;const Object=g.Object,String=g.String,Arr"\
   "ay=g.Array,Date=g.Date,Math=g.Math,isFinite=g.isFinite,parseF"\

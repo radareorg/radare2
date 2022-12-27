@@ -30625,8 +30625,8 @@ typedef struct CodeContext {
 } CodeContext;
 
 #define M2(op1, op2)            ((op1) | ((op2) << 8))
-#define M3(op1, op2, op3)       ((op1) | ((op2) << 8) | ((op3) << 16))
-#define M4(op1, op2, op3, op4)  ((op1) | ((op2) << 8) | ((op3) << 16) | ((op4) << 24))
+#define M3(op1, op2, op3)       ((op1) | ((op2 & 0xff) << 8) | ((op3 & 0xff) << 16))
+#define M4(op1, op2, op3, op4)  ((op1) | ((unsigned char)(op2 & 0xff) << 8) | ((unsigned char)(op3 & 0xff) << 16) | ((unsigned char)(op4 & 0xff) << 24))
 
 static BOOL code_match(CodeContext *s, int pos, ...)
 {
