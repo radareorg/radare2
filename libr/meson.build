@@ -439,6 +439,7 @@ include_files = [
   'include/r_core.h',
   'include/r_crypto.h',
   'include/r_debug.h',
+  'include/r_drx.h',
   'include/r_egg.h',
   'include/r_endian.h',
   'include/r_flag.h',
@@ -534,7 +535,8 @@ r_util_files = [
   'include/r_util/r_utf8.h',
   'include/r_util/r_w32.h',
   'include/r_util/r_w32dw.h',
-  'include/r_util/r_x509.h'
+  'include/r_util/r_x509.h',
+  'include/r_util/r_xml.h'
 ]
 install_headers(r_util_files, install_dir: join_paths(r2_incdir, 'r_util'))
 

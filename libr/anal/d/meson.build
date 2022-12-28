@@ -10,6 +10,7 @@ sdb_files = [
   'cc-ppc-64',
   'cc-riscv-64',
   'cc-sparc-32',
+  'cc-hexagon-32',
   'cc-v850-32',
   'cc-s390-64',
   'cc-x86-16',
