@@ -10841,9 +10841,9 @@ static int JS_ToInt32SatFree(JSContext *ctx, int *pres, JSValue val)
             if (isnan(d)) {
                 ret = 0;
             } else {
-                if (d < INT32_MIN)
+                if (d < (double)INT32_MIN)
                     ret = INT32_MIN;
-                else if (d > INT32_MAX)
+                else if (d > (double)INT32_MAX)
                     ret = INT32_MAX;
                 else
                     ret = (int)d;
@@ -11635,10 +11635,12 @@ static void js_dtoa1(char *buf, double d, int radix, int n_digits, int flags)
             strcpy(q, "Infinity");
         }
     } else if (flags == JS_DTOA_VAR_FORMAT) {
-        int64_t i64;
+        int64_t i64 = 0;
         char buf1[70], *ptr;
+        if (d > MAX_SAFE_INTEGER || d < -MAX_SAFE_INTEGER)
+            goto generic_conv;
         i64 = (int64_t)d;
-        if (d != i64 || i64 > MAX_SAFE_INTEGER || i64 < -MAX_SAFE_INTEGER)
+        if (d != i64)
             goto generic_conv;
         /* fast path for integers */
         ptr = i64toa(buf1 + sizeof(buf1), i64, radix);
@@ -54122,8 +54124,8 @@ static JSValue js_atomics_wait(JSContext *ctx,
     }
     if (JS_ToFloat64(ctx, &d, argv[3]))
         return JS_EXCEPTION;
-    if (isnan(d) || d > INT64_MAX)
-        timeout = INT64_MAX;
+    if (isnan(d) || d > (double)INT64_MAX)
+        timeout = (double)INT64_MAX;
     else if (d < 0)
         timeout = 0;
     else
