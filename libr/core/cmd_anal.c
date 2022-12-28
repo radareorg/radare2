@@ -2179,6 +2179,7 @@ static inline REsil *esil_new_setup(RCore *core) {
 
 static void val_tojson(PJ *pj, RAnalValue *val) {
 	char *s = r_anal_value_tostring (val);
+	pj_o (pj);
 	pj_ks (pj, "name", s);
 	free (s);
 	pj_ks (pj, "type", r_anal_value_type_tostring (val));
@@ -2197,6 +2198,7 @@ static void val_tojson(PJ *pj, RAnalValue *val) {
 	if (val->mul) {
 		pj_kn (pj, "mul", val->mul);
 	}
+	pj_end (pj);
 }
 
 static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int fmt) {
