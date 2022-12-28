@@ -4902,6 +4902,7 @@ static void func_walk_blocks(RCore *core, RAnalFunction *f, char input, char typ
 	const char *orig_bb_middle = r_config_get (core->config, "asm.bbmiddle");
 	r_config_set_i (core->config, "asm.bbmiddle", false);
 	PJ *pj = NULL;
+	ut64 oseek = core->offset;
 
 	// XXX: hack must be reviewed/fixed in code analysis
 	if (!b) {
@@ -4970,6 +4971,7 @@ static void func_walk_blocks(RCore *core, RAnalFunction *f, char input, char typ
 		r_config_set_i (core->config, "asm.lines.jmp", asm_lines);
 	}
 	r_config_set (core->config, "asm.bbmiddle", orig_bb_middle);
+	r_core_seek (core, oseek, SEEK_SET);
 }
 
 static inline char cmd_pxb_p(char input) {
