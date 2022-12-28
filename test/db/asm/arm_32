@@ -278,3 +278,8 @@ a "str r1, [r2]" 001082e5
 ad "tst r1, r2" 020011e1
 ad "cmn r1, r3" 030071e1
 ad "teq r3, r4" 040033e1
+a "blt 0x8" 000000ba
+a "ble 0xc" 010000da
+a "cmn r0, 8" 080070e3
+a "teq r6, 4" 040036e3
+a "tst r2, 1" 010012e3
