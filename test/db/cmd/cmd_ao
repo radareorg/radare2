@@ -297,3 +297,96 @@ stackptr: 8
 ]
 EOF
 RUN
+
+NAME=aojvals-z80
+FILE=-
+ARGS=-a z80 -b 8
+CMDS=<<EOF
+wx ceed
+aoj~{}
+EOF
+EXPECT=<<EOF
+[
+  {
+    "opcode": "adc a, 0xed",
+    "disasm": "adc a, 0xed",
+    "pseudo": "a = a + 0xed",
+    "description": "add with carry register pair",
+    "mnemonic": "adc",
+    "mask": "ffff",
+    "sign": false,
+    "prefix": 0,
+    "id": 0,
+    "addr": 0,
+    "bytes": "ceed",
+    "size": 2,
+    "type": "unk",
+    "esilcost": 0,
+    "scale": 0,
+    "refptr": 0,
+    "cycles": 0,
+    "failcycles": 0,
+    "delay": 0,
+    "stackptr": 0,
+    "family": "cpu"
+  }
+]
+EOF
+RUN
+
+NAME=aojvals-gb
+FILE=-
+ARGS=-a x86 -b 8
+CMDS=<<EOF
+# hack because there's no parse plugin for gb
+-a gb
+wx ceed
+aoj~{}
+EOF
+EXPECT=<<EOF
+[
+  {
+    "opcode": "adc 0xed",
+    "disasm": "adc 0xed",
+    "pseudo": "0xed +=",
+    "description": "add with carry register pair",
+    "srcs": [
+      {
+        "name": "0xed",
+        "type": "imm",
+        "absolute": 1,
+        "imm": 237
+      },
+      {
+        "name": "C",
+        "type": "reg"
+      }
+    ],
+    "dsts": [
+      {
+        "name": "a",
+        "type": "reg"
+      }
+    ],
+    "mnemonic": "adc",
+    "mask": "ffff",
+    "esil": "0xed,a,+=,C,NUM,7,$c,C,:=,3,$c,H,:=,a,+=,7,$c,C,|,C,:=,3,$c,H,|=,a,a,=,$z,Z,:=,0,N,:=",
+    "sign": false,
+    "prefix": 0,
+    "id": 0,
+    "addr": 0,
+    "bytes": "ceed",
+    "size": 2,
+    "type": "add",
+    "esilcost": 0,
+    "scale": 0,
+    "refptr": 0,
+    "cycles": 8,
+    "failcycles": 0,
+    "delay": 0,
+    "stackptr": 0,
+    "family": "cpu"
+  }
+]
+EOF
+RUN

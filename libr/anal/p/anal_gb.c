@@ -175,16 +175,19 @@ static inline void gb_anal_add_sp(RReg *reg, RAnalOp *op, const ut8 data) {
 }
 
 static void gb_anal_mov_imm(RReg *reg, RAnalOp *op, const ut8 *data) {
-	RAnalValue *dst, *src;
-	dst = r_vector_push (&op->dsts, NULL);
-	src = r_vector_push (&op->srcs, NULL);
+	RAnalValue *dst = r_vector_push (&op->dsts, NULL);
+	RAnalValue *src = r_vector_push (&op->srcs, NULL);
 	if (data[0] & 1) {
 		dst->reg = r_reg_get (reg, regs_16[data[0]>>4], R_REG_TYPE_GPR);
+		dst->type = R_ANAL_VAL_REG;
 		src->imm = GB_SOFTCAST (data[1], data[2]);
+		src->type = R_ANAL_VAL_IMM;
 		r_strbuf_setf (&op->esil, "0x%04" PFMT64x ",%s,=", src->imm, regs_16[data[0]>>4]);
 	} else {
 		dst->reg = r_reg_get (reg, regs_8[data[0]>>3], R_REG_TYPE_GPR);
+		dst->type = R_ANAL_VAL_REG;
 		src->imm = data[1];
+		src->type = R_ANAL_VAL_IMM;
 		r_strbuf_setf (&op->esil, "0x%02" PFMT64x ",%s,=", src->imm, regs_8[data[0]>>3]);
 	}
 	src->absolute = true;
@@ -208,6 +211,7 @@ static inline void gb_anal_mov_hl_sp(RReg *reg, RAnalOp *op, const ut8 data) {
 	dst->reg = r_reg_get (reg, regs_16[2], R_REG_TYPE_GPR);
 	src0->reg = r_reg_get (reg, regs_16[3], R_REG_TYPE_GPR);
 	src1->imm = (st8)data;
+	src1->type = R_ANAL_VAL_IMM;
 	if (data < 128) {
 		r_strbuf_setf (&op->esil, "0x%02x,sp,+,hl,=", data);
 	} else {
@@ -431,6 +435,7 @@ static void gb_anal_xoaasc_imm(RReg *reg, RAnalOp *op, const ut8 *data) {
 	dst->reg = r_reg_get (reg, "a", R_REG_TYPE_GPR);
 	src0->absolute = true;
 	src0->imm = data[1];
+	src0->type = R_ANAL_VAL_IMM;
 	switch (op->type) {
 	case R_ANAL_OP_TYPE_XOR:
 		r_strbuf_setf (&op->esil, "0x%02x,a,^=,$z,Z,:=,0,N,:=,0,H,:=,0,C,:=", data[1]);
@@ -465,11 +470,10 @@ static void gb_anal_xoaasc_imm(RReg *reg, RAnalOp *op, const ut8 *data) {
 	}
 }
 
-//load with [hl] as memref
+// load with [hl] as memref
 static inline void gb_anal_load_hl(RReg *reg, RAnalOp *op, const ut8 data) {
-	RAnalValue *dst, *src;
-	dst = r_vector_push (&op->dsts, NULL);
-	src = r_vector_push (&op->srcs, NULL);
+	RAnalValue *dst = r_vector_push (&op->dsts, NULL);
+	RAnalValue *src = r_vector_push (&op->srcs, NULL);
 	src->reg = r_reg_get (reg, "hl", R_REG_TYPE_GPR);
 	src->memref = 1;
 	src->absolute = true;

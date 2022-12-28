@@ -6,6 +6,8 @@
 #include <r_util.h>
 #include <r_bin.h>
 #include <r_reg.h>
+
+// Rename to R_ARCH_VALTYPE_*
 typedef enum {
 	R_ANAL_VAL_REG,
 	R_ANAL_VAL_MEM,
