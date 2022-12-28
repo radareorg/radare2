@@ -336,8 +336,10 @@ RUN
 
 NAME=aojvals-gb
 FILE=-
-ARGS=-a gb -b 8
+ARGS=-a x86 -b 8
 CMDS=<<EOF
+# hack because there's no parse plugin for gb
+-a gb
 wx ceed
 aoj~{}
 EOF
@@ -346,7 +348,7 @@ EXPECT=<<EOF
   {
     "opcode": "adc 0xed",
     "disasm": "adc 0xed",
-    "pseudo": "0xed =  +",
+    "pseudo": "0xed +=",
     "description": "add with carry register pair",
     "srcs": [
       {
