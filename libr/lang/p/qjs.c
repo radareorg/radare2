@@ -178,6 +178,24 @@ static JSValue r2plugin(JSContext *ctx, JSValueConst this_val, int argc, JSValue
 	return JS_NewBool (ctx, false);
 }
 
+static JSValue r2plugin_unload(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
+	if (argc != 1) {
+		return JS_ThrowRangeError(ctx, "r2.unload takes only one string as argument");
+	}
+	if (!JS_IsString (argv[0])) {
+		return JS_ThrowRangeError(ctx, "r2.unload takes only one string as argument");
+	}
+	JSRuntime *rt = JS_GetRuntime (ctx);
+	QjsContext *k = JS_GetRuntimeOpaque (rt);
+	size_t plen;
+	const char *name = JS_ToCStringLen2 (ctx, &plen, argv[0], false);
+	k->core->lang->cmdf (k->core, "L-%s", name);
+	Gctx = NULL;
+	// invalid throw exception here
+	// return JS_ThrowRangeError(ctx, "invalid r2plugin type");
+	return JS_NewBool (ctx, true);
+}
+
 static JSValue r2cmd(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
 	JSRuntime *rt = JS_GetRuntime (ctx);
 	QjsContext *k = JS_GetRuntimeOpaque (rt);
@@ -255,17 +273,6 @@ static JSValue js_os_read_write(JSContext *ctx, JSValueConst this_val, int argc,
 }
 
 
-static const JSCFunctionListEntry js_r2_funcs[] = {
-	JS_CFUNC_DEF ("cmd", 1, r2cmd),
-	// JS_CFUNC_DEF ("cmdj", 1, r2cmdj), // can be implemented in js
-	JS_CFUNC_DEF ("log", 1, r2log),
-	JS_CFUNC_DEF ("error", 1, r2error),
-};
-
-static int js_r2_init(JSContext *ctx, JSModuleDef *m) {
-	return JS_SetModuleExportList (ctx, m, js_r2_funcs, countof (js_r2_funcs));
-}
-
 
 static const JSCFunctionListEntry js_os_funcs[] = {
 	JS_CFUNC_MAGIC_DEF ("read", 4, js_os_read_write, 0 ),
@@ -292,6 +299,33 @@ JSModuleDef *js_init_module_os(JSContext *ctx, const char *module_name) {
 	return m;
 }
 
+static const JSCFunctionListEntry js_r2_funcs[] = {
+	JS_CFUNC_DEF ("cmd", 1, r2cmd),
+	JS_CFUNC_DEF ("plugin", 2, r2plugin),
+	JS_CFUNC_DEF ("unload", 1, r2plugin_unload),
+	// JS_SetPropertyStr (ctx, global_obj, "r2plugin", JS_NewCFunction (ctx, r2plugin, "r2plugin", 1));
+	// JS_CFUNC_DEF ("cmdj", 1, r2cmdj), // can be implemented in js
+	JS_CFUNC_DEF ("log", 1, r2log),
+	JS_CFUNC_DEF ("error", 1, r2error),
+};
+
+static int js_r2_init(JSContext *ctx, JSModuleDef *m) {
+	return JS_SetModuleExportList (ctx, m, js_r2_funcs, countof (js_r2_funcs));
+}
+
+JSModuleDef *js_init_module_r2(JSContext *ctx, const char *module_name) {
+	JSModuleDef *m = JS_NewCModule (ctx, module_name, js_r2_init);
+	if (m) {
+		JSValue global_obj = JS_GetGlobalObject (ctx);
+		JSValue name = JS_NewString(ctx, "r2");
+		JSValue v = JS_NewObjectProtoClass(ctx, name, 0);
+		JS_SetPropertyStr (ctx, global_obj, "r2", v);
+		JS_SetPropertyFunctionList(ctx, v, js_r2_funcs, countof(js_r2_funcs));
+		// JS_AddModuleExportList (ctx, m, js_r2_funcs, countof(js_r2_funcs));
+	}
+	return m;
+}
+
 static void register_helpers(JSContext *ctx) {
 #if 0
 	JSRuntime *rt = JS_GetRuntime (ctx);
@@ -300,18 +334,21 @@ static void register_helpers(JSContext *ctx) {
 
 	JS_SetModuleLoaderFunc (rt, NULL, js_module_loader, NULL);
 #endif
+	/*
 	JSModuleDef *m = JS_NewCModule (ctx, "r2", js_r2_init);
 	if (!m) {
 		return;
 	}
 	js_r2_init (ctx, m);
+	*/
 	js_init_module_os (ctx, "os");
-	JS_AddModuleExportList (ctx, m, js_r2_funcs, countof (js_r2_funcs));
+	js_init_module_r2 (ctx, "r2");
+	// JS_AddModuleExportList (ctx, m, js_r2_funcs, countof (js_r2_funcs));
 	JSValue global_obj = JS_GetGlobalObject (ctx);
+	// JS_SetPropertyStr (ctx, global_obj, "r2", global_obj); // JS_NewCFunction (ctx, b64, "b64", 1));
 	JS_SetPropertyStr (ctx, global_obj, "b64", JS_NewCFunction (ctx, b64, "b64", 1));
+	// r2cmd deprecate . we have r2.cmd already same for r2log
 	JS_SetPropertyStr (ctx, global_obj, "r2cmd", JS_NewCFunction (ctx, r2cmd, "r2cmd", 1));
-	JS_SetPropertyStr (ctx, global_obj, "r2plugin", JS_NewCFunction (ctx, r2plugin, "r2plugin", 1));
-	// JS_SetPropertyStr (ctx, global_obj, "r2unplugin", JS_NewCFunction (ctx, r2unplugin, "r2unplugin", 1));
 	JS_SetPropertyStr (ctx, global_obj, "r2log", JS_NewCFunction (ctx, r2log, "r2log", 1));
 	JS_SetPropertyStr (ctx, global_obj, "write", JS_NewCFunction (ctx, js_write, "write", 1));
 	JS_SetPropertyStr (ctx, global_obj, "flush", JS_NewCFunction (ctx, js_flush, "flush", 1));
@@ -321,14 +358,19 @@ static void register_helpers(JSContext *ctx) {
 		"console.log(JSON.stringify(x).replace(/,/g,',\\n '));"
 		"for (var i in x) {console.log(i);}}");
 	eval (ctx, "var console = { log:print, error:print, debug:print };");
-	eval (ctx, "var r2 = { log:r2log, cmd:r2cmd, cmdj:(x)=>JSON.parse(r2cmd(x))};");
+	eval (ctx, "r2.cmdj = (x) => JSON.parse(r2.cmd(x));");
 	eval (ctx, "r2.call = (x) => r2.cmd('\"\"' + x);");
+	eval (ctx, "r2.callj = (x)=> JSON.parse(r2.call(x));");
 	eval (ctx, "var global = globalThis; var G = globalThis;");
 	eval (ctx, js_require_qjs);
-	eval (ctx, js_r2papi_qjs);
-	eval (ctx, "var require = requirejs;");
+	eval (ctx, "var exports = {};");
 	eval (ctx, "G.R2Pipe=() => R.r2;");
-	eval (ctx, "R=G.R=new R2Papi(r2);");
+	if (!r_sys_getenv_asbool ("R2_DEBUG_NOPAPI")) {
+		eval (ctx, js_r2papi_qjs);
+		eval (ctx, "R=G.R=new R2Papi(r2);");
+	} else {
+		eval (ctx, "R=r2;");
+	}
 }
 
 static JSContext *JS_NewCustomContext(JSRuntime *rt) {
@@ -406,7 +448,7 @@ static void *init(RLangSession *s) {
 		JS_SetRuntimeOpaque (rt, k);
 		k->r = rt;
 		k->ctx = JS_NewCustomContext (rt);
-		register_helpers (k->ctx);
+		// already initialized by customcontext register_helpers (k->ctx);
 		k->core = s->lang->user;
 	}
 	s->plugin_data = k; // implicit

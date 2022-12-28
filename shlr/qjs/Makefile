@@ -27,6 +27,10 @@ JS_CFILES:=js_repl.c js_r2papi.c js_require.c
 
 all: src $(JS_CFILES)
 
+node_modules:
+	mkdir -p node_modules
+	npm i
+
 src:
 	$(MAKE) $(QJS_NAME)
 	rm -rf src
@@ -46,8 +50,10 @@ js_r2papi.c:
 	-jq .version node_modules/r2papi/package.json
 	mkdir -p $(shell npm bin)
 
-	cat	$(shell npm bin)/../r2papi/index.js \
+	cat	\
+		$(shell npm bin)/../r2papi/index.js \
 		$(shell npm bin)/../r2papi/shell.js \
+		$(shell npm bin)/../r2papi/esil.js \
 		> $(shell npm bin)/../r2papi/entrypoint.js
 	sed \
 		-e 's,exports,G,g' \
