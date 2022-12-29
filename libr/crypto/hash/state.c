@@ -3,7 +3,7 @@
 #include <r_hash.h>
 #include <r_util.h>
 
-#if HAVE_LIB_SSL
+#if WANT_SSL_CRYPTO
 #  include <openssl/md4.h>
 #  include <openssl/md5.h>
 #  include <openssl/sha.h>
