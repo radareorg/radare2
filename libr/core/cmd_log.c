@@ -440,10 +440,68 @@ static int cmd_plugins(void *data, const char *input) {
 		if (input[1] == '?') {
 			r_core_cmd_help_match (core, help_msg_L, "LA", true);
 		} else {
+			int mode = input[1];
+			PJ *pj = (mode == 'j')? r_core_pj_new (core): NULL;
+			RList *list;
 			RListIter *iter;
 			RArchPlugin *item;
+			if (pj) {
+				pj_a (pj);
+			}
 			r_list_foreach (core->anal->arch->plugins, iter, item) {
-				eprintf ("%s\n", item->name);
+				char *cpu;
+				RListIter *iter2;
+				switch (mode) {
+				case 'j':
+					pj_o (pj);
+					pj_ks (pj, "name", item->name);
+					pj_ks (pj, "desc", item->desc);
+					if (item->author) {
+						pj_ks (pj, "author", item->author);
+					}
+					if (item->version) {
+						pj_ks (pj, "version", item->version);
+					}
+					if (item->license) {
+						pj_ks (pj, "license", item->license);
+					}
+					if (item->arch) {
+						pj_ks (pj, "arch", item->arch);
+					}
+					pj_ks (pj, "endian", (item->endian = R_SYS_ENDIAN_BIG)? "big": "little");
+					if (item->cpus) {
+						pj_ka (pj, "cpus");
+						list = r_str_split_list (strdup (item->cpus), ",", 0);
+						r_list_foreach (list, iter2, cpu) {
+							pj_s (pj, cpu);
+						}
+						r_list_free (list);
+						pj_end (pj);
+					}
+					pj_ka (pj, "bits");
+					int i;
+					for (i = 0; i < 8; i++) {
+						ut8 b = 0xff & (item->bits >> (i * 8));
+						if (b) {
+							pj_n (pj, b);
+						}
+					}
+					pj_end (pj);
+					pj_end (pj);
+					break;
+				case 'q':
+					r_cons_printf ("%s\n", item->name);
+					break;
+				default:
+					r_cons_printf ("%s    %s\n", item->name, item->desc);
+					break;
+				}
+			}
+			if (pj) {
+				pj_end (pj);
+				char *s = pj_drain (pj);
+				r_cons_printf ("%s\n", s);
+				free (s);
 			}
 		}
 		break;
