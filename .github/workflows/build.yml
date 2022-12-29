@@ -35,7 +35,6 @@ jobs:
 
   # Linux
   linux-static:
-    if: contains(github.ref, 'master') || contains(github.ref, 'ci-')
     runs-on: ubuntu-20.04
     steps:
     - name: Checkout
