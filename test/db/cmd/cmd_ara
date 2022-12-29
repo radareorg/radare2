@@ -93,6 +93,7 @@ EXPECT=<<EOF
 amd64
 amd64syscall
 ms
+p9
 reg
 swift
 r0 reg(r0, r1, r2, r3)
@@ -100,6 +101,7 @@ rax reg(rdi, rsi, rdx, rcx)
 amd64
 amd64syscall
 ms
+p9
 reg
 swift
 EOF

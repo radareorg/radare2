@@ -371,6 +371,7 @@ static RBinInfo *info(RBinFile *bf) {
 	ret->bclass = strdup ("program");
 	ret->rclass = strdup ("p9");
 	ret->os = strdup ("Plan9");
+	ret->default_cc = strdup ("p9");
 	ret->arch = strdup (r_sys_arch_str (arch));
 	ret->machine = strdup (ret->arch);
 	ret->subsystem = strdup ("plan9");
