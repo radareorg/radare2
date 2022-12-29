@@ -460,7 +460,9 @@ static void register_helpers(JSContext *ctx) {
 	JS_SetPropertyStr (ctx, global_obj, "print", JS_NewCFunction (ctx, js_print, "print", 1));
 	eval (ctx, "setTimeout = (x,y) => x();");
 	eval (ctx, "function dump(x) {"
-		"console.log((typeof x==='string')?x:JSON.stringify(x, null, 2));"
+		"if(typeof x==='object' && Object.keys(x)[0] != '0'){for(let k of Object.keys(x)) {console.log(k);}}else "
+		"if(typeof x==='number'&& x > 0x1000){console.log(R.hex(x));}else"
+		"{console.log((typeof x==='string')?x:JSON.stringify(x, null, 2));}"
 		"}");
 	eval (ctx, "var console = { log:print, error:print, debug:print };");
 	eval (ctx, "r2.cmdj = (x) => JSON.parse(r2.cmd(x));");

@@ -14,24 +14,95 @@ class R2Papi {
     constructor(r2) {
         this.r2 = r2;
     }
+    jsonToTypescript(name, a) {
+        let str = `interface ${name} {\n`;
+        if (a.length && a.length > 0) {
+            a = a[0];
+        }
+        for (let k of Object.keys(a)) {
+            const typ = typeof (a[k]);
+            const nam = k;
+            str += `    ${nam}: ${typ};\n`;
+        }
+        return `${str}}\n`;
+    }
+    /**
+     * should return the id for the new map using the given file descriptor
+     */
+    newMap(fd, vaddr, size, paddr, perm, name = "") {
+        this.cmd(`om ${fd} ${vaddr} ${size} ${paddr} ${perm} ${name}`);
+    }
+    at(a) {
+        return new NativePointer(a);
+    }
     getShell() {
         return new shell_js_1.R2PapiShell(this);
     }
+    // Radare/Frida
+    version() {
+        return this.r2.cmd("?Vq").trim();
+    }
+    // Process
+    platform() {
+        return this.r2.cmd("uname").trim();
+    }
+    arch() {
+        return this.r2.cmd("uname -a").trim();
+    }
+    bits() {
+        return this.r2.cmd("uname -b").trim();
+    }
+    id() {
+        // getpid();
+        return +this.r2.cmd("?vi:$p");
+    }
+    // Other stuff
     printAt(msg, x, y) {
         // see pg, but pg is obrken :D
     }
     clearScreen() {
         this.r2.cmd("!clear");
+        return this;
     }
     getConfig(key) {
         return this.r2.call("e " + key).trim();
     }
     setConfig(key, val) {
         this.r2.call("e " + key + "=" + val);
+        return this;
     }
     getRegisters() {
         // this.r2.log("winrar" + JSON.stringify(JSON.parse(this.r2.cmd("drj")),null, 2) );
         return this.cmdj("drj");
+    }
+    resizeFile(newSize) {
+        this.cmd(`r ${newSize}`);
+        return this;
+    }
+    insertNullBytes(newSize, at) {
+        if (at === undefined) {
+            at = "$$";
+        }
+        this.cmd(`r+${newSize}@${at}`);
+        return this;
+    }
+    removeBytes(newSize, at) {
+        if (at === undefined) {
+            at = "$$";
+        }
+        this.cmd(`r-${newSize}@${at}`);
+        return this;
+    }
+    seek(addr) {
+        this.cmd(`s ${addr}`);
+        return this;
+    }
+    getBlockSize() {
+        return +this.cmd("b");
+    }
+    setBlockSize(a) {
+        this.cmd(`b ${a}`);
+        return this;
     }
     enumerateThreads() {
         // TODO: use apt/dpt to list threads at iterate over them to get the registers
@@ -44,14 +115,17 @@ class R2Papi {
         };
         return [thread0];
     }
+    currentThreadId() {
+        if (+this.cmd("e cfg.debug")) {
+            return +this.cmd("dpt.");
+        }
+        return this.id();
+    }
     setRegisters(obj) {
         for (let r of Object.keys(obj)) {
             const v = obj[r];
             this.r2.cmd("dr " + r + "=" + v);
         }
-    }
-    analyzeProgram() {
-        this.r2.cmd("aa");
     }
     hex(s) {
         return this.r2.cmd("?v " + s).trim();
@@ -60,24 +134,19 @@ class R2Papi {
         this.r2.cmd("ds");
         return this;
     }
-    functionGraph(format) {
-        if (format === "dot") {
-            return this.r2.cmd("agfd");
-        }
-        if (format === "json") {
-            return this.r2.cmd("agfj");
-        }
-        if (format === "mermaid") {
-            return this.r2.cmd("agfm");
-        }
-        return this.r2.cmd("agf");
-    }
     stepOver() {
         this.r2.cmd("dso");
         return this;
     }
     math(expr) {
         return +this.r2.cmd("?v " + expr);
+    }
+    stepUntil(dst) {
+        this.cmd(`dsu ${dst}`);
+    }
+    searchDisasm(s) {
+        const res = this.callj("/ad " + s);
+        return res;
     }
     searchString(s) {
         const res = this.cmdj("/j " + s);
@@ -99,17 +168,69 @@ class R2Papi {
             return {};
         }
     }
+    // TODO: take a BinFile as argument instead of number
+    selectBinary(id) {
+        this.call(`ob ${id}`);
+    }
+    openFile(name) {
+        this.call(`o ${name}`);
+    }
+    enumeratePlugins(type) {
+        switch (type) {
+            case "bin":
+                return this.callj("Lij");
+            case "io":
+                return this.callj("Loj");
+            case "core":
+                return this.callj("Lcj");
+            case "anal":
+                return this.callj("Laj");
+            case "lang":
+                return this.callj("Llj");
+        }
+        return [];
+    }
     enumerateModules() {
         return this.callj("dmmj");
     }
+    enumerateFiles() {
+        return this.callj("oj");
+    }
+    enumerateBinaries() {
+        return this.callj("obj");
+    }
+    enumerateMaps() {
+        return this.callj("omj");
+    }
     enumerateSymbols() {
         return this.callj("isj");
+    }
+    enumerateExports() {
+        return this.callj("iEj");
     }
     enumerateImports() {
         return this.callj("iij");
     }
     enumerateLibraries() {
         return this.callj("ilj");
+    }
+    enumerateSections() {
+        return this.callj("iSj");
+    }
+    enumerateSegments() {
+        return this.callj("iSSj");
+    }
+    enumerateEntrypoints() {
+        return this.callj("iej");
+    }
+    enumerateRelocations() {
+        return this.callj("irj");
+    }
+    enumerateFunctions() {
+        return this.cmdj("aflj");
+    }
+    enumerateFlags() {
+        return this.cmdj("fj");
     }
     skip() {
         this.r2.cmd("dss");
@@ -138,12 +259,6 @@ class R2Papi {
     ascii(msg) {
         this.r2.log(this.r2.cmd("?ea " + msg));
     }
-    enumerateFunctions() {
-        return this.cmdj("aflj");
-    }
-    enumerateFlags() {
-        return this.cmdj("fj");
-    }
 }
 G.R2Papi = R2Papi;
 class NativePointer {
@@ -156,6 +271,22 @@ class NativePointer {
         }
         // this.api.r2.log("NP " + s);
         this.addr = ("" + s).trim();
+    }
+    hexdump(length) {
+        let len = (length === undefined) ? "" : "" + length;
+        return this.api.cmd(`x${len}@${this.addr}`);
+    }
+    functionGraph(format) {
+        if (format === "dot") {
+            return this.api.cmd(`agfd@ ${this.addr}`);
+        }
+        if (format === "json") {
+            return this.api.cmd(`agfj@${this.addr}`);
+        }
+        if (format === "mermaid") {
+            return this.api.cmd(`agfm@${this.addr}`);
+        }
+        return this.api.cmd(`agf@${this.addr}`);
     }
     readByteArray(len) {
         return JSON.parse(this.api.cmd(`p8j ${len}@${this.addr}`));
@@ -185,7 +316,7 @@ class NativePointer {
         return this;
     }
     writeCString(s) {
-        this.api.cmd("\"w " + s + "\"");
+        this.api.call("w " + s);
         return this;
     }
     isNull() {
@@ -258,8 +389,38 @@ class NativePointer {
         const op = this.api.cmdj(`aoj@${this.addr}`)[0];
         return op;
     }
+    disassemble(length) {
+        let len = (length === undefined) ? "" : "" + length;
+        return this.api.cmd(`pd ${len}@${this.addr}`);
+    }
     analyzeFunction() {
         this.api.cmd("af@" + this.addr);
+        return this;
+    }
+    analyzeFunctionRecursively() {
+        this.api.cmd("afr@" + this.addr);
+        return this;
+    }
+    // define a type
+    analyzeProgram(depth) {
+        if (depth === undefined) {
+            depth = 0;
+        }
+        switch (depth) {
+            case 0:
+                this.api.cmd("aa");
+                break;
+            case 1:
+                this.api.cmd("aaa");
+                break;
+            case 2:
+                this.api.cmd("aaaa");
+                break;
+            case 3:
+                this.api.cmd("aaaaa");
+                break;
+        }
+        return this;
     }
     name() {
         return this.api.cmd("fd " + this.addr).trim();
