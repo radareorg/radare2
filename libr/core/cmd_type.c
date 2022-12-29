@@ -1250,9 +1250,6 @@ static int cmd_type(void *data, const char *input) {
 		case '-':
 			r_core_cmdf (core, "t-%s", r_str_trim_head_ro (input + 2));
 			break;
-		case '?':
-			r_core_cmd_help (core, help_msg_te);
-			break;
 		case 'j': // "tej"
 			if (input[2] == 0) { // "tej"
 				char *name = NULL;
@@ -1354,6 +1351,10 @@ static int cmd_type(void *data, const char *input) {
 			ls_free (l);
 			break;
 		}
+		case '?':
+		default:
+			r_core_cmd_help (core, help_msg_te);
+			break;
 		} // end of switch (input[1])
 		free (name);
 		if (res) {
@@ -1908,6 +1909,7 @@ static int cmd_type(void *data, const char *input) {
 		free (s);
 		break;
 	}
+	default:
 	case '?':
 		show_help (core);
 		break;
