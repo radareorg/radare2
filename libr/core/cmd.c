@@ -295,13 +295,23 @@ static RCoreHelpMessage help_msg_r = {
 
 static RCoreHelpMessage help_msg_u = {
 	"Usage:", "u", "uname or undo write/seek",
-	"u", "", "show system uname",
+	"u", "", "show system uname (alias for uname)",
 	"uw", "", "alias for wc (requires: e io.cache=true)",
 	"us", "", "alias for s- (seek history)",
 	"uc", "[?]", "undo core commands (uc?, ucl, uc*, ..) (see `e cmd.undo`)",
 	"uid", "", "display numeric user id",
 	"uniq", "", "filter rows to avoid duplicates",
 	"uname", "", "uname - show system information",
+	NULL
+};
+
+static RCoreHelpMessage help_msg_uname = {
+	"Usage:", "uname", "show information about the current system",
+	"uname", "", "show host operating system",
+	"uname", " -j", "show uname information in JSON",
+	"uname", " -b", "show machine cpu register bits size",
+	"uname", " -m", "show machine cpu architecture name",
+	"uname", " -r", "show operating system version",
 	NULL
 };
 
@@ -554,11 +564,30 @@ static bool print_aliases(void *use_b64, const void *key, const void *val) {
 }
 
 static int cmd_uname(void *data, const char *input) { // "uniq"
+	RCore *core = (RCore *)(data);
 	RSysInfo *si = r_sys_info ();
 	if (si) {
-		r_cons_printf ("%s", si->sysname);
-		if (strstr (input, "-r")) {
-			r_cons_printf (" %s", si->release);
+		if (strstr (input, "-h") || strstr (input, "?")) {
+			r_core_cmd_help (data, help_msg_uname);
+		} else if (strstr (input, "-j")) {
+			PJ *pj = r_core_pj_new (core);
+			pj_o (pj);
+			pj_ks (pj, "platform", si->sysname);
+			pj_ks (pj, "arch", R_SYS_ARCH);
+			pj_kn (pj, "bits", (R_SYS_BITS & R_SYS_BITS_64)? 64: 32);
+			pj_end (pj);
+			char *s = pj_drain (pj);
+			r_cons_printf ("%s", s);
+			free (s);
+		} else if (strstr (input, "-m")) {
+			r_cons_printf ("%s", R_SYS_ARCH);
+		} else if (strstr (input, "-b")) {
+			r_cons_printf ("%d", (R_SYS_BITS & R_SYS_BITS_64)? 64: 32);
+		} else {
+			r_cons_printf ("%s", si->sysname);
+			if (strstr (input, "-r")) {
+				r_cons_printf (" %s", si->release);
+			}
 		}
 		r_cons_newline ();
 		r_sys_info_free (si);
@@ -691,11 +720,17 @@ static int cmd_undo(void *data, const char *input) {
 	case 'w': // "uw"
 		r_core_cmdf (data, "wc%s", input + 1);
 		return 1;
+	case 0:
+	case ' ':
+		(void)cmd_uname (core, input);
+		return 1;
 	case 'n': // "un"
 		if (input[1] == 'a') { // "uname"
 			(void)cmd_uname (core, input);
 		} else if (input[1] == 'i' && input[2] == 'q') {
 			(void)cmd_uniq (core, input);
+		} else {
+			r_core_cmd_help (data, help_msg_uname);
 		}
 		return 1;
 	default:
