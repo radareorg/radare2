@@ -46,7 +46,7 @@ else
   r_crypto_sources += files('hash/xxhash.c')
 endif
 
-if use_sys_openssl
+if use_sys_openssl and use_ssl_crypto
   r_crypto_deps += sys_openssl
 else
   r_crypto_sources += files('hash/md4.c', 'hash/md5.c', 'hash/sha1.c', 'hash/sha2.c')
