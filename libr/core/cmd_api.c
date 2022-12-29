@@ -499,6 +499,7 @@ R_API int r_cmd_call(RCmd *cmd, const char *input) {
 			return true;
 		}
 		r_list_foreach (cmd->plist, iter, cp) {
+			/// XXX the plugin call have no plugin context!! we cant have multiple plugins here
 			if (cp->call && cp->call (cmd->data, input)) {
 				free (nstr);
 				return true;

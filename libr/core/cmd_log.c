@@ -516,14 +516,14 @@ static int cmd_plugins(void *data, const char *input) {
 		break;
 	case 'g': // "Lg"
 		if (input[1] == 'j') {
-			r_core_cmd0 (core, "gLj");
+			r_core_cmd_call (core, "gLj");
 		} else {
-			r_core_cmd0 (core, "gL");
+			r_core_cmd_call (core, "gL");
 		}
 		break;
 	case 'o': // "Lo"
 	case 'i': // "Li"
-		r_core_cmdf (core, "%cL%s", input[0], input + 1);
+		r_core_cmd_callf (core, "%cL%s", input[0], input + 1);
 		break;
 	case 'c': { // "Lc"
 		RListIter *iter;
@@ -537,8 +537,8 @@ static int cmd_plugins(void *data, const char *input) {
 			pj_a (pj);
 			r_list_foreach (core->rcmd->plist, iter, cp) {
 				pj_o (pj);
-				pj_ks (pj, "Name", cp->name);
-				pj_ks (pj, "Description", cp->desc);
+				pj_ks (pj, "name", cp->name);
+				pj_ks (pj, "desc", cp->desc);
 				pj_end (pj);
 			}
 			pj_end (pj);
