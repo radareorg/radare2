@@ -11,7 +11,7 @@ extern "C" {
 
 R_LIB_VERSION_HEADER (r_hash);
 
-#if HAVE_LIB_SSL
+#if WANT_SSL_CRYPTO
 #include <openssl/sha.h>
 #include <openssl/md5.h>
 typedef MD5_CTX RHashMD5Context;

@@ -92,6 +92,10 @@ extern "C" {
 #define HAVE_LIB_SSL @HAVE_OPENSSL@
 #endif
 
+#ifndef WANT_SSL_CRYPTO
+#define WANT_SSL_CRYPTO @WANT_SSL_CRYPTO@
+#endif
+
 #define HAVE_LIBUV @HAVE_LIBUV@
 
 #if __MINGW32__

@@ -290,10 +290,12 @@ if get_option('use_ssl')
     use_sys_openssl = true
   else
     message('Using bundled openssl code')
+    use_ssl_crypto = false
   endif
 else
   sys_openssl = false
   use_sys_openssl = false
+  use_ssl_crypto = false
 endif
 
 use_fork = get_option('use_fork')
@@ -375,6 +377,7 @@ userconf.set('PLUGINS', r2_plugins)
 userconf.set('EXTRAS', r2_extras)
 userconf.set('BINDINGS', r2_bindings)
 userconf.set10('HAVE_OPENSSL', use_sys_openssl)
+userconf.set10('WANT_SSL_CRYPTO', use_ssl_crypto)
 userconf.set10('HAVE_LIBUV', use_libuv)
 userconf.set10('HAVE_FORK', use_fork)
 userconf.set10('HAVE_GPERF', get_option('sdb_cgen'))
