@@ -35,7 +35,7 @@ R_API bool r_io_map_remap(RIO *io, ut32 id, ut64 addr) {
 	const ut64 ofrom = r_io_map_from (map);
 	const ut64 oto = r_io_map_to (map);
 	ut64 size = r_io_map_size (map);
-	if (map->perm & R_PERM_RELOC) {
+	if (map->perm & R_PERM_RELOC && map->reloc_map) {
 		if (R_UNLIKELY (UT64_MAX - size + 1 < addr)) {
 			R_LOG_ERROR ("Mapsplit for reloc maps is not possible");
 			return false;
