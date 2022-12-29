@@ -672,9 +672,9 @@ static js_force_inline JSValue JS_NewFloat64(JSContext *ctx, double d)
     } u, t;
     u.d = d;
     if (d < INT32_MIN) {
-	    val = d = INT32_MIN;
+	    val = INT32_MIN;
     } else if (d > INT32_MAX) {
-	    val = d = INT32_MAX;
+	    val = INT32_MAX;
     } else {
 	    val = (int32_t)d;
     }
