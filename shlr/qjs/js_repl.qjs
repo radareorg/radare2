@@ -1162,7 +1162,8 @@ import('os').catch(console.error).then((os) => {
         /* eval as a script */
         // result = std.evalScript(expr, { backtrace_barrier: true });
         // expr = expr.replace(/;$//);
-        // result = (new Function('return (' + expr + ');')).call(global);
+        // result = (new Function('return ({' + expr + '});')).call(global);
+        // // // result = eval(expr);
         result = eval(expr);
         eval_time = (new Date()).getTime() - now;
         write(colors[styles.result]);
@@ -1174,7 +1175,7 @@ import('os').catch(console.error).then((os) => {
       } catch (error) {
         if (show_colors) { write(colors[styles.error_msg]); }
         if (error instanceof Error) {
-          // console.log(error);
+          console.log(error);
           if (error.stack) {
             write(error.stack);
           }

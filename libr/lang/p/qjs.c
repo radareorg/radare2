@@ -460,7 +460,7 @@ static void register_helpers(JSContext *ctx) {
 	JS_SetPropertyStr (ctx, global_obj, "print", JS_NewCFunction (ctx, js_print, "print", 1));
 	eval (ctx, "setTimeout = (x,y) => x();");
 	eval (ctx, "function dump(x) {"
-		"console.log(JSON.stringify(x, null, 2));"
+		"console.log((typeof x==='string')?x:JSON.stringify(x, null, 2));"
 		"}");
 	eval (ctx, "var console = { log:print, error:print, debug:print };");
 	eval (ctx, "r2.cmdj = (x) => JSON.parse(r2.cmd(x));");
