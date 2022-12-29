@@ -24,6 +24,7 @@ r_bin_sources = [
   'p/bin_dbginfo_dex.c',
   'p/bin_dbginfo_elf.c',
   'p/bin_dbginfo_elf64.c',
+  'p/bin_dbginfo_p9.c',
   'p/bin_dex.c',
   'p/bin_dmp64.c',
   'p/bin_dol.c',
