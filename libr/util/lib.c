@@ -5,11 +5,7 @@
 
 R_LIB_VERSION(r_lib);
 
-/* TODO: avoid globals */
-#define IFDBG if (__has_debug)
-static R_TH_LOCAL bool __has_debug = false;
-
-/* XXX : this must be registered in runtime */
+/* XXX : this must be registered at runtime instead of hardcoded */
 static const char *r_lib_types[] = {
 	"io", "dbg", "lang", "asm", "anal", "parse", "bin", "bin_xtr", "bin_ldr",
 	"bp", "syscall", "fastcall", "crypto", "core", "egg", "fs", "arch", NULL
@@ -46,8 +42,8 @@ R_API void *r_lib_dl_open(const char *libname) {
 	} else {
 		ret = dlopen (NULL, RTLD_NOW);
 	}
-	if (!ret && __has_debug) {
-		R_LOG_ERROR ("r_lib_dl_open failed %s (%s)", libname, dlerror ());
+	if (!ret) {
+		R_LOG_DEBUG ("r_lib_dl_open failed %s (%s)", libname, dlerror ());
 	}
 #elif R2__WINDOWS__
 	LPTSTR libname_;
@@ -64,8 +60,8 @@ R_API void *r_lib_dl_open(const char *libname) {
 	}
 	ret = LoadLibrary (libname_);
 	free (libname_);
-	if (!ret && __has_debug) {
-		R_LOG_ERROR ("r_lib_dl_open failed %s", libname);
+	if (!ret) {
+		R_LOG_DEBUG ("r_lib_dl_open failed %s", libname);
 	}
 #endif
 #endif
@@ -161,7 +157,10 @@ err:
 R_API RLib *r_lib_new(const char *symname, const char *symnamefunc) {
 	RLib *lib = R_NEW (RLib);
 	if (lib) {
-		__has_debug = r_sys_getenv_asbool ("R2_DEBUG");
+		// __has_debug = r_sys_getenv_asbool ("R2_DEBUG"); /// XXX just use loglevel
+		if (r_sys_getenv_asbool ("R2_DEBUG")) {
+			r_log_set_level (R_LOGLVL_DEBUG);
+		}
 		lib->ignore_version = r_sys_getenv_asbool ("R2_IGNVER");
 		lib->handlers = r_list_newf (free);
 		lib->plugins = r_list_newf (free);
@@ -210,6 +209,7 @@ R_API RLibHandler *r_lib_get_handler(RLib *lib, int type) {
 R_API int r_lib_close(RLib *lib, const char *file) {
 	RLibPlugin *p;
 	RListIter *iter, *iter2;
+
 	r_list_foreach_safe (lib->plugins, iter, iter2, p) {
 		if ((!file || !strcmp (file, p->file))) {
 			int ret = 0;
@@ -237,7 +237,6 @@ R_API int r_lib_close(RLib *lib, const char *file) {
 				ret = p->handler->destructor (p,
 					p->handler->user, p->data);
 			}
-			eprintf ("Unloaded %s\n", p->file);
 			free (p->file);
 			r_list_delete (lib->plugins, iter);
 			return ret;
@@ -264,18 +263,18 @@ static bool __already_loaded(RLib *lib, const char *file) {
 R_API int r_lib_open(RLib *lib, const char *file) {
 	/* ignored by filename */
 	if (!__lib_dl_check_filename (file)) {
-		eprintf ("Invalid library extension: %s\n", file);
+		R_LOG_ERROR ("Invalid library extension: %s", file);
 		return -1;
 	}
 
 	if (__already_loaded (lib, file)) {
-		eprintf ("Not loading library because it has already been loaded from somewhere else: '%s'\n", file);
+		R_LOG_ERROR ("Not loading library because it has already been loaded from '%s'", file);
 		return -1;
 	}
 
 	void *handler = r_lib_dl_open (file);
 	if (!handler) {
-		IFDBG R_LOG_ERROR ("Cannot open library: '%s'", file);
+		R_LOG_DEBUG ("Cannot open library: '%s'", file);
 		return -1;
 	}
 
@@ -288,8 +287,7 @@ R_API int r_lib_open(RLib *lib, const char *file) {
 		stru = (RLibStruct *) r_lib_dl_sym (handler, lib->symname);
 	}
 	if (!stru) {
-		IFDBG R_LOG_ERROR ("Cannot find symbol '%s' in library '%s'",
-			lib->symname, file);
+		R_LOG_DEBUG ("Cannot find symbol '%s' in library '%s'", lib->symname, file);
 		r_lib_dl_close (handler);
 		return -1;
 	}
@@ -345,7 +343,7 @@ R_API int r_lib_open_ptr(RLib *lib, const char *file, void *handler, RLibStruct 
 
 	int ret = r_lib_run_handler (lib, p, stru);
 	if (ret == -1) {
-		R_LOG_DEBUG ("Library handler has failed for '%s'", file);
+		R_LOG_ERROR ("Library handler has failed for '%s'", file);
 		free (p->file);
 		free (p);
 		r_lib_dl_close (handler);
@@ -388,7 +386,7 @@ R_API bool r_lib_opendir(RLib *lib, const char *path) {
 	swprintf (directory, _countof (directory), L"%ls\\*.*", wcpath);
 	fh = FindFirstFileW (directory, &dir);
 	if (fh == INVALID_HANDLE_VALUE) {
-		IFDBG R_LOG_ERROR ("Cannot open directory %ls", wcpath);
+		R_LOG_DEBUG ("Cannot open directory %ls", wcpath);
 		free (wcpath);
 		return false;
 	}
@@ -399,7 +397,7 @@ R_API bool r_lib_opendir(RLib *lib, const char *path) {
 			if (__lib_dl_check_filename (wctocbuff)) {
 				r_lib_open (lib, wctocbuff);
 			} else {
-				IFDBG R_LOG_ERROR ("Cannot open %ls", dir.cFileName);
+				R_LOG_DEBUG ("Cannot open %ls", dir.cFileName);
 			}
 			free (wctocbuff);
 		}
@@ -409,7 +407,7 @@ R_API bool r_lib_opendir(RLib *lib, const char *path) {
 #else
 	dh = opendir (path);
 	if (!dh) {
-		IFDBG R_LOG_ERROR ("Cannot open directory '%s'", path);
+		R_LOG_DEBUG ("Cannot open directory '%s'", path);
 		return false;
 	}
 	while ((de = (struct dirent *)readdir (dh))) {
@@ -418,10 +416,10 @@ R_API bool r_lib_opendir(RLib *lib, const char *path) {
 		}
 		snprintf (file, sizeof (file), "%s/%s", path, de->d_name);
 		if (__lib_dl_check_filename (file)) {
-			IFDBG R_LOG_INFO ("Loading %s", file);
+			R_LOG_DEBUG ("Loading %s", file);
 			r_lib_open (lib, file);
 		} else {
-			IFDBG R_LOG_ERROR ("Cannot open %s", file);
+			R_LOG_DEBUG ("Cannot open %s", file);
 		}
 	}
 	closedir (dh);
@@ -442,7 +440,7 @@ R_API bool r_lib_add_handler(RLib *lib,
 
 	r_list_foreach (lib->handlers, iter, h) {
 		if (type == h->type) {
-			IFDBG eprintf ("Redefining library handler constructor for %d\n", type);
+			R_LOG_DEBUG ("Redefining library handler constructor for %d", type);
 			handler = h;
 			break;
 		}
