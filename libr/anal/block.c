@@ -728,6 +728,9 @@ beach:
 
 R_API bool r_anal_block_was_modified(RAnalBlock *block) {
 	r_return_val_if_fail (block, false);
+	if (!block->bbhash) {
+		return false;
+	}
 	if (!block->anal->iob.read_at) {
 		return false;
 	}
