@@ -537,7 +537,7 @@ G.R2PapiShell = R2PapiShell;
 Object.defineProperty(G, "__esModule", { value: true });
 G.EsilParser = G.EsilNode = G.EsilToken = void 0;
 class EsilToken {
-    constructor(text, position) {
+    constructor(text = "", position = 0) {
         this.label = "";
         this.comment = "";
         this.text = "";
@@ -552,9 +552,11 @@ class EsilToken {
 }
 G.EsilToken = EsilToken;
 class EsilNode {
-    constructor(token, type) {
+    constructor(token = new EsilToken(), type = "none") {
+        this.lhs = new EsilNode(); // left side
+        this.rhs = new EsilNode(); // right side
+        this.type = "none";
         this.token = token;
-        this.type = type;
         this.children = [];
     }
     setSides(lhs, rhs) {
@@ -742,7 +744,7 @@ class EsilParser {
     }
     isInternal(expr) {
         const text = expr.toString();
-        return text && text.startsWith("$") && text.length > 1;
+        return text.startsWith("$") && text.length > 1;
     }
     parseUntil(start) {
         const from = start + 1;
@@ -854,7 +856,7 @@ class EsilParser {
                         const value = 0 | +destNode.toString();
                         if (value > 0) {
                             const destToken = this.peek(value);
-                            if (destToken !== null) {
+                            if (destToken !== undefined) {
                                 destToken.label = "label_" + value;
                                 destToken.comment = "hehe";
                                 const nn = new EsilNode(expr, "goto");
