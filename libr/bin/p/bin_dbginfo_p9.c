@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2022 - nibble, montekki, pancake, keegan */
+/* radare - LGPL - Copyright 2009-2022 - nibble, montekki, pancake */
 
 #include <r_bin.h>
 

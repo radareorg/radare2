@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2009-2022 - nibble, pancake, keegan */
+/* radare2 - MIT - Copyright 2021-2022 - pancake, keegan, Plan 9 Foundation */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -318,8 +318,7 @@ static st64 sym_read(RBinFile *bf, Sym *sym, const ut64 offset) {
 	return size;
 }
 
-static void sym_fini(void *sym, void *user) {
-	(void)user;
+static void sym_fini(void *sym, R_UNUSED void *user) {
 	Sym *s = (Sym *)sym;
 	if (s && s->name) {
 		free (s->name);
@@ -329,23 +328,19 @@ static void sym_fini(void *sym, void *user) {
 
 static int apply_history(RBinFile *bf, ut64 pc, ut64 line, Sym *base, Sym **ret) {
 	// start of current level
-	Sym *start;
+	Sym *start = base;
 	// current entry
-	Sym *h;
+	Sym *h = base;
 	// sum of size of files this level
-	st64 delta;
-	int k;
+	st64 delta = h->value;
 
 	// see fline in libmach
-	start = base;
-	h = base;
-	delta = h->value;
 	while (h && h->name && line > h->value) {
 		if (strlen (h->name)) {
-			if (start == base)
+			if (start == base) {
 				start = h++;
-			else {
-				k = apply_history (bf, pc, line, start, &h);
+			} else {
+				int k = apply_history (bf, pc, line, start, &h);
 				if (k <= 0) {
 					return k;
 				}
@@ -357,12 +352,12 @@ static int apply_history(RBinFile *bf, ut64 pc, ut64 line, Sym *base, Sym **ret)
 					*ret = h;
 				}
 				return 1;
-			} else {
-				// end of included file
-				delta += h->value - start->value;
-				h++;
-				start = base;
 			}
+
+			// end of included file
+			delta += h->value - start->value;
+			h++;
+			start = base;
 		}
 	}
 
@@ -377,11 +372,8 @@ static int apply_history(RBinFile *bf, ut64 pc, ut64 line, Sym *base, Sym **ret)
 		line = line - delta + 1;
 	}
 
-	char buffer[SDB_NUM_BUFSZ] = {0};
 	char *line_info = r_str_newf ("%s|%"PFMT64d, name, line);
-	char *address = sdb_itoa (pc, 16, buffer, sizeof (buffer));
-	sdb_set (bf->sdb_addrinfo, address, line_info, 0);
-	sdb_set (bf->sdb_addrinfo, line_info, address, 0);
+	sdb_nset (bf->sdb_addrinfo, pc, line_info, 0);
 	free (line_info);
 	return 0;
 }
@@ -452,7 +444,7 @@ static RList *symbols(RBinFile *bf) {
 					break;
 				}
 
-				char *name = r_pvector_at (names, index - 1);
+				const char *name = r_pvector_at (names, index - 1);
 				r_strbuf_appendf (sb, "%s", name);
 				// lead / is NOT assumed
 				if (i != 0) {
@@ -688,8 +680,8 @@ static RBuffer *create(RBin *bin, const ut8 *code, int codelen, const ut8 *data,
 
 RBinPlugin r_bin_plugin_p9 = {
 	.name = "p9",
-	.desc = "Plan9 bin plugin",
-	.license = "LGPL3",
+	.desc = "Plan 9 bin plugin",
+	.license = "MIT",
 	.load_buffer = &load_buffer,
 	.size = &size,
 	.destroy = &destroy,

@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2011-2022 - pancake, keegan */
+/* radare2 - MIT - Copyright 2021-2022 - pancake, keegan, Plan 9 Foundation */
 
 #ifndef P9BIN_H
 #define P9BIN_H
