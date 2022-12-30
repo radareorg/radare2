@@ -26,7 +26,7 @@
 	}\
 	static int __lib_ ## x ## _dt (RLibPlugin * pl, void *p, void *u) { return true; }
 
-// XXX api consistency issues
+// XXX R2_590 : api consistency issues
 #define r_io_add r_io_plugin_add
 CB_COPY (io, io)
 #define r_core_add r_core_plugin_add
@@ -39,11 +39,11 @@ CB (lang, lang)
 CB (anal, anal)
 #define r_esil_add r_esil_plugin_add
 CB (esil, anal->esil)
-// CB (asm, rasm)
 CB (parse, parser)
 CB (bin, bin)
 CB (egg, egg)
 CB (fs, fs)
+CB (arch, anal->arch);
 
 static void __openPluginsAt(RCore *core, const char *arg, const char *user_path) {
 	if (arg && *arg) {
@@ -110,6 +110,7 @@ R_API void r_core_loadlibs_init(RCore *core) {
 	DF (BIN, "bin plugins", bin);
 	DF (EGG, "egg plugins", egg);
 	DF (FS, "fs plugins", fs);
+	DF (ARCH, "archplugins", arch);
 	core->times->loadlibs_init_time = r_time_now_mono () - prev;
 }
 
