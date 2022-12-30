@@ -4759,14 +4759,14 @@ R_API void r_core_anal_fcn_merge(RCore *core, ut64 addr, ut64 addr2) {
 		R_LOG_ERROR ("Cannot merge the same function");
 		return;
 	}
-	// join all basic blocks from f1 into f2 if they are not
-	// delete f1
+	// join all basic blocks from f2 into f1 if they are not
+	// delete f2
 	R_LOG_INFO ("Merge 0x%08"PFMT64x" into 0x%08"PFMT64x, addr, addr2);
-	r_list_foreach (f1->bbs, iter, bb) {
-		r_anal_function_add_block (f2, bb);
+	r_list_foreach (f2->bbs, iter, bb) {
+		r_anal_function_add_block (f1, bb);
 	}
 	// TODO: import data/code/refs
-	r_anal_function_delete (f1);
+	r_anal_function_delete (f2);
 }
 
 static bool esil_anal_stop = false;
