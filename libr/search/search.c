@@ -93,6 +93,7 @@ R_API int r_search_set_mode(RSearch *s, int mode) {
 
 	// no r_search_update for these
 	case R_SEARCH_RABIN_KARP:
+	case R_SEARCH_TIRE:
 	case R_SEARCH_PATTERN:
 		break;
 	default:
@@ -533,6 +534,8 @@ R_API int r_search_update_read(RSearch *s, ut64 from, ut64 to) {
 		return search_regex_read (s, from, to);
 	case R_SEARCH_RABIN_KARP:
 		return search_rk (s, from, to);
+	case R_SEARCH_TIRE:
+		return search_tire (s, from, to);
 	default:
 		R_LOG_WARN ("Unsupported search mode");
 		return -1;
