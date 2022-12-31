@@ -2730,7 +2730,7 @@ static void __foreach(RCore *core, const char **cmds, int type) {
 
 static void __init_autocomplete_default(RCore* core) {
 	const char *fcns[] = {
-		"afi", "afcf", "afn", NULL
+		"afi", "afcf", "afn", "afm", NULL
 	};
 	const char *seeks[] = {
 		"s", NULL
