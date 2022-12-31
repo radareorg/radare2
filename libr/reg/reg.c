@@ -127,6 +127,9 @@ R_API int r_reg_type_by_name(const char *str) {
 	if (!strcmp (str, "all")) {
 		return R_REG_TYPE_ALL;
 	}
+	if (!strcmp (str, "xmm")) {
+		return R_REG_TYPE_VEC128;
+	}
 	return -1;
 }
 
