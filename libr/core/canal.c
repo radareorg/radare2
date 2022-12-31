@@ -4755,6 +4755,9 @@ struct r_merge_ctx_t {
 bool fcn_merge_touch_cb(ut64 addr, struct r_merge_ctx_t *ctx) {
 	RAnalBlock *bb = r_anal_get_block_at(ctx->anal, addr);
 
+	if (!bb)
+		return true;
+
 	RListIter *iter;
 	RAnalFunction *fcn;
 	bool found = false;
