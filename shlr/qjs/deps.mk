@@ -1,6 +1,7 @@
 include ../../libr/config.mk
 # include $(SHLR)/qjs/config.mk
 LINK_QJS_ARCHIVE=0
+QJS_STACK_CHECK=1
 QJS_BIGNUM=1
 QJS_LIBC=0
 
@@ -24,4 +25,7 @@ QJS_OBJS=$(subst .c,.o,$(QJS_FILES))
 CFLAGS+=-I$(SHLR)/qjs/src
 ifeq ($(QJS_BIGNUM),1)
 CFLAGS+=-DCONFIG_BIGNUM=$(QJS_BIGNUM)
+endif
+ifeq ($(QJS_STACK_CHECK),1)
+CFLAGS+=-DCONFIG_STACK_CHECK=y
 endif
