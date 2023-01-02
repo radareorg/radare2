@@ -4744,13 +4744,53 @@ R_API RList* r_core_anal_cycles(RCore *core, int ccl) {
 	return hooks;
 }
 
+struct r_merge_ctx_t {
+	RAnal *anal;
+	RAnalFunction *cur;
+	RAnalFunction *merge;
+	RList touch;
+};
+
+/* Tests if functions are touching */
+bool fcn_merge_touch_cb(ut64 addr, struct r_merge_ctx_t *ctx) {
+	RAnalBlock *bb = r_anal_get_block_at(ctx->anal, addr);
+
+	if (!bb)
+		return true;
+
+	RListIter *iter;
+	RAnalFunction *fcn;
+	bool found = false;
+	r_list_foreach(bb->fcns, iter, fcn) {
+		// Ignore if already part of current function
+		if (ctx->cur == fcn) {
+			return true;
+		}
+
+		// Function we're trying to merge into
+		if (ctx->merge == fcn) {
+			found = true;
+		}
+	}
+
+	// Add it to the touch list
+	if (found)
+		r_list_append(&ctx->touch, bb);
+
+	return true;
+}
+
+/* Adds BB to function */
+bool fcn_merge_add_cb(RAnalBlock *block, RAnalFunction *fcn) {
+	r_anal_function_add_block(fcn, block);
+	return true;
+}
+
 /* Join function at addr2 into function at addr */
 // addr use to be core->offset
 R_API void r_core_anal_fcn_merge(RCore *core, ut64 addr, ut64 addr2) {
-	RListIter *iter;
-	ut64 min = 0;
-	ut64 max = 0;
-	int first = 1;
+	RListIter *iter_fcn;
+	RListIter *iter_merge;
 	RAnalBlock *bb;
 	RAnalFunction *f1 = r_anal_get_function_at (core->anal, addr);
 	RAnalFunction *f2 = r_anal_get_function_at (core->anal, addr2);
@@ -4762,42 +4802,50 @@ R_API void r_core_anal_fcn_merge(RCore *core, ut64 addr, ut64 addr2) {
 		R_LOG_ERROR ("Cannot merge the same function");
 		return;
 	}
-	// join all basic blocks from f1 into f2 if they are not
-	// delete f2
+
+	// Join f2 BBs into f1
+	r_list_foreach (f1->bbs, iter_fcn, bb) {
+		struct r_merge_ctx_t merge = {
+			.anal = core->anal,
+			.cur = f1,
+			.merge = f2
+		};
+		r_list_init (&merge.touch);
+
+		// Go over each possible path ie jump, fail, ...
+		r_anal_block_successor_addrs_foreach(bb, (RAnalAddrCb)&fcn_merge_touch_cb, &merge);
+
+		// Loop over each touching BB
+		r_list_foreach ((&merge.touch), iter_merge, bb) {
+			r_anal_block_recurse(bb, (RAnalBlockCb)&fcn_merge_add_cb, f1);
+		}
+
+		// Free the contents of the list
+		r_list_purge (&merge.touch);
+	}
+
+	// Join f1 BBs into f2
+	r_list_foreach (f2->bbs, iter_fcn, bb) {
+		struct r_merge_ctx_t merge = {
+			.anal = core->anal,
+			.cur = f2,
+			.merge = f1
+		};
+		r_list_init (&merge.touch);
+
+		// Go over each possible path ie jump, fail, ...
+		r_anal_block_successor_addrs_foreach(bb, (RAnalAddrCb)&fcn_merge_touch_cb, &merge);
+
+		// Loop over each touching BB
+		r_list_foreach ((&merge.touch), iter_merge, bb) {
+			r_anal_block_recurse(bb, (RAnalBlockCb)&fcn_merge_add_cb, f2);
+		}
+
+		// Free the contents of the list
+		r_list_purge (&merge.touch);
+	}
+
 	R_LOG_INFO ("Merge 0x%08"PFMT64x" into 0x%08"PFMT64x, addr, addr2);
-	r_list_foreach (f1->bbs, iter, bb) {
-		if (first) {
-			min = bb->addr;
-			max = bb->addr + bb->size;
-			first = 0;
-		} else {
-			if (bb->addr < min) {
-				min = bb->addr;
-			}
-			if (bb->addr + bb->size > max) {
-				max = bb->addr + bb->size;
-			}
-		}
-	}
-	r_list_foreach (f2->bbs, iter, bb) {
-		if (first) {
-			min = bb->addr;
-			max = bb->addr + bb->size;
-			first = 0;
-		} else {
-			if (bb->addr < min) {
-				min = bb->addr;
-			}
-			if (bb->addr + bb->size > max) {
-				max = bb->addr + bb->size;
-			}
-		}
-		r_anal_function_add_block (f1, bb);
-	}
-	// TODO: import data/code/refs
-	r_anal_function_delete (f2);
-	// update size
-	r_anal_function_relocate (f2, R_MIN (addr, addr2));
 }
 
 static bool esil_anal_stop = false;

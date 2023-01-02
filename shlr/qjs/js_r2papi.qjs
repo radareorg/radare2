@@ -553,8 +553,6 @@ class EsilToken {
 G.EsilToken = EsilToken;
 class EsilNode {
     constructor(token = new EsilToken(), type = "none") {
-        this.lhs = new EsilNode(); // left side
-        this.rhs = new EsilNode(); // right side
         this.type = "none";
         this.token = token;
         this.children = [];

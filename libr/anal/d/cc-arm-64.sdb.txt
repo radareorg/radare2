@@ -25,3 +25,8 @@ cc.swift.argn=stack
 cc.swift.self=x20
 cc.swift.error=x21
 cc.swift.ret=x0
+
+p9=cc
+cc.p9.arg0=x0
+cc.p9.argn=stack
+cc.p9.ret=x0

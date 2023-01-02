@@ -35,7 +35,6 @@ jobs:
 
   # Linux
   linux-static:
-    if: contains(github.ref, 'master') || contains(github.ref, 'ci-')
     runs-on: ubuntu-20.04
     steps:
     - name: Checkout
@@ -518,6 +517,39 @@ jobs:
 #      with:
 #        name: freebsd
 #        path: radare2-freebsd.tgz
+
+
+  check_abi_compatibility:
+    needs:
+      - linux-static
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
+        working-directory: /tmp
+    steps:
+    - name: Install dependencies
+      run: |
+        sudo apt-get --assume-yes update
+        sudo apt install --assume-yes abigail-tools wget
+    - name: Download Build
+      uses: actions/download-artifact@v3
+      with:
+        name: linux-static
+        path: /tmp
+    - name: Download latest release
+      run: |
+        DOWNLOAD_URL=$(curl -s https://api.github.com/repos/radareorg/radare2/releases/latest | jq -r '.assets[] | select(.name | startswith("radare2")) | select(.name | endswith("static.tar.xz")) | .browser_download_url')
+        wget -O r2-static-latest.tar.xz $DOWNLOAD_URL
+    - name: Untar
+      run: |
+        mkdir r2-static
+        tar -xvf r2-static.tar.xz -C r2-static --strip-components=1
+        mkdir r2-static-latest
+        tar -xvf r2-static-latest.tar.xz -C r2-static-latest --strip-components=1
+    - name: ABI compatibility check
+      run: |
+        for lib in r2-static-latest/usr/lib/libr_*.so; do abidiff --no-show-locs ${lib} r2-static/usr/lib/$(basename ${lib}); done
 
 
   # Release creation

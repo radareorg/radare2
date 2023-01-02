@@ -43,6 +43,8 @@ endif
 # installation directory
 prefix=/usr/local
 
+# avoid stack overflow on recursive calls
+CONFIG_STACK_CHECK=y
 # use the gprof profiler
 #CONFIG_PROFILE=y
 # use address sanitizer
