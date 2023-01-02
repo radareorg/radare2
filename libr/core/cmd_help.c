@@ -171,6 +171,7 @@ static RCoreHelpMessage help_msg_exclamation = {
 
 static RCoreHelpMessage help_msg_root = {
 	"%var", "=value", "alias for 'env' command",
+	"\"", "[?][\"..|..\"]", "quote a command to avoid evaluaing special chars",
 	"*", "[?] off[=[0x]value]", "pointer read/write data/values (see ?v, wx, wv)",
 	"(macro arg0 arg1)",  "", "manage scripting macros",
 	".", "[?] [-|(m)|f|!sh|cmd]", "Define macro or load r2, cparse or rlang file",

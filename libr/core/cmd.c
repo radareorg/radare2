@@ -90,6 +90,16 @@ static RCoreHelpMessage help_msg_l = {
 	NULL
 };
 
+static RCoreHelpMessage help_msg_quote = {
+	"Usage:", "\"[\"..|..\"]", "quote the command to avoid evaluating special characters",
+	"\"?", "", "show this help",
+	"\"", "?e hello \\\"world\\\"\"", "print (hello \"world\")",
+	"\"", "?e x;y\";\"?e y;x\"", "run two commands (prints x;y\ny;x)",
+	"\"\"", "[cmd]", "directly call a command ignoring all special chars (fast)",
+	"\"\"?e x;y\";\"?e y;x", "", "run two commands ignoring special chars (prints x;y\";\"?e y;x) ",
+	NULL
+};
+
 static RCoreHelpMessage help_msg_plus = {
 	"Usage:", "+", "seek forward, same as s+X (see s? and -? for more help)",
 	"+", "8", "seek 8 bytes forward, same as s+8",
@@ -3865,7 +3875,11 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon, bool *tmpseek
 				cmd++;
 				p = *cmd ? find_eoq (cmd) : NULL;
 				if (!p || !*p) {
-					R_LOG_ERROR ("Missing \" in (%s)", cmd);
+					if (!strcmp (cmd, "?")) {
+						r_core_cmd_help (core, help_msg_quote);
+					} else {
+						R_LOG_ERROR ("Missing \" in (%s)", cmd);
+					}
 					r_list_free (tmpenvs);
 					return false;
 				}
