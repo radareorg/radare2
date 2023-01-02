@@ -110,7 +110,7 @@ R_API void r_core_loadlibs_init(RCore *core) {
 	DF (BIN, "bin plugins", bin);
 	DF (EGG, "egg plugins", egg);
 	DF (FS, "fs plugins", fs);
-	DF (ARCH, "archplugins", arch);
+	DF (ARCH, "arch plugins", arch);
 	core->times->loadlibs_init_time = r_time_now_mono () - prev;
 }
 
