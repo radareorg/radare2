@@ -285,7 +285,7 @@ static void siguza_xrefs(RCore *core, ut64 search, ut64 start, int lenbytes) {
 	} else {
 		snprintf (target_ref, sizeof (target_ref), "xrefs to 0x%08"PFMT64x, search);
 	}
-	eprintf ("Finding %s in 0x%08"PFMT64x"-0x%08"PFMT64x"\n", target_ref, start, end);
+	R_LOG_INFO ("Finding %s in 0x%08"PFMT64x"-0x%08"PFMT64x, target_ref, start, end);
 
 	do {
 		int lenbytes_to_read = lenbytes_rem >= core->blocksize_max ? core->blocksize_max : end - cursor;
@@ -308,14 +308,14 @@ static int r_cmdsixref_call(void *user, const char *input) {
 	const char *arch = r_config_get (core->config, "asm.arch");
 	const int bits = r_config_get_i (core->config, "asm.bits");
 
-	if (!strstr (arch, "arm") || bits != 64) {
-		eprintf ("This command only works on arm64. Please check your asm.{arch,bits}\n");
-		return true;
+	if (*input == '?') {
+		eprintf ("Usage: sixref [address] [len]   Find x-refs in executable sections (arm64 only but fast!)\n");
+		goto done;
 	}
 
-	if (*input == '?') {
-		eprintf ("Usage: sixref [address] [len]   Find x-refs in executable sections (arm64 only. fast!)\n");
-		goto done;
+	if (!strstr (arch, "arm") || bits != 64) {
+		R_LOG_ERROR ("This command only works on arm64. Please check your asm.{arch,bits}");
+		return true;
 	}
 
 	ut64 search = 0;
@@ -333,7 +333,7 @@ static int r_cmdsixref_call(void *user, const char *input) {
 	if (len == 0) {
 		RList *sections = r_bin_get_sections (core->bin);
 		if (!sections) {
-			eprintf ("No executable sections found\n");
+			R_LOG_ERROR ("No executable sections found");
 			goto done;
 		}
 
@@ -350,19 +350,19 @@ static int r_cmdsixref_call(void *user, const char *input) {
 		ut64 offset = core->offset;
 		if (offset & 3) {
 			offset -= offset % 4;
-			eprintf ("Current offset is not 4-byte aligned, using 0x%"PFMT64x" instaed\n", offset);
+			R_LOG_INFO ("Current offset is not 4-byte aligned, using 0x%"PFMT64x" instaed", offset);
 		}
 
 		RBinSection *s = r_bin_get_section_at (core->bin->cur->o, offset, true);
 		if (!s || !(s->perm & R_PERM_X)) {
-			eprintf ("Current section is not executable\n");
+			R_LOG_WARN ("Current section is not executable");
 			goto done;
 		}
 
 		ut64 sect_end = s->vaddr + s->vsize;
 		if (offset + len > sect_end || offset + len < s->vaddr) {
 			len = sect_end - offset;
-			eprintf ("Length is not within range for this section, using %u instead\n", len);
+			R_LOG_WARN ("Length is not within range for this section, using %u instead", len);
 		}
 
 		siguza_xrefs (core, search, offset, len);

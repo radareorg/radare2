@@ -213,9 +213,9 @@ static CPU_CONST *const_by_name(CPU_MODEL *cpu, int type, char *c) {
 	return NULL;
 }
 
-static int __esil_pop_argument(RAnalEsil *esil, ut64 *v) {
-	char *t = r_anal_esil_pop (esil);
-	if (!t || !r_anal_esil_get_parm (esil, t, v)) {
+static int __esil_pop_argument(REsil *esil, ut64 *v) {
+	char *t = r_esil_pop (esil);
+	if (!t || !r_esil_get_parm (esil, t, v)) {
 		free (t);
 		return false;
 	}
@@ -631,8 +631,8 @@ INST_HANDLER (eijmp) {	// EIJMP
 	ut64 eind = 0;
 	// read z and eind for calculating jump address on runtime
 	if (anal->esil) {
-		r_anal_esil_reg_read (anal->esil, "z",    &z,    NULL);
-		r_anal_esil_reg_read (anal->esil, "eind", &eind, NULL);
+		r_esil_reg_read (anal->esil, "z",    &z,    NULL);
+		r_esil_reg_read (anal->esil, "eind", &eind, NULL);
 	}
 	// real target address may change during execution, so this value will
 	// be changing all the time
@@ -729,7 +729,7 @@ INST_HANDLER (ijmp) {	// IJMP k
 	ut64 z = 0;
 	// read z for calculating jump address on runtime
 	if (anal->esil) {
-		r_anal_esil_reg_read (anal->esil, "z", &z, NULL);
+		r_esil_reg_read (anal->esil, "z", &z, NULL);
 	}
 	// real target address may change during execution, so this value will
 	// be changing all the time
@@ -1390,7 +1390,7 @@ INST_HANDLER (spm) { // SPM Z+
 
 	// read SPM Control Register (SPMCR)
 	if (anal->esil) {
-		r_anal_esil_reg_read (anal->esil, "spmcsr", &spmcsr, NULL);
+		r_esil_reg_read (anal->esil, "spmcsr", &spmcsr, NULL);
 	}
 
 	// clear SPMCSR
@@ -1713,19 +1713,19 @@ static int avr_op (RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 	// set memory layout registers
 	if (anal->esil) {
 		ut64 offset = 0;
-		r_anal_esil_reg_write (anal->esil, "_prog", offset);
+		r_esil_reg_write (anal->esil, "_prog", offset);
 
 		offset += (1ULL << (cpu ? cpu->pc: 8));
-		r_anal_esil_reg_write (anal->esil, "_io", offset);
+		r_esil_reg_write (anal->esil, "_io", offset);
 
 		offset += const_get_value (const_by_name (cpu, CPU_CONST_PARAM, "sram_start"));
-		r_anal_esil_reg_write (anal->esil, "_sram", offset);
+		r_esil_reg_write (anal->esil, "_sram", offset);
 
 		offset += const_get_value (const_by_name (cpu, CPU_CONST_PARAM, "sram_size"));
-		r_anal_esil_reg_write (anal->esil, "_eeprom", offset);
+		r_esil_reg_write (anal->esil, "_eeprom", offset);
 
 		offset += const_get_value (const_by_name (cpu, CPU_CONST_PARAM, "eeprom_size"));
-		r_anal_esil_reg_write (anal->esil, "_page", offset);
+		r_esil_reg_write (anal->esil, "_page", offset);
 	}
 	// process opcode
 	avr_op_analyze (anal, op, addr, buf, len, cpu);
@@ -1738,7 +1738,7 @@ static int avr_op (RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 	return size;
 }
 
-static bool avr_custom_des(RAnalEsil *esil) {
+static bool avr_custom_des(REsil *esil) {
 	ut64 key, encrypt, text,des_round;
 	ut32 key_lo, key_hi, buf_lo, buf_hi;
 	if (!esil || !esil->anal || !esil->anal->reg) {
@@ -1747,9 +1747,9 @@ static bool avr_custom_des(RAnalEsil *esil) {
 	if (!__esil_pop_argument (esil, &des_round)) {
 		return false;
 	}
-	r_anal_esil_reg_read (esil, "hf", &encrypt, NULL);
-	r_anal_esil_reg_read (esil, "deskey", &key, NULL);
-	r_anal_esil_reg_read (esil, "text", &text, NULL);
+	r_esil_reg_read (esil, "hf", &encrypt, NULL);
+	r_esil_reg_read (esil, "deskey", &key, NULL);
+	r_esil_reg_read (esil, "text", &text, NULL);
 
 	key_lo = key & UT32_MAX;
 	key_hi = key >> 32;
@@ -1783,12 +1783,12 @@ static bool avr_custom_des(RAnalEsil *esil) {
 		desctx.round++;
 	}
 
-	r_anal_esil_reg_write (esil, "text", text);
+	r_esil_reg_write (esil, "text", text);
 	return true;
 }
 
 // ESIL operation SPM_PAGE_ERASE
-static bool avr_custom_spm_page_erase(RAnalEsil *esil) {
+static bool avr_custom_spm_page_erase(REsil *esil) {
 	ut64 addr, i;
 
 	// sanity check
@@ -1812,7 +1812,7 @@ static bool avr_custom_spm_page_erase(RAnalEsil *esil) {
 	//eprintf ("SPM_PAGE_ERASE %ld bytes @ 0x%08" PFMT64x ".\n", page_size, addr);
 	ut8 c = 0xff;
 	for (i = 0; i < (1ULL << page_size_bits); i++) {
-		r_anal_esil_mem_write (
+		r_esil_mem_write (
 			esil, (addr + i) & CPU_PC_MASK (cpu), &c, 1);
 	}
 
@@ -1820,7 +1820,7 @@ static bool avr_custom_spm_page_erase(RAnalEsil *esil) {
 }
 
 // ESIL operation SPM_PAGE_FILL
-static bool avr_custom_spm_page_fill(RAnalEsil *esil) {
+static bool avr_custom_spm_page_fill(REsil *esil) {
 	ut64 addr, i;
 	ut8 r0, r1;
 
@@ -1853,14 +1853,14 @@ static bool avr_custom_spm_page_fill(RAnalEsil *esil) {
 
 	// perform write to temporary page
 	//eprintf ("SPM_PAGE_FILL bytes (%02x, %02x) @ 0x%08" PFMT64x ".\n", r1, r0, addr);
-	r_anal_esil_mem_write (esil, addr++, &r0, 1);
-	r_anal_esil_mem_write (esil, addr++, &r1, 1);
+	r_esil_mem_write (esil, addr++, &r0, 1);
+	r_esil_mem_write (esil, addr++, &r1, 1);
 
 	return true;
 }
 
 // ESIL operation SPM_PAGE_WRITE
-static bool avr_custom_spm_page_write(RAnalEsil *esil) {
+static bool avr_custom_spm_page_write(REsil *esil) {
 	CPU_MODEL *cpu;
 	char *t = NULL;
 	ut64 addr, page_size_bits, tmp_page;
@@ -1879,7 +1879,7 @@ static bool avr_custom_spm_page_write(RAnalEsil *esil) {
 	// of the internal temporary page
 	cpu = get_cpu_model (esil->anal->config->cpu);
 	page_size_bits = const_get_value (const_by_name (cpu, CPU_CONST_PARAM, "page_size"));
-	r_anal_esil_reg_read (esil, "_page", &tmp_page, NULL);
+	r_esil_reg_read (esil, "_page", &tmp_page, NULL);
 
 	// align base address to page_size_bits
 	addr &= (~(MASK (page_size_bits)) & CPU_PC_MASK (cpu));
@@ -1889,13 +1889,13 @@ static bool avr_custom_spm_page_write(RAnalEsil *esil) {
 	if (!(t = malloc (1 << page_size_bits))) {
 		return false;
 	}
-	r_anal_esil_mem_read (esil, tmp_page, (ut8 *) t, 1 << page_size_bits);
-	r_anal_esil_mem_write (esil, addr, (ut8 *) t, 1 << page_size_bits);
+	r_esil_mem_read (esil, tmp_page, (ut8 *) t, 1 << page_size_bits);
+	r_esil_mem_write (esil, addr, (ut8 *) t, 1 << page_size_bits);
 
 	return true;
 }
 
-static bool esil_avr_hook_reg_write(RAnalEsil *esil, const char *name, ut64 *val) {
+static bool esil_avr_hook_reg_write(REsil *esil, const char *name, ut64 *val) {
 	// r_return_val_if_fail (esil && esil->anal, false);
 	if (!esil || !esil->anal) {
 		return false;
@@ -1919,20 +1919,20 @@ static bool esil_avr_hook_reg_write(RAnalEsil *esil, const char *name, ut64 *val
 	return false;
 }
 
-static int esil_avr_init(RAnalEsil *esil) {
+static int esil_avr_init(REsil *esil) {
 	if (!esil) {
 		return false;
 	}
 	desctx.round = 0;
-	r_anal_esil_set_op (esil, "des", avr_custom_des, 0, 0, R_ANAL_ESIL_OP_TYPE_CUSTOM);		//better meta info plz
-	r_anal_esil_set_op (esil, "SPM_PAGE_ERASE", avr_custom_spm_page_erase, 0, 0, R_ANAL_ESIL_OP_TYPE_CUSTOM);
-	r_anal_esil_set_op (esil, "SPM_PAGE_FILL", avr_custom_spm_page_fill, 0, 0, R_ANAL_ESIL_OP_TYPE_CUSTOM);
-	r_anal_esil_set_op (esil, "SPM_PAGE_WRITE", avr_custom_spm_page_write, 0, 0, R_ANAL_ESIL_OP_TYPE_CUSTOM);
+	r_esil_set_op (esil, "des", avr_custom_des, 0, 0, R_ESIL_OP_TYPE_CUSTOM);		//better meta info plz
+	r_esil_set_op (esil, "SPM_PAGE_ERASE", avr_custom_spm_page_erase, 0, 0, R_ESIL_OP_TYPE_CUSTOM);
+	r_esil_set_op (esil, "SPM_PAGE_FILL", avr_custom_spm_page_fill, 0, 0, R_ESIL_OP_TYPE_CUSTOM);
+	r_esil_set_op (esil, "SPM_PAGE_WRITE", avr_custom_spm_page_write, 0, 0, R_ESIL_OP_TYPE_CUSTOM);
 	esil->cb.hook_reg_write = esil_avr_hook_reg_write;
 	return true;
 }
 
-static int esil_avr_fini(RAnalEsil *esil) {
+static int esil_avr_fini(REsil *esil) {
 	return true;
 }
 

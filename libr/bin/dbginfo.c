@@ -60,8 +60,30 @@ R_API char *r_bin_addr2text(RBin *bin, ut64 addr, int origin) {
 		if (token) {
 			*token++ = 0;
 			line = atoi (token);
-			out = r_file_slurp_line (file_line, line, 0);
-			*token++ = ':';
+			bool found = true;
+			const char *filename = file_line;
+			char *nf = NULL;
+			if (!r_file_exists (file_line)) {
+				const char *bn = r_file_basename (file_line);
+				// TODO: use dir.source
+				if (r_file_exists (bn)) {
+					filename = bn;
+				} else {
+					nf = r_str_newf ("%s/%s", bin->srcdir, bn);
+					if (r_file_exists (bn)) {
+						filename = nf;
+					} else {
+						found = false;
+						// R_LOG_WARN ("Cannot find %s", filename);
+						// return NULL;
+					}
+				}
+			}
+			if (found) {
+				out = r_file_slurp_line (filename, line, 0);
+				*token++ = ':';
+				free (nf);
+			}
 		} else {
 			return file_line;
 		}

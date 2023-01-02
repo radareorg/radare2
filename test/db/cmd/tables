@@ -1,5 +1,6 @@
 NAME=tables sum
 FILE=bins/elf/analysis/elf-virtualtable
+ARGS=-e bin.types=true
 CMDS=<<EOF
 f, size/sum
 EOF
@@ -75,6 +76,7 @@ RUN
 
 NAME=tables csv
 FILE=bins/elf/analysis/elf-virtualtable
+ARGS=-e bin.types=true
 CMDS=<<EOF
 f, size/ne/0,addr/ne/0x00000000,/head/10,:csv~:..20
 f, space/eq/relocs,addr/cols/name,/head/3,:json~{}
@@ -111,11 +113,11 @@ addr,size,space,name
 
 space            name
 ---------------------
+sections         section..strtab
 segments         segment.GNU_STACK
 symbols.sections sym..comment
 imports          loc.imp.__gmon_start__
 imports          loc.imp._Jv_RegisterClasses
-imports          loc.imp._ITM_deregisterTMCloneTable
 
 .--------------------------------------------------------------------------------------------------.
 | space    | size  | name                                                                          |
@@ -127,10 +129,10 @@ imports          loc.imp._ITM_deregisterTMCloneTable
 | classes  | 1     | class.B                                                                       |
 | classes  | 1     | class.A                                                                       |
 | classes  | 1     | class.C                                                                       |
-| imports  | 16    | loc.imp._ITM_registerTMCloneTable                                             |
 | imports  | 16    | loc.imp._ITM_deregisterTMCloneTable                                           |
+| imports  | 16    | loc.imp._ITM_registerTMCloneTable                                             |
+| imports  | 16    | loc.imp._Jv_RegisterClasses                                                   |
 | format   | 56    | elf_phdr                                                                      |
-| format   | 64    | elf_header                                                                    |
 `--------------------------------------------------------------------------------------------------'
 
 EOF

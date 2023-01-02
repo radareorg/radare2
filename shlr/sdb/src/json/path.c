@@ -3,8 +3,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "rangstr.c"
-#include "../types.h"
+#include "sdb/rangstr.h"
+#include "sdb/sdb.h"
+#include "sdb/types.h"
 
 SDB_IPI void json_path_first(Rangstr *s) {
 	char *p;
@@ -68,7 +69,7 @@ int json_foreach(const char *s, JSONCallback cb UNUSED) {
 	int i, len, ret;
 	unsigned short *res = NULL;
 	len = strlen (s);
-	res = malloc (len);
+	res = sdb_gh_malloc (len);
 	ret = sdb_js0n ((const unsigned char *)s, len, res);
 	if (!ret) return 0;
 	if (*s=='[') {
@@ -89,10 +90,10 @@ int json_foreach(const char *s, JSONCallback cb UNUSED) {
 SDB_IPI int json_walk (const char *s) {
 	RangstrType *res;
 	int i, ret, len = strlen (s);
-	res = malloc (len+1);
+	res = sdb_gh_malloc (len+1);
 	ret = sdb_js0n ((const unsigned char *)s, len, res);
 	if (!ret) {
-		free (res);
+		sdb_gh_free (res);
 		return 0;
 	}
 	if (*s=='[' || *s=='{') {
@@ -105,7 +106,7 @@ SDB_IPI int json_walk (const char *s) {
 			printf ("%.*s\n", res[i+3], s+res[i+2]);
 		}
 	}
-	free (res);
+	sdb_gh_free (res);
 	return 1;
 }
 #endif
@@ -123,7 +124,7 @@ SDB_IPI Rangstr json_find (const char *s, Rangstr *rs) {
 
 	len = strlen (s);
 	if (len > RESFIXSZ) {
-		res = (RangstrType *)calloc (len + 1, sizeof (RangstrType));
+		res = (RangstrType *)sdb_gh_calloc (len + 1, sizeof (RangstrType));
 		if (!res) {
 			// eprintf ("Cannot allocate %d byte%s\n", len + 1, (len > 1)? "s": "");
 			return rangstr_null ();
@@ -131,7 +132,7 @@ SDB_IPI Rangstr json_find (const char *s, Rangstr *rs) {
 	}
 
 	ret = sdb_js0n ((const unsigned char *)s, len, res);
-#define PFREE(x) if (x && x != resfix) free (x)
+#define PFREE(x) if (x && x != resfix) sdb_gh_free (x)
 	if (ret > 0) {
 		PFREE (res);
 		return rangstr_null ();

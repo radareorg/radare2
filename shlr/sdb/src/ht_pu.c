@@ -1,11 +1,11 @@
 /* sdb - MIT - Copyright 2018-2022 - ret2libc, pancake */
 
-#include "sdb.h"
-#include "ht_pu.h"
+#include "sdb/sdb.h"
+#include "sdb/ht_pu.h"
 #include "ht.inc"
 
 static void free_kv_key(HT_(Kv) *kv) {
-	free (kv->key);
+	sdb_gh_free (kv->key);
 }
 
 // creates a default HtPU that has strings as keys
@@ -13,7 +13,7 @@ SDB_API HtName_(Ht)* Ht_(new0)(void) {
 	HT_(Options) opt = {
 		.cmp = (HT_(ListComparator))strcmp,
 		.hashfn = (HT_(HashFunction))sdb_hash,
-		.dupkey = (HT_(DupKey))strdup,
+		.dupkey = (HT_(DupKey))sdb_strdup,
 		.dupvalue = NULL,
 		.calcsizeK = (HT_(CalcSizeK))strlen,
 		.calcsizeV = NULL,

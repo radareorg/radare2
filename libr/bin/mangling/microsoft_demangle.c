@@ -373,7 +373,8 @@ static size_t get_operator_code(const char *buf, RList *names_l, bool memorize) 
 }
 	SStrInfo *str_info;
 	size_t read_len = 1;
-	switch (*++buf) {
+	buf++;
+	switch (*buf) {
 	case '0': SET_OPERATOR_CODE ("constructor"); break;
 	case '1': SET_OPERATOR_CODE ("~destructor"); break;
 	case '2': SET_OPERATOR_CODE ("operator new"); break;
@@ -426,7 +427,8 @@ static size_t get_operator_code(const char *buf, RList *names_l, bool memorize) 
 		break;
 	}
 	case '_':
-		switch (*++buf) {
+		buf++;
+		switch (*buf) {
 		case '0': SET_OPERATOR_CODE ("operator/="); break;
 		case '1': SET_OPERATOR_CODE ("operator%="); break;
 		case '2': SET_OPERATOR_CODE ("operator>>="); break;
@@ -451,7 +453,8 @@ static size_t get_operator_code(const char *buf, RList *names_l, bool memorize) 
 		case 'N': SET_OPERATOR_CODE ("eh_vector_vbase_ctor_iter"); break;
 		case 'O': SET_OPERATOR_CODE ("copy_ctor_closure"); break;
 		case 'R':
-			switch (*++buf) {
+			buf++;
+			switch (*buf) {
 			case '0': {
 				size_t len;
 				char *str = NULL;
@@ -1096,7 +1099,7 @@ static inline void parse_type_modifier(SStateInfo *state, STypeCodeStr *type_cod
 			free (str);
 		} else {
 			if (is_pin_ptr && *modifier_str) {
-				while (*++modifier_str == ' ') {};
+				modifier_str = r_str_trim_head_ro (modifier_str + 1);
 			}
 			copy_string (&tmp_str, modifier_str, 0);
 		}

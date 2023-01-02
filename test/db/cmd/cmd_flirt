@@ -20,7 +20,7 @@ FILE=bins/elf/analysis/pid_stripped
 CMDS=s 0x4e2420 ; af ; s 0x4e25c7 ; af ; zfs bins/other/sigs/libc-v7.sig ; afl~4e2420
 EXPECT=<<EOF
 Found flirt.__libc_start_main
-0x004e2420   40 664          flirt.__libc_start_main
+0x004e2420   40    664 flirt.__libc_start_main
 EOF
 RUN
 
@@ -36,7 +36,7 @@ afl~4e2420
 EOF
 EXPECT=<<EOF
 Found flirt.__libc_start_main
-0x004e2420   40 664          flirt.__libc_start_main
+0x004e2420   40    664 flirt.__libc_start_main
 EOF
 RUN
 
@@ -62,7 +62,7 @@ FILE=bins/elf/analysis/pid_stripped
 CMDS=s 0x4e2420 ; af ; s 0x4e25c7 ; af ; zfs bins/other/sigs/libc-v10.sig ; afl~4e2420
 EXPECT=<<EOF
 Found flirt.__libc_start_main
-0x004e2420   40 664          flirt.__libc_start_main
+0x004e2420   40    664 flirt.__libc_start_main
 EOF
 RUN
 
@@ -78,7 +78,7 @@ afl~4e2420
 EOF
 EXPECT=<<EOF
 Found flirt.__libc_start_main
-0x004e2420   40 664          flirt.__libc_start_main
+0x004e2420   40    664 flirt.__libc_start_main
 EOF
 RUN
 
@@ -210,7 +210,7 @@ EXPECT=<<EOF
 0x0045a8c0 132 flirt.__sigsetjmp
 0x0045abc0 6232 flirt._quicksort
 0x0045c620 19 flirt.__libc_secure_getenv
-0x0045ce30 10673 flirt.group_number
+0x0045ce30 10704 flirt.group_number
 0x0045f800 13172 flirt._IO_vfprintf_internal
 0x00462b80 976 flirt.hack_digit
 0x00465a50 11033 flirt.___printf_fp

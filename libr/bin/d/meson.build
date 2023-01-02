@@ -14,6 +14,8 @@ sdb_files = [
   'iertutil',
   'kernel32',
   'mfc120',
+  'mfc100u',
+  'mfc140u',
   'mfc30',
   'mfc40',
   'mfc42',
@@ -176,6 +178,8 @@ foreach file : sdb_files
 endforeach
 
 format_files = [
+  'dex',
+  'macho',
   'elf32',
   'elf64',
   'elf_enums',

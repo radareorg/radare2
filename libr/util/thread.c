@@ -17,7 +17,7 @@
 #include <kernel/scheduler.h>
 #endif
 
-#if __WINDOWS__
+#if R2__WINDOWS__
 static DWORD WINAPI _r_th_launcher(void *_th) {
 #else
 static void *_r_th_launcher(void *_th) {
@@ -72,7 +72,7 @@ R_API int r_th_push_task(RThread *th, void *user) {
 R_API R_TH_TID r_th_self(void) {
 #if HAVE_PTHREAD
 	return pthread_self ();
-#elif __WINDOWS__
+#elif R2__WINDOWS__
 	return GetCurrentThread ();
 #else
 #pragma message("Not implemented on this platform")
@@ -137,6 +137,8 @@ R_API bool r_th_getname(RThread *th, char *name, size_t len) {
 	return true;
 }
 
+#if 0
+// disabled because its not really useful and hard to compile
 R_API bool r_th_setaffinity(RThread *th, int cpuid) {
 #if !WANT_THREADS || defined(__wasi__) || defined(_WASI_EMULATED_SIGNAL)
 	return true;
@@ -148,11 +150,12 @@ R_API bool r_th_setaffinity(RThread *th, int cpuid) {
 	cpu_set_t c;
 	CPU_ZERO(&c);
 	CPU_SET(cpuid, &c);
-
+#if 0
 	if (sched_setaffinity (th->tid, sizeof (c), &c) != 0) {
 		R_LOG_ERROR ("Failed to set cpu affinity");
 		return false;
 	}
+#endif
 #endif
 #elif __FreeBSD__ || __DragonFly__
 	cpuset_t c;
@@ -181,7 +184,7 @@ R_API bool r_th_setaffinity(RThread *th, int cpuid) {
 		R_LOG_ERROR ("Failed to set cpu affinity");
 		return false;
 	}
-#elif __WINDOWS__
+#elif R2__WINDOWS__
 	if (SetThreadAffinityMask (th->tid, (DWORD_PTR)1 << cpuid) == 0) {
 		R_LOG_ERROR ("Failed to set cpu affinity");
 		return false;
@@ -204,6 +207,7 @@ R_API bool r_th_setaffinity(RThread *th, int cpuid) {
 #endif
 	return true;
 }
+#endif
 
 R_API RThread *r_th_new(RThreadFunction fun, void *user, int delay) {
 	RThread *th = R_NEW0 (RThread);
@@ -217,7 +221,7 @@ R_API RThread *r_th_new(RThreadFunction fun, void *user, int delay) {
 		th->ready = false;
 #if HAVE_PTHREAD
 		pthread_create (&th->tid, NULL, _r_th_launcher, th);
-#elif __WINDOWS__
+#elif R2__WINDOWS__
 		th->tid = CreateThread (NULL, 0, _r_th_launcher, th, 0, 0);
 #endif
 	}
@@ -241,7 +245,7 @@ R_API bool r_th_kill(RThread *th, bool force) {
 #else
 	pthread_cancel (th->tid);
 #endif
-#elif __WINDOWS__
+#elif R2__WINDOWS__
 	TerminateThread (th->tid, -1);
 #endif
 	return 0;
@@ -250,7 +254,7 @@ R_API bool r_th_kill(RThread *th, bool force) {
 // enable should be bool and th->ready must be protected with locks
 R_API bool r_th_start(RThread *th, int enable) {
 	bool ret = true;
-	enable = false; /// R2_580. remove the enable bit imho
+	enable = false;
 	if (enable) {
 		R_LOG_WARN ("r_th_start.enable should be removed");
 		if (!r_th_is_running (th)) {
@@ -277,7 +281,7 @@ R_API int r_th_wait(struct r_th_t *th) {
 #if HAVE_PTHREAD
 		void *thret;
 		ret = pthread_join (th->tid, &thret);
-#elif __WINDOWS__
+#elif R2__WINDOWS__
 		ret = WaitForSingleObject (th->tid, INFINITE);
 #endif
 		r_th_set_running (th, false);
@@ -293,7 +297,7 @@ R_API void *r_th_free(struct r_th_t *th) {
 	if (!th) {
 		return NULL;
 	}
-#if __WINDOWS__
+#if R2__WINDOWS__
 	CloseHandle (th->tid);
 #endif
 	r_th_lock_free (th->lock);

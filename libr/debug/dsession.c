@@ -275,7 +275,7 @@ static void serialize_registers(Sdb *db, HtUP *registers) {
 	ht_up_foreach (registers, serialize_register_cb, db);
 }
 
-// 0x<addr>={"size":<size_t>, "a":[<RDebugChangeMem>]}},
+// 0x<addr>={ "size":<size_t>, "a":[<RDebugChangeMem>]}},
 static bool serialize_memory_cb(void *db, const ut64 k, const void *v) {
 	RDebugChangeMem *mem;
 	RVector *vmem = (RVector *)v;
@@ -311,8 +311,8 @@ static void serialize_checkpoints(Sdb *db, RVector *checkpoints) {
 
 	r_vector_foreach (checkpoints, chkpt) {
 		// 0x<cnum>={
-		//   registers:{"<RRegisterType>":<RRegArena>, ...},
-		//   snaps:{"size":<size_t>, "a":[<RDebugSnap>]}
+		//   registers:{ "<RRegisterType>":<RRegArena>, ...},
+		//   snaps:{ "size":<size_t>, "a":[<RDebugSnap>]}
 		// }
 		PJ *j = pj_new ();
 		if (!j) {
@@ -321,7 +321,7 @@ static void serialize_checkpoints(Sdb *db, RVector *checkpoints) {
 		pj_o (j);
 
 		// Serialize RRegArena to "registers"
-		// {"size":<int>, "bytes":"<base64>"}
+		// { "size":<int>, "bytes":"<base64>" }
 		pj_ka (j, "registers");
 		for (i = 0; i < R_REG_TYPE_LAST; i++) {
 			RRegArena *arena = chkpt->arena[i];
@@ -338,7 +338,7 @@ static void serialize_checkpoints(Sdb *db, RVector *checkpoints) {
 		pj_end (j);
 
 		// Serialize RDebugSnap to "snaps"
-		// {"name":<str>, "addr":<ut64>, "addr_end":<ut64>, "size":<ut64>,
+		// { "name":<str>, "addr":<ut64>, "addr_end":<ut64>, "size":<ut64>,
 		//  "data":"<base64>", "perm":<int>, "user":<int>, "shared":<bool>}
 		pj_ka (j, "snaps");
 		r_list_foreach (chkpt->snaps, iter, snap) {
@@ -375,28 +375,28 @@ static void serialize_checkpoints(Sdb *db, RVector *checkpoints) {
  *   maxcnum=<maxcnum>
  *
  *   /registers
- *     0x<addr>={"size":<size_t>, "a":[<RDebugChangeReg>]}
+ *     0x<addr>={ "size":<size_t>, "a":[<RDebugChangeReg>]}
  *
  *   /memory
- *     0x<addr>={"size":<size_t>, "a":[<RDebugChangeMem>]}
+ *     0x<addr>={ "size":<size_t>, "a":[<RDebugChangeMem>]}
  *
  *   /checkpoints
  *     0x<cnum>={
- *       registers:{"<RRegisterType>":<RRegArena>, ...},
- *       snaps:{"size":<size_t>, "a":[<RDebugSnap>]}
+ *       registers:{ "<RRegisterType>":<RRegArena>, ...},
+ *       snaps:{ "size":<size_t>, "a":[<RDebugSnap>]}
  *     }
  *
  * RDebugChangeReg JSON:
- * {"cnum":<int>, "data":<ut64>}
+ * { "cnum":<int>, "data":<ut64>}
  *
  * RDebugChangeMem JSON:
- * {"cnum":<int>, "data":<ut8>}
+ * { "cnum":<int>, "data":<ut8>}
  *
  * RRegArena JSON:
- * {"size":<int>, "bytes":"<base64>"}
+ * { "size":<int>, "bytes":"<base64>" }
  *
  * RDebugSnap JSON:
- * {"name":<str>, "addr":<ut64>, "addr_end":<ut64>, "size":<ut64>,
+ * { "name":<str>, "addr":<ut64>, "addr_end":<ut64>, "size":<ut64>,
  *  "data":"<base64>", "perm":<int>, "user":<int>, "shared":<bool>}
  *
  * Notes:

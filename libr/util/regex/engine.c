@@ -482,11 +482,11 @@ dissect(struct match *m, char *start, char *stop, sopno startst, sopno stopst)
 
 /*
  - backref - figure out what matched what, figuring in back references
- */
-static char *			/* == stop (success) or NULL (failure) */
-backref(struct match *m, char *start, char *stop, sopno startst, sopno stopst,
-    sopno lev, int rec)			/* PLUS nesting level */
-{
+== stop (success) or NULL (failure)
+*/
+
+static char *backref(struct match *m, char *start, char *stop, sopno startst, sopno stopst, sopno lev, int rec) {
+	/* PLUS nesting level */
 	int i;
 	sopno ss;	/* start sop of current subRE */
 	char *sp;	/* start of string matched by it */
@@ -633,8 +633,9 @@ backref(struct match *m, char *start, char *stop, sopno startst, sopno stopst,
 		}
 		for (;;) {	/* find first matching branch */
 			dp = backref(m, sp, stop, ssub, esub, lev, rec);
-			if (dp)
+			if (dp) {
 				return dp;
+			}
 			/* that one missed, try next one */
 			if (OP (m->g->strip[esub]) == O_CH)
 				return NULL;	/* there is none */
@@ -658,10 +659,11 @@ backref(struct match *m, char *start, char *stop, sopno startst, sopno stopst,
 			offsave = m->pmatch[i].rm_so;
 			m->pmatch[i].rm_so = sp - m->offp;
 			dp = backref(m, sp, stop, ss+1, stopst, lev, rec);
-			if (dp)
-				return(dp);
+			if (dp) {
+				return dp;
+			}
 			m->pmatch[i].rm_so = offsave;
-			return(NULL);
+			return NULL;
 		}
 		break;
 	case ORPAREN:		/* must undo assignment if rest fails */
@@ -686,11 +688,9 @@ backref(struct match *m, char *start, char *stop, sopno startst, sopno stopst,
 }
 
 /*
- - fast - step through the string at top speed
+ - fast - step through the string at top speed where tentative match ended, or NULL
  */
-static char *			/* where tentative match ended, or NULL */
-fast(struct match *m, char *start, char *stop, sopno startst, sopno stopst)
-{
+static char * fast(struct match *m, char *start, char *stop, sopno startst, sopno stopst) {
 	states st = m->st;
 	states fresh = m->fresh;
 	states tmp = m->tmp;
@@ -776,11 +776,9 @@ fast(struct match *m, char *start, char *stop, sopno startst, sopno stopst)
 }
 
 /*
- - slow - step through the string more deliberately
+ - slow - step through the string more deliberately where it ended
  */
-static char *			/* where it ended */
-slow(struct match *m, char *start, char *stop, sopno startst, sopno stopst)
-{
+static char * slow(struct match *m, char *start, char *stop, sopno startst, sopno stopst) {
 	states st = m->st;
 	states empty = m->empty;
 	states tmp = m->tmp;
@@ -865,13 +863,12 @@ slow(struct match *m, char *start, char *stop, sopno startst, sopno stopst)
 /*
  - step - map set of states reachable before char to set reachable after
  */
-static states
-step(struct re_guts *g,
-    sopno start,		/* start state within strip */
-    sopno stop,			/* state after stop state within strip */
-    states bef,			/* states reachable before */
-    int ch,			/* character or NONCHAR code */
-    states aft)			/* states already known reachable after */
+static states step(struct re_guts *g,
+		sopno start,		/* start state within strip */
+		sopno stop,			/* state after stop state within strip */
+		states bef,			/* states reachable before */
+		int ch,			/* character or NONCHAR code */
+		states aft)			/* states already known reachable after */
 {
 	cset *cs;
 	sop s;

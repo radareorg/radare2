@@ -10,10 +10,10 @@ static R_TH_LOCAL RList *p_types_list;
 static bool is_simple_type(int idx) {
 	ut32 value = (ut32) idx;
 	/*   https://llvm.org/docs/PDB/TpiStream.html#type-indices
-        .---------------------------.------.----------.
-        |           Unused          | Mode |   Kind   |
-        '---------------------------'------'----------'
-        |+32                        |+12   |+8        |+0
+	     .---------------------------.------.----------.
+	     |           Unused          | Mode |   Kind   |
+	     '---------------------------'------'----------'
+	     |+32                        |+12   |+8        |+0
 	*/
 	return value < base_idx;
 	// return ((value & 0x00000000FFF00) <= 0x700 && (value & 0x00000000000FF) < 0x80);

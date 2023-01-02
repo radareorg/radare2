@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2011-2021 pancake<nopcode.org>, keegan */
+/* radare2 - MIT - Copyright 2021-2022 - pancake, keegan, Plan 9 Foundation */
 
 #include "p9bin.h"
 #include <r_asm.h>

@@ -23,18 +23,18 @@ typedef struct r_io_zip_uri_const_t {
 } RIOZipConstURI;
 
 static RIOZipConstURI ZIP_URIS[] = {
-	{"zip://", 6},
-	{"ipa://", 6},
-	{"jar://", 6},
+	{ "zip://", 6},
+	{ "ipa://", 6},
+	{ "jar://", 6},
 	{NULL, 0}
 };
 
 static RIOZipConstURI ZIP_ALL_URIS[] = {
-	{"apk://", 6},
-	{"zipall://", 9},
-	{"apkall://", 9},
-	{"ipaall://", 9},
-	{"jarall://", 9},
+	{ "apk://", 6},
+	{ "zipall://", 9},
+	{ "apkall://", 9},
+	{ "ipaall://", 9},
+	{ "jarall://", 9},
 	{NULL, 0}
 };
 

@@ -4,7 +4,7 @@
 #include "r_types.h"
 #include "r_list.h"
 
-#if __UNIX__ && WANT_DYLINK
+#if R2__UNIX__ && WANT_DYLINK
 #include <dlfcn.h>
 #endif
 
@@ -22,7 +22,7 @@ R_LIB_VERSION_HEADER (r_lib);
 #define R_LIB_ENV "R2_LIBR_PLUGINS"
 
 /* TODO: This must depend on HOST_OS, and maybe move into r_types */
-#if __WINDOWS__
+#if R2__WINDOWS__
 #include <windows.h>
 #define R_LIB_EXT "dll"
 #elif __APPLE__
@@ -31,6 +31,24 @@ R_LIB_VERSION_HEADER (r_lib);
 #define R_LIB_EXT "so"
 #endif
 
+typedef enum r_plugin_status_t {
+	R_PLUGIN_STATUS_BROKEN = 0,
+	R_PLUGIN_STATUS_INCOMPLETE = 1,
+	R_PLUGIN_STATUS_BASIC = 2,
+	R_PLUGIN_STATUS_OK = 3,
+	R_PLUGIN_STATUS_GOOD= 4,
+	R_PLUGIN_STATUS_COMPLETE = 5,
+} RPluginStatus;
+
+typedef struct r_plugin_meta_t {
+	char *name;
+	char *desc;
+	char *author;
+	char *version;
+	char *license;
+	RPluginStatus status;
+} RPluginMeta;
+
 /* store list of loaded plugins */
 typedef struct r_lib_plugin_t {
 	int type;
@@ -38,9 +56,13 @@ typedef struct r_lib_plugin_t {
 	void *data; /* user pointer */
 	struct r_lib_handler_t *handler;
 	void *dl_handler; // DL HANDLER
+	void (*free)(void *data);
+#if 0
 	char *author;
 	char *version;
-	void (*free)(void *data);
+	char *license;
+	RLibStatus status;
+#endif
 } RLibPlugin;
 
 /* store list of initialized plugin handlers */
@@ -83,6 +105,7 @@ enum {
 	R_LIB_TYPE_EGG,     /* r_egg plugin */
 	R_LIB_TYPE_FS,      /* r_fs plugin */
 	R_LIB_TYPE_ESIL,    /* r_anal.esil plugin */
+	R_LIB_TYPE_ARCH,
 	R_LIB_TYPE_LAST
 };
 

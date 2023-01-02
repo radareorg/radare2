@@ -15,7 +15,7 @@ static void print_message(RLogLevel level, const char *origin, const char *fmt, 
 }
 #else
 static void print_message(RLogLevel level, const char *origin, const char *fmt, va_list ap) {
-	r_log_vmessage (level, origin, fmt, ap);
+	r_log_vmessage (level, origin, __FILE__, __LINE__, fmt, ap);
 }
 #endif
 /*

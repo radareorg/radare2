@@ -542,3 +542,30 @@ afvW
     var_4h  0x27
 EOF
 RUN
+
+
+NAME=Stack Variables
+FILE=-
+ARGS=-a arm -b 16
+CMDS=<<EOF
+e anal.vars.newstack=true
+wx 2de9f04fadf54e4da5b088460df1900a0021aaf18007802281463846fff7e0ee4bf2640400214ff448420df5d260fff7d8eec0f2000400214ff48062a4a8fff7
+af
+afv-arg_690h
+afvs 0x690 config char *
+pd 1
+?e ...
+pd 1 @..2a
+EOF
+EXPECT=<<EOF
+/ 66: fcn.00000000 (int16_t arg1, int16_t arg2, int16_t arg_290h, char *config);
+|           ; arg int16_t arg1 @ r0
+|           ; arg int16_t arg2 @ r1
+|           ; arg int16_t arg_290h @ sp+0x290
+|           ; arg char *config @ sp+0x748
+|           ; var int16_t var_90h @ sp+0x90
+|           0x00000000      2de9f04f       push.w {r4, r5, r6, r7, r8, sb, sl, fp, lr}
+...
+|           0x0000002a      0df5d260       add.w r0, config
+EOF
+RUN

@@ -1,6 +1,6 @@
 /* sdb - MIT - Copyright 2019-2020 - pancake */
 
-#include "set.h"
+#include "sdb/set.h"
 
 //// set foreach spaguetti
 typedef struct {

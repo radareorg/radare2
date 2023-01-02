@@ -2,7 +2,7 @@
 
 #include <r_cons.h>
 #include <string.h>
-#if __UNIX__
+#if R2__UNIX__
 #include <errno.h>
 #endif
 
@@ -14,7 +14,7 @@ static int readbuffer_length = 0;
 static bool bufactive = true;
 
 #if 0
-//__UNIX__
+//R2__UNIX__
 #include <poll.h>
 static int __is_fd_ready(int fd) {
 	fd_set rfds;
@@ -33,7 +33,7 @@ static int __is_fd_ready(int fd) {
 #endif
 
 R_API int r_cons_controlz(int ch) {
-#if __UNIX__
+#if R2__UNIX__
 	if (ch == 0x1a) {
 		r_cons_show_cursor (true);
 		r_cons_enable_mouse (false);
@@ -92,7 +92,7 @@ static int __parseMouseEvent(void) {
 }
 
 R_API int r_cons_arrow_to_hjkl(int ch) {
-#if __WINDOWS__
+#if R2__WINDOWS__
 	if (I->vtmode != 2) {
 		if (I->is_arrow) {
 			switch (ch) {
@@ -405,7 +405,7 @@ R_API int r_cons_any_key(const char *msg) {
 
 extern void resizeWin(void);
 
-#if __WINDOWS__
+#if R2__WINDOWS__
 static int __cons_readchar_w32(ut32 usec) {
 	int ch = 0;
 	BOOL ret;
@@ -557,7 +557,7 @@ static int __cons_readchar_w32(ut32 usec) {
 #endif
 
 R_API int r_cons_readchar_timeout(ut32 usec) {
-#if __UNIX__
+#if R2__UNIX__
 	struct timeval tv;
 	fd_set fdset, errset;
 	FD_ZERO (&fdset);
@@ -597,7 +597,7 @@ R_API void r_cons_switchbuf(bool active) {
 	bufactive = active;
 }
 
-#if !__WINDOWS__
+#if !R2__WINDOWS__
 extern volatile sig_atomic_t sigwinchFlag;
 #endif
 
@@ -611,7 +611,7 @@ R_API int r_cons_readchar(void) {
 		return ch;
 	}
 	r_cons_set_raw (1);
-#if __WINDOWS__
+#if R2__WINDOWS__
 	return __cons_readchar_w32 (0);
 #elif __wasi__
 	void *bed = r_cons_sleep_begin ();
@@ -697,7 +697,7 @@ R_API char *r_cons_password(const char *msg) {
 	printf ("\r%s", msg);
 	fflush (stdout);
 	r_cons_set_raw (1);
-#if __UNIX__ && !__wasi__
+#if R2__UNIX__ && !__wasi__
 	RCons *a = r_cons_singleton ();
 	a->term_raw.c_lflag &= ~(ECHO | ECHONL);
 	// //  required to make therm/iterm show the key
@@ -728,7 +728,7 @@ R_API char *r_cons_password(const char *msg) {
 	buf[i] = 0;
 	r_cons_set_raw (0);
 	printf ("\n");
-#if __UNIX__
+#if R2__UNIX__
 	r_sys_signal (SIGTSTP, SIG_DFL);
 #endif
 	return buf;

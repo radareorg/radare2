@@ -1,8 +1,8 @@
 /* radare2 - LGPL - Copyright 2013-2020 - pancake */
 
-#if __UNIX__
+#if R2__UNIX__
 #include <unistd.h>
-#elif __WINDOWS__
+#elif R2__WINDOWS__
 #include <windows.h>
 #endif
 #include "spp.h"
@@ -103,13 +103,13 @@ int r_sys_setenv(const char *key, const char *value) {
 	if (!key) {
 		return 0;
 	}
-#if __UNIX__
+#if R2__UNIX__
 	if (!value) {
 		unsetenv (key);
 		return 0;
 	}
 	return setenv (key, value, 1);
-#elif __WINDOWS__
+#elif R2__WINDOWS__
 	int ret = SetEnvironmentVariableA (key, value);
 	return ret ? 0 : -1;
 #else
@@ -119,7 +119,7 @@ int r_sys_setenv(const char *key, const char *value) {
 }
 
 char *r_sys_getenv(const char *key) {
-#if __WINDOWS__
+#if R2__WINDOWS__
 	DWORD dwRet;
 	char *envbuf = NULL, *tmp_ptr;
 	char *val = NULL;
@@ -162,9 +162,9 @@ err_r_sys_get_env:
 }
 
 int r_sys_getpid() {
-#if __UNIX__
+#if R2__UNIX__
 	return getpid();
-#elif __WINDOWS__
+#elif R2__WINDOWS__
 	return GetCurrentProcessId();
 #else
 #warning r_sys_getpid not implemented for this platform

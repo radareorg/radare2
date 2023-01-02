@@ -6,7 +6,7 @@
 #include <r_util.h>
 #include "transport.h"
 
-#if __WINDOWS__
+#if R2__WINDOWS__
 #include <windows.h>
 
 static void *iob_pipe_open(const char *path) {

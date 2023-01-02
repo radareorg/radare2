@@ -9,7 +9,7 @@ pd 2
 EOF
 EXPECT=<<EOF
             0x100003ac0     .string "\xbf\n" ; len=3
-            0x100003ac3                     unaligned
+            0x100003ac3      f9             unaligned
 EOF
 RUN
 
@@ -34,7 +34,7 @@ NAME=pd+reloff+colors
 FILE=bins/elf/analysis/ls-alxchk
 CMDS=<<EOF
 af
-e asm.reloff=true
+e asm.offset.relative=true
 pd 10
 e scr.color=1
 pd 10

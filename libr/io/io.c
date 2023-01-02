@@ -1,20 +1,21 @@
 /* radare2 - LGPL - Copyright 2008-2022 - condret, pancake, alvaro_fe */
 
 #include <r_io.h>
-#include <sdb.h>
+#include <sdb/sdb.h>
 #include <config.h>
 
 R_LIB_VERSION (r_io);
 
 R_API RIO* r_io_new(void) {
-	return r_io_init (R_NEW0 (RIO));
+	RIO *io = R_NEW0 (RIO);
+	r_io_init (io);
+	return io;
 }
 
-// R2_580 - just return bool
-R_API RIO* r_io_init(RIO* io) {
-	r_return_val_if_fail (io, NULL);
+R_API void r_io_init(RIO* io) {
+	r_return_if_fail (io);
 	io->addrbytes = 1;
-	io->cb_printf = printf; // r_cons_printf;
+	io->cb_printf = printf;
 	r_io_desc_init (io);
 	r_io_bank_init (io);
 	r_io_map_init (io);
@@ -27,18 +28,17 @@ R_API RIO* r_io_init(RIO* io) {
 		io->bank = bank->id;
 		r_io_bank_add (io, bank);
 	}
-	return io;
 }
 
 R_API void r_io_free(RIO *io) {
 	if (io) {
 		r_io_fini (io);
-		r_cache_free (io->buffer);
 		free (io);
 	}
 }
 
 R_API RIODesc *r_io_open_buffer(RIO *io, RBuffer *b, int perm, int mode) {
+	r_return_val_if_fail (io && b, NULL);
 #if 0
 	ut64 bufSize = r_buf_size (b);
 	char *uri = r_str_newf ("malloc://%" PFMT64d, bufSize);
@@ -132,7 +132,7 @@ R_API RList* r_io_open_many(RIO* io, const char* uri, int perm, int mode) {
 	return desc_list;
 }
 
-#if __WINDOWS__
+#if R2__WINDOWS__
 R_API bool r_io_reopen(RIO* io, int fd, int perm, int mode) {
 	RIODesc	*old, *new;
 	char *uri;
@@ -267,27 +267,6 @@ R_API bool r_io_read_at(RIO *io, ut64 addr, ut8 *buf, int len) {
 		return true;
 	}
 	return internal_r_io_read_at (io, addr, buf, len);
-}
-
-// Returns true iff all reads on mapped regions are successful and complete.
-// Unmapped regions are filled with io->Oxff in both physical and virtual modes.
-// Use this function if you want to ignore gaps or do not care about the number
-// of read bytes.
-R_API bool r_io_read_at_mapped(RIO *io, ut64 addr, ut8 *buf, int len) {
-	bool ret;
-	r_return_val_if_fail (io && buf, false);
-	if (io->ff) {
-		memset (buf, io->Oxff, len);
-	}
-	if (io->va) {
-		ret = r_io_vread_at (io, addr, buf, len);
-	} else {
-		ret = r_io_pread_at (io, addr, buf, len) > 0;
-	}
-	if (io->cached & R_PERM_R) {
-		(void)r_io_cache_read(io, addr, buf, len);
-	}
-	return ret;
 }
 
 // For both virtual and physical mode, returns the number of bytes of read

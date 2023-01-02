@@ -31,9 +31,11 @@ static REggState *__es_new(void) {
 }
 
 static void __es_free(REggState *es) {
-	r_egg_free (es->e);
-	r_lib_free (es->l);
-	free (es);
+	if (es) {
+		r_egg_free (es->e);
+		r_lib_free (es->l);
+		free (es);
+	}
 }
 
 /* egg callback */
@@ -57,7 +59,7 @@ static void __load_plugins(REggState *es) {
 	}
 
 	// load plugins from the home directory
-	char *homeplugindir = r_str_home (R2_HOME_PLUGINS);
+	char *homeplugindir = r_xdg_datadir ("plugins");
 	r_lib_opendir (es->l, homeplugindir);
 	free (homeplugindir);
 
@@ -164,12 +166,12 @@ static int openfile(const char *f, int x) {
 			return -1;
 		}
 	}
-#if __UNIX__ && !__wasi__
+#if R2__UNIX__ && !__wasi__
 	if (x) {
 		fchmod (fd, 0755);
 	}
 #endif
-#if _MSC_VER || __WINDOWS__
+#if _MSC_VER || R2__WINDOWS__
 	int r = _chsize (fd, 0);
 #else
 	int r = ftruncate (fd, 0);
@@ -359,7 +361,7 @@ R_API int r_main_ragg2(int argc, const char **argv) {
 		case 'F':
 #if __APPLE__
 			format = "mach0";
-#elif __WINDOWS__
+#elif R2__WINDOWS__
 			format = "pe";
 #else
 			format = "elf";

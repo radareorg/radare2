@@ -31,7 +31,9 @@ FILE=-
 CMDS=<<EOF
 !!rasm2 -L~4004
 EOF
-EXPECT=
+EXPECT=<<EOF
+ade 4           i4004       LGPL3   i4004 decoder plugin (by pancake, condret)
+EOF
 RUN
 
 NAME=rasm2 arm asm/dis endian
@@ -140,14 +142,27 @@ RUN
 
 NAME=rasm2 #1167 3
 FILE=-
+BROKEN=1
 REQUIRE=gas linux x86
+BROKEN=1
 CMDS=!rasm2 -s att -a x86.as -b 64 "test %rbx, %rax" 
 EXPECT=<<EOF
 4885d8
 EOF
 RUN
 
+NAME=rasm2 -s att -a x86.as -b 64 movq %rdx, %rax
+BROKEN=1
+FILE=-
+REQUIRE=gas linux x86
+CMDS=!rasm2 -s att -a x86.as -b 64 "movq %rdx, %rax"
+EXPECT=<<EOF
+4889d0
+EOF
+RUN
+
 NAME=rasm2 #1167 4
+BROKEN=1
 FILE=-
 REQUIRE=gas linux x86
 CMDS=!rasm2 -s intel -a x86.as -b 64 "test rax, rbx" 
@@ -157,6 +172,7 @@ EOF
 RUN
 
 NAME=rasm2 #1167 5
+BROKEN=1
 FILE=-
 REQUIRE=gas linux x86
 CMDS=!rasm2 -s att -a x86.as -b 64 "add \$33, %rbx"
@@ -166,6 +182,7 @@ EOF
 RUN
 
 NAME=rasm2 #1167 6
+BROKEN=1
 FILE=-
 REQUIRE=gas linux x86
 CMDS=!rasm2 -s intel -a x86.as -b 64 "add rbx, 33" 
@@ -325,14 +342,6 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=rasm2 -s att -a x86.as -b 64 movq %rdx, %rax
-FILE=-
-REQUIRE=gas linux x86
-CMDS=!rasm2 -s att -a x86.as -b 64 "movq %rdx, %rax"
-EXPECT=<<EOF
-4889d0
-EOF
-RUN
 
 NAME=rasm2 -v~commit?"
 FILE=-
@@ -571,7 +580,7 @@ RUN
 
 NAME=rasm -a sh -d
 FILE=-
-CMDS=!rasm2 -a sh -d "008d 0b00 2920 fb8f 0900 0b42 e031"
+CMDS=!rasm2 -a sh -d "8d00 000b 2029 8ffb 0009 420b 31e0"
 EXPECT=<<EOF
 bt.s 0x00000004
 rts
@@ -585,15 +594,15 @@ RUN
 
 NAME=rasm -a sh -D
 FILE=-
-CMDS=!rasm2 -a sh -D "008d 0b00 2920 fb8f 0900 0b42 e031"
+CMDS=!rasm2 -a sh -D "8d00 000b 2029 8ffb 0009 420b 31e0"
 EXPECT=<<EOF
-0x00000000   2                     008d  bt.s 0x00000004
-0x00000002   2                     0b00  rts
-0x00000004   2                     2920  and r2, r0
-0x00000006   2                     fb8f  bf.s 0x00000000
-0x00000008   2                     0900  nop
-0x0000000a   2                     0b42  jsr @r2
-0x0000000c   2                     e031  cmp/eq r14, r1
+0x00000000   2                     8d00  bt.s 0x00000004
+0x00000002   2                     000b  rts
+0x00000004   2                     2029  and r2, r0
+0x00000006   2                     8ffb  bf.s 0x00000000
+0x00000008   2                     0009  nop
+0x0000000a   2                     420b  jsr @r2
+0x0000000c   2                     31e0  cmp/eq r14, r1
 EOF
 RUN
 

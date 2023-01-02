@@ -11,31 +11,6 @@ R_API RAnalValue *r_anal_value_new_from_string(const char *str) {
 	return NULL;
 }
 
-R_API RAnalValue *r_anal_value_copy(RAnalValue *ov) {
-	r_return_val_if_fail (ov, NULL);
-
-	RAnalValue *v = R_NEW0 (RAnalValue);
-	if (!v) {
-		return NULL;
-	}
-
-	memcpy (v, ov, sizeof (RAnalValue));
-	// reference to reg and regdelta should be kept
-	return v;
-}
-
-// TODO: move into .h as #define free
-R_API void r_anal_value_free(RAnalValue *value) {
-	free (value);
-#if 0
-	ut64 pval = (ut64)(size_t)value;
-	if (pval && pval != UT64_MAX) {
-		/* TODO: free RRegItem objects? */
-		free (value);
-	}
-#endif
-}
-
 // mul*value+regbase+regidx+delta
 R_API ut64 r_anal_value_to_ut64(RAnal *anal, RAnalValue *val) {
 	ut64 num;
@@ -79,7 +54,20 @@ R_API int r_anal_value_set_ut64(RAnal *anal, RAnalValue *val, ut64 num) {
 	return false;							//is this necessary
 }
 
-R_API char *r_anal_value_to_string(RAnalValue *value) {
+R_API const char *r_anal_value_type_tostring(RAnalValue *value) {
+	if (value->type == R_ANAL_VAL_REG) {
+		return "reg";
+	}
+	if (value->type == R_ANAL_VAL_MEM) {
+		return "mem";
+	}
+	if (value->type == R_ANAL_VAL_IMM) {
+		return "imm";
+	}
+	return "unk";
+}
+
+R_API char *r_anal_value_tostring(RAnalValue *value) {
 	char *out = NULL;
 	if (value) {
 		out = r_str_new ("");

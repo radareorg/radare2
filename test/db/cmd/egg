@@ -12,8 +12,9 @@ RUN
 NAME=egg: darwin-x86-64 syscall close 
 FILE=malloc://1024
 CMDS=<<EOF
-e asm.arch=x86
 e asm.bits=64
+e asm.assembler=x86.nz
+e asm.arch=x86
 e asm.os=darwin
 gs close 3
 EOF
@@ -25,8 +26,9 @@ RUN
 NAME=egg: linux-x86-64 syscall close 
 FILE=malloc://1024
 CMDS=<<EOF
-e asm.arch=x86
 e asm.bits=64
+e asm.assembler=x86.nz
+e asm.arch=x86
 e asm.os=linux
 gs close 3
 EOF
@@ -38,8 +40,9 @@ RUN
 NAME=egg: linux-x86-32 syscall close 
 FILE=malloc://1024
 CMDS=<<EOF
-e asm.arch=x86
 e asm.bits=32
+e asm.assembler=x86.nz
+e asm.arch=x86
 e asm.os=linux
 gs close 3
 EOF

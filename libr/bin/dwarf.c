@@ -501,7 +501,7 @@ static const ut8 *parse_line_header_source(RBinFile *bf, const ut8 *buf, const u
 					if (include_dir && include_dir[0] != '/') {
 						comp_dir = sdb_get (bf->sdb_addrinfo, "DW_AT_comp_dir", 0);
 						if (comp_dir) {
-							include_dir = r_str_newf("%s/%s/", comp_dir, include_dir);
+							include_dir = r_str_newf ("%s/%s/", comp_dir, include_dir);
 						}
 					}
 				} else {
@@ -548,6 +548,8 @@ beach:
 
 	return buf;
 }
+
+#if 0
 // TODO DWARF 5 line header parsing, very different from ver. 4
 // Because this function needs ability to parse a lot of FORMS just like debug info
 // I'll complete this function after completing debug_info parsing and merging
@@ -574,12 +576,13 @@ static const ut8 *parse_line_header_source_dwarf5(RBinFile *bf, const ut8 *buf, 
 
 	return NULL;
 }
+#endif
 
 static const ut8 *parse_line_header(
 	RBinFile *bf, const ut8 *buf, const ut8 *buf_end,
 	RBinDwarfLineHeader *hdr, int mode, PrintfCallback print) {
 
-	r_return_val_if_fail(hdr && bf && buf, NULL);
+	r_return_val_if_fail (hdr && bf && buf, NULL);
 
 	hdr->is_64bit = false;
 	hdr->unit_length = READ32 (buf);
@@ -654,6 +657,7 @@ static const ut8 *parse_line_header(
 	// for now we skip
 	if (hdr->version == 5) {
 		tmp_buf += hdr->header_length;
+		R_LOG_WARN ("DWARF5 format is not yet supported by radare2, please contribute");
 		return tmp_buf;
 	}
 
@@ -665,7 +669,7 @@ static const ut8 *parse_line_header(
 	if (hdr->version <= 4) {
 		buf = parse_line_header_source (bf, buf, buf_end, hdr, sdb, mode, print);
 	} else { // because Version 5 source files are very different
-		buf = parse_line_header_source_dwarf5 (bf, buf, buf_end, hdr, sdb, mode);
+		// dwarf5 parsing is not supported
 	}
 
 	return buf;
@@ -674,7 +678,7 @@ static const ut8 *parse_line_header(
 static inline void add_sdb_addrline(Sdb *s, ut64 addr, const char *file, ut64 line, int mode, PrintfCallback print) {
 	const char *p;
 	char *fileline;
-	char offset[64];
+	char offset[SDB_NUM_BUFSZ];
 	char *offset_ptr;
 
 	if (!s || !file) {
@@ -703,7 +707,7 @@ static inline void add_sdb_addrline(Sdb *s, ut64 addr, const char *file, ut64 li
 	p = file;
 #endif
 	fileline = r_str_newf ("%s|%"PFMT64d, p, line);
-	offset_ptr = sdb_itoa (addr, offset, 16);
+	offset_ptr = sdb_itoa (addr, 16, offset, sizeof (offset));
 	sdb_add (s, offset_ptr, fileline, 0);
 	sdb_add (s, fileline, offset_ptr, 0);
 	free (fileline);
@@ -746,7 +750,7 @@ static const ut8 *parse_ext_opcode(const RBin *bin, const ut8 *obuf,
 		if (binfile && binfile->sdb_addrinfo && hdr->file_names) {
 			int fnidx = regs->file - 1;
 			if (fnidx >= 0 && fnidx < hdr->file_names_count) {
-				add_sdb_addrline(binfile->sdb_addrinfo, regs->address,
+				add_sdb_addrline (binfile->sdb_addrinfo, regs->address,
 						hdr->file_names[fnidx].name, regs->line, mode, print);
 			}
 		}

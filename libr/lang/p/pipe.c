@@ -1,16 +1,16 @@
-/* radare2 - LGPL - Copyright 2015-2020 pancake */
+/* radare2 - LGPL - Copyright 2015-2022 pancake */
 
 #include "r_lib.h"
 #include "r_core.h"
 #include "r_lang.h"
-#if __WINDOWS__
+#if R2__WINDOWS__
 #include <windows.h>
 #endif
 #ifdef _MSC_VER
 #include <process.h>
 #endif
 
-#if __WINDOWS__
+#if R2__WINDOWS__
 static HANDLE myCreateChildProcess(const char *szCmdline) {
 	PROCESS_INFORMATION piProcInfo = {0};
 	STARTUPINFO siStartInfo = {0};
@@ -32,7 +32,7 @@ static HANDLE hPipeInOut = NULL;
 static HANDLE hproc = NULL;
 #define PIPE_BUF_SIZE 8192
 
-static void lang_pipe_run_win(RLang *lang) {
+static void lang_pipe_run_win(RLangSession *s) {
 	CHAR buf[PIPE_BUF_SIZE];
 	BOOL bSuccess = TRUE;
 	int i, res = 0;
@@ -48,6 +48,7 @@ static void lang_pipe_run_win(RLang *lang) {
 		CloseHandle (hRead);
 		return;
 	}
+	RCore *core = R_UNWRAP3 (s, lang, user);
 	r_cons_break_push (NULL, NULL);
 	do {
 		if (r_cons_is_breaked ()) {
@@ -75,7 +76,7 @@ static void lang_pipe_run_win(RLang *lang) {
 			buf[sizeof (buf) - 1] = 0;
 			OVERLAPPED oWrite = {0};
 			oWrite.hEvent = hWritten;
-			char *res = lang->cmd_str ((RCore*)lang->user, buf);
+			char *res = s->lang->cmd_str (core, buf);
 			if (res) {
 				int res_len = strlen (res) + 1;
 				for (i = 0; i < res_len; i++) {
@@ -128,15 +129,15 @@ static void env(const char *s, int f) {
 }
 #endif
 
-static bool lang_pipe_run(RLang *lang, const char *code, int len) {
-#if __UNIX__
+static bool lang_pipe_run(RLangSession *s, const char *code, int len) {
+#if R2__UNIX__
 	int safe_in = dup (0);
 	int child, ret;
 	int input[2];
 	int output[2];
 
 	if (pipe (input) != 0) {
-		eprintf ("r_lang_pipe: pipe failed on input\n");
+		R_LOG_WARN ("r_lang_pipe: pipe failed on input");
 		if (safe_in != -1) {
 			close (safe_in);
 		}
@@ -173,6 +174,7 @@ static bool lang_pipe_run(RLang *lang, const char *code, int len) {
 		r_sys_exit (rc, true);
 		return false;
 	} else {
+		RCore *core = R_UNWRAP3 (s, lang, user);
 		/* parent */
 		char *res, buf[8192]; // TODO: use the heap?
 		/* Close pipe ends not required in the parent */
@@ -194,7 +196,7 @@ static bool lang_pipe_run(RLang *lang, const char *code, int len) {
 				continue;
 			}
 			buf[sizeof (buf) - 1] = 0;
-			res = lang->cmd_str ((RCore*)lang->user, buf);
+			res = s->lang->cmd_str (core, buf);
 			if (res) {
 				// r_cons_print (res);
 				size_t res_len = strlen (res) + 1;
@@ -238,7 +240,7 @@ static bool lang_pipe_run(RLang *lang, const char *code, int len) {
 #endif
 	return true;
 #else
-#if __WINDOWS__
+#if R2__WINDOWS__
 	char *r2pipe_var = r_str_newf ("R2PIPE_IN%x", _getpid ());
 	char *r2pipe_paz = r_str_newf ("\\\\.\\pipe\\%s", r2pipe_var);
 	LPTSTR r2pipe_paz_ = r_sys_conv_utf8_to_win (r2pipe_paz);
@@ -286,7 +288,7 @@ static bool lang_pipe_run(RLang *lang, const char *code, int len) {
 				goto cleanup;
 			}
 		}
-		lang_pipe_run_win (lang);
+		lang_pipe_run_win (s);
 	}
 cleanup:
 	CloseHandle (hConnected);
@@ -302,13 +304,14 @@ beach:
 #endif
 }
 
-static bool lang_pipe_file(RLang *lang, const char *file) {
-	return lang_pipe_run (lang, file, -1);
+static bool lang_pipe_file(RLangSession *s, const char *file) {
+	return lang_pipe_run (s, file, -1);
 }
 
 static RLangPlugin r_lang_plugin_pipe = {
 	.name = "pipe",
 	.ext = "pipe",
+	.author = "pancake",
 	.license = "LGPL",
 	.desc = "Use #!pipe node script.js",
 	.run = lang_pipe_run,

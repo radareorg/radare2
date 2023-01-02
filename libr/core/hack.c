@@ -263,8 +263,7 @@ R_API bool r_core_hack_x86(RCore *core, const char *op, const RAnalOp *analop) {
 	return true;
 }
 
-// R2580 - return bool
-R_API int r_core_hack(RCore *core, const char *op) {
+R_API bool r_core_hack(RCore *core, const char *op) {
 	r_return_val_if_fail (core && op, false);
 	bool (*hack)(RCore *core, const char *op, const RAnalOp *analop) = NULL;
 	const char *asmarch = r_config_get (core->config, "asm.arch");
@@ -273,6 +272,25 @@ R_API int r_core_hack(RCore *core, const char *op) {
 	if (!asmarch) {
 		return false;
 	}
+#if R2_580
+	// TODO: call RArch.patch() if available, otherwise just do this hack until all anal plugs are moved to arch
+	// r_arch_patch (aop, 0);
+	RArchSession *acur = R_UNWRAP3 (core, rasm, acur);
+	if (acur && acur->plugin->patch) {
+		RAnalOp *aop = r_anal_op_new ();
+		r_anal_op_set_mnemonic (aop, core->offset, op);
+		r_anal_op_set_bytes (aop, core->offset, r_mem_dup (core->block, core->blocksize), core->blocksize);
+#if 0
+		r_arch_session_patch (core->anal->arch, aop, 0);
+#endif
+		bool res = acur->plugin->patch (acur, aop, 0);
+		if (res) {
+			// ... r_io_write_at ()
+		}
+		r_anal_op_free (aop);
+		return res;
+	}
+#endif
 	if (strstr (asmarch, "x86")) {
 		hack = r_core_hack_x86;
 	} else if (strstr (asmarch, "dalvik")) {
@@ -288,7 +306,7 @@ R_API int r_core_hack(RCore *core, const char *op) {
 	}
 	if (hack) {
 		RAnalOp analop;
-		if (!r_anal_op (core->anal, &analop, core->offset, core->block, core->blocksize, R_ANAL_OP_MASK_BASIC)) {
+		if (!r_anal_op (core->anal, &analop, core->offset, core->block, core->blocksize, R_ARCH_OP_MASK_BASIC)) {
 			R_LOG_ERROR ("anal op fail");
 			return false;
 		}

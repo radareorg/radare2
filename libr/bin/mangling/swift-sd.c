@@ -160,7 +160,7 @@ static char *swift_demangle_cmd(const char *s) {
 }
 
 static char *swift_demangle_lib(const char *s) {
-#if __UNIX__
+#if R2__UNIX__
 	static R_TH_LOCAL bool haveSwiftCore = false;
 	static R_TH_LOCAL char *(*swift_demangle)(const char *sym, int symlen, void *out, int *outlen, int flags, int unk) = NULL;
 	if (!haveSwiftCore) {

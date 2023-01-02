@@ -12,7 +12,7 @@ static const char *help_msg_w[] = {
 	"wa","[?] push ebp","write opcode, separated by ';' (use '\"' around the command)",
 	"waf"," f.asm","assemble file and write bytes",
 	"waF"," f.asm","assemble file and write bytes and show 'wx' op with hexpair bytes of assembled code",
-	"wao","[?] op","modify opcode (change conditional of jump. nop, etc)",
+	"wao","[?] op","modify opcode (change conditional of jump. nop, etc) (RArch.patch)",
 	"wA","[?] r 0","alter/modify opcode at current seek (see wA?)",
 	"wb"," 011001","write bits in bit big endian",
 	"wB","[-]0xVALUE","set or unset bits with given value",
@@ -59,18 +59,6 @@ static const char *help_msg_wa[] = {
 	NULL
 };
 
-static const char *help_msg_wA[] = {
-	"Usage:", " wA", "[type] [value]",
-	"Types", "", "",
-	"r", "", "raw write value",
-	"v", "", "set value (taking care of current address)",
-	"d", "", "destination register",
-	"0", "", "1st src register",
-	"1", "", "2nd src register",
-	"Example:",  "wA r 0", "# e800000000",
-	NULL
-};
-
 static const char *help_msg_wc[] = {
 	"Usage:", "wc[jir+-*?]","  # See `e io.cache = true`",
 	"wc","","list all write changes",
@@ -100,27 +88,26 @@ static const char *help_msg_we[] = {
 };
 
 static const char *help_msg_wo[] = {
-	"Usage:","wo[asmdxoArl24]"," [hexpairs] @ addr[!bsize]",
-	"wo[24aAdlmorwx]","", "without hexpair values, clipboard is used",
-	"wo2"," [val]","2=  2 byte endian swap (word)",
-	"wo4"," [val]", "4=  4 byte endian swap (dword)",
-	"wo8"," [val]", "8=  8 byte endian swap (qword)",
-	"woa"," [val]", "+=  addition (f.ex: woa 0102)",
-	"woA"," [val]","&=  and",
-	"wod"," [val]", "/=  divide",
-	"woD","[algo] [key] [IV]","decrypt current block with given algo and key",
-	"woe"," [from to] [step] [wsz=1]","..  create sequence",
-	"woE"," [algo] [key] [IV]", "encrypt current block with given algo and key",
-	"woi","", "inverse bytes in current block",
-	"wol"," [val]","<<= shift left",
-	"wom"," [val]", "*=  multiply",
-	"woo"," [val]","|=  or",
-	"wop[DO]"," [arg]","De Bruijn Patterns",
-	"wor"," [val]", ">>= shift right",
-	"woR","","random bytes (alias for 'wr $b')",
-	"wos"," [val]", "-=  substraction",
-	"wow"," [val]", "==  write looped value (alias for 'wb')",
-	"wox"," [val]","^=  xor  (f.ex: wox 0x90)",
+	"Usage:","wo[asmdxoArl24]"," [hexpairs] @ addr[!bsize] write operation in current block",
+	"wo2", "", "2=  2 byte endian swap (word)",
+	"wo4", "", "4=  4 byte endian swap (dword)",
+	"wo8", "", "8=  8 byte endian swap (qword)",
+	"woa", " [hexpair]", "+= addition (f.ex: woa 0102)",
+	"woA", " [hexpair]", "&=  and",
+	"wod", " [hexpair]", "/=  divide",
+	"woD", "[algo] [key] [IV]", "decrypt current block with given algo and key",
+	"woE", " [algo] [key] [IV]", "encrypt current block with given algo and key",
+	"woe", " [from to] [step] [wsz=1]","..  create sequence",
+	"woi", "", "inverse bytes in current block",
+	"wol", " [val]", "<<= shift left",
+	"wom", " [val]", "*=  multiply",
+	"woo", " [val]", "|=  or",
+	"wop[DO]", " [arg]", "De Bruijn Patterns",
+	"wor", " [val]", ">>= shift right",
+	"woR", "", "random bytes (alias for 'wr $b')",
+	"wos", " [val]", "-=  substraction",
+	"wow", " [val]", "==  write looped value (alias for 'wb')",
+	"wox", " [val]", "^=  xor  (f.ex: wox 0x90)",
 	NULL
 };
 
@@ -173,6 +160,7 @@ static const char *help_msg_wv[] = {
 	"wv2", " 234", "write unsigned short (2 bytes) with this number",
 	"wv4", " 1 2 3", "write N space-separated dword (4 bytes)",
 	"wv8", " 234", "write qword (8 bytes) with this number",
+	"wvp", " 934", "write 4 or 8 byte pointer, depending on asm.bits",
 	"wvf", " 3.14", "write float value (4 bytes)",
 	"wvF", " 3.14", "write double value (8 bytes)",
 	"wvG", " 3.14", "write long double value (10/16 bytes)",
@@ -247,9 +235,9 @@ static bool encrypt_or_decrypt_block(RCore *core, const char *algo, const char *
 		free (binkey);
 		return false;
 	}
-	RCrypto *cry = r_crypto_new ();
-	if (r_crypto_use (cry, algo)) {
-		if (r_crypto_set_key (cry, binkey, keylen, 0, direction)) {
+	RCryptoJob *cj = r_crypto_use (core->crypto, algo);
+	if (cj) {
+		if (r_crypto_job_set_key (cj, binkey, keylen, 0, direction)) {
 			if (iv) {
 				ut8 *biniv = malloc (strlen (iv) + 1);
 				int ivlen = r_hex_str2bin (iv, biniv);
@@ -257,15 +245,15 @@ static bool encrypt_or_decrypt_block(RCore *core, const char *algo, const char *
 					ivlen = strlen(iv);
 					strcpy ((char *)biniv, iv);
 				}
-				if (!r_crypto_set_iv (cry, biniv, ivlen)) {
+				if (!r_crypto_job_set_iv (cj, biniv, ivlen)) {
 					R_LOG_ERROR ("Invalid IV");
 					return 0;
 				}
 			}
-			r_crypto_update (cry, (const ut8*)core->block, core->blocksize);
+			r_crypto_job_update (cj, (const ut8*)core->block, core->blocksize);
 
 			int result_size = 0;
-			ut8 *result = r_crypto_get_output (cry, &result_size);
+			ut8 *result = r_crypto_job_get_output (cj, &result_size);
 			if (result) {
 				if (!r_core_write_at (core, core->offset, result, result_size)) {
 					R_LOG_ERROR ("write failed at 0x%08"PFMT64x, core->offset);
@@ -277,12 +265,10 @@ static bool encrypt_or_decrypt_block(RCore *core, const char *algo, const char *
 			R_LOG_ERROR ("Invalid key");
 		}
 		free (binkey);
-		r_crypto_free (cry);
 		return 0;
 	} else {
 		R_LOG_ERROR ("Unknown %s algorithm '%s'", ((!direction) ? "encryption" : "decryption") ,algo);
 	}
-	r_crypto_free (cry);
 	return 1;
 }
 
@@ -343,8 +329,12 @@ static int cmd_wo(void *data, const char *input) {
 	case '2': // "wo2"
 	case '4': // "wo4"
 	case '8': // "wo8"
-		if (input[1]) {  // parse val from arg
-			r_core_write_op (core, r_str_trim_head_ro (input + 2), input[0]);
+		if (input[1] == '?') {  // parse val from arg
+			char s[8];
+			snprintf (s, sizeof (s), "wo%c", input[0]);
+			r_core_cmd_help_match (core, help_msg_wo, s, true);
+		} else if (input[1]) {  // parse val from arg
+			r_core_write_op (core, r_str_trim_head_ro (input + 1), input[0]);
 		} else {  // use clipboard instead of val
 			r_core_write_op (core, NULL, input[0]);
 		}
@@ -380,35 +370,7 @@ static int cmd_wo(void *data, const char *input) {
 				encrypt_or_decrypt_block (core, algo, key, direction, iv);
 			} else {
 				eprintf ("Usage: wo%c [algo] [key] [IV]\n", ((!direction)?'E':'D'));
-				eprintf ("Currently supported hashes:\n");
-				ut64 bits;
-				int i;
-				for (i = 0; ; i++) {
-					bits = ((ut64)1) << i;
-					const char *name = r_hash_name (bits);
-					if R_STR_ISEMPTY (name) {
-						break;
-					}
-					printf ("  %s\n", name);
-				}
-				eprintf ("Available Encoders/Decoders: \n");
-				for (i = 0; ; i++) {
-					bits = (1ULL) << i;
-					const char *name = r_crypto_codec_name ((const RCryptoSelector)bits);
-					if (R_STR_ISEMPTY (name)) {
-						break;
-					}
-					printf ("  %s\n", name);
-				}
-				eprintf ("Currently supported crypto algos:\n");
-				for (i = 0; ; i++) {
-					bits = (1ULL) << i;
-					const char *name = r_crypto_name ((const RCryptoSelector)bits);
-					if R_STR_ISEMPTY (name) {
-						break;
-					}
-					printf ("  %s\n", name);
-				}
+				r_crypto_list (core->crypto, r_cons_printf, 0);
 			}
 			free (args);
 		}
@@ -497,8 +459,12 @@ static void cmd_write_value(RCore *core, const char *input) {
 	bool be = r_config_get_b (core->config, "cfg.bigendian");
 
 	r_core_return_value (core, R_CMD_RC_SUCCESS);
+	char op = input[0];
+	if (op == 'p') {
+		op = (r_config_get_i (core->config, "asm.bits") == 64)? '8': '4';
+	}
 
-	switch (input[0]) {
+	switch (op) {
 	case '?': // "wv?"
 		r_core_cmd_help (core, help_msg_wv);
 		return;
@@ -1249,6 +1215,20 @@ static int cmd_wr(void *data, const char *input) {
 	return 0;
 }
 
+#if 0
+static const char *help_msg_wA[] = {
+	"Usage:", " wA", "[type] [value]",
+	"Types", "", "",
+	"r", "", "raw write value",
+	"v", "", "set value (taking care of current address)",
+	"d", "", "destination register",
+	"0", "", "1st src register",
+	"1", "", "2nd src register",
+	"Example:",  "wA r 0", "# e800000000",
+	NULL
+};
+
+// RAsm.modify() was unused therefor this is kind of attempt to move the asmhacks into the arch plugins
 static int cmd_wA(void *data, const char *input) {
 	RCore *core = (RCore *)data;
 	int len;
@@ -1279,6 +1259,7 @@ static int cmd_wA(void *data, const char *input) {
 	}
 	return 0;
 }
+#endif
 
 static char *__current_filename(RCore *core) {
 	RIOMap *map = r_io_map_get_at (core->io, core->offset);
@@ -1381,7 +1362,7 @@ static int cmd_wc(void *data, const char *input) {
 	case '+': // "wc+"
 		if (input[1]=='*') { // "wc+*"
 			//r_io_cache_reset (core->io, core->io->cached);
-			eprintf ("TODO\n");
+			R_LOG_TODO ("wc+*");
 		} else if (input[1]==' ') { // "wc+ "
 			char *p = strchr (input + 2, ' ');
 			ut64 to, from;
@@ -1595,6 +1576,7 @@ static int cmd_wt(RCore *core, const char *input) {
 		}
 		case 'f': // "wtf"
 			switch (input[1]) {
+			case '\0':
 			case '?': // "wtf?"
 				r_core_cmd_help_match (core, help_msg_wt, "wtf", true);
 				ret = 1;
@@ -1887,7 +1869,7 @@ static int cmd_wa(void *data, const char *input) {
 				RAnalOp analop;
 				ut64 at = core->offset;
 repeat:
-				if (!r_anal_op (core->anal, &analop, at, core->block + delta, core->blocksize - delta, R_ANAL_OP_MASK_BASIC)) {
+				if (!r_anal_op (core->anal, &analop, at, core->block + delta, core->blocksize - delta, R_ARCH_OP_MASK_BASIC)) {
 					R_LOG_DEBUG ("Invalid instruction?");
 					r_anal_op_fini (&analop);
 					r_asm_code_free (acode);
@@ -1905,7 +1887,7 @@ repeat:
 				input++;
 			} else if (input[0] == 'i') { // "wai"
 				RAnalOp analop;
-				if (!r_anal_op (core->anal, &analop, core->offset, core->block, core->blocksize, R_ANAL_OP_MASK_BASIC)) {
+				if (!r_anal_op (core->anal, &analop, core->offset, core->block, core->blocksize, R_ARCH_OP_MASK_BASIC)) {
 					R_LOG_DEBUG ("Invalid instruction?");
 					r_anal_op_fini (&analop);
 					r_asm_code_free (acode);
@@ -2080,7 +2062,7 @@ static int cmd_wm(void *data, const char *input) {
 	int size = r_hex_str2bin (input, (ut8 *)str);
 	switch (input[0]) {
 	case '\0':
-		eprintf ("TODO: Display current write mask");
+		R_LOG_TODO ("Display current write mask");
 		break;
 	case '?':
 		break;
@@ -2177,11 +2159,11 @@ static int cmd_ws(void *data, const char *input) {
 				r_io_write_at (core->io, core->offset, lenbuf, 1);
 				break;
 			case 2:
-				r_write_ble16 (lenbuf, len, core->anal->config->big_endian);
+				r_write_ble16 (lenbuf, len, R_ARCH_CONFIG_IS_BIG_ENDIAN (core->anal->config));
 				r_io_write_at (core->io, core->offset, lenbuf, 2);
 				break;
 			case 4:
-				r_write_ble32 (lenbuf, len, core->anal->config->big_endian);
+				r_write_ble32 (lenbuf, len, R_ARCH_CONFIG_IS_BIG_ENDIAN (core->anal->config));
 				r_io_write_at (core->io, core->offset, lenbuf, 4);
 				break;
 			}
@@ -2255,9 +2237,11 @@ static int cmd_write(void *data, const char *input) {
 	case 'r': // "wr"
 		cmd_wr (core, input + 1);
 		break;
+#if 0
 	case 'A': // "wA"
 		cmd_wA (core, input + 1);
 		break;
+#endif
 	case ' ': // "w"
 	case '+': // "w+"
 	{

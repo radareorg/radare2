@@ -1,6 +1,6 @@
 /* sdb - MIT - Copyright 2015-2016 - pancake */
 
-#include "sdb.h"
+#include "sdb/sdb.h"
 #include <ctype.h>
 
 static inline int haveSuffix(const char *glob, int glob_len, const char *sfx) {
@@ -79,7 +79,7 @@ static inline bool compareString(const char *a, const char *b, int blen, int fla
 			else ret = strstr2 (a, b, blen);
 		}
 	}
-	free (aa);
+	sdb_gh_free (aa);
 	return ret;
 }
 

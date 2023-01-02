@@ -1,0 +1,19 @@
+NAME=js tests
+FILE=-
+CMDS=<<EOF
+js var a = 123
+js r2.log(a)
+js!
+js r2.log(a)
+EOF
+EXPECT=<<EOF
+123
+EOF
+EXPECT_ERR=<<EOF
+ReferenceError: 'a' is not defined
+    at <eval> (-)
+
+null
+EOF
+RUN
+

@@ -14,33 +14,35 @@ typedef char* (*RCoreCmdStrCallback)(void* core, const char *s);
 typedef int (*RCoreCmdfCallback)(void* core, const char *s, ...);
 
 typedef struct r_lang_t {
-	struct r_lang_plugin_t *cur;
+	// struct r_lang_plugin_t *cur;
 	void *user;
 	RList *defs;
 	RList *langs;
 	PrintfCallback cb_printf;
 	RCoreCmdStrCallback cmd_str;
 	RCoreCmdfCallback cmdf;
+	RList *sessions;
+	struct r_lang_session_t *session;
 } RLang;
+
+typedef struct r_lang_session_t _RLangSession;
 
 typedef struct r_lang_plugin_t {
 	const char *name;
 	const char *alias;
 	const char *desc;
-#if R2_580
 	const char *author;
-#endif
 	const char *example;
 	const char *license;
 	const char **help;
 	const char *ext;
-	bool (*init)(RLang *user);
-	bool (*setup)(RLang *user);
-	bool (*fini)(RLang *user);
-	bool (*prompt)(RLang *user);
-	bool (*run)(RLang *user, const char *code, int len);
-	bool (*run_file)(RLang *user, const char *file);
-	int (*set_argv)(RLang *user, int argc, char **argv);
+	void *(*init)(_RLangSession *s);
+	bool (*setup)(_RLangSession *s);
+	bool (*fini)(_RLangSession *s);
+	bool (*prompt)(_RLangSession *s);
+	bool (*run)(_RLangSession *s, const char *code, int len);
+	bool (*run_file)(_RLangSession *s, const char *file);
+	int (*set_argv)(_RLangSession *s, int argc, char **argv);
 } RLangPlugin;
 
 typedef struct r_lang_def_t {
@@ -49,6 +51,13 @@ typedef struct r_lang_def_t {
 	void *value;
 } RLangDef;
 
+typedef struct r_lang_session_t {
+	RLang *lang;
+	RLangPlugin *plugin;
+	void *plugin_data;
+	void *user_data; // there's also lang->user_data :think:
+} RLangSession;
+
 #ifdef R_API
 R_API RLang *r_lang_new(void);
 R_API void r_lang_free(RLang *lang);
@@ -56,6 +65,7 @@ R_API bool r_lang_setup(RLang *lang);
 R_API bool r_lang_add(RLang *lang, RLangPlugin *foo);
 R_API void r_lang_list(RLang *lang, int mode);
 R_API bool r_lang_use(RLang *lang, const char *name);
+R_API bool r_lang_use_plugin(RLang *lang, RLangPlugin *h);
 R_API bool r_lang_run(RLang *lang, const char *code, int len);
 R_API bool r_lang_run_string(RLang *lang, const char *code);
 /* TODO: user_ptr must be deprecated */
@@ -63,7 +73,6 @@ R_API void r_lang_set_user_ptr(RLang *lang, void *user);
 R_API bool r_lang_set_argv(RLang *lang, int argc, char **argv);
 R_API bool r_lang_run_file(RLang *lang, const char *file);
 R_API bool r_lang_prompt(RLang *lang);
-R_API void r_lang_plugin_free(RLangPlugin *p); // XXX
 R_API RLangPlugin *r_lang_get_by_name(RLang *lang, const char *name);
 R_API RLangPlugin *r_lang_get_by_extension(RLang *lang, const char *ext);
 // TODO: rename r_Lang_add for r_lang_plugin_add

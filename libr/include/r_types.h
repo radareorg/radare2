@@ -16,10 +16,10 @@
 
 // TODO: fix this to make it crosscompile-friendly: R_SYS_OSTYPE ?
 /* operating system */
-#undef __BSD__
+#undef R2__BSD__
 #undef __KFBSD__
-#undef __UNIX__
-#undef __WINDOWS__
+#undef R2__UNIX__
+#undef R2__WINDOWS__
 
 #define R_MODE_PRINT 0x000
 #define R_MODE_RADARE 0x001
@@ -35,7 +35,7 @@
 #define R_OUT /* parameter is written, not read */
 #define R_INOUT /* parameter is read and written */
 #define R_OWN /* pointer ownership is transferred */
-#define R_BORROW /* pointer ownership is not transferred, it must not be freed by the receiver */
+#define R_BORROW /* pointer ownership is not transferred, it must not be freed by the caller */
 #define R_NONNULL /* pointer can not be null */
 #define R_NULLABLE /* pointer can be null */
 
@@ -86,6 +86,7 @@
 #define R_PERM_PRIV	16
 #define R_PERM_ACCESS	32
 #define R_PERM_CREAT	64
+#define R_PERM_RELOC	128
 
 
 // HACK to fix capstone-android-mips build
@@ -154,6 +155,8 @@
 #  define UNUSED_FUNCTION(x) UNUSED_ ## x
 #endif
 
+#define R_UNUSED_RESULT(x) if ((x)) {}
+
 #if defined (__FreeBSD__) || defined (__FreeBSD_kernel__)
 #define __KFBSD__ 1
 #else
@@ -164,32 +167,32 @@
   #define restrict
   #define strcasecmp stricmp
   #define strncasecmp strnicmp
-  #define __WINDOWS__ 1
+  #define R2__WINDOWS__ 1
 
   #include <time.h>
   static inline struct tm *gmtime_r(const time_t *t, struct tm *r) { return (gmtime_s(r, t))? NULL : r; }
 #endif
 
 #ifdef __HAIKU__
-# define __UNIX__ 1
+# define R2__UNIX__ 1
 #endif
 
 #undef HAVE_PTY
 #if EMSCRIPTEN || __wasi__ || defined(__serenity__)
 #define HAVE_PTY 0
 #else
-#define HAVE_PTY __UNIX__ && LIBC_HAVE_FORK && !__sun
+#define HAVE_PTY R2__UNIX__ && LIBC_HAVE_FORK && !__sun
 #endif
 
 #if defined(EMSCRIPTEN) || defined(__wasi__) || defined(__linux__) || defined(__APPLE__) || defined(__GNU__) || defined(__ANDROID__) || defined(__QNX__) || defined(__sun) || defined(__HAIKU__) || defined(__serenity__) || defined(__vinix__)
-  #define __BSD__ 0
-  #define __UNIX__ 1
+  #define R2__BSD__ 0
+  #define R2__UNIX__ 1
 #endif
 #if __KFBSD__ || defined(__NetBSD__) || defined(__OpenBSD__) || defined(__FreeBSD__) || defined(__DragonFly__)
-  #define __BSD__ 1
-  #define __UNIX__ 1
+  #define R2__BSD__ 1
+  #define R2__UNIX__ 1
 #endif
-#if __WINDOWS__ || _WIN32
+#if R2__WINDOWS__ || _WIN32
   #ifdef _MSC_VER
   /* Must be included before windows.h */
   #include <winsock2.h>
@@ -200,11 +203,11 @@
   #endif
   typedef int socklen_t;
   #undef USE_SOCKETS
-  #define __WINDOWS__ 1
-  #undef __UNIX__
-  #undef __BSD__
+  #define R2__WINDOWS__ 1
+  #undef R2__UNIX__
+  #undef R2__BSD__
 #endif
-#if __WINDOWS__ || _WIN32
+#if R2__WINDOWS__ || _WIN32
   #define __addr_t_defined
   #include <windows.h>
 #endif
@@ -266,7 +269,7 @@ extern "C" {
 
 // TODO: FS or R_SYS_DIR ??
 #undef FS
-#if __WINDOWS__
+#if R2__WINDOWS__
 #define FS '\\'
 #define R_SYS_DIR "\\"
 #define R_SYS_ENVSEP ";"
@@ -316,7 +319,7 @@ typedef int (*PrintfCallback)(const char *str, ...) R_PRINTF_CHECK(1, 2);
 #elif R_INLINE
   #define R_API inline
 #else
-  #if __WINDOWS__
+  #if R2__WINDOWS__
     #define R_API __declspec(dllexport)
   #elif defined(__GNUC__) && __GNUC__ >= 4
     #define R_API __attribute__((visibility("default")))
@@ -389,7 +392,7 @@ static inline void *r_new_copy(int size, void *data) {
 #define r_sys_perror(x) r_sys_perror_str(x);
 #endif
 
-#if __UNIX__
+#if R2__UNIX__
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
@@ -420,13 +423,13 @@ static inline void *r_new_copy(int size, void *data) {
 
 #define R_FREE(x) { free((void *)x); x = NULL; }
 
-#if __WINDOWS__
+#if R2__WINDOWS__
 #define HAVE_REGEXP 0
 #else
 #define HAVE_REGEXP 1
 #endif
 
-#if __WINDOWS__
+#if R2__WINDOWS__
 #define PFMT64x "I64x"
 #define PFMT64d "I64d"
 #define PFMT64u "I64u"
@@ -518,7 +521,7 @@ static inline void *r_new_copy(int size, void *data) {
 # else
 # define R_SYS_BASE ((ut64)0x1000)
 # endif
-#elif __WINDOWS__
+#elif R2__WINDOWS__
 # define R_SYS_BASE ((ut64)0x01001000)
 #else // linux, bsd, ...
 # if __arm__ || __arm64__
@@ -688,7 +691,7 @@ typedef enum {
 #define R_SYS_OS "darwin"
 #elif defined (__linux__)
 #define R_SYS_OS "linux"
-#elif defined (__WINDOWS__)
+#elif defined (R2__WINDOWS__)
 #define R_SYS_OS "windows"
 #elif defined (__NetBSD__ )
 #define R_SYS_OS "netbsd"
@@ -759,20 +762,5 @@ static inline void r_run_call10(void *fcn, void *arg1, void *arg2, void *arg3, v
 #ifndef container_of
 #define container_of(ptr, type, member) (ptr? ((type *)((char *)(ptr) - r_offsetof(type, member))): NULL)
 #endif
-
-// reference counter
-typedef int RRef;
-
-#define R_REF_NAME refcount
-#define r_ref(x) ((x)->R_REF_NAME++, (x));
-#define r_ref_init(x,y) (x)->R_REF_NAME = 1;(x)->free = (void *)(y)
-// #define r_unref(x) { assert (x->R_REF_NAME > 0); if (!--(x->R_REF_NAME)) { x->free(x); } }
-#define r_unref(x) { if ((x) != NULL && (x)->R_REF_NAME > 0 && !--((x)->R_REF_NAME)) { (x)->free(x); (x) = NULL; } }
-#define r_ref_set(x,y) do { if ((x) != (y) && (x) != NULL) { r_unref(x); } (x)=(y); (y)->R_REF_NAME++; } while(0)
-
-#define R_REF_TYPE RRef R_REF_NAME; void (*free)(void*)
-#define R_REF_FUNCTIONS(s, n) \
-static inline void n##_ref(s *x) { x->R_REF_NAME++; } \
-static inline void n##_unref(s *x) { r_unref(x); }
 
 #endif // R2_TYPES_H

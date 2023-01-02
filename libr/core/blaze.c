@@ -280,7 +280,7 @@ R_API bool core_anal_bbs(RCore *core, const char* input) {
 			cur += dsize;
 			continue;
 		}
-		RAnalOp *const op = r_core_anal_op (core, dst, R_ANAL_OP_MASK_BASIC | R_ANAL_OP_MASK_DISASM);
+		RAnalOp *const op = r_core_anal_op (core, dst, R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_DISASM);
 
 		if (!op || !op->mnemonic) {
 			block_score -= 10;
@@ -557,7 +557,7 @@ R_API bool core_anal_bbs_range(RCore *core, const char* input) {
 				}
 
 				if (!bFound) {
-					op = r_core_anal_op (core, b_start + cur, R_ANAL_OP_MASK_BASIC | R_ANAL_OP_MASK_DISASM);
+					op = r_core_anal_op (core, b_start + cur, R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_DISASM);
 
 					if (!op || !op->mnemonic) {
 						block_score -= 10;

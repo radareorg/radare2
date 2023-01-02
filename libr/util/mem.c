@@ -1,7 +1,7 @@
 /* radare - LGPL - Copyright 2007-2022 - pancake */
 
 #include <r_util.h>
-#if __UNIX__
+#if R2__UNIX__
 #include <sys/mman.h>
 #endif
 
@@ -18,7 +18,7 @@ R_API int r_mem_count(const ut8 **addr) {
 }
 
 // R2580 return bool
-R_API int r_mem_eq(ut8 *a, ut8 *b, int len) {
+R_API bool r_mem_eq(ut8 *a, ut8 *b, int len) {
 	register int i;
 	for (i = 0; i < len; i++) {
 		if (a[i] != b[i]) {
@@ -126,7 +126,7 @@ R_API ut64 r_mem_get_num(const ut8 *b, int size) {
 }
 
 // TODO: SEE: R_API ut64 r_reg_get_value(RReg *reg, RRegItem *item) { .. dupped code?
-R_API int r_mem_set_num(ut8 *dest, int dest_size, ut64 num) {
+R_API bool r_mem_set_num(ut8 *dest, int dest_size, ut64 num) {
 	// LITTLE ENDIAN is the default for streams
 	switch (dest_size) {
 	case 1:
@@ -262,7 +262,7 @@ R_API const ut8 *r_mem_mem_aligned(const ut8 *haystack, int hlen, const ut8 *nee
 R_API bool r_mem_protect(void *ptr, int size, const char *prot) {
 #if __wasi__
 	return false;
-#elif __UNIX__
+#elif R2__UNIX__
 	int p = 0;
 	if (strchr (prot, 'x')) {
 		p |= PROT_EXEC;
@@ -276,7 +276,7 @@ R_API bool r_mem_protect(void *ptr, int size, const char *prot) {
 	if (mprotect (ptr, size, p) == -1) {
 		return false;
 	}
-#elif __WINDOWS__
+#elif R2__WINDOWS__
 	int r, w, x;
 	DWORD p = PAGE_NOACCESS;
 	r = strchr (prot, 'r')? 1: 0;
@@ -347,7 +347,7 @@ R_API void r_mem_free(void *p) {
 	free (p);
 }
 
-R_API void r_mem_memzero(void *dst, size_t l) {
+R_API void r_mem_zero(void *dst, size_t l) {
 #ifdef _MSC_VER
 	RtlSecureZeroMemory (dst, l);
 #elif __MINGW32__
@@ -363,7 +363,7 @@ R_API void r_mem_memzero(void *dst, size_t l) {
 }
 
 R_API void *r_mem_mmap_resize(RMmap *m, ut64 newsize) {
-#if __WINDOWS__
+#if R2__WINDOWS__
 	if (m->fm != INVALID_HANDLE_VALUE) {
 		CloseHandle (m->fm);
 	}
@@ -373,7 +373,7 @@ R_API void *r_mem_mmap_resize(RMmap *m, ut64 newsize) {
 	if (m->buf) {
 		UnmapViewOfFile (m->buf);
 	}
-#elif __UNIX__ && !__wasi__
+#elif R2__UNIX__ && !__wasi__
 	if (munmap (m->buf, m->len) != 0) {
 		return NULL;
 	}

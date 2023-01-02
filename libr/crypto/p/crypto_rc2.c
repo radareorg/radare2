@@ -1,3 +1,5 @@
+/* radare - LGPL - Copyright 2009-2022 - pancake */
+
 #include <r_lib.h>
 #include <r_crypto.h>
 
@@ -37,7 +39,7 @@ static bool rc2_expandKey(struct rc2_state *state, const ut8 *key, int key_len) 
 	if (key_len < 1 || key_len > 128) {
 		return false;
 	}
-	memcpy(state->ekey, key, key_len);
+	memcpy (state->ekey, key, key_len);
 
 	// first loop
  	for (i = key_len; i < 128; i++) {
@@ -166,79 +168,87 @@ static void rc2_dcrypt(struct rc2_state *state, const ut8 *inbuf, ut8 *outbuf, i
 }
 
 static void rc2_crypt(struct rc2_state *state, const ut8 *inbuf, ut8 *outbuf, int buflen) {
-	int i;
-	char data_block[BLOCK_SIZE] = {0};
-	int idx = 0;
-
 	char crypted_block[BLOCK_SIZE] = {0};
+	char data_block[BLOCK_SIZE] = {0};
 	char *ptr = (char *) outbuf;
+	int i, idx = 0;
 
 	// divide it into blocks of BLOCK_SIZE
 	for (i = 0; i < buflen; i++) {
 		data_block[idx] = inbuf[i];
 		idx += 1;
 		if (idx % BLOCK_SIZE == 0) {
-			rc2_crypt8(state, (const ut8 *) data_block, (ut8 *) crypted_block);
-			strncpy(ptr, crypted_block, BLOCK_SIZE);
+			rc2_crypt8 (state, (const ut8 *) data_block, (ut8 *) crypted_block);
+			strncpy (ptr, crypted_block, BLOCK_SIZE);
 			ptr += BLOCK_SIZE;
 			idx = 0;
 		}
 	}
 
-	if (idx % 8) {
-		while (idx % 8) {
-			data_block[idx++] = 0;
+	size_t mod = idx % BLOCK_SIZE;
+	if (mod) {
+		while (idx % BLOCK_SIZE) {
+			mod = idx % BLOCK_SIZE;
+			data_block[mod] = 0;
+			idx++;
 		}
-		rc2_crypt8(state, (const ut8 *) data_block, (ut8 *) crypted_block);
-		strncpy(ptr, crypted_block, 8);
+		rc2_crypt8 (state, (const ut8 *) data_block, (ut8 *) crypted_block);
+		r_str_ncpy (ptr, crypted_block, BLOCK_SIZE);
 	}
 }
 
 ///////////////////////////////////////////////////////////
 
-static struct rc2_state state;
-static int flag = 0;
-
-static bool rc2_set_key(RCrypto *cry, const ut8 *key, int keylen, int mode, int direction) {
-	flag = direction;
-	state.key_size = 1024;
-	return rc2_expandKey(&state, key, keylen);
+static bool rc2_set_key(RCryptoJob *cj, const ut8 *key, int keylen, int mode, int direction) {
+	free (cj->data);
+	cj->data = R_NEW0 (struct rc2_state);
+	struct rc2_state *state = cj->data;
+	cj->flag = direction;
+	state->key_size = 1024;
+	return rc2_expandKey (state, key, keylen);
 }
 
-static int rc2_get_key_size(RCrypto *cry) {
-	return state.key_size;
+static int rc2_get_key_size(RCryptoJob *cj) {
+	struct rc2_state *state = cj->data;
+	return state? state->key_size: 0;
 }
 
-static bool rc2_use(const char *algo) {
+static bool rc2_check(const char *algo) {
 	return !strcmp (algo, "rc2");
 }
 
-static bool update(RCrypto *cry, const ut8 *buf, int len) {
+static bool update(RCryptoJob *cj, const ut8 *buf, int len) {
 	ut8 *obuf = calloc (1, len);
 	if (!obuf) {
 		return false;
 	}
-	if (flag == 0) {
-		rc2_crypt (&state, buf, obuf, len);
-	} else if (flag == 1) {
-		rc2_dcrypt (&state, buf, obuf, len);
+	struct rc2_state *state = cj->data;
+	if (!state) {
+		return false;
 	}
-	r_crypto_append(cry, obuf, len);
+	if (cj->flag == 0) {
+		rc2_crypt (state, buf, obuf, len);
+	} else if (cj->flag == 1) {
+		rc2_dcrypt (state, buf, obuf, len);
+	}
+	r_crypto_job_append (cj, obuf, len);
 	free (obuf);
 	return true;
 }
 
-static bool final(RCrypto *cry, const ut8 *buf, int len) {
-	return update (cry, buf, len);
+static bool fini(RCryptoJob *cj) {
+	R_FREE (cj->data);
+	return true;
 }
 
 RCryptoPlugin r_crypto_plugin_rc2 = {
 	.name = "rc2",
 	.set_key = rc2_set_key,
 	.get_key_size = rc2_get_key_size,
-	.use = rc2_use,
+	.check = rc2_check,
 	.update = update,
-	.final = final
+	.end = update,
+	.fini = fini
 };
 
 #ifndef R2_PLUGIN_INCORE

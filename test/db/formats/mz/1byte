@@ -1,4 +1,5 @@
 NAME=MZ: 1byte
+ARGS=-e bin.types=true
 FILE=bins/mz/1byte.exe
 CMDS=<<EOF
 iS
@@ -8,14 +9,14 @@ EOF
 EXPECT=<<EOF
 [Sections]
 
-nth paddr       size vaddr       vsize perm name
-------------------------------------------------
-0   0x00000200   0x0 0x00000000    0x0 -rwx seg_000
-1   0x00000200   0x1 0x00000000    0x1 -rwx seg_001
+nth paddr       size vaddr       vsize perm type name
+-----------------------------------------------------
+0   0x00000200   0x0 0x00000000    0x0 -rwx ---- seg_000
+1   0x00000200   0x1 0x00000000    0x1 -rwx ---- seg_001
 
+            ;-- mz.dos_header:
             ;-- section.seg_000:
             ;-- section.seg_001:
-            ;-- mz.dos_header:
             ;-- entry0:
             0000:0000     30ff           xor bh, bh                    ; [01] -rwx section size 1 named seg_001
             0000:0002     ff             invalid

@@ -160,7 +160,7 @@ static void emit_arg(REgg *egg, int xs, int num, const char *str) {
 		if (d) {
 			r_egg_printf (egg, "  add "R_BP ", %d\n", d);
 		}
-		r_egg_printf (egg, "  push {"R_BP "}\n");
+		r_egg_printf (egg, "  push { "R_BP " }\n");
 		if (d) {
 			r_egg_printf (egg, "  sub "R_BP ", %d\n", d);
 		}

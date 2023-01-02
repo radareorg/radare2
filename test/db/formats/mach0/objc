@@ -2,10 +2,13 @@ NAME=objc hello-objc not encrypted
 FILE=bins/mach0/hello-objc
 CMDS=ic
 EXPECT=<<EOF
-0x100001180 [0x100000da0 - 0x100000e20]    128 class 0 Person :: NSObject
-0x100000da0 method 0      sayHello
-0x100000df0 method 1      name
-0x100000e20 method 2      setName:
+0x100001180 [0x100000da0 - 0x100000e20]    128 objc class 0 Person :: NSObject
+0x100000da0 objc method 0      sayHello
+0x100000df0 objc method 1      name
+0x100000e20 objc method 2      setName:
+0x00000000 objc field 0      isa
+0x100001178 objc field 1      Person::(ivar)name
+0x00000000 objc field 2      Person::(property)name
 EOF
 RUN
 
@@ -13,8 +16,8 @@ NAME=objc generics-objc
 FILE=bins/mach0/generics-objc
 CMDS=ic
 EXPECT=<<EOF
-0x100001120 [0x100000e70 - 0x100000e70]      0 class 0 MyCustomClass :: NSObject
-0x100000e70 method 0      doSomethingWithGeneric:
+0x100001120 [0x100000e70 - 0x100000e70]      0 objc class 0 MyCustomClass :: NSObject
+0x100000e70 objc method 0      doSomethingWithGeneric:
 EOF
 RUN
 
@@ -64,8 +67,9 @@ NAME=objc categories (swift)
 FILE=bins/mach0/TestSwiftObjc
 CMDS=ic~ class
 EXPECT=<<EOF
-0x100003078 [0x100001ad0 - 0x100001ad0]      0 class 0 TestSwiftObjc.ThisIsASwiftClass(TEST)
-0x1000031e8 [0x100001d80 - 0x100001d80]      0 class 0 TestSwiftObjc.ThisIsASwiftClass :: NSObject
+0x100003078 [0x100001ad0 - 0x100001ad0]      0 objc class 0 TestSwiftObjc.ThisIsASwiftClass(TEST) :: TestSwiftObjc.ThisIsASwiftClass
+0x00001f34 [0x00001f34 - 0x00001f34]      0 swift class 0 ThisIsASwiftClass
+0x1000031e8 [0x100001d80 - 0x100001d80]      0 objc class 0 TestSwiftObjc.ThisIsASwiftClass :: NSObject
 EOF
 RUN
 
@@ -112,7 +116,8 @@ class Test
 0x100003b68 method Test      methodWithTwoArgs:secondArg:
 0x100003be0 method Test      methodWithReturn
 0x100003aa0 method Test c    someStaticMethod
-0x1000080f8 [0x100003a7c - 0x100003be0]    356 class 0 Test :: NSObject
+0x1000080f8 [0x100003a7c - 0x100003be0]    356 objc class 0 Test :: NSObject
+0x1000080f0 objc field 1      Test::(ivar)someField
 EOF
 RUN
 
@@ -123,13 +128,15 @@ aao
 ic
 EOF
 EXPECT=<<EOF
-0x100001098 [0x100000c47 - 0x100000d1d]    214 class 0 Test :: NSObject
-0x100000d1d method 0      sayHello2
-0x100000cf7 method 1      sayHello:
-0x100000cce method 2      sayHello3::
-0x100000ca7 method 3      sayLong:
-0x100000c6a method 4      init
-0x100000c47 method 5 c    callMeNot
+0x100001098 [0x100000c47 - 0x100000d1d]    214 objc class 0 Test :: NSObject
+0x100000d1d objc method 0      sayHello2
+0x100000cf7 objc method 1      sayHello:
+0x100000cce objc method 2      sayHello3::
+0x100000ca7 objc method 3      sayLong:
+0x100000c6a objc method 4      init
+0x100000c47 objc method 5 c    callMeNot
+0x00000000 objc field 0      isa
+0x100001270 objc field 1      Test::(ivar)num
 EOF
 RUN
 
@@ -143,7 +150,11 @@ EXPECT=<<EOF
 0x100003238 method AppDelegate      applicationDidFinishLaunching:
 0x100003288 method AppDelegate      applicationWillTerminate:
 0x1000032d8 method AppDelegate      applicationSupportsSecureRestorableState:
-0x100008a70 [0x10000313c - 0x100003184]     72 class 0 ViewController :: NSViewController
-0x100008a98 [0x100003238 - 0x1000032d8]    160 class 0 AppDelegate :: NSObject
+0x100008a70 [0x10000313c - 0x100003184]     72 objc class 0 ViewController :: NSViewController
+0x100008a98 [0x100003238 - 0x1000032d8]    160 objc class 0 AppDelegate :: NSObject
+0x00000000 objc field 0      AppDelegate::(property)hash
+0x00000000 objc field 1      AppDelegate::(property)superclass
+0x00000000 objc field 2      AppDelegate::(property)description
+0x00000000 objc field 3      AppDelegate::(property)debugDescription
 EOF
 RUN

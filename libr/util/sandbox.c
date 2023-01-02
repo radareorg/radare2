@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2012-2021 - pancake */
+/* radare - LGPL - Copyright 2012-2022 - pancake */
 
 #include <r_util.h>
 #include <signal.h>
@@ -24,7 +24,7 @@ static R_TH_LOCAL int G_graintype = R_SANDBOX_GRAIN_NONE;
 static bool inHomeWww(const char *path) {
 	r_return_val_if_fail (path, false);
 	bool ret = false;
-	char *homeWww = r_str_home (R2_HOME_WWWROOT R_SYS_DIR);
+	char *homeWww = r_xdg_datadir ("www");
 	if (homeWww) {
 		if (r_str_startswith (path, homeWww)) {
 			ret = true;
@@ -67,7 +67,7 @@ R_API bool r_sandbox_check_path(const char *path) {
 	}
 
 	// ./ path is not allowed
-        if (path[0]=='.' && path[1]=='/') {
+	if (path[0]=='.' && path[1]=='/') {
 		return false;
 	}
 	// Properly check for directory traversal using "..". First, does it start with a .. part?
@@ -85,7 +85,7 @@ R_API bool r_sandbox_check_path(const char *path) {
 	if (*path == '/') {
 		return false;
 	}
-#if __UNIX__
+#if R2__UNIX__
 	char ch;
 	if (readlink (path, &ch, 1) != -1) {
 		return false;
@@ -226,7 +226,7 @@ R_API int r_sandbox_system(const char *x, int n) {
 		eprintf ("sandbox: system call disabled\n");
 		return -1;
 	}
-#if __WINDOWS__
+#if R2__WINDOWS__
 	return system (x);
 #elif LIBC_HAVE_FORK
 #if LIBC_HAVE_SYSTEM
@@ -326,7 +326,7 @@ R_API bool r_sandbox_creat(const char *path, int mode) {
 }
 
 static inline char *expand_home(const char *p) {
-	return (*p == '~')? r_str_home (p): strdup (p);
+	return (*p == '~')? r_file_home (p): strdup (p);
 }
 
 R_API int r_sandbox_lseek(int fd, ut64 addr, int whence) {
@@ -365,7 +365,7 @@ R_API int r_sandbox_open(const char *path, int perm, int mode) {
 	R_SANDBOX_GUARD (R_SANDBOX_GRAIN_DISK, -1);
 	char *epath = expand_home (path);
 	int ret = -1;
-#if __WINDOWS__
+#if R2__WINDOWS__
 	if (!strcmp (path, "/dev/null")) {
 		path = "NUL";
 	}
@@ -377,7 +377,7 @@ R_API int r_sandbox_open(const char *path, int perm, int mode) {
 			return -1;
 		}
 	}
-#if __WINDOWS__
+#if R2__WINDOWS__
 	{
 		DWORD flags = 0;
 		if (perm & O_RANDOM) {
@@ -433,9 +433,9 @@ R_API int r_sandbox_open(const char *path, int perm, int mode) {
 		}
 		free (wepath);
 	}
-#else // __WINDOWS__
+#else // R2__WINDOWS__
 	ret = open (epath, perm, mode);
-#endif // __WINDOWS__
+#endif // R2__WINDOWS__
 	free (epath);
 	return ret;
 }
@@ -459,7 +459,7 @@ R_API FILE *r_sandbox_fopen(const char *path, const char *mode) {
 		epath = expand_home (path);
 	}
 	if ((strchr (mode, 'w') || strchr (mode, 'a') || r_file_is_regular (epath))) {
-#if __WINDOWS__
+#if R2__WINDOWS__
 		wchar_t *wepath = r_utf8_to_utf16 (epath);
 		if (!wepath) {
 			free (epath);
@@ -474,9 +474,9 @@ R_API FILE *r_sandbox_fopen(const char *path, const char *mode) {
 		ret = _wfopen (wepath, wmode);
 		free (wmode);
 		free (wepath);
-#else // __WINDOWS__
+#else // R2__WINDOWS__
 		ret = fopen (epath, mode);
-#endif // __WINDOWS__
+#endif // R2__WINDOWS__
 	}
 	free (epath);
 	return ret;
@@ -505,12 +505,12 @@ R_API int r_sandbox_kill(int pid, int sig) {
 	if (G_enabled) {
 		return -1;
 	}
-#if HAVE_SYSTEM && __UNIX__
+#if HAVE_SYSTEM && R2__UNIX__
 	return kill (pid, sig);
 #endif
 	return -1;
 }
-#if __WINDOWS__
+#if R2__WINDOWS__
 R_API HANDLE r_sandbox_opendir(const char *path, WIN32_FIND_DATAW *entry) {
 	r_return_val_if_fail (path, NULL);
 	R_SANDBOX_GUARD (R_SANDBOX_GRAIN_FILES | R_SANDBOX_GRAIN_DISK, NULL);
@@ -545,7 +545,7 @@ R_API bool r_sys_stop(void) {
 	if (G_enabled) {
 		return false;
 	}
-#if __UNIX__
+#if R2__UNIX__
 	return !r_sandbox_kill (0, SIGTSTP);
 #else
 	return false;

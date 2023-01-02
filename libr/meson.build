@@ -5,11 +5,26 @@ no_user_plugins = get_option('plugins') == ''
 esil_plugins = [ 'dummy' ]
 asm_plugins = [ 'null' ]
 anal_plugins = [ 'null' ]
+arch_plugins = [ 'null',
+  'sh',
+  'arm',
+  '6502',
+  'snes',
+  'v850',
+  'any_as',
+  'any_vasm',
+  'jdh8',
+  'xap',
+  'riscv',
+  'i4004',
+  'rsp',
+  'amd29k',
+]
 bin_plugins = [ 'any' ]
 bin_ldr_plugins = [ 'ldr_linux' ]
 bin_xtr_plugins = [ 'xtr_sep64' ]
 io_plugins = [ 'malloc', 'xattr', 'fd', 'default', 'null', 'rbuf', 'r2pipe' , 'r2pipe']
-fs_plugins = [ 'r2', 'posix', 'io' ]
+fs_plugins = [ 'r2', 'posix', 'io', 'zip' ]
 bp_plugins = [ 'bf' ]
 crypto_plugins = [ 'xor', 'punycode' ]
 core_plugins = [ 'a2f' ]
@@ -21,7 +36,6 @@ parse_plugins = [ 'att2intel' ]
 if get_option('nogpl')
   user_plugins += ['nogrub']
 endif
-
 
 # This must be splitted in meson.builds for each module
 # meson split is results in 1 empty element when splitting an empty string :facepalm:
@@ -52,7 +66,7 @@ if not no_user_plugins
     ]
   endif
   if user_plugins.contains('x86')
-    asm_plugins += [ 'x86_nz' ]
+    arch_plugins += [ 'x86_nz' ]
     anal_plugins += [ 'x86_cs' ]
     bp_plugins += [ 'x86' ]
     parse_plugins += [ 'x86_pseudo' ]
@@ -62,13 +76,13 @@ if not no_user_plugins
     io_plugins += [ 'r2web' ]
   endif
   if user_plugins.contains('arm')
-    asm_plugins += [ 'arm' ]
     anal_plugins += [ 'arm_cs' ]
+    arch_plugins += [ 'arm' ]
     bp_plugins += [ 'arm' ]
     parse_plugins += [ 'arm_pseudo' ]
   endif
   if user_plugins.contains('v850')
-    anal_plugins += [ 'v850', 'v810' ]
+    arch_plugins += [ 'v810', 'v850' ]
     parse_plugins += [ 'v850_pseudo' ]
   endif
   if user_plugins.contains('wasm')
@@ -93,10 +107,6 @@ if not no_user_plugins
     anal_plugins += [ 'dalvik' ]
     parse_plugins += [ 'dalvik_pseudo' ]
   endif
-  if user_plugins.contains('riscv')
-    anal_plugins += [ 'riscv' ]
-    parse_plugins += [ 'riscv_pseudo' ]
-  endif
   if user_plugins.contains('loongarch')
     anal_plugins += [ 'loongarch_gnu' ]
   endif
@@ -117,23 +127,12 @@ endif
 # else
 if no_user_plugins
 
-asm_plugins += [
-  'arm_as',
-  'arm',
-  'ppc_as',
-  'x86_as',
-  'x86_nasm',
-  'x86_nz',
-]
-
 # TODO: add the pyc plugin for meson builds too
 anal_plugins += [
-  '6502',
   '6502_cs',
   'mcs96',
   '8051',
   'alpha',
-  'amd29k',
   # 'arc',
   'arm_cs',
   'avr',
@@ -142,14 +141,12 @@ anal_plugins += [
   'bpf_cs',
   'chip8',
   'cr16',
-  'bpf',
   'cris',
   'dalvik',
   'ebc',
   'evm_cs',
   'gb',
   'h8300',
-  'i4004',
   'i8080',
   'java',
   'kvx',
@@ -159,7 +156,6 @@ anal_plugins += [
   'm68k_cs',
   'm68k_gnu',
   'm680x_cs',
-  'malbolge',
   'mcore',
   'mips_cs',
   'msp430',
@@ -168,22 +164,15 @@ anal_plugins += [
   'pic',
   'ppc_cs',
   'propeller',
-  'riscv',
   'riscv_cs',
-  'rsp',
-  'sh',
-  'snes',
   'sparc_cs',
   's390_cs',
   'tms320',
   'tricore',
-  'v810',
-  'v850',
   'vax',
   'wasm',
   'ws',
   'x86_cs',
-  'xap',
   'xcore_cs',
   'xtensa',
 ]
@@ -411,6 +400,8 @@ endif
 
 parse_plugins += [
   '6502_pseudo',
+  'bpf_pseudo',
+  'evm_pseudo',
   'arm_pseudo',
   'avr_pseudo',
   'chip8_pseudo',
@@ -431,9 +422,11 @@ endif
 
 include_files = [
   'include/r2naked.h',
+  'include/rvc.h',
   'include/r_agraph.h',
   'include/r_anal.h',
   'include/r_arch.h',
+  'include/r_esil.h',
   'include/r_asm.h',
   'include/r_bin.h',
   'include/r_bin_dwarf.h',
@@ -446,10 +439,10 @@ include_files = [
   'include/r_core.h',
   'include/r_crypto.h',
   'include/r_debug.h',
+  'include/r_drx.h',
   'include/r_egg.h',
   'include/r_endian.h',
   'include/r_flag.h',
-  'include/r_flist.h',
   'include/r_fs.h',
   'include/r_getopt.h',
   'include/r_hash.h',
@@ -521,6 +514,7 @@ r_util_files = [
   'include/r_util/r_queue.h',
   'include/r_util/r_range.h',
   'include/r_util/r_rbtree.h',
+  'include/r_util/r_ref.h',
   'include/r_util/r_sandbox.h',
   'include/r_util/r_signal.h',
   'include/r_util/r_spaces.h',
@@ -541,14 +535,28 @@ r_util_files = [
   'include/r_util/r_utf8.h',
   'include/r_util/r_w32.h',
   'include/r_util/r_w32dw.h',
-  'include/r_util/r_x509.h'
+  'include/r_util/r_x509.h',
+  'include/r_util/r_xml.h'
 ]
 install_headers(r_util_files, install_dir: join_paths(r2_incdir, 'r_util'))
 
 r_crypto_files = [
-  'include/r_crypto/r_des.h'
+  'include/r_crypto/r_aes.h',
+  'include/r_crypto/r_des.h',
+  'include/r_crypto/r_sm4.h'
 ]
 install_headers(r_crypto_files, install_dir: join_paths(r2_incdir, 'r_crypto'))
+
+r_anal_files = [
+  'include/r_anal/op.h',
+  'include/r_anal/hint.h',
+]
+install_headers(r_anal_files, install_dir: join_paths(r2_incdir, 'r_anal'))
+
+r_esil_files = [
+  'include/r_esil.h',
+]
+install_headers(r_esil_files, install_dir: join_paths(r2_incdir, 'r_esil'))
 
 sflib_common_files = [
   join_paths('include/sflib/common/sftypes.h'),

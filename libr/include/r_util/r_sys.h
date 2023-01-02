@@ -3,7 +3,7 @@
 
 #include <r_list.h>
 
-#if __WINDOWS__
+#if R2__WINDOWS__
 #define R_SYS_DEVNULL "nul"
 #else
 #include <errno.h>
@@ -15,11 +15,31 @@
 extern "C" {
 #endif
 
-#define R_SYS_BITS_8 1
-#define R_SYS_BITS_16 2
-#define R_SYS_BITS_32 4
-#define R_SYS_BITS_64 8
-#define R_SYS_BITS_27 16
+// no need for an enum or type here, its just 1:1
+#define R_SYS_BITS_8	1
+#define R_SYS_BITS_16	2
+#define R_SYS_BITS_32	4
+#define R_SYS_BITS_64	8
+#define R_SYS_BITS_24	24
+#define R_SYS_BITS_27	16
+#define R_SYS_BITS_4	32
+#define R_SYS_BITS_12	64
+
+typedef ut64 RSysBits;
+
+#define R_SYS_BITS_SIZE 8
+#define R_SYS_BITS_MASK 0xff
+#define R_SYS_BITS_PACK(x) (RSysBits)(x)
+#define R_SYS_BITS_PACK1(x) (RSysBits)(x)
+#define R_SYS_BITS_PACK2(x,y) (RSysBits)((x) | ((y)<<R_SYS_BITS_SIZE))
+#define R_SYS_BITS_PACK3(x,y,z) (RSysBits)((x) | ((y)<<R_SYS_BITS_SIZE) | ((z) << (R_SYS_BITS_SIZE*2)))
+#define R_SYS_BITS_PACK4(x,y,z,q) (RSysBits)((x) | ((y)<<R_SYS_BITS_SIZE) | ((z) << (R_SYS_BITS_SIZE*2)) | ((q) << (R_SYS_BITS_SIZE*3)) )
+#define R_SYS_BITS_CHECK(x, y) (bool)( \
+	(((x) & R_SYS_BITS_MASK) == (y)) || \
+	((((x) >> R_SYS_BITS_SIZE) & R_SYS_BITS_MASK) == (y)) || \
+	((((x) >> (R_SYS_BITS_SIZE*2)) & R_SYS_BITS_MASK) == (y)) || \
+	((((x) >> (R_SYS_BITS_SIZE*3)) & R_SYS_BITS_MASK) == (y)) \
+)
 
 typedef struct {
 	char *sysname;
@@ -53,7 +73,7 @@ R_API int r_sys_arch_id(const char *arch);
 R_API bool r_sys_arch_match(const char *archstr, const char *arch);
 R_API RList *r_sys_dir(const char *path);
 R_API void r_sys_perror_str(const char *fun);
-#if __WINDOWS__
+#if R2__WINDOWS__
 #define r_sys_mkdir_failed() (GetLastError () != ERROR_ALREADY_EXISTS)
 #else
 #define r_sys_mkdir_failed() (errno != EEXIST)
@@ -67,6 +87,7 @@ R_API int r_sys_sleep(int secs);
 R_API int r_sys_usleep(int usecs);
 R_API char *r_sys_getenv(const char *key);
 R_API bool r_sys_getenv_asbool(const char *key);
+R_API int r_sys_getenv_asint(const char *key);
 R_API int r_sys_setenv(const char *key, const char *value);
 R_API int r_sys_clearenv(void);
 R_API char *r_sys_whoami(void);
@@ -76,7 +97,7 @@ R_API bool r_sys_chdir(const char *s);
 R_API bool r_sys_aslr(int val);
 R_API int r_sys_thp_mode(void);
 R_API int r_sys_cmd_str_full(const char *cmd, const char *input, int ilen, char **output, int *len, char **sterr);
-#if __WINDOWS__
+#if R2__WINDOWS__
 #ifdef UNICODE
 #define W32_TCHAR_FSTR "%S"
 #define W32_TCALL(name) name"W"
@@ -106,7 +127,7 @@ R_API char *r_sys_cmd_strf(const char *cmd, ...) R_PRINTF_CHECK(1, 2);
 R_API void r_sys_backtrace(void);
 R_API bool r_sys_tts(const char *txt, bool bg);
 
-#if __WINDOWS__
+#if R2__WINDOWS__
 #  define r_sys_breakpoint() { __debugbreak  (); }
 #else
 #if __GNUC__ && !defined(__TINYC__)

@@ -51,10 +51,6 @@ typedef struct r_x509_subjectpublickeyinfo_t {
 	RX509AlgorithmIdentifier algorithm;
 	//This is a bit string, but it encapsulate mod + pubkey
 	RASN1Binary *subjectPublicKey; // BIT STRING
-	//This struct won't follow RFC,
-	//just because it should be seen as this.
-	RASN1Binary *subjectPublicKeyExponent;
-	RASN1Binary *subjectPublicKeyModule;
 } RX509SubjectPublicKeyInfo;
 
 typedef struct r_x509_extension_t {
@@ -107,13 +103,13 @@ typedef struct r_x509_certificaterevocationlist {
 R_API RX509CertificateRevocationList* r_x509_parse_crl(RASN1Object *object);
 // R_API void r_x509_free_crl(RX509CertificateRevocationList *crl);
 // R_API void r_x509_crl_dump(RX509CertificateRevocationList *crl, const char* pad);
-R_API char *r_x509_crl_to_string(RX509CertificateRevocationList *crl, const char* pad);
+R_API char *r_x509_crl_tostring(RX509CertificateRevocationList *crl, const char* pad);
 R_API void r_x509_crl_json(PJ* pj, RX509CertificateRevocationList *crl);
 
 R_API RX509Certificate *r_x509_parse_certificate(RASN1Object *object);
 R_API RX509Certificate *r_x509_parse_certificate2(const ut8 *buffer, ut32 length);
 R_API void r_x509_free_certificate(RX509Certificate* certificate);
-R_API char *r_x509_certificate_to_string(RX509Certificate* certificate, const char* pad);
+R_API char *r_x509_certificate_tostring(RX509Certificate* certificate, const char* pad);
 R_API void r_x509_certificate_json(PJ* pj, RX509Certificate *certificate);
 R_API void r_x509_certificate_dump(RX509Certificate* cert, const char* pad, RStrBuf *sb);
 

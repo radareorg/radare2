@@ -3,7 +3,7 @@
 
 #include <r_util.h>
 #include <r_types.h>
-#include <ht_pu.h>
+#include <sdb/ht_pu.h>
 #include <r_io.h>
 #include <r_cons.h>
 #include <r_list.h>
@@ -134,19 +134,23 @@ typedef enum {
 // name mangling types
 // TODO: Rename to R_BIN_LANG_
 typedef enum {
-	R_BIN_NM_NONE = 0,
-	R_BIN_NM_JAVA = 1,
-	R_BIN_NM_C = 1<<1,
-	R_BIN_NM_GO = 1<<2,
-	R_BIN_NM_CXX = 1<<3,
-	R_BIN_NM_OBJC = 1<<4,
-	R_BIN_NM_SWIFT = 1<<5,
-	R_BIN_NM_DLANG = 1<<6,
-	R_BIN_NM_MSVC = 1<<7,
-	R_BIN_NM_RUST = 1<<8,
-	R_BIN_NM_KOTLIN = 1<<9,
-	R_BIN_NM_BLOCKS = 1U<<31,
-	R_BIN_NM_ANY = -1,
+	R_BIN_LANG_NONE = 0,
+	R_BIN_LANG_JAVA = 1,
+	R_BIN_LANG_C = 1<<1,
+	R_BIN_LANG_GO = 1<<2,
+	R_BIN_LANG_CXX = 1<<3,
+	R_BIN_LANG_OBJC = 1<<4,
+	R_BIN_LANG_SWIFT = 1<<5,
+	R_BIN_LANG_DLANG = 1<<6,
+	R_BIN_LANG_MSVC = 1<<7,
+	R_BIN_LANG_RUST = 1<<8,
+	R_BIN_LANG_KOTLIN = 1<<9,
+	R_BIN_LANG_PASCAL = 1<<10,
+	R_BIN_LANG_DART = 1<<11,
+	R_BIN_LANG_GROOVY = 1<<12,
+	R_BIN_LANG_JNI = 1U<<13,
+	R_BIN_LANG_BLOCKS = 1U<<31,
+	R_BIN_LANG_ANY = -1,
 } RBinNameMangling;
 
 typedef enum {
@@ -214,8 +218,8 @@ typedef struct r_bin_info_t {
 	char *arch;
 	char *cpu;
 	char *machine;
-	char *head_flag;
-	char *features;
+	char *flags; // elf.flags, which can ship info about cpu features or the abi used
+	char *abi;
 	char *os;
 	char *subsystem;
 	char *rpath;
@@ -266,7 +270,7 @@ typedef struct r_bin_object_t {
 	HtPP *methods_ht;
 	RList/*<RBinDwarfRow>*/ *lines;
 	HtUP *strings_db;
-	RList/*<??>*/ *mem;	//RBinMem maybe?
+	RList/*<??>*/ *mem; // RBinMem maybe?
 	RList/*<BinMap*/ *maps;
 	char *regstate;
 	RBinInfo *info;
@@ -276,6 +280,7 @@ typedef struct r_bin_object_t {
 	Sdb *kv;
 	HtUP *addr2klassmethod;
 	void *bin_obj; // internal pointer used by formats
+	bool is_reloc_patched; // used to indicate whether relocations were patched or not
 } RBinObject;
 
 // XXX: RbinFile may hold more than one RBinObject
@@ -330,6 +335,7 @@ struct r_bin_t {
 	int maxsymlen;
 	ut64 maxstrbuf;
 	int rawstr;
+	bool strings_nofp; // move to options struct passed instead of min, dump raw on every getstrings call
 	Sdb *sdb;
 	RIDStorage *ids;
 	RList/*<RBinPlugin>*/ *plugins;
@@ -355,7 +361,6 @@ struct r_bin_t {
 	bool use_xtr; // use extract plugins when loading a file?
 	bool use_ldr; // use loader plugins when loading a file?
 	RStrConstPool constpool;
-	bool is_reloc_patched; // used to indicate whether relocations were patched or not
 };
 
 typedef struct r_bin_xtr_metadata_t {
@@ -414,6 +419,7 @@ typedef struct r_bin_ldr_plugin_t {
 	bool (*load)(RBin *bin);
 } RBinLdrPlugin;
 
+// R2_580 - deprecate this struct which looks dupe from RArchConfig
 typedef struct r_bin_arch_options_t {
 	const char *arch;
 	int bits;
@@ -490,7 +496,7 @@ typedef struct r_bin_section_t {
 	ut64 vaddr;
 	ut64 paddr;
 	ut32 perm;
-	// per section platform info
+	const char *type;
 	const char *arch;
 	char *format;
 	int bits;
@@ -503,7 +509,7 @@ typedef struct r_bin_section_t {
 typedef struct r_bin_class_t {
 	char *name;
 	// TODO: char *module;
-	char *super;
+	RList *super; // list of char*
 	char *visibility_str; // XXX only used by java
 	int index;
 	ut64 addr;
@@ -511,6 +517,7 @@ typedef struct r_bin_class_t {
 	RList *fields; // <RBinField>
 	// RList *interfaces; // <char *>
 	int visibility;
+	int lang;
 } RBinClass;
 
 #define RBinSectionName r_offsetof(RBinSection, name)
@@ -547,6 +554,7 @@ typedef struct r_bin_symbol_t {
 	ut32 size;
 	ut32 ordinal;
 	ut32 visibility;
+	int lang;
 	int bits;
 	/* see R_BIN_METH_* constants */
 	ut64 method_flags;
@@ -657,6 +665,7 @@ typedef struct r_bin_bind_t {
 } RBinBind;
 
 R_IPI RBinSection *r_bin_section_new(const char *name);
+R_API RBinSection *r_bin_section_clone(RBinSection *s);
 R_IPI void r_bin_section_free(RBinSection *bs);
 R_API void r_bin_info_free(RBinInfo *rb);
 R_API void r_bin_import_free(RBinImport *imp);
@@ -681,6 +690,11 @@ R_API bool r_bin_open_io(RBin *bin, RBinFileOptions *opt);
 R_API bool r_bin_open_buf(RBin *bin, RBuffer *buf, RBinFileOptions *opt);
 R_API bool r_bin_reload(RBin *bin, ut32 bf_id, ut64 baseaddr);
 
+R_IPI RBinClass *r_bin_class_new(const char *name, const char *super, int view);
+R_API void r_bin_class_free(RBinClass *);
+// uhm should be tied used because we dont want bincur to change because of open
+R_API RBinFile *r_bin_file_open(RBin *bin, const char *file, RBinFileOptions *opt);
+
 // plugins/bind functions
 R_API void r_bin_bind(RBin *b, RBinBind *bnd);
 R_API bool r_bin_add(RBin *bin, RBinPlugin *foo);
@@ -704,7 +718,7 @@ R_API RList *r_bin_raw_strings(RBinFile *a, int min);
 R_API RList *r_bin_dump_strings(RBinFile *a, int min, int raw);
 
 // use RBinFile instead
-R_API RList *r_bin_get_entries(RBin *bin);
+R_API const RList *r_bin_get_entries(RBin *bin);
 R_API RList *r_bin_get_fields(RBin *bin);
 R_API const RList *r_bin_get_imports(RBin *bin);
 R_API RList *r_bin_get_libs(RBin *bin);
@@ -769,6 +783,7 @@ R_API bool r_bin_file_set_cur_by_id(RBin *bin, ut32 bin_id);
 R_API bool r_bin_file_set_cur_by_name(RBin *bin, const char *name);
 R_API ut64 r_bin_file_delete_all(RBin *bin);
 R_API bool r_bin_file_delete(RBin *bin, ut32 bin_id);
+R_API void r_bin_file_merge(RBinFile *bo, RBinFile *b);
 R_API RList *r_bin_file_compute_hashes(RBin *bin, ut64 limit);
 R_API RList *r_bin_file_set_hashes(RBin *bin, RList *new_hashes);
 R_API RBinPlugin *r_bin_file_cur_plugin(RBinFile *binfile);
@@ -782,6 +797,7 @@ R_API void r_bin_mem_free(void *data);
 // demangle functions
 R_API char *r_bin_demangle(RBinFile *binfile, const char *lang, const char *str, ut64 vaddr, bool libs);
 R_API char *r_bin_demangle_java(const char *str);
+R_API char *r_bin_demangle_freepascal(const char *str);
 R_API char *r_bin_demangle_cxx(RBinFile *binfile, const char *str, ut64 vaddr);
 R_API char *r_bin_demangle_msvc(const char *str);
 R_API char *r_bin_demangle_swift(const char *s, bool syscmd, bool trylib);
@@ -806,6 +822,8 @@ R_API bool r_bin_wr_scn_perms(RBin *bin, const char *name, int perms);
 R_API bool r_bin_wr_rpath_del(RBin *bin);
 R_API bool r_bin_wr_entry(RBin *bin, ut64 addr);
 R_API bool r_bin_wr_output(RBin *bin, const char *filename);
+
+R_API const char *r_bin_lang_tostring(int type);
 
 R_API RList *r_bin_get_mem(RBin *bin);
 

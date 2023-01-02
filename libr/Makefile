@@ -96,8 +96,9 @@ endif
 _libr.${EXT_AR}: .libr
 	-${AR} -rs $@ .libr/*.o
 
-# this code should be in do-ar-sh not inlined here..
-
+# ifeq ($(shell type libtool),)
+ifeq (1,1)
+# XXX this is not correct. libtool is required for static builds for now
 .libr2: $(wildcard */libr_*.${EXT_AR}) ../shlr/libr_shlr.${EXT_AR}
 	rm -rf .libr2
 	mkdir -p .libr2
@@ -108,19 +109,38 @@ _libr.${EXT_AR}: .libr
 		( cd .libr2/$$BN ; pwd ; du -hs ../../$$LIB; ${AR} -x ../../$$LIB ) ; \
 	done
 
-libr.${EXT_AR}: .libr2
-	-${AR} -rs $@ .libr2/*/*.o
+ifeq ($(shell uname),Darwin)
+WHOLEFLAG=-all_load
+else
+WHOLEFLAG=-Wl,--whole-archive
+endif
+libr.o: ../shlr/libr_shlr.${EXT_AR}
+	$(CC) -r -nostdlib $(WHOLEFLAG) -o libr.o $(wildcard */libr_*.${EXT_AR}) ../shlr/libr_shlr.${EXT_AR}
+
+libr.${EXT_AR}: libr.o
+	$(AR) -rs $@ libr.o
+	$(RANLIB) $@
+
+#libr.${EXT_AR}: .libr2
+#	-${AR} -rs $@ .libr2/*/*.o
+else
+
+libr.${EXT_AR}: $(wildcard */libr_*.${EXT_AR}) ../shlr/libr_shlr.${EXT_AR}
+	libtool -static -o libr.${EXT_AR} $^
+	# ar -rcT libr.${EXT_AR} $^
+	du -hs libr.${EXT_AR}
+endif
+
 
 ifeq (1,$(WITH_GPL))
 E+=../shlr/grub/libgrubfs.${EXT_AR}
 endif
-E+=../shlr/yxml/libyxml.${EXT_AR}
 E+=../shlr/ar/libr_ar.${EXT_AR}
 E+=../shlr/winkd/libr_winkd.${EXT_AR}
 E+=../shlr/qnx/lib/libqnxr.${EXT_AR}
 E+=../shlr/bochs/lib/libbochs.${EXT_AR}
-E+=../libr/asm/arch/arm/v35arm64/arm64dis.${EXT_AR}
-E+=../libr/asm/arch/arm/v35arm64/armv7dis.${EXT_AR}
+E+=../libr/arch/p/arm/v35arm64/arm64dis.${EXT_AR}
+E+=../libr/arch/p/arm/v35arm64/armv7dis.${EXT_AR}
 
 ifeq ($(USE_CAPSTONE),1)
 E+=$(CAPSTONE_LDFLAGS)
@@ -134,13 +154,23 @@ else
 LIBR_LDFLAGS=-shared
 endif
 
-libr.${EXT_SO}: .libr2
+libr2.${EXT_SO}: .libr2
 ifeq (${COMPILER},emscripten)
 	echo nothing to do here
 else
 	$(CC) -fvisibility=hidden $(MLFLAGS) ${LINK} ${CFLAGS} ${CPPFLAGS} ${LDFLAGS} $(LIBR_LDFLAGS) -o libr.${EXT_SO}  \
 		.libr2/*/*.o \
 		../shlr/gdb/lib/libgdbr.${EXT_AR} ../shlr/java/libr_java.${EXT_AR} \
+		../shlr/libr_shlr.${EXT_AR} ../shlr/mpc/libmpc.${EXT_AR} $(E) \
+		../libr/util/libr_util.${EXT_AR}
+endif
+
+libr.${EXT_SO}: libr.${EXT_AR}
+ifeq (${COMPILER},emscripten)
+	echo nothing to do here
+else
+	$(CC) -fvisibility=hidden $(MLFLAGS) ${LINK} ${CFLAGS} ${CPPFLAGS} ${LDFLAGS} $(LIBR_LDFLAGS) -o libr.${EXT_SO}  \
+		libr.${EXT_AR} ../shlr/gdb/lib/libgdbr.${EXT_AR} ../shlr/java/libr_java.${EXT_AR} \
 		../shlr/libr_shlr.${EXT_AR} ../shlr/mpc/libmpc.${EXT_AR} $(E) \
 		../libr/util/libr_util.${EXT_AR}
 endif
@@ -187,15 +217,14 @@ install-includes:
 		done ; \
 	done)
 	${INSTALL_DIR} "${DESTDIR}${INCLUDEDIR}/libr/sdb"
-	(cd ../shlr/sdb/src && for FILE in *.h ; do \
+	(cd ../shlr/sdb/include/sdb && for FILE in *.h ; do \
 		${INSTALL_DATA} $$FILE "${DESTDIR}${INCLUDEDIR}/libr/sdb/$$FILE" ; \
 	done)
-	${INSTALL_DIR} "${DESTDIR}${INCLUDEDIR}/libr/r_util"
-	(cd include/r_util && for FILE in * ; do \
-		${INSTALL_DATA} $$FILE "${DESTDIR}${INCLUDEDIR}/libr/r_util/$$FILE" ; done)
-	${INSTALL_DIR} "${DESTDIR}${INCLUDEDIR}/libr/r_crypto"
-	(cd include/r_crypto && for FILE in * ; do \
-		${INSTALL_DATA} $$FILE "${DESTDIR}${INCLUDEDIR}/libr/r_crypto/$$FILE" ; done)
+	for a in r_util r_crypto r_anal ; do \
+	${INSTALL_DIR} "${DESTDIR}${INCLUDEDIR}/libr/$$a" ; \
+	(cd include/$$a && for FILE in * ; do \
+		${INSTALL_DATA} $$FILE "${DESTDIR}${INCLUDEDIR}/libr/$$a/$$FILE" ; done) ; \
+	done
 
 symstall install-symlink:
 	@cd .. && \
@@ -204,7 +233,7 @@ symstall install-symlink:
 		"${DESTDIR}${LIBDIR}/pkgconfig" \
 		"${DESTDIR}${LIBDIR}/radare2/${VERSION}" ; \
 	rm -rf "${DESTDIR}${INCLUDEDIR}/libr" && ln -fs "${PWD}/include" "${DESTDIR}${INCLUDEDIR}/libr" ; \
-	rm -rf "${DESTDIR}${INCLUDEDIR}/libr/sdb" && ln -fs "${PWD}/../shlr/sdb/src" "${DESTDIR}${INCLUDEDIR}/libr/sdb" ; \
+	rm -rf "${DESTDIR}${INCLUDEDIR}/libr/sdb" && ln -fs "${PWD}/../shlr/sdb/include/sdb" "${DESTDIR}${INCLUDEDIR}/libr/sdb" ; \
 	$(MAKE) install-pkgconfig-symlink ; \
 	$(foreach lib,${LIBS}, \
 	  ln -fs "${PWD}/$(lib)/libr_$(lib).${EXT_SO}" \
@@ -236,7 +265,7 @@ install: install-includes install-pkgconfig
 	  ${INSTALL_LIB} "$$lib" "${DESTDIR}${LIBDIR}/$$lib"; \
 	fi
 	# object archives
-	@for FILE in `find * -type f -iname "*.${EXT_AR}" | grep -v fs/p` ; do \
+	@for FILE in `find * -type f -iname "*.${EXT_AR}" | grep -v dis.a | grep -v fs/p` ; do \
 	  echo " ${DESTDIR}${LIBDIR}/$$FILE"; ${INSTALL_DATA} $$FILE "${DESTDIR}${LIBDIR}" ; done || true
 	# plugins
 	@${INSTALL_DIR} "${DESTDIR}${LIBDIR}/radare2/${VERSION}"

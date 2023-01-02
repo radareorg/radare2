@@ -107,9 +107,9 @@ static void print_string(RBinFile *bf, RBinString *string, int raw, PJ *pj) {
 	}
 }
 
-static int string_scan_range(RList *list, RBinFile *bf, int min,
-			      const ut64 from, const ut64 to, int type, int raw, RBinSection *section) {
+static int string_scan_range(RList *list, RBinFile *bf, int min, const ut64 from, const ut64 to, int type, int raw, RBinSection *section) {
 	RBin *bin = bf->rbin;
+	const bool strings_nofp = bin->strings_nofp;
 	ut8 tmp[R_STRING_SCAN_BUFFER_SIZE];
 	ut64 str_start, needle = from;
 	int count = 0, i, rc, runes;
@@ -268,20 +268,34 @@ static int string_scan_range(RList *list, RBinFile *bf, int min,
 				}
 				rc = r_utf8_encode (tmp + i, r);
 				runes++;
-				/* Print the escape code */
 			} else if (r && r < 0x100 && strchr ("\b\v\f\n\r\t\a\033\\", (char)r)) {
-				if ((i + 32) < sizeof (tmp) && r < 93) {
-					tmp[i + 0] = '\\';
-					tmp[i + 1] = "       abtnvfr             e  "
-					             "                              "
-					             "                              "
-					             "  \\"[r];
+				/* Print the escape code */
+				if (strings_nofp) {
+					rc = 2;
+					if (r && r < 0x100 && strchr ("\n\r\t\033\\", (char)r)) {
+						// eprintf ("is special\n");
+						runes++;
+						// accept it as it is
+						rc = 1;
+					} else {
+						rc = 1;
+						r = 0;
+						break;
+					}
 				} else {
-					// string too long
-					break;
+					if ((i + 32) < sizeof (tmp) && r < 93) {
+						tmp[i + 0] = '\\';
+						tmp[i + 1] = "       abtnvfr             e  "
+							"                              "
+							"                              "
+							"  \\"[r];
+					} else {
+						// string too long
+						break;
+					}
+					rc = 2;
+					runes++;
 				}
-				rc = 2;
-				runes++;
 			} else {
 				/* \0 marks the end of C-strings */
 				break;
@@ -385,7 +399,10 @@ static int string_scan_range(RList *list, RBinFile *bf, int min,
 			ut64 baddr = bf->loadaddr && bf->o? bf->o->baddr: bf->loadaddr;
 			bs->paddr = str_start + baddr;
 			bs->vaddr = str_start - pdelta + vdelta + baddr;
-			bs->string = r_str_ndup ((const char *)tmp, i);
+			bs->string = r_str_ndup ((const char *)tmp, i); // Use stringviews to save memory
+			if (strings_nofp) {
+				r_str_trim (bs->string); // trim spaces to ease readability
+			}
 			if (list) {
 				r_list_append (list, bs);
 				if (bf->o) {
@@ -424,7 +441,7 @@ static bool __isDataSection(RBinFile *a, RBinSection *s) {
 	return strstr (s->name, "_const");
 }
 
-static void get_strings_range(RBinFile *bf, RList *list, int min, int raw, ut64 from, ut64 to, RBinSection *section) {
+static void get_strings_range(RBinFile *bf, RList *list, int min, int raw, bool nofp, ut64 from, ut64 to, RBinSection *section) {
 	r_return_if_fail (bf && bf->buf);
 
 	RBinPlugin *plugin = r_bin_file_cur_plugin (bf);
@@ -462,7 +479,7 @@ static void get_strings_range(RBinFile *bf, RList *list, int min, int raw, ut64 
 		// in case of dump ignore here
 		if (bf->rbin->maxstrbuf && size && size > bf->rbin->maxstrbuf) {
 			if (bf->rbin->verbose) {
-				R_LOG_WARN ("bin_strings buffer is too big (0x%08" PFMT64x "). Use -zzz or set bin.maxstrbuf (RABIN2_MAXSTRBUF) in r2 (rabin2)", size);
+				R_LOG_WARN ("bin_strings buffer is too big (0x%08" PFMT64x "). Use -zzz or set bin.str.maxbuf (RABIN2_MAXSTRBUF) in r2 (rabin2)", size);
 			}
 			return;
 		}
@@ -724,6 +741,7 @@ R_IPI bool r_bin_file_set_obj(RBin *bin, RBinFile *bf, RBinObject *obj) {
 	}
 	if (obj) {
 		if (!obj->info) {
+			R_LOG_DEBUG ("bin object have no information");
 			return false;
 		}
 		if (!obj->info->lang) {
@@ -841,6 +859,7 @@ R_API RBinPlugin *r_bin_file_cur_plugin(RBinFile *bf) {
 
 // TODO: searchStrings() instead
 R_IPI RList *r_bin_file_get_strings(RBinFile *bf, int min, int dump, int raw) {
+	const bool nofp = bf->rbin->strings_nofp;
 	r_return_val_if_fail (bf, NULL);
 	RListIter *iter;
 	RBinSection *section;
@@ -850,7 +869,7 @@ R_IPI RList *r_bin_file_get_strings(RBinFile *bf, int min, int dump, int raw) {
 		RBinObject *o = bf->o;
 		r_list_foreach (o->sections, iter, section) {
 			if (__isDataSection (bf, section)) {
-				get_strings_range (bf, ret, min, raw, section->paddr,
+				get_strings_range (bf, ret, min, raw, nofp, section->paddr,
 						section->paddr + section->size, section);
 			}
 		}
@@ -864,6 +883,9 @@ R_IPI RList *r_bin_file_get_strings(RBinFile *bf, int min, int dump, int raw) {
 				// XXX do not walk if bin.strings == 0
 				ut8 *p;
 				if (section->size > bf->size) {
+					continue;
+				}
+				if (section->size < 1) {
 					continue;
 				}
 				ut8 *sbuf = malloc (section->size);
@@ -899,7 +921,7 @@ R_IPI RList *r_bin_file_get_strings(RBinFile *bf, int min, int dump, int raw) {
 			}
 		}
 	} else {
-		get_strings_range (bf, ret, min, raw, 0, bf->size, NULL);
+		get_strings_range (bf, ret, min, raw, nofp, 0, bf->size, NULL);
 	}
 	return ret;
 }
@@ -939,7 +961,7 @@ R_API RList *r_bin_file_compute_hashes(RBin *bin, ut64 limit) {
 	// By SLURP_LIMIT normally cannot compute ...
 	if (buf_len > limit) {
 		if (bin->verbose) {
-			R_LOG_WARN ("r_bin_file_hash: file exceeds bin.hashlimit");
+			R_LOG_WARN ("file size exceeds bin.hashlimit");
 		}
 		return NULL;
 	}
@@ -1029,9 +1051,12 @@ R_IPI RBinClass *r_bin_class_new(const char *name, const char *super, int view) 
 	RBinClass *c = R_NEW0 (RBinClass);
 	if (c) {
 		c->name = strdup (name);
-		c->super = super? strdup (super): NULL;
-		c->methods = r_list_new ();
-		c->fields = r_list_new ();
+		if (super) {
+			c->super = r_list_newf (free);
+			r_list_append (c->super, strdup (super));
+		}
+		c->methods = r_list_newf (r_bin_symbol_free);
+		c->fields = r_list_newf (r_bin_field_free);
 		c->visibility = view;
 	}
 	return c;
@@ -1040,7 +1065,7 @@ R_IPI RBinClass *r_bin_class_new(const char *name, const char *super, int view) 
 R_IPI void r_bin_class_free(RBinClass *k) {
 	if (k) {
 		free (k->name);
-		free (k->super);
+		r_list_free (k->super);
 		free (k->visibility_str);
 		r_list_free (k->methods);
 		r_list_free (k->fields);
@@ -1053,8 +1078,9 @@ R_API RBinClass *r_bin_file_add_class(RBinFile *bf, const char *name, const char
 	RBinClass *c = __getClass (bf, name);
 	if (c) {
 		if (super) {
-			free (c->super);
-			c->super = strdup (super);
+			r_list_free (c->super);
+			c->super = r_list_newf (free);
+			r_list_append (c->super, strdup (super));
 		}
 		return c;
 	}
@@ -1076,14 +1102,17 @@ R_API RBinSymbol *r_bin_file_add_method(RBinFile *bf, const char *klass, const c
 		R_LOG_ERROR ("Cannot allocate class %s", klass);
 		return NULL;
 	}
+	int lang = (strstr (method, "JNI") || strstr (klass, "JNI"))? R_BIN_LANG_JNI: R_BIN_LANG_CXX;
+	c->lang = lang;
 	RBinSymbol *sym = __getMethod (bf, klass, method);
 	if (!sym) {
 		sym = R_NEW0 (RBinSymbol);
 		if (sym) {
 			sym->name = strdup (method);
-			r_list_append (c->methods, sym);
+			sym->lang = lang;
 			char *name = r_str_newf ("%s::%s", klass, method);
 			ht_pp_insert (bf->o->methods_ht, name, sym);
+			r_list_append (c->methods, sym);
 			free (name);
 		}
 	}
@@ -1091,7 +1120,7 @@ R_API RBinSymbol *r_bin_file_add_method(RBinFile *bf, const char *klass, const c
 }
 
 R_API RBinField *r_bin_file_add_field(RBinFile *binfile, const char *classname, const char *name) {
-	R_LOG_ERROR ("TODO: RBinFile.addField() is not implemented");
+	R_LOG_TODO ("RBinFile.addField() is not implemented");
 	return NULL;
 }
 
@@ -1118,4 +1147,20 @@ R_API RList *r_bin_file_get_symbols(RBinFile *bf) {
 	r_return_val_if_fail (bf, NULL);
 	RBinObject *o = bf->o;
 	return o? o->symbols: NULL;
+}
+
+R_API RBinFile *r_bin_file_open(RBin *bin, const char *file, RBinFileOptions *opt) {
+	if (r_bin_open (bin, file, opt)) {
+		return r_bin_cur (bin);
+	}
+	return NULL;
+}
+
+// TODO Improve this API
+R_API void r_bin_file_merge(RBinFile *dst, RBinFile *src) {
+	// merge imports
+	// merge dbginfo
+	sdb_merge (dst->o->kv, src->o->kv);
+	sdb_merge (dst->sdb_addrinfo, src->sdb_addrinfo);
+	sdb_merge (dst->sdb_info, src->sdb_info);
 }

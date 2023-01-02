@@ -69,6 +69,7 @@ R_API const char *r_num_calc_index(RNum *num, const char *p);
 R_API ut64 r_num_chs(int cylinder, int head, int sector, int sectorsize);
 R_API int r_num_is_valid_input(RNum *num, const char *input_value);
 R_API ut64 r_num_get_input_value(RNum *num, const char *input_value);
+R_API char *r_num_list_join(RList *str, const char *sep);
 R_API const char *r_num_get_name(RNum *num, ut64 n);
 R_API char* r_num_as_string(RNum *___, ut64 n, bool printable_only);
 R_API ut64 r_num_tail(RNum *num, ut64 addr, const char *hex);
@@ -93,6 +94,10 @@ R_API void *r_num_dup(ut64 n);
 R_API double r_num_cos(double a);
 R_API double r_num_sin(double a);
 R_API size_t r_num_bit_count(ut32 val);
+R_API size_t r_num_bit_clz32(ut32 val);
+R_API size_t r_num_bit_clz64(ut64 val);
+R_API size_t r_num_bit_ctz32(ut32 val);
+R_API size_t r_num_bit_ctz64(ut64 val);
 R_API double r_num_get_float(RNum *num, const char *str);
 
 static inline st64 r_num_abs(st64 num) {

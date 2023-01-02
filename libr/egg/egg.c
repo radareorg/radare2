@@ -55,6 +55,11 @@ R_API REgg *r_egg_new(void) {
 	if (!egg->rasm) {
 		goto beach;
 	}
+	egg->anal = r_anal_new ();
+	if (!egg->anal) {
+		goto beach;
+	}
+	r_anal_bind (egg->anal, &egg->rasm->analb);
 	egg->bits = 0;
 	egg->endian = 0;
 	egg->db = sdb_new (NULL, NULL, 0);
@@ -79,11 +84,11 @@ beach:
 R_API bool r_egg_add(REgg *a, REggPlugin *foo) {
 	r_return_val_if_fail (a && foo, false);
 	RListIter *iter;
-	RAsmPlugin *h;
 	// TODO: cache foo->name length and use memcmp instead of strcmp
 	if (!foo->name) {
 		return false;
 	}
+	REggPlugin *h;
 	r_list_foreach (a->plugins, iter, h) {
 		if (!strcmp (h->name, foo->name)) {
 			return false;
@@ -93,9 +98,9 @@ R_API bool r_egg_add(REgg *a, REggPlugin *foo) {
 	return true;
 }
 
-R_API char *r_egg_to_string(REgg *egg) {
+R_API char *r_egg_tostring(REgg *egg) {
 	r_return_val_if_fail (egg, NULL);
-	return r_buf_to_string (egg->buf);
+	return r_buf_tostring (egg->buf);
 }
 
 R_API void r_egg_free(REgg *egg) {
@@ -105,6 +110,7 @@ R_API void r_egg_free(REgg *egg) {
 		r_buf_free (egg->bin);
 		r_list_free (egg->list);
 		r_asm_free (egg->rasm);
+		r_anal_free (egg->anal);
 		r_syscall_free (egg->syscall);
 		sdb_free (egg->db);
 		r_list_free (egg->plugins);
@@ -127,6 +133,7 @@ R_API void r_egg_reset(REgg *egg) {
 	r_list_purge (egg->patches);
 }
 
+// TODO: use RArchConfig instead
 R_API bool r_egg_setup(REgg *egg, const char *arch, int bits, int endian, const char *os) {
 	r_return_val_if_fail (egg && arch, false);
 	const char *asmcpu = NULL; // TODO
@@ -335,10 +342,12 @@ R_API bool r_egg_assemble_asm(REgg *egg, char **asm_list) {
 	}
 	if (asm_name) {
 		r_asm_use (egg->rasm, asm_name);
+		r_asm_use_assembler (egg->rasm, asm_name);
 		r_asm_set_bits (egg->rasm, egg->bits);
 		r_asm_set_big_endian (egg->rasm, egg->endian);
-		r_asm_set_syntax (egg->rasm, R_ASM_SYNTAX_INTEL);
-		code = r_buf_to_string (egg->buf);
+		// r_asm_set_syntax (egg->rasm, R_ARCH_SYNTAX_INTEL);
+		r_arch_config_set_syntax (egg->rasm->config, R_ARCH_SYNTAX_INTEL);
+		code = r_buf_tostring (egg->buf);
 		asmcode = r_asm_massemble (egg->rasm, code);
 		if (asmcode) {
 			if (asmcode->len > 0) {
@@ -397,11 +406,11 @@ R_API RBuffer *r_egg_get_bin(REgg *egg) {
 //R_API int r_egg_dump (REgg *egg, const char *file) { }
 
 R_API char *r_egg_get_source(REgg *egg) {
-	return r_buf_to_string (egg->src);
+	return r_buf_tostring (egg->src);
 }
 
 R_API char *r_egg_get_assembly(REgg *egg) {
-	return r_buf_to_string (egg->buf);
+	return r_buf_tostring (egg->buf);
 }
 
 R_API void r_egg_append(REgg *egg, const char *src) {

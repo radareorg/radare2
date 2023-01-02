@@ -47,10 +47,13 @@ typedef struct {
 	RList *cols;
 	int totalCols;
 	bool showHeader;
+	/// R2_580 - squash them all as int showMode and switch it
 	bool showFancy;
 	bool showSQL;
 	bool showJSON;
 	bool showCSV;
+	bool showTSV;
+	bool showHTML;
 	bool showR2;
 	bool showSum;
 	bool adjustedCols;
@@ -78,6 +81,8 @@ R_API char *r_table_tosimplestring(RTable *t);
 R_API char *r_table_tostring(RTable *t);
 R_API char *r_table_tosql(RTable *t);
 R_API char *r_table_tocsv(RTable *t);
+R_API char *r_table_tohtml(RTable *t);
+R_API char *r_table_totsv(RTable *t);
 R_API char *r_table_tor2cmds(RTable *t);
 R_API char *r_table_tojson(RTable *t);
 R_API const char *r_table_help(void);
@@ -91,12 +96,15 @@ R_API bool r_table_align(RTable *t, int nth, int align);
 R_API void r_table_visual_list(RTable *table, RList* list, ut64 seek, ut64 len, int width, bool va);
 R_API RTable *r_table_push(RTable *t);
 R_API RTable *r_table_pop(RTable *t);
+#if 0
+// not implemented
 R_API void r_table_fromjson(RTable *t, const char *csv);
 R_API void r_table_fromcsv(RTable *t, const char *csv);
-R_API char *r_table_tohtml(RTable *t);
+R_API void r_table_fromtsv(RTable *t, const char *tsv);
 R_API void r_table_transpose(RTable *t);
 R_API void r_table_format(RTable *t, int nth, RTableColumnType *type);
 R_API ut64 r_table_reduce(RTable *t, int nth);
+#endif
 R_API void r_table_columns(RTable *t, RList *cols); // const char *name, ...);
 
 #ifdef __cplusplus

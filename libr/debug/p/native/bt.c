@@ -66,7 +66,7 @@ static RList *r_debug_native_frames(RDebug *dbg, ut64 at) {
 	RList *list;
 	if (dbg->btalgo && !strcmp (dbg->btalgo, "trace")) {
 		if (dbg->call_frames) {
-			list = r_list_clone (dbg->call_frames);
+			list = r_list_clone (dbg->call_frames, NULL);
 		} else {
 			list = r_list_newf (free);
 		}

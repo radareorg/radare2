@@ -13,6 +13,10 @@
     "type": "git",
     "url": "git+https://github.com/radareorg/radare2.git"
   },
+  "engines": {
+    "node": ">=16",
+    "npm": ">=7"
+  },
   "keywords": [
     "radare2"
   ],
@@ -21,7 +25,7 @@
     "pancake <pancake@nopcode.org>"
   ],
   "name": "radare2-git",
-  "version": "5.7.7",
+  "version": "5.8.0",
   "bugs": {
     "url": "https://github.com/radareorg/radare2/issues"
   },

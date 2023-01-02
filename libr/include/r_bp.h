@@ -110,8 +110,8 @@ typedef struct r_bp_trace_t {
 R_API RBreakpoint *r_bp_new(void);
 R_API RBreakpoint *r_bp_free(RBreakpoint *bp);
 
-R_API int r_bp_del(RBreakpoint *bp, ut64 addr);
-R_API int r_bp_del_all(RBreakpoint *bp);
+R_API bool r_bp_del(RBreakpoint *bp, ut64 addr);
+R_API bool r_bp_del_all(RBreakpoint *bp);
 
 R_API int r_bp_plugin_add(RBreakpoint *bp, RBreakpointPlugin *foo);
 R_API int r_bp_use(RBreakpoint *bp, const char *name, int bits);
@@ -120,19 +120,19 @@ R_API void r_bp_plugin_list(RBreakpoint *bp);
 
 R_API int r_bp_in(RBreakpoint *bp, ut64 addr, int perm);
 // deprecate?
-R_API int r_bp_list(RBreakpoint *bp, int rad);
+R_API void r_bp_list(RBreakpoint *bp, int rad);
 R_API int r_bp_size(RBreakpoint *bp);
 
 /* bp item attribs setters */
 R_API int r_bp_get_bytes(RBreakpoint *bp, ut8 *buf, int len, int endian, int idx);
-R_API int r_bp_set_trace(RBreakpoint *bp, ut64 addr, int set);
-R_API int r_bp_set_trace_all(RBreakpoint *bp, int set);
+R_API bool r_bp_set_trace(RBreakpoint *bp, ut64 addr, int set);
+R_API void r_bp_set_trace_all(RBreakpoint *bp, int set);
 R_API RBreakpointItem *r_bp_enable(RBreakpoint *bp, ut64 addr, int set, int count);
-R_API int r_bp_enable_all(RBreakpoint *bp, int set);
+R_API void r_bp_enable_all(RBreakpoint *bp, int set);
 
 /* index api */
-R_API int r_bp_del_index(RBreakpoint *bp, int idx);
 R_API RBreakpointItem *r_bp_get_index(RBreakpoint *bp, int idx);
+R_API bool r_bp_del_index(RBreakpoint *bp, int idx);
 R_API int r_bp_get_index_at(RBreakpoint *bp, ut64 addr);
 R_API RBreakpointItem *r_bp_item_new(RBreakpoint *bp);
 
@@ -141,9 +141,9 @@ R_API RBreakpointItem *r_bp_get_in(RBreakpoint *bp, ut64 addr, int perm);
 
 R_API bool r_bp_is_valid(RBreakpoint *bp, RBreakpointItem *b);
 
-R_API int r_bp_add_cond(RBreakpoint *bp, const char *cond);
-R_API int r_bp_del_cond(RBreakpoint *bp, int idx);
-R_API int r_bp_add_fault(RBreakpoint *bp, ut64 addr, int size, int perm);
+R_API bool r_bp_add_cond(RBreakpoint *bp, const char *cond);
+R_API bool r_bp_del_cond(RBreakpoint *bp, int idx);
+R_API void r_bp_add_fault(RBreakpoint *bp, ut64 addr, int size, int perm);
 
 R_API RBreakpointItem *r_bp_add_sw(RBreakpoint *bp, ut64 addr, int size, int perm);
 R_API RBreakpointItem *r_bp_add_hw(RBreakpoint *bp, ut64 addr, int size, int perm);

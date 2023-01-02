@@ -1,4 +1,6 @@
-/* radare - LGPL - Copyright 2011-2019 - pancake */
+/* radare - LGPL - Copyright 2011-2022 - pancake */
+
+#define R_LOG_ORIGIN "fs.file"
 
 #include <r_fs.h>
 

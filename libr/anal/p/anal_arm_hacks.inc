@@ -147,7 +147,7 @@ static inline int hackyArmAnal(RAnal *a, RAnalOp *op, const ut8 *buf, int len) {
 	int ret = -1;
 	// Hacky support for ARMv8.3 and ARMv8.5
 	if (a->config->bits == 64 && len >= 4) {
-		ut32 insn = r_read_ble32 (buf, a->config->big_endian);
+		ut32 insn = r_read_ble32 (buf, R_ARCH_CONFIG_IS_BIG_ENDIAN (a->config));
 		int insn_class = (insn >> 25) & 0xf;
 		// xpaci // e#43c1da
 		if (!memcmp (buf + 1, "\x43\xc1\xda", 3)) {

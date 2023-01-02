@@ -58,7 +58,7 @@ static void parse_skip(const char *arg) {
 }
 
 static int help(bool verbose) {
-	printf ("Usage: r2r [-qvVnL] [-j threads] [test file/dir | @test-type]\n");
+	printf ("Usage: r2r [-qvVnLi] [-C dir] [-F dir] [-f file] [-o file] [-s test] [-t seconds] [-j threads] [test file/dir | @test-type]\n");
 	if (verbose) {
 		printf (
 		" -C [dir]     chdir before running r2r (default follows executable symlink + test/new\n"
@@ -72,19 +72,19 @@ static int help(bool verbose) {
 		" -n           do nothing (don't run any test, just load/parse them)\n"
 		" -o [file]    output test run information in JSON format to file\n"
 		" -q           quiet\n"
-		" -s [ignore]  set R2R_SKIP_(xxx)=1 to skip running those tests\n"
+		" -s [test]    set R2R_SKIP_(TEST)=1 to skip running that test type\n"
 		" -t [seconds] timeout per test (default is "TIMEOUT_DEFAULT_STR")\n"
 		" -u           do not git pull/clone test/bins\n"
 		" -v           show version\n"
 		"\n"
 		"R2R_SKIP_ARCHOS=1  # do not run the arch-os-specific tests\n"
 		"R2R_SKIP_JSON=1    # do not run the JSON tests\n"
-		"R2R_SKIP_FUZZ=1    # do not run the rasm2 tests\n"
-		"R2R_SKIP_UNIT=1    # do not run the rasm2 tests\n"
-		"R2R_SKIP_CMD=1     # do not run the rasm2 tests\n"
+		"R2R_SKIP_FUZZ=1    # do not run the fuzz tests\n"
+		"R2R_SKIP_UNIT=1    # do not run the unit tests\n"
+		"R2R_SKIP_CMD=1     # do not run the cmds tests\n"
 		"R2R_SKIP_ASM=1     # do not run the rasm2 tests\n"
 		"\n"
-		"Supported test types: @asm @json @unit @fuzz @arch @cmds\n"
+		"Supported test types: @asm @json @unit @fuzz @arch @cmd\n"
 		"OS/Arch for archos tests: "R2R_ARCH_OS"\n");
 	}
 	return 1;
@@ -95,7 +95,7 @@ static void path_left_free_kv(HtPPKv *kv) {
 }
 
 static bool r2r_chdir(const char *argv0) {
-#if __UNIX__
+#if R2__UNIX__
 	if (r_file_is_directory ("db")) {
 		return true;
 	}
@@ -214,7 +214,7 @@ int main(int argc, char **argv) {
 	bool get_bins = true;
 	int ret = 0;
 
-#if __WINDOWS__
+#if R2__WINDOWS__
 	UINT old_cp = GetConsoleOutputCP ();
 	{
 		HANDLE streams[] = { GetStdHandle (STD_OUTPUT_HANDLE), GetStdHandle (STD_ERROR_HANDLE) };
@@ -430,7 +430,7 @@ int main(int argc, char **argv) {
 	}
 
 	R_FREE (cwd);
-	uint32_t loaded_tests = r_pvector_len (&state.db->tests);
+	uint32_t loaded_tests = r_pvector_length (&state.db->tests);
 	printf ("Loaded %u tests.\n", loaded_tests);
 	if (nothing) {
 		goto coast;
@@ -440,7 +440,7 @@ int main(int argc, char **argv) {
 	if (!jq_available) {
 		eprintf ("Skipping json tests because jq is not available.\n");
 		size_t i;
-		for (i = 0; i < r_pvector_len (&state.db->tests);) {
+		for (i = 0; i < r_pvector_length (&state.db->tests);) {
 			R2RTest *test = r_pvector_at (&state.db->tests, i);
 			if (test->type == R2R_TEST_TYPE_JSON) {
 				r2r_test_free (test);
@@ -451,7 +451,7 @@ int main(int argc, char **argv) {
 		}
 	}
 
-	r_pvector_insert_range (&state.queue, 0, state.db->tests.v.a, r_pvector_len (&state.db->tests));
+	r_pvector_insert_range (&state.queue, 0, state.db->tests.v.a, r_pvector_length (&state.db->tests));
 
 	if (log_mode) {
 		// Log mode prints the state after every completed file.
@@ -490,15 +490,15 @@ int main(int argc, char **argv) {
 	ut64 prev_completed = UT64_MAX;
 	ut64 prev_paths_completed = 0;
 	while (true) {
-		ut64 completed = (ut64)r_pvector_len (&state.results);
+		ut64 completed = (ut64)r_pvector_length (&state.results);
 		if (log_mode) {
 			print_log (&state, prev_completed, prev_paths_completed);
 		} else if (completed != prev_completed) {
 			print_state (&state, prev_completed);
 		}
 		prev_completed = completed;
-		prev_paths_completed = (ut64)r_pvector_len (&state.completed_paths);
-		if (completed == r_pvector_len (&state.db->tests)) {
+		prev_paths_completed = (ut64)r_pvector_length (&state.completed_paths);
+		if (completed == r_pvector_length (&state.db->tests)) {
 			break;
 		}
 		r_th_cond_wait (state.cond, state.lock);
@@ -558,7 +558,7 @@ coast:
 beach:
 	free (json_test_file);
 	free (fuzz_dir);
-#if __WINDOWS__
+#if R2__WINDOWS__
 	if (old_cp) {
 		(void)SetConsoleOutputCP (old_cp);
 		// chcp doesn't pick up the code page switch for some reason
@@ -661,7 +661,7 @@ static RThreadFunctionRet worker_th(RThread *th) {
 
 static void print_diff(const char *actual, const char *expected, bool diffchar, const char *regexp) {
 	RDiff *d = r_diff_new ();
-#ifdef __WINDOWS__
+#ifdef R2__WINDOWS__
 	d->diff_cmd = "git diff --no-index";
 #endif
 	char *output = (char *)actual;
@@ -681,7 +681,7 @@ static void print_diff(const char *actual, const char *expected, bool diffchar, 
 		}
 		d->diff_cmd = "git diff --no-index --word-diff=porcelain --word-diff-regex=.";
 	}
-	char *uni = r_diff_buffers_to_string (d, (const ut8 *)expected, (int)strlen (expected),
+	char *uni = r_diff_buffers_tostring (d, (const ut8 *)expected, (int)strlen (expected),
 			(const ut8 *)output, (int)strlen (output));
 	r_diff_free (d);
 
@@ -811,7 +811,7 @@ static void print_result_diff(R2RRunConfig *config, R2RTestResultInfo *result) {
 
 static void print_new_results(R2RState *state, ut64 prev_completed) {
 	// Detailed test result (with diff if necessary)
-	ut64 completed = (ut64)r_pvector_len (&state->results);
+	ut64 completed = (ut64)r_pvector_length (&state->results);
 	ut64 i;
 	for (i = prev_completed; i < completed; i++) {
 		R2RTestResultInfo *result = r_pvector_at (&state->results, (size_t)i);
@@ -857,15 +857,15 @@ static void print_state_counts(R2RState *state) {
 }
 
 static void print_state(R2RState *state, ut64 prev_completed) {
-#if __WINDOWS__
+#if R2__WINDOWS__
 	setvbuf (stdout, NULL, _IOFBF, 8192);
 #endif
 	print_new_results (state, prev_completed);
 
 	// [x/x] OK  42 BR  0 ...
 	printf (R_CONS_CLEAR_LINE);
-	ut64 a = (ut64)r_pvector_len (&state->results);
-	ut64 b = (ut64)r_pvector_len (&state->db->tests);
+	ut64 a = (ut64)r_pvector_length (&state->results);
+	ut64 b = (ut64)r_pvector_length (&state->db->tests);
 	int w = printf ("[%"PFMT64u"/%"PFMT64u"]", a, b);
 	while (w >= 0 && w < 20) {
 		printf (" ");
@@ -874,15 +874,15 @@ static void print_state(R2RState *state, ut64 prev_completed) {
 	printf (" ");
 	print_state_counts (state);
 	fflush (stdout);
-#if __WINDOWS__
+#if R2__WINDOWS__
 	setvbuf (stdout, NULL, _IONBF, 0);
 #endif
 }
 
 static void print_log(R2RState *state, ut64 prev_completed, ut64 prev_paths_completed) {
 	print_new_results (state, prev_completed);
-	ut64 paths_completed = r_pvector_len (&state->completed_paths);
-	int a = r_pvector_len (&state->queue);
+	ut64 paths_completed = r_pvector_length (&state->completed_paths);
+	int a = r_pvector_length (&state->queue);
 	for (; prev_paths_completed < paths_completed; prev_paths_completed++) {
 		printf ("[%d/%d] %50s ",
 				(int)paths_completed,
@@ -908,7 +908,7 @@ static void interact(R2RState *state) {
 	}
 
 	bool use_fancy_stuff = !r_cons_is_windows ();
-#if __WINDOWS__
+#if R2__WINDOWS__
 	// XXX move to rcons
 	(void)SetConsoleOutputCP (65001); // UTF-8
 #endif
@@ -916,9 +916,9 @@ static void interact(R2RState *state) {
 	printf ("#####################\n");
 	if (use_fancy_stuff) {
 		printf (" %"PFMT64u" failed test(s)"R_UTF8_POLICE_CARS_REVOLVING_LIGHT"\n",
-			(ut64)r_pvector_len (&failed_results));
+			(ut64)r_pvector_length (&failed_results));
 	} else {
-		printf (" %"PFMT64u" failed test(s)\n", (ut64)r_pvector_len (&failed_results));
+		printf (" %"PFMT64u" failed test(s)\n", (ut64)r_pvector_length (&failed_results));
 	}
 
 	r_pvector_foreach (&failed_results, it) {
@@ -1101,7 +1101,7 @@ static void replace_cmd_kv_file(const char *path, ut64 line_begin, ut64 line_end
 		return;
 	}
 	if (r_file_dump (path, (const ut8 *)newc, -1, false)) {
-#if __UNIX__ && !(__wasi__ || __EMSCRIPTEN__)
+#if R2__UNIX__ && !(__wasi__ || __EMSCRIPTEN__)
 		sync ();
 #endif
 	} else {

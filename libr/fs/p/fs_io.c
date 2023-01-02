@@ -125,7 +125,7 @@ static RList *fs_io_dir(RFSRoot *root, const char *path, int view /*ignored*/) {
 	return list;
 }
 
-static int fs_io_mount(RFSRoot *root) {
+static bool fs_io_mount(RFSRoot *root) {
 	root->ptr = NULL;
 	return true;
 }

@@ -592,7 +592,7 @@ RUN
 
 NAME=Print value only
 FILE=bins/pe/ch22.exe
-ARGS=-nn
+ARGS=-nn -e bin.types=true
 CMDS=<<EOF
 e asm.bits=32
 s 0x80
@@ -679,7 +679,7 @@ RUN
 
 NAME=PE test
 FILE=bins/pe/ch22.exe
-ARGS=-nn
+ARGS=-nn -e bin.types=true
 CMDS=<<EOF
 e asm.bits=32
 s 0x80

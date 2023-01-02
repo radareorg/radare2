@@ -1,23 +1,20 @@
 include ../../global.mk
 
 NAME=r_asm
-R2DEPS=r_syscall r_lang r_util r_parse
-R2DEPS+=r_flag r_cons r_reg
+R2DEPS=r_syscall r_lang r_util
+R2DEPS+=r_flag r_cons r_reg r_arch
 CFLAGS+=-DR2_PLUGIN_INCORE -Iarch/include -Iarch -I../../shlr
 CURDIR=p/
 
 include $(TOP)/libr/config.mk
 
-include p/capstone.mk
 LDFLAGS+=${CS_LDFLAGS}
 include $(STOP)/java/deps.mk
-include $(STOP)/capstone.mk
 
 .PHONY: alle plugins
 
 alle:
 	$(MAKE) gperfs
-	$(MAKE) -C arch/arm/v35arm64
 	$(MAKE) plugins
 
 SDB_PATH=../../../shlr/sdb
@@ -43,10 +40,14 @@ $(EXTRA_CLEAN):
 	$(MAKE) -C p clean
 	rm -f `find arch/| grep '\.o$$'`
 
-include ${STATIC_ASM_PLUGINS}
-STATIC_OBJS=$(subst ..,p/..,$(subst asm_,p/asm_,$(STATIC_OBJ)))
-OBJS=${STATIC_OBJS} asm.o acode.o aop.o binutils_as.o aplugs.o
+# include ${STATIC_ASM_PLUGINS}
+# STATIC_OBJS=$(subst ..,p/..,$(subst asm_,p/asm_,$(STATIC_OBJ)))
+
+include ${STATIC_PARSE_PLUGINS}
+STATIC_OBJS=$(subst ..,p/..,$(subst parse_,p/parse_,$(STATIC_OBJ)))
+OBJS=${STATIC_OBJS} asm.o acode.o aop.o agperf.o filter.o parse.o
 OBJS+=${SHARED2_OBJ}
+
 
 ifeq ($(HAVE_GPERF),1)
 OBJS+=d/6502.o
@@ -60,7 +61,6 @@ OBJS+=d/i8080.o
 OBJS+=d/java.o
 OBJS+=d/lm32.o
 OBJS+=d/m68k.o
-OBJS+=d/malbolge.o
 OBJS+=d/mips.o
 OBJS+=d/tricore.o
 OBJS+=d/s390.o

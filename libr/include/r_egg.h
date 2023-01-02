@@ -97,6 +97,7 @@ typedef struct r_egg_t {
 	RList *list;
 	//RList *shellcodes; // XXX is plugins nao?
 	RAsm *rasm;
+	RAnal *anal;/// XXX this is temporary hack until asm can use arch
 	RSyscall *syscall;
 	REggLang lang;
 	Sdb *db;
@@ -139,7 +140,7 @@ EOF
 #define R_EGG_OS_DEFAULT R_EGG_OS_OSX
 #define R_EGG_OS_NAME "darwin"
 #define R_EGG_FORMAT_DEFAULT "mach0"
-#elif __WINDOWS__
+#elif R2__WINDOWS__
 #define R_EGG_OS_DEFAULT R_EGG_OS_W32
 #define R_EGG_OS_NAME "windows"
 #define R_EGG_FORMAT_DEFAULT "pe"
@@ -184,7 +185,7 @@ typedef struct r_egg_emit_t {
 R_API REgg *r_egg_new(void);
 R_API void r_egg_lang_init(REgg *egg);
 R_API void r_egg_lang_free(REgg *egg);
-R_API char *r_egg_to_string(REgg *egg);
+R_API char *r_egg_tostring(REgg *egg);
 R_API void r_egg_free(REgg *egg);
 R_API bool r_egg_add(REgg *a, REggPlugin *foo);
 R_API void r_egg_reset(REgg *egg);

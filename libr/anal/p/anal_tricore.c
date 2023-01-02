@@ -1,17 +1,12 @@
 /* radare - LGPL - Copyright 2020-2022 - curly */
 
-#include <string.h>
-#include <r_types.h>
 #include <r_lib.h>
 #include <r_asm.h>
 #include <r_anal.h>
-// DISASM BEGIN
 
 #include "disas-asm.h"
 
-static R_TH_LOCAL unsigned long Offset = 0;
-static R_TH_LOCAL RStrBuf *buf_global = NULL;
-static R_TH_LOCAL ut8 bytes[128];
+#define BUFSZ 8
 enum {
 	TRICORE_GENERIC = 0x00000000,
 	TRICORE_RIDER_A = 0x00000001,
@@ -23,7 +18,7 @@ enum {
 };
 
 static int cpu_to_mach(char *cpu_type) {
-	if (cpu_type && *cpu_type) {
+	if (R_STR_ISNOTEMPTY (cpu_type)) {
 		if (!strcmp (cpu_type, "generic")) {
 			return TRICORE_GENERIC;
 		}
@@ -47,8 +42,9 @@ static int cpu_to_mach(char *cpu_type) {
 }
 
 static int tricore_buffer_read_memory(bfd_vma memaddr, bfd_byte *myaddr, ut32 length, struct disassemble_info *info) {
-	int delta = memaddr - Offset;
-	if (delta >= 0 && length + delta < sizeof (bytes)) {
+	int delta = memaddr - info->buffer_vma;
+	if (delta >= 0 && length + delta < BUFSZ) {
+		ut8 *bytes = info->buffer;
 		memcpy (myaddr, bytes + delta, length);
 	}
 	return 0;
@@ -62,32 +58,32 @@ static void memory_error_func(int status, bfd_vma memaddr, struct disassemble_in
 	//--
 }
 
-DECLARE_GENERIC_PRINT_ADDRESS_FUNC()
-DECLARE_GENERIC_FPRINTF_FUNC()
+DECLARE_GENERIC_PRINT_ADDRESS_FUNC_NOGLOBALS()
+DECLARE_GENERIC_FPRINTF_FUNC_NOGLOBALS()
 
 static int disassemble(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
+	ut8 bytes[BUFSZ] = {0};
 	struct disassemble_info disasm_obj;
 	RStrBuf *sb = r_strbuf_new ("");
-	buf_global = sb;
-	Offset = addr;
-	memcpy (bytes, buf, R_MIN (len, 8)); // TODO handle thumb
+	memcpy (bytes, buf, R_MIN (len, sizeof (bytes)));
 
 	/* prepare disassembler */
 	memset (&disasm_obj, '\0', sizeof (struct disassemble_info));
 	disasm_obj.disassembler_options = (a->config->bits == 64)?"64":"";
 	disasm_obj.buffer = bytes;
+	disasm_obj.buffer_vma = addr;
 	disasm_obj.read_memory_func = &tricore_buffer_read_memory;
 	disasm_obj.symbol_at_address_func = &symbol_at_address;
 	disasm_obj.memory_error_func = &memory_error_func;
 	disasm_obj.print_address_func = &generic_print_address_func;
 	disasm_obj.endian = BFD_ENDIAN_LITTLE;
 	disasm_obj.fprintf_func = &generic_fprintf_func;
-	disasm_obj.stream = stdout;
+	disasm_obj.stream = sb;
 
 	// cpu type
 	disasm_obj.mach = cpu_to_mach (a->config->cpu);
 
-	int ret = print_insn_tricore ((bfd_vma)Offset, &disasm_obj);
+	int ret = print_insn_tricore ((bfd_vma)addr, &disasm_obj);
 	op->size = ret;
 	if (op->size == -1) {
 		r_strbuf_set (sb, "(data)");

@@ -12,7 +12,7 @@ PARTIALLD=${CROSS}ld -r --whole-archive
 PICFLAGS=
 EXT_AR=lib
 EXT_SO=dll
-CFLAGS+=${PICFLAGS} -MD -D__WINDOWS__=1
+CFLAGS+=${PICFLAGS} -MD -DR2__WINDOWS__=1
 CC_LIB=${CC} -shared -o
 CFLAGS_INCLUDE=-I
 LDFLAGS+=-static-libgcc

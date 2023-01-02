@@ -1,6 +1,6 @@
 /* sdb - MIT - Copyright 2011-2022 - pancake */
 
-#include "sdb.h"
+#include "sdb/sdb.h"
 
 SDB_API void sdb_ns_lock(Sdb *s, int lock, int depth) {
 	SdbListIter *it;
@@ -99,29 +99,29 @@ static SdbNs *sdb_ns_new (Sdb *s, const char *name, ut32 hash) {
 	} else {
 		dir[0] = 0;
 	}
-	ns = (SdbNs *)malloc (sizeof (SdbNs));
+	ns = (SdbNs *)sdb_gh_malloc (sizeof (SdbNs));
 	if (!ns) {
 		return NULL;
 	}
 	ns->hash = hash;
-	ns->name = name? strdup (name): NULL;
+	ns->name = name? sdb_strdup (name): NULL;
 	//ns->sdb = sdb_new (dir, ns->name, 0);
 	ns->sdb = sdb_new0 ();
 	// TODO: generate path
 
 	if (ns->sdb) {
-		free (ns->sdb->path);
+		sdb_gh_free (ns->sdb->path);
 		ns->sdb->path = NULL;
 		if (*dir) {
-			ns->sdb->path = strdup (dir);
+			ns->sdb->path = sdb_strdup (dir);
 		}
-		free (ns->sdb->name);
+		sdb_gh_free (ns->sdb->name);
 		if (name && *name) {
-			ns->sdb->name = strdup (name);
+			ns->sdb->name = sdb_strdup (name);
 		}
 	} else {
-		free (ns->name);
-		free (ns);
+		sdb_gh_free (ns->name);
+		sdb_gh_free (ns);
 		ns = NULL;
 	}
 	return ns;
@@ -170,9 +170,9 @@ SDB_API int sdb_ns_set(Sdb *s, const char *name, Sdb *r) {
 	if (!ns) {
 		return 0;
 	}
-	ns->name = strdup (name);
+	ns->name = sdb_strdup (name);
 	if (!ns->name) {
-		free (ns);
+		sdb_gh_free (ns);
 		return 0;
 	}
 	ns->hash = hash;
@@ -216,7 +216,7 @@ SDB_API Sdb *sdb_ns_path(Sdb *s, const char *path, int create) {
 	if (!s || !path || !*path) {
 		return s;
 	}
-	ptr = str = strdup (path);
+	ptr = str = sdb_strdup (path);
 	do {
 		slash = strchr (ptr, '/');
 		if (slash)
@@ -226,7 +226,7 @@ SDB_API Sdb *sdb_ns_path(Sdb *s, const char *path, int create) {
 		if (slash)
 			ptr = slash+1;
 	} while (slash);
-	free (str);
+	sdb_gh_free (str);
 	return s;
 }
 

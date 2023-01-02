@@ -2,7 +2,7 @@
 
 #include <r_core.h>
 
-static const char *help_msg_at[] = {
+static RCoreHelpMessage help_msg_at = {
 	"Usage: [.][#]<cmd>[*] [`cmd`] [@ addr] [~grep] [|syscmd] [>[>]file]", "", "",
 	"0", "", "alias for 's 0'",
 	"0x", "addr", "alias for 's 0x..'",
@@ -40,7 +40,7 @@ static const char *help_msg_at[] = {
 	"@i:", "nth.op", "temporary seek to the Nth relative instruction",
 	"@k:", "k", "temporary seek at value of sdb key `k`",
 	"@o:", "fd", "temporary switch to another fd",
-	"@r:", "reg", "tmp seek to reg value (f.ex pd@r:PC)",
+	"@r:", "reg", "tmp seek to reg value (f.ex pd@r:PC, see also $r{PC} and $r:PC)",
 	"@s:", "string", "same as above but from a string",
 	"@v:", "value", "modify the current offset to a custom value",
 	"@x:", "909192", "from hex pairs string",
@@ -58,7 +58,7 @@ static const char *help_msg_at[] = {
 	NULL
 };
 
-static const char *help_msg_at_at[] = {
+static RCoreHelpMessage help_msg_at_at = {
 	"@@", "", " # foreach iterator command:",
 	"x", " @@ sym.*", "run 'x' over all flags matching 'sym.' in current flagspace",
 	"x", " @@.file", "run 'x' over the offsets specified in the file (one offset per line)",
@@ -79,7 +79,7 @@ static const char *help_msg_at_at[] = {
 	NULL
 };
 
-static const char *help_msg_at_at_at[] = {
+static RCoreHelpMessage help_msg_at_at_at = {
 	"@@@", "", " # foreach offset+size iterator command:",
 	"x", " @@@=", "[addr] [size] ([addr] [size] ...)",
 	"x", " @@@C:cmd", "comments matching",
@@ -119,7 +119,7 @@ static ut32 vernum(const char *s) {
 	return res;
 }
 
-static const char *help_msg_percent[] = {
+static RCoreHelpMessage help_msg_percent = {
 	"Usage:", "%[name[=value]]", "Set each NAME to VALUE in the environment",
 	"%", "", "list all environment variables",
 	"%", "SHELL", "prints SHELL value",
@@ -131,7 +131,7 @@ static const char *help_msg_percent[] = {
 // because they can be replaced by commands in the given
 // command.. we should only expose the most essential and
 // unidirectional ones.
-static const char *help_msg_env[] = {
+static RCoreHelpMessage help_msg_env = {
 	"\nEnvironment:", "", "",
 	"R2_FILE", "", "file name",
 	"R2_OFFSET", "", "10base offset 64bit value",
@@ -151,7 +151,7 @@ static const char *help_msg_env[] = {
 	NULL
 };
 
-static const char *help_msg_exclamation[] = {
+static RCoreHelpMessage help_msg_exclamation = {
 	"Usage:", "!<cmd>", "  Run given command as in system(3)",
 	"!", "", "list all historic commands",
 	"!", "ls", "execute 'ls' in shell",
@@ -169,8 +169,9 @@ static const char *help_msg_exclamation[] = {
 	NULL
 };
 
-static const char *help_msg_root[] = {
+static RCoreHelpMessage help_msg_root = {
 	"%var", "=value", "alias for 'env' command",
+	"\"", "[?][\"..|..\"]", "quote a command to avoid evaluaing special chars",
 	"*", "[?] off[=[0x]value]", "pointer read/write data/values (see ?v, wx, wv)",
 	"(macro arg0 arg1)",  "", "manage scripting macros",
 	".", "[?] [-|(m)|f|!sh|cmd]", "Define macro or load r2, cparse or rlang file",
@@ -193,7 +194,7 @@ static const char *help_msg_root[] = {
 	"k","[?] [sdb-query]", "run sdb-query. see k? for help, 'k *', 'k **' ...",
 	"l","[?] [filepattern]", "list files and directories",
 	"L","[?] [-] [plugin]", "list, unload load r2 plugins",
-	"m","[?]", "mountpoints commands",
+	"m","[?]", "mountpoint / filesystems (r_fs) related commands",
 	"o","[?] [file] ([offset])", "open file at optional address",
 	"p","[?] [len]", "print current block with format and length",
 	"P","[?]", "project management utilities",
@@ -217,7 +218,19 @@ static const char *help_msg_root[] = {
 	NULL
 };
 
-static const char *help_msg_question_e[] = {
+static RCoreHelpMessage help_msg_question_i = {
+	"Usage: ?e[=bdgnpst] arg", "print/echo things", "",
+	"?i", " ([prompt])", "inquery the user and save that text into the yank clipboard (y)",
+	"?ie", " [msg]", "same as ?i, but prints the output, useful for oneliners",
+	"?iy", " [question]", "dialog yes/no with default Yes",
+	"?if", " [math-expr]", "evaluates math expression returns true if result is zero",
+	"?in", " [question]", "dialog yes/no with default No",
+	"?im", " [msg]", "like ?ie, but using RCons.message (clear-screen + press-any-key)",
+	"?ik", "", "press any key",
+	"?ip", " ([path])", "interactive hud mode to find files in given path",
+	NULL
+};
+static RCoreHelpMessage help_msg_question_e = {
 	"Usage: ?e[=bdgnpst] arg", "print/echo things", "",
 	"?e", "", "echo message with newline",
 	"?e=", " 32", "progress bar at 32 percentage",
@@ -233,7 +246,7 @@ static const char *help_msg_question_e[] = {
 	NULL
 };
 
-static const char *help_msg_question[] = {
+static RCoreHelpMessage help_msg_question = {
 	"Usage: ?[?[?]] expression", "", "",
 	"?!", " [cmd]", "run cmd if $? == 0",
 	"?", " eip-0x804800", "show all representation result for this math expr",
@@ -284,7 +297,7 @@ static const char *help_msg_question[] = {
 	NULL
 };
 
-static const char *help_msg_question_v[] = {
+static RCoreHelpMessage help_msg_question_v = {
 	"Usage: ?v [$.]","","",
 	"flag", "", "offset of flag",
 	"$", "{ev}", "get value of eval config variable",
@@ -330,7 +343,7 @@ static const char *help_msg_question_v[] = {
 	"$p", "", "getpid()",
 	"$P", "", "pid of children (only in debug)",
 	"$r", "", "get console height (in rows, see $c for columns)",
-	"$r", "{reg}", "get value of named register",
+	"$r", "{reg}", "get value of named register ($r{PC} and $r:PC syntax is supported)",
 	"$s", "", "file size",
 	"$S", "", "section offset",
 	"$SS", "", "section size",
@@ -342,7 +355,7 @@ static const char *help_msg_question_v[] = {
 	NULL
 };
 
-static const char *help_msg_question_V[] = {
+static RCoreHelpMessage help_msg_question_V = {
 	"Usage: ?V[jq]","","",
 	"?V", "", "show version information",
 	"?V0", "", "show major version",
@@ -355,7 +368,7 @@ static const char *help_msg_question_V[] = {
 	NULL
 };
 
-static const char *help_msg_greater_sign[] = {
+static RCoreHelpMessage help_msg_greater_sign = {
 	"Usage:", "[cmd]>[file]", "redirects console from 'cmd' output to 'file'",
 	"[cmd] > [file]", "", "redirect STDOUT of 'cmd' to 'file'",
 	"[cmd] > $alias", "", "save the output of the command as an alias (see $?)",
@@ -365,7 +378,7 @@ static const char *help_msg_greater_sign[] = {
 	NULL
 };
 
-static const char *help_msg_intro[] = {
+static RCoreHelpMessage help_msg_intro = {
 	"Usage: [.][times][cmd][~grep][@[@iter]addr!size][|>pipe] ; ...", "", "",
 	"Append '?' to any char command to get detailed help", "", "",
 	"Prefix with number to repeat command N times (f.ex: 3x)", "", "",
@@ -392,6 +405,18 @@ static const char* findBreakChar(const char *s) {
 	return s;
 }
 
+// XXX This is an experimental test and must be implemented in RCons directly
+static void colormessage(RCore *core, const char *msg) {
+	size_t msglen = strlen (msg);
+	const char *pad = r_str_pad (' ', msglen + 5);
+	r_cons_gotoxy (10, 10); r_cons_printf (Color_BGBLUE"%s", pad);
+	r_cons_gotoxy (10, 11); r_cons_printf (Color_BGBLUE"%s", pad);
+	r_cons_gotoxy (10, 12); r_cons_printf (Color_BGBLUE"%s", pad);
+	r_cons_gotoxy (12, 11); r_cons_printf (Color_BGBLUE""Color_WHITE"%s", msg);
+	r_cons_gotoxy (0, 0);
+	r_cons_printf (Color_RESET);
+}
+
 static char *filterFlags(RCore *core, const char *msg) {
 	const char *dollar, *end;
 	char *word, *buf = NULL;
@@ -403,12 +428,12 @@ static char *filterFlags(RCore *core, const char *msg) {
 		buf = r_str_appendlen (buf, msg, dollar-msg);
 		if (dollar[1]=='{') {
 			// find }
-			end = strchr (dollar+2, '}');
+			end = strchr (dollar + 2, '}');
 			if (end) {
 				word = r_str_newlen (dollar+2, end-dollar-2);
 				end++;
 			} else {
-				msg = dollar+1;
+				msg = dollar + 1;
 				buf = r_str_append (buf, "$");
 				continue;
 			}
@@ -417,7 +442,7 @@ static char *filterFlags(RCore *core, const char *msg) {
 			buf = r_str_append (buf, "$");
 			continue;
 		} else {
-			end = findBreakChar (dollar+1);
+			end = findBreakChar (dollar + 1);
 			if (!end) {
 				end = dollar + strlen (dollar);
 			}
@@ -666,7 +691,7 @@ static int cmd_help(void *data, const char *input) {
 		if (input[1] == ' ') {
 			r_cons_printf ("0x%08x\n", (ut32)r_str_hash (input + 2));
 		} else {
-			eprintf ("Usage: ?h [string-to-hash]\n");
+			r_core_cmd_help_match (core, help_msg_question, "?h", false);
 		}
 		break;
 	case 'F': // "?F"
@@ -836,16 +861,23 @@ static int cmd_help(void *data, const char *input) {
 			const char *space = strchr (input, ' ');
 			if (space) {
 				n = r_num_math (core->num, space + 1);
+			} else if (input[1] == ':') {
+				n = r_num_math (core->num, input + 2);
+			} else if (input[1] && input[2] == ':') {
+				n = r_num_math (core->num, input + 3);
 			} else {
 				n = r_num_math (core->num, "$?");
 			}
-		}
-		if (core->num->dbz) {
-			R_LOG_ERROR ("Division by Zero");
+			if (core->num->nc.errors > 0) {
+				R_LOG_ERROR (core->num->nc.calc_err);
+			}
+			if (core->num->dbz) {
+				R_LOG_ERROR ("Division by Zero");
+			}
 		}
 		switch (input[1]) {
 		case '?':
-			r_cons_printf ("|Usage: ?v[id][ num]  # Show value\n"
+			r_cons_printf ("Usage: ?v[id][ num]  # Show value\n"
 				"|?vx number  -> show 8 digit padding in hex\n"
 				"|?vi1 200    -> 1 byte size value (char)\n"
 				"|?vi2 0xffff -> 2 byte size value (short)\n"
@@ -1140,6 +1172,9 @@ static int cmd_help(void *data, const char *input) {
 		case 'c': // "?ec" column
 			r_cons_column (r_num_math (core->num, input + 2));
 			break;
+		case 'v':
+			colormessage (core, input + 2);
+			break;
 		case 'g': { // "?eg" gotoxy
 			int x = atoi (input + 2);
 			char *arg = strchr (input + 2, ' ');
@@ -1304,6 +1339,9 @@ static int cmd_help(void *data, const char *input) {
 			R_LOG_ERROR ("Not running in interactive mode");
 		} else {
 			switch (input[1]) {
+			case '?': // "?i?"
+				r_core_cmd_help (core, help_msg_question_i);
+				break;
 			case 'f': // "?if"
 				r_core_return_value (core, !r_num_conditional (core->num, input + 2));
 				eprintf ("%s\n", r_str_bool (!core->num->value));
@@ -1312,7 +1350,28 @@ static int cmd_help(void *data, const char *input) {
 				r_cons_message (input + 2);
 				break;
 			case 'p': // "?ip"
-				r_core_return_value (core, r_core_yank_hud_path (core, input + 2, 0) == true);
+				{
+					const bool interactive = r_config_get_b (core->config, "scr.interactive");
+					if (interactive) {
+						r_core_return_value (core, r_core_yank_hud_path (core, input + 2, 0) == true);
+					} else {
+						R_LOG_WARN ("?ip requires scr.interactive=true");
+					}
+				}
+				break;
+			case 'e': // "?ie"
+				{
+				char foo[1024];
+				r_cons_flush ();
+				for (input+=2; *input == ' '; input++);
+				// TODO: r_cons_input()
+				snprintf (foo, sizeof (foo) - 1, "%s: ", input);
+				r_line_set_prompt (foo);
+				r_cons_fgets (foo, sizeof (foo), 0, NULL);
+				foo[sizeof (foo) - 1] = 0;
+				r_cons_printf ("%s\n", foo);
+				r_core_return_value (core, 0);
+				}
 				break;
 			case 'k': // "?ik"
 				 r_cons_any_key (NULL);

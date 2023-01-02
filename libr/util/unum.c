@@ -26,7 +26,20 @@ static int r_rand(int mod) {
 }
 
 // This function count bits set on 32bit words
-R_API size_t r_num_bit_count(ut32 val) {
+R_API size_t r_num_bit_clz32(ut32 val) { // CLZ
+	val = val - ((val >> 1) & 0x55555555);
+	val = (val & 0x33333333) + ((val >> 2) & 0x33333333);
+	return (((val + (val >> 4)) & 0x0F0F0F0F) * 0x01010101) >> 24;
+}
+
+R_API size_t r_num_bit_clz64(ut64 val) { // CLZ
+	val = val - ((val >> 1) & 0x5555555555555555);
+	val = (val & 0x3333333333333333) + ((val >> 2) & 0x3333333333333333);
+	return (((val + (val >> 4)) & 0x0F0F0F0F0F0F0F0F) * 0x0101010101010101) >> 24;
+}
+
+R_API size_t r_num_bit_count(ut32 val) { // CLZ
+	return r_num_bit_clz32 (val);
 	/* visual studio doesnt supports __buitin_clz */
 #if defined(_MSC_VER) || defined(__TINYC__)
 	size_t count = 0;
@@ -37,6 +50,18 @@ R_API size_t r_num_bit_count(ut32 val) {
 #else
 	return val? __builtin_clz (val): 0;
 #endif
+}
+
+R_API size_t r_num_bit_ctz64(ut64 val) { // CTZ
+	const ut64 m = 0x0101010101010101ULL;
+	val ^= val - 1;
+	return (unsigned)(((ut64)((val & (m - 1)) * m)) >> 56);
+}
+
+R_API size_t r_num_bit_ctz32(ut32 val) { // CTZ
+	// FROM shlr/lz4/lz4.c
+	const ut32 m = 0x01010101;
+	return (unsigned)((((val - 1) ^ val) & (m - 1)) * m) >> 24;
 }
 
 R_API void r_num_irand(void) {
@@ -108,7 +133,8 @@ R_API char *r_num_units(char *buf, size_t len, ut64 num) {
 	char unit;
 	const char *fmt_str;
 	if (!buf) {
-		buf = malloc (64);
+		len = 64;
+		buf = malloc (len);
 		if (!buf) {
 			return NULL;
 		}
@@ -278,7 +304,7 @@ R_API ut64 r_num_get(RNum *num, const char *str) {
 		}
 	} else if (!strncmp (str, "0xf..", 5) || !strncmp (str, "0xF..", 5)) {
 		ret = r_num_tailff (num, str + 5);
-	} else if (str[0] == '0' && tolower ((unsigned char)str[1]) == 'x') {
+	} else if (str[0] == '0' && tolower ((ut8)str[1]) == 'x') {
 		const char *lodash = strchr (str + 2, '_');
 		if (lodash) {
 			// Support 0x1000_f000_4000
@@ -869,4 +895,18 @@ R_API bool r_num_segaddr(ut64 addr, ut64 sb, int sg, ut32 *a, ut32 *b) {
 		*b = (addr & 0xffff);
 	}
 	return *a <= 0xffff && *b <= 0xffff;
+}
+
+// wont work for 64bit but thats by design
+R_API char *r_num_list_join(RList *str, const char *sep) {
+	r_return_val_if_fail (str && sep, NULL);
+	RListIter *iter;
+	RStrBuf *sb = r_strbuf_new ("");
+	r_list_foreach_iter (str, iter) {
+		if (r_strbuf_length (sb) != 0) {
+			r_strbuf_append (sb, sep);
+		}
+		r_strbuf_appendf (sb, "%d", (int)(size_t)iter->data);
+	}
+	return r_strbuf_drain (sb);
 }

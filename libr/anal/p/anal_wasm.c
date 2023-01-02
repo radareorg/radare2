@@ -78,7 +78,7 @@ static int wasm_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 	WasmOp wop = {{0}};
 	RAnalHint *hint = NULL;
 	int ret = wasm_dis (&wop, data, len);
-	if (mask & R_ANAL_OP_MASK_DISASM) {
+	if (mask & R_ARCH_OP_MASK_DISASM) {
 		op->mnemonic = strdup (wop.txt);
 	}
 	op->nopcode = 1;

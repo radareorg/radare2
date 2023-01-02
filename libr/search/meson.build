@@ -4,9 +4,10 @@ r_search_sources = [
   'keyword.c',
   'regexp.c',
   'uds.c',
-  'privkey_find.c',
-  'rabin_karp.c',
+  'privkey.c',
+  'karp.c',
   'search.c',
+  'sm4_find.c',
   'strings.c'
 ]
 

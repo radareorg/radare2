@@ -3,9 +3,9 @@ exec_prefix=${prefix}
 libdir=@LIBDIR@
 includedir=${prefix}/include
 
-Name: r_crypto
+Name: r_util
 Description: radare foundation libraries
 Version: @VERSION@
-Requires: r_hash r_util r_util r_util
+Requires: r_crypto
 Libs: -L${libdir} -lr_crypto
 Cflags: -I${includedir}/libr

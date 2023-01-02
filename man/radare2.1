@@ -19,7 +19,7 @@
 .Op Fl r Ar rarun2
 .Op Fl R Ar rr2rule
 .Op Fl s Ar addr
-.Op Fl 0AdDwntLquvVxX
+.Op Fl 0AdDjwntLquvVxX
 .Ar -|--|=|file
 .Sh DESCRIPTION
 radare2 is a command-line hexadecimal editor.
@@ -53,9 +53,11 @@ Start in debugger mode
 .It Fl D Ar dbg.backend
 Enable debug mode. Set cfg.debug=true
 .It Fl e Ar k=v
-Set configuration eval variable key=value. For example \-e scr.color=false
+Set configuration eval variable key=value. For example \-e scr.color=false. When -e is passed after -j, it will set the script source to run instead of setting eval vars.
 .It Fl f
 Blocksize = file size
+.It Fl j
+Run QJS script if an argument is passed or enter the qjs shell if no file is specified. You can evaluate expressions when passing the -e flag after the -j.
 .It Fl i Ar file
 Run script file. After the file is loaded
 .It Fl I Ar file
@@ -65,7 +67,9 @@ Select kernel (asm.os) for syscall resolution
 .It Fl l Ar plugfile
 Load given plugin file
 .It Fl L
-List supported IO plugins.
+List loaded IO plugins.
+.It Fl LL
+List loaded core plugins.
 .It Fl m Ar addr
 map file at given address
 .It Fl M
@@ -97,7 +101,7 @@ Start seeking at this address
 .It Fl S
 Enable sandboxed mode (same as \-e cfg.sandbox=true)
 .It Fl t
-Get binary information using a thread
+Get binary information and analyze binary in a background thread
 .It Fl T
 Avoid computing the file hashes
 .It Fl u

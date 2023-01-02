@@ -16,7 +16,7 @@ FILE=-
 CMDS=<<EOF
 e cfg.bigendian=false
 w helloworld
-wox 0xabcd@!10
+wox2+0xabcd@!10
 p8 14
 EOF
 EXPECT=<<EOF
@@ -29,10 +29,13 @@ FILE=-
 CMDS=<<EOF
 e cfg.bigendian=false
 w helloworld
-wox 0xabcdef@!10
+wox8+0xabcdef12@!10
+ps 14
+wox8+0xabcdef12@!10
 ps 14
 EOF
 EXPECT=<<EOF
+z\x8a\xa1\xc7owor~\x8b\x00\x00\x00\x00
 helloworld\x00\x00\x00\x00
 EOF
 RUN
@@ -42,7 +45,7 @@ FILE=-
 CMDS=<<EOF
 e cfg.bigendian=false
 w helloworld
-wox 0xabcdef01@!10
+wox4+0xabcdef01@!10
 p8 14
 EOF
 EXPECT=<<EOF
@@ -55,10 +58,13 @@ FILE=-
 CMDS=<<EOF
 e cfg.bigendian=false
 w helloworld
-wox 0xabcdef0102@!10
+wox4+0xabcdef01@!10
+ps 14
+wox4+0xabcdef01@!10
 ps 14
 EOF
 EXPECT=<<EOF
+i\x8a\xa1\xc7n\x98\xa2\xd9m\x8b\x00\x00\x00\x00
 helloworld\x00\x00\x00\x00
 EOF
 RUN
@@ -68,10 +74,13 @@ FILE=-
 CMDS=<<EOF
 e cfg.bigendian=false
 w helloworld
-wox 0xabcdef010203@!10
+wox8+0xabcdef010203@!10
+ps 14
+wox8+0xabcdef010203@!10
 ps 14
 EOF
 EXPECT=<<EOF
+kgm\x83\xa2\xdcorof\x00\x00\x00\x00
 helloworld\x00\x00\x00\x00
 EOF
 RUN
@@ -81,10 +90,13 @@ FILE=-
 CMDS=<<EOF
 e cfg.bigendian=false
 w helloworld
-wox 0xabcdef01020304@!10
+wox8+0xabcdef01020304@!10
+ps 14
+wox8+0xabcdef01020304@!10
 ps 14
 EOF
 EXPECT=<<EOF
+lfnm\x80\xba\xc4rhg\x00\x00\x00\x00
 helloworld\x00\x00\x00\x00
 EOF
 RUN
@@ -94,7 +106,7 @@ FILE=-
 CMDS=<<EOF
 e cfg.bigendian=false
 w helloworld
-wox 0xabcdef0102030405@!10
+wox8+0xabcdef0102030405@!10
 p8 14
 EOF
 EXPECT=<<EOF

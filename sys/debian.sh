@@ -10,6 +10,9 @@ fi
 if [ "${ARCH}" = "x86_64" ]; then
   ARCH=amd64
 fi
+if [ "${ARCH}" = "aarch64" ]; then
+  ARCH=arm64
+fi
 
 echo "[debian] preparing radare2 package..."
 PKGDIR=dist/debian/radare2/root
@@ -20,13 +23,20 @@ rm -rf "${PKGDIR}" "${DEVDIR}"
 
 . `dirname $0`/make-jobs.inc.sh
 
+type fakeroot > /dev/null 2>&1
+if [ $? = 0 ]; then
+FAKEROOT=fakeroot
+else
+FAKEROOT=
+fi
+
 export CFLAGS="-Wno-cpp -Wno-unused-result ${CFLAGS} -O2"
 # build
-./configure --prefix=/usr --with-checks-level=0
+./configure --prefix=/usr --with-checks-level=0 $*
 [ $? != 0 ] && exit 1
 make -j4
 [ $? != 0 ] && exit 1
-make install DESTDIR="${PWD}/${PKGDIR}"
+$FAKEROOT make install DESTDIR="${PWD}/${PKGDIR}"
 [ $? != 0 ] && exit 1
 
 # dev-split
@@ -45,12 +55,16 @@ for a in ${PKGDIR}/usr/lib/libr*.so.* ; do
   echo "[debian] strip $a"
   strip --strip-unneeded "$a" 2> /dev/null || true
 done
+for a in ${PKGDIR}/usr/lib/radare2/*/* ; do
+  echo "[debian] strip $a"
+  strip --strip-unneeded "$a" 2> /dev/null || true
+done
 
 # packages
 echo "[debian] building radare2 package..."
-make -C dist/debian/radare2 ARCH=${ARCH}
+$FAKEROOT make -C dist/debian/radare2 ARCH=${ARCH}
 cp -f dist/debian/radare2/*.deb .
 
 echo "[debian] building radare2-dev package..."
-make -C dist/debian/radare2-dev ARCH=${ARCH}
+$FAKEROOT make -C dist/debian/radare2-dev ARCH=${ARCH}
 cp -f dist/debian/radare2-dev/*.deb .

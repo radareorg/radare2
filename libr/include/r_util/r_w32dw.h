@@ -6,7 +6,7 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-#if __WINDOWS__
+#if R2__WINDOWS__
 
 typedef enum r_w32dw_request {
 	W32_NONE,

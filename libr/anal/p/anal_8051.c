@@ -181,36 +181,36 @@ typedef struct {
 // custom reg read/write temporarily disabled - see r2 issue #9242
 static RI8051Reg registers[] = {
 	// keep these sorted
-	{"a",     0xE0, 0x00, 1, 0},
-	{"b",     0xF0, 0x00, 1, 0},
-	{"dph",   0x83, 0x00, 1, 0},
-	{"dpl",   0x82, 0x00, 1, 0},
-	{"dptr",  0x82, 0x00, 2, 0, 1},
-	{"ie",    0xA8, 0x00, 1, 0},
-	{"ip",    0xB8, 0x00, 1, 0},
-	{"p0",    0x80, 0xFF, 1, 0},
-	{"p1",    0x90, 0xFF, 1, 0},
-	{"p2",    0xA0, 0xFF, 1, 0},
-	{"p3",    0xB0, 0xFF, 1, 0},
-	{"pcon",  0x87, 0x00, 1, 0},
-	{"psw",   0xD0, 0x00, 1, 0},
-	{"r0",    0x00, 0x00, 1, 1},
-	{"r1",    0x01, 0x00, 1, 1},
-	{"r2",    0x02, 0x00, 1, 1},
-	{"r3",    0x03, 0x00, 1, 1},
-	{"r4",    0x04, 0x00, 1, 1},
-	{"r5",    0x05, 0x00, 1, 1},
-	{"r6",    0x06, 0x00, 1, 1},
-	{"r7",    0x07, 0x00, 1, 1},
-	{"sbuf",  0x99, 0x00, 1, 0},
-	{"scon",  0x98, 0x00, 1, 0},
-	{"sp",    0x81, 0x07, 1, 0},
-	{"tcon",  0x88, 0x00, 1, 0},
-	{"th0",   0x8C, 0x00, 1, 0},
-	{"th1",   0x8D, 0x00, 1, 0},
-	{"tl0",   0x8A, 0x00, 1, 0},
-	{"tl1",   0x8B, 0x00, 1, 0},
-	{"tmod",  0x89, 0x00, 1, 0}
+	{ "a",     0xE0, 0x00, 1, 0},
+	{ "b",     0xF0, 0x00, 1, 0},
+	{ "dph",   0x83, 0x00, 1, 0},
+	{ "dpl",   0x82, 0x00, 1, 0},
+	{ "dptr",  0x82, 0x00, 2, 0, 1},
+	{ "ie",    0xA8, 0x00, 1, 0},
+	{ "ip",    0xB8, 0x00, 1, 0},
+	{ "p0",    0x80, 0xFF, 1, 0},
+	{ "p1",    0x90, 0xFF, 1, 0},
+	{ "p2",    0xA0, 0xFF, 1, 0},
+	{ "p3",    0xB0, 0xFF, 1, 0},
+	{ "pcon",  0x87, 0x00, 1, 0},
+	{ "psw",   0xD0, 0x00, 1, 0},
+	{ "r0",    0x00, 0x00, 1, 1},
+	{ "r1",    0x01, 0x00, 1, 1},
+	{ "r2",    0x02, 0x00, 1, 1},
+	{ "r3",    0x03, 0x00, 1, 1},
+	{ "r4",    0x04, 0x00, 1, 1},
+	{ "r5",    0x05, 0x00, 1, 1},
+	{ "r6",    0x06, 0x00, 1, 1},
+	{ "r7",    0x07, 0x00, 1, 1},
+	{ "sbuf",  0x99, 0x00, 1, 0},
+	{ "scon",  0x98, 0x00, 1, 0},
+	{ "sp",    0x81, 0x07, 1, 0},
+	{ "tcon",  0x88, 0x00, 1, 0},
+	{ "th0",   0x8C, 0x00, 1, 0},
+	{ "th1",   0x8D, 0x00, 1, 0},
+	{ "tl0",   0x8A, 0x00, 1, 0},
+	{ "tl1",   0x8B, 0x00, 1, 0},
+	{ "tmod",  0x89, 0x00, 1, 0}
 };
 #endif
 
@@ -716,11 +716,11 @@ static void analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf) {
 	}
 }
 
-static RAnalEsilCallbacks ocbs = {0};
+static REsilCallbacks ocbs = {0};
 
 #if 0
 // custom reg read/write temporarily disabled - see r2 issue #9242
-static int i8051_hook_reg_read(RAnalEsil *, const char *, ut64 *, int *);
+static int i8051_hook_reg_read(REsil *, const char *, ut64 *, int *);
 
 static int i8051_reg_compare(const void *name, const void *reg) {
 	return strcmp ((const char*)name, ((RI8051Reg*)reg)->name);
@@ -734,7 +734,7 @@ static RI8051Reg *i8051_reg_find(const char *name) {
 		i8051_reg_compare);
 }
 
-static int i8051_reg_get_offset(RAnalEsil *esil, RI8051Reg *ri) {
+static int i8051_reg_get_offset(REsil *esil, RI8051Reg *ri) {
 	ut8 offset = ri->offset;
 	if (ri->banked) {
 		ut64 psw = 0LL;
@@ -749,15 +749,15 @@ static int i8051_reg_get_offset(RAnalEsil *esil, RI8051Reg *ri) {
 //           as r_reg_get already does this. Also, the anal esil callbacks
 //           approach interferes with r_reg_arena_swap.
 
-static int i8051_hook_reg_read(RAnalEsil *esil, const char *name, ut64 *res, int *size) {
+static int i8051_hook_reg_read(REsil *esil, const char *name, ut64 *res, int *size) {
 	int ret = 0;
 	ut64 val = 0LL;
 	RI8051Reg *ri;
-	RAnalEsilCallbacks cbs = esil->cb;
+	REsilCallbacks cbs = esil->cb;
 
 	if ((ri = i8051_reg_find (name))) {
 		ut8 offset = i8051_reg_get_offset(esil, ri);
-		ret = r_anal_esil_mem_read (esil, IRAM_BASE + offset, (ut8*)res, ri->num_bytes);
+		ret = r_esil_mem_read (esil, IRAM_BASE + offset, (ut8*)res, ri->num_bytes);
 	}
 	esil->cb = ocbs;
 	if (!ret && ocbs.hook_reg_read) {
@@ -771,13 +771,13 @@ static int i8051_hook_reg_read(RAnalEsil *esil, const char *name, ut64 *res, int
 	return ret;
 }
 
-static int i8051_hook_reg_write(RAnalEsil *esil, const char *name, ut64 *val) {
+static int i8051_hook_reg_write(REsil *esil, const char *name, ut64 *val) {
 	int ret = 0;
 	RI8051Reg *ri;
-	RAnalEsilCallbacks cbs = esil->cb;
+	REsilCallbacks cbs = esil->cb;
 	if ((ri = i8051_reg_find (name))) {
 		ut8 offset = i8051_reg_get_offset(esil, ri);
-		ret = r_anal_esil_mem_write (esil, IRAM_BASE + offset, (ut8*)val, ri->num_bytes);
+		ret = r_esil_mem_write (esil, IRAM_BASE + offset, (ut8*)val, ri->num_bytes);
 	}
 	esil->cb = ocbs;
 	if (!ret && ocbs.hook_reg_write) {
@@ -788,7 +788,7 @@ static int i8051_hook_reg_write(RAnalEsil *esil, const char *name, ut64 *val) {
 }
 #endif
 
-static int esil_i8051_init(RAnalEsil *esil) {
+static int esil_i8051_init(REsil *esil) {
 	if (esil->cb.user) {
 		return true;
 	}
@@ -803,7 +803,7 @@ static int esil_i8051_init(RAnalEsil *esil) {
 	return true;
 }
 
-static int esil_i8051_fini(RAnalEsil *esil) {
+static int esil_i8051_fini(REsil *esil) {
 	if (!i8051_is_init) {
 		return false;
 	}
@@ -1047,7 +1047,7 @@ static int i8051_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 		op->refptr = 1;
 	}
 
-	if (mask & R_ANAL_OP_MASK_ESIL) {
+	if (mask & R_ARCH_OP_MASK_ESIL) {
 		ut8 copy[3] = {0, 0, 0};
 		memcpy (copy, buf, len >= 3 ? 3 : len);
 		analop_esil (anal, op, addr, copy);

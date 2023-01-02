@@ -22,7 +22,7 @@ static int __io_posix_open(const char *file, int perm, int mode) {
 	if (r_file_is_directory (file)) {
 		return -1;
 	}
-#if __WINDOWS__
+#if R2__WINDOWS__
 	// probably unnecessary to have this ifdef nowadays windows is posix enough
 	if (perm & R_PERM_W) {
 		fd = r_sandbox_open (file, O_RDWR, 0);
@@ -302,7 +302,7 @@ static bool __resize(RIO *io, RIODesc *fd, ut64 size) {
 	return r_io_def_mmap_truncate (mmo, size);
 }
 
-#if __UNIX__
+#if R2__UNIX__
 static bool __is_blockdevice(RIODesc *desc) {
 	r_return_val_if_fail (desc && desc->data, false);
 	RIOMMapFileObj *mmo = desc->data;
@@ -326,7 +326,7 @@ RIOPlugin r_io_plugin_default = {
 	.seek = __lseek,
 	.write = __write,
 	.resize = __resize,
-#if __UNIX__
+#if R2__UNIX__
 	.is_blockdevice = __is_blockdevice,
 #endif
 };

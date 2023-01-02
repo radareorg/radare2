@@ -2,7 +2,7 @@
 
 #include <r_lang.h>
 
-static bool lang_vala_file(RLang *lang, const char *file, bool silent) {
+static bool lang_vala_file(RLangSession *s, const char *file, bool silent) {
 	char *name = (!strstr (file, ".vala")) ? r_str_newf ("%s.vala", file) : strdup (file);
 	if (!name || !r_file_exists (name)) {
 		R_LOG_ERROR ("file not found (%s)", name);
@@ -81,7 +81,7 @@ static bool lang_vala_file(RLang *lang, const char *file, bool silent) {
 	if (lib) {
 		void (*fcn) (RCore *) = r_lib_dl_sym (lib, "entry");
 		if (fcn) {
-			fcn (lang->user);
+			fcn (s->lang->user);
 		} else {
 			R_LOG_ERROR ("Cannot find 'entry' symbol in library");
 		}
@@ -98,8 +98,8 @@ static bool lang_vala_file(RLang *lang, const char *file, bool silent) {
 	return 0;
 }
 
-static bool vala_run_file(RLang *lang, const char *file) {
-	return lang_vala_file(lang, file, false);
+static bool vala_run_file(RLangSession *s, const char *file) {
+	return lang_vala_file (s, file, false);
 }
 
 static bool lang_vala_init(void *user) {
@@ -107,7 +107,7 @@ static bool lang_vala_init(void *user) {
 	return true;
 }
 
-static bool lang_vala_run(RLang *lang, const char *code, int len) {
+static bool lang_vala_run(RLangSession *s, const char *code, int len) {
 	bool silent = !strncmp (code, "-s", 2);
 	FILE *fd = r_sandbox_fopen (".tmp.vala", "w");
 	if (fd) {
@@ -118,7 +118,7 @@ static bool lang_vala_run(RLang *lang, const char *code, int len) {
 		fputs (code, fd);
 		fputs (";\n}\n", fd);
 		fclose (fd);
-		lang_vala_file (lang, ".tmp.vala", silent);
+		lang_vala_file (s, ".tmp.vala", silent);
 		r_file_rm (".tmp.vala");
 		return true;
 	}
@@ -129,9 +129,7 @@ static bool lang_vala_run(RLang *lang, const char *code, int len) {
 static RLangPlugin r_lang_plugin_vala = {
 	.name = "vala",
 	.ext = "vala",
-#if R2_580
 	.author = "pancake",
-#endif
 	.license = "LGPL",
 	.desc = "Vala language extension",
 	.run = lang_vala_run,

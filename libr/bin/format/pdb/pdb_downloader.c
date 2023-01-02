@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2014-2021 - inisider */
+/* radare - LGPL - Copyright 2014-2022 - inisider */
 
 #include <string.h>
 #include <r_util.h>
@@ -6,7 +6,7 @@
 #include "pdb_downloader.h"
 
 static bool checkExtract(void) {
-#if __WINDOWS__
+#if R2__WINDOWS__
 	return r_sys_cmd ("expand -? >nul") == 0;
 #else
 	return r_sys_cmd ("cabextract -v > /dev/null") == 0;
@@ -24,7 +24,7 @@ static bool download_and_write(SPDBDownloaderOpt *opt, const char *file) {
 	}
 	char *url = r_str_newf ("%s/%s/%s/%s", opt->symbol_server, opt->dbg_file, opt->guid, file);
 	char *path = r_str_newf ("%s%s%s", dir, R_SYS_DIR, opt->dbg_file);
-#if __WINDOWS__
+#if R2__WINDOWS__
 	if (r_str_startswith (url, "\\\\")) { // Network path
 		LPCWSTR origin = r_utf8_to_utf16 (url);
 		LPCWSTR dest = r_utf8_to_utf16 (path);
@@ -90,7 +90,7 @@ static int download(struct SPDBDownloader *pd) {
 
 		R_LOG_INFO ("Attempting to download compressed pdb in %s", abspath_to_archive);
 		char *abs_arch_esc = r_str_escape_sh (abspath_to_archive);
-#if __WINDOWS__
+#if R2__WINDOWS__
 		char *abs_file_esc = r_str_escape_sh (abspath_to_file);
 		// expand %1 %2
 		// %1 - absolute path to archive

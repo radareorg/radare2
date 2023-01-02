@@ -20,7 +20,7 @@
 #define AES256_KEY_LENGTH 32
 
 static bool aes256_key_test(const unsigned char *buf) {
-	return( buf[32] == (buf[0] ^ Sbox[buf[29]] ^ 1) \
+	return (buf[32] == (buf[0] ^ Sbox[buf[29]] ^ 1) \
 		&& buf[33] == (buf[1] ^ Sbox[buf[30]]) \
 		&& buf[34] == (buf[2] ^ Sbox[buf[31]]) \
 		&& buf[35] == (buf[3] ^ Sbox[buf[28]])
@@ -31,7 +31,7 @@ static bool aes256_key_test(const unsigned char *buf) {
 }
 
 static bool aes192_key_test(const unsigned char *buf) {
-	return( buf[24] == (buf[0] ^ Sbox[buf[21]] ^ 1) \
+	return (buf[24] == (buf[0] ^ Sbox[buf[21]] ^ 1) \
 		&& buf[25] == (buf[1] ^ Sbox[buf[22]]) \
 		&& buf[26] == (buf[2] ^ Sbox[buf[23]]) \
 		&& buf[27] == (buf[3] ^ Sbox[buf[20]]) \
@@ -42,7 +42,7 @@ static bool aes192_key_test(const unsigned char *buf) {
 }
 
 static bool aes128_key_test(const unsigned char *buf) {
-	return( buf[16] == (buf[0] ^ Sbox[buf[13]] ^ 1) \
+	return (buf[16] == (buf[0] ^ Sbox[buf[13]] ^ 1) \
 		&& buf[17] == (buf[1] ^ Sbox[buf[14]]) \
 		&& buf[18] == (buf[2] ^ Sbox[buf[15]]) \
 		&& buf[19] == (buf[3] ^ Sbox[buf[12]]) \

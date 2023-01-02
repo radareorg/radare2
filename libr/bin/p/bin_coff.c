@@ -4,7 +4,7 @@
 #include <r_util.h>
 #include <r_lib.h>
 #include <r_bin.h>
-#include <ht_uu.h>
+#include <sdb/ht_uu.h>
 
 #include "coff/coff.h"
 
@@ -165,6 +165,42 @@ static RList *entries(RBinFile *bf) {
 	return ret;
 }
 
+// XXX the string must be heap allocated because these are bitfields
+static const char *section_type_tostring(int i) {
+	if (i & COFF_STYP_TEXT) {
+		return "TEXT";
+	}
+	if (i & COFF_STYP_DATA) {
+		return "DATA";
+	}
+	if (i & COFF_STYP_DATA) {
+		return "BSS";
+	}
+	return "MAP";
+#if 0
+	r_cons_printf ("---> %x\n", i);
+	if (i & COFF_FLAGS_TI_F_EXEC) {
+		return "EXEC";
+	}
+	if (i & COFF_FLAGS_TI_F_RELFLG) {
+		return "RELFLG";
+	}
+	if (i & COFF_FLAGS_TI_F_LNNO) {
+		return "LNNO";
+	}
+	if (i & COFF_FLAGS_TI_F_LSYMS) {
+		return "LSYMS";
+	}
+	if (i & COFF_FLAGS_TI_F_BIG) {
+		return "BIG";
+	}
+	if (i & COFF_FLAGS_TI_F_LITTLE) {
+		return "LITTLE";
+	}
+#endif
+	return "MAP";
+}
+
 static RList *sections(RBinFile *bf) {
 	char *tmp = NULL;
 	size_t i;
@@ -197,6 +233,7 @@ static RList *sections(RBinFile *bf) {
 			ptr->size = obj->scn_hdrs[i].s_size;
 			ptr->vsize = obj->scn_hdrs[i].s_size;
 			ptr->paddr = obj->scn_hdrs[i].s_scnptr;
+			ptr->type = section_type_tostring (obj->scn_hdrs[i].s_flags);
 			if (obj->scn_va) {
 				ptr->vaddr = obj->scn_va[i];
 			}

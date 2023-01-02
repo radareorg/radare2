@@ -41,7 +41,8 @@ static bool __fcn_exists(RAnal *anal, const char *name, ut64 addr) {
 	RAnalFunction *f = ht_pp_find (anal->ht_name_fun, name, &found);
 	if (f && found) {
 		if (f->addr != addr) {
-			R_LOG_ERROR ("Invalid function name '%s' at 0x%08"PFMT64x" (function at 0x%08"PFMT64x")", name, addr, f->addr);
+			const char *const nopskipmsg = (anal->opt.nopskip)? "Try disabling `e anal.nopskip=false`": "";
+			R_LOG_WARN ("Unaligned function '%s' at 0x%08"PFMT64x" (vs 0x%08"PFMT64x")%s", name, addr, f->addr, nopskipmsg);
 		}
 		return true;
 	}

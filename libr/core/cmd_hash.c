@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2021 - pancake, nibble */
+/* radare - LGPL - Copyright 2009-2022 - pancake, nibble */
 
 #include <r_core.h>
 
@@ -6,14 +6,14 @@ const char *help_msg_hash[] = {
 	"Usage:", "#!<interpreter>", "[<args>] [<file] [<<eof]",
 	"#", "", "comment - do nothing",
 	"#!", "", "list all available interpreters",
+	"#!!", "", "reset rlang session context (see js!)",
 	"#!?", "", "show this help message",
 	"#!?j", "", "list all available interpreters in JSON",
-	"#!v?", "", "show vlang script example",
-	"#!python?", "", "show python script example",
-	"#!python", "", "run python commandline",
-	"#!python", " foo.py", "run foo.py python script (same as '. foo.py')",
-	//"#!python <<EOF        get python code until 'EOF' mark\n"
-	"#!python", " arg0 a1 <<q", "set arg0 and arg1 and read until 'q'",
+	"#!?q", "", "list all available lang plugin names (See Ll?)",
+	"#!<lang>?", "", "show help for <lang> (v, python, mujs, ..)",
+	"#!<lang>", " [file]", "interpret the given file with lang plugin",
+	"#!<lang>", "", "enter interactive prompt for given language plugin",
+	"#!pipe", " node -e 'console.log(123)''", "run program with arguments inside an r2pipe environment",
 	NULL
 };
 
@@ -385,17 +385,25 @@ static int cmd_hash_bang(RCore *core, const char *input) {
 		if (p) {
 			// I see no point in using r_lang_use here, as we already haz a ptr to the pluging in our handz
 			// Maybe add r_lang_use_plugin in r_lang api?
-			core->lang->cur = p;
+			r_lang_use_plugin (core->lang, p);
 			if (ac > 1) {
 				if (!strcmp (av[1], "-e")) {
 					char *run_str = strstr (input + 2, "-e") + 2;
-					r_lang_run_string (core->lang, run_str);
+					if (run_str) {
+						r_lang_run_file (core->lang, run_str);
+					} else {
+						R_LOG_ERROR ("Invalid file name");
+					}
 				} else {
 					if (r_lang_set_argv (core->lang, ac - 1, &av[1])) {
 						r_lang_run_file (core->lang, av[1]);
 					} else {
 						char *run_str = strstr (input + 2, av[1]);
-						r_lang_run_file (core->lang, run_str);
+						if (run_str) {
+							r_lang_run_file (core->lang, run_str);
+						} else {
+							R_LOG_ERROR ("Invalid file name");
+						}
 					}
 				}
 			} else {
@@ -405,10 +413,14 @@ static int cmd_hash_bang(RCore *core, const char *input) {
 					R_LOG_ERROR ("scr.interactive required to run the rlang prompt");
 				}
 			}
-		} else if (av[0][0] == '?' && av[0][1] == 'j') {
-			r_lang_list (core->lang, 'j');
-		} else if (av[0][0] == '?' || av[0][0] == '*') {
-			r_lang_list (core->lang, 0);
+		} else if (av[0][0] == '?') {
+		       if (av[0][1] == 'j') {
+			       r_lang_list (core->lang, 'j');
+		       } else if (av[0][1] == '*') {
+			       r_lang_list (core->lang, 0);
+		       } else if (av[0][1] == 'q') {
+			       r_lang_list (core->lang, 'q');
+		       }
 		}
 	} else {
 		r_lang_list (core->lang, 0);
@@ -421,6 +433,10 @@ static int cmd_hash(void *data, const char *input) {
 	RCore *core = (RCore *)data;
 
 	if (*input == '!') {
+		if (input[1] == '!') {
+			r_lang_setup (core->lang);
+			return 0;
+		}
 		return cmd_hash_bang (core, input);
 	}
 	if (*input == '?') {
@@ -433,24 +449,24 @@ static int cmd_hash(void *data, const char *input) {
 }
 
 static RHashHashHandlers hash_handlers[] = {
-	{"md4", handle_md4},
-	{"md5", handle_md5},
-	{"sha1", handle_sha1},
-	{"sha256", handle_sha256},
-	{"sha512", handle_sha512},
-	{"adler32", handle_adler32},
-	{"xor", handle_xor},
-	{"xorpair", handle_xorpair},
-	{"entropy", handle_entropy},
-	{"parity", handle_parity},
-	{"hamdist", handle_hamdist},
-	{"pcprint", handle_pcprint},
-	{"mod255", handle_mod255},
-	{"xxhash", handle_xxhash},
-	{"luhn", handle_luhn},
-	{"ssdeep", handle_ssdeep},
+	{ "md4", handle_md4},
+	{ "md5", handle_md5},
+	{ "sha1", handle_sha1},
+	{ "sha256", handle_sha256},
+	{ "sha512", handle_sha512},
+	{ "adler32", handle_adler32},
+	{ "xor", handle_xor},
+	{ "xorpair", handle_xorpair},
+	{ "entropy", handle_entropy},
+	{ "parity", handle_parity},
+	{ "hamdist", handle_hamdist},
+	{ "pcprint", handle_pcprint},
+	{ "mod255", handle_mod255},
+	{ "xxhash", handle_xxhash},
+	{ "luhn", handle_luhn},
+	{ "ssdeep", handle_ssdeep},
 
-	{"crc8smbus", handle_crc8_smbus},
+	{ "crc8smbus", handle_crc8_smbus},
 #if R_HAVE_CRC8_EXTRA
 	{ /* CRC-8/CDMA2000     */ "crc8cdma2000", handle_crc8_cdma2000},
 	{ /* CRC-8/DARC         */ "crc8darc", handle_crc8_darc},
@@ -464,11 +480,11 @@ static RHashHashHandlers hash_handlers[] = {
 #endif /* #if R_HAVE_CRC8_EXTRA */
 
 #if R_HAVE_CRC15_EXTRA
-	{"crc15can", handle_crc15_can},
+	{ "crc15can", handle_crc15_can},
 #endif /* #if R_HAVE_CRC15_EXTRA */
 
-	{"crc16", handle_crc16},
-	{"crc16hdlc", handle_crc16_hdlc},
+	{ "crc16", handle_crc16},
+	{ "crc16hdlc", handle_crc16_hdlc},
 	{ /* CRC-16/USB         */ "crc16usb", handle_crc16_usb},
 	{ /* CRC-16/CCITT-FALSE */ "crc16citt", handle_crc16_citt},
 #if R_HAVE_CRC16_EXTRA
@@ -495,12 +511,12 @@ static RHashHashHandlers hash_handlers[] = {
 #endif /* #if R_HAVE_CRC16_EXTRA */
 
 #if R_HAVE_CRC24
-	{"crc24", handle_crc24},
+	{ "crc24", handle_crc24},
 #endif /* #if R_HAVE_CRC24 */
 
-	{"crc32", handle_crc32},
-	{"crc32c", handle_crc32c},
-	{"crc32ecma267", handle_crc32_ecma_267},
+	{ "crc32", handle_crc32},
+	{ "crc32c", handle_crc32c},
+	{ "crc32ecma267", handle_crc32_ecma_267},
 #if R_HAVE_CRC32_EXTRA
 	{ /* CRC-32/BZIP2       */ "crc32bzip2", handle_crc32_bzip2 },
 	{ /* CRC-32D            */ "crc32d", handle_crc32d },
@@ -521,9 +537,9 @@ static RHashHashHandlers hash_handlers[] = {
 	{ /* CRC-64/XZ          */ "crc64xz", handle_crc64_xz },
 	{ /* CRC-64/ISO         */ "crc64iso", handle_crc64_iso },
 #endif /* #if R_HAVE_CRC64_EXTRA */
-	{"fletcher8", handle_fletcher8},
-	{"fletcher16", handle_fletcher16},
-	{"fletcher32", handle_fletcher32},
-	{"fletcher64", handle_fletcher64},
+	{ "fletcher8", handle_fletcher8},
+	{ "fletcher16", handle_fletcher16},
+	{ "fletcher32", handle_fletcher32},
+	{ "fletcher64", handle_fletcher64},
 	{NULL, NULL},
 };

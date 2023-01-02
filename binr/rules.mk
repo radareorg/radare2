@@ -15,7 +15,7 @@ endif
 ifeq ($(USE_PIE),1)
 CFLAGS+=-pie
 endif
-CFLAGS:=-I$(LTOP)/include -I$(LTOP)/include/sdb $(CFLAGS)
+CFLAGS:=-I$(LTOP)/include $(CFLAGS)
 
 ifeq (${ANDROID},1)
 LDFLAGS+=-lm
@@ -49,11 +49,9 @@ LINK+=$(LIBR)/reg/libr_reg.a
 LINK+=$(LIBR)/bp/libr_bp.a
 LINK+=$(LIBR)/io/libr_io.a
 LINK+=$(LIBR)/flag/libr_flag.a
-LINK+=$(LIBR)/hash/libr_hash.a
 LINK+=$(LIBR)/syscall/libr_syscall.a
 LINK+=$(LIBR)/egg/libr_egg.a
 LINK+=$(LIBR)/fs/libr_fs.a
-LINK+=$(LIBR)/parse/libr_parse.a
 LINK+=$(LIBR)/bin/libr_bin.a
 LINK+=$(LIBR)/asm/libr_asm.a
 LINK+=$(LIBR)/search/libr_search.a

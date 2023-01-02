@@ -296,7 +296,7 @@ static int cmd_seek_opcode_backward(RCore *core, int numinstr) {
 			if (prev_addr == UT64_MAX || prev_addr >= core->offset) {
 				break;
 			}
-			RAsmOp op = {0};
+			RAnalOp op = {0};
 			r_core_seek (core, prev_addr, true);
 			r_asm_disassemble (core->rasm, &op, core->block, 32);
 			if (op.size < mininstrsize) {
@@ -318,7 +318,7 @@ static int cmd_seek_opcode_forward(RCore *core, int n) {
 	for (val = i = 0; i < n; i++) {
 		RAnalOp op;
 		ret = r_anal_op (core->anal, &op, core->offset, core->block,
-			core->blocksize, R_ANAL_OP_MASK_BASIC);
+			core->blocksize, R_ARCH_OP_MASK_BASIC);
 		if (ret < 1) {
 			ret = 1;
 		}

@@ -1,6 +1,6 @@
 /* sdb - MIT - Copyright 2014-2022 - pancake */
 
-#include "sdb.h"
+#include "sdb/sdb.h"
 
 // TODO: convert into a function
 // TODO: Add 'a' format for array of pointers null terminated??
@@ -8,49 +8,50 @@
 #define concat(x) if (x) { \
 	int size = 2 + strlen (x? x: "")+(out? strlen (out) + 4: 0); \
 	if (out) { \
-		char *o = (char *)realloc (out, size); \
+		char *o = (char *)sdb_gh_realloc (out, size); \
 		if (o) { \
 			strcat (o, ","); \
 			strcat (o, x); \
 			out = o; \
 		} \
 	} else { \
-		out = strdup (x); \
+		out = sdb_strdup (x); \
 	} \
 }
 
 SDB_API char *sdb_fmt_tostr(void *p, const char *fmt) {
-	char buf[128], *e_str, *out = NULL;
+	char buf[SDB_NUM_BUFSZ], *e_str, *out = NULL;
 	int n, len = 0;
 	if (!p || !fmt) {
 		return NULL;
 	}
 	for (; *fmt; fmt++) {
 		n = 4;
+		const ut8 *nbuf = ((ut8*)p) + len;
 		switch (*fmt) {
 		case 'b':
-			concat (sdb_itoa ((ut64)*((ut8*)p + len), buf, 10));
+			concat (sdb_itoa ((ut64)*(nbuf), 10, buf, sizeof (buf)));
 			break;
 		case 'h':
-			concat (sdb_itoa ((ut64)*((short*)((ut8*)p + len)), buf, 10));
+			concat (sdb_itoa ((ut64)*((short*)nbuf), 10, buf, sizeof (buf)));
 			break;
 		case 'd':
-			concat (sdb_itoa ((ut64)*((int*)((ut8*)p + len)), buf, 10));
+			concat (sdb_itoa ((ut64)*((int*)nbuf), 10, buf, sizeof (buf)));
 			break;
 		case 'q':
-			concat (sdb_itoa (*((ut64*)((ut8*)p + len)), buf, 10));
+			concat (sdb_itoa (*((ut64*)nbuf), 10, buf, sizeof (buf)));
 			n = 8;
 			break;
 		case 'z':
 			concat ((char*)p + len);
 			break;
 		case 's':
-			e_str = sdb_encode ((const ut8*)*((char**)((ut8*)p + len)), -1);
+			e_str = sdb_encode ((const ut8*)*((char**)nbuf), -1);
 			concat (e_str);
-			free (e_str);
+			sdb_gh_free (e_str);
 			break;
 		case 'p':
-			concat (sdb_itoa ((ut64)*((size_t*)((ut8*)p + len)), buf, 16));
+			concat (sdb_itoa ((ut64)*((size_t*)(nbuf)), 16, buf, sizeof (buf)));
 			n = sizeof (size_t);
 			break;
 		}
@@ -67,7 +68,7 @@ SDB_API int sdb_fmt_tobin(const char *_str, const char *fmt, void *stru) {
 	if (!_str || !*_str || !fmt) {
 		return 0;
 	}
-	str = ptr = strdup (_str);
+	str = ptr = sdb_strdup (_str);
 	for (; *fmt; fmt++) {
 		word = sdb_anext (ptr, &next);
 		if (!word || !*word) {
@@ -82,10 +83,10 @@ SDB_API int sdb_fmt_tobin(const char *_str, const char *fmt, void *stru) {
 		case 'h': *((short*)(stru8 + idx)) = (short)sdb_atoi (word); break;
 		case 's':
 			e_str = (char*)sdb_decode (word, 0);
-			*((char**)(stru8 + idx)) = e_str? e_str: strdup (word);
+			*((char**)(stru8 + idx)) = e_str? e_str: sdb_strdup (word);
 			break;
 		case 'z':
-			*((char**)(stru8 + idx)) = (char*)strdup (word);
+			*((char**)(stru8 + idx)) = (char*)sdb_strdup (word);
 			break;
 		case 'p':
 			*((void**)(stru8 + idx)) = (void*)(size_t)sdb_atoi (word);
@@ -117,7 +118,7 @@ SDB_API void sdb_fmt_free (void *stru, const char *fmt) {
 			break;
 		case 'z':
 		case 's':
-			free ((void*)*((char**)((ut8*)stru + len)));
+			sdb_gh_free ((void*)*((char**)((ut8*)stru + len)));
 			break;
 		}
 		len += R_MAX ((long)sizeof (void*), n); // align
@@ -163,7 +164,7 @@ SDB_API ut64* sdb_fmt_array_num(const char *list) {
 		if (size < len) {
 			return NULL;
 		}
-		retp = ret = (ut64*) malloc (size);
+		retp = ret = (ut64*) sdb_gh_malloc (size);
 		if (!ret) {
 			return NULL;
 		}
@@ -183,7 +184,7 @@ SDB_API char** sdb_fmt_array(const char *list) {
 	const char *next, *ptr = list;
 	if (list && *list) {
 		int len = sdb_alen (list);
-		retp = ret = (char**) malloc (2 * strlen (list) +
+		retp = ret = (char**) sdb_gh_malloc (2 * strlen (list) +
 			((len + 1) * sizeof (char *)) + 1);
 		_s = (char *)ret + ((len + 1) * sizeof (char *));
 		if (!ret) {

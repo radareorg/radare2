@@ -160,23 +160,24 @@ static bool iob_net_close(void *p) {
 
 static bool _encrypt(iobnet_t *obj, ut8 *buf, int size, int type) {
 	bool ret = false;
-	RCrypto *cry = r_crypto_new ();
+	RCrypto *cry = r_crypto_new (); // find core pointer maybe?
 	if (!cry) {
 		return false;
 	}
-	if (!r_crypto_use (cry, "aes-cbc")) {
+	RCryptoJob *cj = r_crypto_use (cry, "aes-cbc");
+	if (!cj) {
 		goto end;
 	}
 
 	// Set AES-256 Key based on the KDNet packet type
 	switch (type) {
 	case KDNET_PACKET_TYPE_DATA:
-		if (!r_crypto_set_key (cry, obj->datakey, sizeof (obj->datakey), 0, 0)) {
+		if (!r_crypto_job_set_key (cj, obj->datakey, sizeof (obj->datakey), 0, 0)) {
 			goto end;
 		}
 		break;
 	case KDNET_PACKET_TYPE_CONTROL: // Control Channel
-		if (!r_crypto_set_key (cry, obj->key, sizeof (obj->key), 0, 0)) {
+		if (!r_crypto_job_set_key (cj, obj->key, sizeof (obj->key), 0, 0)) {
 			goto end;
 		}
 		break;
@@ -185,17 +186,17 @@ static bool _encrypt(iobnet_t *obj, ut8 *buf, int size, int type) {
 	}
 
 	// Set IV to the 16 bytes HMAC at the end of KDNet packet
-	if (!r_crypto_set_iv (cry, buf + size - KDNET_HMAC_SIZE, KDNET_HMAC_SIZE)) {
+	if (!r_crypto_job_set_iv (cj, buf + size - KDNET_HMAC_SIZE, KDNET_HMAC_SIZE)) {
 		goto end;
 	}
 
 	// Encrypt the buffer except HMAC
-	if (r_crypto_final (cry, buf, size - KDNET_HMAC_SIZE) == 0) {
+	if (r_crypto_job_end (cj, buf, size - KDNET_HMAC_SIZE) == 0) {
 		goto end;
 	}
 	// Overwrite the buffer with encrypted data
 	int sz;
-	ut8 *encbuf = r_crypto_get_output (cry, &sz);
+	ut8 *encbuf = r_crypto_job_get_output (cj, &sz);
 	if (!encbuf) {
 		goto end;
 	}
@@ -272,19 +273,20 @@ static bool _decrypt(iobnet_t *obj, ut8 *buf, int size, int type) {
 	if (!cry) {
 		return false;
 	}
-	if (!r_crypto_use (cry, "aes-cbc")) {
+	RCryptoJob *cj = r_crypto_use (cry, "aes-cbc");
+	if (!cj) {
 		goto end;
 	}
 
 	// Set AES-256 Key based on the KDNet packet type
 	switch (type) {
 	case KDNET_PACKET_TYPE_DATA:
-		if (!r_crypto_set_key (cry, obj->datakey, sizeof (obj->datakey), 0, 1)) {
+		if (!r_crypto_job_set_key (cj, obj->datakey, sizeof (obj->datakey), 0, 1)) {
 			goto end;
 		}
 		break;
 	case KDNET_PACKET_TYPE_CONTROL:
-		if (!r_crypto_set_key (cry, obj->key, sizeof (obj->key), 0, 1)) {
+		if (!r_crypto_job_set_key (cj, obj->key, sizeof (obj->key), 0, 1)) {
 			goto end;
 		}
 		break;
@@ -293,17 +295,17 @@ static bool _decrypt(iobnet_t *obj, ut8 *buf, int size, int type) {
 	}
 
 	// Set IV to the 16 bytes HMAC at the end of KDNet packet
-	if (!r_crypto_set_iv (cry, buf + size - KDNET_HMAC_SIZE, KDNET_HMAC_SIZE)) {
+	if (!r_crypto_job_set_iv (cj, buf + size - KDNET_HMAC_SIZE, KDNET_HMAC_SIZE)) {
 		goto end;
 	}
 
 	// Decrypt the buffer except HMAC
-	if (r_crypto_final (cry, buf, size - KDNET_HMAC_SIZE) == 0) {
+	if (r_crypto_job_end (cj, buf, size - KDNET_HMAC_SIZE) == 0) {
 		goto end;
 	}
 	// Overwrite it with decrypted data
 	int sz;
-	ut8 *decbuf = r_crypto_get_output (cry, &sz);
+	ut8 *decbuf = r_crypto_job_get_output (cj, &sz);
 	if (!decbuf) {
 		goto end;
 	}
@@ -312,6 +314,7 @@ static bool _decrypt(iobnet_t *obj, ut8 *buf, int size, int type) {
 
 	free (decbuf);
 end:
+	r_crypto_job_free (cj);
 	r_crypto_free (cry);
 	return ret;
 }

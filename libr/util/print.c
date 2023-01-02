@@ -346,12 +346,13 @@ R_API RPrint* r_print_new(void) {
 	return p;
 }
 
-R_API RPrint* r_print_free(RPrint *p) {
+R_API void r_print_free(RPrint *p) {
 	if (!p) {
-		return NULL;
+		return;
 	}
 	sdb_free (p->formats);
 	p->formats = NULL;
+	free (p->spinmsg);
 	R_FREE (p->strconv_mode);
 	if (p->zoom) {
 		free (p->zoom->buf);
@@ -361,8 +362,8 @@ R_API RPrint* r_print_free(RPrint *p) {
 	R_FREE (p->lines_cache);
 	R_FREE (p->row_offsets);
 	r_charset_free (p->charset);
+	r_unref (p->config);
 	free (p);
-	return NULL;
 }
 
 // dummy setter can be removed
@@ -512,6 +513,7 @@ R_API void r_print_addr(RPrint *p, ut64 addr) {
 }
 
 R_API char* r_print_hexpair(RPrint *p, const char *str, int n) {
+	r_return_val_if_fail (p && str, NULL);
 	const char *s, *lastcol = Color_WHITE;
 	char *d, *dst = (char *) calloc ((strlen (str) + 2), 32);
 	int colors = p->flags & R_PRINT_FLAGS_COLOR;
@@ -564,8 +566,7 @@ R_API char* r_print_hexpair(RPrint *p, const char *str, int n) {
 			if (p->nbcolor > 0) {
 				// colorize N first bytes only
 				// used for op+arg in disasm hexpairs
-				lastcol = (i < p->nbcolor)
-					? color_0x00: color_0x7f;
+				lastcol = (i < p->nbcolor) ? color_0x00: color_0x7f;
 			} else if (s[0] == '0' && s[1] == '0') {
 				lastcol = color_0x00;
 			} else if (s[0] == '7' && s[1] == 'f') {
@@ -577,11 +578,7 @@ R_API char* r_print_hexpair(RPrint *p, const char *str, int n) {
 				if (ch == -1) {
 					break;
 				}
-				if (IS_PRINTABLE (ch)) {
-					lastcol = color_text;
-				} else {
-					lastcol = color_other;
-				}
+				lastcol = IS_PRINTABLE (ch) ? color_text: color_other;
 			}
 			memcat (d, lastcol);
 		}
@@ -1000,9 +997,13 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 					}
 					if  (use_hdroff) {
 						if (use_pair) {
-							printfmt ("%c%c",
+							if ((((i + k) >> 4) + K) % 16) {
+								printfmt ("%c%c",
 									hex[(((i+k) >> 4) + K) % 16],
 									hex[(i + k) % 16]);
+							} else {
+								printfmt (" %c", hex[(i + k) % 16]);
+							}
 						} else {
 							printfmt (" %c", hex[(i + k) % 16]);
 						}
@@ -1057,7 +1058,7 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 	bool printValue = true;
 	bool oPrintValue = true;
 	bool isPxr = (p && p->flags & R_PRINT_FLAGS_REFS);
-	bool be = p->config? p->config->big_endian: R_SYS_ENDIAN;
+	bool be = p->config? R_ARCH_CONFIG_IS_BIG_ENDIAN (p->config): R_SYS_ENDIAN;
 
 	for (i = j = 0; i < len; i += (stride? stride: inc)) {
 		if (p && p->cons && p->cons->context && p->cons->context->breaked) {
@@ -1629,7 +1630,8 @@ R_API void r_print_raw(RPrint *p, ut64 addr, const ut8 *buf, int len, int offlin
 			}
 			p->cb_printf ("\n");
 			linenum++;
-			o = ++q;
+			q++;
+			o = q;
 			i++;
 		} while (!mustbreak);
 		break;
@@ -1639,25 +1641,72 @@ R_API void r_print_raw(RPrint *p, ut64 addr, const ut8 *buf, int len, int offlin
 
 R_API void r_print_c(RPrint *p, const ut8 *str, int len) {
 	int i, inc = p->width / 6;
-	p->cb_printf ("#define _BUFFER_SIZE %d\n"
-	"unsigned char buffer[_BUFFER_SIZE] = {\n",
-	len);
+	const char *namenm = p->codevarname;
+	char *namesz = NULL;
+	if (R_STR_ISEMPTY (namenm)) {
+		namenm = "buffer";
+		namesz = strdup ("_BUFFER_SIZE");
+	} else {
+		namesz = r_str_newf ("_%s_SIZE", namenm);
+		r_str_case (namesz, true);
+	}
+
+	p->cb_printf ("#define %s %d\n"
+	"unsigned char %s[%s] = {\n", namesz, len, namenm, namesz);
 	for (i = 0; !r_print_is_interrupted () && i < len;) {
 		r_print_byte (p, (ut64)i, "0x%02x", i, str[i]);
-		if (++i < len) {
+		i++;
+		if (i < len) {
 			p->cb_printf (", ");
 		}
 		if (!(i % inc)) {
 			p->cb_printf ("\n");
 		}
 	}
-	p->cb_printf (" };\n");
+	p->cb_printf ("};\n");
+	free (namesz);
 }
 
 // HACK :D
 static R_TH_LOCAL RPrint staticp = {
 	.cb_printf = libc_printf
 };
+
+R_API void r_print_spinbar(RPrint *p, const char *msg) {
+	r_return_if_fail (p);
+	p->spinpos++;
+	const char *a[6] = {
+		"/", "-", "\\", "|",
+	};
+#if 0
+	const char *_a[6] = {
+		"_", ".", "-", "`", "-", "."
+	};
+	const char *u[] = {
+		"⠇", "⢰" , "⢸"
+		"⢹",
+		"⣰",
+	};
+	const char *n[10] = {
+		"⣿", // 0
+		"⢺", // 1
+		"⣝", // 2
+		"⡑", // 3
+		"⢳", // 4
+		"⣯", // 6
+		"⡝", // 7
+		"⣭", // 8
+		"⢻", // 9
+	};
+#endif
+	int x = p->spinpos % 4; // 6;
+	if (msg) {
+		free (p->spinmsg);
+		p->spinmsg = strdup (msg);
+	}
+	eprintf (R_CONS_CLEAR_LINE"\r[%s] %s", a[x], r_str_get (p->spinmsg));
+	fflush (stderr);
+}
 
 /* TODO: handle screen width */
 R_API void r_print_progressbar(RPrint *p, int pc, int _cols) {
@@ -1762,7 +1811,7 @@ R_API void r_print_rangebar(RPrint *p, ut64 startA, ut64 endA, ut64 min, ut64 ma
 	p->cb_printf ("|");
 }
 
-R_API void r_print_zoom_buf(RPrint *p, void *user, RPrintZoomCallback cb, ut64 from, ut64 to, int len, int maxlen) {
+R_API void r_print_zoom_buf(RPrint *p, RPrintZoomCallback cb, void *user, ut64 from, ut64 to, int len, int maxlen) {
 	static R_TH_LOCAL int mode = -1;
 	ut8 *bufz = NULL, *bufz2 = NULL;
 	int i, j = 0;
@@ -1817,9 +1866,9 @@ R_API void r_print_zoom_buf(RPrint *p, void *user, RPrintZoomCallback cb, ut64 f
 	}
 }
 
-R_API void r_print_zoom(RPrint *p, void *user, RPrintZoomCallback cb, ut64 from, ut64 to, int len, int maxlen) {
+R_API void r_print_zoom(RPrint *p, RPrintZoomCallback cb, void *user, ut64 from, ut64 to, int len, int maxlen) {
 	ut64 size = (to - from);
-	r_print_zoom_buf (p, user, cb, from, to, len, maxlen);
+	r_print_zoom_buf (p, cb, user, from, to, len, maxlen);
 	size = len? size / len: 0;
 	p->flags &= ~R_PRINT_FLAGS_HEADER;
 	r_print_hexdump (p, from, p->zoom->buf, p->zoom->size, 16, 1, size);
@@ -2216,7 +2265,7 @@ R_API char* r_print_colorize_opcode(RPrint *print, char *p, const char *reg, con
 #define STRIP_ANSI 1
 #if STRIP_ANSI
 			/* skip until 'm' */
-			for (++i; p[i] && p[i] != 'm'; i++) {
+			for (i++; p[i] && p[i] != 'm'; i++) {
 				o[j] = p[i];
 			}
 			j--;
@@ -2414,7 +2463,7 @@ R_API int r_print_jsondump(RPrint *p, const ut8 *buf, int len, int wordsize) {
 	}
 	int i, words = (len / bytesize);
 	p->cb_printf ("[");
-	bool be = p->config? p->config->big_endian: R_SYS_ENDIAN;
+	bool be = p->config? R_ARCH_CONFIG_IS_BIG_ENDIAN (p->config): R_SYS_ENDIAN;
 	for (i = 0; i < words; i++) {
 		switch (wordsize) {
 		case 8: {
@@ -2449,9 +2498,9 @@ R_API void r_print_hex_from_bin(RPrint *p, char *bin_str) {
 	if (!len) {
 		return;
 	}
-	ut64 n, *buf = malloc (sizeof (ut64) * ((len + 63) / 64));
+	ut64 n, *buf = calloc (sizeof (ut64), ((len + 63) / 64));
 	if (!buf) {
-		eprintf ("allocation failed\n");
+		R_LOG_ERROR ("allocation failed");
 		return;
 	}
 	if (!p) {
@@ -2477,35 +2526,6 @@ R_API void r_print_hex_from_bin(RPrint *p, char *bin_str) {
 	p->cb_printf ("\n");
 	free (buf);
 }
-
-R_API const char* r_print_rowlog(RPrint *print, const char *str) {
-	int use_color = print->flags & R_PRINT_FLAGS_COLOR;
-	bool verbose = print->scr_prompt;
-	r_return_val_if_fail (print->cb_eprintf, NULL);
-	if (!verbose) {
-		return NULL;
-	}
-	if (use_color) {
-		print->cb_eprintf ("[ ] "Color_YELLOW"%s\r["Color_RESET, str);
-	} else {
-		print->cb_eprintf ("[ ] %s\r[", str);
-	}
-	return str;
-}
-
-R_API void r_print_rowlog_done(RPrint *print, const char *str) {
-	int use_color = print->flags & R_PRINT_FLAGS_COLOR;
-	bool verbose =  print->scr_prompt;
-	r_return_if_fail (print->cb_eprintf);
-	if (verbose) {
-		if (use_color) {
-			print->cb_eprintf ("\r"Color_GREEN"[x]"Color_RESET" %s\n", str);
-		} else {
-			print->cb_eprintf ("\r[x] %s\n", str);
-		}
-	}
-}
-
 
 R_API RBraile r_print_braile(int u) {
 #define CH0(x) ((x) >> 8)
@@ -2549,7 +2569,7 @@ R_API void r_print_graphline(RPrint *print, const ut8 *buf, size_t len) {
 		// const char *chars = "_.,-^'";
 		size_t i;
 		for (i = 0; i < len; i++) {
-			print->cb_printf ("%c", chars[buf[i]/50]);
+			print->cb_printf ("%c", chars[buf[i] / 50]);
 		}
 	}
 	print->cb_printf ("\n");

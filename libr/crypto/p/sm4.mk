@@ -1,4 +1,4 @@
-OBJ_SM4=crypto_sm4.o
+OBJ_SM4=crypto_sm4.o crypto_sm4_algo.o
 
 STATIC_OBJ+=${OBJ_SM4}
 TARGET_SM4=crypto_sm4.${EXT_SO}

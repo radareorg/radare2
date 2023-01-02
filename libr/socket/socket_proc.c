@@ -7,14 +7,14 @@
 #include <r_util.h>
 #include <signal.h>
 
-#if __UNIX__ && !__wasi__
+#if R2__UNIX__ && !__wasi__
 #include <sys/wait.h>
 #endif
 
 #define BUFFER_SIZE 4096
 
 R_API struct r_socket_proc_t *r_socket_proc_open(char* const argv[]) {
-#if __UNIX__ && LIBC_HAVE_FORK
+#if R2__UNIX__ && LIBC_HAVE_FORK
 	RSocketProc *sp = R_NEW (RSocketProc);
 #ifdef O_CLOEXEC
 	const int flags = O_CLOEXEC; //O_NONBLOCK|O_CLOEXEC;
@@ -74,7 +74,7 @@ error:
 }
 
 R_API int r_socket_proc_close(struct r_socket_proc_t *sp) {
-#if __UNIX__
+#if R2__UNIX__
 	/* this is wrong */
 	kill (sp->pid, SIGKILL);
 	waitpid (sp->pid, NULL, 0); //WNOHANG);

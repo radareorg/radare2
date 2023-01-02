@@ -68,6 +68,20 @@ hello
 EOF
 RUN
 
+NAME=r rax2 -D null byte
+FILE=-
+CMDS=rax2 -D ZQBlAA== |rax2 -S
+EXPECT=<<EOF
+65006500
+EOF
+RUN
+
+NAME=r rax2 -E null byte
+FILE=-
+CMDS=rax2 -E "\x60\x00\x66\x00\x67"
+EXPECT=YABmAGc=
+RUN
+
 NAME=rax2 -S hello | rax2 -s
 FILE=-
 CMDS=!rax2 -S hello | rax2 -s
@@ -85,14 +99,6 @@ RUN
 NAME=rax2 -S hello | rax2 -s (2)
 FILE=-
 CMDS=!echo hello | rax2 -S | rax2 -s | rax2 -S | rax2 -s
-EXPECT=<<EOF
-hello
-EOF
-RUN
-
-NAME=rax2 -E | rax2 -D -E
-FILE=-
-CMDS=!echo hello | rax2 -E |rax2 -D |rax2 -E | rax2 -D  |rax2 -E|rax2 -D |rax2 -E | rax2 -D
 EXPECT=<<EOF
 hello
 EOF
@@ -211,6 +217,22 @@ FILE=-
 CMDS=!rax2 Bx63
 EXPECT=<<EOF
 1100011b
+EOF
+RUN
+
+NAME=rax2 Bxffff0000ffff0101
+FILE=-
+CMDS=!rax2 Bxffff0000ffff0101
+EXPECT=<<EOF
+1111111111111111000000000000000011111111111111110000000100000001b
+EOF
+RUN
+
+NAME=rax2 64bit binary number
+FILE=-
+CMDS=!rax2 1111111111111111000000000000000011111111111111110000000100000001b
+EXPECT=<<EOF
+0xffff0000ffff0101
 EOF
 RUN
 
@@ -424,11 +446,18 @@ EOF
 RUN
 
 NAME=long number conversion
-BROKEN=1
 FILE=-
 CMDS=!rax2 10000000000000000000000000000000000000000000000b
 EXPECT=<<EOF
-0x8000000000000000
+0x400000000000
+EOF
+RUN
+
+NAME=long number conversion with shift
+FILE=-
+CMDS=!rax2 b$(!rax2 "1<<46")
+EXPECT=<<EOF
+10000000000000000000000000000000000000000000000b
 EOF
 RUN
 

@@ -23,7 +23,7 @@ static bool lock_init(RThreadLock *thl, bool recursive) {
 		pthread_mutexattr_init (&attr);
 		pthread_mutex_init (&thl->lock, &attr);
 	}
-#elif __WINDOWS__
+#elif R2__WINDOWS__
 	// TODO: obey `recursive` (currently it is always recursive)
 	InitializeCriticalSection (&thl->lock);
 #else
@@ -108,7 +108,7 @@ R_API bool r_th_lock_enter(RThreadLock *thl) {
 	}
 #if HAVE_PTHREAD
 	return pthread_mutex_lock (&thl->lock);
-#elif __WINDOWS__
+#elif R2__WINDOWS__
 	EnterCriticalSection (&thl->lock);
 	return 0;
 #else
@@ -120,7 +120,7 @@ R_API bool r_th_lock_tryenter(RThreadLock *thl) {
 	R_LOG_DEBUG ("r_th_lock_tryenter");
 #if HAVE_PTHREAD
 	return pthread_mutex_trylock (&thl->lock) == 0;
-#elif __WINDOWS__
+#elif R2__WINDOWS__
 	return TryEnterCriticalSection (&thl->lock);
 #else
 	return false;
@@ -131,7 +131,7 @@ R_API bool r_th_lock_leave(RThreadLock *thl) {
 	R_LOG_DEBUG ("r_th_lock_leave");
 #if HAVE_PTHREAD
 	return pthread_mutex_unlock (&thl->lock) == 0;
-#elif __WINDOWS__
+#elif R2__WINDOWS__
 	LeaveCriticalSection (&thl->lock);
 	return true;
 #else
@@ -155,7 +155,7 @@ R_API void *r_th_lock_free(RThreadLock *thl) {
 	if (thl) {
 #if HAVE_PTHREAD
 		pthread_mutex_destroy (&thl->lock);
-#elif __WINDOWS__
+#elif R2__WINDOWS__
 		DeleteCriticalSection (&thl->lock);
 #endif
 		if (thl->type == R_TH_LOCK_TYPE_HEAP) {

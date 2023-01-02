@@ -113,7 +113,7 @@ static char *signature(RBinFile *bf, bool json) {
 		}
 		return strdup ("{}");
 	}
-	return r_pkcs7_cms_to_string (pe->cms);
+	return r_pkcs7_cms_tostring (pe->cms);
 }
 
 static RList *fields(RBinFile *bf) {

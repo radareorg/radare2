@@ -5,11 +5,16 @@
 #ifndef HAVE_SYSTEM
 #define HAVE_SYSTEM 1
 #endif
+#include <sdb/sdb.h>
 #if USE_DLSYSTEM
 #include <dlfcn.h>
 #endif
-#include "sdb.h"
 
+#if __SDB_WINDOWS__
+#define ftruncate _chsize
+#endif
+
+// TODO: enums must be uppercase
 typedef enum {
 	text,
 	zero,
@@ -19,6 +24,7 @@ typedef enum {
 	perf
 } MainFormat;
 
+// TODO: enums must be uppercase
 typedef enum {
 	nope = 0,
 	dash,
@@ -55,7 +61,8 @@ static void terminate(int sig UNUSED) {
 		s = NULL;
 		exit (1);
 	}
-	sdb_free (s);
+	sdb_gh_fini ();
+	//sdb_free (s);
 	exit (sig < 2? sig: 0);
 }
 
@@ -84,17 +91,17 @@ static char *slurp(FILE *f, size_t *sz) {
 		/* run test/add10k.sh script to benchmark */
 		const int buf_size = 96096;
 
-		buf = (char *)calloc (1, buf_size);
+		buf = (char *)sdb_gh_calloc (1, buf_size);
 		if (!buf) {
 			return NULL;
 		}
 
 		if (!fgets (buf, buf_size, f)) {
-			free (buf);
+			sdb_gh_free (buf);
 			return NULL;
 		}
 		if (feof (f)) {
-			free (buf);
+			sdb_gh_free (buf);
 			return NULL;
 		}
 
@@ -103,15 +110,11 @@ static char *slurp(FILE *f, size_t *sz) {
 			buf[buf_len - 1] = '\0';
 		}
 
-		char *newbuf = (char *)realloc (buf, buf_len + 1);
-		// realloc behaves like free if buf_len is 0
-		if (!newbuf) {
-			return buf;
-		}
-		return newbuf;
+		char *newbuf = (char *)sdb_gh_realloc (buf, buf_len + 1);
+		return newbuf? newbuf: buf;
 	}
 #endif
-	buf = (char *)calloc (BS + 1, 1);
+	buf = (char *)sdb_gh_calloc (BS + 1, 1);
 	if (!buf) {
 		return NULL;
 	}
@@ -119,7 +122,7 @@ static char *slurp(FILE *f, size_t *sz) {
 	len = 0;
 	for (;;) {
 		if (next) {
-			free (buf);
+			sdb_gh_free (buf);
 			buf = next;
 			bufsize = nextlen + blocksize;
 			//len = nextlen;
@@ -149,7 +152,7 @@ static char *slurp(FILE *f, size_t *sz) {
 				int nlen = nl - buf;
 				nextlen = len - nlen;
 				if (nextlen > 0) {
-					next = (char *)malloc (nextlen + blocksize + 1);
+					next = (char *)sdb_gh_malloc (nextlen + blocksize + 1);
 					if (!next) {
 						eprintf ("Cannot malloc %d\n", nextlen);
 						break;
@@ -169,7 +172,7 @@ static char *slurp(FILE *f, size_t *sz) {
 		}
 #endif
 		bufsize += blocksize;
-		tmp = (char *)realloc (buf, bufsize + 1);
+		tmp = (char *)sdb_gh_realloc (buf, bufsize + 1);
 		if (!tmp) {
 			bufsize -= blocksize;
 			break;
@@ -181,7 +184,7 @@ static char *slurp(FILE *f, size_t *sz) {
 		*sz = len;
 	}
 	if (len < 1) {
-		free (buf);
+		sdb_gh_free (buf);
 		return buf = NULL;
 	}
 	buf[len] = 0;
@@ -213,7 +216,7 @@ static char* get_name(const char*name) {
 		}
 		l--;
 	}
-	char *n = strdup (name);
+	char *n = sdb_strdup (name);
 	char *v, *d = n;
 	for (v = (char*)n; *v; v++) {
 		if (*v == '.') {
@@ -237,7 +240,7 @@ static char* get_cname(const char*name) {
 		}
 		l--;
 	}
-	char *n = strdup (name);
+	char *n = sdb_strdup (name);
 	char *v, *d = n;
 	for (v = (char*)n; *v; v++) {
 		if (*v == '/' || *v == '-') {
@@ -254,7 +257,7 @@ static char* get_cname(const char*name) {
 }
 
 static char *escape(const char *b, int ch) {
-	char *a = (char *)calloc ((1 + strlen (b)), 4);
+	char *a = (char *)sdb_gh_calloc ((1 + strlen (b)), 4);
 	char *c = a;
 	while (*b) {
 		if (*b == ch) {
@@ -310,8 +313,8 @@ static void sdb_dump_cb(MainOptions *mo, const char *k, const char *v, const cha
 			} else {
 				printf ("%s,\"%s\"\n", a, b);
 			}
-			free (a);
-			free (b);
+			sdb_gh_free (a);
+			sdb_gh_free (b);
 		}
 		break;
 	case zero:
@@ -433,7 +436,7 @@ static void cgen_footer(MainOptions *mo, const char *name, const char *cname) {
 		"			char *comma = strchr (line, ',');\n"
 		"			if (comma) {\n"
 		"				*comma = 0;\n"
-		"				char *up = strdup (line);\n"
+		"				char *up = sdb_strdup (line);\n"
 		"				char *p = up; while (*p) { *p = toupper (*p); p++; }\n"
 		"				printf (\"#define GPERF_%s_%%s %%d\\n\",\n"
 		"					line, sdb_hash_c_%s (line, comma - line));\n"
@@ -486,8 +489,8 @@ static int sdb_dump(MainOptions *mo) {
 		if (!mo->textmode && mo->format == cgen && ls_length (l) > SDB_MAX_GPERF_KEYS) {
 			ls_free (l);
 			eprintf ("Error: gperf doesn't work with datasets with more than 15.000 keys.\n");
-			free (name);
-			free (cname);
+			sdb_gh_free (name);
+			sdb_gh_free (cname);
 			return -1;
 		}
 		SdbKv *kv;
@@ -506,12 +509,12 @@ static int sdb_dump(MainOptions *mo) {
 		int count = 0;
 		while (sdb_dump_dupnext (db, k, &v, NULL)) {
 			if (v && *v && grep && !strstr (k, expgrep) && !strstr (v, expgrep)) {
-				free (v);
+				sdb_gh_free (v);
 				continue;
 			}
 			sdb_dump_cb (mo, k, v, comma);
 			comma = ",";
-			free (v);
+			sdb_gh_free (v);
 			if (!mo->textmode && mo->format == cgen && count++ > SDB_MAX_GPERF_KEYS) {
 				eprintf ("Error: gperf doesn't work with datasets with more than 15.000 keys.\n");
 				ret = -1;
@@ -535,9 +538,9 @@ static int sdb_dump(MainOptions *mo) {
 			break;
 		}
 	}
-	sdb_free (db);
-	free (cname);
-	free (name);
+	// sdb_free (db);
+	sdb_gh_free (cname);
+	sdb_gh_free (name);
 	return ret;
 }
 
@@ -548,17 +551,19 @@ static int insertkeys(Sdb *db, const char **args, int nargs, int mode) {
 		for (i = 0; i < nargs; i++) {
 			switch (mode) {
 			case '-':
-				must_save |= sdb_query (db, args[i]);
+				if (sdb_query (db, args[i])) {
+					must_save = true;
+				}
 				break;
 			case '=':
 				if (strchr (args[i], '=')) {
-					char *v, *kv = (char *) strdup (args[i]);
+					char *v, *kv = (char *) sdb_strdup (args[i]);
 					v = strchr (kv, '=');
 					if (v) {
 						*v++ = 0;
 						sdb_disk_insert (db, kv, v);
 					}
-					free (kv);
+					sdb_gh_free (kv);
 				}
 				break;
 			}
@@ -591,7 +596,7 @@ static int createdb(const char *f, const char **args, int nargs) {
 		if (!sdb_text_load_buf (s, in, len)) {
 			eprintf ("Failed to read text sdb from stdin\n");
 		}
-		free (in);
+		sdb_gh_free (in);
 	}
 	sdb_sync (s);
 	return ret;
@@ -635,12 +640,12 @@ static int jsonIndent(void) {
 	}
 	out = sdb_json_indent (in, "  ");
 	if (!out) {
-		free (in);
+		sdb_gh_free (in);
 		return 1;
 	}
 	puts (out);
-	free (out);
-	free (in);
+	sdb_gh_free (out);
+	sdb_gh_free (in);
 	return 0;
 }
 
@@ -653,12 +658,12 @@ static int base64encode(void) {
 	}
 	out = sdb_encode (in, (int)len);
 	if (!out) {
-		free (in);
+		sdb_gh_free (in);
 		return 1;
 	}
 	puts (out);
-	free (out);
-	free (in);
+	sdb_gh_free (out);
+	sdb_gh_free (in);
 	return 0;
 }
 
@@ -672,8 +677,8 @@ static int base64decode(void) {
 		if (out && declen >= 0) {
 			ret = (write (1, out, declen) == declen)? 0: 1;
 		}
-		free (out);
-		free (in);
+		sdb_gh_free (out);
+		sdb_gh_free (in);
 	}
 	return ret;
 }
@@ -687,7 +692,7 @@ static void dbdiff_cb(const SdbDiff *diff, void *user) {
 	char *buf = sbuf;
 	char *hbuf = NULL;
 	if ((size_t)r >= sizeof (sbuf)) {
-		hbuf = (char *)malloc (r + 1);
+		hbuf = (char *)sdb_gh_malloc (r + 1);
 		if (!hbuf) {
 			return;
 		}
@@ -698,7 +703,7 @@ static void dbdiff_cb(const SdbDiff *diff, void *user) {
 	}
 	printf ("\x1b[%sm%s\x1b[0m\n", diff->add ? "32" : "31", buf);
 beach:
-	free (hbuf);
+	sdb_gh_free (hbuf);
 }
 
 static bool dbdiff(const char *a, const char *b) {
@@ -741,14 +746,14 @@ static int sdb_system(const char *cmd) {
 
 static int gen_gperf(MainOptions *mo, const char *file, const char *name) {
 	const size_t buf_size = 4096;
-	char *buf = (char *)malloc (buf_size);
+	char *buf = (char *)sdb_gh_malloc (buf_size);
 	if (!buf) {
 		return -1;
 	}
 	size_t out_size = strlen (file) + 32;
-	char *out = (char *)malloc (out_size);
+	char *out = (char *)sdb_gh_malloc (out_size);
 	if (!out) {
-		free (buf);
+		sdb_gh_free (buf);
 		return -1;
 	}
 	if (mo->outfile) {
@@ -761,8 +766,8 @@ static int gen_gperf(MainOptions *mo, const char *file, const char *name) {
 		wd = open (out, O_RDWR | O_CREAT, 0644);
 	} else {
 		if (ftruncate (wd, 0) == -1) {
-			free (out);
-			free (buf);
+			sdb_gh_free (out);
+			sdb_gh_free (buf);
 			close (wd);
 			return -1;
 		}
@@ -793,7 +798,7 @@ static int gen_gperf(MainOptions *mo, const char *file, const char *name) {
 			}
 			snprintf (buf, buf_size, "gperf -aclEDCIG --null-strings -H sdb_hash_c_%s"
 					" -N sdb_get_c_%s -t %s.gperf > %s.c\n", cname, cname, name, name);
-			free (cname);
+			sdb_gh_free (cname);
 			rc = sdb_system (buf);
 			if (rc == 0) {
 				snprintf (buf, buf_size, "gcc -DMAIN=1 %s.c ; ./a.out > %s.h\n", name, name);
@@ -808,8 +813,8 @@ static int gen_gperf(MainOptions *mo, const char *file, const char *name) {
 			eprintf ("Outdated sdb binary in PATH?\n");
 		}
 	}
-	free (out);
-	free (buf);
+	sdb_gh_free (out);
+	sdb_gh_free (buf);
 	return rc;
 }
 
@@ -945,7 +950,7 @@ static MainOptions *main_argparse(MainOptions *mo, int argc, const char **argv) 
 	return mo;
 }
 
-int main(int argc, const char **argv) {
+SDB_API int sdb_main(int argc, const char **argv) {
 	char *line;
 	int i;
 
@@ -953,7 +958,6 @@ int main(int argc, const char **argv) {
 	if (argc < 2) {
 		return showusage (1);
 	}
-
 	MainOptions _mo = {0};
 	MainOptions *mo = &_mo;
 	main_argparse (mo, argc, argv);
@@ -975,13 +979,13 @@ int main(int argc, const char **argv) {
 				return showusage (1);
 			}
 			const char *file = mo->argv[mo->db0];
-			char *name = strdup (file);
+			char *name = sdb_strdup (file);
 			char *p = strchr (name, '.');
 			if (p) {
 				*p = 0;
 			}
 			int rc = gen_gperf (mo, file, name);
-			free (name);
+			sdb_gh_free (name);
 			return rc;
 		}
 	default:
@@ -1011,25 +1015,31 @@ int main(int argc, const char **argv) {
 			int kvs = mo->db0 + 2;
 			if (mo->argi + 2 < mo->argc) {
 				for (i = mo->argi + 2; i < argc; i++) {
-					save |= sdb_query (s, mo->argv[i]);
+					if (sdb_query (s, mo->argv[i])) {
+						save = true;
+					}
 					if (mo->format) {
 						fflush (stdout);
 						ret = write_null ();
 					}
 				}
 			} else {
-				if (kvs < argc) {
-					save |= insertkeys (s, argv + mo->argi + 2, argc - kvs, '-');
+				if (kvs < argc && insertkeys (s, argv + mo->argi + 2, argc - kvs, '-')) {
+					save = true;
 				}
 				for (; (line = slurp (stdin, NULL));) {
-					save |= sdb_query (s, line);
+					if (sdb_query (s, line)) {
+						save = true;
+					}
 					if (mo->format) {
 						fflush (stdout);
 						ret = write_null ();
 					}
-					free (line);
+					sdb_gh_free (line);
 				}
 			}
+		} else {
+			eprintf ("Cannot create database\n");
 		}
 		break;
 	case eqeq: // "="
@@ -1050,7 +1060,9 @@ int main(int argc, const char **argv) {
 		sdb_config (s, options);
 		if (mo->argi + 1 < mo->argc) {
 			for (i = mo->db0 + 1; i < argc; i++) {
-				save |= sdb_query (s, mo->argv[i]);
+				if (sdb_query (s, mo->argv[i])) {
+					save = true;
+				}
 				if (mo->format) {
 					fflush (stdout);
 					ret = write_null ();

@@ -3,21 +3,21 @@
 #ifndef INCLUDE_P_SPP_H
 #define INCLUDE_P_SPP_H
 
-#if __UNIX__
+#if R2__UNIX__
 #include <unistd.h>
 #endif
 
 #if __WIN32__
 #undef SPP_HAVE_SYSTEM
 #define SPP_HAVE_SYSTEM 0
-#undef __WINDOWS__
-#define __WINDOWS__ 1
+#undef R2__WINDOWS__
+#define R2__WINDOWS__ 1
 #endif
 #ifdef _MSC_VER
 #undef SPP_HAVE_SYSTEM
 #define SPP_HAVE_SYSTEM 0
-#undef __WINDOWS__
-#define __WINDOWS__ 1
+#undef R2__WINDOWS__
+#define R2__WINDOWS__ 1
 #endif
 
 #if HAVE_SYSTEM == 0
@@ -108,7 +108,7 @@ static TAG_CALLBACK(spp_getrandom) {
 		return 0;
 	}
 	// XXX srsly? this is pretty bad random
-#if __WINDOWS__
+#if R2__WINDOWS__
 	srand (r_sys_getpid ());
 #else
 	srandom (r_sys_getpid ()); // TODO: change this to be portable

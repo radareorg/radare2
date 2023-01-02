@@ -55,7 +55,7 @@ R_API void r_core_wait(RCore *core) {
 }
 
 static void http_logf(RCore *core, const char *fmt, ...) {
-	bool http_log_enabled = r_config_get_i (core->config, "http.log");
+	bool http_log_enabled = r_config_get_b (core->config, "http.log");
 	va_list ap;
 	va_start (ap, fmt);
 	if (http_log_enabled) {
@@ -96,7 +96,7 @@ static char *rtrcmd(TextLog T, const char *str) {
 static void showcursor(RCore *core, int x) {
 	if (core && core->vmode) {
 		r_cons_show_cursor (x);
-		r_cons_enable_mouse (x? r_config_get_i (core->config, "scr.wheel"): false);
+		r_cons_enable_mouse (x? r_config_get_b (core->config, "scr.wheel"): false);
 	} else {
 		r_cons_enable_mouse (false);
 	}
@@ -179,7 +179,7 @@ R_API int r_core_rtr_http_stop(RCore *u) {
 	const char *port;
 	RSocket* sock;
 
-#if __WINDOWS__
+#if R2__WINDOWS__
 	r_socket_http_server_set_breaked (&r_cons_context ()->breaked);
 #endif
 	if (((size_t)u) > 0xff) {
@@ -213,7 +213,7 @@ static char *rtr_dir_files(const char *path) {
 	return r_str_append (ptr, "</body></html>\n");
 }
 
-#if __UNIX__
+#if R2__UNIX__ && !__wasi__
 static void dietime(int sig) {
 	eprintf ("It's Time To Die!\n");
 	exit (0);
@@ -223,7 +223,7 @@ static void dietime(int sig) {
 static void activateDieTime(RCore *core) {
 	int dt = r_config_get_i (core->config, "http.dietime");
 	if (dt > 0) {
-#if __UNIX__ && !__wasi__
+#if R2__UNIX__ && !__wasi__
 		r_sys_signal (SIGALRM, dietime);
 		alarm (dt);
 #else
@@ -420,7 +420,7 @@ static int r_core_rtr_gdb_cb(libgdbr_t *g, void *core_ptr, const char *cmd,
 			break;
 		case 'r': // dr
 			r_debug_reg_sync (core->dbg, R_REG_TYPE_ALL, false);
-			be = r_config_get_i (core->config, "cfg.bigendian");
+			be = r_config_get_b (core->config, "cfg.bigendian");
 			if (isspace ((ut8)cmd[2])) { // dr reg
 				const char *name, *val_ptr;
 				char new_cmd[128] = {0};
@@ -681,7 +681,7 @@ R_API void r_core_rtr_pushout(RCore *core, const char *input) {
 		r_socket_write (rtr_host[rtr_n].fd, str, strlen (str));
 		break;
 	case RTR_PROTOCOL_HTTP:
-		R_LOG_INFO ("TODO");
+		R_LOG_TODO ("RTR_PROTOCOL_HTTP");
 		break;
 	case RTR_PROTOCOL_TCP:
 	case RTR_PROTOCOL_UDP:
@@ -731,12 +731,12 @@ R_API void r_core_rtr_add(RCore *core, const char *_input) {
 			const char *name;
 			int protocol;
 		} uris[7] = {
-			{"tcp", RTR_PROTOCOL_TCP},
-			{"udp", RTR_PROTOCOL_UDP},
-			{"rap", RTR_PROTOCOL_RAP},
-			{"r2p", RTR_PROTOCOL_RAP},
-			{"http", RTR_PROTOCOL_HTTP},
-			{"unix", RTR_PROTOCOL_UNIX},
+			{ "tcp", RTR_PROTOCOL_TCP},
+			{ "udp", RTR_PROTOCOL_UDP},
+			{ "rap", RTR_PROTOCOL_RAP},
+			{ "r2p", RTR_PROTOCOL_RAP},
+			{ "http", RTR_PROTOCOL_HTTP},
+			{ "unix", RTR_PROTOCOL_UNIX},
 			{NULL, 0}
 		};
 		char *s = r_str_ndup (input, pikaboo - input);
@@ -904,7 +904,7 @@ R_API void r_core_rtr_event(RCore *core, const char *input) {
 	}
 	if (!strcmp (input, "errmsg")) {
 		// TODO: support udp, tcp, rap, ...
-#if __UNIX__ && !__wasi__
+#if R2__UNIX__ && !__wasi__
 		char *f = r_file_temp ("errmsg");
 		r_cons_printf ("%s\n", f);
 		r_file_rm (f);
@@ -1000,8 +1000,10 @@ R_API void r_core_rtr_cmd(RCore *core, const char *input) {
 				RT->input = strdup (input + 1);
 				//RapThread rt = { core, strdup (input + 1) };
 				rapthread = r_th_new (r_core_rtr_rap_thread, RT, false);
+#if 0
 				int cpuaff = (int)r_config_get_i (core->config, "cfg.cpuaffinity");
 				r_th_setaffinity (rapthread, cpuaff);
+#endif
 				r_th_setname (rapthread, "rapthread");
 				r_th_start (rapthread, false);
 				R_LOG_INFO ("Background rap server started");
@@ -1148,7 +1150,7 @@ static void rtr_cmds_client_close(uv_tcp_t *client, bool remove) {
 	rtr_cmds_context *context = loop->data;
 	if (remove) {
 		size_t i;
-		for (i = 0; i < r_pvector_len (&context->clients); i++) {
+		for (i = 0; i < r_pvector_length (&context->clients); i++) {
 			if (r_pvector_at (&context->clients, i) == client) {
 				r_pvector_remove_at (&context->clients, i);
 				break;
@@ -1326,7 +1328,7 @@ beach:
 #else
 
 R_API int r_core_rtr_cmds(RCore *core, const char *port) {
-	unsigned char buf[4097];
+	ut8 buf[4097];
 	RSocket *ch = NULL;
 	int i, ret;
 	char *str;

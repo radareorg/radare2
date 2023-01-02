@@ -135,8 +135,6 @@ static ut64 iterate_rebase_list(RBuffer *cache_buf, ut64 multiplier, ut64 start_
 static ut64 r_rebase_offset_to_paddr(RKernelCacheObj *obj, struct section_t *sections, ut64 offset);
 static void swizzle_io_read(RKernelCacheObj *obj, RIO *io);
 static int kernelcache_io_read(RIO *io, RIODesc *fd, ut8 *buf, int count);
-static bool r_parse_pointer(RParsedPointer *ptr, ut64 decorated_addr, RKernelCacheObj *obj);
-static bool on_rebase_pointer(ut64 offset, ut64 decorated_addr, RRebaseCtx *ctx);
 static void rebase_buffer(RKernelCacheObj *obj, ut64 off, RIODesc *fd, ut8 *buf, int count);
 static void rebase_buffer_fixup(RKernelCacheObj *kobj, ut64 off, RIODesc *fd, ut8 *buf, int count);
 
@@ -161,8 +159,7 @@ static struct MACH0_(obj_t) *create_kext_mach0(RKernelCacheObj *obj, RKext *kext
 static struct MACH0_(obj_t) *create_kext_shared_mach0(RKernelCacheObj *obj, RKext *kext, RBinFile *bf);
 
 #define r_kext_index_foreach(index, i, item)\
-	if (index)\
-		for (i = 0; i < index->length && (item = index->entries[i], 1); i++)
+	if (index) for (i = 0; i < index->length && (item = index->entries[i], 1); i++)
 
 static RKextIndex *r_kext_index_new(RList *kexts);
 static void r_kext_index_free(RKextIndex *index);
@@ -201,8 +198,11 @@ static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadadd
 		goto beach;
 	}
 
+	bool is_modern = main_mach0->hdr.filetype == MH_FILESET ||
+		(main_mach0->hdr.cputype == CPU_TYPE_ARM64 && main_mach0->hdr.cpusubtype  == 0xc0000002);
+
 	RCFValueDict *prelink_info = NULL;
-	if (main_mach0->hdr.filetype != MH_FILESET && prelink_range->range.size) {
+	if (!is_modern && prelink_range->range.size) {
 		prelink_info = r_cf_value_dict_parse (fbuf, prelink_range->range.offset,
 				prelink_range->range.size, R_CF_OPTION_SKIP_NSDATA);
 		if (!prelink_info) {
@@ -246,6 +246,26 @@ beach:
 	r_buf_free (fbuf);
 	MACH0_(mach0_free) (main_mach0);
 	return false;
+}
+
+static void r_ptr_undecorate(RParsedPointer *ptr, ut64 decorated_addr, RKernelCacheObj *obj) {
+	/*
+	 * Logic taken from:
+	 * https://github.com/Synacktiv/kernelcache-laundering/blob/master/ios12_kernel_cache_helper.py
+	 */
+
+	if ((decorated_addr & 0x4000000000000000LL) == 0 && obj->rebase_info) {
+		if (decorated_addr & 0x8000000000000000LL) {
+			ptr->address = obj->rebase_info->kernel_base + (decorated_addr & 0xFFFFFFFFLL);
+		} else {
+			ptr->address = ((decorated_addr << 13) & 0xFF00000000000000LL) | (decorated_addr & 0x7ffffffffffLL);
+			if (decorated_addr & 0x40000000000LL) {
+				ptr->address |= 0xfffc0000000000LL;
+			}
+		}
+	} else {
+		ptr->address = decorated_addr;
+	}
 }
 
 static void ensure_kexts_initialized(RKernelCacheObj *obj, RBinFile *bf) {
@@ -454,7 +474,7 @@ static RList *filter_kexts(RKernelCacheObj *obj, RBinFile *bf) {
 
 static ut64 p_ptr(ut64 decorated_addr, RKernelCacheObj *obj) {
 	RParsedPointer ptr;
-	r_parse_pointer (&ptr, decorated_addr, obj);
+	r_ptr_undecorate (&ptr, decorated_addr, obj);
 	return ptr.address;
 }
 
@@ -815,7 +835,7 @@ static struct MACH0_(obj_t) *create_kext_shared_mach0(RKernelCacheObj *obj, RKex
 	opts.verbose = false;
 	opts.header_at = kext->range.offset;
 	struct MACH0_(obj_t) *mach0 = MACH0_(new_buf) (buf, &opts);
-	r_buf_free (buf);
+	// RESULTS IN UAF we should ref and unref instead r_buf_free (buf);
 	return mach0;
 }
 
@@ -1750,23 +1770,22 @@ static RStubsInfo *get_stubs_info(struct MACH0_(obj_t) *mach0, ut64 paddr, RKern
 }
 
 static RBinInfo *info(RBinFile *bf) {
-	RBinInfo *ret = NULL;
 	bool big_endian = 0;
-	if (!(ret = R_NEW0 (RBinInfo))) {
-		return NULL;
+	RBinInfo *ret = R_NEW0 (RBinInfo);
+	if (ret) {
+		ret->file = strdup (bf->file);
+		ret->bclass = strdup ("kernelcache");
+		ret->rclass = strdup ("ios");
+		ret->os = strdup ("iOS");
+		ret->arch = strdup ("arm"); // XXX
+		ret->machine = strdup (ret->arch);
+		ret->subsystem = strdup ("xnu");
+		ret->type = strdup ("kernel-cache");
+		ret->bits = 64;
+		ret->has_va = true;
+		ret->big_endian = big_endian;
+		ret->dbg_info = 0;
 	}
-	ret->file = strdup (bf->file);
-	ret->bclass = strdup ("kernelcache");
-	ret->rclass = strdup ("ios");
-	ret->os = strdup ("iOS");
-	ret->arch = strdup ("arm"); // XXX
-	ret->machine = strdup (ret->arch);
-	ret->subsystem = strdup ("xnu");
-	ret->type = strdup ("kernel-cache");
-	ret->bits = 64;
-	ret->has_va = true;
-	ret->big_endian = big_endian;
-	ret->dbg_info = 0;
 	return ret;
 }
 
@@ -1774,7 +1793,6 @@ static ut64 baddr(RBinFile *bf) {
 	if (!bf || !bf->o || !bf->o->bin_obj) {
 		return 8LL;
 	}
-
 	RKernelCacheObj *obj = (RKernelCacheObj*) bf->o->bin_obj;
 	return MACH0_(get_baddr)(obj->mach0);
 }
@@ -1818,9 +1836,8 @@ static void r_kernel_cache_free(RKernelCacheObj *obj) {
 }
 
 static RRebaseInfo *r_rebase_info_new_from_mach0(RBuffer *cache_buf, struct MACH0_(obj_t) *mach0) {
-	RFileRange *rebase_ranges = NULL;
-	struct section_t *sections = NULL;
-	if (!(sections = MACH0_(get_sections) (mach0))) {
+	struct section_t *sections = MACH0_(get_sections) (mach0);
+	if (!sections) {
 		return NULL;
 	}
 
@@ -1859,8 +1876,8 @@ static RRebaseInfo *r_rebase_info_new_from_mach0(RBuffer *cache_buf, struct MACH
 	if (n_starts <= 1) {
 		return NULL;
 	}
-	rebase_ranges = R_NEWS0 (RFileRange, n_starts - 1);
-	if (rebase_ranges == NULL) {
+	RFileRange *rebase_ranges = R_NEWS0 (RFileRange, n_starts - 1);
+	if (!rebase_ranges) {
 		return NULL;
 	}
 
@@ -1868,7 +1885,7 @@ static RRebaseInfo *r_rebase_info_new_from_mach0(RBuffer *cache_buf, struct MACH
 	for (i = 0; i != n_starts; i++) {
 		ut8 bytes[4];
 		if (r_buf_read_at (cache_buf, starts_offset + i * 4, bytes, 4) < 4) {
-			goto beach;
+			break;
 		}
 
 		if (i == 0) {
@@ -1879,35 +1896,25 @@ static RRebaseInfo *r_rebase_info_new_from_mach0(RBuffer *cache_buf, struct MACH
 		rebase_ranges[i - 1].offset = r_read_le32 (bytes);
 		rebase_ranges[i - 1].size = UT64_MAX;
 	}
-
-	RRebaseInfo *rebase_info = R_NEW0 (RRebaseInfo);
-	if (rebase_info == NULL) {
-		goto beach;
+	if (i == n_starts) {
+		RRebaseInfo *rebase_info = R_NEW0 (RRebaseInfo);
+		if (rebase_info) {
+			rebase_info->ranges = rebase_ranges;
+			rebase_info->n_ranges = n_starts - 1;
+			rebase_info->multiplier = multiplier;
+			rebase_info->kernel_base = kernel_base;
+			return rebase_info;
+		}
 	}
-	rebase_info->ranges = rebase_ranges;
-	rebase_info->n_ranges = n_starts - 1;
-	rebase_info->multiplier = multiplier;
-	rebase_info->kernel_base = kernel_base;
-
-	return rebase_info;
-
-beach:
-
 	R_FREE (rebase_ranges);
 	return NULL;
 }
 
 static void r_rebase_info_free(RRebaseInfo *info) {
-	if (!info) {
-		return;
+	if (info) {
+		free (info->ranges);
+		free (info);
 	}
-
-	if (info->ranges) {
-		R_FREE (info->ranges);
-		info->ranges = NULL;
-	}
-
-	R_FREE (info);
 }
 
 static void r_rebase_info_populate(RRebaseInfo *info, RKernelCacheObj *obj) {
@@ -2074,6 +2081,26 @@ static int kernelcache_io_read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 	return result;
 }
 
+static bool on_rebase_pointer(ut64 offset, ut64 decorated_addr, RRebaseCtx *ctx) {
+	if (offset < ctx->off) {
+		return true;
+	}
+	if (offset >= ctx->eob) {
+		return false;
+	}
+	ut64 in_buf = offset - ctx->off;
+	if (in_buf >= ctx->count || (in_buf + 8) > ctx->count) {
+		return false;
+	}
+
+	RParsedPointer ptr;
+	r_ptr_undecorate (&ptr, decorated_addr, ctx->obj);
+
+	r_write_le64 (&ctx->buf[in_buf], ptr.address);
+
+	return true;
+}
+
 static void rebase_buffer(RKernelCacheObj *obj, ut64 off, RIODesc *fd, ut8 *buf, int count) {
 	if (obj->rebasing_buffer || !buf) {
 		return;
@@ -2193,48 +2220,6 @@ static void rebase_buffer_fixup(RKernelCacheObj *kobj, ut64 off, RIODesc *fd, ut
 		}
 	}
 	kobj->rebasing_buffer = false;
-}
-
-static bool on_rebase_pointer(ut64 offset, ut64 decorated_addr, RRebaseCtx *ctx) {
-	if (offset < ctx->off) {
-		return true;
-	}
-	if (offset >= ctx->eob) {
-		return false;
-	}
-	ut64 in_buf = offset - ctx->off;
-	if (in_buf >= ctx->count || (in_buf + 8) > ctx->count) {
-		return false;
-	}
-
-	RParsedPointer ptr;
-	r_parse_pointer (&ptr, decorated_addr, ctx->obj);
-
-	r_write_le64 (&ctx->buf[in_buf], ptr.address);
-
-	return true;
-}
-
-static bool r_parse_pointer(RParsedPointer *ptr, ut64 decorated_addr, RKernelCacheObj *obj) {
-	/*
-	 * Logic taken from:
-	 * https://github.com/Synacktiv/kernelcache-laundering/blob/master/ios12_kernel_cache_helper.py
-	 */
-
-	if ((decorated_addr & 0x4000000000000000LL) == 0 && obj->rebase_info) {
-		if (decorated_addr & 0x8000000000000000LL) {
-			ptr->address = obj->rebase_info->kernel_base + (decorated_addr & 0xFFFFFFFFLL);
-		} else {
-			ptr->address = ((decorated_addr << 13) & 0xFF00000000000000LL) | (decorated_addr & 0x7ffffffffffLL);
-			if (decorated_addr & 0x40000000000LL) {
-				ptr->address |= 0xfffc0000000000LL;
-			}
-		}
-	} else {
-		ptr->address = decorated_addr;
-	}
-
-	return true;
 }
 
 RBinPlugin r_bin_plugin_xnu_kernelcache = {

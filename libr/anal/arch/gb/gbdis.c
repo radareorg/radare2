@@ -217,7 +217,7 @@ static void gbDisass(RAnalOp *op, const ut8 *buf) {
 		op->mnemonic = r_str_newf (gb_op[buf[0]].name, buf[1] + 0x100 * buf[2]);
 		break;
 	case GB_8BIT + ARG_8 + GB_IO:
-		gb_hardware_register_name (reg, buf[1]);	//XXX
+		gb_hardware_register_name (reg, buf[1]); // XXX
 		op->mnemonic = r_str_newf (gb_op[buf[0]].name, reg);
 		break;
 	default:

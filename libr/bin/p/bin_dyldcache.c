@@ -6,7 +6,6 @@
 #include <r_bin.h>
 #include <r_core.h>
 #include <r_io.h>
-#include <ht_pu.h>
 // #include "../format/mach0/mach0_defines.h"
 #define R_BIN_MACH064 1
 #include "../format/mach0/mach0.h"
@@ -987,16 +986,18 @@ static cache_imgxtr_t *read_cache_imgextra(RBuffer *cache_buf, cache_hdr_t *hdr,
 
 static char *get_lib_name(RBuffer *cache_buf, cache_img_t *img) {
 	char file[256];
-	char *lib_name = file;
+	const char *lib_name = file;
 	if (r_buf_read_at (cache_buf, img->pathFileOffset, (ut8*) &file, sizeof (file)) == sizeof (file)) {
-		file[255] = 0;
-		/*char * last_slash = strrchr (file, '/');
+		file[sizeof (file) - 1] = 0; // wtf
+#if 0
+		char * last_slash = strrchr (file, '/');
 		if (last_slash && *last_slash) {
 			lib_name = last_slash + 1;
-		}*/
+		}
+#endif
 		return strdup (lib_name);
 	}
-	return strdup ("FAIL");
+	return strdup ("FAIL"); /// XXX return NULL instead
 }
 
 static int string_contains(const void *a, const void *b) {
@@ -1101,7 +1102,7 @@ static ut64 resolve_symbols_off(RDyldCache *cache, ut64 pa) {
 			return 0;
 		}
 		ut32 cmdsize = r_buf_read_le32_at (cache->buf, cursor + sizeof (ut32));
-		if (cmdsize == UT32_MAX) {
+		if (cmdsize == UT32_MAX || cmdsize < 1) {
 			return 0;
 		}
 		if (cmd == LC_SEGMENT || cmd == LC_SEGMENT_64) {
@@ -1684,13 +1685,18 @@ static void populate_cache_maps(RDyldCache *cache) {
 	r_return_if_fail (cache && cache->buf);
 
 	ut32 i;
-	ut32 n_maps = 0;
+	size_t n_maps = 0;
 	for (i = 0; i < cache->n_hdr; i++) {
 		cache_hdr_t *hdr = &cache->hdr[i];
 		if (!hdr->mappingCount || !hdr->mappingOffset) {
 			continue;
 		}
 		n_maps += hdr->mappingCount;
+	}
+
+	if (n_maps > (r_buf_size (cache->buf) / 4)) {
+		R_LOG_WARN ("Invalid n_maps (%d)", (int)n_maps);
+		return;
 	}
 
 	cache_map_t *maps = NULL;

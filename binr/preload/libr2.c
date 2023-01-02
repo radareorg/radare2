@@ -2,13 +2,13 @@
 
 #include <r_core.h>
 
-#if __WINDOWS__
+#if R2__WINDOWS__
 #include <windows.h>
 #endif
 
 static RCore *core = NULL;
 
-#if __UNIX__
+#if R2__UNIX__
 
 // XXX check if its already opened
 static RCoreFile *openself(void) {
@@ -54,7 +54,7 @@ static void _libwrap_init(void) {
 	// TODO: maybe reopen every time a signal is spawned to reload memory regions information
 	// TODO: open io_self
 }
-#elif __WINDOWS__
+#elif R2__WINDOWS__
 void alloc_console(void) {
 	CONSOLE_SCREEN_BUFFER_INFO coninfo;
 	HANDLE hStdin = GetStdHandle (STD_INPUT_HANDLE);

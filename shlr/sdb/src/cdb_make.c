@@ -1,27 +1,36 @@
 /* Public domain. */
 
-#include "sdb.h"
-#include "cdb.h"
-#include "cdb_make.h"
+#include "sdb/sdb.h"
+#include "sdb/cdb.h"
+#include "sdb/cdb_make.h"
 
 #define ALIGNMENT sizeof (void*)
+#define USE_GHA 1
 
-char *cdb_alloc(ut32 n) {
+static char *cdb_alloc(ut32 n) {
+#if USE_GHA
+	return (char *)sdb_gh_malloc (n);
+#else
 #if __APPLE__ && !__POWERPC__
 	void *ret = NULL;
 	return (char *)(posix_memalign (&ret, ALIGNMENT, n)? NULL: ret);
 #elif __SDB_WINDOWS__ && !__CYGWIN__
 	return (char *)_aligned_malloc (n, ALIGNMENT);
 #else
-	return (char *)malloc (n);
+	return (char *)sdb_gh_malloc (n);
+#endif
 #endif
 }
 
-void cdb_alloc_free(void *x) {
+static void cdb_alloc_free(void *x) {
+#if USE_GHA
+	sdb_gh_free (x);
+#else
 #if __SDB_WINDOWS__ && !__CYGWIN__
 	_aligned_free (x);
 #else
-	free (x);
+	sdb_gh_free (x);
+#endif
 #endif
 }
 
@@ -50,12 +59,12 @@ static inline int incpos(struct cdb_make *c, ut32 len) {
 	return 1;
 }
 
-#define R_ANEW(x) (x*)cdb_alloc(sizeof(x))
 int cdb_make_addend(struct cdb_make *c, ut32 keylen, ut32 datalen, ut32 h) {
 	ut32 u;
 	struct cdb_hplist *head = c->head;
 	if (!head || (head->num >= CDB_HPLIST)) {
-		if (!(head = R_ANEW (struct cdb_hplist))) {
+		head = (struct cdb_hplist*)cdb_alloc (sizeof (struct cdb_hplist));
+		if (!head) {
 			return 0;
 		}
 		head->num = 0;

@@ -17,7 +17,7 @@ static int msp430_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int le
 	op->family = R_ANAL_OP_FAMILY_CPU;
 
 	int ret = op->size = msp430_decode_command (buf, len, &cmd);
-	if (mask & R_ANAL_OP_MASK_DISASM) {
+	if (mask & R_ARCH_OP_MASK_DISASM) {
 		if (ret < 1) {
 			op->mnemonic = strdup ("invalid");
 		} else if (ret > 0) {
@@ -27,7 +27,7 @@ static int msp430_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int le
 				op->mnemonic = strdup (cmd.instr);
 			}
 		}
-		{ // if (a->syntax != R_ASM_SYNTAX_ATT)
+		{ // if (a->syntax != R_ARCH_SYNTAX_ATT)
 			char *ba = op->mnemonic;
 			r_str_replace_ch (ba, '#', 0, 1);
 			// r_str_replace_ch (ba, "$", "$$", 1);

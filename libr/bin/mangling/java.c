@@ -6,23 +6,20 @@
 R_API char *r_bin_demangle_java(const char *str) {
 	const char *w = NULL;
 	int is_array = 0;
-	const char *ptr;
 	int is_ret = 0;
 	int wlen = 0;
-	RBuffer *buf;
 	int n = 0;
-	char *ret;
 
-	ptr = strchr (str, '(');
+	const char *ptr = strchr (str, '(');
 	if (!ptr) {
 		return NULL;
 	}
-	buf = r_buf_new ();
-	if (!buf) {
+	RStrBuf *sb = r_strbuf_new ("");
+	if (!sb) {
 		return NULL;
 	}
-	r_buf_append_bytes (buf, (const ut8*)str, (int)(size_t)(ptr-str));
-	r_buf_append_bytes (buf, (const ut8*)" (", 2);
+	r_strbuf_append_n (sb, str, (int)(size_t)(ptr - str));
+	r_strbuf_append (sb, " (");
 	while (*str) {
 		switch (*str) {
 		case ')':
@@ -36,7 +33,7 @@ R_API char *r_bin_demangle_java(const char *str) {
 			ptr = strchr (str, ';');
 			if (ptr) {
 				w = str;
-				wlen = (int)(size_t)(ptr-str);
+				wlen = (int)(size_t)(ptr - str);
 			}
 			str = ptr;
 			break;
@@ -52,18 +49,18 @@ R_API char *r_bin_demangle_java(const char *str) {
 		}
 		if (w) {
 			if (is_ret) {
-				r_buf_prepend_bytes (buf, (const ut8*)" ", 1);
-				r_buf_prepend_bytes (buf, (const ut8*)w, wlen);
-				r_buf_append_bytes (buf, (const ut8*)")", 1);
+				r_strbuf_append (sb, " ");
+				r_strbuf_append_n (sb, w, wlen);
+				r_strbuf_append (sb, ")");
 				break;
 			} else {
 				if (n++ > 0) {
-					r_buf_append_bytes (buf, (const ut8 *)", ", 2);
+					r_strbuf_append (sb, ", ");
 				}
-				r_buf_append_bytes (buf, (const ut8*)w, wlen);
+				r_strbuf_append_n (sb, w, wlen);
 			}
 			if (is_array) {
-				r_buf_append_bytes (buf, (const ut8*)"[]", 2);
+				r_strbuf_append (sb, "[]");
 				is_array = 0;
 			}
 		}
@@ -73,9 +70,7 @@ R_API char *r_bin_demangle_java(const char *str) {
 		}
 		str++;
 	}
-	ret = r_buf_to_string (buf);
-	r_buf_free (buf);
-	return ret;
+	return r_strbuf_drain (sb);
 }
 
 

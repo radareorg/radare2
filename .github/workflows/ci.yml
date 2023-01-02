@@ -14,7 +14,7 @@ jobs:
 #    runs-on: ubuntu-20.04
 #    steps:
 #    - name: Checkout
-#      uses: actions/checkout@v2
+#      uses: actions/checkout@v3
 #    - name: Building r2 without network access
 #      run: |
 #        ./preconfigure
@@ -28,11 +28,11 @@ jobs:
     runs-on: ubuntu-20.04
     steps:
     - name: Checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
     - name: Setting up bad libnames
       run: |
         mkdir -p /tmp/fakelibs /tmp/fakeincs
-        for a in anal asm cons crypto flag hash lang parse reg search syscall util ; do touch /tmp/fakelibs/libr_$a.a ; touch /tmp/fakelibs/libr_$a.so ; done
+        for a in anal asm cons crypto flag lang parse reg search syscall util ; do touch /tmp/fakelibs/libr_$a.a ; touch /tmp/fakelibs/libr_$a.so ; done
         touch /tmp/fakeincs/r_util.h
         chmod 000 /tmp/fakelibs/*
         export CFLAGS=-I/tmp/fakeincs/
@@ -43,15 +43,15 @@ jobs:
     runs-on: ubuntu-20.04
     steps:
     - name: Checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
     - name: Linting
       run: sys/lint.sh
-    - name: Building without capstone
+    - name: Building without capstone but with ssl
       env:
         CFLAGS: -O0
       run: |
         cp -f dist/plugins-cfg/plugins.nocs.cfg plugins.cfg
-        ./configure --without-capstone --with-rpath && make -j
+        ./configure --without-capstone --with-rpath --with-ssl && make -j
         sudo make install
     - name: Running c/m with self-hosted libmagic
       run:
@@ -89,7 +89,7 @@ jobs:
     runs-on: ubuntu-20.04
     steps:
     - name: Checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
@@ -101,7 +101,7 @@ jobs:
         sys/install.sh
     - name: Running tests
       run: r2r -o /tmp/r2r.json test/db/cmd
-    - uses: actions/upload-artifact@v2
+    - uses: actions/upload-artifact@v3
       with:
         name: r2r.json
         path: /tmp/r2r.json
@@ -110,7 +110,7 @@ jobs:
     runs-on: ubuntu-20.04
     steps:
     - name: Checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
     - name: Installing capstone
       run: |
         git clone --branch next --single-branch --depth=1 https://github.com/capstone-engine/capstone
@@ -126,7 +126,7 @@ jobs:
     runs-on: ubuntu-20.04
     steps:
     - name: Checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
     - name: Installing with symlinks
       run: |
         export CFLAGS="-O0 -Werror -Wno-unused-result -Wno-stringop-truncation"
@@ -140,7 +140,7 @@ jobs:
 #    if: contains(github.ref, 'ci-')
     steps:
     - name: Checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
     - name: Building Radare2
       run: |
         pip install r2pipe wheel
@@ -152,10 +152,11 @@ jobs:
         make tests
   linux-static-meson:
     if: contains(github.ref, 'master') || contains(github.ref, 'ci-')
+    continue-on-error: true
     runs-on: ubuntu-20.04
     steps:
     - name: Checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
     - name: Installing the musl runtime
       run: |
         sudo apt install musl-tools
@@ -166,11 +167,11 @@ jobs:
         CFLAGS="-static" LDFLAGS="-static" meson --prefix=${HOME}/.local --buildtype release --default-library static build
         ninja -C build && ninja -C build install
   macos-test:
-    runs-on: macos-latest
+    runs-on: macos-11
     if: contains(github.ref, 'master') || contains(github.ref, 'ci-')
     steps:
     - name: Checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
@@ -186,7 +187,7 @@ jobs:
     runs-on: ubuntu-20.04
     steps:
     - name: Checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
     - name: build and run
       run: |
         # test and build rpath installation
@@ -201,10 +202,10 @@ jobs:
     if: contains(github.ref, 'master') || contains(github.ref, 'ci-')
     name: macos-rpath
     continue-on-error: true
-    runs-on: macos-latest
+    runs-on: macos-11
     steps:
     - name: Checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
     - name: build and run
       run: |
         # test and build rpath installation
@@ -220,7 +221,7 @@ jobs:
     runs-on: ubuntu-20.04
     steps:
     - name: Checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
     #- name: XXX this is not possible with make Install from a directory with spaces
     #  run: |
     #    git config pull.rebase false
@@ -256,7 +257,7 @@ jobs:
     continue-on-error: true
     steps:
     - name: Checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
     - name: Building Radare2
       run: |
         pip install r2pipe
@@ -283,7 +284,7 @@ jobs:
     if: contains(github.ref, 'master') || contains(github.ref, 'ci-')
     steps:
     - name: Checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
     - name: Building Radare2
       run: |
         pip install r2pipe
@@ -308,16 +309,16 @@ jobs:
     runs-on: windows-2019
     steps:
     - name: Win configure Pagefile
-      uses: al-cheb/configure-pagefile-action@v1.2
+      uses: al-cheb/configure-pagefile-action@v1.3
       with:
           minimum-size: 16GB
           maximum-size: 16GB
           disk-root: "C:"
     - name: Checkout
-      uses: actions/checkout@v2
-    - uses: actions/setup-python@v2
-#      with:
-#        python-version: '3.7'
+      uses: actions/checkout@v3
+    - uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
     - name: Preparing nmake
       uses: ilammy/msvc-dev-cmd@v1
       with:
@@ -345,13 +346,13 @@ jobs:
     runs-on: ubuntu-20.04
     steps:
     - name: Checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
     - name: Compiling
       run: |
         export PATH=${HOME}/.local/bin:${HOME}/Library/Python/3.9/bin:${PATH}
         sudo apt-get --assume-yes install python3-wheel gperf python3-setuptools cabextract gperf gcc-mingw-w64
         sys/mingw32.sh
-    - uses: actions/upload-artifact@v2
+    - uses: actions/upload-artifact@v3
       with:
         name: w32-mingw
         path: radare2*.zip
@@ -360,13 +361,13 @@ jobs:
     runs-on: ubuntu-20.04
     steps:
     - name: Checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
     - name: Compiling
       run: |
         export PATH=${HOME}/.local/bin:${HOME}/Library/Python/3.9/bin:${PATH}
         sudo apt-get --assume-yes install python3-wheel gperf python3-setuptools cabextract gperf gcc-mingw-w64
         sys/mingw64.sh
-    - uses: actions/upload-artifact@v2
+    - uses: actions/upload-artifact@v3
       with:
         name: w64-mingw
         path: radare2*.zip

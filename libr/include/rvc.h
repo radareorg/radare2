@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2021 - RHL120, pancake */
+/* radare - LGPL - Copyright 2021-2022 - RHL120, pancake */
 
 #ifndef R_RVC_H
 #define R_RVC_H 1
@@ -8,39 +8,84 @@
 extern "C" {
 #endif
 
-#include <r_core.h>
-#include <sdb.h>
-typedef struct RvcBlob_t {
+#include <r_util.h>
+#include <sdb/sdb.h>
+
+typedef struct r_vc_blob_t {
 	char *fname;
 	char *fhash;
 } RvcBlob;
 
-R_API Rvc *r_vc_git_init(const char *path);
-R_API bool r_vc_git_branch(const char *path, const char *name);
-R_API bool r_vc_git_checkout(const char *path, const char *name);
-R_API bool r_vc_git_add(const char *path, const char *fname);
-R_API bool r_vc_git_commit(const char *path, const char *message);
-R_API Rvc *r_vc_git_open(const char *path);
+typedef enum r_vc_type_t {
+	RVC_TYPE_RVC,
+	RVC_TYPE_GIT,
+	RVC_TYPE_ANY,
+	RVC_TYPE_INV
+} RvcType;
 
-R_API bool r_vc_commit(Rvc *rvc, const char *message, const char *author, const RList *files);
-R_API bool r_vc_branch(Rvc *rvc, const char *bname);
+typedef struct r_vc_t {
+	char *path;
+	Sdb *db;
+	const struct rvc_plugin_t *p;
+} Rvc;
+
+typedef bool (*RvcPluginBranch)(struct r_vc_t *rvc, const char *bname);
+typedef bool (*RvcPluginCommit)(struct r_vc_t *rvc, const char *message, const char *author, const RList *files);
+typedef bool (*RvcPluginCheckout)(struct r_vc_t *rvc, const char *bname);
+typedef RList *(*RvcPluginBranches)(struct r_vc_t *rvc);
+typedef void (*RvcPluginClose)(struct r_vc_t *vc, bool save);
+typedef char *(*RvcPluginCurrentBranch)(struct r_vc_t *rvc);
+typedef bool (*RvcPluginPrintCommits) (struct r_vc_t *rvc);
+typedef RList *(*RvcPluginUncommited) (struct r_vc_t *rvc);
+typedef bool (*RvcPluginReset)(struct r_vc_t *rvc);
+typedef bool (*RvcPluginClone)(const struct r_vc_t *rvc, const char *dst);
+typedef bool (*RvcPluginSave)(struct r_vc_t *vc);
+typedef Rvc *(*RvcPluginOpen)(const char *path);
+
+typedef struct rvc_plugin_t {
+	const char *const name;
+	const char *const author;
+	const char *const desc;
+	const char *const license;
+	RvcType type;
+	RvcPluginCommit commit;
+	RvcPluginCheckout checkout;
+	RvcPluginBranch branch;
+	RvcPluginBranches branches;
+	RvcPluginCurrentBranch curbranch;
+	RvcPluginUncommited uncommited;
+	RvcPluginPrintCommits log;
+	RvcPluginReset reset;
+	RvcPluginClone clone;
+	RvcPluginClose close;
+	RvcPluginSave save;
+	RvcPluginOpen open;
+} RvcPlugin;
+
+R_API Rvc *rvc_open(const char *rp, RvcType type);
+R_API void rvc_close(Rvc *vc, bool save);
+R_API bool rvc_save(Rvc *vc);
+R_API void rvc_free(Rvc *vc);
+
+R_API RList *rvc_branches(Rvc *vc);
+
+R_API bool rvc_commit(Rvc *rvc, const char *message, const char *author, const RList *files);
+R_API bool rvc_branch(Rvc *rvc, const char *bname);
 R_API Rvc *r_vc_new(const char *path);
 R_API bool r_vc_checkout(Rvc *rvc, const char *bname);
-R_API RList *r_vc_get_branches(Rvc *rvc);
 R_API RList *r_vc_get_uncommitted(Rvc *rvc);
-R_API RList *r_vc_log(Rvc *rvc);
+R_API bool r_vc_log(Rvc *rvc);
 R_API char *r_vc_current_branch(Rvc *rvc);
 R_API bool r_vc_reset(Rvc *rvc);
-R_API bool r_vc_clone(const char *src, const char *dst);
-R_API Rvc *r_vc_open(const char *rp);
-R_API void r_vc_close(Rvc *vc, bool save);
-R_API bool r_vc_save(Rvc *vc);
+R_API bool r_vc_clone(const Rvc *rvc, const char *dst);
 
-R_API Rvc *rvc_git_init(const RCore *core, const char *path);
-R_API bool rvc_git_commit(RCore *core, Rvc *rvc, const char *message, const char *author, const RList *files);
-R_API bool rvc_git_branch(Rvc *rvc, const char *bname);
-R_API bool rvc_git_checkout(const RCore *core, Rvc *rvc, const char *bname);
-R_API bool rvc_git_repo_exists(const RCore *core, const char *path);
+R_API Rvc *rvc_git_init(const char *path);
+R_API Rvc *rvc_git_open(const char *path);
+R_API bool rvc_use(Rvc *vc, RvcType);
+R_API bool rvc_checkout(Rvc *vc, const char *bname);
+R_API bool rvc_git_commit(Rvc *rvc, const char *message, const char *author, const RList *files);
+R_API void rvc_git_close(struct r_vc_t *vc, bool save);
+R_API RList *rvc_git_get_branches(Rvc *rvc);
 
 #ifdef __cplusplus
 }

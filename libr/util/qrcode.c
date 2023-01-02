@@ -994,7 +994,7 @@ static void setModuleBounded(ut8 qrcode[], int x, int y, bool isBlack) {
 static char qrcode_utf8_expansions[16][7] = { "  ","▀ "," ▀","▀▀",
 											  "▄ ","█ ","▄▀","█▀",
 											  " ▄","▀▄"," █","▀█",
-											  "▄▄","█▄","▄█","██"};
+											  "▄▄","█▄","▄█","██" };
 
 R_API char *r_qrcode_gen(const ut8 *text, int len, bool utf8, bool inverted) {
 	uint8_t qrcode[qrcodegen_BUFFER_LEN_MAX] = {

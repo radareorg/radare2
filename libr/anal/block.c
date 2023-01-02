@@ -2,9 +2,21 @@
 
 #include <r_anal.h>
 #include <r_hash.h>
-#include <ht_uu.h>
 
 #define unwrap(rbnode) container_of (rbnode, RAnalBlock, _rb)
+
+// rename to instr_at
+R_API ut64 r_anal_block_ninstr(RAnalBlock *block, int pos) {
+	r_return_val_if_fail (block, UT64_MAX);
+	if (pos < 1) {
+		return block->addr;
+	}
+	if (pos > block->ninstr) {
+		return UT64_MAX;
+	}
+	// ensure pos is > 0 because first check is pos < 1
+	return block->addr + block->op_pos[pos - 1];
+}
 
 static void __max_end(RBNode *node) {
 	RAnalBlock *block = unwrap (node);
@@ -181,11 +193,14 @@ R_API RAnalBlock *r_anal_create_block(RAnal *anal, ut64 addr, ut64 size) {
 	if (r_anal_get_block_at (anal, addr)) {
 		return NULL;
 	}
+	R_CRITICAL_ENTER (anal);
 	RAnalBlock *block = block_new (anal, addr, size);
 	if (!block) {
+		R_CRITICAL_LEAVE (anal);
 		return NULL;
 	}
 	r_rbtree_aug_insert (&anal->bb_tree, &block->addr, &block->_rb, __bb_addr_cmp, NULL, __max_end);
+	R_CRITICAL_LEAVE (anal);
 	return block;
 }
 
@@ -755,6 +770,9 @@ beach:
 
 R_API bool r_anal_block_was_modified(RAnalBlock *block) {
 	r_return_val_if_fail (block, false);
+	if (!block->bbhash) {
+		return false;
+	}
 	if (!block->anal->iob.read_at) {
 		return false;
 	}
@@ -868,7 +886,7 @@ R_API RAnalBlock *r_anal_block_chop_noreturn(RAnalBlock *block, ut64 addr) {
 	RListIter *it;
 	RAnalFunction *fcn;
 	// We need to clone the list because block->fcns will get modified in the loop
-	RList *fcns_cpy = r_list_clone (block->fcns);
+	RList *fcns_cpy = r_list_clone (block->fcns, NULL);
 	r_list_foreach (fcns_cpy, it, fcn) {
 		RAnalBlock *entry = r_anal_get_block_at (block->anal, fcn->addr);
 		if (entry && r_list_contains (entry->fcns, fcn)) {

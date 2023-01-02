@@ -1,17 +1,23 @@
 NAME=offs390 bininfo
 FILE=bins/s390/zos/prueba/prueba
 CMDS=<<EOF
+-a
+aia
+?e --
 i
 EOF
 EXPECT=<<EOF
+s390
+minopsz 2
+maxopsz 6
+invopsz 2
+dtalign 1
+pcalign 1
+--
 fd       3
 file     bins/s390/zos/prueba/prueba
 size     0x11000
 humansz  68K
-minopsz  2
-maxopsz  6
-invopsz  2
-pcalign  1
 mode     r-x
 format   off
 iorw     false
@@ -65,7 +71,7 @@ EXPECT=<<EOF
         |   0x0000193c      58f0c31c       l r15, 0x31c(r12)
         |   0x00001940      184e           lr r4, r14
         |   0x00001942      05ef           balr r14, r15
-        |   0x00001944      0000           invalid
+        |   0x00001944      00             invalid
             ;-- entry0:
             ;-- hit0_0:
             0x00001928      47f0f024       b 36(%r15)
@@ -135,7 +141,7 @@ EXPECT=<<EOF
   {
     "opcode": "la r4, 8(r15)",
     "disasm": "la r4, 8(r15)",
-    "pseudo": "la r4, 8 (r15) ",
+    "pseudo": "la r4, 8 (r15)",
     "description": "Load Address",
     "mnemonic": "la",
     "mask": "ffffffff",

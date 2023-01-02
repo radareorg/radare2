@@ -32,40 +32,32 @@ static void xor_crypt(struct xor_state *const state, const ut8 *inbuf, ut8 *outb
 		outbuf[i] = inbuf[i] ^ state->key[(i%state->key_size)];
 	}
 }
-static bool xor_set_key(RCrypto *cry, const ut8 *key, int keylen, int mode, int direction) {
+static bool xor_set_key(RCryptoJob *cj, const ut8 *key, int keylen, int mode, int direction) {
 	return xor_init (&st, key, keylen);
 }
 
-static int xor_get_key_size(RCrypto *cry) {
+static int xor_get_key_size(RCryptoJob *cj) {
 	return st.key_size;
 }
 
-static bool xor_use(const char *algo) {
-	return !strcmp (algo, "xor");
-}
-
-static bool update(RCrypto *cry, const ut8 *buf, int len) {
+static bool update(RCryptoJob *cj, const ut8 *buf, int len) {
 	ut8 *obuf = calloc (1, len);
 	if (!obuf) {
 		return false;
 	}
 	xor_crypt (&st, buf, obuf, len);
-	r_crypto_append (cry, obuf, len);
+	r_crypto_job_append (cj, obuf, len);
 	free (obuf);
 	return true;
 }
 
-static bool final(RCrypto *cry, const ut8 *buf, int len) {
-	return update (cry, buf, len);
-}
-
 RCryptoPlugin r_crypto_plugin_xor = {
 	.name = "xor",
+	.implements = "xor",
 	.set_key = xor_set_key,
 	.get_key_size = xor_get_key_size,
-	.use = xor_use,
 	.update = update,
-	.final = final
+	.end = update
 };
 
 #ifndef R2_PLUGIN_INCORE

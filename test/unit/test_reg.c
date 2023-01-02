@@ -148,20 +148,20 @@ bool test_r_reg_get(void) {
 	bool success = r_reg_set_profile_string (reg,
 		"gpr	eax		.32	24	0\n\
 		fpu		sf0		.32	304	0\n\
-		xmm		xmm0	.64	160	4");
+		vec128		xmm0	.64	160	4"); // XXX xmm0 is 128 not .64
 	mu_assert_eq (success, true, "define eax, sf0 and xmm0 register");
 
 	r = r_reg_get (reg, "sf0", R_REG_TYPE_FPU);
 	mu_assert_streq (r->name, "sf0", "found sf0 as R_REG_TYPE_FPU");
 	mu_assert_eq (r->type, R_REG_TYPE_FPU, "sf0 type is R_REG_TYPE_FPU");
 
-	r = r_reg_get (reg, "xmm0", R_REG_TYPE_XMM);
-	mu_assert_streq (r->name, "xmm0", "found xmm0 as R_REG_TYPE_XMM");
-	mu_assert_eq (r->type, R_REG_TYPE_XMM, "xmm0 type is R_REG_TYPE_XMM");
+	r = r_reg_get (reg, "xmm0", R_REG_TYPE_VEC128);
+	mu_assert_streq (r->name, "xmm0", "found xmm0 as R_REG_TYPE_VEC128");
+	mu_assert_eq (r->type, R_REG_TYPE_VEC128, "xmm0 type is R_REG_TYPE_VEC128");
 
 	r = r_reg_get (reg, "xmm0", -1);
 	mu_assert_streq (r->name, "xmm0", "found xmm0");
-	mu_assert_eq (r->type, R_REG_TYPE_XMM, "xmm0 type is R_REG_TYPE_XMM");
+	mu_assert_eq (r->type, R_REG_TYPE_VEC128, "xmm0 type is R_REG_TYPE_VEC128");
 
 	r_reg_free (reg);
 	mu_end;
@@ -178,14 +178,14 @@ bool test_r_reg_get_list(void) {
 	bool success = r_reg_set_profile_string (reg,
 		"gpr		eax		.32	24	0\n\
 		fpu			sf0		.32	304	0\n\
-		xmm@fpu		xmm0	.64	160	4");
+		vec128@fpu		xmm0	.64	160	4");
 	mu_assert_eq (success, true, "define eax, sf0 and xmm0 register");
 
-	mask = ((int)1 << R_REG_TYPE_XMM);
+	mask = ((int)1 << R_REG_TYPE_VEC128);
 	mu_assert_eq ((reg->regset[R_REG_TYPE_FPU].maskregstype & mask), mask,
 		"xmm0 stored as R_REG_TYPE_FPU");
 
-	l = r_reg_get_list (reg, R_REG_TYPE_XMM);
+	l = r_reg_get_list (reg, R_REG_TYPE_VEC128);
 	mu_assert_eq (r_list_length (l), 2, "sf0 and xmm0 stored as R_REG_TYPE_FPU");
 
 	r_reg_free (reg);
@@ -193,22 +193,22 @@ bool test_r_reg_get_list(void) {
 }
 
 bool test_r_reg_get_pack(void) {
-	RReg *reg;
 	RRegItem *r;
 	ut64 value;
 
-	reg = r_reg_new ();
+	RReg *reg = r_reg_new ();
 	mu_assert_notnull (reg, "r_reg_new () failed");
 
+	/// XXX xmm0h and l should be of size 64 not 128!!
 	r_reg_set_profile_string (reg,
-		"xmm    xmm0	.128	0	16\n\
-		xmm    xmm0h	.64		0	8\n\
-		xmm    xmm0l	.64		8	8\n\
-		xmm    xmm1	.128	16	16\n\
-		xmm    xmm1h	.64		16	8\n\
-		xmm    xmm1l	.64		24	8");
+		"vec128    xmm0	.128	0	16\n\
+		vec128    xmm0h	.64		0	8\n\
+		vec128    xmm0l	.64		8	8\n\
+		vec128    xmm1	.128	16	16\n\
+		vec128    xmm1h	.64		16	8\n\
+		vec128    xmm1l	.64		24	8");
 
-	r = r_reg_get (reg, "xmm0", R_REG_TYPE_XMM);
+	r = r_reg_get (reg, "xmm0", R_REG_TYPE_VEC128);
 	r_reg_set_pack (reg, r, 0, 64, 0x0011223344556677);
 	value = r_reg_get_pack (reg, r, 0, 64);
 	mu_assert_eq (value, 0x0011223344556677,
@@ -223,9 +223,9 @@ bool test_r_reg_get_pack(void) {
 	mu_assert_eq (value, 0xdeadbeef,
 		"get xmm0 value at index 2 and bitsize 32");
 
-	r = r_reg_get (reg, "xmm1", R_REG_TYPE_XMM);
+	r = r_reg_get (reg, "xmm1", R_REG_TYPE_VEC128);
 	r_reg_set_pack (reg, r, 1, 64, 0x8899aabbccddeeff);
-	r = r_reg_get (reg, "xmm1l", R_REG_TYPE_XMM);
+	r = r_reg_get (reg, "xmm1l", R_REG_TYPE_VEC128);
 	value = r_reg_get_pack (reg, r, 0, 32);
 	mu_assert_eq (value, 0xccddeeff,
 		"get xmm1l value at index 0 and bitsize 32");

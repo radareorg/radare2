@@ -151,6 +151,7 @@ static const char *help_msg_tn[] = {
 	"Usage:", "tn [-][0xaddr|symname]", " manage no-return marks",
 	"tn[a]", " 0x3000", "stop function analysis if call/jmp to this address",
 	"tn[n]", " sym.imp.exit", "same as above but for flag/fcn names",
+	"tnf", "", "same as `afl,noret/eq/1`",
 	"tn-", " 0x3000 sym.imp.exit ...", "remove some no-return references",
 	"tn-*", "", "remove all no-return references",
 	"tn", "", "list them all",
@@ -366,11 +367,10 @@ static int cmd_tail(void *data, const char *_input) { // "tail"
 	char *input = strdup (_input);
 	RCore *core = (RCore *)data;
 	int lines = 5;
-	char *arg = strchr (input, ' ');
-	char *tmp, *count;
+	char *tmp, *arg = strchr (input, ' ');
 	if (arg) {
 		arg = (char *)r_str_trim_head_ro (arg + 1); 	// contains "count filename"
-		count = strchr (arg, ' ');
+		char *count = strchr (arg, ' ');
 		if (count) {
 			*count = 0;	// split the count and file name
 			tmp = (char *)r_str_trim_head_ro (count + 1);
@@ -428,6 +428,9 @@ static void cmd_type_noreturn(RCore *core, const char *input) {
 				r_anal_noreturn_add (core->anal, arg, UT64_MAX);
 			}
 		}
+		break;
+	case 'f': // "tnf"
+		r_core_cmd0 (core, "afl,noret/eq/1");
 		break;
 	case 'a': // "tna"
 		if (input[1] == ' ') {
@@ -663,7 +666,7 @@ static void printFunctionType(RCore *core, const char *input) {
 	}
 	pj_o (pj);
 	r_strf_buffer (64);
-	char *res = sdb_querys (TDB, NULL, -1, r_strf ("func.%s.args", input));
+	char *res = sdb_get (TDB, r_strf ("func.%s.args", input), NULL);
 	const char *name = r_str_trim_head_ro (input);
 	int i, args = sdb_num_get (TDB, r_strf ("func.%s.args", name), 0);
 	pj_ks (pj, "name", name);
@@ -688,11 +691,17 @@ static void printFunctionType(RCore *core, const char *input) {
 			pj_ks (pj, "name", "(null)");
 		}
 		pj_end (pj);
+		free (type);
 	}
 	pj_end (pj);
 	pj_end (pj);
-	r_cons_printf ("%s", pj_string (pj));
-	pj_free (pj);
+	char *s = pj_drain (pj);
+	if (R_STR_ISEMPTY (s)) {
+		r_cons_printf ("{}");
+	} else {
+		r_cons_printf ("%s,", s);
+	}
+	free (s);
 	free (res);
 }
 
@@ -773,24 +782,32 @@ static bool print_typelist_r_cb(void *p, const char *k, const char *v) {
 }
 
 static bool print_typelist_json_cb(void *p, const char *k, const char *v) {
+	r_return_val_if_fail (p && k, false);
 	RCore *core = (RCore *)p;
+	if (!v) {
+		v = "";
+	}
 	PJ *pj = pj_new ();
 	pj_o (pj);
 	Sdb *sdb = core->anal->sdb_types;
 	char *sizecmd = r_str_newf ("type.%s.size", k);
-	char *size_s = sdb_querys (sdb, NULL, -1, sizecmd);
+	char *size_s = sdb_get (sdb, sizecmd, NULL);
 	char *formatcmd = r_str_newf ("type.%s", k);
-	char *format_s = sdb_querys (sdb, NULL, -1, formatcmd);
-	r_str_trim (format_s);
-	pj_ks (pj, "type", k);
-	pj_ki (pj, "size", size_s ? atoi (size_s) : -1);
-	pj_ks (pj, "format", format_s);
-	pj_end (pj);
-	r_cons_printf ("%s", pj_string (pj));
+	char *format_s = sdb_get (sdb, formatcmd, NULL);
+	if (size_s && format_s) {
+		r_str_trim (format_s);
+		pj_ks (pj, "type", k);
+		pj_ki (pj, "size", size_s ? atoi (size_s) : -1);
+		pj_ks (pj, "format", format_s);
+		pj_end (pj);
+		r_cons_printf ("%s,", pj_string (pj));
+	} else {
+		R_LOG_DEBUG ("Internal sdb inconsistency for %s", sizecmd);
+	}
 	pj_free (pj);
 	free (size_s);
-	free (format_s);
 	free (sizecmd);
+	free (format_s);
 	free (formatcmd);
 	return true;
 }
@@ -799,24 +816,22 @@ static void print_keys(Sdb *TDB, RCore *core, SdbForeachCallback filter, SdbFore
 	SdbList *l = sdb_foreach_list_filter (TDB, filter, true);
 	SdbListIter *it;
 	SdbKv *kv;
-	const char *comma = "";
 
 	if (json) {
-		r_cons_printf ("[");
+		r_cons_print ("{\"types\":[");
 	}
 	ls_foreach (l, it, kv) {
 		const char *k = sdbkv_key (kv);
-		if (!k || !*k) {
+		const char *v = sdbkv_value (kv);
+		if (R_STR_ISEMPTY (k)) {
 			continue;
 		}
-		if (json) {
-			r_cons_printf ("%s", comma);
-			comma = ",";
+		if (v) {
+			printfn_cb (core, k, v);
 		}
-		printfn_cb (core, sdbkv_key (kv), sdbkv_value (kv));
 	}
 	if (json) {
-		r_cons_printf ("]\n");
+		r_cons_println ("{}]}\n");
 	}
 	ls_free (l);
 }
@@ -861,9 +876,10 @@ R_API int r_core_get_stacksz(RCore *core, ut64 from, ut64 to) {
 	const int mininstrsz = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_MIN_OP_SIZE);
 	const int minopcode = R_MAX (1, mininstrsz);
 	while (at < to) {
-		RAnalOp *op = r_core_anal_op (core, at, R_ANAL_OP_MASK_BASIC);
+		RAnalOp *op = r_core_anal_op (core, at, R_ARCH_OP_MASK_BASIC);
 		if (!op || op->size <= 0) {
 			at += minopcode;
+			r_anal_op_free (op);
 			continue;
 		}
 		if ((op->stackop == R_ANAL_STACK_INC) && R_ABS (op->stackptr) < 8096) {
@@ -912,7 +928,7 @@ R_API void r_core_link_stroff(RCore *core, RAnalFunction *fcn) {
 	const char *varpfx;
 	int dbg_follow = r_config_get_i (core->config, "dbg.follow");
 	Sdb *TDB = core->anal->sdb_types;
-	RAnalEsil *esil;
+	REsil *esil;
 	int iotrap = r_config_get_i (core->config, "esil.iotrap");
 	int stacksize = r_config_get_i (core->config, "esil.stack.depth");
 	unsigned int addrsize = r_config_get_i (core->config, "esil.addr.size");
@@ -923,10 +939,10 @@ R_API void r_core_link_stroff(RCore *core, RAnalFunction *fcn) {
 	if (!fcn) {
 		return;
 	}
-	if (!(esil = r_anal_esil_new (stacksize, iotrap, addrsize))) {
+	if (!(esil = r_esil_new (stacksize, iotrap, addrsize))) {
 		return;
 	}
-	r_anal_esil_setup (esil, core->anal, 0, 0, 0);
+	r_esil_setup (esil, core->anal, 0, 0, 0);
 	int i, ret, bsize = R_MAX (64, core->blocksize);
 	const int mininstrsz = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_MIN_OP_SIZE);
 	const int maxinstrsz = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_MAX_OP_SIZE);
@@ -934,7 +950,7 @@ R_API void r_core_link_stroff(RCore *core, RAnalFunction *fcn) {
 	ut8 *buf = malloc (bsize);
 	if (!buf) {
 		free (buf);
-		r_anal_esil_free (esil);
+		r_esil_free (esil);
 		return;
 	}
 	r_reg_arena_push (core->anal->reg);
@@ -977,7 +993,7 @@ R_API void r_core_link_stroff(RCore *core, RAnalFunction *fcn) {
 			if (!i) {
 				r_io_read_at (core->io, at, buf, bsize);
 			}
-			ret = r_anal_op (core->anal, &aop, at, buf + i, bsize - i, R_ANAL_OP_MASK_VAL);
+			ret = r_anal_op (core->anal, &aop, at, buf + i, bsize - i, R_ARCH_OP_MASK_VAL);
 			if (ret <= 0) {
 				i += minopcode;
 				at += minopcode;
@@ -990,18 +1006,20 @@ R_API void r_core_link_stroff(RCore *core, RAnalFunction *fcn) {
 			if (aop.ireg) {
 				index = r_reg_getv (esil->anal->reg, aop.ireg) * aop.scale;
 			}
-			int j, src_imm = -1, dst_imm = -1;
+			int src_imm = -1, dst_imm = -1;
 			ut64 src_addr = UT64_MAX;
 			ut64 dst_addr = UT64_MAX;
-			for (j = 0; j < 3; j++) {
-				if (aop.src[j] && aop.src[j]->reg && aop.src[j]->reg->name) {
-					src_addr = r_reg_getv (esil->anal->reg, aop.src[j]->reg->name) + index;
-					src_imm = aop.src[j]->delta;
+			RAnalValue *src = NULL;
+			r_vector_foreach (&aop.srcs, src) {
+				if (src && src->reg && src->reg->name) {
+					src_addr = r_reg_getv (esil->anal->reg, src->reg->name) + index;
+					src_imm = src->delta;
 				}
 			}
-			if (aop.dst && aop.dst->reg && aop.dst->reg->name) {
-				dst_addr = r_reg_getv (esil->anal->reg, aop.dst->reg->name) + index;
-				dst_imm = aop.dst->delta;
+			RAnalValue *dst = r_vector_at (&aop.dsts, 0);
+			if (dst && dst->reg && dst->reg->name) {
+				dst_addr = r_reg_getv (esil->anal->reg, dst->reg->name) + index;
+				dst_imm = dst->delta;
 			}
 			RAnalVar *var = r_anal_get_used_function_var (core->anal, aop.addr);
 			if (false) { // src_addr != UT64_MAX || dst_addr != UT64_MAX) {
@@ -1051,7 +1069,7 @@ beach:
 		r_core_cmd0 (core, "aeim-");
 	}
 	r_core_seek (core, oldoff, true);
-	r_anal_esil_free (esil);
+	r_esil_free (esil);
 	r_reg_arena_pop (core->anal->reg);
 	r_core_cmd0 (core, ".ar*");
 	r_cons_break_pop ();
@@ -1232,9 +1250,6 @@ static int cmd_type(void *data, const char *input) {
 		case '-':
 			r_core_cmdf (core, "t-%s", r_str_trim_head_ro (input + 2));
 			break;
-		case '?':
-			r_core_cmd_help (core, help_msg_te);
-			break;
 		case 'j': // "tej"
 			if (input[2] == 0) { // "tej"
 				char *name = NULL;
@@ -1336,6 +1351,10 @@ static int cmd_type(void *data, const char *input) {
 			ls_free (l);
 			break;
 		}
+		case '?':
+		default:
+			r_core_cmd_help (core, help_msg_te);
+			break;
 		} // end of switch (input[1])
 		free (name);
 		if (res) {
@@ -1376,7 +1395,7 @@ static int cmd_type(void *data, const char *input) {
 				char *homefile = NULL;
 				if (*filename == '~') {
 					if (filename[1] && filename[2]) {
-						homefile = r_str_home (filename + 2);
+						homefile = r_file_home (filename + 2);
 						filename = homefile;
 					}
 				}
@@ -1384,7 +1403,7 @@ static int cmd_type(void *data, const char *input) {
 					char *tmp = r_core_editor (core, "*.h", "");
 					if (tmp) {
 						char *errmsg = NULL;
-						char *out = r_parse_c_string (core->anal, tmp, &errmsg);
+						char *out = r_anal_cparse (core->anal, tmp, &errmsg);
 						if (out) {
 							// r_cons_strcat (out);
 							r_anal_save_parsed_type (core->anal, out);
@@ -1398,7 +1417,7 @@ static int cmd_type(void *data, const char *input) {
 					}
 				} else {
 					char *errmsg = NULL;
-					char *out = r_parse_c_file (core->anal, filename, dir, &errmsg);
+					char *out = r_anal_cparse_file (core->anal, filename, dir, &errmsg);
 					if (out) {
 						//r_cons_strcat (out);
 						r_anal_save_parsed_type (core->anal, out);
@@ -1416,7 +1435,7 @@ static int cmd_type(void *data, const char *input) {
 				if (arg) {
 					r_file_touch (arg + 1);
 				} else {
-					eprintf ("Usage: touch [filename]\n");
+					eprintf ("Usage: ot|touch [filename]\n");
 				}
 			} else if (input[1] == 's') {
 				const char *dbpath = input + 3;
@@ -1431,7 +1450,7 @@ static int cmd_type(void *data, const char *input) {
 				char *tmp = r_core_editor (core, "*.h", str);
 				if (tmp) {
 					char *errmsg = NULL;
-					char *out = r_parse_c_string (core->anal, tmp, &errmsg);
+					char *out = r_anal_cparse (core->anal, tmp, &errmsg);
 					if (out) {
 						// remove previous types and save new edited types
 						sdb_reset (TDB);
@@ -1463,7 +1482,7 @@ static int cmd_type(void *data, const char *input) {
 				break;
 			}
 			char *errmsg = NULL;
-			char *out = r_parse_c_string (core->anal, tmp, &errmsg);
+			char *out = r_anal_cparse (core->anal, tmp, &errmsg);
 			free (tmp);
 			if (out) {
 				r_anal_save_parsed_type (core->anal, out);
@@ -1815,6 +1834,9 @@ static int cmd_type(void *data, const char *input) {
 						} else {
 							char *q = r_str_newf ("typedef.%s", name);
 							const char *res = sdb_const_get (TDB, q, 0);
+							if (!res) {
+								res = "";
+							}
 							pj_ks (pj, name, res);
 							free (q);
 						}
@@ -1887,6 +1909,7 @@ static int cmd_type(void *data, const char *input) {
 		free (s);
 		break;
 	}
+	default:
 	case '?':
 		show_help (core);
 		break;

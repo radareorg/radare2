@@ -508,7 +508,7 @@ PEDA like details: `drr;pd 10@-10;pxr 40@esp`
 Debug in visual mode
 
 ```
-toggl breakpoints with F2
+toggle breakpoints with F2
 single-step with F7 (s)
 step-over with F8 (S)
 continue with F9

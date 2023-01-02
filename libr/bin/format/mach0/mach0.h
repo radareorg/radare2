@@ -151,6 +151,7 @@ struct MACH0_(obj_t) {
 	RBinImport **imports_by_ord;
 	size_t imports_by_ord_size;
 	HtPP *imports_by_name;
+	RList *cached_segments;
 
 	struct dysymtab_command dysymtab;
 	struct load_command main_cmd;
@@ -199,6 +200,7 @@ struct MACH0_(obj_t) {
 	bool rebasing_buffer;
 	RList *symbols_cache;
 	RList *sections_cache;
+	RList *reloc_fixups;
 	ut8 *internal_buffer;
 	int internal_buffer_size;
 };
@@ -208,6 +210,7 @@ typedef struct {
 	struct MACH0_(obj_t) *bin;
 	ut64 offset;
 	ut64 raw_ptr;
+	ut64 ptr_size;
 } RFixupEventDetails;
 
 typedef struct {
@@ -215,6 +218,7 @@ typedef struct {
 	struct MACH0_(obj_t) *bin;
 	ut64 offset;
 	ut64 raw_ptr;
+	ut64 ptr_size;
 	ut64 ordinal;
 	ut64 addend;
 } RFixupBindEventDetails;
@@ -224,6 +228,7 @@ typedef struct {
 	struct MACH0_(obj_t) *bin;
 	ut64 offset;
 	ut64 raw_ptr;
+	ut64 ptr_size;
 	ut32 ordinal;
 	ut8 key;
 	ut8 addr_div;
@@ -235,6 +240,7 @@ typedef struct {
 	struct MACH0_(obj_t) *bin;
 	ut64 offset;
 	ut64 raw_ptr;
+	ut64 ptr_size;
 	ut64 ptr_value;
 } RFixupRebaseEventDetails;
 
@@ -243,6 +249,7 @@ typedef struct {
 	struct MACH0_(obj_t) *bin;
 	ut64 offset;
 	ut64 raw_ptr;
+	ut64 ptr_size;
 	ut64 ptr_value;
 	ut8 key;
 	ut8 addr_div;
@@ -256,8 +263,7 @@ struct MACH0_(obj_t) *MACH0_(mach0_new)(const char *file, struct MACH0_(opts_t) 
 struct MACH0_(obj_t) *MACH0_(new_buf)(RBuffer *buf, struct MACH0_(opts_t) *options);
 void *MACH0_(mach0_free)(struct MACH0_(obj_t) *bin);
 struct section_t *MACH0_(get_sections)(struct MACH0_(obj_t) *bin);
-//RList *MACH0_(get_segments)(struct MACH0_(obj_t) *bin);
-RList *MACH0_(get_segments)(RBinFile *bf); // struct MACH0_(obj_t) *bin);
+RList *MACH0_(get_segments)(RBinFile *bf);
 const struct symbol_t *MACH0_(get_symbols)(struct MACH0_(obj_t) *bin);
 const RList *MACH0_(get_symbols_list)(struct MACH0_(obj_t) *bin);
 void MACH0_(pull_symbols)(struct MACH0_(obj_t) *mo, RBinSymbolCallback cb, void *user);

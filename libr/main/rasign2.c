@@ -40,7 +40,7 @@ static RCore *opencore(const char *fname) {
 	r_core_loadlibs (c, R_CORE_LOADLIBS_ALL, NULL);
 	r_config_set_b (c->config, "scr.interactive", false);
 	if (fname) {
-#if __WINDOWS__
+#if R2__WINDOWS__
 		char *winf = r_acp_to_utf8 (fname);
 		rfile = r_core_file_open (c, winf, 0, 0);
 		free (winf);
@@ -117,7 +117,7 @@ static int signs_from_file(const char *fname, struct rasignconf *conf) {
 		return -1;
 	}
 	if (conf->quiet) {
-		r_config_set (core->config, "scr.prompt", "false");
+		r_config_set_b (core->config, "scr.prompt", false);
 		r_config_set_i (core->config, "scr.color", COLOR_MODE_DISABLED);
 	}
 	if (conf->space) {

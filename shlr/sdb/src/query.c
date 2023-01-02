@@ -3,7 +3,7 @@
 #include <fcntl.h>
 #include <stdarg.h>
 #include <ctype.h>
-#include "sdb.h"
+#include "sdb/sdb.h"
 
 typedef struct {
 	char *buf;
@@ -12,7 +12,7 @@ typedef struct {
 } StrBuf;
 
 static StrBuf* strbuf_new(void) {
-	return (StrBuf*) calloc (sizeof (StrBuf), 1);
+	return (StrBuf*) sdb_gh_calloc (sizeof (StrBuf), 1);
 }
 
 #define NEWLINE_AFTER_QUERY 1
@@ -23,8 +23,8 @@ static StrBuf* strbuf_append(StrBuf *sb, const char *str, const int nl) {
 	}
 	int len = strlen (str);
 	if ((sb->len + len + 2) >= sb->size) {
-		int newsize = sb->size + len + 256;
-		char *b = (char *)realloc (sb->buf, newsize);
+		size_t newsize = sb->size + len + 256;
+		char *b = (char *)sdb_gh_realloc (sb->buf, newsize);
 		/// TODO perform free and force all callers to update the ref?
 		if (!b) {
 			return NULL;
@@ -49,8 +49,8 @@ static StrBuf* strbuf_append(StrBuf *sb, const char *str, const int nl) {
 }
 
 static StrBuf *strbuf_free(StrBuf *sb) {
-	free (sb->buf);
-	free (sb);
+	sdb_gh_free (sb->buf);
+	sdb_gh_free (sb);
 	return NULL;
 }
 
@@ -106,9 +106,9 @@ static bool foreach_list_cb(void *user, const char *k, const char *v) {
 	vlen = strlen (v);
 	if (root) {
 		rlen = strlen (root);
-		line = (char *)malloc (klen + vlen + rlen + 3);
+		line = (char *)sdb_gh_malloc (klen + vlen + rlen + 3);
 		if (!line) {
-			free (v2);
+			sdb_gh_free (v2);
 			return false;
 		}
 		memcpy (line, root, rlen);
@@ -117,9 +117,9 @@ static bool foreach_list_cb(void *user, const char *k, const char *v) {
 		line[rlen + klen + 1] = '=';
 		memcpy (line + rlen + klen + 2, v, vlen + 1);
 	} else {
-		line = (char *)malloc (klen + vlen + 2);
+		line = (char *)sdb_gh_malloc (klen + vlen + 2);
 		if (!line) {
-			free (v2);
+			sdb_gh_free (v2);
 			return false;
 		}
 		memcpy (line, k, klen);
@@ -127,8 +127,8 @@ static bool foreach_list_cb(void *user, const char *k, const char *v) {
 		memcpy (line + klen + 1, v, vlen + 1);
 	}
 	strbuf_append (rlu->out, line, 1);
-	free (v2);
-	free (line);
+	sdb_gh_free (v2);
+	sdb_gh_free (line);
 	return true;
 }
 
@@ -175,18 +175,18 @@ SDB_API char *sdb_querys(Sdb *r, char *buf, size_t len, const char *_cmd) {
 	if ((int)len < 1 || !buf) {
 		bufset = true;
 		len = 64;
-		buf = (char *)calloc (1, len);
+		buf = (char *)sdb_gh_calloc (1, len);
 		if (!buf) {
 			strbuf_free (out);
 			return NULL;
 		}
 	}
 	if (_cmd) {
-		cmd = original_cmd = strdup (_cmd);
+		cmd = original_cmd = sdb_strdup (_cmd);
 		if (!cmd) {
 			strbuf_free (out);
 			if (bufset) {
-				free (buf);
+				sdb_gh_free (buf);
 			}
 			return NULL;
 		}
@@ -345,9 +345,9 @@ next_quote:
 		p = cmd;
 	}
 	if (*cmd == '$') {
-		free (newcmd);
+		sdb_gh_free (newcmd);
 		char *nc = sdb_get (s, cmd + 1, 0);
-		cmd = newcmd = (nc) ? nc : strdup ("");
+		cmd = newcmd = (nc) ? nc : sdb_strdup ("");
 	}
 	// cmd = val
 	// cmd is key and val is value
@@ -378,7 +378,7 @@ next_quote:
 	} else if (*cmd == '+' || *cmd == '-') {
 		d = 1;
 		if (!buf) {
-			buf = (char *)calloc (1, len);
+			buf = (char *)sdb_gh_calloc (1, len);
 			if (!buf) {
 				goto fail;
 			}
@@ -419,26 +419,22 @@ next_quote:
 				} else {
 					// never happens
 				}
-				nstr = sdb_itoa (curnum, numstr, 10);
+				nstr = sdb_itoa (curnum, 10, numstr, sizeof (numstr));
 				strbuf_append (out, nstr, 1);
 			}
 		} else if (val) {
 			if (sdb_isnum (val)) {
 				int op = *cmd;
 				if (*val == '-') {
-					if (*cmd == '-') {
-						op = '+';
-					} else {
-						op = '-';
-					}
+					op = (*cmd == '-')? '+': '-';
 					d = sdb_atoi (val + 1);
 				} else {
 					d = sdb_atoi (val);
 				}
-				if (op=='+') {
-					sdb_num_inc (s, cmd+1, d, 0);
+				if (op == '+') {
+					sdb_num_inc (s, cmd + 1, d, 0);
 				} else {
-					sdb_num_dec (s, cmd+1, d, 0);
+					sdb_num_dec (s, cmd + 1, d, 0);
 				}
 			} else {
 				if (*cmd == '+') {
@@ -470,8 +466,8 @@ next_quote:
 				w = snprintf (buf, len - 1, "0x%" PRIx64, n);
 				if (w < 0 || (size_t)w > len) {
 					if (bufset && len < 0xff) {
-						free (buf);
-						buf = (char *)malloc (len = 0xff);
+						sdb_gh_free (buf);
+						buf = (char *)sdb_gh_malloc (len = 0xff);
 						if (!buf) {
 							goto fail;
 						}
@@ -483,8 +479,8 @@ next_quote:
 				w = snprintf (buf, len-1, "%" PRId64, n);
 				if (w < 0 || (size_t)w > len) {
 					if (bufset && len < 0xff) {
-						free (buf);
-						buf = (char *)malloc (len = 0xff);
+						sdb_gh_free (buf);
+						buf = (char *)sdb_gh_malloc (len = 0xff);
 						if (!buf) {
 							goto fail;
 						}
@@ -501,7 +497,7 @@ next_quote:
 			// if (!eq) ...
 			alength = sdb_array_length (s, p);
 			if (!buf) {
-				buf = (char *)malloc (++len);
+				buf = (char *)sdb_gh_malloc (++len);
 				if (!buf) {
 					goto fail;
 				}
@@ -510,9 +506,9 @@ next_quote:
 			w = snprintf (buf, len, "%d", alength);
 			if (w < 0 || (size_t)w > len) {
 				if (bufset) {
-					free (buf);
+					sdb_gh_free (buf);
 				}
-				buf = (char *)malloc (len = 32);
+				buf = (char *)sdb_gh_malloc (len = 32);
 				bufset = 1;
 				snprintf (buf, 31, "%d", alength);
 			}
@@ -552,7 +548,7 @@ next_quote:
 					} else {
 						char *ret = sdb_array_pop (s, p, 0);
 						out_concat (ret);
-						free (ret);
+						sdb_gh_free (ret);
 					}
 				}
 			} else
@@ -591,7 +587,7 @@ next_quote:
 						// (-)foo :: remove last element
 						sdb_array_delete (s, p, -1, 0);
 					}
-					free (ret);
+					sdb_gh_free (ret);
 				}
 			} else {
 				// get/set specific element in array
@@ -606,13 +602,13 @@ next_quote:
 								if (!newtmp) {
 									goto fail;
 								}
-								free (arr);
+								sdb_gh_free (arr);
 								arr = newtmp;
 							}
 							ok = 0;
 							out_concat (arr);
 							sdb_array_delete (s, p, -i, 0);
-							free (arr);
+							sdb_gh_free (arr);
 						} else goto fail;
 					} else {
 						if (encode) {
@@ -623,7 +619,7 @@ next_quote:
 							sdb_array_set (s, p, i, val, 0)
 							): sdb_array_delete (s, p, i, 0);
 						if (encode) {
-							free ((void*)val);
+							sdb_gh_free ((void*)val);
 							val = NULL;
 						}
 					}
@@ -648,14 +644,14 @@ next_quote:
 							out_concat (arr);
 							sdb_array_delete (s, p, -i, 0);
 						}
-						free (arr);
+						sdb_gh_free (arr);
 					} else {
 						/* [+3]foo */
 						char *arr = sdb_array_get (s, p, i, NULL);
 						if (arr && *arr) {
 							out_concat (arr);
 						}
-						free (arr);
+						sdb_gh_free (arr);
 					}
 				}
 			}
@@ -671,7 +667,7 @@ next_quote:
 					ok = sdb_array_set (s, p, idx, sval, 0);
 // TODO: handle when idx > sdb_alen
 					if (encode)
-						free (sval);
+						sdb_gh_free (sval);
 				} else {
 					if (encode) {
 						ok = sdb_set_owned (s, p, sval, 0);
@@ -696,7 +692,7 @@ next_quote:
 					if (encode) {
 						char *newbuf = (char*)sdb_decode (buf, NULL);
 						if (newbuf) {
-							free (buf);
+							sdb_gh_free (buf);
 							buf = newbuf;
 							len = strlen(buf) + 1;
 						}
@@ -708,9 +704,9 @@ next_quote:
 					}
 					wl = strlen (sval);
 					if (!buf || wl >= len) {
-						buf = (char *)malloc (wl + 2);
+						buf = (char *)sdb_gh_malloc (wl + 2);
 						if (!buf) {
-							free (out->buf);
+							sdb_gh_free (out->buf);
 							out->buf = NULL;
 							goto fail;
 						}
@@ -730,7 +726,7 @@ next_quote:
 						char *newbuf = (char*)sdb_decode (buf, NULL);
 						if (newbuf) {
 							if (bufset) {
-								free (buf);
+								sdb_gh_free (buf);
 							}
 							buf = newbuf;
 							len = strlen (buf) + 1;
@@ -768,7 +764,7 @@ next_quote:
 				}
 			}
 			if (encode) {
-				free ((void*)val);
+				sdb_gh_free ((void*)val);
 				val = NULL;
 			}
 			if (ok && buf) {
@@ -786,17 +782,17 @@ next_quote:
 							char *newtmp = (char*)sdb_decode (tmp, NULL);
 							if (!newtmp)
 								goto fail;
-							free (tmp);
+							sdb_gh_free (tmp);
 							tmp = newtmp;
 						}
 						out_concat (tmp);
-						free (tmp);
+						sdb_gh_free (tmp);
 					}
 				} else {
 					// kvpath:  -> show indented json
 					char *o = sdb_json_indent (sdb_const_get (s, cmd, 0), "  ");
 					out_concat (o);
-					free (o);
+					sdb_gh_free (o);
 				}
 			} else {
 				// sdbget
@@ -806,7 +802,7 @@ next_quote:
 					}
 					out_concat (q);
 					if (encode) {
-						free ((void*)q);
+						sdb_gh_free ((void*)q);
 					}
 				}
 			}
@@ -815,7 +811,7 @@ next_quote:
 runNext:
 	if (next) {
 		if (bufset) {
-			free (buf);
+			sdb_gh_free (buf);
 			buf = NULL;
 			bufset = false;
 		}
@@ -828,17 +824,17 @@ runNext:
 	}
 fail:
 	if (bufset) {
-		free (buf);
+		sdb_gh_free (buf);
 	}
 	if (out) {
 		res = out->buf;
-		free (out);
+		sdb_gh_free (out);
 	} else {
-		free (res);
+		sdb_gh_free (res);
 		res = NULL;
 	}
-	free (original_cmd);
-	free (newcmd);
+	sdb_gh_free (original_cmd);
+	sdb_gh_free (newcmd);
 	return res;
 }
 
@@ -852,7 +848,7 @@ SDB_API bool sdb_query(Sdb *s, const char *cmd) {
 			fputs (out, stdout);
 		}
 		if (out != buf) {
-			free (out);
+			sdb_gh_free (out);
 		}
 	}
 	return must_save;
@@ -863,7 +859,7 @@ SDB_API int sdb_query_lines(Sdb *s, const char *cmd) {
 	if (!s || !cmd) {
 		return 0;
 	}
-	op = strdup (cmd);
+	op = sdb_strdup (cmd);
 	if (!op) {
 		return 0;
 	}
@@ -878,7 +874,7 @@ SDB_API int sdb_query_lines(Sdb *s, const char *cmd) {
 			p = o + 1;
 		}
 	} while (o);
-	free (op);
+	sdb_gh_free (op);
 	return 1;
 }
 
@@ -896,14 +892,14 @@ static char *slurp(const char *file) {
 		return NULL;
 	}
 	lseek (fd, 0, SEEK_SET);
-	char *text = (char *)malloc (sz + 1);
+	char *text = (char *)sdb_gh_malloc (sz + 1);
 	if (!text) {
 		close (fd);
 		return NULL;
 	}
 	int ret = read (fd, text, sz);
 	if (ret != sz) {
-		free (text);
+		sdb_gh_free (text);
 		text = NULL;
 	} else {
 		text[sz] = 0;
@@ -917,7 +913,7 @@ SDB_API int sdb_query_file(Sdb *s, const char* file) {
 	char *txt = slurp (file);
 	if (txt) {
 		ret = sdb_query_lines (s, txt);
-		free (txt);
+		sdb_gh_free (txt);
 	}
 	return ret;
 }

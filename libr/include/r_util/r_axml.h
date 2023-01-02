@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2021 - keegan */
+/* radare - LGPL - Copyright 2021-2022 - keegan */
 
 #ifndef R_AXML_H
 #define R_AXML_H
@@ -7,7 +7,7 @@
 extern "C" {
 #endif
 
-R_API char *r_axml_decode(const ut8* buffer, const ut64 size);
+R_API char *r_axml_decode(const ut8 *data, const ut64 data_size, PJ *pj);
 
 #ifdef __cplusplus
 }

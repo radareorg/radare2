@@ -1,21 +1,17 @@
-/* radare - LGPL - Copyright 2016-2018 pancake */
+/* radare - LGPL - Copyright 2016-2022 pancake */
 
-#include "r_lib.h"
-#include "r_core.h"
-#include "r_lang.h"
+#include <r_lang.h>
 
-static int lang_rust_file(RLang *lang, const char *file) {
+static int lang_rust_file(RLangSession *s, const char *file) {
 	void *lib;
-	char *a, *cc, *p, name[512];
+	char *a, *cc, *p;
 	const char *libpath, *libname;
 
-	if (strlen (file) > (sizeof (name) - 10)) {
-		return false;
-	}
+	char *name;
 	if (!strstr (file, ".rs")) {
-		sprintf (name, "%s.rs", file);
+		name = r_str_newf ("%s.rs", file);
 	} else {
-		strcpy (name, file);
+		name = strdup (file);
 	}
 	if (!r_file_exists (name)) {
 		eprintf ("file not found (%s)\n", name);
@@ -26,7 +22,7 @@ static int lang_rust_file(RLang *lang, const char *file) {
 	if (a) {
 		*a = 0;
 		libpath = name;
-		libname = a+1;
+		libname = a + 1;
 	} else {
 		libpath = ".";
 		libname = name;
@@ -45,6 +41,7 @@ static int lang_rust_file(RLang *lang, const char *file) {
 	free (cc);
 	if (r_sandbox_system (cmd, 1) != 0) {
 		free (cmd);
+		free (name);
 		return false;
 	}
 	free (cmd);
@@ -55,7 +52,7 @@ static int lang_rust_file(RLang *lang, const char *file) {
 		void (*fcn)(RCore *);
 		fcn = r_lib_dl_sym (lib, "entry");
 		if (fcn) {
-			fcn (lang->user);
+			fcn (s->lang->user);
 		} else {
 			R_LOG_ERROR ("Cannot find 'entry' symbol in library");
 		}
@@ -65,6 +62,7 @@ static int lang_rust_file(RLang *lang, const char *file) {
 	}
 	r_file_rm (path); // remove lib
 	free (path);
+	free (name);
 	return 0;
 }
 
@@ -73,7 +71,7 @@ static int lang_rust_init(void *user) {
 	return true;
 }
 
-static bool lang_rust_run(RLang *lang, const char *code, int len) {
+static bool lang_rust_run(RLangSession *s, const char *code, int len) {
 	FILE *fd = r_sandbox_fopen ("_tmp.rs", "w");
 	if (!fd) {
 		R_LOG_ERROR ("Cannot open _tmp.rs");
@@ -113,7 +111,7 @@ static bool lang_rust_run(RLang *lang, const char *code, int len) {
 	fputs (code, fd);
 	fputs (rust_footer, fd);
 	fclose (fd);
-	lang_rust_file (lang, "_tmp.rs");
+	lang_rust_file (s, "_tmp.rs");
 	r_file_rm ("_tmp.rs");
 	return true;
 }
@@ -121,6 +119,7 @@ static bool lang_rust_run(RLang *lang, const char *code, int len) {
 static RLangPlugin r_lang_plugin_rust = {
 	.name = "rust",
 	.ext = "rs",
+	.author = "pancake",
 	.license = "MIT",
 	.desc = "Rust language extension",
 	.run = lang_rust_run,

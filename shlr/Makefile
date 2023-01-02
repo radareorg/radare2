@@ -13,7 +13,8 @@ else
 CS_RELEASE=1
 endif
 
-CAPSTONE_CFLAGS?=-g
+# CAPSTONE_CFLAGS?=-g
+CAPSTONE_CFLAGS=
 # CAPSTONE_MAKEFLAGS?=CAPSTONE_ARCHS="arm aarch64"
 
 GIT?=git
@@ -36,10 +37,10 @@ CS_ARCHIVE=https://$(CS_URL_BASE)/archive
 CS_UPD=20201203
 # NOTE: when you update CS_TIP or CS_BRA, also update them in shlr/meson.build
 ifeq ($(USE_CS4),1)
-CS_TIP=a7cac8352f7397aa73bb2e2dcc1b6cdb2e1b8461
+CS_TIP=1d230532840a37ac032c6ab80128238fc930c6c1
 CS_BRA=v4
 else
-CS_TIP=0d0e684358afd0889b98deaf3941caa9c6855cae
+CS_TIP=12e8258f60647a997ffa72702a9e5b37bd622044
 CS_BRA=next
 endif
 ifeq ($(CS_COMMIT_ARCHIVE),1)
@@ -60,8 +61,8 @@ endif
 SHLR?=$(shell pwd)
 AR?=ar
 RANLIB?=ranlib
-# MODS=sdb zip java mpc yxml
-MODS=zip java mpc yxml
+# MODS=sdb zip java mpc
+MODS=zip java mpc
 MODS+=gdb qnx ar
 # lz4
 ifneq ($(CC),cccl)
@@ -125,8 +126,8 @@ sdb-host:
 	@echo "HOST SDB"
 	@echo ">>>>>>>>"
 	@echo
-	$(MAKE) -C sdb clean ; rm -f sdb/src/*.o sdb/src/sdb_version.h
-	$(MAKE) -C sdb/src "CC=${HOST_CC}" LDFLAGS='${HOST_LDFLAGS}' CPPFLAGS='' CFLAGS='${HOST_CFLAGS} ${PIC}' bin
+	$(MAKE) -C sdb clean ; rm -f sdb/src/*.o sdb/include/sdb/version.h
+	$(MAKE) -C sdb/src "CC=${HOST_CC}" LDFLAGS='${HOST_LDFLAGS}' CPPFLAGS='-I$(SHLR)/sdb/include' CFLAGS='${HOST_CFLAGS} ${PIC}' bin
 	cp -f sdb/src/sdb${BUILD_EXT_EXE} sdb/src/.sdb${BUILD_EXT_EXE}
 	cp -f sdb/src/sdb${BUILD_EXT_EXE} sdb/sdb$(BUILD_EXT_EXE)
 	rm -f $(SDB_LIBA)
@@ -139,19 +140,21 @@ sdb-target:
 	@echo ">>>>>>>>>>"
 	@echo
 	rm -f src/libsdb.$(EXT_AR)
-	$(MAKE) -C sdb clean ; rm -f sdb/src/*.o sdb/src/sdb_version.h
-	$(MAKE) -C sdb/src sdb_version.h
+	$(MAKE) -C sdb clean ; rm -f sdb/src/*.o ../include/sdb/version.h
+	$(MAKE) -C sdb/src ../include/sdb/version.h
 ifeq ($(EXT_EXE),.wasm)
-	$(MAKE) -C sdb/src ARCH=xxx EXT_AR=.$(EXT_AR) RANLIB="${RANLIB}" CFLAGS_SHARED="${CFLAGS_SHARED} -DHAVE_MMAN=0" \
+	$(MAKE) -C sdb/src ARCH=xxx EXT_AR=.$(EXT_AR) RANLIB="${RANLIB}" CPPFLAGS=-I$(SHLR)/sdb/include \
+		CFLAGS_SHARED="${CFLAGS_SHARED} -DHAVE_MMAN=0" \
 		CC="${CC}" AR="${AR}" ARCH=undefined CFLAGS='${CFLAGS} -DHAVE_MMAN=0' LDFLAGS='${LDFLAGS}' libsdb.$(EXT_AR)
 else
-	$(MAKE) -C sdb/src ARCH=xxx EXT_AR=.$(EXT_AR) RANLIB="${RANLIB}" CFLAGS_SHARED="${CFLAGS_SHARED}" \
+	$(MAKE) -C sdb/src ARCH=xxx EXT_AR=.$(EXT_AR) RANLIB="${RANLIB}" CPPFLAGS="-I$(SHLR)/sdb/include -DHAVE_SYSTEM=0" \
+		CFLAGS_SHARED="${CFLAGS_SHARED}" \
 		CC="${CC}" AR="${AR}" ARCH=undefined LDFLAGS='${LDFLAGS}' libsdb.$(EXT_AR)
 endif
 	$(RANLIB) sdb/src/libsdb.$(EXT_AR)
 
 .PHONY: sdb-sync sync-sdb sdbclean sdb-native sdb-target
-SDB_F=README.md config.mk src Makefile meson.build wasi.mk wasi.sh
+SDB_F=README.md config.mk src include Makefile meson.build wasi.mk wasi.sh
 SDB_SYNCFILES=$(addprefix sdb.vc/,${SDB_F})
 I=../libr/include
 
@@ -175,8 +178,8 @@ sdb-sync sync-sdb:
 	mkdir -p sdb
 	cp -rf ${SDB_SYNCFILES} sdb
 	rm -rf sdb.vc
-	rm -f src/sdb_version.h
-	$(MAKE) -C sdb src/sdb_version.h
+	rm -f include/sdb/version.h
+	$(MAKE) -C sdb include/sdb/version.h
 	mkdir -p sdb/test sdb/memcache
 	sed -e 's,HAVE_VALA=,HAVE_VALA=#,' sdb/config.mk > .t
 	mv .t sdb/config.mk
@@ -252,7 +255,7 @@ capstone-sync:
 ifeq ($(WITHOUT_PULL),1)
 	@echo "Nothing to sync because of --without-pull"
 else
-	if [ ! -d capstone ]; then \
+	if [ ! -d capstone ] || [ $(shell [ -d capstone/.git ] && git --git-dir capstone/.git rev-parse HEAD) != $(CS_TIP) ]; then \
 		"$(SHELL)" capstone.sh "${CS_URL}" "${CS_BRA}" "${CS_TIP}" "${CS_REV}" "${CS_ARCHIVE_URL}" ; \
 	fi
 endif
@@ -280,6 +283,9 @@ endif
 
 endif
 endif
+
+headsup:
+	[ "`cd capstone && git rev-parse HEAD`" = "$(CS_TIP)" ]
 
 ../../radare2-webui:
 	cd ../.. ; git clone --depth 1 https://github.com/radareorg/radare2-webui
@@ -323,13 +329,6 @@ spp-sync sync-spp:
 spp: spp-sync
 	export CFLAGS="-DUSE_R2=1 -I../../libr/include -DHAVE_FORK=${HAVE_FORK} -fPIC";  $(MAKE) -C spp r2lib
 
-sync-yxml yxml-sync:
-	rm -rf yxml-git
-	git clone https://g.blicky.net/yxml.git/ yxml-git
-	cp -f yxml-git/yxml.c yxml/yxml.c
-	cp -f yxml-git/yxml.h yxml/yxml.h
-	rm -rf yxml-git
-
 SHLRS+=ar/libr_ar.a
 SHLRS+=bochs/lib/libbochs.a
 SHLRS+=capstone/libcapstone.a
@@ -338,7 +337,6 @@ SHLRS+=grub/libgrubfs.a
 SHLRS+=java/libr_java.a
 SHLRS+=lz4/liblz4.a
 SHLRS+=qnx/lib/libqnxr.a
-SHLRS+=yxml/libyxml.a
 SHLRS+=winkd/libr_winkd.a
 SHLRS+=zip/librz.a
 

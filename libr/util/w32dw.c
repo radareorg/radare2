@@ -2,7 +2,7 @@
 
 #include <r_types.h>
 
-#if __WINDOWS__
+#if R2__WINDOWS__
 #include <windows.h>
 #include <r_util/r_w32dw.h>
 

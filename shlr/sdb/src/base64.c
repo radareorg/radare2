@@ -1,6 +1,6 @@
 /* base64 enc/dec - MIT - Copyright 2011-2022 - pancake */
 
-#include "sdb.h"
+#include "sdb/sdb.h"
 
 #define SZ 1024
 static const char cb64[]="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
@@ -66,9 +66,9 @@ SDB_API char *sdb_encode(const ut8 *bin, int len) {
 		len = strlen ((const char *)bin);
 	}
 	if (!len) {
-		return strdup ("");
+		return sdb_strdup ("");
 	}
-	out = (char *)calloc (8 + (len * 2), sizeof (char));
+	out = (char *)sdb_gh_calloc (8 + (len * 2), sizeof (char));
 	if (!out) {
 		return NULL;
 	}
@@ -94,13 +94,13 @@ SDB_API ut8 *sdb_decode(const char *in, int *len) {
 	if (size < (ut32)ilen) {
 		return NULL;
 	}
-	out = (ut8 *)calloc (1, size);
+	out = (ut8 *)sdb_gh_calloc (1, size);
 	if (!out) {
 		return NULL;
 	}
 	olen = sdb_decode_raw (out, in, ilen);
 	if (!olen) {
-		free (out);
+		sdb_gh_free (out);
 		return NULL;
 	}
 	out[olen] = 0;

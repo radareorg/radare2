@@ -64,3 +64,25 @@ EXPECT=<<EOF
 [4294971880,4294971926,4294972048,4294972086,4294972102,4294972135,4294973058,4294973067]
 EOF
 RUN
+
+NAME=afbo
+FILE=bins/mach0/mac-ls2
+CMDS=<<EOF
+af
+abo~?
+?e --
+abo~?
+afbo~?
+"(nops;f opcount=opcount+`abo~?`)"
+.(nops)@@=`afbq`
+afi~nins
+?vi opcount
+EOF
+EXPECT=<<EOF
+14
+--
+14
+421
+421
+EOF
+RUN

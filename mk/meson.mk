@@ -11,7 +11,6 @@ meson-install:
 meson-symstall: symstall-sdb
 	@echo "[ Meson symstall (not stable) ]"
 	ln -fs $(PWD)/binr/r2pm/r2pm ${B}/r2pm
-	ln -fs $(PWD)/binr/r2pm/r2pm.sh ${B}/r2pm.sh
 	ln -fs $(PWD)/build/binr/rasm2/rasm2 ${B}/rasm2
 	ln -fs $(PWD)/build/binr/rarun2/rarun2 ${B}/rarun2
 	ln -fs $(PWD)/build/binr/radare2/radare2 ${B}/radare2
@@ -30,7 +29,6 @@ meson-symstall: symstall-sdb
 	ln -fs $(PWD)/build/libr/reg/libr_reg.$(EXT_SO) ${L}/libr_reg.$(EXT_SO)
 	ln -fs $(PWD)/build/libr/bin/libr_bin.$(EXT_SO) ${L}/libr_bin.$(EXT_SO)
 	ln -fs $(PWD)/build/libr/config/libr_config.$(EXT_SO) ${L}/libr_config.$(EXT_SO)
-	ln -fs $(PWD)/build/libr/parse/libr_parse.$(EXT_SO) ${L}/libr_parse.$(EXT_SO)
 	ln -fs $(PWD)/build/libr/lang/libr_lang.$(EXT_SO) ${L}/libr_lang.$(EXT_SO)
 	ln -fs $(PWD)/build/libr/asm/libr_asm.$(EXT_SO) ${L}/libr_asm.$(EXT_SO)
 	ln -fs $(PWD)/build/libr/anal/libr_anal.$(EXT_SO) ${L}/libr_anal.$(EXT_SO)

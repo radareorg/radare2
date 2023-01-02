@@ -1,0 +1,698 @@
+NAME=test dwarf2
+FILE=bins/elf/dwarf/hello-dwarf2
+CMDS=<<EOF
+id
+CL
+EOF
+EXPECT=<<EOF
+   1      DW_TAG_compile_unit       [has children] (0x0)
+    DW_AT_producer                 DW_FORM_strp                  
+    DW_AT_language                 DW_FORM_data1                 
+    DW_AT_name                     DW_FORM_strp                  
+    DW_AT_comp_dir                 DW_FORM_strp                  
+    DW_AT_low_pc                   DW_FORM_addr                  
+    DW_AT_high_pc                  DW_FORM_addr                  
+    DW_AT_stmt_list                DW_FORM_data4                 
+   2      DW_TAG_base_type          [no children] (0x13)
+    DW_AT_byte_size                DW_FORM_data1                 
+    DW_AT_encoding                 DW_FORM_data1                 
+    DW_AT_name                     DW_FORM_strp                  
+   3      DW_TAG_base_type          [no children] (0x1e)
+    DW_AT_byte_size                DW_FORM_data1                 
+    DW_AT_encoding                 DW_FORM_data1                 
+    DW_AT_name                     DW_FORM_string                
+   4      DW_TAG_subprogram         [no children] (0x29)
+    DW_AT_external                 DW_FORM_flag                  
+    DW_AT_name                     DW_FORM_strp                  
+    DW_AT_decl_file                DW_FORM_data1                 
+    DW_AT_decl_line                DW_FORM_data1                 
+    DW_AT_decl_column              DW_FORM_data1                 
+    DW_AT_type                     DW_FORM_ref4                  
+    DW_AT_low_pc                   DW_FORM_addr                  
+    DW_AT_high_pc                  DW_FORM_addr                  
+    DW_AT_frame_base               DW_FORM_data4                 
+    DW_AT_GNU_all_tail_call_sites  DW_FORM_flag                  
+
+  Compilation Unit @ offset 0x0:
+   Length:        0x8b
+   Version:       2
+   Abbrev Offset: 0x0
+   Pointer Size:  8
+
+<0xb>: Abbrev Number: 1    (DW_TAG_compile_unit)
+     DW_AT_producer            : (indirect string, offset: 0x2f): GNU C17 11.3.0 -mtune=generic -march=x86-64 -g -gdwarf-2 -fasynchronous-unwind-tables -fstack-protector-strong -fstack-clash-protection -fcf-protection
+     DW_AT_language            : 12   (C99)
+     DW_AT_name                : (indirect string, offset: 0xc7): hello.c
+     DW_AT_comp_dir            : (indirect string, offset: 0xeb): /home/pancake/prg/radare2/test/bins/elf/dwarf
+     DW_AT_low_pc              : 0x1149
+     DW_AT_high_pc             : 0x1176
+     DW_AT_stmt_list           : 0
+<0x2d>: Abbrev Number: 2    (DW_TAG_base_type)
+     DW_AT_byte_size           : 8
+     DW_AT_encoding            : 7
+     DW_AT_name                : (indirect string, offset: 0x0): long unsigned int
+<0x34>: Abbrev Number: 2    (DW_TAG_base_type)
+     DW_AT_byte_size           : 4
+     DW_AT_encoding            : 7
+     DW_AT_name                : (indirect string, offset: 0x5): unsigned int
+<0x3b>: Abbrev Number: 2    (DW_TAG_base_type)
+     DW_AT_byte_size           : 1
+     DW_AT_encoding            : 8
+     DW_AT_name                : (indirect string, offset: 0xcf): unsigned char
+<0x42>: Abbrev Number: 2    (DW_TAG_base_type)
+     DW_AT_byte_size           : 2
+     DW_AT_encoding            : 7
+     DW_AT_name                : (indirect string, offset: 0x12): short unsigned int
+<0x49>: Abbrev Number: 2    (DW_TAG_base_type)
+     DW_AT_byte_size           : 1
+     DW_AT_encoding            : 6
+     DW_AT_name                : (indirect string, offset: 0xd1): signed char
+<0x50>: Abbrev Number: 2    (DW_TAG_base_type)
+     DW_AT_byte_size           : 2
+     DW_AT_encoding            : 5
+     DW_AT_name                : (indirect string, offset: 0x25): short int
+<0x57>: Abbrev Number: 3    (DW_TAG_base_type)
+     DW_AT_byte_size           : 4
+     DW_AT_encoding            : 5
+     DW_AT_name                : int
+<0x5e>: Abbrev Number: 2    (DW_TAG_base_type)
+     DW_AT_byte_size           : 8
+     DW_AT_encoding            : 5
+     DW_AT_name                : (indirect string, offset: 0xdd): long int
+<0x65>: Abbrev Number: 2    (DW_TAG_base_type)
+     DW_AT_byte_size           : 1
+     DW_AT_encoding            : 6
+     DW_AT_name                : (indirect string, offset: 0xd8): char
+<0x6c>: Abbrev Number: 4    (DW_TAG_subprogram)
+     DW_AT_external            : 1
+     DW_AT_name                : (indirect string, offset: 0xe6): main
+     DW_AT_decl_file           : 1
+     DW_AT_decl_line           : 3
+     DW_AT_decl_column         : 5
+     DW_AT_type                : <0x57>
+     DW_AT_low_pc              : 0x1149
+     DW_AT_high_pc             : 0x1176
+     DW_AT_frame_base          : 0
+     DW_AT_GNU_all_tail_call_sites : 1
+<0x8e>: Abbrev Number: 0    (DW_TAG_null_entry)
+
+Contents of the .debug_loc section:
+0x0 0x0 0x5
+0x14 0x5 0x8
+0x28 0x8 0x2c
+0x3c 0x2c 0x2d
+0x50 <End of list>
+
+parse_aranges
+length 0x2c
+Version 2
+Debug info offset 0
+address size 8
+segment size 0
+length 0x2d address 0x1149
+Raw dump of debug contents of section .debug_line:
+
+ Header information:
+  Length:                             63
+  DWARF Version:                      3
+  Header Length:                      30
+  Minimum Instruction Length:         1
+  Maximum Operations per Instruction: 0
+  Initial value of 'is_stmt':         1
+  Line Base:                          -5
+  Line Range:                         14
+  Opcode Base:                        13
+
+ Opcodes:
+  Opcode 1 has 0 arg
+  Opcode 2 has 1 arg
+  Opcode 3 has 1 arg
+  Opcode 4 has 1 arg
+  Opcode 5 has 1 arg
+  Opcode 6 has 0 arg
+  Opcode 7 has 0 arg
+  Opcode 8 has 0 arg
+  Opcode 9 has 1 arg
+  Opcode 10 has 0 arg
+  Opcode 11 has 0 arg
+  Opcode 12 has 1 arg
+
+ The Directory Table:
+
+ The File Name Table:
+  Entry Dir     Time      Size       Name
+  1     0       0         0          hello.c
+
+ Line Number Statements:
+  Set column to 12
+  Extended opcode 2: set Address to 0x1149
+  Special opcode 7: advance Address by 0 to 0x1149 and Line by 2 to 3
+  Set column to 2
+  Special opcode 118: advance Address by 8 to 0x1151 and Line by 1 to 4
+  Special opcode 216: advance Address by 15 to 0x1160 and Line by 1 to 5
+  Set column to 1
+  Advance PC by constant 17 to 0x1171
+  Special opcode 48: advance Address by 3 to 0x1174 and Line by 1 to 6
+  Advance PC by 2 to 0x1176
+  Extended opcode 1: End of Sequence
+
+0x00001174	/home/pancake/prg/radare2/test/bins/elf/dwarf/hello.c	6
+0x00001160	/home/pancake/prg/radare2/test/bins/elf/dwarf/hello.c	5
+0x00001149	/home/pancake/prg/radare2/test/bins/elf/dwarf/hello.c	3
+0x00001151	/home/pancake/prg/radare2/test/bins/elf/dwarf/hello.c	4
+0x00001176	/home/pancake/prg/radare2/test/bins/elf/dwarf/hello.c	6
+file: /home/pancake/prg/radare2/test/bins/elf/dwarf/hello.c
+line: 6
+addr: 0x00001174
+file: /home/pancake/prg/radare2/test/bins/elf/dwarf/hello.c
+line: 5
+addr: 0x00001160
+file: /home/pancake/prg/radare2/test/bins/elf/dwarf/hello.c
+line: 3
+addr: 0x00001149
+file: /home/pancake/prg/radare2/test/bins/elf/dwarf/hello.c
+line: 4
+addr: 0x00001151
+file: /home/pancake/prg/radare2/test/bins/elf/dwarf/hello.c
+line: 6
+addr: 0x00001176
+EOF
+RUN
+
+NAME=test dwarf3
+FILE=bins/elf/dwarf/hello-dwarf3
+CMDS=<<EOF
+id
+CL
+EOF
+EXPECT=<<EOF
+   1      DW_TAG_compile_unit       [has children] (0x0)
+    DW_AT_producer                 DW_FORM_strp                  
+    DW_AT_language                 DW_FORM_data1                 
+    DW_AT_name                     DW_FORM_strp                  
+    DW_AT_comp_dir                 DW_FORM_strp                  
+    DW_AT_low_pc                   DW_FORM_addr                  
+    DW_AT_high_pc                  DW_FORM_addr                  
+    DW_AT_stmt_list                DW_FORM_data4                 
+   2      DW_TAG_base_type          [no children] (0x13)
+    DW_AT_byte_size                DW_FORM_data1                 
+    DW_AT_encoding                 DW_FORM_data1                 
+    DW_AT_name                     DW_FORM_strp                  
+   3      DW_TAG_base_type          [no children] (0x1e)
+    DW_AT_byte_size                DW_FORM_data1                 
+    DW_AT_encoding                 DW_FORM_data1                 
+    DW_AT_name                     DW_FORM_string                
+   4      DW_TAG_subprogram         [no children] (0x29)
+    DW_AT_external                 DW_FORM_flag                  
+    DW_AT_name                     DW_FORM_strp                  
+    DW_AT_decl_file                DW_FORM_data1                 
+    DW_AT_decl_line                DW_FORM_data1                 
+    DW_AT_decl_column              DW_FORM_data1                 
+    DW_AT_type                     DW_FORM_ref4                  
+    DW_AT_low_pc                   DW_FORM_addr                  
+    DW_AT_high_pc                  DW_FORM_addr                  
+    DW_AT_frame_base               DW_FORM_block1                
+    DW_AT_GNU_all_tail_call_sites  DW_FORM_flag                  
+
+  Compilation Unit @ offset 0x0:
+   Length:        0x89
+   Version:       3
+   Abbrev Offset: 0x0
+   Pointer Size:  8
+
+<0xb>: Abbrev Number: 1    (DW_TAG_compile_unit)
+     DW_AT_producer            : (indirect string, offset: 0x37): GNU C17 11.3.0 -mtune=generic -march=x86-64 -g -gdwarf-3 -fasynchronous-unwind-tables -fstack-protector-strong -fstack-clash-protection -fcf-protection
+     DW_AT_language            : 12   (C99)
+     DW_AT_name                : (indirect string, offset: 0x2f): hello.c
+     DW_AT_comp_dir            : (indirect string, offset: 0xeb): /home/pancake/prg/radare2/test/bins/elf/dwarf
+     DW_AT_low_pc              : 0x1149
+     DW_AT_high_pc             : 0x1176
+     DW_AT_stmt_list           : 0
+<0x2d>: Abbrev Number: 2    (DW_TAG_base_type)
+     DW_AT_byte_size           : 8
+     DW_AT_encoding            : 7
+     DW_AT_name                : (indirect string, offset: 0x0): long unsigned int
+<0x34>: Abbrev Number: 2    (DW_TAG_base_type)
+     DW_AT_byte_size           : 4
+     DW_AT_encoding            : 7
+     DW_AT_name                : (indirect string, offset: 0x5): unsigned int
+<0x3b>: Abbrev Number: 2    (DW_TAG_base_type)
+     DW_AT_byte_size           : 1
+     DW_AT_encoding            : 8
+     DW_AT_name                : (indirect string, offset: 0xcf): unsigned char
+<0x42>: Abbrev Number: 2    (DW_TAG_base_type)
+     DW_AT_byte_size           : 2
+     DW_AT_encoding            : 7
+     DW_AT_name                : (indirect string, offset: 0x12): short unsigned int
+<0x49>: Abbrev Number: 2    (DW_TAG_base_type)
+     DW_AT_byte_size           : 1
+     DW_AT_encoding            : 6
+     DW_AT_name                : (indirect string, offset: 0xd1): signed char
+<0x50>: Abbrev Number: 2    (DW_TAG_base_type)
+     DW_AT_byte_size           : 2
+     DW_AT_encoding            : 5
+     DW_AT_name                : (indirect string, offset: 0x25): short int
+<0x57>: Abbrev Number: 3    (DW_TAG_base_type)
+     DW_AT_byte_size           : 4
+     DW_AT_encoding            : 5
+     DW_AT_name                : int
+<0x5e>: Abbrev Number: 2    (DW_TAG_base_type)
+     DW_AT_byte_size           : 8
+     DW_AT_encoding            : 5
+     DW_AT_name                : (indirect string, offset: 0xdd): long int
+<0x65>: Abbrev Number: 2    (DW_TAG_base_type)
+     DW_AT_byte_size           : 1
+     DW_AT_encoding            : 6
+     DW_AT_name                : (indirect string, offset: 0xd8): char
+<0x6c>: Abbrev Number: 4    (DW_TAG_subprogram)
+     DW_AT_external            : 1
+     DW_AT_name                : (indirect string, offset: 0xe6): main
+     DW_AT_decl_file           : 1
+     DW_AT_decl_line           : 3
+     DW_AT_decl_column         : 5
+     DW_AT_type                : <0x57>
+     DW_AT_low_pc              : 0x1149
+     DW_AT_high_pc             : 0x1176
+     DW_AT_frame_base          : 1 byte block: 0x9c
+     DW_AT_GNU_all_tail_call_sites : 1
+<0x8c>: Abbrev Number: 0    (DW_TAG_null_entry)
+parse_aranges
+length 0x2c
+Version 2
+Debug info offset 0
+address size 8
+segment size 0
+length 0x2d address 0x1149
+Raw dump of debug contents of section .debug_line:
+
+ Header information:
+  Length:                             63
+  DWARF Version:                      3
+  Header Length:                      30
+  Minimum Instruction Length:         1
+  Maximum Operations per Instruction: 0
+  Initial value of 'is_stmt':         1
+  Line Base:                          -5
+  Line Range:                         14
+  Opcode Base:                        13
+
+ Opcodes:
+  Opcode 1 has 0 arg
+  Opcode 2 has 1 arg
+  Opcode 3 has 1 arg
+  Opcode 4 has 1 arg
+  Opcode 5 has 1 arg
+  Opcode 6 has 0 arg
+  Opcode 7 has 0 arg
+  Opcode 8 has 0 arg
+  Opcode 9 has 1 arg
+  Opcode 10 has 0 arg
+  Opcode 11 has 0 arg
+  Opcode 12 has 1 arg
+
+ The Directory Table:
+
+ The File Name Table:
+  Entry Dir     Time      Size       Name
+  1     0       0         0          hello.c
+
+ Line Number Statements:
+  Set column to 12
+  Extended opcode 2: set Address to 0x1149
+  Special opcode 7: advance Address by 0 to 0x1149 and Line by 2 to 3
+  Set column to 2
+  Special opcode 118: advance Address by 8 to 0x1151 and Line by 1 to 4
+  Special opcode 216: advance Address by 15 to 0x1160 and Line by 1 to 5
+  Set column to 1
+  Advance PC by constant 17 to 0x1171
+  Special opcode 48: advance Address by 3 to 0x1174 and Line by 1 to 6
+  Advance PC by 2 to 0x1176
+  Extended opcode 1: End of Sequence
+
+0x00001174	/home/pancake/prg/radare2/test/bins/elf/dwarf/hello.c	6
+0x00001160	/home/pancake/prg/radare2/test/bins/elf/dwarf/hello.c	5
+0x00001149	/home/pancake/prg/radare2/test/bins/elf/dwarf/hello.c	3
+0x00001151	/home/pancake/prg/radare2/test/bins/elf/dwarf/hello.c	4
+0x00001176	/home/pancake/prg/radare2/test/bins/elf/dwarf/hello.c	6
+file: /home/pancake/prg/radare2/test/bins/elf/dwarf/hello.c
+line: 6
+addr: 0x00001174
+file: /home/pancake/prg/radare2/test/bins/elf/dwarf/hello.c
+line: 5
+addr: 0x00001160
+file: /home/pancake/prg/radare2/test/bins/elf/dwarf/hello.c
+line: 3
+addr: 0x00001149
+file: /home/pancake/prg/radare2/test/bins/elf/dwarf/hello.c
+line: 4
+addr: 0x00001151
+file: /home/pancake/prg/radare2/test/bins/elf/dwarf/hello.c
+line: 6
+addr: 0x00001176
+EOF
+RUN
+
+NAME=test dwarf4
+FILE=bins/elf/dwarf/hello-dwarf4
+CMDS=<<EOF
+id
+CL
+EOF
+EXPECT=<<EOF
+   1      DW_TAG_compile_unit       [has children] (0x0)
+    DW_AT_producer                 DW_FORM_strp                  
+    DW_AT_language                 DW_FORM_data1                 
+    DW_AT_name                     DW_FORM_strp                  
+    DW_AT_comp_dir                 DW_FORM_strp                  
+    DW_AT_low_pc                   DW_FORM_addr                  
+    DW_AT_high_pc                  DW_FORM_data8                 
+    DW_AT_stmt_list                DW_FORM_sec_offset            
+   2      DW_TAG_base_type          [no children] (0x13)
+    DW_AT_byte_size                DW_FORM_data1                 
+    DW_AT_encoding                 DW_FORM_data1                 
+    DW_AT_name                     DW_FORM_strp                  
+   3      DW_TAG_base_type          [no children] (0x1e)
+    DW_AT_byte_size                DW_FORM_data1                 
+    DW_AT_encoding                 DW_FORM_data1                 
+    DW_AT_name                     DW_FORM_string                
+   4      DW_TAG_subprogram         [no children] (0x29)
+    DW_AT_external                 DW_FORM_flag_present          
+    DW_AT_name                     DW_FORM_strp                  
+    DW_AT_decl_file                DW_FORM_data1                 
+    DW_AT_decl_line                DW_FORM_data1                 
+    DW_AT_decl_column              DW_FORM_data1                 
+    DW_AT_type                     DW_FORM_ref4                  
+    DW_AT_low_pc                   DW_FORM_addr                  
+    DW_AT_high_pc                  DW_FORM_data8                 
+    DW_AT_frame_base               DW_FORM_exprloc               
+    DW_AT_GNU_all_tail_call_sites  DW_FORM_flag_present          
+
+  Compilation Unit @ offset 0x0:
+   Length:        0x87
+   Version:       4
+   Abbrev Offset: 0x0
+   Pointer Size:  8
+
+<0xb>: Abbrev Number: 1    (DW_TAG_compile_unit)
+     DW_AT_producer            : (indirect string, offset: 0x2f): GNU C17 11.3.0 -mtune=generic -march=x86-64 -g -gdwarf-4 -fasynchronous-unwind-tables -fstack-protector-strong -fstack-clash-protection -fcf-protection
+     DW_AT_language            : 12   (C99)
+     DW_AT_name                : (indirect string, offset: 0xc7): hello.c
+     DW_AT_comp_dir            : (indirect string, offset: 0xeb): /home/pancake/prg/radare2/test/bins/elf/dwarf
+     DW_AT_low_pc              : 0x1149
+     DW_AT_high_pc             : 45
+     DW_AT_stmt_list           : <0x0>
+<0x2d>: Abbrev Number: 2    (DW_TAG_base_type)
+     DW_AT_byte_size           : 8
+     DW_AT_encoding            : 7
+     DW_AT_name                : (indirect string, offset: 0x0): long unsigned int
+<0x34>: Abbrev Number: 2    (DW_TAG_base_type)
+     DW_AT_byte_size           : 4
+     DW_AT_encoding            : 7
+     DW_AT_name                : (indirect string, offset: 0x5): unsigned int
+<0x3b>: Abbrev Number: 2    (DW_TAG_base_type)
+     DW_AT_byte_size           : 1
+     DW_AT_encoding            : 8
+     DW_AT_name                : (indirect string, offset: 0xcf): unsigned char
+<0x42>: Abbrev Number: 2    (DW_TAG_base_type)
+     DW_AT_byte_size           : 2
+     DW_AT_encoding            : 7
+     DW_AT_name                : (indirect string, offset: 0x12): short unsigned int
+<0x49>: Abbrev Number: 2    (DW_TAG_base_type)
+     DW_AT_byte_size           : 1
+     DW_AT_encoding            : 6
+     DW_AT_name                : (indirect string, offset: 0xd1): signed char
+<0x50>: Abbrev Number: 2    (DW_TAG_base_type)
+     DW_AT_byte_size           : 2
+     DW_AT_encoding            : 5
+     DW_AT_name                : (indirect string, offset: 0x25): short int
+<0x57>: Abbrev Number: 3    (DW_TAG_base_type)
+     DW_AT_byte_size           : 4
+     DW_AT_encoding            : 5
+     DW_AT_name                : int
+<0x5e>: Abbrev Number: 2    (DW_TAG_base_type)
+     DW_AT_byte_size           : 8
+     DW_AT_encoding            : 5
+     DW_AT_name                : (indirect string, offset: 0xdd): long int
+<0x65>: Abbrev Number: 2    (DW_TAG_base_type)
+     DW_AT_byte_size           : 1
+     DW_AT_encoding            : 6
+     DW_AT_name                : (indirect string, offset: 0xd8): char
+<0x6c>: Abbrev Number: 4    (DW_TAG_subprogram)
+     DW_AT_external            : 1
+     DW_AT_name                : (indirect string, offset: 0xe6): main
+     DW_AT_decl_file           : 1
+     DW_AT_decl_line           : 3
+     DW_AT_decl_column         : 5
+     DW_AT_type                : <0x57>
+     DW_AT_low_pc              : 0x1149
+     DW_AT_high_pc             : 45
+     DW_AT_frame_base          : 1 byte block: 0x9c
+     DW_AT_GNU_all_tail_call_sites : 1
+<0x8a>: Abbrev Number: 0    (DW_TAG_null_entry)
+parse_aranges
+length 0x2c
+Version 2
+Debug info offset 0
+address size 8
+segment size 0
+length 0x2d address 0x1149
+Raw dump of debug contents of section .debug_line:
+
+ Header information:
+  Length:                             64
+  DWARF Version:                      4
+  Header Length:                      31
+  Minimum Instruction Length:         1
+  Maximum Operations per Instruction: 1
+  Initial value of 'is_stmt':         1
+  Line Base:                          -5
+  Line Range:                         14
+  Opcode Base:                        13
+
+ Opcodes:
+  Opcode 1 has 0 arg
+  Opcode 2 has 1 arg
+  Opcode 3 has 1 arg
+  Opcode 4 has 1 arg
+  Opcode 5 has 1 arg
+  Opcode 6 has 0 arg
+  Opcode 7 has 0 arg
+  Opcode 8 has 0 arg
+  Opcode 9 has 1 arg
+  Opcode 10 has 0 arg
+  Opcode 11 has 0 arg
+  Opcode 12 has 1 arg
+
+ The Directory Table:
+
+ The File Name Table:
+  Entry Dir     Time      Size       Name
+  1     0       0         0          hello.c
+
+ Line Number Statements:
+  Set column to 12
+  Extended opcode 2: set Address to 0x1149
+  Special opcode 7: advance Address by 0 to 0x1149 and Line by 2 to 3
+  Set column to 2
+  Special opcode 118: advance Address by 8 to 0x1151 and Line by 1 to 4
+  Special opcode 216: advance Address by 15 to 0x1160 and Line by 1 to 5
+  Set column to 1
+  Advance PC by constant 17 to 0x1171
+  Special opcode 48: advance Address by 3 to 0x1174 and Line by 1 to 6
+  Advance PC by 2 to 0x1176
+  Extended opcode 1: End of Sequence
+
+0x00001174	/home/pancake/prg/radare2/test/bins/elf/dwarf/hello.c	6
+0x00001160	/home/pancake/prg/radare2/test/bins/elf/dwarf/hello.c	5
+0x00001149	/home/pancake/prg/radare2/test/bins/elf/dwarf/hello.c	3
+0x00001151	/home/pancake/prg/radare2/test/bins/elf/dwarf/hello.c	4
+0x00001176	/home/pancake/prg/radare2/test/bins/elf/dwarf/hello.c	6
+file: /home/pancake/prg/radare2/test/bins/elf/dwarf/hello.c
+line: 6
+addr: 0x00001174
+file: /home/pancake/prg/radare2/test/bins/elf/dwarf/hello.c
+line: 5
+addr: 0x00001160
+file: /home/pancake/prg/radare2/test/bins/elf/dwarf/hello.c
+line: 3
+addr: 0x00001149
+file: /home/pancake/prg/radare2/test/bins/elf/dwarf/hello.c
+line: 4
+addr: 0x00001151
+file: /home/pancake/prg/radare2/test/bins/elf/dwarf/hello.c
+line: 6
+addr: 0x00001176
+EOF
+RUN
+
+NAME=test dwarf5
+FILE=bins/elf/dwarf/hello-dwarf5
+CMDS=<<EOF
+id
+CL
+EOF
+EXPECT=<<EOF
+   1      DW_TAG_base_type          [no children] (0x0)
+    DW_AT_byte_size                DW_FORM_data1                 
+    DW_AT_encoding                 DW_FORM_data1                 
+    DW_AT_name                     DW_FORM_strp                  
+   2      DW_TAG_compile_unit       [has children] (0xb)
+    DW_AT_producer                 DW_FORM_strp                  
+    DW_AT_language                 DW_FORM_data1                 
+    DW_AT_name                     DW_FORM_line_ptr              
+    DW_AT_comp_dir                 DW_FORM_line_ptr              
+    DW_AT_low_pc                   DW_FORM_addr                  
+    DW_AT_high_pc                  DW_FORM_data8                 
+    DW_AT_stmt_list                DW_FORM_sec_offset            
+   3      DW_TAG_base_type          [no children] (0x1e)
+    DW_AT_byte_size                DW_FORM_data1                 
+    DW_AT_encoding                 DW_FORM_data1                 
+    DW_AT_name                     DW_FORM_string                
+   4      DW_TAG_subprogram         [no children] (0x29)
+    DW_AT_external                 DW_FORM_flag_present          
+    DW_AT_name                     DW_FORM_strp                  
+    DW_AT_decl_file                DW_FORM_data1                 
+    DW_AT_decl_line                DW_FORM_data1                 
+    DW_AT_decl_column              DW_FORM_data1                 
+    DW_AT_type                     DW_FORM_ref4                  
+    DW_AT_low_pc                   DW_FORM_addr                  
+    DW_AT_high_pc                  DW_FORM_data8                 
+    DW_AT_frame_base               DW_FORM_exprloc               
+    DW_AT_call_all_tail_calls      DW_FORM_flag_present          
+
+  Compilation Unit @ offset 0x0:
+   Length:        0x88
+   Version:       5
+   Abbrev Offset: 0x0
+   Pointer Size:  8
+   Unit Type:     DW_UT_compile
+
+<0xc>: Abbrev Number: 2    (DW_TAG_compile_unit)
+     DW_AT_producer            : (indirect string, offset: 0x2f): GNU C17 11.3.0 -mtune=generic -march=x86-64 -g -fasynchronous-unwind-tables -fstack-protector-strong -fstack-clash-protection -fcf-protection
+     DW_AT_language            : 29   (C11)
+     DW_AT_name                : (indirect string, offset: 0x0): (null)
+     DW_AT_comp_dir            : (indirect string, offset: 0x8): (null)
+     DW_AT_low_pc              : 0x1149
+     DW_AT_high_pc             : 45
+     DW_AT_stmt_list           : <0x0>
+<0x2e>: Abbrev Number: 1    (DW_TAG_base_type)
+     DW_AT_byte_size           : 8
+     DW_AT_encoding            : 7
+     DW_AT_name                : (indirect string, offset: 0x0): long unsigned int
+<0x35>: Abbrev Number: 1    (DW_TAG_base_type)
+     DW_AT_byte_size           : 4
+     DW_AT_encoding            : 7
+     DW_AT_name                : (indirect string, offset: 0x5): unsigned int
+<0x3c>: Abbrev Number: 1    (DW_TAG_base_type)
+     DW_AT_byte_size           : 1
+     DW_AT_encoding            : 8
+     DW_AT_name                : (indirect string, offset: 0xbd): unsigned char
+<0x43>: Abbrev Number: 1    (DW_TAG_base_type)
+     DW_AT_byte_size           : 2
+     DW_AT_encoding            : 7
+     DW_AT_name                : (indirect string, offset: 0x12): short unsigned int
+<0x4a>: Abbrev Number: 1    (DW_TAG_base_type)
+     DW_AT_byte_size           : 1
+     DW_AT_encoding            : 6
+     DW_AT_name                : (indirect string, offset: 0xbf): signed char
+<0x51>: Abbrev Number: 1    (DW_TAG_base_type)
+     DW_AT_byte_size           : 2
+     DW_AT_encoding            : 5
+     DW_AT_name                : (indirect string, offset: 0x25): short int
+<0x58>: Abbrev Number: 3    (DW_TAG_base_type)
+     DW_AT_byte_size           : 4
+     DW_AT_encoding            : 5
+     DW_AT_name                : int
+<0x5f>: Abbrev Number: 1    (DW_TAG_base_type)
+     DW_AT_byte_size           : 8
+     DW_AT_encoding            : 5
+     DW_AT_name                : (indirect string, offset: 0xcb): long int
+<0x66>: Abbrev Number: 1    (DW_TAG_base_type)
+     DW_AT_byte_size           : 1
+     DW_AT_encoding            : 6
+     DW_AT_name                : (indirect string, offset: 0xc6): char
+<0x6d>: Abbrev Number: 4    (DW_TAG_subprogram)
+     DW_AT_external            : 1
+     DW_AT_name                : (indirect string, offset: 0xd4): main
+     DW_AT_decl_file           : 1
+     DW_AT_decl_line           : 3
+     DW_AT_decl_column         : 5
+     DW_AT_type                : <0x58>
+     DW_AT_low_pc              : 0x1149
+     DW_AT_high_pc             : 45
+     DW_AT_frame_base          : 1 byte block: 0x9c
+     DW_AT_call_all_tail_calls : 1
+<0x8b>: Abbrev Number: 0    (DW_TAG_null_entry)
+parse_aranges
+length 0x2c
+Version 2
+Debug info offset 0
+address size 8
+segment size 0
+length 0x2d address 0x1149
+Raw dump of debug contents of section .debug_line:
+
+ Header information:
+  Length:                             77
+  DWARF Version:                      5
+  Header Length:                      42
+  Minimum Instruction Length:         1
+  Maximum Operations per Instruction: 1
+  Initial value of 'is_stmt':         1
+  Line Base:                          -5
+  Line Range:                         14
+  Opcode Base:                        13
+
+ Opcodes:
+  Opcode 1 has 0 arg
+  Opcode 2 has 1 arg
+  Opcode 3 has 1 arg
+  Opcode 4 has 1 arg
+  Opcode 5 has 1 arg
+  Opcode 6 has 0 arg
+  Opcode 7 has 0 arg
+  Opcode 8 has 0 arg
+  Opcode 9 has 1 arg
+  Opcode 10 has 0 arg
+  Opcode 11 has 0 arg
+  Opcode 12 has 1 arg
+
+ Line Number Statements:
+  Set column to 12
+  Extended opcode 2: set Address to 0x1149
+  Special opcode 7: advance Address by 0 to 0x1149 and Line by 2 to 3
+  Set column to 2
+  Special opcode 118: advance Address by 8 to 0x1151 and Line by 1 to 4
+  Special opcode 216: advance Address by 15 to 0x1160 and Line by 1 to 5
+  Set column to 1
+  Advance PC by constant 17 to 0x1171
+  Special opcode 48: advance Address by 3 to 0x1174 and Line by 1 to 6
+  Advance PC by 2 to 0x1176
+  Extended opcode 1: End of Sequence
+
+EOF
+EXPECT_ERR=<<EOF
+WARN: DWARF5 format is not yet supported by radare2, please contribute
+WARN: run r2 with -e bin.cache=true to fix relocations in disassembly
+WARN: DWARF5 format is not yet supported by radare2, please contribute
+EOF
+RUN
+
+NAME=test dwarf4 code listing
+FILE=bins/elf/dwarf/hello-dwarf4
+CMDS=<<EOF
+s main
+af
+# TODO .add test for dir.source
+cd bins/elf/dwarf
+list
+CLL
+EOF
+EXPECT=<<EOF
+0x00001149  int main() {
+0x00001151  	printf ("Hello World\n");
+0x00001160  	printf ("How Are You?\n");
+0x00001174  }
+0x00001149  int main() {
+EOF
+RUN

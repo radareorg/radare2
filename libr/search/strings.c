@@ -1,4 +1,6 @@
-/* radare - LGPL - Copyright 2006-2021 pancake */
+/* radare - LGPL - Copyright 2006-2022 pancake */
+
+#define R_LOG_ORIGIN "search.strings"
 
 #include "r_search.h"
 
@@ -13,11 +15,10 @@ static char *encodings[3] = { "ascii", "cp850", NULL };
 	//encoding = resolve_encoding(config_get("cfg.encoding"));
 
 R_API int r_search_get_encoding(const char *name) {
-	int i;
-	if (!name || !*name) {
+	if (R_STR_ISEMPTY (name)) {
 		return ENCODING_ASCII;
 	}
-	ut32 lename = strlen (name);
+	size_t i, lename = strlen (name);
 	for (i = 0; encodings[i]; i++) {
 		ut32 sz = R_MIN (strlen (encodings[i]), lename);
 		if (!r_str_ncasecmp (name, encodings[i], sz)) {
@@ -75,7 +76,7 @@ R_IPI int search_strings_update(RSearch *s, ut64 from, const ut8 *buf, int len) 
 				if (matches < sizeof (str)) {
 					matches++;
 				} else {
-					eprintf ("Truncated match, keyword is too large\n");
+					R_LOG_WARN ("Truncated match, keyword is too large");
 				}
 			} else {
 				/* wide char check \x??\x00\x??\x00 */

@@ -61,7 +61,7 @@ static void print_format_values(RCore *core, const char *fmt, bool onstack, ut64
 	char opt;
 	ut64 bval = src;
 	int i;
-	const int endian = core->rasm->config->big_endian;
+	const int endian = R_ARCH_CONFIG_IS_BIG_ENDIAN (core->rasm->config);
 	int width = (core->anal->config->bits == 64)? 8: 4;
 	int bsize = R_MIN (64, core->blocksize);
 
@@ -153,7 +153,7 @@ R_API void r_core_print_func_args(RCore *core) {
 	const char *pc = r_reg_get_name (core->anal->reg, R_REG_NAME_PC);
 	ut64 cur_addr = r_reg_getv (core->anal->reg, pc);
 	RListIter *iter;
-	RAnalOp *op = r_core_anal_op (core, cur_addr, R_ANAL_OP_MASK_BASIC);
+	RAnalOp *op = r_core_anal_op (core, cur_addr, R_ARCH_OP_MASK_BASIC);
 	if (!op) {
 		return;
 	}

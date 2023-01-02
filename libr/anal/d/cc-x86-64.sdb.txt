@@ -46,3 +46,8 @@ cc.amd64syscall.arg3=r10
 cc.amd64syscall.arg4=r8
 cc.amd64syscall.arg5=r9
 cc.amd64syscall.ret=rax
+
+p9=cc
+cc.p9.arg0=rbp
+cc.p9.argn=stack
+cc.p9.ret=rax

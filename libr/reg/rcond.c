@@ -41,7 +41,7 @@ R_API bool r_reg_cond_set(RReg *r, const char *name, bool val) {
 	return false;
 }
 
-R_API const char *r_reg_cond_to_string(int n) {
+R_API const char *r_reg_cond_tostring(int n) {
 	const char *cs[] = {
 		"eq", "ne", "cf", "neg", "of", "hi", "he",
 		"lo", "loe", "ge", "gt", "lt", "le"
@@ -112,8 +112,7 @@ R_API int r_reg_cond_from_string(const char *str) {
 	return -1;
 }
 
-// R2_580: R_API bool r_reg_cond_bits(RReg *r, int type, RRegFlags *f) {
-R_API int r_reg_cond_bits(RReg *r, int type, RRegFlags *f) {
+R_API bool r_reg_cond_bits(RReg *r, int type, RRegFlags *f) {
 	switch (type) {
 	case R_REG_COND_EQ: return Z;
 	case R_REG_COND_NE: return !Z;
@@ -224,8 +223,7 @@ R_API bool r_reg_cond_bits_set(RReg *r, int type, RRegFlags *f, bool v) {
 	return true;
 }
 
-// R2_580: R_API bool r_reg_cond(RReg *r, int type) {
-R_API int r_reg_cond(RReg *r, int type) {
+R_API bool r_reg_cond(RReg *r, int type) {
 	r_return_val_if_fail (r, false);
 	RRegFlags f = {0};
 	r_reg_cond_retrieve (r, &f);

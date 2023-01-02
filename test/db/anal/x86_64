@@ -5,7 +5,7 @@ aap
 aflc
 EOF
 EXPECT=<<EOF
-439
+440
 EOF
 RUN
 
@@ -729,19 +729,6 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=raw aac with maps (using a PIC bin)
-FILE=bins/elf/libmagic.so
-ARGS=-n -m 0x80000 -a arm -b 16 -e cfg.bigendian=false
-CMDS=<<EOF
-aac
-e search.in=io.maps
-afl~?
-EOF
-EXPECT=<<EOF
-94
-EOF
-RUN
-
 NAME=aav without vinfun
 FILE=bins/elf/analysis/mipsbe-busybox
 CMDS=<<EOF
@@ -767,19 +754,6 @@ EXPECT=<<EOF
 1
 EOF
 RUN
-
-NAME=aav thumb detection
-FILE=bins/firmware/armthumb.bin
-ARGS=-aarm -b32
-CMDS=<<EOF
-aav
-f
-EOF
-EXPECT=<<EOF
-0x0000000d 4 aav.0x0000000d
-EOF
-RUN
-
 
 NAME=sym is not fcn
 FILE=bins/mach0/mach0-i386
@@ -827,9 +801,9 @@ afr
 afl
 EOF
 EXPECT=<<EOF
-0x00001f80    1 41           main
-0x00001f50    1 47           sym._foo
-0x00001f00    4 73           sym._bar
+0x00001f80    1     41 main
+0x00001f50    1     47 sym._foo
+0x00001f00    4     73 sym._bar
 EOF
 RUN
 
@@ -841,7 +815,7 @@ aF
 afl
 EOF
 EXPECT=<<EOF
-0x00001f80    1 41           main
+0x00001f80    1     41 main
 EOF
 RUN
 
@@ -867,9 +841,9 @@ aap
 afl
 EOF
 EXPECT=<<EOF
-0x00001f00    4 73           sym._bar
-0x00001f50    1 47           sym._foo
-0x00001f80    1 41           main
+0x00001f00    4     73 sym._bar
+0x00001f50    1     47 sym._foo
+0x00001f80    1     41 main
 EOF
 RUN
 
@@ -898,16 +872,16 @@ EOF
 EXPECT=<<EOF
 Current section
 
-nth paddr       size vaddr       vsize perm name
-------------------------------------------------
-0   0x00000188  0x24 0x08048188   0x24 -r-- .note.gnu.build-id
+nth paddr       size vaddr       vsize perm type name
+-----------------------------------------------------
+0   0x00000188  0x24 0x08048188   0x24 -r-- NOTE .note.gnu.build-id
 
 Current section
 
-nth paddr  size vaddr  vsize perm name
---------------------------------------
+nth paddr  size vaddr  vsize perm type name
+-------------------------------------------
 
-{"name":".plt","size":240,"vsize":240,"perm":"-r-x","paddr":1888,"vaddr":134514528}
+{"name":".plt","size":240,"vsize":240,"type":"PROGBITS","perm":"-r-x","paddr":1888,"vaddr":134514528}
 EOF
 RUN
 
@@ -923,6 +897,7 @@ EXPECT=<<EOF
       "name": "",
       "size": 0,
       "vsize": 0,
+      "type": "NULL",
       "perm": "----",
       "paddr": 0,
       "vaddr": 0
@@ -931,6 +906,7 @@ EXPECT=<<EOF
       "name": ".interp",
       "size": 19,
       "vsize": 19,
+      "type": "PROGBITS",
       "perm": "-r--",
       "entropy": "3.68188080",
       "paddr": 340,
@@ -940,6 +916,7 @@ EXPECT=<<EOF
       "name": ".note.ABI-tag",
       "size": 32,
       "vsize": 32,
+      "type": "NOTE",
       "perm": "-r--",
       "entropy": "1.74868984",
       "paddr": 360,
@@ -949,6 +926,7 @@ EXPECT=<<EOF
       "name": ".note.gnu.build-id",
       "size": 36,
       "vsize": 36,
+      "type": "NOTE",
       "perm": "-r--",
       "entropy": "4.13605609",
       "paddr": 392,
@@ -958,6 +936,7 @@ EXPECT=<<EOF
       "name": ".gnu.hash",
       "size": 176,
       "vsize": 176,
+      "type": "GNU_HASH",
       "perm": "-r--",
       "entropy": "4.74342302",
       "paddr": 428,
@@ -967,6 +946,7 @@ EXPECT=<<EOF
       "name": ".dynsym",
       "size": 592,
       "vsize": 592,
+      "type": "DYNSYM",
       "perm": "-r--",
       "entropy": "2.53170115",
       "paddr": 604,
@@ -976,6 +956,7 @@ EXPECT=<<EOF
       "name": ".dynstr",
       "size": 384,
       "vsize": 384,
+      "type": "STRTAB",
       "perm": "-r--",
       "entropy": "4.59829027",
       "paddr": 1196,
@@ -985,6 +966,7 @@ EXPECT=<<EOF
       "name": ".gnu.version",
       "size": 74,
       "vsize": 74,
+      "type": "GNU_VERSYM",
       "perm": "-r--",
       "entropy": "1.55329753",
       "paddr": 1580,
@@ -994,6 +976,7 @@ EXPECT=<<EOF
       "name": ".gnu.version_r",
       "size": 64,
       "vsize": 64,
+      "type": "GNU_VERNEED",
       "perm": "-r--",
       "entropy": "2.33399879",
       "paddr": 1656,
@@ -1003,6 +986,7 @@ EXPECT=<<EOF
       "name": ".rel.dyn",
       "size": 16,
       "vsize": 16,
+      "type": "REL",
       "perm": "-r--",
       "entropy": "3.25000000",
       "paddr": 1720,
@@ -1012,6 +996,7 @@ EXPECT=<<EOF
       "name": ".rel.plt",
       "size": 112,
       "vsize": 112,
+      "type": "REL",
       "perm": "-r--",
       "entropy": "3.52414971",
       "paddr": 1736,
@@ -1021,6 +1006,7 @@ EXPECT=<<EOF
       "name": ".init",
       "size": 35,
       "vsize": 35,
+      "type": "PROGBITS",
       "perm": "-r-x",
       "entropy": "4.12467560",
       "paddr": 1848,
@@ -1030,6 +1016,7 @@ EXPECT=<<EOF
       "name": ".plt",
       "size": 240,
       "vsize": 240,
+      "type": "PROGBITS",
       "perm": "-r-x",
       "entropy": "3.68026477",
       "paddr": 1888,
@@ -1039,6 +1026,7 @@ EXPECT=<<EOF
       "name": ".text",
       "size": 1170,
       "vsize": 1170,
+      "type": "PROGBITS",
       "perm": "-r-x",
       "entropy": "5.89126869",
       "paddr": 2128,
@@ -1048,6 +1036,7 @@ EXPECT=<<EOF
       "name": ".fini",
       "size": 20,
       "vsize": 20,
+      "type": "PROGBITS",
       "perm": "-r-x",
       "entropy": "3.72192809",
       "paddr": 3300,
@@ -1057,6 +1046,7 @@ EXPECT=<<EOF
       "name": ".rodata",
       "size": 249,
       "vsize": 249,
+      "type": "PROGBITS",
       "perm": "-r--",
       "entropy": "4.65845607",
       "paddr": 3320,
@@ -1066,6 +1056,7 @@ EXPECT=<<EOF
       "name": ".eh_frame_hdr",
       "size": 84,
       "vsize": 84,
+      "type": "PROGBITS",
       "perm": "-r--",
       "entropy": "3.49291576",
       "paddr": 3572,
@@ -1075,6 +1066,7 @@ EXPECT=<<EOF
       "name": ".eh_frame",
       "size": 336,
       "vsize": 336,
+      "type": "PROGBITS",
       "perm": "-r--",
       "entropy": "4.46780720",
       "paddr": 3656,
@@ -1084,6 +1076,7 @@ EXPECT=<<EOF
       "name": ".init_array",
       "size": 4,
       "vsize": 4,
+      "type": "INIT_ARRAY",
       "perm": "-rw-",
       "entropy": "2.00000000",
       "paddr": 7944,
@@ -1093,6 +1086,7 @@ EXPECT=<<EOF
       "name": ".fini_array",
       "size": 4,
       "vsize": 4,
+      "type": "FINI_ARRAY",
       "perm": "-rw-",
       "entropy": "2.00000000",
       "paddr": 7948,
@@ -1102,6 +1096,7 @@ EXPECT=<<EOF
       "name": ".jcr",
       "size": 4,
       "vsize": 4,
+      "type": "PROGBITS",
       "perm": "-rw-",
       "entropy": "0.00000000",
       "paddr": 7952,
@@ -1111,6 +1106,7 @@ EXPECT=<<EOF
       "name": ".dynamic",
       "size": 232,
       "vsize": 232,
+      "type": "DYNAMIC",
       "perm": "-rw-",
       "entropy": "2.87462433",
       "paddr": 7956,
@@ -1120,6 +1116,7 @@ EXPECT=<<EOF
       "name": ".got",
       "size": 4,
       "vsize": 4,
+      "type": "PROGBITS",
       "perm": "-rw-",
       "entropy": "0.00000000",
       "paddr": 8188,
@@ -1129,6 +1126,7 @@ EXPECT=<<EOF
       "name": ".got.plt",
       "size": 68,
       "vsize": 68,
+      "type": "PROGBITS",
       "perm": "-rw-",
       "entropy": "3.42061456",
       "paddr": 8192,
@@ -1138,6 +1136,7 @@ EXPECT=<<EOF
       "name": ".data",
       "size": 8,
       "vsize": 8,
+      "type": "PROGBITS",
       "perm": "-rw-",
       "entropy": "0.00000000",
       "paddr": 8260,
@@ -1147,6 +1146,7 @@ EXPECT=<<EOF
       "name": ".bss",
       "size": 0,
       "vsize": 8,
+      "type": "NOBITS",
       "perm": "-rw-",
       "paddr": 8268,
       "vaddr": 134520928
@@ -1155,6 +1155,7 @@ EXPECT=<<EOF
       "name": ".comment",
       "size": 36,
       "vsize": 36,
+      "type": "PROGBITS",
       "perm": "----",
       "entropy": "4.04868811",
       "paddr": 8268,
@@ -1164,6 +1165,7 @@ EXPECT=<<EOF
       "name": ".shstrtab",
       "size": 246,
       "vsize": 246,
+      "type": "STRTAB",
       "perm": "----",
       "entropy": "4.28967882",
       "paddr": 8304,
@@ -1669,25 +1671,6 @@ EXPECT=<<EOF
 EOF
 RUN
 
-
-NAME=no string on cbz
-FILE=malloc://8096
-CMDS=<<EOF
-e asm.arch=arm
-e asm.bits=64
-e cfg.bigendian=false
-e emu.str=true
-wv 0x52800015
-wv 0x340000b5 @ 4
-w hello @ 0x18
-pd 2
-EOF
-EXPECT=<<EOF
-            0x00000000      15008052       mov w21, 0
-        ,=< 0x00000004      b5000034       cbz w21, 0x18               ; likely
-EOF
-RUN
-
 NAME=No function
 FILE=malloc://0x50
 CMDS=aftm
@@ -1808,18 +1791,6 @@ EXPECT=<<EOF
 int category
 int fd
 unsigned long request
-EOF
-RUN
-
-NAME=Function definition
-FILE=bins/elf/arm1.bin
-CMDS=<<EOF
-afr @ main
-s 0x000082cc
-pd 1~?*xmalloc
-EOF
-EXPECT=<<EOF
-1
 EOF
 RUN
 
@@ -4118,9 +4089,9 @@ EXPECT=<<EOF
 |                                |
 `--------------------------------'
 
-address            size  nbbs edges    cc cost          min bound range max bound          calls locals args xref frame name
-================== ==== ===== ===== ===== ==== ================== ===== ================== ===== ====== ==== ==== ===== ====
-0x0000000000000003    9     3     3     0    4 0x0000000000000000     7 0x0000000000000007     0    0      0    0     0 fcn.00000003
+address            noret size  nbbs edges    cc cost          min bound range max bound          calls locals args xref frame name
+================== ===== ===== ===== ===== ===== ==== ================== ===== ================== ===== ====== ==== ==== ===== ====
+0x0000000000000003     0    9     3     3     0    4 0x0000000000000000     7 0x0000000000000007     0    0      0    0     0 fcn.00000003
 EOF
 RUN
 

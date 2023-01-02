@@ -10,7 +10,8 @@ static const char *help_msg_o[] = {
 	"o","","list opened files",
 	"o","-1","close file descriptor 1",
 	"o*","","list opened files in r2 commands",
-	"o+"," [file]","open file in read-write mode",
+	"o+"," [file]", "open a file in read-write mode",
+	"o++"," [file]", "create and open file in read-write mode (see ot and omr)",
 	"o-","!*","close all opened files",
 	"o--","","close all files, analysis, binfiles, flags, same as !r2 --",
 	"o.","","show current filename (or o.q/oq to get the fd)",
@@ -21,11 +22,13 @@ static const char *help_msg_o[] = {
 	"ob","[?] [lbdos] [...]","list opened binary files backed by fd",
 	"oc"," [file]","open core file, like relaunching r2",
 	"of","[?] [file]","open file without creating any map",
+	"oe"," [filename]","open cfg.editor with given file",
 	"oj","[?]","list opened files in JSON format",
 	"om","[?]","create, list, remove IO maps",
 	"on","[?][n] [file] 0x4000","map raw file at 0x4000 (no r_bin involved)",
 	"oo","[?][+bcdnm]","reopen current file (see oo?) (reload in rw or debugger)",
 	"op","[r|n|p|fd]", "select priorized file by fd (see ob), opn/opp/opr = next/previous/rotate",
+	"ot"," [file]", "same as `touch [file]`",
 	"oq","","list all open files",
 	"ox", " fd fdx", "exchange the descs of fd and fdx and keep the mapping",
 	NULL
@@ -52,6 +55,8 @@ static const char *help_msg_o_[] = {
 	"o-*","","close all opened files",
 	"o-!","","close all files except the current one",
 	"o-3","","close fd=3",
+	"o-$","","close last fd",
+	"o-.","","close current fd",
 	NULL
 };
 
@@ -101,12 +106,15 @@ static const char *help_msg_oba[] = {
 
 static const char *help_msg_ob[] = {
 	"Usage:", "ob", " # List open binary files backed by fd",
-	"ob", " [bfid]", "switch to open given objid",
+	"ob", " [name|bfid]", "switch to open given objid (or name)",
 	"ob", "", "list opened binary files and objid",
 	"ob*", "", "list opened binary files and objid (r2 commands)",
 	"ob", " *", "select all bins (use 'ob bfid' to pick one)",
+	"obm", "([id])", "merge current selected binfile into previous binfile (id-1)",
+	"obm-", "([id])", "same as obm, but deletes the current binfile",
 	"ob-", "*", "delete all binfiles",
 	"ob-", "[objid]", "delete binfile by binobjid",
+	"ob--", "", "delete the last binfile",
 	"ob.", " ([addr])", "show bfid at current address",
 	"ob=", "", "show ascii art table having the list of open files",
 	"obL", "", "same as iL or Li",
@@ -115,7 +123,6 @@ static const char *help_msg_ob[] = {
 	"oba", " [addr]", "open bin info from the given address",
 	"obf", " ([file])", "load bininfo for current file (useful for r2 -n)",
 	"obj", "", "list opened binary files and objid (JSON format)",
-	"obn", " [name]", "select binfile by name",
 	"obo", " [fd]", "switch to open binfile by fd number",
 	"obr", " [baddr]", "rebase current bin object",
 	NULL
@@ -212,6 +219,20 @@ static const char *help_msg_oonn[] = {
 	NULL
 };
 
+static bool isfile(const char *filename) {
+	if (R_STR_ISEMPTY (filename)) {
+		return false;
+	}
+	// check for ./ or /
+	if (r_file_exists (filename)) {
+		return true;
+	}
+	if (r_str_startswith (filename, "./") || r_str_startswith (filename, "/")) {
+		return true;
+	}
+	return false;
+}
+
 // HONOR bin.at
 static void cmd_open_bin(RCore *core, const char *input) {
 	const char *value = NULL;
@@ -254,7 +275,7 @@ static void cmd_open_bin(RCore *core, const char *input) {
 		if (input[2] && input[3]) {
 			char *arg = strdup (input + 3);
 			char *filename = strchr (arg, ' ');
-			if (filename && *filename && (filename[1] == '/' || filename[1] == '.')) {
+			if (filename && isfile (filename + 1)) {
 				int saved_fd = r_io_fd_get_current (core->io);
 				RIODesc *desc = r_io_open (core->io, filename + 1, R_PERM_RX, 0);
 				if (desc) {
@@ -263,13 +284,14 @@ static void cmd_open_bin(RCore *core, const char *input) {
 					RBinFileOptions opt;
 					r_bin_file_options_init (&opt, desc->fd, addr, 0, core->bin->rawstr);
 					r_bin_open_io (core->bin, &opt);
-					r_io_desc_close (desc);
+					r_core_bin_load (core, NULL, UT64_MAX);
 					r_core_cmd0 (core, ".is*");
+					r_io_desc_close (desc);
 					r_io_use_fd (core->io, saved_fd);
 				} else {
 					R_LOG_ERROR ("Cannot open '%s'", r_str_trim_head_ro (filename + 1));
 				}
-			} else if (filename && *filename) {
+			} else if (R_STR_ISNOTEMPTY (filename)) {
 				ut64 baddr = r_num_math (core->num, filename);
 				ut64 addr = r_num_math (core->num, input + 2); // mapaddr
 				int fd = r_io_fd_get_current (core->io);
@@ -323,7 +345,7 @@ static void cmd_open_bin(RCore *core, const char *input) {
 			r_list_free (files);
 		}
 		break;
-	case ' ': // "ob "
+	case ' ': // "ob " // select bf by id or name
 	{
 		ut32 id;
 		const char *tmp;
@@ -360,12 +382,47 @@ static void cmd_open_bin(RCore *core, const char *input) {
 		r_core_bin_rebase (core, r_num_math (core->num, input + 3));
 		r_core_cmd0 (core, ".is*");
 		break;
-	case 'f':
+	case 'f': // "obf"
 		if (input[2] == ' ') {
 			r_core_cmdf (core, "oba 0 %s", input + 3);
 		} else {
 			r_core_bin_load (core, NULL, UT64_MAX);
 			value = input[2] ? input + 2 : NULL;
+		}
+		break;
+	case 'm': // "obm"
+		{
+			int dstid = atoi (input + 2);
+			// TODO take argument with given id to merge to
+			RBinFile *src = r_bin_cur (core->bin);
+			int current = src? src->id: -1;
+			if (current > 0) {
+				if (dstid < 1) {
+					dstid = current - 1;
+				}
+				RBinFile *dst = r_bin_file_find_by_id (core->bin, dstid);
+				if (dst) {
+					r_bin_file_merge (dst, src);
+					R_LOG_DEBUG ("merge %d into %d", current, dstid);
+					if (strchr (input + 2, '-')) { // "obm-"
+						int curfd = -1;
+						if (core->io->desc) {
+							curfd = core->io->desc->fd;
+						}
+						r_core_cmd_callf (core, "op %d", dst->fd);
+						r_bin_file_set_cur_binfile (core->bin, dst);
+						r_bin_file_delete (core->bin, current);
+						if (curfd >= 0) {
+							r_io_fd_close (core->io, curfd);
+							// r_core_cmd_callf (core, "o-%d", curfd);
+						}
+					}
+					break;
+				} else {
+					R_LOG_ERROR ("Cannot find binfile with id=%d", dstid);
+				}
+			}
+			R_LOG_INFO ("Nothing to merge");
 		}
 		break;
 	case 'o': // "obo"
@@ -382,6 +439,13 @@ static void cmd_open_bin(RCore *core, const char *input) {
 	case '-': // "ob-"
 		if (input[2] == '*') {
 			r_bin_file_delete_all (core->bin);
+		} else if (input[2] == '-') {
+			RBinFile *bf = r_bin_cur (core->bin);
+			int current = bf? bf->id: 0;
+			if (current >= 0) {
+				r_core_cmd_callf (core, "ob-%d", current);
+				r_core_cmd_callf (core, "ob %d", current -1);
+			}
 		} else {
 			ut32 id;
 			value = r_str_trim_head_ro (input + 2);
@@ -392,18 +456,19 @@ static void cmd_open_bin(RCore *core, const char *input) {
 			id = (*value && r_is_valid_input_num_value (core->num, value)) ?
 					r_get_input_num_value (core->num, value) : UT32_MAX;
 			RBinFile *bf = r_bin_file_find_by_id (core->bin, id);
-			if (!bf) {
+			if (bf) {
+				int bfid = bf->id;
+				if (!r_core_bin_delete (core, bfid)) {
+					R_LOG_ERROR ("Cannot find an RBinFile associated with id %d", bfid);
+				}
+			} else {
 				R_LOG_ERROR ("Invalid binid");
-				break;
-			}
-			if (!r_core_bin_delete (core, bf->id)) {
-				R_LOG_ERROR ("Cannot find an RBinFile associated with that id");
 			}
 		}
 		break;
 	case '=': // "ob="
 		{
-			char temp[64];
+			char temp[SDB_NUM_BUFSZ];
 			RListIter *iter;
 			RList *list = r_list_newf ((RListFree) r_listinfo_free);
 			RBinFile *bf = NULL;
@@ -413,7 +478,7 @@ static void cmd_open_bin(RCore *core, const char *input) {
 			}
 			r_list_foreach (bin->binfiles, iter, bf) {
 				RInterval inter = (RInterval) {bf->o->baddr, bf->o->size};
-				RListInfo *info = r_listinfo_new (bf->file, inter, inter, -1,  sdb_itoa (bf->fd, temp, 10));
+				RListInfo *info = r_listinfo_new (bf->file, inter, inter, -1, sdb_itoa (bf->fd, 10, temp, sizeof (temp)));
 				if (!info) {
 					break;
 				}
@@ -527,6 +592,11 @@ static void cmd_omfg(RCore *core, const char *input) {
 		: r_str_rwx (input) : 7;
 	ut32 mapid;
 	if (!r_id_storage_get_lowest (core->io->maps, &mapid)) {
+		ut32 fd = r_io_fd_get_current (core->io);
+		RIODesc *desc = r_io_desc_get (core->io, fd);
+		if (desc) {
+			r_core_cmd0 (core, "omm");
+		}
 		return;
 	}
 	switch (*input) {
@@ -1046,7 +1116,9 @@ static void cmd_open_map(RCore *core, const char *input) {
 		}
 		break;
 	case 'm': // "omm"
-		{
+		if (input[2] == '?') {
+			r_core_cmd_help_match (core, help_msg_om, "omm", false);
+		} else {
 			ut32 fd = input[2]? r_num_math (core->num, input + 2): r_io_fd_get_current (core->io);
 			RIODesc *desc = r_io_desc_get (core->io, fd);
 			if (desc) {
@@ -1056,7 +1128,7 @@ static void cmd_open_map(RCore *core, const char *input) {
 					r_io_map_set_name (map, desc->name);
 				}
 			} else {
-				r_core_cmd_help_match (core, help_msg_om, "omm", false);
+				R_LOG_DEBUG ("Cannot find any fd to map");
 			}
 		}
 		break;
@@ -1274,7 +1346,7 @@ static bool __rebase_refs(void *user, const ut64 k, const void *v) {
 static void __rebase_everything(RCore *core, RList *old_sections, ut64 old_base) {
 	RListIter *it, *itit, *ititit;
 	RAnalFunction *fcn;
-	ut64 new_base = core->bin->cur->o->baddr_shift;
+	ut64 new_base = (core->bin->cur && core->bin->cur->o)? core->bin->cur->o->baddr_shift: 0;
 	RBinSection *old_section;
 	ut64 diff = new_base - old_base;
 	if (!diff) {
@@ -1417,7 +1489,7 @@ R_API void r_core_file_reopen_debug(RCore *core, const char *args) {
 	}
 
 	RList *old_sections = __save_old_sections (core);
-	ut64 old_base = core->bin->cur->o->baddr_shift;
+	ut64 old_base = (core->bin->cur && core->bin->cur->o)? core->bin->cur->o->baddr_shift: 0;
 	int bits = core->rasm->config->bits;
 	char *bin_abspath = r_file_abspath (binpath);
 	if (strstr (bin_abspath, "://")) {
@@ -1757,7 +1829,7 @@ static int cmd_open(void *data, const char *input) {
 			return 0;
 		}
 		if (input[1] == '*') { // "on*"
-			R_LOG_INFO ("TODO: on* is not yet implemented");
+			R_LOG_TODO ("on* is not yet implemented");
 			return 0;
 		}
 		if (input[1] == '+') { // "on+"
@@ -1805,6 +1877,14 @@ static int cmd_open(void *data, const char *input) {
 		r_core_return_value (core, fd);
 		r_core_block_read (core);
 		return 0;
+	case 'e': // "oe"
+		if (input[1] == ' ') {
+			const char *arg = r_str_trim_head_ro (input + 1);
+			free (r_core_editor (core, arg, NULL));
+		} else {
+			r_core_cmd_help_match (core, help_msg_o, "oe", false);
+		}
+		return 0;
 	// XXX projects use the of command, but i think we should deprecate it... keeping it for now
 	case 'f': // "of"
 		if (input[1]) {
@@ -1825,10 +1905,36 @@ static int cmd_open(void *data, const char *input) {
 			r_core_cmd_help_match (core, help_msg_o, "of", true);
 		}
 		return 0;
+	case 't': // "ot"
+		r_core_cmdf (core, "touch%s", input + 1);
+		return 0;
 	case 'p': // "op"
 		/* handle prioritize */
 		if (input[1]) {
 			switch (input[1]) {
+			case 'e': // "ope" - 'open'
+				{
+					const char *sp = strchr (input, ' ');
+					if (sp) {
+#if R2__WINDOWS__
+						r_sys_cmdf ("start %s", sp + 1);
+#else
+						if (r_file_exists ("/usr/bin/xdg-open")) {
+							r_sys_cmdf ("xdg-open %s", sp + 1);
+						} else if (r_file_exists ("/usr/local/bin/xdg-open")) {
+							r_sys_cmdf ("xdg-open %s", sp + 1);
+						} else if (r_file_exists ("/usr/bin/open")) {
+							r_sys_cmdf ("open %s", sp + 1);
+						} else {
+							eprintf ("Unknown open tool. Cannot find xdg-open\n");
+						}
+#endif
+
+					} else {
+						eprintf ("Usage: open [path]\n");
+					}
+				}
+				break;
 			case 'r': // "opr" - open next file + rotate if not found
 			case 'n': // "opn" - open next file
 			case 'p': // "opp" - open previous file
@@ -1858,7 +1964,15 @@ static int cmd_open(void *data, const char *input) {
 		return 0;
 		break;
 	case '+': // "o+"
+		if (input[1] == '?' || (input[1] && input[2] == '?')) {
+			r_core_cmd_help_match (core, help_msg_o, "o+", false);
+			return 0;
+		}
 		perms |= R_PERM_W;
+		if (input[1] == '+') { // "o++"
+			perms |= R_PERM_CREAT;
+			input++;
+		}
 		/* fallthrough */
 	case ' ': // "o" "o "
 		ptr = input + 1;
@@ -1904,7 +2018,7 @@ static int cmd_open(void *data, const char *input) {
 					RIODesc *desc = r_io_desc_get (core->io, fd);
 					if (desc && (desc->perm & R_PERM_W)) {
 						RListIter *iter;
-						RList *maplist =r_io_map_get_by_fd (core->io, desc->fd);
+						RList *maplist = r_io_map_get_by_fd (core->io, desc->fd);
 						if (!maplist) {
 							break;
 						}
@@ -1918,6 +2032,9 @@ static int cmd_open(void *data, const char *input) {
 					}
 				}
 			} else {
+				if (perms & R_PERM_W) {
+					// create file!
+				}
 				R_LOG_ERROR ("cannot open file %s", argv0);
 			}
 		}
@@ -1997,6 +2114,21 @@ static int cmd_open(void *data, const char *input) {
 		switch (input[1]) {
 		case '!': // "o-!"
 			r_core_file_close_all_but (core);
+			break;
+		case '$': // "o-$"
+			R_LOG_TODO ("o-$: close last fd is not implemented");
+			break;
+		case '.': // "o-."
+			{
+				RBinFile *bf = r_bin_cur (core->bin);
+				if (bf && bf->fd >= 0) {
+					core->bin->cur = NULL;
+					int fd = bf->fd;
+					if (!r_io_fd_close (core->io, fd)) {
+						R_LOG_ERROR ("Unable to find file descriptor %d", fd);
+					}
+				}
+			}
 			break;
 		case '*': // "o-*"
 			r_io_close_all (core->io);
@@ -2187,7 +2319,7 @@ static int cmd_open(void *data, const char *input) {
 
 						r_core_cmd0 (core, "ob-*");
 						r_io_close_all (core->io);
-						r_config_set (core->config, "cfg.debug", "false");
+						r_config_set_b (core->config, "cfg.debug", false);
 						r_core_cmdf (core, "o %s", file);
 
 						r_core_block_read (core);

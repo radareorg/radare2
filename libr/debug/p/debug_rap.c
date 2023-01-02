@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2011-2019 - pancake */
+/* radare - LGPL - Copyright 2011-2022 - pancake */
 
 #include <r_asm.h>
 #include <r_cons.h>
@@ -9,12 +9,12 @@ static bool __rap_step(RDebug *dbg) {
 	return true;
 }
 
-static int __rap_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
+static bool __rap_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 	r_io_system (dbg->iob.io, "dr");
-	return 0;
+	return true;
 }
 
-static int __rap_reg_write(RDebug *dbg, int type, const ut8 *buf, int size) {
+static bool __rap_reg_write(RDebug *dbg, int type, const ut8 *buf, int size) {
 	return false; // XXX Error check
 }
 
@@ -79,8 +79,6 @@ RDebugPlugin r_debug_plugin_rap = {
 	.reg_read = &__rap_reg_read,
 	.reg_write = &__rap_reg_write,
 	.reg_profile = (void *)__rap_reg_profile,
-	//.bp_write = &__rap_bp_write,
-	//.bp_read = &__rap_bp_read,
 };
 
 #ifndef R2_PLUGIN_INCORE

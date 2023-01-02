@@ -35,7 +35,7 @@ all: $(DLL_SDB)
 clean:
 	rm -f dll/*.sdb
 
-.PHONY: all clean install install-symlink symstall
+.PHONY: all clean install install-symlink symstall uninstall
 
 FORMATS=dex macho elf32 elf64 elf_enums pe32 trx mz zip
 
@@ -57,7 +57,7 @@ symstall install-symlink:
 	done
 
 $(DLL_SDB):
-	$(SDB) $@ = < $@.txt
+	-$(SDB) $@ = < $@.txt
 
 uninstall:
 	rm -rf "$P"

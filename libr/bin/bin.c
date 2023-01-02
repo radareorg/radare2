@@ -3,8 +3,6 @@
 #define R_LOG_ORIGIN "bin"
 
 #include <r_bin.h>
-#include <r_util.h>
-#include <r_lib.h>
 #include <config.h>
 #include "i/private.h"
 
@@ -64,7 +62,7 @@ R_API RBinXtrData *r_bin_xtrdata_new(RBuffer *buf, ut64 offset, ut64 size, ut32 
 		data->file_count = file_count;
 		data->metadata = metadata;
 		data->loaded = false;
-// don't slice twice TODO. review this
+		// don't slice twice TODO. review this
 		data->buf = r_buf_ref (buf); // r_buf_new_slice (buf, offset, size);
 	}
 	return data;
@@ -107,6 +105,7 @@ R_API RList *r_bin_dump_strings(RBinFile *bf, int min, int raw) {
 }
 
 R_API void r_bin_file_options_init(RBinFileOptions *opt, int fd, ut64 baseaddr, ut64 loadaddr, int rawstr) {
+	r_return_if_fail (opt);
 	memset (opt, 0, sizeof (*opt));
 	opt->baseaddr = baseaddr;
 	opt->loadaddr = loadaddr;
@@ -114,7 +113,8 @@ R_API void r_bin_file_options_init(RBinFileOptions *opt, int fd, ut64 baseaddr, 
 	opt->rawstr = rawstr;
 }
 
-R_API void r_bin_arch_options_init(RBinArchOptions *opt, const char *arch, int bits) {
+R_API void r_bin_arch_options_init(RBinArchOptions *opt, R_NULLABLE const char *arch, int bits) {
+	r_return_if_fail (opt);
 	opt->arch = arch? arch: R_SYS_ARCH;
 	opt->bits = bits? bits: R_SYS_BITS;
 }
@@ -132,25 +132,26 @@ R_API void r_bin_info_free(RBinInfo *rb) {
 		return;
 	}
 	r_list_free (rb->file_hashes);
-	free (rb->intrp);
-	free (rb->file);
-	free (rb->charset);
-	free (rb->type);
-	free (rb->bclass);
-	free (rb->rclass);
-	free (rb->arch);
-	free (rb->cpu);
-	free (rb->machine);
-	free (rb->os);
-	free (rb->subsystem);
-	free (rb->default_cc);
-	free (rb->rpath);
-	free (rb->guid);
-	free (rb->debug_file_name);
+	free (rb->abi);
 	free (rb->actual_checksum);
+	free (rb->arch);
+	free (rb->bclass);
+	free (rb->charset);
 	free (rb->claimed_checksum);
 	free (rb->compiler);
-	free (rb->head_flag);
+	free (rb->cpu);
+	free (rb->debug_file_name);
+	free (rb->default_cc);
+	free (rb->file);
+	free (rb->flags);
+	free (rb->guid);
+	free (rb->intrp);
+	free (rb->machine);
+	free (rb->os);
+	free (rb->rclass);
+	free (rb->rpath);
+	free (rb->subsystem);
+	free (rb->type);
 	free (rb);
 }
 
@@ -168,10 +169,10 @@ R_API RBinImport *r_bin_import_clone(RBinImport *o) {
 
 R_API void r_bin_import_free(RBinImport *imp) {
 	if (imp) {
-		R_FREE (imp->name);
-		R_FREE (imp->libname);
-		R_FREE (imp->classname);
-		R_FREE (imp->descriptor);
+		free (imp->name);
+		free (imp->libname);
+		free (imp->classname);
+		free (imp->descriptor);
 		free (imp);
 	}
 }
@@ -286,11 +287,15 @@ R_API bool r_bin_open_buf(RBin *bin, RBuffer *buf, RBinFileOptions *opt) {
 			return false;
 		}
 	}
+	// r_list_append (bin->binfiles, bf); // uaf
+	bool res = r_id_storage_set (bin->ids, bin->cur, bf->id);
 	if (!r_bin_file_set_cur_binfile (bin, bf)) {
+		R_LOG_WARN ("Cannot set the current binfile");
 		return false;
 	}
-	r_id_storage_set (bin->ids, bin->cur, bf->id);
-	return true;
+	// r_ref (bf);
+	bin->cur = bf;
+	return res;
 }
 
 R_API bool r_bin_open_io(RBin *bin, RBinFileOptions *opt) {
@@ -338,7 +343,6 @@ R_API bool r_bin_open_io(RBin *bin, RBinFileOptions *opt) {
 		r_buf_free (buf);
 		buf = slice;
 	}
-
 	opt->filename = fname;
 	bool res = r_bin_open_buf (bin, buf, opt);
 	r_buf_free (buf);
@@ -660,7 +664,7 @@ R_API RBinAddr *r_bin_get_sym(RBin *bin, int sym) {
 }
 
 // XXX: those accessors are redundant
-R_API RList *r_bin_get_entries(RBin *bin) {
+R_API const RList *r_bin_get_entries(RBin *bin) {
 	r_return_val_if_fail (bin, NULL);
 	RBinObject *o = r_bin_cur_object (bin);
 	return o ? o->entries : NULL;
@@ -977,6 +981,21 @@ static void list_xtr_archs(RBin *bin, PJ *pj, int mode) {
 	}
 }
 
+static char *get_arch_string(const char *arch, int bits, RBinInfo *info) {
+	RStrBuf *sb = r_strbuf_new ("");
+	r_strbuf_appendf (sb, "%s_%d", arch, bits);
+	if (R_STR_ISNOTEMPTY (info->cpu)) {
+		r_strbuf_appendf (sb, " cpu=%s", info->cpu);
+	}
+	if (R_STR_ISNOTEMPTY (info->abi)) {
+		r_strbuf_appendf (sb, " abi=%s", info->abi);
+	}
+	if (R_STR_ISNOTEMPTY (info->machine)) {
+		r_strbuf_appendf (sb, " machine=%s", info->machine);
+	}
+	return r_strbuf_drain (sb);
+}
+
 R_API void r_bin_list_archs(RBin *bin, PJ *pj, int mode) {
 	r_return_if_fail (bin);
 
@@ -1017,7 +1036,6 @@ R_API void r_bin_list_archs(RBin *bin, PJ *pj, int mode) {
 	ut64 obj_size = obj->obj_size;
 	const char *arch = info? info->arch: NULL;
 	const char *machine = info? info->machine: "unknown_machine";
-	const char *h_flag = info? info->head_flag: NULL;
 	char * str_fmt;
 	if (!arch) {
 		snprintf (unk, sizeof (unk), "unk_0");
@@ -1037,9 +1055,12 @@ R_API void r_bin_list_archs(RBin *bin, PJ *pj, int mode) {
 			pj_ki (pj, "bits", bits);
 			pj_kn (pj, "offset", boffset);
 			pj_kn (pj, "size", obj_size);
+			if (R_STR_ISNOTEMPTY (info->abi)) {
+				pj_ks (pj, "abi", info->abi);
+			}
 			if (!strcmp (arch, "mips")) {
 				pj_ks (pj, "isa", info->cpu);
-				pj_ks (pj, "features", info->features);
+				pj_ks (pj, "flags", info->flags);
 			}
 			if (machine) {
 				pj_ks (pj, "machine", machine);
@@ -1047,9 +1068,7 @@ R_API void r_bin_list_archs(RBin *bin, PJ *pj, int mode) {
 			pj_end (pj);
 			break;
 		default:
-			str_fmt = h_flag && strcmp (h_flag, "unknown_flag")
-				? r_str_newf ("%s_%i %s", arch, bits, h_flag) \
-				: r_str_newf ("%s_%i", arch, bits);
+			str_fmt = get_arch_string (arch, bits, info);
 			r_table_add_rowf (table, fmt, 0, boffset, obj_size, str_fmt, machine);
 			free (str_fmt);
 			bin->cb_printf ("%s", r_table_tostring (table));
@@ -1071,9 +1090,12 @@ R_API void r_bin_list_archs(RBin *bin, PJ *pj, int mode) {
 				pj_ki (pj, "bits", bits);
 				pj_kn (pj, "offset", boffset);
 				pj_kn (pj, "size", obj_size);
+				if (R_STR_ISNOTEMPTY (info->abi)) {
+					pj_ks (pj, "abi", info->abi);
+				}
 				if (!strcmp (arch, "mips")) {
 					pj_ks (pj, "isa", info->cpu);
-					pj_ks (pj, "features", info->features);
+					pj_ks (pj, "flags", info->flags);
 				}
 				if (machine) {
 					pj_ks (pj, "machine", machine);
@@ -1081,9 +1103,7 @@ R_API void r_bin_list_archs(RBin *bin, PJ *pj, int mode) {
 				pj_end (pj);
 				break;
 			default:
-				str_fmt = h_flag && strcmp (h_flag, "unknown_flag")
-					? r_str_newf ("%s_%i %s", arch, bits, h_flag)
-					: r_str_newf ("%s_%i", arch, bits);
+				str_fmt = get_arch_string (arch, bits, info);
 				r_table_add_rowf (table, fmt, 0, boffset, obj_size, str_fmt, "");
 				free (str_fmt);
 				bin->cb_printf ("%s", r_table_tostring (table));
@@ -1400,6 +1420,16 @@ R_IPI RBinSection *r_bin_section_new(const char *name) {
 		s->name = name? strdup (name): NULL;
 	}
 	return s;
+}
+
+R_API RBinSection *r_bin_section_clone(RBinSection *s) {
+	RBinSection *d = R_NEW0 (RBinSection);
+	if (d) {
+		memcpy (d, s, sizeof (RBinSection));
+		d->name = s->name? strdup (s->name): NULL;
+		d->format = s->format? strdup (s->format): NULL;
+	}
+	return d;
 }
 
 R_IPI void r_bin_section_free(RBinSection *bs) {

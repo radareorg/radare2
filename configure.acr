@@ -1,5 +1,5 @@
 PKGNAME radare2
-VERSION 5.7.7
+VERSION 5.8.1
 CONTACT pancake ; pancake@nopcode.org
 
 LANG_C!
@@ -30,6 +30,8 @@ ARG_DISABLE WANT_THREADS threads disable use of thread apis ;
 (( useful for static builds . see sys/static.sh ))
 ARG_DISABLE LOADLIBS loadlibs disable loading plugins ;
 
+ARG_ENABLE R_CRITICAL_ENABLED threadsafety enable mutexes in critical code paths ;
+
 ARG_WITHOUT WANT_DYLINK dylink disable support for dynamic loading of plugins ;
 ARG_WITHOUT HAVE_FORK fork disable fork ;
 ARG_WITHOUT WANT_PTRACE_WRAP ptrace-wrap build ptrace-wrap support needed for the iaito debugger on Linux ;
@@ -41,6 +43,7 @@ IFNOT WANT_GPERF {
 }
 
 ARG_WITH WITH_LIBR libr build libr.a and libr.dylib ;
+ARG_WITH WITH_STATIC_THEMES static-themes default themes are compiled and fallback if not available on disk ;
 
 (( CAPSTONE ))
 ARG_WITH USE_CS5 capstone5 build next branch of capstone5 (default) ;
@@ -120,14 +123,16 @@ HAVE_GMP = 0 ;
 ))
 HAVE_LIB_GMP = 0 ;
 
+
+(( openssl is used for https:// in rsocket and crypto/hash ))
 CHKLIB ssl
 PKGCFG SSL_CFLAGS SSL_LDFLAGS openssl
 IFNOTNULL SSL_LDFLAGS {
 	HAVE_OPENSSL = 1 ;
 }
-(( ARG_WITHOUT HAVE_OPENSSL ssl disable openssl dependency ; ))
-ARG_WITH WANT_OPENSSL openssl build with openssl if possible ;
-IFAND WANT_OPENSSL HAVE_OPENSSL {
+
+ARG_WITH WANT_SSL ssl build with (Open|Boring|..)SSL if possible ;
+IFAND WANT_SSL HAVE_OPENSSL {
 	HAVE_OPENSSL = 1 ;
 }{
 	HAVE_OPENSSL = 0 ;
@@ -139,7 +144,14 @@ IFNULL SSL_LDFLAGS {
 		SSL_LDFLAGS = -lssl ;
 	}
 }
+ARG_WITH WANT_SSL_CRYPTO ssl-crypto build crypto code with libssl ;
+IFAND WANT_SSL_CRYPTO HAVE_OPENSSL {
+	WANT_SSL_CRYPTO = 1 ;
+}{
+	WANT_SSL_CRYPTO = 0 ;
+}
 
+ARG_WITH WANT_LIBUV libuv disable libuv dependency ;
 CHKVER libuv 1.0.0
 IF HAVE_LIBUV_VERSION_1_0_0 {
 	PKGCFG LIBUV_CFLAGS LIBUV_LDFLAGS libuv
@@ -148,7 +160,6 @@ IF HAVE_LIBUV_VERSION_1_0_0 {
 	}{
 		HAVE_LIBUV = 0 ;
 	}
-	ARG_WITHOUT WANT_LIBUV libuv disable libuv dependency ;
 	IFNOT WANT_LIBUV {
 		HAVE_LIBUV = 0 ;
 	}
@@ -264,7 +275,7 @@ ARG_WITH R_CHECKS_LEVEL=2 checks-level value between 0 and 3 to enable different
 REPORT
 	BUILD CC CFLAGS DEBUGGER HAVE_ARC4RANDOM_UNIFORM HAVE_EXPLICIT_BZERO
 	HAVE_EXPLICIT_MEMSET HAVE_FORK HAVE_GPERF HAVE_LIBUV HAVE_LIB_GMP
-	HAVE_OPENSSL HAVE_PTRACE HOST LDFLAGS LIBVERSION PKGCONFIG PREFIX
+	HAVE_OPENSSL WANT_SSL_CRYPTO HAVE_PTRACE HOST LDFLAGS LIBVERSION PKGCONFIG PREFIX
 	R_CHECKS_LEVEL TARGET USERCC USEROSTYPE USE_CAPSTONE USE_LIB_MAGIC
 	USE_LIB_XXHASH USE_LIB_ZIP USE_PTRACE_WRAP USE_SYSLZ4 VERSION WANT_DYLINK
 ;
@@ -274,10 +285,11 @@ SUBDIRS ./config-user.mk
 	libr/include/r_userconf.h
 	pkgcfg/r_io.pc
 	pkgcfg/r_magic.pc
+	pkgcfg/r_esil.pc
 	pkgcfg/r_asm.pc
 	pkgcfg/r_bin.pc
 	pkgcfg/r_anal.pc
-	pkgcfg/r_hash.pc
+	pkgcfg/r_arch.pc
 	pkgcfg/r_cons.pc
 	pkgcfg/r_core.pc
 	pkgcfg/r_lang.pc
@@ -290,7 +302,6 @@ SUBDIRS ./config-user.mk
 	pkgcfg/r_util.pc
 	pkgcfg/r_search.pc
 	pkgcfg/r_bp.pc
-	pkgcfg/r_parse.pc
 	pkgcfg/r_fs.pc
 	pkgcfg/r_egg.pc
 	pkgcfg/r_crypto.pc

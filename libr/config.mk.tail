@@ -35,10 +35,6 @@ LINK+=$(shell echo ${R2DEPS} | sed -e 's:r_\([^ ]\+\):$(LIBR)/\1/libr_\1.${EXT_A
 endif
 endif
 
-# Debug
-ifneq ($(OSTYPE),mingw32)
-CFLAGS+=-g
-endif
 CFLAGS+=-Wall
 
 # libgmp
@@ -61,6 +57,7 @@ endif
 
 # XXX do it in configure stage
 OSTYPE?=gnulinux
+
 ifeq (${OSTYPE},auto)
  _UNAME=$(shell uname)
  ifeq ($(_UNAME),Darwin)
@@ -93,8 +90,11 @@ OSTYPE=bsd
 endif
 
 # Output
+ifneq ($(OSTYPE),mingw32)
+CFLAGS+=-g
+endif
 ifeq (${OSTYPE},windows)
-CFLAGS+=-D__WINDOWS__=1
+CFLAGS+=-DR2__WINDOWS__=1
 EXT_AR=lib
 EXT_SO=dll
 EXT_EXE=.exe
@@ -102,35 +102,35 @@ TH_LIBS=
 endif
 
 ifeq (${OSTYPE},bsd)
-CFLAGS+=-D__UNIX__=1
+CFLAGS+=-DR2__UNIX__=1
 EXT_AR=a
 EXT_SO=so
 EXT_EXE=
 TH_LIBS=-lpthread
 endif
 ifeq (${OSTYPE},qnx)
-CFLAGS+=-D__UNIX__=1
+CFLAGS+=-DR2__UNIX__=1
 EXT_AR=a
 EXT_SO=so
 EXT_EXE=
 TH_LIBS=
 endif
 ifeq (${OSTYPE},gnulinux)
-CFLAGS+=-D__UNIX__=1
+CFLAGS+=-DR2__UNIX__=1
 EXT_AR=a
 EXT_SO=so
 EXT_EXE=
 TH_LIBS=-lpthread
 endif
 ifeq (${OSTYPE},haiku)
-CFLAGS+=-D__UNIX__=1
+CFLAGS+=-DR2__UNIX__=1
 EXT_AR=a
 EXT_SO=so
 EXT_EXE=
 TH_LIBS=
 endif
 ifeq (${OSTYPE},darwin)
-CFLAGS+=-D__UNIX__=1
+CFLAGS+=-DR2__UNIX__=1
 EXT_AR=a
 EXT_SO=dylib
 EXT_EXE=
@@ -143,21 +143,21 @@ TH_LIBS=-lpthread
 endif
 endif
 ifeq (${OSTYPE},android)
-CFLAGS+=-D__UNIX__=1
+CFLAGS+=-DR2__UNIX__=1
 EXT_AR=a
 EXT_SO=so
 EXT_EXE=
 TH_LIBS=
 endif
 ifeq (${OSTYPE},solaris)
-CFLAGS+=-D__UNIX__=1
+CFLAGS+=-DR2__UNIX__=1
 EXT_AR=a
 EXT_SO=so
 EXT_EXE=
 TH_LIBS=
 endif
 ifeq (${OSTYPE},serenityos)
-CFLAGS+=-D__UNIX__=1
+CFLAGS+=-DR2__UNIX__=1
 EXT_AR=a
 EXT_SO=so
 EXT_EXE=

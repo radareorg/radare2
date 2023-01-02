@@ -1,11 +1,10 @@
-/* radare - Apache - Copyright 2014-2020 - dso, pancake */
+/* radare - Apache - Copyright 2014-2022 - dso, pancake */
 
 #include <r_types.h>
 #include <r_lib.h>
 #include <r_cmd.h>
 #include <r_core.h>
 #include <r_cons.h>
-#include <string.h>
 #include <r_anal.h>
 
 #include "../../../shlr/java/ops.h"
@@ -15,7 +14,6 @@
 #define DO_THE_DBG 0
 #undef IFDBG
 #define IFDBG if (DO_THE_DBG)
-
 
 typedef struct found_idx_t {
 	ut16 idx;
@@ -1385,11 +1383,12 @@ static int r_cmd_java_handle_set_flags(RCore *core, const char *input) {
 		? r_cmd_java_get_input_num_value (core, p)
 		: (ut64)-1;
 	p = r_cmd_java_strtok (p + 1, ' ', -1);
-	if (!p || !*p) {
+	if (R_STR_ISEMPTY (p)) {
 		r_cmd_java_print_cmd_help (JAVA_CMDS + SET_ACC_FLAGS_IDX);
 		return true;
 	}
-	const char f_type = p && *p? r_cmd_java_is_valid_java_mcf (*(++p)): '?';
+	p++;
+	const char f_type = r_cmd_java_is_valid_java_mcf (*p);
 
 	int flag_value = r_cmd_java_is_valid_input_num_value (core, p)? r_cmd_java_get_input_num_value (core, p): -1;
 
@@ -1661,7 +1660,7 @@ static int r_cmd_java_resolve_cp_address(RBinJavaObj *obj, ut16 idx) {
 
 static int r_cmd_java_resolve_cp_to_key(RBinJavaObj *obj, ut16 idx) {
 	if (obj && idx) {
-		char *str = r_bin_java_resolve_cp_idx_to_string (obj, idx);
+		char *str = r_bin_java_resolve_cp_idx_tostring (obj, idx);
 		r_cons_println (str);
 		free (str);
 	}

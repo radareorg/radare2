@@ -90,14 +90,12 @@ EXPECT=<<EOF
             0x100003c19      4881ec380600.  sub rsp, 0x638
             0x100003c20      4989f7         mov r15, rsi
             0x100003c23      4189fe         mov r14d, edi
- 4 fd: 3 +0x00004000 0x100000000 - 0x100007fff r-x fmap.__TEXT
+ 3 fd: 3 +0x00004000 0x100000000 - 0x100007fff r-x fmap.__TEXT
 554889e54157415641554154534881ec
  3 * r-x 0x0002daa0 bins/mach0/ls-m1
-- 5 fd: 3 +0x00000000 0x00000000 - 0x0002da9f r-x
-* 4 fd: 3 +0x00004000 0x100000000 - 0x100007fff r-x fmap.__TEXT
-- 3 fd: 3 +0x0000c000 0x100008000 - 0x10000bfff r-- fmap.__DATA
-- 2 fd: 3 +0x00010000 0x10000c000 - 0x100013fff r-- fmap.__LINKEDIT
-- 1 fd: 3 +0x00000000 0x100000000 - 0x10002da9f r-x
+* 3 fd: 3 +0x00004000 0x100000000 - 0x100007fff r-x fmap.__TEXT
+- 2 fd: 3 +0x0000c000 0x100008000 - 0x10000bfff r-- fmap.__DATA
+- 1 fd: 3 +0x00010000 0x10000c000 - 0x100013fff r-- fmap.__LINKEDIT
 EOF
 RUN
 
@@ -109,7 +107,7 @@ e scr.interactive=false
 e dir.projects = bins/other/projects
 CC hello world
 C*
-Po test > /dev/null
+P test > /dev/null
 C*
 EOF
 EXPECT=<<EOF
@@ -154,7 +152,7 @@ af test
 afF @ test
 pdf
 P+import2 > /dev/null
-Pc import2~afF
+PS*import2~afF
 P-import2
 rm .tmp
 EOF
@@ -177,7 +175,7 @@ cat .tmp/testexp/rc.r2 | grep base64
 rmdir -p .tmp/testexp
 EOF
 EXPECT=<<EOF
-"e bin.debase64 = false"
+"e bin.str.debase64 = false"
 CCu base64:IlNvbWUgb3RoZXIgdGVzdCI= @ 0x00404890
 EOF
 RUN
@@ -193,7 +191,7 @@ CC "Second comment" @ 0x00404800
 P+ testset > /dev/null
 C- @ 0x00404890
 C- @ 0x00404800
-Po project.r2
+P project.r2
 cat .tmp/testset/rc.r2 | grep CC
 rmdir -p .tmp/testset
 EOF
@@ -230,7 +228,7 @@ echo Saved `pu 3 @ 0xc000`
 # Ps resetc64
 pu 3 @2
 pu 3 @0xc000
-Po resetc64
+P resetc64
 echo Loaded `pu 3 @ 0xc000`
 pu 3 @0xc000
 EOF
@@ -251,7 +249,7 @@ e asm.flags = false
 e asm.emu = true
 e dir.projects = .tmp/
 P+ emu > /dev/null
-Po emu
+P emu
 CC-
 om `o~[0]` 0
 pd 1
@@ -271,8 +269,8 @@ af
 afvr edi blahblah typeR @ 0x10002d8d
 afvb 8 ImageHandle blah @ 0x10002d8d
 P+ var > /dev/null
-Pc var~ImageHandle
-Pc var~blahblah
+PS*var~ImageHandle
+PS*var~blahblah
 rm .tmp/var
 EOF
 EXPECT=<<EOF
@@ -290,8 +288,8 @@ e dir.projects = .tmp/
 tk zoby  =  type
 tl char @ 0x0
 P+ types > /dev/null
-Pc types~?link.,symlink,unlink
-Pc types~?zoby
+PS*types~?link.,symlink,unlink
+PS*types~?zoby
 EOF
 EXPECT=<<EOF
 10
@@ -322,7 +320,7 @@ e prj.vc=false
 fV 49 0x400410
 fV 50 0x400412
 P+ vmarks > /dev/null
-Pc vmarks~fV
+PS*vmarks~fV
 P- vmarks > /dev/null
 EOF
 EXPECT=<<EOF
@@ -339,11 +337,11 @@ tk char **=type
 tk type.char **=**z
 tk type.char **.size=64
 P+ ctypes > /dev/null
-Pc ctypes~?char **
+PS* ctypes~?char **
 "td struct Foo { int bar; int x; int y; };"
 P+ ctypes > /dev/null
-Pc ctypes~?char **
-Pc ctypes~?Foo
+PS* ctypes~?char **
+PS* ctypes~?Foo
 P- ctypes > /dev/null
 EOF
 EXPECT=<<EOF
@@ -367,7 +365,7 @@ t- char **
 t- Foo
 tk~?char **
 tk~?Foo
-Po costom_types > /dev/null
+P costom_types > /dev/null
 tk~?char **
 tk~?Foo
 P- costom_types > /dev/null
@@ -390,10 +388,10 @@ o
 P- ulumulu
 P+ ulumulu > /dev/null
 PS*~^o
-Px
+Pc
 o--
 o
-Po ulumulu > /dev/null
+P ulumulu > /dev/null
 ?e files:
 o
 ?e count:
@@ -425,7 +423,7 @@ CMDS=<<EOF
 e prj.vc=false
 e dir.projects = .tmp/
 # Ps blub > /dev/null
-Po blub > /dev/null
+P blub > /dev/null
 i~format
 EOF
 EXPECT=<<EOF
@@ -442,7 +440,7 @@ e scr.interactive=false
 aa
 P+ beer
 e scr.interactive=false
-Po beer
+P beer
 echo Info: `Pi~Info`
 aflc
 e scr.interactive=false
@@ -540,7 +538,7 @@ P- hund
 P+ hund > /dev/null
 CC-$$
 e prj.name= # close current project
-Po hund > /dev/null
+P hund > /dev/null
 pd 4
 om*
 ?e --
@@ -676,7 +674,7 @@ e dir.projects = .tmp/
 e asm.arch=x86
 e asm.bits=16
 P+ sun > /dev/null
-Po sun > /dev/null
+P sun > /dev/null
 e asm.arch
 e asm.bits
 EOF
@@ -693,7 +691,7 @@ e prj.vc=false
 e dir.projects = .tmp/
 P+ namedprj > /dev/null
 e prj.name=
-Po namedprj > /dev/null
+P namedprj > /dev/null
 e prj.name
 rm .tmp/namedprj
 EOF
@@ -708,9 +706,9 @@ CMDS=<<EOF
 e prj.vc=false
 e dir.projects = .tmp/
 P+ stupid > /dev/null
-Po stupid > /dev/null
+P stupid > /dev/null
 P+ stupid > /dev/null
-Po stupid > /dev/null
+P stupid > /dev/null
 e prj.name
 EOF
 EXPECT=<<EOF
@@ -729,7 +727,7 @@ e dir.projects = .tmp/
 wx 5031c0e801000000c3b801000000c3
 af
 P+ dream > /dev/null
-Po dream > /dev/null
+P dream > /dev/null
 axq
 EOF
 EXPECT=<<EOF
@@ -744,7 +742,7 @@ CMDS=<<EOF
 e prj.vc=false
 e dir.projects = .tmp/
 P+ bininfo > /dev/null
-Po bininfo
+P bininfo
 i~?
 ie~?
 ii~?
@@ -765,7 +763,7 @@ e dir.projects = .tmp/
 s main > /dev/null
 CC test
 P+ lapa > /dev/null
-Po lapa
+P lapa
 pd 1 ~test
 rm .tmp/
 EOF
@@ -778,15 +776,16 @@ NAME=Check Pc\'s return value
 FILE=bins/elf/analysis/main
 ARGS=-A -eprj.vc=false -edir.projects=.tmp/
 CMDS=<<EOF
+P- hello
 Pc aabb
 ?v $?
 P+ hello
-Pc hello >/dev/null
+Pc
 ?v $?
 EOF
 EXPECT=<<EOF
-0x1
 0x0
+0x1
 EOF
 RUN
 
@@ -798,10 +797,23 @@ e prj.vc=false
 P- hjkl
 P+ hjkl
 Pi~!/
-Px
+Pc
 Pi
 EOF
 EXPECT=<<EOF
 hjkl
+EOF
+RUN
+
+NAME=Rename
+FILE=bins/elf/analysis/main
+CMDS=<<EOF
+e prj.vc = false
+Ps hello
+Ps world
+EOF
+EXPECT_ERR=<<EOF
+EOF
+EXPECT=<<EOF
 EOF
 RUN

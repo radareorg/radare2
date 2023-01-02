@@ -4,7 +4,7 @@
 
 #include <r_util.h>
 
-#if __WINDOWS__
+#if R2__WINDOWS__
 #include <windows.h>
 #endif
 
@@ -12,7 +12,7 @@ typedef struct libbochs_t {
 	char *data;
 	int punteroBuffer;
 	int sizeSend;
-#if __WINDOWS__
+#if R2__WINDOWS__
 	HANDLE hReadPipeIn;
 	HANDLE hReadPipeOut;
 	HANDLE hWritePipeIn;

@@ -185,7 +185,8 @@ static bool rax(RNum *num, char *str, int len, int last, ut64 *_flags, int *fm) 
 	ut8 *buf;
 	char *p, out_mode = (flags & 128)? 'I': '0';
 	int i;
-	if (!(flags & 4) || !len) {
+	// For -S and -E we do not compute the length again since it may contain null byte.
+	if ((!(flags & 4) && !(flags & 4096)) || !len) {
 		len = strlen (str);
 	}
 	if ((flags & 4)) {
@@ -472,23 +473,26 @@ dotherax:
 		r_list_free (split);
 		return true;
 	} else if (flags & (1 << 12)) { // -E
-		const int n = strlen (str);
 		/* http://stackoverflow.com/questions/4715415/base64-what-is-the-worst-possible-increase-in-space-usage */
-		char *out = calloc (1, (n + 2) / 3 * 4 + 1); // ceil(n/3)*4 plus 1 for NUL
+		char *out = calloc (1, (len + 2) / 3 * 4 + 1); // ceil(n/3)*4 plus 1 for NUL
 		if (out) {
-			r_base64_encode (out, (const ut8 *) str, n);
+			r_base64_encode (out, (const ut8 *)str, len);
 			printf ("%s%s", out, nl);
 			fflush (stdout);
 			free (out);
 		}
 		return true;
 	} else if (flags & (1 << 13)) { // -D
-		const int n = strlen (str);
+		int n = strlen (str);
 		ut8 *out = calloc (1, n / 4 * 3 + 1);
 		if (out) {
-			r_base64_decode (out, str, n);
-			printf ("%s%s", out, nl);
-			fflush (stdout);
+			n = r_base64_decode (out, str, n);
+			if (n > 0) {
+				fwrite (out, n, 1, stdout);
+				fflush (stdout);
+			} else {
+				R_LOG_ERROR ("Cannot decode");
+			}
 			free (out);
 		}
 		return true;
@@ -703,6 +707,8 @@ dotherax:
 R_API int r_main_rax2(int argc, const char **argv) {
 	int i, fm = 0;
 	int rc = 0;
+	int len = 0;
+
 	if (argc < 2) {
 		help_usage ();
 		// use_stdin (num, NULL, &fm);
@@ -712,8 +718,8 @@ R_API int r_main_rax2(int argc, const char **argv) {
 		for (i = 1; i < argc; i++) {
 			char *argv_i = strdup (argv[i]);
 			if (argv_i) {
-				r_str_unescape (argv_i);
-				if (!rax (num, argv_i, 0, i == argc - 1, &flags, &fm)) {
+				len = r_str_unescape (argv_i);
+				if (!rax (num, argv_i, len, i == argc - 1, &flags, &fm)) {
 					rc = 1;
 				}
 				free (argv_i);

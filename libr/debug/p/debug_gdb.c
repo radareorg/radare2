@@ -53,23 +53,22 @@ static RList* r_debug_gdb_pids(RDebug *dbg, int pid) {
 	return list;
 }
 
-static int r_debug_gdb_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
+static bool gdb_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 	int copy_size;
 	int buflen = 0;
 	check_connection (dbg);
 	if (!desc) {
-		return R_DEBUG_REASON_UNKNOWN;
+		return false;
 	}
 	gdbr_read_registers (desc);
 	if (!desc || !desc->data) {
-		return -1;
+		return false;
 	}
 	// read the len of the current area
 	free (r_reg_get_bytes (dbg->reg, type, &buflen));
 	if (size < desc->data_len) {
-		eprintf ("r_debug_gdb_reg_read: small buffer %d vs %d\n",
+		R_LOG_WARN ("gdb_reg_read got a small buffer %d vs %d",
 			(int)size, (int)desc->data_len);
-		//	return -1;
 	}
 	copy_size = R_MIN (desc->data_len, size);
 	buflen = R_MAX (desc->data_len, buflen);
@@ -78,7 +77,7 @@ static int r_debug_gdb_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 		if (buflen > buf_size) { //copy_size) {
 			ut8* new_buf = realloc (reg_buf, buflen);
 			if (!new_buf) {
-				return -1;
+				return false;
 			}
 			reg_buf = new_buf;
 			buf_size = buflen;
@@ -86,7 +85,7 @@ static int r_debug_gdb_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 	} else {
 		reg_buf = calloc (buflen, 1);
 		if (!reg_buf) {
-			return -1;
+			return false;
 		}
 		buf_size = buflen;
 	}
@@ -94,7 +93,8 @@ static int r_debug_gdb_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 	memcpy ((void*)(volatile void*)buf, desc->data, R_MIN (copy_size, size));
 	memset ((void*)(volatile void*)reg_buf, 0, buflen);
 	memcpy ((void*)(volatile void*)reg_buf, desc->data, copy_size);
-	return desc->data_len;
+	// return desc->data_len;
+	return true;
 }
 
 static RList *r_debug_gdb_map_get(RDebug* dbg) { //TODO
@@ -269,14 +269,14 @@ static RList* r_debug_gdb_modules_get(RDebug *dbg) {
 	return last;
 }
 
-static int r_debug_gdb_reg_write(RDebug *dbg, int type, const ut8 *buf, int size) {
+static bool gdb_reg_write(RDebug *dbg, int type, const ut8 *buf, int size) {
 	check_connection (dbg);
 	if (!desc) {
-		return R_DEBUG_REASON_UNKNOWN;
+		return false;
 	}
 	if (!reg_buf) {
 		// we cannot write registers before we once read them
-		return -1;
+		return false;
 	}
 	int buflen = 0;
 	int bits = dbg->anal->config->bits;
@@ -297,7 +297,7 @@ static int r_debug_gdb_reg_write(RDebug *dbg, int type, const ut8 *buf, int size
 	if (buf_size < buflen) {
 		ut8* new_buf = realloc (reg_buf, buflen * sizeof (ut8));
 		if (!new_buf) {
-			return -1;
+			return false;
 		}
 		reg_buf = new_buf;
 		memset (new_buf + buf_size, 0, buflen - buf_size);
@@ -549,8 +549,8 @@ RDebugPlugin r_debug_plugin_gdb = {
 	.map_get = r_debug_gdb_map_get,
 	.modules_get = r_debug_gdb_modules_get,
 	.breakpoint = &r_debug_gdb_breakpoint,
-	.reg_read = &r_debug_gdb_reg_read,
-	.reg_write = &r_debug_gdb_reg_write,
+	.reg_read = &gdb_reg_read,
+	.reg_write = &gdb_reg_write,
 	.reg_profile = (void *)r_debug_gdb_reg_profile,
 	.set_reg_profile = &r_debug_gdb_set_reg_profile,
 	.kill = &r_debug_gdb_kill,

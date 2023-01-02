@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include "code.h"
-#include <sdb.h>
+#include <sdb/sdb.h>
 
 int main() {
 	Sdb *kv = sdb_new(NULL, NULL, 0);

@@ -12,10 +12,11 @@ RUN
 NAME=Hud mode
 FILE=-
 CMDS=<<EOF
+e log.origin=true
 e scr.interactive=false
 pd 1~...
 EOF
 EXPECT_ERR=<<EOF
-ERROR: Hud mode requires scr.interactive=true
+ERROR: [r_cons_hud_string] Hud mode requires scr.interactive=true
 EOF
 RUN

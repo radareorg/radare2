@@ -56,6 +56,7 @@ RUN
 
 NAME=foreach iterator for other stuff
 FILE=bins/mach0/mac-ls
+ARGS=-e bin.types=true
 CMDS=<<EOF
 ?e hello
 ?e=1@@@s~?

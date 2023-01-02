@@ -369,7 +369,7 @@ af+ 0x1337 func
 afl
 EOF
 EXPECT=<<EOF
-0x00001337    0 0            func
+0x00001337    0      0 func
 EOF
 EXPECT_ERR=<<EOF
 ERROR: Cannot add function 'func' (duplicated) at 0x00001337
@@ -404,26 +404,26 @@ af @@ *
 afl
 EOF
 EXPECT=<<EOF
-0x00000000    1 1            sym.some_func
-0x00000001    1 1            sym.some_other_func
-0x00000002    1 1            a
-0x00000003    1 1            aa
-0x00000004    1 1            aaa
-0x00000005    1 1            aaaa
-0x00000006    1 1            sym
-0x00000007    1 1            sym.
-0x00000008    1 1            sym.b
+0x00000000    1      1 sym.some_func
+0x00000001    1      1 sym.some_other_func
+0x00000002    1      1 a
+0x00000003    1      1 aa
+0x00000004    1      1 aaa
+0x00000005    1      1 aaaa
+0x00000006    1      1 sym
+0x00000007    1      1 sym.
+0x00000008    1      1 sym.b
 --
 --
-0x00000000    1 1            sym.some_func
-0x00000001    1 1            sym.some_other_func
-0x00000002    1 1            a
-0x00000003    1 1            aa
-0x00000004    1 1            aaa
-0x00000005    1 1            aaaa
-0x00000006    1 1            sym
-0x00000007    1 1            sym.
-0x00000008    1 1            sym.b
+0x00000000    1      1 sym.some_func
+0x00000001    1      1 sym.some_other_func
+0x00000002    1      1 a
+0x00000003    1      1 aa
+0x00000004    1      1 aaa
+0x00000005    1      1 aaaa
+0x00000006    1      1 sym
+0x00000007    1      1 sym.
+0x00000008    1      1 sym.b
 EOF
 RUN
 
@@ -436,8 +436,8 @@ af @ sym.__syscall_error
 afl
 EOF
 EXPECT=<<EOF
-0x0001f8b8    2 20           sym.fstatat
-0x00021484    1 8            sym.__errno
-0x0001f7cc    1 48           sym.__syscall_error
+0x0001f8b8    2     20 sym.fstatat
+0x00021484    1      8 sym.__errno
+0x0001f7cc    1     48 sym.__syscall_error
 EOF
 RUN

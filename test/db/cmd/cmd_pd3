@@ -1,0 +1,44 @@
+NAME=Cd4middle
+FILE=bins/elf/before-after-main
+CMDS=<<EOF
+pd 2
+e asm.flags.right=1
+?e --
+pd 2
+EOF
+EXPECT=<<EOF
+            ;-- section..text:
+            ;-- .text:
+            ;-- entry0:
+            ;-- _start:
+            0x08048370      31ed           xor ebp, ebp                ; [13] -r-x section size 805 named .text
+            0x08048372      5e             pop esi
+--
+            0x08048370      31ed           xor ebp, ebp                ;-- entry0, section..text, sym..text, sym._start 
+            0x08048372      5e             pop esi
+EOF
+RUN
+
+NAME=bytealign
+FILE=bins/elf/before-after-main
+CMDS=<<EOF
+e asm.flags=false
+e asm.comments=false
+pd 4
+e asm.bytes.align=true
+?e --
+pd 4
+EOF
+EXPECT=<<EOF
+            0x08048370      31ed           xor ebp, ebp
+            0x08048372      5e             pop esi
+            0x08048373      89e1           mov ecx, esp
+            0x08048375      83e4f0         and esp, 0xfffffff0
+--
+            0x08048370               31ed  xor ebp, ebp
+            0x08048372                 5e  pop esi
+            0x08048373               89e1  mov ecx, esp
+            0x08048375             83e4f0  and esp, 0xfffffff0
+EOF
+RUN
+

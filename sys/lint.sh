@@ -2,9 +2,27 @@
 
 cd "$(dirname $0)"/..
 
+# NAME=no preincrement/predecrement in 3rd part of for statement
+(git grep -n -e '++[a-z][a-z]*[);]' libr | grep -v arch) && exit 1
+
+# Bad: static void foo() {
+# Good: static void foo(void) {
+# NAME=use void on functions without parameters
+(git grep -e ^R_API -e ^static libr | grep -e '[a-z]() {' -e '[a-z]();') && exit 1
+
+(git grep '|Usage' libr) && exit 1
+# (git grep -e '_[a-z][a-z](' libr | grep -v '{'| grep c:) && exit 1
+# TODO  : also check for '{0x'
+(git grep '\t{"' libr | grep -v strcmp | grep -v format | grep -v '{",' | grep -v esil | grep c:) && exit 1
+(git grep -e "\telse" libr | grep c:) && exit 1
+(git grep '"},' libr | grep -v strcmp | grep -v format | grep -v '"},' | grep -v '"}{' | grep -v esil | grep -v anal/p | grep c:) && exit 1
+(git grep '^\ \ \ ' libr | grep -v '/arch/' | grep -v dotnet | grep -v mangl | grep c:) && exit 1
+(git grep 'TODO' libr | grep R_LOG_INFO) && exit 1
+( git grep r_config_set libr binr | grep -e '"fal' -e '"tru') && exit 1
 # find calls without (
 #(git grep -n -e '[a-z]('  | grep -v static | grep -v _API | grep -v shlr | grep libr/core) && exit 1
 # validated and ready to go lintings
+(git grep -e 'R_MIN(' -e 'R_MAX(' libr | grep c:) && exit 1
 (git grep -n 'cmp(' libr | grep -v R_API | grep -v static | grep c:) && exit 1
 # (git grep -n 'len(' libr | grep -v R_API | grep -v static | grep c:) && exit 1
 # (git grep -n ',"' libr | grep -v R_API | grep -v static | grep c:) && exit 1
@@ -23,6 +41,10 @@ cd "$(dirname $0)"/..
 
 (git grep eprintf libr| grep -i error | grep -v '/native/' | grep -v spp | grep -v cons) && exit 1
 
+(git grep appendf libr | grep '"' | grep -v '%') && exit 1
+(git grep strbuf_setf libr | grep '"' | grep -v '%') && exit 1
+(git grep 'strbuf_append (' libr | grep '"' | grep '%') && exit 1
+
 (git grep -i unkown libr ) && exit 1
 
 (git grep '=0' libr| grep c:|grep -v '"' |grep -v '=0x') && exit 1
@@ -33,6 +55,7 @@ cd "$(dirname $0)"/..
 ( git grep '){$' libr| grep if) && exit 1
 (git grep -e 'sizeof(' -e 'for(' -e 'while(' -e 'if(' libr | grep -v :static | grep -v :R_API | grep c:) && exit 1
 ( git grep 'else$' libr | grep -v '#' | grep '}' | grep 'c:') && exit 1
+( git grep 'return(' libr | grep -v R_API | grep -v static | grep -v define | grep c:) && exit 1
 # ( git grep if' (' libr| grep ')$'| grep -v '//'|grep -v '#' | grep c:) && exit 1
 # ( git grep strcmp | grep '== 0') && exit 1
 # ( git grep strncmp | grep '== 0') && exit 1 ## must use r_str_startswith
@@ -60,13 +83,15 @@ cd "$(dirname $0)"/..
  diff -ru /tmp/.a /tmp/.b
 ) || exit 1
 
+# TODO: detect bool foo = RConfig.get_i ("boolvar"); -> must use get_b()
+#(git grep 'get_i (' | grep bool)
+
 # pending cleanups
 # ( git grep 'desc = "[A-Z]' ) && exit 1
 # git grep -e "`printf '\x09static'`" libr | grep -v R_TH_LOCAL|grep -v const | grep -v '(' && exit 1
-# (git grep 'TODO' libr) # && exit 1 # use r_str_startswith()
 # (git grep 'XXX' libr) # && exit 1 # use r_str_startswith()
 # (git grep 'strncmp' libr) # && exit 1 # use r_str_startswith()
-# (git grep 'eprintf' libr | grep 'Warning:') # && exit 1
+(git grep 'eprintf' libr | grep 'Warning:') # && exit 1
 # (git grep 'eprintf' | grep 'Usage:' | grep -v sys/) # && exit 1
 
 exit 0

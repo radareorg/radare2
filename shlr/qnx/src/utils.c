@@ -82,7 +82,7 @@ static int i386nto_gregset_reg_offset[] = {
 #define NTO_EILSEQ 88
 #define NTO_ENOSYS 89
 
-#if defined(__linux__) || defined(__WINDOWS__) || defined(__APPLE__) || defined(__CYGWIN__) || defined(MINGW32) || defined(__NetBSD__)
+#if defined(__linux__) || defined(R2__WINDOWS__) || defined(__APPLE__) || defined(__CYGWIN__) || defined(MINGW32) || defined(__NetBSD__)
 
 struct errnomap_t {
 	int nto;

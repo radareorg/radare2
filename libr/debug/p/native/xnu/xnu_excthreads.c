@@ -9,10 +9,10 @@
 #if defined __i386__ || __x86_64__ // intel processors
 
 /* Set/clear bit 8 (Trap Flag) of the EFLAGS processor control
-   register to enable/disable single-step mode.
-   ENABLE is a boolean, indicating whether to set (1) the Trap Flag
-   or clear it (0).  */
-
+ * register to enable/disable single-step mode.
+ * ENABLE is a boolean, indicating whether to set (1) the Trap Flag
+ * or clear it (0).
+ */
 static bool modify_trace_bit(RDebug *dbg, xnu_thread_t *th, int enable) {
 	R_REG_T *state;
 	int ret;

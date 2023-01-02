@@ -1,7 +1,6 @@
-/* sdb - MIT - Copyright 2011-2016 - pancake */
+/* sdb - MIT - Copyright 2011-2022 - pancake */
 
-#include "sdb.h"
-#include "types.h"
+#include "sdb/sdb.h"
 
 // check if key exists and if it's a number.. rename?
 SDB_API bool sdb_num_exists (Sdb *s, const char *key) {
@@ -17,14 +16,14 @@ SDB_API ut64 sdb_num_get(Sdb *s, const char *key, ut32 *cas) {
 SDB_API int sdb_num_add(Sdb *s, const char *key, ut64 v, ut32 cas) {
 	char *val, b[SDB_NUM_BUFSZ];
 	int numbase = sdb_num_base (sdb_const_get (s, key, NULL));
-	val = sdb_itoa (v, b, numbase);
+	val = sdb_itoa (v, numbase, b, sizeof (b));
 	return sdb_add (s, key, val, cas);
 }
 
 SDB_API int sdb_num_set(Sdb *s, const char *key, ut64 v, ut32 cas) {
 	char *val, b[SDB_NUM_BUFSZ];
 	int numbase = sdb_num_base (sdb_const_get (s, key, NULL));
-	val = sdb_itoa (v, b, numbase);
+	val = sdb_itoa (v, numbase, b, sizeof (b));
 	return sdb_set (s, key, val, cas);
 }
 

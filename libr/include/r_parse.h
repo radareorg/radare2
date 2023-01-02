@@ -11,7 +11,7 @@
 extern "C" {
 #endif
 
-R_LIB_VERSION_HEADER(r_parse);
+R_LIB_VERSION_HEADER (r_parse);
 
 typedef RList* (*RAnalVarList)(RAnalFunction *fcn, int kind);
 
@@ -38,18 +38,20 @@ typedef struct r_parse_t {
 	RAnalBind analb;
 	RFlagGetAtAddr flag_get; // XXX
 	RAnalLabelAt label_get;
-} RParse;
+} RParse; // TODO rename to RAsmParseState
 
 typedef struct r_parse_plugin_t {
 	char *name;
 	char *desc;
-	bool (*init)(RParse *p, void *user);
-	int (*fini)(RParse *p, void *user);
+	bool (*init)(RParse *p, void *user); // returns an RAsmParseState*
+	int (*fini)(RParse *p, void *user); // receives the asmparsestate
+
 	int (*parse)(RParse *p, const char *data, char *str);
-	bool (*assemble)(RParse *p, char *data, char *str);
+	// UNUSED bool (*assemble)(RParse *p, char *data, char *str);
 	int (*filter)(RParse *p, ut64 addr, RFlag *f, char *data, char *str, int len, bool big_endian);
 	bool (*subvar)(RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *data, char *str, int len);
-	int (*replace)(int argc, const char *argv[], char *newstr);
+	// int (*replace)(int argc, const char *argv[], char *newstr); // rename to pseudo!
+	// int (*pseudo)(int argc, const char *argv[], char *newstr); // rename to pseudo!
 } RParsePlugin;
 
 #ifdef R_API
@@ -65,16 +67,11 @@ R_API bool r_parse_use(RParse *p, const char *name);
 
 /* action */
 R_API bool r_parse_parse(RParse *p, const char *data, char *str);
+R_API char *r_parse_instruction(RParse *p, const char *data);
 R_API bool r_parse_assemble(RParse *p, char *data, char *str); // XXX deprecate, unused and probably useless, related to write-hack
 R_API bool r_parse_filter(RParse *p, ut64 addr, RFlag *f, RAnalHint *hint, char *data, char *str, int len, bool big_endian);
 R_API bool r_parse_subvar(RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *data, char *str, int len);
 R_API char *r_parse_immtrim(char *opstr);
-
-/* c */
-// why we have anal scoped things in rparse
-R_API char *r_parse_c_string(RAnal *anal, const char *code, char **error_msg);
-R_API char *r_parse_c_file(RAnal *anal, const char *path, const char *dir, char **error_msg);
-R_API void r_parse_c_reset(RParse *p);
 
 /* plugin pointers */
 extern RParsePlugin r_parse_plugin_6502_pseudo;
@@ -94,6 +91,8 @@ extern RParsePlugin r_parse_plugin_x86_pseudo;
 extern RParsePlugin r_parse_plugin_z80_pseudo;
 extern RParsePlugin r_parse_plugin_tms320_pseudo;
 extern RParsePlugin r_parse_plugin_v850_pseudo;
+extern RParsePlugin r_parse_plugin_bpf_pseudo;
+extern RParsePlugin r_parse_plugin_evm_pseudo;
 #endif
 
 #ifdef __cplusplus

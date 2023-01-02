@@ -3,7 +3,7 @@
 
 #define R_DEBUG 0
 #define R_RTDEBUG 1
-#define WANT_THREADS 1
+#define WANT_THREADS @WANT_THREADS@
 
 /* inlined APIs */
 #define R_INLINE 0
@@ -17,6 +17,7 @@
 #define R_IO_STATIC_PLUGINS @plugins_io@
 #define R_DEBUG_STATIC_PLUGINS @plugins_debug@
 #define R_BP_STATIC_PLUGINS @plugins_bp@
+#define R_ARCH_STATIC_PLUGINS @plugins_arch@
 #define R_ASM_STATIC_PLUGINS @plugins_asm@
 #define R_ANAL_STATIC_PLUGINS @plugins_anal@
 #define R_ESIL_STATIC_PLUGINS @plugins_esil@

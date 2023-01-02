@@ -1,8 +1,9 @@
 /* radare2 - LGPL - Copyright 2011-2022 - pancake */
 
+#define R_LOG_ORIGIN "fs"
+
 #include <r_fs.h>
 #include <config.h>
-#include "types.h"
 
 #if WITH_GPL
 # ifndef USE_GRUB
@@ -17,9 +18,27 @@
 
 R_LIB_VERSION (r_fs);
 
-static RFSPlugin* fs_static_plugins[] = {
+static const RFSPlugin* fs_static_plugins[] = {
 	R_FS_STATIC_PLUGINS
 };
+
+static const RFSType fstypes[] = {
+	{ "hfs", 0x400, "BD", 2, 0, 0, 0x400 },
+	{ "hfsplus", 0x400, "H+", 2, 0, 0, 0x400 },
+	{ "fat", 0x36, "FAT12", 5, 0, 0, 0 },
+	{ "fat", 0x52, "FAT32", 5, 0, 0, 0 },
+	{ "ext2", 0x438, "\x53\xef", 2, 0, 0, 0 },
+	{ "btrfs", 0x10040, "_BHRfS_M", 8, 0, 0, 0x0 },
+	{ "iso9660", 0x8000, "\x01" "CD0", 4, 0, 0, 0x8000 },
+	{ NULL }
+};
+
+R_API R_MUSTUSE const RFSType* r_fs_type_index(int i) {
+	if (i < 0 || i >= R_ARRAY_SIZE (fstypes)) {
+		return NULL;
+	}
+	return &fstypes[i];
+}
 
 R_API R_MUSTUSE RFS* r_fs_new(void) {
 	int i;
@@ -511,19 +530,19 @@ static int fs_parhook(void* disk, void* ptr, void* closure) {
 
 static RFSPartitionType partitions[] = {
 	/* LGPL code */
-	{"dos", &fs_part_dos, fs_parhook},
+	{ "dos", &fs_part_dos, fs_parhook},
 #if USE_GRUB
 	/* WARNING GPL code */
 #if !__EMSCRIPTEN__
 // wtf for some reason is not available on emscripten
-	{"msdos", &grub_msdos_partition_map, grub_parhook},
+	{ "msdos", &grub_msdos_partition_map, grub_parhook},
 #endif
-	{"apple", &grub_apple_partition_map, grub_parhook},
-	{"sun", &grub_sun_partition_map, grub_parhook},
-	{"sunpc", &grub_sun_pc_partition_map, grub_parhook},
-	{"amiga", &grub_amiga_partition_map, grub_parhook},
-	{"bsdlabel", &grub_bsdlabel_partition_map, grub_parhook},
-	{"gpt", &grub_gpt_partition_map, grub_parhook},
+	{ "apple", &grub_apple_partition_map, grub_parhook},
+	{ "sun", &grub_sun_partition_map, grub_parhook},
+	{ "sunpc", &grub_sun_pc_partition_map, grub_parhook},
+	{ "amiga", &grub_amiga_partition_map, grub_parhook},
+	{ "bsdlabel", &grub_bsdlabel_partition_map, grub_parhook},
+	{ "gpt", &grub_gpt_partition_map, grub_parhook},
 #endif
 	// XXX: In BURG all bsd partition map are in bsdlabel
 	//{ "openbsdlabel", &grub_openbsd_partition_map },
@@ -537,10 +556,6 @@ R_API const char* r_fs_partition_type_get(int n) {
 		return NULL;
 	}
 	return partitions[n].name;
-}
-
-R_API int r_fs_partition_get_size(void) {
-	return R_FS_PARTITIONS_LENGTH;
 }
 
 R_API RList* r_fs_partitions(RFS* fs, const char* ptype, ut64 delta) {
@@ -641,7 +656,7 @@ R_API char* r_fs_name(RFS* fs, ut64 offset) {
 	int i, j, len, ret = false;
 
 	for (i = 0; fstypes[i].name; i++) {
-		RFSType* f = &fstypes[i];
+		const RFSType* f = &fstypes[i];
 		len = R_MIN (f->buflen, sizeof (buf) - 1);
 		fs->iob.read_at (fs->iob.io, offset + f->bufoff, buf, len);
 		if (f->buflen > 0 && !memcmp (buf, f->buf, f->buflen)) {

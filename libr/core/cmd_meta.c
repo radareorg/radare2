@@ -6,7 +6,7 @@
 #include "r_core.h"
 #include "r_util.h"
 #include "r_types.h"
-#include <sdb.h>
+#include <sdb/sdb.h>
 
 char *getcommapath(RCore *core);
 
@@ -71,6 +71,7 @@ static const char *help_msg_CL[] = {
 	"CL*", "", "same as above but in r2 commands format",
 	"CL.", "", "show list all code line information (virtual address <-> source file:line)",
 	"CL-", "*", "remove all the cached codeline information",
+	"CLL", "", "show source code line reading from file",
 	"CL", " addr file:line", "register new file:line source details, r2 will slurp the line",
 	"CL", " addr base64:text", "register new source details for given address using base64",
 	NULL
@@ -154,10 +155,10 @@ static const char *help_msg_Cvs[] = {
 };
 
 static int remove_meta_offset(RCore *core, ut64 offset) {
-	char aoffset[64];
-	char *aoffsetptr = sdb_itoa (offset, aoffset, 16);
+	char aoffset[SDB_NUM_BUFSZ];
+	char *aoffsetptr = sdb_itoa (offset, 16, aoffset, sizeof (aoffset));
 	if (!aoffsetptr) {
-		eprintf ("Failed to convert %"PFMT64x" to a key\n", offset);
+		R_LOG_ERROR ("Failed to convert %"PFMT64x" to a key", offset);
 		return -1;
 	}
 	return sdb_unset (core->bin->cur->sdb_addrinfo, aoffsetptr, 0);
@@ -198,7 +199,7 @@ static bool print_meta_offset(RCore *core, ut64 addr, PJ *pj) {
 				}
 			}
 		} else {
-			eprintf ("Cannot open '%s'\n", file);
+			R_LOG_ERROR ("Cannot open '%s'", file);
 		}
 	}
 	return ret;
@@ -303,9 +304,8 @@ static bool print_addrinfo(void *user, const char *k, const char *v) {
 }
 
 static int cmd_meta_add_fileline(Sdb *s, char *fileline, ut64 offset) {
-	char aoffset[64];
-	char *aoffsetptr = sdb_itoa (offset, aoffset, 16);
-
+	char aoffset[SDB_NUM_BUFSZ];
+	char *aoffsetptr = sdb_itoa (offset, 16, aoffset, sizeof (aoffset));
 	if (!aoffsetptr) {
 		return -1;
 	}
@@ -331,19 +331,30 @@ static int cmd_meta_lineinfo(RCore *core, const char *input) {
 		r_core_cmd_help (core, help_msg_CL);
 		return 0;
 	}
-	if (*p == '-') {
+	if (*p == 'L') { // "CLL"
+		ut64 at = core->offset;
+		if (p[1] == ' ') {
+			at = r_num_math (core->num, p + 2);
+		}
+		char *text = r_bin_addr2text (core->bin, at, 0);
+		if (R_STR_ISNOTEMPTY (text)) {
+			r_cons_printf ("0x%08"PFMT64x"  %s\n", at, text);
+		}
+		return 0;
+	}
+	if (*p == '-') { // "CL-"
 		p++;
 		remove = true;
 	}
-	if (*p == 'j') {
+	if (*p == 'j') { // "CLj"
 		p++;
 		use_json = true;
 	}
-	if (*p == '.') {
+	if (*p == '.') { // "CL."
 		p++;
 		offset = core->offset;
 	}
-	if (*p == ' ') {
+	if (*p == ' ') { // "CL "
 		p = r_str_trim_head_ro (p + 1);
 		char *arg = strchr (p, ' ');
 		if (!arg) {
@@ -382,7 +393,7 @@ static int cmd_meta_lineinfo(RCore *core, const char *input) {
 			int len = 0;
 			ut8 *o = sdb_decode (sp + 7, &len);
 			if (!o) {
-				eprintf ("Invalid base64\n");
+				R_LOG_ERROR ("Invalid base64");
 				return 0;
 			}
 			sp = pheap = (char *)o;
@@ -392,7 +403,7 @@ static int cmd_meta_lineinfo(RCore *core, const char *input) {
 		if (bf && bf->sdb_addrinfo) {
 			ret = cmd_meta_add_fileline (bf->sdb_addrinfo, sp, offset);
 		} else {
-			eprintf ("TODO: Support global SdbAddrinfo or dummy rbinfile to handlee this case\n");
+			R_LOG_TODO ("Support global SdbAddrinfo or dummy rbinfile to handlee this case");
 		}
 		free (file_line);
 		free (myp);
@@ -408,15 +419,16 @@ static int cmd_meta_lineinfo(RCore *core, const char *input) {
 		filter_count = 0;
 		fscache = sdb_new0 ();
 		PJ *pj = NULL;
+		RBinFile *bf = r_bin_cur (core->bin);
 		if (use_json) {
 			pj = r_core_pj_new (core);
 			pj_a (pj);
-			if (core->bin->cur && core->bin->cur->sdb_addrinfo) {
-				sdb_foreach (core->bin->cur->sdb_addrinfo, print_addrinfo_json, pj);
+			if (bf && bf->sdb_addrinfo) {
+				sdb_foreach (bf->sdb_addrinfo, print_addrinfo_json, pj);
 			}
 		} else {
-			if (core->bin->cur && core->bin->cur->sdb_addrinfo) {
-				sdb_foreach (core->bin->cur->sdb_addrinfo, print_addrinfo, NULL);
+			if (bf && bf->sdb_addrinfo) {
+				sdb_foreach (bf->sdb_addrinfo, print_addrinfo, NULL);
 			}
 		}
 		if (filter_count == 0) {
@@ -618,7 +630,8 @@ static int cmd_meta_comment(RCore *core, const char *input) {
 		if (s) {
 			s = strdup (s + 1);
 		} else {
-			eprintf ("Usage\n");
+			eprintf ("Usage: CCa [address] [comment]\n");
+			eprintf ("Usage: CCa-[address]\n");
 			return false;
 		}
 		p = strchr (s, ' ');
@@ -626,13 +639,15 @@ static int cmd_meta_comment(RCore *core, const char *input) {
 			*p++ = 0;
 		}
 		ut64 addr;
-		if (input[2]=='-') {
+		if (input[2] == '-') {
 			if (input[3]) {
 				addr = r_num_math (core->num, input+3);
 				r_meta_del (core->anal,
 						R_META_TYPE_COMMENT,
 						addr, 1);
-			} else eprintf ("Usage: CCa-[address]\n");
+			} else {
+				eprintf ("Usage: CCa-[address]\n");
+			}
 			free (s);
 			return true;
 		}
@@ -712,7 +727,7 @@ static int cmd_meta_vartype_comment(RCore *core, const char *input) {
 
 static int cmd_meta_others(RCore *core, const char *input) {
 	int n, type = input[0], subtype;
-	char *t = 0, *p, *p2, name[256];
+	char *t = 0, *p, *p2, name[256] = {0};
 	int repeat = 1;
 	ut64 addr = core->offset;
 
@@ -724,7 +739,7 @@ static int cmd_meta_others(RCore *core, const char *input) {
 	case '?':
 		switch (input[0]) {
 		case 'f': // "Cf?"
-			r_cons_println(
+			r_cons_println (
 				"Usage: Cf[-] [sz] [fmt..] [@addr]\n\n"
 				"'sz' indicates the byte size taken up by struct.\n"
 				"'fmt' is a 'pf?' style format string. It controls only the display format.\n\n"
@@ -894,14 +909,14 @@ static int cmd_meta_others(RCore *core, const char *input) {
 							if (realformat) {
 								p = (char *)realformat;
 							} else {
-								eprintf ("Cannot resolve format '%s'\n", p + 1);
+								R_LOG_WARN ("Cannot resolve format '%s'", p + 1);
 								break;
 							}
 						}
 						if (n < 1) {
 							n = r_print_format_struct_size (core->print, p, 0, 0);
 							if (n < 1) {
-								eprintf ("Warning: Cannot resolve struct size for '%s'\n", p);
+								R_LOG_WARN ("Cannot resolve struct size for '%s'", p);
 								n = 32; //
 							}
 						}
@@ -968,7 +983,7 @@ static int cmd_meta_others(RCore *core, const char *input) {
 						if (type != 's') {
 							fi = r_flag_get_i (core->flags, addr);
 							if (fi) {
-								strncpy (name, fi->name, sizeof (name)-1);
+								strncpy (name, fi->name, sizeof (name) - 1);
 							}
 						}
 					}
@@ -997,7 +1012,7 @@ static int cmd_meta_others(RCore *core, const char *input) {
 		//r_meta_cleanup (core->anal->meta, 0LL, UT64_MAX);
 		break;
 	default:
-		eprintf ("Missing space after CC\n");
+		R_LOG_ERROR ("Missing space after CC");
 		break;
 	}
 
@@ -1074,7 +1089,7 @@ void r_comment_vars(RCore *core, const char *input) {
 			var = r_anal_function_get_var (fcn, input[0], idx);
 		}
 		if (!var) {
-			eprintf ("can't find variable at given offset\n");
+			R_LOG_ERROR ("can't find variable at given offset");
 		} else {
 			if (var->comment) {
 				if (comment && *comment) {
@@ -1100,7 +1115,7 @@ void r_comment_vars(RCore *core, const char *input) {
 			var = r_anal_function_get_var (fcn, input[0], idx);
 		}
 		if (!var) {
-			eprintf ("can't find variable at given offset\n");
+			R_LOG_ERROR ("can't find variable at given offset");
 			break;
 		}
 		free (var->comment);
@@ -1113,7 +1128,7 @@ void r_comment_vars(RCore *core, const char *input) {
 		r_str_trim (name);
 		RAnalVar *var = r_anal_function_get_var_byname (fcn, name);
 		if (!var) {
-			eprintf ("can't find variable named `%s`\n", name);
+			R_LOG_ERROR ("can't find variable named `%s`", name);
 			break;
 		}
 		comment = r_core_editor (core, NULL, var->comment);
@@ -1193,7 +1208,7 @@ static int cmd_meta(void *data, const char *input) {
 		if (f) {
 			r_anal_str_to_fcn (core->anal, f, input + 2);
 		} else {
-			eprintf ("Cannot find function here\n");
+			R_LOG_ERROR ("Cannot find function here");
 		}
 		break;
 	case 'S': // "CS"

@@ -1,0 +1,13 @@
+OBJ_V810=p/v810/plugin.o
+
+STATIC_OBJ+=${OBJ_V810}
+OBJ_V810+=p/v810/v810_disas.o
+TARGET_V810=arch_v810.${EXT_SO}
+
+CFLAGS+=-Iv810
+
+ALL_TARGETS+=${TARGET_V810}
+
+${TARGET_V810}: ${OBJ_V810} ${SHARED_OBJ}
+	${CC} $(call libname,arch_v810) ${CFLAGS} \
+		-Iv810 -o ${TARGET_V810} ${OBJ_V810}

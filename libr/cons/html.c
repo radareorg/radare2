@@ -193,7 +193,8 @@ R_API char *r_cons_html_filter(const char *ptr, int *newlen) {
 				str = ptr;
 				continue;
 			} else if (ptr[0] == '0' && ptr[1] == 'm') {
-				str = (++ptr) + 1;
+				ptr++;
+				str = ptr + 1;
 				esc = 0;
 				inv = false;
 				text_color[0] = '\0';
@@ -210,7 +211,8 @@ R_API char *r_cons_html_filter(const char *ptr, int *newlen) {
 				continue;
 				// reset invert color
 			} else if (ptr[0] == '7' && ptr[1] == 'm') {
-				str = (++ptr) + 1;
+				ptr++;
+				str = ptr + 1;
 				inv = true;
 				need_to_set = true;
 				esc = 0;

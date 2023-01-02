@@ -34,7 +34,7 @@ bool ar_check_magic(RBuffer *b) {
 		return false;
 	}
 	if (strncmp (buf, AR_MAGIC_HEADER, 8)) {
-		eprintf ("Wrong file type.\n");
+		R_LOG_ERROR ("Wrong file type");
 		return false;
 	}
 	return true;
@@ -47,7 +47,7 @@ static inline void arf_clean_name(RArFp *arf) {
 
 static char *name_from_table(ut64 off, filetable *tbl) {
 	if (off > tbl->size) {
-		eprintf ("Malformed ar: name lookup out of bounds for header at offset 0x%" PFMT64x "\n", off);
+		R_LOG_ERROR ("Malformed ar: name lookup out of bounds for header at offset 0x%" PFMT64x, off);
 		return NULL;
 	}
 	// files are suppose to be line feed seperated but we also stop on invalid
@@ -71,7 +71,7 @@ static char *name_from_table(ut64 off, filetable *tbl) {
 	x[sizeof (x) - 1] = '\0';                                                                \
 	r_str_trim_tail (x);                                                                     \
 	if (x[0] != '\0' && (x[0] == '-' || !r_str_isnumber (x))) {                              \
-		eprintf ("Malformed AR: bad %s in header at offset 0x%" PFMT64x "\n", s, h_off); \
+		R_LOG_ERROR ("Malformed AR: bad %s in header at offset 0x%" PFMT64x, s, h_off); \
 		return -1;                                                                       \
 	}
 
@@ -106,15 +106,15 @@ static int ar_parse_header(RArFp *arf, filetable *tbl, ut64 arsize) {
 			return 1; // no more file
 		}
 		if (r < 0) {
-			eprintf ("AR read io error\n");
+			R_LOG_ERROR ("AR read io error");
 		} else {
-			eprintf ("Malformed AR: Invalid length while parsing header at 0x%" PFMT64x "\n", h_off);
+			R_LOG_ERROR ("Malformed AR: Invalid length while parsing header at 0x%" PFMT64x, h_off);
 		}
 		return -1;
 	}
 
 	if (strncmp (h.end, AR_FILE_HEADER_END, sizeof (h.end))) {
-		eprintf ("Invalid header at offset 0x%" PFMT64x ": bad end field\n", h_off);
+		R_LOG_ERROR ("Invalid header at offset 0x%" PFMT64x ": bad end field", h_off);
 		return -1;
 	}
 
@@ -126,7 +126,7 @@ static int ar_parse_header(RArFp *arf, filetable *tbl, ut64 arsize) {
 	VERIFY_AR_NUM_FIELD (h.size, "size")
 
 	if (h.size[0] == '\0') {
-		eprintf ("Malformed AR: bad size in header at offset 0x%" PFMT64x "\n", h_off);
+		R_LOG_ERROR ("Malformed AR: bad size in header at offset 0x%" PFMT64x, h_off);
 		return -1;
 	}
 	ut64 size = atol (h.size);
@@ -140,7 +140,7 @@ static int ar_parse_header(RArFp *arf, filetable *tbl, ut64 arsize) {
 	if (!strcmp (h.name, "/")) {
 		// skip over symbol table
 		if (r_buf_seek (b, size, R_BUF_CUR) <= 0 || r_buf_tell (b) > arsize) {
-			eprintf ("Malformed ar: too short\n");
+			R_LOG_ERROR ("Malformed ar: too short");
 			return -1;
 		}
 		// return next entry
@@ -148,7 +148,7 @@ static int ar_parse_header(RArFp *arf, filetable *tbl, ut64 arsize) {
 	} else if (!strcmp (h.name, "//")) {
 		// table of file names
 		if (tbl->data || tbl->size != 0) {
-			eprintf ("invalid ar file: two filename lookup tables (at 0x%" PFMT64x ", and 0x%" PFMT64x ")\n", tbl->offset, h_off);
+			R_LOG_ERROR ("invalid ar file: two filename lookup tables (at 0x%" PFMT64x ", and 0x%" PFMT64x ")", tbl->offset, h_off);
 			return -1;
 		}
 		tbl->data = (char *)malloc (size + 1);
@@ -169,7 +169,7 @@ static int ar_parse_header(RArFp *arf, filetable *tbl, ut64 arsize) {
 	RList *list = r_str_split_duplist (h.name, "/", false); // don't strip spaces
 	if (r_list_length (list) != 2) {
 		r_list_free (list);
-		eprintf ("invalid ar file: invalid file name in header at: 0x%" PFMT64x "\n", h_off);
+		R_LOG_ERROR ("invalid ar file: invalid file name in header at: 0x%" PFMT64x, h_off);
 		return -1;
 	}
 
@@ -180,7 +180,7 @@ static int ar_parse_header(RArFp *arf, filetable *tbl, ut64 arsize) {
 		if (r_str_isnumber (tmp)) {
 			arf->name = name_from_table (atol (tmp), tbl);
 		} else {
-			eprintf ("invalid ar file: invalid file name in header at: 0x%" PFMT64x "\n", h_off);
+			R_LOG_ERROR ("invalid ar file: invalid file name in header at: 0x%" PFMT64x, h_off);
 		}
 		free (tmp);
 	} else {
@@ -188,7 +188,7 @@ static int ar_parse_header(RArFp *arf, filetable *tbl, ut64 arsize) {
 		tmp = r_list_pop (list);
 		if (tmp[0]) {
 			arf_clean_name (arf);
-			eprintf ("invalid ar file: invalid file name in header at: 0x%" PFMT64x "\n", h_off);
+			R_LOG_ERROR ("invalid ar file: invalid file name in header at: 0x%" PFMT64x, h_off);
 		}
 		free (tmp);
 	}
@@ -202,7 +202,7 @@ static int ar_parse_header(RArFp *arf, filetable *tbl, ut64 arsize) {
 
 	// skip over file content and make sure it is all there
 	if (r_buf_seek (b, size, R_BUF_CUR) <= 0 || r_buf_tell (b) > arsize) {
-		eprintf ("Malformed ar: missing the end of %s (header offset: 0x%" PFMT64x ")\n", arf->name, h_off);
+		R_LOG_ERROR ("Malformed ar: missing the end of %s (header offset: 0x%" PFMT64x ")", arf->name, h_off);
 		arf_clean_name (arf);
 		return -1;
 	}

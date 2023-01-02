@@ -8,8 +8,10 @@ EXPECT=<<EOF
 arm.pseudo
 att2intel
 avr.pseudo
+bpf.pseudo
 chip8.pseudo
 dalvik.pseudo
+evm.pseudo
 m68k.pseudo
 mips.pseudo
 ppc.pseudo

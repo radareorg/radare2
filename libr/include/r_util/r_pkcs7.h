@@ -86,7 +86,7 @@ typedef struct {
 
 R_API RCMS *r_pkcs7_parse_cms(const ut8 *buffer, ut32 length);
 R_API void r_pkcs7_free_cms(RCMS* container);
-R_API char *r_pkcs7_cms_to_string(RCMS* container);
+R_API char *r_pkcs7_cms_tostring(RCMS* container);
 R_API PJ *r_pkcs7_cms_json(RCMS* container);
 R_API SpcIndirectDataContent *r_pkcs7_parse_spcinfo(RCMS *cms);
 R_API void r_pkcs7_free_spcinfo(SpcIndirectDataContent *spcinfo);

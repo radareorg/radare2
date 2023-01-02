@@ -72,7 +72,7 @@ int r_pyc_disasm(RAnalOp *opstruct, const ut8 *code, RList *cobjs, RList *intern
 	return i;
 }
 
-static char *generic_array_obj_to_string(RList *l);
+static char *generic_array_obj_tostring(RList *l);
 
 static char *parse_arg(pyc_opcode_object *op, ut32 oparg, RList *names, RList *consts, RList *varnames, RList *interned_table, RList *freevars, RList *cellvars, RList *opcode_arg_fmt) {
 	pyc_object *t = NULL;
@@ -106,7 +106,7 @@ static char *parse_arg(pyc_opcode_object *op, ut32 oparg, RList *names, RList *c
 		case TYPE_FROZENSET:
 		case TYPE_LIST:
 		case TYPE_SMALL_TUPLE:
-			arg = generic_array_obj_to_string (t->data);
+			arg = generic_array_obj_tostring (t->data);
 			break;
 		case TYPE_STRING:
 		case TYPE_INTERNED:
@@ -170,7 +170,7 @@ static char *parse_arg(pyc_opcode_object *op, ut32 oparg, RList *names, RList *c
 	return arg;
 }
 
-static char *generic_array_obj_to_string(RList *l) {
+static char *generic_array_obj_tostring(RList *l) {
 	RListIter *iter = NULL;
 	pyc_object *e = NULL;
 

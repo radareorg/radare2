@@ -2,11 +2,11 @@
 // TODO: integrate floating point support
 // TODO: do not use global variables
 /*
-   Reference Chapter 6:
-   "The C++ Programming Language", Special Edition.
-   Bjarne Stroustrup,Addison-Wesley Pub Co; 3 edition (February 15, 2000)
-    ISBN: 0201700735
- */
+	Reference Chapter 6:
+	"The C++ Programming Language", Special Edition.
+	Bjarne Stroustrup,Addison-Wesley Pub Co; 3 edition (February 15, 2000)
+	ISBN: 0201700735
+*/
 
 #define R_LOG_ORIGIN "util.calc"
 #include <r_util.h>
@@ -145,6 +145,11 @@ static RNumCalcValue prim(RNum *num, RNumCalc *nc, int get) {
 		//double& v = table[nc->string_value];
 		r_str_trim (nc->string_value);
 		v = Nset (r_num_get (num, nc->string_value));
+#if 0
+		if (num && num->nc.errors > 0) {
+			return v;
+		}
+#endif
 		get_token (num, nc);
 		if (nc->curr_tok  == RNCASSIGN) {
 			v = expr (num, nc, 1);
@@ -196,7 +201,7 @@ static RNumCalcValue prim(RNum *num, RNumCalc *nc, int get) {
 	return v;
 }
 
-static void cin_putback(RNum *num, RNumCalc *nc, char c) {
+static inline void cin_putback(RNum *num, RNumCalc *nc, char c) {
 	nc->oc = c;
 }
 
@@ -246,7 +251,16 @@ static int cin_get_num(RNum *num, RNumCalc *nc, RNumCalcValue *n) {
 		}
 	}
 	str[i] = 0;
+#if 1
 	*n = Nset (r_num_get (num, str));
+#else
+	ut64 v = r_num_get (num, str);
+	if (num && num->nc.errors > 0) {
+		return 0;
+	}
+	*n = Nset (v);
+#endif
+
 	if (IS_DIGIT (*str) && strchr (str, '.')) {
 		if (sscanf (str, "%lf", &d) < 1) {
 			return 0;

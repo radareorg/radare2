@@ -16,7 +16,6 @@ endif
 -include $(STOP)/bochs/deps.mk
 LDFLAGS+=-L$(LTOP)/util -lr_util
 LDFLAGS+=-L$(LTOP)/cons -lr_cons
-LDFLAGS+=-L$(LTOP)/parse -lr_parse
 LDFLAGS+=-L$(LTOP)/anal -lr_anal
 LDFLAGS+=-L$(LTOP)/reg -lr_reg
 LDFLAGS+=-L$(LTOP)/bp -lr_bp

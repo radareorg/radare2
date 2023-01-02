@@ -8,7 +8,7 @@ R_API bool r_core_patch_line(RCore *core, char *str) {
 		return false;
 	}
 	*p = 0;
-	for (++p; *p == ' '; p++) {
+	for (p++; *p == ' '; p++) {
 		; // XXX: skipsspaces here
 	}
 
@@ -29,7 +29,7 @@ R_API bool r_core_patch_line(RCore *core, char *str) {
 		q = strchr (p + 1,' ');
 		if (q) {
 			*q = 0;
-			for (++q; *q == ' '; q++) {
+			for (q++; *q == ' '; q++) {
 				; // XXX: skipsspaces here
 			}
 		} else {
@@ -84,7 +84,7 @@ static bool __core_patch_bracket(RCore *core, const char *str, ut64 *noff) {
 		str = p;
 	}
 
-	s = r_buf_to_string (b);
+	s = r_buf_tostring (b);
 	r_egg_load (core->egg, s, 0);
 	free (s);
 

@@ -50,7 +50,7 @@ SDB_API char *sdb_json_indent(const char *s, const char *tab) {
 	o_size += 2;
 	indent = 0;
 
-	O = (char *)malloc (o_size + 1);
+	O = (char *)sdb_gh_malloc (o_size + 1);
 	if (!O) {
 		return NULL;
 	}
@@ -110,7 +110,7 @@ SDB_API char *sdb_json_indent(const char *s, const char *tab) {
 SDB_API char *sdb_json_unindent(const char *s) {
 	int instr = 0;
 	int len = strlen (s);
-	char *o, *O = (char *)malloc (len + 1);
+	char *o, *O = (char *)sdb_gh_malloc (len + 1);
 	if (!O) {
 		return NULL;
 	}

@@ -15,6 +15,7 @@ static const char *help_msg_i[] = {
 	"ia", "", "show all info (imports, exports, sections..)",
 	"ib", "", "reload the current buffer for setting of the bin (use once only)",
 	"ic", "", "List classes, methods and fields (icj for json)",
+	"ic.", "", "show class and method name in current seek",
 	"icc", "", "List classes, methods and fields in Header Format",
 	"icg", " [str]", "List classes as agn/age commands to create class hirearchy graphs (matches str if provided)",
 	"icq", "", "List classes, in quiet mode (just the classname)",
@@ -96,13 +97,14 @@ static bool demangle_internal(RCore *core, const char *lang, const char *s) {
 	char *res = NULL;
 	int type = r_bin_demangle_type (lang);
 	switch (type) {
-	case R_BIN_NM_CXX: res = r_bin_demangle_cxx (core->bin->cur, s, 0); break;
-	case R_BIN_NM_JAVA: res = r_bin_demangle_java (s); break;
-	case R_BIN_NM_OBJC: res = r_bin_demangle_objc (NULL, s); break;
-	case R_BIN_NM_SWIFT: res = r_bin_demangle_swift (s, core->bin->demangle_usecmd, core->bin->demangle_trylib); break;
-	case R_BIN_NM_DLANG: res = r_bin_demangle_plugin (core->bin, "dlang", s); break;
-	case R_BIN_NM_MSVC: res = r_bin_demangle_msvc (s); break;
-	case R_BIN_NM_RUST: res = r_bin_demangle_rust (core->bin->cur, s, 0); break;
+	case R_BIN_LANG_CXX: res = r_bin_demangle_cxx (core->bin->cur, s, 0); break;
+	case R_BIN_LANG_JAVA: res = r_bin_demangle_java (s); break;
+	case R_BIN_LANG_OBJC: res = r_bin_demangle_objc (NULL, s); break;
+	case R_BIN_LANG_SWIFT: res = r_bin_demangle_swift (s, core->bin->demangle_usecmd, core->bin->demangle_trylib); break;
+	case R_BIN_LANG_DLANG: res = r_bin_demangle_plugin (core->bin, "dlang", s); break;
+	case R_BIN_LANG_MSVC: res = r_bin_demangle_msvc (s); break;
+	case R_BIN_LANG_RUST: res = r_bin_demangle_rust (core->bin->cur, s, 0); break;
+	case R_BIN_LANG_PASCAL: res = r_bin_demangle_freepascal (s); break;
 	default:
 		r_bin_demangle_list (core->bin);
 		return true;
@@ -141,7 +143,6 @@ static void cmd_info_here(RCore *core, PJ *pj, int mode) {
 	// fixme: other modes
 	if (item && mode == R_MODE_JSON) {
 		pj_o (pj);
-
 		pj_ks (pj, "type", item->type);
 		pj_ks (pj, "perm", r_str_rwx_i (item->perm));
 		pj_kn (pj, "size", item->size);
@@ -245,22 +246,6 @@ static void r_core_file_info(RCore *core, PJ *pj, int mode) {
 				pj_ks (pj, "referer", desc->referer);
 			}
 		}
-		int v = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_MIN_OP_SIZE);
-		if (v > 0) {
-			pj_ki (pj, "minopsz", v);
-		}
-		v = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_MAX_OP_SIZE);
-		if (v > 0) {
-			pj_ki (pj, "maxopsz", v);
-		}
-		v = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_INV_OP_SIZE);
-		if (v > 0) {
-			pj_ki (pj, "invopsz", v);
-		}
-		v = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_ALIGN);
-		if (v > 0) {
-			pj_ki (pj, "pcalign", v);
-		}
 		pj_ki (pj, "block", core->blocksize);
 		if (binfile) {
 			if (binfile->curxtr) {
@@ -291,22 +276,6 @@ static void r_core_file_info(RCore *core, PJ *pj, int mode) {
 				r_num_units (humansz, sizeof (humansz), fsz);
 				pair ("humansz", humansz);
 			}
-		}
-		int v = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_MIN_OP_SIZE);
-		if (v > 0) {
-			pair ("minopsz", r_strf ("%d", v));
-		}
-		v = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_MAX_OP_SIZE);
-		if (v > 0) {
-			pair ("maxopsz", r_strf ("%d", v));
-		}
-		v = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_INV_OP_SIZE);
-		if (v > 0) {
-			pair ("invopsz", r_strf ("%d", v));
-		}
-		v = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_ALIGN);
-		if (v > 0) {
-			pair ("pcalign", r_strf ("%d", v));
 		}
 		if (desc) {
 			pair ("mode", r_str_rwx_i (desc->perm & R_PERM_RWX));
@@ -351,7 +320,7 @@ static int bin_is_executable(RBinObject *obj) {
 static void cmd_info_bin(RCore *core, int va, PJ *pj, int mode) {
 	RBinObject *obj = r_bin_cur_object (core->bin);
 	int array = 0;
-	if (core->io->desc) {
+	if (core->io->desc || obj) {
 		if (mode & R_MODE_JSON) {
 			if (!(mode & R_MODE_ARRAY)) {
 				pj_o (pj);
@@ -691,8 +660,7 @@ static int cmd_info(void *data, const char *input) {
 			} else {
 				RBININFO ("exports", R_CORE_BIN_ACC_EXPORTS, input + 1, 0);
 			}
-			while (*(++input)) ;
-			input--;
+			input = input + strlen (input) - 1;
 			break;
 		}
 		case 't': // "it"
@@ -826,11 +794,7 @@ static int cmd_info(void *data, const char *input) {
 
 
 			}
-			//we move input until get '\0'
-			while (*(++input)) {};
-			//input-- because we are inside a while that does input++
-			// oob read if not input--
-			input--;
+			input = input + strlen (input) - 1;
 			break;
 		case 'H': // "iH"
 			if (input[1] == 'H') { // "iHH"
@@ -911,8 +875,7 @@ static int cmd_info(void *data, const char *input) {
 					RBININFO ("symbols", R_CORE_BIN_ACC_SYMBOLS, input + 1, (obj && obj->symbols)? r_list_length (obj->symbols): 0);
 				}
 			}
-			while (*(++input)) ;
-			input--;
+			input = input + strlen (input) - 1;
 			r_list_free (objs);
 			break;
 		}
@@ -1217,7 +1180,7 @@ static int cmd_info(void *data, const char *input) {
 #if 1
 				if (rdump) {
 					RBinFile *bf = r_bin_cur (core->bin);
-					int min = r_config_get_i (core->config, "bin.minstr");
+					int min = r_config_get_i (core->config, "bin.str.min");
 					if (bf) {
 						bf->strmode = mode;
 						RList *res = r_bin_dump_strings (bf, min, 2);
@@ -1228,7 +1191,7 @@ static int cmd_info(void *data, const char *input) {
 				RBININFO ("strings", R_CORE_BIN_ACC_RAW_STRINGS, NULL, 0);
 #else
 				// XXX for some reason this is breaking tests
-				int min = r_config_get_i (core->config, "bin.minstr");
+				int min = r_config_get_i (core->config, "bin.str.min");
 				{
 					RList *objs = r_core_bin_files (core);
 					RListIter *iter;
@@ -1299,46 +1262,56 @@ static int cmd_info(void *data, const char *input) {
 			} else if (input[1] == ',') { // "ic,"
 				// ic,
 				cmd_ic_comma (core, input);
-			} else if (input[1] == 'g') {
+			} else if (input[1] == 'g') { // "icg"
 				RBinClass *cls;
-				RListIter *iter;
+				RListIter *iter, *iter2;
 				RBinObject *obj = r_bin_cur_object (core->bin);
 				if (!obj) {
 					break;
 				}
 				bool fullGraph = true;
 				const char *match = r_str_trim_head_ro (input + 2);
-				if (*match) {
+				if (R_STR_ISNOTEMPTY (match)) {
 					r_list_foreach (obj->classes, iter, cls) {
-					    if (cls->super && strstr (cls->super, match)) {
-							r_cons_printf ("agn %s\n", cls->super);
-							r_cons_printf ("agn %s\n", cls->name);
-							r_cons_printf ("age %s %s\n", cls->super, cls->name);
-						} else if (strstr (cls->name, match)) {
-							r_cons_printf ("agn %s\n", cls->name);
+						char *sk;
+						if (!match || !strstr (cls->name, match)) {
+							continue;
+						}
+						r_cons_printf ("agn %s\n", cls->name);
+						if (cls->super) {
+							r_list_foreach (cls->super, iter2, sk) {
+								if (match && strstr (sk, match)) {
+									r_cons_printf ("agn %s\n", sk);
+									r_cons_printf ("age %s %s\n", sk, cls->name);
+								}
+							}
 						}
 					}
 				} else if (fullGraph) {
 					r_list_foreach (obj->classes, iter, cls) {
-						if (cls->super) {
-							r_cons_printf ("agn %s\n", cls->super);
-							r_cons_printf ("agn %s\n", cls->name);
-							r_cons_printf ("age %s %s\n", cls->super, cls->name);
-						} else {
-							r_cons_printf ("agn %s\n", cls->name);
+						const char *sk;
+						r_cons_printf ("agn %s\n", cls->name);
+						r_list_foreach (cls->super, iter2, sk) {
+							r_cons_printf ("agn %s\n", sk);
+							r_cons_printf ("age %s %s\n", sk, cls->name);
 						}
 					}
 				} else {
 					r_list_foreach (obj->classes, iter, cls) {
-						if (cls->super && !strstr (cls->super, "NSObject")) {
-							r_cons_printf ("agn %s\n", cls->super);
+						char *sk;
+						RListIter *iter;
+						r_list_foreach (cls->super, iter, sk) {
+							if (strstr (sk, "NSObject")) {
+								continue;
+							}
+							r_cons_printf ("agn %s\n", sk);
 							r_cons_printf ("agn %s\n", cls->name);
-							r_cons_printf ("age %s %s\n", cls->super, cls->name);
+							r_cons_printf ("age %s %s\n", sk, cls->name);
 						}
 					}
 				}
 				goto done;
-			} else if (input[1] == ' ' || input[1] == 's' || input[1] == 'q' || input[1] == 'j' || input[1] == 'l' || input[1] == 'c' || input[1] == '*') {
+			} else if (input[1] == ' ' || input[1] == '.' || input[1] == 's' || input[1] == 'q' || input[1] == 'j' || input[1] == 'l' || input[1] == 'c' || input[1] == '*') {
 				RList *objs = r_core_bin_files (core);
 				RListIter *objs_iter;
 				RBinFile *bf;
@@ -1460,6 +1433,34 @@ static int cmd_info(void *data, const char *input) {
 								if (!r_list_empty (cls->methods)) {
 									r_cons_newline ();
 								}
+							}
+						} else if (input[1] == '.') { // "ic."
+							ut64 addr = core->offset;
+							ut64 min = UT64_MAX;
+							const char *method = NULL;
+							ut64 max = 0LL;
+							r_list_foreach (obj->classes, iter, cls) {
+								method = NULL;
+								r_list_foreach (cls->methods, iter2, sym) {
+									if (sym->vaddr < min) {
+										min = sym->vaddr;
+									}
+									if (sym->vaddr + sym->size > max) {
+										max = sym->vaddr + sym->size;
+									}
+									if (addr >= sym->vaddr && addr <= sym->vaddr + sym->size) {
+										method = sym->name;
+									}
+								}
+								if (addr >= min && addr < max) {
+									if (method) {
+										r_cons_printf ("%s::%s\n", cls->name, method);
+									} else {
+										r_cons_printf ("%s\n", cls->name);
+									}
+								}
+								min = UT64_MAX;
+								max = 0LL;
 							}
 						} else if (input[1] == 'c') { // "icc"
 							mode = R_MODE_CLASSDUMP;

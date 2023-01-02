@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include "rangstr.h"
+#include "sdb/rangstr.h"
 
 /* public sdb api */
 char *api_json_get (const char *s, const char *p) {
@@ -35,7 +35,7 @@ char *api_json_set (const char *s, const char *k, const char *v) {
 	end[2] = s + strlen (s);
 	len[2] = WLEN (2);
 
-	str = (char *)malloc (len[0]+len[1]+len[2]+1);
+	str = (char *)sdb_gh_malloc (len[0]+len[1]+len[2]+1);
 	if (!str) {
 		return NULL;
 	}

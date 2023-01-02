@@ -20,7 +20,8 @@ static bool r_config_setter_s(void *data) {
 		free (*node->cb_ptr_s);
 		*node->cb_ptr_s = NULL;
 	} else {
-		*node->cb_ptr_s = r_str_dup (*node->cb_ptr_s, node->value);
+		free (*node->cb_ptr_s);
+		*node->cb_ptr_s = strdup (node->value);
 	}
 	return true;
 }

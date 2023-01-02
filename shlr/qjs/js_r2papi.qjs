@@ -1,0 +1,983 @@
+// r2papi main file
+Object.defineProperty(G, "__esModule", { value: true });
+G.Base64 = G.NativePointer = G.R2Papi = void 0;
+const shell_js_1 = G;//"./shell.js");
+;
+;
+;
+;
+;
+;
+;
+;
+class R2Papi {
+    constructor(r2) {
+        this.r2 = r2;
+    }
+    jsonToTypescript(name, a) {
+        let str = `interface ${name} {\n`;
+        if (a.length && a.length > 0) {
+            a = a[0];
+        }
+        for (let k of Object.keys(a)) {
+            const typ = typeof (a[k]);
+            const nam = k;
+            str += `    ${nam}: ${typ};\n`;
+        }
+        return `${str}}\n`;
+    }
+    /**
+     * should return the id for the new map using the given file descriptor
+     */
+    newMap(fd, vaddr, size, paddr, perm, name = "") {
+        this.cmd(`om ${fd} ${vaddr} ${size} ${paddr} ${perm} ${name}`);
+    }
+    at(a) {
+        return new NativePointer(a);
+    }
+    getShell() {
+        return new shell_js_1.R2PapiShell(this);
+    }
+    // Radare/Frida
+    version() {
+        return this.r2.cmd("?Vq").trim();
+    }
+    // Process
+    platform() {
+        return this.r2.cmd("uname").trim();
+    }
+    arch() {
+        return this.r2.cmd("uname -a").trim();
+    }
+    bits() {
+        return this.r2.cmd("uname -b").trim();
+    }
+    id() {
+        // getpid();
+        return +this.r2.cmd("?vi:$p");
+    }
+    // Other stuff
+    printAt(msg, x, y) {
+        // see pg, but pg is obrken :D
+    }
+    clearScreen() {
+        this.r2.cmd("!clear");
+        return this;
+    }
+    getConfig(key) {
+        return this.r2.call("e " + key).trim();
+    }
+    setConfig(key, val) {
+        this.r2.call("e " + key + "=" + val);
+        return this;
+    }
+    getRegisters() {
+        // this.r2.log("winrar" + JSON.stringify(JSON.parse(this.r2.cmd("drj")),null, 2) );
+        return this.cmdj("drj");
+    }
+    resizeFile(newSize) {
+        this.cmd(`r ${newSize}`);
+        return this;
+    }
+    insertNullBytes(newSize, at) {
+        if (at === undefined) {
+            at = "$$";
+        }
+        this.cmd(`r+${newSize}@${at}`);
+        return this;
+    }
+    removeBytes(newSize, at) {
+        if (at === undefined) {
+            at = "$$";
+        }
+        this.cmd(`r-${newSize}@${at}`);
+        return this;
+    }
+    seek(addr) {
+        this.cmd(`s ${addr}`);
+        return this;
+    }
+    getBlockSize() {
+        return +this.cmd("b");
+    }
+    setBlockSize(a) {
+        this.cmd(`b ${a}`);
+        return this;
+    }
+    enumerateThreads() {
+        // TODO: use apt/dpt to list threads at iterate over them to get the registers
+        const regs0 = this.cmdj("drj");
+        const thread0 = {
+            context: regs0,
+            id: 0,
+            state: "waiting",
+            selected: true,
+        };
+        return [thread0];
+    }
+    currentThreadId() {
+        if (+this.cmd("e cfg.debug")) {
+            return +this.cmd("dpt.");
+        }
+        return this.id();
+    }
+    setRegisters(obj) {
+        for (let r of Object.keys(obj)) {
+            const v = obj[r];
+            this.r2.cmd("dr " + r + "=" + v);
+        }
+    }
+    hex(s) {
+        return this.r2.cmd("?v " + s).trim();
+    }
+    step() {
+        this.r2.cmd("ds");
+        return this;
+    }
+    stepOver() {
+        this.r2.cmd("dso");
+        return this;
+    }
+    math(expr) {
+        return +this.r2.cmd("?v " + expr);
+    }
+    stepUntil(dst) {
+        this.cmd(`dsu ${dst}`);
+    }
+    searchDisasm(s) {
+        const res = this.callj("/ad " + s);
+        return res;
+    }
+    searchString(s) {
+        const res = this.cmdj("/j " + s);
+        return res;
+    }
+    searchBytes(data) {
+        function num2hex(data) {
+            return (data & 0xff).toString(16);
+        }
+        const s = data.map(num2hex).join('');
+        const res = this.cmdj("/xj " + s);
+        return res;
+    }
+    binInfo() {
+        try {
+            return this.cmdj("ij~{bin}");
+        }
+        catch (e) {
+            return {};
+        }
+    }
+    // TODO: take a BinFile as argument instead of number
+    selectBinary(id) {
+        this.call(`ob ${id}`);
+    }
+    openFile(name) {
+        this.call(`o ${name}`);
+    }
+    enumeratePlugins(type) {
+        switch (type) {
+            case "bin":
+                return this.callj("Lij");
+            case "io":
+                return this.callj("Loj");
+            case "core":
+                return this.callj("Lcj");
+            case "anal":
+                return this.callj("Laj");
+            case "lang":
+                return this.callj("Llj");
+        }
+        return [];
+    }
+    enumerateModules() {
+        return this.callj("dmmj");
+    }
+    enumerateFiles() {
+        return this.callj("oj");
+    }
+    enumerateBinaries() {
+        return this.callj("obj");
+    }
+    enumerateMaps() {
+        return this.callj("omj");
+    }
+    enumerateSymbols() {
+        return this.callj("isj");
+    }
+    enumerateExports() {
+        return this.callj("iEj");
+    }
+    enumerateImports() {
+        return this.callj("iij");
+    }
+    enumerateLibraries() {
+        return this.callj("ilj");
+    }
+    enumerateSections() {
+        return this.callj("iSj");
+    }
+    enumerateSegments() {
+        return this.callj("iSSj");
+    }
+    enumerateEntrypoints() {
+        return this.callj("iej");
+    }
+    enumerateRelocations() {
+        return this.callj("irj");
+    }
+    enumerateFunctions() {
+        return this.cmdj("aflj");
+    }
+    enumerateFlags() {
+        return this.cmdj("fj");
+    }
+    skip() {
+        this.r2.cmd("dss");
+    }
+    ptr(s) {
+        return new NativePointer(s, this);
+    }
+    call(s) {
+        return this.r2.call(s);
+    }
+    callj(s) {
+        return JSON.parse(this.call(s));
+    }
+    cmd(s) {
+        return this.r2.cmd(s);
+    }
+    cmdj(s) {
+        return JSON.parse(this.cmd(s));
+    }
+    log(s) {
+        return this.r2.log(s);
+    }
+    clippy(msg) {
+        this.r2.log(this.r2.cmd("?E " + msg));
+    }
+    ascii(msg) {
+        this.r2.log(this.r2.cmd("?ea " + msg));
+    }
+}
+G.R2Papi = R2Papi;
+class NativePointer {
+    constructor(s, api) {
+        if (api === undefined) {
+            this.api = G.R;
+        }
+        else {
+            this.api = api;
+        }
+        // this.api.r2.log("NP " + s);
+        this.addr = ("" + s).trim();
+    }
+    hexdump(length) {
+        let len = (length === undefined) ? "" : "" + length;
+        return this.api.cmd(`x${len}@${this.addr}`);
+    }
+    functionGraph(format) {
+        if (format === "dot") {
+            return this.api.cmd(`agfd@ ${this.addr}`);
+        }
+        if (format === "json") {
+            return this.api.cmd(`agfj@${this.addr}`);
+        }
+        if (format === "mermaid") {
+            return this.api.cmd(`agfm@${this.addr}`);
+        }
+        return this.api.cmd(`agf@${this.addr}`);
+    }
+    readByteArray(len) {
+        return JSON.parse(this.api.cmd(`p8j ${len}@${this.addr}`));
+    }
+    and(a) {
+        this.addr = this.api.call(`?v ${this.addr} & ${a}`).trim();
+        return this;
+    }
+    or(a) {
+        this.addr = this.api.call(`?v ${this.addr} | ${a}`).trim();
+        return this;
+    }
+    add(a) {
+        this.addr = this.api.call(`?v ${this.addr}+${a}`).trim();
+        return this;
+    }
+    sub(a) {
+        this.addr = this.api.call(`?v ${this.addr}-${a}`).trim();
+        return this;
+    }
+    writeByteArray(data) {
+        this.api.cmd("wx " + data.join(""));
+        return this;
+    }
+    writeAssembly(instruction) {
+        this.api.cmd(`\"wa ${instruction} @ ${this.addr}`);
+        return this;
+    }
+    writeCString(s) {
+        this.api.call("w " + s);
+        return this;
+    }
+    isNull() {
+        return +this.addr === 0;
+    }
+    compare(a) {
+        if (typeof a === "string" || typeof a === "number") {
+            a = new NativePointer(a);
+        }
+        return a.addr === this.addr;
+    }
+    pointsToNull() {
+        return this.readPointer().compare(0);
+    }
+    toString() {
+        return this.addr.trim();
+    }
+    writePointer(p) {
+        const cmd = (+this.api.getConfig("asm.bits") === 64) ? "wv8" : "wv4";
+        this.api.cmd(`${cmd} ${p}@${this}`);
+        // 5.8.2 this.call("wvp " + p.addr);
+    }
+    readPointer() {
+        if (+this.api.getConfig("asm.bits") === 64) {
+            return new NativePointer(this.api.call("pv8@" + this.addr));
+        }
+        else {
+            return new NativePointer(this.api.call("pv4@" + this.addr));
+        }
+    }
+    readU8() {
+        return +this.api.cmd(`pv1@"${this.addr}`);
+    }
+    readU16() {
+        return +this.api.cmd(`pv2@"${this.addr}`);
+    }
+    readU32() {
+        return +this.api.cmd(`pv4@"${this.addr}`);
+    }
+    readU64() {
+        // XXX: use bignum or 
+        return +this.api.cmd(`pv8@"${this.addr}`);
+    }
+    writeInt(n) {
+        return +this.api.cmd(`wv4 ${n}@${this.addr}`);
+    }
+    writeU8(n) {
+        this.api.cmd(`wv1 ${n}@${this.addr}`);
+        return true;
+    }
+    writeU16(n) {
+        this.api.cmd(`wv2 ${n}@${this.addr}`);
+        return true;
+    }
+    writeU32(n) {
+        this.api.cmd(`wv4 ${n}@${this.addr}`);
+        return true;
+    }
+    writeU64(n) {
+        this.api.cmd(`wv8 ${n}@${this.addr}`);
+        return true;
+    }
+    readInt() {
+        return +this.api.cmd(`pv4@"${this.addr}`);
+    }
+    readCString() {
+        return JSON.parse(this.api.cmd(`psj@${this.addr}`)).string;
+    }
+    instruction() {
+        const op = this.api.cmdj(`aoj@${this.addr}`)[0];
+        return op;
+    }
+    disassemble(length) {
+        let len = (length === undefined) ? "" : "" + length;
+        return this.api.cmd(`pd ${len}@${this.addr}`);
+    }
+    analyzeFunction() {
+        this.api.cmd("af@" + this.addr);
+        return this;
+    }
+    analyzeFunctionRecursively() {
+        this.api.cmd("afr@" + this.addr);
+        return this;
+    }
+    // define a type
+    analyzeProgram(depth) {
+        if (depth === undefined) {
+            depth = 0;
+        }
+        switch (depth) {
+            case 0:
+                this.api.cmd("aa");
+                break;
+            case 1:
+                this.api.cmd("aaa");
+                break;
+            case 2:
+                this.api.cmd("aaaa");
+                break;
+            case 3:
+                this.api.cmd("aaaaa");
+                break;
+        }
+        return this;
+    }
+    name() {
+        return this.api.cmd("fd " + this.addr).trim();
+    }
+    basicBlock() {
+        const bb = this.api.cmdj("abj@" + this.addr);
+        return bb;
+    }
+    functionBasicBlocks() {
+        const bbs = this.api.cmdj("afbj@" + this.addr);
+        return bbs;
+    }
+    xrefs() {
+        return this.api.cmdj("axtj@" + this.addr);
+    }
+}
+G.NativePointer = NativePointer;
+class Base64 {
+    static encode(x) {
+        return (0, G.b64)(x);
+    }
+    static decode(x) {
+        return (0, G.b64)(x, true);
+    }
+}
+G.Base64 = Base64;
+// shell utilities on top of r2pipe
+Object.defineProperty(G, "__esModule", { value: true });
+G.R2PapiShell = void 0;
+class R2PapiShell {
+    constructor(papi) {
+        this.rp = papi;
+    }
+    /**
+    * Create a new directory in the host system, if the opational recursive argument is set to
+    * true it will create all the necessary subdirectories instead of just the specified one.
+    */
+    mkdir(file, recursive) {
+        if (recursive === true) {
+            this.rp.call(`mkdir -p ${file}`);
+        }
+        else {
+            this.rp.call(`mkdir ${file}`);
+        }
+        return true;
+    }
+    /**
+    * Deletes a file
+    */
+    unlink(file) {
+        this.rp.call(`rm ${file}`);
+        return true;
+    }
+    /**
+    * Change current directory
+    */
+    chdir(path) {
+        this.rp.call(`cd ${path}`);
+        return true;
+    }
+    ls() {
+        return this.rp.call(`ls -q`).trim().split('\n');
+    }
+    fileExists(path) {
+        // TODO
+        return false;
+    }
+    /**
+    * Opens an URL or application
+    * calls `xdg-open` on linux, `start` on windows, `open` on Mac
+    */
+    open(arg) {
+        this.rp.call(`open ${arg}`);
+    }
+    system(cmd) {
+        this.rp.call(`!${cmd}`);
+        return 0;
+    }
+    run(path) {
+        this.rp.call(`rm ${path}`);
+        return 0;
+    }
+    mount(fstype, path) {
+        this.rp.call(`m ${fstype} ${path}`);
+        return true;
+    }
+    umount(path) {
+        this.rp.call(`m-${path}`);
+    }
+    chdir2(path) {
+        if (path === undefined) {
+            path = "/";
+        }
+        this.rp.call(`mdq ${path}`);
+        return true;
+    }
+    ls2(path) {
+        if (path === undefined) {
+            path = "/";
+        }
+        return this.rp.call(`mdq ${path}`).trim().split('\n');
+    }
+    enumerateMountpoints() {
+        return this.rp.cmdj("mlj");
+    }
+    isSymlink(file) {
+        return false;
+    }
+    isDirectory(file) {
+        return false;
+    }
+}
+G.R2PapiShell = R2PapiShell;
+Object.defineProperty(G, "__esModule", { value: true });
+G.EsilParser = G.EsilNode = G.EsilToken = void 0;
+class EsilToken {
+    constructor(text = "", position = 0) {
+        this.label = "";
+        this.comment = "";
+        this.text = "";
+        this.addr = "0"; // for ut64 we use strings for numbers :<
+        this.position = 0;
+        this.text = text;
+        this.position = position;
+    }
+    toString() {
+        return this.text;
+    }
+}
+G.EsilToken = EsilToken;
+class EsilNode {
+    constructor(token = new EsilToken(), type = "none") {
+        this.type = "none";
+        this.token = token;
+        this.children = [];
+    }
+    setSides(lhs, rhs) {
+        this.lhs = lhs;
+        this.rhs = rhs;
+    }
+    addChildren(ths, fhs) {
+        if (ths !== undefined) {
+            this.children.push(ths);
+        }
+        if (fhs !== undefined) {
+            this.children.push(fhs);
+        }
+    }
+    toEsil() {
+        if (this.lhs !== undefined && this.rhs !== undefined) {
+            // XXX handle ?{ }{ }
+            let left = this.lhs.toEsil();
+            if (left !== "") {
+                left += ",";
+            }
+            return `${this.rhs.toEsil()},${left}${this.token}`;
+        }
+        return this.token.text;
+    }
+    toString() {
+        let str = "";
+        if (this.token.label !== "") {
+            str += this.token.label + ":\n";
+        }
+        if (this.token.addr !== "0") {
+            // str += "//  @ " + this.token.addr + "\n";
+        }
+        if (this.token.comment !== "") {
+            str += "/*" + this.token.comment + "*/\n";
+        }
+        if (this.token.toString() === "GOTO") {
+            if (this.children.length > 0) {
+                const children = this.children[0];
+                str += "goto label_" + children.token.position + ";\n";
+            }
+            else {
+                // console.log(JSON.stringify(this,null, 2));
+                let pos = 0;
+                str += `goto label_${pos};\n`;
+            }
+        }
+        if (this.children.length > 0) {
+            str += `  (if (${this.rhs})\n`;
+            for (let children of this.children) {
+                if (children !== null) {
+                    const x = children.toString();
+                    if (x != "") {
+                        str += `  ${x}\n`;
+                    }
+                }
+            }
+            str += "  )\n";
+        }
+        if (this.lhs !== undefined && this.rhs !== undefined) {
+            return str + `    ( ${this.lhs} ${this.token} ${this.rhs} )`;
+            // return str + `${this.lhs} ${this.token} ${this.rhs}`;
+        }
+        return str + this.token.toString();
+    }
+}
+G.EsilNode = EsilNode;
+class EsilParser {
+    constructor(r2) {
+        this.cur = 0;
+        this.r2 = r2;
+        this.cur = 0;
+        this.stack = [];
+        this.nodes = [];
+        this.tokens = [];
+        this.root = new EsilNode(new EsilToken("function", 0), "block");
+    }
+    toJSON() {
+        if (this.stack.length > 0) {
+            // return JSON.stringify (this.stack, null, 2);
+            throw new Error("The ESIL stack is not empty");
+        }
+        return JSON.stringify(this.root, null, 2);
+    }
+    toEsil() {
+        return this.nodes
+            .map((x) => x.toEsil())
+            .join(',');
+    }
+    optimizeFlags(node) {
+        if (node.rhs !== undefined) {
+            this.optimizeFlags(node.rhs);
+        }
+        if (node.lhs !== undefined) {
+            this.optimizeFlags(node.lhs);
+        }
+        for (let i = 0; i < node.children.length; i++) {
+            this.optimizeFlags(node.children[i]);
+        }
+        const addr = node.toString();
+        if (+addr > 4096) {
+            const fname = r2.cmd(`fd.@ ${addr}`).trim().split("\n")[0].trim();
+            if (fname != "" && fname.indexOf("+") === -1) {
+                node.token.text = fname;
+            }
+        }
+    }
+    optimize(options) {
+        if (options.indexOf("flag") != -1) {
+            this.optimizeFlags(this.root);
+        }
+    }
+    toString() {
+        return this.root.children
+            .map((x) => x.toString())
+            .join(';\n');
+    }
+    reset() {
+        this.nodes = [];
+        this.stack = [];
+        this.tokens = [];
+        this.cur = 0;
+        this.root = new EsilNode(new EsilToken("function", 0), "block");
+    }
+    parseRange(from, to) {
+        let pos = from;
+        while (pos < this.tokens.length && pos < to) {
+            const token = this.peek(pos);
+            if (!token) {
+                // console.log("BREAK");
+                break;
+            }
+            // console.log(pos, token);
+            this.cur = pos;
+            this.pushToken(token);
+            pos = this.cur;
+            pos++;
+        }
+        // console.log("done");
+    }
+    parse(expr, addr) {
+        const tokens = expr.trim().split(',').map((x) => x.trim());
+        const from = this.tokens.length;
+        for (let tok of tokens) {
+            const token = new EsilToken(tok, this.tokens.length);
+            if (addr !== undefined) {
+                token.addr = addr;
+            }
+            this.tokens.push(token);
+        }
+        const to = this.tokens.length;
+        this.parseRange(from, to);
+    }
+    peek(a) {
+        return this.tokens[a];
+    }
+    pushToken(tok) {
+        if (this.isNumber(tok)) {
+            const node = new EsilNode(tok, "number");
+            this.stack.push(node);
+            this.nodes.push(node);
+        }
+        else if (this.isInternal(tok)) {
+            const node = new EsilNode(tok, "flag");
+            this.stack.push(node);
+            this.nodes.push(node);
+        }
+        else if (this.isOperation(tok)) {
+            // run the operation login
+        }
+        else {
+            // assume it's a register, so just push the string
+            const node = new EsilNode(tok, "register");
+            this.stack.push(node);
+            this.nodes.push(node);
+        }
+        // we need a list of register names to do this check properly
+        // throw new Error ("Unknown token");
+    }
+    isNumber(expr) {
+        if (expr.toString().startsWith("0")) {
+            return true;
+        }
+        return +expr > 0;
+    }
+    isInternal(expr) {
+        const text = expr.toString();
+        return text.startsWith("$") && text.length > 1;
+    }
+    parseUntil(start) {
+        const from = start + 1;
+        let pos = from;
+        const origStack = [];
+        const this_nodes_length = this.nodes.length;
+        this.stack.forEach((x) => origStack.push(x));
+        while (pos < this.tokens.length) {
+            const token = this.peek(pos);
+            if (!token) {
+                break;
+            }
+            if (token.toString() === '}') {
+                break;
+            }
+            if (token.toString() === '}{') {
+                // return token;
+                break;
+            }
+            // console.log("peek ", this.tokens[pos]);
+            pos++;
+        }
+        this.stack = origStack;
+        const to = pos;
+        this.parseRange(from, to);
+        const same = this.nodes.length == this_nodes_length;
+        // console.log("BLOCK ("+ ep.toString());
+        if (same) {
+            return null;
+        }
+        return this.nodes[this.nodes.length - 1]; // this.tokens.length - 1];
+    }
+    getNodeFor(index) {
+        const tok = this.peek(index);
+        if (tok === undefined) {
+            return null;
+        }
+        for (let node of this.nodes) {
+            if (node.token.position === index) {
+                return node;
+            }
+        }
+        this.nodes.push(new EsilNode(new EsilToken("label", index), "label"));
+        return null;
+    }
+    findNodeFor(index) {
+        for (let node of this.nodes) {
+            if (node.token.position === index) {
+                return node;
+            }
+        }
+        return null;
+    }
+    isOperation(expr) {
+        switch (expr.toString()) {
+            // 1pop1push
+            case "[1]":
+            case "[2]":
+            case "[4]":
+            case "[8]":
+                if (this.stack.length >= 1) {
+                    const i1 = this.stack.pop();
+                    // TODO: MemoryReferenceNode(i1));
+                    const mn = new EsilNode(i1.token, "operation"); // expr.toString());
+                    this.stack.push(i1); // mn);
+                }
+                else {
+                    throw new Error("Stack needs more items");
+                }
+                return true;
+            // 1pop1push
+            case "!":
+                if (this.stack.length >= 1) {
+                    const i0 = new EsilNode(new EsilToken("", expr.position), "none");
+                    const i1 = this.stack.pop();
+                    const nn = new EsilNode(expr, "operation");
+                    nn.setSides(i0, i1);
+                    this.stack.push(nn);
+                }
+                else {
+                    throw new Error("Stack needs more items");
+                }
+                return true;
+            case "":
+            case "}":
+            case "}{":
+                // no pops or nothing, just does nothing
+                return true;
+            case "DUP":
+                if (true) {
+                    if (this.stack.length < 1) {
+                        throw new Error("goto cant pop");
+                    }
+                    const destNode = this.stack.pop();
+                    this.stack.push(destNode);
+                    this.stack.push(destNode);
+                }
+                return true;
+            case "GOTO":
+                // take previous statement which should be const and add a label
+                const prev = this.peek(expr.position - 1);
+                if (prev !== null) {
+                    // TODO: check stack
+                    if (this.stack.length < 1) {
+                        throw new Error("goto cant pop");
+                    }
+                    const destNode = this.stack.pop();
+                    if (destNode !== null) {
+                        const value = 0 | +destNode.toString();
+                        if (value > 0) {
+                            const destToken = this.peek(value);
+                            if (destToken !== undefined) {
+                                destToken.label = "label_" + value;
+                                destToken.comment = "hehe";
+                                const nn = new EsilNode(expr, "goto");
+                                const gn = this.getNodeFor(destToken.position);
+                                if (gn != null) {
+                                    nn.children.push(gn);
+                                }
+                                this.root.children.push(nn);
+                            }
+                            else {
+                                console.error("Cannot find goto node");
+                            }
+                        }
+                        else {
+                            console.error("Cannot find dest node for goto");
+                        }
+                    }
+                }
+                return true;
+            // controlflow
+            case "?{": // ESIL_TOKEN_IF
+                if (this.stack.length >= 1) {
+                    const i0 = new EsilNode(new EsilToken("if", expr.position), "none");
+                    const i1 = this.stack.pop();
+                    const nn = new EsilNode(expr, "operation");
+                    nn.setSides(i0, i1); // left side can be ignored for now.. but we can express this somehow
+                    let trueBlock = this.parseUntil(expr.position);
+                    let falseBlock = null;
+                    // nn.addChildren(trueBlock, falseBlock);
+                    if (trueBlock !== null) {
+                        nn.children.push(trueBlock);
+                        this.nodes.push(trueBlock);
+                        falseBlock = this.parseUntil(trueBlock.token.position + 1);
+                        if (falseBlock !== null) {
+                            nn.children.push(falseBlock);
+                            this.nodes.push(falseBlock);
+                        }
+                    }
+                    // console.log("true", trueBlock);
+                    // console.log("false", falseBlock);
+                    // this.stack.push(nn);
+                    this.nodes.push(nn);
+                    this.root.children.push(nn);
+                    if (falseBlock !== null) {
+                        this.cur = falseBlock.token.position;
+                    }
+                }
+                else {
+                    throw new Error("Stack needs more items");
+                }
+                return true;
+            case "-":
+                if (this.stack.length >= 2) {
+                    const i0 = this.stack.pop();
+                    const i1 = this.stack.pop();
+                    const nn = new EsilNode(expr, "operation");
+                    nn.setSides(i0, i1);
+                    if (this.stack.length === 0) {
+                        //	this.root.children.push(nn);
+                    }
+                    this.stack.push(nn);
+                    this.nodes.push(nn);
+                }
+                else {
+                    throw new Error("Stack needs more items");
+                }
+                return true;
+            // 2pop1push
+            case "<":
+            case ">":
+            case "^":
+            case "&":
+            case "|":
+            case "+":
+            case "*":
+            case "/":
+            case ">>=":
+            case "<<=":
+            case ">>>=":
+            case "<<<=":
+            case ">>>>=":
+            case "<<<<=":
+                if (this.stack.length >= 2) {
+                    const i0 = this.stack.pop();
+                    const i1 = this.stack.pop();
+                    const nn = new EsilNode(expr, "operation");
+                    nn.setSides(i0, i1);
+                    if (this.stack.length === 0) {
+                        //	this.root.children.push(nn);
+                    }
+                    this.stack.push(nn);
+                    this.nodes.push(nn);
+                }
+                else {
+                    throw new Error("Stack needs more items");
+                }
+                return true;
+            // 2pop0push
+            case "=":
+            case ":=":
+            case "-=":
+            case "+=":
+            case "==":
+            case "=[1]":
+            case "=[2]":
+            case "=[4]":
+            case "=[8]":
+                if (this.stack.length >= 2) {
+                    const i0 = this.stack.pop();
+                    const i1 = this.stack.pop();
+                    const nn = new EsilNode(expr, "operation");
+                    nn.setSides(i0, i1);
+                    if (this.stack.length === 0) {
+                        this.root.children.push(nn);
+                    }
+                    this.nodes.push(nn);
+                }
+                else {
+                    throw new Error("Stack needs more items");
+                }
+                return true;
+        }
+        return false;
+    }
+}
+G.EsilParser = EsilParser;

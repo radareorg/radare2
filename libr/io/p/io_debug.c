@@ -4,7 +4,7 @@
 #include <r_lib.h>
 #include <r_core.h>
 
-#if __linux__ ||  __APPLE__ || __WINDOWS__ || __NetBSD__ || __KFBSD__ || __OpenBSD__ || __serenity__
+#if __linux__ ||  __APPLE__ || R2__WINDOWS__ || __NetBSD__ || __KFBSD__ || __OpenBSD__ || __serenity__
 #define DEBUGGER_SUPPORTED 1
 #else
 #define DEBUGGER_SUPPORTED 0
@@ -14,7 +14,7 @@
 #define MAGIC_EXIT 123
 
 #include <signal.h>
-#if __UNIX__
+#if R2__UNIX__
 #include <sys/ptrace.h>
 #include <sys/types.h>
 #include <sys/wait.h>
@@ -39,7 +39,7 @@
 #include <mach-o/nlist.h>
 #endif
 
-#if __WINDOWS__
+#if R2__WINDOWS__
 #include <windows.h>
 #include <tlhelp32.h>
 #include <winbase.h>
@@ -47,7 +47,7 @@
 #include <r_util/r_w32dw.h>
 #endif
 
-#if __WINDOWS__
+#if R2__WINDOWS__
 typedef struct {
 	HANDLE hnd;
 	ut64 winbase;
@@ -182,7 +182,7 @@ err_fork:
 
 #if (__APPLE__ && __POWERPC__) || !__APPLE__
 
-#if __APPLE__ || __BSD__
+#if __APPLE__ || R2__BSD__
 static void inferior_abort_handler(int pid) {
 	R_LOG_ERROR ("Inferior received signal SIGABRT. Executing BKPT");
 }
@@ -196,7 +196,7 @@ static void trace_me(void) {
 	if (ptrace (PT_TRACE_ME, 0, 0, 0) != 0) {
 		r_sys_perror ("ptrace-traceme");
 	}
-#elif __APPLE__ || __BSD__
+#elif __APPLE__ || R2__BSD__
 	/* we can probably remove this #if..as long as PT_TRACE_ME is redefined for OSX in r_debug.h */
 	r_sys_signal (SIGABRT, inferior_abort_handler);
 	if (ptrace (PT_TRACE_ME, 0, 0, 0) != 0) {
@@ -236,7 +236,7 @@ static void handle_posix_error(int err) {
 static RRunProfile* _get_run_profile(RIO *io, int bits, char **argv) {
 	char *expr = NULL;
 	int i;
-	RRunProfile *rp = r_run_new (NULL);
+	RRunProfile *rp = r_run_new ("");
 	if (!rp) {
 		return NULL;
 	}
@@ -250,7 +250,6 @@ static RRunProfile* _get_run_profile(RIO *io, int bits, char **argv) {
 	}
 	rp->_program = strdup (argv[0]);
 
-	rp->_dodebug = true;
 	if (io->runprofile && *io->runprofile) {
 		if (!r_run_parsefile (rp, io->runprofile)) {
 			R_LOG_ERROR ("Can't find profile '%s'", io->runprofile);
@@ -273,7 +272,7 @@ static RRunProfile* _get_run_profile(RIO *io, int bits, char **argv) {
 		r_run_parseline (rp, expr = strdup ("bits=32"));
 	}
 	free (expr);
-	if (r_run_config_env (rp)) {
+	if (!r_run_config_env (rp)) {
 		R_LOG_ERROR ("Cannot configure the environment");
 		r_run_free (rp);
 		return NULL;
@@ -296,7 +295,7 @@ static void handle_posix_redirection(RRunProfile *rp, posix_spawn_file_actions_t
 	}
 }
 
-// __UNIX__ (not windows)
+// R2__UNIX__ (not windows)
 static int fork_and_ptraceme_for_mac(RIO *io, int bits, const char *cmd) {
 	pid_t p = -1;
 	posix_spawn_file_actions_t fileActions;
@@ -505,7 +504,7 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 			if (pid == -1) {
 				return NULL;
 			}
-#if __WINDOWS__
+#if R2__WINDOWS__
 			sprintf (uri, "w32dbg://%d", pid);
 			_plugin = r_io_plugin_resolve (io, (const char *)uri, false);
 			if (!_plugin || !_plugin->open) {
@@ -539,7 +538,7 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 				return NULL;
 			}
 			ret = _plugin->open (io, uri, rw, mode);
-#if __WINDOWS__
+#if R2__WINDOWS__
 			if (ret) {
 				RCore *c = io->coreb.core;
 				RW32Dw *wrap = (RW32Dw *)ret->data;

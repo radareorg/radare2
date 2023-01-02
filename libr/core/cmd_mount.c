@@ -137,7 +137,8 @@ static void cmd_mount_ls(RCore *core, const char *input) {
 				if (isJSON) {
 					pj_o (pj);
 					pj_ks (pj, "path", root->path);
-					pj_ks (pj, "type", "mountpoint");
+					pj_kn (pj, "delta", root->delta);
+					pj_ks (pj, "type", root->p->name);
 					pj_end (pj);
 				} else {
 					r_cons_printf ("m %s\n", root->path); //  (root->path && root->path[0]) ? root->path + 1: "");
@@ -506,15 +507,14 @@ static int cmd_mount(void *data, const char *_input) {
 		input = (char *)r_str_trim_head_ro (input + 1);
 		r_cons_set_raw (false);
 		{
-			char *cwd = strdup (r_config_get (core->config, "fs.cwd"));
 			free (core->rfs->cwd);
-			core->rfs->cwd = (char **)cwd;
+			core->rfs->cwd = strdup (r_config_get (core->config, "fs.cwd"));
 			core->rfs->set_prompt = r_line_set_prompt;
 			core->rfs->readline = r_line_readline;
 			core->rfs->hist_add = r_line_hist_add;
 			core->autocomplete_type = AUTOCOMPLETE_MS;
 			r_core_autocomplete_reload (core);
-			r_fs_shell_prompt (core->rfs, core->fs, input);
+			r_fs_shell (core->rfs, core->fs, input);
 			core->autocomplete_type = AUTOCOMPLETE_DEFAULT;
 			r_core_autocomplete_reload (core);
 			r_config_set (core->config, "fs.cwd", (const char *)core->rfs->cwd);

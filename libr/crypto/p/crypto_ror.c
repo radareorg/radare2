@@ -3,15 +3,15 @@
 
 #define NAME "ror"
 
-enum { MAX_ror_KEY_SIZE = 32768 };
+enum { MAX_ROR_KEY_SIZE = 32768 };
 
 struct ror_state {
-	ut8 key[MAX_ror_KEY_SIZE];
+	ut8 key[MAX_ROR_KEY_SIZE];
 	int key_size;
 };
 
 static bool ror_init(struct ror_state *const state, const ut8 *key, int keylen) {
-	if (!state || !key || keylen < 1 || keylen > MAX_ror_KEY_SIZE) {
+	if (!state || !key || keylen < 1 || keylen > MAX_ROR_KEY_SIZE) {
 		return false;
 	}
 	int i;
@@ -31,34 +31,40 @@ static void ror_crypt(struct ror_state *const state, const ut8 *inbuf, ut8 *outb
 	}
 }
 
-static struct ror_state st;
-static int flag = 0;
-
-static bool ror_set_key(RCrypto *cry, const ut8 *key, int keylen, int mode, int direction) {
-	flag = direction;
-	return ror_init (&st, key, keylen);
+static bool ror_set_key(RCryptoJob *cj, const ut8 *key, int keylen, int mode, int direction) {
+	cj->flag = direction;
+	free (cj->data);
+	cj->data = R_NEW0 (struct ror_state);
+	struct ror_state *st = (struct ror_state*)cj->data;
+	return ror_init (st, key, keylen);
 }
 
-static int ror_get_key_size(RCrypto *cry) {
-	return st.key_size;
+static int ror_get_key_size(RCryptoJob *cj) {
+	struct ror_state *st = (struct ror_state*)cj->data;
+	return st->key_size;
 }
 
-static bool ror_use(const char *algo) {
+static bool ror_check(const char *algo) {
 	return !strcmp (algo, NAME);
 }
 
-static bool update(RCrypto *cry, const ut8 *buf, int len) {
-	if (flag) {
-		eprintf ("USE ROL\n");
+static bool update(RCryptoJob *cj, const ut8 *buf, int len) {
+	if (cj->flag) {
 		return false;
 	}
 	ut8 *obuf = calloc (1, len);
 	if (!obuf) {
 		return false;
 	}
-	ror_crypt (&st, buf, obuf, len);
-	r_crypto_append (cry, obuf, len);
+	struct ror_state *st = (struct ror_state*)cj->data;
+	ror_crypt (st, buf, obuf, len);
+	r_crypto_job_append (cj, obuf, len);
 	free (obuf);
+	return true;
+}
+
+static bool fini(RCryptoJob *cj) {
+	R_FREE (cj->data);
 	return true;
 }
 
@@ -66,9 +72,10 @@ RCryptoPlugin r_crypto_plugin_ror = {
 	.name = NAME,
 	.set_key = ror_set_key,
 	.get_key_size = ror_get_key_size,
-	.use = ror_use,
+	.check = ror_check,
 	.update = update,
-	.final = update,
+	.end = update,
+	.fini = fini,
 };
 
 #ifndef R2_PLUGIN_INCORE

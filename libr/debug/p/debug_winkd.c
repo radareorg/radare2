@@ -24,29 +24,29 @@ static bool r_debug_winkd_step(RDebug *dbg) {
 	return true;
 }
 
-static int r_debug_winkd_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
-	int ret = winkd_read_reg(wctx, buf, size);
+static bool r_debug_winkd_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
+	int ret = winkd_read_reg (wctx, buf, size);
 	if (!ret || size != ret) {
-		return -1;
+		return false;
 	}
 	r_reg_read_regs (dbg->reg, buf, ret);
 	// Report as if no register has been written as we've already updated the arena here
-	return 0;
+	return true;
 }
 
-static int r_debug_winkd_reg_write(RDebug *dbg, int type, const ut8 *buf, int size) {
+static bool r_debug_winkd_reg_write(RDebug *dbg, int type, const ut8 *buf, int size) {
 	if (!dbg->reg) {
 		return false;
 	}
 	int arena_size;
 	ut8 *arena = r_reg_get_bytes (dbg->reg, R_REG_TYPE_ALL, &arena_size);
 	if (!arena) {
-		R_LOG_ERROR ("Could not retrieve the register arena!");
+		R_LOG_ERROR ("Could not retrieve the register arena");
 		return false;
 	}
-	int ret = winkd_write_reg (wctx, arena, arena_size);
+	bool res = winkd_write_reg (wctx, arena, arena_size);
 	free (arena);
-	return ret;
+	return res;
 }
 
 static bool r_debug_winkd_continue(RDebug *dbg, int pid, int tid, int sig) {

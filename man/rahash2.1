@@ -50,8 +50,8 @@ Apply the hash Iters times to itself+seed
 Set initialization vector (IV) for the cryptographic functions.
 .It Fl j
 Show output in JSON (see -r and -J). If passed more than once results in -J
-.It Fl j
-New simplified JSON output, maybe this format will replace -j, but it's added as a new flag to not break backward compat until proper discussion
+.It Fl J
+New simplified JSON output, maybe this format will replace -j, but it's added as a new flag to not break backward compatibility until proper discussion
 .It Fl B
 Show per-block hash
 .It Fl k
@@ -61,7 +61,7 @@ Amount of blocks to hash
 .It Fl s Ar string
 Hash this string instead of using the 'source' and 'hash-file' arguments.
 .It Fl S Ar [^]s:string|hexstr
-Set seed to hash with, use ^to prefix seed, otherwise its suffixed. If the seed is just a dash '-' it will read from stdin, this is useful to provide huge XOR payloads or other crypto keys bigger than few bytes.
+Set seed to hash with, use ^to prefix seed, otherwise it's suffixed. If the seed is just a dash '-' it will read from stdin. This is useful to provide huge XOR payloads or other crypto keys bigger than few bytes.
 .It Fl f Ar from
 Start hashing at given address
 .It Fl t Ar to

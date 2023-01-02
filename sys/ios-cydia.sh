@@ -89,6 +89,12 @@ if [ "$1" = makedeb ]; then
 	onlymakedeb=1
 fi
 
+if [ "$1" = "--shell" ]; then
+	echo "Entering the ios-cydia shell"
+	${SHELL}
+	exit 0
+fi
+
 if [ $onlymakedeb = 1 ]; then
 	makeDeb
 else
@@ -98,10 +104,10 @@ else
 		make clean
 		cp -f dist/plugins-cfg/plugins.ios.cfg plugins.cfg
 		if [ "$static" = 1 ]; then
-			./configure --prefix="${PREFIX}" --with-ostype=darwin --without-libuv \
+			./configure --prefix="${PREFIX}" --with-ostype=darwin \
 			--with-compiler=ios-sdk --target=arm-unknown-darwin --with-libr
 		else
-			./configure --prefix="${PREFIX}" --with-ostype=darwin --without-libuv \
+			./configure --prefix="${PREFIX}" --with-ostype=darwin \
 			--with-compiler=ios-sdk --target=arm-unknown-darwin
 		fi
 		RV=$?

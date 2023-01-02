@@ -62,7 +62,7 @@ R_API int r_socket_flush(RSocket *s) {
 R_API int r_socket_ready(RSocket *s, int secs, int usecs) {
 	return -1;
 }
-R_API char *r_socket_to_string(RSocket *s) {
+R_API char *r_socket_tostring(RSocket *s) {
 	return NULL;
 }
 R_API int r_socket_write(RSocket *s, const void *buf, int len) {
@@ -95,7 +95,7 @@ R_API bool r_socket_is_connected(RSocket *s) {
 	if (!r_sandbox_check (R_SANDBOX_GRAIN_SOCKET)) {
 		return false;
 	}
-#if __WINDOWS__
+#if R2__WINDOWS__
 	char buf[2];
 	r_socket_block_time (s, false, 0, 0);
 #ifdef _MSC_VER
@@ -117,7 +117,7 @@ R_API bool r_socket_is_connected(RSocket *s) {
 #endif
 }
 
-#if __UNIX__
+#if R2__UNIX__
 static bool __connect_unix(RSocket *s, const char *file) {
 	struct sockaddr_un addr;
 	int sock = socket (PF_UNIX, SOCK_STREAM, 0);
@@ -216,7 +216,9 @@ R_API bool r_socket_spawn(RSocket *s, const char *cmd, unsigned int timeout) {
 				"system=%s\n"
 				"listen=%d\n", cmd, port);
 		RRunProfile *rp = r_run_new (profile);
-		r_run_start (rp);
+		if (!r_run_start (rp)) {
+			R_LOG_ERROR ("r_run_start failed");
+		}
 		r_run_free (rp);
 		free (profile);
 #endif
@@ -237,7 +239,7 @@ R_API bool r_socket_spawn(RSocket *s, const char *cmd, unsigned int timeout) {
 	if (!sock) {
 		return false;
 	}
-#if __UNIX__
+#if R2__UNIX__
 	r_sys_sleep (4);
 	r_sys_usleep (timeout);
 
@@ -253,7 +255,7 @@ R_API bool r_socket_spawn(RSocket *s, const char *cmd, unsigned int timeout) {
 
 R_API bool r_socket_connect(RSocket *s, const char *host, const char *port, int proto, unsigned int timeout) {
 	r_return_val_if_fail (s, false);
-#if __WINDOWS__
+#if R2__WINDOWS__
 #define gai_strerror gai_strerrorA
 	WSADATA wsadata;
 
@@ -268,11 +270,11 @@ R_API bool r_socket_connect(RSocket *s, const char *host, const char *port, int 
 	if (proto == R_SOCKET_PROTO_NONE) {
 		proto = R_SOCKET_PROTO_DEFAULT;
 	}
-#if __UNIX__
+#if R2__UNIX__
 	r_sys_signal (SIGPIPE, SIG_IGN);
 #endif
 	if (proto == R_SOCKET_PROTO_UNIX) {
-#if __UNIX__
+#if R2__UNIX__
 		if (!__connect_unix (s, host)) {
 			return false;
 		}
@@ -382,7 +384,7 @@ R_API bool r_socket_connect(RSocket *s, const char *host, const char *port, int 
 				s->sa.sin_port = htons (s->port);
 				if (bind (s->fd, (struct sockaddr *)&s->sa, sizeof (s->sa)) < 0) {
 					r_sys_perror ("bind");
-#ifdef __WINDOWS__
+#ifdef R2__WINDOWS__
 					closesocket (s->fd);
 #else
 					close (s->fd);
@@ -483,10 +485,10 @@ R_API int r_socket_close(RSocket *s) {
 		return false;
 	}
 	if (s->fd != R_INVALID_SOCKET) {
-#if __UNIX__
+#if R2__UNIX__
 		shutdown (s->fd, SHUT_RDWR);
 #endif
-#if __WINDOWS__
+#if R2__WINDOWS__
 		// https://msdn.microsoft.com/en-us/library/windows/desktop/ms740481(v=vs.85).aspx
 		shutdown (s->fd, SD_SEND);
 		if (r_socket_ready (s, 0, 250)) {
@@ -538,7 +540,7 @@ R_API bool r_socket_listen(RSocket *s, const char *port, const char *certfile) {
 	struct linger linger = {0};
 
 	if (s->proto == R_SOCKET_PROTO_UNIX) {
-#if __UNIX__
+#if R2__UNIX__
 		return __listen_unix (s, port);
 #endif
 		return false;
@@ -546,7 +548,7 @@ R_API bool r_socket_listen(RSocket *s, const char *port, const char *certfile) {
 	if (!r_sandbox_check (R_SANDBOX_GRAIN_SOCKET)) {
 		return false;
 	}
-#if __WINDOWS__
+#if R2__WINDOWS__
 	WSADATA wsadata;
 	if (WSAStartup (MAKEWORD (1, 1), &wsadata) == SOCKET_ERROR) {
 		R_LOG_ERROR ("WSAStartup failed");
@@ -607,7 +609,7 @@ R_API bool r_socket_listen(RSocket *s, const char *port, const char *certfile) {
 #endif
 		return false;
 	}
-#if __UNIX__
+#if R2__UNIX__
 	r_sys_signal (SIGPIPE, SIG_IGN);
 #endif
 	if (s->proto == R_SOCKET_PROTO_TCP) {
@@ -710,13 +712,13 @@ R_API RSocket *r_socket_accept_timeout(RSocket *s, unsigned int timeout) {
 
 // Only applies to read in UNIX
 R_API bool r_socket_block_time(RSocket *s, bool block, int sec, int usec) {
-#if __UNIX__
+#if R2__UNIX__
 	int ret, flags;
 #endif
 	if (!s) {
 		return false;
 	}
-#if __UNIX__
+#if R2__UNIX__
 	flags = fcntl (s->fd, F_GETFL, 0);
 	if (flags < 0) {
 		return false;
@@ -727,7 +729,7 @@ R_API bool r_socket_block_time(RSocket *s, bool block, int sec, int usec) {
 	if (ret < 0) {
 		return false;
 	}
-#elif __WINDOWS__
+#elif R2__WINDOWS__
 	ioctlsocket (s->fd, FIONBIO, (u_long FAR*)&block);
 #endif
 	if (sec > 0 || usec > 0) {
@@ -761,10 +763,10 @@ R_API int r_socket_ready(RSocket *s, int secs, int usecs) {
 	return select (s->fd + 1, &rfds, NULL, NULL, &tv);
 }
 
-R_API char *r_socket_to_string(RSocket *s) {
-#if __WINDOWS__
+R_API char *r_socket_tostring(RSocket *s) {
+#if R2__WINDOWS__
 	return r_str_newf ("fd%d", (int)(size_t)s->fd);
-#elif __UNIX__
+#elif R2__UNIX__
 	char *str = NULL;
 	struct sockaddr sa;
 	socklen_t sl = sizeof (sa);
@@ -788,7 +790,7 @@ R_API char *r_socket_to_string(RSocket *s) {
 /* Read/Write functions */
 R_API int r_socket_write(RSocket *s, const void *buf, int len) {
 	int ret, delta = 0;
-#if __UNIX__
+#if R2__UNIX__
 	r_sys_signal (SIGPIPE, SIG_IGN);
 #endif
 	for (;;) {
@@ -805,8 +807,11 @@ R_API int r_socket_write(RSocket *s, const void *buf, int len) {
 			}
 		} else /* block */
 #endif
-		{
-			ret = send (s->fd, (char *)buf+delta, b, 0);
+		if (s->proto == R_SOCKET_PROTO_SERIAL) {
+			ret = write (s->fd, (char *)buf + delta, b);
+			eprintf ("SERIAL WRITE %d\n", ret);
+		} else {
+			ret = send (s->fd, (char *)buf + delta, b, 0);
 		}
 		//if (ret == 0) return -1;
 		if (ret < 1) {
@@ -865,6 +870,9 @@ R_API int r_socket_read(RSocket *s, unsigned char *buf, int len) {
 		return SSL_read (s->sfd, buf, len);
 	}
 #endif
+	if (s->proto == R_SOCKET_PROTO_SERIAL) {
+		return read (s->fd, (char *)buf, len);
+	}
 	return recv (s->fd, (char *)buf, len, 0);
 }
 

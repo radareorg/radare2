@@ -365,6 +365,7 @@ struct d_print_info
   int num_copy_templates;
   /* The nearest enclosing template, if any.  */
   const struct demangle_component *current_template;
+  int depth;
 };
 
 #ifdef CP_DEMANGLE_DEBUG
@@ -3770,13 +3771,13 @@ d_clone_suffix (struct d_info *di, struct demangle_component *encoding)
     {
       pend += 2;
       while (IS_LOWER (*pend) || *pend == '_')
-	++pend;
+	pend++;
     }
   while (*pend == '.' && IS_DIGIT (pend[1]))
     {
       pend += 2;
       while (IS_DIGIT (*pend))
-	++pend;
+	pend++;
     }
   d_advance (di, pend - suffix);
   n = d_make_name (di, suffix, pend - suffix);
@@ -3874,7 +3875,7 @@ d_substitution (struct d_info *di, int prefix)
 	    }
 	  while (c != '_');
 
-	  ++id;
+	  id++;
 	}
 
       if (id >= (unsigned int) di->next_sub)
@@ -4311,6 +4312,7 @@ cplus_demangle_print_callback (int options,
     dpi.copy_templates = alloca (dpi.num_copy_templates
 				 * sizeof (*dpi.copy_templates));
 #endif
+    dpi.depth = 1024;
 
     d_print_comp (&dpi, options, dc);
   }
@@ -4455,7 +4457,7 @@ d_pack_length (const struct demangle_component *dc)
   while (dc && dc->type == DEMANGLE_COMPONENT_TEMPLATE_ARGLIST
 	 && d_left (dc))
     {
-      ++count;
+      count++;
       dc = d_right (dc);
     }
   return count;
@@ -4480,7 +4482,7 @@ d_args_length (struct d_print_info *dpi, const struct demangle_component *dc)
 	  count += d_pack_length (a);
 	}
       else
-	++count;
+	count++;
     }
   return count;
 }
@@ -4638,7 +4640,10 @@ d_print_comp_inner (struct d_print_info *dpi, int options,
   /* Variable used to store the current templates while a previously
      captured scope is used.  */
   struct d_print_template *saved_templates;
-
+  if (--dpi->depth < 1) {
+    fprintf (stderr, "Stack exhaustion prevented\n");
+    return;
+  }
   /* Nonzero if templates have been stored in the above variable.  */
   int need_template_restore = 0;
 
@@ -4714,7 +4719,7 @@ d_print_comp_inner (struct d_print_info *dpi, int options,
 	    adpm[i].mod = typed_name;
 	    adpm[i].printed = 0;
 	    adpm[i].templates = dpi->templates;
-	    ++i;
+	    i++;
 
 	    if (!is_fnqual_component_type (typed_name->type))
 	      break;
@@ -4753,7 +4758,7 @@ d_print_comp_inner (struct d_print_info *dpi, int options,
 		adpm[i - 1].mod = typed_name;
 		adpm[i - 1].printed = 0;
 		adpm[i - 1].templates = dpi->templates;
-		++i;
+		i++;
 
 		typed_name = d_left (typed_name);
 	      }
@@ -5225,7 +5230,7 @@ d_print_comp_inner (struct d_print_info *dpi, int options,
 		adpm[i].next = dpi->modifiers;
 		dpi->modifiers = &adpm[i];
 		pdpm->printed = 1;
-		++i;
+		i++;
 	      }
 
 	    pdpm = pdpm->next;

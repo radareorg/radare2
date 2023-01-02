@@ -2,8 +2,7 @@
 #define R2_LIST_H
 
 #include <r_types.h>
-#include <r_flist.h>
-#include <sdb.h>
+#include <sdb/sdb.h>
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -34,11 +33,6 @@ typedef struct r_list_range_t {
 typedef int (*RListComparator)(const void *a, const void *b);
 typedef ut64 (*RListComparatorItem)(const void *a);
 
-#define ROFList_Parent RList
-typedef struct r_oflist_t {
-	ROFList_Parent super; // super class
-	RFList *array;	// statical readonly cache of linked list as a pointer array
-} ROFList;
 #endif
 
 #ifdef R_API
@@ -108,7 +102,9 @@ R_API void r_list_iter_to_top(RList *list, RListIter *iter);
 R_API void *r_list_pop(RList *list);
 R_API void *r_list_pop_head(RList *list);
 R_API void r_list_reverse(RList *list);
-R_API RList *r_list_clone(const RList *list);
+//R_API RList *r_list_clone(const RList *list, );
+typedef void *(*RListClone)(void *);
+R_API RList *r_list_clone(const RList *list, RListClone clone);
 R_API char *r_list_to_str(RList *list, char ch);
 
 /* hashlike api */

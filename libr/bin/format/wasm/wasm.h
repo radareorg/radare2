@@ -261,6 +261,6 @@ RPVector *r_bin_wasm_get_datas(RBinWasmObj *bin);
 RBinWasmCustomNames *r_bin_wasm_get_custom_names(RBinWasmObj *bin);
 ut32 r_bin_wasm_get_entrypoint(RBinWasmObj *bin);
 const char *r_bin_wasm_get_function_name(RBinWasmObj *bin, ut32 idx);
-const char *r_bin_wasm_valuetype_to_string(r_bin_wasm_value_type_t type);
+const char *r_bin_wasm_valuetype_tostring(r_bin_wasm_value_type_t type);
 
 #endif

@@ -17,16 +17,13 @@ R_API RLine *r_line_new(void) {
 	I.contents = NULL;
 	I.enable_vi_mode = false;
 	I.clipboard = NULL;
-	I.kill_ring = r_list_newf (NULL);
+	I.kill_ring = r_list_newf (free);
 	I.kill_ring_ptr = -1;
-#if __WINDOWS__
+#if R2__WINDOWS__
 	I.vtmode = r_cons_is_vtcompat ();
 #else
 	I.vtmode = 2;
 #endif
-	if (!r_line_dietline_init ()) {
-		R_LOG_ERROR ("r_line_dietline_init has failed");
-	}
 	r_line_completion_init (&I.completion, 4096);
 	return &I;
 }
@@ -74,7 +71,7 @@ R_API void r_line_completion_push(RLineCompletion *completion, const char *str) 
 	if (completion->quit) {
 		return;
 	}
-	if (r_pvector_len (&completion->args) < completion->args_limit) {
+	if (r_pvector_length (&completion->args) < completion->args_limit) {
 		char *s = strdup (str);
 		if (s) {
 			r_pvector_push (&completion->args, (void *)s);
@@ -89,7 +86,9 @@ R_API void r_line_completion_set(RLineCompletion *completion, int argc, const ch
 	r_return_if_fail (completion && (argc >= 0));
 	r_line_completion_clear (completion);
 	if (argc > completion->args_limit) {
-		R_LOG_WARN ("Maximum completion capacity reached, increase scr.maxtab");
+		argc = completion->args_limit;
+		R_LOG_DEBUG ("Maximum completion capacity reached, increase scr.maxtab (%d %d)",
+				argc, completion->args_limit);
 	}
 	size_t count = R_MIN (argc, completion->args_limit);
 	r_pvector_reserve (&completion->args, count);

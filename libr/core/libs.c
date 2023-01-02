@@ -26,7 +26,7 @@
 	}\
 	static int __lib_ ## x ## _dt (RLibPlugin * pl, void *p, void *u) { return true; }
 
-// XXX api consistency issues
+// XXX R2_590 : api consistency issues
 #define r_io_add r_io_plugin_add
 CB_COPY (io, io)
 #define r_core_add r_core_plugin_add
@@ -37,13 +37,13 @@ CB (debug, dbg)
 CB (bp, dbg->bp)
 CB (lang, lang)
 CB (anal, anal)
-#define r_anal_esil_add r_anal_esil_plugin_add
-CB (anal_esil, anal->esil)
-CB (asm, rasm)
+#define r_esil_add r_esil_plugin_add
+CB (esil, anal->esil)
 CB (parse, parser)
 CB (bin, bin)
 CB (egg, egg)
 CB (fs, fs)
+CB (arch, anal->arch);
 
 static void __openPluginsAt(RCore *core, const char *arg, const char *user_path) {
 	if (arg && *arg) {
@@ -80,7 +80,7 @@ static void __loadSystemPlugins(RCore *core, int where, const char *path) {
 		free (p);
 	}
 	if (where & R_CORE_LOADLIBS_HOME) {
-		char *hpd = r_str_home (R2_HOME_PLUGINS);
+		char *hpd = r_xdg_datadir ("plugins");
 		if (hpd) {
 			r_lib_opendir (core->lib, hpd);
 			free (hpd);
@@ -104,19 +104,19 @@ R_API void r_core_loadlibs_init(RCore *core) {
 	DF (BP, "debugger breakpoint plugins", bp);
 	DF (LANG, "language plugins", lang);
 	DF (ANAL, "analysis plugins", anal);
-	DF (ESIL, "esil emulation plugins", anal_esil);
-	DF (ASM, "(dis)assembler plugins", asm);
+	DF (ESIL, "esil emulation plugins", esil);
+	// DF (ASM, "(dis)assembler plugins", asm);
 	DF (PARSE, "parsing plugins", parse);
 	DF (BIN, "bin plugins", bin);
 	DF (EGG, "egg plugins", egg);
 	DF (FS, "fs plugins", fs);
+	DF (ARCH, "arch plugins", arch);
 	core->times->loadlibs_init_time = r_time_now_mono () - prev;
 }
 
 static bool __isScriptFilename(const char *name) {
-	const char *ext = r_str_lchr (name, '.');
+	const char *ext = r_file_extension (name);
 	if (ext) {
-		ext++;
 		if (0
 		|| !strcmp (ext, "c")
 		|| !strcmp (ext, "go")
@@ -144,7 +144,7 @@ R_API bool r_core_loadlibs(RCore *core, int where, const char *path) {
 		return false;
 	}
 	// load script plugins
-	char *homeplugindir = r_str_home (R2_HOME_PLUGINS);
+	char *homeplugindir = r_xdg_datadir ("plugins");
 	RList *files = r_sys_dir (homeplugindir);
 	RListIter *iter;
 	char *file;

@@ -33,7 +33,7 @@ R_IPI bool r_coff_supported_arch(const ut8 *buf) {
 
 R_IPI char *r_coff_symbol_name(RBinCoffObj *obj, void *ptr) {
 	char n[256] = {0};
-	int len = 0, offset = 0;
+	int len = 0;
 	union {
 		char name[8];
 		struct {
@@ -47,7 +47,7 @@ R_IPI char *r_coff_symbol_name(RBinCoffObj *obj, void *ptr) {
 	if (p->zero) {
 		return r_str_ndup (p->name, 8);
 	}
-	offset = obj->hdr.f_symptr + obj->hdr.f_nsyms * sizeof (struct coff_symbol) + p->offset;
+	ut64 offset = obj->hdr.f_symptr + (obj->hdr.f_nsyms * sizeof (struct coff_symbol) + p->offset);
 	if (offset > obj->size) {
 		return NULL;
 	}

@@ -2,7 +2,7 @@ include ../config.mk
 include ../../global.mk
 
 NAME=r_bin
-R2DEPS=r_util r_io r_socket r_magic r_hash r_syscall r_cons r_crypto
+R2DEPS=r_util r_io r_socket r_magic r_syscall r_cons r_crypto r_fs
 
 .PHONY: pre
 
@@ -28,6 +28,7 @@ OBJS+=mangling/microsoft_demangle.o
 OBJS+=mangling/objc.o mangling/cxx.o mangling/msvc.o
 OBJS+=mangling/swift.o mangling/swift-sd.o
 OBJS+=mangling/java.o
+OBJS+=mangling/pascal.o
 OBJS+=mangling/rust.o
 
 include $(TOP)/libr/bin/format/pdb/deps.mk

@@ -150,6 +150,11 @@ typedef struct r_bin_dex_obj_t {
 	Sdb *kv;
 	char **cal_strings;
 	bool verbose;
+	// moved from globals
+	bool dexdump;
+	const char *dexSubsystem;
+	bool simplifiedDemangling;
+	Sdb *mdb;
 } RBinDexObj;
 
 struct r_bin_dex_str_t {

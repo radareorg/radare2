@@ -39,22 +39,6 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=/m lzma
-FILE=bins/other/hello-world.lzma
-CMDS=pm
-EXPECT=<<EOF
-0x00000000 1 LZMA BE compressed data dictionary size: 32768 bytes
-EOF
-RUN
-
-NAME=/m lzma
-FILE=bins/other/smol.lzma
-CMDS=pm
-EXPECT=<<EOF
-0x00000000 1 LZMA LE compressed data dictionary size: 2162620 bytes
-EOF
-RUN
-
 NAME=/r push [imm] refs
 FILE=bins/pe/x.dll
 CMDS=/r 0x69682004
@@ -98,10 +82,21 @@ EXPECT=<<EOF
 0x100011a50             02208072  movk w2, 0x100
 0x100011ac4             02208072  movk w2, 0x100
 0x100011b38             02208072  movk w2, 0x100
+0x100012588             e3031832  mov w3, 0x100
 0x100013704             02208072  movk w2, 0x100
+0x100013c7c             e8031832  mov w8, 0x100
+0x100013d28             e10378b2  mov x1, 0x100
+0x100013db0             e8031832  mov w8, 0x100
+0x100013fe0             e80378b2  mov x8, 0x100
+0x10001413c             e00378b2  mov x0, 0x100
+0x100014670             e9031832  mov w9, 0x100
 0x10006cb40             ff0304d1  sub sp, sp, 0x100
 0x100072594             04208072  movk w4, 0x100
 0x10007856c             ff0304d1  sub sp, sp, 0x100
+0x100086a3c             e3031832  mov w3, 0x100
+0x100086ae0             e3031832  mov w3, 0x100
+0x100086b20             e3031832  mov w3, 0x100
+0x100086b5c             e3031832  mov w3, 0x100
 0x10009b4e8             ff0304d1  sub sp, sp, 0x100
 0x1000bfc00             04208072  movk w4, 0x100
 0x1000f24d0             ff0304d1  sub sp, sp, 0x100
@@ -213,6 +208,32 @@ wx 666f6f005c
 EOF
 EXPECT=<<EOF
 [{"offset":0,"type":"string","data":"foo\\"}]
+EOF
+RUN
+
+NAME=/j search (cfg.json.num=hex search.show=true)
+FILE=malloc://1024
+CMDS=<<EOF
+e cfg.json.num=hex
+e search.show=true
+wx 666f6f005c
+/j foo
+EOF
+EXPECT=<<EOF
+[{"offset":"0x0","type":"string","data":"foo\\"}]
+EOF
+RUN
+
+NAME=/j search (cfg.json.num=hex search.show=false)
+FILE=malloc://1024
+CMDS=<<EOF
+e cfg.json.num=hex
+e search.show=false
+wx 666f6f005c
+/j foo
+EOF
+EXPECT=<<EOF
+[{"offset":"0x0","len":3}]
 EOF
 RUN
 
@@ -404,7 +425,7 @@ e asm.bits=32
 /at ret
 EOF
 EXPECT=<<EOF
-0x00000005 1 ret
+0x00000005 ret 1 ret
 EOF
 RUN
 
@@ -418,8 +439,8 @@ e search.to = 0x00000050
 /at xor
 EOF
 EXPECT=<<EOF
-0x0000003c 2 xor al, 0x80
-0x00000040 2 xor al, 0x80
+0x0000003c xor 2 xor al, 0x80
+0x00000040 xor 2 xor al, 0x80
 EOF
 RUN
 
@@ -433,8 +454,8 @@ e search.to = 0x00000050
 /at xor
 EOF
 EXPECT=<<EOF
-0x0000003c 2 xor al, 0x80
-0x00000040 2 xor al, 0x80
+0x0000003c xor 2 xor al, 0x80
+0x00000040 xor 2 xor al, 0x80
 EOF
 RUN
 
@@ -463,6 +484,37 @@ EXPECT=<<EOF
   0x00000002             085b5d  or byte [ebx + 0x5d], bl
   0x00000005                 c3  ret
 
+EOF
+RUN
+
+NAME=Rop search json
+FILE=malloc://1024
+CMDS=<<EOF
+e asm.arch=x86
+e anal.arch=x86
+e asm.bits=32
+"wa add esp,8;pop ebx; pop ebp; ret"
+/Rj
+q
+EOF
+EXPECT=<<EOF
+[{"opcodes":[{"offset":0,"size":3,"opcode":"add esp, 8","type":"add"},{"offset":3,"size":1,"opcode":"pop ebx","type":"pop"},{"offset":4,"size":1,"opcode":"pop ebp","type":"pop"},{"offset":5,"size":1,"opcode":"ret","type":"ret"}],"retaddr":5,"size":6},{"opcodes":[{"offset":1,"size":2,"opcode":"les ecx, [eax]","type":"null"},{"offset":3,"size":1,"opcode":"pop ebx","type":"pop"},{"offset":4,"size":1,"opcode":"pop ebp","type":"pop"},{"offset":5,"size":1,"opcode":"ret","type":"ret"}],"retaddr":5,"size":5},{"opcodes":[{"offset":2,"size":3,"opcode":"or byte [ebx + 0x5d], bl","type":"or"},{"offset":5,"size":1,"opcode":"ret","type":"ret"}],"retaddr":5,"size":4}]
+EOF
+RUN
+
+NAME=Rop search json (cfg.json.num=hex)
+FILE=malloc://1024
+CMDS=<<EOF
+e asm.arch=x86
+e anal.arch=x86
+e asm.bits=32
+e cfg.json.num=hex
+"wa add esp,8;pop ebx; pop ebp; ret"
+/Rj
+q
+EOF
+EXPECT=<<EOF
+[{"opcodes":[{"offset":"0x0","size":3,"opcode":"add esp, 8","type":"add"},{"offset":"0x3","size":1,"opcode":"pop ebx","type":"pop"},{"offset":"0x4","size":1,"opcode":"pop ebp","type":"pop"},{"offset":"0x5","size":1,"opcode":"ret","type":"ret"}],"retaddr":5,"size":6},{"opcodes":[{"offset":"0x1","size":2,"opcode":"les ecx, [eax]","type":"null"},{"offset":"0x3","size":1,"opcode":"pop ebx","type":"pop"},{"offset":"0x4","size":1,"opcode":"pop ebp","type":"pop"},{"offset":"0x5","size":1,"opcode":"ret","type":"ret"}],"retaddr":5,"size":5},{"opcodes":[{"offset":"0x2","size":3,"opcode":"or byte [ebx + 0x5d], bl","type":"or"},{"offset":"0x5","size":1,"opcode":"ret","type":"ret"}],"retaddr":5,"size":4}]
 EOF
 RUN
 
@@ -540,34 +592,6 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=/m search from/to (seek 0)
-FILE=bins/pe/standard.exe
-CMDS=<<EOF
-e io.va = false
-s 0
-e search.from = 0
-e search.to = 0x10
-/m
-EOF
-EXPECT=<<EOF
-0x00000000 1 PE for MS Windows Intel 80386 32-bit
-EOF
-RUN
-
-NAME=/m search from/to (seek beyond data)
-FILE=bins/pe/standard.exe
-CMDS=<<EOF
-e io.va = false
-s 0x1000
-e search.from = 0
-e search.to = 0x10
-/m
-EOF
-EXPECT=<<EOF
-0x00000000 1 PE for MS Windows Intel 80386 32-bit
-EOF
-RUN
-
 NAME=/o search offset of instructions backward
 FILE=malloc://1024
 ARGS=-a x86 -b 32
@@ -610,21 +634,6 @@ e search.to = 0x200
 EOF
 EXPECT=<<EOF
 0x00000100 hit0_0 41424344
-EOF
-RUN
-
-NAME=/m search seek
-FILE=bins/pe/standard.exe
-CMDS=<<EOF
-e io.va = false
-s 0x1000
-/m~[0]
-s
-/fm
-EOF
-EXPECT=<<EOF
-0x00000000
-0x1000
 EOF
 RUN
 
@@ -704,6 +713,18 @@ wx 0x12345678aabbccddeeff12345678
 EOF
 EXPECT=<<EOF
 [{"offset":0,"value":2018915346},{"offset":10,"value":2018915346}]
+EOF
+RUN
+
+NAME=/V4j search 4 byte with json (cfg.json.num=hex)
+FILE=-
+CMDS=<<EOF
+e cfg.json.num=hex
+wx 0x12345678aabbccddeeff12345678
+/V4j 0x78563412 0x78563420
+EOF
+EXPECT=<<EOF
+[{"offset":"0x0","value":"0x78563412"},{"offset":"0xa","value":"0x78563412"}]
 EOF
 RUN
 
@@ -1098,14 +1119,21 @@ EXPECT=<<EOF
 0x00000004 hit0_0 "ZZZZAAABAAA"
 EOF
 RUN
-
-NAME=/m on Info
-FILE=bins/other/Info.plist
+NAME=pm lzma
+FILE=bins/other/hello-world.lzma
 CMDS=<<EOF
-/m
+pm
 EOF
 EXPECT=<<EOF
-0x00000000 1 Binary PLIST data stream
+0x00000000 1 LZMA BE compressed data dictionary size: 32768 bytes
+EOF
+RUN
+
+NAME=pm lzma
+FILE=bins/other/smol.lzma
+CMDS=pm
+EXPECT=<<EOF
+0x00000000 1 LZMA LE compressed data dictionary size: 2162620 bytes
 EOF
 RUN
 
@@ -1273,6 +1301,7 @@ EXPECT=<<EOF
 0x0009c928 futex
 0x0009ca89 futex
 0x0009caee futex
+0x0009cb65 futex
 0x0009cff8 futex
 0x0009d0e8 futex
 0x0009d1c4 futex

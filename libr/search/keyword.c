@@ -12,6 +12,20 @@ static int ignoreMask(const ut8 *bm, int len) {
 	return 1;
 }
 
+R_API RSearchKeyword* r_search_keyword_new_hexstr(const char *xs, const char *data) {
+	char *s = strdup (xs);
+	char *m = strchr (s, ' ');
+	int mlen = 0;
+	if (m) {
+		*m++ = 0;
+		mlen = r_hex_str2bin (m, (ut8*)m);
+	}
+	int slen = r_hex_str2bin (s, (ut8*)s);
+	RSearchKeyword *k = r_search_keyword_new ((const ut8*)s, slen, (const ut8*)m, mlen, data);
+	free (s);
+	return k;
+}
+
 R_API RSearchKeyword* r_search_keyword_new(const ut8 *kwbuf, int kwlen, const ut8 *bmbuf, int bmlen, const char *data) {
 	RSearchKeyword *kw;
 	if (kwlen < 1 || bmlen < 0) {
@@ -46,15 +60,14 @@ R_API RSearchKeyword* r_search_keyword_new(const ut8 *kwbuf, int kwlen, const ut
 }
 
 R_API void r_search_keyword_free(RSearchKeyword *kw) {
-	if (!kw) {
-		return;
+	if (R_LIKELY (kw)) {
+		free (kw->bin_binmask);
+		free (kw->bin_keyword);
+		free (kw);
 	}
-	free (kw->bin_binmask);
-	free (kw->bin_keyword);
-	free (kw);
 }
 
-R_API RSearchKeyword* r_search_keyword_new_str(const char *kwbuf, const char *bmstr, const char *data, int ignore_case) {
+R_API RSearchKeyword* r_search_keyword_new_str(const char *kwbuf, const char *bmstr, const char *data, bool ignore_case) {
 	r_return_val_if_fail (kwbuf, NULL);
 	ut8 *bmbuf = NULL;
 	int bmlen = 0;
@@ -78,7 +91,7 @@ R_API RSearchKeyword* r_search_keyword_new_str(const char *kwbuf, const char *bm
 	return kw;
 }
 
-R_API RSearchKeyword* r_search_keyword_new_wide(const char *kwbuf, const char *bmstr, const char *data, int ignore_case) {
+R_API RSearchKeyword* r_search_keyword_new_wide(const char *kwbuf, const char *bmstr, const char *data, bool ignore_case) {
 	RSearchKeyword *kw;
 	int len;
 	const char *p2;
