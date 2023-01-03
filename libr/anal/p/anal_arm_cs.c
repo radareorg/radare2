@@ -1890,7 +1890,6 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 		break;
 	}
 	case ARM64_INS_CCMP:
-	case ARM64_INS_TST: // cmp w8, 0xd
 	case ARM64_INS_CMP: // cmp w8, 0xd
 		ARG64_APPEND (&op->esil, 1);
 		COMMA (&op->esil);
@@ -1917,6 +1916,20 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 			arm_prefix_cond (op, insn->detail->arm64.cc);
 			r_strbuf_appendf (&op->esil, "}{,pstate,1,28,1,<<,-,&,28,%"PFMT64d",<<,|,pstate,:=", IMM64 (2));
 		}
+		break;
+	case ARM64_INS_TST: // tst w8, 0xd
+		r_strbuf_append (&op->esil, "0,");
+		ARG64_APPEND (&op->esil, 1);
+		COMMA (&op->esil);
+		ARG64_APPEND (&op->esil, 0);
+		r_strbuf_appendf (&op->esil,
+			",&,==" // (Wn & #imm) == 0
+			// NZCV := result<datasize-1>:IsZeroBit(result):'00'
+			",%d,$s,nf,:="
+			",$z,zf,:="
+			",0,cf,:="
+			",0,vf,:=",
+			REGBITS64 (0) - 1);
 		break;
 	case ARM64_INS_FCSEL:
 	case ARM64_INS_CSEL: // csel Wd, Wn, Wm --> Wd := (cond) ? Wn : Wm
