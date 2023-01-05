@@ -3580,6 +3580,12 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 	if (r_str_startswith (cmd, "\"\"")) {
 		return r_core_cmd_call (core, cmd + 2);
 	}
+	if (r_str_startswith (cmd, "?t\"\"")) {
+		char *c = r_str_newf ("?t\"\"%s", cmd + 4);
+		int res = r_core_cmd_call (core, c);
+		free (c);
+		return res;
+	}
 
 	if (r_str_startswith (cmd, "GET /cmd/")) {
 		memmove (cmd, cmd + 9, strlen (cmd + 9) + 1);
