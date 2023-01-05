@@ -1726,8 +1726,7 @@ static const ut8 *parse_attr_value(const ut8 *obuf, int obuf_len,
 		value->kind = DW_AT_KIND_STRING;
 		value->string.offset = dwarf_read_offset (hdr->is_64bit, &buf, buf_end);
 		if (debug_str && value->string.offset < debug_str_len) {
-			int maxlen = buf_end - buf;
-			char *ds = r_str_ndup ((const char *)(debug_str + value->string.offset), maxlen);
+			char *ds = r_str_ndup ((const char *)(debug_str + value->string.offset), debug_str_len);
 			if (ds) {
 				r_str_ansi_strip (ds);
 				r_str_replace_ch (ds, '\n', 0, true);
