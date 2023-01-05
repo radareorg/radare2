@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2008-2021 - pancake */
+/* radare - LGPL - Copyright 2008-2023 - pancake */
 
 #include <r_cons.h>
 #include <ctype.h>
@@ -9,6 +9,7 @@
 R_API char *r_cons_hud_file(const char *f) {
 	char *s = r_file_slurp (f, NULL);
 	if (s) {
+		r_str_ansi_strip (s);
 		char *ret = r_cons_hud_string (s);
 		free (s);
 		return ret;
@@ -29,6 +30,7 @@ R_API char *r_cons_hud_line_string(const char *s) {
 	}
 	r_str_replace_ch (o, '\r', 0, true);
 	r_str_replace_ch (o, '\t', 0, true);
+	r_str_ansi_strip (o);
 	RList *fl = r_list_new ();
 	int i;
 	if (!fl) {
@@ -66,6 +68,7 @@ R_API char *r_cons_hud_string(const char *s) {
 	if (!o) {
 		return NULL;
 	}
+	r_str_ansi_strip (o);
 	r_str_replace_ch (o, '\r', 0, true);
 	r_str_replace_ch (o, '\t', 0, true);
 	RList *fl = r_list_new ();
