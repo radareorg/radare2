@@ -1382,7 +1382,7 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 					}
 					if (p && p->offname) {
 						a = p->offname (p->user, addr + j);
-						if (p->colorfor && a && *a) {
+						if (p->colorfor && R_STR_ISNOTEMPTY (a)) {
 							const char *color = p->colorfor (p->user, addr + j, addr + j, true);
 							printfmt ("%s  ; %s%s", r_str_get (color), a,
 									color ? Color_RESET : "");
@@ -1390,8 +1390,9 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 					}
 					char *comment = p->get_comments (p->user, addr + j);
 					if (comment) {
+						// r_str_ansi_strip (comment);
 						if (p && p->colorfor) {
-							a = p->colorfor (p->user, addr + j, addr +j, true);
+							a = p->colorfor (p->user, addr + j, addr + j, true);
 							if (R_STR_ISEMPTY (a)) {
 								a = "";
 							}

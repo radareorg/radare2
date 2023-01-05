@@ -2071,14 +2071,15 @@ static void cmd_print_format(RCore *core, const char *_input, const ut8* block, 
  * that are 4 chars long. */
 #define append(x, y) if (x && y) { strcat (x, y); x += strlen (y); }
 static void annotated_hexdump(RCore *core, const char *str, int len) {
-	if (!core || !str || len < 1) {
+	r_return_if_fail (core);
+	if (!str || len < 1) {
 		return;
 	}
 	const int usecolor = r_config_get_i (core->config, "scr.color");
 	int nb_cols = r_config_get_i (core->config, "hex.cols");
 	core->print->use_comments = r_config_get_i (core->config, "hex.comments");
 	int flagsz = r_config_get_i (core->config, "hex.flagsz");
-	bool showSection = r_config_get_i (core->config, "hex.section");
+	bool showSection = r_config_get_b (core->config, "hex.section");
 	const ut8 *buf = core->block;
 	ut64 addr = core->offset;
 	int color_idx = 0;
@@ -2088,7 +2089,7 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 	int i, j, low, max, here, rows;
 	bool marks = false, setcolor = true, hascolor = false;
 	ut8 ch = 0;
-	char *colors[10] = {NULL};
+	char *colors[10] = { NULL };
 	for (i = 0; i < 10; i++) {
 		colors[i] = r_cons_rainbow_get (i, 10, false);
 	}
@@ -2179,7 +2180,6 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 				ea = va;
 			}
 		}
-
 		if (usecolor) {
 			append (ebytes, core->cons->context->pal.offset);
 		}
@@ -2204,7 +2204,7 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 			RAnalMetaItem *meta = meta_node ? meta_node->data : NULL;
 			if (meta && meta->type == R_META_TYPE_FORMAT && meta_node->start == addr + j) {
 				r_cons_printf (".format %s ; size=", meta->str);
-				r_core_cmdf (core, "pfs %s", meta->str);
+				r_core_cmd_callf (core, "pfs %s", meta->str);
 				r_core_cmdf (core, "pf %s @ 0x%08"PFMT64x, meta->str, meta_node->start);
 				if (usecolor) {
 					append (ebytes, Color_INVERT);
@@ -2375,8 +2375,8 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 					}
 				}
 			}
-			sprintf (ebytes, "%02x", ch);
-			// r_print_byte (core->print, "%02x ", j, ch);
+			// R2_590 - r_hex_from_byte (ebytes, ch);
+			snprintf (ebytes, 3, "%02x", (ch & 0xff));
 			ebytes += strlen (ebytes);
 			if (hadflag) {
 				if (usecolor) {

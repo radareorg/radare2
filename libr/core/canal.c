@@ -6327,3 +6327,20 @@ kontinue:
 	r_list_free (todo);
 	ht_uu_free (done);
 }
+
+R_API char *r_core_anal_get_comments(RCore *core, ut64 addr) {
+	if (core) {
+		const char *type = r_meta_get_string (core->anal, R_META_TYPE_VARTYPE, addr);
+		const char *cmt = r_meta_get_string (core->anal, R_META_TYPE_COMMENT, addr);
+		if (type && cmt) {
+			return r_str_newf ("%s %s", type, cmt);
+		}
+		if (type) {
+			return strdup (type);
+		}
+		if (cmt) {
+			return strdup (cmt);
+		}
+	}
+	return NULL;
+}

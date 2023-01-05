@@ -2580,23 +2580,6 @@ R_API char *r_core_anal_hasrefs_to_depth(RCore *core, ut64 value, PJ *pj, int de
 	return res;
 }
 
-R_API char *r_core_anal_get_comments(RCore *core, ut64 addr) {
-	if (core) {
-		const char *type = r_meta_get_string (core->anal, R_META_TYPE_VARTYPE, addr);
-		const char *cmt = r_meta_get_string (core->anal, R_META_TYPE_COMMENT, addr);
-		if (type && cmt) {
-			return r_str_newf ("%s %s", type, cmt);
-		}
-		if (type) {
-			return strdup (type);
-		}
-		if (cmt) {
-			return strdup (cmt);
-		}
-	}
-	return NULL;
-}
-
 static R_TH_LOCAL char *const_color = NULL;
 
 R_API const char *colorforop(RCore *core, ut64 addr) {
