@@ -4622,7 +4622,7 @@ dodo:
 #if 1
 		// This is why multiple debug views dont work
 		if (core->printidx == R_CORE_VISUAL_MODE_DB) {
-			const int pxa = r_config_get_i (core->config, "stack.anotated"); // stack.anotated
+			const bool pxa = r_config_get_b (core->config, "stack.annotated");
 			const char *reg = r_config_get (core->config, "stack.reg");
 			const int size = r_config_get_i (core->config, "stack.size");
 			const int delta = r_config_get_i (core->config, "stack.delta");

@@ -147,7 +147,6 @@ static bool __matchString(char *entry, char *filter, char *mask, const int mask_
 	return true;
 }
 
-
 static RList *hud_filter(RList *list, char *user_input, int top_entry_n, int *current_entry_n, char **selected_entry, bool simple) {
 	RListIter *iter;
 	char *current_entry;

@@ -3843,7 +3843,7 @@ R_API int r_core_config_init(RCore *core) {
 	free (zigndir);
 	SETPREF ("stack.reg", "SP", "which register to use as stack pointer in the visual debug");
 	SETBPREF ("stack.bytes", "true", "show bytes instead of words in stack");
-	SETBPREF ("stack.anotated", "false", "show anotated hexdump in visual debug");
+	SETBPREF ("stack.annotated", "false", "show annotated hexdump in visual debug");
 	SETI ("stack.size", 64,  "size in bytes of stack hexdump in visual debug");
 	SETI ("stack.delta", 0,  "delta for the stack dump");
 

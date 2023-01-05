@@ -140,7 +140,6 @@ R_API const char *r_meta_get_string(RAnal *a, RAnalMetaType type, ut64 addr) {
 	return item->str;
 }
 
-
 static void del(RAnal *a, RAnalMetaType type, const RSpace *space, ut64 addr, ut64 size) {
 	RPVector *victims = NULL;
 	if (size == UT64_MAX) {
