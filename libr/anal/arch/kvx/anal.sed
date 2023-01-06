@@ -2,13 +2,14 @@
 /"errop/	{s/.type =/& R_ANAL_OP_TYPE_TRAP |/};
 /"abs/		{s/.type =/& R_ANAL_OP_TYPE_ABS |/};
 /"copy/		{s/.type =/& R_ANAL_OP_TYPE_MOV |/};
-/"xcopy/	{s/.type =/& R_ANAL_OP_TYPE_MOV |/};
 /"not[wd]/	{s/.type =/& R_ANAL_OP_TYPE_NOT |/};
 /"add/		{s/.type =/& R_ANAL_OP_TYPE_ADD |/};
+/"sbf/		{s/.type =/& R_ANAL_OP_TYPE_SUB |/};
 /"and/		{s/.type =/& R_ANAL_OP_TYPE_AND |/};
 /"mul/		{s/.type =/& R_ANAL_OP_TYPE_MUL |/};
 /"nop/		{s/.type =/& R_ANAL_OP_TYPE_NOP |/};
 /"nor/		{s/.type =/& R_ANAL_OP_TYPE_NOR |/};
+/"neg/		{s/.type =/& R_ANAL_OP_TYPE_CPL |/};
 /"or[wd]/	{s/.type =/& R_ANAL_OP_TYPE_OR |/};
 /"xor[wd]/	{s/.type =/& R_ANAL_OP_TYPE_XOR |/};
 /"srl[hwd]/	{s/.type =/& R_ANAL_OP_TYPE_SHR |/};
@@ -25,10 +26,8 @@
 /"scall/	{s/.type =/& R_ANAL_OP_TYPE_SWI |/};
 /"ret/		{s/.type =/& R_ANAL_OP_TYPE_RET |/};
 /"rfe/		{s/.type =/& R_ANAL_OP_TYPE_RET |/};
-/"s[bhwdqov]/	{s/.type =/& R_ANAL_OP_TYPE_STORE |/};
-/"xso/		{s/.type =/& R_ANAL_OP_TYPE_STORE |/};
-/"l[bhwdqov]/	{s/.type =/& R_ANAL_OP_TYPE_LOAD |/};
-/"xlo/		{s/.type =/& R_ANAL_OP_TYPE_LOAD |/};
+/"s[bhwdqov]["\.]/	{s/.type =/& R_ANAL_OP_TYPE_STORE |/};
+/"l[bhwdqov]["\.sz]/	{s/.type =/& R_ANAL_OP_TYPE_LOAD |/};
 /"l[bhw][sz]/	{s/.type =/& R_ANAL_OP_TYPE_LOAD |/};
 /"loopdo/	{s/.type =/& R_ANAL_OP_TYPE_REP |/};
 
