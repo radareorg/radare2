@@ -1,4 +1,4 @@
-/* TODO: <LICENSE INFO HERE> */
+/* radare - LGPL - Copyright 2022 - jmaselbas */
 #ifndef ASM_KVX_H
 #define ASM_KVX_H
 
