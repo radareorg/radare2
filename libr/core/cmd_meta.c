@@ -539,10 +539,10 @@ static int cmd_meta_comment(RCore *core, const char *input) {
 		break;
 	case '!':
 		{
-			char *out;
 			const char *comment = r_meta_get_string (core->anal, R_META_TYPE_COMMENT, addr);
-			out = r_core_editor (core, NULL, comment);
+			char *out = r_core_editor (core, NULL, comment);
 			if (out) {
+				r_str_ansi_strip (out);
 				//r_meta_set (core->anal->meta, R_META_TYPE_COMMENT, addr, 0, out);
 				r_core_cmdf (core, "CC-@0x%08"PFMT64x, addr);
 				//r_meta_del (core->anal->meta, input[0], addr, addr+1);
@@ -560,6 +560,7 @@ static int cmd_meta_comment(RCore *core, const char *input) {
 		char *text;
 		char *nc = strdup (newcomment);
 		r_str_unescape (nc);
+		r_str_ansi_strip (nc);
 		if (comment) {
 			text = malloc (strlen (comment) + strlen (newcomment) + 2);
 			if (text) {

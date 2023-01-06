@@ -111,12 +111,13 @@ static bool meta_set(RAnal *a, RAnalMetaType type, int subtype, ut64 from, ut64 
 	item->subtype = subtype;
 	item->space = space;
 	free (item->str);
-	item->str = str ? strdup (str) : NULL;
-	if (str && !item->str) {
-		if (!node) { // If we just created this
-			free (item);
-		}
-		return false;
+	if (R_STR_ISNOTEMPTY (str)) {
+		item->str = strdup (str);
+		// this breaks the `ecHw` command
+		// (highlights word in current instruction, which uses ansi
+		// r_str_ansi_strip (item->str);
+	} else {
+		item->str = NULL;
 	}
 	R_DIRTY (a);
 	if (!node) {

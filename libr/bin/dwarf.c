@@ -431,6 +431,7 @@ static const ut8 *parse_line_header_source(RBinFile *bf, const ut8 *buf, const u
 	int i = 0;
 	size_t count;
 	const ut8 *tmp_buf = NULL;
+	char *fn = NULL;
 
 	if (mode == R_MODE_PRINT) {
 		print (" The Directory Table:\n");
@@ -464,10 +465,12 @@ static const ut8 *parse_line_header_source(RBinFile *bf, const ut8 *buf, const u
 
 	for (i = 0; i < 2; i++) {
 		while (buf + 1 < buf_end) {
-			const char *filename = (const char *)buf;
 			size_t maxlen = R_MIN ((size_t) (buf_end - buf - 1), 0xfff);
 			ut64 id_idx, mod_time, file_len;
-			size_t len = r_str_nlen (filename, maxlen);
+			free (fn);
+			fn = r_str_ndup ((const char *)buf, maxlen);
+			r_str_ansi_strip (fn);
+			size_t len = strlen (fn);
 
 			if (!len) {
 				buf++;
@@ -512,7 +515,7 @@ static const ut8 *parse_line_header_source(RBinFile *bf, const ut8 *buf, const u
 				}
 
 				if (hdr->file_names) {
-					hdr->file_names[count].name = r_str_newf("%s/%s", r_str_get (include_dir), filename);
+					hdr->file_names[count].name = r_str_newf("%s/%s", r_str_get (include_dir), fn);
 					hdr->file_names[count].id_idx = id_idx;
 					hdr->file_names[count].mod_time = mod_time;
 					hdr->file_names[count].file_len = file_len;
@@ -525,7 +528,8 @@ static const ut8 *parse_line_header_source(RBinFile *bf, const ut8 *buf, const u
 			}
 			count++;
 			if (mode == R_MODE_PRINT && i) {
-				print ("  %d     %" PFMT64d "       %" PFMT64d "         %" PFMT64d "          %s\n", entry_index++, id_idx, mod_time, file_len, filename);
+				print ("  %d     %" PFMT64d "       %" PFMT64d "         %" PFMT64d "          %s\n",
+						entry_index++, id_idx, mod_time, file_len, fn);
 			}
 		}
 		if (i == 0) {
@@ -544,6 +548,7 @@ static const ut8 *parse_line_header_source(RBinFile *bf, const ut8 *buf, const u
 	}
 
 beach:
+	free (fn);
 	sdb_free (sdb);
 
 	return buf;
@@ -677,7 +682,6 @@ static const ut8 *parse_line_header(
 
 static inline void add_sdb_addrline(Sdb *s, ut64 addr, const char *file, ut64 line, int mode, PrintfCallback print) {
 	const char *p;
-	char *fileline;
 	char offset[SDB_NUM_BUFSZ];
 	char *offset_ptr;
 
@@ -706,7 +710,10 @@ static inline void add_sdb_addrline(Sdb *s, ut64 addr, const char *file, ut64 li
 #else
 	p = file;
 #endif
-	fileline = r_str_newf ("%s|%"PFMT64d, p, line);
+	char *fileline = r_str_newf ("%s|%"PFMT64d, p, line);
+	r_str_ansi_strip (fileline);
+	r_str_replace_ch (fileline, '\n', 0, true);
+	r_str_replace_ch (fileline, '\t', 0, true);
 	offset_ptr = sdb_itoa (addr, 16, offset, sizeof (offset));
 	sdb_add (s, offset_ptr, fileline, 0);
 	sdb_add (s, fileline, offset_ptr, 0);
@@ -1666,7 +1673,15 @@ static const ut8 *parse_attr_value(const ut8 *obuf, int obuf_len,
 		break;
 	case DW_FORM_string:
 		value->kind = DW_AT_KIND_STRING;
-		value->string.content = *buf ? r_str_ndup ((const char *)buf, buf_end - buf) : NULL;
+		if (*buf) {
+			char *name = r_str_ndup ((const char *)buf, buf_end - buf);
+			r_str_ansi_strip (name);
+			r_str_replace_ch (name, '\n', 0, true);
+			r_str_replace_ch (name, '\t', 0, true);
+			value->string.content = name;
+		} else {
+			value->string.content = NULL;
+		}
 		if (value->string.content) {
 			buf += strlen (value->string.content) + 1;
 		}
@@ -1711,8 +1726,15 @@ static const ut8 *parse_attr_value(const ut8 *obuf, int obuf_len,
 		value->kind = DW_AT_KIND_STRING;
 		value->string.offset = dwarf_read_offset (hdr->is_64bit, &buf, buf_end);
 		if (debug_str && value->string.offset < debug_str_len) {
-			const char *ds = (const char *)(debug_str + value->string.offset);
-			value->string.content = strdup (ds); // r_str_ndup (ds, debug_str_len - value->string.offset);
+			char *ds = r_str_ndup ((const char *)(debug_str + value->string.offset), debug_str_len);
+			if (ds) {
+				r_str_ansi_strip (ds);
+				r_str_replace_ch (ds, '\n', 0, true);
+				r_str_replace_ch (ds, '\t', 0, true);
+				value->string.content = ds;
+			} else {
+				value->string.content = NULL;
+			}
 		} else {
 			value->string.content = NULL; // Means malformed DWARF, should we print error message?
 		}
@@ -1903,8 +1925,11 @@ static const ut8 *parse_die(const ut8 *buf, const ut8 *buf_end, RBinDwarfAbbrevD
 		// Or atleast it needs to rework becase there will be
 		// more comp units -> more comp dirs and only the last one will be kept
 		if (attribute->attr_name == DW_AT_comp_dir && is_valid_string_form) {
-			const char *name = attribute->string.content;
-			sdb_set (sdb, "DW_AT_comp_dir", name, 0);
+			char *name = strdup (attribute->string.content);
+			r_str_ansi_strip (name);
+			r_str_replace_ch (name, '\n', 0, true);
+			r_str_replace_ch (name, '\t', 0, true);
+			sdb_set_owned (sdb, "DW_AT_comp_dir", name, 0);
 		}
 		die->count++;
 	}

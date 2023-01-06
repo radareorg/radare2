@@ -1,3 +1,55 @@
+NAME="ansi injection via dwarf"
+FILE=bins/elf/dwarf_test_func_patched
+ARGS=-AA
+CMDS=<<EOF
+CL
+xc
+EOF
+EXPECT=<<EOF
+file: /_test.c
+line: 5
+addr: 0x00001159
+file: /_test.c
+line: 11
+addr: 0x00001184
+file: /_test.c
+line: 6
+addr: 0x00001165
+file: /_test.c
+line: 11
+addr: 0x00001186
+file: /_test.c
+line: 9
+addr: 0x00001170
+file: /_test.c
+line: 8
+addr: 0x00001168
+file: /_test.c
+line: 4
+addr: 0x00001149
+file: /_test.c
+line: 10
+addr: 0x0000117f
+- offset -  6061 6263 6465 6667 6869 6A6B 6C6D 6E6F  0123456789ABCDEF  comment
+0x00001060  f30f 1efa 31ed 4989 d15e 4889 e248 83e4  ....1.I..^H..H..  ; rip ; [16] -r-x section size 294 named .text ; arg3
+0x00001070  f050 5445 31c0 31c9 488d 3de9 0000 00ff  .PTE1.1.H.=.....
+0x00001080  1553 2f00 00f4 662e 0f1f 8400 0000 0000  .S/...f.........
+0x00001090  488d 3d79 2f00 0048 8d05 722f 0000 4839  H.=y/..H..r/..H9  ; sym.deregister_tm_clones
+0x000010a0  f874 1548 8b05 362f 0000 4885 c074 09ff  .t.H..6/..H..t..
+0x000010b0  e00f 1f80 0000 0000 c30f 1f80 0000 0000  ................
+0x000010c0  488d 3d49 2f00 0048 8d35 422f 0000 4829  H.=I/..H.5B/..H)  ; sym.register_tm_clones
+0x000010d0  fe48 89f0 48c1 ee3f 48c1 f803 4801 c648  .H..H..?H...H..H
+0x000010e0  d1fe 7414 488b 0505 2f00 0048 85c0 7408  ..t.H.../..H..t.
+0x000010f0  ffe0 660f 1f44 0000 c30f 1f80 0000 0000  ..f..D..........
+0x00001100  f30f 1efa 803d 052f 0000 0075 2b55 4883  .....=./...u+UH.  ; sym.__do_global_dtors_aux
+0x00001110  3de2 2e00 0000 4889 e574 0c48 8b3d e62e  =.....H..t.H.=..
+0x00001120  0000 e819 ffff ffe8 64ff ffff c605 dd2e  ........d.......
+0x00001130  0000 015d c30f 1f00 c30f 1f80 0000 0000  ...]............
+0x00001140  f30f 1efa e977 ffff fff3 0f1e fa55 4889  .....w.......UH.  ; sym.frame_dummy  ; dbg._func ; void _func(char * msg);
+0x00001150  e548 83ec 1048 897d f848 8b45 f848 89c7  .H...H.}.H.E.H.. ; arg1 ; const char *s
+EOF
+RUN
+
 NAME="open companion file for macho dwarf"
 FILE=bins/mach0/dwarf/a.out
 CMDS=<<EOF
