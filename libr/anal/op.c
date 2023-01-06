@@ -641,9 +641,17 @@ R_API const char *r_anal_op_direction_tostring(RAnalOp *op) {
 	if (!op) {
 		return "none";
 	}
-	int d = op->direction;
-	return d == 1 ? "read"
-		: d == 2 ? "write"
-		: d == 4 ? "exec"
-		: d == 8 ? "ref": "none";
+	switch (op->direction) {
+	case R_ANAL_OP_DIR_READ:
+		return "read";
+	case R_ANAL_OP_DIR_WRITE:
+		return "write";
+	case R_ANAL_OP_DIR_EXEC:
+		return "exec";
+	case R_ANAL_OP_DIR_REF:
+		return "ref";
+	default:
+		break;
+	}
+	return "none";
 }
