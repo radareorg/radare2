@@ -69,10 +69,10 @@ static bool __core_patch_bracket(RCore *core, const char *str, ut64 *noff) {
 			break;
 		}
 		if ((q = strstr (str, "${"))) {
-			char *end = strchr (q+2,'}');
+			char *end = strchr (q + 2,'}');
 			if (end) {
 				*q = *end = 0;
-				*noff = r_num_math (core->num, q+2);
+				*noff = r_num_math (core->num, q + 2);
 				r_buf_append_bytes (b, (const ut8*)str, strlen (str));
 				snprintf (tmp, sizeof (tmp), "0x%08"PFMT64x, *noff);
 				r_buf_append_bytes (b, (const ut8*)tmp, strlen (tmp));
