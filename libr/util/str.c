@@ -1964,8 +1964,9 @@ R_API size_t r_str_ansi_strip(char *str) {
 		size_t chlen = __str_ansi_length (str + i);
 		if (chlen > 1) {
 			r_str_cpy (str + i, str + i + chlen);
+		} else {
+			i++;
 		}
-		i++;
 	}
 	return i;
 }

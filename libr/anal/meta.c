@@ -113,7 +113,9 @@ static bool meta_set(RAnal *a, RAnalMetaType type, int subtype, ut64 from, ut64 
 	free (item->str);
 	if (R_STR_ISNOTEMPTY (str)) {
 		item->str = strdup (str);
-		r_str_ansi_strip (item->str);
+		// this breaks the `ecHw` command
+		// (highlights word in current instruction, which uses ansi
+		// r_str_ansi_strip (item->str);
 	} else {
 		item->str = NULL;
 	}
