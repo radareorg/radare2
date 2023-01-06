@@ -557,15 +557,15 @@ struct op_family {
 };
 
 static const struct op_family of[] = {
-	{ "cpu", R_ANAL_OP_FAMILY_CPU},
-	{ "fpu", R_ANAL_OP_FAMILY_FPU},
-	{ "vec", R_ANAL_OP_FAMILY_VEC},
-	{ "priv", R_ANAL_OP_FAMILY_PRIV},
-	{ "virt", R_ANAL_OP_FAMILY_VIRT},
-	{ "crypto", R_ANAL_OP_FAMILY_CRYPTO},
-	{ "io", R_ANAL_OP_FAMILY_IO},
-	{ "sec", R_ANAL_OP_FAMILY_SECURITY},
-	{ "thread", R_ANAL_OP_FAMILY_THREAD},
+	{ "cpu", R_ANAL_OP_FAMILY_CPU },
+	{ "fpu", R_ANAL_OP_FAMILY_FPU },
+	{ "vec", R_ANAL_OP_FAMILY_VEC },
+	{ "priv", R_ANAL_OP_FAMILY_PRIV },
+	{ "virt", R_ANAL_OP_FAMILY_VIRT },
+	{ "crypto", R_ANAL_OP_FAMILY_CRYPTO },
+	{ "io", R_ANAL_OP_FAMILY_IO },
+	{ "sec", R_ANAL_OP_FAMILY_SECURITY },
+	{ "thread", R_ANAL_OP_FAMILY_THREAD },
 };
 
 R_API int r_anal_op_family_from_string(const char *f) {
