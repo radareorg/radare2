@@ -252,10 +252,10 @@ static int kvx_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, RA
 
 		op->type = insn->opc->type;
 		op->cond = insn->opc->cond;
-		/* The delay slot is a bit abused here, it is used make each
-		 * instructions in a bundle complet at the same address, for
-		 * exemple branch isntruction comes first but will be effective
-		 * at the end of the bundle, after the remaning instructions. */
+		/* The delay slot a bit misused here, as it is used to make every
+		 * instructions in a bundle completes at the same time/address, for
+		 * example branch instruction comes first but will be effective
+		 * at the end of the bundle: after the remaining instructions. */
 		op->delay = insn->rem;
 		if ((op->type & R_ANAL_OP_TYPE_CJMP) == R_ANAL_OP_TYPE_CJMP) {
 			/* if fail goto next bundle */
