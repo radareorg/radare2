@@ -2096,7 +2096,7 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 	const int col = core->print->col;
 	RFlagItem *curflag = NULL;
 	char **note;
-	int html = r_config_get_i (core->config, "scr.html");
+	bool html = r_config_get_b (core->config, "scr.html");
 	int nb_cons_cols;
 	bool compact = false;
 
@@ -2189,7 +2189,7 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 			append (ebytes, s);
 			free (s);
 		}
-		ebytes += sprintf (ebytes, "0x%08"PFMT64x, ea);
+		ebytes += snprintf (ebytes, 20, "0x%08"PFMT64x, ea);
 		if (usecolor) {
 			append (ebytes, Color_RESET);
 		}
@@ -3093,7 +3093,7 @@ static void disasm_strings(RCore *core, const char *input, RAnalFunction *fcn) {
 	}
 	r_cons_pop ();
 
-	r_config_set_i (core->config, "scr.html", scr_html);
+	r_config_set_b (core->config, "scr.html", scr_html);
 	r_config_set_i (core->config, "scr.color", use_color);
 	r_config_set_i (core->config, "asm.cmt.right", asm_cmt_right);
 	count = r_str_split (s, '\n');

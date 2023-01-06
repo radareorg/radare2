@@ -521,7 +521,7 @@ static bool lastcmd_repeat(RCore *core, int next) {
 	case '$':
 		if (!strncmp (core->lastcmd, "pd", 2)) {
 			if (core->lastcmd[2]== ' ') {
-				r_core_cmdf (core, "so %s", core->lastcmd + 3);
+				r_core_cmd_callf (core, "so %s", r_str_trim_head_ro (core->lastcmd + 3));
 			} else {
 				r_core_cmd0 (core, "so `pi~?`");
 			}
@@ -620,7 +620,7 @@ static int cmd_uniq(void *data, const char *input) { // "uniq"
 			arg = "";
 		}
 		if (r_fs_check (core->fs, arg)) {
-			r_core_cmdf (core, "md %s", arg);
+			r_core_cmd_callf (core, "md %s", arg);
 		} else {
 			char *res = r_syscmd_uniq (arg);
 			if (res) {
@@ -2975,25 +2975,17 @@ static int cmd_tasks(void *data, const char *input) {
 
 static int cmd_pointer(void *data, const char *input) {
 	RCore *core = (RCore*) data;
-	int ret = true;
-	char *str, *eq;
+	int ret = 0;
 	input = r_str_trim_head_ro (input);
-	while (*input == ' ') {
-		input++;
-	}
 	if (!*input || *input == '?') {
 		r_core_cmd_help (core, help_msg_star);
 		return ret;
 	}
-	str = strdup (input);
-	eq = strchr (str, '=');
+	char *str = strdup (input);
+	char *eq = strchr (str, '=');
 	if (eq) {
 		*eq++ = 0;
-		if (!strncmp (eq, "0x", 2)) {
-			ret = r_core_cmdf (core, "wv %s@%s", eq, str);
-		} else {
-			ret = r_core_cmdf (core, "wx %s@%s", eq, str);
-		}
+		ret = r_core_cmdf (core, "wv %s@%s", eq, str);
 	} else {
 		ret = r_core_cmdf (core, "?v [%s]", input);
 	}
@@ -3003,7 +2995,7 @@ static int cmd_pointer(void *data, const char *input) {
 
 static int cmd_env(void *data, const char *input) {
 	RCore *core = (RCore*)data;
-	int ret = true;
+	int ret = 1;
 	switch (*input) {
 	case '?':
 		cmd_help_percent (core);
@@ -3439,7 +3431,7 @@ R_API int r_core_cmd_pipe(RCore *core, char *radare_cmd, char *shell_cmd) {
 	}
 	bool si = r_cons_is_interactive ();
 	r_config_set_b (core->config, "scr.interactive", false);
-	if (!r_config_get_i (core->config, "scr.color.pipe")) {
+	if (!r_config_get_b (core->config, "scr.color.pipe")) {
 		pipecolor = r_config_get_i (core->config, "scr.color");
 		r_config_set_i (core->config, "scr.color", COLOR_MODE_DISABLED);
 	}
@@ -4162,7 +4154,7 @@ escape_pipe:
 			return true;
 		}
 		int fdn = 1;
-		int pipecolor = r_config_get_i (core->config, "scr.color.pipe");
+		bool pipecolor = r_config_get_b (core->config, "scr.color.pipe");
 		int use_editor = false;
 		int ocolor = r_config_get_i (core->config, "scr.color");
 		*ptr = '\0';
@@ -4321,7 +4313,7 @@ next2:
 			ret = r_core_cmd_subst (core, cmd);
 			free (cmd);
 			if (scr_html != -1) {
-				r_config_set_i (core->config, "scr.html", scr_html);
+				r_config_set_b (core->config, "scr.html", scr_html);
 			}
 			free (str);
 			r_list_free (tmpenvs);
@@ -6069,6 +6061,21 @@ R_API char *r_core_cmd_strf(RCore *core, const char *fmt, ...) {
 	return ret;
 }
 
+#if R2_590
+// R_API
+int r_core_cmd_call_at(RCore *core, const char *cmd, ut64 addr) {
+	ut64 oaddr = core->offset;
+	if (addr != core->offset) {
+		r_core_seek (core, addr, 1);
+	}
+	int res = r_cmd_call (core->rcmd, cmd);
+	if (addr != core->offset) {
+		r_core_seek (core, oaddr, 1);
+	}
+	return res;
+}
+#endif
+
 // run an r2 command without evaluating any special character
 R_API int r_core_cmd_call(RCore *core, const char *cmd) {
 	return r_cmd_call (core->rcmd, cmd);
@@ -6160,7 +6167,13 @@ R_API int r_core_cmd_task_sync(RCore *core, const char *cmd, bool log) {
 }
 
 static int cmd_ox(void *data, const char *input) {
-	return r_core_cmdf ((RCore*)data, "s 0%s", input);
+	// return r_core_cmdf ((RCore*)data, "s 0%s", input);
+	RCore *core = (RCore*)data;
+	char *s = r_str_newf ("0%s", input);
+	ut64 at = r_num_get (NULL, s);
+	int ret = r_core_seek (core, at, 1);
+	free (s);
+	return ret;
 }
 
 static int core_cmd0_wrapper(void *core, const char *cmd) {

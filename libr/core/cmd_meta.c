@@ -545,6 +545,7 @@ static int cmd_meta_comment(RCore *core, const char *input) {
 				r_str_ansi_strip (out);
 				//r_meta_set (core->anal->meta, R_META_TYPE_COMMENT, addr, 0, out);
 				r_core_cmdf (core, "CC-@0x%08"PFMT64x, addr);
+				// R2_590 - r_core_cmd_call_at (core, "CC-", addr);
 				//r_meta_del (core->anal->meta, input[0], addr, addr+1);
 				r_meta_set_string (core->anal,
 						R_META_TYPE_COMMENT, addr, out);
@@ -799,6 +800,7 @@ static int cmd_meta_others(RCore *core, const char *input) {
 			if (out) {
 				//r_meta_set (core->anal->meta, R_META_TYPE_COMMENT, addr, 0, out);
 				r_core_cmdf (core, "CC-@0x%08"PFMT64x, addr);
+				// R2_590 - r_core_cmd_call_at (core, "CC-", addr);
 				//r_meta_del (core->anal->meta, input[0], addr, addr+1);
 				r_meta_set_string (core->anal, R_META_TYPE_COMMENT, addr, out);
 				free (out);
