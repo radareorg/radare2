@@ -570,7 +570,7 @@ static const struct op_family of[] = {
 
 R_API int r_anal_op_family_from_string(const char *f) {
 	size_t i;
-	for (i = 0; i < sizeof (of) / sizeof (of[0]); i ++) {
+	for (i = 0; i < R_ARRAY_SIZE (of); i ++) {
 		if (!strcmp (f, of[i].name)) {
 			return of[i].id;
 		}
