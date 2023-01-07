@@ -539,7 +539,10 @@ jobs:
         path: /tmp
     - name: Download latest release
       run: |
-        DOWNLOAD_URL=$(curl -s https://api.github.com/repos/radareorg/radare2/releases/latest | jq -r '.assets[] | select(.name | startswith("radare2")) | select(.name | endswith("static.tar.xz")) | .browser_download_url')
+        DOWNLOAD_URL=$(curl -s \
+        --header 'authorization: Bearer ${{ secrets.GITHUB_TOKEN }}' \
+        https://api.github.com/repos/radareorg/radare2/releases/latest \
+        | jq -r '.assets[] | select(.name | startswith("radare2")) | select(.name | endswith("static.tar.xz")) | .browser_download_url')
         wget -O r2-static-latest.tar.xz $DOWNLOAD_URL
     - name: Untar
       run: |
