@@ -3032,6 +3032,7 @@ R_API bool r_core_init(RCore *core) {
 	core->ropchain = r_list_newf ((RListFree)free);
 	r_core_bind (core, &(core->print->coreb));
 	core->print->user = core;
+	core->num = r_num_new (&num_callback, &str_callback, core);
 	core->print->num = core->num;
 	core->print->offname = r_core_print_offname;
 	core->print->offsize = r_core_print_offsize;
@@ -3073,7 +3074,6 @@ R_API bool r_core_init(RCore *core) {
 	core->cmdqueue = r_list_newf (free);
 	core->cmdrepeat = true;
 	core->yank_buf = r_buf_new ();
-	core->num = r_num_new (&num_callback, &str_callback, core);
 	core->crypto = r_crypto_new ();
 	core->egg = r_egg_new ();
 	r_egg_setup (core->egg, R_SYS_ARCH, R_SYS_BITS, 0, R_SYS_OS);
