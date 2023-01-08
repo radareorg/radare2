@@ -29,6 +29,9 @@ r_arch_sources = [
   'p/v850/plugin.c',
   'p/v850/v850dis.c',
   'p/v850/v850e0.c',
+  'p/nios2/plugin.c',
+  'p/nios2/nios2-opc.c',
+  'p/nios2/nios2-dis.c',
 ]
 
 # must be deleted when anal refactor is done
