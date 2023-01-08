@@ -184,7 +184,7 @@ typedef struct libgdbr_t {
 	int remote_type;
 	bool no_ack;
 	bool is_server;
-	bool server_debug;
+	bool server_debug; // deprecated
 	bool get_baddr;
 	libgdbr_stop_reason_t stop_reason;
 

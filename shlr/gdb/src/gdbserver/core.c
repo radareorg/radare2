@@ -638,9 +638,7 @@ int gdbr_server_serve(libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, void *core_ptr) {
 				return -1;
 			}
 			g->no_ack = true;
-			if (g->server_debug) {
-				R_LOG_DEBUG ("[noack mode enabled]");
-			}
+			R_LOG_DEBUG ("[noack mode enabled]");
 			if (send_msg (g, "OK") < 0) {
 				return -1;
 			}
