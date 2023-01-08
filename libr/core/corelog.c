@@ -5,7 +5,7 @@
 R_API int r_core_log_list(RCore *core, int n, int nth, char fmt) {
 	r_return_val_if_fail (core && core->log, 0);
 	int printed = 0;
-	int count = 0, i, idx, id = core->log->first;
+	int count = 0, idx, id = core->log->first;
 	RStrpool *sp = core->log->sp;
 	char *str = sp->str;
 	PJ *pj = NULL;
@@ -14,7 +14,7 @@ R_API int r_core_log_list(RCore *core, int n, int nth, char fmt) {
 		pj = r_core_pj_new (core);
 		pj_a (pj);
 	}
-	for (i = idx = 0; str && *str; i++, id++) {
+	for (idx = 0; str && *str; id++) {
 		if ((n && n <= id) || !n) {
 			switch (fmt) {
 			case 'j':

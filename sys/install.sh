@@ -102,7 +102,12 @@ fi
 if [ "$(id -u)" = 0 ]; then
 	SUDO=""
 else
-	[ -n "${NOSUDO}" ] && SUDO="echo NOTE: sudo not found. Please run as root: "
+	if [ -d /system/bin ]; then
+		# This is an android
+		SUDO=""
+	else
+		[ -n "${NOSUDO}" ] && SUDO="echo NOTE: sudo not found. Please run as root: "
+	fi
 fi
 
 if [ "${USE_SU}" = 1 ]; then

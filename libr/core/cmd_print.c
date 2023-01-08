@@ -3820,8 +3820,7 @@ static bool cmd_print_blocks(RCore *core, const char *input) {
 		r_cons_printf ("0x%08"PFMT64x " [", from);
 	}
 
-	bool use_color = r_config_get_i (core->config, "scr.color");
-	int len = 0;
+	const bool use_color = r_config_get_i (core->config, "scr.color");
 	int i;
 	for (i = 0; i < ((to - from) / piece); i++) {
 		ut64 at = from + (piece * i);
@@ -3861,7 +3860,6 @@ static bool cmd_print_blocks(RCore *core, const char *input) {
 				pj_ks (pj, "perm", r_str_rwx_i (as->block[p].perm));
 			}
 			pj_end (pj);
-			len++;
 			break;
 		case 'h':
 			if ((as->block[p].flags)

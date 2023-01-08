@@ -5593,7 +5593,6 @@ static void __init_menu_color_settings_layout(void *_core, const char *parent) {
 
 static void __init_menu_disasm_settings_layout(void *_core, const char *parent) {
 	RCore *core = (RCore *)_core;
-	int i = 0;
 	RList *list = __sorted_list (core, menus_settings_disassembly, COUNT (menus_settings_disassembly));
 	char *pos;
 	RListIter* iter;
@@ -5608,7 +5607,6 @@ static void __init_menu_disasm_settings_layout(void *_core, const char *parent) 
 			r_strbuf_append (rsb, r_config_get (core->config, pos));
 			__add_menu (core, parent, r_strbuf_get (rsb), __config_toggle_cb);
 		}
-		i++;
 	}
 	r_list_free (list);
 	r_strbuf_free (rsb);

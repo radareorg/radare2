@@ -2075,7 +2075,6 @@ static int bin_imports(RCore *r, PJ *pj, int mode, int va, const char *name) {
 	RListIter *iter;
 	r_strf_buffer (64);
 	bool lit = info ? info->has_lit: false;
-	int i = 0;
 
 	if (!info) {
 		if (IS_MODE_JSON (mode)) {
@@ -2170,7 +2169,6 @@ static int bin_imports(RCore *r, PJ *pj, int mode, int va, const char *name) {
 		}
 		R_FREE (symname);
 		R_FREE (libname);
-		i++;
 	}
 
 	if (IS_MODE_JSON (mode)) {
@@ -2368,7 +2366,7 @@ static int bin_symbols(RCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at, 
 	bool printHere = (args && *args == '.');
 	bool none = true;
 
-	int i = 0, lastfs = 's';
+	int lastfs = 's';
 	RTable *table = r_core_table (r, "symbols");
 	bool bin_demangle = r_config_get_i (r->config, "bin.demangle");
 	if (IS_MODE_JSON (mode)) {
@@ -2412,7 +2410,6 @@ static int bin_symbols(RCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at, 
 		r_table_set_columnsf (table, "dXXssdss", "nth", "paddr","vaddr","bind", "type", "size", "lib", "name");
 	}
 
-	size_t count = 0;
 	r_list_foreach (symbols, iter, symbol) {
 		if (!symbol->name) {
 			continue;
@@ -2433,7 +2430,6 @@ static int bin_symbols(RCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at, 
 			continue;
 		}
 		SymName sn = {0};
-		count ++;
 		snInit (r, &sn, symbol, lang);
 		char *r_symbol_name = r_str_escape_utf8 (sn.name, false, true);
 
@@ -2596,7 +2592,6 @@ static int bin_symbols(RCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at, 
 		}
 next:
 		snFini (&sn);
-		i++;
 		free (r_symbol_name);
 		if (exponly && firstexp) {
 			firstexp = false;
