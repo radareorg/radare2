@@ -104,7 +104,7 @@ gdb_reg_t *arch_parse_reg_profile(const char * reg_profile) {
 				reg = parse_def (tok);
 				// Warn the user if something went wrong
 				if (!reg) {
-					eprintf ("gdb_regs: Parse error @ line %d\n", l);
+					R_LOG_ERROR ("%s: gdb_regs: Parse error @ line %d", __func__, l);
 					for (i = 0; i < j; i++) {
 						free (tok[i]);
 					}

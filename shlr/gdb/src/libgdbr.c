@@ -2,6 +2,7 @@
 
 #include "libgdbr.h"
 #include "arch.h"
+#include <r_util.h>
 
 #include <stdio.h>
 
@@ -58,7 +59,7 @@ bool gdbr_set_architecture(libgdbr_t *g, int arch, int bits) {
 
 	const char *regprofile = gdbr_get_reg_profile (arch, bits);
 	if (!regprofile) {
-		eprintf ("cannot find gdb reg_profile\n");
+		R_LOG_ERROR ("%s: cannot find gdb reg_profile", __func__);
 		return false;
 	}
 	if (!gdbr_set_reg_profile (g, regprofile)) {
@@ -79,7 +80,7 @@ const char *gdbr_get_reg_profile(int arch, int bits) {
 		} else if (bits == 64) {
 #include "reg/x86_64.h"
 		} else {
-			eprintf ("%s: unsupported x86 bits: %d\n", __func__, bits);
+			R_LOG_ERROR ("%s: unsupported x86 bits: %d", __func__, bits);
 			return NULL;
 		}
 		break;
@@ -89,7 +90,7 @@ const char *gdbr_get_reg_profile(int arch, int bits) {
 		} else if (bits == 64) {
 #include "reg/arm64.h"
 		} else {
-			eprintf ("%s: unsupported arm bits: %d\n", __func__, bits);
+			R_LOG_ERROR ("%s: unsupported arm bits: %d", __func__, bits);
 			return NULL;
 		}
 		break;
@@ -121,7 +122,7 @@ int gdbr_set_reg_profile(libgdbr_t *g, const char *str) {
 	}
 	gdb_reg_t *registers = arch_parse_reg_profile (str);
 	if (!registers) {
-		eprintf ("cannot parse reg profile\n");
+		R_LOG_ERROR ("%s: cannot parse reg profile", __func__);
 		return -1;
 	}
 	if (g->target.regprofile) {

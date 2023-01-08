@@ -5,6 +5,7 @@
 #include "packet.h"
 #include "utils.h"
 #include "r_util/r_str.h"
+#include "r_util/r_log.h"
 
 int handle_qSupported(libgdbr_t *g) {
 	char *tok = NULL;
@@ -136,7 +137,7 @@ int send_ack(libgdbr_t *g) {
 			return -1;
 		}
 		if (g->server_debug) {
-			eprintf ("[sent ack]\n");
+			R_LOG_DEBUG ("[sent ack]");
 		}
 		return 0;
 	}

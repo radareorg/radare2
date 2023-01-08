@@ -9,6 +9,7 @@
 #include "gdbr_common.h"
 #include "packet.h"
 #include <r_util/r_strbuf.h>
+#include <r_util/r_log.h>
 #include <r_cons.h>
 #include <r_debug.h>
 
@@ -770,7 +771,8 @@ static int gdbr_read_memory_page(libgdbr_t *g, ut64 address, ut8 *buf, int len) 
 		int delta = (pkt * data_sz);
 
 		if (delta > len) {
-			eprintf ("oops\n");
+			R_LOG_ERROR ("%s: delta is greater than len (%d > %d)",
+			        __func__, delta, len);
 			break;
 		}
 		int left = R_MIN (g->data_len, len - delta);
@@ -1033,7 +1035,8 @@ int gdbr_write_register(libgdbr_t *g, int index, char *value, int len) {
 	reg_cache.valid = false;
 	ret = snprintf (command, sizeof (command) - 1, "%s%x=", CMD_WRITEREG, index);
 	if (len + ret >= sizeof (command)) {
-		eprintf ("command is too small\n");
+		R_LOG_ERROR ("%s: command buffer is too small, expected: %d, actual: %d",
+		        __func__, len + ret, sizeof(command));
 		ret = -1;
 		goto end;
 	}
@@ -1079,7 +1082,7 @@ int gdbr_write_reg(libgdbr_t *g, const char *name, char *value, int len) {
 		i++;
 	}
 	if (g->registers[i].size == 0) {
-		eprintf ("Error registername <%s> not found in profile\n", name);
+		R_LOG_ERROR ("%s: registername <%s> not found in profile", __func__, name);
 		ret = -1;
 		goto end;
 	}
@@ -1128,7 +1131,7 @@ int gdbr_write_registers(libgdbr_t *g, char *registers) {
 	while (reg) {
 		char *name_end = strchr (reg, '=');
 		if (name_end == NULL) {
-			eprintf ("Malformed argument: %s\n", reg);
+			R_LOG_ERROR ("%s: Malformed argument: %s", __func__, reg);
 			ret = -1;
 			goto end;
 		}
@@ -1455,7 +1458,7 @@ int gdbr_open_file(libgdbr_t *g, const char *filename, int flags, int mode) {
 		return -1;
 	}
 	if (g->remote_file_fd >= 0) {
-		eprintf ("%s: Remote file already open\n", __func__);
+		R_LOG_ERROR ("%s: Remote file already open", __func__);
 		return -1;
 	}
 	buf_len = (strlen (filename) * 2) + strlen ("vFile:open:") + 30;
@@ -1495,11 +1498,11 @@ int gdbr_read_file(libgdbr_t *g, ut8 *buf, ut64 max_len) {
 		return -1;
 	}
 	if (max_len >= INT32_MAX) {
-		eprintf ("%s: Too big a file read requested: %"PFMT64d, __func__, max_len);
+		R_LOG_ERROR ("%s: Too big a file read requested: %"PFMT64d, __func__, max_len);
 		return -1;
 	}
 	if (g->remote_file_fd < 0) {
-		eprintf ("%s: No remote file opened\n", __func__);
+		R_LOG_ERROR ("%s: No remote file opened", __func__);
 		return -1;
 	}
 
@@ -1548,7 +1551,7 @@ int gdbr_close_file(libgdbr_t *g) {
 		return -1;
 	}
 	if (g->remote_file_fd < 0) {
-		eprintf ("%s: No remote file opened\n", __func__);
+		R_LOG_ERROR ("%s: No remote file opened", __func__);
 		return -1;
 	}
 
@@ -1763,7 +1766,7 @@ RList* gdbr_pids_list(libgdbr_t *g, int pid) {
 	// Child processes will only show up in ThreadInfo if gdbr is currently processing a
 	// fork/vfork/exec event or if the children weren't detached yet. This is intended
 	// gdb `info inferiors` behavior that can only be avoided using xml.
-	eprintf ("Warning: Showing possibly incomplete pid list due to xml protocol failure\n");
+	R_LOG_WARN ("Showing possibly incomplete pid list due to xml protocol failure");
 
 	if (!g->stub_features.qXfer_exec_file_read
 		    || !(exec_file = gdbr_exec_file_read (g, pid))) {

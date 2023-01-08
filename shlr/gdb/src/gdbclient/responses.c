@@ -6,6 +6,7 @@
 #include "gdbr_common.h"
 #include "utils.h"
 #include "r_util/r_str.h"
+#include "r_util/r_log.h"
 
 
 int handle_g(libgdbr_t *g) {
@@ -192,21 +193,21 @@ static int stop_reason_exit(libgdbr_t *g) {
 	g->stop_reason.reason = R_DEBUG_REASON_DEAD;
 	if (g->stub_features.multiprocess && g->data_len > 3) {
 		if (sscanf (g->data + 1, "%x;process:%x", &status, &pid) != 2) {
-			eprintf ("Message from remote: %s\n", g->data);
+			R_LOG_DEBUG ("Message from remote: %s", g->data);
 			return -1;
 		}
-		eprintf ("Process %d exited with status %d\n", pid, status);
+		R_LOG_DEBUG ("Process %d exited with status %d", pid, status);
 		g->stop_reason.thread.pid = pid;
 		g->stop_reason.thread.tid = pid;
 		g->stop_reason.is_valid = true;
 		return 0;
 	}
 	if (!isxdigit ((unsigned char)g->data[1])) {
-		eprintf ("Message from remote: %s\n", g->data);
+		R_LOG_DEBUG ("Message from remote: %s", g->data);
 		return -1;
 	}
 	status = (int) strtol (g->data + 1, NULL, 16);
-	eprintf ("Process %d exited with status %d\n", g->pid, status);
+	R_LOG_DEBUG ("Process %d exited with status %d", g->pid, status);
 	g->stop_reason.thread.pid = pid;
 	g->stop_reason.thread.tid = pid;
 	g->stop_reason.is_valid = true;
@@ -219,10 +220,10 @@ static int stop_reason_terminated(libgdbr_t *g) {
 	g->stop_reason.reason = R_DEBUG_REASON_DEAD;
 	if (g->stub_features.multiprocess && g->data_len > 3) {
 		if (sscanf (g->data + 1, "%x;process:%x", &signal, &pid) != 2) {
-			eprintf ("Message from remote: %s\n", g->data);
+			R_LOG_DEBUG ("Message from remote: %s", g->data);
 			return -1;
 		}
-		eprintf ("Process %d terminated with signal %d\n", pid, signal);
+		R_LOG_DEBUG ("Process %d terminated with signal %d", pid, signal);
 		g->stop_reason.thread.pid = pid;
 		g->stop_reason.thread.tid = pid;
 		g->stop_reason.signum = signal;
@@ -230,11 +231,11 @@ static int stop_reason_terminated(libgdbr_t *g) {
 		return 0;
 	}
 	if (!isxdigit ((unsigned char)g->data[1])) {
-		eprintf ("Message from remote: %s\n", g->data);
+		R_LOG_DEBUG ("Message from remote: %s", g->data);
 		return -1;
 	}
 	signal = (int) strtol (g->data + 1, NULL, 16);
-	eprintf ("Process %d terminated with signal %d\n", g->pid, signal);
+	R_LOG_DEBUG ("Process %d terminated with signal %d", g->pid, signal);
 	g->stop_reason.thread.pid = pid;
 	g->stop_reason.thread.tid = pid;
 	g->stop_reason.signum = signal;
@@ -252,7 +253,7 @@ int handle_stop_reason(libgdbr_t *g) {
 	case 'O':
 		unpack_hex (g->data + 1, g->data_len - 1, g->data + 1);
 		//g->data[g->data_len - 1] = '\0';
-		eprintf ("%s", g->data + 1);
+		R_LOG_DEBUG ("%s: %s", __func__, g->data + 1);
 		if (send_ack (g) < 0) {
 			return -1;
 		}

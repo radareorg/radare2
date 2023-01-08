@@ -563,7 +563,7 @@ static int _resolve_arch(libgdbr_t *g, char *xml_data) {
 			g->target.arch = R_SYS_ARCH_X86;
 			g->target.bits = 64;
 		} else {
-			eprintf ("Warning: Unknown architecture parsing XML (%s)\n", xml_data);
+			R_LOG_WARN ("Unknown architecture parsing XML (%s)", xml_data);
 		}
 	}
 	return 0;
@@ -867,7 +867,7 @@ static RList *_extract_regs(char *regstr, RList *flags, char *pc_alias) {
 		}
 		regname[regname_len] = '\0';
 		if (regname_len > sizeof (tmpreg->name) - 1) {
-			eprintf ("Register name too long: %s\n", regname);
+			R_LOG_WARN ("Register name too long: %s", regname);
 		}
 		strncpy (tmpreg->name, regname, sizeof (tmpreg->name) - 1);
 		tmpreg->name[sizeof (tmpreg->name) - 1] = '\0';
