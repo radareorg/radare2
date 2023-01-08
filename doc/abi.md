@@ -15,6 +15,8 @@ the next big release, the .9 versions are always the most unstable as they focus
 on quick development in order to make all the breaking changes needed to
 introduce new features or simplify the usage of some apis.
 
+## Development rules
+
 What you **CANNOT** do between X.Y.0 and X.Y.8:
 
 * Add, Remove or rename public functions, structs or enums
@@ -40,3 +42,9 @@ What you **MUST** do in X.Y.9:
 
 * Remove everything marked as `R_DEPRECATE` or `R2_XY0`. Use `git grep` to find them out
 * Anything that was forbidden 
+
+## CI
+
+All this is checked in the CI with the `abidiff` utility.
+
+[.github/workflows/build.yml#L522](.github/workflows/build.yml#L522)
