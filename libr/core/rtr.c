@@ -544,17 +544,12 @@ static int r_core_rtr_gdb_cb(libgdbr_t *g, void *core_ptr, const char *cmd,
 static int r_core_rtr_gdb_run(RCore *core, int launch, const char *path) {
 	RSocket *sock;
 	int p, ret;
-	bool debug_msg = false;
 	char port[10];
 	char *file = NULL, *args = NULL;
 	libgdbr_t *g;
 
 	if (!core || !path) {
 		return -1;
-	}
-	if (*path == '!') {
-		debug_msg = true;
-		path++;
 	}
 	if (!(path = r_str_trim_head_ro (path)) || !*path) {
 		R_LOG_ERROR ("gdbserver: Port not specified");
@@ -604,7 +599,6 @@ static int r_core_rtr_gdb_run(RCore *core, int launch, const char *path) {
 		return -1;
 	}
 	gdbr_init (g, true);
-	g->server_debug = debug_msg;
 	int arch = r_sys_arch_id (r_config_get (core->config, "asm.arch"));
 	int bits = r_config_get_i (core->config, "asm.bits");
 	gdbr_set_architecture (g, arch, bits);

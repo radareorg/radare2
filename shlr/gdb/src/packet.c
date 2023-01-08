@@ -123,9 +123,8 @@ static int unpack(libgdbr_t *g, struct parse_ctx *ctx, int len) {
 		case '-':
 			if (!(ctx->flags & HEADER)) {
 				/* TODO: Handle acks/nacks */
-				if (g->server_debug && !g->no_ack) {
-					R_LOG_DEBUG ("[received '%c' (0x%x)]", cur,
-						 (int) cur);
+				if (!g->no_ack) {
+					R_LOG_DEBUG ("[received '%c' (0x%x)]", cur, (int) cur);
 				}
 				break;
 			}
@@ -150,10 +149,8 @@ int read_packet(libgdbr_t *g, bool vcont) {
 		if (unpack (g, &ctx, g->read_len) == 0) {
 			// TODO: Evaluate if partial packets are clubbed
 			g->data[g->data_len] = '\0';
-			if (g->server_debug) {
-				R_LOG_DEBUG ("getpkt (\"%s\");  %s", g->data,
-					 g->no_ack ? "[no ack sent]" : "[sending ack]");
-			}
+			R_LOG_DEBUG ("getpkt (\"%s\");  %s", g->data,
+					g->no_ack ? "[no ack sent]" : "[sending ack]");
 			return 0;
 		}
 	}
@@ -178,10 +175,8 @@ int read_packet(libgdbr_t *g, bool vcont) {
 		}
 		if (!ret) {
 			g->data[g->data_len] = '\0';
-			if (g->server_debug) {
-				R_LOG_DEBUG ("getpkt (\"%s\");  %s", g->data,
-					 g->no_ack ? "[no ack sent]" : "[sending ack]");
-			}
+			R_LOG_DEBUG ("getpkt (\"%s\");  %s", g->data,
+					g->no_ack ? "[no ack sent]" : "[sending ack]");
 			return 0;
 		}
 	}
@@ -190,11 +185,9 @@ int read_packet(libgdbr_t *g, bool vcont) {
 
 int send_packet(libgdbr_t *g) {
 	r_return_val_if_fail (g, -1);
-	if (g->server_debug) {
-		g->send_buff[g->send_len] = '\0';
-		R_LOG_DEBUG ("putpkt (\"%s\");  %s", g->send_buff,
-			 g->no_ack ? "[noack mode]" : "[looking for ack]");
-	}
+	g->send_buff[g->send_len] = '\0';
+	R_LOG_DEBUG ("putpkt (\"%s\");  %s", g->send_buff,
+			g->no_ack ? "[noack mode]" : "[looking for ack]");
 	return r_socket_write (g->sock, g->send_buff, g->send_len);
 }
 

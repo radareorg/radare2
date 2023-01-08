@@ -136,9 +136,7 @@ int send_ack(libgdbr_t *g) {
 		if (r_socket_write (g->sock, "+", 1) < 0) {
 			return -1;
 		}
-		if (g->server_debug) {
-			R_LOG_DEBUG ("[sent ack]");
-		}
+		R_LOG_DEBUG ("[sent ack]");
 		return 0;
 	}
 	return -1;
