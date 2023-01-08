@@ -132,7 +132,8 @@ void hexdump(void *ptr, ut64 len, ut64 offset) {
 		} while (++x % 16 && x < len);
 
 		*c = '\0';
-		eprintf ("0x%016"PFMT64x ": %-48s- %s\n", (curr_offset), hex, txt);
+		R_LOG_DEBUG ("%s: 0x%016"PFMT64x ": %-48s- %s",
+		        __func__, (curr_offset), hex, txt);
 	}
 }
 
