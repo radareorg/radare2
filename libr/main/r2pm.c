@@ -73,7 +73,7 @@ static int git_pull(const char *dir, bool reset) {
 
 static int git_clone(const char *dir, const char *url) {
 	char *git = r_file_path ("git");
-	if (!git) {
+	if (!git || !strcmp (git, "git")) {
 		R_LOG_ERROR ("Cannot find `git` in $PATH");
 		return 1;
 	}
@@ -477,14 +477,14 @@ static bool download(const char *url, const char *outfile) {
 	char *tool = r_file_path ("curl");
 	int res = 1;
 	R_LOG_INFO ("download: %s into %s", url, outfile);
-	if (tool && *tool == '/') {
+	if (tool && strcmp (tool, "curl")) {
 		res = r_sys_cmdf ("%s -sfL -o '%s' '%s'", tool, outfile, url);
 		free (tool);
 		return res == 0;
 	}
 	free (tool);
 	tool = r_file_path ("wget");
-	if (tool && *tool == '/') {
+	if (tool && strcmp (tool, "wget")) {
 		res = r_sys_cmdf ("%s -qO '%s' '%s'", tool, outfile, url);
 		free (tool);
 		return res == 0;
