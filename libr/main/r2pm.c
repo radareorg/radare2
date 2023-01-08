@@ -266,6 +266,7 @@ static void r2pm_upgrade(bool force) {
 		r2pm_install (list, false, true, force, false);
 	}
 	free (s);
+	r_list_free (list);
 #else
 	// R_LOG_INFO ("Auto upgrade feature is not supported on windows");
 #endif
