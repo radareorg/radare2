@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2021-2022 - pancake */
+/* radare - LGPL - Copyright 2021-2023 - pancake */
 
 #define R_LOG_ORIGIN "r2pm"
 
@@ -56,6 +56,10 @@ typedef struct r_r2pm_t {
 } R2Pm;
 
 static int git_pull(const char *dir, bool reset) {
+	if (strchr (dir, ' ')) {
+		R_LOG_ERROR ("Directory '%s' cannot contain spaces", dir);
+		return -1;
+	}
 	if (!r_file_is_directory (dir)) {
 		R_LOG_ERROR ("Directory '%s' does not exist", dir);
 		return -1;
@@ -72,6 +76,10 @@ static int git_pull(const char *dir, bool reset) {
 }
 
 static int git_clone(const char *dir, const char *url) {
+	if (strchr (dir, ' ')) {
+		R_LOG_ERROR ("Directory '%s' cannot contain spaces", dir);
+		return -1;
+	}
 	char *git = r_file_path ("git");
 	if (!git || !strcmp (git, "git")) {
 		R_LOG_ERROR ("Cannot find `git` in $PATH");
@@ -548,8 +556,42 @@ static int r2pm_clone(const char *pkg) {
 	return 0;
 }
 
+static bool r2pm_check (const char *program) {
+	char *s = r_file_path (program);
+	bool found = s && strcmp (s, program);
+	free (s);
+	return found;
+}
+
 static int r2pm_install_pkg(const char *pkg, bool global) {
 	R_LOG_INFO ("Starting install for %s", pkg);
+	char *needs = r2pm_get (pkg, "\nR2PM_NEEDS ", TT_TEXTLINE);
+	if (needs) {
+		bool error = false;
+		char *dep;
+		RListIter *iter;
+		RList *l = r_str_split_list (needs, " ", 0);
+		r_list_foreach (l, iter, dep) {
+			if (!r2pm_check (dep)) {
+				R_LOG_ERROR ("R2PM_NEEDS: Cannot find %s in PATH", dep);
+				error = true;
+			} else {
+				R_LOG_INFO ("R2PM_NEEDS: Found %s in PATH", dep);
+			}
+		}
+		free (needs);
+		if (error) {
+			if (r2pm_check ("apt") && r_file_is_directory ("/system/bin")) {
+				if (r_cons_yesno ('y', "Install system dependencies (Y/n)")) {
+					const char *const cmd = "apt install build-essential git make patch python wget";
+					R_LOG_INFO ("Running %s");
+					r_sys_cmd (cmd);
+					return r2pm_install_pkg (pkg, global);
+				}
+			}
+			return -1;
+		}
+	}
 	char *deps = r2pm_get (pkg, "\nR2PM_DEPS ", TT_TEXTLINE);
 	if (deps) {
 		char *dep;
@@ -560,6 +602,7 @@ static int r2pm_install_pkg(const char *pkg, bool global) {
 				r2pm_install_pkg (dep, false); // XXX get current pkg global value
 			} else {
 				R_LOG_ERROR ("Cannot clone %s", dep);
+				// ignore return -1;
 			}
 		}
 	}
