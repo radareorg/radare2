@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2020-2022 pancake */
+/* radare - LGPL - Copyright 2020-2023 pancake */
 
 #include <r_lib.h>
 #include <r_core.h>
@@ -153,6 +153,10 @@ static JSValue b64(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst
 }
 
 static int r2plugin_core_call2(QjsContext *qc, RCore *core, const char *input) {
+	// ceprintf ("CALL2\n");
+	if (!qc || !qc->ctx) {
+		return 0;
+	}
 	JSValueConst args[1] = {
 		JS_NewString (qc->ctx, input)
 	};
@@ -249,14 +253,12 @@ static JSValue r2plugin_core(JSContext *ctx, JSValueConst this_val, int argc, JS
 		// return JS_ThrowRangeError (ctx, "r2.plugin core already registered (only one exists)");
 		return JS_NewBool (ctx, false);
 	}
-	eprintf ("ADDING LE PLUGIN BECAUSE WE DDIND FIND IT THE FUNC\n");
 	if (Gplug >= MAXPLUGS) {
 		R_LOG_WARN ("Maximum number of plugins loaded! this is a limitation induced by the");
 		return JS_NewBool (ctx, false);
 	}
 	qc = qjsctx_add (core, nameptr, ctx, func);
 	ap->call = Gcalls[Gplug];
-	eprintf ("%s = %p\n", ap->name, qc);
 	GcallsData[Gplug] = qc;
 	Gplug++;
 
