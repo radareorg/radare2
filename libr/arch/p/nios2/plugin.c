@@ -32,7 +32,7 @@ static void memory_error_func(int status, bfd_vma memaddr, struct disassemble_in
 DECLARE_GENERIC_PRINT_ADDRESS_FUNC_NOGLOBALS()
 DECLARE_GENERIC_FPRINTF_FUNC_NOGLOBALS()
 
-static int disassemble(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
+static int disassemble(RArchSession *session, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 	ut8 bytes[8] = {0};
 	struct disassemble_info disasm_obj;
 	if (len < 4) {
@@ -50,7 +50,7 @@ static int disassemble(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 	disasm_obj.symbol_at_address_func = &symbol_at_address;
 	disasm_obj.memory_error_func = &memory_error_func;
 	disasm_obj.print_address_func = &generic_print_address_func;
-	disasm_obj.endian = !R_ARCH_CONFIG_IS_BIG_ENDIAN (a->config);
+	disasm_obj.endian = !R_ARCH_CONFIG_IS_BIG_ENDIAN (session->config);
 	disasm_obj.fprintf_func = &generic_fprintf_func;
 	disasm_obj.stream = sb;
 
@@ -68,12 +68,15 @@ static int disassemble(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 	return op->size;
 }
 
-static int nios2_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, RAnalOpMask mask) {
+static bool decode(RArchSession *session, RAnalOp *op, RArchDecodeMask mask) {
+	const ut64 addr = op->addr;
+	const ut8 *b = op->bytes;
+	const size_t len = op->size;
 	if (!op) {
 		return 1;
 	}
 	if (mask & R_ARCH_OP_MASK_DISASM) {
-		disassemble (anal, op, addr, b, len);
+		disassemble (session, op, addr, b, len);
 	}
 	op->size = 4;
 
@@ -146,21 +149,20 @@ static int nios2_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, 
 	return op->size;
 }
 
-RAnalPlugin r_anal_plugin_nios2 = {
+RArchPlugin r_arch_plugin_nios2 = {
 	.name = "nios2",
 	.desc = "NIOS II code analysis plugin",
 	.license = "LGPL3",
 	.endian = R_SYS_ENDIAN_LITTLE | R_SYS_ENDIAN_BIG,
 	.arch = "nios2",
-	.esil = false,
 	.bits = 32,
-	.op = &nios2_op,
+	.decode = &decode,
 };
 
 #ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_ANAL,
-	.data = &r_anal_plugin_nios2,
+	.type = R_LIB_TYPE_ARCH,
+	.data = &r_arch_plugin_nios2,
 	.version = R2_VERSION
 };
 #endif
