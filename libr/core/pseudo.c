@@ -504,10 +504,8 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 		//n_bb --;
 	} while (n_bb > 0);
 	RListIter *iter;
-	size_t orphan = 0;
 	r_list_foreach (fcn->bbs, iter, bb) {
 		if (!r_list_contains (visited, bb)) {
-			orphan ++;
 			char *s = r_core_cmd_strf (core, "pdb@0x%08"PFMT64x"@e:asm.offset=0", bb->addr);
 			s = r_str_replace (s, ";", "//", true);
 			char *os = r_str_prefix_all (s, indentstr);

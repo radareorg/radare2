@@ -49,17 +49,14 @@ static int cmd_macro(void *data, const char *_input) {
 		r_core_cmd_help (core, help_msg_lparen);
 		break;
 	default: {
-		int mustcall = 0;
-		int i, j = 0;
+		int i, mustcall = 0;
 		buf = strdup (input);
 
 		for (i = 0; buf[i]; i++) {
 			switch (buf[i]) {
 			case '(':
-				j++;
 				break;
 			case ')':
-				j--;
 				if (buf[i + 1] == '(') {
 					buf[i + 1] = 0;
 					mustcall = i + 2;
