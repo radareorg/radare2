@@ -5938,12 +5938,12 @@ static int cmd_print(void *data, const char *input) {
 
 		int want = r_num_math (core->num, input + 1);
 		if (input[1] == '?') {
-			r_core_cmd0 (core, "/A?");
+			r_core_cmd_help_match (core, help_msg_p, "pA", false);
 		} else {
 			r_config_set_i (core->config, "search.maxhits", want);
 			r_config_set_i (core->config, "search.from", core->offset);
 			r_config_set_i (core->config, "search.to", core->offset + core->blocksize);
-			r_core_cmd0 (core, "/A");
+			r_core_cmd0 (core, "/a");
 			r_config_set_i (core->config, "search.maxhits", saved_maxhits);
 			r_config_set_i (core->config, "search.from", saved_from);
 			r_config_set_i (core->config, "search.to", saved_to);
