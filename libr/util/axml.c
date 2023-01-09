@@ -403,7 +403,9 @@ R_API char *r_axml_decode(const ut8 *data, const ut64 data_size, PJ *pj) {
 				free (element);
 				goto bad;
 			}
-			pj_ka (pj, "child");
+			if (pj) {
+				pj_ka (pj, "child");
+			}
 			depth++;
 			free (element);
 		} break;
@@ -416,14 +418,15 @@ R_API char *r_axml_decode(const ut8 *data, const ut64 data_size, PJ *pj) {
 			if (r_buf_read_at (buffer, offset, (void *)&end, sizeof (end)) != sizeof (end)) {
 				goto bad;
 			}
-
 			// The beginning of the start and end element structs
 			// are the same, so we can use this interchangably
 			if (!dump_element (pj, sb, pool, namespace, data, data_size, (start_element_t *)&end, 0,
 					resource_map, resource_map_length, &depth, false)) {
 				goto bad;
 			}
-			pj_end (pj);
+			if (pj) {
+				pj_end (pj);
+			}
 		} break;
 		case TYPE_START_NAMESPACE: {
 			// If there is already a start namespace, override it
