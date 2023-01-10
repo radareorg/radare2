@@ -7,8 +7,8 @@
 #include "r_lang.h"
 
 #if R2__UNIX__ && !__wasi__
-static int ac = 0;
-static const char **av = NULL;
+static R_TH_LOCAL int ac = 0;
+static R_TH_LOCAL const char **av = NULL;
 
 static bool lang_c_set_argv(RLang *lang, int argc, const char **argv) {
 	ac = argc;
