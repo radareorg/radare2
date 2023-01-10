@@ -9,6 +9,7 @@ R_LIB_VERSION (r_lang);
 #if HAVE_SYSTEM
 #include "p/pipe.c"
 #include "p/c.c"
+#include "p/s.c"
 #include "p/v.c"
 #include "p/vala.c"
 #include "p/rust.c"
@@ -44,6 +45,7 @@ R_API RLang *r_lang_new(void) {
 	lang->cb_printf = (PrintfCallback)printf;
 #if HAVE_SYSTEM
 #if R2__UNIX__
+	r_lang_add (lang, &r_lang_plugin_s);
 	r_lang_add (lang, &r_lang_plugin_c);
 	r_lang_add (lang, &r_lang_plugin_cpipe);
 #endif
