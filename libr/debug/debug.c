@@ -106,7 +106,7 @@ static bool r_debug_bp_hit(RDebug *dbg, RRegItem *pc_ri, ut64 pc, RBreakpointIte
 				/* handle the case of hw breakpoints - notify the user */
 				int drx_reg_idx = r_debug_drx_at (dbg, pc);
 				if (drx_reg_idx != -1) {
-					eprintf ("hit hardware breakpoint %d at: %" PFMT64x "\n",
+					R_LOG_INFO ("hit hardware breakpoint %d at: %" PFMT64x,
 						drx_reg_idx, pc);
 				}
 				/* Couldn't find the break point. Nothing more to do... */
@@ -173,7 +173,7 @@ static bool r_debug_bp_hit(RDebug *dbg, RRegItem *pc_ri, ut64 pc, RBreakpointIte
 
 	/* inform the user of what happened */
 	if (dbg->hitinfo) {
-		eprintf ("hit %spoint at: 0x%" PFMT64x "\n",
+		R_LOG_INFO ("hit %spoint at: 0x%" PFMT64x,
 			b->trace ? "trace" : "break", pc);
 	}
 
@@ -743,7 +743,7 @@ R_API RDebugReasonType r_debug_wait(RDebug *dbg, RBreakpointItem **bp) {
 	if (dbg->h && dbg->h->wait) {
 		reason = dbg->h->wait (dbg, dbg->pid);
 		if (reason == R_DEBUG_REASON_DEAD) {
-			eprintf ("\n==> Process finished\n\n");
+			R_LOG_INFO ("==> Process finished");
 			REventDebugProcessFinished event = {
 				.pid = dbg->pid
 			};
@@ -1317,7 +1317,7 @@ repeat:
 		int what = r_debug_signal_what (dbg, dbg->reason.signum);
 		if (what & R_DBG_SIGNAL_CONT) {
 			sig = dbg->reason.signum;
-			eprintf ("Continue into the signal %d handler\n", sig);
+			R_LOG_INFO ("Continue into the signal %d handler", sig);
 			goto repeat;
 		} else if (what & R_DBG_SIGNAL_SKIP) {
 			// skip signal. requires skipping one instruction
@@ -1329,12 +1329,12 @@ repeat:
 			if (op.size > 0) {
 				const char *signame = r_signal_tostring (dbg->reason.signum);
 				r_debug_reg_set (dbg, "PC", pc+op.size);
-				eprintf ("Skip signal %d handler %s\n",
+				R_LOG_INFO ("Skip signal %d handler %s",
 					dbg->reason.signum, signame);
 				goto repeat;
 			} else {
 				ut64 pc = r_debug_reg_get (dbg, "PC");
-				eprintf ("Stalled with an exception at 0x%08"PFMT64x"\n", pc);
+				R_LOG_INFO ("Stalled with an exception at 0x%08"PFMT64x, pc);
 			}
 		}
 	}
@@ -1490,7 +1490,7 @@ R_API bool r_debug_continue_back(RDebug *dbg) {
 		has_bp = r_bp_get_in (dbg->bp, reg->data, R_BP_PROT_EXEC);
 		if (has_bp) {
 			cnum = reg->cnum;
-			eprintf ("hit breakpoint at: 0x%" PFMT64x " cnum: %d\n", reg->data, reg->cnum);
+			R_LOG_INFO ("hit breakpoint at: 0x%" PFMT64x " cnum: %d", reg->data, reg->cnum);
 			break;
 		}
 	}
@@ -1520,18 +1520,21 @@ static int show_syscall(RDebug *dbg, const char *sysreg) {
 		sysname = "unknown";
 		args = 3;
 	}
-	eprintf ("--> %s 0x%08"PFMT64x" syscall %d %s (", sysreg,
+	RStrBuf *sb = r_str_newf ("--> %s 0x%08"PFMT64x" syscall %d %s (", sysreg,
 			r_debug_reg_get (dbg, "PC"), reg, sysname);
 	for (i = 0; i < args; i++) {
 		snprintf (regname, sizeof (regname) - 1, "A%d", i);
 		ut64 val = r_debug_reg_get (dbg, regname);
-		if (((st64)val<0) && ((st64)val>-0xffff)) {
-			eprintf ("%"PFMT64d"%s", val, (i+1==args)?"":" ");
+		if (((st64)val < 0) && ((st64)val>-0xffff)) {
+			r_strbuf_appendf (sb, "%"PFMT64d"%s", val, (i+1==args)?"":" ");
 		} else {
-			eprintf ("0x%"PFMT64x"%s", val, (i+1==args)?"":" ");
+			r_strbuf_appendf (sb, "0x%"PFMT64x"%s", val, (i+1==args)?"":" ");
 		}
 	}
-	eprintf (")\n");
+	r_strbuf_append (sb, ")\n");
+	char *s = r_strbuf_drain (sb);
+	R_LOG_INFO ("%s", s);
+	free (s);
 	r_syscall_item_free (si);
 	return reg;
 }
@@ -1579,7 +1582,7 @@ R_API int r_debug_continue_syscalls(RDebug *dbg, int *sc, int n_sc) {
 		}
 #if 0
 		if (reason != R_DEBUG_REASON_STEP) {
-			eprintf ("astep\n");
+			R_LOG_INFO ("astep");
 			break;
 		}
 #endif
