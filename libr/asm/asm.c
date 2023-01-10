@@ -15,7 +15,7 @@ R_LIB_VERSION (r_asm);
 static const char *directives[] = {
 	".include", ".error", ".warning",
 	".echo", ".if", ".ifeq", ".endif",
-	".else", ".set", ".get", NULL
+	".else", ".set", ".get", ".extern", NULL
 };
 
 /* pseudo.c - private api */
@@ -40,14 +40,6 @@ static int r_asm_pseudo_string(RAnalOp *op, char *input, int zero) {
 	r_anal_op_set_mnemonic (op, op->addr, input);
 	r_anal_op_set_bytes (op, op->addr, (const ut8*)input, len + 1);
 	return len;
-}
-
-static inline int r_asm_pseudo_arch(RAsm *a, const char *input) {
-	if (!r_asm_use (a, input)) {
-		R_LOG_ERROR ("Unknown plugin");
-		return -1;
-	}
-	return 0;
 }
 
 static inline int r_asm_pseudo_bits(RAsm *a, const char *input) {
@@ -687,6 +679,23 @@ static int parse_asm_directive(RAsm *a, RAnalOp *op, RAsmCode *acode, char *ptr_
 		char *str = r_str_trim_dup (ptr + 6);
 		ret = r_asm_pseudo_string (op, ptr + 6, 1);
 		free (str);
+	} else if (r_str_startswith (ptr, ".extern")) {
+		char *str = r_str_trim_dup (ptr + strlen (".extern"));
+		if (!r_asm_code_equ_get (acode, str)) {
+			void *p = r_lib_dl_open ("libr_core."R_LIB_EXT);
+			void *a = r_lib_dl_sym (p, str);
+			if (a) {
+				char *val = r_str_newf ("%p", a);
+				// Will be good to have a separate api for R2_590 to let the caller resolve those pointers
+				r_asm_code_set_equ (acode, str, val);
+				R_LOG_INFO ("Resolved symbol '%s' = %s", str, val);
+				free (val);
+			} else {
+				R_LOG_WARN ("Cannot resolve '%s'", str);
+			}
+			free (str);
+		}
+		ret = 0;
 	} else if (r_str_startswith (ptr, ".string ")) {
 		char *str = r_str_trim_dup (ptr + 8);
 		ret = r_asm_pseudo_string (op, str, 1);
@@ -712,8 +721,11 @@ static int parse_asm_directive(RAsm *a, RAnalOp *op, RAsmCode *acode, char *ptr_
 		r_asm_set_bits (a, 16);
 		ret = 0;
 	} else if (r_str_startswith (ptr, ".arch ")) {
-		// XXX should be arch_use()
-		ret = r_asm_pseudo_arch (a, ptr + 6);
+		if (r_asm_use (a, ptr + 6)) {
+			ret = 0;
+		} else {
+			R_LOG_ERROR ("cannot use %s", ptr + 6);
+		}
 	} else if (r_str_startswith (ptr, ".bits ")) {
 		ret = r_asm_pseudo_bits (a, ptr + 6);
 	} else if (r_str_startswith (ptr, ".fill ")) {
@@ -731,11 +743,13 @@ static int parse_asm_directive(RAsm *a, RAnalOp *op, RAsmCode *acode, char *ptr_
 	} else if (r_str_startswith (ptr, ".int32 ")) {
 		ret = r_asm_pseudo_int32 (a, op, ptr + 7);
 	} else if (r_str_startswith (ptr, ".int64 ")) {
-		ret = r_asm_pseudo_int64 (a, op, ptr + 7);
+		char *str = r_asm_code_equ_replace (acode, strdup (ptr + 7));
+		ret = r_asm_pseudo_int64 (a, op, str); // ptr + 7);
+		free (str);
 	} else if (r_str_startswith (ptr, ".size")) {
-		ret = true; // do nothing, ignored
+		ret = 0; // do nothing, ignored
 	} else if (r_str_startswith (ptr, ".section")) {
-		ret = true; // do nothing, ignored
+		ret = 0; // do nothing, ignored
 	} else if (r_str_startswith (ptr, ".byte ") || r_str_startswith (ptr, ".int8 ")) {
 		ret = r_asm_pseudo_byte (op, ptr + 6);
 	} else if (r_str_startswith (ptr, ".glob")) {
@@ -753,20 +767,23 @@ static int parse_asm_directive(RAsm *a, RAnalOp *op, RAsmCode *acode, char *ptr_
 		if (ptr2) {
 			*ptr2 = '\0';
 			r_asm_code_set_equ (acode, ptr + 5, ptr2 + 1);
+			ret = 0;
 		} else {
 			R_LOG_ERROR ("Invalid syntax for '.equ': Use '.equ <word> <word>'");
 		}
 	} else if (r_str_startswith (ptr, ".org ")) {
 		if (r_asm_pseudo_org (a, ptr + 5)) {
-			ret = 1;
+			ret = 0;
 			*off = a->pc;
 		}
 	} else if (r_str_startswith (ptr, ".offset ")) {
 		R_LOG_ERROR ("Invalid use of the .offset directory. This directive is only supported in r2 -c 'waf'");
 	} else if (r_str_startswith (ptr, ".text")) {
 		acode->code_offset = a->pc;
+		ret = 0;
 	} else if (r_str_startswith (ptr, ".data")) {
 		acode->data_offset = a->pc;
+		ret = 0;
 	} else if (r_str_startswith (ptr, ".incbin")) {
 		if (ptr[7] != ' ') {
 			R_LOG_ERROR ("incbin missing filename");
@@ -784,8 +801,8 @@ static int parse_asm_directive(RAsm *a, RAnalOp *op, RAsmCode *acode, char *ptr_
 }
 
 static inline char *next_token(const char *tok) {
-	const char * const delimiters = ";\n\r";
-	const char * d = delimiters;
+	const char *const delimiters = ";\n\r";
+	const char *d = delimiters;
 	for (; *d; d++) {
 		char *ptr = strchr (tok, *d);
 		if (ptr) {
@@ -1078,6 +1095,7 @@ R_API const RList* r_asm_get_plugins(RAsm *a) {
 	return a->plugins;
 }
 
+// XXX UNUSED! R2_590 delete
 R_API bool r_asm_set_arch(RAsm *a, const char *name, int bits) {
 	return r_asm_use (a, name)? r_asm_set_bits (a, bits): false;
 }

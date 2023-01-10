@@ -14,7 +14,6 @@ typedef char* (*RCoreCmdStrCallback)(void* core, const char *s);
 typedef int (*RCoreCmdfCallback)(void* core, const char *s, ...);
 
 typedef struct r_lang_t {
-	// struct r_lang_plugin_t *cur;
 	void *user;
 	RList *defs;
 	RList *langs;

@@ -2,7 +2,7 @@
 
 #include <r_asm.h>
 
-// XXX this file should be just r_arch_op so should be removed soon
+// XXX R2_590 - this file should be just r_arch_op so should be removed soon
 R_API RAnalOp *r_asm_op_new(void) {
 	return R_NEW0 (RAnalOp);
 }
