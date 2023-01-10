@@ -34385,7 +34385,12 @@ static int JS_WriteBigNum(BCWriterState *s, JSValueConst obj)
         tag1 = BC_TAG_BIG_DECIMAL;
         break;
     default:
+#if QJS_NOABORT
+        JS_ThrowInternalError(s->ctx, "unknown tag");
+        return -1;
+#else
         abort();
+#endif
     }
     bc_put_u8(s, tag1);
 
@@ -35356,7 +35361,11 @@ static JSValue JS_ReadBigNum(BCReaderState *s, int tag)
         obj = JS_MKPTR(JS_TAG_BIG_DECIMAL, p);
         break;
     default:
+#if QJS_NOABORT
+	goto fail;
+#else
         abort();
+#endif
     }
 
     /* sign + exponent */
@@ -36241,7 +36250,11 @@ static JSAtom find_atom(JSContext *ctx, const char *name)
             if (str->len == len && !memcmp(str->u.str8, name, len))
                 return JS_DupAtom(ctx, atom);
         }
+#if QJS_NOABORT
+	return JS_ATOM_NULL;
+#else
         abort();
+#endif
     } else {
         atom = JS_NewAtom(ctx, name);
     }
@@ -36294,7 +36307,11 @@ static int JS_InstantiateFunctionListItem(JSContext *ctx, JSValueConst obj,
                 val = JS_GetProperty(ctx, ctx->class_proto[JS_CLASS_ARRAY], atom1);
                 break;
             default:
+#if QJS_NOABORT
+		return 0;
+#else
                 abort();
+#endif
             }
             JS_FreeAtom(ctx, atom1);
             if (atom == JS_ATOM_Symbol_toPrimitive) {
@@ -36359,7 +36376,11 @@ static int JS_InstantiateFunctionListItem(JSContext *ctx, JSValueConst obj,
                                   (void *)e, prop_flags);
         return 0;
     default:
+#if QJS_NOABORT
+	return -1;
+#else
         abort();
+#endif
     }
     JS_DefinePropertyValue(ctx, obj, atom, val, prop_flags);
     return 0;
@@ -36419,7 +36440,11 @@ int JS_SetModuleExportList(JSContext *ctx, JSModuleDef *m,
             JS_SetPropertyFunctionList(ctx, val, e->u.prop_list.tab, e->u.prop_list.len);
             break;
         default:
+#if QJS_NOABORT
+	    return -1;
+#else
             abort();
+#endif
         }
         if (JS_SetModuleExport(ctx, m, e->name, val))
             return -1;
@@ -40095,7 +40120,7 @@ static const JSCFunctionListEntry js_number_funcs[] = {
     JS_PROP_DOUBLE_DEF("MAX_VALUE", 1.7976931348623157e+308, 0 ),
     JS_PROP_DOUBLE_DEF("MIN_VALUE", 5e-324, 0 ),
     JS_PROP_DOUBLE_DEF("NaN", NAN, 0 ),
-#if !__TINYCC__
+#ifndef __TINYC__
     JS_PROP_DOUBLE_DEF("NEGATIVE_INFINITY", -INFINITY, 0 ),
     JS_PROP_DOUBLE_DEF("POSITIVE_INFINITY", INFINITY, 0 ),
 #endif
