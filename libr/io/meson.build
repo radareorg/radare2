@@ -61,6 +61,7 @@ endif
 r_io_deps = [
   r_util_dep,
   r_socket_dep,
+  r_cons_dep,
   r_crypto_dep,
   bochs_dep,
   gdb_dep,
@@ -86,7 +87,7 @@ endif
 
 r_io = library('r_io', r_io_sources,
   include_directories: platform_inc,
-  link_with: [r_util, r_socket],
+  link_with: [r_util, r_cons, r_crypto, r_socket],
   dependencies: r_io_deps,
   c_args: library_cflags,
   install: true,
@@ -101,6 +102,7 @@ r_io_dep = declare_dependency(link_with: [r_io, r_crypto],
 if get_option('blob')
 r_io_static_deps = [
   r_util_static_dep,
+  r_cons_static_dep,
   r_crypto_static_dep,
   r_socket_static_dep,
   winkd_static_dep,
@@ -114,7 +116,7 @@ r_io_static_deps = [
 
 r_io_static = static_library('r_io_static', r_io_sources,
   include_directories: platform_inc,
-  link_with: [r_util_static, r_crypto_static, r_socket_static],
+  link_with: [r_util_static, r_crypto_static, r_cons_static, r_socket_static],
   dependencies: r_io_static_deps,
   c_args: library_cflags,
   install: true,
@@ -133,6 +135,7 @@ pkgconfig_mod.generate(r_io,
   libraries: pkgcfg_sanitize_libs,
   requires: [
     'r_util',
+    'r_cons',
     'r_crypto',
     'r_socket'
   ],

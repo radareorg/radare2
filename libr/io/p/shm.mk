@@ -11,13 +11,16 @@ LDFLAGS+=-lrt
 endif
 
 ifeq (${WITHPIC},0)
-LINKFLAGS+=../../util/libr_util.a
-LINKFLAGS+=../../io/libr_io.a
+R_IO_SHM_LINKFLAGS+=../../util/libr_util.a
+R_IO_SHM_LINKFLAGS+=../../io/libr_io.a
+R_IO_SHM_LINKFLAGS+=../../cons/libr_cons.a
+R_IO_SHM_LINKFLAGS+=../../cons/libr_socket.a
 else
-LINKFLAGS+=-L../../cons -lr_cons
-LINKFLAGS+=-L../../util -lr_util
-LINKFLAGS+=-L.. -lr_io
+R_IO_SHM_LINKFLAGS+=-L../../cons -lr_cons
+R_IO_SHM_LINKFLAGS+=-L../../util -lr_util
+R_IO_SHM_LINKFLAGS+=-L../../socket -lr_socket
+R_IO_SHM_LINKFLAGS+=-L.. -lr_io
 endif
 
 $(N) p/${TARGET_SHM}: p/${OBJ_SHM}
-	cd p && $(CC) $(CFLAGS) -shared -L.. $(CSRC_SHM) -fPIC -o $(TARGET_SHM) -I../../include -I../../../shlr/sdb/src $(LINKFLAGS)
+	cd p && $(CC) $(CFLAGS) -shared -L.. $(CSRC_SHM) -fPIC -o $(TARGET_SHM) -I../../include -I../../../shlr/sdb/src $(R_IO_SHM_LINKFLAGS)
