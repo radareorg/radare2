@@ -275,12 +275,12 @@ static char *windbg_reg_profile(RDebug *dbg) {
 	return NULL;
 }
 
-static int windbg_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
+static bool windbg_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 	DbgEngContext *idbg = dbg->user;
 	r_return_val_if_fail (idbg && idbg->initialized, 0);
 	ULONG ptype;
 	if (!idbg || !idbg->initialized || FAILED (ITHISCALL (dbgCtrl, GetActualProcessorType, &ptype))) {
-		return 0;
+		return false;
 	}
 	if (ptype == IMAGE_FILE_MACHINE_IA64 || ptype == IMAGE_FILE_MACHINE_AMD64) {
 		DWORD *b = (DWORD *)(buf + 0x30);
@@ -296,17 +296,18 @@ static int windbg_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 		*b |= 0xff | CONTEXT_ARM;
 	}
 	if (SUCCEEDED (ITHISCALL (dbgAdvanced, GetThreadContext, (PVOID)buf, size))) {
-		return size;
+		return true;
 	}
-	return 0;
+	return false;
 }
-static int windbg_reg_write(RDebug *dbg, int type, const ut8 *buf, int size) {
+
+static bool windbg_reg_write(RDebug *dbg, int type, const ut8 *buf, int size) {
 	DbgEngContext *idbg = dbg->user;
 	r_return_val_if_fail (idbg && idbg->initialized, 0);
 	if (SUCCEEDED (ITHISCALL (dbgAdvanced, SetThreadContext, (PVOID)buf, size))) {
-		return size;
+		return true;
 	}
-	return 0;
+	return false;
 }
 
 static RList *windbg_frames(RDebug *dbg, ut64 at) {

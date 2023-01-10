@@ -892,7 +892,7 @@ static int cmd_alias(void *data, const char *input) {
 			for (i = 0; i < core->rcmd->aliases->count; i++) {
 				r_cons_printf ("$%s\n", keys[i]);
 			}
-			free (keys);
+			free ((char *)keys);
 		}
 	} else {
 		/* Execute or evaluate alias */
