@@ -22,7 +22,7 @@ PARTIALLD=${LD} -r --whole-archive
 LDFLAGS_LIB=-shared
 LDFLAGS_LIB+=-Dxx
 #Wl,-soname,lib${NAME}.${EXT_SO}.${VERSION}
-LDFLAGS_SONAME=-soname=
+LDFLAGS_SONAME=-soname
 #Wl,-soname=
 endif
 

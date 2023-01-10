@@ -9,9 +9,8 @@ LIBS4=lang bin
 LIBS5=debug egg
 LIBS6=core
 LIBS7=main
-LIBS8=
 
-LIBS=$(LIBS0) $(LIBS1) $(LIBS2) $(LIBS3) $(LIBS4) $(LIBS5) $(LIBS6) $(LIBS7) $(LIBS8)
+LIBS=$(LIBS0) $(LIBS1) $(LIBS2) $(LIBS3) $(LIBS4) $(LIBS5) $(LIBS6) $(LIBS7)
 endif
 
 .PHONY: $(LIBS)
