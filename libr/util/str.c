@@ -34,6 +34,12 @@ R_API bool r_str_eqi(const char *s1, const char *s2) {
 }
 
 R_API int r_str_casecmp(const char *s1, const char *s2) {
+	if (!s1) {
+		return -1;
+	}
+	if (s1 && !s2) {
+		return 1;
+	}
 #ifdef _MSC_VER
 	return stricmp (s1, s2);
 #else

@@ -1977,9 +1977,9 @@ static int cmd_debug_map(RCore *core, const char *input) {
 #include "linux_heap_glibc.c"
 #elif R2__WINDOWS__
 #include "windows_heap.c"
-#endif
 #undef R_LOG_ORIGIN
 #define R_LOG_ORIGIN "cmd.debug"
+#endif
 
 HEAPTYPE(ut64);
 
