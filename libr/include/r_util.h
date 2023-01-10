@@ -19,6 +19,9 @@
 #if HAVE_LIB_SSL
 #include <openssl/bn.h>
 #endif
+#if APPLE_SDK_IPHONEOS
+extern int ptrace(int _request, pid_t _pid, caddr_t _addr, int _data);
+#endif
 #ifdef _MSC_VER
 #include <windows.h>
 int gettimeofday (struct timeval* p, void* tz);

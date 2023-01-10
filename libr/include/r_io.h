@@ -43,7 +43,7 @@
 #if __sun
 #include <sys/types.h>
 #else
-#if DEBUGGER && HAVE_PTRACE && !R2__WINDOWS__
+#if DEBUGGER && HAVE_PTRACE && !R2__WINDOWS__ && !APPLE_SDK_IPHONEOS
 #include <sys/ptrace.h>
 #endif
 #endif

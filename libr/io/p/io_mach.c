@@ -8,31 +8,36 @@
 
 #if __APPLE__ && DEBUGGER
 
-static int __get_pid(RIODesc *desc);
-#define EXCEPTION_PORT 0
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <errno.h>
 
-// NOTE: mach/mach_vm is not available for iOS
 #include <mach/exception_types.h>
 #include <mach/mach_host.h>
 #include <mach/host_priv.h>
+#include <mach/processor_set.h>
 #include <mach/mach_init.h>
 #include <mach/mach_port.h>
+#include <mach/vm_map.h>
+
+static int __get_pid(RIODesc *desc);
+#if APPLE_SDK_IPHONEOS
+// missing includes
+#else
+
+#define EXCEPTION_PORT 0
+
+// NOTE: mach/mach_vm is not available for iOS
 #include <mach/mach_traps.h>
-#include <mach/processor_set.h>
 #include <mach/mach_error.h>
-#include <mach/task.h>
-#include <mach/task_info.h>
 #include <mach/thread_act.h>
 #include <mach/thread_info.h>
-#include <mach/vm_map.h>
 #include <mach-o/loader.h>
 #include <mach-o/nlist.h>
 #include <sys/ptrace.h>
-#include <sys/types.h>
-#include <sys/types.h>
-#include <sys/wait.h>
-#include <sys/wait.h>
-#include <errno.h>
+#endif
+#include <mach/task.h>
+#include <mach/task_info.h>
 
 #define MACH_ERROR_STRING(ret) \
 	(mach_error_string (ret) ? mach_error_string (ret) : "(unknown)")
