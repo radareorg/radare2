@@ -113,6 +113,19 @@ R_API bool r_asm_code_set_equ(RAsmCode *code, const char *key, const char *value
 R_API char *r_asm_code_equ_replace(RAsmCode *code, char *str);
 R_API char* r_asm_code_get_hex(RAsmCode *acode);
 
+static inline RAsmEqu *r_asm_code_equ_get(RAsmCode *code, const char *key) { // R2_590
+	// TODO: use a hashtable or sdb
+	RAsmEqu *equ = NULL;
+	RListIter *iter;
+	r_list_foreach (code->equs, iter, equ) {
+		if (!strcmp (equ->key, key)) {
+			return equ;
+		}
+	}
+	return NULL;
+}
+
+
 /* op.c XXX deprecate we have RArchOp which does the same */
 R_API RAnalOp *r_asm_op_new(void);
 R_API void r_asm_op_init(RAnalOp *op);
