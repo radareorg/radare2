@@ -26,7 +26,7 @@ bool linux_generate_corefile(RDebug *dbg, RBuffer *dest);
 
 #if R2__UNIX__
 # include <errno.h>
-# if !defined (__HAIKU__) && !defined (__sun)
+# if !defined (__HAIKU__) && !defined (__sun) && !APPLE_SDK_IPHONEOS
 #  include <sys/ptrace.h>
 # endif
 # include <sys/wait.h>

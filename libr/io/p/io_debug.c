@@ -14,7 +14,7 @@
 #define MAGIC_EXIT 123
 
 #include <signal.h>
-#if R2__UNIX__
+#if R2__UNIX__ && !APPLE_SDK_IPHONEOS
 #include <sys/ptrace.h>
 #include <sys/types.h>
 #include <sys/wait.h>

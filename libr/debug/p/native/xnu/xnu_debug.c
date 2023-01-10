@@ -12,6 +12,7 @@
 #endif
 // ------------------------------------
 
+
 #include <r_debug.h>
 #include <r_asm.h>
 #include <r_reg.h>
@@ -20,10 +21,29 @@
 #include <string.h>
 #include <mach/mach_host.h>
 #include <mach/host_priv.h>
-#include <mach/mach_vm.h>
 #include <mach/thread_status.h>
 #include <mach/vm_statistics.h>
 
+#if APPLE_SDK_IPHONEOS
+kern_return_t mach_vm_protect
+(
+        vm_map_t target_task,
+        mach_vm_address_t address,
+        mach_vm_size_t size,
+        boolean_t set_maximum,
+        vm_prot_t new_protection
+);
+kern_return_t mach_vm_read
+(
+        vm_map_t target_task,
+        mach_vm_address_t address,
+        mach_vm_size_t size,
+        vm_offset_t *data,
+        mach_msg_type_number_t *dataCnt
+);
+#else
+#include <mach/mach_vm.h>
+#endif
 static task_t task_dbg = 0;
 #include "xnu_debug.h"
 #include "xnu_threads.c"
