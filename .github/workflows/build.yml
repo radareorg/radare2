@@ -71,7 +71,7 @@ jobs:
         path: dist/rpm/*.rpm
   linux-acr-deb-64:
     # if: contains(github.ref, 'master') || contains(github.ref, 'ci-')
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-20.04
     steps:
     - name: Checkout
       uses: actions/checkout@v3
@@ -86,7 +86,7 @@ jobs:
         path: dist/debian/*/*.deb
 
   linux-acr-deb-32:
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-20.04
     steps:
     - name: Checkout
       uses: actions/checkout@v3
@@ -106,7 +106,7 @@ jobs:
 
 ## RPM PACKAGES DISABLED
 #  linux-meson-rpm:
-#    runs-on: ubuntu:18.04
+#    runs-on: ubuntu:20.04
 #    container: centos:8
 #    steps:
 #    - name: Checkout
@@ -125,7 +125,7 @@ jobs:
 #        path: RPMS/*/*.rpm *.rpm dist/rpm/*.rpm
 #
 #  centos-meson-rpm:
-#    runs-on: ubuntu:18.04
+#    runs-on: ubuntu:20.04
 #    container: centos:8
 #    steps:
 #    - name: Checkout
