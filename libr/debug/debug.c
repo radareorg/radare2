@@ -1520,7 +1520,7 @@ static int show_syscall(RDebug *dbg, const char *sysreg) {
 		sysname = "unknown";
 		args = 3;
 	}
-	RStrBuf *sb = r_str_newf ("--> %s 0x%08"PFMT64x" syscall %d %s (", sysreg,
+	RStrBuf *sb = r_strbuf_newf ("--> %s 0x%08"PFMT64x" syscall %d %s (", sysreg,
 			r_debug_reg_get (dbg, "PC"), reg, sysname);
 	for (i = 0; i < args; i++) {
 		snprintf (regname, sizeof (regname) - 1, "A%d", i);

@@ -2,6 +2,8 @@ include ../config.mk
 
 NAME=r_main
 
+R2DEPS=r_core
+
 OBJS+=main.o
 OBJS+=ravc2.o
 OBJS+=rax2.o

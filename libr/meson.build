@@ -387,6 +387,8 @@ lang_plugins += [
   'rust',
   'go',
   'zig',
+  's',
+  'asm',
   'c',
   'vala'
 ]

@@ -607,7 +607,7 @@ static bool fini(RLangSession *s) {
 	k->r = NULL;
 	qjsctx_free ();
 // 	free (k);
-	return NULL;
+	return true;
 }
 
 static RLangPlugin r_lang_plugin_qjs = {

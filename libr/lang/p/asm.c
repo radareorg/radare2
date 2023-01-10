@@ -12,7 +12,7 @@ static bool lang_asm_run(RLangSession *s, const char *code, int len) {
 	if (kode) {
 		int i;
 		eprintf ("CODE: %d\nBYTES: ", kode->len);
-		for (i = 0; i< kode->len; i++) {
+		for (i = 0; i < kode->len; i++) {
 			eprintf ("%02x ", kode->bytes[i]);
 		}
 		eprintf ("\n");
@@ -49,9 +49,8 @@ static RLangPlugin r_lang_plugin_asm = {
 #endif
 };
 #else
-#ifdef _MSC_VER
+
 #pragma message("Warning: C RLangPlugin is not implemented on this platform")
-#else
-#warning C RLangPlugin is not implemented on this platform
-#endif
+static RLangPlugin r_lang_plugin_asm = {NULL};
+
 #endif

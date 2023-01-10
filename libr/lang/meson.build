@@ -13,7 +13,7 @@ r_lang_sources += '../../shlr/qjs/src/libunicode.c'
 r_lang = library('r_lang', r_lang_sources,
   include_directories: [platform_inc, spp_inc, qjs_inc],
   c_args: library_cflags,
-  dependencies: [r_util_dep, r_cons_dep],
+  dependencies: [r_util_dep, r_asm_dep, r_cons_dep],
   install: true,
   implicit_include_directories: false,
   install_rpath: rpath_lib,
@@ -26,7 +26,7 @@ if get_option('blob')
 r_lang_static = static_library('r_lang_static', r_lang_sources,
   include_directories: [platform_inc, spp_inc, qjs_inc],
   c_args: library_cflags,
-  dependencies: [r_util_static_dep, r_cons_static_dep],
+  dependencies: [r_util_static_dep, r_asm_static_dep, r_cons_static_dep],
   install: true,
   implicit_include_directories: false,
 )
@@ -43,6 +43,7 @@ pkgconfig_mod.generate(r_lang,
   libraries: pkgcfg_sanitize_libs,
   requires: [
     'r_util',
+    'r_asm',
     'r_cons'
   ],
   description: 'radare foundation libraries'

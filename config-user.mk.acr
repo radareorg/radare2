@@ -62,7 +62,10 @@ DL_LIBS=
 else
 ifeq ($(OSTYPE),windows)
 else
+ifeq ($(OSTYPE),darwin)
+else
 DL_LIBS=@DL_LIBS@
+endif
 endif
 endif
 
