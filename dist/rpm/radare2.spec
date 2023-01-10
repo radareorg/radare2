@@ -1,24 +1,21 @@
 %global         gituser         radareorg
 %global         gitname         radare2
 #global         commit          5a3dab0a86e1452c0bb0c13d869f95b41f50b9a9
-%global         commit          5860c3efc12d4b75e72bdce4b1d3834599620913
+%global         commit          4012ec3a8697bfbd0bd510c33d34576534e4d456
 %global         shortcommit     %(c=%{commit}; echo ${c:0:7})
 
 Name:           radare2
-Version:        5.4.2
+Version:        5.8.0
 Release:        1%{?dist}
 Summary:        The %{name} reverse engineering framework
 Group:          Applications/Engineering
 License:        LGPLv3
 URL:            https://www.radare.org/
-#Source0:        http://radare.org/get/%{name}-%{version}.tar.gz
-#Source0:        http://radare.org/get/%{name}-%{version}.tar.xz
-# Source0:        https://github.com/%{gituser}/%{gitname}/archive/%{commit}/%{name}-%{version}-%{shortcommit}.tar.gz
-Source0:        https://github.com/%{gituser}/%{gitname}/archive/%{commit}/%{name}-%{version}-git.tar.gz
+Source0:        https://github.com/%{gituser}/%{gitname}/archive/refs/tags/%{version}.tar.gz
 
 
-BuildRequires:  file-devel
-BuildRequires:  libzip-devel
+# BuildRequires:  file-devel
+# BuildRequires:  libzip-devel
 #BuildRequires:  capstone-devel >= 3.0.4
 
 #Assume more versions installed in paraller side-by-side
@@ -44,7 +41,7 @@ information.
 
 %prep
 #%setup -q -n %{name}-%{version}
-%setup -q -n %{gitname}-%{commit}
+%setup -q -n %{gitname}-%{version}
 
 
 %build
@@ -71,30 +68,27 @@ cp shlr/sdb/src/libsdb.a %{buildroot}/%{_libdir}/libsdb.a
 %{_bindir}/r*
 %{_libdir}/libr*
 %dir %{_libdir}/%{name}
-%dir %{_libdir}/%{name}/%{version}-git
+%dir %{_libdir}/%{name}/%{version}
 %{_libdir}/%{name}/last
-%{_libdir}/%{name}/%{version}-git/*.so
-#%{_libdir}/%{name}/%{version}-git/*.py*
-#%{_libdir}/%{name}/%{version}-git/*.lua
-#%{_libdir}/%{name}/%{version}-git/*.rb
-%{_libdir}/%{name}/%{version}-git/hud
-%{_libdir}/%{name}/%{version}-git/syscall
-%{_libdir}/%{name}/%{version}-git/opcodes
-%dir %{_prefix}/lib/%{name}
-%dir %{_prefix}/lib/%{name}/%{version}-git
-%dir %{_prefix}/lib/%{name}/%{version}-git/magic
-%{_prefix}/lib/%{name}/%{version}-git/magic/*
+%{_libdir}/%{name}/%{version}/*.so
+%{_datadir}/%{name}/last
+%{_datadir}/%{name}/%{version}/hud
+%{_datadir}/%{name}/%{version}/cons
+%{_datadir}/%{name}/%{version}/syscall
+%{_datadir}/%{name}/%{version}/opcodes
+%{_datadir}/%{name}/%{version}/format
+%{_datadir}/%{name}/%{version}/fcnsign
+%{_datadir}/%{name}/%{version}/flag
+%{_datadir}/%{name}/%{version}/charsets
+%{_datadir}/doc/%{name}
+%dir %{_prefix}/share/%{name}
+%dir %{_prefix}/share/%{name}/%{version}
+%dir %{_prefix}/share/%{name}/%{version}/magic
+%{_prefix}/share/%{name}/%{version}/magic/*
 %{_mandir}/man1/r*.1.*
-%dir %{_datadir}/%{name}
-%dir %{_datadir}/%{name}/%{version}-git
-%dir %{_datadir}/%{name}/%{version}-git/cons
-%{_datadir}/%{name}/%{version}-git/cons/*
-%dir %{_datadir}/%{name}/%{version}-git/format
-%{_datadir}/%{name}/%{version}-git/format/*
-%dir %{_prefix}/%{name}/%{version}-git/r2pm
-%{_prefix}/%{name}/%{version}-git/r2pm/*
-%dir %{_datadir}/%{name}/%{version}-git/www
-%{_datadir}/%{name}/%{version}-git/www/*
+%{_mandir}/man7/esil.7.*
+%dir %{_datadir}/%{name}/%{version}/www
+%{_datadir}/%{name}/%{version}/www/*
 
 
 %files devel
@@ -107,7 +101,10 @@ cp shlr/sdb/src/libsdb.a %{buildroot}/%{_libdir}/libsdb.a
 
 
 %changelog
-* Sun Sep 20 2021 pancake <pancake@nopcode.org> 5.4.2
+* Tue Jan 10 2023 pancake <pancake@nopcode.org> 5.8.0
+- remove system deps and integrate it in the build system
+
+* Mon Sep 20 2021 pancake <pancake@nopcode.org> 5.4.2
 - update for latest centos8 and r2 codebase
 
 * Sat Oct 10 2020 pancake <pancake@nopcode.org> 5.1.0
