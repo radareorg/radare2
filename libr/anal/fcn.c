@@ -1237,7 +1237,7 @@ repeat:
 				bb->cond->type = op->cond;
 			}
 #if 1
-			if (op->ptr != UT64_MAX) {
+			if (anal->opt.jmptbl) {
 				ut64 table_size, default_case;
 				table_size = anal->cmpval + 1;
 				default_case = op->fail; // is this really default case?
@@ -1576,7 +1576,7 @@ beach:
 	if (bb && bb->size == 0) {
 		r_anal_function_remove_block (fcn, bb);
 	}
-	r_anal_block_update_hash (bb);
+	// r_anal_block_update_hash (bb); // XXX
 	r_anal_block_unref (bb);
 	return ret;
 }

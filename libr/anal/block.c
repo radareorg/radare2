@@ -437,6 +437,29 @@ R_API void r_anal_block_unref(RAnalBlock *bb) {
 	}
 }
 
+#if 1
+R_API void r_anal_block_successor_addrs_foreach(RAnalBlock *block, RAnalAddrCb cb, void *user) {
+#define CB_ADDR(addr) do { \
+		if (addr == UT64_MAX) { \
+			break; \
+		} \
+		if (!cb (addr, user)) { \
+			return; \
+		} \
+	} while (0);
+
+	CB_ADDR (block->jump);
+	CB_ADDR (block->fail);
+	if (block->switch_op && block->switch_op->cases) {
+		RListIter *iter;
+		RAnalCaseOp *caseop;
+		r_list_foreach (block->switch_op->cases, iter, caseop) {
+			CB_ADDR (caseop->jump);
+		}
+	}
+#undef CB_ADDR
+}
+#else
 R_API void r_anal_block_successor_addrs_foreach(RAnalBlock *block, RAnalAddrCb cb, void *user) {
 	cb (block->jump, user);
 	cb (block->fail, user);
@@ -448,6 +471,7 @@ R_API void r_anal_block_successor_addrs_foreach(RAnalBlock *block, RAnalAddrCb c
 		}
 	}
 }
+#endif
 
 typedef struct r_anal_block_recurse_context_t {
 	RAnal *anal;
