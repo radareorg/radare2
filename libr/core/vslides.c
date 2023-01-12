@@ -134,7 +134,8 @@ static void render(RCore *core, RList *list, int mode, int page) {
 
 static void render_title(int page, int mode, int total) {
 	r_cons_gotoxy (0, 0);
-	r_cons_printf (Color_BLACK""Color_BGYELLOW""R_CONS_CLEAR_LINE"\r [r2slides] [%s:%d/%d]", 
+	r_cons_printf ("%s%s%s\r [r2slides] [%s:%d/%d]",
+			Color_BLACK,Color_BGYELLOW,R_CONS_CLEAR_LINE,
 			(mode==2)?"pages":"page", page, total);
 }
 
@@ -213,6 +214,7 @@ R_API void r_core_visual_slides(RCore *core, const char *file) {
 		case '!':
 			//
 			{
+				r_config_set_b (core->config, "scr.interactive", true);
 				r_core_cmdf (core, "vim %s", file);
 				char *ndata = r_file_slurp (file, NULL);
 				if (ndata) {
@@ -222,6 +224,7 @@ R_API void r_core_visual_slides(RCore *core, const char *file) {
 					list = r_str_split_list (data, "\n", 0);
 					total_pages = count_pages (list);
 				}
+				r_config_set_b (core->config, "scr.interactive", false);
 			}
 			break;
 		case ':':
