@@ -282,7 +282,8 @@ R_API char *r_file_abspath(const char *file) {
 		free (cwd);
 		return ret;
 	}
-	return NULL;
+	// v-- if getcwd returns null we fallback like this
+	return strdup (file);
 }
 
 R_API char *r_file_binsh(void) {

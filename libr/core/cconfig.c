@@ -4341,16 +4341,18 @@ R_API void r_core_parse_radare2rc(RCore *r) {
 		R_LOG_DEBUG ("user script loaded from %s", homerc);
 		r_core_cmd_file (r, homerc);
 	}
-	free (homerc);
+	R_FREE (homerc);
 	char *configdir = r_xdg_configdir (NULL);
-	homerc = r_file_new (configdir, "radare2rc", NULL);
-	if (homerc && r_file_is_regular (homerc)) {
-		R_LOG_DEBUG ("user script loaded from %s", homerc);
-		r_core_cmd_file (r, homerc);
+	if (configdir) {
+		homerc = r_file_new (configdir, "radare2rc", NULL);
+		if (homerc && r_file_is_regular (homerc)) {
+			R_LOG_DEBUG ("user script loaded from %s", homerc);
+			r_core_cmd_file (r, homerc);
+		}
+		free (homerc);
+		homerc = r_file_new (configdir, "radare2rc.d", NULL);
+		free (configdir);
 	}
-	free (homerc);
-	homerc = r_file_new (configdir, "radare2rc.d", NULL);
-	free (configdir);
 	if (homerc) {
 		if (r_file_is_directory (homerc)) {
 			char *file;

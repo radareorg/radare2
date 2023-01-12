@@ -139,6 +139,11 @@ static void render_title(int page, int mode, int total) {
 }
 
 R_API void r_core_visual_slides(RCore *core, const char *file) {
+	if (!r_config_get_b (core->config, "scr.interactive")) {
+		R_LOG_ERROR ("Requires scr.interactive=true");
+		return;
+	}
+	r_config_set_b (core->config, "scr.interactive", false);
 	bool having_fun = true;
 	r_return_if_fail (core && file);
 	if (!*file) {
@@ -249,4 +254,5 @@ R_API void r_core_visual_slides(RCore *core, const char *file) {
 	r_cons_show_cursor (true);
 	r_list_free (list);
 	free (data);
+	r_config_set_b (core->config, "scr.interactive", true);
 }

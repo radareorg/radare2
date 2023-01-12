@@ -297,6 +297,10 @@ static char *r2pm_list(void) {
 
 static int r2pm_update(bool force) {
 	char *gpath = r2pm_gitdir ();
+	if (!gpath) {
+		R_LOG_ERROR ("Cannot find gitdir");
+		return -1;
+	}
 	char *pmpath = r_str_newf ("%s/%s", gpath, "radare2-pm");
 	r_sys_mkdirp (gpath);
 	if (force) {
@@ -351,6 +355,10 @@ static void r2pm_setenv(void) {
 	}
 
 	char *r2_prefix = r_xdg_datadir ("prefix");
+	if (!r2_prefix) {
+		R_LOG_ERROR ("Cannot resolve xdg.datadir('prefix')");
+		return;
+	}
 	r_sys_setenv ("R2PM_PREFIX", r2_prefix);
 
 	char *pkgcfg = r_sys_getenv ("PKG_CONFIG_PATH");
