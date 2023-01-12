@@ -62,6 +62,9 @@ static inline char *getformat(RCoreVisualTypes *vt, const char *k) {
 }
 
 static char *colorize_asm_string(RCore *core, const char *buf_asm, int optype, ut64 addr) {
+	if (!buf_asm) {
+		return NULL;
+	}
 	char *tmp, *spacer = NULL;
 	char *source = (char*)buf_asm;
 	bool use_color = core->print->flags & R_PRINT_FLAGS_COLOR;
