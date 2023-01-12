@@ -1129,6 +1129,8 @@ static int disassemble(RAnal *a, RAnalOp *op, const ut8 *buf, int len) {
 	if (cpu && (!pre_cpu || !strcmp (cpu, pre_cpu))) {
 		if (!r_str_casecmp (cpu, "mips64r2")) {
 			disasm_obj.mach = bfd_mach_mipsisa64r2;
+		} else if (!r_str_casecmp (cpu, "micro")) {
+			disasm_obj.mach = bfd_mach_mips_micromips;
 		} else if (!r_str_casecmp (cpu, "mips32r2")) {
 			disasm_obj.mach = bfd_mach_mipsisa32r2;
 		} else if (!r_str_casecmp (cpu, "mips64")) {
@@ -1918,7 +1920,7 @@ RAnalPlugin r_anal_plugin_mips_gnu = {
 	.name = "mips.gnu",
 	.desc = "MIPS code analysis plugin",
 	.license = "LGPL3",
-	.cpus = "mips64r2,mips32r2,mips64,mips32,loongson3a,gs464,gs464e,gs264e,loongson2e,loongson2f,mips32/64",
+	.cpus = "micro,mips64r2,mips32r2,mips64,mips32,loongson3a,gs464,gs464e,gs264e,loongson2e,loongson2f,mips32/64",
 	.arch = "mips",
 	.bits = 32,
 	.esil = true,

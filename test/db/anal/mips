@@ -1,3 +1,15 @@
+NAME=micromips on gnu
+FILE=-
+CMDS=<<EOF
+rasm2 -a mips.gnu -b32 -d 22fdd018
+rasm2 -a mips.gnu -b32 -c micro -d 22fdd018
+EOF
+EXPECT=<<EOF
+0x18d0fd22
+lw t1, 6352(v0)
+EOF
+RUN
+
 NAME=mips hello ref anal
 FILE=bins/elf/analysis/mips-hello
 CMDS=<<EOF
