@@ -380,6 +380,7 @@ R_API bool r_core_visual_bit_editor(RCore *core) {
 	memcpy (buf, core->block + cur, sizeof (ut64));
 	for (;;) {
 		RAnalOp asmop;
+		r_anal_op_init (&asmop);
 		// RAnalOp asmop;
 		r_cons_clear00 ();
 		bool use_color = core->print->flags & R_PRINT_FLAGS_COLOR;
