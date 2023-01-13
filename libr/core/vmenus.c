@@ -508,6 +508,14 @@ R_API bool r_core_visual_bit_editor(RCore *core) {
 			memcpy (core->block, buf, 8);
 			r_core_cmd0 (core, vi);
 		}
+		{
+			ut8 *o = core->block;
+			int bs = core->blocksize;
+			core->block = buf;
+			r_core_cmd_call (core, "pri1");
+			core->block = o;
+			core->blocksize = bs;
+		}
 		r_cons_visual_flush ();
 
 		int ch = r_cons_readchar ();
