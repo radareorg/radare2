@@ -120,7 +120,7 @@ static const char* help_msg_pr[] = {
 	"Usage: pr[glx]", "[size]", "print N raw bytes",
 	"prc", "[=fep..]", "print bytes as colors in palette",
 	"prg", "[?]", "print raw GUNZIPped block",
-	"pri", "[aA2r]", "print raw image, honor hex.cols",
+	"pri", "[aA12r]", "print raw image, 1bit image, honor hex.cols",
 	"print", "[f][ln]", "print, println, printf, printfln",
 	"prl", "", "print raw with lines offsets",
 	"prx", "", "printable chars with real offset (hyew)",
@@ -550,6 +550,7 @@ static const char *help_msg_px[] = {
 	"pxa", "", "show annotated hexdump",
 	"pxA", "[?]", "show op analysis color map",
 	"pxb", "", "dump bits in hexdump form", // should be px1?
+	"pxB", "", "dump bits in bitmap form", // should be something else? :D
 	"pxc", "", "show hexdump with comments",
 	"pxd", "[?1248]", "signed integer dump (1 byte, 2 and 4)",
 	"pxe", "", "emoji hexdump! :)",
@@ -5537,6 +5538,44 @@ static void core_print_decompile(RCore *core, const char *input) {
 	r_esil_free (esil);
 }
 
+#if 0
+static void bitimage0(RCore *core, int cols) {
+	int stride = r_config_get_i (core->config, "hex.stride");
+	if (stride < 1) {
+		stride = 16;
+	}
+	stride = 1;
+	const ut8 *b = core->block;
+	int x, y;
+	for (y = 0; y < 8; y++) {
+		ut8 byte = b[y * stride];
+		for (x = 8; x > 0; x--) {
+			bool pixel = byte & (1 << x);
+			r_cons_printf ("%s", pixel? "##": "--");
+		}
+		r_cons_printf ("\n");
+	}
+}
+#endif
+
+static void bitimage(RCore *core, int cols) {
+	int stride = r_config_get_i (core->config, "hex.stride");
+	if (stride < 1) {
+		stride = 16;
+	}
+	stride = 32;
+	const ut8 *b = core->block;
+	int x, y;
+	for (y = 0; y < 8; y++) {
+		ut8 byte = b[y * stride];
+		for (x = 8; x > 0; x--) {
+			bool pixel = byte & (1 << x);
+			r_cons_printf ("%s", pixel? "##": "--");
+		}
+		r_cons_printf ("\n");
+	}
+}
+
 static bool strnullpad_check(const ut8 *buf, int len, int clen, int inc, bool be) {
 	int i;
 	for (i = 0; i < len; i += inc) {
@@ -7075,6 +7114,8 @@ static int cmd_print(void *data, const char *input) {
 		case 'i': // "pri" // color raw image
 			if (input[2] == 'n') {
 				cmd_printmsg (core, input + 4);
+			} else if (input[2] == '1') {
+				bitimage (core, 1);
 			} else {
 				// TODO: do colormap and palette conversions here
 				int mode = r_config_get_i (core->config, "scr.color")? 0: 'a';
@@ -7349,6 +7390,7 @@ static int cmd_print(void *data, const char *input) {
 			}
 			break;
 		case 'b': // "pxb"
+		case 'B': // "pxB"
 			if (l) {
 				ut32 n;
 				int i, c;
@@ -7370,8 +7412,11 @@ static int cmd_print(void *data, const char *input) {
 					// split bits
 					memmove (buf + 5, buf + 4, 5);
 					buf[4] = 0;
-
 					r_print_cursor (core->print, i, 1, 1);
+					if (input[1] == 'B') {
+						r_str_replace_ch (buf, '0', '.', true);
+						r_str_replace_ch (buf + 5, '0', '.', true);
+					}
 					r_cons_printf ("%s_%s  ", buf, buf + 5);
 					r_print_cursor (core->print, i, 1, 0);
 					if (c == 3) {
