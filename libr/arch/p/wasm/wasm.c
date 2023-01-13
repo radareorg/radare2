@@ -468,16 +468,12 @@ R_IPI int wasm_asm(const char *str, ut8 *buf, int buf_len) {
 			}
 		}
 	}
-	// Abort
-	if (len == 0) goto err;
 	// TODO: parse immediates
-	return len;
-  err:
-	return -1;
+	return len? len: -1;
 }
 
 // disassemble an instruction from the given buffer.
-R_IPI int wasm_dis(WasmOp *op, const unsigned char *buf, int buf_len) {
+R_IPI int wasm_dis(WasmOp *op, const ut8 *buf, int buf_len) {
 	RStrBuf *sb = r_strbuf_new ("");
 	int id = buf[0];
 	if (id < 0xc0) {
@@ -658,15 +654,12 @@ R_IPI int wasm_dis(WasmOp *op, const unsigned char *buf, int buf_len) {
 		case WASM_OP_BR:
 		case WASM_OP_BRIF:
 		case WASM_OP_CALL:
-			{
-				ut32 val = 0;
-				size_t n = read_u32_leb128 (buf + 1, buf + buf_len, &val);
-				if (!(n > 0 && n < buf_len)) {
-					goto err;
-				}
-				r_strbuf_setf (sb, "%s %d", opdef->txt, val);
-				op->len += n;
+			size_t n = read_u32_leb128 (buf + 1, buf + buf_len, &op->val);
+			if (n <= 0 || n >= buf_len) {
+				goto err;
 			}
+			r_strbuf_setf (sb, "%s %d", opdef->txt, op->val);
+			op->len += n;
 			break;
 		case WASM_OP_BRTABLE:
 			{

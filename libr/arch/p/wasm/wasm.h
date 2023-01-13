@@ -486,6 +486,7 @@ typedef struct {
 		WasmOpAtomicCodes atomic;
 		WasmOpSimdCodes simd;
 	} op;
+	ut32 val; // not used for all opcodes yet, careful
 	WasmTypeOp type;
 	int len;
 	char *txt;

@@ -417,7 +417,7 @@ static RBuffer *create(RBin *bin, const ut8 *code, int codelen, const ut8 *data,
 }
 
 static int get_fcn_offset_from_id(RBinFile *bf, int ordinal) {
-	RBinWasmObj *bin = bf->o->bin_obj;
+	RBinWasmObj *bin = R_UNWRAP3 (bf, o, bin_obj);
 	ut32 min = first_ord_not_import (bin, R_BIN_WASM_EXTERNALKIND_Function);
 	RPVector *codes = r_bin_wasm_get_codes (bin);
 	if (min <= ordinal && codes) {
@@ -430,10 +430,44 @@ static int get_fcn_offset_from_id(RBinFile *bf, int ordinal) {
 	return -1;
 }
 
+static int _code_frm_addr(const void *_code, const void *_needle) {
+	int addr = *(int *)_needle;
+	const RBinWasmCodeEntry *code = _code;
+	if (addr < code->code) {
+		return 1;
+	} else if (addr >= code->code + code->len) {
+		return -1;
+	}
+	return 0;
+}
+
+static int get_fcn_offset_from_addr(RBinFile *bf, int addr, bool start) {
+	RBinWasmObj *bin = R_UNWRAP3 (bf, o, bin_obj);
+	if (bin) {
+		RPVector *codes = r_bin_wasm_get_codes (bin);
+		if (codes) {
+			int n = r_pvector_bsearch (codes, (void *)&addr, _code_frm_addr);
+			RBinWasmCodeEntry *code = vector_at (codes, n);
+			if (code) {
+				if (start) {
+					return code->code;
+				} else {
+					return code->code + code->len - 1;
+				}
+			}
+		}
+	}
+	return -1;
+}
+
 static int getoffset(RBinFile *bf, int type, int idx) {
 	switch (type) {
 	case 'f': // fcnid -> fcnaddr
 		return get_fcn_offset_from_id (bf, idx);
+	case 'F': // addr -> fcnaddr
+		return get_fcn_offset_from_addr (bf, idx, true);
+	case 'e': // addr -> end of function
+		return get_fcn_offset_from_addr (bf, idx, false);
 	}
 	return -1;
 }
