@@ -544,6 +544,14 @@ R_API bool r_core_visual_bit_editor(RCore *core) {
 				x = y - y % 8;
 			}
 			break;
+		case 'J':
+			r_core_cmd_call (core, "s+8");
+			memcpy (buf, core->block + cur, sizeof (ut64));
+			break;
+		case 'K':
+			r_core_cmd_call (core, "s-8");
+			memcpy (buf, core->block + cur, sizeof (ut64));
+			break;
 		case 'j':
 		case 'k':
 		case 10:
