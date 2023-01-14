@@ -30,7 +30,7 @@ static void free_root(RTireNode **root) {
 	}
 }
 
-static inline RTireNode *new_node() {
+static inline RTireNode *new_node(void) {
 	return R_NEW0 (RTireNode);
 }
 
