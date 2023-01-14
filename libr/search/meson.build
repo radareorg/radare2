@@ -7,6 +7,7 @@ r_search_sources = [
   'privkey.c',
   'karp.c',
   'search.c',
+  'tire.c',
   'sm4_find.c',
   'strings.c'
 ]
