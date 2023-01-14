@@ -133,8 +133,7 @@ static inline int build_tire(RSearch *srch, RTireNode **root) {
 }
 
 R_IPI int search_tire(RSearch *srch, ut64 from, ut64 to) {
-	int cnt = r_list_length (srch->kws);
-	r_return_val_if_fail (cnt > 0, -1);
+	r_return_val_if_fail (r_list_length (srch->kws) > 0, -1);
 
 	RTireNode *_root[256] = { 0 };
 	RTireNode **root = _root;
