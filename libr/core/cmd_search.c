@@ -4084,7 +4084,7 @@ reread:
 			{
 				const bool le = !r_config_get_b (core->config, "cfg.bigendian");
 				RSearchKeyword *kw;
-				r_search_reset (core->search, R_SEARCH_KEYWORD);
+				r_search_reset (core->search, R_SEARCH_TIRE);
 
 				// aes round constant table
 				kw = r_search_keyword_new_hexmask ("01020408102040801b366cc0ab4d9a2f5ebf63c697356ad4b37dfaefc591", NULL); // AES
@@ -4119,6 +4119,8 @@ reread:
 				// serpent
 				kw = r_search_keyword_new_hexmask ("00204060012141610222426203234363042444640525456506264666072747", NULL);
 				r_search_kw_add (search, kw);
+				dosearch = false;
+				dosearch_read = true;
 				break;
 			}
 		case 'c': // "/cc"
