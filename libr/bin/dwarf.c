@@ -563,16 +563,17 @@ beach:
 static const ut8 *parse_line_header_source_dwarf5(RBinFile *bf, const ut8 *buf, const ut8 *buf_end,
 	RBinDwarfLineHeader *hdr, Sdb *sdb, int mode) {
 	size_t maxlen = 0xfff;
+	int i, j;
 	enum type { DIRECTORIES,
 		FILES };
 
-	for (int i = DIRECTORIES; i <= FILES; i++) {
+	for (i = DIRECTORIES; i <= FILES; i++) {
 
 		ut8 entry_format_count = READ8 (buf);
 		const ut8 *entry_format = buf;
 
 		ut64 total_entries = 0;
-		for (int i = 0; i < entry_format_count; i++) {
+		for (j = 0; j < entry_format_count; j++) {
 			buf = r_uleb128 (buf, buf_end - buf, NULL, NULL);
 			buf = r_uleb128 (buf, buf_end - buf, NULL, NULL);
 		}
@@ -588,14 +589,17 @@ static const ut8 *parse_line_header_source_dwarf5(RBinFile *bf, const ut8 *buf, 
 			hdr->file_names_count = total_entries;
 		}
 
-		for (ut64 index = 0; index < total_entries; index++) {
+		ut64 index;
+		for (index = 0; index < total_entries; index++) {
 			int count = 0;
 			const ut8 *format = entry_format;
 
-			for (ut8 entry_format_index = 0; entry_format_index < entry_format_count; entry_format_index++) {
+			ut8 entry_format_index;
+			for (entry_format_index = 0; entry_format_index < entry_format_count; entry_format_index++) {
 				ut64 content_type_code, form_code;
 				char *name = NULL;
 				ut64 data = 0;
+				const char *section_name = NULL;
 
 				format = r_uleb128 (format, buf_end - format, &content_type_code, NULL);
 				format = r_uleb128 (format, buf_end - format, &form_code, NULL);
@@ -613,7 +617,7 @@ static const ut8 *parse_line_header_source_dwarf5(RBinFile *bf, const ut8 *buf, 
 					break;
 				case DW_FORM_strp:
 				case DW_FORM_line_strp:
-					const char *section_name = form_code == DW_FORM_strp? "debug_str": "debug_line_str";
+					section_name = form_code == DW_FORM_strp? "debug_str": "debug_line_str";
 					size_t section_len = 0;
 					ut64 section_offset = dwarf_read_offset (hdr->is_64bit, &buf, buf_end);
 					ut8 *section = get_section_bytes (bf->rbin, section_name, &section_len);
