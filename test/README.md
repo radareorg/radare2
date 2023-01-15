@@ -31,7 +31,7 @@ Failure Levels
 
 A test can have one of the following results:
 * success: The test passed, and that was expected.
-* fixed: The test passed, but failure was expeced.
+* fixed: The test passed, but failure was expected.
 * broken: Failure was expected, and happened.
 * failed: The test failed unexpectedly. This is a regression.
 

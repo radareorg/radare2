@@ -9,7 +9,7 @@ bool test_r_io_cache(void) {
 	mu_assert_false (r_io_cache_at (io, 10), "Cache shouldn't exist at 10");
 	mu_assert_true (r_io_cache_write (io, 0, (ut8 *)"AAAAA", 5), "Cache write at 0 failed");
 	mu_assert_true (r_io_cache_write (io, 10, (ut8 *)"BBBBB", 5), "Cache write at 10 failed");
-	mu_assert_true (r_io_cache_at (io, 0), "Cache should exist at 0 (beggining of cache)");
+	mu_assert_true (r_io_cache_at (io, 0), "Cache should exist at 0 (beginning of cache)");
 	mu_assert_true (r_io_cache_at (io, 4), "Cache should exist at 4 (end of cache)");
 	mu_assert_false (r_io_cache_at (io, 8), "Cache shouldn't exist at 8 (between 2 caches)");
 	mu_assert_true (r_io_cache_at (io, 12), "Cache should exist at 12 (middle of cache)");
@@ -206,7 +206,7 @@ bool test_r_io_priority(void) {
 
 	r_io_map_remap (io, map1, 0x1);
 	r_io_read_at (io, 0, (ut8 *)&buf, 8);
-	mu_assert_memeq ((ut8 *)&buf, (ut8 *)"\x00\x00\xff\x6f\x90\x90\x6f\x6f", 8, "map1 should have been remapped and partialy hidden");
+	mu_assert_memeq ((ut8 *)&buf, (ut8 *)"\x00\x00\xff\x6f\x90\x90\x6f\x6f", 8, "map1 should have been remapped and partially hidden");
 
 	r_io_open_at (io, "malloc://2", R_PERM_RW, 0644, 0x4);
 	r_io_open_at (io, "malloc://2", R_PERM_RW, 0644, 0x6);
