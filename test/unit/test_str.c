@@ -500,7 +500,7 @@ bool test_r_str_str_xy(void) {
 	mu_assert_eq (x, 0, "x of fourth occurrence");
 	mu_assert_eq (y, 2, "y of fourth occurrence");
 	next = r_str_str_xy (canvas, "World", next, &x, &y);
-	mu_assert_null (next, "no more occurences");
+	mu_assert_null (next, "no more occurrences");
 	mu_end;
 }
 

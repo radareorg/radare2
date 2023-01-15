@@ -43,7 +43,7 @@ int int_compare(const void *a, const void *b){
 /**
  * @brief Tests correct parsing of abbreviations and line information of DWARF3 C binary
  */
-bool test_dwarf3_c_basic(void) { // this should work for dwarf2 aswell
+bool test_dwarf3_c_basic(void) { // this should work for dwarf2 as well
 	RBin *bin = r_bin_new ();
 	RIO *io = r_io_new ();
 	r_io_bind (io, &bin->iob);
@@ -167,7 +167,7 @@ bool test_dwarf3_c_basic(void) { // this should work for dwarf2 aswell
  * 
  * 
  */
-bool test_dwarf3_cpp_basic(void) { // this should work for dwarf2 aswell
+bool test_dwarf3_cpp_basic(void) { // this should work for dwarf2 as well
 	RBin *bin = r_bin_new ();
 	RIO *io = r_io_new ();
 	r_io_bind (io, &bin->iob);
@@ -685,7 +685,7 @@ bool test_dwarf3_cpp_many_comp_units(void) {
 	mu_end;
 }
 
-bool test_dwarf_cpp_empty_line_info(void) { // this should work for dwarf2 aswell
+bool test_dwarf_cpp_empty_line_info(void) { // this should work for dwarf2 as well
 	RBin *bin = r_bin_new ();
 	RIO *io = r_io_new ();
 	r_io_bind (io, &bin->iob);
