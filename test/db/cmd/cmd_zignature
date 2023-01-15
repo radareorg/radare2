@@ -61,7 +61,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=zsr newname (dupplicated name)
+NAME=zsr newname (duplicated name)
 FILE=-
 CMDS=<<EOF
 zs test1

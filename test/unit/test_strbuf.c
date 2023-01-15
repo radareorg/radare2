@@ -208,10 +208,10 @@ bool test_r_strbuf_setf(void) {
 
 bool test_r_strbuf_initf(void) {
 	RStrBuf sb;
-	const char *s = r_strbuf_initf (&sb, "hmmst, %s was that audial occurence? %d", "wat", 42);
+	const char *s = r_strbuf_initf (&sb, "hmmst, %s was that audial occurrence? %d", "wat", 42);
 	mu_assert_notnull (s, "initf return notnull");
 	mu_assert_ptreq (s, r_strbuf_get (&sb), "initf return");
-	mu_assert_streq (r_strbuf_get (&sb), "hmmst, wat was that audial occurence? 42", "initf");
+	mu_assert_streq (r_strbuf_get (&sb), "hmmst, wat was that audial occurrence? 42", "initf");
 	r_strbuf_fini (&sb);
 	mu_end;
 }

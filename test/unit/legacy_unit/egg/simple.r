@@ -17,7 +17,7 @@ main@global(128, 128) {
 	.var1 = 4;
 	.var2 = 8;
 
-	// prolematic sizes: 1 2 5 6 9
+	// problematic sizes: 1 2 5 6 9
 	write (1, "hello.\n", 7);
 	write (1, "hello world\n", 12);
 	.ret = 3;

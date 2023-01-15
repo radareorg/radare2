@@ -32,7 +32,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=agC function names are resovled properly
+NAME=agC function names are resolved properly
 FILE=bins/elf/true
 CMDS=<<EOF
 aaa 2> /dev/null

@@ -26,7 +26,7 @@ What you **CANNOT** do between X.Y.0 and X.Y.8:
 
 What you **CAN** do between X.Y.0 and X.Y.8:
 
-* Remove global symbols (they shouldnt be accessed directly anyway)
+* Remove global symbols (they shouldn't be accessed directly anyway)
 * Change internal structs or functions (static)
 * Refactor the programs (those are not libraries and dont expose apis)
 * If you really need to add a new public function use `R2_XY0 static inline`

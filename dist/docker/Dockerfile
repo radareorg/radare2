@@ -106,7 +106,7 @@ RUN useradd -m r2 && \
   adduser r2 sudo && \
   echo "r2:r2" | chpasswd
 
-# Initilise base user
+# Initialise base user
 USER r2
 WORKDIR /home/r2
 ENV HOME /home/r2

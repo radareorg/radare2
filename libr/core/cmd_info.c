@@ -17,7 +17,7 @@ static const char *help_msg_i[] = {
 	"ic", "", "List classes, methods and fields (icj for json)",
 	"ic.", "", "show class and method name in current seek",
 	"icc", "", "List classes, methods and fields in Header Format",
-	"icg", " [str]", "List classes as agn/age commands to create class hirearchy graphs (matches str if provided)",
+	"icg", " [str]", "List classes as agn/age commands to create class hierarchy graphs (matches str if provided)",
 	"icq", "", "List classes, in quiet mode (just the classname)",
 	"icqq", "", "List classes, in quieter mode (only show non-system classnames)",
 	"icl", "", "Show addresses of class and it methods, without names",

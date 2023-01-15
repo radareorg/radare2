@@ -149,7 +149,7 @@ Common operations:
 
  * Check dstreg
  * Check srcreg
- * Get destinaion
+ * Get destination
  * Is jump
  * Is conditional
  * Evulate

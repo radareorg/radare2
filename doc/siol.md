@@ -73,5 +73,5 @@ Emulation-Transformation:
 
 - when the section does not allow write-access perform Analysis-Transformation, and you're done
 - open a new desc with write-permissions, using the malloc-plugin, with the size of vsize
-- copy min (size, vsize) bytes fram the desc, that fd referes to, starting at addr, to the new desc, starting at 0x0
+- copy min (size, vsize) bytes fram the desc, that fd refers to, starting at addr, to the new desc, starting at 0x0
 - create a map with the size of vsize, that maps the new desc to vaddr, starting at 0x0
