@@ -657,6 +657,14 @@ Raw dump of debug contents of section .debug_line:
   Opcode 11 has 0 arg
   Opcode 12 has 1 arg
 
+ The Directory Table:
+  0     /home/pancake/prg/radare2/test/bins/elf/dwarf
+
+ The File Name Table:
+  Entry Dir     Time      Size       Name
+  1     0       0         0          /home/pancake/prg/radare2/test/bins/elf/dwarf/hello.c
+  2     0       0         0          /home/pancake/prg/radare2/test/bins/elf/dwarf/hello.c
+
  Line Number Statements:
   Set column to 12
   Extended opcode 2: set Address to 0x1149

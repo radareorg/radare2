@@ -561,13 +561,21 @@ beach:
 // I'll complete this function after completing debug_info parsing and merging
 // for the meanwhile I am skipping the space.
 static const ut8 *parse_line_header_source_dwarf5(RBinFile *bf, const ut8 *buf, const ut8 *buf_end,
-	RBinDwarfLineHeader *hdr, Sdb *sdb, int mode) {
+	RBinDwarfLineHeader *hdr, Sdb *sdb, int mode, PrintfCallback print) {
 	size_t maxlen = 0xfff;
 	int i, j;
 	enum type { DIRECTORIES,
 		FILES };
 
 	for (i = DIRECTORIES; i <= FILES; i++) {
+
+		if (mode == R_MODE_PRINT && i == DIRECTORIES) {
+			print (" The Directory Table:\n");
+		} else if (mode == R_MODE_PRINT && i == FILES) {
+			print ("\n");
+			print (" The File Name Table:\n");
+			print ("  Entry Dir     Time      Size       Name\n");
+		}
 
 		ut8 entry_format_count = READ8 (buf);
 		const ut8 *entry_format = buf;
@@ -679,8 +687,22 @@ static const ut8 *parse_line_header_source_dwarf5(RBinFile *bf, const ut8 *buf, 
 					break;
 				}
 			}
+
+			if (mode == R_MODE_PRINT && i == DIRECTORIES) {
+				// Keep directories 0 indexed?
+				print ("  %d     %s\n", index, sdb_array_get (sdb, "includedirs", index, 0));
+			} else if (mode == R_MODE_PRINT && i == FILES) {
+				print ("  %d     %" PFMT64d "       %" PFMT64d "         %" PFMT64d "          %s\n",
+					index + 1, hdr->file_names[count].id_idx, hdr->file_names[count].mod_time,
+					hdr->file_names[count].file_len, hdr->file_names[count].name);
+			}
+
 			count++;
 		}
+	}
+
+	if (mode == R_MODE_PRINT) {
+		print ("\n");
 	}
 
 	sdb_free (sdb);
@@ -770,7 +792,7 @@ static const ut8 *parse_line_header(
 	if (hdr->version <= 4) {
 		buf = parse_line_header_source (bf, buf, buf_end, hdr, sdb, mode, print);
 	} else {
-		buf = parse_line_header_source_dwarf5 (bf, buf, buf_end, hdr, sdb, mode);
+		buf = parse_line_header_source_dwarf5 (bf, buf, buf_end, hdr, sdb, mode, print);
 	}
 
 	return buf;
