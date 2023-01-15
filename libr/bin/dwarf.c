@@ -327,6 +327,8 @@ static const char *dwarf_unit_types[] = {
 	[DW_UT_hi_user] = "DW_UT_hi_user",
 };
 
+static ut8 *get_section_bytes(RBin *, const char *, size_t *);
+
 static int abbrev_cmp(const void *a, const void *b) {
 	const RBinDwarfAbbrevDecl *first = a;
 	const RBinDwarfAbbrevDecl *second = b;
@@ -554,34 +556,133 @@ beach:
 	return buf;
 }
 
-#if 0
 // TODO DWARF 5 line header parsing, very different from ver. 4
 // Because this function needs ability to parse a lot of FORMS just like debug info
 // I'll complete this function after completing debug_info parsing and merging
 // for the meanwhile I am skipping the space.
 static const ut8 *parse_line_header_source_dwarf5(RBinFile *bf, const ut8 *buf, const ut8 *buf_end,
 	RBinDwarfLineHeader *hdr, Sdb *sdb, int mode) {
-// 	int i = 0;
-// 	size_t count;
-// 	const ut8 *tmp_buf = NULL;
+	size_t maxlen = 0xfff;
+	enum type { DIRECTORIES,
+		FILES };
 
-// 	ut8 dir_entry_count = READ8 (buf);
-// 	// uleb128 pairs
-// 	ut8 dir_count = READ8 (buf);
+	for (int i = DIRECTORIES; i <= FILES; i++) {
 
-// 	// dirs
+		ut8 entry_format_count = READ8 (buf);
+		const ut8 *entry_format = buf;
 
-// 	ut8 file_entry_count = READ8 (buf);
-// 	// uleb128 pairs
-// 	ut8 file_count = READ8 (buf);
-// 	// file names
+		ut64 total_entries = 0;
+		for (int i = 0; i < entry_format_count; i++) {
+			buf = r_uleb128 (buf, buf_end - buf, NULL, NULL);
+			buf = r_uleb128 (buf, buf_end - buf, NULL, NULL);
+		}
 
-// beach:
-// 	sdb_free (sdb);
+		buf = r_uleb128 (buf, buf_end - buf, &total_entries, NULL);
 
-	return NULL;
+		if (i == FILES) {
+			if (total_entries > 0) {
+				hdr->file_names = calloc (sizeof (file_entry), total_entries);
+			} else {
+				hdr->file_names = NULL;
+			}
+			hdr->file_names_count = total_entries;
+		}
+
+		for (ut64 index = 0; index < total_entries; index++) {
+			int count = 0;
+			const ut8 *format = entry_format;
+
+			for (ut8 entry_format_index = 0; entry_format_index < entry_format_count; entry_format_index++) {
+				ut64 content_type_code, form_code;
+				char *name = NULL;
+				ut64 data = 0;
+
+				format = r_uleb128 (format, buf_end - format, &content_type_code, NULL);
+				format = r_uleb128 (format, buf_end - format, &form_code, NULL);
+
+				switch (form_code) {
+				case DW_FORM_string:
+					// TODO: find a way to test this case.
+					name = r_str_ndup ((const char *)buf, maxlen);
+					size_t len = strlen (name);
+					buf += len + 1;
+					break;
+				case DW_FORM_strp_sup:
+					// TODO: handle this properly
+					dwarf_read_offset (hdr->is_64bit, &buf, buf_end);
+					break;
+				case DW_FORM_strp:
+				case DW_FORM_line_strp:
+					const char *section_name = form_code == DW_FORM_strp? "debug_str": "debug_line_str";
+					size_t section_len = 0;
+					ut64 section_offset = dwarf_read_offset (hdr->is_64bit, &buf, buf_end);
+					ut8 *section = get_section_bytes (bf->rbin, section_name, &section_len);
+					if (!section) {
+						// TODO handle this somehow
+					}
+					ut8 *name_start = section + section_offset;
+					name = r_str_ndup ((const char *)name_start, maxlen);
+					free (section);
+					break;
+				case DW_FORM_data1:
+					data = READ8 (buf);
+					break;
+				case DW_FORM_data2:
+					data = READ16 (buf);
+					break;
+				case DW_FORM_data4:
+					data = READ32 (buf);
+					break;
+				case DW_FORM_data8:
+					data = READ64 (buf);
+					break;
+				case DW_FORM_data16:
+					// TODO: We only get here if it's an MD5 hash
+					break;
+				case DW_FORM_udata:
+					buf = r_uleb128 (buf, buf_end - buf, &data, NULL);
+					break;
+				}
+
+				switch (content_type_code) {
+				case DW_LNCT_path:
+					if (i == FILES) {
+						// For now just save the filename. Prepend the directory once we have it.
+						hdr->file_names[count].name = name;
+					} else {
+						add_sdb_include_dir (sdb, name, index);
+						free (name);
+					}
+					break;
+				case DW_LNCT_directory_index:
+					hdr->file_names[count].id_idx = data;
+					// prepend directory to the file name
+					if (hdr->file_names[count].name) {
+						char *dir = sdb_array_get (sdb, "includedirs", hdr->file_names[count].id_idx, 0);
+						char *filename = hdr->file_names[count].name;
+						hdr->file_names[count].name = r_str_newf ("%s/%s", r_str_get (dir), filename);
+						free (filename);
+					}
+					break;
+				case DW_LNCT_timestamp:
+					hdr->file_names[count].mod_time = data;
+					break;
+				case DW_LNCT_size:
+					hdr->file_names[count].file_len = data;
+					break;
+				case DW_LNCT_MD5:
+					// TODO Save the hash of the file.
+					break;
+				}
+			}
+			count++;
+		}
+	}
+
+	sdb_free (sdb);
+
+	return buf;
 }
-#endif
 
 static const ut8 *parse_line_header(
 	RBinFile *bf, const ut8 *buf, const ut8 *buf_end,
@@ -605,8 +706,6 @@ static const ut8 *parse_line_header(
 	}
 
 	hdr->header_length = dwarf_read_offset(hdr->is_64bit, &buf, buf_end);
-
-	const ut8 *tmp_buf = buf; // So I can skip parsing DWARF 5 headers for now
 
 	if (buf_end - buf < 8) {
 		return NULL;
@@ -658,13 +757,6 @@ static const ut8 *parse_line_header(
 	} else {
 		hdr->std_opcode_lengths = NULL;
 	}
-	// TODO finish parsing of source files out of DWARF 5 header
-	// for now we skip
-	if (hdr->version == 5) {
-		tmp_buf += hdr->header_length;
-		R_LOG_WARN ("DWARF5 format is not yet supported by radare2, please contribute");
-		return tmp_buf;
-	}
 
 	Sdb *sdb = sdb_new (NULL, NULL, 0);
 	if (!sdb) {
@@ -673,8 +765,8 @@ static const ut8 *parse_line_header(
 
 	if (hdr->version <= 4) {
 		buf = parse_line_header_source (bf, buf, buf_end, hdr, sdb, mode, print);
-	} else { // because Version 5 source files are very different
-		// dwarf5 parsing is not supported
+	} else {
+		buf = parse_line_header_source_dwarf5 (bf, buf, buf_end, hdr, sdb, mode);
 	}
 
 	return buf;
