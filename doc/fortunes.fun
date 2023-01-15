@@ -85,7 +85,7 @@ This is an unacceptable million year dungeon.
 The Hard ROP Cafe
 Wait a minute! I found a bug, self-fixing ... OK
 Hold on, this should never happen!
-Well this is embarrasing ...
+Well this is embarrassing ...
 THIS IS NOT FUNNY
 ♥  --
 Can you stand on your head?
@@ -140,7 +140,7 @@ When you sold that exploit, what they really bought, was your silence.
 Greetings, human.
 nothing personal, just bitness
 Too old to crash
-Finnished a beer
+Finished a beer
 ESIL ruined my life
 ESIL: The Aftersleep
 Insert coin to continue ...
@@ -198,7 +198,7 @@ r2 talks to you. tries to make you feel well.
 Now i'm like an evil engineer. MUAHAHAH
 We only have bugs, features are an unintended side-effect
 There are 5 minutes from WTF to FIX in r2land
-Quantum dissasemble: it's there as long as you don't observe it
+Quantum disassemble: it's there as long as you don't observe it
 Ceci n'est pas une r2pipe
 Buy a mac
 (gdb) ^D
