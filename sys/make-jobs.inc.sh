@@ -26,7 +26,7 @@ BuildJobsThrottler(){
 	FREE_RAM=$(grep MemAvailable /proc/meminfo | sed 's/[^0-9]//g')
 
 	DEFAULT_MAX_MEM_PER_JOB=200000
-	[ -z "${MAX_MEM_PER_JOB}" ] && MAX_MEM_PER_JOB="$DEFAULT_MAX_MEM_PER_JOB" # Defensive, prevent devision by 0
+	[ -z "${MAX_MEM_PER_JOB}" ] && MAX_MEM_PER_JOB="$DEFAULT_MAX_MEM_PER_JOB" # Defensive, prevent division by 0
 
 	# Assuming we may have many 300MB compilation jobs running in parallel
 	MEM_ALLOWED_JOBS=$((FREE_RAM / MAX_MEM_PER_JOB))
