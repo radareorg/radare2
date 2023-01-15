@@ -109,7 +109,7 @@ found!
 > agfb
 
 Braile UTF8 chars permit to create pixel-art style using terminals, which permits
-a higer resolution than using ascii-art. This is used when the minigraph option
+a higher resolution than using ascii-art. This is used when the minigraph option
 is set.
 
 # vector35 armv7
@@ -121,7 +121,7 @@ Open your favourite arm32 binary like this:
 
 > r2 -a arm.v35 -b32 ...
 
-Note that the v35 thumb2 disassembler is written in c++ and it cant be shipped
+Note that the v35 thumb2 disassembler is written in c++ and it can't be shipped
 in r2core because it violates the 1st rule in r2land, so it may wait for
 contributors to rewrite it in plain C.
 
