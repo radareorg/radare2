@@ -294,6 +294,7 @@ static int gdbr_parse_target_xml(libgdbr_t *g, char *xml_data, ut64 len) {
 		case 32:
 			if (!(profile = r_str_prepend (profile,
 						     "=PC	eip\n"
+						     "=A0	eax\n"
 						     "=SP	esp\n"
 						     "=BP	ebp\n"))) {
 				goto exit_err;
@@ -302,6 +303,7 @@ static int gdbr_parse_target_xml(libgdbr_t *g, char *xml_data, ut64 len) {
 		case 64:
 			if (!(profile = r_str_prepend (profile,
 						     "=PC	rip\n"
+						     "=A0	rax\n"
 						     "=SP	rsp\n"
 						     "=BP	rbp\n"))) {
 				goto exit_err;
