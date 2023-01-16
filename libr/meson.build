@@ -19,6 +19,7 @@ arch_plugins = [ 'null',
   'riscv',
   'i4004',
   'rsp',
+  'propeller',
   'amd29k',
 ]
 bin_plugins = [ 'any' ]
@@ -163,7 +164,6 @@ anal_plugins += [
   'or1k',
   'pic',
   'ppc_cs',
-  'propeller',
   'riscv_cs',
   'sparc_cs',
   's390_cs',
