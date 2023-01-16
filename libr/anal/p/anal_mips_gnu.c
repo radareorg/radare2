@@ -1194,7 +1194,7 @@ static int disassemble(RAnal *a, RAnalOp *op, const ut8 *buf, int len) {
 }
 
 static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, RAnalOpMask mask) {
-	ut32 opcode;
+	ut32 opcode = 0;
 	int oplen = 4;
 	const ut8 *buf;
 	gnu_insn insn;
@@ -1212,7 +1212,11 @@ static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, R
 	op->size = oplen;
 	op->addr = addr;
 	// Be endian aware
-	opcode = r_read_ble32 (b, R_ARCH_CONFIG_IS_BIG_ENDIAN (anal->config));
+	if (len >= 4) {
+		opcode = r_read_ble32 (b, R_ARCH_CONFIG_IS_BIG_ENDIAN (anal->config));
+	} else if (len >= 2) {
+		opcode = r_read_ble16 (b, R_ARCH_CONFIG_IS_BIG_ENDIAN (anal->config));
+	}
 
 	// eprintf ("MIPS: %02x %02x %02x %02x (after endian: big=%d)\n", buf[0], buf[1], buf[2], buf[3], anal->big_endian);
 	if (opcode == 0) {
