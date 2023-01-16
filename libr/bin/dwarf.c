@@ -589,6 +589,10 @@ static const ut8 *parse_line_header_source_dwarf5(RBinFile *bf, const ut8 *buf, 
 		if (i == FILES) {
 			if (total_entries > 0) {
 				hdr->file_names = calloc (sizeof (file_entry), total_entries);
+				if (!hdr->file_names) {
+					buf = NULL;
+					goto beach;
+				}
 			} else {
 				hdr->file_names = NULL;
 			}
@@ -629,6 +633,8 @@ static const ut8 *parse_line_header_source_dwarf5(RBinFile *bf, const ut8 *buf, 
 					ut8 *section = get_section_bytes (bf->rbin, section_name, &section_len);
 					if (!section) {
 						// TODO handle this somehow
+						buf = NULL;
+						goto beach;
 					}
 					ut8 *name_start = section + section_offset;
 					name = r_str_ndup ((const char *)name_start, maxlen);
@@ -708,6 +714,7 @@ static const ut8 *parse_line_header_source_dwarf5(RBinFile *bf, const ut8 *buf, 
 		print ("\n");
 	}
 
+beach:
 	sdb_free (sdb);
 
 	return buf;
