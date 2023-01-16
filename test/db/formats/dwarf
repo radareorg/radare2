@@ -657,6 +657,14 @@ Raw dump of debug contents of section .debug_line:
   Opcode 11 has 0 arg
   Opcode 12 has 1 arg
 
+ The Directory Table:
+  0     /home/pancake/prg/radare2/test/bins/elf/dwarf
+
+ The File Name Table:
+  Entry Dir     Time      Size       Name
+  1     0       0         0          /home/pancake/prg/radare2/test/bins/elf/dwarf/hello.c
+  2     0       0         0          /home/pancake/prg/radare2/test/bins/elf/dwarf/hello.c
+
  Line Number Statements:
   Set column to 12
   Extended opcode 2: set Address to 0x1149
@@ -670,11 +678,29 @@ Raw dump of debug contents of section .debug_line:
   Advance PC by 2 to 0x1176
   Extended opcode 1: End of Sequence
 
+0x00001174	/home/pancake/prg/radare2/test/bins/elf/dwarf/hello.c	6
+0x00001160	/home/pancake/prg/radare2/test/bins/elf/dwarf/hello.c	5
+0x00001149	/home/pancake/prg/radare2/test/bins/elf/dwarf/hello.c	3
+0x00001151	/home/pancake/prg/radare2/test/bins/elf/dwarf/hello.c	4
+0x00001176	/home/pancake/prg/radare2/test/bins/elf/dwarf/hello.c	6
+file: /home/pancake/prg/radare2/test/bins/elf/dwarf/hello.c
+line: 6
+addr: 0x00001174
+file: /home/pancake/prg/radare2/test/bins/elf/dwarf/hello.c
+line: 5
+addr: 0x00001160
+file: /home/pancake/prg/radare2/test/bins/elf/dwarf/hello.c
+line: 3
+addr: 0x00001149
+file: /home/pancake/prg/radare2/test/bins/elf/dwarf/hello.c
+line: 4
+addr: 0x00001151
+file: /home/pancake/prg/radare2/test/bins/elf/dwarf/hello.c
+line: 6
+addr: 0x00001176
 EOF
 EXPECT_ERR=<<EOF
-WARN: DWARF5 format is not yet supported by radare2, please contribute
 WARN: run r2 with -e bin.cache=true to fix relocations in disassembly
-WARN: DWARF5 format is not yet supported by radare2, please contribute
 EOF
 RUN
 

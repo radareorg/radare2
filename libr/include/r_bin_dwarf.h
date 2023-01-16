@@ -304,6 +304,7 @@ extern "C" {
 #define DW_FORM_strp_sup                0x1d
 #define DW_FORM_data16                  0x1e
 #define DW_FORM_line_ptr                0x1f
+#define DW_FORM_line_strp               0x1f
 #define DW_FORM_ref_sig8                0x20
 #define DW_FORM_implicit_const          0x21
 #define DW_FORM_loclistx                0x22
@@ -622,6 +623,14 @@ extern "C" {
 #define DW_UT_split_type                0x06
 #define DW_UT_lo_user                   0x80
 #define DW_UT_hi_user                   0xff
+
+#define DW_LNCT_path            0x0001
+#define DW_LNCT_directory_index 0x0002
+#define DW_LNCT_timestamp       0x0003
+#define DW_LNCT_size            0x0004
+#define DW_LNCT_MD5             0x0005
+#define DW_LNCT_lo_user         0x2000
+#define DW_LNCT_hi_user         0x3fff
 
 typedef struct {
 	ut32 total_length;
