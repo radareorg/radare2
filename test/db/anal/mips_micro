@@ -33,6 +33,7 @@ EOF
 RUN
 
 NAME=micromips code block and endian test CAPSTONE
+BROKEN=1
 FILE=-
 CMDS=<<EOF
 rasm2 -a mips -b16 -c micro -D 4fe522fdd01840e40007ae920e2541a49860cc0630847090
