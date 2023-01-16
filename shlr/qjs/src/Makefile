@@ -52,6 +52,8 @@ CONFIG_STACK_CHECK=y
 # include the code for BigInt/BigFloat/BigDecimal and math mode
 CONFIG_BIGNUM=y
 
+CONFIG_NOABORT=y
+
 OBJDIR=.obj
 
 ifdef CONFIG_WIN32
@@ -206,6 +208,9 @@ endif #CROSS_PREFIX
 QJSC_DEFINES:=-DCONFIG_CC=\"$(QJSC_CC)\" -DCONFIG_PREFIX=\"$(prefix)\"
 ifdef CONFIG_LTO
 QJSC_DEFINES+=-DCONFIG_LTO
+endif
+ifdef CONFIG_NOABORT
+QJSC_DEFINES+=-DCONFIG_NOABORT
 endif
 QJSC_HOST_DEFINES:=-DCONFIG_CC=\"$(HOST_CC)\" -DCONFIG_PREFIX=\"$(prefix)\"
 
