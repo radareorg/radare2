@@ -519,6 +519,9 @@ static int rasm_disasm(RAsmState *as, ut64 addr, const char *buf, int len, int b
 				op.size = 1;
 				r_asm_op_set_asm (&op, "invalid");
 			}
+			if (!op.mnemonic) {
+				r_asm_op_set_asm (&op, "unaligned");
+			}
 			char *op_hex = r_asm_op_get_hex (&op);
 			printf ("0x%08" PFMT64x "  %2d %24s  %s\n",
 				as->a->pc, op.size, op_hex,

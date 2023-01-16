@@ -1176,6 +1176,7 @@ static int disassemble(RAnal *a, RAnalOp *op, const ut8 *buf, int len) {
 	disasm_obj.print_address_func = &generic_print_address_func;
 	disasm_obj.buffer_vma = addr;
 	disasm_obj.buffer_length = 4;
+	// is micromips always big endian? different code endian and data endian? must move to arch
 	disasm_obj.endian = !R_ARCH_CONFIG_IS_BIG_ENDIAN (a->config);
 	disasm_obj.fprintf_func = &generic_fprintf_func;
 	disasm_obj.stream = sb;
@@ -1194,7 +1195,7 @@ static int disassemble(RAnal *a, RAnalOp *op, const ut8 *buf, int len) {
 
 static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, RAnalOpMask mask) {
 	ut32 opcode;
-	int oplen = (anal->config->bits == 16) ? 2 : 4;
+	int oplen = 4;
 	const ut8 *buf;
 	gnu_insn insn;
 
@@ -1204,6 +1205,7 @@ static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, R
 	if (mask & R_ARCH_OP_MASK_DISASM) {
 		op->addr = addr;
 		disassemble (anal, op, b, len);
+		oplen = op->size;
 	}
 
 	op->type = R_ANAL_OP_TYPE_UNK;
@@ -1913,6 +1915,12 @@ static bool mips_set_reg_profile(RAnal *anal) {
 }
 
 static int archinfo(RAnal *anal, int q) {
+	if (q == R_ANAL_ARCHINFO_MIN_OP_SIZE) {
+		const char *cpu = anal->config->cpu;
+		if (!strcmp (cpu, "micro")) {
+			return 2; // (anal->bits == 16) ? 2: 4;
+		}
+	}
 	return 4;
 }
 
