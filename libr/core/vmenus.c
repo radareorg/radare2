@@ -379,38 +379,37 @@ R_API bool r_core_visual_bit_editor(RCore *core) {
 	}
 	memcpy (buf, core->block + cur, sizeof (ut64));
 	for (;;) {
-		RAnalOp asmop;
-		r_anal_op_init (&asmop);
-		// RAnalOp asmop;
+		r_anal_op_init (&analop);
 		r_cons_clear00 ();
 		bool use_color = core->print->flags & R_PRINT_FLAGS_COLOR;
-		r_anal_op_set_bytes (&asmop, core->offset + cur, buf, sizeof (ut64));
-		// bool is_valid = r_arch_decode (core->anal->arch, &asmop, R_ARCH_OP_MASK_DISASM);
-		// (void) r_asm_disassemble (core->rasm, &asmop, buf, sizeof (ut64));
-		analop.type = -1;
-		(void)r_anal_op (core->anal, &analop, core->offset, buf, sizeof (ut64), R_ARCH_OP_MASK_ESIL | R_ARCH_OP_MASK_DISASM);
+		r_anal_op_set_bytes (&analop, core->offset + cur, buf, sizeof (ut64));
+		(void)r_anal_op (core->anal, &analop, core->offset, buf, sizeof (buf), R_ARCH_OP_MASK_ESIL | R_ARCH_OP_MASK_DISASM);
 		analopType = analop.type & R_ANAL_OP_TYPE_MASK;
 		r_cons_printf ("r2's bit editor: (=pfb 3b4b formatting)\n\n");
-		r_cons_printf ("offset: 0x%08"PFMT64x"\n"Color_RESET, core->offset + cur);
-		{
-			char *op_hex = r_hex_bin2strdup (asmop.bytes, asmop.size);
+		r_cons_printf ("adr: 0x%08"PFMT64x"\n"Color_RESET, core->offset + cur);
+		if (analop.bytes) {
+			char *op_hex = r_hex_bin2strdup (analop.bytes, analop.size);
 			char *res = r_print_hexpair (core->print, op_hex, -1);
 			r_cons_printf ("hex: %s\n"Color_RESET, res);
 			free (res);
 			free (op_hex);
 		}
-		r_cons_printf ("len: %d\n", asmop.size);
+		r_cons_printf ("len: %d\n", analop.size);
 		{
 			ut32 word = (x % 32);
-			r_cons_printf ("shift: >> %d << %d\n", word, (asmop.size * 8) - word - 1);
+			r_cons_printf ("shf: >> %d << %d\n", word, (analop.size * 8) - word - 1);
 		}
 		{
-			char *op = colorize_asm_string (core, asmop.mnemonic, analopType, core->offset);
-			r_cons_printf (Color_RESET"asm: %s\n"Color_RESET, op);
-			free (op);
+			char *op = colorize_asm_string (core, analop.mnemonic, analopType, core->offset);
+			if (op) {
+				r_cons_printf (Color_RESET"asm: %s\n"Color_RESET, op);
+				free (op);
+			} else {
+				r_cons_printf (Color_RED"asm: unknown\n"Color_RESET);
+				free (op);
+			}
 		}
 		r_cons_printf (Color_RESET"esl: %s\n"Color_RESET, r_strbuf_get (&analop.esil));
-		r_anal_op_fini (&analop);
 		r_cons_printf ("chr:");
 		for (i = 0; i < 8; i++) {
 			const ut8 *byte = buf + i;
@@ -447,7 +446,7 @@ R_API bool r_core_visual_bit_editor(RCore *core) {
 				if (i == 4) {
 					r_cons_print ("| ");
 				}
-				if (colorBits && i >= asmop.size) {
+				if (colorBits && i >= analop.size) {
 					r_cons_print (Color_RESET);
 					colorBits = false;
 				}
@@ -467,7 +466,7 @@ R_API bool r_core_visual_bit_editor(RCore *core) {
 					if (i == 4) {
 						r_cons_print ("| ");
 					}
-					if (colorBits && i >= asmop.size) {
+					if (colorBits && i >= analop.size) {
 						r_cons_print (Color_RESET);
 						colorBits = false;
 					}
@@ -523,10 +522,10 @@ R_API bool r_core_visual_bit_editor(RCore *core) {
 		switch (ch) {
 		case 'Q':
 		case 'q':
-			{
-				char *op_hex = r_hex_bin2strdup (asmop.bytes, asmop.size);
+			if (analop.bytes) {
+				char *op_hex = r_hex_bin2strdup (analop.bytes, analop.size);
 				char *res = r_print_hexpair (core->print, op_hex, -1);
-				r_core_cmdf (core, "wx %02x%02x%02x%02x", buf[0], buf[1], buf[2], buf[3]);
+				r_core_cmd_callf (core, "wx %02x%02x%02x%02x", buf[0], buf[1], buf[2], buf[3]);
 				free (res);
 				free (op_hex);
 			}
@@ -545,11 +544,13 @@ R_API bool r_core_visual_bit_editor(RCore *core) {
 			}
 			break;
 		case 'J':
-			r_core_cmd_call (core, "s+8");
+			// r_core_cmd_call (core, "s+8");
+			r_core_cmd_call (core, "so+1");
 			memcpy (buf, core->block + cur, sizeof (ut64));
 			break;
 		case 'K':
-			r_core_cmd_call (core, "s-8");
+			// r_core_cmd_call (core, "s-8");
+			r_core_cmd_call (core, "so-1");
 			memcpy (buf, core->block + cur, sizeof (ut64));
 			break;
 		case 'j':
@@ -610,7 +611,7 @@ R_API bool r_core_visual_bit_editor(RCore *core) {
 			buf[(x/8)]++;
 			break;
 		case '-':
-			buf[(x/8)]--;
+			buf[(x / 8)]--;
 			break;
 		case 'h':
 			x = R_MAX (x - 1, 0);
@@ -658,7 +659,7 @@ R_API bool r_core_visual_bit_editor(RCore *core) {
 			}
 			break;
 		}
-		r_anal_op_fini (&asmop);
+		r_anal_op_fini (&analop);
 	}
 	return true;
 }
@@ -703,7 +704,7 @@ static bool sdbforcb(void *p, const char *k, const char *v) {
 						vt->curfmt = strdup (v);
 						pre = ">";
 					}
-					if (use_color && *pre=='>') {
+					if (use_color && *pre == '>') {
 						r_cons_printf ("%s"Color_RESET" %s %s  %s\n", color_sel,
 							pre, k, v);
 					} else {
@@ -2593,7 +2594,7 @@ R_API void r_core_visual_config(RCore *core) {
 		case '\r':
 		case '\n': // never happens
 			if (menu == 1) {
-				fs2 ? config_visual_hit (core, fs2, (ch=='E')) : 0;
+				fs2 ? config_visual_hit (core, fs2, (ch == 'E')) : 0;
 			} else {
 				menu = 1;
 				_option = option;
@@ -4006,7 +4007,7 @@ onemoretime:
 		{
 			char str[128];
 			r_cons_show_cursor (true);
-			r_line_set_prompt (ch=='t'?"type: ": "opstr: ");
+			r_line_set_prompt (ch == 't'? "type: ": "opstr: ");
 			if (r_cons_fgets (str, sizeof (str), 0, NULL) > 0) {
 				r_core_cmdf (core, "ah%c %s @ 0x%"PFMT64x, ch, str, off);
 			}
