@@ -14,21 +14,83 @@ NAME=micromips on cs
 FILE=-
 CMDS=<<EOF
 rasm2 -a mips -b32 -d 22fdd018
+?e --
 rasm2 -a mips -b32 -c micro -d 22fdd018
-?e gnu
+?e --
 rasm2 -a mips.gnu -b32 -d 22fdd018
+?e --
 rasm2 -a mips.gnu -b32 -c micro -d 22fdd018
 EOF
 EXPECT=<<EOF
 invalid
+--
 lw t1, 0x18d0(v0)
-gnu
+--
 0x18d0fd22
+--
 lw t1, 6352(v0)
 EOF
 RUN
 
-NAME=micromips code block and endian test
+NAME=micromips code block and endian test CAPSTONE
+FILE=-
+CMDS=<<EOF
+rasm2 -a mips -b16 -c micro -D 4fe522fdd01840e40007ae920e2541a49860cc0630847090
+?e --
+rasm2 -e -a mips -b16 -c micro -D 4fe522fdd01840e40007ae920e2541a49860cc0630847090
+EOF
+EXPECT=<<EOF
+0x00000000   4                 4fe522fd  invalid
+0x00000004   4                 d01840e4  sb a2, -0x1bc0(s0)
+0x00000008   2                     0007  addu16 a2, s0, s0
+0x0000000a   4                 ae920e25  slti s5, t6, 0x250e
+0x0000000e   4                 41a49860  invalid
+0x00000012   2                     cc06  addu16 a1, a2, a0
+0x00000014   2                     3084  movep a1, a2, zero, v1
+0x00000016   2                     7090  unaligned
+--
+0x00000000   2                     4fe5  addiusp -0x38
+0x00000002   4                 22fdd018  swm32 s0, s1, s2, s3, s4, s5, s6, ra, 0x18(sp)
+0x00000006   4                 40e40007  beqzc a0, 0xe
+0x0000000a   2                     ae92  bnez16 a1, 0x24
+0x0000000c   2                     0e25  move s1, a1
+0x0000000e   4                 41a49860  lui a0, 0x9860
+0x00000012   2                     cc06  b16 0xc
+0x00000014   4                 30847090  addiu a0, a0, 0x7090
+EOF
+RUN
+
+NAME=micromips code block and endian test GNU
+FILE=-
+CMDS=<<EOF
+rasm2 -a mips.gnu -b16 -c micro -D 4fe522fdd01840e40007ae920e2541a49860cc0630847090
+?e --
+rasm2 -e -a mips.gnu -b16 -c micro -D 4fe522fdd01840e40007ae920e2541a49860cc0630847090
+EOF
+EXPECT=<<EOF
+0x00000000   2                     4fe5  0xe54f
+0x00000002   4                 22fdd018  lw t1, 6352(v0)
+0x00000006   2                     40e4  0xe440
+0x00000008   2                     0007  addu a2, s0, s0
+0x0000000a   4                 ae920e25  slti s5, t6, 9486
+0x0000000e   2                     41a4  0xa441
+0x00000010   4                 9860cc06  lwl a0, 1740(t8)
+0x00000014   2                     3084  movep a1,a2, zero, v1
+0x00000016   2                     7090  unaligned
+--
+0x00000000   2                     4fe5  addiu sp, sp, -56
+0x00000002   4                 22fdd018  swm s0-s6,ra, 24(sp)
+0x00000006   4                 40e40007  beqzc a0, 0x00000019
+0x0000000a   2                     ae92  bnez a1, 0x00000031
+0x0000000c   2                     0e25  move s1, a1
+0x0000000e   4                 41a49860  lui a0, 0x9860
+0x00000012   2                     cc06  b 0x00000021
+0x00000014   4                 30847090  addiu a0, a0, 28816
+EOF
+RUN
+
+NAME=both
+BROKEN=1
 FILE=-
 CMDS=<<EOF
 rasm2 -a mips -b16 -c micro -D 4fe522fdd01840e40007ae920e2541a49860cc0630847090
