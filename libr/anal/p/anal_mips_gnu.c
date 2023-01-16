@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2010-2022 - pancake */
+/* radare - LGPL - Copyright 2010-2023 - pancake */
 
 #include <r_lib.h>
 #include <r_asm.h>
@@ -768,7 +768,6 @@ static const char *mips_reg_decode(ut32 reg_num) {
 }
 
 static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, gnu_insn *insn) {
-
 	switch (insn->id) {
 	case MIPS_INS_NOP:
 		r_strbuf_set (&op->esil, ",");
@@ -1197,7 +1196,7 @@ static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, R
 	ut32 opcode = 0;
 	int oplen = 4;
 	const ut8 *buf;
-	gnu_insn insn;
+	gnu_insn insn = {0};
 
 	if (!op) {
 		return oplen;
