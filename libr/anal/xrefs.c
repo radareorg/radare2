@@ -361,6 +361,8 @@ R_API const char *r_anal_ref_type_tostring(RAnalRefType type) {
 	case ' ':
 	case R_ANAL_REF_TYPE_NULL:
 		return "NULL";
+	case R_ANAL_REF_TYPE_CODE | R_ANAL_REF_TYPE_DATA:
+		return "ICOD"; // indirect code reference
 	case R_ANAL_REF_TYPE_CODE:
 		return "CODE";
 	case R_ANAL_REF_TYPE_CALL:
