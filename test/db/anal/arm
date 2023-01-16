@@ -1125,3 +1125,33 @@ EXPECT=<<EOF
 EOF
 RUN
 
+
+NAME=load code refs
+FILE=bins/elf/blah.bin
+CMDS=<<EOF
+af
+pdf
+s main
+pd 1
+EOF
+EXPECT=<<EOF
+            ;-- section..text:
+/ 44: entry0 (int32_t arg1, int argc);
+|           ; arg int32_t arg1 @ r0
+|           ; arg int argc @ r1
+|           0x000083b8      00b0a0e3       mov fp, 0                   ; [14] -r-x section size 800 named .text
+|           0x000083bc      00e0a0e3       mov lr, 0
+|           0x000083c0      04109de4       pop {r1}
+|           0x000083c4      0d20a0e1       mov r2, sp
+|           0x000083c8      04202de5       str r2, [sp, -4]!
+|           0x000083cc      04002de5       str r0, [sp, -4]!           ; arg1
+|           0x000083d0      10c09fe5       ldr ip, [0x000083e8]        ; [0x83e8:4]=0x8664
+|           0x000083d4      04c02de5       str ip, [sp, -4]!
+|           0x000083d8      0c009fe5       ldr r0, main                ; [0x83ec:4]=0x8470 main
+|           0x000083dc      0c309fe5       ldr r3, [0x000083f0]        ; [0x83f0:4]=0x8668
+\           0x000083e0      e5ffffeb       bl sym.imp.__libc_start_main ; int __libc_start_main(func main, int argc, char **ubp_av, func init, func fini, func rtld_fini, void *stack_end)
+            ;-- main:
+            ; DREF XREF from entry0 @ 0x83d8(r)
+            0x00008470      10482de9       push {r4, fp, lr}
+EOF
+RUN
