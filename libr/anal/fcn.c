@@ -1042,16 +1042,27 @@ repeat:
 			}
 			break;
 		case R_ANAL_OP_TYPE_LOAD:
-			if (anal->opt.loads) {
-				if (anal->iob.is_valid_offset (anal->iob.io, op->ptr, 0)) {
-					r_meta_set (anal, R_META_TYPE_DATA, op->ptr, 4, "");
+			if (anal->iob.is_valid_offset (anal->iob.io, op->ptr, 0)) {
+				ut8 dd[4] = {0};
+				(void)anal->iob.read_at (anal->iob.io, op->ptr, (ut8 *) dd, sizeof (dd));
+				// if page have exec perms
+				ut64 da = (ut64)r_read_ble32 (dd, R_ARCH_CONFIG_IS_BIG_ENDIAN (anal->config));
+				if (da != UT32_MAX && anal->iob.is_valid_offset (anal->iob.io, da, 0)) {
+					r_anal_xrefs_set (anal, op->addr, da, R_ANAL_REF_TYPE_CODE | R_ANAL_REF_TYPE_DATA);
+				}
+				r_anal_xrefs_set (anal, op->addr, op->ptr, R_ANAL_REF_TYPE_DATA);
+				if (anal->opt.loads) {
+					// set this address as data if destination is not code
+					if (anal->iob.is_valid_offset (anal->iob.io, op->ptr, 0)) {
+						r_meta_set (anal, R_META_TYPE_DATA, op->ptr, 4, "");
+					}
 				}
 			}
 			break;
 			// Case of valid but unused "add [rax], al"
 		case R_ANAL_OP_TYPE_ADD:
 			if (is_arm && anal->config->bits == 32) {
-				if (!memcmp (buf, "\x00\xe0\x8f\xe2", 4)) {
+				if (len >= 4 && !memcmp (buf, "\x00\xe0\x8f\xe2", 4)) {
 					// add lr, pc, 0 //
 					last_is_add_lr_pc = true; // TODO: support different values, not just 0
 				}
