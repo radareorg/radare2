@@ -1151,7 +1151,7 @@ EXPECT=<<EOF
 |           0x000083dc      0c309fe5       ldr r3, [0x000083f0]        ; [0x83f0:4]=0x8668
 \           0x000083e0      e5ffffeb       bl sym.imp.__libc_start_main ; int __libc_start_main(func main, int argc, char **ubp_av, func init, func fini, func rtld_fini, void *stack_end)
             ;-- main:
-            ; DREF XREF from entry0 @ 0x83d8(r)
+            ; ICOD XREF from entry0 @ 0x83d8(r)
             0x00008470      10482de9       push {r4, fp, lr}
 EOF
 RUN
