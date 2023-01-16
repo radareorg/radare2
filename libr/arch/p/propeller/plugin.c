@@ -18,7 +18,7 @@ static bool propeller_op(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 		if (mask & R_ARCH_OP_MASK_DISASM) {
 			op->mnemonic = strdup ("invalid");
 		}
-		return op->size = 0;
+		return false;
 	}
 	int ret;
 	struct propeller_cmd cmd;
@@ -32,7 +32,8 @@ static bool propeller_op(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 		if (mask & R_ARCH_OP_MASK_DISASM) {
 			op->mnemonic = strdup ("invalid");
 		}
-		return op->size = ret;
+		op->size = ret;
+		return true;
 	}
 
 	if (mask & R_ARCH_OP_MASK_DISASM) {
@@ -119,8 +120,8 @@ static bool propeller_op(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 		op->type = R_ANAL_OP_TYPE_UNK;
 		break;
 	}
-
-	return ret;
+	op->size = ret;
+	return true;
 }
 
 RArchPlugin r_arch_plugin_propeller = {
