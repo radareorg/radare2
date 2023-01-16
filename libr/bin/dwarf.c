@@ -560,15 +560,13 @@ beach:
 // Because this function needs ability to parse a lot of FORMS just like debug info
 // I'll complete this function after completing debug_info parsing and merging
 // for the meanwhile I am skipping the space.
-static const ut8 *parse_line_header_source_dwarf5(RBinFile *bf, const ut8 *buf, const ut8 *buf_end,
-	RBinDwarfLineHeader *hdr, Sdb *sdb, int mode, PrintfCallback print) {
-	size_t maxlen = 0xfff;
+static const ut8 *parse_line_header_source_dwarf5(RBinFile *bf, const ut8 *buf, const ut8 *buf_end, RBinDwarfLineHeader *hdr, Sdb *sdb, int mode, PrintfCallback print) {
+	const size_t maxlen = 0xfff;
 	int i, j;
 	enum type { DIRECTORIES,
 		FILES };
 
 	for (i = DIRECTORIES; i <= FILES; i++) {
-
 		if (mode == R_MODE_PRINT && i == DIRECTORIES) {
 			print (" The Directory Table:\n");
 		} else if (mode == R_MODE_PRINT && i == FILES) {
@@ -688,13 +686,18 @@ static const ut8 *parse_line_header_source_dwarf5(RBinFile *bf, const ut8 *buf, 
 				}
 			}
 
-			if (mode == R_MODE_PRINT && i == DIRECTORIES) {
-				// Keep directories 0 indexed?
-				print ("  %d     %s\n", index, sdb_array_get (sdb, "includedirs", index, 0));
-			} else if (mode == R_MODE_PRINT && i == FILES) {
-				print ("  %d     %" PFMT64d "       %" PFMT64d "         %" PFMT64d "          %s\n",
-					index + 1, hdr->file_names[count].id_idx, hdr->file_names[count].mod_time,
-					hdr->file_names[count].file_len, hdr->file_names[count].name);
+			if (mode == R_MODE_PRINT) {
+				switch (i) {
+				case DIRECTORIES:
+					// Keep directories 0 indexed?
+					print ("  %" PFMT64u "     %s\n", index, sdb_array_get (sdb, "includedirs", index, 0));
+					break;
+				case FILES:
+					print ("  %" PFMT64u "     %" PFMT32d "       %" PFMT32d "         %" PFMT32d "          %s\n",
+						index + 1, hdr->file_names[count].id_idx, hdr->file_names[count].mod_time,
+						hdr->file_names[count].file_len, hdr->file_names[count].name);
+					break;
+				}
 			}
 
 			count++;
