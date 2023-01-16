@@ -1,5 +1,5 @@
-/* radare - LGPL - Copyright 2012-2013 - pancake
-	2014 - Fedor Sakharov <fedor.sakharov@gmail.com> */
+/* radare - LGPL - Copyright 2012-2023 - pancake */
+/* 2014 - Fedor Sakharov <fedor.sakharov@gmail.com> */
 
 #include <string.h>
 #include <r_types.h>
@@ -7,15 +7,18 @@
 #include <r_anal.h>
 #include <r_util.h>
 
-#include "propeller/propeller_disas.h"
+#include "./propeller_disas.h"
 
-static int propeller_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
+// static int propeller_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
+static bool propeller_op(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
+	const ut8 *buf = op->bytes;
+	const int len = op->size;
 	if (len < 4) {
 		op->type = R_ANAL_OP_TYPE_ILL;
 		if (mask & R_ARCH_OP_MASK_DISASM) {
 			op->mnemonic = strdup ("invalid");
 		}
-		return op->size = 0;
+		return false;
 	}
 	int ret;
 	struct propeller_cmd cmd;
@@ -29,10 +32,9 @@ static int propeller_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int
 		if (mask & R_ARCH_OP_MASK_DISASM) {
 			op->mnemonic = strdup ("invalid");
 		}
-		return op->size = ret;
+		op->size = ret;
+		return true;
 	}
-
-	op->addr = addr;
 
 	if (mask & R_ARCH_OP_MASK_DISASM) {
 		if (cmd.prefix[0] && cmd.operands[0]) {
@@ -45,6 +47,9 @@ static int propeller_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int
 	}
 
 	switch (cmd.opcode) {
+	case PROP_NOP:
+		op->type = R_ANAL_OP_TYPE_NOP;
+		break;
 	case PROP_TEST:
 	case PROP_TESTN:
 	case PROP_TJNZ:
@@ -82,7 +87,7 @@ static int propeller_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int
 	case PROP_MIN:
 	case PROP_MAX:
 	case PROP_MAXS:
-	case PROP_RDBYTE:
+	// case PROP_RDBYTE:
 	case PROP_RDLONG:
 	case PROP_RDWORD:
 	case PROP_MOV:
@@ -105,25 +110,25 @@ static int propeller_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int
 		if (cmd.immed == 0) {
 			op->type = R_ANAL_OP_TYPE_CJMP;
 			op->jump = 0x20 + cmd.src;
-			op->fail = addr + 2;
+			op->fail = op->addr + 2;
 		} else {
 			op->type = R_ANAL_OP_TYPE_UJMP;
-			op->fail = addr + 2;
+			op->fail = op->addr + 2;
 		}
 		break;
 	default:
 		op->type = R_ANAL_OP_TYPE_UNK;
 		break;
 	}
-
-	return ret;
+	op->size = ret;
+	return true;
 }
 
-RAnalPlugin r_anal_plugin_propeller = {
+RArchPlugin r_arch_plugin_propeller = {
 	.name = "propeller",
 	.desc = "Parallax propeller code analysis plugin",
 	.license = "LGPL3",
 	.arch = "propeller",
 	.bits = 32,
-	.op = propeller_op,
+	.decode = propeller_op,
 };
