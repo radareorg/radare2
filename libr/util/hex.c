@@ -349,7 +349,7 @@ R_API int r_hex_pair2bin(const char *arg) {
 	ut32 j = 0;
 
 	for (ptr = (ut8*)arg; ;ptr = ptr + 1) {
-		if (!*ptr || *ptr==' ' || j == 2) {
+		if (!*ptr || *ptr == ' ' || j == 2) {
 			break;
 		}
 		d = c;

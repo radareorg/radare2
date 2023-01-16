@@ -233,8 +233,8 @@ static void __rtr_shell(RCore *core, int nth) {
 				free (ptr);
 				free (uri);
 			}
-		} else if (res[0]=='v' || res[0] == 'V') {
-			if (res[1]==' ') {
+		} else if (res[0] == 'v' || res[0] == 'V') {
+			if (res[1] == ' ') {
 				rtr_visual (core, T, res + 1);
 			} else {
 				rtr_visual (core, T, NULL);

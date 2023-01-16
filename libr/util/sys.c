@@ -973,7 +973,7 @@ R_API bool r_sys_arch_match(const char *archstr, const char *arch) {
 	}
 	if ((ptr = strstr (archstr, arch))) {
 		char p = ptr[strlen (arch)];
-		if (!p || p==',') {
+		if (!p || p == ',') {
 			return true;
 		}
 	}

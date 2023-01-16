@@ -457,8 +457,8 @@ static int cmd_meta_comment(RCore *core, const char *input) {
 		r_meta_print_list_all (core->anal, R_META_TYPE_COMMENT, ',', input + 2);
 		break;
 	case 'F': // "CC,"
-		if (input[2]=='?') {
-			eprintf ("Usage: CCF [file]\n");
+		if (input[2] == '?') {
+			r_core_cmd_help_match (core, help_msg_CC, "CCF", true);
 		} else if (input[2] == ' ') {
 			const char *fn = input + 2;
 			const char *comment = r_meta_get_string (core->anal, R_META_TYPE_COMMENT, addr);
@@ -656,7 +656,7 @@ static int cmd_meta_comment(RCore *core, const char *input) {
 		addr = r_num_math (core->num, s);
 		// Comment at
 		if (p) {
-			if (input[2]=='+') {
+			if (input[2] == '+') {
 				const char *comment = r_meta_get_string (core->anal, R_META_TYPE_COMMENT, addr);
 				if (comment) {
 					char *text = r_str_newf ("%s\n%s", comment, p);

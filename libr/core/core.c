@@ -848,7 +848,7 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 				/* function bounds (uppercase) */
 				case 'B': return fcn->addr; // begin
 				case 'E': return r_anal_function_max_addr (fcn); // end
-				case 'S': return (str[3]=='S') ? r_anal_function_realsize (fcn) : r_anal_function_linear_size (fcn);
+				case 'S': return (str[3] == 'S') ? r_anal_function_realsize (fcn) : r_anal_function_linear_size (fcn);
 				case 'I': return fcn->ninstr;
 				/* basic blocks (lowercase) */
 				case 'b': return bbBegin (fcn, core->offset);
@@ -2063,7 +2063,7 @@ R_API void r_core_autocomplete(R_NULLABLE RCore *core, RLineCompletion *completi
 			|| !strncmp (buf->data, "pfv.", 4)
 			|| !strncmp (buf->data, "pfj.", 4)) {
 		char pfx[2];
-		int chr = (buf->data[2]=='.')? 3: 4;
+		int chr = (buf->data[2] == '.')? 3: 4;
 		if (chr == 4) {
 			pfx[0] = buf->data[2];
 			pfx[1] = 0;

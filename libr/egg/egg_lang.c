@@ -490,7 +490,7 @@ R_API char *r_egg_mkvar(REgg *egg, char *out, const char *_str, int delta) {
 	}
 	/* XXX memory leak */
 	ret = str = oldstr = r_str_trim_dup (_str);
-	// if (num || str[0]=='0') { sprintf(out, "$%d", num); ret = out; }
+	// if (num || str[0] == '0') { sprintf(out, "$%d", num); ret = out; }
 	if ((q = strchr (str, ':'))) {
 		*q = '\0';
 		qi = atoi (q + 1);
@@ -1146,9 +1146,9 @@ static void rcc_next(REgg *egg) {
 				vs = egg->lang.varsize;
 				if (is_var (eq)) {
 					eq = r_egg_mkvar (egg, buf, eq, 0);
-					if (egg->lang.varxs=='*') {
+					if (egg->lang.varxs == '*') {
 						e->load (egg, eq, egg->lang.varsize);
-					} else if (egg->lang.varxs=='&') {
+					} else if (egg->lang.varxs == '&') {
 						// XXX this is a hack .. must be integrated with pusharg
 						e->load_ptr (egg, eq);
 					}

@@ -3885,7 +3885,7 @@ reread:
 		goto beach;
 	case 'r': // "/r" and "/re"
 		{
-		ut64 n = (input[1] == ' ' || (input[1] && input[2]==' '))
+		ut64 n = (input[1] == ' ' || (input[1] && input[2] == ' '))
 			? r_num_math (core->num, input + 2): UT64_MAX;
 		if (!n) {
 			R_LOG_ERROR ("Cannot find null references");

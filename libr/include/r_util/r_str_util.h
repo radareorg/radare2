@@ -6,8 +6,8 @@ extern "C" {
 #endif
 
 #define IS_NULLSTR(x) (!(x) || !*(x))
-#define IS_WHITECHAR(x) ((x) == ' ' || (x)=='\t' || (x) == '\n' || (x) == '\r')
-#define IS_SEPARATOR(x) ((x) == ' ' || (x)=='\t' || (x) == '\n' || (x) == '\r' || (x) == ' '|| \
+#define IS_WHITECHAR(x) ((x) == ' ' || (x) == '\t' || (x) == '\n' || (x) == '\r')
+#define IS_SEPARATOR(x) ((x) == ' ' || (x) == '\t' || (x) == '\n' || (x) == '\r' || (x) == ' '|| \
 		(x) == ',' || (x) == ';' || (x) == ':' || (x) == '[' || (x) == ']' || \
 		(x) == '(' || (x) == ')' || (x) == '{' || (x) == '}')
 #define IS_HEXCHAR(x) (((x) >= '0' && (x) <= '9') || ((x) >= 'a' && (x) <= 'f') || ((x) >= 'A' && (x) <= 'F'))

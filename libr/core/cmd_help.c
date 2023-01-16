@@ -426,7 +426,7 @@ static char *filterFlags(RCore *core, const char *msg) {
 			break;
 		}
 		buf = r_str_appendlen (buf, msg, dollar-msg);
-		if (dollar[1]=='{') {
+		if (dollar[1] == '{') {
 			// find }
 			end = strchr (dollar + 2, '}');
 			if (end) {
@@ -642,7 +642,7 @@ static int cmd_help(void *data, const char *input) {
 		ut64 b = 0;
 		ut32 r = UT32_MAX;
 		if (input[1]) {
-			strncpy (out, input + (input[1] ==' '? 2: 1), sizeof (out)-1);
+			strncpy (out, input + (input[1] == ' '? 2: 1), sizeof (out)-1);
 			p = strchr (out + 1, ' ');
 			if (p) {
 				*p = 0;
@@ -1294,7 +1294,7 @@ static int cmd_help(void *data, const char *input) {
 	case 's': { // "?s" sequence from to step
 		ut64 from, to, step;
 		char *p, *p2;
-		for (input++; *input==' '; input++);
+		for (input++; *input == ' '; input++);
 		p = strchr (input, ' ');
 		if (p) {
 			*p = '\0';
@@ -1395,7 +1395,7 @@ static int cmd_help(void *data, const char *input) {
 				 r_core_return_value (core, r_cons_yesno (1, "%s? (Y/n)", input));
 				 break;
 			case 'n': // "?in"
-				 for (input += 2; *input==' '; input++);
+				 for (input += 2; *input == ' '; input++);
 				 r_core_return_value (core, r_cons_yesno (0, "%s? (y/N)", input));
 				 break;
 			default: {

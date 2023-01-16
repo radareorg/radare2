@@ -552,7 +552,7 @@ static bool cmd_wff(RCore *core, const char *input) {
 		*p++ = 0;
 	}
 
-	if (*arg =='?' || !*arg) {
+	if (*arg == '?' || !*arg) {
 		eprintf ("Usage: wf [file] ([size] ([offset]))\n");
 	} else if (!strcmp (arg, "-")) {
 		char *out = r_core_editor (core, NULL, NULL);
@@ -1131,7 +1131,7 @@ static int cmd_wp(void *data, const char *input) {
 
 static int cmd_wu(void *data, const char *input) {
 	// TODO: implement it in an API RCore.write_unified_hexpatch() is ETOOLONG
-	if (input[0]==' ') {
+	if (input[0] == ' ') {
 		char *data = r_file_slurp (input+1, NULL);
 		if (data) {
 			int i;
@@ -1147,7 +1147,7 @@ static int cmd_wu(void *data, const char *input) {
 				case '-':
 					if (newline) {
 						sign = 0;
-						offs = i + ((data[i+1]==' ')?2:1);
+						offs = i + ((data[i + 1] == ' ')? 2: 1);
 					}
 					break;
 				case ' ':
@@ -1360,10 +1360,10 @@ static int cmd_wc(void *data, const char *input) {
 		r_io_cache_list (core->io, 1);
 		break;
 	case '+': // "wc+"
-		if (input[1]=='*') { // "wc+*"
+		if (input[1] == '*') { // "wc+*"
 			//r_io_cache_reset (core->io, core->io->cached);
 			R_LOG_TODO ("wc+*");
-		} else if (input[1]==' ') { // "wc+ "
+		} else if (input[1] == ' ') { // "wc+ "
 			char *p = strchr (input + 2, ' ');
 			ut64 to, from;
 			from = r_num_math (core->num, input+2);
@@ -1384,7 +1384,7 @@ static int cmd_wc(void *data, const char *input) {
 		}
 		break;
 	case '-': { // "wc-"
-		if (input[1]=='*') { // "wc-*"
+		if (input[1] == '*') { // "wc-*"
 			r_io_cache_reset (core->io, core->io->cached);
 			break;
 		}
@@ -1781,7 +1781,7 @@ static int cmd_wx(void *data, const char *input) {
 		cmd_write_hexpair (core, r_str_trim_head_ro (input));
 		break;
 	case 'f': // "wxf"
-		arg = (const char *)(input + ((input[1]==' ')? 2: 1));
+		arg = (const char *)(input + ((input[1] == ' ')? 2: 1));
 		if (!strcmp (arg, "-")) {
 			int len;
 			ut8 *out;

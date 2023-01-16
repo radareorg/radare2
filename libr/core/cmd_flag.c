@@ -1056,7 +1056,7 @@ rep:
 			r_flag_unset_all (core->flags);
 		} else if (input[1]) {
 			const char *flagname = r_str_trim_head_ro (input + 1);
-			while (*flagname==' ') {
+			while (*flagname == ' ') {
 				flagname++;
 			}
 			if (*flagname == '.') {
@@ -1104,7 +1104,7 @@ rep:
 					}
 					r_str_trim (name);
 					if (fcn) {
-						if (*name=='-') {
+						if (*name == '-') {
 							r_anal_function_delete_label (fcn, name + 1);
 						} else {
 							r_anal_function_set_label (fcn, name, off);
@@ -1314,8 +1314,8 @@ rep:
 			RListIter *iter;
 			RFlagItem *fi;
 			ut64 addr = (input[1] && input[2] != '*' && input[2]) ? r_num_math (core->num, input + 2): core->offset;
-			RList *list_to_free = (input[1] && input[2]=='*')? r_flag_all_list (core->flags, false): NULL;
-			const RList *list = (input[1] && input[2]=='*')?
+			RList *list_to_free = (input[1] && input[2] == '*')? r_flag_all_list (core->flags, false): NULL;
+			const RList *list = (input[1] && input[2] == '*')?
 				list_to_free
 				: r_flag_get_list (core->flags, addr);
 			r_list_foreach (list, iter, fi) {

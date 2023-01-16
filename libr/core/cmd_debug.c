@@ -1544,7 +1544,7 @@ static int cmd_debug_map_snapshot(RCore *core, const char *input) {
 		r_core_cmd_help (core, help_msg_dms);
 		break;
 	case '-':
-		if (input[1]=='*') {
+		if (input[1] == '*') {
 			r_debug_snap_delete (core->dbg, -1);
 		} else {
 			r_debug_snap_delete (core->dbg, r_num_math (core->num, input + 1));
@@ -1851,7 +1851,7 @@ static int cmd_debug_map(RCore *core, const char *input) {
 			char *ptr;
 			int i;
 
-			if (input[1]=='*') {
+			if (input[1] == '*') {
 				ptr = strdup (r_str_trim_head_ro ((char*)input + 2));
 				mode = "-r ";
 			} else {
@@ -2915,7 +2915,7 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 		//r_debug_drx_list (core->dbg);
 		if (str[1] == '?') {
 			eprintf ("usage: drf [fpureg] [= value]\n");
-		} else if (str[1]==' ') {
+		} else if (str[1] == ' ') {
 			char *p, *name = strdup (str + 2);
 			char *eq = strchr (name, '=');
 			if (eq) {
@@ -3649,7 +3649,7 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 			}
 			break;
 		case 'd': // "dbtd"
-			for (p = input + 3; *p==' ';p++) {
+			for (p = input + 3; *p == ' ';p++) {
 				//nothing to see here
 			}
 			if (*p == '*') {
@@ -4291,7 +4291,7 @@ static void r_core_debug_kill(RCore *core, const char *input) {
 		} else {
 			r_core_cmd_help (core, help_msg_dk);
 		}
-	} else if (*input=='o') {
+	} else if (*input == 'o') {
 		switch (input[1]) {
 			case 0: // "dko" - list signal skip/conts
 				r_debug_signal_list (core->dbg, 1);
@@ -4429,8 +4429,8 @@ static bool cmd_dcu(RCore *core, const char *input) {
 		ptr = (input[2] && input[3])? strchr (input + 3, ' '): NULL;
 		if (ptr) { // TODO: put '\0' in *ptr to avoid
 			from = r_num_math (core->num, input + 3);
-			if (ptr[1]=='.') {
-				to = r_num_tail (core->num, core->offset, ptr+2);
+			if (ptr[1] == '.') {
+				to = r_num_tail (core->num, core->offset, ptr + 2);
 			} else {
 				to = r_num_math (core->num, ptr+1);
 			}

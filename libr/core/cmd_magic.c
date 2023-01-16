@@ -115,7 +115,7 @@ static int r_core_magic_at(RCore *core, RSearchKeyword *kw, const char *file, ut
 		fmt = p;
 		// processing newline
 		for (q = p; *q; q++) {
-			if (q[0] == '\\' && q[1]=='n') {
+			if (q[0] == '\\' && q[1] == 'n') {
 				*q = '\n';
 				strcpy (q + 1, q + ((q[2] == ' ')? 3: 2));
 			}

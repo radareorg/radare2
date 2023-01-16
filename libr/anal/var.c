@@ -1816,7 +1816,7 @@ R_API char *r_anal_function_format_sig(R_NONNULL RAnal *anal, R_NONNULL RAnalFun
 			tmp_len = strlen (var->type);
 			if (tmp_len > 0) {
 				r_strbuf_appendf (buf, "%s%s%s%s", comma, var->type,
-						tmp_len && var->type[tmp_len - 1] =='*' ? "" : " ",
+						tmp_len && var->type[tmp_len - 1] == '*' ? "" : " ",
 						var->name);
 				comma = ", ";
 			}

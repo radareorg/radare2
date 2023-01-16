@@ -62,7 +62,7 @@ static RBuffer *build(REgg *egg) {
 	char *shell = r_egg_option_get (egg, "cmd");
 	char *suid = r_egg_option_get (egg, "suid");
 	// TODO: last char must not be \x00 .. or what? :D
-	if (suid && *suid=='f') { // false
+	if (suid && *suid == 'f') { // false
 		free (suid);
 		suid = NULL;
 	}

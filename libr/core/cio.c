@@ -122,7 +122,7 @@ R_API ut8* r_core_transform_op(RCore *core, const char *arg, char op) {
 	const char *plus = arg? strchr (arg, '+'): NULL;
 	int numsize = 1;
 	if (plus) {
-		numsize = (*arg=='+')? 1: atoi (arg);
+		numsize = (*arg == '+')? 1: atoi (arg);
 		if (numsize < 1) {
 			numsize = 1;
 		}

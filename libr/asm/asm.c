@@ -903,9 +903,9 @@ R_API RAsmCode *r_asm_massemble(RAsm *a, const char *assembly) {
 		tokens[ctr] = ptr + 1;
 	}
 
-#define isavrseparator(x) ((x)==' '||(x)=='\t'||(x)=='\n'||(x)=='\r'||(x)==' '|| \
-		(x)==','||(x)==';'||(x)=='['||(x)==']'|| \
-		(x)=='('||(x)==')'||(x)=='{'||(x)=='}')
+#define isavrseparator(x) ((x) == ' ' || (x) == '\t' || (x) == '\n' || (x) == '\r'|| (x) == ' '|| \
+		(x) == ',' || (x) == ';' || (x) == '[' || (x) == ']'|| \
+		(x) == '(' || (x) == ')' || (x) == '{' || (x) == '}')
 
 	/* Stage 0-2: Parse labels*/
 	/* Stage 3: Assemble */

@@ -179,10 +179,10 @@ static bool false_positive(const char *str) {
 		} else {
 			ot++;
 		}
-		if (str[i]=='\\') {
+		if (str[i] == '\\') {
 			ot++;
 		}
-		if (str[i]==' ') {
+		if (str[i] == ' ') {
 			sp++;
 		}
 		bo[(ut8)str[i]] = 1;

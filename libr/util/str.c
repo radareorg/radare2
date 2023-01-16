@@ -205,7 +205,7 @@ R_API int r_str_binstr2bin(const char *str, ut8 *out, int outlen) {
 	len = strlen (str);
 	for (n = i = 0; i < len; i += 8) {
 		ret = 0;
-		while (str[i]==' ') {
+		while (str[i] == ' ') {
 			str++;
 		}
 		if (i + 7 < len) {

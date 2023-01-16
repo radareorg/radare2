@@ -765,7 +765,7 @@ R_API int r_cmd_macro_cmd_args(RCmdMacro *mac, const char *ptr, const char *args
 	const char *arg = args;
 
 	for (*cmd = i = j = 0; j < R_CMD_MAXLEN && ptr[j]; i++,j++) {
-		if (ptr[j]=='$') {
+		if (ptr[j] == '$') {
 			if (ptr[j+1]>='0' && ptr[j+1]<='9') {
 				int wordlen;
 				int w = ptr[j+1]-'0';
@@ -781,7 +781,7 @@ R_API int r_cmd_macro_cmd_args(RCmdMacro *mac, const char *ptr, const char *args
 				} else {
 					R_LOG_ERROR ("Undefined argument %d", w);
 				}
-			} else if (ptr[j+1]=='@') {
+			} else if (ptr[j + 1] == '@') {
 				char off[32];
 				int offlen;
 				offlen = snprintf (off, sizeof (off), "%d",
@@ -789,7 +789,7 @@ R_API int r_cmd_macro_cmd_args(RCmdMacro *mac, const char *ptr, const char *args
 				if ((i + offlen + 1) >= sizeof (cmd)) {
 					return -1;
 				}
-				memcpy (cmd+i, off, offlen+1);
+				memcpy (cmd + i, off, offlen + 1);
 				i += offlen-1;
 				j++;
 			} else {
@@ -805,7 +805,7 @@ R_API int r_cmd_macro_cmd_args(RCmdMacro *mac, const char *ptr, const char *args
 		;
 	}
 	//eprintf ("-pre %d\n", (int)mac->num->value);
-	int xx = (*pcmd==')')? 0: mac->cmd (mac->user, pcmd);
+	int xx = (*pcmd == ')')? 0: mac->cmd (mac->user, pcmd);
 	//eprintf ("-pos %p %d\n", mac->num, (int)mac->num->value);
 	return xx;
 }
@@ -815,7 +815,7 @@ R_API char *r_cmd_macro_label_process(RCmdMacro *mac, RCmdMacroLabel *labels, in
 	for (; *ptr == ' '; ptr++) {
 		;
 	}
-	if (ptr[strlen (ptr) - 1]==':' && !strchr (ptr, ' ')) {
+	if (ptr[strlen (ptr) - 1] == ':' && !strchr (ptr, ' ')) {
 		/* label detected */
 		if (ptr[0] == '.') {
 		//	eprintf("---> GOTO '%s'\n", ptr+1);
@@ -828,7 +828,7 @@ R_API char *r_cmd_macro_label_process(RCmdMacro *mac, RCmdMacroLabel *labels, in
 			}
 			return NULL;
 			/* conditional goto */
-		} else if (ptr[0]=='?' && ptr[1]=='!' && ptr[2] != '?') {
+		} else if (ptr[0] == '?' && ptr[1] == '!' && ptr[2] != '?') {
 			if (mac->num && mac->num->value != 0) {
 				char *label = ptr + 3;
 				for (; *label == ' ' || *label == '.'; label++) {

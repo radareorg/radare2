@@ -3273,7 +3273,7 @@ static int cmd_afbplus(RCore *core, const char *input) {
 }
 
 static void r_core_anal_nofunclist(RCore *core, const char *input) {
-	int minlen = (int)(input[0]==' ') ? r_num_math (core->num, input + 1): 16;
+	int minlen = (int)(input[0] == ' ') ? r_num_math (core->num, input + 1): 16;
 	ut64 code_size = r_num_get (core->num, "$SS");
 	ut64 base_addr = r_num_get (core->num, "$S");
 	ut64 chunk_size, chunk_offset, i;
@@ -5148,7 +5148,7 @@ static int cmd_af(RCore *core, const char *input) {
 			}
 			// list xrefs from current address
 			{
-				ut64 addr = input[2]==' '? r_num_math (core->num, input + 2): core->offset;
+				ut64 addr = (input[2] == ' ')? r_num_math (core->num, input + 2): core->offset;
 				RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, addr, R_ANAL_FCN_TYPE_NULL);
 				if (fcn) {
 					ut64 oaddr = core->offset;
@@ -8070,7 +8070,7 @@ static void cmd_anal_opcode(RCore *core, const char *input) {
 		if (input[1] == '?') {
 			r_core_cmd_help (core, help_msg_aom);
 		} else if (input[1] == 'd') {
-			const int id = (input[2]==' ')
+			const int id = (input[2] == ' ')
 				?(int)r_num_math (core->num, input + 2): -1;
 			char *ops = r_asm_mnemonics (core->rasm, id, false);
 			if (ops) {

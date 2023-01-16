@@ -177,7 +177,7 @@ static char *skip_whitespace(char *p) {
 }
 
 static char *parse_key(const char **key, char *p) {
-	// on '}' return with *p=='}'
+	// on '}' return with *p == '}'
 	p = skip_whitespace (p);
 	if (!p) {
 		return NULL;

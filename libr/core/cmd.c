@@ -1475,7 +1475,7 @@ R_API bool r_core_run_script(RCore *core, const char *file) {
 					}
 				} else {
 					if (r_file_is_executable (file)) {
-						r_core_cmdf (core, "#!pipe %s%s", (*file=='/')?"":"./", file);
+						r_core_cmdf (core, "#!pipe %s%s", (*file == '/')?"":"./", file);
 						ret = true;
 					} else {
 						ret = r_core_cmd_file (core, file);
@@ -1493,7 +1493,7 @@ R_API bool r_core_run_script(RCore *core, const char *file) {
 					ret = 1;
 				} else {
 					if (r_file_is_executable (file)) {
-						r_core_cmdf (core, "#!pipe %s%s", (*file=='/')?"":"./", file);
+						r_core_cmdf (core, "#!pipe %s%s", (*file == '/')?"":"./", file);
 						ret = 1;
 					}
 				}

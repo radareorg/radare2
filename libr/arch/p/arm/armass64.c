@@ -1542,7 +1542,8 @@ static bool parseOperands(char* str, ArmOp *op) {
 			if (token[0] == '#' || (token[0] >= '0' && token[0] <= '9')) {
 				//immediate operand found.
 				op->operands[operand].sp_val = 0xfffe; //not regiter, but a immediate
-				op->operands[operand].immediate = r_num_math (NULL, token[0]=='#'?token+1:token);
+				const char *arg = (token[0] == '#')? token + 1: token;
+				op->operands[operand].immediate = r_num_math (NULL, arg);
 				operand ++;
 				token = next;
 				continue;

@@ -80,7 +80,7 @@ R_IPI int search_strings_update(RSearch *s, ut64 from, const ut8 *buf, int len) 
 				}
 			} else {
 				/* wide char check \x??\x00\x??\x00 */
-				if (matches && i + 2 < len && buf[i+2]=='\0' && buf[i]=='\0' && buf[i+1]!='\0') {
+				if (matches && i + 2 < len && buf[i + 2] == '\0' && buf[i] == '\0' && buf[i + 1]!='\0') {
 					widechar = true;
 					// return 1; // widechar
 				}

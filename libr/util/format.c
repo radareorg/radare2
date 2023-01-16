@@ -2255,7 +2255,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len, cons
 				}
 				free (oarg);
 				oarg = fieldname = strdup (r_str_word_get0 (args, idx));
-				if (ISSTRUCT || tmp=='E' || tmp=='B' || tmp=='r') {
+				if (ISSTRUCT || tmp == 'E' || tmp == 'B' || tmp == 'r') {
 					if (*fieldname == '(') {
 						fmtname = fieldname + 1;
 						fieldname = (char*)r_str_rchr (fieldname, NULL, ')');
