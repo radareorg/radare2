@@ -212,3 +212,43 @@ EXPECT=<<EOF
             0x0000001c      30800005       li a0, 5
 EOF
 RUN
+
+NAME=micromips align
+FILE=bins/elf/micromips.elf
+CMDS=<<EOF
+pd 10
+pd 10
+EOF
+EXPECT=<<EOF
+            ;-- section..text:
+            ;-- .text:
+            ;-- main:
+            ;-- entry0:
+            ;-- _ftext:
+            0x004000d0      41bc0002       lui gp, 2                   ; [04] -r-x section size 512 named .text
+            0x004000d4      339c821f       addiu gp, gp, -0x7de1
+            0x004000d8      033ce150       addu gp, gp, t9
+            0x004000dc      4fed           addiusp -0x28
+            0x004000de      ff3c801c       lw t9, -0x7fe4(gp)          ; [0x41030c:4]=0x400221
+            0x004000e2      fb9d0010       sw gp, 0x10(sp)
+            0x004000e6      cbe9           sw ra, 0x24(sp)
+            0x004000e8      6e8d           addiur1sp a1, 0x18
+            0x004000ea      45d9           jalr t9
+            0x004000ec      30800005       addiu a0, zero, 5
+            ;-- section..text:
+            ;-- .text:
+            ;-- main:
+            ;-- entry0:
+            ;-- _ftext:
+            0x004000d0      41bc0002       lui gp, 2                   ; [04] -r-x section size 512 named .text
+            0x004000d4      339c821f       addiu gp, gp, -0x7de1
+            0x004000d8      033ce150       addu gp, gp, t9
+            0x004000dc      4fed           addiusp -0x28
+            0x004000de      ff3c801c       lw t9, -0x7fe4(gp)          ; [0x41030c:4]=0x400221
+            0x004000e2      fb9d0010       sw gp, 0x10(sp)
+            0x004000e6      cbe9           sw ra, 0x24(sp)
+            0x004000e8      6e8d           addiur1sp a1, 0x18
+            0x004000ea      45d9           jalr t9
+            0x004000ec      30800005       addiu a0, zero, 5
+EOF
+RUN

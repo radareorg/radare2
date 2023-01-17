@@ -45,7 +45,13 @@
 
 #define EF_MIPS_ABI_O32		0x00001000  /* O32 ABI.  */
 #define EF_MIPS_ABI_O64		0x00002000  /* O32 extended for 64 bit.  */
-#define EF_MIPS_ABI			0x0000f000
+#define EF_MIPS_ABI		0x0000f000
+
+/* ARCH_ASE */
+#define EF_MIPS_MICROMIPS      0x02000000 /* microMIPS */
+#define EF_MIPS_ARCH_ASE_M16   0x04000000 /* Has Mips-16 ISA extensions */
+#define EF_MIPS_ARCH_ASE_MDMX  0x08000000 /* Has MDMX multimedia extensions */
+#define EF_MIPS_ARCH_ASE       0x0f000000 /* Mask for EF_MIPS_ARCH_ASE_xxx flags */
 
 static inline bool is_elfclass64(Elf_(Ehdr) *h) {
 	return h->e_ident[EI_CLASS] == ELFCLASS64;
@@ -63,6 +69,17 @@ static bool is_mips_o32(Elf_(Ehdr) *h) {
 		return false;
 	}
 	return true;
+}
+
+static bool is_mips_micro(Elf_(Ehdr) *h) {
+	const ut32 eflags = h->e_flags;
+	if (h->e_ident[EI_CLASS] != ELFCLASS32) {
+		return false;
+	}
+	if ((eflags & EF_MIPS_MICROMIPS) != 0) {
+		return true;
+	}
+	return false;
 }
 
 static bool is_mips_n32(Elf_(Ehdr) *h) {
@@ -2221,6 +2238,9 @@ char* Elf_(r_bin_elf_get_abi)(ELFOBJ *bin) {
 			if (is_mips_o32 (ehdr)) {
 				return strdup ("o32");
 			}
+			if (is_mips_micro (ehdr)) {
+				return strdup ("micro");
+			}
 		}
 		break;
 	case EM_V800:
@@ -2277,7 +2297,11 @@ char* Elf_(r_bin_elf_get_cpu)(ELFOBJ *bin) {
 	const char *cpu = NULL;
 	switch (bin->ehdr.e_machine) {
 	case EM_MIPS:
-		cpu = bin->phdr ? mips_flags_to_cpu (bin->ehdr.e_flags & EF_MIPS_ARCH): NULL;
+		if (is_mips_micro (&bin->ehdr)) {
+			cpu = "micro";
+		} else {
+			cpu = bin->phdr ? mips_flags_to_cpu (bin->ehdr.e_flags & EF_MIPS_ARCH): NULL;
+		}
 		break;
 	case EM_V800:
 	case EM_V850:
