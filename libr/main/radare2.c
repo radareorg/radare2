@@ -1182,6 +1182,16 @@ R_API int r_main_radare2(int argc, const char **argv) {
 			return 1;
 		}
 	} else if (strcmp (argv[opt.ind - 1], "--") && !project_name) {
+		if (asmarch) {
+			r_config_set (r->config, "asm.arch", asmarch);
+		}
+		if (asmbits) {
+			r_config_set (r->config, "asm.bits", asmbits);
+		}
+		if (asmos) {
+			r_config_set (r->config, "asm.os", asmos);
+		}
+
 		if (debug) {
 			if (asmbits) {
 				r_config_set (r->config, "asm.bits", asmbits);
@@ -1310,16 +1320,6 @@ R_API int r_main_radare2(int argc, const char **argv) {
 				pfile = file;
 			}
 		}
-		if (asmarch) {
-			r_config_set (r->config, "asm.arch", asmarch);
-		}
-		if (asmbits) {
-			r_config_set (r->config, "asm.bits", asmbits);
-		}
-		if (asmos) {
-			r_config_set (r->config, "asm.os", asmos);
-		}
-
 		if (!debug || debug == 2) {
 			const char *dbg_profile = r_config_get (r->config, "dbg.profile");
 			if (opt.ind == argc && dbg_profile && *dbg_profile) {
