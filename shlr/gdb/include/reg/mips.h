@@ -1,5 +1,6 @@
 return strdup (
 "=PC    pc\n"
+"=A0    a0\n"
 "=SP    sp\n"
 "=BP    gp\n"
 "gpr	zero	.32	0	0\n"
