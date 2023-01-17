@@ -164,3 +164,51 @@ gnu 32bit
 0x00000014   4                 30847090  addiu a0, a0, 28816
 EOF
 RUN
+
+NAME=micromips align
+FILE=-
+CMDS=<<EOF
+-a mips
+-e asm.cpu=micro
+-e cfg.bigendian=true
+-b 16
+wx 41bc0002339c821f033ce1504fedff3c801cfb9d0010cbe96e8d45d9308000054be9470a
+pd 10
+EOF
+EXPECT=<<EOF
+            0x00000000      41bc0002       lui gp, 2
+            0x00000004      339c821f       addiu gp, gp, -0x7de1
+            0x00000008      033ce150       addu gp, gp, t9
+            0x0000000c      4fed           addiusp -0x28
+            0x0000000e      ff3c801c       lw t9, -0x7fe4(gp)
+            0x00000012      fb9d0010       sw gp, 0x10(sp)
+            0x00000016      cbe9           sw ra, 0x24(sp)
+            0x00000018      6e8d           addiur1sp a1, 0x18
+            0x0000001a      45d9           jalr t9
+            0x0000001c      30800005       addiu a0, zero, 5
+EOF
+RUN
+
+NAME=micromips align
+FILE=-
+CMDS=<<EOF
+-a mips.gnu
+-e asm.cpu=micro
+-e cfg.bigendian=true
+-b 16
+wx 41bc0002339c821f033ce1504fedff3c801cfb9d0010cbe96e8d45d9308000054be9470a
+pd 10
+EOF
+EXPECT=<<EOF
+            0x00000000      41bc0002       lui gp, 0x2
+            0x00000004      339c821f       addiu gp, gp, -32225
+            0x00000008      033ce150       addu gp, gp, t9
+            0x0000000c      4fed           addiu sp, sp, -40
+            0x0000000e      ff3c801c       lw t9, -32740(gp)
+            0x00000012      fb9d0010       sw gp, 16(sp)
+            0x00000016      cbe9           sw ra, 36(sp)
+            0x00000018      6e8d           addiu a1, sp, 24
+            0x0000001a      45d9           jalr t9
+            0x0000001c      30800005       li a0, 5
+EOF
+RUN
