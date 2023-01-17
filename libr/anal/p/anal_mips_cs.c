@@ -1276,9 +1276,9 @@ static char *get_reg_profile(RAnal *anal) {
 }
 
 static int archinfo(RAnal *anal, int q) {
-	if (q == R_ANAL_ARCHINFO_MIN_OP_SIZE) {
+	if (q == R_ANAL_ARCHINFO_ALIGN || q == R_ANAL_ARCHINFO_MIN_OP_SIZE) {
 		const char *cpu = anal->config->cpu;
-		if (!strcmp (cpu, "micro")) {
+		if (cpu && !strcmp (cpu, "micro")) {
 			return 2; // (anal->bits == 16) ? 2: 4;
 		}
 	}
