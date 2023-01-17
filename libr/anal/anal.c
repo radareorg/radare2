@@ -234,6 +234,9 @@ R_API bool r_anal_use(RAnal *anal, const char *name) {
 	r_return_val_if_fail (anal, false);
 	RListIter *it;
 	RAnalPlugin *h;
+	if (anal->uses) {
+		return true;
+	}
 	// r_anal plugins
 	r_list_foreach (anal->plugins, it, h) {
 		if (!h->name || strcmp (h->name, name)) {
