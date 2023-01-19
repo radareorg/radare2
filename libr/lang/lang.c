@@ -22,6 +22,7 @@ R_LIB_VERSION (r_lang);
 #include "p/go.c"
 #include "p/lib.c"
 #include "p/qjs.c"
+#include "p/poke.c"
 #include "p/tsc.c"
 
 R_API RLang *r_lang_new(void) {

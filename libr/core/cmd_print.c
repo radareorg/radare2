@@ -474,7 +474,7 @@ static const char *help_msg_pif[] = {
 };
 
 static const char *help_msg_po[] = {
-	"Usage:","po[24aAdlmorsx]"," [hexpairs] @ addr[!bsize]",
+	"Usage:","po[24aAdlmorsx]"," [hexpairs] @ addr[!bsize] (see also `poke`)",
 	"po[24aAdlmorsx]","", "without hexpair values, clipboard is used",
 	"po2"," [val]","2=  2 byte endian swap",
 	"po4"," [val]", "4=  4 byte endian swap",
@@ -2963,7 +2963,7 @@ static int cmd_print_pxA(RCore *core, int len, const char *input) {
 }
 
 static void cmd_print_op(RCore *core, const char *input) {
-	ut8 *buf;
+	ut8 *buf = NULL;
 	if (!input[0]) {
 		return;
 	}
@@ -2980,7 +2980,7 @@ static void cmd_print_op(RCore *core, const char *input) {
 	case '2':
 	case '4':
 		if (input[2]) {  // parse val from arg
-			buf = r_core_transform_op (core, input+3, input[1]);
+			buf = r_core_transform_op (core, input + 3, input[1]);
 		} else {  // use clipboard instead of val
 			buf = r_core_transform_op (core, NULL, input[1]);
 		}
@@ -2988,11 +2988,18 @@ static void cmd_print_op(RCore *core, const char *input) {
 	case 'n':
 		buf = r_core_transform_op (core, "ff", 'x');
 		break;
+	case 'k':
+		if (input[2] == 'e') { // "poke"
+			R_LOG_ERROR ("Missing plugin. Run: r2pm -ci r2poke");
+		} else {
+			r_core_cmd_help (core, help_msg_po);
+		}
+		break;
 	case '\0':
 	case '?':
 	default:
 		r_core_cmd_help (core, help_msg_po);
-		return;
+		break;
 	}
 	if (buf) {
 		r_print_hexdump (core->print, core->offset, buf, core->blocksize, 16, 1, 1);
