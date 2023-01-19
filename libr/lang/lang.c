@@ -57,6 +57,7 @@ R_API RLang *r_lang_new(void) {
 	r_lang_add (lang, &r_lang_plugin_pipe);
 #endif
 	r_lang_add (lang, &r_lang_plugin_go);
+	r_lang_add (lang, &r_lang_plugin_poke);
 	r_lang_add (lang, &r_lang_plugin_spp);
 	r_lang_add (lang, &r_lang_plugin_lib);
 	r_lang_add (lang, &r_lang_plugin_asm);

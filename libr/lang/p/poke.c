@@ -2,15 +2,25 @@
 
 #include <r_lang.h>
 
-static bool lang_poke_file_run(RLangSession *session, const char *file) {
-	RCore *core = session->user_data;
-	session->lang->cmdf (core, "\"\"poke -f %s", file);
+static bool lang_poke_file_run(RLangSession *s, const char *file) {
+	r_return_val_if_fail (s && file, false);
+	RCore *core = s->lang->user;
+	if (core) {
+		s->lang->cmdf (core, "\"\"poke -f %s", file);
+	} else {
+		R_LOG_WARN ("RLang can't find the core instance");
+	}
 	return true;
 }
 
 static bool lang_poke_run(RLangSession *s, const char *code, int len) {
-	RCore *core = s->user_data;
-	s->lang->cmdf (core, "\"\"poke %s", code);
+	r_return_val_if_fail (s, false);
+	RCore *core = s->lang->user;
+	if (core) {
+		s->lang->cmdf (core, "\"\"poke %s", code);
+	} else {
+		R_LOG_WARN ("RLang can't find the core instance");
+	}
 	return true;
 }
 
