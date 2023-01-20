@@ -3382,8 +3382,11 @@ restore_conf:
 
 static void algolist(int mode) {
 	int i;
-	PJ *pj = (mode == 'j')? pj_new (): NULL;
-	pj_a (pj);
+	PJ *pj = NULL;
+	if (mode == 'j') {
+		pj = pj_new ();
+		pj_a (pj);
+	}
 	for (i = 0; i < R_HASH_NBITS; i++) {
 		ut64 bits = 1ULL << i;
 		const char *name = r_hash_name (bits);
