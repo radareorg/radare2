@@ -1,4 +1,4 @@
-OBJ_MCORE=arch_mcore.o mcore/mcore.o
+OBJ_MCORE=p/mcore/plugin.o p/mcore/mcore.o
 
 STATIC_OBJ+=${OBJ_MCORE}
 
