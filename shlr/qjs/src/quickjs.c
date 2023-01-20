@@ -1607,7 +1607,15 @@ static void set_dummy_numeric_ops(JSNumericOperations *ops)
 
 #endif /* CONFIG_BIGNUM */
 
-#if !defined(CONFIG_STACK_CHECK)
+#define HAS_ASAN 0
+#if defined(__has_feature)
+# if __has_feature(address_sanitizer)
+#undef HAS_ASAN
+#define HAS_ASAN 0
+# endif
+#endif
+#if !defined(CONFIG_STACK_CHECK) || defined(HAS_ASAN)
+
 /* no stack limitation */
 static inline uintptr_t js_get_stack_pointer(void)
 {
@@ -6866,7 +6874,7 @@ JSValue JS_ThrowOutOfMemory(JSContext *ctx)
 
 static JSValue JS_ThrowStackOverflow(JSContext *ctx)
 {
-    return JS_ThrowInternalError(ctx, "stack overflow");
+    return JS_ThrowInternalError(ctx, "stack overflow 1");
 }
 
 static JSValue JS_ThrowTypeErrorNotAnObject(JSContext *ctx)
@@ -20976,7 +20984,7 @@ static __exception int next_token(JSParseState *s)
     JSAtom atom;
     
     if (js_check_stack_overflow(s->ctx->rt, 0)) {
-        return js_parse_error(s, "stack overflow");
+        return js_parse_error(s, "stack overflow 2");
     }
     
     free_token(s, &s->token);
@@ -21523,7 +21531,7 @@ static __exception int json_next_token(JSParseState *s)
     JSAtom atom;
     
     if (js_check_stack_overflow(s->ctx->rt, 0)) {
-        return js_parse_error(s, "stack overflow");
+        return js_parse_error(s, "stack overflow 3");
     }
     
     free_token(s, &s->token);
