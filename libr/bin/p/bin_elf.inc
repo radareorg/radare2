@@ -246,9 +246,17 @@ static bool parse_pt_dynamic(RBinFile *bf, RBinSection *ptr) {
 	for (at = paddr; at < paddr_end; at += sizeof (Elf_(Dyn))) {
 #if R_BIN_ELF64
 		entry.d_tag = r_buf_read_ble64_at (bf->buf, at, big_endian);
+		if (entry.d_tag == UT64_MAX) {
+			R_LOG_DEBUG ("Corrupted elf tag");
+			break;
+		}
 		entry.d_un.d_val = r_buf_read_ble64_at (bf->buf, at + sizeof (entry.d_tag), big_endian);
 #else
 		entry.d_tag = r_buf_read_ble32_at (bf->buf, at, big_endian);
+		if (entry.d_tag == UT32_MAX) {
+			R_LOG_DEBUG ("Corrupted elf tag");
+			break;
+		}
 		entry.d_un.d_val = r_buf_read_ble32_at (bf->buf, at + sizeof (entry.d_tag), big_endian);
 #endif
 		if (entry.d_tag == DT_NULL) {
