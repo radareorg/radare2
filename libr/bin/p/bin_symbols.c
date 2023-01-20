@@ -280,7 +280,7 @@ static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadadd
 	}
 	SymbolsMetadata sm = parseMetadata (buf, 0x40);
 	char * file_name = NULL;
-	if (sm.namelen) {
+	if (sm.namelen > 0 && sm.namelen < 1024) {
 		file_name = calloc (sm.namelen + 1, 1);
 		if (!file_name) {
 			return false;
