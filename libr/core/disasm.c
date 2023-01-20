@@ -2702,7 +2702,13 @@ static int ds_disassemble(RDisasmState *ds, ut8 *buf, int len) {
 				i += meta_size;
 				break;
 			case R_META_TYPE_RUN:
-				r_core_cmd0 (core, meta->str);
+				{
+					char *s = r_core_cmd_strf (core, "%s@%"PFMT64d, meta->str, ds->at);
+					r_str_trim (s);
+					r_cons_printf ("; (Cr %d %s)\n%s", (int)meta_size, meta->str, s);
+					free (s);
+					i += meta_size;
+				}
 				break;
 			default:
 				break;
@@ -3278,10 +3284,15 @@ static bool ds_print_meta_infos(RDisasmState *ds, ut8* buf, int len, int idx, in
 			ret = true;
 			break;
 		case R_META_TYPE_RUN:
-			r_core_cmdf (core, "%s @ 0x%"PFMT64x, mi->str, ds->at);
-			ds->asmop.size = mi_size;
-			ds->oplen = mi_size;
-			ret = true;
+			{
+				char *s = r_core_cmd_strf (core, "%s@%"PFMT64d, mi->str, ds->at);
+				r_str_trim (s);
+				r_cons_printf ("; (Cr %d %s)\n%s", (int)mi_size, mi->str, s);
+				free (s);
+				ds->asmop.size = mi_size;
+				ds->oplen = mi_size;
+				ret = true;
+			}
 			break;
 		case R_META_TYPE_DATA:
 			hexlen = len - idx;

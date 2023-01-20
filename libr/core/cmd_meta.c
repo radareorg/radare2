@@ -35,6 +35,7 @@ static const char *help_msg_C[] = {
 	"Cd", "[-] [size] [repeat] [@addr]", "hexdump data array (Cd 4 10 == dword [10])",
 	"Cd.", " [@addr]", "show size of data at current address",
 	"Cf", "[?][-] [sz] [0|cnt][fmt] [a0 a1...] [@addr]", "format memory (see pf?)",
+	"Cr", "[?][-] [sz] [r2cmd] [@addr]", "run the given command to replace SZ bytes in the disasm",
 	"Ch", "[-] [size] [@addr]", "hide data",
 	"Cm", "[-] [sz] [fmt..] [@addr]", "magic parse (see pm?)",
 	"Cs", "[?] [-] [size] [@addr]", "add string",
@@ -858,6 +859,7 @@ static int cmd_meta_others(RCore *core, const char *input) {
 	case 'g':
 	case 'a':
 	case '1':
+	case 'r':
 	case '2':
 	case '4':
 	case '8':
