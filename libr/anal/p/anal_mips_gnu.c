@@ -1115,14 +1115,18 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, gnu_insn *insn) {
 
 static int disassemble(RAnal *a, RAnalOp *op, const ut8 *buf, int len) {
 	ut8 bytes[8] = { 0 };
+	int minopsz = 4;
 	struct disassemble_info disasm_obj = { 0 };
-	if (len < 4) {
+	if (len < 2) {
 		return -1;
 	}
 	RStrBuf *sb = r_strbuf_new ("");
 	memcpy (&bytes, buf, R_MIN (len, sizeof (bytes)));
 
 	const char *cpu = a->config->cpu;
+	if (a->config->bits == 16) {
+		len = 2;
+	}
 
 	/* prepare disassembler */
 	if (cpu && (!pre_cpu || !strcmp (cpu, pre_cpu))) {
@@ -1130,6 +1134,7 @@ static int disassemble(RAnal *a, RAnalOp *op, const ut8 *buf, int len) {
 			disasm_obj.mach = bfd_mach_mipsisa64r2;
 		} else if (!r_str_casecmp (cpu, "micro")) {
 			disasm_obj.mach = bfd_mach_mips_micromips;
+			minopsz = 2;
 		} else if (!r_str_casecmp (cpu, "mips32r2")) {
 			disasm_obj.mach = bfd_mach_mipsisa32r2;
 		} else if (!r_str_casecmp (cpu, "mips64")) {
@@ -1164,6 +1169,9 @@ static int disassemble(RAnal *a, RAnalOp *op, const ut8 *buf, int len) {
 	if (R_STR_ISNOTEMPTY (abi)) {
 		// n32, n64, o32
 		disasm_obj.disassembler_options = r_str_newf ("abi=%s", abi);
+	}
+	if (len < minopsz) {
+		return -1;
 	}
 
 	const ut64 addr = op->addr;
@@ -1203,7 +1211,10 @@ static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, R
 	}
 	if (mask & R_ARCH_OP_MASK_DISASM) {
 		op->addr = addr;
-		disassemble (anal, op, b, len);
+		int res = disassemble (anal, op, b, len);
+		if (res > 0) {
+			op->size = res;
+		}
 		oplen = op->size;
 	}
 
@@ -1302,8 +1313,6 @@ static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, R
 			} else if (rs == 25) {
 				op->type = R_ANAL_OP_TYPE_RJMP;
 				op->jump = t9_pre;
-				break;
-
 			} else {
 				op->type = R_ANAL_OP_TYPE_RJMP;
 			}
@@ -1728,6 +1737,9 @@ static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, R
 	}
 	if (mask & R_ARCH_OP_MASK_VAL) {
 		// TODO: add op_fillval (anal, op, &insn);
+	}
+	if (oplen < 1) {
+		oplen = 2;
 	}
 	return oplen;
 	/*

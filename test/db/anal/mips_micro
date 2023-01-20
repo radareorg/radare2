@@ -78,7 +78,7 @@ EXPECT=<<EOF
 0x0000000e   2                     41a4  0xa441
 0x00000010   4                 9860cc06  lwl a0, 1740(t8)
 0x00000014   2                     3084  movep a1,a2, zero, v1
-0x00000016   2                     7090  unaligned
+0x00000016   2                     7090  slti v1, s0, 0
 --
 0x00000000   2                     4fe5  addiu sp, sp, -56
 0x00000002   4                 22fdd018  swm s0-s6,ra, 24(sp)
@@ -250,5 +250,17 @@ EXPECT=<<EOF
             0x004000e8      6e8d           addiur1sp a1, 0x18
             0x004000ea      45d9           jalr t9
             0x004000ec      30800005       addiu a0, zero, 5
+EOF
+RUN
+
+NAME=twobytes
+FILE=--
+CMDS=<<EOF
+!!rasm2 -a mips -b16 -e -c micro -d '4fe5'
+!!rasm2 -a mips.gnu -b16 -e -c micro -d '4fe5'
+EOF
+EXPECT=<<EOF
+addiusp -0x38
+addiu sp, sp, -56
 EOF
 RUN

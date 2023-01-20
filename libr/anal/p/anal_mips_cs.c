@@ -828,9 +828,6 @@ static int analop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, 
 
 // XXX no arch->cpu ?!?! CS_MODE_MICRO, N64
 	op->addr = addr;
-	if (len < 4) {
-		return -1;
-	}
 	op->size = 4;
 	n = cs_disasm (hndl, buf, len, addr, 1, &insn);
 	if (n < 1 || insn->size < 1) {
