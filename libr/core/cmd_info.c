@@ -636,12 +636,12 @@ static int cmd_info(void *data, const char *input) {
 			r_core_bin_load (core, fn, baddr);
 		}
 		break;
-			#define RBININFO(n,x,y,z)\
-				if (is_array) {\
-					pj_k (pj, n);\
-				}\
-				if (z) { playMsg (core, n, z);}\
-				r_core_bin_info (core, x, pj, mode, va, NULL, y);
+#define RBININFO(n,x,y,z)\
+	if (is_array) {\
+		pj_k (pj, n);\
+	}\
+	if (z) { playMsg (core, n, z);}\
+	r_core_bin_info (core, x, pj, mode, va, NULL, y);
 		case 'A': // "iA"
 			if (input[1] == 'j') {
 				pj_o (pj);
@@ -981,7 +981,7 @@ static int cmd_info(void *data, const char *input) {
 							if (file_found) {
 								filename = pdb_path;
 							} else {
-								R_FREE(pdb_path);
+								R_FREE (pdb_path);
 							}
 						}
 					}
