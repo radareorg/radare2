@@ -31,12 +31,12 @@
   IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-
 #include <string.h>
-#ifdef HAVE_STRINGS_H
+#if defined(_MSC_VER) || defined(__WIN32__) || defined(_WIN32)
+// use stricmp from string.h
+#else
 #include <strings.h>
 #endif
-
 #include "zipint.h"
 
 
