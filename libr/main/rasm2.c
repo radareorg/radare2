@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2022 - pancake, nibble, maijin */
+/* radare - LGPL - Copyright 2009-2023 - pancake, nibble, maijin */
 
 #define R_LOG_ORIGIN "rasm2"
 
@@ -502,9 +502,11 @@ static int rasm_disasm(RAsmState *as, ut64 addr, const char *buf, int len, int b
 			aop.size = 0;
 			if (r_anal_op (as->anal, &aop, addr, data + ret, len - ret, R_ARCH_OP_MASK_ESIL) > 0) {
 				printf ("%s\n", R_STRBUF_SAFEGET (&aop.esil));
+			} else {
+				printf ("invalid\n");
 			}
 			if (aop.size < 1) {
-				R_LOG_ERROR ("Invalid");
+				printf ("invalid\n");
 				break;
 			}
 			ret += aop.size;
@@ -539,8 +541,10 @@ static int rasm_disasm(RAsmState *as, ut64 addr, const char *buf, int len, int b
 		if (as->oneliner) {
 			r_str_replace_char (acode->assembly, '\n', ';');
 			printf ("%s\"\n", acode->assembly);
-		} else {
+		} else if (acode->assembly[0]) {
 			printf ("%s", acode->assembly);
+		} else {
+			printf ("empty\n");
 		}
 		ret = acode->len;
 		r_asm_code_free (acode);
