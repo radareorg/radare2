@@ -23,6 +23,8 @@ if get_option('enable_libfuzzer')
       ],
       install: false,
       implicit_include_directories: false,
+      c_args : '-fsanitize=fuzzer',
+      link_args : '-fsanitize=fuzzer'
     )
   endforeach
 endif
