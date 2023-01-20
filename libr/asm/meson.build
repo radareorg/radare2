@@ -60,8 +60,7 @@ r_asm = library('r_asm', r_asm_sources,
   soversion: r2_libversion
 )
 
-r_asm_dep = declare_dependency(link_with: r_asm,
-                               include_directories: r_asm_inc)
+r_asm_dep = declare_dependency(link_with: r_asm, include_directories: r_asm_inc)
 
 if get_option('blob')
 r_asm_static = static_library('r_asm_static', r_asm_sources,
