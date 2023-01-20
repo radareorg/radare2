@@ -154,6 +154,7 @@ RArchPlugin r_arch_plugin_nios2 = {
 	.desc = "NIOS II code analysis plugin",
 	.license = "LGPL3",
 	.endian = R_SYS_ENDIAN_LITTLE | R_SYS_ENDIAN_BIG,
+	// TODO: missing reg profile
 	.arch = "nios2",
 	.bits = 32,
 	.decode = &decode,

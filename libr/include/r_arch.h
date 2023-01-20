@@ -266,6 +266,7 @@ extern RArchPlugin r_arch_plugin_6502;
 extern RArchPlugin r_arch_plugin_xap;
 extern RArchPlugin r_arch_plugin_v850;
 extern RArchPlugin r_arch_plugin_propeller;
+extern RArchPlugin r_arch_plugin_mcore;
 extern RArchPlugin r_arch_plugin_nios2;
 
 #ifdef __cplusplus

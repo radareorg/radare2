@@ -592,7 +592,7 @@ static int r2pm_install_pkg(const char *pkg, bool global) {
 		if (error) {
 			if (r2pm_check ("apt") && r_file_is_directory ("/system/bin")) {
 				if (r_cons_yesno ('y', "Install system dependencies (Y/n)")) {
-					const char *const cmd = "apt install build-essential git make patch python wget";
+					const char *const cmd = "apt install build-essential git make patch python wget binutils";
 					R_LOG_INFO ("Running %s");
 					r_sys_cmd (cmd);
 					return r2pm_install_pkg (pkg, global);

@@ -1,11 +1,12 @@
-/* radare - LGPL3 - Copyright 2018 - deroad */
+/* radare - LGPL3 - Copyright 2018-2023 - deroad */
 
 #include <r_anal.h>
-#include <r_types.h>
-#include <r_lib.h>
-#include "../../asm/arch/mcore/mcore.h"
+#include "mcore.h"
 
-static int mcore_anal(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
+static bool decode(RArchSession *session, RAnalOp *op, RArchDecodeMask mask) {
+	const ut64 addr = op->addr;
+	const ut8 *buf = op->bytes;
+	const int len = op->size;
 	mcore_handle handle = {0};
 	mcore_t* instr = NULL;
 
@@ -48,8 +49,8 @@ static int mcore_anal(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 	return op->size;
 }
 
-static bool set_reg_profile(RAnal *anal) {
-	const char *p = \
+static char *regs(RArchSession *as) {
+	const char * const p = \
 		"=PC	pc\n"
 		"=SP	r1\n"
 		"=SR	sr\n"
@@ -111,14 +112,14 @@ static bool set_reg_profile(RAnal *anal) {
 		"gpr	cr30  .32 184 0\n"
 		"gpr	cr31  .32 188 0\n"
 		"gpr	pc	.32 192 0\n";
-	return r_reg_set_profile_string (anal->reg, p);
+	return strdup (p);
 }
 
-static int archinfo(RAnal *anal, int q) {
+static int archinfo(RArchSession *s, ut32 q) {
 	return 2;
 }
 
-RAnalPlugin r_anal_plugin_mcore = {
+RArchPlugin r_arch_plugin_mcore = {
 	.name = "mcore",
 	.desc = "MCore analysis plugin",
 	.arch = "mcore",
@@ -126,9 +127,9 @@ RAnalPlugin r_anal_plugin_mcore = {
 	.bits = 32,
 	.cpus = "mcore,c-sky",
 	.endian = R_SYS_ENDIAN_BIG,
-	.op = &mcore_anal,
-	.archinfo = archinfo,
-	.set_reg_profile = &set_reg_profile,
+	.decode = &decode,
+	.info = archinfo,
+	.regs = &regs,
 };
 
 #ifndef R2_PLUGIN_INCORE

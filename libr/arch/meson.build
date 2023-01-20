@@ -18,6 +18,8 @@ r_arch_sources = [
   'p/amd29k/plugin.c',
   'p/jdh8/plugin.c',
   'p/pickle/plugin.c',
+  'p/mcore/plugin.c',
+  'p/mcore/mcore.c',
   'p/rsp/plugin.c',
   'p/rsp/rsp_idec.c',
   'p/riscv/plugin.c',
