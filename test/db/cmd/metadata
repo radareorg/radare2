@@ -17,9 +17,8 @@ RUN
 
 NAME=Cr 10 px
 FILE=-
+ARGS=-a x86 -b32
 CMDS=<<EOF
--a x86
--b 32
 wx 90909090c3c3
 Cr 2 px 2 @ 2
 pd 5
