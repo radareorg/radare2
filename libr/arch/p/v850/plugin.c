@@ -234,7 +234,7 @@ static int v850e0_op(RArchSession *a, RAnalOp *op, ut64 addr, const ut8 *buf, in
 		r_strbuf_appendf (&op->esil, "ep,0x%x,+,[1],ep,0x%x,+,[1],0x80,&,!,!,0xffffff00,*,|,%s,:=",
 			word1 & 0x7f, word1 & 0x7f, F4_RN2 (word1));
 		op->type = R_ANAL_OP_TYPE_LOAD;
-		if (F4_REG2(word1) == V850_SP) {
+		if (F4_REG2 (word1) == V850_SP) {
 			op->stackop = R_ANAL_STACK_GET;
 			op->stackptr = 0;
 			op->ptr = 0;
@@ -244,7 +244,7 @@ static int v850e0_op(RArchSession *a, RAnalOp *op, ut64 addr, const ut8 *buf, in
 		r_strbuf_appendf (&op->esil, "ep,0x%x,+,[2],ep,0x%x,+,[2],0x8000,&,!,!,0xffff0000,*,|,%s,:=",
 			(word1 & 0x7f) << 1, (word1 & 0x7f) << 1, F4_RN2 (word1));
 		op->type = R_ANAL_OP_TYPE_LOAD;
-		if (F4_REG2(word1) == V850_SP) {
+		if (F4_REG2 (word1) == V850_SP) {
 			op->stackop = R_ANAL_STACK_GET;
 			op->stackptr = 0;
 			op->ptr = 0;
@@ -253,7 +253,7 @@ static int v850e0_op(RArchSession *a, RAnalOp *op, ut64 addr, const ut8 *buf, in
 	case V850_SLDW:
 		r_strbuf_appendf (&op->esil, "ep,0x%x,+,[4],%s,:=", (word1 & 0x7e) << 1, F4_RN2 (word1));
 		op->type = R_ANAL_OP_TYPE_LOAD;
-		if (F4_REG2(word1) == V850_SP) {
+		if (F4_REG2 (word1) == V850_SP) {
 			op->stackop = R_ANAL_STACK_GET;
 			op->stackptr = 0;
 			op->ptr = 0;
@@ -262,7 +262,7 @@ static int v850e0_op(RArchSession *a, RAnalOp *op, ut64 addr, const ut8 *buf, in
 	case V850_SSTB:
 		r_strbuf_appendf (&op->esil, "%s,ep,0x%x,+,=[1]", F4_RN2 (word1), word1 & 0x7f);
 		op->type = R_ANAL_OP_TYPE_STORE;
-		if (F4_REG2(word1) == V850_SP) {
+		if (F4_REG2 (word1) == V850_SP) {
 			op->stackop = R_ANAL_STACK_SET;
 			op->stackptr = 0;
 			op->ptr = 0;
@@ -271,7 +271,7 @@ static int v850e0_op(RArchSession *a, RAnalOp *op, ut64 addr, const ut8 *buf, in
 	case V850_SSTH:
 		r_strbuf_appendf (&op->esil, "%s,ep,0x%x,+,=[2]", F4_RN2 (word1), (word1 & 0x7f) << 1);
 		op->type = R_ANAL_OP_TYPE_STORE;
-		if (F4_REG2(word1) == V850_SP) {
+		if (F4_REG2 (word1) == V850_SP) {
 			op->stackop = R_ANAL_STACK_SET;
 			op->stackptr = 0;
 			op->ptr = 0;
@@ -280,7 +280,7 @@ static int v850e0_op(RArchSession *a, RAnalOp *op, ut64 addr, const ut8 *buf, in
 	case V850_SSTW:
 		r_strbuf_appendf (&op->esil, "%s,ep,0x%x,+,=[4]", F4_RN2 (word1), (word1 & 0x7e) << 1);
 		op->type = R_ANAL_OP_TYPE_STORE;
-		if (F4_REG2(word1) == V850_SP) {
+		if (F4_REG2 (word1) == V850_SP) {
 			op->stackop = R_ANAL_STACK_SET;
 			op->stackptr = 0;
 			op->ptr = 0;
@@ -370,7 +370,7 @@ static int v850e0_op(RArchSession *a, RAnalOp *op, ut64 addr, const ut8 *buf, in
 		break;
 	case V850_CMP_IMM5:
 		op->type = R_ANAL_OP_TYPE_CMP;
-		r_strbuf_appendf (&op->esil, "0x%x,%s,==", SEXT5(F2_IMM(word1)), F2_RN2(word1));
+		r_strbuf_appendf (&op->esil, "0x%x,%s,==", SEXT5 (F2_IMM (word1)), F2_RN2 (word1));
 		update_flags (op, -1);
 		break;
 	case V850_TST:
@@ -401,7 +401,7 @@ static int v850e0_op(RArchSession *a, RAnalOp *op, ut64 addr, const ut8 *buf, in
 			op->stackptr = F2_IMM (word1);
 			op->val = op->stackptr;
 		}
-		r_strbuf_appendf (&op->esil, "0x%x,%s,+=", SEXT5(F2_IMM (word1)), F2_RN2 (word1));
+		r_strbuf_appendf (&op->esil, "0x%x,%s,+=", SEXT5 (F2_IMM (word1)), F2_RN2 (word1));
 		update_flags (op, -1);
 		break;
 	case V850_ADDI:
