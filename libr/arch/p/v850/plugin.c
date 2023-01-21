@@ -93,6 +93,8 @@
 
 #define F13_RN2(instr) (V850_REG_NAMES[F13_REG2(instr)])
 
+#define	SEXT_IMM16_32(imm16)	((imm16 & 0x8000)? (imm16 | 0xffff0000): (imm16))
+
 static const char* V850_REG_NAMES[] = {
 	"zero",
 	"r1",
@@ -190,24 +192,47 @@ static int v850e0_op(RArchSession *a, RAnalOp *op, ut64 addr, const ut8 *buf, in
 	opcode = get_opcode (word1);
 
 	switch (opcode) {
-	case V850_MOV_IMM5:
 	case V850_MOV:
-		// 2 formats
 		op->type = R_ANAL_OP_TYPE_MOV;
-		if (opcode != V850_MOV_IMM5) { // Format I
-			r_strbuf_appendf (&op->esil, "%s,%s,=", F1_RN1(word1), F1_RN2(word1));
-		} else { // Format II
-			r_strbuf_appendf (&op->esil, "%"PFMT64d",%s,=", (st64)(F2_IMM(word1)), F2_RN2(word1));
-		}
+		r_strbuf_appendf (&op->esil, "%s,%s,:=", F1_RN1 (word1), F1_RN2 (word1));
+		break;
+	case V850_MOV_IMM5:
+		op->type = R_ANAL_OP_TYPE_MOV;
+		r_strbuf_appendf (&op->esil, "0x%x,%s,:=", SEXT5 (F2_IMM(word1)), F2_RN2 (word1));
 		break;
 	case V850_MOVEA:
 		op->type = R_ANAL_OP_TYPE_MOV;
+#if 0
 		// FIXME: to decide about reading 16/32 bit and use only macros to access
 		r_strbuf_appendf (&op->esil, "%s,0xffff,&,%u,+,%s,=", F6_RN1(word1), word2, F6_RN2(word1));
+#else
+		r_strbuf_appendf (&op->esil, "0x%x,%s,+,%s,:=", SEXT_IMM16_32 (word2), F6_RN1 (word1), F6_RN2 (word1));
+#endif
 		break;
 	case V850_SLDB:
+		// sign extension here is probably a good candidate for a custom op
+		// avoid using DUP here to not fuck up esil-dfg
+		r_strbuf_appendf (&op->esil, "ep,0x%x,+,[1],ep,0x%x,+,[1],0x80,&,!,!,0xffffff00,*,|,%s,:=",
+			word1 & 0x7f, word1 & 0x7f, F4_RN2 (word1));
+		op->type = R_ANAL_OP_TYPE_LOAD;
+		if (F4_REG2(word1) == V850_SP) {
+			op->stackop = R_ANAL_STACK_GET;
+			op->stackptr = 0;
+			op->ptr = 0;
+		}
+		break;
 	case V850_SLDH:
+		r_strbuf_appendf (&op->esil, "ep,0x%x,+,[2],ep,0x%x,+,[2],0x8000,&,!,!,0xffff0000,*,|,%s,:=",
+			(word1 & 0x7f) << 1, (word1 & 0x7f) << 1, F4_RN2 (word1));
+		op->type = R_ANAL_OP_TYPE_LOAD;
+		if (F4_REG2(word1) == V850_SP) {
+			op->stackop = R_ANAL_STACK_GET;
+			op->stackptr = 0;
+			op->ptr = 0;
+		}
+		break;
 	case V850_SLDW:
+		r_strbuf_appendf (&op->esil, "ep,0x%x,+,[4],%s,:=", (word1 & 0x7e) << 1, F4_RN2 (word1));
 		op->type = R_ANAL_OP_TYPE_LOAD;
 		if (F4_REG2(word1) == V850_SP) {
 			op->stackop = R_ANAL_STACK_GET;
@@ -216,8 +241,25 @@ static int v850e0_op(RArchSession *a, RAnalOp *op, ut64 addr, const ut8 *buf, in
 		}
 		break;
 	case V850_SSTB:
+		r_strbuf_appendf (&op->esil, "%s,ep,0x%x,+,=[1]", F4_RN2 (word1), word1 & 0x7f);
+		op->type = R_ANAL_OP_TYPE_STORE;
+		if (F4_REG2(word1) == V850_SP) {
+			op->stackop = R_ANAL_STACK_SET;
+			op->stackptr = 0;
+			op->ptr = 0;
+		}
+		break;
 	case V850_SSTH:
+		r_strbuf_appendf (&op->esil, "%s,ep,0x%x,+,=[2]", F4_RN2 (word1), (word1 & 0x7f) << 1);
+		op->type = R_ANAL_OP_TYPE_STORE;
+		if (F4_REG2(word1) == V850_SP) {
+			op->stackop = R_ANAL_STACK_SET;
+			op->stackptr = 0;
+			op->ptr = 0;
+		}
+		break;
 	case V850_SSTW:
+		r_strbuf_appendf (&op->esil, "%s,ep,0x%x,+,=[4]", F4_RN2 (word1), (word1 & 0x7e) << 1);
 		op->type = R_ANAL_OP_TYPE_STORE;
 		if (F4_REG2(word1) == V850_SP) {
 			op->stackop = R_ANAL_STACK_SET;
@@ -309,7 +351,7 @@ static int v850e0_op(RArchSession *a, RAnalOp *op, ut64 addr, const ut8 *buf, in
 		break;
 	case V850_CMP_IMM5:
 		op->type = R_ANAL_OP_TYPE_CMP;
-		r_strbuf_appendf (&op->esil, "%d,%s,==", (st8)SEXT5(F2_IMM(word1)), F2_RN2(word1));
+		r_strbuf_appendf (&op->esil, "0x%x,%s,==", SEXT5(F2_IMM(word1)), F2_RN2(word1));
 		update_flags (op, -1);
 		break;
 	case V850_TST:
@@ -340,7 +382,7 @@ static int v850e0_op(RArchSession *a, RAnalOp *op, ut64 addr, const ut8 *buf, in
 			op->stackptr = F2_IMM (word1);
 			op->val = op->stackptr;
 		}
-		r_strbuf_appendf (&op->esil, "%d,%s,+=", (st8)SEXT5(F2_IMM (word1)), F2_RN2 (word1));
+		r_strbuf_appendf (&op->esil, "0x%x,%s,+=", SEXT5(F2_IMM (word1)), F2_RN2 (word1));
 		update_flags (op, -1);
 		break;
 	case V850_ADDI:
@@ -350,7 +392,7 @@ static int v850e0_op(RArchSession *a, RAnalOp *op, ut64 addr, const ut8 *buf, in
 			op->stackptr = (st64) word2;
 			op->val = op->stackptr;
 		}
-		r_strbuf_appendf (&op->esil, "%d,%s,+,%s,=", (st32) word2, F6_RN1 (word1), F6_RN2 (word1));
+		r_strbuf_appendf (&op->esil, "0x%x,%s,+,%s,=",  SEXT_IMM16_32 (word2), F6_RN1 (word1), F6_RN2 (word1));
 		update_flags (op, -1);
 		break;
 	case V850_SHR_IMM5:
