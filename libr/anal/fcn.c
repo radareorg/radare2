@@ -540,7 +540,10 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int
 	char *sp_reg = NULL;
 	char *op_dst = NULL;
 	char *op_src = NULL;
-	if (R_UNLIKELY ((depth < 1) && (depth != -1))) {
+	if (depth < -1) {
+		// only happens when we want to analyze 1 basic block
+		return R_ANAL_RET_ERROR; // MUST BE TOO DEEP
+	} else if (R_UNLIKELY ((depth < 0) && (depth != -1))) {
 		R_LOG_WARN ("Analysis of 0x%08"PFMT64x" stopped at 0x%08"PFMT64x", use a higher anal.depth to continue", fcn->addr, addr);
 		return R_ANAL_RET_ERROR;
 	}

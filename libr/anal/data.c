@@ -344,7 +344,7 @@ R_API const char *r_anal_data_kind(RAnal *a, ut64 addr, const ut8 *buf, int len)
 	int num = 0;
 	int i, j;
 	RAnalData *data;
-	len = R_MIN (len, 128); // dim the scan to 16 byte only otherwise its too slow
+	len = R_MIN (len, 32); // smoler dim causes some tests to fail
 	int word = a->config->bits / 8;
 	for (i = j = 0; i < len; j++) {
 		if (R_UNLIKELY (str && !buf[i])) {

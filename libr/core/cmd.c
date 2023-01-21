@@ -3569,17 +3569,17 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 	char *colon = NULL, *icmd = NULL;
 	bool tmpseek = false;
 	bool original_tmpseek = core->tmpseek;
-	if (r_str_startswith (cmd, "\"\"")) {
+	if (R_UNLIKELY (r_str_startswith (cmd, "\"\""))) {
 		return r_core_cmd_call (core, cmd + 2);
 	}
-	if (r_str_startswith (cmd, "?t\"\"")) {
+	if (R_UNLIKELY (r_str_startswith (cmd, "?t\"\""))) {
 		char *c = r_str_newf ("?t\"\"%s", cmd + 4);
 		int res = r_core_cmd_call (core, c);
 		free (c);
 		return res;
 	}
 
-	if (r_str_startswith (cmd, "GET /cmd/")) {
+	if (R_UNLIKELY (r_str_startswith (cmd, "GET /cmd/"))) {
 		memmove (cmd, cmd + 9, strlen (cmd + 9) + 1);
 		char *http = strstr (cmd, "HTTP");
 		if (http) {
@@ -3611,7 +3611,7 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 	r_str_trim_tail (cmd);
 	R_CRITICAL_LEAVE (core);
 	// lines starting with # are ignored (never reach cmd_hash()), except #! and #?
-	if (!*cmd) {
+	if (R_UNLIKELY (!*cmd)) {
 		if (core->cmdrepeat > 0) {
 			lastcmd_repeat (core, true);
 			ret = r_core_cmd_nullcallback (core);
@@ -3623,7 +3623,7 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 	}
 	if (*cmd) {
 		char *hash = (char *) r_str_firstbut_escape (cmd, '#', "'\"");
-		if (hash && hash != cmd) {
+		if (R_UNLIKELY (hash && hash != cmd)) {
 			*hash = 0;
 			r_str_trim_tail (cmd);
 		}
@@ -4253,7 +4253,7 @@ escape_redir:
 next2:
 	/* sub commands */
 	ptr = r_core_cmd_find_subcmd_begin (cmd);
-	if (ptr) {
+	if (R_UNLIKELY (ptr)) {
 		bool backquote = false;
 		if (*ptr == '`') {
 			backquote = true;
@@ -4324,7 +4324,7 @@ escape_backtick:
 	// TODO must honor " and `
 	if (*cmd != '"' && *cmd) {
 		const char *s = strstr (cmd, "~?");
-		if (s) {
+		if (R_UNLIKELY (s)) {
 			bool showHelp = false;
 			if (cmd == s) {
 				// ~?
@@ -5758,18 +5758,18 @@ static int run_cmd_depth(RCore *core, char *cmd) {
 	char *rcmd;
 	int ret = false;
 
-	if (core->cons->context->cmd_depth < 1) {
+	if (R_UNLIKELY (core->cons->context->cmd_depth < 1)) {
 		R_LOG_ERROR ("That '%s' was too deep", cmd);
 		return false;
 	}
 	core->cons->context->cmd_depth--;
 	for (rcmd = cmd;;) {
 		char *ptr = strchr (rcmd, '\n');
-		if (ptr) {
+		if (R_UNLIKELY (ptr)) {
 			*ptr = '\0';
 		}
 		ret = r_core_cmd_subst (core, rcmd);
-		if (ret == -1) {
+		if (R_UNLIKELY (ret == -1)) {
 			R_LOG_ERROR ("Invalid command '%s' (0x%02x)", rcmd, *rcmd);
 			break;
 		}

@@ -1381,10 +1381,10 @@ pd 1
 pdJ 1
 EOF
 EXPECT=<<EOF
-            0x080484aa      b8e1850408     mov eax, 0x80485e1          ; eax=0x80485e1 "%ls"
-[{"offset":134513834,"text":"            0x080484aa      b8e1850408     mov eax, 0x80485e1          ; eax=0x80485e1 \"%ls\""}]
-            [32m0x080484aa[0m      [37mb8[37me1[37m85[37m04[37m08[0m     [37mmov[36m eax[0m,[36m[36m [33m0x80485e1[0m[0m[0m[31m          ; eax=0x80485e1 [7m"%ls"[27m[0m
-[{"offset":134513834,"text":"            \u001b[32m0x080484aa\u001b[0m      \u001b[37mb8\u001b[37me1\u001b[37m85\u001b[37m04\u001b[37m08\u001b[0m     \u001b[37mmov\u001b[36m eax\u001b[0m,\u001b[36m\u001b[36m \u001b[33m0x80485e1\u001b[0m\u001b[0m\u001b[0m\u001b[31m          ; eax=0x80485e1 \u001b[7m\"%ls\"\u001b[27m\u001b[0m"}]
+            0x080484aa      b8e1850408     mov eax, 0x80485e1          ; "%ls" ; eax=0x80485e1 -> 0x736c25
+[{"offset":134513834,"text":"            0x080484aa      b8e1850408     mov eax, 0x80485e1          ; \"%ls\" ; eax=0x80485e1 -> 0x736c25"}]
+            [32m0x080484aa[0m      [37mb8[37me1[37m85[37m04[37m08[0m     [37mmov[36m eax[0m,[36m[36m [33m0x80485e1[0m[0m[31m          [31m; "%ls"[0m[31m ; eax=0x80485e1 -> 0x736c25[0m
+[{"offset":134513834,"text":"            \u001b[32m0x080484aa\u001b[0m      \u001b[37mb8\u001b[37me1\u001b[37m85\u001b[37m04\u001b[37m08\u001b[0m     \u001b[37mmov\u001b[36m eax\u001b[0m,\u001b[36m\u001b[36m \u001b[33m0x80485e1\u001b[0m\u001b[0m\u001b[31m          \u001b[31m; \"%ls\"\u001b[0m\u001b[31m ; eax=0x80485e1 -> 0x736c25\u001b[0m"}]
 EOF
 RUN
 
