@@ -14,6 +14,8 @@ export CC="$(brew --prefix llvm@14)/bin/clang"
 Clean project
 
 ```shell
+git clean -xdf
+rm -rf shlr/capstone
 rm -rf build
 ```
 
@@ -23,7 +25,7 @@ Build project with libFuzzer and sanitizers
 # If you want to debug crashes
 export CFLAGS="-g"
 # Build project with test/fuzz
-python3 ./sys/meson.py --fuzz --sanitize address,leak
+python3 ./sys/meson.py --fuzz --sanitize address,leak,fuzzer-no-link
 ```
 
 ## Run
