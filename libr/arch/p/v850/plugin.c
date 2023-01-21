@@ -130,6 +130,25 @@ static const char* V850_REG_NAMES[] = {
 	"lp",
 };
 
+static const char * const esil_conds[] = {
+	[V850_COND_V]	= "v",
+	[V850_COND_CL]	= "cy",
+	[V850_COND_ZE]	= "z",
+	[V850_COND_NH]	= "cy,z,|",
+	[V850_COND_N]	= "s",
+	[V850_COND_AL]	= "1",
+	[V850_COND_LT]	= "s,ov,^",
+	[V850_COND_LE]	= "s,ov,^,z,|",
+	[V850_COND_NV]	= "ov,!",
+	[V850_COND_NC]	= "cy,!",
+	[V850_COND_NZ]	= "z,!",
+	[V850_COND_H]	= "cy,z,|,!",
+	[V850_COND_NS]	= "s,!",
+	[V850_COND_SA]	= "sat",
+	[V850_COND_GE]	= "s,ov,^,!",
+	[V850_COND_GT]	= "s,ov,^,z,|,!",
+};
+
 static void update_flags(RAnalOp *op, int flags) {
 	if (flags & V850_FLAG_CY) {
 		r_strbuf_append (&op->esil, "31,$c,cy,:=");
@@ -497,6 +516,12 @@ static int v850e0_op(RArchSession *a, RAnalOp *op, ut64 addr, const ut8 *buf, in
 		break;
 	case V850_EXT1:
 		switch (get_subopcode(word1 | (ut32)word2 << 16)) {
+		case V850_EXT_SETF:
+			op->type = R_ANAL_OP_TYPE_MOV;
+			// probably not matching format, but it should work anyways
+			r_strbuf_appendf (&op->esil, "%s,%s,:=", esil_conds[F3_COND (word1)], F9_RN2 (word1));
+			// update flags here?
+			break;
 		case V850_EXT_SHL:
 			op->type = R_ANAL_OP_TYPE_SHL;
 			r_strbuf_appendf (&op->esil, "%s,%s,<<=", F9_RN1(word1), F9_RN2(word1));
