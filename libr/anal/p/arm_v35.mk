@@ -1,14 +1,14 @@
 include ../config.mk
 N=anal_arm_v35
-V35ARM64_HOME=$(LIBR)/arch/p/arm/v35arm64/
+V35ARM64_HOME=$(LIBR)/arch/p/arm/v35/
 
-include ../arch/p/arm/v35arm64/deps-arm64.mk
+include ../arch/p/arm/v35/deps-arm64.mk
 
 OBJ_ARM_V35=anal_arm_v35.o
 # OBJ_ARM_V35+=${V35ARM64_LINK}
-OBJ_ARM_V35+=../../arch/p/arm/v35arm64/arch-arm64/disassembler/*.o
-# OBJ_ARM_V35 += ../../arch/p/arm/v35arm64/arm64dis.$(EXT_AR)
-# OBJ_ARM_V35+=../../arch/p/arm/v35arm64/armv7dis.$(EXT_AR)
+OBJ_ARM_V35+=../../arch/p/arm/v35/arch-arm64/disassembler/*.o
+# OBJ_ARM_V35 += ../../arch/p/arm/v35/arm64dis.$(EXT_AR)
+# OBJ_ARM_V35+=../../arch/p/arm/v35/armv7dis.$(EXT_AR)
 
 STATIC_OBJ+=${OBJ_ARM_V35}
 CFLAGS+=$(V35ARM64_CFLAGS)

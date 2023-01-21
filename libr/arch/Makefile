@@ -13,7 +13,7 @@ pre: p v35pre
 	$(MAKE) libr_arch.$(EXT_AR)
 
 v35pre:
-	$(MAKE) -C p/arm/v35arm64
+	$(MAKE) -C p/arm/v35
 
 include $(STATIC_ARCH_PLUGINS)
 
