@@ -85,6 +85,25 @@ v2
 EOF
 RUN
 
+NAME=e asm.cpu
+FILE=--
+CMDS=<<EOF
+-a v850
+-b 32
+e asm.cpu=?
+EOF
+EXPECT=<<EOF
+e0
+0
+e
+e1
+e2
+e2v3
+e3v5
+all
+EOF
+RUN
+
 NAME=e asm.syntax
 FILE=-
 CMDS=<<EOF

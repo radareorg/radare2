@@ -737,8 +737,8 @@ RArchPlugin r_arch_plugin_v850 = {
 	.cpus = "e0,0,e,e1,e2,e2v3,e3v5,all",
 	.arch = "v850",
 	.bits = 32,
-	.encode = encode, // op = v850_op,
-	.decode = decode,//  .opasm = v850_opasm,
+	.encode = encode,
+	.decode = decode,
 	.info = archinfo,
 	.regs = regs,
 };
