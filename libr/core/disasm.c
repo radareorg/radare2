@@ -3285,13 +3285,20 @@ static bool ds_print_meta_infos(RDisasmState *ds, ut8* buf, int len, int idx, in
 			break;
 		case R_META_TYPE_RUN:
 			{
-				char *s = r_core_cmd_strf (core, "%s@%"PFMT64d, mi->str, ds->at);
+				int obs = core->blocksize;
+				ut8 *oblock = core->block;
+				core->block = r_mem_dup (core->block, core->blocksize);
+				// XXX temporal seek causes UAF char *s = r_core_cmd_strf (core, "%s@%"PFMT64d, mi->str, ds->at);
+				char *s = r_core_cmd_strf (core, "s %"PFMT64d";%s;s-", ds->at, mi->str);
 				r_str_trim (s);
 				r_cons_printf ("; (Cr %d %s)\n%s", (int)mi_size, mi->str, s);
 				free (s);
 				ds->asmop.size = mi_size;
 				ds->oplen = mi_size;
 				ret = true;
+				free (core->block);
+				core->block = oblock;
+				core->blocksize = obs;
 			}
 			break;
 		case R_META_TYPE_DATA:
