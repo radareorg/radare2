@@ -147,8 +147,8 @@ bool ranal2_list(RCore *core, const char *arch, int fmt) {
 		}
 		pj_o (pj);
 	}
-	r_list_foreach (a->plugins, iter, h) {
-		if (R_STR_ISNOTEMPTY (arch)) {
+	if (R_STR_ISNOTEMPTY (arch)) {
+		r_list_foreach (a->plugins, iter, h) {
 			if (h->cpus && !strcmp (arch, h->name)) {
 				char *c = strdup (h->cpus);
 				int n = r_str_split (c, ',');
@@ -159,7 +159,25 @@ bool ranal2_list(RCore *core, const char *arch, int fmt) {
 				free (c);
 				break;
 			}
-		} else {
+		}
+		if (!any) {
+			RArch *ai = core->anal->arch;
+			RArchPlugin *arp;
+			r_list_foreach (ai->plugins, iter, arp) {
+				if (arp->cpus && !strcmp (arch, arp->name)) {
+					char *c = strdup (arp->cpus);
+					int n = r_str_split (c, ',');
+					for (i = 0; i < n; i++) {
+						r_cons_println (r_str_word_get0 (c, i));
+						any = true;
+					}
+					free (c);
+					break;
+				}
+			}
+		}
+	} else {
+		r_list_foreach (a->plugins, iter, h) {
 			RStrBuf *sb = r_strbuf_new ("");
 			if (h->bits & 8) {
 				r_strbuf_append (sb, "8");

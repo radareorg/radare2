@@ -47,8 +47,8 @@ RebuildSpp() {
 }
 
 RebuildQJS() {
-#rm -f shlr/qjs/js_repl.c
-#	make -C shlr/qjs
+	rm -f shlr/qjs/js_repl.c
+	make -C shlr/qjs
 	Rebuild libr/lang
 	touch libr/core/cmd.c
 	make -C libr/core
