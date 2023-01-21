@@ -491,3 +491,14 @@ mov 0x674, r1
 mov 0x34120674, r1
 EOF
 RUN
+
+
+NAME=v850 10x bug
+FILE=malloc://1024
+CMDS=<<EOF
+!rasm2 -a v850 -d 01fb
+EOF
+EXPECT=<<EOF
+sld.b 1, lp
+EOF
+RUN
