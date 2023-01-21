@@ -450,7 +450,20 @@ static bool v850np_disassemble(v850np_inst *inst, int cpumodel, ut64 memaddr, co
 #if ABS_R0REF
 				if (opnum == 2 && value == 0) { // "-X[r0]"
 					ut32 addr = UT32_MAX + 1 + prevalue;
-					r_strbuf_appendf (sb, "0x%08"PFMT32x, addr);
+					// uncommenting this breaks `rasm2 -a v850 -d 01fb`
+					// trim last char and append this
+					char *s = r_strbuf_drain (sb);
+					if (*s) {
+						s[strlen (s) - 1] = 0;
+						r_str_trim (s);
+					}
+					if (addr < 256) {
+						sb = r_strbuf_newf ("%s %"PFMT32d, s, addr);
+					} else {
+						sb = r_strbuf_newf ("%s 0x%08"PFMT32x, s, addr);
+					}
+					free (s);
+					// r_strbuf_appendf (sb, "0x%08"PFMT32x, addr);
 					inst->value = addr;
 					done = true;
 				} else {
