@@ -447,55 +447,14 @@ static int v850e0_op(RArchSession *a, RAnalOp *op, ut64 addr, const ut8 *buf, in
 		}
 		op->jump = addr + destaddrs;
 		op->fail = addr + 2;
-		op->type = R_ANAL_OP_TYPE_CJMP;
-		switch (F3_COND(word1)) {
-		case V850_COND_V:
-			r_strbuf_append (&op->esil, "ov");
-			break;
-		case V850_COND_CL:
-			r_strbuf_append (&op->esil, "cy");
-			break;
-		case V850_COND_ZE:
-			r_strbuf_append (&op->esil, "z");
-			break;
-		case V850_COND_NH:
-			r_strbuf_append (&op->esil, "cy,z,|");
-			break;
-		case V850_COND_N:
-			r_strbuf_append (&op->esil, "s");
-			break;
-		case V850_COND_AL: // Always
-			r_strbuf_append (&op->esil, "1");
-			break;
-		case V850_COND_LT:
-			r_strbuf_append (&op->esil, "s,ov,^");
-			break;
-		case V850_COND_LE:
-			r_strbuf_append (&op->esil, "s,ov,^,z,|");
-			break;
-		case V850_COND_NV:
-			r_strbuf_append (&op->esil, "ov,!");
-			break;
-		case V850_COND_NL:
-			r_strbuf_append (&op->esil, "cy,!");
-			break;
-		case V850_COND_NE:
-			r_strbuf_append (&op->esil, "z,!");
-			break;
-		case V850_COND_H:
-			r_strbuf_append (&op->esil, "cy,z,|,!");
-			break;
-		case V850_COND_P:
-			r_strbuf_append (&op->esil, "s,!");
-			break;
-		case V850_COND_GE:
-			r_strbuf_append (&op->esil, "s,ov,^,!");
-			break;
-		case V850_COND_GT:
-			r_strbuf_append (&op->esil, "s,ov,^,z,|,!");
-			break;
+		if (F3_COND (word1) == V850_COND_AL) {
+			op->type = R_ANAL_OP_TYPE_JMP;
+			r_strbuf_appendf (&op->esil, "0x%"PFMT64x",pc,:=", op->jump);
+		} else {
+			op->type = R_ANAL_OP_TYPE_CJMP;
+			r_strbuf_appendf (&op->esil, "%s,?{,0x%"PFMT64x",pc,:=,}",
+				esil_conds[F3_COND (word1)], op->jump);
 		}
-		r_strbuf_appendf (&op->esil, ",?{,0x%"PFMT64x",pc,:=,}", op->jump);
 		break;
 	case V850_BIT_MANIP:
 		{
