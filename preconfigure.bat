@@ -91,21 +91,21 @@ if %ERRORLEVEL% == 0 (
   )
 )
 
-if EXIST "libr\asm\arch\arm\v35arm64\arch-arm64" (
+if EXIST "libr\arch\p\arm\v35arm64\arch-arm64" (
   echo "v35arm64 ok"
 ) else (
-  pushd "libr\asm\arch\arm\v35arm64"
+  pushd "libr\arch\p\arm\v35"
   git clone https://github.com/radareorg/vector35-arch-arm64 arch-arm64
   cd arch-arm64
   git checkout radare2-wip
-  git reset --hard 194c539228d0a1ba292bfeef3f4f53da9a8db7bd
+  git reset --hard 55d73c6bbb94448a5c615933179e73ac618cf876
   popd
 )
 
-if EXIST "libr\asm\arch\arm\v35arm64\arch-armv7" (
+if EXIST "libr\arch\p\arm\v35arm64\arch-armv7" (
   echo "v35armv7 ok"
 ) else (
-  pushd "libr\asm\arch\arm\v35arm64"
+  pushd "libr\arch\p\arm\v35"
   git clone https://github.com/radareorg/vector35-arch-armv7 arch-armv7
   cd arch-armv7
   git checkout radare2
