@@ -1,4 +1,4 @@
-/* radare - MIT - Copyright 2021-2022 - pancake, brainstorm */
+/* radare - MIT - Copyright 2021-2023 - pancake, brainstorm, condret */
 
 #include <r_lib.h>
 #include <r_anal.h>
@@ -557,6 +557,10 @@ static int v850e0_op(RArchSession *a, RAnalOp *op, ut64 addr, const ut8 *buf, in
 			r_strbuf_appendf (&op->esil, "31,%s,>>,?{,%s,32,-,%s,1,<<,--,<<,}{,0,},%s,%s,>>,|,%s,=", reg2, reg1, reg1, reg1, reg2, reg2);
 			update_flags (op, V850_FLAG_CY | V850_FLAG_S | V850_FLAG_Z);
 			clear_flags (op, V850_FLAG_OV);
+			break;
+		case V850_EXT_RETI:
+			op->type = R_ANAL_OP_TYPE_RCJMP;
+			r_strbuf_append (&op->esil, "epi,!,npi,&,?{,fepc,pc,:=,fepsw,psw,:=,BREAK,},eipc,pc,:=,eipsw,psw,:=");
 			break;
 		}
 		break;
