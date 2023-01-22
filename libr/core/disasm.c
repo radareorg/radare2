@@ -2589,6 +2589,9 @@ static void ds_update_ref_lines(RDisasmState *ds) {
 		free (ds->line);
 		free (ds->line_col);
 		RAnalRefStr *line = r_anal_reflines_str (ds->core, ds->at, ds->linesopts);
+		if (!line) {
+			return;
+		}
 		ds->line = line->str;
 		ds->line_col = line->cols;
 		free (ds->refline);

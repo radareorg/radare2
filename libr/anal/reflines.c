@@ -344,6 +344,7 @@ static inline bool refline_kept(RAnalRefline *ref, bool middle_after, ut64 addr)
 // TODO: this is TOO SLOW. do not iterate over all reflines or gtfo
 R_API RAnalRefStr *r_anal_reflines_str(void *_core, ut64 addr, int opts) {
 	RCore *core = _core;
+	r_return_val_if_fail (core && core->cons && core->anal, NULL);
 	RCons *cons = core->cons;
 	RAnal *anal = core->anal;
 	RBuffer *b;
@@ -358,7 +359,9 @@ R_API RAnalRefStr *r_anal_reflines_str(void *_core, ut64 addr, int opts) {
 	char *str = NULL;
 	char *col_str = NULL;
 
-	r_return_val_if_fail (cons && anal && anal->reflines, NULL);
+	if (!anal->reflines) {
+		return NULL;
+	}
 
 	RList *lvls = r_list_new ();
 	if (!lvls) {
