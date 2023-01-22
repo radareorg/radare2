@@ -562,6 +562,11 @@ static int v850e0_op(RArchSession *a, RAnalOp *op, ut64 addr, const ut8 *buf, in
 			op->type = R_ANAL_OP_TYPE_RCJMP;
 			r_strbuf_append (&op->esil, "epi,!,npi,&,?{,fepc,pc,:=,fepsw,psw,:=,BREAK,},eipc,pc,:=,eipsw,psw,:=");
 			break;
+		case V850_EXT_EXT2:
+			//ei and di
+			op->type = R_ANAL_OP_TYPE_MOV;
+			r_strbuf_appendf (&op->esil, "%d,id,:=", (word2 >> 13) & 1);
+			break;
 		}
 		break;
 	}
