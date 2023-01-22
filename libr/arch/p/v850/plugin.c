@@ -149,6 +149,35 @@ static const char * const esil_conds[] = {
 	[V850_COND_GT]	= "s,ov,^,z,|,!",
 };
 
+static char *get_sysreg(ut32 regid) {
+	//TODO: check cpu-model
+	switch (regid) {
+	case 0:
+		return "eipc";
+	case 1:
+		return "eipsw";
+	case 2:
+		return "fepc";
+	case 3:
+		return "fepsw";
+	case 4:
+		return "ecr";
+	case 5:
+		return "psw";
+	case 16:
+		return "ctpc";
+	case 17:
+		return "ctpsw";
+	case 18:
+		return "dbpc";
+	case 19:
+		return "dbpsw";
+	case 20:
+		return "ctbp";
+	}
+	return NULL;
+}
+
 static void update_flags(RAnalOp *op, int flags) {
 	if (flags & V850_FLAG_CY) {
 		r_strbuf_append (&op->esil, "31,$c,cy,:=");
@@ -480,6 +509,23 @@ static int v850e0_op(RArchSession *a, RAnalOp *op, ut64 addr, const ut8 *buf, in
 			// probably not matching format, but it should work anyways
 			r_strbuf_appendf (&op->esil, "%s,%s,:=", esil_conds[F3_COND (word1)], F9_RN2 (word1));
 			// update flags here?
+			break;
+		case V850_EXT_LDSR:
+			{
+				const ut32 regid = (word1 & 0xf800) >> 11;
+				if (regid == 4) {
+					break;
+				}
+				const char *sr = get_sysreg (regid);
+				if (!sr) {
+					break;
+				}
+				r_strbuf_appendf (&op->esil, "%s,%s,:=", F9_RN1 (word1), sr);
+				if (regid == 5) {
+					r_strbuf_append (&op->esil, "0,sat,:=");
+					clear_flags (op, -1);
+				}
+			}
 			break;
 		case V850_EXT_SHL:
 			op->type = R_ANAL_OP_TYPE_SHL;
