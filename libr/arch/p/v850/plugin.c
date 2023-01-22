@@ -520,11 +520,22 @@ static int v850e0_op(RArchSession *a, RAnalOp *op, ut64 addr, const ut8 *buf, in
 				if (!sr) {
 					break;
 				}
+				op->type = R_ANAL_OP_TYPE_LOAD;
 				r_strbuf_appendf (&op->esil, "%s,%s,:=", F9_RN1 (word1), sr);
 				if (regid == 5) {
 					r_strbuf_append (&op->esil, "0,sat,:=");
 					clear_flags (op, -1);
 				}
+			}
+			break;
+		case V850_EXT_STSR:
+			{
+				const char *sr = get_sysreg ((word1 & 0xf800) >> 11);
+				if (!sr) {
+					break;
+				}
+				op->type = R_ANAL_OP_TYPE_STORE;
+				r_strbuf_appendf (&op->esil, "%s,%s,:=", sr, F9_RN1 (word1));
 			}
 			break;
 		case V850_EXT_SHL:
