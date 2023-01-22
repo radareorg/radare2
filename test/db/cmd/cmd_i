@@ -3708,7 +3708,6 @@ vaddr      paddr      type   name
 
 
 11 relocations
-0x00000000 52 elf_header
 0x00000000 1936 segment.LOAD0
 0x00000000 0 segment.GNU_STACK
 0x00000000 52 segment.ehdr
@@ -3717,8 +3716,9 @@ vaddr      paddr      type   name
 0x00000000 16 loc.imp.__gmon_start__
 0x00000000 16 loc.imp._Jv_RegisterClasses
 0x00000000 16 loc.imp._ITM_registerTMCloneTable
-0x00000034 32 elf_phdr
+0x00000000 52 elf_header
 0x00000034 288 segment.PHDR
+0x00000034 32 elf_phdr
 0x00000154 19 segment.INTERP
 0x00000168 68 segment.NOTE
 0x00000270 175 elf_strtab

@@ -113,11 +113,11 @@ addr,size,space,name
 
 space            name
 ---------------------
-sections         section..strtab
 segments         segment.GNU_STACK
 symbols.sections sym..comment
 imports          loc.imp.__gmon_start__
 imports          loc.imp._Jv_RegisterClasses
+imports          loc.imp._ITM_deregisterTMCloneTable
 
 .--------------------------------------------------------------------------------------------------.
 | space    | size  | name                                                                          |
@@ -129,10 +129,10 @@ imports          loc.imp._Jv_RegisterClasses
 | classes  | 1     | class.B                                                                       |
 | classes  | 1     | class.A                                                                       |
 | classes  | 1     | class.C                                                                       |
-| imports  | 16    | loc.imp._ITM_deregisterTMCloneTable                                           |
 | imports  | 16    | loc.imp._ITM_registerTMCloneTable                                             |
-| imports  | 16    | loc.imp._Jv_RegisterClasses                                                   |
+| imports  | 16    | loc.imp._ITM_deregisterTMCloneTable                                           |
 | format   | 56    | elf_phdr                                                                      |
+| format   | 64    | elf_header                                                                    |
 `--------------------------------------------------------------------------------------------------'
 
 EOF
