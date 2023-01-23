@@ -325,13 +325,29 @@ static int v850e0_op(RArchSession *a, RAnalOp *op, ut64 addr, const ut8 *buf, in
 		op->type = R_ANAL_OP_TYPE_LOAD;
 		if (word2 & 0x1) {
 			// LDW
-			const ut32 imm = SEXT_IMM16_32 (word2 & 0xfffe);
+			const ut32 imm = SEXT_IMM16_32 (word2) & 0xfffffffe;
 			r_strbuf_appendf (&op->esil, "0x%x,%s,+,[4],%s,:=", imm, F6_RN1 (word1), F6_RN2 (word1));
 		} else {
 			// LDH
 			const ut32 imm = SEXT_IMM16_32 (word2);
 			r_strbuf_appendf (&op->esil, "0x%x,%s,+,[2],0x%x,%s,+,[2],0x8000,&,!,!,0xffff0000,*,|,%s,:=",
 				imm, F6_RN1 (word1), imm, F6_RN1 (word1), F6_RN2 (word1));
+		}
+		break;
+	case V850_STB:
+		op->type = R_ANAL_OP_TYPE_STORE;
+		r_strbuf_appendf (&op->esil, "%s,0x%x,%s,+,=[1]", F6_RN1 (word1), SEXT_IMM16_32 (word2), F6_RN2 (word1));
+		break;
+	case V850_STHW:
+		op->type = R_ANAL_OP_TYPE_STORE;
+		if (word2 & 0x1) {
+			// STW
+			r_strbuf_appendf (&op->esil, "%s,0x%x,%s,+,=[4]", F6_RN1 (word1),
+				SEXT_IMM16_32 (word2) & 0xfffffffe, F6_RN2 (word1));
+		} else {
+			// STH
+			r_strbuf_appendf (&op->esil, "%s,0x%x,%s,+,=[2]", F6_RN1 (word1),
+				SEXT_IMM16_32 (word2), F6_RN2 (word1));
 		}
 		break;
 	case V850_NOT:
