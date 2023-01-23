@@ -656,7 +656,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: dist/artifacts/tarball/radare2/radare2-${{ steps.r2v.outputs.branch }}.tar.xz
+          asset_path: dist/artifacts/tarball/radare2-${{ steps.r2v.outputs.branch }}.tar.xz
           asset_name: radare2-${{ steps.r2v.outputs.branch }}.tar.xz
           asset_content_type: application/x-txz
       - name: Upload prefetched zip (source)
@@ -665,7 +665,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: dist/artifacts/tarball/radare2/radare2-${{ steps.r2v.outputs.branch }}.zip
+          asset_path: dist/artifacts/tarball/radare2-${{ steps.r2v.outputs.branch }}.zip
           asset_name: radare2-${{ steps.r2v.outputs.branch }}.zip
           asset_content_type: application/x-zip
       - name: Upload asset for Debian (i386)
