@@ -31,7 +31,7 @@ jobs:
     - uses: actions/upload-artifact@v3
       with:
         name: tarball
-        path: radare2-*.*
+        path: radare2-?.?.?.*
 
   # Linux
   linux-static:

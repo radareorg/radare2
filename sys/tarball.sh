@@ -16,3 +16,4 @@ find * | grep /.git$ | xargs rm -rf
 cd ..
 tar cJvf radare2-${V}.tar.xz radare2-${V}
 zip -r radare2-${V}.zip radare2-${V}
+rm -rf radare2-${V}
