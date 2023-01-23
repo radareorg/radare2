@@ -679,6 +679,7 @@ if cli_enabled
     'man/ragg2.1',
     'man/rahash2.1',
     'man/rarun2.1',
+    'man/rasign2.1',
     'man/rasm2.1',
     'man/rax2.1',
     'man/ravc2.1',
