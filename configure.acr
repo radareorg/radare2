@@ -1,12 +1,11 @@
 PKGNAME radare2
-VERSION 5.8.2
+VERSION 5.8.3
 CONTACT pancake ; pancake@nopcode.org
 
 LANG_C!
 
 ARG_DISABLE DEBUGGER debugger disable native debugger features ;
 
-(( -ldl -dynamic ... ))
 USE_DL
 
 USE_PKGCONFIG
