@@ -10,7 +10,11 @@ include ../mk/darwin.mk
 ifeq ($(shell test -d ../.git && echo 1),1)
 CS_RELEASE=0
 else
+ifeq ($(shell test -d capstone/.git && echo 1),1)
+CS_RELEASE=0
+else
 CS_RELEASE=1
+endif
 endif
 
 # CAPSTONE_CFLAGS?=-g
