@@ -107,7 +107,6 @@ R_API char *r_x509_crl_tostring(RX509CertificateRevocationList *crl, const char*
 R_API void r_x509_crl_json(PJ* pj, RX509CertificateRevocationList *crl);
 
 R_API RX509Certificate *r_x509_parse_certificate(RASN1Object *object);
-R_API RX509Certificate *r_x509_parse_certificate2(const ut8 *buffer, ut32 length);
 R_API void r_x509_free_certificate(RX509Certificate* certificate);
 R_API char *r_x509_certificate_tostring(RX509Certificate* certificate, const char* pad);
 R_API void r_x509_certificate_json(PJ* pj, RX509Certificate *certificate);

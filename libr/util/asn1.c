@@ -39,7 +39,7 @@ static RASN1Object *asn1_parse_header(const ut8 *buffer_base, const ut8 *buffer,
 		return NULL;
 	}
 	ut8 head = buffer[0];
-	obj->offset = buffer_base ? (buffer - buffer_base) : 0;
+	obj->offset = buffer_base? (buffer - buffer_base): 0;
 	obj->klass = head & ASN1_CLASS;
 	obj->form = head & ASN1_FORM;
 	obj->tag = head & ASN1_TAG;
@@ -48,7 +48,13 @@ static RASN1Object *asn1_parse_header(const ut8 *buffer_base, const ut8 *buffer,
 		length64 = 0;
 		length8 &= ASN1_LENSHORT;
 		obj->sector = buffer + 2;
-		if (length8 && length8 < length - 2) {
+		// Check for indefinite length.
+		if (length8) {
+			// Length over 6 bytes is not allowed.
+			if (length8 > length - 1 || length8 > 6) {
+				R_LOG_DEBUG ("ASN.1: length error");
+				goto out_error;
+			}
 			ut8 i8;
 			// can overflow.
 			for (i8 = 0; i8 < length8; i8++) {
@@ -94,7 +100,7 @@ static ut32 asn1_count_objects(const ut8 *buffer, ut32 length) {
 	if (!length) {
 		return 0;
 	}
-	ut32 counter = 0;
+	st32 counter = 0;
 	const ut8 *next = buffer;
 	const ut8 *end = buffer + length;
 	while (next >= buffer && next < end) {
@@ -122,6 +128,9 @@ R_API RASN1Object *r_asn1_object_parse(const ut8 *buffer_base, const ut8 *buffer
 			return NULL;
 		}
 		ut32 count = asn1_count_objects (object->sector, object->length);
+		if (count == -1) {
+			return NULL;
+		}
 		if (count > 0) {
 			object->list.length = count;
 			object->list.objects = R_NEWS0 (RASN1Object*, count);
@@ -157,6 +166,9 @@ R_API RAsn1 *r_asn1_new(const ut8 *buffer, int length, int fmtmode) {
 		break;
 	}
 	a->root = r_asn1_object_parse (buffer, buffer, length, fmtmode);
+	if (a->root == NULL) {
+		return NULL;
+	}
 	if (fmtmode == 'j') {
 		pj_end (a->pj);
 	}
