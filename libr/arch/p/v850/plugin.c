@@ -93,7 +93,7 @@
 
 #define F13_RN2(instr) (V850_REG_NAMES[F13_REG2(instr)])
 
-#define	SEXT_IMM16_32(imm16)	((imm16 & 0x8000)? (imm16 | 0xffff0000): (imm16))
+#define	SEXT_IMM16_32(imm16)	(((imm16) & 0x8000)? ((imm16) | 0xffff0000): (imm16))
 
 static const char* V850_REG_NAMES[] = {
 	"zero",
@@ -313,6 +313,25 @@ static int v850e0_op(RArchSession *a, RAnalOp *op, ut64 addr, const ut8 *buf, in
 			op->stackop = R_ANAL_STACK_SET;
 			op->stackptr = 0;
 			op->ptr = 0;
+		}
+		break;
+	case V850_LDB:
+		op->type = R_ANAL_OP_TYPE_LOAD;
+		r_strbuf_appendf (&op->esil, "0x%x,%s,+,[1],0x%x,%s,+,[1],0x80,&,!,!,0xffffff00,*,|,%s,:=",
+			SEXT_IMM16_32 (word2), F6_RN1 (word1), SEXT_IMM16_32 (word2),
+			F6_RN1 (word1), F6_RN2 (word1));
+		break;
+	case V850_LDHW:
+		op->type = R_ANAL_OP_TYPE_LOAD;
+		if (word2 & 0x1) {
+			// LDW
+			const ut32 imm = SEXT_IMM16_32 (word2 & 0xfffe);
+			r_strbuf_appendf (&op->esil, "0x%x,%s,+,[4],%s,:=", imm, F6_RN1 (word1), F6_RN2 (word1));
+		} else {
+			// LDH
+			const ut32 imm = SEXT_IMM16_32 (word2);
+			r_strbuf_appendf (&op->esil, "0x%x,%s,+,[2],0x%x,%s,+,[2],0x8000,&,!,!,0xffff0000,*,|,%s,:=",
+				imm, F6_RN1 (word1), imm, F6_RN1 (word1), F6_RN2 (word1));
 		}
 		break;
 	case V850_NOT:
