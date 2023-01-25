@@ -240,23 +240,15 @@ static int sp_open(struct gport *port) {
 #if R2__WINDOWS__
 	int ret;
 	DWORD errors;
-	char *escaped_port_name;
 	COMSTAT status;
 	DCB dcb;
-	LPTSTR filename_;
 
 	/* Prefix port name with '\\.\' to work with ports above COM9. */
-	size_t = escaped_port_name_sz = strlen (port->name) + 5;
-	if (!(escaped_port_name = malloc (escaped_port_name_sz))) {
-		return -1;
-	}
-	snprintf (escaped_port_name, escaped_port_name_sz, "\\\\.\\%s", port->name);
-
-	filename_ = r_sys_conv_utf8_to_win (escaped_port_name);
+	char *escaped_port_name = r_str_newf ("\\\\.\\%s", port->name);
+	LPTSTR filename_ = r_sys_conv_utf8_to_win (escaped_port_name);
 
 	port->hdl = CreateFile (filename_, GENERIC_READ | GENERIC_WRITE, 0, 0,
-				OPEN_EXISTING,
-				FILE_ATTRIBUTE_NORMAL | FILE_FLAG_OVERLAPPED, 0);
+			OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_OVERLAPPED, 0);
 
 	free (escaped_port_name);
 
