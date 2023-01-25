@@ -424,16 +424,7 @@ int run_old_command(RIO *io, RIODesc *iodesc, const char *buf) {
 			}
 			r2k_struct.beid = beid;
 			r2k_struct.pid = (beid == 1) ? pid : 0;
-
-			cmd = (char *) malloc (27);
-			if (!cmd) {
-				io->cb_printf ("io_r2k_linux : Malloc failed. Seeking to 0x0\n");
-				io->coreb.cmd (io->coreb.core, "s 0");
-			} else {
-				sprintf (cmd, "s 0x%"PFMT64x, io->off);
-				io->coreb.cmd (io->coreb.core, cmd);
-				free (cmd);
-			}
+			io->coreb.cmdf (io->coreb.core, "s 0x%"PFMT64x, io->off);
 		}
 		break;
 	case 'r':

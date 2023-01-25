@@ -774,10 +774,8 @@ R_API char *r_socket_tostring(RSocket *s) {
 	if (!getpeername (s->fd, &sa, &sl)) {
 		struct sockaddr_in *sain = (struct sockaddr_in*) &sa;
 		ut8 *a = (ut8*) &(sain->sin_addr);
-		if ((str = malloc (32))) {
-			sprintf (str, "%d.%d.%d.%d:%d",
-				a[0], a[1], a[2], a[3], ntohs (sain->sin_port));
-		}
+		str = r_str_newf ("%d.%d.%d.%d:%d",
+			a[0], a[1], a[2], a[3], ntohs (sain->sin_port));
 	} else {
 		r_sys_perror ("getpeername");
 	}

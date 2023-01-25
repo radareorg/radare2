@@ -4062,7 +4062,7 @@ R_API void r_core_visual_title(RCore *core, int color) {
 			} else {
 				pc = (pa * 100) / sz;
 			}
-			sprintf (pcs, "%d%% ", pc);
+			snprintf (pcs, sizeof (pcs), "%d%% ", pc);
 		}
 	}
 	{

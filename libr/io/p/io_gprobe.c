@@ -164,7 +164,7 @@ static int i2c_open(struct gport *port) {
 	int file = r_sandbox_open (filename, O_RDWR, 0);
 
 	if (file < 0 && (errno == ENOENT || errno == ENOTDIR)) {
-		sprintf (filename, "/dev/i2c-%d", i2cbus);
+		snprintf (filename, sizeof (filename), "/dev/i2c-%d", i2cbus);
 		file = r_sandbox_open (filename, O_RDWR, 0);
 	}
 	if (file < 0) {
@@ -246,10 +246,11 @@ static int sp_open(struct gport *port) {
 	LPTSTR filename_;
 
 	/* Prefix port name with '\\.\' to work with ports above COM9. */
-	if (!(escaped_port_name = malloc (strlen (port->name) + 5))) {
+	size_t = escaped_port_name_sz = strlen (port->name) + 5;
+	if (!(escaped_port_name = malloc (escaped_port_name_sz))) {
 		return -1;
 	}
-	sprintf (escaped_port_name, "\\\\.\\%s", port->name);
+	snprintf (escaped_port_name, escaped_port_name_sz, "\\\\.\\%s", port->name);
 
 	filename_ = r_sys_conv_utf8_to_win (escaped_port_name);
 

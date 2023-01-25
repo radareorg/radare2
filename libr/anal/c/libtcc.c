@@ -432,7 +432,7 @@ static void tcc_init_defines(TCCState *s) {
 	const char *arch = s->arch;
 	const int bits = s->bits;
 	const char *os = s->os;
-	int a, b, c;
+	int a = 0, b = 0, c = 0;
 	/* we add dummy defines for some special macros to speed up tests
 	   and to have working defined() */
 	define_push (s, TOK___LINE__, MACRO_OBJ, NULL, NULL);
@@ -442,7 +442,7 @@ static void tcc_init_defines(TCCState *s) {
 
 	/* define __TINYC__ 92X  */
 	sscanf (TCC_VERSION, "%d.%d.%d", &a, &b, &c);
-	sprintf (buffer, "%d", a * 10000 + b * 100 + c);
+	snprintf (buffer, sizeof (buffer), "%d", a * 10000 + b * 100 + c);
 	tcc_define_symbol (s, "__TINYC__", buffer);
 	tcc_define_symbol (s, "__R2TINYC__", buffer);
 

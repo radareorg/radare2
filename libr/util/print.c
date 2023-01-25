@@ -5,8 +5,8 @@
 
 #define DFLT_ROWS 16
 
-// global
 static const char hex[16] = "0123456789ABCDEF";
+
 // global mutable
 static R_TH_LOCAL RPrintIsInterruptedCallback is_interrupted_cb = NULL;
 

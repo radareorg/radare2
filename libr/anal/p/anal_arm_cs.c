@@ -964,18 +964,18 @@ const char* arm_prefix_cond(RAnalOp *op, int cond_type) {
 
 /* arm64 */
 
-static const char *arg(RAnal *a, csh *handle, cs_insn *insn, char *buf, int n) {
+static const char *arg(RAnal *a, csh *handle, cs_insn *insn, char *buf, size_t buf_sz, int n) {
 	buf[0] = 0;
 	switch (insn->detail->arm.operands[n].type) {
 	case ARM_OP_REG:
 		if (ISSHIFTED (n)) {
-			sprintf (buf, "%u,%s,%s",
+			snprintf (buf, buf_sz, "%u,%s,%s",
 			LSHIFT2 (n),
 			r_str_getf (cs_reg_name (*handle,
 				insn->detail->arm.operands[n].reg)),
 			DECODE_SHIFT (n));
 		} else {
-			sprintf (buf, "%s",
+			snprintf (buf, buf_sz, "%s",
 			r_str_getf (cs_reg_name (*handle,
 				insn->detail->arm.operands[n].reg)));
 		}
@@ -983,18 +983,18 @@ static const char *arg(RAnal *a, csh *handle, cs_insn *insn, char *buf, int n) {
 	case ARM_OP_IMM:
 		if (a->config->bits == 64) {
 			// 64bit only
-			sprintf (buf, "%"PFMT64d, (ut64)
+			snprintf (buf, buf_sz, "%"PFMT64d, (ut64)
 					insn->detail->arm.operands[n].imm);
 		} else {
 			// 32bit only
-			sprintf (buf, "%"PFMT64d, (ut64)(ut32)
+			snprintf (buf, buf_sz, "%"PFMT64d, (ut64)(ut32)
 					insn->detail->arm.operands[n].imm);
 		}
 		break;
 	case ARM_OP_MEM:
 		break;
 	case ARM_OP_FP:
-		sprintf (buf, "%lf", insn->detail->arm.operands[n].fp);
+		snprintf (buf, buf_sz, "%lf", insn->detail->arm.operands[n].fp);
 		break;
 	default:
 		break;
@@ -1002,7 +1002,7 @@ static const char *arg(RAnal *a, csh *handle, cs_insn *insn, char *buf, int n) {
 	return buf;
 }
 
-#define ARG(x) arg(a, handle, insn, str[x], x)
+#define ARG(x) arg(a, handle, insn, str[x], sizeof (str[x]), x)
 
 #define VEC64(n) insn->detail->arm64.operands[n].vess
 #define VEC64_APPEND(sb, n, i) vector64_append(sb, handle, insn, n, i)

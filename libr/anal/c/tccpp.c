@@ -244,14 +244,14 @@ ST_FUNC char *get_tok_str(TCCState *s1, int v, CValue *cv) {
 	case TOK_CUINT:
 		/* XXX: not quite exact, but only useful for testing */
 		if (cv) {
-			sprintf (p, "%u", cv->ui);
+			snprintf (p, sizeof (s1->tok_buf), "%u", cv->ui);
 		}
 		break;
 	case TOK_CLLONG:
 	case TOK_CULLONG:
 		/* XXX: not quite exact, but only useful for testing  */
 		if (cv) {
-			sprintf (p, "%"PFMT64u, (ut64)cv->ull);
+			snprintf (p, sizeof (s1->tok_buf), "%"PFMT64u, (ut64)cv->ull);
 		}
 		break;
 	case TOK_LCHAR:
@@ -332,7 +332,7 @@ addv:
 			return s1->table_ident[v - TOK_IDENT]->str;
 		} else if (v >= SYM_FIRST_ANOM) {
 			/* special name for anonymous symbol */
-			sprintf (p, "%u", v - SYM_FIRST_ANOM);
+			snprintf (p, sizeof (s1->tok_buf), "%u", v - SYM_FIRST_ANOM);
 		} else {
 			/* should never happen */
 			return NULL;

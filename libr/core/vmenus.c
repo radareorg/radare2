@@ -2179,18 +2179,16 @@ R_API int r_core_visual_trackflags(RCore *core) {
 			break;
 		case 'r': // "Vtr"
 			if (menu == 1) {
-				int len;
+				char line[1024];
 				r_cons_show_cursor (true);
 				r_cons_set_raw (0);
-				// TODO: use r_flag_rename or wtf?..fr doesnt uses this..
-				snprintf (cmd, sizeof (cmd), "fr %s ", fs2);
-				len = strlen (cmd);
-				eprintf ("Rename flag '%s' as:\n", fs2);
+				r_cons_printf ("Rename flag '%s' as:\n", fs2);
+				r_cons_flush ();
 				r_line_set_prompt (":> ");
-				if (r_cons_fgets (cmd + len, sizeof (cmd) - len, 0, NULL) < 0) {
-					cmd[0] = '\0';
+				if (r_cons_fgets (line, sizeof (line), 0, NULL) >= 0) {
+					// TODO: use the API
+					r_core_cmdf (core, "fr %s %s", fs2, line);
 				}
-				r_core_cmd (core, cmd, 0);
 				r_cons_set_raw (1);
 				r_cons_show_cursor (false);
 			}
@@ -2200,14 +2198,12 @@ R_API int r_core_visual_trackflags(RCore *core) {
 				char line[1024];
 				r_cons_show_cursor (true);
 				r_cons_set_raw (0);
-				eprintf ("Rename function '%s' as:\n", fs2);
+				r_cons_printf ("Rename function '%s' as:\n", fs2);
+				r_cons_flush ();
 				r_line_set_prompt (":> ");
-				if (r_cons_fgets (line, sizeof (line), 0, NULL) < 0) {
-					cmd[0] = '\0';
-				}
-				int res = snprintf (cmd, sizeof (cmd), "afr %s %s", line, fs2);
-				if (res < sizeof (cmd)) {
-					r_core_cmd (core, cmd, 0);
+				if (r_cons_fgets (line, sizeof (line), 0, NULL) >= 0) {
+					// TODO: use the API
+					r_core_cmdf (core, "afr %s %s", line, fs2);
 				}
 				r_cons_set_raw (1);
 				r_cons_show_cursor (false);
@@ -2224,8 +2220,7 @@ R_API int r_core_visual_trackflags(RCore *core) {
 		case '\r':
 		case '\n':
 			if (menu == 1) {
-				sprintf (cmd, "s %s", fs2);
-				r_core_cmd (core, cmd, 0);
+				r_core_cmdf (core, "s %s", fs2);
 				return true;
 			}
 			r_flag_space_set (core->flags, fs);
@@ -2317,9 +2312,9 @@ R_API int r_core_visual_comments(RCore *core) {
 		r_cons_newline ();
 
 		switch (format) {
-		case 0: sprintf (cmd, "px @ 0x%"PFMT64x":64", from); core->printidx = 0; break;
-		case 1: sprintf (cmd, "pd 12 @ 0x%"PFMT64x":64", from); core->printidx = 1; break;
-		case 2: sprintf (cmd, "ps @ 0x%"PFMT64x":64", from); core->printidx = 5; break;
+		case 0: snprintf (cmd, sizeof (cmd), "px @ 0x%"PFMT64x":64", from); core->printidx = 0; break;
+		case 1: snprintf (cmd, sizeof (cmd), "pd 12 @ 0x%"PFMT64x":64", from); core->printidx = 1; break;
+		case 2: snprintf (cmd, sizeof (cmd), "ps @ 0x%"PFMT64x":64", from); core->printidx = 5; break;
 		default: format = 0; continue;
 		}
 		if (*cmd) {
@@ -3247,10 +3242,8 @@ static ut64 r_core_visual_anal_refresh(RCore *core) {
 	}
 	ut64 addr;
 	RStrBuf *buf;
-	char old[1024];
 	bool color = r_config_get_i (core->config, "scr.color");
 	int h, cols = r_cons_get_size (&h);
-	old[0] = '\0';
 	addr = core->offset;
 	cols -= 50;
 	if (cols > 60) {
@@ -3307,8 +3300,7 @@ static ut64 r_core_visual_anal_refresh(RCore *core) {
 			r_cons_strcat ("\n" Color_RESET);
 		}
 		// TODO: filter only the callrefs. but we cant grep here
-		sprintf (old, "afi @ 0x%08"PFMT64x, addr);
-		char *output = r_core_cmd_str (core, old);
+		char *output = r_core_cmd_strf (core, "afi @ 0x%08"PFMT64x, addr);
 		if (output) {
 			// 'h - 2' because we have two new lines in r_cons_printf
 			if (!r_cons_singleton ()->show_vals) {
@@ -4425,7 +4417,8 @@ onemoretime:
 }
 
 R_API void r_core_visual_colors(RCore *core) {
-	char *color = calloc (1, 64), cstr[32];
+	char *color = NULL;
+	char cstr[32];
 	char preview_cmd[128] = "pd $r";
 	int ch, opt = 0, oopt = -1;
 	char *rgb_xxx_fmt = "rgb:%02x%02x%02x";
@@ -4442,7 +4435,7 @@ R_API void r_core_visual_colors(RCore *core) {
 			opt = 0;
 			k = r_cons_pal_get_name (opt);
 		}
-		sprintf (color, rgb_xxx_fmt, rcolor.r, rcolor.g, rcolor.b);
+		color = r_str_newf (rgb_xxx_fmt, rcolor.r, rcolor.g, rcolor.b);
 		if (rcolor.r2 || rcolor.g2 || rcolor.b2) {
 			color = r_str_append (color, " ");
 			color = r_str_appendf (color, rgb_xxx_fmt, rcolor.r2, rcolor.g2, rcolor.b2);
@@ -4469,7 +4462,7 @@ R_API void r_core_visual_colors(RCore *core) {
 		}
 		r_cons_newline ();
 
-		if (memcmp (&rcolor, &zcolor, sizeof (rcolor))) {
+		if (memcmp (&rcolor, &zcolor, sizeof (rcolor)) != 0) {
 			r_core_cmdf (core, "ec %s %s", k, color);
 		}
 		char * res = r_core_cmd_str (core, preview_cmd);

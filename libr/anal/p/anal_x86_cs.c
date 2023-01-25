@@ -985,9 +985,9 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 			char shft[32];
 			cs_x86_op operand = insn->detail->x86.operands[2];
 			if (operand.type == X86_OP_IMM) {
-				sprintf (shft, "%" PFMT64d, operand.imm);
+				snprintf (shft, sizeof (shft), "%" PFMT64d, operand.imm);
 			} else {
-				strcpy (shft, "cl");
+				snprintf (shft, sizeof (shft), "%s", "cl");
 			}
 			src = getarg (&gop, 1, 0, NULL, NULL);
 			dst_r = getarg (&gop, 0, 0, NULL, NULL);
