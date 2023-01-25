@@ -402,7 +402,6 @@ int run_old_command(RIO *io, RIODesc *iodesc, const char *buf) {
 		break;
 	case 'b':
 		{
-			char *cmd = NULL;
 			if (buf[1] != ' ') {
 				io->cb_printf ("beid: %d\n", r2k_struct.beid);
 				io->cb_printf ("pid:  %d\n", r2k_struct.pid);
