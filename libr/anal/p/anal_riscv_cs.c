@@ -99,35 +99,33 @@ static void opex(RStrBuf *buf, csh handle, cs_insn *insn) {
 	pj_free (pj);
 }
 
-static const char *arg(csh *handle, cs_insn *insn, char *buf, int n) {
+static const char *arg(csh *handle, cs_insn *insn, char *buf, size_t buf_sz, int n) {
 	*buf = 0;
 	switch (insn->detail->riscv.operands[n].type) {
 	case RISCV_OP_INVALID:
 		break;
 	case RISCV_OP_REG:
-		sprintf (buf, "%s",
+		snprintf (buf, buf_sz, "%s",
 			cs_reg_name (*handle,
 				insn->detail->riscv.operands[n].reg));
 		break;
 	case RISCV_OP_IMM:
 	{
 		st64 x = (st64)insn->detail->riscv.operands[n].imm;
-		sprintf (buf, "%"PFMT64d, x);
+		snprintf (buf, buf_sz, "%"PFMT64d, x);
 		break;
 	}
 	case RISCV_OP_MEM:
 	{
 		st64 disp = insn->detail->riscv.operands[n].mem.disp;
 		if (disp < 0) {
-			sprintf (buf, "%"PFMT64d",%s,-",
-				(ut64)-insn->detail->riscv.operands[n].mem.disp,
-				cs_reg_name (*handle,
-					insn->detail->riscv.operands[n].mem.base));
+			snprintf (buf, buf_sz, "%"PFMT64d",%s,-",
+				(ut64)(-insn->detail->riscv.operands[n].mem.disp),
+				cs_reg_name (*handle, insn->detail->riscv.operands[n].mem.base));
 		} else {
-			sprintf (buf, "%"PFMT64d",%s,+",
+			snprintf (buf, buf_sz, "%"PFMT64d",%s,+",
 				(st64)insn->detail->riscv.operands[n].mem.disp,
-				cs_reg_name (*handle,
-					insn->detail->riscv.operands[n].mem.base));
+				cs_reg_name (*handle, insn->detail->riscv.operands[n].mem.base));
 		}
 		break;
 	}
@@ -135,7 +133,7 @@ static const char *arg(csh *handle, cs_insn *insn, char *buf, int n) {
 	return buf;
 }
 
-#define ARG(x) (*str[x] != 0)? str[x]: arg (handle, insn, str[x], x)
+#define ARG(x) (*str[x] != 0)? str[x]: arg (handle, insn, str[x], sizeof (str[x]), x)
 
 static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh *handle, cs_insn *insn) {
 	char str[8][32] = {{0}};

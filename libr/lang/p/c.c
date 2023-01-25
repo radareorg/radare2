@@ -25,7 +25,7 @@ static int lang_c_file(RLangSession *s, const char *file) {
 		return false;
 	}
 	if (!strstr (file, ".c")) {
-		sprintf (name, "%s.c", file);
+		snprintf (name, sizeof (name), "%s.c", file);
 	} else {
 		strcpy (name, file);
 	}

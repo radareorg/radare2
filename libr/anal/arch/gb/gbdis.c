@@ -1,11 +1,7 @@
-/* radare - LGPL - Copyright 2013-2022 - condret, pancake */
+/* radare - LGPL - Copyright 2013-2023 - condret, pancake */
 
-#include <r_types.h>
-#include <r_util.h>
 #include <r_asm.h>
 #include <r_lib.h>
-#include <stdio.h>
-#include <string.h>
 #include "gb_op_table.h"
 
 static int gbOpLength(int gboptype) {
@@ -23,7 +19,7 @@ static int gbOpLength(int gboptype) {
 	}
 }
 
-static void gb_hardware_register_name(char *reg, ut8 offset) {
+static void gb_hardware_register_name(char *reg, size_t reg_sz, ut8 offset) {
 	switch (offset) {
 	case 0x00: // Joy pad info
 		r_str_cpy (reg, "rP1")
@@ -170,7 +166,7 @@ static void gb_hardware_register_name(char *reg, ut8 offset) {
 	case 0x53: // Horizontal Blanking, General Purpose DMA
 	case 0x54: // Horizontal Blanking, General Purpose DMA
 	case 0x55: // Horizontal Blanking, General Purpose DMA
-		sprintf (reg, "rHDMA%d", offset - 0x50);
+		snprintf (reg, reg_sz, "rHDMA%d", offset - 0x50);
 		break;
 	case 0x56: // Infrared Communications Port
 		r_str_cpy (reg, "rRP")
@@ -195,7 +191,7 @@ static void gb_hardware_register_name(char *reg, ut8 offset) {
 		break;
 	default:
 		// If unknown, return the original address
-		sprintf (reg, "0xff%02x", offset);
+		snprintf (reg, reg_sz, "0xff%02x", offset);
 		break;
 	}
 }
@@ -217,7 +213,7 @@ static void gbDisass(RAnalOp *op, const ut8 *buf) {
 		op->mnemonic = r_str_newf (gb_op[buf[0]].name, buf[1] + 0x100 * buf[2]);
 		break;
 	case GB_8BIT + ARG_8 + GB_IO:
-		gb_hardware_register_name (reg, buf[1]); // XXX
+		gb_hardware_register_name (reg, sizeof (reg), buf[1]); // XXX
 		op->mnemonic = r_str_newf (gb_op[buf[0]].name, reg);
 		break;
 	default:

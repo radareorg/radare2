@@ -3,10 +3,9 @@
 #include <r_util.h>
 
 R_API bool r_type_set(Sdb *TDB, ut64 at, const char *field, ut64 val) {
-	const char *kind;
 	char var[128];
-	sprintf (var, "link.%08"PFMT64x, at);
-	kind = sdb_const_get (TDB, var, NULL);
+	snprintf (var, sizeof (var), "link.%08"PFMT64x, at);
+	const char *kind = sdb_const_get (TDB, var, NULL);
 	if (kind) {
 		const char *p = sdb_const_get (TDB, kind, NULL);
 		if (p) {

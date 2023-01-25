@@ -163,43 +163,41 @@ static void opex(RStrBuf *buf, csh handle, cs_insn *insn) {
 	pj_free (pj);
 }
 
-static const char *arg(csh *handle, cs_insn *insn, char *buf, int n) {
+static const char *arg(csh *handle, cs_insn *insn, char *buf, size_t buf_sz, int n) {
 	*buf = 0;
 	switch (insn->detail->mips.operands[n].type) {
 	case MIPS_OP_INVALID:
 		break;
 	case MIPS_OP_REG:
-		sprintf (buf, "%s",
+		snprintf (buf, buf_sz, "%s",
 			cs_reg_name (*handle,
 				insn->detail->mips.operands[n].reg));
 		break;
 	case MIPS_OP_IMM:
 		{
 			st64 x = (st64)insn->detail->mips.operands[n].imm;
-			sprintf (buf, "%"PFMT64d, x);
+			snprintf (buf, buf_sz, "%"PFMT64d, x);
 		}
 		break;
 	case MIPS_OP_MEM:
 		{
 			int disp = insn->detail->mips.operands[n].mem.disp;
-		if (disp<0) {
-		sprintf (buf, "%"PFMT64d",%s,-",
-			(ut64)-insn->detail->mips.operands[n].mem.disp,
-			cs_reg_name (*handle,
-				insn->detail->mips.operands[n].mem.base));
-		} else {
-		sprintf (buf, "0x%"PFMT64x",%s,+",
-			(ut64)insn->detail->mips.operands[n].mem.disp,
-			cs_reg_name (*handle,
-				insn->detail->mips.operands[n].mem.base));
-		}
+			if (disp < 0) {
+				snprintf (buf, buf_sz, "%"PFMT64d",%s,-",
+					(ut64)(-insn->detail->mips.operands[n].mem.disp),
+					cs_reg_name (*handle, insn->detail->mips.operands[n].mem.base));
+			} else {
+				snprintf (buf, buf_sz, "0x%"PFMT64x",%s,+",
+					(ut64)insn->detail->mips.operands[n].mem.disp,
+					cs_reg_name (*handle, insn->detail->mips.operands[n].mem.base));
+			}
 		}
 		break;
 	}
 	return buf;
 }
 
-#define ARG(x) (*str[x] != 0)?str[x]:arg(handle, insn, str[x], x)
+#define ARG(x) (*str[x] != 0)?str[x]:arg(handle, insn, str[x], sizeof (str[x]), x)
 
 static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh *handle, cs_insn *insn) {
 	char str[8][32] = {{0}};

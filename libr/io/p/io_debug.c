@@ -505,7 +505,7 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 				return NULL;
 			}
 #if R2__WINDOWS__
-			sprintf (uri, "w32dbg://%d", pid);
+			snprintf (uri, sizeof (uri), "w32dbg://%d", pid);
 			_plugin = r_io_plugin_resolve (io, (const char *)uri, false);
 			if (!_plugin || !_plugin->open) {
 				return NULL;
@@ -516,7 +516,7 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 				c->dbg->user = wrap;
 			}
 #elif __APPLE__
-			sprintf (uri, "smach://%d", pid);		//s is for spawn
+			snprintf (uri, sizeof (uri), "smach://%d", pid); //s is for spawn
 			_plugin = r_io_plugin_resolve (io, (const char *)uri + 1, false);
 			if (!_plugin || !_plugin->open || !_plugin->close) {
 				return NULL;
@@ -524,7 +524,7 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 			ret = _plugin->open (io, uri, rw, mode);
 #else
 			// TODO: use io_procpid here? faster or what?
-			sprintf (uri, "ptrace://%d", pid);
+			snprintf (uri, sizeof (uri), "ptrace://%d", pid);
 			_plugin = r_io_plugin_resolve (io, (const char *)uri, false);
 			if (!_plugin || !_plugin->open) {
 				return NULL;
