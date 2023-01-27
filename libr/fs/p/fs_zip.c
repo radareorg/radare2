@@ -135,6 +135,7 @@ static RList *fs_zip_dir(RFSRoot *root, const char *path, R_UNUSED int view) {
 	zip_t *za = zip_open_from_source (zs, _flags, &error);
 	if (!za) {
 		R_LOG_ERROR ("failed to open zip from source");
+		zip_source_free (zs);
 		free (buf);
 		return NULL;
 	}
