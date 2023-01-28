@@ -1452,10 +1452,10 @@ RList *MACH0_(parse_classes)(RBinFile *bf, objc_cache_opt_info *oi) {
 			const int aligned_size = swift5_types_size + (swift5_types_size % 4);
 			r_buf_read_at (bf->buf, swift5_fieldmd_addr, (ut8*)fieldmd, aligned_fieldmd_size);
 			int amount = aligned_size / 4;
-			st32 *words = calloc (sizeof (st32), amount);
+			st32 *words = calloc (sizeof (st32), aligned_size);
 			if (words) {
 				int i;
-				int res = r_buf_read_at (bf->buf, swift5_types_addr, (ut8*)words, aligned_size); // TODO check for return
+				int res = r_buf_read_at (bf->buf, swift5_types_addr, (ut8*)words, aligned_size);
 				if (res >= aligned_size) {
 					for (i = 0; i < amount; i++) {
 						st32 word = r_read_le32 (&words[i]);
