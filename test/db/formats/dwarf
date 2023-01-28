@@ -156,26 +156,26 @@ Raw dump of debug contents of section .debug_line:
   Advance PC by 2 to 0x1176
   Extended opcode 1: End of Sequence
 
-0x00001174	/home/pancake/prg/radare2/test/bins/elf/dwarf/hello.c	6
 0x00001160	/home/pancake/prg/radare2/test/bins/elf/dwarf/hello.c	5
-0x00001149	/home/pancake/prg/radare2/test/bins/elf/dwarf/hello.c	3
-0x00001151	/home/pancake/prg/radare2/test/bins/elf/dwarf/hello.c	4
 0x00001176	/home/pancake/prg/radare2/test/bins/elf/dwarf/hello.c	6
-file: /home/pancake/prg/radare2/test/bins/elf/dwarf/hello.c
-line: 6
-addr: 0x00001174
+0x00001151	/home/pancake/prg/radare2/test/bins/elf/dwarf/hello.c	4
+0x00001174	/home/pancake/prg/radare2/test/bins/elf/dwarf/hello.c	6
+0x00001149	/home/pancake/prg/radare2/test/bins/elf/dwarf/hello.c	3
 file: /home/pancake/prg/radare2/test/bins/elf/dwarf/hello.c
 line: 5
 addr: 0x00001160
 file: /home/pancake/prg/radare2/test/bins/elf/dwarf/hello.c
-line: 3
-addr: 0x00001149
+line: 6
+addr: 0x00001176
 file: /home/pancake/prg/radare2/test/bins/elf/dwarf/hello.c
 line: 4
 addr: 0x00001151
 file: /home/pancake/prg/radare2/test/bins/elf/dwarf/hello.c
 line: 6
-addr: 0x00001176
+addr: 0x00001174
+file: /home/pancake/prg/radare2/test/bins/elf/dwarf/hello.c
+line: 3
+addr: 0x00001149
 EOF
 RUN
 
@@ -329,26 +329,26 @@ Raw dump of debug contents of section .debug_line:
   Advance PC by 2 to 0x1176
   Extended opcode 1: End of Sequence
 
-0x00001174	/home/pancake/prg/radare2/test/bins/elf/dwarf/hello.c	6
 0x00001160	/home/pancake/prg/radare2/test/bins/elf/dwarf/hello.c	5
-0x00001149	/home/pancake/prg/radare2/test/bins/elf/dwarf/hello.c	3
-0x00001151	/home/pancake/prg/radare2/test/bins/elf/dwarf/hello.c	4
 0x00001176	/home/pancake/prg/radare2/test/bins/elf/dwarf/hello.c	6
-file: /home/pancake/prg/radare2/test/bins/elf/dwarf/hello.c
-line: 6
-addr: 0x00001174
+0x00001151	/home/pancake/prg/radare2/test/bins/elf/dwarf/hello.c	4
+0x00001174	/home/pancake/prg/radare2/test/bins/elf/dwarf/hello.c	6
+0x00001149	/home/pancake/prg/radare2/test/bins/elf/dwarf/hello.c	3
 file: /home/pancake/prg/radare2/test/bins/elf/dwarf/hello.c
 line: 5
 addr: 0x00001160
 file: /home/pancake/prg/radare2/test/bins/elf/dwarf/hello.c
-line: 3
-addr: 0x00001149
+line: 6
+addr: 0x00001176
 file: /home/pancake/prg/radare2/test/bins/elf/dwarf/hello.c
 line: 4
 addr: 0x00001151
 file: /home/pancake/prg/radare2/test/bins/elf/dwarf/hello.c
 line: 6
-addr: 0x00001176
+addr: 0x00001174
+file: /home/pancake/prg/radare2/test/bins/elf/dwarf/hello.c
+line: 3
+addr: 0x00001149
 EOF
 RUN
 
@@ -502,26 +502,26 @@ Raw dump of debug contents of section .debug_line:
   Advance PC by 2 to 0x1176
   Extended opcode 1: End of Sequence
 
-0x00001174	/home/pancake/prg/radare2/test/bins/elf/dwarf/hello.c	6
 0x00001160	/home/pancake/prg/radare2/test/bins/elf/dwarf/hello.c	5
-0x00001149	/home/pancake/prg/radare2/test/bins/elf/dwarf/hello.c	3
-0x00001151	/home/pancake/prg/radare2/test/bins/elf/dwarf/hello.c	4
 0x00001176	/home/pancake/prg/radare2/test/bins/elf/dwarf/hello.c	6
-file: /home/pancake/prg/radare2/test/bins/elf/dwarf/hello.c
-line: 6
-addr: 0x00001174
+0x00001151	/home/pancake/prg/radare2/test/bins/elf/dwarf/hello.c	4
+0x00001174	/home/pancake/prg/radare2/test/bins/elf/dwarf/hello.c	6
+0x00001149	/home/pancake/prg/radare2/test/bins/elf/dwarf/hello.c	3
 file: /home/pancake/prg/radare2/test/bins/elf/dwarf/hello.c
 line: 5
 addr: 0x00001160
 file: /home/pancake/prg/radare2/test/bins/elf/dwarf/hello.c
-line: 3
-addr: 0x00001149
+line: 6
+addr: 0x00001176
 file: /home/pancake/prg/radare2/test/bins/elf/dwarf/hello.c
 line: 4
 addr: 0x00001151
 file: /home/pancake/prg/radare2/test/bins/elf/dwarf/hello.c
 line: 6
-addr: 0x00001176
+addr: 0x00001174
+file: /home/pancake/prg/radare2/test/bins/elf/dwarf/hello.c
+line: 3
+addr: 0x00001149
 EOF
 RUN
 
@@ -539,8 +539,8 @@ EXPECT=<<EOF
    2      DW_TAG_compile_unit       [has children] (0xb)
     DW_AT_producer                 DW_FORM_strp                  
     DW_AT_language                 DW_FORM_data1                 
-    DW_AT_name                     DW_FORM_line_ptr              
-    DW_AT_comp_dir                 DW_FORM_line_ptr              
+    DW_AT_name                     DW_FORM_line_strp             
+    DW_AT_comp_dir                 DW_FORM_line_strp             
     DW_AT_low_pc                   DW_FORM_addr                  
     DW_AT_high_pc                  DW_FORM_data8                 
     DW_AT_stmt_list                DW_FORM_sec_offset            
@@ -570,8 +570,8 @@ EXPECT=<<EOF
 <0xc>: Abbrev Number: 2    (DW_TAG_compile_unit)
      DW_AT_producer            : (indirect string, offset: 0x2f): GNU C17 11.3.0 -mtune=generic -march=x86-64 -g -fasynchronous-unwind-tables -fstack-protector-strong -fstack-clash-protection -fcf-protection
      DW_AT_language            : 29   (C11)
-     DW_AT_name                : (indirect string, offset: 0x0): (null)
-     DW_AT_comp_dir            : (indirect string, offset: 0x8): (null)
+     DW_AT_name                : (indirect string, offset: 0x0): hello.c
+     DW_AT_comp_dir            : (indirect string, offset: 0x8): /home/pancake/prg/radare2/test/bins/elf/dwarf
      DW_AT_low_pc              : 0x1149
      DW_AT_high_pc             : 45
      DW_AT_stmt_list           : <0x0>
@@ -678,26 +678,26 @@ Raw dump of debug contents of section .debug_line:
   Advance PC by 2 to 0x1176
   Extended opcode 1: End of Sequence
 
-0x00001174	/home/pancake/prg/radare2/test/bins/elf/dwarf/hello.c	6
 0x00001160	/home/pancake/prg/radare2/test/bins/elf/dwarf/hello.c	5
-0x00001149	/home/pancake/prg/radare2/test/bins/elf/dwarf/hello.c	3
-0x00001151	/home/pancake/prg/radare2/test/bins/elf/dwarf/hello.c	4
 0x00001176	/home/pancake/prg/radare2/test/bins/elf/dwarf/hello.c	6
-file: /home/pancake/prg/radare2/test/bins/elf/dwarf/hello.c
-line: 6
-addr: 0x00001174
+0x00001151	/home/pancake/prg/radare2/test/bins/elf/dwarf/hello.c	4
+0x00001174	/home/pancake/prg/radare2/test/bins/elf/dwarf/hello.c	6
+0x00001149	/home/pancake/prg/radare2/test/bins/elf/dwarf/hello.c	3
 file: /home/pancake/prg/radare2/test/bins/elf/dwarf/hello.c
 line: 5
 addr: 0x00001160
 file: /home/pancake/prg/radare2/test/bins/elf/dwarf/hello.c
-line: 3
-addr: 0x00001149
+line: 6
+addr: 0x00001176
 file: /home/pancake/prg/radare2/test/bins/elf/dwarf/hello.c
 line: 4
 addr: 0x00001151
 file: /home/pancake/prg/radare2/test/bins/elf/dwarf/hello.c
 line: 6
-addr: 0x00001176
+addr: 0x00001174
+file: /home/pancake/prg/radare2/test/bins/elf/dwarf/hello.c
+line: 3
+addr: 0x00001149
 EOF
 EXPECT_ERR=<<EOF
 WARN: run r2 with -e bin.cache=true to fix relocations in disassembly

@@ -303,7 +303,6 @@ extern "C" {
 #define DW_FORM_ref_sup4                0x1c
 #define DW_FORM_strp_sup                0x1d
 #define DW_FORM_data16                  0x1e
-#define DW_FORM_line_ptr                0x1f
 #define DW_FORM_line_strp               0x1f
 #define DW_FORM_ref_sig8                0x20
 #define DW_FORM_implicit_const          0x21

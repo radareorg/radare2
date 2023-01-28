@@ -7,26 +7,26 @@ xc
 EOF
 EXPECT=<<EOF
 file: /_test.c
-line: 5
-addr: 0x00001159
-file: /_test.c
-line: 11
-addr: 0x00001184
-file: /_test.c
 line: 6
 addr: 0x00001165
 file: /_test.c
 line: 11
+addr: 0x00001184
+file: /_test.c
+line: 11
 addr: 0x00001186
 file: /_test.c
-line: 9
-addr: 0x00001170
+line: 5
+addr: 0x00001159
 file: /_test.c
 line: 8
 addr: 0x00001168
 file: /_test.c
 line: 4
 addr: 0x00001149
+file: /_test.c
+line: 9
+addr: 0x00001170
 file: /_test.c
 line: 10
 addr: 0x0000117f
