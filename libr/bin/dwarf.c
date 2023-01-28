@@ -1529,6 +1529,7 @@ static void free_attr_value(RBinDwarfAttrValue *val) {
 	switch (val->attr_form) {
 	case DW_FORM_strp:
 	case DW_FORM_string:
+	case DW_FORM_line_strp:
 		R_FREE (val->string.content);
 		break;
 	case DW_FORM_exprloc:
