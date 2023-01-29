@@ -1,20 +1,24 @@
-/* radare2 - LGPL - Copyright 2022 - pancake, Sylvain Pelissier */
+/* radare2 - LGPL - Copyright 2022-2023 - pancake, Sylvain Pelissier */
+
+#define R_LOG_ORIGIN "arch.evm"
 
 #include <r_asm.h>
 #include <r_lib.h>
+
+#include "./evm.c"
 
 #include <capstone/capstone.h>
 #if CS_API_MAJOR >= 5
 #include <capstone/evm.h>
 
+// TODO :Rename CSINC to something meaningful
 #define CSINC EVM
-#include "capstone.inc"
+#include "../capstone.inc"
 
-struct evm_anal_info {
+typedef struct {
 	Sdb *pushs_db;
-};
-
-static R_TH_LOCAL struct evm_anal_info *evm_ai = NULL;
+	csh cs_handle;
+} EvmPluginData;
 
 static void set_opdir(RAnalOp *op) {
 	switch (op->type & R_ANAL_OP_TYPE_MASK) {
@@ -47,48 +51,58 @@ static void set_opdir(RAnalOp *op) {
  * addr of the push instruction, but at the addr of next jumpi instruction.
  * So in our example we are inserting (0xf, 0x42)
  */
-static int evm_add_push_to_db(RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
-	ut64 next_cmd_addr = 0;
+static int evm_add_push_to_db(RArchSession *s, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
+	EvmPluginData *epd = (EvmPluginData*)s->data;
 	ut64 dst_addr = 0;
-	size_t i, push_size;
+	size_t i;
 
-	push_size = op->id - EVM_INS_PUSH1;
-	next_cmd_addr = addr + push_size + 2;
+	size_t push_size = op->id - EVM_INS_PUSH1;
+	ut64 next_cmd_addr = addr + push_size + 2;
 
 	for (i = 0; i < push_size + 1; i++) {
 		dst_addr <<= 8;
 		dst_addr |= buf[i + 1];
 	}
 
-	if (evm_ai) {
-		sdb_num_nset (evm_ai->pushs_db, next_cmd_addr, dst_addr, 0);
-	}
+	sdb_num_nset (epd->pushs_db, next_cmd_addr, dst_addr, 0);
 
 	return 0;
 }
 
-static ut64 evm_get_jmp_addr(ut64 addr) {
-	return sdb_num_nget (evm_ai->pushs_db, addr, 0);
+static ut64 evm_get_jmp_addr(RArchSession *s, ut64 addr) {
+	EvmPluginData *epd = (EvmPluginData*)s->data;
+	return sdb_num_nget (epd->pushs_db, addr, 0);
 }
 
-static int analop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
-	csh hndl = init_capstone (anal);
-
-	if (hndl == 0) {
-		return -1;
+static bool encode(RArchSession *s, RAnalOp *op, RAnalOpMask mask) {
+	ut8 buf[64];
+	int asmlen = evm_asm (op->mnemonic, buf, sizeof (buf));
+	if (asmlen > 0) {
+		op->size = asmlen;
+		r_anal_op_set_bytes (op, op->addr, buf, asmlen);
+		return true;
 	}
+	return false;
+}
 
-	int n, opsize = -1;
+static bool decode(RArchSession *s, RAnalOp *op, RAnalOpMask mask) {
+	r_return_val_if_fail (s && op && s->data, false);
+	const ut64 addr = op->addr;
+	const ut8 *buf = op->bytes;
+	const int len = op->size;
+	EvmPluginData *epd = (EvmPluginData*)s->data;
+
+	int opsize = -1;
 	cs_insn *insn;
 	char *str;
 
 	op->addr = addr;
 	if (len < 1) {
-		return -1;
+		return false;
 	}
 	op->size = 1;
 	op->type = R_ANAL_OP_TYPE_UNK;
-	n = cs_disasm (hndl, (ut8 *)buf, len, addr, 1, &insn);
+	int n = cs_disasm (epd->cs_handle, (ut8 *)buf, len, addr, 1, &insn);
 	opsize = 1;
 	if (n < 1 || insn->size < 1) {
 		if (mask & R_ARCH_OP_MASK_DISASM) {
@@ -97,7 +111,7 @@ static int analop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, 
 		goto beach;
 	}
 	if (mask & R_ARCH_OP_MASK_DISASM) {
-		if (!r_str_cmp (insn->op_str, "0x", 2)) {
+		if (r_str_startswith (insn->op_str, "0x")) {
 			str = r_str_newf ("%s%s%s", insn->mnemonic, insn->op_str[0]? " ": "", insn->op_str);
 		} else {
 			str = r_str_newf ("%s%s%s", insn->mnemonic, insn->op_str[0]? " 0x": "", insn->op_str);
@@ -117,7 +131,7 @@ static int analop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, 
 	case EVM_INS_JUMP:
 		op->type = R_ANAL_OP_TYPE_JMP;
 		op->fail = op->addr + 1;
-		op->jump = evm_get_jmp_addr (addr);
+		op->jump = evm_get_jmp_addr (s, addr);
 		esilprintf (op, "32,sp,-=,sp,[1],pc,:=");
 		break;
 	case EVM_INS_JUMPDEST:
@@ -126,7 +140,7 @@ static int analop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, 
 	case EVM_INS_JUMPI:
 		op->fail = op->addr + 1;
 		op->type = R_ANAL_OP_TYPE_CJMP;
-		op->jump = evm_get_jmp_addr (addr);
+		op->jump = evm_get_jmp_addr (s, addr);
 		break;
 	case EVM_INS_MLOAD:
 	case EVM_INS_SLOAD:
@@ -215,7 +229,7 @@ static int analop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, 
 	case EVM_INS_PUSH1:
 		esilprintf (op, "0x%s,sp,=[1],32,sp,+=", insn->op_str);
 		op->type = R_ANAL_OP_TYPE_PUSH;
-		evm_add_push_to_db (op, addr, buf, len);
+		evm_add_push_to_db (s, op, addr, buf, len);
 		break;
 	case EVM_INS_PUSH2:
 	case EVM_INS_PUSH3:
@@ -238,7 +252,7 @@ static int analop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, 
 	case EVM_INS_PUSH22:
 	case EVM_INS_PUSH23:
 		op->type = R_ANAL_OP_TYPE_PUSH;
-		evm_add_push_to_db (op, addr, buf, len);
+		evm_add_push_to_db (s, op, addr, buf, len);
 		break;
 	// Handle https://github.com/capstone-engine/capstone/pull/1231. Can be removed when merged.
 	case EVM_INS_PUSH24:
@@ -302,19 +316,20 @@ beach:
 		opex (&op->opex, hndl, insn);
 	}
 	if (mask & R_ARCH_OP_MASK_ESIL) {
-		if (analop_esil (anal, op, addr, buf, len, &hndl, insn) != 0) {
+		if (archop_esil (arch, op, addr, buf, len, &hndl, insn) != 0) {
 			r_strbuf_fini (&op->esil);
 		}
 	}
 	if (mask & R_ARCH_OP_MASK_VAL) {
-		op_fillval (anal, op, &hndl, insn);
+		op_fillval (arch, op, &hndl, insn);
 	}
 #endif
 	cs_free (insn, n);
-	return opsize;
+	op->size = opsize;
+	return true;
 }
 
-static char *get_reg_profile(RAnal *anal) {
+static char *regs(RArchSession *as) {
 	return strdup (
 		"=PC	pc\n"
 		"=SP	sp\n"
@@ -329,66 +344,77 @@ static char *get_reg_profile(RAnal *anal) {
 	);
 }
 
-static int evm_anal_init(void *user) {
-	if (!evm_ai) {
-		evm_ai = R_NEW0 (struct evm_anal_info);
-		evm_ai->pushs_db = sdb_new0 ();
-		if (!evm_ai) {
-			return false;
-		}
+static bool init(RArchSession *s) {
+	r_return_val_if_fail (s, false);
+	if (s->data) {
+		R_LOG_WARN ("Already initialized");
+		return false;
 	}
-
+	s->data = R_NEW0 (EvmPluginData);
+	EvmPluginData *epd = (EvmPluginData*)s->data;
+	if (!r_arch_cs_init (s, &epd->cs_handle)) {
+		R_LOG_ERROR ("Cannot initialize capstone");
+		R_FREE (s->data);
+		return false;
+	}
+	epd->pushs_db = sdb_new0 ();
 	return true;
 }
 
-static int evm_anal_fini(void *user) {
-	if (evm_ai) {
-		sdb_free (evm_ai->pushs_db);
-		R_FREE (evm_ai);
-	}
+static bool fini(RArchSession *s) {
+	r_return_val_if_fail (s, false);
+	EvmPluginData *epd = (EvmPluginData*)s->data;
+	sdb_free (epd->pushs_db);
+	cs_close (&epd->cs_handle);
+	R_FREE (s->data);
 	return true;
 }
 
-static int archinfo(RAnal *anal, int q) {
+static int archinfo(RArchSession *a, ut32 q) {
 	switch (q) {
-	case R_ANAL_ARCHINFO_ALIGN:
+	case R_ARCH_INFO_ALIGN:
 		return 0;
-	case R_ANAL_ARCHINFO_MAX_OP_SIZE:
+	case R_ARCH_INFO_MAX_OP_SIZE:
 		return 33;
-	case R_ANAL_ARCHINFO_MIN_OP_SIZE:
+	case R_ARCH_INFO_MIN_OP_SIZE:
 		return 1;
 	}
 	return 0;
 }
 
-RAnalPlugin r_anal_plugin_evm_cs = {
+static char *mnemonics(RArchSession *s, int id, bool json) {
+	EvmPluginData *epd = (EvmPluginData*)s->data;
+	return r_arch_cs_mnemonics (s, epd->cs_handle, id, json);
+}
+
+RArchPlugin r_arch_plugin_evm = {
 	.name = "evm",
-	.desc = "Capstone ETHEREUM VM arch plugin",
+	.desc = "EthereumVM plugin",
 	.license = "BSD",
-	.esil = true,
 	.arch = "evm",
-	.get_reg_profile = get_reg_profile,
-	.archinfo = archinfo,
-	.bits = 8,
-	.op = &analop,
-	.mnemonics = cs_mnemonics,
-	.init = evm_anal_init,
-	.fini = evm_anal_fini
+	.regs = regs,
+	.info = archinfo,
+	.bits = 32,
+	.decode = &decode,
+	.encode = &encode,
+	.mnemonics = mnemonics,
+	.init = init,
+	.fini = fini
 };
 
 #ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_ANAL,
-	.data = &r_anal_plugin_evm_cs,
+	.type = R_LIB_TYPE_ARCH,
+	.data = &r_arch_plugin_evm,
 	.version = R2_VERSION
 };
 #endif
 
 #else
-RAnalPlugin r_anal_plugin_evm_cs = { 0 };
+RArchPlugin r_arch_plugin_evm = { 0 };
 #ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_ANAL,
+	.type = R_LIB_TYPE_ARCH,
 	.version = R2_VERSION
 };
 #endif
