@@ -68,9 +68,7 @@ static int evm_add_push_to_db(RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 }
 
 static ut64 evm_get_jmp_addr(ut64 addr) {
-	ut64 ret = -1;
-	ret = sdb_num_nget (evm_ai->pushs_db, addr, 0);
-	return ret;
+	return sdb_num_nget (evm_ai->pushs_db, addr, 0);
 }
 
 static int analop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
@@ -317,7 +315,7 @@ beach:
 }
 
 static char *get_reg_profile(RAnal *anal) {
-	const char *p =
+	return strdup (
 		"=PC	pc\n"
 		"=SP	sp\n"
 		"=BP	bp\n"
@@ -327,8 +325,8 @@ static char *get_reg_profile(RAnal *anal) {
 		"gpr	pc	.32	0	0\n"
 		"gpr	sp	.32	4	0\n"
 		"gpr	bp	.32	8	0\n"
-		"gpr	r0	.32	12	0\n";
-	return (p && *p)? strdup (p): NULL;
+		"gpr	r0	.32	12	0\n"
+	);
 }
 
 static int evm_anal_init(void *user) {
@@ -364,7 +362,7 @@ static int archinfo(RAnal *anal, int q) {
 }
 
 RAnalPlugin r_anal_plugin_evm_cs = {
-	.name = "evm.cs",
+	.name = "evm",
 	.desc = "Capstone ETHEREUM VM arch plugin",
 	.license = "BSD",
 	.esil = true,
