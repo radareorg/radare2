@@ -1881,7 +1881,7 @@ static const ut8 *parse_attr_value(const ut8 *obuf, int obuf_len, RBinDwarfAttrD
 		ut8 *section = NULL;
 		section = get_section_bytes (bin, section_name, &section_len);
 		if (section && value->string.offset < section_len) {
-			char *ds = r_str_ndup ((const char *)(section + value->string.offset), section_len - 1);
+			char *ds = r_str_ndup ((const char *)(section + value->string.offset), section_len - value->string.offset);
 			if (ds) {
 				r_str_ansi_strip (ds);
 				r_str_replace_ch (ds, '\n', 0, true);
