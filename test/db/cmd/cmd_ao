@@ -44,10 +44,10 @@ invalid
 EOF
 RUN
 
-NAME=aom-evm.cs
+NAME=aom-evm for capstone
 FILE=-
 CMDS=<<EOF
-e asm.arch=evm.cs
+e asm.arch=evm
 e asm.bits=32
 aom
 aoml~?

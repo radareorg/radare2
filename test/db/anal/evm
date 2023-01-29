@@ -1,7 +1,7 @@
 NAME=push29
 FILE=malloc://1024
 CMDS=<<EOF
-e asm.arch=evm.cs
+e asm.arch=evm
 wx 7c030000000000000000000000000000000000000000000000000000000f9004
 pd 3
 EOF
@@ -15,7 +15,7 @@ RUN
 NAME=jump
 FILE=malloc://1024
 CMDS=<<EOF
-e asm.arch=evm.cs
+e asm.arch=evm
 wx 62000005565b
 pd 3
 s 4
