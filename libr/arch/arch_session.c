@@ -1,18 +1,6 @@
-/* radare2 - LGPL - Copyright 2022 - pancake */
+/* radare2 - LGPL - Copyright 2022-2023 - pancake */
 
 #include <r_arch.h>
-#include <r_util.h>
-
-#if 0
-// pseudocode
-var a = arch.session("x86", {bits: 64});
-var op = new RArchOp ();
-op.setBytes("\x90");
-if (!a.decode(op)) {
-	println("cannot decode");
-}
-printfln (a.mnemonic);
-#endif
 
 R_API RArchSession *r_arch_session(RArch *arch, RArchConfig *cfg, RArchPlugin *ap) {
 	RArchSession *ai = R_NEW0 (RArchSession);

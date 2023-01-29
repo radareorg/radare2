@@ -70,7 +70,6 @@ r_anal_sources = [
   '../asm/arch/cris/gnu/cris-opc.c',
   'p/anal_dalvik.c',
   'p/anal_ebc.c',
-  'p/anal_evm_cs.c',
   'p/anal_gb.c',
   'p/anal_h8300.c',
   'p/anal_i8080.c',

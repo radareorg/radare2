@@ -7,6 +7,7 @@ r_arch_sources = [
   'arch_cond.c',
   'arch_value.c',
   'p/null/plugin.c',
+  'p/evm/plugin.c',
   'p/propeller/plugin.c',
   'p/propeller/propeller_disas.c',
   'p/arm/plugin.c',

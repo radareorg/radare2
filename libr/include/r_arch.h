@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2022 - pancake, condret */
+/* radare2 - LGPL - Copyright 2022-2023 - pancake, condret */
 
 #ifndef R2_ARCH_H
 #define R2_ARCH_H
@@ -105,14 +105,16 @@ typedef enum {
 	R_ARCH_OP_MASK_ALL   = 1 | 2 | 4 | 8 | 16
 } RAnalOpMask;
 
+#if 0
 // XXX R2_590 - backward compatible, shouldnt be used
-#define R_ANAL_OP_MASK_BASIC = 0, // Just fills basic op info , it's fast
-#define R_ANAL_OP_MASK_ESIL  = 1, // It fills RAnalop->esil info
-#define R_ANAL_OP_MASK_VAL   = 2, // It fills RAnalop->dst/src info
-#define R_ANAL_OP_MASK_HINT  = 4, // It calls r_anal_op_hint to override anal options
-#define R_ANAL_OP_MASK_OPEX  = 8, // It fills RAnalop->opex info
-#define R_ANAL_OP_MASK_DISASM = 16, // It fills RAnalop->mnemonic // should be RAnalOp->disasm // only from r_core_anal_op()
-#define R_ANAL_OP_MASK_ALL   = 1 | 2 | 4 | 8 | 16
+#define R_ANAL_OP_MASK_BASIC 0, // Just fills basic op info , it's fast
+#define R_ANAL_OP_MASK_ESIL  1, // It fills RAnalop->esil info
+#define R_ANAL_OP_MASK_VAL   2, // It fills RAnalop->dst/src info
+#define R_ANAL_OP_MASK_HINT  4, // It calls r_anal_op_hint to override anal options
+#define R_ANAL_OP_MASK_OPEX  8, // It fills RAnalop->opex info
+#define R_ANAL_OP_MASK_DISASM 16, // It fills RAnalop->mnemonic // should be RAnalOp->disasm // only from r_core_anal_op()
+#define R_ANAL_OP_MASK_ALL   (1 | 2 | 4 | 8 | 16)
+#endif
 
 typedef struct r_arch_t {
 	RList *plugins;	       // all plugins
@@ -268,6 +270,7 @@ extern RArchPlugin r_arch_plugin_v850;
 extern RArchPlugin r_arch_plugin_propeller;
 extern RArchPlugin r_arch_plugin_mcore;
 extern RArchPlugin r_arch_plugin_nios2;
+extern RArchPlugin r_arch_plugin_evm;
 
 #ifdef __cplusplus
 }
