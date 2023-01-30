@@ -15,6 +15,7 @@ CHKPRG! AR ar
 CHKPRG GIT git
 CHKPRG GPERF gperf
 CHKLIB magic
+CHKINC linux/can.h
 ARG_WITH USE_MAGIC sysmagic force to use system's magic ;
 IFAND HAVE_LIB_MAGIC USE_MAGIC {
 	USE_LIB_MAGIC = 1 ;
