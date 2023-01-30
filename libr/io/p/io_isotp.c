@@ -1,11 +1,11 @@
-/* radare - LGPL - Copyright 2021 - pancake */
+/* radare - LGPL - Copyright 2021-2023 - pancake */
 
 #include <r_io.h>
+
+#if __linux__ && HAVE_LINUX_CAN_H
+
 #include <r_lib.h>
 #include <r_cons.h>
-
-#if __linux__
-
 #include "../io_memory.h"
 #include <net/if.h>
 #include <sys/ioctl.h>
