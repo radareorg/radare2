@@ -76,6 +76,7 @@ r_bin_sources = [
   'p/bin_write_pe.c',
   'p/bin_write_pe64.c',
   'p/bin_xbe.c',
+  'p/bin_xcoff64.c',
   'p/bin_xnu_kernelcache.c',
   'p/bin_xtr_dyldcache.c',
   'p/bin_xtr_fatmach0.c',
@@ -87,6 +88,7 @@ r_bin_sources = [
 # implementation
   'format/bflt/bflt.c',
   'format/coff/coff.c',
+  'format/coff/xcoff64.c',
   'format/dex/dex.c',
   'format/dmp/dmp64.c',
   'format/elf/elf.c',

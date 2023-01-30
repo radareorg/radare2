@@ -122,7 +122,7 @@ if not no_user_plugins
     bin_plugins += [ 'elf', 'elf64' ]
   endif
   if user_plugins.contains('pe')
-    bin_plugins += [ 'pe', 'pe64', 'coff', 'mz', 'ne' ]
+    bin_plugins += [ 'pe', 'pe64', 'coff', 'xcoff64', 'mz', 'ne' ]
     bin_xtr_plugins += [ 'xtr_pemixed' ]
   endif
   if not user_plugins.contains('nogrub')
@@ -252,6 +252,7 @@ bin_plugins += [
   'vsf',
   'wasm',
   'xbe',
+  'xcoff64',
   'xnu_kernelcache',
   'z64',
   'zimg'

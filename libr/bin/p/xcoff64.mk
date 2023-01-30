@@ -1,0 +1,11 @@
+OBJ_XCOFF64=bin_xcoff64.o
+OBJ_XCOFF64+=../format/coff/xcoff64.o
+
+STATIC_OBJ+=${OBJ_XCOFF64}
+TARGET_XCOFF64=bin_xcoff64.${EXT_SO}
+
+ALL_TARGETS+=${TARGET_XCOFF64}
+
+${TARGET_XCOFF64}: ${OBJ_XCOFF64}
+	${CC} $(call libname,bin_xcoff64) ${CFLAGS} \
+		$(OBJ_XCOFF64) $(LINK) $(LDFLAGS)
