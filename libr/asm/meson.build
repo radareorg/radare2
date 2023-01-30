@@ -30,7 +30,7 @@ r_asm_sources = [
 r_asm_inc = [
   platform_inc,
   include_directories(
-    join_paths('..','..','shlr'),
+    join_paths('../../shlr'),
     join_paths('arch','include'),
     join_paths('arch'),
     join_paths('arch','h8300'),
