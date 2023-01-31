@@ -20,7 +20,6 @@
 #  define JEMALLOC_N(n) je_##n
 #  include "../jemalloc.h"
 #endif
-#include "private_namespace.h"
 
 static const bool config_debug =
 #ifdef JEMALLOC_DEBUG
