@@ -20,7 +20,6 @@
 #  define JEMALLOC_N(n) je_##n
 #  include "../jemalloc.h"
 #endif
-#include "private_namespace.h"
 
 static const bool config_debug =
 #ifdef JEMALLOC_DEBUG
@@ -116,13 +115,6 @@ static const bool config_tls =
     ;
 static const bool config_utrace =
 #ifdef JEMALLOC_UTRACE
-    true
-#else
-    false
-#endif
-    ;
-static const bool config_valgrind =
-#ifdef JEMALLOC_VALGRIND
     true
 #else
     false
@@ -381,7 +373,6 @@ typedef unsigned szind_t;
 #endif
 
 #include "nstime.h"
-#include "valgrind.h"
 #include "util.h"
 #include "atomic.h"
 #include "spin.h"
@@ -406,7 +397,6 @@ typedef unsigned szind_t;
 #include "huge.h"
 #include "tcache.h"
 #include "hash.h"
-#include "quarantine.h"
 #include "prof.h"
 
 #undef JEMALLOC_H_TYPES
@@ -414,7 +404,6 @@ typedef unsigned szind_t;
 #define	JEMALLOC_H_STRUCTS
 
 #include "nstime.h"
-#include "valgrind.h"
 #include "util.h"
 #include "atomic.h"
 #include "spin.h"
@@ -443,7 +432,6 @@ typedef unsigned szind_t;
 #include "huge.h"
 #include "tcache.h"
 #include "hash.h"
-#include "quarantine.h"
 #include "prof.h"
 
 #include "tsd.h"
@@ -456,14 +444,11 @@ extern bool	opt_abort;
 extern const char	*opt_junk;
 extern bool	opt_junk_alloc;
 extern bool	opt_junk_free;
-extern size_t	opt_quarantine;
 extern bool	opt_redzone;
 extern bool	opt_utrace;
 extern bool	opt_xmalloc;
 extern bool	opt_zero;
 extern unsigned	opt_narenas;
-
-extern bool	in_valgrind;
 
 /* Number of CPUs. */
 extern unsigned	ncpus;
@@ -517,7 +502,6 @@ void	jemalloc_postfork_parent(void);
 void	jemalloc_postfork_child(void);
 
 #include "nstime.h"
-#include "valgrind.h"
 #include "util.h"
 #include "atomic.h"
 #include "spin.h"
@@ -541,7 +525,6 @@ void	jemalloc_postfork_child(void);
 #include "huge.h"
 #include "tcache.h"
 #include "hash.h"
-#include "quarantine.h"
 #include "prof.h"
 #include "tsd.h"
 
@@ -550,7 +533,6 @@ void	jemalloc_postfork_child(void);
 #define	JEMALLOC_H_INLINES
 
 #include "nstime.h"
-#include "valgrind.h"
 #include "util.h"
 #include "atomic.h"
 #include "spin.h"
@@ -611,6 +593,5 @@ ticker_t	*decay_ticker_get(tsd_t *tsd, unsigned ind);
 #include "arena.h"
 #undef JEMALLOC_ARENA_INLINE_B
 #include "hash.h"
-#include "quarantine.h"
 
 #endif /* JEMALLOC_INTERNAL_H */
