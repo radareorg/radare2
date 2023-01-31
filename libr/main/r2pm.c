@@ -391,6 +391,7 @@ static void r2pm_setenv(void) {
 	char *opath = r_sys_getenv ("PATH");
 	if (opath) {
 		char *bindir = r2pm_bindir ();
+		r_sys_mkdirp (bindir);
 		const char *sep = R_SYS_ENVSEP;
 		char *newpath = r_str_newf ("%s%s%s", bindir, sep, opath);
 		r_sys_setenv ("PATH", newpath);
@@ -565,7 +566,7 @@ static int r2pm_clone(const char *pkg) {
 	return 0;
 }
 
-static bool r2pm_check (const char *program) {
+static bool r2pm_check(const char *program) {
 	char *s = r_file_path (program);
 	bool found = s && strcmp (s, program);
 	free (s);
@@ -636,7 +637,7 @@ static int r2pm_install_pkg(const char *pkg, bool global) {
 			exit (1);
 		}
 #else
-		eprintf ("r2pm.QJS support is experimental\n");
+		R_LOG_WARN ("r2pm.qjs support is experimental");
 		res = 1;
 #endif
 		// run script!
@@ -660,7 +661,7 @@ static int r2pm_install_pkg(const char *pkg, bool global) {
 		free (srcdir);
 		return 1;
 	}
-	eprintf ("script (%s)\n", script);
+	eprintf ("SCRIPT=<<EOF\n%s\nEOF\n", script);
 	char *pkgdir = r_str_newf ("%s/%s", srcdir, pkg);
 	if (!r_file_is_directory (pkgdir)) {
 		R_LOG_ERROR ("Cannot find directory: %s", pkgdir);
