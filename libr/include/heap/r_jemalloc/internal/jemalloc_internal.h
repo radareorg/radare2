@@ -398,7 +398,6 @@ typedef unsigned szind_t;
 #include "huge.h"
 #include "tcache.h"
 #include "hash.h"
-#include "quarantine.h"
 #include "prof.h"
 
 #undef JEMALLOC_H_TYPES
@@ -434,7 +433,6 @@ typedef unsigned szind_t;
 #include "huge.h"
 #include "tcache.h"
 #include "hash.h"
-#include "quarantine.h"
 #include "prof.h"
 
 #include "tsd.h"
@@ -447,7 +445,6 @@ extern bool	opt_abort;
 extern const char	*opt_junk;
 extern bool	opt_junk_alloc;
 extern bool	opt_junk_free;
-extern size_t	opt_quarantine;
 extern bool	opt_redzone;
 extern bool	opt_utrace;
 extern bool	opt_xmalloc;
@@ -529,7 +526,6 @@ void	jemalloc_postfork_child(void);
 #include "huge.h"
 #include "tcache.h"
 #include "hash.h"
-#include "quarantine.h"
 #include "prof.h"
 #include "tsd.h"
 
@@ -598,6 +594,5 @@ ticker_t	*decay_ticker_get(tsd_t *tsd, unsigned ind);
 #include "arena.h"
 #undef JEMALLOC_ARENA_INLINE_B
 #include "hash.h"
-#include "quarantine.h"
 
 #endif /* JEMALLOC_INTERNAL_H */
