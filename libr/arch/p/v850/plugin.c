@@ -394,12 +394,18 @@ static int v850e0_op(RArchSession *a, RAnalOp *op, ut64 addr, const ut8 *buf, in
 		break;
 	case V850_ORI:
 		op->type = R_ANAL_OP_TYPE_OR;
-		r_strbuf_appendf (&op->esil, "%hu,%s,|,%s,=",
-						 word2, F6_RN1(word1), F6_RN2(word1));
+		r_strbuf_appendf (&op->esil, "0x%x,%s,|,%s,=", word2, F6_RN1(word1), F6_RN2(word1));
 		update_flags (op, V850_FLAG_S | V850_FLAG_Z);
 		clear_flags (op, V850_FLAG_OV);
 		break;
 	case V850_MULH:
+		op->type = R_ANAL_OP_TYPE_MUL;
+		r_strbuf_appendf (&op->esil,
+			"0xffff,%s,&=,%s,0x8000,&,%s,0x8000,&,^,?{,%s,0xffff,&,%s,*,0xffffffff,^,1,+,%s,=,}{,%s,0xffff,&,%s,*,%s,=,}",
+			F6_RN2 (word1), F6_RN1 (word1), F6_RN2 (word1), F6_RN1 (word1),
+			F6_RN2 (word1), F6_RN2 (word1), F6_RN1 (word1), F6_RN2 (word1), F6_RN2 (word1));
+		update_flags (op, -1);
+		break;
 	case V850_MULH_IMM5:
 		op->type = R_ANAL_OP_TYPE_MUL;
 		break;
@@ -411,7 +417,7 @@ static int v850e0_op(RArchSession *a, RAnalOp *op, ut64 addr, const ut8 *buf, in
 		break;
 	case V850_XORI:
 		op->type = R_ANAL_OP_TYPE_XOR;
-		r_strbuf_appendf (&op->esil, "%hu,%s,^,%s,=", word2, F6_RN1(word1), F6_RN2(word1));
+		r_strbuf_appendf (&op->esil, "0x%x,%s,^,%s,=", word2, F6_RN1(word1), F6_RN2(word1));
 		update_flags (op, V850_FLAG_S | V850_FLAG_Z);
 		clear_flags (op, V850_FLAG_OV);
 		break;
