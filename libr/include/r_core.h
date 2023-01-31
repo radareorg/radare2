@@ -252,6 +252,7 @@ typedef struct r_core_project_t {
 } RProject;
 
 R_API RProject *r_project_new(void);
+R_API bool r_core_is_project(RCore *core, const char *name);
 R_API bool r_project_rename(RProject *p, const char *newname);
 R_API bool r_project_is_git(RProject *p);
 R_API void r_project_close(RProject *p);

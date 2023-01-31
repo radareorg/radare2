@@ -10,9 +10,6 @@
 
 #define DB core->sdb
 
-extern void r_core_echo(RCore *core, const char *input);
-extern bool r_core_is_project(RCore *core, const char *name);
-
 R_LIB_VERSION (r_core);
 
 static ut64 letter_divs[R_CORE_ASMQJMPS_LEN_LETTERS - 1] = {
