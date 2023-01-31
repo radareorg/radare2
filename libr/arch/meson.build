@@ -39,6 +39,12 @@ r_arch_sources = [
   'p/nios2/nios2-dis.c',
 ]
 
+if arch_plugins.contains('x86_nz')
+  r_arch_sources += [
+    'p/x86_nz/plugin.c' 
+  ]
+endif
+
 # must be deleted when anal refactor is done
 arch_inc = include_directories('../asm/arch/include')
 

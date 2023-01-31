@@ -7,6 +7,7 @@ asm_plugins = [ 'null' ]
 anal_plugins = [ 'null' ]
 arch_plugins = [ 'null',
   'sh',
+  'x86_nz',
   'arm',
   '6502',
   'evm',
