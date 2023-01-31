@@ -345,6 +345,7 @@ userconf.set10('HAVE_LIB_MAGIC', sys_magic.found())
 userconf.set10('USE_LIB_MAGIC', use_syslib_magic)
 userconf.set10('HAVE_LIB_XXHASH', sys_xxhash.found())
 userconf.set10('USE_LIB_XXHASH', use_sys_xxhash)
+userconf.set10('HAVE_LINUX_CAN_H', 0)
 userconf.set10('DEBUGGER', has_debugger)
 userconf.set('ETCDIR', join_paths(r2_prefix, 'etc'))
 userconf.set('PREFIX', r2_prefix)
@@ -359,11 +360,7 @@ else
   userconf.set('DATADIR_R2', r2_datdir_r2)
   userconf.set10('HAVE_JEMALLOC', true)
 endif
-if get_option('static_themes')
-  userconf.set('WITH_STATIC_THEMES', 1)
-else
-  userconf.set('WITH_STATIC_THEMES', 0)
-endif
+userconf.set('WITH_STATIC_THEMES', get_option('static_themes'))
 
 userconf.set('DATADIR', join_paths(r2_prefix, r2_datdir))
 userconf.set('WWWROOT', join_paths(r2_prefix, r2_wwwroot))
