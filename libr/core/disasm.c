@@ -2806,12 +2806,22 @@ static int ds_disassemble(RDisasmState *ds, ut8 *buf, int len) {
 	ds->oplen = ds->asmop.size;
 	if (ds->pseudo) {
 #if 1
-		r_parse_parse (core->parser, ds->opstr
-				? ds->opstr
-				: r_asm_op_get_asm (&ds->asmop),
-				ds->str);
+		char *str = ds->opstr ? ds->opstr : r_asm_op_get_asm (&ds->asmop);
+		if (!str) {
+			str = ds->str;
+		}
+		r_parse_parse (core->parser, str, ds->str);
 		free (ds->opstr);
 		ds->opstr = strdup (ds->str);
+#else
+		char *str = ds->opstr? ds->opstr: ds->str;
+		char *s = r_parse_instruction (core->parser, str);
+		if (R_STR_ISNOTEMPTY (s)) {
+			free (ds->opstr);
+			ds->opstr = s;
+		} else {
+			free (s);
+		}
 #endif
 	}
 	if (ds->acase) {

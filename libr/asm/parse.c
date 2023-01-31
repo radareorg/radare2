@@ -172,7 +172,7 @@ R_API char *r_parse_instruction(RParse *p, const char *data) {
 	return NULL;
 }
 
-R_API bool r_parse_parse(RParse *p, const char *data, char *str) { // TODO deprecate. because r_parse_instruction is better
+R_API bool r_parse_parse(RParse *p, const char *data, char *str) { // TODO deprecate. in R2_590 because r_parse_instruction is better
 	r_return_val_if_fail (p && data && str, false);
 	return (p && data && *data && p->cur && p->cur->parse)
 		? p->cur->parse (p, data, str) : false;
