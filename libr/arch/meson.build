@@ -41,7 +41,7 @@ r_arch_sources = [
 
 if arch_plugins.contains('x86_nz')
   r_arch_sources += [
-    'p/x86_nz/plugin.c' 
+    'p/x86_nz/plugin.c'
   ]
 endif
 
