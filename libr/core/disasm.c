@@ -4148,6 +4148,10 @@ static char *ds_esc_str(RDisasmState *ds, const char *str, int len, const char *
 	if (prefix_out) {
 		*prefix_out = prefix;
 	}
+	char *ffff = strstr (escstr, "\\xff\\xff\\xff");
+	if (ffff) {
+		*ffff = 0;
+	}
 	return escstr;
 }
 
