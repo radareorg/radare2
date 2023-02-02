@@ -3317,7 +3317,7 @@ static RBinElfSymbol* get_symbols_from_phdr(ELFOBJ *bin, int type) {
 		// since we don't know the size of the sym table in this case,
 		// let's stop at the first invalid entry
 
-		if (!strcmp (bind2str (&sym[i]), R_BIN_BIND_UNKNOWN_STR) ||
+		if (!strcmp (bind2str (sym + i), R_BIN_BIND_UNKNOWN_STR) ||
 		    !strcmp (type2str (NULL, NULL, &sym[i]), R_BIN_TYPE_UNKNOWN_STR)) {
 			goto done;
 		}
