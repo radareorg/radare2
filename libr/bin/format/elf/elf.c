@@ -3318,7 +3318,7 @@ static RBinElfSymbol* get_symbols_from_phdr(ELFOBJ *bin, int type) {
 		// let's stop at the first invalid entry
 
 		if (!strcmp (bind2str (sym + i), R_BIN_BIND_UNKNOWN_STR) ||
-		    !strcmp (type2str (NULL, NULL, &sym[i]), R_BIN_TYPE_UNKNOWN_STR)) {
+		    !strcmp (type2str (NULL, NULL, sym + i), R_BIN_TYPE_UNKNOWN_STR)) {
 			goto done;
 		}
 		tmp_offset = Elf_(r_bin_elf_v2p_new) (bin, toffset);
