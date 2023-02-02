@@ -961,14 +961,19 @@ static int esil_6502_fini(REsil *esil) {
 }
 #endif
 
+static int archinfo(RArchSession *a, ut32 q) {
+	return 1;
+}
+
 RArchPlugin r_arch_plugin_6502 = {
 	.name = "6502",
 	.desc = "6502/NES analysis plugin",
 	.license = "LGPL3",
 	.arch = "6502",
-	.bits = 8,
+	.bits = R_SYS_BITS_PACK1 (8),
 	.decode = &_6502_op,
 	.regs = regs,
+	.info = archinfo,
 #if 0
 	.esil_init = esil_6502_init, // XXX
 	.esil_fini = esil_6502_fini, // XXX
