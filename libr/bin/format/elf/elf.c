@@ -1843,7 +1843,7 @@ ut64 Elf_(r_bin_elf_get_entry_offset)(ELFOBJ *bin) {
 	if (entry) {
 		return Elf_(r_bin_elf_v2p) (bin, entry);
 	}
-	return get_entry_offset_from_shdr(bin);
+	return get_entry_offset_from_shdr (bin);
 }
 
 static ut64 getmainsymbol(ELFOBJ *bin) {
