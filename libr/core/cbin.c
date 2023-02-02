@@ -4319,16 +4319,18 @@ static bool bin_signature(RCore *r, PJ *pj, int mode) {
 	RBinFile *cur = r_bin_cur (r->bin);
 	RBinPlugin *plg = r_bin_file_cur_plugin (cur);
 	if (plg && plg->signature) {
-		const char *signature = plg->signature (cur, IS_MODE_JSON (mode));
-		if (IS_MODE_JSON (mode)) {
-			pj_o (pj);
-			pj_k (pj, "signature");
-			pj_j (pj, signature);
-			pj_end (pj);
-		} else {
-			r_cons_println (signature);
+		char *signature = plg->signature (cur, IS_MODE_JSON (mode));
+		if (signature) {
+			if (IS_MODE_JSON (mode)) {
+				pj_o (pj);
+				pj_k (pj, "signature");
+				pj_j (pj, signature);
+				pj_end (pj);
+			} else {
+				r_cons_println (signature);
+			}
+			free (signature);
 		}
-		free ((char*) signature);
 		return true;
 	}
 	if (IS_MODE_JSON (mode)) {
