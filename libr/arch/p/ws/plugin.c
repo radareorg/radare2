@@ -1,12 +1,10 @@
-/* radare - LGPL - Copyright 2014-2022 condret */
+/* radare - LGPL - Copyright 2014-2023 condret */
 
-#include <string.h>
-#include <r_types.h>
-#include <r_anal.h>
-#include <r_lib.h>
-#include <r_io.h>
-#include "../arch/whitespace/wsdis.c"
+#include <r_arch.h>
+#include "wsdis.c"
 
+#if 0
+// R2_590 - Reimplement this logic as an anal plugin and put the hints
 static ut64 ws_find_label(int l, const RIOBind *iob) {
 	RIO *io = iob->io;
 	ut64 cur = 0ULL;
@@ -28,12 +26,12 @@ static ut64 ws_find_label(int l, const RIOBind *iob) {
 	r_strbuf_free (mn);
 	return 0;
 }
+#endif
 
-static int ws_anal(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len, RAnalOpMask mask) {
-	op->addr = addr;
+static bool decode(RArchSession *session, RAnalOp *op, RArchDecodeMask mask) {
 	op->type = R_ANAL_OP_TYPE_UNK;
 	RStrBuf *mn = r_strbuf_new (NULL);
-	op->size = wsdis (mn, data, len);
+	op->size = wsdis (mn, op->bytes, op->size);
 	if (op->size) {
 		char *buf_asm = r_strbuf_drain (mn);
 		switch (*buf_asm) {
@@ -64,8 +62,8 @@ static int ws_anal(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 		case 'c':
 			if (buf_asm[1] == 'a') {
 				op->type = R_ANAL_OP_TYPE_CALL;
-				op->fail = addr + op->size;
-				op->jump = ws_find_label (atoi (buf_asm + 5), &anal->iob);
+				op->fail = op->addr + op->size;
+				op->jump = UT64_MAX; // ws_find_label (atoi (buf_asm + 5), &anal->iob);
 			} else {
 				op->type = R_ANAL_OP_TYPE_UPUSH;
 			}
@@ -73,12 +71,12 @@ static int ws_anal(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 		case 'j':
 			if (buf_asm[1] == 'm') {
 				op->type = R_ANAL_OP_TYPE_JMP;
-				op->jump = ws_find_label(atoi (buf_asm + 4), &anal->iob);
+				op->jump = UT64_MAX; // ws_find_label (atoi (buf_asm + 4), &anal->iob);
 			} else {
 				op->type = R_ANAL_OP_TYPE_CJMP;
-				op->jump = ws_find_label(atoi(buf_asm + 3), &anal->iob);
+				op->jump = UT64_MAX; // ws_find_label (atoi(buf_asm + 3), &anal->iob);
 			}
-			op->fail = addr + op->size;
+			op->fail = op->addr + op->size;
 			break;
 		case 'g':
 			op->type = R_ANAL_OP_TYPE_IO;
@@ -94,7 +92,8 @@ static int ws_anal(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 						c[3] = '\0';
 						c[0] = c[2] = '\'';
 						c[1] = (char) atoi (buf_asm + 5);
-						r_meta_set_string (anal, R_META_TYPE_COMMENT, addr, c);
+						// XXX R2_590 - anal plugin for this
+						// r_meta_set_string (anal, R_META_TYPE_COMMENT, addr, c);
 					}
 				} else {
 					op->type = R_ANAL_OP_TYPE_IO;
@@ -129,18 +128,19 @@ static int ws_anal(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 	return op->size;
 }
 
-RAnalPlugin r_anal_plugin_ws = {
+RArchPlugin r_arch_plugin_ws = {
 	.name = "ws",
 	.desc = "Space, tab and linefeed analysis plugin",
 	.license = "LGPL3",
+	.endian = R_SYS_ENDIAN_LITTLE | R_SYS_ENDIAN_BIG,
 	.arch = "ws",
 	.bits = 32,
-	.op = &ws_anal,
+	.decode = &decode,
 };
 
 #ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_ANAL,
+	.type = R_LIB_TYPE_ARCH,
 	.data = &r_anal_plugin_ws,
 	.version = R2_VERSION
 };
