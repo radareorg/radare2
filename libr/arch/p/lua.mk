@@ -1,4 +1,4 @@
-OBJ_LUA=arch_lua.o
+OBJ_LUA=p/lua/plugin.o
 
 STATIC_OBJ+=$(OBJ_LUA)
 TARGET_LUA=arch_lua.${EXT_SO}

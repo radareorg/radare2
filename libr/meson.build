@@ -19,6 +19,7 @@ arch_plugins = [ 'null',
   'any_as',
   'any_vasm',
   'jdh8',
+  'xtensa',
   'xap',
   'mcore',
   'riscv',
@@ -174,8 +175,7 @@ anal_plugins += [
   'vax',
   'wasm',
   'x86_cs',
-  'xcore_cs',
-  'xtensa',
+  'xcore_cs'
 ]
 
 if no_user_plugins

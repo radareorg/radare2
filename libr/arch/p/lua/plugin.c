@@ -4,8 +4,8 @@
 #include <r_lib.h>
 
 // XXX should be dynlink
-#include "lua/lua53.c"
-#include "lua/lua53_parser.c"
+#include "lua53.c"
+#include "lua53_parser.c"
 
 static bool encode(RArchSession *as, RAnalOp *op, RArchEncodeMask mask) {
 	int parsed = 0;
