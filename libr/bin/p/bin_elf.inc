@@ -142,20 +142,12 @@ static RBinAddr* binsym(RBinFile *bf, int sym) {
 }
 
 static bool is_wordable_section(const char *name) {
-	if (!strcmp (name, ".init_array")) {
-		return true;
-	}
-	if (!strcmp (name, ".fini_array")) {
-		return true;
-	}
-	if (!strcmp (name, ".data.rel.ro")) {
-		return true;
-	}
-	if (!strcmp (name, ".dynamic")) {
-		return true;
-	}
-	if (!strcmp (name, ".got")) {
-		return true;
+	const char *sections[] = {".init_array", ".fini_array", ".data.rel.ro", ".dynamic", ".got"};
+	int i;
+	for (i = 0; i < R_ARRAY_SIZE (sections); i++) {
+		if (!strcmp (name, sections[i])) {
+			return true;
+		}
 	}
 	if (strstr (name, ".rela.")) {
 		return true;
@@ -637,12 +629,12 @@ static RList* entries(RBinFile *bf) {
 	if (!ret) {
 		return NULL;
 	}
-	ut64 pa = Elf_(r_bin_elf_get_entry_offset) (obj);
-	if (pa != UT64_MAX) {
+	ut64 paddr = Elf_(r_bin_elf_get_entry_offset) (obj);
+	if (paddr != UT64_MAX) {
 		if (!(ptr = R_NEW0 (RBinAddr))) {
 			return ret;
 		}
-		ptr->paddr = pa;
+		ptr->paddr = paddr;
 		ptr->vaddr = Elf_(r_bin_elf_p2v) (obj, ptr->paddr);
 		ptr->hpaddr = 0x18;  // e_entry offset in ELF header
 		ptr->hvaddr = UT64_MAX;

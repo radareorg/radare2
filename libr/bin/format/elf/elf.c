@@ -1835,24 +1835,32 @@ ut64 Elf_(r_bin_elf_get_fini_offset)(ELFOBJ *bin) {
 	return 0;
 }
 
+static ut64 get_entry_offset_from_shdr(ELFOBJ *bin) {
+	ut64 sectionOffset = Elf_(r_bin_elf_get_section_offset)(bin, ".init.text");
+	if (sectionOffset != UT64_MAX) {
+		return sectionOffset;
+	}
+	sectionOffset = Elf_(r_bin_elf_get_section_offset)(bin, ".text");
+	if (sectionOffset != UT64_MAX) {
+		return sectionOffset;
+	}
+	sectionOffset = Elf_(r_bin_elf_get_section_offset)(bin, ".text");
+	if (sectionOffset != UT64_MAX) {
+		return sectionOffset;
+	}
+	return UT64_MAX;
+}
+
 ut64 Elf_(r_bin_elf_get_entry_offset)(ELFOBJ *bin) {
 	r_return_val_if_fail (bin, UT64_MAX);
-	ut64 entry = bin->ehdr.e_entry;
-	if (!entry) {
-		if (!Elf_(r_bin_elf_is_executable) (bin)) {
-			return UT64_MAX;
-		}
-		entry = Elf_(r_bin_elf_get_section_offset)(bin, ".init.text");
-		if (entry != UT64_MAX) {
-			return entry;
-		}
-		entry = Elf_(r_bin_elf_get_section_offset)(bin, ".text");
-		if (entry != UT64_MAX) {
-			return entry;
-		}
-		return Elf_(r_bin_elf_get_section_offset)(bin, ".init");
+	if (!Elf_(r_bin_elf_is_executable) (bin)) {
+		return UT64_MAX;
 	}
-	return Elf_(r_bin_elf_v2p) (bin, entry);
+	ut64 entry = bin->ehdr.e_entry;
+	if (entry) {
+		return Elf_(r_bin_elf_v2p) (bin, entry);
+	}
+	return get_entry_offset_from_shdr (bin);
 }
 
 static ut64 getmainsymbol(ELFOBJ *bin) {
@@ -3332,8 +3340,9 @@ static RBinElfSymbol* get_symbols_from_phdr(ELFOBJ *bin, int type) {
 		}
 		// since we don't know the size of the sym table in this case,
 		// let's stop at the first invalid entry
-		if (!strcmp (bind2str (&sym[i]), R_BIN_BIND_UNKNOWN_STR) ||
-		    !strcmp (type2str (NULL, NULL, &sym[i]), R_BIN_TYPE_UNKNOWN_STR)) {
+
+		if (!strcmp (bind2str (sym + i), R_BIN_BIND_UNKNOWN_STR) ||
+		    !strcmp (type2str (NULL, NULL, sym + i), R_BIN_TYPE_UNKNOWN_STR)) {
 			goto done;
 		}
 		tmp_offset = Elf_(r_bin_elf_v2p_new) (bin, toffset);
