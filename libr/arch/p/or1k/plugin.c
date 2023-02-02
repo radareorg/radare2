@@ -1,9 +1,7 @@
-/* radare2 - LGPL - Copyright 2019-2022 - v3l0c1r4pt0r */
+/* radare2 - LGPL - Copyright 2019-2023 - v3l0c1r4pt0r */
 
-#include <r_asm.h>
-#include <r_anal.h>
-#include <r_lib.h>
-#include "../../asm/arch/or1k/or1k_disas.h"
+#include <r_arch.h>
+#include "or1k_disas.h"
 
 struct operands {
 	ut32 rd;
@@ -17,10 +15,11 @@ struct operands {
 	ut32 l;
 };
 
+// XXX remove globals and move into init/fini data pointer or just reimplement this into an ctual anal plugin for 5.9 so maybe its not worth
 static R_TH_LOCAL ut32 cpu[32] = {0}; /* register contents */
 static R_TH_LOCAL ut32 cpu_enable; /* allows to treat only registers with known value as valid */
 
-static char *insn_to_str(RAnal *a, ut64 addr, insn_t *descr, insn_extra_t *extra, ut32 insn) {
+static char *insn_to_str(ut64 addr, insn_t *descr, insn_extra_t *extra, ut32 insn) {
 	struct operands o = {0};
 	insn_type_t type = type_of_opcode (descr, extra);
 	insn_type_descr_t *type_descr = &types[INSN_X];
@@ -98,18 +97,17 @@ static char *insn_to_str(RAnal *a, ut64 addr, insn_t *descr, insn_extra_t *extra
  */
 static ut64 n_oper_to_addr(ut32 n, ut32 mask, ut64 addr) {
 	/* sign extension returns 32b unsigned N, then it is multiplied by 4, made
-	 * signed to support negative offsets, added to address and made unsigned
-	 * again */
+	 * signed to support negative offsets, added to address and made unsigned again */
 	return (ut64) ((st64) ((st32) (sign_extend(n, mask) << 2)) + addr);
 }
 
-static int insn_to_op(RAnal *a, RAnalOp *op, ut64 addr, insn_t *descr, insn_extra_t *extra, ut32 insn) {
+static int insn_to_op(RAnalOp *op, ut64 addr, insn_t *descr, insn_extra_t *extra, ut32 insn) {
 	struct operands o = {0};
-	insn_type_t type = type_of_opcode(descr, extra);
+	insn_type_t type = type_of_opcode (descr, extra);
 	insn_type_descr_t *type_descr = &types[INSN_X];
 
 	/* only use type descriptor if it has some useful data */
-	if (has_type_descriptor(type) && is_type_descriptor_defined(type)) {
+	if (has_type_descriptor (type) && is_type_descriptor_defined (type)) {
 		type_descr = &types[type];
 	}
 
@@ -204,9 +202,15 @@ static int insn_to_op(RAnal *a, RAnalOp *op, ut64 addr, insn_t *descr, insn_extr
 	return 4;
 }
 
-static int or1k_op(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *data, int len, RAnalOpMask mask) {
+static bool or1k_op(RArchSession *a, RAnalOp *op, RArchDecodeMask mask) {
 	insn_t *insn_descr;
 	insn_extra_t *extra_descr;
+	const ut64 addr = op->addr;
+	const size_t len = op->size;
+	const ut8 *data = op->bytes;
+	if (len < 4) {
+		return false;
+	}
 
 	/* read instruction and basic opcode value */
 	ut32 insn = r_read_be32 (data);
@@ -231,13 +235,13 @@ static int or1k_op(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *data, int len, R
 	if (!insn_descr->name && (insn_descr->extra)) {
 		extra_descr = find_extra_descriptor (insn_descr->extra, insn);
 		if (extra_descr) {
-			insn_to_op (a, op, addr, insn_descr, extra_descr, insn);
-			line = insn_to_str (a, addr, insn_descr, extra_descr, insn);
+			insn_to_op (op, addr, insn_descr, extra_descr, insn);
+			line = insn_to_str (addr, insn_descr, extra_descr, insn);
 		}
 	} else {
 		/* otherwise basic descriptor is enough */
-		insn_to_op (a, op, addr, insn_descr, NULL, insn);
-		line = insn_to_str (a, addr, insn_descr, NULL, insn);
+		insn_to_op (op, addr, insn_descr, NULL, insn);
+		line = insn_to_str (addr, insn_descr, NULL, insn);
 	}
 	if (mask & R_ARCH_OP_MASK_DISASM) {
 		if (line) {
@@ -252,20 +256,24 @@ static int or1k_op(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *data, int len, R
 	return op->size;
 }
 
-RAnalPlugin r_anal_plugin_or1k = {
+static int archinfo(RArchSession *a, ut32 q) {
+	return 1;
+}
+
+RArchPlugin r_arch_plugin_or1k = {
 	.name = "or1k",
 	.desc = "OpenRISC 1000",
 	.license = "LGPL3",
 	.bits = 32,
 	.arch = "or1k",
-	.esil = false,
-	.op = &or1k_op,
+	.info = archinfo,
+	.decode = &or1k_op,
 };
 
 #ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_ANAL,
-	.data = &r_anal_plugin_or1k,
+	.type = R_LIB_TYPE_ARCH,
+	.data = &r_arch_plugin_or1k,
 	.version = R2_VERSION
 };
 #endif

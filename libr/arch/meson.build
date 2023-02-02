@@ -34,6 +34,8 @@ r_arch_sources = [
   'p/v850/plugin.c',
   'p/v850/v850dis.c',
   'p/v850/v850e0.c',
+  'p/or1k/plugin.c',
+  'p/or1k/or1k_disas.c',
   'p/nios2/plugin.c',
   'p/nios2/nios2-opc.c',
   'p/nios2/nios2-dis.c',
