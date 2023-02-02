@@ -10,6 +10,7 @@ r_arch_sources = [
   'p/evm/plugin.c',
   'p/propeller/plugin.c',
   'p/propeller/propeller_disas.c',
+  'p/ws/plugin.c',
   'p/arm/plugin.c',
   'p/arm/armass.c',
   'p/arm/armass64.c',
