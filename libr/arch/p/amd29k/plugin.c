@@ -643,6 +643,9 @@ static bool decode(RArchSession *a, RAnalOp *op, RArchDecodeMask mask) {
 	int len = op->size;
 	ut64 addr = op->addr;
 
+	if (len < 4) {
+		return false;
+	}
 	RArchConfig *cfg = a->config;
 	op->size = 4;
 	op->eob = false;
