@@ -981,9 +981,11 @@ static bool parse_signature(struct MACH0_(obj_t) *bin, ut64 off) {
 			break;
 		}
 	}
+#if 0
 	if (!bin->signature) {
 		bin->signature = (ut8 *)strdup ("No entitlement found");
 	}
+#endif
 	return true;
 }
 
