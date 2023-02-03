@@ -27,6 +27,7 @@ r_arch_sources = [
   'p/pickle/plugin.c',
   'p/mcore/plugin.c',
   'p/mcore/mcore.c',
+  'p/wasm/plugin.c',
   'p/rsp/plugin.c',
   'p/rsp/rsp_idec.c',
   'p/riscv/plugin.c',

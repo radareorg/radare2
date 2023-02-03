@@ -486,6 +486,7 @@ typedef struct {
 		WasmOpAtomicCodes atomic;
 		WasmOpSimdCodes simd;
 	} op;
+	ut32 val; // not used for all opcodes yet, careful
 	WasmTypeOp type;
 	int len;
 	char *txt;
@@ -497,6 +498,6 @@ typedef struct {
 } WasmOpDef;
 
 R_IPI int wasm_asm(const char *str, unsigned char *buf, int buf_len);
-R_IPI int wasm_dis(WasmOp *op, const unsigned char *buf, int buf_len);
+R_IPI int wasm_dis(WasmOp *op, const ut8 *buf, int buf_len, bool txt);
 
 #endif

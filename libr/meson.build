@@ -94,7 +94,7 @@ if not no_user_plugins
     parse_plugins += [ 'v850_pseudo' ]
   endif
   if user_plugins.contains('wasm')
-    anal_plugins += [ 'wasm' ]
+    arch_plugins += [ 'wasm' ]
     parse_plugins += [ 'wasm_pseudo' ]
   endif
   if user_plugins.contains('sparc')
@@ -173,7 +173,6 @@ anal_plugins += [
   'tms320',
   'tricore',
   'vax',
-  'wasm',
   'x86_cs',
   'xcore_cs'
 ]

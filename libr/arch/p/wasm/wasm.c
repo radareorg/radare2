@@ -468,17 +468,12 @@ R_IPI int wasm_asm(const char *str, ut8 *buf, int buf_len) {
 			}
 		}
 	}
-	// Abort
-	if (len == 0) goto err;
 	// TODO: parse immediates
-	return len;
-  err:
-	return -1;
+	return len > 0? len: -1;
 }
 
 // disassemble an instruction from the given buffer.
-R_IPI int wasm_dis(WasmOp *op, const unsigned char *buf, int buf_len) {
-	RStrBuf *sb = r_strbuf_new ("");
+R_IPI int wasm_dis(WasmOp *op, const ut8 *buf, int buf_len, bool txt) {
 	int id = buf[0];
 	if (id < 0xc0) {
 		op->type = WASM_TYPE_OP_CORE;
@@ -616,8 +611,8 @@ R_IPI int wasm_dis(WasmOp *op, const unsigned char *buf, int buf_len) {
 		case WASM_OP_F32REINTERPRETI32:
 		case WASM_OP_F64REINTERPRETI64:
 		case WASM_OP_END:
-			{
-				r_strbuf_set (sb, opdef->txt);
+			if (txt) {
+				op->txt = strdup (opdef->txt);
 			}
 			break;
 		case WASM_OP_BLOCK:
@@ -629,28 +624,30 @@ R_IPI int wasm_dis(WasmOp *op, const unsigned char *buf, int buf_len) {
 				if (!(n > 0 && n < buf_len)) {
 					goto err;
 				}
-				switch (val) {
-				case R_BIN_WASM_VALUETYPE_VOID:
-					r_strbuf_set (sb, opdef->txt);
-					break;
-				case R_BIN_WASM_VALUETYPE_i32:
-					r_strbuf_setf (sb, "%s (result i32)", opdef->txt);
-					break;
-				case R_BIN_WASM_VALUETYPE_i64:
-					r_strbuf_setf (sb, "%s (result i64)", opdef->txt);
-					break;
-				case R_BIN_WASM_VALUETYPE_f32:
-					r_strbuf_setf (sb, "%s (result f32)", opdef->txt);
-					break;
-				case R_BIN_WASM_VALUETYPE_f64:
-					r_strbuf_setf (sb, "%s (result f64)", opdef->txt);
-					break;
-				case R_BIN_WASM_VALUETYPE_v128:
-					r_strbuf_setf (sb, "%s (result v128)", opdef->txt);
-					break;
-				default:
-					r_strbuf_setf (sb, "%s (result ?)", opdef->txt);
-					break;
+				if (txt) {
+					switch (val) {
+					case R_BIN_WASM_VALUETYPE_VOID:
+						op->txt = strdup (opdef->txt);
+						break;
+					case R_BIN_WASM_VALUETYPE_i32:
+						op->txt = r_str_newf ("%s (result i32)", opdef->txt);
+						break;
+					case R_BIN_WASM_VALUETYPE_i64:
+						op->txt = r_str_newf ("%s (result i64)", opdef->txt);
+						break;
+					case R_BIN_WASM_VALUETYPE_f32:
+						op->txt = r_str_newf ("%s (result f32)", opdef->txt);
+						break;
+					case R_BIN_WASM_VALUETYPE_f64:
+						op->txt = r_str_newf ("%s (result f64)", opdef->txt);
+						break;
+					case R_BIN_WASM_VALUETYPE_v128:
+						op->txt = r_str_newf ("%s (result v128)", opdef->txt);
+						break;
+					default:
+						op->txt = r_str_newf ("%s (result ?)", opdef->txt);
+						break;
+					}
 				}
 				op->len += n;
 			}
@@ -659,12 +656,13 @@ R_IPI int wasm_dis(WasmOp *op, const unsigned char *buf, int buf_len) {
 		case WASM_OP_BRIF:
 		case WASM_OP_CALL:
 			{
-				ut32 val = 0;
-				size_t n = read_u32_leb128 (buf + 1, buf + buf_len, &val);
-				if (!(n > 0 && n < buf_len)) {
+				size_t n = read_u32_leb128 (buf + 1, buf + buf_len, &op->val);
+				if (n <= 0 || n >= buf_len) {
 					goto err;
 				}
-				r_strbuf_setf (sb, "%s %d", opdef->txt, val);
+				if (txt) {
+					op->txt = r_str_newf ("%s %d", opdef->txt, op->val);
+				}
 				op->len += n;
 			}
 			break;
@@ -695,11 +693,17 @@ R_IPI int wasm_dis(WasmOp *op, const unsigned char *buf, int buf_len) {
 					goto beach;
 				}
 				op->len += n;
-				r_strbuf_setf (sb, "%s %d ", opdef->txt, count);
-				for (i = 0; i < count; i++) {
-					r_strbuf_appendf (sb, "%d ", table[i]);
+				if (txt) {
+					RStrBuf *sb = r_strbuf_new ("");
+					if (sb) {
+						r_strbuf_setf (sb, "%s %d ", opdef->txt, count);
+						for (i = 0; i < count; i++) {
+							r_strbuf_appendf (sb, "%d ", table[i]);
+						}
+						r_strbuf_appendf (sb, "%d", def);
+						op->txt = r_strbuf_drain (sb);
+					}
 				}
-				r_strbuf_appendf (sb, "%d", def);
 				free (table);
 				break;
 			beach:
@@ -720,7 +724,9 @@ R_IPI int wasm_dis(WasmOp *op, const unsigned char *buf, int buf_len) {
 					goto err;
 				}
 				reserved &= 0x1;
-				r_strbuf_setf (sb, "%s %d %d", opdef->txt, val, reserved);
+				if (txt) {
+					op->txt = r_str_newf ("%s %d %d", opdef->txt, val, reserved);
+				}
 				op->len += n;
 			}
 			break;
@@ -735,7 +741,9 @@ R_IPI int wasm_dis(WasmOp *op, const unsigned char *buf, int buf_len) {
 				if (!(n > 0 && n < buf_len)) {
 					goto err;
 				}
-				r_strbuf_setf (sb, "%s %d", opdef->txt, val);
+				if (txt) {
+					op->txt = r_str_newf ("%s %d", opdef->txt, val);
+				}
 				op->len += n;
 			}
 			break;
@@ -773,7 +781,9 @@ R_IPI int wasm_dis(WasmOp *op, const unsigned char *buf, int buf_len) {
 				if (!(n > 0 && op->len + n <= buf_len)) {
 					goto err;
 				}
-				r_strbuf_setf (sb, "%s %d %d", opdef->txt, flag, offset);
+				if (txt) {
+					op->txt = r_str_newf ("%s %d %d", opdef->txt, flag, offset);
+				}
 				op->len += n;
 			}
 			break;
@@ -786,7 +796,9 @@ R_IPI int wasm_dis(WasmOp *op, const unsigned char *buf, int buf_len) {
 					goto err;
 				}
 				reserved &= 0x1;
-				r_strbuf_setf (sb, "%s %d", opdef->txt, reserved);
+				if (txt) {
+					op->txt = r_str_newf ("%s %d", opdef->txt, reserved);
+				}
 				op->len += n;
 			}
 			break;
@@ -797,7 +809,9 @@ R_IPI int wasm_dis(WasmOp *op, const unsigned char *buf, int buf_len) {
 				if (!(n > 0 && n < buf_len)) {
 					goto err;
 				}
-				r_strbuf_setf (sb, "%s %" PFMT32d, opdef->txt, val);
+				if (txt) {
+					op->txt = r_str_newf ("%s %" PFMT32d, opdef->txt, val);
+				}
 				op->len += n;
 			}
 			break;
@@ -808,7 +822,9 @@ R_IPI int wasm_dis(WasmOp *op, const unsigned char *buf, int buf_len) {
 				if (!(n > 0 && n < buf_len)) {
 					goto err;
 				}
-				r_strbuf_setf (sb, "%s %" PFMT64d, opdef->txt, val);
+				if (txt) {
+					op->txt = r_str_newf ("%s %" PFMT64d, opdef->txt, val);
+				}
 				op->len += n;
 			}
 			break;
@@ -819,7 +835,9 @@ R_IPI int wasm_dis(WasmOp *op, const unsigned char *buf, int buf_len) {
 					float f;
 				} u;
 				u.v = r_read_at_le32 (buf, 1);
-				r_strbuf_setf (sb, "%s %f", opdef->txt, u.f);
+				if (txt) {
+					op->txt = r_str_newf ("%s %f", opdef->txt, u.f);
+				}
 				op->len += 4;
 			} else {
 				goto err;
@@ -832,7 +850,9 @@ R_IPI int wasm_dis(WasmOp *op, const unsigned char *buf, int buf_len) {
 					double f;
 				} u;
 				u.v = r_read_at_le64 (buf, 1);
-				r_strbuf_setf (sb, "%s %f", opdef->txt, u.f);
+				if (txt) {
+					op->txt = r_str_newf ("%s %f", opdef->txt, u.f);
+				}
 				op->len += 8;
 			} else {
 				goto err;
@@ -916,7 +936,9 @@ R_IPI int wasm_dis(WasmOp *op, const unsigned char *buf, int buf_len) {
 				if (!(n > 0 && op->len + n <= buf_len)) {
 					goto err;
 				}
-				r_strbuf_setf (sb, "%s %d %d", opdef->txt, flag, offset);
+				if (txt) {
+					op->txt = r_str_newf ("%s %d %d", opdef->txt, flag, offset);
+				}
 				op->len += n;
 			}
 			break;
@@ -1086,8 +1108,8 @@ R_IPI int wasm_dis(WasmOp *op, const unsigned char *buf, int buf_len) {
 		case WASM_OP_I8X16ABS:
 		case WASM_OP_I16X8ABS:
 		case WASM_OP_I32X4ABS:
-			{
-				r_strbuf_set (sb, opdef->txt);
+			if (txt) {
+				op->txt = strdup (opdef->txt);
 			}
 			break;
 		case WASM_OP_V128LOAD:
@@ -1114,7 +1136,9 @@ R_IPI int wasm_dis(WasmOp *op, const unsigned char *buf, int buf_len) {
 				if (!(n > 0 && n < buf_len)) {
 					goto err;
 				}
-				r_strbuf_setf (sb, "%s o:%d a:2^%d", opdef->txt, offset, align);
+				if (txt) {
+					op->txt = r_str_newf ("%s o:%d a:2^%d", opdef->txt, offset, align);
+				}
 			}
 			break;
 		case WASM_OP_V128CONST:
@@ -1129,12 +1153,14 @@ R_IPI int wasm_dis(WasmOp *op, const unsigned char *buf, int buf_len) {
 				for (i = 0; i < 16; i++) {
 					bytes[i] = buf[i + 1 + simdop_size];
 				}
-				r_strbuf_setf (sb, "%s %02x %02x %02x %02x %02x %02x %02x " \
+				if (txt) {
+					op->txt = r_str_newf ("%s %02x %02x %02x %02x %02x %02x %02x " \
 						"%02x %02x %02x %02x %02x %02x %02x %02x %02x",
 						opdef->txt, bytes[0], bytes[1], bytes[2], bytes[3],
 						bytes[4], bytes[5], bytes[6], bytes[7], bytes[8],
 						bytes[9], bytes[10], bytes[11], bytes[12], bytes[13],
 						bytes[14], bytes[15]);
+				}
 			}
 			break;
 		case WASM_OP_I8X16EXTRACTLANES:
@@ -1157,19 +1183,21 @@ R_IPI int wasm_dis(WasmOp *op, const unsigned char *buf, int buf_len) {
 				}
 				unsigned char lane = buf[1 + simdop_size];
 				++op->len;
-				r_strbuf_setf (sb, "%s %d", opdef->txt, lane);
+				if (txt) {
+					op->txt = r_str_newf ("%s %d", opdef->txt, lane);
+				}
 			}
 			break;
 		}
 	} else {
 		goto err;
 	}
-	op->txt = r_strbuf_drain (sb);
 	return op->len;
 
   err:
 	op->len = 1;
-	r_strbuf_set (sb, "invalid");
-	op->txt = r_strbuf_drain (sb);
+	if (txt) {
+		op->txt = strdup ("invalid");
+	}
 	return op->len;
 }
