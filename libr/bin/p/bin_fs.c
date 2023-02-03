@@ -55,10 +55,6 @@ static void destroy(RBinFile *bf) {
 	//r_bin_fs_free ((struct r_bin_fs_obj_t*)bf->o->bin_obj);
 }
 
-static ut64 baddr(RBinFile *bf) {
-	return 0;
-}
-
 /* accelerate binary load */
 static RList *strings(RBinFile *bf) {
 	return NULL;
@@ -96,7 +92,6 @@ RBinPlugin r_bin_plugin_fs = {
 	.load_buffer = &load_buffer,
 	.destroy = &destroy,
 	.check_buffer = &check_buffer,
-	.baddr = &baddr,
 	.strings = &strings,
 	.info = &info,
 };

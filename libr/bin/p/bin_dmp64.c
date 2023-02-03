@@ -1,9 +1,5 @@
-/* radare2 - LGPL - Copyright 2020 - abcSup */
+/* radare2 - LGPL - Copyright 2020-2023 - abcSup */
 
-#include <r_types.h>
-#include <r_util.h>
-#include <r_util/r_print.h>
-#include <r_lib.h>
 #include <r_bin.h>
 
 #include "dmp/dmp64.h"

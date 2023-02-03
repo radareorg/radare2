@@ -1,23 +1,13 @@
 /* radare - LGPL - Copyright 2014-2019 - Fedor Sakharov */
 
-#include <r_types.h>
-#include <r_util.h>
-#include <r_lib.h>
 #include <r_bin.h>
 #include <sdb/ht_uu.h>
 
 #include "coff/coff.h"
 
 static Sdb* get_sdb(RBinFile *bf) {
-	RBinObject *o = bf->o;
-	if (!o) {
-		return NULL;
-	}
-	struct r_bin_coff_obj *bin = (struct r_bin_coff_obj *) o->bin_obj;
-	if (bin->kv) {
-		return bin->kv;
-	}
-	return NULL;
+	struct r_bin_coff_obj *bin = (struct r_bin_coff_obj *) R_UNWRAP3 (bf, o, bin_obj);
+	return bin? bin->kv: NULL;
 }
 
 static bool r_coff_is_stripped(struct r_bin_coff_obj *obj) {
@@ -32,10 +22,6 @@ static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadadd
 
 static void destroy(RBinFile *bf) {
 	r_bin_coff_free ((struct r_bin_coff_obj*)bf->o->bin_obj);
-}
-
-static ut64 baddr(RBinFile *bf) {
-	return 0;
 }
 
 static RBinAddr *binsym(RBinFile *bf, int sym) {
@@ -711,7 +697,6 @@ RBinPlugin r_bin_plugin_coff = {
 	.load_buffer = &load_buffer,
 	.destroy = &destroy,
 	.check_buffer = &check_buffer,
-	.baddr = &baddr,
 	.binsym = &binsym,
 	.entries = &entries,
 	.sections = &sections,

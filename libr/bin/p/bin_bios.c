@@ -1,8 +1,5 @@
 /* radare - LGPL - Copyright 2013-2019 - pancake */
 
-#include <r_types.h>
-#include <r_util.h>
-#include <r_lib.h>
 #include <r_bin.h>
 #include "../i/private.h"
 
@@ -55,23 +52,22 @@ static RList *strings(RBinFile *bf) {
 }
 
 static RBinInfo *info(RBinFile *bf) {
-	RBinInfo *ret = NULL;
-	if (!(ret = R_NEW0 (RBinInfo))) {
-		return NULL;
+	r_return_val_if_fail (bf, NULL);
+	RBinInfo *ret = R_NEW0 (RBinInfo);
+	if (ret) {
+		ret->file = bf->file? strdup (bf->file): NULL;
+		ret->type = strdup ("bios");
+		ret->bclass = strdup ("1.0");
+		ret->rclass = strdup ("bios");
+		ret->os = strdup ("any");
+		ret->subsystem = strdup ("unknown");
+		ret->machine = strdup ("pc");
+		ret->arch = strdup ("x86");
+		ret->has_va = 1;
+		ret->bits = 16;
+		ret->big_endian = 0;
+		ret->dbg_info = false;
 	}
-	ret->lang = NULL;
-	ret->file = bf->file? strdup (bf->file): NULL;
-	ret->type = strdup ("bios");
-	ret->bclass = strdup ("1.0");
-	ret->rclass = strdup ("bios");
-	ret->os = strdup ("any");
-	ret->subsystem = strdup ("unknown");
-	ret->machine = strdup ("pc");
-	ret->arch = strdup ("x86");
-	ret->has_va = 1;
-	ret->bits = 16;
-	ret->big_endian = 0;
-	ret->dbg_info = 0;
 	return ret;
 }
 

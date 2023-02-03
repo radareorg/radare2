@@ -1,8 +1,5 @@
 /* radare2 - LGPL - Copyright 2018-2022 - pancake, mrmacete, keegan */
 
-#include <r_types.h>
-#include <r_util.h>
-#include <r_lib.h>
 #include <r_bin.h>
 #include <r_core.h>
 #include <r_io.h>

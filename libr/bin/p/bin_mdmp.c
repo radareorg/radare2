@@ -1,11 +1,7 @@
-/* radare2 - LGPL - Copyright 2016-2018 - Davis, Alex Kornitzer */
+/* radare2 - LGPL - Copyright 2016-2023 - Davis, Alex Kornitzer */
 
-#include <r_types.h>
-#include <r_util.h>
 #include <r_util/r_print.h>
-#include <r_lib.h>
 #include <r_bin.h>
-
 #include "mdmp/mdmp.h"
 
 static Sdb *get_sdb(RBinFile *bf) {
@@ -304,18 +300,20 @@ static RList *mem(RBinFile *bf) {
 	struct minidump_memory_descriptor *module;
 	struct minidump_memory_descriptor64 *module64;
 	struct minidump_memory_info *mem_info;
-	struct r_bin_mdmp_obj *obj;
-	RList *ret;
 	RListIter *it;
 	RBinMem *ptr;
 	ut64 index;
 	ut64 state, type, a_protect;
 
-	if (!(ret = r_list_newf (r_bin_mem_free))) {
+	RList *ret = r_list_newf (r_bin_mem_free);
+	if (!ret) {
 		return NULL;
 	}
 
-	obj = (struct r_bin_mdmp_obj *)bf->o->bin_obj;
+	struct r_bin_mdmp_obj *obj = (struct r_bin_mdmp_obj *)R_UNWRAP3 (bf, o, bin_obj);
+	if (!obj) {
+		return ret;
+	}
 
 	/* [1] As there isnt a better place to put this info at the moment we will
 	** mash it into the name field, but without enumeration for now  */

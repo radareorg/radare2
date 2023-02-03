@@ -1,8 +1,5 @@
-/* radare - LGPL - Copyright 2016-2019 - Oscar Salvador */
+/* radare - LGPL - Copyright 2016-2023 - Oscar Salvador */
 
-#include <r_types.h>
-#include <r_util.h>
-#include <r_lib.h>
 #include <r_bin.h>
 #include <r_io.h>
 #include "bflt/bflt.h"
@@ -13,26 +10,19 @@ static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadadd
 }
 
 static RList *entries(RBinFile *bf) {
-	struct r_bin_bflt_obj *obj = (struct r_bin_bflt_obj *) bf->o->bin_obj;
-	RList *ret;
-	RBinAddr *ptr;
-
-	if (!(ret = r_list_newf (free))) {
-		return NULL;
+	RList *ret = r_list_newf (free);
+	if (ret) {
+		struct r_bin_bflt_obj *obj = (struct r_bin_bflt_obj *) R_UNWRAP3 (bf, o, bin_obj);
+		RBinAddr *ptr = r_bflt_get_entry (obj);
+		if (ptr) {
+			r_list_append (ret, ptr);
+		}
 	}
-	ptr = r_bflt_get_entry (obj);
-	if (!ptr) {
-		r_list_free (ret);
-		return NULL;
-	}
-	r_list_append (ret, ptr);
 	return ret;
 }
 
 static void __patch_reloc(RBuffer *buf, ut32 addr_to_patch, ut32 data_offset) {
-	ut8 val[4] = {
-		0
-	};
+	ut8 val[4] = { 0 };
 	r_write_le32 (val, data_offset);
 	r_buf_write_at (buf, addr_to_patch, (void *) val, sizeof (val));
 }
@@ -253,32 +243,27 @@ out_error:
 }
 
 static RBinInfo *info(RBinFile *bf) {
-	struct r_bin_bflt_obj *obj = NULL;
-	RBinInfo *info = NULL;
-	if (!bf || !bf->o || !bf->o->bin_obj) {
-		return NULL;
+	RBinInfo *info = R_NEW0 (RBinInfo);
+	if (info) {
+		struct r_bin_bflt_obj *obj = R_UNWRAP3 (bf, o, bin_obj);
+		info->file = bf->file? strdup (bf->file): NULL;
+		info->rclass = strdup ("bflt");
+		info->bclass = strdup ("bflt" );
+		info->type = strdup ("bFLT (Executable file)");
+		info->os = strdup ("Linux");
+		info->subsystem = strdup ("Linux");
+		info->arch = strdup ("arm");
+		info->big_endian = obj? obj->endian: R_SYS_ENDIAN_LITTLE;
+		info->bits = 32;
+		info->has_va = false;
+		info->dbg_info = 0;
+		info->machine = strdup ("unknown");
 	}
-	obj = (struct r_bin_bflt_obj *) bf->o->bin_obj;
-	if (!(info = R_NEW0 (RBinInfo))) {
-		return NULL;
-	}
-	info->file = bf->file? strdup (bf->file): NULL;
-	info->rclass = strdup ("bflt");
-	info->bclass = strdup ("bflt" );
-	info->type = strdup ("bFLT (Executable file)");
-	info->os = strdup ("Linux");
-	info->subsystem = strdup ("Linux");
-	info->arch = strdup ("arm");
-	info->big_endian = obj->endian;
-	info->bits = 32;
-	info->has_va = false;
-	info->dbg_info = 0;
-	info->machine = strdup ("unknown");
 	return info;
 }
 
 static bool check_buffer(RBinFile *bf, RBuffer *buf) {
-	ut8 tmp[4];
+	ut8 tmp[4] = {0};
 	int r = r_buf_read_at (buf, 0, tmp, sizeof (tmp));
 	return r == sizeof (tmp) && !memcmp (tmp, "bFLT", 4);
 }
