@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2022 - pancake, nibble */
+/* radare - LGPL - Copyright 2009-2023 - pancake, nibble */
 
 #define R_LOG_ORIGIN "core.anal"
 
@@ -12,6 +12,7 @@
 HEAPTYPE (ut64);
 
 static R_TH_LOCAL RCore *mycore = NULL;
+static R_TH_LOCAL bool esil_anal_stop = false;
 
 // used to speedup strcmp with rconfig.get in loops
 enum {
@@ -4044,6 +4045,31 @@ R_API int r_core_anal_search(RCore *core, ut64 from, ut64 to, ut64 ref, int mode
 	return count;
 }
 
+static void add_string_ref(RCore *core, ut64 xref_from, ut64 xref_to) {
+	const int reftype = R_ANAL_REF_TYPE_DATA | R_ANAL_REF_TYPE_READ;
+	int len = 0;
+	if (xref_to == UT64_MAX || !xref_to) {
+		return;
+	}
+	if (!xref_from || xref_from == UT64_MAX) {
+		xref_from = core->anal->esil->address;
+	}
+	char *str = is_string_at (core, xref_to, &len);
+	if (R_STR_ISNOTEMPTY (str) && len > 0) {
+		r_meta_set (core->anal, R_META_TYPE_STRING, xref_to, len, str);
+		r_name_filter (str, -1);
+		if (*str) {
+			r_flag_space_push (core->flags, R_FLAGS_FS_STRINGS);
+			char *strf = r_str_newf ("str.%s", str);
+			r_flag_set (core->flags, strf, xref_to, len);
+			free (strf);
+			r_flag_space_pop (core->flags);
+			r_anal_xrefs_set (core->anal, xref_from, xref_to, reftype);
+		}
+	}
+	free (str);
+}
+
 static bool found_xref(RCore *core, ut64 at, ut64 xref_to, RAnalRefType type, PJ *pj, int rad, bool cfg_debug, bool cfg_anal_strings) {
 	// Validate the reference. If virtual addressing is enabled, we
 	// allow only references to virtual addresses in order to reduce
@@ -4064,24 +4090,8 @@ static bool found_xref(RCore *core, ut64 at, ut64 xref_to, RAnalRefType type, PJ
 	}
 	if (!rad) {
 		if (cfg_anal_strings && R_ANAL_REF_TYPE_MASK (type) == R_ANAL_REF_TYPE_DATA) {
-			int len = 0;
-			char *str_string = is_string_at (core, xref_to, &len);
-			if (str_string) {
-				r_name_filter (str_string, -1);
-				char *str_flagname = r_str_newf ("str.%s", str_string);
-				r_flag_space_push (core->flags, R_FLAGS_FS_STRINGS);
-				(void)r_flag_set (core->flags, str_flagname, xref_to, 1);
-				r_flag_space_pop (core->flags);
-				free (str_flagname);
-				if (len > 0) {
-					r_meta_set (core->anal, R_META_TYPE_STRING, xref_to,
-								len, (const char *) str_string);
-				}
-				free (str_string);
-			}
-		}
-		// Add to SDB
-		if (xref_to) {
+			add_string_ref (core, at, xref_to);
+		} else if (xref_to) {
 			r_anal_xrefs_set (core->anal, at, xref_to, type);
 		}
 	} else if (rad == 'j') {
@@ -4848,35 +4858,11 @@ R_API void r_core_anal_fcn_merge(RCore *core, ut64 addr, ut64 addr2) {
 	R_LOG_INFO ("Merge 0x%08"PFMT64x" into 0x%08"PFMT64x, addr, addr2);
 }
 
-static bool esil_anal_stop = false;
 static void cccb(void *u) {
 	esil_anal_stop = true;
 	r_cons_context_break (NULL);
 	eprintf ("^C\n");
 }
-
-static void add_string_ref(RCore *core, ut64 xref_from, ut64 xref_to) {
-	int len = 0;
-	if (xref_to == UT64_MAX || !xref_to) {
-		return;
-	}
-	if (!xref_from || xref_from == UT64_MAX) {
-		xref_from = core->anal->esil->address;
-	}
-	char *str_flagname = is_string_at (core, xref_to, &len);
-	if (str_flagname) {
-		r_anal_xrefs_set (core->anal, xref_from, xref_to, R_ANAL_REF_TYPE_DATA | R_ANAL_REF_TYPE_READ);
-		r_name_filter (str_flagname, -1);
-		r_flag_space_push (core->flags, R_FLAGS_FS_STRINGS);
-		char *flagname = r_str_newf ("str.%s", str_flagname);
-		r_flag_set (core->flags, flagname, xref_to, len);
-		free (flagname);
-		r_flag_space_pop (core->flags);
-		r_meta_set (core->anal, 's', xref_to, len, str_flagname);
-		free (str_flagname);
-	}
-}
-
 
 // dup with isValidAddress wtf
 static bool myvalid(RIO *io, ut64 addr) {
