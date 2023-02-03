@@ -435,7 +435,8 @@ static int _code_frm_addr(const void *_code, const void *_needle) {
 	const RBinWasmCodeEntry *code = _code;
 	if (addr < code->code) {
 		return 1;
-	} else if (addr >= code->code + code->len) {
+	}
+	if (addr >= code->code + code->len) {
 		return -1;
 	}
 	return 0;
@@ -451,9 +452,8 @@ static int get_fcn_offset_from_addr(RBinFile *bf, int addr, bool start) {
 			if (code) {
 				if (start) {
 					return code->code;
-				} else {
-					return code->code + code->len - 1;
 				}
+				return code->code + code->len - 1;
 			}
 		}
 	}
