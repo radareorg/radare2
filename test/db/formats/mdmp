@@ -11,7 +11,6 @@ FILE=bins/mdmp/calc.dmp
 CMDS=iI
 EXPECT=<<EOF
 arch     x86
-baddr    0xffffffffffffffff
 binsz    36724
 bintype  mdmp
 bits     64

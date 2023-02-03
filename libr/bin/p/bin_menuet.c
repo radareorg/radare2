@@ -1,8 +1,5 @@
 /* radare2 - LGPL - Copyright 2016-2019 - pancake */
 
-#include <r_types.h>
-#include <r_util.h>
-#include <r_lib.h>
 #include <r_bin.h>
 
 #define MENUET_VERSION(x) x[7]

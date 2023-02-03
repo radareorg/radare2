@@ -17,7 +17,6 @@ block    0x100
 type     ROM
 arch     m68k
 cpu      68040
-baddr    0x0
 binsz    204
 bits     8
 canary   false

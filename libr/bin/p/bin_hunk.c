@@ -99,17 +99,11 @@ static RList* entries(RBinFile *bf) { //Should be 3 offsets pointed by NMI, RESE
 	return ret;
 }
 
-static ut64 baddr(RBinFile *bf) {
-	// having this we make r2 -B work, otherwise it doesnt works :??
-	return 0;
-}
-
 RBinPlugin r_bin_plugin_hunk = {
 	.name = "hunk",
 	.desc = "AmigaOS Hunk executable binary",
 	.license = "MIT",
 	.load_buffer = &load_buffer,
-	.baddr = &baddr,
 	.check_buffer = &check_buffer,
 	.entries = &entries,
 	.sections = sections,

@@ -100,10 +100,6 @@ static RList *entries(RBinFile *bf) {
 	return r_bin_java_get_entrypoints (bf->o->bin_obj);
 }
 
-static ut64 baddr(RBinFile *bf) {
-	return 0;
-}
-
 static RList *classes(RBinFile *bf) {
 	return r_bin_java_get_classes ((struct r_bin_java_obj_t *) bf->o->bin_obj);
 }
@@ -208,7 +204,6 @@ RBinPlugin r_bin_plugin_java = {
 	.load_buffer = &load_buffer,
 	.destroy = &destroy,
 	.check_buffer = &check_buffer,
-	.baddr = &baddr,
 	.binsym = binsym,
 	.entries = &entries,
 	.sections = sections,

@@ -1,10 +1,7 @@
 /* radare - LGPL - Copyright 2015-2021 nodepad, pancake */
 
-#include <r_types.h>
 #include <r_bin.h>
-#include <r_lib.h>
 #include "mz/mz.h"
-
 
 /* half-magic */
 #define HM(x) (int)((int)(x[0]<<8)|(int)(x[1]))
@@ -21,7 +18,7 @@ static Sdb *get_sdb(RBinFile *bf) {
 }
 
 static bool knownHeaderBuffer(RBuffer *b, ut16 offset) {
-	ut8 h[2];
+	ut8 h[2] = {0};
 	if (r_buf_read_at (b, offset, h, sizeof (h)) != sizeof (h)) {
 		return false;
 	}
@@ -130,14 +127,12 @@ static RBinAddr *binsym(RBinFile *bf, int type) {
 }
 
 static RList *entries(RBinFile *bf) {
-	RBinAddr *ptr = NULL;
-	RList *res = NULL;
-	if (!(res = r_list_newf (free))) {
-		return NULL;
-	}
-	ptr = r_bin_mz_get_entrypoint (bf->o->bin_obj);
-	if (ptr) {
-		r_list_append (res, ptr);
+	RList *res = r_list_newf (free);
+	if (R_LIKELY (res)) {
+		RBinAddr *ptr = r_bin_mz_get_entrypoint (bf->o->bin_obj);
+		if (R_LIKELY (ptr)) {
+			r_list_append (res, ptr);
+		}
 	}
 	return res;
 }
@@ -160,7 +155,7 @@ static RBinInfo *info(RBinFile *bf) {
 	ret->type = strdup ("EXEC (Executable file)");
 	ret->subsystem = strdup ("DOS");
 	ret->bits = 16;
-	ret->dbg_info = 0;
+	ret->dbg_info = false;
 	ret->big_endian = false;
 	ret->has_crypto = false;
 	ret->has_canary = false;

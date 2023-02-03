@@ -1,6 +1,5 @@
 /* radare - LGPL - 2015-2022 - pancake */
 
-#include <r_lib.h>
 #include <r_bin.h>
 
 #if 0

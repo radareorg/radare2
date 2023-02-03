@@ -160,13 +160,13 @@ RBinPlugin r_bin_plugin_avr = {
 	.name = "avr",
 	.desc = "ATmel AVR MCUs",
 	.license = "LGPL3",
-	.load_buffer = &load_buffer,
-	.destroy = &destroy,
-	.entries = &entries,
-	.symbols = &symbols,
-	.check_buffer = &check_buffer,
-	.info = &info,
-	.strings = &strings,
+	.load_buffer = load_buffer,
+	.destroy = destroy,
+	.entries = entries,
+	.strings = strings,
+	.symbols = symbols,
+	.check_buffer = check_buffer,
+	.info = info,
 };
 
 #ifndef R2_PLUGIN_INCORE

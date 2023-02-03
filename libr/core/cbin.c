@@ -339,6 +339,9 @@ R_API bool r_core_bin_set_env(RCore *r, RBinFile *binfile) {
 		const char *arch = info->arch;
 		ut16 bits = info->bits;
 		ut64 baseaddr = r_bin_get_baddr (r->bin);
+		if (baseaddr == UT64_MAX) {
+			baseaddr = 0;
+		}
 		r_config_set_i (r->config, "bin.baddr", baseaddr);
 		sdb_num_add (r->sdb, "orig_baddr", baseaddr, 0);
 		r->dbg->bp->baddr = baseaddr;
@@ -870,7 +873,7 @@ static int bin_info(RCore *r, PJ *pj, int mode, ut64 laddr) {
 		r_config_set (r->config, "cfg.bigendian",
 			      info->big_endian ? "true" : "false");
 		if (!info->rclass || strcmp (info->rclass, "fs")) {
-			if (info->lang) {
+			if (info->lang && info->lang[0] != '?') {
 				r_config_set (r->config, "bin.lang", info->lang);
 			}
 			r_config_set (r->config, "asm.os", info->os);
@@ -926,7 +929,7 @@ static int bin_info(RCore *r, PJ *pj, int mode, ut64 laddr) {
 				r_str_bool (R_BIN_DBG_STRIPPED &info->dbg_info));
 			int v = r_anal_archinfo (r->anal, R_ANAL_ARCHINFO_ALIGN);
 			r_cons_printf ("e asm.pcalign=%d\n", (v > 0)? v: 0);
-			if (R_STR_ISNOTEMPTY (info->lang)) {
+			if (R_STR_ISNOTEMPTY (info->lang) && info->lang[0] != '?') {
 				r_cons_printf ("e bin.lang=%s\n", info->lang);
 			}
 			if (R_STR_ISNOTEMPTY (info->charset)) {
@@ -961,7 +964,10 @@ static int bin_info(RCore *r, PJ *pj, int mode, ut64 laddr) {
 		if (R_STR_ISNOTEMPTY (info->cpu)) {
 			pair_str (pj, "cpu", info->cpu);
 		}
-		pair_ut64x (pj, "baddr", r_bin_get_baddr (r->bin));
+		ut64 baddr = r_bin_get_baddr (r->bin);
+		if (baddr != UT64_MAX) {
+			pair_ut64x (pj, "baddr", baddr);
+		}
 		pair_ut64 (pj, "binsz", r_bin_get_size (r->bin));
 		pair_str (pj, "bintype", info->rclass);
 		if (R_STR_ISNOTEMPTY (info->charset)) {
@@ -1294,13 +1300,13 @@ R_API bool r_core_pdb_info(RCore *core, const char *file, PJ *pj, int mode) {
 	r_return_val_if_fail (core && file, false);
 
 	ut64 baddr = r_config_get_i (core->config, "bin.baddr");
-	if (core->bin->cur && core->bin->cur->o && core->bin->cur->o->baddr) {
+	if (!baddr && core->bin->cur && core->bin->cur->o && core->bin->cur->o->baddr) {
 		baddr = core->bin->cur->o->baddr;
-	} else if (baddr == UT64_MAX) {
-		R_LOG_WARN ("Cannot find base address, flags will probably be misplaced");
-		baddr = 0LL;
 	}
-
+	if (baddr == UT64_MAX) {
+		R_LOG_WARN ("Cannot find base address, flags will probably be misplaced");
+		baddr = 0;
+	}
 	RPdb pdb = {0};
 
 	pdb.cb_printf = r_cons_printf;
@@ -3591,14 +3597,12 @@ static int bin_classes(RCore *r, PJ *pj, int mode) {
 				r_name_filter (method, -1);
 				r_flag_set (r->flags, method, sym->vaddr, 1);
 			}
-#if 1
 			r_list_foreach (c->fields, iter2, f) {
 				char *fn = r_str_newf ("field.%s.%s", classname, f->name);
 				ut64 at = f->vaddr; //  sym->vaddr + (f->vaddr &  0xffff);
 				r_flag_set (r->flags, fn, at, 1);
 				free (fn);
 			}
-#endif
 		} else if (IS_MODE_SIMPLEST (mode)) {
 			r_cons_printf ("%s\n", c->name);
 		} else if (IS_MODE_SIMPLE (mode)) {
@@ -3668,7 +3672,7 @@ static int bin_classes(RCore *r, PJ *pj, int mode) {
 			}
 
 			// C struct
-			r_cons_printf ("\"td struct %s {", c->name);
+			r_cons_printf ("\"\"td struct %s {", c->name);
 			if (r_list_empty (c->fields)) {
 				// XXX workaround because we cant register empty structs yet
 				// XXX https://github.com/radareorg/radare2/issues/16342
@@ -3682,7 +3686,7 @@ static int bin_classes(RCore *r, PJ *pj, int mode) {
 					free (n);
 				}
 			}
-			r_cons_printf ("};\"\n");
+			r_cons_printf ("};\n");
 			free (n);
 		} else if (IS_MODE_JSON (mode)) {
 			pj_o (pj);

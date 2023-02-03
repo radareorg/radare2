@@ -1,15 +1,14 @@
-/* radare - LGPL3 - 2015-2019 - maijin */
+/* radare - LGPL3 - 2015-2023 - maijin */
 
 #include <r_bin.h>
-#include <r_lib.h>
 #include "nes/nes_specs.h"
-
 
 static bool check_buffer(RBinFile *bf, RBuffer *b) {
 	if (r_buf_size (b) > 4) {
 		ut8 buf[4];
-		r_buf_read_at (b, 0, buf, sizeof (buf));
-		return (!memcmp (buf, INES_MAGIC, sizeof (buf)));
+		if (r_buf_read_at (b, 0, buf, sizeof (buf)) == sizeof (buf)) {
+			return (!memcmp (buf, INES_MAGIC, sizeof (buf)));
+		}
 	}
 	return false;
 }
@@ -19,42 +18,39 @@ static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadadd
 }
 
 static RBinInfo *info(RBinFile *bf) {
-	RBinInfo *ret = NULL;
-	ines_hdr ihdr;
-	memset (&ihdr, 0, INES_HDR_SIZE);
+	ines_hdr ihdr = {0};
 	int reat = r_buf_read_at (bf->buf, 0, (ut8*)&ihdr, INES_HDR_SIZE);
 	if (reat != INES_HDR_SIZE) {
 		R_LOG_ERROR ("Truncated Header");
 		return NULL;
 	}
-	if (!(ret = R_NEW0 (RBinInfo))) {
-		return NULL;
+	RBinInfo *ret = R_NEW0 (RBinInfo);
+	if (R_LIKELY (ret)) {
+		ret->file = strdup (bf->file);
+		ret->type = strdup ("ROM");
+		ret->machine = strdup ("Nintendo NES");
+		ret->os = strdup ("nes");
+		ret->arch = strdup ("6502");
+		ret->bits = 8;
+		ret->has_va = 1;
 	}
-	ret->file = strdup (bf->file);
-	ret->type = strdup ("ROM");
-	ret->machine = strdup ("Nintendo NES");
-	ret->os = strdup ("nes");
-	ret->arch = strdup ("6502");
-	ret->bits = 8;
-	ret->has_va = 1;
 	return ret;
 }
 
 static void addsym(RList *ret, const char *name, ut64 addr, ut32 size) {
 	RBinSymbol *ptr = R_NEW0 (RBinSymbol);
-	if (!ptr) {
-		return;
+	if (R_LIKELY (ptr)) {
+		ptr->name = strdup (r_str_get (name));
+		ptr->paddr = ptr->vaddr = addr;
+		ptr->size = size;
+		ptr->ordinal = 0;
+		r_list_append (ret, ptr);
 	}
-	ptr->name = strdup (r_str_get (name));
-	ptr->paddr = ptr->vaddr = addr;
-	ptr->size = size;
-	ptr->ordinal = 0;
-	r_list_append (ret, ptr);
 }
 
 static RList* symbols(RBinFile *bf) {
-	RList *ret = NULL;
-	if (!(ret = r_list_newf (free))) {
+	RList *ret = r_list_newf (free);
+	if (R_UNLIKELY (!ret)) {
 		return NULL;
 	}
 	addsym (ret, "NMI_VECTOR_START_ADDRESS", NMI_VECTOR_START_ADDRESS,2);
@@ -124,40 +120,35 @@ static RList* sections(RBinFile *bf) {
 }
 
 static RList *mem(RBinFile *bf) {
-	RList *ret;
-	RBinMem *m, *n;
-	if (!(ret = r_list_new ())) {
+	RList *ret = r_list_new ();
+	if (R_UNLIKELY (!ret)) {
 		return NULL;
 	}
-	ret->free = free;
-	if (!(m = R_NEW0 (RBinMem))) {
-		r_list_free (ret);
-		return NULL;
+	RBinMem *m = R_NEW0 (RBinMem);
+	if (R_LIKELY (m)) {
+		m->name = strdup ("RAM");
+		m->addr = RAM_START_ADDRESS;
+		m->size = RAM_SIZE;
+		m->perms = r_str_rwx ("rwx");
+		r_list_append (ret, m);
 	}
-	m->name = strdup ("RAM");
-	m->addr = RAM_START_ADDRESS;
-	m->size = RAM_SIZE;
-	m->perms = r_str_rwx ("rwx");
-	r_list_append (ret, m);
-	if (!(n = R_NEW0 (RBinMem))) {
-		return ret;
+	RBinMem *n = R_NEW0 (RBinMem);
+	if (R_LIKELY (n)) {
+		m->mirrors = r_list_new ();
+		n->name = strdup ("RAM_MIRROR_2");
+		n->addr = RAM_MIRROR_2_ADDRESS;
+		n->size = RAM_MIRROR_2_SIZE;
+		n->perms = r_str_rwx ("rwx");
+		r_list_append (m->mirrors, n);
 	}
-	m->mirrors = r_list_new ();
-	n->name = strdup ("RAM_MIRROR_2");
-	n->addr = RAM_MIRROR_2_ADDRESS;
-	n->size = RAM_MIRROR_2_SIZE;
-	n->perms = r_str_rwx ("rwx");
-	r_list_append (m->mirrors, n);
-	if (!(n = R_NEW0 (RBinMem))) {
-		r_list_free (m->mirrors);
-		m->mirrors = NULL;
-		return ret;
+	n = R_NEW0 (RBinMem);
+	if (R_LIKELY (n)) {
+		n->name = strdup ("RAM_MIRROR_3");
+		n->addr = RAM_MIRROR_3_ADDRESS;
+		n->size = RAM_MIRROR_3_SIZE;
+		n->perms = r_str_rwx ("rwx");
+		r_list_append (m->mirrors, n);
 	}
-	n->name = strdup ("RAM_MIRROR_3");
-	n->addr = RAM_MIRROR_3_ADDRESS;
-	n->size = RAM_MIRROR_3_SIZE;
-	n->perms = r_str_rwx ("rwx");
-	r_list_append (m->mirrors, n);
 	if (!(m = R_NEW0 (RBinMem))) {
 		r_list_free (ret);
 		return NULL;
@@ -170,13 +161,12 @@ static RList *mem(RBinFile *bf) {
 	m->mirrors = r_list_new ();
 	int i;
 	for (i = 1; i < 1024; i++) {
-		if (!(n = R_NEW0 (RBinMem))) {
-			r_list_free (m->mirrors);
-			m->mirrors = NULL;
-			return ret;
+		n = R_NEW0 (RBinMem);
+		if (R_UNLIKELY (!n)) {
+			break;
 		}
 		n->name = r_str_newf ("PPU_REG_MIRROR_%d", i);
-		n->addr = PPU_REG_ADDRESS+i*PPU_REG_SIZE;
+		n->addr = PPU_REG_ADDRESS + i * PPU_REG_SIZE;
 		n->size = PPU_REG_SIZE;
 		n->perms = r_str_rwx ("rwx");
 		r_list_append (m->mirrors, n);
@@ -203,23 +193,16 @@ static RList *mem(RBinFile *bf) {
 }
 
 static RList* entries(RBinFile *bf) { //Should be 3 offsets pointed by NMI, RESET, IRQ after mapping && default = 1st CHR
-	RList *ret;
-	RBinAddr *ptr = NULL;
-	if (!(ret = r_list_new ())) {
-		return NULL;
+	RList *ret = r_list_new ();
+	if (R_LIKELY (ret)) {
+		RBinAddr *ptr = R_NEW0 (RBinAddr);
+		if (R_LIKELY (ptr)) {
+			ptr->paddr = INES_HDR_SIZE;
+			ptr->vaddr = ROM_START_ADDRESS;
+			r_list_append (ret, ptr);
+		}
 	}
-	if (!(ptr = R_NEW0 (RBinAddr))) {
-		return ret;
-	}
-	ptr->paddr = INES_HDR_SIZE;
-	ptr->vaddr = ROM_START_ADDRESS;
-	r_list_append (ret, ptr);
 	return ret;
-}
-
-static ut64 baddr(RBinFile *bf) {
-	// having this we make r2 -B work, otherwise it doesnt works :??
-	return 0;
 }
 
 RBinPlugin r_bin_plugin_nes = {
@@ -227,7 +210,6 @@ RBinPlugin r_bin_plugin_nes = {
 	.desc = "NES",
 	.license = "MIT",
 	.load_buffer = &load_buffer,
-	.baddr = &baddr,
 	.check_buffer = &check_buffer,
 	.entries = &entries,
 	.sections = sections,

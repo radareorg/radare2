@@ -382,6 +382,9 @@ static bool is_equal_file_hashes(RList *lfile_hashes, RList *rfile_hashes, bool 
 static int __r_core_bin_reload(RCore *r, const char *file, ut64 baseaddr) {
 	int result = 0;
 	RIODesc *cd = r->io->desc;
+	if (baseaddr == UT64_MAX) {
+		baseaddr = 0;
+	}
 	if (cd) {
 		RBinFile *bf = r_bin_file_find_by_fd (r->bin, cd->fd);
 		if (bf) {
@@ -486,7 +489,7 @@ static int cmd_info(void *data, const char *input) {
 	RIODesc *desc = r_io_desc_get (core->io, fd);
 	int i;
 	const bool va = core->io->va || r_config_get_b (core->config, "cfg.debug");
-	int mode = 0; //R_MODE_SIMPLE;
+	int mode = 0;
 	bool rdump = false;
 	int is_array = 0;
 	bool is_izzzj = false;
@@ -517,17 +520,16 @@ static int cmd_info(void *data, const char *input) {
 	if (mode == R_MODE_JSON) {
 		INIT_PJ ();
 		int suffix_shift = 0;
-		if (!strncmp (input, "SS", 2) || !strncmp (input, "ee", 2)
-		    || !strncmp (input, "zz", 2)) {
+		if (r_str_startswith (input, "SS") || r_str_startswith (input, "ee") || r_str_startswith (input, "zz")) {
 			suffix_shift = 1;
 		}
 		if (strlen (input + 1 + suffix_shift) > 1) {
 			is_array = 1;
 		}
-		if (!strncmp (input, "zzz", 3)) {
+		if (r_str_startswith (input, "zzz")) {
 			is_izzzj = true;
 		}
-		if (!strncmp (input, "dpi", 3)) {
+		if (r_str_startswith (input, "dpi")) {
 			is_idpij = true;
 		}
 	}
@@ -568,10 +570,7 @@ static int cmd_info(void *data, const char *input) {
 		switch (*input) {
 		case 'b': // "ib"
 		{
-			ut64 baddr = r_config_get_i (core->config, "bin.baddr");
-			if (input[1] == ' ') {
-				baddr = r_num_math (core->num, input + 1);
-			}
+			ut64 baddr = (input[1] == ' ')? r_num_math (core->num, input + 1) : r_config_get_i (core->config, "bin.baddr");
 			// XXX: this will reload the bin using the buffer.
 			// An assumption is made that assumes there is an underlying
 			// plugin that will be used to load the bin (e.g. malloc://)
@@ -628,7 +627,7 @@ static int cmd_info(void *data, const char *input) {
 		case 'o': // "io"
 		{
 			if (!desc) {
-				eprintf ("Core file not open\n");
+				R_LOG_ERROR ("Core file not open");
 				return 0;
 			}
 			const char *fn = input[1] == ' '? input + 2: desc->name;
@@ -985,7 +984,6 @@ static int cmd_info(void *data, const char *input) {
 							}
 						}
 					}
-
 					if (!file_found) {
 						if (info->debug_file_name) {
 							const char *fn = r_file_basename (info->debug_file_name);
@@ -1518,12 +1516,7 @@ static int cmd_info(void *data, const char *input) {
 			}
 			goto redone;
 		case '*': // "i*"
-			if (mode == R_MODE_RADARE) {
-				// TODO:handle ** submodes
-				mode = R_MODE_RADARE;
-			} else {
-				mode = R_MODE_RADARE;
-			}
+			mode = R_MODE_RADARE;
 			goto done;
 		case 'q': // "iq"
 			mode = R_MODE_SIMPLE;

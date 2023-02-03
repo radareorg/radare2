@@ -1,6 +1,5 @@
 /* radare - LGPL - Copyright 2009-2022 - pancake */
 
-#include <r_lib.h>
 #include <r_core.h>
 #include "../i/private.h"
 #include "mach0/mach0.h"

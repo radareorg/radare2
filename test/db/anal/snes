@@ -21,7 +21,6 @@ iorw     false
 block    0x100
 type     ROM
 arch     snes
-baddr    0xffffffffffffffff
 binsz    65536
 bits     16
 canary   false
