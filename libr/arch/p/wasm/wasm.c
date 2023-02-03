@@ -469,7 +469,7 @@ R_IPI int wasm_asm(const char *str, ut8 *buf, int buf_len) {
 		}
 	}
 	// TODO: parse immediates
-	return len? len: -1;
+	return len > 0? len: -1;
 }
 
 // disassemble an instruction from the given buffer.
