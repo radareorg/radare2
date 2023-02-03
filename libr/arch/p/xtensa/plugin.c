@@ -171,6 +171,7 @@ static void xtensa_shr_op(RArchSession *anal, RAnalOp *op, ut64 addr, const ut8 
 static void xtensa_l32r_op(RArchSession *anal, RAnalOp *op, ut64 addr, const ut8 *buf) {
 	op->type = R_ANAL_OP_TYPE_LOAD;
 	op->ptr = ((addr + 3) & ~3) + ((buf[2] << 8 | buf[1]) << 2) - 0x40000;
+	op->refptr = 4;
 }
 
 static void xtensa_snm0_op(RArchSession *anal, RAnalOp *op, ut64 addr, const ut8 *buf) {

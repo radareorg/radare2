@@ -27,3 +27,17 @@ var int32_t var_8h @ a1+0x8
 var int32_t var_4h @ a1+0xc
 EOF
 RUN
+
+NAME=xtensa l32r refptr
+FILE=malloc://512
+CMDS=<<EOF
+e asm.arch=xtensa
+e asm.bits=32
+wx 00000000ff11ff1121ffff0df0ff
+pD 3 @ 8
+EOF
+EXPECT=<<EOF
+            0x00000008      21ffff         l32r a2, 0x00000004         ; [0x4:4]=0x11ff11ff
+EOF
+RUN
+
