@@ -270,11 +270,10 @@ static inline bool parse_control_flow(RArchSession *s, ut64 opaddr) {
 
 		// TODO: bigger and fewer reads to speed up
 		while (readsize && iob->read_at (iob->io, addr, buffer, readsize)) {
-			int size = wasm_dis (&wop, ptr, readsize);
-			if (!wop.txt || !parse_op_cf (scope, keep, addr, &wop, &lastcf)) {
+			int size = wasm_dis (&wop, ptr, readsize, false);
+			if (!parse_op_cf (scope, keep, addr, &wop, &lastcf)) {
 				break;
 			}
-			free (wop.txt);
 			addr += size;
 			len -= size;
 			if (len < sizeof (buffer)) {
@@ -344,10 +343,17 @@ static bool wasm_encode(RArchSession *s, RAnalOp *op, RArchEncodeMask mask) {
 static bool wasm_decode(RArchSession *s, RAnalOp *op, RAnalOpMask mask) {
 	r_return_val_if_fail (s && op, false);
 	WasmOp wop = {{0}};
-	int ret = wasm_dis (&wop, op->bytes, op->size);
-	if (mask & R_ARCH_OP_MASK_DISASM) {
-		op->mnemonic = strdup (wop.txt);
+	bool txt = mask & R_ARCH_OP_MASK_DISASM;
+	int ret = wasm_dis (&wop, op->bytes, op->size, txt);
+
+	op->mnemonic = wop.txt;
+	wop.txt = NULL;
+
+	if (txt && (!op->mnemonic || !strcmp (op->mnemonic, "invalid"))) {
+		op->type = R_ANAL_OP_TYPE_ILL;
+		return -1;
 	}
+
 	op->nopcode = 1;
 	op->size = ret;
 	op->sign = true; // XXX: Probably not always signed?
@@ -362,12 +368,6 @@ static bool wasm_decode(RArchSession *s, RAnalOp *op, RAnalOpMask mask) {
 	case WASM_TYPE_OP_SIMD:
 		op->id = 0xfd;
 		break;
-	}
-
-	if (!wop.txt || !strncmp (wop.txt, "invalid", 7)) {
-		op->type = R_ANAL_OP_TYPE_ILL;
-		free (wop.txt);
-		return -1;
 	}
 
 	switch (wop.type) {
@@ -589,7 +589,6 @@ static bool wasm_decode(RArchSession *s, RAnalOp *op, RAnalOpMask mask) {
 		break;
 	}
 
-	free (wop.txt);
 	return op->size;
 }
 
