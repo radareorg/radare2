@@ -102,10 +102,8 @@ static void render(RCore *core, RList *list, int mode, int page) {
 			} else if (*s == '#') {
 				char *ss = r_str_ss (s, 0, 0);
 				r_strbuf_append (sb, ss);
-				// r_cons_printf ("%s\n", ss);
 				free (ss);
 			} else {
-				// r_cons_printf ("     %s\n", s);
 				r_strbuf_appendf (sb, "     %s\n", s);
 			}
 		}
@@ -135,8 +133,8 @@ static void render(RCore *core, RList *list, int mode, int page) {
 static void render_title(int page, int mode, int total) {
 	r_cons_gotoxy (0, 0);
 	r_cons_printf ("%s%s%s\r [r2slides] [%s:%d/%d]",
-			Color_BLACK,Color_BGYELLOW,R_CONS_CLEAR_LINE,
-			(mode==2)?"pages":"page", page, total);
+			Color_BLACK, Color_BGYELLOW, R_CONS_CLEAR_LINE,
+			(mode == 2)? "pages": "page", page, total);
 }
 
 R_API void r_core_visual_slides(RCore *core, const char *file) {
@@ -192,11 +190,11 @@ R_API void r_core_visual_slides(RCore *core, const char *file) {
 		case ' ':
 		case 'n':
 		case 'P':
-			page+=mode;
+			page += mode;
 			break;
 		case 'p':
 		case 'N':
-			page-=mode;
+			page -= mode;
 			if (page < 1) {
 				page = 1;
 			}
@@ -225,6 +223,19 @@ R_API void r_core_visual_slides(RCore *core, const char *file) {
 					total_pages = count_pages (list);
 				}
 				r_config_set_b (core->config, "scr.interactive", false);
+			}
+			break;
+		case 'r': // reload
+		case 'R':
+			{
+				char *ndata = r_file_slurp (file, NULL);
+				if (ndata) {
+					r_list_free (list);
+					free (data);
+					data = ndata;
+					list = r_str_split_list (data, "\n", 0);
+					total_pages = count_pages (list);
+				}
 			}
 			break;
 		case ':':

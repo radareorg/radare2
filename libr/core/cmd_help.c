@@ -1153,7 +1153,7 @@ static int cmd_help(void *data, const char *input) {
 				free (s);
 			}
 			break;
-		case 't': // "?e=t newtitle"
+		case 't': // "?et" "?e=t newtitle"
 			r_cons_set_title (r_str_trim_head_ro (input + 2));
 			break;
 		case '=': { // "?e="
@@ -1174,15 +1174,18 @@ static int cmd_help(void *data, const char *input) {
 			R_FREE (portions);
 			break;
 		}
-		case 's': { // "?es"
-			char *msg = strdup (input + 2);
-			r_str_trim (msg);
-			char *p = strchr (msg, '&');
-			if (p) *p = 0;
-			r_sys_tts (msg, p);
-			free (msg);
+		case 's': // "?es"
+			  {
+				  char *msg = strdup (input + 2);
+				  r_str_trim (msg);
+				  char *p = strchr (msg, '&');
+				  if (p) {
+					  *p = 0;
+				  }
+				  r_sys_tts (msg, p);
+				  free (msg);
+			  }
 			break;
-		}
 		case 'c': // "?ec" column
 			r_cons_column (r_num_math (core->num, input + 2));
 			break;
