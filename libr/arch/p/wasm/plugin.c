@@ -223,9 +223,11 @@ static inline bool cache_offsets(HtUP *cache, RList *keep) {
 static inline bool parse_control_flow(RArchSession *s, ut64 opaddr) {
 	r_return_val_if_fail (s && s->arch, false);
 	RArch *a = s->arch;
-	RBinBind *binb = &a->binb;
-	RIOBind *iob = &binb->bin->iob;
-	r_return_val_if_fail (iob->read_at && iob->io, false);
+	RBin *bin = R_UNWRAP2 (a, binb.bin);
+	if (!bin || !bin->iob.read_at) {
+		return false;
+	}
+	RIOReadAt read_at = bin->iob.read_at;
 
 	HtUP *cache = s->user;
 	if (!cache) { // exit early if no cache,
@@ -235,16 +237,13 @@ static inline bool parse_control_flow(RArchSession *s, ut64 opaddr) {
 	ut64 addr = get_func_offset (a, opaddr, true);
 	ut64 end = get_func_offset (a, opaddr, false);
 	if (addr == UT64_MAX || end == UT64_MAX) {
-		if (s->arch && s->arch->binb.get_offset) {
-			// outside function, add bad op to cache
-			CFInfo *nfo = R_NEW (CFInfo);
-			if (nfo) {
-				nfo->jump = UT64_MAX;
-				nfo->fail = UT64_MAX;
-				nfo->type = R_ANAL_OP_TYPE_ILL;
-				if (ht_up_insert (cache, opaddr, nfo)) {
-					return true;
-				}
+		CFInfo *nfo = R_NEW (CFInfo);
+		if (nfo) {
+			nfo->jump = UT64_MAX;
+			nfo->fail = UT64_MAX;
+			nfo->type = R_ANAL_OP_TYPE_ILL;
+			if (ht_up_insert (cache, opaddr, nfo)) {
+				return true;
 			}
 		}
 		return false;
@@ -269,7 +268,7 @@ static inline bool parse_control_flow(RArchSession *s, ut64 opaddr) {
 		ut32 readsize = R_MIN (sizeof (buffer), len);
 
 		// TODO: bigger and fewer reads to speed up
-		while (readsize && iob->read_at (iob->io, addr, buffer, readsize)) {
+		while (readsize && read_at (bin->iob.io, addr, buffer, readsize)) {
 			int size = wasm_dis (&wop, ptr, readsize, false);
 			if (!parse_op_cf (scope, keep, addr, &wop, &lastcf)) {
 				break;
