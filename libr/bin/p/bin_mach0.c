@@ -24,24 +24,24 @@ static RBuffer *swizzle_io_read(struct MACH0_(obj_t) *obj, RIO *io);
 #define IS_PTR_BIND(x) ((x & (1ULL << 62)) != 0)
 
 static Sdb *get_sdb(RBinFile *bf) {
-	RBinObject *o = bf->o;
-	if (!o) {
-		return NULL;
-	}
-	struct MACH0_(obj_t) *bin = (struct MACH0_(obj_t) *) o->bin_obj;
-	return bin? bin->kv: NULL;
+	struct MACH0_(obj_t) *mo = (struct MACH0_(obj_t) *) R_UNWRAP3 (bf, o, bin_obj);
+	return mo? mo->kv: NULL;
 }
 
 static char *entitlements(RBinFile *bf, bool json) {
-	r_return_val_if_fail (bf && bf->o && bf->o->bin_obj, NULL);
-	struct MACH0_(obj_t) *bin = bf->o->bin_obj;
-	if (json) {
-		const char *s = r_str_get ((const char *)bin->signature);
-		PJ *pj = pj_new ();
-		pj_s (pj, s);
-		return pj_drain (pj);
+	struct MACH0_(obj_t) *bin = R_UNWRAP3 (bf, o, bin_obj);
+	if (bin) {
+		const char *s = (const char *)bin->signature;
+		if (s) {
+			if (json) {
+				PJ *pj = pj_new ();
+				pj_s (pj, s);
+				return pj_drain (pj);
+			}
+			return strdup (s);
+		}
 	}
-	return strdup ((const char*)bin->signature);
+	return NULL;
 }
 
 static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
