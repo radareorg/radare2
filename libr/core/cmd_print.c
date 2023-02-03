@@ -2080,7 +2080,8 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 	int nb_cols = r_config_get_i (core->config, "hex.cols");
 	core->print->use_comments = r_config_get_i (core->config, "hex.comments");
 	int flagsz = r_config_get_i (core->config, "hex.flagsz");
-	bool showSection = r_config_get_b (core->config, "hex.section");
+	bool show_section = r_config_get_b (core->config, "hex.section");
+	bool show_offset = r_config_get_b (core->config, "hex.offset");
 	const ut8 *buf = core->block;
 	ut64 addr = core->offset;
 	int color_idx = 0;
@@ -2144,7 +2145,9 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 		*addrpad = 0;
 		addrpadlen = 0;
 	}
-	strcpy (bytes + addrpadlen, "- offset -  ");
+	if (show_offset) {
+		strcpy (bytes + addrpadlen, "- offset -  ");
+	}
 #endif
 	j = strlen (bytes);
 	for (i = 0; i < nb_cols; i += 2) {
@@ -2184,7 +2187,7 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 		if (usecolor) {
 			append (ebytes, core->cons->context->pal.offset);
 		}
-		if (showSection) {
+		if (show_section) {
 			const char * name = r_core_get_section_name (core, ea);
 			char *s = r_str_newf ("%20s ", name);
 			append (ebytes, s);
@@ -2297,7 +2300,7 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 				marks = true;
 				color_idx++;
 				color_idx %= 10;
-				if (showSection) {
+				if (show_section) {
 					r_cons_printf ("%20s ", "");
 				}
 				if (flagaddr == addr + j) {

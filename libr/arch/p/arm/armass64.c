@@ -810,7 +810,6 @@ static ut32 sxt(ArmOp *op) {
 }
 
 static ut32 tb(ArmOp *op) {
-	ut32 data = UT32_MAX;
 	int k = 0;
 	const bool reg64_imm = op->operands[0].reg_type & ARM_REG64 && op->operands[1].type & ARM_CONSTANT && op->operands[2].type & ARM_CONSTANT;
 	const bool reg32_imm = op->operands[0].reg_type & ARM_REG32 && op->operands[1].type & ARM_CONSTANT && op->operands[2].type & ARM_CONSTANT;
@@ -836,7 +835,8 @@ static ut32 tb(ArmOp *op) {
 	} else {
 	  	return UT32_MAX;
 	}
-	data = k | (op->operands[0].reg & 0x1f) << 24;
+	ut32 data = k;
+	data |= (op->operands[0].reg & 0x1f) << 24;
 	data |= (op->operands[1].immediate & 0x1f) << 11;
 	data |= (op->operands[2].immediate & 0x1c) << 27;
 	data |= (op->operands[2].immediate & 0x1fe0) << 11;

@@ -950,15 +950,19 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 		}
 		if (base < 32) {
 			{ // XXX: use r_print_addr_header
-				int i, delta;
+				int i, delta = 0;
 				char soff[32];
-				if (hex_style) {
-					print ("..offset..");
-				} else {
-					print ("- offset -");
-					if (p && p->wide_offsets) {
-						print ("       ");
+				if (use_offset) {
+					if (hex_style) {
+						print ("..offset..");
+					} else {
+						print ("- offset -");
+						if (p && p->wide_offsets) {
+							print ("       ");
+						}
 					}
+				} else {
+					delta--;
 				}
 				if (use_segoff) {
 					int seggrn = (p && p->config)? p->config->seggrn: 4;
@@ -966,10 +970,10 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 					a = addr & 0xffff;
 					s = ((addr - a) >> seggrn) & 0xffff;
 					snprintf (soff, sizeof (soff), "%04x:%04x ", s, a);
-					delta = strlen (soff) - 10;
+					delta += strlen (soff) - 10;
 				} else {
 					snprintf (soff, sizeof (soff), "0x%08" PFMT64x, addr);
-					delta = strlen (soff) - 9;
+					delta += strlen (soff) - 9;
 				}
 				if (compact) {
 					delta--;
