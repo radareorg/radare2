@@ -173,7 +173,6 @@ anal_plugins += [
   'tms320',
   'tricore',
   'vax',
-  'wasm',
   'x86_cs',
   'xcore_cs'
 ]
