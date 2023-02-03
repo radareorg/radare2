@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2020 - nibble, pancake */
+/* radare - LGPL - Copyright 2009-2023 - nibble, pancake */
 
 #include <r_types.h>
 #include <r_bin.h>
@@ -9,6 +9,9 @@ R_API bool r_bin_addr2line(RBin *bin, ut64 addr, char *file, int len, int *line)
 	RBinObject *o = r_bin_cur_object (bin);
 	RBinPlugin *cp = r_bin_file_cur_plugin (binfile);
 	ut64 baddr = r_bin_get_baddr (bin);
+	if (baddr == UT64_MAX) {
+		baddr = 0;
+	}
 	if (cp && cp->dbginfo) {
 		if (o && addr >= baddr && addr < baddr + bin->cur->o->size) {
 			if (cp->dbginfo->get_line) {
