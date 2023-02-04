@@ -416,8 +416,8 @@ static RBuffer *create(RBin *bin, const ut8 *code, int codelen, const ut8 *data,
 	return buf;
 }
 
-static int get_fcn_offset_from_id(RBinFile *bf, int ordinal) {
-	RBinWasmObj *bin = R_UNWRAP3 (bf, o, bin_obj);
+static ut64 get_fcn_offset_from_id(RBinFile *bf, int ordinal) {
+	RBinWasmObj *bin = bf->o->bin_obj;
 	ut32 min = first_ord_not_import (bin, R_BIN_WASM_EXTERNALKIND_Function);
 	RPVector *codes = r_bin_wasm_get_codes (bin);
 	if (min <= ordinal && codes) {
@@ -427,7 +427,7 @@ static int get_fcn_offset_from_id(RBinFile *bf, int ordinal) {
 			return func->code;
 		}
 	}
-	return -1;
+	return UT64_MAX;
 }
 
 static int _code_frm_addr(const void *_code, const void *_needle) {
@@ -442,7 +442,7 @@ static int _code_frm_addr(const void *_code, const void *_needle) {
 	return 0;
 }
 
-static int get_fcn_offset_from_addr(RBinFile *bf, int addr, bool start) {
+static ut64 get_fcn_offset_from_addr(RBinFile *bf, int addr, bool start) {
 	RBinWasmObj *bin = R_UNWRAP3 (bf, o, bin_obj);
 	if (bin) {
 		RPVector *codes = r_bin_wasm_get_codes (bin);
@@ -457,10 +457,10 @@ static int get_fcn_offset_from_addr(RBinFile *bf, int addr, bool start) {
 			}
 		}
 	}
-	return -1;
+	return UT64_MAX;
 }
 
-static int getoffset(RBinFile *bf, int type, int idx) {
+static ut64 getoffset(RBinFile *bf, int type, int idx) {
 	switch (type) {
 	case 'f': // fcnid -> fcnaddr
 		return get_fcn_offset_from_id (bf, idx);
