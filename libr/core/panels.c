@@ -937,7 +937,7 @@ static void __update_pdc_contents(RCore *core, RPanel *panel, char *cmdstr) {
 
 static char *__handle_cmd_str_cache(RCore *core, RPanel *panel, bool force_cache) {
 	// XXX force cache is always used as false!!
-	if (panel->model->cache) {
+	if (panel->model->cache && panel->model->cmdStrCache) {
 		return strdup (panel->model->cmdStrCache);
 	}
 	char *cmd = __apply_filter_cmd (core, panel);
