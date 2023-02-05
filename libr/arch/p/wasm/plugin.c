@@ -161,13 +161,15 @@ static void inline find_br_scope(CFInfo *nfo, CFScope *sc) {
 	// depending on outer, br goes to different place
 	switch (outer->opcode) {
 	case WASM_OP_BLOCK:
+	case WASM_OP_IF:
+	case WASM_OP_ELSE:
 		nfo->jump = outer->fail;
 		break;
 	case WASM_OP_LOOP:
 		nfo->jump = outer->jump;
 		break;
 	default:
-		r_warn_if_reached ();
+		R_LOG_ERROR ("Unexpected type: 0x%x\n", outer->opcode);
 	}
 }
 
