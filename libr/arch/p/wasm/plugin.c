@@ -71,7 +71,12 @@ static inline bool parse_op_cf(RList *scopes, RList *keep, ut64 addr, WasmOp *wo
 	// move to adjancent scope
 	case WASM_OP_ELSE:
 		if (!c || c->opcode != WASM_OP_IF) {
-			R_LOG_WARN ("Ignoring `else` at 0x%" PFMT64x " without `if` 0x%" PFMT64x, addr, c->addr);
+			R_LOG_WARN ("Ignoring `else` at 0x%" PFMT64x " without `if`", addr);
+			sc = parse_new_scope (keep, addr, wop, NULL);
+			if (!sc) {
+				return false;
+			}
+			sc->jump = UT64_MAX; // dud
 		} else {
 			sc = parse_new_scope (keep, addr, wop, c->parent);
 			if (!sc) {
@@ -115,7 +120,12 @@ static inline bool parse_op_cf(RList *scopes, RList *keep, ut64 addr, WasmOp *wo
 	case WASM_OP_END:
 		// close current scope and move up
 		if (!c) {
-			R_LOG_ERROR ("Instruction `end` at 0x%" PFMT64x " lacks opening", addr);
+			R_LOG_WARN ("Ignoring `end` at 0x%" PFMT64x " without opening", addr);
+			sc = parse_new_scope (keep, addr, wop, NULL);
+			if (!sc) {
+				return false;
+			}
+			sc->jump = UT64_MAX; // dud
 		} else {
 			c->fail = addr;
 			if (c->opcode == WASM_OP_ELSE && c->sibling) {
@@ -173,7 +183,24 @@ static void inline find_br_scope(CFInfo *nfo, CFScope *sc) {
 	}
 }
 
+static bool cache_dud(HtUP *cache, ut64 addr) {
+	CFInfo *nfo = R_NEW (CFInfo);
+	if (nfo) {
+		nfo->jump = UT64_MAX;
+		nfo->fail = UT64_MAX;
+		nfo->type = R_ANAL_OP_TYPE_ILL;
+		if (ht_up_insert (cache, addr, nfo)) {
+			return true;
+		}
+		free (nfo);
+	}
+	return false;
+}
+
 static inline bool scope_to_cache(HtUP *cache, CFScope *sc) {
+	if (sc->jump == UT64_MAX) {
+		return cache_dud (cache, sc->addr);
+	}
 	CFInfo *nfo = R_NEW (CFInfo);
 	nfo->jump = UT64_MAX;
 	nfo->fail = UT64_MAX;
@@ -239,16 +266,7 @@ static inline bool parse_control_flow(RArchSession *s, ut64 opaddr) {
 	ut64 addr = get_func_offset (a, opaddr, true);
 	ut64 end = get_func_offset (a, opaddr, false);
 	if (addr == UT64_MAX || end == UT64_MAX) {
-		CFInfo *nfo = R_NEW (CFInfo);
-		if (nfo) {
-			nfo->jump = UT64_MAX;
-			nfo->fail = UT64_MAX;
-			nfo->type = R_ANAL_OP_TYPE_ILL;
-			if (ht_up_insert (cache, opaddr, nfo)) {
-				return true;
-			}
-		}
-		return false;
+		return cache_dud (cache, opaddr);
 	}
 
 	ut32 len = end - addr;
