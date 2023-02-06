@@ -3,9 +3,9 @@
 #include <string.h>
 #include <r_types.h>
 #include <r_lib.h>
-#include <r_anal.h>
+#include <r_arch.h>
 
-#include "kvx/kvx.h"
+#include "kvx.h"
 
 static const char *kvx_reg_profile = ""
 	"=PC	pc\n"
@@ -226,20 +226,39 @@ static const char *kvx_reg_profile = ""
  * individually, but each instructions should be printed on it's own
  * line for readability. The function kvx_next_insn does all the magic
  * of figuring out if the next instruction is already decoded in this
- * bundle or if it needs to decode a new bundle */
-static R_TH_LOCAL bundle_t bundle;
+ * bundle or if it needs to decode a new bundle.
+ * was:
+ *    static R_TH_LOCAL bundle_t bundle;
+ * now is allocated per RArchSession in init/fini
+ */
 
-static int kvx_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, RAnalOpMask mask) {
+static bool kvx_init(RArchSession *s) {
+	r_return_val_if_fail (!s->user, false);
+	s->user = malloc (sizeof (bundle_t));
+	return s->user? true: false;
+}
+
+static bool kvx_fini(RArchSession *s) {
+	free (s->user);
+	s->user = NULL;
+	return true;
+}
+
+static bool kvx_op(RArchSession *a, RAnalOp *op, RArchDecodeMask mask) {
+	bundle_t *bundle = a->user;
+	const ut64 addr = op->addr;
+	const size_t len = op->size;
+	const ut8 *data = op->bytes;
 	char strasm[64];
-	r_return_val_if_fail (anal && op, -1);
+	r_return_val_if_fail (a && op, false);
 
 	if (addr % 4) {
-		goto unaligned;
+		return false; /* unaligned */
 	}
 
-	insn_t *insn = kvx_next_insn (&bundle, addr, b, len);
+	insn_t *insn = kvx_next_insn (bundle, addr, data, len);
 	if (!insn) {
-		goto invalid;
+		return false; /* invalid */
 	}
 	op->addr = addr;
 	op->size = insn->len * sizeof (ut32);
@@ -259,7 +278,7 @@ static int kvx_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, RA
 		op->delay = insn->rem;
 		if ((op->type & R_ANAL_OP_TYPE_CJMP) == R_ANAL_OP_TYPE_CJMP) {
 			/* if fail goto next bundle */
-			op->fail = bundle.addr + bundle.size;
+			op->fail = bundle->addr + bundle->size;
 		}
 		if ((op->type & R_ANAL_OP_TYPE_JMP) == R_ANAL_OP_TYPE_JMP) {
 			op->jump = kvx_instr_jump (insn, addr);
@@ -272,52 +291,44 @@ static int kvx_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, RA
 	}
 
 	return op->size;
-
-invalid:
-	op->size = 4;
-	return op->size;
-
-unaligned:
-	op->size = 4 - (addr % 4);
-	return op->size;
 }
 
-static int kvx_archinfo(RAnal *anal, int query) {
+static int kvx_info(RArchSession *a, ut32 query) {
 	switch (query) {
-	case R_ANAL_ARCHINFO_MIN_OP_SIZE:
+	case R_ARCH_INFO_MIN_OP_SIZE:
 		return 4;
-	case R_ANAL_ARCHINFO_MAX_OP_SIZE:
+	case R_ARCH_INFO_MAX_OP_SIZE:
 		return 12;
-	case R_ANAL_ARCHINFO_ALIGN:
+	case R_ARCH_INFO_ALIGN:
 		return 4;
-	case R_ANAL_ARCHINFO_DATA_ALIGN:
+	case R_ARCH_INFO_DATA_ALIGN:
 		return 0;
 	default:
 		return 0;
 	}
 }
 
-static bool kvx_set_reg_profile(RAnal *anal) {
-	return r_reg_set_profile_string (anal->reg, kvx_reg_profile);
+static char *kvx_regs(RArchSession *a) {
+	return strdup (kvx_reg_profile);
 }
 
-RAnalPlugin r_anal_plugin_kvx = {
+RArchPlugin r_arch_plugin_kvx = {
 	.name = "kvx",
-	.desc = "Kalray VLIW core analysis plugin",
+	.desc = "Kalray VLIW core",
 	.arch = "kvx",
-	.license = "GPL",
-	.esil = false,
-	.bits = 32 | 64,
+	.bits = R_SYS_BITS_PACK1 (64),
 	.endian = R_SYS_ENDIAN_LITTLE,
-	.op = kvx_op,
-	.archinfo = kvx_archinfo,
-	.set_reg_profile = kvx_set_reg_profile,
+	.init = kvx_init,
+	.fini = kvx_fini,
+	.info = kvx_info,
+	.regs = kvx_regs,
+	.decode = kvx_op,
 };
 
 #ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_ANAL,
-	.data = &r_anal_plugin_kvx,
+	.type = R_LIB_TYPE_ARCH,
+	.data = &r_arch_plugin_kvx,
 	.version = R2_VERSION
 };
 #endif
