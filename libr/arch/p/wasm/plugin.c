@@ -179,7 +179,7 @@ static void inline find_br_scope(CFInfo *nfo, CFScope *sc) {
 		nfo->jump = outer->jump;
 		break;
 	default:
-		R_LOG_ERROR ("Unexpected type: 0x%x\n", outer->opcode);
+		R_LOG_ERROR ("Unexpected type: 0x%x", outer->opcode);
 	}
 }
 
