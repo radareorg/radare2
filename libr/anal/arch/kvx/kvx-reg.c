@@ -518,7 +518,7 @@ static const char *kv3_reg_srf[] = {
 	"$vsfr255",
 };
 
-char *kv3_reg_grf[] = {
+const char *kv3_reg_grf[] = {
 	"$r0",
 	"$r1",
 	"$r2",
@@ -585,7 +585,7 @@ char *kv3_reg_grf[] = {
 	"$r63",
 };
 
-char *kv3_reg_grf_pair[] = {
+const char *kv3_reg_grf_pair[] = {
 	"$r0r1",
 	"$r2r3",
 	"$r4r5",
@@ -620,7 +620,7 @@ char *kv3_reg_grf_pair[] = {
 	"$r62r63",
 };
 
-char *kv3_reg_grf_quad[] = {
+const char *kv3_reg_grf_quad[] = {
 	"$r0r1r2r3",
 	"$r4r5r6r7",
 	"$r8r9r10r11",
@@ -639,7 +639,7 @@ char *kv3_reg_grf_quad[] = {
 	"$r60r61r62r63",
 };
 
-char *kv3_reg_arf[] = {
+const char *kv3_reg_arf[] = {
 	"$a0",
 	"$a1",
 	"$a2",
@@ -706,7 +706,7 @@ char *kv3_reg_arf[] = {
 	"$a63",
 };
 
-char *kv3_reg_arf_pair[] = {
+const char *kv3_reg_arf_pair[] = {
 	"$a0a1",
 	"$a2a3",
 	"$a4a5",
@@ -741,7 +741,7 @@ char *kv3_reg_arf_pair[] = {
 	"$a62a63",
 };
 
-char *kv3_reg_arf_quad[] = {
+const char *kv3_reg_arf_quad[] = {
 	"$a0a1a2a3",
 	"$a4a5a6a7",
 	"$a8a9a10a11",
