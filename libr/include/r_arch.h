@@ -163,7 +163,7 @@ typedef struct r_arch_plugin_t {
 	RSysBits bits;
 	RSysBits addr_bits;
 	RArchPluginInitCallback init;
-	RArchPluginInitCallback fini;
+	RArchPluginFiniCallback fini;
 	RArchPluginInfoCallback info;
 	RArchPluginRegistersCallback regs;
 	RArchPluginEncodeCallback encode;
