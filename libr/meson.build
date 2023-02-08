@@ -8,6 +8,7 @@ anal_plugins = [ 'null' ]
 arch_plugins = [ 'null',
   'sh',
   'x86_nz',
+  'mcs96',
   'ws',
   'arm',
   '6502',
@@ -139,7 +140,6 @@ if no_user_plugins
 # TODO: add the pyc plugin for meson builds too
 anal_plugins += [
   '6502_cs',
-  'mcs96',
   '8051',
   'alpha',
   # 'arc',
