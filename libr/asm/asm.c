@@ -233,6 +233,7 @@ R_API void r_asm_free(RAsm *a) {
 		r_list_free (a->plugins);
 		a->plugins = NULL;
 	}
+	r_parse_free (a->parse);
 	r_unref (a->config);
 	r_syscall_free (a->syscall);
 	sdb_free (a->pair);
