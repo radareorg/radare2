@@ -97,33 +97,33 @@ static int assemble(const char *buf, ut8 *outbuf, int outbufsz) {
 	} else {
 		n = 1;
 	}
-	if (!strncmp (buf, "trap", 4)) {
+	if (r_str_startswith (buf, "trap")) {
 		write_err = _write_asm (outbuf, outbufsz, 0xcc, n);
-	} else if (!strncmp (buf, "nop", 3)) {
+	} else if (r_str_startswith (buf, "nop")) {
 		write_err = _write_asm (outbuf, outbufsz, 0x90, n);
-	} else if (!strncmp (buf, "inc", 3)) {
+	} else if (r_str_startswith (buf, "inc")) {
 		char ch = ref? '+': '>';
 		n = 1;
 		write_err = _write_asm (outbuf, outbufsz, ch, n);
-	} else if (!strncmp (buf, "dec", 3)) {
+	} else if (r_str_startswith (buf, "dec")) {
 		char ch = ref? '-': '<';
 		n = 1;
 		write_err = _write_asm (outbuf, outbufsz, ch, n);
-	} else if (!strncmp (buf, "sub", 3)) {
+	} else if (r_str_startswith (buf, "sub")) {
 		char ch = ref? '-': '<';
 		write_err = _write_asm (outbuf, outbufsz, ch, n);
-	} else if (!strncmp (buf, "add", 3)) {
+	} else if (r_str_startswith (buf, "add")) {
 		char ch = ref? '+': '>';
 		write_err = _write_asm (outbuf, outbufsz, ch, n);
-	} else if (!strncmp (buf, "while", 5)) {
+	} else if (r_str_startswith (buf, "while")) {
 		n = 1;
 		write_err = _write_asm (outbuf, outbufsz, '[', 1);
-	} else if (!strncmp (buf, "loop", 4)) {
+	} else if (r_str_startswith (buf, "loop")) {
 		n = 1;
 		write_err = _write_asm (outbuf, outbufsz, ']', 1);
-	} else if (!strncmp (buf, "in", 2)) {
+	} else if (r_str_startswith (buf, "in")) {
 		write_err = _write_asm (outbuf, outbufsz, ',', n);
-	} else if (!strncmp (buf, "out", 3)) {
+	} else if (r_str_startswith (buf, "out")) {
 		write_err = _write_asm (outbuf, outbufsz, '.', n);
 	} else {
 		n = 0;
@@ -135,7 +135,8 @@ static int assemble(const char *buf, ut8 *outbuf, int outbufsz) {
 }
 
 #define BUFSIZE_INC 32
-static int bf_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
+static int bf_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *_buf, int len, RAnalOpMask mask) {
+	ut8 *buf = (ut8*)_buf; // XXX
 	ut64 dst = 0LL;
 	if (!op) {
 		return 1;
@@ -165,8 +166,7 @@ static int bf_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, R
 				if (*p == ']') {
 					lev--;
 					if (lev==-1) {
-						dst = addr + (size_t)(p-buf);
-						dst ++;
+						dst = addr + (size_t)(p - buf) + 1;
 						op->jump = dst;
 						r_strbuf_setf (&op->esil,
 								"0x%"PFMT64x",brk,=[1],brk,++=,"
@@ -182,7 +182,7 @@ static int bf_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, R
 					int new_buf_len = len + 1 + BUFSIZE_INC;
 					ut8 *new_buf = calloc (new_buf_len, 1);
 					if (new_buf) {
-						free ((ut8 *)buf);
+						free (buf);
 						(void)anal->read_at (anal, addr, new_buf, new_buf_len);
 						buf = new_buf;
 						p = buf + i;
@@ -194,7 +194,7 @@ static int bf_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, R
 			}
 		}
 beach:
-		free ((ut8 *)buf);
+		free (buf);
 		break;
 	case ']': op->type = R_ANAL_OP_TYPE_UJMP;
 		// XXX This is wrong esil

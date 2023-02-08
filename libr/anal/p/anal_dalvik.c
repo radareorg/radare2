@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2010-2019 - pancake */
+/* radare - LGPL - Copyright 2010-2023 - pancake */
 
 #include <r_anal.h>
 #include <dalvik/opcode.h>
@@ -14,12 +14,11 @@ static inline int _anal_get_offset(RAnal *a, int type, int idx) {
 	return -1;
 }
 
-static inline const char *_anal_get_name(RAnal *a, int type, int idx) {
+static inline char *_anal_get_name(RAnal *a, int type, int idx) {
 	if (a && a->binb.bin && a->binb.get_name) {
-		return a->binb.get_name (a->binb.bin, type, idx,
+		return (char *)a->binb.get_name (a->binb.bin, type, idx,
 				(bool)a->coreb.cfggeti (a->coreb.core, "asm.pseudo"));
 	}
-
 	return NULL;
 }
 
@@ -271,7 +270,7 @@ static int dalvik_disassemble(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, 
 
 	int vA, vB, vC, vD, vE, vF, vG, vH, payload = 0;
 	char str[1024], *strasm = NULL;
-	const char *flag_str = NULL;
+	char *flag_str = NULL;
 	ut64 offset;
 	ut8 opcode = buf[0];
 
@@ -689,7 +688,7 @@ static int dalvik_disassemble(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, 
 			vD = (buf[4] & 0xf0) >> 4;
 			vC = (buf[4] & 0x0f);
 			vF = (buf[5] & 0xf0) >> 4;
-			vE  = (buf[5] & 0x0f);
+			vE = (buf[5] & 0x0f);
 			vH = (buf[7] << 8) | buf[6];
 
 			switch (vA) {
@@ -775,7 +774,7 @@ static int dalvik_disassemble(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, 
 	}
 
 	free (strasm);
-	free ((char *)flag_str);
+	free (flag_str);
 
 	return size;
 }

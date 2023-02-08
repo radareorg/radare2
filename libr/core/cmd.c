@@ -770,7 +770,7 @@ static int cmd_alias(void *data, const char *input) {
 	char *desc = strchr (buf, '?');
 
 	if (buf == def) {
-		eprintf ("No alias name given.\n");
+		R_LOG_ERROR ("No alias name given");
 		free (buf);
 		return 0;
 	}
@@ -887,13 +887,14 @@ static int cmd_alias(void *data, const char *input) {
 		bool use_b64 = (buf[1] == '*');
 		ht_pp_foreach (core->rcmd->aliases, print_aliases, &use_b64);
 	} else if (!*buf) {
-		const char **keys = r_cmd_alias_keys (core->rcmd);
+		char **keys = (char **)r_cmd_alias_keys (core->rcmd);
 		if (keys) {
 			int i;
-			for (i = 0; i < core->rcmd->aliases->count; i++) {
+			const int count = core->rcmd->aliases->count;
+			for (i = 0; i < count; i++) {
 				r_cons_printf ("$%s\n", keys[i]);
 			}
-			free ((char *)keys);
+			free (keys);
 		}
 	} else {
 		/* Execute or evaluate alias */
@@ -1267,7 +1268,7 @@ static char *langFromHashbang(RCore *core, const char *file) {
 		char firstLine[128] = {0};
 		int len = r_sandbox_read (fd, (ut8*)firstLine, sizeof (firstLine) - 1);
 		firstLine[len] = 0;
-		if (!strncmp (firstLine, "#!/", 3)) {
+		if (r_str_startswith (firstLine, "#!/")) {
 			// I CAN HAS A HASHBANG
 			char *nl = strchr (firstLine, '\n');
 			if (nl) {
@@ -5439,7 +5440,7 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 					}
 				}
 			} else {
-				eprintf ("Usage: cmd @@s:from to step\n");
+				R_LOG_ERROR ("Use the sequence iterator like this: 'cmd @@s:from to step'");
 			}
 			goto out_finish;
 		}

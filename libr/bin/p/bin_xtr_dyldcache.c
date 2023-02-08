@@ -76,7 +76,7 @@ static RBinXtrData *extract(RBin *bin, int idx) {
 		(struct r_bin_dyldcache_obj_t*)bin->cur->xtr_obj, idx, &nlib);
 
 	if (lib) {
-		RBinXtrMetadata *metadata = R_NEW0(RBinXtrMetadata);
+		RBinXtrMetadata *metadata = R_NEW0 (RBinXtrMetadata);
 		if (!metadata) {
 			free (lib);
 			return NULL;
