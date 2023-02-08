@@ -9,7 +9,7 @@ cd "$(dirname $0)"/..
 # Good: static void foo(void) {
 # NAME=use void on functions without parameters
 (git grep -e ^R_API -e ^static libr | grep -e '[a-z]() {' -e '[a-z]();') && exit 1
-
+(git grep 'R_NEW0(' libr | grep c:) && exit 1
 (git grep "=='" libr | grep -v '===') && exit 1
 (git grep '|Usage' libr) && exit 1
 # (git grep -e '_[a-z][a-z](' libr | grep -v '{'| grep c:) && exit 1

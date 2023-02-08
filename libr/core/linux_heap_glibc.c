@@ -902,10 +902,10 @@ static GH (RTcache)* GH (tcache_new) (RCore *core) {
 	GH (RTcache) *tcache = R_NEW0 (GH (RTcache));
 	if (core->dbg->glibc_version >= TCACHE_NEW_VERSION) {
 		tcache->type = NEW;
-		tcache->RHeapTcache.heap_tcache = R_NEW0(GH (RHeapTcache));
+		tcache->RHeapTcache.heap_tcache = R_NEW0 (GH (RHeapTcache));
 	} else {
 		tcache->type = OLD;
-		tcache->RHeapTcache.heap_tcache_pre_230 = R_NEW0(GH (RHeapTcachePre230));
+		tcache->RHeapTcache.heap_tcache_pre_230 = R_NEW0 (GH (RHeapTcachePre230));
 	}
 	return tcache;
 }

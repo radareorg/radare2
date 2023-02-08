@@ -187,7 +187,7 @@ static RList *symbols(RBinFile *bf) {
 }
 
 static RBinInfo *info(RBinFile *bf) {
-	RBinInfo *ret = R_NEW0(RBinInfo);
+	RBinInfo *ret = R_NEW0 (RBinInfo);
 	struct r_bin_xcoff64_obj *obj = (struct r_bin_xcoff64_obj*)bf->o->bin_obj;
 
 	ret->file = bf->file? strdup (bf->file): NULL;
