@@ -4320,29 +4320,29 @@ static bool bin_versioninfo(RCore *r, PJ *pj, int mode) {
 }
 
 static bool bin_signature(RCore *r, PJ *pj, int mode) {
+	bool have_signature = false;
 	RBinFile *cur = r_bin_cur (r->bin);
 	RBinPlugin *plg = r_bin_file_cur_plugin (cur);
+	if (IS_MODE_JSON (mode)) {
+		pj_o (pj);
+	}
 	if (plg && plg->signature) {
 		char *signature = plg->signature (cur, IS_MODE_JSON (mode));
 		if (signature) {
+			have_signature = true;
 			if (IS_MODE_JSON (mode)) {
-				pj_o (pj);
 				pj_k (pj, "signature");
 				pj_j (pj, signature);
-				pj_end (pj);
 			} else {
 				r_cons_println (signature);
 			}
 			free (signature);
 		}
-		return true;
 	}
 	if (IS_MODE_JSON (mode)) {
-		pj_o (pj);
 		pj_end (pj);
-		return true;
 	}
-	return false;
+	return have_signature;
 }
 
 static bool bin_header(RCore *r, int mode) {
