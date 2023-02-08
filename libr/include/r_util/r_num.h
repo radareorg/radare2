@@ -55,6 +55,7 @@ typedef struct r_num_t {
 	void *userptr;
 	int dbz; /// division by zero happened
 	RNumCalc nc;
+// R2_590 R_REF_TYPE
 } RNum;
 
 typedef ut64 (*RNumCallback)(struct r_num_t *self, const char *str, int *ok);

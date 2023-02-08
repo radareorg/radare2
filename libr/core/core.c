@@ -3176,6 +3176,7 @@ R_API bool r_core_init(RCore *core) {
 
 	r_bin_bind (core->bin, &(core->anal->binb));
 	r_bin_bind (core->bin, &(core->anal->arch->binb));
+	r_num_free (core->anal->arch->num);
 	core->anal->arch->num = core->num;
 	r_io_bind (core->io, &(core->search->iob));
 	r_io_bind (core->io, &(core->print->iob));
