@@ -7,6 +7,7 @@ r_arch_sources = [
   'arch_cond.c',
   'arch_value.c',
   'p/null/plugin.c',
+  'p/mcs96/plugin.c',
   'p/xtensa/plugin.c',
   'p/xtensa/gnu/elf32-xtensa.c',
   'p/xtensa/gnu/xtensa-dis.c',

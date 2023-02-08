@@ -1,8 +1,7 @@
-/* radare - LGPL - Copyright - 2015-2022 - condret */
+/* radare - LGPL - Copyright - 2015-2023 - condret */
 
 #include <r_asm.h>
-#include <r_lib.h>
-#include "../arch/mcs96/mcs96.h"
+#include "mcs96.h"
 
 static int mcs96_len(const ut8 *buf, int len, RAnalOp *op) {
 	int ret = 1;
@@ -98,7 +97,7 @@ static int mcs96_len(const ut8 *buf, int len, RAnalOp *op) {
 	return ret;
 }
 
-static int disassemble(RAnal *a, RAnalOp *op, const ut8 *buf, int len) {
+static int disassemble(RArchSession *a, RAnalOp *op, const ut8 *buf, int len) {
 	if (len > 1 && !memcmp (buf, "\xff\xff", 2)) {
 		return -1;
 	}
@@ -106,30 +105,30 @@ static int disassemble(RAnal *a, RAnalOp *op, const ut8 *buf, int len) {
 	return op->size;
 }
 
-static int _op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len, RAnalOpMask mask) {
-	int ilen = disassemble (anal, op, data, len);
+static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
+	int ilen = disassemble (as, op, op->bytes, op->size);
+	op->size = ilen;
 	if (mask & R_ARCH_OP_MASK_DISASM) {
 		// do nothing
 	}
-	return ilen;
+	return ilen > 0;
 }
 
-RAnalPlugin r_anal_plugin_mcs96 = {
+RArchPlugin r_arch_plugin_mcs96 = {
 	.name = "mcs96",
 	.desc = "Intel MCS96 microcontroller, also known as 8xC196 or 80196",
 	.arch = "mcs96",
 	.license = "LGPL3",
-	.op = &_op,
+	.decode = &decode,
 	.author = "condret",
-	.bits = 16,
+	.bits = R_SYS_BITS_PACK1 (16),
 	.endian = R_SYS_ENDIAN_NONE,
-	// .disassemble = &disassemble
 };
 
 #ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ANAL,
-	.data = &r_anal_plugin_mcs96,
+	.data = &r_arch_plugin_mcs96,
 	.version = R2_VERSION
 };
 #endif

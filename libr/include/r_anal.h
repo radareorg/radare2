@@ -1706,7 +1706,6 @@ extern RAnalPlugin r_anal_plugin_x86_udis;
 extern RAnalPlugin r_anal_plugin_xcore_cs;
 extern RAnalPlugin r_anal_plugin_arm_v35;
 extern RAnalPlugin r_anal_plugin_z80;
-extern RAnalPlugin r_anal_plugin_mcs96;
 extern RAnalPlugin r_anal_plugin_pyc;
 extern RAnalPlugin r_anal_plugin_pickle;
 extern RAnalPlugin r_anal_plugin_evm_cs;

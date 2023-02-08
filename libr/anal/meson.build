@@ -60,7 +60,6 @@ r_anal_sources = [
   'p/anal_arm_gnu.c',
   'p/anal_avr.c',
   'p/anal_bf.c',
-  'p/anal_mcs96.c',
   'p/anal_bpf.c',
   'p/anal_bpf_cs.c',
   'p/anal_chip8.c',
