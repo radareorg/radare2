@@ -819,8 +819,12 @@ static bool edf_consume_2_push_1(REsil *esil) {
 			const_result &= true;
 		} else {
 			src_node[i] = _edf_var_get (edf, src[i]);
-			RAnalEsilDFGNode *ec_node = (RAnalEsilDFGNode *)src_node[i]->data;
-			const_result &= !!(ec_node->type & R_ANAL_ESIL_DFG_TAG_CONST);
+			if (src_node[i]) {
+				RAnalEsilDFGNode *ec_node = (RAnalEsilDFGNode *)src_node[i]->data;
+				const_result &= !!(ec_node->type & R_ANAL_ESIL_DFG_TAG_CONST);
+			} else {
+				R_LOG_WARN ("Invalid node");
+			}
 		}
 		r_graph_add_edge (edf->flow, src_node[i], op_node);
 	}
