@@ -358,6 +358,7 @@ static int v850e0_op(RArchSession *a, RAnalOp *op, ut64 addr, const ut8 *buf, in
 		break;
 	case V850_DIVH:
 		op->type = R_ANAL_OP_TYPE_DIV;
+		// TODO add customop for signed division
 		r_strbuf_appendf (&op->esil, "%s,%s,0xffff,&,/,%s,=",
 						 F1_RN1(word1), F1_RN2(word1), F1_RN2(word1));
 		update_flags (op, V850_FLAG_OV | V850_FLAG_S | V850_FLAG_Z);
@@ -503,6 +504,35 @@ static int v850e0_op(RArchSession *a, RAnalOp *op, ut64 addr, const ut8 *buf, in
 		r_strbuf_appendf (&op->esil, "%u,%s,<<=", (ut8)F2_IMM(word1), F2_RN2(word1));
 		update_flags (op, V850_FLAG_CY | V850_FLAG_S | V850_FLAG_Z);
 		clear_flags (op, V850_FLAG_OV);
+		break;
+	case V850_SATADD:
+		op->type = R_ANAL_OP_TYPE_ADD;
+		// check overflow for msb sign and saturate accordingly
+		r_strbuf_appendf (&op->esil, "%s,%s,+=,31,$o,?{,31,$s,?{,0x7fffffff,%s,:=,}{,0x80000000,%s,:=,},}",
+			F1_RN1 (word1), F1_RN2 (word1), F1_RN2 (word1), F1_RN2 (word1));
+		break;
+	case V850_SATADD_IMM5:
+		op->type = R_ANAL_OP_TYPE_ADD;
+		// check overflow for msb sign and saturate accordingly
+		r_strbuf_appendf (&op->esil,
+			"0x%x,%s,+=,31,$o,sat,:=,sat,?{,31,$s,?{,0x7fffffff,%s,:=,}{,0x80000000,%s,:=,},}",
+			SEXT5 (F2_IMM (word1)), F2_RN2 (word1), F2_RN2 (word1), F2_RN2 (word1));
+		update_flags (op, -1);
+		break;
+	case V850_SATSUB:
+		op->type = R_ANAL_OP_TYPE_SUB;
+		// check overflow for msb sign and saturate accordingly
+		r_strbuf_appendf (&op->esil,
+			"%s,%s,-=,31,$o,sat,:=,sat,?{,31,$s,?{,0x7fffffff,%s,:=,}{,0x80000000,%s,:=,},}",
+			F1_RN1 (word1), F1_RN2 (word1), F1_RN2 (word1), F1_RN2 (word1));
+		update_flags (op, -1);
+		break;
+	case V850_SATSUBR:
+		op->type = R_ANAL_OP_TYPE_SUB;
+		r_strbuf_appendf (&op->esil,
+			"%s,NUM,%s,%s,:=,%s,-=,31,$o,sat,:=,sat,?{,31,$s,?{,0x7fffffff,%s,:=,}{,0x80000000,%s,:=,},}",
+			F1_RN2 (word1), F1_RN1 (word1), F1_RN2 (word1), F1_RN2 (word1), F1_RN2 (word1), F1_RN2 (word1));
+		update_flags (op, -1);
 		break;
 	case V850_BCOND:
 	case V850_BCOND2:
