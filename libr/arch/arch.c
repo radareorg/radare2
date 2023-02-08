@@ -179,7 +179,10 @@ R_API bool r_arch_set_arch(RArch *arch, char *archname) {
 }
 
 R_API bool r_arch_add(RArch *a, RArchPlugin *ap) {
-	r_return_val_if_fail (a && ap->name && ap->arch, false);
+	r_return_val_if_fail (a && ap, false);
+	if (!ap->name || !ap->arch) {
+		return false;
+	}
 	return !!r_list_append (a->plugins, ap);
 }
 
