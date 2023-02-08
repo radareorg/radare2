@@ -3116,15 +3116,18 @@ R_API bool r_core_init(RCore *core) {
 	r_asm_set_user_ptr (core->rasm, core);
 	core->anal = r_anal_new ();
 #if 1
+	// TODO: use r_ref_set
+	r_ref (core->rasm->config);
 	r_unref (core->print->config);
-	r_unref (core->anal->config);
-	r_unref (core->anal->reg->config);
-	r_ref (core->rasm->config);
 	core->print->config = core->rasm->config;
+
 	r_ref (core->rasm->config);
+	r_unref (core->anal->config);
 	core->anal->config = core->rasm->config;
+
 	r_ref (core->rasm->config);
-	core->anal->reg->config=core->rasm->config;
+	r_unref (core->anal->reg->config);
+	core->anal->reg->config = core->rasm->config;
 #else
 	r_ref_set (core->print->config, core->rasm->config);
 	r_ref_set (core->anal->config, core->rasm->config);
