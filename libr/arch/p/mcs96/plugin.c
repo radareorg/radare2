@@ -1,7 +1,6 @@
 /* radare - LGPL - Copyright - 2015-2023 - condret */
 
 #include <r_asm.h>
-#include <r_lib.h>
 #include "mcs96.h"
 
 static int mcs96_len(const ut8 *buf, int len, RAnalOp *op) {
@@ -98,7 +97,7 @@ static int mcs96_len(const ut8 *buf, int len, RAnalOp *op) {
 	return ret;
 }
 
-static int disassemble(RAnal *a, RAnalOp *op, const ut8 *buf, int len) {
+static int disassemble(RArchSession *a, RAnalOp *op, const ut8 *buf, int len) {
 	if (len > 1 && !memcmp (buf, "\xff\xff", 2)) {
 		return -1;
 	}
@@ -107,7 +106,7 @@ static int disassemble(RAnal *a, RAnalOp *op, const ut8 *buf, int len) {
 }
 
 static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
-	int ilen = disassemble (anal, op, op->bytes, op->size);
+	int ilen = disassemble (as, op, op->bytes, op->size);
 	op->size = ilen;
 	if (mask & R_ARCH_OP_MASK_DISASM) {
 		// do nothing
@@ -124,7 +123,6 @@ RArchPlugin r_arch_plugin_mcs96 = {
 	.author = "condret",
 	.bits = R_SYS_BITS_PACK1 (16),
 	.endian = R_SYS_ENDIAN_NONE,
-	// .disassemble = &disassemble
 };
 
 #ifndef R2_PLUGIN_INCORE
