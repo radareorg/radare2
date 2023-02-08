@@ -284,13 +284,9 @@ R_API void r_cons_canvas_write(RConsCanvas *c, const char *_s) {
 	if (!c || !_s || !*_s || !R_BETWEEN (0, c->y, c->h - 1) || !R_BETWEEN (0, c->x, c->w - 1)) {
 		return;
 	}
-#if 1
-	char *os = r_str_ansi_resetbg (strdup (_s), c->bgcolor);
+	char *oos = strdup (_s);
+	char *os = r_str_ansi_resetbg (oos, c->bgcolor);
 	const char *s = os;
-#else
-	char *os = NULL;
-	const char *s = _s;
-#endif
 	char ch;
 	int left, slen, attr_len, piece_len;
 	int orig_x = c->x, attr_x = c->x;
@@ -351,6 +347,7 @@ R_API void r_cons_canvas_write(RConsCanvas *c, const char *_s) {
 	} while (*s && !r_cons_is_breaked ());
 	r_cons_break_pop ();
 	c->x = orig_x;
+	free (oos);
 	free (os);
 }
 
