@@ -140,7 +140,7 @@ static bool check_buffer(RBinFile *bf, RBuffer *buf) {
 }
 
 static RList *entries(RBinFile *bf) {
-	BootImageObj *bio = bf->o->bin_obj;
+	BootImageObj *bio = R_UNWRAP3 (bf, o, bin_obj);
 	RBinAddr *ptr = NULL;
 	if (!bio) {
 		return NULL;

@@ -301,7 +301,6 @@ static void _6502_anal_esil_flags(RAnalOp *op, ut8 data0) {
 		enabled = 0;
 		flag = 'V';
 		break;
-		break;
 	}
 	r_strbuf_setf (&op->esil, "%d,%c,=", enabled, flag);
 }

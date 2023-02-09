@@ -9,7 +9,7 @@ static bool load(RBin *bin) {
 	if (!bin->file) {
 	   	bin->file = bin->cur->file;
 	}
-	return bin->cur->xtr_obj? true : false;
+	return bin->cur->xtr_obj != NULL;
 }
 
 

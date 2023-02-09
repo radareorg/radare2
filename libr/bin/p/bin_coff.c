@@ -662,15 +662,6 @@ static RBinInfo *info(RBinFile *bf) {
 	return ret;
 }
 
-static RList *fields(RBinFile *bf) {
-	return NULL;
-}
-
-
-static ut64 size(RBinFile *bf) {
-	return 0;
-}
-
 static bool check_buffer(RBinFile *bf, RBuffer *buf) {
 #if 0
 TODO: do more checks here to avoid false positives
@@ -703,8 +694,6 @@ RBinPlugin r_bin_plugin_coff = {
 	.symbols = &symbols,
 	.imports = &imports,
 	.info = &info,
-	.fields = &fields,
-	.size = &size,
 	.libs = &libs,
 	.relocs = &relocs,
 	.patch_relocs = &patch_relocs

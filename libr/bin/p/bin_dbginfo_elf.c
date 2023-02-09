@@ -12,7 +12,7 @@ static bool get_line(RBinFile *bf, ut64 addr, char *file, int len, int *line) {
 			char *p = strchr (ret, '|');
 			if (p) {
 				*p = '\0';
-				strncpy (file, ret, len);
+				r_str_ncpy (file, ret, len);
 				*line = atoi (p + 1);
 				return true;
 			}

@@ -5,7 +5,7 @@
 
 RArchPlugin r_arch_plugin_null = {
 	.name = "null",
-	.desc = "Fallback/Null archysis plugin",
+	.desc = "Fallback/Null arch plugin",
 	.arch = "none",
 	.license = "LGPL3",
 	.bits = R_SYS_BITS_PACK4 (8, 16, 32, 64)
