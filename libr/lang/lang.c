@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2009-2022 - pancake */
+/* radare2 - LGPL - Copyright 2009-2023 - pancake */
 
 #include <r_lang.h>
 #include <r_util.h>
@@ -12,6 +12,7 @@ R_LIB_VERSION (r_lang);
 #include "p/s.c"
 #include "p/v.c"
 #include "p/vala.c"
+#include "p/nim.c"
 #include "p/rust.c"
 #include "p/zig.c"
 #if R2__UNIX__
@@ -63,6 +64,7 @@ R_API RLang *r_lang_new(void) {
 	r_lang_add (lang, &r_lang_plugin_asm);
 	r_lang_add (lang, &r_lang_plugin_qjs);
 	r_lang_add (lang, &r_lang_plugin_tsc);
+	r_lang_add (lang, &r_lang_plugin_nim);
 
 	return lang;
 }

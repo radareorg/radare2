@@ -1404,6 +1404,10 @@ R_API bool r_core_run_script(RCore *core, const char *file) {
 					lang_run_file (core, core->lang, cmd);
 					free (cmd);
 					ret = 1;
+				} else if (!strcmp (ext, "nim")) {
+					r_lang_use (core->lang, "nim");
+					lang_run_file (core, core->lang, file);
+					ret = 1;
 				} else if (!strcmp (ext, "vala")) {
 					r_lang_use (core->lang, "vala");
 					lang_run_file (core, core->lang, file);
