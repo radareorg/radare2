@@ -186,10 +186,6 @@ static RList *imports(RBinFile *bf) {
 	return r_bin_java_get_imports (bf->o->bin_obj);
 }
 
-static RList *fields(RBinFile *bf) {
-	return NULL;// r_bin_java_get_fields (bf->o->bin_obj);
-}
-
 static RList *libs(RBinFile *bf) {
 	return r_bin_java_get_lib_names (bf->o->bin_obj);
 }
@@ -211,7 +207,6 @@ RBinPlugin r_bin_plugin_java = {
 	.imports = &imports,
 	.strings = &strings,
 	.info = &info,
-	.fields = fields,
 	.libs = libs,
 	.lines = &lines,
 	.classes = classes,

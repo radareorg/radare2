@@ -7,7 +7,8 @@ static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadadd
 }
 
 static void destroy(RBinFile *bf) {
-	r_buf_free (bf->o->bin_obj);
+	RBuffer *buf = R_UNWRAP3 (bf, o, bin_obj);
+	r_buf_free (buf);
 }
 
 static RList *strings(RBinFile *bf) {

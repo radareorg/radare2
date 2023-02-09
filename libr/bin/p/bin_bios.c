@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2013-2019 - pancake */
+/* radare - LGPL - Copyright 2013-2023 - pancake */
 
 #include <r_bin.h>
 #include "../i/private.h"
@@ -19,7 +19,7 @@ static bool check_buffer(RBinFile *bf, RBuffer *buf) {
 	const ut32 ep = sz - 0x10000 + 0xfff0; /* F000:FFF0 address */
 	/* hacky check to avoid detecting multidex or MZ bins as bios */
 	/* need better fix for this */
-	ut8 tmp[3];
+	ut8 tmp[3] = {0};
 	int r = r_buf_read_at (buf, 0, tmp, sizeof (tmp));
 	if (r <= 0 || !memcmp (tmp, "dex", 3) || !memcmp (tmp, "MZ", 2)) {
 		return false;
