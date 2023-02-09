@@ -120,7 +120,6 @@ gdb:
 infrastructure:
   - .appveyor.yml
   - .travis.yml
-  - .lgtm.yml
   - .builds/**/*
   - .github/workflows/*
 
