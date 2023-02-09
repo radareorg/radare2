@@ -932,6 +932,19 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 	case X86_INS_SHL:
 	case X86_INS_SAL:
 		{
+		ut32 bitsize = 0;
+		src = getarg (&gop, 1, 0, NULL, NULL);
+		dst = getarg (&gop, 0, 0, NULL, NULL);
+		// dst2 = getarg (&gop, 0, 1, "<<", &bitsize);
+#if 0
+	// https://c9x.me/x86/html/file_module_x86_id_285.html
+	The CF flag contains the value of the last bit shifted out of the destination operand;
+		it is undefined for SHL and SHR instructions where the count is greater than or equal to the size (in bits) of the destination operand.
+	The OF flag is affected only for 1-bit shifts (see "Description" above); otherwise, it is undefined.
+	The SF, ZF, and PF flags are set according to the result
+	If the count is 0, the flags are not affected.
+	For a non-zero count, the AF flag is undefined.
+#endif
 		ut64 val = 0;
 		switch (gop.insn->detail->x86.operands[0].size) {
 		case 1:
@@ -950,15 +963,17 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 			R_LOG_ERROR ("unknown operand size: %d", gop.insn->detail->x86.operands[0].size);
 			val = 256;
 		}
-		ut32 bitsize;
-		src = getarg (&gop, 1, 0, NULL, NULL);
-		dst = getarg (&gop, 0, 0, NULL, NULL);
-		dst2 = getarg (&gop, 0, 1, "<<", &bitsize);
-		esilprintf (op, "0,%s,!,!,?{,1,%s,-,%s,<<,0x%"PFMT64x",&,!,!,^,},%s,%s,$z,zf,:=,$p,pf,:=,%d,$s,sf,:=,cf,=",
-			src, src, dst, val, src, dst2, bitsize - 1);
-		free (src);
-		free (dst);
-		free (dst2);
+		// experimental simplified expression
+		esilprintf (op,
+		"%s,0x%"PFMT64x",&,POP,$z,cf,:=,"
+		"%s,%s,<<=,"
+		"$z,zf,:=,"
+		"$p,pf,:=,"
+		"%d,$s,sf,:="
+		,
+		dst, val,
+		src, dst,
+		bitsize - 1);
 	   	}
 		break;
 	case X86_INS_SALC:
