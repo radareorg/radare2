@@ -1,12 +1,12 @@
-/* radare - LGPL - Copyright 2009-2022 - pancake */
+/* radare - LGPL - Copyright 2009-2023 - pancake */
 
 #include <r_reg.h>
-#include <r_util.h>
 
 R_LIB_VERSION (r_reg);
 
 static const char * const types[R_REG_TYPE_LAST + 1] = {
 	// PAST "gpr", "drx", "fpu", "mmx", "xmm", "ymm", "flg", "seg", NULL
+	// R2_590 Add "pri", // for privileged registers
 	"gpr", "drx", "fpu", "vec64", "vec128", "vec256", "vec512", "flg", "seg", NULL
 	// FUTURE "gpr", "drx", "fpu", "vec", "flg", "seg", NULL
 };

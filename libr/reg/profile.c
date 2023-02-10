@@ -379,9 +379,9 @@ static char *gdb_to_r2_profile(const char *gdb) {
 				type_bits |= restore;
 			} else if (r_str_startswith (gptr, "float")) {
 				type_bits |= float_;
-			} else if (r_str_startswith (gptr, "sse")) {
+			} else if (r_str_startswith (gptr, "sse")) { // this is vector
 				type_bits |= sse;
-			} else if (r_str_startswith (gptr, "mmx")) {
+			} else if (r_str_startswith (gptr, "mmx")) { // this is vector too
 				type_bits |= mmx;
 			} else if (r_str_startswith (gptr, "vector")) {
 				type_bits |= vector;
@@ -405,11 +405,20 @@ static char *gdb_to_r2_profile(const char *gdb) {
 		if (!(type_bits & sse) && !(type_bits & float_)) {
 			type_bits |= gpr;
 		}
-		// Print line
-		r_strbuf_appendf (sb, "%s\t%s\t.%d\t%d\t0\n",
-			// Ref: Comment above about more register type mappings
-			((type_bits & mmx) || (type_bits & float_) || (type_bits & sse)) ? "fpu" : "gpr",
-			name, size * 8, offset);
+		const char *type = ((type_bits & mmx) || (type_bits & float_) || (type_bits & sse)) ? "fpu" : "gpr";
+		if (isupper (*name)) {
+#if R2_590
+			// assume uppercase register names are only used for privileged registers
+			type = "pri";
+			char *loname = r_str_case (strdup (name), false);
+			r_strbuf_appendf (sb, "%s\t%s\t.%d\t%d\t0\n", type, loname, size * 8, offset);
+			free (loname);
+#else
+			R_LOG_DEBUG ("Ignoring upper case register '%s', considering it privileged", name);
+#endif
+		} else {
+			r_strbuf_appendf (sb, "%s\t%s\t.%d\t%d\t0\n", type, name, size * 8, offset);
+		}
 		// Go to next line
 		if (!ptr1) {
 			break;
