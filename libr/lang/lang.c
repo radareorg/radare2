@@ -12,7 +12,6 @@ R_LIB_VERSION (r_lang);
 #include "p/s.c"
 #include "p/v.c"
 #include "p/vala.c"
-#include "p/nim.c"
 #include "p/rust.c"
 #include "p/zig.c"
 #if R2__UNIX__
@@ -25,6 +24,7 @@ R_LIB_VERSION (r_lang);
 #include "p/qjs.c"
 #include "p/poke.c"
 #include "p/tsc.c"
+#include "p/nim.c"
 
 R_API RLang *r_lang_new(void) {
 	RLang *lang = R_NEW0 (RLang);
