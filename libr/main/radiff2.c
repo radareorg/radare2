@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2022 - pancake */
+/* radare - LGPL - Copyright 2009-2023 - pancake */
 
 #define R_LOG_ORIGIN "radiff2"
 
@@ -29,6 +29,7 @@ enum {
 	GRAPH_TINY_MODE,
 	GRAPH_INTERACTIVE_MODE,
 	GRAPH_DOT_MODE,
+	GRAPH_MERMAID_MODE,
 	GRAPH_STAR_MODE,
 	GRAPH_GML_MODE
 };
@@ -978,6 +979,9 @@ static void __print_diff_graph(RCore *c, ut64 off, int gmode) {
 	case GRAPH_DOT_MODE:
 		r_core_anal_graph (c, off, opts);
 		break;
+	case GRAPH_MERMAID_MODE:
+		r_core_agraph_print (c, use_utf8, "m");
+		break;
 	case GRAPH_STAR_MODE:
 		r_core_anal_graph (c, off, opts |  R_CORE_ANAL_STAR);
 		break;
@@ -1095,6 +1099,7 @@ R_API int r_main_radiff2(int argc, const char **argv) {
 			case 't': ro.gmode = GRAPH_TINY_MODE; break;
 			case 'd': ro.gmode = GRAPH_DOT_MODE; break;
 			case 's': ro.gmode = GRAPH_STAR_MODE; break;
+			case 'm': ro.gmode = GRAPH_MERMAID_MODE; break;
 			case 'g': ro.gmode = GRAPH_GML_MODE; break;
 			case 'a':
 			default: ro.gmode = GRAPH_DEFAULT_MODE; break;
