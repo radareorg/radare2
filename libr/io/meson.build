@@ -18,6 +18,7 @@ r_io_sources = [
   'p/io_fd.c',
   'p/io_bfdbg.c',
   'p/io_bochs.c',
+  'p/io_dap.c',
   'p/io_socket.c',
   'p/io_debug.c',
   'p/io_default.c',

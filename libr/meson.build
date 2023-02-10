@@ -348,6 +348,7 @@ io_plugins += [
   'reg',
   'bfdbg',
   'bochs',
+  'dap',
   'debug',
   'gdb',
   'gprobe',

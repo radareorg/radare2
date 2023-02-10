@@ -619,6 +619,7 @@ extern RIOPlugin r_io_plugin_xalz;
 extern RIOPlugin r_io_plugin_reg;
 extern RIOPlugin r_io_plugin_treebuf;
 extern RIOPlugin r_io_plugin_serial;
+extern RIOPlugin r_io_plugin_dap;
 
 #if __cplusplus
 }
