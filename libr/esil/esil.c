@@ -15,17 +15,7 @@
 
 #define ESIL_MACRO 0
 #define IFDBG if (esil && esil->verbose > 1)
-#define IFVBS if (esil && esil->verbose > 0)
 #define ERR(...) if (esil->verbose) { R_LOG_ERROR (__VA_ARGS__); }
-#define FLG(x) R_ESIL_FLAG_##x
-#define cpuflag(x, y)\
-if (esil) {\
-	if (y) { \
-		R_BIT_SET (&esil->flags, FLG (x));\
-	} else { \
-		R_BIT_UNSET (&esil->flags, FLG (x));\
-	} \
-}
 
 /* Returns the number that has bits + 1 least significant bits set. */
 static inline ut64 genmask(int bits) {
@@ -243,7 +233,12 @@ static bool alignCheck(REsil *esil, ut64 addr) {
 }
 
 static bool internal_esil_mem_read(REsil *esil, ut64 addr, ut8 *buf, int len) {
-	r_return_val_if_fail (esil && esil->anal && esil->anal->iob.io, 0);
+	r_return_val_if_fail (esil && esil->anal, false);
+	RIOBind *iob = &esil->anal->iob;
+	RIO *io = iob->io;
+	if (!io || addr == UT64_MAX) {
+		return false;
+	}
 
 	addr &= esil->addrmask;
 	if (!alignCheck (esil, addr)) {
@@ -275,7 +270,12 @@ static bool internal_esil_mem_read(REsil *esil, ut64 addr, ut8 *buf, int len) {
 }
 
 static bool internal_esil_mem_read_no_null(REsil *esil, ut64 addr, ut8 *buf, int len) {
-	r_return_val_if_fail (esil && esil->anal && esil->anal->iob.io, 0);
+	r_return_val_if_fail (esil && esil->anal, false);
+	RIOBind *iob = &esil->anal->iob;
+	RIO *io = iob->io;
+	if (!io || addr == UT64_MAX) {
+		return false;
+	}
 
 	addr &= esil->addrmask;
 	if (!alignCheck (esil, addr)) {
@@ -284,10 +284,10 @@ static bool internal_esil_mem_read_no_null(REsil *esil, ut64 addr, ut8 *buf, int
 		return false;
 	}
 	//TODO: Check if error return from read_at.(on previous version of r2 this call always return len)
-	(void)esil->anal->iob.read_at (esil->anal->iob.io, addr, buf, len);
+	(void)iob->read_at (io, addr, buf, len);
 	// check if request address is mapped , if don't fire trap and esil ioer callback
 	// now with siol, read_at return true/false can't be used to check error vs len
-	if (!esil->anal->iob.is_valid_offset (esil->anal->iob.io, addr, false)) {
+	if (!iob->is_valid_offset (io, addr, false)) {
 		if (esil->iotrap) {
 			esil->trap = R_ANAL_TRAP_READ_ERR;
 			esil->trap_code = addr;
@@ -330,8 +330,14 @@ R_API bool r_esil_mem_read(REsil *esil, ut64 addr, ut8 *buf, int len) {
 
 static bool internal_esil_mem_write(REsil *esil, ut64 addr, const ut8 *buf, int len) {
 	int ret = 0;
-	if (!esil || !esil->anal || !esil->anal->iob.io || esil->nowrite) {
+	r_return_val_if_fail (esil && esil->anal, false);
+	if (esil->nowrite) {
 		return 0;
+	}
+	RIOBind *iob = &esil->anal->iob;
+	RIO *io = iob->io;
+	if (!io || addr == UT64_MAX) {
+		return false;
 	}
 	addr &= esil->addrmask;
 	if (!alignCheck (esil, addr)) {
@@ -346,12 +352,12 @@ static bool internal_esil_mem_write(REsil *esil, ut64 addr, const ut8 *buf, int 
 			}
 		}
 	}
-	if (esil->anal->iob.write_at (esil->anal->iob.io, addr, buf, len)) {
+	if (iob->write_at (io, addr, buf, len)) {
 		ret = len;
 	}
 	// check if request address is mapped , if don't fire trap and esil ioer callback
 	// now with siol, write_at return true/false can't be used to check error vs len
-	if (!esil->anal->iob.is_valid_offset (esil->anal->iob.io, addr, false)) {
+	if (!iob->is_valid_offset (io, addr, false)) {
 		if (esil->iotrap) {
 			esil->trap = R_ANAL_TRAP_WRITE_ERR;
 			esil->trap_code = addr;
@@ -364,20 +370,23 @@ static bool internal_esil_mem_write(REsil *esil, ut64 addr, const ut8 *buf, int 
 }
 
 static bool internal_esil_mem_write_no_null(REsil *esil, ut64 addr, const ut8 *buf, int len) {
+	r_return_val_if_fail (esil && esil->anal, false);
+	RIOBind *iob = &esil->anal->iob;
+	RIO *io = iob->io;
 	bool ret = false;
-	if (!esil || !esil->anal || !esil->anal->iob.io || !addr) {
+	if (!io || addr == UT64_MAX) {
 		return false;
 	}
 	if (esil->nowrite) {
 		return false;
 	}
 	addr &= esil->addrmask;
-	if (esil->anal->iob.write_at (esil->anal->iob.io, addr, buf, len)) {
+	if (iob->write_at (io, addr, buf, len)) {
 		ret = len;
 	}
 	// check if request address is mapped , if don't fire trap and esil ioer callback
 	// now with siol, write_at return true/false can't be used to check error vs len
-	if (!esil->anal->iob.is_valid_offset (esil->anal->iob.io, addr, false)) {
+	if (!iob->is_valid_offset (io, addr, false)) {
 		if (esil->iotrap) {
 			esil->trap = R_ANAL_TRAP_WRITE_ERR;
 			esil->trap_code = addr;
@@ -429,9 +438,7 @@ static bool internal_esil_reg_write(REsil *esil, const char *regname, ut64 num) 
 		RRegItem *ri = r_reg_get (esil->anal->reg, regname, -1);
 		if (ri) {
 			r_reg_set_value (esil->anal->reg, ri, num);
-			if (esil->verbose) {
-				eprintf ("%s = %x\n", regname, (int)num);
-			}
+			R_LOG_DEBUG ("%s = %x", regname, (int)num);
 			r_unref (ri);
 			return true;
 		}
@@ -445,10 +452,11 @@ static bool internal_esil_reg_write(REsil *esil, const char *regname, ut64 num) 
 //	- condret
 static bool internal_esil_reg_write_no_null(REsil *esil, const char *regname, ut64 num) {
 	r_return_val_if_fail (esil && esil->anal && esil->anal->reg, false);
+	RReg *reg = esil->anal->reg;
 
-	const char *pc = r_reg_get_name (esil->anal->reg, R_REG_NAME_PC);
-	const char *sp = r_reg_get_name (esil->anal->reg, R_REG_NAME_SP);
-	const char *bp = r_reg_get_name (esil->anal->reg, R_REG_NAME_BP);
+	const char *pc = r_reg_get_name (reg, R_REG_NAME_PC);
+	const char *sp = r_reg_get_name (reg, R_REG_NAME_SP);
+	const char *bp = r_reg_get_name (reg, R_REG_NAME_BP);
 
 	if (!pc) {
 		R_LOG_WARN ("RReg profile does not contain PC register");
@@ -462,9 +470,9 @@ static bool internal_esil_reg_write_no_null(REsil *esil, const char *regname, ut
 		R_LOG_WARN ("RReg profile does not contain BP register");
 		return false;
 	}
-	RRegItem *ri = r_reg_get (esil->anal->reg, regname, -1);
-	if (ri && ri->name && ((strcmp (ri->name , pc) && strcmp (ri->name, sp) && strcmp (ri->name, bp)) || num)) { //I trust k-maps
-		r_reg_set_value (esil->anal->reg, ri, num);
+	RRegItem *ri = r_reg_get (reg, regname, -1);
+	if (ri && ri->name && ((strcmp (ri->name, pc) && strcmp (ri->name, sp) && strcmp (ri->name, bp)) || num)) { //I trust k-maps
+		r_reg_set_value (reg, ri, num);
 		r_unref (ri);
 		return true;
 	}
@@ -505,17 +513,16 @@ static int not_a_number(REsil *esil, const char *str) {
 }
 
 R_API int r_esil_get_parm_type(REsil *esil, const char *str) {
-	int len, i;
-
-	if (!str || !(len = strlen (str))) {
+	if (R_STR_ISEMPTY (str)) {
 		return R_ESIL_PARM_INVALID;
 	}
-	if (!strncmp (str, "0x", 2)) {
+	if (r_str_startswith (str, "0x")) {
 		return R_ESIL_PARM_NUM;
 	}
 	if (!((IS_DIGIT (str[0])) || str[0] == '-')) {
 		return not_a_number (esil, str);
 	}
+	int i, len = strlen (str);
 	for (i = 1; i < len; i++) {
 		if (!(IS_DIGIT (str[i]))) {
 			return not_a_number (esil, str);
@@ -545,9 +552,7 @@ static bool get_parm_size(REsil *esil, const char *str, ut64 *num, int *size) {
 		}
 		return true;
 	default:
-		if (esil->verbose) {
-			eprintf ("Invalid arg (%s)\n", str);
-		}
+		R_LOG_DEBUG ("Invalid esil arg to find parm size (%s)", str);
 		esil->parse_stop = 1;
 		break;
 	}
@@ -560,7 +565,7 @@ R_API int r_esil_get_parm(REsil *esil, const char *str, ut64 *num) {
 
 R_API bool r_esil_reg_write(REsil *esil, const char *dst, ut64 num) {
 	bool ret = 0;
-	IFDBG { eprintf ("%s=0x%" PFMT64x "\n", dst, num); }
+	R_LOG_DEBUG ("%s=0x%" PFMT64x, dst, num);
 	if (esil && esil->cb.hook_reg_write) {
 		ret = esil->cb.hook_reg_write (esil, dst, &num);
 	}
@@ -696,6 +701,7 @@ static bool esil_cf(REsil *esil) {
 
 // checks if there was a borrow from bit x (x,$b)
 static bool esil_bf(REsil *esil) {
+	r_return_val_if_fail (esil, false);
 	char *src = r_esil_pop (esil);
 
 	if (!src) {
@@ -815,7 +821,7 @@ static bool esil_weak_eq(REsil *esil) {
 	char *dst = r_esil_pop (esil);
 	char *src = r_esil_pop (esil);
 
-	if (!(dst && src && (r_esil_get_parm_type(esil, dst) == R_ESIL_PARM_REG))) {
+	if (!(dst && src && (r_esil_get_parm_type (esil, dst) == R_ESIL_PARM_REG))) {
 		free (dst);
 		free (src);
 		return false;
@@ -1099,14 +1105,16 @@ static int signed_compare_gt(ut64 a, ut64 b, ut64 size) {
 }
 
 static void pushnums(REsil *esil, const char *src, ut64 num2, const char *dst, ut64 num) {
+	r_return_if_fail (esil);
 	esil->old = num;
 	esil->cur = num - num2;
-	RRegItem *ri = r_reg_get (esil->anal->reg, dst, -1);
+	RReg *reg = esil->anal->reg;
+	RRegItem *ri = r_reg_get (reg, dst, -1);
 	if (ri) {
 		esil->lastsz = esil_internal_sizeof_reg (esil, dst);
 		r_unref (ri);
 	} else {
-		ri = r_reg_get (esil->anal->reg, src, -1);
+		ri = r_reg_get (reg, src, -1);
 		if (ri) {
 			esil->lastsz = esil_internal_sizeof_reg (esil, src);
 			r_unref (ri);
@@ -1119,6 +1127,7 @@ static void pushnums(REsil *esil, const char *src, ut64 num2, const char *dst, u
 
 // This function also sets internal vars which is used in flag calculations.
 static bool esil_cmp(REsil *esil) {
+	r_return_val_if_fail (esil, false);
 	ut64 num, num2;
 	bool ret = false;
 	char *dst = r_esil_pop (esil);
@@ -1170,6 +1179,15 @@ JBE: CF = 1 || ZF = 1
  * Defining new cpu flags
  */
 #if 0
+#define FLG(x) R_ESIL_FLAG_##x
+#define cpuflag(x, y)\
+if (esil) {\
+	if (y) { \
+		R_BIT_SET (&esil->flags, FLG (x));\
+	} else { \
+		R_BIT_UNSET (&esil->flags, FLG (x));\
+	} \
+}
 static int esil_ifset(REsil *esil) {
 	char *s, *src = r_esil_pop (esil);
 	for (s=src; *s; s++) {
@@ -2849,23 +2867,26 @@ static bool esil_num(REsil *esil) {
 
 /* duplicate the last element in the stack */
 static bool esil_dup(REsil *esil) {
-	if (!esil || !esil->stack || esil->stackptr < 1 || esil->stackptr > (esil->stacksize - 1)) {
+	r_return_val_if_fail (esil, false);
+	const int stackptr = esil->stackptr;
+	if (!esil->stack || stackptr < 1 || stackptr > (esil->stacksize - 1)) {
 		return false;
 	}
-	return r_esil_push (esil, esil->stack[esil->stackptr-1]);
+	return r_esil_push (esil, esil->stack[stackptr - 1]);
 }
 
 static bool esil_swap(REsil *esil) {
-	char *tmp;
-	if (!esil || !esil->stack || esil->stackptr < 2) {
+	r_return_val_if_fail (esil, false);
+	const int stackptr = esil->stackptr;
+	if (!esil->stack || stackptr < 2) {
 		return false;
 	}
-	if (!esil->stack[esil->stackptr-1] || !esil->stack[esil->stackptr-2]) {
+	if (!esil->stack[stackptr - 1] || !esil->stack[stackptr - 2]) {
 		return false;
 	}
-	tmp = esil->stack[esil->stackptr-1];
-	esil->stack[esil->stackptr-1] = esil->stack[esil->stackptr-2];
-	esil->stack[esil->stackptr-2] = tmp;
+	char *tmp = esil->stack[stackptr - 1];
+	esil->stack[stackptr - 1] = esil->stack[stackptr - 2];
+	esil->stack[stackptr - 2] = tmp;
 	return true;
 }
 
@@ -3744,6 +3765,7 @@ R_API int r_esil_condition(REsil *esil, const char *str) {
 #define	OT_MEMR	R_ESIL_OP_TYPE_MEM_READ
 
 R_API void r_esil_setup_macros(REsil *esil) {
+	r_return_if_fail (esil);
 #if ESIL_MACRO
 	OP ("++", esil_inc_macro, 1, 1, OT_MATH);
 	OP ("++=", esil_inceq_macro, 1, 1, OT_MATH);
@@ -3760,6 +3782,7 @@ R_API void r_esil_setup_macros(REsil *esil) {
 }
 
 R_API void r_esil_setup_ops(REsil *esil) {
+	r_return_if_fail (esil);
 	OP ("$", esil_interrupt, 0, 1, OT_UNK); // hm, type seems a bit wrong
 	OP ("()", esil_syscall, 0, 1, OT_UNK);  // same
 	OP ("$z", esil_zf, 1, 0, OT_UNK);
