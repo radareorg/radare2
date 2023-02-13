@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2010-2022 - pancake */
+/* radare - LGPL - Copyright 2010-2023 - pancake */
 
 #include <r_core.h>
 #include <sdb/ht_uu.h>
@@ -1912,6 +1912,7 @@ static const char *get_syscall_register(RCore *core) {
 	}
 	return a0;
 }
+
 // IMHO This code must be deleted
 static int emulateSyscallPrelude(RCore *core, ut64 at, ut64 curpc) {
 	int i, inslen, bsize = R_MIN (64, core->blocksize);
@@ -2002,6 +2003,7 @@ static void do_syscall_search(RCore *core, struct search_parameters *param) {
 	const char *a0 = get_syscall_register (core);
 	char *esp = r_str_newf ("%s,=", a0);
 	char *esp32 = NULL;
+	r_reg_arena_push (core->anal->reg);
 	if (core->anal->config->bits == 64) {
 		const char *reg = r_reg_64_to_32 (core->anal->reg, a0);
 		if (reg) {
@@ -2055,7 +2057,7 @@ static void do_syscall_search(RCore *core, struct search_parameters *param) {
 			}
 #endif
 			if ((aop.type == R_ANAL_OP_TYPE_SWI) && ret) { // && (aop.val > 10)) {
-				int scVector = -1; // int 0x80, svc 0x70, ...
+				int scVector = aop.val; // int 0x80, svc 0x70, ...
 				int scNumber = 0; // r0/eax/...
 #if USE_EMULATION
 				// This for calculating no of bytes to be subtracted , to get n instr above syscall
@@ -2068,12 +2070,23 @@ static void do_syscall_search(RCore *core, struct search_parameters *param) {
 				scNumber = syscallNumber;
 #endif
 #if 1
+				// scNumber = aop.val;
 				if (scNumber < 0 || scNumber > 0xFFFFF) {
-					goto theverynext;
+					scNumber = aop.val;
+					if (scNumber < 0 || scNumber > 0xFFFFF) {
+						R_LOG_DEBUG ("INVALID SYSCALL at 0x%08"PFMT64x" NUMBER %d", aop.addr, scNumber);
+						// r_core_cmd0 (core, "dr0");
+						goto theverynext;
+					}
 				}
 #endif
 				scVector = (aop.val > 0)? aop.val: -1; // int 0x80 (aop.val = 0x80)
 				RSyscallItem *item = r_syscall_get (core->anal->syscall, scNumber, scVector);
+				if (!item) {
+					if (scVector > 0x10 && scVector < 128) {
+						item = r_syscall_get (core->anal->syscall, scVector, -1);
+					}
+				}
 				if (item) {
 					if (param->pj) {
 						pj_o (param->pj);
@@ -2114,6 +2127,7 @@ static void do_syscall_search(RCore *core, struct search_parameters *param) {
 					r_core_seek (core, here, true);
 				}
 				count++;
+				// r_core_cmd0 (core, "dr0");
 				if (search->maxhits > 0 && count >= search->maxhits) {
 					r_anal_op_fini (&aop);
 					break;
@@ -2139,6 +2153,7 @@ beach:
 		pj_end (param->pj);
 		pj_end (param->pj);
 	}
+	// r_core_cmd0 (core, "dr0");
 	r_core_seek (core, oldoff, true);
 	r_esil_free (esil);
 	r_cons_break_pop ();
@@ -2146,6 +2161,7 @@ beach:
 	free (esp32);
 	free (esp);
 	free (previnstr);
+	r_reg_arena_pop (core->anal->reg);
 }
 
 static void do_ref_search(RCore *core, ut64 addr,ut64 from, ut64 to, struct search_parameters *param) {

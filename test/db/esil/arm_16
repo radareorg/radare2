@@ -1137,8 +1137,70 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=arm s110 syscalls /as twice
+FILE=bins/elf/BLE_Beacon2.NRF51822_OTA.bin
+ARGS=-aarm -b16 -easm.os=s110 -m 0x16000
+CMDS=<<EOF
+/as
+?e --
+/as
+EOF
+EXPECT=<<EOF
+0x000168d0 sd_evt_get
+0x000168f2 sd_ble_evt_get
+0x00016b42 sd_ble_gap_sec_params_reply
+0x00016c1c sd_ble_gap_device_name_set
+0x00016c28 sd_ble_gap_appearance_set
+0x00016c32 sd_ble_gap_ppcp_set
+0x00016c3a sd_ble_gap_tx_power_set
+0x00016ce4 sd_ble_gatts_service_add
+0x00016ed6 sd_ble_gatts_sys_attr_set
+0x000171b2 sd_ble_gap_adv_start
+0x00017212 sd_ble_gap_adv_data_set
+0x0001721e sd_ble_gap_appearance_set
+0x00017408 sd_power_pof_threshold_set
+0x000177f6 sd_power_system_off
+0x000177f8 sd_softdevice_disable
+0x00017820 sd_softdevice_vector_table_base_set
+0x0001785c sd_ble_enable
+0x00017864 sd_ble_gap_address_get
+0x0001786c sd_ble_gap_address_set
+0x0001794c sd_ble_gatts_characteristic_add
+0x0001799e sd_ble_gatts_descriptor_add
+0x00017a1a sd_ble_uuid_vs_add
+0x00017d5e sd_softdevice_enable
+0x00017d6a sd_ppi_group_assign
+0x00018660 sd_ble_gatts_value_set
+--
+0x000168d0 sd_evt_get
+0x000168f2 sd_ble_evt_get
+0x00016b42 sd_ble_gap_sec_params_reply
+0x00016c1c sd_ble_gap_device_name_set
+0x00016c28 sd_ble_gap_appearance_set
+0x00016c32 sd_ble_gap_ppcp_set
+0x00016c3a sd_ble_gap_tx_power_set
+0x00016ce4 sd_ble_gatts_service_add
+0x00016ed6 sd_ble_gatts_sys_attr_set
+0x000171b2 sd_ble_gap_adv_start
+0x00017212 sd_ble_gap_adv_data_set
+0x0001721e sd_ble_gap_appearance_set
+0x00017408 sd_power_pof_threshold_set
+0x000177f6 sd_power_system_off
+0x000177f8 sd_softdevice_disable
+0x00017820 sd_softdevice_vector_table_base_set
+0x0001785c sd_ble_enable
+0x00017864 sd_ble_gap_address_get
+0x0001786c sd_ble_gap_address_set
+0x0001794c sd_ble_gatts_characteristic_add
+0x0001799e sd_ble_gatts_descriptor_add
+0x00017a1a sd_ble_uuid_vs_add
+0x00017d5e sd_softdevice_enable
+0x00017d6a sd_ppi_group_assign
+0x00018660 sd_ble_gatts_value_set
+EOF
+RUN
+
 NAME=arm s110 syscalls aae
-BROKEN=1
 FILE=bins/elf/BLE_Beacon2.NRF51822_OTA.bin
 ARGS=-aarm -b16 -easm.os=s110 -m 0x16000
 CMDS=<<EOF
@@ -1147,12 +1209,14 @@ aae $s @ 0x00016000
 fs
 EOF
 EXPECT=<<EOF
-0    0 * sections
-1    0 * segments
-2    0 * relocs
-3    0 * symbols
-4   25 * syscalls
-5    5 * strings
+    0 * classes
+    0 * format
+    4 * functions
+   24 * registers
+    0 * sections
+    0 * segments
+    0 * symbols
+   24 * syscalls
 EOF
 RUN
 
