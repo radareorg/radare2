@@ -1978,6 +1978,7 @@ static void do_syscall_search(RCore *core, struct search_parameters *param) {
 	int stacksize = r_config_get_i (core->config, "esil.stack.depth");
 	int iotrap = r_config_get_i (core->config, "esil.iotrap");
 	unsigned int addrsize = r_config_get_i (core->config, "esil.addr.size");
+	const bool isx86 = r_str_startswith (r_config_get (core->config, "asm.arch"), "x86");
 
 	if (!(esil = r_esil_new (stacksize, iotrap, addrsize))) {
 		return;
@@ -2083,8 +2084,10 @@ static void do_syscall_search(RCore *core, struct search_parameters *param) {
 				scVector = (aop.val > 0)? aop.val: -1; // int 0x80 (aop.val = 0x80)
 				RSyscallItem *item = r_syscall_get (core->anal->syscall, scNumber, scVector);
 				if (!item) {
-					if (scVector > 0x10 && scVector < 128) {
-						item = r_syscall_get (core->anal->syscall, scVector, -1);
+					if (scNumber == scVector && !isx86) {
+						if (scVector > 10 && scVector < 200) {
+							item = r_syscall_get (core->anal->syscall, scVector, -1);
+						}
 					}
 				}
 				if (item) {
