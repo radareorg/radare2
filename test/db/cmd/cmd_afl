@@ -59,3 +59,26 @@ aflss
 0x100004111   18    331 sym.func.100004111
 EOF
 RUN
+
+NAME=afltables
+FILE=bins/mach0/ls-osx-x86_64
+CMDS=<<EOF
+aa
+afl,xref/sort/dec,any/head/10
+EOF
+EXPECT=<<EOF
+addr        size name                     noret nbbs nins refs xref calls cc
+----------------------------------------------------------------------------
+0x100004630 6    sym.imp.putchar          0     1    1    1    24   0     1
+0x10000462a 6    sym.imp.printf           0     1    1    1    22   0     1
+0x100004678 6    sym.imp.strlen           0     1    1    1    12   0     1
+0x10000456a 6    sym.imp.compat_mode      0     1    1    1    11   0     1
+0x10000451c 6    sym.imp.__snprintf_chk   0     1    1    1    9    0     1
+0x100004504 6    sym.imp.tputs            0     1    1    1    8    0     1
+0x1000045be 6    sym.imp.getenv           0     1    1    1    7    0     1
+0x100004522 6    sym.imp.__stack_chk_fail 1     1    1    1    7    0     1
+0x100003de3 13   sym.func.100003de3       0     1    6    1    6    1     1
+0x1000044f8 6    sym.imp.tgetstr          0     1    1    1    6    0     1
+
+EOF
+RUN

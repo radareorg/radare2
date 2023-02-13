@@ -3164,16 +3164,31 @@ static int fcn_print_legacy(RCore *core, RAnalFunction *fcn) {
 	r_list_free (refs);
 
 	int indegree = 0;
-	r_cons_printf ("\ncode-xrefs:");
 	xrefs = r_anal_function_get_xrefs (fcn);
-	r_list_foreach (xrefs, iter, refi) {
-		int rt = R_ANAL_REF_TYPE_MASK (refi->type);
-		if (rt  == R_ANAL_REF_TYPE_CODE || rt == R_ANAL_REF_TYPE_CALL) {
-			indegree++;
-			r_cons_printf (" 0x%08"PFMT64x" %c", refi->addr,
-					rt == R_ANAL_REF_TYPE_CALL?'C':'J');
+	if (!r_list_empty (xrefs)) {
+		r_cons_printf ("\ncode-xrefs:");
+		r_list_foreach (xrefs, iter, refi) {
+			int rt = R_ANAL_REF_TYPE_MASK (refi->type);
+			if (rt == R_ANAL_REF_TYPE_CODE || rt == R_ANAL_REF_TYPE_CALL) {
+				indegree++;
+				r_cons_printf (" 0x%08"PFMT64x" %c", refi->addr,
+						rt == R_ANAL_REF_TYPE_CALL? 'C': 'J');
+			}
 		}
 	}
+#if R2_590
+	xrefs = r_anal_function_get_all_xrefs (fcn);
+	r_cons_printf ("\nall-code-xrefs:");
+	if (!r_list_empty (xrefs)) {
+		r_list_foreach (xrefs, iter, refi) {
+			int rt = R_ANAL_REF_TYPE_MASK (refi->type);
+			if (rt == R_ANAL_REF_TYPE_CODE || rt == R_ANAL_REF_TYPE_CALL) {
+				r_cons_printf (" 0x%08"PFMT64x" %c", refi->addr,
+						rt == R_ANAL_REF_TYPE_CALL?'C':'J');
+			}
+		}
+	}
+#endif
 	r_cons_printf ("\nnoreturn: %s", r_str_bool (fcn->is_noreturn));
 	r_cons_printf ("\nin-degree: %d", indegree);
 	r_cons_printf ("\nout-degree: %d", outdegree);
