@@ -1141,6 +1141,11 @@ NAME=/as on glibc
 FILE=bins/elf/glibc-2.34-39.el9.x86_64_libc.so.6
 CMDS=/as
 EXPECT=<<EOF
+0x001c5155 read
+0x001c516d read
+0x001d0fe0 read
+0x001d79b5 read
+0x001f39bc read
 0x00029769 kill
 0x00029799 sigaltstack
 0x00029843 arch_prctl
@@ -1608,6 +1613,7 @@ EXPECT=<<EOF
 0x0016dd66 writev
 0x00176910 rt_sigqueueinfo
 0x00196a7f futex
+0x0000ef20 read
 EOF
 RUN
 
