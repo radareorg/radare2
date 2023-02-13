@@ -3164,16 +3164,31 @@ static int fcn_print_legacy(RCore *core, RAnalFunction *fcn) {
 	r_list_free (refs);
 
 	int indegree = 0;
-	r_cons_printf ("\ncode-xrefs:");
 	xrefs = r_anal_function_get_xrefs (fcn);
-	r_list_foreach (xrefs, iter, refi) {
-		int rt = R_ANAL_REF_TYPE_MASK (refi->type);
-		if (rt  == R_ANAL_REF_TYPE_CODE || rt == R_ANAL_REF_TYPE_CALL) {
-			indegree++;
-			r_cons_printf (" 0x%08"PFMT64x" %c", refi->addr,
-					rt == R_ANAL_REF_TYPE_CALL?'C':'J');
+	if (!r_list_empty (xrefs)) {
+		r_cons_printf ("\ncode-xrefs:");
+		r_list_foreach (xrefs, iter, refi) {
+			int rt = R_ANAL_REF_TYPE_MASK (refi->type);
+			if (rt == R_ANAL_REF_TYPE_CODE || rt == R_ANAL_REF_TYPE_CALL) {
+				indegree++;
+				r_cons_printf (" 0x%08"PFMT64x" %c", refi->addr,
+						rt == R_ANAL_REF_TYPE_CALL? 'C': 'J');
+			}
 		}
 	}
+#if R2_590
+	xrefs = r_anal_function_get_all_xrefs (fcn);
+	r_cons_printf ("\nall-code-xrefs:");
+	if (!r_list_empty (xrefs)) {
+		r_list_foreach (xrefs, iter, refi) {
+			int rt = R_ANAL_REF_TYPE_MASK (refi->type);
+			if (rt == R_ANAL_REF_TYPE_CODE || rt == R_ANAL_REF_TYPE_CALL) {
+				r_cons_printf (" 0x%08"PFMT64x" %c", refi->addr,
+						rt == R_ANAL_REF_TYPE_CALL?'C':'J');
+			}
+		}
+	}
+#endif
 	r_cons_printf ("\nnoreturn: %s", r_str_bool (fcn->is_noreturn));
 	r_cons_printf ("\nin-degree: %d", indegree);
 	r_cons_printf ("\nout-degree: %d", outdegree);
@@ -3224,7 +3239,7 @@ static int fcn_list_detail(RCore *core, RList *fcns) {
 }
 
 static int fcn_list_table(RCore *core, const char *q, int fmt) {
-	char xref[128], ccstr[128], castr[128];
+	char xref[128], refs[128], ccstr[128], castr[128];
 	RAnalFunction *fcn;
 	RListIter *iter;
 	RTable *t = r_core_table (core, "fcns");
@@ -3236,6 +3251,7 @@ static int fcn_list_table(RCore *core, const char *q, int fmt) {
 	r_table_add_column (t, typeNumber, "noret", 0);
 	r_table_add_column (t, typeNumber, "nbbs", 0);
 	r_table_add_column (t, typeNumber, "nins", 0);
+	r_table_add_column (t, typeNumber, "refs", 0);
 	r_table_add_column (t, typeNumber, "xref", 0);
 	r_table_add_column (t, typeNumber, "calls", 0);
 	r_table_add_column (t, typeNumber, "cc", 0);
@@ -3245,7 +3261,12 @@ static int fcn_list_table(RCore *core, const char *q, int fmt) {
 		r_strf_var (nbbs, 32, "%d", r_list_length (fcn->bbs));
 		r_strf_var (nins, 32, "%d", r_anal_function_instrcount (fcn));
 		r_strf_var (noret, 32, "%d", fcn->is_noreturn);
-		RList *xrefs = r_anal_function_get_xrefs (fcn);
+
+		RList *xrefs = r_anal_function_get_refs (fcn);
+		snprintf (refs, sizeof (refs), "%d", r_list_length (xrefs));
+		r_list_free (xrefs);
+
+		xrefs = r_anal_function_get_xrefs (fcn);
 		snprintf (xref, sizeof (xref), "%d", r_list_length (xrefs));
 		r_list_free (xrefs);
 
@@ -3255,7 +3276,7 @@ static int fcn_list_table(RCore *core, const char *q, int fmt) {
 		r_list_free (calls);
 		snprintf (ccstr, sizeof (ccstr), "%d", r_anal_function_complexity (fcn));
 
-		r_table_add_row (t, fcnAddr, fcnSize, fcn->name, noret, nbbs, nins, xref, castr, ccstr, NULL);
+		r_table_add_row (t, fcnAddr, fcnSize, fcn->name, noret, nbbs, nins, refs, xref, castr, ccstr, NULL);
 	}
 	if (r_table_query (t, q)) {
 		char *s = (fmt == 'j')
