@@ -361,6 +361,35 @@ beach:
 	return true;
 }
 
+static int compare_mnemonics(const char *a , const char *b) {
+	if (!a || !b) {
+		return 0;
+	}
+	char *sa = strdup (a);
+	char *sb = strdup (b);
+	r_str_replace_ch (sa, ' ', ',', 0);
+	r_str_replace_ch (sb, ' ', ',', 0);
+	RList *la = r_str_split_list (sa, ",", 0);
+	RList *lb = r_str_split_list (sb, ",", 0);
+	int i = 0;
+	for (i = 0; i < 10; i++) {
+		char *wa = r_list_get_n (la, i);
+		char *wb = r_list_get_n (lb, i);
+		if (!wa || !wb) {
+			i = 0;
+			break;
+		}
+		if (strcmp (wa, wb)) {
+			break;
+		}
+	}
+	r_list_free (la);
+	r_list_free (lb);
+	free (sa);
+	free (sb);
+	return i;
+}
+
 R_API bool r_core_visual_bit_editor(RCore *core) {
 	const int nbits = sizeof (ut64) * 8;
 	bool colorBits = false;
@@ -502,12 +531,48 @@ R_API bool r_core_visual_bit_editor(RCore *core) {
 		str_pos[46] = ' ';
 		str_pos[55] = ' ';
 		str_pos[64] = ' ';
-		r_cons_printf ("pos: %s\n", str_pos);
+		r_cons_printf ("cur: %s\n", str_pos);
+		{
+			r_cons_printf ("pos: ");
+			RAnalOp op;
+			analopType = analop.type & R_ANAL_OP_TYPE_MASK;
+			for (i = 0; i < 8; i++) {
+				ut8 *byte = buf + i;
+				if (i == 4) {
+					r_cons_print ("| ");
+				}
+				if (colorBits && i >= analop.size) {
+					r_cons_print (Color_RESET);
+					colorBits = false;
+				}
+				for (j = 0; j < 8; j++) {
+					bool bit = R_BIT_CHK (byte, 7 - j);
+					r_anal_op_init (&op);
+					ut8 newbuf[sizeof (ut64)] = {0};
+					memcpy (&newbuf, &buf, sizeof (ut64));
+					ut8 *newbyte = newbuf + i;
+					if (bit) {
+						newbuf[i] = R_BIT_UNSET (newbyte, 7 - j);
+					} else {
+						newbuf[i] = R_BIT_SET (newbyte, 7 - j);
+					}
+					r_anal_op_set_bytes (&op, core->offset + cur, newbuf, sizeof (newbuf));
+					(void)r_anal_op (core->anal, &op, core->offset + cur, newbuf, sizeof (ut64), R_ARCH_OP_MASK_ESIL | R_ARCH_OP_MASK_DISASM);
+					// r_cons_printf ("%d %s\n%d %s\n\n", (i*8) + j, analop.mnemonic, (i*8)+j, op.mnemonic);
+					int word_change = compare_mnemonics (analop.mnemonic, op.mnemonic);
+					r_anal_op_fini (&op);
+				 	r_cons_printf ("%d", word_change);
+				}
+				r_cons_print (" ");
+			}
+			r_cons_newline ();
+		}
 		const char *vi = r_config_get (core->config, "cmd.vprompt");
 		if (R_STR_ISNOTEMPTY (vi)) {
 			memcpy (core->block, buf, 8);
 			r_core_cmd0 (core, vi);
 		}
+		r_cons_newline ();
 		{
 			ut8 *o = core->block;
 			int bs = core->blocksize;
