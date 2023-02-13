@@ -455,31 +455,45 @@ R_API ut64 r_anal_xrefs_count(RAnal *anal) {
 	return ret;
 }
 
-static RList *fcn_get_refs(RAnalFunction *fcn, HtUP *ht) {
+static RList *fcn_get_all_refs(RAnalFunction *fcn, HtUP *ht) {
 	RListIter *iter;
 	RAnalBlock *bb;
 	RList *list = r_anal_ref_list_new ();
-	if (!list) {
-		return NULL;
-	}
-	r_list_foreach (fcn->bbs, iter, bb) {
-		int i;
-
-		for (i = 0; i < bb->ninstr; i++) {
-			ut64 at = bb->addr + r_anal_bb_offset_inst (bb, i);
-			listxrefs (ht, at, list);
+	if (R_LIKELY (list)) {
+		r_list_foreach (fcn->bbs, iter, bb) {
+			int i;
+			for (i = 0; i < bb->ninstr; i++) {
+				ut64 at = bb->addr + r_anal_bb_offset_inst (bb, i);
+				listxrefs (ht, at, list);
+			}
 		}
+		sortxrefs (list);
 	}
-	sortxrefs (list);
+	return list;
+}
+
+static RList *fcn_get_refs(RAnalFunction *fcn, HtUP *ht) {
+	RList *list = r_anal_ref_list_new ();
+	if (R_LIKELY (list)) {
+		// XXX assume first basic block is the entrypoint
+				listxrefs (ht, fcn->addr, list);
+	}
 	return list;
 }
 
 R_API RList *r_anal_function_get_refs(RAnalFunction *fcn) {
 	r_return_val_if_fail (fcn, NULL);
-	return fcn_get_refs (fcn, fcn->anal->dict_refs);
+	return fcn_get_all_refs (fcn, fcn->anal->dict_refs);
 }
 
 R_API RList *r_anal_function_get_xrefs(RAnalFunction *fcn) {
 	r_return_val_if_fail (fcn, NULL);
 	return fcn_get_refs (fcn, fcn->anal->dict_xrefs);
 }
+
+#if R2_590
+R_API RList *r_anal_function_get_all_xrefs(RAnalFunction *fcn) {
+	r_return_val_if_fail (fcn, NULL);
+	return fcn_get_all_refs (fcn, fcn->anal->dict_xrefs);
+}
+#endif
