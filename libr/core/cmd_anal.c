@@ -4702,7 +4702,7 @@ static int cmd_af(RCore *core, const char *input) {
 			char *sig = r_core_cmd_str (core, "afs");
 			char *data = r_core_editor (core, NULL, sig);
 			if (sig && data) {
-				r_core_cmdf (core, "\"afs %s\"", data);
+				r_core_cmdf (core, "\"\"afs %s", data);
 			}
 			free (sig);
 			free (data);
