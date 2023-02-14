@@ -1,7 +1,6 @@
-/* radare - LGPL - Copyright 2009-2022 - pancake, maijin */
+/* radare - LGPL - Copyright 2009-2023 - pancake, maijin */
 
 #include <r_core.h>
-#include <r_util.h>
 
 #define SLOW_ANALYSIS 1
 #define MAX_SCAN_SIZE 0x7ffffff
@@ -899,6 +898,7 @@ static const char *help_msg_ao[] = {
 	"Usage:", "ao[e?] [len]", "analyze Opcodes",
 	"ao", " 5", "display opcode analysis of 5 opcodes",
 	"ao*", "", "display opcode in r commands",
+	"aob", " ([hex])", "analyze meaning of every single bit in the current opcode",
 	"aoc", " [cycles]", "analyze which op could be executed in [cycles]",
 	"aod", " [mnemonic]", "describe opcode for asm.arch",
 	"aoda", "", "show all mnemonic descriptions",
@@ -8035,6 +8035,152 @@ static void cmd_anal_bytes(RCore *core, const char *input) {
 	}
 }
 
+static int compare_mnemonics(const char *a , const char *b) {
+	if (!a || !b) {
+		return 0;
+	}
+	char *sa = strdup (a);
+	char *sb = strdup (b);
+	r_str_replace_ch (sa, ' ', ',', 0);
+	r_str_replace_ch (sb, ' ', ',', 0);
+	RList *la = r_str_split_list (sa, ",", 0);
+	RList *lb = r_str_split_list (sb, ",", 0);
+	int i = 0;
+	for (i = 0; i < 10; i++) {
+		char *wa = r_list_get_n (la, i);
+		char *wb = r_list_get_n (lb, i);
+		if (!wa || !wb) {
+			i = 0;
+			break;
+		}
+		if (strcmp (wa, wb)) {
+			break;
+		}
+	}
+	r_list_free (la);
+	r_list_free (lb);
+	free (sa);
+	free (sb);
+	return i;
+}
+
+static int intsort(const void *a, const void *b) {
+	if (a > b) {
+		return 1;
+	}
+	if (a == b) {
+		return 0;
+	}
+	return -1;
+}
+
+static void cmd_anal_opcode_bits(RCore *core, const char *arg, int mode) {
+	ut8 buf[32] = {0};
+	if (*arg) {
+		char *choparg = r_str_ndup (arg, 8);
+		int res = r_hex_str2bin (choparg, (ut8 *)buf);
+		free (choparg);
+		if (res < 1) {
+			R_LOG_ERROR ("Invalid hex string");
+			return;
+		}
+	} else {
+		r_io_read_at (core->io, core->offset, buf, sizeof (buf));
+	}
+	RList *args[8];
+	int i, j;
+	RAnalOp analop, op;
+	r_anal_op_init (&analop);
+	r_anal_op_set_bytes (&analop, core->offset, buf, sizeof (ut64));
+	(void)r_anal_op (core->anal, &analop, core->offset, buf, sizeof (buf), R_ARCH_OP_MASK_DISASM);
+	int last = R_MIN (8, analop.size);
+	PJ *pj = (mode == 'j')? r_core_pj_new (core): NULL;
+	if (last < 1) {
+		return;
+	}
+	for (i = 0; i < 8; i++) {
+		args[i] = r_list_new ();
+	}
+
+	if (pj) {
+		pj_o (pj);
+		pj_ks (pj, "opstr", analop.mnemonic);
+		pj_kn (pj, "size", analop.size);
+		pj_ko (pj, "bytes");
+	}
+	RStrBuf *sb = r_strbuf_new ("");
+	for (i = 0; i < last; i++) {
+		ut8 *byte = buf + i;
+		if (pj) {
+			pj_a (pj);
+		}
+		if (i == 4) {
+			r_strbuf_append (sb, "| ");
+		}
+		for (j = 0; j < 8; j++) {
+			bool bit = R_BIT_CHK (byte, 7 - j);
+			r_anal_op_init (&op);
+			ut8 newbuf[sizeof (ut64)] = {0};
+			memcpy (&newbuf, &buf, sizeof (ut64));
+			ut8 *newbyte = newbuf + i;
+			if (bit) {
+				newbuf[i] = R_BIT_UNSET (newbyte, 7 - j);
+			} else {
+				newbuf[i] = R_BIT_SET (newbyte, 7 - j);
+			}
+			r_anal_op_set_bytes (&op, core->offset, newbuf, sizeof (newbuf));
+			(void)r_anal_op (core->anal, &op, core->offset, newbuf, sizeof (ut64), R_ARCH_OP_MASK_DISASM);
+			// r_cons_printf ("%d %s\n%d %s\n\n", (i*8) + j, analop.mnemonic, (i*8)+j, op.mnemonic);
+			int word_change = compare_mnemonics (analop.mnemonic, op.mnemonic);
+			r_anal_op_fini (&op);
+			if (pj) {
+				pj_n (pj, word_change);
+				r_list_append (args[word_change], (void *)(size_t)((i * 8) + 7 - j));
+			}
+			r_strbuf_appendf (sb, "%d", word_change);
+		}
+		if (pj) {
+			pj_end (pj);
+		}
+		r_strbuf_append (sb, " ");
+	}
+	if (pj) {
+		void *n;
+		RListIter *iter;
+		pj_end (pj);
+		char *s = r_strbuf_drain (sb);
+		pj_ks (pj, "flipstr", s);
+		free (s);
+		pj_ka (pj, "args");
+		for (j = 0; j < 8; j++) {
+			if (r_list_empty (args[j])) {
+				break;
+			}
+			pj_a (pj);
+			r_list_sort (args[j], intsort);
+			r_list_foreach (args[j], iter, n) {
+				int nn = (int)((size_t)n & ST32_MAX);
+				pj_n (pj, nn);
+			}
+			pj_end (pj);
+		}
+		pj_end (pj);
+		pj_end (pj);
+		s = pj_drain (pj);
+		r_cons_printf ("%s\n", s);
+		free (s);
+	} else {
+		r_strbuf_appendf (sb, " : %s", analop.mnemonic);
+		char *s = r_strbuf_drain (sb);
+		r_cons_printf ("%s\n", s);
+		free (s);
+	}
+	r_anal_op_fini (&analop);
+	for (i = 0; i < 8; i++) {
+		r_list_free (args[i]);
+	}
+}
+
 static void cmd_anal_opcode(RCore *core, const char *input) {
 	int l, len = core->blocksize;
 	ut32 tbs = core->blocksize;
@@ -8119,6 +8265,13 @@ static void cmd_anal_opcode(RCore *core, const char *input) {
 			}
 		} else {
 			r_core_cmd0 (core, "ao~mnemonic[1]");
+		}
+		break;
+	case 'b': // "aob"
+		if (input[1] == 'j') {
+			cmd_anal_opcode_bits (core, r_str_trim_head_ro (input + 2), 'j');
+		} else {
+			cmd_anal_opcode_bits (core, r_str_trim_head_ro (input + 1), 0);
 		}
 		break;
 	case 'c': // "aoc"
