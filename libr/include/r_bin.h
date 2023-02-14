@@ -906,6 +906,7 @@ extern RBinPlugin r_bin_plugin_lua;
 extern RBinPlugin r_bin_plugin_hunk;
 extern RBinPlugin r_bin_plugin_xalz;
 extern RBinPlugin r_bin_plugin_lua;
+extern RBinPlugin r_bin_plugin_xtac;
 
 #ifdef __cplusplus
 }
