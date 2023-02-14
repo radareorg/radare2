@@ -346,7 +346,6 @@ int linux_step(RDebug *dbg) {
 	int ret = false;
 	int pid = dbg->tid;
 	ret = r_debug_ptrace (dbg, PTRACE_SINGLESTEP, pid, 0, 0);
-	//XXX(jjd): why?? //linux_handle_signals (dbg);
 	if (ret == -1) {
 		r_sys_perror ("native-singlestep");
 		ret = false;
@@ -1237,8 +1236,14 @@ bool linux_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 			// ret = ptrace (PTRACE_GETREGSET, pid, (void*)(size_t)(NT_PRSTATUS), NULL); // &io);
 #elif R2__BSD__ && (__POWERPC__ || __sparc__)
 			ret = r_debug_ptrace (dbg, PTRACE_GETREGS, pid, &regs, NULL);
+#elif __riscv
+			// theres no PTRACE_GETREGS implemented for rv64
+			struct iovec iov;
+			iov.iov_base = &regs;
+			iov.iov_len = sizeof (regs);
+			ret = ptrace (PTRACE_GETREGSET, pid, NT_PRSTATUS, &iov);
 #else
-			/* linux -{arm/mips/riscv/x86/x86_64} */
+			/* linux -{arm/mips/x86/x86_64} */
 			ret = r_debug_ptrace (dbg, PTRACE_GETREGS, pid, NULL, &regs);
 #endif
 			/*
