@@ -1089,6 +1089,7 @@ static void anop64(RAnal *a, RAnalOp *op, Instruction *insn) {
 		break;
 	case ARM64_LDUR:
 	case ARM64_LDURB:
+	case ARM64_LDURH:
 	case ARM64_LDRSW:
 	case ARM64_LDRSB:
 	case ARM64_LDRSH:
