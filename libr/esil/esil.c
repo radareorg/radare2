@@ -30,9 +30,7 @@ static inline ut64 genmask(int bits) {
 }
 
 static bool isnum(REsil *esil, const char *str, ut64 *num) {
-	if (!esil || !str) {
-		return false;
-	}
+	r_return_val_if_fail (esil && str, false);
 	if (IS_DIGIT (*str)) {
 		if (num) {
 			*num = r_num_get (NULL, str);
@@ -3905,10 +3903,10 @@ R_API void r_esil_setup_ops(REsil *esil) {
 	OP ("GOTO", esil_goto, 0, 1, OT_CTR);
 	OP ("BREAK", esil_break, 0, 0, OT_CTR);
 	OP ("CLEAR", esil_clear, 0, 0, OT_UNK);
-	OP ("DUP", esil_dup, 1, 0, OT_UNK);
+	OP ("DUP", esil_dup, 2, 1, OT_UNK);
 	OP ("NUM", esil_num, 1, 1, OT_UNK);
 	OP ("SWAP", esil_swap, 2, 2, OT_UNK);
-	OP ("TRAP", esil_trap, 0, 0, OT_UNK);
+	OP ("TRAP", esil_trap, 0, 2, OT_UNK);
 	OP ("BITS", esil_bits, 1, 0, OT_UNK);
 	OP ("SETJT", esil_set_jump_target, 0, 1, OT_UNK);
 	OP ("SETJTS", esil_set_jump_target_set, 0, 1, OT_UNK);

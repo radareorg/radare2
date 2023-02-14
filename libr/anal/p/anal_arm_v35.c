@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2020-2022 - aemitt, pancake */
+/* radare2 - LGPL - Copyright 2020-2023 - aemitt, pancake */
 
 #include <r_anal.h>
 #include <r_lib.h>
@@ -1258,6 +1258,9 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 	} doesn't work this way is v35 */
 
 	switch (insn->operation) {
+	case ARM64_BRK:
+		r_strbuf_setf (&op->esil, "0,%d,TRAP", (int) (GETIMM64 (0) & 0xffff));
+		break;
 	case ARM64_REV:
 	case ARM64_REV64:
 	// these REV* instructions were almost right, except in the cases like rev x0, x0
