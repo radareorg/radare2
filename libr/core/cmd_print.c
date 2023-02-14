@@ -884,12 +884,8 @@ static void cmd_pCd(RCore *core, const char *input) {
 	int rows = h - 2;
 	int obsz = core->blocksize;
 	int user_rows = r_num_math (core->num, input);
-	bool asm_minicols = r_config_get_i (core->config, "asm.minicols");
 	char *o_ao = strdup (r_config_get (core->config, "asm.offset"));
 	char *o_ab = strdup (r_config_get (core->config, "asm.bytes"));
-	if (asm_minicols) {
-		r_config_set_b (core->config, "asm.offset", false);
-	}
 	r_config_set_b (core->config, "asm.bytes", false);
 	if (user_rows > 0) {
 		rows = user_rows + 1;
@@ -913,10 +909,6 @@ static void cmd_pCd(RCore *core, const char *input) {
 	r_cons_pop ();
 	r_cons_canvas_print (c);
 	r_cons_canvas_free (c);
-	if (asm_minicols) {
-		r_config_set (core->config, "asm.offset", o_ao);
-		r_config_set (core->config, "asm.bytes", o_ab);
-	}
 	r_config_set (core->config, "asm.bytes", o_ab);
 	free (o_ao);
 	free (o_ab);
@@ -966,13 +958,8 @@ static void cmd_pCD(RCore *core, const char *input) {
 	int rows = h - 2;
 	int obsz = core->blocksize;
 	int user_rows = r_num_math (core->num, input);
-	bool asm_minicols = r_config_get_i (core->config, "asm.minicols");
 	char *o_ao = strdup (r_config_get (core->config, "asm.offset"));
 	char *o_ab = strdup (r_config_get (core->config, "asm.bytes"));
-	if (asm_minicols) {
-		r_config_set_b (core->config, "asm.offset", false);
-		r_config_set_b (core->config, "asm.bytes", false);
-	}
 	r_config_set_b (core->config, "asm.bytes", false);
 	if (user_rows > 0) {
 		rows = user_rows + 1;
@@ -1011,10 +998,6 @@ static void cmd_pCD(RCore *core, const char *input) {
 	r_cons_pop ();
 	r_cons_canvas_print (c);
 	r_cons_canvas_free (c);
-	if (asm_minicols) {
-		r_config_set (core->config, "asm.offset", o_ao);
-		r_config_set (core->config, "asm.bytes", o_ab);
-	}
 	r_config_set (core->config, "asm.bytes", o_ab);
 	free (o_ao);
 	free (o_ab);

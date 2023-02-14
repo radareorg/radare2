@@ -3674,7 +3674,6 @@ R_API int r_core_config_init(RCore *core) {
 	SETBPREF ("asm.anal", "false", "analyze code and refs while disassembling (see anal.strings)");
 	SETI ("asm.symbol.col", 40, "columns width to show asm.section");
 	SETCB ("asm.assembler", "", &cb_asmassembler, "set the plugin name to use when assembling");
-	SETBPREF ("asm.minicols", "false", "only show the instruction in the column disasm");
 	RConfigNode *asmcpu = NODECB ("asm.cpu", R_SYS_ARCH, &cb_asmcpu);
 	SETDESC (asmcpu, "set the kind of asm.arch cpu");
 	RConfigNode *asmarch = NODECB ("asm.arch", R_SYS_ARCH, &cb_asmarch);
