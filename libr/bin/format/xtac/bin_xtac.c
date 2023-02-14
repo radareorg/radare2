@@ -249,8 +249,8 @@ static bool r_bin_xtac_read_header(RBinXtacObj *bin) {
 		r_sys_perror ("R_NEW0 (xtac header)");
 		return false;
 	}
-	if (r_buf_read_at (bin->b, 0, (ut8*) bin->header, sizeof(RBinXtacHeader)) < 0) {
-		eprintf ("Warning: read (xtac header)\n");
+	if (r_buf_read_at (bin->b, 0, (ut8*) bin->header, sizeof (RBinXtacHeader)) < 0) {
+		R_LOG_WARN ("Warning: read (xtac header)\n");
 		free (bin->header);
 		bin->header = NULL;
 		return false;
@@ -260,14 +260,14 @@ static bool r_bin_xtac_read_header(RBinXtacObj *bin) {
 
 static bool r_bin_xtac_read_address_pairs(RBinXtacObj *bin) {
 	const ut32 n_addr_pairs = bin->header->num_of_addr_pairs;
-	const ut32 addr_pair_size = n_addr_pairs * sizeof(X86ArmAddrPair);
+	const ut32 addr_pair_size = n_addr_pairs * sizeof (X86ArmAddrPair);
 	const ut32 p_addr_pair = bin->header->ptr_to_addr_pairs;
 	if (!(bin->address_pairs = R_NEWS0 (X86ArmAddrPair, n_addr_pairs))) {
 		r_sys_perror ("R_NEWS0 (xtac address pair)");
 		return false;
 	}
 	if (r_buf_read_at (bin->b, p_addr_pair, (ut8*) bin->address_pairs, addr_pair_size) < 0) {
-		eprintf ("Warning: read (xtac address pairs)\n");
+		R_LOG_WARN ("Warning: read (xtac address pairs)\n");
 		free (bin->address_pairs);
 		bin->address_pairs = NULL;
 		return false;
@@ -276,14 +276,14 @@ static bool r_bin_xtac_read_address_pairs(RBinXtacObj *bin) {
 }
 
 static bool r_bin_xtac_read_module_name(RBinXtacObj *bin) {
-	const ut32 len_of_mod_name = bin->header->size_of_mod_name / sizeof(ut16) + 1;
+	const ut32 len_of_mod_name = bin->header->size_of_mod_name / sizeof (ut16) + 1;
 	const ut32 p_mod_name = bin->header->ptr_to_mod_name;
 	if (!(bin->mod_name_u16 = R_NEWS0 (ut16, len_of_mod_name))) {
 		r_sys_perror ("R_NEWS0 (xtac module name)");
 		return false;
 	}
 	if (r_buf_read_at (bin->b, p_mod_name, (ut8*) bin->mod_name_u16, bin->header->size_of_mod_name) < 0) {
-		eprintf ("Warning: read (xtac module name)\n");
+		R_LOG_WARN ("Warning: read (xtac module name)\n");
 		free (bin->mod_name_u16);
 		bin->mod_name_u16 = NULL;
 		return false;
@@ -297,14 +297,14 @@ static bool r_bin_xtac_read_module_name(RBinXtacObj *bin) {
 }
 
 static bool r_bin_xtac_read_nt_native_pathname(RBinXtacObj *bin) {
-	const ut32 len_of_nt_pname = bin->header->size_of_nt_pname / sizeof(ut16) + 1;
+	const ut32 len_of_nt_pname = bin->header->size_of_nt_pname / sizeof (ut16) + 1;
 	const ut32 p_nt_name = bin->header->ptr_to_nt_pname;
 	if (!(bin->nt_path_name_u16 = R_NEWS0 (ut16, len_of_nt_pname))) {
 		r_sys_perror ("R_NEWS0 (xtac nt path)");
 		return false;
 	}
 	if (r_buf_read_at (bin->b, p_nt_name, (ut8*) bin->nt_path_name_u16, bin->header->size_of_nt_pname) < 0) {
-		eprintf ("Warning: read (xtac nt path)\n");
+		R_LOG_WARN ("Warning: read (xtac nt path)\n");
 		free (bin->nt_path_name_u16);
 		bin->nt_path_name_u16 = NULL;
 		return false;
@@ -344,21 +344,21 @@ static bool r_bin_xtac_read_blck_stubs(RBinXtacObj *bin) {
 			r_sys_perror ("R_NEW0 (xtac BLCK stub)");
 			return false;
 		}
-		if (r_buf_read_at (bin->b, p_blck_stub, (ut8*) blck_stub, sizeof(RBinBlckStubHeader) - sizeof(ut32)) < 0) {
-			eprintf ("Warning: read (xtac BLCK stub)\n");
+		if (r_buf_read_at (bin->b, p_blck_stub, (ut8*) blck_stub, sizeof (RBinBlckStubHeader) - sizeof (ut32)) < 0) {
+			R_LOG_WARN ("Warning: read (xtac BLCK stub)\n");
 			free (blck_stub);
 			return false;
 		}
 		blck_stub->ptr_to_entry = p_blck_stub;
 		r_list_append (bin->blck_stubs, blck_stub);
 		if (p_blck_stub == blck_stub->ptr_to_next_entry) {
-			eprintf ("Warning: an infinite loop is detected. Some header members of BOCK Stub might be broken\n");
+			R_LOG_WARN ("Warning: an infinite loop is detected. Some header members of BOCK Stub might be broken\n");
 			break;
 		}
 		p_blck_stub = blck_stub->ptr_to_next_entry;
 		i++;
 		if (i >= max_depth) {
-			eprintf ("Warning: Too many BLCK Stubs. Some header members of BLCK Stub might be broken\n");
+			R_LOG_WARN ("Warning: Too many BLCK Stubs. Some header members of BLCK Stub might be broken\n");
 			break;
 		}
 	} while (p_blck_stub);
@@ -381,25 +381,25 @@ static bool r_bin_xtac_read_xtac_linked_list(RBinXtacObj *bin) {
 		}
 		entry->ptr_to_entry = p_buffer;
 
-		if (r_buf_read_at (bin->b, p_buffer, (ut8*) entry, sizeof(ut32)) < 0) {
-			eprintf ("Warning: read (xtac linked list metadata)\n");
+		if (r_buf_read_at (bin->b, p_buffer, (ut8*) entry, sizeof (ut32)) < 0) {
+			R_LOG_WARN ("Warning: read (xtac linked list metadata)\n");
 			free (entry);
 			return false;
 		}
 
 		const ut32 meta = GET_META_DATA(entry->meta_and_offset);
 		if (has_forward_edge_addr (meta)) {
-			p_buffer += sizeof(ut32);
-			if (r_buf_read_at (bin->b, p_buffer, (ut8*) &entry->forward_edge_addr, sizeof(ut32)) < 0) {
-				eprintf ("Warning: read (xtac linked list forward edge address)\n");
+			p_buffer += sizeof (ut32);
+			if (r_buf_read_at (bin->b, p_buffer, (ut8*) &entry->forward_edge_addr, sizeof (ut32)) < 0) {
+				R_LOG_WARN ("Warning: read (xtac linked list forward edge address)\n");
 				free (entry);
 				return false;
 			}
 		}
 		if (has_backward_edge_addr (meta)) {
-			p_buffer += sizeof(ut32);
-			if (r_buf_read_at (bin->b, p_buffer, (ut8*) &entry->backward_edge_addr, sizeof(ut32)) < 0) {
-				eprintf ("Warning: read (xtac linked list backward edge address)\n");
+			p_buffer += sizeof (ut32);
+			if (r_buf_read_at (bin->b, p_buffer, (ut8*) &entry->backward_edge_addr, sizeof (ut32)) < 0) {
+				R_LOG_WARN ("Warning: read (xtac linked list backward edge address)\n");
 				free (entry);
 				return false;
 			}
@@ -410,8 +410,8 @@ static bool r_bin_xtac_read_xtac_linked_list(RBinXtacObj *bin) {
 	} while (p_xtac_linked_list_entry < bin->header->ptr_to_addr_pairs);
 
 	if (GET_OFFSET(entry->meta_and_offset) != 0x0FFFFFFF) {
-		eprintf ("Warning: xtac linked list is not properly terminated\n");
-		eprintf ("Some entry of xtac linked list might be broken\n");
+		R_LOG_WARN ("Warning: xtac linked list is not properly terminated\n");
+		R_LOG_WARN ("Some entry of xtac linked list might be broken\n");
 	}
 
 	return true;
@@ -528,13 +528,13 @@ static RBinInfo *info(RBinFile *bf) {
 
 static bool check_buffer(RBinFile* file, RBuffer *b) {
 	ut64 length = r_buf_size(b);
-	if (length <= sizeof(RBinXtacHeader) ) {
+	if (length <= sizeof (RBinXtacHeader) ) {
 		return false;
 	}
 
-	ut8 buf[sizeof(XTAC_MAGIC) - 1];
-	r_buf_read_at(b, 0, buf, sizeof(buf));
-	return memcmp(buf, XTAC_MAGIC, sizeof(buf)) == 0;
+	ut8 buf[sizeof (XTAC_MAGIC) - 1];
+	r_buf_read_at(b, 0, buf, sizeof (buf));
+	return memcmp(buf, XTAC_MAGIC, sizeof (buf)) == 0;
 }
 
 static RList* symbols(RBinFile *bf) {

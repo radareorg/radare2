@@ -123,6 +123,7 @@ r_bin_sources = [
   'format/te/te.c',
   'format/wasm/wasm.c',
   'format/zimg/zimg.c',
+  'format/xtac/bin_xtac.c',
 # pdb microsoft format
   'format/pdb/dbi.c',
   'format/pdb/fpo.c',

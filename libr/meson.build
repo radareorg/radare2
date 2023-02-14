@@ -255,7 +255,8 @@ bin_plugins += [
   'xcoff64',
   'xnu_kernelcache',
   'z64',
-  'zimg'
+  'zimg',
+  'xtac'
 ]
 
 bin_ldr_plugins += [
