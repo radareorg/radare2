@@ -3899,7 +3899,6 @@ R_API char *fcnshowr(RAnalFunction *function) {
 	char *sdb_ret = r_str_newf ("func.%s.ret", realname);
 	char *sdb_args = r_str_newf ("func.%s.args", realname);
 	// RList *args_list = r_list_newf ((RListFree) free);
-	unsigned int i;
 	// const char *ret_type = sdb_const_get (a->sdb_types, sdb_ret, 0);
 	const char *argc_str = sdb_const_get (a->sdb_types, sdb_args, 0);
 	const int argc = argc_str? atoi (argc_str): 0;
@@ -3911,6 +3910,7 @@ R_API char *fcnshowr(RAnalFunction *function) {
 	if (function->cc) {
 		r_strbuf_appendf (sb, "afc %s\n", function->cc);
 	}
+	int i;
 	for (i = 0; i < argc; i++) {
 		char *sdb_arg_i = r_str_newf ("func.%s.arg.%d", realname, i);
 		char *type = sdb_get (a->sdb_types, sdb_arg_i, 0);
@@ -4079,7 +4079,7 @@ R_API void r_core_af(RCore *core, ut64 addr, const char *name, bool anal_calls) 
 			RListIter *iter;
 			RList *refs = r_anal_function_get_refs (fcn);
 			r_list_foreach (refs, iter, ref) {
-				if (!set_u_contains (visited, ref->addr)) {
+				if (set_u_contains (visited, ref->addr)) {
 					continue;
 				}
 				set_u_add (visited, ref->addr);
@@ -4105,7 +4105,7 @@ R_API void r_core_af(RCore *core, ut64 addr, const char *name, bool anal_calls) 
 					RList *refs1 = r_anal_function_get_refs (f);
 					r_list_foreach (refs1, iter, ref) {
 						const ut64 raddr = ref->addr;
-						if (!set_u_contains (visited, raddr)) {
+						if (set_u_contains (visited, raddr)) {
 							continue;
 						}
 						set_u_add (visited, raddr);
@@ -5241,12 +5241,10 @@ static int cmd_af(RCore *core, const char *input) {
 	case ' ': // "af "
 	case '\0': // "af"
 		{
-			bool anal_calls = false;
+			bool anal_calls = r_config_get_b (core->config, "anal.calls");
 			if (input[0] && input[1] == 'r') {
 				input++;
 				anal_calls = true;
-			} else {
-				anal_calls = r_config_get_b (core->config, "anal.calls");
 			}
 			ut64 addr = core->offset;
 			const char *name = NULL;
@@ -7856,7 +7854,7 @@ static void cmd_anal_esil(RCore *core, const char *input, bool verbose) {
 			}
 			break;
 		default:
-			eprintf ("Unknown command. Use `aetr`.\n");
+			eprintf ("Unknown command. Use `aetr`\n");
 			break;
 		}
 		break;
@@ -11828,8 +11826,9 @@ static int cmd_anal_all(RCore *core, const char *input) {
 						r_core_task_yield (&core->tasks);
 					}
 				}
-				int c = r_config_get_i (core->config, "anal.calls");
-				r_config_set_i (core->config, "anal.calls", 1);
+				// XXX do not override user settings!
+				// int c = r_config_get_i (core->config, "anal.calls");
+				// r_config_set_b (core->config, "anal.calls", true);
 				r_core_cmd0 (core, "s $S");
 				if (r_cons_is_breaked ()) {
 					goto jacuzzi;
@@ -11869,7 +11868,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 				R_LOG_INFO ("Finding and parsing C++ vtables (avrr)");
 				r_core_cmd0 (core, "avrr");
 				r_core_task_yield (&core->tasks);
-				r_config_set_i (core->config, "anal.calls", c);
+				// r_config_set_b (core->config, "anal.calls", c);
 				r_core_task_yield (&core->tasks);
 				if (r_cons_is_breaked ()) {
 					goto jacuzzi;
