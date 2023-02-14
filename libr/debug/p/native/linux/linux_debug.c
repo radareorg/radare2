@@ -1288,7 +1288,7 @@ bool linux_reg_write(RDebug *dbg, int type, const ut8 *buf, int size) {
 #endif
 	}
 	if (type == R_REG_TYPE_GPR) {
-#if __arm64__ || __aarch64__ || __s390x__
+#if __arm64__ || __aarch64__ || __s390x__ || __riscv
 		struct iovec io = {
 			.iov_base = (void*)buf,
 			.iov_len = sizeof (R_DEBUG_REG_T)
