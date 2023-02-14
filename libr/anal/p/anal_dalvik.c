@@ -121,7 +121,7 @@ static void format21c(int len, const ut8* data, ut32* dst, ut32* src) {
 	}
 }
 
-static void format22c(int len, const ut8* data, ut32* dst, ut32* src, ut32* ref) {
+static void format22c (int len, const ut8* data, ut32* dst, ut32* src, ut32* ref) {
 	if (len > 3) {
 		*dst = data[1] & 0x0F;
 		*src = (data[1] & 0xF0) >> 4;
@@ -1067,7 +1067,7 @@ static int dalvik_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 		op->type = R_ANAL_OP_TYPE_NEW;
 		// 0x1c, 0x1f, 0x22
 		if (mask & R_ARCH_OP_MASK_ESIL) {
-			format22c(len, data, &vA, &vB, &vC);
+			format22c (len, data, &vA, &vB, &vC);
 			esilprintf (op, "%u,%u,newarray,v%u,=",vC, vB, vA);
 		}
 		break;
@@ -1084,8 +1084,8 @@ static int dalvik_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 	case 0x27: // throw
 		op->type = R_ANAL_OP_TYPE_TRAP;
 		if (mask & R_ARCH_OP_MASK_ESIL) {
-			format11x(len, data, &vA);
-			esilprintf (op, "v%u,TRAP", vA);
+			format11x (len, data, &vA);
+			esilprintf (op, "0, v%u,TRAP", vA);
 		}
 		break;
 	case 0x28: // goto

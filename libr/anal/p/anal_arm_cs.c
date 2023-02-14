@@ -1089,23 +1089,23 @@ static ut64 shifted_imm64(csh *handle, cs_insn *insn, int n, int sz) {
 	cs_arm64_op op = INSOP64 (n);
 	int sft = op.shift.value;
 	switch (op.shift.type) {
-		case ARM64_SFT_MSL:
-			return (IMM64 (n) << sft) | ((1 << sft) - 1);
-		case ARM64_SFT_LSL:
-			return IMM64 (n) << sft;
-		case ARM64_SFT_LSR:
-			return IMM64 (n) >> sft;
-		case ARM64_SFT_ROR:
-			return (IMM64 (n) >> sft)|(IMM64 (n) << (sz - sft));
-		case ARM64_SFT_ASR:
-			switch (sz) {
-			case 8: return (st8)IMM64 (n) >> sft;
-			case 16: return (st16)IMM64 (n) >> sft;
-			case 32: return (st32)IMM64 (n) >> sft;
-			default: return (st64)IMM64 (n) >> sft;
-			}
-		default:
-			return IMM64 (n);
+	case ARM64_SFT_MSL:
+		return (IMM64 (n) << sft) | ((1 << sft) - 1);
+	case ARM64_SFT_LSL:
+		return IMM64 (n) << sft;
+	case ARM64_SFT_LSR:
+		return IMM64 (n) >> sft;
+	case ARM64_SFT_ROR:
+		return (IMM64 (n) >> sft)|(IMM64 (n) << (sz - sft));
+	case ARM64_SFT_ASR:
+		switch (sz) {
+		case 8: return (st8)IMM64 (n) >> sft;
+		case 16: return (st16)IMM64 (n) >> sft;
+		case 32: return (st32)IMM64 (n) >> sft;
+		default: return (st64)IMM64 (n) >> sft;
+		}
+	default:
+		return IMM64 (n);
 	}
 }
 
@@ -1254,6 +1254,9 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 	postfix = arm_prefix_cond (op, insn->detail->arm64.cc);
 
 	switch (insn->id) {
+	case ARM64_INS_BRK:
+		r_strbuf_setf (&op->esil, "0,%d,TRAP", (int) (IMM64 (0) & 0xffff));
+		break;
 	case ARM64_INS_REV:
 	case ARM64_INS_REV64:
 	// these REV* instructions were almost right, except in the cases like rev x0, x0
