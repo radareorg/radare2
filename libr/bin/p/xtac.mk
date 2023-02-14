@@ -1,9 +1,7 @@
 # ####################################################################
 # Plugin for XTA cache file - Makefile
 #
-# (c) FFRI Security, Inc., 2020 / Koh M. Nakagawa: FFRI Security, Inc.
-#
-# Copyright (c) 2020. FFRI Security, Inc., 2020 / Koh M. Nakagawa: FFRI Security, Inc. All Rights Reserved.
+# Copyright (c) FFRI Security, Inc., 2023 / Author: FFRI Security, Inc. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
