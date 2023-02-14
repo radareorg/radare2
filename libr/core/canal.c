@@ -1950,8 +1950,7 @@ R_API bool r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dep
 		return false;
 	}
 
-	const bool use_esil = r_config_get_i (core->config, "anal.esil");
-	RAnalFunction *fcn;
+	const bool use_esil = r_config_get_b (core->config, "anal.esil");
 
 	//update bits based on the core->offset otherwise we could have the
 	//last value set and blow everything up
@@ -1963,7 +1962,7 @@ R_API bool r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dep
 			return false;
 		}
 	}
-	if (r_config_get_i (core->config, "anal.a2f")) {
+	if (r_config_get_b (core->config, "anal.a2f")) {
 		r_core_cmdf (core, ".a2f @ 0x%08"PFMT64x, at);
 		return 0;
 	}
@@ -1972,13 +1971,13 @@ R_API bool r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dep
 	}
 
 	if ((from != UT64_MAX && !at) || at == UT64_MAX) {
-		R_LOG_WARN ("Invalid address from 0x%08"PFMT64x, from);
+		R_LOG_DEBUG ("Unknown address from memref call 0x%08"PFMT64x, from);
 		return false;
 	}
 	if (r_cons_is_breaked ()) {
 		return false;
 	}
-	fcn = r_anal_get_fcn_in (core->anal, at, 0);
+	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, at, 0);
 	if (fcn) {
 		if (fcn->addr == at) {
 			// if the function was already analyzed as a "loc.",
@@ -6132,7 +6131,7 @@ static int __addrs_cmp(void *_a, void *_b) {
 R_API void r_core_anal_inflags(RCore *core, const char *glob) {
 	RList *addrs = r_list_newf (free);
 	RListIter *iter;
-	bool a2f = r_config_get_i (core->config, "anal.a2f");
+	const bool a2f = r_config_get_b (core->config, "anal.a2f");
 	char *anal_in = strdup (r_config_get (core->config, "anal.in"));
 	r_config_set (core->config, "anal.in", "block");
 	// aaFa = use a2f instead of af+
