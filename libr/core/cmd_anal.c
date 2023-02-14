@@ -4072,12 +4072,17 @@ R_API void r_core_af(RCore *core, ut64 addr, const char *name, bool anal_calls) 
 		}
 	}
 	if (anal_calls) {
+		SetU *visited = set_u_new ();
 		fcn = r_anal_get_fcn_in (core->anal, addr, 0); /// XXX wrong in case of nopskip
 		if (fcn) {
 			RAnalRef *ref;
 			RListIter *iter;
 			RList *refs = r_anal_function_get_refs (fcn);
 			r_list_foreach (refs, iter, ref) {
+				if (!set_u_contains (visited, ref->addr)) {
+					continue;
+				}
+				set_u_add (visited, ref->addr);
 				if (ref->addr == UT64_MAX) {
 					R_LOG_DEBUG ("ignore 0x%08"PFMT64x" call 0x%08"PFMT64x, ref->at, ref->addr);
 					continue;
@@ -4099,15 +4104,23 @@ R_API void r_core_af(RCore *core, ut64 addr, const char *name, bool anal_calls) 
 					RAnalRef *ref;
 					RList *refs1 = r_anal_function_get_refs (f);
 					r_list_foreach (refs1, iter, ref) {
-						if (!r_io_is_valid_offset (core->io, ref->addr, !core->anal->opt.noncode)) {
+						const ut64 raddr = ref->addr;
+						if (!set_u_contains (visited, raddr)) {
 							continue;
 						}
-						int rt = R_ANAL_REF_TYPE_MASK (ref->type);
+						set_u_add (visited, raddr);
+						if (!r_io_is_valid_offset (core->io, raddr, !core->anal->opt.noncode)) {
+							continue;
+						}
+						const int rt = R_ANAL_REF_TYPE_MASK (ref->type);
 						if (rt != R_ANAL_REF_TYPE_CALL && rt != R_ANAL_REF_TYPE_CODE) {
 							continue;
 						}
-						r_core_anal_fcn (core, ref->addr, f->addr, R_ANAL_REF_TYPE_CALL, depth - 1);
 						// recursively follow fcn->refs again and again
+						if (!r_anal_get_function_at (core->anal, raddr)) {
+							// do not reanalize if theres a function already there
+							r_core_anal_fcn (core, raddr, f->addr, R_ANAL_REF_TYPE_CALL, depth - 1);
+						}
 					}
 					r_list_free (refs1);
 				} else {
@@ -4129,6 +4142,7 @@ R_API void r_core_af(RCore *core, ut64 addr, const char *name, bool anal_calls) 
 				r_core_recover_vars (core, fcn, true);
 			}
 		}
+		set_u_free (visited);
 	}
 	if (name) {
 		if (*name && !__setFunctionName (core, addr, name, true)) {
