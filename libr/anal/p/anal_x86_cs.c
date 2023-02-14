@@ -963,7 +963,7 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 			R_LOG_ERROR ("unknown operand size: %d", gop.insn->detail->x86.operands[0].size);
 			val = 256;
 		}
-		// experimental simplified expression
+		// OLD: esilprintf (op, "0,%s,!,!,?{,1,%s,-,%s,<<,0x%"PFMT64x",&,!,!,^,},%s,%s,$z,zf,:=,$p,pf,:=,%d,$s,sf,:=,cf,=", src, src, dst, val, src, dst2, bitsize - 1);
 		esilprintf (op,
 		"%s,0x%"PFMT64x",&,POP,$z,cf,:=,"
 		"%s,%s,<<=,"
