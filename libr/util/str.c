@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2007-2022 - pancake */
+/* radare - LGPL - Copyright 2007-2023 - pancake */
 
 #include <r_bin.h>
 
@@ -952,7 +952,7 @@ R_API R_MUSTUSE char* r_str_replace_all(char *str, const char *key, const char *
 	while (strstr (str, key)) {
 		res = r_str_replace (str, key, val, true);
 		if (!res) {
-			return str;
+			return NULL;
 		}
 		str = res;
 	}
