@@ -1307,6 +1307,9 @@ R_API bool r_core_run_script(RCore *core, const char *file) {
 			ret = r_core_cmd_lines (core, out);
 			free (out);
 		}
+	} else if (r_str_endswith (file, ".pk")) {
+		r_core_cmdf (core, "'poke -f %s", file);
+		ret = true;
 	} else if (r_str_endswith (file, ".html")) {
 		const bool httpSandbox = r_config_get_i (core->config, "http.sandbox");
 		char *httpIndex = strdup (r_config_get (core->config, "http.index"));
@@ -1434,7 +1437,7 @@ R_API bool r_core_run_script(RCore *core, const char *file) {
 					if (r_lang_use (core->lang, "qjs")) {
 						ret = r_lang_run_file (core->lang, file);
 					} else {
-						R_LOG_ERROR ("r2pm -ci rlang-qjs");
+						R_LOG_ERROR ("Cannot instantiate the quickjs runtime");
 						ret = false;
 					}
 				} else if (!strcmp (ext, "wren")) {
