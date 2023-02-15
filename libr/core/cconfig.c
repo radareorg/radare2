@@ -2423,7 +2423,7 @@ static bool cb_scrtheme(void* user, void* data) {
 		if (*node->value == '?') {
 			r_core_cmd0 (core, "eco");
 		} else {
-			r_core_cmdf (core, "eco %s", node->value);
+			r_core_cmdf (core, "'eco %s", node->value);
 		}
 	}
 	return true;
