@@ -77,6 +77,10 @@ static const char *parse_def(RReg *reg, char **tok, const int n) {
 	}
 	if (!strcmp (tok[3], "?")) {
 		item->offset = -1;
+	} else if (!strcmp (tok[3], "?0")) {
+		item->offset = -1;
+	} else if (!strcmp (tok[3], "?1")) {
+		item->offset = -2; // TODO: use an enum here
 	} else if (!strcmp (tok[3], "$")) {
 		RRegItem *ri;
 		RListIter *iter;

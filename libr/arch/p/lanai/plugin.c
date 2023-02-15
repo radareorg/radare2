@@ -68,8 +68,8 @@ static char *regs(RArchSession *as) {
 		"=SP	sp\n"
 		"=A0	r2\n"
 		"=A1	r3\n"
-		"gpr	r0	.32	?	0\n" // all zeros
-		"gpr	r1	.32	?	0\n" // all ones
+		"gpr	r0	.32	?0	0\n" // all zeros
+		"gpr	r1	.32	?1	0\n" // all ones
 
 		"gpr	r2	.32	0	0\n" // pc
 		"gpr	r3	.32	4	0\n" // status register

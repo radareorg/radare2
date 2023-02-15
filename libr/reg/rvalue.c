@@ -59,6 +59,9 @@ R_API ut64 r_reg_get_value_big(RReg *reg, RRegItem *item, utX *val) {
 
 R_API ut64 r_reg_get_value(RReg *reg, RRegItem *item) {
 	r_return_val_if_fail (reg && item, 0);
+	if (item->offset == -2) {
+		return UT64_MAX;
+	}
 	if (item->offset == -1) {
 		return 0LL;
 	}
