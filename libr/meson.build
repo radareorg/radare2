@@ -185,7 +185,6 @@ if no_user_plugins
     anal_plugins += [
       'z80',
       'arm_gnu',
-      'lanai_gnu',
       'bpf',
       'mips_gnu',
       'loongarch_gnu',
@@ -194,6 +193,9 @@ if no_user_plugins
       'ppc_gnu',
       'm68k_gnu',
       'sparc_gnu',
+    ]
+    arch_plugins += [
+      'lanai'
     ]
   endif
 endif
