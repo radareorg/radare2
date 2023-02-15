@@ -14,11 +14,13 @@
  * limitations under the License.
  */
 
+#define R_LOG_ORIGIN "xtac"
+
 #include <r_bin.h>
 #include "xtac.h"
 
-#define GET_META_DATA(v) (((v) & 0xF0000000) >> 28)
-#define GET_OFFSET(v) ((v) & 0x0FFFFFFF)
+#define GET_META_DATA(v) (((v)&0xF0000000) >> 28)
+#define GET_OFFSET(v)    ((v)&0x0FFFFFFF)
 
 static inline bool has_forward_edge_addr(ut8 meta) {
 	return (meta & 0x1) == 0x1;
@@ -28,7 +30,7 @@ static inline bool has_backward_edge_addr(ut8 meta) {
 	return (meta & 0x2) == 0x2;
 }
 
-static RList* sections(RBinFile *bf) {
+static RList *sections(RBinFile *bf) {
 	RBinXtacObj *bin = bf->o->bin_obj;
 
 	RList *ret = NULL;
@@ -39,7 +41,6 @@ static RList* sections(RBinFile *bf) {
 	RBinSection *ptr_sect_header = NULL, *ptr_sect_blck = NULL, *ptr_sect_trans_code = NULL;
 
 	if (!(ptr_sect_header = R_NEW0 (RBinSection))) {
-		r_sys_perror ("R_NEW0 (bin_xtac sections");
 		r_list_free (ret);
 		return NULL;
 	}
@@ -51,11 +52,11 @@ static RList* sections(RBinFile *bf) {
 
 	ut32 blck_stub_code_size = bin->header->size_of_blck_stub_code + 8; // NOTE: always 8 bytes data is padded.
 	ut32 ptr_addr = bin->header->ptr_to_head_blck_stub + sizeof (RBinBlckStubHeader) - 4;
-	for (ut32 i = 0; i < bin->blck_stubs->length; i++) {
-		RBinBlckStubHeader * blck_stub_header = (RBinBlckStubHeader *) r_list_get_n (bin->blck_stubs, i);
+	int i;
+	for (i = 0; i < bin->blck_stubs->length; i++) {
+		RBinBlckStubHeader *blck_stub_header = (RBinBlckStubHeader *)r_list_get_n (bin->blck_stubs, i);
 
 		if (!(ptr_sect_blck = R_NEW0 (RBinSection))) {
-			r_sys_perror ("R_NEW0 (bin_xtac sections)");
 			r_list_free (ret);
 			return NULL;
 		}
@@ -69,7 +70,6 @@ static RList* sections(RBinFile *bf) {
 		r_list_append (ret, ptr_sect_blck);
 
 		if (!(ptr_sect_trans_code = R_NEW0 (RBinSection))) {
-			r_sys_perror ("R_NEW0 (bin_xtac sections)");
 			r_list_free (ret);
 			return NULL;
 		}
@@ -96,98 +96,122 @@ static RList *fields(RBinFile *bf) {
 		return NULL;
 	}
 
-	r_strf_buffer(128);
-	#define ROWL(nam,siz,val,fmt) \
+	r_strf_buffer (128);
+#define ROWL(nam, siz, val, fmt) \
 	r_list_append (ret, r_bin_field_new (addr, addr, siz, nam, r_strf ("0x%08x", val), fmt, false));
 	RBinXtacObj *bin = bf->o->bin_obj;
 
 	ut64 addr = 0;
-	ROWL ("magic", 4, bin->header->magic, "x"); addr += 4;
-	ROWL ("version", 4, bin->header->version, "x"); addr += 4;
-	ROWL ("is_updated", 4, bin->header->is_updated, "x"); addr += 4;
-	ROWL ("ptr_to_addr_pairs", 4, bin->header->ptr_to_addr_pairs, "x"); addr += 4;
-	ROWL ("num_of_addr_pairs", 4, bin->header->num_of_addr_pairs, "x"); addr += 4;
+	ROWL ("magic", 4, bin->header->magic, "x");
+	addr += 4;
+	ROWL ("version", 4, bin->header->version, "x");
+	addr += 4;
+	ROWL ("is_updated", 4, bin->header->is_updated, "x");
+	addr += 4;
+	ROWL ("ptr_to_addr_pairs", 4, bin->header->ptr_to_addr_pairs, "x");
+	addr += 4;
+	ROWL ("num_of_addr_pairs", 4, bin->header->num_of_addr_pairs, "x");
+	addr += 4;
 
 	r_list_append (ret, r_bin_field_new (bin->header->ptr_to_mod_name, bin->header->ptr_to_mod_name, 0, "mod_name", strdup (bin->mod_name_u8), "s", false));
-	ROWL ("ptr_to_mod_name", 4, bin->header->ptr_to_mod_name, "x"); addr += 4;
-	ROWL ("size_of_mod_name", 4, bin->header->size_of_mod_name, "x"); addr += 4;
+	ROWL ("ptr_to_mod_name", 4, bin->header->ptr_to_mod_name, "x");
+	addr += 4;
+	ROWL ("size_of_mod_name", 4, bin->header->size_of_mod_name, "x");
+	addr += 4;
 
 	r_list_append (ret, r_bin_field_new (bin->header->ptr_to_nt_pname, bin->header->ptr_to_nt_pname, 0, "nt_pname", strdup (bin->nt_path_name_u8), "s", false));
-	ROWL ("ptr_to_nt_pname", 4, bin->header->ptr_to_nt_pname, "x"); addr += 4;
-	ROWL ("size_of_nt_pname", 4, bin->header->size_of_nt_pname, "x"); addr += 4;
+	ROWL ("ptr_to_nt_pname", 4, bin->header->ptr_to_nt_pname, "x");
+	addr += 4;
+	ROWL ("size_of_nt_pname", 4, bin->header->size_of_nt_pname, "x");
+	addr += 4;
 
-	ROWL ("ptr_to_head_blck_stub", 4, bin->header->ptr_to_head_blck_stub, "x"); addr += 4;
-	ROWL ("ptr_to_tail_blck_stub", 4, bin->header->ptr_to_tail_blck_stub, "x"); addr += 4;
-	ROWL ("size_of_blck_stub_code", 4, bin->header->size_of_blck_stub_code, "x"); addr += 4;
-	ROWL ("ptr_to_xtac_linked_list_head", 4, bin->header->ptr_to_xtac_linked_list_head, "x"); addr += 4;
-	ROWL ("ptr_to_xtac_linked_list_tail", 4, bin->header->ptr_to_xtac_linked_list_tail, "x"); addr += 4;
+	ROWL ("ptr_to_head_blck_stub", 4, bin->header->ptr_to_head_blck_stub, "x");
+	addr += 4;
+	ROWL ("ptr_to_tail_blck_stub", 4, bin->header->ptr_to_tail_blck_stub, "x");
+	addr += 4;
+	ROWL ("size_of_blck_stub_code", 4, bin->header->size_of_blck_stub_code, "x");
+	addr += 4;
+	ROWL ("ptr_to_xtac_linked_list_head", 4, bin->header->ptr_to_xtac_linked_list_head, "x");
+	addr += 4;
+	ROWL ("ptr_to_xtac_linked_list_tail", 4, bin->header->ptr_to_xtac_linked_list_tail, "x");
+	addr += 4;
 
 	addr = bin->header->ptr_to_addr_pairs;
-	for (ut32 i = 0; i < bin->header->num_of_addr_pairs; i++) {
-		char* x86_rva_key_name = r_str_newf ("address_pairs[%d].x86_rva", i);
-		char* arm64_rva_key_name = r_str_newf ("address_pairs[%d].arm64_rva", i);
+	int i;
+	for (i = 0; i < bin->header->num_of_addr_pairs; i++) {
+		char *x86_rva_key_name = r_str_newf ("address_pairs[%d].x86_rva", i);
+		char *arm64_rva_key_name = r_str_newf ("address_pairs[%d].arm64_rva", i);
 
-		ROWL (x86_rva_key_name, 4, bin->address_pairs[i].x86_rva, "x"); addr += 4;
-		ROWL (arm64_rva_key_name, 4, bin->address_pairs[i].arm64_rva, "x"); addr += 4;
+		ROWL (x86_rva_key_name, 4, bin->address_pairs[i].x86_rva, "x");
+		addr += 4;
+		ROWL (arm64_rva_key_name, 4, bin->address_pairs[i].arm64_rva, "x");
+		addr += 4;
 
-		free (x86_rva_key_name);
-		free (arm64_rva_key_name);
+		R_FREE (x86_rva_key_name);
+		R_FREE (arm64_rva_key_name);
 	}
 
-	for (ut32 i = 0; i < bin->blck_stubs->length; i++) {
-		char* blck_key_name = r_str_newf ("blck_stub[%d]", i);
-		RBinBlckStubHeader* blck_stub = (RBinBlckStubHeader*) r_list_get_n (bin->blck_stubs, i);
+	for (i = 0; i < bin->blck_stubs->length; i++) {
+		char *blck_key_name = r_str_newf ("blck_stub[%d]", i);
+		RBinBlckStubHeader *blck_stub = (RBinBlckStubHeader *)r_list_get_n (bin->blck_stubs, i);
 
 		addr = blck_stub->ptr_to_entry;
 
-		char* key_blck_magic = r_str_newf ("%s.magic", blck_key_name);
-		ROWL (key_blck_magic, 4, blck_stub->magic, "x"); addr += 4;
-		free (key_blck_magic);
+		char *key_blck_magic = r_str_newf ("%s.magic", blck_key_name);
+		ROWL (key_blck_magic, 4, blck_stub->magic, "x");
+		addr += 4;
+		R_FREE (key_blck_magic);
 
-		char* key_blck_offset_to_next_entry = r_str_newf ("%s.offset_to_next_entry", blck_key_name);
-		ROWL (key_blck_offset_to_next_entry, 4, blck_stub->offset_to_next_entry, "x"); addr += 4;
-		free (key_blck_offset_to_next_entry);
+		char *key_blck_offset_to_next_entry = r_str_newf ("%s.offset_to_next_entry", blck_key_name);
+		ROWL (key_blck_offset_to_next_entry, 4, blck_stub->offset_to_next_entry, "x");
+		addr += 4;
+		R_FREE (key_blck_offset_to_next_entry);
 
-		char* key_blck_ptr_to_next_entry = r_str_newf ("%s.ptr_to_next_entry", blck_key_name);
-		ROWL (key_blck_ptr_to_next_entry, 4, blck_stub->ptr_to_next_entry, "x"); addr += 4;
-		free (key_blck_ptr_to_next_entry);
+		char *key_blck_ptr_to_next_entry = r_str_newf ("%s.ptr_to_next_entry", blck_key_name);
+		ROWL (key_blck_ptr_to_next_entry, 4, blck_stub->ptr_to_next_entry, "x");
+		addr += 4;
+		R_FREE (key_blck_ptr_to_next_entry);
 
-		char* key_blck_padding = r_str_newf ("%s.padding", blck_key_name);
-		ROWL (key_blck_padding, 4, blck_stub->padding, "x"); addr += 4;
-		free (key_blck_padding);
+		char *key_blck_padding = r_str_newf ("%s.padding", blck_key_name);
+		ROWL (key_blck_padding, 4, blck_stub->padding, "x");
+		addr += 4;
+		R_FREE (key_blck_padding);
 
-		free (blck_key_name);
+		R_FREE (blck_key_name);
 	}
 
-	for (ut32 i = 0; i < bin->xtac_linked_list->length; i++) {
-		char* entry_key_name = r_str_newf ("xtac_linked_list[%d]", i);
-		RBinXtacLinkedListEntry* entry = (RBinXtacLinkedListEntry*) r_list_get_n (bin->xtac_linked_list, i);
+	for (i = 0; i < bin->xtac_linked_list->length; i++) {
+		char *entry_key_name = r_str_newf ("xtac_linked_list[%d]", i);
+		RBinXtacLinkedListEntry *entry = (RBinXtacLinkedListEntry *)r_list_get_n (bin->xtac_linked_list, i);
 
 		addr = entry->ptr_to_entry;
 
-		char* key_meta_and_offset = r_str_newf ("%s.meta_and_offset", entry_key_name);
-		ROWL (key_meta_and_offset, 4, entry->meta_and_offset, "x"); addr += 4;
-		free (key_meta_and_offset);
+		char *key_meta_and_offset = r_str_newf ("%s.meta_and_offset", entry_key_name);
+		ROWL (key_meta_and_offset, 4, entry->meta_and_offset, "x");
+		addr += 4;
+		R_FREE (key_meta_and_offset);
 
-		const ut8 meta = GET_META_DATA(entry->meta_and_offset);
-		if (has_forward_edge_addr(meta)) {
-			char* key_forward_edge_addr = r_str_newf ("%s.forward_edge_addr", entry_key_name);
-			ROWL (key_forward_edge_addr, 4, entry->forward_edge_addr, "x"); addr += 4;
-			free (key_forward_edge_addr);
+		const ut8 meta = GET_META_DATA (entry->meta_and_offset);
+		if (has_forward_edge_addr (meta)) {
+			char *key_forward_edge_addr = r_str_newf ("%s.forward_edge_addr", entry_key_name);
+			ROWL (key_forward_edge_addr, 4, entry->forward_edge_addr, "x");
+			addr += 4;
+			R_FREE (key_forward_edge_addr);
 		}
 
-		if (has_backward_edge_addr(meta)) {
-			char* key_backward_edge_addr = r_str_newf ("%s.backward_edge_addr", entry_key_name);
-			ROWL (key_backward_edge_addr, 4, entry->backward_edge_addr, "x"); addr += 4;
-			free (key_backward_edge_addr);
+		if (has_backward_edge_addr (meta)) {
+			char *key_backward_edge_addr = r_str_newf ("%s.backward_edge_addr", entry_key_name);
+			ROWL (key_backward_edge_addr, 4, entry->backward_edge_addr, "x");
+			addr += 4;
+			R_FREE (key_backward_edge_addr);
 		}
 
-		free (entry_key_name);
+		R_FREE (entry_key_name);
 	}
 
 	return ret;
 
-	#undef ROWL
+#undef ROWL
 }
 
 static void header(RBinFile *bf) {
@@ -246,13 +270,11 @@ static void header(RBinFile *bf) {
 
 static bool r_bin_xtac_read_header(RBinXtacObj *bin) {
 	if (!(bin->header = R_NEW0 (RBinXtacHeader))) {
-		r_sys_perror ("R_NEW0 (xtac header)");
 		return false;
 	}
-	if (r_buf_read_at (bin->b, 0, (ut8*) bin->header, sizeof (RBinXtacHeader)) < 0) {
-		R_LOG_WARN ("Warning: read (xtac header)\n");
-		free (bin->header);
-		bin->header = NULL;
+	if (r_buf_read_at (bin->b, 0, (ut8 *)bin->header, sizeof (RBinXtacHeader)) < 0) {
+		R_LOG_WARN ("Read (xtac header)");
+		R_FREE (bin->header);
 		return false;
 	}
 	return true;
@@ -263,13 +285,11 @@ static bool r_bin_xtac_read_address_pairs(RBinXtacObj *bin) {
 	const ut32 addr_pair_size = n_addr_pairs * sizeof (X86ArmAddrPair);
 	const ut32 p_addr_pair = bin->header->ptr_to_addr_pairs;
 	if (!(bin->address_pairs = R_NEWS0 (X86ArmAddrPair, n_addr_pairs))) {
-		r_sys_perror ("R_NEWS0 (xtac address pair)");
 		return false;
 	}
-	if (r_buf_read_at (bin->b, p_addr_pair, (ut8*) bin->address_pairs, addr_pair_size) < 0) {
-		R_LOG_WARN ("Warning: read (xtac address pairs)\n");
-		free (bin->address_pairs);
-		bin->address_pairs = NULL;
+	if (r_buf_read_at (bin->b, p_addr_pair, (ut8 *)bin->address_pairs, addr_pair_size) < 0) {
+		R_LOG_WARN ("Read (xtac address pairs)");
+		R_FREE (bin->address_pairs);
 		return false;
 	}
 	return true;
@@ -279,60 +299,52 @@ static bool r_bin_xtac_read_module_name(RBinXtacObj *bin) {
 	const ut32 len_of_mod_name = bin->header->size_of_mod_name / sizeof (ut16) + 1;
 	const ut32 p_mod_name = bin->header->ptr_to_mod_name;
 	if (!(bin->mod_name_u16 = R_NEWS0 (ut16, len_of_mod_name))) {
-		r_sys_perror ("R_NEWS0 (xtac module name)");
 		return false;
 	}
-	if (r_buf_read_at (bin->b, p_mod_name, (ut8*) bin->mod_name_u16, bin->header->size_of_mod_name) < 0) {
-		R_LOG_WARN ("Warning: read (xtac module name)\n");
-		free (bin->mod_name_u16);
-		bin->mod_name_u16 = NULL;
+	if (r_buf_read_at (bin->b, p_mod_name, (ut8 *)bin->mod_name_u16, bin->header->size_of_mod_name) < 0) {
+		R_LOG_WARN ("Read (xtac module name)");
+		R_FREE (bin->mod_name_u16);
 		return false;
 	}
-	if (!(bin->mod_name_u8 = r_str_utf16_decode((ut8*) bin->mod_name_u16, bin->header->size_of_mod_name))) {
-		free (bin->mod_name_u16);
-		bin->mod_name_u16 = NULL;
+	if (!(bin->mod_name_u8 = r_str_utf16_decode ((ut8 *)bin->mod_name_u16, bin->header->size_of_mod_name))) {
+		R_FREE (bin->mod_name_u16);
 		return false;
 	}
 	return true;
 }
 
 static bool r_bin_xtac_read_nt_native_pathname(RBinXtacObj *bin) {
-	const ut32 len_of_nt_pname = bin->header->size_of_nt_pname / sizeof (ut16) + 1;
+	const ut32 len_of_nt_pname = (bin->header->size_of_nt_pname / sizeof (ut16)) + 1;
 	const ut32 p_nt_name = bin->header->ptr_to_nt_pname;
 	if (!(bin->nt_path_name_u16 = R_NEWS0 (ut16, len_of_nt_pname))) {
-		r_sys_perror ("R_NEWS0 (xtac nt path)");
 		return false;
 	}
-	if (r_buf_read_at (bin->b, p_nt_name, (ut8*) bin->nt_path_name_u16, bin->header->size_of_nt_pname) < 0) {
-		R_LOG_WARN ("Warning: read (xtac nt path)\n");
-		free (bin->nt_path_name_u16);
-		bin->nt_path_name_u16 = NULL;
+	const ut32 size_read = r_buf_read_at (bin->b, p_nt_name, (ut8 *)bin->nt_path_name_u16, bin->header->size_of_nt_pname);
+	if (size_read != bin->header->size_of_nt_pname) {
+		R_LOG_WARN ("Read (xtac nt path)");
+		R_FREE (bin->nt_path_name_u16);
 		return false;
 	}
 
-	char *nt_path_name_u8_raw = NULL;
-	if (!(nt_path_name_u8_raw = r_str_utf16_decode((ut8*) bin->nt_path_name_u16, bin->header->size_of_nt_pname))) {
-		free (bin->nt_path_name_u16);
-		bin->nt_path_name_u16 = NULL;
+	char *nt_path_name_u8_raw;
+	if (!(nt_path_name_u8_raw = r_str_utf16_decode ((ut8 *)bin->nt_path_name_u16, bin->header->size_of_nt_pname))) {
+		R_FREE (bin->nt_path_name_u16);
 		return false;
 	}
 
 	if (!(bin->nt_path_name_u8 = r_str_escape_utf8_for_json (nt_path_name_u8_raw, -1))) {
-		free (bin->nt_path_name_u16);
-		bin->nt_path_name_u16 = NULL;
-		free (nt_path_name_u8_raw);
-		bin->nt_path_name_u8 = NULL;
+		R_FREE (bin->nt_path_name_u16);
+		R_FREE (nt_path_name_u8_raw);
 		return false;
 	}
 
-	free (nt_path_name_u8_raw);
+	R_FREE (nt_path_name_u8_raw);
 
 	return true;
 }
 
 static bool r_bin_xtac_read_blck_stubs(RBinXtacObj *bin) {
-	if (!(bin->blck_stubs = r_list_newf(free))) {
-		r_sys_perror ("r_list_newf (r_bin_xtac_read_blck_stubs)");
+	if (!(bin->blck_stubs = r_list_newf (free))) {
 		return false;
 	}
 	const ut32 max_depth = 20;
@@ -341,24 +353,23 @@ static bool r_bin_xtac_read_blck_stubs(RBinXtacObj *bin) {
 	do {
 		RBinBlckStubHeader *blck_stub = NULL;
 		if (!(blck_stub = R_NEW0 (RBinBlckStubHeader))) {
-			r_sys_perror ("R_NEW0 (xtac BLCK stub)");
 			return false;
 		}
-		if (r_buf_read_at (bin->b, p_blck_stub, (ut8*) blck_stub, sizeof (RBinBlckStubHeader) - sizeof (ut32)) < 0) {
-			R_LOG_WARN ("Warning: read (xtac BLCK stub)\n");
-			free (blck_stub);
+		if (r_buf_read_at (bin->b, p_blck_stub, (ut8 *)blck_stub, sizeof (RBinBlckStubHeader) - sizeof (ut32)) < 0) {
+			R_LOG_WARN ("Read (xtac BLCK stub)");
+			R_FREE (blck_stub);
 			return false;
 		}
 		blck_stub->ptr_to_entry = p_blck_stub;
 		r_list_append (bin->blck_stubs, blck_stub);
 		if (p_blck_stub == blck_stub->ptr_to_next_entry) {
-			R_LOG_WARN ("Warning: an infinite loop is detected. Some header members of BOCK Stub might be broken\n");
+			R_LOG_WARN ("An infinite loop is detected. Some header members of BOCK Stub might be broken");
 			break;
 		}
 		p_blck_stub = blck_stub->ptr_to_next_entry;
 		i++;
 		if (i >= max_depth) {
-			R_LOG_WARN ("Warning: Too many BLCK Stubs. Some header members of BLCK Stub might be broken\n");
+			R_LOG_WARN ("Too many BLCK Stubs. Some header members of BLCK Stub might be broken");
 			break;
 		}
 	} while (p_blck_stub);
@@ -366,8 +377,7 @@ static bool r_bin_xtac_read_blck_stubs(RBinXtacObj *bin) {
 }
 
 static bool r_bin_xtac_read_xtac_linked_list(RBinXtacObj *bin) {
-	if (!(bin->xtac_linked_list = r_list_newf(free))) {
-		r_sys_perror ("r_list_newf (r_bin_xtac_read_xtac_linked_list)");
+	if (!(bin->xtac_linked_list = r_list_newf (free))) {
 		return false;
 	}
 	RBinXtacLinkedListEntry *entry = NULL;
@@ -376,42 +386,41 @@ static bool r_bin_xtac_read_xtac_linked_list(RBinXtacObj *bin) {
 		ut32 p_buffer = p_xtac_linked_list_entry;
 
 		if (!(entry = R_NEW0 (RBinXtacLinkedListEntry))) {
-			r_sys_perror ("R_NEW0 (xtac linked list)");
 			return false;
 		}
 		entry->ptr_to_entry = p_buffer;
 
-		if (r_buf_read_at (bin->b, p_buffer, (ut8*) entry, sizeof (ut32)) < 0) {
-			R_LOG_WARN ("Warning: read (xtac linked list metadata)\n");
-			free (entry);
+		if (r_buf_read_at (bin->b, p_buffer, (ut8 *)entry, sizeof (ut32)) < 0) {
+			R_LOG_WARN ("Read (xtac linked list metadata)");
+			R_FREE (entry);
 			return false;
 		}
 
-		const ut32 meta = GET_META_DATA(entry->meta_and_offset);
+		const ut32 meta = GET_META_DATA (entry->meta_and_offset);
 		if (has_forward_edge_addr (meta)) {
 			p_buffer += sizeof (ut32);
-			if (r_buf_read_at (bin->b, p_buffer, (ut8*) &entry->forward_edge_addr, sizeof (ut32)) < 0) {
-				R_LOG_WARN ("Warning: read (xtac linked list forward edge address)\n");
-				free (entry);
+			if (r_buf_read_at (bin->b, p_buffer, (ut8 *)&entry->forward_edge_addr, sizeof (ut32)) < 0) {
+				R_LOG_WARN ("Read (xtac linked list forward edge address)");
+				R_FREE (entry);
 				return false;
 			}
 		}
 		if (has_backward_edge_addr (meta)) {
 			p_buffer += sizeof (ut32);
-			if (r_buf_read_at (bin->b, p_buffer, (ut8*) &entry->backward_edge_addr, sizeof (ut32)) < 0) {
-				R_LOG_WARN ("Warning: read (xtac linked list backward edge address)\n");
-				free (entry);
+			if (r_buf_read_at (bin->b, p_buffer, (ut8 *)&entry->backward_edge_addr, sizeof (ut32)) < 0) {
+				R_LOG_WARN ("Read (xtac linked list backward edge address)");
+				R_FREE (entry);
 				return false;
 			}
 		}
 
-		r_list_append(bin->xtac_linked_list, entry);
-		p_xtac_linked_list_entry += GET_OFFSET(entry->meta_and_offset) * 4;
+		r_list_append (bin->xtac_linked_list, entry);
+		p_xtac_linked_list_entry += GET_OFFSET (entry->meta_and_offset) * 4;
 	} while (p_xtac_linked_list_entry < bin->header->ptr_to_addr_pairs);
 
-	if (GET_OFFSET(entry->meta_and_offset) != 0x0FFFFFFF) {
-		R_LOG_WARN ("Warning: xtac linked list is not properly terminated\n");
-		R_LOG_WARN ("Some entry of xtac linked list might be broken\n");
+	if (GET_OFFSET (entry->meta_and_offset) != 0x0FFFFFFF) {
+		R_LOG_WARN ("xtac linked list is not properly terminated");
+		R_LOG_WARN ("Some entry of xtac linked list might be broken");
 	}
 
 	return true;
@@ -419,43 +428,43 @@ static bool r_bin_xtac_read_xtac_linked_list(RBinXtacObj *bin) {
 
 static bool r_bin_xtac_init(RBinXtacObj *bin) {
 	// NOTE: not tested on big-endian processor
-	if (!r_bin_xtac_read_header(bin)) {
+	if (!r_bin_xtac_read_header (bin)) {
 		return false;
 	}
 
-	if (!r_bin_xtac_read_address_pairs(bin)) {
+	if (!r_bin_xtac_read_address_pairs (bin)) {
 		return false;
 	}
 
-	if (!r_bin_xtac_read_module_name(bin)) {
+	if (!r_bin_xtac_read_module_name (bin)) {
 		return false;
 	}
 
-	if (!r_bin_xtac_read_nt_native_pathname(bin)) {
+	if (!r_bin_xtac_read_nt_native_pathname (bin)) {
 		return false;
 	}
 
-	if (!r_bin_xtac_read_blck_stubs(bin)) {
+	if (!r_bin_xtac_read_blck_stubs (bin)) {
 		return false;
 	}
 
-	if (!r_bin_xtac_read_xtac_linked_list(bin)) {
+	if (!r_bin_xtac_read_xtac_linked_list (bin)) {
 		return false;
 	}
 
 	return true;
 }
 
-static void* r_bin_xtac_free(RBinXtacObj *bin) {
+static void r_bin_xtac_free(RBinXtacObj *bin) {
 	if (!bin) {
-		return NULL;
+		return;
 	}
-	free (bin->header);
-	free (bin->address_pairs);
-	free (bin->mod_name_u16);
-	free (bin->mod_name_u8);
-	free (bin->nt_path_name_u16);
-	free (bin->nt_path_name_u8);
+	R_FREE (bin->header);
+	R_FREE (bin->address_pairs);
+	R_FREE (bin->mod_name_u16);
+	R_FREE (bin->mod_name_u8);
+	R_FREE (bin->nt_path_name_u16);
+	R_FREE (bin->nt_path_name_u8);
 
 	r_buf_free (bin->b);
 	bin->b = NULL;
@@ -465,27 +474,26 @@ static void* r_bin_xtac_free(RBinXtacObj *bin) {
 	bin->blck_stubs = NULL;
 	bin->xtac_linked_list = NULL;
 
-	free (bin);
-	return NULL;
+	R_FREE (bin);
+	return;
 }
 
 static RBinXtacObj *r_bin_xtac_new_buf(RBuffer *buf, bool verbose) {
 	RBinXtacObj *bin = R_NEW0 (RBinXtacObj);
-	if (!bin) {
-		return NULL;
-	}
-	bin->b = r_buf_ref (buf);
-	bin->size = r_buf_size (buf);
-	bin->verbose = verbose;
-	if (!r_bin_xtac_init (bin)) {
-		return r_bin_xtac_free(bin);
+	if (R_LIKELY (bin)) {
+		bin->b = r_buf_ref (buf);
+		bin->size = r_buf_size (buf);
+		bin->verbose = verbose;
+		if (!r_bin_xtac_init (bin)) {
+			r_bin_xtac_free (bin);
+		}
 	}
 	return bin;
 }
 
-static bool load_buffer(RBinFile* bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
+static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
 	r_return_val_if_fail (bf && bin_obj && buf, false);
-	RBinXtacObj *res = r_bin_xtac_new_buf(buf, bf->rbin->verbose);
+	RBinXtacObj *res = r_bin_xtac_new_buf (buf, bf->rbin->verbose);
 	if (res) {
 		*bin_obj = res;
 		return true;
@@ -494,12 +502,11 @@ static bool load_buffer(RBinFile* bf, void **bin_obj, RBuffer *buf, ut64 loadadd
 }
 
 static void destroy(RBinFile *bf) {
-	r_bin_xtac_free ((RBinXtacObj*)bf->o->bin_obj);
+	r_bin_xtac_free ((RBinXtacObj *)bf->o->bin_obj);
 }
 
-static ut64 baddr(RBinFile* bf) {
-	(void)bf;
-	return 0;
+static ut64 baddr(RBinFile *bf) {
+	return bf->o->baddr;
 }
 
 static RBinInfo *info(RBinFile *bf) {
@@ -526,34 +533,32 @@ static RBinInfo *info(RBinFile *bf) {
 	return ret;
 }
 
-static bool check_buffer(RBinFile* file, RBuffer *b) {
-	ut64 length = r_buf_size(b);
-	if (length <= sizeof (RBinXtacHeader) ) {
+static bool check_buffer(RBinFile *file, RBuffer *b) {
+	ut64 length = r_buf_size (b);
+	if (length <= sizeof (RBinXtacHeader)) {
 		return false;
 	}
 
 	ut8 buf[sizeof (XTAC_MAGIC) - 1];
-	r_buf_read_at(b, 0, buf, sizeof (buf));
-	return memcmp(buf, XTAC_MAGIC, sizeof (buf)) == 0;
+	r_buf_read_at (b, 0, buf, sizeof (buf));
+	return memcmp (buf, XTAC_MAGIC, sizeof (buf)) == 0;
 }
 
-static RList* symbols(RBinFile *bf) {
+static RList *symbols(RBinFile *bf) {
 	RBinXtacObj *bin = bf->o->bin_obj;
 
-	// FIXME: assuming base address
-	int x86_baddr = 0x400000, arm_baddr = 0x0;
+	ut64 x86_baddr = baddr (bf), arm_baddr = 0x0;
 
 	RList *ret = NULL;
 	if (!(ret = r_list_newf (free))) {
-		r_sys_perror ("r_list_newf (xtac symbol)");
 		return NULL;
 	}
 
 	RBinSymbol *ptr = NULL;
 	const ut32 num_pairs = bin->header->num_of_addr_pairs;
-	for (int i = 0; i < num_pairs; i++) {
+	int i;
+	for (i = 0; i < num_pairs; i++) {
 		if (!(ptr = R_NEW0 (RBinSymbol))) {
-			r_sys_perror ("R_NEW0 (xtac symbol)");
 			break;
 		}
 		const ut32 x86_vaddr = bin->address_pairs[i].x86_rva + x86_baddr;
