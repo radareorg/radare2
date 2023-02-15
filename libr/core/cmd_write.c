@@ -20,6 +20,7 @@ static const char *help_msg_w[] = {
 	"wd"," [off] [n]","copy N bytes from OFF to $$ (memcpy) (see y?)",
 	"we","[?] [nNsxX] [arg]","extend write operations (insert instead of replace)",
 	"wf","[fs] -|file","write contents of file at current offset",
+	"wg","[et] [http://host/file]", "download file from http server and save it to disk (wget)",
 	"wh"," r2","whereis/which shell command",
 	"wm"," f0ff","set binary mask hexpair to be used as cyclic write mask",
 	"wo","[?] hex","write in block with operation. 'wo?' fmi",
@@ -1462,6 +1463,39 @@ static int cmd_w(RCore *core, const char *input) {
 	return 0;
 }
 
+static int cmd_wget(RCore *core, const char *input) {
+	while (*input && *input != ' ') {
+		input++;
+	}
+	input = r_str_trim_head_ro (input);
+	if (!r_str_startswith (input, "http://")) {
+		R_LOG_ERROR ("wget/wg command only accepts http:// urls");
+		return 0;
+	}
+	const char *fname = r_str_lchr (input, '/');
+	if (!fname || !*fname) {
+		fname = "index.html";
+	} else {
+		fname ++;
+	}
+	int len = 0;
+	char *data = r_socket_http_get (input, NULL, &len);
+	if (data) {
+		if (!r_file_dump (fname, (const ut8*)data, len, 0)) {
+			R_LOG_ERROR ("Cannot save file to disk");
+			r_core_return_value (core, 1);
+		} else {
+			r_core_return_value (core, 0);
+			R_LOG_INFO ("Saved %d bytes in %s", len, fname);
+		}
+		free (data);
+	} else {
+		R_LOG_ERROR ("Cannot retrieve file");
+		r_core_return_value (core, 1);
+	}
+	return 0;
+}
+
 static int cmd_wz(RCore *core, const char *input) {
 	char *str = strdup (input + 1);
 	int len = r_str_unescape (str) + 1;
@@ -2281,6 +2315,9 @@ static int cmd_write(void *data, const char *input) {
 		}
 		break;
 	}
+	case 'g': // "wg"
+		cmd_wget (core, input + 1);
+		break;
 	case 'z': // "wz"
 		cmd_wz (core, input + 1);
 		break;

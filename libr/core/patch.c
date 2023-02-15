@@ -8,9 +8,7 @@ R_API bool r_core_patch_line(RCore *core, char *str) {
 		return false;
 	}
 	*p = 0;
-	for (p++; *p == ' '; p++) {
-		; // XXX: skipsspaces here
-	}
+	p = (char *)r_str_trim_head_ro (p + 1);
 
 	switch (*p) {
 	case '"':
@@ -29,7 +27,7 @@ R_API bool r_core_patch_line(RCore *core, char *str) {
 		q = strchr (p + 1, ' ');
 		if (q) {
 			*q = 0;
-			q = r_str_trim_head_ro (q + 1);
+			q = (char *)r_str_trim_head_ro (q + 1);
 		} else {
 			return 0;
 		}
