@@ -20,3 +20,16 @@ EXPECT=<<EOF
         .foo.touch  
 EOF
 RUN
+
+NAME=quote + quoteseek
+FILE=-
+CMDS=<<EOF
+woe 1
+""p8 8
+""@16""p8 8
+EOF
+EXPECT=<<EOF
+0001020304050607
+1011121314151617
+EOF
+RUN

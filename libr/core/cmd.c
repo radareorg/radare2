@@ -3575,6 +3575,25 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 	bool tmpseek = false;
 	bool original_tmpseek = core->tmpseek;
 	if (R_UNLIKELY (r_str_startswith (cmd, "\"\""))) {
+		if (cmd[2] == '@') {
+			int res = 1;
+			char *arg = strdup (cmd + 2);
+			char *end = strstr (arg, "\"\"");
+			if (!end) {
+				R_LOG_ERROR ("Invalid syntax, expected \"\"@addr\"\"command");
+				free (arg);
+			} else {
+				*end = 0;
+				cmd = end + 2;
+				ut64 addr = core->offset;
+				ut64 at = r_num_math (core->num, arg + 1);
+				r_core_seek (core, at, true);
+				res = r_core_cmd_call (core, cmd);
+				r_core_seek (core, addr, true);
+				free (arg);
+			}
+			return res;
+		}
 		return r_core_cmd_call (core, cmd + 2);
 	}
 	if (R_UNLIKELY (r_str_startswith (cmd, "?t\"\""))) {
