@@ -1145,7 +1145,7 @@ static bool is_used_like_arg(const char *regname, const char *opsreg, const char
 		}
 		//fallthrough
 	default:
-		if (op_affect_dst (op) && arch_destroys_dst (anal->cur->arch)) {
+		if (op_affect_dst (op) && arch_destroys_dst (anal->config->arch)) {
 			if (is_reg_in_src (regname, anal, op)) {
 				return true;
 			}

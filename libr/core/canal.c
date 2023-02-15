@@ -5444,8 +5444,8 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 	r_cons_break_push (cccb, core);
 
 	int arch = -1;
-	if (!strcmp (core->anal->cur->arch, "arm")) {
-		switch (core->anal->cur->bits) {
+	if (!strcmp (core->anal->config->arch, "arm")) {
+		switch (core->anal->config->bits) {
 		case 64: arch = R2_ARCH_ARM64; break;
 		case 32: arch = R2_ARCH_ARM32; break;
 		case 16: arch = R2_ARCH_THUMB; break;
@@ -5455,7 +5455,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 
 	ut64 gp = r_config_get_i (core->config, "anal.gp");
 	const char *gp_reg = NULL;
-	if (!strcmp (core->anal->cur->arch, "mips")) {
+	if (!strcmp (core->anal->config->arch, "mips")) {
 		gp_reg = "gp";
 		arch = R2_ARCH_MIPS;
 	}
@@ -5612,7 +5612,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 		switch (op.type) {
 		case R_ANAL_OP_TYPE_LEA:
 			// arm64
-			if (core->anal->cur && arch == R2_ARCH_ARM64) {
+			if (cur && arch == R2_ARCH_ARM64) {
 				if (CHECKREF (ESIL->cur)) {
 					r_anal_xrefs_set (core->anal, cur, ESIL->cur, R_ANAL_REF_TYPE_STRING | R_ANAL_REF_TYPE_READ);
 				}

@@ -570,16 +570,13 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int
 	} delay = {
 		0
 	};
-	if (anal->cur == NULL) {
-		R_LOG_WARN ("fcn.recurse found anal.cur is nul");
-		return R_ANAL_RET_ERROR;
-	}
-	bool arch_destroys_dst = does_arch_destroys_dst (anal->cur->arch);
-	const bool is_arm = anal->cur->arch && !strncmp (anal->cur->arch, "arm", 3);
-	const bool is_v850 = is_arm ? false: (anal->cur->arch && (!strncmp (anal->cur->arch, "v850", 4) || !strncmp (anal->coreb.cfgGet (anal->coreb.core, "asm.cpu"), "v850", 4)));
-	const bool is_x86 = is_arm ? false: anal->cur->arch && !strncmp (anal->cur->arch, "x86", 3);
+	const char *arch = anal->config? anal->config->arch: R_SYS_ARCH;
+	bool arch_destroys_dst = does_arch_destroys_dst (arch);
+	const bool is_arm = !strncmp (arch, "arm", 3);
+	const bool is_v850 = is_arm ? false: (arch && (!strncmp (arch, "v850", 4) || !strncmp (anal->coreb.cfgGet (anal->coreb.core, "asm.cpu"), "v850", 4)));
+	const bool is_x86 = is_arm ? false: arch && !strncmp (arch, "x86", 3);
 	const bool is_amd64 = is_x86 ? fcn->cc && !strcmp (fcn->cc, "amd64") : false;
-	const bool is_dalvik = is_x86 ? false : anal->cur->arch && !strncmp (anal->cur->arch, "dalvik", 6);
+	const bool is_dalvik = is_x86 ? false : arch && !strncmp (arch, "dalvik", 6);
 	const bool propagate_noreturn = anal->opt.propagate_noreturn;
 
 	if (r_cons_is_breaked ()) {
