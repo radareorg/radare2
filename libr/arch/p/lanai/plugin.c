@@ -1,7 +1,6 @@
-/* radare - LGPL - Copyright 2016-2022 - pancake */
+/* radare - LGPL - Copyright 2016-2023 - pancake */
 
-#include <r_lib.h>
-#include <r_asm.h>
+#include <r_arch.h>
 #include "disas-asm.h"
 
 static int lanai_buffer_read_memory(bfd_vma memaddr, bfd_byte *myaddr, ut32 length, struct disassemble_info *info) {
@@ -28,7 +27,10 @@ static void memory_error_func(int status, bfd_vma memaddr, struct disassemble_in
 DECLARE_GENERIC_PRINT_ADDRESS_FUNC_NOGLOBALS()
 DECLARE_GENERIC_FPRINTF_FUNC_NOGLOBALS()
 
-static int lanai_op(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
+static bool decode(RArchSession *a, RAnalOp *op, RArchDecodeMask mask) {
+	const int len = op->size;
+	const ut8 *buf = op->bytes;
+	const ut64 addr = op->addr;
 	ut8 bytes[8] = {0};
 	struct disassemble_info disasm_obj = {0};
 	RStrBuf *sb = NULL;
@@ -58,21 +60,53 @@ static int lanai_op(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, R
 	return op->size;
 }
 
-RAnalPlugin r_anal_plugin_lanai_gnu = {
+// 32 registers, most of them general purpose, with special treatment for R0 (all zeroes), R1 (all ones), R2 (the program counter), R3 (status register), and some registers allocated for mode/context switching.
+
+static char *regs(RArchSession *as) {
+	const char *const p =
+		"=PC	r2\n"
+		"=SP	sp\n"
+		"=A0	r2\n"
+		"=A1	r3\n"
+		"gpr	r0	.32	?	0\n" // all zeros
+		"gpr	r1	.32	?	0\n" // all ones
+
+		"gpr	r2	.32	0	0\n" // pc
+		"gpr	r3	.32	4	0\n" // status register
+		"gpr	r4	.32	8	0\n"
+		"gpr	r5	.32	12	0\n"
+		"gpr	r6	.32	16	0\n"
+		"gpr	r7	.32	20	0\n"
+		"gpr	r8	.32	24	0\n"
+		"gpr	r9	.32	28	0\n"
+		"gpr	r10	.32	32	0\n"
+		"gpr	r11	.32	36	0\n"
+		"gpr	r12	.32	40	0\n"
+		"gpr	r13	.32	44	0\n"
+		"gpr	r14	.32	48	0\n"
+		"gpr	r15	.32	52	0\n"
+		"gpr	r16	.32	56	0\n"
+		"gpr	r17	.32	60	0\n"
+		"gpr	r18	.32	64	0\n"
+		"gpr	r19	.32	68	0\n";
+	return strdup (p);
+}
+
+RArchPlugin r_arch_plugin_lanai = {
 	.name = "lanai",
 	.arch = "lanai",
 	.license = "GPL3",
-	.cpus = "",
-	.bits = 16,
+	.bits = R_SYS_BITS_PACK1 (32),
 	.endian = R_SYS_ENDIAN_BIG,
-	.desc = "HP PA-RISC",
-	.op = &lanai_op
+	.desc = "Myricom's LANAI based on GNU binutils",
+	.regs = regs,
+	.decode = &decode
 };
 
 #ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_ANAL,
-	.data = &r_anal_plugin_lanai_gnu,
+	.type = R_LIB_TYPE_ARCH,
+	.data = &r_arch_plugin_lanai_gnu,
 	.version = R2_VERSION
 };
 #endif
