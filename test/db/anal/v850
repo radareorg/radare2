@@ -327,6 +327,7 @@ EXPECT=<<EOF
 0x0011078e    6    152 fcn.0011078e
 0x001112e6    1     18 sym.__strtod_r
 0x0010fe46   27    548 sym.__strtod_l
+0x0010fda0    9     68 sym._strncmp
 0x001112f8    1     24 sym._strtod_l
 0x00111310    1     28 sym._strtod
 0x0011132c   10    222 sym._strtof_l

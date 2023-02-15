@@ -85,6 +85,7 @@ r_bin_sources = [
   'p/bin_xtr_xalz.c',
   'p/bin_z64.c',
   'p/bin_zimg.c',
+  'p/bin_xtac.c',
 # implementation
   'format/bflt/bflt.c',
   'format/coff/coff.c',
