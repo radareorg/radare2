@@ -118,7 +118,7 @@ static inline RAsmEqu *r_asm_code_equ_get(RAsmCode *code, const char *key) { // 
 	void *equ;
 	RListIter *iter;
 	r_list_foreach (code->equs, iter, equ) {
-		RAsmEqu *e = (RAsmEqu*) equ; NULL;
+		RAsmEqu *e = (RAsmEqu*) equ;
 		if (!strcmp (e->key, key)) {
 			return e;
 		}
