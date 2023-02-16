@@ -150,7 +150,7 @@ R_API bool r_core_loadlibs(RCore *core, int where, const char *path) {
 	char *file;
 	r_list_foreach (files, iter, file) {
 		if (__isScriptFilename (file)) {
-			r_core_cmdf (core, "\". %s/%s\"", homeplugindir, file);
+			r_core_cmdf (core, "\"\". %s/%s", homeplugindir, file);
 		}
 	}
 	r_list_free (files);

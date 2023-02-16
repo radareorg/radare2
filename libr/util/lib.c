@@ -334,6 +334,9 @@ R_API int r_lib_open_ptr(RLib *lib, const char *file, void *handler, RLibStruct 
 		}
 	}
 	RLibPlugin *p = R_NEW0 (RLibPlugin);
+	if (R_UNLIKELY (!p)) {
+		return -1;
+	}
 	p->type = stru->type;
 	p->data = stru->data;
 	p->file = strdup (file);
