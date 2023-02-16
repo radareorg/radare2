@@ -550,12 +550,15 @@ static int r2pm_clone(const char *pkg) {
 			r_sys_mkdirp (srcdir);
 			if (download (url, outfile)) {
 				if (unzip (outfile, srcdir)) {
-					eprintf ("download and unzip works!\n");
+					R_LOG_INFO ("download and unzip works!");
+					free (srcdir);
+					free (url);
+					return 0;
 				} else {
-					eprintf ("unzip failed\n");
+					R_LOG_ERROR ("unzip has failed");
 				}
 			} else {
-				eprintf ("download failed\n");
+				R_LOG_ERROR ("download has failed");
 			}
 			free (srcdir);
 			free (url);
@@ -651,7 +654,12 @@ static int r2pm_install_pkg(const char *pkg, bool global) {
 		R_LOG_ERROR ("This package does not have R2PM_INSTALL_WINDOWS instructions");
 		return 1;
 	}
+	char *dirname = r2pm_get (pkg, "\nR2PM_DIR ", TT_TEXTLINE);
 	char *s = r_str_newf ("cd %s && cd %s && %s", srcdir, pkg, script);
+	if (dirname) {
+		free (s);
+		s = r_str_newf ("cd %s && cd %s && %s", srcdir, dirname, script);
+	}
 	int res = r_sandbox_system (s, 1);
 	free (s);
 #else
@@ -663,13 +671,18 @@ static int r2pm_install_pkg(const char *pkg, bool global) {
 	}
 	eprintf ("SCRIPT=<<EOF\n%s\nEOF\n", script);
 	char *pkgdir = r_str_newf ("%s/%s", srcdir, pkg);
+	char *dirname = r2pm_get (pkg, "\nR2PM_DIR ", TT_TEXTLINE);
+	if (dirname) {
+		free (pkgdir);
+		pkgdir = r_str_newf ("%s/%s/%s", srcdir, pkg, dirname);
+	}
 	if (!r_file_is_directory (pkgdir)) {
 		R_LOG_ERROR ("Cannot find directory: %s", pkgdir);
 		free (pkgdir);
 		return 1;
 	}
+	char *s = r_str_newf ("cd '%s'\nexport MAKE=make\nR2PM_FAIL(){\n  echo $@\n}\n%s", pkgdir, script);
 	free (pkgdir);
-	char *s = r_str_newf ("cd '%s/%s'\nexport MAKE=make\nR2PM_FAIL(){\n  echo $@\n}\n%s", srcdir, pkg, script);
 	int res = r_sandbox_system (s, 1);
 	free (s);
 	if (res == 0) {
