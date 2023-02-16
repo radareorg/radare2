@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2014-2022 - pancake, condret */
+/* radare - LGPL - Copyright 2014-2023 - pancake, condret */
 
 #define R_LOG_ORIGIN "esil"
 
@@ -14,8 +14,8 @@
 #include <fenv.h>
 
 #define ESIL_MACRO 0
+// TODO: replace esil->verbose with R_LOG_DEBUG
 #define IFDBG if (esil && esil->verbose > 1)
-#define ERR(...) if (esil->verbose) { R_LOG_ERROR (__VA_ARGS__); }
 
 /* Returns the number that has bits + 1 least significant bits set. */
 static inline ut64 genmask(int bits) {
@@ -90,7 +90,7 @@ static bool popRN(REsil *esil, ut64 *n) {
 /* R_ESIL API */
 
 static void esil_ops_free(HtPPKv *kv) {
-	if (kv) {
+	if (R_LIKELY (kv)) {
 		free (kv->key);
 		free (kv->value);
 	}
@@ -98,14 +98,15 @@ static void esil_ops_free(HtPPKv *kv) {
 
 R_API REsil *r_esil_new(int stacksize, int iotrap, unsigned int addrsize) {
 	REsil *esil = R_NEW0 (REsil);
-	if (!esil) {
+	if (R_UNLIKELY (!esil)) {
 		return NULL;
 	}
 	if (stacksize < 3) {
 		free (esil);
 		return NULL;
 	}
-	if (!(esil->stack = calloc (sizeof (char *), stacksize))) {
+	esil->stack = calloc (sizeof (char *), stacksize);
+	if (!esil->stack) {
 		free (esil);
 		return NULL;
 	}
@@ -174,13 +175,12 @@ static bool r_esil_fire_trap(REsil *esil, int trap_type, int trap_code) {
 	return false;
 }
 
+// R2_590 R_API void r_esil_set_pc(REsil *esil, ut64 addr) {
 R_API bool r_esil_set_pc(REsil *esil, ut64 addr) {
-	if (esil) {
-		// r_reg_set_value_by_role (esil->anal->reg, R_REG_NAME_PC, addr);
-		esil->address = addr;
-		return true;
-	}
-	return false;
+	r_return_val_if_fail (esil, false);
+	// r_reg_set_value_by_role (esil->anal->reg, R_REG_NAME_PC, addr);
+	esil->address = addr;
+	return true;
 }
 
 R_API void r_esil_free(REsil *esil) {
@@ -193,17 +193,14 @@ R_API void r_esil_free(REsil *esil) {
 	r_esil_plugins_fini (esil);
 	r_esil_handlers_fini (esil);
 	ht_pp_free (esil->ops);
-	esil->ops = NULL;
 	sdb_free (esil->stats);
 	free (esil->pending);
-	esil->stats = NULL;
 	r_esil_stack_free (esil);
 	free (esil->stack);
 	if (esil->anal && esil->anal->cur && esil->anal->cur->esil_fini) {
 		esil->anal->cur->esil_fini (esil);
 	}
 	r_esil_trace_free (esil->trace);
-	esil->trace = NULL;
 	free (esil->cmd_intr);
 	free (esil->cmd_trap);
 	free (esil->cmd_mdev);
@@ -252,10 +249,10 @@ static bool internal_esil_mem_read(REsil *esil, ut64 addr, ut8 *buf, int len) {
 		}
 	}
 	//TODO: Check if error return from read_at.(on previous version of r2 this call always return len)
-	(void)esil->anal->iob.read_at (esil->anal->iob.io, addr, buf, len);
+	(void)esil->anal->iob.read_at (io, addr, buf, len);
 	// check if request address is mapped , if don't fire trap and esil ioer callback
 	// now with siol, read_at return true/false can't be used to check error vs len
-	if (!esil->anal->iob.is_valid_offset (esil->anal->iob.io, addr, false)) {
+	if (!esil->anal->iob.is_valid_offset (io, addr, false)) {
 		if (esil->iotrap) {
 			esil->trap = R_ANAL_TRAP_READ_ERR;
 			esil->trap_code = addr;
@@ -327,8 +324,8 @@ R_API bool r_esil_mem_read(REsil *esil, ut64 addr, ut8 *buf, int len) {
 }
 
 static bool internal_esil_mem_write(REsil *esil, ut64 addr, const ut8 *buf, int len) {
-	int ret = 0;
 	r_return_val_if_fail (esil && esil->anal, false);
+	int ret = 0;
 	if (esil->nowrite) {
 		return 0;
 	}
@@ -414,6 +411,7 @@ R_API bool r_esil_mem_write(REsil *esil, ut64 addr, const ut8 *buf, int len) {
 }
 
 static bool internal_esil_reg_read(REsil *esil, const char *regname, ut64 *num, int *size) {
+	r_return_val_if_fail (esil && esil->anal, false);
 	RRegItem *ri = r_reg_get (esil->anal->reg, regname, -1);
 	if (ri) {
 		if (size) {
@@ -432,14 +430,13 @@ static bool internal_esil_reg_read(REsil *esil, const char *regname, ut64 *num, 
 }
 
 static bool internal_esil_reg_write(REsil *esil, const char *regname, ut64 num) {
-	if (esil && esil->anal) {
-		RRegItem *ri = r_reg_get (esil->anal->reg, regname, -1);
-		if (ri) {
-			r_reg_set_value (esil->anal->reg, ri, num);
-			R_LOG_DEBUG ("%s = %x", regname, (int)num);
-			r_unref (ri);
-			return true;
-		}
+	r_return_val_if_fail (esil && esil->anal, false);
+	RRegItem *ri = r_reg_get (esil->anal->reg, regname, -1);
+	if (ri) {
+		r_reg_set_value (esil->anal->reg, ri, num);
+		R_LOG_DEBUG ("%s = %x", regname, (int)num);
+		r_unref (ri);
+		return true;
 	}
 	return false;
 }
@@ -511,6 +508,7 @@ static int not_a_number(REsil *esil, const char *str) {
 }
 
 R_API int r_esil_get_parm_type(REsil *esil, const char *str) {
+	r_return_val_if_fail (esil && str, R_ESIL_PARM_INVALID);
 	if (R_STR_ISEMPTY (str)) {
 		return R_ESIL_PARM_INVALID;
 	}
@@ -530,13 +528,11 @@ R_API int r_esil_get_parm_type(REsil *esil, const char *str) {
 }
 
 static bool get_parm_size(REsil *esil, const char *str, ut64 *num, int *size) {
+	r_return_val_if_fail (esil && num, false);
 	if (R_STR_ISEMPTY (str)) {
 		return false;
 	}
 	int parm_type = r_esil_get_parm_type (esil, str);
-	if (!num || !esil) {
-		return false;
-	}
 	switch (parm_type) {
 	case R_ESIL_PARM_NUM:
 		*num = r_num_get (NULL, str);
@@ -611,7 +607,7 @@ R_API bool r_esil_signext(REsil *esil, bool assign) {
 	}
 
 	if (!r_esil_get_parm (esil, p_src, &src)) {
-		ERR ("esil_of: empty stack");
+		R_LOG_DEBUG ("esil_of: empty stack");
 		free (p_src);
 		return false;
 	}
@@ -623,7 +619,7 @@ R_API bool r_esil_signext(REsil *esil, bool assign) {
 	}
 
 	if (!r_esil_get_parm (esil, p_dst, &dst)) {
-		ERR ("esil_of: empty stack");
+		R_LOG_DEBUG ("esil_of: empty stack");
 		free (p_src);
 		free (p_dst);
 		return false;
@@ -750,7 +746,7 @@ static bool esil_of(REsil *esil) {
 	ut64 bit;
 
 	if (!r_esil_get_parm (esil, p_bit, &bit)) {
-		ERR ("esil_of: empty stack");
+		R_LOG_DEBUG ("esil_of: empty stack");
 		free (p_bit);
 		return false;
 	}
@@ -844,7 +840,7 @@ static bool esil_eq(REsil *esil) {
 	char *dst = r_esil_pop (esil);
 	char *src = r_esil_pop (esil);
 	if (!src || !dst) {
-		ERR ("Missing elements in the esil stack for '=' at 0x%08"PFMT64x, esil->address);
+		R_LOG_DEBUG ("Missing elements in the esil stack for '=' at 0x%08"PFMT64x, esil->address);
 		free (src);
 		free (dst);
 		return false;
@@ -867,10 +863,10 @@ static bool esil_eq(REsil *esil) {
 			esil->old = num;
 			esil->lastsz = esil_internal_sizeof_reg (esil, dst);
 		} else {
-			ERR ("esil_eq: invalid src");
+			R_LOG_DEBUG ("esil_eq: invalid src");
 		}
 	} else {
-		ERR ("esil_eq: invalid parameters");
+		R_LOG_DEBUG ("esil_eq: invalid parameters");
 	}
 beach:
 	free (src);
@@ -895,7 +891,7 @@ static bool esil_neg(REsil *esil) {
 			}
 		}
 	} else {
-		ERR ("esil_neg: empty stack");
+		R_LOG_DEBUG ("esil_neg: empty stack");
 	}
 	free (src);
 	return ret;
@@ -910,7 +906,7 @@ static bool esil_negeq(REsil *esil) {
 		r_esil_reg_write (esil, src, num);
 		ret = true;
 	} else {
-		ERR ("esil_negeq: empty stack");
+		R_LOG_DEBUG ("esil_negeq: empty stack");
 	}
 	free (src);
 	//r_esil_pushnum (esil, ret);
@@ -934,7 +930,7 @@ static bool esil_andeq(REsil *esil) {
 			r_esil_reg_write (esil, dst, num & num2);
 			ret = true;
 		} else {
-			ERR ("esil_andeq: empty stack");
+			R_LOG_DEBUG ("esil_andeq: empty stack");
 		}
 	}
 	free (src);
@@ -954,7 +950,7 @@ static bool esil_oreq(REsil *esil) {
 			esil->lastsz = esil_internal_sizeof_reg (esil, dst);
 			ret = r_esil_reg_write (esil, dst, num | num2);
 		} else {
-			ERR ("esil_ordeq: empty stack");
+			R_LOG_DEBUG ("esil_ordeq: empty stack");
 		}
 	}
 	free (src);
@@ -974,7 +970,7 @@ static bool esil_xoreq(REsil *esil) {
 				esil->lastsz = esil_internal_sizeof_reg (esil, dst);
 			ret = r_esil_reg_write (esil, dst, num ^ num2);
 		} else {
-			ERR ("esil_xoreq: empty stack");
+			R_LOG_DEBUG ("esil_xoreq: empty stack");
 		}
 	}
 	free (src);
@@ -1045,7 +1041,7 @@ static bool esil_trap(REsil *esil) {
 		esil->trap_code = d;
 		return r_esil_fire_trap (esil, (int)s, (int)d);
 	}
-	ERR ("esil_trap: missing parameters in stack");
+	R_LOG_DEBUG ("esil_trap: missing parameters in stack");
 	return false;
 }
 
@@ -1057,7 +1053,7 @@ static bool esil_bits(REsil *esil) {
 		}
 		return true;
 	}
-	ERR ("esil_bits: missing parameters in stack");
+	R_LOG_DEBUG ("esil_bits: missing parameters in stack");
 	return false;
 }
 
@@ -1236,14 +1232,14 @@ static bool esil_lsl(REsil *esil) {
 	if (dst && r_esil_get_parm (esil, dst, &num)) {
 		if (src && r_esil_get_parm (esil, src, &num2)) {
 			if (num2 > sizeof (ut64) * 8) {
-				ERR ("esil_lsl: shift is too big");
+				R_LOG_DEBUG ("esil_lsl: shift is too big");
 			} else {
 				const ut64 shift = (num2 > 63)? 0: num << num2;
 				r_esil_pushnum (esil, shift);
 				ret = true;
 			}
 		} else {
-			ERR ("esil_lsl: empty stack");
+			R_LOG_DEBUG ("esil_lsl: empty stack");
 		}
 	}
 	free (src);
@@ -1259,7 +1255,7 @@ static bool esil_lsleq(REsil *esil) {
 	if (dst && r_esil_reg_read (esil, dst, &num, NULL)) {
 		if (src && r_esil_get_parm (esil, src, &num2)) {
 			if (num2 > sizeof (ut64) * 8) {
-				ERR ("esil_lsleq: shift is too big");
+				R_LOG_DEBUG ("esil_lsleq: shift is too big");
 			} else {
 				esil->old = num;
 				if (num2 > 63) {
@@ -1273,7 +1269,7 @@ static bool esil_lsleq(REsil *esil) {
 				ret = true;
 			}
 		} else {
-			ERR ("esil_lsleq: empty stack");
+			R_LOG_DEBUG ("esil_lsleq: empty stack");
 		}
 	}
 	free (src);
@@ -1292,7 +1288,7 @@ static bool esil_lsr(REsil *esil) {
 			r_esil_pushnum (esil, res);
 			ret = true;
 		} else {
-			ERR ("esil_lsr: empty stack");
+			R_LOG_DEBUG ("esil_lsr: empty stack");
 		}
 	}
 	free (src);
@@ -1320,7 +1316,7 @@ static bool esil_lsreq(REsil *esil) {
 			r_esil_reg_write (esil, dst, num);
 			ret = true;
 		} else {
-			ERR ("esil_lsreq: empty stack");
+			R_LOG_DEBUG ("esil_lsreq: empty stack");
 		}
 	}
 	free (src);
@@ -1443,7 +1439,7 @@ static bool esil_asr(REsil *esil) {
 			r_esil_pushnum (esil, res);
 			ret = true;
 		} else {
-			ERR ("esil_asr: empty stack");
+			R_LOG_DEBUG ("esil_asr: empty stack");
 		}
 	}
 	free (param);
@@ -1465,7 +1461,7 @@ static bool esil_ror(REsil *esil) {
 			r_esil_pushnum (esil, res);
 			ret = true;
 		} else {
-			ERR ("esil_ror: empty stack");
+			R_LOG_DEBUG ("esil_ror: empty stack");
 		}
 	}
 	free (src);
@@ -1487,7 +1483,7 @@ static bool esil_rol(REsil *esil) {
 			r_esil_pushnum (esil, res);
 			ret = true;
 		} else {
-			ERR ("esil_rol: empty stack");
+			R_LOG_DEBUG ("esil_rol: empty stack");
 		}
 	}
 	free (src);
@@ -1506,7 +1502,7 @@ static bool esil_and(REsil *esil) {
 			r_esil_pushnum (esil, num);
 			ret = true;
 		} else {
-			ERR ("esil_and: empty stack");
+			R_LOG_DEBUG ("esil_and: empty stack");
 		}
 	}
 	free (src);
@@ -1525,7 +1521,7 @@ static bool esil_xor(REsil *esil) {
 			r_esil_pushnum (esil, num);
 			ret = true;
 		} else {
-			ERR ("esil_xor: empty stack");
+			R_LOG_DEBUG ("esil_xor: empty stack");
 		}
 	}
 	free (src);
@@ -1544,7 +1540,7 @@ static bool esil_or(REsil *esil) {
 			r_esil_pushnum (esil, num);
 			ret = true;
 		} else {
-			ERR ("esil_xor: empty stack");
+			R_LOG_DEBUG ("esil_xor: empty stack");
 		}
 	}
 	free (src);
@@ -1645,7 +1641,7 @@ static bool esil_mod(REsil *esil) {
 			ret = true;
 		}
 	} else {
-		ERR ("esil_mod: invalid parameters");
+		R_LOG_DEBUG ("esil_mod: invalid parameters");
 	}
 	free (dst);
 	free (src);
@@ -1671,7 +1667,7 @@ static bool esil_signed_mod(REsil *esil) {
 			ret = true;
 		}
 	} else {
-		ERR ("esil_mod: invalid parameters");
+		R_LOG_DEBUG ("esil_mod: invalid parameters");
 	}
 	free (dst);
 	free (src);
@@ -1691,16 +1687,16 @@ static bool esil_modeq(REsil *esil) {
 				esil->lastsz = esil_internal_sizeof_reg (esil, dst);
 				r_esil_reg_write (esil, dst, d % s);
 			} else {
-				ERR ("esil_modeq: Division by zero!");
+				R_LOG_DEBUG ("esil_modeq: Division by zero!");
 				esil->trap = R_ANAL_TRAP_DIVBYZERO;
 				esil->trap_code = 0;
 			}
 			ret = true;
 		} else {
-			ERR ("esil_modeq: empty stack");
+			R_LOG_DEBUG ("esil_modeq: empty stack");
 		}
 	} else {
-		ERR ("esil_modeq: invalid parameters");
+		R_LOG_DEBUG ("esil_modeq: invalid parameters");
 	}
 	free (src);
 	free (dst);
@@ -1715,7 +1711,7 @@ static bool esil_div(REsil *esil) {
 	if (src && r_esil_get_parm (esil, src, &s)) {
 		if (dst && r_esil_get_parm (esil, dst, &d)) {
 			if (s == 0) {
-				ERR ("esil_div: Division by zero!");
+				R_LOG_DEBUG ("esil_div: Division by zero!");
 				esil->trap = R_ANAL_TRAP_DIVBYZERO;
 				esil->trap_code = 0;
 			} else {
@@ -1724,7 +1720,7 @@ static bool esil_div(REsil *esil) {
 			ret = true;
 		}
 	} else {
-		ERR ("esil_div: invalid parameters");
+		R_LOG_DEBUG ("esil_div: invalid parameters");
 	}
 	free (src);
 	free (dst);
@@ -1739,7 +1735,7 @@ static bool esil_signed_div(REsil *esil) {
 	if (src && r_esil_get_parm (esil, src, (ut64 *)&s)) {
 		if (dst && r_esil_get_parm (esil, dst, (ut64 *)&d)) {
 			if (ST64_DIV_OVFCHK (d, s)) {
-				ERR ("esil_div: Division by zero!");
+				R_LOG_DEBUG ("esil_div: Division by zero!");
 				esil->trap = R_ANAL_TRAP_DIVBYZERO;
 				esil->trap_code = 0;
 			} else {
@@ -1748,7 +1744,7 @@ static bool esil_signed_div(REsil *esil) {
 			ret = true;
 		}
 	} else {
-		ERR ("esil_div: invalid parameters");
+		R_LOG_DEBUG ("esil_div: invalid parameters");
 	}
 	free (src);
 	free (dst);
@@ -1774,10 +1770,10 @@ static bool esil_diveq(REsil *esil) {
 			}
 			ret = true;
 		} else {
-			ERR ("esil_diveq: empty stack");
+			R_LOG_DEBUG ("esil_diveq: empty stack");
 		}
 	} else {
-		ERR ("esil_diveq: invalid parameters");
+		R_LOG_DEBUG ("esil_diveq: invalid parameters");
 	}
 	free (src);
 	free (dst);
@@ -1818,10 +1814,10 @@ static bool esil_long_mul(REsil *esil) {
 			r_esil_pushnum (esil, lo);
 			ret = true;
 		} else {
-			ERR ("esil_long_mul: empty stack");
+			R_LOG_DEBUG ("esil_long_mul: empty stack");
 		}
 	} else {
-		ERR ("esil_long_mul: invalid parameters");
+		R_LOG_DEBUG ("esil_long_mul: invalid parameters");
 	}
 	free (src);
 	free (dst);
@@ -1838,10 +1834,10 @@ static bool esil_mul(REsil *esil) {
 			r_esil_pushnum (esil, d * s);
 			ret = true;
 		} else {
-			ERR ("esil_mul: empty stack");
+			R_LOG_DEBUG ("esil_mul: empty stack");
 		}
 	} else {
-		ERR ("esil_mul: invalid parameters");
+		R_LOG_DEBUG ("esil_mul: invalid parameters");
 	}
 	free (src);
 	free (dst);
@@ -1860,10 +1856,10 @@ static bool esil_muleq(REsil *esil) {
 			esil->lastsz = esil_internal_sizeof_reg (esil, dst);
 			ret = r_esil_reg_write (esil, dst, s * d);
 		} else {
-			ERR ("esil_muleq: empty stack");
+			R_LOG_DEBUG ("esil_muleq: empty stack");
 		}
 	} else {
-		ERR ("esil_muleq: invalid parameters");
+		R_LOG_DEBUG ("esil_muleq: invalid parameters");
 	}
 	free (dst);
 	free (src);
@@ -1879,7 +1875,7 @@ static bool esil_add(REsil *esil) {
 		r_esil_pushnum (esil, s + d);
 		ret = true;
 	} else {
-		ERR ("esil_add: invalid parameters");
+		R_LOG_DEBUG ("esil_add: invalid parameters");
 	}
 	free (src);
 	free (dst);
@@ -1894,7 +1890,7 @@ static bool esil_inc_macro(REsil *esil) {
 		r_esil_runpending (esil, r_str_newf ("1,%s,+", src));
 		ret = true;
 	} else {
-		ERR ("esil_inc: invalid parameters");
+		R_LOG_DEBUG ("esil_inc: invalid parameters");
 	}
 	free (src);
 	return ret;
@@ -1907,7 +1903,7 @@ static bool esil_inceq_macro(REsil *esil) {
 		r_esil_runpending (esil, r_str_newf ("1,%s,+,%s,=", src, src));
 		ret = true;
 	} else {
-		ERR ("esil_inceq_macro: invalid parameters");
+		R_LOG_DEBUG ("esil_inceq_macro: invalid parameters");
 	}
 	free (src);
 	return ret;
@@ -1922,7 +1918,7 @@ static bool esil_addeq_macro(REsil *esil) {
 		r_esil_runpending (esil, r_str_newf ("%s,%s,+,%s,=", src, dst, dst));
 		ret = true;
 	} else {
-		ERR ("esil_addeq_macro: invalid parameters");
+		R_LOG_DEBUG ("esil_addeq_macro: invalid parameters");
 	}
 	free (src);
 	free (dst);
@@ -1937,7 +1933,7 @@ static bool esil_subeq_macro(REsil *esil) {
 		r_esil_runpending (esil, r_str_newf ("%s,%s,-,%s,=", src, dst, dst));
 		ret = true;
 	} else {
-		ERR ("esil_subeq_macro: invalid parameters");
+		R_LOG_DEBUG ("esil_subeq_macro: invalid parameters");
 	}
 	free (src);
 	free (dst);
@@ -1953,7 +1949,7 @@ static bool esil_inc(REsil *esil) {
 		s++;
 		ret = r_esil_pushnum (esil, s);
 	} else {
-		ERR ("esil_inc: invalid parameters");
+		R_LOG_DEBUG ("esil_inc: invalid parameters");
 	}
 	free (src);
 	return ret;
@@ -1971,7 +1967,7 @@ static bool esil_inceq(REsil *esil) {
 		esil->lastsz = esil_internal_sizeof_reg (esil, src_dst);
 		ret = true;
 	} else {
-		ERR ("esil_inceq: invalid parameters");
+		R_LOG_DEBUG ("esil_inceq: invalid parameters");
 	}
 	free (src_dst);
 	return ret;
@@ -1992,7 +1988,7 @@ static bool esil_addeq(REsil *esil) {
 			ret = r_esil_reg_write (esil, dst, s + d);
 		}
 	} else {
-		ERR ("esil_addeq: invalid parameters");
+		R_LOG_DEBUG ("esil_addeq: invalid parameters");
 	}
 	free (src);
 	free (dst);
@@ -2012,7 +2008,7 @@ static bool esil_subeq(REsil *esil) {
 			ret = r_esil_reg_write (esil, dst, d - s);
 		}
 	} else {
-		ERR ("esil_subeq: invalid parameters");
+		R_LOG_DEBUG ("esil_subeq: invalid parameters");
 	}
 	free (src);
 	free (dst);
@@ -2028,7 +2024,7 @@ static bool esil_sub(REsil *esil) {
 	if ((src && r_esil_get_parm (esil, src, &s)) && (dst && r_esil_get_parm (esil, dst, &d))) {
 		ret = r_esil_pushnum (esil, d - s);
 	} else {
-		ERR ("esil_sub: invalid parameters");
+		R_LOG_DEBUG ("esil_sub: invalid parameters");
 	}
 	free (src);
 	free (dst);
@@ -2043,7 +2039,7 @@ static bool esil_dec(REsil *esil) {
 		s--;
 		ret = r_esil_pushnum (esil, s);
 	} else {
-		ERR ("esil_dec: invalid parameters");
+		R_LOG_DEBUG ("esil_dec: invalid parameters");
 	}
 	free (src);
 	return ret;
@@ -2061,7 +2057,7 @@ static bool esil_deceq(REsil *esil) {
 		esil->lastsz = esil_internal_sizeof_reg (esil, src_dst);
 		ret = true;
 	} else {
-		ERR ("esil_deceq: invalid parameters");
+		R_LOG_DEBUG ("esil_deceq: invalid parameters");
 	}
 	free (src_dst);
 	return ret;
@@ -2280,7 +2276,7 @@ static bool esil_peek_some(REsil *esil) {
 				for (i = 0; i < regs; i++) {
 					char *foo = r_esil_pop (esil);
 					if (!foo) {
-						ERR ("Cannot pop in peek");
+						R_LOG_DEBUG ("Cannot pop in peek");
 						free (dst);
 						free (count);
 						return false;
@@ -2331,7 +2327,7 @@ static bool esil_mem_oreq_n(REsil *esil, int bits) {
 		}
 	}
 	if (!ret) {
-		ERR ("esil_mem_oreq_n: invalid parameters");
+		R_LOG_DEBUG ("esil_mem_oreq_n: invalid parameters");
 	}
 	free (dst);
 	free (src0);
@@ -2374,7 +2370,7 @@ static bool esil_mem_xoreq_n(REsil *esil, int bits) {
 		}
 	}
 	if (!ret) {
-		ERR ("esil_mem_xoreq_n: invalid parameters");
+		R_LOG_DEBUG ("esil_mem_xoreq_n: invalid parameters");
 	}
 	free (dst);
 	free (src0);
@@ -2417,7 +2413,7 @@ static bool esil_mem_andeq_n(REsil *esil, int bits) {
 		}
 	}
 	if (!ret) {
-		ERR ("esil_mem_andeq_n: invalid parameters");
+		R_LOG_DEBUG ("esil_mem_andeq_n: invalid parameters");
 	}
 	free (dst);
 	free (src0);
@@ -2460,7 +2456,7 @@ static bool esil_mem_addeq_n(REsil *esil, int bits) {
 		}
 	}
 	if (!ret) {
-		ERR ("esil_mem_addeq_n: invalid parameters");
+		R_LOG_DEBUG ("esil_mem_addeq_n: invalid parameters");
 	}
 	free (dst);
 	free (src0);
@@ -2503,7 +2499,7 @@ static bool esil_mem_subeq_n(REsil *esil, int bits) {
 		}
 	}
 	if (!ret) {
-		ERR ("esil_mem_subeq_n: invalid parameters");
+		R_LOG_DEBUG ("esil_mem_subeq_n: invalid parameters");
 	}
 	free (dst);
 	free (src0);
@@ -2534,7 +2530,7 @@ static bool esil_mem_modeq_n(REsil *esil, int bits) {
 	char *src1 = NULL;
 	if (src0 && r_esil_get_parm (esil, src0, &s)) {
 		if (s == 0) {
-			ERR ("esil_mem_modeq4: Division by zero!");
+			R_LOG_DEBUG ("esil_mem_modeq4: Division by zero!");
 			esil->trap = R_ANAL_TRAP_DIVBYZERO;
 			esil->trap_code = 0;
 		} else {
@@ -2553,7 +2549,7 @@ static bool esil_mem_modeq_n(REsil *esil, int bits) {
 		}
 	}
 	if (!ret) {
-		ERR ("esil_mem_modeq_n: invalid parameters");
+		R_LOG_DEBUG ("esil_mem_modeq_n: invalid parameters");
 	}
 	free (dst);
 	free (src0);
@@ -2584,7 +2580,7 @@ static bool esil_mem_diveq_n(REsil *esil, int bits) {
 	char *src1 = NULL;
 	if (src0 && r_esil_get_parm (esil, src0, &s)) {
 		if (s == 0) {
-			ERR ("esil_mem_diveq8: Division by zero!");
+			R_LOG_DEBUG ("esil_mem_diveq8: Division by zero!");
 			esil->trap = R_ANAL_TRAP_DIVBYZERO;
 			esil->trap_code = 0;
 		} else {
@@ -2602,7 +2598,7 @@ static bool esil_mem_diveq_n(REsil *esil, int bits) {
 		}
 	}
 	if (!ret) {
-		ERR ("esil_mem_diveq_n: invalid parameters");
+		R_LOG_DEBUG ("esil_mem_diveq_n: invalid parameters");
 	}
 	free (dst);
 	free (src0);
@@ -2645,7 +2641,7 @@ static bool esil_mem_muleq_n(REsil *esil, int bits, ut64 bitmask) {
 		}
 	}
 	if (!ret) {
-		ERR ("esil_mem_muleq_n: invalid parameters");
+		R_LOG_DEBUG ("esil_mem_muleq_n: invalid parameters");
 	}
 	free (dst);
 	free (src0);
@@ -2690,7 +2686,7 @@ static bool esil_mem_inceq_n(REsil *esil, int bits) {
 		}
 	}
 	if (!ret) {
-		ERR ("esil_mem_inceq_n: invalid parameters");
+		R_LOG_DEBUG ("esil_mem_inceq_n: invalid parameters");
 	}
 	free (src);
 	free (off);
@@ -2731,7 +2727,7 @@ static bool esil_mem_deceq_n(REsil *esil, int bits) {
 		}
 	}
 	if (!ret) {
-		ERR ("esil_mem_deceq_n: invalid parameters");
+		R_LOG_DEBUG ("esil_mem_deceq_n: invalid parameters");
 	}
 	free (src);
 	free (off);
@@ -2761,7 +2757,7 @@ static bool esil_mem_lsleq_n(REsil *esil, int bits) {
 	char *src1 = NULL;
 	if (src0 && r_esil_get_parm (esil, src0, &s)) {
 		if (s > sizeof (ut64) * 8) {
-			ERR ("esil_mem_lsleq_n: shift is too big");
+			R_LOG_DEBUG ("esil_mem_lsleq_n: shift is too big");
 		} else {
 			r_esil_push (esil, dst);
 			ret = !!esil_peek_n (esil, bits);
@@ -2781,7 +2777,7 @@ static bool esil_mem_lsleq_n(REsil *esil, int bits) {
 		}
 	}
 	if (!ret) {
-		ERR ("esil_mem_lsleq_n: invalid parameters");
+		R_LOG_DEBUG ("esil_mem_lsleq_n: invalid parameters");
 	}
 	free (dst);
 	free (src0);
@@ -2824,7 +2820,7 @@ static bool esil_mem_lsreq_n(REsil *esil, int bits) {
 		}
 	}
 	if (!ret) {
-		ERR ("esil_mem_lsreq_n: invalid parameters");
+		R_LOG_DEBUG ("esil_mem_lsreq_n: invalid parameters");
 	}
 	free (dst);
 	free (src0);
@@ -2968,7 +2964,7 @@ static bool esil_set_jump_target(REsil *esil) {
 		ret = true;
 	} else {
 		R_FREE (src);
-		ERR ("esil_set_jump_target: empty stack");
+		R_LOG_DEBUG ("esil_set_jump_target: empty stack");
 	}
 	free (src);
 	return ret;
@@ -2983,7 +2979,7 @@ static bool esil_set_jump_target_set(REsil *esil) {
 		ret = true;
 	} else {
 		R_FREE (src);
-		ERR ("esil_set_jump_target_set: empty stack");
+		R_LOG_DEBUG ("esil_set_jump_target_set: empty stack");
 	}
 	free (src);
 	return ret;
@@ -2998,7 +2994,7 @@ static bool esil_set_delay_slot(REsil *esil) {
 		ret = true;
 	} else {
 		R_FREE (src);
-		ERR ("esil_set_delay_slot: empty stack");
+		R_LOG_DEBUG ("esil_set_delay_slot: empty stack");
 	}
 	free (src);
 	return ret;
@@ -3022,11 +3018,11 @@ static bool esil_is_nan(REsil *esil) {
 		if (esil_get_parm_float (esil, src, &s)) {
 			ret = r_esil_pushnum (esil, isnan(s));
 		} else {
-			ERR("esil_is_nan: invalid parameters.");
+			R_LOG_DEBUG ("esil_is_nan: invalid parameters");
 		}
 		free (src);
 	} else {
-		ERR("esil_is_nan: fail to get argument from stack.");
+		R_LOG_DEBUG ("esil_is_nan: fail to get argument from stack");
 	}
 	return ret;
 }
@@ -3041,11 +3037,11 @@ static bool esil_int_to_double(REsil *esil, int sign) {
 				? esil_pushnum_float (esil, (double)(s.s64) * 1.0)
 				: esil_pushnum_float (esil, (double)(s.u64) * 1.0);
 		} else {
-			ERR ("esil_int_to_float: invalid parameters");
+			R_LOG_DEBUG ("esil_int_to_float: invalid parameters");
 		}
 		free (src);
 	} else {
-		ERR ("esil_int_to_float: fail to get argument from stack");
+		R_LOG_DEBUG ("esil_int_to_float: fail to get argument from stack");
 	}
 	return ret;
 }
@@ -3065,15 +3061,15 @@ static bool esil_double_to_int(REsil *esil) {
 	if (src) {
 		if (esil_get_parm_float (esil, src, &s.f64)) {
 			if (isnan(s.f64) || isinf(s.f64)) {
-				ERR("esil_float_to_int: nan or inf detected.");
+				R_LOG_DEBUG ("esil_float_to_int: nan or inf detected");
 			}
 			ret = r_esil_pushnum (esil, (st64)(s.f64));
 		} else {
-			ERR("esil_float_to_int: invalid parameters.");
+			R_LOG_DEBUG ("esil_float_to_int: invalid parameters");
 		}
 		free (src);
 	} else {
-		ERR("esil_float_to_int: fail to get argument from stack.");
+		R_LOG_DEBUG ("esil_float_to_int: fail to get argument from stack");
 	}
 	return ret;
 }
@@ -3099,7 +3095,7 @@ static bool esil_double_to_float(REsil *esil) {
 			ret = r_esil_pushnum (esil, d.u64);
 		}
 	} else {
-		ERR("esil_float_to_float: invalid parameters.");
+		R_LOG_DEBUG ("esil_float_to_float: invalid parameters");
 	}
 
 	free (dst);
@@ -3126,7 +3122,7 @@ static bool esil_float_to_double(REsil *esil) {
 			ret = esil_pushnum_float (esil, d.f64);
 		}
 	} else {
-		ERR("esil_float_to_float: invalid parameters.");
+		R_LOG_DEBUG ("esil_float_to_float: invalid parameters");
 	}
 	free (dst);
 	free (src);
@@ -3146,7 +3142,7 @@ static bool esil_float_cmp(REsil *esil) {
 			ret = r_esil_pushnum (esil, fabs(s - d) <= DBL_EPSILON);
 		}
 	} else {
-		ERR ("esil_float_cmp: invalid parameters.");
+		R_LOG_DEBUG ("esil_float_cmp: invalid parameters");
 	}
 	free (dst);
 	free (src);
@@ -3166,7 +3162,7 @@ static bool esil_float_negcmp(REsil *esil) {
 			ret = r_esil_pushnum (esil, fabs(s - d) >= DBL_EPSILON);
 		}
 	} else {
-		ERR("esil_float_negcmp: invalid parameters.");
+		R_LOG_DEBUG ("esil_float_negcmp: invalid parameters");
 	}
 	free (dst);
 	free (src);
@@ -3186,7 +3182,7 @@ static bool esil_float_less(REsil *esil) {
 			ret = r_esil_pushnum (esil, d < s);
 		}
 	} else {
-		ERR("esil_float_less: invalid parameters.");
+		R_LOG_DEBUG ("esil_float_less: invalid parameters");
 	}
 	free (dst);
 	free (src);
@@ -3206,7 +3202,7 @@ static bool esil_float_lesseq(REsil *esil) {
 			ret = r_esil_pushnum (esil, d <= s);
 		}
 	} else {
-		ERR ("esil_float_lesseq: invalid parameters.");
+		R_LOG_DEBUG ("esil_float_lesseq: invalid parameters");
 	}
 	free (dst);
 	free (src);
@@ -3236,7 +3232,7 @@ static bool esil_float_add(REsil *esil) {
 			}
 		}
 	} else {
-		ERR("esil_float_add: invalid parameters.");
+		R_LOG_DEBUG ("esil_float_add: invalid parameters");
 	}
 	free (dst);
 	free (src);
@@ -3266,7 +3262,7 @@ static bool esil_float_sub(REsil *esil) {
 			}
 		}
 	} else {
-		ERR("esil_float_sub: invalid parameters.");
+		R_LOG_DEBUG ("esil_float_sub: invalid parameters");
 	}
 	free (dst);
 	free (src);
@@ -3285,18 +3281,18 @@ static bool esil_float_mul(REsil *esil) {
 		} else if (isnan (d)) {
 			ret = esil_pushnum_float (esil, d);
 		} else {
-			feclearexcept(FE_OVERFLOW);
+			feclearexcept (FE_OVERFLOW);
 			double tmp = s * d;
 			(void)(tmp);
 			int raised = fetestexcept (FE_OVERFLOW);
 			if (raised & FE_OVERFLOW) {
 				ret = esil_pushnum_float (esil, NAN);
 			} else {
-				ret = esil_pushnum_float(esil, s * d);
+				ret = esil_pushnum_float (esil, s * d);
 			}
 		}
 	} else {
-		ERR("esil_float_mul: invalid parameters.");
+		R_LOG_DEBUG ("esil_float_mul: invalid parameters");
 	}
 	free (dst);
 	free (src);
@@ -3326,7 +3322,7 @@ static bool esil_float_div(REsil *esil) {
 			}
 		}
 	} else {
-		ERR("esil_float_div: invalid parameters.");
+		R_LOG_DEBUG ("esil_float_div: invalid parameters");
 	}
 	free (dst);
 	free (src);
@@ -3342,11 +3338,11 @@ static bool esil_float_neg(REsil *esil) {
 		if (esil_get_parm_float (esil, src, &s)) {
 			ret = esil_pushnum_float (esil, -s);
 		} else {
-			ERR ("esil_float_neg: invalid parameters.");
+			R_LOG_DEBUG ("esil_float_neg: invalid parameters");
 		}
 		free (src);
 	} else {
-		ERR ("esil_float_neg: fail to get element from stack.");
+		R_LOG_DEBUG ("esil_float_neg: fail to get element from stack");
 	}
 	return ret;
 }
@@ -3364,11 +3360,11 @@ static bool esil_float_ceil(REsil *esil) {
 				ret = esil_pushnum_float (esil, ceil(s));
 			}
 		} else {
-			ERR ("esil_float_ceil: invalid parameters");
+			R_LOG_DEBUG ("esil_float_ceil: invalid parameters");
 		}
 		free (src);
 	} else {
-		ERR("esil_float_ceil: fail to get element from stack.");
+		R_LOG_DEBUG ("esil_float_ceil: fail to get element from stack");
 	}
 	return ret;
 }
@@ -3386,11 +3382,11 @@ static bool esil_float_floor(REsil *esil) {
 				ret = esil_pushnum_float (esil, floor(s));
 			}
 		} else {
-			ERR ("esil_float_floor: invalid parameters.");
+			R_LOG_DEBUG ("esil_float_floor: invalid parameters");
 		}
 		free (src);
 	} else {
-		ERR ("esil_float_floor: fail to get element from stack.");
+		R_LOG_DEBUG ("esil_float_floor: fail to get element from stack");
 	}
 
 	return ret;
@@ -3409,11 +3405,11 @@ static bool esil_float_round(REsil *esil) {
 				ret = esil_pushnum_float (esil, round(s));
 			}
 		} else {
-			ERR("esil_float_round: invalid parameters.");
+			R_LOG_DEBUG ("esil_float_round: invalid parameters");
 		}
 		free (src);
 	} else {
-		ERR("esil_float_round: fail to get element from stack.");
+		R_LOG_DEBUG ("esil_float_round: fail to get element from stack");
 	}
 	return ret;
 }
@@ -3431,11 +3427,11 @@ static bool esil_float_sqrt(REsil *esil) {
 				ret = esil_pushnum_float (esil, sqrt(s));
 			}
 		} else {
-			ERR ("esil_float_sqrt: invalid parameters");
+			R_LOG_DEBUG ("esil_float_sqrt: invalid parameters");
 		}
 		free (src);
 	} else {
-		ERR("esil_float_sqrt: fail to get element from stack");
+		R_LOG_DEBUG ("esil_float_sqrt: fail to get element from stack");
 	}
 	return ret;
 }
@@ -3456,7 +3452,7 @@ static bool runword(REsil *esil, const char *word) {
 	}
 	esil->parse_goto_count--;
 	if (esil->parse_goto_count < 1) {
-		ERR ("ESIL infinite loop detected");
+		R_LOG_DEBUG ("ESIL infinite loop detected");
 		esil->trap = 1;       // INTERNAL ERROR
 		esil->parse_stop = 1; // INTERNAL ERROR
 		return false;
@@ -3532,7 +3528,7 @@ static bool runword(REsil *esil, const char *word) {
 
 	// push value
 	if (!r_esil_push (esil, word)) {
-		ERR ("ESIL stack is full");
+		R_LOG_DEBUG ("ESIL stack is full");
 		esil->trap = 1;
 		esil->trap_code = 1;
 	}
@@ -3646,7 +3642,7 @@ repeat:
 			break;
 		}
 		if (wordi > 62) {
-			ERR ("Invalid esil string");
+			R_LOG_DEBUG ("Invalid esil string");
 			__stepOut (esil, esil->cmd_step_out);
 			return -1;
 		}

@@ -72,6 +72,14 @@ typedef struct r_esil_callbacks_t {
 	bool (*reg_write)(ESIL *esil, const char *name, ut64 val);
 } REsilCallbacks;
 
+#if R2_590
+typedef struct r_esil_options_t {
+	int nowrite;
+	int iotrap;
+	int exectrap;
+} REsilOptions;
+#endif
+
 typedef struct r_esil_t {
 	struct r_anal_t *anal; // XXX maybe just use arch?
 	char **stack;
