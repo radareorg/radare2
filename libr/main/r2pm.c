@@ -350,6 +350,7 @@ static void r2pm_setenv(void) {
 		if (R_STR_ISNOTEMPTY (pd)) {
 			r_str_trim (pd);
 			r_sys_setenv ("R2_USER_PLUGINS", pd);
+			r_sys_mkdirp (pd);
 		}
 		free (pd);
 	}
