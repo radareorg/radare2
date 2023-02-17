@@ -65,16 +65,16 @@ r2env add radare2@git
 These are the first steps to use r2, read the book or find tutorials for more details
 
 ```sh
-$ r2 /bin/ls   # open the binary in read-only mode
-> aaa          # same as r2 -A, analyse the binary
+$ r2 /bin/ls   # open file in read-only
+> aaa          # analyse the program (r2 -A)
 > afl          # list all functions (try aflt, aflm)
 > px 32        # print 32 byte hexdump current block
-> s sym.main   # seek to the given offset (by flag name, number, ..)
-> f~foo        # filter flags with ~grep (same as |grep)
-> iS;is        # list sections and symbols (same as rabin2 -Ss)
-> pdf; agf     # print function and show control-flow-graph in ascii-art
-> oo+;w hello  # reopen in rw mode and write a string in the current offset
-> ?*~...       # interactive filter all command help messages
+> s sym.main   # seek to main (using flag name)
+> f~foo        # filter flags matching 'foo' (internal |grep)
+> iS;is        # list sections and symbols (rabin2 -Ss)
+> pdf; agf     # disassembly and ascii-art function graph
+> oo+;w hello  # reopen in read-write and write a string
+> ?*~...       # interactive filter in all command help
 > q            # quit
 ```
 
@@ -97,6 +97,8 @@ by using the [r2pm](https://github.com/radareorg/radare2-pm) package manager.
 ```sh
 r2pm -s <word> # search package by word
 r2pm -ci <pkg> # install a package
+r2pm -u <pkg>  # uninstall
+r2pm -l <pkg>  # list installed packages
 ```
 
 Most popular packages are:
@@ -107,6 +109,9 @@ Most popular packages are:
 * [r2dec](https://github.com/wargio/r2dec-js): A decompiler based on r2 written in JS, accessed with the `pdd` command
 * [r2ghidra](https://github.com/radareorg/r2ghidra): The native ghidra decompiler plugin, accessed with the `pdg` command
 * [r2frida](https://github.com/nowsecure/r2frida): The frida io plugin. Start r2 with `r2 frida://0` to use it
+* [r2poke](https://github.com/radareorg/radare2-extras/tree/master/r2poke) Integration with GNU/Poke for extended binary parsing capabilities
+* [r2pipe](https://github.com/radareorg/radare2-r2pipe) Script radare2 from any programming language
+* [r2papi](https://github.com/radareorg/radare2-r2papi) High level api on top of r2pipe
 
 # Contributing
 
@@ -136,6 +141,8 @@ book](https://book.rada.re), here are some methods to contact us:
 * [Matrix](https://matrix.to/#/#radare:matrix.org): `#radare:matrix.org`
 * Telegram: [Main Channel](https://t.me/radare) and [Side Channel](https://t.me/radare_side)
 * [Discord server](https://discord.gg/YBey7CR9jf)
+
+* Mastodon: [@radareorg](https://infosec.exchange/@radareorg)
 * Twitter: [@radareorg](https://twitter.com/radareorg)
 * Website: [https://www.radare.org/](https://www.radare.org/)
 
@@ -152,7 +159,7 @@ i386, x86-64, ARM, BPF, MIPS, PowerPC, SPARC, RISC-V, SH, m68k, m680x,
 AVR, XAP, S390, XCore, CR16, HPPA, ARC, Blackfin, Z80, H8/300, V810,
 V850, CRIS, XAP, PIC, LM32, 8051, 6502, i4004, i8080, Propeller, EVM,
 Tricore, CHIP-8, LH5801, T8200, GameBoy, SNES, SPC700, MSP430, Xtensa,
-NIOS II, Java, Dalvik, WebAssembly, MSIL, EBC, TMS320 (c54x, c55x,
+NIOS II, Java, Dalvik, Pickle, WebAssembly, MSIL, EBC, TMS320 (c54x, c55x,
 c55+, c64x), Hexagon, Brainfuck, Malbolge, whitespace, DCPU16, LANAI,
 MCORE, mcs96, RSP, SuperH-4, VAX, KVX, Am29000, LOONGARCH, JDH8.
 

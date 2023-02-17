@@ -131,7 +131,6 @@ static char *r2pm_dbdir(void) {
 		return e;
 	}
 	free (e);
-	// return r_xdg_datadir ("r2pm/db");
 	char *gitdir = r2pm_gitdir ();
 	char *res = r_str_newf ("%s/radare2-pm/db", gitdir);
 	free (gitdir);
