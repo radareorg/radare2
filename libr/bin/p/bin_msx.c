@@ -24,13 +24,32 @@ static ut64 baddr(RBinFile *bf) {
 
 static bool check_buffer(RBinFile *bf, RBuffer *b) {
 	ut8 buf[2] = {0};
+	if (!bf) {
+		// not eligible for carving
+		return false;
+	}
+	ut64 b_size = r_buf_size (b);
+	// check size
+	if (b_size > 0x100000) {
+		// 1MB is the limit of the sky
+		return false;
+	}
+	// check extension
+	const char *b_file = bf->file;
+	if (b_file == NULL) {
+		return false;
+	}
+	if (!r_str_endswith (b_file, ".rom") && !r_str_endswith (b_file, ".mx1")) {
+		return false;
+	}
+	// check magic
 	r_buf_read_at (b, 0, buf, sizeof (buf));
 	if (!memcmp (buf, "AB", 2)) {
-		if (r_buf_size (b) > sizeof (MSX_Header_ROM)) {
+		if (b_size > sizeof (MSX_Header_ROM)) {
 			return true;
 		}
 	} else if (buf[0] == 0xFE) {
-		if (r_buf_size (b) > sizeof (MSX_Header_BIN)) {
+		if (b_size > sizeof (MSX_Header_BIN)) {
 			return true;
 		}
 	}
