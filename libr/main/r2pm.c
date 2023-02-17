@@ -69,7 +69,11 @@ static int git_pull(const char *dir, bool reset) {
 		R_UNUSED_RESULT (r_sandbox_system (s, 1));
 		free (s);
 	}
+#if R2__WINDOWS__
 	char *s = r_str_newf ("cd %s && git pull && git diff", dir);
+#else
+	char *s = r_str_newf ("cd %s && git pull && git diff | cat", dir);
+#endif
 	int rc = r_sandbox_system (s, 1);
 	free (s);
 	return rc;
@@ -458,11 +462,24 @@ static int r2pm_clean_pkg(const char *pkg) {
 	return 0;
 }
 
+static bool r2pm_have_builddir(const char *pkg) {
+	char *url = r2pm_get (pkg, "\nR2PM_TGZ", TT_TEXTLINE);
+	if (!url) {
+		url = r2pm_get (pkg, "\nR2PM_GIT", TT_TEXTLINE);
+	}
+	if (url) {
+		free (url);
+		return true;
+	}
+	return false;
+}
+
 // looks copypaste with r2pm_install_pkg()
 static int r2pm_uninstall_pkg(const char *pkg) {
 	R_LOG_INFO ("Uninstalling %s", pkg);
 	char *srcdir = r2pm_gitdir ();
 	r2pm_setenv ();
+	const bool have_builddir = r2pm_have_builddir (pkg);
 #if R2__WINDOWS__
 	char *script = r2pm_get (pkg, "\nR2PM_UNINSTALL_WINDOWS() {\n", TT_CODEBLOCK);
 	if (!script) {
@@ -470,7 +487,9 @@ static int r2pm_uninstall_pkg(const char *pkg) {
 		free (srcdir);
 		return 1;
 	}
-	char *s = r_str_newf ("cd %s && cd %s && %s", srcdir, pkg, script);
+	char *s = have_builddir
+		? r_str_newf ("cd %s && cd %s && %s", srcdir, pkg, script)
+		: r_str_newf ("%s", script);
 	int res = r_sandbox_system (s, 1);
 	free (s);
 #else
@@ -480,8 +499,9 @@ static int r2pm_uninstall_pkg(const char *pkg) {
 		free (srcdir);
 		return 1;
 	}
-	char *s = r_str_newf ("cd %s/%s\nexport MAKE=make\nR2PM_FAIL(){\n  echo $@\n}\n%s",
-		srcdir, pkg, script);
+	char *s = have_builddir
+		? r_str_newf ("cd %s/%s\nexport MAKE=make\nR2PM_FAIL(){\n  echo $@\n}\n%s", srcdir, pkg, script)
+		: r_str_newf ("export MAKE=make\nR2PM_FAIL(){\n  echo $@\n}\n%s", script);
 	int res = r_sandbox_system (s, 1);
 	free (s);
 
@@ -543,8 +563,9 @@ static int r2pm_clone(const char *pkg) {
 		} else {
 			char *url = r2pm_get (pkg, "\nR2PM_TGZ", TT_TEXTLINE);
 			if (!url) {
+				R_LOG_INFO ("Nothing to pull");
 				free (srcdir);
-				return 1;
+				return 0;
 			}
 			const char *filename = r_file_basename (url);
 			char *outfile = r_str_newf ("%s/%s", srcdir, filename);
@@ -578,6 +599,8 @@ static bool r2pm_check(const char *program) {
 }
 
 static int r2pm_install_pkg(const char *pkg, bool global) {
+	bool have_builddir = r2pm_have_builddir (pkg);
+	
 	R_LOG_INFO ("Starting install for %s", pkg);
 	char *needs = r2pm_get (pkg, "\nR2PM_NEEDS ", TT_TEXTLINE);
 	if (needs) {
@@ -630,7 +653,7 @@ static int r2pm_install_pkg(const char *pkg, bool global) {
 #if R2__UNIX__ && !defined(__wasi__)
 		int child = fork ();
 		if (child == -1) {
-			eprintf ("Cannot find radare2 in PATH");
+			R_LOG_ERROR ("Cannot find radare2 in PATH");
 			return -1;
 		}
 		if (child) {
@@ -670,19 +693,22 @@ static int r2pm_install_pkg(const char *pkg, bool global) {
 		free (srcdir);
 		return 1;
 	}
-	eprintf ("SCRIPT=<<EOF\n%s\nEOF\n", script);
+	R_LOG_INFO ("SCRIPT=<<EOF\n%s\nEOF", script);
 	char *pkgdir = r_str_newf ("%s/%s", srcdir, pkg);
 	char *dirname = r2pm_get (pkg, "\nR2PM_DIR ", TT_TEXTLINE);
 	if (dirname) {
 		free (pkgdir);
 		pkgdir = r_str_newf ("%s/%s/%s", srcdir, pkg, dirname);
 	}
-	if (!r_file_is_directory (pkgdir)) {
+	if (have_builddir && !r_file_is_directory (pkgdir)) {
 		R_LOG_ERROR ("Cannot find directory: %s", pkgdir);
 		free (pkgdir);
 		return 1;
 	}
-	char *s = r_str_newf ("cd '%s'\nexport MAKE=make\nR2PM_FAIL(){\n  echo $@\n}\n%s", pkgdir, script);
+	char *s = have_builddir
+		? r_str_newf ("cd '%s'\nexport MAKE=make\nR2PM_FAIL(){\n  echo $@\n}\n%s", pkgdir, script)
+		: r_str_newf ("export MAKE=make\nR2PM_FAIL(){\n  echo $@\n}\n%s", script);
+	// if no srcdir is defined because no file to pull just dont cd
 	free (pkgdir);
 	int res = r_sandbox_system (s, 1);
 	free (s);
