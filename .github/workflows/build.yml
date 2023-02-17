@@ -162,6 +162,8 @@ jobs:
     steps:
     - name: Checkout
       uses: actions/checkout@v3
+    - name: Install pkg-config
+      run: brew install pkg-config
     - name: Packaging
       run: dist/macos/build-pkg.sh
 #    - name: Building Radare2
@@ -175,19 +177,21 @@ jobs:
         name: macos-acr-x64
 
   macos-acr-m1:
-     runs-on: macos-12
-     steps:
-     - name: Checkout
-       uses: actions/checkout@v3
-     - name: Packaging
-       env:
-         ARCHFLAGS: '-arch arm64'
-       run: export CC="gcc -arch arm64" ; dist/macos/build-pkg.sh
-     - name: Pub
-       uses: actions/upload-artifact@v3
-       with:
-         path: dist/macos/*.pkg
-         name: macos-acr-m1
+    runs-on: macos-12
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+    - name: Install pkg-config with Homebrew
+      run: brew install pkg-config
+    - name: Packaging
+      env:
+        ARCHFLAGS: '-arch arm64'
+      run: export CC="gcc -arch arm64" ; dist/macos/build-pkg.sh
+    - name: Pub
+      uses: actions/upload-artifact@v3
+      with:
+        path: dist/macos/*.pkg
+        name: macos-acr-m1
   ios-cydia32:
     if: contains(github.ref, 'master') || contains(github.ref, 'ci-')
     runs-on: macos-11
