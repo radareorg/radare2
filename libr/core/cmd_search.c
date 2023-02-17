@@ -1782,37 +1782,39 @@ static void do_esil_search(RCore *core, struct search_parameters *param, const c
 		r_core_cmd_help (core, help_msg_search_esil);
 		return;
 	}
+	const unsigned int addrsize = r_config_get_i (core->config, "esil.addr.size");
+	const int iotrap = r_config_get_i (core->config, "esil.iotrap");
+	const int stacksize = r_config_get_i (core->config, "esil.stacksize");
+	const int nonull = r_config_get_i (core->config, "esil.nonull");
+	const int romem = r_config_get_i (core->config, "esil.romem");
+	const int stats = r_config_get_i (core->config, "esil.stats");
 	if (!core->anal->esil) {
 		// initialize esil vm
 		r_core_cmd0 (core, "aei");
 		if (!core->anal->esil) {
+			core->anal->esil = r_esil_new (stacksize, iotrap, addrsize);
 			R_LOG_ERROR ("Cannot initialize the ESIL vm");
 			return;
 		}
+		core->anal->esil->cb.user = core;
 	}
 	RIOMap *map;
 	RListIter *iter;
+	REsil *esil = core->anal->esil;
+	r_esil_setup (esil, core->anal, romem, stats, nonull);
 	r_list_foreach (param->boundaries, iter, map) {
-		const int iotrap = r_config_get_i (core->config, "esil.iotrap");
-		const int stacksize = r_config_get_i (core->config, "esil.stacksize");
-		int nonull = r_config_get_i (core->config, "esil.nonull");
 		bool hit_happens = false;
 		size_t hit_combo = 0;
 		char *res;
 		ut64 nres, addr;
 		ut64 from = r_io_map_begin (map);
 		ut64 to = r_io_map_end (map);
-		unsigned int addrsize = r_config_get_i (core->config, "esil.addr.size");
-		if (!core->anal->esil) {
-			core->anal->esil = r_esil_new (stacksize, iotrap, addrsize);
-		}
 		/* hook addrinfo */
-		core->anal->esil->cb.user = core;
-		r_esil_set_op (core->anal->esil, "AddrInfo", esil_addrinfo, 1, 1, R_ESIL_OP_TYPE_UNKNOWN);
+		r_esil_set_op (esil, "AddrInfo", esil_addrinfo, 1, 1, R_ESIL_OP_TYPE_UNKNOWN);
 		/* hook addrinfo */
-		r_esil_setup (core->anal->esil, core->anal, 1, 0, nonull);
-		r_esil_stack_free (core->anal->esil);
-		core->anal->esil->verbose = 0;
+		r_esil_setup (esil, core->anal, 1, 0, nonull);
+		r_esil_stack_free (esil);
+		esil->verbose = 0;
 
 		r_cons_break_push (NULL, NULL);
 		for (addr = from; addr < to; addr++) {
@@ -1836,15 +1838,15 @@ static void do_esil_search(RCore *core, struct search_parameters *param, const c
 				R_LOG_INFO ("Breaked at 0x%08"PFMT64x, addr);
 				break;
 			}
-			r_esil_set_pc (core->anal->esil, addr);
-			if (!r_esil_parse (core->anal->esil, input + 2)) {
+			r_esil_set_pc (esil, addr);
+			if (!r_esil_parse (esil, input + 2)) {
 				// XXX: return value doesnt seems to be correct here
 				R_LOG_ERROR ("Cannot parse esil (%s)", input + 2);
 				break;
 			}
 			hit_happens = false;
-			res = r_esil_pop (core->anal->esil);
-			if (r_esil_get_parm (core->anal->esil, res, &nres)) {
+			res = r_esil_pop (esil);
+			if (r_esil_get_parm (esil, res, &nres)) {
 				if (cfgDebug) {
 					eprintf ("RES 0x%08"PFMT64x" %"PFMT64d"\n", addr, nres);
 				}
@@ -1865,11 +1867,11 @@ static void do_esil_search(RCore *core, struct search_parameters *param, const c
 				}
 			} else {
 				R_LOG_ERROR ("Cannot parse esil (%s)", input + 2);
-				r_esil_stack_free (core->anal->esil);
+				r_esil_stack_free (esil);
 				free (res);
 				break;
 			}
-			r_esil_stack_free (core->anal->esil);
+			r_esil_stack_free (esil);
 			free (res);
 
 			if (hit_happens) {
