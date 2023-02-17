@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2019-2022 - condret */
+/* radare - LGPL - Copyright 2019-2023 - condret */
 
 #include <r_anal.h>
 
@@ -800,32 +800,42 @@ static bool edf_consume_2_set_reg(REsil *esil) {
 
 // TODO: not properly implemented
 static bool edf_pop(REsil *esil) {
+	const char *op_string = esil->current_opstr;
 	RAnalEsilDFG *edf = (RAnalEsilDFG *)esil->user;
-	RAnalEsilDFGNode *cur = edf->cur;
-	if (cur) {
-		eprintf ("JEJEJ (%s)\n", r_strbuf_get (cur->content));
+	char *src = r_esil_pop (esil);
+	if (!src) {
+		return false;
 	}
-	RAnalEsilDFGNode *pop_node = r_anal_esil_dfg_node_new (edf, "POP");
-	r_strbuf_appendf (pop_node->content, ":result_8");
-	pop_node->type = R_ANAL_ESIL_DFG_TAG_GENERATIVE;
-
-#if 1
-	RGraphNode *dst_node = r_graph_add_node (edf->flow, pop_node);
-//	r_graph_add_edge (edf->flow, pop_node, dst_node);
-	//r_graph_add_edge (edf->flow, dst_node, pop_node);
-	// _edf_reg_set (edf, "TMP", dst_node);
-	edf->cur = dst_node;
-#endif
-	r_esil_pop (esil);
+	const int src_type = r_esil_get_parm_type (esil, src);
+	RGraphNode *src_node = NULL;
+	if (src_type == R_ESIL_PARM_REG) {
+		src_node = _edf_reg_get (edf, src);
+	} else if (src_type == R_ESIL_PARM_NUM) {
+		src_node = _edf_const_get (edf, src);
+	} else {
+		src_node = _edf_var_get (edf, src);
+	}
+	if (!src_node) {
+		free (src);
+		return false;
+	}
+	RAnalEsilDFGNode *eop_node = r_anal_esil_dfg_node_new (edf, src);
+	r_strbuf_appendf (eop_node->content, ",%s", op_string);
+	eop_node->type = R_ANAL_ESIL_DFG_TAG_GENERATIVE;
+	free (src);
+	RGraphNode *op_node = r_graph_add_node (edf->flow, eop_node);
+	r_graph_add_edge (edf->flow, src_node, op_node);
 	return true;
 }
 
+#if 0
 // TODO: implement
 static bool edf_dup(REsil *esil) {
 	// edf_pop (esil);
 	// edf_push (esil);
 	// edf_push (esil);
 }
+#endif
 
 static bool edf_consume_2_push_1(REsil *esil) {
 	const char *op_string = esil->current_opstr;
@@ -1633,7 +1643,9 @@ R_API RAnalEsilDFG *r_anal_esil_dfg_expr(RAnal *anal, RAnalEsilDFG *dfg, const c
 	r_esil_set_op (esil, "/", edf_consume_2_push_1, 1, 2, R_ESIL_OP_TYPE_MATH);
 	r_esil_set_op (esil, ">>", edf_consume_2_push_1, 1, 2, R_ESIL_OP_TYPE_MATH);
 	r_esil_set_op (esil, "POP", edf_pop, 1, 0, R_ESIL_OP_TYPE_UNKNOWN);
+#if 0
 	r_esil_set_op (esil, "DUP", edf_dup, 0, 1, R_ESIL_OP_TYPE_UNKNOWN);
+#endif
 	r_esil_set_op (esil, "<<", edf_consume_2_push_1, 1, 2, R_ESIL_OP_TYPE_MATH);
 	r_esil_set_op (esil, ">>>", edf_consume_2_push_1, 1, 2, R_ESIL_OP_TYPE_MATH);
 	r_esil_set_op (esil, ">>>", edf_consume_2_push_1, 1, 2, R_ESIL_OP_TYPE_MATH);
