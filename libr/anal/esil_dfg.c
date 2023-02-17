@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2019-2022 - condret */
+/* radare - LGPL - Copyright 2019-2023 - condret */
 
 #include <r_anal.h>
 
@@ -685,6 +685,16 @@ static bool edf_zf(REsil *esil) {
 	return edf_use_new_push_1 (esil, "$z", edf_zf_constraint);
 }
 
+static void edf_sf_constraint(RStrBuf *result, const char *new_node_str) {
+	r_strbuf_appendf (result, ":(%s<0)", new_node_str);
+}
+
+static bool edf_sf(REsil *esil) {
+	char *bitsize = r_esil_pop (esil);
+	R_LOG_DEBUG ("bitsize not yet implemented for sf (%s)", bitsize);
+	return edf_use_new_push_1 (esil, "$s", edf_sf_constraint);
+}
+
 static void edf_pf_constraint(RStrBuf *result, const char *new_node_str) {
 	r_strbuf_appendf (result, ":parity_of(%s)", new_node_str);
 }
@@ -787,6 +797,45 @@ static bool edf_consume_2_use_set_reg(REsil *esil) {
 static bool edf_consume_2_set_reg(REsil *esil) {
 	return _edf_consume_2_set_reg (esil, true);
 }
+
+// TODO: not properly implemented
+static bool edf_pop(REsil *esil) {
+	const char *op_string = esil->current_opstr;
+	RAnalEsilDFG *edf = (RAnalEsilDFG *)esil->user;
+	char *src = r_esil_pop (esil);
+	if (!src) {
+		return false;
+	}
+	const int src_type = r_esil_get_parm_type (esil, src);
+	RGraphNode *src_node = NULL;
+	if (src_type == R_ESIL_PARM_REG) {
+		src_node = _edf_reg_get (edf, src);
+	} else if (src_type == R_ESIL_PARM_NUM) {
+		src_node = _edf_const_get (edf, src);
+	} else {
+		src_node = _edf_var_get (edf, src);
+	}
+	if (!src_node) {
+		free (src);
+		return false;
+	}
+	RAnalEsilDFGNode *eop_node = r_anal_esil_dfg_node_new (edf, src);
+	r_strbuf_appendf (eop_node->content, ",%s", op_string);
+	eop_node->type = R_ANAL_ESIL_DFG_TAG_GENERATIVE;
+	free (src);
+	RGraphNode *op_node = r_graph_add_node (edf->flow, eop_node);
+	r_graph_add_edge (edf->flow, src_node, op_node);
+	return true;
+}
+
+#if 0
+// TODO: implement
+static bool edf_dup(REsil *esil) {
+	// edf_pop (esil);
+	// edf_push (esil);
+	// edf_push (esil);
+}
+#endif
 
 static bool edf_consume_2_push_1(REsil *esil) {
 	const char *op_string = esil->current_opstr;
@@ -1358,7 +1407,7 @@ static bool edf_use_new_push_1(REsil *esil, const char *op_string, AddConstraint
 	RGraphNode *op_node = r_graph_add_node (edf->flow, r_anal_esil_dfg_node_new (edf, op_string));
 	RGraphNode *latest_new = edf->cur;
 	if (!latest_new) {
-		return 0;
+		return false;
 	}
 	RAnalEsilDFGNode *result = r_anal_esil_dfg_node_new (edf, "result_");
 	result->type = R_ANAL_ESIL_DFG_TAG_RESULT; // is this generative?
@@ -1571,6 +1620,7 @@ R_API RAnalEsilDFG *r_anal_esil_dfg_expr(RAnal *anal, RAnalEsilDFG *dfg, const c
 
 	r_esil_set_op (esil, "=", edf_consume_2_set_reg, 0, 2, R_ESIL_OP_TYPE_REG_WRITE);
 	r_esil_set_op (esil, ":=", edf_eq_weak, 0, 2, R_ESIL_OP_TYPE_REG_WRITE);
+	r_esil_set_op (esil, "$s", edf_sf, 1, 0, R_ESIL_OP_TYPE_UNKNOWN); // XXX TODO
 	r_esil_set_op (esil, "$z", edf_zf, 1, 0, R_ESIL_OP_TYPE_UNKNOWN);
 	r_esil_set_op (esil, "$p", edf_pf, 1, 0, R_ESIL_OP_TYPE_UNKNOWN);
 	r_esil_set_op (esil, "$c", edf_cf, 1, 1, R_ESIL_OP_TYPE_UNKNOWN);
@@ -1592,6 +1642,10 @@ R_API RAnalEsilDFG *r_anal_esil_dfg_expr(RAnal *anal, RAnalEsilDFG *dfg, const c
 	r_esil_set_op (esil, "*", edf_consume_2_push_1, 1, 2, R_ESIL_OP_TYPE_MATH);
 	r_esil_set_op (esil, "/", edf_consume_2_push_1, 1, 2, R_ESIL_OP_TYPE_MATH);
 	r_esil_set_op (esil, ">>", edf_consume_2_push_1, 1, 2, R_ESIL_OP_TYPE_MATH);
+	r_esil_set_op (esil, "POP", edf_pop, 1, 0, R_ESIL_OP_TYPE_UNKNOWN);
+#if 0
+	r_esil_set_op (esil, "DUP", edf_dup, 0, 1, R_ESIL_OP_TYPE_UNKNOWN);
+#endif
 	r_esil_set_op (esil, "<<", edf_consume_2_push_1, 1, 2, R_ESIL_OP_TYPE_MATH);
 	r_esil_set_op (esil, ">>>", edf_consume_2_push_1, 1, 2, R_ESIL_OP_TYPE_MATH);
 	r_esil_set_op (esil, ">>>", edf_consume_2_push_1, 1, 2, R_ESIL_OP_TYPE_MATH);
@@ -1952,10 +2006,7 @@ R_API RStrBuf *r_anal_esil_dfg_filter(RAnalEsilDFG *dfg, const char *reg) {
 		return NULL;
 	}
 	RGraphNode *resolve_me = _edf_reg_get (dfg, reg);
-	if (!resolve_me) {
-		return NULL;
-	}
-	return filter_gnode_expr (dfg, resolve_me);
+	return resolve_me? filter_gnode_expr (dfg, resolve_me): NULL;
 }
 
 R_API RStrBuf *r_anal_esil_dfg_filter_expr(RAnal *anal, const char *expr, const char *reg,
