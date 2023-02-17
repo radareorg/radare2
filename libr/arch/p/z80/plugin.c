@@ -1,13 +1,9 @@
-/* radare - LGPL - Copyright 2012-2021 - pancake, condret */
+/* radare - LGPL - Copyright 2012-2023 - pancake, condret */
 
-#include <string.h>
-#include <r_types.h>
-#include <r_lib.h>
-#include <r_asm.h>
-#include <r_anal.h>
-#include "../arch/z80/z80_tab.h"
-#include "../arch/z80/z80asm.c"
-#include "../arch/z80/z80.c"
+#include <r_arch.h>
+#include "z80_tab.h"
+#include "z80asm.c"
+#include "z80.c"
 
 static void z80_op_size(const ut8 *_data, int len, int *size, int *size_prefix) {
 	ut8 data[4] = {0};
@@ -114,13 +110,20 @@ static char *z80dis(const ut8 *buf, int len) {
 	return strdup (buf_asm);
 }
 
-static int z80_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *_data, int len, RAnalOpMask mask) {
+static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
+// static int z80_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *_data, int len, RAnalOpMask mask) {
+	const int len = op->size;
 	int ilen = 0;
 	ut8 data[4] = {0};
-	memcpy (data, _data, R_MIN (len, 4));
+	if (op->size < 1) {
+		return false;
+	}
+	memcpy (data, op->bytes, R_MIN (len, 4));
 	z80_op_size (data, len, &ilen, &op->nopcode);
+	if (ilen < 1) {
+		return false;
+	}
 
-	op->addr = addr;
 	op->size = ilen;
 	op->type = R_ANAL_OP_TYPE_UNK;
 
@@ -431,7 +434,7 @@ static int z80_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *_data, in
 	return ilen;
 }
 
-static bool set_reg_profile(RAnal *anal) {
+static char *regs(RArchSession *as) {
 	const char *p =
 		"=PC	mpc\n"
 		"=SP	sp\n"
@@ -471,10 +474,10 @@ static bool set_reg_profile(RAnal *anal) {
 		"gpr	mbcram	.16	16	0\n"
 
 		"gpr	ime	.1	18	0\n";
-	return r_reg_set_profile_string (anal->reg, p);
+	return strdup (p);
 }
 
-static int archinfo(RAnal *anal, int q) {
+static int archinfo(RArchSession *as, ut32 q) {
 	switch (q) {
 	case R_ANAL_ARCHINFO_ALIGN:
 		return 0;
@@ -488,26 +491,36 @@ static int archinfo(RAnal *anal, int q) {
 	return 1;
 }
 
-static int z80_anal_opasm(RAnal *a, ut64 addr, const char *str, ut8 *outbuf, int outsize) {
-	return z80asm (outbuf, str);
+static bool encode(RArchSession *s, RAnalOp *op, ut32 mask) {
+	ut8 data[32] = {0};
+	int len = z80asm (data, op->mnemonic);
+	if (len < 1) {
+		return false;
+	}
+	r_anal_op_set_bytes (op, op->addr, data, len);
+	return true;
 }
 
-RAnalPlugin r_anal_plugin_z80 = {
+RArchPlugin r_arch_plugin_z80 = {
 	.name = "z80",
 	.arch = "z80",
 	.license = "GPL",
-	.bits = 16,
-	.set_reg_profile = &set_reg_profile,
+	.bits = R_SYS_BITS_PACK (16),
 	.desc = "Z80 CPU code analysis plugin",
-	.archinfo = archinfo,
+	.info = archinfo,
+	.decode = decode,
+	.encode = encode,
+	.regs = regs
+#if 0
 	.op = &z80_anal_op,
 	.opasm = &z80_anal_opasm,
+#endif
 };
 
 #ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_ANAL,
-	.data = &r_anal_plugin_z80,
+	.type = R_LIB_TYPE_ARCH,
+	.data = &r_arch_plugin_z80,
 	.version = R2_VERSION
 };
 #endif

@@ -279,6 +279,7 @@ extern RArchPlugin r_arch_plugin_mcs96;
 extern RArchPlugin r_arch_plugin_ws;
 extern RArchPlugin r_arch_plugin_lanai;
 extern RArchPlugin r_arch_plugin_lua;
+extern RArchPlugin r_arch_plugin_z80;
 
 #ifdef __cplusplus
 }

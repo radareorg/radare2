@@ -109,7 +109,6 @@ r_anal_sources = [
   # join_paths('arch/whitespace/wsdis.c'),
   'p/anal_x86_cs.c',
   'p/anal_xcore_cs.c',
-  'p/anal_z80.c',
   #join_paths('arch','gb','meta_gb_cmt.c'),
   'arch/ebc/ebc_disas.c',
   'arch/loongarch/gnu/loongarch-coder.c',
