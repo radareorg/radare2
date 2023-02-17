@@ -599,7 +599,6 @@ static bool r2pm_check(const char *program) {
 
 static int r2pm_install_pkg(const char *pkg, bool global) {
 	bool have_builddir = r2pm_have_builddir (pkg);
-	
 	R_LOG_INFO ("Starting install for %s", pkg);
 	char *needs = r2pm_get (pkg, "\nR2PM_NEEDS ", TT_TEXTLINE);
 	if (needs) {
@@ -692,7 +691,9 @@ static int r2pm_install_pkg(const char *pkg, bool global) {
 		free (srcdir);
 		return 1;
 	}
-	R_LOG_INFO ("SCRIPT=<<EOF\n%s\nEOF", script);
+	R_LOG_INFO ("SCRIPT=<<EOF");
+	R_LOG_INFO ("%s", script);
+	R_LOG_INFO ("EOF");
 	char *pkgdir = r_str_newf ("%s/%s", srcdir, pkg);
 	char *dirname = r2pm_get (pkg, "\nR2PM_DIR ", TT_TEXTLINE);
 	if (dirname) {
