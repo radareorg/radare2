@@ -880,8 +880,6 @@ static int archinfo(RArchSession *as, ut32 q) {
 }
 
 static bool encode(RArchSession *s, RAnalOp *op, ut32 mask) {
-//	ut64 addr, const char *s, ut8 *buf, int len) {
-// static int v850_opasm(RAnal *anal, ut64 addr, const char *s, ut8 *buf, int len) {
 	r_return_val_if_fail (s && op, false);
 	const char *str = op->mnemonic;
 	if (!strcmp (str, "nop")) {

@@ -179,11 +179,7 @@ anal_plugins += [
 
 if no_user_plugins
   if use_gpl
-    asm_plugins += [
-      # 'z80',
-    ]
     anal_plugins += [
-      'z80',
       'arm_gnu',
       'bpf',
       'mips_gnu',
@@ -195,6 +191,7 @@ if no_user_plugins
       'sparc_gnu',
     ]
     arch_plugins += [
+      'z80',
       'lanai'
     ]
   endif

@@ -341,9 +341,6 @@ static void r2pm_setenv(void) {
 
 	r_sys_setenv ("R2_LIBEXT", R_LIB_EXT);
 
-	// Deprecate this R2PM_FAIL when R2_590 is out
-	r_sys_setenv ("R2PM_FAIL", "exit 1");
-
 	char *gdir = r2pm_gitdir ();
 	r_sys_setenv ("R2PM_GITDIR", gdir);
 	free (gdir);
