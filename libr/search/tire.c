@@ -48,7 +48,7 @@ static inline RTireNode *new_leaf(RSearchKeyword *kw, ut8 *data, ut32 len) {
 // traverse *node and add kw to it
 static inline bool add_node(RTireNode **root, RSearchKeyword *kw) {
 	r_return_val_if_fail (kw && kw->keyword_length >= 1, false);
-	r_return_val_if_fail (!kw->bin_binmask, NULL); // remove when binmake is supported
+	r_return_val_if_fail (!kw->bin_binmask, false); // remove when binmake is supported
 
 	ut8 *data = kw->bin_keyword;
 	RTireNode **writeto = &root[*data];

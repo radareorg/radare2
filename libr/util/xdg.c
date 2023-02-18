@@ -28,7 +28,7 @@ R_API char *r_xdg_configdir(const char *s) {
 
 // XDG_DATA_HOME	User-specific data	~/.var/app/<app-id>/data
 R_API char *r_xdg_datadir(const char *s) {
-	return xdg ("XDG_DATA_HOME", ".local/share", s);
+	return xdg ("XDG_DATA_HOME", ".local" R_SYS_DIR "share", s);
 }
 
 // XDG_CACHE_HOME	Non-essential user-specific data	~/.var/app/<app-id>/cache
