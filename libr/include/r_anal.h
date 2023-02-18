@@ -1711,7 +1711,6 @@ extern RAnalPlugin r_anal_plugin_evm_cs;
 extern RAnalPlugin r_anal_plugin_bpf;
 extern RAnalPlugin r_anal_plugin_hppa_gnu;
 extern RAnalPlugin r_anal_plugin_m68k_gnu;
-extern RAnalPlugin r_anal_plugin_lm32;
 
 #ifdef __cplusplus
 }

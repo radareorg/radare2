@@ -1,10 +1,7 @@
-/* lm32 for r2 - BSD - Copyright 2015-2022 - Felix Held */
+/* lm32 for r2 - BSD - Copyright 2015-2023 - Felix Held */
 
-#include <r_types.h>
-#include <r_util.h>
-#include <r_lib.h>
-#include <r_asm.h>
-#include "../arch/lm32/lm32_isa.h"
+#include <r_arch.h>
+#include "lm32_isa.h"
 
 #define LM32_UNUSED 0
 
@@ -411,8 +408,9 @@ static bool r_asm_lm32_stringify(RAsmLm32Instruction *instr, char *str, int str_
 	return true;
 }
 
-static int lm32_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
-	r_return_val_if_fail (anal && op, -1);
+static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
+	const ut8 *buf = op->bytes;
+	const int len = op->size;
 	RAsmLm32Instruction instr = {0};
 	if (!buf || len < 4) {
 		return -1;
@@ -477,22 +475,21 @@ static char *get_reg_profile(RAnal *anal) {
 	);
 }
 
-RAnalPlugin r_anal_plugin_lm32 = {
+RArchPlugin r_arch_plugin_lm32 = {
 	.name = "lm32",
 	.arch = "lm32",
-	.op = &lm32_op,
-	//.set_reg_profile = &set_reg_profile,
-	.get_reg_profile = get_reg_profile,
+	.decode = &lm32_op,
+	.regs = get_reg_profile,
 	.desc = "disassembly plugin for Lattice Micro 32 ISA",
 	.author = "Felix Held",
 	.license = "BSD",
-	.bits = 32,
+	.bits = R_SYS_BITS_PACK1 (32),
 	.endian = R_SYS_ENDIAN_BIG,
 };
 
 #ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_ANAL,
+	.type = R_LIB_TYPE_ARCH,
 	.data = &r_anal_plugin_lm32,
 	.version = R2_VERSION
 };
