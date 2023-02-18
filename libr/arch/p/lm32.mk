@@ -1,7 +1,7 @@
-OBJ_LM32=anal_lm32.o
+OBJ_LM32=p/lm32/plugin.o
 
 STATIC_OBJ+=${OBJ_LM32}
-TARGET_LM32=anal_lm32.${EXT_SO}
+TARGET_LM32=arch_lm32.${EXT_SO}
 
 ifeq ($(WITHPIC),1)
 ALL_TARGETS+=${TARGET_LM32}

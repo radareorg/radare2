@@ -433,7 +433,7 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 	return 4;
 }
 
-static char *get_reg_profile(RAnal *anal) {
+static char *get_reg_profile(RArchSession *as) {
 	return strdup (
 		"=PC	pc\n"
 		"=BP	fp\n"
@@ -478,7 +478,7 @@ static char *get_reg_profile(RAnal *anal) {
 RArchPlugin r_arch_plugin_lm32 = {
 	.name = "lm32",
 	.arch = "lm32",
-	.decode = &lm32_op,
+	.decode = &decode,
 	.regs = get_reg_profile,
 	.desc = "disassembly plugin for Lattice Micro 32 ISA",
 	.author = "Felix Held",
