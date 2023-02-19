@@ -37,6 +37,11 @@ OBJS+=big_gmp.o
 OBJS+=big_ssl.o
 OBJS+=big.o
 
+ifeq ($(USE_SMALLZ4),1)
+CFLAGS+=-DUSE_SMALLZ4
+OBJS+=$(SHLR)/smallz4/smallz4cat.o
+endif
+
 CWD=$(shell pwd)
 
 LDFLAGS+=${BN_LIBS}

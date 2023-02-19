@@ -1,0 +1,208 @@
+diff --git a/smallz4cat.c b/smallz4cat.c
+index db3778b..5342f80 100644
+--- a/smallz4cat.c
++++ b/smallz4cat.c
+@@ -52,7 +52,6 @@ static void unlz4error(const char* msg)
+   fputs("ERROR: ", stderr);
+   fputs(msg,       stderr);
+   fputc('\n',      stderr);
+-  exit(1);
+ }
+ 
+ 
+@@ -109,7 +108,7 @@ static void sendBytesToOut(const unsigned char* data, unsigned int numBytes, voi
+ 
+ 
+ /// decompress everything in input stream (accessed via getByte) and write to output stream (via sendBytes)
+-void unlz4_userPtr(GET_BYTE getByte, SEND_BYTES sendBytes, const char* dictionary, void* userPtr)
++int unlz4_userPtr(GET_BYTE getByte, SEND_BYTES sendBytes, const char* dictionary, void* userPtr)
+ {
+   // signature
+   unsigned char signature1 = getByte(userPtr);
+@@ -120,7 +119,10 @@ void unlz4_userPtr(GET_BYTE getByte, SEND_BYTES sendBytes, const char* dictionar
+   unsigned char isModern   = (signature == 0x184D2204);
+   unsigned char isLegacy   = (signature == 0x184C2102);
+   if (!isModern && !isLegacy)
++  {
+     unlz4error("invalid signature");
++    return -1;
++  }
+ 
+   unsigned char hasBlockChecksum   = FALSE;
+   unsigned char hasContentSize     = FALSE;
+@@ -138,7 +140,10 @@ void unlz4_userPtr(GET_BYTE getByte, SEND_BYTES sendBytes, const char* dictionar
+     // only version 1 file format
+     unsigned char version = flags >> 6;
+     if (version != 1)
++    {
+       unlz4error("only LZ4 file format version 1 supported");
++      return -1;
++    }
+ 
+     // ignore blocksize
+     char numIgnore = 1;
+@@ -170,8 +175,10 @@ void unlz4_userPtr(GET_BYTE getByte, SEND_BYTES sendBytes, const char* dictionar
+   {
+     // open dictionary
+     FILE* dict = fopen(dictionary, "rb");
+-    if (!dict)
++    if (!dict) {
+       unlz4error("cannot open dictionary");
++      return -1;
++    }
+ 
+     // get dictionary's filesize
+     fseek(dict, 0, SEEK_END);
+@@ -263,8 +270,10 @@ void unlz4_userPtr(GET_BYTE getByte, SEND_BYTES sendBytes, const char* dictionar
+         unsigned int delta = getByte(userPtr);
+         delta |= (unsigned int)getByte(userPtr) << 8;
+         // zero isn't allowed
+-        if (delta == 0)
++        if (delta == 0) {
+           unlz4error("invalid offset");
++          return -1;
++        }
+         blockOffset += 2;
+ 
+         // match length (always >= 4, therefore length is stored minus 4)
+@@ -357,6 +366,140 @@ void unlz4_userPtr(GET_BYTE getByte, SEND_BYTES sendBytes, const char* dictionar
+ 
+   // flush output buffer
+   sendBytes(history, pos, userPtr);
++  return 0;
++}
++
++/// decompress an lz4 block
++int unlz4Block_userPtr(GET_BYTE getByte, SEND_BYTES sendBytes, void* userPtr, unsigned int blockSize)
++{
++
++  // contains the latest decoded data
++  unsigned char history[HISTORY_SIZE];
++  // next free position in history[]
++  unsigned int  pos = 0;
++
++      // decompress block
++      unsigned int blockOffset = 0;
++      unsigned int numWritten  = 0;
++      while (blockOffset < blockSize)
++      {
++        // get a token
++        unsigned char token = getByte(userPtr);
++        blockOffset++;
++
++        // determine number of literals
++        unsigned int numLiterals = token >> 4;
++        if (numLiterals == 15)
++        {
++          // number of literals length encoded in more than 1 byte
++          unsigned char current;
++          do
++          {
++            current = getByte(userPtr);
++            numLiterals += current;
++            blockOffset++;
++          } while (current == 255);
++        }
++
++        blockOffset += numLiterals;
++
++        // copy all those literals
++        if (pos + numLiterals < HISTORY_SIZE)
++        {
++          // fast loop
++          while (numLiterals-- > 0)
++            history[pos++] = getByte(userPtr);
++        }
++        else
++        {
++          // slow loop
++          while (numLiterals-- > 0)
++          {
++            history[pos++] = getByte(userPtr);
++
++            // flush output buffer
++            if (pos == HISTORY_SIZE)
++            {
++              sendBytes(history, HISTORY_SIZE, userPtr);
++              numWritten += HISTORY_SIZE;
++              pos = 0;
++            }
++          }
++        }
++
++        // last token has only literals
++        if (blockOffset == blockSize)
++          break;
++
++        // match distance is encoded in two bytes (little endian)
++        unsigned int delta = getByte(userPtr);
++        delta |= (unsigned int)getByte(userPtr) << 8;
++        // zero isn't allowed
++        if (delta == 0) {
++          unlz4error("invalid offset");
++          return -1;
++        }
++        blockOffset += 2;
++
++        // match length (always >= 4, therefore length is stored minus 4)
++        unsigned int matchLength = 4 + (token & 0x0F);
++        if (matchLength == 4 + 0x0F)
++        {
++          unsigned char current;
++          do // match length encoded in more than 1 byte
++          {
++            current = getByte(userPtr);
++            matchLength += current;
++            blockOffset++;
++          } while (current == 255);
++        }
++
++        // copy match
++        unsigned int referencePos = (pos >= delta) ? (pos - delta) : (HISTORY_SIZE + pos - delta);
++        // start and end within the current 64k block ?
++        if (pos + matchLength < HISTORY_SIZE && referencePos + matchLength < HISTORY_SIZE)
++        {
++          // read/write continuous block (no wrap-around at the end of history[])
++          // fast copy
++          if (pos >= referencePos + matchLength || referencePos >= pos + matchLength)
++          {
++            // non-overlapping
++            memcpy(history + pos, history + referencePos, matchLength);
++            pos += matchLength;
++          }
++          else
++          {
++            // overlapping, slower byte-wise copy
++            while (matchLength-- > 0)
++              history[pos++] = history[referencePos++];
++          }
++        }
++        else
++        {
++          // either read or write wraps around at the end of history[]
++          while (matchLength-- > 0)
++          {
++            // copy single byte
++            history[pos++] = history[referencePos++];
++
++            // cannot write anymore ? => wrap around
++            if (pos == HISTORY_SIZE)
++            {
++              // flush output buffer
++              sendBytes(history, HISTORY_SIZE, userPtr);
++              numWritten += HISTORY_SIZE;
++              pos = 0;
++            }
++            // wrap-around of read location
++            referencePos %= HISTORY_SIZE;
++          }
++        }
++      }
++
++      // flush output buffer
++      sendBytes(history, pos, userPtr);
++      numWritten += pos;
++      return numWritten;
+ }
+ 
+ /// old interface where getByte and sendBytes use global file handles

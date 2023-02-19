@@ -7,6 +7,36 @@
 // set a maximum output buffer of 50MB
 #define MAXOUT 50000000
 
+#if USE_SMALLZ4
+#include "../../../shlr/smallz4/smallz4cat.h"
+
+struct UserPtr {
+	const ut8 * input;
+	ut64 inputPos;
+	ut8 * output;
+	ut64 outputPos;
+	ut32 * outputSize;
+	int error;
+};
+
+void smallz4Write(const unsigned char* data, unsigned int numBytes, void *userPtr) {
+  struct UserPtr* user = (struct UserPtr*)userPtr;
+  if (data != NULL && numBytes > 0) {
+	if (*(user->outputSize) - user->outputPos < numBytes) {
+		user->error = -1;
+		return;
+	}
+	memcpy(user->output + user->outputPos, data, numBytes);
+	user->outputPos += numBytes;
+  }
+}
+
+unsigned char smallz4GetByte(void *userPtr) {
+  struct UserPtr* user = (struct UserPtr*)userPtr;
+  return *(user->input + (user->inputPos++));
+}
+#endif
+
 static const char *gzerr(int n) {
 	const char * const errors[] = {
 		"",
@@ -89,8 +119,23 @@ R_API ut8 *r_inflate_lz4(const ut8 *src, int srcLen, int *consumed, int *dstLen)
 	if (!obuf) {
 		return NULL;
 	}
+
+#if USE_SMALLZ4
+	struct UserPtr user =
+	{
+		.input = src,
+		.inputPos = 0,
+		.output = obuf,
+		.outputPos = 0,
+		.outputSize = &osz,
+		.error = 0
+	};
+	int res = unlz4Block_userPtr(smallz4GetByte, smallz4Write, &user, srcLen);
+	if (res < 1 || user.error != 0) {
+#else
 	int res = LZ4_decompress_safe ((const char*)src, (char*)obuf, (uint32_t) srcLen, (uint32_t) osz);
 	if (res < 1) {
+#endif
 		int mul = srcLen / -res;
 		int nosz = osz * (5 * (mul + 1));
 		if (nosz < osz) {
@@ -104,8 +149,19 @@ R_API ut8 *r_inflate_lz4(const ut8 *src, int srcLen, int *consumed, int *dstLen)
 		}
 		obuf = nbuf;
 		osz = nosz;
+#if USE_SMALLZ4
+		user.output = obuf;
+		user.inputPos = 0;
+		user.outputPos = 0;
+		user.error = 0;
+		res = unlz4Block_userPtr (smallz4GetByte, smallz4Write, &user, srcLen);
+	}
+	user.output = NULL;
+	user.input = NULL;
+#else
 	}
 	res = LZ4_decompress_safe ((const char*)src, (char*)obuf, (uint32_t) srcLen, (uint32_t) osz);
+#endif
 	if (res > 0) {
 		*dstLen = res;
 		*consumed = srcLen;
