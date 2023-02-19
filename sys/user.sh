@@ -26,6 +26,7 @@ abspath() {
 	fi
 }
 
+ARGS=""
 while [ $# -gt 0 ]
 do
 	case "$1" in
@@ -43,7 +44,7 @@ do
 			fi
 			;;
 		*)
-			echo "WARNING: unknown argument \"$1\""
+			ARGS="${ARGS} $1"
 	esac
 	shift
 done
@@ -82,11 +83,11 @@ fi
 mkdir -p "${ROOT}/lib"
 
 if [ "${M32}" = 1 ]; then
-	./sys/build-m32.sh "${ROOT}" && ${MAKE} symstall
+	./sys/build-m32.sh "${ROOT}" ${ARGS} && ${MAKE} symstall
 elif [ "${HARDEN}" = 1 ]; then
-	./sys/build-harden.sh "${ROOT}" && ${MAKE} symstall
+	./sys/build-harden.sh "${ROOT}" ${ARGS} && ${MAKE} symstall
 else
-	./sys/build.sh "${ROOT}" && ${MAKE} symstall
+	./sys/build.sh "${ROOT}" ${ARGS} && ${MAKE} symstall
 fi
 if [ $? != 0 ]; then
 	echo "Oops"
