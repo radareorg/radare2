@@ -99,7 +99,6 @@ r_anal_sources = [
   '../asm/arch/s390/gnu/s390-opc.c',
   '../asm/arch/sparc/gnu/sparc-dis.c',
   '../asm/arch/sparc/gnu/sparc-opc.c',
-  'p/anal_lm32.c',
   'p/anal_sparc_cs.c',
   'p/anal_sparc_gnu.c',
   'p/anal_tms320.c',
