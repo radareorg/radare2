@@ -674,7 +674,7 @@ RArchPlugin r_arch_plugin_bpf_cs = {
 };
 
 #else
-RAnalPlugin r_arch_plugin_bpf_cs = {0};
+RArchPlugin r_arch_plugin_bpf_cs = {0};
 #endif // CS_API_MAJOR
 
 #ifndef R2_PLUGIN_INCORE
