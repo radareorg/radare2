@@ -187,8 +187,7 @@ static void handleFuncSymbol(LuaFunction *func, ParseStruct *parseStruct){
 
 	char *string;
 	if (!func->name_ptr || !func->name_size) {
-		string = malloc (11);
-		sprintf (string, "0x%"PFMT64x, func->offset);
+		string = r_str_newf ("0x%"PFMT64x, func->offset);
 	} else {
 		string = malloc (func->name_size + 1);
 		memcpy (string, func->name_ptr, func->name_size);

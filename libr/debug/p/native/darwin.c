@@ -34,7 +34,7 @@ int pids_sons_of_r(int pid, int recursive, int limit) {
 	while ((file = (struct dirent *)readdir (dh))) {
 		p = atoi (file->d_name);
 		if (p) {
-			sprintf (buf, "/proc/%s/stat", file->d_name);
+			snprintf (buf, sizeof (buf), "/proc/%s/stat", file->d_name);
 			fd = fopen (buf, "r");
 			if (fd) {
 				mola = 0;

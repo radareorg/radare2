@@ -1,11 +1,11 @@
-/* radare - LGPL - Copyright 2009-2020 - pancake, nibble */
+/* radare - LGPL - Copyright 2009-2023 - pancake, nibble */
 
 #include <r_cons.h>
 
-static bool gethtmlrgb(const char *str, char *buf) {
+static bool gethtmlrgb(const char *str, char *buf, size_t buf_size) {
 	ut8 r = 0, g = 0, b = 0;
 	if (r_cons_rgb_parse (str, &r, &g, &b, 0)) {
-		sprintf (buf, "#%02x%02x%02x", r, g, b);
+		snprintf (buf, buf_size, "#%02x%02x%02x", r, g, b);
 		return true;
 	}
 	buf[0] = '\0';
@@ -145,7 +145,7 @@ R_API char *r_cons_html_filter(const char *ptr, int *newlen) {
 				if (m) {
 					// char *s = r_str_ndup (ptr, m + 1 - ptr);
 					// eprintf ("ONE (%s)\n", s);
-					gethtmlrgb (ptr, background_color);
+					gethtmlrgb (ptr, background_color, sizeof (background_color));
 					need_to_set = true;
 					ptr = m;
 					str = ptr + 1;
@@ -156,7 +156,7 @@ R_API char *r_cons_html_filter(const char *ptr, int *newlen) {
 				if (m) {
 					// char *s = r_str_ndup (ptr, m + 1 - ptr);
 					// eprintf ("TWO (%s)\n", s);
-					gethtmlrgb (ptr, text_color);
+					gethtmlrgb (ptr, text_color, sizeof (text_color));
 					need_to_set = true;
 					ptr = m;
 					str = ptr + 1;
@@ -164,14 +164,14 @@ R_API char *r_cons_html_filter(const char *ptr, int *newlen) {
 				}
 			} else if (r_str_startswith (ptr, "48;5;") || r_str_startswith (ptr, "48;2;")) {
 				char *end = strchr (ptr, 'm');
-				gethtmlrgb (ptr, background_color);
+				gethtmlrgb (ptr, background_color, sizeof (background_color));
 				need_to_set = true;
 				ptr = end;
 				str = ptr + 1;
 				esc = 0;
 			} else if (r_str_startswith (ptr, "38;5;") || r_str_startswith (ptr, "38;2;")) {
 				char *end = strchr (ptr, 'm');
-				gethtmlrgb (ptr, text_color);
+				gethtmlrgb (ptr, text_color, sizeof (text_color));
 				need_to_set = true;
 				if (end) {
 					ptr = end;

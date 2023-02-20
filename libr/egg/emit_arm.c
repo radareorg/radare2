@@ -124,7 +124,6 @@ static void emit_call(REgg *egg, const char *str, int atr) {
 		r_egg_printf (egg, "  ldr r%d, [%s]\n", lastarg - 1 - i, lastargs[i]);
 		lastargs[i][0] = 0;
 	}
-
 	if (atr) {
 		r_egg_printf (egg, "  ldr r0, %s", str);
 		r_egg_printf (egg, "  blx r0\n");

@@ -864,7 +864,7 @@ static struct r_bin_pe_export_t* parse_symbol_table(RBinPEObj* pe, struct r_bin_
 							name[sizeof (name) - 1] = 0;
 							strncpy ((char*) exp[symctr].name, longname, PE_NAME_LENGTH - 1);
 						} else {
-							sprintf ((char*) exp[symctr].name, "unk_%d", symctr);
+							snprintf ((char*) exp[symctr].name, PE_NAME_LENGTH, "unk_%d", symctr);
 						}
 					}
 					exp[symctr].name[PE_NAME_LENGTH] = '\0';
