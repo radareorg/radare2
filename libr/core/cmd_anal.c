@@ -12002,7 +12002,7 @@ static bool funref(void *_core, ut64 from, ut64 addr) {
 	return true;
 }
 
-static bool anal_aarr(RCore *core) {
+static void anal_aarr(RCore *core) {
 	SetU *visited = set_u_new ();
 	RAnalFunction *fcn;
 	RAnalRef *refi;
