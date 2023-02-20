@@ -154,9 +154,11 @@ static const char *help_msg_aaf[] = {
 
 static const char *help_msg_aaa[] = {
 	"Usage:", "aa[a[a[a]]]", " # automatically analyze the whole program",
+	"a", " ", "show code analysis statistics",
 	"aa", " ", "alias for 'af@@ sym.*;af@entry0;afva'",
 	"aaa", "", "perform deeper analysis, most common use",
 	"aaaa", "", "same as aaa but adds a bunch of experimental iterations",
+	"aaaaa", "", "refine the analysis to find more functions after aaaa",
 	NULL
 };
 
@@ -222,6 +224,7 @@ static const char *help_msg_ai[] = {
 static const char *help_msg_aar[] = {
 	"Usage:", "aar", "[j*] [sz] # search and analyze xrefs",
 	"aar", " [sz]", "analyze xrefs in current section or sz bytes of code",
+	"aarr", "", "analyze all function reference graph to find more functions (EXPERIMENTAL)",
 	"aar*", " [sz]", "list found xrefs in radare commands format",
 	"aarj", " [sz]", "list found xrefs in JSON format",
 	NULL
@@ -11772,6 +11775,257 @@ static bool is_apple_target(RCore *core) {
 	return bo? strstr (bo->plugin->name, "mach"): false;
 }
 
+static bool is_valid_code(RCore *core, ut64 addr, int n) {
+	int i;
+	for (i = 0; i < n; i++) {
+		RAnalOp *op = r_core_anal_op (core, addr, R_ARCH_OP_MASK_BASIC);
+		if (op) {
+			switch (op->type & R_ANAL_OP_TYPE_MASK) {
+			case R_ANAL_OP_TYPE_NULL:
+			case R_ANAL_OP_TYPE_TRAP:
+			case R_ANAL_OP_TYPE_ILL:
+			case R_ANAL_OP_TYPE_UNK:
+				r_anal_op_free (op);
+				return false;
+			}
+			if (op->size < 1) {
+				r_anal_op_free (op);
+				return false;
+			}
+			addr += op->size;
+			r_anal_op_free (op);
+		} else {
+			return false;
+		}
+	}
+	return true;
+}
+
+static bool is_executable(RCore *core, ut64 addr) {
+	RBinObject *obj = r_bin_cur_object (core->bin);
+	RListIter *it;
+	RBinSection* sec;
+	if (obj) {
+		if (obj->info && obj->info->arch) {
+			return true;
+		}
+		r_list_foreach (obj->sections, it, sec) {
+			ut64 vaddr_end = sec->vaddr + sec->vsize;
+			if (addr >= sec->vaddr && addr < vaddr_end) {
+				if (sec->perm & R_PERM_X) {
+					return true;
+				}
+			}
+		}
+	}
+	RIOMap *map = r_io_map_get_at (core->io, addr);
+	if (map) {
+		if (map->perm & R_PERM_X) {
+			return true;
+		}
+	}
+	return false;
+}
+
+static bool strnullpad_check(const ut8 *buf, int len, int clen, int inc, bool be) {
+	int i;
+	for (i = 0; i < len; i += inc) {
+		if (inc == 2) {
+			if (be) {
+				if (!buf[i] && !buf[i + 1]) {
+					return false;
+				}
+				if (!IS_PRINTABLE (buf[i]) || buf[i + 1]) {
+					return false;
+				}
+			} else {
+				if (!buf[i] && !buf[i + 1]) {
+					return false;
+				}
+				if (buf[i] || !IS_PRINTABLE (buf[i+1])) {
+					return false;
+				}
+			}
+		// utf32 } else if (inc == 4) {
+		} else {
+			R_LOG_ERROR ("Invalid inc");
+			return false;
+		}
+	}
+	return true;
+}
+// XXX from cmd_print.c
+static bool check_string_at(RCore *core, ut64 addr, bool and_print_it) {
+	if (!r_io_is_valid_offset (core->io, addr, 0)) {
+		return false;
+	}
+	const int len = core->blocksize; // max string length
+	int i;
+	// bool is_utf32le = false;
+	// bool is_utf32be = false;
+	bool is_pascal1 = false;
+	bool is_pascal2 = false;
+	bool is_utf8 = false;
+	bool is_ascii = false;
+	char *out = NULL; // utf8 string containing the printable result
+	ut8 *buf = malloc (len);
+	if (buf) {
+		if (r_io_read_at (core->io, addr, buf, len) < 1) {
+			free (buf);
+			return false;
+		}
+	} else {
+		R_LOG_ERROR ("Cannot allocate %d byte(s)", len);
+		return false;
+	}
+	int nullbyte = r_str_nlen ((const char *)buf, len);
+	if (nullbyte == len) {
+		// full block, not null terminated somehow. lets check how printable it is first..
+		buf[len - 1] = 0;
+		nullbyte--;
+	}
+	if (nullbyte < len && nullbyte > 3) {
+		is_ascii = true;
+		// it's a null terminated string!
+		for (i = 0; i < nullbyte; i++) {
+			if (!IS_PRINTABLE (buf[i])) {
+				is_ascii = false;
+			}
+		}
+		if (!is_ascii) {
+			is_utf8 = true;
+			if ((buf[0] & 0xf0) == 0xf0 && (buf[1] & 0xf0) == 0xf0) {
+				is_utf8 = false;
+			}
+			for (i = 0; i < nullbyte; i++) {
+				int us = r_utf8_size (buf + i);
+				if (us < 1) {
+					is_utf8 = false;
+					break;
+				}
+				i += us - 1;
+			}
+		}
+	}
+
+	// utf16le check
+	if (strnullpad_check (buf, R_MIN (len, 10), 10, 2, false)) {
+		out = malloc (len + 1);
+		if (r_str_utf16_to_utf8 ((ut8*)out, len, buf, len, true) < 1) {
+			R_FREE (out);
+		}
+	}
+	// utf16be check
+	if (strnullpad_check (buf, R_MIN (len, 10), 10, 2, true)) {
+		out = malloc (len + 1);
+		if (r_str_utf16_to_utf8 ((ut8*)out, len, buf, len, false) < 1) {
+			R_FREE (out);
+		}
+	}
+	// TODO: add support for utf32 strings and improve util apis
+	// check for pascal string
+	{
+		ut8 plen = buf[0];
+		if (plen > 1 && plen < len) {
+			is_pascal1 = true;
+			int i;
+			for (i = 1; i < plen; i++) {
+				if (!IS_PRINTABLE (buf[i])) {
+					is_pascal1 = false;
+					break;
+				}
+			}
+			if (is_pascal1) {
+				char *oout = r_str_ndup ((const char *)buf + 1, i);
+				free (out);
+				out = oout;
+			}
+		}
+	}
+	if (!is_pascal1) {
+		ut8 plen = r_read_le16 (buf);
+		if (plen > 2 && plen < len) {
+			is_pascal2 = true;
+			for (i = 2; i < plen; i++) {
+				if (!IS_PRINTABLE (buf[i])) {
+					is_pascal2 = false;
+					break;
+				}
+			}
+			if (is_pascal2) {
+				char *oout = r_str_ndup ((const char *)buf + 2, i);
+				free (out);
+				out = oout;
+			}
+		}
+	}
+	if (!and_print_it) {
+		free (out);
+		return (is_ascii || is_utf8);
+	}
+#if 0
+	eprintf ("pascal %d\n", is_pascal1 + is_pascal2);
+	eprintf ("utf8 %d\n", is_utf8);
+	eprintf ("utf16 %d\n", is_utf16le+ is_utf16be);
+	eprintf ("ascii %d\n", is_ascii);
+	eprintf ("render\n");
+#endif
+	// render the stuff
+	if (out) {
+		r_cons_printf ("%s\n", out);
+		free (out);
+		free (buf);
+		return true;
+	}
+	if (is_ascii || is_utf8) {
+		r_cons_printf ("%s\n", buf);
+		free (buf);
+		return true;
+	}
+	free (buf);
+	return false;
+}
+
+static bool funref(void *_core, ut64 from, ut64 addr) {
+	RCore *core = _core;
+	RAnalFunction *fcn = r_anal_get_function_at (core->anal, addr);
+	if (!fcn && is_executable (core, addr)) {
+		if (check_string_at (core, addr, false)) {
+			return false;
+		}
+		if (!is_valid_code (core, addr, 10)) {
+			return false;
+		}
+		r_core_cmdf (core, "af@0x%08"PFMT64x, addr);
+		// r_core_anal_fcn (core, from, addr, 'c', 100);
+	}
+	return true;
+}
+
+static bool anal_aarr(RCore *core) {
+	SetU *visited = set_u_new ();
+	RAnalFunction *fcn;
+	RAnalRef *refi;
+	RListIter *it, *iter;
+	r_list_foreach (core->anal->fcns, it, fcn) {
+#if 0
+		r_anal_analyze_fcn_refs (core, fcn, depth);
+		continue;
+#endif
+		RList *refs = r_anal_function_get_refs (fcn);
+		r_list_foreach (refs, iter, refi) {
+			ut64 ra = refi->addr;
+			if (set_u_contains (visited, ra)) {
+				continue;
+			}
+			set_u_add (visited, ra);
+			funref(core, refi->at, ra);
+		}
+		r_list_free (refs);
+	}
+	set_u_free (visited);
+}
+
 static int cmd_anal_all(RCore *core, const char *input) {
 	switch (*input) {
 	case '?':
@@ -12111,6 +12365,10 @@ static int cmd_anal_all(RCore *core, const char *input) {
 					}
 					R_LOG_INFO ("Enable anal.types.constraint for experimental type propagation");
 					r_config_set_b (core->config, "anal.types.constraint", true);
+					if (input[2] == 'a') { // "aaaa"
+						R_LOG_INFO ("Reanalizing graph references to improve function count (aag)");
+						r_core_cmd0 (core, "aarr");
+					}
 				} else {
 					R_LOG_INFO ("Use -AA or aaaa to perform additional experimental analysis");
 				}
@@ -12236,9 +12494,11 @@ static int cmd_anal_all(RCore *core, const char *input) {
 			r_core_seek (core, at, true);
 		}
 		break;
-	case 'r':
+	case 'r': // "aar"
 		if (input[1] == '?') {
 			r_core_cmd_help (core, help_msg_aar);
+		} else if (input[1] == 'r') { // "aarr"
+			anal_aarr (core);
 		} else {
 			(void)r_core_anal_refs (core, input + 1);
 		}
