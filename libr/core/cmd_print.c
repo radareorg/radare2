@@ -2143,7 +2143,7 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 	strcpy (bytes + j, "     ");
 	j += 2;
 	for (i = 0; i < nb_cols; i++) {
-		snprintf (bytes + j + i, 2, "%0X", i % 17);
+		snprintf (bytes + j + i, 3, "%0X", i % 17);
 	}
 	if (usecolor) {
 		r_cons_strcat (Color_GREEN);
