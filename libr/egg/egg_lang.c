@@ -779,7 +779,7 @@ static void rcc_context(REgg *egg, int delta) {
 			}
 			if (!strcmp (egg->lang.callname, "while")) {
 				char lab[128];
-				sprintf (lab, "__begin_%d_%d_%d", egg->lang.nfunctions,
+				snprintf (lab, sizeof (lab), "__begin_%d_%d_%d", egg->lang.nfunctions,
 					CTX - 1, egg->lang.nestedi[CTX - 1] - 1);
 				// the egg->lang.nestedi[CTX-1] has increased
 				// so we should decrease it in label
@@ -800,7 +800,7 @@ static void rcc_context(REgg *egg, int delta) {
 				// CTX-1, egg->lang.nestedi[CTX-1]);
 				// nestede[CTX-1] = strdup (str);
 				// where give nestede value
-				sprintf (str, "__end_%d_%d_%d", egg->lang.nfunctions, CTX - 1, egg->lang.nestedi[CTX - 1] - 1);
+				snprintf (str, sizeof (str), "__end_%d_%d_%d", egg->lang.nfunctions, CTX - 1, egg->lang.nestedi[CTX - 1] - 1);
 				emit->branch (egg, b, g, e, n, egg->lang.varsize, str);
 				if (CTX > 0) {
 					/* XXX .. */
@@ -999,7 +999,7 @@ static void rcc_next(REgg *egg) {
 				R_LOG_ERROR ("Unsupported while syntax");
 				return;
 			}
-			sprintf (var, "__begin_%d_%d_%d\n", egg->lang.nfunctions, CTX, egg->lang.nestedi[CTX - 1]);
+			snprintf (var, sizeof (var), "__begin_%d_%d_%d\n", egg->lang.nfunctions, CTX, egg->lang.nestedi[CTX - 1]);
 			e->while_end (egg, var);// get_frame_label (1));
 #if 0
 			eprintf ("------------------------------------------ lastctx: %d\n", egg->lang.lastctxdelta);

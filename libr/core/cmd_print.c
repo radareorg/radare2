@@ -2112,7 +2112,8 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 	if (!note) {
 		goto err_note;
 	}
-	bytes = calloc (64 + nb_cons_cols * 40, sizeof (char));
+	size_t bytes_size = (64 + nb_cons_cols * 40);
+	bytes = calloc (bytes_size, 1);
 	if (!bytes) {
 		goto err_bytes;
 	}
@@ -2122,28 +2123,27 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 	if (addrpadlen > 0) {
 		memset (addrpad, ' ', addrpadlen);
 		addrpad[addrpadlen] = 0;
-		// Compute, then show the legend
-		strcpy (bytes, addrpad);
+		r_str_ncpy (bytes, addrpad, bytes_size);
 	} else {
 		*addrpad = 0;
 		addrpadlen = 0;
 	}
 	if (show_offset) {
-		strcpy (bytes + addrpadlen, "- offset -  ");
+		r_str_ncpy (bytes + addrpadlen, "- offset -  ", bytes_size - addrpadlen);
 	}
 #endif
 	j = strlen (bytes);
 	for (i = 0; i < nb_cols; i += 2) {
-		sprintf (bytes + j, format, (i & 0xf), (i + 1) & 0xf);
+		snprintf (bytes + j, bytes_size - j, format, (i & 0xf), (i + 1) & 0xf);
 		j += step;
 	}
 	if (!compact) {
 		j--;
 	}
-	strcpy (bytes + j, "     ");
+	r_str_ncpy (bytes + j, "     ", bytes_size - j);
 	j += 2;
 	for (i = 0; i < nb_cols; i++) {
-		snprintf (bytes + j + i, 3, "%0X", i % 17);
+		snprintf (bytes + j + i, bytes_size - j - i, "%0X", i % 17);
 	}
 	if (usecolor) {
 		r_cons_strcat (Color_GREEN);

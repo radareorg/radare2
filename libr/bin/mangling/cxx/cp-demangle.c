@@ -4266,7 +4266,7 @@ static inline void
 d_append_num (struct d_print_info *dpi, int l)
 {
   char buf[25];
-  sprintf (buf,"%d", l);
+  snprintf (buf, sizeof (buf) - 1, "%d", l);
   d_append_string (dpi, buf);
 }
 

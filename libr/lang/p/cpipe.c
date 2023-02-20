@@ -11,16 +11,16 @@ static int lang_cpipe_file(RLangSession *lang, const char *file) {
 	char *a, *cc, *p, name[512];
 	const char *libpath, *libname;
 
-	if (strlen (file) > (sizeof (name)-10)) {
+	if (strlen (file) > (sizeof (name) - 10)) {
 		return false;
 	}
 	if (!strstr (file, ".c")) {
-		sprintf (name, "%s.c", file);
+		snprintf (name, sizeof (name), "%s.c", file);
 	} else {
 		strcpy (name, file);
 	}
 	if (!r_file_exists (name)) {
-		eprintf ("file not found (%s)\n", name);
+		R_LOG_ERROR ("file not found (%s)", name);
 		return false;
 	}
 

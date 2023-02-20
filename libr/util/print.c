@@ -304,7 +304,7 @@ R_API RPrint* r_print_new(void) {
 	if (!p) {
 		return NULL;
 	}
-	strcpy (p->datefmt, "%Y-%m-%d %H:%M:%S %u");
+	r_str_ncpy (p->datefmt, "%Y-%m-%d %H:%M:%S %u", sizeof (p->datefmt));
 	r_io_bind_init (p->iob);
 	p->pairs = true;
 	p->resetbg = true;
@@ -1468,35 +1468,35 @@ R_API void r_print_hexdump_simple(const ut8 *buf, int len) {
 	r_print_hexdump (NULL, 0, buf, len, 16, 16, 0);
 }
 
-static const char* getbytediff(RPrint *p, char *fmt, ut8 a, ut8 b) {
+static const char* getbytediff(RPrint *p, char *fmt, size_t fmt_size, ut8 a, ut8 b) {
 	if (*fmt) {
 		if (a == b) {
-			sprintf (fmt, "%s%02x" Color_RESET, p->cons->context->pal.graph_true, a);
+			snprintf (fmt, fmt_size, "%s%02x" Color_RESET, p->cons->context->pal.graph_true, a);
 		} else {
-			sprintf (fmt, "%s%02x" Color_RESET, p->cons->context->pal.graph_false, a);
+			snprintf (fmt, fmt_size, "%s%02x" Color_RESET, p->cons->context->pal.graph_false, a);
 		}
 	} else {
-		sprintf (fmt, "%02x", a);
+		snprintf (fmt, fmt_size, "%02x", a);
 	}
 	return fmt;
 }
 
-static const char* getchardiff(RPrint *p, char *fmt, ut8 a, ut8 b) {
-	char ch = IS_PRINTABLE (a)? a: '.';
+static const char* getchardiff(RPrint *p, char *fmt, size_t fmt_size, ut8 a, ut8 b) {
+	const char ch = IS_PRINTABLE (a)? a: '.';
 	if (*fmt) {
 		if (a == b) {
-			sprintf (fmt, "%s%c" Color_RESET, p->cons->context->pal.graph_true, ch);
+			snprintf (fmt, fmt_size, "%s%c" Color_RESET, p->cons->context->pal.graph_true, ch);
 		} else {
-			sprintf (fmt, "%s%c" Color_RESET, p->cons->context->pal.graph_false, ch);
+			snprintf (fmt, fmt_size, "%s%c" Color_RESET, p->cons->context->pal.graph_false, ch);
 		}
 	} else {
-		sprintf (fmt, "%c", ch);
+		snprintf (fmt, fmt_size, "%c", ch);
 	}
 	return fmt;
 }
 
-#define BD(a, b) getbytediff (p, fmt, (a)[i + j], (b)[i + j])
-#define CD(a, b) getchardiff (p, fmt, (a)[i + j], (b)[i + j])
+#define BD(a, b) getbytediff (p, fmt, sizeof (fmt), (a)[i + j], (b)[i + j])
+#define CD(a, b) getchardiff (p, fmt, sizeof (fmt), (a)[i + j], (b)[i + j])
 
 static ut8* M(const ut8 *b, int len) {
 	ut8 *r = malloc (len + 16);

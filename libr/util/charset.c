@@ -326,8 +326,9 @@ R_API size_t r_charset_decode_str(RCharset *rc, ut8 *out, size_t out_len, const 
 			}
 		}
 		if (!found) {
-			strcpy (o, "?");
-			o += strlen ("?");
+			o[0] = '?';
+			o[1] = 0;
+			o++;
 		}
 		free (str);
 	}

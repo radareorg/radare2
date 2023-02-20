@@ -1770,14 +1770,7 @@ static void get_modifier_print_type(void *type, char **name) {
 }
 
 static void get_procedure_print_type(void *type, char **name) {
-	// TODO
-	const int name_len = strlen ("proc ");
-	*name = (char *) malloc (name_len + 1);
-	if (!(*name)) {
-		return;
-	}
-	// name[name_len] = '\0';
-	strcpy (*name, "proc ");
+	*name = strdup ("proc ");
 }
 
 static void get_bitfield_print_type(void *type, char **name) {
@@ -1804,18 +1797,13 @@ static void get_bitfield_print_type(void *type, char **name) {
 	}
 	name_len += 4;
 	*name = (char *) malloc (name_len + 1 + 1);
-	if (!(*name)) {
-		if (need_to_free) {
-			free (tmp_name);
+	if ((*name)) {
+		// name[name_len] = '\0';
+		if (tmp_name) {
+			snprintf (*name, name_len + 2, "%s %s : %d", "bitfield", tmp_name, (int)bitfeild_info->length);
+		} else {
+			snprintf (*name, name_len + 2, "%s : %d", "bitfield", (int)bitfeild_info->length);
 		}
-		return;
-	}
-
-	// name[name_len] = '\0';
-	if (tmp_name) {
-		sprintf (*name, "%s %s : %d", "bitfield", tmp_name, (int)bitfeild_info->length);
-	} else {
-		sprintf (*name, "%s : %d", "bitfield", (int)bitfeild_info->length);
 	}
 
 	if (need_to_free) {

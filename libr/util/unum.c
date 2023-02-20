@@ -724,10 +724,8 @@ R_API ut64 r_num_tail(RNum *num, ut64 addr, const char *hex) {
 		hex++;
 	}
 	int i = strlen (hex) * 4;
-	char *p = malloc (strlen (hex) + 10);
+	char *p = r_str_newf ("0x%s", hex);
 	if (p) {
-		strcpy (p, "0x");
-		strcpy (p + 2, hex);
 		if (isxdigit ((ut8)hex[0])) {
 			n = r_num_math (num, p);
 		} else {
@@ -748,10 +746,8 @@ static ut64 r_num_tailff(RNum *num, const char *hex) {
 		hex++;
 	}
 	int i = strlen (hex) * 4;
-	char *p = malloc (strlen (hex) + 10);
+	char *p = r_str_newf ("0x%s", hex);
 	if (p) {
-		strcpy (p, "0x");
-		strcpy (p + 2, hex);
 		if (isxdigit ((ut8)hex[0])) {
 			n = r_num_get (num, p);
 		} else {

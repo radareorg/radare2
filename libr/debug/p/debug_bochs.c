@@ -1,4 +1,4 @@
-/* debugbochs  - LGPL - Copyright 2016-2022 - SkUaTeR */
+/* debugbochs  - LGPL - Copyright 2016-2023 - SkUaTeR */
 
 #include <r_asm.h>
 #include <r_debug.h>
@@ -42,7 +42,7 @@ static int r_debug_bochs_breakpoint(RBreakpoint *bp, RBreakpointItem *b, bool se
 	}
 	if (set) {
 		//eprintf("[set] bochs_breakpoint %016"PFMT64x"\n",bp->addr);
-		sprintf (cmd, "lb 0x%x", (ut32)b->addr);
+		snprintf (cmd, sizeof (cmd), "lb 0x%x", (ut32)b->addr);
 		bochs_send_cmd (desc, cmd, true);
 		bCapturaRegs = true;
 	} else {
