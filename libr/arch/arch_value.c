@@ -8,6 +8,14 @@ R_API RArchValue *r_arch_value_new(void) { //macro for this ?
 	return R_NEW0 (RArchValue);
 }
 
+#if R2_590
+R_API RArchValue *r_arch_value_new_reg(const char * const reg) {
+	RArchValue *v = R_NEW0 (RArchValue);
+	v->reg = reg;
+	return v;
+}
+#endif
+
 // TODO: move into .h as #define free
 R_API void r_anal_value_free(RArchValue *value) {
 	if (value) {

@@ -15,7 +15,22 @@ typedef enum {
 } RArchValueType;
 #define RAnalValueType RArchValueType
 
+#if R2_590
+#define USE_REG_NAMES 1
+#define R_ARCH_INFO_MIN_OP_SIZE 0
+#define R_ARCH_INFO_MAX_OP_SIZE 1
+#define R_ARCH_INFO_INV_OP_SIZE 2
+#define R_ARCH_INFO_ALIGN 4
+#define R_ARCH_INFO_DATA_ALIGN 8
+#else
 #define USE_REG_NAMES 0
+#define R_ANAL_ARCHINFO_MIN_OP_SIZE 0
+#define R_ANAL_ARCHINFO_MAX_OP_SIZE 1
+#define R_ANAL_ARCHINFO_INV_OP_SIZE 2
+#define R_ANAL_ARCHINFO_ALIGN 4
+#define R_ANAL_ARCHINFO_DATA_ALIGN 8
+#endif
+
 
 // base + reg + regdelta * mul + delta
 typedef struct r_arch_value_t {
@@ -28,9 +43,9 @@ typedef struct r_arch_value_t {
 	st64 imm; // immediate value
 	int mul; // multiplier (reg*4+base)
 #if USE_REG_NAMES
-	const char *seg;
-	const char *reg;
-	const char *regdelta;
+	const char * const seg;
+	const char * const reg;
+	const char * const regdelta;
 #else
 	// XXX can be invalidated if regprofile changes causing an UAF
 	RRegItem *seg; // segment selector register
@@ -77,12 +92,15 @@ typedef struct r_arch_config_t {
 	int syntax;
 	int pcalign;
 	int dataalign;
-	int addrbytes; // move from RIO->addrbytes to RArchConfig->addrbytes
+	int addrbytes;
 	int segbas;
 	int seggrn;
 	int invhex;
 	int bitshift;
 	char *abi;
+#if R2_590
+	ut64 gp;
+#endif
 	R_REF_TYPE;
 } RArchConfig;
 
@@ -121,7 +139,7 @@ typedef struct r_arch_t {
 	RBinBind binb; // required for java, dalvik, wasm, pickle and pyc plugin... pending refactor
 	RNum *num; // XXX maybe not required
 	struct r_arch_session_t *session;
-	RArchConfig *cfg;      // global / default config
+	RArchConfig *cfg; // global / default config
 } RArch;
 
 typedef struct r_arch_session_t {
@@ -172,7 +190,7 @@ typedef struct r_arch_plugin_t {
 	RArchPluginMnemonicsCallback mnemonics;
 	RArchPluginPreludesCallback preludes;
 //TODO: reenable this later? maybe it should be called reset() or setenv().. but esilinit/fini
-       // 	seems to specific to esil and those functions may want to do moreo things like io stuff
+// 	seems to specific to esil and those functions may want to do moreo things like io stuff
 //	bool (*esil_init)(REsil *esil);
 //	void (*esil_fini)(REsil *esil);
 } RArchPlugin;
@@ -223,6 +241,10 @@ R_API void r_arch_config_free(RArchConfig *);
 // backward compat
 #define RAnalValue RArchValue
 R_API RArchValue *r_arch_value_new(void);
+
+#if R2_590
+R_API RArchValue *r_arch_value_new_reg(const char * const regname);
+#endif
 #if 0
 // switchop
 R_API RArchSwitchOp *r_arch_switch_op_new(ut64 addr, ut64 min_val, ut64 max_val, ut64 def_val);
@@ -281,6 +303,8 @@ extern RArchPlugin r_arch_plugin_lanai;
 extern RArchPlugin r_arch_plugin_lua;
 extern RArchPlugin r_arch_plugin_z80;
 extern RArchPlugin r_arch_plugin_lm32;
+extern RArchPlugin r_arch_plugin_bpf;
+extern RArchPlugin r_arch_plugin_bpf_cs;
 
 #ifdef __cplusplus
 }

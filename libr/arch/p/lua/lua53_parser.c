@@ -41,7 +41,7 @@ typedef struct lua_function {
 	ut8 isVarArg;
 	ut8 maxStackSize;
 
-	struct lua_function *parent_func;// if != NULL, should always be valid
+	struct lua_function *parent_func; // if != NULL, should always be valid
 
 	ut64 const_size;
 	ut64 code_size;

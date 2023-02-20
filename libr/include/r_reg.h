@@ -106,6 +106,9 @@ typedef struct r_reg_item_t {
 	char *comment;
 	int index;
 	int arena; /* in which arena is this reg living */
+#if R2_590
+	bool ro;
+#endif
 	R_REF_TYPE;
 } RRegItem;
 
@@ -132,7 +135,10 @@ typedef struct r_reg_t {
 	char *name[R_REG_NAME_LAST]; // aliases
 	RRegSet regset[R_REG_TYPE_LAST];
 	RList *allregs;
+#if R2_590
+#else
 	RList *roregs;
+#endif
 	int iters;
 	int size;
 	int bits_default;

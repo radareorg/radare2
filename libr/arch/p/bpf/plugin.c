@@ -1,11 +1,13 @@
-/* radare2 - LGPL - Copyright 2015-2022 - mrmacete, pancake */
+/* radare2 - LGPL - Copyright 2015-2023 - mrmacete, pancake */
 
-#include <r_lib.h>
-#include <r_anal.h>
-#include "../arch/bpf/bpf.h"
+#include <r_arch.h>
+#include <r_esil.h>
+#include <r_anal/op.h>
+#include "bpf.h"
 
 // disassembly
-static int disassemble(RAnalOp *r_op, ut64 pc, const ut8 *buf, int len) {
+static int disassemble(RAnalOp *r_op, const ut8 *buf, int len) {
+	const ut64 pc = r_op->addr;
 	const char *op, *fmt;
 	RBpfSockFilter *f = (RBpfSockFilter *)buf;
 	int val = f->k;
@@ -385,7 +387,7 @@ static bool parse_jump_targets(RBpfSockFilter *f, int opc, const bpf_token *op, 
 	return true;
 }
 
-static bool parse_ind_or_abs (RBpfSockFilter *f, int opc, const bpf_token *op) {
+static bool parse_ind_or_abs(RBpfSockFilter *f, int opc, const bpf_token *op) {
 	PARSE_NEED (opc >= 2);
 	PARSE_STR (op[0], "[");
 	if (TOKEN_EQ (op[1], "x")) {
@@ -402,7 +404,7 @@ static bool parse_ind_or_abs (RBpfSockFilter *f, int opc, const bpf_token *op) {
 	return true;
 }
 
-static bool parse_ld (RBpfSockFilter *f, const char *mnemonic, int opc, const bpf_token *op) {
+static bool parse_ld(RBpfSockFilter *f, const char *mnemonic, int opc, const bpf_token *op) {
 	switch (mnemonic[2]) {
 	case '\0':
 		PARSE_NEED (opc >= 2);
@@ -609,7 +611,7 @@ static bool parse_alu (RBpfSockFilter *f, const char *m, int opc, const bpf_toke
 	return false;
 }
 
-static bool parse_instruction (RBpfSockFilter *f, BPFAsmParser *p, ut64 pc) {
+static bool parse_instruction(RBpfSockFilter *f, BPFAsmParser *p, ut64 pc) {
 	const char *mnemonic_tok = token_next (p);
 	PARSE_NEED_TOKEN (mnemonic_tok);
 	int mlen = strnlen (mnemonic_tok, 5);
@@ -680,22 +682,18 @@ static bool parse_instruction (RBpfSockFilter *f, BPFAsmParser *p, ut64 pc) {
 	return parse_alu (f, mnemonic, opc, op);
 }
 
-static int bpf_opasm (RAnal *a, ut64 pc, const char *str, ut8 *outbuf, int outsize) {
-	if (outsize < 8) {
-		return -1;
-	}
-
+static bool encode(RArchSession *s, RAnalOp *op, ut32 mask) {
 	RBpfSockFilter f = {0};
-	BPFAsmParser p = { .str = str };
+	BPFAsmParser p = { .str = op->mnemonic };
 
-	bool ret = parse_instruction (&f, &p, pc);
+	bool ret = parse_instruction (&f, &p, op->addr);
 	token_fini (&p);
-	if (!ret) {
-		return -1;
+	if (ret) {
+		r_anal_op_set_bytes (op, op->addr, (const ut8*)&f, 8);
+		op->size = 8;
+		return true;
 	}
-
-	memcpy (outbuf, &f, 8);
-	return 8;
+	return false;
 }
 
 /// analysis
@@ -714,6 +712,7 @@ static int bpf_opasm (RAnal *a, ut64 pc, const char *str, ut8 *outbuf, int outsi
 	src = r_vector_push (&(op)->srcs, NULL); \
 	dst = r_vector_push (&(op)->dsts, NULL);
 
+#if 0
 #define SET_REG_SRC_DST(op, _src, _dst) \
 	NEW_SRC_DST ((op)); \
 	src->reg = r_reg_get (anal->reg, (_src), R_REG_TYPE_GPR); \
@@ -731,6 +730,13 @@ static int bpf_opasm (RAnal *a, ut64 pc, const char *str, ut8 *outbuf, int outsi
 #define SET_A_DST(op) \
 	dst = r_vector_push (&(op)->dsts, NULL); \
 	dst->reg = r_reg_get (anal->reg, "A", R_REG_TYPE_GPR);
+#else
+// R2_590 - port to the new RArchValue thing
+#define SET_REG_SRC_DST(op, _src, _dst)
+#define SET_REG_DST_IMM(op, _dst, _imm)
+#define SET_A_SRC(op)
+#define SET_A_DST(op)
+#endif
 
 // (k) >= 0 must also be true, but the value is already unsigned
 #define INSIDE_M(k) ((k) < 16)
@@ -740,6 +746,7 @@ static bool bpf_int_exit(REsil *esil, ut32 interrupt, void *user);
 REsilInterruptHandler ih = { 0, NULL, NULL, &bpf_int_exit, NULL };
 */
 
+#if 0
 static const char *M[] = {
 	"m[0]",
 	"m[1]",
@@ -758,9 +765,12 @@ static const char *M[] = {
 	"m[14]",
 	"m[15]"
 };
+#endif
 
-static int bpf_anal (RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len, RAnalOpMask mask) {
-	RAnalValue *dst, *src;
+static bool decode(RArchSession *a, RAnalOp *op, RArchDecodeMask mask) {
+	const ut8 *data = op->bytes;
+	const int len = op->size;
+	// RAnalValue *dst, *src;
 	RBpfSockFilter *f = (RBpfSockFilter *)data;
 	op->jump = UT64_MAX;
 	op->fail = UT64_MAX;
@@ -768,12 +778,16 @@ static int bpf_anal (RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 	op->val = -1;
 	op->type = R_ANAL_OP_TYPE_UNK;
 	op->size = 8;
-	op->addr = addr;
 
 	r_strbuf_init (&op->esil);
 	if (mask & R_ARCH_OP_MASK_DISASM) {
-		(void)disassemble (op, addr, data, len);
+		(void)disassemble (op, data, len);
 	}
+#if R2_590
+	ut64 gp = a->config->gp // r_reg_getv (r, "gp");
+#else
+	ut64 gp = 0; // XXX
+#endif
 
 	switch (f->code) {
 	case BPF_RET | BPF_A:
@@ -828,14 +842,14 @@ static int bpf_anal (RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 		esilprintf (op, "%" PFMT64d ",x,=", (ut64)f->k);
 		break;
 	case BPF_LD_W | BPF_ABS:
-		EMIT_LOAD (op, anal->gp + f->k, 4);
+		EMIT_LOAD (op, gp + f->k, 4);
 		SET_A_DST (op);
 		esilprintf (op,
 			"len,%" PFMT64d ",>,?{,0,r0,=,0,$,BREAK,},%" PFMT64d ",[4],a,=",
 			(ut64)f->k + 4, op->ptr);
 		break;
 	case BPF_LD_H | BPF_ABS:
-		EMIT_LOAD (op, anal->gp + f->k, 2);
+		EMIT_LOAD (op, gp + f->k, 2);
 		SET_A_DST (op);
 		esilprintf (op,
 			"len,%" PFMT64d ",>,?{,0,r0,=,0,$,BREAK,},"
@@ -843,7 +857,7 @@ static int bpf_anal (RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 			(ut64)f->k + 2, op->ptr);
 		break;
 	case BPF_LD_B | BPF_ABS:
-		EMIT_LOAD (op, anal->gp + f->k, 1);
+		EMIT_LOAD (op, gp + f->k, 1);
 		SET_A_DST (op);
 		esilprintf (op,
 			"len,%" PFMT64d ",>,?{,0,r0,=,0,$,BREAK,},"
@@ -857,7 +871,7 @@ static int bpf_anal (RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 		esilprintf (op,
 			"len,%" PFMT64d ",x,+,0xffffffff,&,>,?{,0,r0,=,0,$,BREAK,},"
 			"%" PFMT64d ",x,+,0xffffffff,&,[4],A,=",
-			(st64)f->k + 4, anal->gp + (st32)f->k);
+			(st64)f->k + 4, gp + (st32)f->k);
 		break;
 	case BPF_LD_H | BPF_IND:
 		op->type = R_ANAL_OP_TYPE_LOAD;
@@ -866,7 +880,7 @@ static int bpf_anal (RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 		esilprintf (op,
 			"len,%" PFMT64d ",x,+,0xffffffff,&,>,?{,0,r0,=,0,$,BREAK,},"
 			"%" PFMT64d ",x,+,0xffffffff,&,[2],a,=",
-			(st64)f->k + 2, anal->gp + (st32)f->k);
+			(st64)f->k + 2, gp + (st32)f->k);
 		break;
 	case BPF_LD_B | BPF_IND:
 		op->type = R_ANAL_OP_TYPE_LOAD;
@@ -875,7 +889,7 @@ static int bpf_anal (RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 		esilprintf (op,
 			"len,%" PFMT64d ",x,+,0xffffffff,&,>,?{,0,r0,=,0,$,BREAK,},"
 			"%" PFMT64d ",x,+,0xffffffff,&,[1],a,=",
-			(st64)f->k + 1, anal->gp + (st32)f->k);
+			(st64)f->k + 1, gp + (st32)f->k);
 		break;
 	case BPF_LD | BPF_IMM:
 		op->type = R_ANAL_OP_TYPE_MOV;
@@ -892,7 +906,7 @@ static int bpf_anal (RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 	case BPF_LDX_B | BPF_MSH:
 		op->type = R_ANAL_OP_TYPE_LOAD;
 		op->ptrsize = 1;
-		op->ptr = anal->gp + f->k;
+		op->ptr = gp + f->k;
 		SET_A_DST (op);
 		esilprintf (op, "%" PFMT64d ",[1],0xf,&,4,*,x,=", op->ptr);
 		break;
@@ -916,13 +930,12 @@ static int bpf_anal (RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 		break;
 	case BPF_JMP_JA:
 		op->type = R_ANAL_OP_TYPE_JMP;
-		op->jump = addr + 8 + f->k * 8;
+		op->jump = op->addr + 8 + f->k * 8;
 		esilprintf (op, "%" PFMT64d ",pc,=", op->jump);
-
 		break;
 	case BPF_JMP_JGT | BPF_X:
 	case BPF_JMP_JGT | BPF_K:
-		EMIT_CJMP (op, addr, f);
+		EMIT_CJMP (op, op->addr, f);
 		op->cond = R_ANAL_COND_GT;
 		if (BPF_SRC (f->code) == BPF_K) {
 			op->val = f->k;
@@ -939,7 +952,7 @@ static int bpf_anal (RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 		break;
 	case BPF_JMP_JGE | BPF_X:
 	case BPF_JMP_JGE | BPF_K:
-		EMIT_CJMP (op, addr, f);
+		EMIT_CJMP (op, op->addr, f);
 		op->cond = R_ANAL_COND_GE;
 		if (BPF_SRC (f->code) == BPF_K) {
 			op->val = f->k;
@@ -954,7 +967,7 @@ static int bpf_anal (RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 		break;
 	case BPF_JMP_JEQ | BPF_X:
 	case BPF_JMP_JEQ | BPF_K:
-		EMIT_CJMP (op, addr, f);
+		EMIT_CJMP (op, op->addr, f);
 		op->cond = R_ANAL_COND_EQ;
 		if (BPF_SRC (f->code) == BPF_K) {
 			op->val = f->k;
@@ -969,7 +982,7 @@ static int bpf_anal (RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 		break;
 	case BPF_JMP_JSET | BPF_X:
 	case BPF_JMP_JSET | BPF_K:
-		EMIT_CJMP (op, addr, f);
+		EMIT_CJMP (op, op->addr, f);
 		if (BPF_SRC (f->code) == BPF_K) {
 			op->val = f->k;
 			esilprintf (op,
@@ -1122,8 +1135,8 @@ static int bpf_anal (RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 	return op->size;
 }
 
-static bool set_reg_profile (RAnal *anal) {
-	const char *p =
+static char *regs(RArchSession *as) {
+	const char * const p =
 		"=PC    pc\n"
 		"=A0    z\n"
 		"=R0    z\n"
@@ -1153,8 +1166,9 @@ static bool set_reg_profile (RAnal *anal) {
 		"gpr    r2       .32 88   0\n"
 		"gpr    r3       .32 92   0\n"
 		"gpr    r4       .32 96   0\n"
-		"gpr    r5       .32 100  0\n";
-	return r_reg_set_profile_string (anal->reg, p);
+		"gpr    r5       .32 100  0\n"
+		"gpr    gp       .32 104  0\n";
+	return strdup (p);
 }
 
 /*
@@ -1188,7 +1202,7 @@ static int esil_bpf_fini(REsil *esil) {
 }
 */
 
-static int archinfo (RAnal *anal, int q) {
+static int archinfo(RArchSession *anal, ut32 q) {
 	switch (q) {
 	case R_ANAL_ARCHINFO_MIN_OP_SIZE:
 		return 8;
@@ -1204,17 +1218,16 @@ static int archinfo (RAnal *anal, int q) {
 	return 0;
 }
 
-RAnalPlugin r_anal_plugin_bpf = {
+RArchPlugin r_arch_plugin_bpf = {
 	.name = "bpf.mr",
 	.desc = "Classic BPF analysis plugin",
 	.license = "LGPLv3",
 	.arch = "bpf",
 	.bits = 32,
-	.esil = true,
-	.op = &bpf_anal,
-	.archinfo = archinfo,
-	.opasm = &bpf_opasm,
-	.set_reg_profile = &set_reg_profile,
+	.info = archinfo,
+	.encode = encode,
+	.decode = decode,
+	.regs = &regs,
 	/*
 		.esil_init = &esil_bpf_init,
 		.esil_fini = &esil_bpf_fini
@@ -1223,8 +1236,8 @@ RAnalPlugin r_anal_plugin_bpf = {
 
 #ifndef R2_PLUGIN_INCORE
 RLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_ANAL,
-	.data = &r_anal_plugin_bpf,
+	.type = R_LIB_TYPE_ARCH,
+	.data = &r_arch_plugin_bpf,
 	.version = R2_VERSION
 };
 #endif

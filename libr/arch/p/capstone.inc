@@ -14,6 +14,10 @@
 #define CSINC_ARCH CSINC_ARCH_(CSINC)
 #define CSINC_ARCH_(y) TOKEN_PASTE(CS_ARCH_, y)
 
+typedef struct {
+	csh cs_handle;
+} CapstonePluginData;
+
 static void initcs(csh *ud) {
 	cs_opt_mem mem = {
 		.malloc = malloc,
@@ -67,7 +71,7 @@ static bool r_arch_cs_init(RArchSession *as, csh *cs_handle) {
 static char *r_arch_cs_mnemonics(RArchSession *s, csh cs_handle, int id, bool json) {
 	int i;
 #if 0
-	csh cs_handle = init_capstone (s->arch);
+	csh cs_handle = xnit_capstone (s->arch);
 	if (cs_handle == 0) {
 		a->cs_handle = cs_handle;
 		return NULL;

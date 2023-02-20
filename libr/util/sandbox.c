@@ -461,19 +461,14 @@ R_API FILE *r_sandbox_fopen(const char *path, const char *mode) {
 	if ((strchr (mode, 'w') || strchr (mode, 'a') || r_file_is_regular (epath))) {
 #if R2__WINDOWS__
 		wchar_t *wepath = r_utf8_to_utf16 (epath);
-		if (!wepath) {
-			free (epath);
-			return ret;
-		}
-		wchar_t *wmode = r_utf8_to_utf16 (mode);
-		if (!wmode) {
+		if (wepath) {
+			wchar_t *wmode = r_utf8_to_utf16 (mode);
+			if (wmode) {
+				ret = _wfopen (wepath, wmode);
+				free (wmode);
+			}
 			free (wepath);
-			free (epath);
-			return ret;
 		}
-		ret = _wfopen (wepath, wmode);
-		free (wmode);
-		free (wepath);
 #else // R2__WINDOWS__
 		ret = fopen (epath, mode);
 #endif // R2__WINDOWS__

@@ -9,10 +9,10 @@ ao@0
 EOF
 EXPECT=<<EOF
 address: 0x0
-opcode: add 0x1
+opcode: add r0, 0x1
 esilcost: 0
-disasm: add 0x1
-pseudo: 0x1 +=
+disasm: add r0, 0x1
+pseudo: r0 += 0x1
 mnemonic: add
 description: add src to dst (32-bit)
 mask: ffffffffffffffff
@@ -25,7 +25,7 @@ size: 8
 sign: false
 type: add
 cycles: 0
-esil: 1,a,+=
+esil: 1,r0,+=
 family: cpu
 EOF
 RUN
