@@ -1,11 +1,8 @@
-/* radare - LGPL - Copyright 2017-2022 - pancake, cgvwzq */
+/* radare - LGPL - Copyright 2017-2023 - pancake, cgvwzq */
 
 // http://webassembly.org/docs/binary-encoding/#module-structure
 
-#include <r_asm.h>
-#include <r_lib.h>
-#include <string.h>
-
+#include <r_arch.h>
 #include "wasm.h"
 #include "../../../bin/format/wasm/wasm.h"
 
@@ -611,7 +608,7 @@ R_IPI int wasm_dis(WasmOp *op, const ut8 *buf, int buf_len, bool txt) {
 		case WASM_OP_F32REINTERPRETI32:
 		case WASM_OP_F64REINTERPRETI64:
 		case WASM_OP_END:
-			if (txt) {
+			if (txt && opdef->txt) {
 				op->txt = strdup (opdef->txt);
 			}
 			break;
@@ -624,7 +621,7 @@ R_IPI int wasm_dis(WasmOp *op, const ut8 *buf, int buf_len, bool txt) {
 				if (!(n > 0 && n < buf_len)) {
 					goto err;
 				}
-				if (txt) {
+				if (txt && opdef->txt) {
 					switch (val) {
 					case R_BIN_WASM_VALUETYPE_VOID:
 						op->txt = strdup (opdef->txt);
@@ -660,7 +657,7 @@ R_IPI int wasm_dis(WasmOp *op, const ut8 *buf, int buf_len, bool txt) {
 				if (n <= 0 || n >= buf_len) {
 					goto err;
 				}
-				if (txt) {
+				if (txt && opdef->txt) {
 					op->txt = r_str_newf ("%s %d", opdef->txt, op->val);
 				}
 				op->len += n;
@@ -693,7 +690,7 @@ R_IPI int wasm_dis(WasmOp *op, const ut8 *buf, int buf_len, bool txt) {
 					goto beach;
 				}
 				op->len += n;
-				if (txt) {
+				if (txt && opdef->txt) {
 					RStrBuf *sb = r_strbuf_new ("");
 					if (sb) {
 						r_strbuf_setf (sb, "%s %d ", opdef->txt, count);
@@ -724,7 +721,7 @@ R_IPI int wasm_dis(WasmOp *op, const ut8 *buf, int buf_len, bool txt) {
 					goto err;
 				}
 				reserved &= 0x1;
-				if (txt) {
+				if (txt && opdef->txt) {
 					op->txt = r_str_newf ("%s %d %d", opdef->txt, val, reserved);
 				}
 				op->len += n;
@@ -741,7 +738,7 @@ R_IPI int wasm_dis(WasmOp *op, const ut8 *buf, int buf_len, bool txt) {
 				if (!(n > 0 && n < buf_len)) {
 					goto err;
 				}
-				if (txt) {
+				if (txt && opdef->txt) {
 					op->txt = r_str_newf ("%s %d", opdef->txt, val);
 				}
 				op->len += n;
@@ -781,7 +778,7 @@ R_IPI int wasm_dis(WasmOp *op, const ut8 *buf, int buf_len, bool txt) {
 				if (!(n > 0 && op->len + n <= buf_len)) {
 					goto err;
 				}
-				if (txt) {
+				if (txt && opdef->txt) {
 					op->txt = r_str_newf ("%s %d %d", opdef->txt, flag, offset);
 				}
 				op->len += n;
@@ -796,7 +793,7 @@ R_IPI int wasm_dis(WasmOp *op, const ut8 *buf, int buf_len, bool txt) {
 					goto err;
 				}
 				reserved &= 0x1;
-				if (txt) {
+				if (txt && opdef->txt) {
 					op->txt = r_str_newf ("%s %d", opdef->txt, reserved);
 				}
 				op->len += n;
@@ -809,7 +806,7 @@ R_IPI int wasm_dis(WasmOp *op, const ut8 *buf, int buf_len, bool txt) {
 				if (!(n > 0 && n < buf_len)) {
 					goto err;
 				}
-				if (txt) {
+				if (txt && opdef->txt) {
 					op->txt = r_str_newf ("%s %" PFMT32d, opdef->txt, val);
 				}
 				op->len += n;
@@ -822,7 +819,7 @@ R_IPI int wasm_dis(WasmOp *op, const ut8 *buf, int buf_len, bool txt) {
 				if (!(n > 0 && n < buf_len)) {
 					goto err;
 				}
-				if (txt) {
+				if (txt && opdef->txt) {
 					op->txt = r_str_newf ("%s %" PFMT64d, opdef->txt, val);
 				}
 				op->len += n;
@@ -835,7 +832,7 @@ R_IPI int wasm_dis(WasmOp *op, const ut8 *buf, int buf_len, bool txt) {
 					float f;
 				} u;
 				u.v = r_read_at_le32 (buf, 1);
-				if (txt) {
+				if (txt && opdef->txt) {
 					op->txt = r_str_newf ("%s %f", opdef->txt, u.f);
 				}
 				op->len += 4;
@@ -850,7 +847,7 @@ R_IPI int wasm_dis(WasmOp *op, const ut8 *buf, int buf_len, bool txt) {
 					double f;
 				} u;
 				u.v = r_read_at_le64 (buf, 1);
-				if (txt) {
+				if (txt && opdef->txt) {
 					op->txt = r_str_newf ("%s %f", opdef->txt, u.f);
 				}
 				op->len += 8;
@@ -936,7 +933,7 @@ R_IPI int wasm_dis(WasmOp *op, const ut8 *buf, int buf_len, bool txt) {
 				if (!(n > 0 && op->len + n <= buf_len)) {
 					goto err;
 				}
-				if (txt) {
+				if (txt && opdef->txt) {
 					op->txt = r_str_newf ("%s %d %d", opdef->txt, flag, offset);
 				}
 				op->len += n;
@@ -1108,7 +1105,7 @@ R_IPI int wasm_dis(WasmOp *op, const ut8 *buf, int buf_len, bool txt) {
 		case WASM_OP_I8X16ABS:
 		case WASM_OP_I16X8ABS:
 		case WASM_OP_I32X4ABS:
-			if (txt) {
+			if (txt && opdef->txt) {
 				op->txt = strdup (opdef->txt);
 			}
 			break;
@@ -1136,7 +1133,7 @@ R_IPI int wasm_dis(WasmOp *op, const ut8 *buf, int buf_len, bool txt) {
 				if (!(n > 0 && n < buf_len)) {
 					goto err;
 				}
-				if (txt) {
+				if (txt && opdef->txt) {
 					op->txt = r_str_newf ("%s o:%d a:2^%d", opdef->txt, offset, align);
 				}
 			}
@@ -1156,7 +1153,7 @@ R_IPI int wasm_dis(WasmOp *op, const ut8 *buf, int buf_len, bool txt) {
 				if (txt) {
 					op->txt = r_str_newf ("%s %02x %02x %02x %02x %02x %02x %02x " \
 						"%02x %02x %02x %02x %02x %02x %02x %02x %02x",
-						opdef->txt, bytes[0], bytes[1], bytes[2], bytes[3],
+						r_str_get (opdef->txt), bytes[0], bytes[1], bytes[2], bytes[3],
 						bytes[4], bytes[5], bytes[6], bytes[7], bytes[8],
 						bytes[9], bytes[10], bytes[11], bytes[12], bytes[13],
 						bytes[14], bytes[15]);
@@ -1183,7 +1180,7 @@ R_IPI int wasm_dis(WasmOp *op, const ut8 *buf, int buf_len, bool txt) {
 				}
 				unsigned char lane = buf[1 + simdop_size];
 				++op->len;
-				if (txt) {
+				if (txt && opdef->txt) {
 					op->txt = r_str_newf ("%s %d", opdef->txt, lane);
 				}
 			}
@@ -1191,6 +1188,9 @@ R_IPI int wasm_dis(WasmOp *op, const ut8 *buf, int buf_len, bool txt) {
 		}
 	} else {
 		goto err;
+	}
+	if (txt && !op->txt) {
+		op->txt = strdup ("incorrect");
 	}
 	return op->len;
 

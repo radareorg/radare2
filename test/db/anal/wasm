@@ -1,0 +1,25 @@
+NAME=wasm crash test
+FILE=bins/wasm/nullderef.wasm
+CMDS=<<EOF
+pd 10
+EOF
+EXPECT=<<EOF
+            ;-- entry0:
+            ;-- fcn.0:
+            0x000000be      4185feff77     i32.const 251657989
+            0x000000c3      fd0f           i8x16.splat
+            0x000000c5      fda001         incorrect
+            0x000000c8      fd64           incorrect
+            0x000000ca      0b             end
+            0x000000cb      00             trap
+            0x000000cc      00             trap
+            0x000000cd      00             trap
+            0x000000ce      00             trap
+            0x000000cf      00             trap
+EOF
+EXPECT_ERR=<<EOF
+ERROR: unknown section id: 13
+ERROR: unknown section id: 109
+EOF
+RUN
+
