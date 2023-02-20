@@ -2143,7 +2143,7 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 	strcpy (bytes + j, "     ");
 	j += 2;
 	for (i = 0; i < nb_cols; i++) {
-		sprintf (bytes + j + i, "%0X", i % 17);
+		snprintf (bytes + j + i, 3, "%0X", i % 17);
 	}
 	if (usecolor) {
 		r_cons_strcat (Color_GREEN);
@@ -5562,178 +5562,23 @@ static void bitimage(RCore *core, int cols) {
 	}
 }
 
-static bool strnullpad_check(const ut8 *buf, int len, int clen, int inc, bool be) {
-	int i;
-	for (i = 0; i < len; i += inc) {
-		if (inc == 2) {
-			if (be) {
-				if (!buf[i] && !buf[i + 1]) {
-					return false;
-				}
-				if (!IS_PRINTABLE (buf[i]) || buf[i + 1]) {
-					return false;
-				}
-			} else {
-				if (!buf[i] && !buf[i + 1]) {
-					return false;
-				}
-				if (buf[i] || !IS_PRINTABLE (buf[i+1])) {
-					return false;
-				}
-			}
-		// utf32 } else if (inc == 4) {
-		} else {
-			R_LOG_ERROR ("Invalid inc");
-			return false;
-		}
-	}
-	return true;
-}
-
-static bool check_string_at(RCore *core, ut64 addr) {
-	if (!r_io_is_valid_offset (core->io, addr, 0)) {
-		return false;
-	}
-	const int len = core->blocksize; // max string length
-	int i;
-	// bool is_utf32le = false;
-	// bool is_utf32be = false;
-	bool is_pascal1 = false;
-	bool is_pascal2 = false;
-	bool is_utf8 = false;
-	bool is_ascii = false;
-	char *out = NULL; // utf8 string containing the printable result
-	ut8 *buf = malloc (len);
-	if (buf) {
-		if (r_io_read_at (core->io, addr, buf, len) < 1) {
-			free (buf);
-			return false;
-		}
-	} else {
-		R_LOG_ERROR ("Cannot allocate %d byte(s)", len);
-		return false;
-	}
-	int nullbyte = r_str_nlen ((const char *)buf, len);
-	if (nullbyte == len) {
-		// full block, not null terminated somehow. lets check how printable it is first..
-		buf[len - 1] = 0;
-		nullbyte--;
-	}
-	if (nullbyte < len && nullbyte > 3) {
-		is_ascii = true;
-		// it's a null terminated string!
-		for (i = 0; i < nullbyte; i++) {
-			if (!IS_PRINTABLE (buf[i])) {
-				is_ascii = false;
-			}
-		}
-		if (!is_ascii) {
-			is_utf8 = true;
-			if ((buf[0] & 0xf0) == 0xf0 && (buf[1] & 0xf0) == 0xf0) {
-				is_utf8 = false;
-			}
-			for (i = 0; i < nullbyte; i++) {
-				int us = r_utf8_size (buf + i);
-				if (us < 1) {
-					is_utf8 = false;
-					break;
-				}
-				i += us - 1;
-			}
-		}
-	}
-
-	// utf16le check
-	if (strnullpad_check (buf, R_MIN (len, 10), 10, 2, false)) {
-		out = malloc (len + 1);
-		if (r_str_utf16_to_utf8 ((ut8*)out, len, buf, len, true) < 1) {
-			R_FREE (out);
-		}
-	}
-	// utf16be check
-	if (strnullpad_check (buf, R_MIN (len, 10), 10, 2, true)) {
-		out = malloc (len + 1);
-		if (r_str_utf16_to_utf8 ((ut8*)out, len, buf, len, false) < 1) {
-			R_FREE (out);
-		}
-	}
-	// TODO: add support for utf32 strings and improve util apis
-	// check for pascal string
-	{
-		ut8 plen = buf[0];
-		if (plen > 1 && plen < len) {
-			is_pascal1 = true;
-			int i;
-			for (i = 1; i < plen; i++) {
-				if (!IS_PRINTABLE (buf[i])) {
-					is_pascal1 = false;
-					break;
-				}
-			}
-			if (is_pascal1) {
-				char *oout = r_str_ndup ((const char *)buf + 1, i);
-				free (out);
-				out = oout;
-			}
-		}
-	}
-	if (!is_pascal1) {
-		ut8 plen = r_read_le16 (buf);
-		if (plen > 2 && plen < len) {
-			is_pascal2 = true;
-			for (i = 2; i < plen; i++) {
-				if (!IS_PRINTABLE (buf[i])) {
-					is_pascal2 = false;
-					break;
-				}
-			}
-			if (is_pascal2) {
-				char *oout = r_str_ndup ((const char *)buf + 2, i);
-				free (out);
-				out = oout;
-			}
-		}
-	}
-#if 0
-	eprintf ("pascal %d\n", is_pascal1 + is_pascal2);
-	eprintf ("utf8 %d\n", is_utf8);
-	eprintf ("utf16 %d\n", is_utf16le+ is_utf16be);
-	eprintf ("ascii %d\n", is_ascii);
-	eprintf ("render\n");
-#endif
-	// render the stuff
-	if (out) {
-		r_cons_printf ("%s\n", out);
-		free (out);
-		free (buf);
-		return true;
-	}
-	if (is_ascii || is_utf8) {
-		r_cons_printf ("%s\n", buf);
-		free (buf);
-		return true;
-	}
-	free (buf);
-	return false;
-}
-
 static bool check_string_pointer(RCore *core, ut64 addr) {
 	ut8 buf[16];
 	r_io_read_at (core->io, addr, buf, sizeof (buf));
 	// check for 64bit pointer to string
 	ut64 p1 = r_read_le64 (buf);
-	if (check_string_at (core, p1)) {
+	if (check_string_at (core, p1, true)) {
 		return true;
 	}
 	// check for 32bit pointer to string
 	ut64 p2 = (ut64)r_read_le32 (buf);
-	if (check_string_at (core, p2)) {
+	if (check_string_at (core, p2, true)) {
 		return true;
 	}
 	// check for self reference pointer to string used by swift
 	st32 p3 = (st32)r_read_le32 (buf);
 	ut64 dst = core->offset + p3;
-	if (check_string_at (core, dst)) {
+	if (check_string_at (core, dst, true)) {
 		return true;
 	}
 	return false;
@@ -5741,7 +5586,7 @@ static bool check_string_pointer(RCore *core, ut64 addr) {
 
 static void cmd_psa(RCore *core, const char *_) {
 	bool found = true;
-	if (!check_string_at (core, core->offset)) {
+	if (!check_string_at (core, core->offset, true)) {
 		if (!check_string_pointer (core, core->offset)) {
 			found = false;
 		}

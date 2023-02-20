@@ -649,11 +649,11 @@ static int _cb_hit_sz(RSearchKeyword *kw, int klen, void *user, ut64 addr) {
 				}
 				const int bytes = (len > 40)? 40: len;
 				for (i = 0; i < bytes; i++) {
-					sprintf (p, "%02x", buf[i]);
+					snprintf (p, 3, "%02x", buf[i]);
 					p += 2;
 				}
 				if (bytes != len) {
-					strcpy (p, "...");
+					r_str_cpy (p, "...");
 					p += 3;
 				}
 				*p = 0;
