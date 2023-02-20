@@ -20,8 +20,9 @@ QJSFILES+=libbf.c
 endif
 endif
 
+QJSOBJS=$(subst .c,.o,$(QJSFILES))
 QJS_FILES=$(addprefix $(SHLR)/qjs/src/,$(QJSFILES))
-QJS_OBJS=$(subst .c,.o,$(QJS_FILES))
+QJS_OBJS=$(addprefix $(SHLR)/qjs/src/,$(QJSOBJS))
 CFLAGS+=-I$(SHLR)/qjs/src
 ifeq ($(QJS_BIGNUM),1)
 CFLAGS+=-DCONFIG_BIGNUM=$(QJS_BIGNUM)
