@@ -8,6 +8,8 @@ anal_plugins = [ 'null' ]
 arch_plugins = [ 'null',
   'sh',
   'x86_nz',
+  'bpf',
+  'bpf_cs',
   'lm32',
   'mcs96',
   'ws',
@@ -147,8 +149,6 @@ anal_plugins += [
   'arm_cs',
   'avr',
   'bf',
-  'bpf',
-  'bpf_cs',
   'chip8',
   'cr16',
   'cris',
@@ -181,7 +181,6 @@ if no_user_plugins
   if use_gpl
     anal_plugins += [
       'arm_gnu',
-      'bpf',
       'mips_gnu',
       'loongarch_gnu',
       's390_gnu',

@@ -89,12 +89,6 @@ enum {
 #define R_ANAL_ADDR_TYPE_ASCII     1 << 10
 #define R_ANAL_ADDR_TYPE_SEQUENCE  1 << 11
 
-#define R_ANAL_ARCHINFO_MIN_OP_SIZE 0
-#define R_ANAL_ARCHINFO_MAX_OP_SIZE 1
-#define R_ANAL_ARCHINFO_INV_OP_SIZE 2
-#define R_ANAL_ARCHINFO_ALIGN 4
-#define R_ANAL_ARCHINFO_DATA_ALIGN 8
-
 /* type = (R_ANAL_VAR_TYPE_BYTE & R_ANAL_VAR_TYPE_SIZE_MASK) |
  *			( RANAL_VAR_TYPE_SIGNED & RANAL_VAR_TYPE_SIGN_MASK) |
  *			( RANAL_VAR_TYPE_CONST & RANAL_VAR_TYPE_MODIFIER_MASK)
@@ -1668,7 +1662,6 @@ extern RAnalPlugin r_anal_plugin_arm_cs;
 extern RAnalPlugin r_anal_plugin_arm_gnu;
 extern RAnalPlugin r_anal_plugin_avr;
 extern RAnalPlugin r_anal_plugin_bf;
-extern RAnalPlugin r_anal_plugin_bpf_cs;
 extern RAnalPlugin r_anal_plugin_chip8;
 extern RAnalPlugin r_anal_plugin_cr16;
 extern RAnalPlugin r_anal_plugin_cris;
@@ -1709,7 +1702,6 @@ extern RAnalPlugin r_anal_plugin_arm_v35;
 extern RAnalPlugin r_anal_plugin_pyc;
 extern RAnalPlugin r_anal_plugin_pickle;
 extern RAnalPlugin r_anal_plugin_evm_cs;
-extern RAnalPlugin r_anal_plugin_bpf;
 extern RAnalPlugin r_anal_plugin_hppa_gnu;
 extern RAnalPlugin r_anal_plugin_m68k_gnu;
 

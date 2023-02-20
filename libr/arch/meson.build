@@ -6,6 +6,8 @@ r_arch_sources = [
   'arch_session.c',
   'arch_cond.c',
   'arch_value.c',
+  'p/bpf/plugin.c',
+  'p/bpf_cs/plugin.c',
   'p/null/plugin.c',
   'p/lm32/plugin.c',
   'p/mcs96/plugin.c',

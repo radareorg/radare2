@@ -1,6 +1,7 @@
-/* radare2 - LGPL - Copyright 2022 - terorie */
+/* radare2 - LGPL - Copyright 2022-2023 - terorie */
 
 #include <r_anal.h>
+#include <r_esil.h>
 #include <r_lib.h>
 
 #include <capstone/capstone.h>
@@ -9,29 +10,32 @@
 
 #define CSINC BPF
 #define CSINC_MODE \
-	((a->config->bits == 32)? CS_MODE_BPF_CLASSIC: CS_MODE_BPF_EXTENDED) \
-	| ((R_ARCH_CONFIG_IS_BIG_ENDIAN (a->config))? CS_MODE_BIG_ENDIAN: CS_MODE_LITTLE_ENDIAN)
-#include "capstone.inc"
+	((as->config->bits == 32)? CS_MODE_BPF_CLASSIC: CS_MODE_BPF_EXTENDED) \
+	| ((R_ARCH_CONFIG_IS_BIG_ENDIAN (as->config))? CS_MODE_BIG_ENDIAN: CS_MODE_LITTLE_ENDIAN)
+#include "../capstone.inc"
 
 #define OP(n) insn->detail->bpf.operands[n]
 // the "& 0xffffffff" is for some weird CS bug in JMP
-#define IMM(n) (insn->detail->bpf.operands[n].imm & 0xffffffff)
+#define IMM(n) (insn->detail->bpf.operands[n].imm & UT32_MAX)
 #define OPCOUNT insn->detail->bpf.op_count
 
 // calculate jump address from immediate
-#define JUMP(n) (addr + insn->size * (1 + IMM (n)))
+#define JUMP(n) (op->addr + insn->size * (1 + IMM (n)))
 
-void analop_esil(RAnal *a, RAnalOp *op, cs_insn *insn, ut64 addr);
+static void analop_esil(RArchSession *a, RAnalOp *op, cs_insn *insn, ut64 addr);
 
-static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
-	csh handle = init_capstone (a);
-	if (handle == 0) {
-		return -1;
-	}
+static char *mnemonics(RArchSession *s, int id, bool json) {
+	CapstonePluginData *cpd = (CapstonePluginData*)s->data;
+	return r_arch_cs_mnemonics (s, cpd->cs_handle, id, json);
+}
+
+static bool decode(RArchSession *a, RAnalOp *op, RArchDecodeMask mask) {
+	CapstonePluginData *cpd = (CapstonePluginData*)a->data;
+	const ut8 *buf = op->bytes;
+	const int len = op->size;
 	op->size = 8;
-	op->addr = addr;
 	cs_insn *insn = NULL;
-	int n = cs_disasm (handle, (ut8*)buf, len, addr, 1, &insn);
+	int n = cs_disasm (cpd->cs_handle, (ut8*)buf, len, op->addr, 1, &insn);
 	if (n < 1) {
 		op->type = R_ANAL_OP_TYPE_ILL;
 		if (mask & R_ARCH_OP_MASK_DISASM) {
@@ -64,16 +68,16 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 				op->type = R_ANAL_OP_TYPE_CJMP;
 				if (a->config->bits == 32) {
 					op->jump = JUMP (1);
-					op->fail = (insn->detail->bpf.op_count == 3) ? JUMP(2) : addr + insn->size;
+					op->fail = (insn->detail->bpf.op_count == 3) ? JUMP (2) : op->addr + insn->size;
 				} else {
 					op->jump = JUMP (2);
-					op->fail = addr + insn->size;
+					op->fail = op->addr + insn->size;
 				}
 				break;
-			case BPF_INS_CALL:	///< eBPF only
+			case BPF_INS_CALL: ///< eBPF only
 				op->type = R_ANAL_OP_TYPE_CALL;
 				break;
-			case BPF_INS_EXIT:	///< eBPF only
+			case BPF_INS_EXIT: ///< eBPF only
 				//op->type = R_ANAL_OP_TYPE_TRAP;
 				op->type = R_ANAL_OP_TYPE_RET;
 				break;
@@ -138,7 +142,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 				if (OPCOUNT > 1 && OP (1).type == BPF_OP_IMM) {
 					op->val = OP (1).imm;
 				} else if (insn->size == 16) { // lddw wtf
-					op->val = r_read_ble64((insn->bytes)+8, 0) + IMM (0);
+					op->val = r_read_ble64 (insn->bytes + 8, 0) + IMM (0);
 				}
 				break;
 				///< Byteswap: eBPF only
@@ -174,12 +178,10 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 				op->type = R_ANAL_OP_TYPE_STORE;
 				break;
 			}
-
 			if (mask & R_ARCH_OP_MASK_ESIL) {
-				analop_esil(a, op, insn, addr);
+				analop_esil (a, op, insn, op->addr);
 			}
 		}
-
 		op->size = insn->size;
 		op->id = insn->id;
 		cs_free (insn, n);
@@ -225,7 +227,7 @@ static char* regname(uint8_t reg) {
 }
 
 #define REG(n) (regname(OP(n).reg))
-void bpf_alu(RAnal *a, RAnalOp *op, cs_insn *insn, const char* operation, int bits) {
+void bpf_alu(RArchSession *a, RAnalOp *op, cs_insn *insn, const char* operation, int bits) {
 	if (OPCOUNT == 2 && a->config->bits == 64) { // eBPF
 		if (bits == 64) {
 			if (OP (1).type == BPF_OP_IMM) {
@@ -245,16 +247,27 @@ void bpf_alu(RAnal *a, RAnalOp *op, cs_insn *insn, const char* operation, int bi
 			}
 		}
 	} else { // cBPF
-		if (OPCOUNT > 0 && OP (0).type == BPF_OP_IMM) {
-			op->val = IMM (0);
-			esilprintf (op, "%" PFMT64d ",a,%s=", IMM (0), operation);
+		if (OPCOUNT > 0) {
+			switch (OP (0).type) {
+			case BPF_OP_IMM:
+				op->val = IMM (0);
+				esilprintf (op, "%" PFMT64d ",%s=", IMM (0), operation);
+				break;
+			case BPF_OP_REG:
+				op->val = IMM (1);
+				esilprintf (op, "%" PFMT64d ",%s,%s=", IMM (1), REG (0), operation);
+				break;
+			default:
+				R_LOG_ERROR ("oops");
+				break;
+			}
 		} else {
 			esilprintf (op, "x,a,%s=", operation);
 		}
 	}
 }
 
-void bpf_load(RAnal *a, RAnalOp *op, cs_insn *insn, char* reg, int size) {
+void bpf_load(RArchSession *a, RAnalOp *op, cs_insn *insn, char* reg, int size) {
 	if (OPCOUNT > 1 && OP (0).type == BPF_OP_REG) {
 		esilprintf (op, "%d,%s,+,[%d],%s,=",
 			OP (1).mem.disp, regname(OP (1).mem.base), size, REG (0));
@@ -266,7 +279,7 @@ void bpf_load(RAnal *a, RAnalOp *op, cs_insn *insn, char* reg, int size) {
 	}
 }
 
-void bpf_store(RAnal *a, RAnalOp *op, cs_insn *insn, char *reg, int size) {
+void bpf_store(RArchSession *a, RAnalOp *op, cs_insn *insn, char *reg, int size) {
 	if (OPCOUNT > 0 && a->config->bits == 32) { // cBPF
 		esilprintf (op, "%s,m[%d],=", reg, OP (0).mmem);
 	} else if (OPCOUNT > 1) { // eBPF
@@ -280,7 +293,7 @@ void bpf_store(RAnal *a, RAnalOp *op, cs_insn *insn, char *reg, int size) {
 	}
 }
 
-void bpf_jump(RAnal *a, RAnalOp *op, cs_insn *insn, char *condition) {
+void bpf_jump(RArchSession *a, RAnalOp *op, cs_insn *insn, char *condition) {
 	if (OPCOUNT > 0 && a->config->bits == 32) { // cBPF
 		if (OP (0).type == BPF_OP_IMM) {
 			esilprintf (op, "%" PFMT64d ",a,NUM,%s,?{,0x%" PFMT64x ",}{,0x%" PFMT64x ",},pc,=",
@@ -300,12 +313,12 @@ void bpf_jump(RAnal *a, RAnalOp *op, cs_insn *insn, char *condition) {
 	}
 }
 
-#define ALU(c, b) bpf_alu(a, op, insn, c, b)
-#define LOAD(c, s) bpf_load(a, op, insn, c, s)
-#define STORE(c, s) bpf_store(a, op, insn, c, s)
-#define CJMP(c) bpf_jump(a, op, insn, c)
+#define ALU(c, b) bpf_alu (a, op, insn, c, b)
+#define LOAD(c, s) bpf_load (a, op, insn, c, s)
+#define STORE(c, s) bpf_store (a, op, insn, c, s)
+#define CJMP(c) bpf_jump (a, op, insn, c)
 
-void analop_esil(RAnal *a, RAnalOp *op, cs_insn *insn, ut64 addr) {
+static void analop_esil(RArchSession *a, RAnalOp *op, cs_insn *insn, ut64 addr) {
 	switch (insn->id) {
 	case BPF_INS_JMP:
 		esilprintf (op, "0x%" PFMT64x ",pc,=", op->jump);
@@ -557,7 +570,7 @@ void analop_esil(RAnal *a, RAnalOp *op, cs_insn *insn, ut64 addr) {
 	}
 }
 
-static bool set_reg_profile(RAnal *anal) {
+static char *regs(RArchSession *as) {
 	const char *p =
 		"=PC    pc\n"
 		"=A0    r1\n"
@@ -600,14 +613,13 @@ static bool set_reg_profile(RAnal *anal) {
 		"gpr    r10      .64 160  0\n"
 		"gpr    sp       .64 160  0\n"
 		"gpr    tmp      .64 168  0\n";
-
-
-	return r_reg_set_profile_string (anal->reg, p);
+	return strdup (p);
 }
 
-static int archinfo(RAnal *anal, int q) {
-	const int bits = anal->config->bits;
+static int archinfo(RArchSession *as, ut32 q) {
+	const int bits = as->config->bits;
 	switch (q) {
+		// R_ARCH_INFO_MINOPSZ
 	case R_ANAL_ARCHINFO_MIN_OP_SIZE:
 		return 8;
 	case R_ANAL_ARCHINFO_MAX_OP_SIZE:
@@ -621,36 +633,56 @@ static int archinfo(RAnal *anal, int q) {
 	}
 	return 0;
 }
+static bool init(RArchSession *s) {
+	r_return_val_if_fail (s, false);
+	if (s->data) {
+		R_LOG_WARN ("Already initialized");
+		return false;
+	}
+	s->data = R_NEW0 (CapstonePluginData);
+	CapstonePluginData *cpd = (CapstonePluginData*)s->data;
+	if (!r_arch_cs_init (s, &cpd->cs_handle)) {
+		R_LOG_ERROR ("Cannot initialize capstone");
+		R_FREE (s->data);
+		return false;
+	}
+	return true;
+}
 
-RAnalPlugin r_anal_plugin_bpf_cs = {
+static bool fini(RArchSession *s) {
+	r_return_val_if_fail (s, false);
+	CapstonePluginData *cpd = (CapstonePluginData*)s->data;
+	cs_close (&cpd->cs_handle);
+	R_FREE (s->data);
+	return true;
+}
+
+RArchPlugin r_arch_plugin_bpf_cs = {
 	.name = "bpf",
-	.desc = "Capstone BPF arch plugin",
+	.desc = "Capstone BPF plugin",
 	.license = "BSD",
 	.author = "terorie, aemmitt",
-	.esil = false, // TODO
 	.arch = "bpf",
 	.endian = R_SYS_ENDIAN_LITTLE | R_SYS_ENDIAN_BIG,
-	.bits = 32 | 64,
-	.archinfo = archinfo,
-	.set_reg_profile = &set_reg_profile,
-	.op = &analop,
-	.mnemonics = &cs_mnemonics,
+	.bits = R_SYS_BITS_PACK2 (32, 64),
+	.info = archinfo,
+	.regs = &regs,
+	.decode = &decode,
+	.mnemonics = &mnemonics,
+	.init = init,
+	.fini = fini
 };
-
-#ifndef R2_PLUGIN_INCORE
-R_API RLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_ANAL,
-	.data = &r_anal_plugin_bpf_cs,
-	.version = R2_VERSION
-};
-#endif
 
 #else
-RAnalPlugin r_anal_plugin_bpf_cs = {0};
+RArchPlugin r_arch_plugin_bpf_cs = {0};
+#endif // CS_API_MAJOR
+
 #ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_ANAL,
+	.type = R_LIB_TYPE_ARCH,
+#if CS_API_MAJOR >= 5
+	.data = &r_anal_plugin_bpf_cs,
+#endif
 	.version = R2_VERSION
 };
 #endif
-#endif // CS_API_MAJOR

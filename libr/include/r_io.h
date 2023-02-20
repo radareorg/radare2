@@ -120,16 +120,16 @@ typedef struct r_io_t {
 	int va;	// keep it as int, value can be 0, 1 or 2
 	bool ff;
 	ut8 Oxff; // which printable char to use instead of 0xff for unallocated bytes
-	size_t addrbytes;
+	size_t addrbytes; // XXX also available in RArchConfig.addrbytes
 	bool aslr;
 	bool autofd;
 	ut32 cached; // uses R_PERM_RWX // wtf cache for exec?
 	bool cachemode; // write in cache all the read operations (EXPERIMENTAL)
 	ut32 p_cache; // uses 1, 2, 4.. probably R_PERM_RWX :D
-	ut64 mts;	// map "timestamps", this sucks somehow
-	RIDStorage *files;	// RIODescs accessible by their fd
-	RIDStorage *maps;	// RIOMaps accessible by their id
-	RIDStorage *banks;	// RIOBanks accessible by their id
+	ut64 mts; // map "timestamps", this sucks somehow
+	RIDStorage *files; // RIODescs accessible by their fd
+	RIDStorage *maps;  // RIOMaps accessible by their id
+	RIDStorage *banks; // RIOBanks accessible by their id
 #if USE_NEW_IO_CACHE_API
 	RIOCache *cache;
 #else
