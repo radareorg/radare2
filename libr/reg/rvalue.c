@@ -131,7 +131,10 @@ R_API ut64 r_reg_get_value(RReg *reg, RRegItem *item) {
 		// XXX 128 & 256 bit
 		{
 			long double ld = r_reg_get_longdouble (reg, item);
-			return isnan (ld)? UT64_MAX: (ut64)ld;
+			if (ld < 0 || ld >= UT64_MAX) {
+				return isnan (ld)? UT64_MAX: (ut64)ld;
+			}
+			return UT64_MAX;
 		}
 	default:
 		R_LOG_WARN ("Bit size %d not supported", item->size);

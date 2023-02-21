@@ -3060,10 +3060,15 @@ static bool esil_double_to_int(REsil *esil) {
 	char *src = r_esil_pop (esil);
 	if (src) {
 		if (esil_get_parm_float (esil, src, &s.f64)) {
-			if (isnan(s.f64) || isinf(s.f64)) {
+			if (isnan (s.f64) || isinf (s.f64)) {
 				R_LOG_DEBUG ("esil_float_to_int: nan or inf detected");
 			}
-			ret = r_esil_pushnum (esil, (st64)(s.f64));
+			if (s.f64 > ST64_MIN || s.f64 < ST64_MAX) {
+				ret = r_esil_pushnum (esil, (st64)(s.f64));
+			} else {
+				R_LOG_DEBUG ("double-to-int out of range");
+				ret = r_esil_pushnum (esil, 0);
+			}
 		} else {
 			R_LOG_DEBUG ("esil_float_to_int: invalid parameters");
 		}
