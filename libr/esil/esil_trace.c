@@ -404,7 +404,7 @@ R_API void r_esil_trace_show(REsil *esil, int idx) {
 					str2 = sdb_const_get (DB, KEYREG ("reg.read", regname), 0);
 					p ("ar %s = %s\n", regname, str2);
 				} else {
-					eprintf ("Invalid entry in reg.read\n");
+					R_LOG_ERROR ("Invalid entry in reg.read");
 				}
 				ptr = next;
 			} while (next);
@@ -426,7 +426,7 @@ R_API void r_esil_trace_show(REsil *esil, int idx) {
 						r_num_get (NULL, addr)), 0);
 					p ("wx %s @ %s\n", str2, addr);
 				} else {
-					eprintf ("Invalid entry in reg.read\n");
+					R_LOG_ERROR ("Invalid entry in reg.read");
 				}
 				ptr = next;
 			} while (next);
