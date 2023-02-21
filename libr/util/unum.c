@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2007-2022 - pancake */
+/* radare - LGPL - Copyright 2007-2023 - pancake */
 
 #define R_LOG_ORIGIN "util.num"
 
