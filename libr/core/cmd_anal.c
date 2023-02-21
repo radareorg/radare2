@@ -832,6 +832,15 @@ static const char *help_msg_ah[] = {
 	NULL
 };
 
+static const char *help_msg_ahs[] = {
+	"Usage:", "ahs [size] [@ addr]", " Define opcode size hint",
+	"ahs", " 16", "Hint the analysis to make the instruction 16 bytes in size",
+	"ahs-", "", "Unset the instruction size hint in the current offset",
+	"ahs-", "*", "Unset the instruction size hint in the current offset",
+	"ahs*", "", "show all the instruction size hints as r2 commands",
+	NULL
+};
+
 static const char *help_msg_aho[] = {
 	"Usage:", "aho [optype] [@ addr]", " Define opcode type hint",
 	"aho", " nop", "change the opcode type in current address to be considered a NOP",
@@ -9730,9 +9739,22 @@ static void cmd_anal_hint(RCore *core, const char *input) {
 		if (input[1] == ' ') {
 			r_anal_hint_set_size (core->anal, core->offset, atoi (input + 1));
 		} else if (input[1] == '-') {
-			r_anal_hint_unset_size (core->anal, core->offset);
+			if (input[2] == '*') {
+				R_LOG_INFO ("Not implemented");
+				// r_anal_hint_unset_size (core->anal, UT64_MAX);
+				// r_anal_hint_clear (core->anal);
+			} else if (input[2]) {
+				ut64 at = r_num_math (core->num, input + 2);
+				if (at != UT64_MAX) {
+					r_anal_hint_unset_size (core->anal, at);
+				}
+			} else {
+				r_anal_hint_unset_size (core->anal, core->offset);
+			}
+		} else if (input[1] == 0) {
+			r_core_cmd0 (core, "ah~size=");
 		} else {
-			eprintf ("Usage: ahs 16\n");
+			r_core_cmd_help (core, help_msg_ahs);
 		}
 		break;
 	case 'S': // "ahS" set asm.syntax

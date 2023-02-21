@@ -12,3 +12,6 @@ printf -- "strcpy\t"
 git grep 'strcpy (' libr | wc -l
 printf -- "sprintf\t"
 git grep 'sprintf (' libr | wc -l
+
+printf -- "eUsage\t"
+git grep 'eprintf (' libr | grep Usage | wc -l
