@@ -1930,7 +1930,7 @@ static void __handle_tab_new(RCore *core) {
 static void __init_sdb(RCore *core) {
 	Sdb *db = core->panels->db;
 	sdb_set (db, "Symbols", "isq", 0);
-	sdb_set (db, "Stack"  , "px 256@r:SP", 0);
+	sdb_set (db, "Stack"  , "px", 0);
 	sdb_set (db, "Locals", "afvd", 0);
 	sdb_set (db, "Registers", "dr", 0);
 	sdb_set (db, "FPU Registers", PANEL_CMD_FPU_REGISTERS, 0);
@@ -4674,22 +4674,15 @@ static void __print_graph_cb(void *user, void *p) {
 static void __print_stack_cb(void *user, void *p) {
 	RCore *core = (RCore *)user;
 	RPanel *panel = (RPanel *)p;
+	const int size = r_config_get_i (core->config, "stack.size");
 	const int delta = r_config_get_i (core->config, "stack.delta");
 	const int bits = r_config_get_i (core->config, "asm.bits");
 	const char sign = (delta < 0)? '+': '-';
 	const int absdelta = R_ABS (delta);
-	char *cmd = r_str_newf ("%s%s ", PANEL_CMD_STACK, bits == 32 ? "w" : "q");
-	int n = r_str_split (panel->model->cmd, ' ');
-	int i;
-	for (i = 0; i < n; i++) {
-		const char *s = r_str_word_get0 (panel->model->cmd, i);
-		if (!i) {
-			continue;
-		}
-		cmd = r_str_append (cmd, s);
-	}
+	char *cmd = r_str_newf ("%s%s %d", PANEL_CMD_STACK, bits == 32 ? "w" : "q", size);
 	panel->model->cmd = cmd;
-	char *k = r_str_newf ("%s%c%d", cmd, sign, absdelta);
+	ut64 sp_addr = r_reg_getv (core->anal->reg, "SP");
+	char *k = r_str_newf ("%s @ 0x%08"PFMT64x"%c%d", cmd, sp_addr, sign, absdelta);
 	const char *cmdstr = r_core_cmd_str (core, k);
 	free (k);
 	__update_panel_contents (core, panel, cmdstr);
