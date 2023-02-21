@@ -378,6 +378,9 @@ R_API void r_esil_trace_show(REsil *esil, int idx) {
 	PrintfCallback p = esil->anal->cb_printf;
 	const char *str2;
 	const char *str;
+	if (!esil->trace) {
+		return;
+	}
 	int trace_idx = esil->trace->idx;
 	esil->trace->idx = idx;
 
