@@ -1287,7 +1287,7 @@ static RList *create_cache_bins(RBinFile *bf, RDyldCache *cache) {
 			}
 			default:
 				if (magic != 0) {
-					R_LOG_WARN ("Unknown sub-bin 0x%"PFMT64x"\n", magic);
+					R_LOG_WARN ("Unknown sub-bin 0x%x", magic);
 				}
 				break;
 			}
