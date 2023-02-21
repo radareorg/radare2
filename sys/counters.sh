@@ -15,3 +15,9 @@ git grep 'sprintf (' libr | wc -l
 
 printf -- "eUsage\t"
 git grep 'eprintf (' libr | grep Usage | wc -l
+
+printf -- "f(char)\t"
+git grep 'free ((char' libr | wc -l
+
+printf -- "f(void)\t"
+git grep 'free ((void' libr | wc -l
