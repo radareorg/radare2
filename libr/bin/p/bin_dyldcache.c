@@ -9,7 +9,7 @@
 #include "objc/mach0_classes.h"
 
 #define R_IS_PTR_AUTHENTICATED(x) B_IS_SET(x, 63)
-#define MAX_N_HDR 16
+#define MAX_N_HDR 128
 
 typedef struct {
 	ut8 version;
@@ -1176,7 +1176,7 @@ static RList *create_cache_bins(RBinFile *bf, RDyldCache *cache) {
 		ut32 j;
 		if (target_libs) {
 			HtPU *path_to_idx = NULL;
-			if (cache->accel) {
+			if (cache->accel && cache->accel->depListCount > 0) {
 				depArray = R_NEWS0 (ut16, cache->accel->depListCount);
 				if (!depArray) {
 					goto next;
@@ -1242,8 +1242,7 @@ static RList *create_cache_bins(RBinFile *bf, RDyldCache *cache) {
 			if (deps && !deps[j]) {
 				continue;
 			}
-			// ut64 pa = va2pa (img[j].address, hdr->mappingCount, &cache->maps[maps_index], cache->buf, 0, NULL, NULL);
-			ut64 pa = va2pa (img[j].address, cache->n_maps, &cache->maps[maps_index], cache->buf, 0, NULL, NULL);
+			ut64 pa = va2pa (img[j].address, hdr->mappingCount, &cache->maps[maps_index], cache->buf, 0, NULL, NULL);
 			if (pa == UT64_MAX) {
 				continue;
 			}
@@ -1287,7 +1286,9 @@ static RList *create_cache_bins(RBinFile *bf, RDyldCache *cache) {
 				break;
 			}
 			default:
-				eprintf ("Unknown sub-bin\n");
+				if (magic != 0) {
+					R_LOG_WARN ("Unknown sub-bin 0x%x", magic);
+				}
 				break;
 			}
 		}
@@ -1607,7 +1608,6 @@ static cache_hdr_t *read_cache_header(RBuffer *cache_buf, ut64 offset) {
 	return hdr;
 }
 
-
 static void populate_cache_headers(RDyldCache *cache) {
 	cache->n_hdr = 0;
 	RList *hdrs = r_list_newf (NULL);
@@ -1798,7 +1798,9 @@ static objc_cache_opt_info *get_objc_opt_info(RBinFile *bf, RDyldCache *cache) {
 		ut64 scoffs_size = 0;
 		ut64 selrefs_offset = 0;
 		ut64 selrefs_size = 0;
-		ut8 remaining = 2;
+		ut64 const_selrefs_offset = 0;
+		ut64 const_selrefs_size = 0;
+		ut8 remaining = 3;
 		ut64 slide = rebase_infos_get_slide (cache);
 		for (i = 0; !sections[i].last; i++) {
 			if (sections[i].size == 0) {
@@ -1820,10 +1822,23 @@ static objc_cache_opt_info *get_objc_opt_info(RBinFile *bf, RDyldCache *cache) {
 					break;
 				}
 			}
+			if (strstr (sections[i].name, "__DATA_CONST.__objc_selrefs")) {
+				const_selrefs_offset = va2pa (sections[i].addr, cache->n_maps, cache->maps, cache->buf, slide, NULL, NULL);
+				const_selrefs_size = sections[i].size;
+				remaining--;
+				if (remaining == 0) {
+					break;
+				}
+			}
 		}
 
 		MACH0_(mach0_free) (mach0);
 		R_FREE (sections);
+
+		if (!selrefs_offset || !selrefs_size) {
+			selrefs_offset = const_selrefs_offset;
+			selrefs_size = const_selrefs_size;
+		}
 
 		ut64 sel_string_base = 0;
 		if (!scoffs_offset || scoffs_size < 40) {
@@ -1859,7 +1874,7 @@ static objc_cache_opt_info *get_objc_opt_info(RBinFile *bf, RDyldCache *cache) {
 			}
 		} else {
 			ut64 check = r_buf_read_le64_at (cache->buf, scoffs_offset);
-			if (check != 2) {
+			if (check < 2) {
 				break;
 			}
 			sel_string_base = r_buf_read_le64_at (cache->buf, scoffs_offset + 8);
@@ -1884,6 +1899,9 @@ beach:
 
 static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
 	RDyldCache *cache = R_NEW0 (RDyldCache);
+	if (!cache) {
+		return false;
+	}
 	memcpy (cache->magic, "dyldcac", 7);
 	cache->buf = r_buf_ref (buf);
 	populate_cache_headers (cache);
