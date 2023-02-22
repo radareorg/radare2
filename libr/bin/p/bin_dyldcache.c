@@ -1618,15 +1618,20 @@ static void populate_cache_headers(RDyldCache *cache) {
 	cache_hdr_t *h;
 	ut64 offsets[MAX_N_HDR];
 	ut64 offset = 0;
+	ut64 buf_size = r_buf_size (cache->buf);
 	do {
 		offsets[cache->n_hdr] = offset;
 		h = read_cache_header (cache->buf, offset);
 		if (!h) {
 			break;
 		}
-		r_list_append (hdrs, h);
 
 		ut64 size = h->codeSignatureOffset + h->codeSignatureSize;
+		if (!size || size > buf_size) {
+			break;
+		}
+
+		r_list_append (hdrs, h);
 
 #define SHIFT_MAYBE(x) \
 	if (x) { \
