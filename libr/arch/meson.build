@@ -19,6 +19,7 @@ r_arch_sources = [
   'p/xtensa/gnu/xtensa-dis.c',
   'p/xtensa/gnu/xtensa-isa.c',
   'p/xtensa/gnu/xtensa-modules.c',
+  'p/dis/plugin.c',
   'p/evm/plugin.c',
   'p/propeller/plugin.c',
   'p/propeller/propeller_disas.c',
