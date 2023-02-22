@@ -297,6 +297,7 @@ extern RArchPlugin r_arch_plugin_nios2;
 extern RArchPlugin r_arch_plugin_xtensa;
 extern RArchPlugin r_arch_plugin_or1k;
 extern RArchPlugin r_arch_plugin_evm;
+extern RArchPlugin r_arch_plugin_dis;
 extern RArchPlugin r_arch_plugin_mcs96;
 extern RArchPlugin r_arch_plugin_ws;
 extern RArchPlugin r_arch_plugin_lanai;
