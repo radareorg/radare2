@@ -4275,6 +4275,7 @@ static RList *anal_preludes(RAnal *anal) {
 		KW ("\x55\x89\xe5", 3, NULL, 0);
 		KW ("\x55\x8b\xec", 3, NULL, 0);
 		KW ("\xf3\x0f\x1e\xfb", 4, NULL, 0); // endbr32
+		KW ("\x55\x57\x56\x53", 4, NULL, 0); // push ebp, edi, esi, ebx
 		break;
 	case 64:
 		KW ("\x55\x48\x89\xe5", 4, NULL, 0);
