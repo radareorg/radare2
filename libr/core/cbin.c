@@ -3241,6 +3241,8 @@ static int bin_fields(RCore *r, PJ *pj, int mode, int va) {
 		return false;
 	}
 	if (IS_MODE_JSON (mode)) {
+		// load header types
+		r_core_bin_export_info (r, R_MODE_SET);
 		pj_a (pj);
 	} else if (IS_MODE_RAD (mode)) {
 		r_cons_println ("fs header");
