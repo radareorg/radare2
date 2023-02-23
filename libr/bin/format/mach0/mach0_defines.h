@@ -261,6 +261,9 @@ enum SectionType {
 	/// variable initialization pointers to functions.
 	S_THREAD_LOCAL_INIT_FUNCTION_POINTERS = 0x15u,
 
+	/// 32-bit offsets to initializers
+	S_INIT_FUNC_OFFSETS = 0x16u,
+
 	LAST_KNOWN_SECTION_TYPE = S_THREAD_LOCAL_INIT_FUNCTION_POINTERS
 };
 
