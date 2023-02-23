@@ -1,9 +1,9 @@
 /* radare - GPL - Copyright 2015-2022 - pancake, condret */
 
 #include <r_lib.h>
-#include <r_anal.h>
-#include "../../asm/arch/include/disas-asm.h"
-#include "../arch/vax/vax.h"
+#include <r_arch.h>
+#include "asm/arch/include/disas-asm.h"
+#include "vax.h"
 
 // XXX: this is just a PoC
 // XXX: do not hardcode size/type here, use proper decoding table
@@ -35,10 +35,18 @@ static void memory_error_func(int status, bfd_vma memaddr, struct disassemble_in
 DECLARE_GENERIC_PRINT_ADDRESS_FUNC_NOGLOBALS()
 DECLARE_GENERIC_FPRINTF_FUNC_NOGLOBALS()
 
-static int vax_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
+static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 	ut8 bytes[8] = {0};
 	struct disassemble_info disasm_obj;
 	RStrBuf *sb = r_strbuf_new (NULL);
+	const int len = op->size;
+	const ut8 *buf = op->bytes;
+	const ut64 addr = op->addr;
+
+	if (len < 1) {
+		return false;
+	}
+
 	memcpy (bytes, buf, R_MIN (len, sizeof (bytes)));
 
 	/* prepare disassembler */
@@ -191,7 +199,7 @@ static int vax_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, 
 }
 
 // TODO: add the V vector instructions
-static char *get_reg_profile(RAnal *anal) {
+static char *get_reg_profile(RArchSession *as) {
 	const char *p =
 		"=PC	r15\n"
 		"=SP	r14\n"
@@ -230,7 +238,7 @@ static char *get_reg_profile(RAnal *anal) {
 	// return r_reg_set_profile_string (anal->reg, p);
 }
 
-static int archinfo(RAnal *anal, int q) {
+static int archinfo(RArchSession *as, ut32 q) {
 	if (q == R_ANAL_ARCHINFO_DATA_ALIGN) {
 		return 1;
 	}
@@ -246,23 +254,22 @@ static int archinfo(RAnal *anal, int q) {
 	return 1;
 }
 
-RAnalPlugin r_anal_plugin_vax = {
+RArchPlugin r_arch_plugin_vax = {
 	.name = "vax",
 	.desc = "VAX code analysis plugin",
 	.license = "GPL",
 	.arch = "vax",
-	.esil = false,
-	.bits = 32,
+	.bits = R_SYS_BITS_PACK1 (32),
 	.endian = R_SYS_ENDIAN_LITTLE,
-	.op = &vax_op,
-	.get_reg_profile = &get_reg_profile,
-	.archinfo = archinfo,
+	.regs = get_reg_profile,
+	.info = &archinfo,
+	.decode = &decode
 };
 
 #ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_ANAL,
-	.data = &r_anal_plugin_vax,
+	.type = R_LIB_TYPE_ARCH,
+	.data = &r_arch_plugin_vax,
 	.version = R2_VERSION
 };
 #endif

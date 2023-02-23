@@ -58,6 +58,8 @@ r_arch_sources = [
   'p/nios2/plugin.c',
   'p/nios2/nios2-opc.c',
   'p/nios2/nios2-dis.c',
+  'p/vax/vax.c',
+  'p/vax/vax-dis.c',
 ]
 
 if arch_plugins.contains('x86_nz')
