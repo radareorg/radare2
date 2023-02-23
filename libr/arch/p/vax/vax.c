@@ -2,7 +2,7 @@
 
 #include <r_lib.h>
 #include <r_arch.h>
-#include "asm/arch/include/disas-asm.h"
+#include "../../../asm/arch/include/disas-asm.h"
 #include "vax.h"
 
 // XXX: this is just a PoC
