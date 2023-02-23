@@ -7,8 +7,8 @@ afi@0x1000013d8~noret[1]
 afi@0x1000044bd~noret[1]
 EOF
 EXPECT=<<EOF
-0x1000013d8
 0x1000044bd
+0x1000013d8
 true
 true
 EOF
