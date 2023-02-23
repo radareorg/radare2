@@ -2312,8 +2312,6 @@ static const char *macho_section_type_tostring(int flags) {
 		return "TLS_VARIABLES";
 	case S_THREAD_LOCAL_VARIABLE_POINTERS:
 		return "TLS_POINTERS";
-	case S_THREAD_LOCAL_INIT_FUNCTION_POINTERS:
-		return "TLS_INIT_FUNCTIONS";
 	case S_GB_ZEROFILL:
 		return "GB_ZEROFILL";
 	case S_COALESCED:
@@ -2330,6 +2328,10 @@ static const char *macho_section_type_tostring(int flags) {
 		return "MOD_TERM_FUNC_POINTERS";
 	case S_LAZY_DYLIB_SYMBOL_POINTERS:
 		return "LAZY_DYLIB_SYMBOL_POINTERS";
+	case S_THREAD_LOCAL_INIT_FUNCTION_POINTERS:
+		return "TLS_INIT_FUNCTIONS";
+	case S_INIT_FUNC_OFFSETS:
+		return "INIT_FUNC_OFFSETS";
 #if 0
 	S_ATTR_PURE_INSTRUCTIONS   = 0x80000000u,
 	S_ATTR_NO_TOC              = 0x40000000u,
@@ -2345,7 +2347,7 @@ static const char *macho_section_type_tostring(int flags) {
 	INDIRECT_SYMBOL_ABS   = 0x40000000u
 #endif
 	}
-	eprintf ("Unk %x\n", flags);
+	R_LOG_WARN ("Unknown section flags 0x%x", flags);
 	return "";
 }
 
