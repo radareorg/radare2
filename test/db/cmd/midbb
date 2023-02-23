@@ -659,3 +659,55 @@ EXPECT=<<EOF
 [36m|[0m           [32m0x00560e99[0m      [37m14[32m00[0m           [33madc[36m al[0m,[36m [33m0[0m[0m[0m
 EOF
 RUN
+
+# test color bugs
+
+# r2 -N -qe bin.types=false  -s 0x00560e99 -c 'pd 3' bins/pe/cmd_adf_sample0.exe
+NAME=color0
+FILE=bins/pe/cmd_adf_sample0.exe
+CMDS=<<EOF
+s..560e99
+pd 3 @e:scr.color=1
+EOF
+EXPECT=<<EOF
+            [32m0x00560e99[0m      [37m14[32m00[0m           [33madc[36m al[0m,[36m [33m0[0m[0m[0m
+            [32m0x00560e9b[0m      [32m00[32m00[0m           [33madd byte[36m [0m[[36meax[0m][36m[0m,[36m al[0m[0m[0m
+            [32m0x00560e9d[0m      [37ma8[33m36[0m           [33mtest[36m al[0m,[36m[36m [33m0x36[0m[0m[31m               [31m; 54[0m
+EOF
+RUN
+
+# r2 -q -c 'f sym.real=0x00560e95;f sym.dummy=0x00560e97;s 0x00560e95;pd 3' bins/pe/cmd_adf_sample0.exe
+NAME=color1
+FILE=bins/pe/cmd_adf_sample0.exe
+CMDS=<<EOF
+e scr.color=1
+f sym.real=0x00560e95
+f sym.dummy=0x00560e97
+s 0x00560e95
+pd 3
+EOF
+EXPECT=<<EOF
+            [36m;-- sym.real:[0m
+            [32m0x00560e95[0m  ~   [37mba[37m0f[33m31[37me9[37m14[0m     [37mmov[36m edx[0m,[36m[36m [33m0x14e9310f[0m[0m[0m
+            [36m;-- sym.dummy:[0m
+            [32m0x00560e97[0m      [33m31[37me9[0m           [33mxor[36m ecx[0m,[36m ebp[0m[0m[0m
+            [32m0x00560e99[0m      [37m14[32m00[0m           [33madc[36m al[0m,[36m [33m0[0m[0m[0m
+EOF
+RUN
+
+# r2 -q -c 's 0x100004420;pd 1' /bin/ls
+NAME=color2
+FILE=bins/mach0/ls-m1
+ARGS=-a arm -b64
+CMDS=<<EOF
+e scr.color=1
+s 0x100003b34
+pd 1
+f sup.babel0=0x100003bc0
+pd 1
+EOF
+EXPECT=<<EOF
+        [36m,[0m[36m=[0m[36m<[0m [32m0x100003b34[0m      [33m60[37m04[32m00[37mb4[0m       [32mcbz[36m x0[0m,[36m[36m [33m0x100003bc0[0m[0m[0m
+        [36m,[0m[36m=[0m[36m<[0m [32m0x100003b34[0m      [33m60[37m04[32m00[37mb4[0m       [32mcbz[36m x0[0m,[36m[36m sup.babel0[0m[0m[0m
+EOF
+RUN
