@@ -306,6 +306,7 @@ extern RArchPlugin r_arch_plugin_z80;
 extern RArchPlugin r_arch_plugin_lm32;
 extern RArchPlugin r_arch_plugin_bpf;
 extern RArchPlugin r_arch_plugin_bpf_cs;
+extern RArchPlugin r_arch_plugin_vax;
 
 #ifdef __cplusplus
 }
