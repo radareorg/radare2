@@ -10,11 +10,10 @@
 // >     11: signed 30 bits, 4 bytes
 // Based off of `operand' in Inferno's load.c
 static bool dis_read_operand(RBuffer *buf, st32 *n) {
-	ut8 b;
-	if (r_buf_read (buf, &b, sizeof (b)) != sizeof (b)) {
+	ut8 c;
+	if (r_buf_read (buf, &c, sizeof (c)) != sizeof (c)) {
 		return false;
 	}
-	st32 c = b;
 
 	switch (c & 0xc0) {
 	case 0x00:
@@ -24,6 +23,7 @@ static bool dis_read_operand(RBuffer *buf, st32 *n) {
 		*n = c | ~0x7f;
 		return true;
 	case 0x80: {
+		ut8 b;
 		if (r_buf_read (buf, &b, sizeof (b)) != sizeof (b)) {
 			return false;
 		}
