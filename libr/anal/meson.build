@@ -42,10 +42,6 @@ r_anal_sources = [
   'p/anal_6502_cs.c',
   'p/anal_8051.c',
 
-  'p/anal_alpha.c',
-  '../asm/arch/alpha/gnu/alpha-dis.c',
-  '../asm/arch/alpha/gnu/alpha-opc.c',
-
 #  'p/anal_arc.c',
 #  'arch/arc/gnu/arc-dis.c',
 #  'arch/arc/gnu/arc-opc.c',
