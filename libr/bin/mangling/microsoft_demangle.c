@@ -38,6 +38,7 @@ typedef enum ETCState { // TC - type code
 	eTCStateC, eTCStateE, eTCStateF, eTCStateG, eTCStateI, eTCStateJ, eTCStateK,
 	eTCStateM, eTCStateZ, eTCState_, eTCStateT, eTCStateU, eTCStateW, eTCStateV,
 	eTCStateO, eTCStateS, eTCStateP, eTCStateR, eTCStateQ, eTCStateA, eTCState$,
+	eTCState0, eTCState1, eTCStatec, eTCStateo,
 	eTCStateMax
 } ETCState;
 
@@ -773,6 +774,10 @@ get_namespace_and_name_err:
 	return read_len;
 }
 
+#define SINGLEQUOTED_0 '0'
+#define SINGLEQUOTED_1 '1'
+#define SINGLEQUOTED_c 'c'
+#define SINGLEQUOTED_o 'o'
 #define SINGLEQUOTED_U 'U'
 #define SINGLEQUOTED_X 'X'
 #define SINGLEQUOTED_D 'D'
@@ -1406,6 +1411,11 @@ static void tc_state_start(SStateInfo *state, STypeCodeStr *type_code_str) {
 		break; \
 
 	switch (*(state->buff_for_parsing)) {
+	ONE_LETTER_STATE (0)
+	ONE_LETTER_STATE (1)
+	ONE_LETTER_STATE (c)
+	ONE_LETTER_STATE (o)
+	//
 	ONE_LETTER_STATE (X)
 	ONE_LETTER_STATE (D)
 	ONE_LETTER_STATE (C)
