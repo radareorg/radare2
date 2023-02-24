@@ -228,7 +228,6 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 #else
 			switch (errno) {
 			case EPERM:
-				ret = pid;
 				R_LOG_ERROR ("ptrace_attach: Operation not permitted");
 				break;
 			case EINVAL:
@@ -241,7 +240,7 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 			return NULL;
 #endif
 		} else if (__waitpid (pid)) {
-			ret = pid;
+			/*Do Nothing*/
 		} else {
 			R_LOG_ERROR ("waitpid");
 			return NULL;
