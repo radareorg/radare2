@@ -1,7 +1,37 @@
 #ifndef DEMANGLER_H
 #define DEMANGLER_H
+#include <r_types.h>
+#include <r_list.h>
 
-#include "demangler_types.h"
+/// Enum of possible errors while demangler working
+typedef enum EDemanglerErr {
+	eDemanglerErrOK = 0, ///< if all is OK
+	eDemanglerErrMemoryAllocation, ///< some memory allocation problem
+	eDemanglerErrUnsupportedMangling, ///< unsupported mangling scheme yet
+	eDemanglerErrUnknown, ///< unknown mangling scheme
+	eDemanglerErrUncorrectMangledSymbol, ///< uncorrect mangled symbol
+	eDemanglerErrMax
+} EDemanglerErr;
+
+struct SDemangler;
+typedef EDemanglerErr (*demangle_func)(struct SDemangler *, char **res);
+/// Demangler object
+typedef struct SDemangler {
+	char *symbol; ///< symbol that need to be demangled
+	demangle_func demangle; ///< function that will use for demangling
+	RList *abbr_types;
+	RList *abbr_names;
+} SDemangler;
+
+///////////////////////////////////////////////////////////////////////////////
+/// \brief Do demangle for microsoft mangling scheme. Demangled name need to be
+///			free by user
+/// \param demangler 'this' object of demangler
+/// \param demangled_name Demangled name of symbol of demangler object
+/// \return Returns OK if initialization has been finish with success, else one
+///			of next errors: eDemanglerErrUnsupportedMangling, ...
+///////////////////////////////////////////////////////////////////////////////
+EDemanglerErr microsoft_demangle(SDemangler *demangler, char **demangled_name);
 
 ///////////////////////////////////////////////////////////////////////////////
 // Usage of SDemangler:
