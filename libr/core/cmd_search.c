@@ -161,7 +161,7 @@ static const char *help_msg_slash_a[] = {
 	"/ab", " [delta]", "search for backward jumps (usually loops)",
 	"/ac", " mov eax", "same as /aa, but case-sensitive",
 	"/ad", "[/*j] push;mov", "match ins1 followed by ins2 in linear disasm",
-	"/ad/", " ins1;ins2", "search for regex instruction 'ins1' followed by regex 'ins2'",
+	"/ad/", " ins1;ins2", "search for regex 'ins1' followed by regex 'ins2' ('""' to use ;|` in the regex)",
 	"/ad/a", " instr", "search for every byte instruction that matches regexp 'instr'",
 	"/ae", " esil", "search for esil expressions matching substring",
 	"/af", "[l] family", "search for instruction of specific family (afl=list",
@@ -207,7 +207,7 @@ static const char *help_msg_slash_r[] = {
 };
 
 static const char *help_msg_slash_R[] = {
-	"Usage: /R", "", "search for ROP gadgets",
+	"Usage: /R", "", "search for ROP gadgets (hint: quote the command if your regex uses special chars)",
 	"/R", " [filter-by-string]", "show gadgets",
 	"/R/", " [filter-by-regexp]", "show gadgets [regular expression]",
 	"/R/j", " [filter-by-regexp]", "json output [regular expression]",
