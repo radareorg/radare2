@@ -1,3 +1,30 @@
+NAME=dwarf5crash
+FILE=bins/elf/dwarf/dwarf5-crash
+CMDS=<<EOF
+CL
+EOF
+EXPECT=<<EOF
+file: ../../../src/libgcc/config/i386/crtfastmath.c
+line: 84
+addr: 0x00001050
+file: ../../../src/libgcc/config/i386/crtfastmath.c
+line: 94
+addr: 0x00001054
+file: ../../../src/libgcc/config/i386/crtfastmath.c
+line: 95
+addr: 0x00001059
+file: ../../../src/libgcc/config/i386/crtfastmath.c
+line: 96
+addr: 0x00001061
+file: ../../../src/libgcc/config/i386/crtfastmath.c
+line: 98
+addr: 0x00001066
+file: ../../../src/libgcc/config/i386/crtfastmath.c
+line: 98
+addr: 0x00001067
+EOF
+RUN
+
 NAME="ansi injection via dwarf"
 FILE=bins/elf/dwarf_test_func_patched
 ARGS=-AA
