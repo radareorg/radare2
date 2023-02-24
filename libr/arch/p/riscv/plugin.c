@@ -345,8 +345,9 @@ static bool riscv_decode(RArchSession *s, RAnalOp *op, RArchDecodeMask mask) {
 	if (len < 2) {
 		op->size = 2;
 		free (op->mnemonic);
+		op->type = R_ANAL_OP_TYPE_ILL;
 		op->mnemonic = strdup ("truncated");
-		return -1;
+		return false;
 	}
 
 	if (len >= sizeof (ut64)) {
@@ -367,7 +368,7 @@ static bool riscv_decode(RArchSession *s, RAnalOp *op, RArchDecodeMask mask) {
 	struct riscv_opcode *o = get_opcode (word);
 	if (word == UT64_MAX) {
 		op->type = R_ANAL_OP_TYPE_ILL;
-		return -1;
+		return false;
 	}
 	if (!o || !o->name) {
 		return op->size;
@@ -393,7 +394,7 @@ static bool riscv_decode(RArchSession *s, RAnalOp *op, RArchDecodeMask mask) {
 	}
 
 	if (o > &riscv_opcodes[NUMOPCODES - 1]) {
-		return -1;
+		return false;
 	}
 
 	if (o->args) {

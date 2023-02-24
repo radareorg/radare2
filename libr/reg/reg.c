@@ -153,6 +153,10 @@ R_API int r_reg_get_name_idx(const char *type) {
 	case 'S' + ('R' << 8): return R_REG_NAME_SR;
 	case 'L' + ('R' << 8): return R_REG_NAME_LR;
 	case 'S' + ('P' << 8): return R_REG_NAME_SP;
+#if R2_590
+	case 'G' + ('P' << 8): return R_REG_NAME_GP;
+	case 'R' + ('A' << 8): return R_REG_NAME_RA;
+#endif
 	case 'B' + ('P' << 8): return R_REG_NAME_BP;
 	case 'S' + ('N' << 8): return R_REG_NAME_SN;
 	/* args */

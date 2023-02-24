@@ -23,7 +23,7 @@
 #include "sysdep.h"
 #include <stdio.h>
 #include "disas-asm.h"
-#include "opcode/alpha.h"
+#include "opcode-alpha.h"
 
 /* OSF register names.  */
 
@@ -32,10 +32,10 @@ static const char *const osf_regnames[64] = {
   "t7", "s0", "s1", "s2", "s3", "s4", "s5", "fp",
   "a0", "a1", "a2", "a3", "a4", "a5", "t8", "t9",
   "t10", "t11", "ra", "t12", "at", "gp", "sp", "zero",
-  "$f0", "$f1", "$f2", "$f3", "$f4", "$f5", "$f6", "$f7",
-  "$f8", "$f9", "$f10", "$f11", "$f12", "$f13", "$f14", "$f15",
-  "$f16", "$f17", "$f18", "$f19", "$f20", "$f21", "$f22", "$f23",
-  "$f24", "$f25", "$f26", "$f27", "$f28", "$f29", "$f30", "$f31"
+  "f0", "f1", "f2", "f3", "f4", "f5", "f6", "f7",
+  "f8", "f9", "f10", "f11", "f12", "f13", "f14", "f15",
+  "f16", "f17", "f18", "f19", "f20", "f21", "f22", "f23",
+  "f24", "f25", "f26", "f27", "f28", "f29", "f30", "f31"
 };
 
 /* VMS register names.  */
@@ -181,7 +181,7 @@ print_insn_alpha (bfd_vma memaddr, struct disassemble_info *info)
 	  ((operand->flags & (AXP_OPERAND_PARENS | AXP_OPERAND_COMMA))
 	   != AXP_OPERAND_PARENS))
 	{
-	  (*info->fprintf_func) (info->stream, ",");
+	  (*info->fprintf_func) (info->stream, ", ");
 	}
       if (operand->flags & AXP_OPERAND_PARENS)
 	(*info->fprintf_func) (info->stream, "(");

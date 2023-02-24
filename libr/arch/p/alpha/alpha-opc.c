@@ -22,7 +22,7 @@
 
 #include "sysdep.h"
 #include <stdio.h>
-#include "opcode/alpha.h"
+#include "opcode-alpha.h"
 #include "mybfd.h"
 #include "opintl.h"
 

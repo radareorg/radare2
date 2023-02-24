@@ -8,6 +8,7 @@ anal_plugins = [ 'null' ]
 arch_plugins = [ 'null',
   'sh',
   'x86_nz',
+  'alpha',
   'bpf',
   'bpf_cs',
   'lm32',
@@ -146,7 +147,6 @@ if no_user_plugins
 anal_plugins += [
   '6502_cs',
   '8051',
-  'alpha',
   # 'arc',
   'arm_cs',
   'avr',
