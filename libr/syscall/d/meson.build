@@ -35,7 +35,7 @@ foreach file : sdb_files
     gen_cmd = sdb_gen_cmd_cgen
   else
     outfile = '@0@.sdb'.format(file)
-    gen_cmd = sdb_gen_cmd
+    gen_cmd = syscall_sdb_gen_cmd
   endif
 
   r_syscall_d_sources += custom_target(outfile,
