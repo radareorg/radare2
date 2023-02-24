@@ -55,16 +55,27 @@ static bool decode(RArchSession *a, RAnalOp *op, RArchDecodeMask mask) {
 	disasm_obj.stream = sb;
 	op->size = print_insn_alpha ((bfd_vma)op->addr, &disasm_obj);
 
+	char *instr = sb? r_strbuf_drain (sb): NULL;
+	if (instr && *instr == '.') {
+		R_FREE (instr);
+		op->type = R_ANAL_OP_TYPE_ILL;
+		op->size = 4;
+		if (mask & R_ARCH_OP_MASK_DISASM) {
+			op->mnemonic = strdup ("invalid");
+		}
+		free (instr);
+		return false;
+	}
 	if (mask & R_ARCH_OP_MASK_DISASM) {
 		if (op->size > 0) {
-			op->mnemonic = r_strbuf_drain (sb);
-			sb = NULL;
+			op->mnemonic = instr? instr: strdup ("");
 			r_str_replace_char (op->mnemonic, '\t', ' ');
 		} else {
+			free (instr);
 			op->mnemonic = strdup ("(data)");
 		}
-		r_strbuf_free (sb);
-		sb = NULL;
+	} else {
+		free (instr);
 	}
 	return true;
 }
@@ -72,13 +83,17 @@ static bool decode(RArchSession *a, RAnalOp *op, RArchDecodeMask mask) {
 static char *regs(RArchSession *as) {
 	const char *const p =
 		"=PC    pc\n"
-		"=SP    sp\n"
-		"=BP    fp\n"
-		"=A0    r0\n"
-		"=A1    r1\n"
-		"=A2    r2\n"
-		"=A3    r3\n"
-		"=SN    r0\n"
+		"=SP    r30\n"
+		"=BP    r28\n"
+#if R2_590
+		"=RA    r28\n"
+		"=GP    r29\n"
+#endif
+		"=A0    r15\n"
+		"=A1    r16\n"
+		"=A2    r17\n"
+		"=A3    r18\n"
+		"=SN    r15\n"
 		"=R0    r0\n"
 		"=R1    r1\n"
 		"gpr	r0	.64	0	0\n"
@@ -109,10 +124,10 @@ static char *regs(RArchSession *as) {
 		"gpr	r25 	.64	200	0\n"
 		"gpr	r26	.64	208	0\n"
 		"gpr	r27	.64	216	0\n"
-		"gpr	r28	.64	224	0\n"
-		"gpr	r29	.64	232	0\n"
-		"gpr	r30	.64	240	0\n"
-		"gpr	r31	.64	?0	0\n"
+		"gpr	r28	.64	224	0\n" // at
+		"gpr	r29	.64	232	0\n" // gp
+		"gpr	r30	.64	240	0\n" // sp
+		"gpr	r31	.64	?0	0\n" // zero
 		"gpr	pc	.64	256	0\n"
 		"gpr	lr0	.64	264	0\n"
 		"gpr	lr1	.64	272	0\n"
@@ -121,12 +136,17 @@ static char *regs(RArchSession *as) {
 	return strdup (p);
 }
 
+static int info(RArchSession *s, ut32 q) {
+	return 4;
+}
+
 RArchPlugin r_arch_plugin_alpha = {
 	.name = "alpha",
 	.arch = "alpha",
 	.license = "GPL",
 	.bits = R_SYS_BITS_PACK1 (64),
 	.endian = R_SYS_ENDIAN_LITTLE,
+	.info = &info,
 	.desc = "ALPHA architecture plugin",
 	.regs = regs,
 	.decode = &decode
