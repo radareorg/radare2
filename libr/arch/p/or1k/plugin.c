@@ -16,8 +16,21 @@ struct operands {
 };
 
 // XXX remove globals and move into init/fini data pointer or just reimplement this into an ctual anal plugin for 5.9 so maybe its not worth
-static R_TH_LOCAL ut32 cpu[32] = {0}; /* register contents */
-static R_TH_LOCAL ut32 cpu_enable; /* allows to treat only registers with known value as valid */
+struct or1k_regs {
+	ut32 cpu[32]; /* register contents */
+	ut32 cpu_enable; /* allows to treat only registers with known value as valid */
+};
+
+static bool or1k_init(RArchSession *s) {
+	r_return_val_if_fail (s && !s->data, false);
+	s->data = R_NEW0 (struct or1k_regs);
+	return s->data? true: false;
+}
+
+static bool or1k_fini(RArchSession *s) {
+	R_FREE (s->data);
+	return true;
+}
 
 static char *insn_to_str(ut64 addr, insn_t *descr, insn_extra_t *extra, ut32 insn) {
 	struct operands o = {0};
@@ -101,7 +114,7 @@ static ut64 n_oper_to_addr(ut32 n, ut32 mask, ut64 addr) {
 	return (ut64) ((st64) ((st32) (sign_extend(n, mask) << 2)) + addr);
 }
 
-static int insn_to_op(RAnalOp *op, ut64 addr, insn_t *descr, insn_extra_t *extra, ut32 insn) {
+static int insn_to_op(struct or1k_regs *regs, RAnalOp *op, ut64 addr, insn_t *descr, insn_extra_t *extra, ut32 insn) {
 	struct operands o = {0};
 	insn_type_t type = type_of_opcode (descr, extra);
 	insn_type_descr_t *type_descr = &types[INSN_X];
@@ -142,16 +155,16 @@ static int insn_to_op(RAnalOp *op, ut64 addr, insn_t *descr, insn_extra_t *extra
 	case 0x11: /* l.jr */
 		o.rb = get_operand_value (insn, type_descr, INSN_OPER_B);
 		op->eob = true;
-		if (cpu_enable & (1 << o.rb)) {
-			op->jump = cpu[o.rb];
+		if (regs->cpu_enable & (1 << o.rb)) {
+			op->jump = regs->cpu[o.rb];
 		}
 		op->delay = 1;
 		break;
 	case 0x12: /* l.jalr */
 		o.rb = get_operand_value(insn, type_descr, INSN_OPER_B);
 		op->eob = true;
-		if (cpu_enable & (1 << o.rb)) {
-			op->jump = cpu[o.rb];
+		if (regs->cpu_enable & (1 << o.rb)) {
+			op->jump = regs->cpu[o.rb];
 		}
 		op->delay = 1;
 		break;
@@ -160,8 +173,8 @@ static int insn_to_op(RAnalOp *op, ut64 addr, insn_t *descr, insn_extra_t *extra
 		case 0: /* l.movhi */
 			o.rd = get_operand_value (insn, type_descr, INSN_OPER_D);
 			o.k = get_operand_value (insn, type_descr, INSN_OPER_K);
-			cpu[o.rd] = o.k << 16;
-			cpu_enable |= (1 << o.rd);
+			regs->cpu[o.rd] = o.k << 16;
+			regs->cpu_enable |= (1 << o.rd);
 			break;
 		case 1: /* l.macrc */
 			break;
@@ -171,10 +184,10 @@ static int insn_to_op(RAnalOp *op, ut64 addr, insn_t *descr, insn_extra_t *extra
 		o.rd = get_operand_value (insn, type_descr, INSN_OPER_D);
 		o.ra = get_operand_value (insn, type_descr, INSN_OPER_A);
 		o.i = get_operand_value (insn, type_descr, INSN_OPER_I);
-		if (cpu_enable & (1 << o.ra) & cpu_enable & (1 << o.rd)) {
-			cpu[o.rd] = cpu[o.ra] | o.i;
-			cpu_enable |= (1 << o.rd);
-			op->ptr = cpu[o.rd];
+		if (regs->cpu_enable & (1 << o.ra) & regs->cpu_enable & (1 << o.rd)) {
+			regs->cpu[o.rd] = regs->cpu[o.ra] | o.i;
+			regs->cpu_enable |= (1 << o.rd);
+			op->ptr = regs->cpu[o.rd];
 			op->direction = 8; /* reference */
 		}
 		break;
@@ -182,27 +195,28 @@ static int insn_to_op(RAnalOp *op, ut64 addr, insn_t *descr, insn_extra_t *extra
 		o.rd = get_operand_value (insn, type_descr, INSN_OPER_D);
 		o.ra = get_operand_value (insn, type_descr, INSN_OPER_A);
 		o.i = get_operand_value (insn, type_descr, INSN_OPER_I);
-		if (cpu_enable & (1 << o.ra)) {
-			cpu[o.rd] = cpu[o.ra] | o.i;
-			cpu_enable |= (1 << o.rd);
-			op->ptr = cpu[o.rd];
+		if (regs->cpu_enable & (1 << o.ra)) {
+			regs->cpu[o.rd] = regs->cpu[o.ra] | o.i;
+			regs->cpu_enable |= (1 << o.rd);
+			op->ptr = regs->cpu[o.rd];
 			op->direction = 8; /* reference */
 		}
 		break;
 	default:
 		/* if unknown instruction encountered, better forget state */
-		cpu_enable = 0;
+		regs->cpu_enable = 0;
 	}
 
 	/* temporary solution to prevent using wrong register values */
 	if ((op->type & R_ANAL_OP_TYPE_JMP) == R_ANAL_OP_TYPE_JMP) {
 		/* FIXME: handle delay slot after branches */
-		cpu_enable = 0;
+		regs->cpu_enable = 0;
 	}
 	return 4;
 }
 
 static bool or1k_op(RArchSession *a, RAnalOp *op, RArchDecodeMask mask) {
+	struct or1k_regs *regs = a->data;
 	insn_t *insn_descr;
 	insn_extra_t *extra_descr;
 	const ut64 addr = op->addr;
@@ -235,12 +249,12 @@ static bool or1k_op(RArchSession *a, RAnalOp *op, RArchDecodeMask mask) {
 	if (!insn_descr->name && (insn_descr->extra)) {
 		extra_descr = find_extra_descriptor (insn_descr->extra, insn);
 		if (extra_descr) {
-			insn_to_op (op, addr, insn_descr, extra_descr, insn);
+			insn_to_op (regs, op, addr, insn_descr, extra_descr, insn);
 			line = insn_to_str (addr, insn_descr, extra_descr, insn);
 		}
 	} else {
 		/* otherwise basic descriptor is enough */
-		insn_to_op (op, addr, insn_descr, NULL, insn);
+		insn_to_op (regs, op, addr, insn_descr, NULL, insn);
 		line = insn_to_str (addr, insn_descr, NULL, insn);
 	}
 	if (mask & R_ARCH_OP_MASK_DISASM) {
@@ -268,6 +282,8 @@ RArchPlugin r_arch_plugin_or1k = {
 	.arch = "or1k",
 	.info = archinfo,
 	.decode = &or1k_op,
+	.init = or1k_init,
+	.fini = or1k_fini,
 };
 
 #ifndef R2_PLUGIN_INCORE
