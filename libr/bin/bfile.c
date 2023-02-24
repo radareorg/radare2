@@ -164,7 +164,6 @@ static int string_scan_range(RList *list, RBinFile *bf, int min, const ut64 from
 						out[i] = 0;
 					}
 				}
-				len = res;
 				free (buf);
 				buf = out;
 			}
