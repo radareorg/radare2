@@ -88,6 +88,22 @@ static char *swiftField(const char *dn, const char *cn) {
 	return NULL;
 }
 
+// R2_590 - move into rbin as public api
+static RBinSymbol *r_bin_symbol_clone(RBinSymbol *bs) {
+	RBinSymbol *nbs = R_NEW (RBinSymbol);
+	memcpy (nbs, bs, sizeof (RBinSymbol));
+	nbs->name = strdup (nbs->name);
+	if (nbs->dname) {
+		nbs->dname = strdup (nbs->dname);
+	}
+	if (nbs->libname) {
+		nbs->libname = strdup (nbs->libname);
+	}
+	if (nbs->classname) {
+		nbs->classname = strdup (nbs->classname);
+	}
+	return nbs;
+}
 static RList *classes_from_symbols(RBinFile *bf) {
 	RBinSymbol *sym;
 	RListIter *iter;
@@ -113,7 +129,8 @@ static RList *classes_from_symbols(RBinFile *bf) {
 				if (!mn) {
 					mn = strstr (dn, cn);
 					if (mn && mn[strlen (cn)] == '.') {
-						r_list_append (c->methods, sym);
+						RBinSymbol *dsym = r_bin_symbol_clone (sym);
+						r_list_append (c->methods, dsym);
 					}
 				}
 			}

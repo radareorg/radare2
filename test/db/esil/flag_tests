@@ -153,8 +153,8 @@ EXPECT=<<EOF
 0
 EOF
 EXPECT_ERR=<<EOF
-ESIL TRAP type 3 code 0x00000000 divbyzero
-ESIL TRAP type 3 code 0x00000000 divbyzero
-ESIL TRAP type 3 code 0x00000000 divbyzero
+INFO: ESIL TRAP type 3 code 0x00000000 divbyzero
+INFO: ESIL TRAP type 3 code 0x00000000 divbyzero
+INFO: ESIL TRAP type 3 code 0x00000000 divbyzero
 EOF
 RUN

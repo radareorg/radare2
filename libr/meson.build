@@ -16,6 +16,7 @@ arch_plugins = [ 'null',
   'arm',
   '6502',
   'or1k',
+  'dis',
   'evm',
   'nios2',
   'snes',
@@ -32,6 +33,7 @@ arch_plugins = [ 'null',
   'rsp',
   'propeller',
   'amd29k',
+  'vax',
 ]
 bin_plugins = [ 'any' ]
 bin_ldr_plugins = [ 'ldr_linux' ]
@@ -172,7 +174,6 @@ anal_plugins += [
   's390_cs',
   'tms320',
   'tricore',
-  'vax',
   'x86_cs',
   'xcore_cs'
 ]
@@ -211,6 +212,7 @@ bin_plugins += [
   'cgc',
   'coff',
   'dex',
+  'dis',
   'dmp64',
   'dol',
   'dyldcache',

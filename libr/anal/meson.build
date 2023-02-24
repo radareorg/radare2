@@ -101,8 +101,6 @@ r_anal_sources = [
   'p/anal_sparc_gnu.c',
   'p/anal_tms320.c',
   'p/anal_tricore.c',
-  'p/anal_vax.c',
-  'arch/vax/vax-dis.c',
   # join_paths('arch/whitespace/wsdis.c'),
   'p/anal_x86_cs.c',
   'p/anal_xcore_cs.c',

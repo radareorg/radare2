@@ -19,6 +19,7 @@ r_arch_sources = [
   'p/xtensa/gnu/xtensa-dis.c',
   'p/xtensa/gnu/xtensa-isa.c',
   'p/xtensa/gnu/xtensa-modules.c',
+  'p/dis/plugin.c',
   'p/evm/plugin.c',
   'p/propeller/plugin.c',
   'p/propeller/propeller_disas.c',
@@ -57,6 +58,8 @@ r_arch_sources = [
   'p/nios2/plugin.c',
   'p/nios2/nios2-opc.c',
   'p/nios2/nios2-dis.c',
+  'p/vax/vax.c',
+  'p/vax/vax-dis.c',
 ]
 
 if arch_plugins.contains('x86_nz')

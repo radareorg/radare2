@@ -858,6 +858,7 @@ extern RBinPlugin r_bin_plugin_mach064;
 extern RBinPlugin r_bin_plugin_mdmp;
 extern RBinPlugin r_bin_plugin_java;
 extern RBinPlugin r_bin_plugin_dex;
+extern RBinPlugin r_bin_plugin_dis;
 extern RBinPlugin r_bin_plugin_coff;
 extern RBinPlugin r_bin_plugin_xcoff64;
 extern RBinPlugin r_bin_plugin_ningb;

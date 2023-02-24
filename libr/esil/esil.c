@@ -804,7 +804,7 @@ static bool esil_js(REsil *esil) {
 //	- condret
 // YES PLS KILL IT
 static bool esil_address(REsil *esil) {
-	R_LOG_WARN ("support for esil operation $$ is about to end soon, avoid using it!");
+	R_LOG_WARN ("Support for esil operation $$ is about to end soon, avoid using it!");
 	r_return_val_if_fail (esil, false);
 	// esil->address = r_reg_getv (esil->anal->reg, "pc");
 	return r_esil_pushnum (esil, esil->address);
@@ -887,7 +887,7 @@ static bool esil_neg(REsil *esil) {
 				ret = true;
 				r_esil_pushnum (esil, !num);
 			} else {
-				eprintf ("0x%08"PFMT64x" esil_neg: unknown reg %s\n", esil->address, src);
+				R_LOG_WARN ("0x%08"PFMT64x" esil_neg: unknown reg %s", esil->address, src);
 			}
 		}
 	} else {
@@ -1305,7 +1305,7 @@ static bool esil_lsreq(REsil *esil) {
 		if (src && r_esil_get_parm (esil, src, &num2)) {
 			if (num2 > 63) {
 				if (esil->verbose) {
-					eprintf ("Invalid shift at 0x%08"PFMT64x"\n", esil->address);
+					R_LOG_WARN ("Invalid shift at 0x%08"PFMT64x, esil->address);
 				}
 				num2 = 63;
 			}
@@ -1358,21 +1358,21 @@ static bool esil_asreq(REsil *esil) {
 					int shift = regsize - 1;
 					if (shift < 0 || shift > regsize - 1) {
 						if (esil->verbose) {
-							eprintf ("Invalid asreq shift of %d at 0x%"PFMT64x"\n", shift, esil->address);
+							R_LOG_WARN ("Invalid asreq shift of %d at 0x%"PFMT64x, shift, esil->address);
 						}
 						shift = 0;
 					}
 					if (param_num > regsize - 1) {
 						// capstone bug?
 						if (esil->verbose) {
-							eprintf ("Invalid asreq shift of %"PFMT64d" at 0x%"PFMT64x"\n", param_num, esil->address);
+							R_LOG_WARN ("Invalid asreq shift of %"PFMT64d" at 0x%"PFMT64x, param_num, esil->address);
 						}
 						param_num = 30;
 					}
 					if (shift >= 63) {
 						// LL can't handle LShift of 63 or more
 						if (esil->verbose) {
-							eprintf ("Invalid asreq shift of %d at 0x%08"PFMT64x"\n", shift, esil->address);
+							R_LOG_WARN ("Invalid asreq shift of %d at 0x%08"PFMT64x, shift, esil->address);
 						}
 					} else if (op_num & (1LL << shift)) {
 						left_bits = (1 << param_num) - 1;
@@ -1391,7 +1391,7 @@ static bool esil_asreq(REsil *esil) {
 			ret = true;
 		} else {
 			if (esil->verbose) {
-				eprintf ("esil_asr: empty stack\n");
+				R_LOG_WARN ("esil_asr: empty stack");
 			}
 		}
 	}
@@ -1411,7 +1411,7 @@ static bool esil_asr(REsil *esil) {
 			if (param_num > regsize - 1) {
 				// capstone bug?
 				if (esil->verbose) {
-					eprintf ("Invalid asr shift of %"PFMT64d" at 0x%"PFMT64x"\n", param_num, esil->address);
+					R_LOG_WARN ("Invalid asr shift of %"PFMT64d" at 0x%"PFMT64x, param_num, esil->address);
 				}
 				param_num = 30;
 			}
@@ -1575,7 +1575,7 @@ R_API bool r_esil_dumpstack(REsil *esil) {
 	r_return_val_if_fail (esil, false);
 	int i;
 	if (esil->trap) {
-		eprintf ("ESIL TRAP type %d code 0x%08x %s\n",
+		R_LOG_INFO ("ESIL TRAP type %d code 0x%08x %s",
 			esil->trap, esil->trap_code,
 			r_esil_trapstr (esil->trap));
 	}
@@ -1631,7 +1631,7 @@ static bool esil_mod(REsil *esil) {
 		if (dst && r_esil_get_parm (esil, dst, &d)) {
 			if (s == 0) {
 				if (esil->verbose > 0) {
-					eprintf ("0x%08"PFMT64x" esil_mod: Division by zero!\n", esil->address);
+					R_LOG_WARN ("0x%08"PFMT64x" esil_mod: Division by zero!", esil->address);
 				}
 				esil->trap = R_ANAL_TRAP_DIVBYZERO;
 				esil->trap_code = 0;
@@ -1657,7 +1657,7 @@ static bool esil_signed_mod(REsil *esil) {
 		if (dst && r_esil_get_parm (esil, dst, (ut64 *)&d)) {
 			if (ST64_DIV_OVFCHK (d, s)) {
 				if (esil->verbose > 0) {
-					eprintf ("0x%08"PFMT64x" esil_mod: Division by zero!\n", esil->address);
+					R_LOG_WARN ("0x%08"PFMT64x" esil_mod: Division by zero!", esil->address);
 				}
 				esil->trap = R_ANAL_TRAP_DIVBYZERO;
 				esil->trap_code = 0;
@@ -2864,9 +2864,15 @@ static bool esil_dup(REsil *esil) {
 	r_return_val_if_fail (esil, false);
 	const int stackptr = esil->stackptr;
 	if (!esil->stack || stackptr < 1 || stackptr > (esil->stacksize - 1)) {
+		R_LOG_WARN ("Nothing to dup");
 		return false;
 	}
-	return r_esil_push (esil, esil->stack[stackptr - 1]);
+	const char *ss = esil->stack[stackptr - 1];
+	if (ss && *ss) {
+		return r_esil_push (esil, ss);
+	}
+	R_LOG_WARN ("Nothing to dup");
+	return false;
 }
 
 static bool esil_swap(REsil *esil) {
@@ -2963,7 +2969,6 @@ static bool esil_set_jump_target(REsil *esil) {
 		esil->jump_target_set = 1;
 		ret = true;
 	} else {
-		R_FREE (src);
 		R_LOG_DEBUG ("esil_set_jump_target: empty stack");
 	}
 	free (src);
@@ -2978,7 +2983,6 @@ static bool esil_set_jump_target_set(REsil *esil) {
 		esil->jump_target_set = s;
 		ret = true;
 	} else {
-		R_FREE (src);
 		R_LOG_DEBUG ("esil_set_jump_target_set: empty stack");
 	}
 	free (src);
@@ -2993,7 +2997,6 @@ static bool esil_set_delay_slot(REsil *esil) {
 		esil->delay = s;
 		ret = true;
 	} else {
-		R_FREE (src);
 		R_LOG_DEBUG ("esil_set_delay_slot: empty stack");
 	}
 	free (src);
@@ -3060,10 +3063,15 @@ static bool esil_double_to_int(REsil *esil) {
 	char *src = r_esil_pop (esil);
 	if (src) {
 		if (esil_get_parm_float (esil, src, &s.f64)) {
-			if (isnan(s.f64) || isinf(s.f64)) {
+			if (isnan (s.f64) || isinf (s.f64)) {
 				R_LOG_DEBUG ("esil_float_to_int: nan or inf detected");
 			}
-			ret = r_esil_pushnum (esil, (st64)(s.f64));
+			if (s.f64 > ST64_MIN || s.f64 < ST64_MAX) {
+				ret = r_esil_pushnum (esil, (st64)(s.f64));
+			} else {
+				R_LOG_DEBUG ("double-to-int out of range");
+				ret = r_esil_pushnum (esil, 0);
+			}
 		} else {
 			R_LOG_DEBUG ("esil_float_to_int: invalid parameters");
 		}
@@ -3725,16 +3733,11 @@ R_API void r_esil_stack_free(REsil *esil) {
 }
 
 R_API int r_esil_condition(REsil *esil, const char *str) {
-	char *popped;
-	int ret;
-	if (!esil) {
-		return false;
-	}
-	while (*str == ' ') {
-		str++; // use proper string chop?
-	}
+	r_return_val_if_fail (esil, -1);
+	int ret = -1;
+	str = r_str_trim_head_ro (str);
 	(void) r_esil_parse (esil, str);
-	popped = r_esil_pop (esil);
+	char *popped = r_esil_pop (esil);
 	if (popped) {
 		ut64 num;
 		if (isregornum (esil, popped, &num)) {

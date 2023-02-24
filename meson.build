@@ -281,6 +281,7 @@ else
 endif
 
 # handle openssl library
+use_ssl_crypto = get_option('use_ssl_crypto')
 if get_option('use_ssl')
   static_sys_openssl = get_option('static_sys_openssl')
   sys_openssl = dependency('openssl', required: false, static: static_sys_openssl)

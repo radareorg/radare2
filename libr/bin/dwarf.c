@@ -2773,7 +2773,8 @@ static void free_loc_table_entry(HtUPKv *kv) {
 }
 
 R_API void r_bin_dwarf_free_loc(HtUP /*<offset, RBinDwarfLocList*>*/ *loc_table) {
-	r_return_if_fail (loc_table);
-	loc_table->opt.freefn = free_loc_table_entry;
-	ht_up_free (loc_table);
+	if (loc_table) {
+		loc_table->opt.freefn = free_loc_table_entry;
+		ht_up_free (loc_table);
+	}
 }
