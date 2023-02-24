@@ -659,8 +659,12 @@ static const ut8 *parse_line_header_source_dwarf5(RBinFile *bf, const ut8 *buf, 
 						buf = NULL;
 						goto beach;
 					}
-					ut8 *name_start = section + section_offset;
-					name = r_str_ndup ((const char *)name_start, maxlen);
+					if (section_offset < section_len) {
+						ut8 *name_start = section + section_offset;
+						name = r_str_ndup ((const char *)name_start, maxlen);
+					} else {
+						name = NULL;
+					}
 					free (section);
 					break;
 				case DW_FORM_data1:
