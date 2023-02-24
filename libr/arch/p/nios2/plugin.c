@@ -72,13 +72,23 @@ static bool decode(RArchSession *session, RAnalOp *op, RArchDecodeMask mask) {
 	const ut64 addr = op->addr;
 	const ut8 *b = op->bytes;
 	const size_t len = op->size;
-	if (!op) {
-		return 1;
+
+	if (op->size < 4) {
+		if (mask & R_ARCH_OP_MASK_DISASM) {
+			free (op->mnemonic);
+			op->mnemonic = strdup ("truncated");
+		}
+		op->type = R_ANAL_OP_TYPE_ILL;
+		return false;
 	}
-	if (mask & R_ARCH_OP_MASK_DISASM) {
-		disassemble (session, op, addr, b, len);
-	}
+	disassemble (session, op, addr, b, len);
 	op->size = 4;
+	if (op->mnemonic && r_str_startswith (op->mnemonic, "0x")) {
+		op->type = R_ANAL_OP_TYPE_ILL;
+		free (op->mnemonic);
+		op->mnemonic = strdup ("invalid");
+		return false;
+	}
 
 	if ((b[0] & 0xff) == 0x3a) {
 		// XXX
@@ -146,17 +156,77 @@ static bool decode(RArchSession *session, RAnalOp *op, RArchDecodeMask mask) {
 			break;
 		}
 	}
-	return op->size;
+	return true;
+}
+
+static char *regs(RArchSession *as) {
+	 const char *const p = \
+	       // XXX aliases not verified
+		 "=PC	r31\n"
+		 "=A0	r0\n"
+		 "=A1	r1\n"
+		 "=A2	r2\n"
+		 "=A3	r3\n"
+		 "=A4	r4\n"
+		 "=A5	r5\n"
+		 "=A6	r6\n"
+		 "=A7	r7\n"
+		 "=R0	r0\n"
+		 "=R1	r1\n"
+		 "=SP	r30\n"
+		 "=LR	r29\n"
+		 "=BP	r28\n"
+		 "=SN	a0\n"
+		 "gpr	pc	.32	0	0\n"
+		 "gpr	r0	.32	4	0\n"
+		 "gpr	r1	.32	8	0\n"
+		 "gpr	r2	.32	12	0\n"
+		 "gpr	r3	.32	16	0\n"
+		 "gpr	r4	.32	20	0\n"
+		 "gpr	r5	.32	24	0\n"
+		 "gpr	r6	.32	28	0\n"
+		 "gpr	r7	.32	32	0\n"
+		 "gpr	r8	.32	36	0\n"
+		 "gpr	r9	.32	40	0\n"
+		 "gpr	r10	.32	44	0\n"
+		 "gpr	r11	.32	48	0\n"
+		 "gpr	r12	.32	52	0\n"
+		 "gpr	r13	.32	56	0\n"
+		 "gpr	r14	.32	60	0\n"
+		 "gpr	r15	.32	64	0\n"
+		 "gpr	r16	.32	68	0\n"
+		 "gpr	r17	.32	72	0\n"
+		 "gpr	r18	.32	76	0\n"
+		 "gpr	r19	.32	80	0\n"
+		 "gpr	r20	.32	84	0\n"
+		 "gpr	r21	.32	88	0\n"
+		 "gpr	r22	.32	92	0\n"
+		 "gpr	r23	.32	96	0\n"
+		 "gpr	r24	.32	100	0\n"
+		 "gpr	r25	.32	104	0\n"
+		 "gpr	r26	.32	108	0\n"
+		 "gpr	r27	.32	112	0\n"
+		 "gpr	r28	.32	116	0\n"
+		 "gpr	r29	.32	120	0\n"
+		 "gpr	r30	.32	124	0\n"
+		 "gpr	r31	.32	128	0\n"
+		 ;
+	 return strdup (p);
+}
+
+static int info(RArchSession *s, ut32 q) {
+	return 4;
 }
 
 RArchPlugin r_arch_plugin_nios2 = {
 	.name = "nios2",
+	.arch = "nios2",
 	.desc = "NIOS II code analysis plugin",
 	.license = "LGPL3",
 	.endian = R_SYS_ENDIAN_LITTLE | R_SYS_ENDIAN_BIG,
-	// TODO: missing reg profile
-	.arch = "nios2",
-	.bits = 32,
+	.info = info,
+	.regs = regs,
+	.bits = R_SYS_BITS_PACK1 (32),
 	.decode = &decode,
 };
 

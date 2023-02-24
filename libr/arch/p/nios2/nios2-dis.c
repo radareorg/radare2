@@ -209,6 +209,8 @@ nios2_print_insn_arg (const char *argptr,
   switch (*argptr)
     {
     case ',':
+      (*info->fprintf_func) (info->stream, "%c ", *argptr);
+      break;
     case '(':
     case ')':
       (*info->fprintf_func) (info->stream, "%c", *argptr);
