@@ -482,6 +482,10 @@ static size_t get_operator_code(const char *buf, RList *names_l, bool memorize) 
 				}
 				read_len += state.amount_of_read_chars + 1;
 				r_str_newf ("`RTTI Base Class Descriptor at (%s,%s,%s,%s)'", a, b, c, d);
+				free (a);
+				free (b);
+				free (c);
+				free (d);
 				break;
 			}
 			case '2': SET_OPERATOR_CODE ("`RTTI Base Class Array'"); break;
@@ -1442,7 +1446,10 @@ static void tc_state_start(SStateInfo *state, STypeCodeStr *type_code_str) {
 	ONE_LETTER_STATE (A)
 	ONE_LETTER_STATE ($)
 	default:
-		R_LOG_WARN ("invalid type %c", *(state->buff_for_parsing));
+		{
+			ut8 ch = *(state->buff_for_parsing);
+			R_LOG_WARN ("Invalid TCState type '%c' (0x%02x)", ch, ch);
+		}
 		state->state = eTCStateEnd;
 		state->err = eTCStateMachineErrUncorrectTypeCode;
 		break;
@@ -1454,7 +1461,7 @@ static void tc_state_start(SStateInfo *state, STypeCodeStr *type_code_str) {
 }
 
 static void tc_state_end(SStateInfo *state, STypeCodeStr *type_code_str) {
-	return;
+	/* nothing to see */
 }
 
 static void init_state_struct(SStateInfo *state, const char *buff_for_parsing) {
