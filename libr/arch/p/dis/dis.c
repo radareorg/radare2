@@ -48,8 +48,7 @@ static bool dis_read_operand(RBuffer *buf, st32 *n) {
 		} else {
 			c &= 0x3f;
 		}
-
-		*n = (c << 24) | (k[0] << 16) | (k[1] << 8) | k[2];
+		*n = (ut32)((ut32)c << 24) | (k[0] << 16) | (k[1] << 8) | k[2];
 		return true;
 	}
 	}
