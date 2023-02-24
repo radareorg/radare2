@@ -1,8 +1,7 @@
-/* radare - LGPL - Copyright 2015-2022 - inisider */
+/* radare - LGPL - Copyright 2015-2023 - inisider */
 
-#include "demangler.h"
 #include <r_types.h>
-#include "microsoft_demangle.h"
+#include "microsoft.h"
 
 typedef enum EManglingType {
 	eManglingMicrosoft = 0,
@@ -34,27 +33,25 @@ get_mangling_type_err:
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-EDemanglerErr create_demangler(SDemangler **demangler)
-{
+EDemanglerErr create_demangler(SDemangler **demangler) {
 	EDemanglerErr err = eDemanglerErrOK;
-
-	*demangler = (SDemangler *) malloc(sizeof (SDemangler));
-
+	SDemangler *sd = R_NEW0 (SDemangler);
+	*demangler = sd;
 	if (!*demangler) {
 		err = eDemanglerErrMemoryAllocation;
 		goto create_demagler_err;
 	}
-
-	(*demangler)->demangle = 0;
-	(*demangler)->symbol = 0;
+	sd->demangle = 0;
+	sd->symbol = 0;
+	sd->abbr_types = r_list_newf (free);
+	sd->abbr_names = r_list_newf (free);
 
 create_demagler_err:
 	return err;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-EDemanglerErr init_demangler(SDemangler *demangler, char *sym)
-{
+EDemanglerErr init_demangler(SDemangler *demangler, char *sym) {
 	EManglingType mangling_type = eManglingUnsupported;
 	EDemanglerErr err = eDemanglerErrOK;
 
@@ -94,8 +91,9 @@ init_demangler_err:
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-void free_demangler(SDemangler *demangler)
-{
-	R_FREE(demangler->symbol);
-	R_FREE(demangler);
+void free_demangler(SDemangler *sd) {
+	r_list_free (sd->abbr_types);
+	r_list_free (sd->abbr_names);
+	free (sd->symbol);
+	free (sd);
 }

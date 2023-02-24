@@ -142,7 +142,7 @@ r_bin_sources = [
   'mangling/demangler.c',
   'mangling/rust.c',
   'mangling/java.c',
-  'mangling/microsoft_demangle.c',
+  'mangling/microsoft.c',
   'mangling/msvc.c',
   'mangling/objc.c',
   'mangling/swift-sd.c',
