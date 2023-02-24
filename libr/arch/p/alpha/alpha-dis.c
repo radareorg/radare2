@@ -23,7 +23,7 @@
 #include "sysdep.h"
 #include <stdio.h>
 #include "disas-asm.h"
-#include "opcode/alpha.h"
+#include "opcode-alpha.h"
 
 /* OSF register names.  */
 

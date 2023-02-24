@@ -35,17 +35,17 @@ static bool decode(RArchSession *a, RAnalOp *op, RArchDecodeMask mask) {
 	ut8 bytes[BUFSZ] = {0};
 	RStrBuf *sb = NULL;
 	struct disassemble_info disasm_obj = {0};
-	if (op->bytes < 4) {
+	if (op->size < 4) {
 		op->mnemonic = strdup ("truncated");
 		return false;
 	}
 	if (mask & R_ARCH_OP_MASK_DISASM) {
 		sb = r_strbuf_new (NULL);
 	}
-	memcpy (bytes, op->bytes, R_MIN (op->bytes, BUFSZ));
+	memcpy (bytes, op->bytes, R_MIN (op->size, BUFSZ));
 	/* prepare disassembler */
 	disasm_obj.buffer = (ut8*)bytes;
-	disasm_obj.buffer_vma = addr;
+	disasm_obj.buffer_vma = op->addr;
 	disasm_obj.read_memory_func = &alpha_buffer_read_memory;
 	disasm_obj.symbol_at_address_func = &symbol_at_address;
 	disasm_obj.memory_error_func = &memory_error_func;
@@ -53,7 +53,7 @@ static bool decode(RArchSession *a, RAnalOp *op, RArchDecodeMask mask) {
 	disasm_obj.endian = BFD_ENDIAN_LITTLE;
 	disasm_obj.fprintf_func = &generic_fprintf_func;
 	disasm_obj.stream = sb;
-	op->size = print_insn_alpha ((bfd_vma)addr, &disasm_obj);
+	op->size = print_insn_alpha ((bfd_vma)op->addr, &disasm_obj);
 
 	if (mask & R_ARCH_OP_MASK_DISASM) {
 		if (op->size > 0) {
