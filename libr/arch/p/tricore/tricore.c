@@ -2,7 +2,7 @@
 
 #include <r_lib.h>
 #include <r_asm.h>
-#include <r_anal.h>
+#include <r_arch.h>
 
 #include "disas-asm.h"
 
@@ -61,7 +61,10 @@ static void memory_error_func(int status, bfd_vma memaddr, struct disassemble_in
 DECLARE_GENERIC_PRINT_ADDRESS_FUNC_NOGLOBALS()
 DECLARE_GENERIC_FPRINTF_FUNC_NOGLOBALS()
 
-static int disassemble(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
+static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
+	const int len = op->size;
+	const ut8 *buf = op->bytes;
+	const ut64 addr = op->addr;
 	ut8 bytes[BUFSZ] = {0};
 	struct disassemble_info disasm_obj;
 	RStrBuf *sb = r_strbuf_new ("");
@@ -69,7 +72,7 @@ static int disassemble(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 
 	/* prepare disassembler */
 	memset (&disasm_obj, '\0', sizeof (struct disassemble_info));
-	disasm_obj.disassembler_options = (a->config->bits == 64)?"64":"";
+	disasm_obj.disassembler_options = (as->config->bits == 64)?"64":"";
 	disasm_obj.buffer = bytes;
 	disasm_obj.buffer_vma = addr;
 	disasm_obj.read_memory_func = &tricore_buffer_read_memory;
@@ -81,7 +84,7 @@ static int disassemble(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 	disasm_obj.stream = sb;
 
 	// cpu type
-	disasm_obj.mach = cpu_to_mach (a->config->cpu);
+	disasm_obj.mach = cpu_to_mach (as->config->cpu);
 
 	int ret = print_insn_tricore ((bfd_vma)addr, &disasm_obj);
 	op->size = ret;
@@ -93,8 +96,7 @@ static int disassemble(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 	return op->size;
 }
 
-// DISASM END
-static bool set_reg_profile(RAnal *anal) {
+static char *get_reg_profile(RArchSession *as) {
 	const char *p =
 		"=PC	pc\n"
 		"=SP	a10\n"
@@ -157,10 +159,10 @@ static bool set_reg_profile(RAnal *anal) {
 		"gpr	BIV	.32	152	0\n"
 		"gpr	BTV	.32	156	0\n"
 		"gpr	pc	.32	160	0\n";
-	return r_reg_set_profile_string (anal->reg, p);
+	return strdup (p);
 }
 
-static int archinfo(RAnal *anal, int q) {
+static int archinfo(RArchSession *as, ut32 q) {
 	if (q == R_ANAL_ARCHINFO_DATA_ALIGN) {
 		return 2;
 	}
@@ -179,26 +181,22 @@ static int archinfo(RAnal *anal, int q) {
 	return 4; // XXX
 }
 
-static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
-	return disassemble (a, op, addr, buf, len);
-}
-
-RAnalPlugin r_anal_plugin_tricore = {
+RArchPlugin r_arch_plugin_tricore = {
 	.name = "tricore",
 	.desc = "TRICORE analysis plugin",
 	.license = "LGPL3",
 	.arch = "tricore",
-	.bits = 32,
-	.archinfo = archinfo,
-	.op = &analop,
+	.bits = R_SYS_BITS_PACK1 (32),
+	.info = &archinfo,
+	.decode = &decode,
 	.endian = R_SYS_ENDIAN_LITTLE,
-	.set_reg_profile = set_reg_profile,
+	.regs = get_reg_profile,
 };
 
 #ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_ANAL,
-	.data = &r_anal_plugin_tricore,
+	.type = R_LIB_TYPE_ARCH,
+	.data = &r_arch_plugin_tricore,
 	.version = R2_VERSION
 };
 #endif
