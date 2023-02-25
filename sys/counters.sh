@@ -21,3 +21,6 @@ git grep 'free ((char' libr | wc -l
 
 printf -- "f(void)\t"
 git grep 'free ((void' libr | wc -l
+
+printf -- "aPlugs\t"
+ls libr/anal/p/*.c |wc -l

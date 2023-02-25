@@ -1,6 +1,7 @@
 project('radare2', 'c', license : 'LGPL3', meson_version : '>=0.50', version : '5.8.3')
 
 py3_exe = import('python').find_installation('python3')
+gen_py = '@0@/libr/syscall/d/gen.py'.format(meson.current_source_dir())
 git_exe = find_program('git', required: false)
 pkgconfig_mod = import('pkgconfig')
 
@@ -549,6 +550,15 @@ sdb_gen_cmd = [
   '@OUTPUT@',
   '==',
   '@INPUT@'
+]
+
+py_cmd = '__import__("os").readlink(r"@0@"))'.format(repo)
+syscall_sdb_gen_cmd = [
+  py3_exe,
+  gen_py,
+  sdb_exe,
+  '@INPUT@',
+  '@OUTPUT@',
 ]
 
 # handle spp dependency
