@@ -35,6 +35,7 @@ arch_plugins = [ 'null',
   'propeller',
   'amd29k',
   'vax',
+  'tricore',
 ]
 bin_plugins = [ 'any' ]
 bin_ldr_plugins = [ 'ldr_linux' ]
@@ -173,7 +174,6 @@ anal_plugins += [
   'sparc_cs',
   's390_cs',
   'tms320',
-  'tricore',
   'x86_cs',
   'xcore_cs'
 ]

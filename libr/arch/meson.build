@@ -63,6 +63,10 @@ r_arch_sources = [
   'p/nios2/nios2-dis.c',
   'p/vax/vax.c',
   'p/vax/vax-dis.c',
+  'p/tricore/tricore.c',
+  'p/tricore/gnu/cpu-tricore.c',
+  'p/tricore/gnu/tricore-dis.c',
+  'p/tricore/gnu/tricore-opc.c',
 ]
 
 if arch_plugins.contains('x86_nz')

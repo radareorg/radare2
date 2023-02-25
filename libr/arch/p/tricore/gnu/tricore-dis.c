@@ -20,7 +20,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1335 USA. */
 #include <string.h>
 #include <sys/types.h>
 #include <stdlib.h>
-#include <r_util.h>
+#include "include/r_util.h"
 
 #include "ansidecl.h"
 #include "sysdep.h"
