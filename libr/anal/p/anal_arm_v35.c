@@ -568,7 +568,7 @@ static ut64 shifted_imm64(Instruction *insn, int n, int sz) {
 
 // #define VEC64(n) insn->detail->arm64.operands[n].vess
 #define VEC64_APPEND(sb, n, i) vector64_append (sb, insn, n, i)
-#define VEC64_MASK(sh, sz) (bitmask_by_width[63]^(bitmask_by_width[sz-1]<<sh))
+#define VEC64_MASK(sh, sz) (bitmask_by_width[63] ^ (bitmask_by_width[sz - 1] << sh))
 
 static void vector64_append(RStrBuf *sb, Instruction *insn, int n, int i) {
 	InstructionOperand op = INSOP64 (n);
