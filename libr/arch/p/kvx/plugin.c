@@ -233,19 +233,18 @@ static const char *kvx_reg_profile = ""
  */
 
 static bool kvx_init(RArchSession *s) {
-	r_return_val_if_fail (!s->user, false);
-	s->user = malloc (sizeof (bundle_t));
-	return s->user? true: false;
+	r_return_val_if_fail (s && !s->data, false);
+	s->data = R_NEW0 (bundle_t);
+	return s->data? true: false;
 }
 
 static bool kvx_fini(RArchSession *s) {
-	free (s->user);
-	s->user = NULL;
+	R_FREE (s->data);
 	return true;
 }
 
 static bool kvx_op(RArchSession *a, RAnalOp *op, RArchDecodeMask mask) {
-	bundle_t *bundle = a->user;
+	bundle_t *bundle = a->data;
 	const ut64 addr = op->addr;
 	const size_t len = op->size;
 	const ut8 *data = op->bytes;
