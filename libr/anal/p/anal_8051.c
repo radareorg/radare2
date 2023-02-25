@@ -214,8 +214,8 @@ static RI8051Reg registers[] = {
 };
 #endif
 
-#define e(frag) r_strbuf_append(&op->esil, frag)
-#define ef(frag, ...) r_strbuf_appendf(&op->esil, frag, __VA_ARGS__)
+#define e(frag) r_strbuf_append (&op->esil, frag)
+#define ef(frag, ...) r_strbuf_appendf (&op->esil, frag, __VA_ARGS__)
 
 #define flag_c "7,$c,c,:=,"
 #define flag_b "8,$b,c,:=,"

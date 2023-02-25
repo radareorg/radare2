@@ -2118,7 +2118,7 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 			abs = (val >= 0)? val: -val;
 			// "stp x4, x5, [x8], 0x10"
 			// "x4,x8,=[],x5,x8,8,+,=[],16,x8,+="
-			r_strbuf_setf(&op->esil,
+			r_strbuf_setf (&op->esil,
 					"%s,%s,=[%d],%s,%s,%d,+,=[%d],%" PFMT64d ",%s,%c=",
 					REG64 (0), MEMBASE64 (2), size,
 					REG64 (1), MEMBASE64 (2), size, size,

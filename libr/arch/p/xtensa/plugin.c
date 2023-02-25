@@ -1632,7 +1632,7 @@ static void esil_call(xtensa_isa isa, xtensa_opcode opcode,
 			(ut32 *) &imm_offset);
 
 	if (call) {
-		r_strbuf_append(
+		r_strbuf_append (
 			&op->esil,
 			"pc"	CM
 			"a0"	CM
