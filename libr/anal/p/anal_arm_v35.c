@@ -2601,7 +2601,7 @@ static int archinfo(RAnal *anal, int q) {
 
 static RList *anal_preludes(RAnal *anal) {
 	RList *l = r_list_newf ((RListFree)r_search_keyword_free);
-#define KW(d,ds,m,ms) r_list_append (l, r_search_keyword_new ((const ut8*)d,ds,(const ut8*)m, ms, NULL))
+#define KW(d,ds,m,ms) r_list_append (l, r_search_keyword_new ((const ut8*)d, ds, (const ut8*)m, ms, NULL))
 	KW ("\xf0\x00\x00\xd1", 4, "\xf0\x00\x00\xff", 4);
 	KW ("\xf0\x00\x00\xa9", 4, "\xf0\x00\x00\xff", 4);
 	KW ("\x7f\x23\x03\xd5\xff", 5, NULL, 0);
