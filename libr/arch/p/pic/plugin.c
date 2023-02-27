@@ -1,26 +1,29 @@
-/* radare2 - LGPL - Copyright 2015-2022 - oddcoder, thestr4ng3r, courk */
+/* radare2 - LGPL - Copyright 2015-2023 - oddcoder, thestr4ng3r, courk */
 
-#include <r_types.h>
-#include <r_anal.h>
-#include <r_lib.h>
+#include <r_arch.h>
 
-#include "../../asm/arch/pic/pic_midrange.h"
-#include "../../asm/arch/pic/pic_baseline.h"
-#include "../../asm/arch/pic/pic_pic18.h"
+#include "pic_midrange.h"
+#include "pic_baseline.h"
+#include "pic_pic18.h"
 
+#if 0
 static R_TH_LOCAL RIODesc *mem_sram = NULL;
 static R_TH_LOCAL RIODesc *mem_stack = NULL;
+#endif
 
 static char *asm_pic_disassemble(const char *cpu, const ut8 *b, int l, int *opsz) {
 	char *opstr = NULL;
 	if (R_STR_ISNOTEMPTY (cpu)) {
-		if (!strcasecmp (cpu, "baseline")) {
+		if (!r_str_casecmp (cpu, "baseline")) {
 			opstr = pic_baseline_disassemble (b, l, opsz);
-		} else if (!strcasecmp (cpu, "midrange")) {
+		} else if (!r_str_casecmp (cpu, "midrange")) {
 			opstr = pic_midrange_disassemble (b, l, opsz);
-		} else if (!strcasecmp (cpu, "pic18")) {
+		} else if (!r_str_casecmp (cpu, "pic18")) {
 			opstr = pic_pic18_disassemble (b, l, opsz);
 		}
+	}
+	if (opstr == NULL) {
+		opstr = pic_baseline_disassemble (b, l, opsz);
 	}
 	return opstr;
 }
@@ -34,9 +37,7 @@ typedef struct _pic_midrange_op_args_val {
 	ut8 b;
 } PicMidrangeOpArgsVal;
 
-typedef void (*pic_midrange_inst_handler_t) (RAnal *anal, RAnalOp *op,
-					     ut64 addr,
-					     PicMidrangeOpArgsVal *args);
+typedef void (*pic_midrange_inst_handler_t) (RArchSession *as, RAnalOp *op, ut64 addr, PicMidrangeOpArgsVal *args);
 
 typedef struct _pic_midrange_op_anal_info {
 	PicMidrangeOpcode opcode;
@@ -44,14 +45,11 @@ typedef struct _pic_midrange_op_anal_info {
 	pic_midrange_inst_handler_t handler;
 } PicMidrangeOpAnalInfo;
 
-#define INST_HANDLER(OPCODE_NAME)					\
-	static void _inst__##OPCODE_NAME (RAnal *anal, RAnalOp *op,	\
-					  ut64 addr,			\
-					  PicMidrangeOpArgsVal *args)
-#define INST_DECL(NAME, ARGS)							\
-	{									\
-		PIC_MIDRANGE_OPCODE_##NAME, PIC_MIDRANGE_OP_ARGS_##ARGS,	\
-			_inst__##NAME						\
+#define INST_HANDLER(OPCODE_NAME) \
+	static void _inst__##OPCODE_NAME (RArchSession *as, RAnalOp *op, ut64 addr, PicMidrangeOpArgsVal *args)
+#define INST_DECL(NAME, ARGS) \
+	{ \
+		PIC_MIDRANGE_OPCODE_##NAME, PIC_MIDRANGE_OP_ARGS_##ARGS, _inst__##NAME \
 	}
 
 #define e(frag) r_strbuf_append (&op->esil, frag)
@@ -113,9 +111,9 @@ INST_HANDLER (RETURN) {
 }
 
 INST_HANDLER (CALL) {
-	ut64 pclath;
-	op->type = R_ANAL_OP_TYPE_CALL;
-	r_esil_reg_read (anal->esil, "pclath", &pclath, NULL);
+	ut64 pclath = 0;
+	op->type = R_ANAL_OP_TYPE_RCALL;
+	// r_esil_reg_read (anal->esil, "pclath", &pclath, NULL);
 	op->jump = 2 * (((pclath & 0x78) << 8) + args->k);
 	ef ("8,pclath,0x78,&,<<,0x%x,+,2,*,pc,=,", args->k);
 	e ("0x1f,stkptr,==,$z,?{,0xff,stkptr,=,},");
@@ -125,9 +123,9 @@ INST_HANDLER (CALL) {
 }
 
 INST_HANDLER (GOTO) {
-	ut64 pclath;
-	op->type = R_ANAL_OP_TYPE_JMP;
-	r_esil_reg_read (anal->esil, "pclath", &pclath, NULL);
+	ut64 pclath = 0;
+	op->type = R_ANAL_OP_TYPE_UJMP;
+	// r_esil_reg_read (anal->esil, "pclath", &pclath, NULL);
 	op->jump = 2 * (((pclath & 0x78) << 8) + args->k);
 	ef ("8,pclath,0x78,&,<<,0x%x,+,2,*,pc,=,", args->k);
 }
@@ -174,9 +172,10 @@ INST_HANDLER (BRA) {
 }
 
 INST_HANDLER (BRW) {
-	ut64 wreg;
+	ut64 wreg = 0;
 	op->type = R_ANAL_OP_TYPE_UJMP;
-	r_esil_reg_read (anal->esil, "wreg", &wreg, NULL);
+	// TODO: just use esil for this . we cant compute the jump statically
+	// r_esil_reg_read (anal->esil, "wreg", &wreg, NULL);
 	op->jump = addr + 2 * (wreg + 1);
 	e ("wreg,1,+,2,*,pc,+=,");
 }
@@ -649,6 +648,7 @@ static void anal_pic_midrange_extract_args(ut16 instr,
 	}
 }
 
+#if 0
 static RIODesc *cpu_memory_map(RIOBind *iob, RIODesc *desc, ut32 addr,
 				ut32 size) {
 	char *mstr = r_str_newf ("malloc://%d", size);
@@ -671,10 +671,11 @@ static bool pic_midrange_reg_write(RReg *reg, const char *regname, ut32 num) {
 	}
 	return false;
 }
+#endif
 
-static void anal_pic_midrange_malloc(RAnal *anal, bool force) {
-	static R_TH_LOCAL bool init_done = false;
-
+#if 0
+static R_TH_LOCAL bool init_done = false;
+static void anal_pic_midrange_malloc(RArchSession *as, bool force) {
 	if (!init_done || force) {
 		// Allocate memory as needed.
 		// We assume that code is already allocated with firmware
@@ -695,21 +696,19 @@ static void anal_pic_midrange_malloc(RAnal *anal, bool force) {
 		init_done = true;
 	}
 }
+#endif
 
-static int anal_pic_midrange_op(RAnal *anal, RAnalOp *op, ut64 addr,
-				 const ut8 *buf, int len) {
-
-	ut16 instr;
+static int anal_pic_midrange_op(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 	int i;
 
-	anal_pic_midrange_malloc (anal, false);
+//	anal_pic_midrange_malloc (as, false);
 
 	if (!buf || len < 2) {
 		op->type = R_ANAL_OP_TYPE_ILL;
 		return op->size;
 	}
 
-	instr = r_read_le16 (buf);
+	ut16 instr = r_read_le16 (buf);
 
 	// Default op params
 	op->size = 2;
@@ -721,11 +720,8 @@ static int anal_pic_midrange_op(RAnal *anal, RAnalOp *op, ut64 addr,
 
 	for (i = 0; i < PIC_MIDRANGE_OPINFO_LEN; i++) {
 		if (pic_midrange_op_anal_info[i].opcode == opcode) {
-			anal_pic_midrange_extract_args (
-				instr, pic_midrange_op_anal_info[i].args,
-				&args_val);
-			pic_midrange_op_anal_info[i].handler (anal, op, addr,
-							      &args_val);
+			anal_pic_midrange_extract_args (instr, pic_midrange_op_anal_info[i].args, &args_val);
+			pic_midrange_op_anal_info[i].handler (as, op, addr, &args_val);
 			break;
 		}
 	}
@@ -741,7 +737,7 @@ static void pic18_cond_branch(RAnalOp *op, ut64 addr, const ut8 *buf, char *flag
 	r_strbuf_setf (&op->esil, "%s,?,{,0x%" PFMT64x ",pc,=,}", flag, op->jump);
 }
 
-static int anal_pic_pic18_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
+static int anal_pic_pic18_op(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 	//TODO code should be refactored and broken into smaller chunks!!
 	//TODO complete the esil emitter
 	if (len < 2) {
@@ -1020,8 +1016,8 @@ beach:
 	return op->size;
 }
 
-static bool anal_pic_midrange_set_reg_profile(RAnal *esil) {
-	const char *p = \
+static char *anal_pic_midrange_set_reg_profile(void) {
+	const char * const p = \
 		"=PC	pc\n"
 		"=SP	stkptr\n"
 		"=A0	porta\n"
@@ -1047,11 +1043,11 @@ static bool anal_pic_midrange_set_reg_profile(RAnal *esil) {
 		"gpr	stkptr	.8	14	0\n"
 		"gpr	_sram	.32 15	0\n"
 		"gpr	_stack	.32 19	0\n";
-	return r_reg_set_profile_string (esil->reg, p);
+	return strdup (p);
 }
 
-static bool anal_pic_pic18_set_reg_profile(RAnal *esil) {
-	const char *p =
+static char *anal_pic_pic18_set_reg_profile(void) {
+	const char * const p =
 		"#pc lives in nowhere actually"
 		"=PC	pc\n"
 		"=SP	tos\n"
@@ -1165,63 +1161,74 @@ static bool anal_pic_pic18_set_reg_profile(RAnal *esil) {
 		"#stkprt max is 0b11111\n"
 		"gpr	stkptr	.8	96	0\n"
 		"gpr	tablat	.8	14	0\n";
-
-	return r_reg_set_profile_string (esil->reg, p);
+	return strdup (p);
 }
 
-static int anal_pic_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
-	const char *cpu = anal->config->cpu;
+static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
+	const ut8 *buf = op->bytes;
+	int len = op->size;
+// static int anal_pic_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
+	const char *cpu = as->config->cpu;
 	int opsz = -1;
 	if (mask & R_ARCH_OP_MASK_DISASM) {
+		free (op->mnemonic);
 		op->mnemonic = asm_pic_disassemble (cpu, buf, len, &opsz);
 	}
 	if (R_STR_ISNOTEMPTY (cpu)) {
-		if (!strcasecmp (cpu, "baseline")) {
+#if 0
+		if (!r_str_casecmp (cpu, "baseline")) {
 			// TODO: implement
-			return -1;
+			return false;
 		}
-		if (!strcasecmp (cpu, "midrange")) {
-			return anal_pic_midrange_op (anal, op, addr, buf, len);
+		if (!r_str_casecmp (cpu, "midrange")) {
+			return anal_pic_midrange_op (as, op, addr, buf, len);
 		}
-		if (!strcasecmp (cpu, "pic18")) {
-			return anal_pic_pic18_op (anal, op, addr, buf, len);
+#endif
+		if (!r_str_casecmp (cpu, "pic18")) {
+			op->size = anal_pic_pic18_op (as, op, op->addr, op->bytes, op->size);
+			return op->size > 0;
 		}
 	}
-	return opsz;
+	op->size = anal_pic_midrange_op (as, op, op->addr, op->bytes, op->size);
+	if (mask & R_ARCH_OP_MASK_DISASM) {
+		if (R_STR_ISEMPTY (op->mnemonic)) {
+			op->type = R_ANAL_OP_TYPE_ILL;
+			op->mnemonic = strdup ("invalid");
+		}
+	}
+	return opsz > 0;
 }
 
-static bool anal_pic_set_reg_profile(RAnal *anal) {
-	const char *cpu = anal->config->cpu;
+static char *getregs(RArchSession *as) {
+	const char *cpu = as->config->cpu;
 	if (R_STR_ISNOTEMPTY (cpu)) {
-		if (!strcasecmp (cpu, "baseline")) {
-			// TODO: We are using the midrange profile as the baseline
-			return anal_pic_midrange_set_reg_profile (anal);
-		}
-		if (!strcasecmp (cpu, "midrange")) {
-			return anal_pic_midrange_set_reg_profile (anal);
-		}
-		if (!strcasecmp (cpu, "pic18")) {
-			return anal_pic_pic18_set_reg_profile (anal);
+		if (!r_str_casecmp (cpu, "pic18")) {
+			return anal_pic_pic18_set_reg_profile ();
 		}
 	}
-	return false;
+	// default, midrange and baseline
+	return anal_pic_midrange_set_reg_profile ();
 }
 
-RAnalPlugin r_anal_plugin_pic = {
+static int info(RArchSession *as, ut32 q) {
+	return 2;
+}
+
+RArchPlugin r_arch_plugin_pic = {
 	.name = "pic",
 	.desc = "PIC analysis plugin",
 	.cpus = "baseline,midrange,pic18",
 	.license = "LGPL3",
 	.arch = "pic",
-	.bits = 8,
-	.op = &anal_pic_op,
-	.set_reg_profile = &anal_pic_set_reg_profile,
-	.esil = true
+	.info = info,
+	.bits = R_SYS_BITS_PACK1 (8),
+	.decode = &decode,
+	.regs = &getregs,
 };
 
 #ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_ANAL,
+	.type = R_LIB_TYPE_ARCH,
 	.data = &r_anal_plugin_pic,
 	.version = R2_VERSION
 };
