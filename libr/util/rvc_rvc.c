@@ -78,7 +78,7 @@ static Rvc *rvc_rvc_new(const char *path) {
 		free (blobsp);
 		free (rvc->path);
 		free (rvc);
-		return false;
+		return NULL;
 	}
 	if (!r_sys_mkdirp (commitp) || !r_sys_mkdir (blobsp)) {
 		R_LOG_ERROR ("Can't create The RVC repo directory");
@@ -86,7 +86,7 @@ static Rvc *rvc_rvc_new(const char *path) {
 		free (rvc->path);
 		free (rvc);
 		free (blobsp);
-		return false;
+		return NULL;
 	}
 	free (commitp);
 	free (blobsp);
@@ -998,6 +998,7 @@ R_API bool r_vc_reset(Rvc *rvc) {
 	r_list_free (uncommitted);
 	return ret;
 }
+
 static Sdb *vcdb_open(const char *rp) {
 	char *frp = r_file_new (rp, ".rvc", DBNAME, NULL);
 	if (!frp) {
@@ -1021,6 +1022,7 @@ static Rvc *open_rvc(const char *rp) {
 	if (rvc_repo_exists(rp)) {
 		Rvc *repo = R_NEW (Rvc);
 		if (repo) {
+			repo->p = &r_vc_plugin_rvc;
 			repo->db = vcdb_open (rp);
 			if (repo->db) {
 				repo->path = strdup(rp);
