@@ -5,14 +5,14 @@
 ```js
 
 function archPlugin() {
-  return {
-    name: "myarch",
-    description: "this is a test arch",
-    decode: function(op) {
-      op.mnemonic = "nop";
-      return true;
-    }
-  }
+	return {
+		name: "myarch",
+		description: "this is a test arch",
+		decode: function(op) {
+			op.mnemonic = "nop";
+			return true;
+		}
+	}
 }
 
 r2.plugin("arch", archPlugin);
@@ -32,7 +32,7 @@ typedef struct {
 #define R2QJS_GETNUMBER(dst, src, nam, msg) { \
 	JSValue name = JS_GetPropertyStr (ctx, (src), (nam)); \
 	ut32 v; \
-       	if (JS_ToUint32 (ctx, &v, name)) { \
+	if (JS_ToUint32 (ctx, &v, name)) { \
 		(dst) = -1; \
 	} else {\
 		(dst) = v; \
@@ -68,15 +68,12 @@ static bool r2qjs_arch_decode(RArchSession *s, struct r_anal_op_t *op, RArchDeco
 	const char *errmsg = NULL;
 	R2QJSArch *rqa = (R2QJSArch *)s->data;
 	JSContext *ctx = rqa->ctx;
-	JSRuntime *rt = JS_GetRuntime (ctx);
-	QjsContext *k = JS_GetRuntimeOpaque (rt);
- 	RCore *core = k->core;
 	// build object with RAnalOp info
 		JSValue obj = JS_NewObject(ctx);
-        	// JS_SetPropertyStr (ctx, obj, "mnemonic", val);
-        	// JS_SetPropertyStr (ctx, obj, "bytes", val); // tied with size!
+		// JS_SetPropertyStr (ctx, obj, "mnemonic", val);
+		// JS_SetPropertyStr (ctx, obj, "bytes", val); // tied with size!
 		JSValue jsv_size = JS_NewUint32 (ctx, op->size);
-        	JS_SetPropertyStr (ctx, obj, "size", jsv_size);
+		JS_SetPropertyStr (ctx, obj, "size", jsv_size);
 	// call js function
 		JSValue args[1] = { obj };
 		JSValue res = JS_Call (ctx, rqa->decode, obj, 1, args);
@@ -105,8 +102,9 @@ failure:
 	return false;
 }
 
-static R_TH_LOCAL JSContext *Gctx = NULL;
-static R_TH_LOCAL JSValue Gres = JS_UNDEFINED;
+static R_TH_LOCAL JSContext *Gctx = NULL; // XXX no globals
+static R_TH_LOCAL JSValue Gres; //  = JS_UNDEFINED;
+
 static bool r2qjs_arch_init(RArchSession *s) {
 	R2QJSArch *qa = R_NEW0 (R2QJSArch);
 	if (qa && Gctx) {
