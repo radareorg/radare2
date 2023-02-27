@@ -707,7 +707,7 @@ repeat:
 			gotoBeach (R_ANAL_RET_ERROR)
 		}
 		r_anal_op_fini (op);
-		oplen = r_anal_op (anal, op, at, buf, bytes_read, R_ARCH_OP_MASK_ESIL | R_ARCH_OP_MASK_VAL | R_ARCH_OP_MASK_HINT);
+		oplen = r_anal_op (anal, op, at, buf, bytes_read, R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_ESIL | R_ARCH_OP_MASK_VAL | R_ARCH_OP_MASK_HINT);
 		if (oplen < 1) {
 			if (anal->verbose) {
 				R_LOG_WARN ("Invalid instruction at 0x%"PFMT64x" with %d bits", at, anal->config->bits);
