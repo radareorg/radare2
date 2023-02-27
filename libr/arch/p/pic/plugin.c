@@ -6,28 +6,6 @@
 #include "pic_baseline.h"
 #include "pic_pic18.h"
 
-#if 0
-static R_TH_LOCAL RIODesc *mem_sram = NULL;
-static R_TH_LOCAL RIODesc *mem_stack = NULL;
-#endif
-
-static char *asm_pic_disassemble(const char *cpu, const ut8 *b, int l, int *opsz) {
-	char *opstr = NULL;
-	if (R_STR_ISNOTEMPTY (cpu)) {
-		if (!r_str_casecmp (cpu, "baseline")) {
-			opstr = pic_baseline_disassemble (b, l, opsz);
-		} else if (!r_str_casecmp (cpu, "midrange")) {
-			opstr = pic_midrange_disassemble (b, l, opsz);
-		} else if (!r_str_casecmp (cpu, "pic18")) {
-			opstr = pic_pic18_disassemble (b, l, opsz);
-		}
-	}
-	if (opstr == NULL) {
-		opstr = pic_baseline_disassemble (b, l, opsz);
-	}
-	return opstr;
-}
-
 typedef struct _pic_midrange_op_args_val {
 	ut16 f;
 	ut16 k;
@@ -47,10 +25,7 @@ typedef struct _pic_midrange_op_anal_info {
 
 #define INST_HANDLER(OPCODE_NAME) \
 	static void _inst__##OPCODE_NAME (RArchSession *as, RAnalOp *op, ut64 addr, PicMidrangeOpArgsVal *args)
-#define INST_DECL(NAME, ARGS) \
-	{ \
-		PIC_MIDRANGE_OPCODE_##NAME, PIC_MIDRANGE_OP_ARGS_##ARGS, _inst__##NAME \
-	}
+#define INST_DECL(NAME, ARGS) { PIC_MIDRANGE_OPCODE_##NAME, PIC_MIDRANGE_OP_ARGS_##ARGS, _inst__##NAME }
 
 #define e(frag) r_strbuf_append (&op->esil, frag)
 #define ef(frag, ...) r_strbuf_appendf (&op->esil, frag, __VA_ARGS__)
@@ -599,12 +574,8 @@ static const PicMidrangeOpAnalInfo pic_midrange_op_anal_info[PIC_MIDRANGE_OPINFO
 	INST_DECL (MOVIW_2, 1N_6K), INST_DECL (MOVWI_2, 1N_6K)
 };
 
-static void anal_pic_midrange_extract_args(ut16 instr,
-					    PicMidrangeOpArgs args,
-					    PicMidrangeOpArgsVal *args_val) {
-
+static void anal_pic_midrange_extract_args(ut16 instr, PicMidrangeOpArgs args, PicMidrangeOpArgsVal *args_val) {
 	memset (args_val, 0, sizeof (PicMidrangeOpArgsVal));
-
 	switch (args) {
 	case PIC_MIDRANGE_OP_ARGS_NONE: return;
 	case PIC_MIDRANGE_OP_ARGS_2F:
@@ -615,17 +586,14 @@ static void anal_pic_midrange_extract_args(ut16 instr,
 		return;
 	case PIC_MIDRANGE_OP_ARGS_1D_7F:
 		args_val->f = instr & PIC_MIDRANGE_OP_ARGS_1D_7F_MASK_F;
-		args_val->d =
-			(instr & PIC_MIDRANGE_OP_ARGS_1D_7F_MASK_D) >> 7;
+		args_val->d = (instr & PIC_MIDRANGE_OP_ARGS_1D_7F_MASK_D) >> 7;
 		return;
 	case PIC_MIDRANGE_OP_ARGS_1N_6K:
-		args_val->n =
-			(instr & PIC_MIDRANGE_OP_ARGS_1N_6K_MASK_N) >> 6;
+		args_val->n = (instr & PIC_MIDRANGE_OP_ARGS_1N_6K_MASK_N) >> 6;
 		args_val->k = instr & PIC_MIDRANGE_OP_ARGS_1N_6K_MASK_K;
 		return;
 	case PIC_MIDRANGE_OP_ARGS_3B_7F:
-		args_val->b =
-			(instr & PIC_MIDRANGE_OP_ARGS_3B_7F_MASK_B) >> 7;
+		args_val->b = (instr & PIC_MIDRANGE_OP_ARGS_3B_7F_MASK_B) >> 7;
 		args_val->f = instr & PIC_MIDRANGE_OP_ARGS_3B_7F_MASK_F;
 		return;
 	case PIC_MIDRANGE_OP_ARGS_4K:
@@ -641,16 +609,14 @@ static void anal_pic_midrange_extract_args(ut16 instr,
 		args_val->k = instr & PIC_MIDRANGE_OP_ARGS_11K_MASK_K;
 		return;
 	case PIC_MIDRANGE_OP_ARGS_1N_2M:
-		args_val->n =
-			(instr & PIC_MIDRANGE_OP_ARGS_1N_2M_MASK_N) >> 2;
+		args_val->n = (instr & PIC_MIDRANGE_OP_ARGS_1N_2M_MASK_N) >> 2;
 		args_val->m = instr & PIC_MIDRANGE_OP_ARGS_1N_2M_MASK_M;
 		return;
 	}
 }
 
 #if 0
-static RIODesc *cpu_memory_map(RIOBind *iob, RIODesc *desc, ut32 addr,
-				ut32 size) {
+static RIODesc *cpu_memory_map(RIOBind *iob, RIODesc *desc, ut32 addr, ut32 size) {
 	char *mstr = r_str_newf ("malloc://%d", size);
 	if (desc && iob->fd_get_name (iob->io, desc->fd)) {
 		iob->fd_remap (iob->io, desc->fd, addr);
@@ -674,9 +640,11 @@ static bool pic_midrange_reg_write(RReg *reg, const char *regname, ut32 num) {
 #endif
 
 #if 0
-static R_TH_LOCAL bool init_done = false;
 static void anal_pic_midrange_malloc(RArchSession *as, bool force) {
+	static bool init_done = false;
 	if (!init_done || force) {
+		static RIODesc *mem_sram = NULL;
+		static RIODesc *mem_stack = NULL;
 		// Allocate memory as needed.
 		// We assume that code is already allocated with firmware
 		// image
@@ -692,7 +660,6 @@ static void anal_pic_midrange_malloc(RArchSession *as, bool force) {
 		pic_midrange_reg_write (anal->reg, "_stack",
 					PIC_MIDRANGE_ESIL_CSTACK_TOP);
 		pic_midrange_reg_write (anal->reg, "stkptr", 0x1f);
-
 		init_done = true;
 	}
 }
@@ -705,7 +672,7 @@ static int anal_pic_midrange_op(RArchSession *as, RAnalOp *op, ut64 addr, const 
 
 	if (!buf || len < 2) {
 		op->type = R_ANAL_OP_TYPE_ILL;
-		return op->size;
+		return 2;
 	}
 
 	ut16 instr = r_read_le16 (buf);
@@ -761,7 +728,7 @@ static int anal_pic_pic18_op(RArchSession *as, RAnalOp *op, ut64 addr, const ut8
 		return op->size;
 	};
 	switch (b >> 11) { //NEX_T
-	case 0x1b:	//rcall
+	case 0x1b: //rcall
 		op->type = R_ANAL_OP_TYPE_CALL;
 		return op->size;
 	case 0x1a: //bra
@@ -772,7 +739,7 @@ static int anal_pic_pic18_op(RArchSession *as, RAnalOp *op, ut64 addr, const ut8
 		return op->size;
 	}
 	switch (b >> 12) { //NOP,movff,BAF_T
-	case 0xf:	//nop
+	case 0xf: //nop
 		op->type = R_ANAL_OP_TYPE_NOP;
 		op->cycles = 1;
 		r_strbuf_set (&op->esil, ",");
@@ -799,7 +766,7 @@ static int anal_pic_pic18_op(RArchSession *as, RAnalOp *op, ut64 addr, const ut8
 	};
 
 	switch (b >> 8) { //GOTO_T,N_T,K_T
-	case 0xe0:	//bz
+	case 0xe0: //bz
 		pic18_cond_branch (op, addr, buf, "z");
 		return op->size;
 	case 0xe1: //bnz
@@ -893,21 +860,21 @@ static int anal_pic_pic18_op(RArchSession *as, RAnalOp *op, ut64 addr, const ut8
 		return op->size;
 	};
 	switch (b >> 10) { //DAF_T
-	case 0x17:	//subwf
-	case 0x16:	//subwfb
-	case 0x15:	//subfwb
-	case 0x13:	//dcfsnz
-	case 0xb:	//decfsz
-	case 0x1:	//decf
+	case 0x17: //subwf
+	case 0x16: //subwfb
+	case 0x15: //subfwb
+	case 0x13: //dcfsnz
+	case 0xb: //decfsz
+	case 0x1: //decf
 		op->type = R_ANAL_OP_TYPE_SUB;
 		return op->size;
 	case 0x14: //movf
 		op->type = R_ANAL_OP_TYPE_MOV;
 		return op->size;
 	case 0x12: //infsnz
-	case 0xf:  //incfsz
-	case 0xa:  //incf
-	case 0x8:  //addwfc
+	case 0xf: //incfsz
+	case 0xa: //incf
+	case 0x8: //addwfc
 		op->type = R_ANAL_OP_TYPE_ADD;
 		return op->size;
 	case 0x9: //addwf
@@ -915,7 +882,7 @@ static int anal_pic_pic18_op(RArchSession *as, RAnalOp *op, ut64 addr, const ut8
 		op->type = R_ANAL_OP_TYPE_ADD;
 		return op->size;
 	case 0x11: //rlncf
-	case 0xd:  //rlcf
+	case 0xd: //rlcf
 		op->type = R_ANAL_OP_TYPE_ROL;
 		return op->size;
 	case 0x10: //rrncf
@@ -1164,30 +1131,32 @@ static char *anal_pic_pic18_set_reg_profile(void) {
 	return strdup (p);
 }
 
+static char *asm_pic_disassemble(const char *cpu, const ut8 *b, int l, int *opsz) {
+	char *opstr = NULL;
+	if (R_STR_ISNOTEMPTY (cpu)) {
+		if (!r_str_casecmp (cpu, "baseline")) {
+			opstr = pic_baseline_disassemble (b, l, opsz);
+		} else if (!r_str_casecmp (cpu, "midrange")) {
+			opstr = pic_midrange_disassemble (b, l, opsz);
+		} else if (!r_str_casecmp (cpu, "pic18")) {
+			opstr = pic_pic18_disassemble (b, l, opsz);
+		}
+	}
+	return opstr? opstr: pic_baseline_disassemble (b, l, opsz);
+}
+
 static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 	const ut8 *buf = op->bytes;
 	int len = op->size;
-// static int anal_pic_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
 	const char *cpu = as->config->cpu;
-	int opsz = -1;
 	if (mask & R_ARCH_OP_MASK_DISASM) {
 		free (op->mnemonic);
+		int opsz = -1;
 		op->mnemonic = asm_pic_disassemble (cpu, buf, len, &opsz);
+		op->size = opsz;
 	}
-	if (R_STR_ISNOTEMPTY (cpu)) {
-#if 0
-		if (!r_str_casecmp (cpu, "baseline")) {
-			// TODO: implement
-			return false;
-		}
-		if (!r_str_casecmp (cpu, "midrange")) {
-			return anal_pic_midrange_op (as, op, addr, buf, len);
-		}
-#endif
-		if (!r_str_casecmp (cpu, "pic18")) {
-			op->size = anal_pic_pic18_op (as, op, op->addr, op->bytes, op->size);
-			return op->size > 0;
-		}
+	if (cpu && !r_str_casecmp (cpu, "pic18")) {
+		op->size = anal_pic_pic18_op (as, op, op->addr, op->bytes, op->size);
 	}
 	op->size = anal_pic_midrange_op (as, op, op->addr, op->bytes, op->size);
 	if (mask & R_ARCH_OP_MASK_DISASM) {
@@ -1196,7 +1165,7 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 			op->mnemonic = strdup ("invalid");
 		}
 	}
-	return opsz > 0;
+	return op->size > 0;
 }
 
 static char *getregs(RArchSession *as) {
