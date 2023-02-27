@@ -309,6 +309,7 @@ extern RArchPlugin r_arch_plugin_bpf_cs;
 extern RArchPlugin r_arch_plugin_alpha;
 extern RArchPlugin r_arch_plugin_vax;
 extern RArchPlugin r_arch_plugin_tricore;
+extern RArchPlugin r_arch_plugin_pic;
 
 
 #ifdef __cplusplus

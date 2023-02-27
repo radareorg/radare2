@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2015-2022 - oddcoder, thestr4ng3r, courk */
+/* radare2 - LGPL - Copyright 2015-2023 - oddcoder, thestr4ng3r, courk */
 
 #include <r_types.h>
 #include <r_anal.h>
@@ -10,17 +10,21 @@
 
 static R_TH_LOCAL RIODesc *mem_sram = NULL;
 static R_TH_LOCAL RIODesc *mem_stack = NULL;
+static R_TH_LOCAL bool init_done = false;
 
 static char *asm_pic_disassemble(const char *cpu, const ut8 *b, int l, int *opsz) {
 	char *opstr = NULL;
 	if (R_STR_ISNOTEMPTY (cpu)) {
-		if (!strcasecmp (cpu, "baseline")) {
+		if (!r_str_casecmp (cpu, "baseline")) {
 			opstr = pic_baseline_disassemble (b, l, opsz);
-		} else if (!strcasecmp (cpu, "midrange")) {
+		} else if (!r_str_casecmp (cpu, "midrange")) {
 			opstr = pic_midrange_disassemble (b, l, opsz);
-		} else if (!strcasecmp (cpu, "pic18")) {
+		} else if (!r_str_casecmp (cpu, "pic18")) {
 			opstr = pic_pic18_disassemble (b, l, opsz);
 		}
+	}
+	if (opstr == NULL) {
+		opstr = pic_baseline_disassemble (b, l, opsz);
 	}
 	return opstr;
 }
@@ -673,7 +677,6 @@ static bool pic_midrange_reg_write(RReg *reg, const char *regname, ut32 num) {
 }
 
 static void anal_pic_midrange_malloc(RAnal *anal, bool force) {
-	static R_TH_LOCAL bool init_done = false;
 
 	if (!init_done || force) {
 		// Allocate memory as needed.
@@ -696,9 +699,7 @@ static void anal_pic_midrange_malloc(RAnal *anal, bool force) {
 	}
 }
 
-static int anal_pic_midrange_op(RAnal *anal, RAnalOp *op, ut64 addr,
-				 const ut8 *buf, int len) {
-
+static int anal_pic_midrange_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 	ut16 instr;
 	int i;
 
@@ -1020,8 +1021,8 @@ beach:
 	return op->size;
 }
 
-static bool anal_pic_midrange_set_reg_profile(RAnal *esil) {
-	const char *p = \
+static char *anal_pic_midrange_set_reg_profile(void) {
+	const char * const p = \
 		"=PC	pc\n"
 		"=SP	stkptr\n"
 		"=A0	porta\n"
@@ -1047,11 +1048,11 @@ static bool anal_pic_midrange_set_reg_profile(RAnal *esil) {
 		"gpr	stkptr	.8	14	0\n"
 		"gpr	_sram	.32 15	0\n"
 		"gpr	_stack	.32 19	0\n";
-	return r_reg_set_profile_string (esil->reg, p);
+	return strdup (p);
 }
 
-static bool anal_pic_pic18_set_reg_profile(RAnal *esil) {
-	const char *p =
+static char *anal_pic_pic18_set_reg_profile(void) {
+	const char * const p =
 		"#pc lives in nowhere actually"
 		"=PC	pc\n"
 		"=SP	tos\n"
@@ -1165,63 +1166,63 @@ static bool anal_pic_pic18_set_reg_profile(RAnal *esil) {
 		"#stkprt max is 0b11111\n"
 		"gpr	stkptr	.8	96	0\n"
 		"gpr	tablat	.8	14	0\n";
-
-	return r_reg_set_profile_string (esil->reg, p);
+	return strdup (p);
 }
 
-static int anal_pic_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
-	const char *cpu = anal->config->cpu;
+static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
+	const ut8 *buf = op->bytes;
+	int len = op->size;
+// static int anal_pic_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
+	const char *cpu = as->config->cpu;
 	int opsz = -1;
 	if (mask & R_ARCH_OP_MASK_DISASM) {
+		free (op->mnemonic);
 		op->mnemonic = asm_pic_disassemble (cpu, buf, len, &opsz);
 	}
 	if (R_STR_ISNOTEMPTY (cpu)) {
-		if (!strcasecmp (cpu, "baseline")) {
+#if 0
+		if (!r_str_casecmp (cpu, "baseline")) {
 			// TODO: implement
-			return -1;
+			return false;
 		}
-		if (!strcasecmp (cpu, "midrange")) {
+		if (!r_str_casecmp (cpu, "midrange")) {
 			return anal_pic_midrange_op (anal, op, addr, buf, len);
 		}
-		if (!strcasecmp (cpu, "pic18")) {
-			return anal_pic_pic18_op (anal, op, addr, buf, len);
+#endif
+		if (!r_str_casecmp (cpu, "pic18")) {
+			op->size = anal_pic_pic18_op (anal, op, addr, buf, len);
+			return op->size > 0;
 		}
 	}
-	return opsz;
+	op->size = anal_pic_midrange_op (anal, op, addr, buf, len);
+	return opsz > 0;
 }
 
-static bool anal_pic_set_reg_profile(RAnal *anal) {
+static char *getregs(RArchSession *as) {
 	const char *cpu = anal->config->cpu;
 	if (R_STR_ISNOTEMPTY (cpu)) {
-		if (!strcasecmp (cpu, "baseline")) {
-			// TODO: We are using the midrange profile as the baseline
-			return anal_pic_midrange_set_reg_profile (anal);
-		}
-		if (!strcasecmp (cpu, "midrange")) {
-			return anal_pic_midrange_set_reg_profile (anal);
-		}
-		if (!strcasecmp (cpu, "pic18")) {
-			return anal_pic_pic18_set_reg_profile (anal);
+		if (!r_str_casecmp (cpu, "pic18")) {
+			return anal_pic_pic18_set_reg_profile ();
 		}
 	}
-	return false;
+	// default, midrange and baseline
+	return anal_pic_midrange_set_reg_profile ();
 }
 
-RAnalPlugin r_anal_plugin_pic = {
+RArchPlugin r_arch_plugin_pic = {
 	.name = "pic",
 	.desc = "PIC analysis plugin",
 	.cpus = "baseline,midrange,pic18",
 	.license = "LGPL3",
 	.arch = "pic",
-	.bits = 8,
-	.op = &anal_pic_op,
-	.set_reg_profile = &anal_pic_set_reg_profile,
-	.esil = true
+	.bits = R_SYS_BITS_PACK1 (8),
+	.decode = &decode,
+	.regs = &getregs,
 };
 
 #ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_ANAL,
+	.type = R_LIB_TYPE_ARCH,
 	.data = &r_anal_plugin_pic,
 	.version = R2_VERSION
 };
