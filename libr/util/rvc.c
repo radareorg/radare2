@@ -5,9 +5,8 @@
 #include <rvc.h>
 #define DBNAME "branches.sdb"
 
-extern RvcPlugin r_vc_plugin_git;
-extern RvcPlugin r_vc_plugin_rvc;
-
+extern const RvcPlugin r_vc_plugin_git;
+extern const RvcPlugin r_vc_plugin_rvc;
 
 R_API void rvc_free(Rvc *vc) {
 	if (vc) {
@@ -18,18 +17,9 @@ R_API void rvc_free(Rvc *vc) {
 	}
 }
 
-R_API bool rvc_use(Rvc *vc, RvcType type) {
-	switch (type) {
-	case RVC_TYPE_GIT:
-		vc->p = &r_vc_plugin_git;
-		break;
-	case RVC_TYPE_RVC:
-		vc->p = &r_vc_plugin_rvc;
-		break;
-	default:
-		r_return_val_if_reached (false);
-	}
-	return true;
+R_API bool rvc_use(Rvc *vc, RvcType type) { // R2_590
+	R_LOG_ERROR ("rvc_use is deprecated. Don't use it");
+	return false;
 }
 
 R_API RvcType rvc_repo_type(const char *path) {
@@ -39,7 +29,7 @@ R_API RvcType rvc_repo_type(const char *path) {
 	for (; i < sizeof (paths) / sizeof (char *)
 			&& i < sizeof (types) / sizeof (RvcType); i++) {
 		char *p = r_file_new (path, paths[i], NULL);
-		if (r_file_is_directory(p)) {
+		if (r_file_is_directory (p)) {
 			return types[i];
 		}
 		free (p);
@@ -49,52 +39,15 @@ R_API RvcType rvc_repo_type(const char *path) {
 
 R_API Rvc *rvc_open(const char *path, RvcType type) {
 	r_return_val_if_fail (path, NULL);
-	Rvc *rvc = NULL;
-	int repotype = (type == RVC_TYPE_ANY)? rvc_repo_type (path): type;
+	const int repotype = (type == RVC_TYPE_ANY)? rvc_repo_type (path): type;
 	switch (repotype) {
 	case RVC_TYPE_GIT:
-		rvc = r_vc_plugin_git.open (path);
-		rvc->p = &r_vc_plugin_git;
-		break;
+		return r_vc_plugin_git.open (path);
 	case RVC_TYPE_RVC:
-		rvc = r_vc_plugin_rvc.open (path);
-		rvc->p = &r_vc_plugin_rvc;
-		break;
+		return r_vc_plugin_rvc.open (path);
 	}
-	return rvc;
-}
-
-#if 0
-// XXX this is conceptually wrong
-R_API Rvc *rvc_init(const char *path, RvcType type) {
-	r_return_val_if_fail (path, NULL);
-#if 0
-	RvcPluginBranch open = R_UNWRAP3 (vc, p, open);
-	return open? open (vc, path, type): NULL;
-#endif
-#if 0
-	r_return_val_if_fail (path, NULL);
-	switch (type) {
-	case RVC_TYPE_GIT:
-		return r_vc_git_init (path);
-		break;
-	case RVC_TYPE_RVC:
-		{
-			Rvc *rvc = r_vc_new (path);
-			if (!rvc || !rvc_save (rvc)) {
-				return NULL;
-			}
-			return rvc;
-		}
-		break;
-	default:
-		break;
-	}
-	R_LOG_ERROR ("Unknown version control");
-#endif
 	return NULL;
 }
-#endif
 
 R_API void rvc_close(Rvc *vc, bool save) {
 	r_return_if_fail (vc);

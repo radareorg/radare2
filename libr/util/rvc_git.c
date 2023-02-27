@@ -1,8 +1,9 @@
-/* radare - LGPL - Copyright 2021-2022 - RHL120, pancake */
+/* radare - LGPL - Copyright 2021-2023 - RHL120, pancake */
 // GIT commands as APIs
 #define R_LOG_ORIGIN "vc.git"
 #include <rvc.h>
 
+extern const RvcPlugin r_vc_plugin_git;
 
 static Rvc *open_git(const char *path) {
 	char *git_path = r_file_new (path, ".git", NULL);
@@ -28,10 +29,7 @@ static Rvc *open_git(const char *path) {
 		return NULL;
 	}
 	vc->db = NULL;
-	if (!rvc_use (vc, RVC_TYPE_GIT)) {
-		rvc_free (vc);
-		return NULL;
-	}
+	vc->p = &r_vc_plugin_git;
 	return vc;
 }
 
