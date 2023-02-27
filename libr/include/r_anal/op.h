@@ -102,7 +102,7 @@ typedef enum {
 	R_ANAL_OP_TYPE_UCCALL= R_ANAL_OP_TYPE_UCALL | R_ANAL_OP_TYPE_COND, /* conditional unknown call */
 	R_ANAL_OP_TYPE_RET   = 5, /* returns from subroutine */
 	R_ANAL_OP_TYPE_CRET  = R_ANAL_OP_TYPE_COND | R_ANAL_OP_TYPE_RET, /* conditional return from subroutine */
-	R_ANAL_OP_TYPE_ILL   = 6,  /* illegal instruction // trap */
+	R_ANAL_OP_TYPE_ILL   = 6, /* illegal instruction // trap */
 	R_ANAL_OP_TYPE_UNK   = 7, /* unknown opcode type */
 	R_ANAL_OP_TYPE_NOP   = 8, /* does nothing */
 	R_ANAL_OP_TYPE_MOV   = 9, /* register move */
