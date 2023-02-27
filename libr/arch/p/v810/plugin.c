@@ -1,12 +1,6 @@
 /* radare - LGPL - Copyright 2015-2022 - danielps, pancake */
 
-#include <string.h>
-#include <r_types.h>
-#include <r_lib.h>
-#include <r_asm.h>
 #include <r_arch.h>
-#include <r_util.h>
-
 #include "./v810_disas.h"
 
 enum {
