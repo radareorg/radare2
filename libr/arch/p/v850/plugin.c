@@ -376,17 +376,14 @@ static int v850e0_op(RArchSession *a, RAnalOp *op, ut64 addr, const ut8 *buf, in
 	case V850_JARL2:
 		// TODO: fix displacement reading
 		op->type = R_ANAL_OP_TYPE_JMP;
-		op->jump = addr + F5_DISP(((ut32)word2 << 16) | word1);
-		op->fail = addr + 4;
-		r_strbuf_appendf (&op->esil, "pc,%s,=,pc,%u,+=", F5_RN2(word1), F5_DISP(((ut32)word2 << 16) | word1));
+		op->jump = addr + F5_DISP (((ut32)word2 << 16) | word1);
+		r_strbuf_appendf (&op->esil, "pc,%s,:=,0x%"PFMT64x",pc,:=", F5_RN2 (word1), op->jump);
 		break;
-#if 0 // WTF - same opcode as JARL?
-	case V850_JR:
-		jumpdisp = DISP26(word1, word2);
+	case V850_JARL1:
 		op->type = R_ANAL_OP_TYPE_JMP;
-		r_strbuf_appendf (&op->esil, "$$,%d,+,pc,=", jumpdisp);
+		op->jump = addr + F5_DISP (((ut32)word2 << 16) | word1);
+		r_strbuf_appendf (&op->esil, "0x%"PFMT64x",pc,:=", op->jump);
 		break;
-#endif
 	case V850_OR:
 		op->type = R_ANAL_OP_TYPE_OR;
 		r_strbuf_appendf (&op->esil, "%s,%s,|=", F1_RN1(word1), F1_RN2(word1));
@@ -534,6 +531,17 @@ static int v850e0_op(RArchSession *a, RAnalOp *op, ut64 addr, const ut8 *buf, in
 			F1_RN2 (word1), F1_RN1 (word1), F1_RN2 (word1), F1_RN2 (word1), F1_RN2 (word1), F1_RN2 (word1));
 		update_flags (op, -1);
 		break;
+	case V850_SATSUBI:
+		op->type = R_ANAL_OP_TYPE_SUB;
+		{
+			const char *dst = F6_RN2 (word1);
+			const char *src = F6_RN1 (word1);
+			r_strbuf_appendf (&op->esil,
+				"%s,%s,:=,0x%x,%s,-=,31,$o,sat,:=,sat,?{,31,$s,?{,0x7fffffff,%s,:=,}{,0x80000000,%s,:=,},}",
+				src, dst, SEXT_IMM16_32 (word2), dst, dst, dst);
+			update_flags (op, -1);
+		}
+		break;
 	case V850_BCOND:
 	case V850_BCOND2:
 	case V850_BCOND3:
@@ -558,19 +566,28 @@ static int v850e0_op(RArchSession *a, RAnalOp *op, ut64 addr, const ut8 *buf, in
 		break;
 	case V850_BIT_MANIP:
 		{
-		ut8 bitop = word1 >> 14;
-		switch (bitop) {
-		case V850_BIT_CLR1:
-			bitmask = (1 << F8_BIT(word1));
-			r_strbuf_appendf (&op->esil, "%hu,%s,+,[1],%u,&,%hu,%s,+,=[1]", word2, F8_RN1(word1), bitmask, word2, F8_RN1(word1));
-			// TODO: Read the value of the memory byte and set zero flag accordingly!
-			break;
-		case V850_BIT_NOT1:
-			bitmask = (1 << F8_BIT(word1));
-			r_strbuf_appendf (&op->esil, "%hu,%s,+,[1],%u,^,%hu,%s,+,=[1]", word2, F8_RN1(word1), bitmask, word2, F8_RN1(word1));
-			// TODO: Read the value of the memory byte and set zero flag accordingly!
-			break;
-		}
+			ut8 bitop = word1 >> 14;
+			switch (bitop) {
+			case V850_BIT_CLR1:
+				bitmask = (1 << F8_BIT(word1));
+				r_strbuf_appendf (&op->esil,
+					"0%x,%s,+,0xffffffff,&,[1],DUP,0x%x,&,!,z,:=,0x%x,&,0x%x,%s,+,0xffffffff,&,=[1]",
+					SEXT_IMM16_32 (word2), F8_RN1 (word1), bitmask,
+					bitmask ^ 0xff, SEXT_IMM16_32 (word2), F8_RN1 (word1));
+				break;
+			case V850_BIT_NOT1:
+				bitmask = (1 << F8_BIT(word1));
+				r_strbuf_appendf (&op->esil,
+					"0x%x,%s,+,0xffffffff,&,[1],DUP,0x%x,&,!,z,:=,0x%x,^,0x%x,%s,+,0xffffffff,&,=[1]",
+					SEXT_IMM16_32 (word2), F8_RN1 (word1), bitmask,
+					bitmask, SEXT_IMM16_32 (word2), F8_RN1 (word1));
+				break;
+			case V850_BIT_TST1:
+				bitmask = (1 << F8_BIT(word1));
+				r_strbuf_appendf (&op->esil, "0x%x,%s,+,0xffffffff,&,[1],0x%x,&,!,z,:=",
+					SEXT_IMM16_32 (word2), F8_RN1 (word1), bitmask);
+				break;
+			}
 		}
 		break;
 	case V850_EXT1:
