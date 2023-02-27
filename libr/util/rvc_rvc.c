@@ -20,6 +20,7 @@
 //Access both git and rvc functionality from one set of functions
 static RList *uncommited_rvc(Rvc *rvc);
 static bool save_rvc(Rvc *vc);
+extern const RvcPlugin r_vc_plugin_rvc;
 
 static void free_blobs(RList *blobs) {
 	if (blobs) {
@@ -110,13 +111,7 @@ static Rvc *rvc_rvc_new(const char *path) {
 		free (rvc);
 		return NULL;
 	}
-	if (!rvc_use (rvc, RVC_TYPE_RVC)) {
-		sdb_unlink (rvc->db);
-		sdb_free (rvc->db);
-		free (rvc->path);
-		free (rvc);
-		return NULL;
-	}
+	rvc->p = &r_vc_plugin_rvc;
 	return rvc_save (rvc)? rvc : NULL;
 }
 
@@ -1035,12 +1030,13 @@ static Rvc *open_rvc(const char *rp) {
 			}
 		}
 	} else {
-		Rvc *repo = rvc_rvc_new(rp);
+		Rvc *repo = rvc_rvc_new (rp);
 		if (repo) {
+			repo->p = &r_vc_plugin_rvc;
 			return repo;
 		}
 	}
-	R_LOG_ERROR("Can't open rvc repo in: %s", rp);
+	R_LOG_ERROR ("Can't open rvc repo in: %s", rp);
 	return NULL;
 }
 

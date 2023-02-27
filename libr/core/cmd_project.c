@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2022 - pancake */
+/* radare - LGPL - Copyright 2009-2023 - pancake */
 
 #include <r_core.h>
 
@@ -8,7 +8,7 @@ static RCoreHelpMessage help_msg_P = {
 	"P.", "", "show current loaded project (see prj.name)",
 	"P+", " [name]", "save project (same as Ps, but doesnt checks for changes)",
 	"P-", " [name]", "delete project",
-	"P*", "", "save project (same as Ps, but doesnt checks for changes)",
+	"P*", "", "printn project script as r2 commands",
 	"P!", "([cmd])", "open a shell in the project directory",
 	"Pc", "", "close current project",
 	"Pd", " [N]", "diff Nth commit",
@@ -18,7 +18,7 @@ static RCoreHelpMessage help_msg_P = {
 	"Pn", "[j]", "manage notes associated with the project",
 	"Ps", " [file]", "save project (see dir.projects)",
 	"PS", " [file]", "save script file",
-	"PS*", "", "print the project script file (Like PS /dev/stdout)",
+	"PS*", " [name]", "print the project script file (Like P*, but requires a project)",
 	"NOTE:", "", "the 'e prj.name' evar can save/open/rename/list projects.",
 	"NOTE:", "", "see the other 'e??prj.' evars for more options.",
 	"NOTE:", "", "project are stored in dir.projects",
@@ -139,8 +139,9 @@ static int cmd_project(void *data, const char *input) {
 				r_config_get (core->config, "prj.name"), NULL);
 			r_syscmd_pushd (pdir);
 			free (pdir);
-			if (R_STR_ISNOTEMPTY (r_str_trim_head_ro (input + 1))) {
-				r_sys_cmdf ("%s", input + 1);
+			const char *cmd = r_str_trim_head_ro (input + 1);
+			if (R_STR_ISNOTEMPTY (cmd)) {
+				r_sys_cmdf ("%s", cmd);
 			} else {
 #if R2__WINDOWS__
 				r_sys_cmdf ("cmd");
@@ -154,7 +155,12 @@ static int cmd_project(void *data, const char *input) {
 		}
 		break;
 	case '*': // "P*"
+		// XXX dont use /dev/stdout
+#if R2__WINDOWS__
+		r_core_project_save_script (core, "CON", R_CORE_PRJ_ALL);
+#else
 		r_core_project_save_script (core, "/dev/stdout", R_CORE_PRJ_ALL);
+#endif
 		break;
 	case 'S': // "PS"
 		if (input[1] == ' ') {
@@ -163,7 +169,11 @@ static int cmd_project(void *data, const char *input) {
 			if (input[2]) {
 				r_core_project_cat (core, r_str_trim_head_ro (input + 2));
 			} else {
-				r_core_project_cat (core, fileproject);
+				if (R_STR_ISEMPTY (fileproject)) {
+					R_LOG_ERROR ("No project set. Use 'P*' or 'Ps <prjname>'");
+				} else {
+					r_core_project_cat (core, fileproject);
+				}
 			}
 		} else {
 			eprintf ("Usage: PS[*] [projectname]\n");
@@ -185,7 +195,7 @@ static int cmd_project(void *data, const char *input) {
 				} else {
 					char *str = r_core_project_notes_file (core, fileproject);
 					char *data = r_file_slurp (str, NULL);
-					int del = 0;
+					int count = 0;
 					if (data) {
 						char *ptr, *nl;
 						for (ptr = data; ptr; ptr = nl) {
@@ -193,7 +203,7 @@ static int cmd_project(void *data, const char *input) {
 							if (nl) {
 								*nl++ = 0;
 								if (strstr (ptr, input + 2)) {
-									del++;
+									count++;
 								} else {
 									fprintf (fd, "%s\n", ptr);
 								}
@@ -201,8 +211,8 @@ static int cmd_project(void *data, const char *input) {
 						}
 						free (data);
 					}
-					if (del > 0) {
-						R_LOG_ERROR ("Deleted %d lines", del);
+					if (count > 0) {
+						R_LOG_ERROR ("Deleted %d lines", count);
 					}
 					free (str);
 					fclose (fd);
@@ -293,7 +303,7 @@ static int cmd_project(void *data, const char *input) {
 		}
 		break;
 	case 'i': // "Pi" DEPRECATE
-		if (file && *file) {
+		if (R_STR_ISNOTEMPTY (file)) {
 			char *prj_name = r_core_project_name (core, file);
 			if (!R_STR_ISEMPTY (prj_name)) {
 				r_cons_println (prj_name);
@@ -311,9 +321,11 @@ static int cmd_project(void *data, const char *input) {
 	case '.': // "P."
 		r_cons_printf ("%s\n", fileproject);
 		break;
+	case 'l':
+		r_core_project_list (core, input[1]);
+		break;
 	case 0: // "P"
 	case 'P':
-	case 'l':
 	case 'j': // "Pj"
 		r_core_project_list (core, input[0]);
 		break;
