@@ -20,6 +20,7 @@ typedef struct {
 // XXX remove globals
 static R_TH_LOCAL RList *Glist = NULL;
 
+#include "qjs/loader.c"
 #include "qjs/arch.c"
 #include "qjs/core.c"
 
@@ -27,13 +28,13 @@ static R_TH_LOCAL RList *Glist = NULL;
 
 static bool eval(JSContext *ctx, const char *code);
 
-static void js_dump_obj(JSContext *ctx, FILE *f, JSValueConst val) {
+static void r2qjs_dump_obj(JSContext *ctx, JSValueConst val) {
 	const char *str = JS_ToCString (ctx, val);
 	if (str) {
-		fprintf (f, "%s\n", str);
+		R_LOG_ERROR ("%s", str);
 		JS_FreeCString (ctx, str);
 	} else {
-		fprintf (f, "[exception]\n");
+		R_LOG_ERROR ("[exception]");
 	}
 }
 
@@ -42,11 +43,11 @@ static void js_std_dump_error1(JSContext *ctx, JSValueConst exception_val) {
 	bool is_error;
 
 	is_error = JS_IsError (ctx, exception_val);
-	js_dump_obj (ctx, stderr, exception_val);
+	r2qjs_dump_obj (ctx, exception_val);
 	if (is_error) {
 		val = JS_GetPropertyStr (ctx, exception_val, "stack");
 		if (!JS_IsUndefined (val)) {
-			js_dump_obj (ctx, stderr, val);
+			r2qjs_dump_obj (ctx, val);
 		}
 		JS_FreeValue (ctx, val);
 	}
@@ -385,7 +386,7 @@ static bool eval(JSContext *ctx, const char *code) {
 	if (JS_IsException (v)) {
 		js_std_dump_error (ctx);
 		JSValue e = JS_GetException (ctx);
-		js_dump_obj (ctx, stderr, e);
+		r2qjs_dump_obj (ctx, e);
 	}
 	eval_jobs (ctx);
 	if (wantRaw) {
@@ -407,9 +408,18 @@ static bool lang_quickjs_file(RLangSession *s, const char *file) {
 	bool rc = false;
 	char *code = r_file_slurp (file, NULL);
 	if (code) {
-		rc = eval (k->ctx, code) == 0;
-		free (code);
-		rc = true;
+		int loaded = r2qjs_loader (k->ctx, code);
+		if (loaded == 1) {
+			rc = true;
+		} else if (loaded == -1) {
+			// Error loading the file
+			return false;
+		} else {
+			// not a package
+			rc = eval (k->ctx, code) == 0;
+			free (code);
+			rc = true;
+		}
 	}
 	return rc;
 }
