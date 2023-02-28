@@ -28,6 +28,9 @@ typedef struct {
 } R2QJSArch;
 
 
+static R_TH_LOCAL JSContext *Gctx = NULL; // XXX no globals
+static R_TH_LOCAL JSValue Gres; //  = JS_UNDEFINED;
+
 #define R2QJS_ASSERT(x, msg) if (!(x)) { return JS_ThrowRangeError (ctx, msg); }
 #define R2QJS_GETNUMBER(dst, src, nam, msg) { \
 	JSValue name = JS_GetPropertyStr (ctx, (src), (nam)); \
@@ -96,22 +99,19 @@ static bool r2qjs_arch_decode(RArchSession *s, struct r_anal_op_t *op, RArchDeco
 	return JS_ToBool (ctx, res);
 failure:
 	if (errmsg) {
-		eprintf ("%s", errmsg);
+		R_LOG_ERROR ("%s", errmsg);
 		return false;
 	}
 	return false;
 }
-
-static R_TH_LOCAL JSContext *Gctx = NULL; // XXX no globals
-static R_TH_LOCAL JSValue Gres; //  = JS_UNDEFINED;
 
 static bool r2qjs_arch_init(RArchSession *s) {
 	R2QJSArch *qa = R_NEW0 (R2QJSArch);
 	if (qa && Gctx) {
 		qa->ctx = Gctx;
 		qa->core = s->user;
-		JSValue func = JS_GetPropertyStr (Gctx, Gres, "decode");
-		if (!JS_IsFunction (Gctx, func)) {
+		JSValue func = JS_GetPropertyStr (qa->ctx, Gres, "decode");
+		if (!JS_IsFunction (qa->ctx, func)) {
 			R_LOG_WARN ("r2.plugin requires the function to return an object with the `call` field to be a function");
 			free (qa);
 			return false;
@@ -124,7 +124,7 @@ static bool r2qjs_arch_init(RArchSession *s) {
 
 static JSValue r2plugin_arch(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
 	Gctx = ctx; // XXX no globals
-	const char * errmsg = NULL;
+	const char *errmsg = NULL;
 	JSRuntime *rt = JS_GetRuntime (ctx);
 	QjsContext *k = JS_GetRuntimeOpaque (rt);
  	RCore *core = k->core;
@@ -185,62 +185,4 @@ failure:
 		return JS_ThrowRangeError (ctx, "%s", errmsg);
 	}
 	return JS_NewBool (ctx, false);
-#if 0
-	RCorePlugin *ap = R_NEW0 (RCorePlugin);
-	if (!ap) {
-		return JS_ThrowRangeError (ctx, "heap stuff");
-	}
-	JSValue name = JS_GetPropertyStr (ctx, res, "name");
-	size_t namelen;
-	const char *nameptr = JS_ToCStringLen2 (ctx, &namelen, name, false);
-	if (nameptr) {
-		ap->name = strdup (nameptr);
-	} else {
-		R_LOG_WARN ("r2.plugin requires the function to return an object with the `name` field");
-		return JS_NewBool (ctx, false);
-	}
-	JSValue desc = JS_GetPropertyStr (ctx, res, "desc");
-	const char *descptr = JS_ToCStringLen2 (ctx, &namelen, desc, false);
-	if (descptr) {
-		ap->desc = strdup (descptr);
-	}
-	JSValue license = JS_GetPropertyStr (ctx, res, "license");
-	const char *licenseptr = JS_ToCStringLen2 (ctx, &namelen, license, false);
-	if (licenseptr) {
-		ap->license = strdup (licenseptr);
-	}
-	JSValue func = JS_GetPropertyStr (ctx, res, "call");
-	if (!JS_IsFunction (ctx, func)) {
-		R_LOG_WARN ("r2.plugin requires the function to return an object with the `call` field to be a function");
-		// return JS_ThrowRangeError (ctx, "r2.plugin requires the function to return an object with the `call` field to be a function");
-		return JS_NewBool (ctx, false);
-	}
-
-	QjsContext *qc = qjsctx_find (core, ap->name);
-	if (qc) {
-		R_LOG_WARN ("r2.plugin with name %s is already registered", ap->name);
-		free ((char*)ap->name);
-		free (ap);
-		// return JS_ThrowRangeError (ctx, "r2.plugin core already registered (only one exists)");
-		return JS_NewBool (ctx, false);
-	}
-	if (Gplug >= MAXPLUGS) {
-		R_LOG_WARN ("Maximum number of plugins loaded! this is a limitation induced by the");
-		return JS_NewBool (ctx, false);
-	}
-	qc = qjsctx_add (core, nameptr, ctx, func);
-	ap->call = Gcalls[Gplug];
-	GcallsData[Gplug] = qc;
-	Gplug++;
-
-	int ret = -1;
-	RLibStruct *lib = R_NEW0 (RLibStruct);
-	if (lib) {
-		lib->type = R_LIB_TYPE_CORE;
-		lib->data = ap;
-		lib->version = R2_VERSION;
-		ret = r_lib_open_ptr (core->lib, nameptr, NULL, lib);
-	}
-#endif
 }
-
