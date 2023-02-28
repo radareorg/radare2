@@ -2,6 +2,8 @@ PKGNAME radare2
 VERSION 5.8.3
 CONTACT pancake ; pancake@nopcode.org
 
+DESCRIPTION The UNIX-like reverse engineering toolkit ;
+
 LANG_C!
 
 ARG_DISABLE DEBUGGER debugger disable native debugger features ;
@@ -282,29 +284,30 @@ REPORT
 	USE_LIB_XXHASH USE_LIB_ZIP USE_PTRACE_WRAP USE_SYSLZ4 VERSION WANT_DYLINK
 ;
 
-(( TODO: Add the rest of .pc files here.. add a rule for acr? ))
+PKGCFG_DO pkgcfg/r_egg.pc r_egg r_asm r_syscall r_util r_reg r_flag r_cons ;
+PKGCFG_DO pkgcfg/r_io.pc r_io r_util r_socket r_cons r_crypto ;
+PKGCFG_DO pkgcfg/r_esil.pc r_esil r_util r_reg ;
+PKGCFG_DO pkgcfg/r_cons.pc r_cons r_util ;
+PKGCFG_DO pkgcfg/r_socket.pc r_socket r_util ;
+PKGCFG_DO pkgcfg/r_reg.pc r_reg r_util ;
+PKGCFG_DO pkgcfg/r_bp.pc r_bp r_util ;
+PKGCFG_DO pkgcfg/r_flag.pc r_flag r_util ;
+PKGCFG_DO pkgcfg/r_bin.pc r_bin r_util r_io r_socket r_magic ;
+PKGCFG_DO pkgcfg/r_lang.pc r_lang r_util ;
+PKGCFG_DO pkgcfg/r_syscall.pc r_syscall r_util ;
+PKGCFG_DO pkgcfg/r_config.pc r_config r_util ;
+PKGCFG_DO pkgcfg/r_fs.pc r_fs r_util r_io ;
+PKGCFG_DO pkgcfg/r_util.pc r_util ;
+PKGCFG_DO pkgcfg/r_magic.pc r_magic r_util ;
+PKGCFG_DO pkgcfg/r_search.pc r_search r_util ;
+PKGCFG_DO pkgcfg/r_arch.pc r_arch r_util r_reg r_esil ;
+PKGCFG_DO pkgcfg/r_crypto.pc r_crypto r_util ;
+PKGCFG_DO pkgcfg/r_anal.pc r_anal r_util r_reg r_syscall r_search r_cons r_flag r_crypto r_arch r_esil ;
+PKGCFG_DO pkgcfg/r_asm.pc r_asm r_util r_reg r_syscall r_search r_cons r_flag r_crypto r_arch r_esil ;
+PKGCFG_DO pkgcfg/r_debug.pc r_debug r_util ;
+
+/* TODO: Add the rest of .pc files here.. add a rule for acr? */
 SUBDIRS ./config-user.mk
 	libr/include/r_userconf.h
-	pkgcfg/r_io.pc
-	pkgcfg/r_magic.pc
-	pkgcfg/r_esil.pc
-	pkgcfg/r_asm.pc
-	pkgcfg/r_bin.pc
-	pkgcfg/r_anal.pc
-	pkgcfg/r_arch.pc
-	pkgcfg/r_cons.pc
 	pkgcfg/r_core.pc
-	pkgcfg/r_lang.pc
-	pkgcfg/r_socket.pc
-	pkgcfg/r_debug.pc
-	pkgcfg/r_reg.pc
-	pkgcfg/r_config.pc
-	pkgcfg/r_flag.pc
-	pkgcfg/r_syscall.pc
-	pkgcfg/r_util.pc
-	pkgcfg/r_search.pc
-	pkgcfg/r_bp.pc
-	pkgcfg/r_fs.pc
-	pkgcfg/r_egg.pc
-	pkgcfg/r_crypto.pc
 ;
