@@ -1,7 +1,7 @@
 prefix=@PREFIX@
 exec_prefix=${prefix}
-libdir=@LIBDIR@
-includedir=${prefix}/include
+libdir=@PKGCFG_LIBDIR@
+includedir=@PKGCFG_INCDIR@
 
 Name: r_magic
 Description: radare foundation libraries
