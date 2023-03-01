@@ -281,6 +281,7 @@ extern RArchPlugin r_arch_plugin_sh;
 extern RArchPlugin r_arch_plugin_v810;
 extern RArchPlugin r_arch_plugin_rsp;
 extern RArchPlugin r_arch_plugin_riscv;
+extern RArchPlugin r_arch_plugin_riscv_cs;
 extern RArchPlugin r_arch_plugin_any_as;
 extern RArchPlugin r_arch_plugin_any_vasm;
 extern RArchPlugin r_arch_plugin_arm;
