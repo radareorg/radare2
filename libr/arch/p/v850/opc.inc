@@ -903,22 +903,22 @@ const struct v850_opcode v850_opcodes[] = {
 	{ "jnz", BOP (0xa), BOP_MASK, IF3, 0, V850_CPU_ALL, R_ANAL_OP_TYPE_CJMP, "z,!,?{,#0,PC,:=,}" },
 	{ "jbr", BOP (0x5), BOP_MASK, IF3, 0, V850_CPU_ALL, R_ANAL_OP_TYPE_CJMP },
 	{ "ldacc", two (0x07e0, 0x0bc4), two (0x07e0, 0xffff), {R1, R2}, 0, V850_CPU_E2_UP | V850_CPU_OPTION_EXTENSION, R_ANAL_OP_TYPE_LOAD },
-	{ "ld.b", two (0x0700, 0x0000), two (0x07e0, 0x0000), {D16, R1, R2}, 2, V850_CPU_ALL, R_ANAL_OP_TYPE_LOAD, "#0,[1],#1,=" },
-	{ "ld.b", two (0x0780, 0x0005), two (0xffe0, 0x000f), {D23, R1, R3}, 2, V850_CPU_E2_UP, R_ANAL_OP_TYPE_LOAD, "#0,[1],#1,=" },
+	{ "ld.b", two (0x0700, 0x0000), two (0x07e0, 0x0000), {D16, R1, R2}, 2, V850_CPU_ALL, R_ANAL_OP_TYPE_LOAD, "#0,#1,+,0xffffffff,&,[1],DUP,0x80,&,0xffffff,*,|,#2,:=" },
+	{ "ld.b", two (0x0780, 0x0005), two (0xffe0, 0x000f), {D23, R1, R3}, 2, V850_CPU_E2_UP, R_ANAL_OP_TYPE_LOAD, "#0,#1,+,0xffffffff,&,[1],DUP,0x80,&,0xffffff,*,|,#2,:=" },
 	{ "ld.b23", two (0x0780, 0x0005), two (0x07e0, 0x000f), {D23, R1, R3}, 2, V850_CPU_E2_UP | V850_CPU_OPTION_ALIAS, R_ANAL_OP_TYPE_LOAD },
-	{ "ld.bu", two (0x0780, 0x0001), two (0x07c0, 0x0001), {D16_16, R1, R2_NOTR0}, 2, V850_CPU_NON0, R_ANAL_OP_TYPE_LOAD, "#0,[1],#1,=" }, // TODO: not sure how to do unsigned in ESIL
-	{ "ld.bu", two (0x07a0, 0x0005), two (0xffe0, 0x000f), {D23, R1, R3}, 2, V850_CPU_E2_UP, R_ANAL_OP_TYPE_LOAD, "#0,[1],#1,=" },
+	{ "ld.bu", two (0x0780, 0x0001), two (0x07c0, 0x0001), {D16_16, R1, R2_NOTR0}, 2, V850_CPU_NON0, R_ANAL_OP_TYPE_LOAD, "#0,#1,+,0xffffffff,&,[1],#2,:=" },
+	{ "ld.bu", two (0x07a0, 0x0005), two (0xffe0, 0x000f), {D23, R1, R3}, 2, V850_CPU_E2_UP, R_ANAL_OP_TYPE_LOAD, "#0,#1,+,0xffffffff,&,[1],#2,:=" },
 	{ "ld.bu23", two (0x07a0, 0x0005), two (0x07e0, 0x000f), {D23, R1, R3}, 2, V850_CPU_E2_UP | V850_CPU_OPTION_ALIAS, R_ANAL_OP_TYPE_LOAD },
 	{ "ld.dw", two (0x07a0, 0x0009), two (0xffe0, 0x001f), {D23_ALIGN1, R1, R3_EVEN}, 2, V850_CPU_E3V5_UP, R_ANAL_OP_TYPE_LOAD },
 	{ "ld.dw23", two (0x07a0, 0x0009), two (0xffe0, 0x001f), {D23_ALIGN1, R1, R3_EVEN}, 2, V850_CPU_E3V5_UP | V850_CPU_OPTION_ALIAS, R_ANAL_OP_TYPE_LOAD },
-	{ "ld.h", two (0x0720, 0x0000), two (0x07e0, 0x0001), {D16_15, R1, R2}, 2, V850_CPU_ALL, R_ANAL_OP_TYPE_LOAD },
-	{ "ld.h", two (0x0780, 0x0007), two (0x07e0, 0x000f), {D23_ALIGN1, R1, R3}, 2, V850_CPU_E2_UP, R_ANAL_OP_TYPE_LOAD },
+	{ "ld.h", two (0x0720, 0x0000), two (0x07e0, 0x0001), {D16_15, R1, R2}, 2, V850_CPU_ALL, R_ANAL_OP_TYPE_LOAD, "#0,#1,+,0xfffffffe,&,[2],DUP,0x8000,&,0xffff,*,|,#2,:=" },
+	{ "ld.h", two (0x0780, 0x0007), two (0x07e0, 0x000f), {D23_ALIGN1, R1, R3}, 2, V850_CPU_E2_UP, R_ANAL_OP_TYPE_LOAD, "#0,#1,+,0xfffffffe,&,[2],DUP,0x8000,&,0xffff,*,|,#2,:=" },
 	{ "ld.h23", two (0x0780, 0x0007), two (0x07e0, 0x000f), {D23_ALIGN1, R1, R3}, 2, V850_CPU_E2_UP | V850_CPU_OPTION_ALIAS, R_ANAL_OP_TYPE_LOAD },
-	{ "ld.hu", two (0x07e0, 0x0001), two (0x07e0, 0x0001), {D16_15, R1, R2_NOTR0}, 2, V850_CPU_NON0, R_ANAL_OP_TYPE_LOAD, "#0,[2],#1,="   },
-	{ "ld.hu", two (0x07a0, 0x0007), two (0x07e0, 0x000f), {D23_ALIGN1, R1, R3}, 2, V850_CPU_E2_UP, R_ANAL_OP_TYPE_LOAD, "#0,[2],#1,=" },
+	{ "ld.hu", two (0x07e0, 0x0001), two (0x07e0, 0x0001), {D16_15, R1, R2_NOTR0}, 2, V850_CPU_NON0, R_ANAL_OP_TYPE_LOAD, "#0,#1,+,0xfffffffe,&,[2],#2,:="   },
+	{ "ld.hu", two (0x07a0, 0x0007), two (0x07e0, 0x000f), {D23_ALIGN1, R1, R3}, 2, V850_CPU_E2_UP, R_ANAL_OP_TYPE_LOAD, "#0,#1,+,0xfffffffe,&,[2],#2,:=" },
 	{ "ld.hu23", two (0x07a0, 0x0007), two (0x07e0, 0x000f), {D23_ALIGN1, R1, R3}, 2, V850_CPU_E2_UP | V850_CPU_OPTION_ALIAS, R_ANAL_OP_TYPE_LOAD },
-	{ "ld.w", two (0x0720, 0x0001), two (0x07e0, 0x0001), {D16_15, R1, R2}, 2, V850_CPU_ALL, R_ANAL_OP_TYPE_LOAD, "#0,[4],#1," },
-	{ "ld.w", two (0x0780, 0x0009), two (0xffe0, 0x001f), {D23_ALIGN1, R1, R3}, 2, V850_CPU_E2_UP, R_ANAL_OP_TYPE_LOAD, "#0,[4],#1,=" },
+	{ "ld.w", two (0x0720, 0x0001), two (0x07e0, 0x0001), {D16_15, R1, R2}, 2, V850_CPU_ALL, R_ANAL_OP_TYPE_LOAD, "#0,#1,+,0xfffffffc,&,[4],#2,:=" },
+	{ "ld.w", two (0x0780, 0x0009), two (0xffe0, 0x001f), {D23_ALIGN1, R1, R3}, 2, V850_CPU_E2_UP, R_ANAL_OP_TYPE_LOAD, "#0,#1,+,0xfffffffc,&,[4],#2,:=" },
 	{ "ld.w23", two (0x0780, 0x0009), two (0x07e0, 0x001f), {D23_ALIGN1, R1, R3}, 2, V850_CPU_E2_UP | V850_CPU_OPTION_ALIAS, R_ANAL_OP_TYPE_LOAD },
 	{ "ldl.w", two (0x07e0, 0x0378), two (0xffe0, 0x07ff), {R1, R3}, 1, V850_CPU_E3V5_UP, R_ANAL_OP_TYPE_LOAD },
 	/// XXX load status word is always zero
@@ -937,9 +937,9 @@ const struct v850_opcode v850_opcodes[] = {
 	{ "mac", two (0x07e0, 0x03c0), two (0x07e0, 0x0fe1), {R1, R2, R3_EVEN, R4_EVEN}, 0, V850_CPU_E2_UP, R_ANAL_OP_TYPE_MUL },
 	{ "macu", two (0x07e0, 0x03e0), two (0x07e0, 0x0fe1), {R1, R2, R3_EVEN, R4_EVEN}, 0, V850_CPU_E2_UP, R_ANAL_OP_TYPE_MUL },
 	{ "macuacc", two (0x07e0, 0x0bc2), two (0x07e0, 0xffff), {R1, R2}, 0, V850_CPU_E2_UP | V850_CPU_OPTION_EXTENSION, R_ANAL_OP_TYPE_MUL },
-	{ "mov", OP (0x00), OP_MASK, {R1, R2_NOTR0}, 0, V850_CPU_ALL, R_ANAL_OP_TYPE_MOV, "#0,#1,=" }, // TODO: mov 0xff, r2, r1
-	{ "mov", OP (0x10), OP_MASK, {I5, R2_NOTR0}, 0, V850_CPU_ALL, R_ANAL_OP_TYPE_MOV, "#0,#1,=" },
-	{ "mov", one (0x0620), one (0xffe0), {IMM32, R1}, 0, V850_CPU_NON0, R_ANAL_OP_TYPE_MOV, "#0,#1,=" }, // mov 0xfff, r1
+	{ "mov", OP (0x00), OP_MASK, {R1, R2_NOTR0}, 0, V850_CPU_ALL, R_ANAL_OP_TYPE_MOV, "#0,#1,:=" }, // TODO: mov 0xff, r2, r1
+	{ "mov", OP (0x10), OP_MASK, {I5, R2_NOTR0}, 0, V850_CPU_ALL, R_ANAL_OP_TYPE_MOV, "#0,#1,:=" },
+	{ "mov", one (0x0620), one (0xffe0), {IMM32, R1}, 0, V850_CPU_NON0, R_ANAL_OP_TYPE_MOV, "#0,#1,:=" }, // mov 0xfff, r1
 	/* Gas local alias of mov imm32(not defined in spec). */
 	{ "movl", one (0x0620), one (0xffe0), {IMM32, R1}, 0, V850_CPU_NON0 | V850_CPU_OPTION_ALIAS },
 	{ "movea", OP (0x31), OP_MASK, {I16, R1, R2_NOTR0}, 0, V850_CPU_ALL, R_ANAL_OP_TYPE_MOV, "#0,#1,+,#2,=" },
@@ -1057,10 +1057,10 @@ const struct v850_opcode v850_opcodes[] = {
 	{ "tst", OP (0x0b), OP_MASK, IF1, 0, V850_CPU_ALL, R_ANAL_OP_TYPE_CMP, "#1,#0,&,POP,0,ov,:=,$s,s,:=,$z,z,:=" },
 	{ "tst1", two (0xc7c0, 0x0000), two (0xc7e0, 0x0000), {B3, D16, R1}, 3, V850_CPU_ALL, R_ANAL_OP_TYPE_CMP },
 	{ "tst1", two (0x07e0, 0x00e6), two (0x07e0, 0xffff), {R2, R1}, 3, V850_CPU_NON0, R_ANAL_OP_TYPE_CMP },
-	{ "xor", OP (0x09), OP_MASK, IF1, 0, V850_CPU_ALL , R_ANAL_OP_TYPE_XOR, "#0,#1,^,#1,=" },
-	{ "xori", OP (0x35), OP_MASK, IF6U, 0, V850_CPU_ALL , R_ANAL_OP_TYPE_XOR, "#0,#1,^,#2,=" },
-	{ "zxb", one (0x0080), one (0xffe0), {R1}, 0, V850_CPU_NON0, R_ANAL_OP_TYPE_MOV },
-	{ "zxh", one (0x00c0), one (0xffe0), {R1}, 0, V850_CPU_NON0, R_ANAL_OP_TYPE_MOV },
+	{ "xor", OP (0x09), OP_MASK, IF1, 0, V850_CPU_ALL , R_ANAL_OP_TYPE_XOR, "#0,#1,^,#1,=,0,ov,:=,31,$s,s,:=,$z,z,:=" },
+	{ "xori", OP (0x35), OP_MASK, IF6U, 0, V850_CPU_ALL , R_ANAL_OP_TYPE_XOR, "#0,#1,^,#2,=,0,ov,:=,31,$s,s,:=,$z,z,:=" },
+	{ "zxb", one (0x0080), one (0xffe0), {R1}, 0, V850_CPU_NON0, R_ANAL_OP_TYPE_MOV, "0xff,#0,&=" },
+	{ "zxh", one (0x00c0), one (0xffe0), {R1}, 0, V850_CPU_NON0, R_ANAL_OP_TYPE_MOV, "0xffff,#0,&=" },
 
 	/* Floating point operation. */
 	{ "absf.d", two (0x07e0, 0x0458), two (0x0fff, 0x0fff), {R2_EVEN, R3_EVEN}, 0, V850_CPU_E2V3_UP },

@@ -301,7 +301,12 @@ static char *distillate(v850np_inst *inst, const char *esilfmt) {
 		if (ch == '#') {
 			int n = esilfmt[1] - '0';
 			if (n >= 0 && n < 10) {
-				r_strbuf_appendf (sb, "%s", (const char *)r_list_get_n (args, n));
+				const char *_arg = (const char *)r_list_get_n (args, n);
+				if (r_num_is_valid_input (NULL, _arg)) {
+					r_strbuf_appendf (sb, "0x%"PFMT64x, r_num_get (NULL, _arg) & 0xffffffff);
+				} else {
+					r_strbuf_appendf (sb, "%s", _arg);
+				}
 				esilfmt += 2;
 				continue;
 			}
