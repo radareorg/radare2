@@ -264,52 +264,50 @@ static void set_opdir(RAnalOp *op) {
 
 static bool riscv_decode(RArchSession *a, RAnalOp *op, RArchDecodeMask mask) {
 	CapstonePluginData *cpd = (CapstonePluginData*)a->data;
-	const ut8 *buf = op->bytes;
-	const int len = op->size;
-	op->size = 8;
+	bool res = false;
 	cs_insn *insn = NULL;
-	int n = cs_disasm (cpd->cs_handle, (ut8*)buf, len, op->addr, 1, &insn);
+	int n = cs_disasm (cpd->cs_handle, (ut8*)op->bytes, op->size, op->addr, 1, &insn);
 	if (n < 1) {
 		op->type = R_ANAL_OP_TYPE_ILL;
 		if (mask & R_ARCH_OP_MASK_DISASM) {
 			op->mnemonic = strdup ("invalid");
 		}
 	} else {
+		res = true;
 		if (mask & R_ARCH_OP_MASK_DISASM) {
-			op->mnemonic = r_str_newf ("%s%s%s",
-				insn->mnemonic,
-				insn->op_str[0]? " ": "",
-				insn->op_str);
+			op->mnemonic = insn->op_str[0]?
+				r_str_newf ("%s %s", insn->mnemonic, insn->op_str)
+				: strdup (insn->mnemonic);
 		}
 		if (insn->detail) {
 			op->id = insn->id;
 			op->size = insn->size;
 			switch (insn->id) {
-				case RISCV_INS_C_NOP:
-					op->type = R_ANAL_OP_TYPE_NOP;
-					break;
-				case RISCV_INS_INVALID:
-					op->type = R_ANAL_OP_TYPE_ILL;
-					break;
-				case RISCV_INS_C_JALR:
-					op->type = R_ANAL_OP_TYPE_UCALL;
-					break;
-				case RISCV_INS_C_JR:
-					op->type = R_ANAL_OP_TYPE_UJMP;
-					break;
-				case RISCV_INS_C_MV:
-					op->type = R_ANAL_OP_TYPE_MOV;
-					break;
-				case RISCV_INS_JAL:
-					op->type = R_ANAL_OP_TYPE_CALL;
-					op->jump = IMM(0);
-					op->fail = op->addr + op->size;
-					break;
-				case RISCV_INS_MRET:
-				case RISCV_INS_SRET:
-				case RISCV_INS_URET:
-					op->type = R_ANAL_OP_TYPE_RET;
-					break;
+			case RISCV_INS_C_NOP:
+				op->type = R_ANAL_OP_TYPE_NOP;
+				break;
+			case RISCV_INS_INVALID:
+				op->type = R_ANAL_OP_TYPE_ILL;
+				break;
+			case RISCV_INS_C_JALR:
+				op->type = R_ANAL_OP_TYPE_UCALL;
+				break;
+			case RISCV_INS_C_JR:
+				op->type = R_ANAL_OP_TYPE_UJMP;
+				break;
+			case RISCV_INS_C_MV:
+				op->type = R_ANAL_OP_TYPE_MOV;
+				break;
+			case RISCV_INS_JAL:
+				op->type = R_ANAL_OP_TYPE_CALL;
+				op->jump = IMM(0);
+				op->fail = op->addr + op->size;
+				break;
+			case RISCV_INS_MRET:
+			case RISCV_INS_SRET:
+			case RISCV_INS_URET:
+				op->type = R_ANAL_OP_TYPE_RET;
+				break;
 			}
 			set_opdir (op);
 			if (insn && mask & R_ARCH_OP_MASK_OPEX) {
@@ -330,11 +328,11 @@ static bool riscv_decode(RArchSession *a, RAnalOp *op, RArchDecodeMask mask) {
 		op->id = insn->id;
 		cs_free (insn, n);
 	}
-	return op->size;
+	return res;
 }
 
 #if 0
-static bool riscv_decode(RArchSession *s, RAnalOp *op, RArchDecodeMask mask) {
+static bool old_riscv_decode(RArchSession *s, RAnalOp *op, RArchDecodeMask mask) {
 	ut64 addr = op->addr;
 	const ut8 *buf = op->bytes;
 	int len = op->size;
