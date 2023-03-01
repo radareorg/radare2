@@ -50,6 +50,7 @@ r_arch_sources = [
   'p/rsp/plugin.c',
   'p/rsp/rsp_idec.c',
   'p/riscv/plugin.c',
+  'p/riscv_cs/plugin.c',
   'p/xap/plugin.c',
   'p/6502/plugin.c',
   'p/snes/plugin.c',

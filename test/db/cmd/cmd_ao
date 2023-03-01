@@ -150,9 +150,9 @@ RUN
 NAME=aom-riscv
 FILE=-
 CMDS=<<EOF
-wa nop
 e asm.arch=riscv.cs
 e asm.bits=64
+wx 13 # wa nop
 aom
 aoml~?
 e asm.bits=32
@@ -161,6 +161,7 @@ e asm.bits=16
 aoml~?
 EOF
 EXPECT=<<EOF
+nop
 272
 272
 272

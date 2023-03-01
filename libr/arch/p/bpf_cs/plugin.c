@@ -633,6 +633,7 @@ static int archinfo(RArchSession *as, ut32 q) {
 	}
 	return 0;
 }
+
 static bool init(RArchSession *s) {
 	r_return_val_if_fail (s, false);
 	if (s->data) {

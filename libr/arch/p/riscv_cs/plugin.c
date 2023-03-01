@@ -1,7 +1,6 @@
-/* radare2 - LGPL - Copyright 2013-2020 - pancake */
+/* radare2 - LGPL - Copyright 2013-2023 - pancake */
 
-#include <r_asm.h>
-#include <r_lib.h>
+#include <r_arch.h>
 
 #include <capstone/capstone.h>
 #if CS_API_MAJOR >= 5
@@ -99,6 +98,7 @@ static void opex(RStrBuf *buf, csh handle, cs_insn *insn) {
 	pj_free (pj);
 }
 
+#if 0
 static const char *arg(csh *handle, cs_insn *insn, char *buf, size_t buf_sz, int n) {
 	*buf = 0;
 	switch (insn->detail->riscv.operands[n].type) {
@@ -132,34 +132,11 @@ static const char *arg(csh *handle, cs_insn *insn, char *buf, size_t buf_sz, int
 	}
 	return buf;
 }
+#endif
 
 #define ARG(x) (*str[x] != 0)? str[x]: arg (handle, insn, str[x], sizeof (str[x]), x)
 
-static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh *handle, cs_insn *insn) {
-	char str[8][32] = {{0}};
-	int i;
-
-	r_strbuf_init (&op->esil);
-	r_strbuf_set (&op->esil, "");
-
-	if (insn) {
-		// caching operands
-		for (i = 0; i < insn->detail->riscv.op_count && i < 8; i++) {
-			*str[i] = 0;
-			ARG (i);
-		}
 #if 0
-		switch (insn->id) {
-		//case RISCV_INS_NOP:
-		//	r_strbuf_set (&op->esil, ",");
-		//	break;
-		}
-#endif
-	}
-
-	return 0;
-}
-
 static int parse_reg_name(RRegItem *reg, csh handle, cs_insn *insn, int reg_num) {
 	if (!reg) {
 		return -1;
@@ -177,9 +154,12 @@ static int parse_reg_name(RRegItem *reg, csh handle, cs_insn *insn, int reg_num)
 	}
 	return 0;
 }
+#endif
 
-static void op_fillval(RAnal *anal, RAnalOp *op, csh *handle, cs_insn *insn) {
-	static R_TH_LOCAL RRegItem reg;
+// static R_TH_LOCAL RRegItem reg;
+static void op_fillval(RArchSession *as, RAnalOp *op, csh *handle, cs_insn *insn) {
+#if R2_590
+	// using reg names instead
 	RAnalValue *dst, *src0, *src1;
 	switch (op->type & R_ANAL_OP_TYPE_MASK) {
 	case R_ANAL_OP_TYPE_LOAD:
@@ -253,6 +233,7 @@ capstone bug
 	if (insn && (insn->id == RISCV_INS_SLTI || insn->id == RISCV_INS_SLTIU)) {
 		SET_SRC_DST_3_IMM (op);
 	}
+#endif
 }
 
 static void set_opdir(RAnalOp *op) {
@@ -278,10 +259,84 @@ static void set_opdir(RAnalOp *op) {
 }
 
 #define CSINC RISCV
-#define CSINC_MODE (a->config->bits == 64)? CS_MODE_RISCV64: CS_MODE_RISCV32
-#include "capstone.inc"
+#define CSINC_MODE (as->config->bits == 64)? CS_MODE_RISCV64: CS_MODE_RISCV32
+#include "../capstone.inc"
 
-static int analop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
+static bool riscv_decode(RArchSession *a, RAnalOp *op, RArchDecodeMask mask) {
+	CapstonePluginData *cpd = (CapstonePluginData*)a->data;
+	bool res = false;
+	cs_insn *insn = NULL;
+	int n = cs_disasm (cpd->cs_handle, (ut8*)op->bytes, op->size, op->addr, 1, &insn);
+	if (n < 1) {
+		op->type = R_ANAL_OP_TYPE_ILL;
+		if (mask & R_ARCH_OP_MASK_DISASM) {
+			op->mnemonic = strdup ("invalid");
+		}
+	} else {
+		res = true;
+		if (mask & R_ARCH_OP_MASK_DISASM) {
+			op->mnemonic = insn->op_str[0]?
+				r_str_newf ("%s %s", insn->mnemonic, insn->op_str)
+				: strdup (insn->mnemonic);
+		}
+		if (insn->detail) {
+			op->id = insn->id;
+			op->size = insn->size;
+			switch (insn->id) {
+			case RISCV_INS_C_NOP:
+				op->type = R_ANAL_OP_TYPE_NOP;
+				break;
+			case RISCV_INS_INVALID:
+				op->type = R_ANAL_OP_TYPE_ILL;
+				break;
+			case RISCV_INS_C_JALR:
+				op->type = R_ANAL_OP_TYPE_UCALL;
+				break;
+			case RISCV_INS_C_JR:
+				op->type = R_ANAL_OP_TYPE_UJMP;
+				break;
+			case RISCV_INS_C_MV:
+				op->type = R_ANAL_OP_TYPE_MOV;
+				break;
+			case RISCV_INS_JAL:
+				op->type = R_ANAL_OP_TYPE_CALL;
+				op->jump = IMM(0);
+				op->fail = op->addr + op->size;
+				break;
+			case RISCV_INS_MRET:
+			case RISCV_INS_SRET:
+			case RISCV_INS_URET:
+				op->type = R_ANAL_OP_TYPE_RET;
+				break;
+			}
+			set_opdir (op);
+			if (insn && mask & R_ARCH_OP_MASK_OPEX) {
+				opex (&op->opex, cpd->cs_handle, insn);
+			}
+#if 0
+			if (mask & R_ARCH_OP_MASK_ESIL) {
+				if (analop_esil (a, op, op->addr, buf, len, cpd->cs_handle, insn) != 0) {
+					r_strbuf_fini (&op->esil);
+				}
+			}
+#endif
+			if (mask & R_ARCH_OP_MASK_VAL) {
+				op_fillval (a, op, &cpd->cs_handle, insn);
+			}
+		}
+		op->size = insn->size;
+		op->id = insn->id;
+		cs_free (insn, n);
+	}
+	return res;
+}
+
+#if 0
+static bool old_riscv_decode(RArchSession *s, RAnalOp *op, RArchDecodeMask mask) {
+	ut64 addr = op->addr;
+	const ut8 *buf = op->bytes;
+	int len = op->size;
+// static int analop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
 	csh hndl = init_capstone (anal);
 	if (hndl == 0) {
 		return -1;
@@ -355,10 +410,11 @@ beach:
 	cs_free (insn, n);
 	return opsize;
 }
+#endif
 
-static char *get_reg_profile(RAnal *anal) {
+static char *regs(RArchSession *as) {
 	const char *p = NULL;
-	switch (anal->config->bits) {
+	switch (as->config->bits) {
 	case 32: p =
 		"=PC	pc\n"
 		"=SP	sp\n" // ABI: stack pointer
@@ -536,47 +592,78 @@ static char *get_reg_profile(RAnal *anal) {
 	return (p && *p)? strdup (p): NULL;
 }
 
-static int archinfo(RAnal *anal, int q) {
+static int archinfo(RArchSession *s, ut32 q) {
 	switch (q) {
 	case R_ANAL_ARCHINFO_ALIGN:
-		return 4;
+		return 0;
 	case R_ANAL_ARCHINFO_MAX_OP_SIZE:
 		return 4;
+	case R_ANAL_ARCHINFO_INV_OP_SIZE:
+		return 2;
 	case R_ANAL_ARCHINFO_MIN_OP_SIZE:
-		if (anal->config->bits == 64) {
-			return 4;
-		}
 		return 2;
 	}
 	return 0;
 }
 
-RAnalPlugin r_anal_plugin_riscv_cs = {
+static bool init(RArchSession *s) {
+	r_return_val_if_fail (s, false);
+	if (s->data) {
+		R_LOG_WARN ("Already initialized");
+		return false;
+	}
+	s->data = R_NEW0 (CapstonePluginData);
+	CapstonePluginData *cpd = (CapstonePluginData*)s->data;
+	if (!r_arch_cs_init (s, &cpd->cs_handle)) {
+		R_LOG_ERROR ("Cannot initialize capstone");
+		R_FREE (s->data);
+		return false;
+	}
+	return true;
+}
+
+static bool fini(RArchSession *s) {
+	r_return_val_if_fail (s, false);
+	CapstonePluginData *cpd = (CapstonePluginData*)s->data;
+	cs_close (&cpd->cs_handle);
+	R_FREE (s->data);
+	return true;
+}
+
+static char *mnemonics(RArchSession *s, int id, bool json) {
+	CapstonePluginData *cpd = (CapstonePluginData*)s->data;
+	return r_arch_cs_mnemonics (s, cpd->cs_handle, id, json);
+}
+
+RArchPlugin r_arch_plugin_riscv_cs = {
 	.name = "riscv.cs",
-	.desc = "Capstone RISCV analyzer",
+	.desc = "RISC-V analysis plugin",
 	.license = "BSD",
-	.esil = true,
 	.arch = "riscv",
-	.get_reg_profile = get_reg_profile,
-	.archinfo = archinfo,
-	.bits = 32|64,
-	.op = &analop,
-	.mnemonics = cs_mnemonics,
+	.endian = R_SYS_ENDIAN_LITTLE | R_SYS_ENDIAN_BIG,
+	.bits = R_SYS_BITS_PACK2 (32, 64),
+	.mnemonics = &mnemonics,
+	// .encode = &riscv_encode,
+	.decode = &riscv_decode,
+	.info = &archinfo,
+	.regs = &regs,
+	.init = init,
+	.fini = fini
 };
 
 #ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_ANAL,
-	.data = &r_anal_plugin_riscv_cs,
+	.type = R_LIB_TYPE_ARCH,
+	.data = &r_arch_plugin_riscv_cs,
 	.version = R2_VERSION
 };
 #endif
 
 #else
-RAnalPlugin r_anal_plugin_riscv_cs = {0};
+RArchPlugin r_arch_plugin_riscv_cs = {0};
 #ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_ANAL,
+	.type = R_LIB_TYPE_ARCH,
 	.version = R2_VERSION
 };
 #endif
