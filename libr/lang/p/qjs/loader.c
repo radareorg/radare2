@@ -7,12 +7,34 @@ const char * const alias_marker = "\n↻ ";
 static void r2qjs_dump_obj(JSContext *ctx, JSValueConst val);
 
 static char *r2qjs_normalize_module_name(void* self, JSContext * ctx, const char * base_name, const char * name) {
+	if (r_str_startswith (base_name, "./")) {
+		return strdup (base_name + 1);
+	}
 	// R_LOG_INFO ("normalize (%s) (%s)", base_name, name);
-	return strdup (base_name + 1);
+	return strdup (base_name);
 }
 
 static JSModuleDef *r2qjs_load_module(JSContext *ctx, const char *module_name, void *opaque) {
 	HtPP *ht = opaque;
+	if (!strcmp (module_name, "r2papi")) {
+		const char *data =  "export var R2Papi = global.R2Papi;\n"\
+				    "export var R2PapiShell = global.R2PapiShell;\n"\
+				    "export var NativePointer = global.NativePointer;\n"\
+				    "export var EsilParser = global.EsilParser;\n"\
+				    "export var EsilToken = global.EsilToken;\n"\
+				    "export var r2 = global.r2;\n"\
+				    "export var R = global.R;\n"\
+				    ;
+		JSValue val = JS_Eval (ctx, data, strlen (data), module_name,
+				JS_EVAL_TYPE_MODULE | JS_EVAL_FLAG_STRICT | JS_EVAL_FLAG_COMPILE_ONLY);
+		if (JS_IsException (val)) {
+			JSValue e = JS_GetException (ctx);
+			r2qjs_dump_obj (ctx, e);
+			return NULL;
+		}
+		JS_FreeValue (ctx, val);
+		return JS_VALUE_GET_PTR (val);
+	}
 	char *data = ht_pp_find (ht, module_name, NULL);
 	if (data) {
 		JSValue val = JS_Eval (ctx, data, strlen (data), module_name,
