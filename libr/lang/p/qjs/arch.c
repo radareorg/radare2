@@ -95,6 +95,7 @@ static bool r2qjs_arch_decode(RArchSession *s, struct r_anal_op_t *op, RArchDeco
 		if (op->mnemonic) {
 			op->mnemonic = strdup (op->mnemonic);
 		}
+		R2QJS_GETNUMBER (op->type, obj, "type", NULL);
 	// return value
 	return JS_ToBool (ctx, res);
 failure:
