@@ -1,11 +1,6 @@
-/* radare - LGPL - Copyright 2009-2022 - pancake, nibble */
+/* radare - LGPL - Copyright 2009-2023 - pancake, nibble */
 
 #include <r_core.h>
-#include <r_anal.h>
-#include <r_sign.h>
-#include <r_list.h>
-#include <r_cons.h>
-#include <r_util.h>
 
 static const char *help_msg_z[] = {
 	"Usage:", "z[*j-aof/cs] [args] ", "# Manage zignatures",
@@ -186,6 +181,11 @@ static inline bool za_add(RCore *core, const char *input) {
 
 static int cmdAdd(void *data, const char *input) {
 	RCore *core = (RCore *)data;
+	if (*input && input[1] == '?') {
+		char two[2] = {input[0], input[1]};
+		r_core_cmd_help_match (core, help_msg_za, two, false);
+		return 0;
+	}
 
 	switch (*input) {
 	case ' ': // "za"
@@ -194,13 +194,11 @@ static int cmdAdd(void *data, const char *input) {
 		{
 			char *args = r_str_trim_dup (input + 1);
 			int n = r_str_word_set0 (args);
-
-			if (n > 2) {
-				eprintf ("Usage: zaf [fcnname] [zigname]\n");
+			if (input[1] == '?' || n > 2) {
+				r_core_cmd_help_match (core, help_msg_za, "zaf", false);
 				free (args);
 				return false;
 			}
-
 			RAnalFunction *fcni = NULL;
 			const char *zigname = (n == 2)? r_str_word_get0 (args, 1): NULL;
 			if (n > 0) {
@@ -219,22 +217,30 @@ static int cmdAdd(void *data, const char *input) {
 		}
 		break;
 	case 'c': // "zac"
-		r_cons_break_push (NULL, NULL);
-		r_sign_resolve_collisions (core->anal);
-		r_cons_break_pop ();
+		if (input[1] == '?') {
+			r_core_cmd_help_match (core, help_msg_za, "zac", false);
+		} else {
+			r_cons_break_push (NULL, NULL);
+			r_sign_resolve_collisions (core->anal);
+			r_cons_break_pop ();
+		}
 		break;
 	case 'F': // "zaF"
-	{
-		int count = r_sign_all_functions (core->anal, false);
-		R_LOG_INFO ("generated zignatures: %d", count);
+		if (input[1] == '?') {
+			r_core_cmd_help_match (core, help_msg_za, "zaF", false);
+		} else {
+			int count = r_sign_all_functions (core->anal, false);
+			R_LOG_INFO ("generated zignatures: %d", count);
+		}
 		break;
-	}
 	case 'M': // "zaM"
-	{
-		int count = r_sign_all_functions (core->anal, true);
-		R_LOG_INFO ("generated zignatures: %d", count);
+		if (input[1] == '?') {
+			r_core_cmd_help_match (core, help_msg_za, "zaM", false);
+		} else {
+			int count = r_sign_all_functions (core->anal, true);
+			R_LOG_INFO ("generated zignatures: %d", count);
+		}
 		break;
-	}
 	case '?':
 		if (input[1] == '?') {
 			// TODO #7967 help refactor: move to detail
@@ -272,7 +278,7 @@ static int cmdAdd(void *data, const char *input) {
 		}
 		break;
 	default:
-		eprintf ("Usage: za[fF?] [args]\n");
+		r_core_cmd_help (core, help_msg_za);
 		return false;
 	}
 
@@ -287,28 +293,27 @@ static int cmdOpen(void *data, const char *input) {
 		if (input[1]) {
 			return r_sign_load (core->anal, input + 1, false);
 		}
-		eprintf ("Usage: zo filename\n");
+		r_core_cmd_help_match (core, help_msg_zo, "zo", false);
 		return false;
 	case 's':
 		if (input[1] == ' ' && input[2]) {
 			return r_sign_save (core->anal, input + 2);
 		}
-		eprintf ("Usage: zos filename\n");
+		r_core_cmd_help_match (core, help_msg_zo, "zos", false);
 		return false;
 	case 'z':
 		if (input[1] == ' ' && input[2]) {
 			return r_sign_load_gz (core->anal, input + 2, false);
 		}
-		eprintf ("Usage: zoz filename\n");
+		r_core_cmd_help_match (core, help_msg_zo, "zoz", false);
 		return false;
 	case '?':
 		r_core_cmd_help (core, help_msg_zo);
 		break;
 	default:
-		eprintf ("Usage: zo[zs] filename\n");
+		r_core_cmd_help (core, help_msg_zo);
 		return false;
 	}
-
 	return true;
 }
 
@@ -319,7 +324,7 @@ static int cmdSpace(void *data, const char *input) {
 	switch (*input) {
 	case '+':
 		if (!input[1]) {
-			eprintf ("Usage: zs+zignspace\n");
+			r_core_cmd_help_match (core, help_msg_zs, "zs+", false);
 			return false;
 		}
 		char *sp = r_str_trim_dup (input + 1);
@@ -330,7 +335,7 @@ static int cmdSpace(void *data, const char *input) {
 		break;
 	case 'r':
 		if (input[1] != ' ' || !input[2]) {
-			eprintf ("Usage: zsr newname\n");
+			r_core_cmd_help_match (core, help_msg_zs, "zsr", false);
 			return false;
 		}
 		r_spaces_rename (zs, NULL, input + 2);
@@ -351,7 +356,7 @@ static int cmdSpace(void *data, const char *input) {
 		break;
 	case ' ':
 		if (!input[1]) {
-			eprintf ("Usage: zs zignspace\n");
+			r_core_cmd_help (core, help_msg_zs);
 			return false;
 		}
 		r_spaces_set (zs, input + 1);
@@ -360,7 +365,7 @@ static int cmdSpace(void *data, const char *input) {
 		r_core_cmd_help (core, help_msg_zs);
 		break;
 	default:
-		eprintf ("Usage: zs[+-*] [namespace]\n");
+		r_core_cmd_help_match (core, help_msg_zs, "zs", false);
 		return false;
 	}
 
@@ -374,7 +379,7 @@ static int cmdFlirt(void *data, const char *input) {
 	case 'd':
 		// TODO
 		if (input[1] != ' ') {
-			eprintf ("Usage: zfd filename\n");
+			r_core_cmd_help_match (core, help_msg_zf, "zfd", false);
 			return false;
 		}
 		r_sign_flirt_dump (core->anal, input + 2);
@@ -382,7 +387,7 @@ static int cmdFlirt(void *data, const char *input) {
 	case 's':
 		// TODO
 		if (input[1] != ' ') {
-			eprintf ("Usage: zfs filename\n");
+			r_core_cmd_help_match (core, help_msg_zf, "zfs", false);
 			return false;
 		}
 		int depth = r_config_get_i (core->config, "dir.depth");
@@ -401,7 +406,7 @@ static int cmdFlirt(void *data, const char *input) {
 		r_core_cmd_help (core, help_msg_zf);
 		break;
 	default:
-		eprintf ("Usage: zf[dsz] filename\n");
+		r_core_cmd_help (core, help_msg_zf);
 		return false;
 	}
 	return true;
@@ -1132,7 +1137,7 @@ static int cmdCompare(void *data, const char *input) {
 	switch (*input) {
 	case ' ':
 		if (!input[1]) {
-			eprintf ("Usage: zc other_space\n");
+			r_core_cmd_help (core, help_msg_zc);
 			result = false;
 			break;
 		}
@@ -1142,7 +1147,7 @@ static int cmdCompare(void *data, const char *input) {
 		switch (input[1]) {
 		case ' ':
 			if (!input[2]) {
-				eprintf ("Usage: zcn other_space\n");
+				r_core_cmd_help_match (core, help_msg_zc, "zcn", false);
 				result = false;
 				break;
 			}
@@ -1150,14 +1155,14 @@ static int cmdCompare(void *data, const char *input) {
 			break;
 		case '!':
 			if (input[2] != ' ' || !input[3]) {
-				eprintf ("Usage: zcn! other_space\n");
+				r_core_cmd_help_match (core, help_msg_zc, "zcn", false);
 				result = false;
 				break;
 			}
 			result = r_sign_diff_by_name (core->anal, options, input + 3, true);
 			break;
 		default:
-			eprintf ("Usage: zcn! other_space\n");
+			r_core_cmd_help_match (core, help_msg_zc, "zcn", false);
 			result = false;
 		}
 		break;
@@ -1165,7 +1170,7 @@ static int cmdCompare(void *data, const char *input) {
 		r_core_cmd_help (core, help_msg_zc);
 		break;
 	default:
-		eprintf ("Usage: zc[?n!] other_space\n");
+		r_core_cmd_help (core, help_msg_zc);
 		result = false;
 	}
 
@@ -1233,14 +1238,14 @@ static int cmdSearch(void *data, const char *input) {
 		case '*':
 			return search (core, input[1] == '*', true);
 		default:
-			eprintf ("Usage: z/[f*]\n");
+			r_core_cmd_help_match (core, help_msg_z_slash, "z/f", false);
 			return false;
 		}
 	case '?':
 		r_core_cmd_help (core, help_msg_z_slash);
 		break;
 	default:
-		eprintf ("Usage: z/[f*]\n");
+		r_core_cmd_help (core, help_msg_z_slash);
 		return false;
 	}
 	return true;
