@@ -16,6 +16,55 @@ fcn.00005b10
 EOF
 RUN
 
+NAME=foreach section and segment
+FILE=bins/elf/ls
+CMDS=<<EOF
+?vi $$ @@@S
+?e ---
+?vi $$ @@@SS
+EOF
+EXPECT=<<EOF
+0
+680
+708
+740
+776
+976
+4120
+5602
+5864
+5976
+16384
+16416
+92036
+94208
+114956
+117200
+135248
+135256
+135264
+137880
+138328
+139264
+139904
+0
+0
+---
+64
+680
+0
+16384
+94208
+135248
+137880
+708
+114956
+0
+135248
+0
+EOF
+RUN
+
 NAME=foreach iterator on imports at macho
 FILE=bins/mach0/mac-ls
 CMDS=<<EOF
@@ -62,7 +111,7 @@ CMDS=<<EOF
 ?e=1@@@s~?
 ?e=1@@@s~?
 ?e=1@@@S~?
-?e=1@@@S~?
+?e=1@@@SS~?
 ?e=1@@@f~?
 ?e=1@@@f~?
 ?e=1@@@m~?
@@ -75,8 +124,8 @@ EXPECT=<<EOF
 hello
 116
 116
-16
-16
+13
+3
 342
 342
 3

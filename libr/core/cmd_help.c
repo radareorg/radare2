@@ -88,6 +88,7 @@ static RCoreHelpMessage help_msg_at_at_at = {
 	"x", " @@@F:glob", "functions matching glob expression",
 	"x", " @@@M", "dbg.maps (See ?$?~size)",
 	"x", " @@@S", "sections",
+	"x", " @@@SS", "segments (same as @@@G)",
 	"x", " @@@b", "basic blocks of current function",
 	"x", " @@@c:cmd", "Same as @@@=`cmd`, without the backticks",
 	"x", " @@@e", "entries",

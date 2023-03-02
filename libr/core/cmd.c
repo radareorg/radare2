@@ -5133,10 +5133,29 @@ static RList *foreach3list(RCore *core, char type, const char *glob) {
 		break;
 	case 'S': // "@@@S"
 		{
-			RBinObject *obj = r_bin_cur_object (core->bin);
-			if (obj) {
+			RList *sections = r_bin_get_sections (core->bin);
+			if (sections) {
 				RBinSection *sec;
-				r_list_foreach (obj->sections, iter, sec) {
+				r_list_foreach (sections, iter, sec) {
+					if (sec->is_segment) {
+						continue;
+					}
+					ut64 addr = va ? sec->vaddr: sec->paddr;
+					ut64 size = va ? sec->vsize: sec->size;
+					append_item (list, NULL, addr, size);
+				}
+			}
+		}
+		break;
+	case 'G': // "@@@G" // @@@SS - seGments
+		{
+			RList *sections = r_bin_get_sections (core->bin);
+			if (sections) {
+				RBinSection *sec;
+				r_list_foreach (sections, iter, sec) {
+					if (!sec->is_segment) {
+						continue;
+					}
 					ut64 addr = va ? sec->vaddr: sec->paddr;
 					ut64 size = va ? sec->vsize: sec->size;
 					append_item (list, NULL, addr, size);
@@ -5222,12 +5241,16 @@ static RList *foreach3list(RCore *core, char type, const char *glob) {
 R_API int r_core_cmd_foreach3(RCore *core, const char *cmd, char *each) { // "@@@"
 	ForeachListItem *item;
 	RListIter *iter;
+	char ch = each[0];
+	if (r_str_startswith (each, "SS")) {
+		ch = 'G'; // @@@SS = @@@G
+	}
 	char *glob = (each[0] && each[1] == ':')
 		? r_str_trim_dup (each + 2): NULL;
 
-	RList *list = foreach3list (core, *each, glob);
+	RList *list = foreach3list (core, ch, glob);
 
-	switch (each[0]) {
+	switch (ch) {
 	case '=':
 		foreach_pairs (core, cmd, each + 1);
 		break;
@@ -5257,6 +5280,7 @@ R_API int r_core_cmd_foreach3(RCore *core, const char *cmd, char *each) { // "@@
 	case 'z':
 	case 'R':
 	case 'S':
+	case 'G':
 	case 'r':
 	case 'i':
 		{
