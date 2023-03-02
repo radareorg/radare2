@@ -250,7 +250,7 @@ static bool __core_visual_gogo(RCore *core, int ch) {
 				RIOBank *bank = r_io_bank_get (core->io, core->io->bank);
 				if (bank && r_list_length (bank->maprefs)) {
 					map = r_io_map_get (core->io,
-						((RIOMapRef *)r_list_get_top (bank->maprefs))->id);
+						((RIOMapRef *)r_list_last (bank->maprefs))->id);
 				}
 			}
 			if (map) {
@@ -267,7 +267,7 @@ static bool __core_visual_gogo(RCore *core, int ch) {
 			RIOBank *bank = r_io_bank_get (core->io, core->io->bank);
 			if (bank && r_list_length (bank->maprefs)) {
 				map = r_io_map_get (core->io,
-					((RIOMapRef *)r_list_get_top (bank->maprefs))->id);
+					((RIOMapRef *)r_list_last (bank->maprefs))->id);
 			}
 		}
 		if (map) {
@@ -3760,7 +3760,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 							RIOBank *bank = r_io_bank_get (core->io, core->io->bank);
 							if (bank && r_list_length (bank->maprefs)) {
 								map = r_io_map_get (core->io,
-									((RIOMapRef *)r_list_get_top (bank->maprefs))->id);
+									((RIOMapRef *)r_list_last (bank->maprefs))->id);
 							}
 							if (map) {
 								entry = r_io_map_from (map);

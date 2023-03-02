@@ -18,7 +18,7 @@ static const char *str_callback(RNum *user, ut64 off, int *ok) {
 	}
 	if (f) {
 		const RList *list = r_flag_get_list (f, off);
-		RFlagItem *item = r_list_get_top (list);
+		RFlagItem *item = r_list_last (list);
 		if (item) {
 			if (ok) {
 				*ok = true;
@@ -520,7 +520,7 @@ R_API RFlagItem *r_flag_get_i(RFlag *f, ut64 off) {
 		off &= f->mask;
 	}
 	const RList *list = r_flag_get_list (f, off);
-	return list? evalFlag (f, r_list_get_top (list)): NULL;
+	return list? evalFlag (f, r_list_last (list)): NULL;
 }
 
 /* return the first flag that matches an offset ordered by the order of
@@ -547,7 +547,7 @@ R_API RFlagItem *r_flag_get_by_spaces(RFlag *f, ut64 off, ...) {
 		goto beach;
 	}
 	if (r_list_length (list) == 1) {
-		ret = r_list_get_top (list);
+		ret = r_list_last (list);
 		goto beach;
 	}
 

@@ -343,13 +343,13 @@ R_API int r_list_del_n(RList *list, int n) {
 	return false;
 }
 
-R_API void *r_list_get_top(const RList *list) {
+R_DEPRECATE R_API void *r_list_get_top(const RList *list) {
 	r_return_val_if_fail (list, NULL);
 
 	return list->tail ? list->tail->data : NULL;
 }
 
-R_API void *r_list_get_bottom(const RList *list) {
+R_DEPRECATE R_API void *r_list_get_bottom(const RList *list) {
 	r_return_val_if_fail (list, NULL);
 
 	return list->head ? list->head->data : NULL;

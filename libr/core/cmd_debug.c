@@ -4497,7 +4497,7 @@ static bool cmd_dcu(RCore *core, const char *input) {
 					old_sp = cur_sp;
 					prev_call = false;
 				} else if (prev_ret) {
-					RDebugFrame *head = r_list_get_bottom (core->dbg->call_frames);
+					RDebugFrame *head = r_list_first (core->dbg->call_frames);
 					if (head && head->addr != pc) {
 						eprintf ("*");
 					} else {

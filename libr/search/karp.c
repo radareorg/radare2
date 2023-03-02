@@ -125,7 +125,7 @@ R_IPI int search_rk(RSearch *srch, ut64 from, ut64 to) {
 		return rk_many (srch, from, to);
 	}
 
-	RSearchKeyword *kw = r_list_get_top (srch->kws);
+	RSearchKeyword *kw = r_list_last (srch->kws);
 	if (!kw) {
 		return -1;
 	}

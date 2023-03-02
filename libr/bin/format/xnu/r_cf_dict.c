@@ -88,7 +88,7 @@ RCFValueDict *r_cf_value_dict_parse (RBuffer *file_buf, ut64 offset, ut64 size, 
 
 		switch (r) {
 		case R_XML_ELEMSTART: {
-			RCFParseState *state = (RCFParseState *)r_list_get_top (stack);
+			RCFParseState *state = (RCFParseState *)r_list_last (stack);
 			RCFParseState *next_state = NULL;
 
 			if (!strcmp (x->elem, "dict")) {
@@ -157,7 +157,7 @@ RCFValueDict *r_cf_value_dict_parse (RBuffer *file_buf, ut64 offset, ut64 size, 
 		}
 		case R_XML_ELEMEND: {
 			RCFParseState *state = (RCFParseState *)r_list_pop (stack);
-			RCFParseState *next_state = (RCFParseState *)r_list_get_top (stack);
+			RCFParseState *next_state = (RCFParseState *)r_list_last (stack);
 			if (!state || !next_state) {
 				goto beach;
 			}
@@ -248,7 +248,7 @@ RCFValueDict *r_cf_value_dict_parse (RBuffer *file_buf, ut64 offset, ut64 size, 
 			break;
 		}
 		case R_XML_CONTENT: {
-			RCFParseState *state = (RCFParseState *)r_list_get_top (stack);
+			RCFParseState *state = (RCFParseState *)r_list_last (stack);
 			if (state->phase == R_CF_STATE_IN_IGNORE) {
 				break;
 			}

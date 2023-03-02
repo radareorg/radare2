@@ -414,7 +414,7 @@ R_API char *r_anal_var_prot_serialize(RList *l, bool spaces) {
 	const char * const sep = spaces? ", ": ",";
 	size_t len = strlen (sep);
 	RAnalVarProt *v;
-	RAnalVarProt *top = (RAnalVarProt *)r_list_get_top (l);
+	RAnalVarProt *top = (RAnalVarProt *)r_list_last (l);
 	RListIter *iter;
 	r_list_foreach (l, iter, v) {
 		if (!serialize_single_var (v, sb) || (v != top && !r_strbuf_append_n (sb, sep, len))) {

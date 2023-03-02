@@ -658,10 +658,10 @@ R_API void r_anal_esil_cfg_merge_blocks(RAnalEsilCFG *cfg) {
 	r_list_foreach_safe (cfg->g->nodes, iter, ator, node) {
 		if (r_list_length (node->in_nodes) == 1) {
 			REsilBB *bb = (REsilBB *)node->data;
-			RGraphNode *top = (RGraphNode *)r_list_get_top (node->out_nodes);
+			RGraphNode *top = (RGraphNode *)r_list_last (node->out_nodes);
 			// segfaults here ?
 			if (!(top && bb->enter == R_ESIL_BLOCK_ENTER_GLUE && (r_list_length (top->in_nodes) > 1))) {
-				RGraphNode *block = (RGraphNode *)r_list_get_top (node->in_nodes);
+				RGraphNode *block = (RGraphNode *)r_list_last (node->in_nodes);
 				if (r_list_length (block->out_nodes) == 1) {
 					merge_2_blocks (cfg, node, block);
 				}
