@@ -28,6 +28,17 @@ static R_TH_LOCAL RList *Glist = NULL;
 
 static bool eval(JSContext *ctx, const char *code);
 
+static void eval_jobs(JSContext *ctx) {
+	JSRuntime *rt = JS_GetRuntime (ctx);
+	JSContext *pctx = NULL;
+	do {
+		int res = JS_ExecutePendingJob (rt, &pctx);
+		if (res == -1) {
+			R_LOG_ERROR ("Exception in pending job");
+		}
+	} while (pctx);
+}
+
 static void r2qjs_dump_obj(JSContext *ctx, JSValueConst val) {
 	const char *str = JS_ToCString (ctx, val);
 	if (str) {
@@ -212,6 +223,11 @@ static JSValue js_print(JSContext *ctx, JSValueConst this_val, int argc, JSValue
 	return a;
 }
 
+static JSValue js_os_pending(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv, int magic) {
+	eval_jobs (ctx);
+	return JS_UNDEFINED;
+}
+
 static JSValue js_os_read_write(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv, int magic) {
 	int fd;
 	uint64_t pos, len;
@@ -224,15 +240,15 @@ static JSValue js_os_read_write(JSContext *ctx, JSValueConst this_val, int argc,
 	if (JS_ToIndex (ctx, &pos, argv[2])) {
 		return JS_EXCEPTION;
 	}
-	if (JS_ToIndex(ctx, &len, argv[3])) {
+	if (JS_ToIndex (ctx, &len, argv[3])) {
 		return JS_EXCEPTION;
 	}
-	uint8_t *buf = JS_GetArrayBuffer(ctx, &size, argv[1]);
+	uint8_t *buf = JS_GetArrayBuffer (ctx, &size, argv[1]);
 	if (!buf) {
 		return JS_EXCEPTION;
 	}
 	if (pos + len > size) {
-		return JS_ThrowRangeError(ctx, "read/write array buffer overflow");
+		return JS_ThrowRangeError (ctx, "read/write array buffer overflow");
 	}
 	if (magic) {
 		ret = write (fd, buf + pos, len);
@@ -242,11 +258,10 @@ static JSValue js_os_read_write(JSContext *ctx, JSValueConst this_val, int argc,
 	return JS_NewInt64 (ctx, ret);
 }
 
-
-
 static const JSCFunctionListEntry js_os_funcs[] = {
 	JS_CFUNC_MAGIC_DEF ("read", 4, js_os_read_write, 0 ),
 	JS_CFUNC_MAGIC_DEF ("write", 4, js_os_read_write, 1 ),
+	JS_CFUNC_MAGIC_DEF ("pending", 4, js_os_pending, 0 ),
 #if 0
 	JS_CFUNC_MAGIC_DEF("setReadHandler", 2, js_os_setReadHandler, 0 ),
 	JS_CFUNC_DEF("setTimeout", 2, js_os_setTimeout ),
@@ -257,14 +272,13 @@ static const JSCFunctionListEntry js_os_funcs[] = {
 };
 
 static int js_os_init(JSContext *ctx, JSModuleDef *m) {
-	return JS_SetModuleExportList(ctx, m, js_os_funcs,
-			countof(js_os_funcs));
+	return JS_SetModuleExportList(ctx, m, js_os_funcs, countof (js_os_funcs));
 }
 
-JSModuleDef *js_init_module_os(JSContext *ctx, const char *module_name) {
-	JSModuleDef *m = JS_NewCModule (ctx, module_name, js_os_init);
+static JSModuleDef *js_init_module_os(JSContext *ctx) {
+	JSModuleDef *m = JS_NewCModule (ctx, "os", js_os_init);
 	if (m) {
-		JS_AddModuleExportList (ctx, m, js_os_funcs, countof(js_os_funcs));
+		JS_AddModuleExportList (ctx, m, js_os_funcs, countof (js_os_funcs));
 	}
 	return m;
 }
@@ -285,8 +299,8 @@ static int js_r2_init(JSContext *ctx, JSModuleDef *m) {
 	return JS_SetModuleExportList (ctx, m, js_r2_funcs, countof (js_r2_funcs));
 }
 
-JSModuleDef *js_init_module_r2(JSContext *ctx, const char *module_name) {
-	JSModuleDef *m = JS_NewCModule (ctx, module_name, js_r2_init);
+static JSModuleDef *js_init_module_r2(JSContext *ctx) {
+	JSModuleDef *m = JS_NewCModule (ctx, "r2", js_r2_init);
 	if (m) {
 		JSValue global_obj = JS_GetGlobalObject (ctx);
 		JSValue name = JS_NewString(ctx, "r2");
@@ -313,8 +327,9 @@ static void register_helpers(JSContext *ctx) {
 	}
 	js_r2_init (ctx, m);
 	*/
-	js_init_module_os (ctx, "os");
-	js_init_module_r2 (ctx, "r2");
+	js_init_module_os (ctx);
+	js_init_module_r2 (ctx);
+	r2qjs_modules (ctx);
 	// JS_AddModuleExportList (ctx, m, js_r2_funcs, countof (js_r2_funcs));
 	JSValue global_obj = JS_GetGlobalObject (ctx);
 	// JS_SetPropertyStr (ctx, global_obj, "r2", global_obj); // JS_NewCFunction (ctx, b64, "b64", 1));
@@ -363,17 +378,6 @@ static JSContext *JS_NewCustomContext(JSRuntime *rt) {
 	return ctx;
 }
 
-static void eval_jobs(JSContext *ctx) {
-	JSRuntime *rt = JS_GetRuntime (ctx);
-	JSContext *pctx = NULL;
-	do {
-		int res = JS_ExecutePendingJob (rt, &pctx);
-		if (res == -1) {
-			eprintf ("exception in job\n");
-		}
-	} while (pctx);
-}
-
 static bool eval(JSContext *ctx, const char *code) {
 	if (R_STR_ISEMPTY (code)) {
 		return false;
@@ -382,7 +386,12 @@ static bool eval(JSContext *ctx, const char *code) {
 	if (wantRaw) {
 		r_cons_set_raw (true);
 	}
-	JSValue v = JS_Eval (ctx, code, strlen (code), "-", 0);
+	int flags = JS_EVAL_TYPE_GLOBAL; //  | JS_EVAL_TYPE_MODULE; //  | JS_EVAL_FLAG_STRICT;
+	if (*code == '-') {
+		flags = JS_EVAL_TYPE_GLOBAL | JS_EVAL_TYPE_MODULE; //  | JS_EVAL_FLAG_STRICT;
+		code++;
+	}
+	JSValue v = JS_Eval (ctx, code, strlen (code), "-", flags);
 	if (JS_IsException (v)) {
 		js_std_dump_error (ctx);
 		JSValue e = JS_GetException (ctx);
@@ -430,6 +439,7 @@ static void *init(RLangSession *ls) {
 	JSContext *ctx = JS_NewCustomContext (rt);
 	JSValue jv = JS_NewBool (ctx, false); // fake function
 	QjsContext *qc = qjsctx_add (core, NULL, ctx, jv);
+	r2qjs_modules (ctx);
 	if (qc) {
 		qc->r = rt;
 		qc->core = ls->lang->user;

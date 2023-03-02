@@ -1218,6 +1218,7 @@ import('os').catch(console.error).then((os) => {
 
     function readline_handle_cmd (expr) {
       handle_cmd(expr);
+      os.pending();
       cmd_readline_start();
     }
 

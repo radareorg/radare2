@@ -15,7 +15,6 @@ static char *r2qjs_normalize_module_name(void* self, JSContext * ctx, const char
 }
 
 static JSModuleDef *r2qjs_load_module(JSContext *ctx, const char *module_name, void *opaque) {
-	HtPP *ht = opaque;
 	if (!strcmp (module_name, "r2papi")) {
 		const char *data =  "export var R2Papi = global.R2Papi;\n"\
 				    "export var R2PapiShell = global.R2PapiShell;\n"\
@@ -34,6 +33,27 @@ static JSModuleDef *r2qjs_load_module(JSContext *ctx, const char *module_name, v
 		}
 		JS_FreeValue (ctx, val);
 		return JS_VALUE_GET_PTR (val);
+	} else if (!strcmp (module_name, "r2pipe")) {
+		const char *data =  "export function open() {\n"\
+				    "  return {\n"\
+				    "    cmd: r2.cmd,\n"\
+				    "    cmdj: r2.cmdj,\n"\
+				    "  };\n"\
+				    "};\n"\
+				    ;
+		JSValue val = JS_Eval (ctx, data, strlen (data), module_name,
+				JS_EVAL_TYPE_MODULE | JS_EVAL_FLAG_STRICT | JS_EVAL_FLAG_COMPILE_ONLY);
+		if (JS_IsException (val)) {
+			JSValue e = JS_GetException (ctx);
+			r2qjs_dump_obj (ctx, e);
+			return NULL;
+		}
+		JS_FreeValue (ctx, val);
+		return JS_VALUE_GET_PTR (val);
+	}
+	HtPP *ht = opaque;
+	if (!ht) {
+		return NULL;
 	}
 	char *data = ht_pp_find (ht, module_name, NULL);
 	if (data) {
@@ -50,6 +70,11 @@ static JSModuleDef *r2qjs_load_module(JSContext *ctx, const char *module_name, v
 	}
 	R_LOG_ERROR ("Cannot find module (%s)", module_name);
 	return NULL;
+}
+
+static void r2qjs_modules(JSContext *ctx) {
+	JSRuntime *rt = JS_GetRuntime (ctx);
+	JS_SetModuleLoaderFunc (rt, (JSModuleNormalizeFunc*)r2qjs_normalize_module_name, r2qjs_load_module, NULL);
 }
 
 static int r2qjs_loader(JSContext *ctx, const char *const buffer) {
@@ -101,6 +126,7 @@ static int r2qjs_loader(JSContext *ctx, const char *const buffer) {
 		}
 	}
 	ht_pp_free (ht);
-	JS_SetModuleLoaderFunc (rt, NULL, NULL, NULL);
+	// JS_SetModuleLoaderFunc (rt, NULL, NULL, NULL);
+	JS_SetModuleLoaderFunc (rt, (JSModuleNormalizeFunc*)r2qjs_normalize_module_name, r2qjs_load_module, NULL);
 	return true;
 }

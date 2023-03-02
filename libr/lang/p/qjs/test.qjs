@@ -1,0 +1,11 @@
+import ("r2pipe").catch(console.error).then(
+	(r2pipe) => {
+		try {
+			let r2 = r2pipe.open();
+			console.log("r2 is " + r2);
+			console.log(r2.cmd("x"));
+		} catch (err) {
+			console.error("ERRRO" , err);
+		}
+	}
+);
