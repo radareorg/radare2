@@ -5535,7 +5535,12 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 			if (fcn) {
 				r_list_sort (fcn->bbs, bb_cmp);
 				r_list_foreach (fcn->bbs, iter, bb) {
+					r_core_seek (core, bb->addr, true);
+					r_core_cmd (core, cmd, 0);
 					for (i = 0; i < bb->op_pos_size; i++) {
+						if (!bb->op_pos[i]) {
+							break;
+						}
 						ut64 addr = bb->addr + bb->op_pos[i];
 						r_core_seek (core, addr, true);
 						r_core_cmd (core, cmd, 0);

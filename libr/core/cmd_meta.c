@@ -72,7 +72,8 @@ static const char *help_msg_CL[] = {
 	"CL*", "", "same as above but in r2 commands format",
 	"CL.", "", "show list all code line information (virtual address <-> source file:line)",
 	"CL-", "*", "remove all the cached codeline information",
-	"CLL", "", "show source code line reading from file",
+	"CLL", "[f]", "show source code line associated to current offset",
+	"CLLf", "", "show source lines covered by the current function (see CLL@@i or list)",
 	"CL", " addr file:line", "register new file:line source details, r2 will slurp the line",
 	"CL", " addr base64:text", "register new source details for given address using base64",
 	NULL
@@ -333,6 +334,11 @@ static int cmd_meta_lineinfo(RCore *core, const char *input) {
 		return 0;
 	}
 	if (*p == 'L') { // "CLL"
+		if (p[1] == 'f') {
+			r_core_cmd0 (core, "CLL@@i");
+			// same as CLL@@i = r_core_cmd0 (core, "list");
+			return 0;
+		}
 		ut64 at = core->offset;
 		if (p[1] == ' ') {
 			at = r_num_math (core->num, p + 2);
