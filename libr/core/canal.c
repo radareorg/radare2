@@ -2925,7 +2925,7 @@ static int fcn_print_json(RCore *core, RAnalFunction *fcn, PJ *pj) {
 			if (rt == R_ANAL_REF_TYPE_CALL) {
 				outdegree++;
 			}
-			if (rt == R_ANAL_REF_TYPE_CODE || rt != R_ANAL_REF_TYPE_CALL) {
+			if (rt == R_ANAL_REF_TYPE_CODE || rt == R_ANAL_REF_TYPE_CALL) {
 				pj_o (pj);
 				pj_kn (pj, "addr", refi->addr);
 				pj_ks (pj, "type", r_anal_ref_type_tostring (refi->type));

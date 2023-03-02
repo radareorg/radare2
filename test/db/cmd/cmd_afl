@@ -82,3 +82,14 @@ addr        size name                     noret nbbs nins refs xref calls cc
 
 EOF
 RUN
+
+NAME=afijcallrefs
+FILE=bins/mach0/twocalls
+CMDS=<<EOF
+af
+afij~{.callrefs}
+EOF
+EXPECT=<<EOF
+[{"addr":4294983576,"type":"CALL","at":4294983548},{"addr":4294983588,"type":"CALL","at":4294983556}]
+EOF
+RUN
