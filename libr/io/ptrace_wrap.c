@@ -27,7 +27,7 @@ static void wrap_ptrace(ptrace_wrap_instance *inst) {
 			inst->request.ptrace.request,
 			inst->request.ptrace.pid,
 			inst->request.ptrace.addr,
-			inst->request.ptrace.data);
+			(size_t)inst->request.ptrace.data);
 	if (inst->request.ptrace._errno) {
 		*inst->request.ptrace._errno = errno;
 	}
@@ -102,7 +102,7 @@ void ptrace_wrap_instance_stop(ptrace_wrap_instance *inst) {
 
 long ptrace_wrap(ptrace_wrap_instance *inst, ptrace_wrap_ptrace_request request, pid_t pid, void *addr, void *data) {
 	if (inst->th == pthread_self ()) {
-		return ptrace (request, pid, addr, data);
+		return ptrace (request, pid, addr, (size_t)data);
 	}
 
 	int _errno = 0;

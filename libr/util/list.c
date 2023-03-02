@@ -637,16 +637,13 @@ R_API void r_list_sort(RList *list, RListComparator cmp) {
 R_API RList *r_list_uniq(const RList *list, RListComparatorItem cmp) {
 	RListIter *iter, *iter2;
 	void *item;
-	int deleted = 0;
 
 	r_return_val_if_fail (list && cmp, 0);
 	RList *rlist = r_list_newf (list->free);
 	SetU *s = set_u_new ();
 	r_list_foreach_safe (list, iter, iter2, item) {
 		ut64 v = cmp (item);
-		if (set_u_contains (s, v)) {
-			deleted ++;
-		} else {
+		if (!set_u_contains (s, v)) {
 			set_u_add (s, v);
 			r_list_append (rlist, item);
 		}

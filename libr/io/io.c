@@ -582,10 +582,10 @@ R_API long r_io_ptrace(RIO *io, r_ptrace_request_t request, pid_t pid, void *add
 			errno = 0;
 			return -1;
 		}
-		return ptrace_wrap (wrap, request, pid, addr, data);
+		return ptrace_wrap (wrap, request, pid, addr, (void*)(size_t)data);
 	}
 #endif
-	return ptrace (request, pid, addr, data);
+	return ptrace (request, pid, addr, (size_t)data);
 }
 
 R_API pid_t r_io_ptrace_fork(RIO *io, void(*child_callback)(void *), void *child_callback_user) {

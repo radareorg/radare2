@@ -273,7 +273,6 @@ R_API void r_bp_set_trace_all(RBreakpoint *bp, int set) {
 
 // TODO: deprecate or move into RCoreDebug ?
 R_API void r_bp_list(RBreakpoint *bp, int rad) {
-	int n = 0;
 	RBreakpointItem *b;
 	RListIter *iter;
 	PJ *pj = NULL;
@@ -320,7 +319,6 @@ R_API void r_bp_list(RBreakpoint *bp, int rad) {
 				r_str_get (b->name),
 				r_str_get (b->module_name));
 		}
-		n++;
 	}
 	if (pj) {
 		pj_end (pj);
