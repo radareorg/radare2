@@ -73,7 +73,7 @@ R_API char *r_bin_addr2text(RBin *bin, ut64 addr, int origin) {
 					filename = bn;
 				} else {
 					nf = r_str_newf ("%s/%s", bin->srcdir, bn);
-					if (r_file_exists (bn)) {
+					if (r_file_exists (nf)) {
 						filename = nf;
 					} else {
 						found = false;
