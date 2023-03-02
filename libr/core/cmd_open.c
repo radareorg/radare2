@@ -106,14 +106,14 @@ static const char *help_msg_oia[] = {
 
 static const char *help_msg_oi[] = {
 	"Usage:", "oi", " # List open binary files backed by fd",
-	"oi", " [name|bfid]", "switch to open given objid (or name)",
-	"oi", "", "list opened binary files and objid",
-	"oi*", "", "list opened binary files and objid (r2 commands)",
+	"oi", " [name|bfid]", "switch to open given binfd (or name)",
+	"oi", "", "list opened binary files and binfd",
+	"oi*", "", "list opened binary files and binfd (r2 commands)",
 	"oi", " *", "select all bins (use 'oi bfid' to pick one)",
 	"oim", "([id])", "merge current selected binfile into previous binfile (id-1)",
 	"oim-", "([id])", "same as oim, but deletes the current binfile",
 	"oi-", "*", "delete all binfiles",
-	"oi-", "[objid]", "delete binfile by objid",
+	"oi-", "[binfd]", "delete binfile by binfd",
 	"oi--", "", "delete the last binfile",
 	"oi.", " ([addr])", "show bfid at current address",
 	"oi=", "", "show ascii art table having the list of open files",
@@ -122,7 +122,7 @@ static const char *help_msg_oi[] = {
 	"oia", " [addr] [filename]", "open file and load bin info at given address",
 	"oia", " [addr]", "open bin info from the given address",
 	"oif", " ([file])", "load bininfo for current file (useful for r2 -n)",
-	"oij", "", "list opened binary files and objid (JSON format)",
+	"oij", "", "list opened binary files and binfd (JSON format)",
 	"oio", " [fd]", "switch to open binfile by fd number",
 	"oir", " [baddr]", "rebase current bin object",
 	NULL
