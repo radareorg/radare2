@@ -1606,7 +1606,7 @@ static ut64 get_import_addr_x86_manual(ELFOBJ *bin, RBinElfReloc *rel) {
 	ut64 plt_addr = s->offset;
 	ut64 plt_sym_addr;
 
-	while (plt_addr + 2 + 4 < s->offset + s->size) {
+	while (plt_addr + 2 + 4 < s->offset + s->size && plt_addr + 2 + 4 < bin->size) {
 		/*we try to locate the plt entry that correspond with the relocation
 		  since got does not point back to .plt. In this case it has the following
 		  form
