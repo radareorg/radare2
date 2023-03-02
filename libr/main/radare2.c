@@ -1421,9 +1421,9 @@ R_API int r_main_radare2(int argc, const char **argv) {
 			}
 			if (mapaddr) {
 				if (r_config_get_i (r->config, "file.info")) {
-					R_LOG_WARN ("using oba to load the syminfo from different mapaddress");
+					R_LOG_WARN ("using oia to load the syminfo from different mapaddress");
 					// load symbols when using r2 -m 0x1000 /bin/ls
-					r_core_cmdf (r, "oba 0 0x%"PFMT64x, mapaddr);
+					r_core_cmdf (r, "oia 0 0x%"PFMT64x, mapaddr);
 					r_core_cmd0 (r, ".ies*");
 				}
 			}

@@ -19,7 +19,7 @@ static const char *help_msg_o[] = {
 	"o=","","list opened files (ascii-art bars)",
 	"oL","","list all IO plugins registered",
 	"oa","[?][-] [A] [B] [filename]","specify arch and bits for given file",
-	"ob","[?] [lbdos] [...]","list opened binary files backed by fd",
+	"oi","[?] [lbdos] [...]","list opened binary files backed by fd",
 	"oc"," [file]","open core file, like relaunching r2",
 	"of","[?] [file]","open file without creating any map",
 	"oe"," [filename]","open cfg.editor with given file",
@@ -27,7 +27,7 @@ static const char *help_msg_o[] = {
 	"om","[?]","create, list, remove IO maps",
 	"on","[?][n] [file] 0x4000","map raw file at 0x4000 (no r_bin involved)",
 	"oo","[?][+bcdnm]","reopen current file (see oo?) (reload in rw or debugger)",
-	"op","[r|n|p|fd]", "select priorized file by fd (see ob), opn/opp/opr = next/previous/rotate",
+	"op","[r|n|p|fd]", "select priorized file by fd (see oi), opn/opp/opr = next/previous/rotate",
 	"ot"," [file]", "same as `touch [file]`",
 	"oq","","list all open files",
 	"ox", " fd fdx", "exchange the descs of fd and fdx and keep the mapping",
@@ -96,35 +96,35 @@ static const char *help_msg_o_star[] = {
 	"o*", "", "list opened files in r2 commands", NULL
 };
 
-static const char *help_msg_oba[] = {
-	"Usage:", "oba [addr] ([filename])", " # load bininfo and update flags",
-	"oba", " [addr]", "open bin info from the given address",
-	"oba", " [addr] [baddr]", "open file and load bin info at given address",
-	"oba", " [addr] [/abs/filename]", "open file and load bin info at given address",
+static const char *help_msg_oia[] = {
+	"Usage:", "oia [addr] ([filename])", " # load bininfo and update flags",
+	"oia", " [addr]", "open bin info from the given address",
+	"oia", " [addr] [baddr]", "open file and load bin info at given address",
+	"oia", " [addr] [/abs/filename]", "open file and load bin info at given address",
 	NULL
 };
 
-static const char *help_msg_ob[] = {
-	"Usage:", "ob", " # List open binary files backed by fd",
-	"ob", " [name|bfid]", "switch to open given objid (or name)",
-	"ob", "", "list opened binary files and objid",
-	"ob*", "", "list opened binary files and objid (r2 commands)",
-	"ob", " *", "select all bins (use 'ob bfid' to pick one)",
-	"obm", "([id])", "merge current selected binfile into previous binfile (id-1)",
-	"obm-", "([id])", "same as obm, but deletes the current binfile",
-	"ob-", "*", "delete all binfiles",
-	"ob-", "[objid]", "delete binfile by binobjid",
-	"ob--", "", "delete the last binfile",
-	"ob.", " ([addr])", "show bfid at current address",
-	"ob=", "", "show ascii art table having the list of open files",
-	"obL", "", "same as iL or Li",
-	"oba", " [addr] [baddr]", "open file and load bin info at given address",
-	"oba", " [addr] [filename]", "open file and load bin info at given address",
-	"oba", " [addr]", "open bin info from the given address",
-	"obf", " ([file])", "load bininfo for current file (useful for r2 -n)",
-	"obj", "", "list opened binary files and objid (JSON format)",
-	"obo", " [fd]", "switch to open binfile by fd number",
-	"obr", " [baddr]", "rebase current bin object",
+static const char *help_msg_oi[] = {
+	"Usage:", "oi", " # List open binary files backed by fd",
+	"oi", " [name|bfid]", "switch to open given objid (or name)",
+	"oi", "", "list opened binary files and objid",
+	"oi*", "", "list opened binary files and objid (r2 commands)",
+	"oi", " *", "select all bins (use 'oi bfid' to pick one)",
+	"oim", "([id])", "merge current selected binfile into previous binfile (id-1)",
+	"oim-", "([id])", "same as oim, but deletes the current binfile",
+	"oi-", "*", "delete all binfiles",
+	"oi-", "[objid]", "delete binfile by objid",
+	"oi--", "", "delete the last binfile",
+	"oi.", " ([addr])", "show bfid at current address",
+	"oi=", "", "show ascii art table having the list of open files",
+	"oiL", "", "same as iL or Li",
+	"oia", " [addr] [baddr]", "open file and load bin info at given address",
+	"oia", " [addr] [filename]", "open file and load bin info at given address",
+	"oia", " [addr]", "open bin info from the given address",
+	"oif", " ([file])", "load bininfo for current file (useful for r2 -n)",
+	"oij", "", "list opened binary files and objid (JSON format)",
+	"oio", " [fd]", "switch to open binfile by fd number",
+	"oir", " [baddr]", "rebase current bin object",
 	NULL
 };
 
@@ -234,24 +234,24 @@ static bool isfile(const char *filename) {
 }
 
 // HONOR bin.at
-static void cmd_open_bin(RCore *core, const char *input) {
+static void cmd_open_id(RCore *core, const char *input) {
 	const char *value = NULL;
 	ut32 binfile_num = -1;
 
 	switch (input[1]) {
-	case 'L': // "obL"
+	case 'L': // "oiL"
 		r_core_cmd0 (core, "iL");
 		break;
-	case '\0': // "ob"
-	case 'q': // "obj"
-	case 'j': // "obj"
-	case '*': // "ob*"
+	case '\0': // "oi"
+	case 'q': // "oiq"
+	case 'j': // "oij"
+	case '*': // "oi*"
 		r_core_bin_list (core, input[1]);
 		if (input[1] == 'j') {
 			r_cons_newline ();
 		}
 		break;
-	case '.': // "ob."
+	case '.': // "oi."
 		{
 			const char *arg = r_str_trim_head_ro (input + 2);
 			ut64 at = core->offset;
@@ -267,9 +267,9 @@ static void cmd_open_bin(RCore *core, const char *input) {
 			}
 		}
 		break;
-	case 'a': // "oba"
+	case 'a': // "oia"
 		if ('?' == input[2]) {
-			r_core_cmd_help (core, help_msg_oba);
+			r_core_cmd_help (core, help_msg_oia);
 			break;
 		}
 		if (input[2] && input[3]) {
@@ -345,7 +345,7 @@ static void cmd_open_bin(RCore *core, const char *input) {
 			r_list_free (files);
 		}
 		break;
-	case ' ': // "ob " // select bf by id or name
+	case ' ': // "oi " // select bf by id or name
 	{
 		ut32 id;
 		const char *tmp;
@@ -362,7 +362,7 @@ static void cmd_open_bin(RCore *core, const char *input) {
 		}
 		int n = r_str_word_set0 (v);
 		if (n < 1 || n > 2) {
-			eprintf ("Usage: ob [file|objid]\n");
+			r_core_cmd_help_match (core, help_msg_oi, "oi", true);
 			free (v);
 			break;
 		}
@@ -378,19 +378,19 @@ static void cmd_open_bin(RCore *core, const char *input) {
 		free (v);
 		break;
 	}
-	case 'r': // "obr"
+	case 'r': // "oir"
 		r_core_bin_rebase (core, r_num_math (core->num, input + 3));
 		r_core_cmd0 (core, ".is*");
 		break;
-	case 'f': // "obf"
+	case 'f': // "oif"
 		if (input[2] == ' ') {
-			r_core_cmdf (core, "oba 0 %s", input + 3);
+			r_core_cmdf (core, "oia 0 %s", input + 3);
 		} else {
 			r_core_bin_load (core, NULL, UT64_MAX);
 			value = input[2] ? input + 2 : NULL;
 		}
 		break;
-	case 'm': // "obm"
+	case 'm': // "oim"
 		{
 			int dstid = atoi (input + 2);
 			// TODO take argument with given id to merge to
@@ -404,7 +404,7 @@ static void cmd_open_bin(RCore *core, const char *input) {
 				if (dst) {
 					r_bin_file_merge (dst, src);
 					R_LOG_DEBUG ("merge %d into %d", current, dstid);
-					if (strchr (input + 2, '-')) { // "obm-"
+					if (strchr (input + 2, '-')) { // "oim-"
 						int curfd = -1;
 						if (core->io->desc) {
 							curfd = core->io->desc->fd;
@@ -425,7 +425,7 @@ static void cmd_open_bin(RCore *core, const char *input) {
 			R_LOG_INFO ("Nothing to merge");
 		}
 		break;
-	case 'o': // "obo"
+	case 'o': // "oio"
 		if (input[2] == ' ') {
 			ut32 fd = r_num_math (core->num, input + 3);
 			RBinFile *bf = r_bin_file_find_by_fd (core->bin, fd);
@@ -433,18 +433,18 @@ static void cmd_open_bin(RCore *core, const char *input) {
 				R_LOG_ERROR ("Invalid RBinFile.id number");
 			}
 		} else {
-			r_core_cmd_help_match (core, help_msg_ob, "obo", true);
+			r_core_cmd_help_match (core, help_msg_oi, "oio", true);
 		}
 		break;
-	case '-': // "ob-"
+	case '-': // "oi-"
 		if (input[2] == '*') {
 			r_bin_file_delete_all (core->bin);
 		} else if (input[2] == '-') {
 			RBinFile *bf = r_bin_cur (core->bin);
 			int current = bf? bf->id: 0;
 			if (current >= 0) {
-				r_core_cmd_callf (core, "ob-%d", current);
-				r_core_cmd_callf (core, "ob %d", current -1);
+				r_core_cmd_callf (core, "oi-%d", current);
+				r_core_cmd_callf (core, "oi %d", current -1);
 			}
 		} else {
 			ut32 id;
@@ -466,7 +466,7 @@ static void cmd_open_bin(RCore *core, const char *input) {
 			}
 		}
 		break;
-	case '=': // "ob="
+	case '=': // "oi="
 		{
 			char temp[SDB_NUM_BUFSZ];
 			RListIter *iter;
@@ -495,8 +495,8 @@ static void cmd_open_bin(RCore *core, const char *input) {
 			r_table_free (table);
 			r_list_free (list);
 		} break;
-	case '?': // "ob?"
-		r_core_cmd_help (core, help_msg_ob);
+	case '?': // "oi?"
+		r_core_cmd_help (core, help_msg_oi);
 		break;
 	}
 }
@@ -2107,8 +2107,8 @@ static int cmd_open(void *data, const char *input) {
 		}
 		break;
 	}
-	case 'b': // "ob"
-		cmd_open_bin (core, input);
+	case 'i': // "oi"
+		cmd_open_id (core, input);
 		break;
 	case '-': // "o-"
 		switch (input[1]) {
@@ -2317,7 +2317,7 @@ static int cmd_open(void *data, const char *input) {
 						ut64 orig_baddr = core->bin->cur->o->baddr_shift;
 						RList *orig_sections = __save_old_sections (core);
 
-						r_core_cmd0 (core, "ob-*");
+						r_core_cmd0 (core, "oi-*");
 						r_io_close_all (core->io);
 						r_config_set_b (core->config, "cfg.debug", false);
 						r_core_cmdf (core, "o %s", file);

@@ -118,16 +118,16 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=obo baddrs
+NAME=oio baddrs
 FILE=bins/mach0/mac-ls2
 ARGS=-B0x50000
 CMDS=<<EOF
 s
 o bins/mach0/mac-ls
 s
-obo 3
+oio 3
 s
-obo 4
+oio 4
 s
 EOF
 EXPECT=<<EOF
@@ -294,7 +294,7 @@ NAME=oob from malloc
 FILE=malloc://1024
 CMDS=<<EOF
 wx 7f454c4601010100b32ae9310000000002000300010000000800200020000000010000000000000000002000010000001b0300001b0300000700000000100000e901000000b0e8a502000049e7551ff1c2a03ff17995d4f3f241adf35954d7a87b543f48e7551ff1c3a03ff179bc17f3795487eb79543fc0b0ddf14b78543ff1b4d41632fc944be0c0563ed179e60b197f563ff190273df179bf3e412aeda9f3595485f579543f1987553ff1914c3df1796722677b743f856aeddaf159548dec91813ef179bd7df379544dc722d1e48491ed09f05954859979543f19c3553ff190733df1795e1fa60b3b519659245e820a2350831d781f8216264d88577a11fb73546c9e0b2646d11b214bd10d3c5ad1092650921c274cd10a315a9c0a744b9e59365ad10d265e921c3011df57747d881c7a11df735412cf59074a921a314c8259751ed13a3b51960b354b8415354b98163a4cdf577a35d1597901d1203b4ad11a3551d10a31519559395ad1003b4a835927509d0c20569e177b5c9e14395a9f0d271f900d744b991c745e9316225ad11435569d59355b950b7a11df7354c511b6cac511c2838b48c9899750f5818854b6c7c55fff99915eb199c552e48b865afb8fc512a4e0c511b6cac511bbc7c81cbbc7c81cbbc7c81cbbc7c81cbbc7c81cbbc7c81cbbc7c81cbbc7c81cbbe0ef65fe839611f9848011fe8b9611f7ca9550e49e8c52e3868443fa93c542fb8b895db6998c4bf3c4cb1f9ca28a41f3ca9016fa86c556f39ec542f9878011f09f8b11e1839159b683911f9ce0bc5ee3ca8650f8ca8f5eff84c55cf3ca8445b693845fff99915ed6849049f38ecb5ee48dc55ee4ca8a5fb6c99654f58e8047d68c9754f3848a55f3c48b54e2e0ef74f89e8043b69e8d54b6ba8442e59d8a43f2cadf11b6cae53196ea3ff17954d6f079543f414894b632c950f271bae4d6f079543fd24894b63287978ff2b4d4fc41f092b606f08d92c0a9ffdd0bbabd3cf179548f393a65ff78baede0f37954fe187bea37f1595492f0bab6c4708a3f3bf92c972d2390b84b00200089c689f7b9a5020000c1e902ad35f179543fabe2f7c3e9010000003231c089c3fec0cd80c3
-oba
+oia
 i~bintype[1]
 .ie*
 p8 10 @ entry0
@@ -305,18 +305,18 @@ b32ae931000000000200
 EOF
 RUN
 
-NAME=ob select files
+NAME=oi select files
 FILE=malloc://1024
 CMDS=<<EOF
 e scr.null=true
 o malloc://512
 e scr.null=false
 i~file[1]
-obo 3
+oio 3
 i~file[1]
-obo 4
+oio 4
 i~file[1]
-obo 3
+oio 3
 i~file[1]
 EOF
 EXPECT=<<EOF
@@ -327,7 +327,7 @@ malloc://1024
 EOF
 RUN
 
-NAME=ob select files binobj
+NAME=oi select files binobj
 FILE=bins/elf/libmagic.so
 CMDS=<<EOF
 iiq~?
@@ -342,7 +342,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=ob select files binobj2
+NAME=oi select files binobj2
 FILE=bins/elf/libmagic.so
 CMDS=<<EOF
 isq~?
@@ -361,18 +361,18 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=ob 0 fix
+NAME=oi 0 fix
 FILE=<<EOF
 bins/elf/_Exit (42)
 bins/elf/libverifyPass.so
 bins/elf/libc.so.6
 EOF
 CMDS=<<EOF
-ob~[1-2]
+oi~[1-2]
 ?e
-ob 1; i~^fd
-ob 2; i~^fd
-ob 0; i~^fd
+oi 1; i~^fd
+oi 2; i~^fd
+oi 0; i~^fd
 EOF
 EXPECT=<<EOF
 0 3
@@ -412,25 +412,25 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=o: ob fix
+NAME=o: oi fix
 FILE=--
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
 o: 1024
-ob
+oi
 EOF
 EXPECT=<<EOF
 * 0 3 x86-64 ba:0x00000000 sz:1024 malloc://1024
 EOF
 RUN
 
-NAME=o: obj
+NAME=o: oij
 FILE=-
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
-obj~{}
+oij~{}
 EOF
 EXPECT=<<EOF
 [
@@ -577,19 +577,19 @@ EOF
 BROKEN=1
 RUN
 
-NAME=ob *
+NAME=oi *
 FILE=bins/elf/ls
 CMDS=<<EOF
 is~?
 o bins/elf/ezpz
 is~?
 ?e --
-ob *
+oi *
 is~?
 ?e --
-ob 0
+oi 0
 is~?
-ob 1
+oi 1
 is~?
 EOF
 EXPECT=<<EOF
@@ -603,21 +603,21 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=obf
+NAME=oif
 FILE=--
 CMDS=<<EOF
 # pwd
-obf ./bins/mach0/test-arm32
+oif ./bins/mach0/test-arm32
 is~?
-obf ./bins/mach0/ls-m1
+oif ./bins/mach0/ls-m1
 is~?
-ob 1
+oi 1
 is~?
 i
 ?e -- o
 o
-?e -- ob
-ob
+?e -- oi
+oi
 EOF
 EXPECT=<<EOF
 8
@@ -650,7 +650,7 @@ stripped false
 subsys   darwin
 va       true
 -- o
--- ob
+-- oi
 - 0 3 arm-32 ba:0x00000000 sz:65536 ./bins/mach0/test-arm32
 * 1 3 arm-32 ba:0x00004000 sz:65536 ./bins/mach0/test-arm32
 - 2 3 x86-64 ba:0x100000000 sz:72800 ./bins/mach0/ls-m1

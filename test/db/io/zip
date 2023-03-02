@@ -2,10 +2,10 @@ NAME=apkall://
 FILE=apkall://bins/dex/mobipwn-nores.apk
 CMDS=<<EOF
 o
-ob
+oi
 ic~?
-ob *
-ob
+oi *
+oi
 ic~?
 EOF
 EXPECT=<<EOF
@@ -33,10 +33,10 @@ NAME=multidex apk://
 FILE=apk://bins/dex/mobipwn-nores.apk
 CMDS=<<EOF
 o
-ob
+oi
 ic~?
-ob *
-ob
+oi *
+oi
 ic~?
 EOF
 EXPECT=<<EOF
