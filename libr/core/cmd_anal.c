@@ -12388,7 +12388,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 					R_LOG_INFO ("Enable anal.types.constraint for experimental type propagation");
 					r_config_set_b (core->config, "anal.types.constraint", true);
 					if (input[2] == 'a') { // "aaaa"
-						R_LOG_INFO ("Reanalizing graph references to improve function count (aag)");
+						R_LOG_INFO ("Reanalizing graph references to improve function count (aarr)");
 						r_core_cmd0 (core, "aarr");
 					}
 				} else {
