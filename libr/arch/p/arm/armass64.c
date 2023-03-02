@@ -2015,6 +2015,30 @@ bool arm64ass(const char *str, ut64 addr, ut32 *op) {
 		*op = exception (&ops, 0x000040d4);
 	} else if (!strncmp (str, "b ", 2)) {
 		*op = branch (&ops, addr, 0x14);
+#if 0
+02 bhs
+03 blo
+04 bmi
+05 bpl
+06 bvs
+07 bvc
+08 bhi
+09 bls
+0a bge DONE
+0b blt DONE
+0c bgt DONE
+0d ble DONE
+0e bal = alias for "b"
+0f bnv = is this a nop?
+#endif
+	} else if (r_str_startswith (str, "b.ge ") || r_str_startswith (str, "bge ")) {
+		*op = bdot (&ops, addr, 0x0a000054);
+	} else if (r_str_startswith (str, "b.le ") || r_str_startswith (str, "ble ")) {
+		*op = bdot (&ops, addr, 0x0d000054);
+	} else if (r_str_startswith (str, "b.gt ") || r_str_startswith (str, "bgt ")) {
+		*op = bdot (&ops, addr, 0x0c000054);
+	} else if (r_str_startswith (str, "b.lt ") || r_str_startswith (str, "blt ")) {
+		*op = bdot (&ops, addr, 0x0b000054);
 	} else if (!strncmp (str, "b.eq ", 5) || !strncmp (str, "beq ", 4)) {
 		*op = bdot (&ops, addr, 0x00000054);
 	} else if (!strncmp (str, "b.ne ", 5) || !strncmp (str, "bne ", 4)) {
