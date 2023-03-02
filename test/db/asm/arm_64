@@ -1,3 +1,5 @@
+ad "b.ge 0x10" 8a000054
+ad "b.lt 0x10" 8b000054
 ad "udiv x1, x2, x3" 4108c39a
 ad "udiv x3, x4, x1" 8308c19a
 ad "mul x1, x2, x3" 417c039b
