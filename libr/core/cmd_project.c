@@ -19,6 +19,7 @@ static RCoreHelpMessage help_msg_P = {
 	"Ps", " [file]", "save project (see dir.projects)",
 	"PS", " [file]", "save script file",
 	"PS*", " [name]", "print the project script file (Like P*, but requires a project)",
+	"Pz", "[ie] [zipfile]", "import/export r2 project in zip form (.zrp extension)",
 	"NOTE:", "", "the 'e prj.name' evar can save/open/rename/list projects.",
 	"NOTE:", "", "see the other 'e??prj.' evars for more options.",
 	"NOTE:", "", "project are stored in dir.projects",
@@ -38,6 +39,79 @@ static RCoreHelpMessage help_msg_Pn = {
 	"Pnx", "", "run project note commands",
 	NULL
 };
+
+static RCoreHelpMessage help_msg_Pz = {
+	"Usage:", "Pz[ie] ([file])", "Import/Export Projects in Zip form",
+	"Pz", "", "export project to prjname.zrp",
+	"Pze", " foo.zrp", "export project, same as Pz",
+	"Pzi", " foo.zrp", "import radare2 project from given zrp file",
+	NULL
+};
+
+static bool r_core_project_zip_import(RCore *core, const char *inzip) {
+	if (inzip && !r_str_endswith (inzip, ".zrp")) {
+		R_LOG_ERROR ("Project zips must use the .zrp extension");
+		return false;
+	}
+	char *prjdir = r_file_abspath (r_config_get (core->config, "dir.projects"));
+	int ret = r_sys_mkdirp (prjdir);
+	if (!ret) {
+		R_LOG_ERROR ("Cannot mkdir dir.projects");
+	}
+	// unzip in there
+	int res = r_sys_cmdf ("unzip %s -d %s", inzip, prjdir);
+	free (prjdir);
+	return res == 0;
+}
+
+// export project
+static void r_core_project_zip_export(RCore *core, const char *prjname, const char *outzip) {
+	char *prj_dir = r_file_abspath (r_config_get (core->config, "dir.projects"));
+	char *cwd = r_sys_getdir ();
+	const char *prj_name = prjname? prjname: r_config_get (core->config, "prj.name");
+	if (R_STR_ISEMPTY (prj_name)) {
+		R_LOG_ERROR ("No project to export");
+		return;
+	}
+	if (outzip && !r_str_endswith (outzip, ".zrp")) {
+		R_LOG_ERROR ("Project zips must use the .zrp extension");
+		return;
+	}
+	if (r_sys_chdir (prj_dir)) {
+		if (!strchr (prj_name, '\'')) {
+			char *zipfile = r_str_newf ("%s/%s.zrp", cwd, prj_name);
+			r_file_rm (zipfile);
+			// XXX use the ZIP api instead!
+			r_sys_cmdf ("zip -r %s %s", outzip? outzip: zipfile, prj_name);
+			free (zipfile);
+		} else {
+			R_LOG_WARN ("Command injection attempt?");
+		}
+	} else {
+		R_LOG_ERROR ("Cannot chdir %s", prj_dir);
+	}
+	r_sys_chdir (cwd);
+	free (cwd);
+}
+
+static void cmd_Pz(RCore *core, const char *cmd) {
+	char *arg = strchr (cmd, ' ');
+	if (arg) {
+		arg++;
+	}
+	switch (*cmd) {
+	case 'i':
+		r_core_project_zip_import (core, arg);
+		break;
+	case 'e':
+	case ' ':
+		r_core_project_zip_export (core, NULL, arg);
+		break;
+	default:
+		r_core_cmd_help (core, help_msg_Pz);
+		break;
+	}
+}
 
 static int cmd_project(void *data, const char *input) {
 	RCore *core = (RCore *) data;
@@ -115,6 +189,9 @@ static int cmd_project(void *data, const char *input) {
 			// r_project_close (core->prj);
 			r_config_set (core->config, "prj.name", "");
 		}
+		break;
+	case 'z': // "Pz"
+		cmd_Pz (core, input + 1);
 		break;
 	case '+': // "P+"
 		// xxx

@@ -8,12 +8,13 @@
 #include <spp/spp.h>
 
 // project apis to be used from cmd_project.c
+// TODO: Use .zrp as in zipped radare project
 
 static bool is_valid_project_name(const char *name) {
 	if (r_str_len_utf8 (name) >= 64) {
 		return false;
 	}
-	const char *extention = r_str_endswith (name, ".zip")? r_str_last (name, ".zip"): NULL;
+	const char * const extention = r_str_endswith (name, ".zip")? r_str_last (name, ".zip"): NULL;
 	for (; *name && name != extention; name++) {
 		if (IS_DIGIT (*name) || IS_LOWER (*name) || *name == '_') {
 			continue;
@@ -611,6 +612,27 @@ R_API bool r_core_project_save_script(RCore *core, const char *file, int opts) {
 	return true;
 }
 
+static void r_core_project_zip(RCore *core, const char *prj_dir) {
+	char *cwd = r_sys_getdir ();
+	const char *prj_name = r_file_basename (prj_dir);
+	if (r_sys_chdir (prj_dir)) {
+		if (!strchr (prj_name, '\'')) {
+			r_sys_chdir ("..");
+			char *zipfile = r_str_newf ("%s.zip", prj_name);
+			r_file_rm (zipfile);
+			// XXX use the ZIP api instead!
+			r_sys_cmdf ("zip -r %s %s", zipfile, prj_name);
+			free (zipfile);
+		} else {
+			R_LOG_WARN ("Command injection attempt?");
+		}
+	} else {
+		R_LOG_ERROR ("Cannot chdir %s", prj_dir);
+	}
+	r_sys_chdir (cwd);
+	free (cwd);
+}
+
 R_API bool r_core_project_save(RCore *core, const char *prj_name) {
 	bool scr_null = false;
 	bool ret = true;
@@ -719,22 +741,8 @@ R_API bool r_core_project_save(RCore *core, const char *prj_name) {
 			return false;
 		}
 	}
-	if (r_config_get_i (core->config, "prj.zip")) {
-		char *cwd = r_sys_getdir ();
-		const char *prj_name = r_file_basename (prj_dir);
-		if (r_sys_chdir (prj_dir)) {
-			if (!strchr (prj_name, '\'')) {
-				r_sys_chdir ("..");
-				r_sys_cmdf ("rm -f '%s.zip'; zip -r '%s'.zip '%s'",
-					prj_name, prj_name, prj_name);
-			} else {
-				R_LOG_WARN ("Command injection attempt?");
-			}
-		} else {
-			R_LOG_ERROR ("Cannot chdir %s", prj_dir);
-		}
-		r_sys_chdir (cwd);
-		free (cwd);
+	if (r_config_get_b (core->config, "prj.zip")) {
+		r_core_project_zip (core, prj_dir);
 	}
 	// LEAK : not always in heap free (prj_name);
 	free (core->prj->path);

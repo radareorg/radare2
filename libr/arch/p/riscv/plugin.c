@@ -705,7 +705,7 @@ static bool riscv_decode(RArchSession *s, RAnalOp *op, RArchDecodeMask mask) {
 		op->type = R_ANAL_OP_TYPE_LOAD;
 	}
 	if (mask & R_ARCH_OP_MASK_VAL && args.num) {
-		int i, j = 1;
+		int i = 1;
 		RAnalValue *dst, *src;
 		dst = r_vector_push (&op->dsts, NULL);
 		char *argf = strdup (o->args);
@@ -714,26 +714,26 @@ static bool riscv_decode(RArchSession *s, RAnalOp *op, RArchDecodeMask mask) {
 			dst->delta = (st64)r_num_get (NULL, args.arg[0]);
 			// dst->reg = args.arg[1];
 			// dst->reg = r_reg_get (anal->reg, args.arg[1], -1);
-			j = 2;
-		} else if (isdigit ((unsigned char)args.arg[j][0])) {
+			i = 2;
+		} else if (isdigit ((ut8)args.arg[i][0])) {
 			dst->imm = r_num_get (NULL, args.arg[0]);
 		} else {
 			// dst->reg = args.arg[1];
 			// dst->reg = r_reg_get (anal->reg, args.arg[0], -1);
 		}
-		for (i = 0; j < args.num; i++, j++) {
+		for (; i < args.num; i++) {
 			src = r_vector_push (&op->srcs, NULL);
 			comma = strtok (NULL, ",");
 			if (comma && strchr (comma, '(')) {
-				src->delta = (st64)r_num_get (NULL, args.arg[j]);
+				src->delta = (st64)r_num_get (NULL, args.arg[i]);
 				// src->reg = args.arg[1];
 				// src->reg = r_reg_get (anal->reg, args.arg[j + 1], -1);
-				j++;
-			} else if (isalpha ((unsigned char)args.arg[j][0])) {
+				i++;
+			} else if (isalpha ((unsigned char)args.arg[i][0])) {
 				// src->reg = args.arg[1];
 				// src->reg = r_reg_get (anal->reg, args.arg[j], -1);
 			} else {
-				src->imm = r_num_get (NULL, args.arg[j]);
+				src->imm = r_num_get (NULL, args.arg[i]);
 			}
 		}
 		free (argf);

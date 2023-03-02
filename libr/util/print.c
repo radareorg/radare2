@@ -174,13 +174,13 @@ static int r_print_stereogram_private(const char *bump, int w, int h, char *out,
 	const char *string = "Az+|.-=/^@_pT";
 	const int string_len = strlen (string);
 
-	int x, y, s, l = 0, l2 = 0, ch;
+	int x, s, l = 0, l2 = 0, ch;
 	int skip = 7;
 	int bumpi = 0, outi = 0;
 	if (!bump || !out) {
 		return 0;
 	}
-	for (y = 0; bump[bumpi] && outi < size; y++) {
+	for (; bump[bumpi] && outi < size;) {
 		l = l2 = 0;
 		for (x = 0; bump[bumpi] && outi < size && x < w; x++) {
 			ch = string[x % string_len];

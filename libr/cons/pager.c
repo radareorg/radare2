@@ -135,14 +135,12 @@ R_IPI bool pager_all_matches(const char *s, RRegex *rx, RList **mla, int *lines,
 
 R_IPI int *pager_splitlines(char *s, int *lines_count) {
 	int lines_size = 128;
-	int *lines = NULL;
 	int i, row = 0;
-	int sidx = 0;
 
 	if (lines_size * sizeof (int) < lines_size) {
 		return NULL;
 	}
-	lines = malloc (lines_size * sizeof (int));
+	int *lines = (int *)malloc (lines_size * sizeof (int));
 	if (lines) {
 		lines[row++] = 0;
 		for (i = 0; s[i]; i++) {
@@ -164,7 +162,6 @@ R_IPI int *pager_splitlines(char *s, int *lines_count) {
 				s[i] = 0;
 				lines[row++] = i + 1;
 			}
-			sidx++;
 		}
 		*lines_count = row;
 	}

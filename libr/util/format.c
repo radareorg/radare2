@@ -2108,7 +2108,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len, cons
 	/* get args */
 	args = get_args_offset (arg);
 	if (args) {
-		int l = 0, maxl = 0;
+		int maxl = 0;
 		argend = args;
 		tmp = *args;
 		while (tmp == ' ') {
@@ -2128,7 +2128,6 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len, cons
 				maxl = len;
 			}
 		}
-		l++;
 		const char *ends = " "; // XXX trailing space warning
 		snprintf (namefmt, sizeof (namefmt), "%%%ds :%s",
 			((maxl + 1) * (1 + slide)) % STRUCTPTR, ends);
