@@ -232,9 +232,9 @@ bool test_r_anal_var() {
 	vps = r_anal_var_deserialize ("ts-16:var_name:char **, tr48:var_name_b:size_t");
 	mu_assert ("Failed r_anal_var_deserialize", vps && r_list_length (vps) == 2);
 
-	RAnalVarProt *vp = (RAnalVarProt *)r_list_get_bottom (vps);
+	RAnalVarProt *vp = (RAnalVarProt *)r_list_first (vps);
 	mu_assert ("Deserialize name[0]", !strcmp (vp->name, "var_name") && !strcmp (vp->type, "char **"));
-	vp = (RAnalVarProt *)r_list_get_top (vps);
+	vp = (RAnalVarProt *)r_list_last (vps);
 	mu_assert ("Deserialize name[1]", !strcmp (vp->name, "var_name_b") && !strcmp (vp->type, "size_t"));
 
 	mu_assert ("r_anal_function_set_var_prot", r_anal_function_set_var_prot (fcn, vps));

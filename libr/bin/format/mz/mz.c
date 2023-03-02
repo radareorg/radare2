@@ -139,7 +139,7 @@ RList *r_bin_mz_get_segments(const struct r_bin_mz_obj_t *bin) {
 		section->add = true;
 		section_number++;
 	}
-	section = r_list_get_top (seg_list);
+	section = r_list_last (seg_list);
 	section->size = bin->load_module_size - section->vaddr;
 	section->vsize = section->size;
 

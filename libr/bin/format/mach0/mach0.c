@@ -2644,7 +2644,7 @@ static int walk_exports(struct MACH0_(obj_t) *bin, RExportsIterator iterator, vo
 	r_list_push (states, root);
 
 	do {
-		RTrieState * state = r_list_get_top (states);
+		RTrieState *state = r_list_last (states);
 		p = state->node;
 		ut64 len = read_uleb128 (&p, end);
 		if (len == UT64_MAX) {

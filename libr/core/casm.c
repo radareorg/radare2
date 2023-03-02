@@ -782,7 +782,7 @@ R_API ut32 r_core_asm_bwdis_len(RCore* core, int* instr_len, ut64* start_addr, u
 		*instr_len = 0;
 	}
 	if (hits && r_list_length (hits) > 0) {
-		hit = r_list_get_bottom (hits);
+		hit = r_list_first (hits);
 		if (start_addr) {
 			*start_addr = hit->addr;
 		}

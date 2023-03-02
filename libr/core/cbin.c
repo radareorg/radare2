@@ -1387,7 +1387,7 @@ static int bin_source(RCore *r, PJ *pj, int mode) {
 	ls_foreach (ls, iter, kv) {
 		char *v = sdbkv_value (kv);
 		RList *list = r_str_split_list (v, "|", 0);
-		srcline = r_list_get_bottom (list);
+		srcline = r_list_first (list);
 		if (srcline) {
 			if (!strstr (srcline, "0x")) {
 				r_list_append (final_list, srcline);

@@ -4903,7 +4903,7 @@ static void func_walk_blocks(RCore *core, RAnalFunction *f, char input, char typ
 	if (!b) {
 		if (r_list_length (f->bbs) >= 1) {
 			ut32 fcn_size = r_anal_function_realsize (f);
-			b = r_list_get_top (f->bbs);
+			b = r_list_last (f->bbs);
 			if (b->size > fcn_size) {
 				b->size = fcn_size;
 			}

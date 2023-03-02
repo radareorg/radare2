@@ -1317,7 +1317,7 @@ static bool closest_match_update(RSignItem *it, ClosestMatchData *data) {
 		r_sign_close_match_free (r_list_pop (data->output));
 
 		// get new infimum
-		row = r_list_get_top (data->output);
+		row = r_list_last (data->output);
 		data->infimum = row->score;
 	}
 	return true;

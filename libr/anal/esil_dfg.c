@@ -1834,7 +1834,7 @@ static int _dfg_gnode_reducer_insert_cmp(void *incoming, void *in, void *user) {
 static void _dfg_filter_rev_dfs(RGraphNode *n, RAnalEsilDFGFilter *filter) {
 	RAnalEsilDFGNode *node = (RAnalEsilDFGNode *)n->data;
 	if (node->type & R_ANAL_ESIL_DFG_TAG_RESULT) {
-		RGraphNode *previous = (RGraphNode *)r_list_get_top (n->in_nodes);
+		RGraphNode *previous = (RGraphNode *)r_list_last (n->in_nodes);
 		if (!previous) {
 			return;
 		}
@@ -1946,7 +1946,7 @@ static RStrBuf *filter_gnode_expr(RAnalEsilDFG *dfg, RGraphNode *gnode) {	//TODO
 	RAnalEsilDFGNode *node = (RAnalEsilDFGNode *)gnode->data;
 	if ((node->type & (R_ANAL_ESIL_DFG_TAG_RESULT |
 		R_ANAL_ESIL_DFG_TAG_REG | R_ANAL_ESIL_DFG_TAG_MEM)) == R_ANAL_ESIL_DFG_TAG_RESULT) {
-		RGraphNode *previous = (RGraphNode *)r_list_get_top (gnode->in_nodes);
+		RGraphNode *previous = (RGraphNode *)r_list_last (gnode->in_nodes);
 		if (((RAnalEsilDFGNode *)previous->data)->type & R_ANAL_ESIL_DFG_TAG_GENERATIVE) {
 			r_crbtree_insert (filter.tree, previous->data, _dfg_node_filter_insert_cmp, NULL);
 		}
@@ -2011,7 +2011,7 @@ R_API void r_anal_esil_dfg_fold_const(RAnal *anal, RAnalEsilDFG *dfg) {
 		// ok, so gnode here cannot contain a generative node, only const-results
 		// get_resolved_expr expects a generative node
 		// the predecessor of a const-result node is always a generative node
-		RGraphNode *previous_gnode = (RGraphNode *)r_list_get_top (gnode->in_nodes);
+		RGraphNode *previous_gnode = (RGraphNode *)r_list_last (gnode->in_nodes);
 		// it can never be NULL
 
 		RAnalEsilDFGNode *enode = (RAnalEsilDFGNode *)previous_gnode->data;
@@ -2042,7 +2042,7 @@ R_API void r_anal_esil_dfg_fold_const(RAnal *anal, RAnalEsilDFG *dfg) {
 
 		gnode = (RGraphNode *)r_queue_dequeue (dfg->todo);
 		enode = (RAnalEsilDFGNode *)gnode->data;
-		RGraphNode *next_gnode = (RGraphNode *)r_list_get_top (gnode->out_nodes);
+		RGraphNode *next_gnode = (RGraphNode *)r_list_last (gnode->out_nodes);
 		if (next_gnode) {
 			// Cannot assume that there is another operation
 			// Fix string reference
