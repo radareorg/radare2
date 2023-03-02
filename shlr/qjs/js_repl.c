@@ -277,47 +277,47 @@ static const char *const js_repl_qjs = "" \
   "_numcalc),cmd_readline_start()}function cmd_readline_start(){"\
   "try{readline_start(dupstr(\"    \",level),readline_handle_cmd)}"\
   "catch(e){console.error(\"ERROR\",e)}}function readline_handle_c"\
-  "md(e){handle_cmd(e),cmd_readline_start()}function handle_cmd("\
-  "e){if(null===e)return\"\";if(\"?\"===e||\"h\"===e)return help();var"\
-  " r=extract_directive(e);if(0<r.length){if(!handle_directive(r"\
-  ",e))return;e=e.substring(r.length+1)}\"\"!==e&&(r=colorize_js(e"\
-  "=mexpr?mexpr+\"\\n\"+e:e),pstate=r[0],level=r[1],pstate?mexpr=e:"\
-  "(mexpr=\"\",has_bignum?BigFloatEnv.setPrec(eval_and_print.bind("\
-  "null,e),prec,expBits):eval_and_print(e),level=0))}function co"\
-  "lorize_js(e){let r,t,n;const o=e.length;let i,s=\"\",c=0,a=1;co"\
-  "nst l=[];function _(e){s+=e}function u(){return s.substring(s"\
-  ".length-1)}function d(){var e=u();return s=s.substring(0,s.le"\
-  "ngth-1),e}function f(e,r){for(;l.length<e;)l.push(\"default\");"\
-  "for(;l.length<r;)l.push(i)}for(r=0;r<o;){switch(i=null,n=r,t="\
-  "e[r++]){case\" \":case\"\\t\":case\"\\r\":case\"\\n\":continue;case\"+\":c"\
-  "ase\"-\":if(r<o&&e[r]===t){r++;continue}a=1;continue;case\"/\":if"\
-  "(r<o&&\"*\"===e[r]){for(i=\"comment\",_(\"/\"),r++;r<o-1;r++)if(\"*\""\
-  "===e[r]&&\"/\"===e[r+1]){r+=2,d();break}break}if(r<o&&\"/\"===e[r"\
-  "]){for(i=\"comment\",r++;r<o&&\"\\n\"!==e[r];r++);break}if(a){for("\
-  "i=\"regex\",_(\"/\");r<o;)if(\"\\n\"!==(t=e[r++]))if(\"\\\\\"!==t)if(\"[\""\
-  "!==u())if(\"[\"!==t){if(\"/\"===t){for(d();r<o&&is_word(e[r]);)r+"\
-  "+;break}}else _(\"[\"),\"[\"!==e[r]&&\"]\"!==e[r]||r++;else\"]\"===t&"\
-  "&d();else r<o&&r++;else i=\"error\";a=0;break}a=1;continue;case"\
-  "\"'\":case'\"':case\"`\":(function(n){for(i=\"string\",_(n);r<o;)if("\
-  "\"\\n\"!==(t=e[r++])){if(\"\\\\\"===t){if(r>=o)break;r++}else if(t=="\
-  "=n){d();break}}else i=\"error\"})(t),a=0;break;case\"(\":case\"[\":"\
-  "case\"{\":a=1,c++,_(t);continue;case\")\":case\"]\":case\"}\":if((a=0"\
-  ")<c&&is_balanced(u(),t)){c--,d();continue}i=\"error\";break;def"\
-  "ault:if(is_digit(t)){for(i=\"number\";r<o&&(is_word(e[r])||\".\"="\
-  "==e[r]&&(r===o-1||\".\"!==e[r+1]));)r++;a=0}else{if(!is_word(t)"\
-  "&&\"$\"!==t){a=1;continue}!function(){for(a=1;r<o&&is_word(e[r]"\
-  ");)r++;var t=\"|\"+e.substring(n,r)+\"|\";if(0<=\"|break|case|catc"\
-  "h|continue|debugger|default|delete|do|else|finally|for|functi"\
-  "on|if|in|instanceof|new|return|switch|this|throw|try|typeof|w"\
-  "hile|with|class|const|enum|import|export|extends|super|implem"\
-  "ents|interface|let|package|private|protected|public|static|yi"\
-  "eld|undefined|null|true|false|Infinity|NaN|eval|arguments|awa"\
-  "it|\".indexOf(t))return i=\"keyword\",0<=\"|this|super|undefined|"\
-  "null|true|false|Infinity|NaN|arguments|\".indexOf(t)&&(a=0);le"\
-  "t s=r;for(;s<o&&\" \"===e[s];)s++;s<o&&\"(\"===e[s]?i=\"function\":"\
-  "0<=\"|void|var|\".indexOf(t)?i=\"type\":(i=\"identifier\",a=0)}()}}"\
-  "i&&f(n,r)}return f(o,o),[s,c,l]}config_numcalc&&(g.execCmd=fu"\
-  "nction(e){switch(e){case\"dec\":hex_mode=!1;break;case\"hex\":hex"\
-  "_mode=!0;break;case\"num\":algebraicMode=!1;break;case\"alg\":alg"\
-  "ebraicMode=!0}});try{termInit()}catch(e){console.error(e)}}(g"\
-  "lobalThis)}));\n";
+  "md(e){handle_cmd(e),os.pending(),cmd_readline_start()}functio"\
+  "n handle_cmd(e){if(null===e)return\"\";if(\"?\"===e||\"h\"===e)retu"\
+  "rn help();var r=extract_directive(e);if(0<r.length){if(!handl"\
+  "e_directive(r,e))return;e=e.substring(r.length+1)}\"\"!==e&&(r="\
+  "colorize_js(e=mexpr?mexpr+\"\\n\"+e:e),pstate=r[0],level=r[1],ps"\
+  "tate?mexpr=e:(mexpr=\"\",has_bignum?BigFloatEnv.setPrec(eval_an"\
+  "d_print.bind(null,e),prec,expBits):eval_and_print(e),level=0)"\
+  ")}function colorize_js(e){let r,t,n;const o=e.length;let i,s="\
+  "\"\",c=0,a=1;const l=[];function _(e){s+=e}function u(){return "\
+  "s.substring(s.length-1)}function d(){var e=u();return s=s.sub"\
+  "string(0,s.length-1),e}function f(e,r){for(;l.length<e;)l.pus"\
+  "h(\"default\");for(;l.length<r;)l.push(i)}for(r=0;r<o;){switch("\
+  "i=null,n=r,t=e[r++]){case\" \":case\"\\t\":case\"\\r\":case\"\\n\":conti"\
+  "nue;case\"+\":case\"-\":if(r<o&&e[r]===t){r++;continue}a=1;contin"\
+  "ue;case\"/\":if(r<o&&\"*\"===e[r]){for(i=\"comment\",_(\"/\"),r++;r<o"\
+  "-1;r++)if(\"*\"===e[r]&&\"/\"===e[r+1]){r+=2,d();break}break}if(r"\
+  "<o&&\"/\"===e[r]){for(i=\"comment\",r++;r<o&&\"\\n\"!==e[r];r++);bre"\
+  "ak}if(a){for(i=\"regex\",_(\"/\");r<o;)if(\"\\n\"!==(t=e[r++]))if(\"\\"\
+  "\\\"!==t)if(\"[\"!==u())if(\"[\"!==t){if(\"/\"===t){for(d();r<o&&is_w"\
+  "ord(e[r]);)r++;break}}else _(\"[\"),\"[\"!==e[r]&&\"]\"!==e[r]||r++"\
+  ";else\"]\"===t&&d();else r<o&&r++;else i=\"error\";a=0;break}a=1;"\
+  "continue;case\"'\":case'\"':case\"`\":(function(n){for(i=\"string\","\
+  "_(n);r<o;)if(\"\\n\"!==(t=e[r++])){if(\"\\\\\"===t){if(r>=o)break;r+"\
+  "+}else if(t===n){d();break}}else i=\"error\"})(t),a=0;break;cas"\
+  "e\"(\":case\"[\":case\"{\":a=1,c++,_(t);continue;case\")\":case\"]\":ca"\
+  "se\"}\":if((a=0)<c&&is_balanced(u(),t)){c--,d();continue}i=\"err"\
+  "or\";break;default:if(is_digit(t)){for(i=\"number\";r<o&&(is_wor"\
+  "d(e[r])||\".\"===e[r]&&(r===o-1||\".\"!==e[r+1]));)r++;a=0}else{i"\
+  "f(!is_word(t)&&\"$\"!==t){a=1;continue}!function(){for(a=1;r<o&"\
+  "&is_word(e[r]);)r++;var t=\"|\"+e.substring(n,r)+\"|\";if(0<=\"|br"\
+  "eak|case|catch|continue|debugger|default|delete|do|else|final"\
+  "ly|for|function|if|in|instanceof|new|return|switch|this|throw"\
+  "|try|typeof|while|with|class|const|enum|import|export|extends"\
+  "|super|implements|interface|let|package|private|protected|pub"\
+  "lic|static|yield|undefined|null|true|false|Infinity|NaN|eval|"\
+  "arguments|await|\".indexOf(t))return i=\"keyword\",0<=\"|this|sup"\
+  "er|undefined|null|true|false|Infinity|NaN|arguments|\".indexOf"\
+  "(t)&&(a=0);let s=r;for(;s<o&&\" \"===e[s];)s++;s<o&&\"(\"===e[s]?"\
+  "i=\"function\":0<=\"|void|var|\".indexOf(t)?i=\"type\":(i=\"identifi"\
+  "er\",a=0)}()}}i&&f(n,r)}return f(o,o),[s,c,l]}config_numcalc&&"\
+  "(g.execCmd=function(e){switch(e){case\"dec\":hex_mode=!1;break;"\
+  "case\"hex\":hex_mode=!0;break;case\"num\":algebraicMode=!1;break;"\
+  "case\"alg\":algebraicMode=!0}});try{termInit()}catch(e){console"\
+  ".error(e)}}(globalThis)}));\n";

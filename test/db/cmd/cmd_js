@@ -17,3 +17,14 @@ ERROR: null
 EOF
 RUN
 
+NAME=qjs async test
+FILE=-
+CMDS=<<EOF
+""js import("r2pipe").then((r2pipe)=> {console.log(r2pipe.open());}).catch(console.error);
+EOF
+EXPECT=<<EOF
+[object Object]
+EOF
+EXPECT_ERR=
+RUN
+
