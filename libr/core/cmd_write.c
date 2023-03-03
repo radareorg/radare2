@@ -1130,10 +1130,10 @@ static int cmd_wp(void *data, const char *input) {
 	return 0;
 }
 
-static int cmd_wu(void *data, const char *input) {
+static int cmd_wu(RCore *core, const char *input) {
 	// TODO: implement it in an API RCore.write_unified_hexpatch() is ETOOLONG
 	if (input[0] == ' ') {
-		char *data = r_file_slurp (input+1, NULL);
+		char *data = r_file_slurp (input + 1, NULL);
 		if (data) {
 			int i;
 			char sign = ' ';
