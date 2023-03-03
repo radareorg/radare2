@@ -1149,9 +1149,7 @@ static int cmd_pdu(RCore *core, const char *input) {
 			r_core_cmd_help_match (core, help_msg_pdu, "pdua", true);
 			break;
 		}
-
 		ut64 to = r_num_get (core->num, arg);
-
 		if (!to) {
 			R_LOG_ERROR ("Couldn't parse address \"%s\"", arg);
 			ret = 1;

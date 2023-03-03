@@ -9,7 +9,7 @@ static RCoreHelpMessage help_msg_P = {
 	"P+", " [name]", "save project (same as Ps, but doesnt checks for changes)",
 	"P-", " [name]", "delete project",
 	"P*", "", "printn project script as r2 commands",
-	"P!", "([cmd])", "open a shell in the project directory",
+	"P!", "([cmd])", "open a shell or run command in the project directory",
 	"Pc", "", "close current project",
 	"Pd", " [N]", "diff Nth commit",
 	"Pi", " [file]", "show project information",
@@ -209,7 +209,7 @@ static int cmd_project(void *data, const char *input) {
 		break;
 	case '!': // "P!"
 		if (input [1] == '?') {
-			eprintf ("Usage: P!([cmd]) - run shell or command in project directory\n");
+			r_core_cmd_help_match (core, help_msg_P, "P!", false);
 		} else if (r_config_get_b (core->config, "scr.interactive")) {
 			char *pdir = r_file_new (
 				r_config_get (core->config, "dir.projects"),
@@ -253,7 +253,7 @@ static int cmd_project(void *data, const char *input) {
 				}
 			}
 		} else {
-			eprintf ("Usage: PS[*] [projectname]\n");
+			r_core_cmd_help_match (core, help_msg_P, "PS", false);
 		}
 		break;
 	case 'n': // "Pn"
@@ -359,7 +359,7 @@ static int cmd_project(void *data, const char *input) {
 						free (data);
 					}
 				} else {
-					eprintf ("Usage: `Pnj` or `Pnj ...`\n");
+					r_core_cmd_help_match (core, help_msg_P, "Pn", false);
 				}
 				break;
 			case 'x': // "Pnx"

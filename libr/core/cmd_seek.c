@@ -1,11 +1,6 @@
-/* radare - LGPL - Copyright 2009-2022 - pancake */
+/* radare - LGPL - Copyright 2009-2023 - pancake */
 
-#include "r_types.h"
-#include "r_config.h"
-#include "r_cons.h"
-#include "r_core.h"
-#include "r_debug.h"
-#include "r_io.h"
+#include <r_core.h>
 
 static void __core_cmd_search_backward_prelude(RCore *core, bool doseek, bool forward);
 
@@ -38,7 +33,7 @@ static const char *help_msg_s[] = {
 	"snp", "", "seek to next function prelude",
 	"spp", "", "seek to prev function prelude",
 	"so", " [N]", "seek to N next opcode(s)",
-	"sr", " pc", "seek to register",
+	"sr", " PC", "seek to register (or register alias) value",
 	"ss", "[?]", "seek silently (without adding an entry to the seek history)",
 	// "sp [page]  seek page N (page = block)",
 	NULL
@@ -331,7 +326,7 @@ static int cmd_seek_opcode_forward(RCore *core, int n) {
 
 static void cmd_seek_opcode(RCore *core, const char *input) {
 	if (input[0] == '?') {
-		eprintf ("Usage: so [-][n]\n");
+		r_core_cmd_help_match (core, help_msg_s, "so", false);
 		return;
 	}
 	if (!strcmp (input, "-")) {
@@ -400,7 +395,7 @@ static int cmd_seek(void *data, const char *input) {
 		if (input[1] && input[2]) {
 			seek_to_register (core, input + 2, silent);
 		} else {
-			eprintf ("Usage: 'sr PC' seek to program counter register\n");
+			r_core_cmd_help_match (core, help_msg_s, "sr", false);
 		}
 		break;
 	case 'C': // "sC"

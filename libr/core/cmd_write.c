@@ -14,8 +14,8 @@ static const char *help_msg_w[] = {
 	"waF"," f.asm","assemble file and write bytes and show 'wx' op with hexpair bytes of assembled code",
 	"wao","[?] op","modify opcode (change conditional of jump. nop, etc) (RArch.patch)",
 	"wA","[?] r 0","alter/modify opcode at current seek (see wA?)",
-	"wb"," 011001","write bits in bit big endian",
-	"wB","[-]0xVALUE","set or unset bits with given value",
+	"wb"," 011001","write bits in bit big endian (see pb)",
+	"wB","[-]0xVALUE","set or unset bits with given value (also wB-0x2000)",
 	"wc","[?][jir+-*?]","write cache list/undo/commit/reset (io.cache)",
 	"wd"," [off] [n]","copy N bytes from OFF to $$ (memcpy) (see y?)",
 	"we","[?] [nNsxX] [arg]","extend write operations (insert instead of replace)",
@@ -32,6 +32,7 @@ static const char *help_msg_w[] = {
 	"wx","[?][fs] 9090","write two intel nops (from wxfile or wxseek)",
 	"wX"," 1b2c3d","fill current block with cyclic hexpairs",
 	"wv","[?] eip+34","write 32-64 bit value honoring cfg.bigendian",
+	"wu", " [unified-diff-patch]","see 'cu'",
 	"wz"," string","write zero terminated string (like w + \\x00)",
 	NULL
 };
@@ -312,7 +313,7 @@ static int cmd_wo(void *data, const char *input) {
 	switch (input[0]) {
 	case 'e': // "woe"
 		if (input[1]!=' ') {
-			r_cons_printf ("Usage: 'woe from-to step'\n");
+			r_core_cmd_help_match (core, help_msg_wo, "woe", true);
 			return -1;
 		}
 		/* fallthrough */
@@ -554,7 +555,7 @@ static bool cmd_wff(RCore *core, const char *input) {
 	}
 
 	if (*arg == '?' || !*arg) {
-		eprintf ("Usage: wf [file] ([size] ([offset]))\n");
+		r_core_cmd_help_match (core, help_msg_w, "wf", false);
 	} else if (!strcmp (arg, "-")) {
 		char *out = r_core_editor (core, NULL, NULL);
 		if (out) {
@@ -669,7 +670,7 @@ static bool cmd_wfx(RCore *core, const char *input) {
 static bool cmd_wfs(RCore *core, const char *input) {
 	char *str = strdup (input);
 	if (str[0] != ' ') {
-		eprintf ("Usage wfs host:port [sz]\n");
+		r_core_cmd_help_match (core, help_msg_wf, "wfs", false);
 		free (str);
 		return false;
 	}
@@ -677,7 +678,7 @@ static bool cmd_wfs(RCore *core, const char *input) {
 	char *host = str + 1;
 	char *port = strchr (host, ':');
 	if (!port) {
-		eprintf ("Usage wfs host:port [sz]\n");
+		r_core_cmd_help_match (core, help_msg_wf, "wfs", true);
 		free (str);
 		return false;
 	}
@@ -734,7 +735,6 @@ static int cmd_wf(void *data, const char *input) {
 		return -1;
 	}
 	if (input[0] == '?') {
-		eprintf ("Usage: wf [file] ([size] ([offset]))\n");
 		r_core_cmd_help (core, help_msg_wf);
 		return -1;
 	}
@@ -834,7 +834,7 @@ static int cmd_wB(void *data, const char *input) {
 		cmd_write_bits (core, 0, r_num_math (core->num, input + 1));
 		break;
 	default:
-		eprintf ("Usage: wB 0x2000  # or wB-0x2000\n");
+		r_core_cmd_help_match (core, help_msg_w, "wB", true);
 		break;
 	}
 	return 0;
@@ -998,7 +998,7 @@ static int cmd_we(void *data, const char *input) {
 				}
 			}
 		} else {
-			eprintf ("Usage: wen [len]\n");
+			r_core_cmd_help_match (core, help_msg_we, "wen", true);
 			cmd_suc = true;
 		}
 		break;
@@ -1188,7 +1188,7 @@ static int cmd_wu(void *data, const char *input) {
 			free (data);
 		}
 	} else {
-		eprintf ("Usage: wu [unified-diff-patch]    # see 'cu'\n");
+		r_core_cmd_help_match (core, help_msg_we, "wu", true);
 	}
 	return 0;
 }
@@ -2060,7 +2060,7 @@ static int cmd_wb(void *data, const char *input) {
 		b |= (n << shift);
 		r_io_write_at (core->io, core->offset, &b, 1);
 	} else {
-		eprintf ("Usage: wb 010101 (see pb)\n");
+		r_core_cmd_help_match (core, help_msg_w, "wb", true);
 	}
 
 	return 0;
