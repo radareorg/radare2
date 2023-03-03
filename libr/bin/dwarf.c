@@ -1154,14 +1154,14 @@ static void set_regs_default(const RBinDwarfLineHeader *hdr, RBinDwarfSMRegister
 static size_t parse_opcodes(const RBin *bin, const ut8 *obuf,
 		size_t len, const RBinDwarfLineHeader *hdr,
 		RBinDwarfSMRegisters *regs, int mode) {
-	const ut8 *buf, *buf_end;
+	r_return_val_if_fail (bin && obuf, 0);
 	ut8 opcode, ext_opcode;
 
-	if (!bin || !obuf || len < 8) {
+	if (len < 8) {
 		return 0;
 	}
-	buf = obuf;
-	buf_end = obuf + len;
+	const ut8 *buf = obuf;
+	const ut8 *buf_end = obuf + len;
 
 	while (buf && buf + 1 < buf_end) {
 		opcode = *buf++;
@@ -1183,14 +1183,11 @@ static size_t parse_opcodes(const RBin *bin, const ut8 *obuf,
 	if (mode == R_MODE_PRINT) {
 		bin->cb_printf ("\n"); // formatting of the output
 	}
-	if (!buf) {
-		return 0;
-	}
-	return (size_t) (buf - obuf); // number of bytes we've moved by
+	return (size_t) buf? (buf - obuf): 0; // number of bytes we've moved by
 }
 
 static bool parse_line_raw(const RBin *a, const ut8 *obuf, ut64 len, int mode) {
-	r_return_val_if_fail(a && obuf, false);
+	r_return_val_if_fail (a && obuf, false);
 	PrintfCallback print = a->cb_printf;
 
 	if (mode == R_MODE_PRINT) {

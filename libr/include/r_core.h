@@ -154,6 +154,9 @@ typedef struct r_core_times_t {
 	ut64 loadlibs_init_time;
 	ut64 loadlibs_time;
 	ut64 file_open_time;
+#if R2_590
+	ut64 file_anal_time;
+#endif
 } RCoreTimes;
 
 #define R_CORE_ASMQJMPS_NUM 10

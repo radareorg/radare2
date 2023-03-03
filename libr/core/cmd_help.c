@@ -1,6 +1,14 @@
-/* radare - LGPL - Copyright 2009-2022 - pancake */
+/* radare - LGPL - Copyright 2009-2023 - pancake */
 
 #include <r_core.h>
+
+static RCoreHelpMessage help_msg_question_t = {
+	"Usage: ?t[0,1] [cmd]", "", "",
+	"?t", " pd 32", "show time needed to run 'pd 32'",
+	"?t0", "", "select first visual tab",
+	"?t1", "", "select next visual tab",
+	NULL
+};
 
 static RCoreHelpMessage help_msg_at = {
 	"Usage: [.][#]<cmd>[*] [`cmd`] [@ addr] [~grep] [|syscmd] [>[>]file]", "", "",
@@ -626,14 +634,11 @@ static int cmd_help(void *data, const char *input) {
 				r_core_cmd (core, input + 1, 0);
 				r_prof_end (&prof);
 				r_core_return_value (core, (ut64)(int)prof.result);
-				eprintf ("%lf\n", prof.result);
+				r_cons_printf ("%lf\n", prof.result);
 				break;
 			}
 		default:
-			eprintf ("Usage: ?t[0,1] [cmd]\n");
-			eprintf ("?t pd 32 # show time needed to run 'pd 32'\n");
-			eprintf ("?t0 # select first visual tab\n");
-			eprintf ("?t1 # select next visual tab\n");
+			r_core_cmd_help (core, help_msg_question_t);
 			break;
 		}
 		break;
@@ -738,17 +743,32 @@ static int cmd_help(void *data, const char *input) {
 		r_cons_printf ("0%"PFMT64o"\n", n);
 		break;
 	case 'T': // "?T"
-		r_cons_printf("plug.init = %"PFMT64d"\n"
-			"plug.load = %"PFMT64d"\n"
-			"file.load = %"PFMT64d"\n",
-			core->times->loadlibs_init_time,
-			core->times->loadlibs_time,
-			core->times->file_open_time);
+		if (input[1] == 'j') {
+			PJ *pj = r_core_pj_new (core);
+			pj_o (pj);
+			pj_kn (pj, "plug.init", core->times->loadlibs_init_time);
+			pj_kn (pj, "plug.load", core->times->loadlibs_time);
+			pj_kn (pj, "file.load", core->times->file_open_time);
+#if R2_590
+			// file_anal_time
+#endif
+			pj_end (pj);
+			char *s = pj_drain (pj);
+			r_cons_printf ("%s\n", s);
+			free (s);
+		} else {
+			r_cons_printf ("plug.init = %"PFMT64d"\n"
+				"plug.load = %"PFMT64d"\n"
+				"file.load = %"PFMT64d"\n",
+				core->times->loadlibs_init_time,
+				core->times->loadlibs_time,
+				core->times->file_open_time);
+		}
 		break;
 	case 'u': // "?u"
 		{
 			char unit[8];
-			n = r_num_math (core->num, input+1);
+			n = r_num_math (core->num, input + 1);
 			r_num_units (unit, sizeof (unit), n);
 			r_cons_println (unit);
 		}
