@@ -60,6 +60,61 @@ static void pair_ut64(PJ *pj, const char *key, ut64 val) {
 	}
 }
 
+#if !R2_590
+// filter out shell special chars
+static char *r_name_filter_shell(const char *s) {
+	r_return_val_if_fail (s, NULL);
+	char *a = malloc (strlen (s) + 1);
+	if (!a) {
+		return NULL;
+	}
+	char *b = a;
+	while (*s) {
+		switch (*s) {
+		case '@':
+		case '`':
+		case '|':
+		case ';':
+		case '=':
+		case '\n':
+			break;
+		default:
+			*b++ = *s;
+			break;
+		}
+		s++;
+	}
+	*b = 0;
+	return a;
+}
+
+static char *r_name_filter_quoted_shell(const char *s) {
+	r_return_val_if_fail (s, NULL);
+	char *a = malloc (strlen (s) + 1);
+	if (!a) {
+		return NULL;
+	}
+	char *b = a;
+	while (*s) {
+		switch (*s) {
+		case ' ':
+		case '=':
+		case '"':
+		case '\\':
+		case '\r':
+		case '\n':
+			break;
+		default:
+			*b++ = *s;
+			break;
+		}
+		s++;
+	}
+	*b = 0;
+	return a;
+}
+#endif
+
 static void pair_ut64x(PJ *pj, const char *key, ut64 val) {
 	if (pj) {
 		pair_ut64 (pj, key, val);
