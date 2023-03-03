@@ -1,25 +1,22 @@
-/* radare - LGPL - Copyright 2009-2021 - pancake */
+/* radare - LGPL - Copyright 2009-2023 - pancake */
 
-#include "r_cons.h"
-#include "r_core.h"
-#include "r_egg.h"
+#include <r_core.h>
 
 static const char *help_msg_g[] = {
-	"Usage:", "g[wcilper] [arg]", "Go compile shellcodes",
+	"Usage:", "g[wcilper] [arg]", "Go compile shellcodes using asm.arch/bits/os",
 	"g", " ", "compile the shellcode",
 	"g", " foo.r", "compile r_egg source file",
-	"gw", "", "compile and write",
 	"gc", " cmd=/bin/ls", "set config option for shellcodes and encoders",
 	"gc", "", "list all config options",
-	"gL", "[?]", "list plugins (shellcodes, encoders)",
-	"gs", " name args", "compile syscall name(args)",
-	"gi", " [type]", "define the shellcode type",
-	"git", " [...]", "your favourite version control",
-	"gp", " padding", "define padding for command",
 	"ge", " [encoder] [key]", "specify an encoder and a key",
+	"git", " [...]", "your favourite version control",
+	"gi", " [type]", "define the shellcode type",
+	"gL", "[?]", "list plugins (shellcodes, encoders)",
+	"gp", " padding", "define padding for command",
 	"gr", "", "reset r_egg",
+	"gs", " name args", "compile syscall name(args)",
 	"gS", "", "show the current configuration",
-	"EVAL VARS:", "", "asm.arch, asm.bits, asm.os",
+	"gw", "", "compile and write",
 	NULL
 };
 
@@ -156,22 +153,22 @@ static int cmd_egg(void *data, const char *input) {
 			}
 			egg->lang.nsyscalls = 0;
 		} else {
-			eprintf ("Usage: gs [syscallname] [parameters]\n");
+			r_core_cmd_help_match (core, help_msg_g, "gs", false);
 		}
 		break;
 	case ' ': // "g "
 		if (input[1] && input[2]) {
 			r_egg_load (egg, input + 2, 0);
 			if (!cmd_egg_compile (egg)) {
-				eprintf ("Cannot compile '%s'\n", input + 2);
+				R_LOG_ERROR ("Cannot compile '%s'", input + 2);
 			}
 		} else {
-			eprintf ("wat\n");
+			r_core_cmd_help_match (core, help_msg_g, "g ", true);
 		}
 		break;
 	case '\0': // "g"
 		if (!cmd_egg_compile (egg)) {
-			eprintf ("Cannot compile\n");
+			R_LOG_ERROR ("Cannot compile");
 		}
 		break;
 	case 'p': // "gp"
@@ -180,7 +177,7 @@ static int cmd_egg(void *data, const char *input) {
 				r_egg_option_set (egg, "egg.padding", input + 2);
 			}
 		} else {
-			eprintf ("Usage: gp [padding]\n");
+			r_core_cmd_help_match (core, help_msg_g, "gp", true);
 		}
 		break;
 	case 'e': // "ge"
@@ -198,11 +195,11 @@ static int cmd_egg(void *data, const char *input) {
 				r_egg_option_set (egg, "key", p + 1);
 				r_egg_option_set (egg, "egg.encoder", oa);
 			} else {
-				eprintf ("Usage: ge [encoder] [key]\n");
+				r_core_cmd_help_match (core, help_msg_g, "ge", true);
 			}
 			free (oa);
 		} else {
-			eprintf ("Usage: ge [encoder] [key]\n");
+			r_core_cmd_help_match (core, help_msg_g, "ge", true);
 		}
 		break;
 	case 'i': // "gi"
@@ -216,10 +213,10 @@ static int cmd_egg(void *data, const char *input) {
 			if (input[0] && input[2]) {
 				r_egg_option_set (egg, "egg.shellcode", input + 2);
 			} else {
-				eprintf ("Usage: gi [shellcode-type]\n");
+				r_core_cmd_help_match (core, help_msg_g, "gi", false);
 			}
 		} else {
-			eprintf ("Usage: gi [shellcode-type]\n");
+			r_core_cmd_help_match (core, help_msg_g, "gi", false);
 		}
 		break;
 	case 'L': // "gL"
@@ -306,7 +303,7 @@ static int cmd_egg(void *data, const char *input) {
 			R_LOG_TODO ("list options");
 			break;
 		default:
-			eprintf ("Usage: gc [k=v]\n");
+			r_core_cmd_help_match (core, help_msg_g, "gc", false);
 			break;
 		}
 		break;
