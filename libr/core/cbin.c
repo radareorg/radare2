@@ -60,59 +60,6 @@ static void pair_ut64(PJ *pj, const char *key, ut64 val) {
 	}
 }
 
-static char *__filterQuotedShell(const char *arg) {
-	r_return_val_if_fail (arg, NULL);
-	char *a = malloc (strlen (arg) + 1);
-	if (!a) {
-		return NULL;
-	}
-	char *b = a;
-	while (*arg) {
-		switch (*arg) {
-		case ' ':
-		case '=':
-		case '"':
-		case '\\':
-		case '\r':
-		case '\n':
-			break;
-		default:
-			*b++ = *arg;
-			break;
-		}
-		arg++;
-	}
-	*b = 0;
-	return a;
-}
-// TODO: move into libr/util/name.c
-static char *__filterShell(const char *arg) {
-	r_return_val_if_fail (arg, NULL);
-	char *a = malloc (strlen (arg) + 1);
-	if (!a) {
-		return NULL;
-	}
-	char *b = a;
-	while (*arg) {
-		char ch = *arg;
-		switch (ch) {
-		case '@':
-		case '`':
-		case '|':
-		case ';':
-		case '=':
-		case '\n':
-			break;
-		default:
-			*b++ = ch;
-			break;
-		}
-		arg++;
-	}
-	*b = 0;
-	return a;
-}
-
 static void pair_ut64x(PJ *pj, const char *key, ut64 val) {
 	if (pj) {
 		pair_ut64 (pj, key, val);
@@ -1539,7 +1486,7 @@ static int bin_entry(RCore *r, PJ *pj, int mode, ut64 laddr, int va, bool inifin
 			} else {
 				name = r_str_newf ("entry%i", i);
 			}
-			char *n = __filterQuotedShell (name);
+			char *n = r_name_filter_quoted_shell (name);
 			r_cons_printf ("\"f %s 1 0x%08"PFMT64x"\"\n", n, at);
 			r_cons_printf ("\"f %s_%s 1 0x%08"PFMT64x"\"\n", n, hpaddr_key, hpaddr);
 			r_cons_printf ("\"s %s\"\n", n);
@@ -1873,7 +1820,7 @@ static int bin_relocs(RCore *r, PJ *pj, int mode, int va) {
 			}
 			if (name) {
 				int reloc_size = 4;
-				char *n = __filterQuotedShell (name);
+				char *n = r_name_filter_quoted_shell (name);
 				r_cons_printf ("\"f %s%s%s %d 0x%08"PFMT64x"\"\n",
 					r_str_get_fail (r->bin->prefix, "reloc."),
 					r->bin->prefix ? "." : "", n, reloc_size, addr);
@@ -2221,7 +2168,7 @@ static char *construct_symbol_flagname(const char *pfx, const char *libname, con
 	char *r = r_str_newf ("%s.%s%s%s", pfx, r_str_get (libname), libname ? "_" : "", symname);
 	if (r) {
 		r_name_filter (r, len); // maybe unnecessary..
-		char *R = __filterQuotedShell (r);
+		char *R = r_name_filter_quoted_shell (r);
 		free (r);
 		return R;
 	}
@@ -2565,8 +2512,8 @@ static int bin_symbols(RCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at, 
 					char *module = strdup (r_symbol_name);
 					char *p = strstr (module, ".dll_");
 					if (p && symbol->is_imported) {
-						char *symname = __filterShell (p + 5);
-						char *m = __filterShell (module);
+						char *symname = r_name_filter_shell (p + 5);
+						char *m = r_name_filter_shell (module);
 						*p = 0;
 						if (r->bin->prefix) {
 							r_cons_printf ("\"k bin/pe/%s/%d=%s.%s\"\n",
@@ -3253,14 +3200,14 @@ static int bin_fields(RCore *r, PJ *pj, int mode, int va) {
 		ut64 addr = rva (bin, field->paddr, field->vaddr, va);
 
 		if (IS_MODE_RAD (mode)) {
-			char *n = __filterQuotedShell (field->name);
+			char *n = r_name_filter_quoted_shell (field->name);
 			r_name_filter (n, -1);
 			r_cons_printf ("\"f header.%s 1 0x%08"PFMT64x"\"\n", n, addr);
 			if (field->comment && *field->comment) {
 				char *e = sdb_encode ((const ut8*)field->comment, -1);
 				r_cons_printf ("CCu %s @ 0x%"PFMT64x"\n", e, addr);
 				free (e);
-				char *f = __filterShell (field->format);
+				char *f = r_name_filter_shell (field->format);
 				r_cons_printf ("Cf %d %s @ 0x%"PFMT64x"\n", field->size, f, addr);
 				free (f);
 			}
@@ -3629,7 +3576,7 @@ static int bin_classes(RCore *r, PJ *pj, int mode) {
 				}
 			}
 		} else if (IS_MODE_RAD (mode)) {
-			char *n = __filterShell (name);
+			char *n = r_name_filter_shell (name);
 			r_cons_printf ("\"f class.%s = 0x%"PFMT64x"\"\n", n, at_min);
 			if (c->super) {
 				char *cn = c->name;
@@ -3645,8 +3592,8 @@ static int bin_classes(RCore *r, PJ *pj, int mode) {
 			}
 			r_list_foreach (c->methods, iter2, sym) {
 				char *mflags = r_core_bin_method_flags_str (sym->method_flags, mode);
-				char *n = c->name; //  __filterShell (c->name);
-				char *sn = sym->name; //__filterShell (sym->name);
+				char *n = c->name; //  r_name_filter_shell (c->name);
+				char *sn = sym->name; //r_name_filter_shell (sym->name);
 				char *cmd = r_str_newf ("\"f method%s.%s.%s = 0x%"PFMT64x"\"\n", mflags, n, sn, sym->vaddr);
 				// free (n);
 				// free (sn);
@@ -4601,7 +4548,7 @@ static bool r_core_bin_file_print(RCore *core, RBinFile *bf, PJ *pj, int mode) {
 
 	switch (mode) {
 	case '*': {
-		char *n = __filterShell (name);
+		char *n = r_name_filter_shell (name);
 		r_cons_printf ("oba 0x%08"PFMT64x" %s # %d\n", bf->o->boffset, n, bf->id);
 		free (n);
 		break;

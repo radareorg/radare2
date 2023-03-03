@@ -195,3 +195,56 @@ R_API char *r_name_filter_dup(const char *name) {
 	r_name_filter (s, -1);
 	return s;
 }
+
+// filter out shell special chars
+R_API char *r_name_filter_shell(const char *s) {
+	r_return_val_if_fail (s, NULL);
+	char *a = malloc (strlen (s) + 1);
+	if (!a) {
+		return NULL;
+	}
+	char *b = a;
+	while (*s) {
+		switch (*s) {
+		case '@':
+		case '`':
+		case '|':
+		case ';':
+		case '=':
+		case '\n':
+			break;
+		default:
+			*b++ = *s;
+			break;
+		}
+		s++;
+	}
+	*b = 0;
+	return a;
+}
+
+R_API char *r_name_filter_quoted_shell(const char *s) {
+	r_return_val_if_fail (s, NULL);
+	char *a = malloc (strlen (s) + 1);
+	if (!a) {
+		return NULL;
+	}
+	char *b = a;
+	while (*s) {
+		switch (*s) {
+		case ' ':
+		case '=':
+		case '"':
+		case '\\':
+		case '\r':
+		case '\n':
+			break;
+		default:
+			*b++ = *s;
+			break;
+		}
+		s++;
+	}
+	*b = 0;
+	return a;
+}
