@@ -64,6 +64,7 @@ static bool check_buffer(RBinFile *bf, RBuffer *buf) {
 	if (read_length < 12) {
 		return false;
 	}
+	tmp[63] = 0;
 
 	const ut8 *p = (const ut8 *)tmp;
 	int i = 0;
