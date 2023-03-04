@@ -3172,14 +3172,15 @@ static void cmd_autocomplete(RCore *core, const char *input) {
 
 static int cmd_last(void *data, const char *input) {
 	static RCoreHelpMessage help_msg_last = {
-	
+		"_", "", "print last output",
+		NULL
 	};
 	switch (*input) {
 	case 0:
 		r_cons_last ();
 		break;
 	default:
-		r_cons_printf ("Usage: _  print last output\n");
+		r_core_cmd_help (core, help_msg_last);
 	}
 	return 0;
 }
@@ -3201,7 +3202,8 @@ static int cmd_system(void *data, const char *input) {
 		break;
 	case '=': //!=
 		if (input[1] == '?') {
-			r_cons_printf ("Usage: !=[!]  - enable/disable remote commands\n");
+			r_core_cmd_help_match (core, help_msg_exclamation, "!=!", true);
+			r_core_cmd_help_match (core, help_msg_exclamation, "=!=", true);
 		} else {
 			if (!r_sandbox_enable (0)) {
 				R_FREE (core->cmdremote);
@@ -4718,7 +4720,7 @@ repeat_arroba:
 					}
 					is_arch_set = set_tmp_arch (core, ptr + 2, &tmpasm);
 				} else {
-					eprintf ("Usage: pd 10 @a:arm:32\n");
+					r_core_cmd_help_match (core, help_msg_at, "@a:", true);
 				}
 				break;
 			case 's': // "@s:" // wtf syntax
@@ -4839,9 +4841,7 @@ next_arroba:
 				char *range = ptr + 2;
 				char *p = strchr (range, ' ');
 				if (!p) {
-					eprintf ("Usage: / ABCD @{0x1000 0x3000}\n");
-					eprintf ("Run command and define the following vars:\n");
-					eprintf (" (anal|diff|graph|search|zoom).{from,to}\n");
+					r_core_cmd_help_match (core, help_msg_at, "@{", true);
 					free (tmpeval);
 					free (tmpasm);
 					free (tmpbits);
@@ -5254,7 +5254,8 @@ R_API int r_core_cmd_foreach3(RCore *core, const char *cmd, char *each) { // "@@
 		ch = 'G'; // @@@SS = @@@G
 	}
 	char *glob = (each[0] && each[1] == ':')
-		? r_str_trim_dup (each + 2): NULL;
+		? r_str_trim_dup (each + 2)
+		: NULL;
 
 	RList *list = foreach3list (core, ch, glob);
 
@@ -5273,6 +5274,8 @@ R_API int r_core_cmd_foreach3(RCore *core, const char *cmd, char *each) { // "@@
 				free (arg);
 			}
 		} else {
+			// XXX Needs help_msg_at_at_at in proper format
+			// r_core_cmd_help_match (core, help_msg_at_at_at, "@@@c", true);
 			eprintf ("Usage: @@@c:command   # same as @@@=`command`\n");
 		}
 		break;
