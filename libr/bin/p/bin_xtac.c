@@ -285,6 +285,9 @@ static bool r_bin_xtac_read_address_pairs(RBinXtacObj *bin) {
 	const ut32 n_addr_pairs = bin->header->num_of_addr_pairs;
 	const ut32 addr_pair_size = n_addr_pairs * sizeof (X86ArmAddrPair);
 	const ut32 p_addr_pair = bin->header->ptr_to_addr_pairs;
+	if (n_addr_pairs > 0xfffff) {
+		return false;
+	}
 	if (!(bin->address_pairs = R_NEWS0 (X86ArmAddrPair, n_addr_pairs))) {
 		return false;
 	}
