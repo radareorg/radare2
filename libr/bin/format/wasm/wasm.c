@@ -908,6 +908,9 @@ static bool parse_import_sec(RBinWasmObj *bin) {
 	if (!consume_u32_r (buf, bound, &count)) {
 		return false;
 	}
+	if (count > 0xfffff) {
+		return false;
+	}
 
 	// over estimate size, shrink later
 	for (i = 0; i < R_ARRAY_SIZE (bin->g_imports_arr); i++) {
