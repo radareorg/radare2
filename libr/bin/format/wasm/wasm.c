@@ -430,9 +430,15 @@ static inline RPVector *parse_vec(RBinWasmObj *bin, ut64 bound, ParseEntryFcn pa
 	if (count > r_buf_size (buf)) {
 		count = r_buf_size (buf) - r_buf_tell (buf);
 	}
+	if ((st32)count < 1) {
+		return NULL;
+	}
+
 	RPVector *vec = r_pvector_new (free_entry);
 	if (vec) {
-		r_pvector_reserve (vec, count);
+		if (!r_pvector_reserve (vec, count)) {
+			return NULL;
+		}
 		ut32 i;
 		for (i = 0; i < count; i++) {
 			ut64 start = r_buf_tell (buf);
