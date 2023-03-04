@@ -72,7 +72,6 @@ static RBinNXOObj *nso_new(void) {
 }
 
 static bool load_bytes(RBinFile *bf, void **bin_obj, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb) {
-	eprintf ("load_bytes in bin.nso must die\n");
 	RBin *rbin = bf->rbin;
 	ut32 toff = r_buf_read_le32_at (bf->buf, NSO_OFF (text_memoffset));
 	ut32 tsize = r_buf_read_le32_at (bf->buf, NSO_OFF (text_size));
@@ -81,12 +80,16 @@ static bool load_bytes(RBinFile *bf, void **bin_obj, const ut8 *buf, ut64 sz, ut
 	ut32 doff = r_buf_read_le32_at (bf->buf, NSO_OFF (data_memoffset));
 	ut32 dsize = r_buf_read_le32_at (bf->buf, NSO_OFF (data_size));
 	ut64 total_size = tsize + rosize + dsize;
+	if (total_size > ST32_MAX) {
+		R_LOG_WARN ("prevented oom");
+		return false;
+	}
 	RBuffer *newbuf = r_buf_new_empty (total_size);
 	ut64 ba = baddr (bf);
 	ut8 *tmp = NULL;
 
 	if (rbin->iob.io && !(rbin->iob.io->cached & R_PERM_W)) {
-		eprintf ("Please add \'-e io.cache=true\' option to r2 command. This is required to decompress the code.\n");
+		R_LOG_INFO ("Please add \'-e io.cache=true\' option to r2 command. This is required to decompress the code");
 		goto fail;
 	}
 	/* Decompress each sections */
@@ -95,7 +98,7 @@ static bool load_bytes(RBinFile *bf, void **bin_obj, const ut8 *buf, ut64 sz, ut
 		goto fail;
 	}
 	if (decompress (buf + toff, tmp, rooff - toff, tsize) != tsize) {
-		eprintf ("decompression failure\n");
+		R_LOG_ERROR ("decompression failure");
 		goto fail;
 	}
 	r_buf_write_at (newbuf, 0, tmp, tsize);
