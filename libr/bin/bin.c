@@ -1212,7 +1212,6 @@ R_API RBuffer *r_bin_package(RBin *bin, const char *type, const char *file, RLis
 		ut64 from = 0x1000;
 		r_buf_write_at (buf, 4, num8, 4);
 		int off = 12;
-		int item = 0;
 		r_list_foreach (files, iter, f) {
 			size_t f_len = 0;
 			ut8 *f_buf = (ut8 *)r_file_slurp (f, &f_len);
@@ -1221,7 +1220,6 @@ R_API RBuffer *r_bin_package(RBin *bin, const char *type, const char *file, RLis
 				free (f_buf);
 				continue;
 			}
-			item++;
 			/* CPU */
 			num8[0] = f_buf[7];
 			num8[1] = f_buf[6];

@@ -94,6 +94,10 @@ static inline bool consume_str_new(RBuffer *b, ut64 bound, ut32 *len_out, char *
 	ut32 len = 0;
 	// module_str
 	if (consume_u32_r (b, bound, &len)) {
+		if (len > 0xffff) {
+			// avoid large allocations can be caused by fuzzed bins
+			return false;
+		}
 		char *str = (char *)malloc (len + 1);
 		if (str && consume_str_r (b, bound, len, str)) {
 			if (len_out) {
