@@ -4602,7 +4602,7 @@ static bool r_core_bin_file_print(RCore *core, RBinFile *bf, PJ *pj, int mode) {
 	switch (mode) {
 	case '*': {
 		char *n = __filterShell (name);
-		r_cons_printf ("oba 0x%08"PFMT64x" %s # %d\n", bf->o->boffset, n, bf->id);
+		r_cons_printf ("oia 0x%08" PFMT64x " %s # %d\n", bf->o->boffset, n, bf->id);
 		free (n);
 		break;
 	}

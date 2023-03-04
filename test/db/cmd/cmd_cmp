@@ -22,16 +22,16 @@ NAME=cmp obj
 FILE=bins/elf/ls
 CMDS=<<EOF
 o bins/elf/crackme
-ob
+oi
 cil
 ?e --
 cis
 ?e --
 cii
 ?e --
-ob 0
+oi 0
 cii 0
-ob 1
+oi 1
 cii 1
 EOF
 EXPECT=<<EOF

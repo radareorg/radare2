@@ -738,7 +738,7 @@ R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 				r_core_file_loadlib (r, lib, baddr);
 			}
 		}
-		r_core_cmd0 (r, "obb 0;s entry0");
+		r_core_cmd0 (r, "oio 0;s entry0");
 		r_config_set_i (r->config, "bin.at", true);
 		R_LOG_INFO ("[bin.libs] Linking imports");
 		RBinImport *imp;
@@ -831,7 +831,7 @@ beach:
 			// RBinObject *obj = r_bin_cur_object (r->bin);
 			// ut64 nbaddr = obj? obj->baddr: baddr;
 			r_core_cmd_callf (r, "o %s", macdwarf);
-			r_core_cmd_call (r, "obm-");
+			r_core_cmd_call (r, "oim-");
 			// r_core_cmd_callf (r, "o-."); // causes uaf
 		}
 		free (macdwarf);

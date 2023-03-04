@@ -406,7 +406,7 @@ R_API bool r_core_seek(RCore *core, ut64 addr, bool rb) {
 		if (bf) {
 			core->bin->cur = bf;
 			r_bin_select_bfid (core->bin, bf->id);
-			// XXX r_core_cmdf (core, "obb %d", bf->id);
+			// XXX r_core_cmdf (core, "oib %d", bf->id);
 		} else {
 			core->bin->cur = NULL;
 		}

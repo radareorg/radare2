@@ -1,39 +1,39 @@
-NAME=omb banks
+NAME=ob banks
 FILE=malloc://1024
 CMDS=<<EOF
 om
-omb+ map 1
-omb+ nomap
-omb nomap
+ob+ map 1
+ob+ nomap
+ob nomap
 om
-omb map
+ob map
 om
-omb-*
-omb -1
+ob-*
+ob -1
 EOF
 EXPECT=<<EOF
 * 1 fd: 3 +0x00000000 0x00000000 - 0x000003ff rwx
 * 1 fd: 3 +0x00000000 0x00000000 - 0x000003ff rwx
 * 1 fd: 3 +0x00000000 0x00000000 - 0x000003ff rwx
-Usage: omb[jq,+] [fd]  Operate on memory banks
-| omb          list all memory banks
-| omb [id]     switch to use a different bank
-| omb+[name]   create a new bank with given name
-| omba [id]    adds a map to the bank
-| ombd [id]    deletes a map from the bank
-| omb-*        delete all banks
-| omb-[mapid]  delete the bank with given id
-| ombg         associate all maps to the current bank
-| ombq         show current bankid
+Usage: ob[jq,+] [fd]  Operate on memory banks
+| ob          list all memory banks
+| ob [id]     switch to use a different bank
+| ob+[name]   create a new bank with given name
+| oba [id]    adds a map to the bank
+| obd [id]    deletes a map from the bank
+| ob-*        delete all banks
+| ob-[mapid]  delete the bank with given id
+| obg         associate all maps to the current bank
+| obq         show current bankid
 EOF
 RUN
 
-NAME=omb+
+NAME=ob+
 FILE=malloc://1024
 CMDS=<<EOF
-omb+ one
-omb+ two
-omb
+ob+ one
+ob+ two
+ob
 EOF
 EXPECT=<<EOF
 * 0 default [ 1 ]
@@ -42,14 +42,14 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=omb name deletes them all (BUG)
+NAME=ob name deletes them all (BUG)
 BROKEN=1
 FILE=malloc://1024
 CMDS=<<EOF
-omb+ one
-omb
-omb one
-omb
+ob+ one
+ob
+ob one
+ob
 EOF
 EXPECT=<<EOF
 1: one 
