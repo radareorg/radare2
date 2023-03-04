@@ -19,7 +19,7 @@ static char *strchr_ns(char *s, const char ch) {
 	return p;
 }
 
-static const char *help_detail_tilde[] = {
+static RCoreHelpMessage help_detail_tilde = {
 	"Usage: [command]~[modifier][word,word][endmodifier][[column]][:line]\n"
 	"modifier:", "", "",
 	" &",        "", "all words must match to grep the line",

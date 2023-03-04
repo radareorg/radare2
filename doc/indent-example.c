@@ -10,7 +10,7 @@ typedef struct r_core_rtr_host_t2 {
 	RSocket *fd;
 } RCoreRtrHost2;
 
-static const char *help_msg_aa[] = {
+static RCoreHelpMessage help_msg_aa = {
 	"Usage:", "aa[0*?]", " # see also 'af' and 'afna'",
 	"aa", " ", "alias for 'af@@ sym.*;af@entry0;afva'", //;.afna @@ fcn.*'",
 	"aa*", "", "analyze all flags starting with sym. (af @@ sym.*)",

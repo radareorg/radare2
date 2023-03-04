@@ -2,7 +2,7 @@
 
 #include <r_cons.h>
 
-R_API void r_cons_cmd_help_json(const char * const help[]) {
+R_API void r_cons_cmd_help_json(RCoreHelpMessage help) {
 	int i, max_length = 0;
 	const char * const usage_str = "Usage:";
 	const char * help_cmd = NULL;
@@ -56,7 +56,7 @@ R_API void r_cons_cmd_help_json(const char * const help[]) {
 }
 
 /* Print a coloured help message */
-R_API void r_cons_cmd_help(const char * const help[], bool use_color) {
+R_API void r_cons_cmd_help(RCoreHelpMessage help, bool use_color) {
 	RCons *cons = r_cons_singleton ();
 	const char *pal_input_color = use_color ? cons->context->pal.input : "";
 	const char *pal_args_color = use_color ? cons->context->pal.args : "";
@@ -129,7 +129,7 @@ static void print_match(const char * const *match, bool use_color) {
  * If exact is false, will match any command that contains the search text.
  * For example, ("pd", 'r', false) matches both `pdr` and `pdr.`.
  */
-R_API void r_cons_cmd_help_match(const char * const help[], bool use_color, R_BORROW R_NONNULL char *cmd, char spec, bool exact) {
+R_API void r_cons_cmd_help_match(RCoreHelpMessage help, bool use_color, R_BORROW R_NONNULL char *cmd, char spec, bool exact) {
 	size_t i;
 
 	if (spec) {
