@@ -10,7 +10,7 @@ static R_TH_LOCAL int filter_format = 0;
 static R_TH_LOCAL size_t filter_count = 0;
 static R_TH_LOCAL Sdb *fscache = NULL;
 
-static const char *help_msg_C[] = {
+static RCoreHelpMessage help_msg_C = {
 	"Usage:", "C[-LCvsdfm*?][*?] [...]", " # Metadata management",
 	"C", "", "list meta info in human friendly form",
 	"C*", "", "list meta info in r2 commands",
@@ -41,7 +41,7 @@ static const char *help_msg_C[] = {
 	NULL
 };
 
-static const char *help_msg_CC[] = {
+static RCoreHelpMessage help_msg_CC = {
 	"Usage:", "CC[-+!*au] [base64:..|str] @ addr", "",
 	"CC!", "", "edit comment using cfg.editor (vim, ..)",
 	"CC", " [text]", "append comment at current address",
@@ -60,7 +60,7 @@ static const char *help_msg_CC[] = {
 };
 
 // IMHO 'code-line' should be universal concept, instead of dbginfo/dwarf/...
-static const char *help_msg_CL[] = {
+static RCoreHelpMessage help_msg_CL = {
 	"Usage: CL", ".j-", "@addr - manage code-line references (loaded via bin.dbginfo and shown when asm.dwarf)",
 	"CL", "", "list all code line information (virtual address <-> source file:line)",
 	"CLj", "", "same as above but in JSON format (See dir.source to change the path to find the referenced lines)",
@@ -74,7 +74,7 @@ static const char *help_msg_CL[] = {
 	NULL
 };
 
-static const char *help_msg_Ct[] = {
+static RCoreHelpMessage help_msg_Ct = {
 	"Usage: Ct", "[.|-] [@ addr]", " # Manage comments for variable types",
 	"Ct", "", "list all variable type comments",
 	"Ct", " comment-text [@ addr]", "place comment at current or specified address",
@@ -83,7 +83,7 @@ static const char *help_msg_Ct[] = {
 	NULL
 };
 
-static const char *help_msg_CS[] = {
+static RCoreHelpMessage help_msg_CS = {
 	"Usage: CS","[*] [+-][metaspace|addr]", " # Manage metaspaces",
 	"CS","","display metaspaces",
 	"CS"," *","select all metaspaces",
@@ -97,7 +97,7 @@ static const char *help_msg_CS[] = {
 	NULL
 };
 
-static const char *help_msg_Cs[] = {
+static RCoreHelpMessage help_msg_Cs = {
 	"Usage:", "Cs[ga-*.] [size] [@addr]", "",
 	"NOTE:", " size", "1 unit in bytes == width in bytes of smallest possible char in encoding,",
 	"", "", "  so ascii/latin1/utf8 = 1, utf16le = 2",
@@ -115,7 +115,7 @@ static const char *help_msg_Cs[] = {
 	NULL
 };
 
-static const char *help_msg_Cvb[] = {
+static RCoreHelpMessage help_msg_Cvb = {
 	"Usage:", "Cvb", "[name] [comment]",
 	"Cvb?", "", "show this help",
 	"Cvb", "", "list all base pointer args/vars comments in human friendly format",
@@ -127,7 +127,7 @@ static const char *help_msg_Cvb[] = {
 	NULL
 };
 
-static const char *help_msg_Cvr[] = {
+static RCoreHelpMessage help_msg_Cvr = {
 	"Usage:", "Cvr", "[name] [comment]",
 	"Cvr?", "", "show this help",
 	"Cvr", "", "list all register based args comments in human friendly format",
@@ -139,7 +139,7 @@ static const char *help_msg_Cvr[] = {
 	NULL
 };
 
-static const char *help_msg_Cvs[] = {
+static RCoreHelpMessage help_msg_Cvs = {
 	"Usage:", "Cvs", "[name] [comment]",
 	"Cvs!", "[name]", "edit comment using cfg editor",
 	"Cvs", "", "list all stack based args/vars comments in human friendly format",

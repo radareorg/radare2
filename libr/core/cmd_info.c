@@ -3,7 +3,7 @@
 #include <r_core.h>
 #include "../bin/format/pdb/pdb_downloader.h"
 
-static const char *help_msg_i[] = {
+static RCoreHelpMessage help_msg_i = {
 	"Usage: i", "", "Get info from opened file (see rabin2's manpage)",
 	"Output mode:", "", "",
 	"'*'", "", "output in radare commands",
@@ -66,7 +66,7 @@ static const char *help_msg_i[] = {
 };
 
 // TODO: this command needs a refactoring
-static const char *help_msg_id[] = {
+static RCoreHelpMessage help_msg_id = {
 	"Usage: idp", "", "Debug information",
 	"id", "", "show DWARF source lines information",
 	"idp", " [file.pdb]", "load pdb file information",

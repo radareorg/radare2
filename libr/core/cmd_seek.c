@@ -4,7 +4,7 @@
 
 static void __core_cmd_search_backward_prelude(RCore *core, bool doseek, bool forward);
 
-static const char *help_msg_s[] = {
+static RCoreHelpMessage help_msg_s = {
 	"Usage: s", "", " # Help for the seek commands. See ?$? to see all variables",
 	"s", "", "print current address",
 	"s", " addr", "seek to address",
@@ -39,42 +39,42 @@ static const char *help_msg_s[] = {
 	NULL
 };
 
-static const char *help_msg_sdot[] = {
+static RCoreHelpMessage help_msg_sdot = {
 	"Usage:", "s.", "Seek here or there (near seeks)",
 	"s.", "", "seek here, same as 's $$'",
 	"s..", "32a8", "seek to the same address but replacing the lower nibbles",
 	NULL
 };
 
-static const char *help_msg_sh[] = {
+static RCoreHelpMessage help_msg_sh = {
 	"Usage:", "sh", "r2's posix shell compatible subset",
 	"sh", "", "enters a posix shell subset repl (requires scr.interactive)",
 	"sh", " [cmd]", "run the given line and update $?",
 	NULL
 };
 
-static const char *help_msg_sC[] = {
+static RCoreHelpMessage help_msg_sC = {
 	"Usage:", "sC", "Comment grep",
 	"sC", "*", "list all comments",
 	"sC", " str", "seek to the first comment matching 'str'",
 	NULL
 };
 
-static const char *help_msg_sn[] = {
+static RCoreHelpMessage help_msg_sn = {
 	"Usage:", "sn[p]", "",
 	"sn", " [line]", "seek to next address",
 	"snp", "", "seek to next prelude",
 	NULL
 };
 
-static const char *help_msg_sp[] = {
+static RCoreHelpMessage help_msg_sp = {
 	"Usage:", "sp[p]", "",
 	"sp", " [line]", "seek to previous address",
 	"spp", "", "seek to previous prelude",
 	NULL
 };
 
-static const char *help_msg_sl[] = {
+static RCoreHelpMessage help_msg_sl = {
 	"Usage:", "sl+ or sl- or slc", "",
 	"sl", " [line]", "seek to absolute line",
 	"sl", "[+-][line]", "seek to relative line",
@@ -84,7 +84,7 @@ static const char *help_msg_sl[] = {
 	NULL
 };
 
-static const char *help_msg_ss[] = {
+static RCoreHelpMessage help_msg_ss = {
 	"Usage: ss", "", " # Seek silently (not recorded in the seek history)",
 	"s?", "", "works with all s subcommands",
 	NULL

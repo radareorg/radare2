@@ -3197,7 +3197,7 @@ static void r_core_visual_anal_refresh_column(RCore *core, int colpos) {
 	free (cmdf);
 }
 
-static const char *help_fun_visual[] = {
+static RCoreHelpMessage help_fun_visual = {
 	"(a)", "analyze ", "(-)", "delete ", "(x)", "xrefs ", "(X)", "refs ", "(j/k)", "next/prev\n",
 	"(r)", "rename ",  "(c)", "calls ", "(d)", "define ", "(Tab)", "disasm ", "(_)", "hud\n",
 	"(d)", "define ",  "(v)", "vars ", "(?)", " help ", "(:)", "shell " ,"(q)", "quit\n",
@@ -3205,20 +3205,20 @@ static const char *help_fun_visual[] = {
 	NULL
 };
 
-static const char *help_var_visual[] = {
+static RCoreHelpMessage help_var_visual = {
 	"(a)", "add " ,"(x)", "xrefs ", "(r)", "rename\n",
 	"(t)", "type ", "(g)", "go ", "(-)" ,"delete\n",
 	"(q)", "quit ", "(s)", "signature\n\n",
 	NULL
 };
 
-static const char *help_visual_anal_actions[] = {
+static RCoreHelpMessage help_visual_anal_actions = {
 	"functions:", "Add, Modify, Delete, Xrefs Calls Vars",
 	"variables:", "Add, Modify, Delete",
 	NULL
 };
 
-static const char *help_visual_anal_keys[] = {
+static RCoreHelpMessage help_visual_anal_keys = {
 	"j/k",	"select next/prev item; scroll disasm column",
 	"J/K",	"scroll next/prev by page",
 	"b/h",	"functions analysis (level 0)",

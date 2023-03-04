@@ -3298,7 +3298,7 @@ static int fcn_list_legacy(RCore *core, RList *fcns) {
 	return 0;
 }
 
-static const char *help_msg_aflm[] = {
+static RCoreHelpMessage help_msg_aflm = {
 	"Usage:", "aflm", "[q.j] List functions in verbose mode",
 	"aflm", "", "list functions and what they call in makefile-like format",
 	"aflm.", "", "only print the summary for the current function (see pds)",

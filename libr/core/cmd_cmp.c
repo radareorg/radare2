@@ -2,7 +2,7 @@
 
 #include "r_core.h"
 
-static const char *help_message_ci[] = {
+static RCoreHelpMessage help_message_ci = {
 	"Usage: ci", "[sil] ([obid])", "Compare two bin objects",
 	"cis", " 0", "compare symbols with current `ob 1` with given obid (0)",
 	"cii", " 0", "compare imports",
@@ -10,14 +10,14 @@ static const char *help_message_ci[] = {
 	NULL
 };
 
-static const char *help_msg_cmp[] = {
+static RCoreHelpMessage help_msg_cmp = {
 	"Usage: cmp", " [file] [file]", "Compare two ($alias) files, and change $? value",
 	"cmp", " ls ls.old", "compare contents of given files",
 	"cmp", " $a $b", "same as above but using alias files",
 	NULL
 };
 
-static const char *help_msg_c[] = {
+static RCoreHelpMessage help_msg_c = {
 	"Usage:", "c[?dfx] [argument]", " # Compare",
 	"c", " [string]", "compare a plain with escaped chars string",
 	"c*", " [string]", "same as above, but printing r2 commands instead",
@@ -428,7 +428,7 @@ static void nowatchers(ut64 addr) {
 
 /* Returns 0 if operation succeeded, 1 otherwise */
 static int cmd_cmp_watcher(RCore *core, const char *input) {
-	static const char *help_msg_cw[] = {
+	static RCoreHelpMessage help_msg_cw = {
 		"Usage: cw", "[args]", "Manage compare watchers; See if and how memory changes",
 		"cw??", "", "Show more info about watchers",
 		"cw ", "addr sz cmd", "Add a compare watcher",
@@ -701,7 +701,7 @@ static int cmd_cmp_disasm(RCore *core, const char *input, int mode) {
 static int cmd_cp(void *data, const char *input) {
 	RCore *core = (RCore *)data;
 	bool use_corefile;
-	const char *help_msg_cp[] = {
+	RCoreHelpMessage help_msg_cp = {
 		"cp", " src dst", "Standard file copy",
 		"cp", ".[ext]", "Copy current file <name> to <name>.ext",
 		NULL
@@ -1325,7 +1325,7 @@ static int cmd_cmp(void *data, const char *input) {
 			r_anal_diff_setup (core->anal, false, -1, -1);
 			break;
 		default: {
-			const char *help_message[] = {
+			static RCoreHelpMessage help_message = {
 				"Usage: cg", "", "Graph code commands",
 				"cg", "", "diff ratio among functions (columns: off-A, match-ratio, off-B)",
 				"cgf", "[fcn]", "compare functions (curseek vs fcn)",
@@ -1394,7 +1394,7 @@ static int cmd_cmp(void *data, const char *input) {
 			cmd_cmp_disasm (core, input + 2, 'u');
 			break;
 		default: {
-			const char *help_msg[] = {
+			static RCoreHelpMessage help_msg = {
 				"Usage: cu", " [offset]", "# Prints unified comparison to make hexpatches",
 				"cu", " $$+1 > p", "compare hexpairs from  current seek and +1",
 				"cu1", " $$+1 > p", "compare bytes from current seek and +1",

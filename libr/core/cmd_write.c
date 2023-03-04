@@ -2,7 +2,7 @@
 
 #include <r_core.h>
 
-static const char *help_msg_w[] = {
+static RCoreHelpMessage help_msg_w = {
 	"Usage:","w[x] [str] [<file] [<<EOF] [@addr]","",
 	"w","[1248][+-][n]","increment/decrement byte,word..",
 	"w"," foobar","write string 'foobar'",
@@ -37,7 +37,7 @@ static const char *help_msg_w[] = {
 	NULL
 };
 
-static const char *help_msg_ws[] = {
+static RCoreHelpMessage help_msg_ws = {
 	"Usage:", "ws[124?] [string]", "Pascal strings are not null terminated and store the length in binary at the beginning",
 	"ws", " str", "write pascal string using first byte as length",
 	"ws1", " str", "same as above",
@@ -46,7 +46,7 @@ static const char *help_msg_ws[] = {
 	NULL
 };
 
-static const char *help_msg_wa[] = {
+static RCoreHelpMessage help_msg_wa = {
 	"Usage:", "wa[of*] [arg]", "",
 	"wa", " nop", "write nopcode using asm.arch and asm.bits",
 	"wai", " jmp 0x8080", "write inside this op (fill with nops or error if doesnt fit)",
@@ -61,7 +61,7 @@ static const char *help_msg_wa[] = {
 	NULL
 };
 
-static const char *help_msg_wc[] = {
+static RCoreHelpMessage help_msg_wc = {
 	"Usage:", "wc[jir+-*?]","  # See `e io.cache = true`",
 	"wc","","list all write changes",
 	"wcj","","list all write changes in JSON",
@@ -79,7 +79,7 @@ static const char *help_msg_wc[] = {
 	NULL
 };
 
-static const char *help_msg_we[] = {
+static RCoreHelpMessage help_msg_we = {
 	"Usage", "", "write extend # resize the file",
 	"wen", " <num>", "extend the underlying file inserting NUM null bytes at current offset",
 	"weN", " <addr> <len>", "extend current file and insert bytes at address",
@@ -89,7 +89,7 @@ static const char *help_msg_we[] = {
 	NULL
 };
 
-static const char *help_msg_wo[] = {
+static RCoreHelpMessage help_msg_wo = {
 	"Usage:","wo[asmdxoArl24]"," [hexpairs] @ addr[!bsize] write operation in current block",
 	"wo2", "", "2=  2 byte endian swap (word)",
 	"wo4", "", "4=  4 byte endian swap (dword)",
@@ -113,7 +113,7 @@ static const char *help_msg_wo[] = {
 	NULL
 };
 
-static const char *help_msg_wop[] = {
+static RCoreHelpMessage help_msg_wop = {
 	"Usage:","wop[DO]"," len @ addr | value",
 	"wopD"," len [@ addr]","write a De Bruijn Pattern of length 'len' at address 'addr'",
 	"wopD*"," len [@ addr]","show wx command that creates a debruijn pattern of a specific length",
@@ -122,7 +122,7 @@ static const char *help_msg_wop[] = {
 };
 
 // TODO
-static const char *help_msg_wp[] = {
+static RCoreHelpMessage help_msg_wp = {
 	"Usage:", "wp", "[-|r2patch-file]",
 	"^#", "", "comments",
 	".", "", "execute command",
@@ -135,7 +135,7 @@ static const char *help_msg_wp[] = {
 	NULL
 };
 
-static const char *help_msg_wt[] = {
+static RCoreHelpMessage help_msg_wt = {
 	"Usage:", "wt[afs] [filename] [size]", " Write current block or [size] bytes from offset to file",
 	"wta", " [filename]", "append to 'filename'",
 	"wtf", " [filename] [size]", "write to file (see also 'wxf' and 'wf?')",
@@ -146,7 +146,7 @@ static const char *help_msg_wt[] = {
 	NULL
 };
 
-static const char *help_msg_wf[] = {
+static RCoreHelpMessage help_msg_wf = {
 	"Usage:", "wf[fs] [-|args ..]", " Write from (file, swap, offset)",
 	"wf", " 10 20", "write 20 bytes from offset 10 into current seek",
 	"wff", " file [len]", "write contents of file into current offset",
@@ -155,7 +155,7 @@ static const char *help_msg_wf[] = {
 	NULL
 };
 
-static const char *help_msg_wv[] = {
+static RCoreHelpMessage help_msg_wv = {
 	"Usage:", "wv[size] [value]", " Write value of given size",
 	"wv", " 0x834002", "write dword with this value",
 	"wv1", " 234", "write one byte with this value",
@@ -170,7 +170,7 @@ static const char *help_msg_wv[] = {
 	NULL
 };
 
-static const char *help_msg_wx[] = {
+static RCoreHelpMessage help_msg_wx = {
 	"Usage:", "wx[f] [arg]", "",
 	"wx", " 3.", "write the left nibble of the current byte",
 	"wx", " .5", "write the right nibble of the current byte",
@@ -1217,7 +1217,7 @@ static int cmd_wr(void *data, const char *input) {
 }
 
 #if 0
-static const char *help_msg_wA[] = {
+static RCoreHelpMessage help_msg_wA = {
 	"Usage:", " wA", "[type] [value]",
 	"Types", "", "",
 	"r", "", "raw write value",

@@ -1,6 +1,6 @@
 /* radare - LGPL - Copyright 2009-2022 // pancake */
 
-static const char *help_msg_m[] = {
+static RCoreHelpMessage help_msg_m = {
 	"Usage:", "m[-?*dgy] [...] ", "Mountpoints management",
 	"m", " /mnt ext2 0", "mount ext2 fs at /mnt with delta 0 on IO",
 	"m", " /mnt", "mount fs at /mnt with autodetect fs and current offset",
@@ -27,7 +27,7 @@ static const char *help_msg_m[] = {
 	NULL
 };
 
-static const char *help_msg_mf[] = {
+static RCoreHelpMessage help_msg_mf = {
 	"Usage:", "mf[no] [...]", "search files matching name or offset",
 	"mfn", " /foo *.c","search files by name in /foo path",
 	"mfo", " /foo 0x5e91","search files by offset in /foo path",

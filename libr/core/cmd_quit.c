@@ -2,7 +2,7 @@
 
 #include "r_core.h"
 
-static const char *help_msg_q[] = {
+static RCoreHelpMessage help_msg_q = {
 	"Usage:",  "q[!][!] [retval]", "",
 	"q","","quit program",
 	"q!","","force quit (no questions)",

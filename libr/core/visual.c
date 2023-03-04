@@ -288,7 +288,7 @@ static bool __core_visual_gogo(RCore *core, int ch) {
 	return false;
 }
 
-static const char *help_visual[] = {
+static RCoreHelpMessage help_visual = {
 	"?", "full help",
 	"!", "enter panels",
 	"a", "code analysis",
@@ -302,7 +302,7 @@ static const char *help_visual[] = {
 	NULL
 };
 
-static const char *help_msg_visual[] = {
+static RCoreHelpMessage help_msg_visual = {
 	"?", "show visual mode help (short)",
 	"??", "show visual mode help (full)",
 	"$", "set the program counter to the current offset + cursor",
@@ -360,7 +360,7 @@ static const char *help_msg_visual[] = {
 	NULL
 };
 
-static const char *help_msg_visual_fn[] = {
+static RCoreHelpMessage help_msg_visual_fn = {
 	"F2", "toggle breakpoint",
 	"F4", "run to cursor",
 	"F7", "single step",
@@ -1413,7 +1413,7 @@ static int follow_ref(RCore *core, RList *xrefs, int choice, int xref) {
 	return 0;
 }
 
-static const char *help_msg_visual_xref[] = {
+static RCoreHelpMessage help_msg_visual_xref = {
 	"j/k",	"select next or previous item (use arrows)",
 	"J/K",	"scroll by 10 refs",
 	"g/G",	"scroll to top / bottom",

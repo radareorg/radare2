@@ -20,7 +20,7 @@
 
 void cmd_anal_reg (RCore *core, const char *str);
 
-static const char *help_msg_d[] = {
+static RCoreHelpMessage help_msg_d = {
 	"Usage:", "d", " # Debug commands",
 	"d:", "[?] [cmd]", "run custom debug plugin command",
 	"db", "[?]", "breakpoints commands",
@@ -51,7 +51,7 @@ static const char *help_msg_d[] = {
 	NULL
 };
 
-static const char *help_msg_db[] = {
+static RCoreHelpMessage help_msg_db = {
 	"Usage: db", "", " # Breakpoints commands",
 	"db", "", "list breakpoints",
 	"db*", "", "list breakpoints in r commands",
@@ -99,7 +99,7 @@ static const char *help_msg_db[] = {
 	NULL
 };
 
-static const char *help_msg_dbt[] = {
+static RCoreHelpMessage help_msg_dbt = {
 	"Usage: dbt", "", " # Backtrace commands",
 	"dbt", "", "display backtrace based on dbg.btdepth and dbg.btalgo",
 	"dbt*", "", "display backtrace in flags",
@@ -113,19 +113,19 @@ static const char *help_msg_dbt[] = {
 	NULL
 };
 
-static const char *help_msg_drr[] = {
+static RCoreHelpMessage help_msg_drr = {
 	"Usage: drr", ""," # Show references to registers (see pxr?)",
 	"drr", "", "periscope register values",
 	"drrj", "", "same, but output in JSON",
 	NULL
 };
 
-static const char *help_msg_dbw[] = {
+static RCoreHelpMessage help_msg_dbw = {
 	"Usage: dbw", "<addr> <r/w/rw>"," # Add watchpoint",
 	NULL
 };
 
-static const char *help_msg_dc[] = {
+static RCoreHelpMessage help_msg_dc = {
 	"Usage: dc", "", "Execution continuation commands",
 	"dc", "", "continue execution of all children",
 	"dc", " <pid>", "continue execution of pid",
@@ -149,7 +149,7 @@ static const char *help_msg_dc[] = {
 	NULL
 };
 
-static const char *help_msg_dcs[] = {
+static RCoreHelpMessage help_msg_dcs = {
 	"Usage:", "dcs", " Continue until syscall",
 	"dcs", "", "continue until next syscall",
 	"dcs [str]", "", "continue until next call to the 'str' syscall",
@@ -157,7 +157,7 @@ static const char *help_msg_dcs[] = {
 	NULL
 };
 
-static const char *help_msg_dcu[] = {
+static RCoreHelpMessage help_msg_dcu = {
 	"Usage:", "dcu", " Continue until address",
 	"dcu.", "", "alias for dcu $$ (continue until current address)",
 	"dcu", " address", "continue until address",
@@ -166,7 +166,7 @@ static const char *help_msg_dcu[] = {
 	NULL
 };
 
-static const char *help_msg_dd[] = {
+static RCoreHelpMessage help_msg_dd = {
 	"Usage: dd", "", "Manage file descriptors for child process (* to show r2 commands)",
 	"dd", "[*]", "list file descriptors",
 	"dd", "[*] <file|addr>", "open file as read-only (r--); addr = use as char* for path",
@@ -181,7 +181,7 @@ static const char *help_msg_dd[] = {
 	NULL
 };
 
-static const char *help_msg_de[] = {
+static RCoreHelpMessage help_msg_de = {
 	"Usage:", "de", "[-sc] [perm] [rm] [expr]",
 	"de", "", "list esil watchpoints",
 	"de-*", "", "delete all esil watchpoints",
@@ -192,14 +192,14 @@ static const char *help_msg_de[] = {
 	NULL
 };
 
-static const char *help_msg_des[] = {
+static RCoreHelpMessage help_msg_des = {
 	"Usage:", "des", "[u] [arg]",
 	"des", " [N]", "step-in N instructions with esildebug",
 	"desu", " [addr]", "esildebug until specific address",
 	NULL
 };
 
-static const char *help_msg_di[] = {
+static RCoreHelpMessage help_msg_di = {
 	"Usage: di", "", "Debugger target information",
 	"di", "", "show debugger target information",
 	"di*", "", "same as above, but in r2 commands",
@@ -210,7 +210,7 @@ static const char *help_msg_di[] = {
 	NULL
 };
 
-static const char *help_msg_dk[] = {
+static RCoreHelpMessage help_msg_dk = {
 	"Usage: dk", "", "Signal commands",
 	"dk", "", "list all signal handlers of child process",
 	"dk", " <signal>", "send KILL signal to child",
@@ -222,7 +222,7 @@ static const char *help_msg_dk[] = {
 	NULL
 };
 
-static const char *help_msg_dko[] = {
+static RCoreHelpMessage help_msg_dko = {
 	"Usage:", "dko", " # Signal handling commands",
 	"dko", "", "list existing signal handling",
 	"dko", " [signal]", "clear handling for a signal",
@@ -230,7 +230,7 @@ static const char *help_msg_dko[] = {
 	NULL
 };
 
-static const char *help_msg_dm[] = {
+static RCoreHelpMessage help_msg_dm = {
 	"Usage:", "dm", " # Memory maps commands",
 	"dm", "", "list memory maps of target process",
 	"dm", " address size", "allocate <size> bytes at <address> (anywhere if address is -1) in child process",
@@ -259,7 +259,7 @@ static const char *help_msg_dm[] = {
 	NULL
 };
 
-static const char *help_msg_dmi[] = {
+static RCoreHelpMessage help_msg_dmi = {
 	"Usage: dmi", "", " # List/load Symbols",
 	"dmi", "[j|q|*] [libname] [symname]", "list symbols of target lib",
 	"dmia", "[j|q|*] [libname]", "list all info of target lib",
@@ -269,7 +269,7 @@ static const char *help_msg_dmi[] = {
 	NULL
 };
 
-static const char *help_msg_dmm[] = {
+static RCoreHelpMessage help_msg_dmm = {
 	"Usage:", "dmm", " # Module memory maps commands",
 	"dmm", "", "list modules of target process",
 	"dmm*", "", "list modules of target process (r2 commands)",
@@ -278,20 +278,20 @@ static const char *help_msg_dmm[] = {
 	NULL
 };
 
-static const char *help_msg_dxe[] = {
+static RCoreHelpMessage help_msg_dxe = {
 	"Usage:", "dxe", " egg-program # see ragg2 and the 'g' command for more details",
 	"dxe", " sym.imp.puts(\"foo\")", "call puts with a string argument",
 	NULL
 };
 
-static const char *help_msg_dmp[] = {
+static RCoreHelpMessage help_msg_dmp = {
 	"Usage:", "dmp", " Change page permissions",
 	"dmp", " [addr] [size] [perms]", "change permissions",
 	"dmp", " [perms]", "change dbg.map permissions",
 	NULL
 };
 
-static const char *help_msg_do[] = {
+static RCoreHelpMessage help_msg_do = {
 	"Usage:", "do", " # Debug (re)open commands",
 	"do", "", "open process (reload, alias for 'oo')",
 	"dor", " [rarun2]", "comma separated list of k=v rarun2 profile options (e dbg.profile)",
@@ -303,7 +303,7 @@ static const char *help_msg_do[] = {
 	NULL
 };
 
-static const char *help_msg_dp[] = {
+static RCoreHelpMessage help_msg_dp = {
 	"Usage:", "dp", " # Process commands",
 	"dp", "", "list current pid and children",
 	"dp", " <pid>", "list children of pid",
@@ -329,7 +329,7 @@ static const char *help_msg_dp[] = {
 	NULL
 };
 
-static const char *help_msg_dr[] = {
+static RCoreHelpMessage help_msg_dr = {
 	"Usage: dr", "", "Registers commands",
 	"dr", "", "show 'gpr' registers",
 	"dr", " <register>=<val>", "set register value",
@@ -363,7 +363,7 @@ static const char *help_msg_dr[] = {
 	NULL
 };
 
-static const char *help_msg_drp[] = {
+static RCoreHelpMessage help_msg_drp = {
 	"Usage:", "drp", " # Register profile commands",
 	"drp", "", "show the current register profile",
 	"drp", " [regprofile-file]", "set the current register profile",
@@ -377,7 +377,7 @@ static const char *help_msg_drp[] = {
 	NULL
 };
 
-static const char *help_msg_drs[] = {
+static RCoreHelpMessage help_msg_drs = {
 	"Usage:", "drs", "register states commands",
 	"drs", "", "list register stack",
 	"drs", "+", "push register state",
@@ -385,7 +385,7 @@ static const char *help_msg_drs[] = {
 	NULL
 };
 
-static const char *help_msg_drt[] = {
+static RCoreHelpMessage help_msg_drt = {
 	"Usage:", "drt", " [type] [size]    # debug register types",
 	"drt", "", "list all available register types",
 	"drt", " [size]", "show all regs in the profile of size",
@@ -399,7 +399,7 @@ static const char *help_msg_drt[] = {
 	NULL
 };
 
-static const char *help_msg_drx[] = {
+static RCoreHelpMessage help_msg_drx = {
 	"Usage: drx", "", "Hardware breakpoints commands",
 	"drx", "", "list all (x86?) hardware breakpoints",
 	"drx", " <number> <address> <length> <perms>", "modify hardware breakpoint",
@@ -407,7 +407,7 @@ static const char *help_msg_drx[] = {
 	NULL
 };
 
-static const char *help_msg_drv[] = {
+static RCoreHelpMessage help_msg_drv = {
 	"Usage: drv", " [reg] [idx] [wordsize] [= value]", "Show multimedia packed registers",
 	"drv", "", "show XMM registers",
 	"drv", " xmm0", "show all packings of xmm0",
@@ -429,7 +429,7 @@ static const char *help_msg_drv[] = {
 	NULL
 };
 
-static const char *help_msg_ds[] = {
+static RCoreHelpMessage help_msg_ds = {
 	"Usage: ds", "", "Step commands",
 	"ds", "", "step one instruction",
 	"ds", " <num>", "step <num> instructions",
@@ -445,7 +445,7 @@ static const char *help_msg_ds[] = {
 	NULL
 };
 
-static const char *help_msg_dsu[] = {
+static RCoreHelpMessage help_msg_dsu = {
 	"Usage: dsu", "", "Step until commands",
 	"dsu", " <address>", "step until <address>",
 	"dsui", " <instr>", "step until an instruction disasm matches",
@@ -456,7 +456,7 @@ static const char *help_msg_dsu[] = {
 	NULL
 };
 
-static const char *help_msg_dt[] = {
+static RCoreHelpMessage help_msg_dt = {
 	"Usage: dt", "", "Trace commands",
 	"dt", "", "list all traces ",
 	"dt", " [addr]", "show trace info at address",
@@ -477,7 +477,7 @@ static const char *help_msg_dt[] = {
 	NULL
 };
 
-static const char *help_msg_dte[] = {
+static RCoreHelpMessage help_msg_dte = {
 	"Usage:", "dte", " Show esil trace logs",
 	"dte", "", "esil trace log for a single instruction",
 	"dte", " [idx]", "show commands for that index log",
@@ -487,7 +487,7 @@ static const char *help_msg_dte[] = {
 	NULL
 };
 
-static const char *help_msg_dts[] = {
+static RCoreHelpMessage help_msg_dts = {
 	"Usage:", "dts[*]", "",
 	"dts+", "", "start trace session",
 	"dts-", "", "stop trace session",
@@ -497,7 +497,7 @@ static const char *help_msg_dts[] = {
 	NULL
 };
 
-static const char *help_msg_dx[] = {
+static RCoreHelpMessage help_msg_dx = {
 	"Usage: dx", "[aers]", " Debug execution commands",
 	"dx", " <hexpairs>", "execute opcodes",
 	"dxa", " <asm>", "assemble code and execute",
@@ -512,7 +512,7 @@ static const char *help_msg_dx[] = {
 	NULL
 };
 
-static const char *help_msg_dL[] = {
+static RCoreHelpMessage help_msg_dL = {
 	"Usage: dL", "", " # List or set debugger handler",
 	"dL", "", "list debugger handlers",
 	"dLq", "", "list debugger handlers in quiet mode",
@@ -4212,7 +4212,7 @@ static void r_core_debug_esil(RCore *core, const char *input) {
 				}
 			}
 			if (!done) {
-				const char *help_de_msg[] = {
+				RCoreHelpMessage help_de_msg = {
 					"Usage:", "de", " [perm] [reg|mem] [expr]",
 					NULL
 				};

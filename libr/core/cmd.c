@@ -3171,7 +3171,7 @@ static void cmd_autocomplete(RCore *core, const char *input) {
 }
 
 static int cmd_last(void *data, const char *input) {
-	static const char *help_msg_last[] = {
+	static RCoreHelpMessage help_msg_last = {
 	
 	};
 	switch (*input) {

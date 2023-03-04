@@ -2,7 +2,7 @@
 
 #include <r_core.h>
 
-static const char *help_msg_t[] = {
+static RCoreHelpMessage help_msg_t = {
 	"Usage: t", "", "# cparse types commands",
 	"t", "", "list all loaded types",
 	"tj", "", "List all loaded types as json",
@@ -34,7 +34,7 @@ static const char *help_msg_t[] = {
 	NULL
 };
 
-static const char *help_msg_tx[] = {
+static RCoreHelpMessage help_msg_tx = {
 	"Usage: tx", "[flg] [...]", "",
 	"tx.", "", "same as txf",
 	"txf", " ([addr])", "list all types used in the current or given function (same as tx.)",
@@ -46,7 +46,7 @@ static const char *help_msg_tx[] = {
 	NULL
 };
 
-static const char *help_msg_tcc[] = {
+static RCoreHelpMessage help_msg_tcc = {
 	"Usage: tcc", "[-name]", "# type function calling conventions (see also afc? and arcc)",
 	"tcc", "", "list all calling convcentions",
 	"tcc", " r0 pascal(r0,r1,r2)", "define signature for pascall cc (see also arcc)",
@@ -59,12 +59,12 @@ static const char *help_msg_tcc[] = {
 	NULL
 };
 
-static const char *help_msg_t_minus[] = {
+static RCoreHelpMessage help_msg_t_minus = {
 	"Usage: t-", " <type>", "Delete type by its name",
 	NULL
 };
 
-static const char *help_msg_tf[] = {
+static RCoreHelpMessage help_msg_tf = {
 	"Usage: tf[...]", "", "",
 	"tf", "", "list all function definitions loaded",
 	"tf", " <name>", "show function signature",
@@ -75,7 +75,7 @@ static const char *help_msg_tf[] = {
 	NULL
 };
 
-static const char *help_msg_to[] = {
+static RCoreHelpMessage help_msg_to = {
 	"Usage: to[...]", "", "",
 	"to", " -", "open cfg.editor to load types",
 	"to", " <path>", "load types from C header file",
@@ -84,7 +84,7 @@ static const char *help_msg_to[] = {
 	NULL
 };
 
-static const char *help_msg_tp[] = {
+static RCoreHelpMessage help_msg_tp = {
 	"Usage: tp[...]", "", "",
 	"tp", "  <type> [addr|varname]", "cast data at <address> to <type> and print it (XXX: type can contain spaces)",
 	"tpv", " <type> @ [value]", "show offset formatted for given type",
@@ -92,7 +92,7 @@ static const char *help_msg_tp[] = {
 	NULL
 };
 
-static const char *help_msg_tc[] = {
+static RCoreHelpMessage help_msg_tc = {
 	"Usage: tc[...]", " [cctype]", "",
 	"tc", " [type.name]", "list all/given loaded types in C output format with newlines",
 	"tcd", "", "list all loaded types in C output format without newlines",
@@ -101,13 +101,13 @@ static const char *help_msg_tc[] = {
 	NULL
 };
 
-static const char *help_msg_td[] = {
+static RCoreHelpMessage help_msg_td = {
 	"Usage:", "\"td [...]\"", "",
 	"td", "[string]", "load types from string",
 	NULL
 };
 
-static const char *help_msg_te[] = {
+static RCoreHelpMessage help_msg_te = {
 	"Usage: te[...]", "", "",
 	"te", "", "list all loaded enums",
 	"te", " <enum>", "print all values of enum for given name",
@@ -122,7 +122,7 @@ static const char *help_msg_te[] = {
 	NULL
 };
 
-static const char *help_msg_tt[] = {
+static RCoreHelpMessage help_msg_tt = {
 	"Usage: tt[...]", "", "",
 	"tt", "", "list all loaded typedefs",
 	"tt", " <typename>", "show name for given type alias",
@@ -132,7 +132,7 @@ static const char *help_msg_tt[] = {
 	NULL
 };
 
-static const char *help_msg_tl[] = {
+static RCoreHelpMessage help_msg_tl = {
 	"Usage: tl[...]", "[typename] [[=] address]", "# Type link commands",
 	"tl", "", "list all links.",
 	"tll", "", "list all links in readable format.",
@@ -147,7 +147,7 @@ static const char *help_msg_tl[] = {
 	NULL
 };
 
-static const char *help_msg_tn[] = {
+static RCoreHelpMessage help_msg_tn = {
 	"Usage:", "tn [-][0xaddr|symname]", " manage no-return marks",
 	"tn[a]", " 0x3000", "stop function analysis if call/jmp to this address",
 	"tn[n]", " sym.imp.exit", "same as above but for flag/fcn names",
@@ -158,7 +158,7 @@ static const char *help_msg_tn[] = {
 	NULL
 };
 
-static const char *help_msg_ts[] = {
+static RCoreHelpMessage help_msg_ts = {
 	"Usage: ts[...]", " [type]", "",
 	"ts", "", "list all loaded structs",
 	"ts", " [type]", "show pf format string for given struct",
@@ -174,7 +174,7 @@ static const char *help_msg_ts[] = {
 	NULL
 };
 
-static const char *help_msg_tu[] = {
+static RCoreHelpMessage help_msg_tu = {
 	"Usage: tu[...]", "", "",
 	"tu", "", "list all loaded unions",
 	"tu", " [type]", "show pf format string for given union",

@@ -6,7 +6,7 @@
 
 bool ranal2_list(RCore *core, const char *arch, int fmt);
 
-static const char *help_msg_La[] = {
+static RCoreHelpMessage help_msg_La = {
 	"Usage:", "La[qj]", " # asm/anal plugin list",
 	"La",  "", "List asm/anal pluginsh (See rasm2 -L)",
 	"Laq",  "", "Only list the plugin name",
@@ -15,7 +15,7 @@ static const char *help_msg_La[] = {
 };
 
 // TODO #7967 help refactor: move to another place
-static const char *help_msg_L[] = {
+static RCoreHelpMessage help_msg_L = {
 	"Usage:", "L[acio]", "[-name][ file]",
 	"L",  "", "show this help",
 	"L", " blah."R_LIB_EXT, "load plugin file",
@@ -40,7 +40,7 @@ static const char *help_msg_L[] = {
 	NULL
 };
 
-static const char *help_msg_T[] = {
+static RCoreHelpMessage help_msg_T = {
 	"Usage:", "T", "[-][ num|msg] # text-log utility with timestamps",
 	"T", "", "list all Text log messages",
 	"T", " message", "add new log message",

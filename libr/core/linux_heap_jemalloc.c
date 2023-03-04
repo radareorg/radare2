@@ -516,7 +516,7 @@ static void GH(jemalloc_get_runs)(RCore *core, const char *input) {
 #endif
 
 static int GH(cmd_dbg_map_jemalloc)(RCore *core, const char *input) {
-	const char *help_msg[] = {
+	RCoreHelpMessage help_msg = {
 		"Usage:", "dmh", " # Memory map heap",
 		"dmha", "[arena_t]", "show all arenas created, or print arena_t structure for given arena",
 		"dmhb", "[arena_t]", "show all bins created for given arena",

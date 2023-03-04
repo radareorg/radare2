@@ -3,7 +3,7 @@
 #include <r_bin.h>
 #include <r_debug.h>
 
-static const char *help_msg_o[] = {
+static RCoreHelpMessage help_msg_o = {
 	"Usage: o","[com- ] [file] ([offset])","",
 	"o"," [file] 0x4000 rwx", "map file at 0x4000",
 	"o"," [file]","open [file] file in read-only",
@@ -34,7 +34,7 @@ static const char *help_msg_o[] = {
 	NULL
 };
 
-static const char *help_msg_on[] = {
+static RCoreHelpMessage help_msg_on = {
 	"Usage: on","[n+*] [file] ([addr] [rwx])","Open file without parsing headers",
 	"on"," /bin/ls 0x4000","map raw file at 0x4000 (no r_bin involved)",
 	"onn"," [file] ([rwx])","open file without creating any map or parsing headers with rbin)",
@@ -44,13 +44,13 @@ static const char *help_msg_on[] = {
 	NULL
 };
 
-static const char *help_msg_oa[] = {
+static RCoreHelpMessage help_msg_oa = {
 	"Usage: oa","[-][arch] [bits] ([file])", "Specify arch and bits for given file",
 	"oa"," arm 32","force arm32 for the current open file",
 	NULL
 };
 
-static const char *help_msg_o_[] = {
+static RCoreHelpMessage help_msg_o_ = {
 	"Usage: o-","[#!*]", "",
 	"o-*","","close all opened files",
 	"o-!","","close all files except the current one",
@@ -60,7 +60,7 @@ static const char *help_msg_o_[] = {
 	NULL
 };
 
-static const char *help_msg_op[] = {
+static RCoreHelpMessage help_msg_op = {
 	"Usage:", "op[rnp] [fd]", "",
 	"opr", "", "open next file rotating",
 	"opn", "", "open next file",
@@ -69,7 +69,7 @@ static const char *help_msg_op[] = {
 	NULL
 };
 
-static const char *help_msg_omn[] = {
+static RCoreHelpMessage help_msg_omn = {
 	"Usage:", "omn[.-] ([fd]) [name]", "# define a name for the given map",
 	"omn", " mapaddr [name]", "set/delete name for map which spans mapaddr",
 	"omn.", "([-|name])", "show/set/delete name for current map",
@@ -77,7 +77,7 @@ static const char *help_msg_omn[] = {
 	NULL
 };
 
-static const char *help_msg_omb[] = {
+static RCoreHelpMessage help_msg_omb = {
 	"Usage:", "omb[jq,+] [fd]", "Operate on memory banks",
 	"omb", "", "list all memory banks",
 	"omb", " [id]", "switch to use a different bank",
@@ -91,12 +91,12 @@ static const char *help_msg_omb[] = {
 	NULL
 };
 
-static const char *help_msg_o_star[] = {
+static RCoreHelpMessage help_msg_o_star = {
 	"Usage:", "o* [> files.r2]", "",
 	"o*", "", "list opened files in r2 commands", NULL
 };
 
-static const char *help_msg_oba[] = {
+static RCoreHelpMessage help_msg_oba = {
 	"Usage:", "oba [addr] ([filename])", " # load bininfo and update flags",
 	"oba", " [addr]", "open bin info from the given address",
 	"oba", " [addr] [baddr]", "open file and load bin info at given address",
@@ -104,7 +104,7 @@ static const char *help_msg_oba[] = {
 	NULL
 };
 
-static const char *help_msg_ob[] = {
+static RCoreHelpMessage help_msg_ob = {
 	"Usage:", "ob", " # List open binary files backed by fd",
 	"ob", " [name|bfid]", "switch to open given objid (or name)",
 	"ob", "", "list opened binary files and objid",
@@ -128,12 +128,12 @@ static const char *help_msg_ob[] = {
 	NULL
 };
 
-static const char *help_msg_oj[] = {
+static RCoreHelpMessage help_msg_oj = {
 	"Usage:", "oj [~{}]", " # Use ~{} to indent the JSON",
 	"oj", "", "list opened files in JSON format", NULL
 };
 
-static const char *help_msg_om[] = {
+static RCoreHelpMessage help_msg_om = {
 	"Usage:", "om[-] [arg]", " # map opened files",
 	"om", " [fd]", "list all defined IO maps for a specific fd",
 	"om", " fd vaddr [size] [paddr] [rwx] [name]", "create new io map",
@@ -166,13 +166,13 @@ static const char *help_msg_om[] = {
 	NULL
 };
 
-static const char *help_msg_omd[] = {
+static RCoreHelpMessage help_msg_omd = {
 	"Usage:", "omd v_begin v_end @ paddr", " # simplified om",
 	"omd", "0x100000 0x200000 @ 0x100", " # map B-A bytes from PA 0x100- in A",
 	NULL
 };
 
-static const char *help_msg_oo[] = {
+static RCoreHelpMessage help_msg_oo = {
 	"Usage:", "oo[-] [arg]", " # map opened files",
 	"oo", "", "reopen current file",
 	"oo+", "", "reopen in read-write",
@@ -187,17 +187,17 @@ static const char *help_msg_oo[] = {
 	NULL
 };
 
-static const char *help_msg_oo_plus[] = {
+static RCoreHelpMessage help_msg_oo_plus = {
 	"Usage:", "oo+", " # reopen in read-write",
 	NULL
 };
 
-static const char *help_msg_oob[] = {
+static RCoreHelpMessage help_msg_oob = {
 	"Usage:", "oob", " # reopen loading rbin info",
 	NULL
 };
 
-static const char *help_msg_ood[] = {
+static RCoreHelpMessage help_msg_ood = {
 	"Usage:", "ood", " # Debug (re)open commands",
 	"ood", " [args]", " # reopen in debug mode (with args)",
 	"oodf", " [file]", " # reopen in debug mode using the given file",
@@ -205,14 +205,14 @@ static const char *help_msg_ood[] = {
 	NULL
 };
 
-static const char *help_msg_oon[] = {
+static RCoreHelpMessage help_msg_oon = {
 	"Usage:", "oon[+]", " # reopen without loading rbin info",
 	"oon", "", "reopen without loading rbin info",
 	"oon+", "", "reopen in read-write mode without loading rbin info",
 	NULL
 };
 
-static const char *help_msg_oonn[] = {
+static RCoreHelpMessage help_msg_oonn = {
 	"Usage:", "oonn", " # reopen without loading rbin info, but with header flags",
 	"oonn", "", "reopen without loading rbin info, but with header flags",
 	"oonn+", "", "reopen in read-write mode without loading rbin info, but with",
