@@ -61,7 +61,7 @@ static void r_cf_value_free(RCFValue *value);
 
 RCFValueDict *r_cf_value_dict_parse (RBuffer *file_buf, ut64 offset, ut64 size, int options) {
 	RCFValueDict *result = NULL;
-	int i, depth = 0;
+	int i;
 	char *content = NULL;
 
 	RXml *x = r_xml_new (4096);
@@ -148,10 +148,9 @@ RCFValueDict *r_cf_value_dict_parse (RBuffer *file_buf, ut64 offset, ut64 size, 
 			if (next_state) {
 				r_list_push (stack, next_state);
 			} else {
-				eprintf ("Missing next state for elem: %s phase: %d\n", x->elem, state->phase);
+				R_LOG_ERROR ("Missing next state for elem: %s phase: %d", x->elem, state->phase);
 				break;
 			}
-			depth++;
 
 			break;
 		}
@@ -168,14 +167,14 @@ RCFValueDict *r_cf_value_dict_parse (RBuffer *file_buf, ut64 offset, ut64 size, 
 					r_cf_parse_state_free (state);
 					break;
 				} else {
-					eprintf ("Root element is not a dict\n");
+					R_LOG_ERROR ("Root element is not a dict");
 					goto beach;
 				}
 			}
 
 			if (next_state->phase == R_CF_STATE_IN_DICT && state->phase == R_CF_STATE_IN_KEY) {
 				if (!content) {
-					eprintf ("NULL key not supported\n");
+					R_LOG_ERROR ("NULL key not supported");
 					goto beach;
 				}
 				next_state->key = content;
@@ -227,7 +226,7 @@ RCFValueDict *r_cf_value_dict_parse (RBuffer *file_buf, ut64 offset, ut64 size, 
 						RCFKeyValue *key_value = r_cf_key_value_new (next_state->key, value);
 						r_cf_value_dict_add (next_state->dict, key_value);
 					} else if (state->phase != R_CF_STATE_IN_IGNORE) {
-						eprintf ("Missing value for key %s\n", next_state->key);
+						R_LOG_WARN ("Missing value for key %s", next_state->key);
 						r_cf_value_free ((RCFValue *)value);
 						goto beach;
 					}
@@ -235,14 +234,12 @@ RCFValueDict *r_cf_value_dict_parse (RBuffer *file_buf, ut64 offset, ut64 size, 
 					if (value) {
 						r_cf_value_array_add (next_state->array, value);
 					} else if (state->phase != R_CF_STATE_IN_IGNORE) {
-						eprintf ("Missing value for array\n");
+						R_LOG_WARN ("Missing value for array");
 						r_cf_value_free ((RCFValue *)value);
 						goto beach;
 					}
 				}
 			}
-
-			depth--;
 			content = NULL;
 			r_cf_parse_state_free (state);
 			break;
@@ -266,9 +263,8 @@ RCFValueDict *r_cf_value_dict_parse (RBuffer *file_buf, ut64 offset, ut64 size, 
 
 	RXmlRet r = r_xml_eof (x);
 	if (r < 0) {
-		eprintf ("Invalid xml\n");
+		R_LOG_ERROR ("Invalid xml");
 	}
-
 beach:
 	r_xml_free (x);
 	r_list_free (stack);

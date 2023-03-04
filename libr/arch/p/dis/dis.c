@@ -193,7 +193,6 @@ FUNC_ATTR_USED static bool dis_read_type(RBuffer *buf, struct dis_type *typ) {
 
 FUNC_ATTR_USED static bool dis_read_link(RBuffer *buf, struct dis_link *link) {
 	ut8 k[4];
-	ut64 i;
 
 	if (!dis_read_operand (buf, &link->pc)) {
 		return false;
@@ -211,7 +210,7 @@ FUNC_ATTR_USED static bool dis_read_link(RBuffer *buf, struct dis_link *link) {
 	// TODO: ignored for now (unused)
 	link->name = NULL;
 	// skip
-	for (i = 0; ; i++) {
+	for (;;) {
 		ut8 b;
 		if (r_buf_read (buf, &b, sizeof (b)) != sizeof (b)) {
 			return false;

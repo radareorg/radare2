@@ -1443,7 +1443,7 @@ static int bin_pe_init_imports(RBinPEObj* pe) {
 	int dir_size = sizeof (PE_(image_import_directory));
 	int delay_import_size = sizeof (PE_(image_delay_import_directory));
 	int indx = 0;
-	int rr, count = 0;
+	int rr;
 	int import_dir_size = data_dir_import->Size;
 	int delay_import_dir_size = data_dir_delay_import->Size;
 	/// HACK to modify import size because of begin 0.. this may report wrong info con corkami tests
@@ -1469,7 +1469,6 @@ static int bin_pe_init_imports(RBinPEObj* pe) {
 			import_dir_size = maxidsz;
 		}
 		pe->import_directory_offset = import_dir_offset;
-		count = 0;
 		do {
 			new_import_dir = (PE_(image_import_directory)*)realloc (import_dir, ((1 + indx) * dir_size));
 			if (!new_import_dir) {
@@ -1490,7 +1489,6 @@ static int bin_pe_init_imports(RBinPEObj* pe) {
 				break; //goto fail;
 			}
 			indx++;
-			count++;
 		} while (curr_import_dir->FirstThunk != 0 || curr_import_dir->Name != 0 ||
 		curr_import_dir->TimeDateStamp != 0 || curr_import_dir->Characteristics != 0 ||
 		curr_import_dir->ForwarderChain != 0);
