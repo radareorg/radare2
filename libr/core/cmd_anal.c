@@ -1313,7 +1313,7 @@ static void find_refs(RCore *core, const char *glob) {
 		glob = "str.";
 	}
 	if (*glob == '?') {
-		eprintf ("Usage: axF [flag-str-filter]\n");
+		r_core_cmd_help_match (core, help_msg_ax, "axF", true);
 		return;
 	}
 	R_LOG_WARN ("Finding references of flags matching '%s'", glob);
@@ -3977,7 +3977,7 @@ static void cmd_afbc(RCore *core, const char *input) {
 		return;
 	}
 	if (*ptr == '?') {
-		eprintf ("Usage: afbc red @ addrOfBlock\n");
+		r_core_cmd_help_match (core, help_msg_afb, "afbc", true);
 	} else if (!*ptr) {
 		RAnalBlock *bb = r_anal_get_block_at (core->anal, core->offset);
 		if (bb && (bb->color.r || bb->color.g || bb->color.b)) {
@@ -4431,7 +4431,7 @@ static int cmd_af(RCore *core, const char *input) {
 	case 'o': // "afo"
 		switch (input[2]) {
 		case '?':
-			eprintf ("Usage: afo[?sj] ([name|offset])\n");
+			r_core_cmd_help_match (core, help_msg_af, "afo", true);
 			break;
 		case 'j':
 			{
@@ -4884,7 +4884,7 @@ static int cmd_af(RCore *core, const char *input) {
 					sdb_free (db);
 				}
 			} else {
-				eprintf ("Usage: afco [dbpath] - open calling conventions defined in local file.\n");
+				r_core_cmd_help_match (core, help_msg_afc, "afco", true);
 			}
 			free (dbpath);
 			break;
@@ -4999,7 +4999,7 @@ static int cmd_af(RCore *core, const char *input) {
 				R_LOG_ERROR ("afB: Cannot find function to set bits at 0x%08"PFMT64x, core->offset);
 			}
 		} else {
-			eprintf ("Usage: afB [bits] # bits can be: 0, 8, 16, 32 or 64. when using 0, disables the hint\n");
+			r_core_cmd_help_match (core, help_msg_af, "afB", true);
 		}
 		break;
 	case 'b': // "afb"
@@ -5093,7 +5093,7 @@ static int cmd_af(RCore *core, const char *input) {
 				off = r_num_math (core->num, p);
 			}
 			if (*name == '?') {
-				eprintf ("Usage: afn newname [off]   # set new name to given function\n");
+				r_core_cmd_help_match (core, help_msg_afn, "afn", true);
 			} else {
 				if (r_str_startswith (name, "base64:")) {
 					char *res = (char *)r_base64_decode_dyn (name + 7, -1);
@@ -7377,7 +7377,7 @@ static void cmd_anal_esil(RCore *core, const char *input, bool verbose) {
 				reg_name_roll_set (core, "PC", r_num_math (core->num, input + 3));
 				r_core_cmd0 (core, ".ar*");
 			} else {
-				eprintf ("Usage: aepc [address]  # same as 'ar PC=..'\n");
+				r_core_cmd_help_match(core, help_msg_aep, "aepc", true);
 			}
 			break;
 		case 'k':
@@ -7472,14 +7472,12 @@ static void cmd_anal_esil(RCore *core, const char *input, bool verbose) {
 			r_core_cmd0 (core, ".ar*");
 			break;
 		case 'B': // "aesB"
-			{
 			n = strchr (input + 2, ' ');
-			char *n2 = NULL;
 			if (n) {
 				n = (char *)r_str_trim_head_ro (n + 1);
 			}
 			if (n) {
-				n2 = strchr (n, ' ');
+				char *n2 = strchr (n, ' ');
 				if (n2) {
 					*n2++ = 0;
 				}
@@ -7487,15 +7485,15 @@ static void cmd_anal_esil(RCore *core, const char *input, bool verbose) {
 				ut64 nth = n2? r_num_math (core->num, n2): 1;
 				cmd_aespc (core, core->offset, off, (int)nth);
 			} else {
+				// XXX no help msg for this?
 				eprintf ("Usage: aesB [until-addr] [nth-opcodes] @ [from-addr]\n");
-			}
 			}
 			break;
 		case 'u': // "aesu"
 			until_expr = NULL;
 			until_addr = UT64_MAX;
 			if (r_str_endswith (input, "?")) {
-				r_core_cmd0 (core, "aes?~aesu");
+				r_core_cmd_help_match (core, help_msg_aes, "aesu", true);
 			} else switch (input[2]) {
 			case 'e': // "aesue"
 				until_expr = input + 3;
@@ -7548,7 +7546,7 @@ static void cmd_anal_esil(RCore *core, const char *input, bool verbose) {
 				r_anal_op_free (op);
 				r_core_cmd0 (core, ".ar*");
 			} else {
-				eprintf ("Usage: aesou [addr] # step over until given address\n");
+				r_core_cmd_help_match (core, help_msg_aes, "aesou", true);
 			}
 			break;
 		case 'p': //"aesp"
@@ -9763,7 +9761,7 @@ static void cmd_anal_hint(RCore *core, const char *input) {
 		} else if (input[1] == '-') {
 			r_anal_hint_unset_syntax (core->anal, core->offset);
 		} else {
-			eprintf ("Usage: ahS att\n");
+			r_core_cmd_help_match (core, help_msg_ah, "ahS", true);
 		}
 		break;
 	case 'd': // "ahd" set opcode string
@@ -9772,7 +9770,7 @@ static void cmd_anal_hint(RCore *core, const char *input) {
 		} else if (input[1] == '-') {
 			r_anal_hint_unset_opcode (core->anal, core->offset);
 		} else {
-			eprintf ("Usage: ahd popall\n");
+			r_core_cmd_help_match (core, help_msg_ah, "ahd", true);
 		}
 		break;
 	case 'e': // "ahe" set ESIL string
@@ -9781,7 +9779,7 @@ static void cmd_anal_hint(RCore *core, const char *input) {
 		} else if (input[1] == '-') {
 			r_anal_hint_unset_esil (core->anal, core->offset);
 		} else {
-			eprintf ("Usage: ahe r0,pc,=\n");
+			r_core_cmd_help_match (core, help_msg_ah, "ahe", true);
 		}
 		break;
 #if 0
@@ -12169,7 +12167,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 		if (!input[1] || input[1] == ' ' || input[1] == 'a') {
 			r_core_anal_inflags (core, input + 1);
 		} else {
-			eprintf ("Usage: aaF[a] - analyze functions in flag bounds (aaFa uses af/a2f instead of af+/afb+)\n");
+			r_core_cmd_help_match (core, help_msg_aa, "aaF", false);
 		}
 		break;
 	case 'n': // "aan"
