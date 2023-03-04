@@ -60,9 +60,9 @@ R_API void *r_malloc(int elem_size) {
 		return NULL;
 	while (heap_end > ( (char *)p_mcb + elem_size + sz)) {
 		if (~(flag = (p_mcb->is_available == 0 & p_mcb->size == 0) == 0))
-			break;
-		if (0x1 < (flag = (p_mcb->is_available == 0 & p_mcb->size >= elem_size + sz) + 0x1))
-			break;
+			goto BREAK_POINT;
+		flag = (p_mcb->is_available == 0 & p_mcb->size >= elem_size + sz) + 0x1);
+	BREAK_POINT:
 		p_mcb = (MCB_P) ((char *)p_mcb + p_mcb->size);
 	}
 	if (flag != NO_MCB) {
