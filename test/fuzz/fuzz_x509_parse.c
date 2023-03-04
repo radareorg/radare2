@@ -9,7 +9,7 @@ int LLVMFuzzerInitialize(int *lf_argc, char ***lf_argv) {
 	return 0;
 }
 
-R_API RX509Certificate *r_x509_parse_certificate2(const ut8 *buffer, ut32 length) {
+R_API RX509Certificate *wtf_r_x509_parse_certificate2(const ut8 *buffer, ut32 length) {
 	if (!buffer || !length) {
 		return NULL;
 	}
@@ -20,7 +20,7 @@ R_API RX509Certificate *r_x509_parse_certificate2(const ut8 *buffer, ut32 length
 }
 
 int LLVMFuzzerTestOneInput(const ut8 *data, size_t len) {
-	RX509Certificate *out = r_x509_parse_certificate2 (data, len);
+	RX509Certificate *out = wtf_r_x509_parse_certificate2 (data, len);
 	free (out);
 	return 0;
 }
