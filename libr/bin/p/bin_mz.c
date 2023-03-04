@@ -45,7 +45,11 @@ static bool knownHeaderBuffer(RBuffer *b, ut16 offset) {
 static bool checkEntrypointBuffer(RBuffer *b) {
 	st16 cs = r_buf_read_le16_at (b, 0x16);
 	ut16 ip = r_buf_read_le16_at (b, 0x14);
-	ut32 pa = ((r_buf_read_le16_at (b, 0x08) + cs) << 4) + ip;
+	ut32 v = r_buf_read_le16_at (b, 0x08);
+	if ((st32)v < 4) {
+		return false;
+	}
+	ut32 pa = ((v + cs) << 4) + ip;
 
 	/* A minimal MZ header is 0x1B bytes.  Header length is measured in
 	 * 16-byte paragraphs so the minimum header must occupy 2 paragraphs.
