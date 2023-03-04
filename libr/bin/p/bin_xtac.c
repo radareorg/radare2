@@ -487,6 +487,7 @@ static RBinXtacObj *r_bin_xtac_new_buf(RBuffer *buf, bool verbose) {
 		bin->verbose = verbose;
 		if (!r_bin_xtac_init (bin)) {
 			r_bin_xtac_free (bin);
+			bin = NULL;
 		}
 	}
 	return bin;

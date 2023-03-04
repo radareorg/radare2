@@ -91,10 +91,11 @@ R_API void r_line_completion_set(RLineCompletion *completion, int argc, const ch
 				argc, completion->args_limit);
 	}
 	size_t count = R_MIN (argc, completion->args_limit);
-	r_pvector_reserve (&completion->args, count);
-	int i;
-	for (i = 0; i < count; i++) {
-		r_line_completion_push (completion, argv[i]);
+	if (r_pvector_reserve (&completion->args, count)) {
+		int i;
+		for (i = 0; i < count; i++) {
+			r_line_completion_push (completion, argv[i]);
+		}
 	}
 }
 

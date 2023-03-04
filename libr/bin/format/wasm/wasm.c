@@ -911,7 +911,10 @@ static bool parse_import_sec(RBinWasmObj *bin) {
 
 	// over estimate size, shrink later
 	for (i = 0; i < R_ARRAY_SIZE (bin->g_imports_arr); i++) {
-		r_pvector_reserve (bin->g_imports_arr[i], count);
+		if (!r_pvector_reserve (bin->g_imports_arr[i], count)) {
+			R_LOG_ERROR ("Unable to allocate %d in import array", count);
+			return false;
+		}
 	}
 
 	for (i = 0; i < count; i++) {

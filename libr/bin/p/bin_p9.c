@@ -416,7 +416,9 @@ static RList *symbols(RBinFile *bf) {
 		// source file name components
 		if (sym.type == 'f') {
 			if (r_pvector_length (names) < sym.value) {
-				r_pvector_reserve (names, sym.value);
+				if (!r_pvector_reserve (names, sym.value)) {
+					goto error;
+				}
 				// reserve zeros so this is safe
 				names->v.len = sym.value;
 			}

@@ -562,7 +562,10 @@ R_API RVector/*<RAnalMethod>*/ *r_anal_class_method_get_all(RAnal *anal, const c
 	free (class_name_sanitized);
 	free (attr_type_attrs_key);
 
-	r_vector_reserve (vec, (size_t) sdb_alen (array));
+	if (!r_vector_reserve (vec, (size_t) sdb_alen (array))) {
+		r_vector_free (vec);
+		return NULL;
+	}
 	char *cur;
 	sdb_aforeach (cur, array) {
 		RAnalMethod meth;
@@ -730,7 +733,10 @@ R_API RVector/*<RAnalBaseClass>*/ *r_anal_class_base_get_all(RAnal *anal, const 
 	free (class_name_sanitized);
 	free (attr_type_attrs);
 
-	r_vector_reserve (vec, (size_t) sdb_alen (array));
+	if (!r_vector_reserve (vec, (size_t) sdb_alen (array))) {
+		r_vector_free (vec);
+		return NULL;
+	}
 	char *cur;
 	sdb_aforeach (cur, array) {
 		RAnalBaseClass base;
@@ -916,7 +922,10 @@ R_API RVector/*<RAnalVTable>*/ *r_anal_class_vtable_get_all(RAnal *anal, const c
 	free (class_name_sanitized);
 	free (attr_type_attrs);
 
-	r_vector_reserve (vec, (size_t) sdb_alen (array));
+	if (!r_vector_reserve (vec, (size_t) sdb_alen (array))) {
+		r_vector_free (vec);
+		return NULL;
+	}
 	char *cur;
 	sdb_aforeach (cur, array) {
 		RAnalVTable vtable;

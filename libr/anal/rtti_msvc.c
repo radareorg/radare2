@@ -755,8 +755,11 @@ RecoveryCompleteObjectLocator *recovery_anal_complete_object_locator(RRTTIMSVCAn
 		return col;
 	}
 
-
-	r_vector_reserve (&col->base_td, (size_t)col->bcd->length);
+	if (!r_vector_reserve (&col->base_td, (size_t)col->bcd->length)) {
+		r_list_free (col->bcd);
+		col->bcd = NULL;
+		return NULL;
+	}
 	RListIter *bcdIter;
 	rtti_base_class_descriptor *bcd;
 	r_list_foreach (col->bcd, bcdIter, bcd) {
