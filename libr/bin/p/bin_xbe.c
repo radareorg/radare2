@@ -264,7 +264,6 @@ static RList *symbols(RBinFile *bf) {
 		return NULL;
 	}
 	ret->free = free;
-	eprintf ("sections %d\n", h->sections);
 	int limit = h->sections;
 	if (limit * (sizeof (xbe_section)) >= bf->size - h->sechdr_addr) {
 		goto out_error;

@@ -159,7 +159,7 @@ R_API const char *r_strbuf_set(RStrBuf *sb, const char *s) {
 		return r_strbuf_get (sb);
 	}
 	size_t len = strlen (s);
-	if (!r_strbuf_setbin (sb, (const ut8*)s, len)) {
+	if (len > 0 && !r_strbuf_setbin (sb, (const ut8*)s, len)) {
 		return NULL;
 	}
 	sb->len = len;

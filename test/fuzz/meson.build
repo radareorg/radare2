@@ -4,6 +4,7 @@ if get_option('enable_libfuzzer')
     'dwarf',
     'bin_demangle',
     'ia',
+    'cmd',
     'pdb_parse',
     'pkcs7_parse',
     'protobuf_decode',
