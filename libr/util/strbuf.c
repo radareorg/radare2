@@ -108,7 +108,9 @@ R_API bool r_strbuf_setbin(RStrBuf *sb, const ut8 *s, size_t l) {
 		ptr[l] = 0;
 	} else {
 		R_FREE (sb->ptr);
-		memcpy (sb->buf, s, l);
+		if (l > 0) {
+			memcpy (sb->buf, s, l);
+		}
 		sb->buf[l] = 0;
 	}
 	sb->len = l;
@@ -159,7 +161,7 @@ R_API const char *r_strbuf_set(RStrBuf *sb, const char *s) {
 		return r_strbuf_get (sb);
 	}
 	size_t len = strlen (s);
-	if (len > 0 && !r_strbuf_setbin (sb, (const ut8*)s, len)) {
+	if (!r_strbuf_setbin (sb, (const ut8*)s, len)) {
 		return NULL;
 	}
 	sb->len = len;

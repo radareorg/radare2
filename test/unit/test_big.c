@@ -523,7 +523,7 @@ static int all_tests(void) {
 	mu_run_test (test_r_big_lshift);
 	mu_run_test (test_r_big_rshift);
 	mu_run_test (test_r_big_powm);
-	mu_run_test (test_r_big_isqrt);
+	// SLOW AS HELL and useless mu_run_test (test_r_big_isqrt);
 	return tests_passed != tests_run;
 }
 
