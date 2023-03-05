@@ -447,10 +447,6 @@ R_IPI RList *r_bin_le_get_relocs(RBinLEObj *bin) {
 	ut64 end = fix_rec_tbl_off + r_buf_read_ble32_at (bin->buf, (ut64)h->fpagetab + bin->headerOff + (cur_page + 1) * sizeof (ut32), h->worder);
 	const RBinSection *cur_section = (RBinSection *)r_list_get_n (sections, cur_page);
 	ut64 cur_page_offset = cur_section ? cur_section->vaddr : 0;
-	ut64 maxcount = r_buf_size (bin->buf);
-	if (maxcount != UT64_MAX) {
-		maxcount = UT16_MAX;
-	}
 	while (cur_page < h->mpages) {
 		bool rel_appended = false; // whether rel has been appended to l and must not be freed
 		RBinReloc *rel = R_NEW0 (RBinReloc);
@@ -463,9 +459,6 @@ R_IPI RList *r_bin_le_get_relocs(RBinLEObj *bin) {
 		if (ret < (int)sizeof (header)) {
 			R_LOG_WARN ("oobread in LE header parsing relocs");
 			break;
-		}
-		if (h->objcnt > maxcount) {
-			h->objcnt = maxcount;
 		}
 		offset += sizeof (header);
 		switch (header.source & F_SOURCE_TYPE_MASK) {
@@ -680,6 +673,18 @@ R_IPI RBinLEObj *r_bin_le_new_buf(RBuffer *buf) {
 	bin->cpu = __get_cpu_type (bin);
 	bin->os = __get_os_type (bin);
 	bin->arch = __get_arch (bin);
+	{
+		/* dim objcnt */
+		ut64 maxcount = r_buf_size (bin->buf);
+		if (maxcount == UT64_MAX) {
+			maxcount /= sizeof (LE_object_entry);
+		} else {
+			maxcount = UT16_MAX;
+		}
+		if (h->objcnt > maxcount) {
+			h->objcnt = maxcount;
+		}
+	}
 	bin->objtbl = calloc (h->objcnt, sizeof (LE_object_entry));
 	if (!bin->objtbl) {
 		r_bin_le_free (bin);

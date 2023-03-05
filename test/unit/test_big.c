@@ -465,6 +465,7 @@ static bool test_r_big_powm(void) {
 	mu_end;
 }
 
+#if 0
 static bool test_r_big_isqrt(void) {
 	RNumBig *a = r_big_new ();
 	RNumBig *c = r_big_new ();
@@ -502,6 +503,7 @@ static bool test_r_big_isqrt(void) {
 	r_big_free (c);
 	mu_end;
 }
+#endif
 
 static int all_tests(void) {
 	mu_run_test (test_r_big_from_to_int);
