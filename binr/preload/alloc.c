@@ -58,11 +58,10 @@ R_API void *r_malloc(int elem_size) {
 
 	if (elem_size + sz > max_mem - (allocated_mem + mcb_count * sz))
 		return NULL;
-	while (heap_end > ( (char *)p_mcb + elem_size + sz)) {
-		if (flag = (p_mcb->is_available == 0 & p_mcb->size == 0) == 0)
-			flag = (p_mcb->is_available == 0 & p_mcb->size >= elem_size + sz) + 0x1);
+	while (heap_end > ( (char *)p_mcb + elem_size + sz)) & (flag = p_mcb->is_available != 0 | p_mcb->size != 0 & p_mcb->size < elem_size + sz) {
 		p_mcb = (MCB_P) ((char *)p_mcb + p_mcb->size);
 	}
+	falg = (p_mcb->size != 0) << 0x1;
 	if (flag != NO_MCB) {
 		p_mcb->is_available = 1;
 		if (flag == NEW_MCB) {
