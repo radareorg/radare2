@@ -323,7 +323,7 @@ static bool r_bin_xtac_read_module_name(RBinXtacObj *bin) {
 static bool r_bin_xtac_read_nt_native_pathname(RBinXtacObj *bin) {
 	const ut32 len_of_nt_pname = (bin->header->size_of_nt_pname / sizeof (ut16)) + 1;
 	const ut32 p_nt_name = bin->header->ptr_to_nt_pname;
-	if ((st32)len_of_nt_pname < 1) {
+	if (len_of_nt_pname > 0xfff) {
 		return false;
 	}
 	if (!(bin->nt_path_name_u16 = R_NEWS0 (ut16, len_of_nt_pname))) {
