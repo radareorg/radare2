@@ -1,10 +1,10 @@
-/* radare - LGPL - Copyright 2013-2022 - pancake */
+/* radare - LGPL - Copyright 2013-2023 - pancake */
 
 #include <r_util.h>
 
 R_API RStrBuf *r_strbuf_new(const char *str) {
 	RStrBuf *s = R_NEW0 (RStrBuf);
-	if (str) {
+	if (s && str) {
 		r_strbuf_set (s, str);
 	}
 	return s;
@@ -93,6 +93,9 @@ R_API bool r_strbuf_reserve(RStrBuf *sb, size_t len) {
 
 R_API bool r_strbuf_setbin(RStrBuf *sb, const ut8 *s, size_t l) {
 	r_return_val_if_fail (sb && s, false);
+	if (l > ST32_MAX) {
+		return false;
+	}
 	if (l >= sizeof (sb->buf)) {
 		char *ptr = sb->ptr;
 		if (!ptr || l + 1 > sb->ptrlen) {

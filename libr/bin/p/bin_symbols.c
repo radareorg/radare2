@@ -179,17 +179,13 @@ static RBinSymbol *bin_symbol_from_symbol(RCoreSymCacheElement *element, RCoreSy
 	return sym;
 }
 
-static RCoreSymCacheElement *parseDragons(RBinFile *bf, RBuffer *buf, int off, int bits, R_OWN char *file_name) {
-	D eprintf ("Dragons at 0x%x\n", off);
+static RCoreSymCacheElement *parse_dragons(RBinFile *bf, RBuffer *buf, int off, int bits, R_OWN char *file_name) {
 	st64 size = r_buf_size (buf);
-	if (off >= size) {
+	if (size < 0 || off >= size) {
 		return NULL;
 	}
 	size -= off;
-	if (!size) {
-		return NULL;
-	}
-	if (size < 32) {
+	if (size < 32 || size > 0xfffff) {
 		return NULL;
 	}
 	ut8 *b = malloc (size);
@@ -199,6 +195,7 @@ static RCoreSymCacheElement *parseDragons(RBinFile *bf, RBuffer *buf, int off, i
 	int available = r_buf_read_at (buf, off, b, size);
 	if (available != size) {
 		R_LOG_WARN ("r_buf_read_at failed");
+		free (b);
 		return NULL;
 	}
 #if 0
@@ -289,7 +286,7 @@ static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadadd
 			return false;
 		}
 	}
-	RCoreSymCacheElement *element = parseDragons (bf, buf, sm.addr + sm.size, sm.bits, file_name);
+	RCoreSymCacheElement *element = parse_dragons (bf, buf, sm.addr + sm.size, sm.bits, file_name);
 	if (element) {
 		*bin_obj = element;
 		return true;
