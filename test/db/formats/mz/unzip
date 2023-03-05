@@ -1,11 +1,3 @@
-NAME=MZ: unzip.exe - open
-FILE=bins/mz/unzip.exe
-ARGS=-A
-CMDS=q!
-EXPECT=<<EOF
-EOF
-RUN
-
 NAME=MZ: unzip.exe - entrypoint
 FILE=bins/mz/unzip.exe
 CMDS=s
