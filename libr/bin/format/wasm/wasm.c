@@ -190,7 +190,7 @@ static size_t consume_init_expr_r(RBuffer *b, ut64 bound, ut8 eoc, void *out) {
 static size_t consume_locals_r(RBuffer *b, ut64 bound, RBinWasmCodeEntry *out) {
 	r_return_val_if_fail (out, 0);
 	ut32 count = out->local_count;
-	if ((st32)count <= 0) {
+	if ((st32)count < 1 || count > ST16_MAX) {
 		return 0;
 	}
 	out->locals = R_NEWS0 (struct r_bin_wasm_local_entry_t, count);
