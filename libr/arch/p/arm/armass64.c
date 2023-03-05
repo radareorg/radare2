@@ -2016,14 +2016,14 @@ bool arm64ass(const char *str, ut64 addr, ut32 *op) {
 	} else if (!strncmp (str, "b ", 2)) {
 		*op = branch (&ops, addr, 0x14);
 #if 0
-02 bhs
-03 blo
-04 bmi
-05 bpl
-06 bvs
-07 bvc
-08 bhi
-09 bls
+02 bhs DONE
+03 blo DONE
+04 bmi DONE
+05 bpl DONE
+06 bvs DONE
+07 bvc DONE
+08 bhi DONE
+09 bls DONE
 0a bge DONE
 0b blt DONE
 0c bgt DONE
@@ -2031,6 +2031,20 @@ bool arm64ass(const char *str, ut64 addr, ut32 *op) {
 0e bal = alias for "b"
 0f bnv = is this a nop?
 #endif
+	} else if (r_str_startswith (str, "b.lo ") || r_str_startswith (str, "blo ") || r_str_startswith (str, "b.cc ") || r_str_startswith (str, "bcc ")) {
+		*op = bdot (&ops, addr, 0x03000054);
+	} else if (r_str_startswith (str, "b.mi ") || r_str_startswith (str, "bmi ")) {
+		*op = bdot (&ops, addr, 0x04000054);
+	} else if (r_str_startswith (str, "b.pl ") || r_str_startswith (str, "bpl ")) {
+		*op = bdot (&ops, addr, 0x05000054);
+	} else if (r_str_startswith (str, "b.vs ") || r_str_startswith (str, "bvs ")) {
+		*op = bdot (&ops, addr, 0x06000054);
+	} else if (r_str_startswith (str, "b.vc ") || r_str_startswith (str, "bvc ")) {
+		*op = bdot (&ops, addr, 0x07000054);
+	} else if (r_str_startswith (str, "b.hi ") || r_str_startswith (str, "bhi ")) {
+		*op = bdot (&ops, addr, 0x08000054);
+	} else if (r_str_startswith (str, "b.ls ") || r_str_startswith (str, "bls ")) {
+		*op = bdot (&ops, addr, 0x09000054);
 	} else if (r_str_startswith (str, "b.ge ") || r_str_startswith (str, "bge ")) {
 		*op = bdot (&ops, addr, 0x0a000054);
 	} else if (r_str_startswith (str, "b.le ") || r_str_startswith (str, "ble ")) {
