@@ -6,6 +6,9 @@ int LLVMFuzzerInitialize(int *lf_argc, char ***lf_argv) {
 }
 
 int LLVMFuzzerTestOneInput(const uint8_t *Data, size_t Size) {
+	if (Size < 1) {
+		return 0;
+	}
 	RCore *r = r_core_new();
 	if (Size < 1) {
 		return 0;

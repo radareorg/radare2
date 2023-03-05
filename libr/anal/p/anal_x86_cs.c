@@ -1507,13 +1507,13 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 							: INSOP(0).mem.segment == X86_REG_GS ? "gs"
 							: INSOP(0).mem.segment == X86_REG_SS ? "ss"
 							: "unknown_segment_register",
-							(ut64)INSOP(0).mem.disp,
+							(ut64)INSOP (0).mem.disp,
 							rs, pc);
 					} else {
 						esilprintf (
 							op,
 							"0x%"PFMT64x",[%d],%s,=",
-							(ut64)INSOP(0).mem.disp, rs, pc);
+							(ut64)INSOP (0).mem.disp, rs, pc);
 					}
 				}
 			}
@@ -2375,18 +2375,17 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 	}
 }
 
+// R2_590 - return const char * to avoid derefs
 static RRegItem *cs_reg2reg(RReg *reg, csh *h, int id) {
 	if (id == X86_REG_INVALID) {
 		return NULL;
 	}
 	RRegItem *ri = r_reg_get (reg, (char *)cs_reg_name (*h, id), -1);
-	// r_unref (ri); // XXX this fixes the refleak but its not correct
 	return ri;
 }
 
 static void set_access_info(RReg *reg, RAnalOp *op, csh *handle, cs_insn *insn, int mode) {
 	int i;
-	RAnalValue *val;
 	int regsz;
 	x86_reg sp;
 	switch (mode) {
@@ -2413,7 +2412,7 @@ static void set_access_info(RReg *reg, RAnalOp *op, csh *handle, cs_insn *insn, 
 	}
 
 	// PC register
-	val = r_anal_value_new ();
+	RAnalValue *val = r_anal_value_new ();
 	if (val) {
 		val->type = R_ANAL_VAL_REG;
 		val->access = R_PERM_W;
@@ -2426,26 +2425,22 @@ static void set_access_info(RReg *reg, RAnalOp *op, csh *handle, cs_insn *insn, 
 	cs_regs regs_read, regs_write;
 	ut8 read_count, write_count;
 	if (cs_regs_access (*handle, insn, regs_read, &read_count, regs_write, &write_count) == 0) {
-		if (read_count > 0) {
-			for (i = 0; i < read_count; i++) {
-				val = r_anal_value_new ();
-				if (val) {
-					val->type = R_ANAL_VAL_REG;
-					val->access = R_PERM_R;
-					val->reg = cs_reg2reg (reg, handle, regs_read[i]);
-					r_list_append (ret, val);
-				}
+		for (i = 0; i < read_count; i++) {
+			val = r_anal_value_new ();
+			if (val) {
+				val->type = R_ANAL_VAL_REG;
+				val->access = R_PERM_R;
+				val->reg = cs_reg2reg (reg, handle, regs_read[i]);
+				r_list_append (ret, val);
 			}
 		}
-		if (write_count > 0) {
-			for (i = 0; i < write_count; i++) {
-				val = r_anal_value_new ();
-				if (val) {
-					val->type = R_ANAL_VAL_REG;
-					val->access = R_PERM_W;
-					val->reg = cs_reg2reg (reg, handle, regs_write[i]);
-					r_list_append (ret, val);
-				}
+		for (i = 0; i < write_count; i++) {
+			val = r_anal_value_new ();
+			if (val) {
+				val->type = R_ANAL_VAL_REG;
+				val->access = R_PERM_W;
+				val->reg = cs_reg2reg (reg, handle, regs_write[i]);
+				r_list_append (ret, val);
 			}
 		}
 	}
