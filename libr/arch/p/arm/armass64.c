@@ -2015,22 +2015,26 @@ bool arm64ass(const char *str, ut64 addr, ut32 *op) {
 		*op = exception (&ops, 0x000040d4);
 	} else if (!strncmp (str, "b ", 2)) {
 		*op = branch (&ops, addr, 0x14);
-#if 0
-02 bhs
-03 blo
-04 bmi
-05 bpl
-06 bvs
-07 bvc
-08 bhi
-09 bls
-0a bge DONE
-0b blt DONE
-0c bgt DONE
-0d ble DONE
-0e bal = alias for "b"
-0f bnv = is this a nop?
-#endif
+	} else if (r_str_startswith (str, "b.eq ") || r_str_startswith (str, "beq ")) {
+		*op = bdot (&ops, addr, 0x00000054);
+	} else if (r_str_startswith (str, "b.ne ") || r_str_startswith (str, "bne ")) {
+		*op = bdot (&ops, addr, 0x01000054);
+	} else if (r_str_startswith (str, "b.hs ") || r_str_startswith (str, "bhs ") || r_str_startswith (str, "b.cs ") || r_str_startswith (str, "bcs ")) {
+		*op = bdot (&ops, addr, 0x02000054);
+	} else if (r_str_startswith (str, "b.lo ") || r_str_startswith (str, "blo ") || r_str_startswith (str, "b.cc ") || r_str_startswith (str, "bcc ")) {
+		*op = bdot (&ops, addr, 0x03000054);
+	} else if (r_str_startswith (str, "b.mi ") || r_str_startswith (str, "bmi ")) {
+		*op = bdot (&ops, addr, 0x04000054);
+	} else if (r_str_startswith (str, "b.pl ") || r_str_startswith (str, "bpl ")) {
+		*op = bdot (&ops, addr, 0x05000054);
+	} else if (r_str_startswith (str, "b.vs ") || r_str_startswith (str, "bvs ")) {
+		*op = bdot (&ops, addr, 0x06000054);
+	} else if (r_str_startswith (str, "b.vc ") || r_str_startswith (str, "bvc ")) {
+		*op = bdot (&ops, addr, 0x07000054);
+	} else if (r_str_startswith (str, "b.hi ") || r_str_startswith (str, "bhi ")) {
+		*op = bdot (&ops, addr, 0x08000054);
+	} else if (r_str_startswith (str, "b.ls ") || r_str_startswith (str, "bls ")) {
+		*op = bdot (&ops, addr, 0x09000054);
 	} else if (r_str_startswith (str, "b.ge ") || r_str_startswith (str, "bge ")) {
 		*op = bdot (&ops, addr, 0x0a000054);
 	} else if (r_str_startswith (str, "b.le ") || r_str_startswith (str, "ble ")) {
@@ -2039,12 +2043,6 @@ bool arm64ass(const char *str, ut64 addr, ut32 *op) {
 		*op = bdot (&ops, addr, 0x0c000054);
 	} else if (r_str_startswith (str, "b.lt ") || r_str_startswith (str, "blt ")) {
 		*op = bdot (&ops, addr, 0x0b000054);
-	} else if (!strncmp (str, "b.eq ", 5) || !strncmp (str, "beq ", 4)) {
-		*op = bdot (&ops, addr, 0x00000054);
-	} else if (!strncmp (str, "b.ne ", 5) || !strncmp (str, "bne ", 4)) {
-		*op = bdot (&ops, addr, 0x01000054);
-	} else if (!strncmp (str, "b.hs ", 5)) {
-		*op = bdot (&ops, addr, 0x02000054);
 	} else if (!strncmp (str, "bl ", 3)) {
 		*op = branch (&ops, addr, 0x94);
 	} else if (!strncmp (str, "br x", 4)) {
