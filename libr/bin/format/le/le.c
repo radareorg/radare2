@@ -675,12 +675,7 @@ R_IPI RBinLEObj *r_bin_le_new_buf(RBuffer *buf) {
 	bin->arch = __get_arch (bin);
 	{
 		/* dim objcnt */
-		ut64 maxcount = r_buf_size (bin->buf);
-		if (maxcount == UT64_MAX) {
-			maxcount /= sizeof (LE_object_entry);
-		} else {
-			maxcount = UT16_MAX;
-		}
+		ut64 maxcount = 0xfffff / sizeof (LE_object_entry);
 		if (h->objcnt > maxcount) {
 			h->objcnt = maxcount;
 		}
