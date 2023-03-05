@@ -63,6 +63,8 @@ typedef unsigned char (*GET_BYTE)  (void* userPtr);
 // write several bytes,      see sendBytesToOut() for a basic implementation
 typedef void          (*SEND_BYTES)(const unsigned char*, unsigned int, void* userPtr);
 
+int unlz4Block_userPtr(GET_BYTE getByte, SEND_BYTES sendBytes, void* userPtr, unsigned int blockSize, unsigned int* position, unsigned char* hist);
+
 struct UserPtr
 {
   // file handles
@@ -214,122 +216,8 @@ int unlz4_userPtr(GET_BYTE getByte, SEND_BYTES sendBytes, const char* dictionary
     if (isCompressed)
     {
       // decompress block
-      unsigned int blockOffset = 0;
-      unsigned int numWritten  = 0;
-      while (blockOffset < blockSize)
-      {
-        // get a token
-        unsigned char token = getByte(userPtr);
-        blockOffset++;
 
-        // determine number of literals
-        unsigned int numLiterals = token >> 4;
-        if (numLiterals == 15)
-        {
-          // number of literals length encoded in more than 1 byte
-          unsigned char current;
-          do
-          {
-            current = getByte(userPtr);
-            numLiterals += current;
-            blockOffset++;
-          } while (current == 255);
-        }
-
-        blockOffset += numLiterals;
-
-        // copy all those literals
-        if (pos + numLiterals < HISTORY_SIZE)
-        {
-          // fast loop
-          while (numLiterals-- > 0)
-            history[pos++] = getByte(userPtr);
-        }
-        else
-        {
-          // slow loop
-          while (numLiterals-- > 0)
-          {
-            history[pos++] = getByte(userPtr);
-
-            // flush output buffer
-            if (pos == HISTORY_SIZE)
-            {
-              sendBytes(history, HISTORY_SIZE, userPtr);
-              numWritten += HISTORY_SIZE;
-              pos = 0;
-            }
-          }
-        }
-
-        // last token has only literals
-        if (blockOffset == blockSize)
-          break;
-
-        // match distance is encoded in two bytes (little endian)
-        unsigned int delta = getByte(userPtr);
-        delta |= (unsigned int)getByte(userPtr) << 8;
-        // zero isn't allowed
-        if (delta == 0) {
-          unlz4error("invalid offset");
-          return -1;
-        }
-        blockOffset += 2;
-
-        // match length (always >= 4, therefore length is stored minus 4)
-        unsigned int matchLength = 4 + (token & 0x0F);
-        if (matchLength == 4 + 0x0F)
-        {
-          unsigned char current;
-          do // match length encoded in more than 1 byte
-          {
-            current = getByte(userPtr);
-            matchLength += current;
-            blockOffset++;
-          } while (current == 255);
-        }
-
-        // copy match
-        unsigned int referencePos = (pos >= delta) ? (pos - delta) : (HISTORY_SIZE + pos - delta);
-        // start and end within the current 64k block ?
-        if (pos + matchLength < HISTORY_SIZE && referencePos + matchLength < HISTORY_SIZE)
-        {
-          // read/write continuous block (no wrap-around at the end of history[])
-          // fast copy
-          if (pos >= referencePos + matchLength || referencePos >= pos + matchLength)
-          {
-            // non-overlapping
-            memcpy(history + pos, history + referencePos, matchLength);
-            pos += matchLength;
-          }
-          else
-          {
-            // overlapping, slower byte-wise copy
-            while (matchLength-- > 0)
-              history[pos++] = history[referencePos++];
-          }
-        }
-        else
-        {
-          // either read or write wraps around at the end of history[]
-          while (matchLength-- > 0)
-          {
-            // copy single byte
-            history[pos++] = history[referencePos++];
-
-            // cannot write anymore ? => wrap around
-            if (pos == HISTORY_SIZE)
-            {
-              // flush output buffer
-              sendBytes(history, HISTORY_SIZE, userPtr);
-              numWritten += HISTORY_SIZE;
-              pos = 0;
-            }
-            // wrap-around of read location
-            referencePos %= HISTORY_SIZE;
-          }
-        }
-      }
+      int numWritten = unlz4Block_userPtr(getByte, sendBytes, userPtr, blockSize, &pos, history);
 
       // all legacy blocks must be completely filled - except for the last one
       if (isLegacy && numWritten + pos < 8*1024*1024)
@@ -370,13 +258,20 @@ int unlz4_userPtr(GET_BYTE getByte, SEND_BYTES sendBytes, const char* dictionary
 }
 
 /// decompress an lz4 block
-int unlz4Block_userPtr(GET_BYTE getByte, SEND_BYTES sendBytes, void* userPtr, unsigned int blockSize)
+int unlz4Block_userPtr(GET_BYTE getByte, SEND_BYTES sendBytes, void* userPtr, unsigned int blockSize, unsigned int* position, unsigned char* hist)
 {
 
   // contains the latest decoded data
   unsigned char history[HISTORY_SIZE];
   // next free position in history[]
   unsigned int  pos = 0;
+
+  // better way to do this?
+  if (position != NULL && hist != NULL)
+  {
+      pos = *position;
+      memcpy(history, hist, pos);
+  }
 
       // decompress block
       unsigned int blockOffset = 0;
@@ -497,8 +392,20 @@ int unlz4Block_userPtr(GET_BYTE getByte, SEND_BYTES sendBytes, void* userPtr, un
       }
 
       // flush output buffer
-      sendBytes(history, pos, userPtr);
-      numWritten += pos;
+      if (pos > 0)
+      {
+          sendBytes(history, pos, userPtr);
+          numWritten += pos;
+          pos = 0;
+      }
+
+      // If we flushed everything, it's normal that position = 0
+      // and nothing gets copied back into history.
+      if (position != NULL && hist != NULL)
+      {
+          *position = pos;
+          memcpy(hist, history, pos);
+      }
       return numWritten;
 }
 
