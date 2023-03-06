@@ -30,8 +30,11 @@ static RIOMap *io_map_new(RIO* io, int fd, int perm, ut64 delta, ut64 addr, ut64
 }
 
 R_API bool r_io_map_remap(RIO *io, ut32 id, ut64 addr) {
+	r_return_val_if_fail (io, false);
 	RIOMap *map = r_io_map_get (io, id);
-	r_return_val_if_fail (io && map, false);
+	if (!map) {
+		return false;
+	}
 	const ut64 ofrom = r_io_map_from (map);
 	const ut64 oto = r_io_map_to (map);
 	ut64 size = r_io_map_size (map);
