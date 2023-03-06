@@ -302,7 +302,7 @@ static bool r_bin_xtac_read_address_pairs(RBinXtacObj *bin) {
 static bool r_bin_xtac_read_module_name(RBinXtacObj *bin) {
 	const ut32 len_of_mod_name = bin->header->size_of_mod_name / sizeof (ut16) + 1;
 	const ut32 p_mod_name = bin->header->ptr_to_mod_name;
-	if ((st32)len_of_mod_name < 1) {
+	if (len_of_mod_name > 0xfff) {
 		return false;
 	}
 	if (!(bin->mod_name_u16 = R_NEWS0 (ut16, len_of_mod_name))) {
