@@ -1077,12 +1077,15 @@ static int cmd_we(void *data, const char *input) {
 		break;
 	case 'X': // "weX"
 		if (input[1] == ' ') {
-			addr = r_num_math (core->num, input+2);
-			input += 2;
-			while (*input && *input != ' ') input++;
-			input++;
+			addr = r_num_math (core->num, input + 2);
+			while (*input && *input != ' ') {
+				input++;
+			}
+			if (*input) {
+				input++;
+			}
 			len = *input ? strlen (input) : 0;
-			bytes = len > 1? malloc (len+1) : NULL;
+			bytes = (len > 1)? malloc (len + 1) : NULL;
 			len = bytes ? r_hex_str2bin (input, bytes) : 0;
 			if (len > 0) {
 				//ut64 cur_off = core->offset;
