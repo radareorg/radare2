@@ -3,6 +3,7 @@ if get_option('enable_libfuzzer')
     'anal',
     'bin',
     'bin2',
+    'fs',
     'dwarf',
     'bin_demangle',
     'ia',

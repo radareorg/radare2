@@ -1419,8 +1419,13 @@ static void cmd_print_fromage(RCore *core, const char *input, const ut8* data, i
 			eprintf ("Usage: pFB[j] - parse binary plist format, check 'b'lock size, pFBj for json output\n");
 		} else {
 			PJ *pj = r_core_pj_new (core);
-			if (!r_bplist_parse (pj, data, size)) {
-				R_LOG_ERROR ("bplist parse error");
+			if (size > 0) {
+				if (!r_bplist_parse (pj, data, size)) {
+					R_LOG_ERROR ("bplist parse error");
+				}
+			} else {
+				pj_o (pj);
+				pj_end (pj);
 			}
 			char *s = pj_drain (pj);
 			if (input[1] == 'j') {
