@@ -20,7 +20,7 @@ static RCoreHelpMessage help_msg_m = {
 	"mp", " msdos 0", "show partitions in msdos format at offset 0",
 	"mp", "", "list all supported partition types",
 	"ms", " /mnt", "open filesystem shell at /mnt (or fs.cwd if not defined)",
-	"mw", " [file] [data]", "write data into file", // TODO: add mwf
+	"mw", " [file] [data]", "write data into file",
 	"mwf", " [diskfile] [r2filepath]", "write contents of local diskfile into r2fs mounted path",
 	"my", "", "yank contents of file into clipboard",
 	//"TODO: support multiple mountpoints and RFile IO's (need io+core refactorn",
@@ -215,15 +215,15 @@ static int cmd_mount(void *data, const char *_input) {
 		}
 		break;
 	case '-':
-		if (input[1] == '?') { // "mL?"
-			r_core_cmd_help_match_spec (core, help_msg_m, "m-", 0, true);
+		if (input[1] == '?') { // "m-?"
+			r_core_cmd_help_match (core, help_msg_m, "m-", true);
 		} else {
 			r_fs_umount (core->fs, input + 1);
 		}
 		break;
 	case 'j':
-		if (input[1] == '?') { // "mL?"
-			r_core_cmd_help_match_spec (core, help_msg_m, "mj", 0, true);
+		if (input[1] == '?') { // "mj?"
+			r_core_cmd_help_match (core, help_msg_m, "mj", true);
 		} else {
 			PJ *pj = r_core_pj_new (core);
 			pj_o (pj);
@@ -266,7 +266,7 @@ static int cmd_mount(void *data, const char *_input) {
 		break;
 	case 'L': // "mL" list of plugins
 		if (input[1] == '?') { // "mL?"
-			r_core_cmd_help_match_spec (core, help_msg_m, "mL", 0, true);
+			r_core_cmd_help_match (core, help_msg_m, "mL", true);
 		} else if (input[1] == 'L') {
 			r_list_foreach (core->fs->plugins, iter, plug) {
 				r_cons_printf ("%s\n", plug->name);
@@ -290,10 +290,9 @@ static int cmd_mount(void *data, const char *_input) {
 			}
 		}
 		break;
-	case 'l': // "ml"
 	case 'd': // "md"
 		if (input[1] == '?') { // "md?"
-			r_core_cmd_help_match_spec (core, help_msg_m, "md", 0, true);
+			r_core_cmd_help_match (core, help_msg_m, "md", true);
 		} else {
 			cmd_mount_ls (core, input + 1);
 		}
@@ -301,7 +300,7 @@ static int cmd_mount(void *data, const char *_input) {
 	case 'p': // "mp"
 		input = (char *)r_str_trim_head_ro (input + 1);
 		if (input[0] == '?') { // "mp?"
-			r_core_cmd_help_match_spec (core, help_msg_m, "mp", 0, true);
+			r_core_cmd_help_match (core, help_msg_m, "mp", true);
 			break;
 		}
 		ptr = strchr (input, ' ');
@@ -324,7 +323,7 @@ static int cmd_mount(void *data, const char *_input) {
 	case 'o': // "mo"
 		input = (char *)r_str_trim_head_ro (input + 1);
 		if (*input == '?') { // "mo?"
-			r_core_cmd_help_match_spec (core, help_msg_m, "mo", 0, true);
+			r_core_cmd_help_match (core, help_msg_m, "mo", true);
 		} else {
 			file = r_fs_open (core->fs, input, false);
 			if (file) {
@@ -341,7 +340,7 @@ static int cmd_mount(void *data, const char *_input) {
 		break;
 	case 'i':
 		if (input[1] == '?') { // "mi?"
-			r_core_cmd_help_match_spec (core, help_msg_m, "mi", 0, true);
+			r_core_cmd_help_match (core, help_msg_m, "mi", true);
 		} else {
 			input = (char *)r_str_trim_head_ro (input + 1);
 			file = r_fs_open (core->fs, input, false);
@@ -356,8 +355,8 @@ static int cmd_mount(void *data, const char *_input) {
 		}
 		break;
 	case 'c': // "mc"
-		if (input[1] == '?') { // "mi?"
-			r_core_cmd_help_match_spec (core, help_msg_m, "mc", 0, true);
+		if (input[1] == '?') { // "mc?"
+			r_core_cmd_help_match (core, help_msg_m, "mc", true);
 		} else {
 			input = (char *)r_str_trim_head_ro (input + 1);
 			ptr = strchr (input, ' ');
@@ -379,7 +378,7 @@ static int cmd_mount(void *data, const char *_input) {
 		break;
 	case 'g': // "mg"
 		if (input[1] == '?') { // "mg?"
-			r_core_cmd_help_match_spec (core, help_msg_m, "mg", 0, true);
+			r_core_cmd_help_match (core, help_msg_m, "mg", true);
 			break;
 		}
 		input = (char *)r_str_trim_head_ro (input + 1);
@@ -493,7 +492,7 @@ static int cmd_mount(void *data, const char *_input) {
 		break;
 	case 's': // "ms"
 		if (input[1] == '?') { // "ms?"
-			r_core_cmd_help_match_spec (core, help_msg_m, "ms", 0, true);
+			r_core_cmd_help_match (core, help_msg_m, "ms", true);
 			break;
 		};
 		if (!r_config_get_b (core->config, "scr.interactive")) {
@@ -521,17 +520,13 @@ static int cmd_mount(void *data, const char *_input) {
 		}
 		break;
 	case 'w': // "mw"
-		if (input[1] == '?') { // "ms?"
-			r_core_cmd_help_match_spec (core, help_msg_m, "mw", 0, true);
-			break;
-		}
 		if (input[1] == 'f') { // "mwf"
 			char *arg0 = r_str_trim_dup (input + 1);
 			char *arg1 = strchr (arg0, ' ');
 			if (arg1) {
 				*arg1++ = 0;
 			} else {
-				eprintf ("Usage: mwf [local] [dest]\n");
+				r_core_cmd_help_match (core, help_msg_m, "mwf", true);
 				free (arg0);
 				break;
 			}
@@ -563,12 +558,12 @@ static int cmd_mount(void *data, const char *_input) {
 			}
 			free (args);
 		} else {
-			eprintf ("Usage: mw [file] ([data])\n");
+			r_core_cmd_help_match (core, help_msg_m, "mw", false);
 		}
 		break;
 	case 'y':
-		if (input[1] == '?') { // "ms?"
-			r_core_cmd_help_match_spec (core, help_msg_m, "my", 0, true);
+		if (input[1] == '?') { // "my?"
+			r_core_cmd_help_match (core, help_msg_m, "my", true);
 			break;
 		}
 		input = (char *)r_str_trim_head_ro (input + 1);
