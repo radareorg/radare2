@@ -1929,7 +1929,7 @@ static int cmd_debug_map(RCore *core, const char *input) {
 		break;
 	case '-': // "dm-"
 		if (input[1] != ' ') {
-			r_core_cmd_help_match (core, help_msg_dm, "dm-", true)l
+			r_core_cmd_help_match (core, help_msg_dm, "dm-", true);
 			break;
 		}
 		addr = r_num_math (core->num, input + 2);
@@ -2310,7 +2310,7 @@ static void cmd_reg_profile(RCore *core, char from, const char *str) { // "arp" 
 		{
 			const char *from_a[] = { "arp", "arpi", "arpg", "arp.", "arpj", "arps" };
 			// TODO #7967 help refactor
-			const char **help_msg = help_msg_drp;
+			RCoreHelpMessage help_msg = help_msg_drp;
 			if (from == 'a') {
 				help_msg[1] = help_msg[3] = help_msg[6] = help_msg[9] = from_a[0];
 				help_msg[12] = from_a[1];
@@ -2726,22 +2726,22 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 
 			sl = r_str_word_set0 (s);
 			if (sl == 4) {
-#define arg(x) r_str_wor)
+#define arg(x) r_str_word_get0(s,x)
 			        n = (char)r_num_math (core->num, arg(0));
 			        off = r_num_math (core->num, arg(1));
 			        len = (int)r_num_math (core->num, arg(2));
 			        perm = (char)r_str_rwx (arg (3));
 			        if (len == -1) {
-			      	  r_debug_reg_sync (core->dbg, R_REG_TYPE_DRX, false);
-			      	  r_debug_drx_set (core->dbg, n, 0, 0, 0, 0);
-			      	  r_debug_reg_sync (core->dbg, R_REG_TYPE_DRX, true);
+					r_debug_reg_sync (core->dbg, R_REG_TYPE_DRX, false);
+					r_debug_drx_set (core->dbg, n, 0, 0, 0, 0);
+					r_debug_reg_sync (core->dbg, R_REG_TYPE_DRX, true);
 			        } else {
-			      	  r_debug_reg_sync (core->dbg, R_REG_TYPE_DRX, false);
-			      	  r_debug_drx_set (core->dbg, n, off, len, perm, 0);
-			      	  r_debug_reg_sync (core->dbg, R_REG_TYPE_DRX, true);
+					r_debug_reg_sync (core->dbg, R_REG_TYPE_DRX, false);
+					r_debug_drx_set (core->dbg, n, off, len, perm, 0);
+					r_debug_reg_sync (core->dbg, R_REG_TYPE_DRX, true);
 			        }
 			} else {
-			      r_core_cmd_help_match (core, help_msg_dr, "drx", true);
+				r_core_cmd_help_match (core, help_msg_dr, "drx", true);
 			}
 			free (s);
 			}
