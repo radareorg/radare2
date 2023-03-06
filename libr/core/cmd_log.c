@@ -283,7 +283,10 @@ static int cmd_log(void *data, const char *input) {
 					R_LOG_ERROR ("File not found");
 				}
 			} else {
-				eprintf ("Usage: less [filename]\n");
+				static RCoreHelpMessage help_msg_less = {
+					"less", " [filename]", "view file with pagination",
+				};
+				r_core_cmd_help (core, help_msg_less);
 			}
 		}
 		break;
