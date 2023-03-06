@@ -4614,10 +4614,18 @@ RList *MACH0_(mach_fields)(RBinFile *bf) {
 			ut32 ntools = r_buf_read_le32_at (buf, paddr + 20);
 			ut64 off = 24;
 			int j = 0;
-			char tool_flagname[32];
+			char tool_flagname[64];
+			ut64 bsz = r_buf_size (buf);
 			while (off < lcSize && ntools--) {
+				ut64 at = paddr + off;
+				if (at > bsz) {
+					R_LOG_DEBUG ("prevented");
+					break;
+				}
 				snprintf (tool_flagname, sizeof (tool_flagname), "tool_%d", j++);
-				r_list_append (ret, r_bin_field_new (paddr + off, addr + off, 1, tool_flagname, "mach0_build_version_tool", "mach0_build_version_tool", true));
+				RBinField *f = r_bin_field_new (at, addr + off, 1,
+					tool_flagname, "mach0_build_version_tool", "mach0_build_version_tool", true);
+				r_list_append (ret, f);
 				off += 8;
 			}
 			break;
