@@ -1050,7 +1050,7 @@ static int cmd_we(void *data, const char *input) {
 		}
 		break;
 	case 's': // "wes"
-		input +=  2;
+		input += 2;
 		while (*input && *input == ' ') {
 			input++;
 		}
@@ -1079,7 +1079,8 @@ static int cmd_we(void *data, const char *input) {
 		break;
 	case 'X': // "weX"
 		if (input[1] == ' ') {
-			addr = r_num_math (core->num, input + 2);
+			input = r_str_trim_head_ro (input + 2);
+			addr = r_num_math (core->num, input);
 			while (*input && *input != ' ') {
 				input++;
 			}
