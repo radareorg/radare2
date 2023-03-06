@@ -2913,10 +2913,12 @@ R_API char *r_sign_path(RAnal *a, const char *file) {
 }
 
 R_API bool r_sign_load(RAnal *a, const char *file, bool merge) {
-	if (!a || !file) {
+	r_return_val_if_fail (a && file, false);
+	char *path = r_sign_path (a, file);
+	if (!path) {
+		R_LOG_ERROR ("file %s not found in sign path", file);
 		return false;
 	}
-	char *path = r_sign_path (a, file);
 	if (!r_file_exists (path)) {
 		R_LOG_ERROR ("file %s does not exist", file);
 		free (path);
