@@ -4866,14 +4866,21 @@ again:
 			eprintf ("Usage: /z min max\n");
 			break;
 		}
+		const char *maxstr = NULL;
 		if ((p = strchr (input + 2, ' '))) {
 			*p = 0;
-			max = r_num_math (core->num, p + 1);
+			maxstr = r_str_trim_head_ro (p + 1);
+			max = r_num_math (core->num, maxstr);
 		} else {
 			eprintf ("Usage: /z min max\n");
 			break;
 		}
-		min = r_num_math (core->num, input + 2);
+		const char *minstr = r_str_trim_head_ro (input + 2);
+		if ((maxstr && *maxstr == '-') || (minstr && *minstr == '-')) {
+			R_LOG_ERROR ("min and max must be positive");
+			break;
+		}
+		min = r_num_math (core->num, minstr);
 		if (!r_search_set_string_limits (core->search, min, max)) {
 			R_LOG_ERROR ("min must be lower than max");
 			break;

@@ -14,6 +14,7 @@ int LLVMFuzzerTestOneInput(const uint8_t *Data, size_t Size) {
 		return 0;
 	}
 
+	r_core_cmd0 (r, "e scr.interactive=false");
 	// r_core_cmdf (r, "o malloc://%zu", Size);
 	// r_io_write_at (r->io, 0, Data, Size);
 	r_core_cmd0 (r, "o /bin/ls");
