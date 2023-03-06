@@ -121,7 +121,7 @@ static int string_scan_range(RList *list, RBinFile *bf, int min, const ut64 from
 	if (type == -1) {
 		type = R_STRING_TYPE_DETECT;
 	}
-	if (from == to) {
+	if (from == UT64_MAX || from == to) {
 		return 0;
 	}
 	if (from > to) {
