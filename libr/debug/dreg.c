@@ -321,7 +321,7 @@ R_API bool r_debug_reg_set(RDebug *dbg, const char *name, ut64 num) {
 	return (ri);
 }
 
-// XXX deprecate
+// XXX R2_590 deprecate
 R_API ut64 r_debug_reg_get(RDebug *dbg, const char *name) {
 	// ignores errors
 	return r_debug_reg_get_err (dbg, name, NULL, NULL);

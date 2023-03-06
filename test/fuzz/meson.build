@@ -1,5 +1,6 @@
 if get_option('enable_libfuzzer')
   targets = [
+    'anal',
     'bin',
     'bin2',
     'dwarf',
