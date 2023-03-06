@@ -634,8 +634,7 @@ static int cmd_meta_comment(RCore *core, const char *input) {
 		if (s) {
 			s = strdup (s + 1);
 		} else {
-			eprintf ("Usage: CCa [address] [comment]\n");
-			eprintf ("Usage: CCa-[address]\n");
+			r_core_cmd_help_match (core, help_msg_CC, "CCa", true);
 			return false;
 		}
 		p = strchr (s, ' ');
@@ -650,7 +649,7 @@ static int cmd_meta_comment(RCore *core, const char *input) {
 						R_META_TYPE_COMMENT,
 						addr, 1);
 			} else {
-				eprintf ("Usage: CCa-[address]\n");
+				r_core_cmd_help_match (core, help_msg_CC, "CCa", true);
 			}
 			free (s);
 			return true;
@@ -671,7 +670,7 @@ static int cmd_meta_comment(RCore *core, const char *input) {
 				r_meta_set (core->anal, R_META_TYPE_COMMENT, addr, 1, p);
 			}
 		} else {
-			eprintf ("Usage: CCa [address] [comment]\n");
+			r_core_cmd_help_match (core, help_msg_CC, "CCa", true);
 		}
 		free (s);
 		return true;
@@ -743,8 +742,8 @@ static int cmd_meta_others(RCore *core, const char *input) {
 	case '?':
 		switch (input[0]) {
 		case 'f': // "Cf?"
+			r_core_cmd_help_match (core, help_msg_C, "Cf", true);
 			r_cons_println (
-				"Usage: Cf[-] [sz] [fmt..] [@addr]\n\n"
 				"'sz' indicates the byte size taken up by struct.\n"
 				"'fmt' is a 'pf?' style format string. It controls only the display format.\n\n"
 				"You may wish to have 'sz' != sizeof (fmt) when you have a large struct\n"
@@ -936,7 +935,7 @@ static int cmd_meta_others(RCore *core, const char *input) {
 							n  = -1;
 						}
 					} else {
-						eprintf ("Usage: Cf [size] [pf-format-string]\n");
+						r_core_cmd_help_match (core, help_msg_C, "Cf", true);
 						break;
 					}
 				} else if (type == 's') { // "Cs"
@@ -1231,7 +1230,7 @@ static int cmd_meta(void *data, const char *input) {
 			if (input[2] == ' ') {
 				r_spaces_rename (ms, NULL, input + 2);
 			} else {
-				eprintf ("Usage: CSr [newname]\n");
+				r_core_cmd_help_match (core, help_msg_CS, "CSr", true);
 			}
 			break;
 		case '-': // "CS-"
