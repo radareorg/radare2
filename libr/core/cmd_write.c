@@ -2132,13 +2132,26 @@ static int cmd_wd(void *data, const char *input) {
 		if (arg) {
 			*arg = 0;
 			ut64 addr = r_num_math (core->num, input + 1);
-			ut64 len = r_num_math (core->num, arg + 1);
-			ut8 *data = malloc (len);
-			r_io_read_at (core->io, addr, data, len);
-			if (!r_io_write_at (core->io, core->offset, data, len)) {
-				eprintf ("r_io_write_at failed at 0x%08" PFMT64x "\n", core->offset);
+			st64 len = r_num_math (core->num, arg + 1);
+			if (len < 1) {
+				R_LOG_ERROR ("Invalid length for wd");
+				return 0;
 			}
-			free (data);
+			if (len > 0xfffff) {
+				R_LOG_TODO ("Region is too large for wd, implement block copy");
+				return 0;
+			}
+			ut8 *data = malloc (len);
+			if (data) {
+				if (r_io_read_at (core->io, addr, data, len)) {
+					if (!r_io_write_at (core->io, core->offset, data, len)) {
+						R_LOG_ERROR ("r_io_write_at failed at 0x%08" PFMT64x, core->offset);
+					}
+				} else {
+					R_LOG_ERROR ("r_io_read_at: cannot read bytes");
+				}
+				free (data);
+			}
 		} else {
 			eprintf ("See wd?\n");
 		}
