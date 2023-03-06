@@ -2941,6 +2941,10 @@ R_API bool r_sign_load_gz(RAnal *a, const char *filename, bool merge) {
 	char *tmpfile = NULL;
 	bool retval = true;
 	char *path = r_sign_path (a, filename);
+	if (!path) {
+		R_LOG_ERROR ("file %s not found in sign path", filename);
+		return false;
+	}
 	if (!r_file_exists (path)) {
 		R_LOG_ERROR ("file %s does not exist", filename);
 		retval = false;

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2007-2022 - pancake */
+/* radare - LGPL - Copyright 2007-2023 - pancake */
 
 #define R_LOG_ORIGIN "filter"
 
@@ -181,6 +181,7 @@ R_API bool r_file_is_directory(const char *str) {
 }
 
 R_API bool r_file_fexists(const char *fmt, ...) {
+	r_return_val_if_fail (fmt, false);
 	int ret;
 	char string[BS];
 	va_list ap;
@@ -192,6 +193,7 @@ R_API bool r_file_fexists(const char *fmt, ...) {
 }
 
 R_API bool r_file_exists(const char *str) {
+	r_return_val_if_fail (str, false);
 	struct stat buf = {0};
 #if 1
 	if (file_stat (str, &buf) != 0) {
