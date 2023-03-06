@@ -2310,7 +2310,7 @@ static void cmd_reg_profile(RCore *core, char from, const char *str) { // "arp" 
 		{
 			const char *from_a[] = { "arp", "arpi", "arpg", "arp.", "arpj", "arps" };
 			// TODO #7967 help refactor
-			RCoreHelpMessage help_msg = help_msg_drp;
+			const char **help_msg = (const char **)help_msg_drp;
 			if (from == 'a') {
 				help_msg[1] = help_msg[3] = help_msg[6] = help_msg[9] = from_a[0];
 				help_msg[12] = from_a[1];
@@ -4198,7 +4198,6 @@ static void r_core_debug_esil(RCore *core, const char *input) {
 		{
 			char *line = strdup (input + 1);
 			char *p, *q;
-			int done = 0;
 			int perm = 0, dev = 0;
 			p = strchr (line, ' ');
 			if (p) {
@@ -4605,7 +4604,7 @@ static int cmd_debug_continue(RCore *core, const char *input) {
 		break;
 	case 'r': // "dcr"
 		if (input[2] == '?') {
-			r_core_cmd_help_match (core, help_msg_dc, "dcr", true)l
+			r_core_cmd_help_match (core, help_msg_dc, "dcr", true);
 		} else {
 			r_reg_arena_swap (core->dbg->reg, true);
 			r_debug_continue_until_optype (core->dbg, R_ANAL_OP_TYPE_RET, 1);

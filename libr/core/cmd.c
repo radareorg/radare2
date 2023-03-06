@@ -944,7 +944,7 @@ static void cmd_remote(RCore *core, const char *input, bool retry) {
 		return;
 	}
 	if (*input == '?') {
-		r_core_cmd_help (core, help_msg_equal, "=r");
+		r_core_cmd_help_match (core, help_msg_equal, "=r", true);
 		return;
 	}
 	char *host = strdup (input);
@@ -2072,7 +2072,7 @@ static int cmd_table(void *data, const char *input) {
 		break;
 	case '.': // ",."
 		if (R_STR_ISEMPTY (input + 1)) {
-			r_core_cmd_help (core, help_msg_comma, ",.", true);
+			r_core_cmd_help_match (core, help_msg_comma, ",.", true);
 		} else {
 			const char *file = r_str_trim_head_ro (input + 1);
 			if (*file == '$' && !file[1]) {
@@ -2504,7 +2504,7 @@ static int cmd_kuery(void *data, const char *input) {
 			}
 			free (fn);
 		} else {
-			r_core_cmd_help_match (core, help_msg_kd, true);
+			r_core_cmd_help_match (core, help_msg_k, "kd", true);
 		}
 		break;
 	case '?':
@@ -3180,7 +3180,7 @@ static int cmd_last(void *data, const char *input) {
 		r_cons_last ();
 		break;
 	default:
-		r_core_cmd_help (core, help_msg_last);
+		r_core_cmd_help ((RCore *)data, help_msg_last);
 	}
 	return 0;
 }

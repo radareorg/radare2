@@ -2,7 +2,7 @@
 
 #include <r_core.h>
 
-static RCoreHelpMessage help_message_ecH = {
+static RCoreHelpMessage help_msg_ecH = {
 	"Usage ecH[iw-?]","","",
 	"ecHi","[color]","highlight current instruction with 'color' background",
 	"ecHw","[word] [color]","highlight 'word ' in current instruction with 'color' background",
@@ -591,7 +591,7 @@ static int cmd_eval(void *data, const char *input) {
 			char** argv = r_str_argv (r_str_trim_head_ro (input + delta), &argc);
 			switch (input[2]) {
 			case '?':
-				r_core_cmd_help (core, help_message_ecH);
+				r_core_cmd_help (core, help_msg_ecH);
 				r_str_argv_free (argv);
 				return false;
 			case '-': // ecH-

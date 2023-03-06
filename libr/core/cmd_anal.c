@@ -4504,8 +4504,6 @@ static int cmd_af(RCore *core, const char *input) {
 			break;
 		case 'l': // "afil"
 			if (input[3] == '?') {
-				// TODO #7967 help refactor
-				help_msg_afll[1] = "afil";
 				r_core_cmd_help (core, help_msg_afll);
 				break;
 			}
@@ -4693,8 +4691,6 @@ static int cmd_af(RCore *core, const char *input) {
 			break;
 		case 'l': // "afll"
 			if (input[3] == '?') {
-				// TODO #7967 help refactor
-				help_msg_afll[1] = "afll";
 				r_core_cmd_help (core, help_msg_afll);
 				break;
 			}

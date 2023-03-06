@@ -3236,7 +3236,7 @@ static RCoreHelpMessage help_visual_anal_keys = {
 	NULL
 };
 
-static void r_core_vmenu_append_help(RStrBuf *p, const char **help) {
+static void r_core_vmenu_append_help(RStrBuf *p, RCoreHelpMessage help) {
 	int i;
 	RConsContext *cons_ctx = r_cons_singleton ()->context;
 	const char *pal_args_color = cons_ctx->color_mode ? cons_ctx->pal.args : "",
