@@ -618,8 +618,7 @@ static int cmd_info(void *data, const char *input) {
 				break;
 			case '?':
 			default:
-				eprintf ("Usage: ik [sdb-query]\n");
-				eprintf ("Usage: ik*    # load all header information\n");
+				r_core_cmd_help_match (core, help_msg_i, "ik", false);
 			}
 			goto done;
 		}
@@ -1256,9 +1255,8 @@ static int cmd_info(void *data, const char *input) {
 		case 'c': // "ic"
 			// XXX this is dupe of cbin.c:bin_classes()
 			if (input[1] == '?') {
-				eprintf ("Usage: ic[glbjqc**] [class-index or name]\n");
+				r_core_cmd_help_match (core, help_msg_i, "ic", false);
 			} else if (input[1] == ',') { // "ic,"
-				// ic,
 				cmd_ic_comma (core, input);
 			} else if (input[1] == 'g') { // "icg"
 				RBinClass *cls;
@@ -1497,7 +1495,7 @@ static int cmd_info(void *data, const char *input) {
 			break;
 		case 'D': // "iD"
 			if (input[1] != ' ' || !demangle (core, input + 2)) {
-				eprintf ("Usage: iD lang symbolname\n");
+				r_core_cmd_help_match (core, help_msg_i, "iD", true);
 			}
 			return 0;
 		case 'a': // "ia"
