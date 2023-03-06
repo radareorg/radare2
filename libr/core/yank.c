@@ -384,6 +384,7 @@ R_API int r_core_yank_hud_path(RCore *core, const char *input, int dir) {
 
 R_API void r_core_yank_unset(RCore *core) {
 	r_buf_free (core->yank_buf);
+	core->yank_buf = NULL;
 	core->yank_addr = UT64_MAX;
 }
 

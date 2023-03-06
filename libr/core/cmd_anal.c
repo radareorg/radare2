@@ -3271,7 +3271,7 @@ static int cmd_afbplus(RCore *core, const char *input) {
 		fcnaddr = r_num_math (core->num, r_str_word_get0 (ptr, 0));
 	}
 	fcn = r_anal_get_function_at (core->anal, fcnaddr);
-	if (fcn) {
+	if (fcn && size > 0) {
 		if (!r_anal_function_add_bb (core->anal, fcn, addr, size, jump, fail, diff)) {
 			R_LOG_ERROR ("afb+: Cannot add basic block at 0x%08"PFMT64x" with size %d", addr, (int)size);
 		}

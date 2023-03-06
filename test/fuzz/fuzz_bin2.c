@@ -17,8 +17,8 @@ static void usage() {
 
 int LLVMFuzzerInitialize(int *lf_argc, char ***lf_argv) {
 	r_sys_clearenv ();
-	r_sandbox_enable (true);
-	r_sandbox_grain (R_SANDBOX_GRAIN_NONE);
+	// r_sandbox_enable (true);
+	// r_sandbox_grain (R_SANDBOX_GRAIN_NONE);
 	r_log_set_quiet (true);
 
 	int argc = *lf_argc;
