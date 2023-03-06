@@ -392,6 +392,9 @@ static bool r_bin_xtac_read_xtac_linked_list(RBinXtacObj *bin) {
 	}
 	RBinXtacLinkedListEntry *entry = NULL;
 	ut32 p_xtac_linked_list_entry = bin->header->ptr_to_xtac_linked_list_head;
+	if (p_xtac_linked_list_entry > bin->size) {
+		return false;
+	}
 	do {
 		ut32 p_buffer = p_xtac_linked_list_entry;
 
@@ -426,7 +429,7 @@ static bool r_bin_xtac_read_xtac_linked_list(RBinXtacObj *bin) {
 
 		r_list_append (bin->xtac_linked_list, entry);
 		int a = entry->meta_and_offset;
-		if (a < 1) {
+		if (a < 1 || a > 0xfff) {
 			break;
 		}
 		p_xtac_linked_list_entry += (a * 4);

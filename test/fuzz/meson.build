@@ -1,6 +1,7 @@
 if get_option('enable_libfuzzer')
   targets = [
     'bin',
+    'bin2',
     'dwarf',
     'bin_demangle',
     'ia',
