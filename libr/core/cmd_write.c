@@ -1004,11 +1004,14 @@ static int cmd_we(void *data, const char *input) {
 		break;
 	case 'N': // "weN"
 		if (input[1] == ' ') {
-			input += 2;
-			while (*input && *input == ' ') input++;
+			input = r_str_trim_head_ro (input + 2);
 			addr = r_num_math (core->num, input);
-			while (*input && *input != ' ') input++;
-			input++;
+			while (*input && *input != ' ') {
+				input++;
+			}
+			if (*input) {
+				input++;
+			}
 			len = *input ? r_num_math (core->num, input) : 0;
 			if (len > 0) {
 				ut64 cur_off = core->offset;
