@@ -1,6 +1,7 @@
-/* radare - LGPL - Copyright 2009-2022 - pancake, h4ng3r */
+/* radare - LGPL - Copyright 2009-2023 - pancake, h4ng3r */
 
-#include <r_types.h>
+#define R_LOG_ORIGIN "dex"
+
 #include <r_util.h>
 #include "dex.h"
 
@@ -389,6 +390,14 @@ RBinDexObj *r_bin_dex_new_buf(RBuffer *buf, bool verbose) {
 		types_size = dex->size - dexhdr->types_offset;
 	}
 	if (types_size < 0) {
+		free (dex->strings);
+		free (dex->classes);
+		free (dex->methods);
+		free (dex->types);
+		goto fail;
+	}
+	if (types_size > dex->size) {
+		R_LOG_DEBUG ("oom prevented in huge types section %d / %d", types_size, dex->size);
 		free (dex->strings);
 		free (dex->classes);
 		free (dex->methods);
