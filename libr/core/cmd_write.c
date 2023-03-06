@@ -2082,9 +2082,9 @@ static int cmd_wX(void *data, const char *input) {
 	if (!buf) {
 		return 0;
 	}
-	len = r_hex_str2bin (input, buf);
-	if (len > 0) {
-		r_mem_copyloop (core->block, buf, core->blocksize, len);
+	int slen = r_hex_str2bin (input, buf);
+	if (slen > 0) {
+		r_mem_copyloop (core->block, buf, core->blocksize, slen);
 		if (!r_core_write_at (core, core->offset, core->block, core->blocksize)) {
 			cmd_write_fail (core);
 		} else {
