@@ -440,7 +440,7 @@ static int cmd_eval(void *data, const char *input) {
 		break;
 	case 'n': // "en" "env"
 		if (strchr (input, '?')) {
-			r_core_cmd_help_match_spec (core, help_msg_e, "en", 0, false);
+			r_core_cmd_help_match (core, help_msg_e, "en", false);
 			break;
 		} else if (!strchr (input, '=')) {
 			const char *var = strchr (input, ' ');
