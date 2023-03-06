@@ -60,7 +60,7 @@ static RCoreHelpMessage help_msg_f = {
 	"fO", " [glob]", "flag as ordinals (sym.* func.* method.*)",
 	//" fc [name] [cmt]  ; set execution command for a specific flag"
 	"fr"," [[old]] [new]","rename flag (if no new flag current seek one is used)",
-	"fR","[?] [f] [t] [m]","relocate all flags matching f&~m 'f'rom, 't'o, 'm'ask",
+	"fR","[?] [from] [to] [mask]","relocate all flags matching from&~m,
 	"fs","[?]+-*","manage flagspaces",
 	"ft","[?]*","flag tags, useful to find all flags matching some words",
 	"fV","[*-] [nkey] [offset]","dump/restore visual marks (mK/'K)",
@@ -134,12 +134,12 @@ static RCoreHelpMessage help_msg_fs = {
 
 static RCoreHelpMessage help_msg_fz = {
 	"Usage: f", "[?|-name| name] [@addr]", " # Manage flagzones",
-	" fz", " math", "add new flagzone named 'math'",
-	" fz-", "math", "remove the math flagzone",
-	" fz-", "*", "remove all flagzones",
-	" fz.", "", "show around flagzone context",
-	" fz:", "", "show what's in scr.flagzone for visual",
-	" fz*", "", "dump into r2 commands, for projects",
+	"fz", " math", "add new flagzone named 'math'",
+	"fz-", "math", "remove the math flagzone",
+	"fz-", "*", "remove all flagzones",
+	"fz.", "", "show around flagzone context",
+	"fz:", "", "show what's in scr.flagzone for visual",
+	"fz*", "", "dump into r2 commands, for projects",
 	NULL
 };
 
@@ -879,7 +879,7 @@ rep:
 				eprintf ("Cannot find flag '%s'\n", name);
 			}
 		} else {
-			eprintf ("Usage: fa flagname flagalias\n");
+			r_core_cmd_help_match (core, help_msg_f, "fa", true);
 		}
 		break;
 	case 'V': // visual marks
@@ -911,7 +911,7 @@ rep:
 	case 'R': // "fR"
 		switch (*str) {
 		case '\0':
-			eprintf ("Usage: fR [from] [to] ([mask])\n");
+			r_core_cmd_help_match (core, help_msg_f, "fR", true);
 			eprintf ("Example to relocate PIE flags on debugger:\n"
 				" > fR entry0 `dm~:1[1]`\n");
 			break;
@@ -935,7 +935,7 @@ rep:
 					ret = r_flag_relocate (core->flags, from, mask, to);
 					eprintf ("Relocated %d flags\n", ret);
 				} else {
-					eprintf ("Usage: fR [from] [to] ([mask])\n");
+					r_core_cmd_help_match (core, help_msg_f, "fR", true);
 					eprintf ("Example to relocate PIE flags on debugger:\n"
 						" > fR entry0 `dm~:1[1]`\n");
 				}
@@ -964,7 +964,7 @@ rep:
 				core->flags->base);
 			break;
 		default:
-			eprintf ("Usage: fb [addr] [[flags*]]\n");
+			r_core_cmd_help_match (core, help_msg_f, "fb", true);
 			break;
 		}
 		break;
@@ -1126,10 +1126,14 @@ rep:
 		break;
 	case 'l': // "fl"
 		if (input[1] == '?') { // "fl?"
-			eprintf ("Usage: fl[a] [flagname] [flagsize]\n");
+			r_core_cmd_help_match (core, help_msg_f, "fl", false);
 		} else if (input[1] == 'a') { // "fla"
 			// TODO: we can optimize this if core->flags->flags is sorted by flagitem->offset
-			char *glob = strchr (input, ' ');
+			char *glob;
+			if (input[2] == '?') { // "fla?"
+				r_core_cmd_help_match (core, help_msg_f, "fla", true);
+			}
+			glob = strchr (input, ' ');
 			if (glob) {
 				glob++;
 			}
@@ -1218,7 +1222,7 @@ rep:
 				r_flag_space_rename (core->flags, NULL, newname);
 				free (newname);
 			} else {
-				eprintf ("Usage: fsr [newname]\n");
+				r_core_cmd_help_match (core, help_msg_fs, "fsr", true);
 			}
 			break;
 		case 's': // "fss"
@@ -1401,7 +1405,7 @@ rep:
 			}
 			free (p);
 		} else {
-			eprintf ("Usage: fC [name] [comment]\n");
+			r_core_cmd_help_match (core, help_msg_f, "fC", true);
 		}
 		break;
 	case 'o': // "fo"
