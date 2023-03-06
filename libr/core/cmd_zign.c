@@ -182,7 +182,7 @@ static inline bool za_add(RCore *core, const char *input) {
 static int cmdAdd(void *data, const char *input) {
 	RCore *core = (RCore *)data;
 	if (*input && input[1] == '?') {
-		char two[2] = {input[0], input[1]};
+		char two[3] = { input[0], input[1], 0 };
 		r_core_cmd_help_match (core, help_msg_za, two, false);
 		return 0;
 	}
