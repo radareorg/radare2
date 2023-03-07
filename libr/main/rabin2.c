@@ -278,58 +278,57 @@ static int rabin_dump_symbols(RBin *bin, int len) {
 }
 
 static bool __dumpSections(RBin *bin, const char *scnname, const char *output, const char *file, bool raw) {
-	RList *sections;
 	RListIter *iter;
 	RBinSection *section;
-	ut8 *buf;
-	char *ret;
-	int r;
-
-	if (!(sections = r_bin_get_sections (bin))) {
+	RList *sections = r_bin_get_sections (bin);
+	if (!sections || r_list_empty (sections)) {
+		R_LOG_WARN ("No sections to dump");
 		return false;
 	}
 
 	r_list_foreach (sections, iter, section) {
-		if (r_str_glob (section->name, scnname)) {
-			if (!(buf = malloc (section->size))) {
-				return false;
-			}
-			if ((section->size * 2) + 1 < section->size) {
-				free (buf);
-				return false;
-			}
-			if (!(ret = malloc (section->size*2+1))) {
-				free (buf);
-				return false;
-			}
-			if (section->paddr > r_buf_size (bin->cur->buf) ||
-				section->paddr + section->size > r_buf_size (bin->cur->buf)) {
-				free (buf);
-				free (ret);
-				return false;
-			}
-			r = r_buf_read_at (bin->cur->buf, section->paddr,
-					buf, section->size);
-			if (r < 1) {
-				free (buf);
-				free (ret);
-				return false;
-			}
-			//it does mean the user specified an output file
-			if (strcmp (output, file)) {
-				r_file_dump (output, buf, section->size, 0);
-			} else {
-				if (raw) {
-					write (1, buf, section->size);
-				} else {
-					r_hex_bin2str (buf, section->size, ret);
-					printf ("%s\n", ret);
-				}
-			}
+		if (!r_str_glob (section->name, scnname)) {
+			continue;
+		}
+		const size_t ss = section->size;
+		if ((ss * 2) + 1 < ss) {
+			return false;
+		}
+		ut8 *buf = malloc (ss);
+		char *ret = malloc (ss * 2 + 1);
+		if (R_UNLIKELY (!buf || !ret)) {
 			free (buf);
 			free (ret);
-			break;
+			return false;
 		}
+		if (section->paddr > r_buf_size (bin->cur->buf) ||
+			section->paddr + ss > r_buf_size (bin->cur->buf)) {
+			free (buf);
+			free (ret);
+			return false;
+		}
+		int r = r_buf_read_at (bin->cur->buf, section->paddr, buf, ss);
+		if (r < 1) {
+			free (buf);
+			free (ret);
+			return false;
+		}
+		//it does mean the user specified an output file
+		if (strcmp (output, file)) {
+			r_file_dump (output, buf, ss, 0);
+		} else {
+			if (raw) {
+				if (write (1, buf, ss) != ss) {
+					R_LOG_WARN ("write truncated");
+				}
+			} else {
+				r_hex_bin2str (buf, ss, ret);
+				printf ("%s\n", ret);
+			}
+		}
+		free (buf);
+		free (ret);
+		break;
 	}
 	return true;
 }

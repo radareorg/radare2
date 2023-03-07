@@ -2782,7 +2782,8 @@ static void fill_exports_list(struct MACH0_(obj_t) *bin, const char *name, ut64 
 const RList *MACH0_(get_symbols_list)(struct MACH0_(obj_t) *bin) {
 	struct symbol_t *symbols;
 	size_t i, j, s, symbols_size, symbols_count;
-	ut32 to, from;
+	ut32 to = UT32_MAX;
+	ut32 from = UT32_MAX;
 
 	r_return_val_if_fail (bin, NULL);
 	if (bin->symbols_cache) {
@@ -2812,7 +2813,7 @@ const RList *MACH0_(get_symbols_list)(struct MACH0_(obj_t) *bin) {
 	/* parse dynamic symbol table */
 	symbols_count = (bin->dysymtab.nextdefsym + \
 			bin->dysymtab.nlocalsym + \
-			bin->dysymtab.nundefsym );
+			bin->dysymtab.nundefsym);
 	symbols_count += bin->nsymtab;
 	ut64 tmp = symbols_count + 1;
 	if (SZT_MUL_OVFCHK (symbols_count + 1, 2)) {
@@ -2994,9 +2995,12 @@ static void assign_export_symbol_t(struct MACH0_(obj_t) *bin, const char *name, 
 }
 
 const struct symbol_t *MACH0_(get_symbols)(struct MACH0_(obj_t) *bin) {
+	r_return_val_if_fail (bin, NULL);
 	struct symbol_t *symbols;
-	int j, s, stridx, symbols_size, symbols_count;
-	ut32 to, from, i;
+	int j = 0, s, stridx, symbols_size, symbols_count;
+	ut32 to = UT32_MAX;
+	ut32 from = UT32_MAX;
+	ut32 i;
 
 	if (bin->symbols) {
 		return bin->symbols;
@@ -3007,7 +3011,6 @@ const struct symbol_t *MACH0_(get_symbols)(struct MACH0_(obj_t) *bin) {
 		return NULL;
 	}
 
-	r_return_val_if_fail (bin, NULL);
 	int n_exports = walk_exports (bin, NULL, NULL);
 
 	symbols_count = n_exports;
