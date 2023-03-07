@@ -3533,7 +3533,7 @@ static int agraph_print(RAGraph *g, int is_interactive, RCore *core, RAnalFuncti
 			mustFlush = true;
 		}
 		if (core && core->scr_gadgets) {
-			r_core_cmd0 (core, "pg");
+			r_core_cmd_call (core, "pg");
 		}
 		if (mustFlush) {
 			r_cons_flush ();
@@ -3595,7 +3595,7 @@ static int agraph_refresh(struct agraph_refresh_data *grd) {
 		addr = r_anal_get_bbaddr (core->anal, addr);
 		char *title = get_title (addr);
 		if (!acur || strcmp (acur->title, title)) {
-			r_core_cmd0 (core, "sr PC");
+			r_core_cmd_call (core, "sr PC");
 		}
 		free (title);
 		g->is_instep = false;
@@ -3609,7 +3609,7 @@ static int agraph_refresh(struct agraph_refresh_data *grd) {
 					if (!r_cons_yesno ('y', "\rNo function at 0x%08"PFMT64x". Define it here (Y/n)? ", core->offset)) {
 						return 0;
 					}
-					r_core_cmd0 (core, "af");
+					r_core_cmd_call (core, "af");
 				}
 				f = r_anal_get_fcn_in (core->anal, core->offset, 0);
 				g->need_reload_nodes = true;
@@ -4041,15 +4041,8 @@ static void goto_asmqjmps(RAGraph *g, RCore *core) {
 static void seek_to_node(RANode *n, RCore *core) {
 	ut64 off = r_anal_get_bbaddr (core->anal, core->offset);
 	char *title = get_title (off);
-
 	if (title && strcmp (title, n->title)) {
-		char *cmd = r_str_newf ("s %s", n->title);
-		if (cmd) {
-			if (*cmd) {
-				r_core_cmd0 (core, cmd);
-			}
-			free (cmd);
-		}
+		r_core_cmdf (core, "s %s", n->title);
 	}
 	free (title);
 }
@@ -4656,22 +4649,22 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 				g->need_reload_nodes = true;
 			}
 			// TODO: toggle shortcut hotkeys
-			if (r_config_get_i (core->config, "asm.hint.call")) {
-				r_core_cmd0 (core, "e!asm.hint.call");
-				r_core_cmd0 (core, "e!asm.hint.jmp");
-			} else if (r_config_get_i (core->config, "asm.hint.jmp")) {
-				r_core_cmd0 (core, "e!asm.hint.jmp");
-				r_core_cmd0 (core, "e!asm.hint.lea");
-			} else if (r_config_get_i (core->config, "asm.hint.lea")) {
-				r_core_cmd0 (core, "e!asm.hint.lea");
-				r_core_cmd0 (core, "e!asm.hint.call");
+			if (r_config_get_b (core->config, "asm.hint.call")) {
+				r_core_cmd_call (core, "e!asm.hint.call");
+				r_core_cmd_call (core, "e!asm.hint.jmp");
+			} else if (r_config_get_b (core->config, "asm.hint.jmp")) {
+				r_core_cmd_call (core, "e!asm.hint.jmp");
+				r_core_cmd_call (core, "e!asm.hint.lea");
+			} else if (r_config_get_b (core->config, "asm.hint.lea")) {
+				r_core_cmd_call (core, "e!asm.hint.lea");
+				r_core_cmd_call (core, "e!asm.hint.call");
 			}
 			break;
 		case 'R':
-			if (r_config_get_i (core->config, "scr.randpal")) {
-				r_core_cmd0 (core, "ecr");
+			if (r_config_get_b (core->config, "scr.randpal")) {
+				r_core_cmd_call (core, "ecr");
 			} else {
-				r_core_cmd0 (core, "ecn");
+				r_core_cmd_call (core, "ecn");
 			}
 			g->edgemode = r_config_get_i (core->config, "graph.edges");
 			fcn = r_anal_get_fcn_in (core->anal, core->offset, 0);
@@ -4812,7 +4805,7 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 			break;
 		case 'j':
 			if (g->is_dis) {
-				r_core_cmd0 (core, "so 1");
+				r_core_cmd_call (core, "so 1");
 			} else {
 				if (graphCursor) {
 					int speed = (okey == 27)? PAGEKEY_SPEED: movspeed;
@@ -4825,7 +4818,7 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 			break;
 		case 'k':
 			if (g->is_dis) {
-				r_core_cmd0 (core, "so -1");
+				r_core_cmd_call (core, "so -1");
 			} else {
 				if (graphCursor) {
 					int speed = (okey == 27)? PAGEKEY_SPEED: movspeed;
@@ -4935,8 +4928,8 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 			break;
 		case R_CONS_KEY_F2:
 			cmd = r_config_get (core->config, "key.f2");
-			if (cmd && *cmd) {
-				(void) r_core_cmd0 (core, cmd);
+			if (R_STR_ISNOTEMPTY (cmd)) {
+				r_core_cmd0 (core, cmd);
 				g->need_reload_nodes = true;
 			} else {
 				graph_breakpoint (core);
@@ -4944,22 +4937,22 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 			break;
 		case R_CONS_KEY_F3:
 			cmd = r_config_get (core->config, "key.f3");
-			if (cmd && *cmd) {
-				(void) r_core_cmd0 (core, cmd);
+			if (R_STR_ISNOTEMPTY (cmd)) {
+				r_core_cmd0 (core, cmd);
 				g->need_reload_nodes = true;
 			}
 			break;
 		case R_CONS_KEY_F4:
 			cmd = r_config_get (core->config, "key.f4");
-			if (cmd && *cmd) {
-				(void) r_core_cmd0 (core, cmd);
+			if (R_STR_ISNOTEMPTY (cmd)) {
+				r_core_cmd0 (core, cmd);
 				g->need_reload_nodes = true;
 			}
 			break;
 		case R_CONS_KEY_F5:
 			cmd = r_config_get (core->config, "key.f5");
-			if (cmd && *cmd) {
-				(void)r_core_cmd0 (core, cmd);
+			if (R_STR_ISNOTEMPTY (cmd)) {
+				r_core_cmd0 (core, cmd);
 				g->need_reload_nodes = true;
 			}
 			break;
@@ -4972,7 +4965,7 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 			break;
 		case R_CONS_KEY_F7:
 			cmd = r_config_get (core->config, "key.f7");
-			if (cmd && *cmd) {
+			if (R_STR_ISNOTEMPTY (cmd)) {
 				(void)r_core_cmd0 (core, cmd);
 				g->need_reload_nodes = true;
 			} else {
@@ -4981,7 +4974,7 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 			break;
 		case R_CONS_KEY_F8:
 			cmd = r_config_get (core->config, "key.f8");
-			if (cmd && *cmd) {
+			if (R_STR_ISNOTEMPTY (cmd)) {
 				(void)r_core_cmd0 (core, cmd);
 				g->need_reload_nodes = true;
 			} else {
@@ -4990,7 +4983,7 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 			break;
 		case R_CONS_KEY_F9:
 			cmd = r_config_get (core->config, "key.f9");
-			if (cmd && *cmd) {
+			if (R_STR_ISNOTEMPTY (cmd)) {
 				(void)r_core_cmd0 (core, cmd);
 				g->need_reload_nodes = true;
 			} else {
@@ -4999,21 +4992,21 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 			break;
 		case R_CONS_KEY_F10:
 			cmd = r_config_get (core->config, "key.f10");
-			if (cmd && *cmd) {
+			if (R_STR_ISNOTEMPTY (cmd)) {
 				(void)r_core_cmd0 (core, cmd);
 				g->need_reload_nodes = true;
 			}
 			break;
 		case R_CONS_KEY_F11:
 			cmd = r_config_get (core->config, "key.f11");
-			if (cmd && *cmd) {
+			if (R_STR_ISNOTEMPTY (cmd)) {
 				(void)r_core_cmd0 (core, cmd);
 				g->need_reload_nodes = true;
 			}
 			break;
 		case R_CONS_KEY_F12:
 			cmd = r_config_get (core->config, "key.f12");
-			if (cmd && *cmd) {
+			if (R_STR_ISNOTEMPTY (cmd)) {
 				(void)r_core_cmd0 (core, cmd);
 				g->need_reload_nodes = true;
 			}

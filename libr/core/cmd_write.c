@@ -343,7 +343,7 @@ static int cmd_wo(void *data, const char *input) {
 		r_core_block_read (core);
 		break;
 	case 'R':
-		r_core_cmd0 (core, "wr $b");
+		r_core_cmd_call (core, "wr $b");
 		break;
 	case 'n':
 		r_core_write_op (core, "ff", 'x');
@@ -1926,7 +1926,7 @@ repeat:
 					goto repeat;
 				}
 				r_anal_op_fini (&analop);
-				r_core_cmd0 (core, "wao nop");
+				r_core_cmd_call (core, "wao nop");
 				input++;
 			} else if (input[0] == 'i') { // "wai"
 				RAnalOp analop;
@@ -1943,7 +1943,7 @@ repeat:
 					break;
 				}
 				r_anal_op_fini (&analop);
-				r_core_cmd0 (core, "wao nop");
+				r_core_cmd_call (core, "wao nop");
 			}
 			if (acode->len > 0) {
 				char* hex = r_asm_code_get_hex (acode);

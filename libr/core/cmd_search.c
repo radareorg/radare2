@@ -1790,7 +1790,7 @@ static void do_esil_search(RCore *core, struct search_parameters *param, const c
 	const int stats = r_config_get_i (core->config, "esil.stats");
 	if (!core->anal->esil) {
 		// initialize esil vm
-		r_core_cmd0 (core, "aei");
+		r_core_cmd_call (core, "aei");
 		if (!core->anal->esil) {
 			core->anal->esil = r_esil_new (stacksize, iotrap, addrsize);
 			R_LOG_ERROR ("Cannot initialize the ESIL vm");
@@ -2364,7 +2364,7 @@ static void do_unkjmp_search(RCore *core, struct search_parameters *param, bool 
 	}
 	if (!core->anal->esil) {
 		// initialize esil vm
-		r_core_cmd0 (core, "aei");
+		r_core_cmd_call (core, "aei");
 		if (!core->anal->esil) {
 			R_LOG_ERROR ("Cannot initialize the ESIL vm");
 			return;
@@ -2618,10 +2618,10 @@ static bool do_anal_search(RCore *core, struct search_parameters *param, const c
 				}
 				break;
 			case 's': // "als"
-				r_core_cmd0 (core, "asl");
+				r_core_cmd_call (core, "asl");
 				break;
 			case 0:
-				r_core_cmd0 (core, "aoml");
+				r_core_cmd_call (core, "aoml");
 				break;
 			default:
 				R_LOG_ERROR ("Unknown command");
@@ -4062,7 +4062,7 @@ reread:
 			break;
 		case 's': // "/asl"
 			if (input[2] == 'l') { // "asl"
-				r_core_cmd0 (core, "asl");
+				r_core_cmd_call (core, "asl");
 			} else { // "/as" "/asj"
 				do_syscall_search (core, &param);
 			}

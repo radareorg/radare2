@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2019-2021 - pancake, thestr4ng3r */
+/* radare - LGPL - Copyright 2019-2023 - pancake, thestr4ng3r */
 
 #include <r_anal.h>
 #include <r_hash.h>
@@ -100,7 +100,7 @@ void __block_free_rb(RBNode *node, void *user) {
 
 R_API void r_anal_block_reset(RAnal *a) {
 	if (a->bb_tree) {
-		 r_rbtree_free (a->bb_tree, __block_free_rb, NULL);
+		r_rbtree_free (a->bb_tree, __block_free_rb, NULL);
 		a->bb_tree = NULL;
 	}
 }
@@ -182,10 +182,9 @@ R_API void r_anal_blocks_foreach_intersect(RAnal *anal, ut64 addr, ut64 size, RA
 
 R_API RList *r_anal_get_blocks_intersect(RAnal *anal, ut64 addr, ut64 size) {
 	RList *list = r_list_newf ((RListFree)r_anal_block_unref);
-	if (!list) {
-		return NULL;
+	if (R_LIKELY (list)) {
+		r_anal_blocks_foreach_intersect (anal, addr, size, block_list_cb, list);
 	}
-	r_anal_blocks_foreach_intersect (anal, addr, size, block_list_cb, list);
 	return list;
 }
 
@@ -195,11 +194,9 @@ R_API RAnalBlock *r_anal_create_block(RAnal *anal, ut64 addr, ut64 size) {
 	}
 	R_CRITICAL_ENTER (anal);
 	RAnalBlock *block = block_new (anal, addr, size);
-	if (!block) {
-		R_CRITICAL_LEAVE (anal);
-		return NULL;
+	if (block) {
+		r_rbtree_aug_insert (&anal->bb_tree, &block->addr, &block->_rb, __bb_addr_cmp, NULL, __max_end);
 	}
-	r_rbtree_aug_insert (&anal->bb_tree, &block->addr, &block->_rb, __bb_addr_cmp, NULL, __max_end);
 	R_CRITICAL_LEAVE (anal);
 	return block;
 }
