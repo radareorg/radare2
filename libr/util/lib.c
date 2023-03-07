@@ -240,7 +240,7 @@ R_API int r_lib_close(RLib *lib, const char *file) {
 			free (p->file);
 			r_list_delete (lib->plugins, iter);
 #if R2_590
-			{		
+			{
 				const char *fileName = r_str_rstr (file, R_SYS_DIR);
 				if (fileName) {
 					ht_pp_delete (lib->plugins_ht, fileName + 1);
@@ -374,7 +374,6 @@ R_API int r_lib_open_ptr(RLib *lib, const char *file, void *handler, RLibStruct 
 			ht_pp_insert (lib->plugins_ht, strdup (fileName), p);
 		}
 #endif
-		
 	}
 	return ret;
 }
