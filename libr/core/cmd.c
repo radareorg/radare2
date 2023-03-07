@@ -5274,9 +5274,7 @@ R_API int r_core_cmd_foreach3(RCore *core, const char *cmd, char *each) { // "@@
 				free (arg);
 			}
 		} else {
-			// XXX Needs help_msg_at_at_at in proper format
-			// r_core_cmd_help_match (core, help_msg_at_at_at, "@@@c", true);
-			eprintf ("Usage: @@@c:command   # same as @@@=`command`\n");
+			r_core_cmd_help (core, help_msg_at_at_at);
 		}
 		break;
 	case 'C':
