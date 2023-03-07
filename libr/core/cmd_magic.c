@@ -9,7 +9,7 @@ static R_TH_LOCAL char *ofile = NULL;
 
 #define MAX_MAGIC_DEPTH 64
 
-static int r_core_magic_at(RCore *core, RSearchKeyword *kw, const char *file, ut64 addr, int depth, int v, PJ *pj, int *hits) {
+static int r_core_magic_at(RCore *core, RSearchKeyword *kw, const char *file, ut64 addr, int depth, bool v, PJ *pj, int *hits) {
 	const char *fmt;
 	char *q, *p;
 	const char *str;
@@ -22,7 +22,6 @@ static int r_core_magic_at(RCore *core, RSearchKeyword *kw, const char *file, ut
 		return 0;
 	}
 
-	depth++;
 	if (depth > MAX_MAGIC_DEPTH) {
 		ret = 0;
 		goto seek_exit;
@@ -175,7 +174,7 @@ static int r_core_magic_at(RCore *core, RSearchKeyword *kw, const char *file, ut
 					if (R_STR_ISEMPTY (fmt)) {
 						fmt = file;
 					}
-					r_core_magic_at (core, kw, fmt, addr, depth, 1, pj, hits);
+					r_core_magic_at (core, kw, fmt, addr, depth + 1, true, pj, hits);
 					*q = '@';
 				}
 				break;
