@@ -4385,7 +4385,8 @@ reread:
 					if (r_cons_is_breaked ()) {
 						break;
 					}
-					ret = r_core_magic_at (core, kw, file, addr, 99, false, param.outmode == R_MODE_JSON? param.pj: NULL, &hits);
+					ret = r_core_magic_at (core, kw, file, addr, 0, false,
+							param.outmode == R_MODE_JSON? param.pj: NULL, &hits);
 					if (ret == -1) {
 						// something went terribly wrong.
 						break;
@@ -4418,7 +4419,7 @@ reread:
 				r_search_pattern_size (search, ps);
 				dosearch_read = true;
 			} else {
-				eprintf ("Invalid pattern size (must be > 0)\n");
+				R_LOG_ERROR ("Invalid pattern size (must be > 0)");
 			}
 		}
 		break;

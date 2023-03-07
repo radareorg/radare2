@@ -35,7 +35,7 @@ FILE=bins/elf/ioli/crackme0x00
 ARGS=-n
 CMDS=pm bins/src/olf.magic
 EXPECT=<<EOF
-0x00000000 1 OLF 32-bit LSB
+0x00000000 0 OLF 32-bit LSB
 EOF
 RUN
 
@@ -641,7 +641,7 @@ NAME=/mj test json output
 FILE=bins/elf/analysis/x86-simple
 CMDS=/mj
 EXPECT=<<EOF
-[{"offset":134512640,"depth":1,"info":"ELF 32-bit LSB executable, Intel 80386, version 1"}]
+[{"offset":134512640,"depth":0,"info":"ELF 32-bit LSB executable, Intel 80386, version 1"}]
 EOF
 RUN
 
@@ -1125,7 +1125,7 @@ CMDS=<<EOF
 pm
 EOF
 EXPECT=<<EOF
-0x00000000 1 LZMA BE compressed data dictionary size: 32768 bytes
+0x00000000 0 LZMA BE compressed data dictionary size: 32768 bytes
 EOF
 RUN
 
@@ -1133,7 +1133,7 @@ NAME=pm lzma
 FILE=bins/other/smol.lzma
 CMDS=pm
 EXPECT=<<EOF
-0x00000000 1 LZMA LE compressed data dictionary size: 2162620 bytes
+0x00000000 0 LZMA LE compressed data dictionary size: 2162620 bytes
 EOF
 RUN
 
