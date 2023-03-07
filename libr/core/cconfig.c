@@ -4310,9 +4310,6 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB ("log.file", "", cb_log_config_file, "Save log messages to given filename");
 	SETCB ("scr.tee", "", &cb_teefile, "pipe output to file of this name");
 #endif
-	/* magic */
-	SETI ("magic.depth", 100, "recursivity depth in magic description strings");
-
 	/* rap */
 	SETBPREF ("rap.loop", "true", "run rap as a forever-listening daemon (=:9090)");
 

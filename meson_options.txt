@@ -1,5 +1,5 @@
 option('cli', type: 'feature', value: 'auto', description: 'Build CLI programs ("auto" means they will be built when not a subproject)')
-option('static_runtime', type: 'boolean', value: false)
+option('static_runtime', type: 'boolean', value: false, description: 'Link all libraries statically')
 option('local', type: 'boolean', value: false, description: 'Adds support for local/side-by-side installation (sets rpath if needed)')
 option('blob', type: 'boolean', value: false, description: 'Compile just one binary which dispatch to the right handlers based on the name used to call it')
 option('wasan', type: 'boolean', value: false, description: 'Windows-specific hack to build with asan using msvc')
