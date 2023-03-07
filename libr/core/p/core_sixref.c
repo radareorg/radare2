@@ -216,7 +216,7 @@ static void siguza_xrefs_chunked(RCore *core, ut64 search, int lenbytes) {
 				addref (core, addr, addr + off, R_ANAL_REF_TYPE_CODE);
 				// r_cons_printf ("ax 0x%"PFMT64x" 0x%"PFMT64x"\n", addr + off, addr);
 			} else if (addr + off == search) {
-				const char *cond;
+				const char *cond = "al";
 				switch(v & 0xf)
 				{
 					case 0x0: cond = "eq"; break;
@@ -236,7 +236,7 @@ static void siguza_xrefs_chunked(RCore *core, ut64 search, int lenbytes) {
 					case 0xe: cond = "al"; break;
 					case 0xf: cond = "nv"; break;
 				}
-				r_cons_printf("%#"PFMT64x": b.%s %#"PFMT64x"\n", addr, cond, search);
+				r_cons_printf ("%#"PFMT64x": b.%s %#"PFMT64x"\n", addr, cond, search);
 			}
 		}
 		else if ((v & 0x7e000000) == 0x34000000) // cbz and cbnz
