@@ -1,11 +1,13 @@
-/* radare - LGPL - Copyright 2009-2022 - pancake */
+/* radare - LGPL - Copyright 2009-2023 - pancake */
 
 #include <r_core.h>
 
 #define NAH 32
-static R_TH_LOCAL int magicdepth = 99;
+
 static R_TH_LOCAL RMagic *ck = NULL; // XXX: Use RCore->magic
 static R_TH_LOCAL char *ofile = NULL;
+
+#define MAX_MAGIC_DEPTH 64
 
 static int r_core_magic_at(RCore *core, RSearchKeyword *kw, const char *file, ut64 addr, int depth, int v, PJ *pj, int *hits) {
 	const char *fmt;
@@ -20,7 +22,8 @@ static int r_core_magic_at(RCore *core, RSearchKeyword *kw, const char *file, ut
 		return 0;
 	}
 
-	if (--depth < 0) {
+	depth++;
+	if (depth > MAX_MAGIC_DEPTH) {
 		ret = 0;
 		goto seek_exit;
 	}
@@ -137,15 +140,15 @@ static int r_core_magic_at(RCore *core, RSearchKeyword *kw, const char *file, ut
 		// TODO: This must be a callback .. move this into RSearch?
 		if (!pj) {
 			if (kw) {
-				r_cons_printf ("0x%08" PFMT64x " %d %s %s\n", addr + adelta, magicdepth - depth, flag, p);
+				r_cons_printf ("0x%08" PFMT64x " %d %s %s\n", addr + adelta, depth, flag, p);
 				R_FREE (flag);
 			} else {
-				r_cons_printf ("0x%08" PFMT64x " %d %s\n", addr + adelta, magicdepth - depth, p);
+				r_cons_printf ("0x%08" PFMT64x " %d %s\n", addr + adelta, depth, p);
 			}
 		} else {
 			pj_o (pj);
 			pj_kN (pj, "offset", addr + adelta);
-			pj_ki (pj, "depth", magicdepth - depth);
+			pj_ki (pj, "depth", depth);
 			pj_ks (pj, "info", p);
 			pj_end (pj);
 		}
@@ -153,7 +156,7 @@ static int r_core_magic_at(RCore *core, RSearchKeyword *kw, const char *file, ut
 		if (must_report_progress) {
 			r_cons_clear_line (1);
 		}
-		//eprintf ("0x%08"PFMT64x" 0x%08"PFMT64x" %d %s\n", addr+adelta, addr+adelta, magicdepth-depth, p);
+		//eprintf ("0x%08"PFMT64x" 0x%08"PFMT64x" %d %s\n", addr+adelta, addr+adelta, depth, p);
 		// walking children
 		for (q = p; *q; q++) {
 			switch (*q) {
@@ -164,7 +167,7 @@ static int r_core_magic_at(RCore *core, RSearchKeyword *kw, const char *file, ut
 				{
 					ut64 addr = 0LL;
 					*q = 0;
-					if (!strncmp (q + 1, "0x", 2)) {
+					if (r_str_startswith (q + 1, "0x")) {
 						sscanf (q + 3, "%"PFMT64x, &addr);
 					} else {
 						sscanf (q + 1, "%"PFMT64d, &addr);
@@ -181,7 +184,6 @@ static int r_core_magic_at(RCore *core, RSearchKeyword *kw, const char *file, ut
 		R_FREE (p);
 		r_magic_free (ck);
 		ck = NULL;
-//		return adelta+1;
 	}
 	adelta ++;
 	delta ++;
@@ -205,8 +207,7 @@ static void r_core_magic(RCore *core, const char *file, int v, PJ *pj) {
 	ut64 addr = core->offset;
 	int hits = 0;
 
-	magicdepth = r_config_get_i (core->config, "magic.depth"); // TODO: do not use global var here
-	r_core_magic_at (core, NULL, file, addr, magicdepth, v, pj, &hits);
+	r_core_magic_at (core, NULL, file, addr, 0, v, pj, &hits);
 	if (pj) {
 		r_cons_newline ();
 	}

@@ -170,8 +170,7 @@ R_API bool r_anal_cc_exist(RAnal *anal, const char *convention) {
 }
 
 R_API const char *r_anal_cc_arg(RAnal *anal, const char *convention, int n) {
-	r_return_val_if_fail (anal, NULL);
-	r_return_val_if_fail (n >= 0, NULL);
+	r_return_val_if_fail (anal && n >= 0, NULL);
 	if (!convention) {
 		return NULL;
 	}
