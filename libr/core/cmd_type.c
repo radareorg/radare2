@@ -430,7 +430,7 @@ static void cmd_type_noreturn(RCore *core, const char *input) {
 		}
 		break;
 	case 'f': // "tnf"
-		r_core_cmd0 (core, "afl,noret/eq/1");
+		r_core_cmd_call (core, "afl,noret/eq/1");
 		break;
 	case 'a': // "tna"
 		if (input[1] == ' ') {
@@ -967,7 +967,7 @@ R_API void r_core_link_stroff(RCore *core, RAnalFunction *fcn) {
 		}
 	} else {
 		// initialize stack
-		r_core_cmd0 (core, "aeim");
+		r_core_cmd_call (core, "aeim");
 		stack_set = true;
 	}
 	r_config_set_b (core->config, "io.cache", true);
@@ -1062,11 +1062,11 @@ R_API void r_core_link_stroff(RCore *core, RAnalFunction *fcn) {
 		}
 	}
 beach:
-	r_core_cmd0 (core, "wc-*"); // drop cache writes
+	r_core_cmd_call (core, "wc-*"); // drop cache writes
 	r_config_set_b (core->config, "io.cache", ioCache);
 	r_config_set_i (core->config, "dbg.follow", dbg_follow);
 	if (stack_set) {
-		r_core_cmd0 (core, "aeim-");
+		r_core_cmd_call (core, "aeim-");
 	}
 	r_core_seek (core, oldoff, true);
 	r_esil_free (esil);
@@ -1167,7 +1167,7 @@ static int cmd_type(void *data, const char *input) {
 			break;
 		}
 		case '*': // "tc*"
-			r_core_cmd0 (core, "ts*");
+			r_core_cmd_call (core, "ts*");
 			break;
 		case 0: // "tc"
 			r_core_cmd0 (core, "tfc;tuc;tsc;ttc;tec");

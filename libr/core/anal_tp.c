@@ -470,7 +470,7 @@ static bool fast_step(RCore *core, RAnalOp *aop) {
 		return false;
 	}
 	if (!esil) {
-		r_core_cmd0 (core, "aei");
+		r_core_cmd_call (core, "aei");
 		// addr = initializeEsil (core);
 		esil = core->anal->esil;
 		if (!esil) {

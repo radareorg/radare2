@@ -1257,7 +1257,8 @@ static bool cmd_anal_aaft(RCore *core) {
 	seek = core->offset;
 	r_reg_arena_push (core->anal->reg);
 	r_reg_arena_zero (core->anal->reg);
-	r_core_cmd0 (core, "aei;aeim");
+	r_core_cmd_call (core, "aei");
+	r_core_cmd_call (core, "aeim");
 	int saved_arena_size = 0;
 	ut8 *saved_arena = r_reg_arena_peek (core->anal->reg, &saved_arena_size);
 	// Iterating Reverse so that we get function in top-bottom call order
@@ -1682,9 +1683,9 @@ static int var_cmd(RCore *core, const char *str) {
 	if (!str[0]) {
 		if (fcn) {
 			// "afv"
-			r_core_cmd0 (core, "afvr");
-			r_core_cmd0 (core, "afvs");
-			r_core_cmd0 (core, "afvb");
+			r_core_cmd_call (core, "afvr");
+			r_core_cmd_call (core, "afvs");
+			r_core_cmd_call (core, "afvb");
 		} else {
 			R_LOG_WARN ("Cannot find function in 0x%08"PFMT64x, core->offset);
 		}
@@ -6941,11 +6942,11 @@ static void r_anal_aefa(RCore *core, const char *arg) {
 
 	// emulate
 	// XXX do not use commands, here, just use the api
-	r_core_cmd0 (core, "aeim"); // XXX
+	r_core_cmd_call (core, "aeim"); // XXX
 	ut64 off = core->offset;
 	for (at = from; at < to ; at++) {
 		r_core_cmdf (core, "aepc 0x%08"PFMT64x, at);
-		r_core_cmd0 (core, "aeso");
+		r_core_cmd_call (core, "aeso");
 		r_core_seek (core, at, true);
 		int delta = r_num_get (core->num, "$l");
 		if (delta < 1) {
@@ -6957,7 +6958,7 @@ static void r_anal_aefa(RCore *core, const char *arg) {
 
 	// the logic of identifying args by function types and
 	// show json format and arg name goes into arA
-	r_core_cmd0 (core, "arA");
+	r_core_cmd_call (core, "arA");
 #if 0
 	// get results
 	const char *fcn_type = r_type_func_ret (core->anal->sdb_types, fcn->name);
@@ -6994,7 +6995,7 @@ static void __core_anal_appcall(RCore *core, const char *input) {
 	r_reg_setv (core->anal->reg, "SP", 0);
 
 	r_reg_setv (core->anal->reg, "PC", core->offset);
-	r_core_cmd0 (core, "aesu 0");
+	r_core_cmd_call (core, "aesu 0");
 
 	r_reg_setv (core->anal->reg, "SP", sp);
 	free (inp);
@@ -7055,12 +7056,12 @@ R_IPI int core_type_by_addr(RCore *core, ut64 addr) {
 	bool has_flag = false;
 	int type = R_ANAL_REF_TYPE_DATA;
 	r_list_foreach (list, iter, item) {
-		if (item && strchr (item->name, '.')) {
+		if (strchr (item->name, '.')) {
+			has_flag = true;
 			if (r_str_startswith (item->name, "str")) {
 				type = R_ANAL_REF_TYPE_STRING;
+				break;
 			}
-			////  r_anal_xrefs_set (core->anal, *val, esil->address, type);
-			has_flag = true;
 		}
 	}
 	if (!has_flag) {
@@ -7082,8 +7083,8 @@ static void __anal_esil_function(RCore *core, ut64 addr) {
 	RListIter *iter;
 	RAnalBlock *bb;
 	if (!core->anal->esil) {
-		r_core_cmd0 (core, "aei");
-		r_core_cmd0 (core, "aeim");
+		r_core_cmd_call (core, "aei");
+		r_core_cmd_call (core, "aeim");
 	}
 	void *u = core->anal->esil->user;
 	core->anal->esil->user = core;
@@ -8229,7 +8230,7 @@ static void cmd_anal_opcode(RCore *core, const char *input) {
 		break;
 	case 't': // "aot"
 		if (input[1] == 'l') {
-			r_core_cmd0 (core, "/atl");
+			r_core_cmd_call (core, "/atl");
 		} else if (input[1] == '\0') {
 			r_core_cmd0 (core, "ao~^type[1]");
 		} else {
@@ -9219,10 +9220,10 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 			}
 			break;
 		case 'q':
-			r_core_cmd0 (core, "axq");
+			r_core_cmd_call (core, "axq");
 			break;
 		default:
-			r_core_cmd0 (core, "ax");
+			r_core_cmd_call (core, "ax");
 			break;
 		}
 		break;
@@ -10264,7 +10265,7 @@ R_API void cmd_aggb(RCore *core) {
 	r_cons_push ();
 	int ograph_zoom = r_config_get_i (core->config, "graph.zoom");
 	r_config_set_i (core->config, "graph.zoom", 1);
-	r_core_cmd0 (core, "agg");
+	r_core_cmd_call (core, "agg");
 	r_config_set_i (core->config, "scr.color", c);
 	char *s = strdup (r_cons_singleton()->context->buffer);
 	r_cons_pop ();
@@ -12071,7 +12072,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 			r_list_foreach (list, iter, map) {
 				r_core_seek (core, r_io_map_begin (map), true);
 				r_config_set_b (core->config, "anal.hasnext", true);
-				r_core_cmd0 (core, "afr");
+				r_core_cmd_call (core, "afr");
 				r_config_set_b (core->config, "anal.hasnext", hasnext);
 			}
 			r_list_free (list);
@@ -12251,14 +12252,14 @@ static int cmd_anal_all(RCore *core, const char *input) {
 				r_core_task_yield (&core->tasks);
 				if (!cfg_debug) {
 					if (dh_orig && strcmp (dh_orig, "esil")) {
-						r_core_cmd0 (core, "dL esil");
+						r_core_cmd_call (core, "dL esil");
 						r_core_task_yield (&core->tasks);
 					}
 				}
 				// XXX do not override user settings!
 				// int c = r_config_get_i (core->config, "anal.calls");
 				// r_config_set_b (core->config, "anal.calls", true);
-				r_core_cmd0 (core, "s $S");
+				r_core_cmd_call (core, "s $S");
 				if (r_cons_is_breaked ()) {
 					goto jacuzzi;
 				}
@@ -12295,7 +12296,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 				}
 				r_core_task_yield (&core->tasks);
 				R_LOG_INFO ("Finding and parsing C++ vtables (avrr)");
-				r_core_cmd0 (core, "avrr");
+				r_core_cmd_call (core, "avrr");
 				r_core_task_yield (&core->tasks);
 				// r_config_set_b (core->config, "anal.calls", c);
 				r_core_task_yield (&core->tasks);
@@ -12311,7 +12312,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 					r_core_task_yield (&core->tasks);
 				}
 				if (!r_str_startswith (r_config_get (core->config, "asm.arch"), "x86")) {
-					r_core_cmd0 (core, "aav");
+					r_core_cmd_call (core, "aav");
 					r_core_task_yield (&core->tasks);
 					if (cfg_debug) {
 						R_LOG_INFO ("Skipping function emulation in debugger mode (aaef)");
@@ -12320,7 +12321,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 						bool ioCache = r_config_get_i (core->config, "io.pcache");
 						r_config_set_i (core->config, "io.pcache", 1);
 						R_LOG_INFO ("Emulate functions to find computed references (aaef)");
-						r_core_cmd0 (core, "aaef");
+						r_core_cmd_call (core, "aaef");
 						r_core_task_yield (&core->tasks);
 						r_config_set_i (core->config, "io.pcache", ioCache);
 					}
@@ -12353,7 +12354,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 				}
 				if (!sdb_isempty (core->anal->sdb_zigns)) {
 					R_LOG_INFO ("Check for zignature from zigns folder (z/)");
-					r_core_cmd0 (core, "z/");
+					r_core_cmd_call (core, "z/");
 					r_core_task_yield (&core->tasks);
 				}
 				if (cfg_debug) {
@@ -12361,7 +12362,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 					// nothing to do
 				} else {
 					R_LOG_INFO ("Type matching analysis for all functions (aaft)");
-					r_core_cmd0 (core, "aaft");
+					r_core_cmd_call (core, "aaft");
 				}
 				r_core_task_yield (&core->tasks);
 
@@ -12378,7 +12379,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 
 				if (input[1] == 'a') { // "aaaa"
 					R_LOG_INFO ("Scanning for strings constructed in code (/azs)");
-					r_core_cmd0 (core, "/azs");
+					r_core_cmd_call (core, "/azs");
 					if (!didAap) {
 						didAap = true;
 						R_LOG_INFO ("Finding function preludes (aap)");
@@ -12389,12 +12390,12 @@ static int cmd_anal_all(RCore *core, const char *input) {
 					r_config_set_b (core->config, "anal.types.constraint", true);
 					if (input[2] == 'a') { // "aaaa"
 						R_LOG_INFO ("Reanalizing graph references to improve function count (aarr)");
-						r_core_cmd0 (core, "aarr");
+						r_core_cmd_call (core, "aarr");
 					}
 				} else {
 					R_LOG_INFO ("Use -AA or aaaa to perform additional experimental analysis");
 				}
-				r_core_cmd0 (core, "s-");
+				r_core_cmd_call (core, "s-");
 				if (dh_orig) {
 					r_core_cmdf (core, "dL %s", dh_orig);
 					r_core_task_yield (&core->tasks);
@@ -13346,7 +13347,7 @@ static int cmd_anal(void *data, const char *input) {
 	case 'b': // "ab"
 		switch (input[1]) {
 		case '.': // "ab."
-			r_core_cmd0 (core, "ab $$");
+			r_core_cmd_call (core, "ab $$");
 			break;
 		case 'a': // "aba"
 			r_core_cmdf (core, "aeab%s", input + 1);
@@ -13510,9 +13511,9 @@ static int cmd_anal(void *data, const char *input) {
 		}
 		break;
 	case '*': // "a*"
-		r_core_cmd0 (core, "afl*");
-		r_core_cmd0 (core, "ah*");
-		r_core_cmd0 (core, "ax*");
+		r_core_cmd_call (core, "afl*");
+		r_core_cmd_call (core, "ah*");
+		r_core_cmd_call (core, "ax*");
 		break;
 	case 'a': // "aa"
 		if (!cmd_anal_all (core, input + 1)) {
@@ -13576,10 +13577,10 @@ static int cmd_anal(void *data, const char *input) {
 		}
 		break;
 	case 'j': // "aj"
-		r_core_cmd0 (core, "aflj");
+		r_core_cmd_call (core, "aflj");
 		break;
 	case 0: // "a"
-		r_core_cmd0 (core, "aai");
+		r_core_cmd_call (core, "aai");
 		break;
 	case '?':
 		if (input[1] == 'j') {

@@ -185,7 +185,7 @@ R_API bool r_core_file_reopen(RCore *core, const char *args, int perm, int loadb
 	if (isdebug) {
 		r_core_cmd0 (core, ".dm*");
 		r_core_cmd0 (core, ".dr*");
-		r_core_cmd0 (core, "sr PC");
+		r_core_cmd_call (core, "sr PC");
 	} else {
 		loadGP (core);
 	}

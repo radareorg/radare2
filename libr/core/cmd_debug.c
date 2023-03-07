@@ -4228,7 +4228,7 @@ static void r_core_debug_esil(RCore *core, const char *input) {
 		if (r_debug_esil_watch_empty (core->dbg)) {
 			R_LOG_ERROR ("no esil watchpoints defined");
 		} else {
-			r_core_cmd0 (core, "aei");
+			r_core_cmd_call (core, "aei");
 			r_debug_esil_prestep (core->dbg, r_config_get_i (core->config, "esil.prestep"));
 			r_debug_esil_continue (core->dbg);
 		}
@@ -4236,7 +4236,7 @@ static void r_core_debug_esil(RCore *core, const char *input) {
 	case 's': // "des"
 		if (input[1] == 'u' && input[2] == ' ') { // "desu"
 			ut64 addr, naddr, fin = r_num_math (core->num, input + 2);
-			r_core_cmd0 (core, "aei");
+			r_core_cmd_call (core, "aei");
 			addr = r_debug_reg_get (core->dbg, "PC");
 			while (addr != fin) {
 				r_debug_esil_prestep (core->dbg, r_config_get_i (
@@ -4252,7 +4252,7 @@ static void r_core_debug_esil(RCore *core, const char *input) {
 		} else if (input[1] == '?' || !input[1]) {
 			r_core_cmd_help (core, help_msg_des);
 		} else {
-			r_core_cmd0 (core, "aei");
+			r_core_cmd_call (core, "aei");
 			r_debug_esil_prestep (core->dbg, r_config_get_i (core->config, "esil.prestep"));
 			// continue
 			r_debug_esil_step (core->dbg, r_num_math (core->num, input + 1));
@@ -4588,8 +4588,7 @@ static int cmd_debug_continue(RCore *core, const char *input) {
 		} else {
 			// we should stop in fork and vfork syscalls
 			//TODO: multiple syscalls not handled yet
-			// r_core_cmd0 (core, "dcs vfork fork");
-			r_core_cmd0 (core, "dcs vfork fork clone");
+			r_core_cmd_call (core, "dcs vfork fork clone");
 		}
 		break;
 	case 'c': // "dcc"
@@ -5811,9 +5810,7 @@ static int cmd_debug(void *data, const char *input) {
 		case 'o': // "doo" : reopen in debug mode
 			if (input[2] == 'f') { // "doof" : reopen in debug mode from the given file
 				r_config_set_b (core->config, "cfg.debug", true);
-				char *s = r_str_newf ("oodf %s", input + 3);
-				r_core_cmd0 (core, s);
-				free (s);
+				r_core_cmdf (core, "oodf %s", input + 3);
 			} else {
 				r_core_file_reopen_debug (core, input + 2);
 			}
@@ -5844,7 +5841,7 @@ static int cmd_debug(void *data, const char *input) {
 			// Remove registers from the flag list
 			r_core_cmd0 (core, ".dr-*");
 			// Reopen and rebase the original file
-			r_core_cmd0 (core, "oo");
+			r_core_cmd_call (core, "oo");
 			break;
 		case '?': // "do?"
 		default:
@@ -5998,7 +5995,7 @@ static int cmd_debug(void *data, const char *input) {
 		ut64 pc = r_debug_reg_get (core->dbg, "PC");
 		// Is PC before offset or after the follow cutoff?
 		if (!R_BETWEEN (core->offset, pc, core->offset + follow)) {
-			r_core_cmd0 (core, "sr PC");
+			r_core_cmd_call (core, "sr PC");
 		}
 	}
 
