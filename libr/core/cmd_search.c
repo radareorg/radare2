@@ -12,7 +12,7 @@ static int cmd_search(void *data, const char *input);
 #define SM4_SEARCH_LENGTH 24
 #define PRIVATE_KEY_SEARCH_LENGTH 11
 
-static RCoreHelpMessage help_msg_search_wide_string = {
+static RCoreHelpMessage help_msg_slash_wide_string = {
 	"Usage: /w[ij]", "[str]", "Wide string search subcommands",
 	"/w ", "foo", "search for wide string 'f\\0o\\0o\\0'",
 	"/wj ", "foo", "search for wide string 'f\\0o\\0o\\0' (json output)",
@@ -21,22 +21,7 @@ static RCoreHelpMessage help_msg_search_wide_string = {
 	NULL
 };
 
-static RCoreHelpMessage help_msg_search_offset = {
-	"Usage: /o", "[n]", "Shows offset of 'n' Backward instruction",
-	NULL
-};
-
-static RCoreHelpMessage help_msg_search_offset_without_anal = {
-	"Usage: /O", "[n]", "Shows offset of 'n' Backward instruction, but with a different fallback if anal cannot be used.",
-	NULL
-};
-
-static RCoreHelpMessage help_msg_search_string_no_case = {
-	"Usage: /i", "[str]", "Search str string ignorning case",
-	NULL
-};
-
-static RCoreHelpMessage help_msg_search_esil = {
+static RCoreHelpMessage help_msg_slash_esil = {
 	"/E", " [esil-expr]", "search offsets matching a specific esil expression",
 	"/Ej", " [esil-expr]", "same as above but using the given magic file",
 	"/E?", " ", "show this help",
@@ -45,43 +30,43 @@ static RCoreHelpMessage help_msg_search_esil = {
 	NULL
 };
 
-static RCoreHelpMessage help_msg_search_backward = {
+static RCoreHelpMessage help_msg_slash_backward = {
 	"Usage: /b[p]<command>", "[value]", "Backward search subcommands",
 	"/b", "[x] [str|414243]", "search in hexadecimal 'ABC' backwards starting in current address",
 	"/bp", "", "search previous prelude and set hit.prelude flag",
 	NULL
 };
 
-static RCoreHelpMessage help_msg_search_forward = {
+static RCoreHelpMessage help_msg_slash_forward = {
 	"Usage: /f", " ", "search forwards, command modifier, followed by other command",
 	NULL
 };
 
-static RCoreHelpMessage help_msg_search_sections = {
+static RCoreHelpMessage help_msg_slash_sections = {
 	"Usage: /s[*]", "[threshold]", "finds sections by grouping blocks with similar entropy.",
 	NULL
 };
 
-static RCoreHelpMessage help_msg_search_delta = {
+static RCoreHelpMessage help_msg_slash_delta = {
 	"Usage: /d", "delta", "search for a deltified sequence of bytes.",
 	NULL
 };
 
-static RCoreHelpMessage help_msg_search_pattern = {
+static RCoreHelpMessage help_msg_slash_pattern = {
 	"Usage: /p[p]", " [pattern]", "Search for patterns or preludes",
 	"/p", " [hexpattern]", "search in hexpairs pattern in search.in",
 	"/pp", "", "search for function preludes",
 	NULL
 };
 
-static RCoreHelpMessage help_msg_search_ad = {
+static RCoreHelpMessage help_msg_slash_ad = {
 	"Usage: /ad<jq>", "[value]", "Backward search subcommands",
 	"/ad", " rax", "search in disasm plaintext for matching instructions",
 	"/adq", " rax", "quiet mode ideal for scripting",
 	NULL
 };
 
-static RCoreHelpMessage help_msg_slash_m = {
+static RCoreHelpMessage help_msg_slash_magic = {
 	"/m", "", "search for known magic patterns",
 	"/m", " [file]", "same as above but using the given magic file",
 	"/me", " ", "like ?e similar to IRC's /me",
@@ -165,7 +150,7 @@ static RCoreHelpMessage help_msg_slash_a = {
 	"/ad/a", " instr", "search for every byte instruction that matches regexp 'instr'",
 	"/ae", " esil", "search for esil expressions matching substring",
 	"/af", "[l] family", "search for instruction of specific family (afl=list",
-	"/aF", " opstr", "find instructions matching given opstr only in analyzed code",
+	"/aF", "[d] opstr", "find instructions matching given opstr only in analyzed code",
 	"/ai", "[j] 0x300 [0x500]", "find all the instructions using that immediate (in range)",
 	"/al", "", "same as aoml, list all opcodes",
 	"/am", " opcode", "search for specific instructions of specific mnemonic",
@@ -187,10 +172,15 @@ static RCoreHelpMessage help_msg_slash_c = {
 	NULL
 };
 
-static RCoreHelpMessage help_msg_slash_re = {
-	"Usage:", "/re $$", "search references using linear esil emulation",
-	"/re", " [addr]", "target address is specified as addr",
-	NULL,
+static RCoreHelpMessage help_msg_slash_cc  = {
+	"Usage: /cc[aAldpb]", "[algo] [digest]", "find collisions",
+	"/cca", " [algo] [digest]", "lowercase alphabet chars only",
+	"/ccA", " [algo] [digest]", "uppercase alphabet chars only",
+	"/ccl", " [algo] [digest]", "letters (lower + upper alphabet chars)",
+	"/ccd", " [algo] [digest]", "digits (only numbers)",
+	"/ccp", " [algo] [digest]", "printable (alpha + digit)",
+	"/ccb", " [algo] [digest]", "binary (any number is valid)",
+	NULL
 };
 
 static RCoreHelpMessage help_msg_slash_r = {
@@ -1779,7 +1769,7 @@ static void do_esil_search(RCore *core, struct search_parameters *param, const c
 		input++;
 	}
 	if (input[1] != ' ') { // "/E?"
-		r_core_cmd_help (core, help_msg_search_esil);
+		r_core_cmd_help (core, help_msg_slash_esil);
 		return;
 	}
 	const unsigned int addrsize = r_config_get_i (core->config, "esil.addr.size");
@@ -2219,8 +2209,7 @@ static void do_ref_search(RCore *core, ut64 addr,ut64 from, ut64 to, struct sear
 static void cmd_search_aF(RCore *core, const char *input) {
 	bool quiet = *input == 'd';
 	if (*input && *input != ' ' && *input != 'd') {
-		eprintf ("Usage: /aF mov ## search in instructions covered by basic blocks ('uses the pi command')\n");
-		eprintf ("Usage: /aFd mov ## uses internal disasm api (15x faster than /aF), no flag subst\n");
+		r_core_cmd_help_match (core, help_msg_slash_a, "aF", false);
 		return;
 	}
 	RAnalFunction *fcn;
@@ -2630,7 +2619,7 @@ static bool do_anal_search(RCore *core, struct search_parameters *param, const c
 			return false;
 		case 'F': // "/aF"
 			cmd_search_aF (core, input + 1);
-			return true;
+			return false;
 			break;
 		case 'f': // "/af"
 		case 's': // "/as"
@@ -2908,7 +2897,7 @@ static void do_asm_search(RCore *core, struct search_parameters *param, const ch
 		param->outmode = R_MODE_RADARE;
 		break;
 	case '?':
-		r_core_cmd_help (core, help_msg_search_ad);
+		r_core_cmd_help (core, help_msg_slash_ad);
 		return;
 	default:
 		break;
@@ -3794,7 +3783,7 @@ reread:
 		goto reread;
 	case 'b': // "/b" backward search
 		if (*(++input) == '?') {
-			r_core_cmd_help (core, help_msg_search_backward);
+			r_core_cmd_help (core, help_msg_slash_backward);
 			goto beach;
 		}
 		param_offset--;
@@ -3814,7 +3803,7 @@ reread:
 		goto reread;
 	case 'o': { // "/o" print the offset of the Previous opcode
 			  if (input[1] == '?') {
-				  r_core_cmd_help (core, help_msg_search_offset);
+				  r_core_cmd_help_match (core, help_msg_slash, "/o", true);
 				  break;
 			  }
 			  ut64 addr, n = input[param_offset - 1] ? r_num_math (core->num, input + param_offset) : 1;
@@ -3835,7 +3824,7 @@ reread:
 		break;
 	case 'O': { // "/O" alternative to "/o"
 		if (input[1] == '?') {
-			r_core_cmd_help (core, help_msg_search_offset_without_anal);
+			r_core_cmd_help_match (core, help_msg_slash, "/O", true);
 			break;
 		}
 		ut64 addr, n = input[param_offset - 1] ? r_num_math (core->num, input + param_offset) : 1;
@@ -3951,7 +3940,7 @@ reread:
 					r_core_seek (core, curseek, true);
 				}
 			} else {
-				r_core_cmd_help (core, help_msg_slash_re);
+				r_core_cmd_help_match (core, help_msg_slash_r, "/re", true);
 				dosearch = false;
 			}
 			break;
@@ -4150,13 +4139,7 @@ reread:
 				char *space = strchr (input, ' ');
 				const char *arg = space? r_str_trim_head_ro (space + 1): NULL;
 				if (!arg || input[2] == '?') {
-					eprintf ("Usage: /cc[aAdlpb] [hashname] [hexpairhashvalue]\n");
-					eprintf (" /cca - lowercase alphabet chars only\n");
-					eprintf (" /ccA - uppercase alphabet chars only\n");
-					eprintf (" /ccl - letters (lower + upper alphabet chars)\n");
-					eprintf (" /ccd - digits (only numbers)\n");
-					eprintf (" /ccp - printable (alpha + digit)\n");
-					eprintf (" /ccb - binary (any number is valid)\n");
+					r_core_cmd_help (core, help_msg_slash_cc);
 					goto beach;
 				}
 				char *s = strdup (arg);
@@ -4189,8 +4172,7 @@ reread:
 						r_core_return_value (core, 1);
 					}
 				} else {
-					eprintf ("Usage: /cc [hashname] [hexpairhashvalue]\n");
-					eprintf ("Usage: /CC to search ascii collisions\n");
+					r_core_cmd_help (core, help_msg_slash_cc);
 				}
 				free (s);
 				goto beach;
@@ -4319,7 +4301,7 @@ reread:
 	case 'm': // "/m"
 		dosearch = false;
 		if (input[1] == '?') { // "/me"
-			r_core_cmd_help (core, help_msg_slash_m);
+			r_core_cmd_help (core, help_msg_slash_magic);
 		} else if (input[1] == 'b') { // "/mb"
 			bool bin_verbose = r_config_get_i (core->config, "bin.verbose");
 			r_config_set_i (core->config, "bin.verbose", false);
@@ -4402,15 +4384,19 @@ reread:
 				pj_end (param.pj);
 			}
 		} else {
-			eprintf ("Usage: /m [file]\n");
+			r_core_cmd_help (core, help_msg_slash_magic);
 		}
 		r_cons_clear_line (1);
 		break;
 	case 'p': // "/p"
-		if (input[1] == '?') { // "/pp" -- find next prelude
-			r_core_cmd_help (core, help_msg_search_pattern);
+		if (input[1] == '?') { // "/p" -- find next pattern
+			r_core_cmd_help (core, help_msg_slash_pattern);
 		} else if (input[1] == 'p') { // "/pp" -- find next prelude
-			__core_cmd_search_backward_prelude (core, false, true);
+			if (input[2] == '?') {
+				r_core_cmd_help_match (core, help_msg_slash_pattern, "/pp", true);
+			} else {
+				__core_cmd_search_backward_prelude (core, false, true);
+			}
 		} else if (input[param_offset - 1]) {
 			int ps = atoi (input + param_offset);
 			if (ps > 1) {
@@ -4460,17 +4446,15 @@ reread:
 				}
 			}
 			if (err) {
-				eprintf ("Usage: /V[1|2|4|8] [minval] [maxval]\n");
+				r_core_cmd_help_match (core, help_msg_slash, "/V", true);
 			}
 		}
 		dosearch = false;
 		break;
 	case 'v': // "/v"
-		if (input[1]) {
-			if (input[1] == '?') {
-				r_cons_print ("Usage: /v[1|2|4|8] [value]\n");
-				break;
-			}
+		if (input[1] == '?') {
+			r_core_cmd_help_match (core, help_msg_slash, "/v", true);
+			break;
 		}
 		r_search_reset (core->search, R_SEARCH_KEYWORD);
 		r_search_set_distance (core->search, (int)
@@ -4486,7 +4470,7 @@ reread:
 				bsize = sizeof (ut64) * len;
 				v_buf = v_writebuf (core, nums, len, '8', bsize);
 			} else {
-				eprintf ("Usage: /v8 value\n");
+				r_core_cmd_help_match (core, help_msg_slash, "/v", true);
 			}
 			break;
 		case '1':
@@ -4494,7 +4478,7 @@ reread:
 				bsize = sizeof (ut8) * len;
 				v_buf = v_writebuf (core, nums, len, '1', bsize);
 			} else {
-				eprintf ("Usage: /v1 value\n");
+				r_core_cmd_help_match (core, help_msg_slash, "/v", true);
 			}
 			break;
 		case '2':
@@ -4502,7 +4486,7 @@ reread:
 				bsize = sizeof (ut16) * len;
 				v_buf = v_writebuf (core, nums, len, '2', bsize);
 			} else {
-				eprintf ("Usage: /v2 value\n");
+				r_core_cmd_help_match (core, help_msg_slash, "/v", true);
 			}
 			break;
 		default: // default size
@@ -4513,7 +4497,7 @@ reread:
 					v_buf = v_writebuf (core, nums, len, '4', bsize);
 				}
 			} else {
-				eprintf ("Usage: /v4 value\n");
+				r_core_cmd_help_match (core, help_msg_slash, "/v", true);
 			}
 			break;
 		}
@@ -4527,12 +4511,12 @@ reread:
 		break;
 	case 'w': // "/w" search wide string, includes ignorecase search functionality (/wi cmd)!
 		if (input[1] == '?') {
-			r_core_cmd_help (core, help_msg_search_wide_string);
+			r_core_cmd_help (core, help_msg_slash_wide_string);
 			break;
 		}
 		if (input[2]) {
 			if (input[2] == '?') { // "/w?"
-				r_core_cmd_help (core, help_msg_search_wide_string);
+				r_core_cmd_help (core, help_msg_slash_wide_string);
 				break;
 			}
 			if (input[1] == 'j' || input[2] == 'j') { // "/wj"
@@ -4564,7 +4548,7 @@ reread:
 		break;
 	case 'i': // "/i"
 		if (input[1] == '?') {
-			r_core_cmd_help (core, help_msg_search_string_no_case);
+			r_core_cmd_help_match (core, help_msg_slash, "/i", true);
 			break;
 		}
 		if (input[param_offset - 1] != ' ') {
@@ -4627,7 +4611,7 @@ reread:
 		break;
 	case 'e': // "/e" match regexp
 		if (input[1] == '?') {
-			eprintf ("Usage: /e /foo/i or /e/foo/i\n");
+			r_core_cmd_help_match (core, help_msg_slash, "/e", true);
 		} else if (input[1]) {
 			RSearchKeyword *kw;
 			kw = r_search_keyword_new_regexp (input + 1, NULL);
@@ -4654,7 +4638,7 @@ reread:
 		goto beach;
 	case 'd': // "/d" search delta key
 		if (input[1] == '?') {
-			r_core_cmd_help (core, help_msg_search_delta);
+			r_core_cmd_help (core, help_msg_slash_delta);
 			break;
 		}
 		if (input[1]) {
@@ -4674,7 +4658,7 @@ reread:
 		if (p) {
 			*p++ = 0;
 			if (*arg == '?') {
-				eprintf ("Usage: /h md5 [hash] [datalen]\n");
+				r_core_cmd_help_match (core, help_msg_slash, "/h", true);
 			} else {
 				ut32 min = UT32_MAX;
 				ut32 max = UT32_MAX;
@@ -4698,7 +4682,7 @@ reread:
 	break;
 	case 'f': // "/f" forward search
 		if (input[1] == '?') {
-			r_core_cmd_help (core, help_msg_search_forward);
+			r_core_cmd_help (core, help_msg_slash_forward);
 			break;
 		}
 		if (core->offset) {
@@ -4714,8 +4698,7 @@ reread:
 		break;
 	case 'g': // "/g" graph search
 		if (input[1] == '?') {
-			r_cons_printf ("Usage: /g[g] [fromaddr] @ [toaddr]\n");
-			r_cons_printf ("(find all graph paths A to B (/gg follow jumps, see search.count and anal.depth)");
+			r_core_cmd_help_match (core, help_msg_slash, "/g", true);
 		} else {
 			ut64 addr = UT64_MAX;
 			if (input[1]) {
@@ -4784,7 +4767,7 @@ reread:
 			r_str_argv_free (args);
 			free (buf);
 		} else {
-			eprintf ("Usage: /F[j] [file] ([offset] ([sz]))\n");
+			r_core_cmd_help_match (core, help_msg_slash, "/F", true);
 		}
 		break;
 	case 'x': // "/x" search hex
@@ -4815,7 +4798,7 @@ reread:
 		break;
 	case 's': // "/s"
 		if (input[1] == '?') {
-			r_core_cmd_help (core, help_msg_search_sections);
+			r_core_cmd_help (core, help_msg_slash_sections);
 			break;
 		}
 		do_section_search (core, &param, input + 1);
@@ -4855,7 +4838,7 @@ again:
 			free (str);
 			free (buf);
 		} else {
-			eprintf ("Usage: /+ [string]\n");
+			r_core_cmd_help_match (core, help_msg_slash, "/+", true);
 		}
 		break;
 	case 'z': // "/z" search strings of min-max range
@@ -4863,14 +4846,14 @@ again:
 		char *p;
 		ut32 min, max;
 		if (!input[1]) {
-			eprintf ("Usage: /z min max\n");
+			r_core_cmd_help_match (core, help_msg_slash, "/z", true);
 			break;
 		}
 		if ((p = strchr (input + 2, ' '))) {
 			*p = 0;
 			max = r_num_math (core->num, p + 1);
 		} else {
-			eprintf ("Usage: /z min max\n");
+			r_core_cmd_help_match (core, help_msg_slash, "/z", true);
 			break;
 		}
 		min = r_num_math (core->num, input + 2);
