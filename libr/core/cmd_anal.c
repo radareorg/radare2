@@ -308,6 +308,7 @@ static RCoreHelpMessage help_msg_aes = {
 	"aesu", " [addr]", "step until given address",
 	"aesue", " [esil]", "step until esil expression match",
 	"aesuo", " [optype]", "step until given opcode type",
+	"aesB", " [addr] [N] @ [from-addr]", "step over every N instructions",
 	NULL
 };
 
@@ -7481,8 +7482,7 @@ static void cmd_anal_esil(RCore *core, const char *input, bool verbose) {
 				ut64 nth = n2? r_num_math (core->num, n2): 1;
 				cmd_aespc (core, core->offset, off, (int)nth);
 			} else {
-				// XXX no help msg for this?
-				eprintf ("Usage: aesB [until-addr] [nth-opcodes] @ [from-addr]\n");
+				r_core_cmd_help_match (core, help_msg_aes, "aesB", true);
 			}
 			break;
 		case 'u': // "aesu"
