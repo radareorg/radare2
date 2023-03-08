@@ -394,6 +394,7 @@ static RCoreHelpMessage help_msg_drp = {
 	"drpj", "", "show the current register profile (JSON)",
 	"drps", " [new fake size]", "set the fake size",
 	"drpg", "", "show register profile comments",
+	"NOTE:", "", "this help will show arp if you run drp? when cfg.debug=0",
 	NULL
 };
 
@@ -2173,6 +2174,10 @@ static void cmd_drpi(RCore *core) {
 	}
 }
 
+/* XXX "from" is irrelevant, control flow into here is determined by cfg.debug
+ * right now, i.e.: if cfg.debug=1, arp -> drp, so from == 'd' despite entering
+ * arp, so you still get the wrong help for your input.
+ */
 static void cmd_reg_profile(RCore *core, char from, const char *str) { // "arp" and "drp"
 	const char *ptr;
 	RReg *r = r_config_get_b (core->config, "cfg.debug")? core->dbg->reg: core->anal->reg;
@@ -2306,21 +2311,38 @@ static void cmd_reg_profile(RCore *core, char from, const char *str) { // "arp" 
 		}
 		break;
 	case '?': // "drp?" "arp?"
-	default:
-		{
-			const char *from_a[] = { "arp", "arpi", "arpg", "arp.", "arpj", "arps" };
-			// TODO #7967 help refactor
-			const char **help_msg = (const char **)help_msg_drp;
-			if (from == 'a') {
-				help_msg[1] = help_msg[3] = help_msg[6] = help_msg[9] = from_a[0];
-				help_msg[12] = from_a[1];
-				help_msg[15] = from_a[2];
-				help_msg[18] = from_a[3];
-				help_msg[21] = from_a[4];
-			}
-			r_core_cmd_help (core, help_msg);
-			break;
+	default: {
+		// i hate this so much
+		int i;
+		int num_strings = 0;
+		char **help_msg;
+		const char * const *p = help_msg_drp;
+		while (*p) {
+			num_strings += 3;
+			p = &p[3];
 		}
+
+		help_msg = R_NEWS (char *, num_strings+1);
+		help_msg[num_strings] = NULL;
+		for (i = 0; i < num_strings; i++) {
+			help_msg[i] = strdup (help_msg_drp[i]);
+		}
+
+		// see function comment
+		// eprintf ("%c\n", from);
+		if (from == 'a') {
+			for (i = 0; !r_str_startswith (help_msg[i], "NOTE:"); i++) {
+				help_msg[i] = r_str_replace (help_msg[i], "drp", "arp", true);
+			}
+		}
+		r_core_cmd_help (core, (const char * const *)help_msg);
+
+		for (i = 0; i < num_strings; i++) {
+			free (help_msg[i]);
+		}
+		free (help_msg);
+		break;
+	}
 	}
 }
 
@@ -2959,6 +2981,8 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 		}
 		break;
 	case 'p': // "drp"
+		// this is only ever reached if cdg.debug=1
+		// ("from" == d) == cfg.debug
 		cmd_reg_profile (core, 'd', str);
 		break;
 	case 't': { // "drt"
