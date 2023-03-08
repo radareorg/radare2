@@ -787,7 +787,7 @@ grub_hfs_find_node_node_found (struct grub_hfs_node *hnd,
   if (cmp <= 0)
     {
       grub_uint32_t *node = (grub_uint32_t *) rec->data;
-      c->found = grub_be_to_cpu32 (*node);
+      c->found = r_read_be32 (node);
     }
   else /* The key can not be found in the tree. */
     return 1;
