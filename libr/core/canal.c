@@ -975,6 +975,10 @@ R_API RAnalOp* r_core_anal_op(RCore *core, ut64 addr, int mask) {
 	if (!op) {
 		return NULL;
 	}
+	int maxopsz = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_MAX_OP_SIZE);
+	if (sizeof (buf) < maxopsz) {
+		maxopsz = sizeof (buf);
+	}
 	int delta = (addr - core->offset);
 	int minopsz = 8;
 	if (delta > 0 && delta + minopsz < core->blocksize && addr >= core->offset && addr + 16 < core->offset + core->blocksize) {
@@ -984,11 +988,11 @@ R_API RAnalOp* r_core_anal_op(RCore *core, ut64 addr, int mask) {
 			goto err_op;
 		}
 	} else {
-		if (!r_io_read_at (core->io, addr, buf, sizeof (buf))) {
+		if (!r_io_read_at (core->io, addr, buf, maxopsz)) {
 			goto err_op;
 		}
 		ptr = buf;
-		len = sizeof (buf);
+		len = maxopsz;
 	}
 	if (r_anal_op (core->anal, op, addr, ptr, len, mask) < 1) {
 		goto err_op;
