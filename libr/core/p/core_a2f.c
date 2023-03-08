@@ -397,16 +397,25 @@ static bool analyzeFunction(RCore *core, ut64 addr) {
 
 static int r_cmd_anal_call(void *user, const char *input) {
 	RCore *core = (RCore *) user;
+	static RCoreHelpMessage help_msg_a2f = {
+		"Usage:", "a2f", "Experimental function analysis",
+		"a2f", "", "like af, but with an experimental engine. see anal.a2f",
+		NULL
+	};
 	if (!strncmp (input, "a2", 2)) {
 		switch (input[2]) {
 		case 'f':
+			if (input[3] == '?') {
+				r_core_cmd_help (core, help_msg_a2f);
+				return true;
+			}
+
 			if (!analyzeFunction (core, core->offset)) {
 				R_LOG_DEBUG ("a2f: Failed to analyze function at 0x%08"PFMT64x, core->offset);
 			}
 			break;
 		default:
-			eprintf ("Usage: a2f @ address_of_function          # See anal.a2f\n");
-			eprintf ("a2f is an experimental analysis engine that replaces af.\n");
+			r_core_cmd_help (core, help_msg_a2f);
 			break;
 		}
 		return true;
