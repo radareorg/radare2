@@ -1288,7 +1288,7 @@ static int cmd_cmp(void *data, const char *input) {
 	}
 	case 'c': // "cc"
 		if (input[1] == '?') { // "cc?"
-			r_core_cmd0 (core, "c?~cc");
+			r_core_cmd_help_match (core, help_msg_c, "cc", false);
 		} else if (input[1] == 'd') { // "ccd"
 			if (input[2] == 'd') { // "ccdd"
 				cmd_cmp_disasm (core, input + 3, 'd');
