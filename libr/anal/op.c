@@ -82,8 +82,8 @@ R_API int r_anal_opasm(RAnal *anal, ut64 addr, const char *s, ut8 *outbuf, int o
 }
 
 R_API int r_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len, RAnalOpMask mask) {
-	r_anal_op_init (op);
 	r_return_val_if_fail (anal && op && len > 0, -1);
+	r_anal_op_init (op);
 
 	// use core binding to set asm.bits correctly based on the addr
 	// this is because of the hassle of arm/thumb
