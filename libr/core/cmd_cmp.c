@@ -21,7 +21,7 @@ static RCoreHelpMessage help_msg_c = {
 	"Usage:", "c[?dfx] [argument]", " # Compare",
 	"c", " [string]", "compare a plain with escaped chars string",
 	"c*", " [string]", "same as c, but printing r2 commands instead",
-	"cj", " [string]", "same as c, with JSON output"
+	"cj", " [string]", "same as c, with JSON output",
 	"c1", " [addr]", "compare byte at addr with current offset",
 	"c2", "[*] [value]", "compare word at offset with given value",
 	"c4", "[*] [value]", "compare doubleword at offset with given value",
