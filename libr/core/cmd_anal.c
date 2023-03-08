@@ -7374,7 +7374,7 @@ static void cmd_anal_esil(RCore *core, const char *input, bool verbose) {
 				reg_name_roll_set (core, "PC", r_num_math (core->num, input + 3));
 				r_core_cmd0 (core, ".ar*");
 			} else {
-				r_core_cmd_help_match(core, help_msg_aep, "aepc", true);
+				r_core_cmd_help_match (core, help_msg_aep, "aepc", true);
 			}
 			break;
 		case 'k':
