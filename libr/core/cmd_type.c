@@ -3,64 +3,54 @@
 #include <r_core.h>
 
 static RCoreHelpMessage help_msg_t = {
-	"Usage: t", "", "# cparse types commands",
+	"Usage: t", "", "Parse, manage, and print C types",
 	"t", "", "list all loaded types",
-	"tj", "", "List all loaded types as json",
+	"tj", "", "list all loaded types as json",
 	"t", " <type>", "show type in 'pf' syntax",
 	"t*", "", "list types info in r2 commands",
-	"t-", " <name>", "delete types by its name",
+	"t-", " <name>", "delete type by name",
 	"t-*", "", "remove all types",
-	"tail", " [filename]", "output the last part of files",
-	"tac", " [filename]", "the infamous reverse cat command",
-	"tc", " [type.name]", "list all/given types in C output format",
+	"tail", "([n]) [file]", "output the last n lines of a file (default n=5)",
+	"tac", " [file]", "the infamous reverse cat command",
+	"tc", "[?] [type.name]", "list all/given types in C output format",
+	"td", " <string>", "load types from string (quote the whole command: \"td ...\")",
 	"te", "[?]", "list all loaded enums",
-	"td", "[?] <string>", "load types from string",
-	"tf", "", "list all loaded functions signatures",
+	"tf", "[?]", "list all loaded functions signatures",
 	"tk", " <sdb-query>", "perform sdb query",
 	"tl", "[?]", "show/Link type to an address",
 	"tn", "[?] [-][addr]", "manage noreturn function attributes and marks",
-	"to", " -", "open cfg.editor to load types",
-	"to", " <path>", "load types from C header file",
-	"toe", " [type.name]", "open cfg.editor to edit types",
-	"tos", " <path>", "load types from parsed Sdb database",
-	"touch", " <file>", "create or update timestamp in file",
-	"tp", "  <type> [addr|varname]", "cast data at <address> to <type> and print it (XXX: type can contain spaces)",
-	"tpv", " <type> @ [value]", "show offset formatted for given type",
-	"tpx", " <type> <hexpairs>", "show value for type with specified byte sequence (XXX: type can contain spaces)",
+	"to", "[?] <path>", "load types from C header file",
+	"tp", "[?]  <type> [addr|varname]", "cast data at <address> to <type> and print it (XXX: type can contain spaces)",
 	"ts", "[?]", "print loaded struct types",
-	"tu", "[?]", "print loaded union types",
-	"tx", "[f?]", "type xrefs",
 	"tt", "[?]", "list all loaded typedefs",
+	"tu", "[?]", "print loaded union types",
+	"tx", "[?]", "type xrefs",
 	NULL
 };
 
 static RCoreHelpMessage help_msg_tx = {
-	"Usage: tx", "[flg] [...]", "",
+	"Usage: tx[.tflg]", "[...]", "Function types",
+	"tx", "", "list functions and the types they use",
 	"tx.", "", "same as txf",
+	"tx", " int32_t", "list functions names using this type",
+	"txt", " int32_t", "same as 'tx type'",
 	"txf", " ([addr])", "list all types used in the current or given function (same as tx.)",
 	"txl","","list all types used by any function",
 	"txg", "", "render the type xrefs graph (usage .txg;aggv)",
-	"tx", " int32_t", "list functions names using this type",
-	"txt", " int32_t", "same as 'tx type'",
-	"tx", "", "list functions and the types they use",
 	NULL
 };
 
 static RCoreHelpMessage help_msg_tcc = {
-	"Usage: tcc", "[-name]", "# type function calling conventions (see also afc? and arcc)",
-	"tcc", "", "list all calling convcentions",
-	"tcc", " r0 pascal(r0,r1,r2)", "define signature for pascall cc (see also arcc)",
-	"tcc", "-pascal", "remove the pascal cc",
-	"tcc-*", "", "unregister all the calling conventions",
-	"tcck", "", "list calling conventions in k=v",
+	"Usage: tcc", "[-name]", "Type function calling conventions (see also afc? and arcc)",
+	"tcc", "", "list all calling conventions",
+	"tcc*", "", "list calling conventions as r2 commands",
+	"tcck", "", "list calling conventions in k=v format",
 	"tccl", "", "list cc signatures (return ccname (arg0, arg1, ..) err;)",
 	"tccj", "", "list them in JSON",
-	"tcc*", "", "list them as r2 commands",
-	NULL
-};
-
-static RCoreHelpMessage help_msg_t_minus = {
-	"Usage: t-", " <type>", "Delete type by its name",
+	"tcc ", "<ret> ([args]) ([err])", "define function cc",
+	"tcc ", "r0 pascal(r0,r1,r2)", "define signature for pascal cc (see also arcc)",
+	"tcc-", "<name>", "unregister calling convention by name",
+	"tcc-*", "", "unregister all calling conventions",
 	NULL
 };
 
@@ -80,60 +70,55 @@ static RCoreHelpMessage help_msg_to = {
 	"to", " -", "open cfg.editor to load types",
 	"to", " <path>", "load types from C header file",
 	"tos", " <path>", "load types from parsed Sdb database",
+	"toe", " [type.name]", "open cfg.editor to edit types",
+	"tos", " <path>", "load types from parsed Sdb database",
 	"touch", " <file>", "create or update timestamp in file",
 	NULL
 };
 
 static RCoreHelpMessage help_msg_tp = {
-	"Usage: tp[...]", "", "",
+	"Usage: tp[vx]", " <type> [...]", "Print type",
 	"tp", "  <type> [addr|varname]", "cast data at <address> to <type> and print it (XXX: type can contain spaces)",
-	"tpv", " <type> @ [value]", "show offset formatted for given type",
+	"tpv", " <type> [@addr]", "show offset formatted for given type",
 	"tpx", " <type> <hexpairs>", "show value for type with specified byte sequence (XXX: type can contain spaces)",
 	NULL
 };
 
 static RCoreHelpMessage help_msg_tc = {
-	"Usage: tc[...]", " [cctype]", "",
-	"tc", " [type.name]", "list all/given loaded types in C output format with newlines",
+	"Usage: tc[...]", " [type]", "Print loaded types",
+	"tc", "", "list all loaded types in C output format with newlines",
+	"tc", " [type.name]", "list given loaded type in C output format with newlines",
 	"tcd", "", "list all loaded types in C output format without newlines",
-	"tcc", "?", "manage calling conventions types",
-	"tc?", "", "show this help",
-	NULL
-};
-
-static RCoreHelpMessage help_msg_td = {
-	"Usage:", "\"td [...]\"", "",
-	"td", "[string]", "load types from string",
+	"tcc", "[?]", "manage calling convention types",
 	NULL
 };
 
 static RCoreHelpMessage help_msg_te = {
-	"Usage: te[...]", "", "",
+	"Usage: te[...]", "", "Type enum commands",
 	"te", "", "list all loaded enums",
 	"te", " <enum>", "print all values of enum for given name",
+	"te", " <enum> <value>", "show name for given enum number",
 	"te-", "<enum>", "delete enum type definition",
 	"tej", "", "list all loaded enums in json",
 	"tej", " <enum>", "show enum in json",
-	"te", " <enum> <value>", "show name for given enum number",
 	"teb", " <enum> <name>", "show matching enum bitfield for given name",
-	"tec", "<name>", "list all/given loaded enums in C output format with newlines",
+	"tec", "", "list all loaded enums in C output format with newlines",
+	"tec", " <name>", "list given loaded enums in C output format with newlines",
 	"ted", "", "list all loaded enums in C output format without newlines",
-	"te?", "", "show this help",
 	NULL
 };
 
 static RCoreHelpMessage help_msg_tt = {
-	"Usage: tt[...]", "", "",
+	"Usage: tt[...]", "", "Type typedef commands",
 	"tt", "", "list all loaded typedefs",
 	"tt", " <typename>", "show name for given type alias",
 	"ttj", "", "show typename and type alias in json",
 	"ttc", "<name>", "show typename and type alias in C output format",
-	"tt?", "", "show this help",
 	NULL
 };
 
 static RCoreHelpMessage help_msg_tl = {
-	"Usage: tl[...]", "[typename] [[=] address]", "# Type link commands",
+	"Usage: tl[...]", "[typename] [[=] address]", "Type link commands",
 	"tl", "", "list all links.",
 	"tll", "", "list all links in readable format.",
 	"tllj", "", "list all links in readable JSON format.",
@@ -170,7 +155,6 @@ static RCoreHelpMessage help_msg_ts = {
 	"tsc", "<name>", "list all/given loaded structs in C output format with newlines",
 	"tsd", "", "list all loaded structs in C output format without newlines",
 	"tss", " [type]", "display size of struct",
-	"ts?", "", "show this help",
 	NULL
 };
 
@@ -184,13 +168,8 @@ static RCoreHelpMessage help_msg_tu = {
 	"tu*", " [type]", "show pf.<name> format string for given union",
 	"tuc", "<name>", "list all/given loaded unions in C output format with newlines",
 	"tud", "", "list all loaded unions in C output format without newlines",
-	"tu?", "", "show this help",
 	NULL
 };
-
-static void show_help(RCore *core) {
-	r_core_cmd_help (core, help_msg_t);
-}
 
 static bool cc_cb(void *p, const char *k, const char *v) {
 	if (!strcmp (v, "cc")) {
@@ -257,26 +236,33 @@ static void cmd_tcc(RCore *core, const char *input) {
 		break;
 	case '-':
 		if (input[1] == '*') {
-			sdb_reset (core->anal->sdb_cc);
+			if (input[2] == '?') {
+				r_core_cmd_help_match (core, help_msg_tcc, "tcc-*", true);
+			} else {
+				sdb_reset (core->anal->sdb_cc);
+			}
+		} else if (input[1] == '?') {
+			r_core_cmd_help_match (core, help_msg_tcc, "tcc-", false);
 		} else {
 			r_anal_cc_del (core->anal, r_str_trim_head_ro (input + 1));
 		}
 		break;
-	case 0:
-		cmd_afcl (core, "");
-		break;
+	case '\0':
 	case 'l':
-		cmd_afcl (core, "l");
-		break;
 	case 'j':
-		cmd_afcl (core, "j");
-		break;
-		break;
 	case '*':
-		cmd_afcl (core, "*");
+		if (*input && input[1] == '?') {
+			r_core_cmd_help_match_spec (core, help_msg_tcc, "tcc", *input, true);
+		} else {
+			cmd_afcl (core, input);
+		}
 		break;
 	case 'k':
-		cmd_afck (core, NULL);
+		if (input[1] == '?') {
+			r_core_cmd_help_match (core, help_msg_tcc, "tcck", true);
+		} else {
+			cmd_afck (core, NULL);
+		}
 		break;
 	case ' ':
 		if (strchr (input, '(')) {
@@ -334,6 +320,7 @@ static void showFormat(RCore *core, const char *name, int mode) {
 }
 
 static int cmd_tac(void *data, const char *_input) { // "tac"
+	RCore *core = (RCore *) data;
 	char *input = strdup (_input);
 	char *arg = strchr (input, ' ');
 	if (arg) {
@@ -341,21 +328,21 @@ static int cmd_tac(void *data, const char *_input) { // "tac"
 	}
 	switch (*input) {
 	case '?': // "tac?"
-		eprintf ("Usage: tac [file]\n");
+		r_core_cmd_help_match (core, help_msg_t, "tac", true);
 		break;
 	default: // "tac"
 		if (R_STR_ISNOTEMPTY (arg)) {
-			char *data = r_file_slurp (arg, NULL);
-			RList *lines = r_str_split_list (data, "\n", 0);
+			char *filedata = r_file_slurp (arg, NULL);
+			RList *lines = r_str_split_list (filedata, "\n", 0);
 			RListIter *iter;
 			char *line;
 			r_list_foreach_prev (lines, iter, line) {
 				r_cons_printf ("%s\n", line);
 			}
 			r_list_free (lines);
-			free (data);
+			free (filedata);
 		} else {
-			eprintf ("Usage: tac [file]\n");
+			r_core_cmd_help_match (core, help_msg_t, "tac", true);
 		}
 		break;
 	}
@@ -380,7 +367,7 @@ static int cmd_tail(void *data, const char *_input) { // "tail"
 	}
 	switch (*input) {
 	case '?': // "tail?"
-		eprintf ("Usage: tail [file] # to list last n lines in file\n");
+		r_core_cmd_help_match (core, help_msg_t, "tail", true);
 		break;
 	default: // "tail"
 		if (!arg) {
@@ -1129,12 +1116,16 @@ static int cmd_type(void *data, const char *input) {
 		break;
 	}
 	case 'k': // "tk"
-		res = (input[1] == ' ')
-			? sdb_querys (TDB, NULL, -1, input + 2)
-			: sdb_querys (TDB, NULL, -1, "*");
-		if (res) {
-			r_cons_print (res);
-			free (res);
+		if (input[1] == '?') {
+			r_core_cmd_help_match (core, help_msg_t, "tk", true);
+		} else {
+			res = (input[1] == ' ')
+				? sdb_querys (TDB, NULL, -1, input + 2)
+				: sdb_querys (TDB, NULL, -1, "*");
+			if (res) {
+				r_cons_print (res);
+				free (res);
+			}
 		}
 		break;
 	case 'c': // "tc"
@@ -1173,7 +1164,11 @@ static int cmd_type(void *data, const char *input) {
 			r_core_cmd0 (core, "tfc;tuc;tsc;ttc;tec");
 			break;
 		case 'd': // "tcd"
-			r_core_cmd0 (core, "tud;tsd;ttc;ted");
+			if (input[2] == '?') {
+				r_core_cmd_help_match (core, help_msg_tc, "tcd", true);
+			} else {
+				r_core_cmd0 (core, "tud;tsd;ttc;ted");
+			}
 			break;
 		default:
 			r_core_cmd_help (core, help_msg_tc);
@@ -1241,7 +1236,7 @@ static int cmd_type(void *data, const char *input) {
 		if (member_name) {
 			*member_name++ = 0;
 		}
-		if (name && (r_type_kind (TDB, name) != R_TYPE_ENUM)) {
+		if (R_STR_ISNOTEMPTY (name) && (r_type_kind (TDB, name) != R_TYPE_ENUM)) {
 			R_LOG_ERROR ("%s is not an enum", name);
 			free (name);
 			break;
@@ -1251,7 +1246,7 @@ static int cmd_type(void *data, const char *input) {
 			r_core_cmdf (core, "t-%s", r_str_trim_head_ro (input + 2));
 			break;
 		case 'j': // "tej"
-			if (input[2] == 0) { // "tej"
+			if (input[2] == '\0') { // "tej"
 				char *name = NULL;
 				SdbKv *kv;
 				SdbListIter *iter;
@@ -1259,25 +1254,24 @@ static int cmd_type(void *data, const char *input) {
 				PJ *pj = pj_new ();
 				pj_o (pj);
 				ls_foreach (l, iter, kv) {
-					if (!strcmp (sdbkv_value (kv), "enum")) {
-						if (!name || strcmp (sdbkv_value (kv), name)) {
-							free (name);
-							name = strdup (sdbkv_key (kv));
-							pj_k (pj, name);
-							{
-								RList *list = r_type_get_enum (TDB, name);
-								if (list && !r_list_empty (list)) {
-									pj_o (pj);
-									RListIter *iter;
-									RTypeEnum *member;
-									r_list_foreach (list, iter, member) {
-										pj_kn (pj, member->name, r_num_math (NULL, member->val));
-									}
-									pj_end (pj);
-								}
-								r_list_free (list);
+					if (!strcmp (sdbkv_value (kv), "enum")
+							&& (!name || strcmp (sdbkv_value (kv), name))) {
+						RList *list;
+						free (name);
+						name = strdup (sdbkv_key (kv));
+						pj_k (pj, name);
+						list = r_type_get_enum (TDB, name);
+						if (!r_list_empty (list)) {
+							RListIter *iter;
+							RTypeEnum *member;
+							pj_o (pj);
+							r_list_foreach (list, iter, member) {
+								pj_kn (pj, member->name,
+										r_num_math (NULL, member->val));
 							}
+							pj_end (pj);
 						}
+						r_list_free (list);
 					}
 				}
 				pj_end (pj);
@@ -1285,6 +1279,8 @@ static int cmd_type(void *data, const char *input) {
 				pj_free (pj);
 				free (name);
 				ls_free (l);
+			} else if (input[2] == '?') {
+				r_core_cmd_help_match (core, help_msg_te, "tej", false);
 			} else { // "tej ENUM"
 				RListIter *iter;
 				PJ *pj = pj_new ();
@@ -1295,7 +1291,7 @@ static int cmd_type(void *data, const char *input) {
 					// NEVER REACHED
 				} else {
 					RList *list = r_type_get_enum (TDB, name);
-					if (list && !r_list_empty (list)) {
+					if (!r_list_empty (list)) {
 						pj_ks (pj, "name", name);
 						pj_k (pj, "values");
 						pj_o (pj);
@@ -1312,15 +1308,27 @@ static int cmd_type(void *data, const char *input) {
 			}
 			break;
 		case 'b': // "teb"
-			res = r_type_enum_member (TDB, name, member_name, 0);
+			if (R_STR_ISEMPTY (name) || input[2] == '?') {
+				r_core_cmd_help_match (core, help_msg_te, "teb", true);
+			} else {
+				res = r_type_enum_member (TDB, name, member_name, 0);
+			}
 			break;
 		case 'c': // "tec"
-			print_enum_in_c_format(TDB, r_str_trim_head_ro (input + 2), true);
+			if (input[2] == '?') {
+				r_core_cmd_help_match (core, help_msg_te, "tec", true);
+			} else {
+				print_enum_in_c_format (TDB, r_str_trim_head_ro (input + 2), true);
+			}
 			break;
-		case 'd':
-			print_enum_in_c_format(TDB, r_str_trim_head_ro (input + 2), false);
+		case 'd': // "ted"
+			if (input[2] == '?') {
+				r_core_cmd_help_match (core, help_msg_te, "ted", true);
+			} else {
+				print_enum_in_c_format (TDB, r_str_trim_head_ro (input + 2), false);
+			}
 			break;
-		case ' ':
+		case ' ': // "te "
 			if (member_name) {
 				res = r_type_enum_member (TDB, name, NULL, r_num_math (core->num, member_name));
 			} else {
@@ -1382,8 +1390,12 @@ static int cmd_type(void *data, const char *input) {
 	// t* - list all types in 'pf' syntax
 	case 'j': // "tj"
 	case '*': // "t*"
-	case 0: // "t"
-		typesList (core, input[0]);
+	case '\0': // "t"
+		if (input[0] && input[1] == '?') {
+			r_core_cmd_help_match_spec (core, help_msg_t, "t", input[0], true);
+		} else {
+			typesList (core, input[0]);
+		}
 		break;
 	case 'o': // "to"
 		if (input[1] == '?') {
@@ -1435,7 +1447,7 @@ static int cmd_type(void *data, const char *input) {
 				if (arg) {
 					r_file_touch (arg + 1);
 				} else {
-					eprintf ("Usage: ot|touch [filename]\n");
+					r_core_cmd_help_match (core, help_msg_to, "touch", true);
 				}
 			} else if (input[1] == 's') {
 				const char *dbpath = input + 3;
@@ -1473,9 +1485,7 @@ static int cmd_type(void *data, const char *input) {
 	case 'd': // "td"
 		if (input[1] == '?') {
 			// TODO #7967 help refactor: move to detail
-			r_core_cmd_help (core, help_msg_td);
-			r_cons_printf ("Note: The td command should be put between double quotes\n"
-				"Example: \"td struct foo {int bar;int cow;};\"\n");
+			r_core_cmd_help_match (core, help_msg_t, "td", true);
 		} else if (input[1] == ' ') {
 			char *tmp = r_str_newf ("%s;", input + 2);
 			if (!tmp) {
@@ -1595,11 +1605,11 @@ static int cmd_type(void *data, const char *input) {
 			if (input[2] == 'l') {
 				cmd_tail (core, input);
 			} else {
-				eprintf ("Usage: tail [number] [file]\n");
+				r_core_cmd_help_match (core, help_msg_t, "tail", true);
 			}
 			break;
 		default:
-			R_LOG_WARN ("`ta` command is deprecated. Use \"aht\" instead");
+			r_core_cmd_help_match (core, help_msg_t, "ta", false);
 			break;
 		}
 		break;
@@ -1702,7 +1712,7 @@ static int cmd_type(void *data, const char *input) {
 				ut64 val = core->offset;
 				r_core_cmdf (core, "pf %s @v:0x%08" PFMT64x, fmt, val);
 			} else {
-				eprintf ("Usage: tpv [type] @ [value]\n");
+				r_core_cmd_help_match (core, help_msg_tp, "tpv", true);
 			}
 		} else if (input[1] == ' ' || input[1] == 'x' || !input[1]) {
 			char *tmp = strdup (input);
@@ -1767,9 +1777,13 @@ static int cmd_type(void *data, const char *input) {
 		break;
 	case '-': // "t-"
 		if (input[1] == '?') {
-			r_core_cmd_help (core, help_msg_t_minus);
+			r_core_cmd_help_match (core, help_msg_t, "t-", false);
 		} else if (input[1] == '*') {
-			sdb_reset (TDB);
+			if (input[2] == '?') {
+				r_core_cmd_help_match (core, help_msg_t, "t-*", true);
+			} else {
+				sdb_reset (TDB);
+			}
 		} else {
 			const char *name = r_str_trim_head_ro (input + 1);
 			if (*name) {
@@ -1911,7 +1925,7 @@ static int cmd_type(void *data, const char *input) {
 	}
 	default:
 	case '?':
-		show_help (core);
+		r_core_cmd_help (core, help_msg_t);
 		break;
 	}
 	return true;
