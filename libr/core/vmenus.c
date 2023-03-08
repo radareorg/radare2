@@ -137,11 +137,16 @@ R_API bool r_core_visual_esil(RCore *core, const char *input) {
 	RAnalOp analop;
 	ut8 buf[sizeof (ut64)];
 	unsigned int addrsize = r_config_get_i (core->config, "esil.addr.size");
+	static RCoreHelpMessage help_msg_aev = {
+		"Usage:", "aev [esil]", "Visual esil debugger",
+		"aev", " [esil]", "visual esil debugger for the given expression or current instruction"
+		NULL
+	};
 	if (input && !*input) {
 		input = NULL;
 	}
 	if (input && *input == '?') {
-		eprintf ("Usage: aev [esil-expression]    # same as VbE\n");
+		r_core_cmd_help (core, help_msg_aev);
 		return false;
 	}
 	if (!r_config_get_b (core->config, "scr.interactive")) {
