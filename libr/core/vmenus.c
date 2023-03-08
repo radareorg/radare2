@@ -139,7 +139,7 @@ R_API bool r_core_visual_esil(RCore *core, const char *input) {
 	unsigned int addrsize = r_config_get_i (core->config, "esil.addr.size");
 	static RCoreHelpMessage help_msg_aev = {
 		"Usage:", "aev [esil]", "Visual esil debugger",
-		"aev", " [esil]", "visual esil debugger for the given expression or current instruction"
+		"aev", " [esil]", "visual esil debugger for the given expression or current instruction",
 		NULL
 	};
 	if (input && !*input) {
