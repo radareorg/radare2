@@ -2175,8 +2175,8 @@ static void cmd_drpi(RCore *core) {
 }
 
 /* XXX "from" is irrelevant, control flow into here is determined by cfg.debug
- * right now, i.e.: if cfg.debug=1, arp -> drp, so from == 'd' despite entering
- * arp, so you still get the wrong help for your input.
+ * right now, i.e.: if cfg.debug == 1, arp -> drp, so from == 'd' despite
+ * entering arp, so you still get the wrong help for your input.
  */
 static void cmd_reg_profile(RCore *core, char from, const char *str) { // "arp" and "drp"
 	const char *ptr;
