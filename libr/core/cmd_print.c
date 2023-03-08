@@ -1736,7 +1736,7 @@ static void cmd_print_format(RCore *core, const char *_input, const ut8* block, 
 			if (val) {
 				r_cons_printf ("%d\n", r_print_format_struct_size (core->print, val, mode, 0));
 			} else {
-				R_LOG_WARN ("Struct %s not defined.", _input);
+				R_LOG_WARN ("Struct %s not defined", _input);
 				r_core_cmd_help_match (core, help_msg_pf, "pfs", true);
 			}
 		} else if (*_input == ' ') {
@@ -1746,7 +1746,7 @@ static void cmd_print_format(RCore *core, const char *_input, const ut8* block, 
 			if (*_input) {
 				r_cons_printf ("%d\n", r_print_format_struct_size (core->print, _input, mode, 0));
 			} else {
-				R_LOG_WARN ("Struct %s not defined.", _input);
+				R_LOG_WARN ("Struct %s not defined", _input);
 				r_core_cmd_help_match (core, help_msg_pf, "pfs", true);
 			}
 		} else {
