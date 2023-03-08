@@ -18,7 +18,7 @@ static RCoreHelpMessage help_msg_s = {
 	"s+", " n", "seek n bytes forward",
 	"s++", "[n]", "seek blocksize bytes forward (/=n)",
 	"s[j*=!]", "", "list undo seek history (JSON, =list, *r2, !=names, s==)",
-	"s/", " DATA", "search for next occurrence of 'DATA'",
+	"s/", " DATA", "search for next occurrence of 'DATA' (see /?)",
 	"s/x", " 9091", "search for next occurrence of \\x90\\x91",
 	"sa", " [[+-]a] [asz]", "seek asz (or bsize) aligned to addr",
 	"sb", "", "seek aligned to bb start",
@@ -36,6 +36,7 @@ static RCoreHelpMessage help_msg_s = {
 	"sr", " PC", "seek to register (or register alias) value",
 	"ss", "[?]", "seek silently (without adding an entry to the seek history)",
 	// "sp [page]  seek page N (page = block)",
+	"sort", " [file]", "sort the contents of the file",
 	NULL
 };
 
@@ -248,7 +249,7 @@ static int cmd_sort(void *data, const char *input) { // "sort"
 	}
 	switch (*input) {
 	case '?': // "sort?"
-		eprintf ("Usage: sort # sort the contents of the file\n");
+		r_core_cmd_help_match (core, help_msg_s, "sort", true);
 		break;
 	default: // "ls"
 		if (!arg) {
@@ -325,10 +326,6 @@ static int cmd_seek_opcode_forward(RCore *core, int n) {
 }
 
 static void cmd_seek_opcode(RCore *core, const char *input) {
-	if (input[0] == '?') {
-		r_core_cmd_help_match (core, help_msg_s, "so", false);
-		return;
-	}
 	if (!strcmp (input, "-")) {
 		input = "-1";
 	}
@@ -484,8 +481,7 @@ static int cmd_seek(void *data, const char *input) {
 			r_config_set_i (core->config, "search.maxhits", saved_maxhits);
 			break;
 		case '?':
-			eprintf ("Usage: s/.. arg.\n");
-			r_cons_printf ("/?\n");
+			r_core_cmd_help_match (core, help_msg_s, "s/", false);
 			break;
 		default:
 			R_LOG_ERROR ("unknown search subcommand");
@@ -759,10 +755,14 @@ static int cmd_seek(void *data, const char *input) {
 		case 'r':
 			if (input[2] == 't') {
 				cmd_sort (core, input);
+			} else if (input[2] == '?') {
+				r_core_cmd_help_match (core, help_msg_s, "sort", true);
 			} else {
 				return -1;
 			}
 			break;
+		case '?':
+			r_core_cmd_help_match (core, help_msg_s, "so", false);
 		case ' ':
 		case '\0':
 		case '+':
@@ -843,7 +843,7 @@ static int cmd_seek(void *data, const char *input) {
 					}
 					r_cons_sleep_end (bed);
 				} else {
-					eprintf ("Usage: sleep [seconds]\n");
+					r_core_cmd_help_match (core, help_msg_sl, "sleep", true);
 				}
 			}
 			break;
