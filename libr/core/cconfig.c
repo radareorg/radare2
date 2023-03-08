@@ -1491,8 +1491,18 @@ static bool cb_dirsrc(void *user, void *data) {
 static bool cb_cfgsanbox_grain(void *user, void *data) {
 	RConfigNode *node = (RConfigNode*) data;
 	if (strstr (node->value, "?")) {
-		eprintf ("comma separated grain types to be masked out by the sandbox.\n");
-		eprintf ("all, none, disk, files, exec, socket, exec\n");
+		static RCoreHelpMessage help_msg_grain = {
+			"Usage:", "e cfg.sandbox.grain=arg[,arg...]", "set grain types to mask out",
+			"Grain types:", "", "",
+			"", "all", "",
+			"", "none", "",
+			"", "disk", "",
+			"", "files", "",
+			"", "exec", "",
+			"", "socket", "",
+			NULL
+		};
+		r_core_cmd_help ((RCore *)user, help_msg_grain);
 		return false;
 	}
 	int gt = R_SANDBOX_GRAIN_NONE;
