@@ -299,6 +299,12 @@ static void siguza_xrefs(RCore *core, ut64 search, ut64 start, int lenbytes) {
 }
 
 static int r_cmdsixref_call(void *user, const char *input) {
+	static RCoreHelpMessage help_msg_sixref = {
+		"Usage:", "sixref", "Fast xref discovery in arm64 executable sections",
+		"sixref", " [addr] [len]", "find xrefs in arm64 executable sections",
+		NULL
+	};
+
 	if (!r_str_startswith (input, "sixref")) {
 		return false;
 	}
@@ -309,7 +315,7 @@ static int r_cmdsixref_call(void *user, const char *input) {
 	const int bits = r_config_get_i (core->config, "asm.bits");
 
 	if (*input == '?') {
-		eprintf ("Usage: sixref [address] [len]   Find x-refs in executable sections (arm64 only but fast!)\n");
+		r_core_cmd_help (core, help_msg_sixref);
 		goto done;
 	}
 
