@@ -130,7 +130,7 @@ R_API ut8 *r_inflate_lz4(const ut8 *src, int srcLen, int *consumed, int *dstLen)
 		.outputSize = &osz,
 		.error = 0
 	};
-	int res = unlz4Block_userPtr(smallz4GetByte, smallz4Write, &user, srcLen, NULL, NULL);
+	int res = unlz4Block_userPtr (smallz4GetByte, smallz4Write, &user, srcLen, NULL, NULL);
 	if (res < 1 || user.error != 0) {
 #else
 	int res = LZ4_decompress_safe ((const char*)src, (char*)obuf, (uint32_t) srcLen, (uint32_t) osz);
