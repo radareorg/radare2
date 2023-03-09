@@ -172,7 +172,7 @@ e dir.projects = .tmp/
 CC "Some other test" @ 0x00404890
 P+ testexp > /dev/null
 cat .tmp/testexp/rc.r2 | grep base64
-rmdir -p .tmp/testexp
+rm -rf .tmp/testexp
 EOF
 EXPECT=<<EOF
 "e bin.str.debase64 = false"
@@ -193,7 +193,7 @@ C- @ 0x00404890
 C- @ 0x00404800
 P project.r2
 cat .tmp/testset/rc.r2 | grep CC
-rmdir -p .tmp/testset
+rm -rf .tmp/testset
 EOF
 EXPECT=<<EOF
 CCu base64:IlNlY29uZCBjb21tZW50Ig== @ 0x00404800

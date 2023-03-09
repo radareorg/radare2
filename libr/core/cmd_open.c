@@ -78,7 +78,7 @@ static RCoreHelpMessage help_msg_omb = {
 	"omb", " [id]", "switch to use a different bank",
 	"omb+", " [name]", "create a new bank with given name",
 	"omba", " [id]", "adds a map to the bank",
-	"ombd", " [id]", "deletes a map from the bank",
+	"ombd", " [id]", "delete a map from the bank",
 	"omb-", "*", "delete all banks",
 	"omb-", " [mapid]", "delete the bank with given id",
 	"ombg", "", "associate all maps to the current bank",
