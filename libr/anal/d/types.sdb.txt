@@ -97,7 +97,7 @@ func.srandomdev.ret=void
 
 initstate=func
 func.initstate.args=3
-func.initstate.arg.0=uint32_t,state
+func.initstate.arg.0=uint32_t,seed
 func.initstate.arg.1=char *,state
 func.initstate.arg.2=size_t,size
 func.initstate.ret=char *
