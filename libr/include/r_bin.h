@@ -573,7 +573,7 @@ typedef struct r_bin_import_t {
 } RBinImport;
 
 typedef struct r_bin_reloc_t {
-	ut8 type;
+	ut8 type; // type have implicit size.. but its anoying
 	ut8 additive;
 	RBinSymbol *symbol;
 	RBinImport *import;
