@@ -104,21 +104,21 @@ R_API RList *r_anal_types_from_fcn(RAnal *anal, RAnalFunction *fcn) {
 R_IPI void enum_type_case_free(void *e, void *user) {
 	(void)user;
 	RAnalEnumCase *cas = e;
-	free ((char *)cas->name);
+	free (cas->name);
 }
 
 R_IPI void struct_type_member_free(void *e, void *user) {
 	(void)user;
 	RAnalStructMember *member = e;
-	free ((char *)member->name);
-	free ((char *)member->type);
+	free (member->name);
+	free (member->type);
 }
 
 R_IPI void union_type_member_free(void *e, void *user) {
 	(void)user;
 	RAnalUnionMember *member = e;
-	free ((char *)member->name);
-	free ((char *)member->type);
+	free (member->name);
+	free (member->type);
 }
 
 static RAnalBaseType *get_enum_type(RAnal *anal, const char *sname) {
