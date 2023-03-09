@@ -1679,8 +1679,11 @@ static void parse_function(Context *ctx, ut64 idx) {
 	r_warn_if_fail (ctx->lang);
 	if (ctx->anal->binb.demangle) {
 		char *mangled_name = fcn.name;
-		fcn.name = ctx->anal->binb.demangle (NULL, ctx->lang, mangled_name, fcn.addr, false);
-		free (mangled_name);
+		char *demangled_name = ctx->anal->binb.demangle (NULL, ctx->lang, mangled_name, fcn.addr, false);
+		if (demangled_name) {
+			fcn.name = demangled_name;
+			free (mangled_name);
+		}
 	}
 	fcn.signature = r_str_newf ("%s %s(%s);", r_strbuf_get (&ret_type), fcn.name, r_strbuf_get (&args));
 	sdb_save_dwarf_function (&fcn, variables, ctx->sdb);
