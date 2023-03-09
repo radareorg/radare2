@@ -622,14 +622,14 @@ static RList* patch_relocs(RBin *b) {
 	if (!io || !io->desc) {
 		return NULL;
 	}
-	const bool apply_relocs = true;
-	const bool cache_relocs = io->cached;
 
 	RBinObject *obj = r_bin_cur_object (b);
 	if (!obj) {
 		return NULL;
 	}
 	struct MACH0_(obj_t) *mo = obj->bin_obj;
+	const bool apply_relocs = !mo->b->readonly;
+	const bool cache_relocs = io->cached;
 
 	RSkipList *all_relocs = MACH0_(get_relocs)(mo);
 	if (!all_relocs) {
@@ -712,7 +712,6 @@ static RList* patch_relocs(RBin *b) {
 	}
 	gotr2map->name = strdup (".got.r2");
 
-	eprintf ("got");
 	if (!(ret = r_list_newf ((RListFree)free))) {
 		goto beach;
 	}
