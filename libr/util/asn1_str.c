@@ -313,7 +313,11 @@ R_API RASN1String *r_asn1_stringify_oid(const ut8* buffer, ut32 length) {
 R_API void r_asn1_string_free(RASN1String* str) {
 	if (str) {
 		if (str->allocated) {
-			free ((char*) str->string);
+#if R2_590
+			free (str->string);
+#else
+			free ((char *)str->string);
+#endif
 		}
 		free (str);
 	}
