@@ -1,15 +1,18 @@
 /* work-in-progress reverse engineered swift-demangler in C
- * Copyright MIT 2015-2022 by pancake@nopcode.org */
+ * Copyright MIT 2015-2023 by pancake@nopcode.org */
 
-#include <r_util.h>
-#include <r_lib.h>
 #include <r_cons.h>
+#include <r_lib.h>
 
 #define IFDBG if (0)
 
 // $ echo "..." | xcrun swift-demangle
 
 static R_TH_LOCAL int have_swift_demangle = -1;
+#if R2__UNIX__
+static R_TH_LOCAL bool haveSwiftCore = false;
+static R_TH_LOCAL char *(*swift_demangle)(const char *sym, int symlen, void *out, int *outlen, int flags, int unk) = NULL;
+#endif
 
 struct Type {
 	const char *code;
@@ -161,10 +164,20 @@ static char *swift_demangle_cmd(const char *s) {
 
 static char *swift_demangle_lib(const char *s) {
 #if R2__UNIX__
-	static R_TH_LOCAL bool haveSwiftCore = false;
-	static R_TH_LOCAL char *(*swift_demangle)(const char *sym, int symlen, void *out, int *outlen, int flags, int unk) = NULL;
 	if (!haveSwiftCore) {
-		void *lib = r_lib_dl_open ("/usr/lib/swift/libswiftCore.dylib");
+		void *lib = r_lib_dl_open ("/usr/lib/swift/libswiftCore." R_LIB_EXT);
+		if (!lib) {
+			lib = r_lib_dl_open ("/usr/lib/libswiftCore." R_LIB_EXT);
+			if (!lib) {
+				lib = r_lib_dl_open ("libswiftCore");
+				if (!lib) {
+					lib = r_lib_dl_open ("/usr/lib/swift/libswiftDemangle." R_LIB_EXT);
+					if (!lib) {
+						lib = r_lib_dl_open ("libswiftDemangle");
+					}
+				}
+			}
+		}
 		if (lib) {
 			swift_demangle = r_lib_dl_sym (lib, "swift_demangle");
 		}
