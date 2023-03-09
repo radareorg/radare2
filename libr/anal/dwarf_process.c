@@ -16,8 +16,8 @@ typedef struct dwarf_parse_context_t {
 
 typedef struct dwarf_function_t {
 	ut64 addr;
-	const char *name;
-	const char *signature;
+	char *name;
+	char *signature;
 	bool is_external;
 	bool is_method;
 	bool is_virtual;
@@ -1675,15 +1675,16 @@ static void parse_function(Context *ctx, ut64 idx) {
 	if (ret_type.len == 0) { /* DW_AT_type is omitted in case of `void` ret type */
 		r_strbuf_append (&ret_type, "void");
 	}
+
 	r_warn_if_fail (ctx->lang);
-	char *new_name = ctx->anal->binb.demangle
-		? ctx->anal->binb.demangle (NULL, ctx->lang, fcn.name, fcn.addr, false): NULL;
-	fcn.name = new_name ? new_name : strdup (fcn.name);
+	fcn.name = ctx->anal->binb.demangle
+		? ctx->anal->binb.demangle (NULL, ctx->lang, fcn.name, fcn.addr, false)
+		: strdup (fcn.name);
 	fcn.signature = r_str_newf ("%s %s(%s);", r_strbuf_get (&ret_type), fcn.name, r_strbuf_get (&args));
 	sdb_save_dwarf_function (&fcn, variables, ctx->sdb);
 
-	free ((char *)fcn.signature);
-	free ((char *)fcn.name);
+	free (fcn.signature);
+	free (fcn.name);
 
 	RListIter *iter;
 	Variable *var;
