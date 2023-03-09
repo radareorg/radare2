@@ -14,7 +14,7 @@ R_API RASN1String *r_asn1_create_string(const char *string, bool allocated, ut32
 	if (s) {
 		s->allocated = allocated;
 		s->length = length;
-		s->string = string;
+		s->string = (char *)string;
 	}
 	return s;
 }
