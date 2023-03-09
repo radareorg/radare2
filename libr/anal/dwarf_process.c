@@ -16,8 +16,8 @@ typedef struct dwarf_parse_context_t {
 
 typedef struct dwarf_function_t {
 	ut64 addr;
-	const char *name;
-	const char *signature;
+	char *name;
+	char *signature;
 	bool is_external;
 	bool is_method;
 	bool is_virtual;
@@ -1611,12 +1611,12 @@ static void parse_function(Context *ctx, ut64 idx) {
 		switch (die->attr_values[i].attr_name) {
 		case DW_AT_name:
 			if (!get_linkage_name || !has_linkage_name) {
-				fcn.name = val->string.content;
+				fcn.name = strdup (val->string.content);
 			}
 			break;
 		case DW_AT_linkage_name:
 		case DW_AT_MIPS_linkage_name:
-			fcn.name = val->string.content;
+			fcn.name = strdup (val->string.content);
 			has_linkage_name = true;
 			break;
 		case DW_AT_low_pc:
@@ -1627,7 +1627,7 @@ static void parse_function(Context *ctx, ut64 idx) {
 		{
 			RBinDwarfDie *spec_die = ht_up_find (ctx->die_map, val->reference, NULL);
 			if (spec_die) {
-				fcn.name = get_specification_die_name (spec_die); /* I assume that if specification has a name, this DIE hasn't */
+				fcn.name = strdup (get_specification_die_name (spec_die)); /* I assume that if specification has a name, this DIE hasn't */
 				get_spec_die_type (ctx, spec_die, &ret_type);
 			}
 			break;
@@ -1677,9 +1677,11 @@ static void parse_function(Context *ctx, ut64 idx) {
 	}
 
 	r_warn_if_fail (ctx->lang);
-	fcn.name = ctx->anal->binb.demangle
-		? ctx->anal->binb.demangle (NULL, ctx->lang, fcn.name, fcn.addr, false)
-		: strdup (fcn.name);
+	if (ctx->anal->binb.demangle) {
+		char *mangled_name = fcn.name;
+		fcn.name = ctx->anal->binb.demangle (NULL, ctx->lang, mangled_name, fcn.addr, false);
+		free (mangled_name);
+	}
 	fcn.signature = r_str_newf ("%s %s(%s);", r_strbuf_get (&ret_type), fcn.name, r_strbuf_get (&args));
 	sdb_save_dwarf_function (&fcn, variables, ctx->sdb);
 
