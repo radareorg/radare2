@@ -63,7 +63,7 @@ int r_pyc_disasm(RAnalOp *opstruct, const ut8 *code, RList *cobjs, RList *intern
 			char *nm = r_str_newf ("%s %s", opstruct->mnemonic, arg);
 			free (opstruct->mnemonic);
 			opstruct->mnemonic = nm;
-			free ((char *)arg);
+			free (arg);
 		}
 	} else if (ops->bits == 8) {
 		i += 1;

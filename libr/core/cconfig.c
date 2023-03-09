@@ -2572,7 +2572,11 @@ static bool cb_scrstrconv(void *user, void *data) {
 		}
 		return false;
 	} else {
+#if R2_590
+		free (core->print->strconv_mode);
+#else
 		free ((char *)core->print->strconv_mode);
+#endif
 		core->print->strconv_mode = strdup (node->value);
 	}
 	return true;
