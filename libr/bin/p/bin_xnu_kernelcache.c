@@ -204,7 +204,7 @@ static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadadd
 	RCFValueDict *prelink_info = NULL;
 	if (!is_modern && prelink_range->range.size) {
 		prelink_info = r_cf_value_dict_parse (fbuf, prelink_range->range.offset,
-				prelink_range->range.size, R_CF_OPTION_SKIP_NSDATA);
+				prelink_range->range.size, R_CF_OPTION_SKIP_NSDATA | R_CF_OPTION_SUPPORT_IDREF);
 		if (!prelink_info) {
 			R_FREE (prelink_range);
 			R_FREE (obj);

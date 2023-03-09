@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2019-2022 - mrmacete, pancake */
+/* radare - LGPL - Copyright 2019-2023 - mrmacete, pancake, Siguza */
 
 #include <r_util.h>
 #include <r_util/r_xml.h>
@@ -12,10 +12,20 @@ typedef enum {
 	R_CF_STATE_IN_KEY,
 	R_CF_STATE_IN_SCALAR,
 	R_CF_STATE_IN_IGNORE,
+	R_CF_STATE_IN_ATTR_ID,
+	R_CF_STATE_IN_ATTR_IDREF,
 } RCFParsePhase;
+
+typedef enum {
+	R_CF_ID_STATE_NONE,
+	R_CF_ID_STATE_SET,
+	R_CF_ID_STATE_REF,
+} RCFIDState;
 
 typedef struct _RCFParseState {
 	RCFParsePhase phase;
+	RCFIDState idstate;
+	ut32 id;
 	char *key;
 	RCFValueType value_type;
 	RCFValueDict *dict;
@@ -57,6 +67,7 @@ static RCFValueBool *r_cf_value_bool_new(bool value);
 static void r_cf_value_bool_free(RCFValueBool *bool_value);
 static void r_cf_value_bool_print(RCFValueBool *bool_value);
 
+static RCFValue *r_cf_value_clone(RCFValue *value);
 static void r_cf_value_free(RCFValue *value);
 
 RCFValueDict *r_cf_value_dict_parse (RBuffer *file_buf, ut64 offset, ut64 size, int options) {
@@ -69,6 +80,14 @@ RCFValueDict *r_cf_value_dict_parse (RBuffer *file_buf, ut64 offset, ut64 size, 
 	RList *stack = r_list_newf ((RListFree)&r_cf_parse_state_free);
 	if (!stack) {
 		goto beach;
+	}
+
+	RList *idlist = NULL;
+	if (options & R_CF_OPTION_SUPPORT_IDREF) {
+		idlist = r_list_new ();
+		if (!idlist) {
+			goto beach;
+		}
 	}
 
 	r_list_push (stack, r_cf_parse_state_new (R_CF_STATE_ROOT));
@@ -183,42 +202,80 @@ RCFValueDict *r_cf_value_dict_parse (RBuffer *file_buf, ut64 offset, ut64 size, 
 			if (state->phase != R_CF_STATE_IN_KEY) {
 				RCFValue *value = NULL;
 
-				switch (state->phase) {
-				case R_CF_STATE_IN_DICT:
-					value = (RCFValue *)state->dict;
-					break;
-				case R_CF_STATE_IN_ARRAY:
-					value = (RCFValue *)state->array;
-					break;
-				case R_CF_STATE_IN_SCALAR:
-					if (!content && state->value_type != R_CF_FALSE && state->value_type != R_CF_TRUE) {
-						value = (RCFValue *)r_cf_value_null_new ();
-					} else {
-						switch (state->value_type) {
-						case R_CF_STRING:
-							value = (RCFValue *)r_cf_value_string_new (content);
-							break;
-						case R_CF_INTEGER:
-							value = (RCFValue *)r_cf_value_integer_new (content);
-							R_FREE (content);
-							break;
-						case R_CF_DATA:
-							value = (RCFValue *)r_cf_value_data_new (content);
-							R_FREE (content);
-							break;
-						case R_CF_TRUE:
-							value = (RCFValue *)r_cf_value_bool_new (true);
-							break;
-						case R_CF_FALSE:
-							value = (RCFValue *)r_cf_value_bool_new (false);
-							break;
-						default:
-							break;
+				if (idlist && state->idstate == R_CF_ID_STATE_REF) {
+					value = r_list_get_n (idlist, (int)state->id);
+					if (!value) {
+						R_LOG_ERROR ("Missing value for IDREF %"PFMT64d, state->id);
+						goto beach;
+					}
+					if (state->phase == R_CF_STATE_IN_DICT) {
+						if (r_list_length (state->dict->pairs) != 0) {
+							R_LOG_ERROR ("Dict with IDREF already has elements");
+							goto beach;
+						}
+						r_cf_value_dict_free (state->dict);
+						state->dict = NULL;
+					} else if (state->phase == R_CF_STATE_IN_ARRAY) {
+						if (r_list_length (state->dict->pairs) != 0) {
+							R_LOG_ERROR ("Array with IDREF already has elements");
+							goto beach;
+						}
+						r_cf_value_array_free (state->array);
+						state->array = NULL;
+					} else if (state->phase == R_CF_STATE_IN_SCALAR && content) {
+						R_LOG_ERROR ("Element with IDREF already has content");
+						goto beach;
+					}
+					value = r_cf_value_clone (value);
+					if (!value) {
+						goto beach;
+					}
+				} else {
+					switch (state->phase) {
+					case R_CF_STATE_IN_DICT:
+						value = (RCFValue *)state->dict;
+						break;
+					case R_CF_STATE_IN_ARRAY:
+						value = (RCFValue *)state->array;
+						break;
+					case R_CF_STATE_IN_SCALAR:
+						if (!content && state->value_type != R_CF_FALSE && state->value_type != R_CF_TRUE) {
+							value = (RCFValue *)r_cf_value_null_new ();
+						} else {
+							switch (state->value_type) {
+							case R_CF_STRING:
+								value = (RCFValue *)r_cf_value_string_new (content);
+								break;
+							case R_CF_INTEGER:
+								value = (RCFValue *)r_cf_value_integer_new (content);
+								R_FREE (content);
+								break;
+							case R_CF_DATA:
+								value = (RCFValue *)r_cf_value_data_new (content);
+								R_FREE (content);
+								break;
+							case R_CF_TRUE:
+								value = (RCFValue *)r_cf_value_bool_new (true);
+								break;
+							case R_CF_FALSE:
+								value = (RCFValue *)r_cf_value_bool_new (false);
+								break;
+							default:
+								break;
+							}
+						}
+						break;
+					default:
+						break;
+					}
+
+					if (idlist && state->idstate == R_CF_ID_STATE_SET) {
+						if (value) {
+							r_list_insert (idlist, state->id, value);
+						} else {
+							R_LOG_WARN ("Missing value for ID %"PFMT64d, state->id);
 						}
 					}
-					break;
-				default:
-					break;
 				}
 
 				if (next_state->phase == R_CF_STATE_IN_DICT) {
@@ -226,7 +283,7 @@ RCFValueDict *r_cf_value_dict_parse (RBuffer *file_buf, ut64 offset, ut64 size, 
 						RCFKeyValue *key_value = r_cf_key_value_new (next_state->key, value);
 						r_cf_value_dict_add (next_state->dict, key_value);
 					} else if (state->phase != R_CF_STATE_IN_IGNORE) {
-						R_LOG_WARN ("Missing value for key %s", next_state->key);
+						R_LOG_ERROR ("Missing value for key %s", next_state->key);
 						r_cf_value_free ((RCFValue *)value);
 						goto beach;
 					}
@@ -234,7 +291,7 @@ RCFValueDict *r_cf_value_dict_parse (RBuffer *file_buf, ut64 offset, ut64 size, 
 					if (value) {
 						r_cf_value_array_add (next_state->array, value);
 					} else if (state->phase != R_CF_STATE_IN_IGNORE) {
-						R_LOG_WARN ("Missing value for array");
+						R_LOG_ERROR ("Missing value for array");
 						r_cf_value_free ((RCFValue *)value);
 						goto beach;
 					}
@@ -250,6 +307,58 @@ RCFValueDict *r_cf_value_dict_parse (RBuffer *file_buf, ut64 offset, ut64 size, 
 				break;
 			}
 			content = r_str_append (content, x->data);
+			break;
+		}
+		case R_XML_ATTRSTART: {
+			if (idlist) {
+				RCFParseState *state = (RCFParseState *)r_list_last (stack);
+				if (state->phase != R_CF_STATE_IN_DICT && state->phase != R_CF_STATE_IN_ARRAY && state->phase != R_CF_STATE_IN_SCALAR) {
+					break;
+				}
+				RCFParsePhase next_phase;
+				if (!strcmp(x->attr, "ID")) {
+					next_phase = R_CF_STATE_IN_ATTR_ID;
+				} else if (!strcmp(x->attr, "IDREF")) {
+					next_phase = R_CF_STATE_IN_ATTR_IDREF;
+				} else {
+					break;
+				}
+				if (state->idstate != R_CF_ID_STATE_NONE) {
+					R_LOG_ERROR ("Cannot have ID and IDREF on the same element");
+					goto beach;
+				}
+				RCFParseState *next_state = r_cf_parse_state_new (next_phase);
+				if (!next_state) {
+					goto beach;
+				}
+				r_list_push (stack, next_state);
+			}
+			break;
+		}
+		case R_XML_ATTRVAL: {
+			if (idlist) {
+				RCFParseState *state = (RCFParseState *)r_list_last (stack);
+				if (state->phase != R_CF_STATE_IN_ATTR_ID && state->phase != R_CF_STATE_IN_ATTR_IDREF) {
+					break;
+				}
+				content = r_str_append (content, x->data);
+			}
+			break;
+		}
+		case R_XML_ATTREND: {
+			if (idlist) {
+				RCFParseState *state = (RCFParseState *)r_list_last (stack);
+				if (state->phase != R_CF_STATE_IN_ATTR_ID && state->phase != R_CF_STATE_IN_ATTR_IDREF) {
+					break;
+				}
+				r_list_pop (stack);
+				RCFParseState *next_state = (RCFParseState *)r_list_last (stack);
+				next_state->id = (ut32)r_num_get (NULL, content);
+				next_state->idstate = state->phase == R_CF_STATE_IN_ATTR_ID ? R_CF_ID_STATE_SET : R_CF_ID_STATE_REF;
+				R_FREE (content);
+				content = NULL;
+				r_cf_parse_state_free (state);
+			}
 			break;
 		}
 		default:
@@ -268,6 +377,7 @@ RCFValueDict *r_cf_value_dict_parse (RBuffer *file_buf, ut64 offset, ut64 size, 
 beach:
 	r_xml_free (x);
 	r_list_free (stack);
+	r_list_free (idlist);
 	free (content);
 
 	return result;
@@ -547,6 +657,110 @@ static void r_cf_value_bool_print(RCFValueBool *bool_value) {
 		printf ("false");
 	}
 }
+
+static RCFValue *r_cf_value_clone(RCFValue *value) {
+	if (!value) {
+		return NULL;
+	}
+
+	RCFValue *copy = NULL;
+
+	switch (value->type) {
+	case R_CF_DICT: {
+		RCFValueDict *dict = r_cf_value_dict_new ();
+		if (dict) {
+			copy = (RCFValue *)dict;
+			RListIter *iter;
+			RCFKeyValue *item;
+			r_list_foreach (((RCFValueDict *)value)->pairs, iter, item) {
+				char *key = r_str_new (item->key);
+				if (key) {
+					RCFValue *clone = r_cf_value_clone (item->value);
+					if (clone) {
+						RCFKeyValue *pair = r_cf_key_value_new (key, clone);
+						if (pair) {
+							r_cf_value_dict_add (dict, pair);
+						}
+						r_cf_value_free (clone);
+					}
+					R_FREE (key);
+				}
+				r_cf_value_dict_free (dict);
+				copy = NULL;
+				break;
+			}
+		}
+		break;
+	}
+	case R_CF_ARRAY: {
+		RCFValueArray *array = r_cf_value_array_new ();
+		if (array) {
+			copy = (RCFValue *)array;
+			RListIter *iter;
+			RCFValue *item;
+			r_list_foreach (((RCFValueArray *)value)->values, iter, item) {
+				RCFValue *clone = r_cf_value_clone (item);
+				if (clone) {
+					r_cf_value_array_add (array, clone);
+					continue;
+				}
+				r_cf_value_array_free (array);
+				copy = NULL;
+				break;
+			}
+		}
+		break;
+	}
+	case R_CF_STRING: {
+		RCFValueString *string = R_NEW0 (RCFValueString);
+		if (string) {
+			string->value = r_str_new (((RCFValueString *)value)->value);
+			if (string->value) {
+				copy = (RCFValue *)string;
+			} else {
+				R_FREE (string);
+			}
+		}
+		break;
+	}
+	case R_CF_INTEGER: {
+		RCFValueInteger *integer = R_NEW0 (RCFValueInteger);
+		if (integer) {
+			integer->value = ((RCFValueInteger *)value)->value;
+			copy = (RCFValue *)integer;
+		}
+		break;
+	}
+	case R_CF_DATA: {
+		RCFValueData *data = R_NEW0 (RCFValueData);
+		if (data) {
+			data->value = r_buf_new_with_buf(((RCFValueData *)value)->value);
+			if (data->value) {
+				copy = (RCFValue *)data;
+			} else {
+				R_FREE (data);
+			}
+		}
+		break;
+	}
+	case R_CF_NULL:
+		copy = (RCFValue *)(R_NEW0 (RCFValueNULL));
+		break;
+	case R_CF_TRUE:
+	case R_CF_FALSE:
+		copy = (RCFValue *)(R_NEW0 (RCFValueBool));
+		break;
+	default:
+		break;
+	}
+
+	if (copy) {
+		copy->type = value->type;
+	}
+
+	return copy;
+}
+
 static void r_cf_value_free(RCFValue *value) {
 	if (!value) {
 		return;

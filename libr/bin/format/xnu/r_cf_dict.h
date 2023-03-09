@@ -3,6 +3,7 @@
 
 #define R_CF_OPTION_NONE 0
 #define R_CF_OPTION_SKIP_NSDATA 1
+#define R_CF_OPTION_SUPPORT_IDREF 2
 
 typedef enum {
 	R_CF_INVALID,
