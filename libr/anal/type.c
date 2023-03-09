@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2019-2022 - pancake, oddcoder, Anton Kochkov */
+/* radare - LGPL - Copyright 2019-2023 - pancake, oddcoder, Anton Kochkov */
 
 #include <r_anal.h>
 #include <string.h>
