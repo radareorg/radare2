@@ -348,6 +348,9 @@ R_API bool r_core_bin_set_env(RCore *r, RBinFile *binfile) {
 		sdb_num_add (r->sdb, "orig_baddr", baseaddr, 0);
 		r->dbg->bp->baddr = baseaddr;
 		r_config_set (r->config, "asm.arch", arch);
+		if (!strcmp (arch, "arm")) {
+			r_config_set_b (r->config, "anal.nopskip", false);
+		}
 		r_config_set_i (r->config, "asm.bits", bits);
 		r_config_set (r->config, "anal.arch", arch);
 		const char *cpu = R_STR_ISNOTEMPTY (info->cpu)? info->cpu: arch;
