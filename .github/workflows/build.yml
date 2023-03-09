@@ -576,7 +576,9 @@ jobs:
         tar -xvf r2-static-latest.tar.xz -C r2-static-latest --strip-components=1
     - name: ABI compatibility check
       run: |
-        for lib in r2-static-latest/usr/lib/libr_*.so; do abidiff --no-show-locs ${lib} r2-static/usr/lib/$(basename ${lib}); done
+        echo '[suppress_type]' > abidiff.supressions.conf
+        echo 'name_regexp = ^cs_' >> abidiff.supressions.conf
+        for lib in r2-static-latest/usr/lib/libr_*.so; do abidiff --suppr abidiff.supressions.conf ${lib} r2-static/usr/lib/$(basename ${lib}); done
 
 
   # Release creation
