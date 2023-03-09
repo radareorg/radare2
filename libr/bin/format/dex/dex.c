@@ -55,7 +55,7 @@ static char *getstr(RBinDexObj *bin, int idx) {
 }
 
 
-static const char *className(RBinDexObj *dex, int idx) {
+static char *className(RBinDexObj *dex, int idx) {
 	if (idx < 0 || idx >= dex->header.types_size) {
 		return NULL;
 	}
