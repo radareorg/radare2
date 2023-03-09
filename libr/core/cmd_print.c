@@ -7,8 +7,9 @@
 #define PF_USAGE_STR "pf[.k[.f[=v]]|[v]]|[n]|[0|cnt][fmt] [a0 a1 ...]"
 
 static int printzoomcallback(void *user, int mode, ut64 addr, ut8 *bufz, ut64 size);
-static const char *help_msg_pa[] = {
-	"Usage: pa[edD]", "[asm|hex]", "print (dis)assembled",
+
+static RCoreHelpMessage help_msg_pa = {
+	"Usage: pa[edD]", "[asm|hex]", "Print (dis)assembly",
 	"pa", " [assembly]", "print hexpairs of the given assembly expression",
 	"paD", " [hexpairs]", "print assembly expression from hexpairs and show hexpairs",
 	"pad", " [hexpairs]", "print assembly expression from hexpairs (alias for pdx, pix)",
@@ -17,8 +18,8 @@ static const char *help_msg_pa[] = {
 	NULL
 };
 
-static const char *help_msg_psz[] = {
-	"Usage: psz[jl]", "", "print zero-terminated string",
+static RCoreHelpMessage help_msg_psz = {
+	"Usage: psz[jl]", "", "Print zero-terminated string",
 	"psz", "", "print zero-terminated string",
 	"psz*", "", "r2 command to write the null-terminated string in here",
 	"pszj", "", "print zero-terminated string as json",
@@ -26,20 +27,7 @@ static const char *help_msg_psz[] = {
 	NULL
 };
 
-static const char *help_msg_pdf[] = {
-	"Usage: pdf[bf]", "", "disassemble function",
-	"pdf", "", "disassemble function",
-	"pdfs", "", "disassemble function summary",
-	NULL
-};
-
-static const char *help_msg_pdo[] = {
-	"Usage: pdo", "", "convert esil to C for N instructions",
-	"pdo", " [count]", "print decompiled opcodes using esil",
-	NULL
-};
-
-static const char *help_msg_p8[] = {
+static RCoreHelpMessage help_msg_p8 = {
 	"Usage: p8[*fjx]", " [len]", "8bit hexpair list of bytes (see pcj)",
 	"p8", " ([len])", "print hexpairs string",
 	"p8*", "","display r2 commands to write this block",
@@ -49,7 +37,14 @@ static const char *help_msg_p8[] = {
 	NULL
 };
 
-static const char *help_msg_pp[] = {
+static RCoreHelpMessage help_msg_pm = {
+	"Usage: pm", "[file|directory]", "Set libmagic reference file or directory (see /m?)",
+	"pm", " [file|directory]", "set libmagic reference (see /m?)",
+	"e", " dir.magic", "defaults to " R_JOIN_2_PATHS (R2_PREFIX, R2_SDB_MAGIC),
+	NULL
+};
+
+static RCoreHelpMessage help_msg_pp = {
 	"Usage: pp[d]", "", "print patterns",
 	"pp0", "", "print buffer filled with zeros",
 	"pp1", "", "print incremental byte pattern (honor lower bits of cur address and bsize)",
@@ -63,7 +58,7 @@ static const char *help_msg_pp[] = {
 	NULL
 };
 
-static const char *help_msg_pc[] = {
+static RCoreHelpMessage help_msg_pc = {
 	"Usage:", "pc", " # Print in code",
 	"pc",  "", "C",
 	"pc*", "", "print 'wx' r2 commands",
@@ -92,7 +87,7 @@ static const char *help_msg_pc[] = {
 	NULL
 };
 
-static const char *help_msg_p6[] = {
+static RCoreHelpMessage help_msg_p6 = {
 	"Usage: p6[d|e][s|z]", " [len]", "base64 decoding/encoding",
 	"p6d", "[s|z] [len]", "decode current block as base64",
 	"p6e", "[s|z][len]", "encode current block in base64",
@@ -103,7 +98,7 @@ static const char *help_msg_p6[] = {
 	NULL
 };
 
-static const char *help_msg_pF[] = {
+static RCoreHelpMessage help_msg_pF = {
 	"Usage: pF[apdbA][*vqj]", "[len]", "parse ASN1, PKCS, X509, DER, protobuf, axml",
 	"pFa", "[jq] [len]", "decode ASN1/DER from current block (PEM is B64(DER))",
 	"pFA", "[j] [len]", "decode Android Binary XML from current block",
@@ -128,7 +123,7 @@ static const char* help_msg_pr[] = {
 	NULL
 };
 
-static const char *help_msg_prg[] = {
+static RCoreHelpMessage help_msg_prg = {
 	"Usage: prg[?ilo]", " [len]", "print raw inflated/decompressed block",
 	"prg", "", "print gunzipped data of current block",
 	"prgl", "", "decompress current block using LZ4 (adjust blocksize)",
@@ -137,7 +132,7 @@ static const char *help_msg_prg[] = {
 	NULL
 };
 
-static const char *help_msg_amper[] = {
+static RCoreHelpMessage help_msg_amper = {
 	"Usage:", "&[-|<cmd>]", "Manage tasks (WARNING: Experimental. Use with caution!)",
 	"&", " <cmd>", "run <cmd> in a new background task",
 	"&:", "<cmd>", "queue <cmd> to be executed later when possible",
@@ -155,7 +150,7 @@ static const char *help_msg_amper[] = {
 	NULL
 };
 
-static const char *help_msg_p[] = {
+static RCoreHelpMessage help_msg_p = {
 	"Usage:", "p[=68abcdDfiImrstuxz] [arg|len] [@addr]", "",
 	"p", "[b|B|xb] [len] ([S])", "bindump N bits skipping S bytes",
 	"p", "[iI][df] [len]", "print N ops/bytes (f=func) (see pi? and pdi)",
@@ -173,13 +168,15 @@ static const char *help_msg_p[] = {
 	"pc", "[?][p] [len]", "output C (or python) format",
 	"pC", "[aAcdDxw] [rows]", "print disassembly in columns (see hex.cols and pdi)",
 	"pd", "[?] [sz] [a] [b]", "disassemble N opcodes (pd) or N bytes (pD)",
-	"pf", "[?][.nam] [fmt]", "print formatted data (pf.name, pf.name $<expr>)",
+	"pf", "[?][.name] [fmt]", "print formatted data (pf.name, pf.name $<expr>)",
 	"pF", "[?][apx]", "print asn1, pkcs7 or x509",
 	"pg", "[?][x y w h] [cmd]", "create new visual gadget or print it (see pg? for details)",
 	"ph", "[?][=|hash] ([len])", "calculate hash for a block",
 	"pi", "[?][bdefrj] [num]", "print instructions",
 	"pI", "[?][iI][df] [len]", "print N instructions/bytes (f=func)",
 	"pj", "[?] [len]", "print as indented JSON",
+	"pk", " [len]", "print key in randomart mosaic",
+	"pK", " [len]", "print key in randomart mosaic",
 	"pm", "[?] [magic]", "print libmagic data (see pm? and /m?)",
 	"po", "[?] hex", "print operation applied to block (see po?)",
 	"pp", "[?][sz] [len]", "print patterns, see pp? for more help",
@@ -187,16 +184,19 @@ static const char *help_msg_p[] = {
 	"pr", "[?][glx] [len]", "print N raw bytes (in lines or hexblocks, 'g'unzip)",
 	"ps", "[?][pwz] [len]", "print pascal/wide/zero-terminated strings",
 	"pt", "[?][dn] [len]", "print different timestamps",
-	"pu", "[?][w] [len]", "print N url encoded bytes (w=wide)",
+	"pu", "[w] [len]", "print N url encoded bytes (w=wide)",
 	"pv", "[?][ejh] [mode]", "show value of given size (1, 2, 4, 8)",
 	"pwd", "", "display current working directory",
 	"px", "[?][owq] [len]", "hexdump of N bytes (o=octal, w=32bit, q=64bit)",
 	"py", "([-:file]) [expr]", "print clipboard (yp) run python script (py:file) oneliner `py print(1)` or stdin slurp `py-`",
 	"pz", "[?] [len]", "print zoom view (see pz? for help)",
+	"pkill", " [process-name]", "kill all processes with the given name",
+	"pushd", " [dir]", "cd to dir and push current directory to stack",
+	"popd", "[-a][-h]", "pop dir off top of stack and cd to it",
 	NULL
 };
 
-static const char *help_msg_pxd[] = {
+static RCoreHelpMessage help_msg_pxd = {
 	"Usage:", "pxd[1248] ([len])", "show decimal byte/short/word/dword dumps",
 	"pxd", "", "show base10 signed decimal hexdumps",
 	"pxd1", "", "show byte hexdump (int8_t)",
@@ -206,7 +206,7 @@ static const char *help_msg_pxd[] = {
 	NULL
 };
 
-static const char *help_msg_pxu[] = {
+static RCoreHelpMessage help_msg_pxu = {
 	"Usage:", "pxu[1248] ([len])", "show unsigned decimal byte/short/word/dword dumps",
 	"pxu", "", "show base10 unsigned decimal hexdumps",
 	"pxu1", "", "show byte hexdump (int8_t)",
@@ -216,7 +216,7 @@ static const char *help_msg_pxu[] = {
 	NULL
 };
 
-static const char *help_msg_p_equal[] = {
+static RCoreHelpMessage help_msg_p_equal = {
 	"Usage:", "p=[=bep?][qj] [N] ([len]) ([offset]) ", "show entropy/printable chars/chars bars",
 	"e ", "zoom.in", "specify range for zoom",
 	"p=", "", "print bytes of current block in bars",
@@ -239,7 +239,7 @@ static const char *help_msg_p_equal[] = {
 	NULL
 };
 
-static const char *help_msg_pj[] = {
+static RCoreHelpMessage help_msg_pj = {
 	"Usage:", "pj[..] [size]", "",
 	"pj", "", "print current block as indented JSON",
 	"pj.", "", "print as indented JSON from 0 to the current offset",
@@ -247,66 +247,58 @@ static const char *help_msg_pj[] = {
 	NULL
 };
 
-static const char *help_msg_p_minus[] = {
-	"Usage:", "p-[hj] [nblocks] ", "bar|json|histogram blocks",
-	"p-", "", "show ascii-art bar of metadata in file boundaries",
-	"p-e", "", "show ascii-art bar of entropy per block",
-	"p-h", "", "show histogram analysis of metadata per block",
-	"p-j", "", "show json format",
+static RCoreHelpMessage help_msg_p_minus = {
+	"Usage:", "p-[hej] [nblocks] ", "bar|json|histogram blocks",
+	"p-", " [nblocks]", "show ascii-art bar of metadata in file boundaries",
+	"p-e", " [nblocks]", "show ascii-art bar of entropy per block",
+	"p-h", " [nblocks]", "show histogram analysis of metadata per block",
+	"p-j", " [nblocks]", "show json format",
 	NULL
 };
 
-static const char *help_msg_pd[] = {
+static RCoreHelpMessage help_msg_pd = {
 	"Usage:", "p[dD][ajbrfils] [[-]len]", " # Print N bytes/instructions bw/forward",
 	"NOTE: ", "len", "parameter can be negative",
 	"NOTE: ", "", "Pressing ENTER on empty command will repeat last print command in next page",
 	"pD", " N", "disassemble N bytes",
 	"pd", " -N", "disassemble N instructions backwards",
 	"pd", " N", "disassemble N instructions",
-	"pd--", "[n]", "context disassembly of N instructions",
-	"pda", "[?]", "disassemble all possible opcodes (byte per byte)",
-	"pdb", "[?]", "disassemble basic block",
+	"pd--", " N", "context disassembly of N instructions",
+	"pda", "", "disassemble all possible opcodes (byte per byte)",
+	"pdaj", "", "disassemble all possible opcodes (byte per byte) in JSON",
+	"pdb", "[j]", "disassemble basic block (j for JSON)",
 	"pdc", "[?][c]", "pseudo disassembler output in C-like syntax",
 	"pdC", "", "show comments found in N instructions",
-	"pde", "[q|qq|j] [N]", "disassemble N instructions following execution flow from current PC",
-	"pdo", "[N]", "convert esil expressions of N instructions to C (bytes for pdO)",
-	"pdf", "[?]", "disassemble function",
+	"pde", "[q|qq|j] N", "disassemble N instructions following execution flow from current PC",
+	"pdo", " N", "convert esil expressions of N instructions to C (pdO for bytes)",
+	"pdf", "", "disassemble function",
+	"pdfs", "", "disassemble function summary",
 	"pdi", "", "like 'pi', with offset and bytes",
 	"pdj", "", "disassemble to json",
 	"pdJ", "", "formatted disassembly like pd as json",
 	"pdk", "[?]", "disassemble all methods of a class",
 	"pdl", "", "show instruction sizes",
-	"pdp", "[?]", "disassemble by following pointers to read ropchains",
-	"pdr", "[?]", "recursive disassemble across the function graph",
+	"pdp", "", "disassemble by following pointers to read ropchains",
+	"pdr", "", "recursive disassemble across the function graph",
 	"pdr.", "", "recursive disassemble across the function graph (from current basic block)",
 	"pdR", "", "recursive disassemble block size bytes without analyzing functions",
-	"pds", "[?]", "disassemble summary (strings, calls, jumps, refs) (see pdsf and pdfs)",
+	"pds", "[bf] [N]", "disassemble summary: strings, calls, jumps, refs (b=N bytes f=function)",
 	"pdu", "[aceios?]", "disassemble instructions until condition",
 	"pd,", " [n] [query]", "disassemble N instructions in a table (see dtd for debug traces)",
 	"pdx", " [hex]", "alias for pad or pix",
 	NULL
 };
 
-static const char *help_msg_pda[] = {
-	"Usage:", "pda[j]", "Print disassembly of all possbile opcodes",
-	"pdaj", "", "display the disassembly of all possbile opcodes (byte per byte) in JSON",
-	NULL
-};
-
-static const char *help_msg_pde[] = {
+static RCoreHelpMessage help_msg_pde = {
 	"Usage:", "pde[q|qq|j] [N]", "Disassemble N instructions following execution flow from current PC",
 	"pde", "", "disassemble N instructions following execution flow from current PC",
+	"pdeq", "", "disassemble N instructions following execution flow from current PC (like pdi)",
+	"pdeqq", "", "disassemble N instructions following execution flow from current PC (like pi)",
 	"pdej", "", "disassemble N instructions following execution flow from current PC in JSON",
 	NULL
 };
 
-static const char *help_msg_pdp[] = {
-	"Usage:", "pdp", "Disassemble by following pointers to read ropchains",
-	"pdp", "", "disassemble by following pointers to read ropchains",
-	NULL
-};
-
-static const char *help_msg_ph[] = {
+static RCoreHelpMessage help_msg_ph = {
 	"Usage:", "ph", " [algorithm] ([size])",
 	"ph", " md5", "compute md5 hash of current block",
 	"ph", ":md5", "same as 'ph md5' (colon acts as a space)",
@@ -316,22 +308,8 @@ static const char *help_msg_ph[] = {
 	NULL
 };
 
-static const char *help_msg_pdr[] = {
-	"Usage:", "pdr", "Disassemble N instructions following execution flow from current PC",
-	"pdr", "", "recursive disassemble across the function graph",
-	"pdr.", "", "recursive disassemble across the function graph (from current basic block)",
-	NULL
-};
-
-static const char *help_msg_pds[] = {
-	"Usage:", "pds[bf]", "Summarize N bytes or function",
-	"pdsf", "", "summarize the current function",
-	"pdsb", "", "summarize N bytes",
-	NULL
-};
-
-static const char *help_msg_pdu[] = {
-	"Usage:", "pdu[aceios][j]", "Disassemble instructions until condition",
+static RCoreHelpMessage help_msg_pdu = {
+	"Usage:", "pdu[acios][j]", "Disassemble instructions until condition",
 	"pdua", "[j] [addr]", "disassemble until address",
 	"pduc", "[j]", "disassemble until call",
 	//"pdue", "[j] [expr]", "disassemble until esil expression",
@@ -341,7 +319,7 @@ static const char *help_msg_pdu[] = {
 	NULL
 };
 
-static const char *help_msg_pf[] = {
+static RCoreHelpMessage help_msg_pf = {
 	"Usage:", PF_USAGE_STR, "",
 	"Commands:", "", "",
 	"pf", " fmt", "show data using the given format-string. See 'pf\?\?' and 'pf\?\?\?'.",
@@ -356,19 +334,19 @@ static const char *help_msg_pf[] = {
 	"pf.", "fmt_name.field_name[i]", "show element i of array field_name",
 	"pf.", "fmt_name [0|cnt]fmt", "define a new named format",
 	"pf?", "fmt_name", "show the definition of a named format",
-	"pfb ", "binfmt", "binary format",
-	"pfc ", "fmt_name|fmt", "show data using (named) format as C string",
+	"pfb", " binfmt", "binary format",
+	"pfc", " fmt_name|fmt", "show data using (named) format as C string",
 	"pfd.", "fmt_name", "show data using named format as graphviz commands",
 	"pfj ", "fmt_name|fmt", "show data using (named) format in JSON",
 	"pfo", " fdf_name", "load a Format Definition File (fdf)",
 	"pfo", "", "list all format definition files (fdf)",
 	"pfq", " fmt ...", "quiet print format (do now show address)",
-	"pfs", "[.fmt_name| fmt]", "print the size of (named) format in bytes",
+	"pfs", "[.fmt_name|fmt]", "print the size of (named) format in bytes",
 	"pfv.", "fmt_name[.field]", "print value(s) only for named format. Useful for one-liners",
 	NULL
 };
 
-static const char *help_detail_pf[] = {
+static RCoreHelpMessage help_detail_pf = {
 	"Usage:", PF_USAGE_STR, "",
 	"Format:", "", "",
 	" ", "b", "byte (unsigned)",
@@ -410,7 +388,7 @@ static const char *help_detail_pf[] = {
 	NULL
 };
 
-static const char *help_detail2_pf[] = {
+static RCoreHelpMessage help_detail2_pf = {
 	"Usage:", PF_USAGE_STR, "",
 	"Examples:", "", "",
 	"pf", " 3xi foo bar", "3-array of struct, each with named fields: 'foo' as hex, and 'bar' as int",
@@ -439,7 +417,7 @@ static const char *help_detail2_pf[] = {
 	NULL
 };
 
-static const char *help_msg_pi[] = {
+static RCoreHelpMessage help_msg_pi = {
 	"Usage:", "pi[bdefrj] [num]", "",
 	"pia", "", "print all possible opcodes (byte per byte)",
 	"pib", "", "print instructions of basic block",
@@ -453,7 +431,7 @@ static const char *help_msg_pi[] = {
 	NULL
 };
 
-static const char *help_msg_pie[] = {
+static RCoreHelpMessage help_msg_pie = {
 	"Usage:", "pie[fq]", " # print esil of N instructions",
 	"pie", "", "print esil of N instructions",
 	"pieb", "", "alias for `pie $Fi`",
@@ -464,7 +442,7 @@ static const char *help_msg_pie[] = {
 	NULL
 };
 
-static const char *help_msg_pif[] = {
+static RCoreHelpMessage help_msg_pif = {
 	"Usage:", "pif[cj]", " # print instructions from function",
 	"pif", "", "print function instructions",
 	"pifj", "", "same as above but in JSON format",
@@ -473,7 +451,7 @@ static const char *help_msg_pif[] = {
 	NULL
 };
 
-static const char *help_msg_po[] = {
+static RCoreHelpMessage help_msg_po = {
 	"Usage:","po[24aAdlmorsx]"," [hexpairs] @ addr[!bsize] (see also `poke`)",
 	"po[24aAdlmorsx]","", "without hexpair values, clipboard is used",
 	"po2"," [val]","2=  2 byte endian swap",
@@ -490,14 +468,14 @@ static const char *help_msg_po[] = {
 	NULL
 };
 
-static const char *help_msg_pq[] = {
+static RCoreHelpMessage help_msg_pq = {
 	"Usage:", "pq[?z] [len]", "generate QR code in ascii art",
 	"pq", " 32", "print QR code with the current 32 bytes",
 	"pqz", "", "print QR code with current string in current offset",
 	NULL
 };
 
-static const char *help_msg_ps[] = {
+static RCoreHelpMessage help_msg_ps = {
 	"Usage:", "ps[abijqpsuwWxz+] [N]", "Print String",
 	"ps", "", "print string",
 	"ps+", "[j]", "print libc++ std::string (same-endian, ascii, zero-terminated)",
@@ -516,7 +494,7 @@ static const char *help_msg_ps[] = {
 	NULL
 };
 
-static const char *help_msg_pt[] = {
+static RCoreHelpMessage help_msg_pt = {
 	"Usage: pt", "[dn]", "print timestamps",
 	"pt.", "", "print current time",
 	"pt", "", "print UNIX time (32 bit `cfg.bigendian`) Since January 1, 1970",
@@ -527,7 +505,7 @@ static const char *help_msg_pt[] = {
 	NULL
 };
 
-static const char *help_msg_pv[] = {
+static RCoreHelpMessage help_msg_pv = {
 	"Usage: pv[1248z][j]", "", "Print value(s) given size and endian",
 	"pv", "", "print bytes based on asm.bits",
 	"pv1", "", "print 1 byte in memory",
@@ -540,7 +518,7 @@ static const char *help_msg_pv[] = {
 	NULL
 };
 
-static const char *help_msg_px[] = {
+static RCoreHelpMessage help_msg_px = {
 	"Usage:", "px[0afoswqWqQ][f]", " # Print heXadecimal",
 	"px", "", "show hexdump",
 	"px--", "[n]", "context hexdump (the hexdump version of pd--3)",
@@ -573,7 +551,7 @@ static const char *help_msg_px[] = {
 	NULL
 };
 
-const char *help_msg_pz[] = {
+static RCoreHelpMessage help_msg_pz = {
 	"Usage: pz [len]", "", "print zoomed blocks (filesize/N)",
 	"e ", "zoom.maxsz", "max size of block",
 	"e ", "zoom.from", "start address",
@@ -590,7 +568,7 @@ const char *help_msg_pz[] = {
 	NULL
 };
 
-const char *help_msg_pxA[] = {
+static RCoreHelpMessage help_msg_pxA = {
 	"Usage: pxA [len]", "", "show op analysis color map",
 	"$$", "", "int/swi/trap/new",
 	"+-*/", "", "math ops",
@@ -607,6 +585,15 @@ const char *help_msg_pxA[] = {
 	"io", "", "in/out ops",
 	"mv", "", "move,lea,li",
 	"|&^", "", "bin ops",
+	NULL
+};
+
+static RCoreHelpMessage help_msg_pg = {
+	"Usage: pg[-]", "[asm|hex]", "print (dis)assembled",
+	"pg", " [x y w h cmd]", "add a new gadget",
+	"pg", "", "print them all",
+	"pg", "*", "print the gadgets as r2 commands",
+	"pg-", "*", "remove all the gadgets",
 	NULL
 };
 
@@ -758,7 +745,7 @@ static void cmd_printmsg(RCore *core, const char *input) {
 	} else if (!strncmp (input, "fln ", 2)) {
 		R_LOG_TODO ("waiting for r2shell");
 	} else {
-		R_LOG_INFO ("Usage: print, println, printf, printfln");
+		r_core_cmd_help_match (core, help_msg_pr, "print", true);
 	}
 }
 
@@ -1416,7 +1403,7 @@ static void cmd_print_fromage(RCore *core, const char *input, const ut8* data, i
 		break;
 	case 'B': // "pFB"
 		if (input[1] == '?') {
-			eprintf ("Usage: pFB[j] - parse binary plist format, check 'b'lock size, pFBj for json output\n");
+			r_core_cmd_help_match (core, help_msg_pF, "pFB", true);
 		} else {
 			PJ *pj = r_core_pj_new (core);
 			if (size > 0) {
@@ -1451,15 +1438,6 @@ R_API void r_core_gadget_free(RCoreGadget *g) {
 		free (g);
 	}
 }
-
-static const char *help_msg_pg[] = {
-	"Usage: pg[-]", "[asm|hex]", "print (dis)assembled",
-	"pg", " [x y w h cmd]", "add a new gadget",
-	"pg", "", "print them all",
-	"pg", "*", "print the gadgets as r2 commands",
-	"pg-", "*", "remove all the gadgets",
-	NULL
-};
 
 static void cmd_print_gadget(RCore *core, const char *_input) {
 	if (*_input == '?') { // "pg?"
@@ -1542,14 +1520,6 @@ static void cmd_print_gadget(RCore *core, const char *_input) {
 	} else {
 		r_core_cmd_help (core, help_msg_pg);
 	}
-}
-
-static void cmd_pfo_help(RCore *core) {
-	const char *help[] = {
-		"Usage:", "pfo [format-file]", "# List all format definition files (fdf)",
-		NULL
-	};
-	r_core_cmd_help (core, help);
 }
 
 static ut64 read_val(RBitmap *bm, int pos, int sz) {
@@ -1771,7 +1741,8 @@ static void cmd_print_format(RCore *core, const char *_input, const ut8* block, 
 			if (val) {
 				r_cons_printf ("%d\n", r_print_format_struct_size (core->print, val, mode, 0));
 			} else {
-				R_LOG_WARN ("Struct %s not defined. Use pfs.struct_name | pfs format", _input);
+				R_LOG_WARN ("Struct %s not defined", _input);
+				r_core_cmd_help_match (core, help_msg_pf, "pfs", true);
 			}
 		} else if (*_input == ' ') {
 			while (*_input == ' ' && *_input != '\0') {
@@ -1780,10 +1751,11 @@ static void cmd_print_format(RCore *core, const char *_input, const ut8* block, 
 			if (*_input) {
 				r_cons_printf ("%d\n", r_print_format_struct_size (core->print, _input, mode, 0));
 			} else {
-				R_LOG_WARN ("Struct %s not defined. Use pfs.struct_name | pfs format", _input);
+				R_LOG_WARN ("Struct %s not defined", _input);
+				r_core_cmd_help_match (core, help_msg_pf, "pfs", true);
 			}
 		} else {
-			eprintf ("Usage: pfs.struct_name | pfs format\n");
+			r_core_cmd_help_match (core, help_msg_pf, "pfs", true);
 		}
 		return;
 	}
@@ -1819,12 +1791,12 @@ static void cmd_print_format(RCore *core, const char *_input, const ut8* block, 
 		if (_input[2] == ' ') {
 			r_core_cmd_print_binformat (core, r_str_trim_head_ro (_input + 2), PFB_ART);
 		} else {
-			eprintf ("Usage: pfb [binfmt] [names...]\n");
+			r_core_cmd_help_match (core, help_msg_pf, "pfb", true);
 		}
 		return;
 	case 'o': // "pfo"
 		if (_input[2] == '?') {
-			cmd_pfo_help (core);
+			r_core_cmd_help_match (core, help_msg_pf, "pfo", true);
 		} else if (_input[2] == ' ') {
 			const char *fname = r_str_trim_head_ro (_input + 3);
 			char *tmp = r_str_newf (R_JOIN_2_PATHS (R2_SDB_FORMAT, "%s"), fname);
@@ -2030,13 +2002,10 @@ static void cmd_print_format(RCore *core, const char *_input, const ut8* block, 
 			goto err_args;
 		}
 
-		/* check if fmt is '\d+ \d+<...>', common mistake due to usage string*/
+		/* check if fmt is '\d+ \d+<...>', common mistake due to usage string */
 		const char *arg1 = strtok (args, " ");
 		if (arg1 && r_str_isnumber (arg1)) {
-			r_core_cmd_help (core, (const char *[]) {
-				"Usage:", "pf [0|cnt][format-string]", "",
-				NULL
-			});
+			r_core_cmd_help_match (core, help_msg_pf, "pf", true);
 			goto err_arg1;
 		}
 		r_print_format (core->print, core->offset,
@@ -5268,7 +5237,6 @@ static bool cmd_pi(RCore *core, const char *input, int len, int l, ut8 *block) {
 	}
 	switch (ch) {
 	case '?':
-		// r_cons_printf ("Usage: pi[defj] [num]\n");
 		r_core_cmd_help (core, help_msg_pi);
 		break;
 	case 'u': // "piu" disasm until given optype
@@ -5632,7 +5600,7 @@ static int cmd_print(void *data, const char *input) {
 			}
 		}
 		if (halp) {
-			eprintf ("Usage: pushd [dir]\n");
+			r_core_cmd_help_match (core, help_msg_p, "pushd", true);
 			r_core_return_value (core, 1);
 		}
 		return 0;
@@ -5641,7 +5609,7 @@ static int cmd_print(void *data, const char *input) {
 		bool all = strstr (input, "-a");
 		bool halp = strstr (input, "-h");
 		if (halp) {
-			R_LOG_ERROR ("Usage: popd [-a]");
+			r_core_cmd_help_match (core, help_msg_p, "popd", true);
 			r_core_return_value (core, 1);
 		} else {
 			bool suc = all
@@ -5841,7 +5809,7 @@ static int cmd_print(void *data, const char *input) {
 		}
 		if (input[1] == 'e') { // "pae"
 			if (input[2] == '?') {
-				r_cons_printf ("Usage: pae [asm]       print ESIL expression of the given assembly expression\n");
+				r_core_cmd_help_match (core, help_msg_pa, "pae", true);
 			} else {
 				int printed = 0;
 				int bufsz;
@@ -5871,7 +5839,7 @@ static int cmd_print(void *data, const char *input) {
 			}
 		} else if (input[1] == 'D') { // "paD"
 			if (input[2] == '?') {
-				r_cons_printf ("Usage: paD [hex]       print assembly expression from hexpairs and show hexpairs\n");
+				r_core_cmd_help_match (core, help_msg_pa, "paD", true);
 			} else {
 				r_core_cmdf (core, "pdi@x:%s", input + 2);
 			}
@@ -5879,7 +5847,7 @@ static int cmd_print(void *data, const char *input) {
 			switch (input[2]) {
 			case 'e': // "pade"
 				if (input[3] == '?') {
-					r_cons_printf ("Usage: pade [hex]       print ESIL expression from hexpairs\n");
+					r_core_cmd_help_match (core, help_msg_pa, "pade", true);
 				} else {
 					int printed = 0;
 					int bufsz;
@@ -5915,7 +5883,7 @@ static int cmd_print(void *data, const char *input) {
 				r_core_cmd_help_match (core, help_msg_pa, "pad", false);
 				break;
 			default:
-				r_cons_printf ("Usage: pa[edD] [asm|hex]  print (dis)assembled\n");
+				r_core_cmd_help (core, help_msg_pa);
 				break;
 			}
 		} else if (input[1] == '?') {
@@ -5945,7 +5913,7 @@ static int cmd_print(void *data, const char *input) {
 	break;
 	case 'b': { // "pb"
 		if (input[1] == '?') {
-			r_cons_printf ("Usage: p[bB] [len] ([skip])  ; see also pB and pxb\n");
+			r_core_cmd_help_match (core, help_msg_p, "pb", true);
 		} else if (l != 0) {
 			int from, to;
 			const int size = len * 8;
@@ -5990,7 +5958,7 @@ static int cmd_print(void *data, const char *input) {
 		break;
 	case 'B': { // "pB"
 		if (input[1] == '?') {
-			r_cons_printf ("Usage: p[bB] [len]       bitstream of N bytes\n");
+			r_core_cmd_help_match (core, help_msg_p, "pB", true);
 		} else if (l != 0) {
 			int size;
 			char *buf;
@@ -6037,8 +6005,7 @@ static int cmd_print(void *data, const char *input) {
 			}
 			break;
 		case '?': // "pi?"
-			r_cons_printf ("Usage: p[iI][df] [len]   print N instructions/bytes"
-				"(f=func) (see pi? and pdi)\n");
+			r_core_cmd_help (core, help_msg_pi);
 			break;
 		default:
 			if (l) {
@@ -6184,21 +6151,23 @@ static int cmd_print(void *data, const char *input) {
 				} else {
 					r_core_disasm_pdi (core, l, 0, 0);
 				}
-				pd_result = 0;
+				pd_result = false;
 			}
 			break;
 		case 'a': // "pda"
 			processed_cmd = true;
 			if (input[2] == '?') {
-				r_core_cmd_help (core, help_msg_pda);
-				break;
+				r_core_cmd_help_match (core, help_msg_pd, "pda", false);
+			} else if (input[2] == 'j' && input[3] == '?') {
+				r_core_cmd_help_match (core, help_msg_pd, "pdaj", true);
+			} else {
+				r_core_print_disasm_all (core, core->offset, l, len, input[2]);
+				pd_result = true;
 			}
-			r_core_print_disasm_all (core, core->offset, l, len, input[2]);
-			pd_result = true;
 			break;
 		case 'o': // "pdo"
 			if (input[2] == '?') {
-				r_core_cmd_help (core, help_msg_pdo);
+				r_core_cmd_help_match (core, help_msg_pd, "pdo", true);
 				return 0;
 			}
 			core_print_decompile (core, input + 2);
@@ -6216,11 +6185,23 @@ static int cmd_print(void *data, const char *input) {
 			};
 			int mode = R_MODE_PRINT;
 			if (input[2] == 'j') {
+				if (input[3] == '?') {
+					r_core_cmd_help_match (core, help_msg_pde, "pdej", true);
+					return 0;
+				}
 				mode = R_MODE_JSON;
 			} else if (input[2] == 'q') {
 				if (input[3] == 'q') { // "pdeqq"
+					if (input[4] == '?') {
+						r_core_cmd_help_match (core, help_msg_pde, "pdeqq", true);
+						return 0;
+					}
 					mode = R_MODE_SIMPLEST; // Like pi
 				} else { // "pdeq"
+					if (input[3] == '?') {
+						r_core_cmd_help_match (core, help_msg_pde, "pdeq", false);
+						return 0;
+					}
 					mode = R_MODE_SIMPLE; // Like pdi
 				}
 			}
@@ -6239,11 +6220,12 @@ static int cmd_print(void *data, const char *input) {
 		case 'r': // "pdr"
 			processed_cmd = true;
 			if (input[2] == '?') { // "pdr?"
-				r_core_cmd_help (core, help_msg_pdr);
+				r_core_cmd_help_match (core, help_msg_pd, "pdr", false);
 				pd_result = true;
 				break;
-			};
-			{
+			} else if (input[2] == '.' && input[3] == '?') {
+				r_core_cmd_help_match (core, help_msg_pd, "pdr.", true);
+			} else {
 				RAnalFunction *f = r_anal_get_fcn_in (core->anal, core->offset, 0);
 				// R_ANAL_FCN_TYPE_FCN|R_ANAL_FCN_TYPE_SYM);
 				if (f) {
@@ -6257,7 +6239,7 @@ static int cmd_print(void *data, const char *input) {
 		case 'b': // "pdb"
 			processed_cmd = true;
 			if (input[2] == '?') {
-				r_cons_printf ("Usage: pdb[j]  - disassemble basic block\n");
+				r_core_cmd_help_match (core, help_msg_pd, "pdb", true);
 			} else {
 				RAnalBlock *b = r_anal_bb_from_offset (core->anal, core->offset);
 				if (b) {
@@ -6291,13 +6273,13 @@ static int cmd_print(void *data, const char *input) {
 				}
 			}
 			break;
-		case 's': // "pds" and "pdsf"
+		case 's': // "pds"
 			processed_cmd = true;
 			if (input[2] == '?') {
-				r_core_cmd_help (core, help_msg_pds);
+				r_core_cmd_help_match (core, help_msg_pd, "pds", true);
 			} else {
 				if (input[2] && input[3] == '?') {
-					r_core_cmd_help (core, help_msg_pds);
+					r_core_cmd_help_match (core, help_msg_pd, "pds", true);
 				} else {
 					disasm_strings (core, input, NULL);
 				}
@@ -6306,7 +6288,7 @@ static int cmd_print(void *data, const char *input) {
 		case 'f': // "pdf"
 			processed_cmd = true;
 			if (input[2] == '?') {
-				r_core_cmd_help (core, help_msg_pdf);
+				r_core_cmd_help_match (core, help_msg_pd, "pdf", true);
 			} else if (input[2] == 's') { // "pdfs"
 				ut64 oseek = core->offset;
 				int oblock = core->blocksize;
@@ -6394,7 +6376,7 @@ static int cmd_print(void *data, const char *input) {
 		case 'p': // "pdp"
 			processed_cmd = true;
 			if (input[2] == '?') {
-				r_core_cmd_help (core, help_msg_pdp);
+				r_core_cmd_help_match (core, help_msg_pd, "pdp", true);
 				pd_result = true;
 				break;
 			};
@@ -6845,15 +6827,7 @@ static int cmd_print(void *data, const char *input) {
 		break;
 	case 'm': // "pm"
 		if (input[1] == '?') {
-			r_cons_printf ("Usage: pm [file|directory]\n"
-				"| r_magic will use given file/dir as reference\n"
-				"| output of those magic can contain expressions like:\n"
-				"|   foo@0x40   # use 'foo' magic file on address 0x40\n"
-				"|   @0x40      # use current magic file on address 0x40\n"
-				"|   \\n         # append newline\n"
-				"| e dir.magic  # defaults to " R_JOIN_2_PATHS ("{R2_PREFIX}", R2_SDB_MAGIC) "\n"
-				"| /m           # search for magic signatures\n"
-				);
+			r_core_cmd_help (core, help_msg_pm);
 		} else if (input[1] == 'j') { // "pmj"
 			const char *filename = r_str_trim_head_ro (input + 2);
 			PJ *pj = r_core_pj_new (core);
@@ -6868,8 +6842,7 @@ static int cmd_print(void *data, const char *input) {
 		break;
 	case 'u': // "pu"
 		if (input[1] == '?') {
-			r_cons_printf ("Usage: pu[w] [len]       print N url"
-				"encoded bytes (w=wide)\n");
+			r_core_cmd_help_match (core, help_msg_p, "pu", true);
 		} else {
 			if (l > 0) {
 				r_print_string (core->print, core->offset, core->block, len,
@@ -6939,14 +6912,16 @@ static int cmd_print(void *data, const char *input) {
 			cmd_pCx (core, input + 2, "pc");
 			break;
 		default:
-			eprintf ("Usage: pC[dDaAxwc] - column output for pxa, pxA, pxw, ..\n");
+			r_core_cmd_help_match (core, help_msg_p, "pC", true);
 			break;
 		}
 		break;
 	case 'r': // "pr"
 		switch (input[1]) {
 		case 'i': // "pri" // color raw image
-			if (input[2] == 'n') {
+			if (input[2] == '?') {
+				r_core_cmd_help_match (core, help_msg_pr, "pri", true);
+			} else if (input[2] == 'n') {
 				cmd_printmsg (core, input + 4);
 			} else if (input[2] == '1') {
 				bitimage (core, 1);
@@ -7707,8 +7682,7 @@ static int cmd_print(void *data, const char *input) {
 	case '2': // "p2"
 		if (l) {
 			if (input[1] == '?') {
-				r_cons_printf ("Usage: p2 [number of bytes representing tiles]\n"
-					"NOTE: Only full tiles will be printed\n");
+				r_core_cmd_help_match (core, help_msg_p, "p2", true);
 			} else {
 				RConsContext *c = core->cons->context;
 				const char **colors = (const char *[]) {
@@ -7862,8 +7836,7 @@ static int cmd_print(void *data, const char *input) {
 		break;
 	case 'k': // "pk"
 		if (input[1] == '?') {
-			r_cons_printf ("Usage: pk [len]       print key in randomart\n");
-			r_cons_printf ("Usage: pkill [process-name]\n");
+			r_core_cmd_help_match (core, help_msg_p, "pk", false);
 		} else if (!strncmp (input, "kill", 4)) {
 			RListIter *iter;
 			RDebugPid *pid;
@@ -7889,7 +7862,7 @@ static int cmd_print(void *data, const char *input) {
 		break;
 	case 'K': // "pK"
 		if (input[1] == '?') {
-			r_cons_printf ("Usage: pK [len]       print key in randomart mosaic\n");
+			r_core_cmd_help_match (core, help_msg_p, "pK", true);
 		} else if (l > 0) {
 			len = len > core->blocksize? core->blocksize: len;
 			int w, h;

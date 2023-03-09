@@ -4,7 +4,7 @@
 
 static void __core_cmd_search_backward_prelude(RCore *core, bool doseek, bool forward);
 
-static const char *help_msg_s[] = {
+static RCoreHelpMessage help_msg_s = {
 	"Usage: s", "", " # Help for the seek commands. See ?$? to see all variables",
 	"s", "", "print current address",
 	"s", " addr", "seek to address",
@@ -18,7 +18,7 @@ static const char *help_msg_s[] = {
 	"s+", " n", "seek n bytes forward",
 	"s++", "[n]", "seek blocksize bytes forward (/=n)",
 	"s[j*=!]", "", "list undo seek history (JSON, =list, *r2, !=names, s==)",
-	"s/", " DATA", "search for next occurrence of 'DATA'",
+	"s/", " DATA", "search for next occurrence of 'DATA' (see /?)",
 	"s/x", " 9091", "search for next occurrence of \\x90\\x91",
 	"sa", " [[+-]a] [asz]", "seek asz (or bsize) aligned to addr",
 	"sb", "", "seek aligned to bb start",
@@ -36,45 +36,46 @@ static const char *help_msg_s[] = {
 	"sr", " PC", "seek to register (or register alias) value",
 	"ss", "[?]", "seek silently (without adding an entry to the seek history)",
 	// "sp [page]  seek page N (page = block)",
+	"sort", " [file]", "sort the contents of the file",
 	NULL
 };
 
-static const char *help_msg_sdot[] = {
+static RCoreHelpMessage help_msg_sdot = {
 	"Usage:", "s.", "Seek here or there (near seeks)",
 	"s.", "", "seek here, same as 's $$'",
 	"s..", "32a8", "seek to the same address but replacing the lower nibbles",
 	NULL
 };
 
-static const char *help_msg_sh[] = {
+static RCoreHelpMessage help_msg_sh = {
 	"Usage:", "sh", "r2's posix shell compatible subset",
 	"sh", "", "enters a posix shell subset repl (requires scr.interactive)",
 	"sh", " [cmd]", "run the given line and update $?",
 	NULL
 };
 
-static const char *help_msg_sC[] = {
+static RCoreHelpMessage help_msg_sC = {
 	"Usage:", "sC", "Comment grep",
 	"sC", "*", "list all comments",
 	"sC", " str", "seek to the first comment matching 'str'",
 	NULL
 };
 
-static const char *help_msg_sn[] = {
+static RCoreHelpMessage help_msg_sn = {
 	"Usage:", "sn[p]", "",
 	"sn", " [line]", "seek to next address",
 	"snp", "", "seek to next prelude",
 	NULL
 };
 
-static const char *help_msg_sp[] = {
+static RCoreHelpMessage help_msg_sp = {
 	"Usage:", "sp[p]", "",
 	"sp", " [line]", "seek to previous address",
 	"spp", "", "seek to previous prelude",
 	NULL
 };
 
-static const char *help_msg_sl[] = {
+static RCoreHelpMessage help_msg_sl = {
 	"Usage:", "sl+ or sl- or slc", "",
 	"sl", " [line]", "seek to absolute line",
 	"sl", "[+-][line]", "seek to relative line",
@@ -84,7 +85,7 @@ static const char *help_msg_sl[] = {
 	NULL
 };
 
-static const char *help_msg_ss[] = {
+static RCoreHelpMessage help_msg_ss = {
 	"Usage: ss", "", " # Seek silently (not recorded in the seek history)",
 	"s?", "", "works with all s subcommands",
 	NULL
@@ -248,7 +249,7 @@ static int cmd_sort(void *data, const char *input) { // "sort"
 	}
 	switch (*input) {
 	case '?': // "sort?"
-		eprintf ("Usage: sort # sort the contents of the file\n");
+		r_core_cmd_help_match (core, help_msg_s, "sort", true);
 		break;
 	default: // "ls"
 		if (!arg) {
@@ -325,10 +326,6 @@ static int cmd_seek_opcode_forward(RCore *core, int n) {
 }
 
 static void cmd_seek_opcode(RCore *core, const char *input) {
-	if (input[0] == '?') {
-		r_core_cmd_help_match (core, help_msg_s, "so", false);
-		return;
-	}
 	if (!strcmp (input, "-")) {
 		input = "-1";
 	}
@@ -484,8 +481,7 @@ static int cmd_seek(void *data, const char *input) {
 			r_config_set_i (core->config, "search.maxhits", saved_maxhits);
 			break;
 		case '?':
-			eprintf ("Usage: s/.. arg.\n");
-			r_cons_printf ("/?\n");
+			r_core_cmd_help_match (core, help_msg_s, "s/", false);
 			break;
 		default:
 			R_LOG_ERROR ("unknown search subcommand");
@@ -759,10 +755,14 @@ static int cmd_seek(void *data, const char *input) {
 		case 'r':
 			if (input[2] == 't') {
 				cmd_sort (core, input);
+			} else if (input[2] == '?') {
+				r_core_cmd_help_match (core, help_msg_s, "sort", true);
 			} else {
 				return -1;
 			}
 			break;
+		case '?':
+			r_core_cmd_help_match (core, help_msg_s, "so", false);
 		case ' ':
 		case '\0':
 		case '+':
@@ -843,7 +843,7 @@ static int cmd_seek(void *data, const char *input) {
 					}
 					r_cons_sleep_end (bed);
 				} else {
-					eprintf ("Usage: sleep [seconds]\n");
+					r_core_cmd_help_match (core, help_msg_sl, "sleep", true);
 				}
 			}
 			break;

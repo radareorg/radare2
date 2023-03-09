@@ -68,6 +68,7 @@ EXPECT=<<EOF
 0
 
 0b
+| ?f [num] [str]  map each bit of the number as flag string index
 0x00000000
 
 0
@@ -222,7 +223,7 @@ NAME="?*"
 FILE=--
 CMDS=<<EOF
 ?*~?display zignspace
-?*~?List all loaded types as json
+?*~?list all loaded types as json
 EOF
 EXPECT=<<EOF
 1

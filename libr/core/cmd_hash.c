@@ -2,7 +2,7 @@
 
 #include <r_core.h>
 
-const char *help_msg_hash[] = {
+static RCoreHelpMessage help_msg_hash = {
 	"Usage:", "#!<interpreter>", "[<args>] [<file] [<<eof]",
 	"#", "", "comment - do nothing",
 	"#!", "", "list all available interpreters",

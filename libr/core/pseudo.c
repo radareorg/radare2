@@ -162,7 +162,7 @@ static void find_and_change(char* in, int len) {
 	}
 }
 
-static const char *help_msg_pdc[] = {
+static RCoreHelpMessage help_msg_pdc = {
 	"Usage: pdc[oj]", "", "experimental, unreliable and hacky pseudo-decompiler",
 	"pdc", "", "pseudo decompile function in current offset",
 	"pdcc", "", "pseudo-decompile with C helpers around",

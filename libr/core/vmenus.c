@@ -137,11 +137,16 @@ R_API bool r_core_visual_esil(RCore *core, const char *input) {
 	RAnalOp analop;
 	ut8 buf[sizeof (ut64)];
 	unsigned int addrsize = r_config_get_i (core->config, "esil.addr.size");
+	static RCoreHelpMessage help_msg_aev = {
+		"Usage:", "aev [esil]", "Visual esil debugger",
+		"aev", " [esil]", "visual esil debugger for the given expression or current instruction",
+		NULL
+	};
 	if (input && !*input) {
 		input = NULL;
 	}
 	if (input && *input == '?') {
-		eprintf ("Usage: aev [esil-expression]    # same as VbE\n");
+		r_core_cmd_help (core, help_msg_aev);
 		return false;
 	}
 	if (!r_config_get_b (core->config, "scr.interactive")) {
@@ -3197,7 +3202,7 @@ static void r_core_visual_anal_refresh_column(RCore *core, int colpos) {
 	free (cmdf);
 }
 
-static const char *help_fun_visual[] = {
+static RCoreHelpMessage help_fun_visual = {
 	"(a)", "analyze ", "(-)", "delete ", "(x)", "xrefs ", "(X)", "refs ", "(j/k)", "next/prev\n",
 	"(r)", "rename ",  "(c)", "calls ", "(d)", "define ", "(Tab)", "disasm ", "(_)", "hud\n",
 	"(d)", "define ",  "(v)", "vars ", "(?)", " help ", "(:)", "shell " ,"(q)", "quit\n",
@@ -3205,20 +3210,20 @@ static const char *help_fun_visual[] = {
 	NULL
 };
 
-static const char *help_var_visual[] = {
+static RCoreHelpMessage help_var_visual = {
 	"(a)", "add " ,"(x)", "xrefs ", "(r)", "rename\n",
 	"(t)", "type ", "(g)", "go ", "(-)" ,"delete\n",
 	"(q)", "quit ", "(s)", "signature\n\n",
 	NULL
 };
 
-static const char *help_visual_anal_actions[] = {
+static RCoreHelpMessage help_visual_anal_actions = {
 	"functions:", "Add, Modify, Delete, Xrefs Calls Vars",
 	"variables:", "Add, Modify, Delete",
 	NULL
 };
 
-static const char *help_visual_anal_keys[] = {
+static RCoreHelpMessage help_visual_anal_keys = {
 	"j/k",	"select next/prev item; scroll disasm column",
 	"J/K",	"scroll next/prev by page",
 	"b/h",	"functions analysis (level 0)",
@@ -3236,7 +3241,7 @@ static const char *help_visual_anal_keys[] = {
 	NULL
 };
 
-static void r_core_vmenu_append_help(RStrBuf *p, const char **help) {
+static void r_core_vmenu_append_help(RStrBuf *p, RCoreHelpMessage help) {
 	int i;
 	RConsContext *cons_ctx = r_cons_singleton ()->context;
 	const char *pal_args_color = cons_ctx->color_mode ? cons_ctx->pal.args : "",

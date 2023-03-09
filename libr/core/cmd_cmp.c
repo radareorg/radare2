@@ -2,7 +2,7 @@
 
 #include "r_core.h"
 
-static const char *help_message_ci[] = {
+static RCoreHelpMessage help_message_ci = {
 	"Usage: ci", "[sil] ([obid])", "Compare two bin objects",
 	"cis", " 0", "compare symbols with current `ob 1` with given obid (0)",
 	"cii", " 0", "compare imports",
@@ -10,17 +10,18 @@ static const char *help_message_ci[] = {
 	NULL
 };
 
-static const char *help_msg_cmp[] = {
+static RCoreHelpMessage help_msg_cmp = {
 	"Usage: cmp", " [file] [file]", "Compare two ($alias) files, and change $? value",
 	"cmp", " ls ls.old", "compare contents of given files",
 	"cmp", " $a $b", "same as above but using alias files",
 	NULL
 };
 
-static const char *help_msg_c[] = {
+static RCoreHelpMessage help_msg_c = {
 	"Usage:", "c[?dfx] [argument]", " # Compare",
 	"c", " [string]", "compare a plain with escaped chars string",
-	"c*", " [string]", "same as above, but printing r2 commands instead",
+	"c*", " [string]", "same as c, but printing r2 commands instead",
+	"cj", " [string]", "same as c, with JSON output",
 	"c1", " [addr]", "compare byte at addr with current offset",
 	"c2", "[*] [value]", "compare word at offset with given value",
 	"c4", "[*] [value]", "compare doubleword at offset with given value",
@@ -34,7 +35,7 @@ static const char *help_msg_c[] = {
 	// "cc", " [offset]", "code bindiff current block against offset"
 	// "cD", " [file]", "like above, but using radiff -b",
 	"cf", " [file]", "compare contents of file at current seek",
-	"cg", "[?] [o] [file]", "graphdiff current file and [file]",
+	"cg", "[fo?] [file]", "graphdiff current file and [file]",
 	"ci", "[?] [obid] ([obid2])", "compare two bin-objects (symbols, imports, ...)",
 	"cl|cls|clear", "", "clear screen, (clear0 to goto 0, 0 only)",
 	"cmp", " [file] [file]", "compare two files",
@@ -46,6 +47,27 @@ static const char *help_msg_c[] = {
 	"cx", " [hexpair]", "compare hexpair string (use '.' as nibble wildcard)",
 	"cx*", " [hexpair]", "compare hexpair string (output r2 commands)",
 	"cX", " [addr]", "Like 'cc' but using hexdiff output",
+	NULL
+};
+
+static RCoreHelpMessage help_msg_cu = {
+	"Usage: cu", " [offset]", "# Prints unified comparison to make hexpatches",
+	"cu", " $$+1 > p", "compare hexpairs from current seek and +1",
+	"cu1", " $$+1 > p", "compare bytes from current seek and +1",
+	"cu2", " $$+1 > p", "compare words (half, 16bit) from current seek and +1",
+	"cu4", " $$+1 > p", "compare dwords from current seek and +1",
+	"cu8", " $$+1 > p", "compare qwords from current seek and +1",
+	"cud", " $$+1 > p", "compare disasm current seek and +1",
+	"wu", " p", "apply unified hex patch (see output of cu)",
+	"curl", " [http-url]", "",
+	NULL
+};
+
+static RCoreHelpMessage help_msg_cg = {
+	"Usage: cg", "", "Graph compare",
+	"cg", " [file]", "diff ratio among functions (columns: off-A, match-ratio, off-B)",
+	"cgf", " [fcn]", "compare functions (curseek vs fcn)",
+	"cgo", "", "opcode-bytes code graph diff",
 	NULL
 };
 
@@ -428,7 +450,7 @@ static void nowatchers(ut64 addr) {
 
 /* Returns 0 if operation succeeded, 1 otherwise */
 static int cmd_cmp_watcher(RCore *core, const char *input) {
-	static const char *help_msg_cw[] = {
+	static RCoreHelpMessage help_msg_cw = {
 		"Usage: cw", "[args]", "Manage compare watchers; See if and how memory changes",
 		"cw??", "", "Show more info about watchers",
 		"cw ", "addr sz cmd", "Add a compare watcher",
@@ -701,7 +723,7 @@ static int cmd_cmp_disasm(RCore *core, const char *input, int mode) {
 static int cmd_cp(void *data, const char *input) {
 	RCore *core = (RCore *)data;
 	bool use_corefile;
-	const char *help_msg_cp[] = {
+	RCoreHelpMessage help_msg_cp = {
 		"cp", " src dst", "Standard file copy",
 		"cp", ".[ext]", "Copy current file <name> to <name>.ext",
 		NULL
@@ -978,7 +1000,7 @@ static void cmd_curl(RCore *core, const char *arg) {
 	if (r_sys_getenv_asbool ("R2_CURL")) {
 		r_sys_cmdf ("curl %s", arg);
 	} else {
-		if (strstr (arg, "http") && strstr (arg, "://")) {
+		if (r_str_startswith (arg, "http://") || r_str_startswith (arg, "https://")) {
 			int len;
 			char *s = r_socket_http_get (arg, NULL, &len);
 			if (s) {
@@ -986,7 +1008,7 @@ static void cmd_curl(RCore *core, const char *arg) {
 				free (s);
 			}
 		} else {
-			eprintf ("Usage: curl [http-url]\n");
+			r_core_cmd_help_match (core, help_msg_cu, "curl", true);
 		}
 	}
 }
@@ -1079,9 +1101,9 @@ static int cmd_cmp(void *data, const char *input) {
 	case 'w':
 		return cmd_cmp_watcher (core, input + 1);
 		break;
-	case '*': // c*"
+	case '*': // "c*"
 		if (!input[2]) {
-			eprintf ("Usage: cx* 00..22'\n");
+			r_core_cmd_help_match (core, help_msg_c, "c*", true);
 			return 0;
 		}
 
@@ -1097,7 +1119,7 @@ static int cmd_cmp(void *data, const char *input) {
 	}
 	case 'j': // "cj"
 		if (input[1] != ' ') {
-			eprintf ("Usage: cj [string]\n");
+			r_core_cmd_help_match (core, help_msg_c, "cj", true);
 		} else {
 			char *str = strdup (input + 2);
 			int len = r_str_unescape (str);
@@ -1113,14 +1135,14 @@ static int cmd_cmp(void *data, const char *input) {
 			break;
 		case '*':
 			if (input[2] != ' ') {
-				eprintf ("Usage: cx* 00..22'\n");
+				r_core_cmd_help_match (core, help_msg_c, "cx*", true);
 				return 0;
 			}
 			mode = '*';
 			input += 3;
 			break;
 		default:
-			eprintf ("Usage: cx 00..22'\n");
+			r_core_cmd_help_match (core, help_msg_c, "cx", true);
 			return 0;
 		}
 		if (!(filled = (char *) malloc (strlen (input) + 1))) {
@@ -1266,7 +1288,7 @@ static int cmd_cmp(void *data, const char *input) {
 	}
 	case 'c': // "cc"
 		if (input[1] == '?') { // "cc?"
-			r_core_cmd0 (core, "c?~cc");
+			r_core_cmd_help_match (core, help_msg_c, "cc", false);
 		} else if (input[1] == 'd') { // "ccd"
 			if (input[2] == 'd') { // "ccdd"
 				cmd_cmp_disasm (core, input + 3, 'd');
@@ -1305,36 +1327,28 @@ static int cmd_cmp(void *data, const char *input) {
 		RCore *core2;
 		char *file2 = NULL;
 		switch (input[1]) {
-		case 'o':         // "cgo"
+		case 'o': // "cgo"
 			file2 = (char *) r_str_trim_head_ro (input + 2);
 			if (*file2) {
 				r_anal_diff_setup (core->anal, true, -1, -1);
 			} else {
-				eprintf ("Usage: cgo [file]\n");
+				r_core_cmd_help_match (core, help_msg_cg, "cgo", true);
 				return false;
 			}
 			break;
-		case 'f':         // "cgf"
+		case 'f': // "cgf"
 			R_LOG_TODO ("agf is experimental");
 			r_anal_diff_setup (core->anal, true, -1, -1);
 			r_core_gdiff_fcn (core, core->offset,
 				r_num_math (core->num, input + 2));
 			return false;
-		case ' ':
+		case ' ': // "cg "
 			file2 = (char *) r_str_trim_head_ro (input + 2);
 			r_anal_diff_setup (core->anal, false, -1, -1);
 			break;
-		default: {
-			const char *help_message[] = {
-				"Usage: cg", "", "Graph code commands",
-				"cg", "", "diff ratio among functions (columns: off-A, match-ratio, off-B)",
-				"cgf", "[fcn]", "compare functions (curseek vs fcn)",
-				"cgo", "", "opcode-bytes code graph diff",
-				NULL
-			};
-			r_core_cmd_help (core, help_message);
+		default:
+			r_core_cmd_help (core, help_msg_cg);
 			return false;
-		}
 		}
 
 		if (r_file_size (file2) <= 0) {
@@ -1394,18 +1408,7 @@ static int cmd_cmp(void *data, const char *input) {
 			cmd_cmp_disasm (core, input + 2, 'u');
 			break;
 		default: {
-			const char *help_msg[] = {
-				"Usage: cu", " [offset]", "# Prints unified comparison to make hexpatches",
-				"cu", " $$+1 > p", "compare hexpairs from  current seek and +1",
-				"cu1", " $$+1 > p", "compare bytes from current seek and +1",
-				"cu2", " $$+1 > p", "compare words (half, 16bit) from current seek and +1",
-				"cu4", " $$+1 > p", "compare dwords from current seek and +1",
-				"cu8", " $$+1 > p", "compare qwords from current seek and +1",
-				"cud", " $$+1 > p", "compare disasm current seek and +1",
-				"wu", " p", "apply unified hex patch (see output of cu)",
-				NULL
-			};
-			r_core_cmd_help (core, help_msg);
+			r_core_cmd_help (core, help_msg_cu);
 		}
 		}
 		break;
@@ -1469,12 +1472,7 @@ static int cmd_cmp(void *data, const char *input) {
 			r_core_return_value (core, 1);
 			// fallthrough
 		case '?':
-			eprintf ("Usage: cv[1248] [num]\n"
-				"Show offset if current value equals to the one specified\n"
-				" /v 18312   # serch for a known value\n"
-				" dc\n"
-				" cv4 18312 @@ hit*\n"
-				" dc\n");
+			r_core_cmd_help_match (core, help_msg_c, "cv", true);
 			break;
 		}
 	}
@@ -1490,8 +1488,7 @@ static int cmd_cmp(void *data, const char *input) {
 			default: sz = '4'; break; // default
 			}
 		} else if (sz == '?') {
-			eprintf ("Usage: cV[1248] [addr] @ addr2\n"
-				"compare n bytes from one address to current one and return in $? 0 or 1\n");
+			r_core_cmd_help_match (core, help_msg_c, "cV", true);
 		}
 		sz -= '0';
 		if (sz > 0) {

@@ -3,7 +3,7 @@
 #include "r_cmd.h"
 #include "r_core.h"
 
-static const char *help_msg_lparen[] = {
+static RCoreHelpMessage help_msg_lparen = {
 	"Usage:", "(foo args;cmd1;cmd2;..)", "Aliases",
 	"(foo args;..;..)", "", "define a macro",
 	"(foo args;..;..)()", "", "define and call a macro",

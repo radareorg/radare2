@@ -1491,8 +1491,18 @@ static bool cb_dirsrc(void *user, void *data) {
 static bool cb_cfgsanbox_grain(void *user, void *data) {
 	RConfigNode *node = (RConfigNode*) data;
 	if (strstr (node->value, "?")) {
-		eprintf ("Usage: comma separated grain types to be masked out by the sandbox.\n");
-		eprintf ("all, none, disk, files, exec, socket, exec\n");
+		static RCoreHelpMessage help_msg_grain = {
+			"Usage:", "e cfg.sandbox.grain=arg[,arg...]", "set grain types to mask out",
+			"Grain types:", "", "",
+			"", "all", "",
+			"", "none", "",
+			"", "disk", "",
+			"", "files", "",
+			"", "exec", "",
+			"", "socket", "",
+			NULL
+		};
+		r_core_cmd_help ((RCore *)user, help_msg_grain);
 		return false;
 	}
 	int gt = R_SANDBOX_GRAIN_NONE;
@@ -2388,7 +2398,7 @@ static bool cb_pager(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
 	if (*node->value == '?') {
-		eprintf ("Usage: scr.pager must be '..' for internal less, or the path to a program in $PATH\n");
+		eprintf ("scr.pager must be '..' for internal less, or the path to a program in $PATH\n");
 		return false;
 	}
 	/* Let cons know we have a new pager. */

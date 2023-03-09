@@ -287,15 +287,16 @@ static RCoreHelpMessage help_msg_question = {
 	"?o", " num", "get octal value",
 	"?P", " paddr", "get virtual address for given physical one",
 	"?p", " vaddr", "get physical address for given virtual address",
-	"?q", " eip-0x804800", "compute expression like ? or ?v but in quiet mode",
+	"?q", " num|expr", "compute expression like ? or ?v but in quiet mode",
 	"?r", " [from] [to]", "generate random number between from-to",
 	"?s", " from to step", "sequence of numbers from to by steps",
 	"?t", " cmd", "returns the time to run a command",
 	"?T", "", "show loading times",
 	"?u", " num", "get value in human units (KB, MB, GB, TB)",
-	"?v", " eip-0x804800", "show hex value of math expr",
+	"?v", " num|expr", "show hex value of math expr (no expr prints $?)",
+	"?vi", "[1248] num|expr", "show decimal value of math expr [n bytes]",
+	"?vx", " num|expr", "show 8 digit padding in hex",
 	"?V", "", "show library version of r_core",
-	"?vi", " rsp-rbp", "show decimal value of math expr",
 	"?w", " addr", "show what's in this address (like pxr/pxq does)",
 	"?X", " num|expr", "returns the hexadecimal value numeric expr",
 	"?x", " str", "returns the hexpair of number or string",
@@ -688,7 +689,7 @@ static int cmd_help(void *data, const char *input) {
 			free (buf);
 		} else if (input[1] == 't' && input[2] == 'w') { // "?btw"
 			if (r_num_between (core->num, input + 3) == -1) {
-				eprintf ("Usage: ?btw num|(expr) num|(expr) num|(expr)\n");
+				r_core_cmd_help_match (core, help_msg_question, "?btw", true);
 			}
 		} else {
 			n = r_num_math (core->num, input + 1);
@@ -731,11 +732,11 @@ static int cmd_help(void *data, const char *input) {
 				r_str_bits (out, (const ut8*)&n, sizeof (n) * 8, q + 1);
 				r_cons_println (out);
 			} else {
-				eprintf ("Usage: \"?b value bitstring\"\n");
+				r_core_cmd_help_match (core, help_msg_question, "?f", true);
 			}
 			free (p);
 		} else {
-			R_LOG_ERROR ("expected whitespace after '?f'");
+			r_core_cmd_help_match (core, help_msg_question, "?f", true);
 		}
 		break;
 	case 'o': // "?o"
@@ -879,8 +880,7 @@ static int cmd_help(void *data, const char *input) {
 			R_LOG_ERROR ("Division by Zero");
 		}
 		if (input[1] == '?') {
-			r_cons_printf ("Usage: ?q [num]  # Update $? without printing anything\n"
-				"|?q 123; ?? x    # hexdump if 123 != 0");
+			r_core_cmd_help_match (core, help_msg_question, "?q", true);
 		} else {
 			const char *space = strchr (input, ' ');
 			if (space) {
@@ -912,14 +912,7 @@ static int cmd_help(void *data, const char *input) {
 		}
 		switch (input[1]) {
 		case '?':
-			r_cons_printf ("Usage: ?v[id][ num]  # Show value\n"
-				"|?vx number  -> show 8 digit padding in hex\n"
-				"|?vi1 200    -> 1 byte size value (char)\n"
-				"|?vi2 0xffff -> 2 byte size value (short)\n"
-				"|?vi4 0xffff -> 4 byte size value (int)\n"
-				"|?vi8 0xffff -> 8 byte size value (st64)\n"
-				"| No argument shows $? value\n"
-				"|?vi will show in decimal instead of hex\n");
+			r_core_cmd_help_match (core, help_msg_question, "?v", false);
 			break;
 		case '\0':
 			r_cons_printf ("%d\n", (st32)n);
@@ -970,7 +963,7 @@ static int cmd_help(void *data, const char *input) {
 				}
 				free (s);
 			} else {
-				eprintf ("Usage: ?== str1 str2\n");
+				r_core_cmd_help_match (core, help_msg_question, "?==", true);
 			}
 		} else {
 			if (input[1]) { // ?=

@@ -1321,14 +1321,14 @@ static void w32_list_heaps_blocks(RCore *core, const char format) {
 	RtlDestroyQueryDebugBuffer (db);
 }
 
-static const char *help_msg[] = {
+static RCoreHelpMessage help_msg = {
 	"Usage:", " dmh[?|b][f|j]", " # Memory map heap",
 	"dmh[j]", "", "List process heaps",
 	"dmhb[?] [addr]", "", "List process heap blocks",
 	NULL
 };
 
-static const char *help_msg_block[] = {
+static RCoreHelpMessage help_msg_block = {
 	"Usage:", " dmhb[f|j]", " # Memory map heap",
 	"dmhb [addr]", "", "List allocated heap blocks",
 	"dmhbf", "", "Create flags for each allocated block",

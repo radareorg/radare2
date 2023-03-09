@@ -6,21 +6,21 @@
 #define MAX_SCAN_SIZE 0x7ffffff
 // should be 1 unless it makes the CI sad
 
-static const char *help_msg_af_plus[] = {
+static RCoreHelpMessage help_msg_af_plus = {
 	"Usage:", "af+", " [addr] ([name] ([type] [diff]))",
 	"af+", "$$", "add a raw function element. See afb+ to add basic blocks to it",
 	"af+", "$$ main", "add new function in current offset with 'main' as name",
 	NULL
 };
 
-static const char *help_msg_aex[] = {
+static RCoreHelpMessage help_msg_aex = {
 	"Usage:", "aex", "[a] [9090]",
 	"aex", " 90", "decode the given hexpairs and execute them",
 	"aexa", " mov rax, 33", "assemble instruction and execute it",
 	NULL
 };
 
-static const char *help_msg_a[] = {
+static RCoreHelpMessage help_msg_a = {
 	"Usage:", "a", "[abdefFghoprxstc] [...]",
 	"a", "", "alias for aai - analysis information",
 	"a*", "", "same as afl*;ah*;ax*",
@@ -51,19 +51,19 @@ static const char *help_msg_a[] = {
 	NULL
 };
 
-static const char *help_msg_afna[] = {
+static RCoreHelpMessage help_msg_afna = {
 	"Usage:", "afna", " # construct a function name and rename the function for the current offset.",
 	"", "", "Based on flags or methods calls found inside that function.",
 	NULL
 };
 
-static const char *help_msg_afu[] = {
+static RCoreHelpMessage help_msg_afu = {
 	"Usage:", "afu", "[addr]   # resize and analyze function from current address until addr.",
 	"afu", " 0x100004093", "resize and analyze function from current address until 0x100004093",
 	NULL
 };
 
-static const char *help_msg_aae[] = {
+static RCoreHelpMessage help_msg_aae = {
 	"Usage:", "aae", "[pf] ([addr]) # analyze all kind of stuff using esil",
 	"aaep", "", "same as aepa@@@i - define anal pins by import flag names",
 	"aaep", "a", "run 'aep ret0@@@i' and then 'aaep' - all unknown imports are faked to return 0",
@@ -73,14 +73,14 @@ static const char *help_msg_aae[] = {
 	NULL
 };
 
-static const char *help_msg_aav[] = {
+static RCoreHelpMessage help_msg_aav = {
 	"Usage:", "aav", "[sat] # find values referencing a specific section or map",
 	"aav", "", "find absolute reference values",
 	"aavr", "", "find relative reference values (address + 4 byte signed int)",
 	NULL
 };
 
-static const char *help_msg_aan[] = {
+static RCoreHelpMessage help_msg_aan = {
 	"Usage:", "aan", "[rg]   # automatically name functions.",
 	"aan", "", "autoname all functions",
 	"aang", "", "autoname all golang functions",
@@ -88,19 +88,19 @@ static const char *help_msg_aan[] = {
 	NULL
 };
 
-static const char *help_msg_afm[] = {
+static RCoreHelpMessage help_msg_afm = {
 	"Usage:", "afm", "[name]   # merge two functions.",
 	"afm", " sym.func.100003d74", "merge current function into 0x100003d74",
 	NULL
 };
 
-static const char *help_msg_aF[] = {
+static RCoreHelpMessage help_msg_aF = {
 	"Usage:", "aF", " # analyze a function, but using anal.depth=1",
 	"aF", "", "check af? for more options and information.",
 	NULL
 };
 
-static const char *help_msg_an[] = {
+static RCoreHelpMessage help_msg_an = {
 	"Usage:", "an", " # analyze name for the current address",
 	"an", "", "show flag/function/symbol name",
 	"an*", "", "same as above but in r2 commands",
@@ -108,13 +108,13 @@ static const char *help_msg_an[] = {
 	NULL
 };
 
-static const char *help_msg_a8[] = {
+static RCoreHelpMessage help_msg_a8 = {
 	"Usage:", "a8", "[hexpairs]   # analyze the byte array given as input",
 	"a8 ", "5548", "analyzes 5548 byte array",
 	NULL
 };
 
-static const char *help_msg_ap[] = {
+static RCoreHelpMessage help_msg_ap = {
 	"Usage:", "ap[?]", " # analyze prelude in current offset",
 	"ap", "", "check if current offset contains a function prelude",
 	"apl", "", "list available function preludes defined by the arch plugin",
@@ -126,7 +126,7 @@ static const char *help_msg_ap[] = {
 	NULL
 };
 
-static const char *help_msg_avg[] = {
+static RCoreHelpMessage help_msg_avg = {
 	"Usage:", "avg", " # analyze variable global",
 	"avg", "", "use ESIL emulation to find out arguments of a call (uses 'abte')",
 	"avg", " [type] [name]", "add global",
@@ -134,14 +134,14 @@ static const char *help_msg_avg[] = {
 	NULL
 };
 
-static const char *help_msg_aC[] = {
+static RCoreHelpMessage help_msg_aC = {
 	"Usage:", "aC[fej] [addr-of-call]", " # analyze call args",
 	"aCe", "", "use ESIL emulation to find out arguments of a call (uses 'abte')",
 	"aCf", "", "same as .aCe* $$ @@=`pdr~call`",
 	NULL
 };
 
-static const char *help_msg_aaf[] = {
+static RCoreHelpMessage help_msg_aaf = {
 	"Usage:", "aaf[efrt?]", " # analyse all functionsee also 'af' and 'afna'",
 	"aaf", "", "same as afr@@c:isq",
 	"aafe", " ", "same as aef@@F",
@@ -152,7 +152,7 @@ static const char *help_msg_aaf[] = {
 	NULL
 };
 
-static const char *help_msg_aaa[] = {
+static RCoreHelpMessage help_msg_aaa = {
 	"Usage:", "aa[a[a[a]]]", " # automatically analyze the whole program",
 	"a", " ", "show code analysis statistics",
 	"aa", " ", "alias for 'af@@ sym.*;af@entry0;afva'",
@@ -162,7 +162,7 @@ static const char *help_msg_aaa[] = {
 	NULL
 };
 
-static const char *help_msg_aa[] = {
+static RCoreHelpMessage help_msg_aa = {
 	"Usage:", "aa[0*?]", " # see also 'af' and 'afna'",
 	"aa", " ", "alias for 'af@@ sym.*;af@entry0;afva'", //;.afna @@ fcn.*'",
 	"aaa", "[?]", "autoname functions after aa (see afna)",
@@ -192,7 +192,7 @@ static const char *help_msg_aa[] = {
 	NULL
 };
 
-static const char *help_msg_afls[] = {
+static RCoreHelpMessage help_msg_afls = {
 	"Usage:", "afls", "[afls] # sort function list",
 	"afls", "", "same as aflsa",
 	"aflsa", "", "sort by address (same as afls)",
@@ -211,7 +211,7 @@ static const RCoreHelpMessage help_msg_aflx = {
 	NULL
 };
 
-static const char *help_msg_ai[] = {
+static RCoreHelpMessage help_msg_ai = {
 	"Usage:", "ai", "[j*] [sz] # analysis/address information/imports",
 	"ai", " @addr", "show address information",
 	"aia", "", "show architecture specific information instruction size and alignment details",
@@ -221,7 +221,7 @@ static const char *help_msg_ai[] = {
 	NULL
 };
 
-static const char *help_msg_aar[] = {
+static RCoreHelpMessage help_msg_aar = {
 	"Usage:", "aar", "[j*] [sz] # search and analyze xrefs",
 	"aar", " [sz]", "analyze xrefs in current section or sz bytes of code",
 	"aarr", "", "analyze all function reference graph to find more functions (EXPERIMENTAL)",
@@ -230,7 +230,7 @@ static const char *help_msg_aar[] = {
 	NULL
 };
 
-static const char *help_msg_ab[] = {
+static RCoreHelpMessage help_msg_ab = {
 	"Usage:", "ab", "# analyze basic block",
 	"ab", " [addr]", "show basic block information at given address",
 	"ab.", "", "same as: ab $$",
@@ -247,7 +247,7 @@ static const char *help_msg_ab[] = {
 	NULL
 };
 
-static const char *help_msg_abl[] = {
+static RCoreHelpMessage help_msg_abl = {
 	"Usage:", "abl", "analyzed basicblocks listing",
 	"abl", "", "list all program-wide basic blocks analyzed",
 	"abl,", " [table-query]", "render the list using a table",
@@ -257,7 +257,7 @@ static const char *help_msg_abl[] = {
 	NULL
 };
 
-static const char *help_msg_abt[] = {
+static RCoreHelpMessage help_msg_abt = {
 	"Usage:", "abt", "[addr] [num] # find num paths from current offset to addr",
 	"abt", " [addr] [num]", "find num paths from current offset to addr",
 	"abte", " [addr]", "emulate from beginning of function to the given address",
@@ -265,7 +265,7 @@ static const char *help_msg_abt[] = {
 	NULL
 };
 
-static const char *help_msg_ac[] = {
+static RCoreHelpMessage help_msg_ac = {
 	"Usage:", "ac", "anal classes commands",
 	"acl", "[j*]", "list all classes",
 	"acll", "[j] (class_name)", "list all or single class detailed",
@@ -286,7 +286,7 @@ static const char *help_msg_ac[] = {
 	NULL
 };
 
-static const char *help_msg_ad[] = {
+static RCoreHelpMessage help_msg_ad = {
 	"Usage:", "ad", "[kt] [...]",
 	"ad", " [N] [D]", "analyze N data words at D depth",
 	"ad4", " [N] [D]", "analyze N data words at D depth (asm.bits=32)",
@@ -298,7 +298,7 @@ static const char *help_msg_ad[] = {
 	NULL
 };
 
-static const char *help_msg_aes[] = {
+static RCoreHelpMessage help_msg_aes = {
 	"Usage:", "aes[pbosu]", "esil stepping utilities",
 	"aesp", " [X] [N]", "evaluate N instr from offset X",
 	"aesb", "", "step back",
@@ -308,10 +308,11 @@ static const char *help_msg_aes[] = {
 	"aesu", " [addr]", "step until given address",
 	"aesue", " [esil]", "step until esil expression match",
 	"aesuo", " [optype]", "step until given opcode type",
+	"aesB", " [addr] [N] @ [from-addr]", "step over every N instructions",
 	NULL
 };
 
-static const char *help_msg_aei[] = {
+static RCoreHelpMessage help_msg_aei = {
 	"Usage:", "aei", "[smp] [...]",
 	"aei", "", "initialize ESIL VM state (aei- to deinitialize)",
 	"aeis", " argc [argv] [envp]", "initialize entrypoint stack environment",
@@ -320,7 +321,7 @@ static const char *help_msg_aei[] = {
 	NULL
 };
 
-static const char *help_msg_ae[] = {
+static RCoreHelpMessage help_msg_ae = {
 	"Usage:", "ae[idesr?] [arg]", "ESIL code emulation",
 	"ae", " [expr]", "evaluate ESIL expression",
 	"ae?", "", "show this help",
@@ -347,7 +348,7 @@ static const char *help_msg_ae[] = {
 	NULL
 };
 
-static const char *help_detail_ae[] = {
+static RCoreHelpMessage help_detail_ae = {
 	"Examples:", "ESIL", " examples and documentation",
 	"=", "", "assign updating internal flags",
 	":=", "", "assign without updating internal flags",
@@ -433,7 +434,7 @@ static const char *help_detail_ae[] = {
 	NULL
 };
 
-static const char *help_msg_aea[] = {
+static RCoreHelpMessage help_msg_aea = {
 	"Examples:", "aea", " show regs and memory accesses used in a range",
 	"aea", "  [ops]", "show regs/memory accesses used in N instructions",
 	"aea*", " [ops]", "create mem.* flags for memory accesses",
@@ -457,7 +458,7 @@ static const char *help_msg_aea[] = {
 	NULL
 };
 
-static const char *help_msg_aec[] = {
+static RCoreHelpMessage help_msg_aec = {
 	"Examples:", "aec", " continue until ^c",
 	"aec", "", "continue until exception",
 	"aecs", "", "continue until syscall",
@@ -467,13 +468,13 @@ static const char *help_msg_aec[] = {
 	NULL
 };
 
-static const char *help_msg_aeC[] = {
+static RCoreHelpMessage help_msg_aeC = {
 	"Examples:", "aeC", " arg0 arg1 ... @ calladdr",
 	"aeC", " 1 2 @ sym._add", "Call sym._add(1,2)",
 	NULL
 };
 
-static const char *help_msg_aeg[] = {
+static RCoreHelpMessage help_msg_aeg = {
 	"Usage:", "aeg[fniv]", " [...]",
 	"aeg", "", "analyze current instruction as an esil graph",
 	"aegb", "", "data flow graph for current basic block (aeg `pieq $Fi`)",
@@ -483,7 +484,7 @@ static const char *help_msg_aeg[] = {
 	NULL
 };
 
-static const char *help_msg_aep[] = {
+static RCoreHelpMessage help_msg_aep = {
 	"Usage:", "aep[-*c] ", " [...] manage esil pins, run r2 commands instead of esil",
 	"aepc", " [addr]", "change program counter for esil",
 	"aep*", "", "list pins in r2 commands",
@@ -499,7 +500,7 @@ static const char *help_msg_aep[] = {
 	NULL
 };
 
-static const char *help_msg_aek[] = {
+static RCoreHelpMessage help_msg_aek = {
 	"Usage:", "aek ", " [...]",
 	"aek", "", "dump the esil.stats database contents",
 	"aek ", "sdb.query", "evaluate sdb query on esil.stats db",
@@ -507,14 +508,14 @@ static const char *help_msg_aek[] = {
 	NULL
 };
 
-static const char *help_msg_aets[] = {
+static RCoreHelpMessage help_msg_aets = {
 	"Usage:", "aets ", " [...]",
 	"aets+", "", "start ESIL trace session",
 	"aets-", "", "stop ESIL trace session",
 	NULL
 };
 
-static const char *help_msg_af[] = {
+static RCoreHelpMessage help_msg_af = {
 	"Usage:", "af", "",
 	"af", " ([name]) ([addr])", "analyze functions (start at addr or $$)",
 	"af+", " addr name [type] [diff]", "hand craft a function (requires afb+)",
@@ -547,7 +548,7 @@ static const char *help_msg_af[] = {
 	NULL
 };
 
-static const char *help_msg_afb[] = {
+static RCoreHelpMessage help_msg_afb = {
 	"Usage:", "afb", " list basic blocks of given function",
 	".afbr-", "", "set breakpoint on every return address of the function",
 	".afbr-*", "", "remove breakpoint on every return address of the function",
@@ -566,7 +567,7 @@ static const char *help_msg_afb[] = {
 	NULL
 };
 
-static const char *help_msg_afc[] = {
+static RCoreHelpMessage help_msg_afc = {
 	"Usage:", "afc[agl?]", "# see also tcc command to manage all calling conventions",
 	"afc", " ccname", "manually set calling convention for current function",
 	"afc", "", "show calling convention for the Current function (same as tcc)",
@@ -581,7 +582,7 @@ static const char *help_msg_afc[] = {
 	NULL
 };
 
-static const char *help_msg_afC[] = {
+static RCoreHelpMessage help_msg_afC = {
 	"Usage:", "afC", " [addr]",
 	"afC", "", "function cycles cost",
 	"afCc", "", "cyclomatic complexity",
@@ -589,7 +590,7 @@ static const char *help_msg_afC[] = {
 	NULL
 };
 
-static const char *help_msg_afi[] = {
+static RCoreHelpMessage help_msg_afi = {
 	"Usage:", "afi[jlp*]", " <addr>",
 	"afi", "", "show information of the function",
 	"afi.", "", "show function name in current offset",
@@ -603,7 +604,7 @@ static const char *help_msg_afi[] = {
 	NULL
 };
 
-static const char *help_msg_afis[] = {
+static RCoreHelpMessage help_msg_afis = {
 	"Usage:", "afis[ft]", "",
 	"afis", "", "enumerate unique opcodes in function",
 	"afisa", "[fo]", "enumerate all the meta of all the functions",
@@ -613,7 +614,7 @@ static const char *help_msg_afis[] = {
 	NULL
 };
 
-static const char *help_msg_afl[] = {
+static RCoreHelpMessage help_msg_afl = {
 	"Usage:", "afl", " List all functions",
 	"afl", "", "list functions",
 	"afl.", "", "display function in current offset (see afi.)",
@@ -632,7 +633,7 @@ static const char *help_msg_afl[] = {
 	NULL
 };
 
-static const char *help_msg_afll[] = {
+static RCoreHelpMessage help_msg_afll = {
 	"Usage:", "", " List functions in verbose mode",
 	"", "", "",
 	"Table fields:", "", "",
@@ -655,7 +656,7 @@ static const char *help_msg_afll[] = {
 	NULL
 };
 
-static const char *help_msg_afn[] = {
+static RCoreHelpMessage help_msg_afn = {
 	"Usage:", "afn[sa]", " Analyze function names",
 	"afn", " [name]", "rename the function",
 	"afn", " base64:encodedname", "rename the function",
@@ -666,7 +667,7 @@ static const char *help_msg_afn[] = {
 	NULL
 };
 
-static const char *help_msg_afs[] = {
+static RCoreHelpMessage help_msg_afs = {
 	"Usage:", "afs[r]", " Analyze function signatures",
 	"afs", "[!] ([fcnsign])", "get/set function signature at current address (afs! uses cfg.editor)",
 	"afs*", " ([signame])", "get function signature in flags",
@@ -675,13 +676,13 @@ static const char *help_msg_afs[] = {
 	NULL
 };
 
-static const char *help_msg_aft[] = {
+static RCoreHelpMessage help_msg_aft = {
 	"Usage:", "aft", "",
 	"aft", "", "type matching analysis for current function",
 	NULL
 };
 
-static const char *help_msg_afv[] = {
+static RCoreHelpMessage help_msg_afv = {
 	"Usage:", "afv[rbs]"," Function variables manipulation",
 	"afv*", "", "output r2 command to add args/locals to flagspace",
 	"afv-", "([name])", "remove all or given var",
@@ -700,7 +701,7 @@ static const char *help_msg_afv[] = {
 	NULL
 };
 
-static const char *help_msg_aeim[] = {
+static RCoreHelpMessage help_msg_aeim = {
 	"Usage:", "aeim", " [addr] [size] [name] - initialize the ESIL VM stack",
 	"aeim", "", "initialize esil memory with default values from esil.stack.* evals",
 	"aeim", " 0x10000", "same as aeim@e:esil.stack.addr=0x10000",
@@ -708,7 +709,7 @@ static const char *help_msg_aeim[] = {
 	NULL
 };
 
-static const char *help_msg_afvb[] = {
+static RCoreHelpMessage help_msg_afvb = {
 	"Usage:", "afvb", " [idx] [name] ([type])",
 	"afvb", "", "list base pointer based arguments, locals",
 	"afvb*", "", "same as afvb but in r2 commands",
@@ -720,7 +721,7 @@ static const char *help_msg_afvb[] = {
 	NULL
 };
 
-static const char *help_msg_afvr[] = {
+static RCoreHelpMessage help_msg_afvr = {
 	"Usage:", "afvr", " [reg] [type] [name]",
 	"afvr", "", "list register based arguments",
 	"afvr*", "", "same as afvr but in r2 commands",
@@ -732,7 +733,7 @@ static const char *help_msg_afvr[] = {
 	NULL
 };
 
-static const char *help_msg_afvs[] = {
+static RCoreHelpMessage help_msg_afvs = {
 	"Usage:", "afvs", " [idx] [type] [name]",
 	"afvs", "", "list stack based arguments and locals",
 	"afvs*", "", "same as afvs but in r2 commands",
@@ -744,7 +745,7 @@ static const char *help_msg_afvs[] = {
 	NULL
 };
 
-static const char *help_msg_ag[] = {
+static RCoreHelpMessage help_msg_ag = {
 	"Usage:", "ag<graphtype><format> [addr]", "",
 	"Graph commands:", "", "",
 	"aga", "[format]", "data references graph",
@@ -778,7 +779,7 @@ static const char *help_msg_ag[] = {
 	NULL
 };
 
-static const char *help_msg_age[] = {
+static RCoreHelpMessage help_msg_age = {
 	"Usage:", "age [title1] [title2]", "",
 	"Examples:", "", "",
 	"age", " title1 title2", "add an edge from the node with \"title1\" as title to the one with title \"title2\"",
@@ -791,7 +792,7 @@ static const char *help_msg_age[] = {
 	NULL
 };
 
-static const char *help_msg_agn[] = {
+static RCoreHelpMessage help_msg_agn = {
 	"Usage:", "agn [title] [body]", "",
 	"Examples:", "", "",
 	"agn", " title1 body1", "add a node with title \"title1\" and body \"body1\"",
@@ -802,7 +803,7 @@ static const char *help_msg_agn[] = {
 	NULL
 };
 
-static const char *help_msg_ah[] = {
+static RCoreHelpMessage help_msg_ah = {
 	"Usage:", "ah[lba-]", "analysis Hints",
 	"ah?", "", "show this help",
 	"ah?", " offset", "show hint of given offset",
@@ -832,7 +833,7 @@ static const char *help_msg_ah[] = {
 	NULL
 };
 
-static const char *help_msg_ahs[] = {
+static RCoreHelpMessage help_msg_ahs = {
 	"Usage:", "ahs [size] [@ addr]", " Define opcode size hint",
 	"ahs", " 16", "Hint the analysis to make the instruction 16 bytes in size",
 	"ahs-", "", "Unset the instruction size hint in the current offset",
@@ -841,7 +842,7 @@ static const char *help_msg_ahs[] = {
 	NULL
 };
 
-static const char *help_msg_aho[] = {
+static RCoreHelpMessage help_msg_aho = {
 	"Usage:", "aho [optype] [@ addr]", " Define opcode type hint",
 	"aho", " nop", "change the opcode type in current address to be considered a NOP",
 	"aho", "", "show the current opcode hint if any",
@@ -850,7 +851,7 @@ static const char *help_msg_aho[] = {
 	NULL
 };
 
-static const char *help_msg_ahb[] = {
+static RCoreHelpMessage help_msg_ahb = {
 	"Usage:", "ahb [8|16|32|64] [@ addr]", " Define asm.bits hint at given address",
 	"ahb", " 16", "set asm.bits=16 in the given address",
 	"ahb", "", "get asm.bits used in given addr (current seek)",
@@ -859,13 +860,13 @@ static const char *help_msg_ahb[] = {
 	NULL
 };
 
-static const char *help_msg_ahr[] = {
+static RCoreHelpMessage help_msg_ahr = {
 	"Usage:", "ahr addr", " Set instruction as return type (similar to 'aho ret'?)",
 	"ahr", " $$", "current instruction may be considered as the end of a function",
 	NULL
 };
 
-static const char *help_msg_ahi[] = {
+static RCoreHelpMessage help_msg_ahi = {
 	"Usage:", "ahi [2|8|10|10u|16|bodhipSs] [@ offset]", " Define numeric base",
 	"ahi", " <base>", "set numeric base (2, 8, 10, 16)",
 	"ahi", " 10|d", "set base to signed decimal (10), sign bit should depend on receiver size",
@@ -881,7 +882,7 @@ static const char *help_msg_ahi[] = {
 	NULL
 };
 
-static const char *help_msg_aht[] = {
+static RCoreHelpMessage help_msg_aht = {
 	"Usage:", "aht[s] [addr|type]", "mark immediate as type offset (moved to aho)",
 	"ahts", " <offset>", "list all matching structure offsets",
 	"aht", " <struct.member>", "change immediate to structure offset",
@@ -889,14 +890,14 @@ static const char *help_msg_aht[] = {
 	NULL
 };
 
-static const char *help_msg_aot[] = {
+static RCoreHelpMessage help_msg_aot = {
 	"Usage:", "aot[l]", "list opcode types",
 	"aot", "", "show type of the current instruction",
 	"aotl", "", "list all possible opcode types (See /atl)",
 	NULL
 };
 
-static const char *help_msg_aom[] = {
+static RCoreHelpMessage help_msg_aom = {
 	"Usage:", "aom[ljd] [arg]", "list opcode mnemonics",
 	"aom", "", "show instruction mnemonic",
 	"aom.", "", "show instruction mnemonic in current address",
@@ -906,7 +907,7 @@ static const char *help_msg_aom[] = {
 	NULL
 };
 
-static const char *help_msg_ao[] = {
+static RCoreHelpMessage help_msg_ao = {
 	"Usage:", "ao[e?] [len]", "analyze Opcodes",
 	"ao", " 5", "display opcode analysis of 5 opcodes",
 	"ao*", "", "display opcode in r commands",
@@ -925,7 +926,7 @@ static const char *help_msg_ao[] = {
 	NULL
 };
 
-static const char *help_msg_ar[] = {
+static RCoreHelpMessage help_msg_ar = {
 	"Usage: ar", "", "# Analysis Registers",
 	"ar", "", "show 'gpr' registers",
 	"ar.", ">$snapshot", "show r2 commands to set register values to the current state",
@@ -959,7 +960,7 @@ static const char *help_msg_ar[] = {
 	NULL
 };
 
-static const char *help_msg_ara[] = {
+static RCoreHelpMessage help_msg_ara = {
 	"Usage:", "ara[+-s]", "register Arena Push/Pop/Swap",
 	"ara", "", "show all register arenas allocated",
 	"ara", "+", "push a new register arena for each type",
@@ -968,13 +969,13 @@ static const char *help_msg_ara[] = {
 	NULL
 };
 
-static const char *help_msg_arw[] = {
+static RCoreHelpMessage help_msg_arw = {
 	"Usage:", "arw ", "# Set contents of the register arena",
 	"arw", " <hexnum>", "set contents of the register arena",
 	NULL
 };
 
-static const char *help_msg_as[] = {
+static RCoreHelpMessage help_msg_as = {
 	"Usage: as[ljk?]", "", "syscall name <-> number utility",
 	"as", "", "show current syscall and arguments",
 	"as", " 4", "show syscall 4 based on asm.os and current regs/mem",
@@ -987,7 +988,7 @@ static const char *help_msg_as[] = {
 	NULL
 };
 
-static const char *help_msg_av[] = {
+static RCoreHelpMessage help_msg_av = {
 	"Usage:", "av[?jr*]", " C++ vtables and RTTI",
 	"av", "", "search for vtables in data sections and show results",
 	"avj", "", "like av, but as json",
@@ -999,7 +1000,7 @@ static const char *help_msg_av[] = {
 	NULL
 };
 
-static const char *help_msg_ax[] = {
+static RCoreHelpMessage help_msg_ax = {
 	"Usage:", "ax[?d-l*]", " # see also 'afx?'",
 	"ax", " addr [at]", "add code ref pointing to addr (from curseek)",
 	"ax", "", "list refs",
@@ -1028,7 +1029,7 @@ static const char *help_msg_ax[] = {
 	NULL
 };
 
-static const char *help_msg_axl[]= {
+static RCoreHelpMessage help_msg_axl= {
 	"Usage:", "axl[jcq]", "show global xrefs",
 	"axl", "", "list all xrefs",
 	"axlj", "", "list xrefs in json format",
@@ -1037,14 +1038,14 @@ static const char *help_msg_axl[]= {
 	NULL
 };
 
-static const char *help_msg_axv[]= {
+static RCoreHelpMessage help_msg_axv= {
 	"Usage:", "axv[?j]", "show xrefs to local variables in current function",
 	"axv", " ([addr])", "optionally you can specify address instead of current seek",
 	"axvj", " ([addr])", "show in json",
 	NULL
 };
 
-static const char *help_msg_axt[]= {
+static RCoreHelpMessage help_msg_axt= {
 	"Usage:", "axt[?gq*]", "find data/code references to this address",
 	"axtj", " [addr]", "find data/code references to this address and print in json format",
 	"axtg", " [addr]", "display commands to generate graphs according to the xrefs",
@@ -1054,7 +1055,7 @@ static const char *help_msg_axt[]= {
 	NULL
 };
 
-static const char *help_msg_axf[]= {
+static RCoreHelpMessage help_msg_axf= {
 	"Usage:", "axf[?gq*]", "find data/code references from this address",
 	"axfj", " [addr]", "find data/code references to this address and print in json format",
 	"axfg", " [addr]", "display commands to generate graphs according to the xrefs",
@@ -1314,7 +1315,7 @@ static void find_refs(RCore *core, const char *glob) {
 		glob = "str.";
 	}
 	if (*glob == '?') {
-		eprintf ("Usage: axF [flag-str-filter]\n");
+		r_core_cmd_help_match (core, help_msg_ax, "axF", true);
 		return;
 	}
 	R_LOG_WARN ("Finding references of flags matching '%s'", glob);
@@ -3978,7 +3979,7 @@ static void cmd_afbc(RCore *core, const char *input) {
 		return;
 	}
 	if (*ptr == '?') {
-		eprintf ("Usage: afbc red @ addrOfBlock\n");
+		r_core_cmd_help_match (core, help_msg_afb, "afbc", true);
 	} else if (!*ptr) {
 		RAnalBlock *bb = r_anal_get_block_at (core->anal, core->offset);
 		if (bb && (bb->color.r || bb->color.g || bb->color.b)) {
@@ -4432,7 +4433,7 @@ static int cmd_af(RCore *core, const char *input) {
 	case 'o': // "afo"
 		switch (input[2]) {
 		case '?':
-			eprintf ("Usage: afo[?sj] ([name|offset])\n");
+			r_core_cmd_help_match (core, help_msg_af, "afo", true);
 			break;
 		case 'j':
 			{
@@ -4505,8 +4506,6 @@ static int cmd_af(RCore *core, const char *input) {
 			break;
 		case 'l': // "afil"
 			if (input[3] == '?') {
-				// TODO #7967 help refactor
-				help_msg_afll[1] = "afil";
 				r_core_cmd_help (core, help_msg_afll);
 				break;
 			}
@@ -4694,8 +4693,6 @@ static int cmd_af(RCore *core, const char *input) {
 			break;
 		case 'l': // "afll"
 			if (input[3] == '?') {
-				// TODO #7967 help refactor
-				help_msg_afll[1] = "afll";
 				r_core_cmd_help (core, help_msg_afll);
 				break;
 			}
@@ -4885,7 +4882,7 @@ static int cmd_af(RCore *core, const char *input) {
 					sdb_free (db);
 				}
 			} else {
-				eprintf ("Usage: afco [dbpath] - open calling conventions defined in local file.\n");
+				r_core_cmd_help_match (core, help_msg_afc, "afco", true);
 			}
 			free (dbpath);
 			break;
@@ -5000,7 +4997,7 @@ static int cmd_af(RCore *core, const char *input) {
 				R_LOG_ERROR ("afB: Cannot find function to set bits at 0x%08"PFMT64x, core->offset);
 			}
 		} else {
-			eprintf ("Usage: afB [bits] # bits can be: 0, 8, 16, 32 or 64. when using 0, disables the hint\n");
+			r_core_cmd_help_match (core, help_msg_af, "afB", true);
 		}
 		break;
 	case 'b': // "afb"
@@ -5094,7 +5091,7 @@ static int cmd_af(RCore *core, const char *input) {
 				off = r_num_math (core->num, p);
 			}
 			if (*name == '?') {
-				eprintf ("Usage: afn newname [off]   # set new name to given function\n");
+				r_core_cmd_help_match (core, help_msg_afn, "afn", true);
 			} else {
 				if (r_str_startswith (name, "base64:")) {
 					char *res = (char *)r_base64_decode_dyn (name + 7, -1);
@@ -5653,7 +5650,7 @@ void cmd_anal_reg(RCore *core, const char *str) {
 			break;
 		case '?': { // "ars?"
 			// TODO #7967 help refactor: dup from drp
-			const char *help_msg[] = {
+			RCoreHelpMessage help_msg = {
 				"Usage:", "drs", " # Register states commands",
 				"drs", "", "list register stack",
 				"drs+", "", "push register state",
@@ -7378,7 +7375,7 @@ static void cmd_anal_esil(RCore *core, const char *input, bool verbose) {
 				reg_name_roll_set (core, "PC", r_num_math (core->num, input + 3));
 				r_core_cmd0 (core, ".ar*");
 			} else {
-				eprintf ("Usage: aepc [address]  # same as 'ar PC=..'\n");
+				r_core_cmd_help_match (core, help_msg_aep, "aepc", true);
 			}
 			break;
 		case 'k':
@@ -7473,14 +7470,12 @@ static void cmd_anal_esil(RCore *core, const char *input, bool verbose) {
 			r_core_cmd0 (core, ".ar*");
 			break;
 		case 'B': // "aesB"
-			{
 			n = strchr (input + 2, ' ');
-			char *n2 = NULL;
 			if (n) {
 				n = (char *)r_str_trim_head_ro (n + 1);
 			}
 			if (n) {
-				n2 = strchr (n, ' ');
+				char *n2 = strchr (n, ' ');
 				if (n2) {
 					*n2++ = 0;
 				}
@@ -7488,15 +7483,14 @@ static void cmd_anal_esil(RCore *core, const char *input, bool verbose) {
 				ut64 nth = n2? r_num_math (core->num, n2): 1;
 				cmd_aespc (core, core->offset, off, (int)nth);
 			} else {
-				eprintf ("Usage: aesB [until-addr] [nth-opcodes] @ [from-addr]\n");
-			}
+				r_core_cmd_help_match (core, help_msg_aes, "aesB", true);
 			}
 			break;
 		case 'u': // "aesu"
 			until_expr = NULL;
 			until_addr = UT64_MAX;
 			if (r_str_endswith (input, "?")) {
-				r_core_cmd0 (core, "aes?~aesu");
+				r_core_cmd_help_match (core, help_msg_aes, "aesu", true);
 			} else switch (input[2]) {
 			case 'e': // "aesue"
 				until_expr = input + 3;
@@ -7549,7 +7543,7 @@ static void cmd_anal_esil(RCore *core, const char *input, bool verbose) {
 				r_anal_op_free (op);
 				r_core_cmd0 (core, ".ar*");
 			} else {
-				eprintf ("Usage: aesou [addr] # step over until given address\n");
+				r_core_cmd_help_match (core, help_msg_aes, "aesou", true);
 			}
 			break;
 		case 'p': //"aesp"
@@ -9764,7 +9758,7 @@ static void cmd_anal_hint(RCore *core, const char *input) {
 		} else if (input[1] == '-') {
 			r_anal_hint_unset_syntax (core->anal, core->offset);
 		} else {
-			eprintf ("Usage: ahS att\n");
+			r_core_cmd_help_match (core, help_msg_ah, "ahS", true);
 		}
 		break;
 	case 'd': // "ahd" set opcode string
@@ -9773,7 +9767,7 @@ static void cmd_anal_hint(RCore *core, const char *input) {
 		} else if (input[1] == '-') {
 			r_anal_hint_unset_opcode (core->anal, core->offset);
 		} else {
-			eprintf ("Usage: ahd popall\n");
+			r_core_cmd_help_match (core, help_msg_ah, "ahd", true);
 		}
 		break;
 	case 'e': // "ahe" set ESIL string
@@ -9782,7 +9776,7 @@ static void cmd_anal_hint(RCore *core, const char *input) {
 		} else if (input[1] == '-') {
 			r_anal_hint_unset_esil (core->anal, core->offset);
 		} else {
-			eprintf ("Usage: ahe r0,pc,=\n");
+			r_core_cmd_help_match (core, help_msg_ah, "ahe", true);
 		}
 		break;
 #if 0
@@ -12170,7 +12164,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 		if (!input[1] || input[1] == ' ' || input[1] == 'a') {
 			r_core_anal_inflags (core, input + 1);
 		} else {
-			eprintf ("Usage: aaF[a] - analyze functions in flag bounds (aaFa uses af/a2f instead of af+/afb+)\n");
+			r_core_cmd_help_match (core, help_msg_aa, "aaF", false);
 		}
 		break;
 	case 'n': // "aan"

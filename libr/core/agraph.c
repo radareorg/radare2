@@ -4192,7 +4192,7 @@ static void nextword(RCore *core, RAGraph *g, const char *word) {
 	nextword (core, g, word);
 }
 
-static const char *help_msg_visual_graph[] = {
+static RCoreHelpMessage help_msg_visual_graph = {
 	":e cmd.gprompt=agft", "show tinygraph in one side",
 	"@",            "toggle graph.layout between 0 and 1",
 	"+/-/0",        "zoom in/out/default",
