@@ -16,8 +16,8 @@ typedef struct dwarf_parse_context_t {
 
 typedef struct dwarf_function_t {
 	ut64 addr;
-	char *name;
-	char *signature;
+	const char *name;
+	const char *signature;
 	bool is_external;
 	bool is_method;
 	bool is_virtual;
