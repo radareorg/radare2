@@ -267,16 +267,18 @@ static bool dump_element(PJ *pj, RStrBuf *sb, string_pool_t *pool, namespace_t *
 			char *key = string_lookup (pool, data, data_size, key_index, NULL);
 			// If the key is empty, it is a cached resource name
 			if (R_STR_ISEMPTY (key)) {
-				free (key);
-				key = strdup ("null");
+				R_FREE (key);
 				if (resource_map && key_index < resource_map_length) {
 					ut32 resource = r_read_le32 (&resource_map[key_index]);
 					if (resource >= 0x1010000) {
 						resource -= 0x1010000;
 						if (resource < ANDROID_ATTRIBUTE_NAMES_SIZE) {
-							key = ANDROID_ATTRIBUTE_NAMES[resource];
+							key = strdup (ANDROID_ATTRIBUTE_NAMES[resource]);
 						}
 					}
+				}
+				if (!key) {
+					key = strdup ("null");
 				}
 			}
 			char *value = resource_value (pool, data, data_size, &a.value);
