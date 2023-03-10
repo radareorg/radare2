@@ -4053,7 +4053,7 @@ R_API int r_core_config_init(RCore *core) {
 		static const char *bin_data[] = {
 			"openURL", "/usr/bin/openURL", "", // iOS ericautils
 			"termux-open", TERMUX_PREFIX "/bin/termux-open", "",
-			"toolbox", "/system/bin/toolbox", "LD_LIBRARY_PATH=/system/lib am start -a android.intent.action.VIEW -d"
+			"toolbox", "/system/bin/toolbox", "LD_LIBRARY_PATH=/system/lib am start -a android.intent.action.VIEW -d",
 			"xdg-open", "/usr/bin/xdg-open", "",
 			"open", "/usr/bin/open", "",
 			NULL
