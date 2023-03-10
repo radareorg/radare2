@@ -1248,7 +1248,11 @@ static bool require_check(const char *require) {
 	bool res = true;
 	if (strstr (require, "gas")) {
 		char *as_bin = r_file_path ("as");
-		res &= R_STR_ISNOTEMPTY (as_bin);
+#if R2_590
+		res &= (bool)as_bin;
+#else
+		res &= strcmp (as_bin, "as");
+#endif
 		free (as_bin);
 	}
 	if (strstr (require, "unix")) {
