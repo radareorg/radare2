@@ -71,6 +71,7 @@ static RCFValue *r_cf_value_clone(RCFValue *value);
 static void r_cf_value_free(RCFValue *value);
 
 RCFValueDict *r_cf_value_dict_parse (RBuffer *file_buf, ut64 offset, ut64 size, int options) {
+	RList *idlist = NULL;
 	RCFValueDict *result = NULL;
 	int i;
 	char *content = NULL;
@@ -82,7 +83,6 @@ RCFValueDict *r_cf_value_dict_parse (RBuffer *file_buf, ut64 offset, ut64 size, 
 		goto beach;
 	}
 
-	RList *idlist = NULL;
 	if (options & R_CF_OPTION_SUPPORT_IDREF) {
 		idlist = r_list_new ();
 		if (!idlist) {
@@ -316,9 +316,9 @@ RCFValueDict *r_cf_value_dict_parse (RBuffer *file_buf, ut64 offset, ut64 size, 
 					break;
 				}
 				RCFParsePhase next_phase;
-				if (!strcmp(x->attr, "ID")) {
+				if (!strcmp (x->attr, "ID")) {
 					next_phase = R_CF_STATE_IN_ATTR_ID;
-				} else if (!strcmp(x->attr, "IDREF")) {
+				} else if (!strcmp (x->attr, "IDREF")) {
 					next_phase = R_CF_STATE_IN_ATTR_IDREF;
 				} else {
 					break;
