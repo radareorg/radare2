@@ -140,7 +140,7 @@ static bool r2r_chdir(const char *argv0) {
 
 static bool r2r_test_run_unit(void) {
 	char *make = r_file_path ("gmake");
-#if #R2_590
+#if R2_590
 	if (!make) {
 #else
 	if (!strcmp (make, "gmake")) {
