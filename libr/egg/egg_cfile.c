@@ -20,7 +20,7 @@ static char *r_egg_cfile_getCompiler(void) {
 	const char *compilers[] = { "llvm-gcc", "clang", "gcc", NULL };
 	const char *compiler;
 	char *env_cc = r_sys_getenv ("CC");
-	char *compiler_path
+	char *compiler_path;
 	int i;
 
 	if (env_cc) {
