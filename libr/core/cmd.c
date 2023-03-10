@@ -97,6 +97,7 @@ static RCoreHelpMessage help_msg_quote = {
 	"\"", "?e hello \\\"world\\\"\"", "print (hello \"world\")",
 	"\"", "?e x;y\";\"?e y;x\"", "run two commands (prints x;y\ny;x)",
 	"\"\"", "[cmd]", "directly call a command ignoring all special chars (fast)",
+	"\"\"@addr\"\"", "[cmd]", "call a command with a temporal seek (EXPERIMENTAL)",
 	"\"\"?e x;y\";\"?e y;x", "", "run two commands ignoring special chars (prints x;y\";\"?e y;x) ",
 	NULL
 };
