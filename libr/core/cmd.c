@@ -1473,13 +1473,15 @@ R_API bool r_core_run_script(RCore *core, const char *file) {
 						NULL
 					};
 					const char *bin;
+					char *bin_path;
 					int i;
 #if !R2_590
 					bool found = false;
 #endif
 
-					for (i = 0; bin = python_bins[i]; i++) {
-						char *bin_path = r_file_path (bin);
+					for (i = 0; python_bins[i]; i++) {
+						bin = python_bins[i];
+						bin_path = r_file_path (bin);
 #if R2_590
 						if (bin_path) {
 #else
