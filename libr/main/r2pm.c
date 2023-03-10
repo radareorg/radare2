@@ -429,7 +429,7 @@ static void r2pm_setenv(void) {
 	bool found;
 #endif
 
-	if (env_python) {
+	if (R_STR_ISNOTEMPTY (env_python)) {
 		free (env_python);
 		return;
 	}
