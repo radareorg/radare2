@@ -5542,6 +5542,7 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 			RAnalBlock *bb;
 			int i;
 			RAnalFunction *fcn = r_anal_get_function_at (core->anal, core->offset);
+			SetU *set = set_u_new ();
 			if (fcn) {
 				r_list_sort (fcn->bbs, bb_cmp);
 				r_list_foreach (fcn->bbs, iter, bb) {
@@ -5552,14 +5553,19 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 							break;
 						}
 						ut64 addr = bb->addr + bb->op_pos[i];
+						if (set_u_contains (set, addr)) {
+							continue;
+						}
 						r_core_seek (core, addr, true);
 						r_core_cmd (core, cmd, 0);
+						set_u_add (set, addr);
 						if (!foreach_newline (core)) {
 							break;
 						}
 					}
 				}
 			}
+			set_u_free (set);
 			goto out_finish;
 		}
 		break;

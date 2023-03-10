@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2009-2022 - pancake */
+/* radare2 - LGPL - Copyright 2009-2023 - pancake */
 
 #include <r_core.h>
 #include <sdb/sdb.h>
@@ -329,7 +329,7 @@ static int cmd_meta_lineinfo(RCore *core, const char *input) {
 		return 0;
 	}
 	if (*p == 'L') { // "CLL"
-		if (p[1] == 'f') {
+		if (p[1] == 'f') { // "CLLf"
 			r_core_cmd0 (core, "CLL@@i");
 			// same as CLL@@i = r_core_cmd0 (core, "list");
 			return 0;
