@@ -961,17 +961,23 @@ static int cmd_w6(void *data, const char *input) {
 }
 
 static int cmd_wh(void *data, const char *input) {
-	char *p = strchr (input, ' ');
-	if (p) {
-		while (*p == ' ')
-			p++;
-		p = r_file_path (p);
-		if (p) {
-			r_cons_println (p);
-			free (p);
+	const char *arg = r_str_trim_head_ro (strchr (input, ' '));
+	if (arg) {
+		char *path = r_file_path (arg);
+#if R2_590
+		if (path) {
+#else
+		if (strcmp (path, arg)) {
+#endif
+			r_cons_println (path);
+			free (path);
+			return 0;
 		}
+#if !R2_590
+		free (path);
+#endif
 	}
-	return 0;
+	return 1;
 }
 
 static int cmd_we(void *data, const char *input) {

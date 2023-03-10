@@ -1341,14 +1341,17 @@ R_API bool r_run_start(RRunProfile *p) {
 	if (p->_program) {
 		if (!r_file_exists (p->_program)) {
 			char *progpath = r_file_path (p->_program);
-			if (progpath && *progpath) {
-				free (p->_program);
-				p->_program = progpath;
-			} else {
+#if R2_590
+			if (!progpath) {
+#else
+			if (!strcmp (progpath, p->_program)) {
 				free (progpath);
+#endif
 				R_LOG_ERROR ("file not found: %s", p->_program);
 				return false;
 			}
+			free (p->_program);
+			p->_program = progpath;
 		}
 #if R2__UNIX__
 		// XXX HACK close all non-tty fds

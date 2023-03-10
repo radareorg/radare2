@@ -293,25 +293,35 @@ R_API char *r_file_binsh(void) {
 	if (R_STR_ISEMPTY (bin_sh)) {
 		free (bin_sh);
 		bin_sh = r_file_path ("sh");
-		if (!bin_sh || *bin_sh != '/') {
+#if R2_590
+		if (!bin_sh) {
+#else
+		if (!strcmp (bin_sh, "sh")) {
 			free (bin_sh);
+#endif
 			bin_sh = strdup (SHELL_PATH);
 		}
 	}
 	return bin_sh;
 }
 
+#if R2_590
+// Returns bin location in PATH, NULL if not found
+#else
+// Returns bin location in PATH, strdup(bin) if not found
+#endif
 R_API char *r_file_path(const char *bin) {
 	r_return_val_if_fail (bin, NULL);
 	char *file = NULL;
 	char *path = NULL;
 	char *str, *ptr;
 	const char *extension = "";
-	if (!strncmp (bin, "./", 2)) {
+	if (r_str_startswith (bin, "./")) {
 		return r_file_exists (bin)
-			? r_file_abspath (bin): NULL;
+			? r_file_abspath (bin)
+			: NULL;
 	}
-	char *path_env = (char *)r_sys_getenv ("PATH");
+	char *path_env = r_sys_getenv ("PATH");
 #if R2__WINDOWS__
 	if (!r_str_endswith (bin, ".exe")) {
 		extension = ".exe";
@@ -338,7 +348,11 @@ R_API char *r_file_path(const char *bin) {
 	}
 	free (path_env);
 	free (path);
+#if R2_590
+	return NULL;
+#else
 	return strdup (bin);
+#endif
 }
 
 R_API char *r_stdin_slurp(int *sz) {

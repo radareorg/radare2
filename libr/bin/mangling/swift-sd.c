@@ -131,16 +131,22 @@ static char *swift_demangle_cmd(const char *s) {
 		if (!swift_demangle) {
 			have_swift_demangle = 0;
 			swift_demangle = r_file_path ("swift-demangle");
-			if (!swift_demangle || !strcmp (swift_demangle, "swift-demangle")) {
+#if R2_590
+			if (!swift_demangle) {
+#else
+			if (!strcmp (swift_demangle, "swift-demangle")) {
+#endif
 				char *xcrun = r_file_path ("xcrun");
+#if R2_590
 				if (xcrun) {
-					if (strcmp (xcrun, "xcrun")) {
-						free (swift_demangle);
-						swift_demangle = r_str_newf ("%s swift-demangle", xcrun);
-						have_swift_demangle = 1;
-					}
-					free (xcrun);
+#else
+				if (strcmp (xcrun, "xcrun")) {
+#endif
+					free (swift_demangle);
+					swift_demangle = r_str_newf ("%s swift-demangle", xcrun);
+					have_swift_demangle = 1;
 				}
+				free (xcrun);
 			}
 		}
 	}
