@@ -18,7 +18,7 @@ struct cEnv_t {
 
 static char *r_egg_cfile_getCompiler(void) {
 	const char *compilers[] = { "llvm-gcc", "clang", "gcc", NULL };
-	const char *compiler;
+	const char *compiler = compilers[0];
 	char *env_cc = r_sys_getenv ("CC");
 	char *compiler_path;
 	int i;
@@ -27,7 +27,7 @@ static char *r_egg_cfile_getCompiler(void) {
 		return env_cc;
 	}
 
-	for (i = 0; compiler = compilers[i]; i++) {
+	for (i = 0; (compiler = compilers[i]); i++) {
 		compiler_path = r_file_path (compiler);
 #if R2_590
 		if (compiler_path) {
