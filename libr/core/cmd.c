@@ -1466,23 +1466,45 @@ R_API bool r_core_run_script(RCore *core, const char *file) {
 					ret = lang_run_file (core, core->lang, cmd);
 					free (cmd);
 				} else if (!strcmp (ext, "py")) {
-					char *fp = r_file_path ("python3");
-					if (!fp) {
-						fp = r_file_path ("python2");
-						if (!fp) {
-							fp = r_file_path ("python");
-						}
-					}
-					if (fp) {
-#if R2__WINDOWS__
-						char *cmd = r_str_newf ("%s %s", fp, file);
+					static const char *python_bins[] = {
+						"python3",
+						"python2",
+						"python",
+						NULL
+					};
+					const char *bin;
+					int i;
+#if !R2_590
+					bool found = false;
+#endif
+
+					for (i = 0; bin = python_bins[i]; i++) {
+						char *bin_path = r_file_path (bin);
+#if R2_590
+						if (bin_path) {
 #else
-						char *cmd = r_str_newf ("%s '%s'", fp, file);
+						if (strcmp (bin_path, bin)) {
+							found = true;
+#endif
+							break;
+						}
+						free (bin_path);
+					}
+
+#if R2_590
+					if (bin_path) {
+#else
+					if (found) {
+#endif
+#if R2__WINDOWS__
+						char *cmd = r_str_newf ("%s %s", bin_path, file);
+#else
+						char *cmd = r_str_newf ("%s '%s'", bin_path, file);
 #endif
 						r_lang_use (core->lang, "pipe");
 						ret = lang_run_file (core, core->lang, cmd);
 						free (cmd);
-						free (fp);
+						free (bin_path);
 					} else {
 						R_LOG_ERROR ("Cannot find python in PATH");
 						ret = false;
@@ -1496,7 +1518,6 @@ R_API bool r_core_run_script(RCore *core, const char *file) {
 					}
 				}
 			} else {
-				char *abspath = r_file_path (file);
 				char *lang = langFromHashbang (core, file);
 				if (lang) {
 					r_lang_use (core->lang, "pipe");
@@ -1511,7 +1532,6 @@ R_API bool r_core_run_script(RCore *core, const char *file) {
 						ret = 1;
 					}
 				}
-				free (abspath);
 			}
 			if (!ret) {
 				ret = r_core_cmd_file (core, file);
