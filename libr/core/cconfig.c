@@ -3359,18 +3359,23 @@ static bool cb_dbg_verbose(void *user, void *data) {
 
 static bool cb_prjvctype(void *user, void *data) {
 	RConfigNode *node = data;
+#if R2_590
+	char *git = r_file_path ("git");
+	bool have_git = (bool)git;
+	free (git);
+#else
 	char *p = r_file_path ("git");
-	bool found = (p && (*p == 'g' ||*p == '/'));
+	bool have_git = strcmp (p, "git");
 	free (p);
 	if (*node->value == '?') {
-		if (found) {
+		if (have_git) {
 			r_cons_println ("git");
 		}
 		r_cons_println ("rvc");
 		return true;
 	}
 	if (!strcmp (node->value, "git")) {
-		if (found) {
+		if (have_git) {
 			return true;
 		}
 		return false;
@@ -4044,21 +4049,57 @@ R_API int r_core_config_init(RCore *core) {
 #if R2__WINDOWS__
 	r_config_set (cfg, "http.browser", "start");
 #else
-	if (r_file_exists ("/usr/bin/openURL")) { // iOS ericautils
-		r_config_set (cfg, "http.browser", "/usr/bin/openURL");
-	} else if (r_file_exists (TERMUX_PREFIX "/bin/termux-open")) {
-		r_config_set (cfg, "http.browser", TERMUX_PREFIX "/bin/termux-open");
-	} else if (r_file_exists ("/system/bin/toolbox")) {
-		r_config_set (cfg, "http.browser",
-				"LD_LIBRARY_PATH=/system/lib am start -a android.intent.action.VIEW -d");
-	} else if (r_file_exists ("/usr/bin/xdg-open")) {
-		r_config_set (cfg, "http.browser", "xdg-open");
-	} else if (r_file_exists ("/usr/bin/open")) {
-		r_config_set (cfg, "http.browser", "open");
-	} else {
-		r_config_set (cfg, "http.browser", "firefox");
+	{
+		/* bin_name, standard_path, http.browser value override */
+		static const char *bin_data[] = {
+			"openURL", "/usr/bin/openURL", "", // iOS ericautils
+			"termux-open", TERMUX_PREFIX "/bin/termux-open", "",
+			"toolbox", "/system/bin/toolbox", "LD_LIBRARY_PATH=/system/lib am start -a android.intent.action.VIEW -d"
+			"xdg-open", "/usr/bin/xdg-open", "",
+			"open", "/usr/bin/open", "",
+			NULL
+		};
+		int i;
+		bool fallback = true;
+
+		/* Attempt to find binary in path before falling back to
+		 * standard locations */
+		for (i = 0; bin_data[i]; i += 3) {
+			const char *bin_name = bin_data[i];
+			const char *standard_path = bin_data[i+1];
+			const char *browser_override = bin_data[i+2];
+			const char *path;
+
+			/* Try to find bin in path */
+			char *bin_path = r_file_path (bin_name);
+			path = bin_path;
+
+#if !R2_590
+			/* Not in path, old API returns strdup (arg) */
+			if (!strcmp (bin_name, bin_path)) {
+				R_FREE (bin_path);
+				path = NULL;
+			}
+#endif
+
+			/* Not in path, but expected location exists */
+			if (!path && r_file_exists (standard_path)) {
+				path = standard_path;
+			}
+
+			if (path) {
+				r_config_set (cfg, "http.browser", r_str_get_fail (browser_override, path));
+				fallback = false;
+			}
+
+			free (bin_path);
+		}
+
+		if (fallback) {
+			r_config_set (cfg, "http.browser", "firefox");
+		}
+		r_config_desc (cfg, "http.browser", "command to open HTTP URLs");
 	}
-	r_config_desc (cfg, "http.browser", "command to open HTTP URLs");
 #endif
 	SETI ("http.maxsize", 0, "maximum file size for upload");
 	SETPREF ("http.index", "index.html", "main html file to check in directory");
