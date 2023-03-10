@@ -3359,14 +3359,13 @@ static bool cb_dbg_verbose(void *user, void *data) {
 
 static bool cb_prjvctype(void *user, void *data) {
 	RConfigNode *node = data;
-#if R2_590
 	char *git = r_file_path ("git");
+#if R2_590
 	bool have_git = (bool)git;
-	free (git);
 #else
-	char *p = r_file_path ("git");
-	bool have_git = strcmp (p, "git");
-	free (p);
+	bool have_git = strcmp (git, "git");
+#endif
+	free (git);
 	if (*node->value == '?') {
 		if (have_git) {
 			r_cons_println ("git");
