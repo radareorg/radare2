@@ -435,7 +435,6 @@ static void r2pm_setenv(void) {
 	}
 
 	for (i = 0; python_bins[i]; i++) {
-		char *bin_path;
 		bin = python_bins[i];
 		bin_path = r_file_path (bin);
 
