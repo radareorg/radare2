@@ -1251,7 +1251,7 @@ static bool require_check(const char *require) {
 #if R2_590
 		res &= (bool)as_bin;
 #else
-		res &= strcmp (as_bin, "as");
+		res &= (bool)strcmp (as_bin, "as");
 #endif
 		free (as_bin);
 	}
