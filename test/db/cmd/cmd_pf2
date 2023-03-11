@@ -181,6 +181,9 @@ FILE=malloc://1024
 CMDS=pf 16 16
 EXPECT=<<EOF
 | pf fmt  show data using the given format-string. See 'pf??' and 'pf???'.
+| pf?    help on commands
+| pf??   help on format characters
+| pf???  show usage examples
 EOF
 RUN
 
@@ -189,6 +192,9 @@ FILE=malloc://1024
 CMDS=pf 16 16
 EXPECT=<<EOF
 | pf fmt  show data using the given format-string. See 'pf??' and 'pf???'.
+| pf?    help on commands
+| pf??   help on format characters
+| pf???  show usage examples
 EOF
 RUN
 
