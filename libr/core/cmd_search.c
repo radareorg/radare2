@@ -2192,6 +2192,9 @@ static void do_ref_search(RCore *core, ut64 addr,ut64 from, ut64 to, struct sear
 			if (from <= ref->addr && to >= ref->addr) {
 				r_cons_printf ("%s 0x%" PFMT64x " [%s] %s\n",
 						buf_fcn, ref->addr, r_anal_ref_type_tostring (ref->type), str);
+
+				r_flag_set (core->flags, "hit.prelude", ref->addr, strlen ("hit.prelude"));
+
 				if (*param->cmd_hit) {
 					ut64 here = core->offset;
 					r_core_seek (core, ref->addr, true);
