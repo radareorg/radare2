@@ -46,7 +46,7 @@ int print_insn_cris_without_register_prefix(bfd_vma vma, disassemble_info *info)
 int print_insn_crisv32_with_register_prefix(bfd_vma vma, disassemble_info *info);
 int print_insn_crisv32_without_register_prefix(bfd_vma vma, disassemble_info *info);
 
-static char *disassemble(RAnal *a, RAnalOp *op, const ut8 *buf, int len) {
+static char *disassemble(RArchSession *as, RAnalOp *op, const ut8 *buf, int len) {
 	ut8 bytes[8] = { 0 };
 	struct disassemble_info disasm_obj;
 	int mode = 2;
@@ -59,18 +59,18 @@ static char *disassemble(RAnal *a, RAnalOp *op, const ut8 *buf, int len) {
 
 	/* prepare disassembler */
 	memset (&disasm_obj, '\0', sizeof (struct disassemble_info));
-	disasm_obj.disassembler_options = (a->config->bits == 64)?"64":"";
+	disasm_obj.disassembler_options = (as->config->bits == 64)?"64":"";
 	disasm_obj.buffer = bytes;
 	disasm_obj.read_memory_func = &cris_buffer_read_memory;
 	disasm_obj.symbol_at_address_func = &symbol_at_address;
 	disasm_obj.memory_error_func = &memory_error_func;
 	disasm_obj.print_address_func = &generic_print_address_func;
-	disasm_obj.endian = !R_ARCH_CONFIG_IS_BIG_ENDIAN (a->config);
+	disasm_obj.endian = !R_ARCH_CONFIG_IS_BIG_ENDIAN (as->config);
 	disasm_obj.fprintf_func = &generic_fprintf_func;
 	disasm_obj.stream = sb;
 	disasm_obj.buffer_vma = op->addr;
 
-	const char *cpu = a->config->cpu;
+	const char *cpu = as->config->cpu;
 	if (R_STR_ISNOTEMPTY (cpu)) {
 		// enum cris_disass_family { cris_dis_v0_v10, cris_dis_common_v10_v32, cris_dis_v32 };
 		// 0: v0-v10
@@ -87,7 +87,7 @@ static char *disassemble(RAnal *a, RAnalOp *op, const ut8 *buf, int len) {
 		mode = 2;
 	}
 	(void)cris_parse_disassembler_options (&disasm_obj, mode);
-	if (a->config->syntax == R_ARCH_SYNTAX_ATT) {
+	if (as->config->syntax == R_ARCH_SYNTAX_ATT) {
 		switch (mode) {
 		case 0:
 			op->size = print_insn_cris_with_register_prefix ((bfd_vma)addr, &disasm_obj);
@@ -118,16 +118,17 @@ static char *disassemble(RAnal *a, RAnalOp *op, const ut8 *buf, int len) {
 	return r_strbuf_drain (sb);
 }
 
-static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
-	int opsize = -1;
+static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
+	const int len = op->size;
+	const ut8 *buf = op->bytes;
+	const ut64 addr = op->addr;
+	op->size = 2;
 	op->type = -1;
-	opsize = 2;
 	if (len < 1) {
 		return -1;
 	}
 	if (mask & R_ARCH_OP_MASK_DISASM) {
-		op->addr = addr;
-		op->mnemonic = disassemble (a, op, buf, len);
+		op->mnemonic = disassemble (as, op, buf, len);
 		if (!op->mnemonic) {
 			op->mnemonic = strdup ("invalid");
 		}
@@ -136,11 +137,11 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 	case 0x3f:
 	case 0x4f:
 		op->type = R_ANAL_OP_TYPE_MOV;
-		opsize = 4;
+		op->size = 4;
 		break;
 	case 0x6f:
 		op->type = R_ANAL_OP_TYPE_MOV;
-		opsize = 6;
+		op->size = 6;
 		break;
 	case 0x7f:
 		op->type = R_ANAL_OP_TYPE_LEA;
@@ -150,7 +151,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 			op->ptr |= buf[4] << 16;
 			op->ptr |= ((ut32)(0xff & buf[5])) << 24;
 			op->ptr += addr;
-			opsize = 6;
+			op->size = 6;
 		} else {
 			// error
 			op->ptr = UT64_MAX;
@@ -168,7 +169,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 			op->jump = UT64_MAX;
 		}
 		op->fail = addr + 6;
-		opsize = 6;
+		op->size = 6;
 		break;
 	case 0x00:
 		if (len < 2) {
@@ -282,96 +283,11 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 			break;
 		}
 	}
-#if 0
-	switch (*buf) {
-	case 0x3f: // adds.w N, R
-		opsize = 4;
-	case 0x01:
-	case 0x53: // addi, acr.w, r3, acr
-	case 0x04:
-	case 0x61:
-	case 0x62:
-	case 0x63:
-		op->type = R_ANAL_OP_TYPE_ADD;
-		break;
-	case 0x88:
-	case 0x84:
-	case 0x81:
-	case 0x8c:
-	case 0xad:
-		op->type = R_ANAL_OP_TYPE_SUB;
-		break;
-	case 0x7f: // lapc <addr>, <reg>
-		op->type = R_ANAL_OP_TYPE_LEA;
-		break;
-	case 0xcf:
-	case 0xbe:
-	case 0x60:
-	case 0x6f:
-	case 0x6a: // move.d reg, reg
-	case 0x7e:
-	case 0xfe:
-		op->type = R_ANAL_OP_TYPE_MOV;
-		break;
-	case 0x00:
-		op->type = R_ANAL_OP_TYPE_JMP;
-		// jsr acr
-		break;
-	case 0xff:
-		opsize = 6;
-	case 0x14:
-	case 0x0e:
-	case 0x1a:
-	case 0x9c:
-	case 0x6d: // bne
-		op->type = R_ANAL_OP_TYPE_CJMP;
-		// jsr acr
-		break;
-	case 0xbf:
-		opsize = 6;
-	case 0xb1:
-	case 0xb2:
-	case 0xb3:
-	case 0xb4:
-	case 0xb5:
-	case 0xb6:
-	case 0xb7:
-	case 0xb8:
-	case 0xb9:
-		op->type = R_ANAL_OP_TYPE_UJMP;
-		// jsr acr
-		break;
-	case 0x8f: // test.b [acr]
-	case 0xc0:
-	case 0xe1:
-	case 0xaa:
-		op->type = R_ANAL_OP_TYPE_CMP;
-		break;
-	default:
-		switch (*w) {
-		case 0xb0b9: //// jsr r0
-			op->type = R_ANAL_OP_TYPE_CJMP;
-			break;
-		case 0xb005:
-		case 0x05b0:
-			op->type = R_ANAL_OP_TYPE_NOP;
-			break;
-		case 0xf0b9:
-		case 0xb9f0:
-			op->type = R_ANAL_OP_TYPE_RET;
-			break;
-		default:
-			op->type = R_ANAL_OP_TYPE_MOV;
-			break;
-		}
-	}
-#endif
-	op->size = opsize;
 	//op->delay = 1;
-	return opsize;
+	return op->size;
 }
 
-static bool set_reg_profile(RAnal *anal) {
+static char *get_reg_profile(RArchSession *as) {
 	const char *p =
 		"=PC	pc\n"
 		"=SP	r14\n" // XXX
@@ -406,24 +322,40 @@ static bool set_reg_profile(RAnal *anal) {
 		"gpr	r15	.32	60	0\n"
 		// ADD P REGISTERS
 		;
-	return r_reg_set_profile_string (anal->reg, p);
+	return strdup (p);
 }
 
-RAnalPlugin r_anal_plugin_cris = {
+static int archinfo(RArchSession *as, ut32 q) {
+	switch (q) {
+	case R_ANAL_ARCHINFO_ALIGN:
+		return 1;
+	case R_ANAL_ARCHINFO_DATA_ALIGN:
+		return 1;
+	case R_ANAL_ARCHINFO_MAX_OP_SIZE:
+		return 8;
+	case R_ANAL_ARCHINFO_INV_OP_SIZE:
+		return 4;
+	case R_ANAL_ARCHINFO_MIN_OP_SIZE:
+		return 2;
+	}
+	return 4;
+}
+
+RArchPlugin r_arch_plugin_cris = {
 	.name = "cris",
 	.desc = "Axis Communications 32-bit embedded processor",
 	.license = "LGPL3",
-	.esil = false,
 	.arch = "cris",
-	.set_reg_profile = set_reg_profile,
-	.bits = 32,
-	.op = &analop,
+	.bits = R_SYS_BITS_PACK1 (32),
+	.info = archinfo,
+	.regs = get_reg_profile,
+	.decode = &decode,
 };
 
 #ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_ANAL,
-	.data = &r_anal_plugin_cris,
+	.type = R_LIB_TYPE_ARCH,
+	.data = &r_arch_plugin_cris,
 	.version = R2_VERSION
 };
 #endif
