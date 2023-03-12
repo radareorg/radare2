@@ -4,19 +4,18 @@
 #include <r_lib.h>
 #include <r_asm.h>
 #include <r_anal.h>
-#include "../arch/cr16/cr16_disas.h"
+#include "cr16_disas.h"
 
-static int cr16_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
+static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 	struct cr16_cmd cmd = {0};
+	const ut64 addr = op->addr;
 
 	op->size = 2;
-	int ret = op->size = cr16_decode_command (buf, &cmd, len);
-	if (ret <= 0) {
-		return ret;
+	op->size = cr16_decode_command (op->bytes, &cmd, op->size);
+	if (op->size <= 0) {
+		return op->size;
 	}
-	op->size = ret;
 
-	op->addr = addr;
 	if (mask & R_ARCH_OP_MASK_DISASM) {
 		op->mnemonic = r_str_newf ("%s %s", cmd.instr, cmd.operands);
 	}
@@ -111,10 +110,10 @@ static int cr16_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 		op->type = R_ANAL_OP_TYPE_UNK;
 	}
 
-	return ret;
+	return op->size;
 }
 
-static int archinfo(RAnal *anal, int q) {
+static int archinfo(RArchSession *as, ut32 q) {
 	switch (q) {
 	case R_ANAL_ARCHINFO_ALIGN:
 		return 2;
@@ -128,20 +127,20 @@ static int archinfo(RAnal *anal, int q) {
 	return 0;
 }
 
-RAnalPlugin r_anal_plugin_cr16 = {
+RArchPlugin r_arch_plugin_cr16 = {
 	.name = "cr16",
 	.desc = "CR16 code analysis plugin",
 	.license = "LGPL3",
 	.arch = "cr16",
-	.archinfo = archinfo,
-	.bits = 16,
-	.op = cr16_op,
+	.info = &archinfo,
+	.bits = R_SYS_BITS_PACK1 (16),
+	.decode =  &decode,
 };
 
 #ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_ANAL,
-	.data = &r_anal_plugin_cr16,
+	.type = R_LIB_TYPE_arch,
+	.data = &r_arch_plugin_cr16,
 	.version = R2_VERSION
 };
 #endif

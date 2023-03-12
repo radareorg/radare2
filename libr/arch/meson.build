@@ -75,6 +75,8 @@ r_arch_sources = [
   'p/cris/cris.c',
   'p/cris/gnu/cris-dis.c',
   'p/cris/gnu/cris-opc.c',
+  'p/cr16/cr16.c',
+  'p/cr16/cr16_disas.c',
 ]
 
 if arch_plugins.contains('x86_nz')

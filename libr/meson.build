@@ -39,6 +39,7 @@ arch_plugins = [ 'null',
   'vax',
   'tricore',
   'cris',
+  'cr16',
 ]
 bin_plugins = [ 'any' ]
 bin_ldr_plugins = [ 'ldr_linux' ]
@@ -156,7 +157,11 @@ anal_plugins += [
   'avr',
   'bf',
   'chip8',
+<<<<<<< HEAD
   'cr16',
+=======
+  'cris',
+>>>>>>> 02f18a9add (Migrate cr16 from anal to ##arch)
   'dalvik',
   'ebc',
   'gb',
