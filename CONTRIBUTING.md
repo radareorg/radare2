@@ -90,7 +90,7 @@ git remote add radareorg https://github.com/radareorg/radare2
 radare2 uses the `squash` merging style to summarize changes. When your changes
 are merged, the merging collaborator can customize the commit message that will
 be used in `master`. Typically, the pull request title is used as the commit
-message.  Specific or smaller changes may be included in the body.
+message. Specific or smaller changes may be included in the body.
 
 Default settings may create "merge commits" when pulling from upstream, which
 can cause issues. Set `merge` and `pull` to fast-forward only to avoid this.
