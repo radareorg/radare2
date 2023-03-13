@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2014-2022 - fedor.sakharov */
+/* radare - LGPL - Copyright 2014-2026 - fedor.sakharov */
 
 #include <r_util.h>
 #include "cr16_disas.h"
