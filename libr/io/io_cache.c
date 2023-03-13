@@ -286,16 +286,20 @@ void _io_cache_item_free (void *data) {
 R_API void r_io_cache_init(RIO *io) {
 	r_return_if_fail (io);
 	io->cache = R_NEW (RIOCache);
-	io->cache->tree = r_crbtree_new (NULL);
-	io->cache->vec = r_pvector_new ((RPVectorFree)_io_cache_item_free);
+	if (io->cache) {
+		io->cache->tree = r_crbtree_new (NULL);
+		io->cache->vec = r_pvector_new ((RPVectorFree)_io_cache_item_free);
+	}
 	io->cached = 0;
 }
 
 R_API void r_io_cache_fini(RIO *io) {
 	r_return_if_fail (io);
-	r_crbtree_free (io->cache->tree);
-	r_pvector_free (io->cache->vec);
-	R_FREE (io->cache);
+	if (io->cache) {
+		r_crbtree_free (io->cache->tree);
+		r_pvector_free (io->cache->vec);
+		R_FREE (io->cache);
+	}
 	io->cached = 0;
 }
 
@@ -332,7 +336,7 @@ static RRBNode *_find_entry_ci_node(RRBTree *caache_tree, RInterval *itv) {
 	return node;
 }
 
-static int _ci_start_cmp_cb (void *incoming, void *in, void *user) {
+static int _ci_start_cmp_cb(void *incoming, void *in, void *user) {
 	IOCacheItem *incoming_ci = (IOCacheItem *)incoming, *in_ci = (IOCacheItem *)in;
 	if (incoming_ci->tree_itv->addr < in_ci->tree_itv->addr) {
 		return -1;
@@ -577,7 +581,7 @@ R_API bool r_io_cache_list(RIO *io, int rad) {
 	return false;
 }
 
-static IOCacheItem *_clone_ci (IOCacheItem *ci) {
+static IOCacheItem *_clone_ci(IOCacheItem *ci) {
 	IOCacheItem *clone = R_NEWCOPY (IOCacheItem, ci);
 	if (clone) {
 		clone->data = R_NEWS (ut8, r_itv_size (ci->itv));
@@ -601,7 +605,7 @@ R_API RIOCache *r_io_cache_clone(RIO *io) {
 	clone->vec = r_pvector_new ((RPVectorFree)_io_cache_item_free);
 	void **iter;
 	r_pvector_foreach_prev (io->cache->vec, iter) {
-		IOCacheItem *ci = _clone_ci((IOCacheItem *)*iter);
+		IOCacheItem *ci = _clone_ci ((IOCacheItem *)*iter);
 		r_pvector_push (clone->vec, ci);
 		if (ci->tree_itv) {
 			r_crbtree_insert (clone->tree, clone, _ci_start_cmp_cb, NULL);
