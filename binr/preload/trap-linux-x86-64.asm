@@ -5,5 +5,7 @@
 mov rax, $sys.getpid
 syscall
 mov rdi, $sys.kill
-xchg rax, rdi
+xor rax, rdi
+xor rdi, rax
+xor rax, rdi
 syscall
