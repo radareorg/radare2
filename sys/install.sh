@@ -154,6 +154,7 @@ if [ "$NEED_CAPSTONE" = 1 ]; then
 		./preconfigure
 	fi
 fi
+echo "ARGS=$ARGS"
 
 if [ "${M32}" = 1 ]; then
 	${SHELL} ./sys/build-m32.sh ${ARGS} || exit 1

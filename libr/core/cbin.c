@@ -1,10 +1,7 @@
-/* radare - LGPL - Copyright 2011-2022 - earada, pancake */
+/* radare - LGPL - Copyright 2011-2023 - earada, pancake */
 
 #define R_LOG_ORIGIN "core.bin"
 #include <r_core.h>
-#include <r_config.h>
-#include <r_util.h>
-#include <r_util/r_time.h>
 
 #define is_in_range(at, from, sz) ((at) >= (from) && (at) < ((from) + (sz)))
 
@@ -1832,7 +1829,12 @@ static int bin_relocs(RCore *r, PJ *pj, int mode, int va) {
 		return false;
 	}
 	if (bin_cache) {
-		if (r_pvector_length (&r->io->cache) == 0) {
+#if USE_NEW_IO_CACHE_API
+		bool cache_is_empty = r_pvector_length (r->io->cache->vec) == 0;
+#else
+		bool cache_is_empty = r_pvector_length (&r->io->cache) == 0;
+#endif
+		if (cache_is_empty) {
 			r_config_set_b (r->config, "io.cache", false);
 		} else {
 			r_config_set_b (r->config, "io.cache.read", true);
