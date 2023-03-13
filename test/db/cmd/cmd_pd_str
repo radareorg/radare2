@@ -33,3 +33,25 @@ EXPECT=<<EOF
             0x00000000      48ba306c5f66.  movabs rdx, 0xa67346c665f6c30 ; '0l_fl4g\n'
 EOF
 RUN
+
+NAME=emustr on calls
+FILE=bins/mach0/ls-m1
+ARGS=-a arm -b64
+CMDS=<<EOF
+e emu.str=true
+?e ---- test strings in calls
+s 0x100003b00
+pd 1
+?e ---- test strings in stores
+s 0x100003b58
+pd 2
+EOF
+EXPECT=<<EOF
+---- test strings in calls
+            0x100003b00      940e0094       bl sym.imp.compat_mode
+                                                                       ; bool compat_mode(-1, -1)
+---- test strings in stores
+            0x100003b58      560000b0       adrp x22, segment.__DATA   ; 0x10000c000
+            0x100003b5c      c80200b9       str w8, [x22]              ; U"P.\uc004\x01" segment.__DATA
+EOF
+RUN

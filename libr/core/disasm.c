@@ -4700,10 +4700,17 @@ static bool myregwrite(REsil *esil, const char *name, ut64 *val) {
 			case R_ANAL_OP_TYPE_CJMP:
 			case R_ANAL_OP_TYPE_MJMP:
 			case R_ANAL_OP_TYPE_UCJMP:
+			// case R_ANAL_OP_TYPE_RCALL:
+			// case R_ANAL_OP_TYPE_UCALL:
 				jump_op = true;
 				break;
+			case R_ANAL_OP_TYPE_CALL:
 			case R_ANAL_OP_TYPE_TRAP:
 			case R_ANAL_OP_TYPE_RET:
+				ignored = true;
+				break;
+			// case R_ANAL_OP_TYPE_STORE:
+			// case R_ANAL_OP_TYPE_LOAD:
 				ignored = true;
 				break;
 			case R_ANAL_OP_TYPE_LEA:
