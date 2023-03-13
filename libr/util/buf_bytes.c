@@ -146,6 +146,9 @@ static ut8 *buf_bytes_get_whole_buf(RBuffer *b, ut64 *sz) {
 }
 
 static const RBufferMethods buffer_bytes_methods = {
+#if R2_590
+	.name = "bytes",
+#endif
 	.init = buf_bytes_init,
 	.fini = buf_bytes_fini,
 	.read = buf_bytes_read,
