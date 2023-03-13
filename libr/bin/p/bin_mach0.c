@@ -54,7 +54,7 @@ static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadadd
 			RIO *io = bf->rbin->iob.io;
 			RBuffer *nb = swizzle_io_read (bf, res, io);
 			if (nb != bf->buf) {
-			//	r_buf_free (bf->buf);
+				r_buf_free (bf->buf);
 			}
 			bf->buf = nb;
 		}
