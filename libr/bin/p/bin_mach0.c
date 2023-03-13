@@ -18,7 +18,7 @@ extern RBinWrite r_bin_write_mach0;
 
 static bool rebase_buffer_callback2(void * context, RFixupEventDetails * event_details);
 static RBinInfo *info(RBinFile *bf);
-static RBuffer *swizzle_io_read(struct MACH0_(obj_t) *obj, RIO *io);
+static RBuffer *swizzle_io_read(RBinFile *bf, struct MACH0_(obj_t) *obj, RIO *io);
 
 #define IS_PTR_AUTH(x) ((x & (1ULL << 63)) != 0)
 #define IS_PTR_BIND(x) ((x & (1ULL << 62)) != 0)
@@ -52,8 +52,10 @@ static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadadd
 	if (res) {
 		if (res->chained_starts) {
 			RIO *io = bf->rbin->iob.io;
-			RBuffer *nb = swizzle_io_read (res, io);
-			r_buf_free (bf->buf);
+			RBuffer *nb = swizzle_io_read (bf, res, io);
+			if (nb != bf->buf) {
+				r_buf_free (bf->buf);
+			}
 			bf->buf = nb;
 		}
 		sdb_ns_set (sdb, "info", res->kv);
@@ -628,7 +630,7 @@ static RList* patch_relocs(RBin *b) {
 		return NULL;
 	}
 	struct MACH0_(obj_t) *mo = obj->bin_obj;
-	const bool apply_relocs = !mo->b->readonly;
+	const bool apply_relocs = io->cached; // true; // !mo->b->readonly;
 	const bool cache_relocs = io->cached;
 
 	RSkipList *all_relocs = MACH0_(get_relocs)(mo);
@@ -665,6 +667,13 @@ static RList* patch_relocs(RBin *b) {
 					r_io_write_at (io, paddr, buf, 8);
 				} else {
 					r_buf_write_at (mo->b, paddr, buf, 8);
+#if 0
+					RBuffer *b = mo->b;
+					int r = r_buf_write_at (b, paddr, buf, 8);
+					if (r != 8) {
+						R_LOG_ERROR ("write error at 0x%"PFMT64x, paddr);
+					}
+#endif
 				}
 			}
 		}
@@ -674,7 +683,7 @@ static RList* patch_relocs(RBin *b) {
 		goto beach;
 	}
 
-	if (!io->cached) {
+	if (!cache_relocs) {
 		R_LOG_WARN ("run r2 with -e bin.cache=true to fix relocations in disassembly");
 		goto beach;
 	}
@@ -762,7 +771,7 @@ beach:
 	return NULL;
 }
 
-static RBuffer *swizzle_io_read(struct MACH0_(obj_t) *obj, RIO *io) {
+static RBuffer *swizzle_io_read(RBinFile *bf, struct MACH0_(obj_t) *obj, RIO *io) {
 	r_return_val_if_fail (io && io->desc && io->desc->plugin, NULL);
 	RFixupRebaseContext ctx = {0};
 	RBuffer *nb = r_buf_new_with_buf (obj->b);
@@ -773,8 +782,10 @@ static RBuffer *swizzle_io_read(struct MACH0_(obj_t) *obj, RIO *io) {
 	ctx.obj = obj;
 	ut64 off = 0;
 	ctx.off = off;
-	MACH0_(iterate_chained_fixups) (obj, off, off + count, R_FIXUP_EVENT_MASK_ALL, &rebase_buffer_callback2, &ctx);
+	MACH0_(iterate_chained_fixups) (obj, off, off + count,
+		R_FIXUP_EVENT_MASK_ALL, &rebase_buffer_callback2, &ctx);
 	obj->b = ob;
+//	bf->buf = nb; // ???
 	return nb;
 }
 
@@ -795,6 +806,7 @@ static bool rebase_buffer_callback2(void *context, RFixupEventDetails * event_de
 		rflist = r_list_newf (free);
 		ctx->obj->reloc_fixups = rflist;
 	}
+	// r_buf_write_at (ctx->obj->b, 0x000a36780, "\x00\x00\x00\x10", 4);
 	switch (event_details->type) {
 	case R_FIXUP_EVENT_BIND:
 	case R_FIXUP_EVENT_BIND_AUTH:
