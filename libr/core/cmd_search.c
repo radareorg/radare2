@@ -197,14 +197,14 @@ static RCoreHelpMessage help_msg_slash_r = {
 };
 
 static RCoreHelpMessage help_msg_slash_R = {
-	"Usage: /R", "", "search for ROP gadgets",
-	"/R", " [filter-by-string]", "show gadgets",
-	"/R/", " [filter-by-regexp]", "show gadgets [regular expression]",
-	"/R/j", " [filter-by-regexp]", "json output [regular expression]",
-	"/R/q", " [filter-by-regexp]", "show gadgets in a quiet manner [regular expression]",
-	"/Rj", " [filter-by-string]", "json output",
-	"/Rk", " [select-by-class]", "query stored ROP gadgets",
-	"/Rq", " [filter-by-string]", "show gadgets in a quiet manner",
+	"Usage: /R", "", "search for ROP gadgets (see \"? for escaping chars in the shell)",
+	"/R", " [string]", "show gadgets",
+	"/R/", " [regexp]", "show gadgets [regular expression]",
+	"/R/j", " [regexp]", "json output [regular expression]",
+	"/R/q", " [regexp]", "show gadgets in a quiet manner [regular expression]",
+	"/Rj", " [string]", "json output",
+	"/Rk", " [ropklass]", "query stored ROP gadgets klass",
+	"/Rq", " [string]", "show gadgets in a quiet manner",
 	NULL
 };
 
