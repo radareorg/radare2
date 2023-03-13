@@ -466,7 +466,7 @@ typedef struct r_bin_plugin_t {
 	RList/*<RBinTrycatch>*/* (*trycatch)(RBinFile *bf);
 	RList/*<RBinClass>*/* (*classes)(RBinFile *bf);
 	RList/*<RBinMem>*/* (*mem)(RBinFile *bf);
-	RList/*<RBinReloc>*/* (*patch_relocs)(RBin *bin);
+	RList/*<RBinReloc>*/* (*patch_relocs)(RBin *bin); // R2_590 RBinFile instead of RBin
 	RList/*<RBinMap>*/* (*maps)(RBinFile *bf);
 	RList/*<RBinFileHash>*/* (*hashes)(RBinFile *bf);
 	void (*header)(RBinFile *bf);

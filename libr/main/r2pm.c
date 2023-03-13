@@ -426,7 +426,7 @@ static void r2pm_setenv(void) {
 	int i;
 	char *env_python = r_sys_getenv ("PYTHON");
 #if !R2_590
-	bool found;
+	bool found = false;
 #endif
 
 	if (R_STR_ISNOTEMPTY (env_python)) {
