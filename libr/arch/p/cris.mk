@@ -1,4 +1,4 @@
-OBJ_CRIS=p/cris/cris.o
+OBJ_CRIS=p/cris/plugin.o
 OBJ_CRIS+=p/cris/gnu/cris-dis.o
 OBJ_CRIS+=p/cris/gnu/cris-opc.o
 

@@ -1,20 +1,18 @@
-/* radare - LGPL - Copyright 2012-2022 - pancake
+/* radare - LGPL - Copyright 2012-2023 - pancake
 	2014 - Fedor Sakharov <fedor.sakharov@gmail.com> */
 
-#include <r_lib.h>
-#include <r_asm.h>
-#include <r_anal.h>
+#include <r_arch.h>
 #include "cr16_disas.h"
 
 static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 	struct cr16_cmd cmd = {0};
 	const ut64 addr = op->addr;
 
-	op->size = 2;
-	op->size = cr16_decode_command (op->bytes, &cmd, op->size);
-	if (op->size <= 0) {
-		return op->size;
+	int oplen = cr16_decode_command (op->bytes, &cmd, op->size);
+	if (oplen < 1) {
+		return false;
 	}
+	op->size = oplen;
 
 	if (mask & R_ARCH_OP_MASK_DISASM) {
 		op->mnemonic = r_str_newf ("%s %s", cmd.instr, cmd.operands);
@@ -108,9 +106,9 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 		break;
 	default:
 		op->type = R_ANAL_OP_TYPE_UNK;
+		break;
 	}
-
-	return op->size;
+	return true;
 }
 
 static int archinfo(RArchSession *as, ut32 q) {
@@ -129,12 +127,13 @@ static int archinfo(RArchSession *as, ut32 q) {
 
 RArchPlugin r_arch_plugin_cr16 = {
 	.name = "cr16",
-	.desc = "CR16 code analysis plugin",
+	.desc = "Compact RISC processor",
 	.license = "LGPL3",
+	.endian = R_SYS_ENDIAN_LITTLE,
 	.arch = "cr16",
 	.info = &archinfo,
 	.bits = R_SYS_BITS_PACK1 (16),
-	.decode =  &decode,
+	.decode = &decode,
 };
 
 #ifndef R2_PLUGIN_INCORE

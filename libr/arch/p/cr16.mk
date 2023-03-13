@@ -1,4 +1,4 @@
-OBJ_CR16=p/cr16/cr16.o
+OBJ_CR16=p/cr16/plugin.o
 
 STATIC_OBJ+=${OBJ_CR16}
 OBJ_CR16+=p/cr16/cr16_disas.o
