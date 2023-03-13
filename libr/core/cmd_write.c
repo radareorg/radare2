@@ -181,7 +181,7 @@ static RCoreHelpMessage help_msg_wx = {
 };
 
 static void cmd_write_fail(RCore *core) {
-	R_LOG_ERROR ("Cannot write. Check `omp` or reopen the file with `oo+`");
+	R_LOG_ERROR ("Cannot write. Use `omf`, `io.cache` or reopen the file in rw with `oo+`");
 	r_core_return_value (core, R_CMD_RC_FAILURE);
 }
 
