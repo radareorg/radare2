@@ -1837,6 +1837,7 @@ static int bin_relocs(RCore *r, PJ *pj, int mode, int va) {
 		} else {
 			r_config_set_b (r->config, "io.cache.read", true);
 		}
+		r_core_cmd_call (r, "wcs"); // write cache squash
 	}
 
 	if (IS_MODE_RAD (mode)) {
