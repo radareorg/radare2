@@ -195,6 +195,7 @@ R_API bool r_io_cache_read(RIO *io, ut64 addr, ut8 *buf, int len) {
 		return false;
 	}
 	const RSkylineItem *last = (RSkylineItem *)skyline->v.a + skyline->v.len;
+	bool read_fast = false;
 	bool covered = false;
 	while (iter != last) {
 		const ut64 begin = r_itv_begin (iter->itv);
@@ -233,6 +234,9 @@ R_API bool r_io_cache_read(RIO *io, ut64 addr, ut8 *buf, int len) {
 		}
 		covered = true;
 		iter++;
+		if (read_fast) {
+			break;
+		}
 	}
 	return covered;
 }
