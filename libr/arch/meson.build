@@ -85,8 +85,8 @@ if arch_plugins.contains('x86_nz')
   ]
 endif
 
-if get_option('use_v35')
-r_anal_sources += [
+#if get_option('use_v35')
+r_arch_sources += [
   join_paths('p/arm/plugin_v35.c'),
   join_paths('p/arm/v35/arch-arm64/disassembler/decode.c'),
   join_paths('p/arm/v35/arch-arm64/disassembler/decode0.c'),
@@ -103,10 +103,10 @@ r_anal_sources += [
   join_paths('p/arm/v35/arch-arm64/disassembler/regs.c'),
   join_paths('p/arm/v35/arch-arm64/disassembler/sysregs.c')
 ]
-incdirs += [
-  join_paths('../asm/arch/arm/v35arm64/arch-arm64/disassembler'),
-]
-endif
+#incdirs += [
+##  join_paths('p/arm/v35/arch-arm64/disassembler'),
+#]
+# endif
 # must be deleted when anal refactor is done
 arch_inc = include_directories('../asm/arch/include')
 
