@@ -39,6 +39,7 @@ arch_plugins = [ 'null',
   'vax',
   'tricore',
   'cris',
+  'cr16',
 ]
 bin_plugins = [ 'any' ]
 bin_ldr_plugins = [ 'ldr_linux' ]
@@ -156,7 +157,6 @@ anal_plugins += [
   'avr',
   'bf',
   'chip8',
-  'cr16',
   'dalvik',
   'ebc',
   'gb',

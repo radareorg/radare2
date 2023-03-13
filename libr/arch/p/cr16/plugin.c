@@ -1,22 +1,19 @@
-/* radare - LGPL - Copyright 2012-2022 - pancake
+/* radare - LGPL - Copyright 2012-2023 - pancake
 	2014 - Fedor Sakharov <fedor.sakharov@gmail.com> */
 
-#include <r_lib.h>
-#include <r_asm.h>
-#include <r_anal.h>
-#include "../arch/cr16/cr16_disas.h"
+#include <r_arch.h>
+#include "cr16_disas.h"
 
-static int cr16_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
+static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 	struct cr16_cmd cmd = {0};
+	const ut64 addr = op->addr;
 
-	op->size = 2;
-	int ret = op->size = cr16_decode_command (buf, &cmd, len);
-	if (ret <= 0) {
-		return ret;
+	int oplen = cr16_decode_command (op->bytes, &cmd, op->size);
+	if (oplen < 1) {
+		return false;
 	}
-	op->size = ret;
+	op->size = oplen;
 
-	op->addr = addr;
 	if (mask & R_ARCH_OP_MASK_DISASM) {
 		op->mnemonic = r_str_newf ("%s %s", cmd.instr, cmd.operands);
 	}
@@ -109,12 +106,12 @@ static int cr16_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 		break;
 	default:
 		op->type = R_ANAL_OP_TYPE_UNK;
+		break;
 	}
-
-	return ret;
+	return true;
 }
 
-static int archinfo(RAnal *anal, int q) {
+static int archinfo(RArchSession *as, ut32 q) {
 	switch (q) {
 	case R_ANAL_ARCHINFO_ALIGN:
 		return 2;
@@ -128,20 +125,22 @@ static int archinfo(RAnal *anal, int q) {
 	return 0;
 }
 
-RAnalPlugin r_anal_plugin_cr16 = {
+RArchPlugin r_arch_plugin_cr16 = {
 	.name = "cr16",
-	.desc = "CR16 code analysis plugin",
+	.desc = "Compact RISC processor",
 	.license = "LGPL3",
+	.endian = R_SYS_ENDIAN_LITTLE,
 	.arch = "cr16",
-	.archinfo = archinfo,
-	.bits = 16,
-	.op = cr16_op,
+// 	.cpus = "crc16c,plus", only supported in the gnu plugin, which we dont have :D
+	.info = &archinfo,
+	.bits = R_SYS_BITS_PACK1 (16),
+	.decode = &decode,
 };
 
 #ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_ANAL,
-	.data = &r_anal_plugin_cr16,
+	.type = R_LIB_TYPE_ARCH,
+	.data = &r_arch_plugin_cr16,
 	.version = R2_VERSION
 };
 #endif
