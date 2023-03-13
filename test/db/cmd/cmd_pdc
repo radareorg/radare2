@@ -101,10 +101,11 @@ EXPECT=<<EOF
 |           0x0040206e      ff15b8304000   call dword [MessageBoxA]    ; 0x4030b8 ; int MessageBoxA(HWND hWnd, LPCSTR lpText, LPCSTR lpCaption, UINT uType)
 |           0x00402074      6a00           push 0
 \           0x00402076      ff1584304000   call dword [ExitProcess]    ; 0x403084 ; VOID ExitProcess(UINT uExitCode)
-int entry0 (int esi, int edx) {
+int entry0 (int stack, int stack) {
     loc_0x40200f:
         si = 3
         fcn.00402000  ()
+        goto loc_0x402018
         do {
     loc_0x402018:
         push  (0)
@@ -121,7 +122,9 @@ int entry0 (int esi, int edx) {
         si-
         var = si - 0
         if  (var > 0) goto loc_0x402018 // unlikely
+        goto loc_0x402042
          // } while (?);
+        goto loc_0x402042
         }
         return eax;
     loc_0x402042:
@@ -147,7 +150,43 @@ int entry0 (int esi, int edx) {
         push  (0)
         dword [ExitProcess]  () // 0x403084 // reloc.kernel32.dll_ExitProcess
         // VOID ExitProcess(NULL)
-        break;
+        }
+        return eax;
+}
+
+EOF
+RUN
+
+NAME=pdc @ main ls-m1
+FILE=bins/mach0/ls-m1
+ARGS=-a arm -b64
+CMDS=<<EOF
+s 0x100003a54
+af
+pdc
+EOF
+EXPECT=<<EOF
+int sym.func.100003a54 (int x0, int x1) {
+    loc_0x100003a54:
+        x8 = [x0 + 0x60] // 0xda // 218 // arg1
+        x8 = [x8 + 0x60] // 0xe2 // 226
+        x9 = [x1 + 0x60] // 0xdb // 219 // arg2
+        x9 = [x9 + 0x60] // 0xe3 // 227
+        if (x8 == x9)
+        goto ifle 0x100003a74 // likely
+        goto loc_0x100003a6c
+    loc_0x100003a74:
+        b.ge 0x100003a80 // likely
+        goto loc_0x100003a78
+    loc_0x100003a80:
+        x8 = x1 + 0x68 // arg2
+        x1 = x0 + 0x68 // arg1
+        x0 = x8
+        goto sym.imp.strcoll
+        // int strcoll("", "")
+         // } else {
+        }
+        return x0;
 }
 
 EOF
