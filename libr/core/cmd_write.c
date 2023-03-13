@@ -72,6 +72,7 @@ static RCoreHelpMessage help_msg_wc = {
 	"wcu","","undo last change",
 	"wcU","","redo undone change (TODO)",
 	"wci","","commit write cache",
+	"wcs","","squash the consecutive write ops",
 	"wcf"," [file]","commit write cache into given file",
 	"wcp"," [fd]", "list all cached write-operations on p-layer for specified fd or current fd",
 	"wcp*"," [fd]","list all cached write-operations on p-layer in radare commands",
@@ -759,6 +760,34 @@ static int cmd_wf(void *data, const char *input) {
 	return 0;
 }
 
+static void squash_write_cache(RCore *core, const char *input) {
+	void **iter;
+	RPVector *v = &core->io->cache;
+	ut64 end = UT64_MAX;
+	RIOCache *oc = NULL;
+	RPVector *nv = r_pvector_new (NULL);
+	int pos = 0;
+	int squashed = 0;
+	r_pvector_foreach (v, iter) {
+		RIOCache *c = *iter;
+		const ut64 a = r_itv_begin (c->itv);
+		const ut64 s = r_itv_size (c->itv);
+		if (oc && end == a) {
+			squashed ++;
+			oc->itv.size += s;
+		} else {
+			r_pvector_insert (nv, pos, c);
+			oc = c;
+			pos++;
+		}
+		end = a + s;
+		// r_skyline_add (&io->cache_skyline, c->itv, c);
+	}
+	R_LOG_INFO ("Squashed %d write caches", squashed);
+	// r_pvector_clear (&core->io->cache);
+	memcpy (&(core->io->cache), nv, sizeof (RIOCache));
+}
+
 static void cmd_write_pcache(RCore *core, const char *input) {
 	RIODesc *desc;
 	RIOCache *c;
@@ -1443,6 +1472,9 @@ static int cmd_wc(void *data, const char *input) {
 		 * longer displayed. */
 		memset (core->block, 0xff, core->blocksize);
 		r_core_block_read (core);
+		break;
+	case 's': // "wcs" -- write cache squash
+		squash_write_cache (core, input + 1);
 		break;
 	}
 	return 0;
