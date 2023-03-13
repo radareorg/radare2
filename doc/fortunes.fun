@@ -319,3 +319,4 @@ It's dangerous to go alone, take this.
 "If you gotta burn it all to the ground; Then let it burn"
 Watch until the end!
 Don't forget to subscribe!
+Ah shit, here we go again.
