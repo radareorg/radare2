@@ -2078,7 +2078,7 @@ static int init_items(struct MACH0_(obj_t) *bin) {
 						ut64 va = offset_to_vaddr(bin, dw);
 					//	eprintf ("# 0x%d -> 0x%x\n", dw, va);
 					//	eprintf ("0x%x kind %d len %d\n", dw, kind, len);
-						eprintf ("Cd 4 %d @ 0x%"PFMT64x"\n", len / 4, va);
+						eprintf ("Cd 8 %d @ 0x%"PFMT64x"\n", len / 8, va);
 					}
 				}
 			}
@@ -2089,7 +2089,7 @@ static int init_items(struct MACH0_(obj_t) *bin) {
 				r_buf_read_at (bin->b, off + 8, buf, sizeof (buf));
 				ut32 dataoff = r_read_ble32 (buf, bin->big_endian);
 				ut32 datasize = r_read_ble32 (buf + 4, bin->big_endian);
-				eprintf ("exports trie at 0x%x size %d\n", dataoff, datasize);
+				R_LOG_INFO ("exports trie at 0x%x size %d", dataoff, datasize);
 			}
 			break;
 		case LC_DYLD_CHAINED_FIXUPS:
@@ -2387,6 +2387,11 @@ RList *MACH0_(get_segments)(RBinFile *bf) {
 			r_list_append (list, s);
 		}
 	}
+#if R_BIN_MACH064
+	const int ws = 8;
+#else
+	const int ws = 4;
+#endif
 	if (macho->nsects > 0) {
 		int last_section = R_MIN (macho->nsects, MACHO_MAX_SECTIONS);
 		for (i = 0; i < last_section; i++) {
@@ -2413,15 +2418,10 @@ RList *MACH0_(get_segments)(RBinFile *bf) {
 			char *segment_name = r_str_newf ("%u.%s", (ut32)i, macho->segs[segment_index].segname);
 			s->name = r_str_newf ("%s.%s", segment_name, section_name);
 			if (strstr (s->name, "__const")) {
-				s->format = r_str_newf ("Cd 4 %"PFMT64d, s->size / 4);
+				s->format = r_str_newf ("Cd %d %"PFMT64d, ws, s->size / ws);
 			}
 			s->is_data = is_data_section (s);
 			if (strstr (section_name, "interpos") || strstr (section_name, "__mod_")) {
-#if R_BIN_MACH064
-				const int ws = 8;
-#else
-				const int ws = 4;
-#endif
 				s->format = r_str_newf ("Cd %d[%"PFMT64d"]", ws, s->vsize / ws);
 			}
 			r_list_append (list, s);
@@ -4713,8 +4713,8 @@ struct MACH0_(mach_header) *MACH0_(get_hdr)(RBuffer *buf) {
 #define IS_FMT_32BIT(x) (x == DYLD_CHAINED_PTR_32 || x == DYLD_CHAINED_PTR_32_CACHE || x == DYLD_CHAINED_PTR_32_FIRMWARE)
 
 void MACH0_(iterate_chained_fixups)(struct MACH0_(obj_t) *mo, ut64 limit_start, ut64 limit_end, ut32 event_mask, RFixupCallback callback, void * context) {
-	int i = 0;
-	for (; i < mo->nsegs && i < mo->segs_count; i++) {
+	int i;
+	for (i = 0; i < mo->nsegs && i < mo->segs_count; i++) {
 		if (!mo->chained_starts[i]) {
 			continue;
 		}
