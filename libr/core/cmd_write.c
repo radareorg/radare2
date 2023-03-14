@@ -1344,7 +1344,7 @@ static void cmd_wcf(RCore *core, const char *dfn) {
 	ut8 *sfb = (ut8*)r_file_slurp (sfn, &sfs);
 	if (sfb) {
 #if USE_NEW_IO_CACHE_API
-#warning TODO. wcf not implemented for the new cache
+		R_LOG_TODO ("wcf not supported yet with the new io cache");
 #else
 		void **iter;
 		r_pvector_foreach (&core->io->cache, iter) {

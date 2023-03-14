@@ -7296,7 +7296,7 @@ R_API int r_core_disasm_pde(RCore *core, int nb_opcodes, int mode) {
 	free (buf);
 	r_reg_arena_pop (reg);
 #if USE_NEW_IO_CACHE_API
-#warning TODO: io-new-cache layers
+	R_LOG_TODO ("new-io-cache doesnt rollbacks yet");
 #else
 	int len = r_pvector_length (&ocache);
 	if (r_pvector_length (&core->io->cache) > len) {
