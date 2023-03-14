@@ -1189,7 +1189,7 @@ R_API char *r_sys_pid_to_path(int pid) {
 #if R2__WINDOWS__
 	HANDLE processHandle = OpenProcess (PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, pid);
 	if (!processHandle) {
-		// eprintf ("r_sys_pid_to_path: Cannot open process.\n");
+		// R_LOG_ERROR ("r_sys_pid_to_path: Cannot open process");
 		return NULL;
 	}
 	char *filename = r_w32_handle_to_path (processHandle);

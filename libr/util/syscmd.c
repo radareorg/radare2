@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2013-2022 - pancake */
+/* radare - LGPL - Copyright 2013-2023 - pancake */
 
 #include <r_core.h>
 #include <errno.h>
@@ -127,7 +127,7 @@ static char *showfile(char *res, const int nth, const char *fpath, const char *n
 		res = r_str_append (res, js);
 		free (js);
 	} else {
-		eprintf ("unknown format\n");
+		R_LOG_ERROR ("unknown format");
 	}
 	free (nn);
 	free (u_rwx);
@@ -164,14 +164,14 @@ R_API char *r_syscmd_ls(const char *input, int cons_width) {
 		input++;
 	}
 	if (r_sandbox_enable (0)) {
-		eprintf ("Sandbox forbids listing directories\n");
+		R_LOG_ERROR ("Sandbox forbids listing directories");
 		return NULL;
 	}
 	if (*input && input[0] == ' ') {
 		input++;
 	}
 	if (*input) {
-		if (!strncmp (input, "-h", 2) || *input == '?') {
+		if (r_str_startswith (input, "-h") || *input == '?') {
 			eprintf ("Usage: ls [-e,-l,-j,-q] [path] # long, json, quiet\n");
 			return NULL;
 		}
@@ -323,7 +323,7 @@ R_API char *r_syscmd_sort(const char *file) {
 		r_str_trim (filename);
 		char *data = r_file_slurp (filename, NULL);
 		if (!data) {
-			eprintf ("No such file or directory\n");
+			R_LOG_ERROR ("No such file or directory");
 		} else {
 			list = r_str_split_list (data, "\n", 0);
 			r_list_sort (list, cmpstr);
@@ -352,7 +352,7 @@ R_API char *r_syscmd_head(const char *file, int count) {
 		r_str_trim (filename);
 		char *data = r_file_slurp_lines (filename, 1, count);
 		if (!data) {
-			eprintf ("No such file or directory\n");
+			R_LOG_ERROR ("No such file or directory");
 		}
 		free (filename);
 		return data;
@@ -376,7 +376,7 @@ R_API char *r_syscmd_tail(const char *file, int count) {
 		r_str_trim (filename);
 		char *data = r_file_slurp_lines_from_bottom (filename, count);
 		if (!data) {
-			eprintf ("No such file or directory\n");
+			R_LOG_ERROR ("No such file or directory");
 		}
 		free (filename);
 		return data;
@@ -401,7 +401,7 @@ R_API char *r_syscmd_uniq(const char *file) {
 		r_str_trim (filename);
 		char *data = r_file_slurp (filename, NULL);
 		if (!data) {
-			eprintf ("No such file or directory\n");
+			R_LOG_ERROR ("No such file or directory");
 		} else {
 			list = r_str_split_list (data, "\n", 0);
 			RList *uniq_list = r_list_uniq (list, valstr);
@@ -437,7 +437,7 @@ R_API char *r_syscmd_join(const char *file1, const char *file2) {
 			p2 = file2;
 		}
 	}
-	if (p1 && *p1 && p2 && *p2 ) {
+	if (R_STR_ISNOTEMPTY (p1) && R_STR_ISNOTEMPTY (p2)) {
 		char *filename1 = strdup (p1);
 		char *filename2 = strdup (p2);
 		r_str_trim (filename1);
@@ -504,7 +504,7 @@ R_API char *r_syscmd_cat(const char *file) {
 		r_str_trim (filename);
 		char *data = r_file_slurp (filename, NULL);
 		if (!data) {
-			eprintf ("No such file or directory\n");
+			R_LOG_ERROR ("No such file or directory");
 		}
 		free (filename);
 		return data;
@@ -544,7 +544,7 @@ R_API char *r_syscmd_mktemp(const char *dir) {
 		ret = r_sys_mkdirp (arg);
 	}
 	if (!ret) {
-		eprintf ("Cannot create '%s'\n", dirname);
+		R_LOG_ERROR ("Cannot create '%s'", dirname);
 		free (dirname);
 		return NULL;
 	}
@@ -568,7 +568,7 @@ R_API bool r_syscmd_mkdir(const char *dir) {
 	}
 	if (!r_sys_mkdirp (dirname)) {
 		if (r_sys_mkdir_failed ()) {
-			eprintf ("Cannot create '%s'\n", dirname);
+			R_LOG_ERROR ("Cannot create '%s'", dirname);
 			free (dirname);
 			return false;
 		}
@@ -583,14 +583,14 @@ R_API bool r_syscmd_pushd(const char *input) {
 	}
 	char *cwd = r_sys_getdir ();
 	if (!cwd) {
-		eprintf ("Where am I?\n");
+		R_LOG_ERROR ("Where am I?");
 		return false;
 	}
 	bool suc = r_sys_chdir (input);
 	if (suc) {
 		r_list_push (dirstack, cwd);
 	} else {
-		eprintf ("Cannot chdir\n");
+		R_LOG_ERROR ("Cannot chdir");
 	}
 	return suc;
 }
@@ -628,13 +628,13 @@ R_API bool r_syscmd_mv(const char *input) {
 		eprintf ("Usage: mv src dst\n");
 		return false;
 	}
-	char *inp = strdup (input + 2);
+	char *inp = r_str_trim_dup (input + 2);
 	char *arg = strchr (inp, ' ');
 	bool rc = false;
 	if (arg) {
 		*arg++ = 0;
 		if (!(rc = r_file_move (inp, arg))) {
-			eprintf ("Cannot move file\n");
+			R_LOG_ERROR ("Cannot move file");
 		}
 	} else {
 		eprintf ("Usage: mv src dst\n");
