@@ -87,8 +87,7 @@ jobs:
   try-new-cache:
     name: try-new-cache
     runs-on: ubuntu-20.04
-    strategy:
-      fail-fast: false
+    continue-on-error: true
     steps:
     - name: Checkout
       uses: actions/checkout@v3
