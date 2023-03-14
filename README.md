@@ -173,6 +173,7 @@ Game Boy (Advance), Nintendo DS ROMs and Nintendo 3DS FIRMs, various filesystems
 
 ## Packaging Status
 
+* [![Snap package](https://snapcraft.io/radare2/badge.svg)](https://snapcraft.io/radare2)
 * [![Termux package](https://repology.org/badge/version-for-repo/termux/radare2.svg)](https://repology.org/project/radare2/versions)
 * [![Alpine Linux Edge package](https://repology.org/badge/version-for-repo/alpine_edge/radare2.svg)](https://repology.org/project/radare2/versions) [![Alpine Linux 3.13 package](https://repology.org/badge/version-for-repo/alpine_3_13/radare2.svg)](https://repology.org/project/radare2/versions) [![Alpine Linux 3.12 package](https://repology.org/badge/version-for-repo/alpine_3_12/radare2.svg)](https://repology.org/project/radare2/versions)
 * [![Arch package](https://repology.org/badge/version-for-repo/arch/radare2.svg)](https://repology.org/project/radare2/versions) [![AUR package](https://repology.org/badge/version-for-repo/aur/radare2.svg)](https://repology.org/project/radare2/versions)
