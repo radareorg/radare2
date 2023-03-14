@@ -1,13 +1,9 @@
-/* Copyright (C) 2008-2022 - pancake */
+/* radare2 - LGPL - Copyright 2008-2023 - pancake */
 
 #include <r_arch.h>
-#include <r_asm.h>
-#include <r_lib.h>
 #include <sdb/ht_uu.h>
 #include "./cs_version.h"
 #include "./asm-arm.h"
-
-bool arm64ass(const char *str, ut64 addr, ut32 *op);
 
 static bool encode(RArchSession *s, RAnalOp *op, ut32 mask) {
 	const int bits = s->config->bits;

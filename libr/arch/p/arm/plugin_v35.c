@@ -3,6 +3,7 @@
 #include <r_arch.h>
 #include <r_search.h>
 #include <sdb/ht_uu.h>
+#include "./asm-arm.h"
 #include <r_util/r_assert.h>
 #include "v35/arch-arm64/disassembler/encodings_dec.h"
 #include "v35/arch-arm64/disassembler/encodings_fmt.h"
@@ -3313,6 +3314,57 @@ static char *regs(RArchSession *as) {
 	return r_str_newf (p, snReg);
 }
 
+static bool encode(RArchSession *s, RAnalOp *op, ut32 mask) {
+	const int bits = s->config->bits;
+	const bool is_thumb = (bits == 16);
+	int opsize;
+	ut32 opcode = UT32_MAX;
+	if (bits == 64) {
+		if (!arm64ass (op->mnemonic, op->addr, &opcode)) {
+			return false;
+		}
+	} else {
+		opcode = armass_assemble (op->mnemonic, op->addr, is_thumb);
+		if (bits != 32 && bits != 16) {
+			R_LOG_ERROR ("ARM assembler only supports 16 or 32 bits");
+			return false;
+		}
+	}
+	if (opcode == UT32_MAX) {
+		return false;
+	}
+	ut8 opbuf[4];
+	const bool be = R_ARCH_CONFIG_IS_BIG_ENDIAN (s->config);
+	if (is_thumb) {
+		const int o = opcode >> 16;
+		opsize = o > 0? 4: 2;
+		if (opsize == 4) {
+			if (be) {
+				r_write_le16 (opbuf, opcode >> 16);
+				r_write_le16 (opbuf + 2, opcode & UT16_MAX);
+			} else {
+				r_write_be32 (opbuf, opcode);
+			}
+		} else if (opsize == 2) {
+			if (be) {
+				r_write_le16 (opbuf, opcode & UT16_MAX);
+			} else {
+				r_write_be16 (opbuf, opcode & UT16_MAX);
+			}
+		}
+	} else {
+		opsize = 4;
+		if (be) {
+			r_write_le32 (opbuf, opcode);
+		} else {
+			r_write_be32 (opbuf, opcode);
+		}
+	}
+	r_anal_op_set_bytes (op, op->addr, opbuf, opsize);
+	// r_strbuf_setbin (&op->buf, opbuf, opsize);
+	return true;
+}
+
 RArchPlugin r_arch_plugin_arm_v35 = {
 	.name = "arm.v35",
 	.desc = "Vector35 ARM analyzer",
@@ -3324,6 +3376,7 @@ RArchPlugin r_arch_plugin_arm_v35 = {
 	.preludes = anal_preludes,
 	.bits = R_SYS_BITS_PACK (64),
 	.decode = &decode,
+	.encode = &encode,
 	.mnemonics = &mnemonics,
 };
 

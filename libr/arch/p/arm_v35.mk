@@ -1,6 +1,8 @@
 include ../config.mk
 N=anal_arm_v35
 V35ARM64_HOME=$(LIBR)/arch/p/arm/v35/
+OBJ_ARM_V35+=p/arm/armass64.o
+OBJ_ARM_V35+=p/arm/armass.o
 
 include ../arch/p/arm/v35/deps-arm64.mk
 
