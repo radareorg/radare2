@@ -26,7 +26,7 @@ EXPECT=<<EOF
 EOF
 EXPECT_ERR=<<EOF
 WARN: run r2 with -e bin.cache=true to fix relocations in disassembly
-ERROR: [cmd_write.c:184] Cannot write. Check `omp` or reopen the file with `oo+`
+ERROR: [cmd_write.c:184] Cannot write. Use `omf`, `io.cache` or reopen the file in rw with `oo+`
 EOF
 RUN
 
@@ -46,6 +46,6 @@ hello
 EOF
 EXPECT_ERR=<<EOF
 WARN: run r2 with -e bin.cache=true to fix relocations in disassembly
-ERROR: [cmd_write_fail] Cannot write. Check `omp` or reopen the file with `oo+`
+ERROR: [cmd_write_fail] Cannot write. Use `omf`, `io.cache` or reopen the file in rw with `oo+`
 EOF
 RUN
