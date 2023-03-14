@@ -1353,15 +1353,25 @@ R_API bool r_sys_tts(const char *txt, bool bg) {
 	return false;
 }
 
+// leaks and globs
+static R_TH_LOCAL char *r2_prefix = NULL;
+
 R_API const char *r_sys_prefix(const char *pfx) {
+	if (!r2_prefix) {
+		r2_prefix = r_sys_getenv ("R2_PREFIX");
+		if (R_STR_ISEMPTY (r2_prefix)) {
+			free (r2_prefix);
+			r2_prefix = strdup (R2_PREFIX);
+		}
+	}
 	if (!prefix) {
 #if R2__WINDOWS__
 		prefix = r_sys_get_src_dir_w32 ();
 		if (!prefix) {
-			prefix = strdup (R2_PREFIX);
+			prefix = strdup (r2_prefix);
 		}
 #else
-		prefix = strdup (R2_PREFIX);
+		prefix = strdup (r2_prefix);
 #endif
 	}
 	if (pfx) {
