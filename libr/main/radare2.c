@@ -158,7 +158,7 @@ static int main_help(int line) {
 	}
 	if (line == 2) {
 		char *datahome = r_xdg_datadir (NULL);
-		const char *dirPrefix = R2_PREFIX;
+		const char *dirPrefix = r_sys_prefix (NULL);
 		RStrBuf *sb = r_strbuf_new ("");
 
 		r_strbuf_append (sb, "Scripts:\n");
@@ -219,12 +219,13 @@ static int main_print_var(const char *var_name) {
 	char *plugins = r_str_r2_prefix (R2_PLUGINS);
 	char *magicpath = r_str_r2_prefix (R2_SDB_MAGIC);
 	char *historyhome = r_xdg_cachedir ("history");
+	const char *r2prefix = r_sys_prefix (NULL);
 	struct {
 		const char *name;
 		const char *value;
 	} r2_vars[] = {
 		{ "R2_VERSION", R2_VERSION },
-		{ "R2_PREFIX", R2_PREFIX },
+		{ "R2_PREFIX", r2prefix },
 		{ "R2_MAGICPATH", magicpath },
 		{ "R2_INCDIR", incdir },
 		{ "R2_LIBDIR", libdir },
