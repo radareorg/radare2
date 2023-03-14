@@ -12,6 +12,8 @@ Currently, you need to prepend `radare2.` to each command you want to run. For e
 
 To find information about this snap package, run `snap info radare2`. See the section below on this.
 
+To review the snap build reciepe this can be found in [this separate repository](https://github.com/radareorg/radare2-snap).
+
 Installing radare2
 -----------------
 This command installs the `radare2` snap package using the _classic_ security confinement type. The _classic_ security confinement disables some restrictions that are applied to typical snap packages. _classic_ makes a package to work similar to APT and RPM packages.
