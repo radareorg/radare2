@@ -106,7 +106,6 @@ EOF
 RUN
 
 NAME=Write reanalysis keeps already unreachable block
-BROKEN=1
 FILE=-
 ARGS=-a x86 -b 64 -e anal.onchange=true
 CMDS=<<EOF

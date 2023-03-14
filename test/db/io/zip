@@ -62,7 +62,6 @@ RUN
 
 NAME=io-zip
 FILE=zip://bins/java/example.zip
-BROKEN=1
 CMDS=q
 EXPECT=<<EOF
 0 research_data/experiment/decompiler/dumped_jar_dec/c.class
@@ -101,7 +100,6 @@ RUN
 
 NAME=io-zip hello.apk
 FILE=zip://bins/dex/Hello.apk
-BROKEN=1
 CMDS=ieq
 EXPECT=<<EOF
 0 classes.dex
