@@ -145,7 +145,6 @@ RUN
 
 NAME=memory write (non-MIPS big endian)
 FILE=-
-BROKEN=1
 CMDS=<<EOF
 e cfg.bigendian=true
 aeim
