@@ -92,6 +92,11 @@ jobs:
     steps:
     - name: Checkout
       uses: actions/checkout@v3
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install meson ninja r2pipe wget
+        sudo apt install gperf
     - name: Installing with symlinks
       run: |
         export CFLAGS="-O0 -Werror -Wno-unused-result -Wno-stringop-truncation"
