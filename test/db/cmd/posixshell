@@ -17,7 +17,7 @@ EXPECT=<<EOF
 /
 EOF
 EXPECT_ERR=<<EOF
-Cannot chdir
+ERROR: Cannot chdir
 /dev
 /dev
 /
