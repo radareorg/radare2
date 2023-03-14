@@ -13,7 +13,7 @@ d "cpfsgt 0x62, 0" 6264
 d "cpfslt 0xc4, 0" c460
 d "goto 0x274e" a7ef13f0
 d "invalid" 02
-dB "invalid" 0200
+d "invalid" 0200
 d "lfsr fsr2, 4005" 2feea5f0
 d "movff 0xe54, 0x49" 54ce49f0
 d "movlb 0xd" 0d01

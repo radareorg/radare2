@@ -202,7 +202,7 @@ static RCoreHelpMessage help_msg_afls = {
 	NULL
 };
 
-static const RCoreHelpMessage help_msg_aflx = {
+static RCoreHelpMessage help_msg_aflx = {
 	"Usage:", "aflx", "[jv*] # list function xrefs",
 	"aflx", "", "list function xrefs (who references or calls the current function)",
 	"aflxj", "", "list function xrefs in JSON format",
@@ -10462,7 +10462,7 @@ static void treemap_layout(RConsCanvas *canvas, RList *maps) {
 			}
 			if (i == 0) {
 				if (n != 1) {
-					nw = canvas->w * mfact;
+					nw = (int)(canvas->w * mfact);
 				}
 				ny = 0;
 			} else if (i == 1) {
