@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2022 - pancake */
+/* radare - LGPL - Copyright 2009-2023 - pancake */
 
 #include <r_core.h>
 
@@ -761,6 +761,9 @@ static int cmd_wf(void *data, const char *input) {
 }
 
 static void squash_write_cache(RCore *core, const char *input) {
+#if USE_NEW_IO_CACHE_API
+	R_LOG_TODO ("Squash is not implemented for the for the new io-cache");
+#else
 	void **iter;
 	RPVector *v = &core->io->cache;
 	ut64 end = UT64_MAX;
@@ -786,14 +789,13 @@ static void squash_write_cache(RCore *core, const char *input) {
 	R_LOG_INFO ("Squashed %d write caches", squashed);
 	// r_pvector_clear (&core->io->cache);
 	memcpy (&(core->io->cache), nv, sizeof (RIOCache));
+#endif
 }
 
 static void cmd_write_pcache(RCore *core, const char *input) {
 	RIODesc *desc;
-	RIOCache *c;
 	RList *caches;
-	RListIter *iter;
-	int fd, i;
+	int fd;
 	bool rad = false;
 	if (core && core->io && core->io->p_cache && core->print && core->print->cb_printf) {
 		switch (input[0]) {
@@ -817,6 +819,12 @@ static void cmd_write_pcache(RCore *core, const char *input) {
 				desc = core->io->desc;
 			}
 			if ((caches = r_io_desc_cache_list (desc))) {
+#if USE_NEW_IO_CACHE_API
+				R_LOG_TODO ("pcache listing not working for the new io-cache (%d)", rad);
+#else
+				int i;
+				RIOCache *c;
+				RListIter *iter;
 				if (rad) {
 					core->print->cb_printf ("e io.va = false\n");
 					r_list_foreach (caches, iter, c) {
@@ -842,6 +850,7 @@ static void cmd_write_pcache(RCore *core, const char *input) {
 						core->print->cb_printf ("\n");
 					}
 				}
+#endif
 				r_list_free (caches);
 			}
 			break;
@@ -1315,6 +1324,7 @@ static char *__current_filename(RCore *core) {
 	return NULL;
 }
 
+#if !USE_NEW_IO_CACHE_API
 static ut64 __va2pa(RCore *core, ut64 va) {
 	RIOMap *map = r_io_map_get_at (core->io, va);
 	if (map) {
@@ -1322,6 +1332,7 @@ static ut64 __va2pa(RCore *core, ut64 va) {
 	}
 	return va;
 }
+#endif
 
 static void cmd_wcf(RCore *core, const char *dfn) {
 	char *sfn = __current_filename (core);
@@ -1332,6 +1343,9 @@ static void cmd_wcf(RCore *core, const char *dfn) {
 	size_t sfs;
 	ut8 *sfb = (ut8*)r_file_slurp (sfn, &sfs);
 	if (sfb) {
+#if USE_NEW_IO_CACHE_API
+		R_LOG_TODO ("wcf not supported yet with the new io cache");
+#else
 		void **iter;
 		r_pvector_foreach (&core->io->cache, iter) {
 			RIOCache *c = *iter;
@@ -1344,6 +1358,7 @@ static void cmd_wcf(RCore *core, const char *dfn) {
 				R_LOG_ERROR ("Out of bounds patch at 0x%08"PFMT64x, pa);
 			}
 		}
+#endif
 		// patch buffer
 		r_file_dump (dfn, sfb, sfs, false);
 		free (sfb);
@@ -1352,6 +1367,9 @@ static void cmd_wcf(RCore *core, const char *dfn) {
 }
 
 static void wcu(RCore *core) {
+#if USE_NEW_IO_CACHE_API
+	R_LOG_WARN ("wcu not implemented for the new io-cache-api");
+#else
 	void **iter;
 	RIO *io = core->io;
 	r_pvector_foreach_prev (&io->cache, iter) {
@@ -1373,6 +1391,7 @@ static void wcu(RCore *core) {
 		c = *iter;
 		r_skyline_add (&io->cache_skyline, c->itv, c);
 	}
+#endif
 }
 
 static int cmd_wc(void *data, const char *input) {

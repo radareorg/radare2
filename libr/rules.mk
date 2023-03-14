@@ -11,6 +11,9 @@ export NOSTRIP=1
 CFLAGS+=-g
 LINK+=-g
 endif
+ifeq ($(NEW_IO_CACHE),1)
+CFLAGS+=-DUSE_NEW_IO_CACHE_API=1
+endif
 
 LIBR:=$(abspath $(dir $(lastword $(MAKEFILE_LIST))))
 
