@@ -35,6 +35,7 @@ USE_CS5=0
 USE_CS4=0
 WITH_CAPSTONE=0
 WITH_SYSLZ4=0
+WITH_SMALLZ4=0
 USE_ZIP=0
 USE_XXHASH=0
 WITH_GPL=1
@@ -188,8 +189,7 @@ System types:
   --target=TARGET        configure for building compilers for TARGET [HOST]
 EOF2
 
-printf "
-Optional Features:
+printf "\nOptional Features:
   --disable-debugger     disable native debugger features
   --with-sysmagic        force to use system's magic
   --disable-threads      disable use of thread apis
@@ -207,6 +207,7 @@ Optional Features:
   --with-capstone4       build v4 branch of capstone
   --with-syscapstone     force to use system-wide capstone
   --with-syslz4          force to use system's liblz4
+  --with-smallz4         build with smallz4 use it as the lz4 decompressor
   --with-syszip          force to use system's libzip and zlib
   --with-sysxxhash       force to use system's xxhash
   --without-gpl          do not build GPL code (grub, cxx, ... )
@@ -218,20 +219,16 @@ Optional Features:
   --with-ostype          Choose OS ( android windows wsl mingw32 bsd solaris gnulinux darwin haiku ) (USEROSTYPE=auto)
   --with-libversion      specify different libversion (LIBVERSION=xxx)
   --without-jemalloc     build without jemalloc
-  --with-checks-level    value between 0 and 3 to enable different level of assert (see R_CHECKS_LEVEL) (R_CHECKS_LEVEL=2)
-"
-printf "
-Some influential environment variables:
+  --with-checks-level    value between 0 and 3 to enable different level of assert (see R_CHECKS_LEVEL) (R_CHECKS_LEVEL=2)\n"
+printf "\nSome influential environment variables:
   CC          C compiler command
   CFLAGS      C compiler flags
   LDFLAGS     linker flags, e.g. -L<lib dir> if you have libraries in a
               nonstandard directory <lib dir>
   CPPFLAGS    C/C++ preprocessor flags, e.g. -I<include dir> if you have
               headers in a nonstandard directory <include dir>
-  CPP         C preprocessor
-"
-printf "
-Report bugs to: pancake <pancake@nopcode.org>"
+  CPP         C preprocessor\n"
+printf "\nReport bugs to: pancake <pancake@nopcode.org>"
 echo ""
 exit 0
 }
@@ -295,7 +292,7 @@ echo "LANGS:       c"
 echo "REQUIRED:    libdl"
 echo "OPTIONAL:    libmagic libz libzip libxxhash libssl liblibuv>=1.0.0"
 echo "PKGCONFIG:   capstone liblz4 openssl libuv"
-echo "FLAGS:       --disable-debugger --with-sysmagic --disable-threads --disable-loadlibs --enable-threadsafety --without-dylink --without-fork --without-ptrace-wrap --without-gperf --without-capstone --with-new-io-cache --with-libr --with-static-themes --with-capstone5 --with-capstone4 --with-syscapstone --with-syslz4 --with-syszip --with-sysxxhash --without-gpl --with-ssl --with-ssl-crypto --with-libuv --with-rpath --with-compiler=gcc --with-ostype=auto --with-libversion=xxx --without-jemalloc --with-checks-level=2"
+echo "FLAGS:       --disable-debugger --with-sysmagic --disable-threads --disable-loadlibs --enable-threadsafety --without-dylink --without-fork --without-ptrace-wrap --without-gperf --without-capstone --with-new-io-cache --with-libr --with-static-themes --with-capstone5 --with-capstone4 --with-syscapstone --with-syslz4 --with-smallz4 --with-syszip --with-sysxxhash --without-gpl --with-ssl --with-ssl-crypto --with-libuv --with-rpath --with-compiler=gcc --with-ostype=auto --with-libversion=xxx --without-jemalloc --with-checks-level=2"
 	exit 0
 	;;
 --cache-file)
@@ -364,6 +361,7 @@ echo "FLAGS:       --disable-debugger --with-sysmagic --disable-threads --disabl
 "--with-capstone4") USE_CS4="1"; ;;
 "--with-syscapstone") WITH_CAPSTONE="1"; ;;
 "--with-syslz4") WITH_SYSLZ4="1"; ;;
+"--with-smallz4") WITH_SMALLZ4="1"; ;;
 "--with-syszip") USE_ZIP="1"; ;;
 "--with-sysxxhash") USE_XXHASH="1"; ;;
 "--without-gpl") WITH_GPL="0"; ;;
@@ -393,7 +391,7 @@ parse_options "$1"
 shift
 done
 
-ENVWORDS="MANDIR DESCRIPTION INFODIR LIBDIR INCLUDEDIR LOCALSTATEDIR ETCDIR SYSCONFDIR DATADIR DOCDIR LIBEXECDIR SBINDIR BINDIR EPREFIX PREFIX SPREFIX TARGET HOST BUILD INSTALL INSTALL_LIB INSTALL_MAN INSTALL_PROGRAM INSTALL_PROGRAM_STRIP INSTALL_DIR INSTALL_SCRIPT INSTALL_DATA HOST_OS HOST_CPU BUILD_OS BUILD_CPU TARGET_OS TARGET_CPU VERSION VERSION_MAJOR VERSION_MINOR VERSION_PATCH VERSION_NUMBER PKGCFG_LIBDIR PKGCFG_INCDIR PKGNAME VPATH CONTACT CONTACT_NAME CONTACT_MAIL CC CFLAGS CPPFLAGS LDFLAGS HAVE_LANG_C DEBUGGER HAVE_LIB_DL DL_LIBS PKGCONFIG HAVE_PATCH PATCH HAVE_AR AR HAVE_GIT GIT HAVE_GPERF GPERF HAVE_LIB_MAGIC HAVE_LINUX_CAN_H USE_MAGIC USE_LIB_MAGIC LIBMAGIC WANT_THREADS LOADLIBS R_CRITICAL_ENABLED WANT_DYLINK HAVE_FORK WANT_PTRACE_WRAP WANT_GPERF WANT_CAPSTONE NEW_IO_CACHE WITH_LIBR WITH_STATIC_THEMES USE_CS5 USE_CS4 WITH_CAPSTONE CAPSTONE_CFLAGS CAPSTONE_LDFLAGS HAVE_PKGCFG_CAPSTONE USE_CAPSTONE LZ4_CFLAGS LZ4_LDFLAGS HAVE_PKGCFG_LIBLZ4 WITH_SYSLZ4 USE_SYSLZ4 HAVE_LIB_Z HAVE_LIB_ZIP USE_ZIP USE_LIB_ZIP LIBZIP HAVE_LIB_XXHASH USE_XXHASH USE_LIB_XXHASH LIBXXHASH WITH_GPL HAVE_DECL_ADDR_NO_RANDOMIZE HAVE_DECL___GLIBC__ HAVE_ARC4RANDOM_UNIFORM HAVE_EXPLICIT_BZERO HAVE_EXPLICIT_MEMSET HAVE_CLOCK_NANOSLEEP HAVE_SIGACTION HAVE_CLOCK_GETTIME CLOCK_LDFLAGS SUPPORT_GNU99 HAVE_LIB_GMP HAVE_LIB_SSL SSL_CFLAGS SSL_LDFLAGS HAVE_PKGCFG_OPENSSL HAVE_OPENSSL WANT_SSL WANT_SSL_CRYPTO WANT_LIBUV HAVE_LIBUV_VERSION_1_0_0 LIBUV_CFLAGS LIBUV_LDFLAGS HAVE_PKGCFG_LIBUV HAVE_LIBUV USE_RPATH USERCC USEROSTYPE LIBVERSION HAVE_JEMALLOC HAVE_PTRACE USE_PTRACE_WRAP R_CHECKS_LEVEL"
+ENVWORDS="MANDIR DESCRIPTION INFODIR LIBDIR INCLUDEDIR LOCALSTATEDIR ETCDIR SYSCONFDIR DATADIR DOCDIR LIBEXECDIR SBINDIR BINDIR EPREFIX PREFIX SPREFIX TARGET HOST BUILD INSTALL INSTALL_LIB INSTALL_MAN INSTALL_PROGRAM INSTALL_PROGRAM_STRIP INSTALL_DIR INSTALL_SCRIPT INSTALL_DATA HOST_OS HOST_CPU BUILD_OS BUILD_CPU TARGET_OS TARGET_CPU VERSION VERSION_MAJOR VERSION_MINOR VERSION_PATCH VERSION_NUMBER PKGCFG_LIBDIR PKGCFG_INCDIR PKGNAME VPATH CONTACT CONTACT_NAME CONTACT_MAIL CC CFLAGS CPPFLAGS LDFLAGS HAVE_LANG_C DEBUGGER HAVE_LIB_DL DL_LIBS PKGCONFIG HAVE_PATCH PATCH HAVE_AR AR HAVE_GIT GIT HAVE_GPERF GPERF HAVE_LIB_MAGIC HAVE_LINUX_CAN_H USE_MAGIC USE_LIB_MAGIC LIBMAGIC WANT_THREADS LOADLIBS R_CRITICAL_ENABLED WANT_DYLINK HAVE_FORK WANT_PTRACE_WRAP WANT_GPERF WANT_CAPSTONE NEW_IO_CACHE WITH_LIBR WITH_STATIC_THEMES USE_CS5 USE_CS4 WITH_CAPSTONE CAPSTONE_CFLAGS CAPSTONE_LDFLAGS HAVE_PKGCFG_CAPSTONE USE_CAPSTONE LZ4_CFLAGS LZ4_LDFLAGS HAVE_PKGCFG_LIBLZ4 WITH_SYSLZ4 USE_SYSLZ4 WITH_SMALLZ4 USE_SMALLZ4 HAVE_LIB_Z HAVE_LIB_ZIP USE_ZIP USE_LIB_ZIP LIBZIP HAVE_LIB_XXHASH USE_XXHASH USE_LIB_XXHASH LIBXXHASH WITH_GPL HAVE_DECL_ADDR_NO_RANDOMIZE HAVE_DECL___GLIBC__ HAVE_ARC4RANDOM_UNIFORM HAVE_EXPLICIT_BZERO HAVE_EXPLICIT_MEMSET HAVE_CLOCK_NANOSLEEP HAVE_SIGACTION HAVE_CLOCK_GETTIME CLOCK_LDFLAGS SUPPORT_GNU99 HAVE_LIB_GMP HAVE_LIB_SSL SSL_CFLAGS SSL_LDFLAGS HAVE_PKGCFG_OPENSSL HAVE_OPENSSL WANT_SSL WANT_SSL_CRYPTO WANT_LIBUV HAVE_LIBUV_VERSION_1_0_0 LIBUV_CFLAGS LIBUV_LDFLAGS HAVE_PKGCFG_LIBUV HAVE_LIBUV USE_RPATH USERCC USEROSTYPE LIBVERSION HAVE_JEMALLOC HAVE_PTRACE USE_PTRACE_WRAP R_CHECKS_LEVEL"
 
 create_environ
 
@@ -665,6 +663,10 @@ if [ 11 = "$WITH_SYSLZ4$LZ4_CFLAGS" ]; then
 USE_SYSLZ4="1"
 else
 USE_SYSLZ4="0"; fi
+if [ "$WITH_SMALLZ4" = "1" ]; then
+USE_SMALLZ4="1"
+else
+USE_SMALLZ4="0"; fi
 check_library HAVE_LIB_Z z 0
 check_library HAVE_LIB_ZIP zip 0
 if [ 11 = "$HAVE_LIB_Z$USE_ZIP" ]; then
@@ -979,7 +981,7 @@ do_remove
 if [ "$QUIET" = 0 ]; then
 echo
 echo "Final report:"
-for A in  BUILD CC CFLAGS DEBUGGER HAVE_ARC4RANDOM_UNIFORM HAVE_EXPLICIT_BZERO HAVE_EXPLICIT_MEMSET HAVE_FORK HAVE_GPERF HAVE_LIBUV HAVE_LIB_GMP HAVE_OPENSSL WANT_SSL_CRYPTO HAVE_PTRACE HOST LDFLAGS LIBVERSION PKGCONFIG PREFIX R_CHECKS_LEVEL TARGET USERCC USEROSTYPE USE_CAPSTONE USE_LIB_MAGIC NEW_IO_CACHE USE_LIB_XXHASH USE_LIB_ZIP USE_PTRACE_WRAP USE_SYSLZ4 VERSION WANT_DYLINK ; do
+for A in  BUILD CC CFLAGS DEBUGGER HAVE_ARC4RANDOM_UNIFORM HAVE_EXPLICIT_BZERO HAVE_EXPLICIT_MEMSET HAVE_FORK HAVE_GPERF HAVE_LIBUV HAVE_LIB_GMP HAVE_OPENSSL WANT_SSL_CRYPTO HAVE_PTRACE HOST LDFLAGS LIBVERSION PKGCONFIG PREFIX R_CHECKS_LEVEL TARGET USERCC USEROSTYPE USE_CAPSTONE USE_LIB_MAGIC NEW_IO_CACHE USE_LIB_XXHASH USE_LIB_ZIP USE_PTRACE_WRAP USE_SYSLZ4 VERSION WANT_DYLINK USE_SMALLZ4 ; do
 eval VAL="\$${A}"
 [ -z "${VAL}" ] && VAL="\"\""
 echo " - ${A} = ${VAL}"
