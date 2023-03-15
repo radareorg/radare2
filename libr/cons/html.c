@@ -123,7 +123,8 @@ R_API char *r_cons_html_filter(const char *ptr, int *newlen) {
 			}
 			esc = 2;
 			continue;
-		} else if (esc == 2) {
+		}
+		if (esc == 2) {
 			// TODO: use dword comparison here
 			if (ptr[0] == '0' && ptr[1] == 'J') { // R_CONS_CLEAR_FROM_CURSOR_TO_END
 				ptr += 2;
@@ -143,8 +144,6 @@ R_API char *r_cons_html_filter(const char *ptr, int *newlen) {
 			} else if (IS_DIGIT (ptr[0]) && ptr[1] == ';' && IS_DIGIT (ptr[2])) {
 				char *m = strchr (ptr, 'm');
 				if (m) {
-					// char *s = r_str_ndup (ptr, m + 1 - ptr);
-					// eprintf ("ONE (%s)\n", s);
 					gethtmlrgb (ptr, background_color, sizeof (background_color));
 					need_to_set = true;
 					ptr = m;
@@ -154,8 +153,6 @@ R_API char *r_cons_html_filter(const char *ptr, int *newlen) {
 			} else if (IS_DIGIT (ptr[0]) && IS_DIGIT (ptr[1]) && ptr[2] == ';') {
 				char *m = strchr (ptr, 'm');
 				if (m) {
-					// char *s = r_str_ndup (ptr, m + 1 - ptr);
-					// eprintf ("TWO (%s)\n", s);
 					gethtmlrgb (ptr, text_color, sizeof (text_color));
 					need_to_set = true;
 					ptr = m;
@@ -228,7 +225,7 @@ R_API char *r_cons_html_filter(const char *ptr, int *newlen) {
 				str = ptr + 1;
 				esc = 0;
 				continue;
-			} else if (ptr[0] == '4' && ptr[2] == 'm') {
+			} else if ((ptr[0] == '4' || ptr[0] == '9') && ptr[2] == 'm') {
 				const char *htmlColor = gethtmlcolor (ptr[1]);
 				if (htmlColor) {
 					r_str_ncpy (background_color, htmlColor, sizeof (background_color));

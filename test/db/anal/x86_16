@@ -142,7 +142,6 @@ EOF
 RUN
 
 NAME=x86-16 seg:off call addr replace with analysed func name
-BROKEN=1
 FILE=-
 CMDS=<<EOF
 e asm.arch=x86

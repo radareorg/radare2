@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2018-2019 - pancake */
+/* radare - LGPL - Copyright 2018-2023 - pancake */
 
 #include <r_util.h>
 #include <r_util/r_print.h>
@@ -228,7 +228,7 @@ R_API PJ *pj_s(PJ *j, const char *k) {
 		pj_raw (j, ek);
 		free (ek);
 	} else {
-		eprintf ("cannot escape string\n");
+		R_LOG_WARN ("cannot escape string");
 	}
 	pj_raw (j, "\"");
 	return j;

@@ -1,6 +1,7 @@
-/* radare - LGPL - Copyright 2009-2022 - pancake, h4ng3r */
+/* radare - LGPL - Copyright 2009-2023 - pancake, h4ng3r */
 
-#include <r_types.h>
+#define R_LOG_ORIGIN "dex"
+
 #include <r_util.h>
 #include "dex.h"
 
@@ -54,7 +55,7 @@ static char *getstr(RBinDexObj *bin, int idx) {
 }
 
 
-static const char *className(RBinDexObj *dex, int idx) {
+static char *className(RBinDexObj *dex, int idx) {
 	if (idx < 0 || idx >= dex->header.types_size) {
 		return NULL;
 	}
@@ -181,7 +182,7 @@ static void readAnnotation(RBinDexObj *dex, bool readVisibility) {
 	if (typeSize < 0 || typeSize > 10000) {
 		return;
 	}
-	const char *typeString = className (dex, typeIndex);
+	char *typeString = className (dex, typeIndex);
 	if (typeString) {
 		bprintf ("      TypeSize: %d %d (%s)\n", (int)typeIndex, (int)typeSize, typeString);
 		for (i = 0; i < typeSize; i++) {
@@ -195,7 +196,7 @@ static void readAnnotation(RBinDexObj *dex, bool readVisibility) {
 			r_buf_seek (dex->b, at, R_BUF_SET);
 			parseValue (dex);
 		}
-		free ((char *)typeString);
+		free (typeString);
 	} else {
 		bprintf ("      TypeSize: %d %d (?)\n", (int)typeIndex, (int)typeSize);
 	}
@@ -395,6 +396,14 @@ RBinDexObj *r_bin_dex_new_buf(RBuffer *buf, bool verbose) {
 		free (dex->types);
 		goto fail;
 	}
+	if (types_size > dex->size) {
+		R_LOG_DEBUG ("oom prevented in huge types section %d / %d", types_size, dex->size);
+		free (dex->strings);
+		free (dex->classes);
+		free (dex->methods);
+		free (dex->types);
+		goto fail;
+	}
 	dexhdr->types_size = types_size / sizeof (struct dex_type_t);
 
 	dex->types = (struct dex_type_t *) calloc (types_size + 1, sizeof (struct dex_type_t));
@@ -471,7 +480,7 @@ RBinDexObj *r_bin_dex_new_buf(RBuffer *buf, bool verbose) {
 			continue;
 		}
 		int j;
-		const char *cn = className (dex, dex->classes[i].class_id);
+		char *cn = className (dex, dex->classes[i].class_id);
 		r_buf_seek (dex->b, at, R_BUF_SET);
 		ut32 classAnnotationsOffset = r_buf_read_le32 (dex->b);
 		ut32 fieldsCount = r_buf_read_le32 (dex->b);
@@ -489,7 +498,7 @@ RBinDexObj *r_bin_dex_new_buf(RBuffer *buf, bool verbose) {
 		bprintf ("            annotatedMethodCount  %d\n", annotatedMethodsCount);
 		bprintf ("            annotatedParametersCount  %d\n", annotatedParametersCount);
 
-		free ((char *)cn);
+		free (cn);
 
 		if (fieldsCount == UT32_MAX || annotatedMethodsCount == UT32_MAX || annotatedParametersCount == UT32_MAX || classAnnotationsOffset == UT32_MAX) {
 			continue;

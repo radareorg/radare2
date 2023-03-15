@@ -975,6 +975,10 @@ R_API RAnalOp* r_core_anal_op(RCore *core, ut64 addr, int mask) {
 	if (!op) {
 		return NULL;
 	}
+	int maxopsz = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_MAX_OP_SIZE);
+	if (sizeof (buf) < maxopsz) {
+		maxopsz = sizeof (buf);
+	}
 	int delta = (addr - core->offset);
 	int minopsz = 8;
 	if (delta > 0 && delta + minopsz < core->blocksize && addr >= core->offset && addr + 16 < core->offset + core->blocksize) {
@@ -984,11 +988,11 @@ R_API RAnalOp* r_core_anal_op(RCore *core, ut64 addr, int mask) {
 			goto err_op;
 		}
 	} else {
-		if (!r_io_read_at (core->io, addr, buf, sizeof (buf))) {
+		if (!r_io_read_at (core->io, addr, buf, maxopsz)) {
 			goto err_op;
 		}
 		ptr = buf;
-		len = sizeof (buf);
+		len = maxopsz;
 	}
 	if (r_anal_op (core->anal, op, addr, ptr, len, mask) < 1) {
 		goto err_op;
@@ -3298,7 +3302,7 @@ static int fcn_list_legacy(RCore *core, RList *fcns) {
 	return 0;
 }
 
-static const char *help_msg_aflm[] = {
+static RCoreHelpMessage help_msg_aflm = {
 	"Usage:", "aflm", "[q.j] List functions in verbose mode",
 	"aflm", "", "list functions and what they call in makefile-like format",
 	"aflm.", "", "only print the summary for the current function (see pds)",
@@ -5398,13 +5402,13 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 	esilbreak_last_read = UT64_MAX;
 	r_io_read_at (core->io, start, buf, iend + 1);
 	if (!ESIL) {
-		r_core_cmd0 (core, "aei");
+		r_core_cmd_call (core, "aei");
 		ESIL = core->anal->esil;
 		if (!ESIL) {
 			R_LOG_ERROR ("ESIL is not initialized");
 			return;
 		}
-		r_core_cmd0 (core, "aeim");
+		r_core_cmd_call (core, "aeim");
 		ESIL = core->anal->esil;
 	}
 	const char *kspname = r_reg_get_name (core->anal->reg, R_REG_NAME_SP);
@@ -6223,8 +6227,7 @@ static bool analyze_noreturn_function(RCore *core, RAnalFunction *f) {
 }
 
 R_API void r_core_anal_propagate_noreturn(RCore *core, ut64 addr) {
-	// r_core_cmd0 (core, ".aflx*@@=`afl,noret/eq/1,addr/cols/,:quiet`");
-
+	// ".aflx*@@=`afl,noret/eq/1,addr/cols/,:quiet`");
 	RList *todo = r_list_newf (free);
 	if (!todo) {
 		return;

@@ -2,7 +2,7 @@
 
 #include <r_core.h>
 
-static const char *help_msg_g[] = {
+static RCoreHelpMessage help_msg_g = {
 	"Usage:", "g[wcilper] [arg]", "Go compile shellcodes using asm.arch/bits/os",
 	"g", " ", "compile the shellcode",
 	"g", " foo.r", "compile r_egg source file",

@@ -207,7 +207,7 @@ static const char *cache_white_list_cmds[] = {
 	NULL
 };
 
-static const char *help_msg_panels[] = {
+static RCoreHelpMessage help_msg_panels = {
 	"|",        "split current panel vertically",
 	"-",        "split current panel horizontally",
 	":",        "run r2 command in prompt",
@@ -260,7 +260,7 @@ static const char *help_msg_panels[] = {
 	NULL
 };
 
-static const char * const help_msg_panels_window[] = {
+static RCoreHelpMessage help_msg_panels_window = {
 	":",        "run r2 command in prompt",
 	";",        "add/remove comment",
 	"\"",       "create a panel from the list and replace the current one",
@@ -280,7 +280,7 @@ static const char * const help_msg_panels_window[] = {
 	NULL
 };
 
-static const char * const help_msg_panels_zoom[] = {
+static RCoreHelpMessage help_msg_panels_zoom = {
 	"?",        "show this help",
 	":",        "run r2 command in prompt",
 	";",        "add/remove comment",
@@ -5035,7 +5035,7 @@ static int __load_layout_default_cb(void *user) {
 
 static int __close_file_cb(void *user) {
 	RCore *core = (RCore *)user;
-	r_core_cmd0 (core, "o-*");
+	r_core_cmd_call (core, "o-*");
 	return 0;
 }
 
@@ -5162,7 +5162,7 @@ static int __copy_cb(void *user) {
 
 static int __paste_cb(void *user) {
 	RCore *core = (RCore *)user;
-	r_core_cmd0 (core, "yy");
+	r_core_cmd_call (core, "yy");
 	return 0;
 }
 
@@ -6110,7 +6110,7 @@ static void __panels_refresh(RCore *core) {
 	print_notch (core);
 	r_cons_canvas_print (can);
 	if (core->scr_gadgets) {
-		r_core_cmd0 (core, "pg");
+		r_core_cmd_call (core, "pg");
 	}
 	show_cursor (core);
 	r_cons_flush ();
@@ -6218,7 +6218,7 @@ static void __handle_menu(RCore *core, const int key) {
 		}
 		break;
 	case '$':
-		r_core_cmd0 (core, "dr PC=$$");
+		r_core_cmd_call (core, "dr PC=$$");
 		break;
 	case ' ':
 	case '\r':
@@ -6719,7 +6719,7 @@ virtualmouse:
 		if (core->print->cur_enabled) {
 			r_core_cmdf (core, "dr PC=$$+%d", core->print->cur);
 		} else {
-			r_core_cmd0 (core, "dr PC=$$");
+			r_core_cmd_call (core, "dr PC=$$");
 		}
 		break;
 	case 's':
@@ -6773,10 +6773,10 @@ virtualmouse:
 		}
 		break;
 	case 'R':
-		if (r_config_get_i (core->config, "scr.randpal")) {
-			r_core_cmd0 (core, "ecr");
+		if (r_config_get_b (core->config, "scr.randpal")) {
+			r_core_cmd_call (core, "ecr");
 		} else {
-			r_core_cmd0 (core, "ecn");
+			r_core_cmd_call (core, "ecn");
 		}
 		__do_panels_refresh (core);
 		break;
@@ -7089,10 +7089,10 @@ virtualmouse:
 				if (!strcmp (format, "hexdump")) {
 					__replace_cmd (core, "px", "px");
 				} else if (!strcmp (format, "analyze function")) {
-					r_core_cmd0 (core, "af");
-					r_core_cmd0 (core, "aaef");
+					r_core_cmd_call (core, "af");
+					r_core_cmd_call (core, "aaef");
 				} else if (!strcmp (format, "analyze program")) {
-					r_core_cmd0 (core, "aaa");
+					r_core_cmd_call (core, "aaa");
 				} else if (!strcmp (format, "offset")) {
 					r_config_toggle (core->config, "asm.offset");
 				} else if (!strcmp (format, "esil")) {

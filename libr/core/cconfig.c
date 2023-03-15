@@ -625,10 +625,10 @@ static bool cb_scrrainbow(void *user, void *data) {
 	RConfigNode *node = (RConfigNode *) data;
 	if (node->i_value) {
 		core->print->flags |= R_PRINT_FLAGS_RAINBOW;
-		r_core_cmd0 (core, "ecr");
+		r_core_cmd_call (core, "ecr");
 	} else {
 		core->print->flags &= (~R_PRINT_FLAGS_RAINBOW);
-		r_core_cmd0 (core, "ecoo");
+		r_core_cmd_call (core, "ecoo");
 	}
 	r_print_set_flags (core->print, core->print->flags);
 	return true;
@@ -1491,8 +1491,18 @@ static bool cb_dirsrc(void *user, void *data) {
 static bool cb_cfgsanbox_grain(void *user, void *data) {
 	RConfigNode *node = (RConfigNode*) data;
 	if (strstr (node->value, "?")) {
-		eprintf ("Usage: comma separated grain types to be masked out by the sandbox.\n");
-		eprintf ("all, none, disk, files, exec, socket, exec\n");
+		static RCoreHelpMessage help_msg_grain = {
+			"Usage:", "e cfg.sandbox.grain=arg[,arg...]", "set grain types to mask out",
+			"Grain types:", "", "",
+			"", "all", "",
+			"", "none", "",
+			"", "disk", "",
+			"", "files", "",
+			"", "exec", "",
+			"", "socket", "",
+			NULL
+		};
+		r_core_cmd_help ((RCore *)user, help_msg_grain);
 		return false;
 	}
 	int gt = R_SANDBOX_GRAIN_NONE;
@@ -2388,7 +2398,7 @@ static bool cb_pager(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
 	if (*node->value == '?') {
-		eprintf ("Usage: scr.pager must be '..' for internal less, or the path to a program in $PATH\n");
+		eprintf ("scr.pager must be '..' for internal less, or the path to a program in $PATH\n");
 		return false;
 	}
 	/* Let cons know we have a new pager. */
@@ -2421,7 +2431,7 @@ static bool cb_scrtheme(void* user, void* data) {
 	RConfigNode *node = (RConfigNode*) data;
 	if (*node->value) {
 		if (*node->value == '?') {
-			r_core_cmd0 (core, "eco");
+			r_core_cmd_call (core, "eco");
 		} else {
 			r_core_cmdf (core, "'eco %s", node->value);
 		}
@@ -2562,7 +2572,11 @@ static bool cb_scrstrconv(void *user, void *data) {
 		}
 		return false;
 	} else {
+#if R2_590
+		free (core->print->strconv_mode);
+#else
 		free ((char *)core->print->strconv_mode);
+#endif
 		core->print->strconv_mode = strdup (node->value);
 	}
 	return true;
@@ -3003,7 +3017,7 @@ static bool cb_dirpfx(RCore *core, RConfigNode *node) {
 static bool cb_analsyscc(RCore *core, RConfigNode *node) {
 	if (core && core->anal) {
 		if (*node->value == '?') {
-			r_core_cmd0 (core, "afcl");
+			r_core_cmd_call (core, "afcl");
 			return false;
 		}
 		r_anal_set_syscc_default (core->anal, node->value);
@@ -3024,7 +3038,7 @@ static bool cb_analcc(RCore *core, RConfigNode *node) {
 	if (core && core->anal) {
 		node->getter = (RConfigCallback)cb_analcc_getter;
 		if (*node->value == '?') {
-			r_core_cmd0 (core, "afcl");
+			r_core_cmd_call (core, "afcl");
 			return false;
 		}
 		r_anal_set_cc_default (core->anal, node->value);
@@ -3345,18 +3359,22 @@ static bool cb_dbg_verbose(void *user, void *data) {
 
 static bool cb_prjvctype(void *user, void *data) {
 	RConfigNode *node = data;
-	char *p = r_file_path ("git");
-	bool found = (p && (*p == 'g' ||*p == '/'));
-	free (p);
+	char *git = r_file_path ("git");
+#if R2_590
+	bool have_git = (bool)git;
+#else
+	bool have_git = strcmp (git, "git");
+#endif
+	free (git);
 	if (*node->value == '?') {
-		if (found) {
+		if (have_git) {
 			r_cons_println ("git");
 		}
 		r_cons_println ("rvc");
 		return true;
 	}
 	if (!strcmp (node->value, "git")) {
-		if (found) {
+		if (have_git) {
 			return true;
 		}
 		return false;
@@ -4030,21 +4048,57 @@ R_API int r_core_config_init(RCore *core) {
 #if R2__WINDOWS__
 	r_config_set (cfg, "http.browser", "start");
 #else
-	if (r_file_exists ("/usr/bin/openURL")) { // iOS ericautils
-		r_config_set (cfg, "http.browser", "/usr/bin/openURL");
-	} else if (r_file_exists (TERMUX_PREFIX "/bin/termux-open")) {
-		r_config_set (cfg, "http.browser", TERMUX_PREFIX "/bin/termux-open");
-	} else if (r_file_exists ("/system/bin/toolbox")) {
-		r_config_set (cfg, "http.browser",
-				"LD_LIBRARY_PATH=/system/lib am start -a android.intent.action.VIEW -d");
-	} else if (r_file_exists ("/usr/bin/xdg-open")) {
-		r_config_set (cfg, "http.browser", "xdg-open");
-	} else if (r_file_exists ("/usr/bin/open")) {
-		r_config_set (cfg, "http.browser", "open");
-	} else {
-		r_config_set (cfg, "http.browser", "firefox");
+	{
+		/* bin_name, standard_path, http.browser value override */
+		static const char *bin_data[] = {
+			"openURL", "/usr/bin/openURL", "", // iOS ericautils
+			"termux-open", TERMUX_PREFIX "/bin/termux-open", "",
+			"toolbox", "/system/bin/toolbox", "LD_LIBRARY_PATH=/system/lib am start -a android.intent.action.VIEW -d",
+			"xdg-open", "/usr/bin/xdg-open", "",
+			"open", "/usr/bin/open", "",
+			NULL
+		};
+		int i;
+		bool fallback = true;
+
+		/* Attempt to find binary in path before falling back to
+		 * standard locations */
+		for (i = 0; bin_data[i]; i += 3) {
+			const char *bin_name = bin_data[i];
+			const char *standard_path = bin_data[i+1];
+			const char *browser_override = bin_data[i+2];
+			const char *path;
+
+			/* Try to find bin in path */
+			char *bin_path = r_file_path (bin_name);
+			path = bin_path;
+
+#if !R2_590
+			/* Not in path, old API returns strdup (arg) */
+			if (!strcmp (bin_name, bin_path)) {
+				R_FREE (bin_path);
+				path = NULL;
+			}
+#endif
+
+			/* Not in path, but expected location exists */
+			if (!path && r_file_exists (standard_path)) {
+				path = standard_path;
+			}
+
+			if (path) {
+				r_config_set (cfg, "http.browser", r_str_get_fail (browser_override, path));
+				fallback = false;
+			}
+
+			free (bin_path);
+		}
+
+		if (fallback) {
+			r_config_set (cfg, "http.browser", "firefox");
+		}
+		r_config_desc (cfg, "http.browser", "command to open HTTP URLs");
 	}
-	r_config_desc (cfg, "http.browser", "command to open HTTP URLs");
 #endif
 	SETI ("http.maxsize", 0, "maximum file size for upload");
 	SETPREF ("http.index", "index.html", "main html file to check in directory");
@@ -4310,9 +4364,6 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB ("log.file", "", cb_log_config_file, "Save log messages to given filename");
 	SETCB ("scr.tee", "", &cb_teefile, "pipe output to file of this name");
 #endif
-	/* magic */
-	SETI ("magic.depth", 100, "recursivity depth in magic description strings");
-
 	/* rap */
 	SETBPREF ("rap.loop", "true", "run rap as a forever-listening daemon (=:9090)");
 

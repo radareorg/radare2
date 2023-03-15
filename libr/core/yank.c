@@ -213,7 +213,6 @@ R_API int r_core_yank_to(RCore *core, const char *_arg) {
 		str[0] = ' ';
 	}
 	if (!str || pos == -1 || len == 0) {
-		eprintf ("Usage: yt [len] [dst-addr]\n");
 		free (arg);
 		return res;
 	}
@@ -227,7 +226,7 @@ R_API int r_core_yank_to(RCore *core, const char *_arg) {
 R_API bool r_core_yank_dump(RCore *core, ut64 pos, int format) {
 	bool res = false;
 	int i = 0;
-	int ybl = r_buf_size (core->yank_buf);
+	int ybl = core->yank_buf ? r_buf_size (core->yank_buf): 0;
 	if (ybl > 0) {
 		if (pos < ybl) {
 			switch (format) {
@@ -384,6 +383,7 @@ R_API int r_core_yank_hud_path(RCore *core, const char *input, int dir) {
 
 R_API void r_core_yank_unset(RCore *core) {
 	r_buf_free (core->yank_buf);
+	core->yank_buf = NULL;
 	core->yank_addr = UT64_MAX;
 }
 

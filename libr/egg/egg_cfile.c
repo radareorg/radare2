@@ -16,22 +16,28 @@ struct cEnv_t {
 	const char *TEXT;
 };
 
-static char* r_egg_cfile_getCompiler(void) {
-	size_t i;
-	const char *compilers[] = { "llvm-gcc", "clang", "gcc" };
-	char *output = r_sys_getenv ("CC");
+static char *r_egg_cfile_getCompiler(void) {
+	const char *compilers[] = { "llvm-gcc", "clang", "gcc", NULL };
+	const char *compiler = compilers[0];
+	char *env_cc = r_sys_getenv ("CC");
+	char *compiler_path;
+	int i;
 
-	if (output) {
-		return output;
+	if (env_cc) {
+		return env_cc;
 	}
 
-	for (i = 0; i < 3; i++) {
-		output = r_file_path (compilers[i]);
-		if (strcmp (output, compilers[i])) {
-			free (output);
-			return strdup (compilers[i]);
+	for (i = 0; (compiler = compilers[i]); i++) {
+		compiler_path = r_file_path (compiler);
+#if R2_590
+		if (compiler_path) {
+#else
+		if (strcmp (compiler_path, compiler)) {
+#endif
+			free (compiler_path);
+			return strdup (compiler);
 		}
-		free (output);
+		free (compiler_path);
 	}
 
 	R_LOG_ERROR ("Couldn't find a compiler! Please set CC");

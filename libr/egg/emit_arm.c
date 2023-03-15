@@ -83,6 +83,7 @@ static void emit_syscall_args(REgg *egg, int nargs) {
 }
 
 static void emit_set_string(REgg *egg, const char *dstvar, const char *str, int j) {
+	char *str_escaped;
 	int rest, off = 0;
 	off = strlen (str) + 1;
 	rest = (off % 4);
@@ -94,8 +95,9 @@ static void emit_set_string(REgg *egg, const char *dstvar, const char *str, int 
 	// XXX: does not handle \n and so on.. must use r_util
 	// use r_str_escape to handle \n
 	// do not forget mem leak
-	r_egg_printf (egg, ".string \"%s\"\n", str = r_str_escape (str));
-	free ((char *) str);
+	str_escaped = r_str_escape (str);
+	r_egg_printf (egg, ".string \"%s\"\n", str);
+	free (str_escaped);
 	if (rest) {
 		r_egg_printf (egg, ".fill %d, 1, 0\n", (rest));
 	}

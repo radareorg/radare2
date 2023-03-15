@@ -234,7 +234,7 @@ static void print_help(RIO *io, char *cmd, int p_usage) {
 		":dp [pid]        Print current selected pid or change it",
 		":e r2k.io=[012]  Read/Write from 0: Linear, 1: Process, 2: Physical addresses"
 	};
-	const char *help_msg_old[] = {
+	RCoreHelpMessage help_msg_old = {
 		":M                      Print kernel memory map",
 		":b      beid [pid]      Change r2k backend. pid is required when beid is 1.",
 		"                         0: linear address; 1: process address; 2: physical address",

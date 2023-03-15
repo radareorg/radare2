@@ -1417,19 +1417,21 @@ static bool esil_asr(REsil *esil) {
 			}
 			bool isNegative;
 			if (regsize == 32) {
-				isNegative = ((st32)op_num)<0;
+				isNegative = ((st32)op_num) < 0;
 				st32 snum = op_num;
 				op_num = snum;
 			} else {
-				isNegative = ((st64)op_num)<0;
+				isNegative = ((st64)op_num) < 0;
 			}
 			if (isNegative) {
 				ut64 mask = (regsize - 1);
 				param_num &= mask;
 				ut64 left_bits = 0;
-				if (op_num & (1ULL << (regsize - 1))) {
-					left_bits = (1ULL << param_num) - 1;
-					left_bits <<= regsize - param_num;
+				if (regsize <= 64) {
+					if (op_num & (1ULL << (regsize - 1))) {
+						left_bits = (1ULL << param_num) - 1;
+						left_bits <<= regsize - param_num;
+					}
 				}
 				op_num = left_bits | (op_num >> param_num);
 			} else {

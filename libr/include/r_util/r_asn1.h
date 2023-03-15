@@ -62,7 +62,7 @@ extern "C" {
 
 typedef struct r_asn1_string_t {
 	ut32 length;
-	const char *string;
+	char *string;
 	bool allocated;
 } RASN1String;
 

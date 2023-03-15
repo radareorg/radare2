@@ -608,7 +608,6 @@ RUN
 
 NAME=subs x0, x0, x1; csel x0, x2, x3, mi
 FILE=malloc://0x200
-BROKEN=1
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=64

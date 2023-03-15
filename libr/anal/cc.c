@@ -125,7 +125,7 @@ R_API char *r_anal_cc_get(RAnal *anal, const char *name) {
 	int i;
 	// get cc by name and print the expr
 	if (r_str_cmp (sdb_const_get (DB, name, 0), "cc", -1)) {
-		R_LOG_ERROR ("This is not a valid calling convention name (%s)", name);
+		R_LOG_ERROR ("Invalid calling convention name (%s)", name);
 		return NULL;
 	}
 	r_strf_var (ccret, 128, "cc.%s.ret", name);
@@ -170,8 +170,7 @@ R_API bool r_anal_cc_exist(RAnal *anal, const char *convention) {
 }
 
 R_API const char *r_anal_cc_arg(RAnal *anal, const char *convention, int n) {
-	r_return_val_if_fail (anal, NULL);
-	r_return_val_if_fail (n >= 0, NULL);
+	r_return_val_if_fail (anal && n >= 0, NULL);
 	if (!convention) {
 		return NULL;
 	}

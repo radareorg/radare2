@@ -87,14 +87,13 @@ git remote add radareorg git@github.com:radareorg/radare2.git
 git remote add radareorg https://github.com/radareorg/radare2
 ```
 
-radare2 uses a `fast-forward` merging style. This means that instead of taking
-the new commits you make and adding them to `master` in a single "merge
-commit", the commits are directly copied and applied to `master`, "replaying"
-them to bring `master` up to date with your branch.
+radare2 uses the `squash` merging style to summarize changes. When your changes
+are merged, the merging collaborator can customize the commit message that will
+be used in `master`. Typically, the pull request title is used as the commit
+message. Specific or smaller changes may be included in the body.
 
-Default settings may create these "merge commits", which are undesirable and
-make the commit history harder to read and interpret. You can set `merge` and
-`pull` to fast-forward only to avoid this.
+Default settings may create "merge commits" when pulling from upstream, which
+can cause issues. Set `merge` and `pull` to fast-forward only to avoid this.
 
 ```sh
 git config merge.ff only

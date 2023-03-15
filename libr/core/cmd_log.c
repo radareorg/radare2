@@ -6,7 +6,7 @@
 
 bool ranal2_list(RCore *core, const char *arch, int fmt);
 
-static const char *help_msg_La[] = {
+static RCoreHelpMessage help_msg_La = {
 	"Usage:", "La[qj]", " # asm/anal plugin list",
 	"La",  "", "List asm/anal pluginsh (See rasm2 -L)",
 	"Laq",  "", "Only list the plugin name",
@@ -15,7 +15,7 @@ static const char *help_msg_La[] = {
 };
 
 // TODO #7967 help refactor: move to another place
-static const char *help_msg_L[] = {
+static RCoreHelpMessage help_msg_L = {
 	"Usage:", "L[acio]", "[-name][ file]",
 	"L",  "", "show this help",
 	"L", " blah."R_LIB_EXT, "load plugin file",
@@ -40,7 +40,7 @@ static const char *help_msg_L[] = {
 	NULL
 };
 
-static const char *help_msg_T[] = {
+static RCoreHelpMessage help_msg_T = {
 	"Usage:", "T", "[-][ num|msg] # text-log utility with timestamps",
 	"T", "", "list all Text log messages",
 	"T", " message", "add new log message",
@@ -147,7 +147,7 @@ static int textlog_chat(RCore *core) {
 			return 0;
 		} else if (!strcmp (buf, "/clear")) {
 			// r_core_log_del (core, 0);
-			r_core_cmd0 (core, "T-");
+			r_core_cmd_call (core, "T-");
 			return 0;
 		} else if (!strcmp (buf, "/quit")) {
 			return 0;
@@ -283,7 +283,10 @@ static int cmd_log(void *data, const char *input) {
 					R_LOG_ERROR ("File not found");
 				}
 			} else {
-				eprintf ("Usage: less [filename]\n");
+				static RCoreHelpMessage help_msg_less = {
+					"less", " [filename]", "view file with pagination",
+				};
+				r_core_cmd_help (core, help_msg_less);
 			}
 		}
 		break;
@@ -311,7 +314,7 @@ static int cmd_log(void *data, const char *input) {
 			if (input[2] == '&') { // "T=&&"
 				r_cons_break_push (NULL, NULL);
 				while (!r_cons_is_breaked ()) {
-					r_core_cmd0 (core, "T=");
+					r_core_cmd_call (core, "T=");
 					void *bed = r_cons_sleep_begin();
 					r_sys_sleep (1);
 					r_cons_sleep_end (bed);
@@ -382,7 +385,6 @@ static int cmd_plugins(void *data, const char *input) {
 	switch (input[0]) {
 	case 0:
 		r_core_cmd_help (core, help_msg_L);
-		// return r_core_cmd0 (core, "Lc");
 		break;
 	case '-':
 		r_lib_close (core->lib, r_str_trim_head_ro (input + 1));
@@ -395,16 +397,16 @@ static int cmd_plugins(void *data, const char *input) {
 		break;
 	case 't': // "Lt"
 		if (input[1] == 'j') {
-			r_core_cmd0 (core, "ecoj");
+			r_core_cmd_call (core, "ecoj");
 		} else {
-			r_core_cmd0 (core, "eco");
+			r_core_cmd_call (core, "eco");
 		}
 		break;
 	case 'm': // "Lm"
 		if (input[1] == 'j') {
-			r_core_cmd0 (core, "mLj");
+			r_core_cmd_call (core, "mLj");
 		} else {
-			r_core_cmd0 (core, "mL");
+			r_core_cmd_call (core, "mL");
 		}
 		break;
 	case 'e': // "Le"
@@ -415,9 +417,9 @@ static int cmd_plugins(void *data, const char *input) {
 		break;
 	case 'h': // "Lh"
 		if (input[1] == 'j') { // "Lhj"
-			r_core_cmd0 (core, "phj");
+			r_core_cmd_call (core, "phj");
 		} else {
-			r_core_cmd0 (core, "ph");
+			r_core_cmd_call (core, "ph");
 		}
 		break;
 	case 'a': // "La"
@@ -425,14 +427,12 @@ static int cmd_plugins(void *data, const char *input) {
 			r_core_cmd_help (core, help_msg_La);
 		} else { // asm plugins
 			ranal2_list (core, NULL, input[1]);
-			// r_core_cmd0 (core, "e anal.arch=??");
 		}
 		break;
 	case 's': // "Ls"
 		if (input[1] == '?') { // "Ls?"
 			r_core_cmd_help_match (core, help_msg_L, "Ls", true);
 		} else { // asm plugins
-			// rasm2_list (core, NULL, input[1]);
 			ranal2_list (core, NULL, input[1]);
 		}
 		break;
@@ -522,7 +522,7 @@ static int cmd_plugins(void *data, const char *input) {
 				free (s);
 			}
 		} else {
-			r_core_cmd0 (core, "e asm.parser=?");
+			r_core_cmd_call (core, "e asm.parser=?");
 		}
 		break;
 	case 'D': // "LD"
@@ -549,7 +549,7 @@ static int cmd_plugins(void *data, const char *input) {
 			r_list_free (list);
 			free (decos);
 		} else {
-			r_core_cmd0 (core, "e cmd.pdc=?");
+			r_core_cmd_call (core, "e cmd.pdc=?");
 		}
 		break;
 	case 'l': // "Ll"

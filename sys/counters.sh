@@ -24,3 +24,9 @@ git grep 'free ((void' libr | wc -l
 
 printf -- "aPlugs\t"
 ls libr/anal/p/*.c |wc -l
+
+printf -- "BROKEN\t"
+git grep BROKEN=1 test/db |wc -l
+
+printf -- "Cannot\t"
+git grep eprintf libr/| grep -i cannot |wc -l

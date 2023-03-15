@@ -2,7 +2,7 @@
 
 #include <r_core.h>
 
-static const char *help_msg_z[] = {
+static RCoreHelpMessage help_msg_z = {
 	"Usage:", "z[*j-aof/cs] [args] ", "# Manage zignatures",
 	"z", "", "show zignatures",
 	"z.", "", "find matching zignatures in current offset",
@@ -25,14 +25,14 @@ static const char *help_msg_z[] = {
 	NULL
 };
 
-static const char *help_msg_zb[] = {
+static RCoreHelpMessage help_msg_zb = {
 	"Usage:", "zb[r?] [args]", "# search for closest matching signatures",
 	"zb ", "[n]", "find n closest matching zignatures to function at current offset",
 	"zbr ", "zigname [n]", "search for n most similar functions to zigname",
 	NULL
 };
 
-static const char *help_msg_z_slash[] = {
+static RCoreHelpMessage help_msg_z_slash = {
 	"Usage:", "z/[f*] ", "# Search signatures (see 'e?search' for options)",
 	"z/ ", "", "search zignatures on range and flag matches",
 	"z/f ", "", "zignature search on known functions",
@@ -40,7 +40,7 @@ static const char *help_msg_z_slash[] = {
 	NULL
 };
 
-static const char *help_msg_za[] = {
+static RCoreHelpMessage help_msg_za = {
 	"Usage:", "za[fFM?] [args] ", "# Add zignature",
 	"za ", "zigname type params", "add zignature",
 	"zac ", "", "Compute collisions between signatures",
@@ -51,7 +51,7 @@ static const char *help_msg_za[] = {
 	NULL
 };
 
-static const char *help_msg_zf[] = {
+static RCoreHelpMessage help_msg_zf = {
 	"Usage:", "zf[dsz] filename ", "# Manage FLIRT signatures",
 	"zfd ", "filename", "open FLIRT file and dump",
 	"zfs ", "filename", "open FLIRT file and scan",
@@ -60,7 +60,7 @@ static const char *help_msg_zf[] = {
 	NULL
 };
 
-static const char *help_msg_zo[] = {
+static RCoreHelpMessage help_msg_zo = {
 	"Usage:", "zo[zs] filename ", "# Manage zignature files (see dir.zigns)",
 	"zo ", "filename", "load zinatures from sdb file",
 	"zoz ", "filename", "load zinatures from gzipped sdb file",
@@ -68,7 +68,7 @@ static const char *help_msg_zo[] = {
 	NULL
 };
 
-static const char *help_msg_zs[] = {
+static RCoreHelpMessage help_msg_zs = {
 	"Usage:", "zs[+-*] [namespace] ", "# Manage zignspaces",
 	"zs", "", "display zignspaces",
 	"zs ", "zignspace", "select zignspace",
@@ -81,7 +81,7 @@ static const char *help_msg_zs[] = {
 	NULL
 };
 
-static const char *help_msg_zc[] = {
+static RCoreHelpMessage help_msg_zc = {
 	"Usage:", "zc[n!] other_space ", "# Compare zignspaces, match >= threshold (e zign.diff.*)",
 	"zc", " other_space", "compare all current space with other_space",
 	"zcn", " other_space", "compare current space with zigns with same name on other_space",
@@ -182,7 +182,7 @@ static inline bool za_add(RCore *core, const char *input) {
 static int cmdAdd(void *data, const char *input) {
 	RCore *core = (RCore *)data;
 	if (*input && input[1] == '?') {
-		char two[2] = {input[0], input[1]};
+		char two[3] = { input[0], input[1], 0 };
 		r_core_cmd_help_match (core, help_msg_za, two, false);
 		return 0;
 	}
@@ -291,13 +291,13 @@ static int cmdOpen(void *data, const char *input) {
 	switch (*input) {
 	case ' ':
 		if (input[1]) {
-			return r_sign_load (core->anal, input + 1, false);
+			return r_sign_load (core->anal, r_str_trim_head_ro (input + 1), false);
 		}
 		r_core_cmd_help_match (core, help_msg_zo, "zo", false);
 		return false;
 	case 's':
 		if (input[1] == ' ' && input[2]) {
-			return r_sign_save (core->anal, input + 2);
+			return r_sign_save (core->anal, r_str_trim_head_ro (input + 2));
 		}
 		r_core_cmd_help_match (core, help_msg_zo, "zos", false);
 		return false;

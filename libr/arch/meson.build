@@ -72,6 +72,11 @@ r_arch_sources = [
   'p/tricore/gnu/cpu-tricore.c',
   'p/tricore/gnu/tricore-dis.c',
   'p/tricore/gnu/tricore-opc.c',
+  'p/cris/plugin.c',
+  'p/cris/gnu/cris-dis.c',
+  'p/cris/gnu/cris-opc.c',
+  'p/cr16/plugin.c',
+  'p/cr16/cr16_disas.c',
 ]
 
 if arch_plugins.contains('x86_nz')

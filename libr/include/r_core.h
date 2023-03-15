@@ -188,7 +188,11 @@ typedef enum r_core_autocomplete_types_t {
 } RCoreAutocompleteType;
 
 typedef struct r_core_autocomplete_t {
+#if R2_590
+	char *cmd;
+#else
 	const char* cmd;
+#endif
 	int length;
 	int n_subcmds;
 	bool locked;

@@ -71,6 +71,9 @@ static RBinNXOObj *nso_new(void) {
 	return bin;
 }
 
+// 512MB
+#define MAX_UNCOMPRESSED_SIZE (1024*1024*512)
+
 static bool load_bytes(RBinFile *bf, void **bin_obj, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb) {
 	RBin *rbin = bf->rbin;
 	ut32 toff = r_buf_read_le32_at (bf->buf, NSO_OFF (text_memoffset));
@@ -80,7 +83,7 @@ static bool load_bytes(RBinFile *bf, void **bin_obj, const ut8 *buf, ut64 sz, ut
 	ut32 doff = r_buf_read_le32_at (bf->buf, NSO_OFF (data_memoffset));
 	ut32 dsize = r_buf_read_le32_at (bf->buf, NSO_OFF (data_size));
 	ut64 total_size = tsize + rosize + dsize;
-	if (total_size > ST32_MAX) {
+	if (total_size > MAX_UNCOMPRESSED_SIZE) {
 		R_LOG_WARN ("prevented oom");
 		return false;
 	}
@@ -89,7 +92,7 @@ static bool load_bytes(RBinFile *bf, void **bin_obj, const ut8 *buf, ut64 sz, ut
 	ut8 *tmp = NULL;
 
 	if (rbin->iob.io && !(rbin->iob.io->cached & R_PERM_W)) {
-		R_LOG_INFO ("Please add \'-e io.cache=true\' option to r2 command. This is required to decompress the code");
+		R_LOG_INFO ("Please add '-e io.cache=true' option to r2 command. This is required to decompress the code");
 		goto fail;
 	}
 	/* Decompress each sections */

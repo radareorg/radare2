@@ -2,7 +2,7 @@
 
 #include <r_core.h>
 
-static RCoreHelpMessage help_message_ecH = {
+static RCoreHelpMessage help_msg_ecH = {
 	"Usage ecH[iw-?]","","",
 	"ecHi","[color]","highlight current instruction with 'color' background",
 	"ecHw","[word] [color]","highlight 'word ' in current instruction with 'color' background",
@@ -31,6 +31,7 @@ static RCoreHelpMessage help_msg_e = {
 	"ec", "[?] [k] [color]", "set color for given key (prompt, offset, ...)",
 	"ee", " [var]", "open cfg.editor to change the value of var",
 	"ed", "", "open editor to change the ~/.radare2rc",
+	"ed-", "", "delete ~/.radare2c",
 	"ej", "", "list config vars in JSON",
 	"eJ", "", "list config vars in verbose JSON",
 	"en", "", "list environment vars",
@@ -439,7 +440,7 @@ static int cmd_eval(void *data, const char *input) {
 		break;
 	case 'n': // "en" "env"
 		if (strchr (input, '?')) {
-			r_core_cmd_help_match_spec (core, help_msg_e, "en", 0, false);
+			r_core_cmd_help_match (core, help_msg_e, "en", false);
 			break;
 		} else if (!strchr (input, '=')) {
 			const char *var = strchr (input, ' ');
@@ -590,7 +591,7 @@ static int cmd_eval(void *data, const char *input) {
 			char** argv = r_str_argv (r_str_trim_head_ro (input + delta), &argc);
 			switch (input[2]) {
 			case '?':
-				r_core_cmd_help (core, help_message_ecH);
+				r_core_cmd_help (core, help_msg_ecH);
 				r_str_argv_free (argv);
 				return false;
 			case '-': // ecH-
@@ -633,7 +634,7 @@ static int cmd_eval(void *data, const char *input) {
 				break;
 			case 'w': // "ecHw"
 				if (!argc) {
-					eprintf ("Usage: ecHw word [color]\n");
+					r_core_cmd_help_match (core, help_msg_ecH, "ecHw", true);
 					r_str_argv_free (argv);
 					return true;
 				}
@@ -689,11 +690,8 @@ static int cmd_eval(void *data, const char *input) {
 		break;
 	case 'd': // "ed"
 		if (input[1] == '?') {
-			eprintf ("Usage: ed[-][?] - edit ~/.radare2rc with cfg.editor\n");
-			eprintf ("NOTE: ~ is HOME and this can be changed with %%HOME=/tmp\n");
-			eprintf ("  ed    : ${cfg.editor} ~/.radare2rc\n");
-			eprintf ("  ed-   : rm ~/.radare2rc\n");
-		} else if (input[1] == '-') {
+			r_core_cmd_help_match (core, help_msg_e, "ed", false);
+		} else if (input[1] == '-') { // "ed-"
 			char *file = r_file_home (".radare2rc");
 			if (file) {
 				r_file_rm (file);

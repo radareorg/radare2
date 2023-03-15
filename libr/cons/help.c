@@ -2,7 +2,7 @@
 
 #include <r_cons.h>
 
-R_API void r_cons_cmd_help_json(const char * const help[]) {
+R_API void r_cons_cmd_help_json(RCoreHelpMessage help) {
 	int i, max_length = 0;
 	const char * const usage_str = "Usage:";
 	const char * help_cmd = NULL;
@@ -56,7 +56,7 @@ R_API void r_cons_cmd_help_json(const char * const help[]) {
 }
 
 /* Print a coloured help message */
-R_API void r_cons_cmd_help(const char * const help[], bool use_color) {
+R_API void r_cons_cmd_help(RCoreHelpMessage help, bool use_color) {
 	RCons *cons = r_cons_singleton ();
 	const char *pal_input_color = use_color ? cons->context->pal.input : "";
 	const char *pal_args_color = use_color ? cons->context->pal.args : "";
@@ -110,18 +110,6 @@ R_API void r_cons_cmd_help(const char * const help[], bool use_color) {
 	}
 }
 
-static void print_match(const char * const *match, bool use_color) {
-	const char *match_help_text[4];
-	size_t i;
-
-	/* Manually construct help array. No need to strdup, just borrow. */
-	match_help_text[3] = NULL;
-	for (i = 0; i < 3; i++) {
-		match_help_text[i] = match[i];
-	}
-	r_cons_cmd_help (match_help_text, use_color);
-}
-
 /* See r_cons_cmd_help().
  * This version will only print help for a specific command.
  * Will append spec to cmd before looking for a match, if spec != 0.
@@ -129,7 +117,12 @@ static void print_match(const char * const *match, bool use_color) {
  * If exact is false, will match any command that contains the search text.
  * For example, ("pd", 'r', false) matches both `pdr` and `pdr.`.
  */
-R_API void r_cons_cmd_help_match(const char * const help[], bool use_color, R_BORROW R_NONNULL char *cmd, char spec, bool exact) {
+R_API void r_cons_cmd_help_match(RCoreHelpMessage help, bool use_color, R_BORROW R_NONNULL char *cmd, char spec, bool exact) {
+	RVector/*<int>*/ *match_indices = r_vector_new (sizeof (int), NULL, NULL);
+	char **matches = NULL;
+	size_t num_matches;
+	int *current_index_ptr;
+	size_t matches_copied;
 	size_t i;
 
 	if (spec) {
@@ -137,20 +130,34 @@ R_API void r_cons_cmd_help_match(const char * const help[], bool use_color, R_BO
 		cmd = r_str_newf ("%s%c", cmd, spec);
 	}
 
+	/* Collect matching indices */
 	for (i = 0; help[i]; i += 3) {
-		if (exact) {
-			if (!strcmp (help[i], cmd)) {
-				print_match (&help[i], use_color);
-				break;
-			}
-		} else {
-			if (strstr (help[i], cmd)) {
-				print_match (&help[i], use_color);
-				/* Don't break - can have multiple results */
-			}
+		if (exact? (bool)!strcmp (help[i], cmd): (bool)strstr (help[i], cmd)) {
+			r_vector_push (match_indices, &i);
 		}
 	}
 
+	/* Leave if no matches */
+	num_matches = r_vector_length (match_indices);
+	if (num_matches == 0) {
+		goto out;
+	}
+
+	matches = R_NEWS (char *, (3 * num_matches) + 1);
+
+	matches_copied = 0;
+	r_vector_foreach (match_indices, current_index_ptr) {
+		int current_index = *current_index_ptr;
+		for (i = 0; i < 3; i++) {
+			matches[matches_copied++] = (char *)help[current_index++];
+		}
+	}
+	matches[matches_copied] = NULL;
+	r_cons_cmd_help ((const char * const *)matches, use_color);
+
+out:
+	free (matches);
+	r_vector_free (match_indices);
 	if (spec) {
 		free (cmd);
 	}

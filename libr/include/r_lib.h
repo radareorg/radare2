@@ -1,8 +1,9 @@
 #ifndef R2_LIB_H
 #define R2_LIB_H
 
-#include "r_types.h"
-#include "r_list.h"
+#include <r_types.h>
+#include <r_list.h>
+#include <sdb/ht_pp.h>
 
 #if R2__UNIX__ && WANT_DYLINK
 #include <dlfcn.h>
@@ -118,6 +119,10 @@ typedef struct r_lib_t {
 	RList /*RLibPlugin*/ *plugins;
 	RList /*RLibHandler*/ *handlers;
 	bool ignore_version;
+#if R2_590
+	// hashtable plugname = &plugin
+	HtPP *plugins_ht;
+#endif
 } RLib;
 
 #ifdef R_API

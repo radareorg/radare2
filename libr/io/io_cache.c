@@ -1,10 +1,9 @@
-/* radare - LGPL - Copyright 2008-2021 - pancake */
+/* radare - LGPL - Copyright 2008-2023 - pancake, condret */
 
 #include <r_io.h>
 #include <r_skyline.h>
 
-#if USE_NEW_IO_CACHE_API
-#else
+#if !USE_NEW_IO_CACHE_API
 
 static void cache_item_free(RIOCache *cache) {
 	if (cache) {
@@ -150,7 +149,7 @@ R_API bool r_io_cache_list(RIO *io, int rad) {
 }
 
 R_API bool r_io_cache_write(RIO *io, ut64 addr, const ut8 *buf, int len) {
-	r_return_val_if_fail (io && buf, false);
+	r_return_val_if_fail (io && buf && len > 0, false);
 	RIOCache *ch = R_NEW0 (RIOCache);
 	if (!ch) {
 		return false;
@@ -188,7 +187,7 @@ R_API bool r_io_cache_write(RIO *io, ut64 addr, const ut8 *buf, int len) {
 }
 
 R_API bool r_io_cache_read(RIO *io, ut64 addr, ut8 *buf, int len) {
-	r_return_val_if_fail (io && buf, false);
+	r_return_val_if_fail (io && buf && len > 0, false);
 	RSkyline *skyline = &io->cache_skyline;
 	const RSkylineItem *iter = r_skyline_get_item_intersect (skyline, addr, len);
 	if (!iter) {
@@ -196,9 +195,11 @@ R_API bool r_io_cache_read(RIO *io, ut64 addr, ut8 *buf, int len) {
 	}
 	const RSkylineItem *last = (RSkylineItem *)skyline->v.a + skyline->v.len;
 	bool covered = false;
+	int count = 0;
 	while (iter != last) {
 		const ut64 begin = r_itv_begin (iter->itv);
 		const ut64 end = r_itv_end (iter->itv);
+		count++;
 		if (end < addr) {
 			iter++;
 			continue;
@@ -228,35 +229,39 @@ R_API bool r_io_cache_read(RIO *io, ut64 addr, ut8 *buf, int len) {
 			iter++;
 			continue;
 		}
+		if (count > 32) {
+			break;
+		}
+		// eprintf ("inrange (%llx %d)\n", begin, (int)(end - begin));
 		if (read > 0) {
 			memcpy (buf + buf_offset, cache->data + cache_offset, read);
 		}
 		covered = true;
 		iter++;
 	}
+#if 0
+	eprintf ("COUNT %d (0x%llx %d)\n", count, addr, len);
+	if (count > 45000) {
+		r_sys_breakpoint ();
+	}
+#endif
 	return covered;
 }
-#endif
 
-#if USE_NEW_IO_CACHE_API
-typedef struct io_cache_item_t {
-	RInterval *tree_itv;
-	RInterval itv;
-	ut8 *data;
-	ut8 *odata;	//is this a good idea?
-} IOCacheItem;
+#else
+// USE_NEW_IO_CACHE_API
 
-IOCacheItem * _io_cache_item_new (RInterval *itv) {
-	IOCacheItem *ci = R_NEW0 (IOCacheItem);
+R_API RIOCacheItem * _io_cache_item_new(RInterval *itv) {
+	RIOCacheItem *ci = R_NEW0 (RIOCacheItem);
 	if (!ci) {
 		return NULL;
 	}
-	ci->data = R_NEWS (ut8, itv->len);
+	ci->data = R_NEWS (ut8, itv->size);
 	if (!ci->data) {
 		free (ci);
 		return NULL;
 	}
-	ci->odata = R_NEWS (ut8, itv->len);
+	ci->odata = R_NEWS (ut8, itv->size);
 	if (!ci->odata) {
 		free (ci->data);
 		free (ci);
@@ -273,8 +278,8 @@ IOCacheItem * _io_cache_item_new (RInterval *itv) {
 	return ci;
 }
 
-void _io_cache_item_free (void *data) {
-	IOCacheItem *ci = (IOCacheItem *)data;
+void _io_cache_item_free(void *data) {
+	RIOCacheItem *ci = (RIOCacheItem *)data;
 	if (ci) {
 		free (ci->tree_itv);
 		free (ci->data);
@@ -286,16 +291,20 @@ void _io_cache_item_free (void *data) {
 R_API void r_io_cache_init(RIO *io) {
 	r_return_if_fail (io);
 	io->cache = R_NEW (RIOCache);
-	io->cache->tree = r_crbtree_new (NULL);
-	io->cache->vec = r_pvector_new ((RPVectorFree)_io_cache_item_free);
+	if (io->cache) {
+		io->cache->tree = r_crbtree_new (NULL);
+		io->cache->vec = r_pvector_new ((RPVectorFree)_io_cache_item_free);
+	}
 	io->cached = 0;
 }
 
 R_API void r_io_cache_fini(RIO *io) {
 	r_return_if_fail (io);
-	r_crbtree_free (io->cache->tree);
-	r_pvector_free (io->cache->vec);
-	R_FREE (io->cache);
+	if (io->cache) {
+		r_crbtree_free (io->cache->tree);
+		r_pvector_free (io->cache->vec);
+		R_FREE (io->cache);
+	}
 	io->cached = 0;
 }
 
@@ -308,7 +317,7 @@ R_API void r_io_cache_reset(RIO *io, int set) {
 
 static int _find_lowest_intersection_ci_cb(void *incoming, void *in, void *user) {
 	RInterval *itv = (RInterval *)incoming;
-	IOCacheItem *ci = (IOCacheItem *)in;
+	RIOCacheItem *ci = (RIOCacheItem *)in;
 	if (r_itv_overlap (itv[0], ci->tree_itv[0])) {
 		return 0;
 	}
@@ -325,15 +334,15 @@ static RRBNode *_find_entry_ci_node(RRBTree *caache_tree, RInterval *itv) {
 		return NULL;
 	}
 	RRBNode *prev = r_rbnode_prev (node);
-	while (prev && r_itv_overlap (itv[0], ((IOCacheItem *)(prev->data))->tree_itv[0])) {
+	while (prev && r_itv_overlap (itv[0], ((RIOCacheItem *)(prev->data))->tree_itv[0])) {
 		node = prev;
 		prev = r_rbnode_prev (node);
 	}
 	return node;
 }
 
-static int _ci_start_cmp_cb (void *incoming, void *in, void *user) {
-	IOCacheItem *incoming_ci = (IOCacheItem *)incoming, *in_ci = (IOCacheItem *)in;
+static int _ci_start_cmp_cb(void *incoming, void *in, void *user) {
+	RIOCacheItem *incoming_ci = (RIOCacheItem *)incoming, *in_ci = (RIOCacheItem *)in;
 	if (incoming_ci->tree_itv->addr < in_ci->tree_itv->addr) {
 		return -1;
 	}
@@ -343,10 +352,14 @@ static int _ci_start_cmp_cb (void *incoming, void *in, void *user) {
 	return 0;
 }
 
-R_API bool r_io_cache_write_at(RIO *io, ut64 addr, ut8 *buf, int len) {
+R_API bool r_io_cache_write(RIO *io, ut64 addr, const ut8 *buf, int len) {
+	return r_io_cache_write_at (io, addr, buf, len);
+}
+
+R_API bool r_io_cache_write_at(RIO *io, ut64 addr, const ut8 *buf, int len) {
 	r_return_val_if_fail (io && buf && (len > 0), false);
 	RInterval itv = (RInterval){addr, len};
-	IOCacheItem *ci = _io_cache_item_new (&itv);
+	RIOCacheItem *ci = _io_cache_item_new (&itv);
 	if (!ci) {
 		return false;
 	}
@@ -354,17 +367,17 @@ R_API bool r_io_cache_write_at(RIO *io, ut64 addr, ut8 *buf, int len) {
 	memcpy (ci->data, buf, len);
 	RRBNode *node = _find_entry_ci_node (io->cache->tree, &itv);
 	if (node) {
-		IOCacheItem *_ci = (IOCacheItem *)node->data;
+		RIOCacheItem *_ci = (RIOCacheItem *)node->data;
 		if (itv.addr > _ci->tree_itv->addr) {
 			_ci->tree_itv->size = itv.addr - _ci->tree_itv->addr;
 			node = r_rbnode_next (node);
-			_ci = node? (IOCacheItem *)node->data: NULL;
+			_ci = node? (RIOCacheItem *)node->data: NULL;
 		}
 		while (_ci && r_itv_include (itv, _ci->tree_itv[0])) {
 			node = r_rbnode_next (node);
 			r_crbtree_delete (io->cache->tree, _ci, _ci_start_cmp_cb, NULL);
 			R_FREE (_ci->tree_itv);
-			_ci = node? (IOCacheItem *)node->data: NULL;
+			_ci = node? (RIOCacheItem *)node->data: NULL;
 		}
 		if (_ci && r_itv_contain (itv, _ci->tree_itv->addr)) {
 			_ci->tree_itv->size = r_itv_end (_ci->tree_itv[0]) - r_itv_end (itv);
@@ -376,19 +389,43 @@ R_API bool r_io_cache_write_at(RIO *io, ut64 addr, ut8 *buf, int len) {
 	return true;
 }
 
+// R2_590 deprecate and use the _at method directly
+R_API bool r_io_cache_read(RIO *io, ut64 addr, ut8 *buf, int len) {
+	return r_io_cache_read_at (io, addr, buf, len);
+}
+
 R_API bool r_io_cache_read_at(RIO *io, ut64 addr, ut8 *buf, int len) {
 	r_return_val_if_fail (io && buf && (len > 0), false);
 	RInterval itv = (RInterval){addr, len};
 	RRBNode *node = _find_entry_ci_node (io->cache->tree, &itv);
-	IOCacheItem *ci = node? (IOCacheItem *)node->data: NULL;
+	RIOCacheItem *ci = node? (RIOCacheItem *)node->data: NULL;
 	const bool ret = !!ci;
 	while (ci && r_itv_overlap (ci->tree_itv[0], itv)) {
 		node = r_rbnode_next (node);
 		RInterval its = r_itv_intersect (ci->tree_itv[0], itv);
-		memcpy (&buf[addr - r_itv_begin (its)],
-			&ci->data[r_itv_begin (its) - r_itv_begin (ci->itv)],
-			r_itv_size (its));
-		ci = node? (IOCacheItem *)node->data: NULL;
+		int itvlen = R_MIN (r_itv_size (its), r_itv_size (ci->itv));
+		if (r_itv_begin (its) > addr) {
+			// R_LOG_ERROR ("io-cache missfeature");
+			ut64 aa = addr;
+			// ut64 as = len;
+			ut64 ba = r_itv_begin (its);
+			ut64 bs = r_itv_size (its);
+			// ut64 ca = r_itv_begin (ci->itv);
+			// ut64 cs = r_itv_size (ci->itv);
+			// eprintf ("%llx %llx - %llx %llx - %llx %llx\n", aa, as, ba, bs, ca, cs);
+			int delta = (ba - aa);
+			if (delta + bs > len) {
+				itvlen = len - delta;
+			}
+			memcpy (buf + (ba - aa), ci->data, itvlen);
+			// r_sys_breakpoint ();
+		} else {
+			st64 offa = addr - r_itv_begin (its);
+			st64 offb = r_itv_begin (its) - r_itv_begin (ci->itv);
+			// eprintf ("OFFA (addr %llx iv %llx) %llx %llx\n", addr, r_itv_begin (its), offa, offb);
+			memcpy (buf + offa, ci->data + offb, itvlen);
+		}
+		ci = node? (RIOCacheItem *)node->data: NULL;
 	}
 	return ret;
 }
@@ -400,13 +437,13 @@ R_API bool r_io_cache_at(RIO *io, ut64 addr) {
 }
 
 // this uses closed boundary input
-R_API ut32 r_io_cache_invalidate(RIO *io, ut64 from, ut64 to) {
+R_API int r_io_cache_invalidate(RIO *io, ut64 from, ut64 to) {
 	r_return_val_if_fail (io && from <= to, 0);
 	RInterval itv = (RInterval){from, (to + 1) - from};
 	void **iter;
 	ut32 invalidated_cache_bytes = 0;
 	r_pvector_foreach_prev (io->cache->vec, iter) {
-		IOCacheItem *ci = (IOCacheItem *)*iter;
+		RIOCacheItem *ci = (RIOCacheItem *)*iter;
 		if (!r_itv_overlap (itv, ci->itv)) {
 			continue;
 		}
@@ -419,11 +456,11 @@ R_API ut32 r_io_cache_invalidate(RIO *io, ut64 from, ut64 to) {
 			continue;
 		}
 		if (r_itv_include (ci->itv, itv)) {
-			IOCacheItem *_ci = _io_cache_item_new (
-				(RInterval){r_itv_end (itv), r_itv_end (ci->itv) - r_itv_end (itv)});
+			RInterval iitv = (RInterval){r_itv_end (itv), r_itv_end (ci->itv) - r_itv_end (itv)};
+			RIOCacheItem *_ci = _io_cache_item_new (&iitv);
 			memcpy (_ci->data, &ci->data[r_itv_end (itv) - r_itv_begin (ci->itv)], r_itv_size (_ci->itv));
 			memcpy (_ci->odata, &ci->odata[r_itv_end (itv) - r_itv_begin (ci->itv)], r_itv_size (_ci->itv));
-			ci->itv.size = itv.addr - ci->itv;
+			ci->itv.size = itv.addr - ci->itv.addr;
 			ci->data = realloc (ci->data, (size_t)r_itv_size (ci->itv));
 			ci->odata = realloc (ci->odata, (size_t)r_itv_size (ci->itv));
 			if (ci->tree_itv) {
@@ -449,7 +486,7 @@ R_API ut32 r_io_cache_invalidate(RIO *io, ut64 from, ut64 to) {
 			continue;
 		}
 		if (r_itv_begin (ci->itv) < r_itv_begin (itv)) {
-			ci->itv.size = itv.addr - ci->itv;
+			ci->itv.size = itv.addr - ci->itv.addr;
 			ci->data = realloc (ci->data, (size_t)r_itv_size (ci->itv));
 			ci->odata = realloc (ci->odata, (size_t)r_itv_size (ci->itv));
 			if (ci->tree_itv) {
@@ -492,7 +529,7 @@ R_API void r_io_cache_commit(RIO *io, ut64 from, ut64 to) {
 	if (from == 0LL && to == UT64_MAX) {
 		RRBNode *node = r_crbtree_first_node (io->cache->tree);
 		while (node) {
-			IOCacheItem *ci = (IOCacheItem *)node->data;
+			RIOCacheItem *ci = (RIOCacheItem *)node->data;
 			node = r_rbnode_next (node);
 			r_io_bank_write_at (io, io->bank, r_itv_begin (ci->tree_itv[0]),
 				&ci->data[r_itv_begin (ci->tree_itv[0]) - r_itv_begin (ci->itv)],
@@ -506,13 +543,13 @@ R_API void r_io_cache_commit(RIO *io, ut64 from, ut64 to) {
 	if (!node) {
 		return;
 	}
-	IOCacheItem *ci = (IOCacheItem *)node->data;
+	RIOCacheItem *ci = (RIOCacheItem *)node->data;
 	while (ci && r_itv_overlap (itv, ci->tree_itv[0])) {
 		RInterval its = r_itv_intersect (itv, ci->tree_itv[0]);
 		r_io_bank_write_at (io, io->bank, r_itv_begin (its),
 			&ci->data[r_itv_begin (its) - r_itv_begin (ci->itv)], r_itv_size (its));
 		node = r_rbnode_next (node);
-		ci = node? (IOCacheItem *)node->data: NULL;
+		ci = node? (RIOCacheItem *)node->data: NULL;
 	}
 	r_io_cache_invalidate (io, from, to);
 }
@@ -521,7 +558,7 @@ R_API bool r_io_cache_list(RIO *io, int rad) {
 	r_return_val_if_fail (io, false);
 	size_t i, j = 0;
 	void **iter;
-	IOCacheItem *ci;
+	RIOCacheItem *ci;
 	PJ *pj = NULL;
 	if (rad == 2) {
 		pj = pj_new ();
@@ -577,8 +614,8 @@ R_API bool r_io_cache_list(RIO *io, int rad) {
 	return false;
 }
 
-static IOCacheItem *_clone_ci (IOCacheItem *ci) {
-	IOCacheItem *clone = R_NEWCOPY (IOCacheItem, ci);
+static RIOCacheItem *_clone_ci(RIOCacheItem *ci) {
+	RIOCacheItem *clone = R_NEWCOPY (RIOCacheItem, ci);
 	if (clone) {
 		clone->data = R_NEWS (ut8, r_itv_size (ci->itv));
 		clone->odata = R_NEWS (ut8, r_itv_size (ci->itv));
@@ -601,7 +638,7 @@ R_API RIOCache *r_io_cache_clone(RIO *io) {
 	clone->vec = r_pvector_new ((RPVectorFree)_io_cache_item_free);
 	void **iter;
 	r_pvector_foreach_prev (io->cache->vec, iter) {
-		IOCacheItem *ci = _clone_ci((IOCacheItem *)*iter);
+		RIOCacheItem *ci = _clone_ci ((RIOCacheItem *)*iter);
 		r_pvector_push (clone->vec, ci);
 		if (ci->tree_itv) {
 			r_crbtree_insert (clone->tree, clone, _ci_start_cmp_cb, NULL);

@@ -580,18 +580,37 @@ R_API R_OWN char *r_type_func_args_type(Sdb *TDB, R_NONNULL const char *func_nam
 			*comma = 0;
 			return ret;
 		}
-		free (ret);
+		return ret;
 	}
 	return NULL;
 }
 
+const char *const argnames[10] = {
+	"arg0",
+	"arg1",
+	"arg2",
+	"arg3",
+	"arg4",
+	"arg5",
+	"arg6",
+	"arg7",
+	"arg8",
+	"arg9",
+};
+
 R_API const char *r_type_func_args_name(Sdb *TDB, R_NONNULL const char *func_name, int i) {
 	char *query = r_str_newf ("func.%s.arg.%d", func_name, i);
-	const char *get = sdb_const_get (TDB, query, 0);
+	const char *row = sdb_const_get (TDB, query, 0);
 	free (query);
-	if (get) {
-		char *ret = strchr (get, ',');
-		return ret == 0 ? ret : ret + 1;
+	if (row) {
+		const char *ret = strchr (row, ',');
+		if (ret) {
+			return ret + 1;
+		}
+		if (i >= 0 && i < 10) {
+			R_LOG_DEBUG ("Missing arg %d name for %s", i, func_name);
+			return argnames[i];
+		}
 	}
 	return NULL;
 }

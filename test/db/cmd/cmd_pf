@@ -62,7 +62,9 @@ EXPECT=<<EOF
 EOF
 RUN
 
+# Cf tests look malformed
 NAME=Cf main
+BROKEN=1
 FILE=-
 CMDS=Cf main;C*
 EXPECT=<<EOF

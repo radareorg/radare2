@@ -1,10 +1,7 @@
-/* radare - LGPL - Copyright 2011-2022 - earada, pancake */
+/* radare - LGPL - Copyright 2011-2023 - earada, pancake */
 
 #define R_LOG_ORIGIN "core.bin"
 #include <r_core.h>
-#include <r_config.h>
-#include <r_util.h>
-#include <r_util/r_time.h>
 
 #define is_in_range(at, from, sz) ((at) >= (from) && (at) < ((from) + (sz)))
 
@@ -347,15 +344,17 @@ R_API bool r_core_bin_set_env(RCore *r, RBinFile *binfile) {
 		r_config_set_i (r->config, "bin.baddr", baseaddr);
 		sdb_num_add (r->sdb, "orig_baddr", baseaddr, 0);
 		r->dbg->bp->baddr = baseaddr;
-		r_config_set (r->config, "asm.arch", arch);
 		r_config_set_i (r->config, "asm.bits", bits);
-		r_config_set (r->config, "anal.arch", arch);
-		if (info->cpu && *info->cpu) {
-			r_config_set (r->config, "asm.cpu", info->cpu);
-		} else {
-			r_config_set (r->config, "asm.cpu", arch);
+		if (arch) {
+			r_config_set (r->config, "asm.arch", arch);
+			if (!strcmp (arch, "arm")) {
+				r_config_set_b (r->config, "anal.nopskip", false);
+			}
+			r_config_set (r->config, "anal.arch", arch);
+			const char *cpu = R_STR_ISNOTEMPTY (info->cpu)? info->cpu: arch;
+			r_config_set (r->config, "asm.cpu", cpu);
+			r_asm_use (r->rasm, arch);
 		}
-		r_asm_use (r->rasm, arch);
 		r_core_bin_info (r, R_CORE_BIN_ACC_ALL, NULL, R_MODE_SET, va, NULL, NULL);
 		r_core_bin_set_cur (r, binfile);
 		return true;
@@ -1830,11 +1829,17 @@ static int bin_relocs(RCore *r, PJ *pj, int mode, int va) {
 		return false;
 	}
 	if (bin_cache) {
-		if (r_pvector_length (&r->io->cache) == 0) {
+#if USE_NEW_IO_CACHE_API
+		bool cache_is_empty = r_pvector_length (r->io->cache->vec) == 0;
+#else
+		bool cache_is_empty = r_pvector_length (&r->io->cache) == 0;
+#endif
+		if (cache_is_empty) {
 			r_config_set_b (r->config, "io.cache", false);
 		} else {
 			r_config_set_b (r->config, "io.cache.read", true);
 		}
+		// r_core_cmd_call (r, "wcs"); // write cache squash
 	}
 
 	if (IS_MODE_RAD (mode)) {

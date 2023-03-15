@@ -391,7 +391,7 @@ static void symbols_from_locsym(RDyldCache *cache, RDyldBinImage *bin, RList *sy
 		ut64 slide = rebase_infos_get_slide (cache);
 		sym->paddr = va2pa (nlist->n_value, cache->n_maps, cache->maps, cache->buf, slide, NULL, NULL);
 
-		char *symstr =r_buf_get_string (cache->buf, locsym->local_symbols_offset + locsym->strings_offset + nlist->n_strx);
+		char *symstr = r_buf_get_string (cache->buf, locsym->local_symbols_offset + locsym->strings_offset + nlist->n_strx);
 		if (symstr) {
 			sym->name = symstr;
 		} else {
@@ -1366,7 +1366,7 @@ static void rebase_bytes_v2(RDyldRebaseInfo2 *rebase_info, ut8 *buf, ut64 offset
 				ut32 delta = 1;
 				while (delta) {
 					ut64 position = in_buf + first_rebase_off - page_offset;
-					if (position + 8 >= count) {
+					if (position + 8 > count) {
 						break;
 					}
 					ut64 raw_value = r_read_le64 (buf + position);

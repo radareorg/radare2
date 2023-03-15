@@ -3,39 +3,39 @@
 #include <r_bin.h>
 #include <r_debug.h>
 
-static const char *help_msg_o[] = {
-	"Usage: o","[com- ] [file] ([offset])","",
+static RCoreHelpMessage help_msg_o = {
+	"Usage: o","[file] ([offset])","Open and close files, maps, and banks",
+	"o","","list opened files",
 	"o"," [file] 0x4000 rwx", "map file at 0x4000",
 	"o"," [file]","open [file] file in read-only",
-	"o","","list opened files",
 	"o","-1","close file descriptor 1",
 	"o*","","list opened files in r2 commands",
 	"o+"," [file]", "open a file in read-write mode",
 	"o++"," [file]", "create and open file in read-write mode (see ot and omr)",
-	"o-","!*","close all opened files",
-	"o--","","close all files, analysis, binfiles, flags, same as !r2 --",
+	"o-","[?][#!*$.]","close opened files",
 	"o.","","show current filename (or o.q/oq to get the fd)",
 	"o:"," [len]","open a malloc://[len] copying the bytes from current offset",
 	"o=","","list opened files (ascii-art bars)",
 	"oL","","list all IO plugins registered",
-	"oa","[?][-] [A] [B] [filename]","specify arch and bits for given file",
+	"oa","[-] [A] [B] [filename]","specify arch and bits for given file",
 	"ob","[?] [lbdos] [...]","list opened binary files backed by fd",
 	"oc"," [file]","open core file, like relaunching r2",
 	"of","[?] [file]","open file without creating any map",
 	"oe"," [filename]","open cfg.editor with given file",
-	"oj","[?]","list opened files in JSON format",
+	"oj","","list opened files in JSON format",
 	"om","[?]","create, list, remove IO maps",
 	"on","[?][n] [file] 0x4000","map raw file at 0x4000 (no r_bin involved)",
 	"oo","[?][+bcdnm]","reopen current file (see oo?) (reload in rw or debugger)",
-	"op","[r|n|p|fd]", "select priorized file by fd (see ob), opn/opp/opr = next/previous/rotate",
+	"op","[npr] [fd]", "select priorized file by fd (see ob), opn/opp/opr = next/previous/rotate",
 	"ot"," [file]", "same as `touch [file]`",
 	"oq","","list all open files",
 	"ox", " fd fdx", "exchange the descs of fd and fdx and keep the mapping",
+	"open", " [file]", "use system xdg-open/open on a file",
 	NULL
 };
 
-static const char *help_msg_on[] = {
-	"Usage: on","[n+*] [file] ([addr] [rwx])","Open file without parsing headers",
+static RCoreHelpMessage help_msg_on = {
+	"Usage: on[n+*]", "[file] ([addr] [rwx])","Open file without parsing headers",
 	"on"," /bin/ls 0x4000","map raw file at 0x4000 (no r_bin involved)",
 	"onn"," [file] ([rwx])","open file without creating any map or parsing headers with rbin)",
 	"onnu"," [file] ([rwx])","same as onn, but unique, will return previos fd if already opened",
@@ -44,24 +44,19 @@ static const char *help_msg_on[] = {
 	NULL
 };
 
-static const char *help_msg_oa[] = {
-	"Usage: oa","[-][arch] [bits] ([file])", "Specify arch and bits for given file",
-	"oa"," arm 32","force arm32 for the current open file",
-	NULL
-};
-
-static const char *help_msg_o_[] = {
-	"Usage: o-","[#!*]", "",
+static RCoreHelpMessage help_msg_o_dash = {
+	"Usage: o-[#!*$.-]", "", "close opened files",
 	"o-*","","close all opened files",
 	"o-!","","close all files except the current one",
 	"o-3","","close fd=3",
 	"o-$","","close last fd",
 	"o-.","","close current fd",
+	"o--","","close all files, analysis, binfiles, flags, same as !r2 --",
 	NULL
 };
 
-static const char *help_msg_op[] = {
-	"Usage:", "op[rnp] [fd]", "",
+static RCoreHelpMessage help_msg_op = {
+	"Usage: op[rnp]", "[fd]", "",
 	"opr", "", "open next file rotating",
 	"opn", "", "open next file",
 	"opp", "", "open previous file",
@@ -69,43 +64,38 @@ static const char *help_msg_op[] = {
 	NULL
 };
 
-static const char *help_msg_omn[] = {
-	"Usage:", "omn[.-] ([fd]) [name]", "# define a name for the given map",
+static RCoreHelpMessage help_msg_omn = {
+	"Usage: omn[.i]", "([fd]) [name]", "Define a name for the given map",
 	"omn", " mapaddr [name]", "set/delete name for map which spans mapaddr",
 	"omn.", "([-|name])", "show/set/delete name for current map",
 	"omni", " mapid [name]", "set/delete name for map with mapid",
 	NULL
 };
 
-static const char *help_msg_omb[] = {
-	"Usage:", "omb[jq,+] [fd]", "Operate on memory banks",
+static RCoreHelpMessage help_msg_omb = {
+	"Usage: omb[+-adgq]", "[fd]", "Operate on memory banks",
 	"omb", "", "list all memory banks",
 	"omb", " [id]", "switch to use a different bank",
-	"omb+", "[name]", "create a new bank with given name",
+	"omb+", " [name]", "create a new bank with given name",
 	"omba", " [id]", "adds a map to the bank",
-	"ombd", " [id]", "deletes a map from the bank",
+	"ombd", " [id]", "delete a map from the bank",
 	"omb-", "*", "delete all banks",
-	"omb-", "[mapid]", "delete the bank with given id",
+	"omb-", " [mapid]", "delete the bank with given id",
 	"ombg", "", "associate all maps to the current bank",
 	"ombq", "", "show current bankid",
 	NULL
 };
 
-static const char *help_msg_o_star[] = {
-	"Usage:", "o* [> files.r2]", "",
-	"o*", "", "list opened files in r2 commands", NULL
-};
-
-static const char *help_msg_oba[] = {
-	"Usage:", "oba [addr] ([filename])", " # load bininfo and update flags",
+static RCoreHelpMessage help_msg_oba = {
+	"Usage: oba", "[addr] ([filename])", "Load bininfo and update flags",
 	"oba", " [addr]", "open bin info from the given address",
 	"oba", " [addr] [baddr]", "open file and load bin info at given address",
 	"oba", " [addr] [/abs/filename]", "open file and load bin info at given address",
 	NULL
 };
 
-static const char *help_msg_ob[] = {
-	"Usage:", "ob", " # List open binary files backed by fd",
+static RCoreHelpMessage help_msg_ob = {
+	"Usage: ob", "", "List open binary files backed by fd",
 	"ob", " [name|bfid]", "switch to open given objid (or name)",
 	"ob", "", "list opened binary files and objid",
 	"ob*", "", "list opened binary files and objid (r2 commands)",
@@ -128,13 +118,8 @@ static const char *help_msg_ob[] = {
 	NULL
 };
 
-static const char *help_msg_oj[] = {
-	"Usage:", "oj [~{}]", " # Use ~{} to indent the JSON",
-	"oj", "", "list opened files in JSON format", NULL
-};
-
-static const char *help_msg_om[] = {
-	"Usage:", "om[-] [arg]", " # map opened files",
+static RCoreHelpMessage help_msg_om = {
+	"Usage: om", "[arg]", "Map opened files",
 	"om", " [fd]", "list all defined IO maps for a specific fd",
 	"om", " fd vaddr [size] [paddr] [rwx] [name]", "create new io map",
 	"om", "", "list all defined IO maps",
@@ -149,12 +134,12 @@ static const char *help_msg_om[] = {
 	"omb", " ", "list/select memory map banks",
 	"omB", " mapid addr", "relocate map with corresponding id",
 	"omB.", " addr", "relocate current map",
-	"omd", " from to @ paddr", "simplied om, takes current seek, fd and perms",
+	"omd", " from to @ paddr", "simplified om; takes current seek, fd and perms",
 	"omf", " [mapid] rwx", "change flags/perms for current/given map",
 	"omfg", "[+-]rwx", "change flags/perms for all maps (global)",
 	"omj", "", "list all maps in json format",
-	"omm"," [fd]", "create default map for given fd. (omm `oq`)",
-	"omn", "[?] ([id]) [name]", "manage map names",
+	"omm"," [fd]", "create default map for given fd (omm `oq`)",
+	"omn", "[?] ([fd]) [name]", "manage map names",
 	"omo", " fd", "map the given fd with lowest priority",
 	"omp", " mapid", "prioritize map with corresponding id",
 	"ompb", " [fd]", "prioritize maps of the bin associated with the binid",
@@ -166,71 +151,36 @@ static const char *help_msg_om[] = {
 	NULL
 };
 
-static const char *help_msg_omd[] = {
-	"Usage:", "omd v_begin v_end @ paddr", " # simplified om",
-	"omd", "0x100000 0x200000 @ 0x100", " # map B-A bytes from PA 0x100- in A",
-	NULL
-};
-
-static const char *help_msg_oo[] = {
-	"Usage:", "oo[-] [arg]", " # map opened files",
+static RCoreHelpMessage help_msg_oo = {
+	"Usage: oo", "[arg]", "Map opened files",
 	"oo", "", "reopen current file",
 	"oo+", "", "reopen in read-write",
-	"oob", "[?] [baddr]", "reopen loading rbin info (change base address?)",
+	"oob", " [baddr]", "reopen loading rbin info (change base address?)",
 	"ooc", "", "reopen core with current file",
 	"ood", "[?]", "reopen in debug mode",
 	"oom", "[?]", "reopen in malloc://",
-	"oon", "[?]", "reopen without loading rbin info",
-	"oon+", "", "reopen in read-write mode without loading rbin info",
-	"oonn", "", "reopen without loading rbin info, but with header flags",
-	"oonn+", "", "reopen in read-write mode without loading rbin info, but with",
-	NULL
-};
-
-static const char *help_msg_oo_plus[] = {
-	"Usage:", "oo+", " # reopen in read-write",
-	NULL
-};
-
-static const char *help_msg_oob[] = {
-	"Usage:", "oob", " # reopen loading rbin info",
-	NULL
-};
-
-static const char *help_msg_ood[] = {
-	"Usage:", "ood", " # Debug (re)open commands",
-	"ood", " [args]", " # reopen in debug mode (with args)",
-	"oodf", " [file]", " # reopen in debug mode using the given file",
-	"oodr", " [rarun2]", " # same as dor ..;ood",
-	NULL
-};
-
-static const char *help_msg_oon[] = {
-	"Usage:", "oon[+]", " # reopen without loading rbin info",
 	"oon", "", "reopen without loading rbin info",
 	"oon+", "", "reopen in read-write mode without loading rbin info",
+	"oonn", "", "reopen without loading rbin info, but with header flags",
+	"oonn+", "", "reopen in read-write mode without loading rbin info, but with",
 	NULL
 };
 
-static const char *help_msg_oonn[] = {
-	"Usage:", "oonn", " # reopen without loading rbin info, but with header flags",
-	"oonn", "", "reopen without loading rbin info, but with header flags",
-	"oonn+", "", "reopen in read-write mode without loading rbin info, but with",
+static RCoreHelpMessage help_msg_ood = {
+	"Usage: ood", "", "Debug (re)open commands",
+	"ood", " [args]", "reopen in debug mode (with args)",
+	"oodf", " [file]", "reopen in debug mode using the given file",
+	"oodr", " [rarun2]", "same as dor ..;ood",
 	NULL
 };
 
 static bool isfile(const char *filename) {
-	if (R_STR_ISEMPTY (filename)) {
-		return false;
-	}
-	// check for ./ or /
-	if (r_file_exists (filename)) {
-		return true;
-	}
-	if (r_str_startswith (filename, "./") || r_str_startswith (filename, "/")) {
-		return true;
-	}
-	return false;
+	return R_STR_ISNOTEMPTY (filename)
+		&& (
+			   r_file_exists (filename)
+			|| r_str_startswith (filename, "./")
+			|| r_str_startswith (filename, "/")
+		);
 }
 
 // HONOR bin.at
@@ -268,7 +218,7 @@ static void cmd_open_bin(RCore *core, const char *input) {
 		}
 		break;
 	case 'a': // "oba"
-		if ('?' == input[2]) {
+		if (input[2] == '?') {
 			r_core_cmd_help (core, help_msg_oba);
 			break;
 		}
@@ -362,7 +312,7 @@ static void cmd_open_bin(RCore *core, const char *input) {
 		}
 		int n = r_str_word_set0 (v);
 		if (n < 1 || n > 2) {
-			eprintf ("Usage: ob [file|objid]\n");
+			r_core_cmd_help_match (core, help_msg_o, "ob", true);
 			free (v);
 			break;
 		}
@@ -379,8 +329,12 @@ static void cmd_open_bin(RCore *core, const char *input) {
 		break;
 	}
 	case 'r': // "obr"
-		r_core_bin_rebase (core, r_num_math (core->num, input + 3));
-		r_core_cmd0 (core, ".is*");
+		if (input[2] == '?') {
+			r_core_cmd_help_match (core, help_msg_ob, "obr", true);
+		} else {
+			r_core_bin_rebase (core, r_num_math (core->num, input + 3));
+			r_core_cmd0 (core, ".is*");
+		}
 		break;
 	case 'f': // "obf"
 		if (input[2] == ' ') {
@@ -651,10 +605,14 @@ static void r_core_cmd_omt(RCore *core, const char *arg) {
 		return;
 	}
 	r_table_set_columnsf (t, "nnnnnnnss", "id", "fd", "pa", "pa_end", "size", "va", "va_end", "perm", "name", NULL);
-	ut32 mapid;
+	ut32 mapid = 0;
 	r_id_storage_get_lowest (core->io->maps, &mapid);
 	do {
 		RIOMap *m = r_id_storage_get (core->io->maps, mapid);
+		if (!m) {
+			R_LOG_WARN ("Cannot find mapid %d", mapid);
+			break;
+		}
 		ut64 va = r_itv_begin (m->itv);
 		ut64 va_end = r_itv_end (m->itv);
 		ut64 pa = m->delta;
@@ -752,7 +710,7 @@ static bool cmd_om(RCore *core, const char *input, int arg) {
 
 static void cmd_omd(RCore *core, const char* input) {
 	if (*input == '?') {
-		r_core_cmd_help (core, help_msg_omd);
+		r_core_cmd_help_match (core, help_msg_om, "omd", true);
 		return;
 	}
 	int fd = r_io_fd_get_current (core->io);
@@ -760,26 +718,20 @@ static void cmd_omd(RCore *core, const char* input) {
 	if (desc) {
 		char *inp = r_str_trim_dup (input);
 		RList *args = r_str_split_list (inp, " ", 0);
-		if (args)
-		switch (r_list_length (args)) {
-		case 2:
-			{
-				ut64 pa = core->offset;
-				ut64 va = r_num_math (core->num, r_list_get_n (args, 0));
-				ut64 vb = r_num_math (core->num, r_list_get_n (args, 1));
-				ut64 sz = vb - va;
-				RIOMap *map = NULL;
-				if (va < vb) {
-					map = r_io_map_add (core->io, fd, desc->perm, pa, va, sz);
-				}
-				if (!map) {
-					R_LOG_ERROR ("Cannot create map");
-				}
+		if (args && r_list_length (args) == 2) {
+			ut64 pa = core->offset;
+			ut64 va = r_num_math (core->num, r_list_get_n (args, 0));
+			ut64 vb = r_num_math (core->num, r_list_get_n (args, 1));
+			ut64 sz = vb - va;
+			RIOMap *map = NULL;
+			if (va < vb) {
+				map = r_io_map_add (core->io, fd, desc->perm, pa, va, sz);
 			}
-			break;
-		default:
-			r_core_cmd_help (core, help_msg_omd);
-			break;
+			if (!map) {
+				R_LOG_ERROR ("Invalid map range");
+			}
+		} else {
+			r_core_cmd_help_match (core, help_msg_om, "omd", true);
 		}
 		r_list_free (args);
 		r_free (inp);
@@ -1748,12 +1700,11 @@ static int cmd_open(void *data, const char *input) {
 	int argc, fd = -1;
 	RIODesc *file;
 	RIODesc *desc;
-	bool write = false;
 	const char *ptr = NULL;
 	char **argv = NULL;
 
 	switch (*input) {
-	case 'a':
+	case 'a': // "oa"
 		switch (input[1]) {
 		case '*': // "oa*"
 			{
@@ -1768,54 +1719,53 @@ static int cmd_open(void *data, const char *input) {
 			}
 			break;
 		case '?': // "oa?"
-			r_core_cmd_help (core, help_msg_oa);
+			r_core_cmd_help_match (core, help_msg_o, "oa", true);
 			return 1;
-		case ' ': // "oa "
-			{
-				int i;
-				char *ptr = strdup (input+2);
-				const char *arch = NULL;
-				ut16 bits = 0;
-				const char *filename = NULL;
-				i = r_str_word_set0 (ptr);
-				if (i < 2) {
-					R_LOG_ERROR ("Missing argument");
-					free (ptr);
-					return 0;
-				}
-				if (i == 3) {
-					filename = r_str_word_get0 (ptr, 2);
-				}
-				bits = r_num_math (core->num, r_str_word_get0 (ptr, 1));
-				arch = r_str_word_get0 (ptr, 0);
-				r_core_bin_set_arch_bits (core, filename, arch, bits);
-				RBinFile *file = NULL;
-				if (filename) {
-					file = r_bin_file_find_by_name (core->bin, filename);
-					if (!file) {
-						R_LOG_ERROR ("Cannot find file %s", filename);
-					}
-				} else if (r_list_length (core->bin->binfiles) == 1) {
-					file = (RBinFile *)r_list_first (core->bin->binfiles);
-				} else {
-					R_LOG_INFO ("More than one file is opened, you must specify the filename");
-				}
-				if (!file) {
-					free (ptr);
-					return 0;
-				}
-				if (file->o && file->o->info) {
-					free (file->o->info->arch);
-					file->o->info->arch = strdup (arch);
-					file->o->info->bits = bits;
-					r_core_bin_set_env (core, file);
-				}
+		case ' ': { // "oa "
+			int i;
+			char *ptr = strdup (input+2);
+			const char *arch = NULL;
+			ut16 bits = 0;
+			const char *filename = NULL;
+			i = r_str_word_set0 (ptr);
+			if (i < 2) {
+				R_LOG_ERROR ("Missing argument");
 				free (ptr);
-				return 1;
+				return 0;
+			}
+			if (i == 3) {
+				filename = r_str_word_get0 (ptr, 2);
+			}
+			bits = r_num_math (core->num, r_str_word_get0 (ptr, 1));
+			arch = r_str_word_get0 (ptr, 0);
+			r_core_bin_set_arch_bits (core, filename, arch, bits);
+			RBinFile *file = NULL;
+			if (filename) {
+				file = r_bin_file_find_by_name (core->bin, filename);
+				if (!file) {
+					R_LOG_ERROR ("Cannot find file %s", filename);
+				}
+			} else if (r_list_length (core->bin->binfiles) == 1) {
+				file = (RBinFile *)r_list_first (core->bin->binfiles);
+			} else {
+				R_LOG_INFO ("More than one file is opened, you must specify the filename");
+			}
+			if (!file) {
+				free (ptr);
+				return 0;
+			}
+			if (file->o && file->o->info) {
+				free (file->o->info->arch);
+				file->o->info->arch = strdup (arch);
+				file->o->info->bits = bits;
+				r_core_bin_set_env (core, file);
+			}
+			free (ptr);
+			return 1;
 			}
 			break;
 		default:
-			r_core_cmd_help (core, help_msg_oa);
+			r_core_cmd_help_match (core, help_msg_o, "oa", true);
 			return 0;
 		}
 		break;
@@ -1833,7 +1783,6 @@ static int cmd_open(void *data, const char *input) {
 			return 0;
 		}
 		if (input[1] == '+') { // "on+"
-			write = true;
 			perms |= R_PERM_W;
 			if (input[2] != ' ') {
 				r_core_cmd_help_match (core, help_msg_on, "on+", true);
@@ -1848,7 +1797,7 @@ static int cmd_open(void *data, const char *input) {
 		}
 		argv = r_str_argv (ptr, &argc);
 		if (!argc) {
-			eprintf ("Usage: on%s file [addr] [rwx]\n", write?"+":"");
+			r_core_cmd_help (core, help_msg_on);
 			r_str_argv_free (argv);
 			return 0;
 		}
@@ -1929,9 +1878,8 @@ static int cmd_open(void *data, const char *input) {
 							eprintf ("Unknown open tool. Cannot find xdg-open\n");
 						}
 #endif
-
 					} else {
-						eprintf ("Usage: open [path]\n");
+						r_core_cmd_help_match (core, help_msg_o, "open", true);
 					}
 				}
 				break;
@@ -1942,14 +1890,13 @@ static int cmd_open(void *data, const char *input) {
 					R_LOG_ERROR ("Cannot find file");
 				}
 				break;
-			case ' ':
-				{
-					int fd = r_num_math (core->num, input + 1);
-					if (fd >= 0 || input[1] == '0') {
-						cmd_op (core, 0, fd);
-					} else {
-						R_LOG_ERROR ("Invalid fd number");
-					}
+			case ' ': {
+				int fd = r_num_math (core->num, input + 1);
+				if (fd >= 0 || input[1] == '0') {
+					cmd_op (core, 0, fd);
+				} else {
+					R_LOG_ERROR ("Invalid fd number");
+				}
 				}
 				break;
 			default:
@@ -1978,7 +1925,11 @@ static int cmd_open(void *data, const char *input) {
 		ptr = input + 1;
 		argv = r_str_argv (ptr, &argc);
 		if (argc == 0) {
-			eprintf ("Usage: o (uri://)[/path/to/file] (addr)\n");
+			if (perms & R_PERM_W) {
+				r_core_cmd_help_match (core, help_msg_o, "o+", false);
+			} else {
+				r_core_cmd_help_match (core, help_msg_o, "o", true);
+			}
 			r_str_argv_free (argv);
 			return 0;
 		}
@@ -2060,15 +2011,15 @@ static int cmd_open(void *data, const char *input) {
 		r_id_storage_foreach (core->io->files, desc_list_cb, core->print);
 		break;
 	case '*': // "o*"
-		if ('?' == input[1]) {
-			r_core_cmd_help (core, help_msg_o_star);
+		if (input[1] == '?') {
+			r_core_cmd_help_match (core, help_msg_o, "o*", true);
 			break;
 		}
 		r_id_storage_foreach (core->io->files, desc_list_cmds_cb, core);
 		break;
 	case 'j': // "oj"
-		if ('?' == input[1]) {
-			r_core_cmd_help (core, help_msg_oj);
+		if (input[1] == '?') {
+			r_core_cmd_help_match (core, help_msg_o, "oj", true);
 			break;
 		}
 		PJ *pj = pj_new ();
@@ -2113,13 +2064,23 @@ static int cmd_open(void *data, const char *input) {
 	case '-': // "o-"
 		switch (input[1]) {
 		case '!': // "o-!"
-			r_core_file_close_all_but (core);
+			if (input[2] == '?') {
+				r_core_cmd_help_match (core, help_msg_o_dash, "o-!", true);
+			} else {
+				r_core_file_close_all_but (core);
+			}
 			break;
 		case '$': // "o-$"
-			R_LOG_TODO ("o-$: close last fd is not implemented");
+			if (input[2] == '?') {
+				r_core_cmd_help_match (core, help_msg_o_dash, "o-$", true);
+			} else {
+				R_LOG_TODO ("o-$: close last fd is not implemented");
+			}
 			break;
 		case '.': // "o-."
-			{
+			if (input[2] == '?') {
+				r_core_cmd_help_match (core, help_msg_o_dash, "o-*", true);
+			} else {
 				RBinFile *bf = r_bin_cur (core->bin);
 				if (bf && bf->fd >= 0) {
 					core->bin->cur = NULL;
@@ -2131,27 +2092,35 @@ static int cmd_open(void *data, const char *input) {
 			}
 			break;
 		case '*': // "o-*"
-			r_io_close_all (core->io);
-			r_bin_file_delete_all (core->bin);
-			break;
-		case '-': // "o--"
-			r_io_close_all (core->io);
-			r_bin_file_delete_all (core->bin);
-			r_core_cmd0 (core, "o-*;om-*");
-			r_anal_purge (core->anal);
-			r_flag_unset_all (core->flags);
-			break;
-		default:
-			{
-				int fd = (int)r_num_math (core->num, input + 1);
-				if (!r_io_fd_close (core->io, fd)) {
-					R_LOG_ERROR ("Unable to find file descriptor %d", fd);
-				}
+			if (input[2] == '?') {
+				r_core_cmd_help_match (core, help_msg_o_dash, "o-*", true);
+			} else {
+				r_io_close_all (core->io);
+				r_bin_file_delete_all (core->bin);
 			}
 			break;
-		case 0:
+		case '-': // "o--"
+			if (input[2] == '?') {
+				r_core_cmd_help_match (core, help_msg_o_dash, "o--", true);
+			} else {
+				r_io_close_all (core->io);
+				r_bin_file_delete_all (core->bin);
+				r_core_cmd0 (core, "o-*;om-*");
+				r_anal_purge (core->anal);
+				r_flag_unset_all (core->flags);
+			}
+			break;
+		case '\0':
 		case '?':
-			r_core_cmd_help (core, help_msg_o_);
+			r_core_cmd_help (core, help_msg_o_dash);
+			break;
+		default: {
+			int fd = (int)r_num_math (core->num, input + 1);
+			if (!r_io_fd_close (core->io, fd)) {
+				R_LOG_ERROR ("Unable to find file descriptor %d", fd);
+			}
+			}
+			break;
 		}
 		break;
 	case '.': // "o."
@@ -2204,37 +2173,44 @@ static int cmd_open(void *data, const char *input) {
 			r_core_file_reopen_in_malloc (core);
 			break;
 		case 'd': // "ood" : reopen in debugger
-			if (input[2] == 'r') { // "oodr"
+			switch (input[2]) {
+			case 'r': // "oodr"
 				r_core_cmdf (core, "dor %s", input + 3);
 				r_core_file_reopen_debug (core, "");
-			} else if (input[2] == 'f') { // "oodf"
-				char **argv = NULL;
-				int addr = 0;
+				break;
+			case 'f': // "oodf"
 				argv = r_str_argv (input + 3, &argc);
-				if (argc == 0) {
-					eprintf ("Usage: oodf (uri://)[/path/to/file] (addr)\n");
+				if (argc < 1 || argc > 2) {
+					r_core_cmd_help_match (core, help_msg_ood, "oodf", true);
 					r_str_argv_free (argv);
 					return 0;
 				}
-				if (argc == 2) {
-					if (r_num_is_valid_input (core->num, argv[1])) {
-						addr = r_num_math (core->num, argv[1]);
-					}
+				if (argc == 2 && r_num_is_valid_input (core->num, argv[1])) {
+					addr = r_num_math (core->num, argv[1]);
 				}
 				r_core_file_reopen_remote_debug (core, argv[0], addr);
 				r_str_argv_free (argv);
-			} else if ('?' == input[2]) {
-				r_core_cmd_help (core, help_msg_ood);
-			} else {
+				break;
+			case '\0': // "ood"
+			case ' ': // "ood "
 				r_core_file_reopen_debug (core, r_str_trim_head_ro (input + 2));
+				break;
+			case '?': // "ood?"
+			default:
+				r_core_cmd_help (core, help_msg_ood);
+				break;
 			}
 			break;
 		case 'c': // "ooc"
-			r_core_cmd0 (core, "oc `o.`");
+			if (input[2] == '?') {
+				r_core_cmd_help_match (core, help_msg_oo, "ooc", true);
+			} else {
+				r_core_cmd0 (core, "oc `o.`");
+			}
 			break;
 		case 'b': // "oob" : reopen with bin info
-			if ('?' == input[2]) {
-				r_core_cmd_help (core, help_msg_oob);
+			if (input[2] == '?') {
+				r_core_cmd_help_match (core, help_msg_oo, "oob", true);
 			} else {
 				r_core_file_reopen (core, input + 2, 0, 2);
 			}
@@ -2248,8 +2224,8 @@ static int cmd_open(void *data, const char *input) {
 				r_core_file_reopen (core, NULL, R_PERM_RW, 0);
 				break;
 			case 'n': // "oonn"
-				if ('?' == input[3] || !core->io->desc) {
-					r_core_cmd_help (core, help_msg_oonn);
+				if (input[3] == '?' || !core->io->desc) {
+					r_core_cmd_help_match (core, help_msg_oo, "oonn", false);
 					break;
 				}
 				RIODesc *desc = r_io_desc_get (core->io, core->io->desc->fd);
@@ -2269,13 +2245,13 @@ static int cmd_open(void *data, const char *input) {
 				break;
 			case '?':
 			default:
-				r_core_cmd_help (core, help_msg_oon);
+				r_core_cmd_help_match (core, help_msg_oo, "oon", false);
 				break;
 			}
 			break;
 		case '+': // "oo+"
-			if ('?' == input[2]) {
-				r_core_cmd_help (core, help_msg_oo_plus);
+			if (input[2] == '?') {
+				r_core_cmd_help_match (core, help_msg_oo, "oo+", true);
 			} else if (core && core->io && core->io->desc) {
 				int fd;
 				int perms = R_PERM_RW;
@@ -2337,7 +2313,7 @@ static int cmd_open(void *data, const char *input) {
 				}
 			}
 			break;
-		case '?':
+		case '?': // "oo?"
 		default:
 			 r_core_cmd_help (core, help_msg_oo);
 			 break;

@@ -12,10 +12,10 @@ static void set_fcn_args_info(RAnalFuncArg *arg, RAnal *anal, const char *fcn_na
 	arg->name = r_type_func_args_name (TDB, fcn_name, arg_num);
 	arg->orig_c_type = r_type_func_args_type (TDB, fcn_name, arg_num);
 	if (!arg->name || !arg->orig_c_type) {
-		eprintf ("Missing type for function argument (%s)\n", fcn_name);
+		R_LOG_WARN ("Missing type for function argument to set (%s)", fcn_name);
 		return;
 	}
-	if (!strncmp ("const ", arg->orig_c_type, 6)) {
+	if (r_str_startswith (arg->orig_c_type, "const ")) {
 		arg->c_type = arg->orig_c_type + 6;
 	} else {
 		arg->c_type = arg->orig_c_type;

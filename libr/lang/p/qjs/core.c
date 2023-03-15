@@ -184,7 +184,7 @@ static JSValue r2plugin_core(JSContext *ctx, JSValueConst this_val, int argc, JS
 	size_t namelen;
 	const char *nameptr = JS_ToCStringLen2 (ctx, &namelen, name, false);
 	if (nameptr) {
-		ap->name = strdup (nameptr);
+		ap->name = nameptr;
 	} else {
 		R_LOG_WARN ("r2.plugin requires the function to return an object with the `name` field");
 		return JS_NewBool (ctx, false);
@@ -209,7 +209,6 @@ static JSValue r2plugin_core(JSContext *ctx, JSValueConst this_val, int argc, JS
 	QjsContext *qc = qjsctx_find (core, ap->name);
 	if (qc) {
 		R_LOG_WARN ("r2.plugin with name %s is already registered", ap->name);
-		free ((char*)ap->name);
 		free (ap);
 		// return JS_ThrowRangeError (ctx, "r2.plugin core already registered (only one exists)");
 		return JS_NewBool (ctx, false);

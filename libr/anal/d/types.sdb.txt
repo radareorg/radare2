@@ -97,7 +97,7 @@ func.srandomdev.ret=void
 
 initstate=func
 func.initstate.args=3
-func.initstate.arg.0=uint32_t,state
+func.initstate.arg.0=uint32_t,seed
 func.initstate.arg.1=char *,state
 func.initstate.arg.2=size_t,size
 func.initstate.ret=char *
@@ -3008,3 +3008,62 @@ func.ptrace.arg.1=pid_t,pid
 func.ptrace.arg.2=void*,addr
 func.ptrace.arg.3=void*,data
 func.ptrace.ret=long
+
+swift_bridgeObjectRelease=func
+func.swift_bridgeObjectRelease.args=1
+func.swift_bridgeObjectRelease.arg.0=void *
+func.swift_bridgeObjectRelease.ret=void
+
+swift_endAccess=func
+func.swift_endAccess.args=1
+func.swift_endAccess.arg.0=void *
+func.swift_endAccess.ret=void
+
+swift_release=func
+func.swift_release.args=1
+func.swift_release.arg.0=void *
+func.swift_release.ret=void
+
+objc_allocWithZone=func
+func.objc_allocWithZone.args=1
+func.objc_allocWithZone.arg.0=void *
+func.objc_allocWithZone.ret=void *
+
+swift_unexpectedError=func
+func.swift_unexpectedError.args=1
+func.swift_unexpectedError.arg.0=void *
+func.swift_unexpectedError.ret=void
+
+objc_opt_self=func
+func.objc_opt_self.args=1
+func.objc_opt_self.arg.0=void *
+func.objc_opt_self.ret=void *
+
+_sSS10FoundationE19_bridgeToObjectiveCSo8NSStringCyF=func
+func._sSS10FoundationE19_bridgeToObjectiveCSo8NSStringCyF.args=1
+func._sSS10FoundationE19_bridgeToObjectiveCSo8NSStringCyF.arg.0=void *
+func._sSS10FoundationE19_bridgeToObjectiveCSo8NSStringCyF.ret=void *
+
+swift_bridgeObjectRetain=func
+func.swift_bridgeObjectRetain.args=1
+func.swift_bridgeObjectRetain.arg.0=void *
+func.swift_bridgeObjectRetain.ret=void *
+
+swift_getObjCClassFromMetadata=func
+func.swift_getObjCClassFromMetadata.args=1
+func.swift_getObjCClassFromMetadata.arg.0=void *
+func.swift_getObjCClassFromMetadata.ret=void *
+
+swift_initStackObject=func
+func.swift_initStackObject.args=2
+func.swift_initStackObject.arg.0=void *
+func.swift_initStackObject.arg.1=void *
+func.swift_initStackObject.ret=void *
+
+swift_beginAccess=func
+func.swift_beginAccess.args=4
+func.swift_beginAccess.arg.0=void *
+func.swift_beginAccess.arg.1=void *
+func.swift_beginAccess.arg.2=void *
+func.swift_beginAccess.arg.3=void *
+func.swift_beginAccess.ret=void

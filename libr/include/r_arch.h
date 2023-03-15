@@ -311,6 +311,8 @@ extern RArchPlugin r_arch_plugin_alpha;
 extern RArchPlugin r_arch_plugin_vax;
 extern RArchPlugin r_arch_plugin_tricore;
 extern RArchPlugin r_arch_plugin_pic;
+extern RArchPlugin r_arch_plugin_cris;
+extern RArchPlugin r_arch_plugin_cr16;
 
 
 #ifdef __cplusplus

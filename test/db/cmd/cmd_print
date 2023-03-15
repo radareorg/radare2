@@ -800,7 +800,7 @@ NAME=pm hello.c
 FILE=bins/src/hello.c
 CMDS=pm
 EXPECT=<<EOF
-0x00000000 1 C source code
+0x00000000 0 C source code
 EOF
 RUN
 
@@ -809,7 +809,7 @@ FILE=bins/elf/analysis/main
 ARGS=-n
 CMDS=pm
 EXPECT=<<EOF
-0x00000000 1 ELF 64-bit LSB executable, x86-64, version 1
+0x00000000 0 ELF 64-bit LSB executable, x86-64, version 1
 EOF
 RUN
 
@@ -818,7 +818,7 @@ FILE=bins/mach0/fatmach0-3true
 ARGS=-n
 CMDS=pm
 EXPECT=<<EOF
-0x00000000 1 Fat-Mach-O
+0x00000000 0 Fat-Mach-O
 EOF
 RUN
 
@@ -827,7 +827,7 @@ FILE=bins/java/Hello.class
 ARGS=-n
 CMDS=pm
 EXPECT=<<EOF
-0x00000000 1 Java CLASS
+0x00000000 0 Java CLASS
 EOF
 RUN
 
@@ -836,7 +836,7 @@ FILE=bins/pe/a.exe
 ARGS=-n
 CMDS=pm
 EXPECT=<<EOF
-0x00000000 1 PE for MS Windows (console) Intel 80386 32-bit
+0x00000000 0 PE for MS Windows (console) Intel 80386 32-bit
 EOF
 RUN
 

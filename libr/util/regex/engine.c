@@ -286,8 +286,8 @@ static int matcher(struct re_guts *g, char *string, size_t nmatch, RRegexMatch p
 		}
 	}
 
-	free ((char *)m->pmatch);
-	free ((char *)m->lastpos);
+	free (m->pmatch);
+	free (m->lastpos);
 	STATETEARDOWN (m);
 	return 0;
 }

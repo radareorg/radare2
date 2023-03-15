@@ -4197,6 +4197,7 @@ static inline bool is_filtered_flag(RDisasmState *ds, const char *name) {
 
 /* convert numeric value in opcode to ascii char or number */
 static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
+	r_return_if_fail (ds);
 	RCore *core = ds->core;
 	const bool be = R_ARCH_CONFIG_IS_BIG_ENDIAN (core->rasm->config);
 	ut64 p = ds->analop.ptr;
@@ -4700,10 +4701,17 @@ static bool myregwrite(REsil *esil, const char *name, ut64 *val) {
 			case R_ANAL_OP_TYPE_CJMP:
 			case R_ANAL_OP_TYPE_MJMP:
 			case R_ANAL_OP_TYPE_UCJMP:
+			// case R_ANAL_OP_TYPE_RCALL:
+			// case R_ANAL_OP_TYPE_UCALL:
 				jump_op = true;
 				break;
+			case R_ANAL_OP_TYPE_CALL:
 			case R_ANAL_OP_TYPE_TRAP:
 			case R_ANAL_OP_TYPE_RET:
+				ignored = true;
+				break;
+			// case R_ANAL_OP_TYPE_STORE:
+			// case R_ANAL_OP_TYPE_LOAD:
 				ignored = true;
 				break;
 			case R_ANAL_OP_TYPE_LEA:
@@ -7174,6 +7182,9 @@ R_API int r_core_disasm_pde(RCore *core, int nb_opcodes, int mode) {
 		}
 	}
 	REsil *esil = core->anal->esil;
+#if USE_NEW_IO_CACHE_API
+	r_io_cache_init (core->io);
+#else
 	RPVector ocache = core->io->cache;
 	const int ocached = core->io->cached;
 	if (ocache.v.a) {
@@ -7184,6 +7195,7 @@ R_API int r_core_disasm_pde(RCore *core, int nb_opcodes, int mode) {
 	} else {
 		r_io_cache_init (core->io);
 	}
+#endif
 	r_reg_arena_push (reg);
 	RConfigHold *chold = r_config_hold_new (core->config);
 	r_config_hold (chold, "io.cache", "asm.lines", NULL);
@@ -7283,6 +7295,9 @@ R_API int r_core_disasm_pde(RCore *core, int nb_opcodes, int mode) {
 	}
 	free (buf);
 	r_reg_arena_pop (reg);
+#if USE_NEW_IO_CACHE_API
+	R_LOG_TODO ("new-io-cache doesnt rollbacks yet");
+#else
 	int len = r_pvector_length (&ocache);
 	if (r_pvector_length (&core->io->cache) > len) {
 		// TODO: Implement push/pop for IO.cache
@@ -7301,6 +7316,7 @@ R_API int r_core_disasm_pde(RCore *core, int nb_opcodes, int mode) {
 		r_skyline_add (&core->io->cache_skyline, c->itv, c);
 	}
 	core->io->cached = ocached;
+#endif
 	r_config_hold_restore (chold);
 	r_config_hold_free (chold);
 	return i;

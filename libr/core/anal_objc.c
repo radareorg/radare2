@@ -80,11 +80,11 @@ static inline ut64 readQword(RCoreObjc *objc, ut64 addr, bool *success) {
 
 static void objc_analyze(RCore *core) {
 	R_LOG_INFO ("Analyzing code to find selref references");
-	r_core_cmd0 (core, "aar");
+	r_core_cmd_call (core, "aar");
 	if (!strcmp ("arm", r_config_get (core->config, "asm.arch"))) {
 		const bool emu_lazy = r_config_get_b (core->config, "emu.lazy");
 		r_config_set_b (core->config, "emu.lazy", true);
-		r_core_cmd0 (core, "aae");
+		r_core_cmd_call (core, "aae");
 		r_config_set_b (core->config, "emu.lazy", emu_lazy);
 	}
 }
