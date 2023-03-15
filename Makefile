@@ -353,46 +353,13 @@ purge: purge-doc purge-dev uninstall user-uninstall
 system-purge: purge
 	sys/purge.sh
 
-R2V=radare2-${VERSION}
-
-v ver version:
-	@echo CURRENT=${VERSION}
-	@echo PREVIOUS=${PREVIOUS_RELEASE}
-
 dist:
-	rm -rf $(R2V)
-	git clone . $(R2V)
-	-cd $(R2V) && [ ! -f config-user.mk -o configure -nt config-user.mk ] && ./configure "--prefix=${PREFIX}"
-	cd $(R2V) ; git log $$(git show-ref | grep ${PREVIOUS_RELEASE} | awk '{print $$1}')..HEAD > ChangeLog
-	$(MAKE) -C $(R2V)/shlr capstone-sync
-	FILES=`cd $(R2V); git ls-files | sed -e "s,^,$(R2V)/,"` ; \
-	CS_FILES=`cd $(R2V)/shlr/capstone ; git ls-files | grep -v pdf | grep -v xcode | grep -v msvc | grep -v suite | grep -v bindings | grep -v tests | sed -e "s,^,$(R2V)/shlr/capstone/,"` ; \
-	${TAR} "radare2-${VERSION}.tar" $${FILES} $${CS_FILES} "$(R2V)/ChangeLog" ; \
-	${CZ} "radare2-${VERSION}.tar"
-
-olddist:
-	-[ configure -nt config-user.mk ] && ./configure "--prefix=${PREFIX}"
-	#git log $$(git show-ref `git tag |tail -n1`)..HEAD > ChangeLog
-	git log $$(git show-ref | grep ${PREVIOUS_RELEASE} | awk '{print $$1}')..HEAD > ChangeLog
-	cd shlr && ${MAKE} capstone-sync
-	$(MAKE) -R capstone.ps
-	DIR=`basename "$$PWD"` ; \
-	FILES=`git ls-files | sed -e "s,^,radare2-${VERSION}/,"` ; \
-	CS_FILES=`cd shlr/capstone ; git ls-files | grep -v pdf | grep -v xcode | grep -v msvc | grep -v suite | grep -v bindings | grep -v tests | sed -e "s,^,radare2-${VERSION}/shlr/capstone/,"` ; \
-	cd .. && mv "$${DIR}" "radare2-${VERSION}" && \
-	${TAR} "radare2-${VERSION}.tar" $${FILES} $${CS_FILES} "radare2-${VERSION}/ChangeLog" ; \
-	${CZ} "radare2-${VERSION}.tar" ; \
-	mv "radare2-${VERSION}" "$${DIR}"
+	$(MAKE) -C dist/tarball
+	cp -f dist/tarball/*.$(TAREXT) .
+	cp -f dist/tarball/*.zip .
 
 shot:
-	DATE=`date '+%Y%m%d'` ; \
-	FILES=`git ls-files | sed -e "s,^,radare2-${DATE}/,"` ; \
-	cd .. && mv radare2 "radare2-$${DATE}" && \
-	${TAR} "radare2-$${DATE}.tar" $${FILES} ;\
-	${CZ} "radare2-$${DATE}.tar" ;\
-	mv "radare2-$${DATE}" radare2 && \
-	scp "radare2-$${DATE}.${TAREXT}" \
-		radare.org:/srv/http/radareorg/get/shot
+	$(MAKE) -C dist/tarball VERSION=`date '+%Y%m%d'`
 
 tests test:
 	$(MAKE) -j -C test

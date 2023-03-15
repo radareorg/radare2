@@ -6,6 +6,13 @@ _INCLUDE_MK_GCC_=
 include ../mk/${COMPILER}.mk
 include ../mk/darwin.mk
 
+
+ifeq ($(shell test -f ../ChangeLog -a -d capstone -a ! -d capstone/.git && echo 1),1)
+WITHOUT_PULL=1
+CS_RELEASE=0
+else
+WITHOUT_PULL=0
+
 # Build against last capstone release or next
 ifeq ($(shell test -d ../.git && echo 1),1)
 CS_RELEASE=0
@@ -14,6 +21,7 @@ ifeq ($(shell test -d capstone/.git && echo 1),1)
 CS_RELEASE=0
 else
 CS_RELEASE=1
+endif
 endif
 endif
 
@@ -254,6 +262,7 @@ capstone-$(CS_VER).tar.gz:
 else
 
 capstone: capstone-sync
+
 
 capstone-sync:
 ifeq ($(WITHOUT_PULL),1)
