@@ -83,7 +83,7 @@ $ r2 /bin/ls   # open file in read-only
 * [Official radare2 book](https://book.rada.re): Read about r2 usage
 * [COMMUNITY.md](COMMUNITY.md): Community engagement and loose guidelines
 * [CONTRIBUTING.md](CONTRIBUTING.md): Information about reporting issues and
-  contributing. See also [Contributing](#Contributing)
+  contributing. See also [Contributing](#contributing)
 * [DEVELOPERS.md](DEVELOPERS.md): Development guidelines for r2
 * [SECURITY.md](SECURITY.md): Instructions for reporting vulnerabilities
 * [USAGE.md](USAGE.md): Some example commands
@@ -116,7 +116,7 @@ Most popular packages are:
 # Contributing
 
 There are many ways to contribute to the project. Contact the
-[community](#Community), check out the github issues, or grep for
+[community](#community), check out the github issues, or grep for
 TODO/FIXME/XXX comments in the source.
 
 To contribute code, push your changes to a branch on your fork of the
