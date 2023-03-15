@@ -1,5 +1,5 @@
 PKGNAME radare2
-VERSION 5.8.4
+VERSION 5.8.5
 CONTACT pancake ; pancake@nopcode.org
 
 DESCRIPTION The UNIX-like reverse engineering toolkit ;
