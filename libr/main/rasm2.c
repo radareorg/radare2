@@ -99,15 +99,15 @@ static int showanal(RAsmState *as, RAnalOp *op, ut64 offset, ut8 *buf, int len, 
 		printf ("offset:   0x%08" PFMT64x "\n", offset);
 		printf ("bytes:    %s\n", bytes);
 		printf ("type:     %s\n", optype);
-		if (op->jump != -1LL) {
+		if (op->jump != UT64_MAX) {
 			printf ("jump:     0x%08" PFMT64x "\n", op->jump);
 		}
-		if (op->fail != -1LL) {
+		if (op->fail != UT64_MAX) {
 			printf ("fail:     0x%08" PFMT64x "\n", op->fail);
 		}
 		//if (op->ref != -1LL)
 		//      printf ("ref:      0x%08"PFMT64x"\n", op->ref);
-		if (op->val != -1LL) {
+		if (op->val != UT64_MAX) {
 			printf ("value:    0x%08" PFMT64x "\n", op->val);
 		}
 		printf ("stackop:  %s\n", stackop);
