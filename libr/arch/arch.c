@@ -32,7 +32,7 @@ static ut32 _rate_compat(RArchPlugin *p, RArchConfig *cfg, const char *name) {
 	ut32 bits = cfg->bits;
 	ut32 score = 0;
 	if (name && !strcmp (p->name, name)) {
-		score += 50;
+		score += 100;
 	}
 	if (cfg->arch && !strcmp (p->arch, cfg->arch)) {
 		score += 50;

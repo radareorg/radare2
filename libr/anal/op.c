@@ -59,7 +59,6 @@ R_API int r_anal_opasm(RAnal *anal, ut64 addr, const char *s, ut8 *outbuf, int o
 			}
 		}
 		r_anal_op_set_mnemonic (op, addr, s);
-		// if current selected arch plugin doesnt support assembly, find a way
 		if (!r_arch_encode (anal->arch, op, 0)) {
 			int ret = r_arch_info (anal->arch, R_ANAL_ARCHINFO_INV_OP_SIZE);
 			if (ret < 1) {
