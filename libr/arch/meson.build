@@ -87,21 +87,21 @@ endif
 
 #if get_option('use_v35')
 r_arch_sources += [
-  join_paths('p/arm/plugin_v35.c'),
-  join_paths('p/arm/v35/arch-arm64/disassembler/decode.c'),
-  join_paths('p/arm/v35/arch-arm64/disassembler/decode0.c'),
-  join_paths('p/arm/v35/arch-arm64/disassembler/decode1.c'),
-  join_paths('p/arm/v35/arch-arm64/disassembler/decode2.c'),
-  join_paths('p/arm/v35/arch-arm64/disassembler/decode_fields32.c'),
-  join_paths('p/arm/v35/arch-arm64/disassembler/decode_scratchpad.c'),
-  join_paths('p/arm/v35/arch-arm64/disassembler/encodings_dec.c'),
-  join_paths('p/arm/v35/arch-arm64/disassembler/encodings_fmt.c'),
-  join_paths('p/arm/v35/arch-arm64/disassembler/format.c'),
-  join_paths('p/arm/v35/arch-arm64/disassembler/gofer.c'),
-  join_paths('p/arm/v35/arch-arm64/disassembler/operations.c'),
-  join_paths('p/arm/v35/arch-arm64/disassembler/pcode.c'),
-  join_paths('p/arm/v35/arch-arm64/disassembler/regs.c'),
-  join_paths('p/arm/v35/arch-arm64/disassembler/sysregs.c')
+  'p/arm/plugin_v35.c',
+  'p/arm/v35/arch-arm64/disassembler/decode.c',
+  'p/arm/v35/arch-arm64/disassembler/decode0.c',
+  'p/arm/v35/arch-arm64/disassembler/decode1.c',
+  'p/arm/v35/arch-arm64/disassembler/decode2.c',
+  'p/arm/v35/arch-arm64/disassembler/decode_fields32.c',
+  'p/arm/v35/arch-arm64/disassembler/decode_scratchpad.c',
+  'p/arm/v35/arch-arm64/disassembler/encodings_dec.c',
+  'p/arm/v35/arch-arm64/disassembler/encodings_fmt.c',
+  'p/arm/v35/arch-arm64/disassembler/format.c',
+  'p/arm/v35/arch-arm64/disassembler/gofer.c',
+  'p/arm/v35/arch-arm64/disassembler/operations.c',
+  'p/arm/v35/arch-arm64/disassembler/pcode.c',
+  'p/arm/v35/arch-arm64/disassembler/regs.c',
+  'p/arm/v35/arch-arm64/disassembler/sysregs.c'
 ]
 #incdirs += [
 ##  join_paths('p/arm/v35/arch-arm64/disassembler'),

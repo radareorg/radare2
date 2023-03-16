@@ -332,7 +332,7 @@ jobs:
     - name: Build with meson + ninja
       shell: cmd
       run: |
-        REM preconfigure
+        call preconfigure
         call configure release
         call make
     - name: Test executable
