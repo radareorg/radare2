@@ -183,7 +183,7 @@ R_API bool r_arch_add(RArch *a, RArchPlugin *ap) {
 	if (!ap->name || !ap->arch) {
 		return false;
 	}
-	return !!r_list_append (a->plugins, ap);
+	return r_list_append (a->plugins, ap) != NULL;
 }
 
 R_API bool r_arch_del(RArch *arch, const char *name) {

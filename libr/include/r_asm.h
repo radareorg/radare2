@@ -89,7 +89,6 @@ R_API bool r_asm_set_syntax(RAsm *a, int syntax); // This is in RArchConfig
 R_API int r_asm_syntax_from_string(const char *name);
 R_API int r_asm_set_pc(RAsm *a, ut64 pc);
 R_API int r_asm_disassemble(RAsm *a, RAnalOp *op, const ut8 *buf, int len);
-// R_API int r_asm_assemble(RAsm *a, RAnalOp *op, const char *buf);
 R_API RAsmCode* r_asm_mdisassemble(RAsm *a, const ut8 *buf, int len);
 R_API RAsmCode* r_asm_mdisassemble_hexstr(RAsm *a, RParse *p, const char *hexstr);
 R_API RAsmCode* r_asm_massemble(RAsm *a, const char *buf);

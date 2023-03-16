@@ -9,8 +9,9 @@ OBJ_ARM_V35=p/arm/plugin_v35.o
 OBJ_ARM_V35+=p/arm/v35/arch-arm64/disassembler/*.o
 # OBJ_ARM_V35 += ../../arch/p/arm/v35/arm64dis.$(EXT_AR)
 # OBJ_ARM_V35+=../../arch/p/arm/v35/armv7dis.$(EXT_AR)
-OBJ_ARM_V35+=p/arm/armass64.o
-OBJ_ARM_V35+=p/arm/armass.o
+# assembler should be resolved externally
+# OBJ_ARM_V35+=p/arm/armass64.o
+# OBJ_ARM_V35+=p/arm/armass.o
 
 STATIC_OBJ+=${OBJ_ARM_V35}
 CFLAGS+=$(V35ARM64_CFLAGS)

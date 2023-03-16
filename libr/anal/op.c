@@ -32,10 +32,34 @@ static int defaultCycles(RAnalOp *op) {
 
 // XXX deprecate!! or at least call  r_arch_bath tradition
 R_API int r_anal_opasm(RAnal *anal, ut64 addr, const char *s, ut8 *outbuf, int outlen) {
+	// XXX this is a hack because RArch needs to hold two pointers one for the encoder and one for the decoder plugins (optionally)
+	char *tmparch = NULL;
 	int ret = 0;
 	if (outlen > 0 && anal->arch->session && anal->uses == 2) {
+		RArchSession *as = R_UNWRAP3 (anal, arch, session);
+		RArchPluginEncodeCallback encode = R_UNWRAP3 (as, plugin, encode);;
 		RAnalOp *op = r_anal_op_new ();
+		if (!op) {
+			return -1;
+		}
+		if (!encode) {
+			const char *arch_name = as->plugin->name;
+			const char *dot = strchr (arch_name, '.');
+			if (dot) {
+				char *an = r_str_ndup (arch_name, dot - arch_name);
+				if (r_arch_use (anal->arch, anal->arch->cfg, an)) {
+					tmparch = strdup (arch_name);
+				}
+				free (an);
+			}
+			if (!tmparch) {
+				// cannot assemble with this plugin
+				r_anal_op_free (op);
+				return -1;
+			}
+		}
 		r_anal_op_set_mnemonic (op, addr, s);
+		// if current selected arch plugin doesnt support assembly, find a way
 		if (!r_arch_encode (anal->arch, op, 0)) {
 			int ret = r_arch_info (anal->arch, R_ANAL_ARCHINFO_INV_OP_SIZE);
 			if (ret < 1) {
@@ -51,7 +75,8 @@ R_API int r_anal_opasm(RAnal *anal, ut64 addr, const char *s, ut8 *outbuf, int o
 			memcpy (outbuf, op->bytes, finlen);
 		} else {
 			r_anal_op_free (op);
-			return -1;
+			ret = -1;
+			goto beach;
 		}
 		r_anal_op_free (op);
 		/* consider at least 1 byte to be part of the opcode */
@@ -73,10 +98,16 @@ R_API int r_anal_opasm(RAnal *anal, ut64 addr, const char *s, ut8 *outbuf, int o
 				ret = op->size; // finlen
 			} else {
 				r_anal_op_free (op);
-				return -1;
+				ret = -1;
+				goto beach;
 			}
 			r_anal_op_free (op);
 		}
+	}
+beach:
+	if (tmparch) {
+		r_arch_use (anal->arch, anal->arch->cfg, tmparch);
+		free (tmparch);
 	}
 	return ret;
 }

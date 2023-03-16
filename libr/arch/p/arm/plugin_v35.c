@@ -3,7 +3,7 @@
 #include <r_arch.h>
 #include <r_search.h>
 #include <sdb/ht_uu.h>
-#include "./asm-arm.h"
+// #include "./asm-arm.h"
 #include <r_util/r_assert.h>
 #include "v35/arch-arm64/disassembler/encodings_dec.h"
 #include "v35/arch-arm64/disassembler/encodings_fmt.h"
@@ -3314,6 +3314,7 @@ static char *regs(RArchSession *as) {
 	return r_str_newf (p, snReg);
 }
 
+#if 0
 static bool encode(RArchSession *s, RAnalOp *op, ut32 mask) {
 	const int bits = s->config->bits;
 	const bool is_thumb = (bits == 16);
@@ -3364,6 +3365,7 @@ static bool encode(RArchSession *s, RAnalOp *op, ut32 mask) {
 	// r_strbuf_setbin (&op->buf, opbuf, opsize);
 	return true;
 }
+#endif
 
 RArchPlugin r_arch_plugin_arm_v35 = {
 	.name = "arm.v35",
@@ -3376,7 +3378,6 @@ RArchPlugin r_arch_plugin_arm_v35 = {
 	.preludes = anal_preludes,
 	.bits = R_SYS_BITS_PACK (64),
 	.decode = &decode,
-	.encode = &encode,
 	.mnemonics = &mnemonics,
 };
 

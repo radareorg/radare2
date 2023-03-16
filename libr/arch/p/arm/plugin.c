@@ -6,7 +6,14 @@
 #include "./asm-arm.h"
 
 static bool encode(RArchSession *s, RAnalOp *op, ut32 mask) {
-	const int bits = s->config->bits;
+	int bits = s->config->bits;
+	if (s->config->bits & R_SYS_BITS_64) {
+		bits = 64;
+	} else if (s->config->bits & R_SYS_BITS_32) {
+		bits = 32;
+	} else if (s->config->bits & R_SYS_BITS_16) {
+		bits = 16;
+	}
 	const bool is_thumb = (bits == 16);
 	int opsize;
 	ut32 opcode = UT32_MAX;
