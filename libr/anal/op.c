@@ -37,7 +37,7 @@ R_API int r_anal_opasm(RAnal *anal, ut64 addr, const char *s, ut8 *outbuf, int o
 	int ret = 0;
 	if (outlen > 0 && anal->arch->session && anal->uses == 2) {
 		RArchSession *as = R_UNWRAP3 (anal, arch, session);
-		RArchPluginEncodeCallback encode = R_UNWRAP3 (as, plugin, encode);;
+		RArchPluginEncodeCallback encode = R_UNWRAP3 (as, plugin, encode);
 		RAnalOp *op = r_anal_op_new ();
 		if (!op) {
 			return -1;
