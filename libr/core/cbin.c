@@ -3109,7 +3109,7 @@ static int bin_sections(RCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at,
 					R_LOG_ERROR ("Section at 0x%08"PFMT64x" larger than bin.hashlimit", section->paddr);
 				}
 			}
-			r_cons_printf ("0x%"PFMT64x" 0x%"PFMT64x" %s %s%s%s\n",
+			r_cons_printf ("0x%08"PFMT64x" 0x%08"PFMT64x" %s %s%s%s\n",
 				addr, addr + section->size,
 				perms,
 				r_str_get (hashstr), hashstr ? " " : "",
