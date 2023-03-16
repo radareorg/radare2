@@ -16,7 +16,6 @@ arch_plugins = [ 'null',
   'mcs96',
   'ws',
   'arm',
-  'arm_v35',
   '6502',
   'or1k',
   'dis',
@@ -198,9 +197,9 @@ if no_user_plugins
   endif
 endif
 
-# if get_option('use_v35')
-#  arch_plugins += ['arm_v35']
-# endif
+if get_option('use_v35')
+  arch_plugins += ['arm_v35']
+endif
 
 bin_plugins += [
   'art',
