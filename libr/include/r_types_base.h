@@ -265,7 +265,7 @@ typedef struct _utX {
 #define R_CONST_MAYBE
 #define R_CONST_TAG(x) ((x)|1)
 #define R_CONST_UNTAG(x) (((x)>>1)<<1)
-#define R_CONST_FREE(x) do { if (!(x&1) { R_FREE(x); }} while(0)
+#define R_CONST_FREE(x) do { if (!((size_t)(x)&1)) { R_FREE(x); }} while(0)
 
 #ifdef __cplusplus
 }
