@@ -85,6 +85,26 @@ if arch_plugins.contains('x86_nz')
   ]
 endif
 
+if get_option('use_v35')
+r_arch_sources += [
+  'p/arm/plugin_v35.c',
+  'p/arm/v35/arch-arm64/disassembler/decode.c',
+  'p/arm/v35/arch-arm64/disassembler/decode0.c',
+  'p/arm/v35/arch-arm64/disassembler/decode1.c',
+  'p/arm/v35/arch-arm64/disassembler/decode2.c',
+  'p/arm/v35/arch-arm64/disassembler/decode_fields32.c',
+  'p/arm/v35/arch-arm64/disassembler/decode_scratchpad.c',
+  'p/arm/v35/arch-arm64/disassembler/encodings_dec.c',
+  'p/arm/v35/arch-arm64/disassembler/encodings_fmt.c',
+  'p/arm/v35/arch-arm64/disassembler/format.c',
+  'p/arm/v35/arch-arm64/disassembler/gofer.c',
+  'p/arm/v35/arch-arm64/disassembler/operations.c',
+  'p/arm/v35/arch-arm64/disassembler/pcode.c',
+  'p/arm/v35/arch-arm64/disassembler/regs.c',
+  'p/arm/v35/arch-arm64/disassembler/sysregs.c'
+]
+endif
+
 # must be deleted when anal refactor is done
 arch_inc = include_directories('../asm/arch/include')
 

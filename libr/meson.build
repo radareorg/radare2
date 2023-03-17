@@ -198,7 +198,7 @@ if no_user_plugins
 endif
 
 if get_option('use_v35')
-  anal_plugins += ['arm_v35']
+  arch_plugins += ['arm_v35']
 endif
 
 bin_plugins += [

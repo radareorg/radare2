@@ -32,7 +32,7 @@ static ut32 _rate_compat(RArchPlugin *p, RArchConfig *cfg, const char *name) {
 	ut32 bits = cfg->bits;
 	ut32 score = 0;
 	if (name && !strcmp (p->name, name)) {
-		score += 50;
+		score += 100;
 	}
 	if (cfg->arch && !strcmp (p->arch, cfg->arch)) {
 		score += 50;
@@ -183,7 +183,7 @@ R_API bool r_arch_add(RArch *a, RArchPlugin *ap) {
 	if (!ap->name || !ap->arch) {
 		return false;
 	}
-	return !!r_list_append (a->plugins, ap);
+	return r_list_append (a->plugins, ap) != NULL;
 }
 
 R_API bool r_arch_del(RArch *arch, const char *name) {

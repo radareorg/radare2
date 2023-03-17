@@ -570,7 +570,6 @@ static int r_asm_assemble(RAsm *a, RAnalOp *op, const char *buf) {
 		// XXX we shuold use just RArch and ecur/dcur
 		ret = a->analb.encode (a->analb.anal, a->pc, b, buf, sizeof (buf));
 		if (ret > 0) {
-			// r_anal_op_set_bytes (op, op->addr, buf, R_MIN (ret, sizeof (buf)));
 			r_anal_op_set_bytes (op, a->pc, buf, R_MIN (ret, sizeof (buf)));
 		} // else fail to assemble
 		// a->analb.opfini (&aop);

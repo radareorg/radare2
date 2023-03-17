@@ -91,7 +91,7 @@ if %ERRORLEVEL% == 0 (
   )
 )
 
-if EXIST "libr\arch\p\arm\v35arm64\arch-arm64" (
+if EXIST "libr\arch\p\arm\v35\arch-arm64" (
   echo "v35arm64 ok"
 ) else (
   pushd "libr\arch\p\arm\v35"
@@ -102,7 +102,7 @@ if EXIST "libr\arch\p\arm\v35arm64\arch-arm64" (
   popd
 )
 
-if EXIST "libr\arch\p\arm\v35arm64\arch-armv7" (
+if EXIST "libr\arch\p\arm\v35\arch-armv7" (
   echo "v35armv7 ok"
 ) else (
   pushd "libr\arch\p\arm\v35"

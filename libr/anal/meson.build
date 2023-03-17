@@ -135,29 +135,6 @@ incdirs = [
     'arch'
 ]
 
-if get_option('use_v35')
-r_anal_sources += [
-  join_paths('p/anal_arm_v35.c'),
-  join_paths('../asm/arch/arm/v35arm64/arch-arm64/disassembler/decode.c'),
-  join_paths('../asm/arch/arm/v35arm64/arch-arm64/disassembler/decode0.c'),
-  join_paths('../asm/arch/arm/v35arm64/arch-arm64/disassembler/decode1.c'),
-  join_paths('../asm/arch/arm/v35arm64/arch-arm64/disassembler/decode2.c'),
-  join_paths('../asm/arch/arm/v35arm64/arch-arm64/disassembler/decode_fields32.c'),
-  join_paths('../asm/arch/arm/v35arm64/arch-arm64/disassembler/decode_scratchpad.c'),
-  join_paths('../asm/arch/arm/v35arm64/arch-arm64/disassembler/encodings_dec.c'),
-  join_paths('../asm/arch/arm/v35arm64/arch-arm64/disassembler/encodings_fmt.c'),
-  join_paths('../asm/arch/arm/v35arm64/arch-arm64/disassembler/format.c'),
-  join_paths('../asm/arch/arm/v35arm64/arch-arm64/disassembler/gofer.c'),
-  join_paths('../asm/arch/arm/v35arm64/arch-arm64/disassembler/operations.c'),
-  join_paths('../asm/arch/arm/v35arm64/arch-arm64/disassembler/pcode.c'),
-  join_paths('../asm/arch/arm/v35arm64/arch-arm64/disassembler/regs.c'),
-  join_paths('../asm/arch/arm/v35arm64/arch-arm64/disassembler/sysregs.c')
-]
-incdirs += [
-  join_paths('../asm/arch/arm/v35arm64/arch-arm64/disassembler'),
-]
-endif
-
 r_anal_sources += r_anal_d_sources
 
 # tcc
