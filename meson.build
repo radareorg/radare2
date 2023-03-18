@@ -599,6 +599,7 @@ if get_option('local') and get_option('default_library') == 'shared'
 endif
 
 subdir('shlr/lz4')
+subdir('shlr/smallz4')
 subdir('libr/util')
 subdir('libr/socket')
 subdir('libr/crypto')
