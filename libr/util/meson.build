@@ -119,6 +119,11 @@ else
   r_util_sources += ['big.c']
 endif
 
+if get_option('use_smallz4')
+  library_cflags += ['-DUSE_SMALLZ4']
+  r_util_deps += [smallz4_dep]
+endif
+
 r_util = library('r_util', r_util_sources,
   include_directories: platform_inc,
   c_args: library_cflags,
