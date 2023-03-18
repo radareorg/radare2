@@ -837,29 +837,30 @@ static ut32 tb(ArmOp *op) {
 	} else {
 	  	return UT32_MAX;
 	}
+	if (reg64_imm) {
+		if (op->operands[1].immediate > 0x3f) {
+			R_LOG_ERROR("Bit to be tested must be in range 0-63 for %s", op->mnemonic);
+			return UT32_MAX;
+		}
+	} else if (reg32_imm) {
+		if (op->operands[1].immediate > 0x1f) {
+			R_LOG_ERROR("Bit to be tested must be in range 0-31 for %s", op->mnemonic);
+			return UT32_MAX;
+		}
+	}
 	ut64 dst = op->operands[2].immediate;
 	st64 delta = dst - op->addr;
 	ut64 maxis = R_ABS (delta);
-	if (maxis > 0x7fff) {
-		R_LOG_ERROR ("tbz destination is too far");
+	if ((delta & 3) || maxis > 0xfffc) {
+		R_LOG_ERROR ("invalid destination for %s", op->mnemonic);
 	  	return UT32_MAX;
 	}
 	data = k;
-#if 0
-	data |= (op->operands[0].reg & 0x1f) << 24;
- 	data |= (op->operands[1].immediate & 0x1f) << 11;
- 	data |= (op->operands[2].immediate & 0x1c) << 27;
- 	data |= (op->operands[2].immediate & 0x1fe0) << 11;
- 	data |= (op->operands[2].immediate & 0x1fe000) >> 5;
-#else
 	data |= (op->operands[0].reg & 0x1f) << 24;
 	data |= (op->operands[1].immediate & 0x1f) << 11;
 	data |= (delta & 0x1c) << 27;
 	data |= (delta & 0x1fe0) << 11;
-	// data |= (delta & 0xfe000) >> 5;
-	data |= ((delta >> 12) & 3) << 7;
-	//data |= (delta & 0x1fe0) << 11;
-#endif
+	data |= ((delta >> 13) & 7) << 8;
 	return data;
 }
 

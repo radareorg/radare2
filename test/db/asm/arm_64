@@ -635,13 +635,14 @@ ad "rev32 x15, x25" 2F0BC0DA
 ad "rev32 x5, x11" 6509C0DA
 ad "rev32 x1, x2" 4108C0DA
 ad "rev32 x10, x16" 0A0AC0DA
-ad "tbz x1, 0x20, 0x1234" a19100b6
-ad "tbnz x1, 0x20, 0x1234" a19100b7
-# ad "tbz x1, 0, 0x1234" a19100b6 INVALID?
-# ad "tbnz x1, 0, 0x1234" a19100b7 INVALID?
-# ad "tbz w0, 0, 0x1234" 9dfe80b7
-# ad "tbz w1, 0, 0x1234" 9dfe80b7
-# ad "tbz w2, 2, 0x4321" 1dff80b6
+adB "tbz x1, 0x1f, 0x3" e1ffffb6
+adB "tbnz x1, 0x1f, 0x3" e1ffffb7
+adB "tbz w1, 0x1f, 0x3" e1ffff36
+adB "tbnz w1, 0x1f, 0x3" e1ffff37
+adB "tbz w0, 0x20, 0xc" 60000036
+adB "tbnz w0, 0x20, 0xc" 60000037
+adB "tbz x0, 0x40, 0xc" 600000b6
+adB "tbnz x0, 0x40, 0xc" 600000b7
 ad "tbz x30, 0x3f, 0x1c" FE00F8B6
 ad "tbz x5, 0x27, 0x14" A50038B6
 ad "tbz x29, 0x30, 0x1fe0" 1DFF80B6
