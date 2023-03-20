@@ -17,6 +17,10 @@
 // TODO: replace esil->verbose with R_LOG_DEBUG
 #define IFDBG if (esil && esil->verbose > 1)
 
+static inline void free_ornot(void *p) {
+	R_CONST_FREE (p);
+}
+
 /* Returns the number that has bits + 1 least significant bits set. */
 static inline ut64 genmask(int bits) {
 	ut64 m = UT64_MAX;
@@ -45,13 +49,13 @@ static bool isnum(REsil *esil, const char *str, ut64 *num) {
 
 static bool r_esil_runpending(REsil *esil, char *pending) {
 	if (pending) {
-		free (esil->pending);
+		free_ornot (esil->pending);
 		esil->pending = pending;
 	} else if (esil->pending) {
 		char *expr = esil->pending;
 		esil->pending = NULL;
-		r_esil_parse (esil, expr);
-		free (expr);
+		r_esil_parse (esil, R_CONST_UNTAG (expr));
+		free_ornot (expr);
 		return true;
 	}
 	return false;
@@ -529,10 +533,13 @@ R_API int r_esil_get_parm_type(REsil *esil, const char *str) {
 
 static bool get_parm_size(REsil *esil, const char *str, ut64 *num, int *size) {
 	r_return_val_if_fail (esil && num, false);
+	if (size) {
+		*size = 0;
+	}
 	if (R_STR_ISEMPTY (str)) {
 		return false;
 	}
-	int parm_type = r_esil_get_parm_type (esil, str);
+	const int parm_type = r_esil_get_parm_type (esil, str);
 	switch (parm_type) {
 	case R_ESIL_PARM_NUM:
 		*num = r_num_get (NULL, str);
@@ -541,16 +548,12 @@ static bool get_parm_size(REsil *esil, const char *str, ut64 *num, int *size) {
 		}
 		return true;
 	case R_ESIL_PARM_REG:
-		if (!r_esil_reg_read (esil, str, num, size)) {
-			break;
-		}
-		return true;
+		return r_esil_reg_read (esil, str, num, size);
 	default:
 		R_LOG_DEBUG ("Invalid esil arg to find parm size (%s)", str);
 		esil->parse_stop = 1;
-		break;
+		return false;
 	}
-	return false;
 }
 
 R_API int r_esil_get_parm(REsil *esil, const char *str, ut64 *num) {
@@ -1069,6 +1072,16 @@ static bool esil_syscall(REsil *esil) {
 	ut64 sc;
 	if (popRN (esil, &sc)) {
 		return r_esil_do_syscall (esil, (ut32)sc);
+	}
+	return false;
+}
+
+static bool esil_cmd(REsil *esil) {
+	char *str = r_esil_pop (esil);
+	if (str) {
+		if (esil->anal && esil->anal->coreb.setab) {
+			esil->anal->coreb.cmd (esil->anal->coreb.core, str);
+		}
 	}
 	return false;
 }
@@ -3611,11 +3624,13 @@ static bool __stepOut(REsil *esil, const char *cmd) {
 }
 
 R_API bool r_esil_parse(REsil *esil, const char *str) {
+	r_return_val_if_fail (esil, false);
+
+	int rc = 0;
 	int wordi = 0;
 	int dorunword;
 	char word[64];
 	const char *ostr = str;
-	r_return_val_if_fail (esil, false);
 	if (R_STR_ISEMPTY (str)) {
 		return false;
 	}
@@ -3624,10 +3639,9 @@ R_API bool r_esil_parse(REsil *esil, const char *str) {
 		(void)__stepOut (esil, esil->cmd_step_out);
 		return true;
 	}
-	const char *hashbang = strstr (str, "#!");
 	esil->trap = 0;
 	if (esil->cmd && esil->cmd_todo) {
-		if (!strncmp (str, "TODO", 4)) {
+		if (r_str_startswith (str, "TODO")) {
 			esil->cmd (esil, esil->cmd_todo, esil->address, 0);
 		}
 	}
@@ -3645,13 +3659,7 @@ repeat:
 		if (r_esil_runpending (esil, NULL)) {
 			continue;
 		}
-		if (str == hashbang) {
-			if (esil->anal && esil->anal->coreb.setab) {
-				esil->anal->coreb.cmd (esil->anal->coreb.core, str + 2);
-			}
-			break;
-		}
-		if (wordi > 62) {
+		if (R_UNLIKELY (wordi > 62)) {
 			R_LOG_DEBUG ("Invalid esil string");
 			__stepOut (esil, esil->cmd_step_out);
 			return -1;
@@ -3704,13 +3712,11 @@ repeat:
 		case 2: goto repeat;
 		}
 	}
-	r_esil_runpending (esil, NULL);
-	__stepOut (esil, esil->cmd_step_out);
-	return 1;
+	rc = 1;
 step_out:
 	r_esil_runpending (esil, NULL);
 	__stepOut (esil, esil->cmd_step_out);
-	return 0;
+	return rc;
 }
 
 R_API bool r_esil_runword(REsil *esil, const char *word) {
@@ -3725,10 +3731,11 @@ R_API bool r_esil_runword(REsil *esil, const char *word) {
 //frees all elements from the stack, not the stack itself
 //rename to stack_empty() ?
 R_API void r_esil_stack_free(REsil *esil) {
-	int i;
 	if (esil) {
+		int i;
 		for (i = 0; i < esil->stackptr; i++) {
-			R_FREE (esil->stack[i]);
+			free_ornot (esil->stack[i]);
+			esil->stack[i] = NULL;
 		}
 		esil->stackptr = 0;
 	}
@@ -3783,6 +3790,7 @@ R_API void r_esil_setup_macros(REsil *esil) {
 R_API void r_esil_setup_ops(REsil *esil) {
 	r_return_if_fail (esil);
 	OP ("$", esil_interrupt, 0, 1, OT_UNK); // hm, type seems a bit wrong
+	OP ("#!", esil_cmd, 0, 1, OT_UNK); // hm, type seems a bit wrong
 	OP ("()", esil_syscall, 0, 1, OT_UNK);  // same
 	OP ("$z", esil_zf, 1, 0, OT_UNK);
 	OP ("$c", esil_cf, 1, 1, OT_UNK);
