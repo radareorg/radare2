@@ -485,16 +485,17 @@ R_API bool r_esil_pushnum(REsil *esil, ut64 num) {
 	return r_esil_push (esil, str);
 }
 
-R_API bool r_esil_push(REsil *esil, const char *str) {
-	r_return_val_if_fail (esil && R_STR_ISNOTEMPTY (str), false);
+R_API bool r_esil_push(REsil *esil, R_CONST_MAYBE char *str) {
+	const char *str_unboxed = R_CONST_UNTAG (str);
+	r_return_val_if_fail (esil && R_STR_ISNOTEMPTY (str_unboxed), false);
 	if (esil->stackptr > (esil->stacksize - 1)) {
 		return false;
 	}
-	esil->stack[esil->stackptr++] = strdup (str);
+	esil->stack[esil->stackptr++] = str;
 	return true;
 }
 
-R_API char *r_esil_pop(REsil *esil) {
+R_API R_CONST_MAYBE char *r_esil_pop(REsil *esil) {
 	r_return_val_if_fail (esil, NULL);
 	if (esil->stackptr < 1) {
 		return NULL;
@@ -3532,11 +3533,10 @@ static bool runword(REsil *esil, const char *word) {
 					return 1; // XXX cannot return != 1
 				}
 			}
-			esil->current_opstr = strdup (word);
+			esil->current_opstr = word;
 			//so this is basically just sharing what's the operation with the operation
 			//useful for wrappers
 			const bool ret = op->code (esil);
-			free (esil->current_opstr);
 			esil->current_opstr = NULL;
 			if (!ret) {
 				R_LOG_DEBUG ("%s returned 0", word);

@@ -139,7 +139,7 @@ typedef struct r_esil_t {
 	ut8 lastsz;	//in bits //used for signature-flag
 	/* native ops and custom ops */
 	HtPP *ops;
-	char *current_opstr;
+	R_CONST_MAYBE const char *current_opstr;
 	SdbMini *interrupts;
 	SdbMini *syscalls;
 	//this is a disgusting workaround, because we have no ht-like storage without magic keys, that you cannot use, with int-keys
