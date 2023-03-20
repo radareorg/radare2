@@ -134,6 +134,7 @@ static RCoreHelpMessage help_msg_dash = {
 	"-j", "", "enter the js: repl",
 	"-i", " [file]", "same as . [file], to run a script",
 	"-s", " [addr]", "same as r2 -e asm.cpu=",
+	"-V", "", "show r2 version, same as ?V",
 	"--", "", "seek one block backward. Same as s-- (see `b` command)",
 	NULL
 };
@@ -1794,6 +1795,9 @@ static int cmd_stdin(void *data, const char *input) {
 		case '?': // "-?"
 		case 'h': // "-h"
 			r_core_cmd_help (core, help_msg_dash);
+			break;
+		case 'V': // "-V"
+			r_core_cmd_call (core, "?V");
 			break;
 		case 'a': // "-a"
 			if (R_STR_ISEMPTY (arg)) {
