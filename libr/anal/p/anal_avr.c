@@ -1944,8 +1944,8 @@ static bool set_reg_profile(RAnal *anal) {
 		"=BP    y\n"
 		"=RS	8\n"
 
-		// explained in http://www.nongnu.org/avr-libc/user-manual/FAQ.html
-		// and http://www.avrfreaks.net/forum/function-calling-convention-gcc-generated-assembly-file
+		// explained in https://www.nongnu.org/avr-libc/user-manual/FAQ.html
+		// and https://www.avrfreaks.net/forum/function-calling-convention-gcc-generated-assembly-file
 		"=A0	r25\n"
 		"=A1	r24\n"
 		"=A2	r23\n"
