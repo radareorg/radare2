@@ -1,14 +1,11 @@
-/* Copyright (C) 2008-2022 - pancake */
+/* Copyright (C) 2008-2023 - pancake */
 
 #include <r_arch.h>
 #include "binutils_as.c"
 
-static const char *getcpu(RArchSession *s) {
+static const char *mycpu(RArchSession *s) {
 	const char *cpu = s->config->cpu;
-	if (!cpu) {
-		return R_SYS_ARCH;
-	}
-	return cpu;
+	return cpu? cpu: R_SYS_ARCH;
 }
 
 #define ASSEMBLER32 "R2_ARM32_AS"
@@ -20,7 +17,7 @@ static bool as_encode(RArchSession *s, RAnalOp *op, RArchEncodeMask mask) {
 		// TODO: find in PATH
 		gas = strdup ("as");
 	}
-	const char *cpu = getcpu (s);
+	const char *cpu = mycpu (s);
 	if (!strcmp (cpu, "ppc")) {
 		char cmd_opt[4096];
 		snprintf (cmd_opt, sizeof (cmd_opt), "-mregnames -a%d %s", s->config->bits,
