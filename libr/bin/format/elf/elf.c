@@ -3615,13 +3615,15 @@ RBinSymbol *Elf_(_r_bin_elf_convert_symbol)(struct Elf_(r_bin_elf_obj_t) *bin,
 
 static ut32 hashRBinElfSymbol(const void *obj) {
 	const RBinElfSymbol *symbol = (const RBinElfSymbol *)obj;
-	if (!symbol || !*symbol->name) {
+	if (!symbol || R_STR_ISEMPTY (symbol->name)) {
 		return 0;
 	}
 	int hash = sdb_hash (symbol->name);
-	hash ^= sdb_hash (symbol->type);
+	if (R_STR_ISEMPTY (symbol->type)) {
+		hash ^= sdb_hash (symbol->type);
+	}
 	hash ^= (symbol->offset >> 32);
-	hash ^= (symbol->offset & 0xffffffff);
+	hash ^= (symbol->offset & UT32_MAX);
 	return hash;
 }
 
@@ -3629,9 +3631,15 @@ static int cmp_RBinElfSymbol(const RBinElfSymbol *a, const RBinElfSymbol *b) {
 	if (a->offset != b->offset) {
 		return 1;
 	}
+	if (!a->name || !b->name) {
+		return 1;
+	}
 	int result = strcmp (a->name, b->name);
 	if (result != 0) {
 		return result;
+	}
+	if (!a->type || !b->type) {
+		return 1;
 	}
 	return strcmp (a->type, b->type);
 }
@@ -3943,15 +3951,13 @@ static RBinElfSymbol* Elf_(_r_bin_elf_get_symbols_imports)(ELFOBJ *bin, int type
 			goto beach;
 		}
 		import_ret_ctr = 0;
-		i = -1;
-		while (!ret[++i].last) {
+		for (i = 0; ret[i].last; i++) {
 			if (!(import_sym_ptr = Elf_(_r_bin_elf_convert_symbol) (bin, &ret[i], "%s"))) {
 				continue;
 			}
 			setsymord (bin, import_sym_ptr->ordinal, import_sym_ptr);
 			if (ret[i].is_imported) {
 				memcpy (&import_ret[import_ret_ctr], &ret[i], sizeof (RBinElfSymbol));
-				++import_ret_ctr;
 			}
 		}
 		import_ret[import_ret_ctr].last = 1;
