@@ -36,6 +36,7 @@ In case of a polluted filesystem, you can uninstall the current version
 or remove all previous installations with one or more of those commands:
 
 ```sh
+sudo chown -R $USER  # Fix permissions
 make uninstall       # Remove the current installation
 make purge           # Remove all files from all installations
 make system-purge    # Remove all installed packages
