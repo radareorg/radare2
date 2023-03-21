@@ -500,7 +500,7 @@ against to use radare2's libraries without depending on an existing system
 installation. See [doc/static.md](doc/static.md) for more info.
 
 [This presentation](http://radare.org/get/lacon-radare-2009/) gives a good
-overview of the libraries.
+overview of the libraries. //Link not working temporarily.
 
 ## API
 

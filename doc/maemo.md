@@ -3,7 +3,7 @@ Build for maemo6 (Harmattan) N9 - N950
 
 1. Install QtSDK
 
-       http://qt.nokia.com/downloads/
+       https://qt.nokia.com/downloads/
 
 2. Configure mad (maemo development environment)
 
