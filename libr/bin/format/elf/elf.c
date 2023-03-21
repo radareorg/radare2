@@ -3619,7 +3619,7 @@ static ut32 hashRBinElfSymbol(const void *obj) {
 		return 0;
 	}
 	int hash = sdb_hash (symbol->name);
-	if (R_STR_ISEMPTY (symbol->type)) {
+	if (R_STR_ISNOTEMPTY (symbol->type)) {
 		hash ^= sdb_hash (symbol->type);
 	}
 	hash ^= (symbol->offset >> 32);
