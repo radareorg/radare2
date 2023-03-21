@@ -3951,7 +3951,7 @@ static RBinElfSymbol* Elf_(_r_bin_elf_get_symbols_imports)(ELFOBJ *bin, int type
 			goto beach;
 		}
 		import_ret_ctr = 0;
-		for (i = 0; ret[i].last; i++) {
+		for (i = 0; !ret[i].last; i++) {
 			if (!(import_sym_ptr = Elf_(_r_bin_elf_convert_symbol) (bin, &ret[i], "%s"))) {
 				continue;
 			}
