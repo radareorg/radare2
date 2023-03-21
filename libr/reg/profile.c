@@ -158,7 +158,7 @@ R_API bool r_reg_set_profile_string(RReg *reg, const char *str) {
 
 	// Same profile, no need to change
 	if (reg->reg_profile_str && !strcmp (reg->reg_profile_str, str)) {
-		R_LOG_WARN ("is the same do nothing");
+		// R_LOG_WARN ("is the same do nothing");
 	//	r_reg_free_internal (reg, false);
 	//	r_reg_init (reg);
 		return true;
