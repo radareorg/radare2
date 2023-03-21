@@ -505,11 +505,13 @@ static RList *patch_relocs(RBin *b) {
 
 	size_t nimports = 0;
 	int i;
-	for (i = 0; i < bin->hdr.f_nsyms; i++) {
-		if (is_imported_symbol (&bin->symbols[i])) {
-			nimports++;
+	if (bin->symbols) {
+		for (i = 0; i < bin->hdr.f_nsyms; i++) {
+			if (is_imported_symbol (&bin->symbols[i])) {
+				nimports++;
+			}
+			i += bin->symbols[i].n_numaux;
 		}
-		i += bin->symbols[i].n_numaux;
 	}
 	ut64 m_vaddr = UT64_MAX;
 	if (nimports) {
