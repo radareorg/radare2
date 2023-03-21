@@ -143,6 +143,9 @@ typedef struct r_arch_t {
 } RArch;
 
 typedef struct r_arch_session_t {
+#if R2_590
+	char *name; // used by .use to chk if it was set already
+#endif
 	struct r_arch_t *arch;
 	struct r_arch_plugin_t *plugin;
 	RArchConfig *config; // TODO remove arch->config!

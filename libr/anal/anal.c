@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2022 - pancake, nibble */
+/* radare - LGPL - Copyright 2009-2023 - pancake, nibble */
 
 #include <r_anal.h>
 #include <r_util.h>
@@ -324,9 +324,13 @@ R_API bool r_anal_set_triplet(RAnal *anal, R_NULLABLE const char *os, R_NULLABLE
 	if (bits < 1) {
 		bits = anal->config->bits;
 	}
-	free (anal->config->os);
-	anal->config->os = strdup (os);
-	r_anal_set_bits (anal, bits);
+	if (anal->config && anal->config->os && !strcmp (anal->config->os, os)) {
+		free (anal->config->os);
+		anal->config->os = strdup (os);
+	}
+	if (bits != anal->config->bits) {
+		r_anal_set_bits (anal, bits);
+	}
 	return r_anal_use (anal, arch);
 }
 
