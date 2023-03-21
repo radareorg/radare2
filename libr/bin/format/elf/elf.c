@@ -3958,6 +3958,7 @@ static RBinElfSymbol* Elf_(_r_bin_elf_get_symbols_imports)(ELFOBJ *bin, int type
 			setsymord (bin, import_sym_ptr->ordinal, import_sym_ptr);
 			if (ret[i].is_imported) {
 				memcpy (&import_ret[import_ret_ctr], &ret[i], sizeof (RBinElfSymbol));
+				import_ret_ctr++;
 			}
 		}
 		import_ret[import_ret_ctr].last = 1;
