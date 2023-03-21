@@ -1,33 +1,28 @@
-Radare2 Regression Test Suite
-=============================
+# Radare2 Regression Test Suite
 
 A set of regression tests for Radare2 (http://radare.org).
 
 Originally based on work by and now in collaboration with pancake.
 
-Directory Hierarchy
--------------------
+## Directory Hierarchy
 
  * db/:          The tests sources
  * unit/:        Unit tests (written in C, using minunit).
  * fuzz/:        Fuzzing helper scripts
  * bins/:        Sample binaries (fetched from the [external repository](https://github.com/radareorg/radare2-testbins))
 
-Requirements
-------------
+## Requirements
 
  * Radare2 installed (and in `$PATH` or set the R2 environment).
  * r2pipe tests require Python and r2pipe (in CI uses python3 and r2pipe from git, but users may be good with latests releases)
  * Valgrind (optional).
 
-Usage
------
+# Usage
 
  * To run *all* tests, use `make -k all`.
  * To execute only the unit tests use `make -k unit_tests`.
 
-Failure Levels
---------------
+## Failure Levels
 
 A test can have one of the following results:
 * success: The test passed, and that was expected.
@@ -35,16 +30,20 @@ A test can have one of the following results:
 * broken: Failure was expected, and happened.
 * failed: The test failed unexpectedly. This is a regression.
 
-Reporting Radare2 Bugs
-----------------------
+# Reporting a Bug
 
 Please do not post Radare2 bugs on the r2-regressions github tracker. Instead
 use the official r2 tracker:
 
 https://github.com/radareorg/radare2/issues?state=open
 
-Writing Assembly tests
-----------------------
+# Test Types
+
+There are different types of tests, `asm`, `json` and `cmd`. Those files are located under the `db/` directory.
+
+## Assembly tests
+
+The `asm` are used to verify that the assembler and disassembler for an instruction + arch works properly.
 
 Example tests for `db/asm/*`:
 
@@ -86,13 +85,11 @@ Example tests for `db/asm/*`:
         arm_v7_64 means what it means
 
 
-Writing JSON tests
-----------
+## JSON tests
 
 The JSON tests `db/json` are executed on 3 standard files (1 ELF, 1 MachO, 1 PE). The tests need to be working on the 3 files to pass.
 
-# Commands tests
-----------------
+## Commands tests
 
 Example commands tests for the other `db/` folders:
 
@@ -119,14 +116,12 @@ Example commands tests for the other `db/` folders:
 
 You must end the test by adding RUN keyword
 
-Advices
--------
+# Advices
 
 * For portability reasons Do not use shell pipes, use `~`
 * dont use `pd` if not necessary, use `pi`
 * All tests use the UTC timezone for consistency.
 
-License
--------
+# License
 
 The test files are licensed under GPL 3 (or later).

@@ -3631,9 +3631,12 @@ static int cmp_RBinElfSymbol(const RBinElfSymbol *a, const RBinElfSymbol *b) {
 	if (a->offset != b->offset) {
 		return 1;
 	}
+#if 0
+	// name is an array not a pointer
 	if (!a->name || !b->name) {
 		return 1;
 	}
+#endif
 	int result = strcmp (a->name, b->name);
 	if (result != 0) {
 		return result;
