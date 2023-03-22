@@ -191,8 +191,8 @@ clean:
 
 distclean mrproper: clean
 	rm -f `find . -type f -iname '*.d'`
-	rm -rf libr/arch/p/arm/v35/arch-arm64
-	rm -rf libr/arch/p/arm/v35/arch-armv7
+	rm -rf libr/arch/p/arm/v35/arch-arm*
+	rm -rf shlr/capstone
 
 pkgcfg:
 	cd libr && ${MAKE} pkgcfg
