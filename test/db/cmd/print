@@ -4,11 +4,11 @@ CMDS=pcc
 
 EXPECT=<<EOF
 const unsigned char cstr[256] = ""\
-  "Radare2 Regression Test Suite\n=============================\n\n"\
-  "A set of regression tests for Radare2 (http://radare.org).\n\nO"\
-  "riginally based on work by and now in collaboration with panc"\
-  "ake.\n\nDirectory Hierarchy\n-------------------\n\n * db/:       "\
-  "   The tests";
+  "# Radare2 Regression Test Suite\n\nA set of regression tests fo"\
+  "r Radare2 (http://radare.org).\n\nOriginally based on work by a"\
+  "nd now in collaboration with pancake.\n\n## Directory Hierarchy"\
+  "\n\n * db/:          The tests sources\n * unit/:        Unit te"\
+  "sts (written";
 EOF
 RUN
 NAME=endian tests: pv4

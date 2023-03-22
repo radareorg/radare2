@@ -234,7 +234,7 @@ R_API bool r_io_cache_read(RIO *io, ut64 addr, ut8 *buf, int len) {
 		}
 		// eprintf ("inrange (%llx %d)\n", begin, (int)(end - begin));
 		if (read > 0) {
-			memmove (buf + buf_offset, cache->data + cache_offset, read);
+			memcpy (buf + buf_offset, cache->data + cache_offset, read);
 		}
 		covered = true;
 		iter++;
@@ -364,7 +364,7 @@ R_API bool r_io_cache_write_at(RIO *io, ut64 addr, const ut8 *buf, int len) {
 		return false;
 	}
 	r_io_read_at (io, addr, ci->odata, len);
-	memmove (ci->data, buf, len);
+	memcpy (ci->data, buf, len);
 	RRBNode *node = _find_entry_ci_node (io->cache->tree, &itv);
 	if (node) {
 		RIOCacheItem *_ci = (RIOCacheItem *)node->data;
@@ -419,13 +419,13 @@ R_API bool r_io_cache_read_at(RIO *io, ut64 addr, ut8 *buf, int len) {
 			}
 			st64 offb = r_itv_begin (its) - r_itv_begin (ci->itv);
 			// eprintf ("ITVLEN = %d (%d)\n", itvlen, delta);
-			memmove (buf + delta, ci->data + offb, itvlen);
+			memcpy (buf + delta, ci->data + offb, itvlen);
 			// r_sys_breakpoint ();
 		} else {
 			st64 offa = addr - r_itv_begin (its);
 			st64 offb = r_itv_begin (its) - r_itv_begin (ci->itv);
 			// eprintf ("OFFA (addr %llx iv %llx) %llx %llx\n", addr, r_itv_begin (its), offa, offb);
-			memmove (buf + offa, ci->data + offb, itvlen);
+			memcpy (buf + offa, ci->data + offb, itvlen);
 		}
 		ci = node? (RIOCacheItem *)node->data: NULL;
 	}
@@ -460,8 +460,8 @@ R_API int r_io_cache_invalidate(RIO *io, ut64 from, ut64 to) {
 		if (r_itv_include (ci->itv, itv)) {
 			RInterval iitv = (RInterval){r_itv_end (itv), r_itv_end (ci->itv) - r_itv_end (itv)};
 			RIOCacheItem *_ci = _io_cache_item_new (&iitv);
-			memmove (_ci->data, &ci->data[r_itv_end (itv) - r_itv_begin (ci->itv)], r_itv_size (_ci->itv));
-			memmove (_ci->odata, &ci->odata[r_itv_end (itv) - r_itv_begin (ci->itv)], r_itv_size (_ci->itv));
+			memcpy (_ci->data, &ci->data[r_itv_end (itv) - r_itv_begin (ci->itv)], r_itv_size (_ci->itv));
+			memcpy (_ci->odata, &ci->odata[r_itv_end (itv) - r_itv_begin (ci->itv)], r_itv_size (_ci->itv));
 			ci->itv.size = itv.addr - ci->itv.addr;
 			ci->data = realloc (ci->data, (size_t)r_itv_size (ci->itv));
 			ci->odata = realloc (ci->odata, (size_t)r_itv_size (ci->itv));
@@ -511,9 +511,9 @@ R_API int r_io_cache_invalidate(RIO *io, ut64 from, ut64 to) {
 			}
 			continue;
 		}
-		memmove (ci->data, &ci->data[r_itv_end (itv) - r_itv_begin (ci->itv)],
+		memcpy (ci->data, &ci->data[r_itv_end (itv) - r_itv_begin (ci->itv)],
 			r_itv_end (ci->itv) - r_itv_end (itv));
-		memmove (ci->odata, &ci->odata[r_itv_end (itv) - r_itv_begin (ci->itv)],
+		memcpy (ci->odata, &ci->odata[r_itv_end (itv) - r_itv_begin (ci->itv)],
 			r_itv_end (ci->itv) - r_itv_end (itv));
 		ci->itv.size = r_itv_end (ci->itv) - r_itv_end (itv);
 		ci->itv.addr = r_itv_end (itv);	//this feels so wrong
