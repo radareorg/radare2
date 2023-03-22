@@ -19,7 +19,7 @@ if not capstone_dep.found() or not get_option('use_sys_capstone')
     patches_files = []
     # NOTE: when you update CS_TIP or CS_BRA, also update them in shlr/Makefile
     if capstone_version == 'v5'
-      CS_TIP = '61cdc56159986e6d77be571b04c570cf2c378d13'
+      CS_TIP = '59153d3af2f74fccfddd5368feba20b8290b11cf'
       CS_BRA = 'next'
       patches_files = [
         'fix-x86-16.patch',
