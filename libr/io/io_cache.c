@@ -417,7 +417,9 @@ R_API bool r_io_cache_read_at(RIO *io, ut64 addr, ut8 *buf, int len) {
 			if (delta + bs > len) {
 				itvlen = len - delta;
 			}
-			memcpy (buf + (ba - aa), ci->data, itvlen);
+			st64 offb = r_itv_begin (its) - r_itv_begin (ci->itv);
+			// eprintf ("ITVLEN = %d (%d)\n", itvlen, delta);
+			memcpy (buf + delta, ci->data + offb, itvlen);
 			// r_sys_breakpoint ();
 		} else {
 			st64 offa = addr - r_itv_begin (its);
@@ -487,8 +489,15 @@ R_API int r_io_cache_invalidate(RIO *io, ut64 from, ut64 to) {
 		}
 		if (r_itv_begin (ci->itv) < r_itv_begin (itv)) {
 			ci->itv.size = itv.addr - ci->itv.addr;
-			ci->data = realloc (ci->data, (size_t)r_itv_size (ci->itv));
-			ci->odata = realloc (ci->odata, (size_t)r_itv_size (ci->itv));
+			ut8 *cidata = realloc (ci->data, (size_t)r_itv_size (ci->itv));
+			ut8 *ciodata = realloc (ci->odata, (size_t)r_itv_size (ci->itv));
+			if (cidata && ciodata) {
+				ci->data = cidata;
+				ci->odata = ciodata;
+			} else {
+				R_LOG_ERROR ("Invalid size");
+				continue;
+			}
 			if (ci->tree_itv) {
 				if (!r_itv_overlap (ci->itv, ci->tree_itv[0])) {
 					invalidated_cache_bytes += r_itv_size (ci->tree_itv[0]);
@@ -502,9 +511,9 @@ R_API int r_io_cache_invalidate(RIO *io, ut64 from, ut64 to) {
 			}
 			continue;
 		}
-		memmove (ci->data, &ci->data[r_itv_end (itv) - r_itv_begin (ci->itv)],
+		memcpy (ci->data, &ci->data[r_itv_end (itv) - r_itv_begin (ci->itv)],
 			r_itv_end (ci->itv) - r_itv_end (itv));
-		memmove (ci->odata, &ci->odata[r_itv_end (itv) - r_itv_begin (ci->itv)],
+		memcpy (ci->odata, &ci->odata[r_itv_end (itv) - r_itv_begin (ci->itv)],
 			r_itv_end (ci->itv) - r_itv_end (itv));
 		ci->itv.size = r_itv_end (ci->itv) - r_itv_end (itv);
 		ci->itv.addr = r_itv_end (itv);	//this feels so wrong

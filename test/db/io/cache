@@ -139,6 +139,43 @@ EXPECT=<<EOF
 EOF
 RUN
 
+
+NAME=io.cache: cache reset
+FILE=malloc://32
+CMDS=<<EOF
+e io.cache=1
+wx 90
+wcr
+wx 90
+EOF
+EXPECT_ERR=<<EOF
+EOF
+RUN
+
+NAME=io.cache: writes
+FILE=malloc://32
+CMDS=<<EOF
+e io.cache=1
+w hello
+x 8
+w wo
+x 8
+?e ---
+e io.cache=0
+x 8
+EOF
+EXPECT=<<EOF
+- offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
+0x00000000  6865 6c6c 6f00 0000                      hello...
+- offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
+0x00000000  776f 6c6c 6f00 0000                      wollo...
+---
+- offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
+0x00000000  0000 0000 0000 0000                      ........
+EOF
+EXPECT_ERR=
+RUN
+
 NAME=io.cache: cache write, cache undo
 FILE=malloc://1024
 CMDS=<<EOF
@@ -152,17 +189,5 @@ EOF
 EXPECT=<<EOF
 6162
 0000
-EOF
-RUN
-
-NAME=io.cache: cache reset
-FILE=malloc://32
-CMDS=<<EOF
-e io.cache=1
-wx 90
-wcr
-wx 90
-EOF
-EXPECT_ERR=<<EOF
 EOF
 RUN
