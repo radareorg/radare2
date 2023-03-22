@@ -1,12 +1,11 @@
 /* radare - LGPL - Copyright 2009-2022 - pancake */
 
 #include <r_reg.h>
-#include <r_util.h>
 #include <r_lib.h>
 
 static const char *parse_alias(RReg *reg, char **tok, const int n) {
 	if (n == 2) {
-		int role = r_reg_get_name_idx (tok[0] + 1);
+		const int role = r_reg_get_name_idx (tok[0] + 1);
 		return r_reg_set_name (reg, role, tok[1]) ? NULL : "Invalid alias";
 	}
 	return "Invalid syntax";
@@ -145,22 +144,26 @@ static const char *parse_def(RReg *reg, char **tok, const int n) {
 
 #define PARSER_MAX_TOKENS 8
 R_API bool r_reg_set_profile_string(RReg *reg, const char *str) {
+	r_return_val_if_fail (reg && str, false);
+//	eprintf ("@SET PROFIL strin%c", 10);
+//	r_sys_backtrace ();
 	char *tok[PARSER_MAX_TOKENS];
 	char tmp[128];
 	int i, j, l;
 	const char *p = str;
 
-	r_return_val_if_fail (reg && str, false);
 	if (R_STR_ISEMPTY (str)) {
 		return true;
 	}
 
 	// Same profile, no need to change
 	if (reg->reg_profile_str && !strcmp (reg->reg_profile_str, str)) {
+		// R_LOG_WARN ("is the same do nothing");
 	//	r_reg_free_internal (reg, false);
 	//	r_reg_init (reg);
 		return true;
 	}
+	// eprintf ("OLD (%s) NEW (%s)\n", reg->reg_profile_str, str);
 
 	// we should reset all the arenas before setting the new reg profile
 	r_reg_arena_pop (reg);
@@ -256,7 +259,7 @@ R_API bool r_reg_set_profile_string(RReg *reg, const char *str) {
 		}
 	} while (*p++);
 	if (!have_a0) {
-		R_LOG_ERROR ("=A0 not defined");
+		R_LOG_ERROR ("=A0 is not defined");
 		//r_reg_free_internal (reg, false);
 		///return false;
 	}
@@ -282,6 +285,7 @@ R_API bool r_reg_set_profile_string(RReg *reg, const char *str) {
 
 // read profile from file
 R_API bool r_reg_set_profile(RReg *reg, const char *profile) {
+	// eprintf ("@SET PROFIL%c", 10);
 	r_return_val_if_fail (reg && profile, false);
 	char *str = r_file_slurp (profile, NULL);
 	if (!str) {
@@ -480,4 +484,3 @@ R_API char *r_reg_profile_to_cc(RReg *reg) {
 	}
 	return r_str_newf ("%s reg(%s)", r0, a0);
 }
-

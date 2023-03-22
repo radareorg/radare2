@@ -519,37 +519,41 @@ R_API bool r_debug_set_arch(RDebug *dbg, const char *arch, int bits) {
  * XXX: This function will advance your seek to the end of the injected code.
  */
 R_API bool r_debug_execute(RDebug *dbg, const ut8 *buf, int len, R_OUT ut64 *ret, bool restore, bool ignore_stack) {
-	ut8 stack_backup[4096];
-	ut8 *pc_backup = NULL, *reg_backup = NULL;
-	int reg_backup_sz;
-
 	r_return_val_if_fail (dbg && buf && len > 0, false);
+	ut8 stack_backup[1024];
 
 	if (r_debug_is_dead (dbg)) {
+		R_LOG_WARN ("Child is dead");
 		return false;
 	}
 
-	const char *pc = dbg->reg->name[R_REG_NAME_PC];
-	const char *sp = dbg->reg->name[R_REG_NAME_SP];
+#if 0
 	if (restore && !ignore_stack) {
 		R_LOG_ERROR ("r_debug_execute: Cannot get stack pointer");
 		return false;
 	}
+#endif
+	if (!r_debug_reg_sync (dbg, R_REG_TYPE_GPR, false)) {
+		R_LOG_ERROR ("Cannot sync registers");
+		return false;
+	}
+	r_reg_arena_push (dbg->reg);
 
-	r_debug_reg_sync (dbg, R_REG_TYPE_GPR, false);
-	reg_backup = r_reg_get_bytes (dbg->reg, R_REG_TYPE_ALL, &reg_backup_sz);
-
-	if (!reg_backup) {
-		R_LOG_ERROR ("Cannot get register arena bytes");
+	char *pc = strdup (r_reg_get_name (dbg->reg, R_REG_NAME_PC));
+	char *sp = strdup (r_reg_get_name (dbg->reg, R_REG_NAME_SP));
+	ut64 reg_pc = r_reg_getv (dbg->reg, pc);
+	ut64 reg_sp = r_reg_getv (dbg->reg, sp);
+	if (reg_pc == UT64_MAX || reg_sp == UT64_MAX) {
+		R_LOG_ERROR ("Invalid pc/sp values");
+		free (pc);
+		free (sp);
 		return false;
 	}
 
-	ut64 reg_pc = r_reg_getv (dbg->reg, pc);
-	ut64 reg_sp = r_reg_getv (dbg->reg, sp);
-
-	pc_backup = malloc (len);
+	ut8 *pc_backup = calloc (1, len);
 	if (!pc_backup) {
-		free (reg_backup);
+		free (pc);
+		free (sp);
 		return false;
 	}
 
@@ -557,7 +561,7 @@ R_API bool r_debug_execute(RDebug *dbg, const ut8 *buf, int len, R_OUT ut64 *ret
 	dbg->iob.read_at (dbg->iob.io, reg_pc, pc_backup, len);
 	if (restore && !ignore_stack) {
 		/* Store bytes at stack */
-		dbg->iob.read_at (dbg->iob.io, reg_sp, stack_backup, 4096);
+		dbg->iob.read_at (dbg->iob.io, reg_sp, stack_backup, sizeof (stack_backup));
 	}
 
 	ut64 bp_addr = reg_pc + len;
@@ -567,36 +571,30 @@ R_API bool r_debug_execute(RDebug *dbg, const ut8 *buf, int len, R_OUT ut64 *ret
 	r_debug_continue (dbg);
 	/* TODO: check if stopped in breakpoint or not */
 
-	/* Restore bytes at PC */
+	/* Restore bytes at PC and remove the breakpoint reference */
 	r_bp_del (dbg->bp, bp_addr);
-	dbg->iob.write_at (dbg->iob.io, reg_pc, pc_backup, len);
-
-	r_debug_reg_sync (dbg, R_REG_TYPE_GPR, false);
 
 	/* Propagate return value */
 	if (ret) {
-		RRegItem *ri_ret = r_reg_get (dbg->reg, dbg->reg->name[R_REG_NAME_R0], R_REG_TYPE_GPR);
-		*ret = r_reg_get_value (dbg->reg, ri_ret);
-		r_unref (ri_ret);
+		if (!r_debug_reg_sync (dbg, R_REG_TYPE_GPR, false)) {
+			R_LOG_WARN ("Cannot read registers after executing the injected payload");
+		}
+		*ret = r_reg_getv (dbg->reg, pc);
 	}
 
-	if (restore) {
-		if (!ignore_stack) {
-			/* Restore stack */
-			dbg->iob.write_at (dbg->iob.io, reg_sp, stack_backup, 4096);
-		}
-		/* Restore registers */
-		r_reg_read_regs (dbg->reg, reg_backup, reg_backup_sz);
-	} else {
-		/* Restore PC */
-		RRegItem *ri_pc = r_reg_get (dbg->reg, dbg->reg->name[R_REG_NAME_PC], R_REG_TYPE_GPR);
-		r_reg_set_value (dbg->reg, ri_pc, reg_pc);
-		r_unref (ri_pc);
+	if (restore && !ignore_stack) {
+		/* Restore stack */
+		dbg->iob.write_at (dbg->iob.io, reg_sp, stack_backup, 4096);
 	}
-	r_debug_reg_sync (dbg, R_REG_TYPE_GPR, true);
+	r_reg_arena_pop (dbg->reg);
+	if (!r_debug_reg_sync (dbg, R_REG_TYPE_GPR, true)) {
+		R_LOG_ERROR ("Cannot restore registers");
+	}
+	dbg->iob.write_at (dbg->iob.io, reg_pc, pc_backup, len);
 
 	free (pc_backup);
-	free (reg_backup);
+	free (pc);
+	free (sp);
 
 	return true;
 }

@@ -74,8 +74,12 @@ R_API bool r_arch_use(RArch *arch, RArchConfig *config, const char *name) {
 		config = arch->cfg;
 	}
 #if 0
+	if (arch->session && !strcmp (name, arch->session->plugin->name)) {
+		R_LOG_WARN ("already set%c", 10);
+		arch->cfg = config;
+		return true;
+	}
 	if (config && arch->cfg == config) {
-		eprintf ("retur\n");
 		return true;
 	}
 #endif
@@ -85,6 +89,7 @@ R_API bool r_arch_use(RArch *arch, RArchConfig *config, const char *name) {
 		arch->session = NULL;
 		return false;
 	}
+	r_unref (arch->session);
 	arch->session = r_arch_session (arch, config, ap);
 #if 0
 	RArchConfig *oconfig = arch->cfg;

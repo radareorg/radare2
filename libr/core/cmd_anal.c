@@ -2501,9 +2501,14 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 			}
 		} else {
 			char disasm[128] = {0};
+			char *text = r_asm_op_get_asm (&asmop);
+			if (!text) {
+				R_LOG_ERROR ("invalid");
+				break;
+			}
 			r_parse_subvar (core->parser, NULL,
 				core->offset + idx,
-				asmop.size, r_asm_op_get_asm (&asmop),
+				asmop.size,  text,
 				disasm, sizeof (disasm));
 			ut64 killme = UT64_MAX;
 			if (r_io_read_i (core->io, op.ptr, &killme, op.refptr, be)) {

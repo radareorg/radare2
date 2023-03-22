@@ -394,22 +394,6 @@ static inline char *dups(const char *x) {
 	return x? strdup (x): NULL;
 }
 
-#if 0
-R_API RReg *r_reg_clone(RReg *reg) {
-	int i;
-	RReg *r = R_NEW0 (RReg);
-	r->profile = dups (reg->profile);
-	r->reg_profile_cmt = dups (reg->reg_profile_cmt);
-	r->reg_profile_str = dups (reg->reg_profile_str);
-	for (i = 0; i < R_REG_NAME_LAST; i++) {
-		r->name[i] = dups (reg->name[i]);
-	}
-	for (i = 0; i < R_REG_TYPE_LAST; i++) {
-		r->regset[i] = r_reg_set_clone (reg->regset[i]);
-	}
-	return r;
-}
-#endif
 R_API RReg *r_reg_clone(RReg *r) {
 	r_return_val_if_fail (r, NULL);
 	RListIter *iter;
@@ -534,19 +518,14 @@ R_API RRegItem *r_reg_get(RReg *reg, const char *name, int type) {
 }
 
 R_API RList *r_reg_get_list(RReg *reg, int type) {
+	r_return_val_if_fail (reg, NULL);
+	r_return_val_if_fail (type >= 0 && type <= (R_REG_TYPE_LAST - 1), NULL);
 	if (type == R_REG_TYPE_ALL) {
 		return reg->allregs;
 	}
-
-	RList *regs;
-	int i, mask;
-	if (type < 0 || type > (R_REG_TYPE_LAST - 1)) {
-		return NULL;
-	}
-
-	regs = reg->regset[type].regs;
+	RList *regs = reg->regset[type].regs;
 	if (regs && r_list_length (regs) == 0) {
-		mask = ((int)1 << type);
+		int i, mask = ((ut32)1 << type);
 		for (i = 0; i < R_REG_TYPE_LAST; i++) {
 			if (reg->regset[i].maskregstype & mask) {
 				regs = reg->regset[i].regs;
