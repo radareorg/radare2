@@ -6,9 +6,14 @@ e asm.bits=16
 s main
 af
 afi~^size
+-b 32
+wx 0ae78ce2
+ao~val
 EOF
 EXPECT=<<EOF
 size: 32
+description: add two values
+val: 0x00280000
 EOF
 RUN
 

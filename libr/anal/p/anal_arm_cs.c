@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2013-2022 - pancake */
+/* radare2 - LGPL - Copyright 2013-2023 - pancake */
 
 #include <r_anal.h>
 #include <r_lib.h>
@@ -3429,7 +3429,8 @@ static void anop64(csh handle, RAnalOp *op, cs_insn *insn) {
 			op->stackptr = 0;
 		}
 		op->cycles = 1;
-		/* fallthru */
+		op->type = R_ANAL_OP_TYPE_ADD;
+		break;
 	case ARM64_INS_ADC:
 	//case ARM64_INS_ADCS:
 	case ARM64_INS_UMADDL:
@@ -3881,19 +3882,20 @@ jmp $$ + 4 + ( [delta] * 2 )
 		}
 		break;
 	case ARM_INS_SUB:
-		if (ISREG(0) && REGID(0) == ARM_REG_SP) {
+		if (ISREG (0) && REGID (0) == ARM_REG_SP) {
 				op->stackop = R_ANAL_STACK_INC;
-				if (ISIMM(1)) {
+				if (ISIMM (1)) {
 					//0x0000bf4e      95b0           sub sp, 0x54
-					op->stackptr = IMM(1);
-				} else if (ISIMM(2) && ISREG(1) && REGID(1) == ARM_REG_SP) {
+					op->stackptr = IMM (1);
+				} else if (ISIMM (2) && ISREG (1) && REGID (1) == ARM_REG_SP) {
 					// 0x00008254    10d04de2     sub sp, sp, 0x10
-					op->stackptr = IMM(2);
+					op->stackptr = IMM (2);
 				}
 				op->val = op->stackptr;
 		}
 		op->cycles = 1;
-		/* fall-thru */
+		op->type = R_ANAL_OP_TYPE_SUB;
+		break;
 	case ARM_INS_SUBW:
 	case ARM_INS_SSUB8:
 	case ARM_INS_SSUB16:
@@ -3909,9 +3911,17 @@ jmp $$ + 4 + ( [delta] * 2 )
 				//add sp, sp, 0x10
 				op->stackptr = -(st64)IMM (2);
 			}
-			op->val = op->stackptr;
+			// op->val = op->stackptr;
+		} else {
+			ut64 v = IMM (2);
+			if (v) {
+				op->val = v;
+			}
 		}
+		op->cycles = 1;
+		// fallthru
 	case ARM_INS_ADC:
+		op->cycles = 1;
 		op->type = R_ANAL_OP_TYPE_ADD;
 		if (REGID(0) == ARM_REG_PC) {
 			op->type = R_ANAL_OP_TYPE_RJMP;
@@ -3925,9 +3935,7 @@ jmp $$ + 4 + ( [delta] * 2 )
 				break;
 			}
 		}
-		op->cycles = 1;
 		break;
-		/* fall-thru */
 	case ARM_INS_ADDW:
 	case ARM_INS_SADD8:
 	case ARM_INS_SADD16:
