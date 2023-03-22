@@ -519,7 +519,7 @@ R_API RRegItem *r_reg_get(RReg *reg, const char *name, int type) {
 
 R_API RList *r_reg_get_list(RReg *reg, int type) {
 	r_return_val_if_fail (reg, NULL);
-	r_return_val_if_fail (type >= 0 && type <= (R_REG_TYPE_LAST - 1), NULL);
+	// TODO: uncomment this line r_return_val_if_fail (type >= 0 && type <= R_REG_TYPE_LAST, NULL);
 	if (type == R_REG_TYPE_ALL) {
 		return reg->allregs;
 	}
@@ -532,7 +532,6 @@ R_API RList *r_reg_get_list(RReg *reg, int type) {
 			}
 		}
 	}
-
 	return regs;
 }
 

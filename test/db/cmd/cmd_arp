@@ -262,7 +262,7 @@ EXPECT=<<EOF
 0x00000000
 EOF
 EXPECT_ERR=<<EOF
-ERROR: [r_reg_set_profile_string] =A0 not defined
+ERROR: [r_reg_set_profile_string] =A0 is not defined
 EOF
 RUN
 
@@ -284,7 +284,7 @@ EXPECT=<<EOF
 0x00000000
 EOF
 EXPECT_ERR=<<EOF
-ERROR: =A0 not defined
+ERROR: =A0 is not defined
 EOF
 RUN
 
