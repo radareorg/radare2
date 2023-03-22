@@ -449,3 +449,25 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=wao recj on arm64
+FILE=-
+ARGS=-a arm -b64
+CMDS=<<EOF
+e io.cache=true
+wx+e01c0034
+wx+4c000054
+s 0
+pd 2
+wao recj @ 0
+wao recj @ 4
+?e --
+pd 2
+EOF
+EXPECT=<<EOF
+        ,=< 0x00000000      e01c0034       cbz w0, 0x39c
+       ,==< 0x00000004      4c000054       b.gt 0xc
+--
+        ,=< 0x00000000      e01c0035       cbnz w0, 0x39c
+       ,==< 0x00000004      4d000054       b.le 0xc
+EOF
+RUN

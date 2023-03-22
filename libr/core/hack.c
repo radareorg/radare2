@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2011-2022 - pancake */
+/* radare - LGPL - Copyright 2011-2023 - pancake */
 
 #include <r_core.h>
 
@@ -45,6 +45,7 @@ R_API bool r_core_hack_dalvik(RCore *core, const char *op, const RAnalOp *analop
 }
 
 R_API bool r_core_hack_arm64(RCore *core, const char *op, const RAnalOp *analop) {
+	ut64 addr = analop->addr;
 	if (!strcmp (op, "nop")) {
 		r_core_cmdf (core, "wx 1f2003d5");
 	} else if (!strcmp (op, "ret")) {
@@ -63,7 +64,30 @@ R_API bool r_core_hack_arm64(RCore *core, const char *op, const RAnalOp *analop)
 		R_LOG_ERROR ("ARM jnz hack not supported");
 		return false;
 	} else if (!strcmp (op, "recj")) {
-		R_LOG_ERROR ("TODO: use jnz or jz");
+		if (analop->size < 4) {
+			return false;
+		}
+		switch (analop->bytes[0]) {
+		case 0x4c: // bgt -> ble
+			r_core_cmd_call (core, "wx 4d");
+			break;
+		case 0x4d: // ble -> bgt
+			r_core_cmd_call (core, "wx 4c");
+			break;
+		default:
+			switch (analop->bytes[3]) {
+			case 0x34: // cbz
+			case 0xb4: // cbz
+				r_core_cmdf (core, "wx 35 @ $$+3");
+				break;
+			case 0x35: // cbnz
+				r_core_cmdf (core, "wx b4 @ $$+3");
+				break;
+			default:
+				R_LOG_ERROR ("TODO: unsupported instruction to toggle conditional jump");
+				break;
+			}
+		}
 		return false;
 	} else if (!strcmp (op, "ret1")) {
 		r_core_cmdf (core, "wa mov x0, 1,,ret");
@@ -305,12 +329,14 @@ R_API bool r_core_hack(RCore *core, const char *op) {
 		R_LOG_WARN ("Write hacks are only implemented for x86, arm32, arm64 and dalvik");
 	}
 	if (hack) {
-		RAnalOp analop;
-		if (!r_anal_op (core->anal, &analop, core->offset, core->block, core->blocksize, R_ARCH_OP_MASK_BASIC)) {
+		RAnalOp aop = {0};
+		// TODO: use r_arch_decode
+		if (!r_anal_op (core->anal, &aop, core->offset, core->block, core->blocksize, R_ARCH_OP_MASK_BASIC)) {
 			R_LOG_ERROR ("anal op fail");
 			return false;
 		}
-		return hack (core, op, &analop);
+		r_anal_op_set_bytes (&aop, core->offset, core->block, core->blocksize);
+		return hack (core, op, &aop);
 	}
 	return false;
 }
