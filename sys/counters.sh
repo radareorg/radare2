@@ -30,3 +30,6 @@ git grep BROKEN=1 test/db |wc -l
 
 printf -- "Cannot\t"
 git grep eprintf libr/| grep -i cannot |wc -l
+
+printf -- "http:/\t"
+git grep 'http:/' libr/| grep -v '/io/' |wc -l
