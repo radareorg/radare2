@@ -290,6 +290,10 @@ void _io_cache_item_free(void *data) {
 
 R_API void r_io_cache_init(RIO *io) {
 	r_return_if_fail (io);
+	if (io->cache) {
+		return;
+	}
+
 	io->cache = R_NEW (RIOCache);
 	if (io->cache) {
 		io->cache->tree = r_crbtree_new (NULL);
