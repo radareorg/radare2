@@ -549,7 +549,7 @@ R_API void r_io_cache_commit(RIO *io, ut64 from, ut64 to) {
 			if (write_ok) {
 				ci->written = true;
 			} else {
-				R_LOG_ERROR ("writing change at 0x%08"PFMT64x, r_itv_begin (ci->itv));
+				R_LOG_ERROR ("cannot write at 0x%08"PFMT64x, r_itv_begin (ci->itv));
 			}
 
 		}
