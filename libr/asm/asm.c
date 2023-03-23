@@ -694,6 +694,7 @@ static int parse_asm_directive(RAsm *a, RAnalOp *op, RAsmCode *acode, char *ptr_
 				R_LOG_WARN ("Cannot resolve '%s'", str);
 			}
 			free (str);
+			r_lib_dl_close (p);
 		}
 		ret = 0;
 	} else if (r_str_startswith (ptr, ".string ")) {
@@ -1195,15 +1196,19 @@ R_API RAsmCode* r_asm_rasm_assemble(RAsm *a, const char *buf, bool use_spp) {
 }
 
 R_API RList *r_asm_cpus(RAsm *a) {
-	RListIter *iter;
-	char *item;
+#if R2_590
+	// use r_arch api instead
+	a->arch->session->plugin->cpus;
+#else
 	// get asm plugin
 	RList *list = (a->config && a->config->cpu)
 		? r_str_split_duplist (a->config->cpu, ",", 0)
 		: r_list_newf (free);
 	// get anal plugin
 	if (a->analb.anal && a->analb.anal->cur && a->analb.anal->cur->cpus) {
-		char *cpus = a->analb.anal->cur->cpus;
+		char *item;
+		RListIter *iter;
+		const char *cpus = a->analb.anal->cur->cpus;
 		RList *al = r_str_split_duplist (cpus, ",", 0);
 		r_list_foreach (al, iter, item) {
 			if (!r_list_find (list, item, (RListComparator)strcmp)) {
@@ -1213,5 +1218,6 @@ R_API RList *r_asm_cpus(RAsm *a) {
 		r_list_free (al);
 	}
 	r_list_sort (list, (RListComparator)strcmp);
+#endif
 	return list;
 }
