@@ -449,6 +449,9 @@ R_API int r_io_cache_invalidate(RIO *io, ut64 from, ut64 to) {
 		if (!r_itv_overlap (itv, ci->itv)) {
 			continue;
 		}
+
+		ci->written = false;
+
 		if (r_itv_include (itv, ci->itv)) {
 			if (ci->tree_itv) {
 				invalidated_cache_bytes += r_itv_size (ci->tree_itv[0]);
@@ -540,11 +543,17 @@ R_API void r_io_cache_commit(RIO *io, ut64 from, ut64 to) {
 		while (node) {
 			RIOCacheItem *ci = (RIOCacheItem *)node->data;
 			node = r_rbnode_next (node);
-			r_io_bank_write_at (io, io->bank, r_itv_begin (ci->tree_itv[0]),
+			bool write_ok = r_io_bank_write_at (io, io->bank, r_itv_begin (ci->tree_itv[0]),
 				&ci->data[r_itv_begin (ci->tree_itv[0]) - r_itv_begin (ci->itv)],
 				r_itv_size (ci->tree_itv[0]));
+			if (write_ok) {
+				ci->written = true;
+			} else {
+				R_LOG_ERROR ("writing change at 0x%08"PFMT64x, r_itv_begin (ci->itv));
+			}
+
 		}
-		r_io_cache_reset (io, io->cached);
+		r_crbtree_clear (io->cache->tree);
 		return;
 	}
 	RInterval itv = (RInterval){from, (to + 1) - from};
@@ -598,7 +607,7 @@ R_API bool r_io_cache_list(RIO *io, int rad) {
 			hex = r_hex_bin2strdup (ci->data, dataSize);
 			pj_ks (pj, "after", hex);
 			free (hex);
-			pj_kb (pj, "written", false);
+			pj_kb (pj, "written", ci->written);
 			pj_end (pj);
 		} else if (rad == 0) {
 			io->cb_printf ("idx=%"PFMTSZu" addr=0x%08"PFMT64x" size=%"PFMT64u" ", j,
@@ -610,7 +619,7 @@ R_API bool r_io_cache_list(RIO *io, int rad) {
 			for (i = 0; i < dataSize; i++) {
 				io->cb_printf ("%02x", ci->data[i]);
 			}
-			io->cb_printf (" %s\n", "(not written)");
+			io->cb_printf (" %s\n", ci->written? "(written)": "(not written)");
 		}
 		j++;
 	}
