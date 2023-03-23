@@ -659,7 +659,7 @@ R_API RIOCache *r_io_cache_clone(RIO *io) {
 		RIOCacheItem *ci = _clone_ci ((RIOCacheItem *)*iter);
 		r_pvector_push (clone->vec, ci);
 		if (ci->tree_itv) {
-			r_crbtree_insert (clone->tree, clone, _ci_start_cmp_cb, NULL);
+			r_crbtree_insert (clone->tree, ci, _ci_start_cmp_cb, NULL);
 		}
 	}
 	return clone;
