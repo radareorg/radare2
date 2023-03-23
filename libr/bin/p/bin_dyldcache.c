@@ -469,7 +469,9 @@ static struct MACH0_(obj_t) *bin_to_mach0(RBinFile *bf, RDyldBinImage *bin) {
 	struct MACH0_(opts_t) opts;
 	MACH0_(opts_set_default) (&opts, bf);
 	opts.header_at = bin->header_at - bin->hdr_offset;
-	opts.symbols_off = bin->symbols_off;
+	if (bin->symbols_off) {
+		opts.symbols_off = bin->symbols_off - bin->hdr_offset;
+	}
 
 	struct MACH0_(obj_t) *mach0 = MACH0_(new_buf) (buf, &opts);
 	if (mach0) {
@@ -1113,6 +1115,10 @@ static ut64 resolve_symbols_off(RDyldCache *cache, ut64 pa) {
 				if (vmaddr == UT64_MAX) {
 					return 0;
 				}
+				ut64 original_off = r_buf_read_le64_at (cache->buf, cursor + 2 * sizeof (ut32) + 16 + 16);
+				if (original_off == UT64_MAX) {
+					return 0;
+				}
 
 				ut32 i,j;
 				for (i = 0; i < cache->n_hdr; i++) {
@@ -1123,7 +1129,8 @@ static ut64 resolve_symbols_off(RDyldCache *cache, ut64 pa) {
 						ut64 map_start = cache->maps[maps_index + j].address;
 						ut64 map_end = map_start + cache->maps[maps_index + j].size;
 						if (vmaddr >= map_start && vmaddr < map_end) {
-							return hdr_offset;
+							ut64 map_off = vmaddr - map_start + cache->maps[maps_index + j].fileOffset;
+							return map_off - original_off;
 						}
 					}
 				}
