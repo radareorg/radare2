@@ -422,7 +422,6 @@ EXPECT=<<EOF
     "mask": "ffffffff",
     "esil": "r1,-16,r1,+,=[4],-16,r1,+=",
     "sign": false,
-    "prefix": 0,
     "id": 1072,
     "opex": {
       "operands": [
@@ -442,8 +441,6 @@ EXPECT=<<EOF
     "size": 4,
     "type": "store",
     "esilcost": 12,
-    "scale": 0,
-    "refptr": 0,
     "cycles": 0,
     "failcycles": 0,
     "delay": 0,
