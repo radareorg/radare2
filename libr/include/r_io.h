@@ -261,6 +261,7 @@ typedef struct io_cache_item_t {
 	RInterval itv;
 	ut8 *data;
 	ut8 *odata;	//is this a good idea?
+	bool written;
 } RIOCacheItem;
 #else
 
