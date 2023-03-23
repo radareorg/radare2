@@ -7184,6 +7184,7 @@ R_API int r_core_disasm_pde(RCore *core, int nb_opcodes, int mode) {
 	REsil *esil = core->anal->esil;
 #if USE_NEW_IO_CACHE_API
 	r_io_cache_init (core->io);
+	RIOCache *cache_clone = r_io_cache_clone (core->io);
 #else
 	RPVector ocache = core->io->cache;
 	const int ocached = core->io->cached;
@@ -7296,7 +7297,7 @@ R_API int r_core_disasm_pde(RCore *core, int nb_opcodes, int mode) {
 	free (buf);
 	r_reg_arena_pop (reg);
 #if USE_NEW_IO_CACHE_API
-	R_LOG_TODO ("new-io-cache doesnt rollbacks yet");
+	r_io_cache_replace (core->io, cache_clone);
 #else
 	int len = r_pvector_length (&ocache);
 	if (r_pvector_length (&core->io->cache) > len) {
