@@ -33,7 +33,6 @@ pseudo: jump
 mnemonic: jump
 description: perform unconditional jump
 mask: ff
-prefix: 0
 id: 86
 bytes: 56
 size: 1

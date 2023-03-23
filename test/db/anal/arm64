@@ -97,7 +97,6 @@ pseudo: irg x8, sp, x8
 mnemonic: irg
 description: insert random tag
 mask: ffffffff
-prefix: 0
 id: 429
 bytes: e813c89a
 size: 4
@@ -114,7 +113,6 @@ pseudo: addg x9, x8, 0x20, 0
 mnemonic: addg
 description: add with tag
 mask: ffffffff
-prefix: 0
 id: 7
 bytes: 09018291
 size: 4
@@ -146,7 +144,6 @@ pseudo: addg x12, x8, 0x200, 2
 mnemonic: addg
 description: add with tag
 mask: ffffffff
-prefix: 0
 id: 7
 bytes: 91a0090c
 size: 4
@@ -164,7 +161,6 @@ pseudo: addg x9, x8, 0x20, 0
 mnemonic: addg
 description: add with tag
 mask: ffffffff
-prefix: 0
 id: 7
 bytes: 91820109
 size: 4
@@ -182,7 +178,6 @@ pseudo: irg x8, sp, x8
 mnemonic: irg
 description: insert random tag
 mask: ffffffff
-prefix: 0
 id: 429
 bytes: 9ac813e8
 size: 4

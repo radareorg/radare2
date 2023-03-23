@@ -261,7 +261,6 @@ pseudo: dword [rbp - 0xc] = 0
 mnemonic: mov
 description: moves data from src to dst
 mask: ffffffffffffff
-prefix: 0
 id: 460
 bytes: c745f400000000
 val: 0x00000000
@@ -286,7 +285,6 @@ stackptr: 8
     "mask": "ffffffffffffff",
     "esil": "0,0xc,rbp,-,=[4]",
     "sign": false,
-    "prefix": 0,
     "id": 460,
     "opex": {
       "operands": [
@@ -315,7 +313,6 @@ stackptr: 8
     "size": 7,
     "type": "mov",
     "esilcost": 12,
-    "scale": 0,
     "refptr": 4,
     "cycles": 1,
     "failcycles": 0,
@@ -346,15 +343,12 @@ EXPECT=<<EOF
     "mnemonic": "adc",
     "mask": "ffff",
     "sign": false,
-    "prefix": 0,
     "id": 0,
     "addr": 0,
     "bytes": "ceed",
     "size": 2,
     "type": "unk",
     "esilcost": 0,
-    "scale": 0,
-    "refptr": 0,
     "cycles": 0,
     "failcycles": 0,
     "delay": 0,
@@ -403,15 +397,12 @@ EXPECT=<<EOF
     "mask": "ffff",
     "esil": "0xed,a,+=,C,NUM,7,$c,C,:=,3,$c,H,:=,a,+=,7,$c,C,|,C,:=,3,$c,H,|=,a,a,=,$z,Z,:=,0,N,:=",
     "sign": false,
-    "prefix": 0,
     "id": 0,
     "addr": 0,
     "bytes": "ceed",
     "size": 2,
     "type": "add",
     "esilcost": 0,
-    "scale": 0,
-    "refptr": 0,
     "cycles": 8,
     "failcycles": 0,
     "delay": 0,

@@ -2414,7 +2414,9 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 				pj_ks (pj, "esil", jesil);
 			}
 			pj_kb (pj, "sign", op.sign);
-			pj_kn (pj, "prefix", op.prefix);
+			if (op.prefix > 0) {
+				pj_kn (pj, "prefix", op.prefix);
+			}
 			pj_ki (pj, "id", op.id);
 			if (op.vliw > 0) {
 				pj_ki (pj, "id", op.vliw);
@@ -2581,7 +2583,9 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 					printline ("ophint", "%s\n", hint->opcode);
 				}
 			}
-			printline ("prefix", "%u\n", op.prefix);
+			if (op.prefix > 0) {
+				printline ("prefix", "%u\n", op.prefix);
+			}
 			printline ("id", "%d\n", op.id);
 			if (op.vliw > 0) {
 				printline ("id", "%d\n", op.vliw);

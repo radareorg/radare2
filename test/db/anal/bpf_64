@@ -15,7 +15,6 @@ pseudo: add64 r0, r1
 mnemonic: add64
 description: add src to dst (64-bit)
 mask: ffffffffffffffff
-prefix: 0
 id: 14
 bytes: 0f10000000000000
 size: 8
@@ -44,7 +43,6 @@ pseudo: add64 r0, 0x1
 mnemonic: add64
 description: add src to dst (64-bit)
 mask: ffffffffffffffff
-prefix: 0
 id: 14
 bytes: 0700000001000000
 val: 0x00000001
@@ -74,7 +72,6 @@ pseudo: r0 += 0x1
 mnemonic: add
 description: add src to dst (32-bit)
 mask: ffffffffffffffff
-prefix: 0
 id: 1
 bytes: 0400000001000000
 val: 0x00000001
@@ -104,7 +101,6 @@ pseudo: stxw [r2+0x10], r9
 mnemonic: stxw
 description: store word from register
 mask: ffffffffffffffff
-prefix: 0
 id: 45
 bytes: 6392100000000000
 size: 8
