@@ -3125,7 +3125,6 @@ EXPECT=<<EOF
     "mask": "ffff",
     "esil": "eax,eax,^=,$z,zf,:=,$p,pf,:=,31,$s,sf,:=,0,cf,:=,0,of,:=",
     "sign": false,
-    "prefix": 0,
     "id": 1503,
     "opex": {
       "operands": [
@@ -3149,8 +3148,6 @@ EXPECT=<<EOF
     "size": 2,
     "type": "xor",
     "esilcost": 0,
-    "scale": 0,
-    "refptr": 0,
     "cycles": 1,
     "failcycles": 0,
     "delay": 0,
@@ -3180,7 +3177,6 @@ EXPECT=<<EOF
     "mask": "ffff",
     "esil": "4,esp,-=,eflags,esp,=[4]",
     "sign": false,
-    "prefix": 0,
     "id": 612,
     "opex": {
       "operands": [
@@ -3197,8 +3193,6 @@ EXPECT=<<EOF
     "size": 2,
     "type": "upush",
     "esilcost": 12,
-    "scale": 0,
-    "refptr": 0,
     "cycles": 2,
     "failcycles": 0,
     "delay": 0,
@@ -3423,7 +3417,7 @@ ao 1
 p8 1
 EOF
 EXPECT=<<EOF
-18
+16
 address: 0x0
 opcode: nop
 esilcost: 0
@@ -3432,10 +3426,8 @@ pseudo: no
 mnemonic: nop
 description: no operation
 mask: ff
-prefix: 0
 id: 510
 bytes: 90
-refptr: 0
 size: 1
 sign: false
 type: nop

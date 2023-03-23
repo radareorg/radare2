@@ -1297,7 +1297,7 @@ ahe test
 ao~esil
 EOF
 EXPECT=<<EOF
-18
+17
 esilcost: 0
 esil: test
 EOF
@@ -2446,7 +2446,6 @@ EXPECT=<<EOF
     "mask": "ffff",
     "esil": "8,rsp,-=,eflags,rsp,=[8]",
     "sign": false,
-    "prefix": 0,
     "id": 612,
     "opex": {
       "operands": [
@@ -2463,8 +2462,6 @@ EXPECT=<<EOF
     "size": 2,
     "type": "upush",
     "esilcost": 24,
-    "scale": 0,
-    "refptr": 0,
     "cycles": 2,
     "failcycles": 0,
     "delay": 0,
@@ -3232,10 +3229,8 @@ pseudo: push (rbp)
 mnemonic: push
 description: push word, doubleword or quadword onto the stack
 mask: ff
-prefix: 0
 id: 609
 bytes: 55
-refptr: 0
 size: 1
 sign: false
 type: rpush

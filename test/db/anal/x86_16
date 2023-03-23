@@ -56,7 +56,6 @@ EXPECT=<<EOF
     "mask": "ff",
     "esil": "2,sp,-=,eflags,sp,=[2]",
     "sign": false,
-    "prefix": 0,
     "id": 612,
     "opex": {
       "operands": [
@@ -73,8 +72,6 @@ EXPECT=<<EOF
     "size": 1,
     "type": "upush",
     "esilcost": 0,
-    "scale": 0,
-    "refptr": 0,
     "cycles": 2,
     "failcycles": 0,
     "delay": 0,

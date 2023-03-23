@@ -146,7 +146,6 @@ EXPECT=<<EOF
     "mnemonic": "la",
     "mask": "ffffffff",
     "sign": false,
-    "prefix": 0,
     "id": 0,
     "opex": {
       "operands": [
@@ -166,8 +165,6 @@ EXPECT=<<EOF
     "size": 4,
     "type": "mov",
     "esilcost": 0,
-    "scale": 0,
-    "refptr": 0,
     "cycles": 0,
     "failcycles": 0,
     "delay": 0,
