@@ -1897,6 +1897,9 @@ static const char *get_syscall_register(RCore *core) {
 	const char *a0 = r_reg_get_name (core->anal->reg, R_REG_NAME_SN);
 	if (!strcmp (core->anal->config->arch, "arm") && core->anal->config->bits == 64) {
 		const char *os = core->anal->config->os;
+		if (!os) {
+			os = r_config_get (core->config, "asm.os");
+		}
 		if (!strcmp (os, "linux")) {
 			a0 = "x8";
 		} else if (!strcmp (os, "macos")) {
