@@ -655,7 +655,7 @@ R_API RIOCache *r_io_cache_clone(RIO *io) {
 	clone->tree = r_crbtree_new (NULL);
 	clone->vec = r_pvector_new ((RPVectorFree)_io_cache_item_free);
 	void **iter;
-	r_pvector_foreach_prev (io->cache->vec, iter) {
+	r_pvector_foreach (io->cache->vec, iter) {
 		RIOCacheItem *ci = _clone_ci ((RIOCacheItem *)*iter);
 		r_pvector_push (clone->vec, ci);
 		if (ci->tree_itv) {
