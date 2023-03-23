@@ -3150,7 +3150,6 @@ EXPECT=<<EOF
     "type": "xor",
     "esilcost": 0,
     "scale": 0,
-    "refptr": 0,
     "cycles": 1,
     "failcycles": 0,
     "delay": 0,
@@ -3198,7 +3197,6 @@ EXPECT=<<EOF
     "type": "upush",
     "esilcost": 12,
     "scale": 0,
-    "refptr": 0,
     "cycles": 2,
     "failcycles": 0,
     "delay": 0,
@@ -3423,7 +3421,7 @@ ao 1
 p8 1
 EOF
 EXPECT=<<EOF
-18
+17
 address: 0x0
 opcode: nop
 esilcost: 0
@@ -3435,7 +3433,6 @@ mask: ff
 prefix: 0
 id: 510
 bytes: 90
-refptr: 0
 size: 1
 sign: false
 type: nop

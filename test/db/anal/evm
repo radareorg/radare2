@@ -36,7 +36,6 @@ mask: ff
 prefix: 0
 id: 86
 bytes: 56
-refptr: 0
 size: 1
 sign: false
 type: jmp

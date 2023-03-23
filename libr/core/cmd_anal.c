@@ -2457,8 +2457,10 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 			if (op.ireg) {
 				pj_ks (pj, "ireg", op.ireg);
 			}
-			pj_ki (pj, "scale", op.scale);
-			if (op.refptr != -1) {
+			if (op.scale > 0) {
+				pj_ki (pj, "scale", op.scale);
+			}
+			if (op.refptr != -1 && op.refptr > 0) {
 				pj_ki (pj, "refptr", op.refptr);
 			}
 			pj_ki (pj, "cycles", op.cycles);
@@ -2606,7 +2608,7 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 			if (op.disp && op.disp != UT64_MAX) {
 				printline ("disp", "0x%08" PFMT64x "\n", op.disp);
 			}
-			if (op.refptr != -1) {
+			if (op.refptr != -1 && op.refptr > 0) {
 				printline ("refptr", "%d\n", op.refptr);
 			}
 			printline ("size", "%d\n", size);
@@ -2629,7 +2631,7 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 			if (op.ireg) {
 				printline ("ireg", "%s\n", op.ireg);
 			}
-			if (op.scale) {
+			if (op.scale > 0) {
 				printline ("scale", "%d\n", op.scale);
 			}
 			if (hint && hint->esil) {

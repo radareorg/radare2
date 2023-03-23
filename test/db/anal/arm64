@@ -100,7 +100,6 @@ mask: ffffffff
 prefix: 0
 id: 429
 bytes: e813c89a
-refptr: 0
 size: 4
 sign: false
 type: mov
@@ -118,7 +117,6 @@ mask: ffffffff
 prefix: 0
 id: 7
 bytes: 09018291
-refptr: 0
 size: 4
 sign: false
 type: add
@@ -151,7 +149,6 @@ mask: ffffffff
 prefix: 0
 id: 7
 bytes: 91a0090c
-refptr: 0
 size: 4
 sign: false
 type: add
@@ -170,7 +167,6 @@ mask: ffffffff
 prefix: 0
 id: 7
 bytes: 91820109
-refptr: 0
 size: 4
 sign: false
 type: add
@@ -189,7 +185,6 @@ mask: ffffffff
 prefix: 0
 id: 429
 bytes: 9ac813e8
-refptr: 0
 size: 4
 sign: false
 type: mov

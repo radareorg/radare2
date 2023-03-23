@@ -18,7 +18,6 @@ mask: ffffffffffffffff
 prefix: 0
 id: 14
 bytes: 0f10000000000000
-refptr: 0
 size: 8
 sign: false
 type: add
@@ -49,7 +48,6 @@ prefix: 0
 id: 14
 bytes: 0700000001000000
 val: 0x00000001
-refptr: 0
 size: 8
 sign: false
 type: add
@@ -80,7 +78,6 @@ prefix: 0
 id: 1
 bytes: 0400000001000000
 val: 0x00000001
-refptr: 0
 size: 8
 sign: false
 type: add
@@ -110,7 +107,6 @@ mask: ffffffffffffffff
 prefix: 0
 id: 45
 bytes: 6392100000000000
-refptr: 0
 size: 8
 sign: false
 type: store

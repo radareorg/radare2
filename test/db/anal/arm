@@ -903,7 +903,6 @@ mask: ffffffff
 prefix: 0
 id: 128
 bytes: 08402de9
-refptr: 0
 size: 4
 sign: false
 type: push
@@ -924,7 +923,6 @@ mask: ffff
 prefix: 0
 id: 2
 bytes: 00af
-refptr: 0
 size: 2
 sign: false
 type: add
