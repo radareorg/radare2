@@ -839,6 +839,10 @@ static RSignHash *r_sign_fcn_bbhash(RAnal *a, RAnalFunction *fcn) {
 }
 
 static RSignItem *item_from_func(RAnal *a, RAnalFunction *fcn, const char *name) {
+	if (r_list_empty (fcn->bbs)) {
+		R_LOG_WARN ("Function with no basic blocks at 0x%08"PFMT64x, fcn->addr);
+		return false;
+	}
 	RSignItem *it = item_new_named (a, name? name: fcn->name);
 	if (it) {
 		r_sign_addto_item (a, it, fcn, R_SIGN_GRAPH);
