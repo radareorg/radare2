@@ -1123,7 +1123,6 @@ static ut64 resolve_symbols_off(RDyldCache *cache, ut64 pa) {
 				ut32 i,j;
 				for (i = 0; i < cache->n_hdr; i++) {
 					cache_hdr_t *hdr = &cache->hdr[i];
-					ut64 hdr_offset = cache->hdr_offset[i];
 					ut32 maps_index = cache->maps_index[i];
 					for (j = 0; j < hdr->mappingCount; j++) {
 						ut64 map_start = cache->maps[maps_index + j].address;
