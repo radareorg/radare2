@@ -111,6 +111,7 @@ typedef struct r_io_undo_w_t {
 typedef struct r_io_cache_t {
 	RPVector *vec;
 	RRBTree *tree;
+	RRBComparator ci_cmp_cb;
 } RIOCache;
 #endif
 

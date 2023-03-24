@@ -1366,11 +1366,25 @@ static void cmd_wcf(RCore *core, const char *dfn) {
 }
 
 static void wcu(RCore *core) {
-#if USE_NEW_IO_CACHE_API
-	R_LOG_WARN ("wcu not implemented for the new io-cache-api");
-#else
 	void **iter;
 	RIO *io = core->io;
+#if USE_NEW_IO_CACHE_API
+	r_pvector_foreach_prev (io->cache->vec, iter) {
+		RIOCacheItem *c = *iter;
+		int cached = io->cached;
+		io->cached = 0;
+		r_io_write_at (io, r_itv_begin (c->itv), c->odata, r_itv_size (c->itv));
+		c->written = false;
+		io->cached = cached;
+		r_pvector_remove_data (io->cache->vec, c);
+		RPVectorFree free_elem = io->cache->vec->v.free_user;
+		if (c->tree_itv) {
+			r_crbtree_delete (io->cache->tree, c, io->cache->ci_cmp_cb, NULL);
+		}
+		free_elem (c);
+		break;
+	}
+#else
 	r_pvector_foreach_prev (&io->cache, iter) {
 		RIOCache *c = *iter;
 		int cached = io->cached;

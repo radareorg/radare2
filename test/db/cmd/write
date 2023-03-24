@@ -336,6 +336,24 @@ idx=2 addr=0x00000006 size=3 000000 -> 909090 (written)
 EOF
 RUN
 
+NAME=wcu should undo last change
+FILE=malloc://512
+CMDS=<<EOF
+e io.cache=true
+wx 11
+s+ 1
+wx 22
+s+ 1
+wx 33
+wcu
+wc
+EOF
+EXPECT=<<EOF
+idx=0 addr=0x00000000 size=1 00 -> 11 (not written)
+idx=1 addr=0x00000001 size=1 00 -> 22 (not written)
+EOF
+RUN
+
 NAME=wcf should commit all the changes to a file
 FILE=bins/lua/hello.lua
 CMDS=<<EOF

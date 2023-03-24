@@ -251,6 +251,8 @@ R_API bool r_io_cache_read(RIO *io, ut64 addr, ut8 *buf, int len) {
 #else
 // USE_NEW_IO_CACHE_API
 
+static int _ci_start_cmp_cb(void *incoming, void *in, void *user);
+
 R_API RIOCacheItem * _io_cache_item_new(RInterval *itv) {
 	RIOCacheItem *ci = R_NEW0 (RIOCacheItem);
 	if (!ci) {
@@ -299,6 +301,7 @@ R_API void r_io_cache_init(RIO *io) {
 		io->cache->tree = r_crbtree_new (NULL);
 		io->cache->vec = r_pvector_new ((RPVectorFree)_io_cache_item_free);
 	}
+	io->cache->ci_cmp_cb = _ci_start_cmp_cb;
 	io->cached = 0;
 }
 
@@ -661,6 +664,7 @@ R_API RIOCache *r_io_cache_clone(RIO *io) {
 	RIOCache *clone = R_NEW (RIOCache);
 	clone->tree = r_crbtree_new (NULL);
 	clone->vec = r_pvector_new ((RPVectorFree)_io_cache_item_free);
+	clone->ci_cmp_cb = _ci_start_cmp_cb;
 	void **iter;
 	r_pvector_foreach (io->cache->vec, iter) {
 		RIOCacheItem *ci = _clone_ci ((RIOCacheItem *)*iter);
