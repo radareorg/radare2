@@ -3695,21 +3695,20 @@ static RBinElfSymbol* parse_gnu_debugdata(ELFOBJ *bin, size_t *ret_size) {
 }
 
 static bool section_matters(ELFOBJ *bin, int i, int type, ut32 shdr_size) {
-	if ((type & R_BIN_ELF_SYMTAB_SYMBOLS) && (bin->shdr[i].sh_type != SHT_SYMTAB)) {
-		return false;
+	bool is_symtab = ((type & R_BIN_ELF_SYMTAB_SYMBOLS) && (bin->shdr[i].sh_type == SHT_SYMTAB));
+	bool is_dyntab = ((type & R_BIN_ELF_DYNSYM_SYMBOLS) && (bin->shdr[i].sh_type == SHT_DYNSYM));
+	if (is_symtab || is_dyntab) {
+		if (bin->shdr[i].sh_link < 1) {
+			/* oops. fix out of range pointers */
+			return false;
+		}
+		if ((bin->shdr[i].sh_link * sizeof (Elf_(Shdr))) >= shdr_size) {
+			/* oops. fix out of range pointers */
+			return false;
+		}
+		return true;
 	}
-	if ((type & R_BIN_ELF_DYNSYM_SYMBOLS) && (bin->shdr[i].sh_type != SHT_DYNSYM)) {
-		return false;
-	}
-	if (bin->shdr[i].sh_link < 1) {
-		/* oops. fix out of range pointers */
-		return false;
-	}
-	if ((bin->shdr[i].sh_link * sizeof (Elf_(Shdr))) >= shdr_size) {
-		/* oops. fix out of range pointers */
-		return false;
-	}
-	return true;
+	return false;
 }
 
 // TODO: return RList<RBinSymbol*> .. or run a callback with that symbol constructed, so we don't have to do it twice
