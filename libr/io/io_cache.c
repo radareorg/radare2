@@ -578,6 +578,9 @@ R_API void r_io_cache_commit(RIO *io, ut64 from, ut64 to) {
 
 R_API bool r_io_cache_list(RIO *io, int rad) {
 	r_return_val_if_fail (io, false);
+	if (!io->cache || !io->cache->vec) {
+		return false;
+	}
 	size_t i, j = 0;
 	void **iter;
 	RIOCacheItem *ci;
