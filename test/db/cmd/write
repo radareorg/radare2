@@ -336,6 +336,31 @@ idx=2 addr=0x00000006 size=3 000000 -> 909090 (written)
 EOF
 RUN
 
+NAME=wcf should commit all the changes to a file
+FILE=bins/lua/hello.lua
+CMDS=<<EOF
+e io.cache=true
+rm .tmp_file
+s 0x0000002B
+wx 7272
+wcf .tmp_file
+cat .tmp_file
+rm .tmp_file
+EOF
+EXPECT=<<EOF
+local c = 0
+
+function hello(msg)
+	print("Herro "..msg)
+	c = c + 1
+end
+
+hello("World")
+hello(c)
+hello(c)
+EOF
+RUN
+
 NAME=wx pcache
 FILE=bins/pe/b.exe
 

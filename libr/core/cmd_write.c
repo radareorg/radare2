@@ -1324,7 +1324,6 @@ static char *__current_filename(RCore *core) {
 	return NULL;
 }
 
-#if !USE_NEW_IO_CACHE_API
 static ut64 __va2pa(RCore *core, ut64 va) {
 	RIOMap *map = r_io_map_get_at (core->io, va);
 	if (map) {
@@ -1332,7 +1331,6 @@ static ut64 __va2pa(RCore *core, ut64 va) {
 	}
 	return va;
 }
-#endif
 
 static void cmd_wcf(RCore *core, const char *dfn) {
 	char *sfn = __current_filename (core);
@@ -1343,12 +1341,14 @@ static void cmd_wcf(RCore *core, const char *dfn) {
 	size_t sfs;
 	ut8 *sfb = (ut8*)r_file_slurp (sfn, &sfs);
 	if (sfb) {
-#if USE_NEW_IO_CACHE_API
-		R_LOG_TODO ("wcf not supported yet with the new io cache");
-#else
 		void **iter;
+#if USE_NEW_IO_CACHE_API
+		r_pvector_foreach (core->io->cache->vec, iter) {
+			RIOCacheItem *c = *iter;
+#else
 		r_pvector_foreach (&core->io->cache, iter) {
 			RIOCache *c = *iter;
+#endif
 			const ut64 ps = r_itv_size (c->itv);
 			const ut64 va = r_itv_begin (c->itv);
 			const ut64 pa = __va2pa (core, va);
@@ -1358,7 +1358,6 @@ static void cmd_wcf(RCore *core, const char *dfn) {
 				R_LOG_ERROR ("Out of bounds patch at 0x%08"PFMT64x, pa);
 			}
 		}
-#endif
 		// patch buffer
 		r_file_dump (dfn, sfb, sfs, false);
 		free (sfb);
