@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2008-2022 - nibble, pancake, alvaro_fe */
+/* radare - LGPL - Copyright 2008-2023 - nibble, pancake, alvaro_fe */
 
 #define R_LOG_ORIGIN "elf"
 #include <r_types.h>
@@ -3714,7 +3714,7 @@ static bool section_matters(ELFOBJ *bin, int i, int type, ut32 shdr_size) {
 // TODO: return RList<RBinSymbol*> .. or run a callback with that symbol constructed, so we don't have to do it twice
 static RBinElfSymbol* Elf_(_r_bin_elf_get_symbols_imports)(ELFOBJ *bin, int type) {
 	r_return_val_if_fail (bin, NULL);
-	int tsize, nsym, ret_ctr = 0, i, j, r, k, newsize;
+	int tsize, nsym, ret_ctr = 0, i, j, k, newsize;
 	RBinElfSymbol *ret = NULL;
 	RBinElfSymbol *import_ret = NULL;
 	RBinSymbol *import_sym_ptr = NULL;
@@ -3791,7 +3791,7 @@ static RBinElfSymbol* Elf_(_r_bin_elf_get_symbols_imports)(ELFOBJ *bin, int type
 			goto beach;
 		}
 		nsym = (int)(bin->shdr[i].sh_size / sizeof (Elf_(Sym)));
-		if (nsym < 0) {
+		if (nsym < 1) {
 			goto beach;
 		}
 		{
@@ -3804,6 +3804,9 @@ static RBinElfSymbol* Elf_(_r_bin_elf_get_symbols_imports)(ELFOBJ *bin, int type
 				st64 newshsize = bin->size - sh_begin;
 				nsym = (int)(newshsize / sizeof (Elf_(Sym)));
 			}
+		}
+		if (nsym < 1) {
+			goto beach;
 		}
 		if (!(sym = (Elf_(Sym) *)calloc (nsym, sizeof (Elf_(Sym))))) {
 			R_LOG_ERROR ("calloc (syms)");
@@ -3823,7 +3826,8 @@ static RBinElfSymbol* Elf_(_r_bin_elf_get_symbols_imports)(ELFOBJ *bin, int type
 		}
 		for (j = 0; j < nsym; j++) {
 			int k = 0;
-			r = r_buf_read_at (bin->b, bin->shdr[i].sh_offset + j * sizeof (Elf_(Sym)), s, sizeof (Elf_(Sym)));
+			ut64 sym_addr = bin->shdr[i].sh_offset + (j * sizeof (Elf_(Sym)));
+			int r = r_buf_read_at (bin->b, sym_addr, s, sizeof (Elf_(Sym)));
 			if (r < 1) {
 				R_LOG_ERROR ("read (sym)");
 				goto beach;
