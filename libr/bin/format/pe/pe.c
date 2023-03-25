@@ -75,6 +75,19 @@ static inline bool follow_offset(struct r_bin_pe_addr_t *entry, RBuffer *buf, ut
 	return read_and_follow_jump (entry, buf, b, len, big_endian);
 }
 
+static st32 sign_extend(ut32 n, ut32 bits) {
+	const st32 m = 1U << (bits - 1);
+	n = n & ((1U << bits) - 1);
+	return (n ^ m) - m;
+}
+
+static inline bool follow_offset_arm64(struct r_bin_pe_addr_t *entry, RBuffer *buf, ut8 *b, int len, bool big_endian, size_t instr_off) {
+	const st32 dst_offset = sign_extend (r_read_ble32 (b + instr_off, big_endian) & 0x3ffffff, 26) * 4 + instr_off;
+	entry->paddr += dst_offset;
+	entry->vaddr += dst_offset;
+	return r_buf_read_at (buf, entry->paddr, b, len) > 0;
+}
+
 struct r_bin_pe_addr_t *PE_(check_msvcseh)(RBinPEObj *pe) {
 	r_return_val_if_fail (pe && pe->b, NULL);
 	ut8 b[512];
@@ -247,6 +260,54 @@ struct r_bin_pe_addr_t *PE_(check_msvcseh)(RBinPEObj *pe) {
 			}
 		}
 	}
+
+	// MSVC Arm64
+	if (b[0] == 0x7f && b[1] == 0x23 && b[2] == 0x03 && b[3] == 0xd5) {
+		// 7f 23 03 d5     pacibsp
+		// fd 7b bf a9     stp        x29,x30,[sp, #local_10]!
+		// fd 03 00 91     mov        x29,sp
+		// xx xx xx 94     bl         __security_init_cookie
+		// xx xx xx 97     bl         __scrt_common_main_seh <-- Follow this
+		// fd 7b c1 a8     ldp        x29=>local_10,x30,[sp], #0x10
+		// ff 23 03 d5     autibsp
+		// c0 03 5f d6     ret
+		if (follow_offset_arm64 (entry, pe->b, b, sizeof (b), pe->big_endian, 16)) {
+			// case 1
+			// e2 03 14 aa  mov        x2,x20
+			// e1 03 13 aa  mov        x1,x19
+			// xx xx xx 94 	bl         main
+			for (n = 0; n < sizeof (b) - 12; n++) {
+				if (b[n] == 0xe2 && b[n + 1] == 0x03 && b[n + 2] == 0x14 && b[n + 3] == 0xaa && b[n + 4] == 0xe1 && b[n + 5] == 0x03 && b[n + 6] == 0x13 && b[n + 7] == 0xaa && (b[n + 11] & 0xfc) == 0x94)	{
+					follow_offset_arm64 (entry, pe->b, b, sizeof (b), pe->big_endian, 8 + n);
+					return entry;
+				}
+			}
+
+			// case 2
+			// 33 xx xx xx     add        x19,x9,xxxxxxxx
+			// 60 02 40 b9     ldr        w0,[x19]=>DAT_1400be060
+			// xx xx xx 97     bl         main
+			for (n = 0; n < sizeof (b) - 12; n++) {
+				if (b[n] == 0x33 && b[n + 4] == 0x60 && b[n + 5] == 0x02 && b[n + 6] == 0x40 && b[n + 7] == 0xb9 && (b[n + 11] & 0xfc) == 0x94) {
+					follow_offset_arm64 (entry, pe->b, b, sizeof (b), pe->big_endian, 8 + n);
+					return entry;
+				}
+			}
+
+			// case 3
+			// 01 00 80 d2     mov        x1,#0x0
+			// a8 ff ff d0     adrp       x8,xxxxxxxx
+			// 00 01 xx 91     add        x0,x8,xxxxxxxx
+			// xx xx xx 94     bl         wWinMain
+			for (n = 0; n < sizeof (b) - 16; n++) {
+				if (b[n] == 0x01 && b[n + 1] == 0x00 && b[n + 2] == 0x80 && b[n + 3] == 0xd2 && (b[n + 4] & 0x1f) == 0x8 && (b[n + 7] & 0x9f) == 0x90 && b[n + 8] == 0 && (b[n + 9] & 3) == 1 && (b[n + 11] & 0x7f) == 0x11 && (b[n + 15] & 0xfc) == 0x94) {
+					follow_offset_arm64 (entry, pe->b, b, sizeof (b), pe->big_endian, 12 + n);
+					return entry;
+				}
+			}
+		}
+	}
+
 	//Microsoft Visual-C
 	// 50                  push eax
 	// FF 75 9C            push dword [ebp - local_64h]
