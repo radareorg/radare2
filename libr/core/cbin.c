@@ -4371,7 +4371,8 @@ static bool bin_header(RCore *r, int mode) {
 R_API bool r_core_bin_info(RCore *core, int action, PJ *pj, int mode, int va, RCoreBinFilter *filter, const char *chksum) {
 	bool ret = true;
 	const char *name = NULL;
-	ut64 at = UT64_MAX, loadaddr = r_bin_get_laddr (core->bin);
+	ut64 at = UT64_MAX;
+	ut64 loadaddr = r_bin_get_laddr (core->bin);
 	if (filter && filter->offset) {
 		at = filter->offset;
 	}

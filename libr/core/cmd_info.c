@@ -246,6 +246,10 @@ static void r_core_file_info(RCore *core, PJ *pj, int mode) {
 				pj_ks (pj, "referer", desc->referer);
 			}
 		}
+		ut64 laddr = r_core_get_cur_laddr (core);
+		if (laddr) {
+			pj_kn (pj, "laddr", laddr);
+		}
 		pj_ki (pj, "block", core->blocksize);
 		if (binfile) {
 			if (binfile->curxtr) {
@@ -276,6 +280,16 @@ static void r_core_file_info(RCore *core, PJ *pj, int mode) {
 				r_num_units (humansz, sizeof (humansz), fsz);
 				pair ("humansz", humansz);
 			}
+			ut64 laddr = r_core_get_cur_laddr (core);
+			if (laddr && laddr != UT64_MAX) {
+				char *laddrs = r_str_newf ("0x%08"PFMT64x, laddr);
+				pair ("laddr", laddrs);
+				free (laddrs);
+			}
+		}
+		ut64 laddr = r_core_get_cur_laddr (core);
+		if (laddr) {
+			pair ("laddr", r_strf ("0x%"PFMT64x, laddr));
 		}
 		if (desc) {
 			pair ("mode", r_str_rwx_i (desc->perm & R_PERM_RWX));

@@ -48,13 +48,33 @@ static void loadGP(RCore *core) {
 	}
 }
 
+R_API ut64 r_core_get_cur_laddr(RCore *core) {
+	RListIter *iter;
+	RIOMap *map;
+	ut64 laddr = 0;
+	RIODesc *odesc = core->io ? core->io->desc : NULL;
+	if (odesc) {
+		RList *maps = r_io_map_get_by_fd (core->io, odesc->fd);
+		r_list_foreach (maps, iter, map) {
+			if (map->delta) {
+				continue;
+			}
+			if (map->itv.addr && (!laddr || map->itv.addr < laddr)) {
+				laddr = map->itv.addr;
+			}
+		}
+	}
+	return laddr;
+}
+
 R_API bool r_core_file_reopen(RCore *core, const char *args, int perm, int loadbin) {
 	const bool isdebug = r_config_get_b (core->config, "cfg.debug");
 	char *path;
-	ut64 laddr = r_config_get_i (core->config, "bin.laddr");
 	RIODesc *odesc = core->io ? core->io->desc : NULL;
 	RBinFile *bf = odesc ? r_bin_file_find_by_fd (core->bin, odesc->fd) : NULL;
 	char *ofilepath = NULL, *obinfilepath = (bf && bf->file)? strdup (bf->file): NULL;
+	ut64 laddr = r_core_get_cur_laddr (core);
+
 	bool ret = false;
 	ut64 origoff = core->offset;
 	if (odesc) {
@@ -612,7 +632,11 @@ static bool linkcb(void *user, void *data, ut32 id) {
 R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 	r_return_val_if_fail (r && r->io, false);
 	R_CRITICAL_ENTER (r);
+#if 0
 	ut64 laddr = r_config_get_i (r->config, "bin.laddr");
+#else
+	ut64 laddr = r_core_get_cur_laddr (r);
+#endif
 	RBinFile *binfile = NULL;
 	RBinPlugin *plugin = NULL;
 	const char *cmd_load;
@@ -937,11 +961,6 @@ R_API RIODesc *r_core_file_open(RCore *r, const char *file, int flags, ut64 load
 				free (dh);
 			}
 		}
-	}
-	//used by r_core_bin_load otherwise won't load correctly
-	//this should be argument of r_core_bin_load <shrug>
-	if (loadaddr != UT64_MAX) {
-		r_config_set_i (r->config, "bin.laddr", loadaddr);
 	}
 	r_core_cmd0 (r, "=!");
 beach:

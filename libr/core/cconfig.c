@@ -3766,7 +3766,6 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB("bin.demangle.trylib", "true", &cb_demangle_trylib, "try to use system available libraries to demangle");
 	SETBPREF ("bin.demangle.libs", "false", "show library name on demangled symbols names");
 	SETI ("bin.baddr", -1, "base address of the binary");
-	SETI ("bin.laddr", 0, "base address for loading library ('*.so')");
 	SETCB ("bin.dbginfo", "true", &cb_bindbginfo, "load debug information at startup if available");
 	SETBPREF ("bin.relocs", "true", "load relocs information at startup if available");
 	SETICB ("bin.str.min", 0, &cb_binminstr, "minimum string length for r_bin");
