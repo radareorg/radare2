@@ -3767,16 +3767,14 @@ static RBinElfSymbol* Elf_(_r_bin_elf_get_symbols_imports)(ELFOBJ *bin, int type
 			return NULL;
 		}
 		if (!strtab) {
+			if (strtab_section->sh_offset > bin->size || strtab_section->sh_offset + strtab_section->sh_size > bin->size) {
+				goto beach;
+			}
 			if (!(strtab = (char *)calloc (1, 8 + strtab_section->sh_size))) {
 				R_LOG_ERROR ("malloc (syms strtab)");
 				goto beach;
 			}
-			if (strtab_section->sh_offset > bin->size ||
-					strtab_section->sh_offset + strtab_section->sh_size > bin->size) {
-				goto beach;
-			}
-			if (r_buf_read_at (bin->b, strtab_section->sh_offset,
-						(ut8*)strtab, strtab_section->sh_size) == -1) {
+			if (r_buf_read_at (bin->b, strtab_section->sh_offset, (ut8*)strtab, strtab_section->sh_size) == -1) {
 				R_LOG_ERROR ("read (syms strtab)");
 				goto beach;
 			}
@@ -3857,8 +3855,9 @@ static RBinElfSymbol* Elf_(_r_bin_elf_get_symbols_imports)(ELFOBJ *bin, int type
 #if 0
 		memset (((ut8*)ret) + ret_size, 0, increment * sizeof (RBinElfSymbol));
 #else
-		for (i = ret_ctr; i < ret_last; i++) {
-			ret[i].name[0] = 0;
+		int mi;
+		for (mi = ret_ctr; mi < ret_last; mi++) {
+			ret[mi].name[0] = 0;
 		}
 #endif
 		ret_size += increment;
