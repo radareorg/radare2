@@ -3613,40 +3613,6 @@ RBinSymbol *Elf_(_r_bin_elf_convert_symbol)(struct Elf_(r_bin_elf_obj_t) *bin,
 	return ptr;
 }
 
-static ut32 hashRBinElfSymbol(const void *obj) {
-	const RBinElfSymbol *symbol = (const RBinElfSymbol *)obj;
-	if (!symbol || R_STR_ISEMPTY (symbol->name)) {
-		return 0;
-	}
-	int hash = sdb_hash (symbol->name);
-	if (R_STR_ISNOTEMPTY (symbol->type)) {
-		hash ^= sdb_hash (symbol->type);
-	}
-	hash ^= (symbol->offset >> 32);
-	hash ^= (symbol->offset & UT32_MAX);
-	return hash;
-}
-
-static int cmp_RBinElfSymbol(const RBinElfSymbol *a, const RBinElfSymbol *b) {
-	if (a->offset != b->offset) {
-		return 1;
-	}
-#if 0
-	// name is an array not a pointer
-	if (!a->name || !b->name) {
-		return 1;
-	}
-#endif
-	int result = strcmp (a->name, b->name);
-	if (result != 0) {
-		return result;
-	}
-	if (!a->type || !b->type) {
-		return 1;
-	}
-	return strcmp (a->type, b->type);
-}
-
 static RBinElfSymbol* parse_gnu_debugdata(ELFOBJ *bin, size_t *ret_size) {
 	if (ret_size) {
 		*ret_size = 0;
@@ -3727,18 +3693,6 @@ static RBinElfSymbol* Elf_(_r_bin_elf_get_symbols_imports)(ELFOBJ *bin, int type
 	ut64 toffset;
 	ut32 size = 0;
 	char *strtab = NULL;
-	HtPP *symbol_map = NULL;
-#if 0
-	HtPPOptions symbol_map_options = {
-		.cmp = (HtPPListComparator)cmp_RBinElfSymbol,
-		.hashfn = hashRBinElfSymbol,
-		.dupkey = NULL,
-		.calcsizeK = NULL,
-		.calcsizeV = NULL,
-		.freefn = NULL,
-		.elem_size = sizeof (HtPPKv),
-	};
-#endif
 
 	if (!bin->shdr || !bin->ehdr.e_shnum || bin->ehdr.e_shnum == 0xffff) {
 		R_LOG_DEBUG ("invalid section header value");
@@ -3864,16 +3818,6 @@ static RBinElfSymbol* Elf_(_r_bin_elf_get_symbols_imports)(ELFOBJ *bin, int type
 		}
 #endif
 		ret_size += increment;
-#if 0
-		if (ret_ctr > 0) {
-			symbol_map = ht_pp_new_opt (&symbol_map_options);
-			for (k = 0; k < ret_last; k++) {
-				if (ret[k].name[0]) {
-					ht_pp_insert (symbol_map, ret + k, ret + k);
-				}
-			}
-		}
-#endif
 		for (k = 1; k < nsym; k++, ret_ctr++) {
 			RBinElfSymbol *es = &ret[ret_ctr];
 			bool is_sht_null = false;
@@ -3921,12 +3865,6 @@ static RBinElfSymbol* Elf_(_r_bin_elf_get_symbols_imports)(ELFOBJ *bin, int type
 				} else {
 					r_str_ncpy (es->name, &strtab[st_name], ELF_STRING_LENGTH - 1);
 					es->type = type2str (bin, es, &sym[k]);
-#if 0
-					if (ht_pp_find (symbol_map, es, NULL)) {
-						memset (es, 0, sizeof (RBinElfSymbol)); // why :?
-						continue;
-					}
-#endif
 				}
 			}
 			es->ordinal = k;
@@ -3942,8 +3880,6 @@ static RBinElfSymbol* Elf_(_r_bin_elf_get_symbols_imports)(ELFOBJ *bin, int type
 		}
 		R_FREE (strtab);
 		R_FREE (sym);
-		// ht_pp_free (symbol_map);
-		// symbol_map = NULL;
 		if (type == R_BIN_ELF_IMPORT_SYMBOLS) {
 			break;
 		}
@@ -4006,7 +3942,6 @@ beach:
 	free (ret);
 	free (sym);
 	free (strtab);
-	// ht_pp_free (symbol_map);
 	return NULL;
 }
 

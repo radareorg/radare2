@@ -634,7 +634,7 @@ R_API int r_cons_readchar(void) {
 	// prevented from happening by having SIGWINCH blocked process-wide except for in
 	// pselect (that is what pselect is for).
 	fd_set readfds;
-	sigset_t sigmask;
+	sigset_t sigmask = 0;
 	FD_ZERO (&readfds);
 	FD_SET (STDIN_FILENO, &readfds);
 	r_signal_sigmask (0, NULL, &sigmask);
