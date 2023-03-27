@@ -1552,7 +1552,7 @@ static void ds_show_xrefs(RDisasmState *ds) {
 			R_FREE (name);
 			free (realname);
 		} else {
-			eprintf ("Corrupted database?\n");
+			R_LOG_ERROR ("Corrupted database?");
 		}
 	}
 	r_list_free (addrs);

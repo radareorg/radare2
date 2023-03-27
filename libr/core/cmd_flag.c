@@ -1,6 +1,5 @@
-/* radare - LGPL - Copyright 2009-2022 - pancake */
+/* radare - LGPL - Copyright 2009-2023 - pancake */
 
-#include <stddef.h>
 #include "r_core.h"
 
 static RCoreHelpMessage help_msg_fR = {
@@ -876,7 +875,7 @@ rep:
 			if (fi) {
 				r_flag_item_set_alias (fi, ptr);
 			} else {
-				eprintf ("Cannot find flag '%s'\n", name);
+				R_LOG_ERROR ("Cannot find flag '%s'", name);
 			}
 		} else {
 			r_core_cmd_help_match (core, help_msg_f, "fa", true);
@@ -912,8 +911,7 @@ rep:
 		switch (*str) {
 		case '\0':
 			r_core_cmd_help_match (core, help_msg_f, "fR", true);
-			eprintf ("Example to relocate PIE flags on debugger:\n"
-				" > fR entry0 `dm~:1[1]`\n");
+			R_LOG_INFO ("Relocate PIE flags in debugger with f.ex: fR entry0 `dm~:1[1]`");
 			break;
 		case '?':
 			r_core_cmd_help (core, help_msg_fR);
@@ -933,11 +931,10 @@ rep:
 					from = r_num_math (core->num, str+1);
 					to = r_num_math (core->num, p+1);
 					ret = r_flag_relocate (core->flags, from, mask, to);
-					eprintf ("Relocated %d flags\n", ret);
+					R_LOG_INFO ("Relocated %d flags", ret);
 				} else {
 					r_core_cmd_help_match (core, help_msg_f, "fR", true);
-					eprintf ("Example to relocate PIE flags on debugger:\n"
-						" > fR entry0 `dm~:1[1]`\n");
+					R_LOG_INFO ("Relocate PIE flags in debugger with f.ex: fR entry0 `dm~:1[1]`");
 				}
 			}
 		}
@@ -1038,7 +1035,7 @@ rep:
 		}
 		if (addFlag) {
 			if (!r_name_check (cstr)) {
-				eprintf ("Invalid flag name '%s'.\n", cstr);
+				R_LOG_ERROR ("Invalid flag name '%s'", cstr);
 				return false;
 			}
 			item = r_flag_set (core->flags, cstr, off, bsze);
@@ -1064,7 +1061,7 @@ rep:
 				if (fcn) {
 					r_anal_function_delete_label_at (fcn, off);
 				} else {
-					eprintf ("Cannot find function at 0x%08"PFMT64x"\n", off);
+					R_LOG_ERROR ("Cannot find function at 0x%08"PFMT64x, off);
 				}
 			} else {
 				if (strchr (flagname, '*')) {
@@ -1090,7 +1087,7 @@ rep:
 					if (fcn) {
 						print_function_labels (core->anal, fcn, input[1]);
 					} else {
-						eprintf ("Cannot find function at 0x%08"PFMT64x"\n", off);
+						R_LOG_ERROR ("Cannot find function at 0x%08"PFMT64x, off);
 					}
 				}
 			} else {
@@ -1110,7 +1107,7 @@ rep:
 							r_anal_function_set_label (fcn, name, off);
 						}
 					} else {
-						eprintf ("Cannot find function at 0x%08"PFMT64x"\n", off);
+						R_LOG_ERROR ("Cannot find function at 0x%08"PFMT64x, off);
 					}
 					free (name);
 				}
@@ -1120,7 +1117,7 @@ rep:
 			if (fcn) {
 				print_function_labels (core->anal, fcn, 0);
 			} else {
-				eprintf ("Local flags require a function to work.");
+				R_LOG_ERROR ("Local flags require a function to work");
 			}
 		}
 		break;
@@ -1164,8 +1161,9 @@ rep:
 			free (arg);
 		} else { // "fl"
 			item = r_flag_get_i (core->flags, core->offset);
-			if (item)
+			if (item) {
 				r_cons_printf ("0x%08"PFMT64x"\n", item->size);
+			}
 		}
 		break;
 #if 0
@@ -1180,7 +1178,9 @@ rep:
 					 item->offset, item->size);
 				r_core_cmd0 (core, cmd);
 			}
-		} else eprintf ("Missing arguments\n");
+		} else {
+			R_LOG_ERROR ("add help here");
+		}
 		break;
 #endif
 	case 'z': // "fz"
@@ -1188,17 +1188,14 @@ rep:
 		break;
 	case 'x':
 		if (input[1] == ' ') {
-			char cmd[128];
 			RFlagItem *item = r_flag_get_i (core->flags,
 				r_num_math (core->num, input+2));
 			if (item) {
 				r_cons_printf ("0x%08"PFMT64x"\n", item->offset);
-				snprintf (cmd, sizeof (cmd), "px@%"PFMT64d":%"PFMT64d,
-					 item->offset, item->size);
-				r_core_cmd0 (core, cmd);
+				r_core_cmdf (core, "px@%"PFMT64d":%"PFMT64d, item->offset, item->size);
 			}
 		} else {
-			eprintf ("Missing arguments\n");
+			R_LOG_ERROR ("Missing arguments");
 		}
 		break;
 	case ',': // "f,"

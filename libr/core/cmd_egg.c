@@ -46,57 +46,26 @@ static void showBuffer(RBuffer *b) {
 	}
 }
 
-#if 0
-static int compileShellcode(REgg *egg, const char *input) {
-	int i = 0;
-	RBuffer *b;
-	if (!r_egg_shellcode (egg, input)) {
-		eprintf ("Unknown shellcode '%s'\n", input);
-		return 1;
-	}
-	if (!r_egg_assemble (egg)) {
-		eprintf ("r_egg_assemble : invalid assembly\n");
-		r_egg_reset (egg);
-		return 1;
-	}
-	if (!egg->bin) {
-		egg->bin = r_buf_new ();
-	}
-	if (!(b = r_egg_get_bin (egg))) {
-		eprintf ("r_egg_get_bin: invalid egg :(\n");
-		r_egg_reset (egg);
-		return 1;
-	}
-	r_egg_finalize (egg);
-	for (i = 0; i < b->length; i++) {
-		r_cons_printf ("%02x", b->buf[i]);
-	}
-	r_cons_newline ();
-	r_egg_reset (egg);
-	return 0;
-}
-#endif
-
 static int cmd_egg_compile(REgg *egg) {
 	RBuffer *b;
 	int ret = false;
 	char *p = r_egg_option_get (egg, "egg.shellcode");
 	if (p && *p) {
 		if (!r_egg_shellcode (egg, p)) {
-			eprintf ("Unknown shellcode '%s'\n", p);
+			R_LOG_ERROR ("Unknown shellcode '%s'", p);
 			free (p);
 			return false;
 		}
 		free (p);
 	} else {
-		eprintf ("Setup a shellcode before (gi command)\n");
+		R_LOG_ERROR ("Setup a shellcode before (gi command)");
 		free (p);
 		return false;
 	}
 
 	r_egg_compile (egg);
 	if (!r_egg_assemble (egg)) {
-		eprintf ("r_egg_assemble: invalid assembly\n");
+		R_LOG_ERROR ("r_egg_assemble: invalid assembly");
 		return false;
 	}
 	p = r_egg_option_get (egg, "egg.padding");
