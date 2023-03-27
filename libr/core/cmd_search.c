@@ -2340,8 +2340,20 @@ static void search_hit_at(RCore *core, struct search_parameters *param, RCoreAsm
 	}
 }
 
+static bool invalid_page(RCore *core, const ut8 *buf, size_t buf_size) {
+	const ut8 OxFF = core->io->Oxff;
+	size_t i;
+	for (i = 0; i < buf_size; i++) {
+		if (buf[i] != OxFF) {
+			return false;
+		}
+	}
+	return true;
+}
+
 static void do_unkjmp_search(RCore *core, struct search_parameters *param, bool quiet, const char *input) {
 	const int flags = R_ARCH_OP_MASK_ESIL | R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_DISASM;
+	const bool badpages = r_config_get_b (core->config, "search.badpages");
 	RAnalOp aop;
 	ut64 i, at;
 	RIOMap *map;
@@ -2378,8 +2390,7 @@ static void do_unkjmp_search(RCore *core, struct search_parameters *param, bool 
 			if (!r_io_read_at (core->io, at, bufop, sizeof (bufop))) {
 				break;
 			}
-			bool fail = !memcmp (bufop, "\xff\xff\xff\xff", 4);
-			if (fail) {
+			if (badpages && invalid_page (core, bufop, sizeof (bufop))) {
 				R_LOG_DEBUG ("Invalid read at 0x%08"PFMT64x, at);
 				break;
 			}
@@ -2419,6 +2430,7 @@ static void do_unkjmp_search(RCore *core, struct search_parameters *param, bool 
 }
 
 static bool do_analstr_search(RCore *core, struct search_parameters *param, bool quiet, const char *input) {
+	const bool badpages = r_config_get_b (core->config, "search.badpages");
 	bool silent = false;
 	if (!input) {
 		input = "5";
@@ -2470,8 +2482,7 @@ static bool do_analstr_search(RCore *core, struct search_parameters *param, bool
 			if (!r_io_read_at (core->io, at, bufop, sizeof (bufop))) {
 				break;
 			}
-			bool fail = !memcmp (bufop, "\xff\xff\xff\xff", 4);
-			if (fail) {
+			if (badpages && invalid_page (core, bufop, sizeof (bufop))) {
 				R_LOG_DEBUG ("Invalid read at 0x%08"PFMT64x, at);
 				break;
 			}
