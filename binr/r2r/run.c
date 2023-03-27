@@ -889,7 +889,7 @@ static R2RProcessOutput *run_r2_test(R2RRunConfig *config, ut64 timeout_ms, cons
 	// r_pvector_push (&args, "-ebin.types=false");
 	r_pvector_push (&args, "-escr.color=0");
 	r_pvector_push (&args, "-escr.interactive=0");
-	r_pvector_push (&args, "-N");
+	r_pvector_push (&args, "-NN");
 	RListIter *it;
 	void *extra_arg, *file_arg;
 	if (extra_args) {

@@ -80,7 +80,7 @@ static int rabin_show_help(int v) {
 		" RABIN2_DEMANGLE=0:e bin.demangle     # do not demangle symbols\n"
 		" RABIN2_DMNGLRCMD: e bin.demanglercmd # try to purge false positives\n"
 		" RABIN2_LANG:      e bin.lang         # assume lang for demangling\n"
-		" RABIN2_MAXSTRBUF: e bin.str.maxbuf    # specify maximum buffer size\n"
+		" RABIN2_MAXSTRBUF: e bin.str.maxbuf   # specify maximum buffer size\n"
 		" RABIN2_NOPLUGINS: 1|0|               # do not load shared plugins (speedup loading)\n"
 		" RABIN2_PDBSERVER: e pdb.server       # use alternative PDB server\n"
 		" RABIN2_PREFIX:    e bin.prefix       # prefix symbols/sections/relocs with a specific string\n"
