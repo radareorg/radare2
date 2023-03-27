@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2022 - pancake */
+/* radare - LGPL - Copyright 2009-2023 - pancake */
 
 #define USE_THREADS 1
 #define ALLOW_THREADED 1
@@ -481,7 +481,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 	bool haveRarunProfile = false;
 	RListIter *iter;
 	int do_analysis = 0;
-	char *cmdn, *tmp;
+	char *cmdn;
 	RIODesc *fh = NULL;
 	RIODesc *iod = NULL;
 	const char *patchfile = NULL;
@@ -1047,10 +1047,10 @@ R_API int r_main_radare2(int argc, const char **argv) {
 		}
 	}
 
-	tmp = NULL;
-	if (!load_l || (tmp = r_sys_getenv ("R2_NOPLUGINS"))) {
+	if (!load_l || r_sys_getenv_asbool ("R2_NOPLUGINS")) {
+		r_sys_setenv ("RASM2_NOPLUGINS", "1");
+		r_sys_setenv ("RABIN2_NOPLUGINS", "1");
 		r_config_set_b (r->config, "cfg.plugins", false);
-		free (tmp);
 	}
 	if (r_config_get_b (r->config, "cfg.plugins")) {
 		r_core_loadlibs (r, R_CORE_LOADLIBS_ALL, NULL);

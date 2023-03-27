@@ -2,7 +2,6 @@
 
 #define R_LOG_ORIGIN "rasm2"
 
-#include <r_anal.h>
 #include <r_asm.h>
 #include <r_lib.h>
 #include <r_main.h>
