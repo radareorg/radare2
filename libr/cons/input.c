@@ -1,17 +1,13 @@
-/* radare - LGPL - Copyright 2009-2021 - pancake */
+/* radare - LGPL - Copyright 2009-2023 - pancake */
 
 #include <r_cons.h>
-#include <string.h>
-#if R2__UNIX__
-#include <errno.h>
-#endif
 
 #define I r_cons_singleton ()
 
 // TODO: Support binary, use RBuffer and remove globals
-static char *readbuffer = NULL;
-static int readbuffer_length = 0;
-static bool bufactive = true;
+static R_TH_LOCAL char *readbuffer = NULL;
+static R_TH_LOCAL int readbuffer_length = 0;
+static R_TH_LOCAL bool bufactive = true;
 
 #if 0
 //R2__UNIX__
@@ -634,7 +630,8 @@ R_API int r_cons_readchar(void) {
 	// prevented from happening by having SIGWINCH blocked process-wide except for in
 	// pselect (that is what pselect is for).
 	fd_set readfds;
-	sigset_t sigmask = 0;
+	sigset_t sigmask;
+	sigemptyset (&sigmask);
 	FD_ZERO (&readfds);
 	FD_SET (STDIN_FILENO, &readfds);
 	r_signal_sigmask (0, NULL, &sigmask);
