@@ -1,9 +1,6 @@
 /* radare2 - LGPL - Copyright 2011-2022 - pancake */
 
 #include <string.h>
-#include <r_types.h>
-#include <r_lib.h>
-#include <r_asm.h>
 #include <r_arch.h>
 
 static size_t countChar(const ut8 *buf, int len, char ch) {
