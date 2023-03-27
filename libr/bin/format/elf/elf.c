@@ -3613,40 +3613,6 @@ RBinSymbol *Elf_(_r_bin_elf_convert_symbol)(struct Elf_(r_bin_elf_obj_t) *bin,
 	return ptr;
 }
 
-static ut32 hashRBinElfSymbol(const void *obj) {
-	const RBinElfSymbol *symbol = (const RBinElfSymbol *)obj;
-	if (!symbol || R_STR_ISEMPTY (symbol->name)) {
-		return 0;
-	}
-	int hash = sdb_hash (symbol->name);
-	if (R_STR_ISNOTEMPTY (symbol->type)) {
-		hash ^= sdb_hash (symbol->type);
-	}
-	hash ^= (symbol->offset >> 32);
-	hash ^= (symbol->offset & UT32_MAX);
-	return hash;
-}
-
-static int cmp_RBinElfSymbol(const RBinElfSymbol *a, const RBinElfSymbol *b) {
-	if (a->offset != b->offset) {
-		return 1;
-	}
-#if 0
-	// name is an array not a pointer
-	if (!a->name || !b->name) {
-		return 1;
-	}
-#endif
-	int result = strcmp (a->name, b->name);
-	if (result != 0) {
-		return result;
-	}
-	if (!a->type || !b->type) {
-		return 1;
-	}
-	return strcmp (a->type, b->type);
-}
-
 static RBinElfSymbol* parse_gnu_debugdata(ELFOBJ *bin, size_t *ret_size) {
 	if (ret_size) {
 		*ret_size = 0;
@@ -3658,7 +3624,7 @@ static RBinElfSymbol* parse_gnu_debugdata(ELFOBJ *bin, size_t *ret_size) {
 				ut64 addr = bin->g_sections[i].offset;
 				ut64 size = bin->g_sections[i].size;
 				if (size < 10) {
-					return false;
+					return NULL;
 				}
 				ut8 *data = malloc (size + 1);
 				if (!data) {
@@ -3714,27 +3680,19 @@ static bool section_matters(ELFOBJ *bin, int i, int type, ut32 shdr_size) {
 // TODO: return RList<RBinSymbol*> .. or run a callback with that symbol constructed, so we don't have to do it twice
 static RBinElfSymbol* Elf_(_r_bin_elf_get_symbols_imports)(ELFOBJ *bin, int type) {
 	r_return_val_if_fail (bin, NULL);
-	int tsize, nsym, ret_ctr = 0, i, j, k, newsize;
+	size_t ret_ctr = 0; // amount of symbols stored in ret
+	size_t ret_size = 0; // size of ret allocation
+	int tsize, nsym, i, j, k;
 	RBinElfSymbol *ret = NULL;
 	RBinElfSymbol *import_ret = NULL;
 	RBinSymbol *import_sym_ptr = NULL;
-	size_t ret_size = 0, import_ret_ctr = 0;
+	size_t import_ret_ctr = 0;
 	Elf_(Sym) *sym = NULL;
 	ut8 s[sizeof (Elf_(Sym))] = {0};
 	ut32 shdr_size = 0;
 	ut64 toffset;
 	ut32 size = 0;
 	char *strtab = NULL;
-	HtPP *symbol_map = NULL;
-	HtPPOptions symbol_map_options = {
-		.cmp = (HtPPListComparator)cmp_RBinElfSymbol,
-		.hashfn = hashRBinElfSymbol,
-		.dupkey = NULL,
-		.calcsizeK = NULL,
-		.calcsizeV = NULL,
-		.freefn = NULL,
-		.elem_size = sizeof (HtPPKv),
-	};
 
 	if (!bin->shdr || !bin->ehdr.e_shnum || bin->ehdr.e_shnum == 0xffff) {
 		R_LOG_DEBUG ("invalid section header value");
@@ -3749,46 +3707,40 @@ static RBinElfSymbol* Elf_(_r_bin_elf_get_symbols_imports)(ELFOBJ *bin, int type
 		return NULL;
 	}
 	// ret_size = amount of dbgsymbols in the array (not size of the array)
-	RBinElfSymbol *dbgsyms = parse_gnu_debugdata (bin, &ret_size);
-	if (dbgsyms) {
-		ret = dbgsyms;
-		ret_ctr = ret_size;
-	} else {
-		ret_ctr = 0;
-		ret_size = 0;
-	}
+	ret = parse_gnu_debugdata (bin, &ret_ctr);
+	ret_size = ret_ctr * sizeof (RBinElfSymbol);
+	int ret_last = ret_ctr;
 	for (i = 0; i < bin->ehdr.e_shnum; i++) {
 		if (!section_matters (bin, i, type, shdr_size)) {
 			continue;
 		}
 		// process symbols in this section
 		Elf_(Shdr) *strtab_section = &bin->shdr[bin->shdr[i].sh_link];
-		if (strtab_section->sh_size > ST32_MAX || strtab_section->sh_size+8 > bin->size) {
+		if (strtab_section->sh_size > ST32_MAX || strtab_section->sh_size + 8 > bin->size) {
 			R_LOG_ERROR ("size (syms strtab)");
 			free (ret);
 			free (strtab);
 			return NULL;
 		}
 		if (!strtab) {
+			if (strtab_section->sh_offset > bin->size || strtab_section->sh_offset + strtab_section->sh_size > bin->size) {
+				goto beach;
+			}
 			if (!(strtab = (char *)calloc (1, 8 + strtab_section->sh_size))) {
 				R_LOG_ERROR ("malloc (syms strtab)");
 				goto beach;
 			}
-			if (strtab_section->sh_offset > bin->size ||
-					strtab_section->sh_offset + strtab_section->sh_size > bin->size) {
-				goto beach;
-			}
-			if (r_buf_read_at (bin->b, strtab_section->sh_offset,
-						(ut8*)strtab, strtab_section->sh_size) == -1) {
+			if (r_buf_read_at (bin->b, strtab_section->sh_offset, (ut8*)strtab, strtab_section->sh_size) == -1) {
 				R_LOG_ERROR ("read (syms strtab)");
 				goto beach;
 			}
 		}
-
-		newsize = 1 + bin->shdr[i].sh_size;
-		if (newsize < 0 || newsize > bin->size) {
-			R_LOG_ERROR ("invalid shdr %d size", i);
-			goto beach;
+		{ // bounch check
+			int newsize = 1 + bin->shdr[i].sh_size;
+			if (newsize < 0 || newsize > bin->size) {
+				R_LOG_ERROR ("invalid shdr %d size", i);
+				goto beach;
+			}
 		}
 		nsym = (int)(bin->shdr[i].sh_size / sizeof (Elf_(Sym)));
 		if (nsym < 1) {
@@ -3848,23 +3800,26 @@ static RBinElfSymbol* Elf_(_r_bin_elf_get_symbols_imports)(ELFOBJ *bin, int type
 			sym[j].st_shndx = READ16 (s, k);
 #endif
 		}
-		void *rett = realloc (ret, (ret_size + nsym) * sizeof (RBinElfSymbol));
+		int increment = (1 + nsym) * sizeof (RBinElfSymbol);
+		void *rett = realloc (ret, increment + ret_size);
 		if (!rett) {
-			R_LOG_ERROR ("Cannot allocate %d symbols", (int)(nsym + ret_size));
+			R_LOG_ERROR ("Cannot allocate %d symbols", (int)(nsym + increment));
 			goto beach;
 		}
 		ret = rett;
-		memset (((ut8*)ret) + (ret_size * sizeof (RBinElfSymbol)), 0,
-			nsym * sizeof (RBinElfSymbol));
-		size_t prev_ret_size = ret_size;
-		ret_size += nsym;
-		symbol_map = ht_pp_new_opt (&symbol_map_options);
-		for (k = 0; k < prev_ret_size; k++) {
-			if (ret[k].name[0]) {
-				ht_pp_insert (symbol_map, ret + k, ret + k);
-			}
+		ret_last = ret_ctr + nsym;
+#if 0
+		memset (((ut8*)ret) + ret_size, 0, increment * sizeof (RBinElfSymbol));
+#else
+		int mi;
+		for (mi = ret_ctr; mi < ret_last; mi++) {
+			memset (&ret[mi], 0, sizeof (RBinElfSymbol));
+			//  ret[mi].name[0] = 0;
 		}
-		for (k = 1; k < nsym; k++) {
+#endif
+		ret_size += increment;
+		for (k = 1; k < nsym; k++, ret_ctr++) {
+			RBinElfSymbol *es = &ret[ret_ctr];
 			bool is_sht_null = false;
 			bool is_vaddr = false;
 			bool is_imported = false;
@@ -3883,16 +3838,16 @@ static RBinElfSymbol* Elf_(_r_bin_elf_get_symbols_imports)(ELFOBJ *bin, int type
 			}
 			if (is_bin_etrel (bin)) {
 				if (sym[k].st_shndx < bin->ehdr.e_shnum) {
-					ret[ret_ctr].offset = sym[k].st_value + bin->shdr[sym[k].st_shndx].sh_offset;
+					es->offset = sym[k].st_value + bin->shdr[sym[k].st_shndx].sh_offset;
 				}
 			} else {
-				ret[ret_ctr].offset = Elf_(r_bin_elf_v2p_new) (bin, toffset);
-				if (ret[ret_ctr].offset == UT64_MAX) {
-					ret[ret_ctr].offset = toffset;
+				es->offset = Elf_(r_bin_elf_v2p_new) (bin, toffset);
+				if (es->offset == UT64_MAX) {
+					es->offset = toffset;
 					is_vaddr = true;
 				}
 			}
-			ret[ret_ctr].size = tsize;
+			es->size = tsize;
 			if (sym[k].st_name + 1 > strtab_section->sh_size) {
 				R_LOG_DEBUG ("index out of strtab range (%"PFMT64d" / %"PFMT64d")",
 					(ut64)sym[k].st_name, (ut64)strtab_section->sh_size);
@@ -3902,36 +3857,29 @@ static RBinElfSymbol* Elf_(_r_bin_elf_get_symbols_imports)(ELFOBJ *bin, int type
 				int st_name = sym[k].st_name;
 				int maxsize = R_MIN (r_buf_size (bin->b), strtab_section->sh_size);
 				if (is_section_local_sym (bin, &sym[k])) {
-					const char *shname = &bin->shstrtab[bin->shdr[sym[k].st_shndx].sh_name];
-					r_str_ncpy (ret[ret_ctr].name, shname, ELF_STRING_LENGTH - 1);
+					const size_t sym_section = sym[k].st_shndx;
+					const char *shname = &bin->shstrtab[bin->shdr[sym_section].sh_name];
+					r_str_ncpy (es->name, shname, ELF_STRING_LENGTH - 1);
 				} else if (st_name <= 0 || st_name >= maxsize) {
-					ret[ret_ctr].name[0] = 0;
+					es->name[0] = 0;
 				} else {
-					r_str_ncpy (ret[ret_ctr].name, &strtab[st_name], ELF_STRING_LENGTH - 1);
-					ret[ret_ctr].type = type2str (bin, &ret[ret_ctr], &sym[k]);
-
-					if (ht_pp_find (symbol_map, &ret[ret_ctr], NULL)) {
-						memset (ret + ret_ctr, 0, sizeof (RBinElfSymbol));
-						continue;
-					}
+					r_str_ncpy (es->name, &strtab[st_name], ELF_STRING_LENGTH - 1);
+					es->type = type2str (bin, es, &sym[k]);
 				}
 			}
-			ret[ret_ctr].ordinal = k;
-			ret[ret_ctr].name[ELF_STRING_LENGTH - 1] = '\0';
-			fill_symbol_bind_and_type (bin, &ret[ret_ctr], &sym[k]);
-			ret[ret_ctr].is_sht_null = is_sht_null;
-			ret[ret_ctr].is_vaddr = is_vaddr;
-			ret[ret_ctr].last = 0;
-			ret[ret_ctr].is_imported = is_imported;
-			ret_ctr++;
+			es->ordinal = k;
+			es->name[ELF_STRING_LENGTH - 1] = '\0';
+			fill_symbol_bind_and_type (bin, es, &sym[k]);
+			es->is_sht_null = is_sht_null;
+			es->is_vaddr = is_vaddr;
+			es->last = 0;
+			es->is_imported = is_imported;
 			if (type == R_BIN_ELF_IMPORT_SYMBOLS && is_imported) {
 				import_ret_ctr++;
 			}
 		}
 		R_FREE (strtab);
 		R_FREE (sym);
-		ht_pp_free (symbol_map);
-		symbol_map = NULL;
 		if (type == R_BIN_ELF_IMPORT_SYMBOLS) {
 			break;
 		}
@@ -3939,9 +3887,10 @@ static RBinElfSymbol* Elf_(_r_bin_elf_get_symbols_imports)(ELFOBJ *bin, int type
 	if (!ret) {
 		return Elf_(get_phdr_symbols) (bin, type);
 	}
-	ret[ret_ctr].last = 1; // ugly dirty hack :D
-	int max = -1;
-	RBinElfSymbol *aux = NULL;
+	if (ret_ctr > 0) {
+		RBinElfSymbol *es = &ret[ret_ctr];
+		es->last = 1; // ugly dirty hack :D
+	}
 	nsym = Elf_(fix_symbols) (bin, ret_ctr, type, &ret);
 	if (nsym == -1) {
 		goto beach;
@@ -3952,7 +3901,8 @@ static RBinElfSymbol* Elf_(_r_bin_elf_get_symbols_imports)(ELFOBJ *bin, int type
 	r_warn_if_fail (nsym >= ret_ctr);
 	import_ret_ctr += nsym - ret_ctr;
 
-	aux = ret;
+	int max = -1;
+	RBinElfSymbol *aux = ret;
 	while (!aux->last) {
 		if ((int)aux->ordinal > max) {
 			max = aux->ordinal;
@@ -3992,7 +3942,6 @@ beach:
 	free (ret);
 	free (sym);
 	free (strtab);
-	ht_pp_free (symbol_map);
 	return NULL;
 }
 
