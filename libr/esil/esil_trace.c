@@ -13,7 +13,9 @@ static int ocbs_set = false;
 static REsilCallbacks ocbs = {0};
 
 static void htup_vector_free(HtUPKv *kv) {
-	r_vector_free (kv->value);
+	if (kv) {
+		r_vector_free (kv->value);
+	}
 }
 
 R_API REsilTrace *r_esil_trace_new(REsil *esil) {
@@ -362,15 +364,18 @@ static int cmp_strings_by_leading_number(void *data1, void *data2) {
 }
 
 R_API void r_esil_trace_list(REsil *esil) {
+	r_return_if_fail (esil && esil->anal);
 	PrintfCallback p = esil->anal->cb_printf;
 	SdbKv *kv;
 	SdbListIter *iter;
-	SdbList *list = sdb_foreach_list (esil->trace->db, true);
-	ls_sort (list, (SdbListComparator) cmp_strings_by_leading_number);
-	ls_foreach (list, iter, kv) {
-		p ("%s=%s\n", sdbkv_key (kv), sdbkv_value (kv));
+	if (esil->trace) {
+		SdbList *list = sdb_foreach_list (esil->trace->db, true);
+		ls_sort (list, (SdbListComparator) cmp_strings_by_leading_number);
+		ls_foreach (list, iter, kv) {
+			p ("%s=%s\n", sdbkv_key (kv), sdbkv_value (kv));
+		}
+		ls_free (list);
 	}
-	ls_free (list);
 }
 
 R_API void r_esil_trace_show(REsil *esil, int idx) {
