@@ -144,13 +144,6 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 		return false;
 	}
 
-	RArch *a = as->arch;
-	RBin *bin = R_UNWRAP2 (a, binb.bin);
-	RIOReadAt read_at = bin->iob.read_at;
-	if (!bin || !read_at) {
-		return false;
-	}
-
 	ut8 *buf = (ut8*)_buf; // XXX
 	ut64 dst = 0LL;
 	if (!op) {
@@ -198,7 +191,7 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 					ut8 *new_buf = calloc (new_buf_len, 1);
 					if (new_buf) {
 						free (buf);
-						(void)read_at (bin->iob.io, addr, new_buf, new_buf_len);
+						memcpy (new_buf, op->bytes, new_buf_len);
 						buf = new_buf;
 						p = buf + i;
 						len += BUFSIZE_INC;
