@@ -40,6 +40,7 @@ extern "C" {
 
 #define R_IGNORE_RETURN(x) if ((x)) {;}
 
+// unaligned word access
 typedef R_ALIGNED(1) ut16 uut16;
 typedef R_ALIGNED(1) ut32 uut32;
 typedef R_ALIGNED(1) ut64 uut64;

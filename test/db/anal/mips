@@ -731,3 +731,53 @@ EXPECT=<<EOF
             0x004020ac      afa20014       sw v0, 0x14(sp)
 EOF
 RUN
+
+NAME=aac on mips be
+FILE=bins/elf/analysis/mipsbe-busybox
+CMDS=<<EOF
+aac
+afl~?
+EOF
+EXPECT=<<EOF
+1268
+EOF
+RUN
+
+NAME=raw aac with maps (less because of wrong map address)
+FILE=bins/elf/analysis/mipsbe-busybox
+ARGS=-n -m 0x80000 -a mips -b32 -e cfg.bigendian=true
+CMDS=<<EOF
+aac
+afl~?
+EOF
+EXPECT=<<EOF
+4
+EOF
+RUN
+
+NAME=aav without vinfun
+FILE=bins/elf/analysis/mipsbe-busybox
+CMDS=<<EOF
+af @ 0x0040dea4
+e anal.vinfun=false
+aav
+pd 1 @ 0x0040decc~?andi
+EOF
+EXPECT=<<EOF
+1
+EOF
+RUN
+
+NAME=aav with vinfun
+FILE=bins/elf/analysis/mipsbe-busybox
+CMDS=<<EOF
+af @ 0x0040ddb0
+e anal.vinfun=true
+aav
+pd 1 @ 0x00463508~?dword
+EOF
+EXPECT=<<EOF
+1
+EOF
+RUN
+
