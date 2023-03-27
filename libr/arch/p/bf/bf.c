@@ -276,6 +276,10 @@ static bool encode(RArchSession *as, RAnalOp *op, RArchEncodeMask mask) {
 	return size > 0;
 }
 
+static int archinfo(RArchSession *as, ut32 q) {
+	return 1;
+}
+
 RArchPlugin r_arch_plugin_bf = {
 	.name = "bf",
 	.desc = "brainfuck code analysis plugin",
@@ -286,6 +290,7 @@ RArchPlugin r_arch_plugin_bf = {
 	.decode = &decode,
 	.encode = &encode,
 	.regs = get_reg_profile,
+	.info = &archinfo
 };
 
 #ifndef R2_PLUGIN_INCORE
