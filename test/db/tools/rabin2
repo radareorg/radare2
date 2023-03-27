@@ -111,7 +111,7 @@ NAME=rabin2 -s file elf
 FILE=bins/elf/analysis/x86-helloworld-gcc
 CMDS=!!rabin2 -s ${R2_FILE}~?
 EXPECT=<<EOF
-68
+69
 EOF
 RUN
 
@@ -625,6 +625,7 @@ nth paddr      vaddr      bind   type   size lib name
 52  0x00000494 0x08048494 GLOBAL FUNC   0        _fini
 53  0x000006ac 0x080496ac GLOBAL NOTYPE 0        __data_start
 56  0x000006b0 0x080496b0 GLOBAL OBJ    0        __dso_handle
+57  0x000004ac 0x080484ac GLOBAL OBJ    4        _IO_stdin_used
 59  0x00000420 0x08048420 GLOBAL FUNC   97       __libc_csu_init
 60  ---------- 0x080496b8 GLOBAL NOTYPE 0        _end
 61  0x00000300 0x08048300 GLOBAL FUNC   0        _start
