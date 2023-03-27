@@ -38,7 +38,7 @@ libr/anal/esil.c
 libr/anal/data.c
 libr/anal/flirt.c
 libr/arch/p/arc/plugin.c
-libr/anal/p/anal_bf.c
+libr/arch/p/bf/bf.c
 
 libr/config/config.c
 libr/config/callback.c

@@ -6,6 +6,7 @@ r_arch_sources = [
   'arch_session.c',
   'arch_cond.c',
   'arch_value.c',
+  'p/bf/plugin.c',
   'p/pic/plugin.c',
   'p/pic/pic_midrange.c',
   'p/pic/pic_baseline.c',
