@@ -2337,10 +2337,11 @@ static int cmd_open(void *data, const char *input) {
 			r_core_fini (core);
 			r_core_init (core);
 			r_core_task_sync_begin (&core->tasks);
-			if (!r_core_file_open (core, input + 2, R_PERM_RX, 0)) {
+			if (r_core_file_open (core, input + 2, R_PERM_RX, 0)) {
+				(void)r_core_bin_load (core, NULL, baddr);
+			} else {
 				R_LOG_ERROR ("Cannot open file");
 			}
-			(void)r_core_bin_load (core, NULL, baddr);
 		} else {
 			R_LOG_ERROR ("Missing argument");
 		}

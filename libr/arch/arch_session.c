@@ -4,9 +4,6 @@
 
 R_API RArchSession *r_arch_session(RArch *arch, RArchConfig *cfg, RArchPlugin *ap) {
 	RArchSession *ai = R_NEW0 (RArchSession);
-	if (!ai) {
-		return NULL;
-	}
 	if (ai) {
 		ai->arch = arch;
 		ai->config = cfg;
@@ -20,7 +17,6 @@ R_API RArchSession *r_arch_session(RArch *arch, RArchConfig *cfg, RArchPlugin *a
 			}
 		}
 	}
-	// resolve and instantiate plugin by name (
 	return ai;
 }
 
