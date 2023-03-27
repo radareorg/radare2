@@ -327,6 +327,8 @@ extern RArchPlugin r_arch_plugin_ebc;
 extern RArchPlugin r_arch_plugin_msp430;
 extern RArchPlugin r_arch_plugin_pyc;
 extern RArchPlugin r_arch_plugin_h8300;
+extern RArchPlugin r_arch_plugin_bf;
+
 
 #ifdef __cplusplus
 }

@@ -1,0 +1,45 @@
+NAME=bf decode
+FILE=bins/bf/hello-ok.bf
+CMDS=<<EOF
+e asm.arch=bf
+e asm.bits=32
+e asm.parser=x86.pseudo
+ao@0xA
+ao@0x61
+EOF
+EXPECT=<<EOF
+address: 0xa
+opcode: while [ptr]
+esilcost: 4
+disasm: while [ptr]
+pseudo: while [ptr]
+mnemonic: while
+mask: 00
+id: 1
+bytes: 5b
+size: 1
+sign: false
+type: cjmp
+cycles: 0
+esil: 0xa,brk,=[1],brk,++=,ptr,[1],!,?{,0x2a,pc,=,brk,--=,}
+jump: 0x0000002a
+fail: 0x0000000b
+cond: al
+family: cpu
+address: 0x61
+opcode: sub [ptr], 8
+esilcost: 4
+disasm: sub [ptr], 8
+pseudo: [ptr] -= 8
+mnemonic: sub
+mask: ffffffffffffffff
+id: 6
+bytes: 2d2d2d2d2d2d2d2d
+size: 8
+sign: false
+type: sub
+cycles: 0
+esil: 8,ptr,-=[1]
+family: cpu
+EOF
+RUN

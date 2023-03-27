@@ -611,6 +611,9 @@ static bool linkcb(void *user, void *data, ut32 id) {
 
 R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 	r_return_val_if_fail (r && r->io, false);
+	if (r_str_startswith (filenameuri, "malloc://")) {
+		return true;
+	}
 	R_CRITICAL_ENTER (r);
 	ut64 laddr = r_config_get_i (r->config, "bin.laddr");
 	RBinFile *binfile = NULL;
@@ -768,7 +771,6 @@ R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 	if (plugin && binfile && plugin->file_type && plugin->file_type (binfile) == R_BIN_TYPE_CORE) {
 		ut64 sp_addr = (ut64)-1;
 		RIOMap *stack_map = NULL;
-
 		// Setting the right arch and bits, so regstate will be shown correctly
 		if (plugin->info) {
 			RBinInfo *inf = plugin->info (binfile);
@@ -912,7 +914,6 @@ R_API RIODesc *r_core_file_open(RCore *r, const char *file, int flags, ut64 load
 		fd = NULL;
 		goto beach;
 	}
-
 	{
 		const char *cp = r_config_get (r->config, "cmd.open");
 		if (cp && *cp) {
