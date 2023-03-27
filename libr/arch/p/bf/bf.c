@@ -79,9 +79,8 @@ static int disassemble(RAnalOp *op, const ut8 *buf, int len) {
 	return rep;
 }
 
-static bool _write_asm(ut8 *outbuf, size_t outbufsz, int value, int n) {
+static void _write_asm(ut8 *outbuf, size_t outbufsz, int value, int n) {
 	memset (outbuf, value, R_MIN (n, outbufsz));
-	return n > outbufsz;
 }
 
 static int assemble(const char *buf, ut8 **outbuf) {
@@ -91,7 +90,6 @@ static int assemble(const char *buf, ut8 **outbuf) {
 	}
 	const char *arg = strchr (buf, ',');
 	const char *ref = strchr (buf, '[');
-	bool write_err = false;
 	if (arg) {
 		n = atoi (arg + 1);
 	} else {
@@ -105,40 +103,36 @@ static int assemble(const char *buf, ut8 **outbuf) {
 	}
 
 	if (r_str_startswith (buf, "trap")) {
-		write_err = _write_asm (*outbuf, outbufsz, 0xcc, n);
+		_write_asm (*outbuf, outbufsz, 0xcc, n);
 	} else if (r_str_startswith (buf, "nop")) {
-		write_err = _write_asm (*outbuf, outbufsz, 0x90, n);
+		_write_asm (*outbuf, outbufsz, 0x90, n);
 	} else if (r_str_startswith (buf, "inc")) {
 		char ch = ref? '+': '>';
 		n = 1;
-		write_err = _write_asm (*outbuf, outbufsz, ch, n);
+		_write_asm (*outbuf, outbufsz, ch, n);
 	} else if (r_str_startswith (buf, "dec")) {
 		char ch = ref? '-': '<';
 		n = 1;
-		write_err = _write_asm (*outbuf, outbufsz, ch, n);
+		_write_asm (*outbuf, outbufsz, ch, n);
 	} else if (r_str_startswith (buf, "sub")) {
 		char ch = ref? '-': '<';
-		write_err = _write_asm (*outbuf, outbufsz, ch, n);
+		_write_asm (*outbuf, outbufsz, ch, n);
 	} else if (r_str_startswith (buf, "add")) {
 		char ch = ref? '+': '>';
-		write_err = _write_asm (*outbuf, outbufsz, ch, n);
+		_write_asm (*outbuf, outbufsz, ch, n);
 	} else if (r_str_startswith (buf, "while")) {
 		n = 1;
-		write_err = _write_asm (*outbuf, outbufsz, '[', 1);
+		_write_asm (*outbuf, outbufsz, '[', 1);
 	} else if (r_str_startswith (buf, "loop")) {
 		n = 1;
-		write_err = _write_asm (*outbuf, outbufsz, ']', 1);
+		_write_asm (*outbuf, outbufsz, ']', 1);
 	} else if (r_str_startswith (buf, "in")) {
-		write_err = _write_asm (*outbuf, outbufsz, ',', n);
+		_write_asm (*outbuf, outbufsz, ',', n);
 	} else if (r_str_startswith (buf, "out")) {
-		write_err = _write_asm (*outbuf, outbufsz, '.', n);
+		_write_asm (*outbuf, outbufsz, '.', n);
 	} else {
 		R_FREE (*outbuf);
 		n = 0;
-	}
-	if (write_err) {
-		R_FREE (*outbuf);
-		return 0;
 	}
 	return n;
 }
