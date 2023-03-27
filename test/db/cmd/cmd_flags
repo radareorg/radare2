@@ -23,9 +23,9 @@ EXPECT=<<EOF
 0xffffffffffffffff
 EOF
 EXPECT_ERR=<<EOF
-Invalid flag name '123'.
-Invalid flag name '$123'.
-Invalid flag name '$foo'.
+ERROR: Invalid flag name '123'
+ERROR: Invalid flag name '$123'
+ERROR: Invalid flag name '$foo'
 EOF
 RUN
 
@@ -439,7 +439,7 @@ all
 f.patata@0x00400410
 EOF
 EXPECT_ERR=<<EOF
-Cannot find function at 0x00000000
+ERROR: Cannot find function at 0x00000000
 EOF
 RUN
 
@@ -462,7 +462,7 @@ all
 {"entry0":{"patata":4195344}}
 EOF
 EXPECT_ERR=<<EOF
-Cannot find function at 0x00000000
+ERROR: Cannot find function at 0x00000000
 EOF
 RUN
 

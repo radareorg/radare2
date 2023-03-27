@@ -4305,7 +4305,7 @@ static int cmd_af(RCore *core, const char *input) {
 		{
 		ut64 addr = 0;
 		if (input[2] == '?') {
-			eprintf ("afd [offset]\n");
+			r_core_cmd_help_match (core, help_msg_af, "afd", true);
 		} else if (input[2] == ' ') {
 			addr = r_num_math (core->num, input + 2);
 		} else {
@@ -4334,7 +4334,7 @@ static int cmd_af(RCore *core, const char *input) {
 					r_cons_println (fcn->name);
 				}
 			} else {
-				eprintf ("afd: Cannot find function\n");
+				R_LOG_ERROR ("afd: Cannot find function");
 			}
 		}
 		}
@@ -6239,7 +6239,7 @@ static void cmd_anal_info(RCore *core, const char *input) {
 			} else if (input[1] == '-') {
 				r_anal_purge_imports (core->anal);
 			} else {
-				eprintf ("Usagae: aii [namespace] # see afii - imports\n");
+				r_core_cmd_help_match (core, help_msg_ai, "aii", true);
 			}
 		} else {
 			if (core->anal->imports) {
@@ -7561,7 +7561,7 @@ static void cmd_anal_esil(RCore *core, const char *input, bool verbose) {
 			n = strchr (input, ' ');
 			n1 = R_STR_ISNOTEMPTY (n) ? strchr (n + 1, ' ') : NULL;
 			if ((!n || !n1) || (!*n || !*n1)) {
-				eprintf ("aesp [offset] [num]\n");
+				r_core_cmd_help_match (core, help_msg_aes, "aesp", true);
 				break;
 			}
 			adr = R_STR_ISNOTEMPTY (n)? r_num_math (core->num, n + 1): 0;
@@ -7641,7 +7641,7 @@ static void cmd_anal_esil(RCore *core, const char *input, bool verbose) {
 					break;
 				}
 				if (op->type == R_ANAL_OP_TYPE_CALL || op->type == R_ANAL_OP_TYPE_UCALL) {
-					eprintf ("stop in call instruction at 0x%08" PFMT64x "\n", addr);
+					R_LOG_INFO ("stop in call instruction at 0x%08" PFMT64x, addr);
 					break;
 				}
 				r_anal_op_free (op);
@@ -7771,7 +7771,7 @@ static void cmd_anal_esil(RCore *core, const char *input, bool verbose) {
 					free (out);
 				}
 			} else {
-				eprintf ("esil.stats is empty. Run 'aei'\n");
+				R_LOG_INFO ("esil.stats is empty. Run 'aei'");
 			}
 			break;
 		case '-':
@@ -7819,10 +7819,10 @@ static void cmd_anal_esil(RCore *core, const char *input, bool verbose) {
 					cmd_aespc (core, bb->addr, bb->addr + bb->size, bb->ninstr);
 					// r_core_cmdf (core, "aesp `ab~addr[1]` `ab~ninstr[1]`");
 				} else {
-					eprintf ("No basic block in this address\n");
+					R_LOG_ERROR ("No basic block in this address");
 				}
 			} else {
-				eprintf ("No function in this address\n");
+				R_LOG_ERROR ("No function in this address");
 			}
 		// ab~ninstr[1]
 		}
@@ -7859,7 +7859,7 @@ static void cmd_anal_esil(RCore *core, const char *input, bool verbose) {
 					break;
 				}
 				if (!esil->trace) {
-					eprintf ("No ESIL trace started\n");
+					R_LOG_ERROR ("No ESIL trace started");
 					break;
 				}
 				r_esil_trace_free (esil->trace);
@@ -7872,7 +7872,7 @@ static void cmd_anal_esil(RCore *core, const char *input, bool verbose) {
 			}
 			break;
 		default:
-			eprintf ("Unknown command. Use `aetr`\n");
+			R_LOG_ERROR ("Unknown command");
 			break;
 		}
 		break;
@@ -8342,7 +8342,7 @@ static void cmd_anal_opcode(RCore *core, const char *input) {
 				R_LOG_ERROR ("Unknown mnemonic");
 			}
 		} else {
-			eprintf ("Use: aod[?a] ([opcode])    describe current, [given] or all mnemonics\n");
+			r_core_cmd_help_match (core, help_msg_ao, "aod", false);
 		}
 		break;
 	case '*':
@@ -8408,7 +8408,7 @@ static void cmd_anal_aftertraps(RCore *core, const char *input) {
 	ut64 addr, addr_end;
 	ut64 len = r_num_math (core->num, input);
 	if (len > 0xffffff) {
-		eprintf ("Too big\n");
+		R_LOG_ERROR ("Length is too large");
 		return;
 	}
 	RBinFile *bf = r_bin_cur (core->bin);
@@ -8426,7 +8426,7 @@ static void cmd_anal_aftertraps(RCore *core, const char *input) {
 				if (bf->size > map->delta) {
 					len = bf->size - map->delta;
 				} else {
-					eprintf ("Opps something went wrong aac\n");
+					R_LOG_ERROR ("Oops something went wrong aac");
 					return;
 				}
 			} else {
@@ -8440,7 +8440,7 @@ static void cmd_anal_aftertraps(RCore *core, const char *input) {
 				if (bf->size > core->offset) {
 					len = bf->size - core->offset;
 				} else {
-					eprintf ("Oops invalid range\n");
+					R_LOG_ERROR ("Oops invalid range");
 					len = 0;
 				}
 			}
@@ -9249,7 +9249,7 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 		if (space) {
 			addr = r_num_math (core->num, space + 1);
 			if (core->num->nc.errors > 0) {
-				eprintf ("Invalid argument.\n");
+				R_LOG_ERROR ("Invalid argument");
 				break;
 			}
 		} else {
@@ -9420,7 +9420,7 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 					r_cons_println (pj_string (pj));
 				}
 			} else {
-				eprintf ("Cannot find any function\n");
+				R_LOG_ERROR ("Cannot find any function");
 			}
 			pj_free (pj);
 		} else { // "axf"
@@ -9441,7 +9441,7 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 			if (space) {
 				addr = r_num_math (core->num, space + 1);
 				if (core->num->nc.errors > 0) {
-					eprintf ("Invalid argument.\n");
+					R_LOG_ERROR ("Invalid argument");
 					break;
 				}
 			} else {
@@ -9602,7 +9602,7 @@ static void cmd_anal_hint(RCore *core, const char *input) {
 		} else if (input[1] == '-') {
 			r_anal_hint_unset_arch (core->anal, core->offset);
 		} else {
-			eprintf ("Missing argument\n");
+			R_LOG_ERROR ("Missing argument");
 		}
 		break;
 	case 'o': // "aho"
@@ -9629,7 +9629,7 @@ static void cmd_anal_hint(RCore *core, const char *input) {
 			if (type != -1) {
 				r_anal_hint_set_type (core->anal, core->offset, type);
 			} else {
-				eprintf ("Unknown opcode type. Try: io, acmp, add, sync, call, cjmp, cmp, nop, ...\n");
+				R_LOG_ERROR ("Unknown opcode type. Try: io, acmp, add, sync, call, cjmp, cmp, nop,,,");
 			}
 		} else {
 			r_core_cmd_help (core, help_msg_aho);
@@ -9650,7 +9650,7 @@ static void cmd_anal_hint(RCore *core, const char *input) {
 			free (ptr);
 		}  else if (input[1] == '-') {
 			if (!strcmp (input + 2, "*")) {
-				eprintf ("Delete all asm.bits hints is not yet supported.\n");
+				R_LOG_TODO ("Delete all asm.bits hints is not yet supported");
 			} else {
 				ut64 off = input[2]? r_num_math (core->num, input + 2): core->offset;
 				r_anal_hint_unset_bits (core->anal, off);
@@ -9899,7 +9899,7 @@ static void cmd_anal_hint(RCore *core, const char *input) {
 				if (ptr && *ptr) {
 					addr = r_num_math (core->num, ptr);
 				} else {
-					eprintf ("address is unvalid\n");
+					R_LOG_ERROR ("address is not valid");
 					free (type);
 					break;
 				}
@@ -9954,7 +9954,7 @@ static void cmd_anal_hint(RCore *core, const char *input) {
 						}
 					}
 					if (!otype) {
-						eprintf ("wrong type for opcode offset\n");
+						R_LOG_ERROR ("wrong type for opcode offset");
 					}
 					r_list_free (otypes);
 				}
@@ -10056,7 +10056,7 @@ static bool convert_dot_to_image(RCore *core, const char *dot_file, const char *
 	char *dot = dot_executable_path ();
 	bool result = false;
 	if (!dot) {
-		eprintf ("Graphviz not found\n");
+		R_LOG_ERROR ("Graphviz not found in PATH");
 		return false;
 	}
 	const char *ext = r_config_get (core->config, "graph.gv.format");
@@ -10071,7 +10071,7 @@ static bool convert_dot_to_image(RCore *core, const char *dot_file, const char *
 				dot, ext, ext, viewer, ext);
 			free (viewer);
 		} else {
-			eprintf ("Cannot find a valid picture viewer\n");
+			R_LOG_ERROR ("Cannot find a valid picture viewer");
 			goto end;
 		}
 	}
