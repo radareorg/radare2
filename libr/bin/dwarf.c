@@ -339,7 +339,7 @@ RBinSection *getsection(RBin *a, const char *sn) {
 	RBinSection *section = NULL;
 	RBinFile *binfile = a ? a->cur: NULL;
 	RBinObject *o = binfile ? binfile->o : NULL;
-	eprintf ("GET (%s)\n", sn);
+	// eprintf ("GET (%s)\n", sn);
 
 	if (o && o->sections) {
 		r_list_foreach (o->sections, iter, section) {
