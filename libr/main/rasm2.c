@@ -344,6 +344,7 @@ static int rasm_show_help(int v) {
 			" -LLL         list RArch plugins (see arch.arch=?) combines with -j\n"
 			" -o,-@ [addr] set start address for code (default 0)\n"
 			" -O [file]    output file name (rasm2 -Bf a.asm -O a)\n"
+			" -N           same as r2 -N (or RASM2_NOPLUGINS) (not load any plugin)\n"
 			" -p           run SPP over input for assembly\n"
 			" -q           quiet mode\n"
 			" -r           output in radare commands\n"

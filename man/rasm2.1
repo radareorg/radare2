@@ -1,11 +1,11 @@
-.Dd Jul 25, 2021
+.Dd Mar 27, 2023
 .Dt RASM2 1
 .Sh NAME
 .Nm rasm2
 .Nd radare2 assembler and disassembler tool
 .Sh SYNOPSIS
 .Nm rasm2
-.Op Fl ABdDeEfCLvwrqx
+.Op Fl ABdDeEfCLvwrNqx
 .Op Fl a Ar arch
 .Op Fl b Ar bits
 .Op Fl c Ar cpu
@@ -63,6 +63,8 @@ List loaded arch plugins
 Offset of the opcode to assemble (default is 0)
 .It Fl @ Ar offset
 Alias for -o
+.It Fl N
+Dont load any plugin, same as RASM2_NOPLUGINS=1 or r2 -NN
 .It Fl O Ar ofile
 output to file, for example 'rasm2 \-BF a a.asm'
 .It Fl r
