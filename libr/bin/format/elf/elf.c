@@ -3728,6 +3728,7 @@ static RBinElfSymbol* Elf_(_r_bin_elf_get_symbols_imports)(ELFOBJ *bin, int type
 	ut32 size = 0;
 	char *strtab = NULL;
 	HtPP *symbol_map = NULL;
+#if 0
 	HtPPOptions symbol_map_options = {
 		.cmp = (HtPPListComparator)cmp_RBinElfSymbol,
 		.hashfn = hashRBinElfSymbol,
@@ -3737,6 +3738,7 @@ static RBinElfSymbol* Elf_(_r_bin_elf_get_symbols_imports)(ELFOBJ *bin, int type
 		.freefn = NULL,
 		.elem_size = sizeof (HtPPKv),
 	};
+#endif
 
 	if (!bin->shdr || !bin->ehdr.e_shnum || bin->ehdr.e_shnum == 0xffff) {
 		R_LOG_DEBUG ("invalid section header value");
@@ -3857,10 +3859,12 @@ static RBinElfSymbol* Elf_(_r_bin_elf_get_symbols_imports)(ELFOBJ *bin, int type
 #else
 		int mi;
 		for (mi = ret_ctr; mi < ret_last; mi++) {
-			ret[mi].name[0] = 0;
+			memset (&ret[mi], 0, sizeof (RBinElfSymbol));
+			//  ret[mi].name[0] = 0;
 		}
 #endif
 		ret_size += increment;
+#if 0
 		if (ret_ctr > 0) {
 			symbol_map = ht_pp_new_opt (&symbol_map_options);
 			for (k = 0; k < ret_last; k++) {
@@ -3869,6 +3873,7 @@ static RBinElfSymbol* Elf_(_r_bin_elf_get_symbols_imports)(ELFOBJ *bin, int type
 				}
 			}
 		}
+#endif
 		for (k = 1; k < nsym; k++, ret_ctr++) {
 			RBinElfSymbol *es = &ret[ret_ctr];
 			bool is_sht_null = false;
@@ -3916,10 +3921,12 @@ static RBinElfSymbol* Elf_(_r_bin_elf_get_symbols_imports)(ELFOBJ *bin, int type
 				} else {
 					r_str_ncpy (es->name, &strtab[st_name], ELF_STRING_LENGTH - 1);
 					es->type = type2str (bin, es, &sym[k]);
+#if 0
 					if (ht_pp_find (symbol_map, es, NULL)) {
 						memset (es, 0, sizeof (RBinElfSymbol)); // why :?
 						continue;
 					}
+#endif
 				}
 			}
 			es->ordinal = k;
@@ -3935,8 +3942,8 @@ static RBinElfSymbol* Elf_(_r_bin_elf_get_symbols_imports)(ELFOBJ *bin, int type
 		}
 		R_FREE (strtab);
 		R_FREE (sym);
-		ht_pp_free (symbol_map);
-		symbol_map = NULL;
+		// ht_pp_free (symbol_map);
+		// symbol_map = NULL;
 		if (type == R_BIN_ELF_IMPORT_SYMBOLS) {
 			break;
 		}
@@ -3999,7 +4006,7 @@ beach:
 	free (ret);
 	free (sym);
 	free (strtab);
-	ht_pp_free (symbol_map);
+	// ht_pp_free (symbol_map);
 	return NULL;
 }
 
