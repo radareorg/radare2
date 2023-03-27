@@ -4306,6 +4306,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETI ("search.chunk", 0, "chunk size for /+ (default size is asm.bits/8");
 	SETI ("search.esilcombo", 8, "stop search after N consecutive hits");
 	SETI ("search.distance", 0, "search string distance");
+	SETBPREF ("search.badpages", "true", "scan and stop searching when finding bad pages");
 	SETBPREF ("search.flags", "true", "all search results are flagged, otherwise only printed");
 	SETBPREF ("search.overlap", "false", "look for overlapped search hits");
 	SETI ("search.maxhits", 0, "maximum number of hits (0: no limit)");
