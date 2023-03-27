@@ -4,10 +4,10 @@
 #include <r_types.h>
 #include <r_lib.h>
 #include <r_asm.h>
-#include <r_anal.h>
+#include <r_arch.h>
 
 static size_t countChar(const ut8 *buf, int len, char ch) {
-	int i;
+	size_t i;
 	for (i = 0; i < len; i++) {
 		if (buf[i] != ch) {
 			break;
@@ -79,12 +79,12 @@ static int disassemble(RAnalOp *op, const ut8 *buf, int len) {
 	return rep;
 }
 
-static bool _write_asm(ut8 *outbuf, int outbufsz, int value, int n) {
+static bool _write_asm(ut8 *outbuf, size_t outbufsz, int value, int n) {
 	memset (outbuf, value, R_MIN (n, outbufsz));
 	return n > outbufsz;
 }
 
-static int assemble(const char *buf, ut8 *outbuf, int outbufsz) {
+static int assemble(const char *buf, ut8 **outbuf) {
 	int n = 0;
 	if (buf[0] && buf[1] == ' ') {
 		buf += 2;
@@ -97,45 +97,69 @@ static int assemble(const char *buf, ut8 *outbuf, int outbufsz) {
 	} else {
 		n = 1;
 	}
+
+	size_t outbufsz = n;
+	*outbuf = malloc (outbufsz);
+	if (!(*outbuf)) {
+		return 0;
+	}
+
 	if (r_str_startswith (buf, "trap")) {
-		write_err = _write_asm (outbuf, outbufsz, 0xcc, n);
+		write_err = _write_asm (*outbuf, outbufsz, 0xcc, n);
 	} else if (r_str_startswith (buf, "nop")) {
-		write_err = _write_asm (outbuf, outbufsz, 0x90, n);
+		write_err = _write_asm (*outbuf, outbufsz, 0x90, n);
 	} else if (r_str_startswith (buf, "inc")) {
 		char ch = ref? '+': '>';
 		n = 1;
-		write_err = _write_asm (outbuf, outbufsz, ch, n);
+		write_err = _write_asm (*outbuf, outbufsz, ch, n);
 	} else if (r_str_startswith (buf, "dec")) {
 		char ch = ref? '-': '<';
 		n = 1;
-		write_err = _write_asm (outbuf, outbufsz, ch, n);
+		write_err = _write_asm (*outbuf, outbufsz, ch, n);
 	} else if (r_str_startswith (buf, "sub")) {
 		char ch = ref? '-': '<';
-		write_err = _write_asm (outbuf, outbufsz, ch, n);
+		write_err = _write_asm (*outbuf, outbufsz, ch, n);
 	} else if (r_str_startswith (buf, "add")) {
 		char ch = ref? '+': '>';
-		write_err = _write_asm (outbuf, outbufsz, ch, n);
+		write_err = _write_asm (*outbuf, outbufsz, ch, n);
 	} else if (r_str_startswith (buf, "while")) {
 		n = 1;
-		write_err = _write_asm (outbuf, outbufsz, '[', 1);
+		write_err = _write_asm (*outbuf, outbufsz, '[', 1);
 	} else if (r_str_startswith (buf, "loop")) {
 		n = 1;
-		write_err = _write_asm (outbuf, outbufsz, ']', 1);
+		write_err = _write_asm (*outbuf, outbufsz, ']', 1);
 	} else if (r_str_startswith (buf, "in")) {
-		write_err = _write_asm (outbuf, outbufsz, ',', n);
+		write_err = _write_asm (*outbuf, outbufsz, ',', n);
 	} else if (r_str_startswith (buf, "out")) {
-		write_err = _write_asm (outbuf, outbufsz, '.', n);
+		write_err = _write_asm (*outbuf, outbufsz, '.', n);
 	} else {
+		R_FREE (*outbuf);
 		n = 0;
 	}
 	if (write_err) {
+		R_FREE (*outbuf);
 		return 0;
 	}
 	return n;
 }
 
 #define BUFSIZE_INC 32
-static int bf_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *_buf, int len, RAnalOpMask mask) {
+static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
+	int len = op->size;
+	const ut8 *_buf = op->bytes;
+	const ut64 addr = op->addr;
+
+	if (len < 1) {
+		return false;
+	}
+
+	RArch *a = as->arch;
+	RBin *bin = R_UNWRAP2 (a, binb.bin);
+	RIOReadAt read_at = bin->iob.read_at;
+	if (!bin || !read_at) {
+		return false;
+	}
+
 	ut8 *buf = (ut8*)_buf; // XXX
 	ut64 dst = 0LL;
 	if (!op) {
@@ -178,12 +202,12 @@ static int bf_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *_buf, int len, 
 					op->type = R_ANAL_OP_TYPE_ILL;
 					goto beach;
 				}
-				if (i == len - 1 && anal->read_at) {
+				if (i == len - 1) {
 					int new_buf_len = len + 1 + BUFSIZE_INC;
 					ut8 *new_buf = calloc (new_buf_len, 1);
 					if (new_buf) {
 						free (buf);
-						(void)anal->read_at (anal, addr, new_buf, new_buf_len);
+						(void)read_at (bin->iob.io, addr, new_buf, new_buf_len);
 						buf = new_buf;
 						p = buf + i;
 						len += BUFSIZE_INC;
@@ -196,7 +220,8 @@ static int bf_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *_buf, int len, 
 beach:
 		free (buf);
 		break;
-	case ']': op->type = R_ANAL_OP_TYPE_UJMP;
+	case ']':
+		op->type = R_ANAL_OP_TYPE_UJMP;
 		// XXX This is wrong esil
 		r_strbuf_set (&op->esil, "brk,--=,brk,[1],pc,=");
 		break;
@@ -241,7 +266,7 @@ beach:
 	return op->size;
 }
 
-static char *get_reg_profile(RAnal *anal) {
+static char *get_reg_profile(RArchSession *as) {
 	return strdup (
 		"=PC	pc\n"
 		"=BP	brk\n"
@@ -258,27 +283,31 @@ static char *get_reg_profile(RAnal *anal) {
 	);
 }
 
-static int bf_opasm(RAnal *a, ut64 addr, const char *str, ut8 *outbuf, int outsize) {
-	return assemble (str, outbuf, outsize);
+static bool encode(RArchSession *as, RAnalOp *op, RArchEncodeMask mask) {
+	ut8 *outbuf = NULL;
+	int size = assemble (op->mnemonic, &outbuf);
+	free (op->bytes);
+	op->bytes = outbuf;
+	op->size = size;
+	return size > 0;
 }
 
-RAnalPlugin r_anal_plugin_bf = {
+RArchPlugin r_arch_plugin_bf = {
 	.name = "bf",
 	.desc = "brainfuck code analysis plugin",
 	.license = "LGPL3",
 	.arch = "bf",
-	.bits = 8,
+	.bits = R_SYS_BITS_PACK1 (8),
 	.endian = R_SYS_ENDIAN_NONE,
-	.esil = true,
-	.op = &bf_op,
-	.opasm = &bf_opasm,
-	.get_reg_profile = get_reg_profile,
+	.decode = &decode,
+	.encode = &encode,
+	.regs = get_reg_profile,
 };
 
 #ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_ANAL,
-	.data = &r_anal_plugin_bf,
+	.type = R_LIB_TYPE_ARCH,
+	.data = &r_arch_plugin_bf,
 	.version = R2_VERSION
 };
 #endif
