@@ -2,12 +2,8 @@
 
 #define R_LOG_ORIGIN "core.anal"
 
-#include <r_list.h>
-#include <r_flag.h>
 #include <r_core.h>
-#include <r_bin.h>
 #include <sdb/ht_uu.h>
-#include <r_util.h>
 
 HEAPTYPE (ut64);
 
@@ -32,7 +28,7 @@ static void loganal(ut64 from, ut64 to, int depth) {
 static int cmpsize(const void *a, const void *b) {
 	ut64 as = r_anal_function_linear_size ((RAnalFunction *) a);
 	ut64 bs = r_anal_function_linear_size ((RAnalFunction *) b);
-	return (as> bs)? 1: (as< bs)? -1: 0;
+	return (as > bs)? 1: (as < bs)? -1: 0;
 }
 
 static int cmpfcncc(const void *_a, const void *_b) {
@@ -83,7 +79,7 @@ static int cmpnbbs(const void *_a, const void *_b) {
 	const RAnalFunction *a = _a, *b = _b;
 	ut64 as = r_list_length (a->bbs);
 	ut64 bs = r_list_length (b->bbs);
-	return (as> bs)? 1: (as< bs)? -1: 0;
+	return (as > bs)? 1: (as < bs)? -1: 0;
 }
 
 static int cmpaddr(const void *_a, const void *_b) {
@@ -5835,9 +5831,11 @@ static bool stringAt(RCore *core, ut64 addr) {
 R_IPI int r_core_search_value_in_range(RCore *core, bool relative, RInterval search_itv, ut64 vmin,
 					 ut64 vmax, int vsize, inRangeCb cb, void *cb_user) {
 	int i, align = core->search->align, hitctr = 0;
-	bool vinfun = r_config_get_i (core->config, "anal.vinfun");
-	bool vinfunr = r_config_get_i (core->config, "anal.vinfunrange");
-	bool analStrings = r_config_get_i (core->config, "anal.strings");
+	bool vinfun = r_config_get_b (core->config, "anal.vinfun");
+	bool vinfunr = r_config_get_b (core->config, "anal.vinfunrange");
+	bool analStrings = r_config_get_b (core->config, "anal.strings");
+	// bool be = r_config_get_b (core->config, "cfg.bigendian");
+	const bool be = R_ARCH_CONFIG_IS_BIG_ENDIAN (core->anal->config);
 	if (relative) {
 		align = 4;
 	}
@@ -5897,7 +5895,7 @@ R_IPI int r_core_search_value_in_range(RCore *core, bool relative, RInterval sea
 			break;
 		}
 		for (i = 0; i <= (size - vsize); i++) {
-			void *v = (buf + i);
+			ut8 *v = (buf + i);
 			ut64 addr = from + i;
 			if (r_cons_is_breaked ()) {
 				goto beach;
@@ -5923,10 +5921,10 @@ R_IPI int r_core_search_value_in_range(RCore *core, bool relative, RInterval sea
 				}
 			} else {
 				switch (vsize) {
-				case 1: value = *(ut8 *)v; match = (buf[i] >= vmin && buf[i] <= vmax); break;
-				case 2: v16 = *(uut16 *)v; match = (v16 >= vmin && v16 <= vmax); value = v16; break;
-				case 4: v32 = *(uut32 *)v; match = (v32 >= vmin && v32 <= vmax); value = v32; break;
-				case 8: v64 = *(uut64 *)v; match = (v64 >= vmin && v64 <= vmax); value = v64; break;
+				case 1: value = *v; match = (value >= vmin && value <= vmax); break;
+				case 2: v16 = r_read_ble16 (v, be); match = (v16 >= vmin && v16 <= vmax); value = v16; break;
+				case 4: v32 = r_read_ble32 (v, be); match = (v32 >= vmin && v32 <= vmax); value = v32; break;
+				case 8: v64 = r_read_ble64 (v, be); match = (v64 >= vmin && v64 <= vmax); value = v64; break;
 				default: R_LOG_ERROR ("Unknown vsize %d", vsize); return -1;
 				}
 			}
@@ -5975,7 +5973,6 @@ beach:
 	return hitctr;
 }
 
-
 typedef struct {
 	dict visited;
 	RList *path;
@@ -6014,6 +6011,7 @@ static bool printAnalPaths(RCoreAnalPaths *p, PJ *pj) {
 	}
 	return (p->count < 1 || --p->count > 0);
 }
+
 static void analPaths(RCoreAnalPaths *p, PJ *pj);
 
 static void analPathFollow(RCoreAnalPaths *p, ut64 addr, PJ *pj) {
@@ -6070,6 +6068,7 @@ static void analPaths(RCoreAnalPaths *p, PJ *pj) {
 }
 
 R_API void r_core_anal_paths(RCore *core, ut64 from, ut64 to, bool followCalls, int followDepth, bool is_json) {
+	r_return_if_fail (core);
 	RAnalBlock *b0 = r_anal_bb_from_offset (core->anal, from);
 	RAnalBlock *b1 = r_anal_bb_from_offset (core->anal, to);
 	PJ *pj = NULL;
@@ -6132,7 +6131,8 @@ static int __addrs_cmp(void *_a, void *_b) {
 	return 0;
 }
 
-R_API void r_core_anal_inflags(RCore *core, const char *glob) {
+R_API void r_core_anal_inflags(RCore *core, R_NULLABLE const char *glob) {
+	r_return_if_fail (core);
 	RList *addrs = r_list_newf (free);
 	RListIter *iter;
 	const bool a2f = r_config_get_b (core->config, "anal.a2f");
