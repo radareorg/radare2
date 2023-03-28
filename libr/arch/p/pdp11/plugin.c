@@ -1,7 +1,6 @@
-/* radare - LGPL - Copyright 2021-2022 - pancake */
+/* radare - LGPL - Copyright 2021-2023 - pancake */
 
-#include <r_lib.h>
-#include <r_asm.h>
+#include <r_arch.h>
 #include "disas-asm.h"
 
 static int pdp11_buffer_read_memory(bfd_vma memaddr, bfd_byte *myaddr, ut32 length, struct disassemble_info *info) {
@@ -28,19 +27,19 @@ static void memory_error_func(int status, bfd_vma memaddr, struct disassemble_in
 DECLARE_GENERIC_PRINT_ADDRESS_FUNC_NOGLOBALS()
 DECLARE_GENERIC_FPRINTF_FUNC_NOGLOBALS()
 
-static int pdp11_op(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
+static bool pdp11_op(RArchSession *a, RAnalOp *op, RArchDecodeMask mask) {
 	ut8 bytes[8] = {0};
 	struct disassemble_info disasm_obj = {0};
 	RStrBuf *sb = NULL;
 	if (mask & R_ARCH_OP_MASK_DISASM) {
 		sb = r_strbuf_new (NULL);
 	}
-	size_t left = R_MIN (sizeof (bytes), len);
-	memcpy (bytes, buf, left);
+	size_t left = R_MIN (sizeof (bytes), op->size);
+	memcpy (bytes, op->bytes, left);
 
 	/* prepare disassembler */
 	disasm_obj.buffer = bytes;
-	disasm_obj.buffer_vma = addr;
+	disasm_obj.buffer_vma = op->addr;
 	disasm_obj.read_memory_func = &pdp11_buffer_read_memory;
 	disasm_obj.symbol_at_address_func = &symbol_at_address;
 	disasm_obj.memory_error_func = &memory_error_func;
@@ -48,31 +47,37 @@ static int pdp11_op(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, R
 	disasm_obj.endian = !R_ARCH_CONFIG_IS_BIG_ENDIAN (a->config);
 	disasm_obj.fprintf_func = &generic_fprintf_func;
 	disasm_obj.stream = sb;
-	op->size = print_insn_pdp11 ((bfd_vma)addr, &disasm_obj);
+	op->size = print_insn_pdp11 ((bfd_vma)op->addr, &disasm_obj);
 	if (mask & R_ARCH_OP_MASK_DISASM) {
+		free (op->mnemonic);
 		op->mnemonic = r_strbuf_drain (sb);
 		r_str_replace_ch (op->mnemonic, '\t', ' ', true);
 		sb = NULL;
 	}
 	r_strbuf_free (sb);
-	return op->size;
+	return op->size > 0;
 }
 
-RAnalPlugin r_anal_plugin_pdp11_gnu = {
+static int info(RArchSession *as, ut32 q) {
+	return 0;
+}
+
+RArchPlugin r_arch_plugin_pdp11 = {
 	.name = "pdp11",
 	.arch = "pdp11",
 	.license = "GPL3",
-	.cpus = "",
-	.bits = 16,
+	.bits = R_SYS_BITS_PACK1 (16),
 	.endian = R_SYS_ENDIAN_LITTLE | R_SYS_ENDIAN_BIG,
 	.desc = "PDP-11",
-	.op = &pdp11_op
+	.info = info,
+// TODO	.regs = regs,
+	.decode = &pdp11_op
 };
 
 #ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_ANAL,
-	.data = &r_anal_plugin_pdp11_gnu,
+	.type = R_LIB_TYPE_ARCH,
+	.data = &r_anal_plugin_pdp11,
 	.version = R2_VERSION
 };
 #endif

@@ -185,13 +185,13 @@ if no_user_plugins
       'mips_gnu',
       'loongarch_gnu',
       's390_gnu',
-      'pdp11_gnu',
       'ppc_gnu',
       'm68k_gnu',
       'sparc_gnu',
     ]
     arch_plugins += [
       'z80',
+      'pdp11',
       'lanai'
     ]
   endif
