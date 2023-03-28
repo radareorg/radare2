@@ -1,10 +1,8 @@
 /* radare - LGPL - Copyright 2012-2021 - pancake, fedor.sakharov */
 
 #include <string.h>
-#include <r_types.h>
-#include <r_lib.h>
-#include <r_anal.h>
-#include "../arch/ebc/ebc_disas.h"
+#include <r_arch.h>
+#include "./ebc_disas.h"
 
 static void ebc_anal_jmp8(RAnalOp *op, ut64 addr, const ut8 *buf) {
 	int jmpadr = (int8_t)buf[1];
@@ -42,12 +40,18 @@ static void ebc_anal_call(RAnalOp *op, ut64 addr, const ut8 *buf) {
 	}
 }
 
-static int ebc_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
+static bool decode(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
+	const ut64 addr = op->addr;
+	const ut8 *buf = op->bytes;
+	const int len = op->size;
+	if (len < 1) {
+		return false;
+	}
+
 	ebc_command_t cmd;
 	ut8 opcode = buf[0] & EBC_OPCODE_MASK;
-
 	if (!op) {
-		return 2;
+		return false;
 	}
 
 	op->addr = addr;
@@ -55,7 +59,7 @@ static int ebc_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, 
 	int ret = op->size = ebc_decode_command (buf, &cmd);
 	if (ret < 0) {
 		op->type = R_ANAL_OP_TYPE_ILL;
-		return -1;
+		return false;
 	}
 	if (mask & R_ARCH_OP_MASK_DISASM) {
 		char *inststr = cmd.operands[0]
@@ -147,31 +151,31 @@ static int ebc_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, 
 		op->type = R_ANAL_OP_TYPE_UNK;
 		break;
 	}
-	return ret;
+	return ret > 0;
 }
 
-static int archinfo(RAnal *anal, int q) {
+static int archinfo(RArchSession *as, ut32 q) {
 	if (q == R_ANAL_ARCHINFO_MAX_OP_SIZE) {
 		return 18;
 	}
 	return 1;
 }
 
-RAnalPlugin r_anal_plugin_ebc = {
+RArchPlugin r_arch_plugin_ebc = {
 	.name = "ebc",
 	.desc = "EFI Bytecode architecture",
 	.license = "LGPL3",
 	.author = "Fedor Sakharov",
-	.archinfo = archinfo,
+	.info = archinfo,
 	.arch = "ebc",
-	.bits = 32 | 64,
-	.op = &ebc_op,
+	.bits = R_SYS_BITS_PACK2 (32, 64),
+	.decode = &decode,
 };
 
 #ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_ANAL,
-	.data = &r_anal_plugin_ebc,
+	.type = R_LIB_TYPE_ARCH,
+	.data = &r_arch_plugin_ebc,
 	.version = R2_VERSION
 };
 #endif

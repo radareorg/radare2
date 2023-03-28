@@ -320,6 +320,7 @@ extern RArchPlugin r_arch_plugin_cr16;
 extern RArchPlugin r_arch_plugin_arc;
 extern RArchPlugin r_arch_plugin_pdp11;
 extern RArchPlugin r_arch_plugin_lh5801;
+extern RArchPlugin r_arch_plugin_ebc;
 
 #ifdef __cplusplus
 }
