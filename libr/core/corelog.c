@@ -130,7 +130,10 @@ R_API char *r_core_log_get(RCore *core, int index) {
 }
 
 R_API void r_core_log_add(RCore *core, const char *msg) {
-	r_return_if_fail (core && core->log);
+	// NOTE we cant use r_return here because it can create a recursive loop
+	if (!core || !core->log) {
+		return;
+	}
 	r_strpool_append (core->log->sp, msg);
 	core->log->last++;
 	if (R_STR_ISNOTEMPTY (core->cmdlog)) {
