@@ -1888,6 +1888,15 @@ static int var_cmd(RCore *core, const char *str) {
 			R_LOG_ERROR ("Cannot find function");
 			return false;
 		}
+	case 'b': // "afvb"
+	case 's': // "afbs"
+	case 'r': // "afbr"
+		break;
+	default:
+		if (str[0]) {
+			r_core_cmd_help (core, help_msg_afv);
+			return false;
+		}
 	}
 	switch (str[1]) { // afv[bsr]
 	case '\0':
@@ -2016,6 +2025,9 @@ static int var_cmd(RCore *core, const char *str) {
 		}
 		r_anal_function_set_var (fcn, delta, type, vartype, size, isarg, name);
  		}
+		break;
+	default:
+		r_core_cmd_help (core, help_msg_afv);
 		break;
 	}
 	free (ostr);

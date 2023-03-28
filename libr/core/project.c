@@ -294,7 +294,7 @@ static bool r_core_project_load(RCore *core, const char *prj_name, const char *r
 		prj_name = r_core_project_name (core, rcpath);
 	}
 	if (r_project_is_loaded (core->prj)) {
-		eprintf ("o--;e prj.name=\n");
+		R_LOG_INFO ("o--;e prj.name=");
 	//	return false;
 	}
 	if (!r_project_open (core->prj, prj_name, rcpath)) {
