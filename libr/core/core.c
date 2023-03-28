@@ -3001,6 +3001,7 @@ R_API bool r_core_init(RCore *core) {
 	r_sys_signal (SIGUSR2, cmdusr2);
 #endif
 	r_w32_init ();
+	core->log = r_core_log_new ();
 	core->blocksize = R_CORE_BLOCKSIZE;
 	core->block = (ut8 *)calloc (R_CORE_BLOCKSIZE + 1, 1);
 	if (!core->block) {
@@ -3054,7 +3055,6 @@ R_API bool r_core_init(RCore *core) {
 	core->watchers->free = (RListFree)r_core_cmpwatch_free;
 	core->scriptstack = r_list_new ();
 	core->scriptstack->free = (RListFree)free;
-	core->log = r_core_log_new ();
 	core->times = R_NEW0 (RCoreTimes);
 	core->vmode = false;
 	core->printidx = 0;
@@ -3100,6 +3100,7 @@ R_API bool r_core_init(RCore *core) {
 	core->print->cons = core->cons;
 	r_cons_bind (&core->print->consbind);
 	core->cmdlog = NULL;
+	// XXX causes uaf
 	r_log_add_callback (cbcore, core);
 
 	// We save the old num ad user, in order to restore it after free
@@ -3283,6 +3284,7 @@ R_API void r_core_fini(RCore *c) {
 	if (c->chan) {
 		r_th_channel_free (c->chan);
 	}
+	r_log_add_callback (cbcore, NULL);
 	r_crypto_free (c->crypto);
 	r_th_lock_free (c->lock);
 	r_core_task_break_all (&c->tasks);

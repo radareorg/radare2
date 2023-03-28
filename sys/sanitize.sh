@@ -2,7 +2,14 @@
 # SANITIZE="address leak memory undefined"
 # SANITIZE="address signed-integer-overflow"  # Faster build
 # default:
-SANITIZE=${SANITIZE:="address undefined signed-integer-overflow"}
+if [ -n "$(echo $SANITIZE | grep memory)" ]; then
+	# This is linux Specific
+	SANITIZE=${SANITIZE:="memory"}
+	export CFLAGS="-fsanitize-memory-track-origins=2"
+	export CC=clang
+else
+	SANITIZE=${SANITIZE:="address undefined signed-integer-overflow"}
+fi
 # SANITIZE=${SANITIZE:="thread"}
 
 printf "\033[32m"
