@@ -32,6 +32,7 @@ R_API void r_log_init(void) {
 
 R_API void r_log_fini(void) {
 	if (rlog) {
+		r_list_free (rlog->cbs);
 		free (rlog->file);
 		free (rlog->filter);
 		free (rlog);

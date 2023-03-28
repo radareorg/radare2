@@ -352,6 +352,7 @@ R_API void r_print_free(RPrint *p) {
 	}
 	sdb_free (p->formats);
 	p->formats = NULL;
+	free (p->codevarname);
 	free (p->spinmsg);
 	R_FREE (p->strconv_mode);
 	if (p->zoom) {
