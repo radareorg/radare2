@@ -7,6 +7,7 @@ asm_plugins = [ 'null' ]
 anal_plugins = [ 'null' ]
 arch_plugins = [ 'null',
   # 'arc',
+  'lh5801',
   'sh',
   'x86_nz',
   'alpha',
@@ -163,7 +164,6 @@ anal_plugins += [
   'h8300',
   'i8080',
   'java',
-  'lh5801',
   'loongarch_gnu',
   'm68k_cs',
   'm68k_gnu',

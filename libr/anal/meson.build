@@ -42,7 +42,7 @@ r_anal_sources = [
   'p/anal_6502_cs.c',
   'p/anal_8051.c',
 
-#  'arch/p/arc/plugin.c',
+#  '../arch/p/arc/plugin.c',
 #  'arch/arc/gnu/arc-dis.c',
 #  'arch/arc/gnu/arc-opc.c',
 #  'arch/arc/gnu/arc-ext.c',
@@ -59,7 +59,7 @@ r_anal_sources = [
   'p/anal_h8300.c',
   'p/anal_i8080.c',
   'p/anal_java.c',
-  'p/anal_lh5801.c',
+  '../arch/p/lh5801/plugin.c',
   'p/anal_m680x_cs.c',
   'p/anal_m68k_cs.c',
   'p/anal_m68k_gnu.c',

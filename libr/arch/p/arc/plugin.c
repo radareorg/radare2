@@ -1,7 +1,7 @@
 /* radare - LGPL - Copyright 2012-2022 - pancake */
 
 #include <r_lib.h>
-#include <r_anal.h>
+#include <r_arch.h>
 
 #include "disas-asm.h"
 #include <mybfd.h>
