@@ -1477,8 +1477,7 @@ R_API bool r_cons_is_tty(void) {
 	return false;
 #elif R2__UNIX__
 	struct winsize win = {0};
-	const char *tty;
-	struct stat sb;
+	struct stat sb = {0};
 
 	if (!isatty (1)) {
 		return false;
@@ -1489,7 +1488,7 @@ R_API bool r_cons_is_tty(void) {
 	if (!win.ws_col || !win.ws_row) {
 		return false;
 	}
-	tty = ttyname (1);
+	const char *tty = ttyname (1);
 	if (!tty) {
 		return false;
 	}
