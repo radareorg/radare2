@@ -1197,6 +1197,7 @@ end:
 	return ret;
 }
 
+#if 0
 int test_command(libgdbr_t *g, const char *command) {
 	int ret = -1;
 
@@ -1215,6 +1216,7 @@ end:
 	gdbr_lock_leave (g);
 	return ret;
 }
+#endif
 
 int send_vcont(libgdbr_t *g, const char *command, const char *thread_id) {
 	char tmp[255] = {0};

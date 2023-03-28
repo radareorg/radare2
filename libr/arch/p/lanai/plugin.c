@@ -57,7 +57,7 @@ static bool decode(RArchSession *a, RAnalOp *op, RArchDecodeMask mask) {
 	}
 	r_strbuf_free (sb);
 
-	return op->size;
+	return op->size > 0;
 }
 
 // 32 registers, most of them general purpose, with special treatment for R0 (all zeroes), R1 (all ones), R2 (the program counter), R3 (status register), and some registers allocated for mode/context switching.
@@ -92,6 +92,10 @@ static char *regs(RArchSession *as) {
 	return strdup (p);
 }
 
+static int info(RArchSession *as, ut32 q) {
+	return 0;
+}
+
 RArchPlugin r_arch_plugin_lanai = {
 	.name = "lanai",
 	.arch = "lanai",
@@ -100,6 +104,7 @@ RArchPlugin r_arch_plugin_lanai = {
 	.endian = R_SYS_ENDIAN_BIG,
 	.desc = "Myricom's LANAI based on GNU binutils",
 	.regs = regs,
+	.info = info,
 	.decode = &decode
 };
 
