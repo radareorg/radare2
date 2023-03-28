@@ -3037,7 +3037,6 @@ RBinElfLib* Elf_(r_bin_elf_get_libs)(ELFOBJ *bin) {
 
 	RBinElfLib *r = realloc (ret, (k + 1) * sizeof (RBinElfLib));
 	if (!r) {
-		r_sys_perror ("realloc (libs)");
 		free (ret);
 		return NULL;
 	}
@@ -3379,12 +3378,15 @@ static RBinElfSymbol* get_symbols_from_phdr(ELFOBJ *bin, int type) {
 		ret_ctr++;
 	}
 done:
-	// Size everything down to only what is used
 	{
 		nsym = i > 0? i: 1;
 		Elf_(Sym) *temp_sym = (Elf_(Sym) *)realloc (sym, (size_t)(nsym * GROWTH_FACTOR) * sym_size);
 		if (!temp_sym) {
 			goto beach;
+		}
+		int n, last = nsym * GROWTH_FACTOR;
+		for (n = nsym; n < last; n++) {
+			memset (&temp_sym[n], 0, sizeof (Elf_(Sym)));
 		}
 		sym = temp_sym;
 	}
@@ -3396,7 +3398,7 @@ done:
 		}
 		ret = p;
 	}
-	ret[ret_ctr].last = 1;
+	ret[ret_ctr].last = true;
 	if (type == R_BIN_ELF_IMPORT_SYMBOLS && !bin->imports_by_ord_size) {
 		bin->imports_by_ord_size = ret_ctr + 1;
 		if (ret_ctr > 0) {
@@ -3889,6 +3891,9 @@ static RBinElfSymbol* Elf_(_r_bin_elf_get_symbols_imports)(ELFOBJ *bin, int type
 	}
 	if (ret_ctr > 0) {
 		RBinElfSymbol *es = &ret[ret_ctr];
+		es->last = 1; // ugly dirty hack :D
+	} else {
+		RBinElfSymbol *es = &ret[0];
 		es->last = 1; // ugly dirty hack :D
 	}
 	nsym = Elf_(fix_symbols) (bin, ret_ctr, type, &ret);
