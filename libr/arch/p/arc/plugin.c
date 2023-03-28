@@ -40,7 +40,7 @@ static void memory_error_func(int status, bfd_vma memaddr, struct disassemble_in
 DECLARE_GENERIC_PRINT_ADDRESS_FUNC_NOGLOBALS()
 DECLARE_GENERIC_FPRINTF_FUNC_NOGLOBALS()
 
-static int disassemble(RAnal *a, RAnalOp *op, const ut8 *buf, int len) {
+static int disassemble(RArchSession *as, RAnalOp *op, const ut8 *buf, int len) {
 	ut8 bytes[BUFSZ] = {0};
 	struct disassemble_info disasm_obj = {0};
 	if (len < 2) {
@@ -59,11 +59,11 @@ static int disassemble(RAnal *a, RAnalOp *op, const ut8 *buf, int len) {
 	disasm_obj.symbol_at_address_func = &symbol_at_address;
 	disasm_obj.memory_error_func = &memory_error_func;
 	disasm_obj.print_address_func = &generic_print_address_func;
-	disasm_obj.endian = !R_ARCH_CONFIG_IS_BIG_ENDIAN (a->config);
+	disasm_obj.endian = !R_ARCH_CONFIG_IS_BIG_ENDIAN (as->config);
 	disasm_obj.fprintf_func = &generic_fprintf_func;
 	disasm_obj.stream = sb;
 	disasm_obj.mach = 0;
-	if (a->config->bits == 16) {
+	if (as->config->bits == 16) {
 		op->size = ARCompact_decodeInstr ((bfd_vma)op->addr, &disasm_obj);
 	} else {
 		ARCTangent_decodeInstr ((bfd_vma)op->addr, &disasm_obj);
@@ -517,7 +517,7 @@ static int arcompact_genops(RAnalOp *op, ut64 addr, ut32 words[2]) {
 	return op->size;
 }
 
-static int arcompact_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len) {
+static int arcompact_op(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *data, int len) {
 	ut32 words[2]; /* storage for the de-swizled opcode data */
 	arc_fields fields;
 
@@ -543,7 +543,7 @@ static int arcompact_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, in
 	op->refptr = 0;
 	op->delay = 0;
 
-	if (R_ARCH_CONFIG_IS_BIG_ENDIAN (anal->config)) {
+	if (R_ARCH_CONFIG_IS_BIG_ENDIAN (as->config)) {
 		words[0] = r_read_be32 (&data[0]);
 		words[1] = r_read_be32 (&data[4]);
 	} else {
@@ -1086,17 +1086,24 @@ static int arcompact_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, in
 	return op->size;
 }
 
-static int arc_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len, RAnalOpMask mask) {
+static bool decode(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
+	const int len = op->size;
+	const ut8 *data = op->bytes;
+	const ut64 addr = op->addr;
+	if (len < 1) {
+		return false;
+	}
+
 	const ut8 *b = (ut8 *)data;
 
 	op->addr = addr;
 	op->size = len;
 	if (mask & R_ARCH_OP_MASK_DISASM) {
-		disassemble (anal, op, data, len);
+		disassemble (as, op, data, len);
 		//op->size = disassemble (anal, op, data, len);
 	}
-	if (anal->config->bits == 16) {
-		(void)arcompact_op (anal, op, addr, data, len);
+	if (as->config->bits == 16) {
+		(void)arcompact_op (as, op, addr, data, len);
 		// eprintf ("%d %d\n", r, op->size);
 		return op->size;
 	}
@@ -1146,8 +1153,8 @@ static int arc_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len,
 	return op->size;
 }
 
-static int archinfo(RAnal *anal, int query) {
-	if (anal->config->bits != 16) {
+static int archinfo(RArchSession *as, ut32 query) {
+	if (as->config->bits != 16) {
 		return -1;
 	}
 	switch (query) {
@@ -1163,9 +1170,9 @@ static int archinfo(RAnal *anal, int query) {
 	}
 }
 
-static bool set_reg_profile(RAnal *anal) {
-	if (anal->config->bits != 16) {
-		return false;
+static char* regs(RArchSession *as) {
+	if (as->config->bits != 16) {
+		return NULL;
 	}
 	const char *p16 =
 		"=PC	pcl\n"
@@ -1215,25 +1222,25 @@ static bool set_reg_profile(RAnal *anal) {
 	/* TODO: */
 	/* Should I add the Auxiliary Register Set? */
 	/* it contains the flag bits, amongst other things */
-	return r_reg_set_profile_string (anal->reg, p16);
+	return strdup (p16);
 }
 
-RAnalPlugin r_anal_plugin_arc = {
+RArchPlugin r_arch_plugin_arc = {
 	.name = "arc",
 	.arch = "arc",
 	.author = "pancake",
 	.license = "LGPL3",
 	.bits = 16 | 32,
 	.desc = "ARC code analysis plugin",
-	.op = &arc_op,
-	.archinfo = archinfo,
-	.set_reg_profile = set_reg_profile,
+	.decode = decode,
+	.info = archinfo,
+	.regs = regs
 };
 
 #ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_ANAL,
-	.data = &r_anal_plugin_arc,
+	.type = R_LIB_TYPE_ARCH,
+	.data = &r_arch_plugin_arc,
 	.version = R2_VERSION,
 };
 #endif
