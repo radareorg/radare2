@@ -88,6 +88,7 @@ R_API void r_core_log_init(RCoreLog *log) {
 
 R_API void r_core_log_free(RCoreLog *log) {
 	if (log) {
+		r_log_fini ();
 		r_strpool_free (log->sp);
 		free (log);
 	}

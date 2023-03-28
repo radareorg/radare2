@@ -1,9 +1,11 @@
-/* radare - LGPL - Copyright 2010-2022 - pancake, ret2libc */
+/* radare - LGPL - Copyright 2010-2023 - pancake, ret2libc */
 
 #define R_LOG_ORIGIN "util.log"
 
 #include <r_core.h>
 #include <stdarg.h>
+
+static R_TH_LOCAL RLog *rlog = NULL;
 
 static const char *level_tags[] = { // Log level to tag string lookup array
 	[R_LOGLVL_FATAL]     = "FATAL",
@@ -19,8 +21,6 @@ static const char *level_name(int i) {
 	}
 	return "UNKN";
 }
-
-static R_TH_LOCAL RLog *rlog = NULL;
 
 // shouldnt be necessary as global thread-local instance
 R_API void r_log_init(void) {
@@ -117,8 +117,8 @@ R_API bool r_log_match(int level, const char *origin) { // , const char *sub_ori
 
 R_API void r_log_vmessage(RLogLevel level, const char *origin, const char *func, int line, const char *fmt, va_list ap) {
 	char out[512];
-	r_log_init ();
 	int type = 3;
+	r_log_init ();
 	vsnprintf (out, sizeof (out), fmt, ap);
 	if (rlog->cbs) {
 		RListIter *iter;
