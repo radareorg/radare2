@@ -1564,7 +1564,6 @@ R_API bool r_anal_tid_select(RAnal *anal, int tid);
 extern RAnalPlugin r_anal_plugin_null;
 extern RAnalPlugin r_anal_plugin_6502_cs;
 extern RAnalPlugin r_anal_plugin_8051;
-extern RAnalPlugin r_anal_plugin_arc;
 extern RAnalPlugin r_anal_plugin_arm_cs;
 extern RAnalPlugin r_anal_plugin_arm_gnu;
 extern RAnalPlugin r_anal_plugin_avr;

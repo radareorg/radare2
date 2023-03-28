@@ -6,6 +6,7 @@ esil_plugins = [ 'dummy' ]
 asm_plugins = [ 'null' ]
 anal_plugins = [ 'null' ]
 arch_plugins = [ 'null',
+  # 'arc',
   'sh',
   'x86_nz',
   'alpha',
@@ -152,7 +153,6 @@ if no_user_plugins
 anal_plugins += [
   '6502_cs',
   '8051',
-  # 'arc',
   'arm_cs',
   'avr',
   'bf',

@@ -42,7 +42,7 @@ r_anal_sources = [
   'p/anal_6502_cs.c',
   'p/anal_8051.c',
 
-#  'p/anal_arc.c',
+#  'arch/p/arc/plugin.c',
 #  'arch/arc/gnu/arc-dis.c',
 #  'arch/arc/gnu/arc-opc.c',
 #  'arch/arc/gnu/arc-ext.c',

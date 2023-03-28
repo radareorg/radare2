@@ -37,7 +37,7 @@ libr/anal/cycles.c
 libr/anal/esil.c
 libr/anal/data.c
 libr/anal/flirt.c
-libr/anal/p/anal_arc.c
+libr/arch/p/arc/plugin.c
 libr/anal/p/anal_bf.c
 
 libr/config/config.c
