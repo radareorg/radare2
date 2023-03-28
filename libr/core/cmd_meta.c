@@ -164,25 +164,30 @@ static int remove_meta_offset(RCore *core, ut64 offset) {
 static bool print_meta_offset(RCore *core, ut64 addr, PJ *pj) {
 	int line, line_old, i;
 	char file[1024];
-
+	int colu = 0; /// addr2line function cant retrieve column info
 	int ret = r_bin_addr2line (core->bin, addr, file, sizeof (file) - 1, &line);
 	if (ret) {
 		if (pj) {
 			pj_o (pj);
 			pj_ks (pj, "file", file);
 			pj_kn (pj, "line", line);
+			pj_kn (pj, "colu", colu);
 			pj_kn (pj, "addr", addr);
 			if (r_file_exists (file)) {
 				char *row = r_file_slurp_line (file, line, 0);
 				pj_ks (pj, "text", file);
 				free (row);
 			} else {
-				// eprintf ("Cannot open '%s'\n", file);
+				// R_LOG_ERROR ("Cannot open '%s'", file);
 			}
 			pj_end (pj);
 			return ret;
 		}
+#if R2_590
+		r_cons_printf ("file: %s\nline: %d\ncolu: %d\naddr: 0x%08"PFMT64x"\n", file, line, colu, addr);
+#else
 		r_cons_printf ("file: %s\nline: %d\naddr: 0x%08"PFMT64x"\n", file, line, addr);
+#endif
 		line_old = line;
 		if (line >= 2) {
 			line -= 2;
@@ -278,20 +283,32 @@ static bool print_addrinfo(void *user, const char *k, const char *v) {
 		return true;
 	}
 	char *subst = strdup (v);
-	char *colonpos = strchr (subst, '|'); // XXX keep only : for simplicity?
+	char *colonpos = strchr (subst, '|');
 	if (!colonpos) {
-		colonpos = strchr (subst, ':');
+		colonpos = strchr (subst, ':'); // : for shell and | for db.. imho : everywhere
 	}
 	if (!colonpos) {
 		r_cons_printf ("%s\n", subst);
-	}
-	if (colonpos && (filter_offset == UT64_MAX || filter_offset == offset)) {
+	} else if (filter_offset == UT64_MAX || filter_offset == offset) {
 		if (filter_format) {
 			*colonpos = ':';
-			r_cons_printf ("CL %s %s\n", k, subst);
+			r_cons_printf ("\"\"CL %s %s\n", k, subst);
 		} else {
-			*colonpos = 0;
-			r_cons_printf ("file: %s\nline: %s\naddr: 0x%08"PFMT64x"\n", subst, colonpos + 1, offset);
+			*colonpos++ = 0;
+			int line = atoi (colonpos);
+#if R2_590
+			int colu = 0;
+			char *columnpos = strchr (colonpos, '|');
+			if (columnpos) {
+				*columnpos ++ = 0;
+				colu = atoi (columnpos);
+			}
+			r_cons_printf ("file: %s\nline: %d\ncolu: %d\naddr: 0x%08"PFMT64x"\n",
+				subst, line, colu, offset);
+#else
+			r_cons_printf ("file: %s\nline: %d\naddr: 0x%08"PFMT64x"\n",
+				subst, line, offset);
+#endif
 		}
 		filter_count++;
 	}
@@ -336,7 +353,7 @@ static int cmd_meta_lineinfo(RCore *core, const char *input) {
 		}
 		ut64 at = core->offset;
 		if (p[1] == ' ') {
-			at = r_num_math (core->num, p + 2);
+			at = r_num_get (core->num, p + 2);
 		}
 		char *text = r_bin_addr2text (core->bin, at, 0);
 		if (R_STR_ISNOTEMPTY (text)) {

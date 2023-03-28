@@ -1758,7 +1758,7 @@ static char *get_section_string(RBin *bin, RBinSection * section, size_t offset)
 		// eprintf ("%d\n", r_str_nlen (str2, len));
 		return r_str_ndup ((const char *)str3, sizeof (str3));
 	}
-	R_LOG_WARN ("TRUNCATED (%s)\n", str3);
+	R_LOG_WARN ("TRUNCATED (%s)", str3);
 	return r_str_ndup ((const char *)str3, sizeof (str3));
 }
 /**
@@ -1906,7 +1906,7 @@ static const ut8 *parse_attr_value(RBin *bin, const ut8 *obuf, int obuf_len, RBi
 		if (def->attr_form == DW_FORM_strp) {
 			section = getsection (bin, "debug_str");
 		} else {
-			section = getsection (bin, "debug_line_str");;
+			section = getsection (bin, "debug_line_str");
 		}
 		// char *str = get_section_string (bin, section_name, value->string.offset);
 		char *str = get_section_string (bin, section, value->string.offset);
