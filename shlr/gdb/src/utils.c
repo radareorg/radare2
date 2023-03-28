@@ -115,7 +115,7 @@ int pack_hex(const char *src, ut64 len, char *dst) {
 	return (len / 2);
 }
 
-#if 0
+// R2_590 UNUSED but public so we cant delete it now
 void hexdump(void *ptr, ut64 len, ut64 offset) {
 	unsigned char *data = (unsigned char *) ptr;
 	int x = 0;
@@ -137,7 +137,6 @@ void hexdump(void *ptr, ut64 len, ut64 offset) {
 		        __func__, (curr_offset), hex, txt);
 	}
 }
-#endif
 
 int write_thread_id(char *dest, int len, int pid, int tid, bool multiprocess) {
 	if (!multiprocess) {
