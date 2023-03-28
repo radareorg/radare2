@@ -3284,6 +3284,9 @@ R_API void r_core_fini(RCore *c) {
 	if (c->chan) {
 		r_th_channel_free (c->chan);
 	}
+#if R2__UNIX__
+	Gcore = NULL;
+#endif
 	r_log_add_callback (cbcore, NULL);
 	r_crypto_free (c->crypto);
 	r_th_lock_free (c->lock);
@@ -3364,7 +3367,7 @@ R_API void r_core_free(RCore *c) {
 }
 
 R_API bool r_core_prompt_loop(RCore *r) {
-	int ret;
+	int ret = 0;
 	do {
 		int err = r_core_prompt (r, false);
 		if (err < 1) {
@@ -3373,7 +3376,8 @@ R_API bool r_core_prompt_loop(RCore *r) {
 			return false;
 		}
 		/* -1 means invalid command, -2 means quit prompt loop */
-		if ((ret = r_core_prompt_exec (r)) == R_CMD_RC_QUIT) {
+		ret = r_core_prompt_exec (r);
+		if (ret == R_CMD_RC_QUIT) {
 			break;
 		}
 	} while (ret != R_CORE_CMD_EXIT);
