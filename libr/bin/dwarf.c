@@ -334,14 +334,13 @@ static const char *dwarf_unit_types[] = {
 	[DW_UT_hi_user] = "DW_UT_hi_user",
 };
 
-RBinSection *getsection(RBin *a, const char *sn) {
+// 1 of 20s spent in this non-mnemonized function
+static RBinSection *getsection(RBin *a, const char *sn) {
 	RListIter *iter;
 	RBinSection *section = NULL;
 	RBinFile *binfile = a ? a->cur: NULL;
 	RBinObject *o = binfile ? binfile->o : NULL;
-	// eprintf ("GET (%s)\n", sn);
-
-	if (o && o->sections) {
+	if (R_LIKELY (o && o->sections)) {
 		r_list_foreach (o->sections, iter, section) {
 			if (strstr (section->name, sn)) {
 				return section;
@@ -351,6 +350,7 @@ RBinSection *getsection(RBin *a, const char *sn) {
 	return NULL;
 }
 
+// XXX this is not optimal. we can use rbuf apis everywhere and avoid boundary checks and full section reads
 static ut8 *get_section_bytes(RBin *bin, const char *sect_name, size_t *len) {
 	r_return_val_if_fail (bin && sect_name && len, NULL);
 	RBinSection *section = getsection (bin, sect_name);
@@ -369,18 +369,16 @@ static ut8 *get_section_bytes(RBin *bin, const char *sect_name, size_t *len) {
 	return buf;
 }
 
-
 static int abbrev_cmp(const void *a, const void *b) {
 	const RBinDwarfAbbrevDecl *first = a;
 	const RBinDwarfAbbrevDecl *second = b;
-
 	if (first->offset > second->offset) {
 		return 1;
-	} else if (first->offset < second->offset) {
-		return -1;
-	} else {
-		return 0;
 	}
+	if (first->offset < second->offset) {
+		return -1;
+	}
+	return 0;
 }
 
 static bool is_printable_lang(ut64 attr_code) {
@@ -1262,7 +1260,7 @@ static bool parse_line_raw(RBin *a, const ut8 *obuf, ut64 len, int mode, bool be
 		// It means that there has to be another header/comp.unit
 		if (buf_size > hdr.unit_length) {
 			buf_size = hdr.unit_length + (hdr.is_64bit * 8 + 4); // we dif against bytes_read, but
-				// unit_length doesn't account unit_length field
+			// unit_length doesn't account unit_length field
 		}
 		// this deals with a case that there is compilation unit with any line information
 		if (buf_size == bytes_read) {
@@ -1736,6 +1734,33 @@ static const ut8 *fill_block_data(const ut8 *buf, const ut8 *buf_end, RBinDwarfB
 	return buf;
 }
 
+static char *get_section_string(RBin *bin, RBinSection * section, size_t offset) {
+	ut8 str[32], str2[128], str3[2048];
+	RBinFile *bf = bin ? bin->cur: NULL;
+	if (!section || (section->paddr + offset + 2) > bf->size) {
+		return NULL;
+	}
+	size_t len = R_MIN (section->size - offset, sizeof (str));
+	r_buf_read_at (bf->buf, section->paddr + offset, str, len);
+	if (r_str_nlen ((const char *)str, len) != len) {
+		// eprintf ("%d\n", r_str_nlen (str, len));
+		return r_str_ndup ((const char *)str, sizeof (str));
+	}
+	len = R_MIN (section->size - offset, sizeof (str2));
+	r_buf_read_at (bf->buf, section->paddr + offset, str2, len);
+	if (r_str_nlen ((const char *)str2, len) != len) {
+		// eprintf ("%d\n", r_str_nlen (str2, len));
+		return r_str_ndup ((const char *)str2, sizeof (str2));
+	}
+	len = R_MIN (section->size - offset, sizeof (str3));
+	r_buf_read_at (bf->buf, section->paddr + offset, str3, len);
+	if (r_str_nlen ((const char *)str3, len) != len) {
+		// eprintf ("%d\n", r_str_nlen (str2, len));
+		return r_str_ndup ((const char *)str3, sizeof (str3));
+	}
+	R_LOG_WARN ("TRUNCATED (%s)\n", str3);
+	return r_str_ndup ((const char *)str3, sizeof (str3));
+}
 /**
  * This function is quite incomplete and requires lot of work
  * With parsing various new FORM values
@@ -1759,7 +1784,6 @@ static const ut8 *parse_attr_value(RBin *bin, const ut8 *obuf, int obuf_len, RBi
 	value->block.data = NULL;
 	value->string.content = NULL;
 	value->string.offset = 0;
-
 
 	const ut8 *buf = obuf;
 	const ut8 *buf_end = obuf + obuf_len;
@@ -1877,23 +1901,23 @@ static const ut8 *parse_attr_value(RBin *bin, const ut8 *obuf, int obuf_len, RBi
 	case DW_FORM_line_strp:
 		value->kind = DW_AT_KIND_STRING;
 		value->string.offset = dwarf_read_offset (hdr->is_64bit, &buf, buf_end, be);
-		const char *section_name = def->attr_form == DW_FORM_strp? "debug_str": "debug_line_str";
-		size_t section_len = 0;
-		ut8 *section = get_section_bytes (bin, section_name, &section_len);
-		if (section && value->string.offset < section_len) {
-			char *ds = r_str_ndup ((const char *)(section + value->string.offset), section_len - value->string.offset);
-			if (ds) {
-				r_str_ansi_strip (ds);
-				r_str_replace_ch (ds, '\n', 0, true);
-				r_str_replace_ch (ds, '\t', 0, true);
-				value->string.content = ds;
-			} else {
-				value->string.content = NULL;
-			}
+		// const char *section_name = def->attr_form == DW_FORM_strp? "debug_str": "debug_line_str";
+		RBinSection *section;
+		if (def->attr_form == DW_FORM_strp) {
+			section = getsection (bin, "debug_str");
 		} else {
-			value->string.content = NULL; // Means malformed DWARF, should we print error message?
+			section = getsection (bin, "debug_line_str");;
 		}
-		free (section);
+		// char *str = get_section_string (bin, section_name, value->string.offset);
+		char *str = get_section_string (bin, section, value->string.offset);
+		if (str) {
+			r_str_ansi_strip (str);
+			r_str_replace_ch (str, '\n', 0, true);
+			r_str_replace_ch (str, '\t', 0, true);
+			value->string.content = str;
+		} else {
+			value->string.content = NULL;
+		}
 		break;
 	// offset in .debug_info
 	case DW_FORM_ref_addr:
@@ -2067,9 +2091,7 @@ static const ut8 *parse_die(RBin *bin, const ut8 *buf, const ut8 *buf_end, RBinD
 		memset (&die->attr_values[i], 0, sizeof (die->attr_values[i]));
 		// debug_str_len = r_str_nlen (debug_str, buf_end - buf);
 		const ut8 *nbuf = parse_attr_value (bin, buf, buf_end - buf,
-			&abbrev->defs[i],
-			&die->attr_values[i],
-			hdr, be);
+			&abbrev->defs[i], &die->attr_values[i], hdr, be);
 		if (!nbuf) {
 			break;
 		}
@@ -2150,7 +2172,6 @@ static const ut8 *parse_comp_unit(RBin *bin, RBinDwarfDebugInfo *info, Sdb *sdb,
 			continue;
 		}
 		ut64 abbr_idx = first_abbr_idx + abbr_code;
-
 		if (abbrevs->count < abbr_idx) {
 			return NULL;
 		}
@@ -2207,22 +2228,19 @@ static const ut8 *info_comp_unit_read_hdr(const ut8 *buf, const ut8 *buf_end, RB
 	hdr->header_size = buf - tmp; // header size excluding length field
 	return buf;
 }
-static int expand_info(RBinDwarfDebugInfo *info) {
-	r_return_val_if_fail (info && info->capacity == info->count, -1);
 
+static bool expand_info(RBinDwarfDebugInfo *info) {
+	r_return_val_if_fail (info && info->capacity == info->count, -1);
 	RBinDwarfCompUnit *tmp = realloc (info->comp_units,
 		info->capacity * 2 * sizeof (RBinDwarfCompUnit));
 	if (!tmp) {
-		return -1;
+		return false;
 	}
-
 	memset ((ut8 *)tmp + info->capacity * sizeof (RBinDwarfCompUnit),
 		0, info->capacity * sizeof (RBinDwarfCompUnit));
-
 	info->comp_units = tmp;
 	info->capacity *= 2;
-
-	return 0;
+	return true;
 }
 
 /**
@@ -2250,7 +2268,7 @@ static RBinDwarfDebugInfo *parse_info_raw(RBin *bin, Sdb *sdb, RBinDwarfDebugAbb
 
 	while (buf < buf_end) {
 		if (info->count >= info->capacity) {
-			if (expand_info (info)) {
+			if (!expand_info (info)) {
 				break;
 			}
 		}
@@ -2295,9 +2313,7 @@ static RBinDwarfDebugInfo *parse_info_raw(RBin *bin, Sdb *sdb, RBinDwarfDebugAbb
 
 		unit_idx++;
 	}
-
 	return info;
-
 cleanup:
 	r_bin_dwarf_free_debug_info (info);
 	return NULL;
@@ -2336,7 +2352,7 @@ static RBinDwarfDebugAbbrev *parse_abbrev_raw(const ut8 *obuf, size_t len) {
 		}
 
 		tmpdecl->code = tmp;
-		buf = r_uleb128 (buf, (size_t)(buf_end-buf), &tmp, NULL);
+		buf = r_uleb128 (buf, (size_t)(buf_end - buf), &tmp, NULL);
 		tmpdecl->tag = tmp;
 
 		tmpdecl->offset = offset;
@@ -2380,7 +2396,6 @@ static RBinDwarfDebugAbbrev *parse_abbrev_raw(const ut8 *obuf, size_t len) {
 R_API RBinDwarfDebugInfo *r_bin_dwarf_parse_info(RBinDwarfDebugAbbrev *da, RBin *bin, int mode) {
 	r_return_val_if_fail (da && bin, NULL);
 	RBinDwarfDebugInfo *info = NULL;
-	RBinSection *debug_str;
 	RBinSection *section = getsection (bin, "debug_info");
 	RBinFile *binfile = bin->cur;
 
@@ -2389,7 +2404,7 @@ R_API RBinDwarfDebugInfo *r_bin_dwarf_parse_info(RBinDwarfDebugAbbrev *da, RBin 
 
 	const bool be = r_bin_is_big_endian (bin);
 	if (binfile && section) {
-		debug_str = getsection (bin, "debug_str");
+		RBinSection *debug_str = getsection (bin, "debug_str");
 		if (debug_str) {
 			debug_str_len = debug_str->size;
 			debug_str_buf = calloc (1, debug_str_len + 1);
@@ -2418,7 +2433,6 @@ R_API RBinDwarfDebugInfo *r_bin_dwarf_parse_info(RBinDwarfDebugAbbrev *da, RBin 
 		}
 		/* set the endianity global [HOTFIX] */
 		info = parse_info_raw (bin, binfile->sdb_addrinfo, da, buf, len, be);
-
 		if (mode == R_MODE_PRINT && info) {
 			print_debug_info (info, bin->cb_printf);
 		}
@@ -2445,13 +2459,12 @@ cleanup:
 static RBinDwarfRow *row_new(ut64 addr, const char *file, int line, int col) {
 	r_return_val_if_fail (file, NULL);
 	RBinDwarfRow *row = R_NEW0 (RBinDwarfRow);
-	if (!row) {
-		return NULL;
+	if (R_LIKELY (row)) {
+		row->file = strdup (file);
+		row->address = addr;
+		row->line = line;
+		row->column = col;
 	}
-	row->file = strdup (file);
-	row->address = addr;
-	row->line = line;
-	row->column = 0;
 	return row;
 }
 
@@ -2512,9 +2525,12 @@ R_API RList *r_bin_dwarf_parse_line(RBin *bin, int mode) {
 				if (tok) {
 					*tok++ = 0;
 					int line = atoi (tok);
-					ut64 addr = r_num_math (NULL, key);
-					RBinDwarfRow *row = row_new (addr, file, line, 0);
-					r_list_append (list, row);
+					int column = 0;
+					ut64 addr = r_num_get (NULL, key);
+					RBinDwarfRow *row = row_new (addr, file, line, column);
+					if (row) {
+						r_list_append (list, row);
+					}
 				}
 				free (file);
 			}
