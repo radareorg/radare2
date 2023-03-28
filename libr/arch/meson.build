@@ -80,6 +80,7 @@ r_arch_sources = [
   'p/pdp11/plugin.c',
   'p/pdp11/pdp11-dis.c',
   'p/pdp11/pdp11-opc.c',
+  'p/lh5801/plugin.c',
 ]
 
 if arch_plugins.contains('x86_nz')
