@@ -34,6 +34,8 @@ git grep eprintf libr/| grep -i cannot |wc -l
 printf -- "http:/\t"
 git grep 'http:/' libr/| grep -v '/io/' |wc -l
 
+printf -- "R2_570\t"
+git grep 'R2_570' libr/| wc -l
 printf -- "R2_580\t"
 git grep 'R2_580' libr/| wc -l
 printf -- "R2_590\t"

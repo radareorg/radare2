@@ -885,11 +885,6 @@ static bool step_until_optype(RCore *core, const char *_optypes) {
 	ut64 pc;
 	bool res = true;
 
-	if (!core || !core->dbg) {
-		R_LOG_ERROR ("Wrong state");
-		res = false;
-		goto end;
-	}
 	st64 maxsteps = r_config_get_i (core->config, "esil.maxsteps");
 	ut64 countsteps = 0;
 	if (R_STR_ISEMPTY (optypes)) {

@@ -228,12 +228,10 @@ typedef struct r_debug_trace_t {
 	RList *traces;
 	int count;
 	int enabled;
-	//int changed;
 	int tag;
 	int dup;
 	char *addresses;
-	// TODO: add range here
-	HtPP *ht;
+	HtPP *ht; // use rbtree like the iocache?
 } RDebugTrace;
 
 typedef struct r_debug_tracepoint_t {
@@ -244,11 +242,16 @@ typedef struct r_debug_tracepoint_t {
 	int count;
 	int times;
 	ut64 stamp;
+#if 0
+	// registers accessed
+	// memory access
+	ut64 refaddr;
+	int direction
+#endif
 } RDebugTracepoint;
 
 typedef struct r_debug_t {
-	// R2_570
-	// use RArchConfig here
+	// R2_590 use RArchConfig instead
 	char *arch;
 	int bits; /// XXX: MUST SET ///
 	int hitinfo;
@@ -258,9 +261,9 @@ typedef struct r_debug_t {
 	int tid; /* selected thread id */
 	int forked_pid; /* last pid created by fork */
 	int n_threads;
-	RList *threads; /* NOTE: list contents are platform-specific */
+	RList *threads; // NOTE: list contents are platform-specific
 
-	char *malloc;     /*choose malloc parser: 0 = glibc, 1 = jemalloc*/
+	char *malloc; // choose malloc parser: 0 = glibc, 1 = jemalloc
 
 	/* dbg.* config options (see e?dbg)
 	 * NOTE: some settings are checked inline instead of tracked here.
