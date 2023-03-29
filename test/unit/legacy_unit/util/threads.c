@@ -10,7 +10,7 @@ int looper(struct r_th_t *th) {
 		(*ctr)++;
 		printf ("%d loop %d\r", i, *ctr);
 		fflush (stdout);
-#if __UNIX__
+#if R2__UNIX__
 		sleep (1);
 #endif
 	}
