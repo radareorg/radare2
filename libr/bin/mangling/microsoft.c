@@ -250,6 +250,9 @@ static int get_template_params(SDemangler *sd, const char *sym, size_t *amount_o
 	const char template_param[] = "template-parameter-";
 	char *tmp, *res = NULL;
 	const char *const start_sym = sym;
+	if (!*sym) {
+		return eDemanglerErrUncorrectMangledSymbol;
+	}
 	if (*sym == '?') {
 		// anonymous template param
 		state.amount_of_read_chars ++;
