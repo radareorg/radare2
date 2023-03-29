@@ -618,11 +618,38 @@ beach:
 	return buf;
 }
 
+static char *get_section_string(RBin *bin, RBinSection * section, size_t offset) {
+	ut8 str[32], str2[128], str3[2048];
+	RBinFile *bf = bin ? bin->cur: NULL;
+	if (!section || (section->paddr + offset + 2) > bf->size) {
+		return NULL;
+	}
+	size_t len = R_MIN (section->size - offset, sizeof (str));
+	r_buf_read_at (bf->buf, section->paddr + offset, str, len);
+	if (r_str_nlen ((const char *)str, len) != len) {
+		// eprintf ("%d\n", r_str_nlen (str, len));
+		return r_str_ndup ((const char *)str, sizeof (str));
+	}
+	len = R_MIN (section->size - offset, sizeof (str2));
+	r_buf_read_at (bf->buf, section->paddr + offset, str2, len);
+	if (r_str_nlen ((const char *)str2, len) != len) {
+		// eprintf ("%d\n", r_str_nlen (str2, len));
+		return r_str_ndup ((const char *)str2, sizeof (str2));
+	}
+	len = R_MIN (section->size - offset, sizeof (str3));
+	r_buf_read_at (bf->buf, section->paddr + offset, str3, len);
+	if (r_str_nlen ((const char *)str3, len) != len) {
+		// eprintf ("%d\n", r_str_nlen (str2, len));
+		return r_str_ndup ((const char *)str3, sizeof (str3));
+	}
+	R_LOG_WARN ("TRUNCATED (%s)", str3);
+	return r_str_ndup ((const char *)str3, sizeof (str3));
+}
 // TODO DWARF 5 line header parsing, very different from ver. 4
 // Because this function needs ability to parse a lot of FORMS just like debug info
 // I'll complete this function after completing debug_info parsing and merging
 // for the meanwhile I am skipping the space.
-static const ut8 *parse_line_header_source_dwarf5(RBinFile *bf, const ut8 *buf, const ut8 *buf_end, RBinDwarfLineHeader *hdr, Sdb *sdb, int mode, PrintfCallback print, bool be) {
+static const ut8 *parse_line_header_source_dwarf5(RBin *bin, RBinFile *bf, const ut8 *buf, const ut8 *buf_end, RBinDwarfLineHeader *hdr, Sdb *sdb, int mode, PrintfCallback print, bool be) {
 	enum type { DIRECTORIES, FILES };
 	const size_t maxlen = 0xfff;
 	int i, j;
@@ -670,7 +697,6 @@ static const ut8 *parse_line_header_source_dwarf5(RBinFile *bf, const ut8 *buf, 
 				ut64 content_type_code, form_code;
 				char *name = NULL;
 				ut64 data = 0;
-				const char *section_name = NULL;
 
 				format = r_uleb128 (format, buf_end - format, &content_type_code, NULL);
 				format = r_uleb128 (format, buf_end - format, &form_code, NULL);
@@ -688,9 +714,23 @@ static const ut8 *parse_line_header_source_dwarf5(RBinFile *bf, const ut8 *buf, 
 					break;
 				case DW_FORM_strp:
 				case DW_FORM_line_strp:
-					section_name = form_code == DW_FORM_strp? "debug_str": "debug_line_str";
-					size_t section_len = 0;
+					{
 					ut64 section_offset = dwarf_read_offset (hdr->is_64bit, &buf, buf_end, be);
+					RBinSection *section;
+					if (form_code == DW_FORM_strp) {
+						section = getsection (bin, "debug_str");
+					} else {
+						section = getsection (bin, "debug_line_str");
+					}
+#if 1
+					name = get_section_string (bin, section, section_offset);
+					if (name) {
+						r_str_ansi_strip (name);
+						r_str_replace_ch (name, '\n', 0, true);
+						r_str_replace_ch (name, '\t', 0, true);
+					}
+#else
+					size_t section_len = 0;
 					ut8 *section = get_section_bytes (bf->rbin, section_name, &section_len);
 					if (!section) {
 						// TODO handle this somehow
@@ -704,6 +744,8 @@ static const ut8 *parse_line_header_source_dwarf5(RBinFile *bf, const ut8 *buf, 
 						name = NULL;
 					}
 					free (section);
+#endif
+					}
 					break;
 				case DW_FORM_data1:
 					data = READ8 (buf);
@@ -785,7 +827,7 @@ beach:
 	return buf;
 }
 
-static const ut8 *parse_line_header(RBinFile *bf, const ut8 *buf, const ut8 *buf_end, RBinDwarfLineHeader *hdr, int mode, PrintfCallback print, int debug_line_offset, bool be) {
+static const ut8 *parse_line_header(RBin *bin, RBinFile *bf, const ut8 *buf, const ut8 *buf_end, RBinDwarfLineHeader *hdr, int mode, PrintfCallback print, int debug_line_offset, bool be) {
 	r_return_val_if_fail (hdr && bf && buf, NULL);
 
 	hdr->is_64bit = false;
@@ -863,7 +905,7 @@ static const ut8 *parse_line_header(RBinFile *bf, const ut8 *buf, const ut8 *buf
 	if (hdr->version <= 4) {
 		buf = parse_line_header_source (bf, buf, buf_end, hdr, sdb, mode, print, debug_line_offset);
 	} else {
-		buf = parse_line_header_source_dwarf5 (bf, buf, buf_end, hdr, sdb, mode, print, be);
+		buf = parse_line_header_source_dwarf5 (bin, bf, buf, buf_end, hdr, sdb, mode, print, be);
 	}
 
 	return buf;
@@ -1254,7 +1296,7 @@ static bool parse_line_raw(RBin *a, const ut8 *obuf, ut64 len, int mode, bool be
 		// Offset from start of the .debug_line section, equal to DW_AT_stmt_list
 		// from the dwarf standard.
 		int debug_line_offset = buf - obuf;
-		buf = parse_line_header (a->cur, buf, buf_end, &hdr, mode, print, debug_line_offset, be);
+		buf = parse_line_header (a, a->cur, buf, buf_end, &hdr, mode, print, debug_line_offset, be);
 		if (!buf) {
 			return false;
 		}
@@ -1740,33 +1782,6 @@ static const ut8 *fill_block_data(const ut8 *buf, const ut8 *buf_end, RBinDwarfB
 	return buf;
 }
 
-static char *get_section_string(RBin *bin, RBinSection * section, size_t offset) {
-	ut8 str[32], str2[128], str3[2048];
-	RBinFile *bf = bin ? bin->cur: NULL;
-	if (!section || (section->paddr + offset + 2) > bf->size) {
-		return NULL;
-	}
-	size_t len = R_MIN (section->size - offset, sizeof (str));
-	r_buf_read_at (bf->buf, section->paddr + offset, str, len);
-	if (r_str_nlen ((const char *)str, len) != len) {
-		// eprintf ("%d\n", r_str_nlen (str, len));
-		return r_str_ndup ((const char *)str, sizeof (str));
-	}
-	len = R_MIN (section->size - offset, sizeof (str2));
-	r_buf_read_at (bf->buf, section->paddr + offset, str2, len);
-	if (r_str_nlen ((const char *)str2, len) != len) {
-		// eprintf ("%d\n", r_str_nlen (str2, len));
-		return r_str_ndup ((const char *)str2, sizeof (str2));
-	}
-	len = R_MIN (section->size - offset, sizeof (str3));
-	r_buf_read_at (bf->buf, section->paddr + offset, str3, len);
-	if (r_str_nlen ((const char *)str3, len) != len) {
-		// eprintf ("%d\n", r_str_nlen (str2, len));
-		return r_str_ndup ((const char *)str3, sizeof (str3));
-	}
-	R_LOG_WARN ("TRUNCATED (%s)", str3);
-	return r_str_ndup ((const char *)str3, sizeof (str3));
-}
 /**
  * This function is quite incomplete and requires lot of work
  * With parsing various new FORM values
