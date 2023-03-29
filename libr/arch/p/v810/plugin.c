@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2015-2022 - danielps, pancake */
+/* radare - LGPL - Copyright 2015-2023 - danielps, pancake */
 
 #include <r_arch.h>
 #include "./v810_disas.h"
@@ -447,6 +447,19 @@ static char *v810_regs(RArchSession *s) {
 	return strdup (p);
 }
 
+static int archinfo(RArchSession *as, ut32 q) {
+	switch (q) {
+	case R_ANAL_ARCHINFO_ALIGN:
+	case R_ANAL_ARCHINFO_DATA_ALIGN:
+		return 2;
+	case R_ANAL_ARCHINFO_MAX_OP_SIZE:
+		return 8;
+	case R_ANAL_ARCHINFO_MIN_OP_SIZE:
+		return 2;
+	}
+	return 0;
+}
+
 RArchPlugin r_arch_plugin_v810 = {
 	.name = "v810",
 	.desc = "V810 code analysis plugin",
@@ -455,6 +468,7 @@ RArchPlugin r_arch_plugin_v810 = {
 	.bits = R_SYS_BITS_PACK1 (32),
 	.decode = v810_decode,
 	.regs = v810_regs,
+	.info = archinfo,
 };
 
 #ifndef R2_PLUGIN_INCORE

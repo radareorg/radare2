@@ -111,7 +111,52 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 	if (mask & R_ARCH_OP_MASK_DISASM) {
 		// do nothing
 	}
+	if (r_str_startswith (op->mnemonic, "invalid")) {
+		return false;
+	}
 	return ilen > 0;
+}
+
+// WORDs must be aligned at even byte boundaries in the address space. 
+static int archinfo(RArchSession *as, ut32 q) {
+	// R2_590
+	switch (q) {
+	case R_ANAL_ARCHINFO_ALIGN:
+		return 1;
+	case R_ANAL_ARCHINFO_DATA_ALIGN:
+		return 2; // data alignment depends on word size used
+#if 0
+	case R_ARCH_INFO_DATA4_ALIGN:
+		return 4;
+	case R_ARCH_INFO_DATA8_ALIGN:
+		return 8;
+#endif
+	case R_ANAL_ARCHINFO_MAX_OP_SIZE:
+		return 5;
+	case R_ANAL_ARCHINFO_MIN_OP_SIZE:
+		return 1;
+	}
+	return 0;
+}
+// 512 bytes register RAM
+// window selection registers
+//  PSW, INT_MASK, INT_MASK1
+// http://datasheets.chipdb.org/Intel/MCS96/MANUALS/27231703.PDF
+static char *regs(RArchSession *s) {
+	const char *p =
+		"=PC	pc\n"
+		"=SP	r3\n"
+		"=A0	r0\n"
+		"=ZF	z\n"
+		"=SF	s\n"
+		"=OF	ov\n"
+		"=CF	cy\n"
+		"gpr	pc	.32	0   0\n"
+		"gpr	psw	.32	4   0\n"
+		"gpr	int_mask	.32	8   0\n"
+		"gpr	int_mask1	.32	12   0\n"
+		;
+	return strdup (p);
 }
 
 RArchPlugin r_arch_plugin_mcs96 = {
@@ -121,13 +166,15 @@ RArchPlugin r_arch_plugin_mcs96 = {
 	.license = "LGPL3",
 	.decode = &decode,
 	.author = "condret",
-	.bits = R_SYS_BITS_PACK1 (16),
+	.regs = regs,
+	.info = archinfo,
+	.bits = R_SYS_BITS_PACK3 (16, 32, 64), // can work with 64bit registers too
 	.endian = R_SYS_ENDIAN_NONE,
 };
 
 #ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_ANAL,
+	.type = R_LIB_TYPE_ARCH,
 	.data = &r_arch_plugin_mcs96,
 	.version = R2_VERSION
 };
