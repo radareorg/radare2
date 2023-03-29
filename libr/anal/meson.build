@@ -77,7 +77,6 @@ r_anal_sources = [
   'p/anal_null.c',
   'p/anal_ppc_cs.c',
   'p/anal_ppc_gnu.c',
-  'p/anal_pyc.c',
   'p/anal_s390_cs.c',
   'p/anal_s390_gnu.c',
   '../asm/arch/s390/gnu/s390-dis.c',
@@ -122,11 +121,6 @@ r_anal_sources = [
   '../asm/arch/tms320/c55x_plus/decode_funcs.c',
   '../asm/arch/tms320/c55x_plus/hashtable.c',
   '../asm/arch/tms320/c55x_plus/utils.c',
-  '../asm/arch/pyc/opcode_all.c',
-  '../asm/arch/pyc/opcode_anal.c',
-  '../asm/arch/pyc/opcode_arg_fmt.c',
-  '../asm/arch/pyc/opcode.c',
-  '../asm/arch/pyc/pyc_dis.c'
 ]
 incdirs = [
     'arch'
