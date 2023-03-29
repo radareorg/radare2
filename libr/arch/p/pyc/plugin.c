@@ -1,45 +1,38 @@
-/* radare - LGPL3 - Copyright 2016-2022 - FXTi */
+/* radare - LGPL3 - Copyright 2016-2023 - FXTi, pancake */
 
 #include <r_lib.h>
-#include <r_anal.h>
-#include "../../asm/arch/pyc/pyc_dis.h"
+#include <r_arch.h>
+#include "pyc_dis.h"
 
-static R_TH_LOCAL pyc_opcodes *ops = NULL;
-
-static int disassemble(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
-	RList *shared = NULL;
-
-	RBin *bin = a->binb.bin;
-
+static bool disassemble(RArchSession *s, RAnalOp *op, RArchDecodeMask mask) {
+	RBin *bin = s->arch->binb.bin;
 	RBinPlugin *plugin = bin && bin->cur && bin->cur->o? bin->cur->o->plugin: NULL;
-
-	if (plugin) {
-		if (!strcmp (plugin->name, "pyc")) {
-			shared = bin->cur->o->bin_obj;
-		}
-	}
+	RList *shared = (plugin && !strcmp (plugin->name, "pyc"))?
+		bin->cur->o->bin_obj: NULL;
 	RList *cobjs = NULL;
 	RList *interned_table = NULL;
 	if (shared) {
 		cobjs = r_list_get_n (shared, 0);
 		interned_table = r_list_get_n (shared, 1);
 	}
-	if (!ops || !pyc_opcodes_equal (ops, a->config->cpu)) {
-		ops = get_opcode_by_version (a->config->cpu);
+	pyc_opcodes *ops = s->data;
+	if (!ops || !pyc_opcodes_equal (ops, s->config->cpu)) {
+		ops = get_opcode_by_version (s->config->cpu);
 		if (!ops) {
 			ops = get_opcode_by_version ("v3.9.0");
 			if (!ops) {
-				return 0;
+				return false;
 			}
 		}
-		ops->bits = a->config->bits;
+		ops->bits = s->config->bits;
 	}
-	int r = r_pyc_disasm (op, buf, cobjs, interned_table, addr, ops);
+	s->data = ops;
+	int r = r_pyc_disasm (op, op->bytes, cobjs, interned_table, op->addr, ops);
 	op->size = r;
-	return r;
+	return r > 0;
 }
 
-static int archinfo(RAnal *anal, int query) {
+static int archinfo(RArchSession *anal, ut32 query) {
 	switch (query) {
 	case R_ANAL_ARCHINFO_MIN_OP_SIZE:
 		return (anal->config->bits == 16)? 1: 2;
@@ -50,7 +43,7 @@ static int archinfo(RAnal *anal, int query) {
 	}
 }
 
-static char *get_reg_profile(RAnal *anal) {
+static char *regs(RArchSession *as) {
 	return strdup (
 		"=PC    pc\n"
 		"=BP    bp\n"
@@ -71,68 +64,59 @@ static char *get_reg_profile(RAnal *anal) {
 	);
 }
 
-static bool set_reg_profile(RAnal *anal) {
-	char *rp = get_reg_profile (anal);
-	if (rp) {
-		bool b = r_reg_set_profile_string (anal->reg, rp);
-		free (rp);
-		return b;
-	}
-	return false;
-}
-
-static RList *get_pyc_code_obj(RAnal *anal) {
-	RBin *b = anal->binb.bin;
+static RList *get_pyc_code_obj(RArchSession *as) {
+	RBin *b = as->arch->binb.bin;
 	RBinPlugin *plugin = b->cur && b->cur->o? b->cur->o->plugin: NULL;
 	bool is_pyc = (plugin && strcmp (plugin->name, "pyc") == 0);
 	return is_pyc? b->cur->o->bin_obj: NULL;
 }
 
-static int pyc_op(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *data, int len, RAnalOpMask mask) {
-	RList *pyobj = get_pyc_code_obj (a);
+static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
+	RList *pyobj = get_pyc_code_obj (as);
 	if (!pyobj) {
-		return -1;
+		return false;
 	}
+	const ut64 addr = op->addr;
+	const ut8 *data = op->bytes;
 	RList *cobjs = r_list_get_n (pyobj, 0);
 	RListIter *iter = NULL;
 	pyc_code_object *func = NULL, *t = NULL;
 	r_list_foreach (cobjs, iter, t) {
-		if (R_BETWEEN (t->start_offset, addr, t->end_offset - 1)) { // addr in [start_offset, end_offset)
+		if (R_BETWEEN (t->start_offset, addr, t->end_offset - 1)) {
 			func = t;
 			break;
 		}
 	}
 	if (!func) {
-		return -1;
+		return false;
 	}
 
 	if (mask & R_ARCH_OP_MASK_DISASM) {
-		disassemble (a, op, addr, data, len);
+		disassemble (as, op, mask);
 	}
 	ut64 func_base = func->start_offset;
 	ut32 extended_arg = 0, oparg = 0;
 	ut8 op_code = data[0];
-	op->addr = addr;
 	op->sign = true;
 	op->type = R_ANAL_OP_TYPE_ILL;
 	op->id = op_code;
 
-	if (!ops || !pyc_opcodes_equal (ops, a->config->cpu)) {
-		if (!(ops = get_opcode_by_version (a->config->cpu))) {
-			return -1;
+	pyc_opcodes *ops = as->data;
+	if (!ops || !pyc_opcodes_equal (ops, as->config->cpu)) {
+		if (!(ops = get_opcode_by_version (as->config->cpu))) {
+			return false;
 		}
 	}
-	int bits = a->config->bits;
+	const int bits = as->config->bits;
 	bool is_python36 = bits == 8;
 	pyc_opcode_object *op_obj = &ops->opcodes[op_code];
 	if (!op_obj->op_name) {
 		op->type = R_ANAL_OP_TYPE_ILL;
 		op->size = 1;
-		goto anal_end;
+		goto beach;
 	}
 
 	op->size = is_python36? 2: ((op_code >= ops->have_argument)? 3: 1);
-
 	if (op_code >= ops->have_argument) {
 		if (!is_python36) {
 			oparg = data[1] + data[2] * 256 + extended_arg;
@@ -149,7 +133,7 @@ static int pyc_op(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *data, int len, RA
 			op->type = R_ANAL_OP_TYPE_CJMP;
 			op->fail = addr + ((is_python36)? 2: 3);
 		}
-		goto anal_end;
+		goto beach;
 	}
 	if (op_obj->type & HASJREL) {
 		op->type = R_ANAL_OP_TYPE_JMP;
@@ -160,47 +144,42 @@ static int pyc_op(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *data, int len, RA
 			op->type = R_ANAL_OP_TYPE_CJMP;
 			//op->fail = addr + ((is_python36)? 2: 3);
 		}
-		//goto anal_end;
 	}
-
 	if (op_obj->type & HASCOMPARE) {
 		op->type = R_ANAL_OP_TYPE_CMP;
-		goto anal_end;
+		goto beach;
 	}
 
 	anal_pyc_op (op, op_obj, oparg);
-
-anal_end:
-	//free_opcode (ops);
-	return op->size;
+beach:
+	return op->size > 0;
 }
 
-static int finish(void *user) {
+static bool finish(RArchSession *s) {
+	pyc_opcodes *ops = s->data;
 	if (ops) {
 		free_opcode (ops);
-		ops = NULL;
+		s->data = NULL;
 	}
-	return 0;
+	return true;
 }
 
-RAnalPlugin r_anal_plugin_pyc = {
+RArchPlugin r_arch_plugin_pyc = {
 	.name = "pyc",
 	.desc = "Python bytecode analysis plugin",
 	.license = "LGPL3",
 	.arch = "pyc",
-	.bits = 32,
-	.archinfo = archinfo,
-	.get_reg_profile = get_reg_profile,
-	.set_reg_profile = &set_reg_profile,
-	.op = &pyc_op,
-	.esil = false,
+	.bits = R_SYS_BITS_PACK1 (32),
+	.info = archinfo,
+	.regs = regs,
+	.decode = &decode,
 	.fini = &finish,
 };
 
 #ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_ANAL,
-	.data = &r_anal_plugin_pyc,
+	.type = R_LIB_TYPE_ARCH,
+	.data = &r_arch_plugin_pyc,
 	.version = R2_VERSION
 };
 #endif

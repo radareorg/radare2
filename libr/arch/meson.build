@@ -85,6 +85,13 @@ r_arch_sources = [
   'p/ebc/ebc_disas.c',
   'p/msp430/plugin.c',
   'p/msp430/msp430_disas.c',
+  # python
+  'p/pyc/plugin.c',
+  'p/pyc/opcode_all.c',
+  'p/pyc/opcode_anal.c',
+  'p/pyc/opcode_arg_fmt.c',
+  'p/pyc/opcode.c',
+  'p/pyc/pyc_dis.c'
 ]
 
 if arch_plugins.contains('x86_nz')
