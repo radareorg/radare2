@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2022 - pancake, jduck, TheLemonMan, saucec0de */
+/* radare - LGPL - Copyright 2009-2023 - pancake, jduck, TheLemonMan, saucec0de */
 
 #include <r_debug.h>
 #include <r_drx.h>
@@ -1001,6 +1001,11 @@ R_API int r_debug_step(RDebug *dbg, int steps) {
 		return steps_taken;
 	}
 
+	// R2_590 - add a var in RDebug.esil_step_cmd instead of pulling config on every stel
+	const char *cmd_step = dbg->coreb.cfgGet (dbg->coreb.core, "cmd.step");
+	if (R_STR_ISEMPTY (cmd_step)) {
+		cmd_step = NULL;
+	}
 	dbg->reason.type = R_DEBUG_REASON_STEP;
 
 	if (dbg->session) {
@@ -1018,17 +1023,18 @@ R_API int r_debug_step(RDebug *dbg, int steps) {
 				R_LOG_ERROR ("trace_ins_before: failed");
 			}
 		}
-
 		if (dbg->swstep) {
 			ret = r_debug_step_soft (dbg);
 		} else {
 			ret = r_debug_step_hard (dbg, &bp);
 		}
+		if (cmd_step && dbg->coreb.cmd) {
+			dbg->coreb.cmd (dbg->coreb.core, ".e cmd.step @r:PC");
+		}
 		if (!ret) {
 			R_LOG_ERROR ("Stepping failed!");
 			return steps_taken;
 		}
-
 		if (dbg->session && dbg->recoil_mode == R_DBG_RECOIL_NONE) {
 			if (!r_debug_trace_ins_after (dbg)) {
 				R_LOG_ERROR ("trace_ins_after: failed");
@@ -1036,7 +1042,6 @@ R_API int r_debug_step(RDebug *dbg, int steps) {
 			dbg->session->reasontype = dbg->reason.type;
 			dbg->session->bp = bp;
 		}
-
 		dbg->steps++;
 		dbg->reason.type = R_DEBUG_REASON_STEP;
 	}

@@ -3617,8 +3617,8 @@ static void cmd_anal_fcn_sig(RCore *core, const char *input) {
 			return;
 		}
 		pj_a (j);
-		if (fcn_name) {
-			char *key = resolve_fcn_name (core->anal, fcn_name);
+		char *key = (fcn_name)? resolve_fcn_name (core->anal, fcn_name): NULL;
+		if (key) {
 			const char *fcn_type = r_type_func_ret (core->anal->sdb_types, key);
 			int nargs = r_type_func_args_count (core->anal->sdb_types, key);
 			if (fcn_type) {

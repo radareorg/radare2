@@ -1,7 +1,6 @@
-/* radare - LGPL - Copyright 2009-2022 - pancake */
+/* radare - LGPL - Copyright 2009-2023 - pancake */
 
 #include <r_core.h>
-#include <r_debug.h>
 #include <sdb/sdb.h>
 #define TN_KEY_LEN 32
 #define TN_KEY_FMT "%"PFMT64u
