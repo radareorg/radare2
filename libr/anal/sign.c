@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2022 - pancake, nibble */
+/* radare - LGPL - Copyright 2009-2023 - pancake, nibble */
 
 #include <r_core.h>
 
@@ -628,6 +628,7 @@ static bool validate_item(RSignItem *it) {
 }
 
 R_API bool r_sign_add_item(RAnal *a, RSignItem *it) {
+	r_name_filter (it->name, -1);
 	if (!validate_item (it)) {
 		return false;
 	}
