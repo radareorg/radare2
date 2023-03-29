@@ -1,4 +1,4 @@
-/* Copyright radare2 2014-2022 - Author: pancake, vane11ope */
+/* Copyright radare2 2014-2023 - Author: pancake, vane11ope */
 
 #include <r_core.h>
 
@@ -3987,7 +3987,7 @@ static bool __draw_modal(RCore *core, RModal *modal, int range_end, int start, c
 	return true;
 }
 
-static void __update_modal(RCore *core, Sdb *menu_db, RModal *modal) {
+static void __update_modal(RCore *core, Sdb *menu_db, RModal *modal, int delta) {
 	RPanels *panels = core->panels;
 	RConsCanvas *can = panels->can;
 	modal->data = r_strbuf_new (NULL);
@@ -4000,13 +4000,13 @@ static void __update_modal(RCore *core, Sdb *menu_db, RModal *modal) {
 			modal->offset = 0;
 			modal->idx = 0;
 		} else {
-			modal->offset += 1;
+			modal->offset += delta;
 		}
 	} else if (modal->idx < 0) {
 		modal->offset = R_MAX (count - modal->pos.h, 0);
 		modal->idx = count - 1;
 	} else if (modal->idx < modal->offset) {
-		modal->offset -= 1;
+		modal->offset -= delta;
 	}
 	SdbList *l = sdb_foreach_list (menu_db, true);
 	SdbKv *kv;
@@ -4091,7 +4091,7 @@ static void __create_modal(RCore *core, RPanel *panel, Sdb *menu_db) {
 	__set_geometry (&modal->pos, x, y, w, h);
 	int okey, key, cx, cy;
 	char *word = NULL;
-	__update_modal (core, menu_db, modal);
+	__update_modal (core, menu_db, modal, 1);
 	while (modal) {
 		okey = r_cons_readchar ();
 		key = r_cons_arrow_to_hjkl (okey);
@@ -4132,11 +4132,19 @@ static void __create_modal(RCore *core, RPanel *panel, Sdb *menu_db) {
 			break;
 		case 'j':
 			modal->idx++;
-			__update_modal (core, menu_db, modal);
+			__update_modal (core, menu_db, modal, 1);
 			break;
 		case 'k':
 			modal->idx--;
-			__update_modal (core, menu_db, modal);
+			__update_modal (core, menu_db, modal, 1);
+			break;
+		case 'J':
+			modal->idx += 5;
+			__update_modal (core, menu_db, modal, 5);
+			break;
+		case 'K':
+			modal->idx -= 5;
+			__update_modal (core, menu_db, modal, 5);
 			break;
 		case 'v':
 			__exec_modal (core, panel, modal, menu_db, PANEL_LAYOUT_VERTICAL);
@@ -4153,7 +4161,7 @@ static void __create_modal(RCore *core, RPanel *panel, Sdb *menu_db) {
 			break;
 		case '-':
 			__delete_modal (core, modal, menu_db);
-			__update_modal (core, menu_db, modal);
+			__update_modal (core, menu_db, modal, 1);
 			break;
 		case 'q':
 		case '"':
