@@ -4002,6 +4002,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF ("cmd.fcn.rename", "", "run when a function is renamed");
 	SETPREF ("cmd.visual", "", "replace current print mode");
 	SETPREF ("cmd.vprompt", "", "visual prompt commands");
+	SETPREF ("cmd.step", "", "run command on every debugger step");
 
 	SETCB ("cmd.esil.pin", "", &cb_cmd_esil_pin, "command to execute everytime a pin is hit by the program counter");
 	SETCB ("cmd.esil.step", "", &cb_cmd_esil_step, "command to run before performing a step in the emulator");
