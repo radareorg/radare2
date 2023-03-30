@@ -1613,7 +1613,7 @@ R_API void r_print_raw(RPrint *p, ut64 addr, const ut8 *buf, int len, int offlin
 	{
 		const ut8 *o, *q;
 		ut64 off;
-		bool mustbreak = 0;
+		bool mustbreak = false;
 		int i, linenum_abs, linenum = 1;
 		o = q = buf;
 		i = 0;
