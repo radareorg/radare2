@@ -2552,7 +2552,6 @@ int Elf_(r_bin_elf_get_bits)(ELFOBJ *bin) {
 			return 32;
 		case EF_MIPS_ARCH_64R2:
 			return 64;
-			break;
 		}
 		return 32;
 	}
@@ -2575,12 +2574,10 @@ int Elf_(r_bin_elf_get_bits)(ELFOBJ *bin) {
 			return 16;
 		}
 	}
-	switch (bin->ehdr.e_ident[EI_CLASS]) {
-	case ELFCLASS32:   return 32;
-	case ELFCLASS64:   return 64;
-	case ELFCLASSNONE:
-	default:           return 32; // defaults
+	if (bin->ehdr.e_ident[EI_CLASS] == ELFCLASS64) {
+		return 64;
 	}
+	return 32;
 }
 
 static inline int noodle(ELFOBJ *bin, const char *s) {
@@ -2611,10 +2608,10 @@ char* Elf_(r_bin_elf_get_osabi_name)(ELFOBJ *bin) {
 	size_t num = bin->ehdr.e_shnum;
 	const char *section_name = NULL;
 	switch (bin->ehdr.e_ident[EI_OSABI]) {
-	case ELFOSABI_LINUX: return strdup("linux");
-	case ELFOSABI_SOLARIS: return strdup("solaris");
-	case ELFOSABI_FREEBSD: return strdup("freebsd");
-	case ELFOSABI_HPUX: return strdup("hpux");
+	case ELFOSABI_LINUX: return strdup ("linux");
+	case ELFOSABI_SOLARIS: return strdup ("solaris");
+	case ELFOSABI_FREEBSD: return strdup ("freebsd");
+	case ELFOSABI_HPUX: return strdup ("hpux");
 	}
 
 	if (bin->shdr && bin->shstrtab) {
@@ -2751,12 +2748,11 @@ char *Elf_(r_bin_elf_get_rpath)(ELFOBJ *bin) {
 	} else {
 		return NULL;
 	}
-
-	if (val > bin->strtab_size) {
+	if (val >= bin->strtab_size) {
 		return NULL;
 	}
-
-	return r_str_ndup (bin->strtab + val, ELF_STRING_LENGTH);
+	size_t maxlen = R_MIN (ELF_STRING_LENGTH, (bin->strtab_size - val));
+	return r_str_ndup (bin->strtab + val, maxlen);
 }
 
 static bool has_valid_section_header(ELFOBJ *bin, size_t pos) {
@@ -2771,7 +2767,7 @@ static void fix_rva_and_offset_relocable_file(ELFOBJ *bin, RBinElfReloc *r, size
 			r->offset = pa;
 			r->rva = Elf_(r_bin_elf_p2v) (bin, pa);
 		} else {
-			eprintf ("fix_rva_and_offset_reloc..: invalid index\n");
+			R_LOG_WARN ("fix_rva_and_offset_reloc have an invalid index");
 		}
 	} else {
 		r->rva = r->offset;
@@ -3005,20 +3001,18 @@ RBinElfReloc* Elf_(r_bin_elf_get_relocs) (ELFOBJ *bin) {
 }
 
 RBinElfLib* Elf_(r_bin_elf_get_libs)(ELFOBJ *bin) {
+	r_return_val_if_fail (bin, NULL);
 	RBinElfLib *ret = NULL;
 	Elf_(Off) *it = NULL;
 	size_t k = 0;
 
-	if (!bin || !bin->phdr || !bin->strtab || *(bin->strtab+1) == '0') {
+	if (!bin->phdr || !bin->strtab || (bin->strtab[0] && bin->strtab[1] == '0')) {
 		return NULL;
 	}
-
-	r_vector_foreach(&bin->dyn_info.dt_needed, it) {
+	r_vector_foreach (&bin->dyn_info.dt_needed, it) {
 		Elf_(Off) val = *it;
-
 		RBinElfLib *r = realloc (ret, (k + 1) * sizeof (RBinElfLib));
 		if (!r) {
-			r_sys_perror ("realloc (libs)");
 			free (ret);
 			return NULL;
 		}
@@ -3168,6 +3162,10 @@ RBinElfSection* Elf_(r_bin_elf_get_sections)(ELFOBJ *bin) {
 }
 
 static bool is_special_arm_symbol(ELFOBJ *bin, Elf_(Sym) *sym, const char *name) {
+	r_return_val_if_fail (bin && sym && name, false);
+	if (!name[0] || !name[1]) {
+		return false;
+	}
 	if (name[0] != '$') {
 		return false;
 	}
@@ -3236,30 +3234,28 @@ static void fill_symbol_bind_and_type(ELFOBJ *bin, struct r_bin_elf_symbol_t *re
 }
 
 static RBinElfSymbol* get_symbols_from_phdr(ELFOBJ *bin, int type) {
+	r_return_val_if_fail (bin, NULL);
 	Elf_(Sym) *sym = NULL;
-	Elf_(Addr) addr_sym_table = 0;
 	ut8 s[sizeof (Elf_(Sym))] = {0};
 	RBinElfSymbol *ret = NULL;
-	int i, r, tsize, nsym, ret_ctr;
+	int i, r, tsize, ret_ctr;
 	ut64 toffset = 0, tmp_offset;
-	ut32 size, sym_size = 0;
+	ut32 size = 0;
 
-	if (!bin || !bin->phdr || !bin->ehdr.e_phnum) {
+	if (!bin->phdr || !bin->ehdr.e_phnum) {
 		return NULL;
 	}
-
 	if (bin->dyn_info.dt_symtab == R_BIN_ELF_ADDR_MAX || !bin->dyn_info.dt_syment) {
 		return NULL;
 	}
-
-	addr_sym_table = Elf_(r_bin_elf_v2p) (bin, bin->dyn_info.dt_symtab);
-	sym_size = bin->dyn_info.dt_syment;
+	Elf_(Addr) addr_sym_table = Elf_(r_bin_elf_v2p) (bin, bin->dyn_info.dt_symtab);
+	ut32 sym_size = bin->dyn_info.dt_syment;
 	if (!sym_size) {
 		goto beach;
 	}
 
 	//since ELF doesn't specify the symbol table size we may read until the end of the buffer
-	nsym = (bin->size - addr_sym_table) / sym_size;
+	int nsym = (bin->size - addr_sym_table) / sym_size;
 	if (!UT32_MUL (&size, nsym, sizeof (Elf_ (Sym)))) {
 		goto beach;
 	}
@@ -3546,10 +3542,10 @@ static void _set_arm_thumb_bits(struct Elf_(r_bin_elf_obj_t) *bin, RBinSymbol **
 	int len = strlen (ptr->name);
 	if (ptr->name[0] == '$' && (len >= 2 && !ptr->name[2])) {
 		switch (ptr->name[1]) {
-		case 'a' : //arm
+		case 'a' : // arm
 			ptr->bits = 32;
 			break;
-		case 't': //thumb
+		case 't': // thumb
 			ptr->bits = 16;
 			if (ptr->vaddr & 1) {
 				ptr->vaddr--;
@@ -3558,7 +3554,7 @@ static void _set_arm_thumb_bits(struct Elf_(r_bin_elf_obj_t) *bin, RBinSymbol **
 				ptr->paddr--;
 			}
 			break;
-		case 'd': //data
+		case 'd': // data
 			break;
 		default:
 			goto arm_symbol;
@@ -3582,11 +3578,8 @@ arm_symbol:
 	}
 }
 
-RBinSymbol *Elf_(_r_bin_elf_convert_symbol)(struct Elf_(r_bin_elf_obj_t) *bin,
-					  struct r_bin_elf_symbol_t *symbol,
-					  const char *namefmt) {
+RBinSymbol *Elf_(_r_bin_elf_convert_symbol)(struct Elf_(r_bin_elf_obj_t) *bin, struct r_bin_elf_symbol_t *symbol, const char *namefmt) {
 	ut64 paddr, vaddr;
-	RBinSymbol *ptr = NULL;
 	if (symbol->is_vaddr) {
 		paddr = UT64_MAX;
 		vaddr = symbol->offset;
@@ -3595,23 +3588,22 @@ RBinSymbol *Elf_(_r_bin_elf_convert_symbol)(struct Elf_(r_bin_elf_obj_t) *bin,
 		vaddr = Elf_(r_bin_elf_p2v_new) (bin, paddr);
 	}
 
-	if (!(ptr = R_NEW0 (RBinSymbol))) {
-		return NULL;
+	RBinSymbol *ptr = R_NEW0 (RBinSymbol);
+	if (R_LIKELY (ptr)) {
+		ptr->name = symbol->name[0] ? r_str_newf (namefmt, &symbol->name[0]) : strdup ("");
+		ptr->forwarder = "NONE";
+		ptr->bind = symbol->bind;
+		ptr->type = symbol->type;
+		ptr->is_imported = symbol->is_imported;
+		ptr->paddr = paddr;
+		ptr->vaddr = vaddr;
+		ptr->size = symbol->size;
+		ptr->ordinal = symbol->ordinal;
+		// detect thumb
+		if (bin->ehdr.e_machine == EM_ARM && *ptr->name) {
+			_set_arm_thumb_bits (bin, &ptr);
+		}
 	}
-	ptr->name = symbol->name[0] ? r_str_newf (namefmt, &symbol->name[0]) : strdup ("");
-	ptr->forwarder = "NONE";
-	ptr->bind = symbol->bind;
-	ptr->type = symbol->type;
-	ptr->is_imported = symbol->is_imported;
-	ptr->paddr = paddr;
-	ptr->vaddr = vaddr;
-	ptr->size = symbol->size;
-	ptr->ordinal = symbol->ordinal;
-	// detect thumb
-	if (bin->ehdr.e_machine == EM_ARM && *ptr->name) {
-		_set_arm_thumb_bits (bin, &ptr);
-	}
-
 	return ptr;
 }
 
@@ -4294,7 +4286,7 @@ char *Elf_(r_bin_elf_compiler)(ELFOBJ *bin) {
 	}
 	buf[sz] = 0;
 	r_str_trim (buf);
-	char * res = r_str_escape (buf);
+	char *res = r_str_escape (buf);
 	free (buf);
 	return res;
 }
