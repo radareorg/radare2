@@ -83,6 +83,8 @@ r_arch_sources = [
   'p/lh5801/plugin.c',
   'p/ebc/plugin.c',
   'p/ebc/ebc_disas.c',
+  'p/msp430/plugin.c',
+  'p/msp430/msp430_disas.c',
 ]
 
 if arch_plugins.contains('x86_nz')
