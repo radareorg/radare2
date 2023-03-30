@@ -1,15 +1,19 @@
 /* radare - LGPL - Copyright 2014-2022 - Fedor Sakharov, pancake */
 
 #include <string.h>
-#include <r_types.h>
-#include <r_lib.h>
-#include <r_asm.h>
-#include <r_anal.h>
+#include <r_arch.h>
 #include <r_util.h>
 
-#include "../arch/msp430/msp430_disas.h"
+#include "./msp430_disas.h"
 
-static int msp430_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
+static bool decode(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
+	const int addr = op->addr;
+	const ut8 *buf = op->bytes;
+	const int len = op->size;
+	if (len < 1) {
+		return false;
+	}
+
 	struct msp430_cmd cmd = {0};
 	op->size = -1;
 	op->nopcode = 1;
@@ -22,7 +26,7 @@ static int msp430_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int le
 			op->mnemonic = strdup ("invalid");
 		} else if (ret > 0) {
 			if (cmd.operands[0]) {
-				op->mnemonic = r_str_newf ("%s %s",cmd.instr, cmd.operands);
+				op->mnemonic = r_str_newf ("%s %s", cmd.instr, cmd.operands);
 			} else {
 				op->mnemonic = strdup (cmd.instr);
 			}
@@ -105,7 +109,7 @@ static int msp430_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int le
 	return ret;
 }
 
-static bool set_reg_profile(RAnal *anal) {
+static char* regs(RArchSession *as) {
 	const char *p = \
 		"=PC	pc\n"
 		"=SP	sp\n"
@@ -141,15 +145,20 @@ static bool set_reg_profile(RAnal *anal) {
 		// between is SCG1 SCG0 OSOFF CPUOFF GIE
 		"flg	v	.1  4.8 0\n";
 
-	return r_reg_set_profile_string (anal->reg, p);
+	return strdup (p);
 }
 
-RAnalPlugin r_anal_plugin_msp430 = {
+static int info(RArchSession *as, ut32 q) {
+	return 0;
+}
+
+RArchPlugin r_arch_plugin_msp430 = {
 	.name = "msp430",
 	.desc = "TI MSP430 code analysis plugin",
 	.license = "LGPL3",
 	.arch = "msp430",
-	.bits = 16,
-	.op = msp430_op,
-	.set_reg_profile = &set_reg_profile,
+	.bits = R_SYS_BITS_PACK1 (16),
+	.decode = &decode,
+	.info = info,
+	.regs = regs,
 };
