@@ -2,12 +2,8 @@
 
 #include <string.h>
 #include <r_types.h>
-#include <r_lib.h>
-#include <r_asm.h>
-#include <r_anal.h>
-#include <r_util.h>
-
-#include <h8300_disas.h>
+#include <r_arch.h>
+#include "./h8300_disas.h"
 
 #define emit(frag) r_strbuf_appendf (&op->esil, frag)
 #define emitf(...) r_strbuf_appendf (&op->esil, __VA_ARGS__)
@@ -83,7 +79,7 @@ static void h8300_anal_jsr(RAnalOp *op, ut64 addr, const ut8 *buf) {
 	}
 }
 
-static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf) {
+static int analop_esil(RAnalOp *op, ut64 addr, const ut8 *buf) {
 	int ret = -1;
 	ut8 opcode = buf[0];
 	if (!op) {
@@ -536,19 +532,26 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf) {
 	return ret;
 }
 
-static int h8300_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
+static bool decode(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
+	const ut64 addr = op->addr;
+	const ut8 *buf = op->bytes;
+	const int len = op->size;
+	if (len < 1) {
+		return false;
+	}
+
 	int ret;
 	ut8 opcode = buf[0];
 	struct h8300_cmd cmd;
 
 	if (!op) {
-		return 2;
+		return false;
 	}
 
 	op->addr = addr;
 	ret = op->size = h8300_decode_command(buf, &cmd);
 	if (ret < 0) {
-		return ret;
+		return false;
 	}
 
 	if (mask & R_ARCH_OP_MASK_DISASM) {
@@ -583,8 +586,8 @@ static int h8300_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 	};
 
 	if (op->type != R_ANAL_OP_TYPE_UNK) {
-		analop_esil(anal, op, addr, buf);
-		return ret;
+		analop_esil(op, addr, buf);
+		return ret > 0;
 	}
 	switch (opcode) {
 	case H8300_MOV_R82IND16:
@@ -676,12 +679,12 @@ static int h8300_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 		break;
 	};
 	if (mask & R_ARCH_OP_MASK_ESIL) {
-		analop_esil(anal, op, addr, buf);
+		analop_esil(op, addr, buf);
 	}
-	return ret;
+	return ret > 0;
 }
 
-static bool set_reg_profile(RAnal *anal) {
+static char* regs(RArchSession *as) {
 	const char * const p =
 		"=PC	pc\n"
 		"=SP	r7\n"
@@ -720,24 +723,29 @@ static bool set_reg_profile(RAnal *anal) {
 		"gpr	Z	.1	.146	0\n"
 		"gpr	V	.1	.145	0\n"
 		"gpr	C	.1	.144	0\n";
-	return r_reg_set_profile_string (anal->reg, p);
+	return strdup (p);
 }
 
-RAnalPlugin r_anal_plugin_h8300 = {
+static int archinfo(RArchSession *as, ut32 q) {
+	return 0;
+}
+
+
+RArchPlugin r_arch_plugin_h8300 = {
 	.name = "h8300",
 	.desc = "H8300 code analysis plugin",
 	.license = "LGPL3",
 	.arch = "h8300",
-	.bits = 16,
-	.op = &h8300_op,
-	.esil = true,
-	.set_reg_profile = set_reg_profile,
+	.bits = R_SYS_BITS_PACK1 (16),
+	.decode = &decode,
+	.regs = regs,
+	.info = archinfo,
 };
 
 #ifndef R2_PLUGIN_INCORE
 struct r_lib_struct_t radare_plugin = {
-	.type = R_LIB_TYPE_ANAL,
-	.data = &r_anal_plugin_h8300,
+	.type = R_LIB_TYPE_ARCH,
+	.data = &r_arch_plugin_h8300,
 	.version = R2_VERSION
 };
 #endif

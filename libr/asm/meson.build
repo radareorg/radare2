@@ -33,7 +33,7 @@ r_asm_inc = [
     join_paths('../../shlr'),
     join_paths('arch','include'),
     join_paths('arch'),
-    join_paths('arch','h8300'),
+    join_paths('../arch/p','h8300'),
   )
 ]
 

@@ -85,6 +85,8 @@ r_arch_sources = [
   'p/ebc/ebc_disas.c',
   'p/msp430/plugin.c',
   'p/msp430/msp430_disas.c',
+  'p/h8300/plugin.c',
+  'p/h8300/h8300_disas.c',
   # python
   'p/pyc/plugin.c',
   'p/pyc/opcode_all.c',
