@@ -141,6 +141,7 @@ libr/include/sdb
 **/d/*.gperf
 **/d/*.out
 **/d/*.inc
+**/d/*.sdb.txt.tmp
 # Artifacts
 /dist/artifacts
 # libFuzzer
