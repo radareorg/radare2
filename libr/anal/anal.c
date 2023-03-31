@@ -267,7 +267,12 @@ R_API bool r_anal_use(RAnal *anal, const char *name) {
 R_API char *r_anal_get_reg_profile(RAnal *anal) {
 	RArchSession *session = R_UNWRAP3 (anal, arch, session);
 	RArchPluginRegistersCallback regs = R_UNWRAP3 (session, plugin, regs);
+	eprintf ("what is null: %p %p\n", anal && anal->arch && anal->arch->session,
+	  anal && anal->arch && anal->arch->session && anal->arch->session->plugin);
+	eprintf ("plugin name: %s\n", R_UNWRAP5 (anal, arch, session, plugin, name));
 	if (regs) {
+
+		eprintf ("using arch profile\n");
 		return regs (session);
 	}
 #if 0
@@ -275,6 +280,7 @@ R_API char *r_anal_get_reg_profile(RAnal *anal) {
 		eprintf ("WINRAR must get wat awat at\n");
 	}
 #endif
+	eprintf ("using analysis profile\n");
 	return (anal && anal->cur && anal->cur->get_reg_profile)
 		? anal->cur->get_reg_profile (anal) : NULL;
 }

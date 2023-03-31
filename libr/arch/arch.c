@@ -48,6 +48,7 @@ static ut32 _rate_compat(RArchPlugin *p, RArchConfig *cfg, const char *name) {
 			score += (!!score) * 20;
 		}
 	}
+	eprintf ("plugin %s, score %d\n", p->name, score);
 	return score;
 }
 
@@ -61,6 +62,7 @@ static RArchPlugin *find_bestmatch(RArch *arch, RArchConfig *cfg, const char *na
 		if (score > 0 && score > best_score) {
 			best_score = score;
 			ap = p;
+			eprintf ("selecting: %s\n", ap->name);
 		}
 	}
 	return ap;
@@ -89,6 +91,7 @@ R_API bool r_arch_use(RArch *arch, RArchConfig *config, const char *name) {
 		arch->session = NULL;
 		return false;
 	}
+	eprintf ("arch_use %s\n", ap->name);
 	r_unref (arch->session);
 	arch->session = r_arch_session (arch, config, ap);
 #if 0

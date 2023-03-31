@@ -277,6 +277,10 @@ static bool encode(RArchSession *as, RAnalOp *op, RArchEncodeMask mask) {
 }
 
 static int archinfo(RArchSession *as, ut32 q) {
+	switch (q) {
+	case R_ANAL_ARCHINFO_MAX_OP_SIZE:
+		return 32;
+	}
 	return 1;
 }
 
@@ -285,7 +289,7 @@ RArchPlugin r_arch_plugin_bf = {
 	.desc = "brainfuck code analysis plugin",
 	.license = "LGPL3",
 	.arch = "bf",
-	.bits = R_SYS_BITS_PACK1 (8),
+	.bits = R_SYS_BITS_PACK2 (8, 32),
 	.endian = R_SYS_ENDIAN_NONE,
 	.decode = &decode,
 	.encode = &encode,

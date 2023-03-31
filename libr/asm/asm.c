@@ -289,6 +289,7 @@ R_API bool r_asm_use(RAsm *a, const char *name) {
 		// that shouldnt be permitted imho, keep for backward compat
 		return false;
 	}
+	eprintf ("asm_use %s\n", name);
 	r_arch_config_use (a->config, name);
 	r_asm_use_assembler (a, name);
 	char *dotname = strdup (name);
@@ -298,33 +299,6 @@ R_API bool r_asm_use(RAsm *a, const char *name) {
 	} else {
 		R_FREE (dotname);
 	}
-#if 0
-	RListIter *iter;
-	RAsmPlugin *h;
-	r_list_foreach (a->plugins, iter, h) {
-		if (!strcmp (h->name, name)) {
-			if (!a->cur || (a->cur && h->arch && strcmp (a->cur->arch, h->arch))) {
-				a->cur = h;
-				load_asm_descriptions (a);
-				r_asm_set_cpu (a, NULL);
-			}
-			a->cur = h;
-			return true;
-		}
-		if (dotname && h->arch && !strcmp (dotname, h->arch)) {
-			char *arch = r_str_ndup (name, vv - name);
-#if 0
-			r_arch_config_set_cpu (a->config, arch);
-#else
-			r_asm_set_cpu (a, arch);
-#endif
-			a->cur = h;
-			load_asm_descriptions (a);
-			free (arch);
-			return true;
-		}
-	}
-#endif
 	if (a->analb.anal) {
 		if (a->analb.use (a->analb.anal, name)) {
 			load_asm_descriptions (a);
@@ -334,11 +308,6 @@ R_API bool r_asm_use(RAsm *a, const char *name) {
 		}
 		R_LOG_ERROR ("Cannot find '%s' asm/arch/anal plugin. See rasm2 -L or -LL", name);
 	}
-#if 0
-	// check if its a valid analysis plugin
-	sdb_free (a->pair);
-	a->pair = NULL;
-#endif
 	if (strcmp (name, "null")) {
 		return r_asm_use (a, "null");
 	}
