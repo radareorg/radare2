@@ -586,7 +586,7 @@ static bool decode(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
 	};
 
 	if (op->type != R_ANAL_OP_TYPE_UNK) {
-		analop_esil(op, addr, buf);
+		analop_esil (op, addr, buf);
 		return ret > 0;
 	}
 	switch (opcode) {
@@ -743,7 +743,7 @@ RArchPlugin r_arch_plugin_h8300 = {
 };
 
 #ifndef R2_PLUGIN_INCORE
-struct r_lib_struct_t radare_plugin = {
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ARCH,
 	.data = &r_arch_plugin_h8300,
 	.version = R2_VERSION
