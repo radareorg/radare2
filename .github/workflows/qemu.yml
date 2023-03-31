@@ -1,0 +1,72 @@
+# https://github.com/marketplace/actions/run-on-architecture
+name: qemu
+
+on:
+  push:
+    tags:
+      - 5.*
+
+jobs:
+  linux-arm64:
+    runs-on: ubuntu-20.04
+    name: Build on qemu-arm64
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+    - uses: uraimo/run-on-arch-action@v2
+      name: Run commands
+      with:
+        arch: aarch64
+        distro: ubuntu20.04
+        run: |
+          uname -a
+          apt update ; apt install --assume-yes gcc make git patch zip xz-utils
+          sys/debian.sh
+          make -C dist/debian
+    - name: Pub
+      uses: actions/upload-artifact@v3
+      with:
+        name: linux-acr-deb-arm64
+        path: dist/debian/*/*.deb
+  linux-rv64:
+    runs-on: ubuntu-20.04
+    name: Build on qemu-riscv64
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+    - uses: uraimo/run-on-arch-action@v2
+      name: Run commands
+      with:
+        arch: riscv64
+        distro: ubuntu20.04
+        run: |
+          uname -a
+          apt update ; apt install --assume-yes gcc make git patch zip xz-utils
+          sys/debian.sh
+          make -C dist/debian
+    - name: Pub
+      uses: actions/upload-artifact@v3
+      with:
+        name: linux-acr-deb-riscv64
+        path: dist/debian/*/*.deb
+  linux-s390x:
+    runs-on: ubuntu-20.04
+    name: Build on qemu-s390x
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+    - uses: uraimo/run-on-arch-action@v2
+      name: Run commands
+      with:
+        arch: s390x
+        distro: ubuntu20.04
+        run: |
+          uname -a
+          apt update ; apt install --assume-yes gcc make git patch zip xz-utils
+          sys/debian.sh
+          make -C dist/debian
+    - name: Pub
+      uses: actions/upload-artifact@v3
+      with:
+        name: linux-acr-deb-s390x
+        path: dist/debian/*/*.deb
