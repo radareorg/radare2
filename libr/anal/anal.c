@@ -331,7 +331,8 @@ R_API bool r_anal_set_triplet(RAnal *anal, R_NULLABLE const char *os, R_NULLABLE
 	if (bits != anal->config->bits) {
 		r_anal_set_bits (anal, bits);
 	}
-	return r_anal_use (anal, arch);
+	return true;
+	// return r_anal_use (anal, arch);
 }
 
 // copypasta from core/cbin.c
