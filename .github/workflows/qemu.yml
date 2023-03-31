@@ -4,7 +4,7 @@ name: qemu
 on:
   push:
     tags:
-      - *.*
+      - v.*
   pull_request:
 
 jobs:
