@@ -358,16 +358,14 @@ static RBinImport *import_from_name(RBin *rbin, const char *orig_name, HtPP *imp
 
 	char *name = (char*) orig_name;
 	const char *_objc_class = "_OBJC_CLASS_$";
-	const int _objc_class_len = strlen (_objc_class);
 	const char *_objc_metaclass = "_OBJC_METACLASS_$";
-	const int _objc_metaclass_len = strlen (_objc_metaclass);
 	const char * type = "FUNC";
 
-	if (!strncmp (name, _objc_class, _objc_class_len)) {
-		name += _objc_class_len;
+	if (r_str_startswith (name, _objc_class)) {
+		name += strlen (_objc_class);
 		type = "OBJC_CLASS";
-	} else if (!strncmp (name, _objc_metaclass, _objc_metaclass_len)) {
-		name += _objc_metaclass_len;
+	} else if (r_str_startswith (name, _objc_metaclass)) {
+		name += strlen (_objc_metaclass);
 		type = "OBJC_METACLASS";
 	}
 
