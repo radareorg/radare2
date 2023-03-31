@@ -2975,12 +2975,15 @@ static void anal_bb_list(RCore *core, const char *input) {
 		free (j);
 	} else if (mode == 't' || mode == ',') {
 		char *q = strchr (input, ' ');
+		bool show_query = true;
 		if (q) {
-			r_table_query (table, q + 1);
+			show_query = r_table_query (table, q + 1);
 		}
-		char *s = r_table_tofancystring (table);
-		r_cons_println (s);
-		free (s);
+		if (show_query) {
+			char *s = r_table_tofancystring (table);
+			r_cons_println (s);
+			free (s);
+		}
 		r_table_free (table);
 	}
 }
@@ -3783,10 +3786,11 @@ static Sdb *__core_cmd_anal_fcn_stats(RCore *core, const char *input) {
 			r_list_append (items, r_str_newf ("%d", nv));
 		}
 		r_table_add_row_list (t, items);
-		r_table_query (t, input + 1);
-		char *ts = r_table_tostring (t);
-		r_cons_printf ("%s", ts);
-		free (ts);
+		if (r_table_query (t, input + 1)) {
+			char *ts = r_table_tostring (t);
+			r_cons_printf ("%s", ts);
+			free (ts);
+		}
 		r_table_free (t);
 	} else {
 		SdbList *ls = sdb_foreach_list (db, true);
@@ -3884,11 +3888,12 @@ static void __core_cmd_anal_fcn_allstats(RCore *core, const char *input) {
 		}
 		r_table_add_row_list (t, items);
 	}
-	r_table_query (t, (*input)?input + 1: "");
-	char *ts = isJson? r_table_tojson(t): r_table_tostring (t);
-	if (ts) {
-		r_cons_printf ("%s%s", ts, isJson ? "\n" : "");
-		free (ts);
+	if (r_table_query (t, (*input)?input + 1: "")) {
+		char *ts = isJson? r_table_tojson(t): r_table_tostring (t);
+		if (ts) {
+			r_cons_printf ("%s%s", ts, isJson ? "\n" : "");
+			free (ts);
+		}
 	}
 	r_table_free (t);
 	r_core_seek (core, oseek, true);

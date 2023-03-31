@@ -579,13 +579,16 @@ static void _print_strings(RCore *r, RList *list, PJ *pj, int mode, int va) {
 	} else if (IS_MODE_SET (mode)) {
 		r_cons_break_pop ();
 	} else if (IS_MODE_NORMAL (mode)) {
+		bool show_table = true;
 		if (r->table_query) {
-			r_table_query (table, r->table_query);
+			show_table = r_table_query (table, r->table_query);
 		}
-		char *s = r_table_tostring (table);
-		if (s) {
-			r_cons_print (s);
-			free (s);
+		if (show_table) {
+			char *s = r_table_tostring (table);
+			if (s) {
+				r_cons_print (s);
+				free (s);
+			}
 		}
 	}
 	r_table_free (table);
@@ -1961,14 +1964,16 @@ static int bin_relocs(RCore *r, PJ *pj, int mode, int va) {
 		pj_end (pj);
 	}
 	if (IS_MODE_NORMAL (mode)) {
+		bool show_table = true;
 		if (r->table_query) {
-			r_table_query (table, r->table_query);
+			show_table = r_table_query (table, r->table_query);
 		}
-		char *s = r_table_tostring (table);
-		r_cons_printf ("\n%s\n", s);
-		free (s);
-		r_cons_printf ("\n%i relocations\n", i);
-
+		if (show_table) {
+			char *s = r_table_tostring (table);
+			r_cons_printf ("\n%s\n", s);
+			free (s);
+			r_cons_printf ("\n%i relocations\n", i);
+		}
 	}
 
 	r_table_free (table);
@@ -2156,7 +2161,9 @@ static int bin_imports(RCore *r, PJ *pj, int mode, int va, const char *name) {
 			if (libname) {
 				pj_ks (pj, "libname", libname);
 			}
-			pj_kn (pj, "plt", addr);
+			if (addr && addr != UT64_MAX) {
+				pj_kn (pj, "plt", addr);
+			}
 			pj_end (pj);
 		} else if (IS_MODE_RAD (mode)) {
 			// TODO(eddyb) symbols that are imports.
@@ -2186,12 +2193,15 @@ static int bin_imports(RCore *r, PJ *pj, int mode, int va, const char *name) {
 	if (IS_MODE_JSON (mode)) {
 		pj_end (pj);
 	} else if (IS_MODE_NORMAL (mode)) {
+		bool show_table = true;
 		if (r->table_query) {
-			r_table_query (table, r->table_query);
+			show_table = r_table_query (table, r->table_query);
 		}
-		char *s = r_table_tostring (table);
-		r_cons_printf ("%s\n", s);
-		free (s);
+		if (show_table) {
+			char *s = r_table_tostring (table);
+			r_cons_printf ("%s\n", s);
+			free (s);
+		}
 	}
 
 	r_table_free (table);
@@ -2910,10 +2920,11 @@ static int bin_sections(RCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at,
 		}
 		RTable *table = r_core_table (r, "sections");
 		r_table_visual_list (table, list, r->offset, -1, cols, r->io->va);
+		bool show_table = true;
 		if (r->table_query) {
-			r_table_query (table, r->table_query);
+			show_table = r_table_query (table, r->table_query);
 		}
-		{
+		if (show_table) {
 			char *s = r_table_tostring (table);
 			r_cons_printf ("\n%s\n", s);
 			free (s);
@@ -3222,12 +3233,15 @@ static int bin_sections(RCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at,
 	ret = true;
 out:
 	if (IS_MODE_NORMAL (mode)) {
+		bool show_table = true;
 		if (r->table_query) {
-			r_table_query (table, r->table_query);
+			show_table = r_table_query (table, r->table_query);
 		}
-		char *s = r_table_tostring (table);
-		r_cons_printf ("\n%s\n", s);
-		free (s);
+		if (show_table) {
+			char *s = r_table_tostring (table);
+			r_cons_printf ("\n%s\n", s);
+			free (s);
+		}
 	}
 	free (hashtypes);
 	r_table_free (table);

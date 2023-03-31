@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2008-2022 - nibble, pancake, thestr4ng3r */
+/* radare - LGPL - Copyright 2008-2023 - nibble, pancake, thestr4ng3r */
 
 #include <r_anal.h>
 #include <r_core.h>
@@ -10,7 +10,6 @@ static bool item_matches_filter(RAnalMetaItem *item, RAnalMetaType type, R_NULLA
 typedef struct {
 	RAnalMetaType type;
 	const RSpace *space;
-
 	RIntervalNode *node;
 } FindCtx;
 
@@ -538,7 +537,11 @@ static void print_meta_list(RAnal *a, int type, int rad, ut64 addr, const char *
 
 beach:
 	if (t && tq) {
-		r_table_query (t, tq);
+		if (!r_table_query (t, tq)) {
+			pj_free (pj);
+			r_table_free (t);
+			return;
+		}
 	}
 	if (!tq || !strstr (tq, "?")) {
 		if (t) {
@@ -548,8 +551,6 @@ beach:
 		} else if (pj) {
 			pj_end (pj);
 			r_cons_printf ("%s\n", pj_string (pj));
-			pj_free (pj);
-			pj = NULL;
 		}
 	}
 	pj_free (pj);

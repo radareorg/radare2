@@ -5078,12 +5078,15 @@ static void r_core_disasm_table(RCore *core, int l, const char *input) {
 		ea += op->size;
 		r_anal_op_free (op);
 	}
-	if (input && *input) {
-		r_table_query (t, input);
+	bool show_table = true;
+	if (R_STR_ISNOTEMPTY (input)) {
+		show_table = r_table_query (t, input);
 	}
-	char *ts = r_table_tostring (t);
-	r_cons_printf ("%s", ts); // \n?
-	free (ts);
+	if (show_table) {
+		char *ts = r_table_tostring (t);
+		r_cons_printf ("%s", ts); // \n?
+		free (ts);
+	}
 	r_table_free (t);
 }
 
@@ -5176,10 +5179,11 @@ static void cmd_pxr(RCore *core, int len, int mode, int wordsize, const char *ar
 		}
 		core->offset = at;
 		if (t) {
-			r_table_query (t, arg? arg + 1: NULL);
-			char *s = r_table_tostring (t);
-			r_cons_println (s);
-			free (s);
+			if (r_table_query (t, arg? arg + 1: NULL)) {
+				char *s = r_table_tostring (t);
+				r_cons_println (s);
+				free (s);
+			}
 			r_table_free (t);
 		}
 		if (pj) {
