@@ -615,7 +615,6 @@ R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 	ut64 laddr = r_config_get_i (r->config, "bin.laddr");
 	RBinFile *binfile = NULL;
 	RBinPlugin *plugin = NULL;
-	const char *cmd_load;
 	RIODesc *desc = r->io->desc;
 	if (!desc && filenameuri) {
 		desc = r_io_desc_get_byuri (r->io, filenameuri);
@@ -667,8 +666,8 @@ R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 	}
 #endif
 	r_core_bin_export_info (r, R_MODE_SET);
-	cmd_load = r_config_get (r->config, "cmd.load");
-	if (cmd_load && *cmd_load) {
+	const char *cmd_load = r_config_get (r->config, "cmd.load");
+	if (R_STR_ISNOTEMPTY (cmd_load)) {
 		r_core_cmd (r, cmd_load, 0);
 	}
 
