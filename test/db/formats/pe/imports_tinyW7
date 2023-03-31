@@ -24,7 +24,7 @@ vaddr      paddr      type   name
 [Imports]
 nth  vaddr      bind type lib      name
 ---------------------------------------
-284  0x00000000 NONE FUNC kernel32 FindAtomW
+284  ---------- NONE FUNC kernel32 FindAtomW
 1268 0x00401034 NONE FUNC msvcrt   Ordinal_1268
 
 EOF

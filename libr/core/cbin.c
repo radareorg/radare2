@@ -2032,7 +2032,7 @@ R_DEPRECATE static RBinSymbol *get_import(RBin *bin, RList *symbols, const char 
 	return res;
 }
 #else
-static RList *osymbols = NULL;
+static R_TH_LOCAL RList *osymbols = NULL;
 static RBinSymbol *get_symbol(RBin *bin, RList *symbols, const char *name, ut64 addr) {
 	RBinSymbol *symbol;
 	RListIter *iter;
@@ -2053,17 +2053,17 @@ static RBinSymbol *get_symbol(RBin *bin, RList *symbols, const char *name, ut64 
 
 /* XXX: This is a hack to get PLT references in rabin2 -i */
 R_API ut64 r_core_bin_impaddr(RBin *bin, int va, const char *name) {
-	RList *symbols;
-
+	r_return_val_if_fail (bin, UT64_MAX);
+	ut64 addr = UT64_MAX;
 	if (!name || !*name) {
-		return false;
+		return addr;
 	}
-	if (!(symbols = r_bin_get_symbols (bin))) {
-		return false;
+	RList *symbols = r_bin_get_symbols (bin);
+	if (!symbols) {
+		return addr;
 	}
 	RBinSymbol *s = get_import (bin, symbols, name, 0LL);
 	// maybe ut64_MAX to indicate import not found?
-	ut64 addr = 0LL;
 	if (s) {
 		if (va) {
 			if (s->paddr == UT64_MAX) {
@@ -2135,8 +2135,7 @@ static int bin_imports(RCore *r, PJ *pj, int mode, int va, const char *name) {
 				r_meta_set (r->anal, R_META_TYPE_DATA, addr, cdsz, NULL);
 			}
 		} else if (IS_MODE_SIMPLE (mode)) {
-			r_cons_printf ("%s%s%s\n",
-					r_str_get (libname), libname ? " " : "", symname);
+			r_cons_printf ("%s%s%s\n", r_str_get (libname), libname ? " " : "", symname);
 		} else if (IS_MODE_SIMPLEST (mode)) {
 			r_cons_println (symname);
 		} else if (IS_MODE_JSON (mode)) {
@@ -2615,7 +2614,10 @@ next:
 	}
 	if (IS_MODE_NORMAL (mode)) {
 		if (r->table_query) {
-			r_table_query (table, r->table_query);
+			if (!r_table_query (table, r->table_query)) {
+				r_table_free (table);
+				return false;
+			}
 		}
 		char *s = r_table_tostring (table);
 		r_cons_printf ("\n%s", s);
@@ -4369,14 +4371,11 @@ static bool bin_header(RCore *r, int mode) {
 }
 
 R_API bool r_core_bin_info(RCore *core, int action, PJ *pj, int mode, int va, RCoreBinFilter *filter, const char *chksum) {
+	const char *name = (filter && filter->name)? filter->name : NULL;
 	bool ret = true;
-	const char *name = NULL;
 	ut64 at = UT64_MAX, loadaddr = r_bin_get_laddr (core->bin);
 	if (filter && filter->offset) {
 		at = filter->offset;
-	}
-	if (filter && filter->name) {
-		name = filter->name;
 	}
 	// XXX this makes r2dec very slow (25s vs 80s)
 	// r_core_bin_export_info (core, R_MODE_SET);
