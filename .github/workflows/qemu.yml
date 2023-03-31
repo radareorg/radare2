@@ -5,7 +5,6 @@ on:
   push:
     tags:
       - 5.*
-  pull_request:
 
 jobs:
   linux-arm64:
