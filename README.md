@@ -1,4 +1,4 @@
-<img src="doc/images/r2emoji.png" alt="screenshot" align="left" width="128px">
+<a href="https://radare.org/"><img border=0 src="doc/images/r2emoji.png" alt="screenshot" align="left" width="128px"></a>
 
 ## Radare2: Libre Reversing Framework for Unix Geeks
 
