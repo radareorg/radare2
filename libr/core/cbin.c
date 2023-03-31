@@ -890,14 +890,16 @@ static int bin_info(RCore *r, PJ *pj, int mode, ut64 laddr) {
 				r_config_set (r->config, "asm.abi", info->abi);
 			}
 			// we can take the eabi from bin.features from arm (f.ex eabi4 eabi5)
-			r_config_set (r->config, "asm.arch", info->arch);
-			r_config_set (r->config, "anal.arch", info->arch);
+			if (info->arch) {
+				r_config_set (r->config, "asm.arch", info->arch);
+				r_config_set (r->config, "anal.arch", info->arch);
+				snprintf (str, R_FLAG_NAME_SIZE, "%i", info->bits);
+				r_config_set (r->config, "asm.bits", str);
+			}
 			// r_config_set (r->config, "arch.decoder", info->arch);
 			if (R_STR_ISNOTEMPTY (info->charset)) {
 				r_config_set (r->config, "cfg.charset", info->charset);
 			}
-			snprintf (str, R_FLAG_NAME_SIZE, "%i", info->bits);
-			r_config_set (r->config, "asm.bits", str);
 			r_config_set (r->config, "asm.dwarf",
 				(R_BIN_DBG_STRIPPED & info->dbg_info) ? "false" : "true");
 			if (R_STR_ISNOTEMPTY (info->cpu)) {

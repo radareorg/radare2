@@ -1,0 +1,17 @@
+NAME=bf bug
+FILE=-
+CMDS=<<EOF
+-a bf
+pd 2
+o malloc://32
+-a
+pd 2
+EOF
+EXPECT=<<EOF
+            0x00000000      00             trap
+            0x00000001      00             trap
+bf
+            0x00000000      00             trap
+            0x00000001      00             trap
+EOF
+RUN
