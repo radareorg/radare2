@@ -880,9 +880,7 @@ static int bin_info(RCore *r, PJ *pj, int mode, ut64 laddr) {
 			if (info->lang && info->lang[0] != '?') {
 				r_config_set (r->config, "bin.lang", info->lang);
 			}
-			if (info->os) {
-				r_config_set (r->config, "asm.os", info->os);
-			}
+			r_config_set (r->config, "asm.os", info->os);
 			if (info->rclass && !strcmp (info->rclass, "pe")) {
 				r_config_set (r->config, "anal.cxxabi", "msvc");
 			} else {
