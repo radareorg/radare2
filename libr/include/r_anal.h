@@ -1571,7 +1571,6 @@ extern RAnalPlugin r_anal_plugin_bf;
 extern RAnalPlugin r_anal_plugin_chip8;
 extern RAnalPlugin r_anal_plugin_dalvik;
 extern RAnalPlugin r_anal_plugin_gb;
-extern RAnalPlugin r_anal_plugin_h8300;
 extern RAnalPlugin r_anal_plugin_i8080;
 extern RAnalPlugin r_anal_plugin_java;
 extern RAnalPlugin r_anal_plugin_m68k_cs;
