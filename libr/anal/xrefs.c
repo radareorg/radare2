@@ -308,12 +308,15 @@ R_API void r_anal_xrefs_list(RAnal *anal, int rad, const char *arg) {
 		}
 	}
 	if (rad == ',') {
+		bool show_table = true;
 		if (R_STR_ISNOTEMPTY (arg)) {
-			r_table_query (table, arg);
+			show_table = r_table_query (table, arg);
 		}
-		char *s = r_table_tofancystring (table);
-		r_cons_println (s);
-		free (s);
+		if (show_table) {
+			char *s = r_table_tofancystring (table);
+			r_cons_println (s);
+			free (s);
+		}
 		r_table_free (table);
 	} else if (rad == 'j') {
 		pj_end (pj);

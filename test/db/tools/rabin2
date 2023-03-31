@@ -345,14 +345,25 @@ RUN
 
 NAME=rabin2 -a x86 -b 32 -i fatmach0
 FILE=bins/mach0/fatmach0-3true
-CMDS=!rabin2 -a x86 -b 32 -i ${R2_FILE}
+CMDS=<<EOF
+!rabin2 -a x86 -b 32 -i ${R2_FILE}
+ii
+iij
+EOF
 EXPECT=<<EOF
 [Imports]
 nth vaddr      bind type lib name
 ---------------------------------
 0   0x00001f94 NONE FUNC     exit
-1   0x00000000 NONE FUNC     dyld_stub_binder
+1   ---------- NONE FUNC     dyld_stub_binder
 
+[Imports]
+nth vaddr       bind type lib name
+----------------------------------
+0   0x100000f40 NONE FUNC     exit
+1   ----------  NONE FUNC     dyld_stub_binder
+
+[{"ordinal":0,"bind":"NONE","type":"FUNC","name":"exit","plt":4294971200},{"ordinal":1,"bind":"NONE","type":"FUNC","name":"dyld_stub_binder"}]
 EOF
 RUN
 
@@ -364,7 +375,7 @@ EXPECT=<<EOF
 nth vaddr      bind type lib name
 ---------------------------------
 0   0x00001f94 NONE FUNC     exit
-1   0x00000000 NONE FUNC     dyld_stub_binder
+1   ---------- NONE FUNC     dyld_stub_binder
 
 EOF
 RUN
