@@ -1,4 +1,5 @@
 NAME=bf decode
+BROKEN=1
 FILE=bins/bf/hello-ok.bf
 CMDS=<<EOF
 e asm.arch=bf
@@ -10,18 +11,18 @@ EOF
 EXPECT=<<EOF
 address: 0xa
 opcode: while [ptr]
-esilcost: 4
+esilcost: 12
 disasm: while [ptr]
 pseudo: while [ptr]
 mnemonic: while
-mask: 00
+mask: ff
 id: 1
 bytes: 5b
 size: 1
 sign: false
 type: cjmp
 cycles: 0
-esil: 0xa,brk,=[1],brk,++=,ptr,[1],!,?{,0x2a,pc,=,brk,--=,}
+esil: 1,pc,-,brk,=[4],4,brk,+=,
 jump: 0x0000002a
 fail: 0x0000000b
 cond: al

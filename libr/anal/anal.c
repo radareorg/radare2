@@ -331,7 +331,8 @@ R_API bool r_anal_set_triplet(RAnal *anal, R_NULLABLE const char *os, R_NULLABLE
 	if (bits != anal->config->bits) {
 		r_anal_set_bits (anal, bits);
 	}
-	return r_anal_use (anal, arch);
+	return true;
+	// return r_anal_use (anal, arch);
 }
 
 // copypasta from core/cbin.c
@@ -402,6 +403,7 @@ R_API ut8 *r_anal_mask(RAnal *anal, int size, const ut8 *data, ut64 at) {
 
 	memset (ret, 0xff, size);
 
+	// TODO: use the bitfliping thing to guess the mask in here
 	while (idx < size) {
 		if ((oplen = r_anal_op (anal, op, at, data + idx, size - idx, R_ARCH_OP_MASK_BASIC)) < 1) {
 			break;

@@ -3,6 +3,7 @@
 #include <r_arch.h>
 #include <r_util.h>
 
+#if 0
 static char* regs(RArchSession *as) {
 	const char* profile =
 		"=PC	null0\n"
@@ -13,6 +14,7 @@ static char* regs(RArchSession *as) {
 		"gpr	null1	.32	?1   0\n";
 	return strdup (profile);
 }
+#endif
 
 RArchPlugin r_arch_plugin_null = {
 	.name = "null",
@@ -20,7 +22,7 @@ RArchPlugin r_arch_plugin_null = {
 	.arch = "none",
 	.license = "LGPL3",
 	.bits = R_SYS_BITS_PACK4 (8, 16, 32, 64),
-	.regs = regs
+//	.regs = regs
 };
 
 #ifndef R2_PLUGIN_INCORE

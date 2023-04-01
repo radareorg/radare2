@@ -51,7 +51,8 @@ static RBinInfo *info(RBinFile *bf) {
 	eprintf ("\"e cmd.vprompt=pxa 32@stack;pxa 32@screen;pxa 32@data\"\n");
 	eprintf ("s 0\n");
 	eprintf ("e asm.bits=32\n");
-	eprintf ("dL bf\n");
+	eprintf ("e cmd.vprompt=pxa 32@stack;pxa 32@screen;pxa 32@data\n");
+// 	eprintf ("dL bf\n");
 	return ret;
 }
 
