@@ -153,6 +153,8 @@ static char *r_debug_bf_reg_profile(RDebug *dbg) {
 	"gpr	inpi	.32	24	0\n"
 	"gpr	mem	.32	28	0\n"
 	"gpr	memi	.32	32	0\n"
+	"gpr	brk	.32	36	0\n"
+	"gpr	kbd	.32	40	0\n"
 	);
 }
 

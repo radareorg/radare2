@@ -1,8 +1,8 @@
 NAME=hello world
 FILE=bins/bf/hello-ok.bf
-ARGS=-b32
+ARGS=-a bf
 CMDS=<<EOF
-e asm.arch = bf
+-b32
 f input 128 0x3000
 o malloc://128 0x3000~z
 f screen 80*25 0x4000
@@ -17,6 +17,8 @@ ar scr=screen
 ar kbd=input
 ar ptr=data
 s 0
+ar PC=0
+sr PC
 150aes
 ps 12 @ screen
 pd 3 @ 0xa
@@ -48,6 +50,7 @@ ar scr=screen
 ar kbd=input
 ar ptr=data
 s 0
+150aes
 pd 3 @ 0xa
 EOF
 EXPECT=<<EOF
@@ -59,9 +62,8 @@ RUN
 
 NAME=loopy hello world
 FILE=bins/bf/hello-loops.bf
-ARGS=-b32
+ARGS=-a bf -b32
 CMDS=<<EOF
-e asm.arch = bf
 f input 128 0x3000
 o malloc://128 0x3000~z
 f screen 80*25 0x4000
@@ -75,8 +77,10 @@ ar brk=stack
 ar scr=screen
 ar kbd=input
 ar ptr=data
-s 0
+ar PC=0
+sr PC
 700aes
+# aesu 0x0000006a
 ps 12 @ screen
 EOF
 EXPECT=<<EOF

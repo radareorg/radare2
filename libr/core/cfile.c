@@ -611,9 +611,6 @@ static bool linkcb(void *user, void *data, ut32 id) {
 
 R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 	r_return_val_if_fail (r && r->io, false);
-	if (r_str_startswith (filenameuri, "malloc://")) {
-		return true;
-	}
 	R_CRITICAL_ENTER (r);
 	ut64 laddr = r_config_get_i (r->config, "bin.laddr");
 	RBinFile *binfile = NULL;

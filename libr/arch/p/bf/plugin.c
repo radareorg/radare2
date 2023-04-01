@@ -156,11 +156,19 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 	switch (buf[0]) {
 	case '[':
 		op->type = R_ANAL_OP_TYPE_CJMP;
+		// read ahead to find the ] bracket
+		op->jump = dst;
 		op->fail = addr + 1;
-		buf = r_mem_dup ((void *)buf, len);
-		if (!buf) {
-			break;
+		RArch *a = as->arch;
+		RIOReadAt read_at = NULL;
+		RBin *bin = R_UNWRAP2 (a, binb.bin);
+		if (bin && bin->iob.read_at) {
+			RIOReadAt read_at = bin->iob.read_at;
+			buf = malloc (0xff);
+			read_at (bin->iob.io, op->addr, buf, 0xff);
 		}
+		r_strbuf_set (&op->esil, "1,pc,-,brk,=[4],4,brk,+=");
+#if 1
 		{
 			const ut8 *p = buf + 1;
 			int lev = 0, i = 1;
@@ -171,12 +179,10 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 				}
 				if (*p == ']') {
 					lev--;
-					if (lev==-1) {
+					if (lev == -1) {
 						dst = addr + (size_t)(p - buf) + 1;
 						op->jump = dst;
-						r_strbuf_setf (&op->esil,
-								"0x%"PFMT64x",brk,=[1],brk,++=,"
-								"ptr,[1],!,?{,0x%"PFMT64x",pc,=,brk,--=,}", addr, dst);
+						r_strbuf_set (&op->esil, "1,pc,-,brk,=[4],4,brk,+=,");
 						goto beach;
 					}
 				}
@@ -184,13 +190,16 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 					op->type = R_ANAL_OP_TYPE_ILL;
 					goto beach;
 				}
-				if (i == len - 1) {
+				if (read_at && i == len - 1) {
+					break;
+					// XXX unnecessary just break
 					int new_buf_len = len + 1 + BUFSIZE_INC;
 					ut8 *new_buf = calloc (new_buf_len, 1);
 					if (new_buf) {
 						free (buf);
 						memcpy (new_buf, op->bytes, new_buf_len);
 						buf = new_buf;
+						read_at (bin->iob.io, op->addr + i, buf + i, 0xff);
 						p = buf + i;
 						len += BUFSIZE_INC;
 					}
@@ -201,11 +210,11 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 		}
 beach:
 		free (buf);
+#endif
 		break;
 	case ']':
 		op->type = R_ANAL_OP_TYPE_UJMP;
-		// XXX This is wrong esil
-		r_strbuf_set (&op->esil, "brk,--=,brk,[1],pc,=");
+		r_strbuf_set (&op->esil, "4,brk,-=,ptr,[1],?{,brk,[4],pc,=,}");
 		break;
 	case '>':
 		op->type = R_ANAL_OP_TYPE_ADD;
@@ -230,11 +239,11 @@ beach:
 	case '.':
 		// print element in stack to screen
 		op->type = R_ANAL_OP_TYPE_STORE;
-		r_strbuf_set (&op->esil, "ptr,[1],scr,=[1],scr,++=");
+		r_strbuf_set (&op->esil, "ptr,[1],scr,=[1],1,scr,+=");
 		break;
 	case ',':
 		op->type = R_ANAL_OP_TYPE_LOAD;
-		r_strbuf_set (&op->esil, "kbd,[1],ptr,=[1],kbd,++=");
+		r_strbuf_set (&op->esil, "kbd,[1],ptr,=[1],1,kbd,+=");
 		break;
 	case 0x00:
 	case 0xff:
@@ -248,15 +257,32 @@ beach:
 	return op->size;
 }
 
-static char *get_reg_profile(RArchSession *as) {
+static char *regs(RArchSession *as) {
+	if (as->config->bits == 8) {
+		return strdup (
+		"=PC	pc\n"
+		"=BP	brk\n"
+		"=SP	ptr\n"
+		"=A0	tmp\n"
+		"=A1	tmp\n"
+		"=A2	tmp\n"
+		"=A3	tmp\n"
+		"gpr	ptr	.8	0	0\n" // data pointer
+		"gpr	pc	.8	4	0\n" // program counter
+		"gpr	brk	.8	8	0\n" // brackets
+		"gpr	scr	.32	12	0\n" // screen
+		"gpr	kbd	.32	16	0\n" // keyboard
+		"gpr	tmp	.32	20	0\n" // keyboard
+		);
+	}
 	return strdup (
 		"=PC	pc\n"
 		"=BP	brk\n"
 		"=SP	ptr\n"
-		"=A0	rax\n"
-		"=A1	rbx\n"
-		"=A2	rcx\n"
-		"=A3	rdx\n"
+		"=A0	ptr\n"
+		"=A1	ptr\n"
+		"=A2	ptr\n"
+		"=A3	ptr\n"
 		"gpr	ptr	.32	0	0\n" // data pointer
 		"gpr	pc	.32	4	0\n" // program counter
 		"gpr	brk	.32	8	0\n" // brackets
@@ -277,7 +303,8 @@ static bool encode(RArchSession *as, RAnalOp *op, RArchEncodeMask mask) {
 static int archinfo(RArchSession *as, ut32 q) {
 	switch (q) {
 	case R_ANAL_ARCHINFO_MAX_OP_SIZE:
-		return 32;
+		return 0xff;
+		// return 32;
 	}
 	return 1;
 }
@@ -287,11 +314,11 @@ RArchPlugin r_arch_plugin_bf = {
 	.desc = "brainfuck code analysis plugin",
 	.license = "LGPL3",
 	.arch = "bf",
-	.bits = R_SYS_BITS_PACK2 (8, 32),
+	.bits = R_SYS_BITS_PACK (32),
 	.endian = R_SYS_ENDIAN_NONE,
 	.decode = &decode,
 	.encode = &encode,
-	.regs = get_reg_profile,
+	.regs = regs,
 	.info = &archinfo
 };
 

@@ -989,7 +989,7 @@ R_API void r_cons_echo(const char *msg) {
 static void optimize(void) {
 	char *buf = C->buffer;
 	int len = C->buffer_len;
-	int i, codes = 0;
+	int i;
 	int escape_n = 0;
 	char escape[32];
 	bool onescape = false;
@@ -1022,7 +1022,6 @@ static void optimize(void) {
 			onescape = true;
 			escape[escape_n++] = buf[i];
 			escape[escape_n] = 0;
-			codes++;
 		}
 	}
 	// eprintf ("FROM %d TO %d (%d)%c", C->buffer_len, len, codes, 10);
