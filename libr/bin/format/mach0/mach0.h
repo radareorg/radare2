@@ -159,7 +159,8 @@ struct MACH0_(obj_t) {
 		struct arm_thread_state32 arm_32;
 		struct arm_thread_state64 arm_64;
 	} thread_state;
-	char (*libs)[R_BIN_MACH0_STRING_LENGTH];
+	bool libs_loaded;
+	RPVector libs_cache;
 	int nlibs;
 	int size;
 	ut64 baddr;
@@ -191,8 +192,6 @@ struct MACH0_(obj_t) {
 	RList *sections_cache;
 	bool imports_loaded;
 	RPVector imports_cache;
-	bool libs_loaded;
-	RPVector libs_cache;
 	RList *reloc_fixups;
 	ut8 *internal_buffer;
 	int internal_buffer_size;

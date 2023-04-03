@@ -1214,23 +1214,22 @@ static int parse_function_starts(struct MACH0_(obj_t) *bin, ut64 off) {
 
 static int parse_dylib(struct MACH0_(obj_t) *bin, ut64 off) {
 	struct dylib_command dl;
-	int lib, len;
+	int len;
 	ut8 sdl[sizeof (struct dylib_command)] = {0};
 
 	if (off > bin->size || off + sizeof (struct dylib_command) > bin->size) {
 		return false;
 	}
-	lib = bin->nlibs - 1;
 
-	void *relibs = realloc (bin->libs, bin->nlibs * R_BIN_MACH0_STRING_LENGTH);
-	if (!relibs) {
-		r_sys_perror ("realloc (libs)");
+	char *lib = calloc (1, R_BIN_MACH0_STRING_LENGTH);
+	if (!lib) {
+		r_sys_perror ("calloc (lib)");
 		return false;
 	}
-	bin->libs = relibs;
 	len = r_buf_read_at (bin->b, off, sdl, sizeof (struct dylib_command));
 	if (len < 1) {
 		bprintf ("Error: read (dylib)\n");
+		free (lib);
 		return false;
 	}
 	dl.cmd = r_read_ble32 (&sdl[0], bin->big_endian);
@@ -1242,17 +1241,19 @@ static int parse_dylib(struct MACH0_(obj_t) *bin, ut64 off) {
 
 	ut64 offname = off + dl.dylib.name;
 	if (offname + R_BIN_MACH0_STRING_LENGTH > bin->size) {
+		free (lib);
 		return false;
 	}
 
-	memset (bin->libs[lib], 0, R_BIN_MACH0_STRING_LENGTH);
 	len = r_buf_read_at (bin->b, off + dl.dylib.name,
-		(ut8*)bin->libs[lib], R_BIN_MACH0_STRING_LENGTH - 1);
-	bin->libs[lib][R_BIN_MACH0_STRING_LENGTH - 1] = 0;
+		(ut8*) lib, R_BIN_MACH0_STRING_LENGTH - 1);
 	if (len < 1) {
 		bprintf ("Error: read (dylib str)");
+		free (lib);
 		return false;
 	}
+
+	r_pvector_push (&bin->libs_cache, lib);
 	return true;
 }
 
@@ -1730,6 +1731,8 @@ static int init_items(struct MACH0_(obj_t) *bin) {
 	bin->uuidn = 0;
 	bin->os = 0;
 	bin->has_crypto = 0;
+	r_pvector_init (&bin->libs_cache, (RPVectorFree) free);
+
 	if (bin->hdr.sizeofcmds > bin->size) {
 		R_LOG_WARN ("chopping hdr.sizeofcmds because it's larger than the file size");
 		bin->hdr.sizeofcmds = bin->size - 128;
@@ -2147,6 +2150,8 @@ static bool init(struct MACH0_(obj_t) *mo) {
 		R_LOG_WARN ("Cannot initialize items");
 	}
 	mo->baddr = MACH0_(get_baddr)(mo);
+	mo->libs_loaded = true;
+	r_pvector_shrink (&mo->libs_cache);
 	return true;
 }
 
@@ -2172,7 +2177,9 @@ void *MACH0_(mach0_free)(struct MACH0_(obj_t) *mo) {
 	free (mo->dyld_info);
 	free (mo->toc);
 	free (mo->modtab);
-	free (mo->libs);
+	if (mo->libs_loaded) {
+		r_pvector_fini (&mo->libs_cache);
+	}
 	free (mo->func_start);
 	free (mo->signature);
 	free (mo->intrp);
@@ -2181,9 +2188,6 @@ void *MACH0_(mach0_free)(struct MACH0_(obj_t) *mo) {
 	r_list_free (mo->sections_cache);
 	if (mo->imports_loaded) {
 		r_pvector_fini (&mo->imports_cache);
-	}
-	if (mo->libs_loaded) {
-		r_pvector_fini (&mo->libs_cache);
 	}
 	if (mo->chained_starts) {
 		for (i = 0; i < mo->nsegs && i < mo->segs_count; i++) {
@@ -4029,7 +4033,7 @@ void MACH0_(kv_loadlibs)(struct MACH0_(obj_t) *bin) {
 	char lib_flagname[128];
 	for (i = 0; i < bin->nlibs; i++) {
 		snprintf (lib_flagname, sizeof (lib_flagname), "libs.%d.name", i);
-		sdb_set (bin->kv, lib_flagname, bin->libs[i], 0);
+		sdb_set (bin->kv, lib_flagname, r_pvector_at (&bin->libs_cache, i), 0);
 	}
 }
 
@@ -4039,23 +4043,11 @@ const RPVector *MACH0_(load_libs)(struct MACH0_(obj_t) *bin) {
 		return &bin->libs_cache;
 	}
 
-	bin->libs_loaded = true;
 	if (!bin->nlibs) {
 		return NULL;
 	}
 
-	r_pvector_init (&bin->libs_cache, (RPVectorFree) free);
-	r_pvector_reserve (&bin->libs_cache, bin->nlibs);
-
-	char lib_flagname[128];
-	for (int i = 0; i < bin->nlibs; i++) {
-		snprintf (lib_flagname, sizeof (lib_flagname), "libs.%d.name", i);
-		sdb_set (bin->kv, lib_flagname, bin->libs[i], 0);
-		// TODO r_vector?
-		char *ptr = strndup (bin->libs[i], R_BIN_MACH0_STRING_LENGTH - 1);
-		r_pvector_push (&bin->libs_cache, ptr);
-	}
-
+	MACH0_(kv_loadlibs)(bin);
 	return &bin->libs_cache;
 }
 
