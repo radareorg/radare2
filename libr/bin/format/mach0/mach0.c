@@ -2182,6 +2182,9 @@ void *MACH0_(mach0_free)(struct MACH0_(obj_t) *mo) {
 	if (mo->imports_loaded) {
 		r_pvector_fini (&mo->imports_cache);
 	}
+	if (mo->libs_loaded) {
+		r_pvector_fini (&mo->libs_cache);
+	}
 	if (mo->chained_starts) {
 		for (i = 0; i < mo->nsegs && i < mo->segs_count; i++) {
 			if (mo->chained_starts[i]) {
@@ -4030,25 +4033,30 @@ void MACH0_(kv_loadlibs)(struct MACH0_(obj_t) *bin) {
 	}
 }
 
-struct lib_t *MACH0_(get_libs)(struct MACH0_(obj_t) *bin) {
-	struct lib_t *libs;
-	int i;
-	char lib_flagname[128];
+const RPVector *MACH0_(load_libs)(struct MACH0_(obj_t) *bin) {
+	r_return_val_if_fail (bin, NULL);
+	if (bin->libs_loaded) {
+		return &bin->libs_cache;
+	}
 
+	bin->libs_loaded = true;
 	if (!bin->nlibs) {
 		return NULL;
 	}
-	if (!(libs = calloc ((bin->nlibs + 1), sizeof (struct lib_t)))) {
-		return NULL;
-	}
-	for (i = 0; i < bin->nlibs; i++) {
+
+	r_pvector_init (&bin->libs_cache, (RPVectorFree) free);
+	r_pvector_reserve (&bin->libs_cache, bin->nlibs);
+
+	char lib_flagname[128];
+	for (int i = 0; i < bin->nlibs; i++) {
 		snprintf (lib_flagname, sizeof (lib_flagname), "libs.%d.name", i);
 		sdb_set (bin->kv, lib_flagname, bin->libs[i], 0);
-		r_str_ncpy (libs[i].name, bin->libs[i], R_BIN_MACH0_STRING_LENGTH - 1);
-		libs[i].last = 0;
+		// TODO r_vector?
+		char *ptr = strndup (bin->libs[i], R_BIN_MACH0_STRING_LENGTH - 1);
+		r_pvector_push (&bin->libs_cache, ptr);
 	}
-	libs[i].last = 1;
-	return libs;
+
+	return &bin->libs_cache;
 }
 
 ut64 MACH0_(get_baddr)(struct MACH0_(obj_t) *bin) {

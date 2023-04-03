@@ -91,11 +91,6 @@ struct addr_t {
 	int last;
 };
 
-struct lib_t {
-	char name[R_BIN_MACH0_STRING_LENGTH];
-	int last;
-};
-
 struct blob_index_t {
 	ut32 type;
 	ut32 offset;
@@ -196,6 +191,8 @@ struct MACH0_(obj_t) {
 	RList *sections_cache;
 	bool imports_loaded;
 	RPVector imports_cache;
+	bool libs_loaded;
+	RPVector libs_cache;
 	RList *reloc_fixups;
 	ut8 *internal_buffer;
 	int internal_buffer_size;
@@ -266,7 +263,7 @@ void MACH0_(pull_symbols)(struct MACH0_(obj_t) *mo, RBinSymbolCallback cb, void 
 const RPVector *MACH0_(load_imports)(RBinFile* bf, struct MACH0_(obj_t) *bin);
 RSkipList *MACH0_(get_relocs)(struct MACH0_(obj_t) *bin);
 struct addr_t *MACH0_(get_entrypoint)(struct MACH0_(obj_t) *bin);
-struct lib_t *MACH0_(get_libs)(struct MACH0_(obj_t) *bin);
+const RPVector *MACH0_(load_libs)(struct MACH0_(obj_t) *bin);
 ut64 MACH0_(get_baddr)(struct MACH0_(obj_t) *bin);
 char *MACH0_(get_class)(struct MACH0_(obj_t) *bin);
 int MACH0_(get_bits)(struct MACH0_(obj_t) *bin);
