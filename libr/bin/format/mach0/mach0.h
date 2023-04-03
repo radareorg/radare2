@@ -71,12 +71,6 @@ struct symbol_t {
 	bool last;
 };
 
-struct import_t {
-	char name[R_BIN_MACH0_STRING_LENGTH];
-	int ord;
-	int last;
-};
-
 struct reloc_t {
 	ut64 offset;
 	ut64 addr;
@@ -200,6 +194,8 @@ struct MACH0_(obj_t) {
 	bool rebasing_buffer;
 	RList *symbols_cache;
 	RList *sections_cache;
+	bool imports_loaded;
+	RPVector imports_cache;
 	RList *reloc_fixups;
 	ut8 *internal_buffer;
 	int internal_buffer_size;
@@ -267,7 +263,7 @@ RList *MACH0_(get_segments)(RBinFile *bf);
 const struct symbol_t *MACH0_(get_symbols)(struct MACH0_(obj_t) *bin);
 const RList *MACH0_(get_symbols_list)(struct MACH0_(obj_t) *bin);
 void MACH0_(pull_symbols)(struct MACH0_(obj_t) *mo, RBinSymbolCallback cb, void *user);
-struct import_t *MACH0_(get_imports)(struct MACH0_(obj_t) *bin);
+const RPVector *MACH0_(load_imports)(RBinFile* bf, struct MACH0_(obj_t) *bin);
 RSkipList *MACH0_(get_relocs)(struct MACH0_(obj_t) *bin);
 struct addr_t *MACH0_(get_entrypoint)(struct MACH0_(obj_t) *bin);
 struct lib_t *MACH0_(get_libs)(struct MACH0_(obj_t) *bin);
