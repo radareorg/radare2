@@ -1221,15 +1221,10 @@ static int parse_dylib(struct MACH0_(obj_t) *bin, ut64 off) {
 		return false;
 	}
 
-	char *lib = calloc (1, R_BIN_MACH0_STRING_LENGTH);
-	if (!lib) {
-		r_sys_perror ("calloc (lib)");
-		return false;
-	}
+	char lib[R_BIN_MACH0_STRING_LENGTH] = {0};
 	len = r_buf_read_at (bin->b, off, sdl, sizeof (struct dylib_command));
 	if (len < 1) {
 		bprintf ("Error: read (dylib)\n");
-		free (lib);
 		return false;
 	}
 	dl.cmd = r_read_ble32 (&sdl[0], bin->big_endian);
@@ -1241,7 +1236,6 @@ static int parse_dylib(struct MACH0_(obj_t) *bin, ut64 off) {
 
 	ut64 offname = off + dl.dylib.name;
 	if (offname + R_BIN_MACH0_STRING_LENGTH > bin->size) {
-		free (lib);
 		return false;
 	}
 
@@ -1249,11 +1243,10 @@ static int parse_dylib(struct MACH0_(obj_t) *bin, ut64 off) {
 		(ut8*) lib, R_BIN_MACH0_STRING_LENGTH - 1);
 	if (len < 1) {
 		bprintf ("Error: read (dylib str)");
-		free (lib);
 		return false;
 	}
 
-	r_pvector_push (&bin->libs_cache, lib);
+	r_pvector_push (&bin->libs_cache, r_str_ndup (lib, R_BIN_MACH0_STRING_LENGTH));
 	return true;
 }
 
@@ -3302,6 +3295,20 @@ static RBinImport *import_from_name(RBin *rbin, const char *orig_name) {
 	return ptr;
 }
 
+static void check_for_special_import_names(struct MACH0_(obj_t) *bin, RBinImport *import) {
+	if (import->name[0] == '_') {
+		if (!strcmp (import->name, "__stack_chk_fail") ) {
+			bin->has_canary = true;
+		}
+		if (!strcmp (import->name, "__asan_init") || !strcmp (import->name, "__tsan_init")) {
+			bin->has_sanitizers = true;
+		}
+		if (!strcmp (import->name, "_NSConcreteGlobalBlock")) {
+			bin->has_blocks_ext = true;
+		}
+	}
+}
+
 const RPVector *MACH0_(load_imports)(RBinFile *bf, struct MACH0_(obj_t) *bin) {
 	r_return_val_if_fail (bin, NULL);
 	if (bin->imports_loaded) {
@@ -3344,20 +3351,8 @@ const RPVector *MACH0_(load_imports)(RBinFile *bf, struct MACH0_(obj_t) *bin) {
 
 		import->ordinal = i;
 		r_pvector_push (&bin->imports_cache, import);
-
 		num_imports++;
-		if (import->name[0] == '_') {
-			if (!strcmp (import->name, "__stack_chk_fail") ) {
-				bin->has_canary = true;
-			}
-			if (!strcmp (import->name, "__asan_init") || !strcmp (import->name, "__tsan_init")) {
-				bin->has_sanitizers = true;
-			}
-			if (!strcmp (import->name, "_NSConcreteGlobalBlock")) {
-				bin->has_blocks_ext = true;
-			}
-		}
-
+		check_for_special_import_names (bin, import);
 		free (imp_name);
 	}
 

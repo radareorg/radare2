@@ -359,7 +359,7 @@ static RBinImport *import_from_name(RBin *rbin, const char *orig_name, HtPP *imp
 	char *name = (char*) orig_name;
 	const char *const _objc_class = "_OBJC_CLASS_$";
 	const char *const _objc_metaclass = "_OBJC_METACLASS_$";
-	const char * type = "FUNC";
+	const char *type = "FUNC";
 
 	if (r_str_startswith (name, _objc_class)) {
 		name += strlen (_objc_class);
