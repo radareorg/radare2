@@ -109,11 +109,13 @@ static int r2qjs_loader(JSContext *ctx, const char *const buffer) {
 		}
 		char *filename = r_str_ndup (space + 1, nl - space - 1);
 		char *data = r_str_ndup (assets, size);
-		// R_LOG_DEBUG ("File: (%s) Size: (%d)", filename, size);
-		// R_LOG_DEBUG ("DATA: %s", data);
-		ht_pp_insert (ht, filename, data);
-		if (!entry) {
-			entry = data;
+		if (r_str_endswith (filename, ".js")) {
+			// R_LOG_DEBUG ("File: (%s) Size: (%d)", filename, size);
+			// R_LOG_DEBUG ("DATA: %s", data);
+			ht_pp_insert (ht, filename, data);
+			if (!entry) {
+				entry = data;
+			}
 		}
 		ptr = nl + 1;
 		assets += size + strlen (delimiter_marker);

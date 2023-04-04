@@ -232,4 +232,3 @@ static JSValue r2plugin_core(JSContext *ctx, JSValueConst this_val, int argc, JS
 	}
 	return JS_NewBool (ctx, ret == 0);
 }
-
