@@ -314,7 +314,7 @@ struct d_info_checkpoint
 };
 
 /* Maximum number of times d_print_comp may be called recursively.  */
-#define MAX_RECURSION_COUNT 1024
+#define MAX_RECURSION_COUNT 512
 
 enum { D_PRINT_BUFFER_LENGTH = 256 };
 struct d_print_info
@@ -4312,7 +4312,7 @@ cplus_demangle_print_callback (int options,
     dpi.copy_templates = alloca (dpi.num_copy_templates
 				 * sizeof (*dpi.copy_templates));
 #endif
-    dpi.depth = 1024;
+    dpi.depth = 4096;
 
     d_print_comp (&dpi, options, dc);
   }
@@ -4640,10 +4640,6 @@ d_print_comp_inner (struct d_print_info *dpi, int options,
   /* Variable used to store the current templates while a previously
      captured scope is used.  */
   struct d_print_template *saved_templates;
-  if (--dpi->depth < 1) {
-    fprintf (stderr, "Stack exhaustion prevented\n");
-    return;
-  }
   /* Nonzero if templates have been stored in the above variable.  */
   int need_template_restore = 0;
 
@@ -5736,6 +5732,7 @@ d_print_comp (struct d_print_info *dpi, int options,
   if (dc == NULL || dc->d_printing > 1 || dpi->recursion > MAX_RECURSION_COUNT)
     {
       d_print_error (dpi);
+      fprintf (stderr, "Stack exhaustion prevented\n");
       return;
     }
 
