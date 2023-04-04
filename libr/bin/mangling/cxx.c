@@ -7,6 +7,7 @@
 R_API char *r_bin_demangle_cxx(RBinFile *bf, const char *str, ut64 vaddr) {
 	// DMGL_TYPES | DMGL_PARAMS | DMGL_ANSI | DMGL_VERBOSE
 	// | DMGL_RET_POSTFIX | DMGL_TYPES;
+	eprintf ("((%s))\n", str);
 	int i;
 #if WITH_GPL
 	int flags = DMGL_NO_OPTS | DMGL_PARAMS;

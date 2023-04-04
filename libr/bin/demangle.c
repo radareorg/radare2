@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2011-2022 - pancake */
+/* radare - LGPL - Copyright 2011-2023 - pancake */
 
 #include <r_bin.h>
 #include "i/private.h"
@@ -96,14 +96,14 @@ R_API char *r_bin_demangle(RBinFile *bf, const char *def, const char *str, ut64 
 	RBinObject *o = bf? bf->o: NULL;
 	RListIter *iter;
 	const char *lib = NULL;
-	if (!strncmp (str, "reloc.", 6)) {
-		str += 6;
+	if (r_str_startswith (str, "reloc.")) {
+		str += strlen ("reloc.");
 	}
-	if (!strncmp (str, "sym.", 4)) {
-		str += 4;
+	if (r_str_startswith (str, "sym.")) {
+		str += strlen ("sym.");
 	}
-	if (!strncmp (str, "imp.", 4)) {
-		str += 4;
+	if (r_str_startswith (str, "imp.")) {
+		str += strlen ("imp.");
 	}
 	if (o && libs) {
 		bool found = false;
@@ -129,7 +129,7 @@ R_API char *r_bin_demangle(RBinFile *bf, const char *def, const char *str, ut64 
 			}
 		}
 	}
-	if (!strncmp (str, "__", 2)) {
+	if (r_str_startswith (str, "__")) {
 		if (str[2] == 'T') {
 			type = R_BIN_LANG_SWIFT;
 		} else {
