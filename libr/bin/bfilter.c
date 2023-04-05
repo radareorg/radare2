@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2015-2021 - pancake */
+/* radare - LGPL - Copyright 2015-2023 - pancake */
 
 #include <r_bin.h>
 #include "i/private.h"
@@ -158,7 +158,7 @@ R_API void r_bin_filter_sections(RBinFile *bf, RList *list) {
 
 static bool false_positive(const char *str) {
 	int i;
-	ut8 bo[0x100];
+//	ut8 bo[0x100];
 	int up = 0;
 	int lo = 0;
 	int ot = 0;
@@ -166,9 +166,11 @@ static bool false_positive(const char *str) {
 	int ln = 0;
 	// int sp = 0;
 	int nm = 0;
+#if 0
 	for (i = 0; i < 0x100; i++) {
 		bo[i] = 0;
 	}
+#endif
 	for (i = 0; str[i]; i++) {
 		if (IS_DIGIT (str[i])) {
 			nm++;
@@ -186,8 +188,8 @@ static bool false_positive(const char *str) {
 		if (str[i] == ' ') {
 			sp++;
 		}
-#endif
 		bo[(ut8)str[i]] = 1;
+#endif
 		ln++;
 	}
 #if 0
