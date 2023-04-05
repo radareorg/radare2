@@ -84,6 +84,24 @@ jobs:
       with:
         name: linux-acr-deb-64
         path: dist/debian/*/*.deb
+  linux-acr-deb-arm64:
+    # if: contains(github.ref, 'master') || contains(github.ref, 'ci-')
+    runs-on: ubuntu-20.04
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+    - name: Installing crosscompiler
+      run: |
+        sudo apt-get --assume-yes update
+        sudo apt install --assume-yes gcc-aarch64-linux-gnu
+    - name: Packaging for Debian
+      run: |
+        sys/debian.sh arm64
+    - name: Pub
+      uses: actions/upload-artifact@v3
+      with:
+        name: linux-acr-deb-arm64
+        path: dist/debian/*/*.deb
 
   linux-acr-deb-32:
     runs-on: ubuntu-20.04
@@ -589,6 +607,7 @@ jobs:
       tag_name: ${{ steps.release.outputs.tag }}
     needs:
       - linux-acr-deb-64
+      - linux-acr-deb-arm64
       - linux-acr-deb-32
       - w64-static
       - w64-meson
@@ -601,8 +620,6 @@ jobs:
       - android-acr-arm
       - android-acr-aarch64
       - linux-static
-      - linux-acr-deb-64
-      - linux-acr-deb-32
       - linux-wasi
 #      - freebsd
 #      - android-meson
@@ -662,6 +679,15 @@ jobs:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_path: dist/artifacts/linux-acr-deb-64/radare2/radare2_${{ steps.r2v.outputs.branch }}_amd64.deb
           asset_name: radare2_${{ steps.r2v.outputs.branch }}_amd64.deb
+          asset_content_type: application/vnd.debian.binary-package
+      - name: Upload asset for Debian (arm64)
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: dist/artifacts/linux-acr-deb-arm64/radare2/radare2_${{ steps.r2v.outputs.branch }}_arm64.deb
+          asset_name: radare2_${{ steps.r2v.outputs.branch }}_arm64.deb
           asset_content_type: application/vnd.debian.binary-package
       - name: Upload prefetched tarball (source)
         uses: actions/upload-release-asset@v1
