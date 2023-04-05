@@ -185,34 +185,97 @@ R_API bool r_anal_diff_bb(RAnal *anal, RAnalFunction *fcn, RAnalFunction *fcn2) 
 }
 
 R_API int r_anal_diff_fcn(RAnal *anal, RList *fcns, RList *fcns2) {
+	r_return_val_if_fail (anal && fcns, false);
 	RAnalFunction *fcn, *fcn2, *mfcn, *mfcn2;
 	RListIter *iter, *iter2;
 	ut64 maxsize, minsize;
 	double t, ot;
-
-	if (!anal) {
-		return false;
+	if (!fcns2) {
+		fcns2 = fcns;
 	}
+
 	if (anal->cur && anal->cur->diff_fcn) {
-		return (anal->cur->diff_fcn (anal, fcns, fcns2));
+		return anal->cur->diff_fcn (anal, fcns, fcns2);
+	}
+	if (fcns == fcns2 || (r_list_length (fcns) == 1 && 1 == r_list_length (fcns2))) {
+		double threshold = 0.8; // XXX make this configurable by the user
+		// inplace diffing
+		r_list_foreach (fcns, iter, fcn) {
+			if (!fcn->fingerprint) {
+				r_anal_diff_fingerprint_fcn (anal, fcn);
+			}
+			r_list_foreach (fcns2, iter2, fcn2) {
+				if (fcn == fcn2 || fcn->addr == fcn2->addr) {
+					continue;
+				}
+				if (!fcn->name || !fcn2->name || !strcmp (fcn->name, fcn2->name)) {
+					continue;
+				}
+				if (!fcn2->fingerprint) {
+					r_anal_diff_fingerprint_fcn (anal, fcn2);
+				}
+				if (fcn->fingerprint && fcn2->fingerprint) {
+					r_diff_buffers_distance (NULL, fcn->fingerprint, fcn->fingerprint_size,
+							fcn2->fingerprint, fcn2->fingerprint_size,
+							NULL, &t);
+					/* Set flag in matched functions */
+					fcn->diff->type = fcn2->diff->type = (t >= threshold)
+						? R_ANAL_DIFF_TYPE_MATCH
+						: R_ANAL_DIFF_TYPE_UNMATCH;
+					fcn->diff->dist = fcn2->diff->dist = t;
+					if (fcn->diff->type == R_ANAL_DIFF_TYPE_MATCH) {
+						// R_LOG_INFO ("match %lf %s", t, fcn2->name);
+						r_cons_printf ("match %lf %s\n", t, fcn2->name);
+					}
+					R_FREE (fcn->fingerprint);
+					R_FREE (fcn2->fingerprint);
+				}
+				fcn->diff->addr = fcn2->addr;
+				fcn2->diff->addr = fcn->addr;
+				fcn->diff->size = r_anal_function_linear_size (fcn2);
+				fcn2->diff->size = r_anal_function_linear_size (fcn);
+				R_FREE (fcn->diff->name);
+				if (fcn2->name) {
+					fcn->diff->name = strdup (fcn2->name);
+				}
+				R_FREE (fcn2->diff->name);
+				if (fcn->name) {
+					fcn2->diff->name = strdup (fcn->name);
+				}
+				r_anal_diff_bb (anal, fcn, fcn2);
+				break;
+			}
+		}
+		return false;
 	}
 	/* Compare functions with the same name */
 	if (fcns) {
 		r_list_foreach (fcns, iter, fcn) {
+			if (!fcn->fingerprint) {
+				r_anal_diff_fingerprint_fcn (anal, fcn);
+			}
 			r_list_foreach (fcns2, iter2, fcn2) {
+				if (fcn == fcn2) {
+					continue;
+				}
 				if (!fcn->name || !fcn2->name || strcmp (fcn->name, fcn2->name)) {
 					continue;
 				}
-				r_diff_buffers_distance (NULL, fcn->fingerprint, fcn->fingerprint_size,
-						fcn2->fingerprint, fcn2->fingerprint_size,
-						NULL, &t);
-				/* Set flag in matched functions */
-				fcn->diff->type = fcn2->diff->type = (t >= 1)
-					? R_ANAL_DIFF_TYPE_MATCH
-					: R_ANAL_DIFF_TYPE_UNMATCH;
-				fcn->diff->dist = fcn2->diff->dist = t;
-				R_FREE (fcn->fingerprint);
-				R_FREE (fcn2->fingerprint);
+				if (!fcn2->fingerprint) {
+					r_anal_diff_fingerprint_fcn (anal, fcn2);
+				}
+				if (fcn->fingerprint && fcn2->fingerprint) {
+					r_diff_buffers_distance (NULL, fcn->fingerprint, fcn->fingerprint_size,
+							fcn2->fingerprint, fcn2->fingerprint_size,
+							NULL, &t);
+					/* Set flag in matched functions */
+					fcn->diff->type = fcn2->diff->type = (t >= 1)
+						? R_ANAL_DIFF_TYPE_MATCH
+						: R_ANAL_DIFF_TYPE_UNMATCH;
+					fcn->diff->dist = fcn2->diff->dist = t;
+					R_FREE (fcn->fingerprint);
+					R_FREE (fcn2->fingerprint);
+				}
 				fcn->diff->addr = fcn2->addr;
 				fcn2->diff->addr = fcn->addr;
 				fcn->diff->size = r_anal_function_linear_size (fcn2);
@@ -266,7 +329,10 @@ R_API int r_anal_diff_fcn(RAnal *anal, RList *fcns, RList *fcns2) {
 				R_LOG_WARN ("Function %s type not supported", fcn2->name);
 				continue;
 			}
-			r_diff_buffers_distance (NULL, fcn->fingerprint, fcn->fingerprint_size, fcn2->fingerprint, fcn2->fingerprint_size, NULL, &t);
+			if (fcn->fingerprint && fcn2->fingerprint) {
+				r_diff_buffers_distance (NULL, fcn->fingerprint, fcn->fingerprint_size,
+						fcn2->fingerprint, fcn2->fingerprint_size, NULL, &t);
+			}
 			fcn->diff->dist = fcn2->diff->dist = t;
 			if (t > anal->diff_thfcn && t > ot) {
 				ot = t;

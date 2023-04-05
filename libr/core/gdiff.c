@@ -16,6 +16,12 @@ R_API int r_core_gdiff_fcn(RCore *c, ut64 addr, ut64 addr2) {
 	r_list_foreach (fb->bbs, iter, bb) {
 		r_anal_diff_fingerprint_bb (c->anal, bb);
 	}
+#if 0
+	RList *la = r_list_new ();
+	r_list_append (la, fa);
+	r_anal_diff_fcn (c->anal, la, la);
+	r_list_free (la);
+#else
 	RList *la = r_list_new ();
 	r_list_append (la, fa);
 	RList *lb = r_list_new ();
@@ -23,10 +29,12 @@ R_API int r_core_gdiff_fcn(RCore *c, ut64 addr, ut64 addr2) {
 	r_anal_diff_fcn (c->anal, la, lb);
 	r_list_free (la);
 	r_list_free (lb);
+#endif
 	return true;
 }
 
 /* Fingerprint functions and blocks, then diff. */
+// R2_590 return bool
 R_API int r_core_gdiff(RCore *c, RCore *c2) {
 	RCore *cores[2] = {c, c2};
 	RAnalFunction *fcn;
@@ -37,10 +45,14 @@ R_API int r_core_gdiff(RCore *c, RCore *c2) {
 	if (!c || !c2) {
 		return false;
 	}
+	if (c == c2) {
+		eprintf ("sama\n");
+		return false;
+	}
 	for (i = 0; i < 2; i++) {
 		/* remove strings */
 		r_list_foreach_safe (cores[i]->anal->fcns, iter, iter2, fcn) {
-			if (!strncmp (fcn->name, "str.", 4)) {
+			if (r_str_startswith (fcn->name, "str.")) {
 				r_anal_function_delete (fcn);
 			}
 		}
@@ -62,6 +74,7 @@ R_API int r_core_gdiff(RCore *c, RCore *c2) {
 }
 
 /* copypasta from radiff2 */
+/// XXX use cb_printf and pass instance
 static void diffrow(ut64 addr, const char *name, ut32 size, int maxnamelen,
 		int digits, ut64 addr2, const char *name2, ut32 size2,
 		const char *match, double dist, int bare) {
@@ -203,7 +216,6 @@ R_API void r_core_diff_show_json(RCore *c, RCore *c2) {
 			pj_ks (pj, "match", match);
 			pj_kd (pj, "dist", f->diff->dist);
 			pj_end (pj);
-
 			break;
 		}
 	}

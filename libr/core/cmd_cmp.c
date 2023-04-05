@@ -67,15 +67,18 @@ static RCoreHelpMessage help_msg_cg = {
 	"Usage: cg", "", "Graph compare",
 	"cg", " [file]", "diff ratio among functions (columns: off-A, match-ratio, off-B)",
 	"cgf", " [fcn]", "compare functions (curseek vs fcn)",
+	"cgfa", "", "list all functions similar to the current one",
 	"cgo", "", "opcode-bytes code graph diff",
 	NULL
 };
 
 R_API void r_core_cmpwatch_free(RCoreCmpWatcher *w) {
-	free (w->ndata);
-	free (w->odata);
-	free (w->cmd);
-	free (w);
+	if (w) {
+		free (w->ndata);
+		free (w->odata);
+		free (w->cmd);
+		free (w);
+	}
 }
 
 R_API R_BORROW RCoreCmpWatcher *r_core_cmpwatch_get(RCore *core, ut64 addr) {
@@ -130,7 +133,6 @@ R_API bool r_core_cmpwatch_add(RCore *core, ut64 addr, int size, const char *cmd
 	if (!found) {
 		r_list_append (core->watchers, cmpw);
 	}
-
 	return true;
 }
 
@@ -518,7 +520,6 @@ static int cmd_cmp_watcher(RCore *core, const char *input) {
 		} else {
 			r_core_cmd_help_match (core, help_msg_cw, "cw ", true);
 		}
-
 out_free_argv:
 		r_str_argv_free (argv);
 		break;
@@ -1338,9 +1339,19 @@ static int cmd_cmp(void *data, const char *input) {
 			break;
 		case 'f': // "cgf"
 			R_LOG_TODO ("agf is experimental");
-			r_anal_diff_setup (core->anal, true, -1, -1);
-			r_core_gdiff_fcn (core, core->offset,
-				r_num_math (core->num, input + 2));
+			if (input[2] == 'a') {
+				r_anal_diff_setup (core->anal, true, -1, -1);
+				RListIter *iter;
+				RAnalFunction *fcn;
+				r_list_foreach (core->anal->fcns, iter, fcn) {
+					// R_LOG_INFO ("compare %s", fcn->name);
+					r_core_gdiff_fcn (core, core->offset, fcn->addr);
+				}
+			} else {
+				r_anal_diff_setup (core->anal, true, -1, -1);
+				r_core_gdiff_fcn (core, core->offset,
+					r_num_math (core->num, input + 2));
+			}
 			return false;
 		case ' ': // "cg "
 			file2 = (char *) r_str_trim_head_ro (input + 2);

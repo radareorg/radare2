@@ -162,9 +162,9 @@ static bool false_positive(const char *str) {
 	int up = 0;
 	int lo = 0;
 	int ot = 0;
-	int di = 0;
+	// int di = 0;
 	int ln = 0;
-	int sp = 0;
+	// int sp = 0;
 	int nm = 0;
 	for (i = 0; i < 0x100; i++) {
 		bo[i] = 0;
@@ -182,17 +182,21 @@ static bool false_positive(const char *str) {
 		if (str[i] == '\\') {
 			ot++;
 		}
+#if 0
 		if (str[i] == ' ') {
 			sp++;
 		}
+#endif
 		bo[(ut8)str[i]] = 1;
 		ln++;
 	}
+#if 0
 	for (i = 0; i < 0x100; i++) {
 		if (bo[i]) {
 			di++;
 		}
 	}
+#endif
 	if (ln > 2 && str[0] != '_') {
 		if (ln < 10) {
 			return true;
