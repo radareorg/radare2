@@ -77,16 +77,18 @@ static bool lang_tsc_file(RLangSession *s, const char *file) {
 		if (rc == 0) {
 			char *js_ifile = r_file_slurp (js_ofile, NULL);
 			RStrBuf *sb = r_strbuf_new ("var Gmain;");
+			char *js_ifile_orig = strdup (js_ifile);
 			// r_strbuf_append (sb, js_require_qjs);
 			js_ifile = patch_entrypoint (js_ifile, name);
-			if (!js_ifile) {
-				R_LOG_ERROR ("Cannot find entrypoint");
-				r_strbuf_free (sb);
-				return false;
+			if (js_ifile) {
+				r_strbuf_append (sb, js_ifile);
+				r_strbuf_append (sb, js_entrypoint_qjs);
+			} else {
+				R_LOG_DEBUG ("Cannot find Gmain entrypoint");
+				r_strbuf_append (sb, js_ifile_orig);
 			}
-			r_strbuf_append (sb, js_ifile);
-			r_strbuf_append (sb, js_entrypoint_qjs);
 			char *s = r_strbuf_drain (sb);
+			free (js_ifile_orig);
 			r_file_dump (qjs_ofile, (const ut8*)s, -1, 0);
 			free (s);
 			r_file_rm (js_ofile);
