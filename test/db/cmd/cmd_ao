@@ -10,6 +10,40 @@ type: mov
 EOF
 RUN
 
+NAME=anal.mask
+FILE=-
+ARGS=-a arm -b 64
+CMDS=<<EOF
+wx 7f2303d5
+e anal.mask=false
+ao~mask
+e anal.mask=true
+ao~mask
+?e --
+wx fc6fbaa9
+e anal.mask=false
+ao~mask
+e anal.mask=true
+ao~mask
+?e --
+wx fd430191
+e anal.mask=false
+ao~mask
+e anal.mask=true
+ao~mask
+EOF
+EXPECT=<<EOF
+mask: ffffffff
+mask: ffffffff
+--
+mask: ffffffff
+mask: 0100025e
+--
+mask: ffffffff
+mask: 000003fe
+EOF
+RUN
+
 NAME=aob
 FILE=-
 CMDS=<<EOF
