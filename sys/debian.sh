@@ -3,6 +3,16 @@
 
 uname -a
 
+ARG=$1
+
+if [ "$ARG" = "arm64" ]; then
+  ARCH=arm64
+  CFGARGS="--with-compiler=aarch64-linux-gnu-gcc"
+  export CC="aarch64-linux-gnu-gcc"
+else
+  CFGARGS=$*
+fi
+
 if [ -z "${ARCH}" ]; then
   ARCH=`uname -m`
 fi
@@ -32,7 +42,7 @@ fi
 
 export CFLAGS="-Wno-cpp -Wno-unused-result ${CFLAGS} -O2"
 # build
-./configure --prefix=/usr --with-checks-level=0 $*
+./configure --prefix=/usr --with-checks-level=0 ${CFGARGS}
 [ $? != 0 ] && exit 1
 make -j4
 [ $? != 0 ] && exit 1
