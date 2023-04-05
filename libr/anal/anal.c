@@ -380,6 +380,7 @@ R_API bool r_anal_set_bits(RAnal *anal, int bits) {
 }
 
 R_API ut8 *r_anal_mask(RAnal *anal, int size, const ut8 *data, ut64 at) {
+	// see 'aobm' command
 	RAnalOp *op = NULL;
 	ut8 *ret = NULL;
 	int oplen, idx = 0;

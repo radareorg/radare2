@@ -2283,6 +2283,7 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 		break;
 	}
 	}
+	const bool smart_mask = r_config_get_b (core->config, "anal.mask");
 	for (i = idx = ret = 0; idx < len && (!nops || (nops && i < nops)); i++, idx += ret) {
 		RAnalOp asmop = {0};
 		addr = core->offset + idx;
@@ -2420,7 +2421,11 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 			}
 
 			pj_ks (pj, "mnemonic", mnem);
-			{
+			if (smart_mask) {
+				char *maskstr = r_core_cmd_strf (core, "aobm@0x%08"PFMT64x, op.addr);
+				pj_ks (pj, "mask", maskstr);
+				free (maskstr);
+			} else {
 				ut8 *mask = r_anal_mask (core->anal, len - idx, buf + idx, core->offset + idx);
 				char *maskstr = r_hex_bin2strdup (mask, size);
 				pj_ks (pj, "mask", maskstr);
@@ -2606,10 +2611,17 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 			}
 			{
 				ut8 *mask = r_anal_mask (core->anal, len - idx, buf + idx, core->offset + idx);
-				char *maskstr = r_hex_bin2strdup (mask, size);
-				printline ("mask", "%s\n", maskstr);
+				if (smart_mask) {
+					char *maskstr = r_core_cmd_strf (core, "aobm@0x%08"PFMT64x, op.addr);
+					r_str_trim (maskstr);
+					printline ("mask", "%s\n", maskstr);
+					free (maskstr);
+				} else {
+					char *maskstr = r_hex_bin2strdup (mask, size);
+					printline ("mask", "%s\n", maskstr);
+					free (maskstr);
+				}
 				free (mask);
-				free (maskstr);
 			}
 			if (hint) {
 				if (hint->opcode) {
@@ -8122,7 +8134,7 @@ static int intsort(const void *a, const void *b) {
 
 static void cmd_anal_opcode_bits(RCore *core, const char *arg, int mode) {
 	ut8 buf[32] = {0};
-	if (*arg) {
+	if (R_STR_ISNOTEMPTY (arg)) {
 		char *choparg = r_str_ndup (arg, 8);
 		int res = r_hex_str2bin (choparg, (ut8 *)buf);
 		free (choparg);
@@ -8216,10 +8228,37 @@ static void cmd_anal_opcode_bits(RCore *core, const char *arg, int mode) {
 		r_cons_printf ("%s\n", s);
 		free (s);
 	} else {
-		r_strbuf_appendf (sb, " : %s", analop.mnemonic);
-		char *s = r_strbuf_drain (sb);
-		r_cons_printf ("%s\n", s);
-		free (s);
+		if (mode == 'm') {
+			int pi = 0;
+			char *s = r_strbuf_drain (sb);
+			char *p = s;
+			ut8 finalmask[8] = {0};
+			for (; *p; p++) {
+				int byte_index = (pi / 8);
+				int bit_index = (pi % 8);
+				ut8 *byte = finalmask + byte_index;
+				if (*p == '0') {
+					// only pick the bits that modify the 0th word
+					R_BIT_SET (byte, bit_index);
+					pi++;
+				} else if (isalnum (*p)) {
+					pi++;
+				}
+				if (byte_index >= last) {
+					break;
+				}
+			}
+			free (s);
+			for (i = 0; i < 8 && i < last; i++) {
+				r_cons_printf ("%02x", finalmask[i]);
+			}
+			r_cons_newline ();
+		} else {
+			r_strbuf_appendf (sb, " : %s", analop.mnemonic);
+			char *s = r_strbuf_drain (sb);
+			r_cons_printf ("%s\n", s);
+			free (s);
+		}
 	}
 	r_anal_op_fini (&analop);
 	for (i = 0; i < 8; i++) {
@@ -8327,6 +8366,8 @@ static void cmd_anal_opcode(RCore *core, const char *input) {
 	case 'b': // "aob"
 		if (input[1] == 'j') {
 			cmd_anal_opcode_bits (core, r_str_trim_head_ro (input + 2), 'j');
+		} else if (input[1] == 'm') {
+			cmd_anal_opcode_bits (core, NULL, 'm');
 		} else {
 			cmd_anal_opcode_bits (core, r_str_trim_head_ro (input + 1), 0);
 		}
