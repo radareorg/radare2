@@ -1440,15 +1440,14 @@ static char *palColorFor(const char *k) {
 }
 
 static void core_anal_color_curr_node(RCore *core, RAnalBlock *bbi) {
-	bool color_current = r_config_get_i (core->config, "graph.gv.current");
-	char *pal_curr = palColorFor ("graph.current");
+	bool color_current = r_config_get_b (core->config, "graph.gv.current");
 	bool current = r_anal_block_contains (bbi, core->offset);
-
 	if (current && color_current) {
+		char *pal_curr = palColorFor ("graph.current");
 		r_cons_printf ("\t\"0x%08"PFMT64x"\" ", bbi->addr);
 		r_cons_printf ("\t[fillcolor=%s style=filled shape=box];\n", pal_curr);
+		free (pal_curr);
 	}
-	free (pal_curr);
 }
 
 static int core_anal_graph_construct_edges(RCore *core, RAnalFunction *fcn, int opts, PJ *pj, Sdb *DB) {
@@ -1735,7 +1734,7 @@ static int core_anal_graph_construct_nodes(RCore *core, RAnalFunction *fcn, int 
 						} else {
 							diffstr = r_str_replace (diffstr, "\n", "\\l", 1);
 							diffstr = r_str_replace (diffstr, "\"", "'", 1);
-							r_cons_printf(" \"0x%08"PFMT64x"\" [fillcolor=\"%s\","
+							r_cons_printf (" \"0x%08"PFMT64x"\" [fillcolor=\"%s\","
 							"color=\"black\", fontname=\"%s\","
 							" label=\"%s\", URL=\"%s/0x%08"PFMT64x"\"]\n",
 							bbi->addr, difftype, font, diffstr, fcn->name,
@@ -1759,7 +1758,7 @@ static int core_anal_graph_construct_nodes(RCore *core, RAnalFunction *fcn, int 
 							free (body_b64);
 							free (title);
 						} else {
-							r_cons_printf(" \"0x%08"PFMT64x"\" [fillcolor=\"%s\","
+							r_cons_printf (" \"0x%08"PFMT64x"\" [fillcolor=\"%s\","
 									"color=\"black\", fontname=\"%s\","
 									" label=\"%s\", URL=\"%s/0x%08"PFMT64x"\"]\n",
 									bbi->addr, difftype, font, str, fcn->name, bbi->addr);
@@ -1778,7 +1777,7 @@ static int core_anal_graph_construct_nodes(RCore *core, RAnalFunction *fcn, int 
 												top, left, bbi->addr, str);
 						left = left? 0: 600;
 						if (!left) {
-								top += 250;
+							top += 250;
 						}
 				} else if (!is_json && !is_keva) {
 					bool current = r_anal_block_contains (bbi, core->offset);
@@ -1787,7 +1786,12 @@ static int core_anal_graph_construct_nodes(RCore *core, RAnalFunction *fcn, int 
 							: (current && color_current)
 							? pal_curr
 							: pal_box4;
-					const char *fill_color = ((current && color_current) || label_color == pal_traced)? pal_traced: "white";
+					char *fill_color;
+					if ((current && color_current) || label_color == pal_traced) {
+						fill_color = r_str_newf ("fillcolor=\"%s\", ", pal_traced);
+					} else {
+						fill_color = r_str_newf ("fontcolor=\"%s\"", label_color);
+					}
 					nodes++;
 					if (is_star) {
 						char *title = get_title (bbi->addr);
@@ -1804,12 +1808,13 @@ static int core_anal_graph_construct_nodes(RCore *core, RAnalFunction *fcn, int 
 						free (title);
 					} else {
 						r_cons_printf ("\t\"0x%08"PFMT64x"\" ["
-								"URL=\"%s/0x%08"PFMT64x"\", fillcolor=\"%s\","
-								"color=\"%s\", fontname=\"%s\","
+								"URL=\"%s/0x%08"PFMT64x"\", "
+								"%sfontname=\"%s\","
 								"label=\"%s\"]\n",
 								bbi->addr, fcn->name, bbi->addr,
-								fill_color, label_color, font, str);
+								fill_color, font, str);
 					}
+					free (fill_color);
 				}
 			}
 			free (str);
@@ -2373,22 +2378,22 @@ R_API void r_core_anal_callgraph(RCore *core, ut64 addr, int fmt) {
 		break;
 	case R_GRAPH_FORMAT_DOT:
 		if (!is_html) {
-			const char * gv_edge = r_config_get (core->config, "graph.gv.edge");
-			char * gv_node = strdup (r_config_get (core->config, "graph.gv.node"));
-			const char * gv_grph = r_config_get (core->config, "graph.gv.graph");
-			const char * gv_spline = r_config_get (core->config, "graph.gv.spline");
-			if (!gv_edge || !*gv_edge) {
+			const char *gv_edge = r_config_get (core->config, "graph.gv.edge");
+			char *gv_node = strdup (r_config_get (core->config, "graph.gv.node"));
+			const char *gv_grph = r_config_get (core->config, "graph.gv.graph");
+			const char *gv_spline = r_config_get (core->config, "graph.gv.spline");
+			if (R_STR_ISEMPTY (gv_edge)) {
 				gv_edge = "arrowhead=\"normal\" style=bold weight=2";
 			}
-			if (!gv_node || !*gv_node) {
+			if (R_STR_ISEMPTY (gv_node)) {
 				const char *font = r_config_get (core->config, "graph.font");
 				free (gv_node);
 				gv_node = r_str_newf ("penwidth=4 fillcolor=white style=filled fontname=\"%s Bold\" fontsize=14 shape=box", font);
 			}
-			if (!gv_grph || !*gv_grph) {
+			if (R_STR_ISEMPTY (gv_grph)) {
 				gv_grph = "bgcolor=azure";
 			}
-			if (!gv_spline || !*gv_spline) {
+			if (R_STR_ISEMPTY (gv_spline)) {
 				// ortho for bbgraph and curved for callgraph
 				gv_spline = "splines=\"curved\"";
 			}
@@ -3784,19 +3789,23 @@ R_API int r_core_anal_graph(RCore *core, ut64 addr, int opts) {
 		const char * gv_edge = r_config_get (core->config, "graph.gv.edge");
 		const char * gv_node = r_config_get (core->config, "graph.gv.node");
 		const char * gv_spline = r_config_get (core->config, "graph.gv.spline");
-		if (!gv_edge || !*gv_edge) {
+		const char *gv_grph = r_config_get (core->config, "graph.gv.graph");
+		if (R_STR_ISEMPTY (gv_edge)) {
 			gv_edge = "arrowhead=\"normal\"";
 		}
-		if (!gv_node || !*gv_node) {
-			gv_node = "fillcolor=gray style=filled shape=box";
+		if (R_STR_ISEMPTY (gv_node)) {
+			gv_node = "fillcolor=white style=filled shape=box";
 		}
-		if (!gv_spline || !*gv_spline) {
+		if (R_STR_ISEMPTY (gv_spline)) {
 			gv_spline = "splines=\"ortho\"";
 		}
+		if (R_STR_ISEMPTY (gv_grph)) {
+			gv_grph = "bgcolor=azure";
+		}
 		r_cons_printf ("digraph code {\n"
-			"\tgraph [bgcolor=azure fontsize=8 fontname=\"%s\" %s];\n"
+			"\tgraph [fontsize=8 fontname=\"%s\" %s %s];\n"
 			"\tnode [%s];\n"
-			"\tedge [%s];\n", font, gv_spline, gv_node, gv_edge);
+			"\tedge [%s];\n", font, gv_grph, gv_spline, gv_node, gv_edge);
 	}
 	if (is_json) {
 		pj = r_core_pj_new (core);

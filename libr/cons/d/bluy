@@ -45,3 +45,7 @@ ec gui.background rgb:7c5
 ec gui.alt_background rgb:e34
 ec gui.border rgb:23f
 ec graph.current rgb:aaf
+
+# ec graph.box4=white
+# ""e graph.gv.node=fillcolor="#303030" color=lightgray bgcolor=red fontcolor=white penwidth=2 style=filled fontname="Courier Bold" fontsize=14 shape=box
+# e graph.gv.graph=bgcolor=black
