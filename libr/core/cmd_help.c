@@ -246,6 +246,8 @@ static RCoreHelpMessage help_msg_question_e = {
 	"?ea", " text", "ascii art echo (seven segment text, same as ~?ea",
 	"?eb", " 10 20 30", "proportional segments bar",
 	"?ed", " 1", "draw a 3D ascii donut at the given animation frame",
+	"?ee", " msg", "stderr message",
+	"?ei", " msg", "R_LOG_INFO message",
 	"?eg", " 10 20", "move cursor to column 10, row 20",
 	"?ef", " text", "echo text with thin ascii art frame around",
 	"?en", " nonl", "echo message without ending newline",
@@ -1240,6 +1242,12 @@ static int cmd_help(void *data, const char *input) {
 				r_cons_print (s);
 				free (s);
 			}
+			break;
+		case 'e': // "?ee"
+			eprintf ("%s\n", r_str_trim_head_ro (input + 2));
+			break;
+		case 'i': // "?ei"
+			R_LOG_INFO ("%s", r_str_trim_head_ro (input + 2));
 			break;
 		case 'd': // "?ed"
 			  if (input[2] == 'd') {
