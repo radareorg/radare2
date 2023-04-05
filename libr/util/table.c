@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2019-2022 - pancake */
+/* radare - LGPL - Copyright 2019-2023 - pancake */
 
 #include <r_util/r_table.h>
 #include "r_cons.h"

@@ -5926,7 +5926,7 @@ R_API int r_core_cmd(RCore *core, const char *cstr, bool log) {
 		if (r_str_startswith (cstr, "\"\"")) {
 			cstr += 2;
 		}
-		if (r_str_startswith (cstr, core->cmdfilter)) {
+		if (!r_str_startswith (cstr, core->cmdfilter)) {
 			ret = true;
 			goto beach;
 		}

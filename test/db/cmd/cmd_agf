@@ -40,8 +40,8 @@ agfdm
 EOF
 EXPECT=<<EOF
 digraph code {
-	graph [bgcolor=azure fontsize=8 fontname="Courier" splines="ortho"];
-	node [fillcolor=gray style=filled shape=box];
+	graph [fontsize=8 fontname="Courier" bgcolor=azure splines="ortho"];
+	node [fillcolor=white style=filled shape=box];
 	edge [arrowhead="normal"];
         "0x00000010" -> "0x0000008a" [color="#13a10e"];
         "0x00000010" -> "0x00000034" [color="#c50f1f"];
