@@ -353,3 +353,120 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=cmp against all functions
+FILE=bins/mach0/ls-m1
+ARGS=-a arm -b 64
+CMDS=<<EOF
+aa
+afn
+cgfa
+?e --
+s sym.imp.strstr
+afn
+cgfa
+?e --
+s 0x100003a1c
+afn
+cgfa
+?e --
+s 0x100007348
+afn
+cgfa
+EOF
+EXPECT=<<EOF
+main
+--
+sym.imp.strstr
+match 1.000000 sym.imp.__assert_rtn
+match 1.000000 sym.imp.__error
+match 1.000000 sym.imp.__maskrune
+match 1.000000 sym.imp.__stack_chk_fail
+match 1.000000 sym.imp.__tolower
+match 1.000000 sym.imp.abort
+match 1.000000 sym.imp.acl_free
+match 1.000000 sym.imp.acl_get_entry
+match 1.000000 sym.imp.acl_get_flag_np
+match 1.000000 sym.imp.acl_get_flagset_np
+match 1.000000 sym.imp.acl_get_link_np
+match 1.000000 sym.imp.acl_get_perm_np
+match 1.000000 sym.imp.acl_get_permset
+match 1.000000 sym.imp.acl_get_qualifier
+match 1.000000 sym.imp.acl_get_tag_type
+match 1.000000 sym.imp.bzero
+match 1.000000 sym.imp.calloc
+match 1.000000 sym.imp.compat_mode
+match 1.000000 sym.imp.err
+match 1.000000 sym.imp.errx
+match 1.000000 sym.imp.exit
+match 1.000000 sym.imp.fflagstostr
+match 1.000000 sym.imp.fprintf
+match 1.000000 sym.imp.fputc
+match 1.000000 sym.imp.fputs
+match 1.000000 sym.imp.free
+match 1.000000 sym.imp.fts_children
+match 1.000000 sym.imp.fts_close
+match 1.000000 sym.imp.fts_open
+match 1.000000 sym.imp.fts_read
+match 1.000000 sym.imp.fts_set
+match 1.000000 sym.imp.getbsize
+match 1.000000 sym.imp.getenv
+match 1.000000 sym.imp.getopt_long
+match 1.000000 sym.imp.getpid
+match 1.000000 sym.imp.getuid
+match 1.000000 sym.imp.getxattr
+match 1.000000 sym.imp.group_from_gid
+match 1.000000 sym.imp.humanize_number
+match 1.000000 sym.imp.ioctl
+match 1.000000 sym.imp.isatty
+match 1.000000 sym.imp.kill
+match 1.000000 sym.imp.listxattr
+match 1.000000 sym.imp.localtime
+match 1.000000 sym.imp.malloc
+match 1.000000 sym.imp.mbr_identifier_translate
+match 1.000000 sym.imp.mbrtowc
+match 1.000000 sym.imp.memchr
+match 1.000000 sym.imp.nl_langinfo
+match 1.000000 sym.imp.printf
+match 1.000000 sym.imp.putchar
+match 1.000000 sym.imp.puts
+match 1.000000 sym.imp.readlink
+match 1.000000 sym.imp.realloc
+match 1.000000 sym.imp.reallocf
+match 1.000000 sym.imp.setenv
+match 1.000000 sym.imp.setlocale
+match 1.000000 sym.imp.signal
+match 1.000000 sym.imp.snprintf
+match 1.000000 sym.imp.strcmp
+match 1.000000 sym.imp.strcoll
+match 1.000000 sym.imp.strcpy
+match 1.000000 sym.imp.strdup
+match 1.000000 sym.imp.strerror
+match 1.000000 sym.imp.strftime
+match 1.000000 sym.imp.strlen
+match 1.000000 sym.imp.strmode
+match 1.000000 sym.imp.strtonum
+match 1.000000 sym.imp.strtoul
+match 1.000000 sym.imp.sysctlbyname
+match 1.000000 sym.imp.tgetent
+match 1.000000 sym.imp.tgetstr
+match 1.000000 sym.imp.tgoto
+match 1.000000 sym.imp.time
+match 1.000000 sym.imp.tputs
+match 1.000000 sym.imp.user_from_uid
+match 1.000000 sym.imp.uuid_unparse_upper
+match 1.000000 sym.imp.warn
+match 1.000000 sym.imp.warnx
+match 1.000000 sym.imp.wcwidth
+match 1.000000 sym.imp.write
+--
+sym.func.100003a1c
+match 0.866667 sym.func.100003a54
+--
+sym.func.100007348
+match 0.958333 sym.func.100007214
+match 0.916667 sym.func.10000722c
+match 0.916667 sym.func.100007318
+match 0.916667 sym.func.100007330
+match 0.916667 sym.func.100007360
+EOF
+RUN
