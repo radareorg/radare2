@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2015-2022 pancake */
+/* radare2 - LGPL - Copyright 2015-2023 pancake */
 
 #include "r_lib.h"
 #include "r_core.h"
@@ -6,10 +6,10 @@
 
 // #include "../js_require.c"
 
-const char *const js_entrypoint_qjs = "Gmain(requirejs,global,{r2,R,EsilParser,NativePointer,R2Papi,R2Pipe,Base64})";
+const char *const js_entrypoint_qjs = "Gmain(requirejs,global,{default:{open:()=>r2},r2,R,EsilParser,NativePointer,R2Papi,R2Pipe,Base64})";
 
 static char *patch_entrypoint(char *input, const char *name) {
-	char *needle = r_str_newf ("\ndefine(\"%s\"", name);
+	char *needle = r_str_newf ("define(\"%s\"", name);
 	char *found = strstr (input, needle);
 	if (found) {
 		const char *const key = ", function (";
@@ -76,11 +76,12 @@ static bool lang_tsc_file(RLangSession *s, const char *file) {
 		rc = r_sys_cmdf ("tsc --target es2020 --allowJs --outFile %s --lib es2020,dom --moduleResolution node --module amd %s", js_ofile, file);
 		if (rc == 0) {
 			char *js_ifile = r_file_slurp (js_ofile, NULL);
-			RStrBuf *sb = r_strbuf_new ("var Gmain;");
+			RStrBuf *sb = r_strbuf_new ("");
 			char *js_ifile_orig = strdup (js_ifile);
 			// r_strbuf_append (sb, js_require_qjs);
 			js_ifile = patch_entrypoint (js_ifile, name);
 			if (js_ifile) {
+				r_strbuf_append (sb, "var Gmain;");
 				r_strbuf_append (sb, js_ifile);
 				r_strbuf_append (sb, js_entrypoint_qjs);
 			} else {

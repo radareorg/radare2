@@ -353,6 +353,7 @@ static void register_helpers(JSContext *ctx) {
 	eval (ctx, "var global = globalThis; var G = globalThis;");
 	eval (ctx, js_require_qjs);
 	eval (ctx, "var exports = {};");
+	eval (ctx, "G.r2pipe = {open: function(){ return R.r2;}};");
 	eval (ctx, "G.R2Pipe=() => R.r2;");
 	if (!r_sys_getenv_asbool ("R2_DEBUG_NOPAPI")) {
 		eval (ctx, js_r2papi_qjs);
