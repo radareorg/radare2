@@ -5915,7 +5915,7 @@ R_API int r_core_cmd(RCore *core, const char *cstr, bool log) {
 	int ret = false;
 	size_t i;
 	R_LOG_DEBUG ("RCore.cmd('%s')", cstr);
-	if (core->cmdfilter) {
+	if (R_STR_ISNOTEMPTY (core->cmdfilter)) {
 		const char *invalid_chars = ";|>`@";
 		for (i = 0; invalid_chars[i]; i++) {
 			if (strchr (cstr, invalid_chars[i])) {
@@ -5923,7 +5923,10 @@ R_API int r_core_cmd(RCore *core, const char *cstr, bool log) {
 				goto beach;
 			}
 		}
-		if (strncmp (cstr, core->cmdfilter, strlen (core->cmdfilter))) {
+		if (r_str_startswith (cstr, "\"\"")) {
+			cstr += 2;
+		}
+		if (r_str_startswith (cstr, core->cmdfilter)) {
 			ret = true;
 			goto beach;
 		}
