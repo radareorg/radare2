@@ -49,8 +49,8 @@ EXPECT=<<EOF
 ;-- func.100000f50:
 0x100000f50      55             push rbp
 0x100000000 0 __mh_execute_header
-0x100000f60 0 _main
 0x100000f50 0 _r\x1b#8qt
+0x100000f60 0 _main
 0x100000f8a 0 imp.printf
 0x100000f50 0 func.100000f50
 0x100000f60 0 func.100000f60

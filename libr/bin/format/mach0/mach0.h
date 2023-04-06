@@ -6,7 +6,7 @@
 #define _INCLUDE_R_BIN_MACH0_H_
 
 // 20% faster loading times for macho if enabled
-#define FEATURE_SYMLIST 0
+#define FEATURE_SYMLIST 1
 
 #define R_BIN_MACH0_STRING_LENGTH 256
 
@@ -181,14 +181,15 @@ struct MACH0_(obj_t) {
 	int func_size;
 	bool verbose;
 	ut64 header_at;
+	struct symbol_t *symbols; // TODO remove
+	bool symbols_loaded;
+	RPVector symbols_cache;
 	ut64 symbols_off;
 	void *user;
 	ut64 (*va2pa)(ut64 p, ut32 *offset, ut32 *left, RBinFile *bf);
-	struct symbol_t *symbols;
 	ut64 main_addr;
 	int (*original_io_read)(RIO *io, RIODesc *fd, ut8 *buf, int count);
 	bool rebasing_buffer;
-	RList *symbols_cache;
 	RList *sections_cache;
 	bool imports_loaded;
 	RPVector imports_cache;
@@ -257,7 +258,7 @@ void *MACH0_(mach0_free)(struct MACH0_(obj_t) *bin);
 struct section_t *MACH0_(get_sections)(struct MACH0_(obj_t) *bin);
 RList *MACH0_(get_segments)(RBinFile *bf);
 const struct symbol_t *MACH0_(get_symbols)(struct MACH0_(obj_t) *bin);
-const RList *MACH0_(get_symbols_list)(struct MACH0_(obj_t) *bin);
+const RPVector *MACH0_(load_symbols)(RBinFile *bf, struct MACH0_(obj_t) *bin);
 void MACH0_(pull_symbols)(struct MACH0_(obj_t) *mo, RBinSymbolCallback cb, void *user);
 const RPVector *MACH0_(load_imports)(RBinFile* bf, struct MACH0_(obj_t) *bin);
 RSkipList *MACH0_(get_relocs)(struct MACH0_(obj_t) *bin);
@@ -276,7 +277,7 @@ char *MACH0_(get_cpusubtype)(struct MACH0_(obj_t) *bin);
 char *MACH0_(get_cpusubtype_from_hdr)(struct MACH0_(mach_header) *hdr);
 char *MACH0_(get_filetype)(struct MACH0_(obj_t) *bin);
 char *MACH0_(get_filetype_from_hdr)(struct MACH0_(mach_header) *hdr);
-ut64 MACH0_(get_main)(struct MACH0_(obj_t) *bin);
+ut64 MACH0_(get_main)(RBinFile *bf, struct MACH0_(obj_t) *bin);
 const char *MACH0_(get_cputype_from_hdr)(struct MACH0_(mach_header) *hdr);
 int MACH0_(get_bits_from_hdr)(struct MACH0_(mach_header) *hdr);
 struct MACH0_(mach_header) *MACH0_(get_hdr)(RBuffer *buf);

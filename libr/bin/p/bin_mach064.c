@@ -269,7 +269,7 @@ static RBinAddr* binsym(RBinFile *bf, int sym) {
 	RBinAddr *ret = NULL;
 	switch (sym) {
 	case R_BIN_SYM_MAIN:
-		addr = MACH0_(get_main) (bf->o->bin_obj);
+		addr = MACH0_(get_main) (bf, bf->o->bin_obj);
 		if (!addr || !(ret = R_NEW0 (RBinAddr))) {
 			return NULL;
 		}
