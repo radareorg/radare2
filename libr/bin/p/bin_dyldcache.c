@@ -2015,7 +2015,7 @@ void symbols_from_bin(RDyldCache *cache, RList *ret, RBinFile *bf, RDyldBinImage
 		return;
 	}
 
-	// const RList*symbols = MACH0_(get_symbols_list) (mach0);
+	// const RList *symbols = MACH0_(load_symbols) (mach0);
 	const struct symbol_t *symbols = MACH0_(get_symbols) (mach0);
 	if (!symbols) {
 		return;

@@ -2177,7 +2177,11 @@ void *MACH0_(mach0_free)(struct MACH0_(obj_t) *mo) {
 	free (mo->signature);
 	free (mo->intrp);
 	free (mo->compiler);
-	r_list_free (mo->symbols_cache);
+#if FEATURE_SYMLIST
+	if (mo->symbols_loaded) {
+		r_pvector_fini (&mo->symbols_cache);
+	}
+#endif
 	r_list_free (mo->sections_cache);
 	if (mo->imports_loaded) {
 		r_pvector_fini (&mo->imports_cache);
@@ -2793,77 +2797,84 @@ beach:
 	return count;
 }
 
-static void fill_exports_list(struct MACH0_(obj_t) *bin, const char *name, ut64 flags, ut64 offset, void *ctx) {
-	RList *list = (RList*) ctx;
+static void update_main_addr_if_needed (struct MACH0_(obj_t) *bin, const RBinSymbol *sym) {
+	if (!bin->main_addr || bin->main_addr == UT64_MAX) {
+		const char *name = sym->name;
+		if (!strcmp (name, "__Dmain")) {
+			bin->main_addr = sym->vaddr;
+		} else if (strstr (name, "4main") && !strstr (name, "STATIC")) {
+			bin->main_addr = sym->vaddr;
+		} else if (!strcmp (name, "_main")) {
+			bin->main_addr = sym->vaddr;
+		} else if (!strcmp (name, "main")) {
+			bin->main_addr = sym->vaddr;
+		}
+	}
+}
+
+typedef struct fill_context_t {
+	HtPP *hash;
+	ut64 boffset;
+} FillCtx;
+
+static void _fill_exports_pvector(struct MACH0_(obj_t) *bin, const char *name, ut64 flags, ut64 offset, void *ctx) {
+	FillCtx *context = ctx;
+	ut64 vaddr = offset_to_vaddr (bin, offset);
+	if (hash_find_or_insert (context->hash, name, vaddr)) {
+		return;
+	}
+
 	RBinSymbol *sym = R_NEW0 (RBinSymbol);
 	if (!sym) {
 		return;
 	}
-	sym->vaddr = offset_to_vaddr (bin, offset);
-	sym->paddr = offset;
+	sym->vaddr = vaddr;
+	sym->paddr = offset + context->boffset;
 	sym->type = "EXT";
 	sym->name = strdup (name);
 	sym->bind = R_BIN_BIND_GLOBAL_STR;
-	r_list_append (list, sym);
+	r_pvector_push (&bin->symbols_cache, sym);
 }
 
-const RList *MACH0_(get_symbols_list)(struct MACH0_(obj_t) *bin) {
-	struct symbol_t *symbols;
+static void _parse_symbols(RBinFile *bf, struct MACH0_(obj_t) *bin) {
 	size_t i, j, s, symbols_size, symbols_count;
 	ut32 to = UT32_MAX;
 	ut32 from = UT32_MAX;
 
-	r_return_val_if_fail (bin, NULL);
-	if (bin->symbols_cache) {
-		return bin->symbols_cache;
+	RBinObject *obj = bf? bf->o: NULL;
+	if (!obj) {
+		return;
 	}
-	RList *list = r_list_newf ((RListFree)r_bin_symbol_free);
-	bin->symbols_cache = list;
 
 	HtPP *hash = ht_pp_new0 ();
 	if (!hash) {
-		return NULL;
+		return;
 	}
 
-	walk_exports (bin, fill_exports_list, list);
-	if (r_list_length (list)) {
-		RListIter *it;
-		RBinSymbol *s;
-		r_list_foreach (list, it, s) {
-			hash_find_or_insert (hash, s->name, s->vaddr);
-		}
-	}
+	FillCtx fill_context = { .hash = hash, .boffset = obj->boffset };
+	walk_exports (bin, _fill_exports_pvector, &fill_context);
 
 	if (!bin->symtab || !bin->symstr) {
 		ht_pp_free (hash);
-		return list;
+		return;
 	}
 	/* parse dynamic symbol table */
-	symbols_count = (bin->dysymtab.nextdefsym + \
-			bin->dysymtab.nlocalsym + \
-			bin->dysymtab.nundefsym);
-	symbols_count += bin->nsymtab;
-	ut64 tmp = symbols_count + 1;
-	if (SZT_MUL_OVFCHK (symbols_count + 1, 2)) {
-		// overflow may happen here
+	symbols_count = bin->dysymtab.nextdefsym + bin->dysymtab.nlocalsym + bin->dysymtab.nundefsym;
+	if (symbols_count == 0) {
 		ht_pp_free (hash);
-		return NULL;
+		return;
 	}
-	tmp *= 2;
-	if (SZT_MUL_OVFCHK (tmp, sizeof (struct symbol_t))) {
-		// overflow may happen here
-		ht_pp_free (hash);
-		return NULL;
-	}
-	tmp *= sizeof (struct symbol_t);
-	symbols_size = tmp;
 
-	if (symbols_size < 1 || !(symbols = calloc (1, symbols_size))) {
+	symbols_count += bin->nsymtab;
+	if (SZT_MUL_OVFCHK (symbols_count, 2 * sizeof (RBinSymbol))) {
+		// overflow may happen here
 		ht_pp_free (hash);
-		return NULL;
+		return;
 	}
+
+	symbols_size = symbols_count * 2 * sizeof (RBinSymbol);
 	j = 0; // symbol_idx
-	bin->main_addr = 0;
+	bin->main_addr = UT64_MAX;
 	int bits = MACH0_(get_bits_from_hdr) (&bin->hdr);
 	for (s = 0; s < 2; s++) {
 		switch (s) {
@@ -2886,55 +2897,50 @@ const RList *MACH0_(get_symbols_list)(struct MACH0_(obj_t) *bin) {
 			continue;
 		}
 
-		from = R_MIN (from, symbols_size / sizeof (struct symbol_t));
-		to = R_MIN (R_MIN (to, bin->nsymtab), symbols_size / sizeof (struct symbol_t));
-
-		ut32 maxsymbols = symbols_size / sizeof (struct symbol_t);
+		from = R_MIN (from, symbols_size / sizeof (RBinSymbol));
+		to = R_MIN (R_MIN (to, bin->nsymtab), symbols_size / sizeof (RBinSymbol));
+		ut32 maxsymbols = symbols_size / sizeof (RBinSymbol);
 		if (symbols_count >= maxsymbols) {
 			symbols_count = maxsymbols - 1;
 			R_LOG_WARN ("Truncated symbol table");
 		}
+
 		for (i = from; i < to && j < symbols_count; i++, j++) {
+			ut64 vaddr = bin->symtab[i].n_value;
+			if (vaddr < 100) {
+				j--;
+				continue;
+			}
+
+			int stridx = bin->symtab[i].n_strx;
+			char *sym_name = get_name (bin, stridx, false);
+			if (!sym_name) {
+				j--;
+				continue;
+			}
+
 			RBinSymbol *sym = R_NEW0 (RBinSymbol);
 			if (!sym) {
 				break;
 			}
-			sym->vaddr = bin->symtab[i].n_value;
-			sym->paddr = addr_to_offset (bin, sym->vaddr);
-			symbols[j].size = 0; /* TODO: Is it anywhere? */
+			sym->vaddr = vaddr;
+			sym->paddr = addr_to_offset (bin, sym->vaddr) + obj->boffset;
+			sym->size = 0; /* TODO: Is it anywhere? */
 			sym->bits = bin->symtab[i].n_desc & N_ARM_THUMB_DEF ? 16 : bits;
+			sym->is_imported = false;
+			sym->type = bin->symtab[i].n_type & N_EXT ? "EXT" : "LOCAL";
+			sym->name = sym_name;
+			update_main_addr_if_needed (bin, sym);
 
-			if (bin->symtab[i].n_type & N_EXT) {
-				sym->type = "EXT";
-			} else {
-				sym->type = "LOCAL";
-			}
-			int stridx = bin->symtab[i].n_strx;
-			char *sym_name = get_name (bin, stridx, false);
-			if (sym_name) {
-				sym->name = sym_name;
-				if (!bin->main_addr || bin->main_addr == UT64_MAX) {
-					const char *name = sym->name;
-					if (!strcmp (name, "__Dmain")) {
-						bin->main_addr = symbols[j].addr;
-					} else if (strstr (name, "4main") && !strstr (name, "STATIC")) {
-						bin->main_addr = symbols[j].addr;
-					} else if (!strcmp (name, "_main")) {
-						bin->main_addr = symbols[j].addr;
-					} else if (!strcmp (name, "main")) {
-						bin->main_addr = symbols[j].addr;
-					}
-				}
-			} else {
-				sym->name = r_str_newf ("unk%u", (ut32)i);
-			}
-			if (!hash_find_or_insert (hash, sym->name, sym->vaddr)) {
-				r_list_append (list, sym);
-			} else {
+			if (hash_find_or_insert (hash, sym->name, sym->vaddr)) {
 				r_bin_symbol_free (sym);
+				j--;
+			} else {
+				r_pvector_push (&bin->symbols_cache, sym);
 			}
 		}
 	}
+
 	to = R_MIN ((ut32)bin->nsymtab, bin->dysymtab.iundefsym + bin->dysymtab.nundefsym);
 	for (i = bin->dysymtab.iundefsym; i < to; i++) {
 		struct symbol_t symbol;
@@ -2942,7 +2948,7 @@ const RList *MACH0_(get_symbols_list)(struct MACH0_(obj_t) *bin) {
 			R_LOG_WARN ("mach0-get-symbols: error");
 			break;
 		}
-		if (parse_import_stub (bin, &symbol, i)) {
+		if (parse_import_stub (bin, &symbol, i) && symbol.addr >= 100) {
 			j++;
 			RBinSymbol *sym = R_NEW0 (RBinSymbol);
 			if (!sym) {
@@ -2950,60 +2956,202 @@ const RList *MACH0_(get_symbols_list)(struct MACH0_(obj_t) *bin) {
 			}
 			sym->lang = R_BIN_LANG_C;
 			sym->vaddr = symbol.addr;
-			sym->paddr = symbol.offset;
+			sym->paddr = symbol.offset + obj->boffset;
 			sym->name = symbol.name;
 			if (!sym->name) {
-				sym->name = r_str_newf ("unk%u", (ut32)i);
+				sym->name = r_str_newf ("entry%u", (ut32)i);
 			}
+			sym->type = symbol.type == R_BIN_MACH0_SYMBOL_TYPE_LOCAL? "LOCAL": "EXT";
 			sym->is_imported = symbol.is_imported;
-			r_list_append (list, sym);
+			r_pvector_push (&bin->symbols_cache, sym);
 		}
 	}
 
 	for (i = 0; i < bin->nsymtab && i < symbols_count; i++) {
 		struct MACH0_(nlist) *st = &bin->symtab[i];
+		if (st->n_type & N_STAB) {
+			continue;
+		}
 		// 0 is for imports
 		// 1 is for symbols
 		// 2 is for func.eh (exception handlers?)
 		int section = st->n_sect;
 		if (section == 1 && j < symbols_count) { // text ??st->n_type == 1) maybe wrong
+			ut64 vaddr = st->n_value;
+			if (vaddr < 100) {
+				continue;
+			}
+
 			RBinSymbol *sym = R_NEW0 (RBinSymbol);
 			if (!sym) {
 				break;
 			}
-			/* is symbol */
-			sym->vaddr = st->n_value;
-			sym->paddr = addr_to_offset (bin, symbols[j].addr);
-			sym->is_imported = symbols[j].is_imported;
+			sym->vaddr = vaddr;
+			sym->paddr = addr_to_offset (bin, vaddr) + obj->boffset;
 			sym->type = (st->n_type & N_EXT)? "EXT": "LOCAL";
 			char *sym_name = get_name (bin, st->n_strx, false);
 			if (sym_name) {
 				sym->name = sym_name;
-				if (hash_find_or_insert (hash, sym->name, sym->vaddr)) {
-					r_bin_symbol_free (sym);
-					continue;
-				}
-				if (!bin->main_addr || bin->main_addr == UT64_MAX) {
-					const char *name = sym->name;
-					if (name && !strcmp (name, "__Dmain")) {
-						bin->main_addr = symbols[i].addr;
-					} else if (strstr (name, "4main") && !strstr (name, "STATIC")) {
-						bin->main_addr = symbols[i].addr;
-					} else if (symbols[i].name && !strcmp (symbols[i].name, "_main")) {
-						bin->main_addr = symbols[i].addr;
-					}
-				}
 			} else {
-				sym->name = r_str_newf ("unk%u", (ut32)i);
+				sym->name = r_str_newf ("entry%u", (ut32)i);
 			}
-			r_list_append (list, sym);
+			if (hash_find_or_insert (hash, sym->name, sym->vaddr)) {
+				r_bin_symbol_free (sym);
+				continue;
+			}
+			update_main_addr_if_needed (bin, sym);
+			r_pvector_push (&bin->symbols_cache, sym);
 			j++;
 		}
 	}
+
 	ht_pp_free (hash);
-	// bin->symbols = symbols;
-	free (symbols);
-	return list;
+}
+
+static void _handle_arm_thumb(RBinSymbol *sym) {
+	if (sym->paddr & 1) {
+		sym->paddr--;
+		sym->vaddr--;
+		sym->bits = 16;
+	}
+}
+
+// TODO integrate directly into _parse_symbols
+static void _enrich_symbols(RBinFile *bf, struct MACH0_(obj_t) *bin, Sdb *symcache) {
+	int wordsize = MACH0_(get_bits) (bin);
+
+	ut32 i = 0;
+	void **iter;
+	r_pvector_foreach (&bin->symbols_cache, iter) {
+		RBinSymbol *sym = *iter;
+		if (sym->name[0] == '_' && !sym->is_imported) {
+			char *demangled = r_bin_demangle (bf, sym->name, sym->name, sym->vaddr, false);
+			if (demangled) {
+				sym->dname = demangled;
+				char *p = strchr (demangled, '.');
+				if (p) {
+					if (IS_UPPER (sym->name[0])) {
+						sym->classname = strdup (sym->name);
+						sym->classname[p - sym->name] = 0;
+					} else if (IS_UPPER (p[1])) {
+						sym->classname = strdup (p + 1);
+						p = strchr (sym->classname, '.');
+						if (p) {
+							*p = 0;
+						}
+					}
+				}
+			}
+		}
+
+		sym->forwarder = "NONE";
+		sym->bind = sym->type && !strncmp (sym->type, "LOCAL", 5)? R_BIN_BIND_LOCAL_STR: R_BIN_BIND_GLOBAL_STR;
+		sym->type = R_BIN_TYPE_FUNC_STR;
+		sym->ordinal = i;
+
+		if (bin->hdr.cputype == CPU_TYPE_ARM && wordsize < 64) {
+			_handle_arm_thumb (sym);
+		}
+
+		bin->dbg_info = strncmp (sym->name, "radr://", 7)? 0: 1;
+		r_strf_var (k, 32, "sym0x%"PFMT64x, sym->vaddr);
+		sdb_set (symcache, k, "found", 0);
+
+		i++;
+	}
+}
+
+static void _parse_function_start_symbols(RBinFile *bf, struct MACH0_(obj_t) *bin, Sdb *symcache) {
+	RBinObject *obj = bf? bf->o: NULL;
+	if (!obj) {
+		return;
+	}
+
+	int wordsize = MACH0_(get_bits) (bin);
+	bool is_stripped = false;
+	ut32 i = r_pvector_length (&bin->symbols_cache);
+
+	// functions from LC_FUNCTION_STARTS
+	if (bin->func_start) {
+		char symstr[128];
+		ut64 value = 0, address = 0;
+		const ut8 *temp = bin->func_start;
+		const ut8 *temp_end = bin->func_start + bin->func_size;
+		strcpy (symstr, "sym0x");
+		while (temp + 3 < temp_end && *temp) {
+			temp = r_uleb128_decode (temp, NULL, &value);
+			address += value;
+			RBinSymbol *sym = R_NEW0 (RBinSymbol);
+			if (!sym) {
+				break;
+			}
+			sym->vaddr = bin->baddr + address;
+			sym->paddr = address + obj->boffset;
+			sym->size = 0;
+			sym->name = r_str_newf ("func.%08"PFMT64x, sym->vaddr);
+			sym->type = R_BIN_TYPE_FUNC_STR;
+			sym->forwarder = "NONE";
+			sym->bind = R_BIN_BIND_LOCAL_STR;
+			sym->ordinal = i++;
+			if (bin->hdr.cputype == CPU_TYPE_ARM && wordsize < 64) {
+				_handle_arm_thumb (sym);
+			}
+			r_pvector_push (&bin->symbols_cache, sym);
+			// if any func is not found in syms then we can consider it is stripped
+			if (!is_stripped) {
+				snprintf (symstr + 5, sizeof (symstr) - 5 , "%" PFMT64x, sym->vaddr);
+				if (!sdb_const_get (symcache, symstr, 0)) {
+					is_stripped = true;
+				}
+			}
+		}
+	}
+
+	if (is_stripped) {
+		bin->dbg_info |= R_BIN_DBG_STRIPPED;
+	}
+}
+
+static bool _check_if_debug_build(RBinFile *bf, struct MACH0_(obj_t) *bin) {
+	RList *sections = MACH0_(get_segments) (bf);
+	if (!sections) {
+		return false;
+	}
+
+	RListIter *iter;
+	RBinSection *section;
+	r_list_foreach (sections, iter, section) {
+		if (strstr (section->name, "DWARF.__debug_line")) {
+			return true;
+		}
+	}
+
+	r_list_free (sections);
+	return false;
+}
+
+
+const RPVector *MACH0_(load_symbols)(RBinFile *bf, struct MACH0_(obj_t) *bin) {
+	r_return_val_if_fail (bin, NULL);
+	if (bin->symbols_loaded) {
+		return &bin->symbols_cache;
+	}
+
+	r_pvector_init (&bin->symbols_cache, (RPVectorFree) r_bin_symbol_free);
+	Sdb *symcache = sdb_new0 ();
+	bool is_debug = _check_if_debug_build (bf, bin);
+	_parse_symbols (bf, bin);
+	_enrich_symbols (bf, bin, symcache);
+	_parse_function_start_symbols (bf, bin, symcache);
+	r_pvector_shrink (&bin->symbols_cache);
+	sdb_free (symcache);
+
+	if (is_debug) {
+		bin->dbg_info |= R_BIN_DBG_LINENUMS;
+	}
+
+	bin->symbols_loaded = true;
+	return &bin->symbols_cache;
 }
 
 static void assign_export_symbol_t(struct MACH0_(obj_t) *bin, const char *name, ut64 flags, ut64 offset, void *ctx) {
@@ -3347,7 +3495,7 @@ const RPVector *MACH0_(load_imports)(RBinFile *bf, struct MACH0_(obj_t) *bin) {
 		RBinImport *import = import_from_name (bf->rbin, imp_name);
 		if (!import) {
 			free (imp_name);
-			break;  // TODO change into continue?
+			break;
 		}
 
 		import->ordinal = i;
@@ -4367,7 +4515,7 @@ char *MACH0_(get_filetype)(struct MACH0_(obj_t) *bin) {
 	return bin? MACH0_(get_filetype_from_hdr) (&bin->hdr): strdup ("Unknown");
 }
 
-ut64 MACH0_(get_main)(struct MACH0_(obj_t) *bin) {
+ut64 MACH0_(get_main)(RBinFile *bf, struct MACH0_(obj_t) *bin) {
 	ut64 addr = UT64_MAX;
 	int i;
 
@@ -4376,7 +4524,7 @@ ut64 MACH0_(get_main)(struct MACH0_(obj_t) *bin) {
 	// other = valid main addr
 	if (bin->main_addr == UT64_MAX) {
 #if FEATURE_SYMLIST
-		 (void)MACH0_(get_symbols_list) (bin);
+		 (void)MACH0_(load_symbols) (bf, bin);
 #else
 		 (void)MACH0_(get_symbols) (bin);
 #endif
