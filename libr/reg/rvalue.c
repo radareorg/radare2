@@ -156,10 +156,8 @@ R_API ut64 r_reg_get_value_by_role(RReg *reg, RRegisterId role) {
 
 R_API bool r_reg_set_value(RReg *reg, RRegItem *item, ut64 value) {
 	r_return_val_if_fail (reg && item, false);
-
-	ut8 bytes[12] = {0};
+	ut8 bytes[32] = {0};
 	ut8 *src = bytes;
-
 	if (r_reg_is_readonly (reg, item)) {
 		return true;
 	}
@@ -170,7 +168,7 @@ R_API bool r_reg_set_value(RReg *reg, RRegItem *item, ut64 value) {
 	if (!arena) {
 		return false;
 	}
-	bool be = reg->config? R_ARCH_CONFIG_IS_BIG_ENDIAN (reg->config): false;
+	const bool be = reg->config? R_ARCH_CONFIG_IS_BIG_ENDIAN (reg->config): false;
 	switch (item->size) {
 	case 80:
 	case 96: // long floating value
@@ -207,7 +205,11 @@ R_API bool r_reg_set_value(RReg *reg, RRegItem *item, ut64 value) {
 		}
 		return true;
 	case 128:
+		// function takes an ut64 as argument, which doesnt allow us to reach 128
+		r_write_ble64 (src, value, be);
+		break;
 	case 256:
+		R_LOG_DEBUG ("TODO: 256 bit register handling not implemented");
 		// XXX 128 & 256 bit
 		return false; // (ut64)r_reg_get_longdouble (reg, item);
 	default:
