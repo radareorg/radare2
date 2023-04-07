@@ -673,11 +673,9 @@ static bool esil_zf(REsil *esil) {
 // checks if there was a carry from bit x (x,$c)
 static bool esil_cf(REsil *esil) {
 	char *src = r_esil_pop (esil);
-
 	if (!src) {
 		return false;
 	}
-
 	if (r_esil_get_parm_type (esil, src) != R_ESIL_PARM_NUM) {
 		//I'd wish we could enforce consts here
 		//I can't say why, but I feel like "al,$c" would be cancer af
@@ -700,11 +698,9 @@ static bool esil_cf(REsil *esil) {
 static bool esil_bf(REsil *esil) {
 	r_return_val_if_fail (esil, false);
 	char *src = r_esil_pop (esil);
-
 	if (!src) {
 		return false;
 	}
-
 	if (r_esil_get_parm_type (esil, src) != R_ESIL_PARM_NUM) {
 		free (src);
 		return false;
@@ -856,10 +852,7 @@ static bool esil_eq(REsil *esil) {
 		}
 		free (newreg);
 		free (src2);
-		goto beach;
-	}
-
-	if (src && dst && r_esil_reg_read_nocallback (esil, dst, &num, NULL)) {
+	} else if (src && dst && r_esil_reg_read_nocallback (esil, dst, &num, NULL)) {
 		if (r_esil_get_parm (esil, src, &num2)) {
 			ret = r_esil_reg_write (esil, dst, num2);
 			esil->cur = num2;
@@ -871,7 +864,6 @@ static bool esil_eq(REsil *esil) {
 	} else {
 		R_LOG_DEBUG ("esil_eq: invalid parameters");
 	}
-beach:
 	free (src);
 	free (dst);
 	return ret;
@@ -2439,12 +2431,15 @@ static bool esil_mem_andeq_n(REsil *esil, int bits) {
 static bool esil_mem_andeq1(REsil *esil) {
 	return esil_mem_andeq_n (esil, 8);
 }
+
 static bool esil_mem_andeq2(REsil *esil) {
 	return esil_mem_andeq_n (esil, 16);
 }
+
 static bool esil_mem_andeq4(REsil *esil) {
 	return esil_mem_andeq_n (esil, 32);
 }
+
 static bool esil_mem_andeq8(REsil *esil) {
 	return esil_mem_andeq_n (esil, 64);
 }
