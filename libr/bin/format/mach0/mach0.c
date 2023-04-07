@@ -2797,7 +2797,7 @@ beach:
 	return count;
 }
 
-static void update_main_addr_if_needed (struct MACH0_(obj_t) *bin, const RBinSymbol *sym) {
+static void _update_main_addr_if_needed(struct MACH0_(obj_t) *bin, const RBinSymbol *sym) {
 	if (!bin->main_addr || bin->main_addr == UT64_MAX) {
 		const char *name = sym->name;
 		if (!strcmp (name, "__Dmain")) {
@@ -2812,9 +2812,56 @@ static void update_main_addr_if_needed (struct MACH0_(obj_t) *bin, const RBinSym
 	}
 }
 
+static void _handle_arm_thumb(RBinSymbol *sym) {
+	if (sym->paddr & 1) {
+		sym->paddr--;
+		sym->vaddr--;
+		sym->bits = 16;
+	}
+}
+
+static void _enrich_symbol(RBinFile *bf, struct MACH0_(obj_t) *bin, Sdb *symcache, RBinSymbol *sym) {
+	int wordsize = MACH0_(get_bits) (bin);
+
+	if (sym->name[0] == '_' && !sym->is_imported) {
+		char *demangled = r_bin_demangle (bf, sym->name, sym->name, sym->vaddr, false);
+		if (demangled) {
+			sym->dname = demangled;
+			char *p = strchr (demangled, '.');
+			if (p) {
+				if (IS_UPPER (sym->name[0])) {
+					sym->classname = strdup (sym->name);
+					sym->classname[p - sym->name] = 0;
+				} else if (IS_UPPER (p[1])) {
+					sym->classname = strdup (p + 1);
+					p = strchr (sym->classname, '.');
+					if (p) {
+						*p = 0;
+					}
+				}
+			}
+		}
+	}
+
+	sym->forwarder = "NONE";
+	sym->bind = sym->type && !strncmp (sym->type, "LOCAL", 5)? R_BIN_BIND_LOCAL_STR: R_BIN_BIND_GLOBAL_STR;
+	sym->type = R_BIN_TYPE_FUNC_STR;
+
+	if (bin->hdr.cputype == CPU_TYPE_ARM && wordsize < 64) {
+		_handle_arm_thumb (sym);
+	}
+
+	bin->dbg_info = strncmp (sym->name, "radr://", 7)? 0: 1;
+	r_strf_var (k, 32, "sym0x%"PFMT64x, sym->vaddr);
+	sdb_set (symcache, k, "found", 0);
+}
+
 typedef struct fill_context_t {
+	RBinFile *bf;
+	Sdb *symcache;
 	HtPP *hash;
 	ut64 boffset;
+	ut32 *ordinal;
 } FillCtx;
 
 static void _fill_exports_pvector(struct MACH0_(obj_t) *bin, const char *name, ut64 flags, ut64 offset, void *ctx) {
@@ -2833,13 +2880,16 @@ static void _fill_exports_pvector(struct MACH0_(obj_t) *bin, const char *name, u
 	sym->type = "EXT";
 	sym->name = strdup (name);
 	sym->bind = R_BIN_BIND_GLOBAL_STR;
+	sym->ordinal = (*context->ordinal)++;
+	_enrich_symbol (context->bf, bin, context->symcache, sym);
 	r_pvector_push (&bin->symbols_cache, sym);
 }
 
-static void _parse_symbols(RBinFile *bf, struct MACH0_(obj_t) *bin) {
+static void _parse_symbols(RBinFile *bf, struct MACH0_(obj_t) *bin, Sdb *symcache) {
 	size_t i, j, s, symbols_size, symbols_count;
 	ut32 to = UT32_MAX;
 	ut32 from = UT32_MAX;
+	ut32 ordinal = 0;
 
 	RBinObject *obj = bf? bf->o: NULL;
 	if (!obj) {
@@ -2851,7 +2901,7 @@ static void _parse_symbols(RBinFile *bf, struct MACH0_(obj_t) *bin) {
 		return;
 	}
 
-	FillCtx fill_context = { .hash = hash, .boffset = obj->boffset };
+	FillCtx fill_context = { .bf = bf, .symcache = symcache, .hash = hash, .boffset = obj->boffset, .ordinal = &ordinal };
 	walk_exports (bin, _fill_exports_pvector, &fill_context);
 
 	if (!bin->symtab || !bin->symstr) {
@@ -2930,12 +2980,14 @@ static void _parse_symbols(RBinFile *bf, struct MACH0_(obj_t) *bin) {
 			sym->is_imported = false;
 			sym->type = bin->symtab[i].n_type & N_EXT ? "EXT" : "LOCAL";
 			sym->name = sym_name;
-			update_main_addr_if_needed (bin, sym);
+			_update_main_addr_if_needed (bin, sym);
 
 			if (hash_find_or_insert (hash, sym->name, sym->vaddr)) {
 				r_bin_symbol_free (sym);
 				j--;
 			} else {
+				_enrich_symbol (bf, bin, symcache, sym);
+				sym->ordinal = ordinal++;
 				r_pvector_push (&bin->symbols_cache, sym);
 			}
 		}
@@ -2963,6 +3015,8 @@ static void _parse_symbols(RBinFile *bf, struct MACH0_(obj_t) *bin) {
 			}
 			sym->type = symbol.type == R_BIN_MACH0_SYMBOL_TYPE_LOCAL? "LOCAL": "EXT";
 			sym->is_imported = symbol.is_imported;
+			sym->ordinal = ordinal++;
+			_enrich_symbol (bf, bin, symcache, sym);
 			r_pvector_push (&bin->symbols_cache, sym);
 		}
 	}
@@ -2999,66 +3053,15 @@ static void _parse_symbols(RBinFile *bf, struct MACH0_(obj_t) *bin) {
 				r_bin_symbol_free (sym);
 				continue;
 			}
-			update_main_addr_if_needed (bin, sym);
+			_update_main_addr_if_needed (bin, sym);
+			sym->ordinal = ordinal++;
+			_enrich_symbol (bf, bin, symcache, sym);
 			r_pvector_push (&bin->symbols_cache, sym);
 			j++;
 		}
 	}
 
 	ht_pp_free (hash);
-}
-
-static void _handle_arm_thumb(RBinSymbol *sym) {
-	if (sym->paddr & 1) {
-		sym->paddr--;
-		sym->vaddr--;
-		sym->bits = 16;
-	}
-}
-
-// TODO integrate directly into _parse_symbols
-static void _enrich_symbols(RBinFile *bf, struct MACH0_(obj_t) *bin, Sdb *symcache) {
-	int wordsize = MACH0_(get_bits) (bin);
-
-	ut32 i = 0;
-	void **iter;
-	r_pvector_foreach (&bin->symbols_cache, iter) {
-		RBinSymbol *sym = *iter;
-		if (sym->name[0] == '_' && !sym->is_imported) {
-			char *demangled = r_bin_demangle (bf, sym->name, sym->name, sym->vaddr, false);
-			if (demangled) {
-				sym->dname = demangled;
-				char *p = strchr (demangled, '.');
-				if (p) {
-					if (IS_UPPER (sym->name[0])) {
-						sym->classname = strdup (sym->name);
-						sym->classname[p - sym->name] = 0;
-					} else if (IS_UPPER (p[1])) {
-						sym->classname = strdup (p + 1);
-						p = strchr (sym->classname, '.');
-						if (p) {
-							*p = 0;
-						}
-					}
-				}
-			}
-		}
-
-		sym->forwarder = "NONE";
-		sym->bind = sym->type && !strncmp (sym->type, "LOCAL", 5)? R_BIN_BIND_LOCAL_STR: R_BIN_BIND_GLOBAL_STR;
-		sym->type = R_BIN_TYPE_FUNC_STR;
-		sym->ordinal = i;
-
-		if (bin->hdr.cputype == CPU_TYPE_ARM && wordsize < 64) {
-			_handle_arm_thumb (sym);
-		}
-
-		bin->dbg_info = strncmp (sym->name, "radr://", 7)? 0: 1;
-		r_strf_var (k, 32, "sym0x%"PFMT64x, sym->vaddr);
-		sdb_set (symcache, k, "found", 0);
-
-		i++;
-	}
 }
 
 static void _parse_function_start_symbols(RBinFile *bf, struct MACH0_(obj_t) *bin, Sdb *symcache) {
@@ -3140,8 +3143,7 @@ const RPVector *MACH0_(load_symbols)(RBinFile *bf, struct MACH0_(obj_t) *bin) {
 	r_pvector_init (&bin->symbols_cache, (RPVectorFree) r_bin_symbol_free);
 	Sdb *symcache = sdb_new0 ();
 	bool is_debug = _check_if_debug_build (bf, bin);
-	_parse_symbols (bf, bin);
-	_enrich_symbols (bf, bin, symcache);
+	_parse_symbols (bf, bin, symcache);
 	_parse_function_start_symbols (bf, bin, symcache);
 	r_pvector_shrink (&bin->symbols_cache);
 	sdb_free (symcache);
