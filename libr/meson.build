@@ -187,11 +187,11 @@ if no_user_plugins
       's390_gnu',
       'ppc_gnu',
       'm68k_gnu',
-      'sparc_gnu',
     ]
     arch_plugins += [
       'z80',
       'pdp11',
+      'sparc_gnu',
       'lanai'
     ]
   endif

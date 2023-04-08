@@ -1,8 +1,6 @@
-/* radare - LGPL - Copyright 2011-2022 -- pancake */
+/* radare - LGPL - Copyright 2011-2023 -- pancake */
 
-#include <r_lib.h>
-#include <r_asm.h>
-#include <r_anal.h>
+#include <r_arch.h>
 #include "disas-asm.h"
 
 // XXX This can be a generic function defined in a macro
@@ -32,22 +30,20 @@ static void memory_error_func(int status, bfd_vma memaddr, struct disassemble_in
 DECLARE_GENERIC_PRINT_ADDRESS_FUNC_NOGLOBALS()
 DECLARE_GENERIC_FPRINTF_FUNC_NOGLOBALS()
 
-static int disassemble(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
-	ut8 bytes[4] = {0};
+static bool disassemble(RArchSession *a, RAnalOp *op, ut8 *bytes, RArchDecodeMask mask) {
+	const int len = op->size;
+	const ut64 addr = op->addr;
 	struct disassemble_info disasm_obj;
 	if (len < 4) {
-		return -1;
+		return false;
 	}
 	RStrBuf *sb = r_strbuf_new ("");
 	if (!sb) {
-		return -1;
+		return false;
 	}
-	// disasm inverted
-	memcpy (bytes, buf, R_MIN (sizeof (bytes), len));
-
 	/* prepare disassembler */
 	memset (&disasm_obj, '\0', sizeof (struct disassemble_info));
-	disasm_obj.buffer = bytes;
+	disasm_obj.buffer = bytes; // 4 byte length
 	disasm_obj.buffer_vma = addr;
 	disasm_obj.read_memory_func = &sparc_buffer_read_memory;
 	disasm_obj.symbol_at_address_func = &symbol_at_address;
@@ -71,7 +67,7 @@ static int disassemble(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 	} else {
 		free (s);
 	}
-	return op->size;
+	return true;
 }
 
 enum {
@@ -109,12 +105,14 @@ enum {
 	GPR_I7 = 31,
 };
 
+#if 0
 static const char * gpr_regs[] = {
 	"g0", "g1", "g2", "g3", "g4", "g5", "g6", "g7",
 	"o0", "o1", "o2", "o3", "o4", "o5", "o6", "o7",
 	"l0", "l1", "l2", "l3", "l4", "l5", "l6", "l7",
 	"i0", "i1", "i2", "i3", "i4", "i5", "i6","i7"
 };
+#endif
 
 enum {
 	ICC_A = 0x8,
@@ -165,7 +163,7 @@ enum {
 
 static int icc_to_r_cond(const int cond) {
 	/* we treat signed and unsigned the same here */
-	switch(cond) {
+	switch (cond) {
 	case ICC_A: return R_ANAL_COND_ALWAYS;
 	case ICC_CC: return R_ANAL_COND_GE;
 	case ICC_CS: return R_ANAL_COND_LT;
@@ -345,23 +343,32 @@ static st64 get_immed_sgnext(const ut64 insn, const ut8 nbit) {
 }
 
 static RAnalValue *value_fill_addr_pc_disp(const ut64 addr, const st64 disp) {
+	return NULL;
+#if 0
 	RAnalValue *val = r_anal_value_new();
 	val->base = addr + disp;
 	return val;
+#endif
 }
 
-static RAnalValue * value_fill_addr_reg_regdelta(RAnal const *const anal, const int ireg, const int iregdelta) {
-	RAnalValue *val = r_anal_value_new();
-	val->reg = r_reg_get(anal->reg, gpr_regs[ireg], R_REG_TYPE_GPR);
-	val->reg = r_reg_get(anal->reg, gpr_regs[iregdelta], R_REG_TYPE_GPR);
+static RAnalValue * value_fill_addr_reg_regdelta(RArchSession *as, const int ireg, const int iregdelta) {
+	return NULL;
+#if 0
+	RAnalValue *val = r_anal_value_new ();
+	val->reg = r_reg_get (anal->reg, gpr_regs[ireg], R_REG_TYPE_GPR);
+	val->reg = r_reg_get (anal->reg, gpr_regs[iregdelta], R_REG_TYPE_GPR);
 	return val;
+#endif
 }
 
-static RAnalValue * value_fill_addr_reg_disp(RAnal const *const anal, const int ireg, const st64 disp) {
+static RAnalValue * value_fill_addr_reg_disp(RArchSession *as, const int ireg, const st64 disp) {
+	return NULL;
+#if 0
 	RAnalValue *val = r_anal_value_new();
 	val->reg = r_reg_get(anal->reg, gpr_regs[ireg], R_REG_TYPE_GPR);
 	val->delta = disp;
 	return val;
+#endif
 }
 
 static void anal_call(RAnalOp *op, const ut32 insn, const ut64 addr) {
@@ -374,7 +381,7 @@ static void anal_call(RAnalOp *op, const ut32 insn, const ut64 addr) {
 	op->fail = addr + 4;
 }
 
-static void anal_jmpl(RAnal const *const anal, RAnalOp *op, const ut32 insn, const ut64 addr) {
+static void anal_jmpl(RArchSession *as, RAnalOp *op, const ut32 insn, const ut64 addr) {
 	st64 disp = 0;
 	if (X_LDST_I (insn)) {
 		disp = get_immed_sgnext (insn, 12);
@@ -391,10 +398,10 @@ static void anal_jmpl(RAnal const *const anal, RAnalOp *op, const ut32 insn, con
 	op->eob = true;
 
 	RAnalValue *val;
-	if (X_LDST_I(insn)) {
-		val = value_fill_addr_reg_disp (anal, X_RS1 (insn), disp);
+	if (X_LDST_I (insn)) {
+		val = value_fill_addr_reg_disp (as, X_RS1 (insn), disp);
 	} else {
-		val = value_fill_addr_reg_regdelta (anal, X_RS1 (insn), X_RS2 (insn));
+		val = value_fill_addr_reg_regdelta (as, X_RS1 (insn), X_RS2 (insn));
 	}
 	r_vector_push (&op->dsts, val);
 	r_anal_value_free (val);
@@ -438,17 +445,21 @@ static void anal_branch(RAnalOp *op, const ut32 insn, const ut64 addr) {
 }
 
 // TODO: this implementation is just a fast hack. needs to be rewritten and completed
-static int sparc_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len, RAnalOpMask mask) {
+// static int sparc_op(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *data, int len, RAnalOpMask mask) {
+static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
+	const ut64 addr = op->addr;
 	int sz = 4;
 	ut32 insn = 0;
 
 	op->family = R_ANAL_OP_FAMILY_CPU;
 	op->addr = addr;
-	op->size = sz;
+	if (op->size < 4) {
+		return false;
+	}
 
-	r_mem_swaporcopy ((ut8*)&insn, data, 4, !R_ARCH_CONFIG_IS_BIG_ENDIAN (anal->config));
+	r_mem_swaporcopy ((ut8*)&insn, op->bytes, 4, !R_ARCH_CONFIG_IS_BIG_ENDIAN (as->config));
 	if (mask & R_ARCH_OP_MASK_DISASM) {
-		disassemble (anal, op, addr, (ut8 *)&insn, 4);
+		disassemble (as, op, (ut8*)&insn, mask);
 	}
 
 	if (X_OP (insn) == OP_0) {
@@ -463,14 +474,13 @@ static int sparc_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 		case OP2_BPr:
 		case OP2_FBPfcc:
 		case OP2_FBfcc:
-			anal_branch(op, insn, addr);
+			anal_branch (op, insn, addr);
 			break;
 		}
 	} else if (X_OP (insn) == OP_1) {
 		anal_call (op, insn, addr);
 	} else if (X_OP (insn) == OP_2) {
-		switch(X_OP3(insn))
-		 {
+		switch (X_OP3 (insn)) {
 		case OP32_INV1:
 		case OP32_INV2:
 		case OP32_INV3:
@@ -486,22 +496,21 @@ static int sparc_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 			}
 			break;
 		case OP32_CONDINV2:
-			if (X_RS1(insn) == 1) {
+			if (X_RS1 (insn) == 1) {
 				op->type = R_ANAL_OP_TYPE_ILL;
 				sz = 0; /* make r_core_anal_bb stop */
 			}
 			break;
 		case OP32_CONDINV3:
-			if (X_RS1(insn) != 0) {
+			if (X_RS1 (insn) != 0) {
 				op->type = R_ANAL_OP_TYPE_ILL;
 				sz = 0; /* make r_core_anal_bb stop */
 			}
 			break;
-
 		case OP32_JMPL:
-			anal_jmpl(anal, op, insn, addr);
+			anal_jmpl (as, op, insn, addr);
 			break;
-		 }
+		}
 	} else if (X_OP (insn) == OP_3) {
 		switch(X_OP3 (insn)) {
 		case OP33_INV1:
@@ -525,11 +534,10 @@ static int sparc_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 			break;
 		 }
 	}
-
 	return sz;
 }
 
-static bool set_reg_profile(RAnal *anal) {
+static char *regs(RArchSession *as) {
 	/* As far as I can see, sparc v9 register and instruction set
 	   don't depened  on bits of the running application.
 	   But: They depend on the bits of the consuming application,
@@ -537,7 +545,7 @@ static bool set_reg_profile(RAnal *anal) {
 	   See sys/procfs_isa.h on a Solaris10 Sparc machine and
 	   'man 4 core' for reference.
 	 */
-	const char *p =
+	const char * const p =
 	"=PC	pc\n"
 	"=SP	o6\n"
 	"=BP	i6\n"
@@ -665,29 +673,29 @@ static bool set_reg_profile(RAnal *anal) {
 	"fpu	qf60	.128	544	0\n"	/* df60 df62 */
 	"gpr	fsr	.64	560	0\n";	/* note that
 						   we've left out the filler */
-	return r_reg_set_profile_string (anal->reg, p);
+	return strdup (p);
 }
 
-static int archinfo(RAnal *anal, int q) {
+static int archinfo(RArchSession *as, ut32 q) {
 	return 4; /* :D */
 }
 
-RAnalPlugin r_anal_plugin_sparc_gnu = {
+RArchPlugin r_arch_plugin_sparc_gnu = {
 	.name = "sparc.gnu",
 	.desc = "Scalable Processor Architecture",
 	.license = "GPL3",
 	.arch = "sparc",
-	.bits = 32 | 64,
-	.op = &sparc_op,
+	.bits = R_SYS_BITS_PACK2 (32, 64),
+	.decode = &decode,
 	.endian = R_SYS_ENDIAN_BIG | R_SYS_ENDIAN_LITTLE,
-	.archinfo = archinfo,
-	.set_reg_profile = set_reg_profile,
+	.info = archinfo,
+	.regs = regs,
 };
 
 #ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_ANAL,
-	.data = &r_anal_plugin_sparc_gnu,
+	.type = R_LIB_TYPE_ARCH,
+	.data = &r_arch_plugin_sparc_gnu,
 	.version = R2_VERSION
 };
 #endif

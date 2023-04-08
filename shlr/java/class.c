@@ -915,16 +915,14 @@ R_API int r_bin_java_extract_reference_name(const char *input_str, char **ref_st
 	char *new_str = NULL;
 	ut32 str_len = array_cnt ? (array_cnt + 1) * 2 : 0;
 	const char *str_pos = input_str;
-	int consumed = 0, len = 0;
+	int len = 0;
 	if (!str_pos || *str_pos != 'L' || !*str_pos) {
 		return -1;
 	}
-	consumed++;
 	str_pos++;
 	while (*str_pos && *str_pos != ';') {
 		str_pos++;
 		len++;
-		consumed++;
 	}
 	str_pos = input_str + 1;
 	free (*ref_str);
