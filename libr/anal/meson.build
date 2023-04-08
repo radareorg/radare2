@@ -42,12 +42,6 @@ r_anal_sources = [
   'p/anal_6502_cs.c',
   'p/anal_8051.c',
 
-#  '../arch/p/arc/plugin.c',
-#  'arch/arc/gnu/arc-dis.c',
-#  'arch/arc/gnu/arc-opc.c',
-#  'arch/arc/gnu/arc-ext.c',
-#  'arch/arc/gnu/arcompact-dis.c',
-
   'p/anal_arm_cs.c',
   'p/anal_arm_gnu.c',
   'p/anal_avr.c',
@@ -81,10 +75,7 @@ r_anal_sources = [
   'p/anal_s390_gnu.c',
   '../asm/arch/s390/gnu/s390-dis.c',
   '../asm/arch/s390/gnu/s390-opc.c',
-  '../asm/arch/sparc/gnu/sparc-dis.c',
-  '../asm/arch/sparc/gnu/sparc-opc.c',
   'p/anal_sparc_cs.c',
-  'p/anal_sparc_gnu.c',
   'p/anal_tms320.c',
   # join_paths('arch/whitespace/wsdis.c'),
   'p/anal_x86_cs.c',

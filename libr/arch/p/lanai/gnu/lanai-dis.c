@@ -54,9 +54,8 @@
 	along with this program; if not, write to the Free Software
 	Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.  */
 
-#include <string.h>
-#include <stdio.h>
-#include <stdlib.h>
+#include <r_types.h>
+#include <r_th.h>
 
 #include "ansidecl.h"
 #include "opcode/lanai.h"
