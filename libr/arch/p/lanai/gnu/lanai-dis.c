@@ -62,23 +62,18 @@
 #include "opcode/lanai.h"
 #include "disas-asm.h"
 
-static  char *reg_names[] =
-{ "r0", "r1", "pc", "ps", "sp", "fp", "r6", "r7",
+static  char *reg_names[] = {
+  "r0", "r1", "pc", "ps", "sp", "fp", "r6", "r7",
   "r8", "r9","r10","r11","r12","r13","r14","r15",
- "r16","r17","r18","r19","r20","r21","r22","r23",
- "r24","r25","r26","r27","r28","r29","r30","r31",
+  "r16","r17","r18","r19","r20","r21","r22","r23",
+  "r24","r25","r26","r27","r28","r29","r30","r31",
 };
 
 static char *op_names[] =
 { "add", "addc", "sub", "subb", "and", "or", "xor", "sh" };
 
 /* Nonzero if INSN is the opcode for a delayed branch.  */
-static int is_delayed_branch(unsigned long insn);
-
-static int
-is_delayed_branch (insn)
-     unsigned long insn;
-{
+static int is_delayed_branch(unsigned long insn) {
   int i;
 
   for (i = 0; i < NUMOPCODES; i++)
@@ -91,7 +86,7 @@ is_delayed_branch (insn)
   return 0;
 }
 
-static int opcodes_sorted = 0;
+static R_TH_LOCAL int opcodes_sorted = 0;
 /* extern void qsort (); */
 static int compare_opcodes(char *a, char *b);
 
@@ -102,11 +97,7 @@ static int compare_opcodes(char *a, char *b);
    is preceded by a findable `sethi' and it either adds an immediate
    displacement to that register, or it is an `add' or `or' instruction
    on that register.  */
-int
-print_insn_lanai (memaddr, info)
-     bfd_vma memaddr;
-     disassemble_info *info;
-{
+int print_insn_lanai (bfd_vma memaddr, disassemble_info *info) {
   FILE *stream = info->stream;
   bfd_byte buffer[4];
   unsigned int insn;
@@ -399,10 +390,7 @@ print_insn_lanai (memaddr, info)
 
 /* Compare opcodes A and B.  */
 
-static int
-compare_opcodes (a, b)
-     char *a, *b;
-{
+static int compare_opcodes (char *a, char *b) {
   struct lanai_opcode *op0 = (struct lanai_opcode *) a;
   struct lanai_opcode *op1 = (struct lanai_opcode *) b;
   unsigned long int match0 = op0->match, match1 = op1->match;
