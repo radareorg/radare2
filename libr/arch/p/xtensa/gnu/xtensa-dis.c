@@ -37,7 +37,7 @@ static void nothing(void) {
 #define OPCODES_SIGLONGJMP(buf,val)     siglongjmp((buf), (val))
 #endif
 
-int show_raw_fields;
+static const int show_raw_fields = false;
 
 struct dis_private
 {
@@ -135,8 +135,7 @@ print_xtensa_operand (bfd_vma memaddr,
 
 /* Print the Xtensa instruction at address MEMADDR on info->stream.
    Returns length of the instruction in bytes.  */
-
-int print_insn_xtensa (bfd_vma memaddr, struct disassemble_info *info) {
+int print_insn_xtensa(bfd_vma memaddr, struct disassemble_info *info) {
   unsigned operand_val;
   int bytes_fetched, size, maxsize, i, n, noperands, nslots;
   xtensa_isa isa;

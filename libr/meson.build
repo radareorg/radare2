@@ -191,7 +191,7 @@ if no_user_plugins
     arch_plugins += [
       'z80',
       'pdp11',
-      'hppa_gnu',
+# 'hppa_gnu',
       'sparc_gnu',
       'lanai'
     ]

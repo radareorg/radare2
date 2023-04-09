@@ -25,7 +25,6 @@
 #include "disas-asm.h"
 #include "libhppa.h"
 #include "opcode/hppa.h"
-#include <string.h>
 #include <r_types.h>
 
 /* Integer register names, indexed by the numbers which appear in the
@@ -203,9 +202,7 @@ fput_creg (unsigned reg, disassemble_info *info)
 
 /* Print constants with sign.  */
 
-static void
-fput_const (unsigned num, disassemble_info *info)
-{
+static void fput_const(unsigned num, disassemble_info *info) {
 	if ((int)num < 0) {
 		(*info->fprintf_func) (info->stream, "-0x%x", -(int)num);
 	} else {
@@ -348,7 +345,7 @@ static int extract_22 (unsigned word) {
 }
 
 /* Print one instruction.  */
-int print_insn_hppa (bfd_vma memaddr, disassemble_info *info) {
+int print_insn_hppa(bfd_vma memaddr, disassemble_info *info) {
 	bfd_byte buffer[4];
 	unsigned int insn, i;
 	{
@@ -377,10 +374,8 @@ int print_insn_hppa (bfd_vma memaddr, disassemble_info *info) {
 			if (!strchr ("cfCY?-+nHNZFIuv{", opcode->args[0])) {
 				(*info->fprintf_func) (info->stream, " ");
 			}
-			for (s = opcode->args; *s != '\0'; ++s)
-			{
-				switch (*s)
-				{
+			for (s = opcode->args; *s != '\0'; ++s) {
+				switch (*s) {
 				case 'x':
 					fput_reg (GET_FIELD (insn, 11, 15), info);
 					break;
@@ -518,7 +513,6 @@ int print_insn_hppa (bfd_vma memaddr, disassemble_info *info) {
 						break;
 					}
 					break;
-
 				case '5':
 					fput_const (extract_5_load (insn), info);
 					break;
@@ -531,12 +525,10 @@ int print_insn_hppa (bfd_vma memaddr, disassemble_info *info) {
 						}
 					}
 					break;
-
 				case 'S':
 					(*info->fprintf_func) (info->stream, "sr%d",
 							extract_3 (insn));
 					break;
-
 					/* Handle completers.  */
 				case 'c':
 					switch (*++s)
@@ -1017,8 +1009,7 @@ int print_insn_hppa (bfd_vma memaddr, disassemble_info *info) {
 					break;
 				case '%':
 					{
-						int num;
-						num = (GET_FIELD (insn, 23, 23) + 1) * 32;
+						int num = (GET_FIELD (insn, 23, 23) + 1) * 32;
 						num -= GET_FIELD (insn, 27, 31);
 						(*info->fprintf_func) (info->stream, "%d", num);
 						break;
@@ -1139,7 +1130,6 @@ int print_insn_hppa (bfd_vma memaddr, disassemble_info *info) {
 						fput_const (disp, info);
 						break;
 					}
-
 				case '>':
 				case 'y':
 					{
@@ -1207,9 +1197,7 @@ int print_insn_hppa (bfd_vma memaddr, disassemble_info *info) {
 				case '=':
 					{
 						int cond = GET_FIELD (insn, 27, 31);
-
-						switch (cond)
-						{
+						switch (cond) {
 						case  0: fputs_filtered (" ", info); break;
 						case  1: fputs_filtered ("acc ", info); break;
 						case  2: fputs_filtered ("rej ", info); break;
@@ -1238,6 +1226,6 @@ int print_insn_hppa (bfd_vma memaddr, disassemble_info *info) {
 			return sizeof (insn);
 		}
 	}
-	(*info->fprintf_func) (info->stream, "#%8x", insn);
+	(*info->fprintf_func) (info->stream, "invalid"); // "#0x%8x", insn);
 	return sizeof (insn);
 }
