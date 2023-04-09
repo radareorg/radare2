@@ -61,16 +61,6 @@ static bool r_esil_runpending(REsil *esil, char *pending) {
 	return false;
 }
 
-static bool ispackedreg(REsil *esil, const char *str) {
-	RRegItem *ri = r_reg_get (esil->anal->reg, str, -1);
-	if (ri) {
-		bool is_packed = ri->packed_size > 0;
-		r_unref (ri);
-		return is_packed;
-	}
-	return false;
-}
-
 static bool isregornum(REsil *esil, const char *str, ut64 *num) {
 	if (!r_esil_reg_read (esil, str, num, NULL)) {
 		if (!isnum (esil, str, num)) {
@@ -183,7 +173,7 @@ static bool r_esil_fire_trap(REsil *esil, int trap_type, int trap_code) {
 R_API bool r_esil_set_pc(REsil *esil, ut64 addr) {
 	r_return_val_if_fail (esil, false);
 	// r_reg_set_value_by_role (esil->anal->reg, R_REG_NAME_PC, addr);
-	esil->address = addr;
+	esil->address = addr; // R2_590 - rename to 'addr' for consistency
 	return true;
 }
 
@@ -834,6 +824,7 @@ static bool esil_weak_eq(REsil *esil) {
 }
 
 static bool esil_eq(REsil *esil) {
+	r_return_val_if_fail (esil, false);
 	bool ret = false;
 	ut64 num, num2;
 	char *dst = r_esil_pop (esil);
@@ -844,7 +835,25 @@ static bool esil_eq(REsil *esil) {
 		free (dst);
 		return false;
 	}
-	if (ispackedreg (esil, dst)) {
+	bool is128reg = false;
+	bool ispacked = false;
+	if (dst) {
+		RRegItem *ri = r_reg_get (esil->anal->reg, dst, -1);
+		if (ri) {
+			is128reg = ri->size == 128;
+			ispacked = ri->packed_size > 0;
+			r_unref (ri);
+		}
+	}
+	if (is128reg && esil->stackptr > 0) {
+		char *src2 = r_esil_pop (esil); // pop the higher 64bit value
+		ut64 n0 = r_num_get (NULL, src);
+		ut64 n1 = r_num_get (NULL, src2);
+		ret = r_esil_reg_write (esil, dst, n1);
+		char *dst2 = r_str_newf ("%sh", dst); // q0 -> q0h
+		ret = r_esil_reg_write (esil, dst2, n0);
+		free (dst2);
+	} else if (ispacked) {
 		char *src2 = r_esil_pop (esil);
 		char *newreg = r_str_newf ("%sl", dst);
 		if (r_esil_get_parm (esil, src2, &num2)) {
@@ -3620,7 +3629,12 @@ static bool __stepOut(REsil *esil, const char *cmd) {
 
 R_API bool r_esil_parse(REsil *esil, const char *str) {
 	r_return_val_if_fail (esil, false);
-
+#if 0
+	if (strstr (str, "(null)")) {
+		R_LOG_WARN ("-> 0x%llx %s\n", esil->address, str);
+		r_sys_breakpoint ();
+	}
+#endif
 	int rc = 0;
 	int wordi = 0;
 	int dorunword;
