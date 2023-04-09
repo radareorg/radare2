@@ -612,38 +612,26 @@ extern disassemble_info tm_print_insn_info;
  * bfd_getm32 - To retrieve the upper 16-bits of the ARCtangent-A5
  *              basecase (32-bit) instruction
  */
-static bfd_vma
-bfd_getm32 (data)
-     unsigned int data;
-{
-   bfd_vma value = 0;
-
-   value = ((data & 0xff00) | (data & 0xff)) << 16;
-   value |= ((data & 0xff0000) | (data & 0xff000000)) >> 16;
-   return value;
+static bfd_vma bfd_getm32(unsigned int data) {
+	bfd_vma value = ((data & 0xff00) | (data & 0xff)) << 16;
+	value |= ((data & 0xff0000) | (data & 0xff000000)) >> 16;
+	return value;
 }
 
 /*
  * bfd_getm32_ac - To retrieve the upper 8-bits of the ARCompact
  *                 16-bit instruction
  */
-static bfd_vma
-bfd_getm32_ac (data)
-     unsigned int data;
-{
-   bfd_vma value = 0;
-
-   value = ((data & 0xff) << 8 | (data & 0xff00) >> 8);
-   return value;
+static bfd_vma bfd_getm32_ac (unsigned int data) {
+	bfd_vma value = (data & 0xff) << 8 | (data & 0xff00) >> 8;
+	return value;
 }
 
 /*
  * sign_extend - Sign Extend the value
  *
  */
-static int
-sign_extend (int value, int bits)
-{
+static int sign_extend(int value, int bits) {
 	if (BIT (value, (bits - 1))) {
 		value |= (0xffffffff << bits);
 	}
