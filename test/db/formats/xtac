@@ -22,9 +22,8 @@ nth paddr       size vaddr        vsize perm type name
 
 --
 [Symbols]
-
-nth paddr      vaddr      bind type size lib name
--------------------------------------------------
+nth paddr      vaddr      bind type size lib name         demangled
+-------------------------------------------------------------------
 0   0x0000a518 0x0000a518 NONE FUNC 0        x86.000011df
 1   0x0000a550 0x0000a550 NONE FUNC 0        x86.0000130f
 2   0x0000a588 0x0000a588 NONE FUNC 0        x86.0000131f
