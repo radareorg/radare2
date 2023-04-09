@@ -2420,25 +2420,25 @@ static int bin_symbols(RCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at, 
 	} else if (at == UT64_MAX && exponly) {
 		if (IS_MODE_RAD (mode)) {
 			r_cons_printf ("fs exports\n");
-		} else if (IS_MODE_NORMAL (mode)) {
+		} else if (IS_MODE_NORMAL (mode) && !r->table_query) {
 			r_cons_printf (printHere ? "" : "[Exports]\n");
 		}
 	} else if (at == UT64_MAX && !exponly) {
 		if (IS_MODE_RAD (mode)) {
 			r_cons_printf ("fs symbols\n");
-		} else if (IS_MODE_NORMAL (mode)) {
+		} else if (IS_MODE_NORMAL (mode) && !r->table_query) {
 			r_cons_printf (printHere ? "" : "[Symbols]\n");
 		}
 	}
 	if (IS_MODE_NORMAL (mode)) {
-		r_table_set_columnsf (table, "dXXssdss", "nth", "paddr","vaddr","bind", "type", "size", "lib", "name");
+		r_table_set_columnsf (table, "dXXssdsss", "nth", "paddr","vaddr","bind", "type", "size", "lib", "name", "demangled");
 	}
 
 	r_list_foreach (symbols, iter, symbol) {
 		if (!symbol->name) {
 			continue;
 		}
-		if (exponly && !isAnExport (symbol)) {
+		if (exponly && !its_an_export (symbol)) {
 			continue;
 		}
 		if (name && strcmp (symbol->name, name)) {
@@ -2514,8 +2514,7 @@ static int bin_symbols(RCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at, 
 			}
 			if (sn.demname) {
 				ut64 size = symbol->size? symbol->size: 1;
-				r_meta_set (r->anal, R_META_TYPE_COMMENT,
-							addr, size, sn.demname);
+				r_meta_set (r->anal, R_META_TYPE_COMMENT, addr, size, sn.demname);
 			}
 			r_flag_space_pop (r->flags);
 		} else if (IS_MODE_JSON (mode)) {
@@ -2604,7 +2603,7 @@ static int bin_symbols(RCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at, 
 			const char *type = r_str_get_fail (symbol->type, "NONE");
 			const char *n = r_str_getf (sn.demname? sn.demname: sn.name);
 			// const char *fwd = r_str_getf (symbol->forwarder);
-			r_table_add_rowf (table, "dXXssdss",
+			r_table_add_rowf (table, "dXXssdsss",
 					symbol->ordinal,
 					symbol->paddr,
 					addr,
@@ -2612,7 +2611,8 @@ static int bin_symbols(RCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at, 
 					type,
 					symbol->size,
 					r_str_get (symbol->libname),
-					n);
+					sn.name,
+					strcmp (n, sn.name)? n: "");
 		}
 next:
 		snFini (&sn);
@@ -2632,7 +2632,7 @@ next:
 			}
 		}
 		char *s = r_table_tostring (table);
-		r_cons_printf ("\n%s", s);
+		r_cons_printf ("%s", s);
 		free (s);
 	}
 

@@ -111,9 +111,8 @@ FILE=bins/wasm/sections.wasm
 CMDS=iE
 EXPECT=<<EOF
 [Exports]
-
-nth paddr      vaddr      bind   type size lib name
----------------------------------------------------
+nth paddr      vaddr      bind   type size lib name                      demangled
+----------------------------------------------------------------------------------
 8   0x000003f1 0x000003f1 GLOBAL FUNC 16       _start
 16  0x000004f5 0x000004f5 GLOBAL FUNC 3        stackSave
 17  0x000004fa 0x000004fa GLOBAL FUNC 5        stackRestore
@@ -131,9 +130,8 @@ FILE=bins/wasm/unary.wasm
 CMDS=iE
 EXPECT=<<EOF
 [Exports]
-
-nth paddr      vaddr      bind   type size lib name
----------------------------------------------------
+nth paddr      vaddr      bind   type size lib name                demangled
+----------------------------------------------------------------------------
 2   0x000001d2 0x000001d2 GLOBAL FUNC 5        i32_eqz_100
 3   0x000001d9 0x000001d9 GLOBAL FUNC 4        i32_eqz_0
 4   0x000001df 0x000001df GLOBAL FUNC 5        i32_clz
@@ -183,9 +181,8 @@ is
 EOF
 EXPECT=<<EOF
 [Symbols]
-
-nth paddr      vaddr      bind   type size lib                    name
-----------------------------------------------------------------------
+nth paddr      vaddr      bind   type size lib                    name                         demangled
+--------------------------------------------------------------------------------------------------------
 0   ---------- ---------- NONE   FUNC 0    env                    imp.emscripten_asm_const_int
 1   ---------- ---------- NONE   FUNC 0    wasi_snapshot_preview1 imp.args_sizes_get
 2   ---------- ---------- NONE   FUNC 0    wasi_snapshot_preview1 imp.args_get

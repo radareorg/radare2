@@ -127,9 +127,8 @@ FILE=bins/omf/null_checks
 CMDS=is
 EXPECT=<<EOF
 [Symbols]
-
-nth paddr      vaddr      bind type size lib name
--------------------------------------------------
+nth paddr      vaddr      bind type size lib name   demangled
+-------------------------------------------------------------
 1   0x00000073 0x00001000 NONE NONE 0        _start
 EOF
 RUN

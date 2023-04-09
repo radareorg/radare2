@@ -3,9 +3,8 @@ FILE=bins/pe/Lab05-01.dll
 CMDS=iE
 EXPECT=<<EOF
 [Exports]
-
-nth paddr      vaddr      bind   type size lib      name
---------------------------------------------------------
+nth paddr      vaddr      bind   type size lib      name        demangled
+-------------------------------------------------------------------------
 1   0x0000cc47 0x1000d847 GLOBAL FUNC 0    xdll.dll InstallRT
 2   0x0000d2c1 0x1000dec1 GLOBAL FUNC 0    xdll.dll InstallSA
 3   0x0000dc92 0x1000e892 GLOBAL FUNC 0    xdll.dll InstallSB
