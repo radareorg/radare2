@@ -131,9 +131,8 @@ FILE=bins/bpf/memo_v2.solana.so
 CMDS=is
 EXPECT=<<EOF
 [Symbols]
-
-nth paddr      vaddr      bind   type   size lib name
------------------------------------------------------
+nth paddr      vaddr      bind   type   size lib name         demangled
+-----------------------------------------------------------------------
 3   0x00000c48 0x00000c48 GLOBAL FUNC   328      custom_panic
 4   0x000009b8 0x000009b8 GLOBAL FUNC   328      entrypoint
 1   ---------- 0x00000000 GLOBAL NOTYPE 16       imp.abort

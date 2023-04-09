@@ -436,6 +436,17 @@ R_API char *r_table_tostring(RTable *t) {
 	return r_table_tosimplestring (t);
 }
 
+static bool nopad_trailing(RListIter *iter) {
+	while (iter->n) {
+		iter = iter->n;
+		char *next_item = iter->data;
+		if (R_STR_ISNOTEMPTY (next_item)) {
+			return false;
+		}
+	}
+	return true;
+}
+
 R_API char *r_table_tosimplestring(RTable *t) {
 	RStrBuf *sb = r_strbuf_new ("");
 	RTableRow *row;
@@ -462,13 +473,7 @@ R_API char *r_table_tosimplestring(RTable *t) {
 		char *item;
 		int c = 0;
 		r_list_foreach (row->items, iter2, item) {
-			bool nopad = !iter2->n;
-			if (iter2->n && !iter2->n->n) {
-				char *next_item = iter2->n->data;
-				if (R_STR_ISEMPTY (next_item)) {
-					nopad = true;
-				}
-			}
+			bool nopad = nopad_trailing (iter2);
 			RTableColumn *col = r_list_get_n (t->cols, c);
 			if (col) {
 				(void)__strbuf_append_col_aligned (sb, col, item, nopad);

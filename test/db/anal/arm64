@@ -74,9 +74,8 @@ nth vaddr      bind   type   lib name
 18  0x00000720 GLOBAL FUNC       __cxa_atexit
 
 [Exports]
-
-nth paddr      vaddr      bind   type size lib name
----------------------------------------------------
+nth paddr      vaddr      bind   type size lib name            demangled
+------------------------------------------------------------------------
 6   0x0000aa20 0x0000aa20 GLOBAL FUNC 1176     Java_o__003dc_e
 EOF
 RUN
