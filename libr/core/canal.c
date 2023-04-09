@@ -5538,8 +5538,10 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 		}
 		if (!r_anal_op (core->anal, &op, cur, buf + i, iend - i, opflags)) {
 			i += minopsize - 1; // XXX dupe in op.size below
+			r_anal_op_fini (&op);
+			goto repeat;
 		}
-		if (op.type == R_ANAL_OP_TYPE_ILL || op.type == R_ANAL_OP_TYPE_UNK) {
+		if (op.type == R_ANAL_OP_TYPE_ILL || op.type == R_ANAL_OP_TYPE_UNK || op.type == R_ANAL_OP_TYPE_NULL) {
 			// i += 2
 			r_anal_op_fini (&op);
 			goto repeat;
