@@ -283,8 +283,8 @@ static int __strbuf_append_col_aligned_fancy(RTable *t, RStrBuf *sb, RTableColum
 			int left = col->width - (pad * 2 + len);
 			r_strbuf_appendf (sb, "%s %-*s ", v_line, pad, " ");
 			r_strbuf_appendf (sb, "%-*s ", pad + left, str);
-			break;
 		}
+		break;
 	}
 	return r_strbuf_length (sb) - ll;
 }
@@ -463,6 +463,12 @@ R_API char *r_table_tosimplestring(RTable *t) {
 		int c = 0;
 		r_list_foreach (row->items, iter2, item) {
 			bool nopad = !iter2->n;
+			if (iter2->n && !iter2->n->n) {
+				char *next_item = iter2->n->data;
+				if (R_STR_ISEMPTY (next_item)) {
+					nopad = true;
+				}
+			}
 			RTableColumn *col = r_list_get_n (t->cols, c);
 			if (col) {
 				(void)__strbuf_append_col_aligned (sb, col, item, nopad);
@@ -1085,6 +1091,7 @@ static bool __table_special(RTable *t, const char *columnName) {
 	}
 	if (!strcmp (columnName, ":quiet")) {
 		t->showHeader = false;
+		t->showFancy = false;
 	} else if (r_str_startswith (columnName, ":nohead")) {
 		t->showHeader = false;
 	} else if (r_str_startswith (columnName, ":head")) {
