@@ -1210,12 +1210,12 @@ EOF
 EXPECT=<<EOF
     0 * classes
     0 * format
-    4 * functions
+    3 * functions
    24 * registers
     0 * sections
     0 * segments
     0 * symbols
-   24 * syscalls
+   23 * syscalls
 EOF
 RUN
 
