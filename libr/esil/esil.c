@@ -3631,7 +3631,7 @@ R_API bool r_esil_parse(REsil *esil, const char *str) {
 	r_return_val_if_fail (esil, false);
 #if 0
 	if (strstr (str, "(null)")) {
-		R_LOG_WARN ("-> 0x%llx %s\n", esil->address, str);
+		R_LOG_WARN ("-> 0x%"PFMT64x" %s", esil->address, str);
 		r_sys_breakpoint ();
 	}
 #endif
