@@ -422,12 +422,21 @@ static RCoreHelpMessage help_msg_pi = {
 	"pia", "", "print all possible opcodes (byte per byte)",
 	"pib", "", "print instructions of basic block",
 	"pid", "", "alias for pdi",
-	"pie", "", "print offset + esil expression",
+	"pie", "[?]", "print offset + esil expression",
+	"piE", "[?]", "same as pie but taking an amount of bytes instead of instructions",
 	"pif", "[?]", "print instructions of function",
 	"pij", "", "print N instructions in JSON",
 	"pir", "", "like 'pdr' but with 'pI' output",
 	"piu", "[q] [optype]", "disassemble until instruction of given optype is found (See /atl)",
 	"pix", "  [hexpairs]", "alias for pdx and pad",
+	NULL
+};
+
+static RCoreHelpMessage help_msg_piE = {
+	"Usage:", "piE[q]", " # print esil of N bytes",
+	"piE", "", "print esil of the instructions found in N bytes",
+	"piEq", "", "same as above but without displaying the instruction address",
+	// "piej", "", "same but in JSON format",
 	NULL
 };
 
@@ -652,12 +661,12 @@ static void cmd_prc(RCore *core, const ut8* block, int len) {
 	int i, j;
 	char ch, ch2, *color;
 	int cols = r_config_get_i (core->config, "hex.cols");
-	bool show_color = r_config_get_b (core->config, "scr.color");
-	bool show_flags = r_config_get_b (core->config, "asm.flags");
-	bool show_section = r_config_get_b (core->config, "hex.section");
-	bool show_offset = r_config_get_b (core->config, "hex.offset");
-	bool show_cursor = core->print->cur_enabled;
-	bool show_unalloc = core->print->flags & R_PRINT_FLAGS_UNALLOC;
+	const bool show_color = r_config_get_b (core->config, "scr.color");
+	const bool show_flags = r_config_get_b (core->config, "asm.flags");
+	const bool show_section = r_config_get_b (core->config, "hex.section");
+	const bool show_offset = r_config_get_b (core->config, "hex.offset");
+	const bool show_cursor = core->print->cur_enabled;
+	const bool show_unalloc = core->print->flags & R_PRINT_FLAGS_UNALLOC;
 	if (cols < 1 || cols > 0xfffff) {
 		cols = 32;
 	}
@@ -736,13 +745,13 @@ static void cmd_prc(RCore *core, const ut8* block, int len) {
 static void cmd_printmsg(RCore *core, const char *input) {
 	if (!strcmp (input, "ln")) {
 		r_cons_newline ();
-	} else if (!strncmp (input, "ln ", 3)) {
+	} else if (r_str_startswith (input, "ln ")) {
 		r_cons_println (input + 3);
-	} else if (!strncmp (input, " ", 1)) {
+	} else if (r_str_startswith (input, " ")) {
 		r_cons_print (input + 1);
-	} else if (!strncmp (input, "f ", 2)) {
+	} else if (r_str_startswith (input, "f ")) {
 		R_LOG_TODO ("waiting for r2shell");
-	} else if (!strncmp (input, "fln ", 2)) {
+	} else if (r_str_startswith (input, "fln ")) {
 		R_LOG_TODO ("waiting for r2shell");
 	} else {
 		r_core_cmd_help_match (core, help_msg_pr, "print", true);
@@ -5281,6 +5290,29 @@ static bool cmd_pi(RCore *core, const char *input, int len, int l, ut8 *block) {
 	case 'd': // "pid" is the same as pdi
 		if (l != 0) {
 			r_core_disasm_pdi (core, l, 0, 0);
+		}
+		break;
+	case 'E': // "piE"
+		switch (input[2]) {
+		case 0:
+		case ' ':
+			if (l != 0) {
+				r_core_disasm_pdi (core, 0, l, 'e');
+			}
+			break;
+		case 'q':
+			{
+				const bool orig = r_config_get_b (core->config, "asm.offset");
+				r_config_set_b (core->config, "asm.offset", false);
+				if (l != 0) {
+					r_core_disasm_pdi (core, 0, l, 'e');
+				}
+				r_config_set_b (core->config, "asm.offset", orig);
+			}
+			break;
+		case '?':
+			r_core_cmd_help (core, help_msg_piE);
+			break;
 		}
 		break;
 	case 'e': // "pie"
