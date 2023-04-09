@@ -6,7 +6,7 @@ EXPECT=<<EOF
 
 nth paddr        size vaddr       vsize perm type        name
 -------------------------------------------------------------
-0   0x00000000    0x0 0x00000000    0x0 ---- NULL        
+0   0x00000000    0x0 0x00000000    0x0 ---- NULL
 1   0x00000200   0x1c 0x00404500   0x1c -r-- PROGBITS    .interp
 2   0x0000021c   0x20 0x0040021c   0x20 -r-- NOTE        .note.ABI-tag
 3   0x0000023c   0x24 0x0040023c   0x24 -r-- NOTE        .note.gnu.build-id

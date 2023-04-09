@@ -268,6 +268,7 @@ typedef struct r_anal_function_meta_t {
 
 typedef struct r_anal_function_t {
 	char *name;
+	// R2_590: add realname for the mangled one
 	int bits; // ((> bits 0) (set-bits bits))
 	int type;
 	const char *cc; // calling convention, should come from RAnal.constpool

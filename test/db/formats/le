@@ -330,9 +330,8 @@ FILE=bins/le/GNUGREP.DLL
 CMDS=is
 EXPECT=<<EOF
 [Symbols]
-
-nth paddr      vaddr      bind   type size lib name
----------------------------------------------------
+nth paddr      vaddr      bind   type size lib name     demangled
+-----------------------------------------------------------------
 1   0x00000000 0x00010ddc GLOBAL FUNC 0        grepmain
 EOF
 RUN

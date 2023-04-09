@@ -1,10 +1,7 @@
-/* radare2 - LGPL - Copyright 2015-2021 - pancake */
+/* radare2 - LGPL - Copyright 2015-2023 - pancake */
 
 #ifndef R2_BIND_H
 #define R2_BIND_H
-
-// TODO: move riobind here too?
-// TODO: move rprint here too
 
 #ifdef __cplusplus
 extern "C" {

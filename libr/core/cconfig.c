@@ -3864,6 +3864,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF ("zign.diff.bthresh", "1.0", "threshold for diffing zign bytes [0, 1] (see zc?)");
 	SETPREF ("zign.diff.gthresh", "1.0", "threshold for diffing zign graphs [0, 1] (see zc?)");
 	SETPREF ("zign.threshold", "0.0", "minimum similarity required for inclusion in zb output");
+	SETBPREF ("zign.mangled", "false", "use the manged name for zignatures (EXPERIMENTAL)");
 
 	/* diff */
 	SETCB ("diff.sort", "addr", &cb_diff_sort, "specify function diff sorting column see (e diff.sort=?)");

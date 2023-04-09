@@ -1732,3 +1732,29 @@ EXPECT=<<EOF
 1
 EOF
 RUN
+
+NAME=Mangled zignatures
+FILE=bins/mach0/mangled
+CMDS=<<EOF
+e zign.mangled=true
+aa
+zg
+z*~N
+?e --
+z-*
+e zign.mangled=false
+zg
+z*~N
+EOF
+EXPECT=<<EOF
+za __Z3fooi N __Z3fooii
+za __Z3foov N __Z3fooi
+za _main N imp.atoi
+za __Z3fooii N _main
+--
+za sym.foo_int__int_ N main
+za sym.foo__ N sym.foo_int_
+za main N sym.imp.atoi
+za sym.foo_int_ N sym.foo_int__int_
+EOF
+RUN
