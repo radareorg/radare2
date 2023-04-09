@@ -84,7 +84,7 @@ o~?
 EOF
 EXPECT=<<EOF
 0
-58
+59
 1
 EOF
 RUN
@@ -99,8 +99,8 @@ pf.~?
 o~?
 EOF
 EXPECT=<<EOF
-58
-58
+59
+59
 1
 EOF
 RUN
