@@ -515,7 +515,7 @@ EXPECT=<<EOF
 
 nth paddr        size vaddr       vsize perm type        name
 -------------------------------------------------------------
-0   0x00000000    0x0 0x00000000    0x0 ---- NULL        
+0   0x00000000    0x0 0x00000000    0x0 ---- NULL
 1   0x00000134   0x13 0x08048134   0x13 -r-- PROGBITS    .interp
 2   0x00000148   0x20 0x08048148   0x20 -r-- NOTE        .note.ABI-tag
 3   0x00000168   0x24 0x08048168   0x24 -r-- NOTE        .note.gnu.build-id
@@ -579,9 +579,8 @@ nth vaddr      bind   type   lib name
 3   0x080482f0 GLOBAL FUNC       __libc_start_main
 
 [Symbols]
-
-nth paddr      vaddr      bind   type   size lib name
------------------------------------------------------
+nth paddr      vaddr      bind   type   size lib name                                   demangled
+-------------------------------------------------------------------------------------------------
 4   0x000004ac 0x080484ac GLOBAL OBJ    4        _IO_stdin_used
 1   0x00000134 0x08048134 LOCAL  SECT   0        .interp
 2   0x00000148 0x08048148 LOCAL  SECT   0        .note.ABI-tag
@@ -610,7 +609,7 @@ nth paddr      vaddr      bind   type   size lib name
 25  ---------- 0x080496b4 LOCAL  SECT   0        .bss
 26  ---------- 0x00000000 LOCAL  SECT   0        .comment
 27  ---------- 0x00000000 LOCAL  FILE   0        init.c
-28  ---------- 0x00000000 LOCAL  FILE   0        
+28  ---------- 0x00000000 LOCAL  FILE   0
 29  ---------- 0x00000000 LOCAL  FILE   0        crtstuff.c
 30  0x000005a4 0x080495a4 LOCAL  OBJ    0        __JCR_LIST__
 31  0x00000340 0x08048340 LOCAL  FUNC   0        deregister_tm_clones
@@ -624,7 +623,7 @@ nth paddr      vaddr      bind   type   size lib name
 39  ---------- 0x00000000 LOCAL  FILE   0        crtstuff.c
 40  0x00000598 0x08048598 LOCAL  OBJ    0        __FRAME_END__
 41  0x000005a4 0x080495a4 LOCAL  OBJ    0        __JCR_END__
-42  ---------- 0x00000000 LOCAL  FILE   0        
+42  ---------- 0x00000000 LOCAL  FILE   0
 43  0x000005a0 0x080495a0 LOCAL  NOTYPE 0        __init_array_end
 44  0x000005a8 0x080495a8 LOCAL  OBJ    0        _DYNAMIC
 45  0x0000059c 0x0804959c LOCAL  NOTYPE 0        __init_array_start
@@ -726,15 +725,15 @@ Version need section '.gnu.version_r' contains 1 entries:
 Section to Segment mapping:
 Segment      Section
 --------------------
-PHDR         
+PHDR
 INTERP       .interp 
 LOAD0        .interp .note.ABI-tag .note.gnu.build-id .gnu.hash .dynsym .dynstr .gnu.version .gnu.version_r .rel.dyn .rel.plt .init .plt .text .fini .rodata .eh_frame_hdr .eh_frame 
 LOAD1        .init_array .fini_array .jcr .dynamic .got .got.plt .data .bss 
 DYNAMIC      .dynamic 
 NOTE         .note.ABI-tag .note.gnu.build-id 
 GNU_EH_FRAME .eh_frame_hdr 
-GNU_STACK    
-ehdr         
+GNU_STACK
+ehdr
 
 EOF
 RUN
@@ -1023,9 +1022,8 @@ FILE=bins/pe/dll.dll
 CMDS=!rabin2 -E ${R2_FILE}
 EXPECT=<<EOF
 [Exports]
-
-nth paddr      vaddr      bind   type size lib     name
--------------------------------------------------------
+nth paddr      vaddr      bind   type size lib     name   demangled
+-------------------------------------------------------------------
 0   0x00000224 0x01001024 GLOBAL FUNC 0    dll.dll export
 EOF
 RUN

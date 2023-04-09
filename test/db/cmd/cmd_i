@@ -6,7 +6,7 @@ EXPECT=<<EOF
 
 vaddr      name
 ---------------
-0x00000000 
+0x00000000
 0x00600910 .bss
 0x006006e0 .init_array
 0x006006e8 .fini_array
@@ -238,9 +238,8 @@ nth vaddr bind type lib name
 ----------------------------
 
 [Exports]
-
-nth paddr vaddr bind type size lib name
----------------------------------------
+nth paddr vaddr bind type size lib name demangled
+-------------------------------------------------
 e cfg.bigendian=false
 e asm.bits=64
 e asm.dwarf=false
@@ -258,9 +257,8 @@ fs imports
 0 entrypoints
 fs symbols
 [Symbols]
-
-nth paddr vaddr bind type size lib name
----------------------------------------
+nth paddr vaddr bind type size lib name demangled
+-------------------------------------------------
 fs symbols
 [Sections]
 
@@ -365,7 +363,7 @@ iA
 iAj
 EOF
 EXPECT=<<EOF
-0   0x00000000 266108 mips_32 cpu=mips1 abi=o32 machine=MIPS R3000 
+0   0x00000000 266108 mips_32 cpu=mips1 abi=o32 machine=MIPS R3000
 {"bins":[{"arch":"mips","bits":32,"offset":0,"size":266108,"abi":"o32","isa":"mips1","flags":"0x1007","machine":"MIPS R3000"}]}
 EOF
 RUN
@@ -377,7 +375,7 @@ iA
 iAj
 EOF
 EXPECT=<<EOF
-0   0x00000000 1039368 mips_64 cpu=mips64r2 abi=n64 machine=MIPS R3000 
+0   0x00000000 1039368 mips_64 cpu=mips64r2 abi=n64 machine=MIPS R3000
 {"bins":[{"arch":"mips","bits":64,"offset":0,"size":1039368,"abi":"n64","isa":"mips64r2","flags":"0x80000007","machine":"MIPS R3000"}]}
 EOF
 RUN
@@ -386,7 +384,7 @@ NAME=iA (file x86)
 FILE=bins/elf/analysis/x86-helloworld-gcc
 CMDS=iA
 EXPECT=<<EOF
-0   0x00000000 4899 x86_32 machine=Intel 80386 
+0   0x00000000 4899 x86_32 machine=Intel 80386
 EOF
 RUN
 
@@ -2875,7 +2873,7 @@ EXPECT=<<EOF
 
 nth paddr        size vaddr       vsize perm type        name
 -------------------------------------------------------------
-0   0x00000000    0x0 0x00000000    0x0 ---- NULL        
+0   0x00000000    0x0 0x00000000    0x0 ---- NULL
 1   0x00000134   0x13 0x08048134   0x13 -r-- PROGBITS    .interp
 2   0x00000148   0x20 0x08048148   0x20 -r-- NOTE        .note.ABI-tag
 3   0x00000168   0x24 0x08048168   0x24 -r-- NOTE        .note.gnu.build-id
@@ -3111,9 +3109,8 @@ FILE=bins/elf/analysis/x86-helloworld-gcc
 CMDS=is
 EXPECT=<<EOF
 [Symbols]
-
-nth paddr      vaddr      bind   type   size lib name
------------------------------------------------------
+nth paddr      vaddr      bind   type   size lib name                                   demangled
+-------------------------------------------------------------------------------------------------
 4   0x000004ac 0x080484ac GLOBAL OBJ    4        _IO_stdin_used
 1   0x00000134 0x08048134 LOCAL  SECT   0        .interp
 2   0x00000148 0x08048148 LOCAL  SECT   0        .note.ABI-tag
@@ -3142,7 +3139,7 @@ nth paddr      vaddr      bind   type   size lib name
 25  ---------- 0x080496b4 LOCAL  SECT   0        .bss
 26  ---------- 0x00000000 LOCAL  SECT   0        .comment
 27  ---------- 0x00000000 LOCAL  FILE   0        init.c
-28  ---------- 0x00000000 LOCAL  FILE   0        
+28  ---------- 0x00000000 LOCAL  FILE   0
 29  ---------- 0x00000000 LOCAL  FILE   0        crtstuff.c
 30  0x000005a4 0x080495a4 LOCAL  OBJ    0        __JCR_LIST__
 31  0x00000340 0x08048340 LOCAL  FUNC   0        deregister_tm_clones
@@ -3156,7 +3153,7 @@ nth paddr      vaddr      bind   type   size lib name
 39  ---------- 0x00000000 LOCAL  FILE   0        crtstuff.c
 40  0x00000598 0x08048598 LOCAL  OBJ    0        __FRAME_END__
 41  0x000005a4 0x080495a4 LOCAL  OBJ    0        __JCR_END__
-42  ---------- 0x00000000 LOCAL  FILE   0        
+42  ---------- 0x00000000 LOCAL  FILE   0
 43  0x000005a0 0x080495a0 LOCAL  NOTYPE 0        __init_array_end
 44  0x000005a8 0x080495a8 LOCAL  OBJ    0        _DYNAMIC
 45  0x0000059c 0x0804959c LOCAL  NOTYPE 0        __init_array_start
@@ -3230,7 +3227,7 @@ NAME=iA (file x86_64)
 FILE=bins/elf/analysis/hello-linux-x86_64
 CMDS=iA
 EXPECT=<<EOF
-0   0x00000000 6710 x86_64 machine=AMD x86-64 architecture 
+0   0x00000000 6710 x86_64 machine=AMD x86-64 architecture
 EOF
 RUN
 
@@ -3323,7 +3320,7 @@ EXPECT=<<EOF
 
 nth paddr        size vaddr       vsize perm type        name
 -------------------------------------------------------------
-0   0x00000000    0x0 0x00000000    0x0 ---- NULL        
+0   0x00000000    0x0 0x00000000    0x0 ---- NULL
 1   0x00000200   0x1a 0x00400200   0x1a -r-- PROGBITS    .interp
 2   0x0000021c   0x20 0x0040021c   0x20 -r-- NOTE        .note.ABI-tag
 3   0x0000023c   0x24 0x0040023c   0x24 -r-- NOTE        .note.gnu.build-id
@@ -3436,9 +3433,8 @@ FILE=bins/elf/analysis/hello-linux-x86_64
 CMDS=is
 EXPECT=<<EOF
 [Symbols]
-
-nth paddr      vaddr      bind   type   size lib name
------------------------------------------------------
+nth paddr      vaddr      bind   type   size lib name                                   demangled
+-------------------------------------------------------------------------------------------------
 1   0x00000200 0x00400200 LOCAL  SECT   0        .interp
 2   0x0000021c 0x0040021c LOCAL  SECT   0        .note.ABI-tag
 3   0x0000023c 0x0040023c LOCAL  SECT   0        .note.gnu.build-id
@@ -3466,7 +3462,7 @@ nth paddr      vaddr      bind   type   size lib name
 25  ---------- 0x00600910 LOCAL  SECT   0        .bss
 26  ---------- 0x00000000 LOCAL  SECT   0        .comment
 27  ---------- 0x00000000 LOCAL  FILE   0        init.c
-28  ---------- 0x00000000 LOCAL  FILE   0        
+28  ---------- 0x00000000 LOCAL  FILE   0
 29  ---------- 0x00000000 LOCAL  FILE   0        crtstuff.c
 30  0x000006f0 0x006006f0 LOCAL  OBJ    0        __JCR_LIST__
 31  0x00000440 0x00400440 LOCAL  FUNC   0        deregister_tm_clones
@@ -3480,7 +3476,7 @@ nth paddr      vaddr      bind   type   size lib name
 39  ---------- 0x00000000 LOCAL  FILE   0        crtstuff.c
 40  0x000006d8 0x004006d8 LOCAL  OBJ    0        __FRAME_END__
 41  0x000006f0 0x006006f0 LOCAL  OBJ    0        __JCR_END__
-42  ---------- 0x00000000 LOCAL  FILE   0        
+42  ---------- 0x00000000 LOCAL  FILE   0
 43  0x000006e8 0x006006e8 LOCAL  NOTYPE 0        __init_array_end
 44  0x000006f8 0x006006f8 LOCAL  OBJ    0        _DYNAMIC
 45  0x000006e0 0x006006e0 LOCAL  NOTYPE 0        __init_array_start
@@ -3530,9 +3526,8 @@ is~?
 isq~?
 EOF
 EXPECT=<<EOF
-
-nth paddr      vaddr      bind   type size lib name
----------------------------------------------------
+nth paddr      vaddr      bind   type size lib name demangled
+-------------------------------------------------------------
 41  0x0000142e 0x0000142e GLOBAL FUNC 563      main
 0x0000142e 563 main
 main
@@ -3623,7 +3618,7 @@ EXPECT=<<EOF
 
 nth paddr        size vaddr       vsize perm entropy    type        name
 ------------------------------------------------------------------------
-0   0x00000000    0x0 0x00000000    0x0 ----            NULL        
+0   0x00000000    0x0 0x00000000    0x0 ----            NULL
 1   0x00000154   0x13 0x08048154   0x13 -r-- 3.68188080 PROGBITS    .interp
 2   0x00000168   0x20 0x08048168   0x20 -r-- 1.74868984 NOTE        .note.ABI-tag
 3   0x00000188   0x38 0x08048188   0x38 -r-- 1.23442903 HASH        .hash
@@ -3677,9 +3672,8 @@ ARGS=-e bin.types=true
 CMDS=is; ir; f
 EXPECT=<<EOF
 [Symbols]
-
-nth paddr      vaddr      bind   type   size lib name
------------------------------------------------------
+nth paddr      vaddr      bind   type   size lib name                            demangled
+------------------------------------------------------------------------------------------
 8   0x00000590 0x00000590 GLOBAL FUNC   60       main
 9   0x0000064c 0x0000064c GLOBAL OBJ    4        _IO_stdin_used
 1   0x00000000 0x00000000 WEAK   NOTYPE 16       imp._ITM_deregisterTMCloneTable
@@ -3693,17 +3687,17 @@ nth paddr      vaddr      bind   type   size lib name
 
 vaddr      paddr      type   name
 ---------------------------------
-0x00001eec 0x00000eec SET_32 
-0x00001ef0 0x00000ef0 SET_32 
+0x00001eec 0x00000eec SET_32
+0x00001ef0 0x00000ef0 SET_32
 0x00001fe8 0x00000fe8 SET_32 _ITM_deregisterTMCloneTable
 0x00001fec 0x00000fec SET_32 __cxa_finalize
 0x00001ff0 0x00000ff0 SET_32 __gmon_start__
-0x00001ff4 0x00000ff4 SET_32 
+0x00001ff4 0x00000ff4 SET_32
 0x00001ff8 0x00000ff8 SET_32 _Jv_RegisterClasses
 0x00001ffc 0x00000ffc SET_32 _ITM_registerTMCloneTable
 0x0000200c 0x0000100c SET_32 puts
 0x00002010 0x00001010 SET_32 __libc_start_main
-0x00002018 0x00001018 SET_32 
+0x00002018 0x00001018 SET_32
 
 
 11 relocations
@@ -4001,7 +3995,7 @@ EXPECT=<<EOF
 6   0x100001010 -----------------------#------ 0x100001018 rw-   8     6.__DATA.__la_symbol_ptr
 7   0x100001020 ------------------------####-- 0x100001048 rw-   40    7.__DATA.__program_vars
 8   0x100001048 ----------------------------## 0x100001068 rw-   32    8.__DATA.__data
-=>  0x100000ef8 ------------------------------ 0x100000ef7             
+=>  0x100000ef8 ------------------------------ 0x100000ef7
 
 EOF
 RUN

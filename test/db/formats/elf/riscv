@@ -179,7 +179,7 @@ nth paddr      vaddr      bind   type   size lib name                           
 126 0x00011858 0x00020858 LOCAL  FUNC   444      _fpadd_parts
 127 ---------- 0x00000000 LOCAL  FILE   0        libgcc2.c
 128 ---------- 0x00000000 LOCAL  FILE   0        errno.c
-129 ---------- 0x00000000 LOCAL  FILE   0        
+129 ---------- 0x00000000 LOCAL  FILE   0
 130 0x00013630 0x00022630 LOCAL  NOTYPE 0        __fini_array_end
 131 0x00013628 0x00022628 LOCAL  NOTYPE 0        __fini_array_start
 132 0x00013628 0x00022628 LOCAL  NOTYPE 0        __init_array_end
