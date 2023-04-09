@@ -434,7 +434,7 @@ static void apply_name(RCore *core, RAnalFunction *fcn, RSignItem *it, bool rad)
 	if (rad) {
 		char *tmp = r_name_filter_dup (name);
 		if (tmp) {
-			r_cons_printf ("\"afn %s @ 0x%08" PFMT64x "\"\n", tmp, fcn->addr);
+			r_cons_printf ("\"\"@0x%08"PFMT64x"\"\"afn %s\n", fcn->addr, tmp);
 			free (tmp);
 		}
 		return;
