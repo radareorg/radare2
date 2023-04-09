@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2015-2022 - pancake */
+/* radare - LGPL - Copyright 2015-2023 - pancake */
 
 #include <r_asm.h>
 #include "disas-asm.h"
@@ -27,7 +27,10 @@ static void memory_error_func(int status, bfd_vma memaddr, struct disassemble_in
 DECLARE_GENERIC_PRINT_ADDRESS_FUNC_NOGLOBALS()
 DECLARE_GENERIC_FPRINTF_FUNC_NOGLOBALS()
 
-static int hppa_op(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
+static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
+// static int hppa_op(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
+	const ut8 *buf = op->bytes;
+	const int len = op->size;
 	ut8 bytes[8] = {0};
 	struct disassemble_info disasm_obj = {0};
 	RStrBuf *sb = NULL;
@@ -38,17 +41,15 @@ static int hppa_op(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RA
 
 	/* prepare disassembler */
 	disasm_obj.buffer = bytes;
-	disasm_obj.buffer_vma = addr;
+	disasm_obj.buffer_vma = op->addr;
 	disasm_obj.read_memory_func = &hppa_buffer_read_memory;
 	disasm_obj.symbol_at_address_func = &symbol_at_address;
 	disasm_obj.memory_error_func = &memory_error_func;
 	disasm_obj.print_address_func = &generic_print_address_func;
-	disasm_obj.endian = !R_ARCH_CONFIG_IS_BIG_ENDIAN (a->config);
+	disasm_obj.endian = !R_ARCH_CONFIG_IS_BIG_ENDIAN (as->config);
 	disasm_obj.fprintf_func = &generic_fprintf_func;
 	disasm_obj.stream = sb;
-	op->size = print_insn_hppa ((bfd_vma)addr, &disasm_obj);
-
-
+	op->size = print_insn_hppa ((bfd_vma)op->addr, &disasm_obj);
 	if (mask & R_ARCH_OP_MASK_DISASM) {
 		op->mnemonic = r_strbuf_drain (sb);
 		sb = NULL;
@@ -59,21 +60,25 @@ static int hppa_op(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RA
 	return op->size;
 }
 
-RAnalPlugin r_anal_plugin_hppa_gnu = {
+static int info(RArchSession *as, ut32 q) {
+	return 4; /* :D */
+}
+
+RArchPlugin r_arch_plugin_hppa_gnu = {
 	.name = "hppa",
 	.arch = "hppa",
 	.license = "GPL3",
-	.cpus = "",
-	.bits = 16,
+	.bits = R_SYS_BITS_PACK1 (16),
 	.endian = R_SYS_ENDIAN_BIG,
 	.desc = "HP PA-RISC",
-	.op = &hppa_op
+	.info = info,
+	.decode = &decode
 };
 
 #ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_ANAL,
-	.data = &r_anal_plugin_hppa_gnu,
+	.type = R_LIB_TYPE_ARCH,
+	.data = &r_arch_plugin_hppa_gnu,
 	.version = R2_VERSION
 };
 #endif

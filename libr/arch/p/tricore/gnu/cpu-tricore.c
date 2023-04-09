@@ -72,19 +72,11 @@ unsigned long tricore_mask_ssr;
 unsigned long tricore_mask_ssro;
 unsigned long tricore_opmask[TRICORE_FMT_MAX];
 
-int
-bfd_default_scan (info, string)
-     const bfd_arch_info_type *info;
-     const char *string;
-{
+int bfd_default_scan (const bfd_arch_info_type *info, const char *string) {
 	return true;
 }
 
-const bfd_arch_info_type *
-bfd_default_compatible (a, b)
-     const bfd_arch_info_type *a;
-     const bfd_arch_info_type *b;
-{
+const bfd_arch_info_type *bfd_default_compatible(const bfd_arch_info_type *a, const bfd_arch_info_type *b) {
 	if (a->arch != b->arch) {
 		return NULL;
 	}
@@ -183,10 +175,7 @@ const bfd_arch_info_type bfd_tricore_arch =
    also have to call this if it ever accesses the variables below, but
    it currently doesn't.  */
 
-void
-tricore_init_arch_vars (mach)
-     unsigned long mach;
-{
+void tricore_init_arch_vars (unsigned long mach) {
   switch (mach & bfd_mach_rider_mask)
     {
     case bfd_mach_rider_a:

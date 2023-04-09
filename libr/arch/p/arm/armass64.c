@@ -1530,7 +1530,7 @@ static bool parseOperands(char* str, ArmOp *op) {
 	int operand = 0;
 	char *token = t;
 	char *x;
-	int imm_count = 0;
+	// int imm_count = 0;
 	int mem_opt = 0;
 	int msr_op_index = 0;
 	size_t index_bound = strcspn (t, "]");
@@ -1577,7 +1577,7 @@ static bool parseOperands(char* str, ArmOp *op) {
 					op->operands_count ++;
 					op->operands[operand].type = ARM_CONSTANT;
 					op->operands[operand].immediate = msr_const[msr_op_index].val;
-					imm_count++;
+					// imm_count++;
 					break;
 				}
 			}
@@ -1773,7 +1773,7 @@ static bool parseOperands(char* str, ArmOp *op) {
 			op->operands[operand].type = ARM_CONSTANT;
 			op->operands[operand].immediate = r_num_math (NULL, token + 1);
 			op->operands[operand].preindex = token - t < index_bound;
-			imm_count++;
+			// imm_count++;
 			break;
 		case '-':
 			op->operands[operand].sign = -1;
@@ -1783,7 +1783,7 @@ static bool parseOperands(char* str, ArmOp *op) {
 			op->operands[operand].type = ARM_CONSTANT;
 			op->operands[operand].immediate = r_num_math (NULL, token);
 			op->operands[operand].preindex = token - t < index_bound;
-			imm_count++;
+			// imm_count++;
 			break;
 		}
 		token = next;
