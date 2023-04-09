@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2009-2022 - pancake */
+/* radare2 - LGPL - Copyright 2009-2023 - pancake */
 
 #define R_LOG_ORIGIN "core"
 
@@ -3444,7 +3444,7 @@ static void set_prompt(RCore *r) {
 		r_core_cmd (r, cmdprompt, 0);
 	}
 
-	if (r_config_get_i (r->config, "scr.prompt.file")) {
+	if (r_config_get_b (r->config, "scr.prompt.file")) {
 		free (filename);
 		filename = r_str_newf ("\"%s\"",
 			r->io->desc ? r_file_basename (r->io->desc->name) : "");
@@ -3473,10 +3473,10 @@ static void set_prompt(RCore *r) {
 		int promptset = false;
 
 		sec[0] = '\0';
-		if (r_config_get_i (r->config, "scr.prompt.flag")) {
+		if (r_config_get_b (r->config, "scr.prompt.flag")) {
 			promptset = prompt_flag (r, p, sizeof (p));
 		}
-		if (r_config_get_i (r->config, "scr.prompt.sect")) {
+		if (r_config_get_b (r->config, "scr.prompt.sect")) {
 			prompt_sec (r, sec, sizeof (sec));
 		}
 

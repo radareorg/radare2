@@ -92,25 +92,25 @@ static RCoreHelpMessage help_msg_we = {
 
 static RCoreHelpMessage help_msg_wo = {
 	"Usage:","wo[asmdxoArl24]"," [hexpairs] @ addr[!bsize] write operation in current block",
-	"wo2", "", "2=  2 byte endian swap (word)",
-	"wo4", "", "4=  4 byte endian swap (dword)",
-	"wo8", "", "8=  8 byte endian swap (qword)",
+	"wo2", "", "2= 2 byte endian swap (word)",
+	"wo4", "", "4= 4 byte endian swap (dword)",
+	"wo8", "", "8= 8 byte endian swap (qword)",
 	"woa", " [hexpair]", "+= addition (f.ex: woa 0102)",
-	"woA", " [hexpair]", "&=  and",
-	"wod", " [hexpair]", "/=  divide",
+	"woA", " [hexpair]", "&= and",
+	"wod", " [hexpair]", "/= divide",
 	"woD", " [algo] [key] [IV]", "decrypt current block with given algo and key",
 	"woE", " [algo] [key] [IV]", "encrypt current block with given algo and key",
-	"woe", " [from to] [step] [wsz=1]","..  create sequence",
+	"woe", " [from] ([to] [step] [wsz=1])", "write enumeration sequence i0 01 02 ..",
 	"woi", "", "inverse bytes in current block",
 	"wol", " [val]", "<<= shift left",
-	"wom", " [val]", "*=  multiply",
-	"woo", " [val]", "|=  or",
+	"wom", " [val]", "*= multiply",
+	"woo", " [val]", "|= or",
 	"wop[DO]", " [arg]", "De Bruijn Patterns",
 	"wor", " [val]", ">>= shift right",
 	"woR", "", "random bytes (alias for 'wr $b')",
-	"wos", " [val]", "-=  substraction",
-	"wow", " [val]", "==  write looped value (alias for 'wb')",
-	"wox", " [val]", "^=  xor  (f.ex: wox 0x90)",
+	"wos", " [val]", "-= substraction",
+	"wow", " [val]", "== write looped value (alias for 'wb')",
+	"wox", " [val]", "^= xor (f.ex: wox 0x90)",
 	NULL
 };
 
@@ -2092,8 +2092,8 @@ repeat:
 					if (input[1] == '*') {
 						r_cons_printf ("wx %s\n", hex);
 					} else {
-						if (r_config_get_i (core->config, "scr.prompt")) {
-							eprintf ("Written %d byte(s) (%s)=wx %s\n", acode->len, input, hex);
+						if (r_config_get_b (core->config, "scr.prompt")) {
+							R_LOG_INFO ("Written %d byte(s) (%s)=wx %s", acode->len, input, hex);
 						}
 						if (!r_core_write_at (core, core->offset, acode->bytes, acode->len)) {
 							cmd_write_fail (core);

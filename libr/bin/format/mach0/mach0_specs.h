@@ -22,54 +22,54 @@ typedef int integer_t;
 #define R_BIN_MACH0_SYMBOL_TYPE_LOCAL 1
 
 struct x86_thread_state32 {
-	ut32	eax;
-	ut32	ebx;
-	ut32	ecx;
-	ut32	edx;
-	ut32	edi;
-	ut32	esi;
-	ut32	ebp;
-	ut32	esp;
-	ut32	ss;
-	ut32	eflags;
-	ut32	eip;
-	ut32	cs;
-	ut32	ds;
-	ut32	es;
-	ut32	fs;
-	ut32	gs;
+	ut32 eax;
+	ut32 ebx;
+	ut32 ecx;
+	ut32 edx;
+	ut32 edi;
+	ut32 esi;
+	ut32 ebp;
+	ut32 esp;
+	ut32 ss;
+	ut32 eflags;
+	ut32 eip;
+	ut32 cs;
+	ut32 ds;
+	ut32 es;
+	ut32 fs;
+	ut32 gs;
 };
 
 struct x86_thread_state64 {
-	ut64	rax;
-	ut64	rbx;
-	ut64	rcx;
-	ut64	rdx;
-	ut64	rdi;
-	ut64	rsi;
-	ut64	rbp;
-	ut64	rsp;
-	ut64	r8;
-	ut64	r9;
-	ut64	r10;
-	ut64	r11;
-	ut64	r12;
-	ut64	r13;
-	ut64	r14;
-	ut64	r15;
-	ut64	rip;
-	ut64	rflags;
-	ut64	cs;
-	ut64	fs;
-	ut64	gs;
+	ut64 rax;
+	ut64 rbx;
+	ut64 rcx;
+	ut64 rdx;
+	ut64 rdi;
+	ut64 rsi;
+	ut64 rbp;
+	ut64 rsp;
+	ut64 r8;
+	ut64 r9;
+	ut64 r10;
+	ut64 r11;
+	ut64 r12;
+	ut64 r13;
+	ut64 r14;
+	ut64 r15;
+	ut64 rip;
+	ut64 rflags;
+	ut64 cs;
+	ut64 fs;
+	ut64 gs;
 };
 
-#define X86_THREAD_STATE32	1
-#define X86_THREAD_STATE64	4
+#define X86_THREAD_STATE32 1
+#define X86_THREAD_STATE64 4
 
 struct ppc_thread_state32 {
-	ut32 srr0;  /* Instruction address register (PC) */
-	ut32 srr1;	/* Machine state register (supervisor) */
+	ut32 srr0; /* Instruction address register (PC) */
+	ut32 srr1; /* Machine state register (supervisor) */
 	ut32 r0;
 	ut32 r1;
 	ut32 r2;

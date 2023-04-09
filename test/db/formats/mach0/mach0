@@ -311,3 +311,48 @@ nth paddr      vaddr      bind   type size lib name
 3   0x00007fb0 0x00007fb0 LOCAL  FUNC 0        func.00007fb0
 EOF
 RUN
+
+NAME=mach0 aot
+FILE=bins/mach0/libswiftCoreImage.dylib.aot
+CMDS=ih
+EXPECT_ERR=<<EOF
+INFO: AOT: Image path offset: 0x00000970
+INFO: AOT: Image path length: 0x00000089
+INFO: AOT: X64- code section: 0x00005a70
+EOF
+EXPECT=<<EOF
+pf.mach0_header @ 0x00000000
+0x00000000  Magic       0xfeedfacf
+0x00000004  CpuType     0x100000c
+0x00000008  CpuSubType  0x0
+0x0000000c  FileType    0x2
+0x00000010  nCmds       6
+0x00000014  sizeOfCmds  504
+0x00000018  Flags       0x200001
+pf.mach0_segment64 @ 0x00000020
+0x00000020  cmd       0 0x19 LC_SEGMENT_64
+0x00000024  cmdsize     152
+0x00000028  name        __TEXT
+pf.mach0_section64 @ 0x00000068
+pf.mach0_segment64 @ 0x000000b8
+0x000000b8  cmd       1 0x19 LC_SEGMENT_64
+0x000000bc  cmdsize     72
+0x000000c0  name        __RUNTIME
+pf.mach0_segment64 @ 0x00000100
+0x00000100  cmd       2 0x19 LC_SEGMENT_64
+0x00000104  cmdsize     152
+0x00000108  name        __DATA
+pf.mach0_section64 @ 0x00000148
+pf.mach0_segment64 @ 0x00000198
+0x00000198  cmd       3 0x19 LC_SEGMENT_64
+0x0000019c  cmdsize     72
+0x000001a0  name        __LINKEDIT
+pf.mach0_aot_metadata @ 0x000001e0
+0x000001e0  cmd       4 0xcacaca01 LC_AOT_METADATA
+0x000001e4  cmdsize     32
+pf.mach0_symtab_command @ 0x00000200
+0x00000200  cmd       5 0x2 LC_SYMTAB
+0x00000204  cmdsize     24
+EOF
+RUN
+

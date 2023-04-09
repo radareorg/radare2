@@ -234,12 +234,15 @@ static void init_sdb_formats(struct MACH0_(obj_t) *bin) {
 		"[4]Eddd "
 		"(mach0_load_command_type)cmd cmdsize flavor count",
 		0);
+	sdb_set (bin->kv, "mach0_aot_metadata.format",
+		"[4]Eddddddd "
+		"(mach0_load_command_type)cmd cmdsize imagepathoffset imagepathlen field10 field14 x64code field1c",
+		0);
 }
 
 static bool init_hdr(struct MACH0_(obj_t) *bin) {
 	ut8 magicbytes[4] = {0};
 	ut8 machohdrbytes[sizeof (struct MACH0_(mach_header))] = {0};
-	int len;
 
 	if (r_buf_read_at (bin->b, 0 + bin->header_at, magicbytes, 4) < 1) {
 		return false;
@@ -259,9 +262,9 @@ static bool init_hdr(struct MACH0_(obj_t) *bin) {
 	} else {
 		return false; // object files are magic == 0, but body is different :?
 	}
-	len = r_buf_read_at (bin->b, bin->header_at, machohdrbytes, sizeof (machohdrbytes));
+	int len = r_buf_read_at (bin->b, bin->header_at, machohdrbytes, sizeof (machohdrbytes));
 	if (len != sizeof (machohdrbytes)) {
-		bprintf ("read (hdr)\n");
+		R_LOG_WARN ("cannot read magic header");
 		return false;
 	}
 	bin->hdr.magic = r_read_ble (&machohdrbytes[0], bin->big_endian, 32);
@@ -529,6 +532,18 @@ error:
 	return false;
 }
 
+static bool parse_aot_metadata(struct MACH0_(obj_t) *bin, ut64 off) {
+	ut32 words[8];
+	if (r_buf_fread_at (bin->b, off, (ut8*)&words, "8i", 1) == -1) {
+		return false;
+	}
+	// TODO: add flags for this or sthg
+	R_LOG_INFO ("AOT: Image path offset: 0x%08x", words[2]);
+	R_LOG_INFO ("AOT: Image path length: 0x%08x", words[3]);
+	R_LOG_INFO ("AOT: X64- code section: 0x%08x", words[6]);
+	return true;
+}
+
 static bool parse_dysymtab(struct MACH0_(obj_t) *bin, ut64 off) {
 	size_t len, i;
 	ut32 size_tab;
@@ -537,7 +552,7 @@ static bool parse_dysymtab(struct MACH0_(obj_t) *bin, ut64 off) {
 	ut8 dymod[sizeof (struct MACH0_(dylib_module))] = {0};
 	ut8 idsyms[sizeof (ut32)] = {0};
 
-	if (off > bin->size || off + sizeof (struct dysymtab_command) > bin->size) {
+	if (off > bin->size || off + sizeof (struct dysymtab_command) >= bin->size) {
 		return false;
 	}
 
@@ -546,7 +561,7 @@ static bool parse_dysymtab(struct MACH0_(obj_t) *bin, ut64 off) {
 		bprintf ("Error: read (dysymtab)\n");
 		return false;
 	}
-
+	// use r_buf_fread instead of all this duck typing
 	bin->dysymtab.cmd = r_read_ble32 (&dysym[0], bin->big_endian);
 	bin->dysymtab.cmdsize = r_read_ble32 (&dysym[4], bin->big_endian);
 	bin->dysymtab.ilocalsym = r_read_ble32 (&dysym[8], bin->big_endian);
@@ -1343,6 +1358,8 @@ static const char *cmd_tostring(ut32 cmd) {
 		return "LC_FVMFILE";
 	case LC_PREPAGE:
 		return "LC_PREPAGE";
+	case LC_AOT_METADATA:
+		return "LC_AOT_METADATA";
 	}
 	return "";
 }
@@ -1443,6 +1460,8 @@ static const char *cmd_to_pf_definition(ut32 cmd) {
 		return NULL;
 	case LC_UNIXTHREAD:
 		return "mach0_unixthread_command";
+	case LC_AOT_METADATA:
+		return "mach0_aot_metadata";
 	}
 	return NULL;
 }
@@ -1777,6 +1796,12 @@ static int init_items(struct MACH0_(obj_t) *bin) {
 			sdb_set (bin->kv, cmd_flagname, "dysymtab", 0);
 			if (!parse_dysymtab (bin, off)) {
 				bprintf ("error parsing dysymtab\n");
+				return false;
+			}
+			break;
+		case LC_AOT_METADATA:
+			sdb_set (bin->kv, cmd_flagname, "aot_metadata", 0);
+			if (!parse_aot_metadata (bin, off)) {
 				return false;
 			}
 			break;
