@@ -1197,7 +1197,7 @@ static void insn_memory_error_func(int status, bfd_vma memaddr, struct disassemb
 static int loongarch_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, RAnalOpMask mask) {
 	struct loongarch_ASE *ase = NULL;
 	const struct loongarch_anal_opcode *it;
-	ut32 opcode, optype;
+	ut32 opcode; // , optype;
 	ut32 insn_id = 0;
 	if (!op || (len < INSNLEN)) {
 		return INSNLEN;
@@ -1209,7 +1209,7 @@ static int loongarch_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int l
 	opcode = r_read_le32 (b);
 
 	/* eprintf("opcode: 0x%x \n", opcode); */
-	optype = 0;
+	// optype = 0;
 
 	for (ase = la_ases; ase->opcode; ase++) {
 		if (!ase->opc_htab_inited) {
@@ -1230,7 +1230,7 @@ static int loongarch_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int l
 		it = ase->la_opcode_ht[LA_INSN_HASH(opcode)];
 		/* it = ase->opcode; */
 		for (; it->match; it++) {
-			optype ++;
+			// optype ++;
 			if ((opcode & it->mask) == it->match) {
 				insn_id = it->index;
 				op->type = it->r_type;

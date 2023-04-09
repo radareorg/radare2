@@ -75,9 +75,8 @@ EXPECT=<<EOF
 * 2 fd: 3 +0x00000064 0x00000000 - 0x00000026 r-x fmap..text_0
 - 1 fd: 3 +0x0000008b 0x00000030 - 0x0000004b r-- fmap..data_1
 [Symbols]
-
-nth paddr      vaddr      bind   type size lib name
----------------------------------------------------
+nth paddr      vaddr      bind   type size lib name            demangled
+------------------------------------------------------------------------
 0   ---------- ---------- NONE   UNK  4        imp.MessageBoxA
 0   ---------- ---------- NONE   UNK  4        imp.ExitProcess
 0   0x00000064 0x00000000 LOCAL  SECT 4        .text

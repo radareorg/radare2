@@ -49,9 +49,8 @@ FILE=bins/elf/analysis/guess-number-riscv64
 CMDS=is
 EXPECT=<<EOF
 [Symbols]
-
-nth paddr      vaddr      bind   type   size lib name
------------------------------------------------------
+nth paddr      vaddr      bind   type   size lib name                                   demangled
+-------------------------------------------------------------------------------------------------
 1   0x00001000 0x00010000 LOCAL  SECT   0        .text
 2   0x000124f8 0x000214f8 LOCAL  SECT   0        .rodata
 3   0x00013620 0x00022620 LOCAL  SECT   0        .init_array

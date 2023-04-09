@@ -74,6 +74,9 @@ static bool buf_bytes_resize(RBuffer *b, ut64 newsize) {
 
 static st64 buf_bytes_read(RBuffer *b, ut8 *buf, ut64 len) {
 	struct buf_bytes_priv *priv = get_priv_bytes (b);
+	if (!priv->buf) {
+		return 0;
+	}
 	ut64 real_len = priv->length < priv->offset? 0: R_MIN (priv->length - priv->offset, len);
 	memmove (buf, priv->buf + priv->offset, real_len);
 	priv->offset += real_len;

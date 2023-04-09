@@ -304,7 +304,7 @@ R_API bool r_core_bin_load_structs(RCore *core, const char *file) {
 			return false;
 		}
 	}
-	if (strchr (file, '\"')) {  // TODO: escape "?
+	if (strchr (file, '\"')) { // TODO: escape "?
 		R_LOG_ERROR ("Invalid char found in filename");
 		return false;
 	}
@@ -2312,7 +2312,7 @@ static void snFini(SymName *sn) {
 	R_FREE (sn->methflag);
 }
 
-static bool isAnExport(RBinSymbol *s) {
+static bool its_an_export(RBinSymbol *s) {
 	/* workaround for some bin plugs */
 	if (s->is_imported) {
 		return false;
@@ -2409,7 +2409,7 @@ static int bin_symbols(RCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at, 
 		return 0;
 	}
 
-	bool is_arm = info && info->arch && !strncmp (info->arch, "arm", 3);
+	bool is_arm = info && info->arch && r_str_startswith (info->arch, "arm");
 	const char *lang = bin_demangle ? r_config_get (r->config, "bin.lang") : NULL;
 
 	RList *symbols = r_bin_get_symbols (r->bin);

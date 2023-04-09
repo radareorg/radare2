@@ -892,6 +892,21 @@ static char *get_unique_name(Sdb *sdb, const char *name, const RSpace *sp) {
 	return NULL;
 }
 
+static char *real_function_name(RAnal *a, ut64 addr, const char *name) {
+	RCore *core = a->coreb.core;
+	if (a->coreb.cfggeti (core, "zign.mangled")) {
+		// resolve the manged name
+		char *res = a->coreb.cmdstrf (core, "is,vaddr/eq/0x%"PFMT64x",name/cols,a/head/1,:quiet", addr);
+		if (res) {
+			r_str_trim (res);
+			if (*res) {
+				return res;
+			}
+		}
+	}
+	return strdup (name);
+}
+
 R_API int r_sign_all_functions(RAnal *a, bool merge) {
 	RAnalFunction *fcni = NULL;
 	RListIter *iter = NULL;
@@ -904,15 +919,17 @@ R_API int r_sign_all_functions(RAnal *a, bool merge) {
 		if (r_cons_is_breaked ()) {
 			break;
 		}
+		char *realname = real_function_name (a, fcni->addr, fcni->name);
 		RSignItem *it = NULL;
-		if (merge || !name_exists (a->sdb_zigns, fcni->name, sp)) {
-			it = item_from_func (a, fcni, fcni->name);
+		if (merge || !name_exists (a->sdb_zigns, realname, sp)) {
+			it = item_from_func (a, fcni, realname);
 		} else {
 			char *name = get_unique_name (a->sdb_zigns, fcni->name, sp);
 			if (name) {
 				it = item_from_func (a, fcni, name);
 			}
 			free (name);
+			free (realname);
 		}
 		if (it) {
 			if (prev_name) {
