@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2015-2022 - pancake, qnix */
+/* radare - LGPL - Copyright 2015-2023 - pancake, qnix */
 
 #include <r_lib.h>
 #include <r_asm.h>
@@ -20,12 +20,12 @@ typedef struct riscv_args {
 
 static bool riscv_encode(RArchSession *s, RAnalOp *op, RArchEncodeMask mask) {
 	const char *str = op->mnemonic;
-	ut8 outbuf[4];
+	ut8 outbuf[4] = {0};
 	int size = riscv_assemble (str, op->addr, outbuf);
-	if (R_ARCH_CONFIG_IS_BIG_ENDIAN (s->config)) {
-		r_mem_swapendian (outbuf, outbuf, 4);
-	}
 	if (size > 0) {
+		if (R_ARCH_CONFIG_IS_BIG_ENDIAN (s->config)) {
+			r_mem_swapendian (outbuf, outbuf, 4);
+		}
 		op->size = size;
 		free (op->bytes);
 		op->bytes = r_mem_dup (outbuf, size);
@@ -331,6 +331,14 @@ static char *riscv_disassemble(RArchSession *s, ut64 addr, const ut8 *buf, int l
 	return NULL;
 }
 
+// R2_590 - make it public
+static char *r_str_next_split(char *s) {
+	if (s) {
+		return s + strlen (s) + 1;
+	}
+	return NULL;
+}
+
 static bool riscv_decode(RArchSession *s, RAnalOp *op, RArchDecodeMask mask) {
 	ut64 addr = op->addr;
 	const ut8 *buf = op->bytes;
@@ -400,7 +408,7 @@ static bool riscv_decode(RArchSession *s, RAnalOp *op, RArchDecodeMask mask) {
 	if (o->args) {
 		const char *name = o->name;
 		// Test for compressed instruction
-		if (!strncmp ("c.", o->name, 2)) {
+		if (r_str_startswith (o->name, "c.")) {
 			name += 2;
 			op->size = 2;
 		} else {
@@ -413,13 +421,13 @@ static bool riscv_decode(RArchSession *s, RAnalOp *op, RArchDecodeMask mask) {
 			esilprintf (op, ",");
 		}
 		// math
-		else if (!strncmp (name, "addi16sp", 8)) {
+		else if (r_str_startswith (name, "addi16sp")) {
 			esilprintf (op, "%s,sp,+,%s,=", ARG (1), ARG (0));
 			if (!strcmp (ARG (0), riscv_gpr_names[X_SP])) {
 				op->stackop = R_ANAL_STACK_INC;
 				op->stackptr = r_num_math (NULL, ARG (1));
 			}
-		} else if (!strncmp (name, "addiw", 5)) {
+		} else if (r_str_startswith (name, "addiw")) {
 			r_strbuf_appendf (&op->esil, "%s,0xffffffff,%s,&,", ARG (2), ARG (1));
 			r_strbuf_appendf (&op->esil, "+,%s,=,", ARG (0));
 			r_strbuf_appendf (&op->esil, "32,%s,~=", ARG (0));
@@ -428,62 +436,62 @@ static bool riscv_decode(RArchSession *s, RAnalOp *op, RArchDecodeMask mask) {
 				op->stackop = R_ANAL_STACK_INC;
 				op->stackptr = r_num_math (NULL, ARG (2));
 			}
-		} else if (!strncmp (name, "addw", 4)) {
+		} else if (r_str_startswith (name, "addw")) {
 			esilprintf (op, "0xffffffff,%s,&,", ARG (2));
 			r_strbuf_appendf (&op->esil, "0xffffffff,%s,&,", ARG (1));
 			r_strbuf_appendf (&op->esil, "+,%s,=,", ARG (0));
 			r_strbuf_appendf (&op->esil, "32,%s,~=", ARG (0));
-		} else if (!strncmp (name, "add", 3)) {
+		} else if (r_str_startswith (name, "add")) {
 			esilprintf (op, "%s,%s,+,%s,=", ARG (2), ARG (1), ARG (0));
 			if (name[3] == 'i' && !strcmp (ARG (0), riscv_gpr_names[X_SP]) &&
 					!strcmp (ARG (1), riscv_gpr_names[X_SP])) {
 				op->stackop = R_ANAL_STACK_INC;
 				op->stackptr = -(signed)r_num_math (NULL, ARG (2));
 			}
-		} else if (!strncmp (name, "subw", 4)) {
+		} else if (r_str_startswith (name, "subw")) {
 			esilprintf (op, "0xffffffff,%s,&,", ARG (2));
 			r_strbuf_appendf (&op->esil, "0xffffffff,%s,&,", ARG (1));
 			r_strbuf_appendf (&op->esil, "-,%s,=,", ARG (0));
 			r_strbuf_appendf (&op->esil, "32,%s,~=", ARG (0));
-		} else if (!strncmp (name, "sub", 3)) {
+		} else if (r_str_startswith (name, "sub")) {
 			esilprintf (op, "%s,%s,-,%s,=", ARG (2), ARG (1), ARG (0));
 			if (name[3] == 'i' && !strcmp (ARG (0), riscv_gpr_names[X_SP]) &&
 					!strcmp (ARG (1), riscv_gpr_names[X_SP])) {
 				op->stackop = R_ANAL_STACK_INC;
 				op->stackptr = r_num_math (NULL, ARG (2));
 			}
-		} else if (!strncmp (name, "mulw", 4)) {
+		} else if (r_str_startswith (name, "mulw")) {
 			esilprintf (op, "0xffffffff,%s,&,", ARG (2));
 			r_strbuf_appendf (&op->esil, "0xffffffff,%s,&,", ARG (1));
 			r_strbuf_appendf (&op->esil, "*,%s,=,", ARG (0));
 			r_strbuf_appendf (&op->esil, "32,%s,~=", ARG (0));
-		} else if (!strncmp (name, "mul", 3)) {
+		} else if (r_str_startswith (name, "mul")) {
 			esilprintf (op, "%s,%s,*,%s,=", ARG (2), ARG (1), ARG (0));
-		} else if (!strncmp (name, "div", 3)) {
+		} else if (r_str_startswith (name, "div")) {
 			esilprintf (op, "%s,%s,/,%s,=", ARG (2), ARG (1), ARG (0));
-		} else if (!strncmp (name, "rem", 3)) {
+		} else if (r_str_startswith (name, "rm")) {
 			esilprintf (op, "%s,%s,%%,%s,=", ARG (2), ARG (1), ARG (0));
-		} else if (!strncmp (name, "xor", 3)) {
+		} else if (r_str_startswith (name, "xor")) {
 			esilprintf (op, "%s,%s,^,%s,=", ARG (2), ARG (1), ARG (0));
-		} else if (!strncmp (name, "or", 2)) {
+		} else if (r_str_startswith (name, "or")) {
 			esilprintf (op, "%s,%s,|,%s,=", ARG (2), ARG (1), ARG (0));
-		} else if (!strncmp (name, "and", 3)) {
+		} else if (r_str_startswith (name, "and")) {
 			esilprintf (op, "%s,%s,&,%s,=", ARG (2), ARG (1), ARG (0));
-		} else if (!strcmp (name, "auipc")) {
+		} else if (r_str_startswith (name, "auipc")) {
 			esilprintf (op, "%s000,0x%"PFMT64x",+,%s,=", ARG (1), addr, ARG (0));
-		} else if (!strncmp (name, "sll", 3)) {
+		} else if (r_str_startswith (name, "sll")) {
 			esilprintf (op, "%s,%s,<<,%s,=", ARG (2), ARG (1), ARG (0));
 			if (name[3] == 'w' || !strncmp (name, "slliw", 5)) {
 				r_strbuf_appendf (&op->esil, ",32,%s,~=", ARG (0));
 			}
 		} else if (!strcmp (name, "srlw") || !strcmp (name, "srliw")) {
 			esilprintf (op, "%s,0xffffffff,%s,&,>>,%s,=", ARG (2), ARG (1), ARG (0));
-		} else if (!strncmp (name, "srl", 3)) {
+		} else if (r_str_startswith (name, "srl")) {
 			esilprintf (op, "%s,%s,>>,%s,=", ARG (2), ARG (1), ARG (0));
 		} else if (!strcmp (name, "sraiw")) {
 			esilprintf (op, "%s,%s,>>>>,%s,=,", ARG (2), ARG (1), ARG (0));
 			r_strbuf_appendf (&op->esil, "%s,64,-,%s,~=", ARG (2), ARG(0));
-		} else if (!strncmp (name, "sra", 3)) {
+		} else if (r_str_startswith (name, "sra")) {
 			esilprintf (op, "%s,%s,>>>>,%s,=", ARG (2), ARG (1), ARG (0));
 		}
 		// assigns
@@ -496,16 +504,15 @@ static bool riscv_decode(RArchSession *s, RAnalOp *op, RArchDecodeMask mask) {
 			if (s->config->bits == 64) {
 				r_strbuf_appendf (&op->esil, ",32,%s,~=", ARG (0));
 			}
-		}
 		// csr instrs
 		// <csr op> rd, rs1, CSR
-		else if (!strncmp (name, "csrrw", 5)) {
+		} else if (r_str_startswith (name, "csrrw")) {
 			// Writes rs1 into CSR, places the old value in rd
 			esilprintf (op, "%s,0,+,%s,%s,=,%s,=", ARG (1), ARG (2), ARG (1), ARG (0));
-		} else if (!strncmp (name, "csrrs", 5)) {
+		} else if (r_str_startswith (name, "csrrs")) {
 			// Ors rs1 with CSR, places old value in rd
 			esilprintf (op, "%s,0,+,%s,%s,|=,%s,=", ARG (1), ARG (2), ARG (1), ARG (0));
-		} else if (!strncmp (name, "csrrc", 5)) {
+		} else if (r_str_startswith (name, "csrrc")) {
 			// Ands the inverse of rs1 with CSR, places old value in rd
 			esilprintf (op, "%s,0,+,%s,1,+,0,-,%s,&=,%s,=", ARG (1), ARG (1), ARG (2), ARG (0));
 		}
@@ -606,17 +613,17 @@ static bool riscv_decode(RArchSession *s, RAnalOp *op, RArchDecodeMask mask) {
 			esilprintf (op, "%s,0,>=,?{,%s,pc,:=,},", ARG (0), ARG (1));
 		} else if (!strcmp (name, "bgtz")) {
 			esilprintf (op, "%s,0,>,?{,%s,pc,:=,},", ARG (0), ARG (1));
-		} else if (!strncmp (name, "seq", 3)) {
+		} else if (r_str_startswith (name, "seq")) {
 			esilprintf (op, "%s,%s,==,%s,=", ARG (2), ARG (1), ARG (0));
-		} else if (!strncmp (name, "sne", 3)) {
+		} else if (r_str_startswith (name, "sne")) {
 			esilprintf (op, "%s,%s,!=,%s,=", ARG (2), ARG (1), ARG (0));
-		} else if (!strncmp (name, "sle", 3)) {
+		} else if (r_str_startswith (name, "sle")) {
 			esilprintf (op, "%s,%s,<=,%s,=", ARG (2), ARG (1), ARG (0));
-		} else if (!strncmp (name, "slt", 3)) {
+		} else if (r_str_startswith (name, "slt")) {
 			esilprintf (op, "%s,%s,<,%s,=", ARG (2), ARG (1), ARG (0));
-		} else if (!strncmp (name, "sge", 3)) {
+		} else if (r_str_startswith (name, "sge")) {
 			esilprintf (op, "%s,%s,>=,%s,=", ARG (2), ARG (1), ARG (0));
-		} else if (!strncmp (name, "sgt", 3)) {
+		} else if (r_str_startswith (name, "sgt")) {
 			esilprintf (op, "%s,%s,>,%s,=", ARG (2), ARG (1), ARG (0));
 		}
 		// debug
@@ -709,7 +716,8 @@ static bool riscv_decode(RArchSession *s, RAnalOp *op, RArchDecodeMask mask) {
 		RAnalValue *dst, *src;
 		dst = r_vector_push (&op->dsts, NULL);
 		char *argf = strdup (o->args);
-		char *comma = strtok (argf, ",");
+		r_str_split (argf, ',');
+		char *comma = argf;
 		if (comma && strchr (comma, '(')) {
 			dst->delta = (st64)r_num_get (NULL, args.arg[0]);
 			// dst->reg = args.arg[1];
@@ -721,20 +729,21 @@ static bool riscv_decode(RArchSession *s, RAnalOp *op, RArchDecodeMask mask) {
 			// dst->reg = args.arg[1];
 			// dst->reg = r_reg_get (anal->reg, args.arg[0], -1);
 		}
+		comma = r_str_next_split (comma);
 		for (; i < args.num; i++) {
 			src = r_vector_push (&op->srcs, NULL);
-			comma = strtok (NULL, ",");
 			if (comma && strchr (comma, '(')) {
 				src->delta = (st64)r_num_get (NULL, args.arg[i]);
 				// src->reg = args.arg[1];
 				// src->reg = r_reg_get (anal->reg, args.arg[j + 1], -1);
 				i++;
-			} else if (isalpha ((unsigned char)args.arg[i][0])) {
+			} else if (isalpha ((ut8)args.arg[i][0])) {
 				// src->reg = args.arg[1];
 				// src->reg = r_reg_get (anal->reg, args.arg[j], -1);
 			} else {
 				src->imm = r_num_get (NULL, args.arg[i]);
 			}
+			comma = r_str_next_split (comma);
 		}
 		free (argf);
 	}
