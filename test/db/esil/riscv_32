@@ -25,8 +25,8 @@ ar a2
 ar a3
 EOF
 EXPECT=<<EOF
-0x000000ed
-0xffffff03
+0xffff4ffd
+0x0000b003
 EOF
 RUN
 
@@ -43,7 +43,7 @@ ar a3
 EOF
 EXPECT=<<EOF
 0x00000018
-0xfffffff8
+0x00000007
 EOF
 RUN
 

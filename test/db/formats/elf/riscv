@@ -678,34 +678,34 @@ EXPECT=<<EOF
 |           0x00010168      9307f0ff       li a5, -1                   ; a5=0xffffffffffffffff
 |           0x0001016c      2324f4fe       sw a5, -24(s0)
 |           ; CODE XREFS from main @ 0x101c8(x), 0x101d8(x)
-|      ..-> 0x00010170      b7170200       lui a5, 0x21                ; a5=0x21000 ; a5=0x21000
+|      ..-> 0x00010170      b7170200       lui a5, 0x21                ; a5=0x21000
 |      ::   0x00010174      1385874f       addi a0, a5, 1272           ; a0=0x214f8 "Enter your guess : " sym..rodata
 |      ::   0x00010178      ef00c01f       jal ra, sym.printf          ; ra=0x1017c -> 0xfe840793 ; pc=0x10374 -> 0x8101b283
 |      ::                                                              ; int printf("Enter your guess : ")
 |      ::   0x0001017c      930784fe       addi a5, s0, -24            ; a5=0x177fe8
 |      ::   0x00010180      93850700       mv a1, a5                   ; a1=0x177fe8
-|      ::   0x00010184      b7170200       lui a5, 0x21                ; a5=0x21000 ; a5=0x21000
+|      ::   0x00010184      b7170200       lui a5, 0x21                ; a5=0x21000
 |      ::   0x00010188      13850751       addi a0, a5, 1296           ; a0=0x21510 "%d"
 |      ::   0x0001018c      ef00402f       jal ra, sym.scanf           ; ra=0x10190 -> 0xfe842703 ; pc=0x10480 -> 0x8101b283
 |      ::                                                              ; int scanf("%d")
-|      ::   0x00010190      032784fe       lw a4, -24(s0)              ; a4=0x0 ; a4=0x0
-|      ::   0x00010194      8327c4fe       lw a5, -20(s0)              ; a5=0x0 ; a5=0x0
+|      ::   0x00010190      032784fe       lw a4, -24(s0)              ; a4=0x0
+|      ::   0x00010194      8327c4fe       lw a5, -20(s0)              ; a5=0x0
 |     ,===< 0x00010198      631cf700       bne a4, a5, 0x101b0         ; unlikely
-|     |::   0x0001019c      b7170200       lui a5, 0x21                ; a5=0x21000 ; a5=0x21000
+|     |::   0x0001019c      b7170200       lui a5, 0x21                ; a5=0x21000
 |     |::   0x000101a0      13858751       addi a0, a5, 1304           ; a0=0x21518 "You win!" str.You_win_
 |     |::   0x000101a4      ef00002d       jal ra, sym.puts            ; ra=0x101a8 -> 0x793 ; pc=0x10474 -> 0x50593
 |     |::                                                              ; int puts("You win!")
 |     |::   0x000101a8      93070000       li a5, 0                    ; a5=0x0
 |    ,====< 0x000101ac      6f000003       j 0x101dc                   ; pc=0x101dc -> 0x78513
-|    |`---> 0x000101b0      032784fe       lw a4, -24(s0)              ; a4=0x0 ; a4=0x0
-|    | ::   0x000101b4      8327c4fe       lw a5, -20(s0)              ; a5=0x0 ; a5=0x0
+|    |`---> 0x000101b0      032784fe       lw a4, -24(s0)              ; a4=0x0
+|    | ::   0x000101b4      8327c4fe       lw a5, -20(s0)              ; a5=0x0
 |    |,===< 0x000101b8      635af700       ble a5, a4, 0x101cc         ; pc=0x101cc -> 0x125fc00 ; likely
-|    ||::   0x000101bc      b7170200       lui a5, 0x21                ; a5=0x21000 ; a5=0x21000
+|    ||::   0x000101bc      b7170200       lui a5, 0x21                ; a5=0x21000
 |    ||::   0x000101c0      13858752       addi a0, a5, 1320           ; a0=0x21528 "Too small" str.Too_small
 |    ||::   0x000101c4      ef00002b       jal ra, sym.puts            ; ra=0x101c8 -> 0xfa9ff06f ; pc=0x10474 -> 0x50593
 |    ||::                                                              ; int puts("Too small")
 |    ||`==< 0x000101c8      6ff09ffa       j 0x10170                   ; pc=0x10170 -> 0x125fc00
-|    |`---> 0x000101cc      b7170200       lui a5, 0x21                ; a5=0x21000 ; a5=0x21000
+|    |`---> 0x000101cc      b7170200       lui a5, 0x21                ; a5=0x21000
 |    |  :   0x000101d0      13858753       addi a0, a5, 1336           ; a0=0x21538 "Too big" str.Too_big
 |    |  :   0x000101d4      ef00002a       jal ra, sym.puts            ; ra=0x101d8 -> 0xf99ff06f ; pc=0x10474 -> 0x50593
 |    |  :                                                              ; int puts("Too big")
