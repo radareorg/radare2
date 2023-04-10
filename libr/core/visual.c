@@ -3348,7 +3348,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 					cursor_prevrow (core, false);
 				}
 			} else {
-				if (r_config_get_i (core->config, "scr.wheel.nkey")) {
+				if (r_config_get_b (core->config, "scr.wheel.nkey")) {
 					int i, distance = numbuf_pull ();
 					if (distance < 1)  {
 						distance =  1;
@@ -4630,18 +4630,20 @@ dodo:
 
 			if (cmdvhex && *cmdvhex) {
 				snprintf (debugstr, sizeof (debugstr),
-					"?t0;f tmp;ssr %s;%s;?t1;%s;drcq;?t1;"
+					"?t0;f tmp;sr %s;%s;?t1;%s;drcq;?t1;"
 					"ss tmp;f-tmp;pd $r", reg, cmdvhex,
 					ref? "drr": "dr=");
 				debugstr[sizeof (debugstr) - 1] = 0;
 			} else {
+				const bool cfg_debug = r_config_get_b (core->config, "cfg.debug");
 				const char *pxw = stackPrintCommand (core);
 				const char sign = (delta < 0)? '+': '-';
 				const int absdelta = R_ABS (delta);
 				snprintf (debugstr, sizeof (debugstr),
-					"diq;?t0;f tmp;ssr %s;%s %d@$$%c%d;"
+					"%s?t0;f tmp;sr %s;%s %d@$$%c%d;"
 					"?t1;%s;drcq;"
 					"?t1;ss tmp;f-tmp;afal;pd $r",
+					cfg_debug? "diq;":"",
 					reg, pxa? "pxa": pxw, size, sign, absdelta,
 					ref? "drr": "dr=");
 			}
@@ -4649,7 +4651,7 @@ dodo:
 		}
 #endif
 		r_cons_show_cursor (false);
-		r_cons_enable_mouse (r_config_get_i (core->config, "scr.wheel"));
+		r_cons_enable_mouse (r_config_get_b (core->config, "scr.wheel"));
 		core->cons->event_resize = NULL; // avoid running old event with new data
 		core->cons->event_data = core;
 		core->cons->event_resize = (RConsEvent) visual_refresh_oneshot;
@@ -4714,7 +4716,7 @@ dodo:
 					(void)r_cons_readpush (chrs, chrs_read);
 				}
 			}
-			if (r_cons_is_breaked()) {
+			if (r_cons_is_breaked ()) {
 				break;
 			}
 			r_core_visual_show_char (core, ch);

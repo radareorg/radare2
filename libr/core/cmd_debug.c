@@ -5747,7 +5747,7 @@ static int cmd_debug(void *data, const char *input) {
 				break;
 #undef P
 #undef PS
-			case 'q':
+			case 'q': // "diq"
 				{
 					const char *r = r_debug_reason_tostring (core->dbg->reason.type);
 					if (!r) {
