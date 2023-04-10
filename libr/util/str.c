@@ -3361,6 +3361,12 @@ R_API char *r_str_wrap(const char *str, int w) {
 	return ret;
 }
 
+// R2_590 - this function is unused so lets just do it well or kill it
+#if 0
+R_API const char *r_str_tok(const char *str1, const char *tok) {
+	char *pos = strstr (str1, tok);
+}
+#endif
 R_API const char *r_str_tok(const char *str1, const char b, size_t len) {
 	const char *p = str1;
 	size_t i = 0;
@@ -3370,7 +3376,7 @@ R_API const char *r_str_tok(const char *str1, const char b, size_t len) {
 	if (len == -1) {
 		len = strlen (str1);
 	}
-	for ( ; i < len; i++,p++) {
+	for ( ; i < len; i++, p++) {
 		if (*p == b) {
 			break;
 		}
