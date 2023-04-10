@@ -331,6 +331,14 @@ static char *riscv_disassemble(RArchSession *s, ut64 addr, const ut8 *buf, int l
 	return NULL;
 }
 
+// R2_590 - make it public
+static char *r_str_next_split(char *s) {
+	if (s) {
+		return s + strlen (s) + 1;
+	}
+	return NULL;
+}
+
 static bool riscv_decode(RArchSession *s, RAnalOp *op, RArchDecodeMask mask) {
 	ut64 addr = op->addr;
 	const ut8 *buf = op->bytes;
@@ -708,8 +716,8 @@ static bool riscv_decode(RArchSession *s, RAnalOp *op, RArchDecodeMask mask) {
 		RAnalValue *dst, *src;
 		dst = r_vector_push (&op->dsts, NULL);
 		char *argf = strdup (o->args);
-		char *last;
-		char *comma = strtok_r (argf, ",", &last);
+		r_str_split (argf, ',');
+		char *comma = argf;
 		if (comma && strchr (comma, '(')) {
 			dst->delta = (st64)r_num_get (NULL, args.arg[0]);
 			// dst->reg = args.arg[1];
@@ -721,20 +729,21 @@ static bool riscv_decode(RArchSession *s, RAnalOp *op, RArchDecodeMask mask) {
 			// dst->reg = args.arg[1];
 			// dst->reg = r_reg_get (anal->reg, args.arg[0], -1);
 		}
+		comma = r_str_next_split (comma);
 		for (; i < args.num; i++) {
 			src = r_vector_push (&op->srcs, NULL);
-			comma = strtok_r (NULL, ",", &last);
 			if (comma && strchr (comma, '(')) {
 				src->delta = (st64)r_num_get (NULL, args.arg[i]);
 				// src->reg = args.arg[1];
 				// src->reg = r_reg_get (anal->reg, args.arg[j + 1], -1);
 				i++;
-			} else if (isalpha ((unsigned char)args.arg[i][0])) {
+			} else if (isalpha ((ut8)args.arg[i][0])) {
 				// src->reg = args.arg[1];
 				// src->reg = r_reg_get (anal->reg, args.arg[j], -1);
 			} else {
 				src->imm = r_num_get (NULL, args.arg[i]);
 			}
+			comma = r_str_next_split (comma);
 		}
 		free (argf);
 	}
