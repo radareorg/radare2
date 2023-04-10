@@ -4227,7 +4227,7 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 			char *str = r_str_from_ut64 (r_read_ble64 (&v, be));
 			if (R_STR_ISNOTEMPTY (str)) {
 				bool printable = true;
-				const char *ptr = str;
+				const signed char *ptr = str;
 				for (; *ptr ; ptr++) {
 					if (*ptr < 10) {
 						printable = false;
