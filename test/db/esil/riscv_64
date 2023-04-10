@@ -45,8 +45,8 @@ ar a5
 ar a6
 EOF
 EXPECT=<<EOF
-0xffffffffffffffff
-0xff5af000
+0x00000000
+0xffffffffff5af000
 0xffffffffffffff5a
 0xfffffffffffffff0
 EOF
