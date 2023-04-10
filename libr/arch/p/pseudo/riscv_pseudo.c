@@ -20,6 +20,7 @@ static int replace(int argc, const char *argv[], char *newstr) {
 		{ 0, "and", "# = # & #", { 1, 2, 3 } },
 		{ 0, "andi", "# = # & #", { 1, 2, 3 } },
 		{ 0, "beq", "if (# == #) goto #", { 1, 2, 3 } },
+		{ 0, "auipc", "# = pc + #", {1, 2} },
 		{ 0, "bleu", "if (unsigned)# <= # goto #", { 1, 2, 3 } },
 		{ 0, "bltu", "if (unsigned)# < # goto #", { 1, 2, 3 } },
 		{ 0, "blt", "if (# < #) goto #", { 1, 2, 3 } },
@@ -100,7 +101,6 @@ static int replace(int argc, const char *argv[], char *newstr) {
 		strcat (newstr, argv[i]);
 		strcat (newstr, (!i || i == argc - 1)? " " : ",");
 	}
-
 	r_str_replace_char (newstr, '{', '(');
 	r_str_replace_char (newstr, '}', ')');
 	return false;
