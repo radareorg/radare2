@@ -27,6 +27,8 @@ static char *r_debug_native_reg_profile(RDebug *dbg) {
 #include "reg/netbsd-x86.h"
 #elif __x86_64__
 #include "reg/netbsd-x64.h"
+#elif __aarch64__
+#include "reg/netbsd-arm64.h"
 #else
 #error "Unsupported BSD architecture"
 #endif

@@ -54,15 +54,13 @@ typedef struct esil_value_t {
 
 /*	HELPERS 	*/
 
+// r_str_tok () ?
 static char *condrets_strtok(char *str, const char tok) {
 	if (!str) {
 		return NULL;
 	}
 	ut32 i = 0;
-	while (1 == 1) {
-		if (!str[i]) {
-			break;
-		}
+	while (str[i]) {
 		if (str[i] == tok) {
 			str[i] = '\0';
 			return &str[i + 1];
@@ -540,7 +538,8 @@ R_IPI RAnalEsilCFG *r_anal_esil_cfg_new(void) {
 // this little function takes a cfg, an offset and an esil expression
 // concatinates to already existing graph
 R_API RAnalEsilCFG *r_anal_esil_cfg_expr(RAnalEsilCFG *cfg, RAnal *anal, const ut64 off, char *expr) {
-	if (!anal || !anal->esil) {
+	r_return_val_if_fail (cfg && anal, NULL);
+	if (!anal->esil) {
 		return NULL;
 	}
 	RStack *stack = r_stack_new (4);
