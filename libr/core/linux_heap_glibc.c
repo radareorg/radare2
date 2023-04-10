@@ -1603,7 +1603,10 @@ static int GH(cmd_dbg_map_heap_glibc)(RCore *core, const char *input) {
 		if (GH(r_resolve_main_arena) (core, &m_arena)) {
 			const char *arg = r_str_trim_head_ro (input + 1);
 			if (*arg) {
-				m_state = r_num_get (core->num, arg);
+				char *sep = strchr (arg, ':');
+				if (sep) {
+					m_state = r_num_get (core->num, sep + 1);
+				}
 				if (!m_state) {
 					m_state = m_arena;
 				}
@@ -1618,7 +1621,7 @@ static int GH(cmd_dbg_map_heap_glibc)(RCore *core, const char *input) {
 				if (!GH(update_main_arena) (core, m_state, main_arena)) {
 					break;
 				}
-				GH(print_heap_bin) (core, m_state, main_arena, dup);
+				GH(print_heap_bin) (core, m_state, main_arena, arg);
 			} else {
 				PRINT_RA ("This address is not part of the arenas\n");
 				break;
@@ -1635,7 +1638,10 @@ static int GH(cmd_dbg_map_heap_glibc)(RCore *core, const char *input) {
 			const bool demangle = r_config_get_b (core->config, "dbg.glibc.demangle"); // XXX reuse bin.demangle
 			const char *arg = r_str_trim_head_ro (input + 1);
 			if (*arg) {
-				m_state = r_num_get (core->num, arg);
+				char *sep = strchr (arg, ':');
+				if (sep) {
+					m_state = r_num_get (core->num, arg);
+				}
 				if (!m_state) {
 					m_state = m_arena;
 				}
@@ -1650,7 +1656,7 @@ static int GH(cmd_dbg_map_heap_glibc)(RCore *core, const char *input) {
 				if (!GH(update_main_arena) (core, m_state, main_arena)) {
 					break;
 				}
-				GH(print_heap_fastbin) (core, m_state, main_arena, global_max_fast, dup, demangle);
+				GH(print_heap_fastbin) (core, m_state, main_arena, global_max_fast, arg, demangle);
 			} else {
 				PRINT_RA ("This address is not part of the arenas\n");
 				break;
