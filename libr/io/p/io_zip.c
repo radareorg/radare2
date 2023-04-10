@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2012-2022 - dso, pancake */
+/* radare - LGPL - Copyright 2012-2023 - dso, pancake */
 
 // TODO: wrap with r_sandbox api
 
@@ -6,7 +6,6 @@
 #include <r_lib.h>
 #include <r_cons.h>
 #include <zip.h>
-
 
 typedef enum {
 	R_IO_PARENT_ZIP = 0x0001,
@@ -31,6 +30,7 @@ static RIOZipConstURI ZIP_URIS[] = {
 
 static RIOZipConstURI ZIP_ALL_URIS[] = {
 	{ "apk://", 6},
+	{ "zip0://", 7},
 	{ "zipall://", 9},
 	{ "apkall://", 9},
 	{ "ipaall://", 9},
@@ -326,6 +326,9 @@ static RList *r_io_zip_open_many(RIO *io, const char *file, int rw, int mode) {
 			RIODesc *res = r_io_desc_new (io, &r_io_plugin_zip, name, rw, mode, zfo);
 			free (name);
 			r_list_append (list_fds, res);
+			if (r_str_startswith (zip_uri, "zip0://")) {
+				break;
+			}
 		}
 	}
 
@@ -609,7 +612,7 @@ static bool r_io_zip_close(RIODesc *fd) {
 RIOPlugin r_io_plugin_zip = {
 	.name = "zip",
 	.desc = "Open zip files",
-	.uris = "zip://,apk://,ipa://,jar://,zipall://,apkall://,ipaall://,jarall://",
+	.uris = "zip://,apk://,ipa://,jar://,zip0://,zipall://,apkall://,ipaall://,jarall://",
 	.license = "BSD",
 	.open = r_io_zip_open,
 	.open_many = r_io_zip_open_many,
