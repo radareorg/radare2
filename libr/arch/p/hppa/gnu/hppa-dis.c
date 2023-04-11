@@ -21,12 +21,11 @@
    Foundation, Inc., 51 Franklin Street - Fifth Floor, Boston,
    MA 02110-1301, USA.  */
 
+#include <r_types.h>
 #include "sysdep.h"
 #include "disas-asm.h"
 #include "libhppa.h"
 #include "opcode/hppa.h"
-#include <r_types.h>
-
 /* Integer register names, indexed by the numbers which appear in the
    opcodes.  */
 static const char *const reg_names[] = {

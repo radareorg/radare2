@@ -19,6 +19,7 @@
    Free Software Foundation, 51 Franklin Street - Fifth Floor, Boston,
    MA 02110-1301, USA.  */
 
+#include <r_types.h>
 #include "disas-asm.h"
 #include "xtensa-isa.h"
 
