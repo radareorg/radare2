@@ -3273,8 +3273,8 @@ static RBinImport *import_from_name(RBin *rbin, const char *orig_name) {
 	}
 
 	char *name = (char*) orig_name;
-	const char *_objc_class = "_OBJC_CLASS_$";
-	const char *_objc_metaclass = "_OBJC_METACLASS_$";
+	const char *const _objc_class = "_OBJC_CLASS_$";
+	const char *const _objc_metaclass = "_OBJC_METACLASS_$";
 	const char * type = "FUNC";
 
 	if (r_str_startswith (name, _objc_class)) {
@@ -3303,18 +3303,20 @@ const RPVector *MACH0_(load_imports)(RBinFile *bf, struct MACH0_(obj_t) *bin) {
 
 	bin->imports_loaded = true;
 	r_pvector_init (&bin->imports_cache, (RPVectorFree) r_bin_import_free);
-	r_pvector_reserve (&bin->imports_cache, bin->dysymtab.nundefsym);
+
+	ut32 nundefsym = bin->dysymtab.nundefsym;
+	if (nundefsym < 1 || nundefsym > 0xfffff) {
+		return NULL;
+	}
+
+	r_pvector_reserve (&bin->imports_cache, nundefsym);
 
 	if (!bin->sects || !bin->symtab || !bin->symstr || !bin->indirectsyms) {
 		return NULL;
 	}
 
-	if (bin->dysymtab.nundefsym < 1 || bin->dysymtab.nundefsym > 0xfffff) {
-		return NULL;
-	}
-
 	int i, num_imports;
-	for (i = num_imports = 0; i < bin->dysymtab.nundefsym; i++) {
+	for (i = num_imports = 0; i < nundefsym; i++) {
 		int idx = bin->dysymtab.iundefsym + i;
 		if (idx < 0 || idx >= bin->nsymtab) {
 			R_LOG_WARN ("Imports index out of bounds. Ignoring relocs");
@@ -3337,14 +3339,16 @@ const RPVector *MACH0_(load_imports)(RBinFile *bf, struct MACH0_(obj_t) *bin) {
 		r_pvector_push (&bin->imports_cache, import);
 
 		num_imports++;
-		if (!strcmp (import->name, "__stack_chk_fail") ) {
-			bin->has_canary = true;
-		}
-		if (!strcmp (import->name, "__asan_init") || !strcmp (import->name, "__tsan_init")) {
-			bin->has_sanitizers = true;
-		}
-		if (!strcmp (import->name, "_NSConcreteGlobalBlock")) {
-			bin->has_blocks_ext = true;
+		if (import->name[0] == '_') {
+			if (!strcmp (import->name, "__stack_chk_fail") ) {
+				bin->has_canary = true;
+			}
+			if (!strcmp (import->name, "__asan_init") || !strcmp (import->name, "__tsan_init")) {
+				bin->has_sanitizers = true;
+			}
+			if (!strcmp (import->name, "_NSConcreteGlobalBlock")) {
+				bin->has_blocks_ext = true;
+			}
 		}
 
 		free (imp_name);
