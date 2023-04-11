@@ -632,7 +632,7 @@ static void r_core_cmd_omt(RCore *core, const char *arg) {
 }
 
 static bool cmd_om(RCore *core, const char *input, int arg) {
-	char *s = strdup (input + 2);
+	char *s = r_str_trim_dup (input + 1);
 	if (!s) {
 		return false;
 	}
