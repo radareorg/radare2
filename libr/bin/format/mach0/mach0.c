@@ -2820,7 +2820,7 @@ static void _handle_arm_thumb(RBinSymbol *sym) {
 	}
 }
 
-static void _enrich_symbol(RBinFile *bf, struct MACH0_(obj_t) *bin, Sdb *symcache, RBinSymbol *sym) {
+static void _enrich_symbol(RBinFile *bf, struct MACH0_(obj_t) *bin, HtPP *symcache, RBinSymbol *sym) {
 	int wordsize = MACH0_(get_bits) (bin);
 
 	if (sym->name[0] == '_' && !sym->is_imported) {
@@ -2853,12 +2853,12 @@ static void _enrich_symbol(RBinFile *bf, struct MACH0_(obj_t) *bin, Sdb *symcach
 
 	bin->dbg_info = strncmp (sym->name, "radr://", 7)? 0: 1;
 	r_strf_var (k, 32, "sym0x%"PFMT64x, sym->vaddr);
-	sdb_set (symcache, k, "found", 0);
+	ht_pp_insert (symcache, k, "found");
 }
 
 typedef struct fill_context_t {
 	RBinFile *bf;
-	Sdb *symcache;
+	HtPP *symcache;
 	HtPP *hash;
 	ut64 boffset;
 	ut32 *ordinal;
@@ -2885,7 +2885,7 @@ static void _fill_exports(struct MACH0_(obj_t) *bin, const char *name, ut64 flag
 	r_list_append (&bin->symbols_cache, sym);
 }
 
-static void _parse_symbols(RBinFile *bf, struct MACH0_(obj_t) *bin, Sdb *symcache) {
+static void _parse_symbols(RBinFile *bf, struct MACH0_(obj_t) *bin, HtPP *symcache) {
 	size_t i, j, s, symbols_size, symbols_count;
 	ut32 to = UT32_MAX;
 	ut32 from = UT32_MAX;
@@ -3064,7 +3064,7 @@ static void _parse_symbols(RBinFile *bf, struct MACH0_(obj_t) *bin, Sdb *symcach
 	ht_pp_free (hash);
 }
 
-static void _parse_function_start_symbols(RBinFile *bf, struct MACH0_(obj_t) *bin, Sdb *symcache) {
+static void _parse_function_start_symbols(RBinFile *bf, struct MACH0_(obj_t) *bin, HtPP *symcache) {
 	RBinObject *obj = bf? bf->o: NULL;
 	if (!obj) {
 		return;
@@ -3100,10 +3100,12 @@ static void _parse_function_start_symbols(RBinFile *bf, struct MACH0_(obj_t) *bi
 				_handle_arm_thumb (sym);
 			}
 			r_list_append (&bin->symbols_cache, sym);
-			// if any func is not found in syms then we can consider it is stripped
+			// if any func is not found in syms then we consider it to be stripped
 			if (!is_stripped) {
 				snprintf (symstr + 5, sizeof (symstr) - 5 , "%" PFMT64x, sym->vaddr);
-				if (!sdb_const_get (symcache, symstr, 0)) {
+				bool found = false;
+				ht_pp_find (symcache, symstr, &found);
+				if (!found) {
 					is_stripped = true;
 				}
 			}
@@ -3140,20 +3142,25 @@ const RList *MACH0_(load_symbols)(RBinFile *bf, struct MACH0_(obj_t) *bin) {
 		return &bin->symbols_cache;
 	}
 
+	bin->symbols_loaded = true;
+
 	r_list_init (&bin->symbols_cache);
 	bin->symbols_cache.free = (RListFree) r_bin_symbol_free;
 
-	Sdb *symcache = sdb_new0 ();
+	HtPP *symcache = ht_pp_new0 ();
+	if (!symcache) {
+		return NULL;
+	}
+
 	bool is_debug = _check_if_debug_build (bf, bin);
 	_parse_symbols (bf, bin, symcache);
 	_parse_function_start_symbols (bf, bin, symcache);
-	sdb_free (symcache);
+	ht_pp_free (symcache);
 
 	if (is_debug) {
 		bin->dbg_info |= R_BIN_DBG_LINENUMS;
 	}
 
-	bin->symbols_loaded = true;
 	return &bin->symbols_cache;
 }
 
