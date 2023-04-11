@@ -2851,7 +2851,7 @@ static void _enrich_symbol(RBinFile *bf, struct MACH0_(obj_t) *bin, HtPP *symcac
 		_handle_arm_thumb (sym);
 	}
 
-	bin->dbg_info = strncmp (sym->name, "radr://", 7)? 0: 1;
+	bin->dbg_info = r_str_startswith (sym->name, "radr://");
 	r_strf_var (k, 32, "sym0x%"PFMT64x, sym->vaddr);
 	ht_pp_insert (symcache, k, "found");
 }
@@ -2871,15 +2871,14 @@ static void _fill_exports(struct MACH0_(obj_t) *bin, const char *name, ut64 flag
 		return;
 	}
 
-	RBinSymbol sym = {0};
-	sym.vaddr = vaddr;
-	sym.paddr = offset + context->boffset;
-	sym.type = "EXT";
-	sym.name = strdup (name);
-	sym.bind = R_BIN_BIND_GLOBAL_STR;
-	sym.ordinal = (*context->ordinal)++;
-	_enrich_symbol (context->bf, bin, context->symcache, &sym);
-	r_vector_push (&bin->symbols_cache, &sym);
+	RBinSymbol *sym = r_vector_end (&bin->symbols_cache);
+	sym->vaddr = vaddr;
+	sym->paddr = offset + context->boffset;
+	sym->type = "EXT";
+	sym->name = strdup (name);
+	sym->bind = R_BIN_BIND_GLOBAL_STR;
+	sym->ordinal = (*context->ordinal)++;
+	_enrich_symbol (context->bf, bin, context->symcache, sym);
 }
 
 static void _parse_symbols(RBinFile *bf, struct MACH0_(obj_t) *bin, HtPP *symcache) {
@@ -2966,22 +2965,21 @@ static void _parse_symbols(RBinFile *bf, struct MACH0_(obj_t) *bin, HtPP *symcac
 				continue;
 			}
 
-			RBinSymbol sym = {0};
-			sym.vaddr = vaddr;
-			sym.paddr = addr_to_offset (bin, sym.vaddr) + obj->boffset;
-			sym.size = 0; /* TODO: Is it anywhere? */
-			sym.bits = bin->symtab[i].n_desc & N_ARM_THUMB_DEF ? 16 : bits;
-			sym.is_imported = false;
-			sym.type = bin->symtab[i].n_type & N_EXT ? "EXT" : "LOCAL";
-			sym.name = sym_name;
-			_update_main_addr_if_needed (bin, &sym);
-
-			if (hash_find_or_insert (hash, sym.name, sym.vaddr)) {
+			if (hash_find_or_insert (hash, sym_name, vaddr)) {
+				free (sym_name);
 				j--;
 			} else {
-				_enrich_symbol (bf, bin, symcache, &sym);
-				sym.ordinal = ordinal++;
-				r_vector_push (&bin->symbols_cache, &sym);
+				RBinSymbol *sym = r_vector_end (&bin->symbols_cache);
+				sym->vaddr = vaddr;
+				sym->paddr = addr_to_offset (bin, sym->vaddr) + obj->boffset;
+				sym->size = 0; /* TODO: Is it anywhere? */
+				sym->bits = bin->symtab[i].n_desc & N_ARM_THUMB_DEF ? 16 : bits;
+				sym->is_imported = false;
+				sym->type = bin->symtab[i].n_type & N_EXT ? "EXT" : "LOCAL";
+				sym->name = sym_name;
+				sym->ordinal = ordinal++;
+				_update_main_addr_if_needed (bin, sym);
+				_enrich_symbol (bf, bin, symcache, sym);
 			}
 		}
 	}
@@ -2995,19 +2993,18 @@ static void _parse_symbols(RBinFile *bf, struct MACH0_(obj_t) *bin, HtPP *symcac
 		}
 		if (parse_import_stub (bin, &symbol, i) && symbol.addr >= 100) {
 			j++;
-			RBinSymbol sym = {0};
-			sym.lang = R_BIN_LANG_C;
-			sym.vaddr = symbol.addr;
-			sym.paddr = symbol.offset + obj->boffset;
-			sym.name = symbol.name;
-			if (!sym.name) {
-				sym.name = r_str_newf ("entry%u", (ut32)i);
+			RBinSymbol *sym = r_vector_end (&bin->symbols_cache);
+			sym->lang = R_BIN_LANG_C;
+			sym->vaddr = symbol.addr;
+			sym->paddr = symbol.offset + obj->boffset;
+			sym->name = symbol.name;
+			if (!sym->name) {
+				sym->name = r_str_newf ("entry%u", (ut32)i);
 			}
-			sym.type = symbol.type == R_BIN_MACH0_SYMBOL_TYPE_LOCAL? "LOCAL": "EXT";
-			sym.is_imported = symbol.is_imported;
-			sym.ordinal = ordinal++;
-			_enrich_symbol (bf, bin, symcache, &sym);
-			r_vector_push (&bin->symbols_cache, &sym);
+			sym->type = symbol.type == R_BIN_MACH0_SYMBOL_TYPE_LOCAL? "LOCAL": "EXT";
+			sym->is_imported = symbol.is_imported;
+			sym->ordinal = ordinal++;
+			_enrich_symbol (bf, bin, symcache, sym);
 		}
 	}
 
@@ -3026,23 +3023,24 @@ static void _parse_symbols(RBinFile *bf, struct MACH0_(obj_t) *bin, HtPP *symcac
 				continue;
 			}
 
-			RBinSymbol sym = {0};
-			sym.vaddr = vaddr;
-			sym.paddr = addr_to_offset (bin, vaddr) + obj->boffset;
-			sym.type = (st->n_type & N_EXT)? "EXT": "LOCAL";
 			char *sym_name = get_name (bin, st->n_strx, false);
-			if (sym_name) {
-				sym.name = sym_name;
-			} else {
-				sym.name = r_str_newf ("entry%u", (ut32)i);
+			if (!sym_name) {
+				sym_name = r_str_newf ("entry%u", (ut32)i);
 			}
-			if (hash_find_or_insert (hash, sym.name, sym.vaddr)) {
+			if (hash_find_or_insert (hash, sym_name, vaddr)) {
+				free (sym_name);
 				continue;
 			}
-			_update_main_addr_if_needed (bin, &sym);
-			sym.ordinal = ordinal++;
-			_enrich_symbol (bf, bin, symcache, &sym);
-			r_vector_push (&bin->symbols_cache, &sym);
+
+			RBinSymbol *sym = r_vector_end (&bin->symbols_cache);
+			sym->name = sym_name;
+			sym->vaddr = vaddr;
+			sym->paddr = addr_to_offset (bin, vaddr) + obj->boffset;
+			sym->type = (st->n_type & N_EXT)? "EXT": "LOCAL";
+			sym->ordinal = ordinal++;
+
+			_update_main_addr_if_needed (bin, sym);
+			_enrich_symbol (bf, bin, symcache, sym);
 			j++;
 		}
 	}
@@ -3070,22 +3068,21 @@ static void _parse_function_start_symbols(RBinFile *bf, struct MACH0_(obj_t) *bi
 		while (temp + 3 < temp_end && *temp) {
 			temp = r_uleb128_decode (temp, NULL, &value);
 			address += value;
-			RBinSymbol sym = {0};
-			sym.vaddr = bin->baddr + address;
-			sym.paddr = address + obj->boffset;
-			sym.size = 0;
-			sym.name = r_str_newf ("func.%08"PFMT64x, sym.vaddr);
-			sym.type = R_BIN_TYPE_FUNC_STR;
-			sym.forwarder = "NONE";
-			sym.bind = R_BIN_BIND_LOCAL_STR;
-			sym.ordinal = i++;
+			RBinSymbol *sym = r_vector_end (&bin->symbols_cache);
+			sym->vaddr = bin->baddr + address;
+			sym->paddr = address + obj->boffset;
+			sym->size = 0;
+			sym->name = r_str_newf ("func.%08"PFMT64x, sym->vaddr);
+			sym->type = R_BIN_TYPE_FUNC_STR;
+			sym->forwarder = "NONE";
+			sym->bind = R_BIN_BIND_LOCAL_STR;
+			sym->ordinal = i++;
 			if (bin->hdr.cputype == CPU_TYPE_ARM && wordsize < 64) {
-				_handle_arm_thumb (&sym);
+				_handle_arm_thumb (sym);
 			}
-			r_vector_push (&bin->symbols_cache, &sym);
 			// if any func is not found in syms then we consider it to be stripped
 			if (!is_stripped) {
-				snprintf (symstr + 5, sizeof (symstr) - 5 , "%" PFMT64x, sym.vaddr);
+				snprintf (symstr + 5, sizeof (symstr) - 5 , "%" PFMT64x, sym->vaddr);
 				bool found = false;
 				ht_pp_find (symcache, symstr, &found);
 				if (!found) {
