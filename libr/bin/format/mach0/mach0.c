@@ -2179,7 +2179,7 @@ void *MACH0_(mach0_free)(struct MACH0_(obj_t) *mo) {
 	free (mo->compiler);
 #if FEATURE_SYMLIST
 	if (mo->symbols_loaded) {
-		r_list_purge (&mo->symbols_cache);
+		r_vector_fini (&mo->symbols_cache);
 	}
 #endif
 	r_list_free (mo->sections_cache);
@@ -2851,7 +2851,7 @@ static void _enrich_symbol(RBinFile *bf, struct MACH0_(obj_t) *bin, HtPP *symcac
 		_handle_arm_thumb (sym);
 	}
 
-	bin->dbg_info = strncmp (sym->name, "radr://", 7)? 0: 1;
+	bin->dbg_info = r_str_startswith (sym->name, "radr://");
 	r_strf_var (k, 32, "sym0x%"PFMT64x, sym->vaddr);
 	ht_pp_insert (symcache, k, "found");
 }
@@ -2871,10 +2871,7 @@ static void _fill_exports(struct MACH0_(obj_t) *bin, const char *name, ut64 flag
 		return;
 	}
 
-	RBinSymbol *sym = R_NEW0 (RBinSymbol);
-	if (!sym) {
-		return;
-	}
+	RBinSymbol *sym = r_vector_end (&bin->symbols_cache);
 	sym->vaddr = vaddr;
 	sym->paddr = offset + context->boffset;
 	sym->type = "EXT";
@@ -2882,7 +2879,6 @@ static void _fill_exports(struct MACH0_(obj_t) *bin, const char *name, ut64 flag
 	sym->bind = R_BIN_BIND_GLOBAL_STR;
 	sym->ordinal = (*context->ordinal)++;
 	_enrich_symbol (context->bf, bin, context->symcache, sym);
-	r_list_append (&bin->symbols_cache, sym);
 }
 
 static void _parse_symbols(RBinFile *bf, struct MACH0_(obj_t) *bin, HtPP *symcache) {
@@ -2969,26 +2965,21 @@ static void _parse_symbols(RBinFile *bf, struct MACH0_(obj_t) *bin, HtPP *symcac
 				continue;
 			}
 
-			RBinSymbol *sym = R_NEW0 (RBinSymbol);
-			if (!sym) {
-				break;
-			}
-			sym->vaddr = vaddr;
-			sym->paddr = addr_to_offset (bin, sym->vaddr) + obj->boffset;
-			sym->size = 0; /* TODO: Is it anywhere? */
-			sym->bits = bin->symtab[i].n_desc & N_ARM_THUMB_DEF ? 16 : bits;
-			sym->is_imported = false;
-			sym->type = bin->symtab[i].n_type & N_EXT ? "EXT" : "LOCAL";
-			sym->name = sym_name;
-			_update_main_addr_if_needed (bin, sym);
-
-			if (hash_find_or_insert (hash, sym->name, sym->vaddr)) {
-				r_bin_symbol_free (sym);
+			if (hash_find_or_insert (hash, sym_name, vaddr)) {
+				free (sym_name);
 				j--;
 			} else {
-				_enrich_symbol (bf, bin, symcache, sym);
+				RBinSymbol *sym = r_vector_end (&bin->symbols_cache);
+				sym->vaddr = vaddr;
+				sym->paddr = addr_to_offset (bin, sym->vaddr) + obj->boffset;
+				sym->size = 0; /* TODO: Is it anywhere? */
+				sym->bits = bin->symtab[i].n_desc & N_ARM_THUMB_DEF ? 16 : bits;
+				sym->is_imported = false;
+				sym->type = bin->symtab[i].n_type & N_EXT ? "EXT" : "LOCAL";
+				sym->name = sym_name;
 				sym->ordinal = ordinal++;
-				r_list_append (&bin->symbols_cache, sym);
+				_update_main_addr_if_needed (bin, sym);
+				_enrich_symbol (bf, bin, symcache, sym);
 			}
 		}
 	}
@@ -3002,10 +2993,7 @@ static void _parse_symbols(RBinFile *bf, struct MACH0_(obj_t) *bin, HtPP *symcac
 		}
 		if (parse_import_stub (bin, &symbol, i) && symbol.addr >= 100) {
 			j++;
-			RBinSymbol *sym = R_NEW0 (RBinSymbol);
-			if (!sym) {
-				break;
-			}
+			RBinSymbol *sym = r_vector_end (&bin->symbols_cache);
 			sym->lang = R_BIN_LANG_C;
 			sym->vaddr = symbol.addr;
 			sym->paddr = symbol.offset + obj->boffset;
@@ -3017,7 +3005,6 @@ static void _parse_symbols(RBinFile *bf, struct MACH0_(obj_t) *bin, HtPP *symcac
 			sym->is_imported = symbol.is_imported;
 			sym->ordinal = ordinal++;
 			_enrich_symbol (bf, bin, symcache, sym);
-			r_list_append (&bin->symbols_cache, sym);
 		}
 	}
 
@@ -3036,27 +3023,24 @@ static void _parse_symbols(RBinFile *bf, struct MACH0_(obj_t) *bin, HtPP *symcac
 				continue;
 			}
 
-			RBinSymbol *sym = R_NEW0 (RBinSymbol);
-			if (!sym) {
-				break;
+			char *sym_name = get_name (bin, st->n_strx, false);
+			if (!sym_name) {
+				sym_name = r_str_newf ("entry%u", (ut32)i);
 			}
+			if (hash_find_or_insert (hash, sym_name, vaddr)) {
+				free (sym_name);
+				continue;
+			}
+
+			RBinSymbol *sym = r_vector_end (&bin->symbols_cache);
+			sym->name = sym_name;
 			sym->vaddr = vaddr;
 			sym->paddr = addr_to_offset (bin, vaddr) + obj->boffset;
 			sym->type = (st->n_type & N_EXT)? "EXT": "LOCAL";
-			char *sym_name = get_name (bin, st->n_strx, false);
-			if (sym_name) {
-				sym->name = sym_name;
-			} else {
-				sym->name = r_str_newf ("entry%u", (ut32)i);
-			}
-			if (hash_find_or_insert (hash, sym->name, sym->vaddr)) {
-				r_bin_symbol_free (sym);
-				continue;
-			}
-			_update_main_addr_if_needed (bin, sym);
 			sym->ordinal = ordinal++;
+
+			_update_main_addr_if_needed (bin, sym);
 			_enrich_symbol (bf, bin, symcache, sym);
-			r_list_append (&bin->symbols_cache, sym);
 			j++;
 		}
 	}
@@ -3072,7 +3056,7 @@ static void _parse_function_start_symbols(RBinFile *bf, struct MACH0_(obj_t) *bi
 
 	int wordsize = MACH0_(get_bits) (bin);
 	bool is_stripped = false;
-	ut32 i = r_list_length (&bin->symbols_cache);
+	ut32 i = r_vector_length (&bin->symbols_cache);
 
 	// functions from LC_FUNCTION_STARTS
 	if (bin->func_start) {
@@ -3084,10 +3068,7 @@ static void _parse_function_start_symbols(RBinFile *bf, struct MACH0_(obj_t) *bi
 		while (temp + 3 < temp_end && *temp) {
 			temp = r_uleb128_decode (temp, NULL, &value);
 			address += value;
-			RBinSymbol *sym = R_NEW0 (RBinSymbol);
-			if (!sym) {
-				break;
-			}
+			RBinSymbol *sym = r_vector_end (&bin->symbols_cache);
 			sym->vaddr = bin->baddr + address;
 			sym->paddr = address + obj->boffset;
 			sym->size = 0;
@@ -3099,7 +3080,6 @@ static void _parse_function_start_symbols(RBinFile *bf, struct MACH0_(obj_t) *bi
 			if (bin->hdr.cputype == CPU_TYPE_ARM && wordsize < 64) {
 				_handle_arm_thumb (sym);
 			}
-			r_list_append (&bin->symbols_cache, sym);
 			// if any func is not found in syms then we consider it to be stripped
 			if (!is_stripped) {
 				snprintf (symstr + 5, sizeof (symstr) - 5 , "%" PFMT64x, sym->vaddr);
@@ -3135,8 +3115,17 @@ static bool _check_if_debug_build(RBinFile *bf, struct MACH0_(obj_t) *bin) {
 	return false;
 }
 
+static void _r_bin_symbol_fini(void *_sym, void *user) {
+	RBinSymbol *sym = _sym;
+	if (sym) {
+		free (sym->name);
+		free (sym->libname);
+		free (sym->classname);
+		// TODO remove free (sym);
+	}
+}
 
-const RList *MACH0_(load_symbols)(RBinFile *bf, struct MACH0_(obj_t) *bin) {
+const RVector *MACH0_(load_symbols)(RBinFile *bf, struct MACH0_(obj_t) *bin) {
 	r_return_val_if_fail (bin, NULL);
 	if (bin->symbols_loaded) {
 		return &bin->symbols_cache;
@@ -3144,8 +3133,7 @@ const RList *MACH0_(load_symbols)(RBinFile *bf, struct MACH0_(obj_t) *bin) {
 
 	bin->symbols_loaded = true;
 
-	r_list_init (&bin->symbols_cache);
-	bin->symbols_cache.free = (RListFree) r_bin_symbol_free;
+	r_vector_init (&bin->symbols_cache, sizeof (RBinSymbol), (RVectorFree) _r_bin_symbol_fini, NULL);
 
 	HtPP *symcache = ht_pp_new0 ();
 	if (!symcache) {

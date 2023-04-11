@@ -53,6 +53,12 @@ typedef struct r_vector_t {
 // RPVector directly wraps RVector for type safety
 typedef struct r_pvector_t { RVector v; } RPVector;
 
+#define INITIAL_VECTOR_LEN 4
+
+#define NEXT_VECTOR_CAPACITY (vec->capacity < INITIAL_VECTOR_LEN \
+	? INITIAL_VECTOR_LEN \
+	: vec->capacity <= 12 ? vec->capacity * 2 \
+	: vec->capacity + (vec->capacity >> 1))
 
 // RVector
 
@@ -135,6 +141,19 @@ R_API void *r_vector_shrink(RVector *vec);
 
 R_API void *r_vector_flush(RVector *vec);
 
+R_API void r_sys_backtrace(void);
+static inline R_MUSTUSE void *r_vector_end (RVector *vec) {
+	size_t len = vec->len;
+	eprintf ("len is now: %d\n", len);
+	r_sys_backtrace ();
+	if (R_UNLIKELY (len >= vec->capacity)) {
+		r_vector_reserve (vec, NEXT_VECTOR_CAPACITY);
+	}
+	void *ptr = r_vector_at (vec, len);
+	vec->len = len + 1;
+	return ptr;
+}
+
 /*
  * example:
  *
@@ -146,7 +165,7 @@ R_API void *r_vector_flush(RVector *vec);
  */
 #define r_vector_foreach(vec, it) \
 	if (!r_vector_empty (vec)) \
-		for (it = (void *)(vec)->a; (char *)it != (char *)(vec)->a + ((vec)->len * (vec)->elem_size); it = (void *)((char *)it + (vec)->elem_size))
+		for (it = (void *)(vec)->a; (char *)it < (char *)(vec)->a + ((vec)->len * (vec)->elem_size); it = (void *)((char *)it + (vec)->elem_size))
 
 #define r_vector_foreach_prev(vec, it) \
 	if (!r_vector_empty (vec)) \
@@ -303,7 +322,7 @@ static inline void **r_pvector_flush(RPVector *vec) {
  */
 #define r_pvector_foreach(vec, it) \
 	if ((vec)->v.len > 0) \
-	for (it = (void **)(vec)->v.a; it != (void **)(vec)->v.a + (vec)->v.len; it++)
+	for (it = (void **)(vec)->v.a; it < (void **)(vec)->v.a + (vec)->v.len; it++)
 
 // like r_pvector_foreach() but inverse
 #define r_pvector_foreach_prev(vec, it) \

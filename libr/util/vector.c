@@ -12,11 +12,6 @@
 #define INITIAL_VECTOR_LEN 4
 #endif
 
-#define NEXT_VECTOR_CAPACITY (vec->capacity < INITIAL_VECTOR_LEN \
-	? INITIAL_VECTOR_LEN \
-	: vec->capacity <= 12 ? vec->capacity * 2 \
-	: vec->capacity + (vec->capacity >> 1))
-
 #define RESIZE_OR_RETURN_NULL(next_capacity) do { \
 		size_t new_capacity = next_capacity; \
 		if (new_capacity == 0) { \
