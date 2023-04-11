@@ -183,7 +183,7 @@ struct MACH0_(obj_t) {
 	ut64 header_at;
 	struct symbol_t *symbols; // TODO remove
 	bool symbols_loaded;
-	RList symbols_cache;
+	RVector symbols_cache;
 	ut64 symbols_off;
 	void *user;
 	ut64 (*va2pa)(ut64 p, ut32 *offset, ut32 *left, RBinFile *bf);
@@ -258,7 +258,7 @@ void *MACH0_(mach0_free)(struct MACH0_(obj_t) *bin);
 struct section_t *MACH0_(get_sections)(struct MACH0_(obj_t) *bin);
 RList *MACH0_(get_segments)(RBinFile *bf);
 const struct symbol_t *MACH0_(get_symbols)(struct MACH0_(obj_t) *bin);
-const RList *MACH0_(load_symbols)(RBinFile *bf, struct MACH0_(obj_t) *bin);
+const RVector *MACH0_(load_symbols)(RBinFile *bf, struct MACH0_(obj_t) *bin);
 void MACH0_(pull_symbols)(struct MACH0_(obj_t) *mo, RBinSymbolCallback cb, void *user);
 const RPVector *MACH0_(load_imports)(RBinFile* bf, struct MACH0_(obj_t) *bin);
 RSkipList *MACH0_(get_relocs)(struct MACH0_(obj_t) *bin);
