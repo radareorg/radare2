@@ -716,13 +716,24 @@ repeat:
 			// RET_END causes infinite loops somehow
 			gotoBeach (R_ANAL_RET_END);
 		}
-		dst = r_vector_at (&op->dsts, 0);
-		free (op_dst);
-		op_dst = (dst && dst->reg && dst->reg->name)? strdup (dst->reg->name): NULL;
-		src0 = r_vector_at (&op->srcs, 0);
-		free (op_src);
-		op_src = (src0 && src0->reg && src0->reg->name) ? strdup (src0->reg->name): NULL;
-		src1 = r_vector_at (&op->srcs, 1);
+		if (r_vector_length (&op->dsts) > 0) {
+			dst = r_vector_at (&op->dsts, 0);
+			free (op_dst);
+			op_dst = (dst && dst->reg && dst->reg->name)? strdup (dst->reg->name): NULL;
+		}
+		if (r_vector_length (&op->srcs) > 0) {
+			src0 = r_vector_at (&op->srcs, 0);
+			free (op_src);
+			op_src = (src0 && src0->reg && src0->reg->name) ? strdup (src0->reg->name): NULL;
+			if (r_vector_length (&op->srcs) > 1) {
+				src1 = r_vector_at (&op->srcs, 1);
+			} else {
+				src1 = NULL;
+			}
+		} else {
+			src0 = NULL;
+			src1 = NULL;
+		}
 
 		if (anal->opt.nopskip && fcn->addr == at) {
 			RFlagItem *fi = anal->flb.get_at (anal->flb.f, addr, false);

@@ -4297,7 +4297,8 @@ static bool is_valid64(arm64_reg reg) {
 	return reg != ARM64_REG_INVALID;
 }
 
-static char *reg_list[] = {
+#if 0
+static const char *reg_list[] = {
 	"x0", "x1", "x2", "x3", "x4",
 	"x5", "x6", "x7", "x8", "x9",
 	"x10", "x11", "x12", "x13", "x14",
@@ -4306,8 +4307,9 @@ static char *reg_list[] = {
 	"x25", "x26", "x27", "x28", "x29",
 	"x30"
 };
+#endif
 
-static int parse_reg64_name(RReg *reg, RRegItem **reg_base, RRegItem **reg_delta, csh handle, cs_insn *insn, int reg_num) {
+static void parse_reg64_name(RReg *reg, RRegItem **reg_base, RRegItem **reg_delta, csh handle, cs_insn *insn, int reg_num) {
 	cs_arm64_op armop = INSOP64 (reg_num);
 	switch (armop.type) {
 	case ARM64_OP_REG:
@@ -4326,10 +4328,12 @@ static int parse_reg64_name(RReg *reg, RRegItem **reg_base, RRegItem **reg_delta
 	default:
 		break;
 	}
-	if (*reg_base && *(*reg_base)->name == 'w') {
-		*reg_base = r_reg_get (reg, reg_list[atoi ((*reg_base)->name + 1)], R_REG_TYPE_ALL);
+#if 0
+	RRegItem *ri = *reg_base;
+	if (ri && ri->name[0] == 'w') {
+		*reg_base = r_reg_get (reg, reg_list[atoi (ri->name + 1)], R_REG_TYPE_ALL);
 	}
-	return 0;
+#endif
 }
 
 static void set_opdir(RAnalOp *op) {
@@ -4360,6 +4364,7 @@ static void set_src_dst(RReg *reg, RAnalValue *val, csh *handle, cs_insn *insn, 
 	if (!val) {
 		return;
 	}
+	memset (val, 0, sizeof (RAnalValue));
 	cs_arm_op armop = INSOP (x);
 	cs_arm64_op arm64op = INSOP64 (x);
 	if (bits == 64) {
@@ -4398,10 +4403,8 @@ static void set_src_dst(RReg *reg, RAnalValue *val, csh *handle, cs_insn *insn, 
 }
 
 static void create_src_dst(RAnalOp *op) {
-	r_vector_push (&op->srcs, NULL);
-	r_vector_push (&op->srcs, NULL);
-	r_vector_push (&op->srcs, NULL);
-	r_vector_push (&op->dsts, NULL);
+	r_vector_reserve (&op->srcs, 4);
+	r_vector_reserve (&op->dsts, 4);
 }
 
 static void op_fillval(RAnal *anal, RAnalOp *op, csh handle, cs_insn *insn, int bits) {

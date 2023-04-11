@@ -96,7 +96,7 @@ static inline void *r_vector_index_ptr(RVector *vec, size_t index) {
 }
 
 static inline void *r_vector_at(RVector *vec, int index) {
-	if (vec && index >= 0 && (size_t)index < vec->capacity) {
+	if (vec && index >= 0 && (size_t)index < vec->len) {
 		return (char *)vec->a + (vec->elem_size * index);
 	}
 	return NULL;

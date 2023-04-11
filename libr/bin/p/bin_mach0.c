@@ -177,18 +177,8 @@ static RList *entries(RBinFile *bf) {
 	return ret;
 }
 
-static void _handle_arm_thumb(struct MACH0_(obj_t) *bin, RBinSymbol **p) {
-	RBinSymbol *ptr = *p;
-	if (bin) {
-		if (ptr->paddr & 1) {
-			ptr->paddr--;
-			ptr->vaddr--;
-			ptr->bits = 16;
-		}
-	}
-}
-
 #if FEATURE_SYMLIST
+
 // R2_590 remove this duplicate function once it is exposed in public API
 static RBinSymbol *r_bin_symbol_clone(RBinSymbol *bs) {
 	RBinSymbol *nbs = R_NEW (RBinSymbol);
@@ -222,6 +212,16 @@ static RList *symbols(RBinFile *bf) {
 	return list;
 }
 #else
+static void _handle_arm_thumb(struct MACH0_(obj_t) *bin, RBinSymbol **p) {
+	RBinSymbol *ptr = *p;
+	if (bin) {
+		if (ptr->paddr & 1) {
+			ptr->paddr--;
+			ptr->vaddr--;
+			ptr->bits = 16;
+		}
+	}
+}
 static RList *symbols(RBinFile *bf) {
 	struct MACH0_(obj_t) *bin;
 	int i;
