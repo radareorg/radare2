@@ -208,18 +208,18 @@ static RBinSymbol *r_bin_symbol_clone(RBinSymbol *bs) {
 
 static RList *symbols(RBinFile *bf) {
 	RBinObject *obj = bf? bf->o: NULL;
-	const RPVector *symbols = MACH0_(load_symbols) (bf, obj->bin_obj);
+	const RList *symbols = MACH0_(load_symbols) (bf, obj->bin_obj);
 	if (!symbols) {
 		return NULL;
 	}
 
 	RList *list = r_list_newf ((RListFree) r_bin_symbol_free);
-	void **it;
-	r_pvector_foreach (symbols, it) {
+	RListIter *it;
+	RBinSymbol *symbol;
+	r_list_foreach (symbols, it, symbol) {
 		// need to clone here, in bobj.c the list free function is forced to `r_bin_symbol_free`
-		// otherwise, a list with no free function could be returned here..
-		RBinSymbol *symbol = r_bin_symbol_clone (*it);
-		r_list_append (list, symbol);
+		// otherwise, a shallow copy of a list with no free function could be returned here..
+		r_list_append (list, r_bin_symbol_clone (symbol));
 	}
 	return list;
 }

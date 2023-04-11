@@ -1324,12 +1324,11 @@ static void parse_type(RList *list, RBinFile *bf, SwiftType st) {
 				break;
 			}
 			method_addr += bf->o->baddr;
-			const RPVector *symbols = MACH0_(load_symbols) (bf, bf->o->bin_obj);
+			const RList *symbols = MACH0_(load_symbols) (bf, bf->o->bin_obj);
 			RBinSymbol *sym;
-			void **iter;
+			RListIter *iter;
 			char *method_name = r_str_newf ("%d", i);
-			r_pvector_foreach (symbols, iter) {
-				sym = *iter;
+			r_list_foreach (symbols, iter, sym) {
 				if (sym->vaddr == method_addr) {
 					free (method_name);
 					method_name = r_name_filter_dup (sym->name);
