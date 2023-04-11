@@ -267,8 +267,8 @@ CMDS=ik ***~uuid
 EXPECT=<<EOF
 info/mach0_uuid_command.format=[4]Ed[16]b (mach0_load_command_type)cmd cmdsize uuid
 info/mach0_cmd_8.format=mach0_uuid_command
-info/uuid.0=ff4d6c2e1dc0369d98d0d3040a8049e8
 info/mach0_cmd_8.cmd=uuid
+info/uuid.0=ff4d6c2e1dc0369d98d0d3040a8049e8
 EOF
 RUN
 

@@ -359,7 +359,7 @@ static RBinImport *import_from_name(RBin *rbin, const char *orig_name, HtPP *imp
 	char *name = (char*) orig_name;
 	const char *const _objc_class = "_OBJC_CLASS_$";
 	const char *const _objc_metaclass = "_OBJC_METACLASS_$";
-	const char * type = "FUNC";
+	const char *type = "FUNC";
 
 	if (r_str_startswith (name, _objc_class)) {
 		name += strlen (_objc_class);
@@ -451,23 +451,22 @@ static RList *relocs(RBinFile *bf) {
 }
 
 static RList *libs(RBinFile *bf) {
-	int i;
-	char *ptr = NULL;
-	struct lib_t *libs;
-	RList *ret = NULL;
 	RBinObject *obj = bf ? bf->o : NULL;
-
-	if (!obj || !obj->bin_obj || !(ret = r_list_newf (free))) {
+	if (!obj) {
 		return NULL;
 	}
-	if ((libs = MACH0_(get_libs) (obj->bin_obj))) {
-		for (i = 0; !libs[i].last; i++) {
-			ptr = strdup (libs[i].name);
-			r_list_append (ret, ptr);
-		}
-		free (libs);
+
+	const RPVector *libs = MACH0_(load_libs) (obj->bin_obj);
+	if (!libs) {
+		return NULL;
 	}
-	return ret;
+
+	RList *result = r_list_new ();
+	void **it;
+	r_pvector_foreach (libs, it) {
+		r_list_append (result, *it);
+	}
+	return result;
 }
 
 static RBinInfo *info(RBinFile *bf) {
