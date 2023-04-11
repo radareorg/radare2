@@ -142,14 +142,13 @@ R_API void *r_vector_shrink(RVector *vec);
 R_API void *r_vector_flush(RVector *vec);
 
 R_API void r_sys_backtrace(void);
-static inline R_MUSTUSE void *r_vector_end (RVector *vec) {
-	size_t len = vec->len;
-	eprintf ("len is now: %d\n", len);
-	r_sys_backtrace ();
+static inline R_MUSTUSE void *r_vector_end(RVector *vec) {
+	const size_t len = vec->len;
 	if (R_UNLIKELY (len >= vec->capacity)) {
-		r_vector_reserve (vec, NEXT_VECTOR_CAPACITY);
+		const size_t next_capacity = (vec->capacity + 4) * 2;
+		r_vector_reserve (vec, next_capacity);
 	}
-	void *ptr = r_vector_at (vec, len);
+	void *ptr = r_vector_index_ptr (vec, len);
 	vec->len = len + 1;
 	return ptr;
 }

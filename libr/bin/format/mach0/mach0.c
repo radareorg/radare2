@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2010-2022 - nibble, mrmacete, pancake */
+/* radare - LGPL - Copyright 2010-2023 - nibble, mrmacete, pancake, luc */
 
 #define R_LOG_ORIGIN "bin.macho"
 
@@ -74,7 +74,7 @@ static ut64 addr_to_offset(struct MACH0_(obj_t) *bin, ut64 addr) {
 			}
 		}
 	}
-	return 0;
+	return 0; // UT64_MAX ?
 }
 
 static ut64 offset_to_vaddr(struct MACH0_(obj_t) *bin, ut64 offset) {
@@ -88,7 +88,7 @@ static ut64 offset_to_vaddr(struct MACH0_(obj_t) *bin, ut64 offset) {
 			}
 		}
 	}
-	return 0;
+	return 0; // UT64_MAX ?
 }
 
 static ut64 pa2va(RBinFile *bf, ut64 offset) {
@@ -2640,7 +2640,6 @@ static char *get_name(struct MACH0_(obj_t) *mo, ut32 stridx, bool filter) {
 }
 
 static int walk_exports(struct MACH0_(obj_t) *bin, RExportsIterator iterator, void *ctx) {
-	RList *states = NULL;
 	r_return_val_if_fail (bin, 0);
 	if (!bin->dyld_info) {
 		return 0;
@@ -2658,10 +2657,10 @@ static int walk_exports(struct MACH0_(obj_t) *bin, RExportsIterator iterator, vo
 	}
 	ut8 *end = trie + size;
 	if (r_buf_read_at (bin->b, bin->dyld_info->export_off, trie, bin->dyld_info->export_size) != size) {
-		goto beach;
+		return 0;
 	}
 
-	states = r_list_newf ((RListFree)free);
+	RList *states = r_list_newf ((RListFree)free);
 	if (!states) {
 		goto beach;
 	}
@@ -2870,8 +2869,11 @@ static void _fill_exports(struct MACH0_(obj_t) *bin, const char *name, ut64 flag
 	if (hash_find_or_insert (context->hash, name, vaddr)) {
 		return;
 	}
-
+	if (r_vector_length (&bin->symbols_cache) > 0) {
+		return;
+	}
 	RBinSymbol *sym = r_vector_end (&bin->symbols_cache);
+	memset (sym, 0, sizeof (RBinSymbol));
 	sym->vaddr = vaddr;
 	sym->paddr = offset + context->boffset;
 	sym->type = "EXT";
@@ -2910,7 +2912,6 @@ static void _parse_symbols(RBinFile *bf, struct MACH0_(obj_t) *bin, HtPP *symcac
 		ht_pp_free (hash);
 		return;
 	}
-
 	symbols_count += bin->nsymtab;
 	if (SZT_MUL_OVFCHK (symbols_count, 2 * sizeof (RBinSymbol))) {
 		// overflow may happen here
@@ -2970,6 +2971,7 @@ static void _parse_symbols(RBinFile *bf, struct MACH0_(obj_t) *bin, HtPP *symcac
 				j--;
 			} else {
 				RBinSymbol *sym = r_vector_end (&bin->symbols_cache);
+				memset (sym, 0, sizeof (RBinSymbol));
 				sym->vaddr = vaddr;
 				sym->paddr = addr_to_offset (bin, sym->vaddr) + obj->boffset;
 				sym->size = 0; /* TODO: Is it anywhere? */
@@ -2994,6 +2996,7 @@ static void _parse_symbols(RBinFile *bf, struct MACH0_(obj_t) *bin, HtPP *symcac
 		if (parse_import_stub (bin, &symbol, i) && symbol.addr >= 100) {
 			j++;
 			RBinSymbol *sym = r_vector_end (&bin->symbols_cache);
+			memset (sym, 0, sizeof (RBinSymbol));
 			sym->lang = R_BIN_LANG_C;
 			sym->vaddr = symbol.addr;
 			sym->paddr = symbol.offset + obj->boffset;
@@ -3031,8 +3034,8 @@ static void _parse_symbols(RBinFile *bf, struct MACH0_(obj_t) *bin, HtPP *symcac
 				free (sym_name);
 				continue;
 			}
-
 			RBinSymbol *sym = r_vector_end (&bin->symbols_cache);
+			memset (sym, 0, sizeof (RBinSymbol));
 			sym->name = sym_name;
 			sym->vaddr = vaddr;
 			sym->paddr = addr_to_offset (bin, vaddr) + obj->boffset;
@@ -3069,6 +3072,7 @@ static void _parse_function_start_symbols(RBinFile *bf, struct MACH0_(obj_t) *bi
 			temp = r_uleb128_decode (temp, NULL, &value);
 			address += value;
 			RBinSymbol *sym = r_vector_end (&bin->symbols_cache);
+			memset (sym, 0, sizeof (RBinSymbol));
 			sym->vaddr = bin->baddr + address;
 			sym->paddr = address + obj->boffset;
 			sym->size = 0;
@@ -3127,28 +3131,23 @@ static void _r_bin_symbol_fini(void *_sym, void *user) {
 
 const RVector *MACH0_(load_symbols)(RBinFile *bf, struct MACH0_(obj_t) *bin) {
 	r_return_val_if_fail (bin, NULL);
-	if (bin->symbols_loaded) {
-		return &bin->symbols_cache;
+	if (!bin->symbols_loaded) {
+		bin->symbols_loaded = true;
+		r_vector_init (&bin->symbols_cache, sizeof (RBinSymbol), (RVectorFree) _r_bin_symbol_fini, NULL);
+		// NOTE: reduce reallocs, but doesnt seems to be a problem
+		// r_vector_reserve (&bin->symbols_cache, 32);
+
+		HtPP *symcache = ht_pp_new0 ();
+		if (symcache) {
+			_parse_symbols (bf, bin, symcache);
+			_parse_function_start_symbols (bf, bin, symcache);
+			ht_pp_free (symcache);
+		}
+		// should be done when parsing the sections, not here
+		if (_check_if_debug_build (bf, bin)) {
+			bin->dbg_info |= R_BIN_DBG_LINENUMS;
+		}
 	}
-
-	bin->symbols_loaded = true;
-
-	r_vector_init (&bin->symbols_cache, sizeof (RBinSymbol), (RVectorFree) _r_bin_symbol_fini, NULL);
-
-	HtPP *symcache = ht_pp_new0 ();
-	if (!symcache) {
-		return NULL;
-	}
-
-	bool is_debug = _check_if_debug_build (bf, bin);
-	_parse_symbols (bf, bin, symcache);
-	_parse_function_start_symbols (bf, bin, symcache);
-	ht_pp_free (symcache);
-
-	if (is_debug) {
-		bin->dbg_info |= R_BIN_DBG_LINENUMS;
-	}
-
 	return &bin->symbols_cache;
 }
 
