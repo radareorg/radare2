@@ -1144,7 +1144,11 @@ static Sdb *store_versioninfo_gnu_verneed(ELFOBJ *bin, Elf_(Shdr) *shdr, int sz)
 	if (bin->shstrtab && link_shdr->sh_name < bin->shstrtab_size) {
 		link_section_name = &bin->shstrtab[link_shdr->sh_name];
 	}
-	if (!(need = (ut8*) calloc (R_MAX (1, shdr->sh_size), sizeof (ut8)))) {
+	size_t shsz = R_MAX (1, shdr->sh_size);
+	if (shsz > bin->size) {
+		return NULL;
+	}
+	if (!(need = (ut8*) calloc (shsz, sizeof (ut8)))) {
 		R_LOG_ERROR ("Cannot allocate memory for Elf_(Verneed)");
 		goto beach;
 	}
