@@ -3296,14 +3296,15 @@ static RBinImport *import_from_name(RBin *rbin, const char *orig_name) {
 }
 
 static void check_for_special_import_names(struct MACH0_(obj_t) *bin, RBinImport *import) {
-	if (import->name[0] == '_') {
-		if (!strcmp (import->name, "__stack_chk_fail") ) {
+	const char *name = import->name;
+	if (*name == '_') {
+		if (!strcmp (name, "__stack_chk_fail") ) {
 			bin->has_canary = true;
 		}
-		if (!strcmp (import->name, "__asan_init") || !strcmp (import->name, "__tsan_init")) {
+		if (!strcmp (name, "__asan_init") || !strcmp (name, "__tsan_init")) {
 			bin->has_sanitizers = true;
 		}
-		if (!strcmp (import->name, "_NSConcreteGlobalBlock")) {
+		if (!strcmp (name, "_NSConcreteGlobalBlock")) {
 			bin->has_blocks_ext = true;
 		}
 	}
