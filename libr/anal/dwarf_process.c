@@ -1593,6 +1593,7 @@ static void sdb_save_dwarf_function(Function *dwarf_fcn, RList/*<Variable*>*/ *v
  * @param ctx
  * @param idx Current entry index
  */
+#define estrdup(x) (x)?strdup((x)):NULL
 static void parse_function(Context *ctx, ut64 idx) {
 	const RBinDwarfDie *die = &ctx->all_dies[idx];
 
@@ -1611,12 +1612,12 @@ static void parse_function(Context *ctx, ut64 idx) {
 		switch (die->attr_values[i].attr_name) {
 		case DW_AT_name:
 			if (!get_linkage_name || !has_linkage_name) {
-				fcn.name = strdup (val->string.content);
+				fcn.name = estrdup (val->string.content);
 			}
 			break;
 		case DW_AT_linkage_name:
 		case DW_AT_MIPS_linkage_name:
-			fcn.name = strdup (val->string.content);
+			fcn.name = estrdup (val->string.content);
 			has_linkage_name = true;
 			break;
 		case DW_AT_low_pc:
@@ -1627,7 +1628,8 @@ static void parse_function(Context *ctx, ut64 idx) {
 		{
 			RBinDwarfDie *spec_die = ht_up_find (ctx->die_map, val->reference, NULL);
 			if (spec_die) {
-				fcn.name = strdup (get_specification_die_name (spec_die)); /* I assume that if specification has a name, this DIE hasn't */
+				/* I assume that if specification has a name, this DIE hasn't */
+				fcn.name = estrdup (get_specification_die_name (spec_die));
 				get_spec_die_type (ctx, spec_die, &ret_type);
 			}
 			break;
