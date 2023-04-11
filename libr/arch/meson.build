@@ -28,8 +28,8 @@ r_arch_sources = [
   'p/sparc/gnu/sparc-opc.c',
 # fails on windows
 # error LNK2005: SocketNotificationRetrieveEvents already defined in p_hppa_gnu_hppa-dis.c.obj
-#  'p/hppa/plugin_gnu.c',
-#  'p/hppa/gnu/hppa-dis.c',
+  'p/hppa/plugin_gnu.c',
+  'p/hppa/gnu/hppa-dis.c',
   'p/xtensa/gnu/elf32-xtensa.c',
   'p/xtensa/gnu/xtensa-dis.c',
   'p/xtensa/gnu/xtensa-isa.c',

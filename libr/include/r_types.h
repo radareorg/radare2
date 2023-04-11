@@ -195,8 +195,11 @@
 #if R2__WINDOWS__ || _WIN32
   #ifdef _MSC_VER
   /* Must be included before windows.h */
+#ifndef WINSOCK_INCLUDED
+#define WINSOCK_INCLUDED 1
   #include <winsock2.h>
   #include <ws2tcpip.h>
+#endif
   #ifndef WIN32_LEAN_AND_MEAN
   #define WIN32_LEAN_AND_MEAN
   #endif
