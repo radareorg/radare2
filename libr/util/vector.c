@@ -16,10 +16,10 @@
 			return NULL; \
 		} \
 		vec->a = new_a; \
-	/* SLOW but at least ensure its initialized */ \
-	 if (new_capacity > vec->capacity) { \
-                      memset (((ut8 *)vec->a) + (vec->elem_size * vec->capacity), 0, (new_capacity - vec->capacity) * vec->elem_size); \
-               } \
+		/* SLOW but at least ensure its initialized */ \
+		if (new_capacity > vec->capacity) { \
+			memset (((ut8 *)vec->a) + (vec->elem_size * vec->capacity), 0, (new_capacity - vec->capacity) * vec->elem_size); \
+		} \
 		vec->capacity = new_capacity; \
 	} while (0)
 
