@@ -2179,7 +2179,7 @@ void *MACH0_(mach0_free)(struct MACH0_(obj_t) *mo) {
 	free (mo->compiler);
 #if FEATURE_SYMLIST
 	if (mo->symbols_loaded) {
-		r_pvector_fini (&mo->symbols_cache);
+		r_list_purge (&mo->symbols_cache);
 	}
 #endif
 	r_list_free (mo->sections_cache);
@@ -2864,7 +2864,7 @@ typedef struct fill_context_t {
 	ut32 *ordinal;
 } FillCtx;
 
-static void _fill_exports_pvector(struct MACH0_(obj_t) *bin, const char *name, ut64 flags, ut64 offset, void *ctx) {
+static void _fill_exports(struct MACH0_(obj_t) *bin, const char *name, ut64 flags, ut64 offset, void *ctx) {
 	FillCtx *context = ctx;
 	ut64 vaddr = offset_to_vaddr (bin, offset);
 	if (hash_find_or_insert (context->hash, name, vaddr)) {
@@ -2882,7 +2882,7 @@ static void _fill_exports_pvector(struct MACH0_(obj_t) *bin, const char *name, u
 	sym->bind = R_BIN_BIND_GLOBAL_STR;
 	sym->ordinal = (*context->ordinal)++;
 	_enrich_symbol (context->bf, bin, context->symcache, sym);
-	r_pvector_push (&bin->symbols_cache, sym);
+	r_list_append (&bin->symbols_cache, sym);
 }
 
 static void _parse_symbols(RBinFile *bf, struct MACH0_(obj_t) *bin, Sdb *symcache) {
@@ -2902,7 +2902,7 @@ static void _parse_symbols(RBinFile *bf, struct MACH0_(obj_t) *bin, Sdb *symcach
 	}
 
 	FillCtx fill_context = { .bf = bf, .symcache = symcache, .hash = hash, .boffset = obj->boffset, .ordinal = &ordinal };
-	walk_exports (bin, _fill_exports_pvector, &fill_context);
+	walk_exports (bin, _fill_exports, &fill_context);
 
 	if (!bin->symtab || !bin->symstr) {
 		ht_pp_free (hash);
@@ -2988,7 +2988,7 @@ static void _parse_symbols(RBinFile *bf, struct MACH0_(obj_t) *bin, Sdb *symcach
 			} else {
 				_enrich_symbol (bf, bin, symcache, sym);
 				sym->ordinal = ordinal++;
-				r_pvector_push (&bin->symbols_cache, sym);
+				r_list_append (&bin->symbols_cache, sym);
 			}
 		}
 	}
@@ -3017,7 +3017,7 @@ static void _parse_symbols(RBinFile *bf, struct MACH0_(obj_t) *bin, Sdb *symcach
 			sym->is_imported = symbol.is_imported;
 			sym->ordinal = ordinal++;
 			_enrich_symbol (bf, bin, symcache, sym);
-			r_pvector_push (&bin->symbols_cache, sym);
+			r_list_append (&bin->symbols_cache, sym);
 		}
 	}
 
@@ -3056,7 +3056,7 @@ static void _parse_symbols(RBinFile *bf, struct MACH0_(obj_t) *bin, Sdb *symcach
 			_update_main_addr_if_needed (bin, sym);
 			sym->ordinal = ordinal++;
 			_enrich_symbol (bf, bin, symcache, sym);
-			r_pvector_push (&bin->symbols_cache, sym);
+			r_list_append (&bin->symbols_cache, sym);
 			j++;
 		}
 	}
@@ -3072,7 +3072,7 @@ static void _parse_function_start_symbols(RBinFile *bf, struct MACH0_(obj_t) *bi
 
 	int wordsize = MACH0_(get_bits) (bin);
 	bool is_stripped = false;
-	ut32 i = r_pvector_length (&bin->symbols_cache);
+	ut32 i = r_list_length (&bin->symbols_cache);
 
 	// functions from LC_FUNCTION_STARTS
 	if (bin->func_start) {
@@ -3099,7 +3099,7 @@ static void _parse_function_start_symbols(RBinFile *bf, struct MACH0_(obj_t) *bi
 			if (bin->hdr.cputype == CPU_TYPE_ARM && wordsize < 64) {
 				_handle_arm_thumb (sym);
 			}
-			r_pvector_push (&bin->symbols_cache, sym);
+			r_list_append (&bin->symbols_cache, sym);
 			// if any func is not found in syms then we can consider it is stripped
 			if (!is_stripped) {
 				snprintf (symstr + 5, sizeof (symstr) - 5 , "%" PFMT64x, sym->vaddr);
@@ -3134,18 +3134,19 @@ static bool _check_if_debug_build(RBinFile *bf, struct MACH0_(obj_t) *bin) {
 }
 
 
-const RPVector *MACH0_(load_symbols)(RBinFile *bf, struct MACH0_(obj_t) *bin) {
+const RList *MACH0_(load_symbols)(RBinFile *bf, struct MACH0_(obj_t) *bin) {
 	r_return_val_if_fail (bin, NULL);
 	if (bin->symbols_loaded) {
 		return &bin->symbols_cache;
 	}
 
-	r_pvector_init (&bin->symbols_cache, (RPVectorFree) r_bin_symbol_free);
+	r_list_init (&bin->symbols_cache);
+	bin->symbols_cache.free = (RListFree) r_bin_symbol_free;
+
 	Sdb *symcache = sdb_new0 ();
 	bool is_debug = _check_if_debug_build (bf, bin);
 	_parse_symbols (bf, bin, symcache);
 	_parse_function_start_symbols (bf, bin, symcache);
-	r_pvector_shrink (&bin->symbols_cache);
 	sdb_free (symcache);
 
 	if (is_debug) {
