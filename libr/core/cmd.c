@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2022 - nibble, pancake */
+/* radare - LGPL - Copyright 2009-2023 - nibble, pancake */
 
 #define INTERACTIVE_MAX_REP 1024
 
@@ -134,6 +134,7 @@ static RCoreHelpMessage help_msg_dash = {
 	"-j", "", "enter the js: repl",
 	"-i", " [file]", "same as . [file], to run a script",
 	"-s", " [addr]", "same as r2 -e asm.cpu=",
+	"-v", "", "same as -V",
 	"-V", "", "show r2 version, same as ?V",
 	"--", "", "seek one block backward. Same as s-- (see `b` command)",
 	NULL
@@ -1796,8 +1797,13 @@ static int cmd_stdin(void *data, const char *input) {
 		case 'h': // "-h"
 			r_core_cmd_help (core, help_msg_dash);
 			break;
+		case 'v': // "-v"
 		case 'V': // "-V"
-			r_core_cmd_call (core, "?V");
+			if (input[1] == 'j') {
+				r_core_cmd_call (core, "?Vj");
+			} else {
+				r_core_cmd_call (core, "?V");
+			}
 			break;
 		case 'a': // "-a"
 			if (R_STR_ISEMPTY (arg)) {
@@ -2667,6 +2673,8 @@ static bool cmd_r2cmd(RCore *core, const char *_input) {
 		rc = __runMain (core->r_main_r2pm, input);
 	} else if (r_str_startswith (input, "radiff2")) {
 		rc = __runMain (core->r_main_radiff2, input);
+	} else if (r_str_startswith (input, "r2.")) {
+		r_core_cmdf (core, "\"\"js console.log(r2.%s)", input + 3);
 	} else if (r_str_startswith (input, "r2") && (!input[2] || input[2] == ' ')) {
 		r_sys_cmdf ("%s", input);
 		// rc = __runMain (core->r_main_radare2, input);
