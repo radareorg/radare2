@@ -1156,3 +1156,23 @@ EXPECT=<<EOF
             0x00008470      10482de9       push {r4, fp, lr}
 EOF
 RUN
+
+NAME=thumb push fp
+FILE=malloc://32
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=16
+wx 2de9 8048 bde8 8048 7047 00bf
+pi 3
+af
+afll
+EOF
+EXPECT=<<EOF
+push.w {r7, fp, lr}
+pop.w {r7, fp, lr}
+bx lr
+address    noret size  nbbs edges    cc cost  min bound range max bound  calls locals args xref frame name
+========== ===== ===== ===== ===== ===== ==== ========== ===== ========== ===== ====== ==== ==== ===== ====
+0x00000000     0   10     1     0     1    7 0x00000000    10 0x0000000a     0    0      0    0    12 fcn.00000000
+EOF
+RUN

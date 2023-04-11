@@ -4042,7 +4042,8 @@ jmp $$ + 4 + ( [delta] * 2 )
 	case ARM_INS_PUSH:
 		op->stackop = R_ANAL_STACK_INC;
 		op->stackptr = 4LL * insn->detail->arm.op_count;
-		// fallthrough
+		op->type = R_ANAL_OP_TYPE_PUSH;
+		break;
 	case ARM_INS_STM:
 	case ARM_INS_STMDA:
 	case ARM_INS_STMDB:
