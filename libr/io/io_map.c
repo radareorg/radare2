@@ -23,6 +23,7 @@ static RIOMap *io_map_new(RIO* io, int fd, int perm, ut64 delta, ut64 addr, ut64
 	map->ts = io->mts++;
 	// RIOMap describes an interval of addresses
 	// r_io_map_from (map) -> r_io_map_to (map)
+	map->reloc_map = NULL;
 	map->itv = (RInterval){ addr, size };
 	map->perm = perm;
 	map->delta = delta;
