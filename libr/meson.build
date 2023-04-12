@@ -171,14 +171,13 @@ anal_plugins += [
   'mips_cs',
   'ppc_cs',
   'sparc_cs',
-  's390_cs',
   'tms320',
   'x86_cs',
   'xcore_cs'
 ]
 
 arch_plugins += [
-  'm68k_gnu',
+  's390_cs',
 ]
 
 if no_user_plugins
@@ -192,6 +191,7 @@ if no_user_plugins
       'z80',
       'pdp11',
       'ppc_gnu',
+      'm68k_gnu',
 # 'hppa_gnu',
       'sparc_gnu',
       'lanai',

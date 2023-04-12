@@ -67,11 +67,11 @@ EXPECT=<<EOF
         |   0x0000192e      c5c5000000a0   bprp 0xc, 0x232e, 0x1a6e
         |   0x00001934      0000           invalid
         |   0x00001936      0090           invalid
-        |   0x00001938      47f0f001       b 1(r15)
+       ,==< 0x00001938      47f0f001       b 1(r15)
         |   0x0000193c      58f0c31c       l r15, 0x31c(r12)
         |   0x00001940      184e           lr r4, r14
         |   0x00001942      05ef           balr r14, r15
-        |   0x00001944      00             invalid
+        |   0x00001944      0000           invalid
             ;-- entry0:
             ;-- hit0_0:
             0x00001928      47f0f024       b 36(%r15)

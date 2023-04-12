@@ -21,6 +21,7 @@ r_arch_sources = [
   'p/ppc/gnu/ppc-opc.c',
   'p/null/plugin.c',
   'p/lm32/plugin.c',
+  'p/s390/plugin.c',
   'p/mcs96/plugin.c',
   'p/xtensa/plugin.c',
   'p/lanai/plugin.c',

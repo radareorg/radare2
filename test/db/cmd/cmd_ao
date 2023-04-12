@@ -221,10 +221,12 @@ FILE=-
 CMDS=<<EOF
 e asm.arch=s390
 e cfg.bigendian=true
+wx 051e
 aom
 aoml~?
 EOF
 EXPECT=<<EOF
+balr
 2345
 EOF
 RUN
