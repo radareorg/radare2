@@ -458,11 +458,13 @@ static int add_sdb_include_dir(Sdb *s, const char *incl, int idx) {
 static void line_header_fini(RBinDwarfLineHeader *hdr) {
 	if (hdr) {
 		size_t i;
-		for (i = 0; i < hdr->file_names_count; i ++) {
-			free (hdr->file_names[i].name);
+		if (hdr->file_names) {
+			for (i = 0; i < hdr->file_names_count; i ++) {
+				free (hdr->file_names[i].name);
+			}
+			free (hdr->file_names);
 		}
 		free (hdr->std_opcode_lengths);
-		free (hdr->file_names);
 	}
 }
 
@@ -488,7 +490,7 @@ static const ut8 *parse_line_header_source(RBinFile *bf, const ut8 *buf, const u
 	if (mode == R_MODE_PRINT) {
 		print (" The Directory Table:\n");
 	}
-	while (buf + 1 < buf_end) {
+	while (buf <= buf_end) {
 		size_t maxlen = R_MIN ((size_t) (buf_end - buf) - 1, 0xfff);
 		size_t len = r_str_nlen ((const char *)buf, maxlen);
 		char *str = r_str_ndup ((const char *)buf, len);
@@ -645,6 +647,7 @@ static char *get_section_string(RBin *bin, RBinSection * section, size_t offset)
 	R_LOG_WARN ("TRUNCATED (%s)", str3);
 	return r_str_ndup ((const char *)str3, sizeof (str3));
 }
+
 // TODO DWARF 5 line header parsing, very different from ver. 4
 // Because this function needs ability to parse a lot of FORMS just like debug info
 // I'll complete this function after completing debug_info parsing and merging
@@ -654,7 +657,7 @@ static const ut8 *parse_line_header_source_dwarf5(RBin *bin, RBinFile *bf, const
 	const size_t maxlen = 0xfff;
 	int i, j;
 
-	for (i = DIRECTORIES; i <= FILES; i++) {
+	for (i = DIRECTORIES; buf && i <= FILES; i++) {
 		if (mode == R_MODE_PRINT && i == DIRECTORIES) {
 			print (" The Directory Table:\n");
 		} else if (mode == R_MODE_PRINT && i == FILES) {
@@ -704,9 +707,16 @@ static const ut8 *parse_line_header_source_dwarf5(RBin *bin, RBinFile *bf, const
 				switch (form_code) {
 				case DW_FORM_string:
 					// TODO: find a way to test this case.
-					name = r_str_ndup ((const char *)buf, maxlen);
-					size_t len = strlen (name);
-					buf += len + 1;
+					if (buf && buf <= buf_end) {
+						int mylen = R_MIN (maxlen, (buf_end - buf));
+						if (mylen > 0) {
+							name = r_str_ndup ((const char *)buf, mylen);
+							buf += mylen + 1;
+						} else {
+							name = NULL;
+							buf++;
+						}
+					}
 					break;
 				case DW_FORM_strp_sup:
 					// TODO: handle this properly
@@ -748,10 +758,14 @@ static const ut8 *parse_line_header_source_dwarf5(RBin *bin, RBinFile *bf, const
 					}
 					break;
 				case DW_FORM_data1:
-					data = READ8 (buf);
+					if (buf) {
+						data = READ8 (buf);
+					}
 					break;
 				case DW_FORM_data2:
-					data = READ16 (buf);
+					if (buf && buf + 2 < buf_end) {
+						data = READ16 (buf);
+					}
 					break;
 				case DW_FORM_data4:
 					data = READ32 (buf);
@@ -771,27 +785,35 @@ static const ut8 *parse_line_header_source_dwarf5(RBin *bin, RBinFile *bf, const
 				case DW_LNCT_path:
 					if (i == FILES) {
 						// For now just save the filename. Prepend the directory once we have it.
-						hdr->file_names[count].name = name;
+						if (hdr->file_names) {
+							hdr->file_names[count].name = name;
+						}
 					} else {
 						add_sdb_include_dir (sdb, name, index);
 						free (name);
 					}
 					break;
 				case DW_LNCT_directory_index:
-					hdr->file_names[count].id_idx = data;
-					// prepend directory to the file name
-					if (hdr->file_names[count].name) {
-						char *dir = sdb_array_get (sdb, "includedirs", hdr->file_names[count].id_idx, 0);
-						char *filename = hdr->file_names[count].name;
-						hdr->file_names[count].name = r_str_newf ("%s/%s", r_str_get (dir), filename);
-						free (filename);
+					if (hdr->file_names) {
+						hdr->file_names[count].id_idx = data;
+						// prepend directory to the file name
+						if (hdr->file_names[count].name) {
+							char *dir = sdb_array_get (sdb, "includedirs", hdr->file_names[count].id_idx, 0);
+							char *filename = hdr->file_names[count].name;
+							hdr->file_names[count].name = r_str_newf ("%s/%s", r_str_get (dir), filename);
+							free (filename);
+						}
 					}
 					break;
 				case DW_LNCT_timestamp:
-					hdr->file_names[count].mod_time = data;
+					if (hdr->file_names) {
+						hdr->file_names[count].mod_time = data;
+					}
 					break;
 				case DW_LNCT_size:
-					hdr->file_names[count].file_len = data;
+					if (hdr->file_names) {
+						hdr->file_names[count].file_len = data;
+					}
 					break;
 				case DW_LNCT_MD5:
 					// TODO Save the hash of the file.
@@ -806,9 +828,13 @@ static const ut8 *parse_line_header_source_dwarf5(RBin *bin, RBinFile *bf, const
 					print ("  %" PFMT64u "     %s\n", index, sdb_array_get (sdb, "includedirs", index, 0));
 					break;
 				case FILES:
-					print ("  %" PFMT64u "     %" PFMT32d "       %" PFMT32d "         %" PFMT32d "          %s\n",
-						index + 1, hdr->file_names[count].id_idx, hdr->file_names[count].mod_time,
-						hdr->file_names[count].file_len, hdr->file_names[count].name);
+					if (hdr->file_names) {
+						print ("  %" PFMT64u "     %" PFMT32d "       %" PFMT32d "         %" PFMT32d "          %s\n",
+							index + 1, hdr->file_names[count].id_idx, hdr->file_names[count].mod_time,
+							hdr->file_names[count].file_len, hdr->file_names[count].name);
+					} else {
+						R_LOG_WARN ("file_names is null");
+					}
 					break;
 				}
 			}
@@ -846,6 +872,9 @@ static const ut8 *parse_line_header(RBin *bin, RBinFile *bf, const ut8 *buf, con
 	}
 
 	hdr->header_length = dwarf_read_offset (hdr->is_64bit, &buf, buf_end, be);
+	if (!buf) {
+		return NULL;
+	}
 	if (buf_end - buf < 8) {
 		return NULL;
 	}

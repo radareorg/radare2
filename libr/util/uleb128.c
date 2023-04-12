@@ -10,6 +10,9 @@ R_API const ut8 *r_uleb128(const ut8 *data, int datalen, ut64 *v, const char **e
 	ut64 s, sum = 0;
 	const ut8 *data_end;
 	bool malformed_uleb = true;
+	if (!data) {
+		return NULL;
+	}
 	if (v) {
 		*v = 0LL;
 	}
