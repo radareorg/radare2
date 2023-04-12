@@ -88,6 +88,8 @@ static bool r_bin_xcoff64_init_scn_hdr(RBinXCoff64Obj *obj) {
 	ut64 offset = sizeof (struct xcoff64_hdr) + obj->hdr.f_opthdr;
 	size = obj->hdr.f_nscns * sizeof (struct xcoff64_scn_hdr);
 	if (offset > obj->size || offset + size > obj->size || size < 0) {
+		obj->hdr.f_nscns = 0;
+		obj->scn_hdrs = NULL;
 		return false;
 	}
 	obj->scn_hdrs = calloc (1, size + sizeof (struct xcoff64_scn_hdr));
