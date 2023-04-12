@@ -1,21 +1,8 @@
-/* radare - LGPL - Copyright 2017-2022 - pancake, maskray, thestr4ng3r */
+/* radare - LGPL - Copyright 2017-2023 - pancake, maskray, thestr4ng3r */
 
 #include "r_vector.h"
 
-// Optimize memory usage on glibc
-#if __WORDSIZE == 32
-// Chunk size 24, minus 4 (chunk header), minus 8 for capacity and len, 12 bytes remaining for 3 void *
-#define INITIAL_VECTOR_LEN 3
-#else
-// For __WORDSIZE == 64
-// Chunk size 48, minus 8 (chunk header), minus 8 for capacity and len, 32 bytes remaining for 4 void *
 #define INITIAL_VECTOR_LEN 4
-#endif
-
-#define NEXT_VECTOR_CAPACITY (vec->capacity < INITIAL_VECTOR_LEN \
-	? INITIAL_VECTOR_LEN \
-	: vec->capacity <= 12 ? vec->capacity * 2 \
-	: vec->capacity + (vec->capacity >> 1))
 
 #define RESIZE_OR_RETURN_NULL(next_capacity) do { \
 		size_t new_capacity = next_capacity; \
@@ -29,6 +16,7 @@
 			return NULL; \
 		} \
 		vec->a = new_a; \
+		/* SLOW but at least ensure its initialized */ \
 		if (new_capacity > vec->capacity) { \
 			memset (((ut8 *)vec->a) + (vec->elem_size * vec->capacity), 0, (new_capacity - vec->capacity) * vec->elem_size); \
 		} \
@@ -213,7 +201,7 @@ R_API void *r_vector_push_front(RVector *vec, void *x) {
 
 R_API void *r_vector_reserve(RVector *vec, size_t capacity) {
 	r_return_val_if_fail (vec, NULL);
-	if (vec->capacity < capacity) {
+	if (vec->len == 0 || vec->capacity <= capacity) {
 		RESIZE_OR_RETURN_NULL (capacity);
 	}
 	return vec->a;

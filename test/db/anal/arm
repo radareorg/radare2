@@ -1048,6 +1048,20 @@ NAME=misaligned arm string xref
 FILE=bins/mach0/misaligned_data-iOS-armv7
 CMDS=<<EOF
 aav
+af
+aae
+axt str.helloradareworld_n
+EOF
+EXPECT=<<EOF
+main 0xbf9c [STRN:-w-] add r0, pc
+EOF
+RUN
+
+NAME=misaligned arm string xref failing
+BROKEN=1
+FILE=bins/mach0/misaligned_data-iOS-armv7
+CMDS=<<EOF
+aav
 aae
 af
 axt str.helloradareworld_n

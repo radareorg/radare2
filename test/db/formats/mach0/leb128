@@ -12,6 +12,5 @@ id.compat=0.0.1
 EOF
 EXPECT_ERR=<<EOF
 ERROR: malformed uleb128
-ERROR: malformed uleb128
 EOF
 RUN

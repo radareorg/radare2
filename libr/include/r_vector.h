@@ -53,6 +53,12 @@ typedef struct r_vector_t {
 // RPVector directly wraps RVector for type safety
 typedef struct r_pvector_t { RVector v; } RPVector;
 
+#define INITIAL_VECTOR_LEN 4
+
+#define NEXT_VECTOR_CAPACITY (vec->capacity < INITIAL_VECTOR_LEN \
+	? INITIAL_VECTOR_LEN \
+	: vec->capacity <= 12 ? vec->capacity * 2 \
+	: vec->capacity + (vec->capacity >> 1))
 
 // RVector
 
@@ -89,8 +95,10 @@ static inline void *r_vector_index_ptr(RVector *vec, size_t index) {
 	return (char *)vec->a + (vec->elem_size * index);
 }
 
+// returns a pointer to the offset inside the array where the element of the index lies.
+// returns NULL when the index is out of bounds of the vector.
 static inline void *r_vector_at(RVector *vec, int index) {
-	if (vec && index >= 0 && (size_t)index < vec->capacity) {
+	if (vec && index >= 0 && (size_t)index < vec->len) {
 		return (char *)vec->a + (vec->elem_size * index);
 	}
 	return NULL;
@@ -135,6 +143,17 @@ R_API void *r_vector_shrink(RVector *vec);
 
 R_API void *r_vector_flush(RVector *vec);
 
+static inline R_MUSTUSE void *r_vector_end (RVector *vec) {
+	const size_t len = vec->len;
+	if (R_UNLIKELY (len >= vec->capacity)) {
+		const size_t next_capacity = (vec->capacity + 4) * 2;
+		r_vector_reserve (vec, next_capacity);
+	}
+	void *ptr = r_vector_index_ptr (vec, len);
+	vec->len = len + 1;
+	return ptr;
+}
+
 /*
  * example:
  *
@@ -146,7 +165,7 @@ R_API void *r_vector_flush(RVector *vec);
  */
 #define r_vector_foreach(vec, it) \
 	if (!r_vector_empty (vec)) \
-		for (it = (void *)(vec)->a; (char *)it != (char *)(vec)->a + ((vec)->len * (vec)->elem_size); it = (void *)((char *)it + (vec)->elem_size))
+		for (it = (void *)(vec)->a; (char *)it < (char *)(vec)->a + ((vec)->len * (vec)->elem_size); it = (void *)((char *)it + (vec)->elem_size))
 
 #define r_vector_foreach_prev(vec, it) \
 	if (!r_vector_empty (vec)) \
@@ -303,7 +322,7 @@ static inline void **r_pvector_flush(RPVector *vec) {
  */
 #define r_pvector_foreach(vec, it) \
 	if ((vec)->v.len > 0) \
-	for (it = (void **)(vec)->v.a; it != (void **)(vec)->v.a + (vec)->v.len; it++)
+	for (it = (void **)(vec)->v.a; it < (void **)(vec)->v.a + (vec)->v.len; it++)
 
 // like r_pvector_foreach() but inverse
 #define r_pvector_foreach_prev(vec, it) \

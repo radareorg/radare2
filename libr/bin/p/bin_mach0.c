@@ -177,6 +177,41 @@ static RList *entries(RBinFile *bf) {
 	return ret;
 }
 
+#if FEATURE_SYMLIST
+// R2_590 remove this duplicate function once it is exposed in public API
+static RBinSymbol *r_bin_symbol_clone(RBinSymbol *bs) {
+	RBinSymbol *nbs = R_NEW (RBinSymbol);
+	memcpy (nbs, bs, sizeof (RBinSymbol));
+	nbs->name = strdup (nbs->name);
+	if (nbs->dname) {
+		nbs->dname = strdup (nbs->dname);
+	}
+	if (nbs->libname) {
+		nbs->libname = strdup (nbs->libname);
+	}
+	if (nbs->classname) {
+		nbs->classname = strdup (nbs->classname);
+	}
+	return nbs;
+}
+
+static RList *symbols(RBinFile *bf) {
+	RBinObject *obj = bf? bf->o: NULL;
+	const RVector *symbols = MACH0_(load_symbols) (bf, obj->bin_obj);
+	if (!symbols) {
+		return NULL;
+	}
+
+	RList *list = r_list_newf ((RListFree) r_bin_symbol_free);
+	RBinSymbol *sym;
+	r_vector_foreach (symbols, sym) {
+		// need to clone here, in bobj.c the list free function is forced to `r_bin_symbol_free`
+		// otherwise, a shallow copy of a list with no free function could be returned here..
+		r_list_append (list, r_bin_symbol_clone (sym));
+	}
+	return list;
+}
+#else
 static void _handle_arm_thumb(struct MACH0_(obj_t) *bin, RBinSymbol **p) {
 	RBinSymbol *ptr = *p;
 	if (bin) {
@@ -188,12 +223,6 @@ static void _handle_arm_thumb(struct MACH0_(obj_t) *bin, RBinSymbol **p) {
 	}
 }
 
-#if FEATURE_SYMLIST
-static RList *symbols(RBinFile *bf) {
-	RBinObject *obj = bf? bf->o: NULL;
-	return (RList *)MACH0_(get_symbols_list) (obj->bin_obj);
-}
-#else
 static RList *symbols(RBinFile *bf) {
 	struct MACH0_(obj_t) *bin;
 	int i;
@@ -1096,7 +1125,7 @@ static RBinAddr *binsym(RBinFile *bf, int sym) {
 	RBinAddr *ret = NULL;
 	switch (sym) {
 	case R_BIN_SYM_MAIN:
-		addr = MACH0_(get_main) (bf->o->bin_obj);
+		addr = MACH0_(get_main) (bf, bf->o->bin_obj);
 		if (addr == UT64_MAX || !(ret = R_NEW0 (RBinAddr))) {
 			return NULL;
 		}
