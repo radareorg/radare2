@@ -416,8 +416,8 @@ static const struct arc_operand arc_operands_a4[] =
    The following modifiers may appear between the % and char (eg: %.f):
 
    '.'	MODDOT_AC          '.' prefix must be present
-   'r'	REG_AC             generic register value, for register table
-   'G'	AUXREG_AC          auxiliary register in "lr" and "sr" insns
+   'r'	ARC_REG_AC             generic register value, for register table
+   'G'	ARC_AUX_REG_AC          auxiliary register in "lr" and "sr" insns
 
    The following operands are used specific to 16-bit insns
 
@@ -445,11 +445,11 @@ static const struct arc_operand arc_operands_a4[] =
    'M'	SIMM9_AC16         9-bit offset, used in "ldb_s" insn
    'O'	SIMM10BY2_AC16     10-bit offset(2-byte aligned), used in "ldw_s" insn
    'R'	SIMM11BY4_AC16     11-bit offset(4-byte aligned), used in "ld_s" insn
-   '4'	REG_R0             'r0' register indicator
-   '5'	REG_GP             'gp' register indicator
-   '6'	REG_SP             'sp' register indicator
-   '9'	REG_BLINK          'blink' register indicator
-   '!'	REG_PCL            'pcl' register indicator
+   '4'	ARC_REG_R0             'r0' register indicator
+   '5'	ARC_REG_GP             'gp' register indicator
+   '6'	ARC_REG_SP             'sp' register indicator
+   '9'	ARC_REG_BLINK          'blink' register indicator
+   '!'	ARC_REG_PCL            'pcl' register indicator
    '@'  UIMM6_A700_16         6-bit unsigned immediate in A700
 
    The following operands are used specific to the Aurora SIMD insns
@@ -666,17 +666,17 @@ static const struct arc_operand arc_operands_ac[] =
   { '.', 1, 0, ARC_MOD_DOT, 0, 0 },
 
 /* Dummy 'r' modifier for the register table. */
-#define REG_AC (MODDOT_AC + 1)
+#define ARC_REG_AC (MODDOT_AC + 1)
   { 'r', 6, 0, ARC_MOD_REG, 0, 0 },
 
 /* Known auxiliary register modifier */
-#define AUXREG_AC (REG_AC + 1)
+#define ARC_AUX_REG_AC (ARC_REG_AC + 1)
   { 'G', 9, 0, ARC_MOD_AUXREG, 0, 0 },
 
 /* Operands used specific to ARCompact 16-bit insns */
 
 /* register A indicator, for ARCompact 16-bit insns */
-#define REGA_AC16 (AUXREG_AC + 1)
+#define REGA_AC16 (ARC_AUX_REG_AC + 1)
   { 'a', 3, 0, ARC_OPERAND_SIGNED | ARC_OPERAND_ERROR, insert_reg, extract_reg },
 
 /* register B indicator, for ARCompact 16-bit insns */
@@ -753,27 +753,27 @@ static const struct arc_operand arc_operands_ac[] =
   { 'R', 9, 0, ARC_OPERAND_LIMM | ARC_OPERAND_SIGNED | ARC_OPERAND_LOAD | ARC_OPERAND_4BYTE_ALIGNED , insert_offset, extract_ld_offset },
 
 /* 'r0' register indicator */
-#define REG_R0 (SIMM11BY4_AC16 + 1)
+#define ARC_REG_R0 (SIMM11BY4_AC16 + 1)
   { '4', 0, 0, 0, 0, 0 },
 
 /* 'gp' register indicator */
-#define REG_GP (REG_R0 + 1)
+#define ARC_REG_GP (ARC_REG_R0 + 1)
   { '5', 0, 0, 0, 0, 0 },
 
 /* 'sp' register indicator */
-#define REG_SP (REG_GP + 1)
+#define ARC_REG_SP (ARC_REG_GP + 1)
   { '6', 0, 0, 0, 0, 0 },
 
 /* 'blink' register indicator */
-#define REG_BLINK (REG_SP + 1)
+#define ARC_REG_BLINK (ARC_REG_SP + 1)
   { '9', 0, 0, 0, 0, 0 },
 
 /* 'pcl' register indicator */
-#define REG_PCL (REG_BLINK + 1)
+#define ARC_REG_PCL (ARC_REG_BLINK + 1)
   { '!', 0, 0, 0, 0, 0 },
 
   /* 'd'  UIMM6_A700_16         6-bit unsigned immediate in A700 */
-#define UIMM6_A700_16 (REG_PCL + 1)
+#define UIMM6_A700_16 (ARC_REG_PCL + 1)
   { '@', 6 ,5, ARC_OPERAND_UNSIGNED, 0 , 0},
 
  /***** Here are the operands exclusively used in the Aurora SIMD instructions  *******/
@@ -1202,7 +1202,7 @@ insert_reg (arc_insn insn,long *ex ATTRIBUTE_UNUSED,
     {
       /* We have to handle both normal and auxiliary registers.  */
 
-      if ((reg->type == AUXREG) || (reg->type == AUXREG_AC))
+      if ((reg->type == AUXREG) || (reg->type == ARC_AUX_REG_AC))
 	{
 	      if (!(mods & ARC_MOD_AUXREG)) {
 		      *errmsg = _ ("auxiliary register not allowed here");
@@ -2145,7 +2145,7 @@ lookup_register (int type, long regno)
 	  ext_oper = ext_oper->next;
     }
 
-    if (type == REG || type == REG_AC) {
+    if (type == REG || type == ARC_REG_AC) {
 	    return &arc_reg_names[regno];
     }
 
@@ -3884,50 +3884,50 @@ static const struct arc_operand_value arc_reg_names_a500600[] =
   /* Sort this so that the first 61 entries are sequential.
      IE: For each i (i < 61), arc_reg_names[i].value == i.  */
 
-  { "r0", 0, REG_AC, 0 }, { "r1", 1, REG_AC, 0 }, { "r2", 2, REG_AC, 0 },
-  { "r3", 3, REG_AC, 0 }, { "r4", 4, REG_AC, 0 }, { "r5", 5, REG_AC, 0 },
-  { "r6", 6, REG_AC, 0 }, { "r7", 7, REG_AC, 0 }, { "r8", 8, REG_AC, 0 },
-  { "r9", 9, REG_AC, 0 },
-  { "r10", 10, REG_AC, 0 }, { "r11", 11, REG_AC, 0 }, { "r12", 12, REG_AC, 0 },
-  { "r13", 13, REG_AC, 0 }, { "r14", 14, REG_AC, 0 }, { "r15", 15, REG_AC, 0 },
-  { "r16", 16, REG_AC, 0 }, { "r17", 17, REG_AC, 0 }, { "r18", 18, REG_AC, 0 },
-  { "r19", 19, REG_AC, 0 }, { "r20", 20, REG_AC, 0 }, { "r21", 21, REG_AC, 0 },
-  { "r22", 22, REG_AC, 0 }, { "r23", 23, REG_AC, 0 }, { "r24", 24, REG_AC, 0 },
-  { "r25", 25, REG_AC, 0 }, { "r26", 26, REG_AC, 0 }, { "r27", 27, REG_AC, 0 },
-  { "r28", 28, REG_AC, 0 }, { "r29", 29, REG_AC, 0 }, { "r30", 30, REG_AC, 0 },
-  { "r31", 31, REG_AC, 0 },
-  { "gp", 26, REG_AC, 0 },  { "fp", 27, REG_AC, 0 },  { "sp", 28, REG_AC, 0 },
-  { "ilink1", 29, REG_AC, 0 },
-  { "ilink2", 30, REG_AC, 0 },
-  { "blink", 31, REG_AC, 0 },
-  { "lp_count", 60, REG_AC, 0 }, { "r60", 60, REG_AC, 0 },
-  { "pcl", 63, REG_AC, ARC_REGISTER_READONLY },
-  { "r63", 63, REG_AC, ARC_REGISTER_READONLY },
+  { "r0", 0, ARC_REG_AC, 0 }, { "r1", 1, ARC_REG_AC, 0 }, { "r2", 2, ARC_REG_AC, 0 },
+  { "r3", 3, ARC_REG_AC, 0 }, { "r4", 4, ARC_REG_AC, 0 }, { "r5", 5, ARC_REG_AC, 0 },
+  { "r6", 6, ARC_REG_AC, 0 }, { "r7", 7, ARC_REG_AC, 0 }, { "r8", 8, ARC_REG_AC, 0 },
+  { "r9", 9, ARC_REG_AC, 0 },
+  { "r10", 10, ARC_REG_AC, 0 }, { "r11", 11, ARC_REG_AC, 0 }, { "r12", 12, ARC_REG_AC, 0 },
+  { "r13", 13, ARC_REG_AC, 0 }, { "r14", 14, ARC_REG_AC, 0 }, { "r15", 15, ARC_REG_AC, 0 },
+  { "r16", 16, ARC_REG_AC, 0 }, { "r17", 17, ARC_REG_AC, 0 }, { "r18", 18, ARC_REG_AC, 0 },
+  { "r19", 19, ARC_REG_AC, 0 }, { "r20", 20, ARC_REG_AC, 0 }, { "r21", 21, ARC_REG_AC, 0 },
+  { "r22", 22, ARC_REG_AC, 0 }, { "r23", 23, ARC_REG_AC, 0 }, { "r24", 24, ARC_REG_AC, 0 },
+  { "r25", 25, ARC_REG_AC, 0 }, { "r26", 26, ARC_REG_AC, 0 }, { "r27", 27, ARC_REG_AC, 0 },
+  { "r28", 28, ARC_REG_AC, 0 }, { "r29", 29, ARC_REG_AC, 0 }, { "r30", 30, ARC_REG_AC, 0 },
+  { "r31", 31, ARC_REG_AC, 0 },
+  { "gp", 26, ARC_REG_AC, 0 },  { "fp", 27, ARC_REG_AC, 0 },  { "sp", 28, ARC_REG_AC, 0 },
+  { "ilink1", 29, ARC_REG_AC, 0 },
+  { "ilink2", 30, ARC_REG_AC, 0 },
+  { "blink", 31, ARC_REG_AC, 0 },
+  { "lp_count", 60, ARC_REG_AC, 0 }, { "r60", 60, ARC_REG_AC, 0 },
+  { "pcl", 63, ARC_REG_AC, ARC_REGISTER_READONLY },
+  { "r63", 63, ARC_REG_AC, ARC_REGISTER_READONLY },
 
   /* General Purpose Registers for ARCompact 16-bit insns */
 
-  { "r0", 0, REG_AC, ARC_REGISTER_16 }, { "r1", 1, REG_AC, ARC_REGISTER_16 },
-  { "r2", 2, REG_AC, ARC_REGISTER_16 }, { "r3", 3, REG_AC, ARC_REGISTER_16 },
-  { "r12", 4, REG_AC, ARC_REGISTER_16 }, { "r13", 5, REG_AC, ARC_REGISTER_16 },
-  { "r14", 6, REG_AC, ARC_REGISTER_16 }, { "r15", 7, REG_AC, ARC_REGISTER_16 },
+  { "r0", 0, ARC_REG_AC, ARC_REGISTER_16 }, { "r1", 1, ARC_REG_AC, ARC_REGISTER_16 },
+  { "r2", 2, ARC_REG_AC, ARC_REGISTER_16 }, { "r3", 3, ARC_REG_AC, ARC_REGISTER_16 },
+  { "r12", 4, ARC_REG_AC, ARC_REGISTER_16 }, { "r13", 5, ARC_REG_AC, ARC_REGISTER_16 },
+  { "r14", 6, ARC_REG_AC, ARC_REGISTER_16 }, { "r15", 7, ARC_REG_AC, ARC_REGISTER_16 },
 
     /* Standard auxiliary registers.  */
-  { "status",         0x00, AUXREG_AC, ARC_REGISTER_READONLY },
-  { "semaphore",      0x01, AUXREG_AC, 0 },
-  { "lp_start",       0x02, AUXREG_AC, 0 },
-  { "lp_end",         0x03, AUXREG_AC, 0 },
-  { "identity",       0x04, AUXREG_AC, ARC_REGISTER_READONLY },
-  { "debug",          0x05, AUXREG_AC, ARC_REGISTER_READONLY },
-  { "pc",             0x06, AUXREG_AC, ARC_REGISTER_READONLY },
-  { "status32",       0xa, AUXREG_AC, ARC_REGISTER_READONLY },
-  { "status32_l1",    0xb, AUXREG_AC, 0 },
-  { "status32_l2",    0xc, AUXREG_AC, 0 },
-  { "int_vector_base",0x25, AUXREG_AC, 0 },
+  { "status",         0x00, ARC_AUX_REG_AC, ARC_REGISTER_READONLY },
+  { "semaphore",      0x01, ARC_AUX_REG_AC, 0 },
+  { "lp_start",       0x02, ARC_AUX_REG_AC, 0 },
+  { "lp_end",         0x03, ARC_AUX_REG_AC, 0 },
+  { "identity",       0x04, ARC_AUX_REG_AC, ARC_REGISTER_READONLY },
+  { "debug",          0x05, ARC_AUX_REG_AC, ARC_REGISTER_READONLY },
+  { "pc",             0x06, ARC_AUX_REG_AC, ARC_REGISTER_READONLY },
+  { "status32",       0xa, ARC_AUX_REG_AC, ARC_REGISTER_READONLY },
+  { "status32_l1",    0xb, ARC_AUX_REG_AC, 0 },
+  { "status32_l2",    0xc, ARC_AUX_REG_AC, 0 },
+  { "int_vector_base",0x25, ARC_AUX_REG_AC, 0 },
   /* Optional extension auxiliary registers */
-  { "multiply_build", 0x7b, AUXREG_AC, ARC_REGISTER_READONLY },
-  { "swap_build",     0x7c, AUXREG_AC, ARC_REGISTER_READONLY },
-  { "norm_build",     0x7d, AUXREG_AC, ARC_REGISTER_READONLY },
-  { "barrel_build",   0x7f, AUXREG_AC, ARC_REGISTER_READONLY },
+  { "multiply_build", 0x7b, ARC_AUX_REG_AC, ARC_REGISTER_READONLY },
+  { "swap_build",     0x7c, ARC_AUX_REG_AC, ARC_REGISTER_READONLY },
+  { "norm_build",     0x7d, ARC_AUX_REG_AC, ARC_REGISTER_READONLY },
+  { "barrel_build",   0x7f, ARC_AUX_REG_AC, ARC_REGISTER_READONLY },
 };
 
 
@@ -3937,159 +3937,159 @@ static const struct arc_operand_value arc_reg_names_a700[] =
   /* Sort this so that the first 61 entries are sequential.
      IE: For each i (i < 61), arc_reg_names[i].value == i.  */
 
-  { "r0", 0, REG_AC, 0 }, { "r1", 1, REG_AC, 0 }, { "r2", 2, REG_AC, 0 },
-  { "r3", 3, REG_AC, 0 }, { "r4", 4, REG_AC, 0 }, { "r5", 5, REG_AC, 0 },
-  { "r6", 6, REG_AC, 0 }, { "r7", 7, REG_AC, 0 }, { "r8", 8, REG_AC, 0 },
-  { "r9", 9, REG_AC, 0 },
-  { "r10", 10, REG_AC, 0 }, { "r11", 11, REG_AC, 0 }, { "r12", 12, REG_AC, 0 },
-  { "r13", 13, REG_AC, 0 }, { "r14", 14, REG_AC, 0 }, { "r15", 15, REG_AC, 0 },
-  { "r16", 16, REG_AC, 0 }, { "r17", 17, REG_AC, 0 }, { "r18", 18, REG_AC, 0 },
-  { "r19", 19, REG_AC, 0 }, { "r20", 20, REG_AC, 0 }, { "r21", 21, REG_AC, 0 },
-  { "r22", 22, REG_AC, 0 }, { "r23", 23, REG_AC, 0 }, { "r24", 24, REG_AC, 0 },
-  { "r25", 25, REG_AC, 0 }, { "r26", 26, REG_AC, 0 }, { "r27", 27, REG_AC, 0 },
-  { "r28", 28, REG_AC, 0 }, { "r29", 29, REG_AC, 0 }, { "r30", 30, REG_AC, 0 },
-  { "r31", 31, REG_AC, 0 },
-  { "gp", 26, REG_AC, 0 }, { "fp", 27, REG_AC, 0 }, { "sp", 28, REG_AC, 0 },
-  { "ilink1", 29, REG_AC, 0 },
-  { "ilink2", 30, REG_AC, 0 },
-  { "blink", 31, REG_AC, 0 },
-  { "lp_count", 60, REG_AC, 0 }, { "r60", 60, REG_AC, 0 },
-  { "pcl", 63, REG_AC, ARC_REGISTER_READONLY },
-  { "r63", 63, REG_AC, ARC_REGISTER_READONLY },
+  { "r0", 0, ARC_REG_AC, 0 }, { "r1", 1, ARC_REG_AC, 0 }, { "r2", 2, ARC_REG_AC, 0 },
+  { "r3", 3, ARC_REG_AC, 0 }, { "r4", 4, ARC_REG_AC, 0 }, { "r5", 5, ARC_REG_AC, 0 },
+  { "r6", 6, ARC_REG_AC, 0 }, { "r7", 7, ARC_REG_AC, 0 }, { "r8", 8, ARC_REG_AC, 0 },
+  { "r9", 9, ARC_REG_AC, 0 },
+  { "r10", 10, ARC_REG_AC, 0 }, { "r11", 11, ARC_REG_AC, 0 }, { "r12", 12, ARC_REG_AC, 0 },
+  { "r13", 13, ARC_REG_AC, 0 }, { "r14", 14, ARC_REG_AC, 0 }, { "r15", 15, ARC_REG_AC, 0 },
+  { "r16", 16, ARC_REG_AC, 0 }, { "r17", 17, ARC_REG_AC, 0 }, { "r18", 18, ARC_REG_AC, 0 },
+  { "r19", 19, ARC_REG_AC, 0 }, { "r20", 20, ARC_REG_AC, 0 }, { "r21", 21, ARC_REG_AC, 0 },
+  { "r22", 22, ARC_REG_AC, 0 }, { "r23", 23, ARC_REG_AC, 0 }, { "r24", 24, ARC_REG_AC, 0 },
+  { "r25", 25, ARC_REG_AC, 0 }, { "r26", 26, ARC_REG_AC, 0 }, { "r27", 27, ARC_REG_AC, 0 },
+  { "r28", 28, ARC_REG_AC, 0 }, { "r29", 29, ARC_REG_AC, 0 }, { "r30", 30, ARC_REG_AC, 0 },
+  { "r31", 31, ARC_REG_AC, 0 },
+  { "gp", 26, ARC_REG_AC, 0 }, { "fp", 27, ARC_REG_AC, 0 }, { "sp", 28, ARC_REG_AC, 0 },
+  { "ilink1", 29, ARC_REG_AC, 0 },
+  { "ilink2", 30, ARC_REG_AC, 0 },
+  { "blink", 31, ARC_REG_AC, 0 },
+  { "lp_count", 60, ARC_REG_AC, 0 }, { "r60", 60, ARC_REG_AC, 0 },
+  { "pcl", 63, ARC_REG_AC, ARC_REGISTER_READONLY },
+  { "r63", 63, ARC_REG_AC, ARC_REGISTER_READONLY },
 
   /* General Purpose Registers for ARCompact 16-bit insns */
 
-  { "r0", 0, REG_AC, ARC_REGISTER_16 }, { "r1", 1, REG_AC, ARC_REGISTER_16 },
-  { "r2", 2, REG_AC, ARC_REGISTER_16 }, { "r3", 3, REG_AC, ARC_REGISTER_16 },
-  { "r12", 4, REG_AC, ARC_REGISTER_16 }, { "r13", 5, REG_AC, ARC_REGISTER_16 },
-  { "r14", 6, REG_AC, ARC_REGISTER_16 }, { "r15", 7, REG_AC, ARC_REGISTER_16 },
+  { "r0", 0, ARC_REG_AC, ARC_REGISTER_16 }, { "r1", 1, ARC_REG_AC, ARC_REGISTER_16 },
+  { "r2", 2, ARC_REG_AC, ARC_REGISTER_16 }, { "r3", 3, ARC_REG_AC, ARC_REGISTER_16 },
+  { "r12", 4, ARC_REG_AC, ARC_REGISTER_16 }, { "r13", 5, ARC_REG_AC, ARC_REGISTER_16 },
+  { "r14", 6, ARC_REG_AC, ARC_REGISTER_16 }, { "r15", 7, ARC_REG_AC, ARC_REGISTER_16 },
 
 
     /* Standard auxiliary registers.  */
-  { "status",         0x00, AUXREG_AC, ARC_REGISTER_READONLY },
-  { "semaphore",      0x01, AUXREG_AC, 0 },
-  { "lp_start",       0x02, AUXREG_AC, 0  },
-  { "lp_end",         0x03, AUXREG_AC, 0 },
-  { "identity",       0x04, AUXREG_AC, ARC_REGISTER_READONLY },
-  { "debug",          0x05, AUXREG_AC, ARC_REGISTER_READONLY },
-  { "pc",             0x06, AUXREG_AC, ARC_REGISTER_READONLY },
-  { "status32",       0xa, AUXREG_AC, ARC_REGISTER_READONLY },
-  { "status32_l1",    0xb, AUXREG_AC, 0 },
-  { "status32_l2",    0xc, AUXREG_AC, 0 },
-  { "int_vector_base",0x25, AUXREG_AC, 0 },
-  { "aux_irq_lv12" ,  0x43, AUXREG_AC, 0 },
+  { "status",         0x00, ARC_AUX_REG_AC, ARC_REGISTER_READONLY },
+  { "semaphore",      0x01, ARC_AUX_REG_AC, 0 },
+  { "lp_start",       0x02, ARC_AUX_REG_AC, 0  },
+  { "lp_end",         0x03, ARC_AUX_REG_AC, 0 },
+  { "identity",       0x04, ARC_AUX_REG_AC, ARC_REGISTER_READONLY },
+  { "debug",          0x05, ARC_AUX_REG_AC, ARC_REGISTER_READONLY },
+  { "pc",             0x06, ARC_AUX_REG_AC, ARC_REGISTER_READONLY },
+  { "status32",       0xa, ARC_AUX_REG_AC, ARC_REGISTER_READONLY },
+  { "status32_l1",    0xb, ARC_AUX_REG_AC, 0 },
+  { "status32_l2",    0xc, ARC_AUX_REG_AC, 0 },
+  { "int_vector_base",0x25, ARC_AUX_REG_AC, 0 },
+  { "aux_irq_lv12" ,  0x43, ARC_AUX_REG_AC, 0 },
   /* Optional extension auxiliary registers */
   /* START ARC LOCAL */
   /* Data Cache Flush */
-  { "dc_startr",      0x4d, AUXREG_AC, 0 },
-  { "dc_endr",        0x4e, AUXREG_AC, 0 },
+  { "dc_startr",      0x4d, ARC_AUX_REG_AC, 0 },
+  { "dc_endr",        0x4e, ARC_AUX_REG_AC, 0 },
   /* Time Stamp Counter */
-  { "tsch",           0x58, AUXREG_AC, 0 },
+  { "tsch",           0x58, ARC_AUX_REG_AC, 0 },
   /* END ARC LOCAL */
-  { "multiply_build", 0x7b, AUXREG_AC, ARC_REGISTER_READONLY },
-  { "swap_build",     0x7c, AUXREG_AC, ARC_REGISTER_READONLY },
-  { "norm_build",     0x7d, AUXREG_AC, ARC_REGISTER_READONLY },
-  { "barrel_build",   0x7f, AUXREG_AC, ARC_REGISTER_READONLY },
-  { "aux_irq_lev", 0x200,AUXREG_AC,0 },
-  { "aux_irq_hint",0x201,AUXREG_AC, 0 },
+  { "multiply_build", 0x7b, ARC_AUX_REG_AC, ARC_REGISTER_READONLY },
+  { "swap_build",     0x7c, ARC_AUX_REG_AC, ARC_REGISTER_READONLY },
+  { "norm_build",     0x7d, ARC_AUX_REG_AC, ARC_REGISTER_READONLY },
+  { "barrel_build",   0x7f, ARC_AUX_REG_AC, ARC_REGISTER_READONLY },
+  { "aux_irq_lev", 0x200,ARC_AUX_REG_AC,0 },
+  { "aux_irq_hint",0x201,ARC_AUX_REG_AC, 0 },
   /* Some Tazer specific auxillary registers */
-  { "eret",   0x400, AUXREG_AC, 0 }, /* Exception Return Address */
-  { "erbta",  0x401, AUXREG_AC, 0}, /* Exception Return Branch Target Address */
-  { "erstatus", 0x402,AUXREG_AC, 0},/* Exception Return Status */
-  { "ecr" , 0x403, AUXREG_AC, 0 } , /* Exception Cause Register */
-  { "efa" , 0x404, AUXREG_AC, 0 } , /* Exception Fault Address */
+  { "eret",   0x400, ARC_AUX_REG_AC, 0 }, /* Exception Return Address */
+  { "erbta",  0x401, ARC_AUX_REG_AC, 0}, /* Exception Return Branch Target Address */
+  { "erstatus", 0x402,ARC_AUX_REG_AC, 0},/* Exception Return Status */
+  { "ecr" , 0x403, ARC_AUX_REG_AC, 0 } , /* Exception Cause Register */
+  { "efa" , 0x404, ARC_AUX_REG_AC, 0 } , /* Exception Fault Address */
   /* Level 1 Interrupt Cause */
-  { "icause1", 0x40A, AUXREG_AC, ARC_REGISTER_READONLY } ,
+  { "icause1", 0x40A, ARC_AUX_REG_AC, ARC_REGISTER_READONLY } ,
   /* Level 2 Interrupt Cause */
-  { "icause2", 0x40B, AUXREG_AC, ARC_REGISTER_READONLY } ,
+  { "icause2", 0x40B, ARC_AUX_REG_AC, ARC_REGISTER_READONLY } ,
 
-  { "auxienable",0x40C, AUXREG_AC, 0 } , /* Interrupt Mask Programming */
-  { "auxitrigger",0x40D, AUXREG_AC, 0} , /* Interrupt Sensitivity Programming */
-  { "xpu" , 0x410, AUXREG_AC, 0 } , /* User Mode Extension Enables */
-  { "xpk" , 0x411, AUXREG_AC, 0 } , /* Kernel Mode Extension Enables */
-  { "bta_l1" , 0x413, AUXREG_AC, 0} , /* Level 1 Return Branch Target */
-  { "bta_l2" ,0x414, AUXREG_AC, 0 } , /* Level 2 Return Branch Target */
+  { "auxienable",0x40C, ARC_AUX_REG_AC, 0 } , /* Interrupt Mask Programming */
+  { "auxitrigger",0x40D, ARC_AUX_REG_AC, 0} , /* Interrupt Sensitivity Programming */
+  { "xpu" , 0x410, ARC_AUX_REG_AC, 0 } , /* User Mode Extension Enables */
+  { "xpk" , 0x411, ARC_AUX_REG_AC, 0 } , /* Kernel Mode Extension Enables */
+  { "bta_l1" , 0x413, ARC_AUX_REG_AC, 0} , /* Level 1 Return Branch Target */
+  { "bta_l2" ,0x414, ARC_AUX_REG_AC, 0 } , /* Level 2 Return Branch Target */
   /* Interrupt Edge Cancel */
-  { "aux_irq_edge_cancel",0x415,AUXREG_AC,  ARC_REGISTER_WRITEONLY } ,
+  { "aux_irq_edge_cancel",0x415,ARC_AUX_REG_AC,  ARC_REGISTER_WRITEONLY } ,
   /* Interrupt Pending Cancel */
-  { "aux_irq_pending" , 0x416,AUXREG_AC, ARC_REGISTER_READONLY},
+  { "aux_irq_pending" , 0x416,ARC_AUX_REG_AC, ARC_REGISTER_READONLY},
 
   /* Build Control Registers */
   /* DCCM BCR */
-  { "dccm_base_build_bcr", 0x61, AUXREG_AC, ARC_REGISTER_READONLY},
-  { "DCCM_BASE_BUILD_BCR", 0x61, AUXREG_AC, ARC_REGISTER_READONLY},
+  { "dccm_base_build_bcr", 0x61, ARC_AUX_REG_AC, ARC_REGISTER_READONLY},
+  { "DCCM_BASE_BUILD_BCR", 0x61, ARC_AUX_REG_AC, ARC_REGISTER_READONLY},
   /* CRC Build BCR */
-  { "crc_build_bcr", 0x62, AUXREG_AC, ARC_REGISTER_READONLY},
-  { "CRC_BUILD_BCR", 0x62, AUXREG_AC, ARC_REGISTER_READONLY},
+  { "crc_build_bcr", 0x62, ARC_AUX_REG_AC, ARC_REGISTER_READONLY},
+  { "CRC_BUILD_BCR", 0x62, ARC_AUX_REG_AC, ARC_REGISTER_READONLY},
   /* BTA Build BCR Signifies the presence of BTA_L1/ L2 registers */
-  { "bta_link_build", 0x63,AUXREG_AC, ARC_REGISTER_READONLY},
-  { "BTA_LINK_BUILD", 0x63,AUXREG_AC, ARC_REGISTER_READONLY},
+  { "bta_link_build", 0x63,ARC_AUX_REG_AC, ARC_REGISTER_READONLY},
+  { "BTA_LINK_BUILD", 0x63,ARC_AUX_REG_AC, ARC_REGISTER_READONLY},
   /* Dual Viterbi Butterfly BCR . Signifies presence of that instruction*/
-  { "DVBF_BUILD",0x64,AUXREG_AC, ARC_REGISTER_READONLY},
-  { "dvbf_build",0x64,AUXREG_AC, ARC_REGISTER_READONLY},
+  { "DVBF_BUILD",0x64,ARC_AUX_REG_AC, ARC_REGISTER_READONLY},
+  { "dvbf_build",0x64,ARC_AUX_REG_AC, ARC_REGISTER_READONLY},
   /* Extended Arithmetic Instructions are present */
-  { "tel_instr_build",0x65,AUXREG_AC, ARC_REGISTER_READONLY},
-  { "TEL_INSTR_BUILD",0x65,AUXREG_AC, ARC_REGISTER_READONLY},
+  { "tel_instr_build",0x65,ARC_AUX_REG_AC, ARC_REGISTER_READONLY},
+  { "TEL_INSTR_BUILD",0x65,ARC_AUX_REG_AC, ARC_REGISTER_READONLY},
   /* Memory Subsystem BCR Information regarding the endian-ness etc. */
-  { "memsubsys",0x67,AUXREG_AC, ARC_REGISTER_READONLY},
-  { "MEMSUBSYS",0x67,AUXREG_AC, ARC_REGISTER_READONLY},
+  { "memsubsys",0x67,ARC_AUX_REG_AC, ARC_REGISTER_READONLY},
+  { "MEMSUBSYS",0x67,ARC_AUX_REG_AC, ARC_REGISTER_READONLY},
   /* Interrupt vector base register */
-  { "vecbase_ac_build",0x68,AUXREG_AC, ARC_REGISTER_READONLY},
-  { "VECBASE_AC_BUILD",0x68,AUXREG_AC, ARC_REGISTER_READONLY},
+  { "vecbase_ac_build",0x68,ARC_AUX_REG_AC, ARC_REGISTER_READONLY},
+  { "VECBASE_AC_BUILD",0x68,ARC_AUX_REG_AC, ARC_REGISTER_READONLY},
   /* Peripheral base address register */
-  { "p_base_addr",0x69,AUXREG_AC, ARC_REGISTER_READONLY},
-  { "P_BASE_ADDR",0x69,AUXREG_AC, ARC_REGISTER_READONLY},
+  { "p_base_addr",0x69,ARC_AUX_REG_AC, ARC_REGISTER_READONLY},
+  { "P_BASE_ADDR",0x69,ARC_AUX_REG_AC, ARC_REGISTER_READONLY},
   /* MMU BCR . Specifies the associativity of the TLB etc. */
-  { "mmu_build",0x6F,AUXREG_AC, ARC_REGISTER_READONLY},
-  { "MMU_BUILD",0x6F,AUXREG_AC, ARC_REGISTER_READONLY},
+  { "mmu_build",0x6F,ARC_AUX_REG_AC, ARC_REGISTER_READONLY},
+  { "MMU_BUILD",0x6F,ARC_AUX_REG_AC, ARC_REGISTER_READONLY},
   /* ARC Angel BCR . Specifies the version of the ARC Angel Dev. Board */
-  { "arcangel_build",0x70,AUXREG_AC, ARC_REGISTER_READONLY},
-  { "ARCANGEL_BUILD",0x70,AUXREG_AC, ARC_REGISTER_READONLY},
+  { "arcangel_build",0x70,ARC_AUX_REG_AC, ARC_REGISTER_READONLY},
+  { "ARCANGEL_BUILD",0x70,ARC_AUX_REG_AC, ARC_REGISTER_READONLY},
   /* Data Cache BCR . Associativity/Line Size/ size of the Data Cache etc. */
-  { "dcache_build",0x72,AUXREG_AC, ARC_REGISTER_READONLY},
-  { "DCACHE_BUILD",0x72,AUXREG_AC, ARC_REGISTER_READONLY},
+  { "dcache_build",0x72,ARC_AUX_REG_AC, ARC_REGISTER_READONLY},
+  { "DCACHE_BUILD",0x72,ARC_AUX_REG_AC, ARC_REGISTER_READONLY},
   /* Information regarding multiple arc debug interfaces */
-  { "madi_build",0x73,AUXREG_AC, ARC_REGISTER_READONLY},
-  { "MADI_BUILD",0x73,AUXREG_AC, ARC_REGISTER_READONLY},
+  { "madi_build",0x73,ARC_AUX_REG_AC, ARC_REGISTER_READONLY},
+  { "MADI_BUILD",0x73,ARC_AUX_REG_AC, ARC_REGISTER_READONLY},
   /* BCR for data closely coupled memory */
-  { "dccm_build",0x74,AUXREG_AC, ARC_REGISTER_READONLY},
-  { "DCCM_BUILD",0x74,AUXREG_AC, ARC_REGISTER_READONLY},
+  { "dccm_build",0x74,ARC_AUX_REG_AC, ARC_REGISTER_READONLY},
+  { "DCCM_BUILD",0x74,ARC_AUX_REG_AC, ARC_REGISTER_READONLY},
   /* BCR for timers */
-  { "timer_build",0x75,AUXREG_AC, ARC_REGISTER_READONLY},
-  { "TIMER_BUILD",0x75,AUXREG_AC, ARC_REGISTER_READONLY},
+  { "timer_build",0x75,ARC_AUX_REG_AC, ARC_REGISTER_READONLY},
+  { "TIMER_BUILD",0x75,ARC_AUX_REG_AC, ARC_REGISTER_READONLY},
   /* Actionpoints build */
-  { "ap_build",0x76,AUXREG_AC, ARC_REGISTER_READONLY},
-  { "AP_BUILD",0x76,AUXREG_AC, ARC_REGISTER_READONLY},
+  { "ap_build",0x76,ARC_AUX_REG_AC, ARC_REGISTER_READONLY},
+  { "AP_BUILD",0x76,ARC_AUX_REG_AC, ARC_REGISTER_READONLY},
   /* Instruction Cache BCR */
-  { "icache_build",0x77,AUXREG_AC, ARC_REGISTER_READONLY},
-  { "ICACHE_BUILD",0x77,AUXREG_AC, ARC_REGISTER_READONLY},
+  { "icache_build",0x77,ARC_AUX_REG_AC, ARC_REGISTER_READONLY},
+  { "ICACHE_BUILD",0x77,ARC_AUX_REG_AC, ARC_REGISTER_READONLY},
   /* BCR for Instruction Closely Coupled Memory.
      Used to be BCR for Saturated ADD/SUB.
   */
-  { "iccm_build",0x78,AUXREG_AC, ARC_REGISTER_READONLY},
-  { "ICCM_BUILD",0x78,AUXREG_AC, ARC_REGISTER_READONLY},
+  { "iccm_build",0x78,ARC_AUX_REG_AC, ARC_REGISTER_READONLY},
+  { "ICCM_BUILD",0x78,ARC_AUX_REG_AC, ARC_REGISTER_READONLY},
   /* BCR for X/Y Memory */
-  { "dspram_build",0x79,AUXREG_AC, ARC_REGISTER_READONLY},
-  { "DSPRAM_BUILD",0x79,AUXREG_AC, ARC_REGISTER_READONLY},
+  { "dspram_build",0x79,ARC_AUX_REG_AC, ARC_REGISTER_READONLY},
+  { "DSPRAM_BUILD",0x79,ARC_AUX_REG_AC, ARC_REGISTER_READONLY},
   /* BCR for MAC / MUL */
-  { "mac_build",0x7A,AUXREG_AC, ARC_REGISTER_READONLY},
-  { "MAC_BUILD",0x7A,AUXREG_AC, ARC_REGISTER_READONLY},
+  { "mac_build",0x7A,ARC_AUX_REG_AC, ARC_REGISTER_READONLY},
+  { "MAC_BUILD",0x7A,ARC_AUX_REG_AC, ARC_REGISTER_READONLY},
   /* BCR for old 32 * 32 Multiply */
-  { "multiply_build",0x7B,AUXREG_AC, ARC_REGISTER_READONLY},
-  { "MULTIPLY_BUILD",0x7B,AUXREG_AC, ARC_REGISTER_READONLY},
+  { "multiply_build",0x7B,ARC_AUX_REG_AC, ARC_REGISTER_READONLY},
+  { "MULTIPLY_BUILD",0x7B,ARC_AUX_REG_AC, ARC_REGISTER_READONLY},
 
   /* BCR for swap */
-  { "swap_build",0x7C,AUXREG_AC, ARC_REGISTER_READONLY},
-  { "SWAP_BUILD",0x7C,AUXREG_AC, ARC_REGISTER_READONLY},
+  { "swap_build",0x7C,ARC_AUX_REG_AC, ARC_REGISTER_READONLY},
+  { "SWAP_BUILD",0x7C,ARC_AUX_REG_AC, ARC_REGISTER_READONLY},
   /* BCR For Norm */
-  { "norm_build",0x7D,AUXREG_AC, ARC_REGISTER_READONLY},
-  { "NORM_BUILD",0x7D,AUXREG_AC, ARC_REGISTER_READONLY},
+  { "norm_build",0x7D,ARC_AUX_REG_AC, ARC_REGISTER_READONLY},
+  { "NORM_BUILD",0x7D,ARC_AUX_REG_AC, ARC_REGISTER_READONLY},
   /* BCR for Min  / Max instructions */
-  { "minmax_build",0x7E,AUXREG_AC, ARC_REGISTER_READONLY},
-  { "MINMAX_BUILD",0x7E,AUXREG_AC, ARC_REGISTER_READONLY},
+  { "minmax_build",0x7E,ARC_AUX_REG_AC, ARC_REGISTER_READONLY},
+  { "MINMAX_BUILD",0x7E,ARC_AUX_REG_AC, ARC_REGISTER_READONLY},
   /* BCR for barrel shifter */
-  { "barrel_build",0x7F,AUXREG_AC, ARC_REGISTER_READONLY},
-  { "BARREL_BUILD",0x7F,AUXREG_AC, ARC_REGISTER_READONLY}
+  { "barrel_build",0x7F,ARC_AUX_REG_AC, ARC_REGISTER_READONLY},
+  { "BARREL_BUILD",0x7F,ARC_AUX_REG_AC, ARC_REGISTER_READONLY}
 
 };
 
@@ -4858,9 +4858,9 @@ arc_operand_type (int opertype)
     case 0:
       return (arc_mach_a4 ? COND : COND_AC);
     case 1:
-      return (arc_mach_a4 ? REG : REG_AC);
+      return (arc_mach_a4 ? REG : ARC_REG_AC);
     case 2:
-      return (arc_mach_a4 ? AUXREG : AUXREG_AC);
+      return (arc_mach_a4 ? AUXREG : ARC_AUX_REG_AC);
     default:
       return 0; // abort
     }
@@ -4966,7 +4966,7 @@ arc_aux_reg_name (int regVal)
 
   for (i= arc_reg_names_count ; i > 0  ; i--)
     {
-	  if ((arc_reg_names[i].type == AUXREG_AC) && (arc_reg_names[i].value == regVal)) {
+	  if ((arc_reg_names[i].type == ARC_AUX_REG_AC) && (arc_reg_names[i].value == regVal)) {
 		  return arc_reg_names[i].name;
 	  }
     }
