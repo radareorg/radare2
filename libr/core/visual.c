@@ -4627,12 +4627,17 @@ dodo:
 			const int size = r_config_get_i (core->config, "stack.size");
 			const int delta = r_config_get_i (core->config, "stack.delta");
 			const char *cmdvhex = r_config_get (core->config, "cmd.stack");
+			char *dr1 = r_core_cmd_str (core, "dr 1~?");
+			bool have_flags = false;
+			if (dr1) {
+				have_flags = (*dr1 != '0');
+			}
 
 			if (cmdvhex && *cmdvhex) {
 				snprintf (debugstr, sizeof (debugstr),
-					"?t0;f tmp;sr %s;%s;?t1;%s;drcq;?t1;"
+					"?t0;f tmp;sr %s;%s;?t1;%s;%s?t1;"
 					"ss tmp;f-tmp;pd $r", reg, cmdvhex,
-					ref? "drr": "dr=");
+					ref? "drr": "dr=", have_flags?"drcq;": "");
 				debugstr[sizeof (debugstr) - 1] = 0;
 			} else {
 				const bool cfg_debug = r_config_get_b (core->config, "cfg.debug");
@@ -4641,10 +4646,11 @@ dodo:
 				const int absdelta = R_ABS (delta);
 				snprintf (debugstr, sizeof (debugstr),
 					"%s?t0;f tmp;sr %s;%s %d@$$%c%d;"
-					"?t1;%s;drcq;"
+					"?t1;%s%s;"
 					"?t1;ss tmp;f-tmp;afal;pd $r",
 					cfg_debug? "diq;":"",
 					reg, pxa? "pxa": pxw, size, sign, absdelta,
+					have_flags? "drcq;": "",
 					ref? "drr": "dr=");
 			}
 			printfmtSingle[2] = debugstr;
