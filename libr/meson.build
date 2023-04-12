@@ -184,7 +184,6 @@ if no_user_plugins
       'arm_gnu',
       'mips_gnu',
       'loongarch_gnu',
-      's390_gnu',
       'ppc_gnu',
       'm68k_gnu',
     ]
@@ -193,7 +192,8 @@ if no_user_plugins
       'pdp11',
 # 'hppa_gnu',
       'sparc_gnu',
-      'lanai'
+      'lanai',
+      's390_gnu',
     ]
   endif
 endif

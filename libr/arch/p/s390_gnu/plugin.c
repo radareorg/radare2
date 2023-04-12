@@ -30,21 +30,24 @@ static void memory_error_func(int status, bfd_vma memaddr, struct disassemble_in
 DECLARE_GENERIC_PRINT_ADDRESS_FUNC_NOGLOBALS()
 DECLARE_GENERIC_FPRINTF_FUNC_NOGLOBALS()
 
-static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
+static bool decode(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
+	const ut64 addr = op->addr;
+	const int len = op->size;
+	const ut8 *buf = op->bytes;
 	ut8 bytes[8] = {0};
 	char options[64];
 	struct disassemble_info disasm_obj;
 	if (len < 6) {
 		// r_asm_op_set_asm (op, "truncated");
-		return 2;
+		return false;
 	}
 	RStrBuf *buf_global = r_strbuf_new ("");
 	memcpy (bytes, buf, R_MIN (6, len)); // TODO handle thumb
 
 	/* prepare disassembler */
 	memset (&disasm_obj, '\0', sizeof (struct disassemble_info));
-	if (!R_STR_ISEMPTY (a->config->cpu)) {
-		r_str_ncpy (options, a->config->cpu, sizeof (options));
+	if (R_STR_ISNOTEMPTY (as->config->cpu)) {
+		r_str_ncpy (options, as->config->cpu, sizeof (options));
 	} else {
 		*options = 0;
 	}
@@ -72,11 +75,11 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 	}
 	r_strbuf_free (buf_global);
 	buf_global = NULL;
-	return op->size;
+	return op->size > 0;
 }
 
-static bool set_reg_profile(RAnal *anal) {
-	const char *p =
+static char* regs(RArchSession *as) {
+	const char *const p =
 		"=PC	r15\n"
 		"=LR	r14\n"
 		"=SP	r13\n"
@@ -111,10 +114,10 @@ static bool set_reg_profile(RAnal *anal) {
 		"gpr	r14	.32	56	0\n"
 		"gpr	r15	.32	60	0\n"
 	;
-	return r_reg_set_profile_string (anal->reg, p);
+	return strdup (p);
 }
 
-static int archinfo(RAnal *anal, int q) {
+static int archinfo(RArchSession *as, ut32 q) {
 	switch (q) {
 	case R_ANAL_ARCHINFO_DATA_ALIGN:
 	case R_ANAL_ARCHINFO_ALIGN:
@@ -127,23 +130,22 @@ static int archinfo(RAnal *anal, int q) {
 	return 2;
 }
 
-RAnalPlugin r_anal_plugin_s390_gnu = {
+RArchPlugin r_arch_plugin_s390_gnu = {
 	.name = "s390.gnu",
 	.desc = "SystemZ S390 from binutils",
-	.esil = false,
 	.license = "BSD",
 	.arch = "s390",
 	.cpus = "esa,zarch",
-	.bits = 32 | 64, // it's actually 31
-	.op = &analop,
-	.archinfo = archinfo,
-	.set_reg_profile = &set_reg_profile,
+	.bits = R_SYS_BITS_PACK2 (32, 64), // it's actually 31
+	.decode = &decode,
+	.info = archinfo,
+	.regs = &regs,
 };
 
 #ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_ANAL,
-	.data = &r_anal_plugin_s390_gnu,
+	.type = R_LIB_TYPE_ARCH,
+	.data = &r_arch_plugin_s390_gnu,
 	.version = R2_VERSION
 };
 #endif

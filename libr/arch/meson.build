@@ -26,6 +26,9 @@ r_arch_sources = [
   'p/sparc/plugin_gnu.c',
   'p/sparc/gnu/sparc-dis.c',
   'p/sparc/gnu/sparc-opc.c',
+  'p/s390_gnu/plugin.c',
+  'p/s390_gnu/s390-dis.c',
+  'p/s390_gnu/s390-opc.c',
 # fails on windows
 # error LNK2005: SocketNotificationRetrieveEvents already defined in p_hppa_gnu_hppa-dis.c.obj
   'p/hppa/plugin_gnu.c',
