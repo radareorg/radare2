@@ -4,8 +4,8 @@
 #include <r_lib.h>
 #include <capstone/capstone.h>
 #include <capstone/ppc.h>
-#include "../../asm/arch/ppc/libvle/vle.h"
-#include "../../asm/arch/ppc/libps/libps.h"
+#include "../../arch/p/ppc/libvle/vle.h"
+#include "../../arch/p/ppc/libps/libps.h"
 
 #define SPR_HID0 0x3f0 /* Hardware Implementation Register 0 */
 #define SPR_HID1 0x3f1 /* Hardware Implementation Register 1 */

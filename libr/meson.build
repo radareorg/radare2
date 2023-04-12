@@ -187,11 +187,11 @@ if no_user_plugins
       'arm_gnu',
       'mips_gnu',
       'loongarch_gnu',
-      'ppc_gnu',
     ]
     arch_plugins += [
       'z80',
       'pdp11',
+      'ppc_gnu',
 # 'hppa_gnu',
       'sparc_gnu',
       'lanai',

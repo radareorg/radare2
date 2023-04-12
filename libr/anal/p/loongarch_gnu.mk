@@ -1,3 +1,4 @@
+N=anal_loongarch_gnu
 OBJ_LOONGARCH=anal_loongarch_gnu.o
 OBJ_LOONGARCH += ../arch/loongarch/gnu/loongarch-dis.o
 OBJ_LOONGARCH += ../arch/loongarch/gnu/loongarch-opc.o
