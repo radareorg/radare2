@@ -74,7 +74,7 @@ static ut64 addr_to_offset(struct MACH0_(obj_t) *bin, ut64 addr) {
 			}
 		}
 	}
-	return 0;
+	return 0; // UT64_MAX?
 }
 
 static ut64 offset_to_vaddr(struct MACH0_(obj_t) *bin, ut64 offset) {
@@ -88,7 +88,7 @@ static ut64 offset_to_vaddr(struct MACH0_(obj_t) *bin, ut64 offset) {
 			}
 		}
 	}
-	return 0;
+	return 0; // UT64_MAX?
 }
 
 static ut64 pa2va(RBinFile *bf, ut64 offset) {
@@ -2640,7 +2640,6 @@ static char *get_name(struct MACH0_(obj_t) *mo, ut32 stridx, bool filter) {
 }
 
 static int walk_exports(struct MACH0_(obj_t) *bin, RExportsIterator iterator, void *ctx) {
-	RList *states = NULL;
 	r_return_val_if_fail (bin, 0);
 	if (!bin->dyld_info) {
 		return 0;
@@ -2658,10 +2657,10 @@ static int walk_exports(struct MACH0_(obj_t) *bin, RExportsIterator iterator, vo
 	}
 	ut8 *end = trie + size;
 	if (r_buf_read_at (bin->b, bin->dyld_info->export_off, trie, bin->dyld_info->export_size) != size) {
-		goto beach;
+		return 0;
 	}
 
-	states = r_list_newf ((RListFree)free);
+	RList *states = r_list_newf ((RListFree)free);
 	if (!states) {
 		goto beach;
 	}
@@ -2872,6 +2871,7 @@ static void _fill_exports(struct MACH0_(obj_t) *bin, const char *name, ut64 flag
 	}
 
 	RBinSymbol *sym = r_vector_end (&bin->symbols_cache);
+	memset (sym, 0, sizeof (RBinSymbol));
 	sym->vaddr = vaddr;
 	sym->paddr = offset + context->boffset;
 	sym->type = "EXT";
@@ -2970,6 +2970,7 @@ static void _parse_symbols(RBinFile *bf, struct MACH0_(obj_t) *bin, HtPP *symcac
 				j--;
 			} else {
 				RBinSymbol *sym = r_vector_end (&bin->symbols_cache);
+				memset (sym, 0, sizeof (RBinSymbol));
 				sym->vaddr = vaddr;
 				sym->paddr = addr_to_offset (bin, sym->vaddr) + obj->boffset;
 				sym->size = 0; /* TODO: Is it anywhere? */
@@ -2994,6 +2995,7 @@ static void _parse_symbols(RBinFile *bf, struct MACH0_(obj_t) *bin, HtPP *symcac
 		if (parse_import_stub (bin, &symbol, i) && symbol.addr >= 100) {
 			j++;
 			RBinSymbol *sym = r_vector_end (&bin->symbols_cache);
+			memset (sym, 0, sizeof (RBinSymbol));
 			sym->lang = R_BIN_LANG_C;
 			sym->vaddr = symbol.addr;
 			sym->paddr = symbol.offset + obj->boffset;
@@ -3033,6 +3035,7 @@ static void _parse_symbols(RBinFile *bf, struct MACH0_(obj_t) *bin, HtPP *symcac
 			}
 
 			RBinSymbol *sym = r_vector_end (&bin->symbols_cache);
+			memset (sym, 0, sizeof (RBinSymbol));
 			sym->name = sym_name;
 			sym->vaddr = vaddr;
 			sym->paddr = addr_to_offset (bin, vaddr) + obj->boffset;

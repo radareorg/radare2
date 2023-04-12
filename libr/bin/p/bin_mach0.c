@@ -177,17 +177,6 @@ static RList *entries(RBinFile *bf) {
 	return ret;
 }
 
-static void _handle_arm_thumb(struct MACH0_(obj_t) *bin, RBinSymbol **p) {
-	RBinSymbol *ptr = *p;
-	if (bin) {
-		if (ptr->paddr & 1) {
-			ptr->paddr--;
-			ptr->vaddr--;
-			ptr->bits = 16;
-		}
-	}
-}
-
 #if FEATURE_SYMLIST
 // R2_590 remove this duplicate function once it is exposed in public API
 static RBinSymbol *r_bin_symbol_clone(RBinSymbol *bs) {
@@ -214,18 +203,26 @@ static RList *symbols(RBinFile *bf) {
 	}
 
 	RList *list = r_list_newf ((RListFree) r_bin_symbol_free);
-	void **it;
-	int i = 0;
-	r_vector_foreach (symbols, it) {
+	RBinSymbol *sym;
+	r_vector_foreach (symbols, sym) {
 		// need to clone here, in bobj.c the list free function is forced to `r_bin_symbol_free`
 		// otherwise, a shallow copy of a list with no free function could be returned here..
-		eprintf ("length = %d, i = %d\n", symbols->len, i);
-		i++;
-		r_list_append (list, r_bin_symbol_clone ((RBinSymbol*) *it));
+		r_list_append (list, r_bin_symbol_clone (sym));
 	}
 	return list;
 }
 #else
+static void _handle_arm_thumb(struct MACH0_(obj_t) *bin, RBinSymbol **p) {
+	RBinSymbol *ptr = *p;
+	if (bin) {
+		if (ptr->paddr & 1) {
+			ptr->paddr--;
+			ptr->vaddr--;
+			ptr->bits = 16;
+		}
+	}
+}
+
 static RList *symbols(RBinFile *bf) {
 	struct MACH0_(obj_t) *bin;
 	int i;
