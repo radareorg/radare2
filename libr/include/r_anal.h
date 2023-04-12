@@ -1582,7 +1582,6 @@ extern RAnalPlugin r_anal_plugin_jdh8;
 extern RAnalPlugin r_anal_plugin_ppc_cs;
 extern RAnalPlugin r_anal_plugin_sh;
 extern RAnalPlugin r_anal_plugin_sparc_cs;
-extern RAnalPlugin r_anal_plugin_s390_cs;
 extern RAnalPlugin r_anal_plugin_tms320;
 extern RAnalPlugin r_anal_plugin_x86;
 extern RAnalPlugin r_anal_plugin_x86_cs;

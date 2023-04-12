@@ -1,0 +1,13 @@
+OBJ_ARCH_S390CS_CS=p/s390/plugin.o
+
+include p/capstone.mk
+
+STATIC_OBJ+=${OBJ_ARCH_S390CS_CS}
+
+TARGET_ARCH_S390CS_CS=arch_s390_cs.${EXT_SO}
+
+ALL_TARGETS+=${TARGET_ARCH_S390CS_CS}
+
+${TARGET_ARCH_S390CS_CS}: ${OBJ_SYSTEMZ_CS}
+	${CC} ${CFLAGS} $(call libname,arch_s390_cs) $(CS_LDFLAGS) \
+		-o arch_s390_cs.${EXT_SO} ${OBJ_ARCH_S390CS_CS}
