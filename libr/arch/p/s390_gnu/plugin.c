@@ -46,7 +46,7 @@ static bool decode(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
 
 	/* prepare disassembler */
 	memset (&disasm_obj, '\0', sizeof (struct disassemble_info));
-	if (!R_STR_ISEMPTY (as->config->cpu)) {
+	if (R_STR_ISNOTEMPTY (as->config->cpu)) {
 		r_str_ncpy (options, as->config->cpu, sizeof (options));
 	} else {
 		*options = 0;
@@ -79,7 +79,7 @@ static bool decode(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
 }
 
 static char* regs(RArchSession *as) {
-	const char *p =
+	const char *const p =
 		"=PC	r15\n"
 		"=LR	r14\n"
 		"=SP	r13\n"
