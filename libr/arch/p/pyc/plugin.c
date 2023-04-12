@@ -48,6 +48,7 @@ static char *regs(RArchSession *as) {
 		"=PC    pc\n"
 		"=BP    bp\n"
 		"=SP    sp\n"
+		"=SN    a0\n"
 		"=A0    a0\n"
 		"=A1    a1\n"
 		"=A2    a2\n"
@@ -78,6 +79,7 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 	}
 	const ut64 addr = op->addr;
 	const ut8 *data = op->bytes;
+	const size_t data_len = op->size;
 	RList *cobjs = r_list_get_n (pyobj, 0);
 	RListIter *iter = NULL;
 	pyc_code_object *func = NULL, *t = NULL;
@@ -118,10 +120,14 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 
 	op->size = is_python36? 2: ((op_code >= ops->have_argument)? 3: 1);
 	if (op_code >= ops->have_argument) {
-		if (!is_python36) {
-			oparg = data[1] + data[2] * 256 + extended_arg;
+		if (is_python36) {
+			if (data_len > 1) {
+				oparg = data[1] + extended_arg;
+			}
 		} else {
-			oparg = data[1] + extended_arg;
+			if (data_len > 2) {
+				oparg = data[1] + data[2] * 256 + extended_arg;
+			}
 		}
 	}
 
