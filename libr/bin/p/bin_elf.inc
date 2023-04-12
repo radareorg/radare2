@@ -588,6 +588,9 @@ static void process_constructors(RBinFile *bf, RList *ret, int bits) {
 		if (type == -1) {
 			continue;
 		}
+		if (sec->size > 0xffffff) {
+			continue;
+		}
 		ut8 *buf = calloc (sec->size, 1);
 		if (!buf) {
 			continue;

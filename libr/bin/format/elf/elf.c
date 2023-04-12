@@ -1336,7 +1336,8 @@ static bool init_dynstr(ELFOBJ *bin) {
 		}
 		section_name = &bin->shstrtab[bin->shdr[i].sh_name];
 		if (bin->shdr[i].sh_type == SHT_STRTAB && !strcmp (section_name, ".dynstr")) {
-			if (!(bin->dynstr = (char*) calloc (bin->shdr[i].sh_size + 1, sizeof (char)))) {
+			size_t shsz = bin->shdr[i].sh_size;
+			if (shsz > 0xffffff || !(bin->dynstr = (char*) calloc (shsz + 1, sizeof (char)))) {
 				R_LOG_ERROR ("Cannot allocate memory for dynamic strings");
 				return false;
 			}
