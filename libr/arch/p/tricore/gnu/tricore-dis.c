@@ -1092,10 +1092,7 @@ init_hash_tables ()
 
 /* Return the name of the core register (SFR) located at offset ADDR.  */
 
-static const char *
-find_core_reg (addr)
-     unsigned long addr;
-{
+static const char * find_core_reg (unsigned long addr) {
   struct sfrlist *psfr;
   int idx = addr & 0xff;
 
@@ -1110,11 +1107,7 @@ find_core_reg (addr)
 
 /* Print the decoded TriCore instruction starting at MEMADDR.  */
 
-static void
-print_decoded_insn (memaddr, info)
-     bfd_vma memaddr;
-     struct disassemble_info *info;
-{
+static void print_decoded_insn (bfd_vma memaddr, struct disassemble_info *info) {
   opcode_t *insn = dec_insn.code;
   int i, needs_creg = 0, need_comma;
   const char *creg;
@@ -1500,12 +1493,12 @@ print_decoded_insn (memaddr, info)
    decoded insn.  Return the number of actually decoded bytes.  */
 
 static int
-decode_tricore_insn (memaddr, insn, len32, info)
-     bfd_vma memaddr;
-     unsigned long insn;
-     int len32;
-     struct disassemble_info *info;
-{
+decode_tricore_insn (
+     bfd_vma memaddr,
+     unsigned long insn,
+     int len32,
+     struct disassemble_info *info
+) {
   int idx = insn & 0x3f;
   struct insnlist *pinsn;
   unsigned long mask;
@@ -1549,10 +1542,10 @@ decode_tricore_insn (memaddr, insn, len32, info)
    actually decoded bytes (2 or 4).  */
 
 static int
-decode_pcp_insn (memaddr, boffer, info)
-     bfd_vma memaddr;
-     bfd_byte boffer[4];
-     struct disassemble_info *info;
+decode_pcp_insn (
+     bfd_vma memaddr,
+     bfd_byte boffer[4],
+     struct disassemble_info *info)
 {
   unsigned long insn = 0, insn2 = 0, val;
   int idx, fail, rb, ra;
@@ -1837,9 +1830,9 @@ decode_pcp_insn (memaddr, boffer, info)
    1, 2 or 4 bytes.  */
 
 int
-print_insn_tricore (memaddr, info)
-     bfd_vma memaddr;
-     struct disassemble_info *info;
+print_insn_tricore (
+     bfd_vma memaddr,
+     struct disassemble_info *info)
 {
   bfd_byte boffer[4];
   int len32 = 0, failure;
