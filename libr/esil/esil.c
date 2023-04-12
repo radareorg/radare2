@@ -18,7 +18,7 @@
 #define IFDBG if (esil && esil->verbose > 1)
 
 static inline void free_ornot(void *p) {
-	R_CONST_FREE (p);
+	R_TAG_FREE (p);
 }
 
 /* Returns the number that has bits + 1 least significant bits set. */
@@ -54,7 +54,7 @@ static bool r_esil_runpending(REsil *esil, char *pending) {
 	} else if (esil->pending) {
 		char *expr = esil->pending;
 		esil->pending = NULL;
-		r_esil_parse (esil, R_CONST_UNTAG (expr));
+		r_esil_parse (esil, R_TAG_NOP (expr));
 		free_ornot (expr);
 		return true;
 	}

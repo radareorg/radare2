@@ -263,11 +263,24 @@ typedef struct _utX {
 #define R_IS_DIRTY(x) (x)->is_dirty
 #define R_DIRTY_VAR bool is_dirty
 
-#define R_CONST_MAYBE
-#define R_CONST_TAG(x) ((x)|1)
-#define R_CONST_UNTAG(x) (void*)((((size_t)x)>>1)<<1)
-#define R_CONST_FREE(x) do { if (!((size_t)(x)&1)) { R_FREE(x); }} while(0)
-#define R_IS_CONST(x) ((size_t)(x)&1))
+#define R_TAG(x) (void*)((size_t)(x)|1)
+#define R_UNTAG(x) (void*)((((size_t)(x))&(size_t)-2))
+#define R_TAG_FREE(x) do { if (!((size_t)(x)&1)) { R_FREE(x); }} while(0)
+#define R_TAG_NOP(x) untagged_pointer_check(x)
+#define R_IS_TAGGED(x) ((size_t)(x)&1)
+#define R_TAGGED
+#if R_CHECKS_LEVEL == 0
+static inline void *untagged_pointer_check(void *x) {
+	return x;
+}
+#else
+static inline void *untagged_pointer_check(void *x) {
+	if (R_IS_TAGGED(x)) {
+		int *p = (int*)0; *p = 0;
+	}
+	return x;
+}
+#endif
 
 #ifdef __cplusplus
 }
