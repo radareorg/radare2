@@ -89,7 +89,7 @@ static char *swiftField(const char *dn, const char *cn) {
 }
 
 // R2_590 - move into rbin as public api
-RBinSymbol *r_bin_symbol_clone(RBinSymbol *bs) {
+static RBinSymbol *r_bin_symbol_clone(RBinSymbol *bs) {
 	RBinSymbol *nbs = R_NEW (RBinSymbol);
 	memcpy (nbs, bs, sizeof (RBinSymbol));
 	nbs->name = strdup (nbs->name);
