@@ -1,10 +1,8 @@
 /* radare - LGPL - Copyright 2009-2022 - pancake */
 
-#define R_LOG_ORIGIN "anal.ppc.gnu"
+#define R_LOG_ORIGIN "arch.ppc.gnu"
 
-#include <r_lib.h>
-#include <r_asm.h>
-#include <r_anal.h>
+#include <r_arch.h>
 #include "disas-asm.h"
 
 static int ppc_buffer_read_memory(bfd_vma memaddr, bfd_byte *myaddr, ut32 length, struct disassemble_info *info) {
@@ -31,7 +29,7 @@ static void memory_error_func(int status, bfd_vma memaddr, struct disassemble_in
 DECLARE_GENERIC_PRINT_ADDRESS_FUNC_NOGLOBALS()
 DECLARE_GENERIC_FPRINTF_FUNC_NOGLOBALS()
 
-static int disassemble(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
+static int disassemble(RArchSession *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 	char options[64];
 	ut8 bytes[8] = { 0 };
 	struct disassemble_info disasm_obj = {0};
@@ -80,10 +78,10 @@ static int disassemble(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 	return op->size;
 }
 
-// NOTE: buf should be at least 16 bytes!
-// XXX addr should be off_t for 64 love
-static int ppc_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *bytes, int len, RAnalOpMask mask) {
-//int arch_ppc_op(ut64 addr, const u8 *bytes, struct op_t *op)
+static bool ppc_op(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
+	const ut64 addr = op->addr;
+	const int len = op->size;
+	const ut8 *bytes = op->bytes;
 	// XXX hack
 	int opcode = (bytes[0] & 0xf8) >> 3; // bytes 0-5
 	short baddr = (((ut32) bytes[2] << 8) | (bytes[3] & 0xfc));// 16-29
@@ -96,12 +94,12 @@ static int ppc_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *bytes, int len
 	op->type = 0;
 	op->size = 4;
 	if (mask & R_ARCH_OP_MASK_DISASM) {
-		int res = disassemble (anal, op, addr, bytes, len);
+		int res = disassemble (as, op, addr, bytes, len);
 		if (res == -1) {
 			op->type = R_ANAL_OP_TYPE_ILL;
 		}
 	}
-	R_LOG_DEBUG ("OPCODE IS %08x : %02x (opcode=%d) baddr = %d", addr, bytes[0], opcode, baddr);
+//	R_LOG_DEBUG ("OPCODE IS %08x : %02x (opcode=%d) baddr = %d", addr, bytes[0], opcode, baddr);
 
 	switch (opcode) {
 //	case 0: // bl op->type = R_ANAL_OP_TYPE_NOP; break;
@@ -158,8 +156,8 @@ static int ppc_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *bytes, int len
 	return op->size;
 }
 
-static bool set_reg_profile(RAnal *anal) {
-	const char *p =
+static char *regs(RArchSession *as) {
+	const char *const p =
 	"=PC	srr0\n"
 	"=SR	srr1\n" // status register
 	"=A0	r0\n"
@@ -213,30 +211,30 @@ static bool set_reg_profile(RAnal *anal) {
 	"gpr	ctr	.32	148	0\n"
 	"gpr	mq	.32	152	0\n"
 	"gpr	vrsave	.32	156	0\n";
-	return r_reg_set_profile_string (anal->reg, p);
+	return strdup (p);
 }
 
-static int archinfo(RAnal *anal, int q) {
+static int archinfo(RArchSession *as, ut32 q) {
 	return 4; /* :D */
 }
 
-RAnalPlugin r_anal_plugin_ppc_gnu = {
+RArchPlugin r_arch_plugin_ppc_gnu = {
 	.name = "ppc.gnu",
 	.desc = "PowerPC analysis plugin",
 	.cpus = "booke,e300,e500,e500x2,e500mc,e440,e464,efs,ppcps,power4,power5,power6,power7,vsx",
 	.license = "LGPL3",
 	.arch = "ppc",
-	.archinfo = archinfo,
-	.bits = 32 | 64,
+	.info = archinfo,
+	.bits = R_SYS_BITS_PACK2 (32, 64),
 	.endian = R_SYS_ENDIAN_LITTLE | R_SYS_ENDIAN_BIG,
-	.op = &ppc_op,
-	.set_reg_profile = &set_reg_profile,
+	.decode = &ppc_op,
+	.regs = &regs,
 };
 
 #ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_ANAL,
-	.data = &r_anal_plugin_ppc_gnu,
+	.type = R_LIB_TYPE_ARCH,
+	.data = &r_arch_plugin_ppc_gnu,
 	.version = R2_VERSION
 };
 #endif
