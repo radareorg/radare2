@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2022 - pancake */
+/* radare - LGPL - Copyright 2009-2023 - pancake */
 
 #include <r_userconf.h>
 #include <r_debug.h>
@@ -1482,6 +1482,9 @@ static int r_debug_native_bp(RBreakpoint *bp, RBreakpointItem *b, bool set) {
 		return set
 			? arm32_hwbp_add (dbg, bp, b)
 			: arm32_hwbp_del (dbg, bp, b);
+#elif __riscv && __linux__
+		// no hw bps afaik
+		return false;
 #else
 #warning r_debug_native_bp not implemented for this platform
 #endif
