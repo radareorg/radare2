@@ -2015,34 +2015,35 @@ void symbols_from_bin(RDyldCache *cache, RList *ret, RBinFile *bf, RDyldBinImage
 		return;
 	}
 
-	// const RList *symbols = MACH0_(load_symbols) (mach0);
-	const struct symbol_t *symbols = MACH0_(get_symbols) (mach0);
+	const RVector *symbols = MACH0_(load_symbols) (bf, mach0);
 	if (!symbols) {
 		return;
 	}
-	int i;
-	for (i = 0; !symbols[i].last; i++) {
-		if (!symbols[i].name || !symbols[i].name[0] || symbols[i].addr < 100) {
+
+	int i = 0;
+	RBinSymbol *sym;
+	r_vector_foreach (symbols, sym) {
+		if (strstr (sym->name, "<redacted>")) {
+			i++;
 			continue;
 		}
-		if (strstr (symbols[i].name, "<redacted>")) {
-			continue;
-		}
-		RBinSymbol *sym = R_NEW0 (RBinSymbol);
-		if (!sym) {
+
+		RBinSymbol *ret_sym = R_NEW0 (RBinSymbol);
+		if (!ret_sym) {
 			break;
 		}
-		sym->name = strdup (symbols[i].name);
-		sym->vaddr = symbols[i].addr;
-		sym->forwarder = "NONE";
-		sym->bind = (symbols[i].type == R_BIN_MACH0_SYMBOL_TYPE_LOCAL)? R_BIN_BIND_LOCAL_STR: R_BIN_BIND_GLOBAL_STR;
-		sym->type = R_BIN_TYPE_FUNC_STR;
-		sym->paddr = symbols[i].offset + bf->o->boffset;
-		sym->size = symbols[i].size;
-		sym->ordinal = i;
 
-		set_u_add (hash, sym->vaddr);
-		r_list_append (ret, sym);
+		ret_sym->name = strdup (sym->name);
+		ret_sym->vaddr = sym->vaddr;
+		ret_sym->paddr = sym->paddr;
+		ret_sym->forwarder = "NONE";
+		ret_sym->bind = sym->bind;
+		ret_sym->type = R_BIN_TYPE_FUNC_STR;
+		ret_sym->size = sym->size;
+		ret_sym->ordinal = i;
+		set_u_add (hash, ret_sym->vaddr);
+		r_list_append (ret, ret_sym);
+		i++;
 	}
 	MACH0_(mach0_free) (mach0);
 }
@@ -2171,7 +2172,7 @@ static RList *symbols(RBinFile *bf) {
 		return NULL;
 	}
 
-	RList *ret = r_list_newf (free);
+	RList *ret = r_list_newf (r_bin_symbol_free);
 	if (!ret) {
 		return NULL;
 	}
