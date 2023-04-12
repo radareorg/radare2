@@ -315,13 +315,14 @@ static RCoreHelpMessage help_msg_u = {
 	"uc", "[?]", "undo core commands (uc?, ucl, uc*, ..) (see `e cmd.undo`)",
 	"uid", "", "display numeric user id",
 	"uniq", "", "filter rows to avoid duplicates",
-	"uname", "", "uname - show system information",
+	"uname", "[?]", "uname - show system information",
 	NULL
 };
 
 static RCoreHelpMessage help_msg_uname = {
 	"Usage:", "uname", "show information about the current system",
 	"uname", "", "show host operating system",
+	"uname", " -a", "show more system details",
 	"uname", " -j", "show uname information in JSON",
 	"uname", " -b", "show machine cpu register bits size",
 	"uname", " -m", "show machine cpu architecture name",
@@ -579,10 +580,15 @@ static bool print_aliases(void *use_b64, const void *key, const void *val) {
 
 static int cmd_uname(void *data, const char *input) { // "uniq"
 	RCore *core = (RCore *)(data);
+	if (strstr (input, "-h") || strstr (input, "?")) {
+		r_core_cmd_help (data, help_msg_uname);
+		return 0;
+	}
 	RSysInfo *si = r_sys_info ();
 	if (si) {
-		if (strstr (input, "-h") || strstr (input, "?")) {
-			r_core_cmd_help (data, help_msg_uname);
+		if (strstr (input, "-a")) {
+			r_cons_printf ("%s %s %s-%d", si->sysname, si->release,
+				R_SYS_ARCH, (R_SYS_BITS & R_SYS_BITS_64)? 64: 32);
 		} else if (strstr (input, "-j")) {
 			PJ *pj = r_core_pj_new (core);
 			pj_o (pj);
