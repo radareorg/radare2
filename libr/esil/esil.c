@@ -2082,7 +2082,7 @@ static bool esil_deceq(REsil *esil) {
 /* POKE */
 static bool esil_poke_n(REsil *esil, int bits) {
 	ut64 bitmask = genmask (bits - 1);
-	ut64 num, num2, addr;
+	ut64 num, addr;
 	ut8 b[8] = {0};
 	ut64 n;
 	char *dst = r_esil_pop (esil);
@@ -2099,6 +2099,17 @@ static bool esil_poke_n(REsil *esil, int bits) {
 	if (src && r_esil_get_parm (esil, src, &num)) {
 		if (dst && r_esil_get_parm (esil, dst, &addr)) {
 			if (bits == 128) {
+				char reg[32];
+				r_str_ncpy (reg, src, sizeof (reg) - 2);
+				size_t last = strlen (reg);
+				reg[last + 1] = 0;
+				reg[last] = 'l';
+				ut64 loow = r_reg_getv (esil->anal->reg, reg);
+				reg[last] = 'h';
+				ut64 high = r_reg_getv (esil->anal->reg, reg);
+				ret = r_esil_mem_write (esil, addr, (const ut8*)&loow, 8);
+				ret = r_esil_mem_write (esil, addr + 8, (const ut8*)&high, 8);
+#if 0
 				src2 = r_esil_pop (esil);
 				if (src2 && r_esil_get_parm (esil, src2, &num2)) {
 					r_write_ble (b, num, R_ARCH_CONFIG_IS_BIG_ENDIAN (esil->anal->config), 64);
@@ -2110,6 +2121,7 @@ static bool esil_poke_n(REsil *esil, int bits) {
 					goto out;
 				}
 				ret = 0;
+#endif
 				goto out;
 			}
 			// this is a internal peek performed before a poke

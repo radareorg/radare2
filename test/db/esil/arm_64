@@ -16,6 +16,32 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=store q0 128bit reg
+FILE=malloc://0x200
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=64
+e hex.header=false
+woe 1
+x 16
+ae 0,[16],q0,=
+ar q0
+?e --
+wow 00
+x 16
+ae q0,0,=[16]
+x 16
+EOF
+EXPECT=<<EOF
+0x00000000  0001 0203 0405 0607 0809 0a0b 0c0d 0e0f  ................
+0x0f0e0d0c0b0a09080706050403020100
+--
+0x00000000  0000 0000 0000 0000 0000 0000 0000 0000  ................
+0x00000000  0001 0203 0405 0607 0809 0a0b 0c0d 0e0f  ................
+EOF
+RUN
+
+
 NAME=ldr q0 128bit reg
 FILE=malloc://0x200
 CMDS=<<EOF

@@ -4631,6 +4631,7 @@ dodo:
 			bool have_flags = false;
 			if (dr1) {
 				have_flags = (*dr1 != '0');
+				free (dr1);
 			}
 
 			if (cmdvhex && *cmdvhex) {
