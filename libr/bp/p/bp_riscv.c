@@ -3,13 +3,13 @@
 #include <r_bp.h>
 #include <r_lib.h>
 
-static struct r_bp_arch_t r_bp_plugin_riscv_bps[] = {
+static RBreakpointArch r_bp_plugin_riscv_bps[] = {
 	{ 32, 2, 0, (const ut8*)"\x02\x90" },
 	{ 64, 4, 0, (const ut8*)"\x02\x90\x02\x90" },
 	{ 0, 0, 0, NULL }
 };
 
-struct r_bp_plugin_t r_bp_plugin_riscv = {
+RBreakpointPlugin r_bp_plugin_riscv = {
 	.name = "riscv",
 	.arch = "riscv",
 	.nbps = 2,

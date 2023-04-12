@@ -1,15 +1,15 @@
-/* radare - LGPL - Copyright 2011 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2011-2023 - pancake */
 
 #include <r_bp.h>
 #include <r_lib.h>
 
-static struct r_bp_arch_t r_bp_plugin_bf_bps[] = {
+static RBreakpointArch r_bp_plugin_bf_bps[] = {
 	{ 0, 1, 0, (const ut8*)"\xff" },
 	{ 0, 1, 0, (const ut8*)"\x00" },
 	{ 0, 0, 0, NULL },
 };
 
-struct r_bp_plugin_t r_bp_plugin_bf = {
+RBreakpointPlugin r_bp_plugin_bf = {
 	.name = "bf",
 	.arch = "bf",
 	.nbps = 2,

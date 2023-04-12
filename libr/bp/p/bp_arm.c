@@ -1,9 +1,9 @@
-/* radare - LGPL - Copyright 2009-2017 - pancake */
+/* radare - LGPL - Copyright 2009-2023 - pancake */
 
 #include <r_bp.h>
 #include <r_lib.h>
 
-static struct r_bp_arch_t r_bp_plugin_arm_bps[] = {
+static RBreakpointArch r_bp_plugin_arm_bps[] = {
 	{ 64, 4, 0, (const ut8*)"\x00\x00\x20\xd4" }, // le - arm64 brk0
 	{ 64, 4, 1, (const ut8*)"\xd4\x20\x00\x00" }, // be - arm64
 	//{ 64, 1, 0, (const ut8*)"\xfe\xde\xff\xe7" }, // le - arm64 // hacky fix
@@ -30,10 +30,10 @@ static struct r_bp_arch_t r_bp_plugin_arm_bps[] = {
 	{ 0, 0, 0, NULL }
 };
 
-struct r_bp_plugin_t r_bp_plugin_arm = {
+RBreakpointPlugin r_bp_plugin_arm = {
 	.name = "arm",
 	.arch = "arm",
-	.nbps = 9,
+	.nbps = 10,
 	.bps = r_bp_plugin_arm_bps,
 };
 
