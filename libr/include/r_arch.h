@@ -331,6 +331,7 @@ extern RArchPlugin r_arch_plugin_bf;
 extern RArchPlugin r_arch_plugin_sparc_gnu;
 extern RArchPlugin r_arch_plugin_hppa_gnu;
 extern RArchPlugin r_arch_plugin_s390_gnu;
+extern RArchPlugin r_arch_plugin_m68k_gnu;
 
 
 #ifdef __cplusplus
