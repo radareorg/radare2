@@ -29,7 +29,7 @@ static bool __check(RIO *io, const char *pathname, bool many) {
 }
 
 static void list_xattr(const char *path) {
-	int total = r_listxattr (path, NULL, -1);
+	int total = r_listxattr (path, NULL, 0);
 	if (total < 1) {
 		return;
 	}
@@ -51,7 +51,7 @@ static bool write_xattr(const char *path, const char *attrname, const ut8 *data,
 }
 
 static char *read_xattr(const char *path, const char *attrname, int *osize) {
-	int size = r_getxattr (path, attrname, NULL, -1);
+	int size = r_getxattr (path, attrname, NULL, 0);
 	if (size < 1) {
 		return NULL;
 	}
