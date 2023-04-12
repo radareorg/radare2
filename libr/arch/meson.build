@@ -29,6 +29,10 @@ r_arch_sources = [
   'p/s390_gnu/plugin.c',
   'p/s390_gnu/s390-dis.c',
   'p/s390_gnu/s390-opc.c',
+  'p/m68k_gnu/plugin.c',
+  'p/m68k_gnu/m68k-dis.c',
+  'p/m68k_gnu/m68k-opc.c',
+  'p/arm/gnu/floatformat.c',
 # fails on windows
 # error LNK2005: SocketNotificationRetrieveEvents already defined in p_hppa_gnu_hppa-dis.c.obj
   'p/hppa/plugin_gnu.c',

@@ -3,11 +3,8 @@
 #include <stdio.h>
 #include <stdarg.h>
 #include <string.h>
-#include <r_types.h>
-#include <r_lib.h>
-#include <r_util.h>
-#include "../../asm/arch/include/opcode/m68k.h"
-#include <r_asm.h>
+#include "../../../asm/arch/include/opcode/m68k.h"
+#include <r_arch.h>
 #include "disas-asm.h"
 
 typedef struct {
@@ -70,7 +67,10 @@ static void memory_error_func(int status, bfd_vma memaddr, struct disassemble_in
 DECLARE_GENERIC_PRINT_ADDRESS_FUNC_NOGLOBALS()
 DECLARE_GENERIC_FPRINTF_FUNC_NOGLOBALS()
 
-static int m68k_op(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
+static bool decode(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
+	const ut64 addr = op->addr;
+	const int len = op->size;
+	const ut8 *buf = op->bytes;
 	ut8 bytes[8] = {0};
 	struct disassemble_info disasm_obj = {0};
 	RStrBuf *sb = NULL;
@@ -85,10 +85,10 @@ static int m68k_op(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RA
 	disasm_obj.symbol_at_address_func = &symbol_at_address;
 	disasm_obj.memory_error_func = &memory_error_func;
 	disasm_obj.print_address_func = &generic_print_address_func;
-	disasm_obj.endian = !R_ARCH_CONFIG_IS_BIG_ENDIAN (a->config);
+	disasm_obj.endian = !R_ARCH_CONFIG_IS_BIG_ENDIAN (as->config);
 	disasm_obj.fprintf_func = &generic_fprintf_func;
 	disasm_obj.stream = sb;
-	disasm_obj.mach = detect_cpu (a->config->cpu);
+	disasm_obj.mach = detect_cpu (as->config->cpu);
 	op->size = print_insn_m68k ((bfd_vma)addr, &disasm_obj);
 
 	if (mask & R_ARCH_OP_MASK_DISASM) {
@@ -99,29 +99,41 @@ static int m68k_op(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RA
 	int left = R_MIN (len, op->size);
 	if (left < 1 || (left > 0 && !memcmp (buf, "\xff\xff\xff\xff\xff\xff\xff\xff", left))) {
 		op->mnemonic = strdup ("breakpoint");
-		return 4;
+		r_strbuf_free (sb);
+		return true;
 	}
 	r_strbuf_free (sb);
-	return op->size;
+	return op->size > 0;
 }
 
-RAnalPlugin r_anal_plugin_m68k_gnu = {
+static int info(RArchSession *as, ut32 q) {
+	switch (q) {
+	case R_ANAL_ARCHINFO_MAX_OP_SIZE:
+		return 6;
+	case R_ANAL_ARCHINFO_MIN_OP_SIZE:
+		return 2;
+	}
+	return 0;
+}
+
+RArchPlugin r_arch_plugin_m68k_gnu = {
 	.name = "m68k.gnu",
 	.author = "pancake",
 	.arch = "m68k",
 	.license = "GPL3",
 	.cpus = "m68000,m68010,m68020,m68030,m68040,m68060,m68881,m68851"
 		"m68000up,m68010up,m68020up,m68030up,m68040up",
-	.bits = 32,
+	.bits = R_SYS_BITS_PACK1 (32),
 	.endian = R_SYS_ENDIAN_BIG,
 	.desc = "Binutils 2.36 based m68k disassembler",
-	.op = &m68k_op
+	.decode = &decode,
+	.info = &info,
 };
 
 #ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_ANAL,
-	.data = &r_anal_plugin_m68k_gnu,
+	.type = R_LIB_TYPE_ARCH,
+	.data = &r_arch_plugin_m68k_gnu,
 	.version = R2_VERSION
 };
 #endif
