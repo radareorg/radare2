@@ -2486,7 +2486,6 @@ const RVector *MACH0_(load_sections)(struct MACH0_(obj_t) *bin) {
 	char sectname[64], raw_segname[17];
 	size_t i, j, to;
 	struct MACH0_(segment_command) *seg;
-	struct section_t section;
 
 	/* for core files */
 	if (bin->nsects < 1 && bin->nsegs > 0) {
@@ -2494,19 +2493,19 @@ const RVector *MACH0_(load_sections)(struct MACH0_(obj_t) *bin) {
 			return NULL;
 		}
 		for (i = 0; i < bin->nsegs; i++) {
+			struct section_t *section = r_vector_end (&bin->sections_cache);
 			seg = &bin->segs[i];
-			section.addr = seg->vmaddr;
-			section.offset = seg->fileoff;
-			section.size = seg->vmsize;
-			section.vsize = seg->vmsize;
-			section.align = 4096;
-			section.flags = seg->flags;
+			section->addr = seg->vmaddr;
+			section->offset = seg->fileoff;
+			section->size = seg->vmsize;
+			section->vsize = seg->vmsize;
+			section->align = 4096;
+			section->flags = seg->flags;
 			r_str_ncpy (sectname, seg->segname, 16);
 			sectname[16] = 0;
 			r_str_filter (sectname, -1);
 			// hack to support multiple sections with same name
-			section.perm = prot2perm (seg->initprot);
-			r_vector_push (&bin->sections_cache, &section);
+			section->perm = prot2perm (seg->initprot);
 		}
 		return &bin->sections_cache;
 	}
@@ -2522,25 +2521,25 @@ const RVector *MACH0_(load_sections)(struct MACH0_(obj_t) *bin) {
 		return NULL;
 	}
 	for (i = 0; i < to; i++) {
-		section.offset = (ut64)bin->sects[i].offset;
-		section.addr = (ut64)bin->sects[i].addr;
-		section.size = (bin->sects[i].flags == S_ZEROFILL) ? 0 : (ut64)bin->sects[i].size;
-		section.vsize = (ut64)bin->sects[i].size;
-		section.align = bin->sects[i].align;
-		section.flags = bin->sects[i].flags;
+		struct section_t *section = r_vector_end (&bin->sections_cache);
+		section->offset = (ut64)bin->sects[i].offset;
+		section->addr = (ut64)bin->sects[i].addr;
+		section->size = (bin->sects[i].flags == S_ZEROFILL) ? 0 : (ut64)bin->sects[i].size;
+		section->vsize = (ut64)bin->sects[i].size;
+		section->align = bin->sects[i].align;
+		section->flags = bin->sects[i].flags;
 		r_str_ncpy (sectname, bin->sects[i].sectname, 17);
 		r_str_filter (sectname, -1);
 		r_str_ncpy (raw_segname, bin->sects[i].segname, 16);
 		for (j = 0; j < bin->nsegs; j++) {
-			if (section.addr >= bin->segs[j].vmaddr &&
-				section.addr < (bin->segs[j].vmaddr + bin->segs[j].vmsize)) {
-				section.perm = prot2perm (bin->segs[j].initprot);
+			if (section->addr >= bin->segs[j].vmaddr &&
+				section->addr < (bin->segs[j].vmaddr + bin->segs[j].vmsize)) {
+				section->perm = prot2perm (bin->segs[j].initprot);
 				break;
 			}
 		}
-		snprintf (section.name, sizeof (section.name),
+		snprintf (section->name, sizeof (section->name),
 			"%d.%s.%s", (int)i, raw_segname, sectname);
-		r_vector_push (&bin->sections_cache, &section);
 	}
 	return &bin->sections_cache;
 }
