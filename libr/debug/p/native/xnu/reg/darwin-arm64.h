@@ -84,16 +84,15 @@ return strdup (
 "gpr	w29	.32	232	0\n" // w0
 "gpr	wzr	.32	?	0\n" // w0
 "gpr	zr	.64	?	0\n" // w0
-// TODO complete w list ...
 // special registers
 "gpr	fp	.64	232	0\n" // FP
 "gpr	lr	.64	240	0\n" // LR X30
 "gpr	sp	.64	248	0\n" // SP
 "gpr	pc	.64	256	0\n" // PC
 "gpr	pstate	.64	264	0   _____tfiae_____________j__qvczn\n" // x0
-"gpr	vf	.1	256.28	0	overflow\n" // set if overflows
-"gpr	cf	.1	256.29	0	carry\n" // set if last op carries
-"gpr	zf	.1	256.30	0	zero\n" // set if last op is 0
-"gpr	nf	.1	256.31	0	sign\n" // msb bit of last op
+"gpr	vf	.1	264.28	0	overflow\n" // set if overflows
+"gpr	cf	.1	264.29	0	carry\n" // set if last op carries
+"gpr	zf	.1	264.30	0	zero\n" // set if last op is 0
+"gpr	nf	.1	264.31	0	sign\n" // msb bit of last op
 );
 
