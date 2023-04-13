@@ -76,7 +76,8 @@ static ut64 baddr(RBinFile *bf) {
 }
 
 static RList *sections(RBinFile *bf) {
-	return MACH0_(get_segments) (bf);
+	struct MACH0_(obj_t) *bin = bf->o->bin_obj;
+	return MACH0_(get_segments) (bf, bin);
 }
 
 static RBinAddr *newEntry(ut64 hpaddr, ut64 paddr, int type, int bits) {
