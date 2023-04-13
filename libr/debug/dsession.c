@@ -22,7 +22,10 @@ static void r_debug_checkpoint_fini(void *element, void *user) {
 	for (i = 0; i < R_REG_TYPE_LAST; i++) {
 		r_reg_arena_free (checkpoint->arena[i]);
 	}
-	r_list_free (checkpoint->snaps);
+	// causes double free in RDebug.free with this reproducer:
+	// lldb -- r2 -NAdq -c 'db main;dts+;db;dc;pd-- 2' /bin/ls
+	// r_list_free (checkpoint->snaps);
+	checkpoint->snaps = NULL;
 }
 
 static void htup_vector_free(HtUPKv *kv) {

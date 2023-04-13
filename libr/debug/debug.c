@@ -428,11 +428,11 @@ R_API void r_debug_free(RDebug *dbg) {
 		free (dbg->btalgo);
 		r_debug_signal_fini (dbg);
 		r_debug_trace_free (dbg->trace);
+		r_list_free (dbg->snaps);
 		r_debug_session_free (dbg->session);
 		r_anal_op_free (dbg->cur_op);
 		dbg->trace = NULL;
 		r_egg_free (dbg->egg);
-		r_list_free (dbg->snaps);
 		free (dbg->arch);
 		free (dbg->glob_libs);
 		free (dbg->glob_unlibs);
