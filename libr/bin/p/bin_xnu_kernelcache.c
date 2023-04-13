@@ -132,7 +132,7 @@ static RRebaseInfo *r_rebase_info_new_from_mach0(RBuffer *cache_buf, struct MACH
 static void r_rebase_info_free(RRebaseInfo *info);
 static void r_rebase_info_populate(RRebaseInfo *info, RKernelCacheObj *obj);
 static ut64 iterate_rebase_list(RBuffer *cache_buf, ut64 multiplier, ut64 start_offset, ROnRebaseFunc func, void *user_data);
-static ut64 r_rebase_offset_to_paddr(RKernelCacheObj *obj, struct section_t *sections, ut64 offset);
+static ut64 r_rebase_offset_to_paddr(RKernelCacheObj *obj, const RVector *sections, ut64 offset);
 static void swizzle_io_read(RKernelCacheObj *obj, RIO *io);
 static int kernelcache_io_read(RIO *io, RIODesc *fd, ut8 *buf, int count);
 static void rebase_buffer(RKernelCacheObj *obj, ut64 off, RIODesc *fd, ut8 *buf, int count);
@@ -307,44 +307,41 @@ static void ensure_kexts_initialized(RKernelCacheObj *obj, RBinFile *bf) {
 }
 
 static RPrelinkRange *get_prelink_info_range_from_mach0(struct MACH0_(obj_t) *mach0) {
-	struct section_t *sections = NULL;
-	if (!(sections = MACH0_(get_sections) (mach0))) {
+	const RVector *sections = MACH0_(load_sections) (mach0);
+	if (!sections) {
 		return NULL;
 	}
 
 	RPrelinkRange *prelink_range = R_NEW0 (RPrelinkRange);
 	if (!prelink_range) {
-		R_FREE (sections);
 		return NULL;
 	}
 
 	int incomplete = 3;
-	int i = 0;
-	for (; !sections[i].last; i++) {
-		if (strstr (sections[i].name, "__PRELINK_INFO.__info")) {
-			prelink_range->range.offset = sections[i].offset;
-			prelink_range->range.size = sections[i].size;
+	struct section_t *section;
+	r_vector_foreach (sections, section) {
+		if (strstr (section->name, "__PRELINK_INFO.__info")) {
+			prelink_range->range.offset = section->offset;
+			prelink_range->range.size = section->size;
 			if (!--incomplete) {
 				break;
 			}
 		}
 
-		if (strstr (sections[i].name, "__PRELINK_TEXT.__text")) {
-			prelink_range->pa2va_exec = sections[i].addr - sections[i].offset;
+		if (strstr (section->name, "__PRELINK_TEXT.__text")) {
+			prelink_range->pa2va_exec = section->addr - section->offset;
 			if (!--incomplete) {
 				break;
 			}
 		}
 
-		if (strstr (sections[i].name, "__PRELINK_DATA.__data")) {
-			prelink_range->pa2va_data = sections[i].addr - sections[i].offset;
+		if (strstr (section->name, "__PRELINK_DATA.__data")) {
+			prelink_range->pa2va_data = section->addr - section->offset;
 			if (!--incomplete) {
 				break;
 			}
 		}
 	}
-
-	R_FREE (sections);
 
 	if (incomplete == 1 && !prelink_range->pa2va_data) {
 		struct MACH0_(segment_command) *seg;
@@ -484,8 +481,8 @@ static ut64 r_ptr(ut8 *buf, RKernelCacheObj *obj) {
 }
 
 static RList *carve_kexts(RKernelCacheObj *obj, RBinFile *bf) {
-	struct section_t *sections = NULL;
-	if (!(sections = MACH0_(get_sections) (obj->mach0))) {
+	const RVector *sections = MACH0_(load_sections) (obj->mach0);
+	if (!sections) {
 		return NULL;
 	}
 
@@ -496,29 +493,30 @@ static RList *carve_kexts(RKernelCacheObj *obj, RBinFile *bf) {
 	int incomplete = 4;
 	RKmodInfo *all_infos = NULL;
 
-	int i = 0;
-	for (; !sections[i].last && incomplete > 0; i++) {
-		if (strstr (sections[i].name, "__TEXT_EXEC.__text")) {
-			pa2va_exec = sections[i].addr - sections[i].offset;
+	struct section_t *section;
+	r_vector_foreach (sections, section) {
+		if (incomplete == 0) {
+			break;
+		}
+		if (strstr (section->name, "__TEXT_EXEC.__text")) {
+			pa2va_exec = section->addr - section->offset;
 			incomplete--;
 		}
-		if (strstr (sections[i].name, "__DATA.__data")) {
-			pa2va_data = sections[i].addr - sections[i].offset;
+		if (strstr (section->name, "__DATA.__data")) {
+			pa2va_data = section->addr - section->offset;
 			incomplete--;
 		}
-		if (strstr (sections[i].name, "__PRELINK_INFO.__kmod_start")) {
-			kmod_start = sections[i].offset;
-			kmod_end = kmod_start + sections[i].size;
+		if (strstr (section->name, "__PRELINK_INFO.__kmod_start")) {
+			kmod_start = section->offset;
+			kmod_end = kmod_start + section->size;
 			incomplete--;
 		}
-		if (strstr (sections[i].name, "__PRELINK_INFO.__kmod_info")) {
-			kmod_info = sections[i].offset;
-			kmod_info_end = kmod_info + sections[i].size;
+		if (strstr (section->name, "__PRELINK_INFO.__kmod_info")) {
+			kmod_info = section->offset;
+			kmod_info_end = kmod_info + section->size;
 			incomplete--;
 		}
 	}
-
-	R_FREE (sections);
 
 	if (incomplete) {
 		return NULL;
@@ -720,22 +718,20 @@ static void r_kext_free(RKext *kext) {
 }
 
 static void r_kext_fill_text_range(RKext *kext) {
-	struct section_t *sections = NULL;
-	if (!(sections = MACH0_(get_sections) (kext->mach0))) {
+	const RVector *sections = MACH0_(load_sections) (kext->mach0);
+	if (!sections) {
 		return;
 	}
 
-	int i = 0;
-	for (; !sections[i].last; i++) {
-		if (strstr (sections[i].name, "__TEXT_EXEC.__text")) {
-			kext->text_range.offset = sections[i].offset;
-			kext->text_range.size = sections[i].size;
-			kext->vaddr = sections[i].addr;
+	struct section_t *section;
+	r_vector_foreach (sections, section) {
+		if (strstr (section->name, "__TEXT_EXEC.__text")) {
+			kext->text_range.offset = section->offset;
+			kext->text_range.size = section->size;
+			kext->vaddr = section->addr;
 			break;
 		}
 	}
-
-	R_FREE (sections);
 }
 
 static int kexts_sort_vaddr_func(const void *a, const void *b) {
@@ -864,14 +860,14 @@ static RList *entries(RBinFile *bf) {
 
 static void process_kmod_init_term(RKernelCacheObj *obj, RKext *kext, RList *ret, ut64 **inits, ut64 **terms) {
 	if (!*inits || !*terms) {
-		struct section_t *sections = NULL;
-		if (!(sections = MACH0_(get_sections) (obj->mach0))) {
+		const RVector *sections = MACH0_(load_sections) (obj->mach0);
+		if (!sections) {
 			return;
 		}
 
-		int i = 0;
-		for (; !sections[i].last; i++) {
-			if (sections[i].size == 0) {
+		struct section_t *section;
+		r_vector_foreach (sections, section) {
+			if (section->size == 0) {
 				continue;
 			}
 
@@ -879,8 +875,8 @@ static void process_kmod_init_term(RKernelCacheObj *obj, RKext *kext, RList *ret
 			ut64 *target = NULL;
 			int n_ptrs = 0;
 
-			if (!*inits && strstr (sections[i].name, "__kmod_init")) {
-				int n_inits = sections[i].size / 8;
+			if (!*inits && strstr (section->name, "__kmod_init")) {
+				int n_inits = section->size / 8;
 				if (n_inits <= 0) {
 					continue;
 				}
@@ -888,8 +884,8 @@ static void process_kmod_init_term(RKernelCacheObj *obj, RKext *kext, RList *ret
 				target = *inits;
 				n_ptrs = n_inits;
 			}
-			if (!*terms && strstr (sections[i].name, "__kmod_term")) {
-				int n_terms = sections[i].size / 8;
+			if (!*terms && strstr (section->name, "__kmod_term")) {
+				int n_terms = section->size / 8;
 				if (n_terms <= 0) {
 					continue;
 				}
@@ -900,7 +896,7 @@ static void process_kmod_init_term(RKernelCacheObj *obj, RKext *kext, RList *ret
 			if (!target || !n_ptrs) {
 				continue;
 			}
-			start_paddr = sections[i].offset;
+			start_paddr = section->offset;
 			int j = 0;
 			ut8 bytes[8];
 			for (; j < n_ptrs; j++) {
@@ -911,8 +907,6 @@ static void process_kmod_init_term(RKernelCacheObj *obj, RKext *kext, RList *ret
 			}
 			target[j] = 0;
 		}
-
-		R_FREE (sections);
 	}
 
 	if (*inits) {
@@ -968,38 +962,39 @@ static void create_initterm_syms(RKext *kext, RList *ret, int type, ut64 *pointe
 }
 
 static void process_constructors(RKernelCacheObj *obj, struct MACH0_(obj_t) *mach0, RList *ret, ut64 paddr, bool is_first, int mode, const char *prefix) {
-	struct section_t *sections = NULL;
-	if (!(sections = MACH0_(get_sections) (mach0))) {
+	const RVector *sections = MACH0_(load_sections) (mach0);
+	if (!sections) {
 		return;
 	}
-	int i, type;
-	for (i = 0; !sections[i].last; i++) {
-		if (sections[i].size == 0) {
+	int type;
+	struct section_t *section;
+	r_vector_foreach (sections, section) {
+		if (section->size == 0) {
 			continue;
 		}
 
-		if (strstr (sections[i].name, "_mod_fini_func") || strstr (sections[i].name, "_mod_term_func")) {
+		if (strstr (section->name, "_mod_fini_func") || strstr (section->name, "_mod_term_func")) {
 			type  = R_BIN_ENTRY_TYPE_FINI;
-		} else if (strstr (sections[i].name, "_mod_init_func")) {
+		} else if (strstr (section->name, "_mod_init_func")) {
 			type  = is_first ? 0 : R_BIN_ENTRY_TYPE_INIT;
 			is_first = false;
 		} else {
 			continue;
 		}
 
-		ut8 *buf = calloc (sections[i].size, 1);
+		ut8 *buf = calloc (section->size, 1);
 		if (!buf) {
 			break;
 		}
-		if (r_buf_read_at (obj->cache_buf, sections[i].offset + paddr, buf, sections[i].size) < sections[i].size) {
+		if (r_buf_read_at (obj->cache_buf, section->offset + paddr, buf, section->size) < section->size) {
 			free (buf);
 			break;
 		}
 		int j;
 		int count = 0;
-		for (j = 0; j < sections[i].size; j += 8) {
+		for (j = 0; j < section->size; j += 8) {
 			ut64 addr64 = K_RPTR (buf + j);
-			ut64 paddr64 = sections[i].offset + paddr + j;
+			ut64 paddr64 = section->offset + paddr + j;
 			if (mode == R_K_CONSTRUCTOR_TO_ENTRY) {
 				RBinAddr *ba = newEntry (paddr64, addr64, type);
 				r_list_append (ret, ba);
@@ -1022,7 +1017,6 @@ static void process_constructors(RKernelCacheObj *obj, struct MACH0_(obj_t) *mac
 		}
 		free (buf);
 	}
-	free (sections);
 }
 
 static RBinAddr *newEntry(ut64 haddr, ut64 vaddr, int type) {
@@ -1119,40 +1113,40 @@ static int prot2perm(int x) {
 }
 
 static void sections_from_mach0(RList *ret, struct MACH0_(obj_t) *mach0, RBinFile *bf, ut64 paddr, char *prefix, RKernelCacheObj *obj) {
-	struct section_t *sections = NULL;
-	if (!(sections = MACH0_(get_sections) (mach0))) {
+	const RVector *sections = MACH0_(load_sections) (mach0);
+	if (!sections) {
 		return;
 	}
-	int i;
-	for (i = 0; !sections[i].last; i++) {
+
+	struct section_t *section;
+	r_vector_foreach (sections, section) {
 		RBinSection *ptr;
 		if (!(ptr = R_NEW0 (RBinSection))) {
 			break;
 		}
 		if (prefix) {
-			ptr->name = r_str_newf ("%s.%s", prefix, (char*)sections[i].name);
+			ptr->name = r_str_newf ("%s.%s", prefix, (char*)section->name);
 		} else {
-			ptr->name = r_str_newf ("%s", (char*)sections[i].name);
+			ptr->name = r_str_newf ("%s", (char*)section->name);
 		}
 		if (strstr (ptr->name, "la_symbol_ptr")) {
-			int len = sections[i].size / 8;
+			int len = section->size / 8;
 			ptr->format = r_str_newf ("Cd %d[%d]", 8, len);
 		}
 		handle_data_sections (ptr);
-		ptr->size = sections[i].size;
-		ptr->vsize = sections[i].vsize;
-		ptr->paddr = sections[i].offset + bf->o->boffset + paddr;
-		ptr->vaddr = K_PPTR (sections[i].addr);
+		ptr->size = section->size;
+		ptr->vsize = section->vsize;
+		ptr->paddr = section->offset + bf->o->boffset + paddr;
+		ptr->vaddr = K_PPTR (section->addr);
 		if (!ptr->vaddr) {
 			ptr->vaddr = ptr->paddr;
 		}
-		ptr->perm = sections[i].perm;
-		if (!ptr->perm && strstr (sections[i].name, "__TEXT_EXEC.__text")) {
+		ptr->perm = section->perm;
+		if (!ptr->perm && strstr (section->name, "__TEXT_EXEC.__text")) {
 			ptr->perm = 1 | 4;
 		}
 		r_list_append (ret, ptr);
 	}
-	free (sections);
 }
 
 static void handle_data_sections(RBinSection *sect) {
@@ -1296,8 +1290,8 @@ typedef struct _r_sysent {
 } RSysEnt;
 
 static RList *resolve_syscalls(RKernelCacheObj *obj, ut64 enosys_addr) {
-	struct section_t *sections = NULL;
-	if (!(sections = MACH0_(get_sections) (obj->mach0))) {
+	const RVector *sections = MACH0_(load_sections) (obj->mach0);
+	if (!sections) {
 		return NULL;
 	}
 
@@ -1305,12 +1299,12 @@ static RList *resolve_syscalls(RKernelCacheObj *obj, ut64 enosys_addr) {
 	RSyscall *syscall = NULL;
 	ut8 *data_const = NULL;
 	ut64 data_const_offset = 0, data_const_size = 0, data_const_vaddr = 0;
-	int i = 0;
-	for (; !sections[i].last; i++) {
-		if (strstr (sections[i].name, "__DATA_CONST.__const")) {
-			data_const_offset = sections[i].offset;
-			data_const_size = sections[i].size;
-			data_const_vaddr = K_PPTR (sections[i].addr);
+	struct section_t *section;
+	r_vector_foreach (sections, section) {
+		if (strstr (section->name, "__DATA_CONST.__const")) {
+			data_const_offset = section->offset;
+			data_const_size = section->size;
+			data_const_vaddr = K_PPTR (section->addr);
 			break;
 		}
 	}
@@ -1393,7 +1387,7 @@ static RList *resolve_syscalls(RKernelCacheObj *obj, ut64 enosys_addr) {
 	sym->type = "OBJECT";
 	r_list_append (syscalls, sym);
 
-	i = 1;
+	int i = 1;
 	cursor += 24;
 	int num_syscalls = sdb_count (syscall->db);
 	while (cursor < end && i < num_syscalls) {
@@ -1422,7 +1416,6 @@ static RList *resolve_syscalls(RKernelCacheObj *obj, ut64 enosys_addr) {
 
 	r_syscall_free (syscall);
 	R_FREE (data_const);
-	R_FREE (sections);
 	return syscalls;
 
 beach:
@@ -1431,7 +1424,6 @@ beach:
 		r_list_free (syscalls);
 	}
 	R_FREE (data_const);
-	R_FREE (sections);
 	return NULL;
 }
 
@@ -1456,8 +1448,8 @@ static HtPP *mig_hash_new(void) {
 }
 
 static RList *resolve_mig_subsystem(RKernelCacheObj *obj) {
-	struct section_t *sections = NULL;
-	if (!(sections = MACH0_(get_sections) (obj->mach0))) {
+	const RVector *sections = MACH0_(load_sections) (obj->mach0);
+	if (!sections) {
 		return NULL;
 	}
 
@@ -1467,18 +1459,19 @@ static RList *resolve_mig_subsystem(RKernelCacheObj *obj) {
 	ut64 data_const_offset = 0, data_const_size = 0, data_const_vaddr = 0;
 	ut64 text_exec_offset = 0, text_exec_size = 0, text_exec_vaddr = 0;
 	int incomplete = 2;
-	int i = 0;
-	for (; !sections[i].last && incomplete > 0; i++) {
-		if (strstr (sections[i].name, "__DATA_CONST.__const")) {
-			data_const_offset = sections[i].offset;
-			data_const_size = sections[i].size;
-			data_const_vaddr = K_PPTR (sections[i].addr);
+
+	struct section_t *section;
+	r_vector_foreach (sections, section) {
+		if (strstr (section->name, "__DATA_CONST.__const")) {
+			data_const_offset = section->offset;
+			data_const_size = section->size;
+			data_const_vaddr = K_PPTR (section->addr);
 			incomplete--;
 		}
-		if (strstr (sections[i].name, "__TEXT_EXEC.__text")) {
-			text_exec_offset = sections[i].offset;
-			text_exec_size = sections[i].size;
-			text_exec_vaddr = K_PPTR (sections[i].addr);
+		if (strstr (section->name, "__TEXT_EXEC.__text")) {
+			text_exec_offset = section->offset;
+			text_exec_size = section->size;
+			text_exec_vaddr = K_PPTR (section->addr);
 			incomplete--;
 		}
 	}
@@ -1589,7 +1582,6 @@ static RList *resolve_mig_subsystem(RKernelCacheObj *obj) {
 
 	sdb_ht_free (mig_hash);
 	R_FREE (data_const);
-	R_FREE (sections);
 	return subsystem;
 
 beach:
@@ -1600,7 +1592,6 @@ beach:
 		sdb_ht_free (mig_hash);
 	}
 	R_FREE (data_const);
-	R_FREE (sections);
 	return NULL;
 }
 
@@ -1718,39 +1709,36 @@ static void symbols_from_stubs(RList *ret, HtPP *kernel_syms_by_addr, RKernelCac
 }
 
 static RStubsInfo *get_stubs_info(struct MACH0_(obj_t) *mach0, ut64 paddr, RKernelCacheObj *obj) {
-	struct section_t *sections = NULL;
-	if (!(sections = MACH0_(get_sections) (mach0))) {
+	const RVector *sections = MACH0_(load_sections) (mach0);
+	if (!sections) {
 		return NULL;
 	}
 
 	RStubsInfo *stubs_info = R_NEW0 (RStubsInfo);
 	if (!stubs_info) {
-		free (sections);
 		return NULL;
 	}
 
 	int incomplete = 2;
-	int i = 0;
-	for (; !sections[i].last; i++) {
-		if (strstr (sections[i].name, "__DATA_CONST.__got")) {
-			stubs_info->got.offset = sections[i].offset + paddr;
-			stubs_info->got.size = sections[i].size;
-			stubs_info->got_addr = K_PPTR (sections[i].addr);
+	struct section_t *section;
+	r_vector_foreach (sections, section) {
+		if (strstr (section->name, "__DATA_CONST.__got")) {
+			stubs_info->got.offset = section->offset + paddr;
+			stubs_info->got.size = section->size;
+			stubs_info->got_addr = K_PPTR (section->addr);
 			if (!--incomplete) {
 				break;
 			}
 		}
 
-		if (strstr (sections[i].name, "__TEXT_EXEC.__stubs")) {
-			stubs_info->stubs.offset = sections[i].offset + paddr;
-			stubs_info->stubs.size = sections[i].size;
+		if (strstr (section->name, "__TEXT_EXEC.__stubs")) {
+			stubs_info->stubs.offset = section->offset + paddr;
+			stubs_info->stubs.size = section->size;
 			if (!--incomplete) {
 				break;
 			}
 		}
 	}
-
-	R_FREE (sections);
 
 	if (incomplete) {
 		R_FREE (stubs_info);
@@ -1826,28 +1814,27 @@ static void r_kernel_cache_free(RKernelCacheObj *obj) {
 }
 
 static RRebaseInfo *r_rebase_info_new_from_mach0(RBuffer *cache_buf, struct MACH0_(obj_t) *mach0) {
-	struct section_t *sections = MACH0_(get_sections) (mach0);
+	const RVector *sections = MACH0_(load_sections) (mach0);
 	if (!sections) {
 		return NULL;
 	}
 
 	ut64 starts_offset = 0, starts_size = 0;
 
-	int i = 0;
-	for (; !sections[i].last; i++) {
-		if (strstr (sections[i].name, "__TEXT.__thread_starts")) {
-			starts_offset = sections[i].offset;
-			starts_size = sections[i].size;
+	struct section_t *section;
+	r_vector_foreach (sections, section) {
+		if (strstr (section->name, "__TEXT.__thread_starts")) {
+			starts_offset = section->offset;
+			starts_size = section->size;
 			break;
 		}
 	}
-
-	R_FREE (sections);
 
 	ut64 kernel_base = 0;
 
 	struct MACH0_(segment_command) *seg;
 	int nsegs = R_MIN (mach0->nsegs, 128);
+	int i;
 	for (i = 0; i < nsegs; i++) {
 		char segname[17];
 		seg = &mach0->segs[i];
@@ -1908,7 +1895,7 @@ static void r_rebase_info_free(RRebaseInfo *info) {
 }
 
 static void r_rebase_info_populate(RRebaseInfo *info, RKernelCacheObj *obj) {
-	struct section_t *sections = NULL;
+	const RVector *sections = NULL;
 	int i = 0;
 
 	if (obj->rebase_info_populated) {
@@ -1918,9 +1905,10 @@ static void r_rebase_info_populate(RRebaseInfo *info, RKernelCacheObj *obj) {
 
 	for (; i < info->n_ranges; i++) {
 		if (info->ranges[i].size != UT64_MAX) {
-			goto cleanup;
+			return;
 		} else if (sections == NULL) {
-			if (!(sections = MACH0_(get_sections) (obj->mach0))) {
+			sections = MACH0_(load_sections) (obj->mach0);
+			if (!sections) {
 				return;
 			}
 		}
@@ -1932,17 +1920,14 @@ static void r_rebase_info_populate(RRebaseInfo *info, RKernelCacheObj *obj) {
 			info->ranges[i].size = 0;
 		}
 	}
-
-cleanup:
-	R_FREE (sections);
 }
 
-static ut64 r_rebase_offset_to_paddr(RKernelCacheObj *obj, struct section_t *sections, ut64 offset) {
+static ut64 r_rebase_offset_to_paddr(RKernelCacheObj *obj, const RVector *sections, ut64 offset) {
 	ut64 vaddr = obj->rebase_info->kernel_base + offset;
-	int i = 0;
-	for (; !sections[i].last; i++) {
-		if (sections[i].addr <= vaddr && vaddr < (sections[i].addr + sections[i].vsize)) {
-			return sections[i].offset + (vaddr - sections[i].addr);
+	struct section_t *section;
+	r_vector_foreach (sections, section) {
+		if (section->addr <= vaddr && vaddr < (section->addr + section->vsize)) {
+			return section->offset + (vaddr - section->addr);
 		}
 	}
 	return offset;
