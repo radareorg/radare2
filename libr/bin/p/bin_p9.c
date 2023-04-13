@@ -321,8 +321,7 @@ static st64 sym_read(RBinFile *bf, Sym *sym, const ut64 offset) {
 static void sym_fini(void *sym, R_UNUSED void *user) {
 	Sym *s = (Sym *)sym;
 	if (s && s->name) {
-		free (s->name);
-		s->name = NULL;
+		R_FREE (s->name);
 	}
 }
 
@@ -561,7 +560,6 @@ static RList *symbols(RBinFile *bf) {
 		}
 	}
 
-	sym_fini (&sym, NULL);
 	ht_up_free (histories);
 	r_pvector_free (names);
 	return ret;
