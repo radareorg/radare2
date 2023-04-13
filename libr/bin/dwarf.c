@@ -676,7 +676,6 @@ static const ut8 *parse_line_header_source_dwarf5(RBin *bin, RBinFile *bf, const
 		}
 
 		buf = r_uleb128 (buf, buf_end - buf, &total_entries, NULL);
-
 		if (i == FILES) {
 			if (total_entries > 0) {
 				hdr->file_names = calloc (sizeof (file_entry), total_entries);
@@ -691,19 +690,18 @@ static const ut8 *parse_line_header_source_dwarf5(RBin *bin, RBinFile *bf, const
 		}
 
 		ut64 index;
-		for (index = 0; index < total_entries; index++) {
+		for (index = 0; buf && index < total_entries; index++) {
 			int count = 0;
 			const ut8 *format = entry_format;
 
 			ut8 entry_format_index;
-			for (entry_format_index = 0; entry_format_index < entry_format_count; entry_format_index++) {
+			for (entry_format_index = 0; buf && entry_format_index < entry_format_count; entry_format_index++) {
 				ut64 content_type_code, form_code;
 				char *name = NULL;
 				ut64 data = 0;
 
 				format = r_uleb128 (format, buf_end - format, &content_type_code, NULL);
 				format = r_uleb128 (format, buf_end - format, &form_code, NULL);
-
 				switch (form_code) {
 				case DW_FORM_string:
 					// TODO: find a way to test this case.
