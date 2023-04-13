@@ -523,8 +523,12 @@ R_API bool r_core_visual_bit_editor(RCore *core) {
 			ut8 *o = core->block;
 			int bs = core->blocksize;
 			core->block = buf;
+			int stride = r_config_get_i (core->config, "hex.stride");
+			r_config_set_i (core->config, "hex.stride", 1);
+			core->blocksize = sizeof (buf);
 			r_core_cmd_call (core, "pri1");
 			core->block = o;
+			r_config_set_i (core->config, "hex.stride", stride);
 			core->blocksize = bs;
 		}
 		r_cons_visual_flush ();

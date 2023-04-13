@@ -5556,12 +5556,16 @@ static void bitimage(RCore *core, int cols) {
 	if (stride < 1) {
 		stride = 16;
 	}
-	stride = 32;
 	const ut8 *b = core->block;
+	const int s = core->blocksize;
 	int x, y;
 	for (y = 0; y < 8; y++) {
-		ut8 byte = b[y * stride];
-		for (x = 8; x > 0; x--) {
+		size_t pos = y * stride;
+		if (pos >= s) {
+			break;
+		}
+		ut8 byte = b[pos];
+		for (x = 7; x >= 0; x--) {
 			bool pixel = byte & (1 << x);
 			r_cons_printf ("%s", pixel? "##": "--");
 		}
