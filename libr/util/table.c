@@ -21,10 +21,7 @@ static RTableColumnType r_table_type_number = { "number", sortNumber };
 static RTableColumnType r_table_type_bool = { "bool", sortNumber };
 
 R_API RTableColumnType *r_table_type(const char *name) {
-	if (!strcmp (name, "bool")) {
-		return &r_table_type_bool;
-	}
-	if (!strcmp (name, "boolean")) {
+	if (r_str_startswith (name, "bool")) {
 		return &r_table_type_bool;
 	}
 	if (!strcmp (name, "string")) {
@@ -383,12 +380,15 @@ static int __strbuf_append_col_aligned(RStrBuf *sb, RTableColumn *col, const cha
 		switch (col->align) {
 		case R_TABLE_ALIGN_LEFT:
 			pad = r_str_repeat (" ", col->width - len);
-			r_strbuf_appendf (sb, "%s%s", str, pad);
+			r_strbuf_append (sb, str);
+			r_strbuf_append (sb, pad);
 			free (pad);
 			break;
 		case R_TABLE_ALIGN_RIGHT:
 			pad = r_str_repeat (" ", padlen);
-			r_strbuf_appendf (sb, "%s%s ", pad, str);
+			r_strbuf_append (sb, pad);
+			r_strbuf_append (sb, str);
+			r_strbuf_append (sb, " ");
 			free (pad);
 			break;
 		case R_TABLE_ALIGN_CENTER:
@@ -464,7 +464,7 @@ R_API char *r_table_tosimplestring(RTable *t) {
 		}
 		int len = r_str_len_utf8_ansi (r_strbuf_get (sb));
 		char *l = r_str_repeat (h_line, R_MAX (maxlen, len));
-		if (l) {
+		if (R_LIKELY (l)) {
 			r_strbuf_appendf (sb, "\n%s\n", l);
 			free (l);
 		}
@@ -475,7 +475,7 @@ R_API char *r_table_tosimplestring(RTable *t) {
 		r_list_foreach (row->items, iter2, item) {
 			bool nopad = nopad_trailing (iter2);
 			RTableColumn *col = r_list_get_n (t->cols, c);
-			if (col) {
+			if (R_LIKELY (col)) {
 				(void)__strbuf_append_col_aligned (sb, col, item, nopad);
 			}
 			c++;
@@ -523,7 +523,8 @@ R_API char *r_table_tor2cmds(RTable *t) {
 		r_list_foreach (row->items, iter2, item) {
 			RTableColumn *col = r_list_get_n (t->cols, c);
 			if (col) {
-				r_strbuf_appendf (sb, " %s", item);
+				r_strbuf_append (sb, " ");
+				r_strbuf_append (sb, item);
 			}
 			c++;
 		}
@@ -558,9 +559,11 @@ R_API char *r_table_tosql(RTable *t) {
 		int c = 0;
 		r_strbuf_appendf (sb, "INSERT INTO %s (", table_name);
 		r_list_foreach (t->cols, iter2, col) {
-			const char *comma = iter2->n? ", ": "";
 			char *s = r_str_escape_sql (col->name);
-			r_strbuf_appendf (sb, "%s%s", s, comma);
+			r_strbuf_append (sb, s);
+			if (iter2->n) {
+				r_strbuf_append (sb, ", ");
+			}
 			free (s);
 		}
 		r_strbuf_append (sb, ") VALUES (");

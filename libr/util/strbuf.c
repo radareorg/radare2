@@ -286,13 +286,12 @@ R_API bool r_strbuf_appendf(RStrBuf *sb, const char *fmt, ...) {
 	r_return_val_if_fail (sb && fmt, false);
 
 	va_start (ap, fmt);
-	bool ret = r_strbuf_vappendf (sb, fmt, ap);
+	const bool ret = r_strbuf_vappendf (sb, fmt, ap);
 	va_end (ap);
 	return ret;
 }
 
 R_API bool r_strbuf_vappendf(RStrBuf *sb, const char *fmt, va_list ap) {
-	int ret;
 	va_list ap2;
 	char string[1024];
 
@@ -302,7 +301,7 @@ R_API bool r_strbuf_vappendf(RStrBuf *sb, const char *fmt, va_list ap) {
 		return false;
 	}
 	va_copy (ap2, ap);
-	ret = vsnprintf (string, sizeof (string), fmt, ap);
+	int ret = vsnprintf (string, sizeof (string), fmt, ap);
 	if (ret >= sizeof (string)) {
 		char *p = malloc (ret + 1);
 		if (!p) {
