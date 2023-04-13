@@ -2213,6 +2213,7 @@ void MACH0_(opts_set_default)(struct MACH0_(opts_t) *options, RBinFile *bf) {
 	options->symbols_off = 0;
 	options->verbose = bf->rbin->verbose;
 	options->maxsymlen = bf->rbin->maxsymlen;
+	options->parse_start_symbols = false;
 }
 
 static void *duplicate_ptr(void *p) {
@@ -2238,6 +2239,7 @@ struct MACH0_(obj_t) *MACH0_(mach0_new)(const char *file, struct MACH0_(opts_t) 
 		bin->verbose = options->verbose;
 		bin->header_at = options->header_at;
 		bin->symbols_off = options->symbols_off;
+		bin->parse_start_symbols = options->parse_start_symbols;
 	}
 	bin->file = file;
 	size_t binsz = 0;
@@ -2281,6 +2283,7 @@ struct MACH0_(obj_t) *MACH0_(new_buf)(RBuffer *buf, struct MACH0_(opts_t) *optio
 			bin->header_at = options->header_at;
 			bin->maxsymlen = options->maxsymlen;
 			bin->symbols_off = options->symbols_off;
+			bin->parse_start_symbols = options->parse_start_symbols;
 		}
 		bin->size = sz;
 		if (!init (bin)) {
@@ -3148,7 +3151,9 @@ const RVector *MACH0_(load_symbols)(RBinFile *bf, struct MACH0_(obj_t) *bin) {
 
 	bool is_debug = _check_if_debug_build (bf, bin);
 	_parse_symbols (bf, bin, symcache);
-	_parse_function_start_symbols (bf, bin, symcache);
+	if (bin->parse_start_symbols) {
+		_parse_function_start_symbols (bf, bin, symcache);
+	}
 	ht_pp_free (symcache);
 
 	if (is_debug) {

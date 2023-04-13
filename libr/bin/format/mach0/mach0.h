@@ -98,6 +98,7 @@ struct MACH0_(opts_t) {
 	ut64 header_at;
 	ut64 symbols_off;
 	int maxsymlen;
+	bool parse_start_symbols;
 	RBinFile *bf;
 };
 
@@ -167,6 +168,7 @@ struct MACH0_(obj_t) {
 	int func_size;
 	bool verbose;
 	ut64 header_at;
+	bool parse_start_symbols;
 	bool symbols_loaded;
 	RVector symbols_cache;
 	ut64 symbols_off;
