@@ -1735,6 +1735,7 @@ static int init_items(struct MACH0_(obj_t) *bin) {
 	bin->uuidn = 0;
 	bin->os = 0;
 	bin->has_crypto = 0;
+	bin->cached_segments = NULL;
 	r_pvector_init (&bin->libs_cache, (RPVectorFree) free);
 
 	if (bin->hdr.sizeofcmds > bin->size) {
@@ -2198,6 +2199,8 @@ void *MACH0_(mach0_free)(struct MACH0_(obj_t) *mo) {
 		}
 		free (mo->chained_starts);
 	}
+	r_list_free (mo->cached_segments);
+	mo->cached_segments = NULL;
 	r_buf_free (mo->b);
 	free (mo);
 	return NULL;
@@ -2386,9 +2389,7 @@ static const char *macho_section_type_tostring(int flags) {
 	return "";
 }
 
-RList *MACH0_(get_segments)(RBinFile *bf) {
-	struct MACH0_(obj_t) *macho = bf->o->bin_obj;
-
+RList *MACH0_(get_segments)(RBinFile *bf, struct MACH0_(obj_t) *macho) {
 	if (macho->cached_segments) {
 		return r_list_clone (macho->cached_segments, (RListClone)r_bin_section_clone);
 	}
@@ -3104,7 +3105,7 @@ static void _parse_function_start_symbols(RBinFile *bf, struct MACH0_(obj_t) *bi
 }
 
 static bool _check_if_debug_build(RBinFile *bf, struct MACH0_(obj_t) *bin) {
-	RList *sections = MACH0_(get_segments) (bf);
+	RList *sections = MACH0_(get_segments) (bf, bin);
 	if (!sections) {
 		return false;
 	}
