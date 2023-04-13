@@ -644,8 +644,9 @@ static char *get_section_string(RBin *bin, RBinSection * section, size_t offset)
 		// eprintf ("%d\n", r_str_nlen (str2, len));
 		return r_str_ndup ((const char *)str3, sizeof (str3));
 	}
-	R_LOG_WARN ("TRUNCATED (%s)", str3);
-	return r_str_ndup ((const char *)str3, sizeof (str3));
+	char *res = r_str_ndup ((const char *)str3, sizeof (str3));
+	R_LOG_DEBUG ("Truncated corrupted section name: %s", res);
+	return res;
 }
 
 // TODO DWARF 5 line header parsing, very different from ver. 4
