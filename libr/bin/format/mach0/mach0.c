@@ -2186,10 +2186,14 @@ void *MACH0_(mach0_free)(struct MACH0_(obj_t) *mo) {
 	if (mo->symbols_loaded) {
 		r_vector_fini (&mo->symbols_cache);
 	}
-	r_list_free (mo->sections_cache);
 	if (mo->imports_loaded) {
 		r_pvector_fini (&mo->imports_cache);
 	}
+	if (mo->sections_loaded) {
+		r_vector_fini (&mo->sections_cache);
+	}
+	r_list_free (mo->cached_segments);
+	mo->cached_segments = NULL;
 	if (mo->chained_starts) {
 		for (i = 0; i < mo->nsegs && i < mo->segs_count; i++) {
 			if (mo->chained_starts[i]) {
@@ -2199,8 +2203,6 @@ void *MACH0_(mach0_free)(struct MACH0_(obj_t) *mo) {
 		}
 		free (mo->chained_starts);
 	}
-	r_list_free (mo->cached_segments);
-	mo->cached_segments = NULL;
 	r_buf_free (mo->b);
 	free (mo);
 	return NULL;
@@ -2472,36 +2474,41 @@ RList *MACH0_(get_segments)(RBinFile *bf, struct MACH0_(obj_t) *macho) {
 	return list;
 }
 
-// XXX this function is called so many times, should return cached RList instead
-struct section_t *MACH0_(get_sections)(struct MACH0_(obj_t) *bin) {
+const RVector *MACH0_(load_sections)(struct MACH0_(obj_t) *bin) {
 	r_return_val_if_fail (bin, NULL);
-	struct section_t *sections;
+	if (bin->sections_loaded) {
+		return &bin->sections_cache;
+	}
+
+	bin->sections_loaded = true;
+	r_vector_init (&bin->sections_cache, sizeof (struct section_t), NULL, NULL);
+
 	char sectname[64], raw_segname[17];
 	size_t i, j, to;
+	struct MACH0_(segment_command) *seg;
+	struct section_t section;
 
 	/* for core files */
 	if (bin->nsects < 1 && bin->nsegs > 0) {
-		struct MACH0_(segment_command) *seg;
-		if (!(sections = calloc ((bin->nsegs + 1), sizeof (struct section_t)))) {
+		if (!r_vector_reserve (&bin->sections_cache, bin->nsegs)) {
 			return NULL;
 		}
 		for (i = 0; i < bin->nsegs; i++) {
 			seg = &bin->segs[i];
-			sections[i].addr = seg->vmaddr;
-			sections[i].offset = seg->fileoff;
-			sections[i].size = seg->vmsize;
-			sections[i].vsize = seg->vmsize;
-			sections[i].align = 4096;
-			sections[i].flags = seg->flags;
+			section.addr = seg->vmaddr;
+			section.offset = seg->fileoff;
+			section.size = seg->vmsize;
+			section.vsize = seg->vmsize;
+			section.align = 4096;
+			section.flags = seg->flags;
 			r_str_ncpy (sectname, seg->segname, 16);
 			sectname[16] = 0;
 			r_str_filter (sectname, -1);
 			// hack to support multiple sections with same name
-			sections[i].perm = prot2perm (seg->initprot);
-			sections[i].last = 0;
+			section.perm = prot2perm (seg->initprot);
+			r_vector_push (&bin->sections_cache, &section);
 		}
-		sections[i].last = 1;
-		return sections;
+		return &bin->sections_cache;
 	}
 
 	if (!bin->sects) {
@@ -2511,32 +2518,31 @@ struct section_t *MACH0_(get_sections)(struct MACH0_(obj_t) *bin) {
 	if (to < 1) {
 		return NULL;
 	}
-	if (!(sections = calloc (to + 1, sizeof (struct section_t)))) {
+	if (!r_vector_reserve (&bin->sections_cache, to)) {
 		return NULL;
 	}
 	for (i = 0; i < to; i++) {
-		sections[i].offset = (ut64)bin->sects[i].offset;
-		sections[i].addr = (ut64)bin->sects[i].addr;
-		sections[i].size = (bin->sects[i].flags == S_ZEROFILL) ? 0 : (ut64)bin->sects[i].size;
-		sections[i].vsize = (ut64)bin->sects[i].size;
-		sections[i].align = bin->sects[i].align;
-		sections[i].flags = bin->sects[i].flags;
+		section.offset = (ut64)bin->sects[i].offset;
+		section.addr = (ut64)bin->sects[i].addr;
+		section.size = (bin->sects[i].flags == S_ZEROFILL) ? 0 : (ut64)bin->sects[i].size;
+		section.vsize = (ut64)bin->sects[i].size;
+		section.align = bin->sects[i].align;
+		section.flags = bin->sects[i].flags;
 		r_str_ncpy (sectname, bin->sects[i].sectname, 17);
 		r_str_filter (sectname, -1);
 		r_str_ncpy (raw_segname, bin->sects[i].segname, 16);
 		for (j = 0; j < bin->nsegs; j++) {
-			if (sections[i].addr >= bin->segs[j].vmaddr &&
-				sections[i].addr < (bin->segs[j].vmaddr + bin->segs[j].vmsize)) {
-				sections[i].perm = prot2perm (bin->segs[j].initprot);
+			if (section.addr >= bin->segs[j].vmaddr &&
+				section.addr < (bin->segs[j].vmaddr + bin->segs[j].vmsize)) {
+				section.perm = prot2perm (bin->segs[j].initprot);
 				break;
 			}
 		}
-		snprintf (sections[i].name, sizeof (sections[i].name),
+		snprintf (section.name, sizeof (section.name),
 			"%d.%s.%s", (int)i, raw_segname, sectname);
-		sections[i].last = false;
+		r_vector_push (&bin->sections_cache, &section);
 	}
-	sections[i].last = true;
-	return sections;
+	return &bin->sections_cache;
 }
 
 static bool parse_import_stub(struct MACH0_(obj_t) *bin, struct symbol_t *symbol, int idx) {

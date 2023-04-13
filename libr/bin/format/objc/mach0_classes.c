@@ -139,15 +139,12 @@ static mach0_ut va2pa(mach0_ut p, ut32 *offset, ut32 *left, RBinFile *bf) {
 	if (bin->va2pa) {
 		return bin->va2pa (p, offset, left, bf);
 	}
-	RList *sctns = bin->sections_cache;
+
+	RList *sctns = r_bin_plugin_mach.sections (bf);
 	if (!sctns) {
-		sctns = r_bin_plugin_mach.sections (bf);
-		if (!sctns) {
-			// retain just for debug
-			// eprintf ("there is no sections\n");
-			return 0;
-		}
-		bin->sections_cache = sctns;
+		// retain just for debug
+		// eprintf ("there is no sections\n");
+		return 0;
 	}
 
 	addr = p;
@@ -1386,7 +1383,7 @@ RList *MACH0_(parse_classes)(RBinFile *bf, objc_cache_opt_info *oi) {
 	RList /*<RBinClass>*/ *ret = NULL;
 	ut64 num_of_unnamed_class = 0;
 	RBinClass *klass = NULL;
-	ut32 i = 0, size = 0;
+	ut32 size = 0;
 	RList *sctns = NULL;
 	bool is_found = false;
 	mach0_ut p = 0;
@@ -1413,8 +1410,8 @@ RList *MACH0_(parse_classes)(RBinFile *bf, objc_cache_opt_info *oi) {
 
 	// sebfing of section with name __objc_classlist
 
-	struct section_t *sections = NULL;
-	if (!(sections = MACH0_(get_sections) (bf->o->bin_obj))) {
+	const RVector *sections = MACH0_(load_sections) (bf->o->bin_obj);
+	if (!sections) {
 		r_skiplist_free (relocs);
 		return ret;
 	}
@@ -1423,21 +1420,22 @@ RList *MACH0_(parse_classes)(RBinFile *bf, objc_cache_opt_info *oi) {
 	ut64 swift5_types_size = UT64_MAX;
 	ut64 swift5_fieldmd_addr = UT64_MAX;
 	ut64 swift5_fieldmd_size = UT64_MAX;
-	for (i = 0; !sections[i].last; i++) {
-		const char *sname = sections[i].name;
+	struct section_t *section;
+	r_vector_foreach (sections, section) {
+		const char *sname = section->name;
 		if (strstr (sname, "__objc_classlist")) {
 			is_found = true;
-			paddr = sections[i].offset;
-			s_size = sections[i].size;
+			paddr = section->offset;
+			s_size = section->size;
 		} else if (strstr (sname, "swift5_types")) {
-			swift5_types_addr = sections[i].offset;
-			swift5_types_size = sections[i].size;
+			swift5_types_addr = section->offset;
+			swift5_types_size = section->size;
 		} else if (strstr (sname, "swift5_fieldmd")) {
-			swift5_fieldmd_addr = sections[i].offset;
-			swift5_fieldmd_size = sections[i].size;
+			swift5_fieldmd_addr = section->offset;
+			swift5_fieldmd_size = section->size;
 		}
 	}
-	R_FREE (sections);
+
 	if (!ret && !(ret = r_list_newf ((RListFree)r_bin_class_free))) {
 		// retain just for debug
 		goto get_classes_error;
@@ -1488,6 +1486,7 @@ RList *MACH0_(parse_classes)(RBinFile *bf, objc_cache_opt_info *oi) {
 	}
 	// end of seaching of section with name __objc_classlist
 	// start of getting information about each class in file
+	ut32 i;
 	for (i = 0; i < s_size; i += sizeof (mach0_ut)) {
 		left = s_size - i;
 		if (left < sizeof (mach0_ut)) {
@@ -1550,22 +1549,20 @@ static RList *MACH0_(parse_categories)(RBinFile *bf, RSkipList *relocs, objc_cac
 	ut64 paddr;
 	ut64 s_size;
 
-	struct section_t *sections = NULL;
-	if (!(sections = MACH0_(get_sections) (obj->bin_obj))) {
+	const RVector *sections = MACH0_(load_sections) (obj->bin_obj);
+	if (!sections) {
 		return ret;
 	}
 
-	ut32 i = 0;
-	for (; !sections[i].last; i++) {
-		if (strstr (sections[i].name, "__objc_catlist")) {
+	struct section_t *section;
+	r_vector_foreach (sections, section) {
+		if (strstr (section->name, "__objc_catlist")) {
 			is_found = true;
-			paddr = sections[i].offset;
-			s_size = sections[i].size;
+			paddr = section->offset;
+			s_size = section->size;
 			break;
 		}
 	}
-
-	R_FREE (sections);
 
 	if (!is_found) {
 		goto error;
@@ -1579,6 +1576,7 @@ static RList *MACH0_(parse_categories)(RBinFile *bf, RSkipList *relocs, objc_cac
 		goto error;
 	}
 
+	ut32 i;
 	for (i = 0; i < s_size; i += ptr_size) {
 		RBinClass *klass;
 		mach0_ut p;

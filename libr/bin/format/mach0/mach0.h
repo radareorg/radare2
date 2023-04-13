@@ -54,7 +54,6 @@ struct section_t {
 	ut32 flags;
 	int perm;
 	char name[R_BIN_MACH0_STRING_LENGTH];
-	int last;
 };
 
 struct reloc_t {
@@ -177,7 +176,8 @@ struct MACH0_(obj_t) {
 	ut64 main_addr;
 	int (*original_io_read)(RIO *io, RIODesc *fd, ut8 *buf, int count);
 	bool rebasing_buffer;
-	RList *sections_cache;
+	bool sections_loaded;
+	RVector sections_cache;
 	bool imports_loaded;
 	RPVector imports_cache;
 	RList *reloc_fixups;
@@ -242,7 +242,7 @@ void MACH0_(opts_set_default)(struct MACH0_(opts_t) *options, RBinFile *bf);
 struct MACH0_(obj_t) *MACH0_(mach0_new)(const char *file, struct MACH0_(opts_t) *options);
 struct MACH0_(obj_t) *MACH0_(new_buf)(RBuffer *buf, struct MACH0_(opts_t) *options);
 void *MACH0_(mach0_free)(struct MACH0_(obj_t) *bin);
-struct section_t *MACH0_(get_sections)(struct MACH0_(obj_t) *bin);
+const RVector *MACH0_(load_sections)(struct MACH0_(obj_t) *bin);
 RList *MACH0_(get_segments)(RBinFile *bf, struct MACH0_(obj_t) *bin);
 const RVector *MACH0_(load_symbols)(RBinFile *bf, struct MACH0_(obj_t) *bin);
 void MACH0_(pull_symbols)(struct MACH0_(obj_t) *mo, RBinSymbolCallback cb, void *user);
