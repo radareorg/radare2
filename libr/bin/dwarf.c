@@ -6,14 +6,6 @@
 #include <r_bin_dwarf.h>
 #include <r_core.h>
 
-#define STANDARD_OPERAND_COUNT_DWARF2 9
-#define STANDARD_OPERAND_COUNT_DWARF3 12
-#define R_BIN_DWARF_INFO 1
-
-/* This macro seems bad regarding to endianess XXX, use only for single byte */
-#define READ(buf, type)                                             \
-	(((buf) + sizeof (type) < buf_end) ? *((type *)(buf)) : 0); \
-	(buf) += sizeof (type)
 #define READ8(buf)                                                \
 	(((buf) + sizeof (ut8) < buf_end) ? ((ut8 *)buf)[0] : 0); \
 	(buf) += sizeof (ut8)
@@ -863,7 +855,7 @@ static const ut8 *parse_line_header(RBin *bin, RBinFile *bf, const ut8 *buf, con
 		hdr->max_ops_per_inst = READ8 (buf);
 	}
 	hdr->default_is_stmt = READ8 (buf);
-	hdr->line_base = READ (buf, int8_t); // signed
+	hdr->line_base = (int8_t) READ8 (buf);
 	hdr->line_range = READ8 (buf);
 	hdr->opcode_base = READ8 (buf);
 
@@ -894,7 +886,7 @@ static const ut8 *parse_line_header(RBin *bin, RBinFile *bf, const ut8 *buf, con
 			if (buf + 2 > buf_end) {
 				break;
 			}
-			hdr->std_opcode_lengths[i] = READ (buf, ut8);
+			hdr->std_opcode_lengths[i] = READ8 (buf);
 			if (mode == R_MODE_PRINT) {
 				print ("  Opcode %u has %d arg\n", (int)i, hdr->std_opcode_lengths[i]);
 			}
@@ -1919,7 +1911,7 @@ static const ut8 *parse_attr_value(RBin *bin, const ut8 *obuf, int obuf_len, RBi
 		break;
 	case DW_FORM_flag:
 		value->kind = DW_AT_KIND_FLAG;
-		value->flag = READ (buf, ut8);
+		value->flag = READ8 (buf);
 		break;
 	// offset in .debug_str
 	case DW_FORM_strp:
@@ -2383,7 +2375,7 @@ static RBinDwarfDebugAbbrev *parse_abbrev_raw(const ut8 *obuf, size_t len) {
 		if (buf >= buf_end) {
 			break;
 		}
-		has_children = READ (buf, ut8);
+		has_children = READ8 (buf);
 		tmpdecl->has_children = has_children;
 		do {
 			if (tmpdecl->count == tmpdecl->capacity) {
