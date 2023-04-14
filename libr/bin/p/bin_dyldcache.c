@@ -1791,7 +1791,7 @@ static objc_cache_opt_info *get_objc_opt_info(RBinFile *bf, RDyldCache *cache) {
 	RListIter *iter;
 	RDyldBinImage *bin;
 	r_list_foreach (cache->bins, iter, bin) {
-		if (strcmp (bin->file, "lib/libobjc.A.dylib")) {
+		if (bin->file && strcmp (bin->file, "lib/libobjc.A.dylib")) {
 			continue;
 		}
 
