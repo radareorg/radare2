@@ -183,7 +183,6 @@ arch_plugins += [
 if no_user_plugins
   if use_gpl
     anal_plugins += [
-      'arm_gnu',
       'mips_gnu',
       'loongarch_gnu',
     ]
@@ -197,6 +196,7 @@ if no_user_plugins
       'lanai',
       's390_gnu',
       'm68k_gnu',
+      'arm_gnu',
     ]
   endif
 endif

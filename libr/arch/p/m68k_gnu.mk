@@ -1,7 +1,6 @@
 OBJ_M68K_GNU=p/m68k_gnu/plugin.o
 OBJ_M68K_GNU+=p/m68k_gnu/m68k-dis.o
 OBJ_M68K_GNU+=p/m68k_gnu/m68k-opc.o
-OBJ_M68K_GNU+=p/arm/gnu/floatformat.o
 
 STATIC_OBJ+=${OBJ_M68K_GNU}
 TARGET_M68K_GNU=m68k_gnu.${EXT_SO}

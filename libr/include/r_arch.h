@@ -334,6 +334,7 @@ extern RArchPlugin r_arch_plugin_s390_cs;
 extern RArchPlugin r_arch_plugin_s390_gnu;
 extern RArchPlugin r_arch_plugin_m68k_gnu;
 extern RArchPlugin r_arch_plugin_ppc_gnu;
+extern RArchPlugin r_arch_plugin_arm_gnu;
 
 #ifdef __cplusplus
 }
