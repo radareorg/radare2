@@ -1,6 +1,4 @@
 #include "r_anal.h"
-// TODO remove this file when arm_cs plugin is ported to arch
-
 static int hack_handle_dp_reg(ut32 insn, RAnalOp *op) {
 	const bool op0 = (insn >> 30) & 0x1;
 	const bool op1 = (insn >> 28) & 0x1;
@@ -145,7 +143,7 @@ static int hack_handle_br_exc_sys(ut32 insn, RAnalOp *op) {
 	return -1;
 }
 
-static inline int hackyArmAnal(RAnal *a, RAnalOp *op, const ut8 *buf, int len) {
+static inline int hacky_arm_anal(RArchSession *a, RAnalOp *op, const ut8 *buf, int len) {
 	int ret = -1;
 	// Hacky support for ARMv8.3 and ARMv8.5
 	if (a->config->bits == 64 && len >= 4) {

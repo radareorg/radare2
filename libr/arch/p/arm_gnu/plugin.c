@@ -1,16 +1,14 @@
 /* radare - LGPL - Copyright 2007-2022 - pancake */
 
-#include <r_lib.h>
-#include <r_asm.h>
-#include <r_anal.h>
+#include <r_arch.h>
 
 /* DEPRECATE ?? */
 #include "wine-arm.h"
-#include "../arch/p/arm/asm-arm.h"
-#include "../arch/p/arm/winedbg/be_arm.h"
-#include "./anal_arm_hacks.inc"
+#include "../arm/asm-arm.h"
+#include "../arm/winedbg/be_arm.h"
+#include "./arm_hacks.inc"
 #include "disas-asm.h"
-#include "../../arch/p/arm/gnu/opcode-arm.h"
+#include "../arm/gnu/opcode-arm.h"
 
 static R_TH_LOCAL char *oldcpu = NULL;
 static R_TH_LOCAL int oldcpucode = 0;
@@ -35,7 +33,7 @@ static ut32 disarm_branch_offset(ut32 pc, ut32 insoff) {
 
 #define API static
 
-static int op_thumb(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len, ut32 mask) {
+static bool op_thumb(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *data, int len, ut32 mask) {
 	int op_code;
 	ut16 *_ins = (ut16 *) data;
 	ut16 ins = *_ins;
@@ -51,7 +49,7 @@ static int op_thumb(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 	op->jump = arminsn->jmp;
 	op->fail = arminsn->fail;
 	if (mask & R_ARCH_OP_MASK_DISASM) {
-		const char *cpu = r_str_get_fail (anal->config->cpu, "");
+		const char *cpu = r_str_get_fail (as->config->cpu, "");
 		if (!strcmp (cpu, "wd")) {
 			const char *asmstr = winedbg_arm_insn_asm (arminsn);
 			if (asmstr) {
@@ -141,7 +139,7 @@ static int op_thumb(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 		op->type = R_ANAL_OP_TYPE_SWI;
 		op->val = (ut64) (ins >> 8);
 	}
-	return op->size;
+	return op->size > 0;
 }
 
 #if 0
@@ -218,8 +216,8 @@ static const struct {
 	{ "iWMMXt2", bfd_mach_arm_iWMMXt2 },
 };
 
-static int disassemble(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
-	const int bits = a->config->bits;
+static int disassemble(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
+	const int bits = as->config->bits;
 	ut8 bytes[4] = {0};
 	struct disassemble_info obj;
 	int opsize;
@@ -239,7 +237,7 @@ static int disassemble(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 
 	/* select cpu */
 	// XXX oldcpu leaks
-	char *cpu = a->config->cpu;
+	char *cpu = as->config->cpu;
 	if (oldcpu != cpu) {
 		int cpucode = 0;
 		if (cpu) {
@@ -268,7 +266,7 @@ static int disassemble(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 	obj.symbol_at_address_func = &symbol_at_address;
 	obj.memory_error_func = &memory_error_func;
 	obj.print_address_func = &generic_print_address_func;
-	obj.endian = !R_ARCH_CONFIG_IS_BIG_ENDIAN (a->config);
+	obj.endian = !R_ARCH_CONFIG_IS_BIG_ENDIAN (as->config);
 	obj.fprintf_func = &generic_fprintf_func;
 	obj.stream = insn_buffer;
 	obj.bytes_per_chunk = obj.bytes_per_line = (bits / 8);
@@ -303,14 +301,14 @@ static int disassemble(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 }
 
 
-static int arm_op32(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len, ut32 mask) {
+static bool arm_op32(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *data, int len, ut32 mask) {
 	const ut8 *b = (ut8 *) data;
 	ut8 ndata[4] = {0};
 	ut32 branch_dst_addr, i = 0;
 	ut32 *code = (ut32 *) data;
 
 	if (!data) {
-		return 0;
+		return false;
 	}
 	struct winedbg_arm_insn *arminsn = arm_new ();
 	arm_set_thumb (arminsn, false);
@@ -320,7 +318,7 @@ static int arm_op32(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 	op->addr = addr;
 	op->type = R_ANAL_OP_TYPE_UNK;
 
-	if (R_ARCH_CONFIG_IS_BIG_ENDIAN (anal->config)) {
+	if (R_ARCH_CONFIG_IS_BIG_ENDIAN (as->config)) {
 		b = data = ndata;
 		ut8 tmp = data[3];
 		ndata[0] = data[3];
@@ -328,13 +326,13 @@ static int arm_op32(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 		ndata[2] = data[1];
 		ndata[3] = tmp;
 	}
-	if (anal->config->bits == 16) {
+	if (as->config->bits == 16) {
 		arm_free (arminsn);
-		return op_thumb (anal, op, addr, data, len, mask);
+		return op_thumb (as, op, addr, data, len, mask);
 	}
 	op->size = arm_disasm_one_insn (arminsn);
 	if (mask & R_ARCH_OP_MASK_DISASM) {
-		const char *cpu = r_str_get_fail (anal->config->cpu, "");
+		const char *cpu = r_str_get_fail (as->config->cpu, "");
 		if (!strcmp (cpu, "wd")) {
 			const char *asmstr = winedbg_arm_insn_asm (arminsn);
 			if (asmstr) {
@@ -433,7 +431,7 @@ static int arm_op32(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 		} else {
 			// ut32 oaddr = addr+8+b[0];
 			// XXX TODO ret = radare_read_at(oaddr, (ut8*)&ptr, 4);
-			if (anal->config->bits == 32) {
+			if (as->config->bits == 32) {
 				b = (ut8 *) &ptr;
 				op->ptr = b[0] + (b[1] << 8) + (b[2] << 16) + (b[3] << 24);
 				// XXX data_xrefs_add(oaddr, op->ptr, 1);
@@ -483,7 +481,7 @@ static int arm_op32(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 	// op->jump = arminsn->jmp;
 	// op->fail = arminsn->fail;
 	arm_free (arminsn);
-	return op->size;
+	return op->size > 0;
 }
 
 static ut64 getaddr(ut64 addr, const ut8 *d) {
@@ -496,13 +494,13 @@ static ut64 getaddr(ut64 addr, const ut8 *d) {
 	return addr + (4 * (d[0] + (d[1] << 8) + (d[2] << 16)));
 }
 
-static int arm_op64(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *d, int len) {
+static bool arm_op64(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *d, int len) {
 	if (d[3] == 0) {
-		return -1;      // invalid
+		return false;      // invalid
 	}
-	int haa = hackyArmAnal (anal, op, d, len);
+	int haa = hacky_arm_anal (as, op, d, len);
 	if (haa > 0) {
-		return haa;
+		return true;
 	}
 	op->size = 4;
 	op->type = R_ANAL_OP_TYPE_NULL;
@@ -542,23 +540,27 @@ static int arm_op64(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *d, int len) 
 		op->fail = addr + 4;
 		break;
 	}
-	return op->size;
+	return op->size > 0;
 }
 
-static int arm_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len, RAnalOpMask mask) {
+static bool decode(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
+	const ut64 addr = op->addr;
+	const ut8 *data = op->bytes;
+	const int len = op->size;
+
 	if (mask & R_ARCH_OP_MASK_DISASM) {
-		const char *cpu = r_str_get_fail (anal->config->cpu, "");
+		const char *cpu = r_str_get_fail (as->config->cpu, "");
 		if (strcmp (cpu, "wd")) {
-			disassemble (anal, op, addr, data, len);
+			disassemble (as, op, addr, data, len);
 		}
 	}
-	if (anal->config->bits == 64) {
-		return arm_op64 (anal, op, addr, data, len);
+	if (as->config->bits == 64) {
+		return arm_op64 (as, op, addr, data, len);
 	}
-	return arm_op32 (anal, op, addr, data, len, mask);
+	return arm_op32 (as, op, addr, data, len, mask);
 }
 
-static bool set_reg_profile(RAnal *anal) {
+static char *regs(RArchSession *as) {
 	// TODO: support 64bit profile
 	const char *p32 =
 		"=PC	r15\n"
@@ -590,12 +592,12 @@ static bool set_reg_profile(RAnal *anal) {
 		"gpr	r16	.32	64	0\n"
 		"gpr	r17	.32	68	0\n"
 		"gpr	cpsr	.32	72	0\n";
-	return r_reg_set_profile_string (anal->reg, p32);
+	return strdup (p32);
 }
 
-static int archinfo(RAnal *anal, int q) {
+static int archinfo(RArchSession *as, ut32 q) {
 	if (q == R_ANAL_ARCHINFO_ALIGN) {
-		if (anal && anal->config->bits == 16) {
+		if (as && as->config->bits == 16) {
 			return 2;
 		}
 		return 4;
@@ -604,7 +606,7 @@ static int archinfo(RAnal *anal, int q) {
 		return 4;
 	}
 	if (q == R_ANAL_ARCHINFO_MIN_OP_SIZE) {
-		if (anal && anal->config->bits == 16) {
+		if (as && as->config->bits == 16) {
 			return 2;
 		}
 		return 4;
@@ -612,7 +614,7 @@ static int archinfo(RAnal *anal, int q) {
 	return 4; // XXX
 }
 
-RAnalPlugin r_anal_plugin_arm_gnu = {
+RArchPlugin r_arch_plugin_arm_gnu = {
 	.name = "arm.gnu",
 	.arch = "arm",
 	.cpus = "v2,v2a,v3M,v4,v5,v5t,v5te,v5j,XScale,ep9312,iWMMXt,iWMMXt2,wd",
@@ -627,15 +629,15 @@ RAnalPlugin r_anal_plugin_arm_gnu = {
 	.license = "LGPL3",
 	.bits = 16 | 32 | 64,
 	.desc = "ARM code analysis plugin (asm.cpu=wd for winedbg disassembler)",
-	.archinfo = archinfo,
-	.op = &arm_op,
-	.set_reg_profile = set_reg_profile,
+	.info = archinfo,
+	.decode = &decode,
+	.regs = &regs,
 };
 
 #ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_ANAL,
-	.data = &r_anal_plugin_arm_gnu,
+	.type = R_LIB_TYPE_ARCH,
+	.data = &r_arch_plugin_arm_gnu,
 	.version = R2_VERSION
 };
 #endif

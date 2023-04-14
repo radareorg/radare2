@@ -48,6 +48,13 @@ r_arch_sources = [
   'p/tms320/c55x_plus/decode_funcs.c',
   'p/tms320/c55x_plus/hashtable.c',
   'p/tms320/c55x_plus/utils.c',
+  'p/arm/gnu/arm-dis.c',
+  'p/arm/aarch64/aarch64-dis.c',
+  'p/arm/aarch64/aarch64-dis-2.c',
+  'p/arm/aarch64/aarch64-opc.c',
+  'p/arm/aarch64/aarch64-opc-2.c',
+  'p/arm_gnu/plugin.c',
+  'p/arm/winedbg/be_arm.c',
 # fails on windows
 # error LNK2005: SocketNotificationRetrieveEvents already defined in p_hppa_gnu_hppa-dis.c.obj
   'p/hppa/plugin_gnu.c',
