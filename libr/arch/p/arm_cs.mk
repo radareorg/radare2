@@ -1,7 +1,9 @@
-N=anal_arm_cs
-OBJ_ARM_CS=anal_arm_cs.o
+N=arm_cs
+OBJ_ARM_CS=p/arm_cs/plugin.o
+OBJ_ARM_CS+=p/arm_cs/arm.o
+OBJ_ARM_CS+=p/arm_cs/arm64.o
 
-include $(CURDIR)capstone.mk
+include p/capstone.mk
 
 STATIC_OBJ+=${OBJ_ARM_CS}
 

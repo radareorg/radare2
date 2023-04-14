@@ -42,7 +42,9 @@ r_anal_sources = [
   '../arch/p/6502_cs/plugin.c',
   'p/anal_8051.c',
 
-  'p/anal_arm_cs.c',
+  '../arch/p/arm_cs/plugin.c',
+  '../arch/p/arm_cs/arm.c',
+  '../arch/p/arm_cs/arm64.c',
   '../arch/p/arm_gnu/plugin.c',
   'p/anal_avr.c',
   'p/anal_dalvik.c',

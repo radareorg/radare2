@@ -106,8 +106,8 @@ if not no_user_plugins
     io_plugins += [ 'r2web' ]
   endif
   if user_plugins.contains('arm')
-    anal_plugins += [ 'arm_cs' ]
-    arch_plugins += [ 'arm' ]
+    anal_plugins += [ ]
+    arch_plugins += [ 'arm', 'arm_cs' ]
     bp_plugins += [ 'arm' ]
     parse_plugins += [ 'arm_pseudo' ]
   endif
@@ -155,7 +155,6 @@ if no_user_plugins
 
 anal_plugins += [
   '8051',
-  'arm_cs',
   'avr',
   'dalvik',
   'gb',
@@ -177,6 +176,7 @@ arch_plugins += [
   'tms320',
   'sparc_cs',
   'ppc_cs',
+  'arm_cs',
 ]
 
 if no_user_plugins
