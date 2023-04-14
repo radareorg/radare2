@@ -4032,12 +4032,18 @@ R_API const char *r_str_str_xy(const char *s, const char *word, const char *prev
 #endif
 
 R_API char *r_str_version(const char *program) {
+	const char *asanstr = "";
+#if defined(__has_feature)
+#if __has_feature(address_sanitizer)
+	asanstr = " (asan)";
+#endif
+#endif
 	char *s = r_str_newf ("%s "R2_VERSION" %d @ "
 			R_SYS_OS"-"
-			R_SYS_ARCH"-%d git.%s\n",
+			R_SYS_ARCH"-%d git.%s%s\n",
 			program, R2_VERSION_COMMIT,
 			(R_SYS_BITS & 8)? 64: 32,
-			*R2_GITTAP ? R2_GITTAP: "");
+			*R2_GITTAP ? R2_GITTAP: "", asanstr);
 	if (*R2_GITTIP) {
 		s = r_str_append (s, "commit: "R2_GITTIP" build: "R2_BIRTH);
 	}
