@@ -6,14 +6,6 @@
 #include <r_bin_dwarf.h>
 #include <r_core.h>
 
-#define STANDARD_OPERAND_COUNT_DWARF2 9
-#define STANDARD_OPERAND_COUNT_DWARF3 12
-#define R_BIN_DWARF_INFO 1
-
-/* This macro seems bad regarding to endianess XXX, use only for single byte */
-#define READ(buf, type)                                             \
-	(((buf) + sizeof (type) < buf_end) ? *((type *)(buf)) : 0); \
-	(buf) += sizeof (type)
 #define READ8(buf)                                                \
 	(((buf) + sizeof (ut8) < buf_end) ? ((ut8 *)buf)[0] : 0); \
 	(buf) += sizeof (ut8)
@@ -725,35 +717,15 @@ static const ut8 *parse_line_header_source_dwarf5(RBin *bin, RBinFile *bf, const
 				case DW_FORM_line_strp:
 					{
 					ut64 section_offset = dwarf_read_offset (hdr->is_64bit, &buf, buf_end, be);
-					RBinSection *section;
-					if (form_code == DW_FORM_strp) {
-						section = getsection (bin, "debug_str");
-					} else {
-						section = getsection (bin, "debug_line_str");
-					}
-#if 1
+					RBinSection *section = (form_code == DW_FORM_strp)
+						? getsection (bin, "debug_str")
+						: getsection (bin, "debug_line_str");
 					name = get_section_string (bin, section, section_offset);
 					if (name) {
 						r_str_ansi_strip (name);
 						r_str_replace_ch (name, '\n', 0, true);
 						r_str_replace_ch (name, '\t', 0, true);
 					}
-#else
-					size_t section_len = 0;
-					ut8 *section = get_section_bytes (bf->rbin, section_name, &section_len);
-					if (!section) {
-						// TODO handle this somehow
-						buf = NULL;
-						goto beach;
-					}
-					if (section_offset < section_len) {
-						ut8 *name_start = section + section_offset;
-						name = r_str_ndup ((const char *)name_start, maxlen);
-					} else {
-						name = NULL;
-					}
-					free (section);
-#endif
 					}
 					break;
 				case DW_FORM_data1:
@@ -791,6 +763,7 @@ static const ut8 *parse_line_header_source_dwarf5(RBin *bin, RBinFile *bf, const
 						add_sdb_include_dir (sdb, name, index);
 						free (name);
 					}
+					name = NULL;
 					break;
 				case DW_LNCT_directory_index:
 					if (hdr->file_names) {
@@ -882,7 +855,7 @@ static const ut8 *parse_line_header(RBin *bin, RBinFile *bf, const ut8 *buf, con
 		hdr->max_ops_per_inst = READ8 (buf);
 	}
 	hdr->default_is_stmt = READ8 (buf);
-	hdr->line_base = READ (buf, int8_t); // signed
+	hdr->line_base = (int8_t) READ8 (buf);
 	hdr->line_range = READ8 (buf);
 	hdr->opcode_base = READ8 (buf);
 
@@ -913,7 +886,7 @@ static const ut8 *parse_line_header(RBin *bin, RBinFile *bf, const ut8 *buf, con
 			if (buf + 2 > buf_end) {
 				break;
 			}
-			hdr->std_opcode_lengths[i] = READ (buf, ut8);
+			hdr->std_opcode_lengths[i] = READ8 (buf);
 			if (mode == R_MODE_PRINT) {
 				print ("  Opcode %u has %d arg\n", (int)i, hdr->std_opcode_lengths[i]);
 			}
@@ -1773,12 +1746,10 @@ static void print_debug_info(const RBinDwarfDebugInfo *inf, PrintfCallback print
 			} else {
 				print ("(Unknown abbrev tag)\n");
 			}
-
 			if (!dies[j].abbrev_code) {
 				continue;
 			}
 			values = dies[j].attr_values;
-
 			for (k = 0; k < dies[j].count; k++) {
 				if (!values[k].attr_name) {
 					continue;
@@ -1796,16 +1767,19 @@ static void print_debug_info(const RBinDwarfDebugInfo *inf, PrintfCallback print
 }
 
 static const ut8 *fill_block_data(const ut8 *buf, const ut8 *buf_end, RBinDwarfBlock *block) {
-	block->data = calloc (sizeof (ut8), block->length);
-	if (!block->data) {
+	if (!buf) {
 		return NULL;
 	}
-	/* Maybe unroll this as an optimization in future? */
-	if (block->data) {
-		size_t j = 0;
-		for (j = 0; j < block->length; j++) {
-			block->data[j] = READ (buf, ut8);
-		}
+	int len = buf_end - buf;
+	len = R_MIN (len, block->length);
+	if (len < 1) {
+		return NULL;
+	}
+	block->data = calloc (sizeof (ut8), len + 1);
+	if (R_LIKELY (block->data)) {
+		memcpy (block->data, buf, len);
+		block->data[len] = 0;
+		buf += len;
 	}
 	return buf;
 }
@@ -1836,7 +1810,6 @@ static const ut8 *parse_attr_value(RBin *bin, const ut8 *obuf, int obuf_len, RBi
 
 	const ut8 *buf = obuf;
 	const ut8 *buf_end = obuf + obuf_len;
-	size_t j;
 
 	if (obuf_len < 1) {
 		return NULL;
@@ -1917,16 +1890,14 @@ static const ut8 *parse_attr_value(RBin *bin, const ut8 *obuf, int obuf_len, RBi
 		value->kind = DW_AT_KIND_BLOCK;
 		size_t len = READ16 (buf);
 		if (len > 0) {
-			ut8 *data = malloc (len);
-			if (!data) {
-				return NULL;
-			}
-			for (j = 0; j < len; j++) {
-				data[j] = READ (buf, ut8);
-			}
-			value->block.data = data;
+			size_t len_buf = buf_end - buf;
+			size_t datalen = R_MIN (len, len_buf);
+			value->block.data = r_mem_dup (buf, datalen);
+			buf += datalen;
+			value->block.length = datalen;
+		} else {
+			value->block.length = 0;
 		}
-		value->block.length = len;
 		break;
 	case DW_FORM_block4:
 		value->kind = DW_AT_KIND_BLOCK;
@@ -1936,14 +1907,11 @@ static const ut8 *parse_attr_value(RBin *bin, const ut8 *obuf, int obuf_len, RBi
 	case DW_FORM_block: // variable length ULEB128
 		value->kind = DW_AT_KIND_BLOCK;
 		buf = r_uleb128 (buf, buf_end - buf, &value->block.length, NULL);
-		if (!buf || buf >= buf_end) {
-			return NULL;
-		}
 		buf = fill_block_data (buf, buf_end, &value->block);
 		break;
 	case DW_FORM_flag:
 		value->kind = DW_AT_KIND_FLAG;
-		value->flag = READ (buf, ut8);
+		value->flag = READ8 (buf);
 		break;
 	// offset in .debug_str
 	case DW_FORM_strp:
@@ -1957,7 +1925,6 @@ static const ut8 *parse_attr_value(RBin *bin, const ut8 *obuf, int obuf_len, RBi
 		} else {
 			section = getsection (bin, "debug_line_str");
 		}
-		// char *str = get_section_string (bin, section_name, value->string.offset);
 		char *str = get_section_string (bin, section, value->string.offset);
 		if (str) {
 			r_str_ansi_strip (str);
@@ -2408,7 +2375,7 @@ static RBinDwarfDebugAbbrev *parse_abbrev_raw(const ut8 *obuf, size_t len) {
 		if (buf >= buf_end) {
 			break;
 		}
-		has_children = READ (buf, ut8);
+		has_children = READ8 (buf);
 		tmpdecl->has_children = has_children;
 		do {
 			if (tmpdecl->count == tmpdecl->capacity) {
@@ -2462,7 +2429,7 @@ R_API RBinDwarfDebugInfo *r_bin_dwarf_parse_info(RBinDwarfDebugAbbrev *da, RBin 
 			}
 			st64 ret = r_buf_read_at (binfile->buf, debug_str->paddr,
 				debug_str_buf, debug_str_len);
-			if (!ret) {
+			if (ret != debug_str_len) {
 				goto cleanup;
 			}
 		}

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2012-2022 - houndthe */
+/* radare - LGPL - Copyright 2012-2023 - houndthe */
 
 #include <r_anal.h>
 #include <r_bin_dwarf.h>
