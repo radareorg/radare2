@@ -43,6 +43,9 @@ r_arch_sources = [
   'p/arm/aarch64/aarch64-opc.c',
   'p/arm/aarch64/aarch64-opc-2.c',
   'p/arm_gnu/plugin.c',
+  'p/arm_cs/plugin.c',
+  'p/arm_cs/arm.c',
+  'p/arm_cs/arm64.c',
   'p/arm/winedbg/be_arm.c',
 # fails on windows
 # error LNK2005: SocketNotificationRetrieveEvents already defined in p_hppa_gnu_hppa-dis.c.obj

@@ -1,7 +1,6 @@
-
-static char *get_reg_profile(RAnal *anal) {
+static char *regs(RArchSession *as) {
 	const char *p;
-	if (anal->config->bits == 64) {
+	if (as->config->bits == 64) {
 		p = \
 		"=PC	pc\n"
 		"=SP	sp\n"
@@ -643,7 +642,7 @@ static char *get_reg_profile(RAnal *anal) {
 		"fpu	q15	.128	308	0\n"
 		;
 	}
-	const char *os = anal->config->os;
+	const char *os = as->config->os;
 	if (!os) {
 		os = R_SYS_OS;
 	}

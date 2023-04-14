@@ -6,7 +6,7 @@
 #include "wine-arm.h"
 #include "../arm/asm-arm.h"
 #include "../arm/winedbg/be_arm.h"
-#include "./arm_hacks.inc"
+#include "../arm/arm_hacks.inc"
 #include "disas-asm.h"
 #include "../arm/gnu/opcode-arm.h"
 
