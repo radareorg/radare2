@@ -1058,15 +1058,13 @@ static int cmd_help(void *data, const char *input) {
 			r_core_cmd_help (core, help_msg_question_V);
 			break;
 		case 0: // "?V"
-#if R2_VERSION_COMMIT == 0
-			r_cons_printf ("%s release\n", R2_VERSION);
-#else
-			if (!strcmp (R2_VERSION, R2_GITTAP)) {
-				r_cons_printf ("%s %d\n", R2_VERSION, R2_VERSION_COMMIT);
-			} else {
-				r_cons_printf ("%s aka %s commit %d\n", R2_VERSION, R2_GITTAP, R2_VERSION_COMMIT);
+			{
+				char *v = r_str_version ("radare2");
+				if (v) {
+					r_cons_printf ("%s\n", v);
+				}
+				free (v);
 			}
-#endif
 			break;
 		case 'c': // "?Vc"
 			r_cons_printf ("%d\n", vernum (R2_VERSION));
