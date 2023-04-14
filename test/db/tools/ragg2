@@ -124,7 +124,7 @@ RUN
 
 NAME=ragg2 -v
 FILE=-
-CMDS=!ragg2 -v | grep -c build
+CMDS=!ragg2 -v | grep -c birth
 EXPECT=<<EOF
 1
 EOF

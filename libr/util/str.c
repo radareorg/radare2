@@ -4034,24 +4034,39 @@ R_API const char *r_str_str_xy(const char *s, const char *word, const char *prev
 R_API char *r_str_version(const char *program) {
 	const char *release = "";
 	const char *asanstr = "";
+	const char *gplstr = "lgpl";
+	char optistr[5] = " -O?";
 #if defined(__has_feature)
 #if __has_feature(address_sanitizer)
-	asanstr = " (asan)";
+	asanstr = " asan";
 #endif
 #endif
 #if R2_VERSION_COMMIT == 0
-	release " (release)";
-#else
+	release = " release";
+#endif
+#ifdef _FORTIFY_SOURCE
+	// clang
+	optistr[3] = '0' + _FORTIFY_SOURCE;
+#endif
+#ifdef __OPTIMIZE__
+	// gcc
+	optistr[3] = '0' + __OPTIMIZE__;
+#endif
+#if WITH_GPL
+	gplstr = " gpl";
 #endif
 	char *s = r_str_newf ("%s "R2_VERSION" %d @ "
 			R_SYS_OS"-"
-			R_SYS_ARCH"-%d git.%s%s%s\n",
+			R_SYS_ARCH"-%d\n",
 			program, R2_VERSION_COMMIT,
-			(R_SYS_BITS & 8)? 64: 32,
-			*R2_GITTAP ? R2_GITTAP: "", asanstr, release);
+			(R_SYS_BITS & 8)? 64: 32);
+	s = r_str_appendf (s, "birth: git.%s "R2_BIRTH"\n",
+			*R2_GITTAP ? R2_GITTAP: "");
 	if (*R2_GITTIP) {
-		s = r_str_append (s, "commit: "R2_GITTIP" build: "R2_BIRTH);
+		s = r_str_append (s, "commit: "R2_GITTIP"\n");
 	}
+	s = r_str_appendf (s, "options:%s%s%s%s checks=%d",
+			gplstr, asanstr, release, optistr, R_CHECKS_LEVEL);
 	return s;
 }
 

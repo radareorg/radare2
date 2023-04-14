@@ -1,6 +1,6 @@
 NAME=rarun2 -v 
 FILE=-
-CMDS=!rarun2 -v | grep -c build
+CMDS=!rarun2 -v | grep -c birth
 EXPECT=<<EOF
 1
 EOF

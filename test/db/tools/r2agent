@@ -1,6 +1,6 @@
 NAME=r2agent -v
 FILE=-
-CMDS=!r2agent -v | grep -c build
+CMDS=!r2agent -v | grep -c birth
 EXPECT=<<EOF
 1
 EOF

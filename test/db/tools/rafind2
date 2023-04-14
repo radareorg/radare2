@@ -117,7 +117,7 @@ RUN
 
 NAME=rafind2 -v
 FILE=-
-CMDS=!rafind2 -v | grep -c build
+CMDS=!rafind2 -v | grep -c birth
 EXPECT=<<EOF
 1
 EOF

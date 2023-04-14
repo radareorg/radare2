@@ -577,7 +577,7 @@ RUN
 
 NAME=rax2 -v 
 FILE=-
-CMDS=!rax2 -v | grep -c build
+CMDS=!rax2 -v | grep -c birth
 EXPECT=<<EOF
 1
 EOF

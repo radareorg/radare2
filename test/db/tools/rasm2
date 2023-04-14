@@ -342,9 +342,9 @@ EOF
 RUN
 
 
-NAME=rasm2 -v~commit?"
+NAME=rasm2 -v~birth?"
 FILE=-
-CMDS=!!rasm2 -v~commit?
+CMDS=!!rasm2 -v~birth?
 EXPECT=<<EOF
 1
 EOF
@@ -531,7 +531,7 @@ RUN
 
 NAME=rasm2 -v
 FILE=-
-CMDS=!rasm2 -v  | grep -c build
+CMDS=!rasm2 -v  | grep -c birth
 EXPECT=<<EOF
 1
 EOF
