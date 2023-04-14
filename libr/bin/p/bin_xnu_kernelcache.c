@@ -1475,6 +1475,9 @@ static RList *resolve_mig_subsystem(RKernelCacheObj *obj) {
 			incomplete--;
 		}
 	}
+	if (incomplete) {
+		return NULL;
+	}
 
 	if (!data_const_offset || !data_const_size || !data_const_vaddr ||
 		!text_exec_offset || !text_exec_size || !text_exec_vaddr) {
