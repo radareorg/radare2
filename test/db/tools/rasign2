@@ -2,7 +2,7 @@ NAME=rasign2 version
 FILE=-
 CMDS=!!rasign2 -v~?
 EXPECT=<<EOF
-2
+4
 EOF
 RUN
 

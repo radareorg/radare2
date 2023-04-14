@@ -971,7 +971,7 @@ RUN
 
 NAME=rabin2 -v
 FILE=-
-CMDS=!rabin2 -v | grep -c build
+CMDS=!rabin2 -v | grep -c birth
 EXPECT=<<EOF
 1
 EOF
