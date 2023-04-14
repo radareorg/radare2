@@ -1343,22 +1343,22 @@ static void parse_type(RList *list, RBinFile *bf, SwiftType st) {
 	}
 	r_list_append (list, klass);
 
-	// eprintf ("fields:\n");
-#define FCD(x) (st.fieldmd_addr + ((6+j+x) * 4) + st.fieldmd[6+j+x])
 	if (st.fields != UT64_MAX) {
 		int i;
+		size_t dmax = st.fieldmd_size / 4;
 		for (i = 0; i < 128; i += 3) {
-			int j = (st.fields - st.fieldmd_addr) / 4;
-			if (((6 + j + i) * 4) >= st.fieldmd_size) {
+			const int j = (st.fields - st.fieldmd_addr) / 4;
+			const int d = 6 + j + i;
+			if (d >= dmax) {
 				break;
 			}
 			RBinField *field = R_NEW0 (RBinField);
 			if (!field) {
 				break;
 			}
-			ut64 field_name_addr = FCD (i);
-			ut64 field_method_addr = FCD (i); // XXX address of the string
-			ut64 vaddr = r_bin_file_get_baddr(bf) + field_method_addr;
+			ut64 field_name_addr = st.fieldmd_addr + (d * 4) + st.fieldmd[d];
+			ut64 field_method_addr = field_name_addr;
+			ut64 vaddr = r_bin_file_get_baddr (bf) + field_method_addr;
 			char *field_name = readstr (bf, field_name_addr);
 			if (!field_name) {
 				break;
@@ -1374,7 +1374,6 @@ static void parse_type(RList *list, RBinFile *bf, SwiftType st) {
 			r_list_append (klass->fields, field);
 		}
 	}
-#undef FCD
 	free (typename);
 	free (otypename);
 }
@@ -1391,7 +1390,6 @@ RList *MACH0_(parse_classes)(RBinFile *bf, objc_cache_opt_info *oi) {
 	int len;
 	ut64 paddr = UT64_MAX;
 	ut64 s_size = 0;
-	bool bigendian;
 	ut8 pp[sizeof (mach0_ut)] = {0};
 
 	r_return_val_if_fail (bf && bf->o, NULL);
@@ -1399,7 +1397,7 @@ RList *MACH0_(parse_classes)(RBinFile *bf, objc_cache_opt_info *oi) {
 	if (!bf->o->bin_obj || !bf->o->info) {
 		return NULL;
 	}
-	bigendian = bf->o->info->big_endian;
+	bool bigendian = bf->o->info->big_endian;
 
 	RSkipList *relocs = MACH0_(get_relocs) (bf->o->bin_obj);
 
