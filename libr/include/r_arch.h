@@ -349,6 +349,7 @@ extern RArchPlugin r_arch_plugin_mips_gnu;
 extern RArchPlugin r_arch_plugin_sm5xx;
 extern RArchPlugin r_arch_plugin_tms320;
 extern RArchPlugin r_arch_plugin_ppc_cs;
+extern RArchPlugin r_arch_plugin_arm_gnu;
 
 #ifdef __cplusplus
 }
