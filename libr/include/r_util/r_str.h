@@ -196,6 +196,31 @@ R_API int r_str_inject(char *begin, char *end, char *str, int maxlen);
 R_API int r_str_delta(char *p, char a, char b);
 R_API void r_str_filter(char *str, int len);
 R_API const char *r_str_tok(const char *str1, const char b, size_t len);
+/* temporal solution until 5.9.0 is out */
+static inline char *r_str_tok_r(char *str, const char *delim, char **save_ptr) {
+	char *ret = NULL;
+
+	if (str == NULL) {
+		str = *save_ptr;
+	}
+
+	str += strspn (str, delim);
+
+	if (*str == '\0') {
+		return NULL;
+	}
+
+	ret = str;
+
+	str += strcspn (str, delim);
+
+	if (*str) {
+		*str++ = '\0';
+	}
+
+	*save_ptr = str;
+	return ret;
+}
 R_API wchar_t *r_str_mb_to_wc(const char *buf);
 R_API char *r_str_wc_to_mb(const wchar_t *buf);
 R_API wchar_t *r_str_mb_to_wc_l(const char *buf, int len);

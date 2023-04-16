@@ -1136,12 +1136,13 @@ R_API ut16 calculate_access_value(const char *access_flags_str, RBinJavaAccessFl
 	ut16 size = strlen (access_flags_str) + 1;
 	char *p_flags, *my_flags = malloc (size);
 	RBinJavaAccessFlags *iter = NULL;
+	char *save_ptr = NULL;
 	if (size < 5 || !my_flags) {
 		free (my_flags);
 		return result;
 	}
 	memcpy (my_flags, access_flags_str, size);
-	p_flags = strtok (my_flags, " ");
+	p_flags = r_str_tok_r (my_flags, " ", &save_ptr);
 	while (p_flags && access_flags) {
 		int idx = 0;
 		do {
@@ -1156,7 +1157,7 @@ R_API ut16 calculate_access_value(const char *access_flags_str, RBinJavaAccessFl
 			}
 			idx++;
 		} while (access_flags[idx].str != NULL);
-		p_flags = strtok (NULL, " ");
+		p_flags = r_str_tok_r (NULL, " ", &save_ptr);
 	}
 	free (my_flags);
 	return result;
