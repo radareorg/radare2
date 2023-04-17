@@ -282,7 +282,7 @@ static RList *relocs(RBinFile *bf) {
 		return NULL;
 	}
 	ret->free = free;
-	RSkipList *relocs = MACH0_(get_relocs) (bf->o->bin_obj);
+	const RSkipList *relocs = MACH0_(load_relocs) (bf->o->bin_obj);
 	if (!relocs) {
 		return ret;
 	}
@@ -316,8 +316,6 @@ static RList *relocs(RBinFile *bf) {
 		ptr->paddr = reloc->offset;
 		r_list_append (ret, ptr);
 	}
-
-	r_skiplist_free (relocs);
 
 	return ret;
 }
@@ -474,21 +472,19 @@ static RList* patch_relocs(RBin *b) {
 	const bool apply_relocs = io->cached; // true; // !mo->b->readonly;
 	const bool cache_relocs = io->cached;
 
-	RSkipList *all_relocs = MACH0_(get_relocs)(mo);
+	const RSkipList *all_relocs = MACH0_(load_relocs)(mo);
 	if (!all_relocs) {
 		return NULL;
 	}
-	RList *ext_relocs = r_list_new ();
-	if (!ext_relocs) {
-		goto beach;
-	}
+	RPVector ext_relocs;
+	r_pvector_init (&ext_relocs, NULL);
 	RSkipListNode *it;
 	struct reloc_t *reloc;
 	r_skiplist_foreach (all_relocs, it, reloc) {
 		if (!reloc->external) {
 			continue;
 		}
-		r_list_append (ext_relocs, reloc);
+		r_pvector_push (&ext_relocs, reloc);
 	}
 	if (mo->reloc_fixups && r_list_length (mo->reloc_fixups) > 0) {
 		if (!apply_relocs) {
@@ -519,7 +515,7 @@ static RList* patch_relocs(RBin *b) {
 			}
 		}
 	}
-	ut64 num_ext_relocs = r_list_length (ext_relocs);
+	ut64 num_ext_relocs = r_pvector_length (&ext_relocs);
 	if (!num_ext_relocs) {
 		goto beach;
 	}
@@ -569,8 +565,9 @@ static RList* patch_relocs(RBin *b) {
 		goto beach;
 	}
 	ut64 vaddr = n_vaddr;
-	RListIter *liter;
-	r_list_foreach (ext_relocs, liter, reloc) {
+	void **ext_reloc_iter;
+	r_pvector_foreach (&ext_relocs, ext_reloc_iter) {
+		reloc = *ext_reloc_iter;
 		bool found = false;
 		ut64 sym_addr = ht_uu_find (relocs_by_sym, reloc->ord, &found);
 		if (!found || !sym_addr) {
@@ -599,13 +596,12 @@ static RList* patch_relocs(RBin *b) {
 		goto beach;
 	}
 	ht_uu_free (relocs_by_sym);
-	r_list_free (ext_relocs);
-	r_skiplist_free (all_relocs);
+	r_pvector_fini (&ext_relocs);
+	// XXX r_io_desc_free (gotr2desc);
 	return ret;
 
 beach:
-	r_list_free (ext_relocs);
-	r_skiplist_free (all_relocs);
+	r_pvector_fini (&ext_relocs);
 	r_io_desc_free (gotr2desc);
 	r_list_free (ret);
 	ht_uu_free (relocs_by_sym);

@@ -48,7 +48,7 @@ static inline void init_head(RSkipListNode *head) {
 //
 // NOTE: `updates` should be big enough to contain `list->list_level + 1`
 //       elements, when provided.
-static RSkipListNode *find_insertpoint(RSkipList *list, void *data, RSkipListNode **updates, bool by_data) {
+static RSkipListNode *find_insertpoint(const RSkipList *list, void *data, RSkipListNode **updates, bool by_data) {
 	RSkipListNode *x = list->head;
 	int i;
 
@@ -216,7 +216,7 @@ R_API bool r_skiplist_delete_node(RSkipList *list, RSkipListNode *node) {
 	return delete_element (list, node, false);
 }
 
-R_API RSkipListNode* r_skiplist_find(RSkipList* list, void* data) {
+R_API RSkipListNode* r_skiplist_find(const RSkipList* list, void* data) {
 	r_return_val_if_fail (list, NULL);
 	RSkipListNode* x = find_insertpoint (list, data, NULL, true);
 	if (x != list->head && list->compare (x->data, data) == 0) {
