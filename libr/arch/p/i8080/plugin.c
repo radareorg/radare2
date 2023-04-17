@@ -4,14 +4,13 @@
 // the Intel 8080 disassembler by Alexander Demin, 2012.
 
 #include <string.h>
-#include <r_types.h>
-#include <r_lib.h>
-#include <r_asm.h>
-#include <r_anal.h>
-// hack
-#include "../../asm/arch/i8080/i8080dis.c"
+#include <r_arch.h>
+#include "./i8080dis.c" // hack
 
-static int i8080_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len, RAnalOpMask mask) {
+static bool decode(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
+	const ut64 addr = op->addr;
+	const ut8 *data = op->bytes;
+	const int len = op->size;
 	char out[32];
 	ut8 code[3] = {0};
 	memcpy (code, data, R_MIN (sizeof (code), len));
@@ -192,18 +191,58 @@ static int i8080_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 	return op->size = ilen;
 }
 
-RAnalPlugin r_anal_plugin_i8080 = {
+static int info(RArchSession *as, ut32 q) {
+	return 0;
+}
+
+static char* regs(RArchSession *as) {
+	const char *reg =
+		"=A0	A\n"
+		"=A1	B\n"
+		"=A2	C\n"
+		"=A3	D\n"
+		"=A4	E\n"
+		"=A5	H\n"
+		"=A6	L\n"
+		"=SP	SP\n"
+		"=PC	PC\n"
+
+		"gpr	A	.8	0	0\n"
+		"flg	Flags	.8	1	0\n"
+		"flg	C	.1	1.0	0\n"
+		"flg	P	.1	1.2	0\n"
+		"flg	AC	.1	1.4	0\n"
+		"flg	Z	.1	1.6	0\n"
+		"flg	S	.1	1.7	0\n"
+		"gpr	BC	.16	2	0\n"
+		"gpr	B	.8	2	0\n"
+		"gpr	C	.8	3	0\n"
+		"gpr	DE	.16	4	0\n"
+		"gpr	D	.8	4	0\n"
+		"gpr	E	.8	5	0\n"
+		"gpr	HL	.16	6	0\n"
+		"gpr	H	.8	6	0\n"
+		"gpr	L	.8	7	0\n"
+		"gpr	SP	.16	8	0\n"
+		"gpr	PC	.16	10	0\n";
+
+	return strdup (reg);
+}
+
+RArchPlugin r_arch_plugin_i8080 = {
 	.name = "i8080",
 	.desc = "I8080 CPU code analysis plugin",
 	.license = "LGPL3",
 	.arch = "i8080",
-	.bits = 16,
-	.op = &i8080_op,
+	.bits = R_SYS_BITS_PACK1 (16),
+	.decode = decode,
+	.info = info,
+	.regs = regs,
 };
 
 #ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_ANAL,
+	.type = R_LIB_TYPE_ARCH,
 	.data = &r_anal_plugin_i8080,
 	.version = R2_VERSION
 };

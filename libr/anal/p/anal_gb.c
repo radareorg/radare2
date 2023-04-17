@@ -1,5 +1,5 @@
 /* radare - LGPL - Copyright 2012 - pancake<nopcode.org> 2022 - condret
-	this file was based on anal_i8080.c */
+	this file was based on i8080/plugin.c */
 
 #include <r_util.h>
 #include <r_asm.h>

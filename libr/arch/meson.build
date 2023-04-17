@@ -57,6 +57,8 @@ r_arch_sources = [
   'p/any_vasm/plugin.c',
   'p/i4004/plugin.c',
   'p/z80/plugin.c',
+  'p/i8080/plugin.c',
+  'p/i8080/i8080dis.c',
   'p/amd29k/plugin.c',
   'p/jdh8/plugin.c',
   'p/kvx/plugin.c',

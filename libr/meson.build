@@ -163,7 +163,6 @@ anal_plugins += [
   'chip8',
   'dalvik',
   'gb',
-  'i8080',
   'java',
   'loongarch_gnu',
   'm68k_cs',
@@ -178,6 +177,7 @@ anal_plugins += [
 
 arch_plugins += [
   's390_cs',
+  'i8080',
 ]
 
 if no_user_plugins
