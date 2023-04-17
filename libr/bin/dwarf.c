@@ -1767,6 +1767,10 @@ static void print_debug_info(const RBinDwarfDebugInfo *inf, PrintfCallback print
 }
 
 static const ut8 *fill_block_data(const ut8 *buf, const ut8 *buf_end, RBinDwarfBlock *block) {
+	if (block->length < 1) {
+		block->length = 0;
+		return NULL;
+	}
 	if (!buf) {
 		R_LOG_WARN ("no data to fill the block");
 		block->length = 0;
@@ -1775,7 +1779,7 @@ static const ut8 *fill_block_data(const ut8 *buf, const ut8 *buf_end, RBinDwarfB
 	int len = buf_end - buf;
 	len = R_MIN (len, block->length);
 	if (len < 1) {
-		R_LOG_WARN ("truncated block data");
+		R_LOG_WARN ("truncated block data %d %d", len, block->length);
 		block->length = 0;
 		return NULL;
 	}
