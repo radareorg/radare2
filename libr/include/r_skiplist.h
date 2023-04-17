@@ -36,7 +36,7 @@ R_API RSkipListNode* r_skiplist_insert(RSkipList* list, void* data);
 R_API bool r_skiplist_insert_autofree(RSkipList* list, void* data);
 R_API bool r_skiplist_delete(RSkipList* list, void* data);
 R_API bool r_skiplist_delete_node(RSkipList *list, RSkipListNode *node);
-R_API RSkipListNode* r_skiplist_find(RSkipList* list, void* data);
+R_API RSkipListNode* r_skiplist_find(const RSkipList* list, void* data);
 R_API RSkipListNode* r_skiplist_find_geq(RSkipList* list, void* data);
 R_API RSkipListNode* r_skiplist_find_leq(RSkipList* list, void* data);
 R_API void r_skiplist_join(RSkipList *l1, RSkipList *l2);
