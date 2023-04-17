@@ -999,7 +999,8 @@ R_API void r_bin_list_archs(RBin *bin, PJ *pj, int mode) {
 	const char *name = binfile? binfile->file: NULL;
 	int narch = binfile? binfile->narch: 0;
 
-	//are we with xtr format?
+	// r_bin_select (bin, "arm", 64, "arm");
+	// are we with xtr format?
 	if (binfile && binfile->curxtr) {
 		list_xtr_archs (bin, pj, mode);
 		return;
