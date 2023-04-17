@@ -112,7 +112,7 @@ static void get_objc_property_list(mach0_ut p, RBinFile *bf, RBinClass *klass);
 static void get_method_list_t(mach0_ut p, RBinFile *bf, char *class_name, RBinClass *klass, bool is_static, objc_cache_opt_info *oi);
 static void get_protocol_list_t(mach0_ut p, RBinFile *bf, RBinClass *klass, objc_cache_opt_info *oi);
 static void get_class_ro_t(mach0_ut p, RBinFile *bf, ut32 *is_meta_class, RBinClass *klass, objc_cache_opt_info *oi);
-static RList *MACH0_(parse_categories)(RBinFile *bf, RSkipList *relocs, objc_cache_opt_info *oi);
+static RList *MACH0_(parse_categories)(RBinFile *bf, const RSkipList *relocs, objc_cache_opt_info *oi);
 static bool read_ptr_pa(RBinFile *bf, ut64 paddr, mach0_ut *out);
 static bool read_ptr_va(RBinFile *bf, ut64 vaddr, mach0_ut *out);
 static char *read_str(RBinFile *bf, mach0_ut p, ut32 *offset, ut32 *left);
@@ -1137,7 +1137,7 @@ static mach0_ut get_isa_value(void) {
 	return 0;
 }
 
-void MACH0_(get_class_t)(mach0_ut p, RBinFile *bf, RBinClass *klass, bool dupe, RSkipList *relocs, objc_cache_opt_info *oi) {
+void MACH0_(get_class_t)(mach0_ut p, RBinFile *bf, RBinClass *klass, bool dupe, const RSkipList *relocs, objc_cache_opt_info *oi) {
 	struct MACH0_(SClass) c = {0};
 	const int size = sizeof (struct MACH0_(SClass));
 	mach0_ut r = 0;
@@ -1399,8 +1399,7 @@ RList *MACH0_(parse_classes)(RBinFile *bf, objc_cache_opt_info *oi) {
 	}
 	bool bigendian = bf->o->info->big_endian;
 
-	RSkipList *relocs = MACH0_(get_relocs) (bf->o->bin_obj);
-
+	const RSkipList *relocs = MACH0_(load_relocs) (bf->o->bin_obj);
 	ret = MACH0_(parse_categories) (bf, relocs, oi);
 
 	/* check if it's Swift */
@@ -1410,7 +1409,6 @@ RList *MACH0_(parse_classes)(RBinFile *bf, objc_cache_opt_info *oi) {
 
 	const RVector *sections = MACH0_(load_sections) (bf->o->bin_obj);
 	if (!sections) {
-		r_skiplist_free (relocs);
 		return ret;
 	}
 
@@ -1526,18 +1524,16 @@ RList *MACH0_(parse_classes)(RBinFile *bf, objc_cache_opt_info *oi) {
 		}
 		r_list_append (ret, klass);
 	}
-	r_skiplist_free (relocs);
 	return ret;
 
 get_classes_error:
 	r_list_free (sctns);
 	r_list_free (ret);
-	r_skiplist_free (relocs);
 	// XXX DOUBLE FREE r_bin_class_free (klass);
 	return NULL;
 }
 
-static RList *MACH0_(parse_categories)(RBinFile *bf, RSkipList *relocs, objc_cache_opt_info *oi) {
+static RList *MACH0_(parse_categories)(RBinFile *bf, const RSkipList *relocs, objc_cache_opt_info *oi) {
 	r_return_val_if_fail (bf && bf->o && bf->o->bin_obj && bf->o->info, NULL);
 
 	RList /*<RBinClass>*/ *ret = NULL;
@@ -1629,7 +1625,7 @@ error:
 	return NULL;
 }
 
-void MACH0_(get_category_t)(mach0_ut p, RBinFile *bf, RBinClass *klass, RSkipList *relocs, objc_cache_opt_info *oi) {
+void MACH0_(get_category_t)(mach0_ut p, RBinFile *bf, RBinClass *klass, const RSkipList *relocs, objc_cache_opt_info *oi) {
 	r_return_if_fail (bf && bf->o && bf->o->info);
 
 	struct MACH0_(SCategory) c = {0};

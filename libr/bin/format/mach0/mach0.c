@@ -2194,6 +2194,9 @@ void *MACH0_(mach0_free)(struct MACH0_(obj_t) *mo) {
 	}
 	r_list_free (mo->cached_segments);
 	mo->cached_segments = NULL;
+	if (mo->relocs_loaded) {
+		r_skiplist_free (mo->relocs_cache);
+	}
 	if (mo->chained_starts) {
 		for (i = 0; i < mo->nsegs && i < mo->segs_count; i++) {
 			if (mo->chained_starts[i]) {
@@ -3540,8 +3543,7 @@ static bool is_valid_ordinal_table_size(ut64 size) {
 	return size > 0 && size <= UT16_MAX;
 }
 
-RSkipList *MACH0_(get_relocs)(struct MACH0_(obj_t) *bin) {
-	RSkipList *relocs = NULL;
+static inline bool _load_relocations(struct MACH0_(obj_t) *bin) {
 	RPVector *threaded_binds = NULL;
 	size_t wordsize = get_word_size (bin);
 	if (bin->dyld_info) {
@@ -3554,7 +3556,7 @@ RSkipList *MACH0_(get_relocs)(struct MACH0_(obj_t) *bin) {
 		CASE(16);
 		CASE(32);
 		CASE(64);
-		default: return NULL;
+		default: return false;
 		}
 #undef CASE
 		bind_size = bin->dyld_info->bind_size;
@@ -3562,40 +3564,35 @@ RSkipList *MACH0_(get_relocs)(struct MACH0_(obj_t) *bin) {
 		weak_size = bin->dyld_info->weak_bind_size;
 
 		if (!bind_size && !lazy_size) {
-			return NULL;
+			return false;
 		}
 
 		if ((bind_size + lazy_size) < 1) {
-			return NULL;
+			return false;
 		}
 		if (bin->dyld_info->bind_off > bin->size || bin->dyld_info->bind_off + bind_size > bin->size) {
-			return NULL;
+			return false;
 		}
 		if (bin->dyld_info->lazy_bind_off > bin->size || \
 			bin->dyld_info->lazy_bind_off + lazy_size > bin->size) {
-			return NULL;
+			return false;
 		}
 		if (bin->dyld_info->bind_off + bind_size + lazy_size > bin->size) {
-			return NULL;
+			return false;
 		}
 		if (bin->dyld_info->weak_bind_off + weak_size > bin->size) {
-			return NULL;
+			return false;
 		}
 		ut64 amount = bind_size + lazy_size + weak_size;
 		if (amount == 0 || amount > UT32_MAX) {
-			return NULL;
+			return false;
 		}
 		if (!bin->segs) {
-			return NULL;
-		}
-		relocs = r_skiplist_new ((RListFree) &free, (RListComparator) &reloc_comparator);
-		if (!relocs) {
-			return NULL;
+			return false;
 		}
 		opcodes = calloc (1, amount + 1);
 		if (!opcodes) {
-			r_skiplist_free (relocs);
-			return NULL;
+			return false;
 		}
 
 		int len = r_buf_read_at (bin->b, bin->dyld_info->bind_off, opcodes, bind_size);
@@ -3604,8 +3601,7 @@ RSkipList *MACH0_(get_relocs)(struct MACH0_(obj_t) *bin) {
 		if (len < amount) {
 			R_LOG_ERROR ("read (dyld_info bind) at 0x%08"PFMT64x, (ut64)(size_t)bin->dyld_info->bind_off);
 			R_FREE (opcodes);
-			r_skiplist_free (relocs);
-			return NULL;
+			return false;
 		}
 
 		size_t partition_sizes[] = {bind_size, lazy_size, weak_size};
@@ -3720,7 +3716,7 @@ RSkipList *MACH0_(get_relocs)(struct MACH0_(obj_t) *bin) {
 									if (addend != -1) {
 										reloc->addend = addend;
 									}
-									r_skiplist_insert (relocs, reloc);
+									r_skiplist_insert (bin->relocs_cache, reloc);
 								}
 								addr += delta * wordsize;
 								if (!delta) {
@@ -3788,9 +3784,8 @@ RSkipList *MACH0_(get_relocs)(struct MACH0_(obj_t) *bin) {
 						bprintf ("Error: BIND_OPCODE_SET_SEGMENT_AND_OFFSET_ULEB"
 							" has unexistent segment %d\n", seg_idx);
 						free (opcodes);
-						r_skiplist_free (relocs);
 						r_pvector_free (threaded_binds);
-						return NULL; // early exit to avoid future mayhem
+						return false; // early exit to avoid future mayhem
 					}
 					addr = bin->segs[seg_idx].vmaddr + read_uleb128 (&p, end);
 					segment_end_addr = bin->segs[seg_idx].vmaddr \
@@ -3825,7 +3820,7 @@ RSkipList *MACH0_(get_relocs)(struct MACH0_(obj_t) *bin) {
 	if (threaded_binds)\
 		r_pvector_set (threaded_binds, sym_ord, reloc);\
 	else\
-		r_skiplist_insert (relocs, reloc);\
+		r_skiplist_insert (bin->relocs_cache, reloc);\
 } while (0)
 				case BIND_OPCODE_DO_BIND:
 					if (!threaded_binds && addr >= segment_end_addr) {
@@ -3872,7 +3867,7 @@ RSkipList *MACH0_(get_relocs)(struct MACH0_(obj_t) *bin) {
 					bprintf ("Error: unknown bind opcode 0x%02x in dyld_info\n", *p);
 					R_FREE (opcodes);
 					r_pvector_free (threaded_binds);
-					return relocs;
+					return false;
 				}
 			}
 
@@ -3890,12 +3885,6 @@ RSkipList *MACH0_(get_relocs)(struct MACH0_(obj_t) *bin) {
 		if (amount < 0) {
 			amount = 0;
 		}
-		if (!relocs) {
-			relocs = r_skiplist_new ((RListFree) &free, (RListComparator) &reloc_comparator);
-			if (!relocs) {
-				goto beach;
-			}
-		}
 		for (j = 0; j < amount; j++) {
 			struct reloc_t *reloc = R_NEW0 (struct reloc_t);
 			if (!reloc) {
@@ -3903,7 +3892,7 @@ RSkipList *MACH0_(get_relocs)(struct MACH0_(obj_t) *bin) {
 			}
 			if (parse_import_ptr (bin, reloc, bin->dysymtab.iundefsym + j)) {
 				reloc->ord = j;
-				r_skiplist_insert_autofree (relocs, reloc);
+				r_skiplist_insert_autofree (bin->relocs_cache, reloc);
 			} else {
 				R_FREE (reloc);
 			}
@@ -3911,27 +3900,37 @@ RSkipList *MACH0_(get_relocs)(struct MACH0_(obj_t) *bin) {
 	}
 
 	if (bin->symtab && bin->dysymtab.extreloff && bin->dysymtab.nextrel) {
-		if (!relocs) {
-			relocs = r_skiplist_new ((RListFree) &free, (RListComparator) &reloc_comparator);
-			if (!relocs) {
-				goto beach;
-			}
-		}
-		parse_relocation_info (bin, relocs, bin->dysymtab.extreloff, bin->dysymtab.nextrel);
+		parse_relocation_info (bin, bin->relocs_cache, bin->dysymtab.extreloff, bin->dysymtab.nextrel);
 	}
 
 	if (!bin->dyld_info && bin->chained_starts && bin->nsegs && bin->fixups_offset) {
-		if (!relocs) {
-			relocs = r_skiplist_new ((RListFree) &free, (RListComparator) &reloc_comparator);
-			if (!relocs) {
-				goto beach;
-			}
-		}
-		walk_bind_chains (bin, relocs);
+		walk_bind_chains (bin, bin->relocs_cache);
 	}
+
 beach:
 	r_pvector_free (threaded_binds);
-	return relocs;
+	return true;
+}
+
+const RSkipList *MACH0_(load_relocs)(struct MACH0_(obj_t) *bin) {
+	r_return_val_if_fail (bin, NULL);
+
+	if (bin->relocs_loaded) {
+		return bin->relocs_cache;
+	}
+
+	bin->relocs_loaded = true;
+	bin->relocs_cache = r_skiplist_new ((RListFree) free, (RListComparator) reloc_comparator);
+	if (!bin->relocs_cache) {
+		return NULL;
+	}
+
+	bool is_success = _load_relocations (bin);
+	if (is_success) {
+		return bin->relocs_cache;
+	}
+
+	return NULL;
 }
 
 struct addr_t *MACH0_(get_entrypoint)(struct MACH0_(obj_t) *bin) {

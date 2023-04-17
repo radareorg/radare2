@@ -62,7 +62,6 @@ struct reloc_t {
 	st64 addend;
 	ut8 type;
 	int ord;
-	int last;
 	char name[256];
 	bool external;
 	bool pc_relative;
@@ -180,6 +179,8 @@ struct MACH0_(obj_t) {
 	RVector sections_cache;
 	bool imports_loaded;
 	RPVector imports_cache;
+	bool relocs_loaded;
+	RSkipList *relocs_cache;
 	RList *reloc_fixups;
 	ut8 *internal_buffer;
 	int internal_buffer_size;
@@ -247,7 +248,7 @@ RList *MACH0_(get_segments)(RBinFile *bf, struct MACH0_(obj_t) *bin);
 const RVector *MACH0_(load_symbols)(RBinFile *bf, struct MACH0_(obj_t) *bin);
 void MACH0_(pull_symbols)(struct MACH0_(obj_t) *mo, RBinSymbolCallback cb, void *user);
 const RPVector *MACH0_(load_imports)(RBinFile* bf, struct MACH0_(obj_t) *bin);
-RSkipList *MACH0_(get_relocs)(struct MACH0_(obj_t) *bin);
+const RSkipList *MACH0_(load_relocs)(struct MACH0_(obj_t) *bin);
 struct addr_t *MACH0_(get_entrypoint)(struct MACH0_(obj_t) *bin);
 const RPVector *MACH0_(load_libs)(struct MACH0_(obj_t) *bin);
 ut64 MACH0_(get_baddr)(struct MACH0_(obj_t) *bin);
