@@ -107,7 +107,7 @@ format   elf
 bintype  elf
 EOF
 EXPECT_ERR=<<EOF
-DEBUG: RCore.cmd('=!')
+DEBUG: RCoreCmd: =!
 DEBUG: Dynamic tag 16 not handled
 DEBUG: bin object have no information
 DEBUG: add dt.dyn.entry tag=3 value=0x0002fde8
@@ -129,14 +129,14 @@ DEBUG: add dt.dyn.entry tag=1 value=0x00000298
 DEBUG: add dt.dyn.entry tag=16 value=0x00000000
 DEBUG: add dt.dyn.entry tag=30 value=0x00000002
 ERROR: Cannot determine entrypoint, using 0x00000d28
-DEBUG: RCore.cmd('Cd 4[48] @ 0x12000')
+DEBUG: RCoreCmd: Cd 4[48] @ 0x12000
 DEBUG: (cannot find opening [) in (48])
-DEBUG: RCore.cmd('Cd 4[56] @ 0x2fdd8')
+DEBUG: RCoreCmd: Cd 4[56] @ 0x2fdd8
 DEBUG: (cannot find opening [) in (56])
-DEBUG: RCore.cmd('=!')
-DEBUG: RCore.cmd('ieq')
-DEBUG: RCore.cmd('ie')
-DEBUG: RCore.cmd('i~elf')
+DEBUG: RCoreCmd: =!
+DEBUG: RCoreCmd: ieq
+DEBUG: RCoreCmd: ie
+DEBUG: RCoreCmd: i~elf
 EOF
 RUN
 

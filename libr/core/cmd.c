@@ -1486,7 +1486,6 @@ R_API bool r_core_run_script(RCore *core, const char *file) {
 #if !R2_590
 					bool found = false;
 #endif
-
 					for (i = 0; python_bins[i]; i++) {
 						bin = python_bins[i];
 						bin_path = r_file_path (bin);
@@ -5926,11 +5925,12 @@ static int run_cmd_depth(RCore *core, char *cmd) {
 }
 
 R_API int r_core_cmd(RCore *core, const char *cstr, bool log) {
+	r_return_val_if_fail (core && cstr, 0);
 	int ret = false;
-	size_t i;
-	R_LOG_DEBUG ("RCore.cmd('%s')", cstr);
+	R_LOG_DEBUG ("RCoreCmd: %s", cstr);
 	if (R_STR_ISNOTEMPTY (core->cmdfilter)) {
-		const char *invalid_chars = ";|>`@";
+		const char invalid_chars[] = ";|>`@";
+		size_t i;
 		for (i = 0; invalid_chars[i]; i++) {
 			if (strchr (cstr, invalid_chars[i])) {
 				ret = true;
@@ -5968,7 +5968,7 @@ R_API int r_core_cmd(RCore *core, const char *cstr, bool log) {
 		}
 	}
 
-	if (!cstr || (*cstr == '|' && cstr[1] != '?')) {
+	if (*cstr == '|' && cstr[1] != '?') {
 		// raw comment syntax
 		goto beach; // false;
 	}
