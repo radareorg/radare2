@@ -119,13 +119,13 @@ R_API int r_reg_default_bits(RReg *reg) {
 R_API int r_reg_type_by_name(const char *str) {
 	r_return_val_if_fail (str, -1);
 	int i;
-	if (!strcmp (str, "all")) {
-		return R_REG_TYPE_ALL;
-	}
 	for (i = 0; i < R_REG_TYPE_LAST && types[i]; i++) {
 		if (!strcmp (types[i], str)) {
 			return i;
 		}
+	}
+	if (!strcmp (str, "all")) {
+		return R_REG_TYPE_ALL;
 	}
 	return -1;
 }
@@ -145,12 +145,8 @@ R_API void r_reg_item_free(RRegItem *item) {
 
 R_API int r_reg_get_name_idx(const char *type) {
 	r_return_val_if_fail (type, -1);
-	char type0 = type[0];
-	if (!type0 || !type[1] || !isupper (type0)) {
-		return -1;
-	}
-	if (!type[2])
-	switch (type0 | (type[1] << 8)) {
+	if (type[0] && type[1] && !type[2])
+	switch (*type | (type[1] << 8)) {
 	/* flags */
 	case 'Z' + ('F' << 8): return R_REG_NAME_ZF;
 	case 'S' + ('F' << 8): return R_REG_NAME_SF;

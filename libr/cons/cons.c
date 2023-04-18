@@ -417,14 +417,14 @@ R_API bool r_cons_default_context_is_interactive(void) {
 }
 
 R_API bool r_cons_was_breaked(void) {
-	const bool res = r_cons_is_breaked () || C->was_breaked;
+	bool res = r_cons_is_breaked () || C->was_breaked;
 	C->breaked = false;
 	C->was_breaked = false;
 	return res;
 }
 
 R_API bool r_cons_is_breaked(void) {
-	if (R_UNLIKELY (I->cb_break)) {
+	if (I->cb_break) {
 		I->cb_break (I->user);
 	}
 	if (R_UNLIKELY (I->timeout)) {
@@ -438,7 +438,7 @@ R_API bool r_cons_is_breaked(void) {
 	if (R_UNLIKELY (!C->was_breaked)) {
 		C->was_breaked = C->breaked;
 	}
-	return R_UNLIKELY (C && C->breaked);
+	return C && C->breaked;
 }
 
 R_API void r_cons_line(int x, int y, int x2, int y2, int ch) {

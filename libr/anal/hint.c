@@ -383,17 +383,17 @@ R_API void r_anal_hint_free(RAnalHint *h) {
 
 R_API R_NULLABLE R_BORROW const char *r_anal_hint_arch_at(RAnal *anal, ut64 addr, R_NULLABLE ut64 *hint_addr) {
 	RBNode *node = r_rbtree_upper_bound (anal->arch_hints, &addr, ranged_hint_record_cmp, NULL);
-	if (R_LIKELY (node)) {
-		RAnalArchHintRecord *record = (RAnalArchHintRecord *)container_of (node, RAnalRangedHintRecordBase, rb);
+	if (!node) {
 		if (hint_addr) {
-			*hint_addr = record->base.addr;
+			*hint_addr = UT64_MAX;
 		}
-		return record->arch;
+		return NULL;
 	}
+	RAnalArchHintRecord *record = (RAnalArchHintRecord *)container_of (node, RAnalRangedHintRecordBase, rb);
 	if (hint_addr) {
-		*hint_addr = UT64_MAX;
+		*hint_addr = record->base.addr;
 	}
-	return NULL;
+	return record->arch;
 }
 
 R_API int r_anal_hint_bits_at(RAnal *anal, ut64 addr, R_NULLABLE ut64 *hint_addr) {

@@ -23,10 +23,8 @@ R_API RQueue *r_queue_new(int n) {
 }
 
 R_API void r_queue_free(RQueue *q) {
-	if (q) {
-		free (q->elems);
-		free (q);
-	}
+	free (q->elems);
+	free (q);
 }
 
 static int is_full(RQueue *q) {
@@ -60,7 +58,7 @@ static int increase_capacity(RQueue *q) {
 }
 
 R_API int r_queue_enqueue(RQueue *q, void *el) {
-	if (is_full (q)) {
+	if (is_full(q)) {
 		int res = increase_capacity (q);
 		if (!res) {
 			return false;
