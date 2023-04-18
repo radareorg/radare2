@@ -3,7 +3,6 @@
 #define R_LOG_ORIGIN "core"
 
 #include <r_core.h>
-#include <config.h>
 #if R2__UNIX__
 #include <signal.h>
 #endif
@@ -515,7 +514,7 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 	char *ptr, *bptr, *out = NULL;
 	RFlagItem *flag;
 	RBinSection *s;
-	RAnalOp op = {0};
+	RAnalOp op;
 	ut64 ret = 0;
 
 	if (ok) {
@@ -617,6 +616,7 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 		case 'm':
 		case 'v':
 		case 'l':
+			r_anal_op_init (&op);
 			r_anal_op (core->anal, &op, core->offset, core->block, core->blocksize, R_ARCH_OP_MASK_BASIC);
 			r_anal_op_fini (&op); // we don't need strings or pointers, just values, which are not nullified in fini
 			break;
@@ -864,7 +864,9 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 		}
 		break;
 	default:
-		if (*str >= 'A' || *str == ':' || *str == '_') {
+		{
+		const char str0 = *str;
+		if (str0 >= 'A' || str0 == ':' || str0 == '_') {
 			// NOTE: functions override flags
 			RAnalFunction *fcn = r_anal_get_function_byname (core->anal, str);
 			if (fcn) {
@@ -913,6 +915,7 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 				ret = r_reg_get_value (core->dbg->reg, r);
 				return ret;
 			}
+		}
 		}
 		break;
 	}
@@ -4191,33 +4194,31 @@ R_API RCoreAutocomplete *r_core_autocomplete_add(RCoreAutocomplete *parent, cons
 }
 
 R_API void r_core_autocomplete_free(RCoreAutocomplete *obj) {
-	if (!obj) {
-		return;
-	}
-	int i;
-	for (i = 0; i < obj->n_subcmds; i++) {
-		r_core_autocomplete_free (obj->subcmds[i]);
-		obj->subcmds[i] = NULL;
-	}
-	free (obj->subcmds);
+	if (obj) {
+		int i;
+		for (i = 0; i < obj->n_subcmds; i++) {
+			r_core_autocomplete_free (obj->subcmds[i]);
+			obj->subcmds[i] = NULL;
+		}
+		free (obj->subcmds);
 #if R2_590
-	free (obj->cmd);
+		free (obj->cmd);
 #else
-	free ((char *)obj->cmd);
+		free ((char *)obj->cmd);
 #endif
-	free (obj);
+		free (obj);
+	}
 }
 
 R_API RCoreAutocomplete *r_core_autocomplete_find(RCoreAutocomplete *parent, const char* cmd, bool exact) {
-	if (!parent || !cmd) {
-		return false;
-	}
-	int len = strlen (cmd);
+	r_return_val_if_fail (parent && cmd, NULL);
+	size_t len = strlen (cmd);
 	int i;
 	for (i = 0; i < parent->n_subcmds; i++) {
-		if (exact && len == parent->subcmds[i]->length && !strncmp (cmd, parent->subcmds[i]->cmd, len)) {
-			return parent->subcmds[i];
-		} else if (!exact && !strncmp (cmd, parent->subcmds[i]->cmd, len)) {
+		if (exact && len != parent->subcmds[i]->length) {
+			continue;
+		}
+		if (!strncmp (cmd, parent->subcmds[i]->cmd, len)) {
 			return parent->subcmds[i];
 		}
 	}
@@ -4225,9 +4226,7 @@ R_API RCoreAutocomplete *r_core_autocomplete_find(RCoreAutocomplete *parent, con
 }
 
 R_API bool r_core_autocomplete_remove(RCoreAutocomplete *parent, const char* cmd) {
-	if (!parent || !cmd) {
-		return false;
-	}
+	r_return_val_if_fail (parent && cmd, NULL);
 	int i, j;
 	for (i = 0; i < parent->n_subcmds; i++) {
 		RCoreAutocomplete *ac = parent->subcmds[i];
@@ -4288,7 +4287,7 @@ R_API PJ *r_core_pj_new(RCore *core) {
 
 // reentrant version of RCore.cmd()
 R_API char *r_core_cmd_str_r(RCore *core, const char *cmd) {
-	if (!strncmp (cmd, "::", 2)) {
+	if (r_str_startswith (cmd, "::")) {
 		return NULL;
 	}
 	if (!core->chan) {

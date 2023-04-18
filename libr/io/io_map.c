@@ -385,10 +385,14 @@ static bool _clear_banks_cb(void *user, void *data, ut32 id) {
 
 R_API void r_io_map_fini(RIO* io) {
 	r_return_if_fail (io);
-	r_id_storage_foreach (io->banks, _clear_banks_cb, NULL);
-	r_id_storage_foreach (io->maps, _map_free_cb, NULL);
-	r_id_storage_free (io->maps);
-	io->maps = NULL;
+	if (io->banks) {
+		r_id_storage_foreach (io->banks, _clear_banks_cb, NULL);
+	}
+	if (io->maps) {
+		r_id_storage_foreach (io->maps, _map_free_cb, NULL);
+		r_id_storage_free (io->maps);
+		io->maps = NULL;
+	}
 }
 
 R_API void r_io_map_set_name(RIOMap* map, const char* name) {
