@@ -76,14 +76,14 @@ R_API void r_log_del_callback(RLogCallback cb);
 #define R_LOG_WARN(f,...) do {} while(0)
 #define R_LOG_DEBUG(f,...) do {} while(0)
 #else
-#define R_LOG(f,...) if (r_log_match (R_LOG_LEVEL_INFO, R_LOG_ORIGIN)) {r_log_message (R_LOG_LEVEL_INFO, R_LOG_ORIGIN, __FILE__, __LINE__, f, ##__VA_ARGS__);}
-#define R_LOG_FATAL(f,...) if (r_log_match (R_LOG_LEVEL_FATAL, R_LOG_ORIGIN)) {r_log_message (R_LOG_LEVEL_FATAL, R_LOG_ORIGIN, __FILE__, __LINE__, f, ##__VA_ARGS__);}
-#define R_LOG_ERROR(f,...) if (r_log_match (R_LOG_LEVEL_ERROR, R_LOG_ORIGIN)) {r_log_message (R_LOG_LEVEL_ERROR, R_LOG_ORIGIN, __FILE__, __LINE__, f, ##__VA_ARGS__);}
-#define R_LOG_INFO(f,...) if (r_log_match (R_LOG_LEVEL_INFO, R_LOG_ORIGIN)) {r_log_message (R_LOG_LEVEL_INFO, R_LOG_ORIGIN, __FILE__, __LINE__, f, ##__VA_ARGS__);}
-#define R_LOG_TODO(f,...) if (r_log_match (R_LOG_LEVEL_TODO, R_LOG_ORIGIN)) {r_log_message(R_LOG_LEVEL_TODO, R_LOG_ORIGIN, __FILE__, __LINE__, f, ##__VA_ARGS__);}
-#define R_LOG_WARN(f,...) if (r_log_match (R_LOG_LEVEL_WARN, R_LOG_ORIGIN)) {r_log_message (R_LOG_LEVEL_WARN, R_LOG_ORIGIN, __FILE__, __LINE__, f, ##__VA_ARGS__);}
+#define R_LOG(f,...) if (R_UNLIKELY (r_log_match ( (R_LOG_LEVEL_INFO, R_LOG_ORIGIN))) {r_log_message (R_LOG_LEVEL_INFO, R_LOG_ORIGIN, __FILE__, __LINE__, f, ##__VA_ARGS__);}
+#define R_LOG_FATAL(f,...) if (R_UNLIKELY (r_log_match ( (R_LOG_LEVEL_FATAL, R_LOG_ORIGIN))) {r_log_message (R_LOG_LEVEL_FATAL, R_LOG_ORIGIN, __FILE__, __LINE__, f, ##__VA_ARGS__);}
+#define R_LOG_ERROR(f,...) if (R_UNLIKELY (r_log_match ( (R_LOG_LEVEL_ERROR, R_LOG_ORIGIN))) {r_log_message (R_LOG_LEVEL_ERROR, R_LOG_ORIGIN, __FILE__, __LINE__, f, ##__VA_ARGS__);}
+#define R_LOG_INFO(f,...) if (R_UNLIKELY (r_log_match ( (R_LOG_LEVEL_INFO, R_LOG_ORIGIN))) {r_log_message (R_LOG_LEVEL_INFO, R_LOG_ORIGIN, __FILE__, __LINE__, f, ##__VA_ARGS__);}
+#define R_LOG_TODO(f,...) if (R_UNLIKELY (r_log_match ( (R_LOG_LEVEL_TODO, R_LOG_ORIGIN))) {r_log_message(R_LOG_LEVEL_TODO, R_LOG_ORIGIN, __FILE__, __LINE__, f, ##__VA_ARGS__);}
+#define R_LOG_WARN(f,...) if (R_UNLIKELY (r_log_match ( (R_LOG_LEVEL_WARN, R_LOG_ORIGIN))) {r_log_message (R_LOG_LEVEL_WARN, R_LOG_ORIGIN, __FILE__, __LINE__, f, ##__VA_ARGS__);}
 #if WANT_DEBUGSTUFF
-#define R_LOG_DEBUG(f,...) if (r_log_match (R_LOG_LEVEL_DEBUG, R_LOG_ORIGIN)) {r_log_message (R_LOG_LEVEL_DEBUG, R_LOG_ORIGIN, __FILE__, __LINE__, f, ##__VA_ARGS__);}
+#define R_LOG_DEBUG(f,...) if (R_UNLIKELY (r_log_match ( (R_LOG_LEVEL_DEBUG, R_LOG_ORIGIN))) {r_log_message (R_LOG_LEVEL_DEBUG, R_LOG_ORIGIN, __FILE__, __LINE__, f, ##__VA_ARGS__);}
 #else
 #define R_LOG_DEBUG(f,...) do {} while(0)
 #endif
