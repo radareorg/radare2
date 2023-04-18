@@ -106,20 +106,15 @@ static st64 buf_bytes_seek(RBuffer *b, st64 addr, int whence) {
 	if (addr < 0 && (-addr) > (st64)priv->offset) {
 		return -1;
 	}
-
-	switch (whence) {
-	case R_BUF_CUR:
-		priv->offset += addr;
-		break;
-	case R_BUF_SET:
+	if (R_LIKELY (whence == R_BUF_SET)) {
+		// 50%
 		priv->offset = addr;
-		break;
-	case R_BUF_END:
+	} else if (whence == R_BUF_CUR) {
+		// 20%
+		priv->offset += addr;
+	} else {
+		// 5%
 		priv->offset = priv->length + addr;
-		break;
-	default:
-		r_warn_if_reached ();
-		return -1;
 	}
 	return priv->offset;
 }

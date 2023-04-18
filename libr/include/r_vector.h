@@ -98,7 +98,8 @@ static inline void *r_vector_index_ptr(const RVector *vec, size_t index) {
 // returns a pointer to the offset inside the array where the element of the index lies.
 // returns NULL when the index is out of bounds of the vector.
 static inline void *r_vector_at(const RVector *vec, int index) {
-	if (vec && index >= 0 && (size_t)index < vec->len) {
+	r_return_val_if_fail (vec, NULL);
+	if (index >= 0 && (size_t)index < vec->len) {
 		return (char *)vec->a + (vec->elem_size * index);
 	}
 	return NULL;

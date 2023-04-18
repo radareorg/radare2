@@ -53,13 +53,11 @@ static inline RBIter bound_iter(RBNode *x, void *data, RBComparator cmp, bool up
 	it.len = 0;
 	memset (it.path, 0, sizeof (RBNode *) * R_RBTREE_MAX_HEIGHT);
 	while (x) {
-		int d = cmp (data, x, user);
-
+		const int d = cmp (data, x, user);
 		if (d == 0) {
 			it.path[it.len++] = x;
 			return it;
 		}
-
 		if (d < 0) {
 			if (!upper) {
 				it.path[it.len++] = x;
@@ -280,10 +278,9 @@ R_API bool r_rbtree_aug_update_sum(RBNode *root, void *data, RBNode *node, RBCom
 		if (cur == node) {
 			break;
 		}
-		int direction = cmp (data, cur, cmp_user);
+		const int direction = cmp (data, cur, cmp_user);
 		cur = cur->child[(direction < 0)? 0: 1];
 	}
-
 	for (; depth > 0; depth--) {
 		sum (path[depth - 1]);
 	}
@@ -296,7 +293,7 @@ R_API bool r_rbtree_delete(RBNode **root, void *data, RBComparator cmp, void *cm
 
 R_API RBNode *r_rbtree_find(RBNode *x, void *data, RBComparator cmp, void *user) {
 	while (x) {
-		int direction = cmp (data, x, user);
+		const int direction = cmp (data, x, user);
 		if (direction < 0) {
 			x = x->child[0];
 		} else if (direction > 0) {

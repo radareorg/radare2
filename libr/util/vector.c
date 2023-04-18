@@ -184,7 +184,7 @@ R_API void r_vector_pop_front(RVector *vec, void *into) {
 
 R_API void *r_vector_push(RVector *vec, void *x) {
 	r_return_val_if_fail (vec, NULL);
-	if (vec->len >= vec->capacity) {
+	if (R_UNLIKELY (vec->len >= vec->capacity)) {
 		RESIZE_OR_RETURN_NULL (NEXT_VECTOR_CAPACITY);
 	}
 	void *p = r_vector_index_ptr (vec, vec->len++);
@@ -238,10 +238,9 @@ R_API void r_pvector_init(RPVector *vec, RPVectorFree free) {
 
 R_API RPVector *r_pvector_new(RPVectorFree free) {
 	RPVector *v = R_NEW (RPVector);
-	if (!v) {
-		return NULL;
+	if (R_LIKELY (v)) {
+		r_pvector_init (v, free);
 	}
-	r_pvector_init (v, free);
 	return v;
 }
 
@@ -271,11 +270,10 @@ R_API void r_pvector_fini(RPVector *vec) {
 }
 
 R_API void r_pvector_free(RPVector *vec) {
-	if (!vec) {
-		return;
+	if (R_LIKELY (vec)) {
+		r_vector_fini (&vec->v);
+		free (vec);
 	}
-	r_vector_fini (&vec->v);
-	free (vec);
 }
 
 R_API void **r_pvector_contains(RPVector *vec, void *x) {
@@ -298,11 +296,10 @@ R_API void *r_pvector_remove_at(RPVector *vec, size_t index) {
 
 R_API void r_pvector_remove_data(RPVector *vec, void *x) {
 	void **el = r_pvector_contains (vec, x);
-	if (!el) {
-		return;
+	if (R_LIKELY (el)) {
+		size_t index = el - (void **)vec->v.a;
+		r_vector_remove_at (&vec->v, index, NULL);
 	}
-	size_t index = el - (void **)vec->v.a;
-	r_vector_remove_at (&vec->v, index, NULL);
 }
 
 R_API void *r_pvector_pop(RPVector *vec) {

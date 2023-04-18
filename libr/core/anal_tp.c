@@ -578,7 +578,8 @@ repeat:
 	ut64 *bblist = calloc (sizeof (ut64), bblist_size + 1);
 	int j = 0;
 	r_list_foreach (fcn->bbs, it, bb) {
-		bblist[j++] = bb->addr;
+		bblist[j] = bb->addr;
+		j++;
 	}
 	for (j = 0; j < bblist_size; j++) {
 		bb = r_anal_get_block_at (core->anal, bblist[j]);
@@ -598,7 +599,7 @@ repeat:
 		r_io_read_at (core->io, addr, buf, bb_size);
 		int i = 0;
 		r_reg_setv (core->dbg->reg, pc, addr);
-		while (1) {
+		for (;;) {
 			if (r_cons_is_breaked ()) {
 				goto out_function;
 			}
