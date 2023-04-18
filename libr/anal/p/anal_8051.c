@@ -45,6 +45,7 @@ static R_TH_LOCAL bool i8051_is_init = false;
 static R_TH_LOCAL const i8051_cpu_model *cpu_curr_model = NULL;
 
 static bool i8051_reg_write(RReg *reg, const char *regname, ut32 num) {
+	// XXX
 	if (reg) {
 		RRegItem *item = r_reg_get (reg, regname, R_REG_TYPE_GPR);
 		if (item) {

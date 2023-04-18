@@ -123,11 +123,7 @@ static bool rsp_op(RArchSession *s, RAnalOp *op, RArchDecodeMask mask) {
 		switch (r_instr.operands[i].type) {
 		case RSP_OPND_GP_REG:
 			snprintf (parsed_operands[i].esil, sizeof (parsed_operands[i].esil), "%s", rsp_gp_reg_soft_names[r_instr.operands[i].u]);
-#if USE_REG_NAMES
 			parsed_operands[i].value->reg = rsp_gp_reg_soft_names[r_instr.operands[i].u];
-#else
-		// 	parsed_operands[i].value->reg = r_reg_get (anal->reg, rsp_gp_reg_soft_names[r_instr.operands[i].u], R_REG_TYPE_GPR);
-#endif
 			break;
 		case RSP_OPND_ZIMM:
 		case RSP_OPND_SHIFT_AMOUNT:
@@ -141,11 +137,7 @@ static bool rsp_op(RArchSession *s, RAnalOp *op, RArchDecodeMask mask) {
 		case RSP_OPND_BASE_OFFSET:
 			snprintf (parsed_operands[i].esil, sizeof (parsed_operands[i].esil),
 			"%"PFMT64d",%s,+", r_instr.operands[i].s, rsp_gp_reg_soft_names[r_instr.operands[i].u]);
-#if USE_REG_NAMES
 			parsed_operands[i].value->reg = rsp_gp_reg_soft_names[r_instr.operands[i].u];
-#else
-			// parsed_operands[i].value->reg = r_reg_get (anal->reg, rsp_gp_reg_soft_names[r_instr.operands[i].u], R_REG_TYPE_GPR);
-#endif
 			parsed_operands[i].value->imm = r_instr.operands[i].s;
 			break;
 		case RSP_OPND_OFFSET:

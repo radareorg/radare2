@@ -857,6 +857,11 @@ static bool var_add_structure_fields_to_list(RAnal *a, RAnalVar *av, RList *list
 static const char *get_regname(RAnal *anal, RAnalValue *value) {
 	// R2_590 - this is underperforming hard
 	const char *name = NULL;
+#if 1
+	if (value && value->reg) {
+		name = (const char *)value->reg;
+	}
+#else
 	if (value && value->reg && value->reg->name) {
 		name = value->reg->name;
 		RRegItem *ri = r_reg_get (anal->reg, value->reg->name, -1);
@@ -865,6 +870,7 @@ static const char *get_regname(RAnal *anal, RAnalValue *value) {
 		}
 		r_unref (ri);
 	}
+#endif
 	return name;
 }
 
@@ -910,10 +916,10 @@ static void extract_arg(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const char
 	RAnalValue *val = NULL;
 
 	r_return_if_fail (anal && fcn && op && reg);
-
+return;
 	r_vector_foreach (&op->srcs, val) {
-		if (val && val->reg && val->reg->name) {
-			if (!strcmp (reg, val->reg->name)) {
+		if (val && val->reg) {
+			if (!strcmp (reg, val->reg)) {
 				st64 delta = val->delta;
 				if ((delta > 0 && *sign == '+') || (delta < 0 && *sign == '-')) {
 					ptr = R_ABS (val->delta);
@@ -949,7 +955,7 @@ static void extract_arg(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const char
 			if (!op->stackop && val) {
 				const char *sp = r_reg_get_name (anal->reg, R_REG_NAME_SP);
 				const char *bp = r_reg_get_name (anal->reg, R_REG_NAME_BP);
-				const char *rn = (val && val->reg) ? val->reg->name : NULL;
+				const char *rn = (val && val->reg) ? val->reg: NULL;
 				if (rn && ((bp && !strcmp (bp, rn)) || (sp && !strcmp (sp, rn)))) {
 					if (anal->verbose) {
 						R_LOG_WARN ("Analysis didn't fill op->stackop for instruction that alters stack at 0x%" PFMT64x, op->addr);
