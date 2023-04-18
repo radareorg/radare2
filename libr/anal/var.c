@@ -1086,7 +1086,7 @@ beach:
 	;
 }
 
-#if 1
+#if 0
 static bool is_reg_in_src(const char *regname, RAnal *anal, RAnalOp *op) {
 	RAnalValue *src0 = r_vector_at (&op->srcs, 0);
 	RAnalValue *src1 = r_vector_at (&op->srcs, 1);
