@@ -20,14 +20,10 @@ static RBinSymbol *__getMethod(RBinFile *bf, const char *klass, const char *meth
 }
 
 static RBinString *__stringAt(RBinFile *bf, RList *ret, ut64 addr) {
-	if (addr != 0 && addr != UT64_MAX) {
+	if (R_LIKELY (addr != 0 && addr != UT64_MAX)) {
 		return ht_up_find (bf->o->strings_db, addr, NULL);
 	}
 	return NULL;
-}
-
-static ut64 binobj_a2b(RBinObject *bo, ut64 addr) {
-	return addr + (bo ? bo->baddr_shift : 0);
 }
 
 static void print_string(RBinFile *bf, RBinString *string, int raw, PJ *pj) {
@@ -1130,7 +1126,7 @@ R_API RBinField *r_bin_file_add_field(RBinFile *binfile, const char *classname, 
 R_API ut64 r_bin_file_get_vaddr(RBinFile *bf, ut64 paddr, ut64 vaddr) {
 	r_return_val_if_fail (bf && bf->o, paddr);
 	if (bf->o->info && bf->o->info->has_va) {
-		return binobj_a2b (bf->o, vaddr);
+		return bf->o->baddr_shift + vaddr;
 	}
 	return paddr;
 }

@@ -49,10 +49,6 @@ static const char *__getname(RBin *bin, int type, int idx, bool sd) {
 	return NULL;
 }
 
-static ut64 binobj_a2b(RBinObject *o, ut64 addr) {
-	return o ? addr + o->baddr_shift : addr;
-}
-
 // TODO: move these two function do a different file
 R_API RBinXtrData *r_bin_xtrdata_new(RBuffer *buf, ut64 offset, ut64 size, ut32 file_count, RBinXtrMetadata *metadata) {
 	RBinXtrData *data = R_NEW0 (RBinXtrData);
@@ -713,18 +709,16 @@ R_API RList *r_bin_get_sections(RBin *bin) {
 }
 
 R_API RBinSection *r_bin_get_section_at(RBinObject *o, ut64 off, int va) {
+	r_return_val_if_fail (o, NULL);
 	RBinSection *section;
 	RListIter *iter;
-	ut64 from, to;
-
-	r_return_val_if_fail (o, NULL);
 	// TODO: must be O(1) .. use sdb here
 	r_list_foreach (o->sections, iter, section) {
 		if (section->is_segment) {
 			continue;
 		}
-		from = va ? binobj_a2b (o, section->vaddr) : section->paddr;
-		to = from + (va ? section->vsize: section->size);
+		ut64 from = va ? o->baddr_shift + section->vaddr : section->paddr;
+		ut64 to = from + (va ? section->vsize: section->size);
 		if (off >= from && off < to) {
 			return section;
 		}
@@ -1281,10 +1275,14 @@ R_API ut64 r_bin_get_vaddr(RBin *bin, ut64 paddr, ut64 vaddr) {
 	return r_bin_file_get_vaddr (bin->cur, paddr, vaddr);
 }
 
+// XXX remove this public api
 R_API ut64 r_bin_a2b(RBin *bin, ut64 addr) {
 	r_return_val_if_fail (bin, UT64_MAX);
 	RBinObject *o = r_bin_cur_object (bin);
-	return binobj_a2b (o, addr);
+	if (o) {
+		return o->baddr_shift + addr;
+	}
+	return addr;
 }
 
 R_API ut64 r_bin_get_size(RBin *bin) {

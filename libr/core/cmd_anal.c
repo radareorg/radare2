@@ -1680,6 +1680,12 @@ static int var_cmd(RCore *core, const char *str) {
 	int delta, type = *str, res = true;
 	RAnalVar *v1;
 	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, -1);
+	if (!fcn) {
+		if (str[0] == 'j') { // "afvj"
+			r_cons_println ("{}");
+		}
+		return false;
+	}
 	if (!str[0]) {
 		if (fcn) {
 			// "afv"
@@ -1911,8 +1917,12 @@ static int var_cmd(RCore *core, const char *str) {
 		if (!pj) {
 			return false;
 		}
-		r_anal_var_list_show (core->anal, fcn, type, str[1], pj);
-		r_cons_println (pj_string (pj));
+		if (fcn) {
+			r_anal_var_list_show (core->anal, fcn, type, str[1], pj);
+			r_cons_println (pj_string (pj));
+		} else {
+			R_LOG_ERROR ("No function");
+		}
 		pj_free (pj);
 		break;
 	case '.': // "afv[bsr]."

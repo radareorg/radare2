@@ -35,11 +35,14 @@ static void __max_end(RBNode *node) {
 static int __bb_addr_cmp(const void *incoming, const RBNode *in_tree, void *user) {
 	ut64 incoming_addr = *(ut64 *)incoming;
 	const RAnalBlock *in_tree_block = container_of (in_tree, const RAnalBlock, _rb);
-	if (incoming_addr < in_tree_block->addr) {
-		return -1;
-	}
-	if (incoming_addr > in_tree_block->addr) {
-		return 1;
+	if (in_tree_block) {
+		ut64 itaddr = in_tree_block->addr;
+		if (incoming_addr < itaddr) {
+			return -1;
+		}
+		if (incoming_addr > itaddr) {
+			return 1;
+		}
 	}
 	return 0;
 }
