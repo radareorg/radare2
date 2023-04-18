@@ -4918,12 +4918,12 @@ static const char *reg_name_for_access(RAnalOp* op, RAnalVarAccessType type) {
 	RAnalValue *dst = r_vector_at (&op->dsts, 0);
 	RAnalValue *src = r_vector_at (&op->srcs, 0);
 	if (type == R_ANAL_VAR_ACCESS_TYPE_WRITE) {
-		if (dst && dst->reg) {
-			return dst->reg->name;
+		if (dst) {
+			return dst->reg;
 		}
 	} else {
-		if (src && src->reg) {
-			return src->reg->name;
+		if (src) {
+			return src->reg;
 		}
 	}
 	return NULL;
@@ -5662,13 +5662,13 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 				ut64 dst = ESIL->cur;
 				RAnalValue *opsrc0 = r_vector_at (&op.srcs, 0);
 				RAnalValue *opsrc1 = r_vector_at (&op.srcs, 1);
-				if (!opsrc0 || !opsrc0->reg || !opsrc0->reg->name) {
+				if (!opsrc0 || !opsrc0->reg) {
 					break;
 				}
-				if (!strcmp (opsrc0->reg->name, "sp")) {
+				if (!strcmp (opsrc0->reg, "sp")) {
 					break;
 				}
-				if (!strcmp (opsrc0->reg->name, "zero")) {
+				if (!strcmp (opsrc0->reg, "zero")) {
 					break;
 				}
 				if ((target && dst == ntarget) || !target) {

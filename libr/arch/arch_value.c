@@ -19,9 +19,9 @@ R_API RArchValue *r_arch_value_new_reg(const char * const reg) {
 // TODO: move into .h as #define free
 R_API void r_anal_value_free(RArchValue *value) {
 	if (value) {
-		r_unref (value->seg);
-		r_unref (value->reg);
-		r_unref (value->regdelta);
+//		r_unref (value->seg);
+//		r_unref (value->reg);
+//		r_unref (value->regdelta);
 		free (value);
 	}
 #if 0

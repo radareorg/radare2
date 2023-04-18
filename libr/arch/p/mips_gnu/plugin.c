@@ -1610,11 +1610,7 @@ static bool decode(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
 			insn.id = MIPS_INS_LUI;
 			snprintf ((char *)insn.i_reg.imm, REG_BUF_MAX, "0x%" PFMT32x, imm);
 			dst = r_vector_push (&op->dsts, NULL);
-#if 0
-			dst->reg = r_reg_get (as->reg, mips_reg_decode (rt), R_REG_TYPE_GPR);
-#else
-			dst->reg = NULL;
-#endif
+			dst->reg = mips_reg_decode (rt);
 			// TODO: currently there is no way for the macro to get access to this register
 			op->val = imm;
 			break;
@@ -1622,18 +1618,10 @@ static bool decode(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
 			insn.id = MIPS_INS_ADDIU;
 			op->type = R_ANAL_OP_TYPE_ADD;
 			dst = r_vector_push (&op->dsts, NULL);
-#if 0
-			dst->reg = r_reg_get (as->reg, mips_reg_decode (rt), R_REG_TYPE_GPR);
-#else
-			dst->reg = NULL;
-#endif
+			dst->reg = mips_reg_decode (rt);
 			// TODO: currently there is no way for the macro to get access to this register
 			src = r_vector_push (&op->srcs, NULL);
-#if 0
-			src->reg = r_reg_get (as->reg, mips_reg_decode (rs), R_REG_TYPE_GPR);
-#else
-			src->reg = NULL;
-#endif
+			src->reg = mips_reg_decode (rs);
 			op->val = imm; // Beware: this one is signed... use `?vi $v`
 			if (rs == 0) {
 				insn.id = MIPS_INS_LI;

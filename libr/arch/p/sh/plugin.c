@@ -198,18 +198,13 @@ static ut64 disarm_8bit_offset(ut64 pc, ut32 offs) {
 	return (off << 1) + pc + 4;
 }
 
-#if USE_REG_NAMES
-static const char *regs[] = { "r0", "r1","r2", "r3", "r4","r5","r6","r7","r8","r9","r10","r11","r12","r13","r14","r15","pc" };
-#endif
+static const char *sh_regs[] = { "r0", "r1","r2", "r3", "r4","r5","r6","r7","r8","r9","r10","r11","r12","r13","r14","r15","pc" };
 
 static RArchValue *anal_fill_ai_rg(RArch *anal, int idx) {
 	RArchValue *ret = r_arch_value_new ();
 	if (ret) {
-#if USE_REG_NAMES
-		ret->reg = regs[idx];
-#else
-		// ret->reg = r_reg_get (anal->reg, regs[idx], R_REG_TYPE_GPR);
-#endif
+		// TODO: check idx in range
+		ret->reg = sh_regs[idx];
 	}
 	return ret;
 }
@@ -245,11 +240,7 @@ static RArchValue *anal_fill_reg_ref(RArch *anal, int reg, st64 size) {
 static RArchValue *anal_fill_r0_reg_ref(RArch *anal, int reg, st64 size) {
 	RArchValue *ret = anal_fill_ai_rg (anal, 0);
 	if (ret) {
-#if USE_REG_NAMES
-		ret->regdelta = regs[reg];
-#else
-		// ret->regdelta = r_reg_get (anal->reg, regs[reg], R_REG_TYPE_GPR);
-#endif
+		ret->regdelta = sh_regs[reg];
 		ret->memref = size;
 	}
 	return ret;
@@ -274,11 +265,7 @@ static RArchValue *anal_pcrel_disp_mov(RArch* anal, RAnalOp* op, ut8 disp, int s
 static RArchValue *anal_regrel_jump(RArch* anal, RAnalOp* op, ut8 reg) {
 	RArchValue *ret = r_arch_value_new ();
 	if (ret) {
-#if USE_REG_NAMES
-		ret->reg = regs[reg];
-#else
-		// ret->reg = r_reg_get (anal->reg, regs[reg], R_REG_TYPE_GPR);
-#endif
+		ret->reg = sh_regs[reg];
 		ret->base = op->addr + 4;
 	}
 	return ret;

@@ -4289,32 +4289,27 @@ jmp $$ + 4 + ( [delta] * 2 )
 #endif
 }
 
-#if 0
+#if 1
 // TODO arch plugins should NOT set register values
 static bool is_valid(arm_reg reg) {
 	return reg != ARM_REG_INVALID;
 }
 
 // XXX this function is a disaster
-static int parse_reg_name(RReg *reg, RRegItem **reg_base, RRegItem **reg_delta, csh handle, cs_insn *insn, int reg_num) {
+static int parse_reg_name(const char **reg_base, const char **reg_delta, csh handle, cs_insn *insn, int reg_num) {
 	cs_arm_op armop = INSOP (reg_num);
 	switch (armop.type) {
 	case ARM_OP_REG:
-		r_unref (*reg_base);
-		*reg_base = r_reg_get (reg, cs_reg_name (handle, armop.reg), R_REG_TYPE_ALL);
+		*reg_base = cs_reg_name (handle, armop.reg);
 		break;
 	case ARM_OP_MEM:
 		if (is_valid (armop.mem.base) && is_valid (armop.mem.index)) {
-			r_unref (*reg_base);
-			r_unref (*reg_delta);
-			*reg_base = r_reg_get (reg, cs_reg_name (handle, armop.mem.base), R_REG_TYPE_ALL);
-			*reg_delta = r_reg_get (reg, cs_reg_name (handle, armop.mem.index), R_REG_TYPE_ALL);
+			*reg_base =  cs_reg_name (handle, armop.mem.base);
+			*reg_delta = cs_reg_name (handle, armop.mem.index);
 		} else if (is_valid (armop.mem.base)) {
-			r_unref (*reg_base);
-			*reg_base = r_reg_get (reg, cs_reg_name (handle, armop.mem.base), R_REG_TYPE_ALL);
+			*reg_base = cs_reg_name (handle, armop.mem.base);
 		} else if (is_valid (armop.mem.index)) {
-			r_unref (*reg_base);
-			*reg_base = r_reg_get (reg, cs_reg_name (handle, armop.mem.index), R_REG_TYPE_ALL);
+			*reg_base = cs_reg_name (handle, armop.mem.index);
 		}
 		break;
 	default:
@@ -4327,7 +4322,7 @@ static bool is_valid64(arm64_reg reg) {
 	return reg != ARM64_REG_INVALID;
 }
 
-static char *reg_list[] = {
+static const char *reg_list[] = {
 	"x0", "x1", "x2", "x3", "x4",
 	"x5", "x6", "x7", "x8", "x9",
 	"x10", "x11", "x12", "x13", "x14",
@@ -4337,27 +4332,27 @@ static char *reg_list[] = {
 	"x30"
 };
 
-static int parse_reg64_name(RReg *reg, RRegItem **reg_base, RRegItem **reg_delta, csh handle, cs_insn *insn, int reg_num) {
+static int parse_reg64_name(const char **reg_base, const char **reg_delta, csh handle, cs_insn *insn, int reg_num) {
 	cs_arm64_op armop = INSOP64 (reg_num);
 	switch (armop.type) {
 	case ARM64_OP_REG:
-		*reg_base = r_reg_get (reg, cs_reg_name (handle, armop.reg), R_REG_TYPE_ALL);
+		*reg_base = cs_reg_name (handle, armop.reg);
 		break;
 	case ARM64_OP_MEM:
 		if (is_valid64 (armop.mem.base) && is_valid64 (armop.mem.index)) {
-			*reg_base = r_reg_get (reg, cs_reg_name (handle, armop.mem.base), R_REG_TYPE_ALL);
-			*reg_delta = r_reg_get (reg, cs_reg_name (handle, armop.mem.index), R_REG_TYPE_ALL);
+			*reg_base = cs_reg_name (handle, armop.mem.base);
+			*reg_delta = cs_reg_name (handle, armop.mem.index);
 		} else if (is_valid64 (armop.mem.base)) {
-			*reg_base = r_reg_get (reg, cs_reg_name (handle, armop.mem.base), R_REG_TYPE_ALL);
+			*reg_base = cs_reg_name (handle, armop.mem.base);
 		} else if (is_valid64 (armop.mem.index)) {
-			*reg_base = r_reg_get (reg, cs_reg_name (handle, armop.mem.index), R_REG_TYPE_ALL);
+			*reg_base = cs_reg_name (handle, armop.mem.index);
 		}
 		break;
 	default:
 		break;
 	}
-	if (*reg_base && *(*reg_base)->name == 'w') {
-		*reg_base = r_reg_get (reg, reg_list[atoi ((*reg_base)->name + 1)], R_REG_TYPE_ALL);
+	if ((*reg_base) && (*reg_base)[0] == 'w') {
+		*reg_base = reg_list [atoi ((*reg_base) + 1)];
 	}
 	return 0;
 }
@@ -4387,18 +4382,18 @@ static void set_opdir(RAnalOp *op) {
 	}
 }
 
-#if 0
+#if 1
 // TODO arch plugins should NOT set register values
-static void set_src_dst(RReg *reg, RAnalValue *val, csh *handle, cs_insn *insn, int x, int bits) {
+static void set_src_dst(RAnalValue *val, csh *handle, cs_insn *insn, int x, int bits) {
 	if (!val) {
 		return;
 	}
 	cs_arm_op armop = INSOP (x);
 	cs_arm64_op arm64op = INSOP64 (x);
 	if (bits == 64) {
-		parse_reg64_name (reg, &val->reg, &val->regdelta, *handle, insn, x);
+		parse_reg64_name ((const char **)&val->reg, (const char **)&val->regdelta, *handle, insn, x);
 	} else {
-		parse_reg_name (reg, &val->reg, &val->regdelta, *handle, insn, x);
+		parse_reg_name ((const char **)&val->reg, (const char **)&val->regdelta, *handle, insn, x);
 	}
 	if (bits == 64) {
 		switch (arm64op.type) {
@@ -4480,13 +4475,13 @@ static void op_fillval(RArchSession *as, RAnalOp *op, csh handle, cs_insn *insn,
 #endif
 			break;
 		}
-#if 0
+#if 1
 		// TODO arch plugins should NOT set register values
 		int j;
 		for (j = 0; j < 3; j++, i++) {
-			set_src_dst (as->reg, r_vector_at (&op->srcs, j), &handle, insn, i, bits);
+			set_src_dst (r_vector_at (&op->srcs, j), &handle, insn, i, bits);
 		}
-		set_src_dst (as->reg, r_vector_at (&op->dsts, 0), &handle, insn, 0, bits);
+		set_src_dst (r_vector_at (&op->dsts, 0), &handle, insn, 0, bits);
 #endif
 		break;
 	case R_ANAL_OP_TYPE_STORE:
@@ -4503,12 +4498,11 @@ static void op_fillval(RArchSession *as, RAnalOp *op, csh handle, cs_insn *insn,
 				}
 			}
 		}
-#if 0
+#if 1
 		// TODO arch plugins should NOT set register values
-		set_src_dst (as->reg, r_vector_at (&op->dsts, 0), &handle, insn, --count, bits);
-		int j;
+		set_src_dst (r_vector_at (&op->dsts, 0), &handle, insn, --count, bits);
 		for (j = 0; j < 3 && j < count; j++) {
-			set_src_dst (as->reg, r_vector_at (&op->srcs, j), &handle, insn, j, bits);
+			set_src_dst (r_vector_at (&op->srcs, j), &handle, insn, j, bits);
 		}
 #endif
 		break;

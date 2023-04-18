@@ -85,14 +85,14 @@ R_API bool r_debug_trace_ins_before(RDebug *dbg) {
 				ut64 addr = 0;
 				addr += val->delta;
 				if (val->seg) {
-					addr += r_reg_get_value (dbg->reg, val->seg);
+					addr += r_reg_getv (dbg->reg, val->seg);
 				}
 				if (val->reg) {
-					addr += r_reg_get_value (dbg->reg, val->reg);
+					addr += r_reg_getv (dbg->reg, val->reg);
 				}
 				if (val->regdelta) {
 					int mul = val->mul ? val->mul : 1;
-					addr += mul * r_reg_get_value (dbg->reg, val->regdelta);
+					addr += mul * r_reg_getv (dbg->reg, val->regdelta);
 				}
 				// resolve address into base for ins_after
 				val->base = addr;
@@ -124,10 +124,13 @@ R_API bool r_debug_trace_ins_after(RDebug *dbg) {
 				R_LOG_ERROR ("invalid register, unable to trace register state");
 				continue;
 			}
-			ut64 data = r_reg_get_value (dbg->reg, val->reg);
+			ut64 data = r_reg_getv (dbg->reg, val->reg);
 
 			// add reg write
-			r_debug_session_add_reg_change (dbg->session, val->reg->arena, val->reg->offset, data);
+			RRegItem *ri = r_reg_get (dbg->reg, val->reg, R_REG_TYPE_GPR);
+			if (ri) {
+				r_debug_session_add_reg_change (dbg->session, ri->arena, ri->offset, data);
+			}
 			break;
 		}
 		case R_ANAL_VAL_MEM:

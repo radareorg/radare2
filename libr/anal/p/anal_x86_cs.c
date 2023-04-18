@@ -1522,8 +1522,8 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 			{
 			src = getarg (&gop, 0, 0, NULL, NULL);
 			val = r_vector_push (&op->srcs, NULL);
-			val->reg = r_reg_get (a->reg, src, R_REG_TYPE_GPR);
-			free (src);
+			val->reg = src; // r_reg_get (a->reg, src, R_REG_TYPE_GPR);
+			/// XXX leak free (src);
 			}
 		//case X86_OP_FP:
 		default: // other?
@@ -2376,12 +2376,15 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 }
 
 // R2_590 - return const char * to avoid derefs
-static RRegItem *cs_reg2reg(RReg *reg, csh *h, int id) {
+static const char *cs_reg2reg(RReg *reg, csh *h, int id) {
 	if (id == X86_REG_INVALID) {
 		return NULL;
 	}
+	return cs_reg_name (*h, id);
+#if 0
 	RRegItem *ri = r_reg_get (reg, (char *)cs_reg_name (*h, id), -1);
 	return ri;
+#endif
 }
 
 static void set_access_info(RReg *reg, RAnalOp *op, csh *handle, cs_insn *insn, int mode) {
@@ -2559,11 +2562,11 @@ static void set_access_info(RReg *reg, RAnalOp *op, csh *handle, cs_insn *insn, 
 					val->delta += insn->size;
 				}
 				val->memref = INSOP (i).size;
-				r_unref (val->seg);
+				//r_unref (val->seg);
 				val->seg = cs_reg2reg (reg, handle, INSOP (i).mem.segment);
-				r_unref (val->reg);
+				//r_unref (val->reg);
 				val->reg = cs_reg2reg (reg, handle, INSOP (i).mem.base);
-				r_unref (val->regdelta);
+				//r_unref (val->regdelta);
 				val->regdelta = cs_reg2reg (reg, handle, INSOP (i).mem.index);
 				r_list_append (ret, val);
 			}
@@ -2588,15 +2591,15 @@ static void set_src_dst(RReg *reg, RAnalValue *val, csh *handle, cs_insn *insn, 
 		val->mul = INSOP (x).mem.scale;
 		val->delta = INSOP (x).mem.disp;
 		val->memref = INSOP (x).size;
-		r_unref (val->seg);
+		// r_unref (val->seg);
 		val->seg = cs_reg2reg (reg, handle, INSOP (x).mem.segment);
-		r_unref (val->reg);
+		//r_unref (val->reg);
 		val->reg = cs_reg2reg (reg, handle, INSOP (x).mem.base);
-		r_unref (val->regdelta);
+		//r_unref (val->regdelta);
 		val->regdelta = cs_reg2reg (reg, handle, INSOP (x).mem.index);
 		break;
 	case X86_OP_REG:
-		r_unref (val->reg);
+		// r_unref (val->reg);
 		val->reg = cs_reg2reg (reg, handle, INSOP (x).reg);
 		break;
 	case X86_OP_IMM:

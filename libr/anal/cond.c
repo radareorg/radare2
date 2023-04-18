@@ -32,8 +32,10 @@ R_API void r_anal_cond_fini(RAnalCond *c) {
 	if (!c) {
 		return;
 	}
+#if 0
 	r_anal_value_free (c->arg[0]);
 	r_anal_value_free (c->arg[1]);
+#endif
 	c->arg[0] = c->arg[1] = NULL;
 }
 

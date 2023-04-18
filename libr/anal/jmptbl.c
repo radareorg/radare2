@@ -189,10 +189,10 @@ R_API bool try_walkthrough_jmptbl(RAnal *anal, RAnalFunction *fcn, RAnalBlock *b
 	if (!jmptbl) {
 		return false;
 	}
-	const char *sarch = R_UNWRAP3 (anal, cur, arch);
+	const char *sarch = R_UNWRAP4 (anal, arch, session, arch);
 	bool is_arm = sarch ? r_str_startswith (sarch, "arm"): false;
 	bool is_x86 = !is_arm && r_str_startswith (sarch, "x86");
-	const bool is_v850 = !is_arm && !is_x86 && ((sarch && !strncmp (sarch, "v850", 4)) || r_str_startswith (anal->coreb.cfgGet (anal->coreb.core, "asm.cpu"), "v850"));
+	const bool is_v850 = !is_arm && !is_x86 && (sarch && !strncmp (sarch, "v850", 4)) || !strncmp (anal->coreb.cfgGet (anal->coreb.core, "asm.cpu"), "v850", 4);
 	// eprintf ("JMPTBL AT 0x%"PFMT64x"\n", jmptbl_loc);
 	anal->iob.read_at (anal->iob.io, jmptbl_loc, jmptbl, jmptblsz);
 	for (offs = 0; offs + sz - 1 < jmptbl_size * sz; offs += sz) {
@@ -269,7 +269,7 @@ static bool detect_casenum_shift(RAnalOp *op, RRegItem **cmp_reg, st64 *start_ca
 	}
 	RAnalValue *dst = r_vector_at (&op->dsts, 0);
 	RAnalValue *src = r_vector_at (&op->srcs, 0);
-	if (dst && dst->reg && dst->reg->offset == (*cmp_reg)->offset) {
+	if (dst && dst->reg) { //  && dst->reg->offset == (*cmp_reg)->offset) {
 		if (op->type == R_ANAL_OP_TYPE_LEA && op->ptr == UT64_MAX) {
 			*start_casenum_shift = -(st64)op->disp;
 		} else if (op->val != UT64_MAX) {
@@ -557,7 +557,7 @@ R_API bool try_get_jmptbl_info(RAnal *anal, RAnalFunction *fcn, ut64 addr, RAnal
 			r_anal_op_fini (&tmp_aop);
 		}
 	}
-	r_unref (cmp_reg);
+	//r_unref (cmp_reg);
 	free (bb_buf);
 	// eprintf ("switch at 0x%" PFMT64x "\n\tdefault case 0x%" PFMT64x "\n\t#cases: %d\n",
 	// 		addr,
