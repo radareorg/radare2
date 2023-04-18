@@ -408,7 +408,6 @@ static void set_color_default(RCore *r) {
 	}
 }
 
-
 typedef struct {
 	char *filepath;
 	ut64 baddr;
@@ -418,12 +417,14 @@ typedef struct {
 } ThreadData;
 
 static void perform_analysis(RCore *r, int do_analysis) {
+	const char *acmd = "aaaaa";
 	switch (do_analysis) {
-	case 1: r_core_cmd0 (r, "aa"); break;
-	case 2: r_core_cmd0 (r, "aaa"); break;
-	case 3: r_core_cmd0 (r, "aaaa"); break;
-	default: r_core_cmd0 (r, "aaaaa"); break;
+	case 0: acmd = ""; break;
+	case 1: acmd = "aa"; break;
+	case 2: acmd = "aaa"; break;
+	case 3: acmd = "aaaa"; break;
 	}
+	r_core_cmd_call (r, acmd);
 	r_cons_flush ();
 }
 
