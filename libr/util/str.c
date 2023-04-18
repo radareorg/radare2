@@ -37,7 +37,7 @@ R_API int r_str_casecmp(const char *s1, const char *s2) {
 	if (!s1) {
 		return -1;
 	}
-	if (s1 && !s2) {
+	if (R_UNLIKELY (!s2)) {
 		return 1;
 	}
 #ifdef _MSC_VER
@@ -1989,13 +1989,12 @@ R_API size_t r_str_ansi_len(const char *str) {
 }
 
 R_API size_t r_str_nlen(const char *str, int n) {
+	r_return_val_if_fail (str, 0);
 	size_t len = 0;
-	if (str) {
-		while (n > 0 && *str) {
-			len++;
-			str++;
-			n--;
-		}
+	while (n > 0 && *str) {
+		len++;
+		str++;
+		n--;
 	}
 	return len;
 }

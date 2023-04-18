@@ -50,12 +50,38 @@ static inline void init_head(RSkipListNode *head) {
 //       elements, when provided.
 static RSkipListNode *find_insertpoint(const RSkipList *list, void *data, RSkipListNode **updates, bool by_data) {
 	RSkipListNode *x = list->head;
+#if 1
+	int i = list->list_level;
+	if (by_data) {
+		for (; i >= 0; i--) {
+			RSkipListNode *fi = x->forward[i];
+			while (fi != list->head && list->compare (fi->data, data) < 0) {
+				x = fi;
+				fi = x->forward[i];
+			}
+			if (updates) {
+				updates[i] = x;
+			}
+		}
+	} else {
+		for (; i >= 0; i--) {
+			RSkipListNode *fi = x->forward[i];
+			while (fi != list->head && fi != data) {
+				x = fi;
+				fi = x->forward[i];
+			}
+			if (updates) {
+				updates[i] = x;
+			}
+		}
+	}
+#else
 	int i;
 
 	for (i = list->list_level; i >= 0; i--) {
 		if (by_data) {
 			while (x->forward[i] != list->head
-				&& list->compare (x->forward[i]->data, data) < 0) {
+					&& list->compare (x->forward[i]->data, data) < 0) {
 				x = x->forward[i];
 			}
 		} else {
@@ -67,6 +93,7 @@ static RSkipListNode *find_insertpoint(const RSkipList *list, void *data, RSkipL
 			updates[i] = x;
 		}
 	}
+#endif
 	x = x->forward[0];
 	return x;
 }
@@ -78,7 +105,7 @@ static bool delete_element(RSkipList* list, void* data, bool by_data) {
 	// locate delete points in the lists of all levels
 	RSkipListNode *x = find_insertpoint (list, data, update, by_data);
 	// do nothing if the element is not present in the list
-	if (x == list->head || list->compare(x->data, data) != 0) {
+	if (x == list->head || list->compare (x->data, data) != 0) {
 		return false;
 	}
 
@@ -237,10 +264,17 @@ R_API RSkipListNode* r_skiplist_find_leq(RSkipList* list, void* data) {
 	int i;
 
 	for (i = list->list_level; i >= 0; i--) {
-		while (x->forward[i] != list->head
-			&& list->compare (x->forward[i]->data, data) <= 0) {
+#if 0
+		while (x->forward[i] != list->head && x->forward[i] != data) {
 			x = x->forward[i];
 		}
+#else
+		RSkipListNode *fi = x->forward[i];
+		while (fi != list->head && list->compare (fi->data, data) <= 0) {
+			x = fi;
+			fi = x->forward[i];
+		}
+#endif
 	}
 	return x != list->head ? x : NULL;
 }
