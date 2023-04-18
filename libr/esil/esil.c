@@ -512,9 +512,9 @@ R_API int r_esil_get_parm_type(REsil *esil, const char *str) {
 	if (!((IS_DIGIT (str[0])) || str[0] == '-')) {
 		return not_a_number (esil, str);
 	}
-	int i, len = strlen (str);
-	for (i = 1; i < len; i++) {
-		if (!(IS_DIGIT (str[i]))) {
+	size_t i;
+	for (i = 1; str[i]; i++) {
+		if (!IS_DIGIT (str[i])) {
 			return not_a_number (esil, str);
 		}
 	}
@@ -1887,9 +1887,11 @@ static bool esil_add(REsil *esil) {
 	ut64 s, d;
 	char *dst = r_esil_pop (esil);
 	char *src = r_esil_pop (esil);
-	if ((src && r_esil_get_parm (esil, src, &s)) && (dst && r_esil_get_parm (esil, dst, &d))) {
-		r_esil_pushnum (esil, s + d);
-		ret = true;
+	if (R_LIKELY (src && dst)) {
+		if (r_esil_get_parm (esil, src, &s) && r_esil_get_parm (esil, dst, &d)) {
+			r_esil_pushnum (esil, s + d);
+			ret = true;
+		}
 	} else {
 		R_LOG_DEBUG ("esil_add: invalid parameters");
 	}
@@ -3597,7 +3599,7 @@ static const char *gotoWord(const char *str, int n) {
  * 2: continue in loop
  * 3: normal continuation
  */
-static int evalWord(REsil *esil, const char *ostr, const char **str) {
+static int eval_word(REsil *esil, const char *ostr, const char **str) {
 	r_return_val_if_fail (esil && str, 0);
 	if (!*str) {
 		return 0;
@@ -3689,8 +3691,7 @@ repeat:
 		if (*str == ';') {
 			word[wordi] = 0;
 			dorunword = 1;
-		}
-		if (*str == ',') {
+		} else if (*str == ',') {
 			word[wordi] = 0;
 			dorunword = 2;
 		}
@@ -3701,7 +3702,7 @@ repeat:
 				}
 				word[wordi] = ',';
 				wordi = 0;
-				switch (evalWord (esil, ostr, &str)) {
+				switch (eval_word (esil, ostr, &str)) {
 				case 0: goto loop;
 				case 1: goto step_out;
 				case 2: continue;
@@ -3712,10 +3713,11 @@ repeat:
 			}
 			str++;
 		}
-		word[wordi++] = *str;
-		//is *str is '\0' in the next iteration the condition will be true
-		//reading beyond the boundaries
-		if (*str) {
+		const char str0 = *str;
+		word[wordi++] = str0;
+		// is *str is '\0' in the next iteration the condition will be true
+		// reading beyond the boundaries
+		if (str0) {
 			str++;
 		}
 	}
@@ -3727,7 +3729,7 @@ repeat:
 		if (!runword (esil, word)) {
 			goto step_out;
 		}
-		switch (evalWord (esil, ostr, &str)) {
+		switch (eval_word (esil, ostr, &str)) {
 		case 0: goto loop;
 		case 1: goto step_out;
 		case 2: goto repeat;
@@ -3743,7 +3745,7 @@ step_out:
 R_API bool r_esil_runword(REsil *esil, const char *word) {
 	const char *str = NULL;
 	if (runword (esil, word)) {
-		(void)evalWord (esil, word, &str);
+		(void)eval_word (esil, word, &str);
 		return true;
 	}
 	return false;
