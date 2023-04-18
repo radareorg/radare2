@@ -278,10 +278,9 @@ R_API bool r_rbtree_aug_update_sum(RBNode *root, void *data, RBNode *node, RBCom
 		if (cur == node) {
 			break;
 		}
-		int direction = cmp (data, cur, cmp_user);
+		const int direction = cmp (data, cur, cmp_user);
 		cur = cur->child[(direction < 0)? 0: 1];
 	}
-
 	for (; depth > 0; depth--) {
 		sum (path[depth - 1]);
 	}
@@ -294,7 +293,7 @@ R_API bool r_rbtree_delete(RBNode **root, void *data, RBComparator cmp, void *cm
 
 R_API RBNode *r_rbtree_find(RBNode *x, void *data, RBComparator cmp, void *user) {
 	while (x) {
-		int direction = cmp (data, x, user);
+		const int direction = cmp (data, x, user);
 		if (direction < 0) {
 			x = x->child[0];
 		} else if (direction > 0) {
