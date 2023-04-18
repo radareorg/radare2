@@ -85,6 +85,7 @@ R_API int r_anal_opasm(RAnal *anal, ut64 addr, const char *s, ut8 *outbuf, int o
 			memcpy (outbuf, op->bytes, finlen);
 		} else {
 			r_anal_op_free (op);
+			eprintf ("Je puta\n");
 			ret = -1;
 			goto beach;
 		}

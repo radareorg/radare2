@@ -11,6 +11,8 @@
 typedef char RStringShort[32];
 
 typedef struct plugin_data_t {
+	int bits;
+	char *cpu;
 	csh cs_handle;
 	HtUU *ht_itblock;
 	HtUU *ht_it;
@@ -4594,7 +4596,23 @@ static int analop(RArchSession *as, RAnalOp *op, ut64 addr, const ut8* buf, int 
 	return op->size;
 }
 
+static bool fini(RArchSession *as);
+static bool init(RArchSession *as);
+static bool diffcpu(RArchSession *as, const char *cpu) {
+	if (as->config->cpu) {
+		if (!cpu || strcmp (cpu, as->config->cpu)) {
+			return true;
+		}
+	}
+	return false;
+}
+
 static bool decode(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
+	PluginData *pd = (PluginData*) as->data;
+	if (as->config->bits != pd->bits || diffcpu (as, pd->cpu)) {
+		fini (as);
+		init (as);
+	}
 	return analop (as, op, op->addr, op->bytes, op->size, mask) >= 1;
 }
 
@@ -4739,7 +4757,7 @@ static ut8 *anal_mask(RArchSession *as, int size, const ut8 *data, ut64 at) {
 		idx += oplen;
 	}
 
-	as->config->bits = oldbits;
+	// as->config->bits = oldbits;
 	r_anal_op_free (op);
 
 	return ret;
@@ -4841,9 +4859,9 @@ extern char *r_arm64_cs_mnemonics(RArchSession *as, csh *cs_handle, int id, bool
 static char *arm_mnemonics(RArchSession *as, int id, bool json) {
 	csh *cs_handle = cs_handle_for_session (as);
 	if (as->config->bits == 64) {
-		return r_arm64_cs_mnemonics(as, cs_handle, id, json);
+		return r_arm64_cs_mnemonics (as, cs_handle, id, json);
 	}
-	return r_arm_cs_mnemonics(as, cs_handle, id, json);
+	return r_arm_cs_mnemonics (as, cs_handle, id, json);
 }
 
 extern bool r_arm_arch_cs_init(RArchSession *as, csh *cs_handle);
@@ -4851,9 +4869,9 @@ extern bool r_arm64_arch_cs_init(RArchSession *as, csh *cs_handle);
 
 static inline bool cs_init(RArchSession *as, csh *cs_handle) {
 	if (as->config->bits == 64) {
-		return r_arm64_arch_cs_init(as, cs_handle);
+		return r_arm64_arch_cs_init (as, cs_handle);
 	}
-	return r_arm_arch_cs_init(as, cs_handle);
+	return r_arm_arch_cs_init (as, cs_handle);
 }
 
 static bool init(RArchSession* as) {
@@ -4862,7 +4880,6 @@ static bool init(RArchSession* as) {
 		R_LOG_WARN ("Already initialized");
 		return false;
 	}
-
 	as->data = R_NEW0 (PluginData);
 	csh *cs_handle = cs_handle_for_session (as);
 	if (!cs_init (as, cs_handle)) {
@@ -4872,6 +4889,8 @@ static bool init(RArchSession* as) {
 	}
 
 	PluginData *pd = (PluginData*) as->data;
+	pd->bits = as->config->bits;
+	pd->cpu = as->config->cpu? strdup (as->config->cpu): NULL;
 	pd->ht_it = ht_uu_new0 ();
 	if (!pd->ht_it) {
 		R_LOG_ERROR ("Cannot initialize 'ht_it'");
