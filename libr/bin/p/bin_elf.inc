@@ -355,7 +355,6 @@ static const char *elf_section_type_tostring(int shtype) {
 
 static RList* sections(RBinFile *bf) {
 	ELFOBJ *obj = (bf && bf->o)? bf->o->bin_obj : NULL;
-	struct r_bin_elf_section_t *section = NULL;
 	int i, found_load = 0;
 	RBinSection *ptr = NULL;
 	if (!obj) {
@@ -368,30 +367,33 @@ static RList* sections(RBinFile *bf) {
 	if (!ret) {
 		return NULL;
 	}
-	// XXX this function is called many times results must be cached.
+	// XXX this function is called many times, results must be cached.
 
-	// there is not leak in section since they are cached by elf.c
+	// there is no leak here with sections since they are cached by elf.c
 	// and freed within Elf_(r_bin_elf_free)
-	if ((section = Elf_(r_bin_elf_get_sections) (obj))) {
-		for (i = 0; !section[i].last; i++) {
+	const RVector *sections = Elf_(r_bin_elf_load_sections) (obj);
+	if (sections) {
+		RBinElfSection *section;
+		i = 0;
+		r_vector_foreach (sections, section) {
 			if (!(ptr = R_NEW0 (RBinSection))) {
 				break;
 			}
-			ptr->name = strdup ((char*)section[i].name);
+			ptr->name = strdup ((char*)section->name);
 			ptr->is_data = is_data_section (ptr->name);
 			if (is_wordable_section (ptr->name)) {
 				ptr->format = r_str_newf ("Cd %d[%"PFMT64d"]",
-					R_BIN_ELF_WORDSIZE, section[i].size / R_BIN_ELF_WORDSIZE);
+					R_BIN_ELF_WORDSIZE, section->size / R_BIN_ELF_WORDSIZE);
 			}
-			ptr->size = section[i].type != SHT_NOBITS ? section[i].size : 0;
-			ptr->vsize = section[i].size;
-			ptr->paddr = section[i].offset;
-			ptr->vaddr = section[i].rva;
-			ptr->type = elf_section_type_tostring (section[i].type);
+			ptr->size = section->type != SHT_NOBITS ? section->size : 0;
+			ptr->vsize = section->size;
+			ptr->paddr = section->offset;
+			ptr->vaddr = section->rva;
+			ptr->type = elf_section_type_tostring (section->type);
 			ptr->add = !obj->phdr; // Load sections if there is no PHDR
-			ptr->perm = elf_flags_to_section_perms (section[i].flags);
+			ptr->perm = elf_flags_to_section_perms (section->flags);
 #if 0
-TODO: ptr->flags = elf_flags_tostring (section[i].flags);
+TODO: ptr->flags = elf_flags_tostring (section->flags);
 #define SHF_WRITE	     (1 << 0)	/* Writable */
 #define SHF_ALLOC	     (1 << 1)	/* Occupies memory during execution */
 #define SHF_EXECINSTR	     (1 << 2)	/* Executable */
@@ -410,6 +412,7 @@ TODO: ptr->flags = elf_flags_tostring (section[i].flags);
 #define SHF_EXCLUDE	     (1U << 31)	/* Section is excluded unless */
 #endif
 			r_list_append (ret, ptr);
+			i++;
 		}
 	}
 
