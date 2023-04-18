@@ -741,11 +741,11 @@ static int init_dynamic_section(ELFOBJ *bin) {
 }
 
 static RBinElfSection* get_section_by_name(ELFOBJ *bin, const char *section_name) {
-	if (bin->g_sections) {
-		size_t i;
-		for (i = 0; !bin->g_sections[i].last; i++) {
-			if (!strncmp (bin->g_sections[i].name, section_name, ELF_STRING_LENGTH - 1)) {
-				return &bin->g_sections[i];
+	if (bin->sections_loaded) {
+		RBinElfSection *section;
+		r_vector_foreach (&bin->g_sections, section) {
+			if (!strncmp (section->name, section_name, ELF_STRING_LENGTH - 1)) {
+				return section;
 			}
 		}
 	}
@@ -1406,7 +1406,7 @@ static bool elf_init(ELFOBJ *bin) {
 	bin->imports_by_ord = NULL;
 	bin->symbols_by_ord_size = 0;
 	bin->symbols_by_ord = NULL;
-	bin->g_sections = Elf_(r_bin_elf_get_sections) (bin);
+	(void) Elf_(r_bin_elf_load_sections) (bin);
 	bin->boffset = Elf_(r_bin_elf_get_boffset) (bin);
 	bin->g_relocs = Elf_(r_bin_elf_get_relocs) (bin);
 	bin->rel_cache = rel_cache_new (bin->g_relocs, bin->g_reloc_num);
@@ -2060,10 +2060,10 @@ bool Elf_(r_bin_elf_get_stripped)(ELFOBJ *bin) {
 	if (!bin->shdr) {
 		return true;
 	}
-	if (bin->g_sections) {
-		size_t i;
-		for (i = 0; !bin->g_sections[i].last; i++) {
-			if (!strcmp (bin->g_sections[i].name, ".gnu_debugdata")) {
+	if (bin->sections_loaded) {
+		RBinElfSection *section;
+		r_vector_foreach (&bin->g_sections, section) {
+			if (!strcmp (section->name, ".gnu_debugdata")) {
 				return false;
 			}
 		}
@@ -2761,12 +2761,14 @@ char *Elf_(r_bin_elf_get_rpath)(ELFOBJ *bin) {
 }
 
 static bool has_valid_section_header(ELFOBJ *bin, size_t pos) {
-	return bin->g_sections[pos].info < bin->ehdr.e_shnum && bin->shdr;
+	RBinElfSection *section = r_vector_at (&bin->g_sections, pos);
+	return section->info < bin->ehdr.e_shnum && bin->shdr;
 }
 
 static void fix_rva_and_offset_relocable_file(ELFOBJ *bin, RBinElfReloc *r, size_t pos) {
 	if (has_valid_section_header (bin, pos)) {
-		size_t idx = bin->g_sections[pos].info;
+		RBinElfSection *section = r_vector_at (&bin->g_sections, pos);
+		size_t idx = section->info;
 		if (idx < bin->ehdr.e_shnum) {
 			ut64 pa = bin->shdr[idx].sh_offset + r->offset;
 			r->offset = pa;
@@ -2841,15 +2843,16 @@ static size_t get_num_relocs_dynamic(ELFOBJ *bin) {
 	return res + get_num_relocs_dynamic_plt (bin);
 }
 
-static bool sectionIsValid(ELFOBJ *bin, RBinElfSection *sect) {
+static bool section_is_valid(ELFOBJ *bin, RBinElfSection *sect) {
 	return (sect->offset + sect->size <= bin->size);
 }
 
 static Elf_(Xword) get_section_mode(ELFOBJ *bin, size_t pos) {
-	if (r_str_startswith (bin->g_sections[pos].name, ".rela.")) {
+	RBinElfSection *section = r_vector_at (&bin->g_sections, pos);
+	if (r_str_startswith (section->name, ".rela.")) {
 		return DT_RELA;
 	}
-	if (r_str_startswith (bin->g_sections[pos].name, ".rel.")) {
+	if (r_str_startswith (section->name, ".rel.")) {
 		return DT_REL;
 	}
 	return 0;
@@ -2863,20 +2866,25 @@ static size_t get_num_relocs_sections(ELFOBJ *bin) {
 	size_t i, size, ret = 0;
 	Elf_(Xword) rel_mode;
 
-	if (!bin->g_sections) {
+	if (!bin->sections_loaded) {
 		return 0;
 	}
 
-	for (i = 0; !bin->g_sections[i].last; i++) {
-		if (!sectionIsValid (bin, &bin->g_sections[i])) {
+	i = 0;
+	RBinElfSection *section;
+	r_vector_foreach (&bin->g_sections, section) {
+		if (!section_is_valid (bin, section)) {
+			i++;
 			continue;
 		}
 		rel_mode = get_section_mode (bin, i);
 		if (!is_reloc_section (rel_mode)) {
+			i++;
 			continue;
 		}
 		size = get_size_rel_mode (rel_mode);
-		ret += NUMENTRIES_ROUNDUP (bin->g_sections[i].size, size);
+		ret += NUMENTRIES_ROUNDUP (section->size, size);
+		i++;
 	}
 
 	return ret;
@@ -2943,30 +2951,34 @@ static size_t populate_relocs_record_from_section(ELFOBJ *bin, RBinElfReloc *rel
 	size_t size, i, j;
 	Elf_(Xword) rel_mode;
 
-	if (!bin->g_sections) {
+	if (!bin->sections_loaded) {
 		return pos;
 	}
 
-	for (i = 0; !bin->g_sections[i].last; i++) {
+	RBinElfSection *section;
+	i = 0;
+	r_vector_foreach (&bin->g_sections, section) {
 		rel_mode = get_section_mode (bin, i);
 
-		if (!is_reloc_section (rel_mode) || bin->g_sections[i].size > bin->size || bin->g_sections[i].offset > bin->size) {
+		if (!is_reloc_section (rel_mode) || section->size > bin->size || section->offset > bin->size) {
+			i++;
 			continue;
 		}
 
 		size = get_size_rel_mode (rel_mode);
 
-		for (j = get_next_not_analysed_offset (bin, bin->g_sections[i].rva, 0);
-			j < bin->g_sections[i].size && pos < num_relocs;
-			j = get_next_not_analysed_offset (bin, bin->g_sections[i].rva, j + size)) {
+		for (j = get_next_not_analysed_offset (bin, section->rva, 0);
+			j < section->size && pos < num_relocs;
+			j = get_next_not_analysed_offset (bin, section->rva, j + size)) {
 
-			if (!read_reloc (bin, relocs + pos, rel_mode, bin->g_sections[i].rva + j)) {
+			if (!read_reloc (bin, relocs + pos, rel_mode, section->rva + j)) {
 				break;
 			}
 
 			fix_rva_and_offset (bin, relocs + pos, i);
 			pos++;
 		}
+		i++;
 	}
 
 	return pos;
@@ -3044,21 +3056,20 @@ RBinElfLib* Elf_(r_bin_elf_get_libs)(ELFOBJ *bin) {
 	return ret;
 }
 
-static void create_section_from_phdr(ELFOBJ *bin, RBinElfSection *ret, size_t *i, const char *name, ut64 addr, ut64 sz) {
-	r_return_if_fail (bin && ret && i);
+static void create_section_from_phdr(ELFOBJ *bin, const char *name, ut64 addr, ut64 sz) {
+	r_return_if_fail (bin);
 	if (!addr || addr == UT64_MAX) {
 		return;
 	}
-	ret[*i].offset = Elf_(r_bin_elf_v2p_new) (bin, addr);
-	ret[*i].rva = addr;
-	ret[*i].size = sz;
-	r_str_ncpy (ret[*i].name, name, R_ARRAY_SIZE (ret[*i].name) - 1);
-	ret[*i].last = 0;
-	*i = *i + 1;
+
+	RBinElfSection *section = r_vector_end (&bin->g_sections);
+	section->offset = Elf_(r_bin_elf_v2p_new) (bin, addr);
+	section->rva = addr;
+	section->size = sz;
+	r_str_ncpy (section->name, name, R_ARRAY_SIZE (section->name) - 1);
 }
 
-static RBinElfSection *get_sections_from_phdr(ELFOBJ *bin) {
-	RBinElfSection *ret;
+static const RVector *load_sections_from_phdr(ELFOBJ *bin) {
 	size_t num_sections = 0;
 	ut64 reldyn = 0, relava = 0, pltgotva = 0, relva = 0;
 	ut64 reldynsz = 0, relasz = 0, pltgotsz = 0;
@@ -3093,53 +3104,55 @@ static RBinElfSection *get_sections_from_phdr(ELFOBJ *bin) {
 		num_sections++;
 	}
 
-	ret = calloc (num_sections + 1, sizeof (RBinElfSection));
-	if (!ret) {
+	if (!r_vector_reserve (&bin->g_sections, num_sections)) {
 		return NULL;
 	}
 
-	size_t i = 0;
-	create_section_from_phdr (bin, ret, &i, ".rel.dyn", reldyn, reldynsz);
-	create_section_from_phdr (bin, ret, &i, ".rela.plt", relava, pltgotsz);
-	create_section_from_phdr (bin, ret, &i, ".rel.plt", relva, relasz);
-	create_section_from_phdr (bin, ret, &i, ".got.plt", pltgotva, pltgotsz);
-	ret[i].last = 1;
-
-	return ret;
+	create_section_from_phdr (bin, ".rel.dyn", reldyn, reldynsz);
+	create_section_from_phdr (bin, ".rela.plt", relava, pltgotsz);
+	create_section_from_phdr (bin, ".rel.plt", relva, relasz);
+	create_section_from_phdr (bin, ".got.plt", pltgotva, pltgotsz);
+	return &bin->g_sections;
 }
 
-RBinElfSection* Elf_(r_bin_elf_get_sections)(ELFOBJ *bin) {
-	RBinElfSection *ret = NULL;
+const RVector* Elf_(r_bin_elf_load_sections)(ELFOBJ *bin) {
 	char unknown_s[32], invalid_s[32];
 	int i, nidx, unknown_c = 0, invalid_c = 0;
 
 	r_return_val_if_fail (bin, NULL);
-	if (bin->g_sections) {
-		return bin->g_sections;
+	if (bin->sections_loaded) {
+		return &bin->g_sections;
 	}
+
+	bin->sections_loaded = true;
+	r_vector_init (&bin->g_sections, sizeof (RBinElfSection), NULL, NULL);
+
 	if (!bin->shdr && bin->phdr) {
-		//we don't give up search in phdr section
-		return get_sections_from_phdr (bin);
+		// we don't give up search in phdr section
+		return load_sections_from_phdr (bin);
 	}
+
 	if (!bin->shdr) {
 		return NULL;
 	}
+
 	ut32 count = bin->ehdr.e_shnum;
-	if (!(ret = calloc ((count + 1), sizeof (RBinElfSection)))) {
+	if (!r_vector_reserve (&bin->g_sections, count)) {
 		return NULL;
 	}
 	for (i = 0; i < count; i++) {
-		ret[i].offset = bin->shdr[i].sh_offset;
-		ret[i].size = bin->shdr[i].sh_size;
-		ret[i].align = bin->shdr[i].sh_addralign;
-		ret[i].flags = bin->shdr[i].sh_flags;
-		ret[i].link = bin->shdr[i].sh_link;
-		ret[i].info = bin->shdr[i].sh_info;
-		ret[i].type = bin->shdr[i].sh_type;
+		RBinElfSection *section = r_vector_end (&bin->g_sections);
+		section->offset = bin->shdr[i].sh_offset;
+		section->size = bin->shdr[i].sh_size;
+		section->align = bin->shdr[i].sh_addralign;
+		section->flags = bin->shdr[i].sh_flags;
+		section->link = bin->shdr[i].sh_link;
+		section->info = bin->shdr[i].sh_info;
+		section->type = bin->shdr[i].sh_type;
 		if (is_bin_etrel (bin)) {
-			ret[i].rva = bin->baddr + bin->shdr[i].sh_offset;
+			section->rva = bin->baddr + bin->shdr[i].sh_offset;
 		} else {
-			ret[i].rva = bin->shdr[i].sh_addr;
+			section->rva = bin->shdr[i].sh_addr;
 		}
 
 		const int SHNAME = (int)bin->shdr[i].sh_name;
@@ -3147,23 +3160,21 @@ RBinElfSection* Elf_(r_bin_elf_get_sections)(ELFOBJ *bin) {
 		nidx = SHNAME;
 		if (nidx < 0 || !bin->shstrtab_section || !bin->shstrtab_size || nidx > bin->shstrtab_size) {
 			snprintf (invalid_s, sizeof (invalid_s), "invalid%d", invalid_c);
-			strncpy (ret[i].name, invalid_s, sizeof (ret[i].name) - 1);
+			strncpy (section->name, invalid_s, sizeof (section->name) - 1);
 			invalid_c++;
 		} else if (bin->shstrtab && (SHNAME > 0) && (SHNAME < SHSIZE)) {
-			strncpy (ret[i].name, &bin->shstrtab[SHNAME], sizeof (ret[i].name) - 1);
+			strncpy (section->name, &bin->shstrtab[SHNAME], sizeof (section->name) - 1);
 		} else if (bin->shdr[i].sh_type == SHT_NULL) {
 			//to follow the same behaviour as readelf
-			ret[i].name[0] = '\0';
+			section->name[0] = '\0';
 		} else {
 			snprintf (unknown_s, sizeof (unknown_s), "unknown%d", unknown_c);
-			strncpy (ret[i].name, unknown_s, sizeof (ret[i].name) - 1);
+			strncpy (section->name, unknown_s, sizeof (section->name) - 1);
 			unknown_c++;
 		}
-		ret[i].name[ELF_STRING_LENGTH - 1] = '\0';
-		ret[i].last = 0;
+		section->name[ELF_STRING_LENGTH - 1] = '\0';
 	}
-	ret[i].last = 1;
-	return ret;
+	return &bin->g_sections;
 }
 
 static bool is_special_arm_symbol(ELFOBJ *bin, Elf_(Sym) *sym, const char *name) {
@@ -3616,12 +3627,13 @@ static RBinElfSymbol* parse_gnu_debugdata(ELFOBJ *bin, size_t *ret_size) {
 	if (ret_size) {
 		*ret_size = 0;
 	}
-	if (bin->g_sections) {
-		size_t i;
-		for (i = 0; !bin->g_sections[i].last; i++) {
-			if (!strcmp (bin->g_sections[i].name, ".gnu_debugdata")) {
-				ut64 addr = bin->g_sections[i].offset;
-				ut64 size = bin->g_sections[i].size;
+	if (bin->sections_loaded) {
+		size_t i = 0;
+		RBinElfSection *section;
+		r_vector_foreach (&bin->g_sections, section) {
+			if (!strcmp (section->name, ".gnu_debugdata")) {
+				ut64 addr = section->offset;
+				ut64 size = section->size;
 				if (size < 10) {
 					return NULL;
 				}
@@ -3654,6 +3666,7 @@ static RBinElfSymbol* parse_gnu_debugdata(ELFOBJ *bin, size_t *ret_size) {
 				free (data);
 				return NULL;
 			}
+			i++;
 		}
 	}
 	return NULL;
@@ -4016,7 +4029,9 @@ void Elf_(r_bin_elf_free)(ELFOBJ* bin) {
 	if (bin->g_imports != bin->phdr_imports) {
 		R_FREE (bin->phdr_imports);
 	}
-	R_FREE (bin->g_sections);
+	if (bin->sections_loaded) {
+		r_vector_fini (&bin->g_sections);
+	}
 	R_FREE (bin->g_symbols);
 	R_FREE (bin->g_imports);
 	R_FREE (bin->g_relocs);
