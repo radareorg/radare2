@@ -2756,6 +2756,56 @@ static void set_opdir(RAnalOp *op, cs_insn *insn) {
 	}
 }
 
+static void inscmp(RAnalOp *op, ut64 addr, cs_insn *insn, int regsz) {
+	switch (INSOP(0).type) {
+	case X86_OP_MEM:
+		op->disp = INSOP(0).mem.disp;
+		op->refptr = INSOP(0).size;
+		if (INSOP(0).mem.base == X86_REG_RIP) {
+			op->ptr = addr + insn->size + op->disp;
+		} else if (INSOP(0).mem.base == X86_REG_RBP || INSOP(0).mem.base == X86_REG_EBP) {
+			op->stackop = R_ANAL_STACK_SET;
+			op->stackptr = regsz;
+			op->type |= R_ANAL_OP_TYPE_REG;
+		} else if (INSOP(0).mem.segment == X86_REG_INVALID && INSOP(0).mem.base == X86_REG_INVALID
+				&& INSOP(0).mem.index == X86_REG_INVALID && INSOP(0).mem.scale == 1) { // [<addr>]
+			op->ptr = op->disp;
+		}
+		if (INSOP(1).type == X86_OP_IMM) {
+			op->val = INSOP(1).imm;
+		}
+		break;
+	default:
+		switch (INSOP(1).type) {
+		case X86_OP_MEM:
+			op->disp = INSOP(1).mem.disp;
+			op->refptr = INSOP(1).size;
+			if (INSOP(1).mem.base == X86_REG_RIP) {
+				op->ptr = addr + insn->size + op->disp;
+			} else if (INSOP(1).mem.base == X86_REG_RBP || INSOP(1).mem.base == X86_REG_EBP) {
+				op->type |= R_ANAL_OP_TYPE_REG;
+				op->stackop = R_ANAL_STACK_SET;
+				op->stackptr = regsz;
+			} else if (INSOP(1).mem.segment == X86_REG_INVALID
+					&& INSOP(1).mem.base == X86_REG_INVALID
+					&& INSOP(1).mem.index == X86_REG_INVALID
+					&& INSOP(1).mem.scale == 1) { // [<addr>]
+				op->ptr = op->disp;
+			}
+			if (INSOP(0).type == X86_OP_IMM) {
+				op->val = INSOP(0).imm;
+			}
+			break;
+		case X86_OP_IMM:
+			op->val = op->ptr = INSOP(1).imm;
+			break;
+		default:
+			break;
+		}
+		break;
+	}
+}
+
 static void anop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh *handle, cs_insn *insn) {
 	int bits = a->config->bits;
 	struct Getarg gop = {
@@ -3140,59 +3190,12 @@ static void anop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh 
 	case X86_INS_CMPSQ:
 	case X86_INS_CMPSB:
 	case X86_INS_CMPSS:
+		op->type = R_ANAL_OP_TYPE_CMP;
+		inscmp (op, addr, insn, regsz);
+		break;
 	case X86_INS_TEST:
-		if (insn->id == X86_INS_TEST) {
-			op->type = R_ANAL_OP_TYPE_ACMP;					//compare via and
-		} else {
-			op->type = R_ANAL_OP_TYPE_CMP;
-		}
-		switch (INSOP(0).type) {
-		case X86_OP_MEM:
-			op->disp = INSOP(0).mem.disp;
-			op->refptr = INSOP(0).size;
-			if (INSOP(0).mem.base == X86_REG_RIP) {
-				op->ptr = addr + insn->size + op->disp;
-			} else if (INSOP(0).mem.base == X86_REG_RBP || INSOP(0).mem.base == X86_REG_EBP) {
-				op->stackop = R_ANAL_STACK_SET;
-				op->stackptr = regsz;
-				op->type |= R_ANAL_OP_TYPE_REG;
-			} else if (INSOP(0).mem.segment == X86_REG_INVALID && INSOP(0).mem.base == X86_REG_INVALID
-					&& INSOP(0).mem.index == X86_REG_INVALID && INSOP(0).mem.scale == 1) { // [<addr>]
-				op->ptr = op->disp;
-			}
-			if (INSOP(1).type == X86_OP_IMM) {
-				op->val = INSOP(1).imm;
-			}
-			break;
-		default:
-			switch (INSOP(1).type) {
-			case X86_OP_MEM:
-				op->disp = INSOP(1).mem.disp;
-				op->refptr = INSOP(1).size;
-				if (INSOP(1).mem.base == X86_REG_RIP) {
-					op->ptr = addr + insn->size + op->disp;
-				} else if (INSOP(1).mem.base == X86_REG_RBP || INSOP(1).mem.base == X86_REG_EBP) {
-					op->type |= R_ANAL_OP_TYPE_REG;
-					op->stackop = R_ANAL_STACK_SET;
-					op->stackptr = regsz;
-				} else if (INSOP(1).mem.segment == X86_REG_INVALID
-						&& INSOP(1).mem.base == X86_REG_INVALID
-						&& INSOP(1).mem.index == X86_REG_INVALID
-						&& INSOP(1).mem.scale == 1) { // [<addr>]
-					op->ptr = op->disp;
-				}
-				if (INSOP(0).type == X86_OP_IMM) {
-					op->val = INSOP(0).imm;
-				}
-				break;
-			case X86_OP_IMM:
-				op->val = op->ptr = INSOP(1).imm;
-				break;
-			default:
-				break;
-			}
-			break;
-		}
+		op->type = R_ANAL_OP_TYPE_ACMP; // compare via and
+		inscmp (op, addr, insn, regsz);
 		break;
 	case X86_INS_LEA:
 		op->type = R_ANAL_OP_TYPE_LEA;
