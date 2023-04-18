@@ -3543,7 +3543,7 @@ static bool is_valid_ordinal_table_size(ut64 size) {
 	return size > 0 && size <= UT16_MAX;
 }
 
-static inline bool _load_relocations(struct MACH0_(obj_t) *bin) {
+static bool _load_relocations(struct MACH0_(obj_t) *bin) {
 	RPVector *threaded_binds = NULL;
 	size_t wordsize = get_word_size (bin);
 	if (bin->dyld_info) {
@@ -3924,12 +3924,9 @@ const RSkipList *MACH0_(load_relocs)(struct MACH0_(obj_t) *bin) {
 	if (!bin->relocs_cache) {
 		return NULL;
 	}
-
-	bool is_success = _load_relocations (bin);
-	if (is_success) {
+	if (_load_relocations (bin)) {
 		return bin->relocs_cache;
 	}
-
 	return NULL;
 }
 

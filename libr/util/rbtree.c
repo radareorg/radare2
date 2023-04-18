@@ -53,13 +53,11 @@ static inline RBIter bound_iter(RBNode *x, void *data, RBComparator cmp, bool up
 	it.len = 0;
 	memset (it.path, 0, sizeof (RBNode *) * R_RBTREE_MAX_HEIGHT);
 	while (x) {
-		int d = cmp (data, x, user);
-
+		const int d = cmp (data, x, user);
 		if (d == 0) {
 			it.path[it.len++] = x;
 			return it;
 		}
-
 		if (d < 0) {
 			if (!upper) {
 				it.path[it.len++] = x;
