@@ -199,6 +199,7 @@ grub_real_dprintf (const char *file, const int line, const char *condition,
 		   const char *fmt, ...)
 {
   va_list args;
+  return;
   const char *debug = grub_env_get ("debug");
 
   if (! debug)

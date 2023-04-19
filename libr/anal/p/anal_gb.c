@@ -383,7 +383,7 @@ static void gb_anal_xoaasc(RReg *reg, RAnalOp *op, const ut8 *data) {
 		if (src0->memref) {
 			if (data[0] > 0x87) {
 				src1->reg = r_reg_get (reg, "C", R_REG_TYPE_GPR);
-				r_strbuf_setf ( &op->esil, "C,%s,[1],+,a,+=,$z,Z,:=,3,$c,H,:=,7,$c,C,:=,0,N,:=", regs_x[data[0] & 7]);
+				r_strbuf_setf (&op->esil, "C,%s,[1],+,a,+=,$z,Z,:=,3,$c,H,:=,7,$c,C,:=,0,N,:=", regs_x[data[0] & 7]);
 			} else {
 				r_strbuf_setf (&op->esil, "%s,[1],a,+=,$z,Z,:=,3,$c,H,:=,7,$c,C,:=,0,N,:=", regs_x[data[0] & 7]);
 			}
