@@ -376,7 +376,7 @@ grub_hfs_mount (grub_disk_t disk)
 			  0, (char *) &dir, sizeof (dir)) == 0)
     {
       grub_error (GRUB_ERR_BAD_FS, "cannot find the HFS root directory");
-      eprintf ("cannot find the HFS root directory");
+      eprintf ("cannot find the HFS root directory\n");
       goto fail;
     }
 
@@ -666,7 +666,8 @@ grub_hfs_iterate_records (struct grub_hfs_data *data, int type, int idx, int thi
 			  void *closure)
 {
   int nodesize = type == 0 ? data->cat_size : data->ext_size;
-#if GCC
+#if 0
+  // XXX this codei s wrong because uses dynamic size vars and this can be exploited to control the stack
   union
   {
     struct grub_hfs_node node;
@@ -717,8 +718,7 @@ if (!node.offsets) {
 	return grub_errno;
       }
 
-      if (grub_disk_read (data->disk, blk, 0,
-			      sizeof (node), &node)) {
+      if (grub_disk_read (data->disk, blk, 0, sizeof (node), &node)) {
 	      return grub_errno;
       }
 
@@ -732,22 +732,25 @@ if (!node.offsets) {
 	    grub_uint8_t keylen;
 	    grub_uint8_t key;
 	  }) *pnt;
-	  pnt = (struct pointer *) (grub_be_to_cpu16 (node.offsets[pos]) + node.rawnode);
-
+	  int off = grub_be_to_cpu16 (node.offsets[pos]);
+	  if (off > 1024) {
+		  eprintf ("prevented oobread\n");
+		  break;
+	  }
+	  pnt = (struct pointer *) (off + node.rawnode);
 	  struct grub_hfs_record rec =
 	    {
 	      &pnt->key,
 	      pnt->keylen,
 	      &pnt->key + pnt->keylen +(pnt->keylen + 1) % 2,
-	      nodesize - grub_be_to_cpu16 (node.offsets[pos])
-	      - pnt->keylen - 1
+	      nodesize - grub_be_to_cpu16 (node.offsets[pos]) - pnt->keylen - 1
 	    };
 
 	  if (node_hook (&node.node, &rec, closure)) {
-		  // free (node.rawnode);
-		  // free (node.offsets);
+	    // free (node.rawnode);
+	    // free (node.offsets);
 	    return 0;
-		}
+	  }
 	}
 
       idx = grub_be_to_cpu32 (node.node.next);
@@ -864,8 +867,11 @@ grub_hfs_iterate_dir_node_found (struct grub_hfs_node *hnd,
   struct grub_hfs_iterate_dir_closure *c = closure;
   struct grub_hfs_catalog_key *ckey = rec->key;
 
-  if (grub_hfs_cmp_catkeys (rec->key, (void *) c->key) <= 0)
-    c->found = grub_be_to_cpu32 (*(grub_uint32_t *) rec->data);
+  if (grub_hfs_cmp_catkeys (rec->key, (void *) c->key) <= 0) {
+	  uint32_t ut;
+	  memcpy (&ut, rec->data, sizeof (ut));
+    c->found = grub_be_to_cpu32 (ut); // FIX UNALIGNED ACCESS *(grub_uint32_t *) rec->data);
+  }
 
   if (hnd->type == 0xFF && ckey->strlen > 0)
     {
