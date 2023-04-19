@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2022 pancake */
+/* radare - LGPL - Copyright 2009-2023 pancake */
 
 #include <r_hash.h>
 #include <r_util.h>
@@ -151,6 +151,35 @@ R_API ut8 *r_hash_do_sha512(RHash *ctx, const ut8 *input, int len) {
 	}
 	return ctx->digest;
 }
+
+#if R2_590
+// https://www.sco.com/developers/gabi/latest/ch5.dynamic.html#hash
+static unsigned long elf_hash(const unsigned char *name) {
+	unsigned long h = 0, g;
+	while (*name) {
+		h = (h << 4) + *name++;
+		g = h & 0xf0000000;
+		if (g) {
+			h ^= g >> 24;
+		}
+		h &= ~g;
+	}
+	return h;
+}
+
+R_API ut8 *r_hash_do_elf(RHash *ctx, const ut8 *input, int len) {
+	unsigned long hash;
+	if (len < 0) {
+		hash = elf_hash (input);
+	} else {
+		char *s = r_str_ndup (input, len);
+		hash = elf_hash (s);
+		free (s);
+	}
+	memcpy (ctx->digest, &hash, sizeof (unsigned long));
+	return ctx->digest;
+}
+#endif
 
 R_API ut8 *r_hash_do_md5(RHash *ctx, const ut8 *input, int len) {
 	if (len < 0) {
