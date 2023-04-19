@@ -567,9 +567,9 @@ grub_ext2_mount (grub_disk_t disk)
     return 0;
 
   /* Read the superblock.  */
-  grub_disk_read (disk, 1 * 2, 0, sizeof (struct grub_ext2_sblock),
+  int res = grub_disk_read (disk, 1 * 2, 0, sizeof (struct grub_ext2_sblock),
                   &data->sblock);
-  if (grub_errno)
+  if (res || grub_errno)
     goto fail;
 
   /* Make sure this is an ext2 filesystem.  */
@@ -586,7 +586,6 @@ grub_ext2_mount (grub_disk_t disk)
       grub_error (GRUB_ERR_BAD_FS, "filesystem has unsupported incompatible features");
       goto fail;
     }
-
 
   data->disk = disk;
 
@@ -879,8 +878,9 @@ grub_ext2_dir (grub_device_t device, const char *path,
   grub_ext2_iterate_dir (fdiro, iterate, &c);
 
  fail:
-  if (fdiro != &data->diropen)
+  if (!data || fdiro != &data->diropen) {
     grub_free (fdiro);
+  }
   grub_free (data);
 
   return grub_errno;
