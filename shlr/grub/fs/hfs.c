@@ -732,8 +732,7 @@ if (!node.offsets) {
 	    grub_uint8_t keylen;
 	    grub_uint8_t key;
 	  }) *pnt;
-	  pnt = (struct pointer *) (grub_be_to_cpu16 (node.offsets[pos])
-				    + node.rawnode);
+	  pnt = (struct pointer *) (grub_be_to_cpu16 (node.offsets[pos]) + node.rawnode);
 
 	  struct grub_hfs_record rec =
 	    {
