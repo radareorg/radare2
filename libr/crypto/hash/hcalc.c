@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2009-2019 pancake */
+/* radare2 - LGPL - Copyright 2009-2023 pancake */
 
 #include <r_hash.h>
 
