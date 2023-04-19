@@ -634,6 +634,9 @@ static bool r_pkcs7_parse_spcdata(SpcAttributeTypeAndOptionalValue *data, RASN1O
 	if (!data->type) {
 		return false;
 	}
+	if (object->list.length < 2) {
+		return false;
+	}
 	RASN1Object *obj1 = object->list.objects[1];
 	if (object->list.length > 1) {
 		if (obj1) {
