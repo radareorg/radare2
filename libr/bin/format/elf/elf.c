@@ -3412,7 +3412,6 @@ static void _cache_bin_sections(RBinFile *bf, ELFOBJ *bin, const RVector *elf_bi
 		r_vector_reserve (&bin->cached_sections, r_vector_length (elf_bin_sections));
 
 		RBinElfSection *section;
-		int i = 0;
 		r_vector_foreach (elf_bin_sections, section) {
 			RBinSection *ptr = r_vector_end (&bin->cached_sections);
 			if (!ptr) {
@@ -3450,7 +3449,6 @@ TODO: ptr->flags = elf_flags_tostring (section->flags);
 #define SHF_ORDERED	     (1 << 30)	/* Special ordering requirement (Solaris) */
 #define SHF_EXCLUDE	     (1U << 31)	/* Section is excluded unless */
 #endif
-			i++;
 		}
 	}
 
