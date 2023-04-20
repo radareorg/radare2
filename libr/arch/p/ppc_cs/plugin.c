@@ -433,26 +433,23 @@ static int analop_vle(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, 
 	return -1;
 }
 
-static int parse_reg_name(RRegItem *reg, csh handle, cs_insn *insn, int reg_num) {
-	if (!reg) {
-		return -1;
-	}
+static char *parse_reg_name(csh handle, cs_insn *insn, int reg_num) {
 	switch (INSOP (reg_num).type) {
 	case PPC_OP_REG:
-		reg->name = (char *)cs_reg_name (handle, INSOP (reg_num).reg);
+		return (char *)cs_reg_name (handle, INSOP (reg_num).reg);
 		break;
 	case PPC_OP_MEM:
 		if (INSOP (reg_num).mem.base != PPC_REG_INVALID) {
-			reg->name = (char *)cs_reg_name (handle, INSOP (reg_num).mem.base);
+			return (char *)cs_reg_name (handle, INSOP (reg_num).mem.base);
 		}
 		break;
 	default :
 		break;
 	}
-	return 0;
+	return NULL;
 }
 
-static RRegItem base_regs[4];
+static R_TH_LOCAL const char *base_regs[4];
 
 static void create_src_dst(RAnalOp *op) {
 	r_vector_push (&op->srcs, NULL);
@@ -467,7 +464,7 @@ static void create_src_dst(RAnalOp *op) {
 
 static void set_src_dst(RAnalValue *val, csh *handle, cs_insn *insn, int x) {
 	cs_ppc_op ppcop = INSOP (x);
-	parse_reg_name (&base_regs[x], *handle, insn, x);
+	base_regs[x] = parse_reg_name (*handle, insn, x);
 	switch (ppcop.type) {
 	case PPC_OP_REG:
 		break;
@@ -480,7 +477,7 @@ static void set_src_dst(RAnalValue *val, csh *handle, cs_insn *insn, int x) {
 	default:
 		break;
 	}
-	val->reg = &base_regs[x];
+	val->reg = base_regs[x];
 }
 
 static void op_fillval(RAnalOp *op, csh handle, cs_insn *insn) {

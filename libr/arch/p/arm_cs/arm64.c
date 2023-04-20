@@ -17,6 +17,7 @@ static inline int cs_mode_for_session(RArchSession *as) {
 			mode |= CS_MODE_MCLASS;
 		}
 	}
+// 	mode |= CS_MODE_V8;
 	return mode;
 }
 
