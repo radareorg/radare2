@@ -857,16 +857,16 @@ static bool var_add_structure_fields_to_list(RAnal *a, RAnalVar *av, RList *list
 static const char *get_regname(RAnal *anal, RAnalValue *value) {
 	// R2_590 - this is underperforming hard
 	const char *name = NULL;
-#if 1
+#if 0
 	if (value && value->reg) {
 		name = (const char *)value->reg;
 	}
 #else
-	if (value && value->reg && value->reg->name) {
-		name = value->reg->name;
-		RRegItem *ri = r_reg_get (anal->reg, value->reg->name, -1);
+	if (value && value->reg) {
+		name = value->reg;
+		RRegItem *ri = r_reg_get (anal->reg, value->reg, -1);
 		if (ri && (ri->size == 32) && (anal->config->bits == 64)) {
-			name = r_reg_32_to_64 (anal->reg, value->reg->name);
+			name = r_reg_32_to_64 (anal->reg, value->reg);
 		}
 		r_unref (ri);
 	}
@@ -916,7 +916,6 @@ static void extract_arg(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const char
 	RAnalValue *val = NULL;
 
 	r_return_if_fail (anal && fcn && op && reg);
-return;
 	r_vector_foreach (&op->srcs, val) {
 		if (val && val->reg) {
 			if (!strcmp (reg, val->reg)) {

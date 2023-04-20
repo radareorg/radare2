@@ -196,7 +196,11 @@ static bool is_delta_pointer_table(ReadAhead *ra, RAnal *anal, RAnalFunction *fc
 		if (aop->type == R_ANAL_OP_TYPE_MOV) {
 			omov_aop = mov_aop;
 			mov_aop = *aop;
-			o_reg_dst = cur_dst.reg;
+			if (cur_dst.reg) {
+				o_reg_dst = r_reg_get (anal->reg, cur_dst.reg, R_REG_TYPE_GPR);
+			} else {
+				o_reg_dst = NULL;
+			}
 			RAnalValue *rval = NULL;
 			rval = r_vector_at (&mov_aop.dsts, 0);
 			if (rval) {
@@ -205,7 +209,7 @@ static bool is_delta_pointer_table(ReadAhead *ra, RAnal *anal, RAnalFunction *fc
 			rval = r_vector_at (&mov_aop.srcs, 0);
 			if (rval) {
 				cur_scr = *rval;
-				reg_src = cur_scr.regdelta;
+				reg_src = cur_scr.regdelta? r_reg_get (anal->reg, cur_scr.regdelta, R_REG_TYPE_GPR): NULL;
 			}
 		}
 		if (aop->type == R_ANAL_OP_TYPE_ADD) {
@@ -285,9 +289,9 @@ static ut64 try_get_cmpval_from_parents(RAnal *anal, RAnalFunction *fcn, RAnalBl
 	return UT64_MAX;
 }
 
-static bool regs_exist(RAnalValue *src, RAnalValue *dst) {
+static inline bool regs_exist(RAnalValue *src, RAnalValue *dst) {
 	r_return_val_if_fail (src && dst, false);
-	return src->reg && dst->reg && src->reg && dst->reg;
+	return src->reg && dst->reg;
 }
 
 // 0 if not skipped; 1 if skipped; 2 if skipped before
@@ -737,7 +741,7 @@ repeat:
 
 		if (anal->opt.nopskip && fcn->addr == at) {
 			RFlagItem *fi = anal->flb.get_at (anal->flb.f, addr, false);
-			if (!fi || strncmp (fi->name, "sym.", 4)) {
+			if (!fi || r_str_startswith (fi->name, "sym.")) {
 				if ((addr + delay.un_idx - oplen) == fcn->addr) {
 					if (r_anal_block_relocate (bb, bb->addr + oplen, bb->size - oplen)) {
 						fcn->addr += oplen;
@@ -989,12 +993,12 @@ repeat:
 				pair->reg = op->reg
 					? strdup (op->reg)
 					: dst && dst->reg
-					? strdup (dst->reg) // ->name)
+					? strdup (dst->reg)
 					: NULL;
 				lea_cnt++;
 				r_list_append (anal->leaddrs, pair);
 			}
-			if (has_stack_regs && op_is_set_bp (op_dst, op_src, bp_reg, sp_reg)     ) {
+			if (has_stack_regs && op_is_set_bp (op_dst, op_src, bp_reg, sp_reg)) {
 				fcn->bp_off = fcn->stack - src0->delta;
 			}
 			if (dst && dst->reg && op->ptr > 0 && op->ptr != UT64_MAX) {
@@ -1481,7 +1485,9 @@ analopfinish:
 		if (has_variadic_reg && !fcn->is_variadic) {
 			r_unref (variadic_reg);
 			variadic_reg = r_reg_get (anal->reg, "rax", R_REG_TYPE_GPR);
-			bool dst_is_variadic = dst && dst->reg && variadic_reg ; // XXX && dst->reg->offset == variadic_reg->offset;
+			RRegItem *ri = dst->reg? r_reg_get (anal->reg, dst->reg, R_REG_TYPE_GPR): NULL;
+			bool dst_is_variadic = dst && dst->reg && variadic_reg && ri;
+			dst_is_variadic &= (ri->offset == variadic_reg->offset);
 			bool op_is_cmp = (op->type == R_ANAL_OP_TYPE_CMP) || op->type == R_ANAL_OP_TYPE_ACMP;
 			if (dst_is_variadic && !op_is_cmp) {
 				has_variadic_reg = false;

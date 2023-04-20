@@ -15,8 +15,6 @@ typedef enum {
 } RArchValueType;
 #define RAnalValueType RArchValueType
 
-#define USE_REG_NAMES 1
-// #define USE_REG_NAMES 0
 #if R2_590
 #define R_ARCH_INFO_MIN_OP_SIZE 0
 #define R_ARCH_INFO_MAX_OP_SIZE 1
@@ -45,16 +43,10 @@ typedef struct r_arch_value_t {
 	st64 delta; // numeric delta
 	st64 imm; // immediate value
 	int mul; // multiplier (reg*4+base)
-#if USE_REG_NAMES
+
 	const char *seg;
 	const char *reg;
 	const char *regdelta;
-#else
-	// XXX can be invalidated if regprofile changes causing an UAF
-	RRegItem *seg; // segment selector register
-	RRegItem *reg; // register item reference
-	RRegItem *regdelta; // register index used
-#endif
 } RArchValue;
 #include <r_anal/op.h>
 

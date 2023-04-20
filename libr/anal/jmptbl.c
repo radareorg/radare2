@@ -189,10 +189,10 @@ R_API bool try_walkthrough_jmptbl(RAnal *anal, RAnalFunction *fcn, RAnalBlock *b
 	if (!jmptbl) {
 		return false;
 	}
-	const char *sarch = R_UNWRAP4 (anal, arch, session, arch);
+	const char *sarch = R_UNWRAP3 (anal, cur, arch);
 	bool is_arm = sarch ? r_str_startswith (sarch, "arm"): false;
 	bool is_x86 = !is_arm && r_str_startswith (sarch, "x86");
-	const bool is_v850 = !is_arm && !is_x86 && (sarch && !strncmp (sarch, "v850", 4)) || !strncmp (anal->coreb.cfgGet (anal->coreb.core, "asm.cpu"), "v850", 4);
+	const bool is_v850 = !is_arm && !is_x86 && ((sarch && !strncmp (sarch, "v850", 4)) || r_str_startswith (anal->coreb.cfgGet (anal->coreb.core, "asm.cpu"), "v850"));
 	// eprintf ("JMPTBL AT 0x%"PFMT64x"\n", jmptbl_loc);
 	anal->iob.read_at (anal->iob.io, jmptbl_loc, jmptbl, jmptblsz);
 	for (offs = 0; offs + sz - 1 < jmptbl_size * sz; offs += sz) {
@@ -263,7 +263,7 @@ R_API bool try_walkthrough_jmptbl(RAnal *anal, RAnalFunction *fcn, RAnalBlock *b
 	return ret;
 }
 
-static bool detect_casenum_shift(RAnalOp *op, RRegItem **cmp_reg, st64 *start_casenum_shift) {
+static bool detect_casenum_shift(RAnalOp *op, const char **cmp_reg, st64 *start_casenum_shift) {
 	if (!*cmp_reg) {
 		return true;
 	}
@@ -307,7 +307,7 @@ R_API bool try_get_delta_jmptbl_info(RAnal *anal, RAnalFunction *fcn, ut64 jmp_a
 	RVector v;
 	r_vector_init (&v, sizeof (ut64), NULL, NULL);
 	int len = 0;
-	RRegItem *cmp_reg = NULL;
+	const char *cmp_reg = NULL;
 	for (i = 0; i + 8 < search_sz; i += len) {
 		len = r_anal_op (anal, &tmp_aop, lea_addr + i, buf + i, search_sz - i, R_ARCH_OP_MASK_BASIC);
 		if (len < 1) {
@@ -353,8 +353,7 @@ R_API bool try_get_delta_jmptbl_info(RAnal *anal, RAnalFunction *fcn, ut64 jmp_a
 		if (tmp_dst && tmp_dst->reg) {
 			cmp_reg = tmp_dst->reg;
 		} else if (tmp_aop.reg) {
-			r_unref (cmp_reg);
-			cmp_reg = r_reg_get (anal->reg, tmp_aop.reg, R_REG_TYPE_ALL);
+			cmp_reg = tmp_aop.reg;
 		} else if (tmp_src && tmp_src->reg) {
 			cmp_reg = tmp_src->reg;
 		}
@@ -378,7 +377,6 @@ R_API bool try_get_delta_jmptbl_info(RAnal *anal, RAnalFunction *fcn, ut64 jmp_a
 			r_anal_op_fini (&tmp_aop);
 		}
 	}
-	r_unref (cmp_reg);
 	r_vector_fini (&v);
 	free (buf);
 	return isValid;
@@ -485,7 +483,7 @@ R_API bool try_get_jmptbl_info(RAnal *anal, RAnalFunction *fcn, ut64 addr, RAnal
 	anal->iob.read_at (anal->iob.io, prev_bb->addr, (ut8 *) bb_buf, prev_bb->size);
 	isValid = false;
 
-	RRegItem *cmp_reg = NULL;
+	const char *cmp_reg = NULL;
 	for (i = prev_bb->ninstr - 1; i >= 0; i--) {
 		const ut64 prev_pos = r_anal_bb_offset_inst (prev_bb, i);
 		const ut64 op_addr = r_anal_bb_opaddr_i (prev_bb, i);
@@ -527,8 +525,7 @@ R_API bool try_get_jmptbl_info(RAnal *anal, RAnalFunction *fcn, ut64 addr, RAnal
 			if (tmp_dst && tmp_dst->reg) {
 				cmp_reg = tmp_dst->reg;
 			} else if (tmp_aop.reg) {
-				r_unref (cmp_reg);
-				cmp_reg = r_reg_get (anal->reg, tmp_aop.reg, R_REG_TYPE_ALL);
+				cmp_reg = tmp_aop.reg;
 			} else if (tmp_src && tmp_src->reg) {
 				cmp_reg = tmp_src->reg;
 			}
