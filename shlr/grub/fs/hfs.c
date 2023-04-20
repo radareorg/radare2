@@ -710,9 +710,13 @@ if (!node.offsets) {
 					: (&data->sblock.extent_recs));
 
       /* Read the node into memory.  */
+      int divident = (data->blksz / nodesize);
+      if (divident == 0) {
+	      return 1;
+      }
       blk = grub_hfs_block (data, dat,
                             (type == 0) ? GRUB_HFS_CNID_CAT : GRUB_HFS_CNID_EXT,
-			    idx / (data->blksz / nodesize), 0);
+			    idx / divident, 0);
       blk += (idx % (data->blksz / nodesize));
       if (grub_errno) {
 	return grub_errno;
