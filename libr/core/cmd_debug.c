@@ -480,8 +480,8 @@ static RCoreHelpMessage help_msg_dt = {
 	"Usage: dt", "", "Trace commands",
 	"dt", "", "list all traces ",
 	"dt", " [addr]", "show trace info at address",
-	"dt%", "", "TODO",
 	"dt*", "", "list all traced opcode offsets",
+	"dtj", "", "list instruction trace logs in json",
 	"dt+"," [addr] [times]", "add trace for address N times",
 	"dt-", "", "reset traces (instruction/calls)",
 	"dt=", "", "show ascii-art color bars with the debug trace ranges",
@@ -5327,6 +5327,9 @@ static int cmd_debug(void *data, const char *input) {
 			break;
 		case 'q': // "dtq"
 			r_debug_trace_list (core->dbg, 'q', core->offset);
+			break;
+		case 'j': // "dtj"
+			r_debug_trace_list (core->dbg, 'j', core->offset);
 			break;
 		case '*': // "dt*"
 			r_debug_trace_list (core->dbg, 1, core->offset);
