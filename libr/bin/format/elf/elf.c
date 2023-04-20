@@ -2822,7 +2822,6 @@ static bool read_reloc(ELFOBJ *bin, RBinElfReloc *r, Elf_(Xword) rel_mode, ut64 
 	}
 
 	r->mode = rel_mode;
-	r->last = 0;
 	r->offset = reloc_info.r_offset;
 	r->sym = ELF_R_SYM (reloc_info.r_info);
 	r->type = ELF_R_TYPE (reloc_info.r_info);
@@ -3026,43 +3025,39 @@ const RVector *Elf_(r_bin_elf_load_relocs) (ELFOBJ *bin) {
 	return &bin->g_relocs;
 }
 
-RBinElfLib* Elf_(r_bin_elf_get_libs)(ELFOBJ *bin) {
+const RVector* Elf_(r_bin_elf_load_libs)(ELFOBJ *bin) {
 	r_return_val_if_fail (bin, NULL);
-	RBinElfLib *ret = NULL;
-	Elf_(Off) *it = NULL;
-	size_t k = 0;
+
+	if (bin->libs_loaded) {
+		return &bin->g_libs;
+	}
+
+	bin->libs_loaded = true;
+	r_vector_init (&bin->g_libs, sizeof (RBinElfLib), NULL, NULL);
 
 	if (!bin->phdr || !bin->strtab || (bin->strtab[0] && bin->strtab[1] == '0')) {
 		return NULL;
 	}
+
+	Elf_(Off) *it = NULL;
 	r_vector_foreach (&bin->dyn_info.dt_needed, it) {
 		Elf_(Off) val = *it;
-		RBinElfLib *r = realloc (ret, (k + 1) * sizeof (RBinElfLib));
-		if (!r) {
-			free (ret);
-			return NULL;
-		}
-		ret = r;
 		if (val > bin->strtab_size) {
-			free (ret);
+			r_vector_clear (&bin->g_libs);
 			return NULL;
 		}
-		strncpy (ret[k].name, bin->strtab + val, ELF_STRING_LENGTH);
-		ret[k].name[ELF_STRING_LENGTH - 1] = '\0';
-		ret[k].last = 0;
-		if (ret[k].name[0]) {
-			k++;
+
+		const char *const name = (bin->strtab + val);
+		if (!name[0]) {
+			continue;
 		}
+
+		RBinElfLib *lib = r_vector_end (&bin->g_libs);
+		r_str_ncpy (lib->name, name, ELF_STRING_LENGTH);
+		lib->name[ELF_STRING_LENGTH - 1] = '\0';
 	}
 
-	RBinElfLib *r = realloc (ret, (k + 1) * sizeof (RBinElfLib));
-	if (!r) {
-		free (ret);
-		return NULL;
-	}
-	ret = r;
-	ret[k].last = 1;
-	return ret;
+	return &bin->g_libs;
 }
 
 static void create_section_from_phdr(ELFOBJ *bin, const char *name, ut64 addr, ut64 sz) {
@@ -4478,6 +4473,9 @@ void Elf_(r_bin_elf_free)(ELFOBJ* bin) {
 	}
 	if (bin->sections_cached) {
 		r_vector_fini (&bin->cached_sections);
+	}
+	if (bin->libs_loaded) {
+		r_vector_fini (&bin->g_libs);
 	}
 	R_FREE (bin->g_symbols);
 	R_FREE (bin->g_imports);
