@@ -412,14 +412,14 @@ static RList* libs(RBinFile *bf) {
 	if (!ret) {
 		return NULL;
 	}
-	struct r_bin_elf_lib_t *libs = Elf_(r_bin_elf_get_libs) (bf->o->bin_obj);
+
+	// No leak, libs is automatically freed when r_bin_elf_free is called
+	const RVector *libs = Elf_(r_bin_elf_load_libs) (bf->o->bin_obj);
 	if (libs) {
-		int i;
-		for (i = 0; !libs[i].last; i++) {
-			char *ptr = strdup (libs[i].name);
-			r_list_append (ret, ptr);
+		RBinElfLib *lib;
+		r_vector_foreach (libs, lib) {
+			r_list_append (ret, strdup (lib->name));
 		}
-		free (libs);
 	}
 	return ret;
 }
