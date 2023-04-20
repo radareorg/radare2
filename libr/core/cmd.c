@@ -113,6 +113,7 @@ static RCoreHelpMessage help_msg_j = {
 	"Usage:", "j[:o]in", "run command with json facilities or join two files",
 	"j:", "?e", "run '?e' command and show the result stats in json",
 	"ji:", "[cmd]", "run command and indent it as json like (cmd~{})",
+	"jq", " [...]", "same as !jq",
 	"js", " [expr]", "run given javascript expression",
 	"js-", "", "read from stdin until ^D",
 	"js!", "", "reset js vm (same as #!!)",
@@ -1668,7 +1669,10 @@ static int cmd_join(void *data, const char *input) { // "join"
 		free (res);
 		return R_CMD_RC_SUCCESS;
 	}
-	if (input[0] == 's') { // "js"
+	if (input[0] == 'q') { // "jq"
+		r_core_cmd_callf (core, "!jq%s", input + 1);
+		return R_CMD_RC_SUCCESS;
+	} else if (input[0] == 's') { // "js"
 		if (input[1] == ':' || input[1] == '.') { // "js:"
 			if (input[2]) {
 				if (r_lang_use (core->lang, "qjs")) {
