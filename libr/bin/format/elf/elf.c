@@ -3047,13 +3047,13 @@ const RVector* Elf_(r_bin_elf_load_libs)(ELFOBJ *bin) {
 			return NULL;
 		}
 
-		char *const name = (bin->strtab + val);
+		const char *const name = (bin->strtab + val);
 		if (!name[0]) {
 			continue;
 		}
 
 		RBinElfLib *lib = r_vector_end (&bin->g_libs);
-		strncpy (lib->name, name, ELF_STRING_LENGTH);
+		r_str_ncpy (lib->name, name, ELF_STRING_LENGTH);
 		lib->name[ELF_STRING_LENGTH - 1] = '\0';
 	}
 
