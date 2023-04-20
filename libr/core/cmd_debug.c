@@ -5381,7 +5381,8 @@ static int cmd_debug(void *data, const char *input) {
 				r_list_foreach (core->dbg->trace->traces, iter, trace) {
 					op = r_core_anal_op (core, trace->addr, R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_DISASM);
 					if (n >= min) {
-						r_cons_printf ("0x%08"PFMT64x" %s\n", trace->addr, op->mnemonic);
+						const char *opstr = op? op->mnemonic: "?";
+						r_cons_printf ("0x%08"PFMT64x" %s\n", trace->addr, opstr);
 					}
 					n++;
 					r_anal_op_free (op);
@@ -5391,7 +5392,8 @@ static int cmd_debug(void *data, const char *input) {
 				//r_core_cmd0 (core, "pd 1 @@= `dtq`");
 				r_list_foreach (core->dbg->trace->traces, iter, trace) {
 					op = r_core_anal_op (core, trace->addr, R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_DISASM);
-					r_cons_printf ("0x%08"PFMT64x" %s\n", trace->addr, op->mnemonic);
+					const char *opstr = op? op->mnemonic: "?";
+					r_cons_printf ("0x%08"PFMT64x" %s\n", trace->addr, opstr);
 					r_anal_op_free (op);
 				}
 			}
