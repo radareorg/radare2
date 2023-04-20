@@ -579,7 +579,6 @@ static RList* relocs(RBinFile *bf) {
 	r_return_val_if_fail (bf && bf->o && bf->o->bin_obj, NULL);
 	RList *ret = NULL;
 	RBinReloc *ptr = NULL;
-	RBinElfReloc *relocs = NULL;
 	ELFOBJ *bin = bf->o->bin_obj;
 	if (!(ret = r_list_newf (free))) {
 		return NULL;
@@ -595,12 +594,14 @@ static RList* relocs(RBinFile *bf) {
 		got_addr = Elf_(r_bin_elf_get_section_addr) (bin, ".got.r2");
 	}
 	if (bf->o) {
-		if (!(relocs = Elf_(r_bin_elf_get_relocs) (bin))) {
+		const RVector *relocs = Elf_(r_bin_elf_load_relocs) (bin);
+		if (!relocs) {
 			return ret;
 		}
-		size_t i;
-		for (i = 0; !relocs[i].last; i++) {
-			if (!(ptr = reloc_convert (bin, &relocs[i], got_addr))) {
+
+		RBinElfReloc *reloc;
+		r_vector_foreach (relocs, reloc) {
+			if (!(ptr = reloc_convert (bin, reloc, got_addr))) {
 				continue;
 			}
 			if (ptr->paddr != UT64_MAX) {
@@ -804,7 +805,6 @@ static RList* patch_relocs(RBin *b) {
 	RList *ret = NULL;
 	RBinReloc *ptr = NULL;
 	HtUU *relocs_by_sym;
-	RBinElfReloc *relcs = NULL;
 
 	RIO *io = b->iob.io;
 	if (!io || !io->desc) {
@@ -859,7 +859,8 @@ static RList* patch_relocs(RBin *b) {
 	}
 	gotr2map->name = strdup (".got.r2");
 
-	if (!(relcs = Elf_(r_bin_elf_get_relocs) (bin))) {
+	const RVector *relocs = Elf_(r_bin_elf_load_relocs) (bin);
+	if (!relocs) {
 		return NULL;
 	}
 	if (!(ret = r_list_newf ((RListFree)free))) {
@@ -871,27 +872,27 @@ static RList* patch_relocs(RBin *b) {
 		return NULL;
 	}
 	ut64 vaddr = n_vaddr;
-	size_t i;
-	for (i = 0; !relcs[i].last; i++) {
+	RBinElfReloc *reloc;
+	r_vector_foreach (relocs, reloc) {
 		ut64 plt_entry_addr = vaddr;
 		ut64 sym_addr = UT64_MAX;
 
-		if (relcs[i].sym) {
-			if (relcs[i].sym < bin->imports_by_ord_size && bin->imports_by_ord[relcs[i].sym]) {
+		if (reloc->sym) {
+			if (reloc->sym < bin->imports_by_ord_size && bin->imports_by_ord[reloc->sym]) {
 				bool found;
-				sym_addr = ht_uu_find (relocs_by_sym, relcs[i].sym, &found);
+				sym_addr = ht_uu_find (relocs_by_sym, reloc->sym, &found);
 				if (found) {
 					plt_entry_addr = sym_addr;
 				}
-			} else if (relcs[i].sym < bin->symbols_by_ord_size && bin->symbols_by_ord[relcs[i].sym]) {
-				sym_addr = bin->symbols_by_ord[relcs[i].sym]->vaddr;
+			} else if (reloc->sym < bin->symbols_by_ord_size && bin->symbols_by_ord[reloc->sym]) {
+				sym_addr = bin->symbols_by_ord[reloc->sym]->vaddr;
 				plt_entry_addr = sym_addr;
 			}
 		}
 		//ut64 raddr = sym_addr? sym_addr: vaddr;
 		ut64 raddr = (sym_addr && sym_addr != UT64_MAX)? sym_addr: vaddr;
-		_patch_reloc (obj, bin, bin->ehdr.e_machine, &b->iob, &relcs[i], raddr, 0, plt_entry_addr);
-		if (!(ptr = reloc_convert (bin, &relcs[i], n_vaddr))) {
+		_patch_reloc (obj, bin, bin->ehdr.e_machine, &b->iob, reloc, raddr, 0, plt_entry_addr);
+		if (!(ptr = reloc_convert (bin, reloc, n_vaddr))) {
 			continue;
 		}
 
@@ -899,7 +900,7 @@ static RList* patch_relocs(RBin *b) {
 			ptr->vaddr = sym_addr;
 		} else {
 			ptr->vaddr = vaddr;
-			ht_uu_insert (relocs_by_sym, relcs[i].sym, vaddr);
+			ht_uu_insert (relocs_by_sym, reloc->sym, vaddr);
 			vaddr += cdsz;
 		}
 		r_list_append (ret, ptr);
