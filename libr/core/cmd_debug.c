@@ -4544,18 +4544,30 @@ static bool cmd_dcu(RCore *core, const char *input) {
 			r_cons_break_pop ();
 			return true;
 		}
+		RBreakpointItem *bp = r_bp_get_at (core->dbg->bp, addr);
+		bool bpset = false;
+		if (bp) {
+			// theres a breakpoint already so no need to set
+		} else {
+			if (r_bp_add_sw (core->dbg->bp, addr, core->dbg->bpsize, R_BP_PROT_EXEC)) {
+				bpset = true;
+				// ok go on!
+			} else {
+				R_LOG_ERROR ("Cannot set breakpoint of size %d at 0x%08"PFMT64x,
+					core->dbg->bpsize, addr);
+				return false;
+			}
+		}
 		R_LOG_INFO ("Continue until 0x%08"PFMT64x" using %d bpsize", addr, core->dbg->bpsize);
 		r_reg_arena_swap (core->dbg->reg, true);
-		if (r_bp_add_sw (core->dbg->bp, addr, core->dbg->bpsize, R_BP_PROT_EXEC)) {
-			if (r_debug_is_dead (core->dbg)) {
-				R_LOG_ERROR ("Cannot continue, run ood?");
-			} else {
-				r_debug_continue (core->dbg);
-			}
-			r_bp_del (core->dbg->bp, addr);
+
+		if (r_debug_is_dead (core->dbg)) {
+			R_LOG_ERROR ("Cannot continue, run ood?");
 		} else {
-			R_LOG_ERROR ("Cannot set breakpoint of size %d at 0x%08"PFMT64x,
-				core->dbg->bpsize, addr);
+			r_debug_continue (core->dbg);
+		}
+		if (bpset) {
+			r_bp_del (core->dbg->bp, addr);
 		}
 	}
 	return true;
