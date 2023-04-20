@@ -32,6 +32,8 @@
  * $Id: sha2.c,v 1.1 2001/11/08 00:01:51 adg Exp adg $
  */
 
+// ripped/inspired from https://github.com/dylan-lang/hash-algorithms/blob/master/sha2.c
+
 #include "sha2.h"
 
 #define WEAK_ALIASING 0
@@ -160,17 +162,6 @@
 #define Sigma1_512(x)   (S64 (14, (x)) ^ S64 (18, (x)) ^ S64 (41, (x)))
 #define sigma0_512(x)   (S64 ( 1, (x)) ^ S64 ( 8, (x)) ^ R ( 7, (x)))
 #define sigma1_512(x)   (S64 (19, (x)) ^ S64 (61, (x)) ^ R ( 6, (x)))
-
-#if 0
-/*** INTERNAL FUNCTION PROTOTYPES *************************************/
-/* NOTE: These should not be accessed directly from outside this
- * library -- they are intended for private internal visibility/use
- * only.
- */
-static void SHA512_Last(RSha512Context *);
-static void SHA256_Transform(RSha256Context *, const ut32 *);
-static void SHA512_Transform(RSha512Context *, const ut64 *);
-#endif
 
 /*** SHA-XYZ INITIAL HASH VALUES AND CONSTANTS ************************/
 /* Hash constant words K for SHA-256: */
@@ -386,22 +377,34 @@ static void SHA256_Transform(RSha256Context *context, const ut32 *data) {
 #else /* SHA2_UNROLL_TRANSFORM */
 
 static void SHA256_Transform(RSha256Context *context, const ut32 *data) {
-	ut32 a, b, c, d, e, f, g, h, s0, s1;
-	ut32 T1, T2, *W256;
+	ut32 T1, T2, s0, s1;
 	int j;
 
-	W256 = (ut32 *) context->buffer;
+	ut32 *W256 = (ut32 *) context->buffer;
 
 	/* Initialize registers with the prev. intermediate value */
-	a = context->state[0];
-	b = context->state[1];
-	c = context->state[2];
-	d = context->state[3];
-	e = context->state[4];
-	f = context->state[5];
-	g = context->state[6];
-	h = context->state[7];
-
+	ut32 a = context->state[0];
+	ut32 b = context->state[1];
+	ut32 c = context->state[2];
+	ut32 d = context->state[3];
+	ut32 e = context->state[4];
+	ut32 f = context->state[5];
+	ut32 g = context->state[6];
+	ut32 h = context->state[7];
+#if 1
+	R_ALIGNED(4) ut32 ldata[16];
+	R_ALIGNED(4) ut32 lW256[16];
+	if ((size_t)W256 % 4) {
+	// 	eprintf ("adjust context buffer\n");
+		memcpy (&lW256, W256, sizeof (lW256));
+		W256 = lW256;
+	}
+	if ((size_t)data % 4) {
+	// 	eprintf ("Prevent unaligned access\n");
+		memcpy (&ldata, data, sizeof (ldata));
+		data = ldata;
+	}
+#endif
 	j = 0;
 	do {
 #if BYTE_ORDER == LITTLE_ENDIAN
@@ -409,7 +412,7 @@ static void SHA256_Transform(RSha256Context *context, const ut32 *data) {
 		REVERSE32 (*data++, W256[j]);
 		/* Apply the SHA-256 compression function to update a..h */
 		T1 = h + Sigma1_256 (e) + Ch (e, f, g) + K256[j] + W256[j];
-#else /* BYTE_ORDER == LITTLE_ENDIAN */
+#else /* BYTE_ORDER == BIG_ENDIAN */
 		/* Apply the SHA-256 compression function to update a..h with copy */
 		T1 = h + Sigma1_256 (e) + Ch (e, f, g) + K256[j] + (W256[j] = *data++);
 #endif /* BYTE_ORDER == LITTLE_ENDIAN */
@@ -458,9 +461,6 @@ static void SHA256_Transform(RSha256Context *context, const ut32 *data) {
 	context->state[5] += f;
 	context->state[6] += g;
 	context->state[7] += h;
-
-	/* Clean up */
-	a = b = c = d = e = f = g = h = T1 = T2 = 0;
 }
 
 #endif /* SHA2_UNROLL_TRANSFORM */
@@ -470,7 +470,6 @@ R_IPI void r_sha256_update(RSha256Context *context, const ut8 *data, size_t len)
 	if (!data || len == 0) {
 		return;
 	}
-
 	unsigned int usedspace = (context->bitcount >> 3) % SHA256_BLOCK_LENGTH;
 	if (usedspace > 0) {
 		/* Calculate how much free space is available in the buffer */
@@ -492,7 +491,7 @@ R_IPI void r_sha256_update(RSha256Context *context, const ut8 *data, size_t len)
 	}
 	while (len >= SHA256_BLOCK_LENGTH) {
 		/* Process as many complete blocks as we can */
-		SHA256_Transform (context, (ut32 *) data);
+		SHA256_Transform (context, (ut32*)data);
 		context->bitcount += SHA256_BLOCK_LENGTH << 3;
 		len -= SHA256_BLOCK_LENGTH;
 		data += SHA256_BLOCK_LENGTH;
