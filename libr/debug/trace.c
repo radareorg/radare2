@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2008-2020 - pancake */
+/* radare - LGPL - Copyright 2008-2023 - pancake */
 
 #include <r_debug.h>
 
@@ -218,10 +218,27 @@ R_API void r_debug_trace_list(RDebug *dbg, int mode, ut64 offset) {
 	if (!info_list && mode == '=') {
 		return;
 	}
+	PJ *pj = NULL;
+
+	if (mode == 'j') {
+		pj = pj_new ();
+		pj_o (pj);
+		pj_kn (pj, "tag", tag);
+		pj_ka (pj, "traces");
+	}
 	RDebugTracepoint *trace;
 	r_list_foreach (dbg->trace->traces, iter, trace) {
 		if (!trace->tag || (tag & trace->tag)) {
 			switch (mode) {
+			case 'j':
+				pj_o (pj);
+				pj_kn (pj, "addr", trace->addr);
+				pj_kn (pj, "tag", trace->tag);
+				pj_kn (pj, "times", trace->times);
+				pj_kn (pj, "count", trace->count);
+				pj_kn (pj, "size", trace->size);
+				pj_end (pj);
+				break;
 			case 'q':
 				dbg->cb_printf ("0x%"PFMT64x"\n", trace->addr);
 				break;
@@ -249,10 +266,17 @@ R_API void r_debug_trace_list(RDebug *dbg, int mode, ut64 offset) {
 			}
 		}
 	}
+	if (pj) {
+		pj_end (pj);
+		pj_end (pj);
+		char *s = pj_drain (pj);
+		dbg->cb_printf ("%s\n", s);
+		free (s);
+	}
 	if (flag) {
 		r_list_sort (info_list, cmpaddr);
 		RTable *table = r_table_new ("traces");
-		table->cons = r_cons_singleton();
+		table->cons = r_cons_singleton ();
 		RIO *io = dbg->iob.io;
 		r_table_visual_list (table, info_list, offset, 1,
 			r_cons_get_size (NULL), io->va);
