@@ -54,7 +54,6 @@ typedef struct r_bin_elf_symbol_t {
 	const char *type;
 	char name[ELF_STRING_LENGTH];
 	char libname[ELF_STRING_LENGTH];
-	int last;
 	bool in_shdr;
 	bool is_sht_null;
 	bool is_vaddr; /* when true, offset is virtual address, otherwise it's physical */
@@ -76,14 +75,6 @@ typedef struct r_bin_elf_field_t {
 	ut64 offset;
 	char name[ELF_STRING_LENGTH];
 } RBinElfField;
-
-typedef struct r_bin_elf_string_t {
-	ut64 offset;
-	ut64 size;
-	char type;
-	char string[ELF_STRING_LENGTH];
-	int last;
-} RBinElfString;
 
 typedef struct Elf_(r_bin_elf_dynamic_info) {
 	Elf_(Xword) dt_pltrelsz;
@@ -150,13 +141,13 @@ struct Elf_(r_bin_elf_obj_t) {
 	RBuffer *b;
 	Sdb *kv;
 	/*cache purpose*/
-	RBinElfSymbol *g_symbols;
-	RBinElfSymbol *g_imports;
-	ut32 g_reloc_num;
-	RBinElfSymbol *phdr_symbols;
-	RBinElfSymbol *phdr_imports;
-	HtUP *rel_cache;
+	RVector *g_symbols;  // RBinElfSymbol
+	RVector *g_imports;  // RBinElfSymbol
+	RVector *phdr_symbols;  // RBinElfSymbol
+	RVector *phdr_imports;  // RBinElfSymbol
 	RList *inits;
+	HtUP *rel_cache;
+	ut32 g_reloc_num;
 	bool relocs_loaded;
 	RVector g_relocs;  // RBinElfReloc
 	bool sections_loaded;
@@ -200,8 +191,8 @@ int Elf_(r_bin_elf_is_big_endian)(struct Elf_(r_bin_elf_obj_t) *bin);
 const RVector *Elf_(r_bin_elf_load_relocs)(struct Elf_(r_bin_elf_obj_t) *bin);  // RBinElfReloc
 const RVector* Elf_(r_bin_elf_load_libs)(struct Elf_(r_bin_elf_obj_t) *bin);  // RBinElfLib
 const RVector* Elf_(r_bin_elf_load_sections)(RBinFile *bf, struct Elf_(r_bin_elf_obj_t) *bin);
-RBinElfSymbol* Elf_(r_bin_elf_get_symbols)(struct Elf_(r_bin_elf_obj_t) *bin);
-RBinElfSymbol* Elf_(r_bin_elf_get_imports)(struct Elf_(r_bin_elf_obj_t) *bin);
+RVector* Elf_(r_bin_elf_load_symbols)(struct Elf_(r_bin_elf_obj_t) *bin);  // RBinElfSymbol
+RVector* Elf_(r_bin_elf_load_imports)(struct Elf_(r_bin_elf_obj_t) *bin);  // RBinElfSymbol
 const RVector* Elf_(r_bin_elf_load_fields)(struct Elf_(r_bin_elf_obj_t) *bin);  // RBinElfField
 char *Elf_(r_bin_elf_get_rpath)(struct Elf_(r_bin_elf_obj_t) *bin);
 
@@ -221,7 +212,7 @@ int Elf_(r_bin_elf_has_nx)(struct Elf_(r_bin_elf_obj_t) *bin);
 ut8 *Elf_(r_bin_elf_grab_regstate)(struct Elf_(r_bin_elf_obj_t) *bin, int *len);
 RList *Elf_(r_bin_elf_get_maps)(ELFOBJ *bin);
 RBinSymbol *Elf_(_r_bin_elf_convert_symbol)(struct Elf_(r_bin_elf_obj_t) *bin,
-					  struct r_bin_elf_symbol_t *symbol,
-					  const char *namefmt);
+	RBinElfSymbol *symbol,
+	const char *namefmt);
 R_API RBinSection *r_bin_section_clone(RBinSection *s);
 #endif
