@@ -4413,28 +4413,40 @@ RBinElfSymbol *Elf_(r_bin_elf_get_imports)(ELFOBJ *bin) {
 	return bin->g_imports;
 }
 
-RBinElfField* Elf_(r_bin_elf_get_fields)(ELFOBJ *bin) {
-	RBinElfField *ret = NULL;
-	int i = 0, j;
-	if (!bin || !(ret = calloc ((bin->ehdr.e_phnum + 3 + 1), sizeof (RBinElfField)))) {
+const RVector* Elf_(r_bin_elf_load_fields)(ELFOBJ *bin) {
+	r_return_val_if_fail (bin, NULL);
+
+	if (bin->fields_loaded) {
+		return &bin->g_fields;
+	}
+
+	bin->fields_loaded = true;
+	r_vector_init (&bin->g_fields, sizeof (RBinElfLib), NULL, NULL);
+
+	ut64 num_fields = bin->ehdr.e_phnum + 3;
+	if (!(r_vector_reserve (&bin->g_fields, num_fields))) {
 		return NULL;
 	}
-	strncpy (ret[i].name, "ehdr", ELF_STRING_LENGTH);
-	ret[i].offset = 0;
-	ret[i++].last = 0;
-	strncpy (ret[i].name, "shoff", ELF_STRING_LENGTH);
-	ret[i].offset = bin->ehdr.e_shoff;
-	ret[i++].last = 0;
-	strncpy (ret[i].name, "phoff", ELF_STRING_LENGTH);
-	ret[i].offset = bin->ehdr.e_phoff;
-	ret[i++].last = 0;
-	for (j = 0; bin->phdr && j < bin->ehdr.e_phnum; i++, j++) {
-		snprintf (ret[i].name, ELF_STRING_LENGTH, "phdr_%i", j);
-		ret[i].offset = bin->phdr[j].p_offset;
-		ret[i].last = 0;
+
+	RBinElfField *new_field = r_vector_end (&bin->g_fields);
+	strncpy (new_field->name, "ehdr", ELF_STRING_LENGTH);
+	new_field->offset = 0;
+
+	new_field = r_vector_end (&bin->g_fields);
+	strncpy (new_field->name, "shoff", ELF_STRING_LENGTH);
+	new_field->offset = bin->ehdr.e_shoff;
+
+	new_field = r_vector_end (&bin->g_fields);
+	strncpy (new_field->name, "phoff", ELF_STRING_LENGTH);
+	new_field->offset = bin->ehdr.e_phoff;
+
+	int i;
+	for (i = 0; bin->phdr && i < bin->ehdr.e_phnum; i++) {
+		new_field = r_vector_end (&bin->g_fields);
+		snprintf (new_field->name, ELF_STRING_LENGTH, "phdr_%i", i);
+		new_field->offset = bin->phdr[i].p_offset;
 	}
-	ret[i].last = 1;
-	return ret;
+	return &bin->g_fields;
 }
 
 void Elf_(r_bin_elf_free)(ELFOBJ* bin) {
@@ -4481,6 +4493,9 @@ void Elf_(r_bin_elf_free)(ELFOBJ* bin) {
 	R_FREE (bin->g_imports);
 	if (bin->relocs_loaded) {
 		r_vector_fini (&bin->g_relocs);
+	}
+	if (bin->fields_loaded) {
+		r_vector_fini (&bin->g_fields);
 	}
 	ht_up_free (bin->rel_cache);
 	bin->rel_cache = NULL;
