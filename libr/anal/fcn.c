@@ -1485,9 +1485,11 @@ analopfinish:
 		if (has_variadic_reg && !fcn->is_variadic) {
 			r_unref (variadic_reg);
 			variadic_reg = r_reg_get (anal->reg, "rax", R_REG_TYPE_GPR);
-			RRegItem *ri = dst->reg? r_reg_get (anal->reg, dst->reg, R_REG_TYPE_GPR): NULL;
+			RRegItem *ri = (dst && dst->reg)? r_reg_get (anal->reg, dst->reg, R_REG_TYPE_GPR): NULL;
 			bool dst_is_variadic = dst && dst->reg && variadic_reg && ri;
-			dst_is_variadic &= (ri->offset == variadic_reg->offset);
+			if (dst_is_variadic) {
+				dst_is_variadic &= (ri->offset == variadic_reg->offset);
+			}
 			bool op_is_cmp = (op->type == R_ANAL_OP_TYPE_CMP) || op->type == R_ANAL_OP_TYPE_ACMP;
 			if (dst_is_variadic && !op_is_cmp) {
 				has_variadic_reg = false;
