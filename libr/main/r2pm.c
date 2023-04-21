@@ -9,30 +9,30 @@
 
 static int r2pm_install(RList *targets, bool uninstall, bool clean, bool force, bool global);
 
-static const char *helpmsg = \
-"Usage: r2pm [-flags] [pkgs...]\n"\
-"Commands:\n"\
-" -a [repository]   add or -delete external repository\n"\
-" -c ([git/dir])    clear source cache (R2PM_GITDIR)\n"\
-" -ci <pkgname>     clean + install\n"\
-" -cp               clean the user's home plugin directory\n"\
-" -d,doc [pkgname]  show documentation and source for given package\n"\
-" -e [pkgname]      edit using $EDITOR the given package script\n"\
-" -f                force operation (Use in combination of -U, -i, -u, ..)\n"\
-" -gi <pkg>         global install (system-wide)\n"\
-" -h                display this help message\n"\
-" -H variable       show the value of given internal environment variable (See -HH)\n"\
-" -i <pkgname>      install/update package and its dependencies (see -c, -g)\n"\
-" -I                information about repository and installed packages\n"\
-" -l                list installed packages\n"\
-" -q                be quiet\n"\
-" -r [cmd ...args]  run shell command with R2PM_BINDIR in PATH\n"\
-" -s [<keyword>]    search available packages in database matching a string\n"\
-" -u <pkgname>      r2pm -u baleful (See -f to force uninstall)\n"\
-" -uci <pkgname>    uninstall + clean + install\n"\
-" -ui <pkgname>     uninstall + install\n"\
-" -U                initialize/update database and upgrade all outdated packages\n"\
-" -v                show version\n";
+static const char *helpmsg =
+	"Usage: r2pm [-flags] [pkgs...]\n"
+	"Commands:\n"
+	" -a [repository]   add or -delete external repository\n"
+	" -c ([git/dir])    clear source cache (R2PM_GITDIR)\n"
+	" -ci <pkgname>     clean + install\n"
+	" -cp               clean the user's home plugin directory\n"
+	" -d,doc [pkgname]  show documentation and source for given package\n"
+	" -e [pkgname]      edit using $EDITOR the given package script\n"
+	" -f                force operation (Use in combination of -U, -i, -u, ..)\n"
+	" -gi <pkg>         global install (system-wide)\n"
+	" -h                display this help message\n"
+	" -H variable       show the value of given internal environment variable (See -HH)\n"
+	" -i <pkgname>      install/update package and its dependencies (see -c, -g)\n"
+	" -I                information about repository and installed packages\n"
+	" -l                list installed packages\n"
+	" -q                be quiet\n"
+	" -r [cmd ...args]  run shell command with R2PM_BINDIR in PATH\n"
+	" -s [<keyword>]    search available packages in database matching a string\n"
+	" -u <pkgname>      r2pm -u baleful (See -f to force uninstall)\n"
+	" -uci <pkgname>    uninstall + clean + install\n"
+	" -ui <pkgname>     uninstall + install\n"
+	" -U                initialize/update database and upgrade all outdated packages\n"
+	" -v                show version\n";
 
 typedef struct r_r2pm_t {
 	bool help;
@@ -167,7 +167,7 @@ static void r2pm_register(const char *pkg, bool g) {
 		r_strbuf_appendf (sb, "InstallationDate: %s\n", s);
 		free (s);
 		char *ss = r_strbuf_drain (sb);
-		r_file_dump (f, (const ut8*)ss, strlen (ss), false);
+		r_file_dump (f, (const ut8 *)ss, strlen (ss), false);
 		free (ss);
 		free (f);
 	}
@@ -231,24 +231,22 @@ static char *r2pm_get(const char *file, const char *token, R2pmTokenType type) {
 				char *begin = nl + 1;
 				char *eoc = strstr (begin, "\n\"\n");
 				if (eoc) {
-					return r_str_ndup (begin, eoc-begin);
+					return r_str_ndup (begin, eoc - begin);
 				} else {
 					R_LOG_ERROR ("Cannot find end of thing");
 					return NULL;
 				}
 			}
 			break;
-		case TT_CODEBLOCK:
-			{
-				char *begin = descptr + strlen (token);
-				char *eoc = strstr (begin, "\n}\n");
-				if (eoc) {
-					return r_str_ndup (begin, eoc - begin);
-				}
-				R_LOG_ERROR ("Cannot find end of thing");
-				return NULL;
+		case TT_CODEBLOCK: {
+			char *begin = descptr + strlen (token);
+			char *eoc = strstr (begin, "\n}\n");
+			if (eoc) {
+				return r_str_ndup (begin, eoc - begin);
 			}
-			break;
+			R_LOG_ERROR ("Cannot find end of thing");
+			return NULL;
+		} break;
 		}
 	}
 	free (data);
@@ -459,7 +457,6 @@ static void r2pm_setenv(void) {
 	free (bin_path);
 }
 
-
 static int r2pm_doc_pkg(const char *pkg) {
 	char *docstr = r2pm_get (pkg, "\nR2PM_DOC=\"", TT_ENDQUOTE);
 	if (docstr) {
@@ -597,6 +594,11 @@ static int r2pm_clone(const char *pkg) {
 	char *pkgdir = r2pm_gitdir ();
 	char *srcdir = r_file_new (pkgdir, pkg, NULL);
 	free (pkgdir);
+
+	int offline = r_sys_getenv_asint ("R2PM_OFFLINE");
+	if (offline) {
+		return 0;
+	}
 	if (r_file_is_directory (srcdir)) {
 		git_pull (srcdir, 0);
 	} else {
@@ -703,7 +705,9 @@ static int r2pm_install_pkg(const char *pkg, bool global) {
 	char *qjs_script = r2pm_get (pkg, "\nR2PM_INSTALL_QJS() {\n", TT_CODEBLOCK);
 	if (qjs_script) {
 		int res = 0;
-		const char *const argv[5] = { "radare2", "-j", "-e", qjs_script, NULL };
+		const char *const argv[5] = {
+			"radare2", "-j", "-e", qjs_script, NULL
+		};
 #if R2__UNIX__ && !defined(__wasi__)
 		int child = fork ();
 		if (child == -1) {
@@ -714,7 +718,7 @@ static int r2pm_install_pkg(const char *pkg, bool global) {
 			int status;
 			res = waitpid (child, &status, 0);
 		} else {
-			execv (argv[0], (char *const*) argv);
+			execv (argv[0], (char *const *)argv);
 			exit (1);
 		}
 #else
@@ -796,7 +800,7 @@ static int r2pm_install(RList *targets, bool uninstall, bool clean, bool force, 
 		return -1;
 	}
 	r_str_trim (r2v);
-	R_LOG_INFO ("Using r2-%s and r2pm-"R2_VERSION, r2v);
+	R_LOG_INFO ("Using r2-%s and r2pm-" R2_VERSION, r2v);
 	free (r2v);
 	if (global) {
 		r_sys_setenv ("GLOBAL", "1");
@@ -919,7 +923,7 @@ static int count_available(void) {
 	int count = 0;
 	r_list_foreach (dbfiles, iter, c) {
 		if (is_valid_package (dbdir, c)) {
-			count ++;
+			count++;
 		}
 	}
 	r_list_free (dbfiles);
@@ -935,7 +939,7 @@ static int count_installed(void) {
 	int count = 0;
 	r_list_foreach (dbfiles, iter, c) {
 		if (*c != '.') {
-			count ++;
+			count++;
 		}
 	}
 	r_list_free (dbfiles);
@@ -984,36 +988,37 @@ static void r2pm_envhelp(bool verbose) {
 		char *r2pm_dbdir = r_sys_getenv ("R2PM_DBDIR");
 		char *r2pm_prefix = r_sys_getenv ("R2PM_PREFIX");
 		char *r2pm_gitdir = r_sys_getenv ("R2PM_GITDIR");
-		printf ("R2_LOG_LEVEL=2         # define log.level for r2pm\n"\
-			"SUDO=sudo              # path to the SUDO executable\n"\
-			"MAKE=make              # path to the GNU MAKE executable\n"\
-			"R2PM_PLUGDIR=%s\n"\
-			"R2PM_PREFIX=%s\n"\
-			"R2PM_BINDIR=%s\n"\
-			"R2PM_OFFLINE=0\n"\
-			"R2PM_LEGACY=0\n"\
-			"R2PM_DBDIR=%s\n"\
+		int r2pm_offline = r_sys_getenv_asint ("R2PM_OFFLINE");
+		printf ("R2_LOG_LEVEL=2         # define log.level for r2pm\n"
+			"SUDO=sudo              # path to the SUDO executable\n"
+			"MAKE=make              # path to the GNU MAKE executable\n"
+			"R2PM_PLUGDIR=%s\n"
+			"R2PM_PREFIX=%s\n"
+			"R2PM_BINDIR=%s\n"
+			"R2PM_OFFLINE=%d         # don't git pull\n"
+			"R2PM_LEGACY=0\n"
+			"R2PM_DBDIR=%s\n"
 			"R2PM_GITDIR=%s\n",
-				r2pm_plugdir,
-				r2pm_prefix,
-				r2pm_bindir,
-				r2pm_dbdir,
-				r2pm_gitdir
-		       );
+			r2pm_plugdir,
+			r2pm_prefix,
+			r2pm_bindir,
+			r2pm_offline,
+			r2pm_dbdir,
+			r2pm_gitdir);
 		free (r2pm_plugdir);
 		free (r2pm_prefix);
 		free (r2pm_bindir);
 		free (r2pm_dbdir);
 		free (r2pm_gitdir);
 	} else {
-		r_cons_printf ("R2_LOG_LEVEL\n"\
-			"R2PM_PLUGDIR\n"\
-			"R2PM_BINDIR\n"\
-			"R2PM_OFFLINE\n"\
-			"R2PM_PREFIX\n"\
-			"R2PM_LEGACY\n"\
-			"R2PM_DBDIR\n"\
-			"R2PM_GITDIR\n");
+		r_cons_printf ("R2_LOG_LEVEL\n"
+			       "R2PM_PLUGDIR\n"
+			       "R2PM_BINDIR\n"
+			       "R2PM_OFFLINE\n"
+			       "R2PM_PREFIX\n"
+			       "R2PM_LEGACY\n"
+			       "R2PM_DBDIR\n"
+			       "R2PM_GITDIR\n");
 		r_cons_flush ();
 	}
 }
@@ -1048,10 +1053,12 @@ R_API int r_main_r2pm(int argc, const char **argv) {
 	// -H option without argument
 	if (argc == 2 && !strcmp (argv[1], "-H")) {
 		r2pm_varprint (NULL); // argv[opt.ind]);
-	//	main_print_var (NULL);
+		// main_print_var (NULL);
 		return 0;
 	}
-	R2Pm r2pm = {0};
+	R2Pm r2pm = {
+		0
+	};
 	RGetopt opt;
 	r_getopt_init (&opt, argc, argv, "aqecdiIhH:flgrpsuUv");
 	if (opt.ind < argc) {
