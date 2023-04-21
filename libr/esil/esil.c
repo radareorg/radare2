@@ -319,9 +319,9 @@ R_API bool r_esil_mem_read(REsil *esil, ut64 addr, ut8 *buf, int len) {
 
 static bool internal_esil_mem_write(REsil *esil, ut64 addr, const ut8 *buf, int len) {
 	r_return_val_if_fail (esil && esil->anal, false);
-	int ret = 0;
+	bool ret = false;
 	if (esil->nowrite) {
-		return 0;
+		return false;
 	}
 	RIOBind *iob = &esil->anal->iob;
 	RIO *io = iob->io;
@@ -386,10 +386,11 @@ static bool internal_esil_mem_write_no_null(REsil *esil, ut64 addr, const ut8 *b
 
 R_API bool r_esil_mem_write(REsil *esil, ut64 addr, const ut8 *buf, int len) {
 	r_return_val_if_fail (esil && buf, false);
-	int i, ret = 0;
+	bool ret = false;
 	addr &= esil->addrmask;
 	IFDBG {
 		eprintf ("0x%08" PFMT64x " <W ", addr);
+		int i;
 		for (i = 0; i < len; i++) {
 			eprintf ("%02x", buf[i]);
 		}
@@ -551,12 +552,13 @@ R_API int r_esil_get_parm(REsil *esil, const char *str, ut64 *num) {
 }
 
 R_API bool r_esil_reg_write(REsil *esil, const char *dst, ut64 num) {
-	bool ret = 0;
+	r_return_val_if_fail (esil && dst, false);
+	bool ret = false;
 	R_LOG_DEBUG ("%s=0x%" PFMT64x, dst, num);
-	if (esil && esil->cb.hook_reg_write) {
+	if (esil->cb.hook_reg_write) {
 		ret = esil->cb.hook_reg_write (esil, dst, &num);
 	}
-	if (!ret && esil && esil->cb.reg_write) {
+	if (!ret && esil->cb.reg_write) {
 		ret = esil->cb.reg_write (esil, dst, num);
 	}
 	return ret;
@@ -984,7 +986,7 @@ static bool esil_xoreq(REsil *esil) {
 
 #if 0
 static int esil_interrupt_linux_i386(REsil *esil) { 		//move this into a plugin
-	ut32 sn, ret = 0;
+	ut32 sn, ret = false;
 	char *usn = r_esil_pop (esil);
 	if (usn) {
 		sn = (ut32) r_num_get (NULL, usn);
@@ -1464,7 +1466,7 @@ static bool esil_asr(REsil *esil) {
 }
 
 static bool esil_ror(REsil *esil) {
-	bool ret = 0;
+	bool ret = false;
 	int regsize;
 	ut64 num, num2;
 	char *dst = r_esil_pop (esil);
@@ -1486,7 +1488,7 @@ static bool esil_ror(REsil *esil) {
 }
 
 static bool esil_rol(REsil *esil) {
-	bool ret = 0;
+	bool ret = false;
 	int regsize;
 	ut64 num, num2;
 	char *dst = r_esil_pop (esil);
@@ -2122,7 +2124,7 @@ static bool esil_poke_n(REsil *esil, int bits) {
 					}
 					goto out;
 				}
-				ret = 0;
+				ret = false;
 #endif
 				goto out;
 			}

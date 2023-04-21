@@ -7,6 +7,12 @@
 
 static bool encode(RArchSession *s, RAnalOp *op, ut32 mask) {
 	int bits = s->config->bits;
+	if (bits & R_SYS_BITS_32) {
+		bits = 32;
+	} else if (bits & R_SYS_BITS_16) {
+		bits = 16;
+	}
+#if 0
 	if (s->config->bits & R_SYS_BITS_64) {
 		bits = 64;
 	} else if (s->config->bits & R_SYS_BITS_32) {
@@ -14,6 +20,7 @@ static bool encode(RArchSession *s, RAnalOp *op, ut32 mask) {
 	} else if (s->config->bits & R_SYS_BITS_16) {
 		bits = 16;
 	}
+#endif
 	const bool is_thumb = (bits == 16);
 	int opsize;
 	ut32 opcode = UT32_MAX;
@@ -134,7 +141,7 @@ static int archinfo(RArchSession *a, ut32 q) {
 }
 
 RArchPlugin r_arch_plugin_arm = {
-	.name = "arm",
+	.name = "arm.nz",
 	.desc = "custom thumb, arm32 and arm64 assembler",
 	.author = "pancake",
 	.license = "LGPL3",

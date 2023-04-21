@@ -1,10 +1,6 @@
-/* radare - LGPL - Copyright 2010-2022 - pancake, oddcoder */
+/* radare - LGPL - Copyright 2010-2023 - pancake, oddcoder */
 
-#include <r_anal.h>
-#include <r_util.h>
-#include <r_cons.h>
 #include <r_core.h>
-#include <r_list.h>
 
 #define ACCESS_CMP(x, y) ((st64)((ut64)(x) - ((RAnalVarAccess *)y)->offset))
 // XXX this helper function is crap and shouldnt be used

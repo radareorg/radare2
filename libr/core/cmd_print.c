@@ -2994,7 +2994,7 @@ static void printraw(RCore *core, int len, int mode) {
 
 static void _handle_call(RCore *core, char *line, char **str) {
 	// XXX: rewrite this function
-	r_return_if_fail (core && line && str && (core->anal && core->anal->cur));
+	r_return_if_fail (core && line && str);
 	if (core->rasm && core->rasm->config && !strcmp (core->rasm->config->arch, "x86")) {
 		*str = strstr (line, "call ");
 	} else if (core->rasm && core->rasm->config && !strcmp (core->rasm->config->arch, "arm")) {

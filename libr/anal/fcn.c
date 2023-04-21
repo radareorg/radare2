@@ -649,10 +649,11 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int
 	int maxlen = len * addrbytes;
 	if (is_dalvik) {
 		bool skipAnalysis = false;
-		if (!strncmp (fcn->name, "sym.", 4)) {
-			if (!strncmp (fcn->name + 4, "imp.", 4)) {
+		const char *name = fcn->name;
+		if (r_str_startswith (name, "sym.")) {
+			if (r_str_startswith (name + 4, "imp.")) {
 				skipAnalysis = true;
-			} else if (strstr (fcn->name, "field")) {
+			} else if (strstr (name, "field")) {
 				skipAnalysis = true;
 			}
 		}
@@ -901,7 +902,7 @@ repeat:
 			last_is_reg_mov_lea = false;
 			if (is_arm) { // mov lr, pc
 				const char *esil = r_strbuf_get (&op->esil);
-				if (!r_str_cmp (esil, "pc,lr,=", -1)) {
+				if (!strcmp (esil, "pc,lr,=")) {
 					last_is_mov_lr_pc = true;
 				}
 			}

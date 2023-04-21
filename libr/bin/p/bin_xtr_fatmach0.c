@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2019 - nibble, pancake */
+/* radare - LGPL - Copyright 2009-2023 - nibble, pancake */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -12,7 +12,9 @@ static RBinXtrData *extract(RBin *bin, int idx);
 static bool checkHeader(RBuffer *b) {
 	ut8 buf[4];
 	const ut64 sz = r_buf_size (b);
-	r_buf_read_at (b, 0, buf, 4);
+	if (r_buf_read_at (b, 0, buf, 4) != 4) {
+		return false;
+	}
 	if (sz >= 0x300 && !memcmp (buf, "\xca\xfe\xba\xbe", 4)) {
 		ut64 addr = 4 * sizeof (32);
 		ut64 off = r_buf_read_be32_at (b, addr);

@@ -37,6 +37,7 @@ R_API bool r_arch_session_patch(RArchSession *ai, RAnalOp *op, RArchEncodeMask m
 }
 
 R_API bool r_arch_session_encode(RArchSession *ai, RAnalOp *op, RArchEncodeMask mask) {
+	// TODO R2_590 use the encoder if found in the current session ai->encoder->..
 	RArchPluginEncodeCallback encode = R_UNWRAP3 (ai, plugin, encode);
 	if (encode != NULL) {
 		return encode (ai, op, mask);

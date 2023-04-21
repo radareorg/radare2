@@ -867,7 +867,7 @@ static bool cb_asmarch(void *user, void *data) {
 	// set a default endianness
 	int bigbin = r_bin_is_big_endian (core->bin);
 	if (bigbin == -1 /* error: no endianness detected in binary */) {
-		bigbin = r_config_get_i (core->config, "cfg.bigendian");
+		bigbin = r_config_get_b (core->config, "cfg.bigendian");
 	}
 
 	// try to set endian of RAsm to match binary
@@ -926,6 +926,7 @@ static bool cb_asmbits(void *user, void *data) {
 	if (!bits) {
 		return false;
 	}
+	core->anal->arch->cfg->endian = core->rasm->config->endian? R_SYS_ENDIAN_BIG: R_SYS_ENDIAN_LITTLE;
 	if (bits == core->rasm->config->bits && bits == core->dbg->bits) {
 		// early optimization
 		return true;
@@ -1348,6 +1349,8 @@ static bool cb_bigendian(void *user, void *data) {
 	if (core->dbg && core->dbg->bp) {
 		core->dbg->bp->endian = isbig;
 	}
+	r_arch_set_endian (core->anal->arch, node->i_value
+			? R_SYS_ENDIAN_BIG: R_SYS_ENDIAN_NONE);
 	// core->rasm->config->endian = node->i_value ? R_SYS_ENDIAN_BIG: R_SYS_ENDIAN_NONE;
 	return true;
 }
