@@ -1,0 +1,8 @@
+NAME=r2pm -HH
+FILE=-
+CMDS=!!r2pm -HH~R2PM_OFFLINE 
+EXPECT=<<EOF
+R2PM_OFFLINE=0         # don't git pull
+EOF
+EXPECT_ERR=
+RUN
