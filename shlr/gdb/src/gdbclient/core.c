@@ -338,6 +338,7 @@ end:
 int gdbr_check_vcont(libgdbr_t *g) {
 	int ret = -1;
 	char *ptr = NULL;
+	char *save_ptr = NULL;
 
 	if (!g) {
 		return -1;
@@ -356,7 +357,7 @@ int gdbr_check_vcont(libgdbr_t *g) {
 		goto end;
 	}
 	g->data[g->data_len] = '\0';
-	if (!(ptr = strtok (g->data + strlen ("vCont;"), ";"))) {
+	if (!(ptr = r_str_tok_r (g->data + strlen ("vCont;"), ";", &save_ptr))) {
 		ret = 0;
 		goto end;
 	}
@@ -382,7 +383,7 @@ int gdbr_check_vcont(libgdbr_t *g) {
 			break;
 		}
 		g->stub_features.vContSupported = true;
-		ptr = strtok (NULL, ";");
+		ptr = r_str_tok_r (NULL, ";", &save_ptr);
 	}
 
 	ret = 0;
@@ -1107,6 +1108,7 @@ int gdbr_write_registers(libgdbr_t *g, char *registers) {
 	int ret = -1;
 	unsigned int x, len;
 	char *command, *reg, *buff, *value;
+	char *save_ptr = NULL;
 	// read current register set
 	command = buff = value = NULL;
 
@@ -1127,7 +1129,7 @@ int gdbr_write_registers(libgdbr_t *g, char *registers) {
 		goto end;
 	}
 	memcpy (buff, registers, len);
-	reg = strtok (buff, ",");
+	reg = r_str_tok_r (buff, ",", &save_ptr);
 	while (reg) {
 		char *name_end = strchr (reg, '=');
 		if (name_end == NULL) {
@@ -1164,7 +1166,7 @@ int gdbr_write_registers(libgdbr_t *g, char *registers) {
 			}
 			i++;
 		}
-		reg = strtok (NULL, " ,");
+		reg = r_str_tok_r (NULL, " ,", &save_ptr);
 	}
 
 	buffer_size = g->data_len * 2 + 8;

@@ -1469,6 +1469,7 @@ static int r_core_search_rop(RCore *core, RInterval search_itv, int opt, const c
 	int align = core->search->align;
 	RListIter *itermap = NULL;
 	char *tok, *gregexp = NULL;
+	char *save_ptr = NULL;
 	char *grep_arg = NULL;
 	char *rx = NULL;
 	int delta = 0;
@@ -1531,11 +1532,11 @@ static int r_core_search_rop(RCore *core, RInterval search_itv, int opt, const c
 			rx_list = r_list_newf (free);
 		}
 		gregexp = strdup (grep);
-		tok = strtok (gregexp, ";");
+		tok = r_str_tok_r (gregexp, ";", &save_ptr);
 		while (tok) {
 			rx = strdup (tok);
 			r_list_append (rx_list, rx);
-			tok = strtok (NULL, ";");
+			tok = r_str_tok_r (NULL, ";", &save_ptr);
 		}
 	}
 	if (param->outmode == R_MODE_JSON) {
@@ -3105,8 +3106,9 @@ static void rop_kuery(void *data, const char *input, PJ *pj) {
 			ls_foreach (sdb_list, sdb_iter, kv) {
 				char *dup = strdup (sdbkv_value (kv));
 				bool flag = false; // to free tok when doing strdup
-				char *size = strtok (dup, " ");
-				char *tok = strtok (NULL, "{}");
+				char *save_ptr = NULL;
+				char *size = r_str_tok_r (dup, " ", &save_ptr);
+				char *tok = r_str_tok_r (NULL, "{}", &save_ptr);
 				if (!tok) {
 					tok = strdup ("NOP");
 					flag = true;

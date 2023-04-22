@@ -775,14 +775,15 @@ static int analFormatDisassembledOperand(RAnal *a, avrDisassembleContext *contex
 int parse_registerpair(const char *operand) {
 		int res = -1;
 		char *op = strdup (operand);
-		char *first = strtok (op, ":");
+		char *save_ptr = NULL;
+		char *first = r_str_tok_r (op, ":", &save_ptr);
 
 		if (!first || strlen (first) < 2) {
 			free (op);
 			return -1;
 		}
 
-		char *second = strtok (NULL, ":");
+		char *second = r_str_tok_r (NULL, ":", &save_ptr);
 
 		/* the next code handles two possible different representation of pair
 		   by pair rx+1:rx

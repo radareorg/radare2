@@ -331,6 +331,7 @@ static bool dump_this_map(char *buff_smaps, linux_map_entry_t *entry, ut8 filter
 	char *identity = r_str_newf (fmt_addr, entry->start_addr, entry->end_addr);
 	bool found = false;
 	char *aux = NULL;
+	char *save_ptr = NULL;
 	ut8 vmflags = 0, perms = entry->perms;
 
 	if (!identity) {
@@ -402,7 +403,7 @@ static bool dump_this_map(char *buff_smaps, linux_map_entry_t *entry, ut8 filter
 			//empty body
 		}
 		flags_str--;
-		p = strtok (flags_str, " ");
+		p = r_str_tok_r (flags_str, " ", &save_ptr);
 		while (p) {
 			if (!strncmp (p, "sh", 2)) {
 				vmflags |= SH_FLAG;
@@ -416,7 +417,7 @@ static bool dump_this_map(char *buff_smaps, linux_map_entry_t *entry, ut8 filter
 			if (!strncmp (p, "dd", 2)) {
 				vmflags |= DD_FLAG;
 			}
-			p = strtok (NULL, " ");
+			p = r_str_tok_r (NULL, " ", &save_ptr);
 		}
 
 		if (!(vmflags & SH_FLAG)) {
