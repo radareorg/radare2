@@ -554,15 +554,17 @@ dotherax:
 		eprintf ("%s %.01lf %ff %lf\n",
 			out, num->fvalue, f, d);
 #endif
+				if (n >> 32) {
+					printf ("int64   %"PFMT64d"\n", (st64)n);
+					printf ("uint64  %"PFMT64u"\n", (ut64)n);
+				} else {
+					printf ("int32   %d\n", (st32)n);
+					printf ("uint32  %u\n", (ut32)n);
+				}
 				printf ("hex     0x%"PFMT64x"\n", n);
 				printf ("octal   0%"PFMT64o"\n", n);
 				printf ("unit    %s\n", unit);
 				printf ("segment %04x:%04x\n", s, a);
-				if (n >> 32) {
-					printf ("int64   %"PFMT64d"\n", (st64)n);
-				} else {
-					printf ("int32   %d\n", (st32)n);
-				}
 				if (asnum) {
 					printf ("string  \"%s\"\n", asnum);
 					free (asnum);
@@ -571,9 +573,9 @@ dotherax:
 				r_str_bits64 (out, n);
 				memcpy (&f, &n, sizeof (f));
 				memcpy (&d, &n, sizeof (d));
+				printf ("float   %ff\n", f);
+				printf ("double  %lf\n", d);
 				printf ("binary  0b%s\n", out);
-				printf ("float:  %ff\n", f);
-				printf ("double: %lf\n", d);
 
 				/* ternary */
 				r_num_to_ternary (out, n);
