@@ -531,7 +531,7 @@ R_API bool r_bin_list_plugin(RBin *bin, const char* name, PJ *pj, int json) {
 	r_return_val_if_fail (bin && name, false);
 
 	r_list_foreach (bin->plugins, it, bp) {
-		if (!strncmp (name, bp->name, strlen (name))) {
+		if (r_str_startswith (bp->name, name)) {
 			continue;
 		}
 		return r_bin_print_plugin_details (bin, bp, pj, json);
