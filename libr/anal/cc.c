@@ -89,7 +89,7 @@ R_API void r_anal_cc_get_json(RAnal *anal, PJ *pj, const char *name) {
 	r_strf_buffer (64);
 	int i;
 	// get cc by name and print the expr
-	if (strncmp (sdb_const_get (DB, name, 0), "cc", 2)) {
+	if (strcmp (sdb_const_get (DB, name, 0), "cc")) {
 		return;
 	}
 	const char *ret = sdb_const_get (DB, r_strf ("cc.%s.ret", name), 0);
