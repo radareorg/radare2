@@ -894,6 +894,7 @@ R_API int r_cons_grep_line(char *buf, int len) {
 	RConsGrep *grep = &cons->context->grep;
 	const char *delims = " |,;=\t";
 	char *tok = NULL;
+	char *save_ptr = NULL;
 	bool hit = true;
 	int outlen = 0;
 	bool use_tok = false;
@@ -961,7 +962,7 @@ R_API int r_cons_grep_line(char *buf, int len) {
 		}
 		if (use_tok && grep->tokens_used) {
 			for (i = 0; i < R_CONS_GREP_TOKENS; i++) {
-				tok = strtok (i? NULL: in, delims);
+				tok = r_str_tok_r (i? NULL: in, delims, &save_ptr);
 				if (tok) {
 					if (grep->tokens[i]) {
 						int toklen = strlen (tok);

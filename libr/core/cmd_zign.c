@@ -118,9 +118,10 @@ static inline bool za_add(RCore *core, const char *input) {
 		return false;
 	}
 
-	char *name = strtok (args, " ");
-	char *stype = strtok (NULL, " ");
-	char *sig = strtok (NULL, "");
+	char *save_ptr = NULL;
+	char *name = r_str_tok_r (args, " ", &save_ptr);
+	char *stype = r_str_tok_r (NULL, " ", &save_ptr);
+	char *sig = r_str_tok_r (NULL, "", &save_ptr);
 
 	if (!stype || !sig || stype[1] != '\0') {
 		R_LOG_ERROR ("Invalid input");
@@ -816,20 +817,21 @@ static bool bestmatch_fcn(RCore *core, const char *input, bool json) {
 	}
 
 	int count = 5;
-	char *zigname = strtok (argv, " ");
+	char *save_ptr = NULL;
+	char *zigname = r_str_tok_r (argv, " ", &save_ptr);
 	if (!zigname) {
 		R_LOG_ERROR ("Need a signature");
 		free (argv);
 		return false;
 	}
-	char *cs = strtok (NULL, " ");
+	char *cs = r_str_tok_r (NULL, " ", &save_ptr);
 	if (cs) {
 		if ((count = atoi (cs)) <= 0) {
 			free (argv);
 			R_LOG_ERROR ("Invalid count");
 			return false;
 		}
-		if (strtok (NULL, " ")) {
+		if (r_str_tok_r (NULL, " ", &save_ptr)) {
 			free (argv);
 			R_LOG_ERROR ("Too many parameters");
 			return false;
@@ -1071,14 +1073,15 @@ static bool diff_zig(void *data, const char *input) {
 		return false;
 	}
 
-	char *zigname = strtok (argv, " ");
+	char *save_ptr = NULL;
+	char *zigname = r_str_tok_r (argv, " ", &save_ptr);
 	if (!zigname) {
 		R_LOG_ERROR ("Need a signature");
 		free (argv);
 		return false;
 	}
 
-	if (strtok (NULL, " ")) {
+	if (r_str_tok_r (NULL, " ", &save_ptr)) {
 		R_LOG_ERROR ("too many arguments");
 		free (argv);
 		return false;

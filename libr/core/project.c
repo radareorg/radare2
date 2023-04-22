@@ -273,12 +273,13 @@ R_API void r_core_project_execute_cmds(RCore *core, const char *prjfile) {
 	spp_eval (data, &out);
 	free (data);
 	data = strdup (r_strbuf_get (out.cout));
-	char *bol = strtok (data, "\n");
+	char *save_ptr = NULL;
+	char *bol = r_str_tok_r (data, "\n", &save_ptr);
 	while (bol) {
 		if (bol[0] == ':') {
 			r_core_cmd0 (core, bol + 1);
 		}
-		bol = strtok (NULL, "\n");
+		bol = r_str_tok_r (NULL, "\n", &save_ptr);
 	}
 	free (data);
 }

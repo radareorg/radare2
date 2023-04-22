@@ -4819,7 +4819,8 @@ static int cmd_af(RCore *core, const char *input) {
 				if (R_STR_ISNOTEMPTY (arg)) {
 					// parse function signature here
 					char *fcnstr = r_str_newf ("%s;", arg), *fcnstr_copy = strdup (fcnstr);
-					char *fcnname_aux = strtok (fcnstr_copy, "(");
+					char *save_ptr = NULL;
+					char *fcnname_aux = r_str_tok_r (fcnstr_copy, "(", &save_ptr);
 					r_str_trim_tail (fcnname_aux);
 					const char *ls = r_str_lchr (fcnname_aux, ' ');
 					char *fcnname = strdup (ls? ls: fcnname_aux);
@@ -5478,6 +5479,7 @@ void cmd_anal_reg(RCore *core, const char *str) {
 	const char *use_color = NULL;
 	const char *name;
 	char *arg;
+	char *save_ptr = NULL;
 
 	if (use_colors) {
 #define ConsP(x) (core->cons && core->cons->context->pal.x)? core->cons->context->pal.x
@@ -5766,7 +5768,7 @@ void cmd_anal_reg(RCore *core, const char *str) {
 				p = strdup (str + 1);
 				if (str[1] != ':') {
 					// Bits were specified
-					bitstr = strtok (p, ":");
+					bitstr = r_str_tok_r (p, ":", &save_ptr);
 					if (r_str_isnumber (bitstr)) {
 						st64 sz = r_num_math (core->num, bitstr);
 						if (sz > 0) {
@@ -5780,13 +5782,13 @@ void cmd_anal_reg(RCore *core, const char *str) {
 				int len = bitstr ? strlen (bitstr) : 0;
 				if (str[len + 1] == ':') {
 					// We have some regs
-					char *regs = bitstr ? strtok (NULL, ":") : strtok ((char *)str + 1, ":");
-					char *reg = strtok (regs, " ");
+					char *regs = bitstr ? r_str_tok_r (NULL, ":", &save_ptr) : r_str_tok_r ((char *)str + 1, ":", &save_ptr);
+					char *reg = r_str_tok_r (regs, " ", &save_ptr);
 					RList *q_regs = r_list_new ();
 					if (q_regs) {
 						while (reg) {
 							r_list_append (q_regs, reg);
-							reg = strtok (NULL, " ");
+							reg = r_str_tok_r (NULL, " ", &save_ptr);
 						}
 						core->dbg->q_regs = q_regs;
 					}

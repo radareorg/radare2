@@ -274,10 +274,11 @@ static bool GetHeapGlobalsOffset(RDebug *dbg, HANDLE h_proc) {
 	bool doopen = lastNdtllAddr != map->addr;
 	char *ntdllopen = dbg->coreb.cmdstrf (dbg->coreb.core, "ob~%s", ntdll);
 	if (*ntdllopen) {
-		char *saddr = strtok (ntdllopen, " ");
+		char *save_ptr = NULL;
+		char *saddr = r_str_tok_r (ntdllopen, " ", &save_ptr);
 		size_t i;
 		for (i = 0; i < 3; i++) {
-			saddr = strtok (NULL, " ");
+			saddr = r_str_tok_r (NULL, " ", &save_ptr);
 		}
 		if (doopen) {
 			// Close to reopen at the right address

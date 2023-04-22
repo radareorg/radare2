@@ -1710,9 +1710,10 @@ R_API int r_cons_is_vtcompat(void) {
 	bool win_support = 0;
 	RSysInfo *info = r_sys_info ();
 	if (info && info->version) {
-		char *dot = strtok (info->version, ".");
+		char *save_ptr = NULL;
+		char *dot = r_str_tok_r (info->version, ".", &save_ptr);
 		major = atoi (dot);
-		dot = strtok (NULL, ".");
+		dot = r_str_tok_r (NULL, ".", &save_ptr);
 		minor = atoi (dot);
 		if (info->release) {
 			release = atoi (info->release);

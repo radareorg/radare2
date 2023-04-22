@@ -28,6 +28,7 @@
 #include "arcompact-dis.h"
 #include "elf-bfd.h"
 #include "r_types.h"
+#include "r_util.h"
 
 static bfd_vma bfd_getm32(unsigned int);
 static bfd_vma bfd_getm32_ac(unsigned int) ATTRIBUTE_UNUSED;
@@ -3856,6 +3857,7 @@ ARCompact_decodeInstr (bfd_vma           address,    /* Address of this instruct
       {
         bfd_vma addr;
         char *tmpBuffer;
+	char *save_ptr = NULL;
         int i = 1;
 
         if (operand[0] != '@')
@@ -3864,7 +3866,7 @@ ARCompact_decodeInstr (bfd_vma           address,    /* Address of this instruct
              only for the third operand. Print the first 2 operands */
           strncpy(buf, operand, sizeof (buf));
           buf[sizeof (buf) - 1] = '\0';
-          tmpBuffer = strtok(buf,"@");
+          tmpBuffer = r_str_tok_r(buf, "@", &save_ptr);
           (*func) (stream, "%s", tmpBuffer);
           i = strlen(tmpBuffer) + 1;
         }

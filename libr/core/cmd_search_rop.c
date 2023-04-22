@@ -10,6 +10,7 @@
 static RList* parse_list(const char *str) {
 	RList *list;
 	char *line, *data, *p, *str_n;
+	char *save_ptr = NULL;
 
 	if (!str) {
 		return NULL;
@@ -21,14 +22,14 @@ static RList* parse_list(const char *str) {
 		free (str_n);
 		return NULL;
 	}
-	line = strtok (str_n, "\n");
+	line = r_str_tok_r (str_n, "\n", &save_ptr);
 	data = strchr (line, '=');
 	// TODO: use r_str_split()
-	p = strtok (data + 1, ",");
+	p = r_str_tok_r (data + 1, ",", &save_ptr);
 
 	while (p) {
 		r_list_append (list, (void*)strdup (p));
-		p = strtok (NULL, ",");
+		p = r_str_tok_r (NULL, ",", &save_ptr);
 	}
 
 	free (str_n);
@@ -38,18 +39,20 @@ static RList* parse_list(const char *str) {
 static RList* get_constants(const char *str) {
 	RList *list;
 	char *p, *data;
+	char *save_ptr = NULL;
+
 	if (!str) {
 		return NULL;
 	}
 
 	data = strdup (str);
 	list = r_list_newf (free);
-	p = strtok (data, ",");
+	p = r_str_tok_r (data, ",", &save_ptr);
 	while (p) {
 		if (strtol (p, NULL, 0)) {
 			r_list_append (list, (void*)strdup (p));
 		}
-		p = strtok (NULL, ",");
+		p = r_str_tok_r (NULL, ",", &save_ptr);
 	}
 	free (data);
 	return list;

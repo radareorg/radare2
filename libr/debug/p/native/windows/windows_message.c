@@ -382,7 +382,8 @@ static ut64 __get_dispatchmessage_offset(RDebug *dbg) {
 		free (res);
 		return 0;
 	}
-	char *line = strtok (res, "\n");
+	char *save_ptr = NULL;
+	char *line = r_str_tok_r (res, "\n", &save_ptr);
 	ut64 offset = 0;
 	do  {
 		char *sym = strrchr (line, ' ');
@@ -391,7 +392,7 @@ static ut64 __get_dispatchmessage_offset(RDebug *dbg) {
 			dbg->iob.read_at (dbg->iob.io, offset, (ut8 *)&offset, sizeof (offset));
 			break;
 		}
-	} while ((line = strtok (NULL, "\n")));
+	} while ((line = r_str_tok_r (NULL, "\n", &save_ptr)));
 	free (res);
 	return offset;
 }

@@ -230,7 +230,8 @@ R_API bool r_sign_deserialize(RAnal *a, RSignItem *it, const char *k, const char
 	it->name = r_str_new (r_str_word_get0 (k2, 2));
 
 	// remove newline at end
-	strtok (v2, "\n");
+	char *save_ptr = NULL;
+	r_str_tok_r (v2, "\n", &save_ptr);
 	// Deserialize value: |k:v|k:v|k:v|...
 	n = r_str_split (v2, '|');
 	const char *token = NULL;
