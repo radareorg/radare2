@@ -1025,6 +1025,7 @@ static int cmd_we(void *data, const char *input) {
 	ut8* bytes = NULL;
 	int cmd_suc = false;
 	char *input_shadow = NULL, *p = NULL;
+	char *save_ptr = NULL;
 
 	switch (input[0]) {
 	case 'n': // "wen"
@@ -1103,13 +1104,13 @@ static int cmd_we(void *data, const char *input) {
 		// the solution is to tokenize the string :/
 		if (len > 0) {
 			input_shadow = strdup (input);
-			p = strtok (input_shadow, " ");
+			p = r_str_tok_r (input_shadow, " ", &save_ptr);
 			addr = p && *p ? r_num_math (core->num, p) : 0;
 
-			p = strtok (NULL, " ");
+			p = r_str_tok_r (NULL, " ", &save_ptr);
 			dist = p && *p ? r_num_math (core->num, p) : 0;
 
-			p = strtok (NULL, " ");
+			p = r_str_tok_r (NULL, " ", &save_ptr);
 			b_size = p && *p ? r_num_math (core->num, p) : 0;
 			if (dist != 0) {
 				r_core_shift_block (core, addr, b_size, dist);

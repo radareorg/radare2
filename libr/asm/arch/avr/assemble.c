@@ -44,6 +44,7 @@ specialregs RegsTable[REGS_TABLE] = {
 int avr_encode(RAnal *a, ut64 pc, const char *str, ut8 *outbuf, int outlen) {
 	AvrToken tok;
 	char *token;
+	char *save_ptr = NULL;
 	uint32_t coded = 0;
 	int len  = 0;
 	uint32_t op1 = 0, op2 = 0;
@@ -52,11 +53,11 @@ int avr_encode(RAnal *a, ut64 pc, const char *str, ut8 *outbuf, int outlen) {
 
 	// simple tokenizer -- creates an array of maximum three tokens
 	// the delimiters are ' ' and ','
-	token = strtok ((char *)str, TOKEN_DELIM);
+	token = r_str_tok_r ((char *)str, TOKEN_DELIM, &save_ptr);
 	while (token && tokens_cnt < 3) {
 		memset (tok.ens[tokens_cnt], 0, MAX_TOKEN_SIZE);
 		strncpy (tok.ens[tokens_cnt], token, MAX_TOKEN_SIZE-1);
-		token = strtok (NULL, TOKEN_DELIM);
+		token = r_str_tok_r (NULL, TOKEN_DELIM, &save_ptr);
 		tokens_cnt += 1;
 	}
 

@@ -1252,7 +1252,8 @@ static int cmd_yank(void *data, const char *input) {
 			}
 			char *data = r_core_editor (core, NULL, sig);
 			if (data) {
-				(void) strtok (data, ";\n");
+				char *save_ptr = NULL;
+				(void) r_str_tok_r (data, ";\n", &save_ptr);
 				r_core_cmdf (core, "y%s", data);
 				free (data);
 			}

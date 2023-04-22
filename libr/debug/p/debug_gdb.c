@@ -159,7 +159,8 @@ static RList *r_debug_gdb_map_get(RDebug* dbg) { //TODO
 	RDebugMap *map = NULL;
 	region1[0] = region2[0] = '0';
 	region1[1] = region2[1] = 'x';
-	if (!(ptr = strtok ((char*) buf, "\n"))) {
+	char *save_ptr = NULL;
+	if (!(ptr = r_str_tok_r ((char*) buf, "\n", &save_ptr))) {
 		gdbr_close_file (desc);
 		free (buf);
 		return NULL;
@@ -192,7 +193,7 @@ static RList *r_debug_gdb_map_get(RDebug* dbg) { //TODO
 			return NULL;
 		}
 		if (!(pos_1 = strchr (&region1[2], '-'))) {
-			ptr = strtok (NULL, "\n");
+			ptr = r_str_tok_r (NULL, "\n", &save_ptr);
 			continue;
 		}
 		strncpy (&region2[2], pos_1 + 1, sizeof (region2) - 2 - 1);
@@ -214,7 +215,7 @@ static RList *r_debug_gdb_map_get(RDebug* dbg) { //TODO
 		if (map_start == map_end || map_end == 0) {
 			eprintf ("%s: ignoring invalid map size: %s - %s\n",
 				 __func__, region1, region2);
-			ptr = strtok (NULL, "\n");
+			ptr = r_str_tok_r (NULL, "\n", &save_ptr);
 			continue;
 		}
 		if (!(map = r_debug_map_new (name, map_start, map_end, perm, 0))) {
@@ -224,7 +225,7 @@ static RList *r_debug_gdb_map_get(RDebug* dbg) { //TODO
 		map->shared = map_is_shared;
 		map->file = strdup (name);
 		r_list_append (retlist, map);
-		ptr = strtok (NULL, "\n");
+		ptr = r_str_tok_r (NULL, "\n", &save_ptr);
 	}
 	gdbr_close_file (desc);
 	free (buf);

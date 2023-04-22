@@ -51,7 +51,8 @@ int handle_qStatus(libgdbr_t *g) {
 		return -1;
 	}
 	char *data = strdup (g->data);
-	char *tok = strtok (data, ";");
+	char *save_ptr = NULL;
+	char *tok = r_str_tok_r (data, ";", &save_ptr);
 	if (!tok) {
 		free (data);
 		return -1;
@@ -68,7 +69,7 @@ int handle_qStatus(libgdbr_t *g) {
 			free (data);
 			return send_ack (g);
 		}
-		tok = strtok (NULL, ";");
+		tok = r_str_tok_r (NULL, ";", &save_ptr);
 	}
 	send_ack (g);
 	free (data);
@@ -270,6 +271,7 @@ int handle_stop_reason(libgdbr_t *g) {
 		return -1;
 	}
 	char *ptr1, *ptr2;
+	char *save_ptr = NULL;
 	g->data[g->data_len] = '\0';
 	free (g->stop_reason.exec.path);
 	memset (&g->stop_reason, 0, sizeof (libgdbr_stop_reason_t));
@@ -279,7 +281,7 @@ int handle_stop_reason(libgdbr_t *g) {
 	}
 	g->stop_reason.is_valid = true;
 	g->stop_reason.reason = R_DEBUG_REASON_SIGNAL;
-	for (ptr1 = strtok (g->data + 3, ";"); ptr1; ptr1 = strtok (NULL, ";")) {
+	for (ptr1 = r_str_tok_r (g->data + 3, ";", &save_ptr); ptr1; ptr1 = r_str_tok_r (NULL, ";", &save_ptr)) {
 		if (r_str_startswith (ptr1, "thread") && !g->stop_reason.thread.present) {
 			if (!(ptr2 = strchr (ptr1, ':'))) {
 				continue;
@@ -394,6 +396,7 @@ int handle_lldb_read_reg(libgdbr_t *g) {
 		return -1;
 	}
 	char *ptr, *ptr2, *buf;
+	char *save_ptr = NULL;
 	size_t regnum, tot_regs, buflen = 0;
 
 	// Get maximum register number
@@ -408,25 +411,25 @@ int handle_lldb_read_reg(libgdbr_t *g) {
 	buf = g->read_buff;
 	memset (buf, 0, buflen);
 
-	if (!(ptr = strtok (g->data, ";"))) {
+	if (!(ptr = r_str_tok_r (g->data, ";", &save_ptr))) {
 		return -1;
 	}
 	while (ptr) {
 		if (!isxdigit ((unsigned char)*ptr)) {
 			// This is not a reg value. Skip
-			ptr = strtok (NULL, ";");
+			ptr = r_str_tok_r (NULL, ";", &save_ptr);
 			continue;
 		}
 		// Get register number
 		regnum = (int) strtoul (ptr, NULL, 16);
 		if (regnum >= tot_regs || !(ptr2 = strchr (ptr, ':'))) {
-			ptr = strtok (NULL, ";");
+			ptr = r_str_tok_r (NULL, ";", &save_ptr);
 			continue;
 		}
 		ptr2++;
 		// Write to offset
 		unpack_hex (ptr2, strlen (ptr2), buf + g->registers[regnum].offset);
-		ptr = strtok (NULL, ";");
+		ptr = r_str_tok_r (NULL, ";", &save_ptr);
 		continue;
 	}
 	memcpy (g->data, buf, buflen);

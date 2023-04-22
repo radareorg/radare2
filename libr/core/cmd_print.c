@@ -2012,7 +2012,8 @@ static void cmd_print_format(RCore *core, const char *_input, const ut8* block, 
 		}
 
 		/* check if fmt is '\d+ \d+<...>', common mistake due to usage string */
-		const char *arg1 = strtok (args, " ");
+		char *save_ptr = NULL;
+		const char *arg1 = r_str_tok_r (args, " ", &save_ptr);
 		if (arg1 && r_str_isnumber (arg1)) {
 			r_core_cmd_help_match (core, help_msg_pf, "pf", true);
 			goto err_arg1;

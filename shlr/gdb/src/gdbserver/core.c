@@ -227,6 +227,7 @@ static int _server_handle_z(libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, void *core_
 
 static int _server_handle_vCont(libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, void *core_ptr) {
 	char *action = NULL;
+	char *save_ptr = NULL;
 	if (send_ack (g) < 0) {
 		return -1;
 	}
@@ -235,10 +236,10 @@ static int _server_handle_vCont(libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, void *c
 		// Query about everything we support
 		return send_msg (g, "vCont;c;s");
 	}
-	if (!(action = strtok (g->data, ";"))) {
+	if (!(action = r_str_tok_r (g->data, ";", &save_ptr))) {
 		return send_msg (g, "E01");
 	}
-	while ((action = strtok (NULL, ";"))) {
+	while ((action = r_str_tok_r (NULL, ";", &save_ptr))) {
 		R_LOG_DEBUG ("%s: action: %s", __func__, action);
 		switch (action[0]) {
 		case 's':

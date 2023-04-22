@@ -71,6 +71,7 @@ R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut6
 	int align = core->search->align;
 	RRegex* rx = NULL;
 	char *tok, *tokens[1024], *code = NULL, *ptr;
+	char *save_ptr = NULL;
 	int idx, tidx = 0, len = 0;
 	int tokcount, matchcount, count = 0;
 	int matches = 0;
@@ -111,7 +112,7 @@ R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut6
 	}
 	tokens[0] = NULL;
 	for (tokcount = 0; tokcount < R_ARRAY_SIZE (tokens) - 1; tokcount++) {
-		tok = strtok (tokcount? NULL: ptr, ";");
+		tok = r_str_tok_r (tokcount? NULL: ptr, ";", &save_ptr);
 		if (!tok) {
 			break;
 		}

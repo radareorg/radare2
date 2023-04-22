@@ -5024,7 +5024,8 @@ static int parseOperand(RArchSession *a, const char *str, Operand *op, bool isre
 					return -1;
 				}
 				strcpy (tmp, str + pos);
-				strtok (tmp, "+-"); // XXX dont use strtok
+				char *save_ptr = NULL;
+				r_str_tok_r (tmp, "+-", &save_ptr);
 				char *bracket = strchr (tmp, ']');
 				if (bracket) {
 					*bracket = 0;
