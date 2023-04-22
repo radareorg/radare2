@@ -408,7 +408,7 @@ static RList *blobs_add(Rvc *rvc, const RList *files) {
 		RListIter *tmp;
 		//problamatic iterates even after finding the file but needed for directires.
 		r_list_foreach_safe (uncommitted, j, tmp, ucp) {
-			if (r_str_cmp (ucp, absp, r_str_len_utf8 (absp))) {
+			if (strncmp (ucp, absp, r_str_len_utf8 (absp))) {
 				continue;
 			}
 			found = true;
@@ -448,7 +448,7 @@ static bool rm_empty_dir(Rvc *rvc) {
 	RListIter *iter;
 	const char *f;
 	r_list_foreach (files, iter, f) {
-		if (r_str_cmp (f, path, r_str_len_utf8 (path))) {
+		if (strncmp (f, path, r_str_len_utf8 (path))) {
 			rmdir (f);
 		}
 	}
@@ -594,7 +594,7 @@ static RList *get_blobs(Rvc *rvc, RList *ignore) {
 		bool found = false;
 		r_list_foreach (lines, j, ln) {
 			if (!found) {
-				found = !r_str_cmp (ln, COMMIT_BLOB_SEP,
+				found = !strncmp (ln, COMMIT_BLOB_SEP,
 						r_str_len_utf8 (COMMIT_BLOB_SEP));
 				continue;
 			}
@@ -715,7 +715,7 @@ R_API RList *branches_rvc(Rvc *rvc) {
 	SdbKv *kv;
 	ls_foreach (keys, i, kv) {
 		size_t bplen = r_str_len_utf8 (BPREFIX);
-		if (r_str_cmp ((char *)kv->base.key,
+		if (strncmp ((char *)kv->base.key,
 					BPREFIX, bplen)) {
 			continue;
 		}

@@ -89,7 +89,7 @@ R_API void r_anal_cc_get_json(RAnal *anal, PJ *pj, const char *name) {
 	r_strf_buffer (64);
 	int i;
 	// get cc by name and print the expr
-	if (r_str_cmp (sdb_const_get (DB, name, 0), "cc", -1)) {
+	if (strncmp (sdb_const_get (DB, name, 0), "cc", 2)) {
 		return;
 	}
 	const char *ret = sdb_const_get (DB, r_strf ("cc.%s.ret", name), 0);
@@ -124,7 +124,7 @@ R_API char *r_anal_cc_get(RAnal *anal, const char *name) {
 	r_return_val_if_fail (anal && name, NULL);
 	int i;
 	// get cc by name and print the expr
-	if (r_str_cmp (sdb_const_get (DB, name, 0), "cc", -1)) {
+	if (strncmp (sdb_const_get (DB, name, 0), "cc", 2)) {
 		R_LOG_ERROR ("Invalid calling convention name (%s)", name);
 		return NULL;
 	}

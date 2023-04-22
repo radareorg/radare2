@@ -798,23 +798,6 @@ R_API bool r_str_cmp_list(const char *list, const char *item, char sep) {
 	return true;
 }
 
-// like strncmp, but checking for null pointers
-R_API int r_str_cmp(const char *a, const char *b, int len) {
-	if ((a == b) || (!a && !b)) {
-		return 0;
-	}
-	if (!a && b) {
-		return -1;
-	}
-	if (a && !b) {
-		return 1;
-	}
-	if (len < 0) {
-		return strcmp (a, b);
-	}
-	return strncmp (a, b, len);
-}
-
 // Copies all characters from src to dst up until the character 'ch'.
 R_API int r_str_ccpy(char *dst, char *src, int ch) {
 	int i;

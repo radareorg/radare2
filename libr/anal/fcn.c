@@ -901,7 +901,7 @@ repeat:
 			last_is_reg_mov_lea = false;
 			if (is_arm) { // mov lr, pc
 				const char *esil = r_strbuf_get (&op->esil);
-				if (!r_str_cmp (esil, "pc,lr,=", -1)) {
+				if (!strncmp (esil, "pc,lr,=", 7)) {
 					last_is_mov_lr_pc = true;
 				}
 			}

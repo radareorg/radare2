@@ -531,13 +531,13 @@ R_API bool r_bin_list_plugin(RBin *bin, const char* name, PJ *pj, int json) {
 	r_return_val_if_fail (bin && name, false);
 
 	r_list_foreach (bin->plugins, it, bp) {
-		if (!r_str_cmp (name, bp->name, strlen (name))) {
+		if (!strncmp (name, bp->name, strlen (name))) {
 			continue;
 		}
 		return r_bin_print_plugin_details (bin, bp, pj, json);
 	}
 	r_list_foreach (bin->binxtrs, it, bx) {
-		if (!r_str_cmp (name, bx->name, strlen (name))) {
+		if (!strncmp (name, bx->name, strlen (name))) {
 			continue;
 		}
 		__printXtrPluginDetails (bin, bx, json);
