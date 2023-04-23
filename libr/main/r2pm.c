@@ -22,6 +22,7 @@ static const char *helpmsg =
 	" -gi <pkg>         global install (system-wide)\n"
 	" -h                display this help message\n"
 	" -H variable       show the value of given internal environment variable (See -HH)\n"
+	" -HH               show all the internal environment variable values\n"
 	" -i <pkgname>      install/update package and its dependencies (see -c, -g)\n"
 	" -I                information about repository and installed packages\n"
 	" -l                list installed packages\n"
@@ -595,7 +596,7 @@ static int r2pm_clone(const char *pkg) {
 	char *srcdir = r_file_new (pkgdir, pkg, NULL);
 	free (pkgdir);
 
-	int offline = r_sys_getenv_asint ("R2PM_OFFLINE");
+	bool offline = r_sys_getenv_asbool ("R2PM_OFFLINE");
 	if (offline) {
 		return 0;
 	}
@@ -988,7 +989,7 @@ static void r2pm_envhelp(bool verbose) {
 		char *r2pm_dbdir = r_sys_getenv ("R2PM_DBDIR");
 		char *r2pm_prefix = r_sys_getenv ("R2PM_PREFIX");
 		char *r2pm_gitdir = r_sys_getenv ("R2PM_GITDIR");
-		int r2pm_offline = r_sys_getenv_asint ("R2PM_OFFLINE");
+		bool r2pm_offline = r_sys_getenv_asbool ("R2PM_OFFLINE");
 		printf ("R2_LOG_LEVEL=2         # define log.level for r2pm\n"
 			"SUDO=sudo              # path to the SUDO executable\n"
 			"MAKE=make              # path to the GNU MAKE executable\n"
