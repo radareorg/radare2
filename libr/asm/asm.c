@@ -326,7 +326,6 @@ R_DEPRECATE R_API int r_asm_set_bits(RAsm *a, int bits) {
 
 R_API bool r_asm_set_big_endian(RAsm *a, bool b) {
 	r_return_val_if_fail (a, false);
-	a->config->endian = R_SYS_ENDIAN ? R_SYS_ENDIAN_BIG: R_SYS_ENDIAN_LITTLE; // default is host endian
 #if 0
 	if (a->cur) {
 		switch (a->cur->endian) {
@@ -350,6 +349,11 @@ R_API bool r_asm_set_big_endian(RAsm *a, bool b) {
 	} else {
 	}
 #endif
+	// default is host endian
+	// a->config->endian = R_SYS_ENDIAN ? R_SYS_ENDIAN_BIG: R_SYS_ENDIAN_LITTLE; // default is host endian
+	if (a->arch) {
+		r_arch_set_endian (a->arch, a->config->endian);
+	}
 	a->config->endian = b ? R_SYS_ENDIAN_BIG: R_SYS_ENDIAN_LITTLE;
 	return R_ARCH_CONFIG_IS_BIG_ENDIAN (a->config);
 }
@@ -535,6 +539,7 @@ static int r_asm_assemble(RAsm *a, RAnalOp *op, const char *buf) {
 		//RAnalOp aop;
 		//a->analb.opinit (&aop);
 		ut8 buf[256] = {0};
+		a->analb.anal->arch->cfg->endian = a->config->endian;
 		// XXX we shuold use just RArch and ecur/dcur
 		ret = a->analb.encode (a->analb.anal, a->pc, b, buf, sizeof (buf));
 		if (ret > 0) {
