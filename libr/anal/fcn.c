@@ -94,7 +94,7 @@ R_API int r_anal_function_resize(RAnalFunction *fcn, int newsize) {
 	}
 
 	// XXX this is something we should probably do for all the archs
-	bool is_arm = anal->cur->arch && r_str_startswith (anal->cur->arch, "arm");
+	bool is_arm = anal->cur && anal->cur->arch && r_str_startswith (anal->cur->arch, "arm");
 	if (is_arm) {
 		return true;
 	}

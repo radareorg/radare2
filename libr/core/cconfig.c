@@ -481,9 +481,9 @@ static bool cb_archdecoder_getter(RCore *core, RConfigNode *node) {
 }
 
 static bool cb_archbits(void *user, void *data) {
+	r_return_val_if_fail (user && data, false);
 	RCore *core = (RCore *)user;
 	RConfigNode *node = (RConfigNode *)data;
-	r_return_val_if_fail (node && core && core->anal && core->anal->arch, false);
 	r_arch_set_bits (core->anal->arch, node->i_value);
 	return true;
 }
@@ -955,29 +955,27 @@ static bool cb_asmbits(void *user, void *data) {
 			ret = false;
 		}
 	}
-	if (core->dbg && core->anal && core->anal->cur) {
-		r_debug_set_arch (core->dbg, core->anal->config->arch, bits);
-		const bool load_from_debug = r_config_get_b (core->config, "cfg.debug");
-		if (load_from_debug) {
-			if (core->dbg->h && core->dbg->h->reg_profile) {
+	r_debug_set_arch (core->dbg, core->anal->config->arch, bits);
+	const bool load_from_debug = r_config_get_b (core->config, "cfg.debug");
+	if (load_from_debug) {
+		if (core->dbg->h && core->dbg->h->reg_profile) {
 // XXX. that should depend on the plugin, not the host os
 #if R2__WINDOWS__
 #if !defined(_WIN64)
-				core->dbg->bits = R_SYS_BITS_32;
+			core->dbg->bits = R_SYS_BITS_32;
 #else
-				core->dbg->bits = R_SYS_BITS_64;
+			core->dbg->bits = R_SYS_BITS_64;
 #endif
 #endif
-				char *rp = core->dbg->h->reg_profile (core->dbg);
-				if (rp) {
-					r_reg_set_profile_string (core->dbg->reg, rp);
-					r_reg_set_profile_string (core->anal->reg, rp);
-					free (rp);
-				}
+			char *rp = core->dbg->h->reg_profile (core->dbg);
+			if (rp) {
+				r_reg_set_profile_string (core->dbg->reg, rp);
+				r_reg_set_profile_string (core->anal->reg, rp);
+				free (rp);
 			}
-		} else {
-			(void)r_anal_set_reg_profile (core->anal, NULL);
 		}
+	} else {
+		(void)r_anal_set_reg_profile (core->anal, NULL);
 	}
 	r_core_anal_cc_init (core);
 	const char *asmos = r_config_get (core->config, "asm.os");
