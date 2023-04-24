@@ -52,6 +52,15 @@ R_API int r_anal_opasm(RAnal *anal, ut64 addr, const char *s, ut8 *outbuf, int o
 				}
 				free (an);
 			}
+			// workaround because r_arch_use doesnt handle encoder sessions until R2_590
+			if (!tmparch) {
+				char *an = r_str_newf ("%s.nz", arch_name);
+				if (r_arch_use (anal->arch, anal->arch->cfg, an)) {
+					tmparch = an;
+				} else {
+					free (an);
+				}
+			}
 			if (!tmparch) {
 				// cannot assemble with this plugin
 				r_anal_op_free (op);
