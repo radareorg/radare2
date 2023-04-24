@@ -51,12 +51,15 @@ static ut32 _rate_compat(RArchPlugin *p, RArchConfig *cfg, const char *name) {
 	return score;
 }
 
-static RArchPlugin *find_bestmatch(RArch *arch, RArchConfig *cfg, const char *name) {
+static RArchPlugin *find_bestmatch(RArch *arch, RArchConfig *cfg, const char *name, bool enc) {
 	ut8 best_score = 0;
 	RArchPlugin *ap = NULL;
 	RListIter *iter;
 	RArchPlugin *p;
 	r_list_foreach (arch->plugins, iter, p) {
+		if (enc && !p->encode) {
+			continue;
+		}
 		const ut32 score = _rate_compat (p, cfg, name);
 		if (score > 0 && score > best_score) {
 			best_score = score;
@@ -83,7 +86,7 @@ R_API bool r_arch_use(RArch *arch, RArchConfig *config, const char *name) {
 		return true;
 	}
 #endif
-	RArchPlugin *ap = find_bestmatch (arch, config, name);
+	RArchPlugin *ap = find_bestmatch (arch, config, name, false);
 	if (!ap) {
 		r_unref (arch->session);
 		arch->session = NULL;
@@ -91,6 +94,22 @@ R_API bool r_arch_use(RArch *arch, RArchConfig *config, const char *name) {
 	}
 	r_unref (arch->session);
 	arch->session = r_arch_session (arch, config, ap);
+	if (arch->session) {
+		RArchPluginEncodeCallback encode = arch->session->plugin->encode;
+		if (!encode) {
+#if R2_590
+			RArchPlugin *ap = find_bestmatch (arch, config, name, true);
+			if (ap) {
+				RArchSession *es = r_arch_session (arch, config, ap);
+				if (es && es->plugin == arch->session->plugin) {
+					r_unref (es);
+				} else if (es) {
+					arch->session->encoder = es;
+				}
+			}
+#endif
+		}
+	}
 #if 0
 	RArchConfig *oconfig = arch->cfg;
 	r_unref (arch->cfg);
@@ -193,7 +212,7 @@ R_API bool r_arch_add(RArch *a, RArchPlugin *ap) {
 
 R_API bool r_arch_del(RArch *arch, const char *name) {
 	r_return_val_if_fail (arch && arch->plugins && name, false);
-	RArchPlugin *ap = find_bestmatch (arch, NULL, name);
+	RArchPlugin *ap = find_bestmatch (arch, NULL, name, false);
 #if 0
 	if (arch->current && !strcmp (arch->current->p->name, name)) {
 		arch->current = NULL;
@@ -219,9 +238,15 @@ R_API int r_arch_info(RArch *a, int query) {
 }
 
 R_API bool r_arch_encode(RArch *a, RAnalOp *op, RArchEncodeMask mask) {
-	// XXX should be unused
-	RArchPluginEncodeCallback encode = R_UNWRAP4 (a, session, plugin, encode);
-	return encode? encode (a->session, op, mask): false;
+	RArchSession *session = a->session;
+	RArchPluginEncodeCallback encode = R_UNWRAP3 (session, plugin, encode);
+#if R2_590
+	if (!encode && session->encoder) {
+		session = session->encoder;
+		encode = R_UNWRAP3 (session, plugin, encode);
+	}
+#endif
+	return encode? encode (session, op, mask): false;
 }
 
 R_API bool r_arch_decode(RArch *a, RAnalOp *op, RArchDecodeMask mask) {

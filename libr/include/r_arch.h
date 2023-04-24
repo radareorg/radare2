@@ -148,9 +148,11 @@ typedef struct r_arch_t {
 typedef struct r_arch_session_t {
 #if R2_590
 	char *name; // used by .use to chk if it was set already
+	// TODO: name it "peer" instead of encoder. so the encoder can back reference the decoder
+	struct r_arch_session_t *encoder; // used for encoding when plugin->encode is not set
 #endif
 	struct r_arch_t *arch;
-	struct r_arch_plugin_t *plugin;
+	struct r_arch_plugin_t *plugin; // used for decoding
 	RArchConfig *config; // TODO remove arch->config!
 	void *data;
 	void *user;
