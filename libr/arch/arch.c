@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2022 - pancake, condret */
+/* radare - LGPL - Copyright 2023 - pancake, condret */
 
 #include <r_arch.h>
 #include <config.h>
@@ -118,6 +118,7 @@ R_API bool r_arch_use_encoder(RArch *arch, const char *dname) {
 // set bits and update config
 // This api conflicts with r_arch_config_set_bits
 R_API bool r_arch_set_bits(RArch *arch, ut32 bits) {
+	// XXX unused??
 	r_return_val_if_fail (arch && bits, false);
 	if (!arch->cfg) {
 		RArchConfig *cfg = r_arch_config_new ();
@@ -211,6 +212,7 @@ R_API void r_arch_free(RArch *arch) {
 	}
 }
 
+// query must be ut32!
 R_API int r_arch_info(RArch *a, int query) {
 	// XXX should be unused, because its not tied to a session
 	RArchSession *session = R_UNWRAP2 (a, session);
