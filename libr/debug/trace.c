@@ -27,13 +27,12 @@ R_API RDebugTrace *r_debug_trace_new(void) {
 }
 
 R_API void r_debug_trace_free(RDebugTrace *trace) {
-	if (!trace) {
-		return;
+	if (trace) {
+		r_list_purge (trace->traces);
+		free (trace->traces);
+		ht_pp_free (trace->ht);
+		R_FREE (trace);
 	}
-	r_list_purge (trace->traces);
-	free (trace->traces);
-	ht_pp_free (trace->ht);
-	R_FREE (trace);
 }
 
 // TODO: added overlap/mask support here... wtf?
