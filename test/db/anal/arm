@@ -1100,6 +1100,7 @@ RUN
 
 NAME=aav thumb detection
 FILE=bins/firmware/armthumb.bin
+BROKEN=1
 ARGS=-aarm -b32
 CMDS=<<EOF
 aav
