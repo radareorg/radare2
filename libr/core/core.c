@@ -203,7 +203,7 @@ R_API char* r_core_add_asmqjmp(RCore *core, ut64 addr) {
  * multiletter shortcut of the form XYWZu and returned (see r_core_get_asmqjmps
  * for more info). Otherwise, the shortcut is the string representation of pos. */
 R_API void r_core_set_asmqjmps(RCore *core, char *str, size_t len, int pos) {
-	r_return_if_fail (core && str && pos > 0)
+	r_return_if_fail (core && str && pos > 0);
 	if (core->is_asmqjmps_letter) {
 		int i, j = 0;
 		pos --;

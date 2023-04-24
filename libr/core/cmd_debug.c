@@ -641,13 +641,11 @@ static int showreg(RCore *core, const char *str) {
 		}
 		return r->size;
 	}
-	char *arg = strchr (str + 1, ' ');
+	const char *arg = strchr (str + 1, ' ');
 	if (arg && size == 0) {
-		size = atoi (arg + 1);
-	} else {
-		size = atoi (str + 1);
+		str = arg;
 	}
-	return size;
+	return atoi (str + 1);
 }
 
 static RGraphNode *get_graphtrace_node(RGraph *g, Sdb *nodes, struct trace_node *tn) {
