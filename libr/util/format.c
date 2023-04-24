@@ -1435,7 +1435,11 @@ static void r_print_format_nulltermwidestring(const RPrint* p, const int len, in
 static void r_print_format_bitfield(const RPrint* p, ut64 seeki, char *fmtname,
 		char *fieldname, ut64 addr, int mode, int size) {
 	char *bitfield = NULL;
-	addr &= (1ULL << (size * 8)) - 1;
+	if (size >= 8) {
+		addr = 0;
+	} else {
+		addr &= (1ULL << (size * 8)) - 1;
+	}
 	if (MUSTSEE && !SEEVALUE) {
 		p->cb_printf ("0x%08"PFMT64x" = ", seeki);
 	}
@@ -1805,7 +1809,12 @@ R_API int r_print_format_struct_size(RPrint *p, const char *f, int mode, int n) 
 				return 0;
 			}
 			if (format) {
-				size += tabsize * newsize;
+				if (!ST32_MUL_OVFCHK (tabsize, newsize)) {
+					size = size + (tabsize * newsize);
+				} else {
+					R_LOG_ERROR ("Prevented multiply integer overflow in format.c");
+					return 0;
+				}
 			}
 			free (structname);
 			if (format_owned) {
