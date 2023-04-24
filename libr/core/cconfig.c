@@ -867,7 +867,7 @@ static bool cb_asmarch(void *user, void *data) {
 	// set a default endianness
 	int bigbin = r_bin_is_big_endian (core->bin);
 	if (bigbin == -1 /* error: no endianness detected in binary */) {
-		bigbin = r_config_get_i (core->config, "cfg.bigendian");
+		bigbin = r_config_get_b (core->config, "cfg.bigendian");
 	}
 
 	// try to set endian of RAsm to match binary
@@ -926,6 +926,13 @@ static bool cb_asmbits(void *user, void *data) {
 	if (!bits) {
 		return false;
 	}
+#if 0
+	if (core->rasm->config && core->anal->arch->cfg) {
+		const int endian = core->rasm->config->endian
+			? R_SYS_ENDIAN_BIG: R_SYS_ENDIAN_LITTLE;
+		core->anal->arch->cfg->endian = endian;
+	}
+#endif
 	if (bits == core->rasm->config->bits && bits == core->dbg->bits) {
 		// early optimization
 		return true;
@@ -1341,14 +1348,16 @@ static bool cb_dirzigns(void *user, void *data) {
 static bool cb_bigendian(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
-	core->rasm->config->endian = node->i_value ? R_SYS_ENDIAN_BIG: R_SYS_ENDIAN_NONE;
-	// Try to set endian based on preference, restrict by RAsmPlugin
+	// bp, asm, arch, anal, should have a single RArchConfig instance
+	int endianType = node->i_value ? R_SYS_ENDIAN_BIG: R_SYS_ENDIAN_NONE;
 	bool isbig = r_asm_set_big_endian (core->rasm, node->i_value);
-	// the big endian should also be assigned to dbg->bp->endian
 	if (core->dbg && core->dbg->bp) {
 		core->dbg->bp->endian = isbig;
 	}
-	// core->rasm->config->endian = node->i_value ? R_SYS_ENDIAN_BIG: R_SYS_ENDIAN_NONE;
+#if 1
+	core->rasm->config->endian = endianType;
+	r_arch_set_endian (core->anal->arch, endianType);
+#endif
 	return true;
 }
 
