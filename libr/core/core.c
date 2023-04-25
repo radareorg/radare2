@@ -203,20 +203,19 @@ R_API char* r_core_add_asmqjmp(RCore *core, ut64 addr) {
  * multiletter shortcut of the form XYWZu and returned (see r_core_get_asmqjmps
  * for more info). Otherwise, the shortcut is the string representation of pos. */
 R_API void r_core_set_asmqjmps(RCore *core, char *str, size_t len, int pos) {
+	r_return_if_fail (core && str && pos > 0)
 	if (core->is_asmqjmps_letter) {
 		int i, j = 0;
-		// if (pos > 0) {
-			pos --;
-		////  }
+		pos --;
 		for (i = 0; i < R_CORE_ASMQJMPS_LEN_LETTERS - 1; i++) {
-			int div = pos / letter_divs[i];
+			const int div = pos / letter_divs[i];
 			pos %= letter_divs[i];
 			if (div > 0 && j < len) {
 				str[j++] = 'A' + div - 1;
 			}
 		}
 		if (j < len) {
-			int div = pos % R_CORE_ASMQJMPS_LETTERS;
+			const int div = pos % R_CORE_ASMQJMPS_LETTERS;
 			str[j++] = 'a' + div;
 		}
 		str[j] = '\0';
@@ -1035,7 +1034,7 @@ static const char *radare_argv[] = {
 	"dts?", "dts", "dts+", "dts-", "dtsf", "dtst", "dtsC", "dtt",
 	"dw",
 	"dx?", "dx", "dxa", "dxe", "dxr", "dxs",
-	"e?", "e", "e-", "e*", "e!", "ec", "ee?", "ee", "?ed", "ed", "ej", "env", "er", "es", "et", "ev", "evj",
+	"e?", "e", "-e", "e-", "e*", "e!", "ec", "ee?", "ee", "?ed", "ed", "ej", "env", "er", "es", "et", "ev", "evj",
 	"ec?", "ec", "ec*", "ecd", "ecr", "ecs", "ecj", "ecc", "eco", "ecp", "ecn",
 	"ecH?", "ecH", "ecHi", "ecHw", "ecH-",
 	"f?", "f", "f.", "f*", "f-", "f--", "f+", "f=", "fa", "fb", "fc?", "fc", "fC", "fd", "fe-", "fe",
@@ -2724,7 +2723,7 @@ static void __init_autocomplete_default(RCore* core) {
 		"afc", "axg", "axt", "axf", "dcu", "ag", "agfl", "aecu", "aesu", "aeim", NULL
 	};
 	const char *evals[] = {
-		"e", "ee", "et", "e?", "e!", "ev", "evj", NULL
+		"-e", "e", "ee", "et", "e?", "e!", "ev", "evj", NULL
 	};
 	const char *breaks[] = {
 		"db-", "dbc", "dbC", "dbd", "dbe", "dbs", "dbi", "dbte", "dbtd", "dbts", NULL
@@ -3417,15 +3416,13 @@ static void prompt_sec(RCore *r, char *s, size_t maxlen) {
 }
 
 static void chop_prompt(const char *filename, char *tmp, size_t max_tmp_size) {
-	size_t tmp_len, file_len;
 	unsigned int OTHRSCH = 3;
 	const char DOTS[] = "...";
-	int w, p_len;
 
-	w = r_cons_get_size (NULL);
-	file_len = strlen (filename);
-	tmp_len = strlen (tmp);
-	p_len = R_MAX (0, w - 6);
+	int w = r_cons_get_size (NULL);
+	size_t file_len = strlen (filename);
+	size_t tmp_len = strlen (tmp);
+	int p_len = R_MAX (0, w - 6);
 	if (file_len + tmp_len + OTHRSCH >= p_len) {
 		size_t dots_size = sizeof (DOTS);
 		size_t chop_point = (size_t)(p_len - OTHRSCH - file_len - dots_size);
@@ -3449,8 +3446,8 @@ static void set_prompt(RCore *r) {
 
 	if (r_config_get_b (r->config, "scr.prompt.file")) {
 		free (filename);
-		filename = r_str_newf ("\"%s\"",
-			r->io->desc ? r_file_basename (r->io->desc->name) : "");
+		const char *fn = r->io->desc ? r_file_basename (r->io->desc->name) : "";
+		filename = r_str_newf ("\"%s\"", fn);
 	}
 	if (r->cmdremote) {
 		char *s = r_core_cmd_str (r, "s");
