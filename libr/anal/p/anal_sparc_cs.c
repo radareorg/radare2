@@ -54,44 +54,35 @@ static void opex(RStrBuf *buf, csh handle, cs_insn *insn) {
 	pj_free (pj);
 }
 
-static int parse_reg_name(RRegItem *reg, csh handle, cs_insn *insn, int reg_num) {
-	if (!reg) {
-		return -1;
-	}
+static const char *parse_reg_name(csh handle, cs_insn *insn, int reg_num) {
 	switch (INSOP (reg_num).type) {
 	case SPARC_OP_REG:
-		reg->name = (char *)cs_reg_name (handle, INSOP (reg_num).reg);
-		break;
+		return (const char *)cs_reg_name (handle, INSOP (reg_num).reg);
 	case SPARC_OP_MEM:
 		if (INSOP (reg_num).mem.base != SPARC_REG_INVALID) {
-			reg->name = (char *)cs_reg_name (handle, INSOP (reg_num).mem.base);
-			break;
+			return (const char *)cs_reg_name (handle, INSOP (reg_num).mem.base);
 		}
+		break;
 	default:
 		break;
 	}
-	return 0;
+	return NULL;
 }
 
 static void op_fillval(RAnalOp *op, csh handle, cs_insn *insn) {
-	static R_TH_LOCAL RRegItem reg;
 	RAnalValue *val;
 	switch (op->type & R_ANAL_OP_TYPE_MASK) {
 	case R_ANAL_OP_TYPE_LOAD:
 		if (INSOP (0).type == SPARC_OP_MEM) {
-			ZERO_FILL (reg);
 			val = r_vector_push (&op->srcs, NULL);
-			val->reg = &reg;
-			parse_reg_name (val->reg, handle, insn, 0);
+			val->reg = parse_reg_name (handle, insn, 0);
 			val->delta = INSOP(0).mem.disp;
 		}
 		break;
 	case R_ANAL_OP_TYPE_STORE:
 		if (INSOP (1).type == SPARC_OP_MEM) {
-			ZERO_FILL (reg);
 			val = r_vector_push (&op->dsts, NULL);
-			val->reg = &reg;
-			parse_reg_name (val->reg, handle, insn, 1);
+			val->reg = parse_reg_name (handle, insn, 1);
 			val->delta = INSOP(1).mem.disp;
 		}
 		break;
