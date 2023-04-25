@@ -79,7 +79,7 @@ RUN DEBIAN_FRONTEND=noninteractive \
   python3 \
   python3-pip \
   sudo \
-  glib-2.0 \
+  unzip \
   gnupg2 \
   ${with_arm64_as:+binutils-aarch64-linux-gnu} \
   ${with_arm32_as:+binutils-arm-linux-gnueabi} \
