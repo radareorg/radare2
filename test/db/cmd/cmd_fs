@@ -101,6 +101,19 @@ hfs	0x0	/root
 EOF
 RUN
 
+NAME=m hfs oobread
+FILE=bins/fs/hfs-oobread.img
+CMDS=<<EOF
+m
+md /
+EOF
+EXPECT=
+EXPECT_ERR=<<EOF
+Cannot find the HFS root directory
+ERROR: Cannot mount /root
+EOF
+RUN
+
 NAME=m fat auto
 FILE=bins/fs/fat.img
 CMDS=m
