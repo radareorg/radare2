@@ -376,7 +376,7 @@ grub_hfs_mount (grub_disk_t disk)
 			  0, (char *) &dir, sizeof (dir)) == 0)
     {
       grub_error (GRUB_ERR_BAD_FS, "cannot find the HFS root directory");
-      eprintf ("cannot find the HFS root directory\n");
+      eprintf ("Cannot find the HFS root directory\n");
       goto fail;
     }
 
@@ -737,11 +737,11 @@ if (!node.offsets) {
 	    grub_uint8_t key;
 	  }) *pnt;
 	  int off = grub_be_to_cpu16 (node.offsets[pos]);
-	  if (off > 1024) {
-		  eprintf ("prevented oobread\n");
+	  if (off > (sizeof (node.rawnode) - sizeof (struct grub_hfs_record))) {
+		  // R_LOG_WARN ("Prevent HFS oobread");
 		  break;
 	  }
-	  pnt = (struct pointer *) (off + node.rawnode);
+	  pnt = (struct pointer *) (node.rawnode + off);
 	  struct grub_hfs_record rec =
 	    {
 	      &pnt->key,
