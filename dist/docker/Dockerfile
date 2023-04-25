@@ -30,8 +30,11 @@
 # $ r2 -d /bin/true
 #
 
-FROM debian:10
-# FROM ubuntu:20.04
+# 12 = Bookworm (stable in 2023)
+# 11 = Bullseye (stable in 2022)
+# 10 = Buster (old stable)
+FROM debian:11
+# FROM ubuntu:22.04
 
 # Label base
 LABEL r2docker latest
@@ -39,7 +42,7 @@ LABEL r2docker latest
 # Radare version
 ARG R2_VERSION=master
 # R2pipe python version
-ARG R2_PIPE_PY_VERSION=1.7.3
+ARG R2_PIPE_PY_VERSION=1.7.4
 
 ARG with_arm32_as
 ARG with_arm64_as
@@ -60,13 +63,16 @@ VOLUME ["/mnt"]
 # Build and install radare2 on master branch
 # Remove all build dependencies
 # Cleanup
-RUN DEBIAN_FRONTEND=noninteractive dpkg --add-architecture i386 && \
+# RUN DEBIAN_FRONTEND=noninteractive dpkg --add-architecture i386
+RUN DEBIAN_FRONTEND=noninteractive \
   apt-get update && \
   apt-get install -y \
   curl \
   wget \
   gcc \
   git \
+  tig \
+  vim \
   bison \
   pkg-config \
   make \
@@ -74,15 +80,11 @@ RUN DEBIAN_FRONTEND=noninteractive dpkg --add-architecture i386 && \
   python3-pip \
   sudo \
   glib-2.0 \
-  libc6:i386 \
-  libncurses5:i386 \
-  libstdc++6:i386 \
   gnupg2 \
-  python-pip \
   ${with_arm64_as:+binutils-aarch64-linux-gnu} \
   ${with_arm32_as:+binutils-arm-linux-gnueabi} \
   ${with_ppc_as:+binutils-powerpc64le-linux-gnu} && \
-  pip install r2pipe=="$R2_PIPE_PY_VERSION" && \
+  pip3 install r2pipe=="$R2_PIPE_PY_VERSION" && \
   cd /mnt && \
   git clone -b "$R2_VERSION" -q --depth 1 https://github.com/radareorg/radare2.git && \
   cd radare2 && \
@@ -105,14 +107,17 @@ ENV R2_PPC_AS=${with_ppc_as:+powerpc64le-linux-gnu-as}
 RUN useradd -m r2 && \
   adduser r2 sudo && \
   echo "r2:r2" | chpasswd
+RUN chown -R r2:r2 /mnt/radare2
 
 # Initialise base user
 USER r2
 WORKDIR /home/r2
 ENV HOME /home/r2
 
+COPY README.md /home/r2/README.md
+
 # Setup r2pm
-RUN r2pm init && r2pm update
+RUN r2pm -U
 
 # Base command for container
 CMD ["/bin/bash"]
