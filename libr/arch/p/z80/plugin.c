@@ -493,12 +493,12 @@ static int archinfo(RArchSession *as, ut32 q) {
 
 static bool encode(RArchSession *s, RAnalOp *op, ut32 mask) {
 	ut8 data[32] = {0};
-	int len = z80asm (data, op->mnemonic);
-	if (len < 1) {
-		return false;
+	const int len = z80asm (data, op->mnemonic);
+	if (len > 0) {
+		r_anal_op_set_bytes (op, op->addr, data, len);
+		return true;
 	}
-	r_anal_op_set_bytes (op, op->addr, data, len);
-	return true;
+	return false;
 }
 
 RArchPlugin r_arch_plugin_z80 = {

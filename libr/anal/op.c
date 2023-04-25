@@ -43,8 +43,9 @@ R_API int r_anal_opasm(RAnal *anal, ut64 addr, const char *s, ut8 *outbuf, int o
 		if (!op) {
 			return -1;
 		}
-		char *oldname = strdup (as->plugin->name);
+		char *oldname = NULL;
 		if (!encode) {
+			oldname = strdup (as->plugin->name);
 			const char *arch_name = as->plugin->name;
 			const char *dot = strchr (arch_name, '.');
 			if (dot) {
@@ -102,7 +103,7 @@ R_API int r_anal_opasm(RAnal *anal, ut64 addr, const char *s, ut8 *outbuf, int o
 		if (oldname) {
 			arch_set = true;
 			r_arch_use (anal->arch, anal->arch->cfg, oldname);
-			free (oldname);
+			R_FREE (oldname);
 		}
 		/* consider at least 1 byte to be part of the opcode */
 	} else if (anal && outbuf && outlen > 0 && anal->cur && anal->cur->opasm) {

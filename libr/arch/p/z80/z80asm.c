@@ -32,7 +32,7 @@
 /* hack */
 // must remove: equ, include, incbin, macro
 // static void wrt_ref (int val, int type, int count);
-static R_TH_LOCAL unsigned char *obuf = NULL;
+static R_TH_LOCAL ut8 *obuf = NULL;
 static R_TH_LOCAL int obuflen = 0;
 #define write_one_byte(x, y) obuf[obuflen++] = x
 #define wrtb(x) obuf[obuflen++] = x
