@@ -715,7 +715,7 @@ R_API RList *branches_rvc(Rvc *rvc) {
 	SdbKv *kv;
 	ls_foreach (keys, i, kv) {
 		size_t bplen = r_str_len_utf8 (BPREFIX);
-		if (strncmp ((char *)kv->base.key,
+		if (!r_str_startswith ((char *)kv->base.key, BPREFIX)) {
 					BPREFIX, bplen)) {
 			continue;
 		}
