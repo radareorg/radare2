@@ -741,7 +741,7 @@ repeat:
 
 		if (anal->opt.nopskip && fcn->addr == at) {
 			RFlagItem *fi = anal->flb.get_at (anal->flb.f, addr, false);
-			if (!fi || r_str_startswith (fi->name, "sym.")) {
+			if (!fi || !r_str_startswith (fi->name, "sym.")) {
 				if ((addr + delay.un_idx - oplen) == fcn->addr) {
 					if (r_anal_block_relocate (bb, bb->addr + oplen, bb->size - oplen)) {
 						fcn->addr += oplen;
