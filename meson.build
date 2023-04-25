@@ -679,7 +679,6 @@ install_data(
 if cli_enabled
   install_man(
     'man/r2agent.1',
-    'man/r2-docker.1',
     'man/r2pm.1',
     'man/rabin2.1',
     'man/radare2.1',
