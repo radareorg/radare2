@@ -448,7 +448,7 @@ static bool rm_empty_dir(Rvc *rvc) {
 	RListIter *iter;
 	const char *f;
 	r_list_foreach (files, iter, f) {
-		if (strncmp (f, path, r_str_len_utf8 (path))) {
+		if (!r_str_startswith (f, path)) {
 			rmdir (f);
 		}
 	}
