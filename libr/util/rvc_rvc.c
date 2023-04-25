@@ -595,7 +595,6 @@ static RList *get_blobs(Rvc *rvc, RList *ignore) {
 		r_list_foreach (lines, j, ln) {
 			if (!found) {
 				found = r_str_startswith (ln, COMMIT_BLOB_SEP);
-						r_str_len_utf8 (COMMIT_BLOB_SEP));
 				continue;
 			}
 			RList *kv = r_str_split_list (ln, "=", 2);
