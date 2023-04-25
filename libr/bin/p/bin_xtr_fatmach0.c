@@ -100,6 +100,9 @@ static RBinXtrData *oneshot_buffer(RBin *bin, RBuffer *b, int idx) {
 	}
 	int narch;
 	struct r_bin_fatmach0_obj_t *fb = bin->cur->xtr_obj;
+	if (!fb) {
+		return NULL;
+	}
 	struct r_bin_fatmach0_arch_t *arch = r_bin_fatmach0_extract (fb, idx, &narch);
 	if (arch) {
 		RBinXtrMetadata *metadata = R_NEW0 (RBinXtrMetadata);
