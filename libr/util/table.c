@@ -294,7 +294,7 @@ static void __computeTotal(RTable *t) {
 		int c = 0;
 		r_list_foreach (row->items, iter2, item) {
 			RTableColumn *col = r_list_get_n (t->cols, c);
-			if (!strncmp (col->type->name, "number", r_str_ansi_len ("number")) && r_str_isnumber (item)) {
+			if (r_str_startswith (col->type->name, "number") && r_str_isnumber (item)) {
 				if (col->total < 0) {
 					col->total = 0;
 				}
