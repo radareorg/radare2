@@ -51,31 +51,20 @@ R_API int r_anal_opasm(RAnal *anal, ut64 addr, const char *s, ut8 *outbuf, int o
 			if (dot) {
 				char *an = r_str_ndup (arch_name, dot - arch_name);
 				if (r_arch_use (anal->arch, anal->arch->cfg, an)) {
-					tmparch = strdup (arch_name);
+					if (anal->arch->session->plugin->encode) {
+						char *an2 = r_str_newf ("%s.nz", an);
+						if (r_arch_use (anal->arch, anal->arch->cfg, an2)) {
+							tmparch = an2;
+						} else {
+							free (an2);
+						}
+					} else {
+						tmparch = strdup (arch_name);
+					}
 				}
 				free (an);
 			}
-			// workaround because r_arch_use doesnt handle encoder sessions until R2_590
 			if (!tmparch) {
-				char *an = r_str_newf ("%s.nz", arch_name);
-				if (r_arch_use (anal->arch, anal->arch->cfg, an)) {
-					tmparch = an;
-				} else {
-					free (an);
-				}
-			}
-			// workaround because r_arch_use doesnt handle encoder sessions until R2_590
-			if (!tmparch) {
-				char *an = r_str_newf ("%s.nz", arch_name);
-				if (r_arch_use (anal->arch, anal->arch->cfg, an)) {
-					tmparch = an;
-				} else {
-					free (an);
-				}
-			}
-			if (!tmparch) {
-				// cannot assemble with this plugin
-				// R_FREE (oldname);
 				r_anal_op_free (op);
 				goto beach;
 			}
