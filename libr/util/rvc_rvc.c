@@ -408,7 +408,7 @@ static RList *blobs_add(Rvc *rvc, const RList *files) {
 		RListIter *tmp;
 		//problamatic iterates even after finding the file but needed for directires.
 		r_list_foreach_safe (uncommitted, j, tmp, ucp) {
-			if (strncmp (ucp, absp, r_str_len_utf8 (absp))) {
+			if (!r_str_startswith (ucp, absp)) {
 				continue;
 			}
 			found = true;
