@@ -715,7 +715,6 @@ R_API RList *branches_rvc(Rvc *rvc) {
 	ls_foreach (keys, i, kv) {
 		size_t bplen = r_str_len_utf8 (BPREFIX);
 		if (!r_str_startswith ((char *)kv->base.key, BPREFIX)) {
-					BPREFIX, bplen)) {
 			continue;
 		}
 		if (!r_list_append (ret, r_str_new ((char *)kv->base.key + bplen))
