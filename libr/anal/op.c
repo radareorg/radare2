@@ -133,6 +133,7 @@ beach:
 	return ret;
 }
 
+// R2_590 data and len are contained inside RAnalOp. those args must disapear same for addr.. and then we get r_arch_op xD
 R_API int r_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len, RAnalOpMask mask) {
 	r_return_val_if_fail (anal && op && len > 0, -1);
 	r_anal_op_init (op);
@@ -161,7 +162,7 @@ R_API int r_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 	}
 	int ret = R_MIN (2, len);
 	if (len > 0 && anal->uses == 2 && anal->arch->session) {
-		r_anal_op_set_bytes (op, addr, data, len);
+		r_anal_op_set_bytes (op, addr, data, op->size);
 		if (!r_arch_decode (anal->arch, op, mask) || op->size <= 0) {
 			op->type = R_ANAL_OP_TYPE_ILL;
 			op->size = r_anal_archinfo (anal, R_ANAL_ARCHINFO_INV_OP_SIZE);
