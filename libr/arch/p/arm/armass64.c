@@ -223,8 +223,9 @@ static inline ut32 encode1reg(ArmOp *op) {
 }
 
 static inline ut32 encode2regs(ArmOp *op) {
-	return (op->operands[1].reg & 0x7) << 29 | (op->operands[1].reg & 0x18) << 13
-		| encode1reg (op);
+	// p/arm/armass64.c:226:37: runtime error: left shift of 5 by 29 places cannot be represented in type 'int'
+	ut32 a0 = op->operands[1].reg;
+	return ((a0 & 0x7) << 29) | ((a0 & 0x18) << 13) | encode1reg (op);
 }
 
 static inline ut32 encode3regs(ArmOp *op) {
