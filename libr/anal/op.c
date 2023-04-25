@@ -30,9 +30,10 @@ static int defaultCycles(RAnalOp *op) {
 	}
 }
 
-// XXX deprecate!! or at least call  r_arch_bath tradition
+// XXX deprecate!! or at least call r_arch_bath tradition
 R_API int r_anal_opasm(RAnal *anal, ut64 addr, const char *s, ut8 *outbuf, int outlen) {
 	// XXX this is a hack because RArch needs to hold two pointers one for the encoder and one for the decoder plugins (optionally)
+	bool arch_set = false;
 	char *tmparch = NULL;
 	int ret = 0;
 	if (outlen > 0 && anal->arch->session && anal->uses == 2) {
@@ -42,7 +43,9 @@ R_API int r_anal_opasm(RAnal *anal, ut64 addr, const char *s, ut8 *outbuf, int o
 		if (!op) {
 			return -1;
 		}
+		char *oldname = NULL;
 		if (!encode) {
+			oldname = strdup (as->plugin->name);
 			const char *arch_name = as->plugin->name;
 			const char *dot = strchr (arch_name, '.');
 			if (dot) {
@@ -61,8 +64,18 @@ R_API int r_anal_opasm(RAnal *anal, ut64 addr, const char *s, ut8 *outbuf, int o
 					free (an);
 				}
 			}
+			// workaround because r_arch_use doesnt handle encoder sessions until R2_590
+			if (!tmparch) {
+				char *an = r_str_newf ("%s.nz", arch_name);
+				if (r_arch_use (anal->arch, anal->arch->cfg, an)) {
+					tmparch = an;
+				} else {
+					free (an);
+				}
+			}
 			if (!tmparch) {
 				// cannot assemble with this plugin
+				free (oldname);
 				r_anal_op_free (op);
 				return -1;
 			}
@@ -87,6 +100,11 @@ R_API int r_anal_opasm(RAnal *anal, ut64 addr, const char *s, ut8 *outbuf, int o
 			goto beach;
 		}
 		r_anal_op_free (op);
+		if (oldname) {
+			arch_set = true;
+			r_arch_use (anal->arch, anal->arch->cfg, oldname);
+			R_FREE (oldname);
+		}
 		/* consider at least 1 byte to be part of the opcode */
 	} else if (anal && outbuf && outlen > 0 && anal->cur && anal->cur->opasm) {
 		// use core binding to set asm.bits correctly based on the addr
@@ -114,7 +132,9 @@ R_API int r_anal_opasm(RAnal *anal, ut64 addr, const char *s, ut8 *outbuf, int o
 	}
 beach:
 	if (tmparch) {
-		r_arch_use (anal->arch, anal->arch->cfg, tmparch);
+		if (!arch_set) {
+			r_arch_use (anal->arch, anal->arch->cfg, tmparch);
+		}
 		free (tmparch);
 	}
 	return ret;
