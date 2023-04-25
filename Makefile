@@ -239,7 +239,6 @@ install: install-doc install-man install-www install-pkgconfig
 	mkdir -p "${DESTDIR}${DATADIR}/radare2/${VERSION}/hud"
 	mkdir -p "${DESTDIR}${BINDIR}"
 	#${INSTALL_SCRIPT} "${PWD}/sys/indent.sh" "${DESTDIR}${BINDIR}/r2-indent"
-	#${INSTALL_SCRIPT} "${PWD}/sys/r1-docker.sh" "${DESTDIR}${BINDIR}/r2-docker"
 	cp -f doc/hud "${DESTDIR}${DATADIR}/radare2/${VERSION}/hud/main"
 	mkdir -p "${DESTDIR}${DATADIR}/radare2/${VERSION}/"
 	$(SHELL) ./configure-plugins --rm-static $(DESTDIR)$(LIBDIR)/radare2/last/
@@ -281,7 +280,6 @@ symstall install-symlink: install-man-symlink install-doc-symlink install-pkgcon
 	cd shlr && ${MAKE} install-symlink
 	mkdir -p "${DESTDIR}${BINDIR}"
 	ln -fs "${PWD}/sys/indent.sh" "${DESTDIR}${BINDIR}/r2-indent"
-	ln -fs "${PWD}/sys/r2-docker.sh" "${DESTDIR}${BINDIR}/r2-docker"
 	mkdir -p "${DESTDIR}${DATADIR}/radare2/${VERSION}/hud"
 	ln -fs "${PWD}/doc/hud" "${DESTDIR}${DATADIR}/radare2/${VERSION}/hud/main"
 	#mkdir -p "${DESTDIR}${DATADIR}/radare2/${VERSION}/flag"
@@ -293,7 +291,6 @@ symstall install-symlink: install-man-symlink install-doc-symlink install-pkgcon
 
 deinstall uninstall:
 	rm -f $(DESTDIR)$(BINDIR)/r2-indent
-	rm -f $(DESTDIR)$(BINDIR)/r2-docker
 	cd libr && ${MAKE} uninstall
 	cd binr && ${MAKE} uninstall
 	cd shlr && ${MAKE} uninstall

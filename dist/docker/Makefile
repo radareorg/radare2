@@ -1,3 +1,5 @@
+include ../../config-user.mk
+
 ifeq ($(shell uname -m),arm64)
 ARCH=arm64
 else
@@ -17,3 +19,6 @@ endif
 all:
 	docker build $(DOCKER_PLATFORM) -t $(DOCKER_IMAGE) .
 	docker run $(DOCKER_PLATFORM) -v $(shell pwd)/../..:/r -v /tmp:/tmp $(DOCKERFLAGS) -i -t ${DOCKER_IMAGE}
+
+install:
+	${INSTALL_SCRIPT} r2-docker.sh "${DESTDIR}${BINDIR}/r2-docker"
