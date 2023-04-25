@@ -131,7 +131,7 @@ R_API int r_anal_opasm(RAnal *anal, ut64 addr, const char *s, ut8 *outbuf, int o
 	}
 beach:
 	if (tmparch) {
-		if (!archset) {
+		if (!arch_set) {
 			r_arch_use (anal->arch, anal->arch->cfg, tmparch);
 		}
 		free (tmparch);
