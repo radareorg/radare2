@@ -1,6 +1,6 @@
-/* radare2 - LGPL - Copyright 2014-2022 - pancake */
+/* radare2 - LGPL - Copyright 2014-2023 - pancake */
 
-#include <r_anal.h>
+#include <r_arch.h>
 #include <r_lib.h>
 #include <capstone/capstone.h>
 #include <capstone/sparc.h>
@@ -54,26 +54,42 @@ static void opex(RStrBuf *buf, csh handle, cs_insn *insn) {
 	pj_free (pj);
 }
 
-static int parse_reg_name(RRegItem *reg, csh handle, cs_insn *insn, int reg_num) {
-	if (!reg) {
-		return -1;
-	}
+static const char *parse_reg_name(csh handle, cs_insn *insn, int reg_num) {
 	switch (INSOP (reg_num).type) {
 	case SPARC_OP_REG:
-		reg->name = (char *)cs_reg_name (handle, INSOP (reg_num).reg);
-		break;
+		return (const char *)cs_reg_name (handle, INSOP (reg_num).reg);
 	case SPARC_OP_MEM:
 		if (INSOP (reg_num).mem.base != SPARC_REG_INVALID) {
-			reg->name = (char *)cs_reg_name (handle, INSOP (reg_num).mem.base);
-			break;
+			return (const char *)cs_reg_name (handle, INSOP (reg_num).mem.base);
 		}
+		break;
 	default:
 		break;
 	}
-	return 0;
+	return NULL;
 }
 
-static int get_capstone_mode(RArchSession *as) {
+static void op_fillval(RAnalOp *op, csh handle, cs_insn *insn) {
+	RAnalValue *val;
+	switch (op->type & R_ANAL_OP_TYPE_MASK) {
+	case R_ANAL_OP_TYPE_LOAD:
+		if (INSOP (0).type == SPARC_OP_MEM) {
+			val = r_vector_push (&op->srcs, NULL);
+			val->reg = parse_reg_name (handle, insn, 0);
+			val->delta = INSOP(0).mem.disp;
+		}
+		break;
+	case R_ANAL_OP_TYPE_STORE:
+		if (INSOP (1).type == SPARC_OP_MEM) {
+			val = r_vector_push (&op->dsts, NULL);
+			val->reg = parse_reg_name (handle, insn, 1);
+			val->delta = INSOP(1).mem.disp;
+		}
+		break;
+	}
+}
+
+static int get_capstone_mode(RAnal *a) {
 	int mode = CS_MODE_LITTLE_ENDIAN;
 #if 0
 	// XXX capstone doesnt support big endian sparc, this code does nothing, so we need to swap around
