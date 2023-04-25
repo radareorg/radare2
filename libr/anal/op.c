@@ -36,6 +36,7 @@ R_API int r_anal_opasm(RAnal *anal, ut64 addr, const char *s, ut8 *outbuf, int o
 	bool arch_set = false;
 	char *tmparch = NULL;
 	int ret = 0;
+	char *oldname = NULL;
 	if (outlen > 0 && anal->arch->session && anal->uses == 2) {
 		RArchSession *as = R_UNWRAP3 (anal, arch, session);
 		RArchPluginEncodeCallback encode = R_UNWRAP3 (as, plugin, encode);
@@ -43,7 +44,6 @@ R_API int r_anal_opasm(RAnal *anal, ut64 addr, const char *s, ut8 *outbuf, int o
 		if (!op) {
 			return -1;
 		}
-		char *oldname = NULL;
 		if (!encode) {
 			oldname = strdup (as->plugin->name);
 			const char *arch_name = as->plugin->name;
@@ -51,33 +51,22 @@ R_API int r_anal_opasm(RAnal *anal, ut64 addr, const char *s, ut8 *outbuf, int o
 			if (dot) {
 				char *an = r_str_ndup (arch_name, dot - arch_name);
 				if (r_arch_use (anal->arch, anal->arch->cfg, an)) {
-					tmparch = strdup (arch_name);
+					if (anal->arch->session->plugin->encode) {
+						char *an2 = r_str_newf ("%s.nz", an);
+						if (r_arch_use (anal->arch, anal->arch->cfg, an2)) {
+							tmparch = an2;
+						} else {
+							free (an2);
+						}
+					} else {
+						tmparch = strdup (arch_name);
+					}
 				}
 				free (an);
 			}
-			// workaround because r_arch_use doesnt handle encoder sessions until R2_590
 			if (!tmparch) {
-				char *an = r_str_newf ("%s.nz", arch_name);
-				if (r_arch_use (anal->arch, anal->arch->cfg, an)) {
-					tmparch = an;
-				} else {
-					free (an);
-				}
-			}
-			// workaround because r_arch_use doesnt handle encoder sessions until R2_590
-			if (!tmparch) {
-				char *an = r_str_newf ("%s.nz", arch_name);
-				if (r_arch_use (anal->arch, anal->arch->cfg, an)) {
-					tmparch = an;
-				} else {
-					free (an);
-				}
-			}
-			if (!tmparch) {
-				// cannot assemble with this plugin
-				free (oldname);
 				r_anal_op_free (op);
-				return -1;
+				goto beach;
 			}
 		}
 		r_anal_op_set_mnemonic (op, addr, s);
@@ -136,6 +125,10 @@ beach:
 			r_arch_use (anal->arch, anal->arch->cfg, tmparch);
 		}
 		free (tmparch);
+	} else {
+		if (oldname) {
+			r_arch_use (anal->arch, anal->arch->cfg, oldname);
+		}
 	}
 	return ret;
 }

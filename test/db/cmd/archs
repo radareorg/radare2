@@ -1,3 +1,17 @@
+NAME=wawa
+FILE=-
+CMDS=<<EOF
+-a sh
+pd 1
+wa 8d00
+pd 1
+EOF
+EXPECT=<<EOF
+            0x00000000      0000           .word 0x00000000
+            0x00000000      0000           .word 0x00000000
+EOF
+RUN
+
 NAME=endian tests: mips
 FILE=-
 CMDS=<<EOF
