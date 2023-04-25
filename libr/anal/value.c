@@ -36,6 +36,7 @@ R_API ut64 r_anal_value_to_ut64(RAnal *anal, RAnalValue *val) {
 	return num;
 }
 
+// R2_590 return bool
 R_API int r_anal_value_set_ut64(RAnal *anal, RAnalValue *val, ut64 num) {
 	if (val->memref) {
 		if (anal->iob.io) {

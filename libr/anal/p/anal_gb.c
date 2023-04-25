@@ -1,8 +1,5 @@
-/* radare - LGPL - Copyright 2012 - pancake<nopcode.org> 2022 - condret
-	this file was based on anal_i8080.c */
+/* radare - LGPL - Copyright 2012-2023 - pancake, condret */
 
-#include <r_util.h>
-#include <r_asm.h>
 #include <r_anal.h>
 #include "gb/gbdis.c"
 #include "gb/gbasm.c"
