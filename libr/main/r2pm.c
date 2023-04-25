@@ -583,7 +583,7 @@ static bool download(const char *url, const char *outfile) {
 
 static bool unzip(const char *file, const char *dir) {
 	if (r_str_endswith (file, ".tgz") || r_str_endswith (file, ".tar.gz")) {
-		return 0 == r_sys_cmdf ("tar xzvf '%s' -C '%s'", file, dir);
+		return 0 == r_sys_cmdf ("tar -xzvf '%s' -C '%s'", file, dir);
 	}
 	if (r_str_endswith (file, ".zip")) {
 		return 0 == r_sys_cmdf ("unzip '%s' -d '%s'", file, dir);
