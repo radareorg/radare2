@@ -1,8 +1,6 @@
 on:
-  pull_request: {}
   push:
     branches:
-    - main
     - master
     paths:
     - .github/workflows/semgrep.yml

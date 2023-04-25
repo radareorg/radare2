@@ -12,7 +12,9 @@ static RBinXtrData *extract(RBin *bin, int idx);
 static bool checkHeader(RBuffer *b) {
 	ut8 buf[4];
 	const ut64 sz = r_buf_size (b);
-	r_buf_read_at (b, 0, buf, 4);
+	if (r_buf_read_at (b, 0, buf, 4) != 4) {
+		return false;
+	}
 	if (sz >= 0x300 && !memcmp (buf, "\xca\xfe\xba\xbe", 4)) {
 		ut64 addr = 4 * sizeof (32);
 		ut64 off = r_buf_read_be32_at (b, addr);
@@ -98,6 +100,9 @@ static RBinXtrData *oneshot_buffer(RBin *bin, RBuffer *b, int idx) {
 	}
 	int narch;
 	struct r_bin_fatmach0_obj_t *fb = bin->cur->xtr_obj;
+	if (!fb) {
+		return NULL;
+	}
 	struct r_bin_fatmach0_arch_t *arch = r_bin_fatmach0_extract (fb, idx, &narch);
 	if (arch) {
 		RBinXtrMetadata *metadata = R_NEW0 (RBinXtrMetadata);

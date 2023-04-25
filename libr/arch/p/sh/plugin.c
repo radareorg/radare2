@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2010-2022 eloi <limited-entropy.com> */
+/* radare - LGPL - Copyright 2010-2023 eloi <limited-entropy.com> */
 
 #include <r_lib.h>
 #include <r_arch.h>
@@ -1272,7 +1272,8 @@ static int disassemble(RArch *a, RAnalOp *op, const ut8 *buf, int len) {
 	disasm_obj.symbol_at_address_func = &symbol_at_address;
 	disasm_obj.memory_error_func = &memory_error_func;
 	disasm_obj.print_address_func = &generic_print_address_func;
-	disasm_obj.endian = !R_ARCH_CONFIG_IS_BIG_ENDIAN (a->cfg);
+	disasm_obj.endian = !R_ARCH_CONFIG_IS_BIG_ENDIAN (a->cfg)
+		? BFD_ENDIAN_BIG: BFD_ENDIAN_LITTLE;
 	disasm_obj.fprintf_func = &generic_fprintf_func;
 	disasm_obj.stream = sb;
 
@@ -1307,9 +1308,14 @@ static bool decode(RArchSession *s, RAnalOp *op, RArchDecodeMask mask) {
 		op->size = disassemble (a, op, data, len);
 		// should be always 2?
 	}
+#if 0
 	bool be = R_ARCH_CONFIG_IS_BIG_ENDIAN (a->cfg);
 	ut8 lsb = be? data[0]: data[1];
 	ut8 msb = be? data[1]: data[0];
+#else
+	ut8 lsb = data[1];
+	ut8 msb = data[0];
+#endif
 	op->size = first_nibble_decode[(msb >> 4) & 0x0F](a, op, (ut16)(((ut16)msb << 8) | lsb));
 	return true;
 }

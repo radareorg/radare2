@@ -581,19 +581,33 @@ NAME=rasm -a sh -d
 FILE=-
 CMDS=!rasm2 -a sh -d "8d00 000b 2029 8ffb 0009 420b 31e0"
 EXPECT=<<EOF
-bt.s 0x00000004
-rts
-and r2, r0
-bf.s 0x00000000
-nop
-jsr @r2
-cmp/eq r14, r1
+mov.w @(r0,r8), r0
+.word 0x000b0000
+mov.b r2, @r9
+.word 0x0f0b080f
+.word 0x00090000
+stc spc, r11
+mov 0x31, r0
 EOF
 RUN
 
 NAME=rasm -a sh -D
 FILE=-
 CMDS=!rasm2 -a sh -D "8d00 000b 2029 8ffb 0009 420b 31e0"
+EXPECT=<<EOF
+0x00000000   2                     8d00  mov.w @(r0,r8), r0
+0x00000002   2                     000b  .word 0x000b0000
+0x00000004   2                     2029  mov.b r2, @r9
+0x00000006   2                     8ffb  .word 0x0f0b080f
+0x00000008   2                     0009  .word 0x00090000
+0x0000000a   2                     420b  stc spc, r11
+0x0000000c   2                     31e0  mov 0x31, r0
+EOF
+RUN
+
+NAME=rasm -a sh -eD
+FILE=-
+CMDS=!rasm2 -a sh -eD "8d00 000b 2029 8ffb 0009 420b 31e0"
 EXPECT=<<EOF
 0x00000000   2                     8d00  bt.s 0x00000004
 0x00000002   2                     000b  rts

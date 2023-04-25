@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2009-2022 - pancake */
+/* radare2 - LGPL - Copyright 2009-2023 - pancake */
 
 #include "r_core.h"
 
@@ -402,6 +402,7 @@ R_API bool r_core_seek(RCore *core, ut64 addr, bool rb) {
 		r_core_block_read (core);
 	}
 	if (core->binat) {
+		// XXX wtf is this code doing here
 		RBinFile *bf = r_bin_file_at (core->bin, core->offset);
 		if (bf) {
 			core->bin->cur = bf;
@@ -448,10 +449,11 @@ R_API bool r_core_write_at(RCore *core, ut64 addr, const ut8 *buf, int size) {
 }
 
 R_API bool r_core_extend_at(RCore *core, ut64 addr, int size) {
-	if (!core->io || !core->io->desc || size < 1) {
+	r_return_val_if_fail (core && core->io, false);
+	if (!core->io->desc || size < 1 || addr == UT64_MAX) {
 		return false;
 	}
-	int io_va = r_config_get_i (core->config, "io.va");
+	const bool io_va = r_config_get_b (core->config, "io.va");
 	if (io_va) {
 		RIOMap *map = r_io_map_get_at (core->io, core->offset);
 		if (map) {
@@ -460,24 +462,25 @@ R_API bool r_core_extend_at(RCore *core, ut64 addr, int size) {
 		r_config_set_i (core->config, "io.va", false);
 	}
 	int ret = r_io_extend_at (core->io, addr, size);
-	if (addr >= core->offset && addr <= core->offset+core->blocksize) {
+	if (addr >= core->offset && addr <= core->offset + core->blocksize) {
 		r_core_block_read (core);
 	}
-	r_config_set_i (core->config, "io.va", io_va);
+	r_config_set_b (core->config, "io.va", io_va);
 	return ret;
 }
 
+// TODO: R2_590 - return bool
 R_API int r_core_shift_block(RCore *core, ut64 addr, ut64 b_size, st64 dist) {
 	// bstart - block start, fstart file start
 	ut64 fend = 0, fstart = 0, bstart = 0, file_sz = 0;
 	ut8 * shift_buf = NULL;
-	int res = false;
+	bool res = false;
 
 	if (!core->io || !core->io->desc) {
 		return false;
 	}
 
-	if (b_size == 0 || b_size == (ut64) -1) {
+	if (b_size == 0 || b_size == UT64_MAX) {
 		r_io_use_fd (core->io, core->io->desc->fd);
 		file_sz = r_io_size (core->io);
 		if (file_sz == UT64_MAX) {
