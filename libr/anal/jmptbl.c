@@ -189,9 +189,10 @@ R_API bool try_walkthrough_jmptbl(RAnal *anal, RAnalFunction *fcn, RAnalBlock *b
 	if (!jmptbl) {
 		return false;
 	}
-	bool is_arm = anal->cur->arch && r_str_startswith (anal->cur->arch, "arm");
-	bool is_x86 = !is_arm && anal->cur->arch && r_str_startswith (anal->cur->arch, "x86");
-	const bool is_v850 = !is_arm && !is_x86 && ((anal->cur->arch && !strncmp (anal->cur->arch, "v850", 4)) || !strncmp (anal->coreb.cfgGet (anal->coreb.core, "asm.cpu"), "v850", 4));
+	const char *sarch = R_UNWRAP3 (anal, cur, arch);
+	bool is_arm = sarch ? r_str_startswith (sarch, "arm"): false;
+	bool is_x86 = !is_arm && r_str_startswith (sarch, "x86");
+	const bool is_v850 = !is_arm && !is_x86 && ((sarch && !strncmp (sarch, "v850", 4)) || r_str_startswith (anal->coreb.cfgGet (anal->coreb.core, "asm.cpu"), "v850"));
 	// eprintf ("JMPTBL AT 0x%"PFMT64x"\n", jmptbl_loc);
 	anal->iob.read_at (anal->iob.io, jmptbl_loc, jmptbl, jmptblsz);
 	for (offs = 0; offs + sz - 1 < jmptbl_size * sz; offs += sz) {
