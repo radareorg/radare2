@@ -1,6 +1,10 @@
 /* radare - LGPL - Copyright 2020-2023 - pancake, thestr4ng3r */
 
 #include "r2r.h"
+#if ALLINC
+#include "load.c"
+#include "run.c"
+#endif
 
 #define WORKERS_DEFAULT        8
 #define JSON_TEST_FILE_DEFAULT "bins/elf/crackme0x00b"
