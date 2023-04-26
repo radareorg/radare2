@@ -267,7 +267,7 @@ RBinDexObj *r_bin_dex_new_buf(RBuffer *buf, bool verbose) {
 		goto fail;
 	}
 	struct dex_header_t *dexhdr = &dex->header;
-
+	memset (dexhdr, 0, sizeof (DexHeader));
 	if (dex->size < 112) {
 		goto fail;
 	}
