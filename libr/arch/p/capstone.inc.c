@@ -83,7 +83,6 @@ static char *r_arch_cs_mnemonics(RArchSession *s, csh cs_handle, int id, bool js
 		return NULL;
 	}
 #endif
-
 	PJ *pj = NULL;
 	if (id != -1) {
 		const char *name = cs_insn_name (cs_handle, id);

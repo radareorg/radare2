@@ -44,14 +44,16 @@ R_API int r_anal_opasm(RAnal *anal, ut64 addr, const char *s, ut8 *outbuf, int o
 		if (!op) {
 			return -1;
 		}
-		if (!encode) {
+		if (encode) {
+			// ok we have an encoder
+		} else {
 			oldname = strdup (as->plugin->name);
 			const char *arch_name = as->plugin->name;
 			const char *dot = strchr (arch_name, '.');
 			if (dot) {
 				char *an = r_str_ndup (arch_name, dot - arch_name);
 				if (r_arch_use (anal->arch, anal->arch->cfg, an)) {
-					if (anal->arch->session->plugin->encode) {
+					if (!anal->arch->session->plugin->encode) {
 						char *an2 = r_str_newf ("%s.nz", an);
 						if (r_arch_use (anal->arch, anal->arch->cfg, an2)) {
 							tmparch = an2;
@@ -63,6 +65,13 @@ R_API int r_anal_opasm(RAnal *anal, ut64 addr, const char *s, ut8 *outbuf, int o
 					}
 				}
 				free (an);
+			} else {
+				char *an2 = r_str_newf ("%s.nz", arch_name);
+				if (r_arch_use (anal->arch, anal->arch->cfg, an2)) {
+					tmparch = an2;
+				} else {
+					free (an2);
+				}
 			}
 			if (!tmparch) {
 				r_anal_op_free (op);
@@ -78,6 +87,7 @@ R_API int r_anal_opasm(RAnal *anal, ut64 addr, const char *s, ut8 *outbuf, int o
 					ret = 1;
 				}
 			}
+			op->size = ret;
 		}
 		int finlen = R_MIN (outlen, op->size);
 		ret = op->size;
@@ -162,7 +172,7 @@ R_API int r_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 	}
 	int ret = R_MIN (2, len);
 	if (len > 0 && anal->uses == 2 && anal->arch->session) {
-		r_anal_op_set_bytes (op, addr, data, op->size);
+		r_anal_op_set_bytes (op, addr, data, len);
 		if (!r_arch_decode (anal->arch, op, mask) || op->size <= 0) {
 			op->type = R_ANAL_OP_TYPE_ILL;
 			op->size = r_anal_archinfo (anal, R_ANAL_ARCHINFO_INV_OP_SIZE);

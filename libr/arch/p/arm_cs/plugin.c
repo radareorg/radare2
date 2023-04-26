@@ -4525,10 +4525,13 @@ static int analop(RArchSession *as, RAnalOp *op, ut64 addr, const ut8* buf, int 
 	R_CRITICAL_ENTER (as);
 	csh *cs_handle = cs_handle_for_session (as);
 	cs_insn *insn = NULL;
-	int n;
 	op->size = (as->config->bits == 16)? 2: 4;
 	op->addr = addr;
-	n = cs_disasm (*cs_handle, (ut8*)buf, len, addr, 1, &insn);
+	if (!buf) {
+		buf = op->bytes;
+		len = op->size;
+	}
+	int n = cs_disasm (*cs_handle, (ut8*)buf, len, addr, 1, &insn);
 	if (n > 0 && is_valid_mnemonic (insn->mnemonic)) {
 		if (mask & R_ARCH_OP_MASK_DISASM) {
 			free (op->mnemonic);
@@ -4587,7 +4590,7 @@ static int analop(RArchSession *as, RAnalOp *op, ut64 addr, const ut8* buf, int 
 		}
 	}
 	R_CRITICAL_LEAVE (as);
-	return op->size;
+	return true;
 }
 
 static bool fini(RArchSession *as);
