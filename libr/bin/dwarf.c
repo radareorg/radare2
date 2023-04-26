@@ -618,19 +618,23 @@ static char *get_section_string(RBin *bin, RBinSection * section, size_t offset)
 	if (!section || (section->paddr + offset + 2) > bf->size) {
 		return NULL;
 	}
-	size_t len = R_MIN (section->size - offset, sizeof (str));
+	size_t len = R_MIN (section->size - offset, sizeof (str) - 1);
+	str[len] = 0;
 	r_buf_read_at (bf->buf, section->paddr + offset, str, len);
 	if (r_str_nlen ((const char *)str, len) != len) {
 		// eprintf ("%d\n", r_str_nlen (str, len));
 		return r_str_ndup ((const char *)str, sizeof (str));
 	}
-	len = R_MIN (section->size - offset, sizeof (str2));
+	len = R_MIN (section->size - offset, sizeof (str2) - 1);
+	str2[len] = 0;
 	r_buf_read_at (bf->buf, section->paddr + offset, str2, len);
 	if (r_str_nlen ((const char *)str2, len) != len) {
 		// eprintf ("%d\n", r_str_nlen (str2, len));
 		return r_str_ndup ((const char *)str2, sizeof (str2));
 	}
-	len = R_MIN (section->size - offset, sizeof (str3));
+	len = R_MIN (section->size - offset, sizeof (str3) - 1);
+	str3[len] = 0;
+	// memset (str3, 0, len + 1);
 	r_buf_read_at (bf->buf, section->paddr + offset, str3, len);
 	if (r_str_nlen ((const char *)str3, len) != len) {
 		// eprintf ("%d\n", r_str_nlen (str2, len));

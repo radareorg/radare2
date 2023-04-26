@@ -1991,7 +1991,7 @@ R_API size_t r_str_ansi_len(const char *str) {
 }
 
 R_API size_t r_str_nlen(const char *str, int n) {
-	r_return_val_if_fail (str, 0);
+	r_return_val_if_fail (str && n >= 0, 0);
 	size_t len = 0;
 	while (n > 0 && *str) {
 		len++;
