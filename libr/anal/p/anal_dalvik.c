@@ -313,7 +313,7 @@ static int dalvik_disassemble(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, 
 			// ([size*element_width+1)/2)+4
 			if (len > 7) {
 				ut16 elem_width = buf[2] | (buf[3] << 8);
-				ut32 array_size = buf[4] | (buf[5] << 8) | (buf[6] << 16) | (buf[7] << 24);
+				ut32 array_size = buf[4] | (buf[5] << 8) | (buf[6] << 16) | ((ut32)buf[7] << 24);
 				op->mnemonic = r_str_newf ("fill-array-data-payload %d, %d", elem_width, array_size);
 				payload = array_size * elem_width;
 			}
@@ -382,7 +382,7 @@ static int dalvik_disassemble(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, 
 		case fmtopvAAcBBBB0000:
 			vA = (int) buf[1];
 			// vB = 0|(buf[3]<<16)|(buf[2]<<24);
-			vB = 0 | (buf[2] << 16) | (buf[3] << 24);
+			vB = 0 | (buf[2] << 16) | ((ut32)buf[3] << 24);
 			if (buf[0] == 0x19) { // const-wide/high16
 				snprintf (str, sizeof (str), " v%i:v%i, 0x%08x", vA, vA + 1, vB);
 			} else {
