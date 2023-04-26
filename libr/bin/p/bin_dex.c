@@ -1607,6 +1607,7 @@ static bool dex_loadcode(RBinFile *bf) {
 	int *methods = NULL;
 	size_t methods_size = 0;
 	int sym_count = 0;
+	memset (&dex->header, 0, sizeof (dex->header));
 	// doublecheck??
 	if (dex->methods_list) {
 		return false;
