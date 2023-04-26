@@ -9032,7 +9032,7 @@ static void anal_axg(RCore *core, const char *input, int level, Sdb *db, int opt
 					pj_o (pj);
 					pj_ks (pj, "type", "fcn");
 					pj_kn (pj, "fcn_addr", fcn->addr);
-					pj_ks (pj, "refs", fcn->name);
+					pj_ks (pj, "name", fcn->name);
 					pj_k (pj, "refs");
 					pj_a (pj);
 				}
