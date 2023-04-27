@@ -50,9 +50,12 @@ static int __bb_addr_cmp(const void *incoming, const RBNode *in_tree, void *user
 #define D if (anal && anal->verbose)
 
 R_API void r_anal_block_ref(RAnalBlock *bb) {
-	// 0-refd must already be freed.
-	r_return_if_fail (bb->ref > 0);
-	bb->ref++;
+	// XXX we have R_REF for this
+	if (bb) {
+		// 0-refd must already be freed.
+		r_return_if_fail (bb->ref > 0);
+		bb->ref++;
+	}
 }
 
 #define DFLT_NINSTR 3
@@ -109,6 +112,10 @@ R_API void r_anal_block_reset(RAnal *a) {
 }
 
 R_API RAnalBlock *r_anal_get_block_at(RAnal *anal, ut64 addr) {
+	r_return_val_if_fail (anal, NULL);
+	if (addr == UT64_MAX || !anal->bb_tree) {
+		return NULL;
+	}
 	RBNode *node = r_rbtree_find (anal->bb_tree, &addr, __bb_addr_cmp, NULL);
 	return node? unwrap (node): NULL;
 }
@@ -778,6 +785,9 @@ static void noreturn_successor_free(HtUPKv *kv) {
 }
 
 static bool noreturn_successors_cb(RAnalBlock *block, void *user) {
+	if (!block) {
+		return false;
+	}
 	HtUP *succs = user;
 	NoreturnSuccessor *succ = R_NEW0 (NoreturnSuccessor);
 	if (!succ) {
@@ -895,12 +905,18 @@ typedef struct {
 } AutomergeCtx;
 
 static bool count_successors_cb(ut64 addr, void *user) {
+	if (addr == UT64_MAX) {
+		return true;
+	}
 	AutomergeCtx *ctx = user;
 	ctx->cur_succ_count++;
 	return true;
 }
 
 static bool automerge_predecessor_successor_cb(ut64 addr, void *user) {
+	if (addr == UT64_MAX) {
+		return true;
+	}
 	AutomergeCtx *ctx = user;
 	ctx->cur_succ_count++;
 	RAnalBlock *block = ht_up_find (ctx->blocks, addr, NULL);
@@ -923,6 +939,9 @@ static bool automerge_predecessor_successor_cb(ut64 addr, void *user) {
 }
 
 static bool automerge_get_predecessors_cb(void *user, ut64 k) {
+	if (k == UT64_MAX) {
+		return true;
+	}
 	AutomergeCtx *ctx = user;
 	const RAnalFunction *fcn = (const RAnalFunction *)(size_t)k;
 	RListIter *it;

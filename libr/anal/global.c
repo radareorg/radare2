@@ -18,7 +18,7 @@ R_API bool r_anal_global_add(RAnal *anal, ut64 addr, const char *type_name, cons
 	RFlag *flags = anal->flb.f;
 	char *fmtstr = r_type_format (anal->sdb_types, type_name);
 	if (!fmtstr) {
-		eprintf ("Unknown type\n");
+		R_LOG_ERROR ("Unknown type in format string for a global");
 		return false;
 	}
 	int fmtsize = r_print_format_struct_size (anal->print, fmtstr, 0, 0);

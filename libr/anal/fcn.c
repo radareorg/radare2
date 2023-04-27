@@ -2240,7 +2240,8 @@ static bool analize_addr_cb(ut64 addr, void *user) {
 }
 
 static bool analize_descendents(RAnalBlock *bb, void *user) {
-	return r_anal_block_successor_addrs_foreach (bb, analize_addr_cb, user);
+	r_anal_block_successor_addrs_foreach (bb, analize_addr_cb, user);
+	return true;
 }
 
 static void free_ht_up(HtUPKv *kv) {
