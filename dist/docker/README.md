@@ -4,3 +4,4 @@
 * You have vim, git, make
 * /tmp is shared with host
 * Source code of radare2 is in /mnt
+* All changes done in this container will be lost on logout
