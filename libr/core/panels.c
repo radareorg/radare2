@@ -5970,7 +5970,7 @@ static void __default_panel_print(RCore *core, RPanel *panel) {
 	core->print->cur_enabled = o_cur;
 }
 
-static void __panel_print(RCore *core, RConsCanvas *can, RPanel *panel, int color) {
+static void __panel_print(RCore *core, RConsCanvas *can, RPanel *panel, bool color) {
 	if (!can || !panel|| !panel->view->refresh) {
 		return;
 	}
@@ -6020,18 +6020,15 @@ static void __panels_refresh(RCore *core) {
 	__refresh_core_offset (core);
 	__set_refresh_all (core, false, false);
 
-	//TODO use getPanel
 	for (i = 0; i < panels->n_panels; i++) {
-// XXX commentedfixes a glitch
-//		if (i != panels->curnode) {
-			__panel_print (core, can, __get_panel (panels, i), 0);
-//		}
+		if (panels->mode == PANEL_MODE_ZOOM) {
+			if (i != panels->curnode) {
+				continue;
+			}
+		}
+		__panel_print (core, can, __get_panel (panels, i), 0);
 	}
-	if (panels->mode == PANEL_MODE_MENU) {
-		__panel_print (core, can, __get_cur_panel (panels), 0);
-	} else {
-		__panel_print (core, can, __get_cur_panel (panels), 1);
-	}
+	__panel_print (core, can, __get_cur_panel (panels), panels->mode != PANEL_MODE_MENU);
 	// draw menus
 	for (i = 0; i < panels->panels_menu->n_refresh; i++) {
 		__panel_print (core, can, panels->panels_menu->refreshPanels[i], 0);
@@ -6407,16 +6404,17 @@ R_API bool r_core_panels_load(RCore *core, const char *_name) {
 	__panel_all_clear (panels);
 	panels->n_panels = 0;
 	__set_curnode (core, 0);
-	char *title, *cmd, *x, *y, *w, *h, *p_cfg = panels_config, *tmp_cfg;
-	int i, tmp_count;
-	tmp_cfg = __parse_panels_config (p_cfg, strlen (p_cfg));
-	tmp_count = r_str_split (tmp_cfg, '\n');
+	char *x, *y, *w, *h;
+	char *p_cfg = panels_config;
+	char *tmp_cfg = __parse_panels_config (p_cfg, strlen (p_cfg));
+	int tmp_count = r_str_split (tmp_cfg, '\n');
+	int i;
 	for (i = 0; i < tmp_count; i++) {
 		if (R_STR_ISEMPTY (tmp_cfg)) {
 			break;
 		}
-		title = sdb_json_get_str (tmp_cfg, "Title");
-		cmd = sdb_json_get_str (tmp_cfg, "Cmd");
+		char *title = sdb_json_get_str (tmp_cfg, "Title");
+		char *cmd = sdb_json_get_str (tmp_cfg, "Cmd");
 		(void)r_str_arg_unescape (cmd);
 		x = sdb_json_get_str (tmp_cfg, "x");
 		y = sdb_json_get_str (tmp_cfg, "y");
