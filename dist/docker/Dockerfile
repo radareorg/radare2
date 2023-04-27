@@ -44,6 +44,7 @@ ARG R2_VERSION=master
 # R2pipe python version
 ARG R2_PIPE_PY_VERSION=1.7.4
 
+ARG with_s390x_as
 ARG with_arm32_as
 ARG with_arm64_as
 ARG with_ppc_as
@@ -56,7 +57,7 @@ RUN echo -e "Building versions:\n\
   R2_PIPE_PY_VERSION=${R2_PIPE_PY_VERSION}"
 
 # Build radare2 in a volume to minimize space used by build
-VOLUME ["/mnt"]
+# VOLUME ["/mnt"]
 
 # Install all build dependencies
 # Install bindings
@@ -81,24 +82,24 @@ RUN DEBIAN_FRONTEND=noninteractive \
   sudo \
   unzip \
   gnupg2 \
+  xz-utils \
+  ${with_s390x_as:+binutils-s390x-linux-gnu} \
   ${with_arm64_as:+binutils-aarch64-linux-gnu} \
   ${with_arm32_as:+binutils-arm-linux-gnueabi} \
   ${with_ppc_as:+binutils-powerpc64le-linux-gnu} && \
+  apt-get autoremove --purge -y && \
+  apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* && \
   pip3 install r2pipe=="$R2_PIPE_PY_VERSION" && \
-  cd /mnt && \
-  git clone -b "$R2_VERSION" -q --depth 1 https://github.com/radareorg/radare2.git && \
+  apt-get remove --purge -y
+
+RUN mkdir -p /mnt && cd /mnt && \
+  git clone -b "$R2_VERSION" -q --depth 100 https://github.com/radareorg/radare2.git && \
   cd radare2 && \
   ./configure && \
   make && \
-  make install && \
-  apt-get install -y xz-utils && \
-  apt-get remove --purge -y \
-  bison \
-  python-pip \
-  glib-2.0 && \
-  apt-get autoremove --purge -y && \
-  apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+  make symstall
 
+ENV R2_S390X_AS=${with_s390x_as:+s390x-linux-gnu-as}
 ENV R2_ARM64_AS=${with_arm64_as:+aarch64-linux-gnu-as}
 ENV R2_ARM32_AS=${with_arm32_as:+arm-linux-gnueabi-as}
 ENV R2_PPC_AS=${with_ppc_as:+powerpc64le-linux-gnu-as}
@@ -107,7 +108,7 @@ ENV R2_PPC_AS=${with_ppc_as:+powerpc64le-linux-gnu-as}
 RUN useradd -m r2 && \
   adduser r2 sudo && \
   echo "r2:r2" | chpasswd
-RUN chown -R r2:r2 /mnt/radare2
+RUN chown -R r2:r2 /mnt/radare2 || true
 
 # Initialise base user
 USER r2
