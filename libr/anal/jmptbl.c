@@ -190,6 +190,9 @@ R_API bool try_walkthrough_jmptbl(RAnal *anal, RAnalFunction *fcn, RAnalBlock *b
 		return false;
 	}
 	const char *sarch = R_UNWRAP3 (anal, cur, arch);
+	if (!sarch && anal->arch->cfg) {
+		sarch = anal->arch->cfg->arch;
+	}
 	bool is_arm = sarch ? r_str_startswith (sarch, "arm"): false;
 	bool is_x86 = !is_arm && r_str_startswith (sarch, "x86");
 	const bool is_v850 = !is_arm && !is_x86 && ((sarch && !strncmp (sarch, "v850", 4)) || r_str_startswith (anal->coreb.cfgGet (anal->coreb.core, "asm.cpu"), "v850"));
