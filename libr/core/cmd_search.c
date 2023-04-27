@@ -390,6 +390,7 @@ R_API int r_core_search_prelude(RCore *core, ut64 from, ut64 to, const ut8 *buf,
 	if (!b) {
 		return 0;
 	}
+	char *zeropage = calloc (core->blocksize, 1);
 	// TODO: handle sections ?
 	if (from >= to) {
 		R_LOG_ERROR ("aap: Invalid search range 0x%08"PFMT64x " - 0x%08"PFMT64x, from, to);
@@ -409,11 +410,17 @@ R_API int r_core_search_prelude(RCore *core, ut64 from, ut64 to, const ut8 *buf,
 			break;
 		}
 		(void)r_io_read_at (core->io, at, b, core->blocksize);
+		// if the whole block is 00 skip, if its all ff da same
+		// aap takes 14s instead of 1s to scan a 800MB page
+		if (!memcmp (b, zeropage, core->blocksize)) {
+			continue;
+		}
 		if (r_search_update (core->search, at, b, core->blocksize) == -1) {
 			R_LOG_ERROR ("update read error at 0x%08"PFMT64x, at);
 			break;
 		}
 	}
+	free (zeropage);
 	// r_search_reset might also benifet from having an if (s->data) R_FREE(s->data), but im not sure.
 	//add a commit that puts it in there to this PR if it wouldn't break anything. (don't have to worry about this happening again, since all searches start by resetting core->search)
 	//For now we will just use r_search_kw_reset
@@ -509,9 +516,13 @@ R_API int r_core_search_preludes(RCore *core, bool log) {
 		return -1;
 	}
 
+	// 256MB scan region limit
+// #define RANGE_LIMIT 0xfffffff
+	// 4GB scan region limit
+#define RANGE_LIMIT 0xffffffff
 	size_t fc0 = r_list_length (core->anal->fcns);
 	r_list_foreach (list, iter, p) {
-		if ((r_itv_end (p->itv) - p->itv.addr) >= ST32_MAX) {
+		if ((r_itv_end (p->itv) - p->itv.addr) >= RANGE_LIMIT) {
 			// skip searching in large regions
 			R_LOG_ERROR ("aap: skipping large range, please check 'anal.in' variable");
 			continue;
@@ -526,9 +537,13 @@ R_API int r_core_search_preludes(RCore *core, bool log) {
 		}
 		from = p->itv.addr;
 		to = r_itv_end (p->itv);
-		if (prelude && *prelude) {
+		if (R_STR_ISNOTEMPTY (prelude)) {
 			ut8 *kw = malloc (strlen (prelude) + 1);
 			int kwlen = r_hex_str2bin (prelude, kw);
+			if (kwlen < 1) {
+				R_LOG_ERROR ("Invalid prelude hex string (%s)", prelude);
+				break;
+			}
 			ret = r_core_search_prelude (core, from, to, kw, kwlen, NULL, 0);
 			free (kw);
 		} else {
