@@ -28,7 +28,6 @@ static ut32 asn1_ber_indefinite(const ut8 *buffer, ut32 length) {
 
 static RASN1Object *asn1_parse_header(const ut8 *buffer_base, const ut8 *buffer, ut32 length) {
 	ut8 length8, byte;
-	ut64 length64;
 
 	if (!buffer || length < 3) {
 		return NULL;
@@ -44,17 +43,17 @@ static RASN1Object *asn1_parse_header(const ut8 *buffer_base, const ut8 *buffer,
 	obj->form = head & ASN1_FORM;
 	obj->tag = head & ASN1_TAG;
 	length8 = buffer[1];
+	if (length8 > length - 1 || length8 > 6) {
+		R_LOG_DEBUG ("ASN.1: length error");
+		goto out_error;
+	}
 	if (length8 & ASN1_LENLONG) {
-		length64 = 0;
+		ut64 length64 = 0;
 		length8 &= ASN1_LENSHORT;
 		obj->sector = buffer + 2;
 		// Check for indefinite length.
 		if (length8) {
 			// Length over 6 bytes is not allowed.
-			if (length8 > length - 1 || length8 > 6) {
-				R_LOG_DEBUG ("ASN.1: length error");
-				goto out_error;
-			}
 			ut8 i8;
 			// can overflow.
 			for (i8 = 0; i8 < length8; i8++) {
