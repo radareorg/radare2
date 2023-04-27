@@ -3112,13 +3112,13 @@ static bool anal_fcn_list_bb(RCore *core, const char *input, bool one) {
 		one = true;
 		input++;
 	}
-	if (input && *input) {
+	if (R_STR_ISNOTEMPTY (input)) {
 		addr = bbaddr = r_num_math (core->num, input);
 		if (!addr && *input != '0') {
 			addr = core->offset;
 		}
 	} else {
-		addr = core->offset;
+		bbaddr = addr = core->offset;
 	}
 	input = r_str_trim_head_ro (input);
 	if (one) {
