@@ -1,7 +1,7 @@
 #!/bin/sh
 
 WASI_ROOT=${HOME}/Downloads/wasi
-WASI_MAJOR=16
+WASI_MAJOR=20
 WASI_VERSION=${WASI_MAJOR}.0
 
 export WASI_SDK=${WASI_ROOT}/wasi-sdk-${WASI_VERSION}
