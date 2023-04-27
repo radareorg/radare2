@@ -94,7 +94,11 @@ R_API int r_anal_function_resize(RAnalFunction *fcn, int newsize) {
 	}
 
 	// XXX this is something we should probably do for all the archs
-	bool is_arm = anal->cur && anal->cur->arch && r_str_startswith (anal->cur->arch, "arm");
+	const char *sarch = R_UNWRAP3 (anal, cur, arch);
+	if (!sarch && anal->arch->session) {
+		sarch = anal->arch->session->config->arch;
+	}
+	const bool is_arm = sarch && r_str_startswith (sarch, "arm");
 	if (is_arm) {
 		return true;
 	}
@@ -1758,7 +1762,11 @@ R_API bool r_anal_function_add_bb(RAnal *a, RAnalFunction *fcn, ut64 addr, ut64 
 		block = NULL;
 	}
 
-	const bool is_x86 = a->cur->arch && !strcmp (a->cur->arch, "x86");
+	const char *sarch = R_UNWRAP3 (a, cur, arch);
+	if (!sarch && a->arch->cfg) {
+		sarch = a->arch->cfg->arch;
+	}
+	const bool is_x86 = sarch && !strcmp (sarch, "x86");
 	// TODO fix this x86-ism
 	if (is_x86) {
 		fcn_recurse (a, fcn, addr, size, -1);
@@ -1771,7 +1779,7 @@ R_API bool r_anal_function_add_bb(RAnal *a, RAnalFunction *fcn, ut64 addr, ut64 
 	}
 
 	if (!block) {
-		D R_LOG_WARN ("r_anal_function_add_bb failed in fcn 0x%08"PFMT64x" at 0x%08"PFMT64x, fcn->addr, addr);
+		R_LOG_DEBUG ("r_anal_function_add_bb failed in fcn 0x%08"PFMT64x" at 0x%08"PFMT64x, fcn->addr, addr);
 		return false;
 	}
 
