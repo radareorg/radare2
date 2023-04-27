@@ -66,7 +66,6 @@ RUN
 NAME=cmp neq unchanged zf
 FILE=malloc://0x200
 CMDS=<<EOF
-e esil.debug=true
 e asm.arch=arm
 e asm.bits=16
 aei
@@ -85,7 +84,6 @@ RUN
 NAME=cmp neq changed zf
 FILE=malloc://0x200
 CMDS=<<EOF
-e esil.debug=true
 e asm.arch=arm
 e asm.bits=16
 aei
@@ -105,7 +103,6 @@ RUN
 NAME=cmp eq unchanged zf
 FILE=malloc://0x200
 CMDS=<<EOF
-e esil.debug=true
 e asm.arch=arm
 e asm.bits=16
 aei
@@ -126,7 +123,6 @@ RUN
 NAME=cmp eq changed zf
 FILE=malloc://0x200
 CMDS=<<EOF
-e esil.debug=true
 e asm.arch=arm
 e asm.bits=16
 aei

@@ -2,7 +2,6 @@ NAME=2step push x86-32
 FILE=-
 CMDS=<<EOF
 e io.va=true
-e esil.debug=true
 e asm.arch=x86
 e asm.bits=32
 aei
@@ -25,7 +24,6 @@ NAME=movsb 1 byte x86-32
 FILE=-
 CMDS=<<EOF
 e io.va=true
-e esil.debug=true
 e asm.arch=x86
 e asm.bits=32
 aei
@@ -55,7 +53,6 @@ NAME=mov eax, 1 x86-32
 FILE=-
 CMDS=<<EOF
 e io.va=true
-e esil.debug=true
 e asm.arch=x86
 e asm.bits=32
 aei
@@ -75,7 +72,6 @@ NAME=rep movsb string x86-32
 FILE=-
 CMDS=<<EOF
 e io.va=true
-e esil.debug=true
 e asm.arch=x86
 e asm.bits=32
 aei
@@ -108,7 +104,6 @@ NAME=mov byte [0x20000000], 0x64 x86-32
 FILE=-
 CMDS=<<EOF
 e io.va=true
-e esil.debug=true
 e asm.arch=x86
 e asm.bits=32
 aei
@@ -131,7 +126,6 @@ NAME=mov eax, [esp + 4] x86-32
 FILE=-
 CMDS=<<EOF
 e io.va=true
-e esil.debug=true
 e asm.arch=x86
 e asm.bits=32
 aei
@@ -154,7 +148,6 @@ NAME=mov [esp + 4], eax x86-32
 FILE=-
 CMDS=<<EOF
 e io.va=true
-e esil.debug=true
 e asm.arch=x86
 e asm.bits=32
 aei
@@ -178,7 +171,6 @@ FILE=-
 BROKEN=1
 CMDS=<<EOF
 e io.va=true
-e esil.debug=true
 e asm.arch=x86
 e asm.bits=32
 aei
@@ -211,7 +203,6 @@ NAME=lodsb ++ x86-32
 FILE=-
 CMDS=<<EOF
 e io.va=true
-e esil.debug=true
 e asm.arch=x86
 e asm.bits=32
 aei
@@ -237,7 +228,6 @@ NAME=lodsb -- x86-32
 FILE=-
 CMDS=<<EOF
 e io.va=true
-e esil.debug=true
 e asm.arch=x86
 e asm.bits=32
 aei
@@ -263,7 +253,6 @@ NAME=lodsw ++ x86-32
 FILE=-
 CMDS=<<EOF
 e io.va=true
-e esil.debug=true
 e asm.arch=x86
 e asm.bits=32
 aei
@@ -289,7 +278,6 @@ NAME=lodsw -- x86-32
 FILE=-
 CMDS=<<EOF
 e io.va=true
-e esil.debug=true
 e asm.arch=x86
 e asm.bits=32
 aei
@@ -315,7 +303,6 @@ NAME=lodsd ++ x86-32
 FILE=-
 CMDS=<<EOF
 e io.va=true
-e esil.debug=true
 e asm.arch=x86
 e asm.bits=32
 aei
@@ -341,7 +328,6 @@ NAME=lodsd -- x86-32
 FILE=-
 CMDS=<<EOF
 e io.va=true
-e esil.debug=true
 e asm.arch=x86
 e asm.bits=32
 aei
@@ -367,7 +353,6 @@ NAME=stosb ++ x86-32
 FILE=-
 CMDS=<<EOF
 e io.va=true
-e esil.debug=true
 e asm.arch=x86
 e asm.bits=32
 aei
@@ -393,7 +378,6 @@ NAME=stosb -- x86-32
 FILE=-
 CMDS=<<EOF
 e io.va=true
-e esil.debug=true
 e asm.arch=x86
 e asm.bits=32
 aei
@@ -419,7 +403,6 @@ NAME=stosw ++ x86-32
 FILE=-
 CMDS=<<EOF
 e io.va=true
-e esil.debug=true
 e asm.arch=x86
 e asm.bits=32
 aei
@@ -445,7 +428,6 @@ NAME=stosw -- x86-32
 FILE=-
 CMDS=<<EOF
 e io.va=true
-e esil.debug=true
 e asm.arch=x86
 e asm.bits=32
 aei
@@ -471,7 +453,6 @@ NAME=stosd ++ x86-32
 FILE=-
 CMDS=<<EOF
 e io.va=true
-e esil.debug=true
 e asm.arch=x86
 e asm.bits=32
 aei
@@ -497,7 +478,6 @@ NAME=stosd -- x86-32
 FILE=-
 CMDS=<<EOF
 e io.va=true
-e esil.debug=true
 e asm.arch=x86
 e asm.bits=32
 aei
@@ -523,7 +503,6 @@ NAME=shr eax(9) >> 1 x86-32
 FILE=-
 CMDS=<<EOF
 e io.va=true
-e esil.debug=true
 e asm.arch=x86
 e asm.bits=32
 aei
@@ -549,7 +528,6 @@ NAME=shr eax(0x1b) >> 1 x86-32
 FILE=-
 CMDS=<<EOF
 e io.va=true
-e esil.debug=true
 e asm.arch=x86
 e asm.bits=32
 aei
@@ -575,7 +553,6 @@ NAME=shr eax(5) >> 2 x86-32
 FILE=-
 CMDS=<<EOF
 e io.va=true
-e esil.debug=true
 e asm.arch=x86
 e asm.bits=32
 aei
@@ -601,7 +578,6 @@ NAME=shr byte [esp + 4], 2 x86-32
 FILE=-
 CMDS=<<EOF
 e io.va=true
-e esil.debug=true
 e asm.arch=x86
 e asm.bits=32
 aei
@@ -626,7 +602,6 @@ NAME=add byte [esp + 4], 0xa x86-32
 FILE=-
 CMDS=<<EOF
 e io.va=true
-e esil.debug=true
 e asm.arch=x86
 e asm.bits=32
 aei
@@ -651,7 +626,6 @@ NAME=add eax, [esp + 4] x86-32
 FILE=-
 CMDS=<<EOF
 e io.va=true
-e esil.debug=true
 e asm.arch=x86
 e asm.bits=32
 aei
@@ -674,7 +648,6 @@ NAME=add dword [0x20000000], eax x86-32
 FILE=-
 CMDS=<<EOF
 e io.va=true
-e esil.debug=true
 e asm.arch=x86
 e asm.bits=32
 aei
@@ -697,7 +670,6 @@ NAME=add byte cf,zf check x86-32
 FILE=-
 CMDS=<<EOF
 e io.va=true
-e esil.debug=true
 e asm.arch=x86
 e asm.bits=32
 aei
@@ -723,7 +695,6 @@ NAME=add word cf,zf check x86-32
 FILE=-
 CMDS=<<EOF
 e io.va=true
-e esil.debug=true
 e asm.arch=x86
 e asm.bits=32
 aei
@@ -749,7 +720,6 @@ NAME=add dword cf,zf check x86-32
 FILE=-
 CMDS=<<EOF
 e io.va=true
-e esil.debug=true
 e asm.arch=x86
 e asm.bits=32
 aei
@@ -775,7 +745,6 @@ NAME=adc byte cf,zf check x86-32
 FILE=-
 CMDS=<<EOF
 e io.va=true
-e esil.debug=true
 e asm.arch=x86
 e asm.bits=32
 aei
@@ -802,7 +771,6 @@ NAME=adc word cf,zf check x86-32
 FILE=-
 CMDS=<<EOF
 e io.va=true
-e esil.debug=true
 e asm.arch=x86
 e asm.bits=32
 aei
@@ -829,7 +797,6 @@ NAME=adc dword cf,zf check x86-32
 FILE=-
 CMDS=<<EOF
 e io.va=true
-e esil.debug=true
 e asm.arch=x86
 e asm.bits=32
 aei
@@ -856,7 +823,6 @@ NAME=dec byte [edi] check zf x86-32
 FILE=-
 CMDS=<<EOF
 e io.va=true
-e esil.debug=true
 e asm.arch=x86
 e asm.bits=32
 aei
@@ -883,7 +849,6 @@ NAME=dec byte [edi] check sf x86-32
 FILE=-
 CMDS=<<EOF
 e io.va=true
-e esil.debug=true
 e asm.arch=x86
 e asm.bits=32
 aei
@@ -910,7 +875,6 @@ NAME=inc byte [edi] check zf x86-32
 FILE=-
 CMDS=<<EOF
 e io.va=true
-e esil.debug=true
 e asm.arch=x86
 e asm.bits=32
 aei
@@ -939,7 +903,6 @@ NAME=inc byte [edi] check sf x86-32
 FILE=-
 CMDS=<<EOF
 e io.va=true
-e esil.debug=true
 e asm.arch=x86
 e asm.bits=32
 aei
@@ -966,7 +929,6 @@ NAME=adc [esi + 0x14], ecx x86-32
 FILE=-
 CMDS=<<EOF
 e io.va=true
-e esil.debug=true
 e asm.arch=x86
 e asm.bits=32
 aei
@@ -991,7 +953,6 @@ NAME=div cl x86-32
 FILE=-
 CMDS=<<EOF
 e io.va=true
-e esil.debug=true
 e asm.arch=x86
 e asm.bits=32
 aei
@@ -1012,7 +973,6 @@ NAME=pushal(pushad in intel documentation) x86_32
 FILE=-
 CMDS=<<EOF
 e io.va=true
-e esil.debug=true
 e asm.arch=x86
 e asm.bits=32
 aei
@@ -1054,7 +1014,6 @@ NAME=popal(popad in intel documentation) x86_32
 FILE=-
 CMDS=<<EOF
 e io.va=true
-e esil.debug=true
 e asm.arch=x86
 e asm.bits=32
 aei
@@ -1107,7 +1066,6 @@ NAME=pop x86-32
 FILE=-
 CMDS=<<EOF
 e io.va=true
-e esil.debug=true
 e asm.arch=x86
 e asm.bits=32
 aei
@@ -1136,7 +1094,6 @@ NAME=pushd followed by popfd x86-32
 FILE=-
 CMDS=<<EOF
 e io.va=true
-e esil.debug=true
 e asm.arch=x86
 e asm.bits=32
 aei
@@ -2481,7 +2438,6 @@ EXPECT=<<EOF
 EOF
 CMDS=<<EOF
 e io.va=true
-e esil.debug=true
 e asm.arch=x86
 e asm.bits=32
 aei
