@@ -1,7 +1,6 @@
 NAME=ands (opcode) triggers zf
 FILE=-
 CMDS=<<EOF
-e esil.debug=true
 e asm.arch=arm
 e asm.bits=32
 aer r2=0
@@ -18,7 +17,6 @@ RUN
 NAME=ands (opcode) triggers zf off
 FILE=-
 CMDS=<<EOF
-e esil.debug=true
 e asm.arch=arm
 e asm.bits=32
 aer r2=5
@@ -35,7 +33,6 @@ RUN
 NAME=ands triggers zf
 FILE=-
 CMDS=<<EOF
-e esil.debug=true
 e asm.arch=arm
 e asm.bits=32
 aer r2=0
@@ -52,7 +49,6 @@ RUN
 NAME=ands triggers zf off
 FILE=-
 CMDS=<<EOF
-e esil.debug=true
 e asm.arch=arm
 e asm.bits=32
 aer r2=5
@@ -69,7 +65,6 @@ RUN
 NAME=and (no s flag) does not trigger zf
 FILE=-
 CMDS=<<EOF
-e esil.debug=true
 e asm.arch=arm
 e asm.bits=32
 aer r2=0
@@ -86,7 +81,6 @@ RUN
 NAME=and (no s flag) does not trigger zf off
 FILE=-
 CMDS=<<EOF
-e esil.debug=true
 e asm.arch=arm
 e asm.bits=32
 aer r2=5
@@ -103,7 +97,6 @@ RUN
 NAME=orrs triggers zf
 FILE=-
 CMDS=<<EOF
-e esil.debug=true
 e asm.arch=arm
 e asm.bits=32
 aer r2=0
@@ -120,7 +113,6 @@ RUN
 NAME=orrs triggers zf off
 FILE=-
 CMDS=<<EOF
-e esil.debug=true
 e asm.arch=arm
 e asm.bits=32
 aer r2=5
@@ -137,7 +129,6 @@ RUN
 NAME=orrs (opcode) triggers zf
 FILE=-
 CMDS=<<EOF
-e esil.debug=true
 e asm.arch=arm
 e asm.bits=32
 aer r2=0
@@ -154,7 +145,6 @@ RUN
 NAME=orrs (opcode) triggers zf off
 FILE=-
 CMDS=<<EOF
-e esil.debug=true
 e asm.arch=arm
 e asm.bits=32
 aer r2=5
@@ -171,7 +161,6 @@ RUN
 NAME=orr (no s flag) does not trigger zf
 FILE=-
 CMDS=<<EOF
-e esil.debug=true
 e asm.arch=arm
 e asm.bits=32
 aer r2=0
@@ -188,7 +177,6 @@ RUN
 NAME=orr (no s flag) does not trigger zf off
 FILE=-
 CMDS=<<EOF
-e esil.debug=true
 e asm.arch=arm
 e asm.bits=32
 aer r2=5
@@ -205,7 +193,6 @@ RUN
 NAME=adds triggers zf
 FILE=-
 CMDS=<<EOF
-e esil.debug=true
 e asm.arch=arm
 e asm.bits=32
 aer r2=0
@@ -222,7 +209,6 @@ RUN
 NAME=adds triggers zf off
 FILE=-
 CMDS=<<EOF
-e esil.debug=true
 e asm.arch=arm
 e asm.bits=32
 aer r2=2
@@ -240,7 +226,6 @@ RUN
 NAME=add (no s flag) does not trigger zf
 FILE=-
 CMDS=<<EOF
-e esil.debug=true
 e asm.arch=arm
 e asm.bits=32
 aer r2=0
@@ -257,7 +242,6 @@ RUN
 NAME=add (no s flag) does not trigger zf off
 FILE=-
 CMDS=<<EOF
-e esil.debug=true
 e asm.arch=arm
 e asm.bits=32
 aer r2=2
@@ -275,7 +259,6 @@ RUN
 NAME=eors (opcode) triggers zf
 FILE=-
 CMDS=<<EOF
-e esil.debug=true
 e asm.arch=arm
 e asm.bits=32
 aer r2=1
@@ -292,7 +275,6 @@ RUN
 NAME=eors (opcode) triggers zf off
 FILE=-
 CMDS=<<EOF
-e esil.debug=true
 e asm.arch=arm
 e asm.bits=32
 aer r2=2
@@ -310,7 +292,6 @@ RUN
 NAME=eors triggers zf
 FILE=-
 CMDS=<<EOF
-e esil.debug=true
 e asm.arch=arm
 e asm.bits=32
 aer r2=1
@@ -327,7 +308,6 @@ RUN
 NAME=eors triggers zf off
 FILE=-
 CMDS=<<EOF
-e esil.debug=true
 e asm.arch=arm
 e asm.bits=32
 aer r2=2
@@ -345,7 +325,6 @@ RUN
 NAME=eor (no s flag) does not trigger zf
 FILE=-
 CMDS=<<EOF
-e esil.debug=true
 e asm.arch=arm
 e asm.bits=32
 aer r2=1
@@ -362,7 +341,6 @@ RUN
 NAME=eor (no s flag) does not trigger zf off
 FILE=-
 CMDS=<<EOF
-e esil.debug=true
 e asm.arch=arm
 e asm.bits=32
 aer r2=2
@@ -380,7 +358,6 @@ RUN
 NAME=subs triggers zf and cf
 FILE=-
 CMDS=<<EOF
-e esil.debug=true
 e asm.arch=arm
 e asm.bits=32
 aer r2=1
@@ -397,7 +374,6 @@ RUN
 NAME=subs triggers cf and zf off
 FILE=-
 CMDS=<<EOF
-e esil.debug=true
 e asm.arch=arm
 e asm.bits=32
 aer r2=2
@@ -414,7 +390,6 @@ RUN
 NAME=sub (no s flag) does not trigger zf
 FILE=-
 CMDS=<<EOF
-e esil.debug=true
 e asm.arch=arm
 e asm.bits=32
 aer r2=1
@@ -431,7 +406,6 @@ RUN
 NAME=sub (no s flag) does not trigger zf off
 FILE=-
 CMDS=<<EOF
-e esil.debug=true
 e asm.arch=arm
 e asm.bits=32
 aer r2=2
@@ -448,7 +422,6 @@ RUN
 NAME=cmp neq unchanged zf
 FILE=malloc://0x200
 CMDS=<<EOF
-e esil.debug=true
 e asm.arch=arm
 e asm.bits=32
 aei
@@ -467,7 +440,6 @@ RUN
 NAME=cmp neq changed zf
 FILE=malloc://0x200
 CMDS=<<EOF
-e esil.debug=true
 e asm.arch=arm
 e asm.bits=32
 aei
@@ -487,7 +459,6 @@ RUN
 NAME=cmp eq unchanged zf
 FILE=malloc://0x200
 CMDS=<<EOF
-e esil.debug=true
 e asm.arch=arm
 e asm.bits=32
 aei
@@ -508,7 +479,6 @@ RUN
 NAME=cmp eq changed zf
 FILE=malloc://0x200
 CMDS=<<EOF
-e esil.debug=true
 e asm.arch=arm
 e asm.bits=32
 aei
