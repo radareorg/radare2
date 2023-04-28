@@ -191,6 +191,6 @@ NAME=symname just before end of dynstr section of size 1
 FILE=bins/elf/switch-hello-world.elf
 CMDS=isq~?
 EXPECT=<<EOF
-1732
+1731
 EOF
 RUN

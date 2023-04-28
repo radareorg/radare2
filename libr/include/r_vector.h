@@ -66,10 +66,10 @@ R_API void r_vector_init(RVector *vec, size_t elem_size, RVectorFree free, void 
 
 R_API RVector *r_vector_new(size_t elem_size, RVectorFree free, void *free_user);
 
-// clears the vector and calls vec->free on every element if set.
+// calls vec->free on every element if set and clears the vector.
 R_API void r_vector_fini(RVector *vec);
 
-// frees the vector and calls vec->free on every element if set.
+// calls vec->free on every element if set and frees the vector.
 R_API void r_vector_free(RVector *vec);
 
 // the returned vector will have the same capacity as vec.
