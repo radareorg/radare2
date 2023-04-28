@@ -119,7 +119,7 @@ struct MACH0_(obj_t) {
 	int symstrlen;
 	int nsymtab;
 	ut32 *indirectsyms;
-	int nindirectsyms;
+	ut32 nindirectsyms;
 	int maxsymlen;
 
 	RBinImport **imports_by_ord;
