@@ -43,10 +43,6 @@ static RASN1Object *asn1_parse_header(const ut8 *buffer_base, const ut8 *buffer,
 	obj->form = head & ASN1_FORM;
 	obj->tag = head & ASN1_TAG;
 	length8 = buffer[1];
-	if (length8 > length - 1 || length8 > 6) {
-		R_LOG_DEBUG ("ASN.1: length error");
-		goto out_error;
-	}
 	if (length8 & ASN1_LENLONG) {
 		ut64 length64 = 0;
 		length8 &= ASN1_LENSHORT;
@@ -54,24 +50,37 @@ static RASN1Object *asn1_parse_header(const ut8 *buffer_base, const ut8 *buffer,
 		// Check for indefinite length.
 		if (length8) {
 			// Length over 6 bytes is not allowed.
+			if (length8 > length - 1 || length8 > 6) {
+				R_LOG_DEBUG ("ASN.1: length error");
+				goto out_error;
+			}
 			ut8 i8;
+			ut8 *fin = buffer_base + length;
 			// can overflow.
-			for (i8 = 0; i8 < length8; i8++) {
-				byte = buffer[2 + i8];
+			eprintf ("LEN %d %p\n", length8, 3);
+			for (i8 = 0; i8 < length8 && obj->sector + i8 < fin; i8++) {
 				length64 <<= 8;
-				length64 |= byte;
+				length64 |= obj->sector[i8];
 				if (length64 > length) {
 					goto out_error;
 				}
 			}
 			obj->sector += length8;
+			eprintf ("DEN %d\n", length64);
 		} else {
+			if (length8 > length - 1 || length8 > 3) {
+				R_LOG_DEBUG ("ASN.1: length error");
+				goto out_error;
+			}
 			if (length < 3) {
 				goto out_error;
 			}
 			length64 = asn1_ber_indefinite (obj->sector, length - 2);
 		}
 		obj->length = (ut32) length64;
+		if (length64 == 0) { // obj->length == 0) {
+			goto out_error;
+		}
 	} else {
 		obj->length = (ut32) length8;
 		obj->sector = buffer + 2;
