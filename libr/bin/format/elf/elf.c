@@ -4302,7 +4302,6 @@ static RVector /* <RBinElfSymbol> */ *Elf_(_r_bin_elf_load_symbols_and_imports)(
 			memory.sym[j].st_shndx = READ16 (s, k);
 #endif
 		}
-		int increment = nsym * sizeof (RBinElfSymbol);
 		if (!ret) {
 			ret = r_vector_new (sizeof (RBinElfSymbol), NULL, NULL);
 			memory.symbols = ret;
@@ -4312,13 +4311,15 @@ static RVector /* <RBinElfSymbol> */ *Elf_(_r_bin_elf_load_symbols_and_imports)(
 			}
 		}
 
-		if (!r_vector_reserve (ret, increment + ret_size)) {
+		int increment = nsym;
+		ut64 len = r_vector_length (ret);
+		if (!r_vector_reserve (ret, increment + len)) {
 			R_LOG_ERROR ("Cannot allocate %d symbols", (int)(nsym + increment));
 			_symbol_memory_free (&memory);
 			return NULL;
 		}
 
-		ret_size += increment;
+		ret_size += increment * sizeof (RBinElfSymbol);
 
 		int k;
 		for (k = 1; k < nsym; k++, ret_ctr++) {
