@@ -6,8 +6,10 @@
 
 #define INSNLEN 4
 
-static R_TH_LOCAL ut64 insn_offset = 0;
-static R_TH_LOCAL ut8 insn_bytes[INSNLEN];
+typedef struct plugin_data_t {
+	ut64 insn_offset;
+	ut8 insn_bytes[INSNLEN];
+} PluginData;
 
 //use bit[30:26] to cal hash index
 #define LA_INSN_HASH(insn) (((insn) & 0x7c000000) >> 26)
@@ -1179,14 +1181,15 @@ static int insn_fprintf_func(void *stream, const char *format, ...) {
 }
 
 static int insn_read_func(bfd_vma memaddr, bfd_byte *addr, unsigned int length, struct disassemble_info *info) {
-	int delta = (memaddr - insn_offset);
+	PluginData *pd = info->private_data;
+	int delta = (memaddr - pd->insn_offset);
 	if (delta < 0) {
 		return -1;      // disable backward reads
 	}
 	if ((delta + length) > INSNLEN) {
 		return -1;
 	}
-	memcpy (addr, insn_bytes + delta, length);
+	memcpy (addr, pd->insn_bytes + delta, length);
 	return 0;
 }
 
@@ -1290,14 +1293,16 @@ static bool decode(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
 	}
 
 	if (mask & R_ARCH_OP_MASK_DISASM) {
+		PluginData *pd = as->data;
 		struct disassemble_info disasm_obj;
 		int n = 0;
 		RStrBuf *insn_strbuf = r_strbuf_new ("");
 
-		insn_offset = addr;
+		pd->insn_offset = addr;
 		/*Looks kind of lame*/
-		memcpy (insn_bytes, b, INSNLEN);
+		memcpy (pd->insn_bytes, b, INSNLEN);
 
+		disasm_obj.private_data = pd;
 		disasm_obj.fprintf_func = &insn_fprintf_func;
 		disasm_obj.memory_error_func = &insn_memory_error_func;
 		disasm_obj.read_memory_func = &insn_read_func;
@@ -1376,6 +1381,23 @@ static char *regs(RArchSession* as) {
 	return strdup (p);
 }
 
+static bool init(RArchSession *s) {
+	r_return_val_if_fail (s, false);
+	if (s->data) {
+		R_LOG_WARN ("Already initialized");
+		return false;
+	}
+
+	s->data = R_NEW0 (PluginData);
+	return !!s->data;
+}
+
+static bool fini(RArchSession *s) {
+	r_return_val_if_fail (s, false);
+	R_FREE (s->data);
+	return true;
+}
+
 RArchPlugin r_arch_plugin_loongarch_gnu = {
 	.name = "loongarch",
 	.desc = "loongson loongarch code analysis plugin",
@@ -1385,6 +1407,8 @@ RArchPlugin r_arch_plugin_loongarch_gnu = {
 	.info = archinfo,
 	.decode = decode,
 	.regs = regs,
+	.init = init,
+	.fini = fini,
 };
 
 #ifndef R2_PLUGIN_INCORE
