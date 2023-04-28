@@ -136,7 +136,7 @@ if not no_user_plugins
     parse_plugins += [ 'dalvik_pseudo' ]
   endif
   if user_plugins.contains('loongarch')
-    anal_plugins += [ 'loongarch_gnu' ]
+    arch_plugins += [ 'loongarch_gnu' ]
   endif
   if user_plugins.contains('elf')
     bin_plugins += [ 'elf', 'elf64' ]
@@ -165,7 +165,6 @@ anal_plugins += [
   'gb',
   'i8080',
   'java',
-  'loongarch_gnu',
   'm68k_cs',
   'm680x_cs',
   'mips_cs',
@@ -177,6 +176,7 @@ anal_plugins += [
 ]
 
 arch_plugins += [
+  'loongarch_gnu',
   's390_cs',
 ]
 
@@ -185,9 +185,9 @@ if no_user_plugins
     anal_plugins += [
       'arm_gnu',
       'mips_gnu',
-      'loongarch_gnu',
     ]
     arch_plugins += [
+      'loongarch_gnu',
       'z80',
       'pdp11',
       'ppc_gnu',

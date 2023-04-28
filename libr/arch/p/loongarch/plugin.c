@@ -1,8 +1,8 @@
 /* radare - LGPL - Copyright 2021-2022 - junchao82@qq.com;zhaojunchao@loongson.cn love lanhy*/
 
-#include <r_anal.h>
+#include <r_arch.h>
 #include "disas-asm.h"
-#include "../arch/loongarch/gnu/loongarch-private.h"
+#include "loongarch-private.h"
 
 #define INSNLEN 4
 
@@ -922,7 +922,7 @@ static R_TH_LOCAL struct loongarch_ASE la_ases[] = {
 	{0}
 };
 
-static int analop_esil(RAnal *a, RAnalOp *op, ut32 opcode) {
+static int analop_esil(RArchSession *as, RAnalOp *op, ut32 opcode) {
 	ut32 insn_id = op->id;
 
 	switch (insn_id) {
@@ -1194,13 +1194,17 @@ static void insn_memory_error_func(int status, bfd_vma memaddr, struct disassemb
 	//TODO
 }
 
-static int loongarch_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, RAnalOpMask mask) {
+static bool decode(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
+	const ut64 addr = op->addr;
+	const ut8 *b = op->bytes;
+	const int len = op->size;
+
 	struct loongarch_ASE *ase = NULL;
 	const struct loongarch_anal_opcode *it;
 	ut32 opcode; // , optype;
 	ut32 insn_id = 0;
 	if (!op || (len < INSNLEN)) {
-		return INSNLEN;
+		return false;
 	}
 	op->type = R_ANAL_OP_TYPE_UNK;
 	op->size = INSNLEN;
@@ -1277,7 +1281,7 @@ static int loongarch_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int l
 	}
 
 	if (mask & R_ARCH_OP_MASK_ESIL) {
-		if (analop_esil (anal, op, opcode)) {
+		if (analop_esil (as, op, opcode)) {
 			r_strbuf_fini (&op->esil);
 		}
 	}
@@ -1306,15 +1310,15 @@ static int loongarch_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int l
 		}
 		r_strbuf_free (insn_strbuf);
 	}
-	return INSNLEN;
+	return true;
 }
 
-static int archinfo(RAnal *anal, int q) {
+static int archinfo(RArchSession *as, ut32 q) {
 	return INSNLEN;
 }
 
 /* Set the profile register */
-static bool la_set_reg_profile(RAnal* anal) {
+static char *regs(RArchSession* as) {
 	const char *p =
 	"=PC	pc\n"
 	"=SP	sp\n"
@@ -1369,24 +1373,23 @@ static bool la_set_reg_profile(RAnal* anal) {
 	/* extra */
 	"gpr	pc	.64	272	0\n"
 	;
-	return r_reg_set_profile_string (anal->reg, p);
+	return strdup (p);
 }
 
-RAnalPlugin r_anal_plugin_loongarch_gnu = {
+RArchPlugin r_arch_plugin_loongarch_gnu = {
 	.name = "loongarch",
 	.desc = "loongson loongarch code analysis plugin",
 	.license = "LGPL3",
 	.arch = "loongarch",
 	.bits = 64,
-	.esil = true,
-	.archinfo = archinfo,
-	.op = &loongarch_op,
-	.set_reg_profile = la_set_reg_profile,
+	.info = archinfo,
+	.decode = decode,
+	.regs = regs,
 };
 
 #ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_ANAL,
-	.data = &r_anal_plugin_loongarch_gnu
+	.type = R_LIB_TYPE_ARCH,
+	.data = &r_arch_plugin_loongarch_gnu
 };
 #endif
