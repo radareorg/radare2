@@ -1,8 +1,8 @@
-N=anal_loongarch_gnu
-OBJ_LOONGARCH=anal_loongarch_gnu.o
-OBJ_LOONGARCH += ../arch/loongarch/gnu/loongarch-dis.o
-OBJ_LOONGARCH += ../arch/loongarch/gnu/loongarch-opc.o
-OBJ_LOONGARCH += ../arch/loongarch/gnu/loongarch-coder.o
+N=loongarch_gnu
+OBJ_LOONGARCH=p/loongarch/plugin.o
+OBJ_LOONGARCH+=p/loongarch/loongarch-dis.o
+OBJ_LOONGARCH+=p/loongarch/loongarch-opc.o
+OBJ_LOONGARCH+=p/loongarch/loongarch-coder.o
 
 STATIC_OBJ+=${OBJ_LOONGARCH}
 TARGET_LOONGARCH=$(N).${EXT_SO}

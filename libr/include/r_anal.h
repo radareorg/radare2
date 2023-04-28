@@ -1576,7 +1576,6 @@ extern RAnalPlugin r_anal_plugin_m68k_cs;
 extern RAnalPlugin r_anal_plugin_m680x_cs;
 extern RAnalPlugin r_anal_plugin_mips_cs;
 extern RAnalPlugin r_anal_plugin_mips_gnu;
-extern RAnalPlugin r_anal_plugin_loongarch_gnu;
 extern RAnalPlugin r_anal_plugin_jdh8;
 extern RAnalPlugin r_anal_plugin_ppc_cs;
 extern RAnalPlugin r_anal_plugin_sh;
