@@ -5,11 +5,11 @@ aap
 aflc
 EOF
 EXPECT=<<EOF
-440
+455
 EOF
 RUN
 
-NAME=got switch cases
+NAME=got switch cases 2
 FILE=bins/elf/game_of_thrones
 CMDS=<<EOF
 s main

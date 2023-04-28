@@ -224,20 +224,19 @@ static void process_constructors(RBinFile *bf, RList *ret, int bits) {
 static RList* entries(RBinFile *bf) {
 	r_return_val_if_fail (bf && bf->o && bf->o->bin_obj, NULL);
 
-	RBinAddr *ptr = NULL;
-	struct r_bin_elf_symbol_t *symbol;
-	int i;
-
-	ELFOBJ* obj = bf->o->bin_obj;
 	RList *ret = r_list_newf ((RListFree)free);
 	if (!ret) {
 		return NULL;
 	}
+
+	ELFOBJ* obj = bf->o->bin_obj;
 	ut64 paddr = Elf_(r_bin_elf_get_entry_offset) (obj);
 	if (paddr != UT64_MAX) {
-		if (!(ptr = R_NEW0 (RBinAddr))) {
+		RBinAddr *ptr = R_NEW0 (RBinAddr);
+		if (!ptr) {
 			return ret;
 		}
+
 		ptr->paddr = paddr;
 		ptr->vaddr = Elf_(r_bin_elf_p2v) (obj, ptr->paddr);
 		ptr->hpaddr = 0x18;  // e_entry offset in ELF header
@@ -280,39 +279,44 @@ static RList* entries(RBinFile *bf) {
 
 	// add entrypoint for jni libraries
 	// NOTE: this is slow, we shouldnt find for java constructors here
-	if (!(symbol = Elf_(r_bin_elf_get_symbols) (obj))) {
+	const RVector *symbols = Elf_(r_bin_elf_load_symbols) (obj);
+	if (!symbols) {
 		return ret;
 	}
-	for (i = 0; !symbol[i].last; i++) {
-		if (!strncmp (symbol[i].name, "Java", 4)) {
-			if (r_str_endswith (symbol[i].name, "_init")) {
-				if (!(ptr = R_NEW0 (RBinAddr))) {
-					return ret;
-				}
-				ptr->paddr = symbol[i].offset;
-				ptr->vaddr = Elf_(r_bin_elf_p2v) (obj, ptr->paddr);
-				ptr->hpaddr = UT64_MAX;
-				ptr->type = R_BIN_ENTRY_TYPE_INIT;
-				r_list_append (ret, ptr);
-				break;
-			}
+
+	RBinElfSymbol *symbol;
+	r_vector_foreach (symbols, symbol) {
+		if (strncmp (symbol->name, "Java", 4) || !r_str_endswith (symbol->name, "_init")) {
+			continue;
 		}
+
+		RBinAddr *ptr = R_NEW0 (RBinAddr);
+		if (!ptr) {
+			return ret;
+		}
+
+		ptr->paddr = symbol->offset;
+		ptr->vaddr = Elf_(r_bin_elf_p2v) (obj, ptr->paddr);
+		ptr->hpaddr = UT64_MAX;
+		ptr->type = R_BIN_ENTRY_TYPE_INIT;
+		r_list_append (ret, ptr);
+		break;
 	}
+
 	int bin_bits = Elf_(r_bin_elf_get_bits) (bf->o->bin_obj);
 	process_constructors (bf, ret, bin_bits < 32 ? 32: bin_bits);
 	RListIter *iter, *iter2;
 	RBinAddr *foo, *bar;
-	bool nope;
 	r_list_foreach (obj->inits, iter, foo) {
-		nope = true;
+		bool is_new_symbol = true;
 		// avoid dupes
 		r_list_foreach (ret, iter2, bar) {
 			if (foo->type == bar->type && foo->paddr == bar->paddr) {
-				nope = false;
+				is_new_symbol = false;
 				break;
 			}
 		}
-		if (nope) {
+		if (is_new_symbol) {
 			r_list_append (ret, foo);
 		}
 	}
@@ -329,76 +333,80 @@ static void insert_symbol(ELFOBJ *bin, RBinSymbol *ptr, bool is_sht_null, RList 
 }
 
 static RList* symbols(RBinFile *bf) {
-	struct r_bin_elf_symbol_t *symbol = NULL;
-	RBinSymbol *ptr = NULL;
-	int i;
-
 	r_return_val_if_fail (bf && bf->o && bf->o->bin_obj, NULL);
 
 	ELFOBJ *bin = bf->o->bin_obj;
-	RList *ret = r_list_newf (free);
+	RList *ret = r_list_newf (free);  // XXX should be r_bin_symbol_free?
 	if (!ret) {
 		return NULL;
 	}
 
 	// traverse symbols
-	if (!(symbol = Elf_(r_bin_elf_get_symbols) (bin))) {
+	const RVector *symbols = Elf_(r_bin_elf_load_symbols) (bin);
+	if (!symbols) {
 		return ret;
 	}
-	for (i = 0; !symbol[i].last; i++) {
-		ptr = Elf_(_r_bin_elf_convert_symbol) (bin, &symbol[i], "%s");
+
+	RBinElfSymbol *symbol;
+	r_vector_foreach (symbols, symbol) {
+		RBinSymbol *ptr = Elf_(_r_bin_elf_convert_symbol) (bin, symbol, "%s");
 		if (!ptr) {
 			break;
 		}
-		insert_symbol (bin, ptr, symbol[i].is_sht_null, ret);
+		insert_symbol (bin, ptr, symbol->is_sht_null, ret);
 	}
 
 	// traverse imports
-	if (!(symbol = Elf_(r_bin_elf_get_imports) (bin))) {
+	const RVector *import_symbols = Elf_(r_bin_elf_load_imports) (bin);
+	if (!import_symbols) {
 		return ret;
 	}
-	for (i = 0; !symbol[i].last; i++) {
-		if (!symbol[i].size) {
+
+	r_vector_foreach (import_symbols, symbol) {
+		if (!symbol->size) {
 			continue;
 		}
-		ptr = Elf_(_r_bin_elf_convert_symbol) (bin, &symbol[i], "%s");
+		RBinSymbol *ptr = Elf_(_r_bin_elf_convert_symbol) (bin, symbol, "%s");
 		if (!ptr) {
 			break;
 		}
 		ptr->is_imported = true;
-		// special case where there is not entry in the plt for the import
+		// special case where there is no entry in the plt for the import
 		if (ptr->vaddr == UT32_MAX) {
 			ptr->paddr = 0;
 			ptr->vaddr = 0;
 		}
-		insert_symbol (bin, ptr, symbol[i].is_sht_null, ret);
+		insert_symbol (bin, ptr, symbol->is_sht_null, ret);
 	}
 	return ret;
 }
 
 static RList* imports(RBinFile *bf) {
-	RBinElfSymbol *import = NULL;
-	RBinImport *ptr = NULL;
-	RList *ret = NULL;
-	int i;
-
 	r_return_val_if_fail (bf && bf->o, NULL);
-	ELFOBJ *elf = bf->o->bin_obj;
-	if (!(ret = r_list_newf ((RListFree)r_bin_import_free))) {
+
+	RList *ret = r_list_newf ((RListFree)r_bin_import_free);
+	if (!ret) {
 		return NULL;
 	}
-	if (!(import = Elf_(r_bin_elf_get_imports) (elf))) {
+
+	ELFOBJ *elf = bf->o->bin_obj;
+	const RVector *import_symbols = Elf_(r_bin_elf_load_imports) (elf);
+	if (!import_symbols) {
 		r_list_free (ret);
 		return NULL;
 	}
-	for (i = 0; !import[i].last; i++) {
-		if (!(ptr = R_NEW0 (RBinImport))) {
+
+	RBinElfSymbol *import_symbol;
+	r_vector_foreach (import_symbols, import_symbol) {
+		RBinImport *ptr = R_NEW0 (RBinImport);
+		if (!ptr) {
 			break;
 		}
-		ptr->name = strdup (import[i].name);
-		ptr->bind = import[i].bind;
-		ptr->type = import[i].type;
-		ptr->ordinal = import[i].ordinal;
+
+		ptr->name = strdup (import_symbol->name);
+		ptr->bind = import_symbol->bind;
+		ptr->type = import_symbol->type;
+		ptr->ordinal = import_symbol->ordinal;
 		setimpord (elf, ptr->ordinal, ptr);
 		r_list_append (ret, ptr);
 	}
