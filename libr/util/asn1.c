@@ -1,4 +1,6 @@
-/* radare2 - LGPL - Copyright 2017-2022 - wargio, pancake */
+/* radare2 - LGPL - Copyright 2017-2023 - wargio, pancake */
+
+#define R_LOG_ORIGIN "asn1"
 
 #include <r_cons.h>
 #include <r_util.h>
@@ -33,7 +35,6 @@ static RASN1Object *asn1_parse_header(const ut8 *buffer_base, const ut8 *buffer,
 	if (!buffer || length < 3) {
 		return NULL;
 	}
-
 	RASN1Object *obj = R_NEW0 (RASN1Object);
 	if (!obj) {
 		return NULL;
@@ -85,8 +86,13 @@ static RASN1Object *asn1_parse_header(const ut8 *buffer_base, const ut8 *buffer,
 			obj->sector++; // real sector starts + 1
 		}
 	}
+	const int left = length - (obj->sector - buffer);
+	if (obj->length > left) {
+		R_LOG_DEBUG ("Wrap down from %d to %d", obj->length, left);
+		obj->length = left;
+	}
 	if (obj->length > length) {
-		// Malformed obj - overflow from data ptr
+		R_LOG_DEBUG ("Truncated object");
 		goto out_error;
 	}
 	return obj;
@@ -123,6 +129,11 @@ R_API RASN1Object *r_asn1_object_parse(const ut8 *buffer_base, const ut8 *buffer
 	if (object && (object->form == FORM_CONSTRUCTED)) {
 		const ut8 *next = object->sector;
 		const ut8 *end = next + object->length;
+		const ut8 *bend = buffer + length;
+		if (end > bend) {
+			free (object);
+			return NULL;
+		}
 		if (end > buffer + length) {
 			free (object);
 			return NULL;
