@@ -37,6 +37,7 @@ r_arch_sources = [
   'p/m68k_gnu/m68k-dis.c',
   'p/m68k_gnu/m68k-opc.c',
   'p/m68k_cs/plugin.c',
+  'p/m680x_cs/plugin.c',
   'p/arm/gnu/floatformat.c',
 # fails on windows
 # error LNK2005: SocketNotificationRetrieveEvents already defined in p_hppa_gnu_hppa-dis.c.obj
