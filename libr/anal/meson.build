@@ -56,7 +56,7 @@ r_anal_sources = [
   'p/anal_java.c',
   '../arch/p/lh5801/plugin.c',
   'p/anal_m680x_cs.c',
-  'p/anal_m68k_cs.c',
+  '../arch/p/m68k_cs/plugin.c',
   '../arch/p/m68k_gnu/plugin.c',
   '../arch/p/m68k_gnu/m68k-dis.c',
   '../arch/p/m68k_gnu/m68k-opc.c',
