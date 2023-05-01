@@ -73,40 +73,15 @@ static int parse_reg_name(RRegItem *reg, csh handle, cs_insn *insn, int reg_num)
 	return 0;
 }
 
-static void op_fillval(RAnalOp *op, csh handle, cs_insn *insn) {
-	static R_TH_LOCAL RRegItem reg;
-	RAnalValue *val;
-	switch (op->type & R_ANAL_OP_TYPE_MASK) {
-	case R_ANAL_OP_TYPE_LOAD:
-		if (INSOP (0).type == SPARC_OP_MEM) {
-			ZERO_FILL (reg);
-			val = r_vector_push (&op->srcs, NULL);
-			val->reg = &reg;
-			parse_reg_name (val->reg, handle, insn, 0);
-			val->delta = INSOP(0).mem.disp;
-		}
-		break;
-	case R_ANAL_OP_TYPE_STORE:
-		if (INSOP (1).type == SPARC_OP_MEM) {
-			ZERO_FILL (reg);
-			val = r_vector_push (&op->dsts, NULL);
-			val->reg = &reg;
-			parse_reg_name (val->reg, handle, insn, 1);
-			val->delta = INSOP(1).mem.disp;
-		}
-		break;
-	}
-}
-
-static int get_capstone_mode(RAnal *a) {
+static int get_capstone_mode(RArchSession *as) {
 	int mode = CS_MODE_LITTLE_ENDIAN;
 #if 0
 	// XXX capstone doesnt support big endian sparc, this code does nothing, so we need to swap around
-	if (a->config->big_endian) {
+	if (as->config->big_endian) {
 		mode = CS_MODE_BIG_ENDIAN;
 	}
 #endif
-	const char *cpu = a->config->cpu;
+	const char *cpu = as->config->cpu;
 	if (cpu && !strcmp (cpu, "v9")) {
 		mode |= CS_MODE_V9;
 	}
@@ -114,13 +89,52 @@ static int get_capstone_mode(RAnal *a) {
 }
 
 #define CSINC SPARC
-#define CSINC_MODE get_capstone_mode(a)
-#include "capstone.inc"
+#define CSINC_MODE get_capstone_mode(as)
+#include "../capstone.inc"
 
-static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
-	csh handle = init_capstone (a);
+typedef struct plugin_data_t {
+	CapstonePluginData cpd;
+	RRegItem reg;
+} PluginData;
+
+static void op_fillval(PluginData *pd, RAnalOp *op, csh handle, cs_insn *insn) {
+	RRegItem *reg = &pd->reg;
+	RAnalValue *val;
+	switch (op->type & R_ANAL_OP_TYPE_MASK) {
+	case R_ANAL_OP_TYPE_LOAD:
+		if (INSOP (0).type == SPARC_OP_MEM) {
+			memset (reg, 0, sizeof (RRegItem));
+			val = r_vector_push (&op->srcs, NULL);
+			val->reg = reg;
+			parse_reg_name (val->reg, handle, insn, 0);
+			val->delta = INSOP(0).mem.disp;
+		}
+		break;
+	case R_ANAL_OP_TYPE_STORE:
+		if (INSOP (1).type == SPARC_OP_MEM) {
+			memset (reg, 0, sizeof (RRegItem));
+			val = r_vector_push (&op->dsts, NULL);
+			val->reg = reg;
+			parse_reg_name (val->reg, handle, insn, 1);
+			val->delta = INSOP(1).mem.disp;
+		}
+		break;
+	}
+}
+
+static csh cs_handle_for_session(RArchSession *as) {
+	r_return_val_if_fail (as && as->data, 0);
+	CapstonePluginData *pd = as->data;
+	return pd->cs_handle;
+}
+
+static bool decode(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
+	const ut64 addr = op->addr;
+	const ut8 *buf = op->bytes;
+	const int len = op->size;
+	csh handle = cs_handle_for_session (as);
 	if (handle == 0) {
-		return -1;
+		return false;
 	}
 	cs_insn *insn = NULL;
 #if 0
@@ -326,14 +340,14 @@ performed in big-endian byte order.
 			break;
 		}
 		if (mask & R_ARCH_OP_MASK_VAL) {
-			op_fillval (op, handle, insn);
+			op_fillval (as->data, op, handle, insn);
 		}
 		cs_free (insn, n);
 	}
-	return op->size;
+	return op->size > 0;
 }
 
-static bool set_reg_profile(RAnal *anal) {
+static char *regs(RArchSession *as) {
 	const char *p = \
 		"=PC	pc\n"
 		"=SN	g1\n"
@@ -389,30 +403,61 @@ static bool set_reg_profile(RAnal *anal) {
 		"gpr	fp	.32	136	0\n"
 		"gpr	i7	.32	140	0\n"
 	;
-	return r_reg_set_profile_string (anal->reg, p);
+	return strdup (p);
 }
 
-static int archinfo(RAnal *anal, int q) {
+static int archinfo(RArchSession *as, ut32 q) {
 	return 4; /* :D */
 }
 
-RAnalPlugin r_anal_plugin_sparc_cs = {
+static bool init(RArchSession *as) {
+	r_return_val_if_fail (as, false);
+	if (as->data) {
+		R_LOG_WARN ("Already initialized");
+		return false;
+	}
+	as->data = R_NEW0 (PluginData);
+	CapstonePluginData *cpd = as->data;
+	if (!r_arch_cs_init (as, &cpd->cs_handle)) {
+		R_LOG_ERROR ("Cannot initialize capstone");
+		R_FREE (as->data);
+		return false;
+	}
+	return true;
+}
+
+static bool fini(RArchSession *as) {
+	r_return_val_if_fail (as, false);
+	PluginData *pd = as->data;
+	cs_close (&pd->cpd.cs_handle);
+	R_FREE (as->data);
+	return true;
+}
+
+static char *mnemonics(RArchSession *as, int id, bool json) {
+	r_return_val_if_fail (as && as->data, NULL);
+	CapstonePluginData *cpd = as->data;
+	return r_arch_cs_mnemonics (as, cpd->cs_handle, id, json);
+}
+
+RArchPlugin r_arch_plugin_sparc_cs = {
 	.name = "sparc",
 	.desc = "Capstone SPARC analysis",
-	.esil = true,
 	.license = "BSD",
 	.arch = "sparc",
-	.bits = 32|64,
+	.bits = R_SYS_BITS_PACK2 (32, 64),
 	.endian = R_SYS_ENDIAN_LITTLE | R_SYS_ENDIAN_BIG,
-	.archinfo = archinfo,
-	.op = &analop,
-	.set_reg_profile = &set_reg_profile,
-	.mnemonics = cs_mnemonics,
+	.info = archinfo,
+	.decode = decode,
+	.regs = regs,
+	.mnemonics = mnemonics,
+	.init = init,
+	.fini = fini
 };
 
 #ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_ANAL,
+	.type = R_LIB_TYPE_ARCH,
 	.data = &r_anal_plugin_sparc_cs,
 	.version = R2_VERSION
 };
