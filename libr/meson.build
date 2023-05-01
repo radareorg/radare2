@@ -156,7 +156,6 @@ endif
 if no_user_plugins
 
 anal_plugins += [
-  '6502_cs',
   '8051',
   'arm_cs',
   'avr',
@@ -175,6 +174,7 @@ anal_plugins += [
 ]
 
 arch_plugins += [
+  '6502_cs',
   'loongarch_gnu',
   's390_cs',
   'm68k_cs',

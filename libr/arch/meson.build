@@ -73,6 +73,7 @@ r_arch_sources = [
   'p/riscv_cs/plugin.c',
   'p/xap/plugin.c',
   'p/6502/plugin.c',
+  'p/6502_cs/plugin.c',
   'p/snes/plugin.c',
   'p/sh/plugin.c',
   'p/sh/gnu/sh-dis.c',
