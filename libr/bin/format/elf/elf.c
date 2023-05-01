@@ -4190,8 +4190,6 @@ static RVector /* <RBinElfSymbol> */ *Elf_(_r_bin_elf_load_symbols_and_imports)(
 	size_t import_ret_ctr = 0;
 	size_t ret_ctr = 0; // amount of symbols stored in ret
 	RVector *ret = parse_gnu_debugdata (bin, &ret_ctr);
-	// ret_size = amount of dbgsymbols in the array (not size of the array)
-	size_t ret_size = ret_ctr * sizeof (RBinElfSymbol); // size of ret allocation
 	ElfSymbolMemory memory = { .symbols = ret, .sym = NULL, .strtab = NULL };
 	int i;
 	for (i = 0; i < bin->ehdr.e_shnum; i++) {
@@ -4318,8 +4316,6 @@ static RVector /* <RBinElfSymbol> */ *Elf_(_r_bin_elf_load_symbols_and_imports)(
 			_symbol_memory_free (&memory);
 			return NULL;
 		}
-
-		ret_size += increment * sizeof (RBinElfSymbol);
 
 		int k;
 		for (k = 1; k < nsym; k++, ret_ctr++) {
