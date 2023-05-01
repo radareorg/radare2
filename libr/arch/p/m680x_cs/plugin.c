@@ -1,7 +1,6 @@
 /* radare2 - LGPL - Copyright 2015-2022 - pancake */
 
-#include <r_anal.h>
-#include <r_lib.h>
+#include <r_arch.h>
 #include <capstone/capstone.h>
 
 #if CS_API_MAJOR >= 4 && CS_API_MINOR >= 0
@@ -56,16 +55,25 @@ static int m680xmode(const char *str) {
 }
 
 #define CSINC M680X
-#define CSINC_MODE m680xmode(a->config->cpu)
-#include "capstone.inc"
+#define CSINC_MODE m680xmode(as->config->cpu)
+#include "../capstone.inc"
 
 #define IMM(x) insn->detail->m680x.operands[x].imm
 #define REL(x) insn->detail->m680x.operands[x].rel
 
-static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
-	csh handle = init_capstone (a);
+static inline csh cs_handle_for_session (RArchSession *as) {
+	r_return_val_if_fail (as && as->data, 0);
+	CapstonePluginData *pd = as->data;
+	return pd->cs_handle;
+}
+
+static bool decode(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
+	const ut64 addr = op->addr;
+	const ut8 *buf = op->bytes;
+	const int len = op->size;
+	csh handle = cs_handle_for_session (as);
 	if (handle == 0) {
-		return -1;
+		return false;
 	}
 
 	int n, opsize = -1;
@@ -510,11 +518,11 @@ beach:
 		}
 	}
 	cs_free (insn, n);
-	return opsize;
+	return opsize > 0;
 }
 
 // XXX
-static bool set_reg_profile(RAnal *anal) {
+static char *regs(RArchSession *as) {
 	const char *p = \
 		"=PC    pc\n"
 		"=SP    sp\n"
@@ -524,33 +532,63 @@ static bool set_reg_profile(RAnal *anal) {
 		"gpr	sp	.16	48	0\n"
 		"gpr	a0	.16	48	0\n"
 		"gpr	a1	.16	48	0\n";
-	return r_reg_set_profile_string (anal->reg, p);
+	return strdup (p);
 }
 
-RAnalPlugin r_anal_plugin_m680x_cs = {
+static bool init(RArchSession *as) {
+	r_return_val_if_fail (as, false);
+	if (as->data) {
+		R_LOG_WARN ("Already initialized");
+		return false;
+	}
+	as->data = R_NEW0 (CapstonePluginData);
+	CapstonePluginData *cpd = as->data;
+	if (!r_arch_cs_init (as, &cpd->cs_handle)) {
+		R_LOG_ERROR ("Cannot initialize capstone");
+		R_FREE (as->data);
+		return false;
+	}
+	return true;
+}
+
+static bool fini(RArchSession *s) {
+	r_return_val_if_fail (s, false);
+	CapstonePluginData *cpd = (CapstonePluginData*)s->data;
+	cs_close (&cpd->cs_handle);
+	R_FREE (s->data);
+	return true;
+}
+
+static char *mnemonics(RArchSession *as, int id, bool json) {
+	CapstonePluginData *cpd = as->data;
+	return r_arch_cs_mnemonics (as, cpd->cs_handle, id, json);
+}
+
+RArchPlugin r_arch_plugin_m680x_cs = {
 	.name = "m680x",
 	.desc = "Capstone M680X analysis plugin",
 	.license = "BSD",
-	.esil = false,
 	.arch = "m680x",
-	.set_reg_profile = &set_reg_profile,
-	.bits = 16 | 32,
-	.op = &analop,
-	.mnemonics = cs_mnemonics,
+	.regs = regs,
+	.bits = R_SYS_BITS_PACK2 (16, 32),
+	.decode = decode,
+	.mnemonics = mnemonics,
+	.init = init,
+	.fini = fini,
 };
 #else
-RAnalPlugin r_anal_plugin_m680x_cs = {
+RArchPlugin r_anal_plugin_m680x_cs = {
 	.name = "m680x (unsupported)",
 	.desc = "Capstone M680X analyzer (unsupported)",
 	.license = "BSD",
 	.arch = "m680x",
-	.bits = 32,
+	.bits = R_SYS_BITS_PACK1 (32),
 };
 #endif
 
 #ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_ANAL,
+	.type = R_LIB_TYPE_ARCH,
 	.data = &r_anal_plugin_m680x_cs,
 	.version = R2_VERSION
 };
