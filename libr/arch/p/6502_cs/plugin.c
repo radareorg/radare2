@@ -1,10 +1,7 @@
 /* radare - LGPL - Copyright 2018-2022 - pancake, Sylvain Pelissier */
 
 #include <string.h>
-#include <r_types.h>
-#include <r_lib.h>
-#include <r_asm.h>
-#include <r_anal.h>
+#include <r_arch.h>
 #include <capstone/capstone.h>
 
 #if CS_API_MAJOR >= 5 || (CS_API_MAJOR >= 4 && CS_API_MINOR >= 1)
@@ -17,17 +14,25 @@
 #include <capstone/mos65xx.h>
 
 #define CSINC MOS65XX
-#include "capstone.inc"
+#include "../capstone.inc"
 
-static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
+static inline csh cs_handle_for_session(RArchSession *as) {
+	r_return_val_if_fail (as, 0);
+	CapstonePluginData *cpd = as->data;
+	return cpd->cs_handle;
+}
+
+static bool decode(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
+	const ut64 addr = op->addr;
+	const ut8 *buf = op->bytes;
+	const int len = op->size;
 #if USE_ITER_API
 	static R_TH_LOCAL
 #endif
 	cs_insn *insn = NULL;
-
-	csh handle = init_capstone (a);
-	if (handle == 0) {
-		return -1;
+	csh handle = cs_handle_for_session (as);
+	if (!handle) {
+		return false;
 	}
 
 	int n;
@@ -176,10 +181,10 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 	cs_free (insn, n);
 #endif
 	//cs_close (&handle);
-	return op->size;
+	return op->size > 0;
 }
 
-static bool set_reg_profile(RAnal *anal) {
+static char *regs(RArchSession *as) {
 	char *p =
 		"=PC	pc\n"
 		"=SP	sp\n"
@@ -201,40 +206,71 @@ static bool set_reg_profile(RAnal *anal) {
 		"gpr	N	.1	.31	0\n"
 		"gpr	sp	.8	4	0\n"
 		"gpr	pc	.16	5	0\n";
-	return r_reg_set_profile_string (anal->reg, p);
+	return strdup (p);
 }
 
-RAnalPlugin r_anal_plugin_6502_cs = {
+static char *mnemonics(RArchSession *as, int id, bool json) {
+	CapstonePluginData *cpd = as->data;
+	return r_arch_cs_mnemonics (as, cpd->cs_handle, id, json);
+}
+
+static bool init(RArchSession *s) {
+	r_return_val_if_fail (s, false);
+	if (s->data) {
+		R_LOG_WARN ("Already initialized");
+		return false;
+	}
+	s->data = R_NEW0 (CapstonePluginData);
+	CapstonePluginData *cpd = (CapstonePluginData*)s->data;
+	if (!r_arch_cs_init (s, &cpd->cs_handle)) {
+		R_LOG_ERROR ("Cannot initialize capstone");
+		R_FREE (s->data);
+		return false;
+	}
+	return true;
+}
+
+static bool fini(RArchSession *s) {
+	r_return_val_if_fail (s, false);
+	CapstonePluginData *cpd = (CapstonePluginData*)s->data;
+	cs_close (&cpd->cs_handle);
+	R_FREE (s->data);
+	return true;
+}
+
+RArchPlugin r_arch_plugin_6502_cs = {
 	.name = "6502.cs",
 	.desc = "Capstone mos65xx analysis plugin",
 	.license = "LGPL3",
 	.arch = "6502",
-	.bits = 8,
-	.op = &analop,
-	.set_reg_profile = &set_reg_profile,
-	.mnemonics = &cs_mnemonics,
+	.bits = R_SYS_BITS_PACK1 (8),
+	.decode = decode,
+	.regs = regs,
+	.mnemonics = mnemonics,
+	.init = init,
+	.fini = fini,
 };
 
 #ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_ANAL,
-	.data = &r_anal_plugin_6502_cs,
+	.type = R_LIB_TYPE_ARCH,
+	.data = &r_arch_plugin_6502_cs,
 	.version = R2_VERSION
 };
 #endif
 #else
 //  empty plugin
-RAnalPlugin r_anal_plugin_6502_cs = {
+RArchPlugin r_arch_plugin_6502_cs = {
 	.name = "6502.cs",
 	.desc = "Capstone mos65xx analysis plugin (not supported)",
 	.license = "LGPL3",
 	.arch = "6502",
-	.bits = 8,
+	.bits = R_SYS_BITS_PACK1 (8),
 };
 
 #ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_ANAL,
+	.type = R_LIB_TYPE_ARCH,
 	.version = R2_VERSION
 };
 #endif

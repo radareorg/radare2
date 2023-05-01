@@ -338,6 +338,7 @@ extern RArchPlugin r_arch_plugin_m68k_gnu;
 extern RArchPlugin r_arch_plugin_m68k_cs;
 extern RArchPlugin r_arch_plugin_ppc_gnu;
 extern RArchPlugin r_arch_plugin_loongarch_gnu;
+extern RArchPlugin r_arch_plugin_6502_cs;
 
 #ifdef __cplusplus
 }
