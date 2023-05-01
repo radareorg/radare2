@@ -160,7 +160,7 @@ af
 afl
 EOF
 EXPECT=<<EOF
-0x00018c08  357   7340 main
+0x00018c08  360   7628 main
 EOF
 RUN
 
