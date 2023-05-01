@@ -14,8 +14,8 @@
 #define CSINC XCORE
 #define CSINC_MODE \
 	CS_MODE_BIG_ENDIAN \
-	| (a->config->cpu != NULL && ((!strcmp (a->config->cpu, "v9"))) ? CS_MODE_V9 : 0)
-#include "capstone.inc"
+	| (as->config->cpu != NULL && ((!strcmp (as->config->cpu, "v9"))) ? CS_MODE_V9 : 0)
+#include "../capstone.inc"
 
 static void opex(RStrBuf *buf, csh handle, cs_insn *insn) {
 	int i;
@@ -59,10 +59,20 @@ static void opex(RStrBuf *buf, csh handle, cs_insn *insn) {
 	pj_free (pj);
 }
 
-static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
-	csh handle = init_capstone (a);
+static csh cs_handle_for_session(RArchSession *as) {
+	r_return_val_if_fail (as && as->data, 0);
+	CapstonePluginData *pd = as->data;
+	return pd->cs_handle;
+}
+
+static bool decode(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
+	const ut64 addr = op->addr;
+	const ut8 *buf = op->bytes;
+	const int len = op->size;
+
+	csh handle = cs_handle_for_session (as);
 	if (handle == 0) {
-		return -1;
+		return false;
 	}
 
 	cs_insn *insn;
@@ -117,25 +127,60 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 		}
 		cs_free (insn, n);
 	}
-	return op->size;
+	return op->size > 0;
 }
 
-RAnalPlugin r_anal_plugin_xcore_cs = {
+static int archinfo(RArchSession *as, ut32 q) {
+	return 0;
+}
+
+static char *mnemonics(RArchSession *as, int id, bool json) {
+	CapstonePluginData *cpd = as->data;
+	return r_arch_cs_mnemonics (as, cpd->cs_handle, id, json);
+}
+
+static bool init(RArchSession *as) {
+	r_return_val_if_fail (as, false);
+	if (as->data) {
+		R_LOG_WARN ("Already initialized");
+		return false;
+	}
+	as->data = R_NEW0 (CapstonePluginData);
+	CapstonePluginData *cpd = (CapstonePluginData*)as->data;
+	if (!r_arch_cs_init (as, &cpd->cs_handle)) {
+		R_LOG_ERROR ("Cannot initialize capstone");
+		R_FREE (as->data);
+		return false;
+	}
+	return true;
+}
+
+static bool fini(RArchSession *as) {
+	r_return_val_if_fail (as, false);
+	CapstonePluginData *cpd = as->data;
+	cs_close (&cpd->cs_handle);
+	R_FREE (as->data);
+	return true;
+}
+
+RArchPlugin r_arch_plugin_xcore_cs = {
 	.name = "xcore",
 	.desc = "Capstone XCORE analysis",
 	.license = "BSD",
-	.esil = false,
 	.arch = "xcore",
-	.bits = 32,
-	.op = &analop,
-	//.set_reg_profile = &set_reg_profile,
-	.mnemonics = cs_mnemonics,
+	.bits = R_SYS_BITS_PACK1 (32),
+	.decode = decode,
+	.info = archinfo,
+	//.regs = regs,
+	.mnemonics = mnemonics,
+	.init = init,
+	.fini = fini,
 };
 
 #ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_ANAL,
-	.data = &r_anal_plugin_xcore_cs,
+	.type = R_LIB_TYPE_ARCH,
+	.data = &r_arch_plugin_xcore_cs,
 	.version = R2_VERSION
 };
 #endif
