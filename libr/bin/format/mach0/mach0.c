@@ -2576,7 +2576,7 @@ static bool parse_import_stub(struct MACH0_(obj_t) *bin, struct symbol_t *symbol
 			nsyms = (int)(sect_size / sect_fragment);
 			for (j = 0; j < nsyms; j++) {
 				if (bin->sects) {
-					if (bin->sects[i].reserved1 + j >= bin->nindirectsyms) {
+					if (bin->nindirectsyms < 0 || bin->sects[i].reserved1 + j >= bin->nindirectsyms) {
 						continue;
 					}
 				}
