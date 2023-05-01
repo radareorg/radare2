@@ -164,7 +164,6 @@ anal_plugins += [
   'gb',
   'i8080',
   'java',
-  'm680x_cs',
   'mips_cs',
   'ppc_cs',
   'sparc_cs',
@@ -178,6 +177,7 @@ arch_plugins += [
   'loongarch_gnu',
   's390_cs',
   'm68k_cs',
+  'm680x_cs',
 ]
 
 if no_user_plugins
