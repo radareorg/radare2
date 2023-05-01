@@ -169,7 +169,6 @@ anal_plugins += [
   'sparc_cs',
   'tms320',
   'x86_cs',
-  'xcore_cs'
 ]
 
 arch_plugins += [
@@ -178,6 +177,7 @@ arch_plugins += [
   's390_cs',
   'm68k_cs',
   'm680x_cs',
+  'xcore_cs'
 ]
 
 if no_user_plugins

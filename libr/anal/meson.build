@@ -77,7 +77,7 @@ r_anal_sources = [
   'p/anal_tms320.c',
   # join_paths('arch/whitespace/wsdis.c'),
   'p/anal_x86_cs.c',
-  'p/anal_xcore_cs.c',
+  '../arch/p/xcore_cs/plugin.c',
   #join_paths('arch','gb','meta_gb_cmt.c'),
   '../arch/p/msp430/plugin.c',
   '../arch/p/msp430/msp430_disas.c',
