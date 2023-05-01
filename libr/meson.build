@@ -118,7 +118,7 @@ if not no_user_plugins
     parse_plugins += [ 'wasm_pseudo' ]
   endif
   if user_plugins.contains('sparc')
-    anal_plugins += [ 'sparc_cs' ]
+    arch_plugins += [ 'sparc_cs' ]
     bp_plugins += [ 'sparc' ]
     # missing parse_plugins += [ 'sparc_pseudo' ]
   endif
@@ -160,7 +160,6 @@ anal_plugins += [
   'java',
   'mips_cs',
   'ppc_cs',
-  'sparc_cs',
   'x86_cs',
 ]
 
@@ -173,6 +172,7 @@ arch_plugins += [
   'm680x_cs',
   'xcore_cs',
   'tms320',
+  'sparc_cs',
 ]
 
 if no_user_plugins
