@@ -235,7 +235,8 @@ SDB_API const char *sdb_const_get_len(Sdb* s, const char *key, int *vlen, ut32 *
 	if (s->ht) {
 		SdbKv *kv = (SdbKv*) sdb_ht_find_kvp (s->ht, key, &found);
 		if (found) {
-			if (!sdbkv_value (kv) || !*sdbkv_value (kv)) {
+			char *kvv = sdbkv_value (kv);
+			if (!kvv || !*kvv) {
 				return NULL;
 			}
 			if (s->timestamped && kv->expire) {
@@ -848,8 +849,9 @@ SDB_API bool sdb_foreach(Sdb* s, SdbForeachCallback cb, void *user) {
 		ut32 j, count;
 
 		BUCKET_FOREACH_SAFE (s->ht, bt, j, count, kv) {
-			if (kv && sdbkv_value (kv) && *sdbkv_value (kv)) {
-				if (!cb (user, sdbkv_key (kv), sdbkv_value (kv))) {
+			if (kv) {
+				const char *kvv = sdbkv_value (kv);
+				if (kvv && *kvv && !cb (user, sdbkv_key (kv), kvv)) {
 					return sdb_foreach_end (s, false);
 				}
 			}
@@ -895,9 +897,12 @@ SDB_API bool sdb_sync(Sdb* s) {
 		ut32 j, count;
 
 		BUCKET_FOREACH_SAFE (s->ht, bt, j, count, kv) {
-			if (sdbkv_key (kv) && sdbkv_value (kv) && *sdbkv_value (kv) && !kv->expire) {
-				if (sdb_disk_insert (s, sdbkv_key (kv), sdbkv_value (kv))) {
-					sdb_remove (s, sdbkv_key (kv), 0);
+			if (sdbkv_key (kv)) {
+				const char *kvv = sdbkv_value (kv);
+				if (kvv && *kvv && !kv->expire) {
+					if (sdb_disk_insert (s, sdbkv_key (kv), sdbkv_value (kv))) {
+						sdb_remove (s, sdbkv_key (kv), 0);
+					}
 				}
 			}
 		}
