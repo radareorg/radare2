@@ -539,7 +539,7 @@ static BOOL __w32_control(DWORD type) {
 	}
 	return false;
 }
-#elif R2__UNIX__
+#elif R2__UNIX__ && !__wasi__
 volatile sig_atomic_t sigwinchFlag;
 static void resize(int sig) {
 	sigwinchFlag = 1;
