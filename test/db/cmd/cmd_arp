@@ -258,7 +258,7 @@ EOF
 EXPECT=<<EOF
 160
 88
-    rax 0x00000000       
+   rax 0x00000000        
 0x00000000
 EOF
 EXPECT_ERR=<<EOF
@@ -280,7 +280,7 @@ EOF
 EXPECT=<<EOF
 160
 88
-    rax 0x00000000       
+   rax 0x00000000        
 0x00000000
 EOF
 EXPECT_ERR=<<EOF

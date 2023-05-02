@@ -1,24 +1,25 @@
-/* radare - LGPL - Copyright 2009-2022 - pancake */
+/* radare - LGPL - Copyright 2009-2023 - pancake */
 
 #include <r_core.h> // just to get the RPrint instance
 #include <r_debug.h>
-#include <r_cons.h>
-#include <r_reg.h>
 
 R_API bool r_debug_reg_sync(RDebug *dbg, int type, int must_write) {
 	r_return_val_if_fail (dbg && dbg->reg && dbg->h, false);
-	int i, n, size;
+	int n, size;
 	if (r_debug_is_dead (dbg)) {
 		return false;
 	}
-	if (must_write && !dbg->h->reg_write) {
-		return false;
-	}
-	if (!must_write && !dbg->h->reg_read) {
-		return false;
+	if (must_write) {
+		if (!dbg->h->reg_write) {
+			return false;
+		}
+	} else {
+		if (!dbg->h->reg_read) {
+			return false;
+		}
 	}
 	// Sync all the types sequentially if asked
-	i = (type == R_REG_TYPE_ALL)? R_REG_TYPE_GPR: type;
+	int i = (type == R_REG_TYPE_ALL)? R_REG_TYPE_GPR: type;
 	// Check to get the correct arena when using @ into reg profile (arena!=type)
 	// if request type is positive and the request regset don't have regs
 	if (i >= R_REG_TYPE_GPR && dbg->reg->regset[i].regs && !dbg->reg->regset[i].regs->length) {
@@ -113,9 +114,9 @@ R_API bool r_debug_reg_list(RDebug *dbg, int type, int size, PJ *pj, int rad, co
 	if (dbg->bits & R_SYS_BITS_64) {
 		//fmt = "%s = 0x%08"PFMT64x"%s";
 		fmt = "%s = %s%s";
-		fmt2 = "%s%7s%s %s%s";
+		fmt2 = "%s%6s%s %s%s";
 		kwhites = "         ";
-		colwidth = dbg->regcols? 20: 25;
+		colwidth = dbg->regcols? 30: 25;
 		cols = 3;
 	} else {
 		//fmt = "%s = 0x%08"PFMT64x"%s";
@@ -191,7 +192,7 @@ R_API bool r_debug_reg_list(RDebug *dbg, int type, int size, PJ *pj, int rad, co
 				pj_kn (pj, item->name, value);
 			} else {
 				if (pr && pr->wide_offsets && dbg->bits & R_SYS_BITS_64) {
-					snprintf (strvalue, sizeof (strvalue),"0x%016"PFMT64x, value);
+					snprintf (strvalue, sizeof (strvalue), "0x%016"PFMT64x, value);
 				} else {
 					snprintf (strvalue, sizeof (strvalue),"0x%08"PFMT64x, value);
 				}
@@ -214,6 +215,7 @@ R_API bool r_debug_reg_list(RDebug *dbg, int type, int size, PJ *pj, int rad, co
 				break;
 			default:
 				snprintf (strvalue, sizeof (strvalue), "ERROR");
+				break;
 			}
 			if (isJson) {
 				pj_ks (pj, item->name, strvalue);
@@ -241,7 +243,7 @@ R_API bool r_debug_reg_list(RDebug *dbg, int type, int size, PJ *pj, int rad, co
 			break;
 		case '=':
 			{
-				int len, highlight = use_color && pr && pr->cur_enabled && itmidx == pr->cur;
+				bool highlight = (use_color && pr && pr->cur_enabled && itmidx == pr->cur);
 				char whites[32], content[300];
 				const char *a = "", *b = "";
 				if (highlight) {
@@ -255,12 +257,13 @@ R_API bool r_debug_reg_list(RDebug *dbg, int type, int size, PJ *pj, int rad, co
 				}
 				snprintf (content, sizeof (content),
 						fmt2, "", item->name, "", strvalue, "");
-				len = colwidth - strlen (content);
+				int len = colwidth - strlen (content);
 				if (len < 0) {
 					len = 0;
 				}
 				memset (whites, ' ', sizeof (whites));
 				whites[len] = 0;
+
 				dbg->cb_printf (fmt2, a, item->name, b, strvalue,
 						((n+1)%cols)? whites: "\n");
 				if (highlight) {
@@ -369,7 +372,7 @@ R_API ut64 r_debug_reg_get_err(RDebug *dbg, const char *name, int *err, utX *val
 	return ret;
 }
 
-// XXX: dup for get_Err!
+// XXX: R2_590 - dup for get_Err!
 R_API ut64 r_debug_num_callback(RNum *userptr, const char *str, int *ok) {
 	RDebug *dbg = (RDebug *)userptr;
 	// resolve using regnu
