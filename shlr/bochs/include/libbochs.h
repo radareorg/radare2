@@ -4,9 +4,6 @@
 
 #include <r_util.h>
 
-#if __wasi__
-#else
-
 #if R2__WINDOWS__
 #include <windows.h>
 #endif
@@ -41,5 +38,4 @@ int bochs_read(libbochs_t* b, ut64 addr, int count, ut8* buf);
 void bochs_close(libbochs_t* b);
 bool bochs_open(libbochs_t* b, const char *rutaBochs, const char *rutaConfig);
 
-#endif
 #endif
