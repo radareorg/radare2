@@ -1954,13 +1954,21 @@ static int cmd_debug_map(RCore *core, const char *input) {
 	case '*': // "dm*"
 	case 'j': // "dmj"
 	case 'q': // "dmq"
-		r_debug_map_sync (core->dbg); // update process memory maps
-		r_debug_map_list (core->dbg, core->offset, input);
+		if (r_config_get_b (core->config, "cfg.debug")) {
+			R_LOG_WARN ("Memory Maps cannot be listed without the debugger. See 'om' instead");
+		} else {
+			r_debug_map_sync (core->dbg); // update process memory maps
+			r_debug_map_list (core->dbg, core->offset, input);
+		}
 		break;
 	case '=': // "dm="
-		r_debug_map_sync (core->dbg);
-		r_debug_map_list_visual (core->dbg, core->offset, input,
-				r_config_get_i (core->config, "scr.color"));
+		if (r_config_get_b (core->config, "cfg.debug")) {
+			R_LOG_WARN ("Memory Maps cannot be listed without the debugger. See 'om' instead");
+		} else {
+			r_debug_map_sync (core->dbg);
+			r_debug_map_list_visual (core->dbg, core->offset, input,
+					r_config_get_i (core->config, "scr.color"));
+		}
 		break;
 	case 'h': // "dmh"
 		(void)r_debug_heap (core, input);
@@ -5027,55 +5035,57 @@ static int cmd_debug_desc(RCore *core, const char *input) {
 	case '\0': // "dd"
 	case '*': // "dd*"
 	case '+': // "dd+"
-	case ' ': { // "dd"
-		RBuffer *buf;
-		char *filename;
-		ut64 addr;
-		int flags;
+	case ' ': // "dd"
+		if (r_config_get_b (core->config, "cfg.debug")) {
+			R_LOG_WARN ("Child file descriptores require the debugger. No alternative for static yet");
+		} else {
+			RBuffer *buf;
+			char *filename;
+			ut64 addr;
+			int flags;
 
-		if (argc < 2) {
-			// only dd and dd* can have 1 arg here, others should error out
-			if (!input[0] || input[0] == '*') {
-				ret = r_debug_desc_list (core->dbg, print);
-			} else {
-				r_core_cmd_help_match_spec (core, help_msg_dd, "dd", input[0], true);
+			if (argc < 2) {
+				// only dd and dd* can have 1 arg here, others should error out
+				if (!input[0] || input[0] == '*') {
+					ret = r_debug_desc_list (core->dbg, print);
+				} else {
+					r_core_cmd_help_match_spec (core, help_msg_dd, "dd", input[0], true);
+				}
+				break;
 			}
-			break;
-		}
 
-		if (input[0] == '+') {
-			flags = O_RDWR | O_CREAT;
-		} else {
-			flags = O_RDONLY;
-		}
+			if (input[0] == '+') {
+				flags = O_RDWR | O_CREAT;
+			} else {
+				flags = O_RDONLY;
+			}
 
-		// Filename can be a given string or char* address in memory
-		addr = r_num_math (core->num, argv[1]);
-		if (addr) {
-			filename = r_core_cmd_strf (core, "ps @%" PFMT64x, addr);
-		} else {
-			filename = r_str_escape (argv[1]);
-		}
+			// Filename can be a given string or char* address in memory
+			addr = r_num_math (core->num, argv[1]);
+			if (addr) {
+				filename = r_core_cmd_strf (core, "ps @%" PFMT64x, addr);
+			} else {
+				filename = r_str_escape (argv[1]);
+			}
 
-		if (!(flags & O_CREAT) && !r_file_exists (filename)) {
-			R_LOG_ERROR ("File %s does not exist", filename);
+			if (!(flags & O_CREAT) && !r_file_exists (filename)) {
+				R_LOG_ERROR ("File %s does not exist", filename);
+				free (filename);
+				ret = 1;
+				break;
+			}
+
+			if (print || flags != O_RDONLY || !r_debug_desc_open (core->dbg, filename)) {
+				buf = r_core_syscallf (core, "open", "\"%s\", %d, 0644", filename, flags);
+				if (buf) {
+					ret = run_buffer_dxr (core, buf, print, false);
+				} else {
+					R_LOG_ERROR ("Cannot open");
+				}
+			}
 			free (filename);
-			ret = 1;
-			break;
 		}
-
-		if (print || flags != O_RDONLY || !r_debug_desc_open (core->dbg, filename)) {
-			buf = r_core_syscallf (core, "open", "\"%s\", %d, 0644", filename, flags);
-			if (buf) {
-				ret = run_buffer_dxr (core, buf, print, false);
-			} else {
-				R_LOG_ERROR ("Cannot open");
-			}
-		}
-
-		free (filename);
 		break;
-	}
 	case 's': { // "dds"
 		int fd;
 		ut64 offset;
@@ -5632,47 +5642,51 @@ static int cmd_debug(void *data, const char *input) {
 			RDebugReasonType stop = r_debug_stop_reason (core->dbg);
 			switch (input[1]) {
 			case '\0': // "di"
+				if (r_config_get_b (core->config, "cfg.debug")) {
+					R_LOG_WARN ("No debugee information available when not using the debugger");
+				} else {
 #define P r_cons_printf
-				if (stop != -1) {
-					if (core->dbg->reason.type == R_DEBUG_REASON_SIGNAL) {
-						P ("signalstr=%s\n", r_signal_to_human (core->dbg->reason.signum));
+					if (stop != -1) {
+						if (core->dbg->reason.type == R_DEBUG_REASON_SIGNAL) {
+							P ("signalstr=%s\n", r_signal_to_human (core->dbg->reason.signum));
+						}
+						P ("stopreason=%s\n", r_debug_reason_tostring (stop));
 					}
-					P ("stopreason=%s\n", r_debug_reason_tostring (stop));
-				}
-				if (rdi) {
-					const char *s = r_signal_tostring (core->dbg->reason.signum);
-					P ("type=%s\n", r_debug_reason_tostring (core->dbg->reason.type));
-					P ("signal=%s\n", r_str_get_fail (s, "none"));
-					P ("sigstr=%s\n", r_signal_to_human (core->dbg->reason.signum));
-					P ("signum=%d\n", core->dbg->reason.signum);
-					P ("sigpid=%d\n", core->dbg->reason.tid);
-					P ("addr=0x%"PFMT64x"\n", core->dbg->reason.addr);
-					P ("bp_addr=0x%"PFMT64x"\n", core->dbg->reason.bp_addr);
-					P ("inbp=%s\n", r_str_bool (core->dbg->reason.bp_addr));
-					P ("baddr=0x%"PFMT64x"\n", r_debug_get_baddr (core->dbg, NULL));
-					P ("pid=%d\n", rdi->pid);
-					P ("tid=%d\n", rdi->tid);
-					P ("stopaddr=0x%"PFMT64x"\n", core->dbg->stopaddr);
-					if (rdi->uid != -1) {
-						P ("uid=%d\n", rdi->uid);
-					}
-					if (rdi->gid != -1) {
-						P ("gid=%d\n", rdi->gid);
-					}
-					if (rdi->usr) {
-						P ("usr=%s\n", rdi->usr);
-					}
-					if (rdi->exe && *rdi->exe) {
-						P ("exe=%s\n", rdi->exe);
-					}
-					if (rdi->cmdline && *rdi->cmdline) {
-						P ("cmdline=%s\n", rdi->cmdline);
-					}
-					if (rdi->cwd && *rdi->cwd) {
-						P ("cwd=%s\n", rdi->cwd);
-					}
-					if (rdi->kernel_stack && *rdi->kernel_stack) {
-						P ("kernel_stack=\n%s\n", rdi->kernel_stack);
+					if (rdi) {
+						const char *s = r_signal_tostring (core->dbg->reason.signum);
+						P ("type=%s\n", r_debug_reason_tostring (core->dbg->reason.type));
+						P ("signal=%s\n", r_str_get_fail (s, "none"));
+						P ("sigstr=%s\n", r_signal_to_human (core->dbg->reason.signum));
+						P ("signum=%d\n", core->dbg->reason.signum);
+						P ("sigpid=%d\n", core->dbg->reason.tid);
+						P ("addr=0x%"PFMT64x"\n", core->dbg->reason.addr);
+						P ("bp_addr=0x%"PFMT64x"\n", core->dbg->reason.bp_addr);
+						P ("inbp=%s\n", r_str_bool (core->dbg->reason.bp_addr));
+						P ("baddr=0x%"PFMT64x"\n", r_debug_get_baddr (core->dbg, NULL));
+						P ("pid=%d\n", rdi->pid);
+						P ("tid=%d\n", rdi->tid);
+						P ("stopaddr=0x%"PFMT64x"\n", core->dbg->stopaddr);
+						if (rdi->uid != -1) {
+							P ("uid=%d\n", rdi->uid);
+						}
+						if (rdi->gid != -1) {
+							P ("gid=%d\n", rdi->gid);
+						}
+						if (rdi->usr) {
+							P ("usr=%s\n", rdi->usr);
+						}
+						if (rdi->exe && *rdi->exe) {
+							P ("exe=%s\n", rdi->exe);
+						}
+						if (rdi->cmdline && *rdi->cmdline) {
+							P ("cmdline=%s\n", rdi->cmdline);
+						}
+						if (rdi->cwd && *rdi->cwd) {
+							P ("cwd=%s\n", rdi->cwd);
+						}
+						if (rdi->kernel_stack && *rdi->kernel_stack) {
+							P ("kernel_stack=\n%s\n", rdi->kernel_stack);
+						}
 					}
 				}
 				break;
