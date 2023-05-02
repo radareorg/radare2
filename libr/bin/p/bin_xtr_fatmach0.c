@@ -116,6 +116,7 @@ static RBinXtrData *oneshot_buffer(RBin *bin, RBuffer *b, int idx) {
 				free (hdr);
 				return res;
 			}
+			free (metadata->type);
 			free (metadata);
 		}
 		free (arch);
