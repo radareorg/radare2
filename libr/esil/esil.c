@@ -3101,7 +3101,7 @@ static bool esil_double_to_int(REsil *esil) {
 			if (isnan (s.f64) || isinf (s.f64)) {
 				R_LOG_DEBUG ("esil_float_to_int: nan or inf detected");
 			}
-			if (s.f64 > (double)ST64_MIN || s.f64 < (double)ST64_MAX) {
+			if (s.f64 > (double)ST64_MIN && s.f64 < (double)ST64_MAX) {
 				ret = r_esil_pushnum (esil, (st64)(s.f64));
 			} else {
 				R_LOG_DEBUG ("double-to-int out of range");
