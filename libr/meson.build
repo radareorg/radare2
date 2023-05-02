@@ -145,11 +145,6 @@ if not no_user_plugins
     bin_plugins += [ 'pe', 'pe64', 'coff', 'xcoff64', 'mz', 'ne' ]
     bin_xtr_plugins += [ 'xtr_pemixed' ]
   endif
-  if not user_plugins.contains('nogrub')
-    fs_plugins += [ 'cpio', 'ext2', 'fat', 'fb', 'hfs',
-      'hfsplus', 'iso9660', 'jfs', 'minix', 'ntfs', 'reiserfs',
-      'sfs', 'tar', 'udf', 'ufs', 'ufs2', 'xfs' ]
-  endif
 endif
 
 # else
@@ -324,27 +319,19 @@ egg_plugins += [
 ]
 
 fs_plugins += [
-  'cpio',
-  'ext2',
-  'fat',
-  'fb',
-  'hfs',
-  'hfsplus',
   'io',
-  'iso9660',
-  'jfs',
-  'minix',
-  'ntfs',
   'posix',
   'r2',
-  'reiserfs',
-  'sfs',
-  'tar',
-  'udf',
-  'ufs',
-  'ufs2',
-  'xfs'
 ]
+
+if not get_option('nogpl')
+  fs_plugins += [
+    'cpio', 'ext2', 'fat', 'fb', 'hfs',
+    'hfsplus', 'iso9660', 'jfs', 'minix',
+    'ntfs', 'reiserfs', 'sfs', 'tar',
+    'udf', 'ufs', 'ufs2', 'xfs'
+  ]
+endif
 
 io_plugins += [
   'ar',
