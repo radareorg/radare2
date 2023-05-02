@@ -4043,10 +4043,12 @@ d_growable_string_callback_adapter (const char *s, size_t l, void *opaque)
 
 static void
 d_count_templates_scopes (int *num_templates, int *num_scopes,
-			  const struct demangle_component *dc)
+			  const struct demangle_component *dc, int depth)
 {
-  if (dc == NULL)
+  if (dc == NULL) {
     return;
+  }
+  depth++;
 
   switch (dc->type)
     {
@@ -4063,12 +4065,14 @@ d_count_templates_scopes (int *num_templates, int *num_scopes,
 
     case DEMANGLE_COMPONENT_TEMPLATE:
       (*num_templates)++;
+      depth++;
       goto recurse_left_right;
 
     case DEMANGLE_COMPONENT_REFERENCE:
     case DEMANGLE_COMPONENT_RVALUE_REFERENCE:
       if (d_left (dc)->type == DEMANGLE_COMPONENT_TEMPLATE_PARAM)
 	(*num_scopes)++;
+      depth++;
       goto recurse_left_right;
 
     case DEMANGLE_COMPONENT_QUAL_NAME:
@@ -4133,42 +4137,44 @@ d_count_templates_scopes (int *num_templates, int *num_scopes,
     case DEMANGLE_COMPONENT_TAGGED_NAME:
     case DEMANGLE_COMPONENT_CLONE:
     recurse_left_right:
-      d_count_templates_scopes (num_templates, num_scopes,
-				d_left (dc));
-      d_count_templates_scopes (num_templates, num_scopes,
-				d_right (dc));
+      if (depth++ > 50) {
+        fprintf (stderr, "Max depth spotted in the template scopes\n");
+        break;
+      }
+      d_count_templates_scopes (num_templates, num_scopes, d_left (dc), depth);
+      d_count_templates_scopes (num_templates, num_scopes, d_right (dc), depth);
       break;
 
     case DEMANGLE_COMPONENT_CTOR:
       d_count_templates_scopes (num_templates, num_scopes,
-				dc->u.s_ctor.name);
+				dc->u.s_ctor.name, depth);
       break;
 
     case DEMANGLE_COMPONENT_DTOR:
       d_count_templates_scopes (num_templates, num_scopes,
-				dc->u.s_dtor.name);
+				dc->u.s_dtor.name, depth);
       break;
 
     case DEMANGLE_COMPONENT_EXTENDED_OPERATOR:
       d_count_templates_scopes (num_templates, num_scopes,
-				dc->u.s_extended_operator.name);
+				dc->u.s_extended_operator.name, depth);
       break;
 
     case DEMANGLE_COMPONENT_FIXED_TYPE:
       d_count_templates_scopes (num_templates, num_scopes,
-                                dc->u.s_fixed.length);
+                                dc->u.s_fixed.length, depth);
       break;
 
     case DEMANGLE_COMPONENT_GLOBAL_CONSTRUCTORS:
     case DEMANGLE_COMPONENT_GLOBAL_DESTRUCTORS:
       d_count_templates_scopes (num_templates, num_scopes,
-				d_left (dc));
+				d_left (dc), depth);
       break;
 
     case DEMANGLE_COMPONENT_LAMBDA:
     case DEMANGLE_COMPONENT_DEFAULT_ARG:
       d_count_templates_scopes (num_templates, num_scopes,
-				dc->u.s_unary_num.sub);
+				dc->u.s_unary_num.sub, depth);
       break;
     }
 }
@@ -4204,7 +4210,7 @@ d_print_init (struct d_print_info *dpi, demangle_callbackref callback,
   dpi->num_copy_templates = 0;
 
   d_count_templates_scopes (&dpi->num_copy_templates,
-			    &dpi->num_saved_scopes, dc);
+			    &dpi->num_saved_scopes, dc, 0);
   dpi->num_copy_templates *= dpi->num_saved_scopes;
 
   dpi->current_template = NULL;
