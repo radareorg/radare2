@@ -14,6 +14,11 @@ func.err.arg.1=const char *,fmt
 func.err.noreturn=true
 func.err.ret=void
 
+xalloc_die=func
+func.xalloc_die.args=0
+func.xalloc_die.noreturn=true
+func.xalloc_die.ret=void
+
 errc=func
 func.errc.args=1
 func.errc.arg.0=int,eval

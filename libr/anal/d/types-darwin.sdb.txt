@@ -99,6 +99,11 @@ func.abort.args=0
 func.abort.noreturn=true
 func.abort.ret=void
 
+xalloc_die=func
+func.xalloc_die.args=0
+func.xalloc_die.noreturn=true
+func.xalloc_die.ret=void
+
 atexit=func
 func.atexit.args=1
 func.atexit.arg.0=func,function
