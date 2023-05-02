@@ -304,9 +304,9 @@ bool bochs_open(libbochs_t* b, const char * pathBochs, const char * pathConfig) 
 			b->hWritePipeOut = aStdinPipe[PIPE_WRITE];
 			b->isRunning = true;
 			bochs_reset_buffer (b);
-			R_LOG_INFO ("Waiting for bochs...\n");
+			R_LOG_INFO ("Waiting for bochs");
 			if (bochs_wait (b)) {
-				R_LOG_INFO ("Ready.\n");
+				R_LOG_INFO ("Ready");
 				b->pid = nChild;
 				result = true;
 			} else {
