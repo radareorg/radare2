@@ -182,12 +182,16 @@ jobs:
     - name: Installing the musl runtime
       run: |
         sudo apt install musl-tools
-    - name: Static r2 build with meson
-      run: |
         sudo apt-get --assume-yes install python3-wheel python3-setuptools cabextract gperf
         sudo pip3 install meson ninja
+    - name: Static r2 build with meson
+      run: |
         CFLAGS="-static" LDFLAGS="-static" meson --prefix=${HOME}/.local --buildtype release --default-library static build
         ninja -C build && ninja -C build install
+    - name: meson gpl-less build
+      run: |
+        meson -Dnogpl=true build-nogpl
+        ninja -C build-nogpl
   macos-test:
     runs-on: macos-11
     if: contains(github.ref, 'master') || contains(github.ref, 'ci-')
