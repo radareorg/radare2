@@ -83,6 +83,21 @@ typedef struct r_cons_bind_t {
 	RConsGrepCallback cb_grep;
 } RConsBind;
 
+#if R2_590
+typedef struct r_cons_mark_t {
+	ut64 addr;
+	char *foo;
+	int row;
+	int col;
+	int pos;
+} RConsMark;
+
+R_API void r_cons_mark_flush(void);
+R_API void r_cons_mark(ut64 addr, const char *name);
+R_API void r_cons_mark_free(RConsMark *m);
+R_API RConsMark *r_cons_mark_at(ut64 addr, const char *name);
+#endif
+
 typedef struct {
 	const char *name;
 	const char *script;
@@ -435,6 +450,7 @@ typedef struct r_cons_context_t {
 	bool use_tts;
 	bool flush;
 	int colors[256];
+	RList *marks;
 } RConsContext;
 
 #define HUD_BUF_SIZE 512
