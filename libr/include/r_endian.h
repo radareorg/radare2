@@ -170,6 +170,22 @@ static inline void r_write_le24(void *_dest, ut32 val) {
 	r_write_le8 (dest,   val >> 16);
 }
 
+static inline ut32 r_read_le24(const void *src) {
+	if (!src) {
+		return UT32_MAX;
+	}
+	const ut8 *s = (const ut8*)src;
+	return (((ut32)s[2]) << 16) | (((ut32)s[1]) << 8) | (((ut32)s[0]) << 0);
+}
+
+static inline ut32 r_read_be24(const void *src) {
+	if (!src) {
+		return UT32_MAX;
+	}
+	const ut8 *s = (const ut8*)src;
+	return (((ut32)s[0]) << 16) | (((ut32)s[1]) << 8) | (((ut32)s[2]) << 0);
+}
+
 static inline ut32 r_read_le32(const void *src) {
 	if (!src) {
 		return UT32_MAX;
@@ -310,10 +326,14 @@ static inline void r_write_at_me64(void *dest, ut64 val, size_t offset) {
 	r_write_me64 (d, val);
 }
 
-/* Helper functions */
+/* Helper functions --- this is all spaguetti that can be rewritten with 1 line macro */
 
 static inline ut16 r_read_ble16(const void *src, bool big_endian) {
 	return big_endian? r_read_be16 (src): r_read_le16 (src);
+}
+
+static inline ut32 r_read_ble24(const void *src, bool big_endian) {
+	return big_endian? r_read_be24 (src): r_read_le24 (src);
 }
 
 static inline ut32 r_read_ble32(const void *src, bool big_endian) {
