@@ -3458,7 +3458,7 @@ TODO: ptr->flags = elf_flags_tostring (section->flags);
 	ut16 mach = bin->ehdr.e_machine;
 	Elf_(Phdr) *phdr = bin->phdr;
 
-	bin->inits = r_list_newf ((RListFree)free); // r_bin_addr_free);
+	bin->inits = r_list_newf ((RListFree)free);
 
 	int found_load = 0;
 	if (phdr) {
@@ -4520,6 +4520,7 @@ void Elf_(r_bin_elf_free)(ELFOBJ* bin) {
 	ht_up_free (bin->rel_cache);
 	bin->rel_cache = NULL;
 	sdb_free (bin->kv);
+	r_list_free (bin->inits);
 	free (bin);
 }
 
