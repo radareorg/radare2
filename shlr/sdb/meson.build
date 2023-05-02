@@ -117,8 +117,7 @@ if not meson.is_subproject()
     'include/sdb/sdb.h',
     'include/sdb/ht.h',
     'include/sdb/set.h',
-    'include/sdb/types.h',
-    'include/sdb/rangstr.h'
+    'include/sdb/types.h'
   ]
   install_headers(include_files, subdir: 'sdb')
 endif
