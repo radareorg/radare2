@@ -1445,8 +1445,12 @@ static bool esil_asr(REsil *esil) {
 				ut64 left_bits = 0;
 				if (regsize <= 64) {
 					if (op_num & (1ULL << (regsize - 1))) {
-						left_bits = (1ULL << param_num) - 1;
-						left_bits <<= regsize - param_num;
+						if (regsize - param_num >= 64) {
+							left_bits = 0;
+						} else {
+							left_bits = (1ULL << param_num) - 1;
+							left_bits <<= regsize - param_num;
+						}
 					}
 				}
 				op_num = left_bits | (op_num >> param_num);
