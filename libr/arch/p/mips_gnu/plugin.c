@@ -1,8 +1,6 @@
 /* radare - LGPL - Copyright 2010-2023 - pancake */
 
-#include <r_lib.h>
-#include <r_asm.h>
-#include <r_anal.h>
+#include <r_arch.h>
 #include "disas-asm.h"
 #include "opcode/mips.h"
 
@@ -61,14 +59,14 @@ DECLARE_GENERIC_FPRINTF_FUNC_NOGLOBALS ()
 #define ES_J(addr)   addr ",pc,:="
 #endif
 
-#define ES_SIGN32_64(arg) es_sign_n_64 (a, op, arg, 32)
-#define ES_SIGN16_64(arg) es_sign_n_64 (a, op, arg, 16)
+#define ES_SIGN32_64(arg) es_sign_n_64 (as, op, arg, 32)
+#define ES_SIGN16_64(arg) es_sign_n_64 (as, op, arg, 16)
 
 #define ES_ADD_CK32_OVERF(x, y, z) es_add_ck (op, x, y, z, 32)
 #define ES_ADD_CK64_OVERF(x, y, z) es_add_ck (op, x, y, z, 64)
 
-static inline void es_sign_n_64(RAnal *a, RAnalOp *op, const char *arg, int bit) {
-	if (a->config->bits == 64) {
+static inline void es_sign_n_64(RArchSession *as, RAnalOp *op, const char *arg, int bit) {
+	if (as->config->bits == 64) {
 		r_strbuf_appendf (&op->esil, ",%d,%s,~,%s,=,", bit, arg, arg);
 	} else {
 		r_strbuf_append (&op->esil, ",");
@@ -767,7 +765,7 @@ static const char *mips_reg_decode(ut32 reg_num) {
 	return NULL;
 }
 
-static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, gnu_insn *insn) {
+static int analop_esil(RArchSession *as, RAnalOp *op, ut64 addr, gnu_insn *insn) {
 	switch (insn->id) {
 	case MIPS_INS_NOP:
 		r_strbuf_set (&op->esil, ",");
@@ -1113,7 +1111,7 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, gnu_insn *insn) {
 	return 0;
 }
 
-static int disassemble(RAnal *a, RAnalOp *op, const ut8 *buf, int len) {
+static int disassemble(RArchSession *as, RAnalOp *op, const ut8 *buf, int len) {
 	ut8 bytes[8] = { 0 };
 	int minopsz = 4;
 	struct disassemble_info disasm_obj = { 0 };
@@ -1123,8 +1121,8 @@ static int disassemble(RAnal *a, RAnalOp *op, const ut8 *buf, int len) {
 	RStrBuf *sb = r_strbuf_new ("");
 	memcpy (&bytes, buf, R_MIN (len, sizeof (bytes)));
 
-	const char *cpu = a->config->cpu;
-	if (a->config->bits == 16) {
+	const char *cpu = as->config->cpu;
+	if (as->config->bits == 16) {
 		len = 2;
 	}
 
@@ -1163,8 +1161,8 @@ static int disassemble(RAnal *a, RAnalOp *op, const ut8 *buf, int len) {
 		disasm_obj.mach = bfd_mach_mips_loongson_2f;
 	}
 
-	const char *abi = a->config->abi;
-	// const char *features = a->config->features;
+	const char *abi = as->config->abi;
+	// const char *features = as->config->features;
 	disasm_obj.disassembler_options = NULL;
 	if (R_STR_ISNOTEMPTY (abi)) {
 		// n32, n64, o32
@@ -1184,7 +1182,7 @@ static int disassemble(RAnal *a, RAnalOp *op, const ut8 *buf, int len) {
 	disasm_obj.buffer_vma = addr;
 	disasm_obj.buffer_length = 4;
 	// is micromips always big endian? different code endian and data endian? must move to arch
-	disasm_obj.endian = !R_ARCH_CONFIG_IS_BIG_ENDIAN (a->config);
+	disasm_obj.endian = !R_ARCH_CONFIG_IS_BIG_ENDIAN (as->config);
 	disasm_obj.fprintf_func = &generic_fprintf_func;
 	disasm_obj.stream = sb;
 	op->size = (disasm_obj.endian == BFD_ENDIAN_LITTLE)
@@ -1200,18 +1198,21 @@ static int disassemble(RAnal *a, RAnalOp *op, const ut8 *buf, int len) {
 	return op->size;
 }
 
-static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, RAnalOpMask mask) {
+static bool decode(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
+	const ut64 addr = op->addr;
+	const ut8 *b = op->bytes;
+	const int len = op->size;
 	ut32 opcode = 0;
 	int oplen = 4;
 	const ut8 *buf;
 	gnu_insn insn = {0};
 
 	if (!op) {
-		return oplen;
+		return false; // XXX true?
 	}
 	if (mask & R_ARCH_OP_MASK_DISASM) {
 		op->addr = addr;
-		int res = disassemble (anal, op, b, len);
+		int res = disassemble (as, op, b, len);
 		if (res > 0) {
 			op->size = res;
 		}
@@ -1223,12 +1224,12 @@ static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, R
 	op->addr = addr;
 	// Be endian aware
 	if (len >= 4) {
-		opcode = r_read_ble32 (b, R_ARCH_CONFIG_IS_BIG_ENDIAN (anal->config));
+		opcode = r_read_ble32 (b, R_ARCH_CONFIG_IS_BIG_ENDIAN (as->config));
 	} else if (len >= 2) {
-		opcode = r_read_ble16 (b, R_ARCH_CONFIG_IS_BIG_ENDIAN (anal->config));
+		opcode = r_read_ble16 (b, R_ARCH_CONFIG_IS_BIG_ENDIAN (as->config));
 	}
 
-	// eprintf ("MIPS: %02x %02x %02x %02x (after endian: big=%d)\n", buf[0], buf[1], buf[2], buf[3], anal->big_endian);
+	// eprintf ("MIPS: %02x %02x %02x %02x (after endian: big=%d)\n", buf[0], buf[1], buf[2], buf[3], as->big_endian);
 	if (opcode == 0) {
 		op->type = R_ANAL_OP_TYPE_NOP;
 		return oplen;
@@ -1606,7 +1607,11 @@ static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, R
 			insn.id = MIPS_INS_LUI;
 			snprintf ((char *)insn.i_reg.imm, REG_BUF_MAX, "0x%" PFMT32x, imm);
 			dst = r_vector_push (&op->dsts, NULL);
-			dst->reg = r_reg_get (anal->reg, mips_reg_decode (rt), R_REG_TYPE_GPR);
+#if 0
+			dst->reg = r_reg_get (as->reg, mips_reg_decode (rt), R_REG_TYPE_GPR);
+#else
+			dst->reg = NULL;
+#endif
 			// TODO: currently there is no way for the macro to get access to this register
 			op->val = imm;
 			break;
@@ -1614,10 +1619,18 @@ static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, R
 			insn.id = MIPS_INS_ADDIU;
 			op->type = R_ANAL_OP_TYPE_ADD;
 			dst = r_vector_push (&op->dsts, NULL);
-			dst->reg = r_reg_get (anal->reg, mips_reg_decode (rt), R_REG_TYPE_GPR);
+#if 0
+			dst->reg = r_reg_get (as->reg, mips_reg_decode (rt), R_REG_TYPE_GPR);
+#else
+			dst->reg = NULL;
+#endif
 			// TODO: currently there is no way for the macro to get access to this register
 			src = r_vector_push (&op->srcs, NULL);
-			src->reg = r_reg_get (anal->reg, mips_reg_decode (rs), R_REG_TYPE_GPR);
+#if 0
+			src->reg = r_reg_get (as->reg, mips_reg_decode (rs), R_REG_TYPE_GPR);
+#else
+			src->reg = NULL;
+#endif
 			op->val = imm; // Beware: this one is signed... use `?vi $v`
 			if (rs == 0) {
 				insn.id = MIPS_INS_LI;
@@ -1681,7 +1694,9 @@ static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, R
 			}
 
 			if (rs == 28) {
-				op->ptr = anal->gp + imm;
+#if R2_590
+				op->ptr = as->config->gp + imm;
+#endif
 			} else {
 				op->ptr = imm;
 			}
@@ -1731,7 +1746,7 @@ static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, R
 	}
 
 	if (mask & R_ARCH_OP_MASK_ESIL) {
-		if (analop_esil (anal, op, addr, &insn)) {
+		if (analop_esil (as, op, addr, &insn)) {
 			r_strbuf_fini (&op->esil);
 		}
 	}
@@ -1741,7 +1756,7 @@ static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, R
 	if (oplen < 1) {
 		oplen = 2;
 	}
-	return oplen;
+	return oplen > 0;
 	/*
 	 R - all instructions that only take registers as arguments (jalr, jr)
 	     opcode 000000
@@ -1832,10 +1847,10 @@ static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, R
 			mul.s 	fd, fs, ft 	000010 	10000
 			sub.s 	fd, fs, ft 	000001 	10000
 	*/
-	return op->size;
+	return op->size > 0;
 }
 /* Set the profile register */
-static bool mips_set_reg_profile(RAnal *anal) {
+static char *regs(RArchSession *as) {
 	const char *p =
 		// take the one from the debugger //
 		"=PC	pc\n"
@@ -1884,17 +1899,17 @@ static bool mips_set_reg_profile(RAnal *anal) {
 		"gpr	ra	.64	248	0\n"
 		/* extra */
 		"gpr	pc	.64	272	0\n";
-	return r_reg_set_profile_string (anal->reg, p);
+	return strdup (p);
 }
 
-static int archinfo(RAnal *anal, int q) {
+static int archinfo(RArchSession *as, ut32 q) {
 	switch (q) {
 	case R_ANAL_ARCHINFO_ALIGN:
 	case R_ANAL_ARCHINFO_MIN_OP_SIZE:
 		{
-			const char *cpu = anal->config->cpu;
+			const char *cpu = as->config->cpu;
 			if (cpu && !strcmp (cpu, "micro")) {
-				return 2; // (anal->bits == 16) ? 2: 4;
+				return 2; // (as->bits == 16) ? 2: 4;
 			}
 		}
 		break;
@@ -1902,22 +1917,21 @@ static int archinfo(RAnal *anal, int q) {
 	return 4;
 }
 
-RAnalPlugin r_anal_plugin_mips_gnu = {
+RArchPlugin r_arch_plugin_mips_gnu = {
 	.name = "mips.gnu",
 	.desc = "MIPS code analysis plugin",
 	.license = "LGPL3",
 	.cpus = "micro,mips64r2,mips32r2,mips64,mips32,loongson3a,gs464,gs464e,gs264e,loongson2e,loongson2f,mips32/64",
 	.arch = "mips",
-	.bits = 32,
-	.esil = true,
-	.archinfo = archinfo,
-	.op = &mips_op,
-	.set_reg_profile = mips_set_reg_profile,
+	.bits = R_SYS_BITS_PACK1 (32),
+	.info = archinfo,
+	.decode = decode,
+	.regs = regs,
 };
 
 #ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_ANAL,
-	.data = &r_anal_plugin_mips_gnu
+	.type = R_LIB_TYPE_ARCH,
+	.data = &r_arch_plugin_mips_gnu
 };
 #endif

@@ -125,7 +125,7 @@ if not no_user_plugins
   if user_plugins.contains('mips')
     anal_plugins += [ 'mips_cs' ]
     if use_gpl
-      anal_plugins += [ 'mips_gnu' ]
+      arch_plugins += [ 'mips_gnu' ]
     endif
     bp_plugins += [ 'mips' ]
     parse_plugins += [ 'mips_pseudo' ]
@@ -179,7 +179,6 @@ if no_user_plugins
   if use_gpl
     anal_plugins += [
       'arm_gnu',
-      'mips_gnu',
     ]
     arch_plugins += [
       'loongarch_gnu',
@@ -191,6 +190,7 @@ if no_user_plugins
       'sparc_gnu',
       'lanai',
       's390_gnu',
+      'mips_gnu',
     ]
   endif
 endif

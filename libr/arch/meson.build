@@ -115,6 +115,11 @@ r_arch_sources = [
   'p/h8300/plugin.c',
   'p/h8300/h8300_disas.c',
   'p/xcore_cs/plugin.c',
+  'p/mips_gnu/plugin.c',
+  'p/mips_gnu/mips-dis.c',
+  'p/mips_gnu/mips16-opc.c',
+  'p/mips_gnu/micromips-opc.c',
+  'p/mips_gnu/mips-opc.c',
   # python
   'p/pyc/plugin.c',
   'p/pyc/opcode_all.c',
