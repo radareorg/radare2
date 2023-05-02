@@ -40,6 +40,9 @@
 
 ZIP_EXTERN zip_t *
 zip_fdopen(int fd_orig, int _flags, int *zep) {
+#if __wasi__
+    return NULL;
+#else
     int fd;
     FILE *fp;
     zip_t *za;
@@ -83,4 +86,5 @@ zip_fdopen(int fd_orig, int _flags, int *zep) {
     zip_error_fini(&error);
     close(fd_orig);
     return za;
+#endif
 }
