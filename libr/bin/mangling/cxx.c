@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2013-2019 - pancake */
+/* radare - LGPL - Copyright 2013-2023 - pancake */
 
 #include <r_bin.h>
 #include "../i/private.h"
@@ -20,11 +20,11 @@ R_API char *r_bin_demangle_cxx(RBinFile *bf, const char *str, ut64 vaddr) {
 	};
 	char *tmpstr = strdup (str);
 	char *p = tmpstr;
-
-	if (p[0] == 0) {
+	const char p0 = *p;
+	if (p0 == 0) {
 		return p;
 	}
-	if (p[0] == p[1] && *p == '_') {
+	if (p0 == p[1] && p0 == '_') {
 		p++;
 	}
 	for (i = 0; prefixes[i]; i++) {
