@@ -274,11 +274,21 @@ static RList *imports(RBinFile *bf) {
 	return list;
 }
 
+static void _r_bin_reloc_free(RBinReloc *reloc) {
+	if (!reloc) {
+		return;
+	}
+
+	// XXX also need to free RBinSymbol?
+	r_bin_import_free (reloc->import);
+	free (reloc);
+}
+
 static RList *relocs(RBinFile *bf) {
 	RList *ret = NULL;
 	RBinObject *obj = bf ? bf->o : NULL;
 	struct MACH0_(obj_t) *bin = (bf && bf->o)? bf->o->bin_obj: NULL;
-	if (!obj || !obj->bin_obj || !(ret = r_list_newf (free))) {
+	if (!obj || !obj->bin_obj || !(ret = r_list_newf ((RListFree)_r_bin_reloc_free))) {
 		return NULL;
 	}
 	ret->free = free;
