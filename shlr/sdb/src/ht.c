@@ -16,7 +16,7 @@ SDB_API HtPP* sdb_ht_new(void) {
 }
 
 static bool sdb_ht_internal_insert(HtPP* ht, const char* key, const char* value, bool update) {
-	if (!ht || !key || !value) {
+	if (!ht || !key || !*key || !value) {
 		return false;
 	}
 	SdbKv kvp = {{ 0 }};

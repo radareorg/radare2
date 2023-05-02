@@ -171,10 +171,10 @@ symstall: install-dirs
 	ln -fs ${PWD}/include/sdb/cdb_make.h ${DESTDIR}${INCDIR}/sdb
 	ln -fs ${PWD}/include/sdb/buffer.h ${DESTDIR}${INCDIR}/sdb
 	ln -fs ${PWD}/include/sdb/config.h ${DESTDIR}${INCDIR}/sdb
-	ln -fs ${PWD}/bindings/vala/sdb.pc ${DESTDIR}${LIBDIR}/pkgconfig
-	ln -fs ${PWD}/bindings/vala/mcsdb.pc ${DESTDIR}${LIBDIR}/pkgconfig
 ifneq (${HAVE_VALA},)
 	$(MKDIR) -p ${DESTDIR}$(VAPIDIR)
+	ln -fs ${PWD}/bindings/vala/sdb.pc ${DESTDIR}${LIBDIR}/pkgconfig
+	ln -fs ${PWD}/bindings/vala/mcsdb.pc ${DESTDIR}${LIBDIR}/pkgconfig
 	ln -fs ${PWD}/bindings/vala/sdb.vapi ${DESTDIR}$(VAPIDIR)
 	ln -fs ${PWD}/bindings/vala/mcsdb.vapi ${DESTDIR}$(VAPIDIR)
 	ln -fs ${PWD}/bindings/vala/sdb.vapi ${DESTDIR}$(VAPIDIR)
