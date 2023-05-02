@@ -317,7 +317,12 @@ static RList* entries(RBinFile *bf) {
 			}
 		}
 		if (is_new_symbol) {
-			r_list_append (ret, foo);
+			RBinAddr *ptr = R_NEW0 (RBinAddr);
+			if (!ptr) {
+				return ret;
+			}
+			memcpy (ptr, foo, sizeof (RBinAddr));
+			r_list_append (ret, ptr);
 		}
 	}
 	return ret;
