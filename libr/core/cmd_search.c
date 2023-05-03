@@ -3796,16 +3796,7 @@ static int cmd_search(void *data, const char *input) {
 	core->search->overlap = r_config_get_i (core->config, "search.overlap");
 	core->search->bckwrds = false;
 
-	int param_offset = 2;
-	if (input[0]) {
-		param_offset = 0;
-		if (input[1]) {
-			param_offset = 1;
-			if (input[2]) {
-				param_offset = 2;
-			}
-		}
-	}
+	int param_offset = r_str_nlen (input, 2);
 	if (is_json_command (input, &param_offset)) {
 		param.outmode = R_MODE_JSON;
 	}
