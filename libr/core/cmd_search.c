@@ -2913,10 +2913,10 @@ static void do_asm_search(RCore *core, struct search_parameters *param, const ch
 	int count = 0;
 	RList *hits;
 	RIOMap *map;
-	bool regexp = input[1] == '/'; // "/c/"
-	bool everyByte = regexp && input[2] == 'a';
+	bool regexp = input[0] && input[1] == '/'; // "/c/"
+	bool everyByte = regexp && input[0] && input[1] && input[2] == 'a';
 	char *end_cmd = strchr (input, ' ');
-	switch ((end_cmd ? *(end_cmd - 1) : input[1])) {
+	switch ((end_cmd ? *(end_cmd - 1) : input[0]? input[1]: 0)) {
 	case 'j':
 		param->outmode = R_MODE_JSON;
 		break;
