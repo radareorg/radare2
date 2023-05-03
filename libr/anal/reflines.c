@@ -1,8 +1,6 @@
-/* radare - LGPL - Copyright 2009-2022 - pancake, nibble */
+/* radare - LGPL - Copyright 2009-2023 - pancake, nibble */
 
 #include <r_core.h>
-#include <r_util.h>
-#include <r_cons.h>
 
 #define mid_down_refline(a, r) ((r)->from > (r)->to && (a) < (r)->from && (a) > (r)->to)
 #define mid_up_refline(a, r) ((r)->from < (r)->to && (a) > (r)->from && (a) < (r)->to)
@@ -176,6 +174,9 @@ do_skip:
 			}
 		case R_ANAL_OP_TYPE_CJMP:
 		case R_ANAL_OP_TYPE_JMP:
+			if (op.jump == UT64_MAX) {
+				break;
+			}
 			if ((!linesout && (op.jump > opc + len || op.jump < opc)) || !op.jump) {
 				break;
 			}
