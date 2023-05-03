@@ -138,7 +138,8 @@ static RList *fields(RBinFile *bf) {
 
 	addr = bin->header->ptr_to_addr_pairs;
 	int i;
-	for (i = 0; i < bin->header->num_of_addr_pairs; i++) {
+	ut64 last = r_buf_size (bf->buf);
+	for (i = 0; addr < last && i < bin->header->num_of_addr_pairs; i++) {
 		char *x86_rva_key_name = r_str_newf ("address_pairs[%d].x86_rva", i);
 		char *arm64_rva_key_name = r_str_newf ("address_pairs[%d].arm64_rva", i);
 
@@ -156,6 +157,9 @@ static RList *fields(RBinFile *bf) {
 		RBinBlckStubHeader *blck_stub = (RBinBlckStubHeader *)r_list_get_n (bin->blck_stubs, i);
 
 		addr = blck_stub->ptr_to_entry;
+		if (addr < last) {
+			continue;
+		}
 
 		char *key_blck_magic = r_str_newf ("%s.magic", blck_key_name);
 		ROWL (key_blck_magic, 4, blck_stub->magic, "x");
@@ -183,8 +187,10 @@ static RList *fields(RBinFile *bf) {
 	for (i = 0; i < bin->xtac_linked_list->length; i++) {
 		char *entry_key_name = r_str_newf ("xtac_linked_list[%d]", i);
 		RBinXtacLinkedListEntry *entry = (RBinXtacLinkedListEntry *)r_list_get_n (bin->xtac_linked_list, i);
-
 		addr = entry->ptr_to_entry;
+		if (addr < last) {
+			continue;
+		}
 
 		char *key_meta_and_offset = r_str_newf ("%s.meta_and_offset", entry_key_name);
 		ROWL (key_meta_and_offset, 4, entry->meta_and_offset, "x");
@@ -581,11 +587,15 @@ static RList *symbols(RBinFile *bf) {
 		}
 		const ut32 x86_vaddr = bin->address_pairs[i].x86_rva + x86_baddr;
 		const ut32 arm_vaddr = bin->address_pairs[i].arm64_rva + arm_baddr;
+		if (arm_vaddr == UT32_MAX || x86_vaddr == UT32_MAX) {
+			continue;
+		}
 		ptr->name = r_str_newf ("x86.%08x", x86_vaddr);
 		ptr->bind = "NONE";
 		ptr->type = R_BIN_TYPE_FUNC_STR;
 		ptr->size = 0;
-		ptr->vaddr = ptr->paddr = arm_vaddr;
+		ptr->paddr = arm_vaddr;
+		ptr->vaddr = ptr->paddr;
 		ptr->ordinal = i;
 		r_list_append (ret, ptr);
 	}
