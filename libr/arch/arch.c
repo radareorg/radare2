@@ -259,6 +259,9 @@ R_API bool r_arch_decode(RArch *a, RAnalOp *op, RArchDecodeMask mask) {
 		res = decode (a->session, op, mask);
 		if (!res) {
 			int align = r_arch_info (a, R_ARCH_INFO_ALIGN);
+			if (align < 1) {
+				align = 1;
+			}
 			int minop = r_arch_info (a, R_ARCH_INFO_INV_OP_SIZE);
 			// adjust mininstr and align
 			int remai = (op->addr + minop) % align;
