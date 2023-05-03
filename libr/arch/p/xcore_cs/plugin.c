@@ -1,6 +1,6 @@
-/* radare2 - LGPL - Copyright 2014-2017 - pancake */
+/* radare2 - LGPL - Copyright 2014-2023 - pancake */
 
-#include <r_anal.h>
+#include <r_arch.h>
 #include <r_lib.h>
 #include <capstone/capstone.h>
 #include <capstone/xcore.h>
