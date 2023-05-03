@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2020-2022 - curly */
+/* radare - LGPL - Copyright 2020-2023 - curly */
 
 #include <r_lib.h>
 #include <r_asm.h>

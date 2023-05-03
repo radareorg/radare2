@@ -319,6 +319,7 @@ extern RArchPlugin r_arch_plugin_bpf_cs;
 extern RArchPlugin r_arch_plugin_alpha;
 extern RArchPlugin r_arch_plugin_vax;
 extern RArchPlugin r_arch_plugin_tricore;
+extern RArchPlugin r_arch_plugin_tricore_cs;
 extern RArchPlugin r_arch_plugin_pic;
 extern RArchPlugin r_arch_plugin_arm_v35;
 extern RArchPlugin r_arch_plugin_cris;

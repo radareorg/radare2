@@ -75,6 +75,7 @@ static bool decode(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
 		return false;
 	}
 
+	op->size = 2;
 	cs_insn *insn;
 	int n;
 	// capstone-next
