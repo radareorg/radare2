@@ -2910,7 +2910,7 @@ static void do_section_search(RCore *core, struct search_parameters *param, cons
 static void do_asm_search(RCore *core, struct search_parameters *param, const char *input, int mode, RInterval search_itv) {
 	RCoreAsmHit *hit; // WTF LOL must use RSearchHit in here!
 	RListIter *iter, *itermap;
-	int count = 0, maxhits = 0;
+	int count = 0;
 	RList *hits;
 	RIOMap *map;
 	bool regexp = input[1] == '/'; // "/c/"
@@ -2936,7 +2936,7 @@ static void do_asm_search(RCore *core, struct search_parameters *param, const ch
 		everyByte = true;
 	}
 
-	maxhits = (int) r_config_get_i (core->config, "search.maxhits");
+	int maxhits = (int) r_config_get_i (core->config, "search.maxhits");
 	if (param->outmode == R_MODE_JSON) {
 		pj_a (param->pj);
 	}
