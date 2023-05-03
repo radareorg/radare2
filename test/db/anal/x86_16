@@ -261,4 +261,39 @@ EXPECT=<<EOF
 EOF
 RUN
 
-
+NAME=int 0x20
+FILE=bins/mz/INSTALL.EXE
+CMDS=<<EOF
+af
+pdf
+EOF
+EXPECT=<<EOF
+            ;-- section.seg_000:
+            ;-- mz.dos_header:
+/ 50: entry0 ();
+|           0000:0000     b8800b         mov ax, 0xb80                 ; [00] -rwx section size 16818 named seg_000
+|           0000:0003     ba1c04         mov dx, 0x41c
+|           0000:0006     050000         add ax, 0                     ; RELOC 16 
+|           0000:0009     3b060200       cmp ax, word [2]              ; [0x2:2]=0xba0b
+|       ,=< 0000:000d     731a           jae 0x29
+|       |   0000:000f     2d2000         sub ax, 0x20
+|       |   0000:0012     fa             cli
+|       |   0000:0013     8ed0           mov ss, ax
+|       |   0000:0015     fb             sti
+|       |   0000:0016     2d1900         sub ax, 0x19
+|       |   ; DATA XREF from entry0 @ 0x16(r)
+|       |   0000:0019     8ec0           mov es, ax
+|       |   0000:001b     50             push ax
+|       |   0000:001c     b9c700         mov cx, 0xc7
+|       |   0000:001f     33ff           xor di, di
+|       |   0000:0021     57             push di
+|       |   0000:0022     be4401         mov si, 0x144
+|       |   0000:0025     fc             cld
+|       |   0000:0026     f3a5           rep movsw word es:[di], word [si]
+|       |   0000:0028     cb             retf
+|       `-> 0000:0029     b409           mov ah, 9
+|           0000:002b     ba3201         mov dx, 0x132
+|           0000:002e     cd21           int 0x21
+\           0000:0030     cd20           int 0x20
+EOF
+RUN

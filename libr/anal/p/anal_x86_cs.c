@@ -3317,6 +3317,12 @@ static void anop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh 
 	case X86_INS_INT:
 		op->type = R_ANAL_OP_TYPE_SWI;
 		op->val = (int)INSOP(0).imm;
+		if (a->config->bits == 16 && op->val == 0x20) {
+			// TODO: Ccheck for >-config->os == "DOS"
+			// "int 0x20" -> terminate program on DOS
+			op->eob = true; // looks like eob is ignored if optype is not trap :?
+			op->type = R_ANAL_OP_TYPE_TRAP;
+		}
 		break;
 	case X86_INS_SYSCALL:
 	case X86_INS_SYSENTER:
