@@ -7042,7 +7042,7 @@ toro:
 			}
 			r_cons_println ("invalid");
 		} else {
-			if (show_bytes) {
+			if (show_bytes && asmop.bytes) {
 				char *op_hex = r_asm_op_get_hex (&asmop);
 				if (op_hex) {
 					r_cons_printf ("%20s  ", op_hex);

@@ -83,19 +83,21 @@ static i8051_map_entry mem_map[3] = {
 
 static void map_cpu_memory(RAnal *anal, int entry, ut32 addr, ut32 size, bool force) {
 	RIODesc *desc = mem_map[entry].desc;
-	if (desc && anal->iob.fd_get_name (anal->iob.io, desc->fd)) {
+	int fd = desc? desc->fd: -1;
+	if (fd != -1 && anal->iob.fd_get_name (anal->iob.io, fd)) {
 		if (force || addr != mem_map[entry].addr) {
 			// reallocate mapped memory if address changed
-			anal->iob.fd_remap (anal->iob.io, desc->fd, addr);
+			anal->iob.fd_remap (anal->iob.io, fd, addr);
 		}
 	} else {
 		// allocate memory for address space
 		char *mstr = r_str_newf ("malloc://%d", size);
 		desc = anal->iob.open_at (anal->iob.io, mstr, R_PERM_RW, 0, addr);
 		free (mstr);
+		fd = desc? desc->fd: -1;
 		// set 8051 address space as name of mapped memory
-		if (desc && anal->iob.fd_get_name (anal->iob.io, desc->fd)) {
-			RList *maps = anal->iob.fd_get_map (anal->iob.io, desc->fd);
+		if (desc && anal->iob.fd_get_name (anal->iob.io, fd)) {
+			RList *maps = anal->iob.fd_get_map (anal->iob.io, fd);
 			RIOMap *current_map;
 			RListIter *iter;
 			r_list_foreach (maps, iter, current_map) {
