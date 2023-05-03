@@ -4298,7 +4298,7 @@ R_API char *r_core_cmd_str_r(RCore *core, const char *cmd) {
 	RThreadChannelMessage *message = r_th_channel_message_new (core->chan, (const ut8*)cmd, strlen (cmd) + 1);
 	RThreadChannelPromise *promise = r_th_channel_query (core->chan, message);
 	RThreadChannelMessage *response = r_th_channel_promise_wait (promise);
-	char *res = strdup ((const char *)response->msg);
+	char *res = response->msg? strdup ((const char *)response->msg): NULL;
 	// r_cons_printf ("%s", response->msg);
 	r_th_channel_message_free (message);
 	r_th_channel_promise_free (promise);
