@@ -766,7 +766,7 @@ static int cmd_eval(void *data, const char *input) {
 		break;
 	case '.': // "e "
 	case ' ': // "e "
-		if (r_str_endswith (input, ".")) {
+		if (r_str_endswith (input, ".") && !r_str_endswith (input, "..")) {
 			r_config_list (core->config, input + 1, 0);
 		} else {
 			// XXX we cant do "e cmd.gprompt=dr=", because the '=' is a token, and quotes dont affect him

@@ -637,7 +637,7 @@ static void eval_config_string(RConfig *cfg, char *name) {
 			(void) r_config_set (cfg, name, eq);
 		}
 	} else {
-		if (r_str_endswith (name, ".")) {
+		if (r_str_endswith (name, ".") && !r_str_endswith (name, "..")) {
 			r_config_list (cfg, name, 0);
 		} else {
 			const char *v = r_config_get (cfg, name);
