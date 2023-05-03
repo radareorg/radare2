@@ -2957,8 +2957,13 @@ static RThreadFunctionRet thchan_handler(RThread *th) {
 		}
 		char *res = r_core_cmd_str (core, (const char *)cm->msg);
 		free (cm->msg);
-		cm->msg = (ut8 *)res;
-		cm->len = strlen (res) + 1;
+		if (res) {
+			cm->msg = (ut8 *)res;
+			cm->len = strlen (res) + 1;
+		} else {
+			cm->msg = NULL;
+			cm->len = 0;
+		}
 		r_th_channel_post (core->chan, cm);
 		r_th_sem_post (cm->sem);
 	}
