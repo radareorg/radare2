@@ -36,11 +36,11 @@ EOF
 EXPECT=<<EOF
 0x00000000                   28  mark
 0x00000001   580400000041420043  binunicode "AB\x00C"
-0x0000000a                   63  
+0x0000000a                   63  invalid
 0x0000000b                   41  invalid
 0x0000000c                   00  invalid
 0x0000000d                   0a  invalid
-0x0000000e                   43  
+0x0000000e                   43  invalid
 0x0000000f                   44  invalid
 EOF
 RUN
@@ -55,13 +55,13 @@ s 0
 pid 8
 EOF
 EXPECT=<<EOF
-0x00000000                   58  
+0x00000000                   58  invalid
 0x00000001   580400000041420043  binunicode "AB\x00C"
-0x0000000a                   63  
+0x0000000a                   63  invalid
 0x0000000b                   41  invalid
 0x0000000c                   00  invalid
 0x0000000d                   0a  invalid
-0x0000000e                   43  
+0x0000000e                   43  invalid
 0x0000000f                   44  invalid
 EOF
 RUN

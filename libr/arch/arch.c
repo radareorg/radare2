@@ -254,5 +254,25 @@ R_API bool r_arch_encode(RArch *a, RAnalOp *op, RArchEncodeMask mask) {
 R_API bool r_arch_decode(RArch *a, RAnalOp *op, RArchDecodeMask mask) {
 	// XXX should be unused
 	RArchPluginEncodeCallback decode = R_UNWRAP4 (a, session, plugin, decode);
-	return decode? decode (a->session, op, mask): false;
+	bool res = false;
+	if (decode) {
+		res = decode (a->session, op, mask);
+		if (!res) {
+			int align = r_arch_info (a, R_ARCH_INFO_ALIGN);
+			int minop = r_arch_info (a, R_ARCH_INFO_INV_OP_SIZE);
+			// adjust mininstr and align
+			int remai = (op->addr + minop) % align;
+			if (align > 1 && remai) {
+				op->size = remai;
+			} else {
+				op->size = minop;
+			}
+			if (mask & R_ARCH_OP_MASK_DISASM) {
+				if (!op->mnemonic) {
+					op->mnemonic = strdup ("invalid");
+				}
+			}
+		}
+	}
+	return res;
 }
