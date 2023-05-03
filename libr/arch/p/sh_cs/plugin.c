@@ -3,6 +3,8 @@
 #include <r_arch.h>
 #include <r_lib.h>
 #include <capstone/capstone.h>
+
+#if CS_VERSION_MAJOR >= 5
 #include <capstone/sh.h>
 
 #if CS_API_MAJOR < 2
@@ -431,4 +433,12 @@ R_API RLibStruct radare_plugin = {
 	.data = &r_arch_plugin_sh_cs,
 	.version = R2_VERSION
 };
+#endif
+#else
+#ifndef R2_PLUGIN_INCORE
+R_API RLibStruct radare_plugin = {
+	.type = 0,
+	.version = -1
+};
+#endif
 #endif
