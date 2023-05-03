@@ -1242,10 +1242,12 @@ R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int
 			char *name = NULL;
 			int delta = 0;
 			const char *regname = r_anal_cc_arg (anal, fcn->cc, i);
-			RRegItem *ri = r_reg_get (anal->reg, regname, -1);
-			if (ri) {
-				delta = ri->index;
-				r_unref (ri);
+			if (regname) {
+				RRegItem *ri = r_reg_get (anal->reg, regname, -1);
+				if (ri) {
+					delta = ri->index;
+					r_unref (ri);
+				}
 			}
 			if (fname) {
 				type = r_type_func_args_type (TDB, fname, i);

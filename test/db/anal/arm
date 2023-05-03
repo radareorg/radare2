@@ -294,9 +294,10 @@ pd 4
 EOF
 EXPECT=<<EOF
 / (fcn) fcn.00000000 16
-// void fcn.00000000 (int32_t arg2);
+// void fcn.00000000 (int32_t arg2, int32_t arg3);
 |           ; arg int32_t arg2 @ r1
-|           0x00000000      021081e0       add r1, r1, r2              ; arg2
+|           ; arg int32_t arg3 @ r2
+|           0x00000000      021081e0       add r1, r1, r2              ; arg3
 |           0x00000004      1eff2f01       bxeq lr
 |           0x00000008      0020a0e3       mov r2, 0
 \           0x0000000c      1eff2fe1       bx lr
@@ -1152,9 +1153,10 @@ pd 1
 EOF
 EXPECT=<<EOF
             ;-- section..text:
-/ 44: entry0 (int32_t arg1, int argc);
+/ 44: entry0 (int32_t arg1, int argc, func fini);
 |           ; arg int32_t arg1 @ r0
 |           ; arg int argc @ r1
+|           ; arg func fini @ r4
 |           0x000083b8      00b0a0e3       mov fp, 0                   ; [14] -r-x section size 800 named .text
 |           0x000083bc      00e0a0e3       mov lr, 0
 |           0x000083c0      04109de4       pop {r1}
