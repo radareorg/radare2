@@ -807,7 +807,6 @@ static int opcall(RArchSession *a, ut8 *data, const Opcode *op) {
 			return l;
 		}
 		data[l++] = mod << 6 | 2 << 3 | op->operands[0].regs[0];
-		data[l++] = mod << 6 | 2 << 3 | op->operands[0].regs[0];
 		if (mod) {
 			data[l++] = offset;
 			if (mod == 2) {
