@@ -137,7 +137,8 @@ extern char *alloca ();
    also rename them via #define to avoid compiler errors when the
    static definition conflicts with the extern declaration in a header
    file.  */
-#ifdef IN_GLIBCPP_V3
+#if 0
+//#ifdef IN_GLIBCPP_V3
 
 #define CP_STATIC_IF_GLIBCPP_V3 static
 
@@ -180,6 +181,7 @@ static void d_init_info(const char *, int, size_t, struct d_info *);
 #endif /* ! defined(IN_GLIBCPP_V3) */
 
 /* See if the compiler supports dynamic arrays.  */
+// CP_STATIC_IF_GLIBCPP_V3 struct demangle_component * cplus_demangle_type(struct d_info *di);
 
 #ifdef __GNUC__
 #define CP_DYNAMIC_ARRAYS
@@ -1212,7 +1214,7 @@ d_make_sub (struct d_info *di, const char *name, int len)
 
    TOP_LEVEL is non-zero when called at the top level.  */
 
-CP_STATIC_IF_GLIBCPP_V3
+static
 struct demangle_component *
 cplus_demangle_mangled_name (struct d_info *di, int top_level)
 {
@@ -2371,8 +2373,8 @@ cplus_demangle_builtin_types[D_BUILTIN_TYPE_COUNT] =
 	     D_PRINT_DEFAULT },
 };
 
-CP_STATIC_IF_GLIBCPP_V3
-struct demangle_component *
+//CP_STATIC_IF_GLIBCPP_V3
+static struct demangle_component *
 cplus_demangle_type (struct d_info *di)
 {
   char peek;
@@ -4291,7 +4293,7 @@ d_last_char (struct d_print_info *dpi)
    memory to build an output string, so cannot encounter memory
    allocation failure.  */
 
-CP_STATIC_IF_GLIBCPP_V3
+static
 int
 cplus_demangle_print_callback (int options,
                                struct demangle_component *dc,
