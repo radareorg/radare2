@@ -1,11 +1,11 @@
 /* radare2 - LGPL - Copyright 2013-2022 - pancake */
 
-#include <r_anal.h>
-#include <r_lib.h>
+#include <r_arch.h>
+#include <r_esil.h>
 #include <capstone/capstone.h>
 #include <capstone/ppc.h>
-#include "../../arch/p/ppc/libvle/vle.h"
-#include "../../arch/p/ppc/libps/libps.h"
+#include "../ppc/libvle/vle.h"
+#include "../ppc/libps/libps.h"
 
 #define SPR_HID0 0x3f0 /* Hardware Implementation Register 0 */
 #define SPR_HID1 0x3f1 /* Hardware Implementation Register 1 */
@@ -206,10 +206,9 @@ static void opex(RStrBuf *buf, csh handle, cs_insn *insn) {
 #define ARG(n) getarg2(&gop, n, "")
 #define ARG2(n,m) getarg2(&gop, n, m)
 
-static bool set_reg_profile(RAnal *anal) {
-	const char *p = NULL;
-	if (anal->config->bits == 32) {
-		p =
+static char *regs(RArchSession *as) {
+	if (as->config->bits == 32) {
+		const char *p =
 			"=PC	pc\n"
 			"=SP	r1\n"
 			"=BP	r31\n"
@@ -310,112 +309,113 @@ static bool set_reg_profile(RAnal *anal) {
 			"gpr	dbat2u .32 276 0\n"
 			"gpr	dbat3u .32 284 0\n"
 			"gpr	mask   .32 288 0\n";
-	} else {
-		p =
-			"=PC	pc\n"
-			"=SP	r1\n"
-			"=SR	srr1\n" // status register ??
-			"=SN	r0\n" // also for ret
-			"=R0	r3\n" // ret
-			"=A0	r3\n" // also for ret
-			"=A1	r4\n"
-			"=A2	r5\n"
-			"=A3	r6\n"
-			"=A4	r7\n"
-			"=A5	r8\n"
-			"=A6	r6\n"
-			"gpr	srr0   .64 0   0\n"
-			"gpr	srr1   .64 8   0\n"
-			"gpr	r0   .64 16  0\n"
-			"gpr	r1   .64 24  0\n"
-			"gpr	r2   .64 32  0\n"
-			"gpr	r3   .64 40  0\n"
-			"gpr	r4   .64 48  0\n"
-			"gpr	r5   .64 56  0\n"
-			"gpr	r6   .64 64  0\n"
-			"gpr	r7   .64 72  0\n"
-			"gpr	r8   .64 80  0\n"
-			"gpr	r9   .64 88  0\n"
-			"gpr	r10 .64 96  0\n"
-			"gpr	r11 .64 104 0\n"
-			"gpr	r12 .64 112 0\n"
-			"gpr	r13 .64 120 0\n"
-			"gpr	r14 .64 128 0\n"
-			"gpr	r15 .64 136 0\n"
-			"gpr	r16 .64 144 0\n"
-			"gpr	r17 .64 152 0\n"
-			"gpr	r18 .64 160 0\n"
-			"gpr	r19 .64 168 0\n"
-			"gpr	r20 .64 176 0\n"
-			"gpr	r21 .64 184 0\n"
-			"gpr	r22 .64 192 0\n"
-			"gpr	r23 .64 200 0\n"
-			"gpr	r24 .64 208 0\n"
-			"gpr	r25 .64 216 0\n"
-			"gpr	r26 .64 224 0\n"
-			"gpr	r27 .64 232 0\n"
-			"gpr	r28 .64 240 0\n"
-			"gpr	r29 .64 248 0\n"
-			"gpr	r30 .64 256 0\n"
-			"gpr	r31 .64 264 0\n"
-			"gpr	lr   .64 272 0\n"
-			"gpr	ctr .64 280 0\n"
-			"gpr	msr .64 288 0\n"
-			"gpr	pc   .64 296 0\n"
-			"gpr	cr  .64 304 0\n"
-			"gpr	cr0 .8  304 0\n"
-			"gpr	cr1 .8  305 0\n"
-			"gpr	cr2 .8  306 0\n"
-			"gpr	cr3 .8  307 0\n"
-			"gpr	cr4 .8  308 0\n"
-			"gpr	cr5 .8  309 0\n"
-			"gpr	cr6 .8  310 0\n"
-			"gpr	cr7 .8  311 0\n"
-			"gpr	xer .64 312 0\n"
-			"gpr	mq   .64 320 0\n"
-			"gpr	fpscr  .64 328 0\n"
-			"gpr	vrsave .64 336 0\n"
-			"gpr	pvr .64 344 0\n"
-			"gpr	dccr   .32 352 0\n"
-			"gpr	iccr   .32 356 0\n"
-			"gpr	dear   .32 360 0\n"
-			"gpr	hid0   .64 364 0\n"
-			"gpr	hid1   .64 372 0\n"
-			"gpr	hid2   .64 380 0\n"
-			"gpr	hid3   .64 388 0\n"
-			"gpr	hid4   .64 396 0\n"
-			"gpr	hid5   .64 404 0\n"
-			"gpr	hid6   .64 412 0\n"
-			"gpr	ibat0  .64 420 0\n"
-			"gpr	ibat1  .64 428 0\n"
-			"gpr	ibat2  .64 436 0\n"
-			"gpr	ibat3  .64 444 0\n"
-			"gpr	ibat0l .32 420 0\n"
-			"gpr	ibat1l .32 428 0\n"
-			"gpr	ibat2l .32 436 0\n"
-			"gpr	ibat3l .32 444 0\n"
-			"gpr	ibat0u .32 424 0\n"
-			"gpr	ibat1u .32 432 0\n"
-			"gpr	ibat2u .32 440 0\n"
-			"gpr	ibat3u .32 448 0\n"
-			"gpr	dbat0  .64 456 0\n"
-			"gpr	dbat1  .64 464 0\n"
-			"gpr	dbat2  .64 472 0\n"
-			"gpr	dbat3  .64 480 0\n"
-			"gpr	dbat0l .32 456 0\n"
-			"gpr	dbat1l .32 464 0\n"
-			"gpr	dbat2l .32 472 0\n"
-			"gpr	dbat3l .32 480 0\n"
-			"gpr	dbat0u .32 460 0\n"
-			"gpr	dbat1u .32 468 0\n"
-			"gpr	dbat2u .32 476 0\n"
-			"gpr	dbat3u .32 484 0\n"
-			"gpr	mask   .64 488 0\n"; //not a real register used on complex functions
+		return strdup (p);
 	}
-	return r_reg_set_profile_string (anal->reg, p);
+
+	const char *p =
+		"=PC	pc\n"
+		"=SP	r1\n"
+		"=SR	srr1\n" // status register ??
+		"=SN	r0\n" // also for ret
+		"=R0	r3\n" // ret
+		"=A0	r3\n" // also for ret
+		"=A1	r4\n"
+		"=A2	r5\n"
+		"=A3	r6\n"
+		"=A4	r7\n"
+		"=A5	r8\n"
+		"=A6	r6\n"
+		"gpr	srr0   .64 0   0\n"
+		"gpr	srr1   .64 8   0\n"
+		"gpr	r0   .64 16  0\n"
+		"gpr	r1   .64 24  0\n"
+		"gpr	r2   .64 32  0\n"
+		"gpr	r3   .64 40  0\n"
+		"gpr	r4   .64 48  0\n"
+		"gpr	r5   .64 56  0\n"
+		"gpr	r6   .64 64  0\n"
+		"gpr	r7   .64 72  0\n"
+		"gpr	r8   .64 80  0\n"
+		"gpr	r9   .64 88  0\n"
+		"gpr	r10 .64 96  0\n"
+		"gpr	r11 .64 104 0\n"
+		"gpr	r12 .64 112 0\n"
+		"gpr	r13 .64 120 0\n"
+		"gpr	r14 .64 128 0\n"
+		"gpr	r15 .64 136 0\n"
+		"gpr	r16 .64 144 0\n"
+		"gpr	r17 .64 152 0\n"
+		"gpr	r18 .64 160 0\n"
+		"gpr	r19 .64 168 0\n"
+		"gpr	r20 .64 176 0\n"
+		"gpr	r21 .64 184 0\n"
+		"gpr	r22 .64 192 0\n"
+		"gpr	r23 .64 200 0\n"
+		"gpr	r24 .64 208 0\n"
+		"gpr	r25 .64 216 0\n"
+		"gpr	r26 .64 224 0\n"
+		"gpr	r27 .64 232 0\n"
+		"gpr	r28 .64 240 0\n"
+		"gpr	r29 .64 248 0\n"
+		"gpr	r30 .64 256 0\n"
+		"gpr	r31 .64 264 0\n"
+		"gpr	lr   .64 272 0\n"
+		"gpr	ctr .64 280 0\n"
+		"gpr	msr .64 288 0\n"
+		"gpr	pc   .64 296 0\n"
+		"gpr	cr  .64 304 0\n"
+		"gpr	cr0 .8  304 0\n"
+		"gpr	cr1 .8  305 0\n"
+		"gpr	cr2 .8  306 0\n"
+		"gpr	cr3 .8  307 0\n"
+		"gpr	cr4 .8  308 0\n"
+		"gpr	cr5 .8  309 0\n"
+		"gpr	cr6 .8  310 0\n"
+		"gpr	cr7 .8  311 0\n"
+		"gpr	xer .64 312 0\n"
+		"gpr	mq   .64 320 0\n"
+		"gpr	fpscr  .64 328 0\n"
+		"gpr	vrsave .64 336 0\n"
+		"gpr	pvr .64 344 0\n"
+		"gpr	dccr   .32 352 0\n"
+		"gpr	iccr   .32 356 0\n"
+		"gpr	dear   .32 360 0\n"
+		"gpr	hid0   .64 364 0\n"
+		"gpr	hid1   .64 372 0\n"
+		"gpr	hid2   .64 380 0\n"
+		"gpr	hid3   .64 388 0\n"
+		"gpr	hid4   .64 396 0\n"
+		"gpr	hid5   .64 404 0\n"
+		"gpr	hid6   .64 412 0\n"
+		"gpr	ibat0  .64 420 0\n"
+		"gpr	ibat1  .64 428 0\n"
+		"gpr	ibat2  .64 436 0\n"
+		"gpr	ibat3  .64 444 0\n"
+		"gpr	ibat0l .32 420 0\n"
+		"gpr	ibat1l .32 428 0\n"
+		"gpr	ibat2l .32 436 0\n"
+		"gpr	ibat3l .32 444 0\n"
+		"gpr	ibat0u .32 424 0\n"
+		"gpr	ibat1u .32 432 0\n"
+		"gpr	ibat2u .32 440 0\n"
+		"gpr	ibat3u .32 448 0\n"
+		"gpr	dbat0  .64 456 0\n"
+		"gpr	dbat1  .64 464 0\n"
+		"gpr	dbat2  .64 472 0\n"
+		"gpr	dbat3  .64 480 0\n"
+		"gpr	dbat0l .32 456 0\n"
+		"gpr	dbat1l .32 464 0\n"
+		"gpr	dbat2l .32 472 0\n"
+		"gpr	dbat3l .32 480 0\n"
+		"gpr	dbat0u .32 460 0\n"
+		"gpr	dbat1u .32 468 0\n"
+		"gpr	dbat2u .32 476 0\n"
+		"gpr	dbat3u .32 484 0\n"
+		"gpr	mask   .64 488 0\n"; //not a real register used on complex functions
+	return strdup (p);
 }
 
-static int analop_vle(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
+static int analop_vle(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 	vle_t* instr = NULL;
 	vle_handle handle = {0};
 	op->size = 2;
@@ -602,11 +602,11 @@ static char *shrink(char *op) {
 
 #define CSINC PPC
 #define CSINC_MODE \
-	((a->config->bits == 64) ? CS_MODE_64 : (a->config->bits == 32) ? CS_MODE_32 : 0) \
-	| (R_ARCH_CONFIG_IS_BIG_ENDIAN (a->config)? CS_MODE_BIG_ENDIAN: CS_MODE_LITTLE_ENDIAN)
-#include "capstone.inc"
+	((as->config->bits == 64) ? CS_MODE_64 : (as->config->bits == 32) ? CS_MODE_32 : 0) \
+	| (R_ARCH_CONFIG_IS_BIG_ENDIAN (as->config)? CS_MODE_BIG_ENDIAN: CS_MODE_LITTLE_ENDIAN)
+#include "../capstone.inc"
 
-static int decompile_vle(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
+static int decompile_vle(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 	vle_t* instr = 0;
 	vle_handle handle = {0};
 	if (len < 2) {
@@ -626,7 +626,7 @@ static int decompile_vle(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 	return op->size;
 }
 
-static int decompile_ps(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
+static int decompile_ps(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 	ppcps_t instr = {0};
 	if (len < 4) {
 		eprintf ("not eno\n");
@@ -644,34 +644,43 @@ static int decompile_ps(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int le
 	return op->size;
 }
 
-static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
+static csh cs_handle_for_session(RArchSession *as) {
+	r_return_val_if_fail (as && as->data, 0);
+	CapstonePluginData *pd = as->data;
+	return pd->cs_handle;
+}
+
+static bool decode(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
+	const ut64 addr = op->addr;
+	const ut8 *buf = op->bytes;
+	const int len = op->size;
 	char cmaskbuf[cmaskbuf_SIZEOF] = {0};
-	csh handle = init_capstone (a);
+	csh handle = cs_handle_for_session (as);
 	if (handle == 0) {
-		return -1;
+		return false;
 	}
 
 	int ret;
 	cs_insn *insn;
 	char *op1;
 
-	const char *cpu = a->config->cpu;
+	const char *cpu = as->config->cpu;
 	// capstone-next
 	int n = cs_disasm (handle, (const ut8*)buf, len, addr, 1, &insn);
 	if (mask & R_ARCH_OP_MASK_DISASM) {
 		ret = -1;
 		if (cpu && !strcmp (cpu, "vle")) {
-			if (!R_ARCH_CONFIG_IS_BIG_ENDIAN (a->config)) {
-				return -1;
+			if (!R_ARCH_CONFIG_IS_BIG_ENDIAN (as->config)) {
+				return false;
 			}
 			// vle is big-endian only
-			ret = decompile_vle (a, op, addr, buf, len);
+			ret = decompile_vle (as, op, addr, buf, len);
 		} else if (cpu && !strcmp (cpu, "ps")) {
 			// libps is big-endian only
-			if (!R_ARCH_CONFIG_IS_BIG_ENDIAN (a->config)) {
-				return -1;
+			if (!R_ARCH_CONFIG_IS_BIG_ENDIAN (as->config)) {
+				return false;
 			}
-			ret = decompile_ps (a, op, addr, buf, len);
+			ret = decompile_ps (as, op, addr, buf, len);
 		}
 		if (ret < 1) {
 			if (n > 0) {
@@ -686,12 +695,12 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 	}
 	if (cpu && !strcmp (cpu, "vle")) {
 		// vle is big-endian only
-		if (!R_ARCH_CONFIG_IS_BIG_ENDIAN (a->config)) {
-			return -1;
+		if (!R_ARCH_CONFIG_IS_BIG_ENDIAN (as->config)) {
+			return false;
 		}
-		ret = analop_vle (a, op, addr, buf, len);
+		ret = analop_vle (as, op, addr, buf, len);
 		if (ret >= 0) {
-			return op->size;
+			return op->size > 0;
 		}
 	}
 
@@ -706,7 +715,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 		struct Getarg gop = {
 			.handle = handle,
 			.insn = insn,
-			.bits = a->config->bits
+			.bits = as->config->bits
 		};
 		op->size = insn->size;
 		op->id = insn->id;
@@ -766,7 +775,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 		case PPC_INS_EXTSB:
 			op->sign = true;
 			op->type = R_ANAL_OP_TYPE_MOV;
-			if (a->config->bits == 64) {
+			if (as->config->bits == 64) {
 				esilprintf (op, "%s,0x80,&,?{,0xFFFFFFFFFFFFFF00,%s,|,%s,=,}", ARG (1), ARG (1), ARG (0));
 			} else {
 				esilprintf (op, "%s,0x80,&,?{,0xFFFFFF00,%s,|,%s,=,}", ARG (1), ARG (1), ARG (0));
@@ -774,7 +783,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 			break;
 		case PPC_INS_EXTSH:
 			op->sign = true;
-			if (a->config->bits == 64) {
+			if (as->config->bits == 64) {
 				esilprintf (op, "%s,0x8000,&,?{,0xFFFFFFFFFFFF0000,%s,|,%s,=,}", ARG (1), ARG (1), ARG (0));
 			} else {
 				esilprintf (op, "%s,0x8000,&,?{,0xFFFF0000,%s,|,%s,=,}", ARG (1), ARG (1), ARG (0));
@@ -1392,46 +1401,74 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 			r_strbuf_fini (&op->esil);
 		}
 		cs_free (insn, n);
-		//cs_close (&handle);
 	}
-	return op->size;
+	return op->size > 0;
 }
 
-static int archinfo(RAnal *a, int q) {
-	const char *cpu = a->config->cpu;
+static int archinfo(RArchSession *as, ut32 q) {
+	const char *cpu = as->config->cpu;
 	if (cpu && !strncmp (cpu, "vle", 3)) {
 		return 2;
 	}
 	return 4;
 }
 
-static RList *anal_preludes(RAnal *anal) {
-#define KW(d,ds,m,ms) r_list_append (l, r_search_keyword_new((const ut8*)d,ds,(const ut8*)m, ms, NULL))
-	RList *l = r_list_newf ((RListFree)r_search_keyword_free);
-	KW ("\x7c\x08\x02\xa6", 4, NULL, 0);
+static RList *preludes(RArchSession *as) {
+	RList *l = r_list_newf (free);
+	r_list_append (l, r_str_newf ("7c0802a6"));
 	return l;
 }
 
-RAnalPlugin r_anal_plugin_ppc_cs = {
+static char *mnemonics(RArchSession *as, int id, bool json) {
+	CapstonePluginData *cpd = as->data;
+	return r_arch_cs_mnemonics (as, cpd->cs_handle, id, json);
+}
+
+static bool init(RArchSession *as) {
+	r_return_val_if_fail (as, false);
+	if (as->data) {
+		R_LOG_WARN ("Already initialized");
+		return false;
+	}
+	as->data = R_NEW0 (CapstonePluginData);
+	CapstonePluginData *cpd = as->data;
+	if (!r_arch_cs_init (as, &cpd->cs_handle)) {
+		R_LOG_ERROR ("Cannot initialize capstone");
+		R_FREE (as->data);
+		return false;
+	}
+	return true;
+}
+
+static bool fini(RArchSession *as) {
+	r_return_val_if_fail (as, false);
+	CapstonePluginData *cpd = as->data;
+	cs_close (&cpd->cs_handle);
+	R_FREE (as->data);
+	return true;
+}
+
+RArchPlugin r_arch_plugin_ppc_cs = {
 	.name = "ppc",
 	.desc = "Capstone (+vle+ps) PowerPC disassembler",
 	.license = "BSD",
-	.esil = true,
 	.arch = "ppc",
-	.bits = 32 | 64,
+	.bits = R_SYS_BITS_PACK2 (32, 64),
 	.cpus = "ppc,vle,ps",
 	.endian = R_SYS_ENDIAN_LITTLE | R_SYS_ENDIAN_BIG,
-	.archinfo = archinfo,
-	.preludes = anal_preludes,
-	.op = &analop,
-	.set_reg_profile = &set_reg_profile,
-	.mnemonics = cs_mnemonics,
+	.info = archinfo,
+	.preludes = preludes,
+	.decode = decode,
+	.regs = regs,
+	.mnemonics = mnemonics,
+	.init = init,
+	.fini = fini,
 };
 
 #ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_ANAL,
-	.data = &r_anal_plugin_ppc_cs,
+	.type = R_LIB_TYPE_ARCH,
+	.data = &r_arch_plugin_ppc_cs,
 	.version = R2_VERSION
 };
 #endif

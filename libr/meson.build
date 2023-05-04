@@ -162,7 +162,6 @@ anal_plugins += [
   'i8080',
   'java',
   'mips_cs',
-  'ppc_cs',
   'x86_cs',
 ]
 
@@ -177,6 +176,7 @@ arch_plugins += [
   'xcore_cs',
   'tms320',
   'sparc_cs',
+  'ppc_cs',
 ]
 
 if no_user_plugins
