@@ -11,6 +11,7 @@ r_arch_sources = [
   'p/pic/pic_midrange.c',
   'p/pic/pic_baseline.c',
   'p/pic/pic_pic18.c',
+  'p/chip8/plugin.c',
   'p/alpha/plugin.c',
   'p/alpha/alpha-dis.c',
   'p/alpha/alpha-opc.c',
