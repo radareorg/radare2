@@ -4,8 +4,10 @@
 #include "disas-asm.h"
 #include "opcode/mips.h"
 
-static R_TH_LOCAL char *pre_cpu = NULL;
-static R_TH_LOCAL ut64 t9_pre = UT64_MAX;
+typedef struct plugin_data_t {
+	char *pre_cpu;
+	ut64 t9_pre;
+} PluginData;
 
 static int symbol_at_address(bfd_vma addr, struct disassemble_info *info) {
 	return 0;
@@ -1127,7 +1129,8 @@ static int disassemble(RArchSession *as, RAnalOp *op, const ut8 *buf, int len) {
 	}
 
 	/* prepare disassembler */
-	if (cpu && (!pre_cpu || !strcmp (cpu, pre_cpu))) {
+	PluginData *pd = as->data;
+	if (cpu && (!pd->pre_cpu || !strcmp (cpu, pd->pre_cpu))) {
 		if (!r_str_casecmp (cpu, "mips64r2")) {
 			disasm_obj.mach = bfd_mach_mipsisa64r2;
 		} else if (!r_str_casecmp (cpu, "micro")) {
@@ -1155,8 +1158,8 @@ static int disassemble(RArchSession *as, RAnalOp *op, const ut8 *buf, int len) {
 			// Fallback for default config
 			disasm_obj.mach = bfd_mach_mips_loongson_2f;
 		}
-		free (pre_cpu);
-		pre_cpu = strdup (cpu);
+		free (pd->pre_cpu);
+		pd->pre_cpu = strdup (cpu);
 	} else {
 		disasm_obj.mach = bfd_mach_mips_loongson_2f;
 	}
@@ -1241,7 +1244,7 @@ static bool decode(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
 	int optype = buf[0] >> 2;
 	insn.optype = optype;
 	insn.id = 0;
-
+	PluginData *pd = as->data;
 	if (optype == 0) {
 		/*
 			R-TYPE
@@ -1313,7 +1316,7 @@ static bool decode(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
 				op->type = R_ANAL_OP_TYPE_RET;
 			} else if (rs == 25) {
 				op->type = R_ANAL_OP_TYPE_RJMP;
-				op->jump = t9_pre;
+				op->jump = pd->t9_pre;
 			} else {
 				op->type = R_ANAL_OP_TYPE_RJMP;
 			}
@@ -1324,7 +1327,7 @@ static bool decode(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
 			insn.id = MIPS_INS_JALR;
 			if (rs == 25) {
 				op->type = R_ANAL_OP_TYPE_RCALL;
-				op->jump = t9_pre;
+				op->jump = pd->t9_pre;
 				break;
 			}
 			op->type = R_ANAL_OP_TYPE_UCALL;
@@ -1701,7 +1704,7 @@ static bool decode(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
 				op->ptr = imm;
 			}
 			if (rt == 25) {
-				t9_pre = op->ptr;
+				pd->t9_pre = op->ptr;
 			}
 			op->type = R_ANAL_OP_TYPE_LOAD;
 			break;
@@ -1917,6 +1920,31 @@ static int archinfo(RArchSession *as, ut32 q) {
 	return 4;
 }
 
+static bool init(RArchSession *as) {
+	r_return_val_if_fail (as, false);
+	if (as->data) {
+		R_LOG_WARN ("Already initialized");
+		return false;
+	}
+	as->data = R_NEW0 (PluginData);
+	PluginData *pd = as->data;
+	if (!pd) {
+		R_LOG_ERROR ("Cannot initialize mips_gnu plugin");
+		return false;
+	}
+
+	pd->t9_pre = UT64_MAX;
+	return true;
+}
+
+static bool fini(RArchSession *as) {
+	r_return_val_if_fail (as, false);
+	PluginData *pd = as->data;
+	R_FREE (pd->pre_cpu);
+	R_FREE (as->data);
+	return true;
+}
+
 RArchPlugin r_arch_plugin_mips_gnu = {
 	.name = "mips.gnu",
 	.desc = "MIPS code analysis plugin",
@@ -1927,6 +1955,8 @@ RArchPlugin r_arch_plugin_mips_gnu = {
 	.info = archinfo,
 	.decode = decode,
 	.regs = regs,
+	.init = init,
+	.fini = fini,
 };
 
 #ifndef R2_PLUGIN_INCORE
