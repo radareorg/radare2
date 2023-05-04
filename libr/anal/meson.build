@@ -71,7 +71,7 @@ r_anal_sources = [
   '../arch/p/loongarch/loongarch-dis.c',
   '../arch/p/loongarch/loongarch-opc.c',
   'p/anal_null.c',
-  'p/anal_ppc_cs.c',
+  '../arch/p/ppc_cs/plugin.c',
   'p/anal_sparc_cs.c',
   'p/anal_tms320.c',
   # join_paths('arch/whitespace/wsdis.c'),
