@@ -2081,7 +2081,6 @@ ut64 Elf_(r_bin_elf_get_main_offset)(ELFOBJ *bin) {
 		/* non-thumb entry points */
 		if (!memcmp (buf, "\x00\xb0\xa0\xe3\x00\xe0\xa0\xe3", 8)) {
 			if (buf[0x40 + 2] == 0xff && buf[0x40 + 3] == 0xeb) {
-				// nothing may happen
 			} else if (!memcmp (buf + 0x28 + 2, "\xff\xeb", 2)) {
 				return Elf_(r_bin_elf_v2p) (bin, r_read_le32 (&buf[0x34]) & ~1);
 			}
@@ -4175,6 +4174,7 @@ RBinSymbol *Elf_(_r_bin_elf_convert_symbol)(struct Elf_(r_bin_elf_obj_t) *bin, s
 		ptr->bind = symbol->bind;
 		ptr->type = symbol->type;
 		ptr->is_imported = symbol->is_imported;
+		// ptr->is_internal = symbol->is_internal;
 		ptr->paddr = paddr;
 		ptr->vaddr = vaddr;
 		ptr->size = symbol->size;
@@ -4489,14 +4489,12 @@ static RVector /* <RBinElfSymbol> */ *Elf_(_r_bin_elf_load_symbols_and_imports)(
 			bool is_sht_null = false;
 			bool is_vaddr = false;
 			bool is_imported = false;
+			bool is_internal = false;
 			if (type == R_BIN_ELF_IMPORT_SYMBOLS) {
-				if (memory.sym[k].st_value) {
-					toffset = memory.sym[k].st_value;
-				} else if ((toffset = get_import_addr (bin, k)) == -1) {
-					toffset = 0;
-				}
+				toffset = get_import_addr (bin, k);
 				tsize = 16;
-				is_imported = memory.sym[k].st_shndx == STN_UNDEF;
+				is_imported = true;
+				is_internal = memory.sym[k].st_shndx != STN_UNDEF;
 			} else {
 				tsize = memory.sym[k].st_size;
 				toffset = (ut64)memory.sym[k].st_value;
@@ -4539,6 +4537,7 @@ static RVector /* <RBinElfSymbol> */ *Elf_(_r_bin_elf_load_symbols_and_imports)(
 			es->is_sht_null = is_sht_null;
 			es->is_vaddr = is_vaddr;
 			es->is_imported = is_imported;
+			es->is_internal = is_internal;
 			if (type == R_BIN_ELF_IMPORT_SYMBOLS && is_imported) {
 				import_ret_ctr++;
 			}
