@@ -28,6 +28,10 @@ struct Getarg {
 #define PFMT32x "lx"
 #endif
 
+typedef struct plugin_data_t PluginData;
+static const char* getspr(PluginData *pd, struct Getarg *gop, int n);
+static char *getarg2(PluginData *pd, struct Getarg *gop, int n, const char *setstr);
+
 static ut64 mask64(ut64 mb, ut64 me) {
 	ut64 maskmb = UT64_MAX >> mb;
 	ut64 maskme = UT64_MAX << (63 - me);
@@ -67,43 +71,6 @@ static const char* cmask32(char *cmaskbuf, const char *mb_c, const char *me_c) {
 	return cmaskbuf;
 }
 
-static char *getarg2(struct Getarg *gop, int n, const char *setstr) {
-	cs_insn *insn = gop->insn;
-	csh handle = gop->handle;
-	static R_TH_LOCAL char words[8][64];
-	cs_ppc_op op;
-
-	if (n < 0 || n >= 8) {
-		return NULL;
-	}
-	op = INSOP (n);
-	switch (op.type) {
-	case PPC_OP_INVALID:
-		words[n][0] = '\0';
-		//strcpy (words[n], "invalid");
-		break;
-	case PPC_OP_REG:
-		snprintf (words[n], sizeof (words[n]),
-				"%s%s", cs_reg_name (handle, op.reg), setstr);
-		break;
-	case PPC_OP_IMM:
-		snprintf (words[n], sizeof (words[n]),
-				"0x%"PFMT64x"%s", (ut64) op.imm, setstr);
-		break;
-	case PPC_OP_MEM:
-		snprintf (words[n], sizeof (words[n]),
-				"%"PFMT64d",%s,+,%s",
-				(ut64) op.mem.disp,
-				cs_reg_name (handle, op.mem.base), setstr);
-		break;
-	case PPC_OP_CRX: // Condition Register field
-		snprintf (words[n], sizeof (words[n]),
-				"%"PFMT64d"%s", (ut64) op.imm, setstr);
-		break;
-	}
-	return words[n];
-}
-
 static ut64 getarg(struct Getarg *gop, int n) {
 	ut64 value = 0;
 	cs_insn *insn = gop->insn;
@@ -131,33 +98,6 @@ static ut64 getarg(struct Getarg *gop, int n) {
 		break;
 	}
 	return value;
-}
-
-static const char* getspr(struct Getarg *gop, int n) {
-	static R_TH_LOCAL char cspr[16];
-	ut32 spr = 0;
-	if (n < 0 || n >= 8) {
-		return NULL;
-	}
-	spr = getarg (gop, 0);
-	switch (spr) {
-	case SPR_HID0:
-		return "hid0";
-	case SPR_HID1:
-		return "hid1";
-	case SPR_HID2:
-		return "hid2";
-	case SPR_HID4:
-		return "hid4";
-	case SPR_HID5:
-		return "hid5";
-	case SPR_HID6:
-		return "hid6";
-	default:
-		snprintf (cspr, sizeof (cspr), "spr_%u", spr);
-		break;
-	}
-	return cspr;
 }
 
 static void opex(RStrBuf *buf, csh handle, cs_insn *insn) {
@@ -202,9 +142,9 @@ static void opex(RStrBuf *buf, csh handle, cs_insn *insn) {
 	pj_free (pj);
 }
 
-#define PPCSPR(n) getspr(&gop, n)
-#define ARG(n) getarg2(&gop, n, "")
-#define ARG2(n,m) getarg2(&gop, n, m)
+#define PPCSPR(n) getspr(pd, &gop, n)
+#define ARG(n) getarg2(pd, &gop, n, "")
+#define ARG2(n,m) getarg2(pd, &gop, n, m)
 
 static char *regs(RArchSession *as) {
 	if (as->config->bits == 32) {
@@ -606,6 +546,75 @@ static char *shrink(char *op) {
 	| (R_ARCH_CONFIG_IS_BIG_ENDIAN (as->config)? CS_MODE_BIG_ENDIAN: CS_MODE_LITTLE_ENDIAN)
 #include "../capstone.inc"
 
+typedef struct plugin_data_t {
+	CapstonePluginData cpd;
+	char cspr[16];
+	char words[8][64];
+} PluginData;
+
+static const char* getspr(PluginData *pd, struct Getarg *gop, int n) {
+	ut32 spr = 0;
+	if (n < 0 || n >= 8) {
+		return NULL;
+	}
+	spr = getarg (gop, 0);
+	switch (spr) {
+	case SPR_HID0:
+		return "hid0";
+	case SPR_HID1:
+		return "hid1";
+	case SPR_HID2:
+		return "hid2";
+	case SPR_HID4:
+		return "hid4";
+	case SPR_HID5:
+		return "hid5";
+	case SPR_HID6:
+		return "hid6";
+	default:
+		snprintf (pd->cspr, sizeof (pd->cspr), "spr_%u", spr);
+		break;
+	}
+	return pd->cspr;
+}
+
+static char *getarg2(PluginData *pd, struct Getarg *gop, int n, const char *setstr) {
+	cs_insn *insn = gop->insn;
+	csh handle = gop->handle;
+	cs_ppc_op op;
+
+	if (n < 0 || n >= 8) {
+		return NULL;
+	}
+	op = INSOP (n);
+	switch (op.type) {
+	case PPC_OP_INVALID:
+		pd->words[n][0] = '\0';
+		//strcpy (pd->words[n], "invalid");
+		break;
+	case PPC_OP_REG:
+		snprintf (pd->words[n], sizeof (pd->words[n]),
+				"%s%s", cs_reg_name (handle, op.reg), setstr);
+		break;
+	case PPC_OP_IMM:
+		snprintf (pd->words[n], sizeof (pd->words[n]),
+				"0x%"PFMT64x"%s", (ut64) op.imm, setstr);
+		break;
+	case PPC_OP_MEM:
+		snprintf (pd->words[n], sizeof (pd->words[n]),
+				"%"PFMT64d",%s,+,%s",
+				(ut64) op.mem.disp,
+				cs_reg_name (handle, op.mem.base), setstr);
+		break;
+	case PPC_OP_CRX: // Condition Register field
+		snprintf (pd->words[n], sizeof (pd->words[n]),
+				"%"PFMT64d"%s", (ut64) op.imm, setstr);
+		break;
+	}
+	return pd->words[n];
+}
+
+
 static int decompile_vle(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 	vle_t* instr = 0;
 	vle_handle handle = {0};
@@ -664,6 +673,7 @@ static bool decode(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
 	cs_insn *insn;
 	char *op1;
 
+	PluginData *pd = as->data;
 	const char *cpu = as->config->cpu;
 	// capstone-next
 	int n = cs_disasm (handle, (const ut8*)buf, len, addr, 1, &insn);
@@ -1430,9 +1440,9 @@ static bool init(RArchSession *as) {
 		R_LOG_WARN ("Already initialized");
 		return false;
 	}
-	as->data = R_NEW0 (CapstonePluginData);
-	CapstonePluginData *cpd = as->data;
-	if (!r_arch_cs_init (as, &cpd->cs_handle)) {
+	as->data = R_NEW0 (PluginData);
+	PluginData *pd = as->data;
+	if (!r_arch_cs_init (as, &pd->cpd.cs_handle)) {
 		R_LOG_ERROR ("Cannot initialize capstone");
 		R_FREE (as->data);
 		return false;
