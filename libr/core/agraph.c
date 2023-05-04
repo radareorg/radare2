@@ -2121,13 +2121,13 @@ static char *get_body(RCore *core, ut64 addr, int size, int opts) {
 	if (!hc) {
 		return NULL;
 	}
-	r_config_hold (hc, "asm.lines", "asm.bytes",
+	r_config_hold (hc, "asm.lines", "asm.bytes", "asm.flags.inbytes",
 		"asm.cmt.col", "asm.marks", "asm.offset",
 		"asm.comments", "asm.cmt.right", "asm.lines.bb", NULL);
 	const bool o_comments = r_config_get_b (core->config, "graph.comments");
 	const bool o_cmtright = r_config_get_b (core->config, "graph.cmtright");
 	const bool o_bytes = r_config_get_b (core->config, "graph.bytes");
-	const bool o_flags_in_bytes = r_config_get_b (core->config, "asm.flags.inbytes");
+	bool o_flags_in_bytes = r_config_get_b (core->config, "asm.flags.inbytes");
 	const bool o_graph_offset = r_config_get_b (core->config, "graph.offset");
 	int o_cursor = core->print->cur_enabled;
 	if (opts & BODY_COMMENTS) {
@@ -2144,6 +2144,10 @@ static char *get_body(RCore *core, ut64 addr, int size, int opts) {
 	}
 
 	// configure options
+	if (r_config_get_b (core->config, "cfg.debug")) {
+		r_config_set_b (core->config, "asm.flags.inbytes", true);
+		o_flags_in_bytes = true;
+	}
 	r_config_set_b (core->config, "asm.lines.bb", false);
 	r_config_set_b (core->config, "asm.lines", false);
 	r_config_set_i (core->config, "asm.cmt.col", 0);
@@ -3526,7 +3530,10 @@ static int agraph_print(RAGraph *g, int is_interactive, RCore *core, RAnalFuncti
 		const char *cmdv = r_config_get (core->config, "cmd.gprompt");
 		bool mustFlush = false;
 		r_cons_visual_flush ();
-		if (cmdv && *cmdv) {
+		if (!strcmp (cmdv, ".dr*")) {
+			cmdv = ".dr*;dr=@e:hex.cols=`?v $w*3`";
+		}
+		if (R_STR_ISNOTEMPTY (cmdv)) {
 			r_cons_gotoxy (0, 2);
 			r_cons_strcat (Color_RESET);
 			r_core_cmd0 (core, cmdv);
@@ -4760,6 +4767,20 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 			break;
 		case 'v':
 			r_core_visual_anal (core, NULL);
+			break;
+		case ']':
+			{
+				int scrcols = r_config_get_i (core->config, "hex.cols");
+				r_config_set_i (core->config, "hex.cols", scrcols + 1);
+			}
+			break;
+		case '[':
+			{
+				int scrcols = r_config_get_i (core->config, "hex.cols");
+				if (scrcols > 1) {
+					r_config_set_i (core->config, "hex.cols", scrcols - 1);
+				}
+			}
 			break;
 		case 'J':
 			// copypaste from 'j'
