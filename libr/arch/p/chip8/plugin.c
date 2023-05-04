@@ -1,27 +1,22 @@
-/* radare - LGPL3 - Copyright 2017-2022 - maijin, pancake */
+/* radare - LGPL3 - Copyright 2017-2023 - maijin, pancake */
 
-#include <string.h>
-#include <r_types.h>
-#include <r_lib.h>
-#include <r_asm.h>
-#include <r_anal.h>
+#include <r_arch.h>
 
-static int chip8_anop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len, RAnalOpMask mask) {
+static bool chip8_anop(RArchSession *s, RAnalOp *op, RArchDecodeMask mask) {
 	char fmtstr[128];
 #define fmt(x,...) fmtstr,snprintf (fmtstr, sizeof (fmtstr), x, __VA_ARGS__)
-
-	if (len < 2) {
+	const ut64 addr = op->addr;
+	if (op->size < 2) {
 		return -1;
 	}
 
-	ut16 opcode = r_read_be16 (data);
+	ut16 opcode = r_read_be16 (op->bytes);
 	uint8_t x = (opcode >> 8) & 0x0F;
 	uint8_t y = (opcode >> 4) & 0x0F;
 	uint8_t nibble = opcode & 0x0F;
 	uint16_t nnn = opcode & 0x0FFF;
 	uint8_t kk = opcode & 0xFF;
 	op->size = 2;
-	op->addr = addr;
 	op->type = R_ANAL_OP_TYPE_UNK;
 	const char *buf_asm = "invalid";
 	switch (opcode & 0xF000) {
@@ -153,7 +148,7 @@ static int chip8_anop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int 
 			buf_asm = fmt ("sknp v%1x", x);
 		}
 		if (kk == 0x9E || kk == 0xA1) {
-			r_meta_set_string (anal, R_META_TYPE_COMMENT, addr, "KEYPAD");
+			// r_meta_set_string (anal, R_META_TYPE_COMMENT, addr, "KEYPAD");
 			op->type = R_ANAL_OP_TYPE_CJMP;
 			op->jump = addr + (op->size * 2);
 			op->fail = addr + op->size;
@@ -166,7 +161,7 @@ static int chip8_anop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int 
 			buf_asm = fmt ("ld v%1x, dt", x);
 			break;
 		case 0x0A:
-			r_meta_set_string (anal, R_META_TYPE_COMMENT, addr, "KEYPAD");
+			// r_meta_set_string (anal, R_META_TYPE_COMMENT, addr, "KEYPAD");
 			op->type = R_ANAL_OP_TYPE_MOV;
 			buf_asm = fmt ("ld v%1x, k", x);
 			break;
@@ -216,22 +211,22 @@ static int chip8_anop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int 
 	if (mask & R_ARCH_OP_MASK_DISASM) {
 		op->mnemonic = strdup (buf_asm);
 	}
-	return op->size;
+	return true;
 }
 
-RAnalPlugin r_anal_plugin_chip8 = {
+RArchPlugin r_arch_plugin_chip8 = {
 	.name = "chip8",
 	.author = "maijin",
 	.desc = "CHIP8 analysis plugin",
 	.license = "LGPL3",
 	.arch = "chip8",
-	.bits = 32,
-	.op = &chip8_anop,
+	.bits = R_SYS_BITS_PACK1 (32),
+	.decode = &chip8_anop,
 };
 
 #ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_ANAL,
+	.type = R_LIB_TYPE_ARCH,
 	.data = &r_anal_plugin_chip8,
 	.version = R2_VERSION
 };
