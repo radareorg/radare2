@@ -493,7 +493,7 @@ static int cmd_plugins(void *data, const char *input) {
 					r_cons_printf ("%s\n", item->name);
 					break;
 				default:
-					r_cons_printf ("%s    %s\n", item->name, item->desc);
+					r_cons_printf ("%-12s %5s %s (%s)\n", item->name, item->license, item->desc, item->arch);
 					break;
 				}
 			}
@@ -560,7 +560,7 @@ static int cmd_plugins(void *data, const char *input) {
 		} else if (input[1] == ',') { // "Ll,"
 			r_lang_list (core->lang, ','); // TODO: take table query as argument
 		} else if (input[1] == '?') { // "Ll?"
-			r_cons_printf ("Usage: Ll[jq] - list r_lang plugins\n");
+			r_cons_printf ("Usage: Ll[,jq] - list r_lang plugins\n");
 		} else {
 			r_lang_list (core->lang, 0);
 		}
@@ -607,10 +607,17 @@ static int cmd_plugins(void *data, const char *input) {
 		case ' ':
 			r_lib_open (core->lib, r_str_trim_head_ro (input + 2));
 			break;
-		case 0:
+		case 'v':
 			r_lib_list (core->lib);
+			break;
+		case 'q':
 			r_list_foreach (core->rcmd->plist, iter, cp) {
-				r_cons_printf ("%s: %s\n", cp->name, cp->desc);
+				r_cons_printf ("%s\n", cp->name);
+			}
+			break;
+		case 0:
+			r_list_foreach (core->rcmd->plist, iter, cp) {
+				r_cons_printf ("%-10s %s\n", cp->name, cp->desc);
 			}
 			break;
 		default:
