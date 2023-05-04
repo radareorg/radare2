@@ -199,7 +199,7 @@ R_API void r_lang_list(RLang *lang, int mode) {
 				r_str_get (h->license),
 				r_str_get (h->desc), 0);
 		} else {
-			lang->cb_printf ("%s: (%s) %s\n",
+			lang->cb_printf ("%-8s %6s  %s\n",
 				h->name, license, h->desc);
 		}
 	}
