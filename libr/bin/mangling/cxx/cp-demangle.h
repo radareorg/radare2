@@ -178,12 +178,13 @@ extern const struct demangle_operator_info cplus_demangle_operators[];
 CP_STATIC_IF_GLIBCPP_V3
 const struct demangle_builtin_type_info
 cplus_demangle_builtin_types[D_BUILTIN_TYPE_COUNT];
-
+#if 0
 CP_STATIC_IF_GLIBCPP_V3
 struct demangle_component *
 cplus_demangle_mangled_name (struct d_info *, int);
+#endif
 
-CP_STATIC_IF_GLIBCPP_V3
+static // CP_STATIC_IF_GLIBCPP_V3
 struct demangle_component *
 cplus_demangle_type (struct d_info *);
 
