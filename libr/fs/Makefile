@@ -8,6 +8,7 @@ include ../config.mk
 CFLAGS:=-I$(SHLR)/grub/include $(CFLAGS)
 ifeq ($(WITH_GPL),1)
 LDFLAGS+=$(SHLR)/grub/libgrubfs.a
+LDFLAGS+=$(SHLR)/zip/librz.a
 endif
 
 EXTRA_TARGETS=plugins
