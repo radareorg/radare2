@@ -32,7 +32,10 @@ R_API bool r_io_plugin_init(RIO *io) {
 			return false;
 		}
 		memcpy (static_plugin, io_static_plugins[i], sizeof (RIOPlugin));
-		r_io_plugin_add (io, static_plugin);
+		if (!r_io_plugin_add (io, static_plugin)) {
+			free(static_plugin);
+			return false;
+		}
 	}
 	return true;
 }
