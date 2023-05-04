@@ -1608,7 +1608,6 @@ extern RAnalPlugin r_anal_plugin_gb;
 extern RAnalPlugin r_anal_plugin_java;
 extern RAnalPlugin r_anal_plugin_mips_cs;
 extern RAnalPlugin r_anal_plugin_jdh8;
-extern RAnalPlugin r_anal_plugin_ppc_cs;
 extern RAnalPlugin r_anal_plugin_sh;
 extern RAnalPlugin r_anal_plugin_x86;
 extern RAnalPlugin r_anal_plugin_x86_cs;
