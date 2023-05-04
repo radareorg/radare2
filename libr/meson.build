@@ -154,7 +154,6 @@ anal_plugins += [
   '8051',
   'arm_cs',
   'avr',
-  'chip8',
   'dalvik',
   'gb',
   'i8080',
@@ -167,6 +166,7 @@ anal_plugins += [
 ]
 
 arch_plugins += [
+  'chip8',
   '6502_cs',
   'loongarch_gnu',
   's390_cs',
