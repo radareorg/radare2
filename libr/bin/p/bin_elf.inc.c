@@ -431,6 +431,9 @@ static RList* imports(RBinFile *bf) {
 
 	RBinElfSymbol *is;
 	R_VEC_FOREACH (imports, is) {
+		if (import_symbol->is_internal) {
+			continue;
+		}
 		RBinImport *ptr = R_NEW0 (RBinImport);
 		if (!ptr) {
 			break;
