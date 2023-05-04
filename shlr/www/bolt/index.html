@@ -1,0 +1,38 @@
+<html>
+ <script src="r2.js"></script>
+<script>
+let cflags = '';
+let compiler = "gcc -S";
+const $ = (x) => document.getElementById(x);
+function compile() {
+	const cc = btoa($('compiler').value);
+	const cs = btoa($('source').value);
+	const cmd = `""!!sh ./r2bolt.sh '' '${cs}'`;
+	r2.cmd(cmd, (res) => {
+		if (res.trim()) {
+			$('output').innerHTML = res;
+		}
+	});
+}
+compile();
+</script>
+<body>
+<table width="100%">
+<tr>
+ <td colspan=2>
+   <input type="button" value="r2bolt" onclick="javascript:compile()"></input>
+   <input id="compiler" value="gcc -S" /></td>
+   </tr>
+   <tr>
+ <td valign="top">
+<textarea rows=20 id="source" onkeyup="compile()">
+#include &lt;stdio.h&gt;
+int main() {
+  return 1 + 2;
+}
+</textarea></td>
+ <td><div id="output" style="font-size:0.7em;font-family:Courier;white-space: pre;"></div></td>
+</tr>
+</table>
+</body>
+</html>
