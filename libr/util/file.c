@@ -896,6 +896,7 @@ R_API bool r_file_move(const char *src, const char *dst) {
 #endif
 		free (a);
 		free (b);
+		free (input);
 		return rc == 0;
 	}
 	return true;
