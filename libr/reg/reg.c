@@ -33,6 +33,7 @@ R_API void r_reg_hasbits_clear(RReg *reg) {
 	reg->hasbits = 0;
 }
 
+/// XXX use R_SYS_PACK_BITS instead
 R_API bool r_reg_hasbits_use(RReg *reg, int size) {
 	bool done = false;
 #define HB(x) if (size&(x)) { reg->hasbits |= (x); done = true; }

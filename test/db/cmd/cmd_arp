@@ -1,3 +1,33 @@
+NAME=sm5xx pc/sp regs
+FILE=-
+CMDS=<<EOF
+-a sm5xx
+dr=
+dr*
+-b 4
+dr*
+EOF
+EXPECT=<<EOF
+    sp 0x00000000            pc 0x00000000        
+fs+registers
+f sp 8 0x00000000
+f pc 8 0x00000000
+fs-
+fs+registers
+f acc 0 0x00000000
+f bl 0 0x00000000
+f bm 0 0x00000000
+f bmask 0 0x00000000
+f c 0 0x00000000
+f skip 0 0x00000000
+f w 0 0x00000000
+f r 0 0x00000000
+f sp 8 0x00000000
+f pc 8 0x00000000
+fs-
+EOF
+RUN
+
 NAME=arpg
 FILE=-
 CMDS=<<EOF
