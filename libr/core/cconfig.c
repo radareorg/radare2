@@ -3596,6 +3596,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETBPREF ("asm.meta", "true", "display the code/data/format conversions in disasm");
 	SETBPREF ("asm.bytes", "true", "display the bytes of each instruction");
 	SETBPREF ("asm.bytes.align", "false", "align bytes at right (left padding space)");
+	SETBPREF ("asm.bytes.asbits", "false", "show instruction bits instead of bytes");
 	SETBPREF ("asm.bytes.right", "false", "display the bytes at the right of the disassembly");
 	SETBPREF ("asm.bytes.opcolor", "false", "colorize bytes depending on opcode size + variant information");
 	SETI ("asm.types", 1, "display the fcn types in calls (0=no,1=quiet,2=verbose)");
