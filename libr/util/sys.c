@@ -276,7 +276,7 @@ R_API RList *r_sys_dir(const char *path) {
 	struct dirent *entry;
 	DIR *dir = r_sandbox_opendir (path);
 	if (dir) {
-		list = r_list_new ();
+		list = r_list_newf (free);
 		if (list) {
 			list->free = free;
 			while ((entry = readdir (dir))) {
