@@ -7,16 +7,13 @@
 
 #include "sm5xx.h"
 
-#define STEP_COND 0x10000000
-#define STEP_OVER 0x20000000
-#define STEP_OUT 0x40000000
-
 // constructor
 
 #if 0
 sm510_common_disassembler_sm510_common_disassembler() {
 	// init 6-bit lfsr pc lut
-	for (ut32 i = 0, pc = 0; i < 0x3f; i++)
+	ut32 i;
+	for (i = 0, pc = 0; i < 0x3f; i++)
 	{
 		m_l2r6[i] = pc;
 		m_r2l6[pc] = i;
@@ -27,7 +24,7 @@ sm510_common_disassembler_sm510_common_disassembler() {
 	m_r2l6[0x3f] = 0x3f;
 
 	// init 7-bit lfsr pc lut
-	for (ut32 i = 0, pc = 0; i < 0x7f; i++)
+	for (i = 0, pc = 0; i < 0x7f; i++)
 	{
 		m_l2r7[i] = pc;
 		m_r2l7[pc] = i;
