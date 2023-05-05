@@ -157,6 +157,7 @@ typedef struct r_disasm_state_t {
 	bool bblined;
 	bool show_bytes;
 	bool show_bytes_align;
+	bool show_bytes_asbits;
 	bool show_bytes_right;
 	bool show_bytes_opcolor;
 	bool show_reloff;
@@ -765,6 +766,7 @@ static RDisasmState *ds_init(RCore *core) {
 	ds->show_offseg = r_config_get_b (core->config, "asm.offset.segment");
 	ds->show_flags = r_config_get_b (core->config, "asm.flags");
 	ds->show_bytes = r_config_get_b (core->config, "asm.bytes");
+	ds->show_bytes_asbits = r_config_get_i (core->config, "asm.bytes.asbits");
 	ds->show_bytes_align = r_config_get_i (core->config, "asm.bytes.align");
 	ds->show_bytes_right = r_config_get_i (core->config, "asm.bytes.right");
 	ds->show_bytes_opcolor = r_config_get_i (core->config, "asm.bytes.opcolor");
@@ -3503,6 +3505,15 @@ static void ds_print_show_bytes(RDisasmState *ds) {
 			}
 			pad[j] = '\0';
 			str = strdup ("");
+		} else if (ds->show_bytes_asbits) {
+			// TODO: use C api instead of calling commands
+			char *_opsize = r_core_cmd_strf (core, "aos@0x%08"PFMT64x, ds->at);
+			int opsize = atoi (_opsize);
+			int len = 8 * R_MIN (opsize, nb);
+			*pad = 0;
+			str = r_core_cmd_strf (core, "pb1 %d @ 0x%08"PFMT64x, len, ds->at);
+			r_str_trim (str);
+			free (_opsize);
 		} else {
 			str = r_asm_op_get_hex (&ds->asmop);
 			if (r_str_ansi_len (str) > nb) {
