@@ -40,6 +40,14 @@ r_arch_sources = [
   'p/m68k_cs/plugin.c',
   'p/m680x_cs/plugin.c',
   'p/arm/gnu/floatformat.c',
+  'p/tms320/plugin.c',
+  'p/tms320/tms320_dasm.c',
+  'p/tms320/c55x_plus/ins.c',
+  'p/tms320/c55x_plus/c55plus.c',
+  'p/tms320/c55x_plus/c55plus_decode.c',
+  'p/tms320/c55x_plus/decode_funcs.c',
+  'p/tms320/c55x_plus/hashtable.c',
+  'p/tms320/c55x_plus/utils.c',
 # fails on windows
 # error LNK2005: SocketNotificationRetrieveEvents already defined in p_hppa_gnu_hppa-dis.c.obj
   'p/hppa/plugin_gnu.c',
