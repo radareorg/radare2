@@ -187,9 +187,8 @@ R_API void r_run_free(RRunProfile *r) {
 	}
 }
 
-#if R2__UNIX__
+#if R2__UNIX__ && !__wasi__ && !defined(__serenity__)
 static void set_limit(int n, int a, ut64 b) {
-#ifndef __wasi__
 	if (n) {
 		struct rlimit cl = {b, b};
 		setrlimit (RLIMIT_CORE, &cl);
@@ -197,7 +196,6 @@ static void set_limit(int n, int a, ut64 b) {
 		struct rlimit cl = {0, 0};
 		setrlimit (a, &cl);
 	}
-#endif
 }
 #endif
 

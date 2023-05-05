@@ -4139,7 +4139,7 @@ d_count_templates_scopes (int *num_templates, int *num_scopes,
     case DEMANGLE_COMPONENT_TAGGED_NAME:
     case DEMANGLE_COMPONENT_CLONE:
     recurse_left_right:
-      if (depth++ > 50) {
+      if (depth++ > 128) {
         fprintf (stderr, "Max depth spotted in the template scopes\n");
         break;
       }
