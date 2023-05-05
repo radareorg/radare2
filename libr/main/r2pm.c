@@ -421,7 +421,7 @@ static void r2pm_setenv(void) {
 		NULL
 	};
 	const char *bin = python_bins[0];
-	char *bin_path;
+	char *bin_path = NULL;
 	int i;
 	char *env_python = r_sys_getenv ("PYTHON");
 #if !R2_590
@@ -445,7 +445,6 @@ static void r2pm_setenv(void) {
 #endif
 			break;
 		}
-		free (bin_path);
 	}
 
 #if R2_590
