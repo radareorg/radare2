@@ -192,6 +192,18 @@ R_API bool r_reg_set_value(RReg *reg, RRegItem *item, ut64 value) {
 	case 16:
 		r_write_ble16 (src, value, be);
 		break;
+	case 4:
+		// read from buffer fill the gaps
+		{
+			ut8 tmp;
+			ut8 *buf = arena->bytes + (item->offset / 8);
+			tmp = *buf;
+			tmp >>= 4;
+			tmp <<= 4;
+			tmp |= (value & 0xf);
+			*buf = tmp;
+		}
+		break;
 	case 8:
 		r_write_ble8 (src, (ut8) (value & UT8_MAX));
 		break;

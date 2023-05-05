@@ -23,6 +23,9 @@ static bool decode(RArchSession *a, RAnalOp *op, RArchDecodeMask mask) {
 		op->type = R_ANAL_OP_TYPE_MOV;
 		break;
 	}
+	if (!strcmp (op->mnemonic, "skip")) {
+		op->type = R_ANAL_OP_TYPE_NOP;
+	}
 	op->size = size;
 	return true;
 }
@@ -31,29 +34,31 @@ static char *regs(RArchSession *as) {
 	const char *const p =
 		"=PC	pc\n"
 		"=SP	sp\n"
-		"=A0	y\n"
-		"=A1	y\n"
-		"gpr	acc	.8	0	0\n"
-		"gpr	bl	.8	1	0\n"
-		"gpr	bm	.8	2	0\n"
-		"gpr	bmask	.8	2	0\n"
-		"gpr	c	.8	2	0\n"
-		"gpr	skip	.8	2	0\n"
-		"gpr	w	.8	2	0\n"
-		"gpr	r	.8	2	0\n"
+		"=A0	bl\n"
+		"=A1	bm\n"
+		"gpr	acc	.4	0	0\n"
+		"gpr	bl	.4	1	0\n"
+		"gpr	bm	.4	2	0\n"
+		"gpr	bmask	.4	2	0\n"
+		"gpr	c	.4	2	0\n"
+		"gpr	skip	.4	2	0\n"
+		"gpr	w	.4	2	0\n"
+		"gpr	r	.4	2	0\n"
 	// u8 m_r_out;
 	// int m_r_mask_option;
 	// bool m_ext_wakeup;
 	// bool m_halt;
 	// int m_clk_div;
+#if 0
 		"gpr	C	.1	.24	0\n"
 		"gpr	Z	.1	.25	0\n"
 		"gpr	I	.1	.26	0\n"
 		"gpr	D	.1	.27	0\n"
 		"gpr	V	.1	.30	0\n"
 		"gpr	N	.1	.31	0\n"
-		"gpr	sp	.8	4	0\n"
-		"gpr	pc	.64	5	0\n";
+#endif
+		"gpr	sp	.64	8	0\n"
+		"gpr	pc	.64	16	0\n";
 	return strdup (p);
 }
 
@@ -65,7 +70,7 @@ RArchPlugin r_arch_plugin_sm5xx = {
 	.name = "sm5xx",
 	.desc = "Sharp SM 5XX family MCUs",
 	.license = "BSD",
-	.bits = 4,
+	.bits = R_SYS_BITS_PACK1 (4),
 	.regs = regs,
 	.arch = "sm5xx",
 	.cpus = "5a,500,510,511,530,590",

@@ -83,6 +83,19 @@ R_API bool r_debug_reg_sync(RDebug *dbg, int type, int must_write) {
 	} while ((type == R_REG_TYPE_ALL) && (i < R_REG_TYPE_LAST));
 	return true;
 }
+static bool is_mandatory(RRegItem *item, const char *pcname, const char *spname) {
+	if (!item || !pcname || !spname) {
+		return true;
+	}
+	// if regname is PC or SP should return false, otherwise return true
+	if (!strcmp (item->name, pcname)) {
+		return false;
+	}
+	if (!strcmp (item->name, spname)) {
+		return false;
+	}
+	return true;
+}
 
 R_API bool r_debug_reg_list(RDebug *dbg, int type, int size, PJ *pj, int rad, const char *use_color) {
 	r_return_val_if_fail (dbg && dbg->reg, false);
@@ -144,10 +157,13 @@ R_API bool r_debug_reg_list(RDebug *dbg, int type, int size, PJ *pj, int rad, co
 	if (rad == 1 || rad == '*') {
 		dbg->cb_printf ("fs+%s\n", R_FLAGS_FS_REGISTERS);
 	}
+	const char *pcname = r_reg_get_name_by_type (dbg->reg, "PC");
+	const char *spname = r_reg_get_name_by_type (dbg->reg, "SP");
+#define IS_MANDATORY(x) is_mandatory ((x), pcname, spname)
 	r_list_foreach (head, iter, item) {
 		ut64 value;
 		utX valueBig;
-		if (type != -1) {
+		if (type != -1 && IS_MANDATORY (item)) {
 			if (type != item->type && R_REG_TYPE_FLG != item->type) {
 				continue;
 			}
