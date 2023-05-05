@@ -6,12 +6,19 @@
  * Distributed under LGPL
  */
 
-#include <r_anal.h>
-#include "../../asm/arch/tms320/tms320_dasm.h"
+#include <r_arch.h>
+#include "tms320_dasm.h"
 
-static R_TH_LOCAL tms320_dasm_t engine = {0};
+typedef struct plugin_data_t PluginData;
 
-int tms320_c55x_plus_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *_buf, int len, RAnalOpMask mask) {
+static tms320_dasm_t *tms320_engine_for_session(RArchSession *as);
+
+typedef int (* TMS_ANAL_OP_FN)(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask);
+
+static int tms320_c54x_op(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask);
+static int tms320_c55x_op(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask);
+
+static int tms320_c55x_plus_op(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *_buf, int len, RAnalOpMask mask) {
 	if (!_buf || len < 1) {
 		return 0;
 	}
@@ -22,14 +29,15 @@ int tms320_c55x_plus_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *_buf, in
 
 	op->size = 1;
 
-	int ins_len = tms320_dasm (&engine, buf, len);
+	tms320_dasm_t *engine = tms320_engine_for_session (as);
+	int ins_len = tms320_dasm (engine, buf, len);
 	if (ins_len <= 0) {
 		return 0;
 	}
 	op->size = ins_len;
 	op->addr = addr;
 	if (mask & R_ARCH_OP_MASK_DISASM) {
-		op->mnemonic = strdup (engine.syntax);
+		op->mnemonic = strdup (engine->syntax);
 	}
 
 	if (ins_len == 1) {
@@ -152,10 +160,27 @@ static void opex(RStrBuf *buf, csh handle, cs_insn *insn) {
 
 #define CSINC_MODE CS_MODE_BIG_ENDIAN
 #define CSINC TMS320C64X
-#include "capstone.inc"
+#include "../capstone.inc"
 
-static int tms320c64x_analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
-	csh handle = init_capstone (a);
+typedef struct plugin_data_t {
+	CapstonePluginData cpd;
+	tms320_dasm_t engine;
+} PluginData;
+
+static tms320_dasm_t *tms320_engine_for_session(RArchSession *as) {
+	r_return_val_if_fail (as && as->data, 0);
+	PluginData *pd = as->data;
+	return &pd->engine;
+}
+
+static csh cs_handle_for_session(RArchSession *as) {
+	r_return_val_if_fail (as && as->data, 0);
+	CapstonePluginData *pd = as->data;
+	return pd->cs_handle;
+}
+
+static int tms320c64x_analop(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
+	csh handle = cs_handle_for_session (as);
 	if (handle == 0) {
 		return -1;
 	}
@@ -289,29 +314,25 @@ static int tms320c64x_analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, i
 }
 #endif
 
-typedef int (* TMS_ANAL_OP_FN)(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask);
-
-int tms320_c54x_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask);
-int tms320_c55x_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask);
-int tms320_c55x_plus_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask);
-
 static bool match(const char * str, const char *token) {
 	return !strncasecmp (str, token, strlen (token));
 }
 
-int tms320_c54x_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
-	op->size = tms320_dasm (&engine, buf, len);
+static int tms320_c54x_op(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
+	tms320_dasm_t *engine = tms320_engine_for_session (as);
+	op->size = tms320_dasm (engine, buf, len);
 	if (mask & R_ARCH_OP_MASK_DISASM) {
-		op->mnemonic = strdup (engine.syntax);
+		op->mnemonic = strdup (engine->syntax);
 	}
 	return op->size;
 }
 
-int tms320_c55x_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
-	const char * str = engine.syntax;
+static int tms320_c55x_op(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
+	tms320_dasm_t *engine = tms320_engine_for_session (as);
+	const char * str = engine->syntax;
 
 	op->delay = 0;
-	op->size = tms320_dasm (&engine, buf, len);
+	op->size = tms320_dasm (engine, buf, len);
 	op->type = R_ANAL_OP_TYPE_NULL;
 
 	if (mask & R_ARCH_OP_MASK_DISASM) {
@@ -363,40 +384,78 @@ int tms320_c55x_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 	return op->size;
 }
 
-int tms320_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
+static bool decode(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
+	const ut64 addr = op->addr;
+	const ut8 *buf = op->bytes;
+	const int len = op->size;
 	op->size = 1;
-	const char *cpu = anal->config->cpu;
+	const char *cpu = as->config->cpu;
 	TMS_ANAL_OP_FN aop = tms320_c55x_op;
 	if (R_STR_ISNOTEMPTY (cpu)) {
+		tms320_dasm_t *engine = tms320_engine_for_session (as);
 		if (!r_str_casecmp (cpu, "c64x")) {
 #ifdef CAPSTONE_TMS320C64X_H
-			return tms320c64x_analop (anal, op, addr, buf, len, mask);
+			return tms320c64x_analop (as, op, addr, buf, len, mask) > 0;
 #else
-			return -1;
+			return false;
 #endif
 		} else if (!r_str_casecmp (cpu, "c54x")) {
-			tms320_f_set_cpu (&engine, TMS320_F_CPU_C54X);
+			tms320_f_set_cpu (engine, TMS320_F_CPU_C54X);
 			aop = tms320_c54x_op;
 		} else if (!r_str_casecmp (cpu, "c55x")) {
-			tms320_f_set_cpu (&engine, TMS320_F_CPU_C55X);
+			tms320_f_set_cpu (engine, TMS320_F_CPU_C55X);
 			aop = tms320_c55x_op;
 		} else if (!r_str_casecmp (cpu, "c55x+")) {
-			tms320_f_set_cpu (&engine, TMS320_F_CPU_C55X_PLUS);
+			tms320_f_set_cpu (engine, TMS320_F_CPU_C55X_PLUS);
 			aop = tms320_c55x_plus_op;
 		}
 	}
-	return aop (anal, op, addr, buf, len, mask);
+	return aop (as, op, addr, buf, len, mask) > 0;
 }
 
-static int tms320_init(void *unused) {
-	return tms320_dasm_init (&engine);
+static bool tms320_init(RArchSession *as) {
+	r_return_val_if_fail (as, false);
+	if (as->data) {
+		R_LOG_WARN ("Already initialized");
+		return false;
+	}
+
+	as->data = R_NEW0 (PluginData);
+	PluginData *pd = as->data;
+	if (!r_arch_cs_init (as, &pd->cpd.cs_handle)) {
+		R_LOG_ERROR ("Cannot initialize capstone");
+		R_FREE (as->data);
+		return false;
+	}
+
+	if (!tms320_dasm_init (&pd->engine)) {
+		R_LOG_ERROR ("Cannot initialize tms320 engine");
+		return false;
+	}
+
+	return true;
 }
 
-static int tms320_fini(void *unused) {
-	return tms320_dasm_fini (&engine);
+static bool tms320_fini(RArchSession *as) {
+	r_return_val_if_fail (as && as->data, false);
+
+	PluginData *pd = as->data;
+	cs_close (&pd->cpd.cs_handle);
+
+	if (!tms320_dasm_fini (&pd->engine)) {
+		R_LOG_ERROR ("Cannot shutdown tms320 engine");
+	}
+
+	R_FREE (as->data);
+	return true;
 }
 
-static int archinfo(RAnal *anal, int q) {
+static char *mnemonics(RArchSession *s, int id, bool json) {
+	CapstonePluginData *cpd = (CapstonePluginData*)s->data;
+	return r_arch_cs_mnemonics (s, cpd->cs_handle, id, json);
+}
+
+static int archinfo(RArchSession *as, ut32 q) {
 	switch (q) {
 	case R_ANAL_ARCHINFO_ALIGN:
 		return 0;
@@ -410,30 +469,30 @@ static int archinfo(RAnal *anal, int q) {
 	return -1;
 }
 
-RAnalPlugin r_anal_plugin_tms320 = {
+RArchPlugin r_arch_plugin_tms320 = {
 	.name = "tms320",
 	.arch = "tms320",
-	.bits = 32,
+	.bits = R_SYS_BITS_PACK1 (32),
 	.init = tms320_init,
 	.fini = tms320_fini,
 	.license = "LGPLv3",
 	.endian = R_SYS_ENDIAN_LITTLE | R_SYS_ENDIAN_BIG,
-	.archinfo = archinfo,
+	.info = archinfo,
 #if CAPSTONE_HAS_TMS320C64X
 	.cpus = "c54x,c55x,c55x+,c64x",
 	.desc = "TMS320 DSP family (c54x,c55x,c55x+,c64x)",
-	.mnemonics = &cs_mnemonics,
+	.mnemonics = mnemonics,
 #else
 	.cpus = "c54x,c55x,c55x+",
 	.desc = "TMS320 DSP family (c54x,c55x,c55x+)",
 #endif
-	.op = &tms320_op,
+	.decode = decode,
 };
 
 #ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_ANAL,
-	.data = &r_anal_plugin_tms320,
+	.type = R_LIB_TYPE_ARCH,
+	.data = &r_arch_plugin_tms320,
 	.version = R2_VERSION
 };
 #endif

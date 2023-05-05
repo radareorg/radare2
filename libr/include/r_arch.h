@@ -343,6 +343,7 @@ extern RArchPlugin r_arch_plugin_m680x_cs;
 extern RArchPlugin r_arch_plugin_xcore_cs;
 extern RArchPlugin r_arch_plugin_chip8;
 extern RArchPlugin r_arch_plugin_mips_gnu;
+extern RArchPlugin r_arch_plugin_tms320;
 
 #ifdef __cplusplus
 }
