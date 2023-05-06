@@ -1,6 +1,9 @@
 "=PC	PC\n"
-/* syntax not yet supported */
-// "=SP	&PC1\n"
+"=SP    PC1\n" // XXX this is wrong. the SP must point to the map of reg:// with PC1 offset
+// syntax not yet supported
+// "=SP	&PC1\n" ..
+// we may want to map the reg arena using the reg:// io plugin
+// i4004 call stack is internal to the cpu, not mapped into memory
 "=A0	r0\n"
 "=A1	r1\n"
 "=A2	r2\n"
@@ -35,3 +38,7 @@
 "gpr	PC1	.12	.88	0\n"
 "gpr	PC2	.12	.104	0\n"
 "gpr	PC3	.12	.120	0\n"
+"gpr	PC4	.12	.136	0\n"
+"gpr	PC5	.12	.152	0\n"
+"gpr	PC6	.12	.168	0\n"
+"gpr	PC7	.12	.184	0\n"
