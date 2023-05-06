@@ -53,7 +53,7 @@ static RBinInfo *info(RBinFile *arch) {
 	ret->machine = r_str_newf ("Python %s VM (rev %s)", version.version,
 		version.revision);
 	ret->os = strdup ("any");
-	ret->bits = version2double (version.version) < 3.6? 16: 8;
+	ret->bits = 32; // version2double (version.version) < 3.6? 16: 8;
 	ret->cpu = strdup (version.version); // pass version info in cpu, Asm plugin will get it
 	return ret;
 }
