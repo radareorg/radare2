@@ -1,10 +1,30 @@
 /* radare - LGPL3 - Copyright 2016-2023 - FXTi, pancake */
 
-#include <r_lib.h>
 #include <r_arch.h>
 #include "pyc_dis.h"
 
-static bool disassemble(RArchSession *s, RAnalOp *op, RArchDecodeMask mask) {
+static int pyversion_toi(const char *version) {
+	if (version) {
+		char vstr[32];
+		char *v = (char *)&vstr;
+		for (;*version; version++) {
+			if (isdigit (*version)) {
+				*v++ = *version;
+			}
+			if (v == vstr + 2) {
+				break;
+			}
+		}
+		*v++ = '0';
+		*v = 0;
+		if (*vstr) {
+			return atoi (vstr);
+		}
+	}
+	return 360; // default version
+}
+
+static bool disassemble(RArchSession *s, RAnalOp *op, RArchDecodeMask mask, int pyversion) {
 	RBin *bin = s->arch->binb.bin;
 	RBinPlugin *plugin = bin && bin->cur && bin->cur->o? bin->cur->o->plugin: NULL;
 	RList *shared = (plugin && !strcmp (plugin->name, "pyc"))?
@@ -32,12 +52,19 @@ static bool disassemble(RArchSession *s, RAnalOp *op, RArchDecodeMask mask) {
 	return r > 0;
 }
 
-static int archinfo(RArchSession *anal, ut32 query) {
+static int archinfo(RArchSession *as, ut32 query) {
 	switch (query) {
+	case R_ANAL_ARCHINFO_INV_OP_SIZE:
 	case R_ANAL_ARCHINFO_MIN_OP_SIZE:
-		return (anal->config->bits == 16)? 1: 2;
+		{
+			int pyversion = pyversion_toi (as->config->cpu);
+			return (pyversion < 370)? 1: 2;
+		}
 	case R_ANAL_ARCHINFO_MAX_OP_SIZE:
-		return (anal->config->bits == 16)? 3: 2;
+		{
+			int pyversion = pyversion_toi (as->config->cpu);
+			return (pyversion < 370)? 3: 2;
+		}
 	default:
 		return -1;
 	}
@@ -92,9 +119,11 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 	if (!func) {
 		return false;
 	}
+	const int pyversion = pyversion_toi (as->config->cpu);
+	bool is_python36 = pyversion == 370; // < 370; // XXX this looks wrong
 
 	if (mask & R_ARCH_OP_MASK_DISASM) {
-		disassemble (as, op, mask);
+		disassemble (as, op, mask, pyversion);
 	}
 	ut64 func_base = func->start_offset;
 	ut32 extended_arg = 0, oparg = 0;
@@ -109,8 +138,6 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 			return false;
 		}
 	}
-	const int bits = as->config->bits;
-	bool is_python36 = bits == 8;
 	pyc_opcode_object *op_obj = &ops->opcodes[op_code];
 	if (!op_obj->op_name) {
 		op->type = R_ANAL_OP_TYPE_ILL;
