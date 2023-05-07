@@ -11,7 +11,7 @@ static RCoreHelpMessage help_msg_question_t = {
 };
 
 static RCoreHelpMessage help_msg_at = {
-	"Usage: [.][#]<cmd>[*] [`cmd`] [@ addr] [~grep] [|syscmd] [>[>]file]", "", "",
+	"Usage: [.:\"][#]<cmd>[*] [`cmd`] [@ addr] [~grep] [|syscmd] [>[>]file]", "", "",
 	"0", "", "alias for 's 0'",
 	"0x", "addr", "alias for 's 0x..'",
 	"#", "cmd", "if # is a number repeat the command # times",
@@ -20,6 +20,7 @@ static RCoreHelpMessage help_msg_at = {
 	".", "cmd", "execute output of command as r2 script",
 	".:", "8080", "wait for commands on port 8080",
 	".!", "rabin2 -re $FILE", "run command output as r2 script",
+	":", "cmd", "run an io command (same as =!)",
 	"-", "[?]", "alias for s- aka negative relative seek and script editor",
 	"+", "[?]", "alias for s+, act as a relative seek",
 	"*", "", "output of command in r2 script format (CC*)",
@@ -185,6 +186,7 @@ static RCoreHelpMessage help_msg_root = {
 	"(macro arg0 arg1)",  "", "manage scripting macros",
 	".", "[?] [-|(m)|f|!sh|cmd]", "Define macro or load r2, cparse or rlang file",
 	",", "[?] [/jhr]", "create a dummy table import from file and query it to filter/sort",
+	":", "cmd", "run an io command (same as =!)",
 	"_", "[?]", "Print last output",
 	"=","[?] [cmd]", "send/listen for remote commands (rap://, raps://, udp://, http://, <fd>)",
 	"<","[...]", "push escaped string into the RCons.readChar buffer",
@@ -606,6 +608,10 @@ static int cmd_help(void *data, const char *input) {
 	RList *tmp;
 
 	switch (input[0]) {
+	case ':':
+		// show help for ':' command
+		r_core_cmd_help_match (core, help_msg_at, ":", true);
+		break;
 	case 't': { // "?t"
 		switch (input[1]) {
 		case '0':
