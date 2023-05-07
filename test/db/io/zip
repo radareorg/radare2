@@ -14,17 +14,17 @@ EXPECT=<<EOF
  5 - r-x 0x000382b4 zip://bins/dex/mobipwn-nores.apk//classes2.dex
  6 - r-x 0x000343a8 zip://bins/dex/mobipwn-nores.apk//classes3.dex
  7 * r-x 0x00045d30 zip://bins/dex/mobipwn-nores.apk//classes4.dex
-- 0 3 dalvik-64 ba:0x00000000 sz:2736 ?
-- 1 4 dalvik-32 ba:0x00005560 sz:285464 ?
-- 2 5 dalvik-32 ba:0x0004fb90 sz:230068 ?
-- 3 6 dalvik-32 ba:0x0008c0f8 sz:213928 ?
-* 4 7 dalvik-32 ba:0x000c4848 sz:286000 ?
+- 0 3 dalvik-64 ba:0x00000000 sz:2736
+- 1 4 dalvik-32 ba:0x00005560 sz:285464
+- 2 5 dalvik-32 ba:0x0004fb90 sz:230068
+- 3 6 dalvik-32 ba:0x0008c0f8 sz:213928
+* 4 7 dalvik-32 ba:0x000c4848 sz:286000
 2652
-* 0 3 dalvik-64 ba:0x00000000 sz:2736 ?
-* 1 4 dalvik-32 ba:0x00005560 sz:285464 ?
-* 2 5 dalvik-32 ba:0x0004fb90 sz:230068 ?
-* 3 6 dalvik-32 ba:0x0008c0f8 sz:213928 ?
-* 4 7 dalvik-32 ba:0x000c4848 sz:286000 ?
+* 0 3 dalvik-64 ba:0x00000000 sz:2736
+* 1 4 dalvik-32 ba:0x00005560 sz:285464
+* 2 5 dalvik-32 ba:0x0004fb90 sz:230068
+* 3 6 dalvik-32 ba:0x0008c0f8 sz:213928
+* 4 7 dalvik-32 ba:0x000c4848 sz:286000
 9784
 EOF
 RUN
@@ -45,17 +45,17 @@ EXPECT=<<EOF
  5 - r-x 0x000382b4 zip://bins/dex/mobipwn-nores.apk//classes2.dex
  6 - r-x 0x000343a8 zip://bins/dex/mobipwn-nores.apk//classes3.dex
  7 * r-x 0x00045d30 zip://bins/dex/mobipwn-nores.apk//classes4.dex
-- 0 3 dalvik-64 ba:0x00000000 sz:2736 ?
-- 1 4 dalvik-32 ba:0x00005560 sz:285464 ?
-- 2 5 dalvik-32 ba:0x0004fb90 sz:230068 ?
-- 3 6 dalvik-32 ba:0x0008c0f8 sz:213928 ?
-* 4 7 dalvik-32 ba:0x000c4848 sz:286000 ?
+- 0 3 dalvik-64 ba:0x00000000 sz:2736
+- 1 4 dalvik-32 ba:0x00005560 sz:285464
+- 2 5 dalvik-32 ba:0x0004fb90 sz:230068
+- 3 6 dalvik-32 ba:0x0008c0f8 sz:213928
+* 4 7 dalvik-32 ba:0x000c4848 sz:286000
 2652
-* 0 3 dalvik-64 ba:0x00000000 sz:2736 ?
-* 1 4 dalvik-32 ba:0x00005560 sz:285464 ?
-* 2 5 dalvik-32 ba:0x0004fb90 sz:230068 ?
-* 3 6 dalvik-32 ba:0x0008c0f8 sz:213928 ?
-* 4 7 dalvik-32 ba:0x000c4848 sz:286000 ?
+* 0 3 dalvik-64 ba:0x00000000 sz:2736
+* 1 4 dalvik-32 ba:0x00005560 sz:285464
+* 2 5 dalvik-32 ba:0x0004fb90 sz:230068
+* 3 6 dalvik-32 ba:0x0008c0f8 sz:213928
+* 4 7 dalvik-32 ba:0x000c4848 sz:286000
 9784
 EOF
 RUN
