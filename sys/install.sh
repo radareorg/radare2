@@ -1,10 +1,21 @@
 #!/bin/sh
 
-if [ "$(id -u)" = 0 ]; then
-	echo "[WW] Do not run this script as root!"
-	if [ -n "${SUDO_USER}" ]; then
-		echo "[--] Downgrading credentials to ${SUDO_USER}"
-		exec sudo -u "${SUDO_USER}" sys/install.sh $*
+if [ "$(uname)" = "Haiku" ]; then
+	gcc-x86 --version > /dev/null 2>&1
+	if [ $? = 0 ]; then
+		export CC=gcc-x86
+		export HOST_CC=gcc-x86
+	else
+		echo "If compilation fails, install gcc-x86 from depot"
+	fi
+	export PREFIX=/system
+else
+	if [ "$(id -u)" = 0 ]; then
+		echo "[WW] Do not run this script as root!"
+		if [ -n "${SUDO_USER}" ]; then
+			echo "[--] Downgrading credentials to ${SUDO_USER}"
+			exec sudo -u "${SUDO_USER}" sys/install.sh $*
+		fi
 	fi
 fi
 
