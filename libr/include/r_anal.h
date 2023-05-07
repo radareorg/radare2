@@ -62,6 +62,42 @@ typedef struct r_anal_range_t {
 	RBNode rb;
 } RAnalRange;
 
+#if 0
+typedef struct r_lib_plugin_description_t {
+	const char *name;
+	const char *author;
+	const char *license;
+} RLibpluginDescription;
+
+typedef bool (*RAnalPluginCheckCallback)(RAnal *anal);
+typedef bool (*RAnalPluginRunCallback)(RAnal *anal, const char *args);
+
+typedef struct r_anal_plugin_t {
+	RLibPluginDescription data;
+	RAnalPluginCheckCallback check;
+	const char *depends; // comma separated list of dependencies
+	RAnalPluginRunCallback run;
+} RAnalPlugin;
+
+static bool p_check(Ranal *anal) {
+	// if arch is x86 or arm, otherwise return false
+}
+
+static bool p_run(Ranal *anal, const char *args) {
+}
+
+RAnalPlugin p = {
+	.data = {
+		.name = "objc",
+		.author = "pancake",
+		.license = "MIT",
+	},
+	.check = p_check,
+	.depends = p_depends,
+	.run = p_run,
+};
+#endif
+
 enum {
 	R_ANAL_DATA_TYPE_NULL = 0,
 	R_ANAL_DATA_TYPE_UNKNOWN = 1,
