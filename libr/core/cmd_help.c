@@ -239,6 +239,7 @@ static RCoreHelpMessage help_msg_question_i = {
 	"?ip", " ([path])", "interactive hud mode to find files in given path",
 	NULL
 };
+
 static RCoreHelpMessage help_msg_question_e = {
 	"Usage: ?e[=bdgnpst] arg", "print/echo things", "",
 	"?e", "", "echo message with newline",

@@ -65,6 +65,18 @@ R_API void r_cons_cmd_help(RCoreHelpMessage help, bool use_color) {
 	int i, max_length = 0, padding = 0;
 	const char *usage_str = "Usage:";
 	const char *help_cmd = NULL, *help_args = NULL, *help_desc = NULL;
+	if (!pal_input_color) {
+		pal_input_color = "";
+	}
+	if (!pal_args_color) {
+		pal_args_color = "";
+	}
+	if (!pal_help_color) {
+		pal_help_color = "";
+	}
+	if (!pal_reset) {
+		pal_reset = Color_RESET;
+	}
 
 	// calculate padding for description text in advance
 	for (i = 0; help[i]; i += 3) {

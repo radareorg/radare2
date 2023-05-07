@@ -8124,6 +8124,7 @@ static int lenof(ut64 off, int two) {
 	return strlen (buf);
 }
 
+// R2_590 - TODO: move into util/print.c
 R_API void r_print_offset(RPrint *p, ut64 off, int invert, int delta, const char *label) {
 	int offdec = (p->flags & R_PRINT_FLAGS_ADDRDEC) != 0;
 	const int segbas = p->config->segbas;
@@ -8140,6 +8141,9 @@ R_API void r_print_offset(RPrint *p, ut64 off, int invert, int delta, const char
 		const char *inv = invert ? R_CONS_INVERT (true, true) : "";
 		if (p->flags & R_PRINT_FLAGS_RAINBOW) {
 			k = r_cons_rgb_str_off (rgbstr, sizeof (rgbstr), off);
+		}
+		if (!k) {
+			k = "";
 		}
 		if (offseg) {
 			ut32 s, a;
