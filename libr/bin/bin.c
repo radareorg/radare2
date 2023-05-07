@@ -306,6 +306,9 @@ R_API bool r_bin_open_io(RBin *bin, RBinFileOptions *opt) {
 	if (opt->loadaddr == UT64_MAX) {
 		opt->loadaddr = 0;
 	}
+	if (R_STR_ISEMPTY (fname)) {
+		fname = "";
+	}
 
 	// Create RBuffer from the opened file
 	// When debugging something, we want to open the backed file because
