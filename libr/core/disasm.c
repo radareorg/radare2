@@ -2986,17 +2986,14 @@ static void ds_print_offset(RDisasmState *ds) {
 	bool hasCustomColor = false;
 	// probably tooslow
 	RFlagItem *f = r_flag_get_at (core->flags, at, 1);
-	if (ds->show_color && f) { // ds->lastflag) {
-		const char *color = f->color;
+	if (ds->show_color && f && R_STR_ISNOTEMPTY (f->color)) {
 		if (ds->at >= f->offset && ds->at < f->offset + f->size) {
 		//	if (r_itv_inrange (f->itv, ds->at))
-			if (color && *color) {
-				char *k = r_cons_pal_parse (f->color, NULL);
-				if (k) {
-					r_cons_printf ("%s", k);
-					hasCustomColor = true;
-					free (k);
-				}
+			char *k = r_cons_pal_parse (f->color, NULL);
+			if (R_STR_ISNOTEMPTY (k)) {
+				r_cons_printf ("%s", k);
+				hasCustomColor = true;
+				free (k);
 			}
 		}
 	}
