@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2017-2022 - condret, pancake, alvaro */
+/* radare2 - LGPL - Copyright 2017-2023 - condret, pancake, alvaro */
 
 #include <r_io.h>
 
@@ -20,6 +20,7 @@ R_API RIODesc* r_io_desc_new(RIO* io, RIOPlugin* plugin, const char* uri, int pe
 		desc->perm = perm & (R_PERM_RWX | R_PERM_CREAT);
 		//because the uri-arg may live on the stack
 		desc->uri = strdup (uri);
+		// XXX used for io redirects desc->name = strdup (uri);
 	}
 	return desc;
 }
