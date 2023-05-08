@@ -4,11 +4,27 @@
 #include "disas-asm.h"
 #include "loongarch-private.h"
 
+struct loongarch_anal_opcode {
+	const ut32 match;
+	const ut32 mask; /* High 1 byte is main opcode and it must be 0xf. */
+	const char * const name;
+	const ut32 index;
+	const ut32 r_type; /*R_ANAL_OP_TYPE*/
+};
+
+#define HT_NUM 32
+struct loongarch_ASE {
+	const struct loongarch_anal_opcode *const opcode;
+	const struct loongarch_anal_opcode *la_opcode_ht[HT_NUM];
+	ut8 opc_htab_inited;
+};
+
 #define INSNLEN 4
 
 typedef struct plugin_data_t {
 	ut64 insn_offset;
 	ut8 insn_bytes[INSNLEN];
+	struct loongarch_ASE la_ases[8];
 } PluginData;
 
 //use bit[30:26] to cal hash index
@@ -82,21 +98,6 @@ static inline st64 sign_extend64(ut64 value, int index) {
 #define ES_H(x) "0xffff,"x",&"
 #define ES_W(x) "0xffffffff,"x",&"
 #define ES_WH(x) "32,0xffffffff00000000,"x",&,>>"
-
-struct loongarch_anal_opcode {
-	const ut32 match;
-	const ut32 mask; /* High 1 byte is main opcode and it must be 0xf. */
-	const char * const name;
-	const ut32 index;
-	const ut32 r_type; /*R_ANAL_OP_TYPE*/
-};
-
-#define HT_NUM 32
-struct loongarch_ASE {
-	const struct loongarch_anal_opcode *const opcode;
-	const struct loongarch_anal_opcode *la_opcode_ht[HT_NUM];
-	ut8 opc_htab_inited;
-};
 
 /*Maybe should be moved to another file*/
 typedef enum la_insn {
@@ -912,8 +913,7 @@ static struct loongarch_anal_opcode la_float_opcodes[] = {
 	{0}
 };
 
-// XXX should be const but its modified at runtime, could cause races
-static R_TH_LOCAL struct loongarch_ASE la_ases[] = {
+static const struct loongarch_ASE la_ases_initial[] = {
 	{la_lmm_opcodes, {0}, 0},
 	{la_privilege_opcodes, {0}, 0},
 	{la_jmp_opcodes, {0}, 0},
@@ -1218,7 +1218,8 @@ static bool decode(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
 	/* eprintf("opcode: 0x%x \n", opcode); */
 	// optype = 0;
 
-	for (ase = la_ases; ase->opcode; ase++) {
+	PluginData *pd = as->data;
+	for (ase = pd->la_ases; ase->opcode; ase++) {
 		if (!ase->opc_htab_inited) {
 			for (it=ase->opcode; it->match; it++) {
 				if (!ase->la_opcode_ht[LA_INSN_HASH(it->match)]) {
@@ -1389,7 +1390,13 @@ static bool init(RArchSession *s) {
 	}
 
 	s->data = R_NEW0 (PluginData);
-	return !!s->data;
+	PluginData *pd = s->data;
+	if (!pd) {
+		return false;
+	}
+
+	memcpy (pd->la_ases, la_ases_initial, sizeof (la_ases_initial));
+	return true;
 }
 
 static bool fini(RArchSession *s) {
