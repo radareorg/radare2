@@ -167,18 +167,20 @@ struct reference
   char input[1];		/* variable size buffer containing formula */
 };
 
+typedef struct plugin_data_t PluginData;
+
 /* print an error message, including current line and file */
-static void printerr(int error, const char *fmt, ...);
+static void printerr(PluginData *pd, int error, const char *fmt, ...);
 
 /* skip over spaces in string */
 static const char *delspc(const char *ptr);
 
-static int rd_expr(const char **p, char delimiter, int *valid, int level,
+static int rd_expr(PluginData *pd, const char **p, char delimiter, int *valid, int level,
 	     int print_errors);
-static int rd_label(const char **p, int *exists, struct label **previous, int level,
+static int rd_label(PluginData *pd, const char **p, int *exists, struct label **previous, int level,
 	      int print_errors);
-static int rd_character(const char **p, int *valid, int print_errors);
+static int rd_character(PluginData *pd, const char **p, int *valid, int print_errors);
 
-static int compute_ref(struct reference *ref, int allow_invalid);
+static int compute_ref(PluginData *pd, struct reference *ref, int allow_invalid);
 
 #endif
