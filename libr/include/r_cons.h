@@ -885,6 +885,7 @@ R_API int r_cons_printf(const char *format, ...) R_PRINTF_CHECK(1, 2);
 R_API void r_cons_printf_list(const char *format, va_list ap);
 R_API void r_cons_strcat(const char *str);
 R_API void r_cons_strcat_at(const char *str, int x, char y, int w, int h);
+// R2_590 deprecate strcat
 #define r_cons_print(x) r_cons_strcat (x)
 R_API void r_cons_println(const char* str);
 
