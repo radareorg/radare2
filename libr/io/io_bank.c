@@ -785,7 +785,6 @@ R_API bool r_io_bank_read_at(RIO *io, const ut32 bankid, ut64 addr, ut8 *buf, in
 			const int read_len = R_MIN (r_io_submap_to ((&fake_sm)),
 						     r_io_submap_to (sm)) - (addr + buf_off) + 1;
 			if (map->perm & R_PERM_RELOC && map->reloc_map) {
-				eprintf (" (%s) %p\n", map->name, map->reloc_map);
 				ret &= map->reloc_map->read (io, map, addr + buf_off, buf + buf_off, read_len);
 			} else {
 				const ut64 paddr = addr + buf_off - r_io_map_from (map) + map->delta;
