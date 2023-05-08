@@ -98,7 +98,7 @@ static RIODesc* __open(RIO* io, const char* pathname, int rw, int mode) {
 					return NULL;
 				}
 				null->offset = 0LL;
-				return r_io_desc_new (io, &r_io_plugin_null, pathname, rw, mode, null);
+				return r_io_desc_new (io, &r_io_plugin_null, pathname, rw & R_PERM_RWX, mode, null);
 			}
 		}
 	}

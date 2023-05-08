@@ -17,7 +17,7 @@ R_API RIODesc* r_io_desc_new(RIO* io, RIOPlugin* plugin, const char* uri, int pe
 		desc->io = io;
 		desc->plugin = plugin;
 		desc->data = data;
-		desc->perm = perm;
+		desc->perm = perm & (R_PERM_RWX | R_PERM_CREAT);
 		//because the uri-arg may live on the stack
 		desc->uri = strdup (uri);
 	}

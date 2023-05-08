@@ -30,7 +30,8 @@ static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 				}
 				mal->buf = obuf;
 				mal->size = osz;
-				return r_io_desc_new (io, &r_io_plugin_xalz, diskpath, R_PERM_RW | rw, mode, mal);
+				return r_io_desc_new (io, &r_io_plugin_xalz, diskpath,
+					R_PERM_RW | (rw & R_PERM_X), mode, mal);
 			}
 			free (data);
 		}
