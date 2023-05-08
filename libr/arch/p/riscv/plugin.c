@@ -1004,7 +1004,7 @@ static bool _init(RArchSession *as) {
 	}
 
 	as->data = R_NEW0 (PluginData);
-	return true;
+	return !!as->data;
 }
 
 static bool _fini(RArchSession *as) {
