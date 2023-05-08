@@ -2460,22 +2460,69 @@ static void config_visual_hit(RCore *core, const char *name, int editor) {
 static void show_config_options(RCore *core, const char *opt) {
 	RConfigNode *node = r_config_node_get (core->config, opt);
 	if (node && !r_list_empty (node->options)) {
-		int h, w = r_cons_get_size (&h);
+		int w = 25; // r_cons_get_size (&h);
 		const char *item;
 		RListIter *iter;
-		RStrBuf *sb = r_strbuf_new (" Options: ");
+		RStrBuf *sb = r_strbuf_new (" Options:\n");
+		int linelen = 0;
 		r_list_foreach (node->options, iter, item) {
-			r_strbuf_appendf (sb, "%s%s", iter->p? ", ": "", item);
+			r_strbuf_appendf (sb, " %s", item);
+			linelen += strlen (item);
+			if (linelen > w) {
+				r_strbuf_appendf (sb, "\n");
+				linelen = 0;
+			}
+#if 0
 			if (r_strbuf_length (sb) + 5 >= w) {
 				char *s = r_strbuf_drain (sb);
 				r_cons_println (s);
 				free (s);
 				sb = r_strbuf_new ("");
 			}
+#endif
 		}
 		char *s = r_strbuf_drain (sb);
 		r_cons_println (s);
 		free (s);
+	}
+}
+
+// R2_590 - move to rcons
+static void r_cons_print_at(char *s, int x, int y, int w, int h) {
+	if (w < 0) {
+		w = 0;
+	}
+	if (h < 0) {
+		h = 0;
+	}
+	while (s) {
+		int pos = 0;
+		int ochar = s[pos];
+		char *n = strchr (s, '\n');
+		if (n) {
+			*n = 0;
+			if (w && r_str_ansi_len (s) > w) {
+				const char *p = r_str_ansi_chrn (s, w);
+				if (p) {
+					pos = p - s;
+					ochar = s[pos];
+					s[pos] = 0;
+				}
+			}
+		}
+		r_cons_gotoxy (x, y);
+		r_cons_printf ("%s", s);
+		if (n) {
+			s[pos] = ochar;
+			*n = '\n';
+			s = n + 1;
+		} else {
+			break;
+		}
+		if (h && y > h) {
+			break;
+		}
+		y++;
 	}
 }
 
@@ -2493,14 +2540,18 @@ R_API void r_core_visual_config(RCore *core) {
 	option = 0;
 	for (;;) {
 		r_cons_clear00 ();
-		r_cons_get_size (&delta);
+		int h, w = r_cons_get_size (&h);
+		delta = h;
 		delta /= 4;
 
 		switch (menu) {
 		case 0: // flag space
-			r_cons_printf ("[EvalSpace]\n\n");
+			r_cons_printf ("[hjkl][Eq] Configuration:\n\n.----------------.\n");
 			hit = j = i = 0;
 			r_list_foreach (core->config->nodes, iter, bt) {
+				if (j > 20) {
+					break;
+				}
 				if (option == i) {
 					fs = bt->name;
 				}
@@ -2517,8 +2568,22 @@ R_API void r_core_visual_config(RCore *core) {
 					if (option == i) {
 						hit = 1;
 					}
-					if ((i >=option-delta) && ((i < option+delta)||((option<delta)&&(i < (delta<<1))))) {
-						r_cons_printf (" %c  %s\n", (option == i)?'>':' ', old);
+					if ((i >= option-delta) && ((i < option+delta) || ((option < delta) && (i < (delta << 1))))) {
+						char *arrow = NULL;
+						const char *arrowstr = "";
+						if (option == i) {
+							arrow = strdup ("------------|");
+							size_t n = strlen (old);
+							arrowstr = arrow + n;
+							arrow[n] = ' ';
+							arrow[n+1] = ']';
+						} else {
+							arrow = strdup ("            |");
+							size_t n = strlen (old);
+							arrowstr = arrow + n;
+						}
+						r_cons_printf ("%s%s%s\n", (option == i)?"|--[ ":"|    ", old, arrowstr);
+						free (arrow);
 						j++;
 					}
 					i++;
@@ -2528,10 +2593,11 @@ R_API void r_core_visual_config(RCore *core) {
 				option--;
 				continue;
 			}
-			r_cons_printf ("\n Sel: %s \n\n", fs);
+			r_cons_printf ("`----------------'\n");
+			// r_cons_printf ("\n Sel: %s \n\n", fs);
 			break;
 		case 1: // flag selection
-			r_cons_printf ("[EvalSpace < Variables: %s]\n\n", fs);
+			r_cons_printf ("[hjkl] [Eq] Configuration: %s\n\n.-----------------------------------.\n", fs);
 			hit = 0;
 			j = i = 0;
 			// TODO: cut -d '.' -f 1 | sort | uniq !!!
@@ -2543,29 +2609,68 @@ R_API void r_core_visual_config(RCore *core) {
 						hit = 1;
 					}
 					if ((i>=option-delta) && ((i < option+delta)||((option<delta)&&(i < (delta<<1))))) {
+						char *msg = r_str_newf ("%s = %s", bt->name, bt->value);
+						char *arrow = NULL;
+						const char *arrowstr = "";
+						if (option == i) {
+							arrow = strdup ("-------------------------------|");
+							size_t n = strlen (msg);
+							arrowstr = arrow + n;
+							arrow[n] = ' ';
+							arrow[n+1] = ']';
+						} else {
+							arrow = strdup ("                               |");
+							size_t n = strlen (msg);
+							arrowstr = arrow + n;
+						}
 						// TODO: Better align
-						r_cons_printf (" %c  %s = %s\n", (option==i)?'>':' ', bt->name, bt->value);
+						r_cons_printf ("|%s %s%s\n", (option==i)?"--[":"   ", msg, arrowstr);
+						R_FREE (arrow);
 						j++;
 					}
 					i++;
 				}
 			}
+			r_cons_printf ("`-----------------------------------'\n");
 			if (!hit && j > 0) {
 				option = i - 1;
 				continue;
 			}
-			if (fs2) {
-				// TODO: Break long lines.
-				r_cons_printf ("\n Selected: %s (%s)\n", fs2, desc);
-				show_config_options (core, fs2);
-				r_cons_newline ();
-			}
 		}
 
-		if (fs && !strncmp (fs, "asm.", 4)) {
-			r_core_cmd (core, "pd $r", 0);
-		}
 		r_cons_visual_flush ();
+			if (menu == 1 && fs2) {
+				// TODO: Break long lines.
+				r_cons_gotoxy (0, 0);
+				r_cons_printf ("[hjkq] %s", desc);
+				r_cons_gotoxy (0, (h / 3) * 2);
+				show_config_options (core, fs2);
+				r_cons_flush ();
+			}
+		if (menu != 0 && fs && r_str_startswith (fs, "asm.")) {
+			char *s = r_core_cmd_str (core, "pd $r");
+			r_cons_print_at (s, 38, 3, w - 36, h - 1);
+			free (s);
+			r_cons_flush ();
+		}
+		if (menu == 0) {
+			int y = 4;
+			r_list_foreach (core->config->nodes, iter, bt) {
+				if (!r_str_ccmp (bt->name, fs, '.')) {
+					if (y > 20) {
+						break;
+					}
+					r_cons_gotoxy (21, y);
+					// TODO: Better align
+					r_cons_printf ("%s = %s", bt->name, bt->value);
+					y++;
+				}
+			}
+			r_cons_gotoxy (21, y);
+			r_cons_printf ("...");
+			r_cons_gotoxy (0, 0);
+			r_cons_flush ();
+		}
 		ch = r_cons_readchar ();
 		if (ch == 4 || ch == -1) {
 			return;
@@ -2573,6 +2678,12 @@ R_API void r_core_visual_config(RCore *core) {
 		ch = r_cons_arrow_to_hjkl (ch); // get ESC+char, return 'hjkl' char
 
 		switch (ch) {
+		case 'd':
+			r_core_visual_define (core, "", 0);
+			break;
+		case '!':
+			r_core_cmd0 (core, "ed");
+			break;
 		case 'j': option++; break;
 		case 'k': option = (option < 1)? 0: option - 1; break;
 		case 'J': option += 4; break;
@@ -2605,8 +2716,11 @@ R_API void r_core_visual_config(RCore *core) {
 		case '-':
 			fs2 ? config_visual_hit_i (core, fs2, -1) : 0;
 			continue;
-		case 'l':
 		case 'E': // edit value
+			// swith to visual theme
+			r_core_visual_colors (core);
+			break;
+		case 'l':
 		case 'e': // edit value
 		case ' ':
 		case '\r':
@@ -3618,7 +3732,7 @@ R_API void r_core_visual_anal(RCore *core, const char *input) {
 			}
 			break;
 		case 'd':
-			r_core_visual_define(core, "", 0);
+			r_core_visual_define (core, "", 0);
 			break;
 		case '-':
 			switch (level) {
@@ -4446,8 +4560,8 @@ R_API void r_core_visual_colors(RCore *core) {
 	int ch, opt = 0, oopt = -1;
 	char *rgb_xxx_fmt = "rgb:%02x%02x%02x";
 	const char *k;
+	bool show_help = false;
 	RColor rcolor, zcolor = { 0 };
-
 	r_cons_show_cursor (false);
 	rcolor = r_cons_pal_get_i (opt);
 	for (;;) {
@@ -4470,29 +4584,40 @@ R_API void r_core_visual_colors(RCore *core) {
 		char *esc = strchr (cstr + 1, '\x1b');
 		char *curtheme = r_core_get_theme (core);
 
-		r_cons_printf ("# Use '.' to randomize current color and ':' to randomize palette\n");
-		r_cons_printf ("# Press '"Color_RED"rR"Color_GREEN"gG"Color_BLUE"bB"Color_RESET
-			"' or '"Color_BGRED"eE"Color_BGGREEN"fF"Color_BGBLUE"vV"Color_RESET
-			"' to change foreground/background color\n");
-		r_cons_printf ("# Export colorscheme with command 'ec* > filename'\n");
-		r_cons_printf ("# Preview command: '%s' - Press 'c' to change it\n", preview_cmd);
-		r_cons_printf ("# Theme (eco): %s  - Use 'hl' or left/right arrow keys to change colorscheme\n", r_str_get_fail (curtheme, "default"));
-		r_cons_printf ("# Item (%s)  - Use 'jk' or up/down arrow keys to change element\n", k);
-		r_cons_printf ("# ec %s %s # %d (\\x1b%.*s)",
-			k, color, atoi (cstr+7), esc ? (int)(esc - cstr - 1) : (int)strlen (cstr + 1), cstr+1);
+		if (show_help) {
+			// r_cons_printf (".-[q hjkl e] Color theme editor ---------------------------------------------.\n");
+			r_cons_printf (".-[q]-[hjkl] Color theme editor ---------------------------------------------.\n");
+			r_cons_printf ("| Use '.' to randomize current color and '@' to randomize palette            |\n");
+			r_cons_printf ("| Press '"Color_RED"rR"Color_GREEN"gG"Color_BLUE"bB"Color_RESET
+				"' or '"Color_BGRED"eE"Color_BGGREEN"fF"Color_BGBLUE"vV"Color_RESET
+				"' to change foreground/background color           |\n");
+			r_cons_printf ("| Export colorscheme with command 'ec* > filename'                           |\n");
+			r_cons_printf ("| Preview command: '%s' - Press 'c' to change it.                         |\n", preview_cmd);
+			r_cons_printf ("`----------------------------------------------------------------------------'\n");
+		} else {
+			r_cons_printf ("--[?]-[hjkl] Color theme editor [rRgGbB]----- ---  --   -\n\n");
+		}
+		r_cons_printf ("  eco %s # left/right keys to change colors theme\n", r_str_get_fail (curtheme, "default"));
+		/// r_cons_printf ("  Item (%s)  - Use 'jk' or up/down arrow keys to change element\n", k);
+		r_cons_printf ("  ec %s %s # %d (\\x1b%.*s)\n",
+			k, color, atoi (cstr + 7), esc ? (int)(esc - cstr - 1) : (int)strlen (cstr + 1), cstr+1);
 		if (esc) {
 			r_cons_printf (" (\\x1b%s)", esc + 1);
 		}
-		r_cons_newline ();
 
 		if (memcmp (&rcolor, &zcolor, sizeof (rcolor)) != 0) {
 			r_core_cmdf (core, "ec %s %s", k, color);
 		}
 		char * res = r_core_cmd_str (core, preview_cmd);
 		int h, w = r_cons_get_size (&h);
-		char *body = r_str_ansi_crop (res, 0, 0, w, h - 8);
-		if (body) {
-			r_cons_printf ("\n%s", body);
+		if (w > 80) {
+			char *body = r_str_ansi_crop (res, 0, 0, w - 10, h - 12);
+			if (body) {
+				r_cons_printf ("\n%s", body);
+				free (body);
+			}
+		} else {
+			r_cons_printf ("\n%s", res);
 		}
 		r_cons_flush ();
 		ch = r_cons_readchar ();
@@ -4510,9 +4635,14 @@ R_API void r_core_visual_colors(RCore *core) {
 		case 'Q':
 		case 'q':
 			free (res);
-			free (body);
 			free (color);
 			return;
+		case 'd':
+			r_core_visual_define (core, "", 0);
+			break;
+		case '!':
+			r_core_cmd0 (core, "ed");
+			break;
 		case 'k':
 			opt--;
 			break;
@@ -4532,6 +4662,20 @@ R_API void r_core_visual_colors(RCore *core) {
 			break;
 		case 'J':
 			opt = r_cons_pal_len () - 1;
+			break;
+		case '@':
+			r_core_cmd_call (core, "ecr");
+			break;
+		case 'p':
+		case 'P':
+			if (r_str_startswith (preview_cmd, "pd")) {
+				strcpy (preview_cmd, "px $r*16");
+			} else {
+				strcpy (preview_cmd, "pd $r");
+			}
+			break;
+		case '?':
+			show_help = !show_help;
 			break;
 		case ':':
 			r_core_visual_prompt_input (core);
@@ -4561,7 +4705,6 @@ R_API void r_core_visual_colors(RCore *core) {
 			rcolor = r_cons_pal_get_i (opt);
 			oopt = opt;
 		}
-		free (body);
 		free (res);
 	}
 }
