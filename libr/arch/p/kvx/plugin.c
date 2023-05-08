@@ -227,9 +227,7 @@ static const char *kvx_reg_profile = ""
  * line for readability. The function kvx_next_insn does all the magic
  * of figuring out if the next instruction is already decoded in this
  * bundle or if it needs to decode a new bundle.
- * was:
- *    static R_TH_LOCAL bundle_t bundle;
- * now is allocated per RArchSession in init/fini
+ * The bundle_t struct is now allocated per RArchSession in init/fini.
  */
 
 static bool kvx_init(RArchSession *s) {
