@@ -9,8 +9,10 @@
 #define RISCVARGN(x) ((x)->arg[(x)->num++])
 #define RISCVPRINTF(x,...) snprintf (RISCVARGN (args), RISCVARGSIZE, x, __VA_ARGS__)
 
-static R_TH_LOCAL bool init0 = false;
-static R_TH_LOCAL const struct riscv_opcode *riscv_hash[OP_MASK_OP + 1] = {0};
+typedef struct plugin_data_t {
+	bool init0;
+	const struct riscv_opcode *riscv_hash[OP_MASK_OP + 1];
+} PluginData;
 
 typedef struct riscv_args {
 	int num;
@@ -272,23 +274,23 @@ static const char* arg_n(riscv_args_t* args, int n) {
 	return args->arg[n];
 }
 
-static struct riscv_opcode *riscv_get_opcode(insn_t word) {
+static struct riscv_opcode *riscv_get_opcode(PluginData *pd, insn_t word) {
 	struct riscv_opcode *op = NULL;
 
 #define OP_HASH_IDX(i) ((i) & (riscv_insn_length (i) == 2 ? 3 : OP_MASK_OP))
-	if (!init0) {
+	if (!pd->init0) {
 		size_t i;
 		for (i = 0; i < OP_MASK_OP + 1; i++) {
-			riscv_hash[i] = 0;
+			pd->riscv_hash[i] = 0;
 		}
 		for (op = riscv_opcodes; op <= &riscv_opcodes[NUMOPCODES - 1]; op++) {
-			if (!riscv_hash[OP_HASH_IDX (op->match)]) {
-				riscv_hash[OP_HASH_IDX (op->match)] = op;
+			if (!pd->riscv_hash[OP_HASH_IDX (op->match)]) {
+				pd->riscv_hash[OP_HASH_IDX (op->match)] = op;
 			}
 		}
-		init0 = true;
+		pd->init0 = true;
 	}
-	return (struct riscv_opcode *)riscv_hash[OP_HASH_IDX (word)];
+	return (struct riscv_opcode *) pd->riscv_hash[OP_HASH_IDX (word)];
 }
 
 static char *riscv_disassemble(RArchSession *s, ut64 addr, const ut8 *buf, int len) {//insn_t word, int xlen, int len) {
@@ -303,7 +305,8 @@ static char *riscv_disassemble(RArchSession *s, ut64 addr, const ut8 *buf, int l
 		return NULL;
 	}
 	const bool no_alias = false;
-	const struct riscv_opcode *op = riscv_get_opcode (word);
+	PluginData *pd = s->data;
+	const struct riscv_opcode *op = riscv_get_opcode (pd, word);
 	if (!op) {
 		return NULL;
 	}
@@ -993,6 +996,23 @@ static int info(RArchSession *s, ut32 q) {
 	return 0;
 }
 
+static bool _init(RArchSession *as) {
+	r_return_val_if_fail (as, false);
+	if (as->data) {
+		R_LOG_WARN ("Already initialized");
+		return false;
+	}
+
+	as->data = R_NEW0 (PluginData);
+	return true;
+}
+
+static bool _fini(RArchSession *as) {
+	r_return_val_if_fail (as, false);
+	R_FREE (as->data);
+	return true;
+}
+
 RArchPlugin r_arch_plugin_riscv = {
 	.name = "riscv",
 	.desc = "RISC-V analysis plugin",
@@ -1001,10 +1021,12 @@ RArchPlugin r_arch_plugin_riscv = {
 	.arch = "riscv",
 	.endian = R_SYS_ENDIAN_LITTLE | R_SYS_ENDIAN_BIG,
 	.bits = R_SYS_BITS_PACK2 (32, 64),
-	.encode = &riscv_encode,
-	.decode = &riscv_decode,
-	.info = &info,
-	.regs = &get_reg_profile,
+	.encode = riscv_encode,
+	.decode = riscv_decode,
+	.info = info,
+	.regs = get_reg_profile,
+	.init = _init,
+	.fini = _fini,
 };
 
 #ifndef R2_PLUGIN_INCORE
