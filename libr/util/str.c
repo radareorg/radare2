@@ -733,8 +733,9 @@ R_API char *r_str_newf(const char *fmt, ...) {
 
 	va_start (ap, fmt);
 	if (!strchr (fmt, '%')) {
+		char *p = strdup (fmt);
 		va_end (ap);
-		return strdup (fmt);
+		return p;
 	}
 	va_copy (ap2, ap);
 	int ret = vsnprintf (NULL, 0, fmt, ap2);
