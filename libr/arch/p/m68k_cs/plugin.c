@@ -894,6 +894,7 @@ static bool init(RArchSession *s) {
 		R_LOG_WARN ("Already initialized");
 		return false;
 	}
+
 	s->data = R_NEW0 (PluginData);
 	if (!s->data) {
 		R_LOG_ERROR ("Could not allocate memory for m68k_cs plugin");
