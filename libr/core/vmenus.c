@@ -1503,9 +1503,7 @@ static void anal_class_print(RAnal *anal, const char *class_name) {
 		}
 		r_vector_free (bases);
 	}
-
 	r_cons_print ("\n");
-
 
 	if (vtables) {
 		RAnalVTable *vtable;
@@ -2469,7 +2467,7 @@ static void show_config_options(RCore *core, const char *opt) {
 			r_strbuf_appendf (sb, " %s", item);
 			linelen += strlen (item);
 			if (linelen > w) {
-				r_strbuf_appendf (sb, "\n");
+				r_strbuf_append (sb, "\n");
 				linelen = 0;
 			}
 #if 0
@@ -2840,7 +2838,7 @@ R_API void r_core_visual_mounts(RCore *core) {
 						}
 						i++;
 					}
-					r_cons_printf ("\n");
+					r_cons_print ("\n");
 					r_list_free (list);
 					list = NULL;
 				} else {
