@@ -21,7 +21,8 @@ static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 		mal->buf = (ut8*)r_socket_http_get (pathname, &code, &rlen);
 		if (mal->buf && rlen > 0) {
 			mal->size = rlen;
-			return r_io_desc_new (io, &r_io_plugin_malloc, pathname, R_PERM_RW | rw, mode, mal);
+			return r_io_desc_new (io, &r_io_plugin_malloc, pathname,
+				R_PERM_RW | (rw & R_PERM_X), mode, mal);
 		}
 		R_LOG_ERROR ("No HTTP response");
 		free (mal);

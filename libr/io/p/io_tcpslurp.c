@@ -73,7 +73,7 @@ static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 		mal->buf = tcpme (pathname, &code, &rlen);
 		if (mal->buf && rlen > 0) {
 			mal->size = rlen;
-			return r_io_desc_new (io, &r_io_plugin_tcpslurp, pathname, rw, mode, mal);
+			return r_io_desc_new (io, &r_io_plugin_tcpslurp, pathname, rw & R_PERM_RWX, mode, mal);
 		}
 		free (mal);
 	}
