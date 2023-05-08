@@ -7,7 +7,7 @@
 #define ABS(x) (((x)<0)?-(x):(x))
 #define POND(x,y) (ABS((x)) * (y))
 
-static R_TH_LOCAL void (*renderer)(PrintfCallback cb_printf, const ut8*, const ut8 *);
+typedef void (*Renderer)(PrintfCallback cb_printf, const ut8*, const ut8 *);
 
 static int reduce8(int r, int g, int b) {
 	int colors_len = 8;
@@ -107,7 +107,7 @@ static void render_ascii(PrintfCallback cb_printf, const ut8 *c, const ut8 *d) {
 	cb_printf ("%c", pal[idx]);
 }
 
-static void dorender(PrintfCallback cb_printf, const ut8 *buf, int len, int w, int h) {
+static void do_render(Renderer renderer, PrintfCallback cb_printf, const ut8 *buf, int len, int w, int h) {
 	const ut8 *c, *d;
 	int x, y;
 	for (y = 0; y < h; y += 2) {
@@ -126,30 +126,25 @@ static void dorender(PrintfCallback cb_printf, const ut8 *buf, int len, int w, i
 	}
 }
 
-static void selectrenderer(int mode) {
+static Renderer select_renderer(int mode) {
 	switch (mode) {
 	case 'a':
-		renderer = render_ascii;
-		break;
+		return render_ascii;
 	case 'A':
-		renderer = render_ansi;
-		break;
+		return render_ansi;
 	case 'g':
-		renderer = render_greyscale;
-		break;
+		return render_greyscale;
 	case '2':
-		renderer = render_256;
-		break;
+		return render_256;
 	default:
-		renderer = render_rgb;
-		break;
+		return render_rgb;
 	}
 }
 
 R_API void r_cons_image(const ut8 *buf, int bufsz, int width, int mode) {
 	int height = (bufsz / width) / 3;
-	selectrenderer (mode);
-	dorender (r_cons_printf, buf, bufsz, width, height);
+	Renderer renderer = select_renderer (mode);
+	do_render (renderer, r_cons_printf, buf, bufsz, width, height);
 }
 
 #if 0
@@ -164,9 +159,12 @@ main(int argc, const char **argv) {
 	}
 	w = atoi (argv[1]);
 	h = atoi (argv[2]);
+	Renderer renderer;
 	if (argc>3) {
-		selectrenderer (argv[3]);
-	} else renderer = render_rgb;
+		renderer = select_renderer (argv[3]);
+	} else {
+		renderer = render_rgb
+	};
 	if (w<1 || h<1) {
 		printf ("Invalid arguments\n");
 		return 1;
@@ -180,7 +178,7 @@ main(int argc, const char **argv) {
 		readsz += n;
 	} while (readsz < imgsz);
 
-	dorender (buf, readsz, w, h);
+	do_render (render, buf, readsz, w, h);
 
 	free (buf);
 	return 0;
