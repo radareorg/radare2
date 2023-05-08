@@ -104,6 +104,11 @@ static int get_capstone_mode (RArchSession *as) {
 #define CSINC_MODE get_capstone_mode(as)
 #include "../capstone.inc"
 
+typedef struct plugin_data_t {
+	CapstonePluginData cpd;
+	RRegItem reg;
+} PluginData;
+
 #define OPERAND(x) insn->detail->m68k.operands[x]
 #define REG(x) cs_reg_name (*handle, insn->detail->m68k.operands[x].reg)
 #define IMM(x) insn->detail->m68k.operands[x].imm
@@ -218,29 +223,28 @@ static int parse_reg_name(RRegItem *reg, csh handle, cs_insn *insn, int reg_num)
 	return 0;
 }
 
-static void op_fillval(RAnalOp *op, csh handle, cs_insn *insn) {
-	static R_TH_LOCAL RRegItem reg;
+static void op_fillval(PluginData *pd, RAnalOp *op, csh handle, cs_insn *insn) {
 	RAnalValue *src, *dst;
 	switch (op->type & R_ANAL_OP_TYPE_MASK) {
 	case R_ANAL_OP_TYPE_MOV:
-		ZERO_FILL (reg);
+		ZERO_FILL (pd->reg);
 		if (OPERAND(1).type == M68K_OP_MEM) {
 			src = r_vector_push (&op->srcs, NULL);
-			src->reg = &reg;
+			src->reg = &pd->reg;
 			parse_reg_name (src->reg, handle, insn, 1);
 			src->delta = OPERAND(0).mem.disp;
 		} else if (OPERAND(0).type == M68K_OP_MEM) {
 			dst = r_vector_push (&op->dsts, NULL);
-			dst->reg = &reg;
+			dst->reg = &pd->reg;
 			parse_reg_name (dst->reg, handle, insn, 0);
 			dst->delta = OPERAND(1).mem.disp;
 		}
 		break;
 	case R_ANAL_OP_TYPE_LEA:
-		ZERO_FILL (reg);
+		ZERO_FILL (pd->reg);
 		if (OPERAND(1).type == M68K_OP_MEM) {
 			dst = r_vector_push (&op->dsts, NULL);
-			dst->reg = &reg;
+			dst->reg = &pd->reg;
 			parse_reg_name (dst->reg, handle, insn, 1);
 			dst->delta = OPERAND(1).mem.disp;
 		}
@@ -790,7 +794,8 @@ static bool decode(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
 		break;
 	}
 	if (mask & R_ARCH_OP_MASK_VAL) {
-		op_fillval (op, handle, insn);
+		PluginData *pd = as->data;
+		op_fillval (pd, op, handle, insn);
 	}
 beach:
 	cs_free (insn, on);
@@ -879,7 +884,7 @@ static int archinfo(RArchSession *as, ut32 q) {
 }
 
 static char *mnemonics(RArchSession *s, int id, bool json) {
-	CapstonePluginData *cpd = (CapstonePluginData*)s->data;
+	CapstonePluginData *cpd = s->data;
 	return r_arch_cs_mnemonics (s, cpd->cs_handle, id, json);
 }
 
@@ -889,9 +894,14 @@ static bool init(RArchSession *s) {
 		R_LOG_WARN ("Already initialized");
 		return false;
 	}
-	s->data = R_NEW0 (CapstonePluginData);
-	CapstonePluginData *cpd = (CapstonePluginData*)s->data;
-	if (!r_arch_cs_init (s, &cpd->cs_handle)) {
+	s->data = R_NEW0 (PluginData);
+	if (!s->data) {
+		R_LOG_ERROR ("Could not allocate memory for m68k_cs plugin");
+		return false;
+	}
+
+	PluginData *pd = s->data;
+	if (!r_arch_cs_init (s, &pd->cpd.cs_handle)) {
 		R_LOG_ERROR ("Cannot initialize capstone");
 		R_FREE (s->data);
 		return false;
@@ -901,7 +911,7 @@ static bool init(RArchSession *s) {
 
 static bool fini(RArchSession *s) {
 	r_return_val_if_fail (s, false);
-	CapstonePluginData *cpd = (CapstonePluginData*)s->data;
+	CapstonePluginData *cpd = s->data;
 	cs_close (&cpd->cs_handle);
 	R_FREE (s->data);
 	return true;
