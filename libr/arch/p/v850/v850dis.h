@@ -87,7 +87,7 @@ enum {
 extern const v850_opcode v850_opcodes[];
 extern const size_t v850_num_opcodes;
 
-
+typedef struct v850_state_t V850State;
 struct v850_operand {
 	/* The number of bits in the operand. when -1, those bits are not contiguous */
 	int bits;
@@ -112,7 +112,7 @@ struct v850_operand {
 	   string (the operand will be inserted in any case).  If the
 	   operand value is legal, *ERRMSG will be unchanged (most operands
 	   can accept any value).  */
-	ut64 (* insert) (ut64 instruction, long op, const char ** errmsg);
+	ut64 (* insert) (V850State *state, ut64 instruction, long op, const char ** errmsg);
 
 	/* Extraction function.  This is used by the disassembler.  To
 	   extract this operand type from an instruction, check this field.
