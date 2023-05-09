@@ -373,7 +373,8 @@ static bool riscv_decode(RArchSession *s, RAnalOp *op, RArchDecodeMask mask) {
 #endif
 	}
 
-	struct riscv_opcode *o = get_opcode (word);
+	PluginData *pd = s->data;
+	struct riscv_opcode *o = riscv_get_opcode (pd, word);
 	if (word == UT64_MAX) {
 		op->type = R_ANAL_OP_TYPE_ILL;
 		return false;
