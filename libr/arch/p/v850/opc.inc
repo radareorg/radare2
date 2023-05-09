@@ -6,10 +6,13 @@
 #include "mybfd.h"
 
 // TODO: delete this global
-static R_TH_LOCAL unsigned long G_pos;
+
+typedef struct v850_state_t {
+	unsigned long pos;
+} V850State;
 
 #define V850NP_EXTRACT(n) ut64 extract_##n(ut64 insn, bool *invalid)
-#define V850NP_INSERT(n) ut64 insert_##n(ut64 insn, long value, const char ** errmsg)
+#define V850NP_INSERT(n) ut64 insert_##n(V850State *state, ut64 insn, long value, const char ** errmsg)
 
 /* Regular opcodes.  */
 #define OP(x) ((x & 0x3f) << 5)
@@ -306,7 +309,7 @@ static V850NP_INSERT(POS) {
 	if (value > 0x1f || value < 0) {
 		* errmsg = pos_out_of_range;
 	}
-	G_pos = (unsigned long) value;
+	state->pos = (unsigned long) value;
 	return insn; /* Not an oparaton until WIDTH.  */
 }
 
@@ -325,10 +328,10 @@ static V850NP_INSERT(WIDTH) {
 	unsigned long msb_expand, lsb_expand;
 
 	ut64 width = value;
-	msb = (unsigned long)width + G_pos - 1;
-	lsb = G_pos;
+	msb = (unsigned long)width + state->pos - 1;
+	lsb = state->pos;
 	opc = 0;
-	G_pos = 0;
+	state->pos = 0;
 
 	if (width > 0x20 || width < 0)
 		* errmsg = width_out_of_range;
