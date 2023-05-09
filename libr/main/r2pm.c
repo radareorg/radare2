@@ -81,13 +81,11 @@ static int git_pull(const char *dir, bool reset) {
 }
 
 static int git_clone(const char *dir, const char *url) {
-	char *git;
 	if (strchr (dir, ' ')) {
 		R_LOG_ERROR ("Directory '%s' cannot contain spaces", dir);
 		return -1;
 	}
-
-	git = r_file_path ("git");
+	char *git = r_file_path ("git");
 #if R2_590
 	if (!git) {
 #else
@@ -1041,6 +1039,11 @@ R_API int r_main_r2pm(int argc, const char **argv) {
 		havetoflush = true;
 		r_cons_new ();
 	}
+#if R2__UNIX__
+	while (!getcwd (NULL,0)) {
+		chdir ("..");
+	}
+#endif
 	int level = r_sys_getenv_asint ("R2_LOG_LEVEL");
 	if (level > 0) {
 		r_log_set_level (level);
