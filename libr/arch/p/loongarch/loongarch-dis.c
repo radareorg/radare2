@@ -6,7 +6,21 @@
 
 #define INSNLEN 4
 
-static R_TH_LOCAL RStrBuf *args_buf = NULL;
+typedef struct print_state_t {
+	RStrBuf *args_buf;
+	bool need_comma;
+} PrintState;
+
+static void print_state_init(PrintState *state) {
+	state->args_buf = NULL;
+	state->need_comma = false;
+}
+
+static void print_state_fini(PrintState *state) {
+	if (state->args_buf) {
+		r_strbuf_free (state->args_buf);
+	}
+}
 
 static const char * const *loongarch_r_disname = loongarch_r_lp64_name;
 static const char * const *loongarch_f_disname = loongarch_f_normal_name;
@@ -50,57 +64,62 @@ static const struct loongarch_opcode * get_loongarch_opcode_by_binfmt (insn_t in
 	return NULL;
 }
 
-static R_TH_LOCAL bool need_comma = false;
+typedef struct loop_context_t {
+	insn_t insn;
+	PrintState *state;
+} LoopContext;
 
 static int32_t dis_one_arg(char esc1, char esc2, const char *bit_field, const char *arg ATTRIBUTE_UNUSED, void *context) {
 	struct disassemble_info *info = context;
-	insn_t insn = *(insn_t *) info->private_data;
+	LoopContext *ctx = info->private_data;
+	insn_t insn = ctx->insn;
+	PrintState *state = ctx->state;
 	int32_t imm, u_imm, abs_imm;
 	if (esc1) {
-		if (need_comma) {
-			r_strbuf_append (args_buf, ",");
+		if (state->need_comma) {
+			r_strbuf_append (state->args_buf, ",");
 		}
-		need_comma = true;
+		state->need_comma = true;
 		imm = loongarch_decode_imm (bit_field, insn, 1);
 		u_imm = loongarch_decode_imm (bit_field, insn, 0);
 	}
 
 	switch (esc1) {
 	case 'r':
-		r_strbuf_appendf (args_buf, " %s", loongarch_r_disname[u_imm]);
+		r_strbuf_appendf (state->args_buf, " %s", loongarch_r_disname[u_imm]);
 		break;
 	case 'f':
-		r_strbuf_appendf (args_buf, " %s", loongarch_f_disname[u_imm]);
+		r_strbuf_appendf (state->args_buf, " %s", loongarch_f_disname[u_imm]);
 		break;
 	case 'c':
 
 		switch (esc2) {
 			case 'r':
-				r_strbuf_appendf (args_buf, " %s", loongarch_cr_disname[u_imm]);
+				r_strbuf_appendf (state->args_buf, " %s", loongarch_cr_disname[u_imm]);
 				break;
 			default:
-				r_strbuf_appendf (args_buf, " %s", loongarch_c_disname[u_imm]);
+				r_strbuf_appendf (state->args_buf, " %s", loongarch_c_disname[u_imm]);
 		}
 		break;
 	case 'v':
-		r_strbuf_appendf (args_buf, " %s", loongarch_v_disname[u_imm]);
+		r_strbuf_appendf (state->args_buf, " %s", loongarch_v_disname[u_imm]);
 		break;
 	case 'x':
-		r_strbuf_appendf (args_buf, " %s", loongarch_x_disname[u_imm]);
+		r_strbuf_appendf (state->args_buf, " %s", loongarch_x_disname[u_imm]);
 		break;
 	case 'u':
-		r_strbuf_appendf (args_buf, " 0x%x", u_imm);
+		r_strbuf_appendf (state->args_buf, " 0x%x", u_imm);
 		break;
 	case 's':
 		if (imm == 0) {
-			r_strbuf_appendf (args_buf, " %d", imm);
+			r_strbuf_appendf (state->args_buf, " %d", imm);
 		} else {
 			abs_imm = abs (imm);
-			r_strbuf_append (args_buf, " ");
+			r_strbuf_append (state->args_buf, " ");
 			if (abs_imm != imm) {
-				r_strbuf_append (args_buf, "-");
+				r_strbuf_append (state->args_buf, "-");
 			}
-			r_strbuf_appendf (args_buf, "0x%x", abs_imm);
+			r_strbuf_appendf (state->args_buf, "0x%x", abs_imm);
 		}
 		if (esc2 == 'b') {
 			info->insn_type = dis_branch;
@@ -108,7 +127,7 @@ static int32_t dis_one_arg(char esc1, char esc2, const char *bit_field, const ch
 		}
 		break;
 	case '\0':
-		need_comma = false;
+		state->need_comma = false;
 		break;
 	}
 	return 0;
@@ -118,7 +137,7 @@ static int32_t dis_one_arg(char esc1, char esc2, const char *bit_field, const ch
    on using INFO.  Returns length of the instruction, in bytes, which is
    always INSNLEN. */
 
-static int do_print_insn_loongarch (int insn, struct disassemble_info *info) {
+static int do_print_insn_loongarch (PrintState *state, int insn, struct disassemble_info *info) {
 	const fprintf_ftype infprintf = info->fprintf_func;
 	void *is = info->stream;
 	const struct loongarch_opcode *opc = get_loongarch_opcode_by_binfmt (insn);
@@ -129,7 +148,7 @@ static int do_print_insn_loongarch (int insn, struct disassemble_info *info) {
 		return INSNLEN;
 	}
 
-	args_buf = r_strbuf_new("");
+	state->args_buf = r_strbuf_new("");
 	info->bytes_per_line = 4;
 	info->insn_info_valid = 1;
 	info->bytes_per_chunk = INSNLEN;
@@ -151,11 +170,12 @@ static int do_print_insn_loongarch (int insn, struct disassemble_info *info) {
 		if (0 < loongarch_split_args_by_comma (fake_args, fake_arg_strs)) {
 			infprintf (is, " ");
 		}
-		info->private_data = &insn;
+		LoopContext context = { .insn = insn, .state = state };
+		info->private_data = &context;
 		loongarch_foreach_args (opc->format, fake_arg_strs, dis_one_arg, info);
 		free (fake_args);
 	}
-	infprintf (is, "%s", args_buf->buf);
+	infprintf (is, "%s", state->args_buf->buf);
 
 	if (info->insn_type == dis_branch || info->insn_type == dis_condbranch) {
 		infprintf (is, " #");
@@ -164,7 +184,6 @@ static int do_print_insn_loongarch (int insn, struct disassemble_info *info) {
 		/* infprintf (is, " "); */
 		/* info->print_address_func (info->target, info); */
 	}
-	r_strbuf_free (args_buf);
 	return INSNLEN;
 }
 
@@ -175,5 +194,10 @@ int print_insn_loongarch (bfd_vma memaddr, struct disassemble_info *info) {
 		(*info->memory_error_func) (status, memaddr, info);
 		return -1;
 	}
-	return do_print_insn_loongarch (bfd_getl32 (buffer), info);
+
+	PrintState state;
+	print_state_init (&state);
+	int result = do_print_insn_loongarch (&state, bfd_getl32 (buffer), info);
+	print_state_fini (&state);
+	return result;
 }
