@@ -8,6 +8,10 @@
 #include <r_main.h>
 #include "../../libr/bin/format/pdb/pdb_downloader.h"
 
+typedef struct rabin2_state_t {
+	char *stdin_buf;
+} Rabin2State;
+
 static int rabin_show_help(int v) {
 	printf ("Usage: rabin2 [-AcdeEghHiIjlLMqrRsSUvVxzZ] [-@ at] [-a arch] [-b bits] [-B addr]\n"
 		"              [-C F:C:D] [-f str] [-m addr] [-n str] [-N m:M] [-P[-P] pdb]\n"
@@ -94,34 +98,21 @@ static int rabin_show_help(int v) {
 	return 1;
 }
 
-static char *stdin_gets(bool liberate) {
-	static R_TH_LOCAL char *stdin_buf = NULL;
+static char *stdin_gets(Rabin2State *state) {
 #define STDIN_BUF_SIZE 96096
-	if (liberate) {
-		free (stdin_buf);
-		stdin_buf = NULL;
-		return NULL;
-	}
-	if (!stdin_buf) {
-		/* XXX: never freed. leaks! */
-		stdin_buf = malloc (STDIN_BUF_SIZE);
-		if (!stdin_buf) {
-			return NULL;
-		}
-	}
-	memset (stdin_buf, 0, STDIN_BUF_SIZE);
-	if (!fgets (stdin_buf, STDIN_BUF_SIZE, stdin)) {
+	memset (state->stdin_buf, 0, STDIN_BUF_SIZE);
+	if (!fgets (state->stdin_buf, STDIN_BUF_SIZE, stdin)) {
 		return NULL;
 	}
 	if (feof (stdin)) {
 		return NULL;
 	}
-	return strdup (stdin_buf);
+	return strdup (state->stdin_buf);
 }
 
-static void __sdb_prompt(Sdb *sdb) {
+static void __sdb_prompt(Rabin2State *state, Sdb *sdb) {
 	char *line;
-	for (; (line = stdin_gets (false));) {
+	for (; (line = stdin_gets (state));) {
 		sdb_query (sdb, line);
 		free (line);
 	}
@@ -561,6 +552,7 @@ static void __listPlugins(RBin *bin, const char* plugin_name, PJ *pj, int rad) {
 }
 
 R_API int r_main_rabin2(int argc, const char **argv) {
+	Rabin2State state = {0};
 	RBin *bin = NULL;
 	const char *name = NULL;
 	const char *file = NULL;
@@ -588,6 +580,11 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 
 	r_core_init (&core);
 	bin = core.bin;
+
+	state.stdin_buf = malloc (STDIN_BUF_SIZE);
+	if (!state.stdin_buf) {
+		return 1;
+	}
 
 	if (!(tmp = r_sys_getenv ("RABIN2_NOPLUGINS"))) {
 		char *homeplugindir = r_xdg_datadir ("plugins");
@@ -816,11 +813,13 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 					" c                 show Codesign data\n"
 					" C                 show LDID entitlements\n");
 				r_core_fini (&core);
+				free (state.stdin_buf);
 				return 0;
 			}
 			if (opt.ind == argc) {
 				R_LOG_ERROR ("Missing filename");
 				r_core_fini (&core);
+				free (state.stdin_buf);
 				return 1;
 			}
 			break;
@@ -828,8 +827,9 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 		case 'p': va = false; break;
 		case 'r': rad = true; break;
 		case 'v':
-			  r_core_fini (&core);
-			  return r_main_version_print ("rabin2");
+			r_core_fini (&core);
+			free (state.stdin_buf);
+			return r_main_version_print ("rabin2");
 		case 'L':
 			set_action (R_BIN_REQ_LISTPLUGINS);
 			break;
@@ -860,6 +860,7 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 			break;
 		case 'h':
 			r_core_fini (&core);
+			free (state.stdin_buf);
 			return rabin_show_help (1);
 		default:
 			action |= R_BIN_REQ_HELP;
@@ -872,6 +873,7 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 	if (rad == R_MODE_JSON) {
 		pj = r_core_pj_new (&core);
 		if (!pj) {
+			free (state.stdin_buf);
 			return 1;
 		}
 	}
@@ -888,6 +890,7 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 			pj_free (pj);
 		}
 		r_core_fini (&core);
+		free (state.stdin_buf);
 		return 0;
 	}
 
@@ -895,6 +898,7 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 		char *res = NULL;
 		if ((argc - opt.ind) < 2) {
 			r_core_fini (&core);
+			free (state.stdin_buf);
 			return rabin_show_help (0);
 		}
 		int type = r_bin_demangle_type (do_demangle);
@@ -902,7 +906,7 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 		file = argv[opt.ind + 1];
 		if (!strcmp (file, "-")) {
 			for (;;) {
-				file = stdin_gets (false);
+				file = stdin_gets (&state);
 				if (R_STR_ISEMPTY (file)) {
 					break;
 				}
@@ -910,6 +914,7 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 				if (!res) {
 					R_LOG_ERROR ("Unknown lang to demangle. Use: cxx, msvc, dlang, rust, pascal, java, objc, swift");
 					r_core_fini (&core);
+					free (state.stdin_buf);
 					return 1;
 				}
 				if (res && *res) {
@@ -920,7 +925,7 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 				R_FREE (res);
 				R_FREE (file);
 			}
-			char *r = stdin_gets (true);
+			char *r = stdin_gets (&state);
 			free (r);
 		} else {
 			res = __demangleAs (bin, type, file);
@@ -928,6 +933,7 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 				printf ("%s\n", res);
 				free (res);
 				r_core_fini (&core);
+				free (state.stdin_buf);
 				return 0;
 			} else {
 				printf ("%s\n", file);
@@ -936,6 +942,7 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 		free (res);
 		//eprintf ("%s\n", file);
 		r_core_fini (&core);
+		free (state.stdin_buf);
 		return 1;
 	}
 	file = argv[opt.ind];
@@ -943,12 +950,14 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 	if (file && !*file) {
 		R_LOG_ERROR ("Cannot open empty path");
 		r_core_fini (&core);
+		free (state.stdin_buf);
 		return 1;
 	}
 
 	if (!query) {
 		if (action & R_BIN_REQ_HELP || action == R_BIN_REQ_UNK || !file) {
 			r_core_fini (&core);
+			free (state.stdin_buf);
 			return rabin_show_help (0);
 		}
 	}
@@ -968,6 +977,7 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 		if (!p) {
 			R_LOG_ERROR ("Invalid format for -C flag. Use 'format:code:data (in hexpairs)");
 			r_core_fini (&core);
+			free (state.stdin_buf);
 			return 1;
 		}
 		*p++ = 0;
@@ -987,6 +997,7 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 		code = malloc (strlen (p) + 1);
 		if (!code) {
 			r_core_fini (&core);
+			free (state.stdin_buf);
 			return 1;
 		}
 		codelen = r_hex_str2bin (p, code);
@@ -1007,6 +1018,7 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 			R_LOG_ERROR ("Cannot create binary for this format '%s'", create);
 		}
 		r_core_fini (&core);
+		free (state.stdin_buf);
 		return 0;
 	}
 	if (rawstr == 2) {
@@ -1017,6 +1029,7 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 	if (!file) {
 		R_LOG_ERROR ("Missing file");
 		r_core_fini (&core);
+		free (state.stdin_buf);
 		return 1;
 	}
 
@@ -1025,9 +1038,11 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 		int child = r_sys_fork ();
 		if (child == -1) {
 			r_core_fini (&core);
+			free (state.stdin_buf);
 			return 1;
 		}
 		if (child == 0) {
+			free (state.stdin_buf);
 			return waitpid (child, NULL, 0);
 		}
 #endif
@@ -1036,10 +1051,12 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 			R_LOG_INFO ("%s is loaded at 0x%"PFMT64x, file, (ut64)(size_t)(addr));
 			r_lib_dl_close (addr);
 			r_core_fini (&core);
+			free (state.stdin_buf);
 			return 0;
 		}
 		R_LOG_ERROR ("Cannot open the '%s' library", file);
 		r_core_fini (&core);
+		free (state.stdin_buf);
 		return 0;
 	}
 	if (action & R_BIN_REQ_PACKAGE) {
@@ -1050,6 +1067,7 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 
 		if (opt.ind + 3 > argc) {
 			R_LOG_ERROR ("Usage: rabin2 -X [fat|zip] foo.zip a b c");
+			free (state.stdin_buf);
 			r_core_fini (&core);
 			return 1;
 		}
@@ -1071,6 +1089,7 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 		}
 		r_core_fini (&core);
 		r_list_free (files);
+		free (state.stdin_buf);
 		return rc;
 	}
 
@@ -1080,11 +1099,13 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 			if (fd == -1) {
 				R_LOG_ERROR ("Cannot open file '%s'", file);
 				r_core_fini (&core);
+				free (state.stdin_buf);
 				return 1;
 			}
 		} else {
 			R_LOG_ERROR ("Cannot open file '%s'", file);
 			r_core_fini (&core);
+			free (state.stdin_buf);
 			return 1;
 		}
 	}
@@ -1104,6 +1125,7 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 		if (!bin->cur || !bin->cur->xtr_data) {
 			R_LOG_ERROR ("Cannot open file");
 			r_core_fini (&core);
+			free (state.stdin_buf);
 			return 1;
 		}
 	}
@@ -1126,12 +1148,13 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 			r_cons_flush ();
 		} else {
 			if (!strcmp (query, "-")) {
-				__sdb_prompt (bin->cur->sdb);
+				__sdb_prompt (&state, bin->cur->sdb);
 			} else {
 				sdb_query (bin->cur->sdb, query);
 			}
 		}
 		r_core_fini (&core);
+		free (state.stdin_buf);
 		return 0;
 	}
 #define isradjson ((rad == R_MODE_JSON) && (actions > 0))
@@ -1222,10 +1245,12 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 		pj_end (pj);
 		r_cons_println (pj_string (pj));
 	}
+
 	pj_free (pj);
 	r_cons_flush ();
 	r_core_fini (&core);
 	r_syscmd_popalld ();
+	free (state.stdin_buf);
 
 	return 0;
 }
