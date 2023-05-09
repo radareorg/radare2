@@ -16,6 +16,14 @@
 #define CSINC MOS65XX
 #include "../capstone.inc"
 
+typedef struct plugin_data_t {
+	CapstonePluginData cpd;
+#if USE_ITER_API
+	cs_insn *insn;
+	int n;
+#endif
+} PluginData;
+
 static inline csh cs_handle_for_session(RArchSession *as) {
 	r_return_val_if_fail (as, 0);
 	CapstonePluginData *cpd = as->data;
@@ -26,10 +34,6 @@ static bool decode(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
 	const ut64 addr = op->addr;
 	const ut8 *buf = op->bytes;
 	const int len = op->size;
-#if USE_ITER_API
-	static R_TH_LOCAL
-#endif
-	cs_insn *insn = NULL;
 	csh handle = cs_handle_for_session (as);
 	if (!handle) {
 		return false;
@@ -39,16 +43,16 @@ static bool decode(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
 	op->cycles = 1; // aprox
 	// capstone-next
 #if USE_ITER_API
+	PluginData *pd = as->data;
 	{
 		ut64 naddr = addr;
 		size_t size = len;
-		if (!insn) {
-			insn = cs_malloc (handle);
-		}
-		n = cs_disasm_iter (handle, (const uint8_t**)&buf,
-			&size, (uint64_t*)&naddr, insn);
+		n = cs_disasm_iter (handle, (const uint8_t**)&buf, &size, (uint64_t*)&naddr, pd->insn);
+		pd->n = n;
 	}
+	cs_insn *insn = pd->insn;
 #else
+	cs_insn *insn = NULL;
 	n = cs_disasm (handle, (const ut8*)buf, len, addr, 1, &insn);
 #endif
 	if (n < 1) {
@@ -180,7 +184,6 @@ static bool decode(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
 #if !USE_ITER_API
 	cs_free (insn, n);
 #endif
-	//cs_close (&handle);
 	return op->size > 0;
 }
 
@@ -220,20 +223,32 @@ static bool init(RArchSession *s) {
 		R_LOG_WARN ("Already initialized");
 		return false;
 	}
-	s->data = R_NEW0 (CapstonePluginData);
-	CapstonePluginData *cpd = (CapstonePluginData*)s->data;
-	if (!r_arch_cs_init (s, &cpd->cs_handle)) {
+	s->data = R_NEW0 (PluginData);
+	PluginData *pd = s->data;
+	if (!r_arch_cs_init (s, &pd->cpd.cs_handle)) {
 		R_LOG_ERROR ("Cannot initialize capstone");
 		R_FREE (s->data);
 		return false;
 	}
+#if USE_ITER_API
+	pd->insn = cs_malloc (pd->cpd.cs_handle);
+	if (!pd->insn) {
+		R_LOG_ERROR ("Failed to allocate memory for 6502_cs plugin");
+		cs_close (&pd->cpd.cs_handle);
+		R_FREE (s->data);
+		return false;
+	}
+#endif
 	return true;
 }
 
 static bool fini(RArchSession *s) {
 	r_return_val_if_fail (s, false);
-	CapstonePluginData *cpd = (CapstonePluginData*)s->data;
-	cs_close (&cpd->cs_handle);
+	PluginData *pd = s->data;
+#if USE_ITER_API
+	cs_free (pd->insn, pd->n);
+#endif
+	cs_close (&pd->cpd.cs_handle);
 	R_FREE (s->data);
 	return true;
 }
