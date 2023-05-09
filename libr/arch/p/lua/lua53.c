@@ -4,24 +4,26 @@
 #include <stdio.h>
 #include "lua53.h"
 
-static R_TH_LOCAL ut32 *current_write_prt;
-static R_TH_LOCAL ut32 current_write_index;
+typedef struct plugin_data_t {
+	ut32 *current_write_prt;
+	ut32 current_write_index;
+} PluginData;
 
 #define isAlpha(x) (('a' <= (x) && 'z' >= (x)) || ('A' <= (x) && 'Z' >= (x)))
 #define isNumeric(x) ('0' <= (x) && '9' >= (x))
 #define isWhitespace(x) (' ' == (x) || '\t' == (x))
 #define isComment(x) (';' == (x))
 
-#define doParse0(inc, func, str) {						\
-		int temp = func (str + inc);					\
+#define doParse0(state, inc, func, str) {						\
+		int temp = func (state, str + inc);					\
 		if (temp < 0) {							\
 			R_LOG_DEBUG ("%i from %s in String %s", temp,#func, str + inc);\
 			return -1;						\
 		}								\
 		inc += temp;							\
 }
-#define doParse1(inc, func, str, ...) {						\
-		int temp = func (str + inc, __VA_ARGS__);			\
+#define doParse1(state, inc, func, str, ...) {						\
+		int temp = func (state, str + inc, __VA_ARGS__);			\
 		if (temp < 0) {							\
 			R_LOG_DEBUG ("%i from %s in String %s", temp,#func, str + inc);\
 			return -1;						\
@@ -38,10 +40,10 @@ typedef enum {
 	PARAMETER_sBx
 } Parameter;
 
-static int parseParameters(const char *str, OpCode opCode);
-static int parseParameter(const char *str, Parameter parameter);
-static int parseNextInstruction(const char *str);
-static int parseWhitespaces(const char *str);
+static int parseParameters(PluginData *state, const char *str, OpCode opCode);
+static int parseParameter(PluginData *state, const char *str, Parameter parameter);
+static int parseNextInstruction(PluginData *state, const char *str);
+static int parseWhitespaces(PluginData *state, const char *str);
 
 const char *instruction_names[] = {
 	"move", "loadk", "loadkx", "loadbool", "loadnil", "getupval", "gettabup", "gettable", "settabup", "setupval", "settable", "newtable", "self", "add", "sub", "mul", "mod",
@@ -65,12 +67,12 @@ static void setInstruction(ut32 opcode, ut8 *data) {
 	data[0] = opcode >> 0;
 }
 
-static int findNextWordStart(const char *str){
+static int findNextWordStart(PluginData *state, const char *str){
 	int chars_skipped = 0;
 	char c;
 	char comment_char;
 	while (1) {
-		doParse0 (chars_skipped, parseWhitespaces, str);
+		doParse0 (state, chars_skipped, parseWhitespaces, str);
 		c = str[chars_skipped];
 		if (isAlpha (c) || isNumeric (c) || c == '-') {	// if alphanumeric character return position
 			return chars_skipped;
@@ -93,9 +95,9 @@ static int findNextWordStart(const char *str){
 	return chars_skipped;
 }
 
-static int parseNextInstruction(const char *str) {
+static int parseNextInstruction(PluginData *state, const char *str) {
 	int chars_skipped = 0;
-	doParse0 (chars_skipped, findNextWordStart, str);
+	doParse0 (state, chars_skipped, findNextWordStart, str);
 	const char *str_ptr = str + chars_skipped;
 
 	int i;
@@ -113,11 +115,11 @@ static int parseNextInstruction(const char *str) {
 			chars_skipped += j;
 			R_LOG_DEBUG ("Opcode %i Instruction %s", i, instruction_names[i]);
 
-			SET_OPCODE (current_write_prt[current_write_index], i);	// sets the opcode
+			SET_OPCODE (state->current_write_prt[state->current_write_index], i);	// sets the opcode
 
-			doParse1 (chars_skipped, parseParameters, str, i);	// Parse parameters
+			doParse1 (state, chars_skipped, parseParameters, str, i);	// Parse parameters
 
-			current_write_index++;	// finished parsing an instruction so increase index
+			state->current_write_index++;	// finished parsing an instruction so increase index
 			return chars_skipped;
 		}
 	}
@@ -125,7 +127,7 @@ static int parseNextInstruction(const char *str) {
 	return -1;
 }
 
-static int parseWhitespaces(const char *str){
+static int parseWhitespaces(PluginData *state, const char *str){
 	int skipped_whitespace = 0;
 	char c = str[skipped_whitespace];
 	while (isWhitespace (c)) {
@@ -135,12 +137,12 @@ static int parseWhitespaces(const char *str){
 	return skipped_whitespace;
 }
 
-static int parseParameters(const char *str, OpCode opCode) {
+static int parseParameters(PluginData *state, const char *str, OpCode opCode) {
 	int chars_skipped = 0;
-	doParse0 (chars_skipped, parseWhitespaces, str);
+	doParse0 (state, chars_skipped, parseWhitespaces, str);
 	switch (opCode) {
 	case OP_LOADKX:		/*  A       R(A) := Kst(extra arg)                          */
-		doParse1 (chars_skipped, parseParameter, str, PARAMETER_A);
+		doParse1 (state, chars_skipped, parseParameter, str, PARAMETER_A);
 		break;
 	case OP_MOVE:		/*  A B     R(A) := R(B)                                    */
 	case OP_LOADNIL:	/*  A B     R(A), R(A+1), ..., R(A+B) := nil                */
@@ -152,18 +154,18 @@ static int parseParameters(const char *str, OpCode opCode) {
 	case OP_LEN:		/*  A B     R(A) := length of R(B)                          */
 	case OP_RETURN:		/*  A B     return R(A), ... ,R(A+B-2)      (see note)      */
 	case OP_VARARG:		/*  A B     R(A), R(A+1), ..., R(A+B-2) = vararg            */
-		doParse1 (chars_skipped, parseParameter, str, PARAMETER_A);
-		doParse1 (chars_skipped, parseParameter, str, PARAMETER_B);
+		doParse1 (state, chars_skipped, parseParameter, str, PARAMETER_A);
+		doParse1 (state, chars_skipped, parseParameter, str, PARAMETER_B);
 		break;
 	case OP_TEST:		/*  A C     if not (R(A) <=> C) then pc++                   */
 	case OP_TFORCALL:	/*  A C     R(A+3), ... ,R(A+2+C) := R(A)(R(A+1), R(A+2));  */
-		doParse1 (chars_skipped, parseParameter, str, PARAMETER_A);
-		doParse1 (chars_skipped, parseParameter, str, PARAMETER_C);
+		doParse1 (state, chars_skipped, parseParameter, str, PARAMETER_A);
+		doParse1 (state, chars_skipped, parseParameter, str, PARAMETER_C);
 		break;
 	case OP_LOADK:		/*  A Bx    R(A) := Kst(Bx)                                 */
 	case OP_CLOSURE:	/*  A Bx    R(A) := closure(KPROTO[Bx])                     */
-		doParse1 (chars_skipped, parseParameter, str, PARAMETER_A);
-		doParse1 (chars_skipped, parseParameter, str, PARAMETER_Bx);
+		doParse1 (state, chars_skipped, parseParameter, str, PARAMETER_A);
+		doParse1 (state, chars_skipped, parseParameter, str, PARAMETER_Bx);
 		break;
 	case OP_LOADBOOL:	/*  A B C   R(A) := (Bool)B; if (C) pc++                    */
 	case OP_GETTABUP:	/*  A B C   R(A) := UpValue[B][RK(C)]                       */
@@ -192,27 +194,27 @@ static int parseParameters(const char *str, OpCode opCode) {
 	case OP_CALL:		/*  A B C   R(A), ... ,R(A+C-2) := R(A)(R(A+1), ... ,R(A+B-1)) */
 	case OP_TAILCALL:	/*  A B C   return R(A)(R(A+1), ... ,R(A+B-1))              */
 	case OP_SETLIST:	/*  A B C   R(A)[(C-1)*FPF+i] := R(A+i), 1 <= i <= B        */
-		doParse1 (chars_skipped, parseParameter, str, PARAMETER_A);
-		doParse1 (chars_skipped, parseParameter, str, PARAMETER_B);
-		doParse1 (chars_skipped, parseParameter, str, PARAMETER_C);
+		doParse1 (state, chars_skipped, parseParameter, str, PARAMETER_A);
+		doParse1 (state, chars_skipped, parseParameter, str, PARAMETER_B);
+		doParse1 (state, chars_skipped, parseParameter, str, PARAMETER_C);
 		break;
 	case OP_JMP:		/*       A sBx   pc+=sBx; if (A) close all upvalues >= R(A - 1)  */
 	case OP_FORLOOP:	/*   A sBx   R(A)+=R(A+2);
 				                                if R(A) <?= R(A+1) then { pc+=sBx; R(A+3)=R(A) }*/
 	case OP_FORPREP:	/*   A sBx   R(A)-=R(A+2); pc+=sBx                           */
 	case OP_TFORLOOP:	/*  A sBx   if R(A+1) ~= nil then { R(A)=R(A+1); pc += sBx }*/
-		doParse1 (chars_skipped, parseParameter, str, PARAMETER_A);
-		doParse1 (chars_skipped, parseParameter, str, PARAMETER_sBx);
+		doParse1 (state, chars_skipped, parseParameter, str, PARAMETER_A);
+		doParse1 (state, chars_skipped, parseParameter, str, PARAMETER_sBx);
 		break;
 	case OP_EXTRAARG:	/*   Ax      extra (larger) argument for previous opcode     */
-		doParse1 (chars_skipped, parseParameter, str, PARAMETER_Ax);
+		doParse1 (state, chars_skipped, parseParameter, str, PARAMETER_Ax);
 		break;
 	}
 	return chars_skipped;
 }
 
-static int parseParameter(const char *str, Parameter parameter) {
-	int skipped_chars = findNextWordStart (str);
+static int parseParameter(PluginData *state, const char *str, Parameter parameter) {
+	int skipped_chars = findNextWordStart (state, str);
 	int resultingNumber = 0;
 	bool negative = false;
 	if (str[skipped_chars] == '-') {
@@ -235,22 +237,22 @@ static int parseParameter(const char *str, Parameter parameter) {
 	}
 	switch (parameter) {
 	case PARAMETER_A:
-		SETARG_A (current_write_prt[current_write_index], resultingNumber);
+		SETARG_A (state->current_write_prt[state->current_write_index], resultingNumber);
 		break;
 	case PARAMETER_B:
-		SETARG_B (current_write_prt[current_write_index], resultingNumber);
+		SETARG_B (state->current_write_prt[state->current_write_index], resultingNumber);
 		break;
 	case PARAMETER_C:
-		SETARG_C (current_write_prt[current_write_index], resultingNumber);
+		SETARG_C (state->current_write_prt[state->current_write_index], resultingNumber);
 		break;
 	case PARAMETER_Ax:
-		SETARG_Ax (current_write_prt[current_write_index], resultingNumber);
+		SETARG_Ax (state->current_write_prt[state->current_write_index], resultingNumber);
 		break;
 	case PARAMETER_Bx:
-		SETARG_Bx (current_write_prt[current_write_index], resultingNumber);
+		SETARG_Bx (state->current_write_prt[state->current_write_index], resultingNumber);
 		break;
 	case PARAMETER_sBx:
-		SETARG_sBx (current_write_prt[current_write_index], resultingNumber);
+		SETARG_sBx (state->current_write_prt[state->current_write_index], resultingNumber);
 		break;
 	}
 	return skipped_chars;
@@ -274,7 +276,7 @@ int lua53asm(RAsmOp *op, const char *s) {
 }
 #endif
 
-int lua53dissasm(RAnalOp *op, const ut8 *buf, int len){
+int lua53dissasm(PluginData *state, RAnalOp *op, const ut8 *buf, int len) {
 	if (len < 4) {
 		op->mnemonic = strdup ("truncated");
 		op->type = R_ANAL_OP_TYPE_ILL;
@@ -393,30 +395,30 @@ int main(int argc, char **argv) {
 
 	char *c = "move 1 2\n forprep 13 -2";
 	int p = 0;
-	current_write_prt = malloc (8);
-	current_write_index = 0;
+	PluginData state = {0};
+	state.current_write_prt = malloc (8);
 	eprintf ("Parsing String: %s\n", c);
 	eprintf ("-----------------------\n");
-	doParse0 (p, parseNextInstruction, c, (int) strlen (c));
+	doParse0 (state, p, parseNextInstruction, c, (int) strlen (c));
 	eprintf ("Parsed Characters %i\n", p);
-	eprintf ("%d   %08x\n", current_write_index, current_write_prt[current_write_index - 1]);
+	eprintf ("%d   %08x\n", state.current_write_index, current_write_prt[state.current_write_index - 1]);
 
 	eprintf ("------------\n");
 
-	doParse0 (p, parseNextInstruction, c, (int) strlen (c));
+	doParse0 (state, p, parseNextInstruction, c, (int) strlen (c));
 	eprintf ("Parsed Characters %i\n", p);
-	eprintf ("%d   %08x\n", current_write_index, current_write_prt[current_write_index - 1]);
+	eprintf ("%d   %08x\n", state.current_write_index, current_write_prt[state.current_write_index - 1]);
 
 	eprintf ("------------\n");
 
 	RAsmOp *asmOp = (RAsmOp *) malloc (sizeof (RAsmOp));
-	int advanced = lua53dissasm (asmOp, (const char *) current_write_prt, 4);
+	int advanced = lua53dissasm (&state, asmOp, (const char *) current_write_prt, 4);
 
 	eprintf ("%s\n", asmOp->buf_asm);
-	lua53dissasm (asmOp, (const char *) current_write_prt + advanced, 4);
+	lua53dissasm (&state, asmOp, (const char *) current_write_prt + advanced, 4);
 	eprintf ("%s\n", asmOp->buf_asm);
 
-	free (current_write_prt);
+	free (state.current_write_prt);
 	return 0;
 }
 #endif	// MAIN_ASM
