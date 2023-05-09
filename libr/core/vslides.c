@@ -2,14 +2,16 @@
 
 #include <r_core.h>
 
-static R_TH_LOCAL char *keys[256] = {0};
+typedef struct slides_state_t {
+	char *keys[256];
+} SlidesState;
 
-static void clearkeys(void) {
+static void clearkeys(SlidesState *state) {
 	int i;
 	for (i = 0; i < 256; i++) {
-		free (keys[i]);
-		keys[i] = NULL;
+		free (state->keys[i]);
 	}
+	memset (state, 0, sizeof (SlidesState));
 }
 
 static int findpage(RList *list, const char *pagename) {
@@ -29,9 +31,9 @@ static int findpage(RList *list, const char *pagename) {
 	return -1;
 }
 
-static int gotokey(RList *list, int ch, int page) {
-	if (keys[ch]) {
-		int npage = findpage (list, keys[ch]);
+static int gotokey(SlidesState *state, RList *list, int ch, int page) {
+	if (state->keys[ch]) {
+		int npage = findpage (list, state->keys[ch]);
 		if (npage != -1) {
 			return npage;
 		}
@@ -51,7 +53,7 @@ static int count_pages(RList *list) {
 	return pages;
 }
 
-static void render(RCore *core, RList *list, int mode, int page) {
+static void render(SlidesState *state, RCore *core, RList *list, int mode, int page) {
 	char *s;
 	if (page < 0) {
 		page = 0;
@@ -90,9 +92,9 @@ static void render(RCore *core, RList *list, int mode, int page) {
 				if (kv[0] && kv[1]) {
 					kv[1] = 0;
 					int k = kv[0];
-					R_FREE (keys[k]);
+					R_FREE (state->keys[k]);
 					if (kv[2]) {
-						keys[k] = strdup (kv + 2);
+						state->keys[k] = strdup (kv + 2);
 					}
 				}
 				free (kv);
@@ -162,17 +164,18 @@ R_API void r_core_visual_slides(RCore *core, const char *file) {
 	r_cons_show_cursor (false);
 	r_cons_enable_mouse (false);
 	int total_pages = count_pages (list);
+	SlidesState state = {0};
 	while (having_fun) {
 		if (page > total_pages) {
 			page = total_pages;
 		}
-		clearkeys ();
+		clearkeys (&state);
 		r_cons_clear00 ();
 		if (mode == 2) {
-			render (core, list, 2, page + 1);
+			render (&state, core, list, 2, page + 1);
 		}
 		r_cons_gotoxy (0, 0);
-		render (core, list, 1, page);
+		render (&state, core, list, 1, page);
 		render_title (page, mode, total_pages);
 		r_cons_flush ();
 		ch = r_cons_readchar ();
@@ -260,7 +263,7 @@ R_API void r_core_visual_slides(RCore *core, const char *file) {
 			r_cons_clear ();
 			break;
 		default:
-			page = gotokey (list, ch, page);
+			page = gotokey (&state, list, ch, page);
 			break;
 		}
 	}
