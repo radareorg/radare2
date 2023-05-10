@@ -328,7 +328,7 @@ R_API int r_str_delta(char *p, char a, char b) {
 R_API int r_str_split(char *str, char ch) {
 	int i;
 	char *p;
-	if (!str || !*str) {
+	if (R_STR_ISEMPTY (str)) {
 		return 0;
 	}
 	/* TODO: sync with r1 code */
