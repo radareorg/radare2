@@ -426,7 +426,7 @@ static ut64 parseStringR(const ut8 *data, ut64 offset, const ut64 size, char **s
 	}
 	if (functionNameSize != 0) {
 		if (str_ptr) {
-			*str_ptr = (char *) data + offset;
+			*str_ptr = r_str_ndup ((char *) (data + offset), functionNameSize - 1);
 		}
 		if (str_len) {
 			*str_len = functionNameSize - 1;
