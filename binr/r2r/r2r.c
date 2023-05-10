@@ -70,6 +70,7 @@ static int help(bool verbose) {
 		" -L           log mode (better printing for CI, logfiles, etc.)\n"
 		" -V           verbose\n"
 		" -f [file]    file to use for json tests (default is "JSON_TEST_FILE_DEFAULT")\n"
+		" -g           run the tests specified via '// R2R' comments in modified source files\n"
 		" -h           print this help\n"
 		" -i           interactive mode\n"
 		" -j [threads] how many threads to use for running tests concurrently (default is "WORKERS_DEFAULT_STR")\n"
@@ -216,6 +217,67 @@ static bool r2r_chdir_fromtest(const char *test_path) {
 	return found;
 }
 
+static void r2r_from_sourcecomments(RList *list, const char *path) {
+	const char bait[] = "// R2R ";
+	char *s = r_file_slurp (path, NULL);
+	if (s) {
+		char *p = s;
+		while (p) {
+			char *r2r = strstr (p, bait);
+			if (!r2r) {
+				break;
+			}
+			r2r += strlen (bait);
+			if (*r2r != '"') {
+				char *nl = strchr (r2r, '\n');
+				if (nl) {
+					*nl = 0;
+					p = nl + 1;
+				}
+				char *tests = strdup (r2r);
+				int i, items = r_str_split (tests, ' ');
+				char *test = tests;
+				for (i = 0; i < items; i++) {
+					r_list_append (list, strdup (test));
+					test += strlen (test) + 1;
+				}
+				free (tests);
+			} else {
+				p = r2r + strlen (bait);
+			}
+		}
+		free (s);
+	} else {
+		R_LOG_WARN ("Cannot open %s", path);
+	}
+}
+
+static void r2r_git(void) {
+	int max = 10;
+	while (max --> 0) {
+		if (r_file_is_directory (".git")) {
+			break;
+		}
+		chdir ("..");
+	}
+	char *changes = r_sys_cmd_strf ("git diff --name-only");
+	RList *lines = r_str_split_list (changes, "\n", 0);
+	RList *tests = r_list_newf (free);
+	RListIter *iter;
+	char *line, *test;
+	r_list_foreach (lines, iter, line) {
+		if (r_str_endswith (line, ".c")) {
+			r2r_from_sourcecomments (tests, line);
+		}
+	}
+	r_list_foreach (tests, iter, test) {
+		R_LOG_INFO ("Running r2r -i test/%s", test);
+		r_sys_cmdf ("r2r -i test/%s", test);
+	}
+	r_list_free (lines);
+	free (changes);
+}
+
 int main(int argc, char **argv) {
 	int workers_count = WORKERS_DEFAULT;
 	bool verbose = false;
@@ -245,11 +307,14 @@ int main(int argc, char **argv) {
 	}
 #endif
 	RGetopt opt;
-	r_getopt_init (&opt, argc, (const char **)argv, "hqvj:r:m:f:C:LnVt:F:io:s:u");
+	r_getopt_init (&opt, argc, (const char **)argv, "hqvj:r:m:f:C:LnVt:F:io:s:ug");
 
 	int c;
 	while ((c = r_getopt_next (&opt)) != -1) {
 		switch (c) {
+		case 'g':
+			r2r_git ();
+			return 0;
 		case 'h':
 			ret = help (true);
 			goto beach;
