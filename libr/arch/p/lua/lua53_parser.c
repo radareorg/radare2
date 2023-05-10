@@ -418,7 +418,11 @@ static ut64 parseString(const ut8 *data, ut64 offset, const ut64 size, ParseStru
 }
 
 static ut64 parseStringR(const ut8 *data, ut64 offset, const ut64 size, char **str_ptr, ut64 *str_len, ParseStruct *parseStruct){
-	ut64 functionNameSize = data[offset + 0];
+	if (offset + 8 > size) {
+		R_LOG_DEBUG ("Prevented oobread");
+		return 0;
+	}
+	ut64 functionNameSize = data[offset];
 	offset += 1;
 	if (functionNameSize == 0xFF) {
 		functionNameSize = parseSize (data + offset);
