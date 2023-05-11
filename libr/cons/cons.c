@@ -1695,11 +1695,11 @@ R_API int r_cons_is_vtcompat(void) {
 	char *term = r_sys_getenv ("TERM");
 	if (term) {
 		if (strstr (term, "xterm")) {
-			I->term_xterm = 1;
+			I->term_xterm = true;
 			free (term);
 			return 2;
 		}
-		I->term_xterm = 0;
+		I->term_xterm = false;
 		free (term);
 	}
 	char *ansicon = r_sys_getenv ("ANSICON");
@@ -1784,6 +1784,13 @@ R_API void r_cons_set_raw(bool is_raw) {
 		tcsetattr (0, TCSANOW, &I->term_buf);
 	}
 #elif R2__WINDOWS__
+	if (I->term_xterm) {
+		char *stty = r_file_path ("stty");
+		if (!stty || *stty == 's') {
+			I->term_xterm = false;
+		}
+		free (stty);
+	}
 	if (is_raw) {
 		if (I->term_xterm) {
 			r_sandbox_system ("stty raw -echo", 1);
