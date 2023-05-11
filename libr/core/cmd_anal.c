@@ -13642,7 +13642,7 @@ static int cmd_anal(void *data, const char *input) {
 		case 't': // "adt"
 			cmd_anal_trampoline (core, input + 2);
 			break;
-		case '.': { // "ad."
+		case '.': // "ad."
 		case ' ': { // "ad" // asm describe maybe? see aod instead
 			const int default_depth = 1;
 			const char *p;
