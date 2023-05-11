@@ -219,7 +219,7 @@ static RCoreHelpMessage help_msg_root = {
 	"V", "", "visual mode (Vv = func/var anal, VV = graph mode, ...)",
 	"w","[?] [str]", "multiple write operations",
 	"x","[?] [len]", "alias for 'px' (print hexadecimal)",
-	"y","[?] [len] [[[@]addr", "Yank/paste bytes from/to memory",
+	"y","[?] [len] [[[@]addr", "yank/paste bytes from/to memory",
 	"z", "[?]", "zignatures management",
 	"?[??]","[expr]", "Help or evaluate math expression",
 	"?$?", "", "show available '$' variables and aliases",
