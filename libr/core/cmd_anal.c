@@ -27,7 +27,7 @@ static RCoreHelpMessage help_msg_a = {
 	"ab", "[?]", "analyze basic block",
 	"ac", "[?]", "manage classes",
 	"aC", "[?]", "analyze function call",
-	"ad", "[?]", "analyze data trampoline (wip)",
+	"ad", "[?]", "analyze data trampoline (wip) (see 'aod' to describe mnemonics)", // XXX rename to at?
 	"ad", " [from] [to]", "analyze data pointers to (from-to)",
 	"ae", "[?] [expr]", "analyze opcode eval expression (see ao)",
 	"af", "[?]", "analyze functions",
@@ -37,7 +37,7 @@ static RCoreHelpMessage help_msg_a = {
 	"ai", " [addr]", "address information (show perms, stack, heap, ...)",
 	"aj", "", "same as a* but in json (aflj)",
 	"aL", "[jq]", "list all asm/anal plugins (See `e asm.arch=?` and `La[jq]`)",
-	"an", "[?] [name]", "show/rename/create whatever var/flag/function is used in current instruction",
+	"an", "[?] [name]", "show/rename/create whatever var/flag/function used in current instruction",
 	"ao", "[?] [len]", "analyze Opcodes (or emulate it)",
 	"aO", "[?] [len]", "analyze N instructions in M bytes",
 	"ap", "", "find prelude for current offset",
@@ -911,7 +911,7 @@ static RCoreHelpMessage help_msg_ao = {
 	"ao*", "", "display opcode in r commands",
 	"aob", " ([hex])", "analyze meaning of every single bit in the current opcode",
 	"aoc", " [cycles]", "analyze which op could be executed in [cycles]",
-	"aod", " [mnemonic]", "describe opcode for asm.arch",
+	"aod", " [mnemonic]", "instruction mnemonic description for asm.arch",
 	"aoda", "", "show all mnemonic descriptions",
 	"aoe", " N", "display esil form for N opcodes",
 	"aoem", " N", "display memory references from esil emulation of N opcode",
@@ -13642,7 +13642,8 @@ static int cmd_anal(void *data, const char *input) {
 		case 't': // "adt"
 			cmd_anal_trampoline (core, input + 2);
 			break;
-		case ' ': { // "ad"
+		case '.': { // "ad."
+		case ' ': { // "ad" // asm describe maybe? see aod instead
 			const int default_depth = 1;
 			const char *p;
 			int a, b;

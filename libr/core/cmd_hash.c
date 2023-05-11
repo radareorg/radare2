@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2022 - pancake, nibble */
+/* radare - LGPL - Copyright 2009-2023 - pancake, nibble */
 
 #include <r_core.h>
 
@@ -353,7 +353,7 @@ static void handle_fletcher64(const ut8 *block, int len) {
 
 static int cmd_hash_bang(RCore *core, const char *input) {
 	if (r_sandbox_enable (0)) {
-		eprintf ("hashbang disabled in sandbox mode\n");
+		R_LOG_ERROR ("hashbang disabled in sandbox mode");
 		return false;
 	}
 	if (r_str_endswith (input, "?")) {
@@ -365,11 +365,11 @@ static int cmd_hash_bang(RCore *core, const char *input) {
 				if (lp->example) {
 					r_cons_println (lp->example);
 				} else {
-					eprintf ("%s plugin does not provide an example.\n", name);
+					R_LOG_ERROR ("%s plugin does not provide an example", name);
 				}
 			} else {
 				if (*name) {
-					eprintf ("Unknown rlang plugin '%s'.\n", name);
+					R_LOG_ERROR ("Unknown rlang plugin '%s'", name);
 				} else {
 					r_core_cmd_help_match (core, help_msg_hash, "#!", false);
 				}
@@ -414,13 +414,19 @@ static int cmd_hash_bang(RCore *core, const char *input) {
 				}
 			}
 		} else if (av[0][0] == '?') {
-		       if (av[0][1] == 'j') {
-			       r_lang_list (core->lang, 'j');
-		       } else if (av[0][1] == '*') {
-			       r_lang_list (core->lang, 0);
-		       } else if (av[0][1] == 'q') {
-			       r_lang_list (core->lang, 'q');
-		       }
+			const char mod = av[0][1];
+			switch (mod) {
+			case 'j':
+			case 'q':
+				r_lang_list (core->lang, mod);
+				break;
+			case '*':
+				r_lang_list (core->lang, 0);
+				break;
+			default:
+				R_LOG_INFO ("Missing halp");
+				break;
+			}
 		}
 	} else {
 		r_lang_list (core->lang, 0);
