@@ -1367,11 +1367,20 @@ R_API bool r_core_run_script(RCore *core, const char *file) {
 			if (ext) {
 				/* TODO: handle this inside r_lang_pipe with new APIs */
 				if (!strcmp (ext, "js")) {
-					char *cmd = cmdstr ("node");
-					r_lang_use (core->lang, "pipe");
-					lang_run_file (core, core->lang, cmd);
-					free (cmd);
-					ret = 1;
+					if (r_str_endswith (file, ".r2.js")) {
+						if (r_lang_use (core->lang, "qjs")) {
+							ret = r_lang_run_file (core->lang, file);
+						} else {
+							R_LOG_ERROR ("Cannot instantiate the quickjs runtime");
+							ret = false;
+						}
+					} else {
+						char *cmd = cmdstr ("node");
+						r_lang_use (core->lang, "pipe");
+						lang_run_file (core, core->lang, cmd);
+						free (cmd);
+						ret = 1;
+					}
 				} else if (!strcmp (ext, "exe")) {
 #if R2__WINDOWS__
 					char *cmd = r_str_newf ("%s", file);
