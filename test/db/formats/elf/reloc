@@ -210,3 +210,205 @@ EXPECT=<<EOF
             0x0800009f      ff             unaligned
 EOF
 RUN
+
+NAME=sparc relocs
+FILE=bins/elf/elf-solaris-sparc-ls
+CMDS=<<EOF
+ir
+s section..plt
+e asm.lines=false
+e asm.bytes=false
+pd 40
+EOF
+EXPECT=<<EOF
+[Relocations]
+
+vaddr      paddr      type   name
+---------------------------------
+0x0003f94c 0x0001f94c ADD_32 _Jv_RegisterClasses
+0x0003f954 0x0001f954 ADD_32 __register_frame_info
+0x0003f958 0x0001f958 ADD_32 __deregister_frame_info
+0x0003f98c 0x0001f98c ADD_32 atexit
+0x0003f998 0x0001f998 ADD_32 exit
+0x0003f9a4 0x0001f9a4 ADD_32 _exit
+0x0003f9b0 0x0001f9b0 ADD_32 __deregister_frame_info
+0x0003f9bc 0x0001f9bc ADD_32 __register_frame_info
+0x0003f9c8 0x0001f9c8 ADD_32 _Jv_RegisterClasses
+0x0003f9d4 0x0001f9d4 ADD_32 fputs
+0x0003f9e0 0x0001f9e0 ADD_32 printf
+0x0003f9ec 0x0001f9ec ADD_32 __flsbuf
+0x0003f9f8 0x0001f9f8 ADD_32 free
+0x0003fa04 0x0001fa04 ADD_32 strncmp
+0x0003fa10 0x0001fa10 ADD_32 strcoll
+0x0003fa1c 0x0001fa1c ADD_32 longjmp
+0x0003fa28 0x0001fa28 ADD_32 strcmp
+0x0003fa34 0x0001fa34 ADD_32 strrchr
+0x0003fa40 0x0001fa40 ADD_32 .udiv
+0x0003fa4c 0x0001fa4c ADD_32 .umul
+0x0003fa58 0x0001fa58 ADD_32 setjmp
+0x0003fa64 0x0001fa64 ADD_32 __assert_c99
+0x0003fa70 0x0001fa70 ADD_32 strlen
+0x0003fa7c 0x0001fa7c ADD_32 sprintf
+0x0003fa88 0x0001fa88 ADD_32 memset
+0x0003fa94 0x0001fa94 ADD_32 lstat64
+0x0003faa0 0x0001faa0 ADD_32 stat64
+0x0003faac 0x0001faac ADD_32 __major
+0x0003fab8 0x0001fab8 ADD_32 __minor
+0x0003fac4 0x0001fac4 ADD_32 strncpy
+0x0003fad0 0x0001fad0 ADD_32 strcpy
+0x0003fadc 0x0001fadc ADD_32 mbrtowc
+0x0003fae8 0x0001fae8 ADD_32 wcwidth
+0x0003faf4 0x0001faf4 ADD_32 mbsinit
+0x0003fb00 0x0001fb00 ADD_32 fwrite
+0x0003fb0c 0x0001fb0c ADD_32 memcpy
+0x0003fb18 0x0001fb18 ADD_32 fflush
+0x0003fb24 0x0001fb24 ADD_32 sigprocmask
+0x0003fb30 0x0001fb30 ADD_32 raise
+0x0003fb3c 0x0001fb3c ADD_32 signal
+0x0003fb48 0x0001fb48 ADD_32 .urem
+0x0003fb54 0x0001fb54 ADD_32 localtime
+0x0003fb60 0x0001fb60 ADD_32 abort
+0x0003fb6c 0x0001fb6c ADD_32 fprintf
+0x0003fb78 0x0001fb78 ADD_32 setlocale
+0x0003fb84 0x0001fb84 ADD_32 getenv
+0x0003fb90 0x0001fb90 ADD_32 ioctl
+0x0003fb9c 0x0001fb9c ADD_32 opendir
+0x0003fba8 0x0001fba8 ADD_32 fstat64
+0x0003fbb4 0x0001fbb4 ADD_32 readdir64
+0x0003fbc0 0x0001fbc0 ADD_32 closedir
+0x0003fbcc 0x0001fbcc ADD_32 sigismember
+0x0003fbd8 0x0001fbd8 ADD_32 isatty
+0x0003fbe4 0x0001fbe4 ADD_32 strchr
+0x0003fbf0 0x0001fbf0 ADD_32 tcgetpgrp
+0x0003fbfc 0x0001fbfc ADD_32 sigemptyset
+0x0003fc08 0x0001fc08 ADD_32 sigaction
+0x0003fc14 0x0001fc14 ADD_32 sigaddset
+0x0003fc20 0x0001fc20 ADD_32 malloc
+0x0003fc2c 0x0001fc2c ADD_32 acl_trivial
+0x0003fc38 0x0001fc38 ADD_32 readlink
+0x0003fc44 0x0001fc44 ADD_32 iswcntrl
+0x0003fc50 0x0001fc50 ADD_32 memcmp
+0x0003fc5c 0x0001fc5c ADD_32 strerror_r
+0x0003fc68 0x0001fc68 ADD_32 strcat
+0x0003fc74 0x0001fc74 ADD_32 tolower
+0x0003fc80 0x0001fc80 ADD_32 wctype
+0x0003fc8c 0x0001fc8c ADD_32 btowc
+0x0003fc98 0x0001fc98 ADD_32 iswctype
+0x0003fca4 0x0001fca4 ADD_32 memchr
+0x0003fcb0 0x0001fcb0 ADD_32 wcslen
+0x0003fcbc 0x0001fcbc ADD_32 wmemcpy
+0x0003fcc8 0x0001fcc8 ADD_32 wcscat
+0x0003fcd4 0x0001fcd4 ADD_32 towlower
+0x0003fce0 0x0001fce0 ADD_32 wmemchr
+0x0003fcec 0x0001fcec ADD_32 mbsrtowcs
+0x0003fcf8 0x0001fcf8 ADD_32 clock_gettime
+0x0003fd04 0x0001fd04 ADD_32 gettimeofday
+0x0003fd10 0x0001fd10 ADD_32 strdup
+0x0003fd1c 0x0001fd1c ADD_32 calloc
+0x0003fd28 0x0001fd28 ADD_32 _Q_flt
+0x0003fd34 0x0001fd34 ADD_32 _Q_qtoull
+0x0003fd40 0x0001fd40 ADD_32 _Q_lltoq
+0x0003fd4c 0x0001fd4c ADD_32 _Q_add
+0x0003fd58 0x0001fd58 ADD_32 _Q_fne
+0x0003fd64 0x0001fd64 ADD_32 localeconv
+0x0003fd70 0x0001fd70 ADD_32 _Q_div
+0x0003fd7c 0x0001fd7c ADD_32 _Q_mul
+0x0003fd88 0x0001fd88 ADD_32 _Q_itoq
+0x0003fd94 0x0001fd94 ADD_32 _Q_fle
+0x0003fda0 0x0001fda0 ADD_32 memmove
+0x0003fdac 0x0001fdac ADD_32 getpwuid
+0x0003fdb8 0x0001fdb8 ADD_32 getpwnam
+0x0003fdc4 0x0001fdc4 ADD_32 getgrgid
+0x0003fdd0 0x0001fdd0 ADD_32 getgrnam
+0x0003fddc 0x0001fddc ADD_32 iswprint
+0x0003fde8 0x0001fde8 ADD_32 toupper
+0x0003fdf4 0x0001fdf4 ADD_32 mbrlen
+0x0003fe00 0x0001fe00 ADD_32 tzset
+0x0003fe0c 0x0001fe0c ADD_32 strftime
+0x0003fe18 0x0001fe18 ADD_32 .div
+0x0003fe24 0x0001fe24 ADD_32 .rem
+0x0003fe30 0x0001fe30 ADD_32 gmtime_r
+0x0003fe3c 0x0001fe3c ADD_32 localtime_r
+0x0003fe48 0x0001fe48 ADD_32 realloc
+0x0003fe54 0x0001fe54 ADD_32 strtoul
+0x0003fe60 0x0001fe60 ADD_32 strtoumax
+0x0003fe6c 0x0001fe6c ADD_32 __fpending
+0x0003fe78 0x0001fe78 ADD_32 fclose
+0x0003fe84 0x0001fe84 ADD_32 _Q_fgt
+0x0003fe90 0x0001fe90 ADD_32 _Q_qtoi
+0x0003fe9c 0x0001fe9c ADD_32 _Q_sub
+0x0003fea8 0x0001fea8 ADD_32 _Q_fge
+0x0003feb4 0x0001feb4 ADD_32 _Q_feq
+0x0003fec0 0x0001fec0 ADD_32 snprintf
+0x0003fecc 0x0001fecc ADD_32 frexp
+0x0003fed8 0x0001fed8 ADD_32 ldexp
+0x00040578 0x00040578 ADD_32 __iob
+0x000406b8 0x000406b8 ADD_32 errno
+0x000406c0 0x000406c0 ADD_32 __ctype
+0x000408d8 0x000408d8 ADD_32 tzname
+0x000408e8 0x000408e8 ADD_32 _environ
+
+
+122 relocations
+;-- section..plt:
+;-- .plt:
+;-- _PROCEDURE_LINKAGE_TABLE_:
+0x0003f95c      unimp 0                                                ; [17] -rwx section size 1420 named .plt
+0x0003f960      unimp 0
+0x0003f964      unimp 0
+0x0003f968      unimp 0
+0x0003f96c      unimp 0
+0x0003f970      unimp 0
+0x0003f974      unimp 0
+0x0003f978      unimp 0
+0x0003f97c      unimp 0
+0x0003f980      unimp 0
+0x0003f984      unimp 0
+0x0003f988      unimp 0
+;-- reloc.atexit:
+;-- atexit:
+0x0003f98c      sethi 0x30, g1                                         ; RELOC 32 atexit
+0x0003f990      ba,a obj._PROCEDURE_LINKAGE_TABLE_
+0x0003f994      nop
+;-- reloc.exit:
+;-- exit:
+0x0003f998      sethi 0x3c, g1                                         ; RELOC 32 exit
+0x0003f99c      ba,a obj._PROCEDURE_LINKAGE_TABLE_
+0x0003f9a0      nop
+;-- reloc._exit:
+;-- _exit:
+0x0003f9a4      sethi 0x48, g1                                         ; RELOC 32 _exit
+0x0003f9a8      ba,a obj._PROCEDURE_LINKAGE_TABLE_
+0x0003f9ac      nop
+;-- reloc.__deregister_frame_info:
+0x0003f9b0      sethi 0x54, g1                                         ; RELOC 32 __deregister_frame_info
+0x0003f9b4      ba,a obj._PROCEDURE_LINKAGE_TABLE_
+0x0003f9b8      nop
+;-- reloc.__register_frame_info:
+0x0003f9bc      sethi 0x60, g1                                         ; RELOC 32 __register_frame_info
+0x0003f9c0      ba,a obj._PROCEDURE_LINKAGE_TABLE_
+0x0003f9c4      nop
+;-- reloc._Jv_RegisterClasses:
+0x0003f9c8      sethi 0x6c, g1                                         ; RELOC 32 _Jv_RegisterClasses
+0x0003f9cc      ba,a obj._PROCEDURE_LINKAGE_TABLE_
+0x0003f9d0      nop
+;-- reloc.fputs:
+;-- fputs:
+0x0003f9d4      sethi 0x78, g1                                         ; RELOC 32 fputs
+0x0003f9d8      ba,a obj._PROCEDURE_LINKAGE_TABLE_
+0x0003f9dc      nop
+;-- reloc.printf:
+;-- printf:
+0x0003f9e0      sethi 0x84, g1                                         ; RELOC 32 printf
+0x0003f9e4      ba,a obj._PROCEDURE_LINKAGE_TABLE_
+0x0003f9e8      nop
+;-- reloc.__flsbuf:
+;-- __flsbuf:
+0x0003f9ec      sethi 0x90, g1                                         ; RELOC 32 __flsbuf
+0x0003f9f0      ba,a obj._PROCEDURE_LINKAGE_TABLE_
+0x0003f9f4      nop
+;-- reloc.free:
+;-- free:
+0x0003f9f8      sethi 0x9c, g1                                         ; RELOC 32 free
+EOF
+RUN
