@@ -1363,21 +1363,6 @@ static bool init_dynstr(ELFOBJ *bin) {
 	return false;
 }
 
-static HtUP *rel_cache_new(const RVector *relocs, ut32 reloc_num) {
-	if (!relocs || reloc_num == 0) {
-		return NULL;
-	}
-	const int htsize = R_MIN (reloc_num, 1024);
-	HtUP *rel_cache = ht_up_new_size (htsize, NULL, NULL, NULL);
-	if (rel_cache) {
-		RBinElfReloc *reloc;
-		r_vector_foreach (relocs, reloc) {
-			ht_up_insert (rel_cache, reloc->sym, reloc);
-		}
-	}
-	return rel_cache;
-}
-
 static const RVector *_load_elf_sections(ELFOBJ *bin);
 
 static bool elf_init(ELFOBJ *bin) {
@@ -1409,8 +1394,8 @@ static bool elf_init(ELFOBJ *bin) {
 	bin->symbols_by_ord = NULL;
 	(void) _load_elf_sections (bin);
 	bin->boffset = Elf_(r_bin_elf_get_boffset) (bin);
+	bin->rel_cache = ht_up_new_size (1024, NULL, NULL, NULL);
 	(void) Elf_(r_bin_elf_load_relocs) (bin);
-	bin->rel_cache = rel_cache_new (&bin->g_relocs, bin->g_reloc_num);
 	sdb_ns_set (bin->kv, "versioninfo", store_versioninfo (bin));
 	return true;
 }
@@ -2908,6 +2893,7 @@ static size_t populate_relocs_record_from_dynamic(ELFOBJ *bin, size_t pos, size_
 		if (!read_reloc (bin, reloc, bin->dyn_info.dt_pltrel, bin->dyn_info.dt_jmprel + offset)) {
 			break;
 		}
+		ht_up_insert (bin->rel_cache, reloc->sym, reloc);
 		fix_rva_and_offset_exec_file (bin, reloc);
 	}
 
@@ -2916,6 +2902,7 @@ static size_t populate_relocs_record_from_dynamic(ELFOBJ *bin, size_t pos, size_
 		if (!read_reloc (bin, reloc, DT_RELA, bin->dyn_info.dt_rela + offset)) {
 			break;
 		}
+		ht_up_insert (bin->rel_cache, reloc->sym, reloc);
 		fix_rva_and_offset_exec_file (bin, reloc);
 	}
 
@@ -2924,6 +2911,7 @@ static size_t populate_relocs_record_from_dynamic(ELFOBJ *bin, size_t pos, size_
 		if (!read_reloc (bin, reloc, DT_REL, bin->dyn_info.dt_rel + offset)) {
 			break;
 		}
+		ht_up_insert (bin->rel_cache, reloc->sym, reloc);
 		fix_rva_and_offset_exec_file (bin, reloc);
 	}
 
@@ -2981,6 +2969,7 @@ static size_t populate_relocs_record_from_section(ELFOBJ *bin, size_t pos, size_
 				break;
 			}
 
+			ht_up_insert (bin->rel_cache, reloc->sym, reloc);
 			fix_rva_and_offset (bin, reloc, i);
 			pos++;
 		}
@@ -3003,7 +2992,6 @@ static bool populate_relocs_record(ELFOBJ *bin) {
 			return false;
 		}
 	}
-
 	i = populate_relocs_record_from_dynamic (bin, i, num_relocs);
 	i = populate_relocs_record_from_section (bin, i, num_relocs);
 	bin->g_reloc_num = i;
