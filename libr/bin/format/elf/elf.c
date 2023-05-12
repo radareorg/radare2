@@ -3009,7 +3009,6 @@ const RVector *Elf_(r_bin_elf_load_relocs) (ELFOBJ *bin) {
 	if (!populate_relocs_record (bin)) {
 		return NULL;
 	}
-
 	return &bin->g_relocs;
 }
 
