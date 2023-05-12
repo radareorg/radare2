@@ -582,9 +582,12 @@ static RBinReloc *reloc_convert(ELFOBJ* bin, RBinElfReloc *rel, ut64 got_addr) {
 		ADD (32, 0);
 		break;
 	case EM_SPARC:
+	case EM_SPARCV9:
+	case EM_SPARC32PLUS:
 		ADD (32, 0);
 		break;
 	default:
+		R_LOG_DEBUG ("unimplemented ELF reloc type %d", rel->type);
 		break;
 	}
 #undef SET
