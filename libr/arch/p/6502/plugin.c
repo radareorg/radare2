@@ -4,6 +4,9 @@
  *
  * Mnemonics logic based on:
  *	http://homepage.ntlworld.com/cyborgsystems/CS_Main/6502/6502.htm
+ *	(archive)
+ *	1 https://web.archive.org/web/20160406122905/http://homepage.ntlworld.com/cyborgsystems/CS_Main/6502/6502.htm
+ *	2 https://github.com/csBlueChip/6502_Programming_Guide
  * and:
  *	http://vice-emu.sourceforge.net/
  */
