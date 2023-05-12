@@ -565,7 +565,6 @@ static RBinReloc *reloc_convert(ELFOBJ* bin, RBinElfReloc *rel, ut64 got_addr) {
 		case R_PPC_JMP_SLOT:    ADD (32, 0); break;
 		default:
 			R_LOG_DEBUG ("unimplemented ELF/PPC reloc type %d", rel->type);
-		break;
 		}
 		break;
 	case EM_BPF: switch (rel->type) {
@@ -578,6 +577,12 @@ static RBinReloc *reloc_convert(ELFOBJ* bin, RBinElfReloc *rel, ut64 got_addr) {
 			R_LOG_DEBUG ("unimplemented ELF/BPF reloc type %d", rel->type);
 			break;
 		}
+		break;
+	case EM_MIPS:
+		ADD (32, 0);
+		break;
+	case EM_SPARC:
+		ADD (32, 0);
 		break;
 	default:
 		break;
@@ -611,15 +616,22 @@ static RList* relocs(RBinFile *bf) {
 		if (!relocs) {
 			return ret;
 		}
-
-		RBinElfReloc *reloc;
+		RBinElfReloc *reloc, *r;
+		RListIter *iter;
 		r_vector_foreach (relocs, reloc) {
+			// XXX this is slow
+			r_list_foreach (ret, iter, r) {
+				if (r->rva == reloc->rva) {
+					goto another;
+				}
+			}
 			if (!(ptr = reloc_convert (bin, reloc, got_addr))) {
 				continue;
 			}
 			if (ptr->paddr != UT64_MAX) {
 				r_list_append (ret, ptr);
 			}
+another:;
 		}
 	}
 	return ret;
