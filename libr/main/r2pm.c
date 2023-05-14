@@ -975,10 +975,10 @@ static char *r2pm_search(const char *grep) {
 	RStrBuf *sb = r_strbuf_new ("");
 	r_list_foreach (files, iter, file) {
 		if (*file != '.') {
-			bool match = R_STR_ISEMPTY (grep) || strstr (file, grep);
+			bool match = R_STR_ISEMPTY (grep) || r_str_casestr (file, grep);
 			char *desc = r2pm_desc (file);
 			if (desc) {
-				if (match || strstr (desc, grep)) {
+				if (match || r_str_casestr (desc, grep)) {
 					r_strbuf_appendf (sb, "%s%s%s\n", file, r_str_pad (' ', 20 - strlen (file)), desc);
 				}
 				free (desc);
