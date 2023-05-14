@@ -99,6 +99,12 @@ static int r2qjs_loader(JSContext *ctx, const char *const buffer) {
 		if (!nl) {
 			break;
 		}
+		if (strstr (ptr, alias_marker)) {
+			// skip line
+			// R_LOG_INFO ("ALIAS %s", ptr);
+			ptr = nl + 1;
+			continue;
+		}
 		int size = atoi (ptr);
 		if (size < 1) {
 			break;
