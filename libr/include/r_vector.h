@@ -144,7 +144,11 @@ R_API void *r_vector_shrink(RVector *vec);
 
 R_API void *r_vector_flush(RVector *vec);
 
-static inline R_MUSTUSE void *r_vector_end (RVector *vec) {
+static inline R_MUSTUSE int r_vector_index(RVector *vec) {
+	return vec->len - 1;
+}
+
+static inline R_MUSTUSE void *r_vector_end(RVector *vec) {
 	const size_t len = vec->len;
 	if (R_UNLIKELY (len >= vec->capacity)) {
 		const size_t next_capacity = (vec->capacity + 4) * 2;
