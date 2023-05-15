@@ -1,5 +1,5 @@
-#ifndef SDB_HT_H_
-#define SDB_HT_H_
+#ifndef SDB_HT_UU_H_
+#define SDB_HT_UU_H_
 
 /*
  * This header provides an hashtable Ht that has ut64 as key and ut64 as
