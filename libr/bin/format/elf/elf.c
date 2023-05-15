@@ -1,7 +1,6 @@
 /* radare - LGPL - Copyright 2008-2023 - nibble, pancake, alvaro_fe */
 
 #define R_LOG_ORIGIN "elf"
-#include <sdb/ht_uu.h>
 #include <r_types.h>
 #include <r_util.h>
 #include "elf.h"
