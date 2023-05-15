@@ -1,6 +1,7 @@
 /* radare - LGPL - Copyright 2007-2023 - pancake */
 
 #include <r_bin.h>
+#include <r_userconf.h>
 
 /* stable code */
 static const char * const rwxstr[] = {
@@ -4067,8 +4068,8 @@ R_API char *r_str_version(const char *program) {
 	if (*R2_GITTIP) {
 		s = r_str_append (s, "commit: "R2_GITTIP"\n");
 	}
-	s = r_str_appendf (s, "options:%s%s%s%s checks=%d",
-			gplstr, asanstr, release, optistr, R_CHECKS_LEVEL);
+	s = r_str_appendf (s, "options:%s%s%s%s checks=%d %s",
+			gplstr, asanstr, release, optistr, R_CHECKS_LEVEL, R_BUILDSYSTEM);
 	return s;
 }
 
