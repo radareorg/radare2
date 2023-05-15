@@ -1658,12 +1658,12 @@ static ut64 get_import_addr(ELFOBJ *bin, int sym) {
 		return UT64_MAX;
 	}
 
-	int index = ht_uu_find (bin->rel_cache, sym, NULL);
+	int index = ht_uu_find (bin->rel_cache, sym+1, NULL);
 	if (index == -1) {
 		return UT64_MAX;
 	}
 	// lookup the right rel/rela entry
-	RBinElfReloc *rel = r_vector_at (&bin->g_relocs, index);
+	RBinElfReloc *rel = r_vector_at (&bin->g_relocs, index - 1);
 	if (!rel) {
 		return UT64_MAX;
 	}
@@ -2894,6 +2894,7 @@ static size_t populate_relocs_record_from_dynamic(ELFOBJ *bin, size_t pos, size_
 	size_t offset;
 	size_t size = get_size_rel_mode (bin->dyn_info.dt_pltrel);
 
+	// order matters
 	for (offset = 0; offset < bin->dyn_info.dt_pltrelsz && pos < num_relocs; offset += size, pos++) {
 		reloc = r_vector_end (&bin->g_relocs);
 		if (!read_reloc (bin, reloc, bin->dyn_info.dt_pltrel, bin->dyn_info.dt_jmprel + offset)) {
@@ -2901,17 +2902,16 @@ static size_t populate_relocs_record_from_dynamic(ELFOBJ *bin, size_t pos, size_
 		}
 		// XXX reloc is a weak pointer we can't own it!
 		int index = r_vector_index (&bin->g_relocs);
-		ht_uu_insert (bin->rel_cache, reloc->sym, index);
+		ht_uu_insert (bin->rel_cache, reloc->sym+1, index +1);
 		fix_rva_and_offset_exec_file (bin, reloc);
 	}
-
 	for (offset = 0; offset < bin->dyn_info.dt_relasz && pos < num_relocs; offset += bin->dyn_info.dt_relaent, pos++) {
 		reloc = r_vector_end (&bin->g_relocs);
 		if (!read_reloc (bin, reloc, DT_RELA, bin->dyn_info.dt_rela + offset)) {
 			break;
 		}
 		int index = r_vector_index (&bin->g_relocs);
-		ht_uu_insert (bin->rel_cache, reloc->sym, index);
+		ht_uu_insert (bin->rel_cache, reloc->sym + 1, index + 1);
 		fix_rva_and_offset_exec_file (bin, reloc);
 	}
 
@@ -2921,7 +2921,7 @@ static size_t populate_relocs_record_from_dynamic(ELFOBJ *bin, size_t pos, size_
 			break;
 		}
 		int index = r_vector_index (&bin->g_relocs);
-		ht_uu_insert (bin->rel_cache, reloc->sym, index);
+		ht_uu_insert (bin->rel_cache, reloc->sym + 1, index + 1);
 		fix_rva_and_offset_exec_file (bin, reloc);
 	}
 
