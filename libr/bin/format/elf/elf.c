@@ -1,6 +1,7 @@
 /* radare - LGPL - Copyright 2008-2023 - nibble, pancake, alvaro_fe */
 
 #define R_LOG_ORIGIN "elf"
+#include <sdb/ht_uu.h>
 #include <r_types.h>
 #include <r_util.h>
 #include "elf.h"
@@ -1394,7 +1395,8 @@ static bool elf_init(ELFOBJ *bin) {
 	bin->symbols_by_ord = NULL;
 	(void) _load_elf_sections (bin);
 	bin->boffset = Elf_(r_bin_elf_get_boffset) (bin);
-	bin->rel_cache = ht_up_new_size (1024, NULL, NULL, NULL);
+	HtUUOptions opt = {0};
+	bin->rel_cache = ht_uu_new_opt (&opt);
 	(void) Elf_(r_bin_elf_load_relocs) (bin);
 	sdb_ns_set (bin->kv, "versioninfo", store_versioninfo (bin));
 	return true;
@@ -1416,7 +1418,7 @@ ut64 Elf_(r_bin_elf_get_section_addr_end)(ELFOBJ *bin, const char *section_name)
 }
 
 static ut64 get_got_entry(ELFOBJ *bin, RBinElfReloc *rel) {
-	if (!rel->rva) {
+	if (!rel || !rel->rva || rel->rva == UT64_MAX) {
 		return UT64_MAX;
 	}
 
@@ -1656,8 +1658,12 @@ static ut64 get_import_addr(ELFOBJ *bin, int sym) {
 		return UT64_MAX;
 	}
 
+	int index = ht_uu_find (bin->rel_cache, sym, NULL);
+	if (index == -1) {
+		return UT64_MAX;
+	}
 	// lookup the right rel/rela entry
-	RBinElfReloc *rel = ht_up_find (bin->rel_cache, sym, NULL);
+	RBinElfReloc *rel = r_vector_at (&bin->g_relocs, index);
 	if (!rel) {
 		return UT64_MAX;
 	}
@@ -2893,7 +2899,9 @@ static size_t populate_relocs_record_from_dynamic(ELFOBJ *bin, size_t pos, size_
 		if (!read_reloc (bin, reloc, bin->dyn_info.dt_pltrel, bin->dyn_info.dt_jmprel + offset)) {
 			break;
 		}
-		ht_up_insert (bin->rel_cache, reloc->sym, reloc);
+		// XXX reloc is a weak pointer we can't own it!
+		int index = r_vector_index (&bin->g_relocs);
+		ht_uu_insert (bin->rel_cache, reloc->sym, index);
 		fix_rva_and_offset_exec_file (bin, reloc);
 	}
 
@@ -2902,7 +2910,8 @@ static size_t populate_relocs_record_from_dynamic(ELFOBJ *bin, size_t pos, size_
 		if (!read_reloc (bin, reloc, DT_RELA, bin->dyn_info.dt_rela + offset)) {
 			break;
 		}
-		ht_up_insert (bin->rel_cache, reloc->sym, reloc);
+		int index = r_vector_index (&bin->g_relocs);
+		ht_uu_insert (bin->rel_cache, reloc->sym, index);
 		fix_rva_and_offset_exec_file (bin, reloc);
 	}
 
@@ -2911,7 +2920,8 @@ static size_t populate_relocs_record_from_dynamic(ELFOBJ *bin, size_t pos, size_
 		if (!read_reloc (bin, reloc, DT_REL, bin->dyn_info.dt_rel + offset)) {
 			break;
 		}
-		ht_up_insert (bin->rel_cache, reloc->sym, reloc);
+		int index = r_vector_index (&bin->g_relocs);
+		ht_uu_insert (bin->rel_cache, reloc->sym, index);
 		fix_rva_and_offset_exec_file (bin, reloc);
 	}
 
@@ -2969,7 +2979,8 @@ static size_t populate_relocs_record_from_section(ELFOBJ *bin, size_t pos, size_
 				break;
 			}
 
-			ht_up_insert (bin->rel_cache, reloc->sym, reloc);
+			int index = r_vector_index (&bin->g_relocs);
+			ht_uu_insert (bin->rel_cache, reloc->sym, index);
 			fix_rva_and_offset (bin, reloc, i);
 			pos++;
 		}
@@ -4504,7 +4515,7 @@ void Elf_(r_bin_elf_free)(ELFOBJ* bin) {
 	if (bin->fields_loaded) {
 		r_vector_fini (&bin->g_fields);
 	}
-	ht_up_free (bin->rel_cache);
+	ht_uu_free (bin->rel_cache);
 	bin->rel_cache = NULL;
 	sdb_free (bin->kv);
 	r_list_free (bin->inits);
