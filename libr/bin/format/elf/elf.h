@@ -2,6 +2,7 @@
 #include <r_util.h>
 #include <r_lib.h>
 #include <r_bin.h>
+#include <sdb/ht_uu.h>
 
 #include "elf_specs.h"
 
@@ -146,7 +147,7 @@ struct Elf_(r_bin_elf_obj_t) {
 	RVector *phdr_symbols;  // RBinElfSymbol
 	RVector *phdr_imports;  // RBinElfSymbol
 	RList *inits;
-	HtUP *rel_cache;
+	HtUU *rel_cache;
 	ut32 g_reloc_num;
 	bool relocs_loaded;
 	RVector g_relocs;  // RBinElfReloc
