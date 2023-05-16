@@ -69,7 +69,8 @@ pwd
 
 # update
 if [ -z "$WITHOUT_PULL" ]; then
-	if [ -d .git ]; then
+	# if .git is a directory, that's a clone, if it's a file it's a submodule
+	if [ -e .git ]; then
 		git branch | grep "^\* master" > /dev/null
 		if [ $? = 0 ]; then
 			echo "WARNING: Updating from remote repository"
