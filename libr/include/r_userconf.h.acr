@@ -21,6 +21,11 @@ extern "C" {
 #define HAVE_LINUX_CAN_H @HAVE_LINUX_CAN_H@
 
 #define R_BUILDSYSTEM "@R2_BUILDSYSTEM@"
+#if @USE_CS4@ > 0
+#define R2_CSVERSION 4
+#else
+#define R2_CSVERSION 5
+#endif
 
 #define WITH_STATIC_THEMES @WITH_STATIC_THEMES@
 

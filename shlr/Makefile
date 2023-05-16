@@ -14,7 +14,7 @@ else
 WITHOUT_PULL=0
 
 # Build against last capstone release or next
-ifeq ($(shell test -d ../.git && echo 1),1)
+ifeq ($(shell test -e ../.git && echo 1),1)
 CS_RELEASE=0
 else
 ifeq ($(shell test -d capstone/.git && echo 1),1)
