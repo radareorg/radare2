@@ -434,10 +434,17 @@ R_API RLibStruct radare_plugin = {
 	.version = R2_VERSION
 };
 #endif
+
 #else
+
+RArchPlugin r_arch_plugin_sh_cs = {
+	0
+};
+
 #ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
 	.type = 0,
+	.data = &r_arch_plugin_sh_cs,
 	.version = -1
 };
 #endif
