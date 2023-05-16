@@ -16,12 +16,12 @@ static char *r_debug_native_reg_profile(RDebug *dbg) {
 	}
 #elif (__OpenBSD__ || __NetBSD__)
 /*                           __.--..__
-	       \-/-/-/    _ __  _.--'  _.--'
-	  _  \'       \   \\  ''      `------.__
-	  \\/      __)_)   \\      ____..---'
-	  //\       o  o    \\----'
-	     / <_/      3    \\
-	      \_,_,__,_/      \\
+       \-/-/-/    _ __  _.--'  _.--'
+  _  \'       \   \\  ''      `------.__
+  \\/      __)_)   \\      ____..---'
+  //\       o  o    \\----'
+     / <_/      3    \\
+      \_,_,__,_/      \\
 */
 #if __i386__
 #include "reg/netbsd-x86.h"
@@ -29,21 +29,23 @@ static char *r_debug_native_reg_profile(RDebug *dbg) {
 #include "reg/netbsd-x64.h"
 #elif __aarch64__
 #include "reg/netbsd-arm64.h"
+#elif __powerpc__
+#include "reg/kfbsd-ppc.h"
 #else
 #error "Unsupported BSD architecture"
 #endif
 
 #elif __KFBSD__ || __FreeBSD__
 /*
-	    /(       ).
-	    \ \__   /|
-	    /  _ '-/ |
-	   (/\/ |    \
-	   / /  | \   )
-	   O O _/     |
-	  (__)  __   /
-	    \___/   /
-	      `----'
+    /(       ).
+    \ \__   /|
+    /  _ '-/ |
+   (/\/ |    \
+   / /  | \   )
+   O O _/     |
+  (__)  __   /
+    \___/   /
+      `----'
 */
 #if __i386__ || __i386
 #include "reg/kfbsd-x86.h"
