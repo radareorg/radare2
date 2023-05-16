@@ -3,11 +3,12 @@
 #include <r_arch.h>
 #include <r_lib.h>
 #include <capstone/capstone.h>
-#include <capstone/tricore.h>
 
-#if CS_API_MAJOR < 2
-#error Old Capstone not supported
-#endif
+#if CS_API_MAJOR < 5
+RArchPlugin r_arch_plugin_tricore_cs = {
+	{0}
+};
+#else
 
 #define INSOP(n) insn->detail->sh.operands[n]
 
@@ -226,6 +227,7 @@ RArchPlugin r_arch_plugin_tricore_cs = {
 	.init = init,
 	.fini = fini,
 };
+#endif
 
 #ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
