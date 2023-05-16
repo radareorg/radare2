@@ -6,7 +6,7 @@
 
 #if CS_API_MAJOR < 5
 RArchPlugin r_arch_plugin_tricore_cs = {
-	{0}
+	0
 };
 #else
 
