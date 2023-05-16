@@ -33,6 +33,12 @@ static bool r_arch_cs_init(RArchSession *as, csh *cs_handle) {
 	int mode = CSINC_MODE;
 	initcs (cs_handle);
 #if 0
+	const bool be = R_ARCH_CONFIG_IS_BIG_ENDIAN (as->config);
+	if (be) {
+		mode = CS_MODE_BIG_ENDIAN;
+	}
+#endif
+#if 0
 	if (mode != a->cs_omode || a->config->bits != a->cs_obits) {
 		if (a->cs_handle != 0) {
 			cs_close (&a->cs_handle);
