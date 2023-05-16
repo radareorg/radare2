@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2013-2022 - pancake */
+/* radare2 - LGPL - Copyright 2013-2023 - pancake */
 
 #include <r_arch.h>
 #include <r_esil.h>
@@ -59,14 +59,8 @@ static const char* cmask64(char *cmaskbuf, const char *mb_c, const char *me_c) {
 }
 
 static const char* cmask32(char *cmaskbuf, const char *mb_c, const char *me_c) {
-	ut32 mb = 0;
-	ut32 me = 0;
-	if (mb_c) {
-		mb = strtol (mb_c, NULL, 16);
-	}
-	if (me_c) {
-		me = strtol (me_c, NULL, 16);
-	}
+	ut32 mb = mb_c? strtol (mb_c, NULL, 16): 0;
+	ut32 me = me_c? strtol (me_c, NULL, 16): 0;
 	snprintf (cmaskbuf, cmaskbuf_SIZEOF, "0x%"PFMT32x, mask32 (mb, me));
 	return cmaskbuf;
 }
@@ -541,9 +535,14 @@ static char *shrink(char *op) {
 }
 
 #define CSINC PPC
+#if 0
 #define CSINC_MODE \
 	((as->config->bits == 64) ? CS_MODE_64 : (as->config->bits == 32) ? CS_MODE_32 : 0) \
 	| (R_ARCH_CONFIG_IS_BIG_ENDIAN (as->config)? CS_MODE_BIG_ENDIAN: CS_MODE_LITTLE_ENDIAN)
+#else
+#define CSINC_MODE \
+	((as->config->bits == 64) ? CS_MODE_64 : (as->config->bits == 32) ? CS_MODE_32 : 0)
+#endif
 #include "../capstone.inc"
 
 typedef struct plugin_data_t {
@@ -659,9 +658,18 @@ static csh cs_handle_for_session(RArchSession *as) {
 	return pd->cs_handle;
 }
 
+static void swap4(ut8 *buf) {
+	ut8 swap = buf[0];
+	buf[0] = buf[3];
+	buf[3] = swap;
+	swap = buf[1];
+	buf[1] = buf[2];
+	buf[2] = swap;
+}
+
 static bool decode(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
 	const ut64 addr = op->addr;
-	const ut8 *buf = op->bytes;
+	ut8 *buf = op->bytes;
 	const int len = op->size;
 	char cmaskbuf[cmaskbuf_SIZEOF] = {0};
 	csh handle = cs_handle_for_session (as);
@@ -675,19 +683,26 @@ static bool decode(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
 
 	PluginData *pd = as->data;
 	const char *cpu = as->config->cpu;
+	const bool be = R_ARCH_CONFIG_IS_BIG_ENDIAN (as->config);
+	if (be) {
+		swap4 (buf);
+	}
 	// capstone-next
 	int n = cs_disasm (handle, (const ut8*)buf, len, addr, 1, &insn);
+	if (be) {
+		swap4 (buf);
+	}
 	if (mask & R_ARCH_OP_MASK_DISASM) {
 		ret = -1;
 		if (cpu && !strcmp (cpu, "vle")) {
-			if (!R_ARCH_CONFIG_IS_BIG_ENDIAN (as->config)) {
+			if (!be) {
 				return false;
 			}
 			// vle is big-endian only
 			ret = decompile_vle (as, op, addr, buf, len);
 		} else if (cpu && !strcmp (cpu, "ps")) {
 			// libps is big-endian only
-			if (!R_ARCH_CONFIG_IS_BIG_ENDIAN (as->config)) {
+			if (!be) {
 				return false;
 			}
 			ret = decompile_ps (as, op, addr, buf, len);
@@ -705,7 +720,7 @@ static bool decode(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
 	}
 	if (cpu && !strcmp (cpu, "vle")) {
 		// vle is big-endian only
-		if (!R_ARCH_CONFIG_IS_BIG_ENDIAN (as->config)) {
+		if (!be) {
 			return false;
 		}
 		ret = analop_vle (as, op, addr, buf, len);
