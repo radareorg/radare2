@@ -129,6 +129,8 @@ r_arch_sources = [
   'p/mips_gnu/mips16-opc.c',
   'p/mips_gnu/micromips-opc.c',
   'p/mips_gnu/mips-opc.c',
+  'p/sh_cs/plugin.c',
+  'p/tricore_cs/plugin.c',
   # python
   'p/pyc/plugin.c',
   'p/pyc/opcode_all.c',

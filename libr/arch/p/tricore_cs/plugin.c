@@ -1,48 +1,45 @@
-/* radare2 - LGPL - Copyright 2014-2023 - pancake */
+/* radare2 - LGPL - Copyright 2023 - pancake */
 
 #include <r_arch.h>
 #include <r_lib.h>
 #include <capstone/capstone.h>
-#include <capstone/xcore.h>
+#include <capstone/tricore.h>
 
 #if CS_API_MAJOR < 2
 #error Old Capstone not supported
 #endif
 
-#define INSOP(n) insn->detail->xcore.operands[n]
+#define INSOP(n) insn->detail->sh.operands[n]
 
-#define CSINC XCORE
-#define CSINC_MODE \
-	CS_MODE_BIG_ENDIAN \
-	| (as->config->cpu != NULL && ((!strcmp (as->config->cpu, "v9"))) ? CS_MODE_V9 : 0)
+#define CSINC TRICORE
+#define CSINC_MODE 0
+	// CS_MODE_BIG_ENDIAN
 #include "../capstone.inc"
 
 static void opex(RStrBuf *buf, csh handle, cs_insn *insn) {
-	int i;
 	PJ *pj = pj_new ();
 	if (!pj) {
 		return;
 	}
 	pj_o (pj);
 	pj_ka (pj, "operands");
-	cs_xcore *x = &insn->detail->xcore;
+#if 0
+	int i;
+	cs_sh *x = &insn->detail->sh;
 	for (i = 0; i < x->op_count; i++) {
-		cs_xcore_op *op = x->operands + i;
+		cs_tricore_op *op = x->operands + i;
 		pj_o (pj);
 		switch (op->type) {
-		case XCORE_OP_REG:
+		case TRICORE_OP_REG:
 			pj_ks (pj, "type", "reg");
 			pj_ks (pj, "value", cs_reg_name (handle, op->reg));
 			break;
-		case XCORE_OP_IMM:
+		case TRICORE_OP_IMM:
 			pj_ks (pj, "type", "imm");
 			pj_ki (pj, "value", op->imm);
 			break;
-		case XCORE_OP_MEM:
+		case TRICORE_OP_MEM:
 			pj_ks (pj, "type", "mem");
-			if (op->mem.base != XCORE_REG_INVALID) {
-				pj_ks (pj, "base", cs_reg_name (handle, op->mem.base));
-			}
 			pj_ki (pj, "disp", op->mem.disp);
 			break;
 		default:
@@ -51,6 +48,7 @@ static void opex(RStrBuf *buf, csh handle, cs_insn *insn) {
 		}
 		pj_end (pj); /* o operand */
 	}
+#endif
 	pj_end (pj); /* a operands */
 	pj_end (pj);
 
@@ -74,12 +72,9 @@ static bool decode(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
 	if (handle == 0) {
 		return false;
 	}
-
 	op->size = 2;
 	cs_insn *insn;
-	int n;
-	// capstone-next
-	n = cs_disasm (handle, (const ut8*)buf, len, addr, 1, &insn);
+	int n = cs_disasm (handle, (const ut8*)buf, len, addr, 1, &insn);
 	if (n < 1) {
 		op->type = R_ANAL_OP_TYPE_ILL;
 	} else {
@@ -94,36 +89,8 @@ static bool decode(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
 		op->size = insn->size;
 		op->id = insn->id;
 		switch (insn->id) {
-		case XCORE_INS_DRET:
-		case XCORE_INS_KRET:
-		case XCORE_INS_RETSP:
-			op->type = R_ANAL_OP_TYPE_RET;
-			break;
-		case XCORE_INS_DCALL:
-		case XCORE_INS_KCALL:
-		case XCORE_INS_ECALLF:
-		case XCORE_INS_ECALLT:
-			op->type = R_ANAL_OP_TYPE_CALL;
-			op->jump = INSOP(0).imm;
-			break;
-		/* ??? */
-		case XCORE_INS_BL:
-		case XCORE_INS_BLA:
-		case XCORE_INS_BLAT:
-		case XCORE_INS_BT:
-		case XCORE_INS_BF:
-		case XCORE_INS_BU:
-		case XCORE_INS_BRU:
-			op->type = R_ANAL_OP_TYPE_CALL;
-			op->jump = INSOP(0).imm;
-			break;
-		case XCORE_INS_SUB:
-		case XCORE_INS_LSUB:
-			op->type = R_ANAL_OP_TYPE_SUB;
-			break;
-		case XCORE_INS_ADD:
-		case XCORE_INS_LADD:
-			op->type = R_ANAL_OP_TYPE_ADD;
+		case TRICORE_INS_INVALID:
+			op->type = R_ANAL_OP_TYPE_ILL;
 			break;
 		}
 		cs_free (insn, n);
@@ -132,7 +99,22 @@ static bool decode(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
 }
 
 static int archinfo(RArchSession *as, ut32 q) {
-	return 0;
+	if (q == R_ANAL_ARCHINFO_DATA_ALIGN) {
+		return 2;
+	}
+	if (q == R_ANAL_ARCHINFO_ALIGN) {
+		return 2;
+	}
+	if (q == R_ANAL_ARCHINFO_INV_OP_SIZE) {
+		return 2;
+	}
+	if (q == R_ANAL_ARCHINFO_MAX_OP_SIZE) {
+		return 4;
+	}
+	if (q == R_ANAL_ARCHINFO_MIN_OP_SIZE) {
+		return 2;
+	}
+	return 4; // XXX
 }
 
 static char *mnemonics(RArchSession *as, int id, bool json) {
@@ -164,15 +146,82 @@ static bool fini(RArchSession *as) {
 	return true;
 }
 
-RArchPlugin r_arch_plugin_xcore_cs = {
-	.name = "xcore",
-	.desc = "Capstone XCORE analysis",
+static char *regs(RArchSession *as) {
+	const char *p =
+		"=PC	pc\n"
+		"=SP	a10\n"
+		"=A0	a0\n"
+		"gpr	p0	.64	0	0\n"
+		"gpr	a0	.32	0	0\n"
+		"gpr	a1	.32	4	0\n"
+		"gpr	p2	.64	8	0\n"
+		"gpr	a2	.32	8	0\n"
+		"gpr	a3	.32	12	0\n"
+		"gpr	p4	.64	16	0\n"
+		"gpr	a4	.32	16	0\n"
+		"gpr	a5	.32	20	0\n"
+		"gpr	p6	.64	24	0\n"
+		"gpr	a6	.32	24	0\n"
+		"gpr	a7	.32	28	0\n"
+		"gpr	p8	.64	32	0\n"
+		"gpr	a8	.32	32	0\n"
+		"gpr	a9	.32	36	0\n"
+		"gpr	p10	.64	40	0\n"
+		"gpr	a10	.32	40	0\n"
+		"gpr	a11	.32	44	0\n"
+		"gpr	p12	.64	48	0\n"
+		"gpr	a12	.32	48	0\n"
+		"gpr	a13	.32	52	0\n"
+		"gpr	p14	.64	56	0\n"
+		"gpr	a14	.32	56	0\n"
+		"gpr	a15	.32	60	0\n"
+		"gpr	e0	.64	64	0\n"
+		"gpr	d0	.32	64	0\n"
+		"gpr	d1	.32	68	0\n"
+		"gpr	e2	.64	72	0\n"
+		"gpr	d2	.32	72	0\n"
+		"gpr	d3	.32	76	0\n"
+		"gpr	e4	.64	80	0\n"
+		"gpr	d4	.32	80	0\n"
+		"gpr	d5	.32	84	0\n"
+		"gpr	e6	.64	88	0\n"
+		"gpr	d6	.32	88	0\n"
+		"gpr	d7	.32	92	0\n"
+		"gpr	e8	.64	96	0\n"
+		"gpr	d8	.32	96	0\n"
+		"gpr	d9	.32	100	0\n"
+		"gpr	e10	.64	104	0\n"
+		"gpr	d10	.32	104	0\n"
+		"gpr	d11	.32	108	0\n"
+		"gpr	e12	.64	112	0\n"
+		"gpr	d12	.32	112	0\n"
+		"gpr	d13	.32	114	0\n"
+		"gpr	e14	.64	118	0\n"
+		"gpr	d14	.32	118	0\n"
+		"gpr	d15	.32	120	0\n"
+		"gpr	PSW	.32	124	0\n"
+		"gpr	PCXI	.32	128	0\n"
+		"gpr	FCX	.32	132	0\n"
+		"gpr	LCX	.32	136	0\n"
+		"gpr	ISP	.32	140	0\n"
+		"gpr	ICR	.32	144	0\n"
+		"gpr	PIPN	.32	148	0\n"
+		"gpr	BIV	.32	152	0\n"
+		"gpr	BTV	.32	156	0\n"
+		"gpr	pc	.32	160	0\n";
+	return strdup (p);
+}
+
+RArchPlugin r_arch_plugin_tricore_cs = {
+	.name = "tricore.cs",
+	.desc = "Capstone TriCore analysis",
+	.endian = R_SYS_ENDIAN_LITTLE,
 	.license = "BSD",
-	.arch = "xcore",
+	.arch = "tricore",
 	.bits = R_SYS_BITS_PACK1 (32),
 	.decode = decode,
 	.info = archinfo,
-	//.regs = regs,
+	.regs = regs,
 	.mnemonics = mnemonics,
 	.init = init,
 	.fini = fini,
@@ -181,7 +230,7 @@ RArchPlugin r_arch_plugin_xcore_cs = {
 #ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ARCH,
-	.data = &r_arch_plugin_xcore_cs,
+	.data = &r_arch_plugin_tricore_cs,
 	.version = R2_VERSION
 };
 #endif
