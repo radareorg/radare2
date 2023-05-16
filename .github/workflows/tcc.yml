@@ -31,6 +31,7 @@ jobs:
           path: test/bins
     - name: Install dependencies
       run: |
+        sudo apt update --assume-yes
         sudo apt-get --assume-yes install gperf wheel setuptools || true
         sudo python -m pip install --upgrade pip
         pip install r2pipe
@@ -59,6 +60,7 @@ jobs:
           git clone https://github.com/mirror/tinycc.git
           cd tinycc && git checkout mob
           git reset --hard 560526a49dfffef118bcb7fba83c727639ec0a1d
+          sudo apt update --assume-yes
           sudo apt-get --assume-yes install gperf wheel setuptools || true
           sudo python -m pip install --upgrade pip
           pip install r2pipe
@@ -141,6 +143,7 @@ jobs:
           git clone https://github.com/mirror/tinycc.git
           cd tinycc && git checkout mob
           git reset --hard 560526a49dfffef118bcb7fba83c727639ec0a1d
+          sudo apt-get update --assume-yes
           sudo apt-get --assume-yes install gperf wheel setuptools || true
           sudo python -m pip install --upgrade pip
           pip install r2pipe
@@ -159,6 +162,7 @@ jobs:
       env:
           CC: tcc
       run: |
+          sudo apt-get update --assume-yes
           sudo apt-get --assume-yes install libxxhash-dev liblz4-dev libzip-dev libmagic-dev libcapstone-dev
           cp -f dist/plugins-cfg/plugins.cs4.cfg plugins.cfg
           ./configure --prefix=/usr --with-compiler=tcc \
