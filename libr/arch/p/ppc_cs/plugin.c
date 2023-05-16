@@ -673,7 +673,7 @@ static bool decode(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
 	const int len = op->size;
 	char cmaskbuf[cmaskbuf_SIZEOF] = {0};
 	csh handle = cs_handle_for_session (as);
-	if (handle == 0) {
+	if (handle == 0 || len < 4) {
 		return false;
 	}
 
@@ -684,14 +684,13 @@ static bool decode(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
 	PluginData *pd = as->data;
 	const char *cpu = as->config->cpu;
 	const bool be = R_ARCH_CONFIG_IS_BIG_ENDIAN (as->config);
+	ut8 csbuf[4];
+	memcpy (csbuf, buf, 4);
 	if (be) {
-		swap4 (buf);
+		swap4 (csbuf);
 	}
 	// capstone-next
-	int n = cs_disasm (handle, (const ut8*)buf, len, addr, 1, &insn);
-	if (be) {
-		swap4 (buf);
-	}
+	int n = cs_disasm (handle, (const ut8*)csbuf, len, addr, 1, &insn);
 	if (mask & R_ARCH_OP_MASK_DISASM) {
 		ret = -1;
 		if (cpu && !strcmp (cpu, "vle")) {
