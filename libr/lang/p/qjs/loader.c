@@ -15,6 +15,9 @@ static char *r2qjs_normalize_module_name(void* self, JSContext * ctx, const char
 }
 
 static JSModuleDef *r2qjs_load_module(JSContext *ctx, const char *module_name, void *opaque) {
+	if (*module_name == '/') {
+		module_name++;
+	}
 	if (!strcmp (module_name, "r2papi")) {
 		const char *data =  "export var R2Papi = global.R2Papi;\n"\
 				    "export var R2PapiShell = global.R2PapiShell;\n"\
@@ -99,7 +102,7 @@ static int r2qjs_loader(JSContext *ctx, const char *const buffer) {
 		if (!nl) {
 			break;
 		}
-		if (strstr (ptr, alias_marker)) {
+		if (r_str_nstr (ptr, alias_marker, nl-ptr)) {
 			// skip line
 			// R_LOG_INFO ("ALIAS %s", ptr);
 			ptr = nl + 1;
