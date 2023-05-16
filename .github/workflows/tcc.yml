@@ -160,7 +160,7 @@ jobs:
           CC: tcc
       run: |
           sudo apt-get --assume-yes install libxxhash-dev liblz4-dev libzip-dev libmagic-dev libcapstone-dev
-	  cp -f dist/plugins/plugins.cs4.cfg plugins.cfg
+          cp -f dist/plugins/plugins.cs4.cfg plugins.cfg
           ./configure --prefix=/usr --with-compiler=tcc \
               --with-syscapstone \
               --with-sysxxhash \
