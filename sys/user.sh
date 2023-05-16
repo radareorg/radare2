@@ -51,7 +51,7 @@ done
 
 # update
 if [ $WITHOUT_PULL -eq 0 ]; then
-	if [ -d .git ]; then
+	if [ -e .git ]; then
 		git branch | grep "^\* master" > /dev/null
 		if [ $? = 0 ]; then
 			echo "WARNING: Updating from remote repository"
