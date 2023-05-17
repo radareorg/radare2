@@ -1,10 +1,11 @@
-/* radare - LGPL - Copyright 2007-2022 - pancake */
+/* radare - LGPL - Copyright 2007-2023 - pancake */
 
 #define R_LOG_ORIGIN "rax2"
 
 #include <r_main.h>
 #include <r_util.h>
 #include <r_util/r_print.h>
+#include <r_util/r_base36.h>
 
 // XXX don't use fixed sized buffers
 #define STDIN_BUFFER_SIZE 354096
@@ -711,6 +712,10 @@ R_API int r_main_rax2(int argc, const char **argv) {
 	int rc = 0;
 	int len = 0;
 
+	char *s = b36_fromnum (r_num_get (NULL, argv[1]));
+	eprintf ("%s\n", s);
+	eprintf ("0x%llx\n", b36_tonum ("0_xi9"));
+		return 0;
 	if (argc < 2) {
 		help_usage ();
 		// use_stdin (num, NULL, &fm);

@@ -1,6 +1,7 @@
 /* radare - LGPL - Copyright 2009-2023 - pancake */
 
 #include <r_core.h>
+#include <r_util/r_base36.h>
 
 static RCoreHelpMessage help_msg_question_t = {
 	"Usage: ?t[0,1] [cmd]", "", "",
@@ -862,6 +863,9 @@ static int cmd_help(void *data, const char *input) {
 					pj_ks (pj, "float", r_strf ("%ff", f));
 					pj_ks (pj, "double", r_strf ("%lf", d));
 					pj_ks (pj, "binary", r_strf ("0b%s", out));
+					char b36str[10];
+					b36_fromnum (b36str, n);
+					pj_ks (pj, "base36", b36str);
 					r_num_to_ternary (out, n);
 					pj_ks (pj, "ternary", r_strf ("0t%s", out));
 				} else {
@@ -869,6 +873,9 @@ static int cmd_help(void *data, const char *input) {
 					r_cons_printf ("float   %ff\n", f);
 					r_cons_printf ("double  %lf\n", d);
 					r_cons_printf ("binary  0b%s\n", out);
+					char b36str[10];
+					b36_fromnum (b36str, n);
+					r_cons_printf ("base36  %s\n", b36str);
 					r_num_to_ternary (out, n);
 					r_cons_printf ("ternary 0t%s\n", out);
 				}

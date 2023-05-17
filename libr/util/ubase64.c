@@ -112,3 +112,4 @@ R_API char *r_base64_encode_dyn(const char *str, int len) {
 	bout[out] = 0;
 	return bout;
 }
+
