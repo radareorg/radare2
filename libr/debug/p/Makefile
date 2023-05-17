@@ -15,12 +15,17 @@ pre:
 clean:
 	-rm -f *.${EXT_SO} *.o ${STATIC_OBJ}
 
+	
+
 mrproper: clean
 	-rm -f *.d */*.d
-
-.PHONY: all clean mrproper
 else
 all clean mrproper:
-
-.PHONY: all clean mrproper
 endif
+
+.PHONY: all clean mrproper sync
+
+M=mini-rv32ima
+sync:
+	git clone https://github.com/cnlohr/$M
+	cp -f $M/$M/$M.h $M.h
