@@ -338,6 +338,11 @@ R_API int r_cons_arrow_to_hjkl(int ch) {
 	return ch;
 }
 
+#if 0
+#define P(x) fwrite ((x), strlen ((x)), 1, stdout);fflush(stdout);
+#else
+#define P(x) write (1, (x), strlen ((x)));
+#endif
 // XXX no control for max length here?!?!
 R_API int r_cons_fgets(char *buf, int len, int argc, const char **argv) {
 #define RETURN(x) { ret=x; goto beach; }
@@ -356,32 +361,30 @@ R_API int r_cons_fgets(char *buf, int len, int argc, const char **argv) {
 	if (cons->user_fgets) {
 		RETURN (cons->user_fgets (buf, len));
 	}
-	printf ("%s", cons->line->prompt);
-	fflush (stdout);
+	const char *prompt = cons->line->prompt;
+	P (prompt);
 	*buf = '\0';
 	if (color) {
 		const char *p = cons->context->pal.input;
 		if (R_STR_ISNOTEMPTY (p)) {
-			fwrite (p, strlen (p), 1, stdout);
-			fflush (stdout);
+			P(p);
 		}
 	}
 	if (!fgets (buf, len, cons->fdin)) {
 		if (color) {
-			printf (Color_RESET);
-			fflush (stdout);
+			P(Color_RESET);
 		}
 		RETURN (-1);
 	}
 	if (feof (cons->fdin)) {
 		if (color) {
-			printf (Color_RESET);
+			P(Color_RESET);
 		}
 		RETURN (-2);
 	}
 	r_str_trim_tail (buf);
 	if (color) {
-		printf (Color_RESET);
+		P (Color_RESET);
 	}
 	ret = strlen (buf);
 beach:
@@ -390,7 +393,7 @@ beach:
 }
 
 R_API int r_cons_any_key(const char *msg) {
-	if (msg && *msg) {
+	if (R_STR_ISNOTEMPTY (msg)) {
 		r_cons_printf ("\n-- %s --\n", msg);
 	} else {
 		r_cons_print ("\n--press any key--\n");
@@ -563,11 +566,11 @@ R_API int r_cons_readchar_timeout(ut32 msec) {
 	tv.tv_sec = secs;
 	ut32 usec = (msec - secs) * 1000;
 	tv.tv_usec = usec;
-	r_cons_set_raw (1);
+	r_cons_set_raw (true);
 	if (select (1, &fdset, NULL, &errset, &tv) == 1) {
 		return r_cons_readchar ();
 	}
-	r_cons_set_raw (0);
+	r_cons_set_raw (false);
 	// timeout
 	return -1;
 #else
@@ -600,6 +603,7 @@ extern volatile sig_atomic_t sigwinchFlag;
 #endif
 
 R_API int r_cons_readchar(void) {
+	const bool doraw = false;
 	char buf[2];
 	buf[0] = -1;
 	if (readbuffer_length > 0) {
@@ -608,7 +612,9 @@ R_API int r_cons_readchar(void) {
 		memmove (readbuffer, readbuffer + 1, readbuffer_length);
 		return ch;
 	}
-	r_cons_set_raw (1);
+	if (doraw) {
+		r_cons_set_raw (true);
+	}
 #if R2__WINDOWS__
 	return __cons_readchar_w32 (0);
 #elif __wasi__
@@ -618,8 +624,8 @@ R_API int r_cons_readchar(void) {
 	if (ret < 1) {
 		return -1;
 	}
-	if (bufactive) {
-		r_cons_set_raw (0);
+	if (doraw && bufactive) {
+		r_cons_set_raw (false);
 	}
 	return r_cons_controlz (buf[0]);
 #else
@@ -654,7 +660,7 @@ R_API int r_cons_readchar(void) {
 	if (ret != 1) {
 		return -1;
 	}
-	if (bufactive) {
+	if (doraw && bufactive) {
 		r_cons_set_raw (0);
 	}
 	return r_cons_controlz (buf[0]);
