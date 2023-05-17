@@ -571,7 +571,7 @@ R_API int r_cons_readchar_timeout(ut32 msec) {
 	// timeout
 	return -1;
 #else
-	return  __cons_readchar_w32 (usec);
+	return  __cons_readchar_w32 (msec);
 #endif
 }
 

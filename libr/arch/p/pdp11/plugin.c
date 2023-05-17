@@ -28,7 +28,7 @@ DECLARE_GENERIC_PRINT_ADDRESS_FUNC_NOGLOBALS()
 DECLARE_GENERIC_FPRINTF_FUNC_NOGLOBALS()
 
 static bool pdp11_op(RArchSession *a, RAnalOp *op, RArchDecodeMask mask) {
-	ut8 bytes[8] = {0};
+	ut8 bytes[4] = {0};
 	struct disassemble_info disasm_obj = {0};
 	RStrBuf *sb = NULL;
 	if (mask & R_ARCH_OP_MASK_DISASM) {
@@ -36,6 +36,7 @@ static bool pdp11_op(RArchSession *a, RAnalOp *op, RArchDecodeMask mask) {
 	}
 	size_t left = R_MIN (sizeof (bytes), op->size);
 	memcpy (bytes, op->bytes, left);
+	op->size = sizeof (bytes);
 
 	/* prepare disassembler */
 	disasm_obj.buffer = bytes;
@@ -53,13 +54,65 @@ static bool pdp11_op(RArchSession *a, RAnalOp *op, RArchDecodeMask mask) {
 		op->mnemonic = r_strbuf_drain (sb);
 		r_str_replace_ch (op->mnemonic, '\t', ' ', true);
 		sb = NULL;
+		const char *text = op->mnemonic;
+		if (strstr (text, ".word")) {
+			op->type = R_ANAL_OP_TYPE_ILL;
+		} else if (r_str_startswith (text, "mov")) {
+			op->type = R_ANAL_OP_TYPE_MOV;
+		} else if (r_str_startswith (text, "j")) {
+			op->type = R_ANAL_OP_TYPE_JMP;
+		} else if (r_str_startswith (text, "cmp")) {
+			op->type = R_ANAL_OP_TYPE_CMP;
+		} else if (r_str_startswith (text, "ld")) {
+			op->type = R_ANAL_OP_TYPE_LOAD;
+		} else if (r_str_startswith (text, "br")) {
+			op->type = R_ANAL_OP_TYPE_RJMP;
+		} else if (r_str_startswith (text, "b")) {
+			op->type = R_ANAL_OP_TYPE_CJMP;
+		}
 	}
 	r_strbuf_free (sb);
 	return op->size > 0;
 }
 
 static int info(RArchSession *as, ut32 q) {
+	switch (q) {
+	case R_ANAL_ARCHINFO_MIN_OP_SIZE:
+		return 2;
+	case R_ANAL_ARCHINFO_MAX_OP_SIZE:
+		return 4;
+	case R_ANAL_ARCHINFO_INV_OP_SIZE:
+		return 2;
+	case R_ANAL_ARCHINFO_ALIGN:
+		return 1;
+	case R_ANAL_ARCHINFO_DATA_ALIGN:
+		return 1;
+	}
 	return 0;
+}
+
+static char *regs(RArchSession *as) {
+	const char *const p =
+		"=PC    r7\n"
+		"=SP    r30\n"
+		"=BP    r5\n"
+		"=A0    r1\n"
+		"=A1    r2\n"
+		"=A2    r3\n"
+		"=A3    r4\n"
+		"=SN    r1\n"
+		"=R0    r1\n"
+		"=R1    r2\n"
+		"gpr	r0	.16	0	0\n"
+		"gpr	r1	.16	2	0\n"
+		"gpr	r2	.16	4	0\n"
+		"gpr	r3	.16	6	0\n"
+		"gpr	r4	.16	8	0\n"
+		"gpr	r5	.16	10	0\n"
+		"gpr	r6	.16	12	0\n"
+		"gpr	r7	.16	14	0\n"
+		;
+	return strdup (p);
 }
 
 RArchPlugin r_arch_plugin_pdp11 = {
@@ -67,10 +120,10 @@ RArchPlugin r_arch_plugin_pdp11 = {
 	.arch = "pdp11",
 	.license = "GPL3",
 	.bits = R_SYS_BITS_PACK1 (16),
-	.endian = R_SYS_ENDIAN_LITTLE | R_SYS_ENDIAN_BIG,
+	.endian = R_SYS_ENDIAN_LITTLE,
 	.desc = "PDP-11",
 	.info = info,
-// TODO	.regs = regs,
+	.regs = regs,
 	.decode = &pdp11_op
 };
 

@@ -964,7 +964,19 @@ static int esil_6502_fini(REsil *esil) {
 #endif
 
 static int archinfo(RArchSession *a, ut32 q) {
-	return 1;
+	switch (q) {
+	case R_ANAL_ARCHINFO_MIN_OP_SIZE:
+		return 1;
+	case R_ANAL_ARCHINFO_MAX_OP_SIZE:
+		return 3;
+	case R_ANAL_ARCHINFO_INV_OP_SIZE:
+		return 1;
+	case R_ANAL_ARCHINFO_ALIGN:
+		return 1;
+	case R_ANAL_ARCHINFO_DATA_ALIGN:
+		return 1;
+	}
+	return 0;
 }
 
 RArchPlugin r_arch_plugin_6502 = {
