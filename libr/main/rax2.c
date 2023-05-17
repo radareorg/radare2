@@ -1,10 +1,11 @@
-/* radare - LGPL - Copyright 2007-2022 - pancake */
+/* radare - LGPL - Copyright 2007-2023 - pancake */
 
 #define R_LOG_ORIGIN "rax2"
 
 #include <r_main.h>
 #include <r_util.h>
 #include <r_util/r_print.h>
+#include <r_util/r_base36.h>
 
 // XXX don't use fixed sized buffers
 #define STDIN_BUFFER_SIZE 354096
@@ -581,6 +582,10 @@ dotherax:
 				r_num_to_ternary (out, n);
 				printf ("ternary 0t%s\n", out);
 
+				// base36
+				char b36str[16];
+				b36_fromnum (b36str, n);
+				printf ("base36  %s\n", b36str);
 		return true;
 	} else if (flags & (1 << 19)) { // -L
 		r_print_hex_from_bin (NULL, str);

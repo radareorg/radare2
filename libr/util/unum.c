@@ -5,6 +5,7 @@
 #include <errno.h>
 #include <math.h>  /* for ceill */
 #include <r_util.h>
+#include <r_util/r_base36.h>
 
 static ut64 r_num_tailff(RNum *num, const char *hex);
 
@@ -304,6 +305,9 @@ R_API ut64 r_num_get(RNum *num, const char *str) {
 		}
 	} else if (!strncmp (str, "0xf..", 5) || !strncmp (str, "0xF..", 5)) {
 		ret = r_num_tailff (num, str + 5);
+	} else if (str[0] == '0' && tolower ((ut8)str[1]) == '_') {
+		// base36 here
+		ret = b36_tonum (str + 2);
 	} else if (str[0] == '0' && tolower ((ut8)str[1]) == 'x') {
 		const char *lodash = strchr (str + 2, '_');
 		if (lodash) {
