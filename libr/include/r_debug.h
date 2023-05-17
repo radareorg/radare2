@@ -378,7 +378,6 @@ typedef struct r_debug_plugin_t {
 #if R2_590
 	const char *description;
 #endif
-	// 
 	//const char **archs; // MUST BE DEPRECATED!!!!
 	ut32 bits;
 	const char *arch;

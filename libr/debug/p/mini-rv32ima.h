@@ -139,6 +139,7 @@ MINIRV32_STEPPROTO
 	uint32_t pc = CSR( pc );
 	uint32_t cycle = CSR( cyclel );
 
+	int icount;
 	if( ( CSR( mip ) & (1<<7) ) && ( CSR( mie ) & (1<<7) /*mtie*/ ) && ( CSR( mstatus ) & 0x8 /*mie*/) )
 	{
 		// Timer interrupt.
@@ -146,7 +147,7 @@ MINIRV32_STEPPROTO
 		pc -= 4;
 	}
 	else // No timer interrupt?  Execute a bunch of instructions.
-	for( int icount = 0; icount < count; icount++ )
+	for (icount = 0; icount < count; icount++)
 	{
 		uint32_t ir = 0;
 		rval = 0;
@@ -331,7 +332,7 @@ MINIRV32_STEPPROTO
 					{
 						switch( (ir>>12)&7 ) // These could be either op-immediate or op commands.  Be careful.
 						{
-							case 0: rval = (is_reg && (ir & 0x40000000) ) ? ( rs1 - rs2 ) : ( rs1 + rs2 ); break; 
+							case 0: rval = (is_reg && (ir & 0x40000000))? (rs1 - rs2) : (rs1 + rs2); break;
 							case 1: rval = rs1 << (rs2 & 0x1F); break;
 							case 2: rval = (int32_t)rs1 < (int32_t)rs2; break;
 							case 3: rval = rs1 < rs2; break;

@@ -9,16 +9,16 @@
 uint32_t ram_amt = 64*1024*1024;
 
 #define MINIRV32_RAM_IMAGE_OFFSET 0
-#define MINIRV32WARN( x... ) printf( x );
-#define MINIRV32_DECORATE  static
+#define MINIRV32WARN(x...) printf((x));
+#define MINIRV32_DECORATE static
 #define MINI_RV32_RAM_SIZE ram_amt
 #define MINIRV32_IMPLEMENTATION
 #if 0
-#define MINIRV32_POSTEXEC( pc, ir, retval ) { if( retval > 0 ) { if( fail_on_all_faults ) { printf( "FAULT\n" ); return 3; } else retval = HandleException( ir, retval ); } }
-#define MINIRV32_HANDLE_MEM_STORE_CONTROL( addy, val ) if( HandleControlStore( addy, val ) ) return val;
-#define MINIRV32_HANDLE_MEM_LOAD_CONTROL( addy, rval ) rval = HandleControlLoad( addy );
-#define MINIRV32_OTHERCSR_WRITE( csrno, value ) HandleOtherCSRWrite( image, csrno, value );
-#define MINIRV32_OTHERCSR_READ( csrno, value ) value = HandleOtherCSRRead( image, csrno );
+#define MINIRV32_POSTEXEC(pc, ir, retval) { if (retval > 0) { if (fail_on_all_faults) { printf ("FAULT\n"); return 3; } else { retval = HandleException( ir, retval ); } } }
+#define MINIRV32_HANDLE_MEM_STORE_CONTROL( addy, val ) if (HandleControlStore(addy, val)) return val;
+#define MINIRV32_HANDLE_MEM_LOAD_CONTROL( addy, rval ) rval = HandleControlLoad( addy);
+#define MINIRV32_OTHERCSR_WRITE(csrno, value) HandleOtherCSRWrite (image, csrno, value);
+#define MINIRV32_OTHERCSR_READ(csrno, value) value = HandleOtherCSRRead (image, csrno);
 #endif
 #include "./mini-rv32ima.h"
 
