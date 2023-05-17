@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2008-2022 - pancake, Jody Frankowski */
+/* radare2 - LGPL - Copyright 2008-2023 - pancake, Jody Frankowski */
 
 #include <r_cons.h>
 #include <r_util.h>
