@@ -1096,7 +1096,7 @@ struct r_line_t {
 	int (*hist_down)(void *user);
 	char *contents;
 	bool zerosep;
-	bool enable_vi_mode;
+	bool enable_vi_mode; // can be merged with vi_mode
 	int vi_mode;
 	bool prompt_mode;
 	RLinePromptType prompt_type;
@@ -1105,18 +1105,21 @@ struct r_line_t {
 	RLineHud *hud;
 	RList *sdbshell_hist;
 	RListIter *sdbshell_hist_iter;
-	int vtmode; // R2_580 duplicated and unused from the global RCons.vtmode
+#if R2_590
+	int maxlength;
+#endif
+	int vtmode; // implemented but unused from the global RCons.vtmode
 	int hist_size;
 }; /* RLine */
 
 #ifdef R_API
 
 R_API RLine *r_line_new(void);
+R_API int r_line_dietline_init(void); // XXX rename to r_line_init?
 R_API RLine *r_line_singleton(void);
 R_API void r_line_free(void);
 R_API char *r_line_get_prompt(void);
 R_API void r_line_set_prompt(const char *prompt);
-R_API int r_line_dietline_init(void);
 R_API void r_line_clipboard_push(const char *str);
 
 typedef int (RLineReadCallback)(void *user, const char *line);

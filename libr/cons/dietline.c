@@ -969,9 +969,12 @@ static void __print_prompt(void) {
 	} else {
 		printf ("\r%s", I.prompt);
 	}
+#if 0
+	//XXX this is slow
 	if (I.buffer.length > 0) {
 		fwrite (I.buffer.data, I.buffer.length, 1, stdout);
 	}
+#endif
 	printf ("\r%s%s%s", promptcolor (), I.prompt, promptcolor ());
 	if (I.buffer.index > cols) {
 		printf ("< ");
@@ -1413,6 +1416,14 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 		if (r_cons_is_breaked ()) {
 			break;
 		}
+#if 0
+		// detect truncation
+		if (I.buffer.length > I.length) {
+			I.buffer.data[0] = 0;
+			I.buffer.length = 0;
+			return NULL;
+		}
+#endif
 		I.buffer.data[I.buffer.length] = '\0';
 		if (cb) {
 			int cbret = cb (user, I.buffer.data);
@@ -1903,7 +1914,7 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 							}
 							break;
 						}
-						r_cons_set_raw (1);
+						r_cons_set_raw (true);
 						break;
 					case 0x37: // HOME xrvt-unicode
 						r_cons_readchar ();
@@ -2071,8 +2082,16 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 	}
 _end:
 	r_cons_break_pop ();
-	r_cons_set_raw (0);
+	r_cons_set_raw (false);
 	r_cons_enable_mouse (mouse_status);
+#if 0
+	if (I.buffer.length > 1024) { // R2_590 - use I.maxlength
+		I.buffer.data[0] = 0;
+		I.buffer.length = 0;
+		R_LOG_WARN ("Input is too large");
+		return I.buffer.data;
+	}
+#endif
 	if (I.echo) {
 		printf ("\r%s%s%s%s\n", I.prompt, promptcolor (), I.buffer.data, Color_RESET);
 		fflush (stdout);

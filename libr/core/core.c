@@ -2170,6 +2170,9 @@ R_API int r_core_fgets(char *buf, int len) {
 	r_return_val_if_fail (buf, -1);
 	RCons *cons = r_cons_singleton ();
 	RLine *rli = cons->line;
+#if R2_590
+	cons->maxlength = len; /// R2_590
+#endif
 	bool prompt = cons->context->is_interactive;
 	buf[0] = '\0';
 	if (prompt) {
@@ -2185,6 +2188,11 @@ R_API int r_core_fgets(char *buf, int len) {
 	const char *ptr = r_line_readline ();
 	if (!ptr) {
 		return -1;
+	}
+	if (cons->line->buffer.length >= len - 2) {
+		R_LOG_ERROR ("input is too large");
+		*buf = 0;
+		return 0;
 	}
 	return r_str_ncpy (buf, ptr, len - 1);
 }
