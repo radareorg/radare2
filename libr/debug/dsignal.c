@@ -6,7 +6,7 @@
 
 // TODO: this must be done by the debugger plugin
 // which is stored already in SDB.. but this is faster :P
-static struct {
+static const struct {
 	const char *k;
 	const char *v;
 } signals[] = {

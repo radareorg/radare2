@@ -863,7 +863,7 @@ static int cmd_help(void *data, const char *input) {
 					pj_ks (pj, "float", r_strf ("%ff", f));
 					pj_ks (pj, "double", r_strf ("%lf", d));
 					pj_ks (pj, "binary", r_strf ("0b%s", out));
-					char b36str[10];
+					char b36str[16];
 					b36_fromnum (b36str, n);
 					pj_ks (pj, "base36", b36str);
 					r_num_to_ternary (out, n);
@@ -873,7 +873,7 @@ static int cmd_help(void *data, const char *input) {
 					r_cons_printf ("float   %ff\n", f);
 					r_cons_printf ("double  %lf\n", d);
 					r_cons_printf ("binary  0b%s\n", out);
-					char b36str[10];
+					char b36str[16];
 					b36_fromnum (b36str, n);
 					r_cons_printf ("base36  %s\n", b36str);
 					r_num_to_ternary (out, n);

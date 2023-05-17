@@ -2180,7 +2180,17 @@ static void cmd_drpi(RCore *core) {
  */
 static void cmd_reg_profile(RCore *core, char from, const char *str) { // "arp" and "drp"
 	const char *ptr;
-	RReg *r = r_config_get_b (core->config, "cfg.debug")? core->dbg->reg: core->anal->reg;
+	const bool cfg_debug = r_config_get_b (core->config, "cfg.debug");
+	if (cfg_debug) {
+		// XXX bas practice
+		char* (*reg_profile)(RDebug *dbg) = R_UNWRAP2 (core->dbg->h, reg_profile);
+		if (reg_profile) {
+			char *rp = reg_profile (core->dbg);
+			r_reg_set_profile_string (core->dbg->reg, rp);
+			free (rp);
+		}
+	}
+	RReg *r = cfg_debug? core->dbg->reg: core->anal->reg;
 	switch (str[1]) {
 	case '\0': // "drp" "arp"
 		if (r->reg_profile_str) {
