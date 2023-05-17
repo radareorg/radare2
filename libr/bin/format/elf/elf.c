@@ -3804,6 +3804,11 @@ static RVector* load_symbols_from_phdr(ELFOBJ *bin, int type) {
 		new_phdr_symbol->ordinal = i;
 		new_phdr_symbol->in_shdr = false;
 		new_phdr_symbol->name[ELF_STRING_LENGTH - 2] = '\0';
+		if (!*new_phdr_symbol->name) {
+			R_LOG_DEBUG ("empty symbol name", new_phdr_symbol->name);
+			ret->len--;
+			break; // continue;
+		}
 		fill_symbol_bind_and_type (bin, new_phdr_symbol, new_symbol);
 		new_phdr_symbol->is_sht_null = is_sht_null;
 		new_phdr_symbol->is_vaddr = is_vaddr;
