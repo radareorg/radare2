@@ -118,6 +118,11 @@ typedef struct _utX {
 #define ASCII_MIN 32
 #define ASCII_MAX 127
 
+#define UT24_MAX 0xFFFFFF
+#define UT40_MAX 0xFFFFFFFFFF
+#define UT48_MAX 0xFFFFFFFFFFFF
+#define UT56_MAX 0xFFFFFFFFFFFFFF
+
 #if SSIZE_MAX == ST32_MAX
 #define SZT_MAX  UT32_MAX
 #define SZT_MIN  UT32_MIN

@@ -278,6 +278,7 @@ fvalue  8.0
 float   0.000000f
 double  0.000000
 binary  0b00001000
+base36  0_8
 ternary 0t22
 0x8
 int32   0
@@ -291,6 +292,7 @@ fvalue  0.0
 float   0.000000f
 double  0.000000
 binary  0b00000000
+base36  0_0
 ternary 0t0
 0x0
 EOF
@@ -351,6 +353,7 @@ fvalue  123.0
 float   0.000000f
 double  0.000000
 binary  0b01111011
+base36  0_f3
 ternary 0t11120
 EOF
 RUN
