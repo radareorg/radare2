@@ -582,6 +582,10 @@ dotherax:
 				r_num_to_ternary (out, n);
 				printf ("ternary 0t%s\n", out);
 
+				// base36
+				char b36str[16];
+				b36_fromnum (b36str, n);
+				printf ("base36  %s\n", b36str);
 		return true;
 	} else if (flags & (1 << 19)) { // -L
 		r_print_hex_from_bin (NULL, str);
@@ -712,10 +716,6 @@ R_API int r_main_rax2(int argc, const char **argv) {
 	int rc = 0;
 	int len = 0;
 
-	char *s = b36_fromnum (r_num_get (NULL, argv[1]));
-	eprintf ("%s\n", s);
-	eprintf ("0x%llx\n", b36_tonum ("0_xi9"));
-		return 0;
 	if (argc < 2) {
 		help_usage ();
 		// use_stdin (num, NULL, &fm);
