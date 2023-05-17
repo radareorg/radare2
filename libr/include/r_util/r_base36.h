@@ -1,3 +1,9 @@
+#ifndef R2_BASE36_H
+#define R2_BASE36_H
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 // R2_590 - this is not standard but will be introduced in r2-5.9
 // R2_590 Move into libr/util/ubase64
 static const char cb36[] = "0123456789abcdefghijklmnopqrstuvwxyz";
@@ -70,3 +76,4 @@ static inline ut64 b36_tonum(const char *s) {
 	}
 	return n;
 }
+#endif
