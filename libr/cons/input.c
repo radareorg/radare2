@@ -552,15 +552,17 @@ static int __cons_readchar_w32(ut32 usec) {
 }
 #endif
 
-R_API int r_cons_readchar_timeout(ut32 usec) {
+R_API int r_cons_readchar_timeout(ut32 msec) {
 #if R2__UNIX__
 	struct timeval tv;
 	fd_set fdset, errset;
 	FD_ZERO (&fdset);
 	FD_ZERO (&errset);
 	FD_SET (0, &fdset);
-	tv.tv_sec = 0; // usec / 1000;
-	tv.tv_usec = 1000 * usec;
+	ut32 secs = msec / 1000;
+	tv.tv_sec = secs;
+	ut32 usec = (msec - secs) * 1000;
+	tv.tv_usec = usec;
 	r_cons_set_raw (1);
 	if (select (1, &fdset, NULL, &errset, &tv) == 1) {
 		return r_cons_readchar ();
