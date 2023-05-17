@@ -5,9 +5,22 @@ const char * const delimiter_marker = "\n✄\n";
 const char * const alias_marker = "\n↻ ";
 
 static void r2qjs_dump_obj(JSContext *ctx, JSValueConst val);
+static char *root = NULL;
 
 static char *r2qjs_normalize_module_name(void* self, JSContext * ctx, const char * base_name, const char * name) {
+	R_LOG_DEBUG ("LOADING BASENAME (%s) (%s)", base_name, name);
 	if (r_str_startswith (base_name, "./")) {
+		if (root) {
+			R_LOG_DEBUG ("HASROOT %s", root);
+			if (r_str_endswith (root, ".js")) {
+				const char *r = r_str_rchr (root, NULL, '/');
+				if (r) {
+					// free (root); // causes an uaf
+					root = r_str_ndup (root, r - root);
+				}
+			}
+			return r_str_newf ("%s/%s", root, base_name + 2);
+		}
 		return strdup (base_name + 1);
 	}
 	// R_LOG_INFO ("normalize (%s) (%s)", base_name, name);
@@ -15,9 +28,16 @@ static char *r2qjs_normalize_module_name(void* self, JSContext * ctx, const char
 }
 
 static JSModuleDef *r2qjs_load_module(JSContext *ctx, const char *module_name, void *opaque) {
+	free (root);
+	root = strdup (module_name);
+	R_LOG_DEBUG ("LOADING (%s)", module_name);
+#if 0
 	if (*module_name == '/') {
-		module_name++;
+		eprintf ("RELATIVE %s\n");
+		module_name = r_str_newf (".%s", module_name);
+		// module_name++;
 	}
+#endif
 	if (!strcmp (module_name, "r2papi")) {
 		const char *data =  "export var R2Papi = global.R2Papi;\n"\
 				    "export var R2PapiShell = global.R2PapiShell;\n"\
@@ -72,6 +92,8 @@ static JSModuleDef *r2qjs_load_module(JSContext *ctx, const char *module_name, v
 		return JS_VALUE_GET_PTR (val);
 	}
 	R_LOG_ERROR ("Cannot find module (%s)", module_name);
+	free (root);
+	root = NULL;
 	return NULL;
 }
 
@@ -121,6 +143,17 @@ static int r2qjs_loader(JSContext *ctx, const char *const buffer) {
 		if (r_str_endswith (filename, ".js")) {
 			// R_LOG_DEBUG ("File: (%s) Size: (%d)", filename, size);
 			// R_LOG_DEBUG ("DATA: %s", data);
+#if 0
+			if (*filename == '/') {
+				char *fn = r_str_newf (".%s", filename);
+				free (filename);
+				filename = fn;
+			}
+			if (*filename == '.') {
+				filename++;
+			}
+#endif
+			R_LOG_DEBUG ("INSERT (%s)", filename);
 			ht_pp_insert (ht, filename, data);
 			if (!entry) {
 				entry = data;
