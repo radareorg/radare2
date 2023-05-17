@@ -969,10 +969,13 @@ static void __print_prompt(void) {
 	} else {
 		printf ("\r%s", I.prompt);
 	}
-#if 0
-	//XXX this is slow
+#if 1
 	if (I.buffer.length > 0) {
-		fwrite (I.buffer.data, I.buffer.length, 1, stdout);
+		int maxlen = R_MIN (I.buffer.length, cols);
+		fwrite (I.buffer.data, maxlen, 1, stdout);
+		if (I.buffer.length > cols) {
+			fwrite (" >", 2, 1, stdout);
+		}
 	}
 #endif
 	printf ("\r%s%s%s", promptcolor (), I.prompt, promptcolor ());
