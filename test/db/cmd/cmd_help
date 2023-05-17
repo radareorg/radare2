@@ -156,6 +156,7 @@ fvalue  1.0
 float   0.000000f
 double  0.000000
 binary  0b00000001
+base36  0_1
 ternary 0t1
 1
 EOF
@@ -176,6 +177,7 @@ fvalue  0.0
 float   0.000000f
 double  0.000000
 binary  0b00000000
+base36  0_0
 ternary 0t0
 0
 EOF
@@ -196,6 +198,7 @@ fvalue  -1.0
 float   nanf
 double  nan
 binary  0b1111111111111111111111111111111111111111111111111111111111111111
+base36  0_fsgs46211e5w3
 ternary 0t11112220022122120101211020120210210211220
 EOF
 RUN
@@ -215,6 +218,7 @@ fvalue  3.0
 float   0.000000f
 double  0.000000
 binary  0b00000010
+base36  0_2
 ternary 0t2
 EOF
 RUN

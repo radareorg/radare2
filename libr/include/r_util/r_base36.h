@@ -16,6 +16,9 @@ static inline void b36_fromnum(char *s, ut64 n) {
 		*p++ = cb36[n % 36];
 		n /= 36;
 	}
+	if (p == s + 2) {
+		*p++ = '0';
+	}
 	*p = 0;
 }
 
