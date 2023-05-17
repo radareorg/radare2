@@ -96,7 +96,6 @@ static bool check_buffer(RBinFile *bf, RBuffer *b) {
 	if (bs >= 32 && bs < 0x1ffff) {
 		// pure executable for DEMOS pdp11 DVK clone
 		ut16 magic = r_read_le16 (buf);
-		eprintf ("MAGIC %x %x\n", magic, 0407);
 		if (magic == 0407) { // 0x0701
 #if 1
 			ut32 textsize = r_read_le16 (buf + 2);
@@ -107,7 +106,6 @@ static bool check_buffer(RBinFile *bf, RBuffer *b) {
 			ut32 derelocs = r_read_le16 (buf + 12);
 			ut32 mustzero = r_read_le16 (buf + 14);
 			if (mustzero > 8) {
-				R_LOG_WARN ("NOT\n");
 				return false;
 			}
 			eprintf ("TS 0x%08x\n", textsize);
