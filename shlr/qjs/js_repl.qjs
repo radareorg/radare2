@@ -109,7 +109,7 @@ import('os').catch(console.error).then((os) => {
     let prompt = '';
     let plen = 0;
     let ps1;
-    if (config_numcalc) { ps1 = '> '; } else { ps1 = 'qjs> '; }
+    if (config_numcalc) { ps1 = '> '; } else { ps1 = '[r2js]> '; }
     const ps2 = ' ... ';
     const utf8 = true;
     let show_time = false;
