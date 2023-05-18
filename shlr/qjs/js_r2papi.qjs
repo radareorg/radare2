@@ -1,6 +1,6 @@
 // r2papi main file
 Object.defineProperty(G, "__esModule", { value: true });
-G.Base64 = G.NativePointer = G.R2Papi = void 0;
+G.Base64 = G.NativePointer = G.R2Papi = G.Assembler = void 0;
 const shell_js_1 = G;//"./shell.js");
 ;
 ;
@@ -10,6 +10,49 @@ const shell_js_1 = G;//"./shell.js");
 ;
 ;
 ;
+class Assembler {
+    constructor(r2) {
+        this.program = "";
+        this.labels = {};
+        this.endian = false;
+        this.pc = 0;
+        this.r2 = null;
+        this.r2 = r2;
+        this.program = '';
+        this.labels = {};
+    }
+    setProgramCounter(pc) {
+        this.pc = pc;
+    }
+    setEndian(big) {
+        this.endian = big;
+    }
+    toString() {
+        return this.program;
+    }
+    append(x) {
+        this.pc += x.length / 2;
+        this.program += x;
+    }
+    // api
+    label(s) {
+        const pos = this.pc; // this.#program.length / 4;
+        this.labels[s] = this.pc;
+        return pos;
+    }
+    asm(s) {
+        let hex = this.r2.cmd('""pa ' + s).trim();
+        if (hex.length < 16) {
+            // ok
+        }
+        else {
+            hex = "____";
+            console.error("Invalid instruction: " + s);
+        }
+        this.append(hex);
+    }
+}
+G.Assembler = Assembler;
 class R2Papi {
     constructor(r2) {
         this.r2 = r2;

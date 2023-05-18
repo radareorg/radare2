@@ -64,7 +64,7 @@ static void js_std_dump_error1(JSContext *ctx, JSValueConst exception_val) {
 	}
 }
 
-void js_std_dump_error(JSContext *ctx) {
+static void js_std_dump_error(JSContext *ctx) {
 	JSValue exception_val;
 	exception_val = JS_GetException (ctx);
 	js_std_dump_error1 (ctx, exception_val);
