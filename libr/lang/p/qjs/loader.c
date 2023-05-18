@@ -8,8 +8,31 @@ static void r2qjs_dump_obj(JSContext *ctx, JSValueConst val);
 static char *root = NULL;
 
 static char *r2qjs_normalize_module_name(void* self, JSContext * ctx, const char * base_name, const char * name) {
+	if (root && r_str_endswith (root, ".js")) {
+		const char *r = r_str_rchr (root, NULL, '/');
+		if (r) {
+			// free (root); // causes an uaf
+			root = r_str_ndup (root, r - root);
+		}
+	}
 	R_LOG_DEBUG ("LOADING BASENAME (%s) (%s)", base_name, name);
-	if (r_str_startswith (base_name, "./")) {
+	if (r_str_startswith (base_name, "../")) {
+		char *newroot = strdup (root);
+		const char *updir = base_name;
+		while (r_str_startswith (updir, "../")) {
+			updir = base_name += 3;
+			const char *r = r_str_rchr (root, NULL, '/');
+			if (!r) {
+				break;
+			}
+			free (newroot); // causes an uaf
+			newroot = r_str_ndup (newroot, r - root);
+		}
+		char *nr = r_str_newf ("%s/%s", newroot, updir); // base_name);
+		free (newroot);
+		R_LOG_DEBUG ("RELATIVE %s", nr);
+		return nr;
+	} else if (r_str_startswith (base_name, "./")) {
 		if (root) {
 			R_LOG_DEBUG ("HASROOT %s", root);
 			if (r_str_endswith (root, ".js")) {
@@ -18,6 +41,9 @@ static char *r2qjs_normalize_module_name(void* self, JSContext * ctx, const char
 					// free (root); // causes an uaf
 					root = r_str_ndup (root, r - root);
 				}
+			}
+			if (r_str_startswith (base_name + 1, root)) {
+				return strdup (base_name + 1);
 			}
 			return r_str_newf ("%s/%s", root, base_name + 2);
 		}
