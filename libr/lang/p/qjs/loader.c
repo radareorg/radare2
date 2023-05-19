@@ -12,7 +12,7 @@ static char *r2qjs_normalize_module_name(JSContext * ctx, const char * base_name
 		char *r = (char *)r_str_rchr (root, NULL, '/');
 		if (r) {
 			*r = 0;
-			R_LOG_DEBUG ("USE ROOT (%s)\n", root);
+			R_LOG_DEBUG ("USE ROOT (%s)", root);
 		}
 	}
 	R_LOG_DEBUG ("NORMALIZE base_name=(%s) name=(%s) root=%s", base_name, name, root);
