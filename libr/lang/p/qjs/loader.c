@@ -5,36 +5,38 @@ const char * const delimiter_marker = "\n✄\n";
 const char * const alias_marker = "\n↻ ";
 
 static void r2qjs_dump_obj(JSContext *ctx, JSValueConst val);
-static char *root = NULL;
 
-static char *r2qjs_normalize_module_name(void* self, JSContext * ctx, const char * base_name, const char * name) {
+static char *r2qjs_normalize_module_name(JSContext * ctx, const char * base_name, const char * name, void *opaque) {
+	char *root = strdup (base_name);
 	if (root && r_str_endswith (root, ".js")) {
-		const char *r = r_str_rchr (root, NULL, '/');
+		char *r = (char *)r_str_rchr (root, NULL, '/');
 		if (r) {
-			// free (root); // causes an uaf
-			root = r_str_ndup (root, r - root);
+			*r = 0;
+			R_LOG_DEBUG ("USE ROOT (%s)\n", root);
 		}
 	}
-	R_LOG_DEBUG ("LOADING BASENAME (%s) (%s)", base_name, name);
-	if (r_str_startswith (base_name, "../")) {
+	R_LOG_DEBUG ("NORMALIZE base_name=(%s) name=(%s) root=%s", base_name, name, root);
+	if (r_str_startswith (name, "../")) {
+	// 	return r_str_newf ("%s/%s", root, base_name + 3);
 		char *newroot = strdup (root);
-		const char *updir = base_name;
+		const char *updir = name;
 		while (r_str_startswith (updir, "../")) {
-			updir = base_name += 3;
+			updir = name + 3;
 			const char *r = r_str_rchr (root, NULL, '/');
 			if (!r) {
 				break;
 			}
 			free (newroot); // causes an uaf
-			newroot = r_str_ndup (newroot, r - root);
+			newroot = r_str_ndup (root, r - root);
 		}
 		char *nr = r_str_newf ("%s/%s", newroot, updir); // base_name);
 		free (newroot);
 		R_LOG_DEBUG ("RELATIVE %s", nr);
 		return nr;
-	} else if (r_str_startswith (base_name, "./")) {
+	} else if (r_str_startswith (name, "./")) {
 		if (root) {
 			R_LOG_DEBUG ("HASROOT %s", root);
+#if 0
 			if (r_str_endswith (root, ".js")) {
 				const char *r = r_str_rchr (root, NULL, '/');
 				if (r) {
@@ -42,20 +44,20 @@ static char *r2qjs_normalize_module_name(void* self, JSContext * ctx, const char
 					root = r_str_ndup (root, r - root);
 				}
 			}
-			if (r_str_startswith (base_name + 1, root)) {
-				return strdup (base_name + 1);
+#endif
+			if (r_str_startswith (name + 1, root)) {
+				return strdup (name + 1);
 			}
-			return r_str_newf ("%s/%s", root, base_name + 2);
+			return r_str_newf ("%s/%s", root, name + 2);
 		}
-		return strdup (base_name + 1);
+		return strdup (name + 1);
 	}
 	// R_LOG_INFO ("normalize (%s) (%s)", base_name, name);
-	return strdup (base_name);
+	return strdup (name);
 }
 
 static JSModuleDef *r2qjs_load_module(JSContext *ctx, const char *module_name, void *opaque) {
-	free (root);
-	root = strdup (module_name);
+	const int qjs_flags = JS_EVAL_TYPE_MODULE | JS_EVAL_FLAG_STRICT | JS_EVAL_FLAG_COMPILE_ONLY;
 	R_LOG_DEBUG ("LOADING (%s)", module_name);
 #if 0
 	if (*module_name == '/') {
@@ -90,8 +92,7 @@ static JSModuleDef *r2qjs_load_module(JSContext *ctx, const char *module_name, v
 				    "  };\n"\
 				    "};\n"\
 				    ;
-		JSValue val = JS_Eval (ctx, data, strlen (data), module_name,
-				JS_EVAL_TYPE_MODULE | JS_EVAL_FLAG_STRICT | JS_EVAL_FLAG_COMPILE_ONLY);
+		JSValue val = JS_Eval (ctx, data, strlen (data), module_name, qjs_flags);
 		if (JS_IsException (val)) {
 			JSValue e = JS_GetException (ctx);
 			r2qjs_dump_obj (ctx, e);
@@ -100,32 +101,39 @@ static JSModuleDef *r2qjs_load_module(JSContext *ctx, const char *module_name, v
 		JS_FreeValue (ctx, val);
 		return JS_VALUE_GET_PTR (val);
 	}
+	R_LOG_DEBUG ("pop");
 	HtPP *ht = opaque;
 	if (!ht) {
 		return NULL;
 	}
 	char *data = ht_pp_find (ht, module_name, NULL);
 	if (data) {
-		JSValue val = JS_Eval (ctx, data, strlen (data), module_name,
-				JS_EVAL_TYPE_MODULE | JS_EVAL_FLAG_STRICT | JS_EVAL_FLAG_COMPILE_ONLY);
+#if 0
+		JSModuleDef *def = JS_RunModule (ctx, "/", module_name);
+		if (!def) {
+			R_LOG_ERROR ("Cannot load module");
+		}
+		return NULL;
+#else
+		R_LOG_DEBUG ("MODULE %s", module_name);
+		JSValue val = JS_Eval (ctx, data, strlen (data), module_name, qjs_flags);
 		if (JS_IsException (val)) {
 			JSValue e = JS_GetException (ctx);
 			r2qjs_dump_obj (ctx, e);
 			return NULL;
 		}
-		// R_LOG_INFO ("loaded (%s)", module_name);
 		JS_FreeValue (ctx, val);
+		// R_LOG_INFO ("loaded (%s)", module_name);
 		return JS_VALUE_GET_PTR (val);
+#endif
 	}
 	R_LOG_ERROR ("Cannot find module (%s)", module_name);
-	free (root);
-	root = NULL;
 	return NULL;
 }
 
 static void r2qjs_modules(JSContext *ctx) {
 	JSRuntime *rt = JS_GetRuntime (ctx);
-	JS_SetModuleLoaderFunc (rt, (JSModuleNormalizeFunc*)r2qjs_normalize_module_name, r2qjs_load_module, NULL);
+	JS_SetModuleLoaderFunc (rt, r2qjs_normalize_module_name, r2qjs_load_module, NULL);
 }
 
 static int r2qjs_loader(JSContext *ctx, const char *const buffer) {
@@ -141,8 +149,9 @@ static int r2qjs_loader(JSContext *ctx, const char *const buffer) {
 	}
 
 	HtPP *ht = ht_pp_new0 ();
-	JS_SetModuleLoaderFunc (rt, (JSModuleNormalizeFunc*)r2qjs_normalize_module_name, r2qjs_load_module, ht);
+	JS_SetModuleLoaderFunc (rt, r2qjs_normalize_module_name, r2qjs_load_module, ht);
 	char *entry = NULL;
+	char *entryfname = NULL;
 
 	assets += strlen (delimiter_marker);
 	while (ptr < ptr_end && assets < ptr_end) {
@@ -183,20 +192,31 @@ static int r2qjs_loader(JSContext *ctx, const char *const buffer) {
 			ht_pp_insert (ht, filename, data);
 			if (!entry) {
 				entry = data;
+				entryfname = strdup (filename);
 			}
 		}
 		ptr = nl + 1;
 		assets += size + strlen (delimiter_marker);
 	}
 	if (entry) {
-		JSValue v = JS_Eval (ctx, entry, strlen (entry), "-", JS_EVAL_TYPE_GLOBAL | JS_EVAL_TYPE_MODULE | JS_EVAL_FLAG_STRICT);
+		R_LOG_DEBUG ("ENTRY (%s)", entryfname);
+#if 0
+		JSModuleDef *def = JS_RunModule (ctx, "/", entryfname);
+		if (!def) {
+			R_LOG_ERROR ("Cannot load module");
+		}
+#else
+		const int qjs_flags = JS_EVAL_TYPE_GLOBAL | JS_EVAL_FLAG_STRICT | JS_EVAL_TYPE_MODULE;
+		JSValue v = JS_Eval (ctx, entry, strlen (entry), entryfname, qjs_flags);
 		if (JS_IsException (v)) {
 			JSValue e = JS_GetException (ctx);
 			r2qjs_dump_obj (ctx, e);
 		}
+#endif
 	}
+	free (entryfname);
 	ht_pp_free (ht);
 	// JS_SetModuleLoaderFunc (rt, NULL, NULL, NULL);
-	JS_SetModuleLoaderFunc (rt, (JSModuleNormalizeFunc*)r2qjs_normalize_module_name, r2qjs_load_module, NULL);
+	JS_SetModuleLoaderFunc (rt, r2qjs_normalize_module_name, r2qjs_load_module, NULL);
 	return true;
 }
