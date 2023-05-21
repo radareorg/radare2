@@ -3686,6 +3686,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB ("scr.rainbow", "false", &cb_scrrainbow, "shows rainbow colors depending of address");
 	SETCB ("scr.last", "true", &cb_scrlast, "cache last output after flush to make _ command work (disable for performance)");
 	SETBPREF ("asm.offset", "true", "show offsets in disassembly");
+	SETBPREF ("asm.offset.base36", "false", "use base36 for addresses");
 	SETCB ("asm.offset.segment", "false", &cb_segoff, "show segmented address in prompt (x86-16)");
 	SETICB ("asm.offset.segment.bits", 4, &cb_asm_offset_segment_bits, "segment granularity in bits (x86-16)");
 	SETCB ("asm.offset.base10", "false", &cb_decoff, "show address in base 10 instead of hexadecimal");

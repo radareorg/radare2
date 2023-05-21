@@ -1,10 +1,10 @@
 /* radare2 - LGPL - Copyright 2009-2019 - nibble, pancake, maijin */
 
 #include <stdio.h>
-
 #include <r_types.h>
 #include <r_parse.h>
 #include <config.h>
+#include <r_util/r_base36.h>
 
 #define isx86separator(x) ( \
 	(x) == ' '||(x) == '\t'||(x) == '\n'|| (x) == '\r'||(x) == ' '|| \
@@ -541,6 +541,13 @@ static bool filter(RParse *p, ut64 addr, RFlag *f, RAnalHint *hint, char *data, 
 					ut32 ip32 = off;
 					ut8 *ip = (ut8*)&ip32;
 					snprintf (num, sizeof (num), "%d.%d.%d.%d", ip[0], ip[1], ip[2], ip[3]);
+				}
+				break;
+			case 36:
+				{
+					char b36str[16];
+					b36_fromnum (b36str, off);
+					r_str_ncpy (num, b36str, sizeof (num));
 				}
 				break;
 			case 80:
