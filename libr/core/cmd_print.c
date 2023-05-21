@@ -1,6 +1,7 @@
 /* radare - LGPL - Copyright 2009-2023 - pancake */
 
 #include <r_core.h>
+#include <r_util/r_base36.h>
 #include <limits.h>
 
 #define R_CORE_MAX_DISASM (1024 * 1024 * 8)
@@ -8130,6 +8131,7 @@ R_API void r_print_offset(RPrint *p, ut64 off, int invert, int delta, const char
 	const int segbas = p->config->segbas;
 	const int seggrn = p->config->seggrn;
 	const int offseg = (p->flags & R_PRINT_FLAGS_SEGOFF) != 0;
+	const bool base36 = true;
 	char space[32] = {
 		0
 	};
@@ -8145,7 +8147,11 @@ R_API void r_print_offset(RPrint *p, ut64 off, int invert, int delta, const char
 		if (!k) {
 			k = "";
 		}
-		if (offseg) {
+		if (base36) {
+			char b36str[16];
+			b36_fromnum (b36str, off);
+			r_cons_printf ("%s%s%s%s", k, inv, b36str, reset);
+		} else if (offseg) {
 			ut32 s, a;
 			r_num_segaddr (off, segbas, seggrn, &s, &a);
 			if (offdec) {
