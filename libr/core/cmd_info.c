@@ -555,7 +555,11 @@ static int cmd_info(void *data, const char *input) {
 		if (tmp) {
 			*tmp = 0;
 		}
-		r_core_cmdf (core, "i?~& i%s", prefix);
+		if (*prefix == 'd') {
+			r_core_cmd_help (core, help_msg_id);
+		} else {
+			r_core_cmdf (core, "i?~& i%s", prefix);
+		}
 		free (prefix);
 		goto done;
 	}
@@ -564,7 +568,8 @@ static int cmd_info(void *data, const char *input) {
 		core->table_query = r_str_trim_dup (space + 1);
 	}
 	while (*input) {
-		if (*input == ' ') {
+		const char ch = *input;
+		if (ch == ' ') {
 			break;
 		}
 		switch (*input) {
@@ -583,7 +588,6 @@ static int cmd_info(void *data, const char *input) {
 		{
 			RBinObject *o = r_bin_cur_object (core->bin);
 			db = o? o->kv: NULL;
-			//:eprintf ("db = %p\n", db);
 			switch (input[1]) {
 			case 'v':
 				if (db) {
@@ -1174,7 +1178,6 @@ static int cmd_info(void *data, const char *input) {
 					break;
 				}
 				input++;
-#if 1
 				if (rdump) {
 					RBinFile *bf = r_bin_cur (core->bin);
 					int min = r_config_get_i (core->config, "bin.str.min");
@@ -1186,31 +1189,6 @@ static int cmd_info(void *data, const char *input) {
 					goto done;
 				}
 				RBININFO ("strings", R_CORE_BIN_ACC_RAW_STRINGS, NULL, 0);
-#else
-				// XXX for some reason this is breaking tests
-				int min = r_config_get_i (core->config, "bin.str.min");
-				{
-					RList *objs = r_core_bin_files (core);
-					RListIter *iter;
-					RBinFile *bf;
-					RBinFile *cur = core->bin->cur;
-					r_list_foreach (objs, iter, bf) {
-						core->bin->cur = bf;
-						if (rdump) {
-							bf->strmode = mode;
-							RList *res = r_bin_dump_strings (bf, min, 2);
-							r_list_free (res);
-						} else {
-							RBININFO ("strings", R_CORE_BIN_ACC_RAW_STRINGS, NULL, 0);
-						}
-					}
-					core->bin->cur = cur;
-					r_list_free (objs);
-					if (rdump) {
-						goto done;
-					}
-				}
-#endif
 			} else {
 				// "iz"
 				bool validcmd = true;
@@ -1537,7 +1515,6 @@ static int cmd_info(void *data, const char *input) {
 	//		cmd_info_bin (core, va, pj, mode);
 			R_LOG_WARN ("Invalid `i` subcommand '%c'", *input);
 			goto done;
-			break;
 		}
 		// input can be overwritten like the 'input = " ";' a few lines above
 		if (*input != ' ') {
