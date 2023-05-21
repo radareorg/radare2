@@ -8131,7 +8131,12 @@ R_API void r_print_offset(RPrint *p, ut64 off, int invert, int delta, const char
 	const int segbas = p->config->segbas;
 	const int seggrn = p->config->seggrn;
 	const int offseg = (p->flags & R_PRINT_FLAGS_SEGOFF) != 0;
-	const bool base36 = true;
+#if R2_590
+	const bool base36 = p->config->base36;
+#else
+	RCore *core = p->user;
+	const bool base36 = r_config_get_b (core->config, "asm.offset.base36");
+#endif
 	char space[32] = {
 		0
 	};
