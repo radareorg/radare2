@@ -353,7 +353,7 @@ fvalue  123.0
 float   0.000000f
 double  0.000000
 binary  0b01111011
-base36  0_f3
+base36  0_3f
 ternary 0t11120
 EOF
 RUN

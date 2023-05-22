@@ -143,6 +143,7 @@ typedef struct r_print_t {
 	bool wide_offsets;
 #if R2_590
 	char *strconv_mode;
+	bool base36;
 #else
 	const char *strconv_mode;
 #endif
