@@ -9,17 +9,18 @@ extern "C" {
 static const char cb36[] = "0123456789abcdefghijklmnopqrstuvwxyz";
 
 static inline void b36_fromnum(char *s, ut64 n) {
+	const int amount = n? (log (n) / log (36)): 0;
 	char *p = s;
 	*p++ = '0';
 	*p++ = '_';
-	while (n > 0) {
-		*p++ = cb36[n % 36];
+	p += amount + 1;
+	*p-- = 0;
+	if (n == 0) {
+		*p = '0';
+	} else while (n > 0) {
+		*p-- = cb36[n % 36];
 		n /= 36;
 	}
-	if (p == s + 2) {
-		*p++ = '0';
-	}
-	*p = 0;
 }
 
 static const ut64 pow36[36] = {
