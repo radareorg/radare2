@@ -80,7 +80,7 @@ $ r2 /bin/ls   # open file in read-only
 
 ## Resources
 
-* [Official radare2 book](https://book.rada.re): Read about r2 usage
+* [Official Book](https://book.rada.re): Read about r2 usage
 * [COMMUNITY.md](COMMUNITY.md): Community engagement and loose guidelines
 * [CONTRIBUTING.md](CONTRIBUTING.md): Information about reporting issues and
   contributing. See also [Contributing](#contributing)
@@ -155,21 +155,21 @@ Windows (since XP), Linux, Darwin, GNU/Hurd, Apple's {Mac,i,iPad,watch}OS, Andro
 
 ## Architectures
 
-i386, x86-64, ARM, BPF, MIPS, PowerPC, SPARC, RISC-V, SH, m68k, m680x,
-AVR, XAP, S390, XCore, CR16, HPPA, ARC, Blackfin, Z80, H8/300, V810,
-V850, CRIS, XAP, PIC, LM32, 8051, 6502, i4004, i8080, Propeller, EVM,
-Tricore, CHIP-8, LH5801, T8200, GameBoy, SNES, SPC700, MSP430, Xtensa,
+i386, x86-64, Alpha, ARM, AVR, BPF, MIPS, PowerPC, SPARC, RISC-V, SH, m68k,
+XAP, S390, XCore, CR16, HPPA, ARC, Blackfin, Z80, H8/300, V810, PDP11, m680x,
+V850, CRIS, XAP, PIC, LM32, 8051, 6502, i4004, i8080, Propeller, EVM, OR1K
+Tricore, CHIP-8, LH5801, T8200, GameBoy, SNES, SPC700, MSP430, Xtensa, xcore,
 NIOS II, Java, Dalvik, Pickle, WebAssembly, MSIL, EBC, TMS320 (c54x, c55x,
-c55+, c64x), Hexagon, Brainfuck, Malbolge, whitespace, DCPU16, LANAI,
-MCORE, mcs96, RSP, SuperH-4, VAX, KVX, Am29000, LOONGARCH, JDH8.
+c55+, c64x), Hexagon, Brainfuck, Malbolge, whitespace, DCPU16, LANAI, lm32,
+MCORE, mcs96, RSP, SuperH-4, VAX, KVX, Am29000, LOONGARCH, JDH8, s390x.
 
 ## File Formats
 
-ELF, Mach-O, Fatmach-O, PE, PE+, MZ, COFF, OMF, TE, XBE, BIOS/UEFI,
-Dyldcache, DEX, ART, CGC, Java class, Android boot image, Plan9 executable,
-ZIMG, MBN/SBL bootloader, ELF coredump, MDMP (Windows minidump),
-WASM (WebAssembly binary), Commodore VICE emulator, QNX, WAD, OFF, TIC-80
-Game Boy (Advance), Nintendo DS ROMs and Nintendo 3DS FIRMs, various filesystems.
+ELF, Mach-O, Fatmach-O, PE, PE+, MZ, COFF, XCOFF, OMF, TE, XBE, SEP64, BIOS/UEFI, 
+Dyldcache, DEX, ART, CGC, Java class, Android boot image, Plan9 executables,
+ZIMG, MBN/SBL bootloader, ELF coredump, MDMP (Windows minidump), PDP11, XTAC,
+WASM (WebAssembly binary), Commodore VICE emulator, QNX, WAD, OFF, TIC-80,
+GB/GBA, NDS and N3DS, and mount several filesystems like NTFS, FAT, HFS+, EXT,...
 
 ## Packaging Status
 
