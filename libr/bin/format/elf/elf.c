@@ -3807,7 +3807,7 @@ static RVector* load_symbols_from_phdr(ELFOBJ *bin, int type) {
 		if (!*new_phdr_symbol->name) {
 			R_LOG_DEBUG ("empty symbol name", new_phdr_symbol->name);
 			ret->len--;
-			break; // continue;
+			continue;
 		}
 		fill_symbol_bind_and_type (bin, new_phdr_symbol, new_symbol);
 		new_phdr_symbol->is_sht_null = is_sht_null;

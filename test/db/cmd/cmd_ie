@@ -129,6 +129,8 @@ DEBUG: add dt.dyn.entry tag=1 value=0x00000298
 DEBUG: add dt.dyn.entry tag=16 value=0x00000000
 DEBUG: add dt.dyn.entry tag=30 value=0x00000002
 ERROR: Cannot determine entrypoint, using 0x00000d28
+DEBUG: empty symbol name
+DEBUG: empty symbol name
 DEBUG: RCoreCmd: Cd 4[48] @ 0x12000
 DEBUG: (cannot find opening [) in (48])
 DEBUG: RCoreCmd: Cd 4[56] @ 0x2fdd8
