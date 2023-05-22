@@ -110,7 +110,7 @@ static const reginfo_t reginf[ARCH_LEN] = {
 	{ 272, 0x84 }
 };
 
-static bool is_bin_etrel(ELFOBJ *bin) {
+static inline bool is_bin_etrel(ELFOBJ *bin) {
 	return bin->ehdr.e_type == ET_REL;
 }
 
@@ -3849,6 +3849,23 @@ static void fill_symbol_bind_and_type(ELFOBJ *bin, struct r_bin_elf_symbol_t *re
 	ret->type = type2str (bin, ret, sym);
 }
 
+static inline ut64 parse_toffset(ELFOBJ *bin, int type, ut64 st_value, int i) {
+	const bool is_relocatable_file = is_bin_etrel (bin);
+	if (type == R_BIN_ELF_IMPORT_SYMBOLS) {
+		if (is_relocatable_file /* && memory.sym[k].st_shndx != SHN_COMMON */) {
+			return st_value;  // offset from beginning of section
+		}
+
+		ut64 offset;
+		if ((offset = get_import_addr (bin, i)) == -1) {
+			offset = 0;
+		}
+		return offset;
+	}
+
+	return st_value;
+}
+
 static RVector* load_symbols_from_phdr(ELFOBJ *bin, int type) {
 	r_return_val_if_fail (bin, NULL);
 
@@ -3911,19 +3928,13 @@ static RVector* load_symbols_from_phdr(ELFOBJ *bin, int type) {
 		bool is_sht_null = false;
 		bool is_vaddr = false;
 		int tsize;
-		ut64 toffset = 0;
+		const ut64 toffset = parse_toffset (bin, type, (ut64) new_symbol->st_value, i);
 		// zero symbol is always empty
 		// Examine entry and maybe store
 		if (type == R_BIN_ELF_IMPORT_SYMBOLS && new_symbol->st_shndx == SHT_NULL) {
-			if (new_symbol->st_value) {
-				toffset = new_symbol->st_value;
-			} else if ((toffset = get_import_addr (bin, i)) == -1) {
-				toffset = 0;
-			}
 			tsize = 16;
 		} else if (type == R_BIN_ELF_ALL_SYMBOLS) {
 			tsize = new_symbol->st_size;
-			toffset = (ut64) new_symbol->st_value;
 			is_sht_null = new_symbol->st_shndx == SHT_NULL;
 		} else {
 			continue;
@@ -4354,6 +4365,7 @@ static RVector /* <RBinElfSymbol> */ *Elf_(_r_bin_elf_load_symbols_and_imports)(
 		return NULL;
 	}
 
+	const bool is_relocatable_file = is_bin_etrel (bin);
 	size_t import_ret_ctr = 0;
 	size_t ret_ctr = 0; // amount of symbols stored in ret
 	RVector *ret = parse_gnu_debugdata (bin, &ret_ctr);
@@ -4486,26 +4498,28 @@ static RVector /* <RBinElfSymbol> */ *Elf_(_r_bin_elf_load_symbols_and_imports)(
 
 		int k;
 		for (k = 1; k < nsym; k++, ret_ctr++) {
-			ut64 toffset;
 			int tsize;
 			RBinElfSymbol *es = r_vector_end (ret);
 			bool is_sht_null = false;
 			bool is_vaddr = false;
 			bool is_imported = false;
 			bool is_internal = false;
+			ut64 toffset = parse_toffset (bin, type, (ut64) memory.sym[k].st_value, k);
 			if (type == R_BIN_ELF_IMPORT_SYMBOLS) {
-				toffset = get_import_addr (bin, k);
 				tsize = 16;
-				is_imported = true;
-				is_internal = memory.sym[k].st_shndx != STN_UNDEF;
+				is_imported = memory.sym[k].st_shndx == STN_UNDEF;
+#if R_BIN_ELF64
+				is_internal = ELF64_ST_VISIBILITY (memory.sym[k].st_other);
+#else
+				is_internal = ELF32_ST_VISIBILITY (memory.sym[k].st_other);
+#endif
 			} else {
 				tsize = memory.sym[k].st_size;
-				toffset = (ut64)memory.sym[k].st_value;
 				is_sht_null = memory.sym[k].st_shndx == SHT_NULL;
 			}
-			if (is_bin_etrel (bin)) {
+			if (is_relocatable_file) {
 				if (memory.sym[k].st_shndx < bin->ehdr.e_shnum) {
-					es->offset = memory.sym[k].st_value + bin->shdr[memory.sym[k].st_shndx].sh_offset;
+					es->offset = toffset + bin->shdr[memory.sym[k].st_shndx].sh_offset;
 				}
 			} else {
 				es->offset = Elf_(r_bin_elf_v2p_new) (bin, toffset);
