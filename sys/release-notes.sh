@@ -48,6 +48,11 @@ printf "Commits: "
 grep ^commit .l | wc -l | xargs echo
 echo "Contributors: `wc -l .A | awk '{print $1}'`"
 echo
+echo "\`\`\`sh"
+echo "curl -Ls https://github.com/radareorg/radare2/releases/download/${VERS}/radare2-${VERS}.tar.xz | tar xJv"
+echo "radare2-${VERS}/sys/install.sh"
+echo "\`\`\`"
+echo
 echo "## Highlights"
 
 echo "<details><summary>More details</summary><p>"
