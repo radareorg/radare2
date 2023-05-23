@@ -1,4 +1,4 @@
-.Dd Dec 28, 2020
+.Dd Dec 28, 2023
 .Dt RAX2 1
 .Sh NAME
 .Nm rax2
@@ -29,6 +29,9 @@ Convert LONG to/from IP ADDRESS
 Append newline to the decoded output for human friendly-ness
 .It Fl K
 Show randomart key asciiart for values or hexpairs
+.It Fl r
+Show the same output as the r2's `? 0x804` command.
+When combined with -S (-rS) it will print r2 commands to write the actual binary into radare2
 .It Fl s
 Convert from hex string to character (rax2 \-s 43 4a 50)
 .It Fl S
