@@ -88,7 +88,7 @@ static int lang_c_file(RLangSession *s, const char *file) {
 }
 
 static int lang_c_init(void *user) {
-	// TODO: check if "valac" is found in path
+	// TODO: check if "cc/gcc/clang/zig/tcc/cl" is found in path
 	return true;
 }
 

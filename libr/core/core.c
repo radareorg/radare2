@@ -21,7 +21,7 @@ static ut64 letter_divs[R_CORE_ASMQJMPS_LEN_LETTERS - 1] = {
 static int on_fcn_new(RAnal *_anal, void* _user, RAnalFunction *fcn) {
 	RCore *core = (RCore*)_user;
 	const char *cmd = r_config_get (core->config, "cmd.fcn.new");
-	if (cmd && *cmd) {
+	if (R_STR_ISNOTEMPTY (cmd)) {
 		ut64 oaddr = core->offset;
 		ut64 addr = fcn->addr;
 		r_core_seek (core, addr, true);
@@ -1034,7 +1034,7 @@ static const char *radare_argv[] = {
 	"dts?", "dts", "dts+", "dts-", "dtsf", "dtst", "dtsC", "dtt",
 	"dw",
 	"dx?", "dx", "dxa", "dxe", "dxr", "dxs",
-	"e?", "e", "-e", "e-", "e*", "e!", "ec", "ee?", "ee", "?ed", "ed", "ej", "env", "er", "es", "et", "ev", "evj",
+	"e?", "e", "-e", "-i", "e-", "e*", "e!", "ec", "ee?", "ee", "?ed", "ed", "ej", "env", "er", "es", "et", "ev", "evj",
 	"ec?", "ec", "ec*", "ecd", "ecr", "ecs", "ecj", "ecc", "eco", "ecp", "ecn",
 	"ecH?", "ecH", "ecHi", "ecHw", "ecH-",
 	"f?", "f", "f.", "f*", "f-", "f--", "f+", "f=", "fa", "fb", "fc?", "fc", "fC", "fd", "fe-", "fe",
@@ -2742,7 +2742,7 @@ static void __init_autocomplete_default(RCore* core) {
 		"idp", "idpi", "L", "obf", "o+", "oc", "of", "r2", "rabin2", "rasm2", "rahash2", "rax2", "wff",
 		"rafind2", "cd", "ls", "lua", "on", "wf", "rm", "wF", "wp", "Sd", "Sl", "to", "pm",
 		"/m", "zos", "zfd", "zfs", "zfz", "cat", "wta", "wtf", "wxf", "dml", "dd", "dd+",
-		"vi", "vim", "nvi", "neovim", "nvim", "nano",
+		"vi", "vim", "nvi", "neovim", "nvim", "nano", "-i",
 #if R2__WINDOWS__
 		"notepad",
 #endif
