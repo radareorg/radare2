@@ -1045,7 +1045,7 @@ R_API void r_cons_flush(void) {
 	if (!C) {
 		r_cons_context_reset ();
 	}
-	if (C->noflush) {
+	if (C->buffer_len < 1 || C->noflush) {
 		return;
 	}
 	if (I->null) {
@@ -1354,7 +1354,7 @@ R_API int r_cons_get_column(void) {
 /* final entrypoint for adding stuff in the buffer screen */
 R_API int r_cons_write(const char *str, int len) {
 	r_return_val_if_fail (str && len >= 0, -1);
-	if (len == 0) {
+	if (len < 1) {
 		return 0;
 	}
 	if (I->echo) {
