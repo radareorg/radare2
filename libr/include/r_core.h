@@ -460,11 +460,11 @@ R_API void r_core_cmd_init(RCore *core);
 R_API int r_core_cmd_call(RCore *core, const char *cmd);
 R_API int r_core_cmd_callf(RCore *core, const char *cmd, ...);
 R_API int r_core_cmd_pipe(RCore *core, char *radare_cmd, char *shell_cmd);
-R_API char *r_core_cmd_str(RCore *core, const char *cmd);
-R_API char *r_core_cmd_str_r(RCore *core, const char *cmd);
-R_API char *r_core_cmd_strf(RCore *core, const char *fmt, ...) R_PRINTF_CHECK(2, 3);
-R_API char *r_core_cmd_str_pipe(RCore *core, const char *cmd);
-R_API RBuffer *r_core_cmd_tobuf(RCore *core, const char *cmd);
+R_API R_MUSTUSE char *r_core_cmd_str(RCore *core, const char *cmd);
+R_API R_MUSTUSE char *r_core_cmd_str_r(RCore *core, const char *cmd);
+R_API R_MUSTUSE char *r_core_cmd_strf(RCore *core, const char *fmt, ...) R_PRINTF_CHECK(2, 3);
+R_API R_MUSTUSE char *r_core_cmd_str_pipe(RCore *core, const char *cmd);
+R_API R_MUSTUSE RBuffer *r_core_cmd_tobuf(RCore *core, const char *cmd);
 R_API int r_core_cmd_file(RCore *core, const char *file);
 R_API int r_core_cmd_lines(RCore *core, const char *lines);
 R_API int r_core_cmd_command(RCore *core, const char *command);
@@ -555,7 +555,6 @@ R_API RIODesc *r_core_file_open(RCore *core, const char *file, int flags, ut64 l
 R_API RIODesc *r_core_file_open_many(RCore *r, const char *file, int flags, ut64 loadaddr);
 R_API bool r_core_file_close_all_but(RCore *core);
 
-
 R_API int r_core_setup_debugger(RCore *r, const char *debugbackend, bool attach);
 R_API int r_core_seek_delta(RCore *core, st64 addr);
 R_API bool r_core_extend_at(RCore *core, ut64 addr, int size);
@@ -572,13 +571,6 @@ R_IPI RList *r_core_fortune_types(void);
 R_API void r_core_fortune_list_types(void);
 R_API void r_core_fortune_list(RCore *core);
 R_API void r_core_fortune_print_random(RCore *core);
-
-/* project */
-#if 0
-R_API bool r_core_project_load(RCore *core, const char *prjfile, const char *rcfile);
-R_API RThread *r_core_project_load_bg(RCore *core, const char *prjfile, const char *rcfile);
-#endif
-R_API void r_core_project_execute_cmds(RCore *core, const char *prjfile);
 
 #define R_CORE_FOREIGN_ADDR -1
 R_API int r_core_yank(RCore *core, ut64 addr, int len);
@@ -736,6 +728,8 @@ R_API int r_core_zdiff(RCore *c, RCore *c2);
 R_API int r_core_gdiff(RCore *core1, RCore *core2);
 R_API int r_core_gdiff_fcn(RCore *c, ut64 addr, ut64 addr2);
 
+/* project */
+R_API void r_core_project_execute_cmds(RCore *core, const char *prjfile);
 R_API bool r_core_project_open(RCore *core, const char *file);
 R_API void r_core_project_cat(RCore *core, const char *name);
 R_API int r_core_project_delete(RCore *core, const char *prjfile);
