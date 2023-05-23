@@ -385,7 +385,10 @@ static int cmd_hash_bang(RCore *core, const char *input) {
 		if (p) {
 			// I see no point in using r_lang_use here, as we already haz a ptr to the pluging in our handz
 			// Maybe add r_lang_use_plugin in r_lang api?
-			r_lang_use_plugin (core->lang, p);
+			if (!r_lang_use_plugin (core->lang, p)) {
+				R_LOG_ERROR ("Sorry but I don't know this this language");
+				return false;
+			}
 			if (ac > 1) {
 				if (!strcmp (av[1], "-e")) {
 					char *run_str = strstr (input + 2, "-e") + 2;

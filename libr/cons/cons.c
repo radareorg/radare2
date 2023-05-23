@@ -1111,7 +1111,7 @@ R_API void r_cons_flush(void) {
 			r_cons_set_raw (true);
 		}
 	}
-	if (tee && *tee) {
+	if (R_STR_ISNOTEMPTY (tee)) {
 		FILE *d = r_sandbox_fopen (tee, "a+");
 		if (d) {
 			if (C->buffer_len != fwrite (C->buffer, 1, C->buffer_len, d)) {
