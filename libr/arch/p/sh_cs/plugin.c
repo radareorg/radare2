@@ -16,7 +16,7 @@
 #define CSINC SH
 #define CSINC_MODE 0
 	// CS_MODE_BIG_ENDIAN
-#include "../capstone.inc"
+#include "../capstone.inc.c"
 
 static void opex(RStrBuf *buf, csh handle, cs_insn *insn) {
 	int i;

@@ -2,7 +2,7 @@
 
 #include "sdb/sdb.h"
 #include "sdb/ht_up.h"
-#include "ht.inc"
+#include "ht.inc.c"
 
 static HtName_(Ht)* internal_ht_default_new(ut32 size, ut32 prime_idx, HT_(DupValue) valdup, HT_(KvFreeFunc) pair_free, HT_(CalcSizeV) calcsizeV) {
 	HT_(Options) opt = {

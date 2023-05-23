@@ -15,7 +15,7 @@ RArchPlugin r_arch_plugin_tricore_cs = {
 #define CSINC TRICORE
 #define CSINC_MODE 0
 	// CS_MODE_BIG_ENDIAN
-#include "../capstone.inc"
+#include "../capstone.inc.c"
 
 static void opex(RStrBuf *buf, csh handle, cs_insn *insn) {
 	PJ *pj = pj_new ();

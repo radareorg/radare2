@@ -35,7 +35,7 @@ call = 4
 	(a->config->bits == 64)? CS_MODE_64: \
 	(a->config->bits == 32)? CS_MODE_32: \
 	(a->config->bits == 16)? CS_MODE_16: 0
-#include "capstone.inc"
+#include "capstone.inc.c"
 
 #define opexprintf(op, fmt, ...) r_strbuf_setf (&op->opex, fmt, ##__VA_ARGS__)
 #define INSOP(n) insn->detail->x86.operands[n]

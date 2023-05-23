@@ -15,7 +15,7 @@
 #define CSINC_MODE \
 	CS_MODE_BIG_ENDIAN \
 	| (as->config->cpu != NULL && ((!strcmp (as->config->cpu, "v9"))) ? CS_MODE_V9 : 0)
-#include "../capstone.inc"
+#include "../capstone.inc.c"
 
 static void opex(RStrBuf *buf, csh handle, cs_insn *insn) {
 	int i;

@@ -807,7 +807,7 @@ static int get_capstone_mode (RAnal *anal) {
 
 #define CSINC MIPS
 #define CSINC_MODE get_capstone_mode(a)
-#include "capstone.inc"
+#include "capstone.inc.c"
 
 static int analop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
 	csh hndl = init_capstone (anal);

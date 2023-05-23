@@ -13,7 +13,7 @@
 
 // TODO :Rename CSINC to something meaningful
 #define CSINC EVM
-#include "../capstone.inc"
+#include "../capstone.inc.c"
 
 typedef struct {
 	Sdb *pushs_db;

@@ -1,6 +1,6 @@
 /* radare2 - LGPL - Copyright 2009-2022 - pancake, nibble, dso */
 
-#include "bin_elf.inc"
+#include "bin_elf.inc.c"
 
 static void headers32(RBinFile *bf) {
 #define p bf->rbin->cb_printf

@@ -56,7 +56,7 @@ static void opex(RStrBuf *buf, csh handle, cs_insn *insn) {
 
 #define CSINC SYSZ
 #define CSINC_MODE CS_MODE_BIG_ENDIAN
-#include "../capstone.inc"
+#include "../capstone.inc.c"
 
 static char *mnemonics(RArchSession *s, int id, bool json) {
 	CapstonePluginData *cpd = (CapstonePluginData*)s->data;

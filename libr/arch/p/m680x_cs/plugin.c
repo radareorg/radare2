@@ -56,7 +56,7 @@ static int m680xmode(const char *str) {
 
 #define CSINC M680X
 #define CSINC_MODE m680xmode(as->config->cpu)
-#include "../capstone.inc"
+#include "../capstone.inc.c"
 
 #define IMM(x) insn->detail->m680x.operands[x].imm
 #define REL(x) insn->detail->m680x.operands[x].rel

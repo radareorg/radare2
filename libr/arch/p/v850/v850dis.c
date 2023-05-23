@@ -1,7 +1,7 @@
 /* V850 disassembler inspired by the GNU binutils one -- 2021-2022 - pancake */
 
 #include "v850dis.h"
-#include "opc.inc"
+#include "opc.inc.c"
 
 enum {
 	V850_ARG_TYPE_UNKNOWN,

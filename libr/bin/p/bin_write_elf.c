@@ -1,6 +1,6 @@
 /* radare - LGPL - Copyright 2009-2019 - pancake, nibble */
 
-#include "bin_write_elf.inc"
+#include "bin_write_elf.inc.c"
 
 RBinWrite r_bin_write_elf = {
 	.scn_resize = &scn_resize,

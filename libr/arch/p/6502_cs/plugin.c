@@ -14,7 +14,7 @@
 #include <capstone/mos65xx.h>
 
 #define CSINC MOS65XX
-#include "../capstone.inc"
+#include "../capstone.inc.c"
 
 typedef struct plugin_data_t {
 	CapstonePluginData cpd;

@@ -1,6 +1,6 @@
 /* radare - LGPL - Copyright 2009-2022 - nibble, pancake, alvarofe */
 
-#include "bin_pe.inc"
+#include "bin_pe.inc.c"
 
 extern struct r_bin_write_t r_bin_write_pe;
 
