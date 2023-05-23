@@ -152,6 +152,13 @@ static bool lang_go_file(RLangSession *session, const char *file) {
 	return 0;
 }
 
+static void *lang_go_init(RLangSession *s) {
+	char *go = r_file_path ("go");
+	bool found = (go && *go != 'g');
+	free (go);
+	return (void*)(size_t)found;
+}
+
 static bool lang_go_run(RLangSession *session, const char *code, int len) {
 	return __gorun (session, code, len);
 }
@@ -168,6 +175,7 @@ static RLangPlugin r_lang_plugin_go = {
 	.example = r_lang_go_example,
 	.desc = "GO language extension",
 	.license = "MIT",
+	.init = lang_go_init,
 	.run = lang_go_run,
 	.run_file = (void*)lang_go_file,
 };
