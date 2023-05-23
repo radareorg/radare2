@@ -1296,7 +1296,26 @@ ut32 fields_offset;
 	return st;
 }
 
-static void parse_type(RList *list, RBinFile *bf, SwiftType st) {
+static inline HtUP *_load_symbol_by_vaddr_hashtable(RBinFile *bf) {
+	const RVector *symbols = MACH0_(load_symbols) (bf, bf->o->bin_obj);
+	if (!symbols) {
+		return NULL;
+	}
+
+	HtUP *ht = ht_up_new0 ();
+	if (!ht) {
+		return NULL;
+	}
+
+	RBinSymbol *sym;
+	r_vector_foreach (symbols, sym) {
+		ht_up_insert (ht, sym->vaddr, sym);
+	}
+
+	return ht;
+}
+
+static void parse_type(RList *list, RBinFile *bf, SwiftType st, HtUP *symbols_ht) {
 	char *otypename = readstr (bf, st.name_addr);
 	if (!otypename) {
 		R_LOG_DEBUG("swift-type-parse missing name");
@@ -1321,15 +1340,12 @@ static void parse_type(RList *list, RBinFile *bf, SwiftType st) {
 				break;
 			}
 			method_addr += bf->o->baddr;
-			const RVector *symbols = MACH0_(load_symbols) (bf, bf->o->bin_obj);
 			RBinSymbol *sym;
-			char *method_name = r_str_newf ("%d", i);
-			r_vector_foreach (symbols, sym) {
-				if (sym->vaddr == method_addr) {
-					free (method_name);
-					method_name = r_name_filter_dup (sym->name);
-					break;
-				}
+			char *method_name;
+			if (symbols_ht && (sym = ht_up_find (symbols_ht, method_addr, NULL))) {
+				method_name = r_name_filter_dup (sym->name);
+			} else {
+				method_name = r_str_newf ("%d", i);
 			}
 			sym = r_bin_symbol_new (method_name, method_addr, method_addr);
 			sym->lang = R_BIN_LANG_SWIFT;
@@ -1450,6 +1466,8 @@ RList *MACH0_(parse_classes)(RBinFile *bf, objc_cache_opt_info *oi) {
 				int i;
 				int res = r_buf_read_at (bf->buf, swift5_types_addr, (ut8*)words, aligned_size);
 				if (res >= aligned_size) {
+					HtUP *symbols_ht = _load_symbol_by_vaddr_hashtable (bf);
+
 					for (i = 0; i < amount; i++) {
 						st32 word = r_read_le32 (&words[i]);
 						ut64 type_address = swift5_types_addr + (i * 4) + word;
@@ -1460,9 +1478,11 @@ RList *MACH0_(parse_classes)(RBinFile *bf, objc_cache_opt_info *oi) {
 						st.fieldmd_size = aligned_fieldmd_size;
 						// eprintf ("Name address %llx\n", st.name_addr);
 						if (st.fields != UT64_MAX) {
-							parse_type (ret, bf, st);
+							parse_type (ret, bf, st, symbols_ht);
 						}
 					}
+
+					ht_up_free (symbols_ht);
 				} else {
 					R_LOG_DEBUG ("Invalid read of swift5 type section");
 				}
