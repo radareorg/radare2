@@ -170,6 +170,7 @@ static int help(void) {
 		"  -r      r2 style output      ;  rax2 -r 0x1234\n"
 		"  -s      hexstr -> raw        ;  rax2 -s 43 4a 50\n"
 		"  -S      raw -> hexstr        ;  rax2 -S < /bin/ls > ls.hex\n"
+		"  -rS     raw -> hex.r2        ;  rax2 -rS < /bin/ls > ls.r2  # script for r2\n"
 		"  -t      tstamp -> str        ;  rax2 -t 1234567890\n"
 		"  -u      units                ;  rax2 -u 389289238 # 317.0M\n"
 		"  -v      version              ;  rax2 -v\n"
@@ -293,10 +294,24 @@ dotherax:
 		return true;
 	}
 	if (flags & (1 << 2)) { // -S
-		for (i = 0; i < len; i++) {
-			printf ("%02x", (ut8) str[i]);
+		if (flags & (1 << 18)) {
+			int j;
+			printf ("s+0\n");
+			for (i = 0; i < len;) {
+				printf ("wx+");
+				for (j = 0; j < 80 && i < len; j++, i++) {
+					printf ("%02x", (ut8) str[i]);
+				}
+				printf ("\n");
+			}
+			printf ("s-\n");
+			printf ("\n");
+		} else {
+			for (i = 0; i < len; i++) {
+				printf ("%02x", (ut8) str[i]);
+			}
+			printf ("\n");
 		}
-		printf ("\n");
 		return true;
 	} else if (flags & (1 << 3)) { // -b
 		int i;
