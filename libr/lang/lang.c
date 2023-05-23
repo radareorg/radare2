@@ -151,14 +151,18 @@ R_API bool r_lang_setup(RLang *lang) {
 
 R_API bool r_lang_add(RLang *lang, RLangPlugin *foo) {
 	if (foo && (!r_lang_get_by_name (lang, foo->name))) {
-#if 0
-		// we want an init when adding the plugin
+		bool supported = true;
 		if (foo->init) {
-			foo->init (lang);
+			// when init takes null, we just check if
+			// the system is capable to use the plugin
+			// otherwise we can use the session info
+			// to initialize the internal plugin state
+			supported = foo->init (NULL);
 		}
-#endif
-		r_list_append (lang->langs, foo);
-		return true;
+		if (supported) {
+			r_list_append (lang->langs, foo);
+			return true;
+		}
 	}
 	return false;
 }
@@ -252,7 +256,12 @@ R_API RLangSession *r_lang_session(RLang *lang, RLangPlugin *h) {
 		session->lang = lang;
 		session->plugin = h;
 		if (h->init) {
-			session->plugin_data = h->init (session);
+			// session->plugin_data = h->init (session);
+			if (!h->init (session)) {
+				R_LOG_ERROR ("Cannot initialize plugin for this rlang session");
+				free (session);
+				return NULL;
+			}
 		}
 	}
 	return session;
@@ -277,7 +286,7 @@ R_API bool r_lang_unuse(RLang *lang) {
 R_API bool r_lang_use_plugin(RLang *lang, RLangPlugin *h) {
 	r_return_val_if_fail (lang && h, false);
 	RListIter *iter;
-	RLangSession *s;
+	RLangSession *s = NULL;
 	r_list_foreach (lang->sessions, iter, s) {
 		if (h == s->plugin) {
 			lang->session = s;

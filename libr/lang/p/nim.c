@@ -47,11 +47,19 @@ static bool lang_nim_run(RLangSession *s, const char *code, int len) {
 	return rv;
 }
 
+static void *lang_nim_init(RLangSession *s) {
+	char *nim = r_file_path ("nim");
+	bool found = (nim && *nim != 'n');
+	free (nim);
+	return (void*)(size_t)found;
+}
+
 static RLangPlugin r_lang_plugin_nim = {
 	.name = "nim",
 	.ext = "ts",
 	.author = "pancake",
 	.license = "LGPL",
+	.init = lang_nim_init,
 	.desc = "Use #!nim script.nim",
 	.run = lang_nim_run,
 	.run_file = (void*)lang_nim_file,

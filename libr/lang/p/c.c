@@ -54,9 +54,15 @@ static int lang_c_file(RLangSession *s, const char *file) {
 	char *file_esc = r_str_escape_sh (file);
 	char *libpath_esc = r_str_escape_sh (libpath);
 	char *libname_esc = r_str_escape_sh (libname);
+#if 0
+	char *buf = r_str_newf ("%s -fPIC -g -shared \"%s\" -o \"%s/lib%s." R_LIB_EXT "\""
+		" $(PKG_CONFIG_PATH=%s pkg-config --cflags --libs r_core)",
+		cc, file_esc, libpath_esc, libname_esc, R2_LIBDIR "/pkgconfig");
+#else
 	char *buf = r_str_newf ("%s -fPIC -shared \"%s\" -o \"%s/lib%s." R_LIB_EXT "\""
 		" $(PKG_CONFIG_PATH=%s pkg-config --cflags --libs r_core)",
 		cc, file_esc, libpath_esc, libname_esc, R2_LIBDIR "/pkgconfig");
+#endif
 	free (libname_esc);
 	free (libpath_esc);
 	free (file_esc);

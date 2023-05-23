@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2020-2022 pancake */
+/* radare - LGPL - Copyright 2020-2023 pancake */
 
 #include "r_lib.h"
 #include "r_core.h"
@@ -12,12 +12,8 @@ static R_TH_LOCAL RLang *Glang = NULL;
 #include "../../../shlr/spp/spp.h"
 #include "spp_r2.inc"
 
-static void *lang_spp_init(RLangSession *s) {
+static bool lang_spp_run(RLangSession *s, const char *code, int len) {
 	Glang = s->lang; // XXX
-	return Glang;
-}
-
-static bool lang_spp_run(RLangSession *lang, const char *code, int len) {
 	Output out;
 	out.fout = NULL;
 	out.cout = r_strbuf_new (NULL);
@@ -53,6 +49,5 @@ static RLangPlugin r_lang_plugin_spp = {
 	.desc = "SPP template programs",
 	.example = r_lang_spp_example,
 	.run = lang_spp_run,
-	.init = (void*)lang_spp_init,
 	.run_file = (void*)lang_spp_file,
 };

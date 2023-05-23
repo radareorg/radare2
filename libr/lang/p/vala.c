@@ -102,9 +102,12 @@ static bool vala_run_file(RLangSession *s, const char *file) {
 	return lang_vala_file (s, file, false);
 }
 
-static bool lang_vala_init(void *user) {
-	// TODO: check if "valac" is found in path
-	return true;
+// R2_590 return bool
+static void *lang_vala_init(RLangSession *s) {
+	char *valac = r_file_path ("valac");
+	bool found = (valac && *valac != 'v');
+	free (valac);
+	return (void*)(size_t)found;
 }
 
 static bool lang_vala_run(RLangSession *s, const char *code, int len) {
