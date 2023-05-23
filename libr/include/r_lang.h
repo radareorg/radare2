@@ -26,6 +26,18 @@ typedef struct r_lang_t {
 
 typedef struct r_lang_session_t _RLangSession;
 
+#if R2_590
+typedef bool (*RLangPluginInit)(_RLangSession *s);
+#else
+typedef void *(*RLangPluginInit)(_RLangSession *s);
+#endif
+typedef bool (*RLangPluginSetup)(_RLangSession *s);
+typedef bool (*RLangPluginFini)(_RLangSession *s);
+typedef bool (*RLangPluginPrompt)(_RLangSession *s);
+typedef bool (*RLangPluginRun)(_RLangSession *s, const char *code, int len);
+typedef bool (*RLangPluginRunFile)(_RLangSession *s, const char *file);
+typedef int (*RLangPluginSetArgv)(_RLangSession *s, int argc, char **argv);
+
 typedef struct r_lang_plugin_t {
 	const char *name;
 	const char *alias;
@@ -35,13 +47,13 @@ typedef struct r_lang_plugin_t {
 	const char *license;
 	const char **help;
 	const char *ext;
-	void *(*init)(_RLangSession *s);
-	bool (*setup)(_RLangSession *s);
-	bool (*fini)(_RLangSession *s);
-	bool (*prompt)(_RLangSession *s);
-	bool (*run)(_RLangSession *s, const char *code, int len);
-	bool (*run_file)(_RLangSession *s, const char *file);
-	int (*set_argv)(_RLangSession *s, int argc, char **argv);
+	RLangPluginInit init;
+	RLangPluginSetup setup;
+	RLangPluginFini fini;
+	RLangPluginPrompt prompt;
+	RLangPluginRun run;
+	RLangPluginRunFile run_file;
+	RLangPluginSetArgv set_argv;
 } RLangPlugin;
 
 typedef struct r_lang_def_t {
