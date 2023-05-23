@@ -1045,7 +1045,7 @@ R_API void r_cons_flush(void) {
 	if (!C) {
 		r_cons_context_reset ();
 	}
-	if (C->buffer_len < 1 || C->noflush) {
+	if (C->noflush) {
 		return;
 	}
 	if (I->null) {
@@ -1071,6 +1071,10 @@ R_API void r_cons_flush(void) {
 		}
 	}
 	r_cons_filter ();
+	if (C->buffer_len < 1) {
+		r_cons_reset ();
+		return;
+	}
 	if (r_cons_is_interactive () && I->fdout == 1) {
 		/* Use a pager if the output doesn't fit on the terminal window. */
 		if (C->pageable && C->buffer && I->pager && *I->pager && C->buffer_len > 0 && r_str_char_count (C->buffer, '\n') >= I->rows) {
