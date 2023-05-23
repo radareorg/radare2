@@ -2719,6 +2719,7 @@ static void __foreach(RCore *core, const char **cmds, int type) {
 }
 
 static void __init_autocomplete_default(RCore* core) {
+	// TODO: if we sort those strings alphabetically we can probably break earlier
 	const char *fcns[] = {
 		"afi", "afcf", "afn", "afm", NULL
 	};

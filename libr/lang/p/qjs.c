@@ -435,6 +435,11 @@ static bool lang_quickjs_file(RLangSession *s, const char *file) {
 }
 
 static void *init(RLangSession *ls) {
+	if (ls == NULL) {
+		// XXX should return bool instead
+		return (void*)1;
+	}
+	r_return_val_if_fail (ls, NULL);
 	RCore *core = (RCore *)ls->lang->user;
 	JSRuntime *rt = JS_NewRuntime ();
 	JSContext *ctx = JS_NewCustomContext (rt);
@@ -448,6 +453,7 @@ static void *init(RLangSession *ls) {
 		// XXX we still have a global list of plugins.. we can probably use this pointer to hold everything
 		ls->plugin_data = qc; // implicit
 	}
+	// return true, 
 	return qc;
 }
 
