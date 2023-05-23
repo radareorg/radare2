@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2018-2022 pancake */
+/* radare - LGPL - Copyright 2018-2023 pancake */
 
 #include <r_core.h>
 
@@ -65,9 +65,12 @@ static bool lang_zig_file(RLangSession *s, const char *file) {
 	return true;
 }
 
-static bool lang_zig_init(void *user) {
+static void *lang_zig_init(void *user) {
 	// TODO: check if "valac" is found in path
-	return true;
+	char *zig = r_file_path ("zig");
+	bool found = (zig && *zig != 'z');
+	free (zig);
+	return (void*)(size_t)found;
 }
 
 static bool lang_zig_run(RLangSession *s, const char *code, int len) {
