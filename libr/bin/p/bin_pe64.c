@@ -1,7 +1,7 @@
 /* radare - LGPL - Copyright 2009-2022 - nibble, pancake */
 
 #define R_BIN_PE64 1
-#include "bin_pe.inc"
+#include "bin_pe.inc.c"
 
 static bool check_buffer(RBinFile *bf, RBuffer *b) {
 	ut64 length = r_buf_size (b);

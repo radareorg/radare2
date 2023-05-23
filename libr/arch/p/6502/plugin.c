@@ -17,7 +17,7 @@
 #include <r_asm.h>
 #include <r_anal.h>
 #include "../snes/optable.h"
-#include "./6502dis.inc"
+#include "./6502dis.inc.c"
 
 enum {
 	_6502_FLAGS_C = (1 << 0),

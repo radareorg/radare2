@@ -10,7 +10,7 @@ static R_TH_LOCAL RLang *Glang = NULL;
 #undef S_API
 // #include "../../../shlr/spp/spp.c"
 #include "../../../shlr/spp/spp.h"
-#include "spp_r2.inc"
+#include "spp_r2.inc.c"
 
 static bool lang_spp_run(RLangSession *s, const char *code, int len) {
 	Glang = s->lang; // XXX

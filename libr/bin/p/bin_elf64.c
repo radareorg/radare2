@@ -1,7 +1,7 @@
 /* radare - LGPL - Copyright 2009-2019 - pancake, nibble */
 
 #define R_BIN_ELF64 1
-#include "bin_elf.inc"
+#include "bin_elf.inc.c"
 
 
 static bool check_buffer(RBinFile *bf, RBuffer *b) {

@@ -2,7 +2,7 @@
 
 #include "sdb/sdb.h"
 #include "sdb/ht_uu.h"
-#include "ht.inc"
+#include "ht.inc.c"
 
 // creates a default HtUU that has strings as keys
 SDB_API HtName_(Ht)* Ht_(new0)(void) {

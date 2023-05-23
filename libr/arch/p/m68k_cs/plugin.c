@@ -102,7 +102,7 @@ static int get_capstone_mode (RArchSession *as) {
 
 #define CSINC M68K
 #define CSINC_MODE get_capstone_mode(as)
-#include "../capstone.inc"
+#include "../capstone.inc.c"
 
 typedef struct plugin_data_t {
 	CapstonePluginData cpd;

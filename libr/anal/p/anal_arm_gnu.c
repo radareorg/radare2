@@ -8,7 +8,7 @@
 #include "wine-arm.h"
 #include "../arch/p/arm/asm-arm.h"
 #include "../arch/p/arm/winedbg/be_arm.h"
-#include "./anal_arm_hacks.inc"
+#include "./anal_arm_hacks.inc.c"
 #include "disas-asm.h"
 #include "../../arch/p/arm/gnu/opcode-arm.h"
 

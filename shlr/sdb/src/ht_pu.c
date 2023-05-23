@@ -2,7 +2,7 @@
 
 #include "sdb/sdb.h"
 #include "sdb/ht_pu.h"
-#include "ht.inc"
+#include "ht.inc.c"
 
 static void free_kv_key(HT_(Kv) *kv) {
 	sdb_gh_free (kv->key);
