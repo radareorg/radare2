@@ -1,7 +1,7 @@
 /* radare - LGPL - Copyright 2009-2019 - ret2libc, pancake */
 
 #define R_BIN_CGC 1
-#include "bin_elf.inc"
+#include "bin_elf.inc.c"
 
 extern struct r_bin_dbginfo_t r_bin_dbginfo_elf;
 extern struct r_bin_write_t r_bin_write_elf;

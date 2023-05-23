@@ -2153,7 +2153,7 @@ R_API void r_cons_thready(void) {
 }
 
 #if WITH_STATIC_THEMES
-#include "d_themes.inc"
+#include "d_themes.inc.c"
 
 R_API const RConsTheme* r_cons_themes(void) {
 	return (const RConsTheme *)d_themes;

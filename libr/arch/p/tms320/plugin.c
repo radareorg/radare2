@@ -160,7 +160,7 @@ static void opex(RStrBuf *buf, csh handle, cs_insn *insn) {
 
 #define CSINC_MODE CS_MODE_BIG_ENDIAN
 #define CSINC TMS320C64X
-#include "../capstone.inc"
+#include "../capstone.inc.c"
 
 typedef struct plugin_data_t {
 	CapstonePluginData cpd;

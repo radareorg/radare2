@@ -2511,7 +2511,7 @@ R_API void r_core_visual_browse(RCore *core, const char *input) {
 	}
 }
 
-#include "visual_tabs.inc"
+#include "visual_tabs.inc.c"
 
 static bool isNumber(RCore *core, int ch) {
 	if (ch > '0' && ch <= '9') {

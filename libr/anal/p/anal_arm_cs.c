@@ -6,8 +6,8 @@
 #include <capstone/capstone.h>
 #include <capstone/arm.h>
 #include <r_util/r_assert.h>
-#include "./anal_arm_hacks.inc"
-#include "./anal_asm_arm_hacks.inc"
+#include "./anal_arm_hacks.inc.c"
+#include "./anal_asm_arm_hacks.inc.c"
 
 typedef char RStringShort[32];
 
@@ -4671,7 +4671,7 @@ static char *arm_mnemonics(RAnal *a, int id, bool json) {
 	return pj? pj_drain (pj): r_strbuf_drain (buf);
 }
 
-#include "anal_arm_regprofile.inc"
+#include "anal_arm_regprofile.inc.c"
 
 static int archinfo(RAnal *anal, int q) {
 	switch (q) {

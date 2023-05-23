@@ -543,7 +543,7 @@ static char *shrink(char *op) {
 #define CSINC_MODE \
 	((as->config->bits == 64) ? CS_MODE_64 : (as->config->bits == 32) ? CS_MODE_32 : 0)
 #endif
-#include "../capstone.inc"
+#include "../capstone.inc.c"
 
 typedef struct plugin_data_t {
 	CapstonePluginData cpd;

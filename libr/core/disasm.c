@@ -2977,7 +2977,7 @@ static void ds_print_cycles(RDisasmState *ds) {
 	}
 }
 
-#include "disasm_stackptr.inc"
+#include "disasm_stackptr.inc.c"
 
 static void ds_print_offset(RDisasmState *ds) {
 	RCore *core = ds->core;

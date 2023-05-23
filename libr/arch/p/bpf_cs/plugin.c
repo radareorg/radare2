@@ -12,7 +12,7 @@
 #define CSINC_MODE \
 	((as->config->bits == 32)? CS_MODE_BPF_CLASSIC: CS_MODE_BPF_EXTENDED) \
 	| ((R_ARCH_CONFIG_IS_BIG_ENDIAN (as->config))? CS_MODE_BIG_ENDIAN: CS_MODE_LITTLE_ENDIAN)
-#include "../capstone.inc"
+#include "../capstone.inc.c"
 
 #define OP(n) insn->detail->bpf.operands[n]
 // the "& 0xffffffff" is for some weird CS bug in JMP
