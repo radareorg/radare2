@@ -217,6 +217,7 @@ typedef struct r_disasm_state_t {
 	bool midcursor;
 	bool show_noisy_comments;
 	ut64 asm_highlight;
+	const char *pal_hint;
 	const char *pal_comment;
 	const char *color_comment;
 	const char *color_usrcmt;
@@ -622,6 +623,7 @@ static RDisasmState *ds_init(RCore *core) {
 	ds->core = core;
 	ds->addrbytes = core->io->addrbytes;
 	ds->strip = r_config_get (core->config, "asm.strip");
+	ds->pal_hint = core->cons->context->pal.jmp; // R2_590 pal.hint
 	ds->pal_comment = core->cons->context->pal.comment;
 	#define P(x) (core->cons && core->cons->context->pal.x)? core->cons->context->pal.x
 	ds->color_comment = P(comment): Color_CYAN;
@@ -3797,7 +3799,7 @@ static int ds_print_shortcut(RDisasmState *ds, ut64 addr, int pos) {
 		ch = " ";
 	}
 	if (ds->show_color) {
-		r_cons_strcat (ds->pal_comment);
+		r_cons_strcat (ds->pal_hint);
 	}
 	if (*ch) {
 		slen++;
