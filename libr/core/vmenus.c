@@ -3119,7 +3119,7 @@ static void variable_rename(RCore *core, ut64 addr, int vindex, const char *name
 	r_list_foreach (list, iter, var) {
 		if (i == vindex) {
 			r_core_seek (core, addr, false);
-			r_core_cmd_strf (core, "afvn %s %s", name, var->name);
+			free (r_core_cmd_strf (core, "afvn %s %s", name, var->name));
 			r_core_seek (core, a_tmp, false);
 			break;
 		}
@@ -3602,6 +3602,7 @@ R_API void r_core_visual_anal(RCore *core, const char *input) {
 			ch = *input;
 			input++;
 		} else {
+			r_cons_set_raw (true);
 			ch = r_cons_readchar ();
 		}
 		if (ch == 4 || ch == -1) {
