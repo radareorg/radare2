@@ -11101,6 +11101,8 @@ static void cmd_anal_graph(RCore *core, const char *input) {
 			RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, R_ANAL_FCN_TYPE_ROOT);
 			if (fcn) {
 				r_core_visual_graph (core, NULL, fcn, 1);
+			} else {
+				R_LOG_ERROR ("No function to graph");
 			}
 			r_cons_enable_mouse (false);
 			r_cons_show_cursor (true);

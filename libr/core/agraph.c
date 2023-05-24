@@ -4262,6 +4262,7 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 		eprintf ("Interactive graph mode requires scr.interactive=true.\n");
 		return 0;
 	}
+	r_cons_set_raw (true);
 	int o_asmqjmps_letter = core->is_asmqjmps_letter;
 	int o_vmode = core->vmode;
 	int exit_graph = false, is_error = false;
@@ -4296,10 +4297,12 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 	can->linemode = r_config_get_b (core->config, "graph.linemode");
 	can->color = r_config_get_i (core->config, "scr.color");
 
+	eprintf ("je\n");
 	if (!g) {
 		graph_allocated = true;
 		fcn = _fcn? _fcn: r_anal_get_fcn_in (core->anal, core->offset, 0);
 		if (!fcn) {
+			R_LOG_ERROR ("No function to graph");
 			r_config_hold_restore (hc);
 			r_config_hold_free (hc);
 			r_cons_canvas_free (can);
