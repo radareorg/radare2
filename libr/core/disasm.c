@@ -129,6 +129,7 @@ typedef struct r_disasm_state_t {
 	int asm_demangle;
 	bool asm_instr;
 	bool show_offset;
+	bool show_offset_focus;
 	bool show_offdec; // dupe for r_print->flags
 	bool show_bbline;
 	bool show_emu;
@@ -263,6 +264,7 @@ typedef struct r_disasm_state_t {
 	ut8* esil_regstate;
 	int esil_regstate_size;
 	bool esil_likely;
+	bool offset_focus;
 
 	int count;
 	int middle;
@@ -588,10 +590,8 @@ static void ds_comment_esil(RDisasmState *ds, bool up, bool end, const char *for
 	r_cons_printf_list (format, ap);
 	va_end (ap);
 
-	if (ds->show_comments && !ds->show_comment_right) {
-		if (end) {
-			ds_newline (ds);
-		}
+	if (end && ds->show_comments && !ds->show_comment_right) {
+		ds_newline (ds);
 	}
 }
 
@@ -723,9 +723,10 @@ static RDisasmState *ds_init(RCore *core) {
 	ds->show_trace = r_config_get_b (core->config, "asm.trace");
 	ds->linesout = r_config_get_i (core->config, "asm.lines.out");
 	ds->adistrick = r_config_get_i (core->config, "asm.middle"); // TODO: find better name
-	ds->asm_demangle = r_config_get_i (core->config, "asm.demangle");
-	ds->asm_describe = r_config_get_i (core->config, "asm.describe");
-	ds->show_offset = r_config_get_i (core->config, "asm.offset");
+	ds->asm_demangle = r_config_get_b (core->config, "asm.demangle");
+	ds->asm_describe = r_config_get_b (core->config, "asm.describe");
+	ds->show_offset = r_config_get_b (core->config, "asm.offset");
+	ds->show_offset_focus = r_config_get_b (core->config, "asm.offset.focus");
 	ds->show_offdec = r_config_get_i (core->config, "asm.offset.base10");
 	ds->show_bbline = r_config_get_i (core->config, "asm.lines.bb");
 	ds->show_section = r_config_get_i (core->config, "asm.section");
@@ -3053,7 +3054,20 @@ static void ds_print_offset(RDisasmState *ds) {
 			core->print->flags = of;
 			r_cons_strcat (Color_RESET);
 		} else {
-			r_print_offset (core->print, at, (at == ds->dest) || show_trace, delta, label);
+			if (ds->show_offset_focus) {
+				ut64 bb = r_anal_get_bbaddr (core->anal, at);
+				bool incur = core->print->cur_enabled && (at == core->offset + ds->cursor);
+			       if (incur || bb == at || bb == UT64_MAX || ds->analop.jump != UT64_MAX) {
+					r_print_offset (core->print, at, (at == ds->dest) || show_trace, delta, label);
+				} else {
+					char atstr[64];
+					snprintf (atstr, sizeof (atstr), " 0x%08"PFMT64x, at);
+					memset (atstr, ' ', strlen (atstr));
+					r_cons_strcat (atstr);
+				}
+			} else {
+				r_print_offset (core->print, at, (at == ds->dest) || show_trace, delta, label);
+			}
 		}
 	}
 	if (ds->atabsoff > 0 && ds->show_offset) {

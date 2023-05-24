@@ -3707,6 +3707,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB ("asm.offset.base10", "false", &cb_decoff, "show address in base 10 instead of hexadecimal");
 	SETBPREF ("asm.offset.relative", "false", "show relative offsets instead of absolute address in disasm");
 	SETBPREF ("asm.offset.flags", "false", "show relative offsets to flags (not only functions)");
+	SETBPREF ("asm.offset.focus", "false", "show only the addresses that branch or located at the beginning of a basic block");
 	SETBPREF ("asm.section", "false", "show section name before offset");
 	SETBPREF ("asm.section.perm", "false", "show section permissions in the disasm");
 	SETBPREF ("asm.section.name", "true", "show section name in the disasm");
