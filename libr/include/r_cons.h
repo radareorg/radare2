@@ -151,6 +151,9 @@ typedef struct r_cons_palette_t {
 	RColor call;
 	RColor cjmp;
 	RColor cmp;
+#if R2_590
+	RColor hint;
+#endif
 	RColor comment;
 	RColor usercomment;
 	RColor creg;
