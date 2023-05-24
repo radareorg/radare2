@@ -300,11 +300,13 @@ static ut64 get_base_from_maps(RCore *core, const char *file) {
 			if (map->name && strstr (map->name, "copy/")) {
 				return map->addr;
 			}
-			if (map->file && !strcmp (map->file, file)) {
-				return map->addr;
-			}
-			if (map->name && !strcmp (map->name, file)) {
-				return map->addr;
+			if (file) {
+				if (map->file && !strcmp (map->file, file)) {
+					return map->addr;
+				}
+				if (map->name && !strcmp (map->name, file)) {
+					return map->addr;
+				}
 			}
 			// XXX - Commented out, as this could unexpected results
 			//b = map->addr;
