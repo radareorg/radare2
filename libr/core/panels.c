@@ -7374,6 +7374,7 @@ R_API bool r_core_panels_root(RCore *core, RPanelsRoot *panels_root) {
 	}
 	int maxpage = r_config_get_i (core->config, "scr.maxpage");
 	r_config_set_i (core->config, "scr.maxpage", 0);
+	r_cons_set_raw (true);
 	while (panels_root->n_panels) {
 		__set_root_state (core, DEFAULT);
 		__panels_process (core, panels_root->panels[panels_root->cur_panels]);

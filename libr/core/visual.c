@@ -2601,6 +2601,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 	int i, cols = core->print->cols;
 	int wheelspeed;
 	int ch = och;
+	r_cons_set_raw (true);
 	if ((ut8)ch == KEY_ALTQ) {
 		r_cons_readchar ();
 		ch = 'q';
@@ -2959,6 +2960,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 					r_cons_printf ("[t] ");
 				}
 				r_cons_flush();
+				r_cons_set_raw (true);
 				int ch = r_cons_readchar ();
 				if (isdigit (ch)) {
 					visual_nthtab (core, ch - '0' - 1);
@@ -3093,7 +3095,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			if (core->print->cur_enabled) {
 				r_core_seek (core, addr, true);
 			}
-			r_cons_set_raw (1);
+			r_cons_set_raw (true);
 			r_core_visual_showcursor (core, false);
 			r_core_seek (core, oaddr, true);
 			}
@@ -4588,7 +4590,7 @@ dodo:
 		// update the cursor when it's not visible anymore
 		skip = fix_cursor (core);
 		r_cons_show_cursor (false);
-		r_cons_set_raw (1);
+		r_cons_set_raw (true);
 		const int ref = r_config_get_i (core->config, "dbg.slow");
 #if 1
 		// This is why multiple debug views dont work
