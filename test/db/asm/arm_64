@@ -57,10 +57,15 @@ a "eon x0, x13, x20" a00134ca
 a "eon x0, x13, x20, ror 15" a03df4ca
 a "adrp x5, 0x0" 05000090
 ad "adrp x16, 0x1000" 100000b0
+ad "adrp x2, 0x1000" 020000b0
+adB "adrp x2, 0x4000" 020000b0
+ad "adrp x0, 0x11341000" 009a08b0
+ad "adrp x0, 0x18343000" 001a0cf0
 a "add x0, x1, x2" 2000028b
 a "add x0, xzr, x30" e0031e8b
 a "b 0x0" 00000014
 a "b ." 00000014
+a "b $$" 00000014
 a "b 0x7efd4" f5fb0114
 a "b 0x7fffff8" feffff15
 a "b 0x8" 02000014
