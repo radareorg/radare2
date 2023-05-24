@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2022 // pancake */
+/* radare - LGPL - Copyright 2009-2023 // pancake */
 
 static RCoreHelpMessage help_msg_m = {
 	"Usage:", "m[-?*dgy] [...] ", "Mountpoints management",
@@ -23,6 +23,7 @@ static RCoreHelpMessage help_msg_m = {
 	"mw", " [file] [data]", "write data into file",
 	"mwf", " [diskfile] [r2filepath]", "write contents of local diskfile into r2fs mounted path",
 	"my", "", "yank contents of file into clipboard",
+	"ma", "[n] [page]", "manpage reading",
 	//"TODO: support multiple mountpoints and RFile IO's (need io+core refactorn",
 	NULL
 };
@@ -33,6 +34,17 @@ static RCoreHelpMessage help_msg_mf = {
 	"mfo", " /foo 0x5e91","search files by offset in /foo path",
 	NULL
 };
+
+static int cmd_man(RCore *core, const char *input) {
+	const char *arg = strchr (input, ' ');
+	// TODO: implement our own man page reader for non-unix platforms
+	if (R_STR_ISNOTEMPTY (arg)) {
+		r_sys_cmdf ("man %s", arg + 1);
+	} else {
+		R_LOG_ERROR ("Usage: man [page]");
+	}
+	return 0;
+}
 
 static int cmd_mktemp(RCore *core, const char *input) {
 	char *res = r_syscmd_mktemp (input);
@@ -165,13 +177,16 @@ static int cmd_mount(void *data, const char *_input) {
 	RFSPartition *part;
 	RCore *core = (RCore *)data;
 
-	if (!strncmp ("ktemp", _input, 5)) {
+	if (r_str_startswith (_input, "an")) {
+		return cmd_man (data, _input);
+	}
+	if (r_str_startswith (_input, "ktemp")) {
 		return cmd_mktemp (data, _input);
 	}
-	if (!strncmp ("kdir", _input, 4)) {
+	if (r_str_startswith (_input, "kdir")) {
 		return cmd_mkdir (data, _input);
 	}
-	if (!strncmp ("v", _input, 1)) {
+	if (r_str_startswith (_input, "v")) {
 		return cmd_mv (data, _input);
 	}
 	input = oinput = strdup (_input);

@@ -1455,7 +1455,6 @@ void GH(print_inst_minfo)(GH(RHeapInfo) *heap_info, GHT hinfo) {
 
 void GH(print_malloc_info)(RCore *core, GHT m_state, GHT malloc_state) {
 	GHT h_info;
-	RConsPrintablePalette *pal = &r_cons_singleton ()->context->pal;
 
 	if (malloc_state == m_state) {
 		R_LOG_ERROR ("main_arena does not have an instance of malloc_info");
@@ -1492,30 +1491,35 @@ void GH(print_malloc_info)(RCore *core, GHT m_state, GHT malloc_state) {
 	}
 }
 
-static void GH(dmhg)(RCore *core, const char *input, int format) {
+// XXX. refactor to pass all those vars all together into a single struct
+static void GH(dmhg)(RCore *core, const char *input, MallocState *main_arena, GHT global_max_fast, int format) {
+	GHT m_state = GHT_MAX;
 	GHT m_arena = GHT_MAX;
-	if (GH(r_resolve_main_arena) (core, &m_arena)) {
-		input++;
-		if (!*input) {
-			if (core->offset != core->prompt_offset) {
-				m_state = core->offset;
-				get_state = true;
-			}
-		} else {
-			m_state = r_num_math (core->num, input);
+	if (!GH(r_resolve_main_arena) (core, &m_arena)) {
+		R_LOG_ERROR ("Cannot find the main arena");
+		return;
+	}
+	input++;
+	bool get_state = false;
+	if (!*input) {
+		if (core->offset != core->prompt_offset) {
+			m_state = core->offset;
 			get_state = true;
 		}
-		if (!get_state) {
-			m_state = m_arena;
+	} else {
+		m_state = r_num_math (core->num, input);
+		get_state = true;
+	}
+	if (!get_state) {
+		m_state = m_arena;
+	}
+	if (GH(is_arena) (core, m_arena, m_state)) {
+		if (!GH(update_main_arena) (core, m_state, main_arena)) {
+			return;
 		}
-		if (GH(is_arena) (core, m_arena, m_state)) {
-			if (!GH(update_main_arena) (core, m_state, main_arena)) {
-				break;
-			}
-			GH(print_heap_segment) (core, main_arena, m_arena, m_state, global_max_fast, format);
-		} else {
-			R_LOG_ERROR ("This address is not part of the arenas");
-		}
+		GH(print_heap_segment) (core, main_arena, m_arena, m_state, global_max_fast, format);
+	} else {
+		R_LOG_ERROR ("This address is not part of the arenas");
 	}
 }
 
@@ -1542,8 +1546,6 @@ static const char* GH(help_msg)[] = {
 
 static int GH(dmh_glibc)(RCore *core, const char *input) {
 	GHT m_arena = GHT_MAX, m_state = GHT_MAX;
-	RConsPrintablePalette *pal = &r_cons_singleton ()->context->pal;
-
 	GHT global_max_fast = (64 * SZ / 4);
 
 	MallocState *main_arena = R_NEW0 (MallocState);
@@ -1706,7 +1708,7 @@ static int GH(dmh_glibc)(RCore *core, const char *input) {
 	case 'g': // "dmhg"
 	case '*': // "dmh*"
 	case 'j': // "dmhj"
-		GH (dmhg) (core, input, input[0]);
+		GH (dmhg) (core, input, main_arena, global_max_fast, input[0]);
 		break;
 	case 't':
 		if (GH(r_resolve_main_arena) (core, &m_arena)) {
