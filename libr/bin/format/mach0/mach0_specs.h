@@ -13,8 +13,10 @@ typedef int integer_t;
 #undef MACH0_
 
 #if R_BIN_MACH064
+#define R_BIN_MACH0_WORD_SIZE 8
 #define MACH0_(name) name##_64
 #else
+#define R_BIN_MACH0_WORD_SIZE 4
 #define MACH0_(name) name
 #endif
 

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2010-2022 - nibble, mrmacete, pancake */
+/* radare - LGPL - Copyright 2010-2023 - nibble, mrmacete, pancake */
 
 #define R_LOG_ORIGIN "bin.macho"
 
@@ -2448,11 +2448,7 @@ RList *MACH0_(get_segments)(RBinFile *bf, struct MACH0_(obj_t) *macho) {
 			r_list_append (list, s);
 		}
 	}
-#if R_BIN_MACH064
-	const int ws = 8;
-#else
-	const int ws = 4;
-#endif
+	const int ws = R_BIN_MACH0_WORD_SIZE;
 	if (macho->nsects > 0) {
 		int last_section = R_MIN (macho->nsects, MACHO_MAX_SECTIONS);
 		for (i = 0; i < last_section; i++) {
@@ -2484,6 +2480,11 @@ RList *MACH0_(get_segments)(RBinFile *bf, struct MACH0_(obj_t) *macho) {
 			s->is_data = is_data_section (s);
 			if (strstr (section_name, "interpos") || strstr (section_name, "__mod_")) {
 				s->format = r_str_newf ("Cd %d[%"PFMT64d"]", ws, s->vsize / ws);
+			}
+			// https://github.com/radareorg/ideas/issues/104
+			// https://stackoverflow.com/questions/29665371/compiling-a-binary-immune-to-library-redirection-on-mac-os-x
+			if (strstr (section_name, "restrict") || strstr (section_name, "RESTRICT")) {
+				macho->has_libinjprot = true;
 			}
 			r_list_append (list, s);
 			free (segment_name);
@@ -3269,11 +3270,9 @@ static void check_for_special_import_names(struct MACH0_(obj_t) *bin, RBinImport
 	if (*name == '_') {
 		if (!strcmp (name, "__stack_chk_fail") ) {
 			bin->has_canary = true;
-		}
-		if (!strcmp (name, "__asan_init") || !strcmp (name, "__tsan_init")) {
+		} else if (!strcmp (name, "__asan_init") || !strcmp (name, "__tsan_init")) {
 			bin->has_sanitizers = true;
-		}
-		if (!strcmp (name, "_NSConcreteGlobalBlock")) {
+		} else if (!strcmp (name, "_NSConcreteGlobalBlock")) {
 			bin->has_blocks_ext = true;
 		}
 	}
