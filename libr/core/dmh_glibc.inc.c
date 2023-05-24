@@ -1,10 +1,10 @@
-/* radare2 - LGPL - Copyright 2016-2020 - n4x0r, soez, pancake */
+/* radare2 - LGPL - Copyright 2016-2023 - n4x0r, soez, pancake */
 
 #ifndef INCLUDE_HEAP_GLIBC_C
 #define INCLUDE_HEAP_GLIBC_C
 #include "r_config.h"
 #define HEAP32 1
-#include "linux_heap_glibc.inc.c"
+#include "dmh_glibc.inc.c"
 #undef HEAP32
 #endif
 
@@ -1493,6 +1493,7 @@ void GH(print_malloc_info)(RCore *core, GHT m_state, GHT malloc_state) {
 }
 
 static void GH(dmhg)(RCore *core, const char *input, int format) {
+	GHT m_arena = GHT_MAX;
 	if (GH(r_resolve_main_arena) (core, &m_arena)) {
 		input++;
 		if (!*input) {
@@ -1540,7 +1541,7 @@ static const char* GH(help_msg)[] = {
 };
 
 static int GH(dmh_glibc)(RCore *core, const char *input) {
-	static GHT m_arena = GHT_MAX, m_state = GHT_MAX;
+	GHT m_arena = GHT_MAX, m_state = GHT_MAX;
 	RConsPrintablePalette *pal = &r_cons_singleton ()->context->pal;
 
 	GHT global_max_fast = (64 * SZ / 4);
