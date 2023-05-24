@@ -261,13 +261,13 @@ static bool GetHeapGlobalsOffset(RDebug *dbg, HANDLE h_proc) {
 	bool found = false;
 	const char ntdll[] = "ntdll.dll";
 	r_list_foreach (modules, it, map) {
-		if (!strncmp (map->name, ntdll, sizeof (ntdll))) {
+		if (r_str_startswith (map->name, ntdll)) {
 			found = true;
 			break;
 		}
 	}
 	if (!found) {
-		eprintf ("ntdll.dll not loaded.\n");
+		R_LOG_ERROR ("ntdll.dll is not loaded");
 		r_list_free (modules);
 		return false;
 	}
@@ -290,7 +290,7 @@ static bool GetHeapGlobalsOffset(RDebug *dbg, HANDLE h_proc) {
 
 	if (doopen) {
 		char *ntdllpath = r_lib_path ("ntdll");
-		eprintf ("Opening %s\n", ntdllpath);
+		R_LOG_INFO ("Opening %s", ntdllpath);
 		dbg->coreb.cmdf (dbg->coreb.core, "o %s 0x%"PFMT64x, ntdllpath, map->addr);
 		lastNdtllAddr = map->addr;
 		free (ntdllpath);
@@ -458,7 +458,7 @@ static PDEBUG_BUFFER InitHeapInfo(RDebug *dbg, DWORD mask) {
 		// It stops blocking if i pause radare in the debugger. is it a race?
 		// why it fails with 1000000 allocs? also with processes with segment heap enabled?
 		params->hanged = true;
-		eprintf ("RtlQueryProcessDebugInformation hanged\n");
+		R_LOG_ERROR ("RtlQueryProcessDebugInformation hanged");
 		db = NULL;
 	} else if (params->ret) {
 		RtlDestroyQueryDebugBuffer (db);
@@ -1387,7 +1387,7 @@ static void cmd_debug_map_heap_block_win(RCore *core, const char *input) {
 	}
 }
 
-static int cmd_debug_map_heap_win(RCore *core, const char *input) {
+static int dmh_windows(RCore *core, const char *input) {
 	init_func ();
 	switch (input[0]) {
 	case '?': // dmh?
@@ -1396,8 +1396,13 @@ static int cmd_debug_map_heap_win(RCore *core, const char *input) {
 	case 'b': // dmhb
 		cmd_debug_map_heap_block_win (core, input + 1);
 		break;
-	default:
+	case 0:
+	case ' ':
+	case 'j':
 		w32_list_heaps (core, input[0]);
+		break;
+	default:
+		R_LOG_ERROR ("Invalid subcommand. See dmh[bj]");
 		break;
 	}
 	return true;
