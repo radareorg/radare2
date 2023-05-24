@@ -844,7 +844,7 @@ linenum  false
 lsyms    false
 machine  x86 64 all
 nx       false
-os       darwin
+os       macos
 pic      true
 relocs   true
 sanitize false

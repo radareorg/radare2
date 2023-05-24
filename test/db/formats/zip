@@ -22,7 +22,7 @@ linenum  false
 lsyms    false
 machine  all
 nx       false
-os       darwin
+os       macos
 pic      false
 relocs   false
 sanitize false

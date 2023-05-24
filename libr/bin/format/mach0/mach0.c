@@ -2161,7 +2161,6 @@ static int init_items(struct MACH0_(obj_t) *bin) {
 		R_LOG_DEBUG ("reconstructing chained fixups");
 		reconstruct_chained_fixup (bin);
 	}
-	eprintf ("ASM.OS %s\n", asm_os);
 	return true;
 }
 
