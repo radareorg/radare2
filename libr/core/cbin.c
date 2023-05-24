@@ -981,6 +981,9 @@ static int bin_info(RCore *r, PJ *pj, int mode, ut64 laddr) {
 		}
 		pair_int (pj, "bits", info->bits);
 		pair_bool (pj, "canary", info->has_canary);
+#if R2_590
+		pair_bool (pj, "libinjprot", info->has_libinjprot);
+#endif
 		if (info->has_retguard != -1) {
 			pair_bool (pj, "retguard", info->has_retguard);
 		}
