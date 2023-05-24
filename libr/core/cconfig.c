@@ -3283,12 +3283,23 @@ static bool cb_malloc(void *user, void *data) {
  	RCore *core = (RCore*) user;
  	RConfigNode *node = (RConfigNode*) data;
  	if (node->value) {
- 		if (!strcmp ("jemalloc", node->value) || !strcmp ("glibc", node->value)) {
-			if (core->dbg) {
-				core->dbg->malloc = data;
+		const char *valid[] = {
+			"glibc",
+			"macos",
+			"windows",
+			"jemalloc",
+			NULL
+		};
+		const char *nv = node->value;
+		if (core->dbg) {
+			int i;
+			for (i = 0; valid[i]; i++) {
+				if (!strcmp (valid[i], nv)) {
+					core->dbg->malloc = data;
+				}
 			}
- 		}
- 	}
+		}
+	}
 	return true;
 }
 
@@ -3552,6 +3563,10 @@ R_API int r_core_config_init(RCore *core) {
 
 #if __linux__ && __GNU_LIBRARY__ && __GLIBC__ && __GLIBC_MINOR__
 	n = NODECB ("dbg.malloc", "glibc", &cb_malloc);
+#elif __APPLE__
+	n = NODECB ("dbg.malloc", "macos", &cb_malloc);
+#elif R2__WINDOWS__
+	n = NODECB ("dbg.malloc", "windows", &cb_malloc);
 #else
 	n = NODECB ("dbg.malloc", "jemalloc", &cb_malloc);
 #endif
