@@ -1358,26 +1358,24 @@ static ut32 logical(ArmOp *op, bool invert, LogicalOp opc) {
 	return r_read_be32 (&data);
 }
 
-static ut32 adrp(ArmOp *op, ut64 addr, ut32 k) { //, int reg, ut64 dst) {
-	ut64 at = 0LL;
-	ut32 data = k;
-	if (op->operands[0].type == ARM_GPR) {
-		data |= encode1reg (op);
-	} else {
+static ut32 adrp(ArmOp *op, ut64 addr) {
+	ut32 data = 0x90000000;
+	if (op->operands[0].type != ARM_GPR) {
 		R_LOG_ERROR ("Invalid syntax for adrp, use: adrp x0, addr");
 		return UT32_MAX;
 	}
-	if (op->operands[1].type == ARM_CONSTANT) {
-		// XXX what about negative values?
-		ut64 imm = op->operands[1].immediate;
-		if (imm > addr) {
-			imm -= addr;
-		}
-		at = imm / 4096;
-	} else {
+	if (op->operands[1].type != ARM_CONSTANT) {
 		R_LOG_ERROR ("Invalid syntax for adrp, use: adrp x0, addr");
 		return UT32_MAX;
 	}
+#if 0
+	data |= encode1reg (op);
+	// XXX what about negative values?
+	ut64 imm = op->operands[1].immediate;
+	if (imm > addr) {
+		imm -= addr;
+	}
+	ut64 at = imm / 4096;
 #if 0
 	31   30 29   28 ... 24   23..5  4..0
 	---+-------+-----------+-------+----
@@ -1389,6 +1387,16 @@ static ut32 adrp(ArmOp *op, ut64 addr, ut32 k) { //, int reg, ut64 dst) {
 	data |= (immlo >> 24) & 0xff;
 	data |= ((immhi >> 8) & 0xff00) | ((immhi << 8) & 0xff0000) | ((immhi << 24) & 0xe0000000);
 	return data;
+#else
+	data |= op->operands[0].reg & 0x1f;
+	ut64 imm = op->operands[1].immediate & ~0xfff;
+	imm -= addr & ~0xfff;
+	imm >>= 12;
+	data |= (imm & 3) << 29;
+	data |= ((imm >> 2) & 0x7ffff) << 5;
+	// eprintf ("BITMASK19 %llx\n", r_num_bitmask (19));
+	return r_swap_ut32 (data);
+#endif
 }
 
 static ut32 adr(ArmOp *op, int addr) {
@@ -1972,9 +1980,9 @@ bool arm64ass(const char *str, ut64 addr, ut32 *op) {
 #endif
 	} else if (!strncmp (str, "adr x", 5)) { // w
 		*op = adr (&ops, addr);
-	} else if (!strncmp (str, "adrp x", 6)) {
-		*op = adrp (&ops, addr, 0x00000090);
-	} else if (!strncmp (str, "neg", 3)) {
+	} else if (r_str_startswith (str, "adrp ")) {
+		*op = adrp (&ops, addr);
+	} else if (r_str_startswith (str, "neg")) {
 		*op = neg (&ops);
 	} else if (!strcmp (str, "isb")) {
 		*op = 0xdf3f03d5;
