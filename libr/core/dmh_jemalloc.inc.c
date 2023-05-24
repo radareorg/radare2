@@ -3,7 +3,7 @@
 #ifndef INCLUDE_HEAP_JEMALLOC_STD_C
 #define INCLUDE_HEAP_JEMALLOC_STD_C
 #define HEAP32 1
-#include "linux_heap_jemalloc.c"
+#include "dmh_jemalloc.inc.c"
 #undef HEAP32
 #endif
 
@@ -26,38 +26,6 @@
 #endif
 
 #if __linux__
-// TODO: provide proper api in cbin to resolve symbols and load libraries from debug maps and such
-// this is, provide a programmatic api for the slow dmi command
-#if 0
-static GHT GH(je_get_va_symbol)(const char *path, const char *symname) {
-	RListIter *iter;
-	RBinSymbol *s;
-	RCore *core = r_core_new ();
-	GHT vaddr = 0LL;
-
-	if (!core) {
-		return GHT_MAX;
-	}
-
-	RBinFileOptions opt;
-	r_bin_file_options_init (&opt, -1, 0, 0, false);
-	if (r_bin_open (core->bin, path, &opt)) {
-		RList *syms = r_bin_get_symbols (core->bin);
-		if (!syms) {
-			r_core_free (core);
-			return GHT_MAX;
-		}
-		r_list_foreach (syms, iter, s) {
-			if (!strcmp (s->name, symname)) {
-				vaddr = s->vaddr;
-				break;
-			}
-		}
-	}
-	r_core_free (core);
-	return vaddr;
-}
-#else
 static GHT GH(je_get_va_symbol)(RCore *core, const char *path, const char *sym_name) {
 	GHT vaddr = GHT_MAX;
 	RBinFileOptions opt = {0};
@@ -83,7 +51,6 @@ static GHT GH(je_get_va_symbol)(RCore *core, const char *path, const char *sym_n
  	r_bin_file_set_cur_binfile (core->bin, current_bf);
 	return vaddr;
 }
-#endif
 
 static int GH(je_matched)(const char *ptr, const char *str) {
 	int ret = strncmp (ptr, str, strlen (str) - 1);
@@ -148,14 +115,14 @@ static void GH(jemalloc_get_chunks)(RCore *core, const char *input) {
 	RConsPrintablePalette *pal = &r_cons_singleton ()->context->pal;
 
 	if (!GH(r_resolve_jemalloc)(core, "je_chunksize", &cnksz)) {
-		eprintf ("Fail at read symbol je_chunksize\n");
+		R_LOG_ERROR ("Cannot find 'je_chunksize' symbol");
 		return;
 	}
 	r_io_read_at (core->io, cnksz, (ut8 *)&cnksz, sizeof (GHT));
 
 	switch (input[0]) {
 	case '\0':
-		eprintf ("need an arena_t to associate chunks\n");
+		R_LOG_ERROR ("need an arena_t to associate chunks");
 		break;
 	case ' ':
 		{
@@ -515,7 +482,7 @@ static void GH(jemalloc_get_runs)(RCore *core, const char *input) {
 }
 #endif
 
-static int GH(cmd_dbg_map_jemalloc)(RCore *core, const char *input) {
+static int GH(dmh_jemalloc)(RCore *core, const char *input) {
 	RCoreHelpMessage help_msg = {
 		"Usage:", "dmh", " # Memory map heap",
 		"dmha", "[arena_t]", "show all arenas created, or print arena_t structure for given arena",
@@ -538,6 +505,9 @@ static int GH(cmd_dbg_map_jemalloc)(RCore *core, const char *input) {
 	case 'c': //dmhc
 		GH(jemalloc_get_chunks) (core, input + 1);
 		break;
+	default:
+		R_LOG_ERROR ("Unknown subcommand. See dmh[abc]");
+		break;
 	/*
 	case 'r': //dmhr
 		GH(jemalloc_get_runs) (core, input + 1);
@@ -546,4 +516,3 @@ static int GH(cmd_dbg_map_jemalloc)(RCore *core, const char *input) {
 	}
 	return 0;
 }
-

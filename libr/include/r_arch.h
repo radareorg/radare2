@@ -232,7 +232,7 @@ R_API bool r_arch_add(RArch *arch, RArchPlugin *ap);
 R_API bool r_arch_del(RArch *arch, const char *name);
 R_API void r_arch_free(RArch *arch);
 
-// deprecate
+// R2_590 - deprecate
 R_API bool r_arch_set_bits(RArch *arch, ut32 bits);
 R_API bool r_arch_set_endian(RArch *arch, ut32 endian);
 R_API bool r_arch_set_arch(RArch *arch, char *archname);

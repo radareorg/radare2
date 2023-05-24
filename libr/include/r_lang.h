@@ -47,6 +47,7 @@ typedef struct r_lang_plugin_t {
 	const char *license;
 	const char **help;
 	const char *ext;
+#if R2_590
 	RLangPluginInit init;
 	RLangPluginSetup setup;
 	RLangPluginFini fini;
@@ -54,6 +55,15 @@ typedef struct r_lang_plugin_t {
 	RLangPluginRun run;
 	RLangPluginRunFile run_file;
 	RLangPluginSetArgv set_argv;
+#else
+	void *(*init)(_RLangSession *s);
+	bool (*setup)(_RLangSession *s);
+	bool (*fini)(_RLangSession *s);
+	bool (*prompt)(_RLangSession *s);
+	bool (*run)(_RLangSession *s, const char *code, int len);
+	bool (*run_file)(_RLangSession *s, const char *file);
+	int (*set_argv)(_RLangSession *s, int argc, char **argv);
+#endif
 } RLangPlugin;
 
 typedef struct r_lang_def_t {

@@ -4,7 +4,7 @@
 #define INCLUDE_HEAP_GLIBC_C
 #include "r_config.h"
 #define HEAP32 1
-#include "linux_heap_glibc.c"
+#include "linux_heap_glibc.inc.c"
 #undef HEAP32
 #endif
 
@@ -39,28 +39,24 @@
 static GHT GH(get_va_symbol)(RCore *core, const char *path, const char *sym_name) {
 	GHT vaddr = GHT_MAX;
 	RBin *bin = core->bin;
-	RBinFile *current_bf = r_bin_cur (bin);
-	RListIter *iter;
-	RBinSymbol *s;
+	RBinFile *bf = r_bin_cur (bin);
 
 	RBinFileOptions opt;
 	r_bin_file_options_init (&opt, -1, 0, 0, false);
-	bool res = r_bin_open (bin, path, &opt);
-	if (!res) {
-		return vaddr;
-	}
-
-	RList *syms = r_bin_get_symbols (bin);
-	r_list_foreach (syms, iter, s) {
-		if (!strcmp (s->name, sym_name)) {
-			vaddr = s->vaddr;
-			break;
+	if (r_bin_open (bin, path, &opt)) {
+		RList *syms = r_bin_get_symbols (bin);
+		RListIter *iter;
+		RBinSymbol *s;
+		r_list_foreach (syms, iter, s) {
+			if (!strcmp (s->name, sym_name)) {
+				vaddr = s->vaddr;
+				break;
+			}
 		}
+		RBinFile *libc_bf = r_bin_cur (bin);
+		r_bin_file_delete (bin, libc_bf->id);
+		r_bin_file_set_cur_binfile (bin, bf);
 	}
-
-	RBinFile *libc_bf = r_bin_cur (bin);
-	r_bin_file_delete (bin, libc_bf->id);
-	r_bin_file_set_cur_binfile (bin, current_bf);
 	return vaddr;
 }
 
@@ -394,10 +390,10 @@ static bool GH(r_resolve_main_arena)(RCore *core, GHT *m_arena) {
 	GHT brk_start = GHT_MAX, brk_end = GHT_MAX;
 	GHT libc_addr_sta = GHT_MAX, libc_addr_end = 0;
 	GHT main_arena_sym = GHT_MAX;
-	const bool is_debugged = r_config_get_b (core->config, "cfg.debug");
+	const bool in_debugger = r_config_get_b (core->config, "cfg.debug");
 	bool first_libc = true;
 
-	if (is_debugged) {
+	if (in_debugger) {
 		RListIter *iter;
 		RDebugMap *map;
 		r_debug_map_sync (core->dbg);
@@ -462,29 +458,27 @@ static bool GH(r_resolve_main_arena)(RCore *core, GHT *m_arena) {
 		GH (update_main_arena) (core, addr_srch, ta);
 		if (ta->GH(top) > brk_start && ta->GH(top) < brk_end &&
 			ta->GH(system_mem) == heap_sz) {
-
 			*m_arena = addr_srch;
 			free (ta);
-			if (is_debugged) {
+			if (in_debugger) {
 				core->dbg->main_arena_resolved = true;
 			}
 			return true;
 		}
 		addr_srch += sizeof (GHT);
 	}
-	R_LOG_WARN ("Can't find main_arena in mapped memory");
+	R_LOG_WARN ("Can't find main_arena in `dm`");
 	free (ta);
 	return false;
 }
 
 void GH(print_heap_chunk)(RCore *core) {
 	GH(RHeapChunk) *cnk = R_NEW0 (GH(RHeapChunk));
-	GHT chunk = core->offset;
-	RConsPrintablePalette *pal = &r_cons_singleton ()->context->pal;
-
 	if (!cnk) {
 		return;
 	}
+	GHT chunk = core->offset;
+	RConsPrintablePalette *pal = &r_cons_singleton ()->context->pal;
 
 	(void) r_io_read_at (core->io, chunk, (ut8 *)cnk, sizeof (*cnk));
 
@@ -666,7 +660,8 @@ static int GH(print_double_linked_list_bin_graph)(RCore *core, GHT bin, MallocSt
 }
 
 static int GH(print_double_linked_list_bin)(RCore *core, MallocState *main_arena, GHT m_arena, GHT offset, GHT num_bin, int graph) {
-	if (!core || !core->dbg || !core->dbg->maps) {
+	r_return_val_if_fail (core && core->dbg, -1);
+	if (!core->dbg->maps) {
 		return -1;
 	}
 	int ret = 0;
@@ -698,6 +693,16 @@ static int GH(print_double_linked_list_bin)(RCore *core, MallocState *main_arena
 		initial_brk = (brk_start >> 12) << 12;
 	}
 
+	if (num_bin == 0) {
+		PRINT_GA ("  double linked list unsorted bin {\n");
+	} else if (num_bin > 0 && num_bin < NSMALLBINS) {
+		PRINT_GA ("  double linked list small bin {\n");
+	} else if (num_bin >= NSMALLBINS && num_bin < NBINS - 2) {
+		PRINT_GA ("  double linked list large bin {\n");
+	} else {
+		// ???
+	}
+#if 0
 	switch (num_bin) {
 	case 0:
 		PRINT_GA ("  double linked list unsorted bin {\n");
@@ -709,8 +714,8 @@ static int GH(print_double_linked_list_bin)(RCore *core, MallocState *main_arena
 		PRINT_GA ("  double linked list large bin {\n");
 		break;
 	}
-
-	if (!graph || graph == 1) {
+#endif
+	if (graph < 2) {
 		ret = GH(print_double_linked_list_bin_simple)(core, bin, main_arena, initial_brk);
 	} else {
 		ret = GH(print_double_linked_list_bin_graph)(core, bin,  main_arena, initial_brk);
@@ -753,11 +758,18 @@ static void GH(print_heap_bin)(RCore *core, GHT m_arena, MallocState *main_arena
 		PRINTF_YA ("  Bin %03"PFMT64u":\n", (ut64)num_bin + 1);
 		GH(print_double_linked_list_bin) (core, main_arena, m_arena, offset, num_bin, j);
 		break;
+	case 'j':
+	default:
+		// unknown subcommand
+		R_LOG_ERROR ("Unknown subcommand");
+		break;
 	}
 }
 
+// TODO. return bool
 static int GH(print_single_linked_list_bin)(RCore *core, MallocState *main_arena, GHT m_arena, GHT offset, GHT bin_num, bool demangle) {
-	if (!core || !core->dbg || !core->dbg->maps) {
+	r_return_val_if_fail (core && core->dbg, -1);
+	if (!core->dbg->maps) {
 		return -1;
 	}
 	GHT next = GHT_MAX, brk_start = GHT_MAX, brk_end = GHT_MAX;
@@ -880,6 +892,10 @@ void GH(print_heap_fastbin)(RCore *core, GHT m_arena, MallocState *main_arena, G
 			PRINT_GA (" Empty bin");
 			PRINT_BA (" 0x0\n");
 		}
+		break;
+	case 'j': // TODO implement json listing with PJ
+	default:
+		R_LOG_ERROR ("Unknown subcommand");
 		break;
 	}
 }
@@ -1442,9 +1458,8 @@ void GH(print_malloc_info)(RCore *core, GHT m_state, GHT malloc_state) {
 	RConsPrintablePalette *pal = &r_cons_singleton ()->context->pal;
 
 	if (malloc_state == m_state) {
-		PRINT_RA ("main_arena does not have an instance of malloc_info\n");
+		R_LOG_ERROR ("main_arena does not have an instance of malloc_info");
 	} else if (GH(is_arena) (core, malloc_state, m_state)) {
-
 		h_info = (malloc_state >> 16) << 16;
 		GH(RHeapInfo) *heap_info = R_NEW0 (GH(RHeapInfo));
 		if (!heap_info) {
@@ -1473,14 +1488,41 @@ void GH(print_malloc_info)(RCore *core, GHT m_state, GHT malloc_state) {
 		free (heap_info);
 		free (ms);
 	} else {
-		PRINT_RA ("This address is not part of the arenas\n");
+		R_LOG_ERROR ("This address is not part of the arenas");
+	}
+}
+
+static void GH(dmhg)(RCore *core, const char *input, int format) {
+	if (GH(r_resolve_main_arena) (core, &m_arena)) {
+		input++;
+		if (!*input) {
+			if (core->offset != core->prompt_offset) {
+				m_state = core->offset;
+				get_state = true;
+			}
+		} else {
+			m_state = r_num_math (core->num, input);
+			get_state = true;
+		}
+		if (!get_state) {
+			m_state = m_arena;
+		}
+		if (GH(is_arena) (core, m_arena, m_state)) {
+			if (!GH(update_main_arena) (core, m_state, main_arena)) {
+				break;
+			}
+			GH(print_heap_segment) (core, main_arena, m_arena, m_state, global_max_fast, format);
+		} else {
+			R_LOG_ERROR ("This address is not part of the arenas");
+		}
 	}
 }
 
 static const char* GH(help_msg)[] = {
 	"Usage:", " dmh", " # Memory map heap",
-	"dmh", "", "List the chunks inside the heap segment",
 	"dmh", " @[malloc_state]", "List heap chunks of a particular arena",
+	"dmh", "", "List the chunks inside the heap segment",
+	"dmh*", "", "Display heap details as radare2 commands",
 	"dmha", "", "List all malloc_state instances in application",
 	"dmhb", " @[malloc_state]", "Display all parsed Double linked list of main_arena's or a particular arena bins instance",
 	"dmhb", " [bin_num|bin_num:malloc_state]", "Display parsed double linked list of bins instance from a particular arena",
@@ -1488,18 +1530,16 @@ static const char* GH(help_msg)[] = {
 	"dmhc", " @[chunk_addr]", "Display malloc_chunk struct for a given malloc chunk",
 	"dmhf", " @[malloc_state]", "Display all parsed fastbins of main_arena's or a particular arena fastbinY instance",
 	"dmhf", " [fastbin_num|fastbin_num:malloc_state]", "Display parsed single linked list in fastbinY instance from a particular arena",
-	"dmhg", "", "Display heap graph of heap segment",
 	"dmhg", " [malloc_state]", "Display heap graph of a particular arena",
+	"dmhg", "", "Display heap graph of heap segment",
 	"dmhi", " @[malloc_state]", "Display heap_info structure/structures for a given arena",
 	"dmhj", "", "List the chunks inside the heap segment in JSON format",
-	"dmhm", "", "List all elements of struct malloc_state of main thread (main_arena)",
-	"dmhm", " @[malloc_state]", "List all malloc_state instance of a particular arena",
+	"dmhm", "[*j]", "List all malloc_state instance of a particular arena (@ malloc_state#addr)",
 	"dmht", "", "Display all parsed thread cache bins of all arena's tcache instance",
-	"dmh?", "", "Show map heap help",
 	NULL
 };
 
-static int GH(cmd_dbg_map_heap_glibc)(RCore *core, const char *input) {
+static int GH(dmh_glibc)(RCore *core, const char *input) {
 	static GHT m_arena = GHT_MAX, m_state = GHT_MAX;
 	RConsPrintablePalette *pal = &r_cons_singleton ()->context->pal;
 
@@ -1522,7 +1562,6 @@ static int GH(cmd_dbg_map_heap_glibc)(RCore *core, const char *input) {
 		// pass through
 	case '\0': // dmh
 		if (GH(r_resolve_main_arena) (core, &m_arena)) {
-
 			if (core->offset != core->prompt_offset) {
 				m_state = core->offset;
 			} else {
@@ -1537,7 +1576,7 @@ static int GH(cmd_dbg_map_heap_glibc)(RCore *core, const char *input) {
 				GH(print_heap_segment) (core, main_arena, m_arena, m_state, global_max_fast, format);
 				break;
 			} else {
-				PRINT_RA ("This address is not part of the arenas\n");
+				R_LOG_ERROR ("This address is not part of any arena");
 				break;
 			}
 		}
@@ -1623,7 +1662,7 @@ static int GH(cmd_dbg_map_heap_glibc)(RCore *core, const char *input) {
 				}
 				GH(print_heap_bin) (core, m_state, main_arena, arg);
 			} else {
-				PRINT_RA ("This address is not part of the arenas\n");
+				R_LOG_ERROR ("This address is not part of the arenas");
 				break;
 			}
 		}
@@ -1658,46 +1697,15 @@ static int GH(cmd_dbg_map_heap_glibc)(RCore *core, const char *input) {
 				}
 				GH(print_heap_fastbin) (core, m_state, main_arena, global_max_fast, arg, demangle);
 			} else {
-				PRINT_RA ("This address is not part of the arenas\n");
+				R_LOG_ERROR ("This address is not part of the arenas");
 				break;
 			}
 		}
 		break;
-	case 'g': //dmhg
-		if (input[0] == 'g') {
-			format = 'g';
-		}
-	case '*': //dmh*
-		if (input[0] == '*') {
-			format = '*';
-		}
+	case 'g': // "dmhg"
+	case '*': // "dmh*"
 	case 'j': // "dmhj"
-		if (input[0] == 'j') {
-			format = 'j';
-		}
-		if (GH(r_resolve_main_arena) (core, &m_arena)) {
-			input++;
-			if (!*input) {
-				if (core->offset != core->prompt_offset) {
-					m_state = core->offset;
-					get_state = true;
-				}
-			} else {
-				m_state = r_num_math (core->num, input);
-				get_state = true;
-			}
-			if (!get_state) {
-				m_state = m_arena;
-			}
-			if (GH(is_arena) (core, m_arena, m_state)) {
-				if (!GH(update_main_arena) (core, m_state, main_arena)) {
-					break;
-				}
-				GH(print_heap_segment) (core, main_arena, m_arena, m_state, global_max_fast, format);
-			} else {
-				PRINT_RA ("This address is not part of the arenas\n");
-			}
-		}
+		GH (dmhg) (core, input, input[0]);
 		break;
 	case 't':
 		if (GH(r_resolve_main_arena) (core, &m_arena)) {
