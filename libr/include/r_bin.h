@@ -229,6 +229,16 @@ typedef struct r_bin_info_t {
 	char *default_cc;
 	RList/*<RBinFileHash>*/ *file_hashes;
 	int bits;
+#if R2_590
+	bool has_va;
+	bool has_pi; // pic/pie
+	bool has_canary;
+	int has_retguard; // can be -1 , 0 and 1
+	bool has_sanitizers;
+	bool has_crypto;
+	bool has_nx;
+	bool has_libinjprot; // binary allows libraries to be injected
+#else
 	int has_va;
 	int has_pi; // pic/pie
 	int has_canary;
@@ -236,6 +246,7 @@ typedef struct r_bin_info_t {
 	int has_sanitizers;
 	int has_crypto;
 	int has_nx;
+#endif
 	int big_endian;
 	bool has_lit;
 	char *actual_checksum;
