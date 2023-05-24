@@ -1724,6 +1724,7 @@ static bool reconstruct_chained_fixup(struct MACH0_(obj_t) *bin) {
 }
 
 static int init_items(struct MACH0_(obj_t) *bin) {
+	const char *asm_os = "darwin";
 	bool skip_chained_fixups = r_sys_getenv_asbool ("RABIN2_MACHO_SKIPFIXUPS");
 	struct load_command lc = {0, 0};
 	ut8 loadc[sizeof (struct load_command)] = {0};
@@ -2003,6 +2004,24 @@ static int init_items(struct MACH0_(obj_t) *bin) {
 			/* ut32 dataoff
 			// ut32 datasize */
 			break;
+		case LC_BUILD_VERSION:
+			switch (r_buf_read_le32_at (bin->b, off + 8)) {
+			case 1: // macos
+			case 6: // iosmac
+				bin->os = 1;
+				break;
+			case 2: // ios
+			case 3: // tvos
+			case 4: // watchos
+			case 5: // bridgeos
+			case 7: // ios-simulator
+			case 8: // tvos-simulator
+			case 9: // watchos-simulator
+				bin->os = 2; // add enum for this, but 2=ios
+				break;
+			}
+			R_LOG_DEBUG ("asm.os=%s", build_version_platform_tostring (r_buf_read_le32_at (bin->b, off + 8)));
+			break;
 		case LC_SOURCE_VERSION:
 			sdb_set (bin->kv, cmd_flagname, "version", 0);
 			/* uint64_t  version;  */
@@ -2055,8 +2074,6 @@ static int init_items(struct MACH0_(obj_t) *bin) {
 		case LC_DYLD_EXPORTS_TRIE:
 			break;
 		case LC_DYLD_CHAINED_FIXUPS:
-			break;
-		case LC_BUILD_VERSION:
 			break;
 		default:
 			R_LOG_DEBUG ("Unknown header %d command 0x%x at 0x%08"PFMT64x, i, lc.cmd, off);
@@ -2144,6 +2161,7 @@ static int init_items(struct MACH0_(obj_t) *bin) {
 		R_LOG_DEBUG ("reconstructing chained fixups");
 		reconstruct_chained_fixup (bin);
 	}
+	eprintf ("ASM.OS %s\n", asm_os);
 	return true;
 }
 
