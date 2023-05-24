@@ -1724,7 +1724,6 @@ static bool reconstruct_chained_fixup(struct MACH0_(obj_t) *bin) {
 }
 
 static int init_items(struct MACH0_(obj_t) *bin) {
-	const char *asm_os = "darwin";
 	bool skip_chained_fixups = r_sys_getenv_asbool ("RABIN2_MACHO_SKIPFIXUPS");
 	struct load_command lc = {0, 0};
 	ut8 loadc[sizeof (struct load_command)] = {0};
