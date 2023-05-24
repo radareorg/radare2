@@ -23,6 +23,9 @@
 // dup from cmd_info
 #define PAIR_WIDTH "9"
 
+static R_TH_LOCAL int old_bits = -1;
+static R_TH_LOCAL char *old_arch = NULL;
+
 static void pair(const char *key, const char *val) {
 	if (R_STR_ISNOTEMPTY (val)) {
 		r_cons_printf ("%-"PAIR_WIDTH"s%s\n", key, val);
@@ -741,20 +744,19 @@ R_API void r_core_anal_type_init(RCore *core) {
 	sdb_reset (types);
 	const char *anal_arch = r_config_get (core->config, "anal.arch");
 	const char *os = r_config_get (core->config, "asm.os");
-	// spaguetti ahead
 
 	load_types_from (core, "types");
 	load_types_from (core, "types-%s", anal_arch);
 	load_types_from (core, "types-%s", os);
+	if (!strcmp (os, "ios") || !strcmp (os, "macos")) {
+		load_types_from (core, "types-darwin");
+	}
 	load_types_from (core, "types-%d", bits);
 	load_types_from (core, "types-%s-%d", os, bits);
 	load_types_from (core, "types-%s-%d", anal_arch, bits);
 	load_types_from (core, "types-%s-%s", anal_arch, os);
 	load_types_from (core, "types-%s-%s-%d", anal_arch, os, bits);
 }
-
-static R_TH_LOCAL int old_bits = -1;
-static R_TH_LOCAL char *old_arch = NULL;
 
 R_API void r_core_anal_cc_init(RCore *core) {
 	char *anal_arch = strdup (r_config_get (core->config, "anal.arch"));
