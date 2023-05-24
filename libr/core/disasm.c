@@ -1709,10 +1709,10 @@ static void ds_print_show_cursor(RDisasmState *ds) {
 	if (!ds->show_marks) {
 		return;
 	}
-	int cursor_addr = core->offset + ds->cursor;
+	ut64 cursor_addr = core->offset + ds->cursor;
 	int q = core->print->cur_enabled &&
 		cursor_addr >= ds->at &&
-		ds->cursor < (ds->at - core->offset + ds->asmop.size);
+		cursor_addr < (ds->at + ds->asmop.size);
 
 	RBreakpointItem *p = r_bp_get_at (core->dbg->bp, ds->at);
 	(void)handleMidFlags (core, ds, false);
