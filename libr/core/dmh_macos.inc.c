@@ -10,6 +10,9 @@ static RCoreHelpMessage help_dmh_macos = {
 
 static void macos_list_heaps(RCore *core, const char format) {
 	int pid = core->dbg->pid;
+	if (pid < 0 || !r_config_get_b (core->config, "cfg.debug")) {
+		return;
+	}
 	// -interleaved
 	if (format == '*') {
 		char *s = r_sys_cmd_strf ("for kv in `vmmap -interleaved -purge -w %d | grep 0x | grep -v MALLOC | grep -v Load | sed -e 's,_0x,=0x,g' -e 's,_, ,g' | awk '{print $1}'`; do echo \"f heap.$kv\"; done", pid);
