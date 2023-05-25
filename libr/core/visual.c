@@ -1598,13 +1598,13 @@ repeat:
 	}
 	r_cons_flush ();
 	r_cons_enable_mouse (r_config_get_i (core->config, "scr.wheel"));
+	r_cons_set_raw (true);
 	ch = r_cons_readchar ();
 	ch = r_cons_arrow_to_hjkl (ch);
 	switch (ch) {
 	case ':':
 		r_core_visual_prompt_input (core);
 		goto repeat;
-		break;
 	case '?':
 		r_cons_clear00 ();
 		RStrBuf *rsb = r_strbuf_new ("");
