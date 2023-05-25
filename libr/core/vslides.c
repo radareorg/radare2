@@ -178,6 +178,7 @@ R_API void r_core_visual_slides(RCore *core, const char *file) {
 		render (&state, core, list, 1, page);
 		render_title (page, mode, total_pages);
 		r_cons_flush ();
+		r_cons_set_raw (true);
 		ch = r_cons_readchar ();
 		ch = r_cons_arrow_to_hjkl (ch);
 		switch (ch) {
@@ -243,7 +244,7 @@ R_API void r_core_visual_slides(RCore *core, const char *file) {
 			break;
 		case ':':
 			r_cons_show_cursor (true);
-			r_cons_set_raw (0);
+			r_cons_set_raw (false);
 			r_cons_flush ();
 			while (1) {
 				char cmd[1024];
@@ -259,7 +260,7 @@ R_API void r_core_visual_slides(RCore *core, const char *file) {
 				r_cons_flush ();
 			}
 			r_cons_show_cursor (false);
-			r_cons_set_raw (1);
+			r_cons_set_raw (true);
 			r_cons_clear ();
 			break;
 		default:

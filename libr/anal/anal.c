@@ -344,7 +344,6 @@ R_API bool r_anal_set_triplet(RAnal *anal, R_NULLABLE const char *os, R_NULLABLE
 		r_anal_set_bits (anal, bits);
 	}
 	return true;
-	// return r_anal_use (anal, arch);
 }
 
 // copypasta from core/cbin.c
@@ -371,7 +370,6 @@ R_API bool r_anal_set_os(RAnal *anal, const char *os) {
 		sdb_free (gd);
 		return r_anal_set_triplet (anal, os, NULL, -1);
 	}
-
 	// char *ff = r_str_newf ("types-%s.sdb", os);
 	// char *dbpath = r_file_new (dir_prefix, r2_sdb_fcnsign, ff);
 	char *dbpath = r_str_newf ("%s/%s/types-%s.sdb", dir_prefix, R2_SDB_FCNSIGN, os);

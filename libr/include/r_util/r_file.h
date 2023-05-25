@@ -8,7 +8,11 @@ extern "C" {
 #include <r_util/r_mem.h>
 
 #ifndef SHELL_PATH
+#if TERMUX_BUILD
+#define SHELL_PATH "/data/data/com.termux/files/usr/bin/sh"
+#else
 #define SHELL_PATH "/bin/sh"
+#endif
 #endif
 
 #ifndef TERMUX_PREFIX

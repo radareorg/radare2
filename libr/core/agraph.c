@@ -1,7 +1,6 @@
-/* Copyright radare2 - 2014-2022 - pancake, ret2libc */
+/* Copyright radare2 - 2014-2023 - pancake, ret2libc */
 
 #include <r_core.h>
-#include <r_util.h>
 
 static R_TH_LOCAL int mousemode = 0;
 static R_TH_LOCAL int disMode = 0;
@@ -3327,6 +3326,7 @@ static void agraph_follow_innodes(RAGraph *g, bool in) {
 		nth = 0;
 	} else if (r_list_length (list) < 10) {
 		// just 1 key
+		r_cons_set_raw (true);
 		char ch = r_cons_readchar ();
 		if (ch >= '0' && ch <= '9') {
 			nth =  ch - '0';
@@ -4021,6 +4021,7 @@ static void goto_asmqjmps(RAGraph *g, RCore *core) {
 	r_cons_flush ();
 
 	do {
+		r_cons_set_raw (true);
 		char ch = r_cons_readchar ();
 		obuf[i++] = ch;
 		r_cons_printf ("%c", ch);
@@ -4262,6 +4263,7 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 		eprintf ("Interactive graph mode requires scr.interactive=true.\n");
 		return 0;
 	}
+	r_cons_set_raw (true);
 	int o_asmqjmps_letter = core->is_asmqjmps_letter;
 	int o_vmode = core->vmode;
 	int exit_graph = false, is_error = false;
@@ -4296,10 +4298,12 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 	can->linemode = r_config_get_b (core->config, "graph.linemode");
 	can->color = r_config_get_i (core->config, "scr.color");
 
+	eprintf ("je\n");
 	if (!g) {
 		graph_allocated = true;
 		fcn = _fcn? _fcn: r_anal_get_fcn_in (core->anal, core->offset, 0);
 		if (!fcn) {
+			R_LOG_ERROR ("No function to graph");
 			r_config_hold_restore (hc);
 			r_config_hold_free (hc);
 			r_cons_canvas_free (can);
@@ -4384,6 +4388,7 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 		showcursor (core, false);
 
 		// r_core_graph_inputhandle()
+		r_cons_set_raw (true);
 		okey = r_cons_readchar ();
 		key = r_cons_arrow_to_hjkl (okey);
 
@@ -4917,6 +4922,7 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 		case ':':
 			core->cons->event_resize = (RConsEvent)agraph_set_need_reload_nodes;
 			r_core_visual_prompt_input (core);
+			r_cons_set_raw (true);
 			core->cons->event_resize = (RConsEvent)agraph_refresh_oneshot;
 			if (!g) {
 				g->need_reload_nodes = true; // maybe too slow and unnecessary sometimes? better be safe and reload

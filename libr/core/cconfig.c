@@ -3283,12 +3283,23 @@ static bool cb_malloc(void *user, void *data) {
  	RCore *core = (RCore*) user;
  	RConfigNode *node = (RConfigNode*) data;
  	if (node->value) {
- 		if (!strcmp ("jemalloc", node->value) || !strcmp ("glibc", node->value)) {
-			if (core->dbg) {
-				core->dbg->malloc = data;
+		const char *valid[] = {
+			"glibc",
+			"macos",
+			"windows",
+			"jemalloc",
+			NULL
+		};
+		const char *nv = node->value;
+		if (core->dbg) {
+			int i;
+			for (i = 0; valid[i]; i++) {
+				if (!strcmp (valid[i], nv)) {
+					core->dbg->malloc = data;
+				}
 			}
- 		}
- 	}
+		}
+	}
 	return true;
 }
 
@@ -3552,6 +3563,10 @@ R_API int r_core_config_init(RCore *core) {
 
 #if __linux__ && __GNU_LIBRARY__ && __GLIBC__ && __GLIBC_MINOR__
 	n = NODECB ("dbg.malloc", "glibc", &cb_malloc);
+#elif __APPLE__
+	n = NODECB ("dbg.malloc", "macos", &cb_malloc);
+#elif R2__WINDOWS__
+	n = NODECB ("dbg.malloc", "windows", &cb_malloc);
 #else
 	n = NODECB ("dbg.malloc", "jemalloc", &cb_malloc);
 #endif
@@ -3609,6 +3624,8 @@ R_API int r_core_config_init(RCore *core) {
 	// maybe rename to asm.cmt.calls
 	SETBPREF ("asm.calls", "true", "show callee function related info as comments in disasm");
 	SETBPREF ("asm.comments", "true", "show comments in disassembly view");
+	SETBPREF ("asm.cmt.token", ";", "token to use before printing a comment");
+	// R2-590 - rename to asm.cmt.user
 	SETBPREF ("asm.usercomments", "false", "show user comments even if asm.comments is false");
 	SETBPREF ("asm.sub.jmp", "true", "always substitute jump, call and branch targets in disassembly");
 	SETBPREF ("asm.hints", "true", "disable all asm.hint* if false");
@@ -3692,6 +3709,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB ("asm.offset.base10", "false", &cb_decoff, "show address in base 10 instead of hexadecimal");
 	SETBPREF ("asm.offset.relative", "false", "show relative offsets instead of absolute address in disasm");
 	SETBPREF ("asm.offset.flags", "false", "show relative offsets to flags (not only functions)");
+	SETBPREF ("asm.offset.focus", "false", "show only the addresses that branch or located at the beginning of a basic block");
 	SETBPREF ("asm.section", "false", "show section name before offset");
 	SETBPREF ("asm.section.perm", "false", "show section permissions in the disasm");
 	SETBPREF ("asm.section.name", "true", "show section name in the disasm");

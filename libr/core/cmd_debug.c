@@ -14,7 +14,7 @@
 
 #if HAVE_JEMALLOC
 #include "r_heap_jemalloc.h"
-#include "linux_heap_jemalloc.c"
+#include "dmh_jemalloc.inc.c"
 #endif
 
 void cmd_anal_reg (RCore *core, const char *str);
@@ -1382,11 +1382,11 @@ beach:
 
 #if __linux__ && __GNU_LIBRARY__ && __GLIBC__ && __GLIBC_MINOR__
 
-static int cmd_dbg_map_heap_glibc_32(RCore *core, const char *input);
-static int cmd_dbg_map_heap_glibc_64(RCore *core, const char *input);
+static int dmh_glibc_32(RCore *core, const char *input);
+static int dmh_glibc_64(RCore *core, const char *input);
 #endif // __linux__ && __GNU_LIBRARY__ && __GLIBC__ && __GLIBC_MINOR__
 #if R2__WINDOWS__
-static int cmd_debug_map_heap_win(RCore *core, const char *input);
+static int dmh_windows(RCore *core, const char *input);
 #endif // R2__WINDOWS__
 
 
@@ -1431,31 +1431,43 @@ static RDebugMap *get_closest_map(RCore *core, ut64 addr) {
 	return NULL;
 }
 
-static int r_debug_heap(RCore *core, const char *input) {
+#if __APPLE__
+#include "dmh_macos.inc.c"
+#elif __linux__ && __GNU_LIBRARY__ && __GLIBC__ && __GLIBC_MINOR__
+#include "dmh_glibc.inc.c"
+#elif R2__WINDOWS__
+#include "dmh_windows.inc.c"
+#undef R_LOG_ORIGIN
+#define R_LOG_ORIGIN "cmd.debug"
+#endif
+
+static bool cmd_dmh(RCore *core, const char *input) {
 	const char *m = r_config_get (core->config, "dbg.malloc");
 	if (m && !strcmp ("glibc", m)) {
 #if __linux__ && __GNU_LIBRARY__ && __GLIBC__ && __GLIBC_MINOR__
 		if (core->rasm->config->bits == 64) {
-			cmd_dbg_map_heap_glibc_64 (core, input + 1);
+			dmh_glibc_64 (core, input + 1);
 		} else {
-			cmd_dbg_map_heap_glibc_32 (core, input + 1);
+			dmh_glibc_32 (core, input + 1);
 		}
 #else
-		R_LOG_WARN ("glibc not supported for this platform");
+		R_LOG_WARN ("glibc is not supported for this platform");
 #endif
 #if HAVE_JEMALLOC
 	} else if (m && !strcmp ("jemalloc", m)) {
 		if (core->rasm->config->bits == 64) {
-			cmd_dbg_map_jemalloc_64 (core, input + 1);
+			dmh_jemalloc_64 (core, input + 1);
 		} else {
-			cmd_dbg_map_jemalloc_32 (core, input + 1);
+			dmh_jemalloc_32 (core, input + 1);
 		}
 #endif
 	} else {
-#if R2__WINDOWS__
-		cmd_debug_map_heap_win (core, input + 1);
+#if __APPLE__
+		dmh_macos (core, input + 1);
+#elif R2__WINDOWS__
+		dmh_windows (core, input + 1);
 #else
-		R_LOG_WARN ("MALLOC algorithm not supported");
+		R_LOG_WARN ("No heap allocation support");
 		return false;
 #endif
 	}
@@ -1955,35 +1967,26 @@ static int cmd_debug_map(RCore *core, const char *input) {
 	case 'j': // "dmj"
 	case 'q': // "dmq"
 		if (r_config_get_b (core->config, "cfg.debug")) {
-			R_LOG_WARN ("Memory Maps cannot be listed without the debugger. See 'om' instead");
-		} else {
 			r_debug_map_sync (core->dbg); // update process memory maps
 			r_debug_map_list (core->dbg, core->offset, input);
+		} else {
+			R_LOG_WARN ("Memory Maps require to be (cfg.debug/-d) in debugger mode. Otherwise use 'om'");
 		}
 		break;
 	case '=': // "dm="
 		if (r_config_get_b (core->config, "cfg.debug")) {
-			R_LOG_WARN ("Memory Maps cannot be listed without the debugger. See 'om' instead");
-		} else {
 			r_debug_map_sync (core->dbg);
 			r_debug_map_list_visual (core->dbg, core->offset, input,
 					r_config_get_i (core->config, "scr.color"));
+		} else {
+			R_LOG_WARN ("Memory Maps require to be (cfg.debug/-d) in debugger mode. Otherwise use 'om'");
 		}
 		break;
 	case 'h': // "dmh"
-		(void)r_debug_heap (core, input);
-		break;
+		return cmd_dmh (core, input);
 	}
 	return true;
 }
-
-#if __linux__ && __GNU_LIBRARY__ && __GLIBC__ && __GLIBC_MINOR__
-#include "linux_heap_glibc.c"
-#elif R2__WINDOWS__
-#include "windows_heap.c"
-#undef R_LOG_ORIGIN
-#define R_LOG_ORIGIN "cmd.debug"
-#endif
 
 HEAPTYPE(ut64);
 

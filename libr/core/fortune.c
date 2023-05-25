@@ -1,12 +1,11 @@
-/* radare2 - LGPL - Copyright 2009-2022 - pancake, condret */
+/* radare2 - LGPL - Copyright 2009-2023 - pancake, condret */
 
 #include <r_core.h>
 
 static char *getFortuneFile(RCore *core, const char *type) {
 	char *fortunedir = r_xdg_datadir ("fortunes");
-	char *ft = r_str_newf ("%s/fortunes.%s", fortunedir, type);
-	char *path = r_file_home (ft);
-	free (ft);
+	char *path = r_str_newf (R_JOIN_2_PATHS ("%s", "fortunes.%s"),
+		fortunedir, type);
 	free (fortunedir);
 	if (path && r_file_exists (path)) {
 		return path;

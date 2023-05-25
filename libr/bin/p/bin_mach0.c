@@ -355,57 +355,59 @@ static RBinInfo *info(RBinFile *bf) {
 	if (!ret) {
 		return NULL;
 	}
-	struct MACH0_(obj_t) *bin = bf->o->bin_obj;
+	struct MACH0_(obj_t) *mo = bf->o->bin_obj;
 	if (bf->file) {
 		ret->file = strdup (bf->file);
 	}
 
-	char *str = MACH0_(get_class) (bf->o->bin_obj);
+	char *str = MACH0_(get_class) (mo);
 	if (str) {
 		ret->bclass = str;
 	}
-	if (bin) {
-		ret->has_canary = bin->has_canary;
+	if (mo) {
+		ret->has_canary = mo->has_canary;
 		ret->has_retguard = -1;
-		ret->has_sanitizers = bin->has_sanitizers;
-		ret->dbg_info = bin->dbg_info;
-		ret->lang = bin->lang;
-		if (bin->dyld_info) {
+		ret->has_sanitizers = mo->has_sanitizers;
+#if R2_590
+		ret->has_libinjprot = mo->has_libinjprot;
+#endif
+		ret->dbg_info = mo->dbg_info;
+		ret->lang = mo->lang;
+		if (mo->dyld_info) {
 			ut64 allbinds = 0;
-			if ((int)bin->dyld_info->bind_size > 0) {
-				allbinds += bin->dyld_info->bind_size;
+			if ((int)mo->dyld_info->bind_size > 0) {
+				allbinds += mo->dyld_info->bind_size;
 			}
-			if ((int)bin->dyld_info->lazy_bind_size > 0) {
-				allbinds += bin->dyld_info->lazy_bind_size;
+			if ((int)mo->dyld_info->lazy_bind_size > 0) {
+				allbinds += mo->dyld_info->lazy_bind_size;
 			}
-			if ((int)bin->dyld_info->weak_bind_size > 0) {
-				allbinds += bin->dyld_info->weak_bind_size;
+			if ((int)mo->dyld_info->weak_bind_size > 0) {
+				allbinds += mo->dyld_info->weak_bind_size;
 			}
 			if (allbinds > 0) {
 				ret->dbg_info |= R_BIN_DBG_RELOCS;
 			}
 		}
 	}
-	const char *intrp = MACH0_(get_intrp)(bf->o->bin_obj);
+	const char *intrp = MACH0_(get_intrp)(mo);
 	ret->intrp = intrp? strdup (intrp): NULL;
 	ret->compiler = strdup ("clang");
 	ret->rclass = strdup ("mach0");
-	ret->os = strdup (MACH0_(get_os)(bf->o->bin_obj));
+	ret->os = strdup (MACH0_(get_os)(mo));
 	ret->subsystem = strdup ("darwin");
-	ret->arch = strdup (MACH0_(get_cputype) (bf->o->bin_obj));
-	ret->machine = MACH0_(get_cpusubtype) (bf->o->bin_obj);
+	ret->arch = strdup (MACH0_(get_cputype) (mo));
+	ret->machine = MACH0_(get_cpusubtype) (mo);
 	ret->has_lit = true;
-	ret->type = MACH0_(get_filetype) (bf->o->bin_obj);
-	ret->big_endian = MACH0_(is_big_endian) (bf->o->bin_obj);
+	ret->type = MACH0_(get_filetype) (mo);
+	ret->big_endian = MACH0_(is_big_endian) (mo);
 	ret->bits = 32;
-	if (bf && bf->o && bf->o->bin_obj) {
-		ret->has_crypto = ((struct MACH0_(obj_t)*)
-			bf->o->bin_obj)->has_crypto;
-		ret->bits = MACH0_(get_bits) (bf->o->bin_obj);
+	if (mo) {
+		ret->has_crypto = mo->has_crypto;
+		ret->bits = MACH0_(get_bits) (mo);
 	}
 	ret->has_va = true;
-	ret->has_pi = MACH0_(is_pie) (bf->o->bin_obj);
-	ret->has_nx = MACH0_(has_nx) (bf->o->bin_obj);
+	ret->has_pi = MACH0_(is_pie) (mo);
+	ret->has_nx = MACH0_(has_nx) (mo);
 	return ret;
 }
 
@@ -703,6 +705,7 @@ static bool check_buffer(RBinFile *bf, RBuffer *b) {
 	}
 	return false;
 }
+
 static RBuffer *create(RBin *bin, const ut8 *code, int clen, const ut8 *data, int dlen, RBinArchOptions *opt) {
 	const bool use_pagezero = true;
 	const bool use_main = true;

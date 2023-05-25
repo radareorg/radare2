@@ -3119,7 +3119,7 @@ static void variable_rename(RCore *core, ut64 addr, int vindex, const char *name
 	r_list_foreach (list, iter, var) {
 		if (i == vindex) {
 			r_core_seek (core, addr, false);
-			r_core_cmd_strf (core, "afvn %s %s", name, var->name);
+			free (r_core_cmd_strf (core, "afvn %s %s", name, var->name));
 			r_core_seek (core, a_tmp, false);
 			break;
 		}
@@ -3160,12 +3160,12 @@ static ut64 var_functions_show(RCore *core, int idx, int show, int cols) {
 	bool color = r_config_get_i (core->config, "scr.color");
 	const char *color_addr = core->cons->context->pal.offset;
 	const char *color_fcn = core->cons->context->pal.fname;
+	r_cons_newline ();
 
 	r_list_foreach (core->anal->fcns, iter, fcn) {
 		print_full_func = true;
 		if (i >= wdelta) {
 			if (i > window + wdelta - 1) {
-				r_cons_printf ("...\n");
 				break;
 			}
 			if (idx == i) {
@@ -3318,21 +3318,6 @@ static void r_core_visual_anal_refresh_column(RCore *core, int colpos) {
 	free (cmdf);
 }
 
-static RCoreHelpMessage help_fun_visual = {
-	"(a)", "analyze ", "(-)", "delete ", "(x)", "xrefs ", "(X)", "refs ", "(j/k)", "next/prev\n",
-	"(r)", "rename ",  "(c)", "calls ", "(d)", "define ", "(Tab)", "disasm ", "(_)", "hud\n",
-	"(d)", "define ",  "(v)", "vars ", "(?)", " help ", "(:)", "shell " ,"(q)", "quit\n",
-	"(s)", "edit function signature\n\n",
-	NULL
-};
-
-static RCoreHelpMessage help_var_visual = {
-	"(a)", "add " ,"(x)", "xrefs ", "(r)", "rename\n",
-	"(t)", "type ", "(g)", "go ", "(-)" ,"delete\n",
-	"(q)", "quit ", "(s)", "signature\n\n",
-	NULL
-};
-
 static RCoreHelpMessage help_visual_anal_actions = {
 	"functions:", "Add, Modify, Delete, Xrefs Calls Vars",
 	"variables:", "Add, Modify, Delete",
@@ -3357,24 +3342,8 @@ static RCoreHelpMessage help_visual_anal_keys = {
 	NULL
 };
 
-static void r_core_vmenu_append_help(RStrBuf *p, RCoreHelpMessage help) {
-	int i;
-	RConsContext *cons_ctx = r_cons_singleton ()->context;
-	const char *pal_args_color = cons_ctx->color_mode ? cons_ctx->pal.args : "",
-		   *pal_help_color = cons_ctx->color_mode ? cons_ctx->pal.help : "",
-		   *pal_reset = cons_ctx->color_mode ? cons_ctx->pal.reset : "";
-
-	for (i = 0; help[i]; i += 2) {
-		r_strbuf_appendf (p, "%s%s %s%s%s",
-			 pal_args_color, help[i],
-			 pal_help_color, help[i + 1], pal_reset);
-	}
-}
-
 static ut64 r_core_visual_anal_refresh(RCore *core) {
-	if (!core) {
-		return 0LL;
-	}
+	r_return_val_if_fail (core, UT64_MAX);
 	ut64 addr;
 	RStrBuf *buf;
 	bool color = r_config_get_i (core->config, "scr.color");
@@ -3397,16 +3366,22 @@ static ut64 r_core_visual_anal_refresh(RCore *core) {
 		if (color) {
 			r_cons_strcat (core->cons->context->pal.prompt);
 		}
+		r_cons_strcat (".-- functions -----------------------------------------.");
+		r_cons_gotoxy (20, 0);
 		if (selectPanel) {
-			r_cons_printf ("-- functions -----------------[ %s ]-->>", printCmds[printMode]);
+			r_cons_printf ("[%s]", printCmds[printMode]);
 		} else {
-			r_cons_printf ("-[ functions ]----------------- %s ---", printCmds[printMode]);
+			r_cons_printf (" %s ", printCmds[printMode]);
 		}
 		if (color) {
-			r_cons_strcat ("\n" Color_RESET);
+			r_cons_strcat (Color_RESET);
 		}
-		r_core_vmenu_append_help (buf, help_fun_visual);
-		r_cons_printf ("%s", r_strbuf_drain (buf));
+		r_cons_newline ();
+		r_cons_strcat ("| (a)nalyze (-)delete (x)xrefs (X)refs (j/k) next/prev |\n");
+		r_cons_strcat ("| (r)ename  (c)alls   (d)efine (Tab)disasm (_) hud     |\n");
+		r_cons_strcat ("| (d)efine  (v)ars    (?)help  (:)shell    (q) quit    |\n");
+		r_cons_strcat ("| (s)ignature edit                                     |\n");
+		r_cons_printf ("'------------------------------------------------------'");
 		addr = var_functions_show (core, option, 1, cols);
 		break;
 	case 1:
@@ -3414,11 +3389,16 @@ static ut64 r_core_visual_anal_refresh(RCore *core) {
 		if (color) {
 			r_cons_strcat (core->cons->context->pal.prompt);
 		}
-		r_cons_printf ("-[ variables ]----- 0x%08"PFMT64x, addr);
+		r_cons_strcat (".-[ variables ]---------------------------.");
 		if (color) {
 			r_cons_strcat ("\n" Color_RESET);
 		}
-		r_core_vmenu_append_help (buf, help_var_visual);
+		r_cons_gotoxy (22, 0);
+		r_cons_printf (" 0x%08"PFMT64x" \n", addr);
+		r_cons_strcat ("| (a)dd     (x)refs       (r)rename       |\n");
+		r_cons_strcat ("| (t)ype    (g)o          (-)delete       |\n");
+		r_cons_strcat ("| (q)uit    (s)signature  (q)uit          |\n");
+		r_cons_printf ("'-----------------------------------------'");
 		char *drained = r_strbuf_drain (buf);
 		r_cons_printf ("%s", drained);
 		addr = var_variables_show (core, option, &variable_option, 1, cols);
@@ -3439,7 +3419,7 @@ static ut64 r_core_visual_anal_refresh(RCore *core) {
 		if (output) {
 			// 'h - 2' because we have two new lines in r_cons_printf
 			if (!r_cons_singleton ()->show_vals) {
-				char *out = r_str_ansi_crop(output, 0, 0, cols, h - 2);
+				char *out = r_str_ansi_crop (output, 0, 0, cols, h - 2);
 				r_cons_printf ("\n%s\n", out);
 				free (out);
 				R_FREE (output);
@@ -3602,6 +3582,7 @@ R_API void r_core_visual_anal(RCore *core, const char *input) {
 			ch = *input;
 			input++;
 		} else {
+			r_cons_set_raw (true);
 			ch = r_cons_readchar ();
 		}
 		if (ch == 4 || ch == -1) {

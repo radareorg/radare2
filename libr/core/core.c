@@ -2818,6 +2818,11 @@ static char *hasrefs_cb(void *user, ut64 addr, int mode) {
 	}
 	core->offset = addr;
 	char *res = r_core_anal_hasrefs ((RCore *)user, addr, mode);
+	if (R_STR_ISEMPTY (res)) {
+		free (res);
+		addr &= 0xffffffffffffULL;
+		res = r_core_anal_hasrefs ((RCore *)user, addr, mode);
+	}
 	return res;
 }
 

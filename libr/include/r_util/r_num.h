@@ -61,6 +61,13 @@ typedef struct r_num_t {
 typedef ut64 (*RNumCallback)(struct r_num_t *self, const char *str, int *ok);
 typedef const char *(*RNumCallback2)(struct r_num_t *self, ut64, int *ok);
 
+static inline ut64 r_num_bitmask(ut8 width) {
+	if (width >= 64) {
+		return UT64_MAX;
+	}
+	return ((ut64)1ULL << (ut64)width) - 1;
+}
+
 R_API RNum *r_num_new(RNumCallback cb, RNumCallback2 cb2, void *ptr);
 R_API void r_num_free(RNum *num);
 R_API char *r_num_units(char *buf, size_t len, ut64 number);

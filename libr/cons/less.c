@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2014-2022 - pancake, Judge_Dredd */
+/* radare2 - LGPL - Copyright 2014-2023 - pancake, Judge_Dredd */
 
 #include <r_cons.h>
 #include <r_regex.h>
@@ -100,20 +100,20 @@ R_API int r_cons_less_str(const char *str, const char *exitkeys) {
 			break;
 		case ' ': from += h; break;
 		case 'g': from = 0; break;
-		case 'G': from = lines_count-h; break;
+		case 'G': from = lines_count - h; break;
 		case -1: // EOF
 		case '\x03': // ^C
 		case 'q': ui = 0; break;
 		case '\r':
 		case '\n':
 		case 'j': from++; break;
-		case 'J': from+=h; break;
+		case 'J': from += h; break;
 		case 'k':
 			if (from > 0) {
 				from--;
 			}
 			break;
-		case 'K': from = (from>=h)? from-h: 0;
+		case 'K': from = (from>=h)? from - h: 0;
 			break;
 		case '/': 	/* search */
 			r_cons_reset_colors ();
@@ -137,6 +137,7 @@ R_API int r_cons_less_str(const char *str, const char *exitkeys) {
 			if (pager_all_matches (p, rx, mla, lines, lines_count)) {
 				from = pager_next_match (from, mla, lines_count);
 			}
+			r_cons_set_raw (true);
 			break;
 		case 'n': 	/* next match */
 			/* search already performed */
