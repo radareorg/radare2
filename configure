@@ -419,7 +419,7 @@ if [ "${CROSSBUILD}" = 1 ]; then
  if [ $? = 0 ]; then CC="${HOST}-${CC}"; fi
 fi
 echo "int main(int argc, char **argv){return 0;}" > test.c
- (exec ${CC} ${CFLAGS} ${CPPFLAGS} ${LDFLAGS} test.c >/dev/null 2>&1)
+ (exec ${CC} -o a.out ${CFLAGS} ${CPPFLAGS} ${LDFLAGS} test.c >/dev/null 2>&1)
 if [ $? = 0 ]; then echo ${CC}; else
  echo no ; HAVE_LANG_C=0
 do_remove
@@ -696,7 +696,7 @@ USE_LIB_XXHASH="0"
 LIBXXHASH=""; fi
 printf "checking declaration of ADDR_NO_RANDOMIZE in sys/personality.h... "
 echo "#include <sys/personality.h>" > test.c
-echo "int main(int ac, char **av){ void *a = ADDR_NO_RANDOMIZE; return 0; }" >> test.c
+echo "int main(int ac, char **av){ void *a = (void *)ADDR_NO_RANDOMIZE; return 0; }" >> test.c
 ${CC} ${CFLAGS} ${CPPFLAGS} ${LDFLAGS} test.c >/dev/null 2>&1
 if [ $? = 0 ]; then
 	echo yes ; HAVE_DECL_ADDR_NO_RANDOMIZE=1
@@ -704,49 +704,49 @@ else
 	HAVE_DECL_ADDR_NO_RANDOMIZE=0 ; echo no ; fi
 printf "checking declaration of __GLIBC__ in features.h... "
 echo "#include <features.h>" > test.c
-echo "int main(int ac, char **av){ void *a = __GLIBC__; return 0; }" >> test.c
+echo "int main(int ac, char **av){ void *a = (void *)__GLIBC__; return 0; }" >> test.c
 ${CC} ${CFLAGS} ${CPPFLAGS} ${LDFLAGS} test.c >/dev/null 2>&1
 if [ $? = 0 ]; then
 	echo yes ; HAVE_DECL___GLIBC__=1
 else
 	HAVE_DECL___GLIBC__=0 ; echo no ; fi
 printf "checking function arc4random_uniform() in c... "
-echo "int main(int ac, char **av){ arc4random_uniform(0); return 0; }" > test.c
+echo "extern int arc4random_uniform(); int main(int ac, char **av){ arc4random_uniform(0); return 0; }" > test.c
 ${CC} ${CFLAGS} ${CPPFLAGS} ${LDFLAGS} -lc test.c >/dev/null 2>&1
 if [ $? = 0 ]; then
 	echo yes ; HAVE_ARC4RANDOM_UNIFORM=1
 else
 	HAVE_ARC4RANDOM_UNIFORM=0 ; echo no ; fi
 printf "checking function explicit_bzero() in c... "
-echo "int main(int ac, char **av){ explicit_bzero(0); return 0; }" > test.c
+echo "extern int explicit_bzero(); int main(int ac, char **av){ explicit_bzero(0); return 0; }" > test.c
 ${CC} ${CFLAGS} ${CPPFLAGS} ${LDFLAGS} -lc test.c >/dev/null 2>&1
 if [ $? = 0 ]; then
 	echo yes ; HAVE_EXPLICIT_BZERO=1
 else
 	HAVE_EXPLICIT_BZERO=0 ; echo no ; fi
 printf "checking function explicit_memset() in c... "
-echo "int main(int ac, char **av){ explicit_memset(0); return 0; }" > test.c
+echo "extern int explicit_memset(); int main(int ac, char **av){ explicit_memset(0); return 0; }" > test.c
 ${CC} ${CFLAGS} ${CPPFLAGS} ${LDFLAGS} -lc test.c >/dev/null 2>&1
 if [ $? = 0 ]; then
 	echo yes ; HAVE_EXPLICIT_MEMSET=1
 else
 	HAVE_EXPLICIT_MEMSET=0 ; echo no ; fi
 printf "checking function clock_nanosleep() in c... "
-echo "int main(int ac, char **av){ clock_nanosleep(0); return 0; }" > test.c
+echo "extern int clock_nanosleep(); int main(int ac, char **av){ clock_nanosleep(0); return 0; }" > test.c
 ${CC} ${CFLAGS} ${CPPFLAGS} ${LDFLAGS} -lc test.c >/dev/null 2>&1
 if [ $? = 0 ]; then
 	echo yes ; HAVE_CLOCK_NANOSLEEP=1
 else
 	HAVE_CLOCK_NANOSLEEP=0 ; echo no ; fi
 printf "checking function sigaction() in c... "
-echo "int main(int ac, char **av){ sigaction(0); return 0; }" > test.c
+echo "extern int sigaction(); int main(int ac, char **av){ sigaction(0); return 0; }" > test.c
 ${CC} ${CFLAGS} ${CPPFLAGS} ${LDFLAGS} -lc test.c >/dev/null 2>&1
 if [ $? = 0 ]; then
 	echo yes ; HAVE_SIGACTION=1
 else
 	HAVE_SIGACTION=0 ; echo no ; fi
 printf "checking function clock_gettime() in c... "
-echo "int main(int ac, char **av){ clock_gettime(0); return 0; }" > test.c
+echo "extern int clock_gettime(); int main(int ac, char **av){ clock_gettime(0); return 0; }" > test.c
 ${CC} ${CFLAGS} ${CPPFLAGS} ${LDFLAGS} -lc test.c >/dev/null 2>&1
 if [ $? = 0 ]; then
 	echo yes ; HAVE_CLOCK_GETTIME=1
