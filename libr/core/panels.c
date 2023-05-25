@@ -7042,6 +7042,9 @@ virtualmouse:
 			core->print->cur++;
 		}
 		break;
+	case 'v':
+		r_core_visual_anal (core, NULL);
+		break;
 	case 'V':
 		__call_visual_graph (core);
 		break;
