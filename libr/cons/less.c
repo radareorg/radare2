@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2014-2022 - pancake, Judge_Dredd */
+/* radare2 - LGPL - Copyright 2014-2023 - pancake, Judge_Dredd */
 
 #include <r_cons.h>
 #include <r_regex.h>

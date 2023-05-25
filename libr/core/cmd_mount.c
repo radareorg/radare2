@@ -35,11 +35,81 @@ static RCoreHelpMessage help_msg_mf = {
 	NULL
 };
 
+static char *readman(const char *page) {
+	int cat = 1;
+	char *p = r_str_newf ("%s/man/man%d/%s.%d",R2_DATDIR, cat, page, cat);
+	char *res = r_file_slurp (p, NULL);
+	if (!res) {
+		free (p);
+		p = r_str_newf ("%s/man/man%d/%s.%d", "/usr/share", cat, page, cat);
+		res = r_file_slurp (p, NULL);
+	}
+	if (res) {
+		char *p = strstr (res, "\n.");
+		while (p) {
+			if (p[1] == '\\' || p != res) {
+				p++;
+			}
+			switch (p[1]) {
+			case '\\': // ".\""
+				p--; *p = ' ';
+				while (*p && *p != '\n') {
+					*p = ' ';
+					p++;
+				}
+				break;
+			case 'F': // ".Fl"
+			case 'T': // ".Tn"
+			case 'B': // ".Bl"
+				while (*p && *p != '\n') {
+					*p = ' ';
+					p++;
+				}
+				break;
+			case 'E': // ".El"
+			case 'N': // ".Nm"
+			case 'X': // ".Xr"
+			case 'D': // ".Dt"
+			case 'P': // ".Dt"
+			case 'A': // ".Ar"
+				memset (p, ' ', 3);
+				break;
+			case 'O': // ".Op Fl"
+				memset (p, ' ', 6);
+				p[6] = '-';
+				break;
+			case 'S': //  .Sh section header
+				memcpy (p, "\n##", 3);
+				break;
+			case 'I': // ".It"
+				memcpy (p, "\n   * ", 6);
+				break;
+			}
+			p = strstr (p, "\n.");
+		}
+		// replace \n.XX with stuff
+		res = r_str_replace_all (res, " Ar ", " ");
+	}
+	free (p);
+	return res;
+}
+
 static int cmd_man(RCore *core, const char *input) {
 	const char *arg = strchr (input, ' ');
 	// TODO: implement our own man page reader for non-unix platforms
 	if (R_STR_ISNOTEMPTY (arg)) {
-		r_sys_cmdf ("man %s", arg + 1);
+		// use our internal reader (
+#if 0 && R2__UNIX__
+		r_sys_cmdf ("man %s", page);
+#else
+		char *text = readman (r_str_trim_head_ro (arg));
+		if (text) {
+			r_cons_less_str (text, NULL);
+			free (text);
+		} else {
+			R_LOG_ERROR ("Cannot find manpage");
+		}
+#endif
 	} else {
 		R_LOG_ERROR ("Usage: man [page]");
 	}
