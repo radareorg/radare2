@@ -750,39 +750,35 @@ static const char *get_ver_flags(char *buff, size_t buff_size, ut32 flags) {
 	return buff;
 }
 
-static Sdb *store_versioninfo_gnu_versym(ELFOBJ *bin, Elf_(Shdr) *shdr, int sz) {
-	size_t i;
-	const ut64 num_entries = sz / sizeof (Elf_(Versym));
-	const char *section_name = "";
-	const char *link_section_name = "";
-	Sdb *sdb = sdb_new0 ();
-	if (!sdb) {
-		return NULL;
-	}
-	if (!bin->version_info[DT_VERSIONTAGIDX (DT_VERSYM)]) {
-		sdb_free (sdb);
-		return NULL;
-	}
-	if (shdr->sh_link >= bin->ehdr.e_shnum) {
-		sdb_free (sdb);
-		return NULL;
-	}
-	Elf_(Shdr) *link_shdr = &bin->shdr[shdr->sh_link];
-	ut8 *edata = (ut8*) calloc (R_MAX (1, num_entries), 2 * sizeof (ut8));
+typedef struct e_data_state_t {
+	Sdb *sdb;
+	Elf_(Shdr) *shdr;
+	const ut64 num_entries;
+} EDataState;
+
+static inline ut16 *_parse_edata(ELFOBJ *bin, EDataState *edata_state) {
+	Sdb *sdb = edata_state->sdb;
+	Elf_(Shdr) *shdr = edata_state->shdr;
+	const ut64 num_entries = edata_state->num_entries;
+	ut8 *edata = calloc (R_MAX (1, num_entries), 2 * sizeof (ut8));
 	if (!edata) {
-		sdb_free (sdb);
 		return NULL;
 	}
-	ut16 *data = (ut16 *)calloc (R_MAX (1, num_entries), sizeof (ut16));
+
+	ut16 *data = calloc (R_MAX (1, num_entries), sizeof (ut16));
 	if (!data) {
 		free (edata);
-		sdb_free (sdb);
 		return NULL;
 	}
+
 	ut64 off = Elf_(r_bin_elf_v2p) (bin, bin->version_info[DT_VERSIONTAGIDX (DT_VERSYM)]);
+	const char *section_name = "";
 	if (bin->shstrtab && shdr->sh_name < bin->shstrtab_size) {
 		section_name = &bin->shstrtab[shdr->sh_name];
 	}
+
+	Elf_(Shdr) *link_shdr = &bin->shdr[shdr->sh_link];
+	const char *link_section_name = "";
 	if (bin->shstrtab && link_shdr->sh_name < bin->shstrtab_size) {
 		link_section_name = &bin->shstrtab[link_shdr->sh_name];
 	}
@@ -793,18 +789,193 @@ static Sdb *store_versioninfo_gnu_versym(ELFOBJ *bin, Elf_(Shdr) *shdr, int sz) 
 	sdb_num_set (sdb, "offset", shdr->sh_offset, 0);
 	sdb_num_set (sdb, "link", shdr->sh_link, 0);
 	sdb_set (sdb, "link_section_name", link_section_name, 0);
-	for (i = num_entries; i--;) {
+
+	size_t i = num_entries;
+	while (i--) {
 		data[i] = r_read_ble16 (&edata[i * sizeof (ut16)], bin->endian);
 	}
-	R_FREE (edata);
+
+	free (edata);
+	return data;
+}
+
+typedef struct parse_vernaux_state_t {
+	int i;
+	int j;
+	Sdb *sdb;
+	ut16 *data;
+	const char *tmp_val;
+	const char *key;
+	bool check_def;  // used as output parameter
+} ParseVernauxState;
+
+static inline bool _maybe_parse_aux_ver_needed_info(ELFOBJ *bin, ParseVernauxState *state) {
+	if (!bin->version_info[DT_VERSIONTAGIDX (DT_VERNEED)]) {
+		return true;
+	}
+
+	Elf_(Verneed) vn;
+	ut64 offset = Elf_(r_bin_elf_v2p) (bin, bin->version_info[DT_VERSIONTAGIDX (DT_VERNEED)]);
+	do {
+		if (offset > bin->size || offset + sizeof (vn) > bin->size) {
+			return false;
+		}
+
+		ut8 svn[sizeof (Elf_(Verneed))] = {0};
+		if (r_buf_read_at (bin->b, offset, svn, sizeof (svn)) < 0) {
+			R_LOG_DEBUG ("Cannot read Verneed for Versym");
+			return false;
+		}
+
+		int k = 0;
+		vn.vn_version = READ16 (svn, k);
+		vn.vn_cnt = READ16 (svn, k);
+		vn.vn_file = READ32 (svn, k);
+		vn.vn_aux = READ32 (svn, k);
+		vn.vn_next = READ32 (svn, k);
+
+		const int i = state->i;
+		const int j = state->j;
+		const ut16 *data = state->data;
+
+		Elf_(Vernaux) vna;
+		ut64 a_off = offset + vn.vn_aux;
+		do {
+			if (a_off > bin->size || a_off + sizeof (vna) > bin->size) {
+				return false;
+			}
+
+			ut8 svna[sizeof (Elf_(Vernaux))] = {0};
+			if (r_buf_read_at (bin->b, a_off, svna, sizeof (svna)) < 0) {
+				R_LOG_DEBUG ("Cannot read Vernaux for Versym");
+				return false;
+			}
+			k = 0;
+			vna.vna_hash = READ32 (svna, k);
+			vna.vna_flags = READ16 (svna, k);
+			vna.vna_other = READ16 (svna, k);
+			vna.vna_name = READ32 (svna, k);
+			vna.vna_next = READ32 (svna, k);
+			a_off += vna.vna_next;
+		} while (vna.vna_other != data[i + j] && vna.vna_next != 0);
+
+		if (vna.vna_other == data[i + j]) {
+			if (vna.vna_name > bin->strtab_size) {
+				return false;
+			}
+			char *val = r_str_newf ("%s(%s)", state->tmp_val, bin->strtab + vna.vna_name);
+			sdb_set (state->sdb, state->key, val, 0);
+			free (val);
+			state->check_def = false;
+			return true;
+		}
+
+		offset += vn.vn_next;
+	} while (vn.vn_next);
+
+	return true;
+}
+
+typedef struct parse_ver_def_state_t {
+	int i;
+	int j;
+	Sdb *sdb;
+	const char *key;
+	const char *tmp_val;
+	ut16 *data;
+} ParseVerDefState;
+
+static inline bool _maybe_parse_version_definition_info(ELFOBJ *bin, ParseVerDefState *state) {
+	const int i = state->i;
+	const int j = state->j;
+	const ut16 *data = state->data;
+	const ut64 vinfoaddr = bin->version_info[DT_VERSIONTAGIDX (DT_VERDEF)];
+	if (!(data[i + j] != 0x8001 && vinfoaddr)) {
+		return true;
+	}
+
+	Elf_(Verdef) vd;
+	ut8 svd[sizeof (Elf_(Verdef))] = {0};
+	ut64 offset = Elf_(r_bin_elf_v2p) (bin, vinfoaddr);
+	if (offset > bin->size || offset + sizeof (vd) > bin->size) {
+		return false;
+	}
+
+	do {
+		if (r_buf_read_at (bin->b, offset, svd, sizeof (svd)) < 0) {
+			R_LOG_DEBUG ("Cannot read Verdef for Versym");
+			return false;
+		}
+
+		int k = 0;
+		vd.vd_version = READ16 (svd, k);
+		vd.vd_flags = READ16 (svd, k);
+		vd.vd_ndx = READ16 (svd, k);
+		vd.vd_cnt = READ16 (svd, k);
+		vd.vd_hash = READ32 (svd, k);
+		vd.vd_aux = READ32 (svd, k);
+		vd.vd_next = READ32 (svd, k);
+		offset += vd.vd_next;
+	} while (vd.vd_ndx != (data[i + j] & 0x7FFF) && vd.vd_next != 0);
+
+	if (vd.vd_ndx == (data[i + j] & 0x7FFF)) {
+		Elf_(Verdaux) vda;
+		ut8 svda[sizeof (Elf_(Verdaux))] = {0};
+		ut64 off_vda = offset - vd.vd_next + vd.vd_aux;
+		if (off_vda > bin->size || off_vda + sizeof (vda) > bin->size) {
+			return false;
+		}
+
+		if (r_buf_read_at (bin->b, off_vda, svda, sizeof (svda)) < 0) {
+			R_LOG_DEBUG ("Cannot read Verdaux for Versym");
+			return false;
+		}
+
+		int k = 0;
+		vda.vda_name = READ32 (svda, k);
+		vda.vda_next = READ32 (svda, k);
+		if (vda.vda_name > bin->strtab_size) {
+			return false;
+		}
+
+		const char *name = bin->strtab + vda.vda_name;
+		if (name) {
+			char *fname = r_str_newf ("%s(%s%-*s)", state->tmp_val, name, (int)(12 - strlen (name)),")");
+			sdb_set (state->sdb, state->key, fname, 0);
+			free (fname);
+		}
+	}
+
+	return true;
+}
+
+static Sdb *store_versioninfo_gnu_versym(ELFOBJ *bin, Elf_(Shdr) *shdr, int sz) {
+	if (!bin->version_info[DT_VERSIONTAGIDX (DT_VERSYM)]) {
+		return NULL;
+	}
+	if (shdr->sh_link >= bin->ehdr.e_shnum) {
+		return NULL;
+	}
+
+	Sdb *sdb = sdb_new0 ();
+	if (!sdb) {
+		return NULL;
+	}
+
+	const ut64 num_entries = sz / sizeof (Elf_(Versym));
+	EDataState edata_state = { .shdr = shdr, .sdb = sdb, .num_entries = num_entries };
+	ut16* data = _parse_edata (bin, &edata_state);
+	if (!data) {
+		sdb_free (sdb);
+		return NULL;
+	}
+
 	char *tmp_val = NULL;
+	size_t i;
 	for (i = 0; i < num_entries; i += 4) {
 		size_t j;
-		int check_def;
-		char key[32] = {0};
-
-		for (j = 0; (j < 4) && (i + j) < num_entries; j++) {
-			int k;
+		for (j = 0; j < 4 && i + j < num_entries; j++) {
+			char key[32] = {0};
 			snprintf (key, sizeof (key), "entry%d", (int)(i + j));
 			switch (data[i + j]) {
 			case 0:
@@ -816,115 +987,32 @@ static Sdb *store_versioninfo_gnu_versym(ELFOBJ *bin, Elf_(Shdr) *shdr, int sz) 
 			default:
 				free (tmp_val);
 				tmp_val = r_str_newf ("%x ", data[i + j] & 0x7FFF);
-				check_def = true;
-				if (bin->version_info[DT_VERSIONTAGIDX (DT_VERNEED)]) {
-					Elf_(Verneed) vn;
-					ut8 svn[sizeof (Elf_(Verneed))] = {0};
-					ut64 offset = Elf_(r_bin_elf_v2p) (bin, bin->version_info[DT_VERSIONTAGIDX (DT_VERNEED)]);
-					do {
-						Elf_(Vernaux) vna;
-						ut8 svna[sizeof (Elf_(Vernaux))] = {0};
-						ut64 a_off;
-						if (offset > bin->size || offset + sizeof (vn) > bin->size) {
-							goto beach;
-						}
-						if (r_buf_read_at (bin->b, offset, svn, sizeof (svn)) < 0) {
-							R_LOG_DEBUG ("Cannot read Verneed for Versym");
-							goto beach;
-						}
-						k = 0;
-						vn.vn_version = READ16 (svn, k);
-						vn.vn_cnt = READ16 (svn, k);
-						vn.vn_file = READ32 (svn, k);
-						vn.vn_aux = READ32 (svn, k);
-						vn.vn_next = READ32 (svn, k);
-						a_off = offset + vn.vn_aux;
-						do {
-							if (a_off > bin->size || a_off + sizeof (vna) > bin->size) {
-								goto beach;
-							}
-							if (r_buf_read_at (bin->b, a_off, svna, sizeof (svna)) < 0) {
-								R_LOG_DEBUG ("Cannot read Vernaux for Versym");
-								goto beach;
-							}
-							k = 0;
-							vna.vna_hash = READ32 (svna, k);
-							vna.vna_flags = READ16 (svna, k);
-							vna.vna_other = READ16 (svna, k);
-							vna.vna_name = READ32 (svna, k);
-							vna.vna_next = READ32 (svna, k);
-							a_off += vna.vna_next;
-						} while (vna.vna_other != data[i + j] && vna.vna_next != 0);
-
-						if (vna.vna_other == data[i + j]) {
-							if (vna.vna_name > bin->strtab_size) {
-								goto beach;
-							}
-							char *val = r_str_newf ("%s(%s)", tmp_val, bin->strtab + vna.vna_name);
-							sdb_set (sdb, key, val, 0);
-							free (val);
-							check_def = false;
-							break;
-						}
-						offset += vn.vn_next;
-					} while (vn.vn_next);
+				ParseVernauxState vernaux_state = {
+					.i = i,
+					.j = j,
+					.sdb = sdb,
+					.data = data,
+					.tmp_val = tmp_val,
+					.key = key,
+					.check_def = true,
+				};
+				if (!_maybe_parse_aux_ver_needed_info (bin, &vernaux_state)) {
+					free (tmp_val);
+					free (data);
+					return sdb;
 				}
 
-				ut64 vinfoaddr = bin->version_info[DT_VERSIONTAGIDX (DT_VERDEF)];
-				if (check_def && data[i + j] != 0x8001 && vinfoaddr) {
-					Elf_(Verdef) vd;
-					ut8 svd[sizeof (Elf_(Verdef))] = {0};
-					ut64 offset = Elf_(r_bin_elf_v2p) (bin, vinfoaddr);
-					if (offset > bin->size || offset + sizeof (vd) > bin->size) {
-						goto beach;
-					}
-					do {
-						if (r_buf_read_at (bin->b, offset, svd, sizeof (svd)) < 0) {
-							R_LOG_DEBUG ("Cannot read Verdef for Versym");
-							goto beach;
-						}
-						k = 0;
-						vd.vd_version = READ16 (svd, k);
-						vd.vd_flags = READ16 (svd, k);
-						vd.vd_ndx = READ16 (svd, k);
-						vd.vd_cnt = READ16 (svd, k);
-						vd.vd_hash = READ32 (svd, k);
-						vd.vd_aux = READ32 (svd, k);
-						vd.vd_next = READ32 (svd, k);
-						offset += vd.vd_next;
-					} while (vd.vd_ndx != (data[i + j] & 0x7FFF) && vd.vd_next != 0);
-
-					if (vd.vd_ndx == (data[i + j] & 0x7FFF)) {
-						Elf_(Verdaux) vda;
-						ut8 svda[sizeof (Elf_(Verdaux))] = {0};
-						ut64 off_vda = offset - vd.vd_next + vd.vd_aux;
-						if (off_vda > bin->size || off_vda + sizeof (vda) > bin->size) {
-							goto beach;
-						}
-						if (r_buf_read_at (bin->b, off_vda, svda, sizeof (svda)) < 0) {
-							R_LOG_DEBUG ("Cannot read Verdaux for Versym");
-							goto beach;
-						}
-						k = 0;
-						vda.vda_name = READ32 (svda, k);
-						vda.vda_next = READ32 (svda, k);
-						if (vda.vda_name > bin->strtab_size) {
-							goto beach;
-						}
-						const char *name = bin->strtab + vda.vda_name;
-						if (name) {
-							char *fname = r_str_newf ("%s(%s%-*s)", tmp_val, name, (int)(12 - strlen (name)),")");
-							sdb_set (sdb, key, fname, 0);
-							free (fname);
-						}
-					}
+				ParseVerDefState parse_vd_state = { .i = i, .j = j, .sdb = sdb, .key = key, .tmp_val = tmp_val, .data = data };
+				if (vernaux_state.check_def && !_maybe_parse_version_definition_info (bin, &parse_vd_state)) {
+					free (tmp_val);
+					free (data);
+					return sdb;
 				}
 			}
 		}
 		R_FREE (tmp_val);
 	}
-beach:
-	R_FREE (tmp_val);
+
 	free (data);
 	return sdb;
 }
