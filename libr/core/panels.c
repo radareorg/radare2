@@ -499,6 +499,7 @@ static int __show_status(RCore *core, const char *msg) {
 	r_cons_gotoxy (0, 0);
 	r_cons_printf (R_CONS_CLEAR_LINE"%s[Status] %s"Color_RESET, core->cons->context->pal.graph_box2, msg);
 	r_cons_flush ();
+	r_cons_set_raw (true);
 	return r_cons_readchar ();
 }
 
@@ -513,6 +514,7 @@ static char *__show_status_input(RCore *core, const char *msg) {
 	r_cons_gotoxy (0, 0);
 	r_cons_flush ();
 	char *out = r_cons_input (n_msg);
+	r_cons_set_raw (true);
 	free (n_msg);
 	return out;
 }
@@ -4093,6 +4095,7 @@ static void __create_modal(RCore *core, RPanel *panel, Sdb *menu_db) {
 	char *word = NULL;
 	__update_modal (core, menu_db, modal, 1);
 	while (modal) {
+		r_cons_set_raw (true);
 		okey = r_cons_readchar ();
 		key = r_cons_arrow_to_hjkl (okey);
 		word = NULL;
@@ -4318,6 +4321,7 @@ static void __handle_visual_mark(RCore *core) {
 		if (r_core_visual_mark_dump (core)) {
 			r_cons_printf (R_CONS_CLEAR_LINE"Remove a shortcut key from the list\n");
 			r_cons_flush ();
+			r_cons_set_raw (true);
 			int ch = r_cons_readchar ();
 			r_core_visual_mark_del (core, ch);
 		}
@@ -4326,6 +4330,7 @@ static void __handle_visual_mark(RCore *core) {
 		r_cons_gotoxy (0, 0);
 		if (r_core_visual_mark_dump (core)) {
 			r_cons_flush ();
+			r_cons_set_raw (true);
 			int ch = r_cons_readchar ();
 			r_core_visual_mark_seek (core, ch);
 			__set_panel_addr (core, cur, core->offset);
@@ -6521,6 +6526,7 @@ static void __handle_tab(RCore *core) {
 			core->cons->context->pal.graph_box2, min, max);
 	}
 	r_cons_flush ();
+	r_cons_set_raw (true);
 	int ch = r_cons_readchar ();
 
 	if (isdigit (ch)) {
@@ -6618,6 +6624,7 @@ repeat:
 	core->cons->event_resize = (RConsEvent) __do_panels_refreshOneShot;
 	__panels_layout_refresh (core);
 	RPanel *cur = __get_cur_panel (panels);
+	r_cons_set_raw (true);
 	if (panels->fun == PANEL_FUN_SNOW || panels->fun == PANEL_FUN_SAKURA) {
 		if (panels->mode == PANEL_MODE_MENU) {
 			panels->fun = PANEL_FUN_NOFUN;
