@@ -3624,6 +3624,8 @@ R_API int r_core_config_init(RCore *core) {
 	// maybe rename to asm.cmt.calls
 	SETBPREF ("asm.calls", "true", "show callee function related info as comments in disasm");
 	SETBPREF ("asm.comments", "true", "show comments in disassembly view");
+	SETBPREF ("asm.cmt.token", ";", "token to use before printing a comment");
+	// R2-590 - rename to asm.cmt.user
 	SETBPREF ("asm.usercomments", "false", "show user comments even if asm.comments is false");
 	SETBPREF ("asm.sub.jmp", "true", "always substitute jump, call and branch targets in disassembly");
 	SETBPREF ("asm.hints", "true", "disable all asm.hint* if false");
