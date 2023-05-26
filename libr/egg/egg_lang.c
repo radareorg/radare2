@@ -1181,7 +1181,7 @@ static void rcc_next(REgg *egg) {
 
 R_API int r_egg_lang_parsechar(REgg *egg, char c) {
 	REggEmit *e = egg->remit;
-	char *ptr, str[64], *tmp_ptr = NULL;
+	char str[64], *tmp_ptr = NULL;
 	int i, j;
 	if (c == '\n') {
 		egg->lang.line++;
@@ -1305,19 +1305,13 @@ R_API int r_egg_lang_parsechar(REgg *egg, char c) {
 				if (egg->lang.nested_callname[CTX - 1] && strstr (egg->lang.nested_callname[CTX - 1], "if")) {
 					tmp_ptr = r_str_newf ("__ifelse_%d_%d", CTX - 1, egg->lang.nestedi[CTX - 1] - 1);
 					e->jmp (egg, tmp_ptr, 0);
-					R_FREE (tmp_ptr);	// mem leak
+					R_FREE (tmp_ptr);
 					egg->lang.ifelse_table[CTX - 1][egg->lang.nestedi[CTX - 1] - 1] =
 						r_str_newf ("__end_%d_%d_%d",
 							egg->lang.nfunctions, CTX - 1, egg->lang.nestedi[CTX - 1] - 1);
 				}
-				// if (nestede[CTX]) {
-				// r_egg_printf (egg, "%s:\n", nestede[CTX]);
-				////nestede[CTX] = NULL;
-				// } else {
 				r_egg_printf (egg, "  __end_%d_%d_%d:\n",
 					egg->lang.nfunctions, CTX - 1, egg->lang.nestedi[CTX - 1] - 1);
-				// get_end_frame_label (egg));
-				// }
 			}
 			if (CTX > 0) {
 				egg->lang.nbrackets++;
@@ -1367,7 +1361,7 @@ R_API int r_egg_lang_parsechar(REgg *egg, char c) {
 		}
 		if (egg->lang.slurp) {
 			if (egg->lang.elem_n) {
-				ptr = egg->lang.elem;
+				char *ptr = egg->lang.elem;
 				egg->lang.elem[egg->lang.elem_n] = '\0';
 				while (is_space (*ptr)) {
 					ptr++;
