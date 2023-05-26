@@ -603,7 +603,6 @@ extern volatile sig_atomic_t sigwinchFlag;
 #endif
 
 R_API int r_cons_readchar(void) {
-	const bool doraw = false;
 	char buf[2];
 	buf[0] = -1;
 	if (readbuffer_length > 0) {
@@ -612,9 +611,7 @@ R_API int r_cons_readchar(void) {
 		memmove (readbuffer, readbuffer + 1, readbuffer_length);
 		return ch;
 	}
-	if (doraw) {
-		r_cons_set_raw (true);
-	}
+	r_cons_set_raw (true);
 #if R2__WINDOWS__
 	return __cons_readchar_w32 (0);
 #elif __wasi__
@@ -623,9 +620,6 @@ R_API int r_cons_readchar(void) {
 	r_cons_sleep_end (bed);
 	if (ret < 1) {
 		return -1;
-	}
-	if (doraw && bufactive) {
-		r_cons_set_raw (false);
 	}
 	return r_cons_controlz (buf[0]);
 #else
@@ -659,9 +653,6 @@ R_API int r_cons_readchar(void) {
 	r_cons_sleep_end (bed);
 	if (ret != 1) {
 		return -1;
-	}
-	if (doraw && bufactive) {
-		r_cons_set_raw (0);
 	}
 	return r_cons_controlz (buf[0]);
 #endif
@@ -701,7 +692,7 @@ R_API char *r_cons_password(const char *msg) {
 	int i = 0;
 	printf ("\r%s", msg);
 	fflush (stdout);
-	r_cons_set_raw (1);
+	r_cons_set_raw (true);
 #if R2__UNIX__ && !__wasi__
 	RCons *a = r_cons_singleton ();
 	a->term_raw.c_lflag &= ~(ECHO | ECHONL);
@@ -731,7 +722,7 @@ R_API char *r_cons_password(const char *msg) {
 		buf[i++] = ch;
 	}
 	buf[i] = 0;
-	r_cons_set_raw (0);
+	r_cons_set_raw (false);
 	printf ("\n");
 #if R2__UNIX__
 	r_sys_signal (SIGTSTP, SIG_DFL);

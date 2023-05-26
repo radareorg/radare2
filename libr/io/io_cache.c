@@ -195,11 +195,9 @@ R_API bool r_io_cache_read(RIO *io, ut64 addr, ut8 *buf, int len) {
 	}
 	const RSkylineItem *last = (RSkylineItem *)skyline->v.a + skyline->v.len;
 	bool covered = false;
-	int count = 0;
 	while (iter != last) {
 		const ut64 begin = r_itv_begin (iter->itv);
 		const ut64 end = r_itv_end (iter->itv);
-		count++;
 		if (end < addr) {
 			iter++;
 			continue;
@@ -229,19 +227,12 @@ R_API bool r_io_cache_read(RIO *io, ut64 addr, ut8 *buf, int len) {
 			iter++;
 			continue;
 		}
-		// eprintf ("inrange (%llx %d)\n", begin, (int)(end - begin));
 		if (read > 0) {
 			memcpy (buf + buf_offset, cache->data + cache_offset, read);
 		}
 		covered = true;
 		iter++;
 	}
-#if 0
-	eprintf ("COUNT %d (0x%llx %d)\n", count, addr, len);
-	if (count > 45000) {
-		r_sys_breakpoint ();
-	}
-#endif
 	return covered;
 }
 
