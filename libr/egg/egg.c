@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2011-2022 - pancake */
+/* radare - LGPL - Copyright 2011-2023 - pancake */
 
 #include <r_egg.h>
 #include <config.h>
@@ -326,9 +326,8 @@ R_API void r_egg_printf(REgg *egg, const char *fmt, ...) {
 R_API bool r_egg_assemble_asm(REgg *egg, char **asm_list) {
 	char *asm_name = NULL;
 	if (asm_list) {
-		char **asm_;
-
-		for (asm_ = asm_list; *asm_; asm_ += 2) {
+		char **asm_ = asm_list;
+		for (; *asm_; asm_ += 2) {
 			if (!strcmp (egg->remit->arch, asm_[0])) {
 				asm_name = asm_[1];
 				break;
@@ -338,14 +337,8 @@ R_API bool r_egg_assemble_asm(REgg *egg, char **asm_list) {
 	if (!asm_name) {
 		if (egg->remit == &emit_x86 || egg->remit == &emit_x64) {
 			asm_name = "x86.nz";
-		} else if (egg->remit == &emit_a64) {
+		} else if (egg->remit == &emit_a64 || egg->remit == &emit_arm) {
 			asm_name = "arm";
-		} else if (egg->remit == &emit_arm) {
-			if (egg->bits == 64) {
-				asm_name = "arm.nz";
-			} else {
-				asm_name = "arm";
-			}
 		}
 	}
 	bool ret = false;
@@ -362,7 +355,7 @@ R_API bool r_egg_assemble_asm(REgg *egg, char **asm_list) {
 			ret = true;
 			r_buf_append_bytes (egg->bin, asmcode->bytes, asmcode->len);
 		} else {
-			R_LOG_ERROR ("r_asm_massemble has failed");
+			R_LOG_ERROR ("r_asm_massemble has failed %s", code);
 		}
 		r_asm_code_free (asmcode);
 		free (code);
