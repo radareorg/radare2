@@ -5,6 +5,7 @@ r_egg_sources = [
   'emit_arm.c',
   'emit_trace.c',
   'emit_x64.c',
+  'emit_a64.c',
   'emit_esil.c',
   'emit_x86.c',
   #'p/egg_bind.c',

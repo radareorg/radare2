@@ -6005,22 +6005,30 @@ static int cmd_debug(void *data, const char *input) {
 				r_egg_setup (egg, asm_arch, asm_bits, 0, asm_os);
 				r_egg_reset (egg);
 				r_egg_load (egg, program, 0);
-				if (!r_egg_compile (egg)) {
-					R_LOG_ERROR ("Failed to compile");
-				}
-				RBuffer *b = r_egg_get_bin (egg);
-				r_asm_set_pc (core->rasm, core->offset);
-				r_reg_arena_push (core->dbg->reg);
-				ut64 tmpsz;
-				const ut8 *tmp = r_buf_data (b, &tmpsz);
-				if (tmpsz > 0) {
-					if (!r_debug_execute (core->dbg, tmp, tmpsz, NULL, false, false)) {
-						R_LOG_ERROR ("Failed to inject code");
+				if (r_egg_compile (egg)) {
+					// assemble the blob
+					if (r_egg_assemble (egg)) {
+						RBuffer *b = r_egg_get_bin (egg);
+						r_asm_set_pc (core->rasm, core->offset);
+						r_reg_arena_push (core->dbg->reg);
+						ut64 tmpsz;
+						const ut8 *tmp = r_buf_data (b, &tmpsz);
+						if (tmpsz > 0) {
+							if (!r_debug_execute (core->dbg, tmp, tmpsz, NULL, false, false)) {
+								R_LOG_ERROR ("Failed to inject code");
+							}
+						} else {
+							R_LOG_ERROR ("No egg program compiled to execute");
+						}
+						r_reg_arena_pop (core->dbg->reg);
+					} else {
+						char *code = r_buf_tostring (egg->buf);
+						R_LOG_ERROR ("Failed to assemble '%s'", code);
+						free (code);
 					}
 				} else {
-					R_LOG_ERROR ("No egg program compiled to execute");
+					R_LOG_ERROR ("Cannot compile the given egg program");
 				}
-				r_reg_arena_pop (core->dbg->reg);
 			}
 			break;
 		case 's': // "dxs"
