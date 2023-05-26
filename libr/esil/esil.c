@@ -3798,6 +3798,10 @@ R_API int r_esil_condition(REsil *esil, const char *str) {
 #define	OT_REGW	R_ESIL_OP_TYPE_REG_WRITE
 #define	OT_MEMW	R_ESIL_OP_TYPE_MEM_WRITE
 #define	OT_MEMR	R_ESIL_OP_TYPE_MEM_READ
+#if R2_590
+#define	OT_FLAG R_ESIL_OP_TYPE_FLAG
+#define	OT_TRAP R_ESIL_OP_TYPE_TRAP
+#endif
 
 R_API void r_esil_setup_macros(REsil *esil) {
 	r_return_if_fail (esil);
@@ -3820,8 +3824,8 @@ R_API void r_esil_setup_ops(REsil *esil) {
 	r_return_if_fail (esil);
 	OP ("$", esil_interrupt, 0, 1, OT_UNK); // hm, type seems a bit wrong
 	OP ("#!", esil_cmd, 0, 1, OT_UNK); // hm, type seems a bit wrong
-	OP ("()", esil_syscall, 0, 1, OT_UNK);  // same
-	OP ("$z", esil_zf, 1, 0, OT_UNK);
+	OP ("()", esil_syscall, 0, 1, OT_UNK); // same as trap?
+	OP ("$z", esil_zf, 1, 0, OT_UNK); // add OT_FLAG
 	OP ("$c", esil_cf, 1, 1, OT_UNK);
 	OP ("$b", esil_bf, 1, 1, OT_UNK);
 	OP ("$p", esil_pf, 1, 0, OT_UNK);
@@ -3944,7 +3948,7 @@ R_API void r_esil_setup_ops(REsil *esil) {
 	OP ("DUP", esil_dup, 2, 1, OT_UNK);
 	OP ("NUM", esil_num, 1, 1, OT_UNK);
 	OP ("SWAP", esil_swap, 2, 2, OT_UNK);
-	OP ("TRAP", esil_trap, 0, 2, OT_UNK);
+	OP ("TRAP", esil_trap, 0, 2, OT_UNK); // syscall?
 	OP ("BITS", esil_bits, 1, 0, OT_UNK);
 	OP ("SETJT", esil_set_jump_target, 0, 1, OT_UNK);
 	OP ("SETJTS", esil_set_jump_target_set, 0, 1, OT_UNK);
