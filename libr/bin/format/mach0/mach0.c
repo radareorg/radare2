@@ -4343,7 +4343,7 @@ ut64 MACH0_(get_main)(RBinFile *bf, struct MACH0_(obj_t) *bin) {
 	// dummy call to initialize things
 	free (MACH0_(get_entrypoint)(bin));
 
-	bin->main_addr = 0;
+	bin->main_addr = UT64_MAX;
 
 	if (addr == UT64_MAX && bin->main_cmd.cmd == LC_MAIN) {
 		addr = bin->entry + bin->baddr;
