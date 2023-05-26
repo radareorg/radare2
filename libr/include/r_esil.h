@@ -30,6 +30,11 @@ enum {
 	R_ESIL_OP_TYPE_REG_WRITE = 0x10,
 	R_ESIL_OP_TYPE_MATH = 0x20,
 	R_ESIL_OP_TYPE_CUSTOM = 0x40
+#if R2_590
+	,
+	R_ESIL_OP_TYPE_FLAG = 0x80,
+	R_ESIL_OP_TYPE_TRAP = 0x100 // syscall, interrupts, breakpoints, ...
+#endif
 };
 
 // this is 80-bit offsets so we can address every piece of esil in an instruction
