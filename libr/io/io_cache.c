@@ -229,9 +229,6 @@ R_API bool r_io_cache_read(RIO *io, ut64 addr, ut8 *buf, int len) {
 			iter++;
 			continue;
 		}
-		if (count > 32) {
-			break;
-		}
 		// eprintf ("inrange (%llx %d)\n", begin, (int)(end - begin));
 		if (read > 0) {
 			memcpy (buf + buf_offset, cache->data + cache_offset, read);
