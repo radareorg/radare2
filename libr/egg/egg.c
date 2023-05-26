@@ -350,15 +350,24 @@ R_API bool r_egg_assemble_asm(REgg *egg, char **asm_list) {
 		// r_asm_set_syntax (egg->rasm, R_ARCH_SYNTAX_INTEL);
 		r_arch_config_set_syntax (egg->rasm->config, R_ARCH_SYNTAX_INTEL);
 		char *code = r_buf_tostring (egg->buf);
-		RAsmCode *asmcode = r_asm_massemble (egg->rasm, code);
-		if (asmcode && asmcode->len > 0) {
-			ret = true;
-			r_buf_append_bytes (egg->bin, asmcode->bytes, asmcode->len);
+		if (R_STR_ISEMPTY (code)) {
+			if (r_buf_size (egg->bin) == 0) {
+				R_LOG_DEBUG ("The egg compiler generated no code to assemble");
+				ret = true;
+			} else {
+				ret = true;
+			}
 		} else {
-			R_LOG_ERROR ("r_asm_massemble has failed %s", code);
+			RAsmCode *asmcode = r_asm_massemble (egg->rasm, code);
+			if (asmcode && asmcode->len > 0) {
+				ret = true;
+				r_buf_append_bytes (egg->bin, asmcode->bytes, asmcode->len);
+			} else {
+				R_LOG_ERROR ("r_asm_massemble has failed %s", code);
+			}
+			r_asm_code_free (asmcode);
+			free (code);
 		}
-		r_asm_code_free (asmcode);
-		free (code);
 	} else {
 		R_LOG_ERROR ("Cannot find a valid assembler");
 	}
@@ -395,7 +404,6 @@ R_API bool r_egg_compile(REgg *egg) {
 		R_LOG_ERROR ("expected '}' at the end of the file. %d left", egg->context);
 		return false;
 	}
-	// return r_egg_assemble (egg);
 	return true;
 }
 
