@@ -1210,9 +1210,7 @@ static Sdb *store_versioninfo_gnu_verdef(ELFOBJ *bin, Elf_(Shdr) *shdr, int sz) 
 
 	size_t shsize = shdr->sh_size;
 	if (shdr->sh_size > bin->size) {
-		if (bin->verbose) {
-			eprintf ("Truncating shsize from %d to %d\n", (int)shdr->sh_size, (int)bin->size);
-		}
+		R_LOG_DEBUG ("Truncating shsize from %d to %d", (int)shdr->sh_size, (int)bin->size);
 		shsize = bin->size > shdr->sh_offset ? bin->size - shdr->sh_offset : bin->size;
 	}
 
@@ -1855,7 +1853,7 @@ static ut64 get_import_addr(ELFOBJ *bin, int sym) {
 	case EM_LOONGARCH:
 		return get_import_addr_loongarch(bin, rel);
 	default:
-		eprintf ("Unsupported relocs type %" PFMT64u " for arch %d\n",
+		R_LOG_WARN ("Unsupported relocs type %" PFMT64u " for arch %d",
 				(ut64) rel->type, bin->ehdr.e_machine);
 		return UT64_MAX;
 	}
@@ -2083,7 +2081,7 @@ ut64 Elf_(r_bin_elf_get_main_offset)(ELFOBJ *bin) {
 		/* non-thumb entry points */
 		if (!memcmp (buf, "\x00\xb0\xa0\xe3\x00\xe0\xa0\xe3", 8)) {
 			if (buf[0x40 + 2] == 0xff && buf[0x40 + 3] == 0xeb) {
-				// eprintf ("custom\n");
+				// nothing may happen
 			} else if (!memcmp (buf + 0x28 + 2, "\xff\xeb", 2)) {
 				return Elf_(r_bin_elf_v2p) (bin, r_read_le32 (&buf[0x34]) & ~1);
 			}
@@ -4291,7 +4289,7 @@ typedef struct import_info_t {
 	int nsym;
 } ImportInfo;
 
-static RVector *_load_additional_imported_symbols (ELFOBJ *bin, ImportInfo *import_info) {
+static RVector *_load_additional_imported_symbols(ELFOBJ *bin, ImportInfo *import_info) {
 	// Elf_(fix_symbols) may find additional symbols, some of which could be
 	// imported symbols. Let's reserve additional space for them.
 	int nsym = import_info->nsym;
