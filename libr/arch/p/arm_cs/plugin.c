@@ -5,8 +5,8 @@
 #include <capstone/capstone.h>
 #include <capstone/arm.h>
 #include <r_util/r_assert.h>
-#include "../arm/arm_hacks.inc"
-#include "../arm/asm_arm_hacks.inc"
+#include "../arm/arm_hacks.inc.c"
+#include "../../../anal/p/anal_asm_arm_hacks.inc.c"
 
 typedef char RStringShort[32];
 
@@ -4613,11 +4613,7 @@ static bool decode(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
 	return analop (as, op, op->addr, op->bytes, op->size, mask) >= 1;
 }
 
-<<<<<<< HEAD:libr/anal/p/anal_arm_cs.c
-#include "anal_arm_regprofile.inc.c"
-=======
-#include "./arm_regprofile.inc"
->>>>>>> 5e04cacfe8 (Migrate arm cs plugin ##arch):libr/arch/p/arm_cs/plugin.c
+#include "../arm/regprofile.inc.c"
 
 static int archinfo(RArchSession *as, ut32 q) {
 	switch (q) {

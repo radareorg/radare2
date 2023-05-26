@@ -89,7 +89,7 @@ static void op_fillval(RAnalOp *op, csh handle, cs_insn *insn) {
 	}
 }
 
-static int get_capstone_mode(RAnal *a) {
+static int get_capstone_mode(RArchSession *as) {
 	int mode = CS_MODE_LITTLE_ENDIAN;
 #if 0
 	// XXX capstone doesnt support big endian sparc, this code does nothing, so we need to swap around
@@ -113,6 +113,7 @@ typedef struct plugin_data_t {
 	RRegItem reg;
 } PluginData;
 
+#if 0
 static void op_fillval(PluginData *pd, RAnalOp *op, csh handle, cs_insn *insn) {
 	RRegItem *reg = &pd->reg;
 	RAnalValue *val;
@@ -121,8 +122,7 @@ static void op_fillval(PluginData *pd, RAnalOp *op, csh handle, cs_insn *insn) {
 		if (INSOP (0).type == SPARC_OP_MEM) {
 			memset (reg, 0, sizeof (RRegItem));
 			val = r_vector_push (&op->srcs, NULL);
-			val->reg = reg;
-			parse_reg_name (val->reg, handle, insn, 0);
+			val->reg = parse_reg_name (handle, insn, 0);
 			val->delta = INSOP(0).mem.disp;
 		}
 		break;
@@ -130,13 +130,13 @@ static void op_fillval(PluginData *pd, RAnalOp *op, csh handle, cs_insn *insn) {
 		if (INSOP (1).type == SPARC_OP_MEM) {
 			memset (reg, 0, sizeof (RRegItem));
 			val = r_vector_push (&op->dsts, NULL);
-			val->reg = reg;
-			parse_reg_name (val->reg, handle, insn, 1);
+			val->reg = parse_reg_name (handle, insn, 1);
 			val->delta = INSOP(1).mem.disp;
 		}
 		break;
 	}
 }
+#endif
 
 static csh cs_handle_for_session(RArchSession *as) {
 	r_return_val_if_fail (as && as->data, 0);
@@ -356,7 +356,8 @@ performed in big-endian byte order.
 			break;
 		}
 		if (mask & R_ARCH_OP_MASK_VAL) {
-			op_fillval (as->data, op, handle, insn);
+			// op_fillval (as->data, op, handle, insn);
+			op_fillval (op, handle, insn);
 		}
 		cs_free (insn, n);
 	}

@@ -20,7 +20,7 @@ static inline int cs_mode_for_session(RArchSession *as) {
 
 #define CSINC ARM64
 #define CSINC_MODE cs_mode_for_session (as)
-#include "../capstone.inc"
+#include "../capstone.inc.c"
 
 bool r_arm64_arch_cs_init(RArchSession *as, csh *cs_handle) {
 	return r_arch_cs_init (as, cs_handle);

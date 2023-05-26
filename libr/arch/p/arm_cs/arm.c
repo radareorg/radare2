@@ -7,7 +7,7 @@ static inline int cs_mode_for_session(RArchSession *as);
 
 #define CSINC ARM
 #define CSINC_MODE cs_mode_for_session (as)
-#include "../capstone.inc"
+#include "../capstone.inc.c"
 
 static inline int cs_mode_for_session(RArchSession *as) {
 	int mode = (as->config->bits == 16)? CS_MODE_THUMB: CS_MODE_ARM;
