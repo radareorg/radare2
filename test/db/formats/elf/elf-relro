@@ -304,3 +304,40 @@ nth vaddr      bind   type   lib name
 
 EOF
 RUN
+
+NAME=ELF: arm64 missing internal plt imports
+BROKEN=1
+FILE=bins/elf/libcurl.so.4.2.0
+CMDS=<<EOF
+s section..plt
+pd 20
+EOF
+EXPECT=<<EOF
+            ;-- section..plt:
+            0x000074dc      04e02de5       str lr, [sp, -4]!           ; [09] -r-x section size 4964 named .plt
+            0x000074e0      04e09fe5       ldr lr, [0x000074ec]        ; [0x74ec:4]=0x45610
+            0x000074e4      0ee08fe0       add lr, pc, lr
+            0x000074e8      08f0bee5       ldr pc, [lr, 8]!
+            0x000074ec      10560400       andeq r5, r4, r0, lsl r6
+            ;-- gnutls_x509_crt_get_expiration_time:
+            0x000074f0      00c68fe2       add ip, pc, 0, 12
+            0x000074f4      45ca8ce2       add ip, ip, 0x45000
+            0x000074f8      10f6bce5       ldr pc, [ip, 0x610]!
+            ;-- Curl_getaddrinfo_ex:
+            0x000074fc      00c68fe2       add ip, pc, 0, 12
+            0x00007500      45ca8ce2       add ip, ip, 0x45000
+            0x00007504      08f6bce5       ldr pc, [ip, 0x608]!
+            ;-- Curl_cookie_add:
+            0x00007508      00c68fe2       add ip, pc, 0, 12
+            0x0000750c      45ca8ce2       add ip, ip, 0x45000
+            0x00007510      00f6bce5       ldr pc, [ip, 0x600]!
+            ;-- Curl_unencode_gzip_write:
+            0x00007514      00c68fe2       add ip, pc, 0, 12
+            0x00007518      45ca8ce2       add ip, ip, 0x45000
+            0x0000751c      f8f5bce5       ldr pc, [ip, 0x5f8]!
+            ;-- freeifaddrs:
+            0x00007520      00c68fe2       add ip, pc, 0, 12
+            0x00007524      45ca8ce2       add ip, ip, 0x45000
+            0x00007528      f0f5bce5       ldr pc, [ip, 0x5f0]!
+EOF
+RUN
