@@ -1,19 +1,18 @@
-/* pancake // nopcode.org 2010-2011 -- arm emiter */
+/* pancake // nopcode.org 2023 -- arm64 emiter */
 
 #include <r_egg.h>
 #define attsyntax 0
 
 #define EMIT_NAME emit_arm
-#define R_ARCH "arm"
+#define R_ARCH "arm64"
 #define R_SZ 8
 #define R_SP "sp"
 #define R_BP "fp"
 #define R_AX "r7"
-#define R_GP { "r0", "r1", "r2", "r3", "r4" }
-#define R_TMP "r9"
+#define R_GP { "x0", "x1", "x2", "x3", "x4" }
+#define R_TMP "x9"
 #define R_NGP 5
 
-// no attsyntax for arm
 static char *regs[] = R_GP;
 static int lastarg = 0;
 static char lastargs[16][32];
@@ -42,21 +41,20 @@ static char *emit_syscall(REgg *egg, int num) {
 }
 
 static void emit_frame(REgg *egg, int sz) {
-	r_egg_printf (egg, "  push {fp,lr}\n");
+	// r_egg_printf (egg, "  push {fp,lr}\n");
 	if (sz > 0) {
 		r_egg_printf (egg,
-			// "  mov "R_BP", "R_SP"\n"
-			"  add fp, sp, $4\n"	// size of arguments
-			"  sub sp, %d\n", sz);	// size of stackframe 8, 16, ..
+			"  add x29, sp, $4\n"      // size of arguments
+			"  sub sp, sp, %d\n", sz); // size of stackframe 8, 16, ..
 	}
 }
 
 static void emit_frame_end(REgg *egg, int sz, int ctx) {
 	if (sz > 0) {
-		r_egg_printf (egg, "  add sp, fp, %d\n", sz);
+		r_egg_printf (egg, "  add sp, sp, %d\n", sz);
 	}
 	if (ctx > 0) {
-		r_egg_printf (egg, "  pop {fp,pc}\n");
+		// XXX r_egg_printf (egg, "  pop {fp,pc}\n");
 	}
 }
 
@@ -83,6 +81,7 @@ static void emit_syscall_args(REgg *egg, int nargs) {
 }
 
 static void emit_set_string(REgg *egg, const char *dstvar, const char *str, int j) {
+	char *str_escaped;
 	int rest, off = 0;
 	off = strlen (str) + 1;
 	rest = (off % 4);
@@ -94,24 +93,25 @@ static void emit_set_string(REgg *egg, const char *dstvar, const char *str, int 
 	// XXX: does not handle \n and so on.. must use r_util
 	// use r_str_escape to handle \n
 	// do not forget mem leak
-	r_egg_printf (egg, ".string \"%s\"\n", str = r_str_escape (str));
-	free ((char *) str);
+	str_escaped = r_str_escape (str);
+	r_egg_printf (egg, ".string \"%s\"\n", str);
+	free (str_escaped);
 	if (rest) {
 		r_egg_printf (egg, ".fill %d, 1, 0\n", (rest));
 	}
-	r_egg_printf (egg, "  sub r0, pc, %d\n", off + 12);
+	r_egg_printf (egg, "  sub x0, pc, %d\n", off + 12);
 	{
 		char str[32], *p = r_egg_mkvar (egg, str, dstvar, 0);
 		// r_egg_printf (egg, "DSTVAR=%s --> %s\n", dstvar, p);
-		r_egg_printf (egg, "  str r0, [%s]\n", p);
+		r_egg_printf (egg, "  str x0, [%s]\n", p);
 		free (p);
 	}
 }
 
 static void emit_jmp(REgg *egg, const char *str, int atr) {
 	if (atr) {
-		r_egg_printf (egg, "  ldr r0, %s", str);
-		r_egg_printf (egg, "  bx r0\n");
+		r_egg_printf (egg, "  ldr x0, %s", str);
+		r_egg_printf (egg, "  br x0\n");
 	} else {
 		r_egg_printf (egg, "  b %s\n", str);
 	}
@@ -121,13 +121,12 @@ static void emit_call(REgg *egg, const char *str, int atr) {
 	int i;
 	// r_egg_printf (egg, " ARGS=%d CALL(%s,%d)\n", lastarg, str, atr);
 	for (i = 0; i < lastarg; i++) {
-		r_egg_printf (egg, "  ldr r%d, [%s]\n", lastarg - 1 - i, lastargs[i]);
+		r_egg_printf (egg, "  ldr x%d, [%s]\n", lastarg - 1 - i, lastargs[i]);
 		lastargs[i][0] = 0;
 	}
-
 	if (atr) {
-		r_egg_printf (egg, "  ldr r0, %s", str);
-		r_egg_printf (egg, "  blx r0\n");
+		r_egg_printf (egg, "  ldr x0, %s", str);
+		r_egg_printf (egg, "  blr x0\n");
 	} else {
 		r_egg_printf (egg, "  bl %s\n", str);
 	}
@@ -148,19 +147,20 @@ static void emit_arg(REgg *egg, int xs, int num, const char *str) {
 			if (!atoi (str)) {
 				R_LOG_WARN ("probably a bug?");
 			}
-			r_egg_printf (egg, "  mov r0, %s\n", str);
+			r_egg_printf (egg, "  mov x0, %s\n", str);
 			snprintf (lastargs[num - 1], sizeof (lastargs[0]), "sp, %d", 8 + (num * 4));
-			r_egg_printf (egg, "  str r0, [%s]\n", lastargs[num - 1]);
+			r_egg_printf (egg, "  str x0, [%s]\n", lastargs[num - 1]);
 		}
 		break;
 	case '*':
+		r_egg_printf (egg, "  stp x29, x30, [sp, %s]\n", str);
 		r_egg_printf (egg, "  push {%s}\n", str);
 		break;
 	case '&':
 		if (d) {
 			r_egg_printf (egg, "  add "R_BP ", %d\n", d);
 		}
-		r_egg_printf (egg, "  push { "R_BP " }\n");
+		// r_egg_printf (egg, "  push { "R_BP " }\n");
 		if (d) {
 			r_egg_printf (egg, "  sub "R_BP ", %d\n", d);
 		}
@@ -169,7 +169,7 @@ static void emit_arg(REgg *egg, int xs, int num, const char *str) {
 }
 
 static void emit_get_result(REgg *egg, const char *ocn) {
-	r_egg_printf (egg, "  mov %s, r0\n", ocn);
+	r_egg_printf (egg, "  mov %s, x0\n", ocn);
 }
 
 static void emit_restore_stack(REgg *egg, int size) {
@@ -178,7 +178,8 @@ static void emit_restore_stack(REgg *egg, int size) {
 }
 
 static void emit_get_while_end(REgg *egg, char *str, const char *ctxpush, const char *label) {
-	sprintf (str, "  push {%s}\n  b %s\n", ctxpush, label);
+	// XXX sprintf (str, "  push {%s}\n  b %s\n", ctxpush, label);
+	// not implemented
 }
 
 static void emit_while_end(REgg *egg, const char *labelback) {
@@ -197,11 +198,11 @@ static void emit_get_var(REgg *egg, int type, char *out, int idx) {
 }
 
 static void emit_trap(REgg *egg) {
-	r_egg_printf (egg, "  udf 16\n");
+	r_egg_printf (egg, "  brk 0\n");
 }
 
 static void emit_load_ptr(REgg *egg, const char *dst) {
-	r_egg_printf (egg, "  ldr r0, [fp, %d]\n", atoi (dst));
+	r_egg_printf (egg, "  ldr x0, [fp, %d]\n", atoi (dst));
 }
 
 static void emit_branch(REgg *egg, char *b, char *g, char *e, char *n, int sz, const char *dst) {
@@ -232,7 +233,7 @@ static void emit_branch(REgg *egg, char *b, char *g, char *e, char *n, int sz, c
 		arg++;		/* for <=, >=, ... */
 	}
 	p = r_egg_mkvar (egg, str, arg, 0);
-	r_egg_printf (egg, "  pop "R_AX "\n");	/* TODO: add support for more than one arg get arg0 */
+	// r_egg_printf (egg, "  pop "R_AX "\n");	/* TODO: add support for more than one arg get arg0 */
 	r_egg_printf (egg, "  cmp %s, "R_AX "\n", p);
 	// if (context>0)
 	r_egg_printf (egg, "  %s %s\n", op, dst);

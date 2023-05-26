@@ -91,11 +91,10 @@ typedef struct r_egg_lang_t {
 } REggLang;
 
 typedef struct r_egg_t {
-	RBuffer *src;
-	RBuffer *buf;
-	RBuffer *bin;
+	RBuffer *src; // input source code
+	RBuffer *buf; // output compiled bytes
+	RBuffer *bin; // input binary data
 	RList *list;
-	//RList *shellcodes; // XXX is plugins nao?
 	RAsm *rasm;
 	RAnal *anal;/// XXX this is temporary hack until asm can use arch
 	RSyscall *syscall;
@@ -113,6 +112,7 @@ typedef struct r_egg_t {
 
 /* XXX: this may fail in different arches */
 #if 0
+// XXX should be a ph subcommand to hash strings. ?h must be removed
 r2 -q - <<EOF
 ?e #define R_EGG_OS_LINUX \`?h linux\`
 ?e #define R_EGG_OS_OSX \`?h osx\`
