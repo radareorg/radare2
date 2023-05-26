@@ -3858,7 +3858,7 @@ static inline ut64 parse_toffset(ELFOBJ *bin, int type, ut64 st_value, int i) {
 
 		ut64 offset;
 		if ((offset = get_import_addr (bin, i)) == -1) {
-			offset = 0;
+			offset = st_value;
 		}
 		return offset;
 	}
