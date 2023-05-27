@@ -18,26 +18,6 @@ typedef struct {
 	// bool quiet;
 } REggState;
 
-static void __load_plugins(REggState *es);
-
-static REggState *__es_new(void) {
-	REggState *es = R_NEW0 (REggState);
-	if (es) {
-		es->l = r_lib_new (NULL, NULL);
-		es->e = r_egg_new ();
-		__load_plugins (es);
-	}
-	return es;
-}
-
-static void __es_free(REggState *es) {
-	if (es) {
-		r_egg_free (es->e);
-		r_lib_free (es->l);
-		free (es);
-	}
-}
-
 /* egg callback */
 static int __lib_egg_cb(RLibPlugin *pl, void *user, void *data) {
 	REggPlugin *hand = (REggPlugin *)data;
@@ -47,10 +27,6 @@ static int __lib_egg_cb(RLibPlugin *pl, void *user, void *data) {
 }
 
 static void __load_plugins(REggState *es) {
-	if (r_sys_getenv_asbool ("RAGG2_NOPLUGINS")) {
-		return;
-	}
-
 	r_lib_add_handler (es->l, R_LIB_TYPE_EGG, "egg plugins", &__lib_egg_cb, NULL, es);
 
 	char *path = r_sys_getenv (R_LIB_ENV);
@@ -75,6 +51,26 @@ static void __load_plugins(REggState *es) {
 	free (bindingsdir);
 
 	free (path);
+}
+
+static REggState *__es_new(bool load_plugins) {
+	REggState *es = R_NEW0 (REggState);
+	if (es) {
+		es->l = r_lib_new (NULL, NULL);
+		es->e = r_egg_new ();
+		if (load_plugins) {
+			__load_plugins (es);
+		}
+	}
+	return es;
+}
+
+static void __es_free(REggState *es) {
+	if (es) {
+		r_egg_free (es->e);
+		r_lib_free (es->l);
+		free (es);
+	}
 }
 
 static int usage(int v) {
@@ -115,7 +111,8 @@ static int usage(int v) {
 			" -w [off:hex]    patch hexpairs at given offset\n"
 			" -x              execute\n"
 			" -X [hexpairs]   execute rop chain, using the stack provided\n"
-			" -z              output in C string syntax\n");
+			" -z              output in C string syntax\n"
+			"R2_NOPLUGINS=1   do not load any plugin\n");
 	}
 	return 1;
 }
@@ -219,8 +216,9 @@ R_API int r_main_ragg2(int argc, const char **argv) {
 	if (argc < 2) {
 		return usage (1);
 	}
+	const bool load_plugins = !r_sys_getenv_asbool ("R2_NOPLUGINS");
 
-	REggState *es = __es_new ();
+	REggState *es = __es_new (load_plugins);
 
 	RGetopt opt;
 	r_getopt_init (&opt, argc, argv, "a:b:B:c:C:d:D:e:E:f:Fhi:I:k:Ln:N:o:Op:P:q:rsS:vw:xX:z");
