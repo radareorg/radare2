@@ -36,7 +36,10 @@ static RAsmState *__as_new(void) {
 		as->a->num = r_num_new (NULL, NULL, NULL);
 		as->anal->config = r_ref_ptr (as->a->config);
 		r_anal_bind (as->anal, &as->a->analb);
-		__load_plugins (as);
+		const bool load_plugins = !r_sys_getenv_asbool ("R2_NOPLUGINS");
+		if (load_plugins) {
+			__load_plugins (as);
+		}
 		__as_set_archbits (as);
 	}
 	return as;
@@ -344,7 +347,7 @@ static int rasm_show_help(int v) {
 			" -LLL         list RArch plugins (see arch.arch=?) combines with -j\n"
 			" -o,-@ [addr] set start address for code (default 0)\n"
 			" -O [file]    output file name (rasm2 -Bf a.asm -O a)\n"
-			" -N           same as r2 -N (or RASM2_NOPLUGINS) (not load any plugin)\n"
+			" -N           same as r2 -N (or R2_NOPLUGINS) (not load any plugin)\n"
 			" -p           run SPP over input for assembly\n"
 			" -q           quiet mode\n"
 			" -r           output in radare commands\n"
@@ -355,12 +358,12 @@ static int rasm_show_help(int v) {
 			" If '-l' value is greater than output length, output is padded with nops\n"
 			" If the last argument is '-' reads from stdin\n");
 		printf ("Environment:\n"
-			" RASM2_NOPLUGINS   do not load shared plugins (speedup loading)\n"
-			" RASM2_ARCH        same as rasm2 -a\n"
-			" RASM2_BITS        same as rasm2 -b\n"
+			" R2_NOPLUGINS   do not load shared plugins (speedup loading)\n"
 			" R2_LOG_LEVEL=X    change the log level\n"
 			" R2_DEBUG          if defined, show error messages and crash signal\n"
 			" R2_DEBUG_ASSERT=1 lldb -- r2 to get proper backtrace of the runtime assert\n"
+			" RASM2_ARCH        same as rasm2 -a\n"
+			" RASM2_BITS        same as rasm2 -b\n"
 			"");
 	}
 	if (v == 2) {
@@ -665,11 +668,6 @@ static int print_assembly_output(RAsmState *as, const char *buf, ut64 offset, ut
 }
 
 static void __load_plugins(RAsmState *as) {
-	char *tmp = r_sys_getenv ("RASM2_NOPLUGINS");
-	if (tmp) {
-		free (tmp);
-		return;
-	}
 	// r_lib_add_handler (as->l, R_LIB_TYPE_ASM, "(dis)assembly plugins", &__lib_asm_cb, NULL, as);
 	r_lib_add_handler (as->l, R_LIB_TYPE_ANAL, "analysis/emulation plugins", &__lib_anal_cb, NULL, as);
 	r_lib_add_handler (as->l, R_LIB_TYPE_ARCH, "architecture plugins", &__lib_arch_cb, NULL, as);
@@ -694,8 +692,6 @@ static void __load_plugins(RAsmState *as) {
 	free (plugindir);
 	free (extrasdir);
 	free (bindingsdir);
-
-	free (tmp);
 	free (path);
 }
 

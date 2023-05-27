@@ -765,6 +765,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 				run_rc = false;
 			} else {
 				load_l = false;
+				r_sys_setenv ("R2_NOPLUGINS", "1");
 			}
 			break;
 		case 'p':
@@ -1049,8 +1050,6 @@ R_API int r_main_radare2(int argc, const char **argv) {
 	}
 
 	if (!load_l || r_sys_getenv_asbool ("R2_NOPLUGINS")) {
-		r_sys_setenv ("RASM2_NOPLUGINS", "1");
-		r_sys_setenv ("RABIN2_NOPLUGINS", "1");
 		r_config_set_b (r->config, "cfg.plugins", false);
 	}
 	if (r_config_get_b (r->config, "cfg.plugins")) {

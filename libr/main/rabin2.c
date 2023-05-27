@@ -79,13 +79,13 @@ static int rabin_show_help(int v) {
 	}
 	if (v) {
 		printf ("Environment:\n"
+		" R2_NOPLUGINS:     1|0|               # do not load shared plugins (speedup loading)\n"
 		" RABIN2_CHARSET:   e cfg.charset      # set default value charset for -z strings\n"
 		" RABIN2_DEBASE64:  e bin.str.debase64 # try to debase64 all strings\n"
 		" RABIN2_DEMANGLE=0:e bin.demangle     # do not demangle symbols\n"
 		" RABIN2_DMNGLRCMD: e bin.demanglercmd # try to purge false positives\n"
 		" RABIN2_LANG:      e bin.lang         # assume lang for demangling\n"
 		" RABIN2_MAXSTRBUF: e bin.str.maxbuf   # specify maximum buffer size\n"
-		" RABIN2_NOPLUGINS: 1|0|               # do not load shared plugins (speedup loading)\n"
 		" RABIN2_PDBSERVER: e pdb.server       # use alternative PDB server\n"
 		" RABIN2_PREFIX:    e bin.prefix       # prefix symbols/sections/relocs with a specific string\n"
 		" RABIN2_STRFILTER: e bin.str.filter   # r2 -qc 'e bin.str.filter=?" "?' -\n"
@@ -586,7 +586,7 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 		return 1;
 	}
 
-	if (!(tmp = r_sys_getenv ("RABIN2_NOPLUGINS"))) {
+	if (!(tmp = r_sys_getenv ("R2_NOPLUGINS"))) {
 		char *homeplugindir = r_xdg_datadir ("plugins");
 		char *plugindir = r_str_r2_prefix (R2_PLUGINS);
 		char *extrasdir = r_str_r2_prefix (R2_EXTRAS);
