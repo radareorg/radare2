@@ -337,7 +337,7 @@ static struct optype {
 	{ R_ANAL_OP_TYPE_CASE, "case" },
 	{ R_ANAL_OP_TYPE_CPL, "cpl" },
 	{ R_ANAL_OP_TYPE_CRYPTO, "crypto" },
-	{ R_ANAL_OP_TYPE_LENGTH, "lenght" },
+	{ R_ANAL_OP_TYPE_LENGTH, "length" },
 	{ R_ANAL_OP_TYPE_ABS, "abs" },
 };
 
