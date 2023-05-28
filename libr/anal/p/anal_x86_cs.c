@@ -3139,6 +3139,13 @@ static void anop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh 
 		op1_memimmhandle (op, insn, addr, regsz);
 		}
 		break;
+	// comiss
+	case X86_INS_COMISS:
+	case X86_INS_UCOMISS:
+	case X86_INS_VCOMISS:
+	case X86_INS_VUCOMISS:
+		op->family = R_ANAL_OP_FAMILY_SIMD;
+		break;
 	case X86_INS_ROL:
 	case X86_INS_RCL:
 		// TODO: RCL Still does not work as intended
