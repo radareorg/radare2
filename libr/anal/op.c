@@ -599,6 +599,7 @@ R_API const char *r_anal_op_family_tostring(int n) {
 	case R_ANAL_OP_FAMILY_CRYPTO: return "crpt";
 	case R_ANAL_OP_FAMILY_IO: return "io";
 	case R_ANAL_OP_FAMILY_VIRT: return "virt";
+	case R_ANAL_OP_FAMILY_SIMD: return "simd";
 	}
 	return NULL;
 }
@@ -618,6 +619,7 @@ static const struct op_family of[] = {
 	{ "io", R_ANAL_OP_FAMILY_IO },
 	{ "sec", R_ANAL_OP_FAMILY_SECURITY },
 	{ "thread", R_ANAL_OP_FAMILY_THREAD },
+	{ "simd", R_ANAL_OP_FAMILY_SIMD },
 };
 
 R_API int r_anal_op_family_from_string(const char *f) {
