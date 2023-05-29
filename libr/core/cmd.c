@@ -5009,8 +5009,13 @@ beach:
 		char *old_grep = grep;
 		grep = unescape_special_chars (old_grep, SPECIAL_CHARS_REGULAR);
 		free (old_grep);
+#if R2_590
+		r_cons_grep_expression (grep);
+		free (grep);
+#else
+		r_cons_grep_process (grep);
+#endif
 	}
-	r_cons_grep_process (grep);
 	if (scr_html != -1) {
 		r_cons_flush ();
 		r_config_set_i (core->config, "scr.html", scr_html);
