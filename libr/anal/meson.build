@@ -52,7 +52,6 @@ r_anal_sources = [
   'p/anal_gb.c',
   '../arch/p/h8300/plugin.c',
   '../arch/p/h8300/h8300_disas.c',
-  'p/anal_i8080.c',
   'p/anal_java.c',
   '../arch/p/lh5801/plugin.c',
   'p/anal_m680x_cs.c',
