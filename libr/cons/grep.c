@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2022 - pancake, nibble */
+/* radare - LGPL - Copyright 2009-2023 - pancake, nibble */
 
 #include <r_cons.h>
 #include <r_util/r_print.h>
@@ -72,9 +72,10 @@ R_API void r_cons_grep_help(void) {
 
 #define R_CONS_GREP_BUFSIZE 4096
 
+// R2_590 - rename to public r_cons_grep_expression()
 static void parse_grep_expression(const char *str) {
-	static R_TH_LOCAL char buf[R_CONS_GREP_BUFSIZE];
-	static R_TH_LOCAL char *ptrs[R_CONS_GREP_COUNT];
+	char buf[R_CONS_GREP_BUFSIZE];
+	char *ptrs[R_CONS_GREP_COUNT];
 	int wlen, len, is_range, num_is_parsed, fail = false;
 	char *ptr, *optr, *ptr2, *ptr3, *end_ptr = NULL, last;
 	ut64 range_begin, range_end;
@@ -399,7 +400,7 @@ static char *find_next_intgrep(char *cmd, const char *quotes) {
 		if (p == cmd || *(p - 1) != '\\') {
 			return (char *)p;
 		}
-		//twiddle unescape
+		// twiddle unescape
 		r_str_cpy (p - 1, p);
 		cmd = p + 1;
 	} while (*cmd);
@@ -459,7 +460,6 @@ R_API void r_cons_grep_parsecmd(char *cmd, const char *quotestr) {
 
 R_API char *r_cons_grep_strip(char *cmd, const char *quotestr) {
 	char *ptr = NULL;
-
 	if (cmd) {
 		ptr = preprocess_filter_expr (cmd, quotestr);
 		r_str_trim (cmd);
@@ -467,6 +467,7 @@ R_API char *r_cons_grep_strip(char *cmd, const char *quotestr) {
 	return ptr;
 }
 
+// R2_590 - Deprecate this function. as its just an owned version of parse_grep_expression()
 R_API void r_cons_grep_process(char *grep) {
 	if (grep) {
 		parse_grep_expression (grep);
@@ -500,10 +501,8 @@ static int cmp(const void *a, const void *b) {
 		return ret;
 	}
 	if (da && db) {
-		int ret = strcmp (ca, cb);
-		free (da);
-		free (db);
-		return ret;
+		a = ca;
+		b = cb;
 	}
 	free (da);
 	free (db);
@@ -511,9 +510,7 @@ static int cmp(const void *a, const void *b) {
 }
 
 static bool gron(RStrBuf *sb, RJson *node, const char *root) {
-	if (!sb || !node || !root) {
-		return false;
-	}
+	r_return_val_if_fail (sb && node && root, false);
 	switch (node->type) {
 	case R_JSON_ARRAY:
 		{
@@ -560,9 +557,8 @@ static bool gron(RStrBuf *sb, RJson *node, const char *root) {
 	case R_JSON_DOUBLE:
 		r_strbuf_appendf (sb, "%s = %lf;\n", root, node->num.dbl_value);
 		break;
-		break;
 	default:
-		eprintf ("unk %s\n", r_json_type (node));
+		R_LOG_WARN ("unknown json type %s", r_json_type (node));
 		break;
 	}
 	return true;
