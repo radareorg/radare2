@@ -22,7 +22,7 @@ struct arg_t {
 	int type; /* 1 - next byte, 2 - next word, 3 - in opcode */
 	int shift;
 	int mask;
-	char **fmt;
+	const char **fmt;
 };
 
 typedef struct i8080_opcode_t {

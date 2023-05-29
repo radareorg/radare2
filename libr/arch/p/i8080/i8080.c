@@ -29,7 +29,7 @@ static bool is_branch (int type) {
 		);
 }
 
-static void i8080_disasm (RAnalOp *op, RStrBuf *sb) {
+void i8080_disasm (RAnalOp *op, RStrBuf *sb) {
 	const ut8 *buf = op->bytes;
 	const int instr = buf[0];
 	int data = 0;

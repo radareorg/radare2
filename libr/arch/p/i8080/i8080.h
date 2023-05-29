@@ -28,9 +28,9 @@
 #ifndef I8080DIS_H
 #define I8080DIS_H
 
-#include <r_util.h>
+#include <r_anal.h>
 
-static void i8080_disasm (RAnalOp *op, RStrBuf *sb);
+void i8080_disasm(RAnalOp *op, RStrBuf *sb);
 
 #endif
 

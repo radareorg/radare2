@@ -10,18 +10,16 @@
 #include "i8080.h"
 
 static bool decode (RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
-	const ut8 *buf = op->bytes;
-	const ut64 addr = op->addr;
-	if (op->size < 3) {
-		op->mnemonic = strdup ("invalid");
-		return false;
-	}
+//	if (op->size < 3) {
+//		op->mnemonic = strdup ("invalid");
+//		return false;
+//	}
 	RStrBuf *sb = r_strbuf_new ("");
+	i8080_disasm (op, sb);
 	if (mask & R_ARCH_OP_MASK_DISASM) {
-		i8080_disasm (op, sb);
 		op->mnemonic = r_strbuf_drain (sb);
 	} else {
-		i8080_disasm (op, sb);
+		r_strbuf_free (sb);
 	}
 	return op->size > 0;
 }
