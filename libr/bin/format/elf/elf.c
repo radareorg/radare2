@@ -2027,7 +2027,6 @@ static ut64 lookup_main_symbol_offset(ELFOBJ *eo) {
 			}
 		}
 	}
-
 	return UT64_MAX;
 }
 
@@ -2644,15 +2643,14 @@ char* Elf_(r_bin_elf_get_machine_name)(ELFOBJ *eo) {
 	case EM_AMDGPU:        return strdup ("AMD GPU architecture");
 	case EM_BPF:           return strdup ("Berkeley Packet Filter");
 	case EM_LOONGARCH:     return strdup ("Loongson Loongarch");
-
-	default:             return r_str_newf ("<unknown>: 0x%x", bin->ehdr.e_machine);
+	default: return r_str_newf ("<unknown>: 0x%x", eo->ehdr.e_machine);
 	}
 }
 
 char* Elf_(r_bin_elf_get_file_type)(ELFOBJ *bin) {
 	r_return_val_if_fail (bin, NULL);
 
-	ut32 e_type = (ut32)bin->ehdr.e_type; // cast to avoid warn in iphone-gcc, must be ut16
+	ut64 e_type = (ut64)bin->ehdr.e_type; // cast to avoid warn in iphone-gcc, must be ut16
 	switch (e_type) {
 	case ET_NONE: return strdup ("NONE (None)");
 	case ET_REL:  return strdup ("REL (Relocatable file)");
