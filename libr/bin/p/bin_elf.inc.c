@@ -407,7 +407,6 @@ static RList* imports(RBinFile *bf) {
 		if (!ptr) {
 			break;
 		}
-
 		ptr->name = strdup (import_symbol->name);
 		ptr->bind = import_symbol->bind;
 		ptr->type = import_symbol->type;
@@ -667,13 +666,8 @@ static void _patch_reloc(RBinObject *binobj, struct Elf_(r_bin_elf_obj_t) *bo, u
 		// only patch the relocs that are initialized with zeroes
 		// if the destination contains a different value it's a constant useful for static analysis
 		ut64 addr = r_read_le64 (buf);
-		if (addr) {
-			r_write_le64 (buf, A);
-			iob->write_at (iob->io, rel->rva, buf, 8);
-		} else {
-			r_write_le64 (buf, S);
-			iob->write_at (iob->io, rel->rva, buf, 8);
-		}
+		r_write_le64 (buf, addr? A: S);
+		iob->write_at (iob->io, rel->rva, buf, 8);
 #endif
 		break;
 	case EM_PPC64: {
@@ -972,7 +966,7 @@ static void lookup_sections(RBinFile *bf, RBinInfo *ret) {
 	bool is_go = false;
 	ret->has_retguard = -1;
 	r_list_foreach (sections_list, iter, section) {
-		if (ret->has_retguard != -1 && is_go == true) {
+		if (is_go && ret->has_retguard != -1) {
 			break;
 		}
 		if (strstr (section->name, "note.go.buildid") ||
@@ -997,8 +991,8 @@ static bool has_sanitizers(RBinFile *bf) {
 	RListIter *iter;
 	RBinImport *import;
 	r_list_foreach (imports_list, iter, import) {
-		if (strstr (import->name, "__sanitizer") ||
-		    strstr (import->name, "__ubsan")) {
+		const char *iname = import->name;
+		if (*iname == '_' && (strstr (iname, "__sanitizer") || strstr (iname, "__ubsan"))) {
 			ret = true;
 			break;
 		}
@@ -1008,16 +1002,15 @@ static bool has_sanitizers(RBinFile *bf) {
 }
 
 static RBinInfo* info(RBinFile *bf) {
-	RBinInfo *ret = NULL;
-	char *str;
-
-	if (!(ret = R_NEW0 (RBinInfo))) {
+	RBinInfo *ret = R_NEW0 (RBinInfo);
+	if (!ret) {
 		return NULL;
 	}
 	ret->file = bf->file
 		? strdup (bf->file)
 		: NULL;
 	void *obj = bf->o->bin_obj;
+	char *str;
 	if ((str = Elf_(r_bin_elf_get_rpath)(obj))) {
 		ret->rpath = strdup (str);
 		free (str);

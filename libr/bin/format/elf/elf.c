@@ -55,6 +55,15 @@ static inline bool is_elfclass64(Elf_(Ehdr) *h) {
 	return h->e_ident[EI_CLASS] == ELFCLASS64;
 }
 
+static bool is_intel(ELFOBJ *eo) {
+	switch (eo->ehdr.e_machine) {
+	case EM_386:
+	case EM_X86_64:
+		return true;
+	}
+	return false;
+}
+
 static bool is_mips_o32(Elf_(Ehdr) *h) {
 	if (h->e_ident[EI_CLASS] != ELFCLASS32) {
 		return false;
