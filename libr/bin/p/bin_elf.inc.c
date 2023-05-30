@@ -229,8 +229,8 @@ static RList* entries(RBinFile *bf) {
 		return NULL;
 	}
 
-	ELFOBJ* obj = bf->o->bin_obj;
-	ut64 paddr = Elf_(r_bin_elf_get_entry_offset) (obj);
+	ELFOBJ* eo = bf->o->bin_obj;
+	ut64 paddr = Elf_(r_bin_elf_get_entry_offset) (eo);
 	if (paddr != UT64_MAX) {
 		RBinAddr *ptr = R_NEW0 (RBinAddr);
 		if (!ptr) {
@@ -258,11 +258,11 @@ static RList* entries(RBinFile *bf) {
 			}
 		}
 		if (ptr->hvaddr == UT64_MAX) {
-			Elf_(r_bin_elf_p2v_new) (obj, ptr->hpaddr);
+			Elf_(r_bin_elf_p2v_new) (eo, ptr->hpaddr);
 		}
 
-		if (obj->ehdr.e_machine == EM_ARM) {
-			int bin_bits = Elf_(r_bin_elf_get_bits) (obj);
+		if (eo->ehdr.e_machine == EM_ARM) {
+			int bin_bits = Elf_(r_bin_elf_get_bits) (eo);
 			if (bin_bits != 64) {
 				ptr->bits = 32;
 				if (ptr->vaddr & 1) {
@@ -280,35 +280,36 @@ static RList* entries(RBinFile *bf) {
 
 	// add entrypoint for jni libraries
 	// NOTE: this is slow, we shouldnt find for java constructors here
-	const RVector *symbols = Elf_(r_bin_elf_load_symbols) (obj);
+	const RVector *symbols = Elf_(r_bin_elf_load_symbols) (eo);
 	if (!symbols) {
 		return ret;
 	}
 
 	RBinElfSymbol *symbol;
 	r_vector_foreach (symbols, symbol) {
-		if (strncmp (symbol->name, "Java", 4) || !r_str_endswith (symbol->name, "_init")) {
+		// why?
+		if (!r_str_startswith (symbol->name, "Java")) {
 			continue;
 		}
-
-		RBinAddr *ptr = R_NEW0 (RBinAddr);
-		if (!ptr) {
-			return ret;
+		if (!r_str_endswith (symbol->name, "_init")) {
+			continue;
 		}
-
-		ptr->paddr = symbol->offset;
-		ptr->vaddr = Elf_(r_bin_elf_p2v) (obj, ptr->paddr);
-		ptr->hpaddr = UT64_MAX;
-		ptr->type = R_BIN_ENTRY_TYPE_INIT;
-		r_list_append (ret, ptr);
+		RBinAddr *ptr = R_NEW0 (RBinAddr);
+		if (ptr) {
+			ptr->paddr = symbol->offset;
+			ptr->vaddr = Elf_(r_bin_elf_p2v) (eo, ptr->paddr);
+			ptr->hpaddr = UT64_MAX;
+			ptr->type = R_BIN_ENTRY_TYPE_INIT;
+			r_list_append (ret, ptr);
+		}
 		break;
 	}
 
-	int bin_bits = Elf_(r_bin_elf_get_bits) (bf->o->bin_obj);
+	const int bin_bits = Elf_(r_bin_elf_get_bits) (eo);
 	process_constructors (bf, ret, bin_bits < 32 ? 32: bin_bits);
 	RListIter *iter, *iter2;
 	RBinAddr *foo, *bar;
-	r_list_foreach (obj->inits, iter, foo) {
+	r_list_foreach (eo->inits, iter, foo) {
 		bool is_new_symbol = true;
 		// avoid dupes
 		r_list_foreach (ret, iter2, bar) {
