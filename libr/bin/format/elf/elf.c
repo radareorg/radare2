@@ -4367,6 +4367,23 @@ static RVector *_load_additional_imported_symbols(ELFOBJ *eo, ImportInfo *import
 	return import_symbols;
 }
 
+static ut64 parse_toffset(ELFOBJ *eo , int type, ut64 st_value, int i) {
+	const bool is_relocatable_file = is_bin_etrel (eo);
+	if (type == R_BIN_ELF_IMPORT_SYMBOLS) {
+		if (is_relocatable_file /* && memory.sym[k].st_shndx != SHN_COMMON */) {
+			return st_value;  // offset from beginning of section
+		}
+
+		ut64 offset;
+		if ((offset = get_import_addr (eo, i)) == -1) {
+			offset = st_value;
+		}
+		return offset;
+	}
+
+	return st_value;
+}
+
 typedef struct process_section_state_t {
 	int i;
 	ElfSymbolMemory *const memory;
@@ -4495,21 +4512,29 @@ static bool _process_symbols_and_imports_in_section(ELFOBJ *eo, int type, Proces
 
 	int k;
 	for (k = 1; k < nsym; k++, (*ret_ctr)++) {
-		ut64 toffset;
 		int tsize;
 		RBinElfSymbol *es = r_vector_end (ret);
 		bool is_sht_null = false;
 		bool is_vaddr = false;
 		bool is_imported = false;
+		bool is_internal = false;
+		ut64 toffset = parse_toffset (eo, type, (ut64) memory->sym[k].st_value, k);
 
 		if (type == R_BIN_ELF_IMPORT_SYMBOLS) {
+#if 0
 			if (memory->sym[k].st_value) {
 				toffset = memory->sym[k].st_value;
 			} else if ((toffset = get_import_addr (eo, k)) == -1) {
 				toffset = 0;
 			}
+#endif
 			tsize = 16;
 			is_imported = memory->sym[k].st_shndx == STN_UNDEF;
+#if R_BIN_ELF64
+			is_internal = ELF64_ST_VISIBILITY (memory->sym[k].st_other);
+#else
+			is_internal = ELF32_ST_VISIBILITY (memory->sym[k].st_other);
+#endif
 		} else {
 			tsize = memory->sym[k].st_size;
 			toffset = (ut64)memory->sym[k].st_value;
@@ -4540,20 +4565,20 @@ static bool _process_symbols_and_imports_in_section(ELFOBJ *eo, int type, Proces
 		if (is_section_local_sym (eo, &memory->sym[k])) {
 			const size_t sym_section = memory->sym[k].st_shndx;
 			const char *shname = &eo->shstrtab[eo->shdr[sym_section].sh_name];
-			r_str_ncpy (es->name, shname, ELF_STRING_LENGTH - 1);
+			r_str_ncpy (es->name, shname, ELF_STRING_LENGTH);
 		} else if (st_name <= 0 || st_name >= maxsize) {
 			es->name[0] = 0;
 		} else {
-			r_str_ncpy (es->name, &memory->strtab[st_name], ELF_STRING_LENGTH - 1);
+			r_str_ncpy (es->name, &memory->strtab[st_name], ELF_STRING_LENGTH);
 			es->type = type2str (eo, es, &memory->sym[k]);
 		}
 
 		es->ordinal = k;
-		es->name[ELF_STRING_LENGTH - 1] = '\0';
 		fill_symbol_bind_and_type (eo, es, &memory->sym[k]);
 		es->is_sht_null = is_sht_null;
 		es->is_vaddr = is_vaddr;
 		es->is_imported = is_imported;
+		es->is_internal = is_internal;
 		if (type == R_BIN_ELF_IMPORT_SYMBOLS && is_imported) {
 			(*import_ret_ctr)++;
 		}
