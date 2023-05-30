@@ -5021,7 +5021,7 @@ char *Elf_(r_bin_elf_compiler)(ELFOBJ *bin) {
 	return res;
 }
 
-bool Elf_(r_bin_elf_is_executable)(ELFOBJ *bin) {
+bool Elf_(is_executable)(ELFOBJ *bin) {
 	const int t = bin->ehdr.e_type;
 	return t == ET_EXEC || t == ET_DYN;
 }

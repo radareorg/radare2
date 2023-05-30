@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2022 - nibble, pancake */
+/* radare - LGPL - Copyright 2009-2023 - nibble, pancake, luctielen */
 
 #define R_LOG_ORIGIN "bin.elf"
 
@@ -16,7 +16,7 @@ static RBinInfo* info(RBinFile *bf);
 static int get_file_type(RBinFile *bf) {
 	ELFOBJ *obj = bf->o->bin_obj;
 	char *type = Elf_(r_bin_elf_get_file_type (obj));
-	int res = type? ((!strncmp (type, "CORE", 4)) ? R_BIN_TYPE_CORE : R_BIN_TYPE_DEFAULT) : -1;
+	int res = type? (r_str_startswith (type, "CORE") ? R_BIN_TYPE_CORE : R_BIN_TYPE_DEFAULT) : -1;
 	free (type);
 	return res;
 }
@@ -112,8 +112,8 @@ static RBinAddr* binsym(RBinFile *bf, int sym) {
 		break;
 	}
 	if (addr && addr != UT64_MAX && (ret = R_NEW0 (RBinAddr))) {
-		ELFOBJ *bin = bf->o->bin_obj;
-		bool is_arm = bin->ehdr.e_machine == EM_ARM;
+		ELFOBJ *eo = bf->o->bin_obj;
+		bool is_arm = eo->ehdr.e_machine == EM_ARM;
 		ret->paddr = addr;
 		ret->vaddr = Elf_(r_bin_elf_p2v) (obj, addr);
 		if (is_arm && addr & 1) {
@@ -154,16 +154,16 @@ static RList* sections(RBinFile *bf) {
 static RBinAddr* newEntry(RBinFile *bf, ut64 hpaddr, ut64 hvaddr, ut64 vaddr, int type, int bits) {
 	r_return_val_if_fail (bf && bf->o && bf->o->bin_obj, NULL);
 
-	ELFOBJ *obj = bf->o->bin_obj;
 	RBinAddr *ptr = R_NEW0 (RBinAddr);
 	if (ptr) {
-		ptr->paddr = Elf_(r_bin_elf_v2p) (obj, vaddr);
+		ELFOBJ *eo = bf->o->bin_obj;
+		ptr->paddr = Elf_(r_bin_elf_v2p) (eo, vaddr);
 		ptr->vaddr = vaddr;
 		ptr->hpaddr = hpaddr;
 		ptr->hvaddr = hvaddr;
 		ptr->bits = bits;
 		ptr->type = type;
-		//realign due to thumb
+		// realign due to thumb
 		if (bits == 16 && ptr->vaddr & 1) {
 			ptr->paddr--;
 			ptr->vaddr--;
@@ -238,17 +238,18 @@ static RList* entries(RBinFile *bf) {
 		}
 
 		ptr->paddr = paddr;
-		ptr->vaddr = Elf_(r_bin_elf_p2v) (obj, ptr->paddr);
+		ptr->vaddr = Elf_(r_bin_elf_p2v) (eo, ptr->paddr);
 		ptr->hpaddr = 0x18;  // e_entry offset in ELF header
 		ptr->hvaddr = UT64_MAX;
 
-		if (ptr->vaddr != (ut64)obj->ehdr.e_entry && Elf_(r_bin_elf_is_executable) (obj)) {
+		if (ptr->vaddr != (ut64)eo->ehdr.e_entry && Elf_(is_executable) (eo)) {
 			R_LOG_ERROR ("Cannot determine entrypoint, using 0x%08" PFMT64x, ptr->vaddr);
 		}
 
 		if (bf->o->sections) {
 			RListIter *iter;
 			RBinSection *section;
+			// XXX this is slow
 			r_list_foreach_prev (bf->o->sections, iter, section) {
 				if (!strcmp (section->name, "ehdr")) {
 					ptr->hvaddr = section->vaddr + ptr->hpaddr;
