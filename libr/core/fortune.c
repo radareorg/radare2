@@ -97,7 +97,7 @@ R_API void r_core_fortune_list(RCore *core) {
 static char *getrandomline(RCore *core) {
 	RList *types = r_str_split_duplist (
 		r_config_get (core->config, "cfg.fortunes.type"), ",", false);
-	if (!r_list_length (types)) {
+	if (r_list_empty (types)) {
 		r_list_free (types);
 		return NULL;
 	}
