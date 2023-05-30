@@ -101,7 +101,8 @@ static char *getrandomline(RCore *core) {
 		r_list_free (types);
 		return NULL;
 	}
-	char *type = r_str_new ((char *)r_list_get_n (types, r_num_rand (r_list_length (types))));
+	const char *file = (char *)r_list_get_n (types, r_num_rand (r_list_length (types)));
+	char *type = strdup (file);
 	r_list_free (types);
 	if (!type) {
 		return NULL;
