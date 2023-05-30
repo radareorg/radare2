@@ -253,10 +253,10 @@ static RList* entries(RBinFile *bf) {
 		}
 
 		if (bf->o->sections) {
-			RListIter *iter;
+			// XXX store / cache sections by name in hashmap
+			const RVector *sections = Elf_(load_sections) (bf, bf->o->bin_obj);
 			RBinSection *section;
-			// XXX this is slow
-			r_list_foreach_prev (bf->o->sections, iter, section) {
+			r_vector_foreach_prev (sections, section) {
 				if (!strcmp (section->name, "ehdr")) {
 					ptr->hvaddr = section->vaddr + ptr->hpaddr;
 					break;
