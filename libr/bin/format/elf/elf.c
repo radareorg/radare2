@@ -231,14 +231,14 @@ static bool init_ehdr(ELFOBJ *eo) {
 	// > pf `k bin/cur/info/elf_header.format` @ `k bin/cur/info/elf_header.offset`
 }
 
-ut64 Elf_(get_phnum)(ELFOBJ *obj) {
-	r_return_val_if_fail (obj, 0);
+ut64 Elf_(get_phnum)(ELFOBJ *eo) {
+	r_return_val_if_fail (eo, 0);
 
-	if (obj->ehdr.e_phnum == UT16_MAX) {
+	if (eo->ehdr.e_phnum == UT16_MAX) {
 		// sh_info member of the initial entry in section header table.
-		if (obj->ehdr.e_shnum > 0) {
+		if (eo->ehdr.e_shnum > 0) {
 			Elf_(Shdr) shdr = {0};
-			int r = r_buf_read_at (obj->b, obj->ehdr.e_shoff, (ut8 *)&shdr, sizeof (shdr));
+			int r = r_buf_read_at (eo->b, eo->ehdr.e_shoff, (ut8 *)&shdr, sizeof (shdr));
 			if (r != sizeof (shdr)) {
 				return 0;
 			}
@@ -249,7 +249,7 @@ ut64 Elf_(get_phnum)(ELFOBJ *obj) {
 			return num;
 		}
 	}
-	return obj->ehdr.e_phnum & UT16_MAX;
+	return eo->ehdr.e_phnum & UT16_MAX;
 }
 
 static bool read_phdr(ELFOBJ *eo, bool linux_kernel_hack) {
@@ -3404,18 +3404,18 @@ static bool is_wordable_section(const char *name) {
 }
 
 static void dtproceed(RBinFile *bf, ut64 preinit_addr, ut64 preinit_size, int symtype) {
-	ELFOBJ *obj = R_UNWRAP3 (bf, o, bin_obj);
+	ELFOBJ *eo = R_UNWRAP3 (bf, o, bin_obj);
 	RListIter *iter;
 	RBinAddr *ba;
-	r_list_foreach (obj->inits, iter, ba) {
+	r_list_foreach (eo->inits, iter, ba) {
 		if (preinit_addr == ba->paddr) {
 			return;
 		}
 	}
 
-	int big_endian = Elf_(is_big_endian) (obj);
-	ut64 from = Elf_(v2p) (obj, preinit_addr);
+	int big_endian = Elf_(is_big_endian) (eo);
 	ut64 _baddr = Elf_(get_baddr) (bf->o->bin_obj);
+	ut64 from = Elf_(v2p) (eo, preinit_addr);
 	ut64 to = from + preinit_size;
 	ut64 at;
 	for (at = from; at < to ; at += R_BIN_ELF_WORDSIZE) {
@@ -3429,7 +3429,7 @@ static void dtproceed(RBinFile *bf, ut64 preinit_addr, ut64 preinit_size, int sy
 			R_LOG_DEBUG ("invalid dynamic init address at 0x%08"PFMT64x, at);
 			break;
 		}
-		ut64 caddr = Elf_(v2p) (obj, addr);
+		ut64 caddr = Elf_(v2p) (eo, addr);
 		if (!caddr) {
 			R_LOG_DEBUG ("v2p failed for 0x%08"PFMT64x, caddr);
 			break;
@@ -3442,14 +3442,14 @@ static void dtproceed(RBinFile *bf, ut64 preinit_addr, ut64 preinit_size, int sy
 			ba->hvaddr = at + _baddr;
 			ba->bits = R_BIN_ELF_WORDSIZE * 8;
 			ba->type = symtype;
-			r_list_append (obj->inits, ba);
+			r_list_append (eo->inits, ba);
 		}
 	}
 }
 
 static bool parse_pt_dynamic(RBinFile *bf, RBinSection *ptr) {
-	ELFOBJ *obj = R_UNWRAP3 (bf, o, bin_obj);
-	int big_endian = Elf_(is_big_endian) (obj);
+	ELFOBJ *eo = R_UNWRAP3 (bf, o, bin_obj);
+	int big_endian = Elf_(is_big_endian) (eo);
 	Elf_(Dyn) entry;
 	ut64 preinit_addr = UT64_MAX;
 	ut64 preinit_size = UT64_MAX;
@@ -3815,8 +3815,8 @@ const RVector* Elf_(load_sections)(RBinFile *bf, ELFOBJ *eo) {
 	return &eo->cached_sections;
 }
 
-static bool is_special_arm_symbol(ELFOBJ *bin, Elf_(Sym) *sym, const char *name) {
-	r_return_val_if_fail (bin && sym && name, false);
+static bool is_special_arm_symbol(ELFOBJ *eo, Elf_(Sym) *sym, const char *name) {
+	r_return_val_if_fail (eo && sym && name, false);
 	const char ch0 = name[0];
 	const char ch1 = name[1];
 	if (!ch0 || !ch1) {
@@ -4391,6 +4391,201 @@ static RVector *_load_additional_imported_symbols(ELFOBJ *eo, ImportInfo *import
 	return import_symbols;
 }
 
+typedef struct process_section_state_t {
+	int i;
+	ElfSymbolMemory *const memory;
+	RVector **ret;
+	size_t *const ret_ctr;
+	size_t *const import_ret_ctr;
+} ProcessSectionState;
+
+static bool _process_symbols_and_imports_in_section(ELFOBJ *eo, int type, ProcessSectionState *state) {
+	int i = state->i;
+	ElfSymbolMemory *const memory = state->memory;
+	size_t *const ret_ctr = state->ret_ctr;
+	size_t *const import_ret_ctr = state->import_ret_ctr;
+
+	Elf_(Shdr) *strtab_section = &eo->shdr[eo->shdr[i].sh_link];
+	if (strtab_section->sh_size > ST32_MAX || strtab_section->sh_size + 8 > eo->size) {
+		R_LOG_ERROR ("size (syms strtab)");
+		return false;
+	}
+
+	if (!memory->strtab) {
+		if (strtab_section->sh_offset > eo->size || strtab_section->sh_offset + strtab_section->sh_size > eo->size) {
+			return false;
+		}
+
+		memory->strtab = calloc (1, 8 + strtab_section->sh_size);
+		if (!memory->strtab) {
+			R_LOG_ERROR ("malloc (syms strtab)");
+			return false;
+		}
+
+		if (r_buf_read_at (eo->b, strtab_section->sh_offset, (ut8*)memory->strtab, strtab_section->sh_size) == -1) {
+			R_LOG_ERROR ("read (syms strtab)");
+			return false;
+		}
+	}
+
+	// bounds check
+	int newsize = 1 + eo->shdr[i].sh_size;
+	if (newsize < 0 || newsize > eo->size) {
+		R_LOG_ERROR ("invalid shdr %d size", i);
+		return false;
+	}
+
+	int nsym = (int)(eo->shdr[i].sh_size / sizeof (Elf_(Sym)));
+	if (nsym < 1) {
+		return false;
+	}
+
+	ut64 sh_begin = eo->shdr[i].sh_offset;
+	ut64 sh_end = sh_begin + eo->shdr[i].sh_size;
+	if (sh_begin > eo->size) {
+		return false;
+	}
+
+	if (sh_end > eo->size) {
+		st64 newshsize = eo->size - sh_begin;
+		nsym = (int)(newshsize / sizeof (Elf_(Sym)));
+	}
+
+	if (nsym < 1) {
+		return false;
+	}
+
+	memory->sym = calloc (nsym, sizeof (Elf_(Sym)));
+	if (!memory->sym) {
+		R_LOG_ERROR ("calloc (syms)");
+		return false;
+	}
+
+	ut32 size = 0;
+	if (!UT32_MUL (&size, nsym, sizeof (Elf_(Sym)))) {
+		return false;
+	}
+	if (size < 1 || size > eo->size) {
+		return false;
+	}
+	if (eo->shdr[i].sh_offset > eo->size || eo->shdr[i].sh_offset + size > eo->size) {
+		return false;
+	}
+
+	ut8 s[sizeof (Elf_(Sym))] = {0};
+	int j;
+	for (j = 0; j < nsym; j++) {
+		int k = 0;
+		ut64 sym_addr = eo->shdr[i].sh_offset + (j * sizeof (Elf_(Sym)));
+		int r = r_buf_read_at (eo->b, sym_addr, s, sizeof (Elf_(Sym)));
+		if (r < 1) {
+			R_LOG_ERROR ("read (sym)");
+			return false;
+		}
+#if R_BIN_ELF64
+		memory->sym[j].st_name = READ32 (s, k);
+		memory->sym[j].st_info = READ8 (s, k);
+		memory->sym[j].st_other = READ8 (s, k);
+		memory->sym[j].st_shndx = READ16 (s, k);
+		memory->sym[j].st_value = READ64 (s, k);
+		memory->sym[j].st_size = READ64 (s, k);
+#else
+		memory->sym[j].st_name = READ32 (s, k);
+		memory->sym[j].st_value = READ32 (s, k);
+		memory->sym[j].st_size = READ32 (s, k);
+		memory->sym[j].st_info = READ8 (s, k);
+		memory->sym[j].st_other = READ8 (s, k);
+		memory->sym[j].st_shndx = READ16 (s, k);
+#endif
+	}
+
+	if (!(*state->ret)) {
+		RVector *ret = r_vector_new (sizeof (RBinElfSymbol), NULL, NULL);
+		if (!ret) {
+			return false;
+		}
+
+		*state->ret = ret;
+		memory->symbols = ret;
+	}
+
+	RVector *ret = *state->ret;
+	int increment = nsym;
+	ut64 len = r_vector_length (ret);
+	if (!r_vector_reserve (ret, increment + len)) {
+		R_LOG_ERROR ("Cannot allocate %d symbols", (int)(nsym + increment));
+		return false;
+	}
+
+	int k;
+	for (k = 1; k < nsym; k++, (*ret_ctr)++) {
+		ut64 toffset;
+		int tsize;
+		RBinElfSymbol *es = r_vector_end (ret);
+		bool is_sht_null = false;
+		bool is_vaddr = false;
+		bool is_imported = false;
+
+		if (type == R_BIN_ELF_IMPORT_SYMBOLS) {
+			if (memory->sym[k].st_value) {
+				toffset = memory->sym[k].st_value;
+			} else if ((toffset = get_import_addr (eo, k)) == -1) {
+				toffset = 0;
+			}
+			tsize = 16;
+			is_imported = memory->sym[k].st_shndx == STN_UNDEF;
+		} else {
+			tsize = memory->sym[k].st_size;
+			toffset = (ut64)memory->sym[k].st_value;
+			is_sht_null = memory->sym[k].st_shndx == SHT_NULL;
+		}
+
+		if (is_bin_etrel (eo)) {
+			if (memory->sym[k].st_shndx < eo->ehdr.e_shnum) {
+				es->offset = memory->sym[k].st_value + eo->shdr[memory->sym[k].st_shndx].sh_offset;
+			}
+		} else {
+			es->offset = Elf_(v2p_new) (eo, toffset);
+			if (es->offset == UT64_MAX) {
+				es->offset = toffset;
+				is_vaddr = true;
+			}
+		}
+
+		es->size = tsize;
+		if (memory->sym[k].st_name + 1 > strtab_section->sh_size) {
+			R_LOG_DEBUG ("index out of strtab range (%"PFMT64d" / %"PFMT64d")",
+				(ut64)memory->sym[k].st_name, (ut64)strtab_section->sh_size);
+			continue;
+		}
+
+		int st_name = memory->sym[k].st_name;
+		int maxsize = R_MIN (r_buf_size (eo->b), strtab_section->sh_size);
+		if (is_section_local_sym (eo, &memory->sym[k])) {
+			const size_t sym_section = memory->sym[k].st_shndx;
+			const char *shname = &eo->shstrtab[eo->shdr[sym_section].sh_name];
+			r_str_ncpy (es->name, shname, ELF_STRING_LENGTH - 1);
+		} else if (st_name <= 0 || st_name >= maxsize) {
+			es->name[0] = 0;
+		} else {
+			r_str_ncpy (es->name, &memory->strtab[st_name], ELF_STRING_LENGTH - 1);
+			es->type = type2str (eo, es, &memory->sym[k]);
+		}
+
+		es->ordinal = k;
+		es->name[ELF_STRING_LENGTH - 1] = '\0';
+		fill_symbol_bind_and_type (eo, es, &memory->sym[k]);
+		es->is_sht_null = is_sht_null;
+		es->is_vaddr = is_vaddr;
+		es->is_imported = is_imported;
+		if (type == R_BIN_ELF_IMPORT_SYMBOLS && is_imported) {
+			(*import_ret_ctr)++;
+		}
+	}
+
+	return true;
+}
+
 // TODO: return RList<RBinSymbol*> .. or run a callback with that symbol constructed, so we don't have to do it twice
 static RVector /* <RBinElfSymbol> */ *Elf_(_r_bin_elf_load_symbols_and_imports)(ELFOBJ *eo, int type) {
 	r_return_val_if_fail (eo, NULL);
@@ -4420,192 +4615,16 @@ static RVector /* <RBinElfSymbol> */ *Elf_(_r_bin_elf_load_symbols_and_imports)(
 			continue;
 		}
 
-		// process symbols in this section
-		Elf_(Shdr) *strtab_section = &eo->shdr[eo->shdr[i].sh_link];
-		if (strtab_section->sh_size > ST32_MAX || strtab_section->sh_size + 8 > eo->size) {
-			R_LOG_ERROR ("size (syms strtab)");
-			r_vector_free (memory.symbols);
-			free (memory.strtab);
-			return NULL;
-		}
-
-		if (!memory.strtab) {
-			if (strtab_section->sh_offset > eo->size || strtab_section->sh_offset + strtab_section->sh_size > eo->size) {
-				_symbol_memory_free (&memory);
-				return NULL;
-			}
-			if (!(memory.strtab = (char *)calloc (1, 8 + strtab_section->sh_size))) {
-				R_LOG_ERROR ("malloc (syms strtab)");
-				_symbol_memory_free (&memory);
-				return NULL;
-			}
-			if (r_buf_read_at (eo->b, strtab_section->sh_offset, (ut8*)memory.strtab, strtab_section->sh_size) == -1) {
-				R_LOG_ERROR ("read (syms strtab)");
-				_symbol_memory_free (&memory);
-				return NULL;
-			}
-		}
-
-		// bounds check
-		int newsize = 1 + eo->shdr[i].sh_size;
-		if (newsize < 0 || newsize > eo->size) {
-			R_LOG_ERROR ("invalid shdr %d size", i);
+		ProcessSectionState state = {
+			.i = i,
+			.memory = &memory,
+			.ret = &ret,
+			.ret_ctr = &ret_ctr,
+			.import_ret_ctr = &import_ret_ctr,
+		};
+		if (!_process_symbols_and_imports_in_section (eo, type, &state)) {
 			_symbol_memory_free (&memory);
 			return NULL;
-		}
-
-		int nsym = (int)(eo->shdr[i].sh_size / sizeof (Elf_(Sym)));
-		if (nsym < 1) {
-			_symbol_memory_free (&memory);
-			return NULL;
-		}
-
-		ut64 sh_begin = eo->shdr[i].sh_offset;
-		ut64 sh_end = sh_begin + eo->shdr[i].sh_size;
-		if (sh_begin > eo->size) {
-			_symbol_memory_free (&memory);
-			return NULL;
-		}
-
-		if (sh_end > eo->size) {
-			st64 newshsize = eo->size - sh_begin;
-			nsym = (int)(newshsize / sizeof (Elf_(Sym)));
-		}
-
-		if (nsym < 1) {
-			_symbol_memory_free (&memory);
-			return NULL;
-		}
-		if (!(memory.sym = (Elf_(Sym) *)calloc (nsym, sizeof (Elf_(Sym))))) {
-			R_LOG_ERROR ("calloc (syms)");
-			_symbol_memory_free (&memory);
-			return NULL;
-		}
-
-		ut32 size = 0;
-		if (!UT32_MUL (&size, nsym, sizeof (Elf_(Sym)))) {
-			_symbol_memory_free (&memory);
-			return NULL;
-		}
-		if (size < 1 || size > eo->size) {
-			_symbol_memory_free (&memory);
-			return NULL;
-		}
-
-		if (eo->shdr[i].sh_offset > eo->size) {
-			_symbol_memory_free (&memory);
-			return NULL;
-		}
-		if (eo->shdr[i].sh_offset + size > eo->size) {
-			_symbol_memory_free (&memory);
-			return NULL;
-		}
-
-		ut8 s[sizeof (Elf_(Sym))] = {0};
-		int j;
-		for (j = 0; j < nsym; j++) {
-			int k = 0;
-			ut64 sym_addr = eo->shdr[i].sh_offset + (j * sizeof (Elf_(Sym)));
-			int r = r_buf_read_at (eo->b, sym_addr, s, sizeof (Elf_(Sym)));
-			if (r < 1) {
-				R_LOG_ERROR ("read (sym)");
-				_symbol_memory_free (&memory);
-				return NULL;
-			}
-#if R_BIN_ELF64
-			memory.sym[j].st_name = READ32 (s, k);
-			memory.sym[j].st_info = READ8 (s, k);
-			memory.sym[j].st_other = READ8 (s, k);
-			memory.sym[j].st_shndx = READ16 (s, k);
-			memory.sym[j].st_value = READ64 (s, k);
-			memory.sym[j].st_size = READ64 (s, k);
-#else
-			memory.sym[j].st_name = READ32 (s, k);
-			memory.sym[j].st_value = READ32 (s, k);
-			memory.sym[j].st_size = READ32 (s, k);
-			memory.sym[j].st_info = READ8 (s, k);
-			memory.sym[j].st_other = READ8 (s, k);
-			memory.sym[j].st_shndx = READ16 (s, k);
-#endif
-		}
-		if (!ret) {
-			ret = r_vector_new (sizeof (RBinElfSymbol), NULL, NULL);
-			memory.symbols = ret;
-			if (!ret) {
-				_symbol_memory_free (&memory);
-				return NULL;
-			}
-		}
-
-		int increment = nsym;
-		ut64 len = r_vector_length (ret);
-		if (!r_vector_reserve (ret, increment + len)) {
-			R_LOG_ERROR ("Cannot allocate %d symbols", (int)(nsym + increment));
-			_symbol_memory_free (&memory);
-			return NULL;
-		}
-
-		int k;
-		for (k = 1; k < nsym; k++, ret_ctr++) {
-			ut64 toffset;
-			int tsize;
-			RBinElfSymbol *es = r_vector_end (ret);
-			bool is_sht_null = false;
-			bool is_vaddr = false;
-			bool is_imported = false;
-			if (type == R_BIN_ELF_IMPORT_SYMBOLS) {
-				if (memory.sym[k].st_value) {
-					toffset = memory.sym[k].st_value;
-				} else if ((toffset = get_import_addr (eo, k)) == -1) {
-					toffset = 0;
-				}
-				tsize = 16;
-				is_imported = memory.sym[k].st_shndx == STN_UNDEF;
-			} else {
-				tsize = memory.sym[k].st_size;
-				toffset = (ut64)memory.sym[k].st_value;
-				is_sht_null = memory.sym[k].st_shndx == SHT_NULL;
-			}
-			if (is_bin_etrel (eo)) {
-				if (memory.sym[k].st_shndx < eo->ehdr.e_shnum) {
-					es->offset = memory.sym[k].st_value + eo->shdr[memory.sym[k].st_shndx].sh_offset;
-				}
-			} else {
-				es->offset = Elf_(v2p_new) (eo, toffset);
-				if (es->offset == UT64_MAX) {
-					es->offset = toffset;
-					is_vaddr = true;
-				}
-			}
-			es->size = tsize;
-			if (memory.sym[k].st_name + 1 > strtab_section->sh_size) {
-				R_LOG_DEBUG ("index out of strtab range (%"PFMT64d" / %"PFMT64d")",
-					(ut64)memory.sym[k].st_name, (ut64)strtab_section->sh_size);
-				continue;
-			}
-			{
-				int st_name = memory.sym[k].st_name;
-				int maxsize = R_MIN (r_buf_size (eo->b), strtab_section->sh_size);
-				if (is_section_local_sym (eo, &memory.sym[k])) {
-					const size_t sym_section = memory.sym[k].st_shndx;
-					const char *shname = &eo->shstrtab[eo->shdr[sym_section].sh_name];
-					r_str_ncpy (es->name, shname, ELF_STRING_LENGTH - 1);
-				} else if (st_name <= 0 || st_name >= maxsize) {
-					es->name[0] = 0;
-				} else {
-					r_str_ncpy (es->name, &memory.strtab[st_name], ELF_STRING_LENGTH - 1);
-					es->type = type2str (eo, es, &memory.sym[k]);
-				}
-			}
-			es->ordinal = k;
-			es->name[ELF_STRING_LENGTH - 1] = '\0';
-			fill_symbol_bind_and_type (eo, es, &memory.sym[k]);
-			es->is_sht_null = is_sht_null;
-			es->is_vaddr = is_vaddr;
-			es->is_imported = is_imported;
-			if (type == R_BIN_ELF_IMPORT_SYMBOLS && is_imported) {
-				import_ret_ctr++;
-			}
 		}
 
 		R_FREE (memory.strtab)
@@ -5012,7 +5031,7 @@ char *Elf_(compiler)(ELFOBJ *eo) {
 	return res;
 }
 
-bool Elf_(is_executable)(ELFOBJ *bin) {
-	const int t = bin->ehdr.e_type;
+bool Elf_(is_executable)(ELFOBJ *eo) {
+	const int t = eo->ehdr.e_type;
 	return t == ET_EXEC || t == ET_DYN;
 }
