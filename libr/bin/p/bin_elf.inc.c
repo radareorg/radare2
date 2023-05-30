@@ -56,12 +56,12 @@ static void setimpord(ELFOBJ* eobj, ut32 ord, RBinImport *ptr) {
 }
 
 static Sdb* get_sdb(RBinFile *bf) {
-	ELFOBJ *bin = R_UNWRAP3 (bf, o, bin_obj);
-	return bin? bin->kv: NULL;
+	ELFOBJ *eo = R_UNWRAP3 (bf, o, bin_obj);
+	return eo? eo->kv: NULL;
 }
 
 static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
-	ELFOBJ *res = Elf_(r_bin_elf_new_buf) (buf, bf->rbin->verbose);
+	ELFOBJ *res = Elf_(new_buf) (buf, bf->rbin->verbose);
 	if (res) {
 	//	sdb_ns_set (sdb, "info", res->kv);
 		*bin_obj = res;
@@ -601,7 +601,6 @@ static RBinReloc *reloc_convert(ELFOBJ* bin, RBinElfReloc *rel, ut64 got_addr) {
 static RList* relocs(RBinFile *bf) {
 	r_return_val_if_fail (bf && bf->o && bf->o->bin_obj, NULL);
 	RList *ret = NULL;
-	RBinReloc *ptr = NULL;
 	ELFOBJ *bin = bf->o->bin_obj;
 	if (!(ret = r_list_newf (free))) {
 		return NULL;
@@ -616,27 +615,25 @@ static RList* relocs(RBinFile *bf) {
 	if (got_addr == UT64_MAX && bin->ehdr.e_type == ET_REL) {
 		got_addr = Elf_(r_bin_elf_get_section_addr) (bin, ".got.r2");
 	}
-	if (bf->o) {
-		const RVector *relocs = Elf_(r_bin_elf_load_relocs) (bin);
-		if (!relocs) {
-			return ret;
+	const RVector *relocs = Elf_(r_bin_elf_load_relocs) (bin);
+	if (!relocs) {
+		return ret;
+	}
+	RBinElfReloc *reloc, *r;
+	RListIter *iter;
+	r_vector_foreach (relocs, reloc) {
+		bool found = false;
+		// XXX this is slow
+		r_list_foreach (ret, iter, r) {
+			if (r->rva == reloc->rva) {
+				found = true;
+			}
 		}
-		RBinElfReloc *reloc, *r;
-		RListIter *iter;
-		r_vector_foreach (relocs, reloc) {
-			// XXX this is slow
-			r_list_foreach (ret, iter, r) {
-				if (r->rva == reloc->rva) {
-					goto another;
-				}
-			}
-			if (!(ptr = reloc_convert (bin, reloc, got_addr))) {
-				continue;
-			}
-			if (ptr->paddr != UT64_MAX) {
+		if (!found) {
+			RBinReloc *ptr = reloc_convert (bin, reloc, got_addr);
+			if (ptr && ptr->paddr != UT64_MAX) {
 				r_list_append (ret, ptr);
 			}
-another:;
 		}
 	}
 	return ret;
