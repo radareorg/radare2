@@ -1,9 +1,5 @@
-/* radare - LGPL - Copyright 2010-2019 pancake, nibble */
+/* radare - LGPL - Copyright 2010-2023 pancake, nibble */
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <r_types.h>
 #include <r_util.h>
 #include "elf.h"
 
@@ -11,9 +7,8 @@
 /* TODO: Take care of endianness */
 /* TODO: Real error handling */
 /* TODO: Resize sections before .init */
-// ut64 Elf_(r_bin_elf_resize_section)(struct Elf_(r_bin_elf_obj_t) *bin, const char *name, ut64 size) {
-ut64 Elf_(r_bin_elf_resize_section)(RBinFile *bf, const char *name, ut64 size) {
-	struct Elf_(r_bin_elf_obj_t) *bin = bf->o->bin_obj; // , const char *name, ut64 size) {
+ut64 Elf_(resize_section)(RBinFile *bf, const char *name, ut64 size) {
+	struct Elf_(obj_t) *bin = bf->o->bin_obj; // , const char *name, ut64 size) {
 	Elf_(Ehdr) *ehdr = &bin->ehdr;
 	Elf_(Phdr) *phdr = bin->phdr, *phdrp;
 	Elf_(Shdr) *shdr = bin->shdr, *shdrp;
@@ -63,7 +58,7 @@ ut64 Elf_(r_bin_elf_resize_section)(RBinFile *bf, const char *name, ut64 size) {
 	for (i = 0, shdrp = shdr; i < ehdr->e_shnum; i++, shdrp++) {
 		if (!strcmp (&strtab[shdrp->sh_name], ".rel.plt")) {
 			Elf_(Rel) *rel, *relp;
-			rel = (Elf_(Rel) *)malloc (1+shdrp->sh_size);
+			rel = (Elf_(Rel) *)malloc (1 + shdrp->sh_size);
 			if (!rel) {
 				r_sys_perror ("malloc");
 				return 0;
@@ -171,11 +166,15 @@ ut64 Elf_(r_bin_elf_resize_section)(RBinFile *bf, const char *name, ut64 size) {
 	/* XXX Check when delta is negative */
 	rest_size = bin->size - (rsz_offset + rsz_osize);
 
-	buf = (ut8 *)malloc (1+bin->size);
+	buf = (ut8 *)malloc (1 + bin->size);
+	if (!buf) {
+		R_LOG_ERROR ("Cannot allocate %d", bin->size);
+		return 0;
+	}
 	r_buf_read_at (bin->b, 0, (ut8*)buf, bin->size);
-	r_buf_set_bytes (bin->b, (ut8*)buf, (int)(rsz_offset+rsz_size+rest_size));
+	r_buf_set_bytes (bin->b, (ut8*)buf, (int)(rsz_offset + rsz_size + rest_size));
 
-	printf ("COPY FROM 0x%08"PFMT64x"\n", (ut64)(rsz_offset+rsz_osize));
+	printf ("COPY FROM 0x%08"PFMT64x"\n", (ut64)(rsz_offset + rsz_osize));
 	r_buf_read_at (bin->b, rsz_offset + rsz_osize, (ut8*)buf, rest_size);
 	printf ("COPY TO 0x%08"PFMT64x"\n", (ut64)(rsz_offset+rsz_size));
 	r_buf_write_at (bin->b, rsz_offset + rsz_size, (ut8*)buf, rest_size);
@@ -187,8 +186,8 @@ ut64 Elf_(r_bin_elf_resize_section)(RBinFile *bf, const char *name, ut64 size) {
 }
 
 /* XXX Endianness? */
-bool Elf_(r_bin_elf_del_rpath)(RBinFile *bf) {
-	struct Elf_(r_bin_elf_obj_t) *bin = bf->o->bin_obj;
+bool Elf_(del_rpath)(RBinFile *bf) {
+	struct Elf_(obj_t) *bin = bf->o->bin_obj;
 	Elf_(Dyn) *dyn = NULL;
 	ut64 stroff = 0LL;
 	int ndyn, i, j;
@@ -233,8 +232,8 @@ bool Elf_(r_bin_elf_del_rpath)(RBinFile *bf) {
 	return true;
 }
 
-bool Elf_(r_bin_elf_section_perms)(RBinFile *bf, const char *name, int perms) {
-	struct Elf_(r_bin_elf_obj_t) *bin = bf->o->bin_obj;
+bool Elf_(section_perms)(RBinFile *bf, const char *name, int perms) {
+	struct Elf_(obj_t) *bin = bf->o->bin_obj;
 	Elf_(Ehdr) *ehdr = &bin->ehdr;
 	Elf_(Shdr) *shdr = bin->shdr, *shdrp;
 	const char *strtab = bin->shstrtab;
@@ -269,7 +268,7 @@ bool Elf_(r_bin_elf_section_perms)(RBinFile *bf, const char *name, int perms) {
 	return false;
 }
 
-bool Elf_(r_bin_elf_entry_write)(RBinFile *bf, ut64 addr) {
+bool Elf_(entry_write)(RBinFile *bf, ut64 addr) {
 	const int patchoff = 0x18;
 #if R_BIN_ELF64
 	printf ("wv8 0x%"PFMT64x" @ 0x%x\n", addr, patchoff);

@@ -15,7 +15,7 @@ static RBinInfo* info(RBinFile *bf);
 
 static int get_file_type(RBinFile *bf) {
 	ELFOBJ *obj = bf->o->bin_obj;
-	char *type = Elf_(r_bin_elf_get_file_type (obj));
+	char *type = Elf_(get_file_type (obj));
 	int res = type? (r_str_startswith (type, "CORE") ? R_BIN_TYPE_CORE : R_BIN_TYPE_DEFAULT) : -1;
 	free (type);
 	return res;
@@ -23,7 +23,7 @@ static int get_file_type(RBinFile *bf) {
 
 static RList *maps(RBinFile *bf) {
 	r_return_val_if_fail (bf && bf->o, NULL);
-	return Elf_(r_bin_elf_get_maps)(bf->o->bin_obj);
+	return Elf_(get_maps)(bf->o->bin_obj);
 }
 
 static char* regstate(RBinFile *bf) {
@@ -35,14 +35,14 @@ static char* regstate(RBinFile *bf) {
 	case EM_X86_64:
 		{
 			int len = 0;
-			ut8 *regs = Elf_(r_bin_elf_grab_regstate) (obj, &len);
+			ut8 *regs = Elf_(grab_regstate) (obj, &len);
 			char *hexregs = (regs && len > 0) ? r_hex_bin2strdup (regs, len) : NULL;
 			free (regs);
 			return hexregs;
 		}
 	}
 	R_LOG_ERROR ("Cannot retrieve regstate on: %s (not yet supported)",
-				Elf_(r_bin_elf_get_machine_name)(obj));
+				Elf_(get_machine_name)(obj));
 	return NULL;
 
 }
@@ -56,12 +56,12 @@ static void setimpord(ELFOBJ* eobj, ut32 ord, RBinImport *ptr) {
 }
 
 static Sdb* get_sdb(RBinFile *bf) {
-	ELFOBJ *bin = R_UNWRAP3 (bf, o, bin_obj);
-	return bin? bin->kv: NULL;
+	ELFOBJ *eo = R_UNWRAP3 (bf, o, bin_obj);
+	return eo? eo->kv: NULL;
 }
 
 static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
-	ELFOBJ *res = Elf_(r_bin_elf_new_buf) (buf, bf->rbin->verbose);
+	ELFOBJ *res = Elf_(new_buf) (buf, bf->rbin->verbose);
 	if (res) {
 	//	sdb_ns_set (sdb, "info", res->kv);
 		*bin_obj = res;
@@ -84,15 +84,15 @@ static void destroy(RBinFile *bf) {
 		}
 		R_FREE (eobj->imports_by_ord);
 	}
-	Elf_(r_bin_elf_free) ((ELFOBJ*)bf->o->bin_obj);
+	Elf_(free) ((ELFOBJ*)bf->o->bin_obj);
 }
 
 static ut64 baddr(RBinFile *bf) {
-	return Elf_(r_bin_elf_get_baddr) (bf->o->bin_obj);
+	return Elf_(get_baddr) (bf->o->bin_obj);
 }
 
 static ut64 boffset(RBinFile *bf) {
-	return Elf_(r_bin_elf_get_boffset) (bf->o->bin_obj);
+	return Elf_(get_boffset) (bf->o->bin_obj);
 }
 
 static RBinAddr* binsym(RBinFile *bf, int sym) {
@@ -102,23 +102,23 @@ static RBinAddr* binsym(RBinFile *bf, int sym) {
 
 	switch (sym) {
 	case R_BIN_SYM_ENTRY:
-		addr = Elf_(r_bin_elf_get_entry_offset) (bf->o->bin_obj);
+		addr = Elf_(get_entry_offset) (bf->o->bin_obj);
 		break;
 	case R_BIN_SYM_MAIN:
-		addr = Elf_(r_bin_elf_get_main_offset) (bf->o->bin_obj);
+		addr = Elf_(get_main_offset) (bf->o->bin_obj);
 		break;
 	case R_BIN_SYM_INIT:
-		addr = Elf_(r_bin_elf_get_init_offset) (bf->o->bin_obj);
+		addr = Elf_(get_init_offset) (bf->o->bin_obj);
 		break;
 	case R_BIN_SYM_FINI:
-		addr = Elf_(r_bin_elf_get_fini_offset) (bf->o->bin_obj);
+		addr = Elf_(get_fini_offset) (bf->o->bin_obj);
 		break;
 	}
 	if (addr && addr != UT64_MAX && (ret = R_NEW0 (RBinAddr))) {
 		ELFOBJ *eo = bf->o->bin_obj;
 		bool is_arm = eo->ehdr.e_machine == EM_ARM;
 		ret->paddr = addr;
-		ret->vaddr = Elf_(r_bin_elf_p2v) (obj, addr);
+		ret->vaddr = Elf_(p2v) (obj, addr);
 		if (is_arm && addr & 1) {
 			ret->bits = 16;
 			ret->vaddr--;
@@ -135,8 +135,8 @@ static RList* sections(RBinFile *bf) {
 	}
 
 	// there is no leak here with sections since they are cached by elf.c
-	// and freed within Elf_(r_bin_elf_free)
-	const RVector *sections = Elf_(r_bin_elf_load_sections) (bf, obj);
+	// and freed within Elf_(free)
+	const RVector *sections = Elf_(load_sections) (bf, obj);
 	if (!sections) {
 		return NULL;
 	}
@@ -160,7 +160,7 @@ static RBinAddr* newEntry(RBinFile *bf, ut64 hpaddr, ut64 hvaddr, ut64 vaddr, in
 	RBinAddr *ptr = R_NEW0 (RBinAddr);
 	if (ptr) {
 		ELFOBJ *eo = bf->o->bin_obj;
-		ptr->paddr = Elf_(r_bin_elf_v2p) (eo, vaddr);
+		ptr->paddr = Elf_(v2p) (eo, vaddr);
 		ptr->vaddr = vaddr;
 		ptr->hpaddr = hpaddr;
 		ptr->hvaddr = hvaddr;
@@ -236,7 +236,7 @@ static RList* entries(RBinFile *bf) {
 	}
 
 	ELFOBJ* eo = bf->o->bin_obj;
-	ut64 paddr = Elf_(r_bin_elf_get_entry_offset) (eo);
+	ut64 paddr = Elf_(get_entry_offset) (eo);
 	if (paddr != UT64_MAX) {
 		RBinAddr *ptr = R_NEW0 (RBinAddr);
 		if (!ptr) {
@@ -244,7 +244,7 @@ static RList* entries(RBinFile *bf) {
 		}
 
 		ptr->paddr = paddr;
-		ptr->vaddr = Elf_(r_bin_elf_p2v) (eo, ptr->paddr);
+		ptr->vaddr = Elf_(p2v) (eo, ptr->paddr);
 		ptr->hpaddr = 0x18;  // e_entry offset in ELF header
 		ptr->hvaddr = UT64_MAX;
 
@@ -264,11 +264,11 @@ static RList* entries(RBinFile *bf) {
 			}
 		}
 		if (ptr->hvaddr == UT64_MAX) {
-			Elf_(r_bin_elf_p2v_new) (eo, ptr->hpaddr);
+			Elf_(p2v_new) (eo, ptr->hpaddr);
 		}
 
 		if (eo->ehdr.e_machine == EM_ARM) {
-			int bin_bits = Elf_(r_bin_elf_get_bits) (eo);
+			int bin_bits = Elf_(get_bits) (eo);
 			if (bin_bits != 64) {
 				ptr->bits = 32;
 				if (ptr->vaddr & 1) {
@@ -286,7 +286,7 @@ static RList* entries(RBinFile *bf) {
 
 	// add entrypoint for jni libraries
 	// NOTE: this is slow, we shouldnt find for java constructors here
-	const RVector *symbols = Elf_(r_bin_elf_load_symbols) (eo);
+	const RVector *symbols = Elf_(load_symbols) (eo);
 	if (!symbols) {
 		return ret;
 	}
@@ -303,7 +303,7 @@ static RList* entries(RBinFile *bf) {
 		RBinAddr *ptr = R_NEW0 (RBinAddr);
 		if (ptr) {
 			ptr->paddr = symbol->offset;
-			ptr->vaddr = Elf_(r_bin_elf_p2v) (eo, ptr->paddr);
+			ptr->vaddr = Elf_(p2v) (eo, ptr->paddr);
 			ptr->hpaddr = UT64_MAX;
 			ptr->type = R_BIN_ENTRY_TYPE_INIT;
 			r_list_append (ret, ptr);
@@ -311,7 +311,7 @@ static RList* entries(RBinFile *bf) {
 		break;
 	}
 
-	const int bin_bits = Elf_(r_bin_elf_get_bits) (eo);
+	const int bin_bits = Elf_(get_bits) (eo);
 	process_constructors (bf, ret, bin_bits < 32 ? 32: bin_bits);
 	RListIter *iter, *iter2;
 	RBinAddr *foo, *bar;
@@ -350,7 +350,7 @@ static RList* symbols(RBinFile *bf) {
 	}
 
 	// traverse symbols
-	const RVector *symbols = Elf_(r_bin_elf_load_symbols) (bin);
+	const RVector *symbols = Elf_(load_symbols) (bin);
 	if (!symbols) {
 		return ret;
 	}
@@ -365,7 +365,7 @@ static RList* symbols(RBinFile *bf) {
 	}
 
 	// traverse imports
-	const RVector *import_symbols = Elf_(r_bin_elf_load_imports) (bin);
+	const RVector *import_symbols = Elf_(load_imports) (bin);
 	if (!import_symbols) {
 		return ret;
 	}
@@ -398,7 +398,7 @@ static RList* imports(RBinFile *bf) {
 	}
 
 	ELFOBJ *elf = bf->o->bin_obj;
-	const RVector *import_symbols = Elf_(r_bin_elf_load_imports) (elf);
+	const RVector *import_symbols = Elf_(load_imports) (elf);
 	if (!import_symbols) {
 		r_list_free (ret);
 		return NULL;
@@ -429,7 +429,7 @@ static RList* libs(RBinFile *bf) {
 	}
 
 	// No leak, libs is automatically freed when r_bin_elf_free is called
-	const RVector *libs = Elf_(r_bin_elf_load_libs) (bf->o->bin_obj);
+	const RVector *libs = Elf_(load_libs) (bf->o->bin_obj);
 	if (libs) {
 		RBinElfLib *lib;
 		r_vector_foreach (libs, lib) {
@@ -601,7 +601,6 @@ static RBinReloc *reloc_convert(ELFOBJ* bin, RBinElfReloc *rel, ut64 got_addr) {
 static RList* relocs(RBinFile *bf) {
 	r_return_val_if_fail (bf && bf->o && bf->o->bin_obj, NULL);
 	RList *ret = NULL;
-	RBinReloc *ptr = NULL;
 	ELFOBJ *bin = bf->o->bin_obj;
 	if (!(ret = r_list_newf (free))) {
 		return NULL;
@@ -609,41 +608,39 @@ static RList* relocs(RBinFile *bf) {
 	/* FIXME: This is a _temporary_ fix/workaround to prevent a use-after-
 	 * free detected by ASan that would corrupt the relocation names */
 	r_list_free (imports (bf));
-	ut64 got_addr = Elf_(r_bin_elf_get_section_addr) (bin, ".got");
+	ut64 got_addr = Elf_(get_section_addr) (bin, ".got");
 	if (got_addr == UT64_MAX) {
-		got_addr = Elf_(r_bin_elf_get_section_addr) (bin, ".got.plt");
+		got_addr = Elf_(get_section_addr) (bin, ".got.plt");
 	}
 	if (got_addr == UT64_MAX && bin->ehdr.e_type == ET_REL) {
-		got_addr = Elf_(r_bin_elf_get_section_addr) (bin, ".got.r2");
+		got_addr = Elf_(get_section_addr) (bin, ".got.r2");
 	}
-	if (bf->o) {
-		const RVector *relocs = Elf_(r_bin_elf_load_relocs) (bin);
-		if (!relocs) {
-			return ret;
+	const RVector *relocs = Elf_(load_relocs) (bin);
+	if (!relocs) {
+		return ret;
+	}
+	RBinElfReloc *reloc, *r;
+	RListIter *iter;
+	r_vector_foreach (relocs, reloc) {
+		bool found = false;
+		// XXX this is slow
+		r_list_foreach (ret, iter, r) {
+			if (r->rva == reloc->rva) {
+				found = true;
+			}
 		}
-		RBinElfReloc *reloc, *r;
-		RListIter *iter;
-		r_vector_foreach (relocs, reloc) {
-			// XXX this is slow
-			r_list_foreach (ret, iter, r) {
-				if (r->rva == reloc->rva) {
-					goto another;
-				}
-			}
-			if (!(ptr = reloc_convert (bin, reloc, got_addr))) {
-				continue;
-			}
-			if (ptr->paddr != UT64_MAX) {
+		if (!found) {
+			RBinReloc *ptr = reloc_convert (bin, reloc, got_addr);
+			if (ptr && ptr->paddr != UT64_MAX) {
 				r_list_append (ret, ptr);
 			}
-another:;
 		}
 	}
 	return ret;
 }
 
 // static void _patch_reloc(ELFOBJ *bo, ut16 e_machine, RIOBind *iob, RBinElfReloc *rel, ut64 S, ut64 B, ut64 L) {
-static void _patch_reloc(RBinObject *binobj, struct Elf_(r_bin_elf_obj_t) *bo, ut16 e_machine, RIOBind *iob, RBinElfReloc *rel, ut64 S, ut64 B, ut64 L) {
+static void _patch_reloc(RBinObject *binobj, struct Elf_(obj_t) *bo, ut16 e_machine, RIOBind *iob, RBinElfReloc *rel, ut64 S, ut64 B, ut64 L) {
 	ut64 V = 0;
 	ut64 A = rel->addend;
 	ut64 P = rel->rva;
@@ -884,7 +881,7 @@ static RList* patch_relocs(RBin *b) {
 	}
 	gotr2map->name = strdup (".got.r2");
 
-	const RVector *relocs = Elf_(r_bin_elf_load_relocs) (bin);
+	const RVector *relocs = Elf_(load_relocs) (bin);
 	if (!relocs) {
 		return NULL;
 	}
@@ -1014,13 +1011,13 @@ static RBinInfo* info(RBinFile *bf) {
 		: NULL;
 	void *obj = bf->o->bin_obj;
 	char *str;
-	if ((str = Elf_(r_bin_elf_get_rpath)(obj))) {
+	if ((str = Elf_(get_rpath)(obj))) {
 		ret->rpath = strdup (str);
 		free (str);
 	} else {
 		ret->rpath = strdup ("NONE");
 	}
-	if (!(str = Elf_(r_bin_elf_get_file_type) (obj))) {
+	if (!(str = Elf_(get_file_type) (obj))) {
 		free (ret);
 		return NULL;
 	}
@@ -1028,55 +1025,55 @@ static RBinInfo* info(RBinFile *bf) {
 	ret->has_pi = (strstr (str, "DYN"))? 1: 0;
 	ret->has_lit = true;
 	ret->has_sanitizers = has_sanitizers (bf);
-	if (!(str = Elf_(r_bin_elf_get_elf_class) (obj))) {
+	if (!(str = Elf_(get_elf_class) (obj))) {
 		free (ret);
 		return NULL;
 	}
 	ret->bclass = str;
-	if (!(str = Elf_(r_bin_elf_get_osabi_name) (obj))) {
+	if (!(str = Elf_(get_osabi_name) (obj))) {
 		free (ret);
 		return NULL;
 	}
 	ret->os = str;
-	if (!(str = Elf_(r_bin_elf_get_osabi_name) (obj))) {
+	if (!(str = Elf_(get_osabi_name) (obj))) {
 		free (ret);
 		return NULL;
 	}
 	ret->subsystem = str;
-	if (!(str = Elf_(r_bin_elf_get_machine_name) (obj))) {
+	if (!(str = Elf_(get_machine_name) (obj))) {
 		free (ret);
 		return NULL;
 	}
 	ret->machine = str;
-	if (!(str = Elf_(r_bin_elf_get_arch) (obj))) {
+	if (!(str = Elf_(get_arch) (obj))) {
 		free (ret);
 		return NULL;
 	}
 	ret->arch = str;
-	ret->cpu = Elf_(r_bin_elf_get_cpu) (obj);
+	ret->cpu = Elf_(get_cpu) (obj);
 
 	ut32 elf_flags = ((ELFOBJ *)obj)->ehdr.e_flags;
 	if (elf_flags) {
 		ret->flags = r_str_newf ("0x%x", elf_flags);
 	}
-	ret->abi = Elf_(r_bin_elf_get_abi) (obj);
+	ret->abi = Elf_(get_abi) (obj);
 	ret->rclass = strdup ("elf");
-	ret->bits = Elf_(r_bin_elf_get_bits) (obj);
+	ret->bits = Elf_(get_bits) (obj);
 	if (!strcmp (ret->arch, "avr")) {
 		ret->bits = 16;
 	}
-	ret->big_endian = Elf_(r_bin_elf_is_big_endian) (obj);
-	ret->has_va = Elf_(r_bin_elf_has_va) (obj);
-	ret->has_nx = Elf_(r_bin_elf_has_nx) (obj);
-	ret->intrp = Elf_(r_bin_elf_intrp) (obj);
-	ret->compiler = Elf_(r_bin_elf_compiler) (obj);
+	ret->big_endian = Elf_(is_big_endian) (obj);
+	ret->has_va = Elf_(has_va) (obj);
+	ret->has_nx = Elf_(has_nx) (obj);
+	ret->intrp = Elf_(intrp) (obj);
+	ret->compiler = Elf_(compiler) (obj);
 	ret->dbg_info = 0;
-	if (!Elf_(r_bin_elf_get_stripped) (obj)) {
+	if (!Elf_(get_stripped) (obj)) {
 		ret->dbg_info |= R_BIN_DBG_LINENUMS | R_BIN_DBG_SYMS | R_BIN_DBG_RELOCS;
 	} else {
 		ret->dbg_info |= R_BIN_DBG_STRIPPED;
 	}
-	if (Elf_(r_bin_elf_is_static) (obj)) {
+	if (Elf_(is_static) (obj)) {
 		ret->dbg_info |= R_BIN_DBG_STATIC;
 	}
 	lookup_sections (bf, ret);
