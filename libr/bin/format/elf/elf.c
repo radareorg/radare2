@@ -132,7 +132,7 @@ static bool init_ehdr(ELFOBJ *eo) {
 	ut8 e_ident[EI_NIDENT];
 	ut8 ehdr[sizeof (Elf_(Ehdr))] = {0};
 	int i, len;
-	if (r_buf_read_at (eo->b, 0, e_ident, EI_NIDENT) == -1) {
+	if (r_buf_read_at (eo->b, 0, e_ident, EI_NIDENT) != EI_NIDENT) {
 		R_LOG_DEBUG ("read (magic)");
 		return false;
 	}
@@ -265,8 +265,8 @@ static bool read_phdr(ELFOBJ *eo, bool linux_kernel_hack) {
 		ut8 phdr[sizeof (Elf_(Phdr))] = {0};
 		int j = 0;
 		const size_t rsize = eo->ehdr.e_phoff + i * sizeof (Elf_(Phdr));
-		int len = r_buf_read_at (eo->b, rsize, phdr, sizeof (Elf_(Phdr)));
-		if (len < 1) {
+		int len = r_buf_read_at (eo->b, rsize, phdr, sizeof (phdr));
+		if (len != sizeof (phdr)) {
 			R_LOG_DEBUG ("read (phdr)");
 			return false;
 		}
@@ -329,7 +329,7 @@ static int init_phdr(ELFOBJ *eo) {
 	}
 
 	/* Enable this hack only for the X86 64bit ELFs */
-	const int _128K = 1024 * 128;
+	const size_t _128K = 1024 * 128;
 	const bool linux_kern_hack = r_buf_size (eo->b) > _128K &&
 		(eo->ehdr.e_machine == EM_X86_64 || eo->ehdr.e_machine == EM_386);
 	if (!read_phdr (eo, linux_kern_hack)) {
@@ -388,7 +388,7 @@ static int init_shdr(ELFOBJ *eo) {
 	for (i = 0; i < eo->ehdr.e_shnum; i++) {
 		size_t j = 0;
 		size_t len = r_buf_read_at (eo->b, eo->ehdr.e_shoff + i * sizeof (Elf_(Shdr)), shdr, sizeof (Elf_(Shdr)));
-		if (len < 1) {
+		if (len != sizeof (Elf_(Shdr))) {
 			R_LOG_DEBUG ("read (shdr) at 0x%" PFMT64x, (ut64) eo->ehdr.e_shoff);
 			R_FREE (eo->shdr);
 			return false;
@@ -463,7 +463,7 @@ static int init_strtab(ELFOBJ *eo) {
 	}
 	int res = r_buf_read_at (eo->b, eo->shstrtab_section->sh_offset, (ut8*)eo->shstrtab,
 		eo->shstrtab_section->sh_size);
-	if (res < 1) {
+	if (res != eo->shstrtab_section->sh_size) {
 		R_LOG_DEBUG ("read (shstrtab) at 0x%" PFMT64x, (ut64) eo->shstrtab_section->sh_offset);
 		R_FREE (eo->shstrtab);
 		return false;
@@ -535,7 +535,7 @@ static void set_default_value_dynamic_info(ELFOBJ *eo) {
 	eo->dyn_info.dt_flags_1 = R_BIN_ELF_XWORD_MAX;
 	eo->dyn_info.dt_rpath = R_BIN_ELF_XWORD_MAX;
 	eo->dyn_info.dt_runpath = R_BIN_ELF_XWORD_MAX;
-	r_vector_init(&eo->dyn_info.dt_needed, sizeof (Elf_(Off)), NULL, NULL);
+	r_vector_init (&eo->dyn_info.dt_needed, sizeof (Elf_(Off)), NULL, NULL);
 }
 
 static inline size_t get_maximum_number_of_dynamic_entries(ut64 dyn_size) {
@@ -544,15 +544,13 @@ static inline size_t get_maximum_number_of_dynamic_entries(ut64 dyn_size) {
 
 static bool fill_dynamic_entry(ELFOBJ *eo, ut64 entry_offset, Elf_(Dyn) *d) {
 	ut8 sdyn[sizeof (Elf_(Dyn))] = {0};
-	int len = r_buf_read_at (eo->b, entry_offset, sdyn, sizeof (Elf_(Dyn)));
-	if (len < 1) {
+	int len = r_buf_read_at (eo->b, entry_offset, sdyn, sizeof (sdyn));
+	if (len != sizeof (sdyn)) {
 		return false;
 	}
-
-	int j = 0;
+	int j = 0; // required because its used in a macro
 	d->d_tag = R_BIN_ELF_READWORD (sdyn, j);
 	d->d_un.d_ptr = R_BIN_ELF_READWORD (sdyn, j);
-
 	return true;
 }
 
@@ -713,7 +711,7 @@ static int init_dynamic_section(ELFOBJ *eo) {
 	}
 
 	int r = r_buf_read_at (eo->b, strtabaddr, (ut8 *)strtab, strsize);
-	if (r < 1) {
+	if (r != strsize) {
 		free (strtab);
 		return false;
 	}
@@ -728,38 +726,26 @@ static RBinElfSection* get_section_by_name(ELFOBJ *eo, const char *section_name)
 	if (eo->sections_loaded) {
 		RBinElfSection *section;
 		r_vector_foreach (&eo->g_sections, section) {
-			if (!strncmp (section->name, section_name, ELF_STRING_LENGTH - 1)) {
+			if (!strcmp (section->name, section_name)) {
 				return section;
 			}
 		}
 	}
-
 	return NULL;
 }
 
-static const char *get_ver_flags(char *buff, size_t buff_size, ut32 flags) {
-	if (!flags) {
-		return "none";
+static char *get_ver_flags(ut32 flags) {
+	if (flags == 0) {
+		return strdup ("none");
 	}
-
-	buff[0] = 0;
-
-	if (flags & VER_FLG_BASE) {
-		strcpy (buff, "BASE ");
-	}
-
+	RStrBuf *sb = r_strbuf_new (flags & VER_FLG_BASE ? "BASE" : "");
 	if (flags & VER_FLG_WEAK) {
-		if (flags & VER_FLG_BASE) {
-			strcat (buff, "| ");
-		}
-		strcat (buff, "WEAK ");
+		r_strbuf_appendf (sb, "%sWEAK", r_strbuf_length (sb) > 0?" | ": "" );
 	}
-
 	if (flags & ~(VER_FLG_BASE | VER_FLG_WEAK)) {
-		strcat (buff, "| <unknown>");
+		r_strbuf_appendf (sb, "%s<unknown>", r_strbuf_length (sb) > 0?" | ": "" );
 	}
-
-	return buff;
+	return r_strbuf_drain (sb);
 }
 
 typedef struct e_data_state_t {
@@ -794,7 +780,8 @@ static inline ut16 *_parse_edata(ELFOBJ *eo, EDataState *edata_state) {
 	if (eo->shstrtab && link_shdr->sh_name < eo->shstrtab_size) {
 		link_section_name = &eo->shstrtab[link_shdr->sh_name];
 	}
-	r_buf_read_at (eo->b, off, edata, sizeof (ut16) * num_entries);
+	edata[0] = 0;
+	(void)r_buf_read_at (eo->b, off, edata, sizeof (ut16) * num_entries);
 	sdb_set (sdb, "section_name", section_name, 0);
 	sdb_num_set (sdb, "num_entries", num_entries, 0);
 	sdb_num_set (sdb, "addr", shdr->sh_addr, 0);
@@ -834,7 +821,7 @@ static inline bool _maybe_parse_aux_ver_needed_info(ELFOBJ *eo, ParseVernauxStat
 		}
 
 		ut8 svn[sizeof (Elf_(Verneed))] = {0};
-		if (r_buf_read_at (eo->b, offset, svn, sizeof (svn)) < 0) {
+		if (r_buf_read_at (eo->b, offset, svn, sizeof (svn)) != sizeof (svn)) {
 			R_LOG_DEBUG ("Cannot read Verneed for Versym");
 			return false;
 		}
@@ -858,7 +845,7 @@ static inline bool _maybe_parse_aux_ver_needed_info(ELFOBJ *eo, ParseVernauxStat
 			}
 
 			ut8 svna[sizeof (Elf_(Vernaux))] = {0};
-			if (r_buf_read_at (eo->b, a_off, svna, sizeof (svna)) < 0) {
+			if (r_buf_read_at (eo->b, a_off, svna, sizeof (svna)) != sizeof (svna)) {
 				R_LOG_DEBUG ("Cannot read Vernaux for Versym");
 				return false;
 			}
@@ -914,7 +901,7 @@ static inline bool _maybe_parse_version_definition_info(ELFOBJ *eo, ParseVerDefS
 	}
 
 	do {
-		if (r_buf_read_at (eo->b, offset, svd, sizeof (svd)) < 0) {
+		if (r_buf_read_at (eo->b, offset, svd, sizeof (svd)) != sizeof (svd)) {
 			R_LOG_DEBUG ("Cannot read Verdef for Versym");
 			return false;
 		}
@@ -938,7 +925,7 @@ static inline bool _maybe_parse_version_definition_info(ELFOBJ *eo, ParseVerDefS
 			return false;
 		}
 
-		if (r_buf_read_at (eo->b, off_vda, svda, sizeof (svda)) < 0) {
+		if (r_buf_read_at (eo->b, off_vda, svda, sizeof (svda)) != sizeof (svda)) {
 			R_LOG_DEBUG ("Cannot read Verdaux for Versym");
 			return false;
 		}
@@ -1108,7 +1095,7 @@ static inline bool _process_verdefs(ELFOBJ *eo, ProcessVerdefsState *state) {
 		}
 
 		ut8 dfs[sizeof (Elf_(Verdef))] = {0};
-		r_buf_read_at (eo->b, shdr->sh_offset + i, dfs, sizeof (Elf_(Verdef)));
+		r_buf_read_at (eo->b, shdr->sh_offset + i, dfs, sizeof (dfs));
 
 		int j = 0;
 		Elf_(Verdef) *verdef = (Elf_(Verdef)*)vstart;
@@ -1151,8 +1138,7 @@ static inline bool _process_verdefs(ELFOBJ *eo, ProcessVerdefsState *state) {
 		sdb_num_set (sdb_verdef, "vd_ndx", verdef->vd_ndx, 0);
 		sdb_num_set (sdb_verdef, "vd_cnt", verdef->vd_cnt, 0);
 		sdb_set (sdb_verdef, "vda_name", &eo->dynstr[aux.vda_name], 0);
-		char verbuf[64];
-		sdb_set (sdb_verdef, "flags", get_ver_flags (verbuf, sizeof (verbuf), verdef->vd_flags), 0);
+		sdb_set_owned (sdb_verdef, "flags", get_ver_flags (verdef->vd_flags), 0);
 
 		ProcessVerdefState verdef_state = {
 			.i = i,
@@ -1319,7 +1305,6 @@ static inline bool _process_verneed_state(ELFOBJ *eo, ProcessVerneedState *state
 				sdb_free (sdb_version);
 				return false;
 			}
-#if 1
 			Sdb *sdb_vernaux = sdb_new0 ();
 			if (!sdb_vernaux) {
 				sdb_free (sdb_vernaux);
@@ -1330,26 +1315,17 @@ static inline bool _process_verneed_state(ELFOBJ *eo, ProcessVerneedState *state
 			sdb_num_set (sdb_vernaux, "idx", isum, 0);
 			if (aux->vna_name > 0 && aux->vna_name + 8 < eo->dynstr_size) {
 				char name [16];
-				strncpy (name, &eo->dynstr[aux->vna_name], sizeof (name) - 1);
-				name[sizeof (name) - 1] = 0;
+				r_str_ncpy (name, eo->dynstr + aux->vna_name, sizeof (name));
 				sdb_set (sdb_vernaux, "name", name, 0);
 			}
 
-			char verbuf[64] = {0};
-			sdb_set (sdb_vernaux, "flags", get_ver_flags (verbuf, sizeof (verbuf), aux->vna_flags), 0);
+			sdb_set_owned (sdb_vernaux, "flags", get_ver_flags (aux->vna_flags), 0);
 			sdb_num_set (sdb_vernaux, "version", aux->vna_other, 0);
 			isum += aux->vna_next;
 			vstart += aux->vna_next;
 			char key[32] = {0};
 			snprintf (key, sizeof (key), "vernaux%d", j);
 			sdb_ns_set (sdb_version, key, sdb_vernaux);
-#else
-			char *key = r_str_newf ("vernaux%d", j);
-			char *val = r_str_newf ("%d,%s", isum, get_ver_flags (aux->vna_flags));
-			sdb_set (sdb_version, key, val, 0);
-			free (key);
-			free (val);
-#endif
 		}
 
 		if ((int)entry->vn_next < 0) {
@@ -1425,8 +1401,8 @@ static Sdb *store_versioninfo_gnu_verneed(ELFOBJ *eo, Elf_(Shdr) *shdr, int sz) 
 		return NULL;
 	}
 
-	ut64 count = r_buf_read_at (eo->b, shdr->sh_offset, need, shdr->sh_size);
-	if (count < 1) {
+	int count = r_buf_read_at (eo->b, shdr->sh_offset, need, shdr->sh_size);
+	if (count != shdr->sh_size) {
 		free (need);
 		sdb_free (sdb);
 		return NULL;
@@ -4272,7 +4248,7 @@ static RVector* parse_gnu_debugdata(ELFOBJ *eo, size_t *ret_size) {
 			if (!data) {
 				return NULL;
 			}
-			if (r_buf_read_at (eo->b, addr, data, size) == -1) {
+			if (r_buf_read_at (eo->b, addr, data, size) != size) {
 				R_LOG_ERROR ("Cannot read");
 			}
 			size_t osize;
@@ -4932,7 +4908,7 @@ static bool get_nt_file_maps(ELFOBJ *eo, RList *core_maps) {
 				break;
 			}
 			char str[512] = {0};
-			r_buf_read_at (eo->b, jump + len_str, (ut8*)str, sizeof (str) - 1);
+			(void)r_buf_read_at (eo->b, jump + len_str, (ut8*)str, sizeof (str) - 1);
 			str[sizeof (str) - 1] = 0; // null terminate string
 			RListIter *iter;
 			RBinMap *p;
@@ -5012,7 +4988,7 @@ char *Elf_(compiler)(ELFOBJ *eo) {
 	}
 
 	ut64 off = section->offset;
-	if (r_buf_read_at (eo->b, off, (ut8*)buf, sz) < 1) {
+	if (r_buf_read_at (eo->b, off, (ut8*)buf, sz) != sz) {
 		free (buf);
 		return NULL;
 	}
