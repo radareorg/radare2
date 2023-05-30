@@ -4180,7 +4180,7 @@ static RVector *Elf_(load_phdr_imports)(ELFOBJ *eo) {
 	return eo->phdr_imports;
 }
 
-static RVector *Elf_(load_phdr_symbols)(ELFOBJ *eo, int type) {
+static RVector *Elf_(load_symbols_type)(ELFOBJ *eo, int type) {
 	return (type != R_BIN_ELF_IMPORT_SYMBOLS)
 		? Elf_(load_phdr_symbols) (eo)
 		: Elf_(load_phdr_imports) (eo);
@@ -4190,7 +4190,7 @@ static int Elf_(fix_symbols)(ELFOBJ *eo, int nsym, int type, RVector *symbols) {
 	int result = -1;
 	HtUP *phd_offset_map = ht_up_new0 ();
 	HtUP *phd_ordinal_map = ht_up_new0 ();
-	const RVector *phdr_symbols = Elf_(load_phdr_symbols) (eo, type);
+	const RVector *phdr_symbols = Elf_(load_symbols_type) (eo, type);
 
 	if (phdr_symbols) {
 		RBinElfSymbol *symbol;
@@ -4488,7 +4488,7 @@ static RVector /* <RBinElfSymbol> */ *Elf_(_r_bin_elf_load_symbols_and_imports)(
 
 	if (!eo->shdr || !eo->ehdr.e_shnum || eo->ehdr.e_shnum == 0xffff) {
 		R_LOG_DEBUG ("invalid section header value");
-		return Elf_(load_phdr_symbols) (eo, type);
+		return Elf_(load_symbols_type) (eo, type);
 	}
 
 	ut32 shdr_size = 0;
@@ -4708,7 +4708,7 @@ static RVector /* <RBinElfSymbol> */ *Elf_(_r_bin_elf_load_symbols_and_imports)(
 	}
 
 	if (!ret) {
-		return Elf_(load_phdr_symbols) (eo, type);
+		return Elf_(load_symbols_type) (eo, type);
 	}
 
 	int nsym = Elf_(fix_symbols) (eo, ret_ctr, type, ret);
