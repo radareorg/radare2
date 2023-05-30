@@ -1664,7 +1664,7 @@ static ut64 get_import_addr_riscv(ELFOBJ *bin, RBinElfReloc *rel) {
 	ut64 got_addr = bin->dyn_info.dt_pltgot;
 	if (got_addr != R_BIN_ELF_ADDR_MAX) {
 		ut64 plt_addr = get_got_entry (bin, rel);
-		if (plt_addr == UT64_MAX) {
+		if (plt_addr != UT64_MAX) {
 			ut64 pos = COMPUTE_PLTGOT_POSITION (rel, got_addr, 2);
 			return plt_addr + RISCV_PLT_OFFSET + pos * RISCV_PLT_ENTRY_SIZE;
 		}
