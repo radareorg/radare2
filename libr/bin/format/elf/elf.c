@@ -1946,111 +1946,101 @@ ut64 Elf_(r_bin_elf_get_baddr)(ELFOBJ *bin) {
 		return 0x08000000;
 	}
 
-	return base == UT64_MAX? 0: base;
+	return base;
 }
 
 ut64 Elf_(r_bin_elf_get_boffset)(ELFOBJ *bin) {
 	r_return_val_if_fail (bin, 0);
-
-	if (!bin->phdr) {
-		return 0; // TODO: should return ut64.max
-	}
-
-	ut64 base = UT64_MAX;
-	size_t i;
-	for (i = 0; i < bin->ehdr.e_phnum; i++) {
-		if (bin->phdr[i].p_type == PT_LOAD) {
-			ut64 tmp = (ut64)bin->phdr[i].p_offset & ELF_PAGE_MASK;
-			tmp = tmp - (tmp % ELF_PAGE_SIZE);
-			if (tmp < base) {
-				base = tmp;
+	ut64 base = 0;
+	if (bin->phdr) {
+		size_t i;
+		for (i = 0; i < bin->ehdr.e_phnum; i++) {
+			if (bin->phdr[i].p_type == PT_LOAD) {
+				ut64 tmp = (ut64)bin->phdr[i].p_offset & ELF_PAGE_MASK;
+				tmp = tmp - (tmp % ELF_PAGE_SIZE);
+				if (tmp < base) {
+					base = tmp;
+				}
 			}
 		}
 	}
-
-	return base == UT64_MAX? 0: base;
+	return base;
 }
 
-ut64 Elf_(r_bin_elf_get_init_offset)(ELFOBJ *bin) {
-	ut64 entry = Elf_(r_bin_elf_get_entry_offset) (bin);
-	if (!bin || entry == UT64_MAX) {
-		return UT64_MAX;
+ut64 Elf_(r_bin_elf_get_init_offset)(ELFOBJ *eo) {
+	r_return_val_if_fail (eo, UT64_MAX);
+	if (is_intel (eo)) { // push // x86 only
+		ut64 entry = Elf_(r_bin_elf_get_entry_offset) (eo);
+		if (entry == UT64_MAX) {
+			return UT64_MAX;
+		}
+		ut8 buf[64];
+		if (r_buf_read_at (eo->b, entry + 16, buf, sizeof (buf)) == sizeof (buf)) {
+			if (*buf == 0x68) {
+				memmove (buf, buf + 1, 4);
+				ut64 addr = (ut64) r_read_le32 (buf);
+				return Elf_(r_bin_elf_v2p) (eo, addr);
+			}
+		}
 	}
-
-	ut8 buf[128];
-	if (r_buf_read_at (bin->b, entry + 16, buf, sizeof (buf)) < 1) {
-		R_LOG_DEBUG ("read (init_offset)");
-		return 0;
-	}
-
-	if (buf[0] == 0x68) { // push // x86 only
-		memmove (buf, buf + 1, 4);
-		ut64 addr = (ut64) r_read_le32 (buf);
-		return Elf_(r_bin_elf_v2p) (bin, addr);
-	}
-
 	return 0;
 }
 
-ut64 Elf_(r_bin_elf_get_fini_offset)(ELFOBJ *bin) {
-	r_return_val_if_fail (bin, UT64_MAX);
-
-	ut64 entry = Elf_(r_bin_elf_get_entry_offset) (bin);
-	if (entry == UT64_MAX) {
-		return UT64_MAX;
+ut64 Elf_(r_bin_elf_get_fini_offset)(ELFOBJ *eo) {
+	r_return_val_if_fail (eo, UT64_MAX);
+	if (is_intel (eo)) { // push // x86 only
+		ut64 entry = Elf_(r_bin_elf_get_entry_offset) (eo);
+		if (entry == UT64_MAX) {
+			return UT64_MAX;
+		}
+		ut8 buf[128];
+		if (r_buf_read_at (eo->b, entry + 11, buf, sizeof (buf)) == -1) {
+			R_LOG_ERROR ("read (get_fini)");
+			return 0;
+		}
+		if (*buf == 0x68) { // push // x86/32 only
+			memmove (buf, buf + 1, 4);
+			ut64 addr = (ut64) r_read_le32 (buf);
+			return Elf_(r_bin_elf_v2p) (eo, addr);
+		}
 	}
-
-	ut8 buf[512];
-	if (r_buf_read_at (bin->b, entry + 11, buf, sizeof (buf)) == -1) {
-		R_LOG_ERROR ("read (get_fini)");
-		return 0;
-	}
-
-	if (*buf == 0x68) { // push // x86/32 only
-		memmove (buf, buf + 1, 4);
-		ut64 addr = (ut64) r_read_le32 (buf);
-		return Elf_(r_bin_elf_v2p) (bin, addr);
-	}
-
 	return 0;
 }
 
-static ut64 get_entry_offset_from_shdr(ELFOBJ *bin) {
-	ut64 sectionOffset = Elf_(r_bin_elf_get_section_offset)(bin, ".init.text");
+static ut64 get_entry_offset_from_shdr(ELFOBJ *eo) {
+	ut64 sectionOffset = Elf_(r_bin_elf_get_section_offset)(eo, ".init.text");
 	if (sectionOffset != UT64_MAX) {
 		return sectionOffset;
 	}
-
-	sectionOffset = Elf_(r_bin_elf_get_section_offset)(bin, ".text");
+	sectionOffset = Elf_(r_bin_elf_get_section_offset)(eo, ".text");
 	if (sectionOffset != UT64_MAX) {
 		return sectionOffset;
 	}
-
-	sectionOffset = Elf_(r_bin_elf_get_section_offset)(bin, ".text");
+	sectionOffset = Elf_(r_bin_elf_get_section_offset)(eo, ".text");
 	if (sectionOffset != UT64_MAX) {
 		return sectionOffset;
 	}
-
 	return UT64_MAX;
 }
 
-ut64 Elf_(r_bin_elf_get_entry_offset)(ELFOBJ *bin) {
-	r_return_val_if_fail (bin, UT64_MAX);
+ut64 Elf_(r_bin_elf_get_entry_offset)(ELFOBJ *eo) {
+	r_return_val_if_fail (eo, UT64_MAX);
 
-	if (!Elf_(r_bin_elf_is_executable) (bin)) {
+	if (!Elf_(is_executable) (eo)) {
 		return UT64_MAX;
 	}
 
-	ut64 entry = bin->ehdr.e_entry;
+	ut64 entry = eo->ehdr.e_entry;
 	if (entry) {
-		return Elf_(r_bin_elf_v2p) (bin, entry);
+		return Elf_(r_bin_elf_v2p) (eo, entry);
 	}
 
-	return get_entry_offset_from_shdr (bin);
+	return get_entry_offset_from_shdr (eo);
 }
 
-static ut64 lookup_main_symbol_offset(ELFOBJ *bin) {
-	const RVector *symbols = Elf_(r_bin_elf_load_symbols) (bin);
+static ut64 lookup_main_symbol_offset(ELFOBJ *eo) {
+	// XXX this is slow
+	const RVector *symbols = Elf_(r_bin_elf_load_symbols) (eo);
 	if (symbols) {
 		RBinElfSymbol *symbol;
 		r_vector_foreach (symbols, symbol) {
