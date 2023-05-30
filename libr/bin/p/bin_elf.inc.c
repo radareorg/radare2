@@ -28,20 +28,23 @@ static RList *maps(RBinFile *bf) {
 
 static char* regstate(RBinFile *bf) {
 	ELFOBJ *obj = bf->o->bin_obj;
-	if (obj->ehdr.e_machine != EM_AARCH64 &&
-		obj->ehdr.e_machine != EM_ARM &&
-		obj->ehdr.e_machine != EM_386 &&
-		obj->ehdr.e_machine != EM_X86_64) {
-		R_LOG_ERROR ("Cannot retrieve regstate on: %s (not yet supported)",
-					Elf_(r_bin_elf_get_machine_name)(obj));
-		return NULL;
+	switch (obj->ehdr.e_machine) {
+	case EM_ARM:
+	case EM_AARCH64:
+	case EM_386:
+	case EM_X86_64:
+		{
+			int len = 0;
+			ut8 *regs = Elf_(r_bin_elf_grab_regstate) (obj, &len);
+			char *hexregs = (regs && len > 0) ? r_hex_bin2strdup (regs, len) : NULL;
+			free (regs);
+			return hexregs;
+		}
 	}
+	R_LOG_ERROR ("Cannot retrieve regstate on: %s (not yet supported)",
+				Elf_(r_bin_elf_get_machine_name)(obj));
+	return NULL;
 
-	int len = 0;
-	ut8 *regs = Elf_(r_bin_elf_grab_regstate) (obj, &len);
-	char *hexregs = (regs && len > 0) ? r_hex_bin2strdup (regs, len) : NULL;
-	free (regs);
-	return hexregs;
 }
 
 static void setimpord(ELFOBJ* eobj, ut32 ord, RBinImport *ptr) {
@@ -179,12 +182,15 @@ static void process_constructors(RBinFile *bf, RList *ret, int bits) {
 	int i, type;
 	r_list_foreach (secs, iter, sec) {
 		type = -1;
-		if (!strcmp (sec->name, ".fini_array")) {
-			type = R_BIN_ENTRY_TYPE_FINI;
-		} else if (!strcmp (sec->name, ".init_array")) {
-			type = R_BIN_ENTRY_TYPE_INIT;
-		} else if (!strcmp (sec->name, ".preinit_array")) {
-			type = R_BIN_ENTRY_TYPE_PREINIT;
+		const char *sec_name = sec->name;
+		if (*sec_name == '.') {
+			if (!strcmp (sec_name, ".fini_array")) {
+				type = R_BIN_ENTRY_TYPE_FINI;
+			} else if (!strcmp (sec_name, ".init_array")) {
+				type = R_BIN_ENTRY_TYPE_INIT;
+			} else if (!strcmp (sec_name, ".preinit_array")) {
+				type = R_BIN_ENTRY_TYPE_PREINIT;
+			}
 		}
 		if (type == -1) {
 			continue;
@@ -319,12 +325,7 @@ static RList* entries(RBinFile *bf) {
 			}
 		}
 		if (is_new_symbol) {
-			RBinAddr *ptr = R_NEW0 (RBinAddr);
-			if (!ptr) {
-				return ret;
-			}
-			memcpy (ptr, foo, sizeof (RBinAddr));
-			r_list_append (ret, ptr);
+			r_list_append (ret, r_mem_dup (foo, sizeof (RBinAddr)));
 		}
 	}
 	return ret;
