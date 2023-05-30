@@ -605,9 +605,7 @@ static RList* relocs(RBinFile *bf) {
 	if (!(ret = r_list_newf (free))) {
 		return NULL;
 	}
-	/* FIXME: This is a _temporary_ fix/workaround to prevent a use-after-
-	 * free detected by ASan that would corrupt the relocation names */
-	r_list_free (imports (bf));
+
 	ut64 got_addr = Elf_(get_section_addr) (bin, ".got");
 	if (got_addr == UT64_MAX) {
 		got_addr = Elf_(get_section_addr) (bin, ".got.plt");
@@ -615,27 +613,32 @@ static RList* relocs(RBinFile *bf) {
 	if (got_addr == UT64_MAX && bin->ehdr.e_type == ET_REL) {
 		got_addr = Elf_(get_section_addr) (bin, ".got.r2");
 	}
+
 	const RVector *relocs = Elf_(load_relocs) (bin);
 	if (!relocs) {
 		return ret;
 	}
-	RBinElfReloc *reloc, *r;
-	RListIter *iter;
+
+	HtUP *reloc_ht = ht_up_new0 ();
+	if (!reloc_ht) {
+		return ret;
+	}
+
+	RBinElfReloc *reloc;
 	r_vector_foreach (relocs, reloc) {
-		bool found = false;
-		// XXX this is slow
-		r_list_foreach (ret, iter, r) {
-			if (r->rva == reloc->rva) {
-				found = true;
-			}
+		RBinReloc *already_inserted = ht_up_find (reloc_ht, reloc->rva, NULL);
+		if (already_inserted) {
+			continue;
 		}
-		if (!found) {
-			RBinReloc *ptr = reloc_convert (bin, reloc, got_addr);
-			if (ptr && ptr->paddr != UT64_MAX) {
-				r_list_append (ret, ptr);
-			}
+
+		RBinReloc *ptr = reloc_convert (bin, reloc, got_addr);
+		if (ptr && ptr->paddr != UT64_MAX) {
+			r_list_append (ret, ptr);
+			ht_up_insert (reloc_ht, reloc->rva, ptr);
 		}
 	}
+
+	ht_up_free (reloc_ht);
 	return ret;
 }
 
