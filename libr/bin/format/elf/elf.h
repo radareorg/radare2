@@ -207,7 +207,7 @@ bool Elf_(r_bin_elf_entry_write)(RBinFile *bf, ut64 addr);
 bool Elf_(r_bin_elf_del_rpath)(RBinFile *bf);
 
 ut64 Elf_(r_bin_elf_get_phnum)(ELFOBJ *bin);
-bool Elf_(r_bin_elf_is_executable)(ELFOBJ *bin);
+bool Elf_(is_executable)(ELFOBJ *bin);
 int Elf_(r_bin_elf_has_relro)(struct Elf_(r_bin_elf_obj_t) *bin);
 int Elf_(r_bin_elf_has_nx)(struct Elf_(r_bin_elf_obj_t) *bin);
 ut8 *Elf_(r_bin_elf_grab_regstate)(struct Elf_(r_bin_elf_obj_t) *bin, int *len);

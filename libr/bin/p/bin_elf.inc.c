@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2022 - nibble, pancake */
+/* radare - LGPL - Copyright 2009-2023 - nibble, pancake, luctielen */
 
 #define R_LOG_ORIGIN "bin.elf"
 
@@ -16,7 +16,7 @@ static RBinInfo* info(RBinFile *bf);
 static int get_file_type(RBinFile *bf) {
 	ELFOBJ *obj = bf->o->bin_obj;
 	char *type = Elf_(r_bin_elf_get_file_type (obj));
-	int res = type? ((!strncmp (type, "CORE", 4)) ? R_BIN_TYPE_CORE : R_BIN_TYPE_DEFAULT) : -1;
+	int res = type? (r_str_startswith (type, "CORE") ? R_BIN_TYPE_CORE : R_BIN_TYPE_DEFAULT) : -1;
 	free (type);
 	return res;
 }
@@ -112,8 +112,8 @@ static RBinAddr* binsym(RBinFile *bf, int sym) {
 		break;
 	}
 	if (addr && addr != UT64_MAX && (ret = R_NEW0 (RBinAddr))) {
-		ELFOBJ *bin = bf->o->bin_obj;
-		bool is_arm = bin->ehdr.e_machine == EM_ARM;
+		ELFOBJ *eo = bf->o->bin_obj;
+		bool is_arm = eo->ehdr.e_machine == EM_ARM;
 		ret->paddr = addr;
 		ret->vaddr = Elf_(r_bin_elf_p2v) (obj, addr);
 		if (is_arm && addr & 1) {
@@ -154,16 +154,16 @@ static RList* sections(RBinFile *bf) {
 static RBinAddr* newEntry(RBinFile *bf, ut64 hpaddr, ut64 hvaddr, ut64 vaddr, int type, int bits) {
 	r_return_val_if_fail (bf && bf->o && bf->o->bin_obj, NULL);
 
-	ELFOBJ *obj = bf->o->bin_obj;
 	RBinAddr *ptr = R_NEW0 (RBinAddr);
 	if (ptr) {
-		ptr->paddr = Elf_(r_bin_elf_v2p) (obj, vaddr);
+		ELFOBJ *eo = bf->o->bin_obj;
+		ptr->paddr = Elf_(r_bin_elf_v2p) (eo, vaddr);
 		ptr->vaddr = vaddr;
 		ptr->hpaddr = hpaddr;
 		ptr->hvaddr = hvaddr;
 		ptr->bits = bits;
 		ptr->type = type;
-		//realign due to thumb
+		// realign due to thumb
 		if (bits == 16 && ptr->vaddr & 1) {
 			ptr->paddr--;
 			ptr->vaddr--;
@@ -229,8 +229,8 @@ static RList* entries(RBinFile *bf) {
 		return NULL;
 	}
 
-	ELFOBJ* obj = bf->o->bin_obj;
-	ut64 paddr = Elf_(r_bin_elf_get_entry_offset) (obj);
+	ELFOBJ* eo = bf->o->bin_obj;
+	ut64 paddr = Elf_(r_bin_elf_get_entry_offset) (eo);
 	if (paddr != UT64_MAX) {
 		RBinAddr *ptr = R_NEW0 (RBinAddr);
 		if (!ptr) {
@@ -238,17 +238,18 @@ static RList* entries(RBinFile *bf) {
 		}
 
 		ptr->paddr = paddr;
-		ptr->vaddr = Elf_(r_bin_elf_p2v) (obj, ptr->paddr);
+		ptr->vaddr = Elf_(r_bin_elf_p2v) (eo, ptr->paddr);
 		ptr->hpaddr = 0x18;  // e_entry offset in ELF header
 		ptr->hvaddr = UT64_MAX;
 
-		if (ptr->vaddr != (ut64)obj->ehdr.e_entry && Elf_(r_bin_elf_is_executable) (obj)) {
+		if (ptr->vaddr != (ut64)eo->ehdr.e_entry && Elf_(is_executable) (eo)) {
 			R_LOG_ERROR ("Cannot determine entrypoint, using 0x%08" PFMT64x, ptr->vaddr);
 		}
 
 		if (bf->o->sections) {
 			RListIter *iter;
 			RBinSection *section;
+			// XXX this is slow
 			r_list_foreach_prev (bf->o->sections, iter, section) {
 				if (!strcmp (section->name, "ehdr")) {
 					ptr->hvaddr = section->vaddr + ptr->hpaddr;
@@ -257,11 +258,11 @@ static RList* entries(RBinFile *bf) {
 			}
 		}
 		if (ptr->hvaddr == UT64_MAX) {
-			Elf_(r_bin_elf_p2v_new) (obj, ptr->hpaddr);
+			Elf_(r_bin_elf_p2v_new) (eo, ptr->hpaddr);
 		}
 
-		if (obj->ehdr.e_machine == EM_ARM) {
-			int bin_bits = Elf_(r_bin_elf_get_bits) (obj);
+		if (eo->ehdr.e_machine == EM_ARM) {
+			int bin_bits = Elf_(r_bin_elf_get_bits) (eo);
 			if (bin_bits != 64) {
 				ptr->bits = 32;
 				if (ptr->vaddr & 1) {
@@ -279,35 +280,36 @@ static RList* entries(RBinFile *bf) {
 
 	// add entrypoint for jni libraries
 	// NOTE: this is slow, we shouldnt find for java constructors here
-	const RVector *symbols = Elf_(r_bin_elf_load_symbols) (obj);
+	const RVector *symbols = Elf_(r_bin_elf_load_symbols) (eo);
 	if (!symbols) {
 		return ret;
 	}
 
 	RBinElfSymbol *symbol;
 	r_vector_foreach (symbols, symbol) {
-		if (strncmp (symbol->name, "Java", 4) || !r_str_endswith (symbol->name, "_init")) {
+		// why?
+		if (!r_str_startswith (symbol->name, "Java")) {
 			continue;
 		}
-
-		RBinAddr *ptr = R_NEW0 (RBinAddr);
-		if (!ptr) {
-			return ret;
+		if (!r_str_endswith (symbol->name, "_init")) {
+			continue;
 		}
-
-		ptr->paddr = symbol->offset;
-		ptr->vaddr = Elf_(r_bin_elf_p2v) (obj, ptr->paddr);
-		ptr->hpaddr = UT64_MAX;
-		ptr->type = R_BIN_ENTRY_TYPE_INIT;
-		r_list_append (ret, ptr);
+		RBinAddr *ptr = R_NEW0 (RBinAddr);
+		if (ptr) {
+			ptr->paddr = symbol->offset;
+			ptr->vaddr = Elf_(r_bin_elf_p2v) (eo, ptr->paddr);
+			ptr->hpaddr = UT64_MAX;
+			ptr->type = R_BIN_ENTRY_TYPE_INIT;
+			r_list_append (ret, ptr);
+		}
 		break;
 	}
 
-	int bin_bits = Elf_(r_bin_elf_get_bits) (bf->o->bin_obj);
+	const int bin_bits = Elf_(r_bin_elf_get_bits) (eo);
 	process_constructors (bf, ret, bin_bits < 32 ? 32: bin_bits);
 	RListIter *iter, *iter2;
 	RBinAddr *foo, *bar;
-	r_list_foreach (obj->inits, iter, foo) {
+	r_list_foreach (eo->inits, iter, foo) {
 		bool is_new_symbol = true;
 		// avoid dupes
 		r_list_foreach (ret, iter2, bar) {
@@ -407,7 +409,6 @@ static RList* imports(RBinFile *bf) {
 		if (!ptr) {
 			break;
 		}
-
 		ptr->name = strdup (import_symbol->name);
 		ptr->bind = import_symbol->bind;
 		ptr->type = import_symbol->type;
@@ -667,13 +668,8 @@ static void _patch_reloc(RBinObject *binobj, struct Elf_(r_bin_elf_obj_t) *bo, u
 		// only patch the relocs that are initialized with zeroes
 		// if the destination contains a different value it's a constant useful for static analysis
 		ut64 addr = r_read_le64 (buf);
-		if (addr) {
-			r_write_le64 (buf, A);
-			iob->write_at (iob->io, rel->rva, buf, 8);
-		} else {
-			r_write_le64 (buf, S);
-			iob->write_at (iob->io, rel->rva, buf, 8);
-		}
+		r_write_le64 (buf, addr? A: S);
+		iob->write_at (iob->io, rel->rva, buf, 8);
 #endif
 		break;
 	case EM_PPC64: {
@@ -972,7 +968,7 @@ static void lookup_sections(RBinFile *bf, RBinInfo *ret) {
 	bool is_go = false;
 	ret->has_retguard = -1;
 	r_list_foreach (sections_list, iter, section) {
-		if (ret->has_retguard != -1 && is_go == true) {
+		if (is_go && ret->has_retguard != -1) {
 			break;
 		}
 		if (strstr (section->name, "note.go.buildid") ||
@@ -997,8 +993,8 @@ static bool has_sanitizers(RBinFile *bf) {
 	RListIter *iter;
 	RBinImport *import;
 	r_list_foreach (imports_list, iter, import) {
-		if (strstr (import->name, "__sanitizer") ||
-		    strstr (import->name, "__ubsan")) {
+		const char *iname = import->name;
+		if (*iname == '_' && (strstr (iname, "__sanitizer") || strstr (iname, "__ubsan"))) {
 			ret = true;
 			break;
 		}
@@ -1008,16 +1004,15 @@ static bool has_sanitizers(RBinFile *bf) {
 }
 
 static RBinInfo* info(RBinFile *bf) {
-	RBinInfo *ret = NULL;
-	char *str;
-
-	if (!(ret = R_NEW0 (RBinInfo))) {
+	RBinInfo *ret = R_NEW0 (RBinInfo);
+	if (!ret) {
 		return NULL;
 	}
 	ret->file = bf->file
 		? strdup (bf->file)
 		: NULL;
 	void *obj = bf->o->bin_obj;
+	char *str;
 	if ((str = Elf_(r_bin_elf_get_rpath)(obj))) {
 		ret->rpath = strdup (str);
 		free (str);
