@@ -45,18 +45,15 @@ void i8080_disasm (RAnalOp *op, RStrBuf *sb) {
 			data = buf[1] | (buf[2] << 8);
 			break;
 	}
-	const bool branch = is_branch(opcode->type);
 	if (sb) {
 		r_strbuf_set (sb, opcode->name);
-		if (!branch) {
+		if (opcode->arg1.type != 0) {
 			r_strbuf_append (sb, " ");
-		}
-		if (&opcode->arg1.type > 0) {
 			get_args (sb, &opcode->arg1, data);
 		}
-		if (&opcode->arg2.type > 0) {
+		if (opcode->arg2.type != 0) {
+			r_strbuf_append (sb, ", ");
 			get_args (sb, &opcode->arg2, data);
-			r_strbuf_append (sb, (branch ? " " : ", "));
 		}
 		switch (op->type) {
 		case R_ANAL_OP_TYPE_JMP:

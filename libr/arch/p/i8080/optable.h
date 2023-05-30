@@ -304,7 +304,7 @@ static i8080_opcode_t i8080_opcodes[] = {
 	{ R_ANAL_OP_TYPE_OR, 2, "ori", { 1 } },                   //0xf6
 	{ R_ANAL_OP_TYPE_JMP, 1, "rst", { 3, 3, 7, rst }},        //0xf7
 	{ R_ANAL_OP_TYPE_CRET, 1, "rm" },                         //0xf8
-	{ R_ANAL_OP_TYPE_LOAD, 1, "SPHL" },                       //0xf9
+	{ R_ANAL_OP_TYPE_LOAD, 1, "sphl" },                       //0xf9
 	{ R_ANAL_OP_TYPE_CJMP, 3, "jm", { 2 } },                  //0xfa
 	{ R_ANAL_OP_TYPE_IO, 1, "ei" },                           //0xfb
 	{ R_ANAL_OP_TYPE_CCALL, 3, "cm", { 2 } },                 //0xfc
