@@ -4188,7 +4188,7 @@ static void _set_arm_thumb_bits(struct Elf_(obj_t) *eo, RBinSymbol **sym) {
 		switch (ptr->name[1]) {
 		case 'a' : // arm
 			ptr->bits = 32;
-			break;
+			return;
 		case 't': // thumb
 			ptr->bits = 16;
 			if (ptr->vaddr & 1) {
@@ -4197,26 +4197,25 @@ static void _set_arm_thumb_bits(struct Elf_(obj_t) *eo, RBinSymbol **sym) {
 			if (ptr->paddr & 1) {
 				ptr->paddr--;
 			}
-			break;
+			return;
 		case 'd': // data
-			break;
+			return;
 		default:
-			goto arm_symbol;
+			break;
 		}
-	} else {
-arm_symbol:
-		ptr->bits = bin_bits;
-		if (bin_bits != 64) {
-			ptr->bits = 32;
-			if (ptr->paddr != UT64_MAX) {
-				if (ptr->vaddr & 1) {
-					ptr->vaddr--;
-					ptr->bits = 16;
-				}
-				if (ptr->paddr & 1) {
-					ptr->paddr--;
-					ptr->bits = 16;
-				}
+	}
+
+	ptr->bits = bin_bits;
+	if (bin_bits != 64) {
+		ptr->bits = 32;
+		if (ptr->paddr != UT64_MAX) {
+			if (ptr->vaddr & 1) {
+				ptr->vaddr--;
+				ptr->bits = 16;
+			}
+			if (ptr->paddr & 1) {
+				ptr->paddr--;
+				ptr->bits = 16;
 			}
 		}
 	}
