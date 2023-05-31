@@ -6113,7 +6113,7 @@ R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr,
 		// eprintf ("REPE 0x%llx %s => 0x%llx\n", addr, R_STRBUF_SAFEGET (&op.esil), r_reg_getv (core->anal->reg, "PC"));
 		ut64 pc = r_reg_getv (core->anal->reg, pcname);
 		if (pc == UT64_MAX || pc == UT32_MAX) {
-			R_LOG_ERROR ("Invalid program counter PC=-1");
+			R_LOG_ERROR ("Invalid program counter PC=-1 coming from 0x%08"PFMT64x, addr);
 			break;
 		}
 		if (core->anal->config->pcalign > 0) {
@@ -9752,7 +9752,7 @@ static void cmd_anal_hint(RCore *core, const char *input) {
 			free (ptr);
 		}  else if (input[1] == '-') {
 			if (!strcmp (input + 2, "*")) {
-				R_LOG_TODO ("Delete all asm.bits hints is not yet supported");
+				r_anal_hint_unset_bits (core->anal, UT64_MAX);
 			} else {
 				ut64 off = input[2]? r_num_math (core->num, input + 2): core->offset;
 				r_anal_hint_unset_bits (core->anal, off);
@@ -9850,6 +9850,7 @@ static void cmd_anal_hint(RCore *core, const char *input) {
 		} else if (input[1] == '-') {
 			if (input[2] == '*') {
 				R_LOG_INFO ("Not implemented");
+				// R2_590 - take arg to specify type of hint to remove .. r_anal_hint_clear (core->anal, );
 				// r_anal_hint_unset_size (core->anal, UT64_MAX);
 				// r_anal_hint_clear (core->anal);
 			} else if (input[2]) {
