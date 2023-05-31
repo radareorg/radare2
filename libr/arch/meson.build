@@ -140,7 +140,7 @@ r_arch_sources = [
   'p/pyc/opcode_anal.c',
   'p/pyc/opcode_arg_fmt.c',
   'p/pyc/opcode.c',
-  'p/pyc/pyc_dis.c'
+  'p/pyc/pyc_dis.c',
   'p/i8080/i8080.c',
   'p/i8080/plugin.c'
 ]
