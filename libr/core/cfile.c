@@ -852,7 +852,7 @@ R_API RIODesc *r_core_file_open_many(RCore *r, const char *file, int perm, ut64 
 	}
 	RListIter *iter;
 	RIODesc *first = NULL;
-	bool incloadaddr = loadaddr == 0;
+	bool incloadaddr = loadaddr == UT64_MAX;
 	// r_config_set_b (r->config, "io.va", false);
 	r_list_foreach (list_fds, iter, fd) {
 		if (fd->uri) {
@@ -866,6 +866,9 @@ R_API RIODesc *r_core_file_open_many(RCore *r, const char *file, int perm, ut64 
 			if (incloadaddr && sz != UT64_MAX) {
 				const int rest = (sz % 4096);
 				const int pillow = 0x4000;
+				if (loadaddr == UT64_MAX) {
+					loadaddr = 0;
+				}
 				loadaddr += sz + rest + pillow;
 			}
 		}
