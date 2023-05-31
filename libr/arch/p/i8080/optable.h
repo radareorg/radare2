@@ -12,7 +12,6 @@ static const char *reg[] = { "b", "c", "d", "e", "h", "l", "m", "a" };
 // 16-bit register
 static const char *rp[] = { "b", "d", "h", "sp" };
 static const char *push_rp[] = { "b", "d", "h", "psw" };
-static const char *cond[] = { "nz", "z", "nc", "c", "po", "pe", "p", "m" };
 static const char *rst[] = { "0", "1", "2", "3", "4", "5", "6", "7" };
 
 
