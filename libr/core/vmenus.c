@@ -138,7 +138,7 @@ R_API bool r_core_visual_esil(RCore *core, const char *input) {
 	ut8 buf[sizeof (ut64)];
 	unsigned int addrsize = r_config_get_i (core->config, "esil.addr.size");
 	static RCoreHelpMessage help_msg_aev = {
-		"Usage:", "aev [esil]", "Visual esil debugger",
+		"Usage:", "aev [esil]", "Visual esil debugger (VdE)",
 		"aev", " [esil]", "visual esil debugger for the given expression or current instruction",
 		NULL
 	};
@@ -215,7 +215,9 @@ R_API bool r_core_visual_esil(RCore *core, const char *input) {
 			free (pas);
 			// free (pad);
 		}
-		r_cons_printf ("esil regs:\n");
+		r_cons_printf ("esil stack: ");
+		r_esil_dumpstack (esil);
+		r_cons_printf ("\nesil regs:\n");
 		showreg (esil, "$$", "address");
 		showreg (esil, "$z", "zero");
 		showreg (esil, "$b", "borrow");
@@ -233,8 +235,6 @@ R_API bool r_core_visual_esil(RCore *core, const char *input) {
 			r_cons_printf ("%s", r);
 			free (r);
 		}
-		r_cons_printf ("esil stack:\n");
-		r_esil_dumpstack (esil);
 		if (!input) {
 			r_anal_op_fini (&analop);
 		}
@@ -282,6 +282,10 @@ R_API bool r_core_visual_esil(RCore *core, const char *input) {
 			r_core_visual_showcursor (core, false);
 		}
 		break;
+		case '!':
+			r_esil_parse (esil, "CLEAR");
+		//	r_esil_clear (esil);
+			break;
 		case 'e':
 			{
 				char *s = r_cons_input ("esil: ");
@@ -303,15 +307,23 @@ R_API bool r_core_visual_esil(RCore *core, const char *input) {
 				free (s);
 			}
 			break;
+		case 'j':
+			r_core_cmd_call (core, "so");
+			break;
+		case 'k':
+			r_core_cmd_call (core, "so -1");
+			break;
 		case 's':
 			// eprintf ("step ((%s))\n", word);
 			// r_sys_usleep (500);
 			x = R_MIN (x + 1, nbits - 1);
 			r_esil_runword (esil, word);
 			break;
+		case '$':
+			r_core_cmd_call (core, "ar PC=$$");
+			break;
 		case 'S':
-			R_LOG_WARN ("TODO: esil step back :D");
-			r_sys_usleep (500);
+			r_core_cmd_call (core, "aeso");
 			break;
 		case 'r':
 		case 'h':
@@ -320,13 +332,14 @@ R_API bool r_core_visual_esil(RCore *core, const char *input) {
 		case '?':
 			r_cons_clear00 ();
 			r_cons_printf (
-			"Vd1?: Visual Bit Editor Help:\n\n"
+			"VdE?: Visual Esil Debugger Help (aev):\n\n"
 			" q     - quit the bit editor\n"
 			" h/r   - reset / go back (reinitialize esil state)\n"
 			" s     - esil step in\n"
+			" S     - esil step over\n"
 			" o     - specify offset to seek\n"
 			" e     - type a new esil expression to debug\n"
-			" j/k   - toggle bit value (same as space key)\n"
+			" j/k   - next/prev instruction\n"
 			" n/p   - go next/prev instruction\n"
 			" =     - enter cmd.vprompt command\n"
 			" :     - enter command\n");
@@ -4046,6 +4059,7 @@ R_API void r_core_visual_define(RCore *core, const char *args, int distance) {
 		," C    define flag color (fc)"
 		," d    set as data"
 		," e    end of function"
+		," E    esil debugger (aev)"
 		," f    analyze function"
 		," F    format"
 		," h    define hint (for half-word, see 'B')"
@@ -4312,6 +4326,9 @@ onemoretime:
 		}
 		}
 		break;
+	case 'E':
+		r_core_visual_esil (core, ""); // "aev"
+		break;
 	case 'j':
 		r_core_cmdf (core, "afm $$+$F @0x%08"PFMT64x, off);
 		break;
@@ -4413,8 +4430,8 @@ onemoretime:
 			}
 		}
 		name[4 + n] = '\0';
-		//handle wide strings
-		//memcpy (name + 4, (const char *)p, n);
+		// handle wide strings
+		// memcpy (name + 4, (const char *)p, n);
 		if (is_wide) {
 			r_meta_set (core->anal, R_META_TYPE_STRING, off,
 						n * 2, (const char *) name + 4);

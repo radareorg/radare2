@@ -1601,11 +1601,9 @@ R_API bool r_esil_dumpstack(REsil *esil) {
 			esil->trap, esil->trap_code,
 			r_esil_trapstr (esil->trap));
 	}
-	if (esil->stackptr < 1) {
-		return false;
-	}
-	for (i = esil->stackptr - 1; i >= 0; i--) {
-		esil->anal->cb_printf ("%s\n", esil->stack[i]);
+	for (i = 0; i < esil->stackptr; i++) {
+		const char *comma = (i + 1 < esil->stackptr)? ",": "\n";
+		esil->anal->cb_printf ("%s%s", esil->stack[i], comma);
 	}
 	return true;
 }
