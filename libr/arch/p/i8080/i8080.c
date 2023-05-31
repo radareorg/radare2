@@ -3,8 +3,6 @@
 // This file is based on the Z80 analyser and modified for
 // the Intel 8080 disassembler by Alexander Demin, 2012.
 
-#include <string.h>
-#include <stdio.h>
 #include "i8080.h"
 #include "optable.h"
 
@@ -36,6 +34,13 @@ void i8080_disasm (RAnalOp *op, RStrBuf *sb) {
 	int data = 0;
 	//const int instr = cmd & ~((opcode->arg1.mask << opcode->arg1.shift) | (opcode->arg2.mask << opcode->arg2.shift));
 	struct i8080_opcode_t const *opcode = &i8080_opcodes[instr];
+	if (opcode->size > op->size) {
+		// truncated
+		op->mnemonic = strdup ("truncated");
+		op->size = -2; // opcode->size;
+		R_FREE (op->bytes);
+		return;
+	}
 	op->size = opcode->size;
 	op->type = opcode->type;
 	switch (opcode->size) {
