@@ -2990,7 +2990,6 @@ static bool read_reloc(ELFOBJ *eo, RBinElfReloc *r, Elf_(Xword) rel_mode, ut64 v
 		reloc_info.r_addend = R_BIN_ELF_READWORD (buf, i);
 		r->addend = reloc_info.r_addend;
 	}
-
 	r->mode = rel_mode;
 	r->offset = reloc_info.r_offset;
 	r->sym = ELF_R_SYM (reloc_info.r_info);
@@ -3070,9 +3069,11 @@ static size_t get_num_relocs_approx(ELFOBJ *eo) {
 
 static size_t populate_relocs_record_from_dynamic(ELFOBJ *eo, size_t pos, size_t num_relocs) {
 	size_t size = get_size_rel_mode (eo->dyn_info.dt_pltrel);
-	size_t offset;
+	ut64 offset;
+	ut64 offset_end = eo->dyn_info.dt_pltrelsz;
 	// order matters
-	for (offset = 0; offset < eo->dyn_info.dt_pltrelsz && pos < num_relocs; offset += size, pos++) {
+	// parse pltrel
+	for (offset = 0; offset < offset_end && pos < num_relocs; offset += size, pos++) {
 		RBinElfReloc *reloc = r_vector_end (&eo->g_relocs);
 		if (!read_reloc (eo, reloc, eo->dyn_info.dt_pltrel, eo->dyn_info.dt_jmprel + offset)) {
 			break;
@@ -3083,7 +3084,7 @@ static size_t populate_relocs_record_from_dynamic(ELFOBJ *eo, size_t pos, size_t
 		ht_uu_insert (eo->rel_cache, reloc->sym + 1, index + 1);
 		fix_rva_and_offset_exec_file (eo, reloc);
 	}
-
+	// parse rela
 	for (offset = 0; offset < eo->dyn_info.dt_relasz && pos < num_relocs; offset += eo->dyn_info.dt_relaent, pos++) {
 		RBinElfReloc *reloc = r_vector_end (&eo->g_relocs);
 		if (!read_reloc (eo, reloc, DT_RELA, eo->dyn_info.dt_rela + offset)) {
@@ -3094,7 +3095,7 @@ static size_t populate_relocs_record_from_dynamic(ELFOBJ *eo, size_t pos, size_t
 		ht_uu_insert (eo->rel_cache, reloc->sym + 1, index + 1);
 		fix_rva_and_offset_exec_file (eo, reloc);
 	}
-
+	// parse relent
 	for (offset = 0; offset < eo->dyn_info.dt_relsz && pos < num_relocs; offset += eo->dyn_info.dt_relent, pos++) {
 		RBinElfReloc *reloc = r_vector_end (&eo->g_relocs);
 		if (!read_reloc (eo, reloc, DT_REL, eo->dyn_info.dt_rel + offset)) {
@@ -3105,7 +3106,6 @@ static size_t populate_relocs_record_from_dynamic(ELFOBJ *eo, size_t pos, size_t
 		ht_uu_insert (eo->rel_cache, reloc->sym + 1, index + 1);
 		fix_rva_and_offset_exec_file (eo, reloc);
 	}
-
 	return pos;
 }
 
@@ -3390,7 +3390,7 @@ static bool is_data_section(const char *name) {
 }
 
 static bool is_wordable_section(const char *name) {
-	const char *sections[] = {".init_array", ".fini_array", ".data.rel.ro", ".dynamic", ".got"};
+	const char *sections[] = {".init_array", ".fini_array", ".data.rel.ro", ".dynamic"}; // , ".got", ".rel.plt", ".rela.plt"};
 	int i;
 	for (i = 0; i < R_ARRAY_SIZE (sections); i++) {
 		if (!strcmp (name, sections[i])) {

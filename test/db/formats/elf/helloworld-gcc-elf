@@ -139,8 +139,8 @@ EXPECT=<<EOF
 0x08049684 data Cd 4
 0x08049688 data Cd 4
 0x0804968c data Cd 4
-0x08049690 data Cd 4
 0x08049690 CCu "[22] -rw- section size 4 named .got"
+0x08049690 data Cd 4
 0x08049694 CCu "[23] -rw- section size 24 named .got.plt"
 0x080496a0 data Cd 4
 0x080496a4 data Cd 4
@@ -237,8 +237,8 @@ Cd 4 @ 0x08049680
 Cd 4 @ 0x08049684
 Cd 4 @ 0x08049688
 Cd 4 @ 0x0804968c
-Cd 4 @ 0x08049690
 CCu base64:WzIyXSAtcnctIHNlY3Rpb24gc2l6ZSA0IG5hbWVkIC5nb3Q= @ 0x08049690
+Cd 4 @ 0x08049690
 CCu base64:WzIzXSAtcnctIHNlY3Rpb24gc2l6ZSAyNCBuYW1lZCAuZ290LnBsdA== @ 0x08049694
 Cd 4 @ 0x080496a0
 Cd 4 @ 0x080496a4
