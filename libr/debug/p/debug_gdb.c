@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2018 - pancake, defragger */
+/* radare - LGPL - Copyright 2009-2023 - pancake, defragger */
 
 #include <r_core.h>
 #include <r_asm.h>
@@ -184,7 +184,7 @@ static RList *r_debug_gdb_map_get(RDebug* dbg) { //TODO
 		if (ret == 3) {
 			name[0] = '\0';
 		} else if (ret < 3) {
-			R_LOG_WARN ("Unable to parse \"%s\"\nContent:\n%s", path, buf);
+			R_LOG_WARN ("Cannot parse \"%s\" with content: %s", path, buf);
 			gdbr_close_file (desc);
 			free (buf);
 			r_list_free (retlist);
