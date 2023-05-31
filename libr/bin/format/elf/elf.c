@@ -252,29 +252,67 @@ ut64 Elf_(get_phnum)(ELFOBJ *eo) {
 	return eo->ehdr.e_phnum & UT16_MAX;
 }
 
-static bool read_phdr(ELFOBJ *eo, bool linux_kernel_hack) {
-	bool phdr_found = false;
+static bool read_phdr(ELFOBJ *eo) {
+	const ut64 phnum = Elf_(get_phnum) (eo);
+
+	/*
+	 * Here is the where all the fun starts.
+	 * Linux kernel during 2005-2022 calculates phdr offset wrongly
+	 * adding it to the load address (va of the LOAD0).
+	 * See `fs/binfmt_elf.c` file, search for this line:
+	 *    NEW_AUX_ENT(AT_PHDR, load_addr + exec->e_phoff);
+	 *
+	 * We solve this by first looking up one of the PT_LOAD segments.
+	 * If we can't find it, we need to fix the phdr offset.
+	 */
+	const size_t _128K = 1024 * 128;
+	// Enable this hack only for the X86 64bit ELFs
+	const bool linux_kern_hack = r_buf_size (eo->b) > _128K &&
+		(eo->ehdr.e_machine == EM_X86_64 || eo->ehdr.e_machine == EM_386);
+	if (linux_kern_hack) {
+		bool load_header_found = false;
+
+		int i;
+		for (i = 0; i < phnum; i++) {
+			ut8 phdr[sizeof (Elf_(Phdr))] = {0};
+			const size_t rsize = eo->ehdr.e_phoff + i * sizeof (phdr);
+			int len = r_buf_read_at (eo->b, rsize, phdr, sizeof (phdr));
+			if (len != sizeof (phdr)) {
+				R_LOG_DEBUG ("read (phdr)");
+				return false;
+			}
+
+			int j = 0;
+			Elf_(Word) p_type = READ32 (phdr, j);
+			if (p_type == PT_LOAD) {
+				load_header_found = true;
+				break;
+			}
+		}
+
+		if (!load_header_found) {
+			const ut64 load_addr = Elf_(get_baddr) (eo);
+			eo->ehdr.e_phoff = Elf_(v2p) (eo, load_addr + eo->ehdr.e_phoff);
+		}
+	}
+
 #if R_BIN_ELF64
 	const bool is_elf64 = true;
 #else
 	const bool is_elf64 = false;
 #endif
-	ut64 phnum = Elf_(get_phnum) (eo);
 	int i;
 	for (i = 0; i < phnum; i++) {
 		ut8 phdr[sizeof (Elf_(Phdr))] = {0};
-		int j = 0;
 		const size_t rsize = eo->ehdr.e_phoff + i * sizeof (Elf_(Phdr));
 		int len = r_buf_read_at (eo->b, rsize, phdr, sizeof (phdr));
 		if (len != sizeof (phdr)) {
 			R_LOG_DEBUG ("read (phdr)");
 			return false;
 		}
-		eo->phdr[i].p_type = READ32 (phdr, j);
-		if (eo->phdr[i].p_type == PT_PHDR) {
-			phdr_found = true;
-		}
 
+		int j = 0;
+		eo->phdr[i].p_type = READ32 (phdr, j);
 		if (is_elf64) {
 			eo->phdr[i].p_flags = READ32 (phdr, j);
 		}
@@ -288,18 +326,6 @@ static bool read_phdr(ELFOBJ *eo, bool linux_kernel_hack) {
 		//	eo->phdr[i].p_flags |= 1; tiny.elf needs this somehow :? LOAD0 is always +x for linux?
 		}
 		eo->phdr[i].p_align = R_BIN_ELF_READWORD (phdr, j);
-	}
-	/* Here is the where all the fun starts.
-	 * Linux kernel since 2005 calculates phdr offset wrongly
-	 * adding it to the load address (va of the LOAD0).
-	 * See `fs/binfmt_elf.c` file this line:
-	 *    NEW_AUX_ENT(AT_PHDR, load_addr + exec->e_phoff);
-	 * So after the first read, we fix the address and read it again
-	 */
-	if (linux_kernel_hack && phdr_found) {
-		ut64 load_addr = Elf_(get_baddr) (eo);
-		eo->ehdr.e_phoff = Elf_(v2p) (eo, load_addr + eo->ehdr.e_phoff);
-		return read_phdr (eo, false);
 	}
 
 	return true;
@@ -328,11 +354,7 @@ static int init_phdr(ELFOBJ *eo) {
 		return false;
 	}
 
-	/* Enable this hack only for the X86 64bit ELFs */
-	const size_t _128K = 1024 * 128;
-	const bool linux_kern_hack = r_buf_size (eo->b) > _128K &&
-		(eo->ehdr.e_machine == EM_X86_64 || eo->ehdr.e_machine == EM_386);
-	if (!read_phdr (eo, linux_kern_hack)) {
+	if (!read_phdr (eo)) {
 		R_FREE (eo->phdr);
 		return false;
 	}
@@ -3728,10 +3750,7 @@ static void _add_ehdr_section (RBinFile *bf, ELFOBJ *eo) {
 	ptr->vaddr = eo->baddr;
 	ptr->size = ehdr_size;
 	ptr->vsize = ehdr_size;
-	ptr->add = false;
-	if (eo->ehdr.e_type == ET_REL) {
-		ptr->add = true;
-	}
+	ptr->add = eo->ehdr.e_type == ET_REL;
 	ptr->perm = R_PERM_RW;
 	ptr->is_segment = true;
 }
