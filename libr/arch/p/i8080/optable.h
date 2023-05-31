@@ -288,7 +288,7 @@ static i8080_opcode_t i8080_opcodes[] = {
 	{ R_ANAL_OP_TYPE_CRET, 1, "rpe" },                       //0xe8
 	{ R_ANAL_OP_TYPE_UNK, 1, "pchl" },                       //0xe9
 	{ R_ANAL_OP_TYPE_CJMP, 3, "jpe", { 2 } },                //0xea
-	{ R_ANAL_OP_TYPE_MOV, 2, "xchg" },                       //0xeb
+	{ R_ANAL_OP_TYPE_MOV, 1, "xchg" },                       //0xeb
 	{ R_ANAL_OP_TYPE_CCALL, 3, "cpe", { 2 } },               //0xec
 	{ R_ANAL_OP_TYPE_UNK, 3, "invalid", { 2 } },             //0xed ilegal opcode
 	{ R_ANAL_OP_TYPE_XOR, 2, "xri", { 1 } },                 //0xee
@@ -297,7 +297,7 @@ static i8080_opcode_t i8080_opcodes[] = {
 	{ R_ANAL_OP_TYPE_CRET, 1, "rp" },                         //0xf0
 	{ R_ANAL_OP_TYPE_POP, 1, "pop", { 3, 4, 3, push_rp } },   //0xf1
 	{ R_ANAL_OP_TYPE_CJMP, 3, "jp", { 2 } },                  //0xf2
-	{ R_ANAL_OP_TYPE_IO, 2, "di" },                           //0xf3
+	{ R_ANAL_OP_TYPE_IO, 1, "di" },                           //0xf3
 	{ R_ANAL_OP_TYPE_CCALL, 3, "cp", { 2 } },                 //0xf4
 	{ R_ANAL_OP_TYPE_PUSH, 1, "push", { 3, 4, 3, push_rp } }, //0xf5
 	{ R_ANAL_OP_TYPE_OR, 2, "ori", { 1 } },                   //0xf6
