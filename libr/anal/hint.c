@@ -81,6 +81,7 @@ void r_anal_hint_storage_fini(RAnal *a) {
 	r_rbtree_free (a->bits_hints, bits_hint_record_free_rb, NULL);
 }
 
+// R2_590 - add argument to specify the type of hint to remove
 R_API void r_anal_hint_clear(RAnal *a) {
 	r_anal_hint_storage_fini (a);
 	r_anal_hint_storage_init (a);
@@ -188,19 +189,17 @@ static RAnalRangedHintRecordBase *ensure_ranged_hint_record(RBTree *tree, ut64 a
 	if (node) {
 		return container_of (node, RAnalRangedHintRecordBase, rb);
 	}
-	RAnalRangedHintRecordBase *record = malloc (sz);
-	memset (record, 0, sz);
-	if (!record) {
-		return NULL;
+	RAnalRangedHintRecordBase *record = calloc (sz, 1);
+	if (record) {
+		record->addr = addr;
+		r_rbtree_insert (tree, &addr, &record->rb, ranged_hint_record_cmp, NULL);
 	}
-	record->addr = addr;
-	r_rbtree_insert (tree, &addr, &record->rb, ranged_hint_record_cmp, NULL);
 	return record;
 }
 
 R_API void r_anal_hint_set_offset(RAnal *a, ut64 addr, const char *typeoff) {
 	SET_HINT (R_ANAL_ADDR_HINT_TYPE_TYPE_OFFSET,
-			  free (r->type_offset);
+		free (r->type_offset);
 		r->type_offset = strdup (typeoff);
 	);
 }
@@ -289,12 +288,11 @@ R_API void r_anal_hint_set_arch(RAnal *a, ut64 addr, const char *arch) {
 
 R_API void r_anal_hint_set_bits(RAnal *a, ut64 addr, int bits) {
 	RAnalBitsHintRecord *record = (RAnalBitsHintRecord *)ensure_ranged_hint_record (&a->bits_hints, addr, sizeof (RAnalBitsHintRecord));
-	if (!record) {
-		return;
-	}
-	record->bits = bits;
-	if (a->hint_cbs.on_bits) {
-		a->hint_cbs.on_bits (a, addr, bits, true);
+	if (record) {
+		record->bits = bits;
+		if (a->hint_cbs.on_bits) {
+			a->hint_cbs.on_bits (a, addr, bits, true);
+		}
 	}
 }
 
@@ -366,8 +364,30 @@ R_API void r_anal_hint_unset_arch(RAnal *a, ut64 addr) {
 	r_rbtree_delete (&a->arch_hints, &addr, ranged_hint_record_cmp, NULL, arch_hint_record_free_rb, NULL);
 }
 
+HEAPTYPE (ut64);
+
+static bool filter_hints(ut64 addr, int bits, void *user) {
+	RList *list = (RList *)user;
+	r_list_append (list, ut64_new (addr));
+	return true;
+}
+
 R_API void r_anal_hint_unset_bits(RAnal *a, ut64 addr) {
-	r_rbtree_delete (&a->bits_hints, &addr, ranged_hint_record_cmp, NULL, bits_hint_record_free_rb, NULL);
+	if (addr == UT64_MAX) {
+		// delete all bits hints
+		RList *list = r_list_newf (free);
+		r_anal_bits_hints_foreach (a, filter_hints, list);
+		ut64 *n;
+		RListIter *iter;
+		r_list_foreach (list, iter, n) {
+			ut64 addr = *n;
+			r_rbtree_delete (&a->bits_hints, &addr, ranged_hint_record_cmp, NULL, bits_hint_record_free_rb, NULL);
+		}
+		r_list_free (list);
+		// delete all bits
+	} else {
+		r_rbtree_delete (&a->bits_hints, &addr, ranged_hint_record_cmp, NULL, bits_hint_record_free_rb, NULL);
+	}
 }
 
 R_API void r_anal_hint_free(RAnalHint *h) {
