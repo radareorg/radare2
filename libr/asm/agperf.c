@@ -7,7 +7,7 @@ extern SdbGperf gperf_z80;
 extern SdbGperf gperf_6502;
 extern SdbGperf gperf_avr;
 //extern SdbGperf gperf_chip8;
-extern SdbGperf gperf_i8080;
+//extern SdbGperf gperf_i8080;
 extern SdbGperf gperf_java;
 extern SdbGperf gperf_lm32;
 extern SdbGperf gperf_m68k;
@@ -33,7 +33,7 @@ static const SdbGperf *gperfs[] = {
 	&gperf_6502,
 	&gperf_avr,
 	// &gperf_chip8,
-	&gperf_i8080,
+	// &gperf_i8080,
 	&gperf_java,
 	&gperf_s390,
 	&gperf_lm32,

@@ -159,7 +159,6 @@ anal_plugins += [
   'avr',
   'dalvik',
   'gb',
-  'i8080',
   'java',
   'mips_cs',
   'x86_cs',
@@ -168,6 +167,7 @@ anal_plugins += [
 arch_plugins += [
   'chip8',
   'wasm',
+  'i8080',
   '6502_cs',
   'loongarch_gnu',
   's390_cs',

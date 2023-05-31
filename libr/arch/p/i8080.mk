@@ -1,0 +1,10 @@
+OBJ_I8080=p/i8080/plugin.o
+OBJ_I8080+=p/i8080/i8080.o
+
+STATIC_OBJ+=${OBJ_I8080}
+TARGET_I8080=plugin.${EXT_SO}
+
+ALL_TARGETS+=${TARGET_I8080}
+
+${TARGET_I8080}: ${OBJ_I8080}
+	${CC} $(call libname,arch_i8080) ${LDFLAGS} ${CFLAGS} -o plugin.${EXT_SO} ${OBJ_I8080}
