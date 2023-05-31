@@ -1,10 +1,11 @@
-ESIL
-====
+# ESIL
 
-ESIL stands for 'Evaluable Strings Intermediate Language'. It aims to describe a
-Forth-like representation for every opcode. Those representations can be
-evaluated in order to emulate code. Each element of an esil expression is
-separated by a comma. The VM can be described as this:
+ESIL stands for 'Evaluable Strings Intermediate Language'. It is used to
+describe in a Forth-like syntax the behaviour of every opcode.
+
+These strings can be evaluated in order to emulate code.
+
+Each element of an esil expression is separated by a comma. The VM can be described as this:
 
     while ((word=haveCommand())) {
       if (word.isKeyword()) {
@@ -20,12 +21,29 @@ calculations and pushes the result in the stack (if any). They aim to cover all
 common operations done by CPUs, permitting to do binary operations, memory
 peeks and pokes, spawning a syscall, etc.
 
-#### Use ESIL
+## Use ESIL
 
-    [0x00000000]> e asm.esil = true
+To display the esil expression associated with each instruction you must set this
+config variable:
 
-Running ESIL
-============
+```
+[0x00000000]> e asm.esil = true
+```
+
+Note that this information is provided by RArch, as part of the instruction details.
+
+The `ae` command have subcommands act as a debugger, for stepping, changing registers, etc.
+
+You can evaluate a string using this command:
+
+```
+[0x000048a0]> ""ae 1024,rax,:=
+```
+
+The double quote tells the command parser to ignore the rest of the line, it's handy
+to avoid undesired effects when not escaping the `|` or `>` operators.
+
+### Debugging ESIL
 
 In visual mode, `V`, one can iterate through the instructions via the `s` (step) key
 and see how registers are changing interactively as `;-- pc` (program counter) advances,
@@ -71,15 +89,17 @@ s:0 z:0 c:0 o:0 p:0
             0x00100042      031ef0ff       addi -16,  sp,  sp          ; -16,sp,+,sp,=
 ```
 
-Syntax
-======
+There's also an ESIL expression debugger which can be accessed via the `aev` command
+
+## Syntax
+
 An opcode is translated into a comma separated list of ESIL expressions.
 
     xor eax, eax    ->    0,eax,=,1,zf,=
 
 Memory access is defined by brackets.
 
-    mov eax, [0x80480]   ->   0x80480,[],eax,=
+    mov eax, [0x80480]   ->   0x80480,[4],eax,=
 
 Default size is the destination of the operation. In this case 8bits, aka 1 byte.
 
@@ -101,8 +121,8 @@ The whitespace, newlines and other chars are ignored in esil, so the first thing
 
 Syscalls are specially handled by '$' at the beginning of the expression. After that char you have an optional numeric value that specifies the number of syscall. The emulator must handle those expressions and 'simulate' the syscalls. (`r_esil_syscall`)
 
-Order of arguments
-==================
+## Order of arguments
+
 As discussed on irc, current implementation works like this:
 
     a,b,-      b - a
@@ -216,8 +236,7 @@ Floating point
 
 _TODO_
 
-The x86 REP prefix in ESIL
-==========================
+## The x86 REP prefix in ESIL
 
 ESIL specifies that the parsing control-flow commands are in uppercase. Bear in
 mind that some archs have uppercase register names. The register profile should
@@ -232,13 +251,15 @@ take care to not reuse any of the following:
 
 Usage example:
 
-rep cmpsb
+### rep cmpsb
 ---------
 
 	ecx,!,?{,BREAK,},edi,[1],esi,[1],==,$z,zf,:=,8,$b,cf,:=,$p,pf,:=,7,$s,sf,:=,edi,[1],0x80,-,!,7,$o,^,of,:=,3,$b,af,:=,df,?{,1,edi,-=,1,esi,-=,}{,1,edi,+=,1,esi,+=,},ecx,--=,zf,!,?{,BREAK,},0,GOTO
 
+## Executing r2 commands
 
-Unimplemented/unhandled instructions
+
+## Unimplemented/unhandled instructions
 ====================================
 
 Those are expressed with the 'TODO' command. which acts as a 'BREAK', but
