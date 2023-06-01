@@ -1771,8 +1771,51 @@ static void set_bin_relocs(RelocInfo *ri, RBinReloc *reloc, ut64 addr, Sdb **db,
 	} else {
 		snprintf (flagname, R_FLAG_NAME_SIZE, "reloc.%s", reloc_name);
 	}
-	// R2_590 - add extra RBinSymbol/addr/field/whatever in RBinReloc to expose that plt association from RBinElf
 	if (ri->is_elf && reloc->symbol && ri->got && ri->plt) {
+#if 1
+		ut64 got_min = rva (r->bin, ri->got->paddr, ri->got->vaddr, true);
+		ut64 got_max = got_min + ri->got->vsize;
+		// ut64 raddr = reloc->vaddr;
+		ut64 raddr = rva (r->bin, reloc->paddr, reloc->vaddr, true);
+		ut64 saddr = rva (r->bin, reloc->symbol->paddr, reloc->symbol->vaddr, true);
+		RBinSection *se = r_bin_get_section_at (r_bin_cur_object (r->bin), raddr, true);
+		if (raddr >= got_min && raddr < got_max) {
+			//se = ri->got;
+		}
+		if (se) {
+			ut32 rbuf = 0;
+			r_io_read_at (r->io, raddr, (ut8*)&rbuf, 4); // relocated buf tells the section to look at
+			char *ss = se->name;
+			if (!strcmp (ss, ".got") && rbuf != 0) {
+#if 0
+				ut64 saddr2 = r_bin_a2b (r->bin, rbuf);
+				RBinSection *se2 = r_bin_get_section_at (r_bin_cur_object (r->bin), saddr2, true);
+				if (se2) {
+					ut64 saddr = reloc->vaddr - got_min;
+					int index = (saddr / 4) - 4; // also for 64bit? we need reproducers here
+					ut64 saddr2 = r_bin_a2b (r->bin, se2->vaddr + (index * 12) + 0x20);
+					char *internal_reloc = r_str_newf ("rsym.%s", reloc_name);
+					(void)r_flag_set (r->flags, internal_reloc, saddr2, bin_reloc_size (reloc));
+					free (internal_reloc);
+				}
+#else
+				ut64 saddr2 = r_bin_a2b (r->bin, rbuf);
+				RBinSection *se2 = r_bin_get_section_at (r_bin_cur_object (r->bin), saddr2, true);
+				if (se2) {
+					saddr  = reloc->vaddr;
+					saddr -= se->vaddr;
+					int index = (saddr / 4) - 4;
+					saddr = r_bin_a2b (r->bin, se2->vaddr + (index * 12) + 0x20);
+					// saddr = 0x000074dc + (index * 12) + 0x20;
+					char *internal_reloc = r_str_newf ("rsym.%s", reloc_name);
+					(void)r_flag_set (r->flags, internal_reloc, saddr, bin_reloc_size (reloc));
+					free (internal_reloc);
+				}
+#endif
+			}
+		}
+#else
+	// R2_590 - add extra RBinSymbol/addr/field/whatever in RBinReloc to expose that plt association from RBinElf
 		ut64 got_min = ri->got->vaddr;
 		ut64 got_max = got_min + ri->got->vsize;
 		ut64 raddr = reloc->vaddr;
@@ -1809,6 +1852,7 @@ static void set_bin_relocs(RelocInfo *ri, RBinReloc *reloc, ut64 addr, Sdb **db,
 				}
 			}
 		}
+#endif
 	}
 	free (reloc_name);
 	char *demname = NULL;
