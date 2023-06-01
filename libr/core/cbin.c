@@ -1674,13 +1674,17 @@ typedef struct {
 	bool is_pe;
 	bool is_elf;
 	bool is32;
-	RBinSection *got;
+
+	// section boundaries and availability
+	bool got;
 	ut64 got_min;
 	ut64 got_max;
 	ut64 got_va;
-	RBinSection *plt;
+
+	bool plt;
 	ut64 plt_min;
 	ut64 plt_max;
+	ut64 plt_va;
 } RelocInfo;
 
 static void ri_init(RCore *core, RelocInfo *ri) {
@@ -1698,13 +1702,16 @@ static void ri_init(RCore *core, RelocInfo *ri) {
 	RList *sections = r_bin_get_sections (core->bin);
 	r_list_foreach (sections, iter, s) {
 		if (!strcmp (s->name, ".got")) {
-			ri->got = s;
+			ri->got = true;
 			ri->got_min = s->paddr;
 			ri->got_max = s->paddr + s->size;
 			ri->got_va = s->vaddr;
 		}
 		if (!strcmp (s->name, ".plt")) {
-			ri->plt = s;
+			ri->plt_min = s->paddr;
+			ri->plt_max = s->paddr + s->size;
+			ri->plt_va = s->vaddr;
+			ri->plt = true;
 		}
 		if (ri->got && ri->plt) {
 			break;
@@ -1779,85 +1786,30 @@ static void set_bin_relocs(RelocInfo *ri, RBinReloc *reloc, ut64 addr, Sdb **db,
 	} else {
 		snprintf (flagname, R_FLAG_NAME_SIZE, "reloc.%s", reloc_name);
 	}
+	// R2_590 - move this logic into rbinelf, requires RBinReloc to hold a plt address if the symbol is internal
 	if (ri->is_elf && reloc->symbol && ri->got && ri->plt) {
-#if 1
-		ut64 got_min = ri->got_min; // rva (r->bin, ri->got->paddr, ri->got->vaddr, true);
-		ut64 got_max = ri->got_max; // got_min + ri->got->vsize;
-		// ut64 raddr = reloc->vaddr;
-		ut64 raddr = reloc->paddr; // rva (r->bin, reloc->paddr, reloc->vaddr, true);
-		ut64 saddr = rva (r->bin, reloc->symbol->paddr, reloc->symbol->vaddr, true);
-		RBinSection *se = NULL;
-		const bool isgot = (raddr >= got_min && raddr < got_max);
-		if (isgot) {
-			ut32 rbuf = 0;
-			ut64 raddr = rva (r->bin, reloc->paddr, reloc->vaddr, true);
-			r_io_read_at (r->io, raddr, (ut8*)&rbuf, 4); // relocated buf tells the section to look at
-			if (isgot && rbuf != 0) {
-#if 0
-				ut64 saddr2 = r_bin_a2b (r->bin, rbuf);
-				RBinSection *se2 = r_bin_get_section_at (r_bin_cur_object (r->bin), saddr2, true);
-				if (se2) {
-					ut64 saddr = reloc->vaddr - got_min;
-					int index = (saddr / 4) - 4; // also for 64bit? we need reproducers here
-					ut64 saddr2 = r_bin_a2b (r->bin, se2->vaddr + (index * 12) + 0x20);
-					char *internal_reloc = r_str_newf ("rsym.%s", reloc_name);
-					(void)r_flag_set (r->flags, internal_reloc, saddr2, bin_reloc_size (reloc));
-					free (internal_reloc);
-				}
-#else
-				ut64 saddr2 = r_bin_a2b (r->bin, rbuf);
-				RBinSection *se2 = r_bin_get_section_at (r_bin_cur_object (r->bin), saddr2, true);
-				if (se2) {
-					saddr  = reloc->vaddr;
-					saddr -= ri->got_va;
-					int index = (saddr / 4) - 4;
-					saddr = r_bin_a2b (r->bin, se2->vaddr + (index * 12) + 0x20);
-					char *internal_reloc = r_str_newf ("rsym.%s", reloc_name);
-					(void)r_flag_set (r->flags, internal_reloc, saddr, bin_reloc_size (reloc));
-					free (internal_reloc);
-				}
-#endif
-			}
-		}
-#else
-	// R2_590 - add extra RBinSymbol/addr/field/whatever in RBinReloc to expose that plt association from RBinElf
-		ut64 got_min = ri->got->vaddr;
-		ut64 got_max = got_min + ri->got->vsize;
-		ut64 raddr = reloc->vaddr;
-		if (raddr >= got_min && raddr < got_max) {
+		ut64 raddr = reloc->paddr;
+		if (raddr >= ri->got_min && raddr < ri->got_max) {
 			ut64 rvaddr = rva (r->bin, reloc->paddr, reloc->vaddr, true);
-			ut64 rbuf = 0; // relocated buf tells the section to look at
+			ut64 pltptr = 0; // relocated buf tells the section to look at
 			if (ri->is32) {
 				ut32 n32;
 				r_io_read_at (r->io, rvaddr, (ut8*)&n32, 4);
-				rbuf = n32;
+				pltptr = n32;
 			} else {
-				r_io_read_at (r->io, rvaddr, (ut8*)&rbuf, 8);
+				r_io_read_at (r->io, rvaddr, (ut8*)&pltptr, 8);
 			}
-			if (rbuf != 0 && rbuf != -1) {
-#if 0
-				ut64 saddr2 = rbuf; // r_bin_a2b (r->bin, rbuf);
-				RBinSection *se2 = NULL;
-				ut64 plt_min = ri->plt->vaddr;
-				ut64 plt_max = plt_min + ri->plt->vsize;
-				if (saddr2 >= plt_min && saddr2 < plt_max) {
-					se2 = ri->plt;
-				}
-#else
-				ut64 saddr2 = r_bin_a2b (r->bin, rbuf);
-				RBinSection *se2 = r_bin_get_section_at (r_bin_cur_object (r->bin), saddr2, true);
-#endif
-				if (se2) {
-					ut64 saddr = reloc->vaddr - got_min;
-					int index = (saddr / 4) - 4; // also for 64bit? we need reproducers here
-					ut64 saddr2 = r_bin_a2b (r->bin, se2->vaddr + (index * 12) + 0x20);
+			if (pltptr != 0 && pltptr != -1) {
+				if (pltptr >= ri->plt_min && pltptr < ri->plt_max) {
+					ut64 saddr = reloc->vaddr - ri->got_va;
+					int index = (saddr / 4) - 4;
+					ut64 naddr = r_bin_a2b (r->bin, ri->plt_va + (index * 12) + 0x20);
 					char *internal_reloc = r_str_newf ("rsym.%s", reloc_name);
-					(void)r_flag_set (r->flags, internal_reloc, saddr2, bin_reloc_size (reloc));
+					(void)r_flag_set (r->flags, internal_reloc, naddr, bin_reloc_size (reloc));
 					free (internal_reloc);
 				}
 			}
 		}
-#endif
 	}
 	free (reloc_name);
 	char *demname = NULL;
