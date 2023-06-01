@@ -123,19 +123,23 @@ static int wordpos(const char *esil, int n) {
 }
 
 static void showreg(RCore *core, const char *rn, const char *desc) {
-	REsil *esil = core->anal->esil;
 #define FLG(x) R_ESIL_FLAG_##x
 	// r_esil_reg_read (esil, rn, &nm, NULL); // R_BIT_CHK (&esil->flags, FLG (ZERO)));
 #if 1
-	char *res = r_core_cmd_callf (core, "ae %s", rn);
-	r_cons_printf ("--> (%s)\n", res);
+	char *res = r_core_cmd_strf (core, "ae %s", rn);
+#else
 	// this code clears the esil stack :?
-	//r_esil_runword (esil, rn);
-	//char *res = r_esil_pop (esil);
+	REsil *esil = core->anal->esil;
+	r_esil_runword (esil, rn);
+	char *res = r_esil_pop (esil);
 #endif
 	ut64 nm = r_num_get (NULL, res);
 	int sz = (*rn == '$') ? (rn[1] == '$')? 8: 1: 8;
-	r_cons_printf ("%s 0x%08"PFMT64x" (%d) ; %s\n", rn, nm, sz, desc);
+	if (sz == 1) {
+		r_cons_printf ("%s = %d ; %s\n", rn, (int)nm, desc);
+	} else {
+		r_cons_printf ("%s 0x%08"PFMT64x" (%d) ; %s\n", rn, nm, sz, desc);
+	}
 	free (res);
 }
 
@@ -227,8 +231,10 @@ R_API bool r_core_visual_esil(RCore *core, const char *input) {
 			// free (pad);
 		}
 		r_cons_printf ("esil stack: ");
-		r_esil_dumpstack (esil);
-		r_cons_printf ("\nesil regs:\n");
+		if (!r_esil_dumpstack (esil)) {
+			r_cons_newline ();
+		}
+		r_cons_printf ("esil regs:\n");
 		showreg (core, "$$", "address");
 		showreg (core, "$z", "zero");
 		showreg (core, "$b", "borrow");
@@ -336,9 +342,23 @@ R_API bool r_core_visual_esil(RCore *core, const char *input) {
 		case 'S':
 			r_core_cmd_call (core, "aeso");
 			break;
-		case 'r':
 		case 'h':
-			x = 0; //R_MAX (x - 1, 0);
+			if (x > 0) {
+				x--;
+			}
+			break;
+		case 'H':
+			x = 0;
+			break;
+		case 'l':
+			if (wordpos (expr, x + 1) != strlen (expr)) {
+				x++;
+			}
+			break;
+		case 'L':
+			while (wordpos (expr, x + 1) != strlen (expr)) {
+				x++;
+			}
 			break;
 		case '?':
 			r_cons_clear00 ();
