@@ -160,7 +160,7 @@ af
 afl
 EOF
 EXPECT=<<EOF
-0x00018c08  360   7628 main
+0x00018c08  360   7376 main
 EOF
 RUN
 
@@ -492,5 +492,30 @@ EXPECT=<<EOF
 0x0001bcc4 0x0001bcec 00:0000 40 j 0x0001bc70 f 0x0001bcec
 0x0001bcec 0x0001bcf8 00:0000 12 j 0x0001bc70 f 0x0001bcf8
 0x0001bcf8 0x0001bd00 00:0000 8
+EOF
+RUN
+
+NAME=sparc-1 main
+FILE=bins/elf/sparc-1
+ARGS=-e asm.lines=false
+CMDS=<<EOF
+pd 4
+s main
+pd 4
+EOF
+EXPECT=<<EOF
+;-- section..text:
+;-- .text:
+;-- entry0:
+;-- _start:
+0x000100f0      bc100000       mov g0, fp                              ; [02] -r-x section size 50552 named .text
+0x000100f4      9c23a018       sub sp, 0x18, sp
+0x000100f8      d203a058       ld [sp+0x58], o1
+0x000100fc      9403a05c       add sp, 0x5c, o2
+;-- main:
+0x000104b4      fc3ba038       empty
+0x000104b8      9c03bfa0       add sp, -0x60, sp
+0x000104bc      bc23bfa0       sub sp, -0x60, fp
+0x000104c0      be10000f       mov o7, i7
 EOF
 RUN
