@@ -58,7 +58,7 @@ RebuildJava() {
 	Rebuild shlr/java
 	Rebuild libr/bin
 	Rebuild libr/asm
-	Rebuild libr/anal
+	Rebuild libr/arch
 	Rebuild libr/core
 }
 
