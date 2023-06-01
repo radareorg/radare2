@@ -719,10 +719,6 @@ static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadadd
 	return o;
 }
 
-static ut64 baddr(RBinFile *bf) {
-	return 0;
-}
-
 static bool check_buffer(RBinFile *bf, RBuffer *buf) {
 	ut8 tmp[8];
 	int r = r_buf_read_at (buf, 0, tmp, sizeof (tmp));
@@ -856,7 +852,8 @@ static RList *strings(RBinFile *bf) {
 				free (ptr);
 				continue;
 			}
-			ptr->vaddr = ptr->paddr = bin->strings[i];
+			ptr->paddr = bin->strings[i];
+			ptr->vaddr = ptr->paddr + bf->o->baddr;
 			ptr->size = len;
 			ptr->length = len;
 			ptr->ordinal = i + 1;
@@ -1089,7 +1086,8 @@ static void parse_dex_class_fields(RBinFile *bf, RBinDexClass *c, RBinClass *cls
 		}
 		sym->name = r_str_replace (sym->name, "method.", "", 0);
 		r_str_replace_char (sym->name, ';', 0);
-		sym->paddr = sym->vaddr = total;
+		sym->paddr = total;
+		sym->vaddr = sym->paddr + bf->o->baddr;
 		sym->lang = R_BIN_LANG_JAVA;
 		sym->ordinal = (*sym_count)++;
 
@@ -1368,6 +1366,7 @@ static void parse_dex_class_method(RBinFile *bf, RBinDexClass *c, RBinClass *cls
 				sym->paddr = encoded_method_addr;
 				sym->vaddr = encoded_method_addr;
 			}
+			sym->vaddr += bf->o->baddr;
 			dex->code_from = R_MIN (dex->code_from, sym->paddr);
 			sym->lang = R_BIN_LANG_JAVA;
 			sym->bind = ((MA & 1) == 1) ? R_BIN_BIND_GLOBAL_STR : R_BIN_BIND_LOCAL_STR;
@@ -1733,7 +1732,8 @@ static bool dex_loadcode(RBinFile *bf) {
 				sym->bind = "NONE";
 				//XXX so damn unsafe check buffer boundaries!!!!
 				//XXX use r_buf API!!
-				sym->paddr = sym->vaddr = dex->header.method_offset + (sizeof (struct dex_method_t) * i) ;
+				sym->paddr = dex->header.method_offset + (sizeof (struct dex_method_t) * i) ;
+				sym->vaddr = sym->paddr + bf->o->baddr;
 				sym->ordinal = sym_count++;
 				sym->lang = R_BIN_LANG_JAVA;
 				r_list_append (dex->methods_list, sym);
@@ -1832,7 +1832,8 @@ static RList *entries(RBinFile *bf) {
 				     ".main([Ljava/lang/String;)V")) {
 				if (!already_entry (ret, m->paddr)) {
 					if ((ptr = R_NEW0 (RBinAddr))) {
-						ptr->paddr = ptr->vaddr = m->paddr;
+						ptr->paddr = m->paddr;
+						ptr->vaddr = ptr->paddr + bf->o->baddr;
 						r_list_append (ret, ptr);
 					}
 				}
@@ -1902,15 +1903,16 @@ typedef struct {
 	ut64 size;
 } Section;
 
-static RBinSection *add_section(RList *ret, const char *name, Section s, int perm, char *format) {
+static RBinSection *add_section(RList *ret, ut64 baddr, const char *name, Section s, int perm, char *format) {
 	r_return_val_if_fail (ret && name, NULL);
 	r_return_val_if_fail (s.addr < UT32_MAX, NULL);
 	r_return_val_if_fail (s.size > 0 && s.size < UT32_MAX, NULL);
 	RBinSection *ptr = R_NEW0 (RBinSection);
 	if (ptr) {
 		ptr->name = strdup (name);
-		ptr->paddr = ptr->vaddr = s.addr;
+		ptr->paddr = s.addr;
 		ptr->size = ptr->vsize = s.size;
+		ptr->vaddr = ptr->paddr + baddr;
 		ptr->perm = perm;
 		ptr->add = false;
 		if (format) {
@@ -1921,8 +1923,8 @@ static RBinSection *add_section(RList *ret, const char *name, Section s, int per
 	return ptr;
 }
 
-static void add_segment(RList *ret, const char *name, Section s, int perm) {
-	RBinSection *bs = add_section (ret, name, s, perm, NULL);
+static void add_segment(RList *ret, ut64 baddr, const char *name, Section s, int perm) {
+	RBinSection *bs = add_section (ret, baddr, name, s, perm, NULL);
 	if (bs) {
 		bs->is_segment = true;
 		bs->add = true;
@@ -2004,27 +2006,28 @@ static RList *sections(RBinFile *bf) {
 	Section s_data = { bin->code_to, bs - bin->code_to};
 	Section s_file = { 0, bs };
 
+	ut64 baddr = bf->o->baddr;
 	/* sanity bound checks and section registrations */
 	if (validate_section ("header", NULL, &s_head, NULL, &s_file)) {
-		add_section (ret, "header", s_head, R_PERM_R, NULL);
+		add_section (ret, baddr, "header", s_head, R_PERM_R, NULL);
 	}
 	if (validate_section ("constpool", &s_head, &s_pool, &s_code, &s_file)) {
 		char *s_pool_format = r_str_newf ("Cd %d[%"PFMT64d"]", 4, (ut64) s_pool.size / 4);
-		add_section (ret, "constpool", s_pool, R_PERM_R, s_pool_format);
+		add_section (ret, baddr, "constpool", s_pool, R_PERM_R, s_pool_format);
 	}
 	if (validate_section ("code", &s_pool, &s_code, &s_data, &s_file)) {
-		add_section (ret, "code", s_code, R_PERM_RX, NULL);
+		add_section (ret, baddr, "code", s_code, R_PERM_RX, NULL);
 	}
 	if (validate_section ("data", &s_code, &s_data, NULL, &s_file)) {
-		add_section (ret, "data", s_data, R_PERM_RX, NULL);
+		add_section (ret, baddr, "data", s_data, R_PERM_RX, NULL);
 	}
-	add_section (ret, "file", s_file, R_PERM_R, NULL);
+	add_section (ret, baddr, "file", s_file, R_PERM_R, NULL);
 
 	/* add segments */
 	if (s_code.size > 0) {
-		add_segment (ret, "code", s_code, R_PERM_RX);
+		add_segment (ret, baddr, "code", s_code, R_PERM_RX);
 	}
-	add_segment (ret, "file", s_file, R_PERM_R);
+	add_segment (ret, baddr, "file", s_file, R_PERM_R);
 	return ret;
 }
 
@@ -2186,7 +2189,6 @@ RBinPlugin r_bin_plugin_dex = {
 	.get_sdb = &get_sdb,
 	.load_buffer = &load_buffer,
 	.check_buffer = check_buffer,
-	.baddr = baddr,
 	.entries = entries,
 	.classes = classes,
 	.sections = sections,
