@@ -159,12 +159,12 @@ anal_plugins += [
   'avr',
   'dalvik',
   'gb',
-  'java',
   'mips_cs',
   'x86_cs',
 ]
 
 arch_plugins += [
+  'java',
   'chip8',
   'wasm',
   'i8080',

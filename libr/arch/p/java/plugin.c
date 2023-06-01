@@ -1,7 +1,6 @@
 /* radare - Apache 2.0 - Copyright 2010-2022 - pancake and Adam Pridgen <dso@rice.edu || adam.pridgen@thecoverofnight.com> */
 
-#include <r_lib.h>
-#include <r_anal.h>
+#include <r_arch.h>
 
 #include "../../../shlr/java/ops.h"
 #include "../../../shlr/java/code.h"
@@ -12,23 +11,11 @@
 
 static R_TH_LOCAL ut64 METHOD_START = 0;
 
-static void java_update_anal_types(RAnal *anal, RBinJavaObj *bin_obj);
-static int java_cmd_ext(RAnal *anal, const char* input);
-static int java_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len, RAnalOpMask mask);
-static RBinJavaObj *get_java_bin_obj(RAnal *anal);
-
-static RBinJavaObj *get_java_bin_obj(RAnal *anal) {
-	RBin *b = anal->binb.bin;
-	RBinPlugin *plugin = b->cur && b->cur->o ? b->cur->o->plugin : NULL;
-	ut8 is_java = (plugin && strcmp (plugin->name, "java") == 0) ? 1 : 0;
-	return is_java ? b->cur->o->bin_obj : NULL;
-}
-
 static ut64 java_get_method_start(void) {
 	return METHOD_START;
 }
 
-static int java_switch_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len) {
+static int java_switch_op(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *data, int len) {
 	ut8 op_byte = data[0];
 	ut64 offset = addr - java_get_method_start ();
 	ut8 pos = (offset + 1)%4 ? 1 + 4 - (offset+1)%4 : 1;
@@ -182,18 +169,21 @@ static int r_anal_java_is_op_type_eop(ut64 x) {
 			 (x & R_ANAL_JAVA_CODEOP_SWITCH) == R_ANAL_JAVA_CODEOP_SWITCH);
 }
 
-static int java_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len, RAnalOpMask mask) {
-	/* get opcode size */
+static bool decode(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
+	const ut64 addr = op->addr;
+	const ut8 *data = op->bytes;
+	const int len = op->size;
+	// get opcode size
 	if (len < 1) {
 		op->type = R_ANAL_OP_TYPE_ILL;
-		return 1;
+		return true; // XXX return false; ?
 	}
-	//ut8 op_byte = data[0];
+
 	ut8 op_byte = data[0];
 	int sz = JAVA_OPS[op_byte].size;
 	if (!op) {
 		op->type = R_ANAL_OP_TYPE_ILL;
-		return sz;
+		return sz > 0;
 	}
 	IFDBG {
 		R_LOG_DEBUG ("Extracting op from buffer (%d byte(s)) @ 0x%04x", (int)len, (ut32)addr);
@@ -206,13 +196,13 @@ static int java_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 	op->type = map_java_op_to_anal_op_type (op->type2);
 	// handle lookup and table switch offsets
 	if (op_byte == 0xaa || op_byte == 0xab) {
-		java_switch_op (anal, op, addr, data, len);
+		java_switch_op (as, op, addr, data, len);
 		// IN_SWITCH_OP = 1;
 	}
 
 	if (mask & R_ARCH_OP_MASK_DISASM) {
 		RBinJavaObj *obj = NULL;
-		RBin *bin = anal->binb.bin;
+		RBin *bin = as->arch->binb.bin;
 		RBinPlugin *plugin = bin && bin->cur && bin->cur->o ?
 			bin->cur->o->plugin : NULL;
 		if (plugin && plugin->name) {
@@ -245,7 +235,7 @@ static int java_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 		op->type2 = 0;
 		op->type = R_ANAL_OP_TYPE_CASE
 		op->eob = 0;
-		return op->sizes;
+		return op->sizes > 0;
 	}
 	*/
 
@@ -260,7 +250,7 @@ static int java_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 
 	if (len < 4) {
 		// incomplete analysis here
-		return op->size; // 0
+		return op->size > 0; // XXX false
 	}
 	if (op->type == R_ANAL_OP_TYPE_POP) {
 		op->stackop = R_ANAL_STACK_INC;
@@ -284,11 +274,27 @@ static int java_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 		op->fail = addr + sz;
 		//IFDBG eprintf ("%s callto 0x%04x  failto 0x%04x.\n", JAVA_OPS[op_byte].name, op->jump, op->fail);
 	}
-	return op->size;
+	return op->size > 0;
 }
 
-static int java_opasm(RAnal *a, ut64 addr, const char *str, ut8 *outbuf, int outsize) {
-	return r_java_assemble (addr, outbuf, str);
+static bool encode(RArchSession *as, RAnalOp *op, ut32 mask) {
+	ut8 bytes[8] = {0};
+	int size = r_java_assemble (op->addr, bytes, op->mnemonic);
+	if (size > 0) {
+		op->bytes = r_mem_dup (bytes, size);
+		op->size = size;
+		return true;
+	}
+
+	return false;
+}
+
+#if 0
+static RBinJavaObj *get_java_bin_obj(RAnal *anal) {
+	RBin *b = anal->binb.bin;
+	RBinPlugin *plugin = b->cur && b->cur->o ? b->cur->o->plugin : NULL;
+	ut8 is_java = (plugin && strcmp (plugin->name, "java") == 0) ? 1 : 0;
+	return is_java ? b->cur->o->bin_obj : NULL;
 }
 
 static void java_update_anal_types(RAnal *anal, RBinJavaObj *bin_obj) {
@@ -340,23 +346,23 @@ static int java_cmd_ext(RAnal *anal, const char* input) {
 	}
 	return 0;
 }
+#endif
 
-RAnalPlugin r_anal_plugin_java = {
+RArchPlugin r_arch_plugin_java = {
 	.name = "java",
 	.desc = "Java bytecode analysis plugin",
 	.license = "Apache",
 	.arch = "java",
-	.bits = 32,
-	.op = &java_op,
-	.opasm = &java_opasm,
-	.cmd_ext = java_cmd_ext,
-	0
+	.bits = R_SYS_BITS_PACK1 (32),
+	.decode = decode,
+	.encode = encode,
+	//.cmd_ext = java_cmd_ext,
 };
 
 #ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_ANAL,
-	.data = &r_anal_plugin_java,
+	.type = R_LIB_TYPE_ARCH,
+	.data = &r_arch_plugin_java,
 	.version = R2_VERSION
 };
 #endif

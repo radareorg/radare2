@@ -52,6 +52,7 @@ r_arch_sources = [
   'p/tms320/c55x_plus/decode_funcs.c',
   'p/tms320/c55x_plus/hashtable.c',
   'p/tms320/c55x_plus/utils.c',
+  'p/java/plugin.c',
 # fails on windows
 # error LNK2005: SocketNotificationRetrieveEvents already defined in p_hppa_gnu_hppa-dis.c.obj
   'p/hppa/plugin_gnu.c',
@@ -180,6 +181,7 @@ r_arch = library('r_arch', r_arch_sources,
   dependencies: [
     r_util_dep,
     r_reg_dep,
+    java_dep,
     capstone_dep,
   ],
   install: true,

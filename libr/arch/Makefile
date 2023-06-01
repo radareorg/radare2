@@ -17,6 +17,7 @@ v35pre:
 	$(MAKE) -C p/arm/v35
 
 include $(STATIC_ARCH_PLUGINS)
+include $(STOP)/java/deps.mk
 
 STATIC_OBJS=$(subst ..,p/..,$(subst arch_,p/arch_,$(STATIC_OBJ)))
 OBJS=arch.o arch_config.o arch_switch.o arch_op.o
