@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2014-2022 - pancake */
+/* radare2 - LGPL - Copyright 2014-2023 - pancake */
 
 #include <r_anal.h>
 #include <r_lib.h>
@@ -147,6 +147,11 @@ performed in big-endian byte order.
 	int n = cs_disasm (handle, (const ut8*)buf, len, addr, 1, &insn);
 	if (n < 1) {
 		op->type = R_ANAL_OP_TYPE_ILL;
+		op->size = 4;
+		if (mask & R_ARCH_OP_MASK_DISASM) {
+			free (op->mnemonic);
+			op->mnemonic = strdup ("empty");
+		}
 	} else {
 		if (mask & R_ARCH_OP_MASK_OPEX) {
 			opex (&op->opex, handle, insn);
