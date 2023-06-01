@@ -1601,11 +1601,13 @@ R_API bool r_esil_dumpstack(REsil *esil) {
 			esil->trap, esil->trap_code,
 			r_esil_trapstr (esil->trap));
 	}
+	bool ret = false;
 	for (i = 0; i < esil->stackptr; i++) {
 		const char *comma = (i + 1 < esil->stackptr)? ",": "\n";
 		esil->anal->cb_printf ("%s%s", esil->stack[i], comma);
+		ret = true;
 	}
-	return true;
+	return ret;
 }
 
 static bool esil_break(REsil *esil) {
@@ -3555,11 +3557,10 @@ static bool runword(REsil *esil, const char *word) {
 				}
 			}
 			esil->current_opstr = strdup (word);
-			//so this is basically just sharing what's the operation with the operation
-			//useful for wrappers
+			// so this is basically just sharing what's the
+			// operation with the operation useful for wrappers
 			const bool ret = op->code (esil);
-			free (esil->current_opstr);
-			esil->current_opstr = NULL;
+			R_FREE (esil->current_opstr);
 			if (!ret) {
 				R_LOG_DEBUG ("%s returned 0", word);
 			}
