@@ -1675,7 +1675,12 @@ typedef struct {
 	bool is_elf;
 	bool is32;
 	RBinSection *got;
+	ut64 got_min;
+	ut64 got_max;
+	ut64 got_va;
 	RBinSection *plt;
+	ut64 plt_min;
+	ut64 plt_max;
 } RelocInfo;
 
 static void ri_init(RCore *core, RelocInfo *ri) {
@@ -1694,6 +1699,9 @@ static void ri_init(RCore *core, RelocInfo *ri) {
 	r_list_foreach (sections, iter, s) {
 		if (!strcmp (s->name, ".got")) {
 			ri->got = s;
+			ri->got_min = s->paddr;
+			ri->got_max = s->paddr + s->size;
+			ri->got_va = s->vaddr;
 		}
 		if (!strcmp (s->name, ".plt")) {
 			ri->plt = s;
@@ -1773,20 +1781,18 @@ static void set_bin_relocs(RelocInfo *ri, RBinReloc *reloc, ut64 addr, Sdb **db,
 	}
 	if (ri->is_elf && reloc->symbol && ri->got && ri->plt) {
 #if 1
-		ut64 got_min = rva (r->bin, ri->got->paddr, ri->got->vaddr, true);
-		ut64 got_max = got_min + ri->got->vsize;
+		ut64 got_min = ri->got_min; // rva (r->bin, ri->got->paddr, ri->got->vaddr, true);
+		ut64 got_max = ri->got_max; // got_min + ri->got->vsize;
 		// ut64 raddr = reloc->vaddr;
-		ut64 raddr = rva (r->bin, reloc->paddr, reloc->vaddr, true);
+		ut64 raddr = reloc->paddr; // rva (r->bin, reloc->paddr, reloc->vaddr, true);
 		ut64 saddr = rva (r->bin, reloc->symbol->paddr, reloc->symbol->vaddr, true);
-		RBinSection *se = r_bin_get_section_at (r_bin_cur_object (r->bin), raddr, true);
-		if (raddr >= got_min && raddr < got_max) {
-			//se = ri->got;
-		}
-		if (se) {
+		RBinSection *se = NULL;
+		const bool isgot = (raddr >= got_min && raddr < got_max);
+		if (isgot) {
 			ut32 rbuf = 0;
+			ut64 raddr = rva (r->bin, reloc->paddr, reloc->vaddr, true);
 			r_io_read_at (r->io, raddr, (ut8*)&rbuf, 4); // relocated buf tells the section to look at
-			char *ss = se->name;
-			if (!strcmp (ss, ".got") && rbuf != 0) {
+			if (isgot && rbuf != 0) {
 #if 0
 				ut64 saddr2 = r_bin_a2b (r->bin, rbuf);
 				RBinSection *se2 = r_bin_get_section_at (r_bin_cur_object (r->bin), saddr2, true);
@@ -1803,10 +1809,9 @@ static void set_bin_relocs(RelocInfo *ri, RBinReloc *reloc, ut64 addr, Sdb **db,
 				RBinSection *se2 = r_bin_get_section_at (r_bin_cur_object (r->bin), saddr2, true);
 				if (se2) {
 					saddr  = reloc->vaddr;
-					saddr -= se->vaddr;
+					saddr -= ri->got_va;
 					int index = (saddr / 4) - 4;
 					saddr = r_bin_a2b (r->bin, se2->vaddr + (index * 12) + 0x20);
-					// saddr = 0x000074dc + (index * 12) + 0x20;
 					char *internal_reloc = r_str_newf ("rsym.%s", reloc_name);
 					(void)r_flag_set (r->flags, internal_reloc, saddr, bin_reloc_size (reloc));
 					free (internal_reloc);
@@ -1982,7 +1987,7 @@ static int bin_relocs(RCore *r, PJ *pj, int mode, int va) {
 
 	RRBNode *node;
 	RBinReloc *reloc;
-	RelocInfo ri;
+	RelocInfo ri = {0};
 	ri_init (r, &ri);
 	r_crbtree_foreach (relocs, node, RBinReloc, reloc) {
 		ut64 addr = rva (r->bin, reloc->paddr, reloc->vaddr, va);
