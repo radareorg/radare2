@@ -109,7 +109,7 @@ static int wordpos(const char *esil, int n) {
 	if (n < 1) {
 		n = 0;
 	}
-	while (w && n--) {
+	while (w && *w && n--) {
 		const char *nw = strchr (w + 1, ',');
 		if (!nw) {
 			return strlen (esil);
@@ -122,10 +122,21 @@ static int wordpos(const char *esil, int n) {
 	return (size_t)(w - esil);
 }
 
-static void showreg(REsil *esil, const char *rn, const char *desc) {
-	ut64 nm = 0;
-	int sz = 0;
+static void showreg(RCore *core, const char *rn, const char *desc) {
+	REsil *esil = core->anal->esil;
+#define FLG(x) R_ESIL_FLAG_##x
+	// r_esil_reg_read (esil, rn, &nm, NULL); // R_BIT_CHK (&esil->flags, FLG (ZERO)));
+#if 1
+	char *res = r_core_cmd_callf (core, "ae %s", rn);
+	r_cons_printf ("--> (%s)\n", res);
+	// this code clears the esil stack :?
+	//r_esil_runword (esil, rn);
+	//char *res = r_esil_pop (esil);
+#endif
+	ut64 nm = r_num_get (NULL, res);
+	int sz = (*rn == '$') ? (rn[1] == '$')? 8: 1: 8;
 	r_cons_printf ("%s 0x%08"PFMT64x" (%d) ; %s\n", rn, nm, sz, desc);
+	free (res);
 }
 
 R_API bool r_core_visual_esil(RCore *core, const char *input) {
@@ -218,16 +229,16 @@ R_API bool r_core_visual_esil(RCore *core, const char *input) {
 		r_cons_printf ("esil stack: ");
 		r_esil_dumpstack (esil);
 		r_cons_printf ("\nesil regs:\n");
-		showreg (esil, "$$", "address");
-		showreg (esil, "$z", "zero");
-		showreg (esil, "$b", "borrow");
-		showreg (esil, "$c", "carry");
-		showreg (esil, "$o", "overflow");
-		showreg (esil, "$p", "parity");
-		showreg (esil, "$r", "regsize");
-		showreg (esil, "$s", "sign");
-		showreg (esil, "$d", "delay");
-		showreg (esil, "$j", "jump");
+		showreg (core, "$$", "address");
+		showreg (core, "$z", "zero");
+		showreg (core, "$b", "borrow");
+		showreg (core, "$c", "carry");
+		showreg (core, "$o", "overflow");
+		showreg (core, "$p", "parity");
+		showreg (core, "$r", "regsize");
+		showreg (core, "$s", "sign");
+		showreg (core, "$d", "delay");
+		showreg (core, "$j", "jump");
 
 		r_cons_printf ("regs:\n");
 		char *r = r_core_cmd_str (core, "dr=");
