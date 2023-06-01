@@ -1786,8 +1786,8 @@ static void set_bin_relocs(RelocInfo *ri, RBinReloc *reloc, ut64 addr, Sdb **db,
 			} else {
 				r_io_read_at (r->io, rvaddr, (ut8*)&rbuf, 8);
 			}
-			if (rbuf != 0 && rbuf != UT32_MAX) {
-#if 1
+			if (rbuf != 0 && rbuf != -1) {
+#if 0
 				ut64 saddr2 = rbuf; // r_bin_a2b (r->bin, rbuf);
 				RBinSection *se2 = NULL;
 				ut64 plt_min = ri->plt->vaddr;
