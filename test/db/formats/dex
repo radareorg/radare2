@@ -1895,12 +1895,20 @@ ARGS=-B 0x100000
 CMDS=<<EOF
 s method.public.Lcom_google_progress_Gps_1.Lcom_google_progress_Gps_1.method.onProviderEnabled_Ljava_lang_String__V
 pd 2
+?e --
+ic~onProviderEnabled
+?e --
+is~onProviderEnabled
 EOF
 EXPECT=<<EOF
             ;-- method.public.Lcom_google_progress_Gps_1.Lcom_google_progress_Gps_1.method.onProviderEnabled_Ljava_lang_String__V:
             ;-- Lcom/google/progress/Gps$1.method.onProviderEnabled(Ljava/lang/String;)V:
             0x0011b938      0e00           return-void
             0x0011b93a      0000           nop
+--
+0x0011b938 java method 4 p    Lcom/google/progress/Gps$1.method.onProviderEnabled(Ljava/lang/String;)V
+--
+544  0x0001b938 0x0011b938 GLOBAL FUNC   2        Lcom/google/progress/Gps$1.method.onProviderEnabled(Ljava/lang/String;)V
 EOF
 RUN
 
@@ -1909,11 +1917,19 @@ FILE=apk://bins/dex/14d9.apk
 CMDS=<<EOF
 s method.public.Lcom_google_progress_Gps_1.Lcom_google_progress_Gps_1.method.onProviderEnabled_Ljava_lang_String__V
 pd 2
+?e --
+ic~onProviderEnabled
+?e --
+is~onProviderEnabled
 EOF
 EXPECT=<<EOF
             ;-- method.public.Lcom_google_progress_Gps_1.Lcom_google_progress_Gps_1.method.onProviderEnabled_Ljava_lang_String__V:
             ;-- Lcom/google/progress/Gps$1.method.onProviderEnabled(Ljava/lang/String;)V:
             0x00022530      0e00           return-void
             0x00022532      0000           nop
+--
+0x00022530 java method 4 p    Lcom/google/progress/Gps$1.method.onProviderEnabled(Ljava/lang/String;)V
+--
+544  0x0001b938 0x00022530 GLOBAL FUNC   2        Lcom/google/progress/Gps$1.method.onProviderEnabled(Ljava/lang/String;)V
 EOF
 RUN
