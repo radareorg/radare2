@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2011-2022 - pancake, h4ng3r */
+/* radare - LGPL - Copyright 2011-2023 - pancake, h4ng3r */
 
 #include <r_bin.h>
 #include "../i/private.h"
@@ -8,6 +8,15 @@
 #include "../../crypto/hash/adler32.c"
 
 extern struct r_bin_dbginfo_t r_bin_dbginfo_dex;
+// R2_590 - move into rbin
+static RBinSymbol *r_bin_symbol_clone(RBinSymbol *s) {
+	RBinSymbol *c = r_mem_dup (s, sizeof (RBinSymbol));
+	c->name = s->name? strdup (s->name): NULL;
+	c->dname = s->dname? strdup (s->dname): NULL;
+	c->libname = s->libname? strdup (s->libname): NULL;
+	c->classname = s->classname? strdup (s->classname): NULL;
+	return c;
+}
 
 static ut64 get_method_flags(ut64 MA) {
 	ut64 flags = 0;
@@ -719,10 +728,6 @@ static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadadd
 	return o;
 }
 
-static ut64 baddr(RBinFile *bf) {
-	return 0;
-}
-
 static bool check_buffer(RBinFile *bf, RBuffer *buf) {
 	ut8 tmp[8];
 	int r = r_buf_read_at (buf, 0, tmp, sizeof (tmp));
@@ -856,7 +861,8 @@ static RList *strings(RBinFile *bf) {
 				free (ptr);
 				continue;
 			}
-			ptr->vaddr = ptr->paddr = bin->strings[i];
+			ptr->paddr = bin->strings[i];
+			ptr->vaddr = ptr->paddr + bf->o->baddr;
 			ptr->size = len;
 			ptr->length = len;
 			ptr->ordinal = i + 1;
@@ -1089,7 +1095,8 @@ static void parse_dex_class_fields(RBinFile *bf, RBinDexClass *c, RBinClass *cls
 		}
 		sym->name = r_str_replace (sym->name, "method.", "", 0);
 		r_str_replace_char (sym->name, ';', 0);
-		sym->paddr = sym->vaddr = total;
+		sym->paddr = total;
+		sym->vaddr = sym->paddr; //  + baddr;
 		sym->lang = R_BIN_LANG_JAVA;
 		sym->ordinal = (*sym_count)++;
 
@@ -1131,6 +1138,7 @@ static void parse_dex_class_method(RBinFile *bf, RBinDexClass *c, RBinClass *cls
 	if (!dex->trycatch_list) {
 		dex->trycatch_list = r_list_newf ((RListFree)r_bin_trycatch_free);
 	}
+	const ut64 baddr = bf->o->baddr;
 	size_t skip = 0;
 	ut64 bufsz = r_buf_size (bf->buf);
 	ut64 encoded_method_addr;
@@ -1362,12 +1370,12 @@ static void parse_dex_class_method(RBinFile *bf, RBinDexClass *c, RBinClass *cls
 			if (MC > 0) {
 				sym->type = R_BIN_TYPE_FUNC_STR;
 				sym->paddr = MC;// + 0x10;
-				sym->vaddr = MC;// + 0x10;
 			} else {
 				sym->type = R_BIN_TYPE_METH_STR;
 				sym->paddr = encoded_method_addr;
-				sym->vaddr = encoded_method_addr;
 			}
+			sym->vaddr = sym->paddr + bf->o->baddr;
+			// sym->vaddr += bf->o->baddr;
 			dex->code_from = R_MIN (dex->code_from, sym->paddr);
 			sym->lang = R_BIN_LANG_JAVA;
 			sym->bind = ((MA & 1) == 1) ? R_BIN_BIND_GLOBAL_STR : R_BIN_BIND_LOCAL_STR;
@@ -1387,13 +1395,16 @@ static void parse_dex_class_method(RBinFile *bf, RBinDexClass *c, RBinClass *cls
 				}
 				// TODO: prolog_size
 				sym->paddr = MC + prolog_size;// + 0x10;
-				sym->vaddr = MC + prolog_size;// + 0x10;
+				sym->vaddr = sym->paddr; //  + baddr;
 				//if (is_direct) {
 				sym->size = insns_size * 2;
 				//}
 				//eprintf("%s (0x%x-0x%x) size=%d\nregsz=%d\ninsns_size=%d\nouts_size=%d\ntries_size=%d\ninsns_size=%d\n", flag_name, sym->vaddr, sym->vaddr+sym->size, prolog_size, regsz, ins_size, outs_size, tries_size, insns_size);
 				r_list_append (dex->methods_list, sym);
-				r_list_append (cls->methods, sym);
+				// XXX this is necessary because class methods and symbols obey baddr in a inconsistent way in cbin.c .. so better get this to work and fix later with more tests
+				RBinSymbol *method = r_bin_symbol_clone (sym);
+				method->vaddr += baddr;
+				r_list_append (cls->methods, method);
 
 				if (dex->code_from == UT64_MAX || dex->code_from > sym->paddr) {
 					dex->code_from = sym->paddr;
@@ -1424,7 +1435,9 @@ static void parse_dex_class_method(RBinFile *bf, RBinDexClass *c, RBinClass *cls
 				sym->size = 0;
 				r_list_append (dex->methods_list, sym);
 				sym->lang = R_BIN_LANG_JAVA;
-				r_list_append (cls->methods, sym);
+				RBinSymbol *method = r_bin_symbol_clone (sym);
+				// method->vaddr += baddr;
+				r_list_append (cls->methods, method);
 			}
 			if (MC > 0 && debug_info_off > 0 && dex->header.data_offset < debug_info_off &&
 				debug_info_off < dex->header.data_offset + dex->header.data_size) {
@@ -1465,7 +1478,7 @@ static void parse_class(RBinFile *bf, RBinDexClass *c, int class_index, int *met
 	r_str_replace_char (cls->name, ';', 0);
 	cls->index = class_index;
 	cls->addr = dex->header.class_offset + (class_index * DEX_CLASS_SIZE);
-	cls->methods = r_list_new ();
+	cls->methods = r_list_newf ((RListFree)r_bin_symbol_free);
 	const char *super = dex_class_super_name (dex, c);
 	if (super) {
 		cls->super = r_list_newf (free);
@@ -1733,7 +1746,8 @@ static bool dex_loadcode(RBinFile *bf) {
 				sym->bind = "NONE";
 				//XXX so damn unsafe check buffer boundaries!!!!
 				//XXX use r_buf API!!
-				sym->paddr = sym->vaddr = dex->header.method_offset + (sizeof (struct dex_method_t) * i) ;
+				sym->paddr = dex->header.method_offset + (sizeof (struct dex_method_t) * i);
+				sym->vaddr = sym->paddr; //  + bf->o->baddr;
 				sym->ordinal = sym_count++;
 				sym->lang = R_BIN_LANG_JAVA;
 				r_list_append (dex->methods_list, sym);
@@ -1832,7 +1846,8 @@ static RList *entries(RBinFile *bf) {
 				     ".main([Ljava/lang/String;)V")) {
 				if (!already_entry (ret, m->paddr)) {
 					if ((ptr = R_NEW0 (RBinAddr))) {
-						ptr->paddr = ptr->vaddr = m->paddr;
+						ptr->paddr = m->paddr;
+						ptr->vaddr = ptr->paddr + bf->o->baddr;
 						r_list_append (ret, ptr);
 					}
 				}
@@ -1902,15 +1917,16 @@ typedef struct {
 	ut64 size;
 } Section;
 
-static RBinSection *add_section(RList *ret, const char *name, Section s, int perm, char *format) {
+static RBinSection *add_section(RList *ret, ut64 baddr, const char *name, Section s, int perm, char *format) {
 	r_return_val_if_fail (ret && name, NULL);
 	r_return_val_if_fail (s.addr < UT32_MAX, NULL);
 	r_return_val_if_fail (s.size > 0 && s.size < UT32_MAX, NULL);
 	RBinSection *ptr = R_NEW0 (RBinSection);
 	if (ptr) {
 		ptr->name = strdup (name);
-		ptr->paddr = ptr->vaddr = s.addr;
 		ptr->size = ptr->vsize = s.size;
+		ptr->paddr = s.addr;
+		ptr->vaddr = s.addr;
 		ptr->perm = perm;
 		ptr->add = false;
 		if (format) {
@@ -1921,8 +1937,8 @@ static RBinSection *add_section(RList *ret, const char *name, Section s, int per
 	return ptr;
 }
 
-static void add_segment(RList *ret, const char *name, Section s, int perm) {
-	RBinSection *bs = add_section (ret, name, s, perm, NULL);
+static void add_segment(RList *ret, ut64 baddr, const char *name, Section s, int perm) {
+	RBinSection *bs = add_section (ret, baddr, name, s, perm, NULL);
 	if (bs) {
 		bs->is_segment = true;
 		bs->add = true;
@@ -2004,27 +2020,28 @@ static RList *sections(RBinFile *bf) {
 	Section s_data = { bin->code_to, bs - bin->code_to};
 	Section s_file = { 0, bs };
 
+	const ut64 baddr = bf->o->baddr;
 	/* sanity bound checks and section registrations */
 	if (validate_section ("header", NULL, &s_head, NULL, &s_file)) {
-		add_section (ret, "header", s_head, R_PERM_R, NULL);
+		add_section (ret, baddr, "header", s_head, R_PERM_R, NULL);
 	}
 	if (validate_section ("constpool", &s_head, &s_pool, &s_code, &s_file)) {
 		char *s_pool_format = r_str_newf ("Cd %d[%"PFMT64d"]", 4, (ut64) s_pool.size / 4);
-		add_section (ret, "constpool", s_pool, R_PERM_R, s_pool_format);
+		add_section (ret, baddr, "constpool", s_pool, R_PERM_R, s_pool_format);
 	}
 	if (validate_section ("code", &s_pool, &s_code, &s_data, &s_file)) {
-		add_section (ret, "code", s_code, R_PERM_RX, NULL);
+		add_section (ret, baddr, "code", s_code, R_PERM_RX, NULL);
 	}
 	if (validate_section ("data", &s_code, &s_data, NULL, &s_file)) {
-		add_section (ret, "data", s_data, R_PERM_RX, NULL);
+		add_section (ret, baddr, "data", s_data, R_PERM_RX, NULL);
 	}
-	add_section (ret, "file", s_file, R_PERM_R, NULL);
+	add_section (ret, baddr, "file", s_file, R_PERM_R, NULL);
 
 	/* add segments */
 	if (s_code.size > 0) {
-		add_segment (ret, "code", s_code, R_PERM_RX);
+		add_segment (ret, baddr, "code", s_code, R_PERM_RX);
 	}
-	add_segment (ret, "file", s_file, R_PERM_R);
+	add_segment (ret, baddr, "file", s_file, R_PERM_R);
 	return ret;
 }
 
@@ -2178,6 +2195,10 @@ static void destroy(RBinFile *bf) {
 	r_bin_dex_free (obj);
 }
 
+static ut64 baddr(RBinFile *bf) {
+	return 0;
+}
+
 RBinPlugin r_bin_plugin_dex = {
 	.name = "dex",
 	.desc = "dex format bin plugin",
@@ -2186,11 +2207,11 @@ RBinPlugin r_bin_plugin_dex = {
 	.get_sdb = &get_sdb,
 	.load_buffer = &load_buffer,
 	.check_buffer = check_buffer,
-	.baddr = baddr,
 	.entries = entries,
 	.classes = classes,
 	.sections = sections,
 	.symbols = methods,
+	.baddr = baddr,
 	.trycatch = trycatch,
 	.imports = imports,
 	.strings = strings,
