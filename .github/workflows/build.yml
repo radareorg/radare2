@@ -595,6 +595,7 @@ jobs:
       run: |
         echo '[suppress_function]' > abidiff.conf
         echo 'name_not_regexp = ^r_.*' >> abidiff.conf
+        echo 'name_regexp = ^r_bin_java.*' >> abidiff.conf
         echo '[suppress_variable]' >> abidiff.conf
         echo 'name_not_regexp = ^r_.*' >> abidiff.conf
         for lib in r2-static-latest/usr/lib/libr_*.so; do

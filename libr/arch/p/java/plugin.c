@@ -240,6 +240,7 @@ static bool decode(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
 	*/
 
 	op->eob = r_anal_java_is_op_type_eop (op->type2);
+#if 0
 	IFDBG {
 		const char *ot_str = r_anal_optype_tostring (op->type);
 		R_LOG_DEBUG ("op_type2: %s @ 0x%04"PFMT64x" 0x%08"PFMT64x" op_type: (0x%02"PFMT64x") %s",
@@ -247,6 +248,7 @@ static bool decode(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
 		//eprintf ("op_eob: 0x%02x.\n", op->eob);
 		//eprintf ("op_byte @ 0: 0x%02x op_byte @ 0x%04x: 0x%02x.\n", data[0], addr, data[addr]);
 	}
+#endif
 
 	if (len < 4) {
 		// incomplete analysis here
