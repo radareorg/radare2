@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2018 - pancake, defragger */
+/* radare - LGPL - Copyright 2009-2023 - pancake, defragger */
 
 #include <r_core.h>
 #include <r_asm.h>
@@ -156,7 +156,6 @@ static RList *r_debug_gdb_map_get(RDebug* dbg) { //TODO
 	char *ptr, *pos_1;
 	size_t line_len;
 	char name[1024], region1[100], region2[100], perms[5];
-	RDebugMap *map = NULL;
 	region1[0] = region2[0] = '0';
 	region1[1] = region2[1] = 'x';
 	char *save_ptr = NULL;
@@ -184,9 +183,8 @@ static RList *r_debug_gdb_map_get(RDebug* dbg) { //TODO
 			      perms, &offset, name);
 		if (ret == 3) {
 			name[0] = '\0';
-		} else if (ret != 4) {
-			eprintf ("%s: Unable to parse \"%s\"\nContent:\n%s\n",
-				 __func__, path, buf);
+		} else if (ret < 3) {
+			R_LOG_WARN ("Cannot parse \"%s\" with content: %s", path, buf);
 			gdbr_close_file (desc);
 			free (buf);
 			r_list_free (retlist);
@@ -213,18 +211,20 @@ static RList *r_debug_gdb_map_get(RDebug* dbg) { //TODO
 		map_start = r_num_get (NULL, region1);
 		map_end = r_num_get (NULL, region2);
 		if (map_start == map_end || map_end == 0) {
-			eprintf ("%s: ignoring invalid map size: %s - %s\n",
-				 __func__, region1, region2);
+			R_LOG_WARN ("%s: ignoring invalid map size: %s - %s", region1, region2);
 			ptr = r_str_tok_r (NULL, "\n", &save_ptr);
 			continue;
 		}
-		if (!(map = r_debug_map_new (name, map_start, map_end, perm, 0))) {
+		RDebugMap *map = r_debug_map_new (name, map_start, map_end, perm, 0);
+		if (map) {
+			map->offset = offset;
+			map->shared = map_is_shared;
+			map->file = strdup (name);
+			r_list_append (retlist, map);
+		} else {
+			R_LOG_WARN ("Cannot create map 0x%08"PFMT64x" - 0x%08"PFMT64x" (%s)", map_start, map_end, perm);
 			break;
 		}
-		map->offset = offset;
-		map->shared = map_is_shared;
-		map->file = strdup (name);
-		r_list_append (retlist, map);
 		ptr = r_str_tok_r (NULL, "\n", &save_ptr);
 	}
 	gdbr_close_file (desc);
@@ -518,7 +518,7 @@ static RDebugInfo* r_debug_gdb_info(RDebug *dbg, const char *arg) {
 	rdi->uid = found ? th->uid : -1;
 	rdi->gid = found ? th->gid : -1;
 	if (gdbr_stop_reason (desc) >= 0) {
-		eprintf ("signal: %d\n", desc->stop_reason.signum);
+		R_LOG_INFO ("signal: %d", desc->stop_reason.signum);
 		rdi->signum = desc->stop_reason.signum;
 	}
 	if (list_alloc) {
