@@ -1874,3 +1874,46 @@ EXPECT=<<EOF
             0x000001c4      1234           const/4 v4, 0x3
 EOF
 RUN
+
+NAME=DEX with baddr
+FILE=bins/dex/14d9.dex
+CMDS=<<EOF
+s method.public.Lcom_google_progress_Gps_1.Lcom_google_progress_Gps_1.method.onProviderEnabled_Ljava_lang_String__V
+pd 2
+EOF
+EXPECT=<<EOF
+            ;-- method.public.Lcom_google_progress_Gps_1.Lcom_google_progress_Gps_1.method.onProviderEnabled_Ljava_lang_String__V:
+            ;-- Lcom/google/progress/Gps$1.method.onProviderEnabled(Ljava/lang/String;)V:
+            0x0001b938      0e00           return-void                 ; Gps.java:85
+            0x0001b93a      0000           nop
+EOF
+RUN
+
+NAME=DEX with baddr
+FILE=bins/dex/14d9.dex
+ARGS=-B 0x100000
+CMDS=<<EOF
+s method.public.Lcom_google_progress_Gps_1.Lcom_google_progress_Gps_1.method.onProviderEnabled_Ljava_lang_String__V
+pd 2
+EOF
+EXPECT=<<EOF
+            ;-- method.public.Lcom_google_progress_Gps_1.Lcom_google_progress_Gps_1.method.onProviderEnabled_Ljava_lang_String__V:
+            ;-- Lcom/google/progress/Gps$1.method.onProviderEnabled(Ljava/lang/String;)V:
+            0x0011b938      0e00           return-void
+            0x0011b93a      0000           nop
+EOF
+RUN
+
+NAME=APK baddr
+FILE=apk://bins/dex/14d9.apk
+CMDS=<<EOF
+s method.public.Lcom_google_progress_Gps_1.Lcom_google_progress_Gps_1.method.onProviderEnabled_Ljava_lang_String__V
+pd 2
+EOF
+EXPECT=<<EOF
+            ;-- method.public.Lcom_google_progress_Gps_1.Lcom_google_progress_Gps_1.method.onProviderEnabled_Ljava_lang_String__V:
+            ;-- Lcom/google/progress/Gps$1.method.onProviderEnabled(Ljava/lang/String;)V:
+            0x00022530      0e00           return-void
+            0x00022532      0000           nop
+EOF
+RUN

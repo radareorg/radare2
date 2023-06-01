@@ -3677,7 +3677,7 @@ static int bin_classes(RCore *r, PJ *pj, int mode) {
 	} else if (IS_MODE_RAD (mode) && !IS_MODE_CLASSDUMP (mode)) {
 		r_cons_println ("fs classes");
 	}
-
+	const ut64 baddr = r_bin_get_baddr (r->bin);
 	const bool bin_filter = r_config_get_b (r->config, "bin.filter");
 	r_list_foreach (cs, iter, c) {
 		if (!c || !c->name || !c->name[0]) {
@@ -3711,11 +3711,11 @@ static int bin_classes(RCore *r, PJ *pj, int mode) {
 				r_strf_var (method, 256, "method%s.%s.%s", mflags, c->name, sym->name);
 				R_FREE (mflags);
 				r_name_filter (method, -1);
-				r_flag_set (r->flags, method, sym->vaddr, 1);
+				r_flag_set (r->flags, method, sym->vaddr + baddr, 1);
 			}
 			r_list_foreach (c->fields, iter2, f) {
 				char *fn = r_str_newf ("field.%s.%s", classname, f->name);
-				ut64 at = f->vaddr; //  sym->vaddr + (f->vaddr &  0xffff);
+				ut64 at = f->vaddr + baddr;
 				r_flag_set (r->flags, fn, at, 1);
 				free (fn);
 			}

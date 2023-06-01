@@ -1360,13 +1360,12 @@ static void parse_dex_class_method(RBinFile *bf, RBinDexClass *c, RBinClass *cls
 			if (MC > 0) {
 				sym->type = R_BIN_TYPE_FUNC_STR;
 				sym->paddr = MC;// + 0x10;
-				sym->vaddr = MC;// + 0x10;
 			} else {
 				sym->type = R_BIN_TYPE_METH_STR;
 				sym->paddr = encoded_method_addr;
-				sym->vaddr = encoded_method_addr;
 			}
-			sym->vaddr += bf->o->baddr;
+			sym->vaddr = sym->paddr;
+			// sym->vaddr += bf->o->baddr;
 			dex->code_from = R_MIN (dex->code_from, sym->paddr);
 			sym->lang = R_BIN_LANG_JAVA;
 			sym->bind = ((MA & 1) == 1) ? R_BIN_BIND_GLOBAL_STR : R_BIN_BIND_LOCAL_STR;
@@ -1732,8 +1731,8 @@ static bool dex_loadcode(RBinFile *bf) {
 				sym->bind = "NONE";
 				//XXX so damn unsafe check buffer boundaries!!!!
 				//XXX use r_buf API!!
-				sym->paddr = dex->header.method_offset + (sizeof (struct dex_method_t) * i) ;
-				sym->vaddr = sym->paddr + bf->o->baddr;
+				sym->paddr = dex->header.method_offset + (sizeof (struct dex_method_t) * i);
+				sym->vaddr = sym->paddr; //  + bf->o->baddr;
 				sym->ordinal = sym_count++;
 				sym->lang = R_BIN_LANG_JAVA;
 				r_list_append (dex->methods_list, sym);
@@ -1912,7 +1911,7 @@ static RBinSection *add_section(RList *ret, ut64 baddr, const char *name, Sectio
 		ptr->name = strdup (name);
 		ptr->paddr = s.addr;
 		ptr->size = ptr->vsize = s.size;
-		ptr->vaddr = ptr->paddr + baddr;
+		ptr->vaddr = ptr->paddr; //  + baddr;
 		ptr->perm = perm;
 		ptr->add = false;
 		if (format) {
@@ -2181,6 +2180,10 @@ static void destroy(RBinFile *bf) {
 	r_bin_dex_free (obj);
 }
 
+static ut64 baddr(RBinFile *bf) {
+	return 0;
+}
+
 RBinPlugin r_bin_plugin_dex = {
 	.name = "dex",
 	.desc = "dex format bin plugin",
@@ -2193,6 +2196,7 @@ RBinPlugin r_bin_plugin_dex = {
 	.classes = classes,
 	.sections = sections,
 	.symbols = methods,
+	.baddr = baddr,
 	.trycatch = trycatch,
 	.imports = imports,
 	.strings = strings,
