@@ -306,11 +306,13 @@ EOF
 RUN
 
 NAME=ELF: arm64 missing internal plt imports
-BROKEN=1
 FILE=bins/elf/libcurl.so.4.2.0
 CMDS=<<EOF
 s section..plt
 pd 20
+s 0x0001de5c
+af
+pdf
 EOF
 EXPECT=<<EOF
             ;-- section..plt:
@@ -323,15 +325,15 @@ EXPECT=<<EOF
             0x000074f0      00c68fe2       add ip, pc, 0, 12
             0x000074f4      45ca8ce2       add ip, ip, 0x45000
             0x000074f8      10f6bce5       ldr pc, [ip, 0x610]!
-            ;-- Curl_getaddrinfo_ex:
+            ;-- rsym.Curl_getaddrinfo_ex:
             0x000074fc      00c68fe2       add ip, pc, 0, 12
             0x00007500      45ca8ce2       add ip, ip, 0x45000
             0x00007504      08f6bce5       ldr pc, [ip, 0x608]!
-            ;-- Curl_cookie_add:
+            ;-- rsym.Curl_cookie_add:
             0x00007508      00c68fe2       add ip, pc, 0, 12
             0x0000750c      45ca8ce2       add ip, ip, 0x45000
             0x00007510      00f6bce5       ldr pc, [ip, 0x600]!
-            ;-- Curl_unencode_gzip_write:
+            ;-- rsym.Curl_unencode_gzip_write:
             0x00007514      00c68fe2       add ip, pc, 0, 12
             0x00007518      45ca8ce2       add ip, ip, 0x45000
             0x0000751c      f8f5bce5       ldr pc, [ip, 0x5f8]!
@@ -339,5 +341,333 @@ EXPECT=<<EOF
             0x00007520      00c68fe2       add ip, pc, 0, 12
             0x00007524      45ca8ce2       add ip, ip, 0x45000
             0x00007528      f0f5bce5       ldr pc, [ip, 0x5f0]!
+/ 552: sym.Curl_close (int32_t arg1);
+|           ; arg int32_t arg1 @ r0
+|           0x0001de5c      70402de9       push {r4, r5, r6, lr}
+|           0x0001de60      0010a0e3       mov r1, 0
+|           0x0001de64      086090e5       ldr r6, [r0, 8]             ; arg1
+|           0x0001de68      14529fe5       ldr r5, [0x0001e084]        ; [0x1e084:4]=0x2ec7c
+|           0x0001de6c      0040a0e1       mov r4, r0                  ; arg1
+|           0x0001de70      58a9ffeb       bl rsym.Curl_expire
+|           0x0001de74      000056e3       cmp r6, 0
+|           0x0001de78      05508fe0       add r5, pc, r5
+|       ,=< 0x0001de7c      0200000a       beq 0x1de8c
+|       |   0x0001de80      080094e5       ldr r0, [r4, 8]
+|       |   0x0001de84      0410a0e1       mov r1, r4
+|       |   0x0001de88      d4a5ffeb       bl rsym.curl_multi_remove_handle
+|       `-> 0x0001de8c      f4619fe5       ldr r6, rsym.Curl_splayinsert ; [0x1e088:4]=0x8594 rsym.Curl_splayinsert
+|           0x0001de90      060094e7       ldr r0, [r4, r6]
+|           0x0001de94      000050e3       cmp r0, 0
+|       ,=< 0x0001de98      0300000a       beq 0x1deac
+|       |   0x0001de9c      0010a0e3       mov r1, 0
+|       |   0x0001dea0      fda9ffeb       bl rsym.Curl_llist_destroy
+|       |   0x0001dea4      0030a0e3       mov r3, 0
+|       |   0x0001dea8      063084e7       str r3, [r4, r6]
+|       `-> 0x0001deac      b43494e5       ldr r3, [r4, 0x4b4]
+|           0x0001deb0      d4219fe5       ldr r2, [0x0001e08c]        ; [0x1e08c:4]=0x86a4
+|           0x0001deb4      0010a0e3       mov r1, 0
+|           0x0001deb8      000053e3       cmp r3, 0
+|           0x0001debc      021084e7       str r1, [r4, r2]
+|       ,=< 0x0001dec0      0200000a       beq 0x1ded0
+|       |   0x0001dec4      080093e5       ldr r0, [r3, 8]
+|       |   0x0001dec8      010050e1       cmp r0, r1
+|      ,==< 0x0001decc      0800000a       beq 0x1def4
+|      |`-> 0x0001ded0      b8119fe5       ldr r1, [0x0001e090]        ; [0x1e090:4]=0x85b0
+|      |    0x0001ded4      016094e7       ldr r6, [r4, r1]
+|      |    0x0001ded8      000056e3       cmp r6, 0
+|      |    0x0001dedc      04108112       addne r1, r1, 4
+|      |    0x0001dee0      0120a013       movne r2, 1
+|      |    0x0001dee4      0120c417       strbne r2, [r4, r1]
+|      |,=< 0x0001dee8      0e00000a       beq 0x1df28
+|     .---> 0x0001deec      0000a0e3       mov r0, 0
+|     :||   0x0001def0      7080bde8       pop {r4, r5, r6, pc}
+|    .-`--> 0x0001def4      0400a0e1       mov r0, r4
+|    :: |   0x0001def8      50f2ffeb       bl 0x1a840
+|    :: |   0x0001defc      010070e3       cmn r0, 1
+|    `====< 0x0001df00      fbffff1a       bne 0x1def4
+|     : |   0x0001df04      b40494e5       ldr r0, [r4, 0x4b4]
+|     : |   0x0001df08      53a6ffeb       bl rsym.Curl_rm_connc
+|     : |   0x0001df0c      7c119fe5       ldr r1, [0x0001e090]        ; [0x1e090:4]=0x85b0
+|     : |   0x0001df10      016094e7       ldr r6, [r4, r1]
+|     : |   0x0001df14      000056e3       cmp r6, 0
+|     : |   0x0001df18      04108112       addne r1, r1, 4
+|     : |   0x0001df1c      0120a013       movne r2, 1
+|     : |   0x0001df20      0120c417       strbne r2, [r4, r1]
+|     `===< 0x0001df24      f0ffff1a       bne 0x1deec
+|       `-> 0x0001df28      042094e5       ldr r2, [r4, 4]
+|           0x0001df2c      010052e3       cmp r2, 1
+|       ,=< 0x0001df30      4e00000a       beq 0x1e070
+|       |   ; CODE XREF from sym.Curl_close @ 0x1e080(x)
+|      .--> 0x0001df34      58e19fe5       ldr lr, [0x0001e094]        ; [0x1e094:4]=0x85c2
+|      :|   0x0001df38      0ec0d4e7       ldrb ip, [r4, lr]
+|      :|   0x0001df3c      00005ce3       cmp ip, 0
+|     ,===< 0x0001df40      3900001a       bne 0x1e02c
+|     |:|   0x0001df44      4c619fe5       ldr r6, [0x0001e098]        ; [0x1e098:4]=0x6c4
+|     |:|   ; CODE XREF from sym.Curl_close @ 0x1e044(x)
+|    .----> 0x0001df48      4ce19fe5       ldr lr, rsym.curl_global_init ; [0x1e09c:4]=0x85b8 rsym.curl_global_init
+|    :|:|   0x0001df4c      0e0094e7       ldr r0, [r4, lr]
+|    :|:|   0x0001df50      2eaaffeb       bl rsym.Curl_safefree
+|    :|:|   0x0001df54      44119fe5       ldr r1, sym.imp.gnutls_global_deinit ; [0x1e0a0:4]=0x85dc sym.imp.gnutls_global_deinit
+|    :|:|   0x0001df58      010094e7       ldr r0, [r4, r1]
+|    :|:|   0x0001df5c      2baaffeb       bl rsym.Curl_safefree
+|    :|:|   0x0001df60      0400a0e1       mov r0, r4
+|    :|:|   0x0001df64      cea7ffeb       bl rsym.Curl_ssl_close_all
+|    :|:|   0x0001df68      34319fe5       ldr r3, [0x0001e0a4]        ; [0x1e0a4:4]=0x84dc
+|    :|:|   0x0001df6c      030094e7       ldr r0, [r4, r3]
+|    :|:|   0x0001df70      26aaffeb       bl rsym.Curl_safefree
+|    :|:|   0x0001df74      2cc19fe5       ldr ip, [0x0001e0a8]        ; [0x1e0a8:4]=0x84f4
+|    :|:|   0x0001df78      0c0094e7       ldr r0, [r4, ip]
+|    :|:|   0x0001df7c      23aaffeb       bl rsym.Curl_safefree
+|    :|:|   0x0001df80      0400a0e1       mov r0, r4
+|    :|:|   0x0001df84      5aa7ffeb       bl rsym.Curl_ssl_free_certinfo
+|    :|:|   0x0001df88      a403d4e5       ldrb r0, [r4, 0x3a4]
+|    :|:|   0x0001df8c      000050e3       cmp r0, 0
+|   ,=====< 0x0001df90      3100001a       bne 0x1e05c
+|   |:|:|   ; CODE XREF from sym.Curl_close @ 0x1e06c(x)
+|  .------> 0x0001df94      9c03d4e5       ldrb r0, [r4, 0x39c]
+|  :|:|:|   0x0001df98      000050e3       cmp r0, 0
+| ,=======< 0x0001df9c      2900001a       bne 0x1e048
+| |:|:|:|   ; CODE XREF from sym.Curl_close @ 0x1e058(x)
+| --------> 0x0001dfa0      c40494e5       ldr r0, [r4, 0x4c4]
+| |:|:|:|   0x0001dfa4      19aaffeb       bl rsym.Curl_safefree
+| |:|:|:|   0x0001dfa8      0110a0e3       mov r1, 1
+| |:|:|:|   0x0001dfac      0400a0e1       mov r0, r4
+| |:|:|:|   0x0001dfb0      c2f8ffeb       bl 0x1c2c0
+| |:|:|:|   0x0001dfb4      0400a0e1       mov r0, r4
+| |:|:|:|   0x0001dfb8      01a8ffeb       bl rsym.Curl_digest_cleanup
+| |:|:|:|   0x0001dfbc      e8309fe5       ldr r3, [0x0001e0ac]        ; [0x1e0ac:4]=0x862c
+| |:|:|:|   0x0001dfc0      030094e7       ldr r0, [r4, r3]
+| |:|:|:|   0x0001dfc4      11aaffeb       bl rsym.Curl_safefree
+| |:|:|:|   0x0001dfc8      e0c09fe5       ldr ip, sym.imp.getpeername ; [0x1e0b0:4]=0x8630 sym.imp.getpeername
+| |:|:|:|   0x0001dfcc      0c0094e7       ldr r0, [r4, ip]
+| |:|:|:|   0x0001dfd0      0eaaffeb       bl rsym.Curl_safefree
+| |:|:|:|   0x0001dfd4      102094e5       ldr r2, [r4, 0x10]
+| |:|:|:|   0x0001dfd8      000052e3       cmp r2, 0
+| ========< 0x0001dfdc      0a00000a       beq 0x1e00c
+| |:|:|:|   0x0001dfe0      0110a0e3       mov r1, 1
+| |:|:|:|   0x0001dfe4      0220a0e3       mov r2, 2
+| |:|:|:|   0x0001dfe8      0400a0e1       mov r0, r4
+| |:|:|:|   0x0001dfec      0ba9ffeb       bl rsym.Curl_share_lock
+| |:|:|:|   0x0001dff0      10c094e5       ldr ip, [r4, 0x10]
+| |:|:|:|   0x0001dff4      0400a0e1       mov r0, r4
+| |:|:|:|   0x0001dff8      0110a0e3       mov r1, 1
+| |:|:|:|   0x0001dffc      04309ce5       ldr r3, [ip, 4]
+| |:|:|:|   0x0001e000      012043e2       sub r2, r3, 1
+| |:|:|:|   0x0001e004      04208ce5       str r2, [ip, 4]
+| |:|:|:|   0x0001e008      09aaffeb       bl rsym.Curl_share_unlock
+| --------> 0x0001e00c      0400a0e1       mov r0, r4
+| |:|:|:|   0x0001e010      0ea6ffeb       bl rsym.Curl_freeset
+| |:|:|:|   0x0001e014      062095e7       ldr r2, [r5, r6]
+| |:|:|:|   0x0001e018      0400a0e1       mov r0, r4
+| |:|:|:|   0x0001e01c      001092e5       ldr r1, [r2]
+| |:|:|:|   0x0001e020      31ff2fe1       blx r1
+| |:|:|:|   0x0001e024      0000a0e3       mov r0, 0
+| |:|:|:|   0x0001e028      7080bde8       pop {r4, r5, r6, pc}
+| |:|:`---> 0x0001e02c      64609fe5       ldr r6, [0x0001e098]        ; [0x1e098:4]=0x6c4
+| |:|: :|   0x0001e030      7c209fe5       ldr r2, rsym.Curl_resolv_timeout ; [0x1e0b4:4]=0x85c4 rsym.Curl_resolv_timeout
+| |:|: :|   0x0001e034      061095e7       ldr r1, [r5, r6]
+| |:|: :|   0x0001e038      020094e7       ldr r0, [r4, r2]
+| |:|: :|   0x0001e03c      003091e5       ldr r3, [r1]
+| |:|: :|   0x0001e040      33ff2fe1       blx r3
+| |:|`====< 0x0001e044      bfffffea       b 0x1df48
+| `-------> 0x0001e048      061095e7       ldr r1, [r5, r6]
+|  :|  :|   0x0001e04c      980394e5       ldr r0, [r4, 0x398]
+|  :|  :|   0x0001e050      003091e5       ldr r3, [r1]
+|  :|  :|   0x0001e054      33ff2fe1       blx r3
+| ========< 0x0001e058      d0ffffea       b 0x1dfa0
+|  :`-----> 0x0001e05c      06c095e7       ldr ip, [r5, r6]
+|  :   :|   0x0001e060      a00394e5       ldr r0, [r4, 0x3a0]
+|  :   :|   0x0001e064      00209ce5       ldr r2, [ip]
+|  :   :|   0x0001e068      32ff2fe1       blx r2
+|  `======< 0x0001e06c      c8ffffea       b 0x1df94
+|      :`-> 0x0001e070      000094e5       ldr r0, [r4]
+|      :    0x0001e074      39a7ffeb       bl rsym.Curl_hash_destroy
+|      :    0x0001e078      006084e5       str r6, [r4]
+|      :    0x0001e07c      046084e5       str r6, [r4, 4]
+\      `==< 0x0001e080      abffffea       b 0x1df34
+EOF
+RUN
+
+NAME=ELF: arm64 missing internal plt imports with baddr
+ARGS=-B 0x10000
+FILE=bins/elf/libcurl.so.4.2.0
+CMDS=<<EOF
+s section..plt
+pd 20
+s 0x0002de5c
+af
+pdf
+EOF
+EXPECT=<<EOF
+            ;-- section..plt:
+            0x000174dc      04e02de5       str lr, [sp, -4]!           ; [09] -r-x section size 4964 named .plt
+            0x000174e0      04e09fe5       ldr lr, [0x000174ec]        ; [0x174ec:4]=0x45610
+            0x000174e4      0ee08fe0       add lr, pc, lr
+            0x000174e8      08f0bee5       ldr pc, [lr, 8]!
+            0x000174ec      10560400       andeq r5, r4, r0, lsl r6
+            ;-- gnutls_x509_crt_get_expiration_time:
+            0x000174f0      00c68fe2       add ip, pc, 0, 12
+            0x000174f4      45ca8ce2       add ip, ip, 0x45000
+            0x000174f8      10f6bce5       ldr pc, [ip, 0x610]!
+            ;-- rsym.Curl_getaddrinfo_ex:
+            0x000174fc      00c68fe2       add ip, pc, 0, 12
+            0x00017500      45ca8ce2       add ip, ip, 0x45000
+            0x00017504      08f6bce5       ldr pc, [ip, 0x608]!
+            ;-- rsym.Curl_cookie_add:
+            0x00017508      00c68fe2       add ip, pc, 0, 12
+            0x0001750c      45ca8ce2       add ip, ip, 0x45000
+            0x00017510      00f6bce5       ldr pc, [ip, 0x600]!
+            ;-- rsym.Curl_unencode_gzip_write:
+            0x00017514      00c68fe2       add ip, pc, 0, 12
+            0x00017518      45ca8ce2       add ip, ip, 0x45000
+            0x0001751c      f8f5bce5       ldr pc, [ip, 0x5f8]!
+            ;-- freeifaddrs:
+            0x00017520      00c68fe2       add ip, pc, 0, 12
+            0x00017524      45ca8ce2       add ip, ip, 0x45000
+            0x00017528      f0f5bce5       ldr pc, [ip, 0x5f0]!
+/ 552: sym.Curl_close (int32_t arg1);
+|           ; arg int32_t arg1 @ r0
+|           0x0002de5c      70402de9       push {r4, r5, r6, lr}
+|           0x0002de60      0010a0e3       mov r1, 0
+|           0x0002de64      086090e5       ldr r6, [r0, 8]             ; arg1
+|           0x0002de68      14529fe5       ldr r5, [0x0002e084]        ; [0x2e084:4]=0x2ec7c
+|           0x0002de6c      0040a0e1       mov r4, r0                  ; arg1
+|           0x0002de70      58a9ffeb       bl rsym.Curl_expire
+|           0x0002de74      000056e3       cmp r6, 0
+|           0x0002de78      05508fe0       add r5, pc, r5
+|       ,=< 0x0002de7c      0200000a       beq 0x2de8c
+|       |   0x0002de80      080094e5       ldr r0, [r4, 8]
+|       |   0x0002de84      0410a0e1       mov r1, r4
+|       |   0x0002de88      d4a5ffeb       bl rsym.curl_multi_remove_handle
+|       `-> 0x0002de8c      f4619fe5       ldr r6, [0x0002e088]        ; [0x2e088:4]=0x8594
+|           0x0002de90      060094e7       ldr r0, [r4, r6]
+|           0x0002de94      000050e3       cmp r0, 0
+|       ,=< 0x0002de98      0300000a       beq 0x2deac
+|       |   0x0002de9c      0010a0e3       mov r1, 0
+|       |   0x0002dea0      fda9ffeb       bl rsym.Curl_llist_destroy
+|       |   0x0002dea4      0030a0e3       mov r3, 0
+|       |   0x0002dea8      063084e7       str r3, [r4, r6]
+|       `-> 0x0002deac      b43494e5       ldr r3, [r4, 0x4b4]
+|           0x0002deb0      d4219fe5       ldr r2, [0x0002e08c]        ; [0x2e08c:4]=0x86a4
+|           0x0002deb4      0010a0e3       mov r1, 0
+|           0x0002deb8      000053e3       cmp r3, 0
+|           0x0002debc      021084e7       str r1, [r4, r2]
+|       ,=< 0x0002dec0      0200000a       beq 0x2ded0
+|       |   0x0002dec4      080093e5       ldr r0, [r3, 8]
+|       |   0x0002dec8      010050e1       cmp r0, r1
+|      ,==< 0x0002decc      0800000a       beq 0x2def4
+|      |`-> 0x0002ded0      b8119fe5       ldr r1, [0x0002e090]        ; [0x2e090:4]=0x85b0
+|      |    0x0002ded4      016094e7       ldr r6, [r4, r1]
+|      |    0x0002ded8      000056e3       cmp r6, 0
+|      |    0x0002dedc      04108112       addne r1, r1, 4
+|      |    0x0002dee0      0120a013       movne r2, 1
+|      |    0x0002dee4      0120c417       strbne r2, [r4, r1]
+|      |,=< 0x0002dee8      0e00000a       beq 0x2df28
+|     .---> 0x0002deec      0000a0e3       mov r0, 0
+|     :||   0x0002def0      7080bde8       pop {r4, r5, r6, pc}
+|    .-`--> 0x0002def4      0400a0e1       mov r0, r4
+|    :: |   0x0002def8      50f2ffeb       bl 0x2a840
+|    :: |   0x0002defc      010070e3       cmn r0, 1                   ; 1
+|    `====< 0x0002df00      fbffff1a       bne 0x2def4
+|     : |   0x0002df04      b40494e5       ldr r0, [r4, 0x4b4]
+|     : |   0x0002df08      53a6ffeb       bl rsym.Curl_rm_connc
+|     : |   0x0002df0c      7c119fe5       ldr r1, [0x0002e090]        ; [0x2e090:4]=0x85b0
+|     : |   0x0002df10      016094e7       ldr r6, [r4, r1]
+|     : |   0x0002df14      000056e3       cmp r6, 0
+|     : |   0x0002df18      04108112       addne r1, r1, 4
+|     : |   0x0002df1c      0120a013       movne r2, 1
+|     : |   0x0002df20      0120c417       strbne r2, [r4, r1]
+|     `===< 0x0002df24      f0ffff1a       bne 0x2deec
+|       `-> 0x0002df28      042094e5       ldr r2, [r4, 4]
+|           0x0002df2c      010052e3       cmp r2, 1                   ; 1
+|       ,=< 0x0002df30      4e00000a       beq 0x2e070
+|       |   ; CODE XREF from sym.Curl_close @ 0x2e080(x)
+|      .--> 0x0002df34      58e19fe5       ldr lr, [0x0002e094]        ; [0x2e094:4]=0x85c2
+|      :|   0x0002df38      0ec0d4e7       ldrb ip, [r4, lr]
+|      :|   0x0002df3c      00005ce3       cmp ip, 0
+|     ,===< 0x0002df40      3900001a       bne 0x2e02c
+|     |:|   0x0002df44      4c619fe5       ldr r6, [0x0002e098]        ; [0x2e098:4]=0x6c4
+|     |:|   ; CODE XREF from sym.Curl_close @ 0x2e044(x)
+|    .----> 0x0002df48      4ce19fe5       ldr lr, [0x0002e09c]        ; [0x2e09c:4]=0x85b8
+|    :|:|   0x0002df4c      0e0094e7       ldr r0, [r4, lr]
+|    :|:|   0x0002df50      2eaaffeb       bl rsym.Curl_safefree
+|    :|:|   0x0002df54      44119fe5       ldr r1, [0x0002e0a0]        ; [0x2e0a0:4]=0x85dc
+|    :|:|   0x0002df58      010094e7       ldr r0, [r4, r1]
+|    :|:|   0x0002df5c      2baaffeb       bl rsym.Curl_safefree
+|    :|:|   0x0002df60      0400a0e1       mov r0, r4
+|    :|:|   0x0002df64      cea7ffeb       bl rsym.Curl_ssl_close_all
+|    :|:|   0x0002df68      34319fe5       ldr r3, [0x0002e0a4]        ; [0x2e0a4:4]=0x84dc
+|    :|:|   0x0002df6c      030094e7       ldr r0, [r4, r3]
+|    :|:|   0x0002df70      26aaffeb       bl rsym.Curl_safefree
+|    :|:|   0x0002df74      2cc19fe5       ldr ip, [0x0002e0a8]        ; [0x2e0a8:4]=0x84f4
+|    :|:|   0x0002df78      0c0094e7       ldr r0, [r4, ip]
+|    :|:|   0x0002df7c      23aaffeb       bl rsym.Curl_safefree
+|    :|:|   0x0002df80      0400a0e1       mov r0, r4
+|    :|:|   0x0002df84      5aa7ffeb       bl rsym.Curl_ssl_free_certinfo
+|    :|:|   0x0002df88      a403d4e5       ldrb r0, [r4, 0x3a4]
+|    :|:|   0x0002df8c      000050e3       cmp r0, 0
+|   ,=====< 0x0002df90      3100001a       bne 0x2e05c
+|   |:|:|   ; CODE XREF from sym.Curl_close @ 0x2e06c(x)
+|  .------> 0x0002df94      9c03d4e5       ldrb r0, [r4, 0x39c]
+|  :|:|:|   0x0002df98      000050e3       cmp r0, 0
+| ,=======< 0x0002df9c      2900001a       bne 0x2e048
+| |:|:|:|   ; CODE XREF from sym.Curl_close @ 0x2e058(x)
+| --------> 0x0002dfa0      c40494e5       ldr r0, [r4, 0x4c4]
+| |:|:|:|   0x0002dfa4      19aaffeb       bl rsym.Curl_safefree
+| |:|:|:|   0x0002dfa8      0110a0e3       mov r1, 1
+| |:|:|:|   0x0002dfac      0400a0e1       mov r0, r4
+| |:|:|:|   0x0002dfb0      c2f8ffeb       bl 0x2c2c0
+| |:|:|:|   0x0002dfb4      0400a0e1       mov r0, r4
+| |:|:|:|   0x0002dfb8      01a8ffeb       bl rsym.Curl_digest_cleanup
+| |:|:|:|   0x0002dfbc      e8309fe5       ldr r3, [0x0002e0ac]        ; [0x2e0ac:4]=0x862c
+| |:|:|:|   0x0002dfc0      030094e7       ldr r0, [r4, r3]
+| |:|:|:|   0x0002dfc4      11aaffeb       bl rsym.Curl_safefree
+| |:|:|:|   0x0002dfc8      e0c09fe5       ldr ip, [0x0002e0b0]        ; [0x2e0b0:4]=0x8630
+| |:|:|:|   0x0002dfcc      0c0094e7       ldr r0, [r4, ip]
+| |:|:|:|   0x0002dfd0      0eaaffeb       bl rsym.Curl_safefree
+| |:|:|:|   0x0002dfd4      102094e5       ldr r2, [r4, 0x10]
+| |:|:|:|   0x0002dfd8      000052e3       cmp r2, 0
+| ========< 0x0002dfdc      0a00000a       beq 0x2e00c
+| |:|:|:|   0x0002dfe0      0110a0e3       mov r1, 1
+| |:|:|:|   0x0002dfe4      0220a0e3       mov r2, 2
+| |:|:|:|   0x0002dfe8      0400a0e1       mov r0, r4
+| |:|:|:|   0x0002dfec      0ba9ffeb       bl rsym.Curl_share_lock
+| |:|:|:|   0x0002dff0      10c094e5       ldr ip, [r4, 0x10]
+| |:|:|:|   0x0002dff4      0400a0e1       mov r0, r4
+| |:|:|:|   0x0002dff8      0110a0e3       mov r1, 1
+| |:|:|:|   0x0002dffc      04309ce5       ldr r3, [ip, 4]
+| |:|:|:|   0x0002e000      012043e2       sub r2, r3, 1
+| |:|:|:|   0x0002e004      04208ce5       str r2, [ip, 4]
+| |:|:|:|   0x0002e008      09aaffeb       bl rsym.Curl_share_unlock
+| --------> 0x0002e00c      0400a0e1       mov r0, r4
+| |:|:|:|   0x0002e010      0ea6ffeb       bl rsym.Curl_freeset
+| |:|:|:|   0x0002e014      062095e7       ldr r2, [r5, r6]
+| |:|:|:|   0x0002e018      0400a0e1       mov r0, r4
+| |:|:|:|   0x0002e01c      001092e5       ldr r1, [r2]
+| |:|:|:|   0x0002e020      31ff2fe1       blx r1
+| |:|:|:|   0x0002e024      0000a0e3       mov r0, 0
+| |:|:|:|   0x0002e028      7080bde8       pop {r4, r5, r6, pc}
+| |:|:`---> 0x0002e02c      64609fe5       ldr r6, [0x0002e098]        ; [0x2e098:4]=0x6c4
+| |:|: :|   0x0002e030      7c209fe5       ldr r2, [0x0002e0b4]        ; [0x2e0b4:4]=0x85c4
+| |:|: :|   0x0002e034      061095e7       ldr r1, [r5, r6]
+| |:|: :|   0x0002e038      020094e7       ldr r0, [r4, r2]
+| |:|: :|   0x0002e03c      003091e5       ldr r3, [r1]
+| |:|: :|   0x0002e040      33ff2fe1       blx r3
+| |:|`====< 0x0002e044      bfffffea       b 0x2df48
+| `-------> 0x0002e048      061095e7       ldr r1, [r5, r6]
+|  :|  :|   0x0002e04c      980394e5       ldr r0, [r4, 0x398]
+|  :|  :|   0x0002e050      003091e5       ldr r3, [r1]
+|  :|  :|   0x0002e054      33ff2fe1       blx r3
+| ========< 0x0002e058      d0ffffea       b 0x2dfa0
+|  :`-----> 0x0002e05c      06c095e7       ldr ip, [r5, r6]
+|  :   :|   0x0002e060      a00394e5       ldr r0, [r4, 0x3a0]
+|  :   :|   0x0002e064      00209ce5       ldr r2, [ip]
+|  :   :|   0x0002e068      32ff2fe1       blx r2
+|  `======< 0x0002e06c      c8ffffea       b 0x2df94
+|      :`-> 0x0002e070      000094e5       ldr r0, [r4]
+|      :    0x0002e074      39a7ffeb       bl rsym.Curl_hash_destroy
+|      :    0x0002e078      006084e5       str r6, [r4]
+|      :    0x0002e07c      046084e5       str r6, [r4, 4]
+\      `==< 0x0002e080      abffffea       b 0x2df34
 EOF
 RUN

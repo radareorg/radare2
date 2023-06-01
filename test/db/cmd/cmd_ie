@@ -133,8 +133,6 @@ DEBUG: empty symbol name
 DEBUG: empty symbol name
 DEBUG: RCoreCmd: Cd 4[48] @ 0x12000
 DEBUG: (cannot find opening [) in (48])
-DEBUG: RCoreCmd: Cd 4[56] @ 0x2fdd8
-DEBUG: (cannot find opening [) in (56])
 DEBUG: RCoreCmd: =!
 DEBUG: RCoreCmd: ieq
 DEBUG: RCoreCmd: ie
