@@ -1230,6 +1230,10 @@ static RList *create_cache_bins(RBinFile *bf, RDyldCache *cache) {
 					ut32 k;
 					for (k = extras[j].dependentsStartArrayIndex; depArray[k] != 0xffff; k++) {
 						ut16 dep_index = depArray[k] & 0x7fff;
+						if (dep_index >= cache->hdr->imagesCount) {
+							R_LOG_ERROR ("depList contents overflow");
+							break;
+						}
 						deps[dep_index]++;
 
 						char *dep_name = get_lib_name (cache->buf, &img[dep_index]);
