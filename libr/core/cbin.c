@@ -1665,16 +1665,50 @@ static char *construct_reloc_name(R_NONNULL RBinReloc *reloc, R_NULLABLE const c
 	return r_strbuf_drain (buf);
 }
 
-static void set_bin_relocs(RCore *r, RBinReloc *reloc, ut64 addr, Sdb **db, char **sdb_module) {
-	bool bin_demangle = r_config_get_b (r->config, "bin.demangle");
-	bool keep_lib = r_config_get_b (r->config, "bin.demangle.libs");
-	const char *lang = r_config_get (r->config, "bin.lang");
-	bool is_pe = true;
-	bool is_sandbox = r_sandbox_enable (0);
+typedef struct {
+	RCore *core;
+	bool bin_demangle;
+	bool keep_lib;
+	const char *lang;
+	bool is_sandbox;
+	bool is_pe;
+	bool is_elf;
+	bool is32;
+	RBinSection *got;
+	RBinSection *plt;
+} RelocInfo;
+
+static void ri_init(RCore *core, RelocInfo *ri) {
+	ri->core = core;
+	ri->bin_demangle = r_config_get_b (core->config, "bin.demangle");
+	ri->keep_lib = r_config_get_b (core->config, "bin.demangle.libs");
+	ri->lang = r_config_get (core->config, "bin.lang");
+	const RBinInfo *info = r_bin_get_info (core->bin);
+	const char *rclass = info->rclass;
+	ri->is32 = r_config_get_i (core->config, "asm.bits") <= 32;
+	ri->is_pe = rclass && r_str_startswith (rclass, "pe");
+	ri->is_elf = rclass && r_str_startswith (rclass, "elf");
+	RBinSection *s;
+	RListIter *iter;
+	RList *sections = r_bin_get_sections (core->bin);
+	r_list_foreach (sections, iter, s) {
+		if (!strcmp (s->name, ".got")) {
+			ri->got = s;
+		}
+		if (!strcmp (s->name, ".plt")) {
+			ri->plt = s;
+		}
+		if (ri->got && ri->plt) {
+			break;
+		}
+	}
+}
+
+static void set_bin_relocs(RelocInfo *ri, RBinReloc *reloc, ut64 addr, Sdb **db, char **sdb_module) {
+	RCore *r = ri->core;
 	r_strf_buffer (64);
 
-	if (is_pe && !is_sandbox && reloc->import
-			&& reloc->import->name && reloc->import->libname
+	if (ri->is_pe && reloc->import && reloc->import->name && reloc->import->libname
 			&& r_str_startswith (reloc->import->name, "Ordinal_")) {
 		char *module = strdup (reloc->import->libname);
 		r_str_case (module, false);
@@ -1737,32 +1771,40 @@ static void set_bin_relocs(RCore *r, RBinReloc *reloc, ut64 addr, Sdb **db, char
 	} else {
 		snprintf (flagname, R_FLAG_NAME_SIZE, "reloc.%s", reloc_name);
 	}
-	if (reloc->symbol && 1) {
-		ut64 raddr = rva (r->bin, reloc->paddr, reloc->vaddr, true);
-		ut64 saddr = rva (r->bin, reloc->symbol->paddr, reloc->symbol->vaddr, true);
-#if 0
-		eprintf ("%llx %llx %llx %s (%d)\n",
-				reloc->vaddr, reloc->symbol->vaddr,
-				addr, reloc_name,
-				reloc->import);
-#endif
-		RBinSection *se = r_bin_get_section_at (r_bin_cur_object (r->bin), raddr, true);
-		const char *ss = "";
-		if (se) {
-			ut32 rbuf = 0;
-			r_io_read_at (r->io, raddr, (ut8*)&rbuf, 4); // relocated buf tells the section to look at
-			ss = se->name;
-			if (!strcmp (ss, ".got") && rbuf != 0) {
+	// R2_590 - add extra RBinSymbol/addr/field/whatever in RBinReloc to expose that plt association from RBinElf
+	if (ri->is_elf && reloc->symbol && ri->got && ri->plt) {
+		ut64 got_min = ri->got->vaddr;
+		ut64 got_max = got_min + ri->got->vsize;
+		ut64 raddr = reloc->vaddr;
+		if (raddr >= got_min && raddr < got_max) {
+			ut64 rvaddr = rva (r->bin, reloc->paddr, reloc->vaddr, true);
+			ut64 rbuf = 0; // relocated buf tells the section to look at
+			if (ri->is32) {
+				ut32 n32;
+				r_io_read_at (r->io, rvaddr, (ut8*)&n32, 4);
+				rbuf = n32;
+			} else {
+				r_io_read_at (r->io, rvaddr, (ut8*)&rbuf, 8);
+			}
+			if (rbuf != 0 && rbuf != UT32_MAX) {
+#if 1
+				ut64 saddr2 = rbuf; // r_bin_a2b (r->bin, rbuf);
+				RBinSection *se2 = NULL;
+				ut64 plt_min = ri->plt->vaddr;
+				ut64 plt_max = plt_min + ri->plt->vsize;
+				if (saddr2 >= plt_min && saddr2 < plt_max) {
+					se2 = ri->plt;
+				}
+#else
 				ut64 saddr2 = r_bin_a2b (r->bin, rbuf);
 				RBinSection *se2 = r_bin_get_section_at (r_bin_cur_object (r->bin), saddr2, true);
+#endif
 				if (se2) {
-					saddr  = reloc->vaddr;
-					saddr -= se->vaddr;
-					int index = (saddr / 4) - 4;
-					saddr = r_bin_a2b (r->bin, se2->vaddr + (index * 12) + 0x20);
-					// saddr = 0x000074dc + (index * 12) + 0x20;
+					ut64 saddr = reloc->vaddr - got_min;
+					int index = (saddr / 4) - 4; // also for 64bit? we need reproducers here
+					ut64 saddr2 = r_bin_a2b (r->bin, se2->vaddr + (index * 12) + 0x20);
 					char *internal_reloc = r_str_newf ("rsym.%s", reloc_name);
-					(void)r_flag_set (r->flags, internal_reloc, saddr, bin_reloc_size (reloc));
+					(void)r_flag_set (r->flags, internal_reloc, saddr2, bin_reloc_size (reloc));
 					free (internal_reloc);
 				}
 			}
@@ -1770,8 +1812,8 @@ static void set_bin_relocs(RCore *r, RBinReloc *reloc, ut64 addr, Sdb **db, char
 	}
 	free (reloc_name);
 	char *demname = NULL;
-	if (bin_demangle) {
-		demname = r_bin_demangle (r->bin->cur, lang, flagname, addr, keep_lib);
+	if (ri->bin_demangle) {
+		demname = r_bin_demangle (r->bin->cur, ri->lang, flagname, addr, ri->keep_lib);
 		if (demname) {
 			snprintf (flagname, R_FLAG_NAME_SIZE, "reloc.%s", demname);
 		}
@@ -1896,6 +1938,8 @@ static int bin_relocs(RCore *r, PJ *pj, int mode, int va) {
 
 	RRBNode *node;
 	RBinReloc *reloc;
+	RelocInfo ri;
+	ri_init (r, &ri);
 	r_crbtree_foreach (relocs, node, RBinReloc, reloc) {
 		ut64 addr = rva (r->bin, reloc->paddr, reloc->vaddr, va);
 		if (IS_MODE_SET (mode) && (is_section_reloc (reloc) || is_file_reloc (reloc))) {
@@ -1904,7 +1948,7 @@ static int bin_relocs(RCore *r, PJ *pj, int mode, int va) {
 			 * Skip also file reloc because not useful for now.
 			 */
 		} else if (IS_MODE_SET (mode)) {
-			set_bin_relocs (r, reloc, addr, &db, &sdb_module);
+			set_bin_relocs (&ri, reloc, addr, &db, &sdb_module);
 			add_metadata (r, reloc, addr, mode);
 		} else if (IS_MODE_SIMPLE (mode)) {
 			r_cons_printf ("0x%08"PFMT64x"  %s\n", addr, reloc->import ? reloc->import->name : "");
