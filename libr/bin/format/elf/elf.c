@@ -1817,7 +1817,7 @@ static ut64 get_import_addr(ELFOBJ *eo, int sym) {
 	}
 
 	int index = ht_uu_find (eo->rel_cache, sym + 1, NULL);
-	if (index == -1) {
+	if (index < 1) {
 		return UT64_MAX;
 	}
 	// lookup the right rel/rela entry
@@ -3928,7 +3928,7 @@ static bool _read_symbols_from_phdr (ELFOBJ *eo, ReadPhdrSymbolState *state) {
 		if (type == R_BIN_ELF_IMPORT_SYMBOLS && new_symbol->st_shndx == SHT_NULL) {
 			if (new_symbol->st_value) {
 				toffset = new_symbol->st_value;
-			} else if ((toffset = get_import_addr (eo, i)) == -1) {
+			} else if ((toffset = get_import_addr (eo, i)) == UT64_MAX) {
 				toffset = 0;
 			}
 			tsize = 16;
@@ -4523,7 +4523,7 @@ static bool _process_symbols_and_imports_in_section(ELFOBJ *eo, int type, Proces
 		if (type == R_BIN_ELF_IMPORT_SYMBOLS) {
 			if (memory->sym[k].st_value) {
 				toffset = memory->sym[k].st_value;
-			} else if ((toffset = get_import_addr (eo, k)) == -1) {
+			} else if ((toffset = get_import_addr (eo, k)) == UT64_MAX) {
 				toffset = 0;
 			}
 			tsize = 16;
