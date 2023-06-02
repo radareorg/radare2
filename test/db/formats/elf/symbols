@@ -135,11 +135,11 @@ nth paddr      vaddr      bind   type   size lib name                           
 57  0x00001ddc 0x00001ddc WEAK   FUNC   2        _ZN7android9SingletonI13AdrenoMemInfoEC2Ev                          android::Singleton<AdrenoMemInfo>::Singleton()
 58  0x00001ddc 0x00001ddc WEAK   FUNC   2        _ZN7android9SingletonI13AdrenoMemInfoEC1Ev                          android::Singleton<AdrenoMemInfo>::Singleton()
 60  0x00002e38 0x00003e38 GLOBAL OBJ    24       _ZTVN7gralloc13IonControllerE                                       vtable for gralloc::IonController
-61  ---------- 0x0000400c GLOBAL OBJ    4        _ZN7gralloc16IAllocController11sControllerE                         gralloc::IAllocController::sController
-62  ---------- 0x00004004 GLOBAL OBJ    4        _ZN7android9SingletonI13AdrenoMemInfoE9sInstanceE                   android::Singleton<AdrenoMemInfo>::sInstance
-63  ---------- 0x00004008 GLOBAL OBJ    4        _ZN7android9SingletonI13AdrenoMemInfoE5sLockE                       android::Singleton<AdrenoMemInfo>::sLock
-64  ---------- 0x00004004 GLOBAL NOTYPE 0        _edata
-65  ---------- 0x00004004 GLOBAL NOTYPE 0        __bss_start
+61  0x0000300c 0x0000400c GLOBAL OBJ    4        _ZN7gralloc16IAllocController11sControllerE                         gralloc::IAllocController::sController
+62  0x00003004 0x00004004 GLOBAL OBJ    4        _ZN7android9SingletonI13AdrenoMemInfoE9sInstanceE                   android::Singleton<AdrenoMemInfo>::sInstance
+63  0x00003008 0x00004008 GLOBAL OBJ    4        _ZN7android9SingletonI13AdrenoMemInfoE5sLockE                       android::Singleton<AdrenoMemInfo>::sLock
+64  0x00003004 0x00004004 GLOBAL NOTYPE 0        _edata
+65  0x00003004 0x00004004 GLOBAL NOTYPE 0        __bss_start
 66  ---------- 0x00004010 GLOBAL NOTYPE 0        _end
 1   0x00001050 0x00001050 GLOBAL FUNC   16       imp.__cxa_finalize
 2   0x0000105c 0x0000105c GLOBAL FUNC   16       imp.__cxa_atexit

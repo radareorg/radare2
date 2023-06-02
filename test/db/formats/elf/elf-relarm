@@ -31,18 +31,18 @@ EXPECT=<<EOF
 [Imports]
 nth vaddr      bind   type   lib name
 -------------------------------------
-1   0x00000000 GLOBAL FUNC       printf
-2   0x00000000 WEAK   NOTYPE     __gmon_start__
-3   0x00000000 GLOBAL FUNC       __libc_start_main
+1   0x4743442a GLOBAL FUNC       printf
+2   0x4743444a WEAK   NOTYPE     __gmon_start__
+3   0x4743446a GLOBAL FUNC       __libc_start_main
 
 [Relocations]
 
 vaddr      paddr      type   name
 ---------------------------------
 0x10020008 0x00010008 ADD_32 __gmon_start__
-0x10020064 0x10020064 ADD_32 printf
-0x1002006c 0x1002006c ADD_32 __gmon_start__
-0x10020074 0x10020074 ADD_32 __libc_start_main
+0x10020064 0x00010064 ADD_32 printf
+0x1002006c 0x0001006c ADD_32 __gmon_start__
+0x10020074 0x00010074 ADD_32 __libc_start_main
 
 
 4 relocations

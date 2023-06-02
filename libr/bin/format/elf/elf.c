@@ -4782,11 +4782,11 @@ ELFOBJ* Elf_(new_buf)(RBuffer *buf, bool verbose) {
 }
 
 static int is_in_pphdr(Elf_(Phdr) *p, ut64 addr) {
-	return addr >= p->p_offset && addr < p->p_offset + p->p_filesz;
+	return addr >= p->p_offset && addr < p->p_offset + p->p_memsz;
 }
 
 static int is_in_vphdr(Elf_(Phdr) *p, ut64 addr) {
-	return addr >= p->p_vaddr && addr < p->p_vaddr + p->p_filesz;
+	return addr >= p->p_vaddr && addr < p->p_vaddr + p->p_memsz;
 }
 
 // Deprecated temporarily. Use r_bin_elf_p2v_new in new code for now.

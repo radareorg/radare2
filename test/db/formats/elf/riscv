@@ -59,8 +59,8 @@ nth paddr      vaddr      bind   type   size lib name                           
 6   0x00015060 0x00024060 LOCAL  SECT   0        .jcr
 7   0x00015070 0x00024070 LOCAL  SECT   0        .data
 8   0x00016070 0x00025070 LOCAL  SECT   0        .sdata
-9   ---------- 0x00025168 LOCAL  SECT   0        .sbss
-10  ---------- 0x00025198 LOCAL  SECT   0        .bss
+9   0x00016168 0x00025168 LOCAL  SECT   0        .sbss
+10  0x00016198 0x00025198 LOCAL  SECT   0        .bss
 11  ---------- 0x00000000 LOCAL  SECT   0        .comment
 12  ---------- 0x00000000 LOCAL  SECT   0        .debug_info
 13  ---------- 0x00000000 LOCAL  SECT   0        .debug_abbrev
@@ -75,10 +75,10 @@ nth paddr      vaddr      bind   type   size lib name                           
 22  0x0000104c 0x0001004c LOCAL  FUNC   0        deregister_tm_clones
 23  0x00001080 0x00010080 LOCAL  FUNC   0        register_tm_clones
 24  0x000010c0 0x000100c0 LOCAL  FUNC   0        __do_global_dtors_aux
-25  ---------- 0x00025198 LOCAL  OBJ    1        completed.3084
+25  0x00016198 0x00025198 LOCAL  OBJ    1        completed.3084
 26  0x00013628 0x00022628 LOCAL  OBJ    0        __do_global_dtors_aux_fini_array_entry
 27  0x00001104 0x00010104 LOCAL  FUNC   0        frame_dummy
-28  ---------- 0x000251a0 LOCAL  OBJ    48       object.3089
+28  0x000161a0 0x000251a0 LOCAL  OBJ    48       object.3089
 29  0x00013620 0x00022620 LOCAL  OBJ    0        __frame_dummy_init_array_entry
 30  ---------- 0x00000000 LOCAL  FILE   0        hello.c
 31  ---------- 0x00000000 LOCAL  FILE   0        crtstuff.c
@@ -170,8 +170,8 @@ nth paddr      vaddr      bind   type   size lib name                           
 117 ---------- 0x00000000 LOCAL  FILE   0        wcrtomb.c
 118 ---------- 0x00000000 LOCAL  FILE   0        wctomb_r.c
 119 ---------- 0x00000000 LOCAL  FILE   0        syscalls.c
-120 ---------- 0x00025190 LOCAL  OBJ    8        heap_end.2381
-121 ---------- 0x000251f8 LOCAL  OBJ    16       t0.2343
+120 0x00016190 0x00025190 LOCAL  OBJ    8        heap_end.2381
+121 0x000161f8 0x000251f8 LOCAL  OBJ    16       t0.2343
 122 ---------- 0x00000000 LOCAL  FILE   0        dp-bit.c
 123 0x00010b9c 0x0001fb9c LOCAL  FUNC   496      _fpadd_parts
 124 ---------- 0x00000000 LOCAL  FILE   0        libgcc2.c
@@ -242,8 +242,8 @@ nth paddr      vaddr      bind   type   size lib name                           
 190 0x00012c60 0x00021c60 GLOBAL OBJ    200      __mprec_tens
 191 0x00006fc4 0x00015fc4 GLOBAL FUNC   12       __locale_charset
 192 0x00012128 0x00021128 GLOBAL FUNC   84       __lesf2
-193 ---------- 0x00025198 GLOBAL NOTYPE 0        _bss_start
-194 ---------- 0x00025188 GLOBAL OBJ    8        __malloc_top_pad
+193 0x00016198 0x00025198 GLOBAL NOTYPE 0        _bss_start
+194 0x00016188 0x00025188 GLOBAL OBJ    8        __malloc_top_pad
 195 0x0000b370 0x0001a370 GLOBAL FUNC   20       strtoul
 196 0x00016070 0x00025070 GLOBAL OBJ    0        __dso_handle
 197 0x00016090 0x00025090 GLOBAL OBJ    4        __mb_cur_max
@@ -253,7 +253,7 @@ nth paddr      vaddr      bind   type   size lib name                           
 201 0x00010ed8 0x0001fed8 GLOBAL FUNC   228      __unpack_d
 202 0x0000e580 0x0001d580 GLOBAL FUNC   260      _fclose_r
 203 0x00005ed8 0x00014ed8 GLOBAL FUNC   32       fflush
-204 ---------- 0x00025180 GLOBAL OBJ    8        __malloc_max_sbrked_mem
+204 0x00016180 0x00025180 GLOBAL OBJ    8        __malloc_max_sbrked_mem
 205 0x00012448 0x00021448 GLOBAL FUNC   60       __extendsfdf2
 206 0x00010fbc 0x0001ffbc GLOBAL FUNC   72       __adddf3
 207 0x00012184 0x00021184 GLOBAL FUNC   4        __nesf2
@@ -284,7 +284,7 @@ nth paddr      vaddr      bind   type   size lib name                           
 232 0x000109a8 0x0001f9a8 GLOBAL FUNC   36       kill
 233 0x00011504 0x00020504 GLOBAL FUNC   84       __ledf2
 234 0x00008610 0x00017610 GLOBAL FUNC   312      __pow5mult
-235 ---------- 0x00025174 GLOBAL OBJ    4        __nlocale_changed
+235 0x00016174 0x00025174 GLOBAL OBJ    4        __nlocale_changed
 236 0x000014d0 0x000104d0 GLOBAL FUNC   68       _scanf_r
 238 0x00010b04 0x0001fb04 GLOBAL FUNC   8        chdir
 239 0x00011a14 0x00020a14 GLOBAL FUNC   352      __pack_f
@@ -295,7 +295,7 @@ nth paddr      vaddr      bind   type   size lib name                           
 245 0x000109cc 0x0001f9cc GLOBAL FUNC   36       wait
 246 0x00006fd0 0x00015fd0 GLOBAL FUNC   8        __locale_mb_cur_max
 247 0x000047cc 0x000137cc GLOBAL FUNC   396      __call_exitprocs
-248 ---------- 0x00025170 GLOBAL OBJ    4        __mlocale_changed
+248 0x00016170 0x00025170 GLOBAL OBJ    4        __mlocale_changed
 249 0x00001000 0x00010000 GLOBAL NOTYPE 0        _ftext
 250 0x00016098 0x00025098 GLOBAL OBJ    8        __malloc_sbrk_base
 251 0x00001000 0x00010000 GLOBAL NOTYPE 0        _start
@@ -308,7 +308,7 @@ nth paddr      vaddr      bind   type   size lib name                           
 258 0x0000f38c 0x0001e38c GLOBAL FUNC   208      strncmp
 259 0x0000841c 0x0001741c GLOBAL FUNC   500      __multiply
 260 0x00010938 0x0001f938 GLOBAL FUNC   32       unlink
-261 ---------- 0x000251d0 GLOBAL OBJ    40       __malloc_current_mallinfo
+261 0x000161d0 0x000251d0 GLOBAL OBJ    40       __malloc_current_mallinfo
 262 0x00012188 0x00021188 GLOBAL FUNC   4        __eqsf2
 263 0x00008cf0 0x00017cf0 GLOBAL FUNC   320      __d2b
 264 0x0000b18c 0x0001a18c GLOBAL FUNC   484      _strtoul_r
@@ -335,7 +335,7 @@ nth paddr      vaddr      bind   type   size lib name                           
 286 0x00010abc 0x0001fabc GLOBAL FUNC   32       gettimeofday
 287 0x00007ecc 0x00016ecc GLOBAL NOTYPE 0        memset
 288 0x00001150 0x00010150 GLOBAL FUNC   160      main
-289 ---------- 0x00025178 GLOBAL OBJ    8        __malloc_max_total_mem
+289 0x00016178 0x00025178 GLOBAL OBJ    8        __malloc_max_total_mem
 290 0x000105d4 0x0001f5d4 GLOBAL FUNC   16       __swbuf
 291 0x00012180 0x00021180 GLOBAL FUNC   4        __ltsf2
 292 0x00006268 0x00015268 GLOBAL FUNC   596      _fread_r
@@ -359,7 +359,7 @@ nth paddr      vaddr      bind   type   size lib name                           
 310 0x00001048 0x00010048 GLOBAL NOTYPE 0        _fini
 311 0x000099b0 0x000189b0 GLOBAL FUNC   124      sprintf
 312 0x00013468 0x00022468 GLOBAL OBJ    256      __clz_tab
-313 ---------- 0x00025168 GLOBAL OBJ    8        _PathLocale
+313 0x00016168 0x00025168 GLOBAL OBJ    8        _PathLocale
 314 0x0000af4c 0x00019f4c GLOBAL FUNC   80       strtof
 315 0x000011f0 0x000101f0 GLOBAL FUNC   20       atexit
 316 0x000120cc 0x000210cc GLOBAL FUNC   88       __gesf2
@@ -415,7 +415,7 @@ nth paddr      vaddr      bind   type   size lib name                           
 367 0x000015e0 0x000105e0 GLOBAL FUNC   7288     _vfprintf_r
 368 0x00008338 0x00017338 GLOBAL FUNC   176      __lo0bits
 369 0x0000332c 0x0001232c GLOBAL FUNC   4476     __svfscanf_r
-370 ---------- 0x00025168 GLOBAL NOTYPE 0        _fbss
+370 0x00016168 0x00025168 GLOBAL NOTYPE 0        _fbss
 371 0x0000d068 0x0001c068 GLOBAL FUNC   460      _ungetc_r
 373 0x00010688 0x0001f688 GLOBAL FUNC   184      wcrtomb
 374 0x000108fc 0x0001f8fc GLOBAL FUNC   32       close

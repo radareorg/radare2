@@ -342,11 +342,11 @@ vaddr      paddr      type   name
 0x0003fec0 0x0001fec0 ADD_32 snprintf
 0x0003fecc 0x0001fecc ADD_32 frexp
 0x0003fed8 0x0001fed8 ADD_32 ldexp
-0x00040578 0x00040578 ADD_32 __iob
-0x000406b8 0x000406b8 ADD_32 errno
-0x000406c0 0x000406c0 ADD_32 __ctype
-0x000408d8 0x000408d8 ADD_32 tzname
-0x000408e8 0x000408e8 ADD_32 _environ
+0x00040578 0x00020578 ADD_32 __iob
+0x000406b8 0x000206b8 ADD_32 errno
+0x000406c0 0x000206c0 ADD_32 __ctype
+0x000408d8 0x000208d8 ADD_32 tzname
+0x000408e8 0x000208e8 ADD_32 _environ
 
 
 122 relocations
@@ -626,13 +626,13 @@ vaddr      paddr      type   name
 0x000ec968 0x000cc968 ADD_32 _init
 0x000ec974 0x000cc974 ADD_32 wcsncmp
 0x000ec980 0x000cc980 ADD_32 geteuid
-0x000f0c58 0x000f0c58 ADD_32 PC
-0x000f0c5c 0x000f0c5c ADD_32 UP
-0x000f0c60 0x000f0c60 ADD_32 stderr
-0x000f0c68 0x000f0c68 ADD_32 __environ
-0x000f0c70 0x000f0c70 ADD_32 stdin
-0x000f0c74 0x000f0c74 ADD_32 BC
-0x000f0c78 0x000f0c78 ADD_32 stdout
+0x000f0c58 0x000d0c58 ADD_32 PC
+0x000f0c5c 0x000d0c5c ADD_32 UP
+0x000f0c60 0x000d0c60 ADD_32 stderr
+0x000f0c68 0x000d0c68 ADD_32 __environ
+0x000f0c70 0x000d0c70 ADD_32 stdin
+0x000f0c74 0x000d0c74 ADD_32 BC
+0x000f0c78 0x000d0c78 ADD_32 stdout
 
 
 206 relocations
