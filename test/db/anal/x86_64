@@ -1144,6 +1144,26 @@ nth paddr      vaddr      bind   type size lib name    demangled
 EOF
 RUN
 
+NAME=iE freebsd
+FILE=bins/elf/freebsd-ls
+CMDS=iE
+EXPECT=<<EOF
+[Exports]
+nth paddr      vaddr      bind   type size lib name               demangled
+---------------------------------------------------------------------------
+77  0x000077d0 0x0020a7d0 GLOBAL OBJ  8        __progname
+78  0x00007aa0 0x0020aaa0 GLOBAL OBJ  8        environ
+79  0x00007cc0 0x0020acc0 GLOBAL OBJ  4        __isthreaded
+80  0x00007ce0 0x0020ace0 GLOBAL OBJ  64       __stack_chk_guard
+81  0x00007cd0 0x0020acd0 GLOBAL OBJ  8        __stdoutp
+82  0x00007cb0 0x0020acb0 GLOBAL OBJ  8        optarg
+83  0x00007d38 0x0020ad38 GLOBAL OBJ  4        __mb_sb_limit
+84  0x00007cb8 0x0020acb8 GLOBAL OBJ  4        optind
+85  0x00007d30 0x0020ad30 GLOBAL OBJ  8        _CurrentRuneLocale
+86  0x00007d20 0x0020ad20 GLOBAL OBJ  8        __stderrp
+EOF
+RUN
+
 NAME=address information
 FILE=bins/mach0/mach0-i386
 CMDS=<<EOF
