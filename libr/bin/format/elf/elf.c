@@ -3386,6 +3386,12 @@ static bool is_data_section(const char *name) {
 	if (strstr (name, "data") && !strstr (name, "rel") && !strstr (name, "pydata")) {
 		return true;
 	}
+#if 0
+	// we use Css in this section->format to avoid the flags and just add the meta
+	if (!strcmp (name, ".dynstr")) {
+		return true;
+	}
+#endif
 	if (!strcmp (name, "C")) {
 		return true;
 	}

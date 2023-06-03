@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2006-2022 pancake */
+/* radare - LGPL - Copyright 2006-2023 pancake */
 
 #define R_LOG_ORIGIN "search.strings"
 
