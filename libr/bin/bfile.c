@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2009-2022 - pancake, nibble, dso */
+/* radare2 - LGPL - Copyright 2009-2023 - pancake, nibble, dso */
 
 #include <r_bin.h>
 #include <r_hash.h>
@@ -103,6 +103,7 @@ static void print_string(RBinFile *bf, RBinString *string, int raw, PJ *pj) {
 	}
 }
 
+// TODO: this code must be implemented in RSearch as options for the strings mode
 static int string_scan_range(RList *list, RBinFile *bf, int min, const ut64 from, const ut64 to, int type, int raw, RBinSection *section) {
 	RBin *bin = bf->rbin;
 	const bool strings_nofp = bin->strings_nofp;

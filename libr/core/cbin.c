@@ -665,7 +665,7 @@ static bool bin_strings(RCore *r, PJ *pj, int mode, int va) {
 		return false;
 	}
 	if (plugin->info && plugin->name) {
-		if (strcmp (plugin->name, "any") == 0 && !rawstr) {
+		if (!strcmp (plugin->name, "any") && !rawstr) {
 			if (IS_MODE_JSON (mode)) {
 				pj_a (pj);
 				pj_end (pj);
@@ -3144,12 +3144,6 @@ static int bin_sections(RCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at,
 				}
 			}
 #endif
-			if (R_STR_ISNOTEMPTY (section->format)) {
-				// This is damn slow if section vsize is HUGE
-				if (section->vsize < 1024 * 1024 * 2) {
-					r_core_cmdf (r, "%s @ 0x%" PFMT64x, section->format, section->vaddr);
-				}
-			}
 			if (r->bin->prefix) {
 				str = r_str_newf ("%s.%s.%s", r->bin->prefix, type, name);
 			} else {
@@ -3321,6 +3315,20 @@ static int bin_sections(RCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at,
 		pj_end (pj);
 	} else if (IS_MODE_NORMAL (mode) && at == UT64_MAX && !printHere) {
 		// r_cons_printf ("\n%i sections\n", i);
+	}
+	// run the formats now
+	r_list_foreach (sections, iter, section) {
+		if (R_STR_ISNOTEMPTY (section->format)) {
+			// This is damn slow if section vsize is HUGE
+			if (section->vsize < 1024 * 1024 * 2) {
+				R_LOG_DEBUG ("(section %s) %s @ 0x%" PFMT64x, section->name, section->format, section->vaddr);
+#if R2_590
+				r_core_cmdf_at (r, addr, "%s @ 0x%"..);
+#else
+				r_core_cmdf (r, "%s @ 0x%" PFMT64x, section->format, section->vaddr);
+#endif
+			}
+		}
 	}
 
 	ret = true;

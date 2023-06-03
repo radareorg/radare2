@@ -99,7 +99,6 @@ static RCoreHelpMessage help_msg_CS = {
 
 static RCoreHelpMessage help_msg_Cs = {
 	"Usage:", "Cs[ga-*.] ([size]) [@addr]", "",
-	"Cz", " [size] [@addr]", "ditto",
 	"Cs", " [size] @addr", "add string (guess latin1/utf16le)",
 	"Cs", "", "list all strings in human friendly form",
 	"Cs*", "", "list all strings in r2 commands",
@@ -940,7 +939,7 @@ static int cmd_meta_others(RCore *core, const char *input) {
 								n = 32; //
 							}
 						}
-						//make sure we do not overflow on r_print_format
+						// make sure we do not overflow on r_print_format
 						if (n > core->blocksize) {
 							n = core->blocksize;
 						}
@@ -963,7 +962,7 @@ static int cmd_meta_others(RCore *core, const char *input) {
 					} else {
 						(void)r_io_read_at (core->io, addr, (ut8*)tmp, sizeof (tmp) - 3);
 						name_len = r_str_nlen_w (tmp, sizeof (tmp) - 3);
-						//handle wide strings
+						// handle wide strings
 						for (i = 0, j = 0; i < sizeof (name); i++, j++) {
 							name[i] = tmp[j];
 							if (!tmp[j]) {
@@ -993,7 +992,6 @@ static int cmd_meta_others(RCore *core, const char *input) {
 					return false;
 				}
 				if (!*t || n > 0) {
-					RFlagItem *fi;
 					p = strchr (t, ' ');
 					if (p) {
 						*p++ = '\0';
@@ -1001,9 +999,9 @@ static int cmd_meta_others(RCore *core, const char *input) {
 						strncpy (name, p, sizeof (name)-1);
 					} else {
 						if (type != 's') {
-							fi = r_flag_get_i (core->flags, addr);
+							RFlagItem *fi = r_flag_get_i (core->flags, addr);
 							if (fi) {
-								strncpy (name, fi->name, sizeof (name) - 1);
+								r_str_ncpy (name, fi->name, sizeof (name));
 							}
 						}
 					}
@@ -1029,7 +1027,7 @@ static int cmd_meta_others(RCore *core, const char *input) {
 			repcnt ++;
 			addr += n;
 		}
-		//r_meta_cleanup (core->anal->meta, 0LL, UT64_MAX);
+		// r_meta_cleanup (core->anal->meta, 0LL, UT64_MAX);
 		break;
 	default:
 		R_LOG_ERROR ("Missing space after CC");

@@ -1,15 +1,10 @@
-/* radare - LGPL - Copyright 2009-2022 - pancake */
+/* radare - LGPL - Copyright 2009-2023 - pancake */
 
 #define R_LOG_ORIGIN "rafind2"
 
 #include <r_main.h>
-#include <r_types.h>
 #include <r_search.h>
-#include <r_util.h>
 #include <r_util/r_print.h>
-#include <r_cons.h>
-#include <r_lib.h>
-#include <r_io.h>
 
 typedef struct {
 	RIO *io;
