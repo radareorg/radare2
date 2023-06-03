@@ -674,6 +674,23 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=nor a1, 0xfffffffe, 0xfffffffe
+FILE=malloc://0x200
+CMDS=<<EOF
+e asm.arch=mips
+e asm.bits=32
+e cfg.bigendian=True
+ar > /dev/null
+ar v0=-2
+wx 00422827
+aes
+ar a1
+EOF
+EXPECT=<<EOF
+0x00000001
+EOF
+RUN
+
 NAME=lh v1, (v0)
 FILE=malloc://0x200
 CMDS=<<EOF
