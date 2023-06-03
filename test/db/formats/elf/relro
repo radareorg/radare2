@@ -1,0 +1,23 @@
+NAME=relro partial
+FILE=bins/elf/relro/true32
+CMDS=ij~{bin.relro}
+EXPECT=<<EOF
+partial
+EOF
+RUN
+
+NAME=relro no
+FILE=bins/elf/relro/top
+CMDS=ij~{bin.relro}
+EXPECT=<<EOF
+no
+EOF
+RUN
+
+NAME=relro full
+FILE=bins/elf/relro/netifd
+CMDS=ij~{bin.relro}
+EXPECT=<<EOF
+full
+EOF
+RUN

@@ -326,3 +326,4 @@ Are you still watching?
 Starting application, this might take some time...
 Do you want to restart to install these updates now or try tonight?
 Updates available
+This binary has not been analyzed. Would you like to analyze it now?
