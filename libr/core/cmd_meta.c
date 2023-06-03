@@ -106,9 +106,12 @@ static RCoreHelpMessage help_msg_Cs = {
 	"Cs.", "", "show string at current address",
 	"Cs..", "", "show string + info about it at current address",
 	"Cs.j", "", "show string at current address in JSON",
-	"Cs8", " [size] [@addr]", "add utf8 string",
-	"Csa", " [size] [@addr]", "add ascii/latin1 string",
-	"Csg", " [size] [@addr]", "as above but addr not needed",
+	"Cs8", " [size] ([@addr])", "add utf8 string",
+	"Csa", " [size] ([@addr])", "add ascii/latin1 string",
+	"Csg", " [size] ([@addr])", "as above but addr not needed",
+	"Csz", " [size] ([@addr])", "define zero terminated strings (with size as maxlen)",
+	"Css", " ([range]) ([@addr])", "define all strings found in given range or section",
+	"Cz", " [size] [@addr]", "Alias for Csz",
 	NULL
 };
 
@@ -742,17 +745,37 @@ static int cmd_meta_vartype_comment(RCore *core, const char *input) {
 	return true;
 }
 
+typedef struct {
+	RCore *core;
+	ut64 addr;
+} StringSearchOptions;
+
+static int cb_strhit(R_NULLABLE RSearchKeyword *kw, void *user, ut64 where) {
+	StringSearchOptions *sso = (StringSearchOptions*)user;
+#if R2_590
+	r_core_cmd_call_at (sso->core, "Cz", where);
+#else
+	r_core_cmdf (sso->core, "Cz@0x%08"PFMT64x, where);
+	// TODO: r_meta_set (core->anal, type, addr, n, name);
+#endif
+	return true;
+}
+
 static int cmd_meta_others(RCore *core, const char *input) {
-	int n, type = input[0], subtype;
 	char *t = 0, *p, *p2, name[256] = {0};
-	int repeat = 1;
+	int n, repeat = 1;
 	ut64 addr = core->offset;
 
+	int type = input[0];
 	if (!type) {
 		return 0;
 	}
+	int subtype = input[1];
+	if (type == 's' && subtype == 'z') {
+		subtype = 0;
+	}
 
-	switch (input[1]) {
+	switch (subtype) {
 	case '?':
 		switch (input[0]) {
 		case 'f': // "Cf?"
@@ -866,6 +889,67 @@ static int cmd_meta_others(RCore *core, const char *input) {
 			r_cons_printf ("%"PFMT64u"\n", size);
 		} else {
 			r_cons_println (mi->str);
+		}
+		break;
+	case 's': // "Css"
+		{
+			ut64 range = UT64_MAX;
+			if (input[0] && input[1] && input[2]) {
+				range = r_num_math (core->num, input + 3);
+			}
+			if (range == UT64_MAX || range == 0) {
+				// get cursection size
+				RBinSection *s = r_bin_get_section_at (r_bin_cur_object (core->bin), core->offset, true);
+				if (s) {
+					range = s->vaddr + s->vsize - core->offset;
+				}
+				// TODO use debug maps if cfg.debug=true?
+			}
+			if (range == UT64_MAX || range == 0) {
+				R_LOG_ERROR ("Invalid memory range passed to Css");
+			} else if (range > 32 * 1024 * 1024) {
+				R_LOG_ERROR ("Range is too large");
+			} else {
+				ut8 *buf = malloc (range);
+				if (buf) {
+					const ut64 addr = core->offset;
+					int minstr = 3;
+					int maxstr = r_config_get_i (core->config, "bin.str.max");
+					if (maxstr < 1) {
+						maxstr = 128;
+					}
+					if (!*buf) {
+						r_core_cmdf (core, "Cz@0x%08"PFMT64x, addr);
+					}
+					// maps are not yet set
+					char *s = r_core_cmd_str (core, "o;om");
+					free (s);
+					r_config_set (core->config, "io.va", "true");
+					if (!r_io_read_at (core->io, addr, buf, range)) {
+						R_LOG_ERROR ("cannot read %d\n", range);
+					}
+					RSearch *ss = r_search_new (R_SEARCH_STRING);
+					r_search_set_string_limits (ss, minstr, maxstr);
+					StringSearchOptions sso = {
+						.addr = addr,
+						.core = core
+					};
+					// r_print_hexdump (core->print, addr, buf, range, 8,1,1);
+					r_search_set_callback (ss, cb_strhit, &sso);
+					r_search_begin (ss);
+					r_search_update (ss, addr, buf, range);
+					r_search_free (ss);
+				} else {
+					R_LOG_ERROR ("Cannot allocate");
+				}
+
+#if 0
+				r_core_cmdf (core, "/z 8 100@0x%08"PFMT64x"@e:search.in=range@e:search.from=0x%"PFMT64x"@e:search.to=0x%"PFMT64x,
+						core->offset, core->offset, core->offset + range);
+				r_core_cmd0 (core, "Csz @@ hit*;f-hit*");
+#else
+#endif
+			}
 		}
 		break;
 	case ' ': // "Cf", "Cd", ...
