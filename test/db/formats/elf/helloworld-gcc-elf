@@ -63,6 +63,12 @@ EXPECT=<<EOF
 0x0804818c CCu "[04] -r-- section size 32 named .gnu.hash"
 0x080481ac CCu "[05] -r-- section size 80 named .dynsym"
 0x080481fc CCu "[06] -r-- section size 74 named .dynstr"
+0x080481fd ascii[10] "libc.so.6"
+0x08048207 ascii[15] "_IO_stdin_used"
+0x08048216 ascii[5] "puts"
+0x0804821b ascii[18] "__libc_start_main"
+0x0804822d ascii[15] "__gmon_start__"
+0x0804823c ascii[10] "GLIBC_2.0"
 0x08048246 CCu "[07] -r-- section size 10 named .gnu.version"
 0x08048250 CCu "[08] -r-- section size 32 named .gnu.version_r"
 0x08048270 CCu "[09] -r-- section size 8 named .rel.dyn"
@@ -80,8 +86,8 @@ EXPECT=<<EOF
 0x080495a0 data Cd 4
 0x080495a0 CCu "[19] -rw- section size 4 named .fini_array"
 0x080495a4 CCu "[20] -rw- section size 4 named .jcr"
-0x080495a8 data Cd 4
 0x080495a8 CCu "[21] -rw- section size 232 named .dynamic"
+0x080495a8 data Cd 4
 0x080495ac data Cd 4
 0x080495b0 data Cd 4
 0x080495b4 data Cd 4
@@ -161,6 +167,12 @@ CCu base64:WzAzXSAtci0tIHNlY3Rpb24gc2l6ZSAzNiBuYW1lZCAubm90ZS5nbnUuYnVpbGQtaWQ= 
 CCu base64:WzA0XSAtci0tIHNlY3Rpb24gc2l6ZSAzMiBuYW1lZCAuZ251Lmhhc2g= @ 0x0804818c
 CCu base64:WzA1XSAtci0tIHNlY3Rpb24gc2l6ZSA4MCBuYW1lZCAuZHluc3lt @ 0x080481ac
 CCu base64:WzA2XSAtci0tIHNlY3Rpb24gc2l6ZSA3NCBuYW1lZCAuZHluc3Ry @ 0x080481fc
+Cs 10 @ 0x080481fd # libc.so.6
+Cs 15 @ 0x08048207 # _IO_stdin_used
+Cs 5 @ 0x08048216 # puts
+Cs 18 @ 0x0804821b # __libc_start_main
+Cs 15 @ 0x0804822d # __gmon_start__
+Cs 10 @ 0x0804823c # GLIBC_2.0
 CCu base64:WzA3XSAtci0tIHNlY3Rpb24gc2l6ZSAxMCBuYW1lZCAuZ251LnZlcnNpb24= @ 0x08048246
 CCu base64:WzA4XSAtci0tIHNlY3Rpb24gc2l6ZSAzMiBuYW1lZCAuZ251LnZlcnNpb25fcg== @ 0x08048250
 CCu base64:WzA5XSAtci0tIHNlY3Rpb24gc2l6ZSA4IG5hbWVkIC5yZWwuZHlu @ 0x08048270
@@ -178,8 +190,8 @@ CCu base64:WzE4XSAtcnctIHNlY3Rpb24gc2l6ZSA0IG5hbWVkIC5pbml0X2FycmF5 @ 0x0804959c
 Cd 4 @ 0x080495a0
 CCu base64:WzE5XSAtcnctIHNlY3Rpb24gc2l6ZSA0IG5hbWVkIC5maW5pX2FycmF5 @ 0x080495a0
 CCu base64:WzIwXSAtcnctIHNlY3Rpb24gc2l6ZSA0IG5hbWVkIC5qY3I= @ 0x080495a4
-Cd 4 @ 0x080495a8
 CCu base64:WzIxXSAtcnctIHNlY3Rpb24gc2l6ZSAyMzIgbmFtZWQgLmR5bmFtaWM= @ 0x080495a8
+Cd 4 @ 0x080495a8
 Cd 4 @ 0x080495ac
 Cd 4 @ 0x080495b0
 Cd 4 @ 0x080495b4
@@ -336,8 +348,8 @@ e search.in=io.maps
 p-
 EOF
 EXPECT=<<EOF
-0x08048000 [^._______ss_s__s_sss_ssssss_ss_ss__sz_s____] 0x0804859c
-0x08048000 [^_sssssszss_____________________________sss] 0x080496b8
+0x08048000 [^._______ss_s__zzzss_ssssss_ss_ss__sz_s____] 0x0804859c
+0x08048000 [^_szzssszss_____________________________sss] 0x080496b8
 EOF
 RUN
 

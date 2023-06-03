@@ -131,6 +131,78 @@ DEBUG: add dt.dyn.entry tag=30 value=0x00000002
 ERROR: Cannot determine entrypoint, using 0x00000d28
 DEBUG: empty symbol name
 DEBUG: empty symbol name
+DEBUG: (section .dynstr) Css 674 @ 0x484
+DEBUG: RCoreCmd: Css 674 @ 0x484
+DEBUG: RCoreCmd: Cz@0x00000484
+DEBUG: RCoreCmd: o;om
+DEBUG: (section .dynamic) Cd 4[48] @ 0x12000
+DEBUG: RCoreCmd: Cd 4[48] @ 0x12000
+DEBUG: (cannot find opening [) in (48])
+DEBUG: (section .dynstr) Css 674 @ 0x484
+DEBUG: RCoreCmd: Css 674 @ 0x484
+DEBUG: RCoreCmd: Cz@0x00000484
+DEBUG: RCoreCmd: o;om
+DEBUG: RCoreCmd: Cz@0x00000485
+DEBUG: RCoreCmd: Cz@0x00000494
+DEBUG: RCoreCmd: Cz@0x000004a3
+DEBUG: RCoreCmd: Cz@0x000004ab
+DEBUG: RCoreCmd: Cz@0x000004b2
+DEBUG: RCoreCmd: Cz@0x000004b7
+DEBUG: RCoreCmd: Cz@0x000004bc
+DEBUG: RCoreCmd: Cz@0x000004c2
+DEBUG: RCoreCmd: Cz@0x000004c8
+DEBUG: RCoreCmd: Cz@0x000004d0
+DEBUG: RCoreCmd: Cz@0x000004d6
+DEBUG: RCoreCmd: Cz@0x000004dd
+DEBUG: RCoreCmd: Cz@0x000004e3
+DEBUG: RCoreCmd: Cz@0x000004e8
+DEBUG: RCoreCmd: Cz@0x000004ee
+DEBUG: RCoreCmd: Cz@0x000004f5
+DEBUG: RCoreCmd: Cz@0x000004fc
+DEBUG: RCoreCmd: Cz@0x00000503
+DEBUG: RCoreCmd: Cz@0x0000050a
+DEBUG: RCoreCmd: Cz@0x00000511
+DEBUG: RCoreCmd: Cz@0x00000516
+DEBUG: RCoreCmd: Cz@0x0000051d
+DEBUG: RCoreCmd: Cz@0x00000522
+DEBUG: RCoreCmd: Cz@0x00000527
+DEBUG: RCoreCmd: Cz@0x0000053b
+DEBUG: RCoreCmd: Cz@0x0000054d
+DEBUG: RCoreCmd: Cz@0x0000055c
+DEBUG: RCoreCmd: Cz@0x00000569
+DEBUG: RCoreCmd: Cz@0x00000576
+DEBUG: RCoreCmd: Cz@0x00000583
+DEBUG: RCoreCmd: Cz@0x00000596
+DEBUG: RCoreCmd: Cz@0x000005ab
+DEBUG: RCoreCmd: Cz@0x000005b0
+DEBUG: RCoreCmd: Cz@0x000005b8
+DEBUG: RCoreCmd: Cz@0x000005c0
+DEBUG: RCoreCmd: Cz@0x000005cc
+DEBUG: RCoreCmd: Cz@0x000005d7
+DEBUG: RCoreCmd: Cz@0x000005e1
+DEBUG: RCoreCmd: Cz@0x000005e7
+DEBUG: RCoreCmd: Cz@0x000005ee
+DEBUG: RCoreCmd: Cz@0x000005f6
+DEBUG: RCoreCmd: Cz@0x000005fd
+DEBUG: RCoreCmd: Cz@0x00000604
+DEBUG: RCoreCmd: Cz@0x0000060b
+DEBUG: RCoreCmd: Cz@0x00000613
+DEBUG: RCoreCmd: Cz@0x0000061a
+DEBUG: RCoreCmd: Cz@0x00000623
+DEBUG: RCoreCmd: Cz@0x0000062a
+DEBUG: RCoreCmd: Cz@0x00000630
+DEBUG: RCoreCmd: Cz@0x00000637
+DEBUG: RCoreCmd: Cz@0x00000643
+DEBUG: RCoreCmd: Cz@0x00000648
+DEBUG: RCoreCmd: Cz@0x0000065c
+DEBUG: RCoreCmd: Cz@0x0000068c
+DEBUG: RCoreCmd: Cz@0x000006d1
+DEBUG: RCoreCmd: Cz@0x000006db
+DEBUG: RCoreCmd: Cz@0x000006e1
+DEBUG: RCoreCmd: Cz@0x0000070b
+DEBUG: RCoreCmd: Cz@0x00000713
+DEBUG: RCoreCmd: Cz@0x0000071c
+DEBUG: (section .dynamic) Cd 4[48] @ 0x12000
 DEBUG: RCoreCmd: Cd 4[48] @ 0x12000
 DEBUG: (cannot find opening [) in (48])
 DEBUG: RCoreCmd: =!

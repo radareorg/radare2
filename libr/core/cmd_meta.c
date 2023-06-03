@@ -918,15 +918,16 @@ static int cmd_meta_others(RCore *core, const char *input) {
 					if (maxstr < 1) {
 						maxstr = 128;
 					}
-					if (!*buf) {
+#if 1
+					// if (!*buf) {
 						r_core_cmdf (core, "Cz@0x%08"PFMT64x, addr);
-					}
+					// }
+#endif
 					// maps are not yet set
 					char *s = r_core_cmd_str (core, "o;om");
 					free (s);
-					r_config_set (core->config, "io.va", "true");
 					if (!r_io_read_at (core->io, addr, buf, range)) {
-						R_LOG_ERROR ("cannot read %d\n", range);
+						R_LOG_ERROR ("cannot read %d", range);
 					}
 					RSearch *ss = r_search_new (R_SEARCH_STRING);
 					r_search_set_string_limits (ss, minstr, maxstr);
