@@ -517,23 +517,6 @@ static Elf_(Phdr) *get_dynamic_segment(ELFOBJ *eo) {
 	return NULL;
 }
 
-static void init_dynamic_section_sdb(ELFOBJ *eo, Elf_(Addr) strtabaddr, size_t strsize) {
-	int r = Elf_(has_relro) (eo);
-	switch (r) {
-	case R_ELF_FULL_RELRO:
-		sdb_set (eo->kv, "elf.relro", "full", 0);
-		break;
-	case R_ELF_PART_RELRO:
-		sdb_set (eo->kv, "elf.relro", "partial", 0);
-		break;
-	default:
-		sdb_set (eo->kv, "elf.relro", "no", 0);
-		break;
-	}
-	sdb_num_set (eo->kv, "elf_strtab.offset", strtabaddr, 0);
-	sdb_num_set (eo->kv, "elf_strtab.size", strsize, 0);
-}
-
 static void set_default_value_dynamic_info(ELFOBJ *eo) {
 	eo->dyn_info.dt_pltrelsz = 0;
 	eo->dyn_info.dt_pltgot = R_BIN_ELF_ADDR_MAX;
@@ -724,23 +707,27 @@ static int init_dynamic_section(ELFOBJ *eo) {
 		if (!strtabaddr) {
 			R_LOG_DEBUG ("DT_STRTAB not found or invalid");
 		}
+		eprintf ("err\n");
 		return false;
 	}
 
 	char *strtab = calloc (1, strsize + 1);
 	if (!strtab) {
+		eprintf ("some\n");
 		return false;
 	}
 
 	int r = r_buf_read_at (eo->b, strtabaddr, (ut8 *)strtab, strsize);
 	if (r != strsize) {
 		free (strtab);
+		eprintf ("early\n");
 		return false;
 	}
 
 	eo->strtab = strtab;
 	eo->strtab_size = strsize;
-	init_dynamic_section_sdb (eo, strtabaddr, strsize);
+	sdb_num_set (eo->kv, "elf_strtab.offset", strtabaddr, 0);
+	sdb_num_set (eo->kv, "elf_strtab.size", strsize, 0);
 	return true;
 }
 
@@ -1534,6 +1521,21 @@ static bool init_dynstr(ELFOBJ *eo) {
 
 static const RVector *_load_elf_sections(ELFOBJ *eo);
 
+static void relro_insdb(ELFOBJ *eo) {
+	int r = Elf_(has_relro) (eo);
+	switch (r) {
+	case R_ELF_FULL_RELRO:
+		sdb_set (eo->kv, "elf.relro", "full", 0);
+		break;
+	case R_ELF_PART_RELRO:
+		sdb_set (eo->kv, "elf.relro", "partial", 0);
+		break;
+	default:
+		sdb_set (eo->kv, "elf.relro", "no", 0);
+		break;
+	}
+}
+
 static bool elf_init(ELFOBJ *eo) {
 	// eo is not an ELF
 	if (!init_ehdr (eo)) {
@@ -1557,6 +1559,7 @@ static bool elf_init(ELFOBJ *eo) {
 			R_LOG_DEBUG ("Cannot initialize dynamic section");
 		}
 	}
+	relro_insdb (eo);
 
 	eo->imports_by_ord_size = 0;
 	eo->imports_by_ord = NULL;

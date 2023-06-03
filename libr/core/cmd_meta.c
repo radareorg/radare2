@@ -98,10 +98,8 @@ static RCoreHelpMessage help_msg_CS = {
 };
 
 static RCoreHelpMessage help_msg_Cs = {
-	"Usage:", "Cs[ga-*.] [size] [@addr]", "",
-	"NOTE:", " size", "1 unit in bytes == width in bytes of smallest possible char in encoding,",
-	"", "", "  so ascii/latin1/utf8 = 1, utf16le = 2",
-	" Cz", " [size] [@addr]", "ditto",
+	"Usage:", "Cs[ga-*.] ([size]) [@addr]", "",
+	"Cz", " [size] [@addr]", "ditto",
 	"Cs", " [size] @addr", "add string (guess latin1/utf16le)",
 	"Cs", "", "list all strings in human friendly form",
 	"Cs*", "", "list all strings in r2 commands",

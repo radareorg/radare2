@@ -1035,9 +1035,11 @@ static int bin_info(RCore *r, PJ *pj, int mode, ut64 laddr) {
 		pair_bool (pj, "pic", info->has_pi);
 		pair_bool (pj, "relocs", R_BIN_DBG_RELOCS & info->dbg_info);
 		Sdb *sdb_info = sdb_ns (obj->kv, "info", false);
-		tmp_buf = sdb_get (sdb_info, "elf.relro", 0);
-		if (tmp_buf) {
-			pair_str (pj, "relro", tmp_buf);
+		if (sdb_info) {
+			tmp_buf = sdb_get (sdb_info, "elf.relro", 0);
+			if (R_STR_ISNOTEMPTY (tmp_buf)) {
+				pair_str (pj, "relro", tmp_buf);
+			}
 			free (tmp_buf);
 		}
 		pair_str (pj, "rpath", info->rpath);

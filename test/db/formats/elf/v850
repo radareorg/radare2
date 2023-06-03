@@ -45,6 +45,7 @@ nx       false
 os       linux
 pic      false
 relocs   true
+relro    no
 rpath    NONE
 sanitize false
 static   true
