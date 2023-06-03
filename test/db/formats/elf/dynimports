@@ -5,3 +5,25 @@ EXPECT=<<EOF
 8
 EOF
 RUN
+
+NAME=ELF: dynstrings section
+FILE=bins/elf/elf-solaris-sparc-ls
+CMDS=<<EOF
+s section..dynstr
+pd 10
+EOF
+EXPECT=<<EOF
+            ;-- section..dynstr:
+            ;-- .dynstr:
+            0x00011b20 (1 bytes hidden)                                ; [04] -r-- section size 3037 named .dynstr
+            0x00011b21     .string "xrealloc" ; len=9
+            0x00011b2a     .string "nstrftime" ; len=10
+            0x00011b34     .string "argmatch_to_argument" ; len=21
+            0x00011b49     .string "xzalloc" ; len=8
+            0x00011b51     .string "wmemchr" ; len=8
+            0x00011b59     .string "hash_get_n_entries" ; len=19
+            0x00011b6c     .string "_obstack_begin" ; len=15
+            0x00011b7b     .string "_environ" ; len=9
+            0x00011b84     .string "strncmp" ; len=8
+EOF
+RUN
