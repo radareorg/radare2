@@ -597,7 +597,7 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 				const char *arg1 = ARG(1);
 				const char *arg2 = ARG(2);
 				PROTECT_ZERO () {
-					r_strbuf_appendf (&op->esil, "%s,%s,|,0xffffffff,^,%s,=",
+					r_strbuf_appendf (&op->esil, "%s,%s,|,0xffffffffffffffff,^,%s,=",
 						arg2, arg1, arg0);
 				}
 			}
