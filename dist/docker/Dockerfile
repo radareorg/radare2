@@ -95,7 +95,7 @@ RUN DEBIAN_FRONTEND=noninteractive \
 RUN mkdir -p /mnt && cd /mnt && \
   git clone -b "$R2_VERSION" -q --depth 100 https://github.com/radareorg/radare2.git && \
   cd radare2 && \
-  ./configure && \
+  ./configure --prefix=/usr && \
   make && \
   make symstall
 
@@ -119,6 +119,9 @@ COPY README.md /home/r2/README.md
 
 # Setup r2pm
 RUN r2pm -U
+
+# install r2frida, r2ghidra and r2dec
+RUN r2pm -i r2frida
 
 # Base command for container
 CMD ["/bin/bash"]
