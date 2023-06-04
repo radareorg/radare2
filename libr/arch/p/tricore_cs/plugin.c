@@ -64,6 +64,16 @@ static csh cs_handle_for_session(RArchSession *as) {
 	return pd->cs_handle;
 }
 
+static ut64 imm(cs_insn *insn, int n) {
+	if (n < insn->detail->tricore.op_count) {
+		struct cs_tricore_op *o = &insn->detail->tricore.operands[n];
+		if (o->type == TRICORE_OP_IMM) {
+			return (ut64)(o->imm & UT32_MAX); // its int32
+		}
+	}
+	return UT64_MAX;
+}
+
 static bool decode(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
 	const ut64 addr = op->addr;
 	const ut8 *buf = op->bytes;
@@ -78,6 +88,9 @@ static bool decode(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
 	int n = cs_disasm (handle, (const ut8*)buf, len, addr, 1, &insn);
 	if (n < 1) {
 		op->type = R_ANAL_OP_TYPE_ILL;
+		if (mask & R_ARCH_OP_MASK_DISASM) {
+			op->mnemonic = strdup ("invalid");
+		}
 	} else {
 		if (mask & R_ARCH_OP_MASK_OPEX) {
 			opex (&op->opex, handle, insn);
@@ -90,6 +103,117 @@ static bool decode(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
 		op->size = insn->size;
 		op->id = insn->id;
 		switch (insn->id) {
+		case TRICORE_INS_LOOP:
+		case TRICORE_INS_LOOPU:
+			op->jump = op->addr + (int)imm (insn, 1);
+			op->type = R_ANAL_OP_TYPE_CJMP;
+			break;
+		case TRICORE_INS_J:
+		case TRICORE_INS_JA:
+			op->jump = imm (insn, 0);
+			op->type = R_ANAL_OP_TYPE_JMP;
+			break;
+		case TRICORE_INS_JEQ_A:
+		case TRICORE_INS_JEQ:
+		case TRICORE_INS_JGEZ:
+		case TRICORE_INS_JGE_U:
+		case TRICORE_INS_JGE:
+		case TRICORE_INS_JGTZ:
+		case TRICORE_INS_JI:
+		case TRICORE_INS_JLA:
+		case TRICORE_INS_JLEZ:
+		case TRICORE_INS_JLI:
+		case TRICORE_INS_JLTZ:
+		case TRICORE_INS_JLT_U:
+		case TRICORE_INS_JLT:
+		case TRICORE_INS_JL:
+		case TRICORE_INS_JNED:
+		case TRICORE_INS_JNEI:
+		case TRICORE_INS_JNE_A:
+		case TRICORE_INS_JNE:
+		case TRICORE_INS_JNZ_A:
+		case TRICORE_INS_JNZ_T:
+		case TRICORE_INS_JNZ:
+		case TRICORE_INS_JZ_A:
+		case TRICORE_INS_JZ_T:
+		case TRICORE_INS_JZ:
+			op->type = R_ANAL_OP_TYPE_CJMP;
+			op->jump = imm (insn, 2);
+			op->fail = op->addr + op->size;
+			break;
+		case TRICORE_INS_RET:
+		case TRICORE_INS_RFE:
+		case TRICORE_INS_RFM:
+			op->type = R_ANAL_OP_TYPE_RET;
+			break;
+		case TRICORE_INS_NOP:
+			op->type = R_ANAL_OP_TYPE_NOP;
+			break;
+		case TRICORE_INS_DIV_F:
+		case TRICORE_INS_DIV_U:
+		case TRICORE_INS_DIV:
+			op->type = R_ANAL_OP_TYPE_DIV;
+			break;
+		case TRICORE_INS_MAX:
+		case TRICORE_INS_MIN_B:
+		case TRICORE_INS_MIN_BU:
+		case TRICORE_INS_MIN_H:
+		case TRICORE_INS_MIN_HU:
+		case TRICORE_INS_MIN_U:
+		case TRICORE_INS_MIN:
+		case TRICORE_INS_CMPSWAP_W:
+		case TRICORE_INS_CMP_F:
+			op->type = R_ANAL_OP_TYPE_CMP;
+			break;
+		case TRICORE_INS_NOT:
+			op->type = R_ANAL_OP_TYPE_NOT;
+			break;
+		case TRICORE_INS_MADD:
+		case TRICORE_INS_CADD:
+			op->type = R_ANAL_OP_TYPE_ADD;
+			break;
+		case TRICORE_INS_SUBS:
+		case TRICORE_INS_SUBX:
+			op->type = R_ANAL_OP_TYPE_SUB;
+			break;
+		case TRICORE_INS_SYSCALL:
+			op->type = R_ANAL_OP_TYPE_SWI;
+			break;
+		case TRICORE_INS_LD_A:
+		case TRICORE_INS_LD_BU:
+		case TRICORE_INS_LD_B:
+		case TRICORE_INS_LD_DA:
+		case TRICORE_INS_LD_D:
+		case TRICORE_INS_LD_HU:
+		case TRICORE_INS_LD_H:
+		case TRICORE_INS_LD_Q:
+		case TRICORE_INS_LD_W:
+			op->type = R_ANAL_OP_TYPE_LOAD;
+			break;
+		case TRICORE_INS_ST_A:
+		case TRICORE_INS_ST_B:
+		case TRICORE_INS_ST_W:
+		case TRICORE_INS_ST_Q:
+		case TRICORE_INS_ST_DA:
+			op->type = R_ANAL_OP_TYPE_STORE;
+			break;
+		case TRICORE_INS_ADD:
+			op->type = R_ANAL_OP_TYPE_ADD;
+			break;
+		case TRICORE_INS_XOR:
+		case TRICORE_INS_XOR_NE: // TODO: CXOR
+			op->type = R_ANAL_OP_TYPE_XOR;
+			break;
+		case TRICORE_INS_CMOVN:
+		case TRICORE_INS_CMOV:
+			op->type = R_ANAL_OP_TYPE_CMOV;
+			break;
+		case TRICORE_INS_MOV:
+		case TRICORE_INS_SWAP_A:
+		case TRICORE_INS_SWAP_W:
+		case TRICORE_INS_MOV_AA:
+			op->type = R_ANAL_OP_TYPE_MOV;
+			break;
 		case TRICORE_INS_INVALID:
 			op->type = R_ANAL_OP_TYPE_ILL;
 			break;

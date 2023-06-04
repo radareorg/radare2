@@ -82,7 +82,7 @@ typedef enum {
 	R_ANAL_OP_TYPE_MEM   = 0x20000000, // TODO must be moved to prefix?
 	R_ANAL_OP_TYPE_REG   = 0x10000000, // operand is a register
 	R_ANAL_OP_TYPE_IND   = 0x08000000, // operand is indirect
-	R_ANAL_OP_TYPE_NULL  = 0,
+	R_ANAL_OP_TYPE_NULL  = 0,  // this is like unknown, but acts like a nop. aka undefined type. rename?
 	R_ANAL_OP_TYPE_JMP   = 1,  /* mandatory jump */
 	R_ANAL_OP_TYPE_UJMP  = 2,  /* unknown jump (register or so) */
 	R_ANAL_OP_TYPE_RJMP  = R_ANAL_OP_TYPE_UJMP| R_ANAL_OP_TYPE_REG,
