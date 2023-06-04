@@ -477,7 +477,7 @@ R_API const char *r_core_get_section_name(struct r_core_t *core, ut64 addr) {
 	}
 	RBinObject *bo = r_bin_cur_object (core->bin);
 	RBinSection *s = bo? r_bin_get_section_at (bo, addr, core->io->va): NULL;
-	if (s && s->name && *s->name) {
+	if (s && R_STR_ISNOTEMPTY (s->name)) {
 		free (Gsection);
 		Gsection = r_str_newf ("%10s ", s->name);
 	} else {
@@ -493,7 +493,7 @@ R_API const char *r_core_get_section_name(struct r_core_t *core, ut64 addr) {
 		}
 	}
 	Goaddr = addr;
-	return Gsection;
+	return Gsection? Gsection: NULL;
 }
 
 static const char *get_section_name(RDisasmState *ds) {
@@ -505,15 +505,16 @@ static void ds_comment_align(RDisasmState *ds) {
 		if (ds->show_color) {
 			r_cons_print (ds->pal_comment);
 		}
-		return;
+	} else {
+		const char *ss =get_section_name (ds);
+		const char *sn = (ds->show_section && ss)? ss: "";
+		ds_align_comment (ds);
+		r_cons_print (COLOR_RESET (ds));
+		ds_print_pre (ds, true);
+		r_cons_printf ("%s", sn);
+		ds_print_ref_lines (ds->refline, ds->line_col, ds);
+		r_cons_printf ("   %s", COLOR (ds, color_comment));
 	}
-	const char *sn = ds->show_section ? get_section_name (ds) : "";
-	ds_align_comment (ds);
-	r_cons_print (COLOR_RESET (ds));
-	ds_print_pre (ds, true);
-	r_cons_printf ("%s", sn);
-	ds_print_ref_lines (ds->refline, ds->line_col, ds);
-	r_cons_printf ("   %s", COLOR (ds, color_comment));
 }
 
 static void ds_comment_lineup(RDisasmState *ds) {
@@ -2923,7 +2924,8 @@ static void ds_print_lines_left(RDisasmState *ds) {
 			str = strdup (map? r_str_rwx_i (map->perm): "---");
 		}
 		if (ds->show_section_name) {
-			str = r_str_appendf (str, " %s", get_section_name (ds));
+			const char *ss = get_section_name (ds);
+			str = r_str_appendf (str, " %s", ss? ss: "");
 		}
 		char *sect = str? str: strdup ("");
 		printCol (ds, sect, ds->show_section_col, ds->color_reg);
@@ -4934,7 +4936,7 @@ static void ds_print_bbline(RDisasmState *ds) {
 		ds_print_pre (ds, true);
 		if (ds->show_section && ds->line_col) {
 			const char *sn = get_section_name (ds);
-			size_t snl = strlen (sn) + 4;
+			size_t snl = sn? strlen (sn) + 4: 4;
 			r_cons_printf ("%s", r_str_pad (' ', R_MAX (10, snl - 1)));
 		}
 		if (!ds->linesright && ds->show_lines_bb && ds->line) {
