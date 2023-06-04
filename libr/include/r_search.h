@@ -47,6 +47,7 @@ typedef struct r_search_keyword_t {
 	int type;
 	ut64 last; // last hit hint
 	int align; // per-keyword alignment rule
+	// XXX string search dont have a way to report the kw hit size
 } RSearchKeyword;
 
 typedef struct r_search_uds_t {
@@ -58,6 +59,9 @@ typedef struct r_search_uds_t {
 typedef struct r_search_hit_t {
 	RSearchKeyword *kw;
 	ut64 addr;
+#if R2_590
+	size_t size;
+#endif
 } RSearchHit;
 
 typedef int (*RSearchCallback) (R_NULLABLE RSearchKeyword *kw, void *user, ut64 where); // TODO: depricate, b/c lacks match len

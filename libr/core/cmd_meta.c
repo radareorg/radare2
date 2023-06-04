@@ -748,15 +748,17 @@ static int cmd_meta_vartype_comment(RCore *core, const char *input) {
 typedef struct {
 	RCore *core;
 	ut64 addr;
+	ut8 *buf;
 } StringSearchOptions;
 
 static int cb_strhit(R_NULLABLE RSearchKeyword *kw, void *user, ut64 where) {
 	StringSearchOptions *sso = (StringSearchOptions*)user;
-#if R2_590
-	r_core_cmd_call_at (sso->core, "Cz", where);
+#if 1
+	const char *name = (const char *)(sso->buf + (where - sso->addr));
+	size_t n = strlen (name) + 1;
+	r_meta_set (sso->core->anal, R_META_TYPE_STRING, where, n, name);
 #else
 	r_core_cmdf (sso->core, "Cz@0x%08"PFMT64x, where);
-	// TODO: r_meta_set (core->anal, type, addr, n, name);
 #endif
 	return true;
 }
@@ -933,7 +935,8 @@ static int cmd_meta_others(RCore *core, const char *input) {
 					r_search_set_string_limits (ss, minstr, maxstr);
 					StringSearchOptions sso = {
 						.addr = addr,
-						.core = core
+						.core = core,
+						.buf = buf
 					};
 					// r_print_hexdump (core->print, addr, buf, range, 8,1,1);
 					r_search_set_callback (ss, cb_strhit, &sso);
