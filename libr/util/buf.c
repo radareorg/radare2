@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2022 - ret2libc, pancake */
+/* radare - LGPL - Copyright 2009-2023 - ret2libc, pancake */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -622,6 +622,30 @@ R_API st64 r_buf_read_at(RBuffer *b, ut64 addr, ut8 *buf, ut64 len) {
 	return r;
 }
 
+#if 0
+static const char *bufnam(RBuffer *b) {
+	if (b->methods == &buffer_bytes_methods) {
+		return "bytes";
+	}
+	if (b->methods == &buffer_mmap_methods) {
+		return "mmap";
+	}
+	if (b->methods == &buffer_sparse_methods) {
+		return "sparse";
+	}
+	if (b->methods == &buffer_ref_methods) {
+		return "ref";
+	}
+	if (b->methods == &buffer_io_methods) {
+		return "io";
+	}
+	if (b->methods == &buffer_file_methods) {
+		return "file";
+	}
+	return "unknown";
+}
+#endif
+
 R_API st64 r_buf_write_at(RBuffer *b, ut64 addr, const ut8 *buf, ut64 len) {
 	r_return_val_if_fail (b && buf && !b->readonly, -1);
 	st64 o_addr = r_buf_seek (b, 0, R_BUF_CUR);
@@ -630,11 +654,16 @@ R_API st64 r_buf_write_at(RBuffer *b, ut64 addr, const ut8 *buf, ut64 len) {
 		return r;
 	}
 	r = r_buf_write (b, buf, len);
+#if 0
+	if (r == 0) {
+		R_LOG_ERROR ("write error in %s (%p) at 0x%"PFMT64x, bufnam (b), b, addr);
+	}
+#endif
 	r_buf_seek (b, o_addr, R_BUF_SET);
 	return r;
 }
 
-// XXX 580 use r_ref api instead
+// XXX R2_590 use r_ref api instead
 R_API void r_buf_fini(RBuffer *b) {
 	if (!b) {
 		return;
@@ -654,7 +683,7 @@ R_API void r_buf_fini(RBuffer *b) {
 	buf_fini (b);
 }
 
-// XXX 580 use r_ref api instead
+// XXX R2_590 use r_ref api instead
 R_API void r_buf_free(RBuffer *b) {
 	if (b) {
 		bool unreferenced = b && b->refctr == 0;
@@ -722,7 +751,7 @@ R_API st64 r_buf_sleb128(RBuffer *b, st64 *v) {
 			return -1;
 		}
 		chunk = value & 0x7f;
-		if (offset < 64) {
+		if (offset < 0x40) {
 			result |= (chunk << offset);
 			offset += 7;
 		} else {
@@ -731,7 +760,7 @@ R_API st64 r_buf_sleb128(RBuffer *b, st64 *v) {
 	} while (value & 0x80);
 
 	if ((value & 0x40) != 0) {
-		if (offset < 64) {
+		if (offset < 0x40) {
 			result |= ~0ULL << offset;
 		}
 	}
@@ -740,3 +769,30 @@ R_API st64 r_buf_sleb128(RBuffer *b, st64 *v) {
 	}
 	return offset / 7;
 }
+
+#if R2_590
+R_API char *r_buf_describe(RBuffer *b) {
+	const char *type = "unknown";
+	switch (b->type) {
+	case R_BUFFER_BYTES:
+		type = "bytes";
+		break;
+	case R_BUFFER_MMAP:
+		type = "mmap";
+		break;
+	case R_BUFFER_SPARSE:
+		type = "sparse";
+		break;
+	case R_BUFFER_FILE:
+		type = "file";
+		break;
+	case R_BUFFER_IO:
+		type = "io";
+		break;
+	case R_BUFFER_REF:
+		type = "ref";
+		break;
+	}
+	return r_str_newf ("RBuffer<%s>(.%s) @ %p", type, b->readonly? "ro": "rw", b);
+}
+#endif

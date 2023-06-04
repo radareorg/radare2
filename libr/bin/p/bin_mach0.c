@@ -463,6 +463,36 @@ static bool _patch_reloc(struct MACH0_(obj_t) *mo, RIOBind *iob, struct reloc_t 
 	return true;
 }
 
+#if !R2_590
+
+#if 0
+static char *r_buf_describe(RBuffer *b) {
+#if 0
+	const char *const type = "unknown";
+	case R_BUFFER_MMAP:
+		type = "mmap";
+		break;
+	case R_BUFFER_SPARSE:
+		type = "sparse";
+		break;
+	case R_BUFFER_FILE:
+		type = "file";
+		break;
+	case R_BUFFER_IO:
+		type = "io";
+		break;
+	case R_BUFFER_REF:
+		type = "ref";
+		break;
+	}
+	const char *name = b->methods->name;
+#endif
+	const char *name = "bytes";
+	return r_str_newf ("RBuffer<%s>(.%s) @ %p", name, b->readonly? "ro": "rw", b);
+}
+#endif
+#endif
+
 static RList* patch_relocs(RBin *b) {
 	r_return_val_if_fail (b, NULL);
 

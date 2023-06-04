@@ -26,6 +26,9 @@ typedef void (*RBufferFreeWholeBuf)(RBuffer *b);
 typedef RList *(*RBufferNonEmptyList)(RBuffer *b);
 
 typedef struct r_buffer_methods_t {
+#if R2_590
+	const char *const name;
+#endif
 	RBufferInit init;
 	RBufferFini fini;
 	RBufferRead read;
@@ -45,7 +48,8 @@ struct r_buf_t {
 	bool readonly;
 	ut8 Oxff_priv;
 	int refctr;
-	// 580 R_REF_TYPE instead of refcnt;
+	// R2_590 R_REF_TYPE instead of refcnt;
+	// R2_590 RBufferType type;
 };
 
 // XXX: this should not be public
