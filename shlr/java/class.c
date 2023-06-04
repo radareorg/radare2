@@ -2934,7 +2934,7 @@ R_API RList *U(r_bin_java_get_fields)(RBinJavaObj * bin) {
 	return fields;
 }
 
-R_API void r_bin_add_import(RBinJavaObj *bin, RBinJavaCPTypeObj *obj, const char *type) {
+static void add_import(RBinJavaObj *bin, RBinJavaCPTypeObj *obj, const char *type) {
 	RBinImport *imp = R_NEW0 (RBinImport);
 	char *class_name = r_bin_java_get_name_from_bin_cp_list (bin, obj->info.cp_method.class_idx);
 	char *name = r_bin_java_get_name_from_bin_cp_list (bin, obj->info.cp_method.name_and_type_idx);
@@ -2965,7 +2965,7 @@ R_API void r_bin_java_set_imports(RBinJavaObj *bin) {
 		default: type = NULL; break;
 		}
 		if (type) {
-			r_bin_add_import (bin, obj, type);
+			add_import (bin, obj, type);
 		}
 	}
 }
