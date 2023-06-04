@@ -11,13 +11,14 @@ DOCKERFLAGS+=--privileged
 DOCKERFLAGS+=--cap-add=SYS_PTRACE
 DOCKERFLAGS+=--security-opt seccomp=unconfined
 DOCKERFLAGS+=--security-opt apparmor=unconfined
+DOCKER_BUILDFLAGS+=--build-arg="r2pm=r2frida r2ghidra r2dec"
 
 ifneq ($(ARCH),)
 DOCKER_PLATFORM+=--platform linux/$(ARCH)
 endif
 
 all:
-	docker build $(DOCKER_PLATFORM) -t $(DOCKER_IMAGE) .
+	docker build $(DOCKER_PLATFORM) -t $(DOCKER_IMAGE) . $(DOCKER_BUILDFLAGS)
 	docker run $(DOCKER_PLATFORM) -v $(shell pwd)/../..:/r -v /tmp:/tmp $(DOCKERFLAGS) -i -t ${DOCKER_IMAGE}
 
 install:

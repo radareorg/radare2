@@ -118,10 +118,14 @@ ENV HOME /home/r2
 COPY README.md /home/r2/README.md
 
 # Setup r2pm
+# space separated list of packages to be installed
+# docker build -t r2 --build-arg="r2pm='r2frida r2ghidra'"
+ARG r2pm
 RUN r2pm -U
 
 # install r2frida, r2ghidra and r2dec
-RUN r2pm -i r2frida
+ENV R2PM_PKGS=${r2pm}
+RUN if [ -n "${R2PM_PKGS}" ]; then r2pm -ci ${R2PM_PKGS}; fi
 
 # Base command for container
 CMD ["/bin/bash"]
