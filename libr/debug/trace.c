@@ -2,8 +2,6 @@
 
 #include <r_debug.h>
 
-// DO IT WITH SDB
-
 R_API RDebugTrace *r_debug_trace_new(void) {
 	RDebugTrace *t = R_NEW0 (RDebugTrace);
 	if (!t) {
@@ -12,12 +10,11 @@ R_API RDebugTrace *r_debug_trace_new(void) {
 	t->tag = 1; // UT32_MAX;
 	t->addresses = NULL;
 	t->enabled = false;
-	t->traces = r_list_new ();
+	t->traces = r_list_newf ((RListFree)free);
 	if (!t->traces) {
 		r_debug_trace_free (t);
 		return NULL;
 	}
-	t->traces->free = free;
 	t->ht = ht_pp_new0 ();
 	if (!t->ht) {
 		r_debug_trace_free (t);
@@ -28,18 +25,19 @@ R_API RDebugTrace *r_debug_trace_new(void) {
 
 R_API void r_debug_trace_free(RDebugTrace *trace) {
 	if (trace) {
-		r_list_purge (trace->traces);
-		free (trace->traces);
+		r_list_free (trace->traces);
 		ht_pp_free (trace->ht);
-		R_FREE (trace);
+		free (trace);
 	}
 }
 
 // TODO: added overlap/mask support here... wtf?
-// TODO: think about tagged traces
+// TODO: think about tagged traces .. must return 0 or ntag :?
 R_API int r_debug_trace_tag(RDebug *dbg, int tag) {
-	//if (tag>0 && tag<31) core->dbg->trace->tag = 1<<(sz-1);
-	return (dbg->trace->tag = (tag>0)? tag: UT32_MAX);
+	r_return_val_if_fail (dbg && dbg->trace, 0);
+	ut32 ntag = (tag > 0)? (ut32)tag: UT32_MAX;
+	dbg->trace->tag = ntag;
+	return ntag;
 }
 
 R_API bool r_debug_trace_ins_before(RDebug *dbg) {
@@ -157,7 +155,9 @@ R_API bool r_debug_trace_ins_after(RDebug *dbg) {
 /*
  * something happened at the given pc that we need to trace
  */
+// R2_590 -> must be bool
 R_API int r_debug_trace_pc(RDebug *dbg, ut64 pc) {
+	r_return_val_if_fail (dbg && dbg->trace, false);
 	ut8 buf[32];
 	RAnalOp op = {0};
 	if (!dbg->iob.is_valid_offset (dbg->iob.io, pc, 0)) {
@@ -175,6 +175,7 @@ R_API int r_debug_trace_pc(RDebug *dbg, ut64 pc) {
 }
 
 R_API void r_debug_trace_op(RDebug *dbg, RAnalOp *op) {
+	r_return_if_fail (dbg && dbg->trace);
 	static ut64 oldpc = UT64_MAX; // Must trace the previously traced instruction
 	if (dbg->trace->enabled) {
 		if (dbg->anal->esil) {
@@ -192,12 +193,14 @@ R_API void r_debug_trace_op(RDebug *dbg, RAnalOp *op) {
 }
 
 R_API void r_debug_trace_at(RDebug *dbg, const char *str) {
+	r_return_if_fail (dbg && dbg->trace);
 	// TODO: parse offsets and so use ut64 instead of strstr()
 	free (dbg->trace->addresses);
-	dbg->trace->addresses = (str&&*str)? strdup (str): NULL;
+	dbg->trace->addresses = R_STR_ISNOTEMPTY (str)? strdup (str): NULL;
 }
 
 R_API RDebugTracepoint *r_debug_trace_get(RDebug *dbg, ut64 addr) {
+	r_return_val_if_fail (dbg && dbg->trace, NULL);
 	int tag = dbg->trace->tag;
 	r_strf_var (key, 64, "trace.%d.%"PFMT64x, tag, addr);
 	return ht_pp_find (dbg->trace->ht, key, NULL);
@@ -210,6 +213,7 @@ static int cmpaddr(const void *_a, const void *_b) {
 }
 
 R_API void r_debug_trace_list(RDebug *dbg, int mode, ut64 offset) {
+	r_return_if_fail (dbg && dbg->trace);
 	int tag = dbg->trace->tag;
 	RListIter *iter;
 	bool flag = false;
@@ -298,33 +302,32 @@ static bool r_debug_trace_is_traceable(RDebug *dbg, ut64 addr) {
 }
 
 R_API RDebugTracepoint *r_debug_trace_add(RDebug *dbg, ut64 addr, int size) {
-	RDebugTracepoint *tp;
+	r_return_val_if_fail (dbg, NULL);
 	int tag = dbg->trace->tag;
 	if (!r_debug_trace_is_traceable (dbg, addr)) {
 		return NULL;
 	}
 	r_anal_trace_bb (dbg->anal, addr);
-	tp = R_NEW0 (RDebugTracepoint);
-	if (!tp) {
-		return NULL;
+	RDebugTracepoint *tp = R_NEW0 (RDebugTracepoint);
+	if (tp) {
+		tp->stamp = r_time_now ();
+		tp->addr = addr;
+		tp->tags = tag;
+		tp->size = size;
+		tp->count = ++dbg->trace->count;
+		tp->times = 1;
+		r_list_append (dbg->trace->traces, tp);
+		r_strf_var (key, 64, "trace.%d.%"PFMT64x, tag, addr);
+		ht_pp_update (dbg->trace->ht, key, tp);
 	}
-	tp->stamp = r_time_now ();
-	tp->addr = addr;
-	tp->tags = tag;
-	tp->size = size;
-	tp->count = ++dbg->trace->count;
-	tp->times = 1;
-	r_list_append (dbg->trace->traces, tp);
-	r_strf_var (key, 64, "trace.%d.%"PFMT64x, tag, addr);
-	ht_pp_update (dbg->trace->ht, key, tp);
 	return tp;
 }
 
 R_API void r_debug_trace_reset(RDebug *dbg) {
+	r_return_if_fail (dbg);
 	RDebugTrace *t = dbg->trace;
-	r_list_purge (t->traces);
 	ht_pp_free (t->ht);
 	t->ht = ht_pp_new0 ();
-	t->traces = r_list_new ();
-	t->traces->free = free;
+	r_list_free (t->traces);
+	t->traces = r_list_newf ((RListFree)free);
 }

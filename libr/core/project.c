@@ -1,6 +1,5 @@
-/* radare - LGPL - Copyright 2010-2022 - pancake, rhl */
+/* radare - LGPL - Copyright 2010-2023 - pancake, rhl */
 
-#define USE_R2 1
 #define PROJECT_EXPERIMENTAL 0
 
 #include <r_core.h>
@@ -101,13 +100,12 @@ R_API void r_core_project_cat(RCore *core, const char *name) {
 R_API int r_core_project_list(RCore *core, int mode) {
 	PJ *pj = NULL;
 	RListIter *iter;
-	RList *list;
 
 	char *foo, *path = r_file_abspath (r_config_get (core->config, "dir.projects"));
 	if (!path) {
 		return 0;
 	}
-	list = r_sys_dir (path);
+	RList *list = r_sys_dir (path);
 	switch (mode) {
 	case 'j':
 		pj = pj_new ();
@@ -169,7 +167,7 @@ R_API int r_core_project_delete(RCore *core, const char *prjfile) {
 }
 
 static bool load_project_rop(RCore *core, const char *prjfile) {
-	r_return_val_if_fail (core && !R_STR_ISEMPTY (prjfile), false);
+	r_return_val_if_fail (core && R_STR_ISNOTEMPTY (prjfile), false);
 	char *path, *db = NULL, *path_ns;
 	bool found = 0;
 	SdbListIter *it;
@@ -288,9 +286,10 @@ typedef struct {
 	RCore *core;
 	char *prj_name;
 	char *rc_path;
-} projectState;
+} ProjectState;
 
 static bool r_core_project_load(RCore *core, const char *prj_name, const char *rcpath) {
+	r_return_val_if_fail (core, false);
 	if (R_STR_ISEMPTY (prj_name)) {
 		prj_name = r_core_project_name (core, rcpath);
 	}
@@ -337,7 +336,7 @@ static bool r_core_project_load(RCore *core, const char *prj_name, const char *r
 }
 
 static RThreadFunctionRet project_load_background(RThread *th) {
-	projectState *ps = th->user;
+	ProjectState *ps = th->user;
 	r_core_project_load (ps->core, ps->prj_name, ps->rc_path);
 	free (ps->prj_name);
 	free (ps->rc_path);
@@ -346,7 +345,7 @@ static RThreadFunctionRet project_load_background(RThread *th) {
 }
 
 R_API RThread *r_core_project_load_bg(RCore *core, const char *prj_name, const char *rc_path) {
-	projectState *ps = R_NEW0 (projectState);
+	ProjectState *ps = R_NEW0 (ProjectState);
 	ps->core = core;
 	ps->prj_name = strdup (prj_name);
 	ps->rc_path = strdup (rc_path);
@@ -370,13 +369,12 @@ R_API bool r_core_project_open(RCore *core, const char *prj_path) {
 		R_LOG_ERROR ("There's a project already opened");
 		ask_for_closing = false;
 		bool ccs = interactive? r_cons_yesno ('y', "Close current session? (Y/n)"): true;
-		if (ccs) {
-			r_core_cmd0 (core, "o--");
-			r_core_cmd0 (core, "P-");
-		} else {
+		if (!ccs) {
 			R_LOG_ERROR ("Project not loaded");
 			return false;
 		}
+		r_core_cmd0 (core, "o--");
+		r_core_cmd0 (core, "P-");
 	}
 	char *prj_name = r_core_project_name (core, prj_path);
 	char *prj_script = get_project_script_path (core, prj_path);
@@ -417,9 +415,14 @@ static char *get_project_name(const char *prj_script) {
 			if (feof (fd)) {
 				break;
 			}
-			if (!strncmp (buf, "\"e prj.name = ", 14)) {
-				buf[strlen (buf) - 2] = 0;
-				file = r_str_new (buf + 14);
+			if (r_str_startswith (buf, "\"\"e prj.name = ")) {
+				file = strdup (buf + strlen ("\"\"e prj.name"));
+				break;
+			}
+			if (r_str_startswith (buf, "\"e prj.name = ")) {
+				// if (!strncmp (buf, "\"e prj.name = ", 14))
+				buf[strlen (buf) - 2] = 0; // remove trailing '"'
+				file = strdup (buf + 14);
 				break;
 			}
 		}

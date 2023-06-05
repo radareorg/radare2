@@ -491,6 +491,15 @@ static const char *avatar_orangg[] = {
 	"     `-----'`-----'\n"
 };
 
+static const char *avatar_croco[] = {
+	" __   __          .-%s-.\n"
+	"(o |_| o)_____    | %s |\n"
+	"|  ___________)  <  %s |\n"
+	"\\            /    | %s |\n"
+	" \\          /     `-%s-'\n"
+	"  \\________/\n"
+};
+
 static const char *avatar_clippy[] = {
 	" .--.     .-%s-.\n"
 	" | _|     | %s |\n"
@@ -560,36 +569,53 @@ static const char *avatar_cybcat[] = {
 enum {
 	R_AVATAR_ORANGG,
 	R_AVATAR_CYBCAT,
+	R_AVATAR_CROCO,
 	R_AVATAR_CLIPPY,
 };
 
 R_API void r_core_clippy(RCore *core, const char *msg) {
 	int type = R_AVATAR_CLIPPY;
-	if (*msg == '+' || *msg == '3') {
-		char *space = strchr (msg, ' ');
-		if (!space) {
-			return;
+	switch (*msg) {
+	case '+':
+	case '3':
+	case 'C':
+		{
+			char *space = strchr (msg, ' ');
+			if (!space) {
+				return;
+			}
+			type = (*msg == '+')? R_AVATAR_ORANGG: (*msg == 'C')? R_AVATAR_CROCO: R_AVATAR_CYBCAT;
+			msg = space + 1;
 		}
-		type = (*msg == '+')? R_AVATAR_ORANGG: R_AVATAR_CYBCAT;
-		msg = space + 1;
+		break;
 	}
 	const char *f;
 	int msglen = r_str_len_utf8 (msg);
 	char *s = strdup (r_str_pad (' ', msglen));
 	char *l;
 
-	if (type == R_AVATAR_ORANGG) {
+	switch (type) {
+	case R_AVATAR_ORANGG:
 		l = strdup (r_str_pad ('-', msglen));
 		f = avatar_orangg[0];
-	} else if (type == R_AVATAR_CYBCAT) {
+		break;
+	case R_AVATAR_CROCO:
+		l = strdup (r_str_pad ('-', msglen));
+		f = avatar_croco[0];
+		break;
+	case R_AVATAR_CYBCAT:
 		l = strdup (r_str_pad ('-', msglen));
 		f = avatar_cybcat[r_num_rand (R_ARRAY_SIZE (avatar_cybcat))];
-	} else if (r_config_get_i (core->config, "scr.utf8")) {
-		l = (char *)r_str_repeat ("─", msglen);
-		f = avatar_clippy_utf8[r_num_rand (R_ARRAY_SIZE (avatar_clippy_utf8))];
-	} else {
-		l = strdup (r_str_pad ('-', msglen));
-		f = avatar_clippy[r_num_rand (R_ARRAY_SIZE (avatar_clippy))];
+		break;
+	default:
+		if (r_config_get_b (core->config, "scr.utf8")) {
+			l = (char *)r_str_repeat ("─", msglen);
+			f = avatar_clippy_utf8[r_num_rand (R_ARRAY_SIZE (avatar_clippy_utf8))];
+		} else {
+			l = strdup (r_str_pad ('-', msglen));
+			f = avatar_clippy[r_num_rand (R_ARRAY_SIZE (avatar_clippy))];
+		}
+		break;
 	}
 
 	r_cons_printf (f, l, s, msg, s, l);
