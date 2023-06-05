@@ -180,7 +180,7 @@ static void process_constructors(RBinFile *bf, RList *ret, int bits) {
 	RListIter *iter;
 	RBinSection *sec;
 	r_list_foreach (secs, iter, sec) {
-		if (sec->size > 0xffffff) {
+		if (sec->size > ALLOC_SIZE_LIMIT) {
 			continue;
 		}
 
@@ -203,7 +203,18 @@ static void process_constructors(RBinFile *bf, RList *ret, int bits) {
 			continue;
 		}
 
-		(void)r_buf_read_at (bf->buf, sec->paddr, buf, sec->size);
+		st64 size = r_buf_read_at(bf->buf, sec->paddr, buf, sec->size);
+		if (size != sec->size) {
+			if (size < sec->size) {
+				R_LOG_WARN ("unexpected section size");
+			}
+			buf = realloc (buf, size);
+			if (!buf) {
+				continue;
+			}
+			sec->size = size;
+		}
+
 		if (bits == 32) {
 			int i;
 			for (i = 0; (i + 3) < sec->size; i += 4) {

@@ -8509,7 +8509,7 @@ static void cmd_anal_aftertraps(RCore *core, const char *input) {
 	RAnalOp op = {0};
 	ut64 addr, addr_end;
 	ut64 len = r_num_math (core->num, input);
-	if (len > 0xffffff) {
+	if (len > ALLOC_SIZE_LIMIT) {
 		R_LOG_ERROR ("Length is too large");
 		return;
 	}
