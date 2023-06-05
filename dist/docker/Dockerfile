@@ -42,7 +42,7 @@ LABEL r2docker latest
 # Radare version
 ARG R2_VERSION=master
 # R2pipe python version
-ARG R2_PIPE_PY_VERSION=1.7.4
+ARG R2PIPE_PY_VERSION=1.7.4
 
 ARG with_s390x_as
 ARG with_arm32_as
@@ -50,11 +50,11 @@ ARG with_arm64_as
 ARG with_ppc_as
 
 ENV R2_VERSION ${R2_VERSION}
-ENV R2_PIPE_PY_VERSION ${R2_PIPE_PY_VERSION}
+ENV R2PIPE_PY_VERSION ${R2PIPE_PY_VERSION}
 
 RUN echo -e "Building versions:\n\
   R2_VERSION=$R2_VERSION\n\
-  R2_PIPE_PY_VERSION=${R2_PIPE_PY_VERSION}"
+  R2PIPE_PY_VERSION=${R2PIPE_PY_VERSION}"
 
 # Build radare2 in a volume to minimize space used by build
 # VOLUME ["/mnt"]
@@ -89,7 +89,7 @@ RUN DEBIAN_FRONTEND=noninteractive \
   ${with_ppc_as:+binutils-powerpc64le-linux-gnu} && \
   apt-get autoremove --purge -y && \
   apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* && \
-  pip3 install r2pipe=="$R2_PIPE_PY_VERSION" && \
+  pip3 install r2pipe=="$R2PIPE_PY_VERSION" && \
   apt-get remove --purge -y
 
 RUN mkdir -p /mnt && cd /mnt && \
@@ -126,6 +126,7 @@ RUN r2pm -U
 # install r2frida, r2ghidra and r2dec
 ENV R2PM_PKGS=${r2pm}
 RUN if [ -n "${R2PM_PKGS}" ]; then r2pm -ci ${R2PM_PKGS}; fi
+# RUN rm -rf /home/r2/.local/share/radare2/r2pm/git
 
 # Base command for container
 CMD ["/bin/bash"]
