@@ -1,8 +1,6 @@
-/* radare2 - LGPL - Copyright 2018-2022 - pancake, mrmacete, keegan */
+/* radare2 - LGPL - Copyright 2018-2023 - pancake, mrmacete, keegan */
 
-#include <r_bin.h>
 #include <r_core.h>
-#include <r_io.h>
 // #include "../format/mach0/mach0_defines.h"
 #define R_BIN_MACH064 1
 #include "../format/mach0/mach0.h"
@@ -1189,13 +1187,15 @@ static RList *create_cache_bins(RBinFile *bf, RDyldCache *cache) {
 		ut32 j;
 		if (target_libs) {
 			HtPU *path_to_idx = NULL;
-			if (cache->accel && cache->accel->depListCount > 0) {
-				depArray = R_NEWS0 (ut16, cache->accel->depListCount);
+			const ut32 depListCount = cache->accel->depListCount;
+			if (cache->accel && depListCount > 0) {
+				depArray = R_NEWS0 (ut16, depListCount);
 				if (!depArray) {
 					goto next;
 				}
 
-				if (r_buf_fread_at (cache->buf, cache->accel->depListOffset, (ut8*) depArray, "s", cache->accel->depListCount) != cache->accel->depListCount * 2) {
+				if (r_buf_fread_at (cache->buf, cache->accel->depListOffset,
+					(ut8*) depArray, "s", depListCount) != depListCount * 2) {
 					goto next;
 				}
 
@@ -1228,8 +1228,12 @@ static RList *create_cache_bins(RBinFile *bf, RDyldCache *cache) {
 
 				if (extras && depArray) {
 					ut32 k;
-					for (k = extras[j].dependentsStartArrayIndex; depArray[k] != 0xffff; k++) {
+					for (k = extras[j].dependentsStartArrayIndex; k < depListCount && depArray[k] != 0xffff; k++) {
 						ut16 dep_index = depArray[k] & 0x7fff;
+						if (dep_index >= cache->hdr->imagesCount) {
+							R_LOG_ERROR ("invalid dep index");
+							continue;
+						}
 						deps[dep_index]++;
 
 						char *dep_name = get_lib_name (cache->buf, &img[dep_index]);
@@ -1300,7 +1304,7 @@ static RList *create_cache_bins(RBinFile *bf, RDyldCache *cache) {
 			}
 			default:
 				if (magic != 0) {
-					R_LOG_WARN ("Unknown sub-bin 0x%x", magic);
+					R_LOG_WARN ("Unknown sub-bin 0x%08x", magic);
 				}
 				break;
 			}
