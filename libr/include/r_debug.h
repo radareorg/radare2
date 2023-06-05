@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2022 - pancake */
+/* radare - LGPL - Copyright 2009-2023 - pancake */
 
 #ifndef R2_DEBUG_H
 #define R2_DEBUG_H
@@ -234,6 +234,8 @@ typedef struct r_debug_trace_t {
 	HtPP *ht; // use rbtree like the iocache?
 } RDebugTrace;
 
+// R2_590 rename to traceitem for consistency?
+#define r_debug_tracepoint_free(x) free((x))
 typedef struct r_debug_tracepoint_t {
 	ut64 addr;
 	ut64 tags; // XXX

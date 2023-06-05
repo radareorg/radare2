@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2016-2021 - oddcoder, sivaramaaa, pancake */
+/* radare - LGPL - Copyright 2016-2023 - oddcoder, sivaramaaa, pancake */
 /* type matching - type propagation */
 
 #include <r_anal.h>
@@ -22,8 +22,7 @@ static bool anal_emul_init(RCore *core, RConfigHold *hc, RDebugTrace **dt, REsil
 	const char *bp = r_reg_get_name (core->anal->reg, R_REG_NAME_BP);
 	const char *sp = r_reg_get_name (core->anal->reg, R_REG_NAME_SP);
 	if ((bp && !r_reg_getv (core->anal->reg, bp)) && (sp && !r_reg_getv (core->anal->reg, sp))) {
-		eprintf ("Stack isn't initialized.\n");
-		eprintf ("Try running aei and aeim commands before aft for default stack initialization\n");
+		R_LOG_WARN ("The virtual stack is not yet available. Run aeim or aei and try again");
 		return false;
 	}
 	return (core->dbg->trace && core->anal->esil->trace);
