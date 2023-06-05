@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2016-2021 - oddcoder, sivaramaaa, pancake */
+/* radare - LGPL - Copyright 2016-2023 - oddcoder, sivaramaaa, pancake */
 /* type matching - type propagation */
 
 #include <r_anal.h>
@@ -16,7 +16,7 @@ static bool anal_emul_init(RCore *core, RConfigHold *hc, RDebugTrace **dt, REsil
 	core->anal->esil->trace = r_esil_trace_new (core->anal->esil);
 	r_config_hold (hc, "esil.romem", "dbg.trace", "esil.nonull", "dbg.follow", NULL);
 	r_config_set_b (core->config, "esil.romem", true);
-	r_config_set_b (core->config, "dbg.trace", true);
+	// r_config_set_b (core->config, "dbg.trace", true);
 	r_config_set_b (core->config, "esil.nonull", true);
 	r_config_set_i (core->config, "dbg.follow", false);
 	const char *bp = r_reg_get_name (core->anal->reg, R_REG_NAME_BP);
