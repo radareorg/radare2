@@ -3589,6 +3589,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETI ("esil.maxsteps", 0, "If !=0 defines the maximum amount of steps to perform on aesu/aec/..");
 	SETPREF ("esil.fillstack", "", "initialize ESIL stack with (random, debrujn, sequence, zeros, ...)");
 	SETICB ("esil.verbose", 0, &cb_esilverbose, "show ESIL verbose level (0, 1, 2)");
+	// R2_590 SETPREF ("esil.trace", "false", "record a trace log of the instruction emulation");
 	SETICB ("esil.gotolimit", core->anal->esil_goto_limit, &cb_gotolimit, "maximum number of gotos per ESIL expression");
 	SETICB ("esil.stack.depth", 256, &cb_esilstackdepth, "number of elements that can be pushed on the esilstack");
 	SETI ("esil.stack.size", 0xf0000, "set stack size in ESIL VM");

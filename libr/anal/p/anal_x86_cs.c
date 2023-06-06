@@ -3733,6 +3733,10 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 		return -1;
 	}
 	int mode = a->cs_omode;
+	// fixes huge functions with invalid code
+	if (len > 7 && !memcmp (buf, "\x00\x00\x00\x00\x00\x00\x00\x00", 8)) {
+		return -1;
+	}
 
 	cs_insn *insn = NULL;
 	int n;

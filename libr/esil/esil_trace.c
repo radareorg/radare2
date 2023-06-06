@@ -185,13 +185,12 @@ static bool trace_hook_mem_read(REsil *esil, ut64 addr, ut8 *buf, int len) {
 static bool trace_hook_mem_write(REsil *esil, ut64 addr, const ut8 *buf, int len) {
 	size_t i;
 	int ret = 0;
-	char *hexbuf = malloc ((1 + len) * 3);
+	char *hexbuf = r_hex_bin2strdup (buf, len);
 	if (!hexbuf) {
 		return false;
 	}
 	r_strf_buffer (128);
 	sdb_array_add_num (DB, KEY ("mem.write"), addr, 0);
-	r_hex_bin2str (buf, len, hexbuf);
 	sdb_set (DB, KEYAT ("mem.write.data", addr), hexbuf, 0);
 	//eprintf ("[ESIL] MEM WRITE 0x%08"PFMT64x" %s\n", addr, hexbuf);
 	free (hexbuf);
@@ -205,7 +204,7 @@ static bool trace_hook_mem_write(REsil *esil, ut64 addr, const ut8 *buf, int len
 		ret = ocbs.hook_mem_write (esil, addr, buf, len);
 		esil->cb = cbs;
 	}
-	return ret;
+	return ret != 0;
 }
 
 R_API void r_esil_trace_op(REsil *esil, RAnalOp *op) {
@@ -219,6 +218,7 @@ R_API void r_esil_trace_op(REsil *esil, RAnalOp *op) {
 	if (!esil->trace) {
 		esil->trace = r_esil_trace_new (esil);
 		if (!esil->trace) {
+			R_LOG_ERROR ("Cannot initialize the esil trace class");
 			return;
 		}
 	}
@@ -228,9 +228,9 @@ R_API void r_esil_trace_op(REsil *esil, RAnalOp *op) {
 		return;
 	}
 	/* save old callbacks */
-	int esil_verbose = esil->verbose;
+	const bool esil_verbose = esil->verbose;
 	if (ocbs_set) {
-		eprintf ("r_esil_trace_op: Cannot call recursively\n");
+		R_LOG_WARN ("r_esil_trace_op: Cannot call recursively");
 	}
 	ocbs = esil->cb;
 	ocbs_set = true;
@@ -244,7 +244,7 @@ R_API void r_esil_trace_op(REsil *esil, RAnalOp *op) {
 	//eprintf ("[ESIL] OPCODE %s\n", op->mnemonic);
 	//eprintf ("[ESIL] EXPR = %s\n", expr);
 	/* set hooks */
-	esil->verbose = 0;
+	esil->verbose = false;
 	esil->cb.hook_reg_read = trace_hook_reg_read;
 	esil->cb.hook_reg_write = trace_hook_reg_write;
 	esil->cb.hook_mem_read = trace_hook_mem_read;
@@ -281,7 +281,9 @@ static bool restore_register(REsil *esil, RRegItem *ri, int idx) {
 		r_vector_upper_bound (vreg, idx, index, CMP_REG_CHANGE);
 		if (index > 0 && index <= vreg->len) {
 			REsilRegChange *c = r_vector_index_ptr (vreg, index - 1);
-			r_reg_set_value (esil->anal->reg, ri, c->data);
+			if (c) {
+				r_reg_set_value (esil->anal->reg, ri, c->data);
+			}
 		}
 	}
 	return true;

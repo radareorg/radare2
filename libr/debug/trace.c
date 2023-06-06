@@ -152,41 +152,45 @@ R_API bool r_debug_trace_ins_after(RDebug *dbg) {
 	return true;
 }
 
-/*
- * something happened at the given pc that we need to trace
- */
 // R2_590 -> must be bool
 R_API int r_debug_trace_pc(RDebug *dbg, ut64 pc) {
+	// XXX this is dupe of ranalop_at ();
 	r_return_val_if_fail (dbg && dbg->trace, false);
-	ut8 buf[32];
 	RAnalOp op = {0};
 	if (!dbg->iob.is_valid_offset (dbg->iob.io, pc, 0)) {
 		R_LOG_ERROR ("trace_pc: cannot read memory at 0x%"PFMT64x, pc);
 		return false;
 	}
-	(void)dbg->iob.read_at (dbg->iob.io, pc, buf, sizeof (buf));
-	if (r_anal_op (dbg->anal, &op, pc, buf, sizeof (buf), R_ARCH_OP_MASK_ESIL) < 1) {
+	ut8 buf[32];
+	int r = dbg->iob.read_at (dbg->iob.io, pc, buf, sizeof (buf));
+	if (r < 1) {
+		R_LOG_ERROR ("trace_pc: cannot read memory at 0x%"PFMT64x, pc);
+		return false;
+	}
+	const int mask = R_ARCH_OP_MASK_ESIL | R_ARCH_OP_MASK_HINT;
+	if (r_anal_op (dbg->anal, &op, pc, buf, sizeof (buf), mask) < 1) {
 		R_LOG_ERROR ("trace_pc: cannot get opcode size at 0x%"PFMT64x, pc);
 		return false;
 	}
-	r_debug_trace_op (dbg, &op);
+	r_debug_trace_op (dbg, &op); // TODO. check return value when signature changed
 	r_anal_op_fini (&op);
 	return true;
 }
 
+// R2_590 - return false if we cant trace
 R_API void r_debug_trace_op(RDebug *dbg, RAnalOp *op) {
 	r_return_if_fail (dbg && dbg->trace);
 	static ut64 oldpc = UT64_MAX; // Must trace the previously traced instruction
 	if (dbg->trace->enabled) {
-		if (dbg->anal->esil) {
-			r_esil_trace_op (dbg->anal->esil, op);
+		//check if esil.trace is set
+		if (!dbg->anal->esil) {
+			R_LOG_ERROR ("Run aeim initialize the stack and esil vm");
 		} else {
-			if (dbg->verbose) {
-				R_LOG_ERROR ("Run aeim to get dbg->anal->esil initialized");
-			}
+			// esil tracing is leaking a lot
+			r_esil_trace_op (dbg->anal->esil, op);
 		}
 		if (oldpc != UT64_MAX) {
-			r_debug_trace_add (dbg, oldpc, op->size); //XXX review what this line really do
+			r_debug_trace_add (dbg, oldpc, op->size);
 		}
 	}
 	oldpc = op->addr;
