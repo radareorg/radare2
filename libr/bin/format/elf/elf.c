@@ -707,7 +707,6 @@ static int init_dynamic_section(ELFOBJ *eo) {
 		if (!strtabaddr) {
 			R_LOG_DEBUG ("DT_STRTAB not found or invalid");
 		}
-		eprintf ("err\n");
 		return false;
 	}
 
