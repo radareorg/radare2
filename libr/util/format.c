@@ -1288,7 +1288,10 @@ static void r_print_format_nulltermstring(const RPrint* p, int len, int endian, 
 		ut8 ch = 0xff;
 		// XXX there are some cases where the memory is there but is_valid_offset fails wtf
 		if (p->iob.read_at (p->iob.io, seeki, &ch, 1) != 1 && ch != 0xff) {
-			p->cb_printf ("-1");
+			p->cb_printf ("\"\"");
+			if (MUSTSEEJSON) {
+				p->cb_printf ("}");
+			}
 			return;
 		}
 	}
