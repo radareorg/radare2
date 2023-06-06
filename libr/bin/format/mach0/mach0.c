@@ -45,6 +45,23 @@ struct symbol_t {
 	char *name;
 };
 
+typedef struct __CodeDirectory {
+	uint32_t magic;					/* magic number (CSMAGIC_CODEDIRECTORY) */
+	uint32_t length;				/* total length of CodeDirectory blob */
+	uint32_t version;				/* compatibility version */
+	uint32_t flags;					/* setup and mode flags */
+	uint32_t hashOffset;			/* offset of hash slot element at index zero */
+	uint32_t identOffset;			/* offset of identifier string */
+	uint32_t nSpecialSlots;			/* number of special hash slots */
+	uint32_t nCodeSlots;			/* number of ordinary (code) hash slots */
+	uint32_t codeLimit;				/* limit to main image signature range */
+	uint8_t hashSize;				/* size of each hash in bytes */
+	uint8_t hashType;				/* type of hash (cdHashType* constants) */
+	uint8_t spare1;					/* unused (must be zero) */
+	uint8_t	pageSize;				/* log2(page size in bytes); 0 => infinite */
+	uint32_t spare2;				/* unused (must be zero) */
+	/* followed by dynamic content as located by offset fields above */
+} CodeDirectory;
 
 // OMG; THIS SHOULD BE KILLED; this var exposes the local native endian, which is completely unnecessary
 // USE THIS: int ws = bf->o->info->big_endian;
@@ -2113,7 +2130,7 @@ static int init_items(struct MACH0_(obj_t) *bin) {
 				ut8 buf[8];
 				r_buf_read_at (bin->b, off + 8, buf, sizeof (buf));
 				ut32 dataoff = r_read_ble32 (buf, bin->big_endian);
-				ut32 datasize= r_read_ble32 (buf + 4, bin->big_endian);
+				ut32 datasize = r_read_ble32 (buf + 4, bin->big_endian);
 				R_LOG_INFO ("data-in-code at 0x%x size %d", dataoff, datasize);
 				ut8 *db = (ut8*)malloc (datasize);
 				if (db) {
@@ -4374,6 +4391,79 @@ ut64 MACH0_(get_main)(RBinFile *bf, struct MACH0_(obj_t) *bin) {
 	return bin->main_addr = addr;
 }
 
+typedef struct {
+	ut32 magic;
+	ut32 length;
+	ut32 count;
+} SuperBlob;
+
+static void walk_codesig(RBinFile *bf, ut32 addr, ut32 size) {
+	ut32 magic;
+	ut32 i;
+	ut64 addr_end = addr + size;
+	PrintfCallback cb_printf = bf->rbin->cb_printf;
+	if (!cb_printf) {
+		cb_printf = printf;
+	}
+	struct MACH0_(obj_t) *bo = bf->o->bin_obj;
+	SuperBlob sb;
+	if (r_buf_fread_at (bo->b, addr, (ut8*)&sb, "3I", 1) != -1) {
+		cb_printf ("0x%08"PFMT64x" superblob.magic = 0x%08x\n", (ut64)addr, sb.magic);
+		cb_printf ("0x%08"PFMT64x" superblob.length = 0x%08x\n", (ut64)addr + 4, sb.length);
+		cb_printf ("0x%08"PFMT64x" superblob.count = 0x%08x\n", (ut64)addr + 8, sb.count);
+	}
+	addr += (3 * 4); // skip superblob
+	for (i = 0; i < sb.count; i++) {
+		// type : offset
+		ut32 to[2];
+		if (r_buf_fread_at (bo->b, addr, (ut8*)&to, "2I", 1) == -1) {
+			break;
+		}
+		cb_printf ("0x%08"PFMT64x" type 0x%08x off %d\n", (ut64)addr, to[0], to[1]);
+		addr += 8;
+	}
+	for (i = 0; i < sb.count; i++) {
+		if (addr >= addr_end) {
+			break;
+		}
+		if (r_buf_fread_at (bo->b, addr, (ut8*)&magic, "1I", 1) == -1) {
+			R_LOG_DEBUG ("cannot read");
+			break;
+		}
+		cb_printf ("0x%08"PFMT64x" blob %d magic 0x%08x:\n", (ut64)addr, i, magic);
+		switch (magic) {
+		case 0xfade0c02: // codedirectory
+			{
+				CodeDirectory cdbuf = {0}; // align pls
+				if (r_buf_fread_at (bo->b, addr, (ut8*)&cdbuf, "9I", 1) == -1) {
+					R_LOG_WARN ("Cant read at 0x%"PFMT64x, (ut64)addr);
+					// cant read the struct
+				} else {
+					cb_printf ("0x%08"PFMT64x" code.dir.magic   0x%08x\n", (ut64)addr, cdbuf.magic);
+					cb_printf ("0x%08"PFMT64x" code.dir.length  0x%08x\n", (ut64)addr+4, cdbuf.length);
+					cb_printf ("0x%08"PFMT64x" code.dir.version 0x%08x\n", (ut64)addr+8, cdbuf.version);
+					cb_printf ("0x%08"PFMT64x" code.dir.flags   0x%08x\n", (ut64)addr+12, cdbuf.flags);
+				}
+				addr += sizeof (CodeDirectory) - 4;
+			}
+			break;
+		case 0xfade0cc0: // embedded signature
+			break;
+		case 0xfade0c01: // requirements
+		case 0xfade0b01:
+			// code signature
+			break;
+		case 0xfade7171:
+			// digest
+			break;
+		default:
+			R_LOG_ERROR ("unknown codesign magic 0x%08x", magic);
+			break;
+		}
+	}
+
+}
+
 void MACH0_(mach_headerfields)(RBinFile *bf) {
 	struct MACH0_(obj_t) *bin = bf->o->bin_obj;
 	PrintfCallback cb_printf = bf->rbin->cb_printf;
@@ -4587,12 +4677,14 @@ void MACH0_(mach_headerfields)(RBinFile *bf) {
 			cb_printf ("0x%08"PFMT64x"  cryptid    %d\n", pvaddr + 8, word);
 			break;
 		}
+		// https://opensource.apple.com/source/Security/Security-55471/sec/Security/Tool/codesign.c.auto.html
 		case LC_CODE_SIGNATURE: {
 			ut32 words[2];
 			r_buf_read_at (buf, addr, (ut8 *)words, sizeof (words));
-			cb_printf ("0x%08"PFMT64x"  dataoff     0x%08x\n", pvaddr, words[0]);
-			cb_printf ("0x%08"PFMT64x"  datasize    %d\n", pvaddr + 4, words[1]);
+			cb_printf ("0x%08"PFMT64x"  codesig.dataoff     0x%08x\n", pvaddr, words[0]);
+			cb_printf ("0x%08"PFMT64x"  codesig.datasize    %d\n", pvaddr + 4, words[1]);
 			cb_printf ("# wtf mach0.sign %d @ 0x%x\n", words[1], words[0]);
+			walk_codesig (bf, words[0], words[1]);
 			break;
 		}
 		}
@@ -4717,18 +4809,20 @@ struct MACH0_(mach_header) *MACH0_(get_hdr)(RBuffer *buf) {
 		free (macho_hdr);
 		return false;
 	}
-
-	if (r_read_le32 (magicbytes) == 0xfeedface) {
+	const ut32 lemagic = r_read_le32 (magicbytes);
+	const ut32 bemagic = r_read_be32 (magicbytes);
+	// TODO: simplify this
+	if (lemagic == 0xfeedface) {
 		big_endian = false;
-	} else if (r_read_be32 (magicbytes) == 0xfeedface) {
+	} else if (bemagic == 0xfeedface) {
 		big_endian = true;
-	} else if (r_read_le32 (magicbytes) == FAT_MAGIC) {
+	} else if (lemagic == FAT_MAGIC) {
 		big_endian = false;
-	} else if (r_read_be32 (magicbytes) == FAT_MAGIC) {
+	} else if (bemagic == FAT_MAGIC) {
 		big_endian = true;
-	} else if (r_read_le32 (magicbytes) == 0xfeedfacf) {
+	} else if (lemagic == 0xfeedfacf) {
 		big_endian = false;
-	} else if (r_read_be32 (magicbytes) == 0xfeedfacf) {
+	} else if (bemagic == 0xfeedfacf) {
 		big_endian = true;
 	} else {
 		/* also extract non-mach0s */
