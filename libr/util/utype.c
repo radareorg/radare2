@@ -84,6 +84,7 @@ R_API void r_type_enum_free(RTypeEnum *member) {
 }
 
 R_API char *r_type_enum_member(Sdb *TDB, const char *name, const char *member, ut64 val) {
+	r_return_val_if_fail (TDB && name, NULL);
 	if (r_type_kind (TDB, name) != R_TYPE_ENUM) {
 		return NULL;
 	}

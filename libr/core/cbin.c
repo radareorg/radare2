@@ -3407,10 +3407,10 @@ static int bin_fields(RCore *r, PJ *pj, int mode, int va) {
 			}
 			char *o = r_core_cmd_strf (r, "pfj%c%s@0x%"PFMT64x,
 				field->format_named ? '.' :  ' ', field->format, field->vaddr);
-			if (o && *o) {
-				r_str_trim_tail(o);
+			if (R_STR_ISNOTEMPTY (o)) {
+				r_str_trim_tail (o);
 				pj_k (pj, "pf");
-				pj_j (pj, o);
+				pj_j (pj, o); // XXX  if json is invalid this may fuck the things
 			}
 			free (o);
 			pj_end (pj);
