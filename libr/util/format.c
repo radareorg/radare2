@@ -1463,7 +1463,7 @@ static void r_print_format_bitfield(const RPrint* p, ut64 seeki, char *fmtname,
 
 static void r_print_format_enum(const RPrint* p, ut64 seeki, char *fmtname,
 		char *fieldname, ut64 addr, int mode, int size) {
-	char *enumvalue = NULL;
+	r_return_if_fail (p && fmtname && fieldname);
 	if (size >= 8) {
 		// avoid shift overflow
 	} else {
@@ -1472,8 +1472,8 @@ static void r_print_format_enum(const RPrint* p, ut64 seeki, char *fmtname,
 	if (MUSTSEE && !SEEVALUE) {
 		p->cb_printf ("0x%08"PFMT64x" = ", seeki);
 	}
-	enumvalue = r_type_enum_member (p->sdb_types, fmtname, NULL, addr);
-	if (enumvalue && *enumvalue) {
+	char *enumvalue = r_type_enum_member (p->sdb_types, fmtname, NULL, addr);
+	if (R_STR_ISNOTEMPTY (enumvalue)) {
 		if (mode & R_PRINT_DOT) {
 			p->cb_printf ("%s.%s", fmtname, enumvalue);
 		} else if (MUSTSEEJSON) {
@@ -2662,7 +2662,11 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len, cons
 					if (size >= ARRAYINDEX_COEF) {
 						size %= ARRAYINDEX_COEF;
 					}
-					r_print_format_enum (p, seeki, fmtname, fieldname, addr, mode, size);
+					if (fmtname) {
+						r_print_format_enum (p, seeki, fmtname, fieldname, addr, mode, size);
+					} else {
+						R_LOG_ERROR ("Missing enum type after the E()");
+					}
 					i += (size == -1)? 1: size;
 					break;
 				case 'r':
@@ -2720,10 +2724,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len, cons
 					format = strchr (fmtname, ' ');
 					if (format) {
 						anon = 1;
-						fmtname = format;
-						while (*fmtname == ' ') {
-							fmtname++;
-						}
+						fmtname = (char *)r_str_trim_head_ro (format);
 					}
 					oldslide = slide;
 					//slide += (isptr) ? STRUCTPTR : NESTEDSTRUCT;
