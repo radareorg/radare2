@@ -85,8 +85,9 @@ static int findstrings(RSearch *s, ut64 from, const ut8 *buf, int len, RSearchKe
 				str[matches] = '\0';
 				size_t len = strlen (str);
 				if (len > 2) {
+					kw->keyword_length = len;
 					if (widechar) {
-						ut64 off = (ut64)from + i -(len * 2) + 1;
+						ut64 off = (ut64)from + i - (len * 2) + 1;
 						r_search_hit_new (s, kw, off);
 					} else {
 						ut64 off = (ut64)from + i - matches;

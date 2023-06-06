@@ -912,19 +912,16 @@ static int cmd_meta_others(RCore *core, const char *input) {
 			} else if (range > 32 * 1024 * 1024) {
 				R_LOG_ERROR ("Range is too large");
 			} else {
-				ut8 *buf = malloc (range);
+				ut8 *buf = malloc (range + 1);
 				if (buf) {
+					buf[range] = 0;
 					const ut64 addr = core->offset;
 					int minstr = 3;
 					int maxstr = r_config_get_i (core->config, "bin.str.max");
 					if (maxstr < 1) {
 						maxstr = 128;
 					}
-#if 1
-					// if (!*buf) {
-						r_core_cmdf (core, "Cz@0x%08"PFMT64x, addr);
-					// }
-#endif
+					r_core_cmdf (core, "Cz@0x%08"PFMT64x, addr);
 					// maps are not yet set
 					char *s = r_core_cmd_str (core, "o;om");
 					free (s);
