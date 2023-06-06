@@ -19,6 +19,9 @@ git grep 'eprintf (' libr | grep Usage | wc -l
 printf -- "f(char)\t"
 git grep 'free ((char' libr | wc -l
 
+printf -- "IS_DIGIT\t"
+git grep 'IS_DIGIT' libr | wc -l
+
 printf -- "f(void)\t"
 git grep 'free ((void' libr | wc -l
 
