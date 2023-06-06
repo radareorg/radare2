@@ -112,6 +112,7 @@ R_API REsil *r_esil_new(int stacksize, int iotrap, unsigned int addrsize) {
 	r_esil_handlers_init (esil);
 	r_esil_plugins_init (esil);
 	esil->addrmask = genmask (addrsize - 1);
+	esil->trace = r_esil_trace_new (esil);
 	return esil;
 }
 
@@ -510,12 +511,12 @@ R_API int r_esil_get_parm_type(REsil *esil, const char *str) {
 	if (r_str_startswith (str, "0x")) {
 		return R_ESIL_PARM_NUM;
 	}
-	if (!((IS_DIGIT (str[0])) || str[0] == '-')) {
+	if (!((isdigit(str[0])) || str[0] == '-')) {
 		return not_a_number (esil, str);
 	}
 	size_t i;
 	for (i = 1; str[i]; i++) {
-		if (!IS_DIGIT (str[i])) {
+		if (!isdigit (str[i])) {
 			return not_a_number (esil, str);
 		}
 	}
@@ -1652,9 +1653,7 @@ static bool esil_mod(REsil *esil) {
 	if (src && r_esil_get_parm (esil, src, &s)) {
 		if (dst && r_esil_get_parm (esil, dst, &d)) {
 			if (s == 0) {
-				if (esil->verbose > 0) {
-					R_LOG_WARN ("0x%08"PFMT64x" esil_mod: Division by zero!", esil->address);
-				}
+				R_LOG_DEBUG ("0x%08"PFMT64x" esil_mod: Division by zero!", esil->address);
 				esil->trap = R_ANAL_TRAP_DIVBYZERO;
 				esil->trap_code = 0;
 			} else {
@@ -1678,9 +1677,7 @@ static bool esil_signed_mod(REsil *esil) {
 	if (src && r_esil_get_parm (esil, src, (ut64 *)&s)) {
 		if (dst && r_esil_get_parm (esil, dst, (ut64 *)&d)) {
 			if (ST64_DIV_OVFCHK (d, s)) {
-				if (esil->verbose > 0) {
-					R_LOG_WARN ("0x%08"PFMT64x" esil_mod: Division by zero!", esil->address);
-				}
+				R_LOG_DEBUG ("0x%08"PFMT64x" esil_mod: Division by zero!", esil->address);
 				esil->trap = R_ANAL_TRAP_DIVBYZERO;
 				esil->trap_code = 0;
 			} else {
@@ -3987,8 +3984,6 @@ R_API bool r_esil_setup(REsil *esil, RAnal *anal, int romem, int stats, int nonu
 	esil->trap_code = 0;
 	//esil->user = NULL;
 	esil->cb.reg_read = internal_esil_reg_read;
-	esil->cb.mem_read = internal_esil_mem_read;
-
 	if (nonull) {
 		// this is very questionable, most platforms allow accessing NULL
 		// never writes zero to PC, BP, SP, why? because writing

@@ -517,7 +517,7 @@ R_API void r_core_anal_type_match(RCore *core, RAnalFunction *fcn) {
 	r_return_if_fail (core && core->anal && fcn);
 
 	if (!core->anal->esil) {
-		eprintf ("Please run aeim\n");
+		R_LOG_WARN ("Please run aeim");
 		return;
 	}
 
@@ -561,6 +561,7 @@ R_API void r_core_anal_type_match(RCore *core, RAnalFunction *fcn) {
 	char *ret_reg = NULL;
 	const char *_pc = r_reg_get_name (core->dbg->reg, R_REG_NAME_PC);
 	if (!_pc) {
+		anal_emul_restore (core, hc, dt, et);
 		return;
 	}
 	int retries = 2;
@@ -568,6 +569,7 @@ R_API void r_core_anal_type_match(RCore *core, RAnalFunction *fcn) {
 	r_cons_break_push (NULL, NULL);
 repeat:
 	if (retries < 0) {
+		anal_emul_restore (core, hc, dt, et);
 		free (pc);
 		return;
 	}

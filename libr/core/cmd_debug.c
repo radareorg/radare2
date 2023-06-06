@@ -501,8 +501,9 @@ static RCoreHelpMessage help_msg_dte = {
 	"Usage: dte", "", "Show esil trace logs",
 	"dte", "", "esil trace log for a single instruction",
 	"dte", " [idx]", "show commands for that index log",
-	"dte", "-*", "delete all esil traces",
-	"dtei", "", "esil trace log single instruction",
+	"dte", "-*", "delete all the esil traces recorded",
+	"dtei", "", "emulate instruction and record a trace their effects",
+	"dted", "", "disassemble all traced instructions",
 	"dtek", " [sdb query]", "esil trace log single instruction from sdb",
 	NULL
 };
@@ -5378,10 +5379,18 @@ static int cmd_debug(void *data, const char *input) {
 			}
 			break;
 		case 'a': // "dta"
-			r_debug_trace_at (core->dbg, input + 3);
+			if (input[2]) {
+				r_debug_trace_at (core->dbg, input + 3);
+			} else {
+				r_debug_trace_at (core->dbg, "$$");
+			}
 			break;
 		case 't': // "dtt"
-			r_debug_trace_tag (core->dbg, atoi (input + 3));
+			if (input[2]) {
+				r_debug_trace_tag (core->dbg, atoi (input + 3));
+			} else {
+				r_debug_trace_tag (core->dbg, 0);
+			}
 			break;
 		case 'c': // "dtc"
 			if (input[2] == '?') {
@@ -5391,7 +5400,7 @@ static int cmd_debug(void *data, const char *input) {
 			}
 			break;
 		case 'd': // "dtd"
-			min = r_num_math (core->num, input + 3);
+			min = r_num_math (core->num, input[2]? input + 3: input + 2);
 			if (input[2] == 'q') { // "dtdq"
 				int n = 0;
 				r_list_foreach (core->dbg->trace->traces, iter, trace) {
@@ -5502,12 +5511,12 @@ static int cmd_debug(void *data, const char *input) {
 				RAnalOp *op = r_core_anal_op (core, addr, R_ARCH_OP_MASK_ESIL);
 				if (op) {
 					r_esil_trace_op (core->anal->esil, op);
+					r_anal_op_free (op);
 				}
-				r_anal_op_free (op);
 			} break;
 			case '-': // "dte-"
 				if (!strcmp (input + 3, "*")) {
-					if (core->anal->esil) {
+					if (core->anal->esil && core->anal->esil->trace) {
 						sdb_free (core->anal->esil->trace->db);
 						core->anal->esil->trace->db = sdb_new0 ();
 					}
@@ -5516,22 +5525,41 @@ static int cmd_debug(void *data, const char *input) {
 				}
 				break;
 			case ' ': { // "dte "
-				int idx = atoi (input + 3);
-				r_esil_trace_show (
-					core->anal->esil, idx);
-			} break;
+					int idx = atoi (input + 3);
+					r_esil_trace_show (core->anal->esil, idx);
+				}
+				break;
+			case 'd':
+				r_core_cmd0 (core, "pd 1 @@=`dte~addr[1]`");
+				break;
 			case 'k': // "dtek"
-				if (input[3] == ' ') {
-					char *s = sdb_querys (core->anal->esil->trace->db,
-							NULL, 0, input + 4);
-					r_cons_println (s);
-					free (s);
+				if (input[3] == 0) {
+					Sdb *db = core->anal->esil->trace->db;
+					char *s = sdb_querys (db, NULL, 0, "*");
+					if (s) {
+						r_str_trim (s);
+						r_cons_println (s);
+						free (s);
+					}
+				} else if (input[3] == ' ') {
+					if (core->anal->esil->trace) {
+						Sdb *db = core->anal->esil->trace->db;
+						char *s = sdb_querys (db, NULL, 0, input + 4);
+						if (s) {
+							r_str_trim (s);
+							r_cons_println (s);
+							free (s);
+						}
+					} else {
+						R_LOG_ERROR ("esil->trace is null. run 'e dbg.trace=true;dtei' to fix that. ");
+					}
 				} else {
 					r_core_cmd_help_match (core, help_msg_dte, "dtek", true);
 				}
 				break;
 			default:
 				r_core_cmd_help (core, help_msg_dte);
+				break;
 			}
 			break;
 		case 's': // "dts"
