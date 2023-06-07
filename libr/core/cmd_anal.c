@@ -3185,16 +3185,15 @@ static bool anal_fcn_list_bb(RCore *core, const char *input, bool one) {
 			}
 		}
 		switch (mode) {
-		case 't':
+		case 't': // "afbt"
 			r_table_add_rowf (t, "xdxx", b->addr, b->size, b->jump, b->fail);
 			break;
-		case 'r':
-			if (b->jump == UT64_MAX) {
+		case 'r': // "afbr"
+			if (b->jump == UT64_MAX || r_anal_noreturn_at_addr (core->anal, b->jump)) {
 				ut64 retaddr = r_anal_bb_opaddr_i (b, b->ninstr - 1);
 				if (retaddr == UT64_MAX) {
 					break;
 				}
-
 				if (!strcmp (input, "*")) {
 					r_cons_printf ("db 0x%08"PFMT64x"\n", retaddr);
 				} else if (!strcmp (input, "-*")) {
@@ -3208,13 +3207,13 @@ static bool anal_fcn_list_bb(RCore *core, const char *input, bool one) {
 			r_cons_printf ("f bb.%05" PFMT64x " = 0x%08" PFMT64x "\n",
 				b->addr & 0xFFFFF, b->addr);
 			break;
-		case 'q':
+		case 'q': // "afbq"
 			r_cons_printf ("0x%08" PFMT64x "\n", b->addr);
 			break;
-		case 'j':
+		case 'j': // "afbj"
 			print_bb (pj, b, fcn, addr);
 			break;
-		case 'i':
+		case 'i': // "afbi"
 			if (*input == 'j') { // "afbij"
 				pj = r_core_pj_new (core);
 				if (!pj) {
