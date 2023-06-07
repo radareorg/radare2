@@ -173,7 +173,7 @@ EXPECT=<<EOF
 0x001044d0    1      4 fcn.001044d0
 0x00104654    2     26 fcn.00104654
 0x00104b72    3     62 fcn.00104b72
-0x00104ec0    2     30 fcn.00104ec0
+0x00104ec0    1      4 fcn.00104ec0
 0x00104ec4   16    300 sym.___udivdi3
 0x001052d8    5     74 sym.___main
 0x00105322    3     34 sym._exit

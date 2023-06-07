@@ -547,7 +547,7 @@ EXPECT=<<EOF
 | 0x004873b1      488d3dd03502.  lea rdi, str._nclosing_file_s__direct_opencount_u_n
 | 0x004873b8      31c0           xor eax, eax
 | 0x004873ba      e9b16cffff     jmp fcn.0047e070
-| // true: 0x0047e070
+
 | 0x004873c0      400fb6f6       movzx esi, sil
 \ 0x004873c4      e937f1ffff     jmp fcn.00486500
 | // true: 0x00486500
