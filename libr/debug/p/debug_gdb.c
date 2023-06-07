@@ -1,8 +1,6 @@
 /* radare - LGPL - Copyright 2009-2023 - pancake, defragger */
 
 #include <r_core.h>
-#include <r_asm.h>
-#include <r_debug.h>
 #include <libgdbr.h>
 #include <gdbclient/commands.h>
 
@@ -14,14 +12,15 @@ typedef struct {
 #define UNSUPPORTED 0
 #define SUPPORTED 1
 
-static RIOGdb ** origriogdb = NULL;
-static libgdbr_t *desc = NULL;
-static ut8* reg_buf = NULL;
-static int buf_size = 0;
-static int support_sw_bp = UNKNOWN;
-static int support_hw_bp = UNKNOWN;
+static R_TH_LOCAL RIOGdb ** origriogdb = NULL;
+static R_TH_LOCAL libgdbr_t *desc = NULL;
+static R_TH_LOCAL ut8* reg_buf = NULL;
+static R_TH_LOCAL int buf_size = 0;
+static R_TH_LOCAL int support_sw_bp = UNKNOWN;
+static R_TH_LOCAL int support_hw_bp = UNKNOWN;
 
 static bool r_debug_gdb_attach(RDebug *dbg, int pid);
+
 static void check_connection(RDebug *dbg) {
 	if (!desc) {
 		r_debug_gdb_attach (dbg, -1);
@@ -97,7 +96,37 @@ static bool gdb_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 	return true;
 }
 
-static RList *r_debug_gdb_map_get(RDebug* dbg) { //TODO
+#ifdef _MSC_VER
+#define GDB_FILE_OPEN_MODE (_S_IREAD | _S_IWRITE)
+#else
+#define GDB_FILE_OPEN_MODE (S_IRUSR | S_IWUSR | S_IXUSR)
+#endif
+
+static char *read_remote_maps(ut64 *buflen) {
+	*buflen = 0;
+	char *fn = r_str_newf ("/proc/%d/maps", desc->pid);
+	if (gdbr_open_file (desc, fn, O_RDONLY, GDB_FILE_OPEN_MODE) < 0) {
+		free (fn);
+		return NULL;
+	}
+	free (fn);
+	int blen = 1024 * 512;
+	char *buf = malloc (blen);
+	if (buf) {
+		int ret = gdbr_read_file (desc, (ut8*)buf, blen);
+		if (ret < 1) {
+			free (buf);
+			return NULL;
+		}
+		*buflen = ret;
+		buf = realloc (buf, ret + 1);
+		buf[ret] = 0;
+	}
+	gdbr_close_file (desc);
+	return buf;
+}
+
+static RList *r_debug_gdb_map_get(RDebug* dbg) { // TODO
 	check_connection (dbg);
 	if (!desc || desc->pid <= 0) {
 		return NULL;
@@ -120,52 +149,26 @@ static RList *r_debug_gdb_map_get(RDebug* dbg) { //TODO
 		}
 	}
 
-	// Get file from GDB
-	char path[128];
-	ut8 *buf;
-	int ret;
-	// TODO don't hardcode buffer size, get from remote target
-	// (I think gdb doesn't do that, it just keeps reading till EOF)
-	// fstat info can get file size, but it doesn't work for /proc/pid/maps
-	ut64 buflen = 16384;
-	// If /proc/%d/maps is not valid for gdbserver, we return NULL, as of now
-	snprintf (path, sizeof (path) - 1, "/proc/%d/maps", desc->pid);
-
-#ifdef _MSC_VER
-#define GDB_FILE_OPEN_MODE (_S_IREAD | _S_IWRITE)
-#else
-#define GDB_FILE_OPEN_MODE (S_IRUSR | S_IWUSR | S_IXUSR)
-#endif
-
-	if (gdbr_open_file (desc, path, O_RDONLY, GDB_FILE_OPEN_MODE) < 0) {
+	ut64 buflen = 0;
+	ut8 *buf = (ut8*) read_remote_maps (&buflen);
+	if (!buf) {
+		R_LOG_ERROR ("Cannot read /proc/pid/maps");
 		return NULL;
 	}
-	if (!(buf = malloc (buflen))) {
-		gdbr_close_file (desc);
-		return NULL;
-	}
-	if ((ret = gdbr_read_file (desc, buf, buflen - 1)) <= 0) {
-		gdbr_close_file (desc);
-		free (buf);
-		return NULL;
-	}
-	buf[ret] = '\0';
 
 	// Get map list
 	int unk = 0, perm, i;
 	char *ptr, *pos_1;
 	size_t line_len;
-	char name[1024], region1[100], region2[100], perms[5];
+	char name[1024], region1[256], region2[100], perms[5];
 	region1[0] = region2[0] = '0';
 	region1[1] = region2[1] = 'x';
 	char *save_ptr = NULL;
 	if (!(ptr = r_str_tok_r ((char*) buf, "\n", &save_ptr))) {
-		gdbr_close_file (desc);
 		free (buf);
 		return NULL;
 	}
 	if (!(retlist = r_list_new ())) {
-		gdbr_close_file (desc);
 		free (buf);
 		return NULL;
 	}
@@ -177,15 +180,40 @@ static RList *r_debug_gdb_map_get(RDebug* dbg) { //TODO
 		if (line_len == 0) {
 			break;
 		}
+#if 1
+		char *wordstr = strdup (ptr);
+		r_str_replace_char (wordstr, '\t', ' ');
+		RList *words = r_str_split_list (wordstr, " ", 6);
+		int ret = r_list_length (words);
+		perms[0] = 0;
+		region1[2] = 0;
+		region2[2] = 0;
+		if (ret > 2) {
+			offset = r_num_get (NULL, r_list_get_n (words, 2));
+			r_str_ncpy (perms, r_list_get_n (words, 1), sizeof (perms));
+			r_str_ncpy (region1 + 2, r_list_get_n (words, 0), sizeof (region1) - 2);
+		}
+		if (ret > 6) {
+			const char *s = r_str_trim_head_ro (r_list_get_n (words, 6));
+			r_str_ncpy (name, s, sizeof (name));
+		} else {
+			*name = 0;
+		}
+		r_list_free (words);
+		free (wordstr);
+#else
 		// We assume Linux target, for now, so -
 		// 7ffff7dda000-7ffff7dfd000 r-xp 00000000 08:05 265428 /usr/lib/ld-2.25.so
+		// Android
+		// "12c00000-12c40000 rw-p 00000000 00:00 0                                  [anon:dalvik-main space (region space)]";
 		ret = sscanf (ptr, "%s %s %"PFMT64x" %*s %*s %[^\n]", &region1[2],
 			      perms, &offset, name);
+#endif
+		// eprintf ("RET = %d (%s)\n", ret, ptr);
 		if (ret == 3) {
 			name[0] = '\0';
 		} else if (ret < 3) {
-			R_LOG_WARN ("Cannot parse \"%s\" with content: %s", path, buf);
-			gdbr_close_file (desc);
+			R_LOG_WARN ("Cannot parse proc/pid/maps line: %s", buf);
 			free (buf);
 			r_list_free (retlist);
 			return NULL;
@@ -222,12 +250,11 @@ static RList *r_debug_gdb_map_get(RDebug* dbg) { //TODO
 			map->file = strdup (name);
 			r_list_append (retlist, map);
 		} else {
-			R_LOG_WARN ("Cannot create map 0x%08"PFMT64x" - 0x%08"PFMT64x" (%s)", map_start, map_end, perm);
+			R_LOG_WARN ("Cannot create map 0x%08"PFMT64x" - 0x%08"PFMT64x" (%s)", map_start, map_end, perms);
 			break;
 		}
 		ptr = r_str_tok_r (NULL, "\n", &save_ptr);
 	}
-	gdbr_close_file (desc);
 	free (buf);
 	return retlist;
 }
@@ -569,3 +596,4 @@ R_API RLibStruct radare_plugin = {
 	.version = R2_VERSION
 };
 #endif
+

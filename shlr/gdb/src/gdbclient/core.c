@@ -1453,25 +1453,24 @@ end:
 
 int gdbr_open_file(libgdbr_t *g, const char *filename, int flags, int mode) {
 	int ret = -1;
-	char *buf;
-	size_t buf_len;
 
-	if (!g || !filename || !*filename) {
+	if (!g || R_STR_ISEMPTY (filename)) {
 		return -1;
 	}
 	if (g->remote_file_fd >= 0) {
 		R_LOG_ERROR ("%s: Remote file already open", __func__);
 		return -1;
 	}
-	buf_len = (strlen (filename) * 2) + strlen ("vFile:open:") + 30;
-	if (!(buf = calloc (buf_len, sizeof (char)))) {
+	size_t buf_len = (strlen (filename) * 2) + strlen ("vFile:open:") + 30;
+	char *buf = calloc (buf_len, sizeof (char));
+	if (!buf) {
 		return -1;
 	}
 
 	if (!gdbr_lock_enter (g)) {
 		goto end;
 	}
-	strcpy (buf, "vFile:open:");
+	r_str_ncpy (buf, "vFile:open:", buf_len);
 	pack_hex (filename, strlen (filename), buf + strlen (buf));
 	snprintf (buf + strlen (buf), buf_len - strlen (buf) - 1, ",%x,%x", flags, mode);
 	if ((ret = send_msg (g, buf)) < 0) {
@@ -1484,21 +1483,17 @@ int gdbr_open_file(libgdbr_t *g, const char *filename, int flags, int mode) {
 
 	ret = 0;
 end:
-	if (buf) {
-		free (buf);
-	}
+	free (buf);
 	gdbr_lock_leave (g);
 	return ret;
 }
 
 int gdbr_read_file(libgdbr_t *g, ut8 *buf, ut64 max_len) {
+	r_return_val_if_fail (g && buf && max_len, -1);
 	int ret, ret1;
 	char command[64];
 	ut64 data_sz;
 	ret = 0;
-	if (!g || !buf || !max_len) {
-		return -1;
-	}
 	if (max_len >= INT32_MAX) {
 		R_LOG_ERROR ("%s: Too big a file read requested: %"PFMT64d, __func__, max_len);
 		return -1;
@@ -1538,8 +1533,7 @@ int gdbr_read_file(libgdbr_t *g, ut8 *buf, ut64 max_len) {
 			goto end;
 		}
 		ret += ret1;
-    }
-
+	}
 end:
 	gdbr_lock_leave (g);
 	return ret;
