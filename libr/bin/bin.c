@@ -905,6 +905,9 @@ R_API bool r_bin_use_arch(RBin *bin, const char *arch, int bits, const char *nam
 R_API bool r_bin_select(RBin *bin, const char *arch, int bits, const char *name) {
 	r_return_val_if_fail (bin, false);
 
+	if (!arch) {
+		return false;
+	}
 	RBinFile *cur = r_bin_cur (bin);
 	RBinObject *obj = NULL;
 	name = !name && cur? cur->file: name;
