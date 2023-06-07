@@ -139,10 +139,15 @@ R_API int java_print_opcode(RBinJavaObj *obj, ut64 addr, int idx, const ut8 *byt
 	case 0x3a: // "astore"
 	case 0xbc: // "newarray"
 	case 0xa9: // ret <var-num>
-		snprintf (output, outlen, "%s %d", JAVA_OPS[idx].name, bytes[1]);
-		output[outlen-1] = 0;
-		return update_bytes_consumed (JAVA_OPS[idx].size);
-
+		if (len > 1) {
+			snprintf (output, outlen, "%s %d", JAVA_OPS[idx].name, bytes[1]);
+			output[outlen-1] = 0;
+			return update_bytes_consumed (JAVA_OPS[idx].size);
+		} else {
+			// ERROR
+			return 0;
+		}
+		break;
 	case 0x12: // ldc
 		arg = r_bin_java_resolve_without_space (obj, (ut16)bytes[1]);
 		if (arg) {
