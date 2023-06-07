@@ -3305,6 +3305,15 @@ static bool cb_malloc(void *user, void *data) {
 
 static bool cb_log_config_level(void *coreptr, void *nodeptr) {
 	RConfigNode *node = (RConfigNode *)nodeptr;
+	if (!strcmp (node->value, "?")) {
+		r_cons_printf ("0 - fatal\n");
+		r_cons_printf ("1 - error\n");
+		r_cons_printf ("2 - info\n");
+		r_cons_printf ("3 - warn\n");
+		r_cons_printf ("4 - todo\n");
+		r_cons_printf ("5 - debug\n");
+		return false;
+	}
 	r_log_set_level (node->i_value);
 	return true;
 }

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2010-2022 - pancake */
+/* radare - LGPL - Copyright 2010-2023 - pancake */
 
 #include <r_anal.h>
 
@@ -132,7 +132,7 @@ R_API RAnalCond *r_anal_cond_new_from_op(RAnalOp *op) {
 }
 
 R_API RAnalCond *r_anal_cond_new_from_string(const char *str) {
-	RAnalCond *cond = R_NEW (RAnalCond);
+	RAnalCond *cond = R_NEW0 (RAnalCond);
 	// TODO: find '<','=','>','!'...
 	return cond;
 }
