@@ -165,6 +165,7 @@ static void get_src_regname(RCore *core, ut64 addr, char *regname, int size) {
 			}
 		}
 		r_str_ncpy (regname, op_esil, size);
+		r_unref (ri);
 	}
 	r_anal_op_free (op);
 }
