@@ -1,10 +1,8 @@
-/* libgdbr - LGPL - Copyright 2014 - defragger */
+/* libgdbr - LGPL - Copyright 2014-2023 - defragger */
 
 #include "libgdbr.h"
 #include "arch.h"
 #include <r_util.h>
-
-#include <stdio.h>
 
 int gdbr_init(libgdbr_t *g, bool is_server) {
 	if (!g) {
