@@ -1,10 +1,9 @@
-/* radare - LGPL - Copyright 2010-2022 - nibble, alvaro, pancake */
+/* radare - LGPL - Copyright 2010-2023 - nibble, alvaro, pancake */
 
 #define R_LOG_ORIGIN "fcn"
 
 #include <r_anal.h>
 #include <r_parse.h>
-#include <r_util.h>
 
 #define READ_AHEAD 1
 #define SDB_KEY_BB "bb.0x%"PFMT64x ".0x%"PFMT64x
@@ -134,6 +133,11 @@ static RAnalBlock *fcn_append_basic_block(RAnal *anal, RAnalFunction *fcn, ut64 
 #define gotoBeach(x) ret = x; goto beach;
 
 static bool is_invalid_memory(RAnal *anal, const ut8 *buf, int len) {
+	if (len > 8) {
+		if (!memcmp (buf, "\x00\x00\x00\x00\x00\x00\x00\x00", R_MIN (len, 8))) {
+			return true;
+		}
+	}
 	if (anal->opt.nonull > 0) {
 		int i;
 		const int count = R_MIN (len, anal->opt.nonull);
@@ -543,7 +547,8 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int
 	if (depth < -1) {
 		// only happens when we want to analyze 1 basic block
 		return R_ANAL_RET_ERROR; // MUST BE TOO DEEP
-	} else if (R_UNLIKELY ((depth < 0) && (depth != -1))) {
+	}
+	if (R_UNLIKELY ((depth < 0) && (depth != -1))) {
 		R_LOG_WARN ("Analysis of 0x%08"PFMT64x" stopped at 0x%08"PFMT64x", use a higher anal.depth to continue", fcn->addr, addr);
 		return R_ANAL_RET_ERROR;
 	}
@@ -701,10 +706,9 @@ repeat:
 			break;
 		}
 		// ret is the max length of bytes available
+		// eprintf("%02x %02x\n", buf[0], buf[1]);
 		if (is_invalid_memory (anal, buf, bytes_read)) {
-			if (anal->verbose) {
-				R_LOG_WARN ("FFFF opcode at 0x%08"PFMT64x, at);
-			}
+			R_LOG_DEBUG ("FFFF opcode at 0x%08"PFMT64x, at);
 			gotoBeach (R_ANAL_RET_ERROR)
 		}
 		r_anal_op_fini (op);
