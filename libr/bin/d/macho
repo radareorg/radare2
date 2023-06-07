@@ -32,3 +32,4 @@ pf.mach0_data_in_code_command [4]Edxd (mach0_load_command_type)cmd cmdsize offse
 pf.mach0_version_min_command [4]Edxx (mach0_load_command_type)cmd cmdsize version reserved
 pf.mach0_segment_split_info_command [4]Edxd (mach0_load_command_type)cmd cmdsize offset size
 pf.mach0_unixthread_command [4]Eddd (mach0_load_command_type)cmd cmdsize flavor count
+pf.mach0_code_directory exxxxxxxxxbbbb magic length version flags hashoff identoff nspecialslots ncodeslots codelimit hashsize hashtype spare pagesize

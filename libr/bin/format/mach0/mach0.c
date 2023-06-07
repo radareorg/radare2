@@ -45,21 +45,21 @@ struct symbol_t {
 	char *name;
 };
 
-typedef struct __CodeDirectory {
-	uint32_t magic;					/* magic number (CSMAGIC_CODEDIRECTORY) */
-	uint32_t length;				/* total length of CodeDirectory blob */
-	uint32_t version;				/* compatibility version */
-	uint32_t flags;					/* setup and mode flags */
-	uint32_t hashOffset;			/* offset of hash slot element at index zero */
-	uint32_t identOffset;			/* offset of identifier string */
-	uint32_t nSpecialSlots;			/* number of special hash slots */
-	uint32_t nCodeSlots;			/* number of ordinary (code) hash slots */
-	uint32_t codeLimit;				/* limit to main image signature range */
-	uint8_t hashSize;				/* size of each hash in bytes */
-	uint8_t hashType;				/* type of hash (cdHashType* constants) */
-	uint8_t spare1;					/* unused (must be zero) */
-	uint8_t	pageSize;				/* log2(page size in bytes); 0 => infinite */
-	uint32_t spare2;				/* unused (must be zero) */
+typedef struct {
+	ut32 magic;          /* magic number (CSMAGIC_CODEDIRECTORY) */
+	ut32 length;         /* total length of CodeDirectory blob */
+	ut32 version;        /* compatibility version */
+	ut32 flags;          /* setup and mode flags */
+	ut32 hashOffset;     /* offset of hash slot element at index zero */
+	ut32 identOffset;    /* offset of identifier string */
+	ut32 nSpecialSlots;  /* number of special hash slots */
+	ut32 nCodeSlots;     /* number of ordinary (code) hash slots */
+	ut32 codeLimit;      /* limit to main image signature range */
+	ut8 hashSize;        /* size of each hash in bytes */
+	ut8 hashType;        /* type of hash (cdHashType* constants) */
+	ut8 spare1;          /* unused (must be zero) */
+	ut8 pageSize;        /* log2(page size in bytes); 0 => infinite */
+	ut32 spare2;         /* unused (must be zero) */
 	/* followed by dynamic content as located by offset fields above */
 } CodeDirectory;
 
@@ -4439,22 +4439,39 @@ static void walk_codesig(RBinFile *bf, ut32 addr, ut32 size) {
 					R_LOG_WARN ("Cant read at 0x%"PFMT64x, (ut64)addr);
 					// cant read the struct
 				} else {
-					cb_printf ("0x%08"PFMT64x" code.dir.magic   0x%08x\n", (ut64)addr, cdbuf.magic);
-					cb_printf ("0x%08"PFMT64x" code.dir.length  0x%08x\n", (ut64)addr+4, cdbuf.length);
-					cb_printf ("0x%08"PFMT64x" code.dir.version 0x%08x\n", (ut64)addr+8, cdbuf.version);
-					cb_printf ("0x%08"PFMT64x" code.dir.flags   0x%08x\n", (ut64)addr+12, cdbuf.flags);
+					cb_printf ("0x%08"PFMT64x" code.dir.magic    0x%08x\n", (ut64)addr, cdbuf.magic);
+					cb_printf ("0x%08"PFMT64x" code.dir.length   0x%08x\n", (ut64)addr+4, cdbuf.length);
+					cb_printf ("0x%08"PFMT64x" code.dir.version  0x%08x\n", (ut64)addr+8, cdbuf.version);
+					cb_printf ("0x%08"PFMT64x" code.dir.flags    0x%08x\n", (ut64)addr+12, cdbuf.flags);
+					cb_printf ("0x%08"PFMT64x" code.dir.hashoff  0x%08x\n", (ut64)addr+16, cdbuf.hashOffset);
+					cb_printf ("0x%08"PFMT64x" code.dir.identoff 0x%08x\n", (ut64)addr+20, cdbuf.identOffset);
+					cb_printf ("0x%08"PFMT64x" code.dir.nspecials  0x%08x\n", (ut64)addr+24, cdbuf.nSpecialSlots);
+					cb_printf ("0x%08"PFMT64x" code.dir.ncodes     0x%08x\n", (ut64)addr+28, cdbuf.nCodeSlots);
+					cb_printf ("0x%08"PFMT64x" code.dir.codelimit  0x%08x\n", (ut64)addr+32, cdbuf.codeLimit);
+					// ut8
+					cb_printf ("0x%08"PFMT64x" code.dir.hashsize   0x%02x\n", (ut64)addr+36, cdbuf.hashSize);
+					cb_printf ("0x%08"PFMT64x" code.dir.hashtype   0x%02x\n", (ut64)addr+40, cdbuf.hashType);
+					cb_printf ("0x%08"PFMT64x" code.dir.pagesize   0x%02x\n", (ut64)addr+40, cdbuf.pageSize); // log2() or 0
 				}
 				addr += sizeof (CodeDirectory) - 4;
 			}
 			break;
 		case 0xfade0cc0: // embedded signature
+			cb_printf ("0x%08"PFMT64x" magic embedded signature\n", (ut64)addr);
+			break;
+		case 0xfade0cc1: // detached signature
+			cb_printf ("0x%08"PFMT64x" magic detached signature\n", (ut64)addr);
 			break;
 		case 0xfade0c01: // requirements
 		case 0xfade0b01:
-			// code signature
+			cb_printf ("0x%08"PFMT64x" codesign requirements\n", (ut64)addr);
 			break;
 		case 0xfade7171:
+			cb_printf ("0x%08"PFMT64x" codesign digest\n", (ut64)addr);
 			// digest
+			break;
+		case 0:
+			// nothing to do
 			break;
 		default:
 			R_LOG_ERROR ("unknown codesign magic 0x%08x", magic);
