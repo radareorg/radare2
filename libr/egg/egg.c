@@ -56,11 +56,13 @@ R_API REgg *r_egg_new(void) {
 	if (!egg->rasm) {
 		goto beach;
 	}
+#if 0
 	egg->anal = r_anal_new ();
 	if (!egg->anal) {
 		goto beach;
 	}
 	r_anal_bind (egg->anal, &egg->rasm->analb);
+#endif
 	egg->bits = 0;
 	egg->endian = 0;
 	egg->db = sdb_new (NULL, NULL, 0);
@@ -111,7 +113,7 @@ R_API void r_egg_free(REgg *egg) {
 		r_buf_free (egg->bin);
 		r_list_free (egg->list);
 		r_asm_free (egg->rasm);
-		r_anal_free (egg->anal);
+	//	r_anal_free (egg->anal);
 		r_syscall_free (egg->syscall);
 		sdb_free (egg->db);
 		r_list_free (egg->plugins);
