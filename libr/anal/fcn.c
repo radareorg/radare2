@@ -121,12 +121,11 @@ R_API int r_anal_function_resize(RAnalFunction *fcn, int newsize) {
 // Create a new 0-sized basic block inside the function
 static RAnalBlock *fcn_append_basic_block(RAnal *anal, RAnalFunction *fcn, ut64 addr) {
 	RAnalBlock *bb = r_anal_create_block (anal, addr, 0);
-	if (!bb) {
-		return NULL;
+	if (bb) {
+		r_anal_function_add_block (fcn, bb);
+		bb->stackptr = fcn->stack;
+		bb->parent_stackptr = fcn->stack;
 	}
-	r_anal_function_add_block (fcn, bb);
-	bb->stackptr = fcn->stack;
-	bb->parent_stackptr = fcn->stack;
 	return bb;
 }
 
@@ -135,7 +134,10 @@ static RAnalBlock *fcn_append_basic_block(RAnal *anal, RAnalFunction *fcn, ut64 
 static bool is_invalid_memory(RAnal *anal, const ut8 *buf, int len) {
 	if (len > 8) {
 		if (!memcmp (buf, "\x00\x00\x00\x00\x00\x00\x00\x00", R_MIN (len, 8))) {
-			return true;
+			const char *arch = R_UNWRAP3 (anal, config, arch);
+			if (arch && !strcmp (arch, "java")) {
+				return true;
+			}
 		}
 	}
 	if (anal->opt.nonull > 0) {
