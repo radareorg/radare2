@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2015-2022 - pancake, nibble */
+/* radare - LGPL - Copyright 2015-2023 - pancake, nibble */
 
 #include <r_anal.h>
 
@@ -140,7 +140,7 @@ static bool cb_list(void *user, const char *k, const char *v) {
 		a->cb_printf ("aep %s @ %s\n", v, k);
 	//	a->cb_printf ("%s = %s\n", k, v);
 	} else {
-		if (!strncmp (k, "cmd.", 4)) {
+		if (r_str_startswith (k, "cmd.")) {
 			a->cb_printf ("\"aep %s=%s\"\n", k + 4, v);
 		} else {
 			a->cb_printf ("\"aep %s\"\n", k);
