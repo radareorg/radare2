@@ -1093,8 +1093,12 @@ repeat:
 			}
 			{
 				RFlagItem *fi = anal->flb.get_at (anal->flb.f, op->jump, false);
-				if (fi && strstr (fi->name, "imp.")) {
-					gotoBeach (R_ANAL_RET_END);
+				if (fi) {
+					if (strstr (fi->name, "imp.")) {
+						gotoBeach (R_ANAL_RET_END);
+					} else if (r_str_startswith (fi->name, "sym.") || r_str_startswith (fi->name, "fcn.")) {
+						gotoBeach (R_ANAL_RET_END);
+					}
 				}
 			}
 			if (r_cons_is_breaked ()) {
