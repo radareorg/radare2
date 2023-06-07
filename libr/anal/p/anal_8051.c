@@ -67,23 +67,26 @@ static ut32 i8051_reg_read(RReg *reg, const char *regname) {
 
 typedef struct {
 	RIODesc *desc;
+	int desc_fd;
 	ut32 addr;
 	const char *name;
 } i8051_map_entry;
 
-static R_TH_LOCAL const int I8051_IDATA = 0;
-static R_TH_LOCAL const int I8051_SFR = 1;
-static R_TH_LOCAL const int I8051_XDATA = 2;
+enum {
+	I8051_IDATA = 0,
+	I8051_SFR = 1,
+	I8051_XDATA = 2
+};
 
 static i8051_map_entry mem_map[3] = {
-	{ NULL, UT32_MAX, "idata" },
-	{ NULL, UT32_MAX, "sfr" },
-	{ NULL, UT32_MAX, "xdata" }
+	{ NULL, -1, UT32_MAX, "idata" },
+	{ NULL, -1, UT32_MAX, "sfr" },
+	{ NULL, -1, UT32_MAX, "xdata" }
 };
 
 static void map_cpu_memory(RAnal *anal, int entry, ut32 addr, ut32 size, bool force) {
-	RIODesc *desc = mem_map[entry].desc;
-	int fd = desc? desc->fd: -1;
+	RIODesc *desc = mem_map[entry].desc; // XXX this is UAFable
+	int fd = desc? mem_map[entry].desc_fd: -1;
 	if (fd != -1 && anal->iob.fd_get_name (anal->iob.io, fd)) {
 		if (force || addr != mem_map[entry].addr) {
 			// reallocate mapped memory if address changed
@@ -109,6 +112,7 @@ static void map_cpu_memory(RAnal *anal, int entry, ut32 addr, ut32 size, bool fo
 		}
 	}
 	mem_map[entry].desc = desc;
+	mem_map[entry].desc_fd = fd;
 	mem_map[entry].addr = addr;
 }
 
