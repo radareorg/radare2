@@ -784,6 +784,9 @@ continuation:
 					show = true;
 				}
 			}
+			if (grep->counter) {
+				show = false;
+			}
 			if ((!ret && is_range_line_grep_only) || ret > 0) {
 				if (show) {
 					char *str = r_str_ndup (tline, ret);
@@ -804,8 +807,8 @@ continuation:
 					if (str) {
 						r_strbuf_append (ob, str);
 						r_strbuf_append (ob, "\n");
+						free (str);
 					}
-					free (str);
 				}
 				if (!grep->range_line) {
 					show = false;
