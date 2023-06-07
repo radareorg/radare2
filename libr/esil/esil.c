@@ -1001,7 +1001,7 @@ static int esil_interrupt_linux_i386(REsil *esil) { 		//move this into a plugin
 	}
 
 	if (sn != 0x80) {
-		eprintf ("Interrupt 0x%x not handled.", sn);
+		R_LOG_WARN ("Unhandled interrupt 0x%x at 0x%08"PFMT64x, sn, esil->pc);
 		esil->trap = R_ANAL_TRAP_UNHANDLED;
 		esil->trap_code = sn;
 		return -1;

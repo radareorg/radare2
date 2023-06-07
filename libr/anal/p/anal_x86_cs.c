@@ -974,6 +974,8 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 		dst, val,
 		src, dst,
 		bitsize - 1);
+		free (src);
+		free (dst);
 	   	}
 		break;
 	case X86_INS_SALC:
@@ -1014,6 +1016,7 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 				shft, bitsize, src, shft, dst_r, bitsize, dst_w, bitsize-1);
 			free (dst_r);
 			free (dst_w);
+			free (src);
 		}
 		break;
 	case X86_INS_PSLLDQ:

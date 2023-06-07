@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2015-2022 - pancake, rkx1209 */
+/* radare - LGPL - Copyright 2015-2023 - pancake, rkx1209 */
 
 #include <r_anal.h>
 
@@ -9,8 +9,8 @@
 #define CMP_REG_CHANGE(x, y) ((x) - ((REsilRegChange *)y)->idx)
 #define CMP_MEM_CHANGE(x, y) ((x) - ((REsilMemChange *)y)->idx)
 
-static int ocbs_set = false;
-static REsilCallbacks ocbs = {0};
+static R_TH_LOCAL int ocbs_set = false;
+static R_TH_LOCAL REsilCallbacks ocbs = {0};
 
 static void htup_vector_free(HtUPKv *kv) {
 	if (kv) {
@@ -78,7 +78,9 @@ R_API void r_esil_trace_free(REsilTrace *trace) {
 			r_reg_arena_free (trace->arena[i]);
 		}
 		free (trace->stack_data);
+		// eprintf ("sdb free %p%c", trace->db, 10);
 		sdb_free (trace->db);
+		trace->db = NULL;
 		R_FREE (trace);
 	}
 }
@@ -133,9 +135,10 @@ static bool trace_hook_reg_read(REsil *esil, const char *name, ut64 *res, int *s
 	}
 	if (ret) {
 		ut64 val = *res;
-		//eprintf ("[ESIL] REG READ %s 0x%08"PFMT64x"\n", name, val);
-		sdb_array_add (DB, KEY ("reg.read"), name, 0);
+		// eprintf ("[ESIL] REG READ %s 0x%08"PFMT64x"\n", name, val);
+		sdb_array_add (DB, KEY ("reg.read"), name, 0); // XXX this is very slow and memory hungry
 		sdb_num_set (DB, KEYREG ("reg.read", name), val, 0);
+		// eprintf ("select it %p%c", DB, 10);
 	}
 	return ret;
 }
@@ -224,7 +227,7 @@ R_API void r_esil_trace_op(REsil *esil, RAnalOp *op) {
 	}
 	/* restore from trace when `idx` is not at the end */
 	if (esil->trace->idx != esil->trace->end_idx) {
-		eprintf ("j %d\n", esil->trace->idx);
+		// eprintf ("j %d\n", esil->trace->idx);
 		r_esil_trace_restore (esil, esil->trace->idx + 1);
 		return;
 	}

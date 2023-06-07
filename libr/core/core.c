@@ -3135,8 +3135,10 @@ R_API bool r_core_init(RCore *core) {
 	r_lang_set_user_ptr (core->lang, core);
 	core->rasm = core->egg->rasm;
 	core->rasm->num = core->num;
-	r_asm_set_user_ptr (core->rasm, core);
 	core->anal = r_anal_new ();
+	core->egg->anal = core->anal;
+	r_anal_bind (core->egg->anal, &core->egg->rasm->analb);
+	r_asm_set_user_ptr (core->rasm, core);
 #if 1
 	// TODO: use r_ref_set
 	r_ref (core->rasm->config);
