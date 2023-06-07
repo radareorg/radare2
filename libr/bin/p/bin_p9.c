@@ -414,6 +414,10 @@ static RList *symbols(RBinFile *bf) {
 
 		// source file name components
 		if (sym.type == 'f') {
+			if (sym.value * 4 > r_buf_size (bf->buf)) {
+				R_LOG_ERROR ("Prevented huge memory allocation");
+				break;
+			}
 			if (r_pvector_length (names) < sym.value) {
 				if (!r_pvector_reserve (names, sym.value)) {
 					goto error;
