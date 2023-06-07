@@ -1,8 +1,6 @@
 /* radare - LGPL - Copyright 2016-2023 - oddcoder, sivaramaaa, pancake */
 /* type matching - type propagation */
 
-#include <r_anal.h>
-#include <r_util.h>
 #include <r_core.h>
 #define LOOP_MAX 10
 
@@ -152,24 +150,22 @@ static void get_src_regname(RCore *core, ut64 addr, char *regname, int size) {
 		r_anal_op_free (op);
 		return;
 	}
-	char *op_esil = strdup (r_strbuf_get (&op->esil));
+	char *op_esil = r_strbuf_get (&op->esil);
 	char *tmp = strchr (op_esil, ',');
 	if (tmp) {
 		*tmp = '\0';
 	}
-	memset (regname, 0, size);
+	regname[0] = 0;
 	RRegItem *ri = r_reg_get (anal->reg, op_esil, -1);
 	if (ri) {
 		if ((anal->config->bits == 64) && (ri->size == 32)) {
 			const char *reg = r_reg_32_to_64 (anal->reg, op_esil);
 			if (reg) {
-				free (op_esil);
-				op_esil = strdup (reg);
+				op_esil = reg;
 			}
 		}
-		strncpy (regname, op_esil, size - 1);
+		r_str_ncpy (regname, op_esil, size);
 	}
-	free (op_esil);
 	r_anal_op_free (op);
 }
 
@@ -284,6 +280,7 @@ static void retype_callee_arg(RAnal *anal, const char *callee_name, bool in_stac
  */
 static void type_match(RCore *core, char *fcn_name, ut64 addr, ut64 baddr, const char* cc,
 		int prev_idx, bool userfnc, ut64 caddr) {
+	r_return_if_fail (core && core->anal->esil && core->anal->esil->trace && fcn_name);
 	Sdb *trace = core->anal->esil->trace->db;
 	Sdb *TDB = core->anal->sdb_types;
 	RAnal *anal = core->anal;
