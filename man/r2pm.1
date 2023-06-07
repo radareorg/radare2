@@ -1,4 +1,4 @@
-.Dd Sep 21, 2022
+.Dd June 7, 2023
 .Dt R2PM 1
 .Sh NAME
 .Nm r2pm
@@ -34,6 +34,8 @@ Uninstall a package from the system directory
 List installed packages
 .It Fl s Ar keyword
 Search in database for packages matching keyword
+.It Fl t Ar YYYY-MM-DD
+Set the R2PM_TIME env var to tell the time to take package source from git
 .It Fl r Ar command ...args
 Run command with R2PM_BINDIR in PATH
 .It Fl p
@@ -85,6 +87,7 @@ List installed packages
  R2PM_DBDIR=~/.local/share/radare2/r2pm/db
  R2PM_GITDIR=~/.local/share/radare2/r2pm/git
  R2PM_GITSKIP=
+ R2PM_TIME=
 .Sh SEE ALSO
 .Pp
 .Xr radare2(1)

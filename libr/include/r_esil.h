@@ -174,6 +174,9 @@ typedef struct r_esil_t {
 	void *user;
 	int stack_fd;	// ahem, let's not do this
 	bool in_cmd_step;
+#if 0
+	bool trace_enabled;
+#endif
 } REsil;
 
 enum {
