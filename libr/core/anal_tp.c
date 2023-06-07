@@ -150,7 +150,7 @@ static void get_src_regname(RCore *core, ut64 addr, char *regname, int size) {
 		r_anal_op_free (op);
 		return;
 	}
-	char *op_esil = r_strbuf_get (&op->esil);
+	const char *op_esil = r_strbuf_get (&op->esil);
 	char *tmp = strchr (op_esil, ',');
 	if (tmp) {
 		*tmp = '\0';
