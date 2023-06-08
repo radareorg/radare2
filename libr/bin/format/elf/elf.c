@@ -519,9 +519,7 @@ static Elf_(Phdr) *get_dynamic_segment(ELFOBJ *eo) {
 
 static void set_default_value_dynamic_info(ELFOBJ *eo) {
 	eo->dyn_info.dt_pltrelsz = 0;
-	eo->dyn_info.dt_pltgot2sz = 0;
 	eo->dyn_info.dt_pltgot = R_BIN_ELF_ADDR_MAX;
-	eo->dyn_info.dt_pltgot2 = R_BIN_ELF_ADDR_MAX;
 	eo->dyn_info.dt_hash = R_BIN_ELF_ADDR_MAX;
 	eo->dyn_info.dt_strtab = R_BIN_ELF_ADDR_MAX;
 	eo->dyn_info.dt_symtab = R_BIN_ELF_ADDR_MAX;
@@ -570,20 +568,6 @@ static void fill_dynamic_entries(ELFOBJ *eo, ut64 loaded_offset, ut64 dyn_size) 
 		ut64 entry_offset = loaded_offset + i * sizeof (Elf_(Dyn));
 		if (!fill_dynamic_entry (eo, entry_offset, &d)) {
 			break;
-		}
-
-		if (eo->ehdr.e_machine == EM_PPC || eo->ehdr.e_machine == EM_PPC64) {
-			switch (d.d_tag) {
-			case DT_PPC_GOT:
-				eo->dyn_info.dt_pltgot2 = d.d_un.d_ptr;
-				eo->dyn_info.dt_pltgot2sz = 32768;
-				continue;
-			// case DT_PPC_GOTSZ:
-			// 	eo->dyn_info.dt_pltgot2sz = d.d_un.d_val;
-			// 	continue;
-			default:
-				break;
-			}
 		}
 
 		switch (d.d_tag) {
@@ -1730,21 +1714,8 @@ static ut64 get_import_addr_ppc(ELFOBJ *eo, RBinElfReloc *rel) {
 	}
 
 	if (rel->rva < plt_addr) {
-		// PPC sometimes has a .got2 section => try this as a fallback
-		if (eo->ehdr.e_machine == EM_PPC || eo->ehdr.e_machine == EM_PPC64) {
-			eprintf("adjusting plt_addr: %llx -> %llx\n", plt_addr, eo->dyn_info.dt_pltgot2);
-			plt_addr = eo->dyn_info.dt_pltgot2;
-			if (plt_addr == R_BIN_ELF_ADDR_MAX) {
-				return UT64_MAX;
-			}
-			if (rel->rva < plt_addr) {
-				R_LOG_WARN ("rva lower than plt_addr: 0x%"PFMT64x " < 0x%"PFMT64x, rel->rva, plt_addr);
-				return UT64_MAX;
-			}
-		} else {
-			R_LOG_WARN ("rva lower than plt_addr: 0x%"PFMT64x " < 0x%"PFMT64x, rel->rva, plt_addr);
-			return UT64_MAX;
-		}
+		R_LOG_WARN ("reloc rva lower than plt_addr: 0x%"PFMT64x " < 0x%"PFMT64x, rel->rva, plt_addr);
+		return UT64_MAX;
 	}
 
 	ut64 p_plt_addr = Elf_(v2p_new) (eo, plt_addr);
@@ -3295,8 +3266,8 @@ static const RVector *load_sections_from_phdr(ELFOBJ *eo) {
 	}
 
 	size_t num_sections = 0;
-	ut64 reldyn = 0, relava = 0, pltgotva = 0, pltgot2va = 0, relva = 0;
-	ut64 reldynsz = 0, relasz = 0, pltgotsz = 0, pltgot2sz = 0;
+	ut64 reldyn = 0, relava = 0, pltgotva = 0, relva = 0;
+	ut64 reldynsz = 0, relasz = 0, pltgotsz = 0;
 
 	if (eo->dyn_info.dt_rel != R_BIN_ELF_ADDR_MAX) {
 		reldyn = eo->dyn_info.dt_rel;
@@ -3316,15 +3287,8 @@ static const RVector *load_sections_from_phdr(ELFOBJ *eo) {
 		pltgotva = eo->dyn_info.dt_pltgot;
 		num_sections++;
 	}
-	if (eo->dyn_info.dt_pltgot2 != R_BIN_ELF_ADDR_MAX) {
-		pltgot2va = eo->dyn_info.dt_pltgot2;
-		num_sections++;
-	}
 	if (eo->dyn_info.dt_pltrelsz) {
 		pltgotsz = eo->dyn_info.dt_pltrelsz;  // XXX pltrel or pltgot?
-	}
-	if (eo->dyn_info.dt_pltgot2sz) {
-		pltgot2sz = eo->dyn_info.dt_pltgot2sz;
 	}
 	if (eo->dyn_info.dt_jmprel != R_BIN_ELF_ADDR_MAX) {
 		relava = eo->dyn_info.dt_jmprel;
@@ -3339,7 +3303,6 @@ static const RVector *load_sections_from_phdr(ELFOBJ *eo) {
 	create_section_from_phdr (eo, ".rela.plt", relava, pltgotsz);
 	create_section_from_phdr (eo, ".rel.plt", relva, relasz);
 	create_section_from_phdr (eo, ".got.plt", pltgotva, pltgotsz);
-	create_section_from_phdr (eo, ".got2.plt", pltgot2va, pltgot2sz);
 	return &eo->g_sections;
 }
 
@@ -3981,7 +3944,7 @@ static bool _read_symbols_from_phdr (ELFOBJ *eo, ReadPhdrSymbolState *state) {
 			if (new_symbol->st_value) {
 				toffset = new_symbol->st_value;
 			} else if ((toffset = get_import_addr (eo, i)) == UT64_MAX) {
-				toffset = 0;
+				// toffset = 0;
 			}
 			tsize = 16;
 		} else if (type == R_BIN_ELF_ALL_SYMBOLS) {
@@ -4576,7 +4539,7 @@ static bool _process_symbols_and_imports_in_section(ELFOBJ *eo, int type, Proces
 			if (memory->sym[k].st_value) {
 				toffset = memory->sym[k].st_value;
 			} else if ((toffset = get_import_addr (eo, k)) == UT64_MAX) {
-				toffset = 0;
+				// toffset = 0;
 			}
 			tsize = 16;
 			is_imported = memory->sym[k].st_shndx == STN_UNDEF;
