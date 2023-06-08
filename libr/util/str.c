@@ -800,35 +800,6 @@ R_API bool r_str_cmp_list(const char *list, const char *item, char sep) {
 	return true;
 }
 
-// R2_590 R_DEPRECATE
-// like strncmp, but checking for null pointers
-R_API int r_str_cmp(const char *a, const char *b, int len) {
-	if ((a == b) || (!a && !b)) {
-		return 0;
-	}
-	if (!a && b) {
-		return -1;
-	}
-	if (a && !b) {
-		return 1;
-	}
-	if (len < 0) {
-		return strcmp (a, b);
-	}
-	return strncmp (a, b, len);
-}
-// R2_590 R_DEPRECATE
-
-// Copies all characters from src to dst up until the character 'ch'.
-R_API int r_str_ccpy(char *dst, char *src, int ch) {
-	int i;
-	for (i = 0; src[i] && src[i] != ch; i++) {
-		dst[i] = src[i];
-	}
-	dst[i] = '\0';
-	return i;
-}
-
 R_API char *r_str_word_get_first(const char *text) {
 	for (; *text && IS_SEPARATOR (*text); text++) {
 		;
@@ -3362,32 +3333,6 @@ R_API char *r_str_wrap(const char *str, int w) {
 	}
 	*r = 0;
 	return ret;
-}
-
-// R2_590 - this function is unused so lets just do it well or kill it
-#if 0
-R_API const char *r_str_tok(const char *str1, const char *tok) {
-	char *pos = strstr (str1, tok);
-}
-#endif
-R_API const char *r_str_tok(const char *str1, const char b, size_t len) {
-	const char *p = str1;
-	size_t i = 0;
-	if (!p || !*p) {
-		return p;
-	}
-	if (len == -1) {
-		len = strlen (str1);
-	}
-	for ( ; i < len; i++, p++) {
-		if (*p == b) {
-			break;
-		}
-	}
-	if (i == len) {
-		p = NULL;
-	}
-	return p;
 }
 
 R_API int r_str_do_until_token(str_operation op, char *str, const char tok) {

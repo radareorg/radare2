@@ -2991,7 +2991,6 @@ static void printraw(RCore *core, int len, int mode) {
 	if (restore_obsz) {
 		(void) r_core_block_size (core, obsz);
 	}
-	core->cons->newline = core->cmd_in_backticks ? false : true;
 }
 
 static void _handle_call(RCore *core, char *line, char **str) {

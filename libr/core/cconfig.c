@@ -1071,10 +1071,6 @@ static bool cb_jsonencoding_numbers(void *user, void *data) {
 	return true;
 }
 
-static bool cb_asm_armimm(void *user, void *data) {	//TODO: Remove this for 5.8.
-	return true;
-}
-
 static bool cb_asm_invhex(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
@@ -3640,7 +3636,6 @@ R_API int r_core_config_init(RCore *core) {
 	SETI ("asm.hint.pos", 1, "shortcut hint position (-1, 0, 1)");
 	SETBPREF ("asm.slow", "true", "perform slow analysis operations in disasm");
 	SETBPREF ("asm.decode", "false", "use code analysis as a disassembler");
-	SETICB ("asm.imm.arm", false,  &cb_asm_armimm, "DEPRECATED, has no effect");	//TODO: Remove this for 5.8.
 	SETBPREF ("asm.imm.str", "true", "show immediates values as strings");
 	SETBPREF ("asm.imm.trim", "false", "remove all offsets and constants from disassembly");
 	SETBPREF ("asm.indent", "false", "indent disassembly based on reflines depth");
@@ -4253,7 +4248,6 @@ R_API int r_core_config_init(RCore *core) {
 	SETBPREF ("scr.wheel", "true", "mouse wheel in Visual; temporaryly disable/reenable by right click/Enter)");
 	SETBPREF ("scr.cursor", "false", "keyboard controlled cursor in visual and panels");
 	SETPREF ("scr.layout", "", "name of the selected panels layout to load as default");
-	// DEPRECATED: USES hex.cols now SETI ("scr.colpos", 80, "Column position of cmd.cprompt in visual");
 	SETCB ("scr.breakword", "", &cb_scrbreakword, "emulate console break (^C) when a word is printed (useful for pD)");
 	SETCB ("scr.breaklines", "false", &cb_breaklines, "break lines in Visual instead of truncating them");
 	SETCB ("scr.gadgets", "true", &cb_scr_gadgets, "run pg in prompt, visual and panels");

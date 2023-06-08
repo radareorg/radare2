@@ -427,7 +427,6 @@ static RCoreHelpMessage help_detail_ae = {
 	"$ds", "", "internal flag: delay-slot",
 	"$jt", "", "internal flag: jump-target",
 	"$js", "", "internal flag: jump-target-set",
-	// DEPRECATED "$r", "", "internal flag: jump-sign",
 	"$$", "", "internal flag: pc address",
 	NULL
 };

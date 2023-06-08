@@ -187,7 +187,6 @@ R_API bool r_str_cmp_list(const char *list, const char *item, char sep);
 R_API R_DEPRECATE int r_str_cmp(const char *dst, const char *orig, int len); // R2_590 R_DEPRECATE
 R_API int r_str_casecmp(const char *dst, const char *orig);
 R_API int r_str_ncasecmp(const char *dst, const char *orig, size_t n);
-R_API int r_str_ccpy(char *dst, char *orig, int ch);
 R_API const char *r_str_get(const char *str);
 R_API const char *r_str_get_fail(const char *str, const char *failstr);
 R_API const char *r_str_getf(const char *str);
