@@ -1822,14 +1822,19 @@ static void set_bin_relocs(RelocInfo *ri, RBinReloc *reloc, ut64 addr, Sdb **db,
 		}
 	}
 	r_name_filter (flagname, 0);
-	RFlagItem *fi = r_flag_set (r->flags, flagname, addr, bin_reloc_size (reloc));
-	if (demname) {
-		char *realname = (r->bin->prefix)
-			? r_str_newf ("%s.reloc.%s", r->bin->prefix, demname)
-			: r_str_newf ("%s", demname);
-		r_flag_item_set_realname (fi, realname);
-		free (realname);
+	if (addr == UT64_MAX) {
+		R_LOG_WARN ("Cannot resolve reloc %s", demname);
+	} else {
+		RFlagItem *fi = r_flag_set (r->flags, flagname, addr, bin_reloc_size (reloc));
+		if (demname) {
+			char *realname = (r->bin->prefix)
+				? r_str_newf ("%s.reloc.%s", r->bin->prefix, demname)
+				: r_str_newf ("%s", demname);
+			r_flag_item_set_realname (fi, realname);
+			free (realname);
+		}
 	}
+
 	free (demname);
 }
 
@@ -2018,6 +2023,11 @@ static int bin_relocs(RCore *r, PJ *pj, int mode, int va) {
 				free (relname);
 			}
 		} else if (IS_MODE_NORMAL (mode)) {
+			if (addr == UT64_MAX) {
+				R_LOG_WARN ("Cannot resolve address for %s", bin_reloc_type_name (reloc));
+				continue;
+			}
+
 			char *name = reloc->import
 				? strdup (reloc->import->name)
 					: reloc->symbol
@@ -2047,6 +2057,7 @@ static int bin_relocs(RCore *r, PJ *pj, int mode, int va) {
 			if (reloc->is_ifunc) {
 				r_strbuf_append (buf, " (ifunc)");
 			}
+
 			char *res = r_strbuf_drain (buf);
 			r_table_add_rowf (table, "XXss", addr, reloc->paddr,
 				bin_reloc_type_name (reloc), res);
