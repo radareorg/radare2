@@ -761,9 +761,8 @@ static int cmd_wf(void *data, const char *input) {
 }
 
 static void squash_write_cache(RCore *core, const char *input) {
-#if USE_NEW_IO_CACHE_API
 	R_LOG_TODO ("Squash is not implemented for the for the new io-cache");
-#else
+#if 0
 	void **iter;
 	RPVector *v = &core->io->cache;
 	ut64 end = UT64_MAX;
@@ -819,9 +818,8 @@ static void cmd_write_pcache(RCore *core, const char *input) {
 				desc = core->io->desc;
 			}
 			if ((caches = r_io_desc_cache_list (desc))) {
-#if USE_NEW_IO_CACHE_API
 				R_LOG_TODO ("pcache listing not working for the new io-cache (%d)", rad);
-#else
+#if 0
 				int i;
 				RIOCache *c;
 				RListIter *iter;
@@ -1345,13 +1343,8 @@ static void cmd_wcf(RCore *core, const char *dfn) {
 	ut8 *sfb = (ut8*)r_file_slurp (sfn, &sfs);
 	if (sfb) {
 		void **iter;
-#if USE_NEW_IO_CACHE_API
 		r_pvector_foreach (core->io->cache->vec, iter) {
 			RIOCacheItem *c = *iter;
-#else
-		r_pvector_foreach (&core->io->cache, iter) {
-			RIOCache *c = *iter;
-#endif
 			const ut64 ps = r_itv_size (c->itv);
 			const ut64 va = r_itv_begin (c->itv);
 			const ut64 pa = __va2pa (core, va);
@@ -1371,7 +1364,6 @@ static void cmd_wcf(RCore *core, const char *dfn) {
 static void wcu(RCore *core) {
 	void **iter;
 	RIO *io = core->io;
-#if USE_NEW_IO_CACHE_API
 	r_pvector_foreach_prev (io->cache->vec, iter) {
 		RIOCacheItem *c = *iter;
 		int cached = io->cached;
@@ -1387,27 +1379,6 @@ static void wcu(RCore *core) {
 		free_elem (c);
 		break;
 	}
-#else
-	r_pvector_foreach_prev (&io->cache, iter) {
-		RIOCache *c = *iter;
-		int cached = io->cached;
-		io->cached = 0;
-		r_io_write_at (io, r_itv_begin (c->itv), c->odata, r_itv_size (c->itv));
-		c->written = false;
-		io->cached = cached;
-		r_pvector_remove_data (&io->cache, c);
-		free (c->data);
-		free (c->odata);
-		free (c);
-		break;
-	}
-	r_skyline_clear (&io->cache_skyline);
-	r_pvector_foreach (&io->cache, iter) {
-		RIOCache *c = *iter;
-		c = *iter;
-		r_skyline_add (&io->cache_skyline, c->itv, c);
-	}
-#endif
 }
 
 static int cmd_wc(void *data, const char *input) {

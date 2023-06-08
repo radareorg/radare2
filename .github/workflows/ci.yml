@@ -80,34 +80,6 @@ jobs:
         cat /tmp/m.1
         echo ===== m.2
         cat /tmp/m.2
-    #- name: Building muon/samu
-    #  run: |
-    #    r2pm -gci muon # installs samurai as dependency
-        # ./preconfigure
-        # XXX muon setup m && samu -C m -j5
-  try-new-cache:
-    name: try-new-cache
-    runs-on: ubuntu-20.04
-    continue-on-error: true
-    steps:
-    - name: Checkout
-      uses: actions/checkout@v3
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install meson ninja r2pipe wget
-        sudo apt update --assume-yes
-        sudo apt install --assume-yes gperf
-    - name: Installing with symlinks
-      run: |
-        export CFLAGS="-O0 -Werror -Wno-unused-result -Wno-stringop-truncation"
-        sys/install.sh --with-new-io-cache
-    - name: Running tests
-      run: r2r -o /tmp/r2r.json test/db/cmd
-    - uses: actions/upload-artifact@v3
-      with:
-        name: r2r.json
-        path: /tmp/r2r.json
   build-acr-gperf:
     name: linux-acr-gperf
     runs-on: ubuntu-20.04

@@ -99,10 +99,6 @@ r_io = library('r_io', r_io_sources,
 r_io_dep = declare_dependency(link_with: [r_io, r_crypto],
   include_directories: platform_inc)
 
-if get_option('use_new_io_cache')
-  add_project_arguments('-DUSE_NEW_IO_CACHE_API=1', language: 'c')
-endif
-
 if get_option('blob')
 r_io_static_deps = [
   r_util_static_dep,

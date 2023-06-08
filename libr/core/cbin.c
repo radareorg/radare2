@@ -1924,11 +1924,7 @@ static int bin_relocs(RCore *r, PJ *pj, int mode, int va) {
 		return false;
 	}
 	if (bin_cache) {
-#if USE_NEW_IO_CACHE_API
 		bool cache_is_empty = r_pvector_length (r->io->cache->vec) == 0;
-#else
-		bool cache_is_empty = r_pvector_length (&r->io->cache) == 0;
-#endif
 		if (cache_is_empty) {
 			r_config_set_b (r->config, "io.cache", false);
 		} else {

@@ -10,10 +10,6 @@
 #include "r_skyline.h"
 #include <r_util/r_w32dw.h>
 
-#ifndef USE_NEW_IO_CACHE_API
-#define	USE_NEW_IO_CACHE_API	0
-#endif
-
 #define R_IO_SEEK_SET 0
 #define R_IO_SEEK_CUR 1
 #define R_IO_SEEK_END 2
@@ -107,13 +103,11 @@ typedef struct r_io_undo_w_t {
 	size_t len;  /* length */
 } RIOUndoWrite;
 
-#if USE_NEW_IO_CACHE_API
 typedef struct r_io_cache_t {
 	RPVector *vec;
 	RRBTree *tree;
 	RRBComparator ci_cmp_cb;
 } RIOCache;
-#endif
 
 typedef struct r_io_t {
 	struct r_io_desc_t *desc; // XXX deprecate... we should use only the fd integer, not hold a weak pointer
@@ -133,12 +127,7 @@ typedef struct r_io_t {
 	RIDStorage *files; // RIODescs accessible by their fd
 	RIDStorage *maps;  // RIOMaps accessible by their id
 	RIDStorage *banks; // RIOBanks accessible by their id
-#if USE_NEW_IO_CACHE_API
 	RIOCache *cache;
-#else
-	RPVector cache;
-	RSkyline cache_skyline;
-#endif
 	ut8 *write_mask;
 	int write_mask_len;
 	ut64 mask;
@@ -256,7 +245,6 @@ typedef struct r_io_bank_t {
 	bool drain_me;	// speedup r_io_nread_at
 } RIOBank;
 
-#if USE_NEW_IO_CACHE_API
 typedef struct io_cache_item_t {
 	RInterval *tree_itv;
 	RInterval itv;
@@ -264,15 +252,6 @@ typedef struct io_cache_item_t {
 	ut8 *odata;	//is this a good idea?
 	bool written;
 } RIOCacheItem;
-#else
-
-typedef struct r_io_cache_t {
-	RInterval itv;
-	ut8 *data;
-	ut8 *odata;
-	int written;
-} RIOCache;
-#endif
 
 #define R_IO_DESC_CACHE_SIZE (sizeof (ut64) * 8)
 typedef struct r_io_desc_cache_t {
@@ -531,12 +510,10 @@ R_API void r_io_cache_init(RIO *io);
 R_API void r_io_cache_fini(RIO *io);
 R_API bool r_io_cache_list(RIO *io, int rad);
 R_API void r_io_cache_reset(RIO *io, int set);
-#if USE_NEW_IO_CACHE_API
 R_API bool r_io_cache_write_at(RIO *io, ut64 addr, const ut8 *buf, int len);
 R_API bool r_io_cache_read_at(RIO *io, ut64 addr, ut8 *buf, int len);
 R_API RIOCache *r_io_cache_clone(RIO *io);
 R_API void r_io_cache_replace(RIO *io, RIOCache *cache);
-#endif
 R_API bool r_io_cache_write(RIO *io, ut64 addr, const ut8 *buf, int len);
 R_API bool r_io_cache_read(RIO *io, ut64 addr, ut8 *buf, int len);
 
