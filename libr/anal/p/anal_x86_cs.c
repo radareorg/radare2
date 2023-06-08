@@ -245,10 +245,13 @@ static char *getarg(struct Getarg* gop, int n, int set, char *setop, ut32 *bitsi
 	case X86_OP_REG:
 		{
 			const char *rn = cs_reg_name (handle, op.reg);
-			if (set == 1) {
-				return r_str_newf ("%s,%s=", rn? rn: "", setarg);
+			if (rn) {
+				if (set == 1) {
+					return r_str_newf ("%s,%s=", rn, setarg);
+				}
+				return strdup (rn);
 			}
-			return rn? strdup (rn): NULL;
+			return NULL;
 		}
 	case X86_OP_IMM:
 		if (set == 1) {
@@ -1526,8 +1529,17 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 			}
 			break;
 		case X86_OP_REG:
+#if 0
+			{
+				src = getarg (&gop, 0, 0, NULL, NULL);
+				val = r_vector_push (&op->srcs, NULL);
+				val->reg = r_reg_get (a->reg, src, R_REG_TYPE_GPR);
+				free (src);
+			}
+#else
 			val = r_vector_push (&op->srcs, NULL);
-			val->reg = cs_reg_name (handle,  INSOP (0).reg); // op->reg);
+			val->reg = cs_reg_name (handle, INSOP (0).reg);
+#endif
 			break;
 		//case X86_OP_FP:
 		default: // other?
