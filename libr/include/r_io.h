@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2017-2022 - condret, pancake */
+/* radare2 - LGPL - Copyright 2017-2023 - condret, pancake */
 
 #ifndef R2_IO_H
 #define R2_IO_H
@@ -7,7 +7,6 @@
 #include <r_util.h>
 #include <r_socket.h>
 #include <r_vector.h>
-#include "r_skyline.h"
 #include <r_util/r_w32dw.h>
 
 #define R_IO_SEEK_SET 0

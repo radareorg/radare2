@@ -825,7 +825,7 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, R_UNUSED int perm, const ch
 		if (m) {
 			append_bound (list, core->io, search_itv, m->itv.addr, m->itv.size, m->perm);
 		}
-	} else if (!strcmp (mode, "io.maps")) { // Non-overlapping RIOMap parts not overridden by others (skyline)
+	} else if (!strcmp (mode, "io.maps")) {
 		ut64 begin = UT64_MAX;
 		ut64 end = UT64_MAX;
 		RIOBank *bank = r_io_bank_get (core->io, core->io->bank);

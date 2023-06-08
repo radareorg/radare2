@@ -91,7 +91,6 @@ r_util_sources = [
   'utf16.c',
   'utf32.c',
   'vector.c',
-  'skyline.c',
   'sys_w32.c',
   'zip.c',
   'protobuf.c',
