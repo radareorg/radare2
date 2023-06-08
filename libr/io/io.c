@@ -347,8 +347,8 @@ R_API bool r_io_is_listener(RIO* io) {
 }
 
 R_API char *r_io_system(RIO* io, const char* cmd) {
-	if (io && io->desc && io->desc->plugin && io->desc->plugin->system) {
-		return io->desc->plugin->system (io, io->desc, cmd);
+	if (io && io->desc) {
+		return r_io_desc_system (io->desc, cmd);
 	}
 	return NULL;
 }
