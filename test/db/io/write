@@ -26,6 +26,9 @@ EXPECT=<<EOF
 EOF
 EXPECT_ERR=<<EOF
 WARN: run r2 with -e bin.cache=true to fix relocations in disassembly
+WARN: Cannot resolve symbol address _ITM_deregisterTMCloneTable
+WARN: Cannot resolve symbol address _Jv_RegisterClasses
+WARN: Cannot resolve symbol address _ITM_registerTMCloneTable
 ERROR: [cmd_write.c:184] Cannot write. Use `omf`, `io.cache` or reopen the file in rw with `oo+`
 EOF
 RUN
@@ -46,6 +49,9 @@ hello
 EOF
 EXPECT_ERR=<<EOF
 WARN: run r2 with -e bin.cache=true to fix relocations in disassembly
+WARN: Cannot resolve symbol address _ITM_deregisterTMCloneTable
+WARN: Cannot resolve symbol address _Jv_RegisterClasses
+WARN: Cannot resolve symbol address _ITM_registerTMCloneTable
 ERROR: [cmd_write_fail] Cannot write. Use `omf`, `io.cache` or reopen the file in rw with `oo+`
 EOF
 RUN

@@ -5,6 +5,8 @@ EXPECT=<<EOF
 0x401126
 EOF
 EXPECT_ERR=<<EOF
+WARN: Cannot resolve symbol address __libc_start_main
+WARN: Cannot resolve symbol address __gmon_start__
 EOF
 RUN
 

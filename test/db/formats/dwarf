@@ -701,6 +701,11 @@ addr: 0x00001149
 EOF
 EXPECT_ERR=<<EOF
 WARN: run r2 with -e bin.cache=true to fix relocations in disassembly
+WARN: Cannot resolve symbol address __libc_start_main
+WARN: Cannot resolve symbol address _ITM_deregisterTMCloneTable
+WARN: Cannot resolve symbol address __gmon_start__
+WARN: Cannot resolve symbol address _ITM_registerTMCloneTable
+WARN: Cannot resolve symbol address __cxa_finalize
 EOF
 RUN
 
