@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2017-2020 - condret */
+/* radare2 - LGPL - Copyright 2017-2023 - condret */
 
 #include <r_io.h>
 
@@ -48,6 +48,10 @@ R_API ut64 r_io_fd_size(RIO *io, int fd) {
 
 R_API bool r_io_fd_resize(RIO *io, int fd, ut64 newsize) {
 	return r_io_desc_resize (r_io_desc_get (io, fd), newsize);
+}
+
+R_API char *r_io_fd_system(RIO *io, int fd, const char *cmd) {
+	return r_io_desc_system (r_io_desc_get (io, fd), cmd);
 }
 
 R_API bool r_io_fd_is_blockdevice(RIO *io, int fd) {

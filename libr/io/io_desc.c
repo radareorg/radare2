@@ -238,6 +238,13 @@ R_API bool r_io_desc_resize(RIODesc *desc, ut64 newsize) {
 	return false;
 }
 
+R_API char *r_io_desc_system(RIODesc *desc, const char *cmd) {
+	if (desc && desc->plugin && desc->plugin->system) {
+		return desc->plugin->system (desc->io, desc, cmd);
+	}
+	return NULL;
+}
+
 R_API bool r_io_desc_is_blockdevice(RIODesc *desc) {
 	if (!desc || !desc->plugin || !desc->plugin->is_blockdevice) {
 		return false;
