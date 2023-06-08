@@ -143,7 +143,7 @@ nth paddr      vaddr      bind   type   size lib name                           
 66  ---------- 0x00004010 GLOBAL NOTYPE 0        _end
 1   0x00001050 0x00001050 GLOBAL FUNC   16       imp.__cxa_finalize
 2   0x0000105c 0x0000105c GLOBAL FUNC   16       imp.__cxa_atexit
-4   0x00000000 0x00000000 GLOBAL FUNC   16       imp.__aeabi_unwind_cpp_pr0
+4   ---------- ---------- GLOBAL FUNC   16       imp.__aeabi_unwind_cpp_pr0
 5   0x00001068 0x00001068 GLOBAL FUNC   16       imp._ZdlPv                                                          operator delete(void*)
 7   0x00001074 0x00001074 GLOBAL FUNC   16       imp.munmap
 8   0x00001080 0x00001080 GLOBAL FUNC   16       imp.__errno
@@ -161,15 +161,15 @@ nth paddr      vaddr      bind   type   size lib name                           
 30  0x00001110 0x00001110 GLOBAL FUNC   16       imp.property_get
 31  0x0000111c 0x0000111c GLOBAL FUNC   16       imp.strncmp
 32  0x00001128 0x00001128 GLOBAL FUNC   16       imp.__stack_chk_fail
-33  0x00000000 0x00000000 GLOBAL OBJ    16       imp.__stack_chk_guard
-34  0x00000000 0x00000000 GLOBAL OBJ    16       imp._ZN7android9SingletonIN7qdutils17QCCompositionTypeEE5sLockE
-35  0x00000000 0x00000000 GLOBAL OBJ    16       imp._ZN7android9SingletonIN7qdutils17QCCompositionTypeEE9sInstanceE
+33  ---------- ---------- GLOBAL OBJ    16       imp.__stack_chk_guard
+34  ---------- ---------- GLOBAL OBJ    16       imp._ZN7android9SingletonIN7qdutils17QCCompositionTypeEE5sLockE     android::Singleton<qdutils::QCCompositionType>::sLock
+35  ---------- ---------- GLOBAL OBJ    16       imp._ZN7android9SingletonIN7qdutils17QCCompositionTypeEE9sInstanceE android::Singleton<qdutils::QCCompositionType>::sInstance
 37  0x00001134 0x00001134 GLOBAL FUNC   16       imp.dlopen
 38  0x00001140 0x00001140 GLOBAL FUNC   16       imp.dlsym
 41  0x0000114c 0x0000114c GLOBAL FUNC   16       imp.dlclose
 44  0x00001158 0x00001158 GLOBAL FUNC   16       imp.strncasecmp
 46  0x00001164 0x00001164 GLOBAL FUNC   16       imp.pthread_mutex_init
-53  0x00000000 0x00000000 GLOBAL OBJ    16       imp.__page_size
+53  ---------- ---------- GLOBAL OBJ    16       imp.__page_size
 59  0x00001170 0x00001170 GLOBAL FUNC   16       imp.__aeabi_atexit
 EOF
 RUN

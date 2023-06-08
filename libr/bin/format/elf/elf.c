@@ -1713,6 +1713,11 @@ static ut64 get_import_addr_ppc(ELFOBJ *eo, RBinElfReloc *rel) {
 		return UT64_MAX;
 	}
 
+	if (rel->rva < plt_addr) {
+		R_LOG_WARN ("reloc rva lower than plt_addr: 0x%"PFMT64x " < 0x%"PFMT64x, rel->rva, plt_addr);
+		return UT64_MAX;
+	}
+
 	ut64 p_plt_addr = Elf_(v2p_new) (eo, plt_addr);
 	if (p_plt_addr == UT64_MAX) {
 		return UT64_MAX;
@@ -3283,7 +3288,7 @@ static const RVector *load_sections_from_phdr(ELFOBJ *eo) {
 		num_sections++;
 	}
 	if (eo->dyn_info.dt_pltrelsz) {
-		pltgotsz = eo->dyn_info.dt_pltrelsz;
+		pltgotsz = eo->dyn_info.dt_pltrelsz;  // XXX pltrel or pltgot?
 	}
 	if (eo->dyn_info.dt_jmprel != R_BIN_ELF_ADDR_MAX) {
 		relava = eo->dyn_info.dt_jmprel;
@@ -3939,7 +3944,7 @@ static bool _read_symbols_from_phdr (ELFOBJ *eo, ReadPhdrSymbolState *state) {
 			if (new_symbol->st_value) {
 				toffset = new_symbol->st_value;
 			} else if ((toffset = get_import_addr (eo, i)) == UT64_MAX) {
-				toffset = 0;
+				// toffset = 0;
 			}
 			tsize = 16;
 		} else if (type == R_BIN_ELF_ALL_SYMBOLS) {
@@ -4534,7 +4539,7 @@ static bool _process_symbols_and_imports_in_section(ELFOBJ *eo, int type, Proces
 			if (memory->sym[k].st_value) {
 				toffset = memory->sym[k].st_value;
 			} else if ((toffset = get_import_addr (eo, k)) == UT64_MAX) {
-				toffset = 0;
+				// toffset = 0;
 			}
 			tsize = 16;
 			is_imported = memory->sym[k].st_shndx == STN_UNDEF;

@@ -1806,9 +1806,13 @@ static void set_bin_relocs(RelocInfo *ri, RBinReloc *reloc, ut64 addr, Sdb **db,
 					ut64 saddr = reloc->vaddr - ri->got_va;
 					int index = (saddr / 4) - 4;
 					ut64 naddr = r_bin_a2b (r->bin, ri->plt_va + (index * 12) + 0x20);
-					char *internal_reloc = r_str_newf ("rsym.%s", reloc_name);
-					(void)r_flag_set (r->flags, internal_reloc, naddr, bin_reloc_size (reloc));
-					free (internal_reloc);
+					if (naddr == UT64_MAX) {
+						R_LOG_WARN ("Cannot resolve reloc reference %s", reloc_name);
+					} else {
+						char *internal_reloc = r_str_newf ("rsym.%s", reloc_name);
+						(void)r_flag_set (r->flags, internal_reloc, naddr, bin_reloc_size (reloc));
+						free (internal_reloc);
+					}
 				}
 			}
 		}
@@ -1822,14 +1826,19 @@ static void set_bin_relocs(RelocInfo *ri, RBinReloc *reloc, ut64 addr, Sdb **db,
 		}
 	}
 	r_name_filter (flagname, 0);
-	RFlagItem *fi = r_flag_set (r->flags, flagname, addr, bin_reloc_size (reloc));
-	if (demname) {
-		char *realname = (r->bin->prefix)
-			? r_str_newf ("%s.reloc.%s", r->bin->prefix, demname)
-			: r_str_newf ("%s", demname);
-		r_flag_item_set_realname (fi, realname);
-		free (realname);
+	if (addr == UT64_MAX) {
+		R_LOG_WARN ("Cannot resolve reloc %s", demname);
+	} else {
+		RFlagItem *fi = r_flag_set (r->flags, flagname, addr, bin_reloc_size (reloc));
+		if (demname) {
+			char *realname = (r->bin->prefix)
+				? r_str_newf ("%s.reloc.%s", r->bin->prefix, demname)
+				: r_str_newf ("%s", demname);
+			r_flag_item_set_realname (fi, realname);
+			free (realname);
+		}
 	}
+
 	free (demname);
 }
 
@@ -2018,6 +2027,11 @@ static int bin_relocs(RCore *r, PJ *pj, int mode, int va) {
 				free (relname);
 			}
 		} else if (IS_MODE_NORMAL (mode)) {
+			if (addr == UT64_MAX) {
+				R_LOG_WARN ("Cannot resolve address for %s", bin_reloc_type_name (reloc));
+				continue;
+			}
+
 			char *name = reloc->import
 				? strdup (reloc->import->name)
 					: reloc->symbol
@@ -2047,6 +2061,7 @@ static int bin_relocs(RCore *r, PJ *pj, int mode, int va) {
 			if (reloc->is_ifunc) {
 				r_strbuf_append (buf, " (ifunc)");
 			}
+
 			char *res = r_strbuf_drain (buf);
 			r_table_add_rowf (table, "XXss", addr, reloc->paddr,
 				bin_reloc_type_name (reloc), res);
@@ -2592,13 +2607,17 @@ static int bin_symbols(RCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at, 
 				char *fnp = (r->bin->prefix) ?
 					r_str_newf ("%s.%s", r->bin->prefix, fn):
 					strdup (r_str_get (fn));
-				RFlagItem *fi = r_flag_set (r->flags, fnp, addr, symbol->size);
-				if (fi) {
-					r_flag_item_set_realname (fi, n);
-					fi->demangled = (bool)(size_t)sn.demname;
+				if (addr == UT64_MAX) {
+					R_LOG_WARN ("Cannot resolve symbol address %s", n);
 				} else {
-					if (fn) {
-						R_LOG_WARN ("Can't find flag (%s)", fn);
+					RFlagItem *fi = r_flag_set (r->flags, fnp, addr, symbol->size);
+					if (fi) {
+						r_flag_item_set_realname (fi, n);
+						fi->demangled = (bool)(size_t)sn.demname;
+					} else {
+						if (fn) {
+							R_LOG_WARN ("Can't find flag (%s)", fn);
+						}
 					}
 				}
 				free (fnp);

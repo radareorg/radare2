@@ -115,25 +115,25 @@ space            name
 ---------------------
 segments         segment.GNU_STACK
 symbols.sections sym..comment
-imports          loc.imp.__gmon_start__
-imports          loc.imp._Jv_RegisterClasses
-imports          loc.imp._ITM_deregisterTMCloneTable
+classes          class.std::ostream
+classes          class.std::ios_base::Init
+classes          class.std::basic_ostream_char__std::char_traits_char____std::operator____std
 
-.--------------------------------------------------------------------------------------------------.
-| space    | size  | name                                                                          |
-)--------------------------------------------------------------------------------------------------(
-| classes  | 1     | class.std::ostream                                                            |
-| classes  | 1     | class.std::ios_base::Init                                                     |
-| classes  | 1     | class.std::basic_ostream_char__std::char_traits_char____std::operator____std  |
-| classes  | 1     | class.std::basic_ostream_char__std::char_traits_char____std::endl_char__std   |
-| classes  | 1     | class.B                                                                       |
-| classes  | 1     | class.A                                                                       |
-| classes  | 1     | class.C                                                                       |
-| imports  | 16    | loc.imp._ITM_registerTMCloneTable                                             |
-| imports  | 16    | loc.imp._ITM_deregisterTMCloneTable                                           |
-| format   | 56    | elf_phdr                                                                      |
-| format   | 64    | elf_header                                                                    |
-`--------------------------------------------------------------------------------------------------'
+.---------------------------------------------------------------------------------------------------.
+| space     | size  | name                                                                          |
+)---------------------------------------------------------------------------------------------------(
+| classes   | 1     | class.std::basic_ostream_char__std::char_traits_char____std::operator____std  |
+| classes   | 1     | class.std::basic_ostream_char__std::char_traits_char____std::endl_char__std   |
+| classes   | 1     | class.B                                                                       |
+| classes   | 1     | class.A                                                                       |
+| classes   | 1     | class.C                                                                       |
+| format    | 56    | elf_phdr                                                                      |
+| format    | 64    | elf_header                                                                    |
+| format    | 64    | elf_shdr                                                                      |
+| format    | 268   | elf_shstrtab                                                                  |
+| format    | 497   | elf_strtab                                                                    |
+| segments  | 4132  | segment.LOAD0                                                                 |
+`---------------------------------------------------------------------------------------------------'
 
 EOF
 RUN

@@ -85,18 +85,18 @@ NAME=ELF: phdr override 2
 FILE=bins/elf/busybox-phdr-shdr
 CMDS=ii~OBJ
 EXPECT=<<EOF
-7   0x00000000 GLOBAL OBJ      __environ
-43  0x00000000 GLOBAL OBJ      __ctype_tolower
-145 0x00000000 GLOBAL OBJ      __stdout
-189 0x00000000 GLOBAL OBJ      stderr
-409 0x00000000 GLOBAL OBJ      stdin
-410 0x00000000 GLOBAL OBJ      __stdin
-417 0x00000000 GLOBAL OBJ      optind
-468 0x00000000 GLOBAL OBJ      environ
-588 0x00000000 GLOBAL OBJ      optarg
-667 0x00000000 GLOBAL OBJ      __ctype_b
-706 0x00000000 GLOBAL OBJ      allCountryList
-718 0x00000000 GLOBAL OBJ      stdout
+7   ---------- GLOBAL OBJ      __environ
+43  ---------- GLOBAL OBJ      __ctype_tolower
+145 ---------- GLOBAL OBJ      __stdout
+189 ---------- GLOBAL OBJ      stderr
+409 ---------- GLOBAL OBJ      stdin
+410 ---------- GLOBAL OBJ      __stdin
+417 ---------- GLOBAL OBJ      optind
+468 ---------- GLOBAL OBJ      environ
+588 ---------- GLOBAL OBJ      optarg
+667 ---------- GLOBAL OBJ      __ctype_b
+706 ---------- GLOBAL OBJ      allCountryList
+718 ---------- GLOBAL OBJ      stdout
 EOF
 RUN
 
