@@ -460,7 +460,6 @@ include_files = [
   'include/r_search.h',
   'include/r_sign.h',
   'include/r_skiplist.h',
-  'include/r_skyline.h',
   'include/r_socket.h',
   'include/r_syscall.h',
   'include/r_th.h',

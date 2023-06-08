@@ -783,7 +783,6 @@ static void squash_write_cache(RCore *core, const char *input) {
 			pos++;
 		}
 		end = a + s;
-		// r_skyline_add (&io->cache_skyline, c->itv, c);
 	}
 	R_LOG_INFO ("Squashed %d write caches", squashed);
 	// r_pvector_clear (&core->io->cache);
