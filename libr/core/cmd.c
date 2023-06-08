@@ -464,6 +464,13 @@ static void recursive_help(RCore *core, int detail, const char *cmd_prefix) {
 	}
 
 	char *s = r_core_cmd_strf (core, "%s?", cmd_prefix);
+	if (!s) {
+		return;
+	}
+	if (!*s) {
+		free (s);
+		return;
+	}
 	RList *pending = r_list_newf (free);
 	r_cons_print (s);
 	RList *rows = r_str_split_list (s, "\n", 0);
