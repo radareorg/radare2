@@ -3,7 +3,7 @@
 #include <r_core.h>
 
 #define NPF 5
-#define PIDX (R_ABS (core->printidx % NPF))
+#define PIDX (R_ABS (core->visual.printidx % NPF))
 
 static void visual_refresh(RCore *core);
 
@@ -455,7 +455,7 @@ R_API void r_core_visual_showcursor(RCore *core, int x) {
 }
 
 static void printFormat(RCore *core, const int next) {
-	switch (core->printidx) {
+	switch (core->visual.printidx) {
 	case R_CORE_VISUAL_MODE_PX: // 0 // xc
 		hexMode += next;
 		r_core_visual_applyHexMode (core, hexMode);
@@ -1163,18 +1163,19 @@ R_API void r_core_visual_seek_animation(RCore *core, ut64 addr) {
 }
 
 static void setprintmode(RCore *core, int n) {
+	RCoreVisual *v = &core->visual;
 	RAnalOp op;
 
 	if (n > 0) {
-		core->printidx = R_ABS ((core->printidx + 1) % NPF);
+		v->printidx = R_ABS ((v->printidx + 1) % NPF);
 	} else {
-		if (core->printidx) {
-			core->printidx--;
+		if (v->printidx) {
+			v->printidx--;
 		} else {
-			core->printidx = NPF - 1;
+			v->printidx = NPF - 1;
 		}
 	}
-	switch (core->printidx) {
+	switch (v->printidx) {
 	case R_CORE_VISUAL_MODE_PD:
 	case R_CORE_VISUAL_MODE_DB:
 		r_asm_op_init (&op);
@@ -2175,7 +2176,7 @@ static bool fix_cursor(RCore *core) {
 
 	if (p->cur < 0) {
 		int sz = p->cols;
-		if (isDisasmPrint (core->printidx)) {
+		if (isDisasmPrint (core->visual.printidx)) {
 			sz = r_core_visual_prevopsz (core, core->offset + p->cur);
 			if (sz < 1) {
 				sz = 1;
@@ -2639,7 +2640,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 	} else {
 		wheelspeed = 1;
 	}
-
+	RCoreVisual *v = &core->visual;
 	if (ch == 'l' && och == 6) {
 		ch = 'J';
 	} else if (ch == 'h' && och == 2) {
@@ -2651,7 +2652,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 	// unless the cursor is set, then, the 0 is captured here
 	if (isNumber (core, ch)) {
 		// only in disasm and debug prints..
-		if (isDisasmPrint (core->printidx)) {
+		if (isDisasmPrint (v->printidx)) {
 			if (r_config_get_i (core->config, "asm.hints") && (r_config_get_i (core->config, "asm.hint.jmp")
 			|| r_config_get_i (core->config, "asm.hint.lea") || r_config_get_i (core->config, "asm.hint.emu")
 			|| r_config_get_i (core->config, "asm.hint.imm")
@@ -2731,7 +2732,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			} else {
 				if (core->print->cur_enabled) {
 					core->curtab = 0;
-					if (core->printidx == R_CORE_VISUAL_MODE_DB) {
+					if (v->printidx == R_CORE_VISUAL_MODE_DB) {
 						core->print->cur = 0;
 						core->seltab++;
 						if (core->seltab > 2) {
@@ -3274,7 +3275,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 						}
 						while (times--) {
 							RAnalOp op;
-							if (isDisasmPrint (core->printidx)) {
+							if (isDisasmPrint (v->printidx)) {
 								r_core_visual_disasm_down (core, &op, &cols);
 								r_asm_op_fini (&op);
 							} else if (!strcmp (__core_visual_print_command (core),
@@ -3305,7 +3306,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 				if (core->print->screen_bounds > 1 && core->print->screen_bounds >= core->offset) {
 					RAnalOp op;
 					ut64 addr = UT64_MAX;
-					if (isDisasmPrint (core->printidx)) {
+					if (isDisasmPrint (v->printidx)) {
 						if (core->print->screen_bounds == core->offset) {
 							r_asm_disassemble (core->rasm, &op, core->block, 32);
 							r_asm_op_fini (&op);
@@ -3359,7 +3360,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 						times = distance;
 					}
 					while (times--) {
-						if (isDisasmPrint (core->printidx)) {
+						if (isDisasmPrint (v->printidx)) {
 							r_core_visual_disasm_up (core, &cols);
 						} else if (!strcmp (__core_visual_print_command (core), "prc")) {
 							cols = r_config_get_i (core->config, "hex.cols");
@@ -3402,16 +3403,16 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 		case '[':
 			// comments column
 			if (core->print->cur_enabled &&
-				(core->printidx == R_CORE_VISUAL_MODE_PD ||
-				(core->printidx == R_CORE_VISUAL_MODE_DB && core->seltab == 2))) {
+				(v->printidx == R_CORE_VISUAL_MODE_PD ||
+				(v->printidx == R_CORE_VISUAL_MODE_DB && core->seltab == 2))) {
 				int cmtcol = r_config_get_i (core->config, "asm.cmt.col");
 				if (cmtcol > 2) {
 					r_config_set_i (core->config, "asm.cmt.col", cmtcol - 2);
 				}
 			}
 			// hex column
-			if ((core->printidx != R_CORE_VISUAL_MODE_PD && core->printidx != R_CORE_VISUAL_MODE_DB) ||
-				(core->printidx == R_CORE_VISUAL_MODE_DB && core->seltab != 2)) {
+			if ((v->printidx != R_CORE_VISUAL_MODE_PD && v->printidx != R_CORE_VISUAL_MODE_DB) ||
+				(v->printidx == R_CORE_VISUAL_MODE_DB && core->seltab != 2)) {
 				int scrcols = r_config_get_i (core->config, "hex.cols");
 				if (scrcols > 1) {
 					r_config_set_i (core->config, "hex.cols", scrcols - 1);
@@ -3421,14 +3422,14 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 		case ']':
 			// comments column
 			if (core->print->cur_enabled &&
-				(core->printidx == R_CORE_VISUAL_MODE_PD ||
-				(core->printidx == R_CORE_VISUAL_MODE_DB && core->seltab == 2))) {
+				(v->printidx == R_CORE_VISUAL_MODE_PD ||
+				(v->printidx == R_CORE_VISUAL_MODE_DB && core->seltab == 2))) {
 				int cmtcol = r_config_get_i (core->config, "asm.cmt.col");
 				r_config_set_i (core->config, "asm.cmt.col", cmtcol + 2);
 			}
 			// hex column
-			if ((core->printidx != R_CORE_VISUAL_MODE_PD && core->printidx != R_CORE_VISUAL_MODE_DB) ||
-				(core->printidx == R_CORE_VISUAL_MODE_DB && core->seltab != 2)) {
+			if ((v->printidx != R_CORE_VISUAL_MODE_PD && v->printidx != R_CORE_VISUAL_MODE_DB) ||
+				(v->printidx == R_CORE_VISUAL_MODE_DB && core->seltab != 2)) {
 				int scrcols = r_config_get_i (core->config, "hex.cols");
 				r_config_set_i (core->config, "hex.cols", scrcols + 1);
 			}
@@ -3461,14 +3462,14 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			break;
 		case 'p':
 			r_core_visual_toggle_decompiler_disasm (core, false, true);
-			if (core->printidx == R_CORE_VISUAL_MODE_DB && core->print->cur_enabled) {
+			if (v->printidx == R_CORE_VISUAL_MODE_DB && core->print->cur_enabled) {
 				nextPrintCommand ();
 			} else {
 				setprintmode (core, 1);
 			}
 			break;
 		case 'P':
-			if (core->printidx == R_CORE_VISUAL_MODE_DB && core->print->cur_enabled) {
+			if (v->printidx == R_CORE_VISUAL_MODE_DB && core->print->cur_enabled) {
 				prevPrintCommand ();
 			} else {
 				setprintmode (core, -1);
@@ -3553,7 +3554,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 		break;
 		case '-':
 			if (core->print->cur_enabled) {
-				if (core->seltab < 2 && core->printidx == R_CORE_VISUAL_MODE_DB) {
+				if (core->seltab < 2 && v->printidx == R_CORE_VISUAL_MODE_DB) {
 					if (core->seltab) {
 						const char *creg = core->dbg->creg;
 						if (creg) {
@@ -3587,7 +3588,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			break;
 		case '+':
 			if (core->print->cur_enabled) {
-				if (core->seltab < 2 && core->printidx == R_CORE_VISUAL_MODE_DB) {
+				if (core->seltab < 2 && v->printidx == R_CORE_VISUAL_MODE_DB) {
 					if (core->seltab) {
 						const char *creg = core->dbg->creg;
 						if (creg) {
@@ -3622,7 +3623,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 		case '/': {
 			bool mouse_state = __holdMouseState (core);
 			if (core->print->cur_enabled) {
-				if (core->seltab < 2 && core->printidx == R_CORE_VISUAL_MODE_DB) {
+				if (core->seltab < 2 && v->printidx == R_CORE_VISUAL_MODE_DB) {
 					if (core->seltab) {
 						const char *creg = core->dbg->creg;
 						if (creg) {
@@ -3657,7 +3658,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			rotateAsmemu (core);
 			break;
 		case '#':
-			if (core->printidx == 1) {
+			if (v->printidx == 1) {
 				r_core_visual_toggle_decompiler_disasm (core, false, false);
 			} else {
 				// do nothing for now :?, px vs pxa?
@@ -3665,7 +3666,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			break;
 		case '*':
 			if (core->print->cur_enabled) {
-				if (core->seltab < 2 && core->printidx == R_CORE_VISUAL_MODE_DB) {
+				if (core->seltab < 2 && v->printidx == R_CORE_VISUAL_MODE_DB) {
 					if (core->seltab) {
 						const char *creg = core->dbg->creg;
 						if (creg) {
@@ -3868,7 +3869,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 		break;
 		case 'Z': // shift-tab SHIFT-TAB
 			if (och == 27) { // shift-tab
-				if (core->print->cur_enabled && core->printidx == R_CORE_VISUAL_MODE_DB) {
+				if (core->print->cur_enabled && v->printidx == R_CORE_VISUAL_MODE_DB) {
 					core->print->cur = 0;
 					core->seltab--;
 					if (core->seltab < 0) {
@@ -3911,7 +3912,7 @@ R_API void r_core_visual_title(RCore *core, int color) {
 	/* automatic block size */
 	int pc, hexcols = r_config_get_i (core->config, "hex.cols");
 	if (autoblocksize) {
-		switch (core->printidx) {
+		switch (core->visual.printidx) {
 #if 0
 		case R_CORE_VISUAL_MODE_PXR: // prc
 		case R_CORE_VISUAL_MODE_PRC: // prc
@@ -4071,7 +4072,7 @@ R_API void r_core_visual_title(RCore *core, int color) {
 			char pm[32] = "[XADVC]";
 			int i;
 			for (i = 0; i < 6; i++) {
-				if (core->printidx == i) {
+				if (core->visual.printidx == i) {
 					pm[i + 1] = toupper ((unsigned char)pm[i + 1]);
 				} else {
 					pm[i + 1] = tolower ((unsigned char)pm[i + 1]);
@@ -4383,7 +4384,7 @@ static void visual_refresh(RCore *core) {
 			const char *pxw = NULL;
 			int h = r_num_get (core->num, "$r");
 			int size = (h * 16) / 2;
-			switch (core->printidx) {
+			switch (core->visual.printidx) {
 			case 1:
 				size = (h - 2) / 2;
 				pxw = "pd";
@@ -4594,7 +4595,7 @@ dodo:
 		const int ref = r_config_get_i (core->config, "dbg.slow");
 #if 1
 		// This is why multiple debug views dont work
-		if (core->printidx == R_CORE_VISUAL_MODE_DB) {
+		if (core->visual.printidx == R_CORE_VISUAL_MODE_DB) {
 			const bool pxa = r_config_get_b (core->config, "stack.annotated");
 			const char *reg = r_config_get (core->config, "stack.reg");
 			const int size = r_config_get_i (core->config, "stack.size");

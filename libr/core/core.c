@@ -3078,7 +3078,7 @@ R_API bool r_core_init(RCore *core) {
 	core->scriptstack->free = (RListFree)free;
 	core->times = R_NEW0 (RCoreTimes);
 	core->vmode = false;
-	core->printidx = 0;
+	core->visual.printidx = 0;
 	core->lastcmd = NULL;
 
 	if (core->print->charset) {

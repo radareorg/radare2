@@ -2091,7 +2091,7 @@ static int bin_relocs(RCore *r, PJ *pj, int mode, int va) {
 }
 
 #define MYDB 1
-/* this is a VERY VERY VERY hacky and bad workaround that needs proper refactoring in Rbin to use Sdb */
+/* R2_590 - this is a VERY VERY VERY hacky and bad workaround that needs proper refactoring in Rbin to use Sdb */
 #if MYDB
 R_DEPRECATE static R_TH_LOCAL Sdb *mydb = NULL;
 R_DEPRECATE static R_TH_LOCAL RList *osymbols = NULL;

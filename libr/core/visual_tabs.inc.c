@@ -61,7 +61,7 @@ static void visual_tabset(RCore *core, RCoreVisualTab *tab) {
 	r_return_if_fail (core && tab);
 
 	r_core_seek (core, tab->offset, true);
-	core->printidx = tab->printidx;
+	core->visual.printidx = tab->printidx;
 	core->print->cur_enabled = tab->cur_enabled;
 	core->print->cur = tab->cur;
 	core->print->ocur = tab->ocur;
@@ -90,7 +90,7 @@ static void visual_tabget(RCore *core, RCoreVisualTab *tab) {
 	r_return_if_fail (core && tab);
 
 	tab->offset = core->offset;
-	tab->printidx = core->printidx;
+	tab->printidx = core->visual.printidx;
 	tab->asm_offset = r_config_get_b (core->config, "asm.offset");
 	tab->asm_instr = r_config_get_i (core->config, "asm.instr");
 	tab->asm_indent = r_config_get_i (core->config, "asm.indent");

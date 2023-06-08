@@ -225,6 +225,7 @@ typedef struct r_core_visual_tab_t {
 // #define RCoreVisualTab Tab
 
 typedef struct r_core_visual_t {
+	RCoreVisualMode printidx;
 	RList *tabs;
 	int tab;
 } RCoreVisual;
@@ -315,7 +316,6 @@ struct r_core_t {
 	bool cfglog; // cfg.corelog
 	int cmdrepeat; // cmd.repeat
 	const char *cmdtimes; // cmd.times
-	R_DEPRECATE bool cmd_in_backticks; // R2_590 whether currently executing a cmd out of backticks
 	int rtr_n;
 	RCoreRtrHost rtr_host[RTR_MAX_HOSTS];
 	ut64 *asmqjmps;
@@ -328,7 +328,6 @@ struct r_core_t {
 	// visual // TODO: move them into RCoreVisual
 	bool http_up;
 	bool gdbserver_up;
-	RCoreVisualMode printidx;
 	char *stkcmd;
 	bool in_search;
 	RList *watchers;

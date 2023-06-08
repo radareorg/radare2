@@ -27,6 +27,15 @@ typedef struct {
 	const char *optword;
 } RCoreVisualTypes;
 
+static int copyuntilch(char *dst, char *src, int ch) {
+	size_t i;
+	for (i = 0; src[i] && src[i] != ch; i++) {
+		dst[i] = src[i];
+	}
+	dst[i] = '\0';
+	return i;
+}
+
 // TODO: move this helper into r_cons
 static char *prompt(const char *str, const char *txt) {
 	char cmd[1024];
@@ -2041,6 +2050,7 @@ R_API int r_core_visual_view_rop(RCore *core) {
 }
 
 R_API int r_core_visual_trackflags(RCore *core) {
+	RCoreVisual *v = &core->visual;
 	const char *fs = NULL, *fs2 = NULL;
 	int hit, i, j, ch;
 	int _option = 0;
@@ -2099,9 +2109,9 @@ R_API int r_core_visual_trackflags(RCore *core) {
 				r_cons_printf ("\n Selected: %s\n\n", fs2);
 				// Honor MAX_FORMATS here
 				switch (format) {
-				case 0: snprintf (cmd, sizeof (cmd), "px %d @ %s!64", rows*16, fs2); core->printidx = 0; break;
-				case 1: snprintf (cmd, sizeof (cmd), "pd %d @ %s!64", rows, fs2); core->printidx = 1; break;
-				case 2: snprintf (cmd, sizeof (cmd), "ps @ %s!64", fs2); core->printidx = 5; break;
+				case 0: snprintf (cmd, sizeof (cmd), "px %d @ %s!64", rows*16, fs2); v->printidx = 0; break;
+				case 1: snprintf (cmd, sizeof (cmd), "pd %d @ %s!64", rows, fs2); v->printidx = 1; break;
+				case 2: snprintf (cmd, sizeof (cmd), "ps @ %s!64", fs2); v->printidx = 5; break;
 				case 3: strcpy (cmd, "f="); break;
 				default: format = 0; continue;
 				}
@@ -2338,6 +2348,7 @@ R_API int r_core_visual_trackflags(RCore *core) {
 }
 
 R_API int r_core_visual_comments(RCore *core) {
+	RCoreVisual *v = &core->visual;
 	char *str;
 	char cmd[512], *p = NULL;
 	int ch, option = 0;
@@ -2377,9 +2388,9 @@ R_API int r_core_visual_comments(RCore *core) {
 		r_cons_newline ();
 
 		switch (format) {
-		case 0: snprintf (cmd, sizeof (cmd), "px @ 0x%"PFMT64x":64", from); core->printidx = 0; break;
-		case 1: snprintf (cmd, sizeof (cmd), "pd 12 @ 0x%"PFMT64x":64", from); core->printidx = 1; break;
-		case 2: snprintf (cmd, sizeof (cmd), "ps @ 0x%"PFMT64x":64", from); core->printidx = 5; break;
+		case 0: snprintf (cmd, sizeof (cmd), "px @ 0x%"PFMT64x":64", from); v->printidx = 0; break;
+		case 1: snprintf (cmd, sizeof (cmd), "pd 12 @ 0x%"PFMT64x":64", from); v->printidx = 1; break;
+		case 2: snprintf (cmd, sizeof (cmd), "ps @ 0x%"PFMT64x":64", from); v->printidx = 5; break;
 		default: format = 0; continue;
 		}
 		if (*cmd) {
@@ -2598,10 +2609,10 @@ R_API void r_core_visual_config(RCore *core) {
 					fs = bt->name;
 				}
 				if (!old[0]) {
-					r_str_ccpy (old, bt->name, '.');
+					copyuntilch (old, bt->name, '.');
 					show = 1;
 				} else if (r_str_ccmp (old, bt->name, '.')) {
-					r_str_ccpy (old, bt->name, '.');
+					copyuntilch (old, bt->name, '.');
 					show = 1;
 				} else {
 					show = 0;
@@ -4053,6 +4064,7 @@ static void handleHints(RCore *core) {
 }
 
 R_API void r_core_visual_define(RCore *core, const char *args, int distance) {
+	RCoreVisual *v = &core->visual;
 	int plen = core->blocksize;
 	ut64 off = core->offset;
 	int i, h = 0, n, ch, ntotal = 0;
@@ -4255,7 +4267,7 @@ onemoretime:
 		RAnalOp op;
 		char *q = NULL;
 		ut64 tgt_addr = UT64_MAX;
-		if (!isDisasmPrint (core->printidx)) {
+		if (!isDisasmPrint (v->printidx)) {
 			break;
 		}
 		// TODO: get the aligned instruction even if the cursor is in the middle of it.

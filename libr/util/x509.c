@@ -790,14 +790,3 @@ R_API void r_x509_certificate_json(PJ *pj, RX509Certificate *certificate) {
 	}
 	pj_end (pj);
 }
-
-// XXX R2_590
-R_DEPRECATE R_API RX509Certificate *r_x509_parse_certificate2(const ut8 *buffer, ut32 length) {
-	if (!buffer || !length) {
-		return NULL;
-	}
-	RASN1Object *object = r_asn1_object_parse (buffer, buffer, length, 0);
-	RX509Certificate *certificate = r_x509_parse_certificate (object);
-	// object freed by r_x509_parse_certificate
-	return certificate;
-}
