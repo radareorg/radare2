@@ -1275,7 +1275,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 #if R2__UNIX__
 				/* implicit ./ to make unix behave like windows */
 				if (f) {
-					char *path, *escaped_path;
+					char *path;
 					if (strchr (f, '/')) {
 						// f is a path
 						path = strdup (f);
@@ -1287,11 +1287,13 @@ R_API int r_main_radare2(int argc, const char **argv) {
 							path = r_file_path (f);
 						}
 					}
-					escaped_path = r_str_arg_escape (path);
-					pfile = r_str_append (pfile, escaped_path);
-					file = pfile; // probably leaks
-					R_FREE (escaped_path);
-					R_FREE (path);
+					if (path) {
+						char *escaped_path = r_str_arg_escape (path);
+						pfile = r_str_append (pfile, escaped_path);
+						file = pfile; // probably leaks
+						R_FREE (escaped_path);
+						free (path);
+					}
 				}
 #elif R2__WINDOWS__
 				char *acpfile = r_acp_to_utf8 (f);

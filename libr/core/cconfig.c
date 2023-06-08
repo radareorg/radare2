@@ -2579,11 +2579,7 @@ static bool cb_scrstrconv(void *user, void *data) {
 		}
 		return false;
 	} else {
-#if R2_590
 		free (core->print->strconv_mode);
-#else
-		free ((char *)core->print->strconv_mode);
-#endif
 		core->print->strconv_mode = strdup (node->value);
 	}
 	return true;
@@ -3387,11 +3383,7 @@ static bool cb_dbg_verbose(void *user, void *data) {
 static bool cb_prjvctype(void *user, void *data) {
 	RConfigNode *node = data;
 	char *git = r_file_path ("git");
-#if R2_590
-	bool have_git = (bool)git;
-#else
-	bool have_git = strcmp (git, "git");
-#endif
+	bool have_git = git != NULL;
 	free (git);
 	if (*node->value == '?') {
 		if (have_git) {
@@ -4104,21 +4096,13 @@ R_API int r_core_config_init(RCore *core) {
 		 * standard locations */
 		for (i = 0; bin_data[i]; i += 3) {
 			const char *bin_name = bin_data[i];
-			const char *standard_path = bin_data[i+1];
-			const char *browser_override = bin_data[i+2];
+			const char *standard_path = bin_data[i + 1];
+			const char *browser_override = bin_data[i + 2];
 			const char *path;
 
 			/* Try to find bin in path */
 			char *bin_path = r_file_path (bin_name);
 			path = bin_path;
-
-#if !R2_590
-			/* Not in path, old API returns strdup (arg) */
-			if (!strcmp (bin_name, bin_path)) {
-				R_FREE (bin_path);
-				path = NULL;
-			}
-#endif
 
 			/* Not in path, but expected location exists */
 			if (!path && r_file_exists (standard_path)) {

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2011-2018 - pancake */
+/* radare - LGPL - Copyright 2011-2023 - pancake */
 
 #include <r_egg.h>
 
@@ -20,7 +20,6 @@ static char *r_egg_cfile_getCompiler(void) {
 	const char *compilers[] = { "llvm-gcc", "clang", "gcc", NULL };
 	const char *compiler = compilers[0];
 	char *env_cc = r_sys_getenv ("CC");
-	char *compiler_path;
 	int i;
 
 	if (env_cc) {
@@ -28,12 +27,8 @@ static char *r_egg_cfile_getCompiler(void) {
 	}
 
 	for (i = 0; (compiler = compilers[i]); i++) {
-		compiler_path = r_file_path (compiler);
-#if R2_590
+		char *compiler_path = r_file_path (compiler);
 		if (compiler_path) {
-#else
-		if (strcmp (compiler_path, compiler)) {
-#endif
 			free (compiler_path);
 			return strdup (compiler);
 		}

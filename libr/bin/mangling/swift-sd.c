@@ -131,17 +131,9 @@ static char *swift_demangle_cmd(const char *s) {
 		if (!swift_demangle) {
 			have_swift_demangle = 0;
 			swift_demangle = r_file_path ("swift-demangle");
-#if R2_590
 			if (!swift_demangle) {
-#else
-			if (!strcmp (swift_demangle, "swift-demangle")) {
-#endif
 				char *xcrun = r_file_path ("xcrun");
-#if R2_590
 				if (xcrun) {
-#else
-				if (strcmp (xcrun, "xcrun")) {
-#endif
 					free (swift_demangle);
 					swift_demangle = r_str_newf ("%s swift-demangle", xcrun);
 					have_swift_demangle = 1;

@@ -88,12 +88,7 @@ static int git_clone(const char *dir, const char *url) {
 		return -1;
 	}
 	char *git = r_file_path ("git");
-#if R2_590
 	if (!git) {
-#else
-	if (!strcmp (git, "git")) {
-		free (git);
-#endif
 		R_LOG_ERROR ("Cannot find `git` in $PATH");
 		return 1;
 	}
@@ -343,11 +338,7 @@ static int r2pm_update(bool force) {
 
 static void r2pm_setenv(void) {
 	char *gmake = r_file_path ("gmake");
-#if R2_590
 	if (gmake) {
-#else
-	if (strcmp (gmake, "gmake")) {
-#endif
 		r_sys_setenv ("MAKE", gmake);
 	} else {
 		r_sys_setenv ("MAKE", "make");
@@ -435,10 +426,6 @@ static void r2pm_setenv(void) {
 	char *bin_path = NULL;
 	int i;
 	char *env_python = r_sys_getenv ("PYTHON");
-#if !R2_590
-	bool found = false;
-#endif
-
 	if (R_STR_ISNOTEMPTY (env_python)) {
 		free (env_python);
 		return;
@@ -447,22 +434,12 @@ static void r2pm_setenv(void) {
 	for (i = 0; python_bins[i]; i++) {
 		bin = python_bins[i];
 		bin_path = r_file_path (bin);
-
-#if R2_590
 		if (bin_path) {
-#else
-		if (strcmp (bin_path, bin)) {
-			found = true;
-#endif
 			break;
 		}
 	}
 
-#if R2_590
 	if (bin_path) {
-#else
-	if (found) {
-#endif
 		r_sys_setenv ("PYTHON", bin_path);
 	}
 	free (bin_path);
@@ -561,32 +538,17 @@ static bool download(const char *url, const char *outfile) {
 	char *tool = r_file_path ("curl");
 	int res = 1;
 	R_LOG_INFO ("download: %s into %s", url, outfile);
-#if R2_590
 	if (tool) {
-#else
-	if (strcmp (tool, "curl")) {
-#endif
 		res = r_sys_cmdf ("%s -sfL -o '%s' '%s'", tool, outfile, url);
 		free (tool);
 		return res == 0;
 	}
-
-#if !R2_590
-	free (tool);
-#endif
 	tool = r_file_path ("wget");
-#if R2_590
 	if (tool) {
-#else
-	if (strcmp (tool, "wget")) {
-#endif
 		res = r_sys_cmdf ("%s -qO '%s' '%s'", tool, outfile, url);
 		free (tool);
 		return res == 0;
 	}
-#if !R2_590
-	free (tool);
-#endif
 	R_LOG_ERROR ("Please install `curl` or `wget`");
 	return false;
 }
@@ -673,11 +635,7 @@ static int r2pm_clone(const char *pkg) {
 
 static bool r2pm_check(const char *program) {
 	char *s = r_file_path (program);
-#if R2_590
-	bool found = (bool)s;
-#else
-	bool found = strcmp (s, program);
-#endif
+	bool found = s != NULL;
 	free (s);
 	return found;
 }

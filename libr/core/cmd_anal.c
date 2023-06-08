@@ -10129,11 +10129,7 @@ static char *getViewerPath(void) {
 	};
 	for (i = 0; viewers[i]; i++) {
 		char *viewerPath = r_file_path (viewers[i]);
-#if R2_590
 		if (viewerPath) {
-#else
-		if (strcmp (viewerPath, viewers[i])) {
-#endif
 			return viewerPath;
 		}
 		free (viewerPath);
@@ -10142,14 +10138,8 @@ static char *getViewerPath(void) {
 }
 
 static char *dot_executable_path(void) {
-	const char *dot = "dot";
-	char *dotPath = r_file_path (dot);
-#if R2_590
+	char *dotPath = r_file_path ("dot");
 	if (!dotPath) {
-#else
-	if (!strcmp (dotPath, dot)) {
-		free (dotPath);
-#endif
 		dotPath = r_file_path ("xdot");
 	}
 	return dotPath;

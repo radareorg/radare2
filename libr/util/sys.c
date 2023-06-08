@@ -1335,20 +1335,13 @@ R_API bool r_sys_tts(const char *txt, bool bg) {
 	};
 	for (i = 0; says[i]; i++) {
 		char *sayPath = r_file_path (says[i]);
-#if R2_590
 		if (sayPath) {
-#else
-		if (strcmp (sayPath, says[i])) {
-#endif
 			char *line = r_str_replace (strdup (txt), "'", "\"", 1);
 			r_sys_cmdf ("\"%s\" '%s'%s", sayPath, line, bg? " &": "");
 			free (line);
 			free (sayPath);
 			return true;
 		}
-#if !R2_590
-		free (sayPath);
-#endif
 	}
 	return false;
 }
