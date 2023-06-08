@@ -999,7 +999,9 @@ static int cmd_w6(void *data, const char *input) {
 }
 
 static int cmd_wh(void *data, const char *input) {
-	const char *arg = r_str_trim_head_ro (strchr (input, ' '));
+	r_return_val_if_fail (data && input, -1);
+	char *space = strchr (input, ' ');
+	const char *arg = space? r_str_trim_head_ro (space): NULL;
 	if (arg) {
 		char *path = r_file_path (arg);
 #if R2_590
