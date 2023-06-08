@@ -71,9 +71,9 @@ static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadadd
 }
 
 static void destroy(RBinFile *bf) {
-	int i;
 	ELFOBJ* eobj = bf->o->bin_obj;
 	if (eobj && eobj->imports_by_ord) {
+		int i;
 		for (i = 0; i < eobj->imports_by_ord_size; i++) {
 			RBinImport *imp = eobj->imports_by_ord[i];
 			if (imp) {
@@ -179,10 +179,13 @@ static void process_constructors(RBinFile *bf, RList *ret, int bits) {
 	RList *secs = sections (bf);
 	RListIter *iter;
 	RBinSection *sec;
-	int i, type;
 	r_list_foreach (secs, iter, sec) {
-		type = -1;
+		if (sec->size > ALLOC_SIZE_LIMIT) {
+			continue;
+		}
+
 		const char *sec_name = sec->name;
+		int type = -1;
 		if (*sec_name == '.') {
 			if (!strcmp (sec_name, ".fini_array")) {
 				type = R_BIN_ENTRY_TYPE_FINI;
@@ -195,15 +198,25 @@ static void process_constructors(RBinFile *bf, RList *ret, int bits) {
 		if (type == -1) {
 			continue;
 		}
-		if (sec->size > 0xffffff) {
-			continue;
-		}
 		ut8 *buf = calloc (sec->size, 1);
 		if (!buf) {
 			continue;
 		}
-		(void)r_buf_read_at (bf->buf, sec->paddr, buf, sec->size);
+
+		st64 size = r_buf_read_at(bf->buf, sec->paddr, buf, sec->size);
+		if (size != sec->size) {
+			if (size < sec->size) {
+				R_LOG_WARN ("unexpected section size");
+			}
+			buf = realloc (buf, size);
+			if (!buf) {
+				continue;
+			}
+			sec->size = size;
+		}
+
 		if (bits == 32) {
+			int i;
 			for (i = 0; (i + 3) < sec->size; i += 4) {
 				ut32 addr32 = r_read_le32 (buf + i);
 				if (addr32) {
@@ -213,6 +226,7 @@ static void process_constructors(RBinFile *bf, RList *ret, int bits) {
 				}
 			}
 		} else {
+			int i;
 			for (i = 0; (i + 7) < sec->size; i += 8) {
 				ut64 addr64 = r_read_le64 (buf + i);
 				if (addr64) {
@@ -331,15 +345,6 @@ static RList* entries(RBinFile *bf) {
 	return ret;
 }
 
-static void insert_symbol(ELFOBJ *bin, RBinSymbol *ptr, bool is_sht_null, RList *ret) {
-	// add it to the list of symbols only if it doesn't point to SHT_NULL
-	if (is_sht_null) {
-		r_bin_symbol_free (ptr);
-	} else {
-		r_list_append (ret, ptr);
-	}
-}
-
 static RList* symbols(RBinFile *bf) {
 	r_return_val_if_fail (bf && bf->o && bf->o->bin_obj, NULL);
 
@@ -357,11 +362,17 @@ static RList* symbols(RBinFile *bf) {
 
 	RBinElfSymbol *symbol;
 	r_vector_foreach (symbols, symbol) {
+		if (symbol->is_sht_null) {
+			// add it to the list of symbols only if it doesn't point to SHT_NULL
+			continue;
+		}
+
 		RBinSymbol *ptr = Elf_(_r_bin_elf_convert_symbol) (bin, symbol, "%s");
 		if (!ptr) {
 			break;
 		}
-		insert_symbol (bin, ptr, symbol->is_sht_null, ret);
+
+		r_list_append (ret, ptr);
 	}
 
 	// traverse imports
@@ -374,6 +385,11 @@ static RList* symbols(RBinFile *bf) {
 		if (!symbol->size) {
 			continue;
 		}
+		if (symbol->is_sht_null) {
+			// add it to the list of symbols only if it doesn't point to SHT_NULL
+			continue;
+		}
+
 		RBinSymbol *ptr = Elf_(_r_bin_elf_convert_symbol) (bin, symbol, "%s");
 		if (!ptr) {
 			break;
@@ -384,7 +400,8 @@ static RList* symbols(RBinFile *bf) {
 			ptr->paddr = 0;
 			ptr->vaddr = 0;
 		}
-		insert_symbol (bin, ptr, symbol->is_sht_null, ret);
+
+		r_list_append (ret, ptr);
 	}
 	return ret;
 }
@@ -887,7 +904,6 @@ static RList* patch_relocs(RBin *b) {
 	if (!gotr2desc) {
 		return NULL;
 	}
-
 
 	RIOMap *gotr2map = b->iob.map_get_at (io, n_vaddr);
 	if (!gotr2map) {

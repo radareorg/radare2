@@ -287,6 +287,8 @@ static inline void *untagged_pointer_check(void *x) {
 }
 #endif
 
+#define ALLOC_SIZE_LIMIT 0xffffff
+
 #ifdef __cplusplus
 }
 #endif

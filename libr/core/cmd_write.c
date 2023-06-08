@@ -880,7 +880,7 @@ static int cmd_w0(void *data, const char *input) {
 	int res = 0;
 	RCore *core = (RCore *)data;
 	ut64 len = r_num_math (core->num, input);
-	if ((st64)len > 0 && len < 0xffffff) {
+	if ((st64)len > 0 && len < ALLOC_SIZE_LIMIT) {
 		ut8 *buf = calloc (1, len);
 		if (buf) {
 			if (!r_io_write_at (core->io, core->offset, buf, len)) {
