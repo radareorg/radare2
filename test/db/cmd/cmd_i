@@ -3838,7 +3838,7 @@ RUN
 
 NAME=iee elf Cd (64-bit)
 FILE=bins/elf/analysis/ls-linux64
-ARGS=-e io.cache=true
+ARGS=-e io.cache=true -e log.level=10 -e log.filter=core.bin
 CMDS=<<EOF
 e scr.interactive=true
 s section..preinit_array
@@ -3858,18 +3858,31 @@ EXPECT=<<EOF
             0x0021bfb0      .qword 0x0000000000005ce0 ; entry.fini0    ; [19] -rw- section size 8 named .fini_array
 EOF
 EXPECT_ERR=<<EOF
-WARN: Cannot resolve symbol address __progname
-WARN: Cannot resolve symbol address _ITM_deregisterTMCloneTable
-WARN: Cannot resolve symbol address stdout
-WARN: Cannot resolve symbol address optind
-WARN: Cannot resolve symbol address optarg
-WARN: Cannot resolve symbol address program_invocation_name
-WARN: Cannot resolve symbol address __progname_full
-WARN: Cannot resolve symbol address _Jv_RegisterClasses
-WARN: Cannot resolve symbol address _ITM_registerTMCloneTable
-WARN: Cannot resolve symbol address program_invocation_short_name
-WARN: Cannot resolve symbol address stderr
-ERROR: Cannot seek to unknown address 'section..preinit_array'
+DEBUG: (section .dynstr) Css 1477 @ 0xf70
+DEBUG: (section .rela.dyn) Cd 8[609] @ 0x16b0
+DEBUG: (section .rela.plt) Cd 8[324] @ 0x29b8
+DEBUG: (section .init_array) Cd 8[1] @ 0x21bfa8
+DEBUG: (section .fini_array) Cd 8[1] @ 0x21bfb0
+DEBUG: (section .data.rel.ro) Cd 8[329] @ 0x21bfc0
+DEBUG: (section .dynamic) Cd 8[64] @ 0x21ca08
+DEBUG: (section .dynstr) Css 1477 @ 0xf70
+DEBUG: (section .rela.dyn) Cd 8[609] @ 0x16b0
+DEBUG: (section .rela.plt) Cd 8[324] @ 0x29b8
+DEBUG: (section .init_array) Cd 8[1] @ 0x21bfa8
+DEBUG: (section .fini_array) Cd 8[1] @ 0x21bfb0
+DEBUG: (section .data.rel.ro) Cd 8[329] @ 0x21bfc0
+DEBUG: (section .dynamic) Cd 8[64] @ 0x21ca08
+DEBUG: Cannot resolve symbol address __progname
+DEBUG: Cannot resolve symbol address _ITM_deregisterTMCloneTable
+DEBUG: Cannot resolve symbol address stdout
+DEBUG: Cannot resolve symbol address optind
+DEBUG: Cannot resolve symbol address optarg
+DEBUG: Cannot resolve symbol address program_invocation_name
+DEBUG: Cannot resolve symbol address __progname_full
+DEBUG: Cannot resolve symbol address _Jv_RegisterClasses
+DEBUG: Cannot resolve symbol address _ITM_registerTMCloneTable
+DEBUG: Cannot resolve symbol address program_invocation_short_name
+DEBUG: Cannot resolve symbol address stderr
 EOF
 RUN
 

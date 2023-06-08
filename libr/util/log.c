@@ -100,7 +100,7 @@ R_API void r_log_set_quiet(bool bq) {
 R_API bool r_log_match(int level, const char *origin) { // , const char *sub_origin, const char *fmt, ...) {
 	r_log_init ();
 	if (R_STR_ISNOTEMPTY (origin) && R_STR_ISNOTEMPTY (rlog->filter)) {
-		if (strstr (origin, rlog->filter)) {
+		if (!strstr (origin, rlog->filter)) {
 			return false;
 		}
 	}

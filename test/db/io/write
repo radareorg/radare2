@@ -16,7 +16,9 @@ RUN
 
 NAME=write-on-ro
 FILE=bins/elf/analysis/pie
+ARGS=-e log.level=10 -e log.filter=core.bin
 CMDS=<<EOF
+e log.level=0
 e log.source=true
 w hello
 ps
@@ -25,11 +27,17 @@ EXPECT=<<EOF
 1\xed^\x89\xe1\x83\xe4\xf0PTR\xe8"
 EOF
 EXPECT_ERR=<<EOF
-WARN: run r2 with -e bin.cache=true to fix relocations in disassembly
-WARN: Cannot resolve symbol address _ITM_deregisterTMCloneTable
-WARN: Cannot resolve symbol address _Jv_RegisterClasses
-WARN: Cannot resolve symbol address _ITM_registerTMCloneTable
-ERROR: [cmd_write.c:184] Cannot write. Use `omf`, `io.cache` or reopen the file in rw with `oo+`
+DEBUG: (section .dynstr) Css 194 @ 0x280
+DEBUG: (section .init_array) Cd 4[1] @ 0x173c
+DEBUG: (section .fini_array) Cd 4[1] @ 0x1740
+DEBUG: (section .dynamic) Cd 4[58] @ 0x1748
+DEBUG: (section .dynstr) Css 194 @ 0x280
+DEBUG: (section .init_array) Cd 4[1] @ 0x173c
+DEBUG: (section .fini_array) Cd 4[1] @ 0x1740
+DEBUG: (section .dynamic) Cd 4[58] @ 0x1748
+DEBUG: Cannot resolve symbol address _ITM_deregisterTMCloneTable
+DEBUG: Cannot resolve symbol address _Jv_RegisterClasses
+DEBUG: Cannot resolve symbol address _ITM_registerTMCloneTable
 EOF
 RUN
 
@@ -49,9 +57,6 @@ hello
 EOF
 EXPECT_ERR=<<EOF
 WARN: run r2 with -e bin.cache=true to fix relocations in disassembly
-WARN: Cannot resolve symbol address _ITM_deregisterTMCloneTable
-WARN: Cannot resolve symbol address _Jv_RegisterClasses
-WARN: Cannot resolve symbol address _ITM_registerTMCloneTable
 ERROR: [cmd_write_fail] Cannot write. Use `omf`, `io.cache` or reopen the file in rw with `oo+`
 EOF
 RUN
