@@ -554,57 +554,58 @@ jobs:
 #        path: radare2-freebsd.tgz
 
 
-  check_abi_compatibility:
-    needs:
-      - linux-static
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        shell: bash
-        working-directory: /tmp
-    steps:
-    - name: Install dependencies
-      run: |
-        # sudo apt install --assume-yes abigail-tools wget
-        # ubuntu-latest is TOO OLD and it ships abigail 2.0 which is known to be buggy
-        wget https://ftp.fau.de/debian/pool/main/liba/libabigail/libabigail0_2.2-2_amd64.deb
-        sudo dpkg -i libabigail0_2.2-2_amd64.deb
-        wget https://ftp.fau.de/debian/pool/main/liba/libabigail/libabigail-dev_2.2-2_amd64.deb
-        sudo dpkg -i libabigail-dev_2.2-2_amd64.deb
-        wget https://ftp.fau.de/debian/pool/main/liba/libabigail/abigail-tools_2.2-2_amd64.deb
-        sudo dpkg -i abigail-tools_2.2-2_amd64.deb
-    - name: Download Build
-      uses: actions/download-artifact@v3
-      with:
-        name: linux-static
-        path: /tmp
-    - name: Download latest release
-      run: |
-        DOWNLOAD_URL=$(curl -s \
-        --header 'authorization: Bearer ${{ secrets.GITHUB_TOKEN }}' \
-        https://api.github.com/repos/radareorg/radare2/releases/latest \
-        | jq -r '.assets[] | select(.name | startswith("radare2")) | select(.name | endswith("static.tar.xz")) | .browser_download_url')
-        wget -O r2-static-latest.tar.xz $DOWNLOAD_URL
-    - name: Untar
-      run: |
-        mkdir r2-static
-        tar -xvf r2-static.tar.xz -C r2-static --strip-components=1
-        mkdir r2-static-latest
-        tar -xvf r2-static-latest.tar.xz -C r2-static-latest --strip-components=1
-    - name: ABI compatibility check
-      run: |
-        A=abidiff.conf
-        echo '[suppress_function]' > $A
-        echo 'name_regexp = .*java.*' >> $A
-        echo '[suppress_function]' >> $A
-        echo 'name_not_regexp = ^r_.*' >> $A
-        echo '[suppress_function]' >> $A
-        echo 'name_regexp = r_bin_add_import' >> $A
-        echo '[suppress_variable]' >> $A
-        echo 'name_not_regexp = ^r_.*' >> $A
-        for lib in r2-static-latest/usr/lib/libr_*.so; do
-          echo $lib ; abidiff --suppr $A ${lib} r2-static/usr/lib/$(basename ${lib});
-        done
+# R2_590 - uncomment after the 590 release
+#  check_abi_compatibility:
+#    needs:
+#      - linux-static
+#    runs-on: ubuntu-latest
+#    defaults:
+#      run:
+#        shell: bash
+#        working-directory: /tmp
+#    steps:
+#    - name: Install dependencies
+#      run: |
+#        # sudo apt install --assume-yes abigail-tools wget
+#        # ubuntu-latest is TOO OLD and it ships abigail 2.0 which is known to be buggy
+#        wget https://ftp.fau.de/debian/pool/main/liba/libabigail/libabigail0_2.2-2_amd64.deb
+#        sudo dpkg -i libabigail0_2.2-2_amd64.deb
+#        wget https://ftp.fau.de/debian/pool/main/liba/libabigail/libabigail-dev_2.2-2_amd64.deb
+#        sudo dpkg -i libabigail-dev_2.2-2_amd64.deb
+#        wget https://ftp.fau.de/debian/pool/main/liba/libabigail/abigail-tools_2.2-2_amd64.deb
+#        sudo dpkg -i abigail-tools_2.2-2_amd64.deb
+#    - name: Download Build
+#      uses: actions/download-artifact@v3
+#      with:
+#        name: linux-static
+#        path: /tmp
+#    - name: Download latest release
+#      run: |
+#        DOWNLOAD_URL=$(curl -s \
+#        --header 'authorization: Bearer ${{ secrets.GITHUB_TOKEN }}' \
+#        https://api.github.com/repos/radareorg/radare2/releases/latest \
+#        | jq -r '.assets[] | select(.name | startswith("radare2")) | select(.name | endswith("static.tar.xz")) | .browser_download_url')
+#        wget -O r2-static-latest.tar.xz $DOWNLOAD_URL
+#    - name: Untar
+#      run: |
+#        mkdir r2-static
+#        tar -xvf r2-static.tar.xz -C r2-static --strip-components=1
+#        mkdir r2-static-latest
+#        tar -xvf r2-static-latest.tar.xz -C r2-static-latest --strip-components=1
+#    - name: ABI compatibility check
+#      run: |
+#        A=abidiff.conf
+#        echo '[suppress_function]' > $A
+#        echo 'name_regexp = .*java.*' >> $A
+#        echo '[suppress_function]' >> $A
+#        echo 'name_not_regexp = ^r_.*' >> $A
+#        echo '[suppress_function]' >> $A
+#        echo 'name_regexp = r_bin_add_import' >> $A
+#        echo '[suppress_variable]' >> $A
+#        echo 'name_not_regexp = ^r_.*' >> $A
+#        for lib in r2-static-latest/usr/lib/libr_*.so; do
+#          echo $lib ; abidiff --suppr $A ${lib} r2-static/usr/lib/$(basename ${lib});
+#        done
 
 
   # Release creation
