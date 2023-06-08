@@ -1502,28 +1502,16 @@ R_API bool r_core_run_script(RCore *core, const char *file) {
 					const char *bin;
 					char *bin_path;
 					int i;
-#if !R2_590
-					bool found = false;
-#endif
 					for (i = 0; python_bins[i]; i++) {
 						bin = python_bins[i];
 						bin_path = r_file_path (bin);
-#if R2_590
 						if (bin_path) {
-#else
-						if (strcmp (bin_path, bin)) {
-							found = true;
-#endif
 							break;
 						}
 						free (bin_path);
 					}
 
-#if R2_590
 					if (bin_path) {
-#else
-					if (found) {
-#endif
 #if R2__WINDOWS__
 						char *cmd = r_str_newf ("%s %s", bin_path, file);
 #else

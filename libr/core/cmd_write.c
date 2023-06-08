@@ -1001,18 +1001,11 @@ static int cmd_wh(void *data, const char *input) {
 	const char *arg = space? r_str_trim_head_ro (space): NULL;
 	if (arg) {
 		char *path = r_file_path (arg);
-#if R2_590
 		if (path) {
-#else
-		if (strcmp (path, arg)) {
-#endif
 			r_cons_println (path);
 			free (path);
 			return 0;
 		}
-#if !R2_590
-		free (path);
-#endif
 	}
 	return 1;
 }

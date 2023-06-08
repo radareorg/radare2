@@ -109,12 +109,7 @@ static bool r2r_chdir(const char *argv0) {
 		return false;
 	}
 	char *r2r_path = r_file_path (argv0);
-#if R2_590
 	if (!r2r_path) {
-#else
-	if (!strcmp (r2r_path, argv0)) {
-		free (r2r_path);
-#endif
 		free (src_path);
 		return false;
 	}
@@ -145,17 +140,9 @@ static bool r2r_chdir(const char *argv0) {
 
 static bool r2r_test_run_unit(void) {
 	char *make = r_file_path ("gmake");
-#if R2_590
 	if (!make) {
-#else
-	if (!strcmp (make, "gmake")) {
-#endif
 		make = r_file_path ("make");
-#if R2_590
 		if (!make) {
-#else
-		if (!strcmp (make, "make")) {
-#endif
 			eprintf ("Cannot find `make` in PATH\n");
 			return false;
 		}

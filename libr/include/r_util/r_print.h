@@ -141,12 +141,8 @@ typedef struct r_print_t {
 	int lines_abs;
 	bool esc_bslash;
 	bool wide_offsets;
-#if R2_590
 	char *strconv_mode;
 	bool base36;
-#else
-	const char *strconv_mode;
-#endif
 	RList *vars;
 	char io_unalloc_ch;
 	bool show_offset;

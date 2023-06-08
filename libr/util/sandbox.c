@@ -271,11 +271,7 @@ R_API int r_sandbox_system(const char *x, int n) {
 		argv = r_str_argv (cmd, &argc);
 		if (argv) {
 			char *argv0 = r_file_path (argv[0]);
-#if R2_590
 			if (!argv0) {
-#else
-			if (!strcmp (argv0, argv[0])) {
-#endif
 				R_LOG_ERROR ("Cannot find '%s'", argv[0]);
 				return -1;
 			}
