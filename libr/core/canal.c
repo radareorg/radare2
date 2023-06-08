@@ -1499,7 +1499,7 @@ static int core_anal_graph_construct_edges(RCore *core, RAnalFunction *fcn, int 
 				}
 			}
 		}
-		if (bbi->fail != -1) {
+		if (bbi->fail != UT64_MAX) {
 			nodes++;
 			if (is_html) {
 				r_cons_printf ("<div class=\"connector _0x%08"PFMT64x" _0x%08"PFMT64x"\">\n"
@@ -2238,6 +2238,9 @@ R_API void r_core_anal_datarefs(RCore *core, ut64 addr) {
 		RAnalRef *ref;
 		RList *refs = r_anal_function_get_refs (fcn);
 		r_list_foreach (refs, iter, ref) {
+			if (ref->addr == UT64_MAX) {
+				continue;
+			}
 			RBinObject *obj = r_bin_cur_object (core->bin);
 			RBinSection *binsec = r_bin_get_section_at (obj, ref->addr, true);
 			if (binsec && binsec->is_data) {
@@ -2267,6 +2270,9 @@ R_API void r_core_anal_coderefs(RCore *core, ut64 addr) {
 		RList *refs = r_anal_function_get_refs (fcn);
 		r_cons_printf ("agn %s\n", me);
 		r_list_foreach (refs, iter, ref) {
+			if (ref->addr == UT64_MAX) {
+				continue;
+			}
 			r_strf_buffer (32);
 			RFlagItem *item = r_flag_get_i (core->flags, ref->addr);
 			const char *dst = item? item->name: r_strf ("0x%08"PFMT64x, ref->addr);
@@ -2280,6 +2286,9 @@ R_API void r_core_anal_coderefs(RCore *core, ut64 addr) {
 }
 
 static void add_single_addr_xrefs(RCore *core, ut64 addr, RGraph *graph) {
+	if (addr == UT64_MAX) {
+		return;
+	}
 	r_return_if_fail (graph);
 	RFlagItem *f = r_flag_get_at (core->flags, addr, false);
 	char *me = (f && f->offset == addr)
@@ -2295,6 +2304,9 @@ static void add_single_addr_xrefs(RCore *core, ut64 addr, RGraph *graph) {
 	RAnalRef *ref;
 	RList *list = r_anal_xrefs_get (core->anal, addr);
 	r_list_foreach (list, iter, ref) {
+		if (ref->addr == UT64_MAX) {
+			continue;
+		}
 		RFlagItem *item = r_flag_get_i (core->flags, ref->addr);
 		char *src = item? r_str_new (item->name): r_str_newf ("0x%08" PFMT64x, ref->addr);
 		RGraphNode *reference_from = r_graph_add_node_info (graph, src, NULL, ref->addr);
@@ -3835,8 +3847,8 @@ R_API int r_core_anal_graph(RCore *core, ut64 addr, int opts) {
 		if (!is_html && !is_json && !is_keva) {
 			RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, addr, 0);
 			if (is_star) {
-					char *name = get_title(fcn ? fcn->addr: addr);
-					r_cons_printf ("agn %s;", name);
+				char *name = get_title (fcn ? fcn->addr: addr);
+				r_cons_printf ("agn %s;", name);
 			} else {
 				r_cons_printf ("\t\"0x%08"PFMT64x"\";\n", fcn? fcn->addr: addr);
 			}
