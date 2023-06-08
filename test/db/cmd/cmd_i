@@ -3669,20 +3669,27 @@ RUN
 NAME=is sht null
 FILE=bins/elf/sht_null_symbols
 ARGS=-e bin.types=true
-CMDS=is; ir; f
+CMDS=<<EOF
+is
+?e relocs
+ir
+?e flags
+f
+EOF
 EXPECT=<<EOF
 [Symbols]
 nth paddr      vaddr      bind   type   size lib name                            demangled
 ------------------------------------------------------------------------------------------
 8   0x00000590 0x00000590 GLOBAL FUNC   60       main
 9   0x0000064c 0x0000064c GLOBAL OBJ    4        _IO_stdin_used
-1   0x00000000 0x00000000 WEAK   NOTYPE 16       imp._ITM_deregisterTMCloneTable
-2   0x00000000 0x00000000 WEAK   FUNC   16       imp.__cxa_finalize
+1   ---------- ---------- WEAK   NOTYPE 16       imp._ITM_deregisterTMCloneTable
+2   ---------- ---------- WEAK   FUNC   16       imp.__cxa_finalize
 3   0x000003f0 0x000003f0 GLOBAL FUNC   16       imp.puts
-4   0x00000000 0x00000000 WEAK   NOTYPE 16       imp.__gmon_start__
+4   ---------- ---------- WEAK   NOTYPE 16       imp.__gmon_start__
 5   0x00000400 0x00000400 GLOBAL FUNC   16       imp.__libc_start_main
-6   0x00000000 0x00000000 WEAK   NOTYPE 16       imp._Jv_RegisterClasses
-7   0x00000000 0x00000000 WEAK   NOTYPE 16       imp._ITM_registerTMCloneTable
+6   ---------- ---------- WEAK   NOTYPE 16       imp._Jv_RegisterClasses
+7   ---------- ---------- WEAK   NOTYPE 16       imp._ITM_registerTMCloneTable
+relocs
 [Relocations]
 
 vaddr      paddr      type   name
@@ -3701,14 +3708,10 @@ vaddr      paddr      type   name
 
 
 11 relocations
+flags
 0x00000000 1936 segment.LOAD0
 0x00000000 0 segment.GNU_STACK
 0x00000000 52 segment.ehdr
-0x00000000 16 loc.imp._ITM_deregisterTMCloneTable
-0x00000000 16 sym.imp.__cxa_finalize
-0x00000000 16 loc.imp.__gmon_start__
-0x00000000 16 loc.imp._Jv_RegisterClasses
-0x00000000 16 loc.imp._ITM_registerTMCloneTable
 0x00000000 52 elf_header
 0x00000034 288 segment.PHDR
 0x00000034 32 elf_phdr
@@ -3855,6 +3858,17 @@ EXPECT=<<EOF
             0x0021bfb0      .qword 0x0000000000005ce0 ; entry.fini0    ; [19] -rw- section size 8 named .fini_array
 EOF
 EXPECT_ERR=<<EOF
+WARN: Cannot resolve symbol address __progname
+WARN: Cannot resolve symbol address _ITM_deregisterTMCloneTable
+WARN: Cannot resolve symbol address stdout
+WARN: Cannot resolve symbol address optind
+WARN: Cannot resolve symbol address optarg
+WARN: Cannot resolve symbol address program_invocation_name
+WARN: Cannot resolve symbol address __progname_full
+WARN: Cannot resolve symbol address _Jv_RegisterClasses
+WARN: Cannot resolve symbol address _ITM_registerTMCloneTable
+WARN: Cannot resolve symbol address program_invocation_short_name
+WARN: Cannot resolve symbol address stderr
 ERROR: Cannot seek to unknown address 'section..preinit_array'
 EOF
 RUN

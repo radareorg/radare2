@@ -1806,9 +1806,13 @@ static void set_bin_relocs(RelocInfo *ri, RBinReloc *reloc, ut64 addr, Sdb **db,
 					ut64 saddr = reloc->vaddr - ri->got_va;
 					int index = (saddr / 4) - 4;
 					ut64 naddr = r_bin_a2b (r->bin, ri->plt_va + (index * 12) + 0x20);
-					char *internal_reloc = r_str_newf ("rsym.%s", reloc_name);
-					(void)r_flag_set (r->flags, internal_reloc, naddr, bin_reloc_size (reloc));
-					free (internal_reloc);
+					if (naddr == UT64_MAX) {
+						R_LOG_WARN ("Cannot resolve reloc reference %s", reloc_name);
+					} else {
+						char *internal_reloc = r_str_newf ("rsym.%s", reloc_name);
+						(void)r_flag_set (r->flags, internal_reloc, naddr, bin_reloc_size (reloc));
+						free (internal_reloc);
+					}
 				}
 			}
 		}
@@ -2603,13 +2607,17 @@ static int bin_symbols(RCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at, 
 				char *fnp = (r->bin->prefix) ?
 					r_str_newf ("%s.%s", r->bin->prefix, fn):
 					strdup (r_str_get (fn));
-				RFlagItem *fi = r_flag_set (r->flags, fnp, addr, symbol->size);
-				if (fi) {
-					r_flag_item_set_realname (fi, n);
-					fi->demangled = (bool)(size_t)sn.demname;
+				if (addr == UT64_MAX) {
+					R_LOG_WARN ("Cannot resolve symbol address %s", n);
 				} else {
-					if (fn) {
-						R_LOG_WARN ("Can't find flag (%s)", fn);
+					RFlagItem *fi = r_flag_set (r->flags, fnp, addr, symbol->size);
+					if (fi) {
+						r_flag_item_set_realname (fi, n);
+						fi->demangled = (bool)(size_t)sn.demname;
+					} else {
+						if (fn) {
+							R_LOG_WARN ("Can't find flag (%s)", fn);
+						}
 					}
 				}
 				free (fnp);

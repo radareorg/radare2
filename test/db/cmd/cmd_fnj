@@ -3,12 +3,66 @@ FILE=bins/elf/demangle-test-cpp
 ARGS=-e bin.types=true
 CMDS=<<EOF
 aaa
-fj~{259}
-fnj~{259}
+fj~{} > $fj
+$fj~__throw_length_error_char_const_
+fnj~{} > $fnj
+$fnj~__throw_length_error_char_const_
+""js a=r2.cmdj("fj").filter((x)=>x.name.indexOf("throw") !== -1);console.log(JSON.stringify(a,null, 2))
 EOF
 EXPECT=<<EOF
-{"name":"reloc.std::__throw_length_error_char_const_","realname":"std::__throw_length_error(char const*)","size":8,"offset":16424}
-{"name":"reloc.std::__throw_length_error_char_const_","realname":"std::__throw_length_error(char const*)","size":8,"offset":16424}
+    "name": "sym.imp.std::__throw_length_error_char_const_",
+    "name": "reloc.std::__throw_length_error_char_const_",
+    "name": "method.std.__throw_length_error_char_const_",
+    "name": "sym.imp.std::__throw_length_error_char_const_",
+    "name": "reloc.std::__throw_length_error_char_const_",
+    "name": "method.std.__throw_length_error_char_const_",
+[
+  {
+    "name": "sym.imp.std::__throw_bad_alloc__",
+    "realname": "std::__throw_bad_alloc()",
+    "size": 6,
+    "offset": 4144
+  },
+  {
+    "name": "sym.imp.std::__throw_length_error_char_const_",
+    "realname": "std::__throw_length_error(char const*)",
+    "size": 6,
+    "offset": 4176
+  },
+  {
+    "name": "sym.imp.__cxa_rethrow",
+    "realname": "__cxa_rethrow",
+    "size": 6,
+    "offset": 4240
+  },
+  {
+    "name": "reloc.std::__throw_bad_alloc__",
+    "realname": "std::__throw_bad_alloc()",
+    "size": 8,
+    "offset": 16408
+  },
+  {
+    "name": "method.std.__throw_bad_alloc__",
+    "size": 1,
+    "offset": 16408
+  },
+  {
+    "name": "reloc.std::__throw_length_error_char_const_",
+    "realname": "std::__throw_length_error(char const*)",
+    "size": 8,
+    "offset": 16424
+  },
+  {
+    "name": "method.std.__throw_length_error_char_const_",
+    "size": 1,
+    "offset": 16424
+  },
+  {
+    "name": "reloc.__cxa_rethrow",
+    "size": 8,
+    "offset": 16456
+  }
+]
 EOF
 RUN
 
