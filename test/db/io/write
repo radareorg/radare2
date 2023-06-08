@@ -16,7 +16,9 @@ RUN
 
 NAME=write-on-ro
 FILE=bins/elf/analysis/pie
+ARGS=-e log.level=10
 CMDS=<<EOF
+e log.level=0
 e log.source=true
 w hello
 ps
@@ -25,11 +27,65 @@ EXPECT=<<EOF
 1\xed^\x89\xe1\x83\xe4\xf0PTR\xe8"
 EOF
 EXPECT_ERR=<<EOF
+DEBUG: RCoreCmd: =!
+DEBUG: bin object have no information
+DEBUG: add dt.dyn.entry tag=1 value=0x00000001
+DEBUG: add dt.dyn.entry tag=12 value=0x000003ec
+DEBUG: add dt.dyn.entry tag=13 value=0x00000644
+DEBUG: init array
+DEBUG: init array size
+DEBUG: fini array
+DEBUG: fini array size
+DEBUG: add dt.dyn.entry tag=1879047925 value=0x0000018c
+DEBUG: add dt.dyn.entry tag=5 value=0x00000280
+DEBUG: add dt.dyn.entry tag=6 value=0x000001c0
+DEBUG: add dt.dyn.entry tag=10 value=0x000000c2
+DEBUG: add dt.dyn.entry tag=11 value=0x00000010
+DEBUG: add dt.dyn.entry tag=21 value=0x00000000
+DEBUG: add dt.dyn.entry tag=3 value=0x00001848
+DEBUG: add dt.dyn.entry tag=2 value=0x00000018
+DEBUG: add dt.dyn.entry tag=20 value=0x00000011
+DEBUG: add dt.dyn.entry tag=23 value=0x000003d4
+DEBUG: add dt.dyn.entry tag=17 value=0x0000038c
+DEBUG: add dt.dyn.entry tag=18 value=0x00000048
+DEBUG: add dt.dyn.entry tag=19 value=0x00000008
+DEBUG: add dt.dyn.entry tag=1879048190 value=0x0000035c
+DEBUG: add dt.dyn.entry tag=1879048191 value=0x00000001
+DEBUG: add dt.dyn.entry tag=1879048176 value=0x00000342
+DEBUG: add dt.dyn.entry tag=1879048186 value=0x00000004
+DEBUG: (section .dynstr) Css 194 @ 0x280
+DEBUG: RCoreCmd: Css 194 @ 0x280
+DEBUG: RCoreCmd: Cz@0x00000280
+DEBUG: RCoreCmd: o;om
+DEBUG: (section .init_array) Cd 4[1] @ 0x173c
+DEBUG: RCoreCmd: Cd 4[1] @ 0x173c
+DEBUG: (cannot find opening [) in (1])
+DEBUG: (section .fini_array) Cd 4[1] @ 0x1740
+DEBUG: RCoreCmd: Cd 4[1] @ 0x1740
+DEBUG: (cannot find opening [) in (1])
+DEBUG: (section .dynamic) Cd 4[58] @ 0x1748
+DEBUG: RCoreCmd: Cd 4[58] @ 0x1748
+DEBUG: (cannot find opening [) in (58])
+DEBUG: (section .dynstr) Css 194 @ 0x280
+DEBUG: RCoreCmd: Css 194 @ 0x280
+DEBUG: RCoreCmd: Cz@0x00000280
+DEBUG: RCoreCmd: o;om
+DEBUG: (section .init_array) Cd 4[1] @ 0x173c
+DEBUG: RCoreCmd: Cd 4[1] @ 0x173c
+DEBUG: (cannot find opening [) in (1])
+DEBUG: (section .fini_array) Cd 4[1] @ 0x1740
+DEBUG: RCoreCmd: Cd 4[1] @ 0x1740
+DEBUG: (cannot find opening [) in (1])
+DEBUG: (section .dynamic) Cd 4[58] @ 0x1748
+DEBUG: RCoreCmd: Cd 4[58] @ 0x1748
+DEBUG: (cannot find opening [) in (58])
 WARN: run r2 with -e bin.cache=true to fix relocations in disassembly
-WARN: Cannot resolve symbol address _ITM_deregisterTMCloneTable
-WARN: Cannot resolve symbol address _Jv_RegisterClasses
-WARN: Cannot resolve symbol address _ITM_registerTMCloneTable
-ERROR: [cmd_write.c:184] Cannot write. Use `omf`, `io.cache` or reopen the file in rw with `oo+`
+DEBUG: Cannot resolve symbol address _ITM_deregisterTMCloneTable
+DEBUG: Cannot resolve symbol address _Jv_RegisterClasses
+DEBUG: Cannot resolve symbol address _ITM_registerTMCloneTable
+DEBUG: RCoreCmd: =!
+DEBUG: RCoreCmd: ieq
+DEBUG: RCoreCmd: e log.level=0
 EOF
 RUN
 
@@ -49,9 +105,6 @@ hello
 EOF
 EXPECT_ERR=<<EOF
 WARN: run r2 with -e bin.cache=true to fix relocations in disassembly
-WARN: Cannot resolve symbol address _ITM_deregisterTMCloneTable
-WARN: Cannot resolve symbol address _Jv_RegisterClasses
-WARN: Cannot resolve symbol address _ITM_registerTMCloneTable
 ERROR: [cmd_write_fail] Cannot write. Use `omf`, `io.cache` or reopen the file in rw with `oo+`
 EOF
 RUN

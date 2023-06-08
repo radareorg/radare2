@@ -527,6 +527,7 @@ RUN
 
 NAME=test dwarf5
 FILE=bins/elf/dwarf/hello-dwarf5
+ARGS=-e log.level=10 -e log.source=true -e log.filter=core.bin
 CMDS=<<EOF
 id
 CL
@@ -700,12 +701,23 @@ line: 3
 addr: 0x00001149
 EOF
 EXPECT_ERR=<<EOF
-WARN: run r2 with -e bin.cache=true to fix relocations in disassembly
-WARN: Cannot resolve symbol address __libc_start_main
-WARN: Cannot resolve symbol address _ITM_deregisterTMCloneTable
-WARN: Cannot resolve symbol address __gmon_start__
-WARN: Cannot resolve symbol address _ITM_registerTMCloneTable
-WARN: Cannot resolve symbol address __cxa_finalize
+DEBUG: [cbin.c:3339] (section .dynstr) Css 141 @ 0x480
+DEBUG: [cbin.c:3339] (section .rela.dyn) Cd 8[24] @ 0x550
+DEBUG: [cbin.c:3339] (section .rela.plt) Cd 8[3] @ 0x610
+DEBUG: [cbin.c:3339] (section .init_array) Cd 8[1] @ 0x3db8
+DEBUG: [cbin.c:3339] (section .fini_array) Cd 8[1] @ 0x3dc0
+DEBUG: [cbin.c:3339] (section .dynamic) Cd 8[62] @ 0x3dc8
+DEBUG: [cbin.c:3339] (section .dynstr) Css 141 @ 0x480
+DEBUG: [cbin.c:3339] (section .rela.dyn) Cd 8[24] @ 0x550
+DEBUG: [cbin.c:3339] (section .rela.plt) Cd 8[3] @ 0x610
+DEBUG: [cbin.c:3339] (section .init_array) Cd 8[1] @ 0x3db8
+DEBUG: [cbin.c:3339] (section .fini_array) Cd 8[1] @ 0x3dc0
+DEBUG: [cbin.c:3339] (section .dynamic) Cd 8[62] @ 0x3dc8
+DEBUG: [cbin.c:2607] Cannot resolve symbol address __libc_start_main
+DEBUG: [cbin.c:2607] Cannot resolve symbol address _ITM_deregisterTMCloneTable
+DEBUG: [cbin.c:2607] Cannot resolve symbol address __gmon_start__
+DEBUG: [cbin.c:2607] Cannot resolve symbol address _ITM_registerTMCloneTable
+DEBUG: [cbin.c:2607] Cannot resolve symbol address __cxa_finalize
 EOF
 RUN
 

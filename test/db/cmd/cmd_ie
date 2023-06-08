@@ -87,10 +87,7 @@ vaddr=0x00000f50 paddr=0x00000f50 haddr=0x00000018 hvaddr=0x00000018 type=progra
 
 1 entrypoints
 EOF
-EXPECT_ERR=<<EOF
-WARN: Cannot resolve symbol address __stack_chk_guard
-WARN: Cannot resolve symbol address __cxa_call_unexpected
-EOF
+EXPECT_ERR=
 RUN
 
 NAME=auto entry (log.level test)

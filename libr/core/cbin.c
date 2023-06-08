@@ -1807,7 +1807,7 @@ static void set_bin_relocs(RelocInfo *ri, RBinReloc *reloc, ut64 addr, Sdb **db,
 					int index = (saddr / 4) - 4;
 					ut64 naddr = r_bin_a2b (r->bin, ri->plt_va + (index * 12) + 0x20);
 					if (naddr == UT64_MAX) {
-						R_LOG_WARN ("Cannot resolve reloc reference %s", reloc_name);
+						R_LOG_DEBUG ("Cannot resolve reloc reference %s", reloc_name);
 					} else {
 						char *internal_reloc = r_str_newf ("rsym.%s", reloc_name);
 						(void)r_flag_set (r->flags, internal_reloc, naddr, bin_reloc_size (reloc));
@@ -1827,7 +1827,7 @@ static void set_bin_relocs(RelocInfo *ri, RBinReloc *reloc, ut64 addr, Sdb **db,
 	}
 	r_name_filter (flagname, 0);
 	if (addr == UT64_MAX) {
-		R_LOG_WARN ("Cannot resolve reloc %s", demname);
+		R_LOG_DEBUG ("Cannot resolve reloc %s", demname);
 	} else {
 		RFlagItem *fi = r_flag_set (r->flags, flagname, addr, bin_reloc_size (reloc));
 		if (demname) {
@@ -2024,7 +2024,7 @@ static int bin_relocs(RCore *r, PJ *pj, int mode, int va) {
 			}
 		} else if (IS_MODE_NORMAL (mode)) {
 			if (addr == UT64_MAX) {
-				R_LOG_WARN ("Cannot resolve address for %s", bin_reloc_type_name (reloc));
+				R_LOG_DEBUG ("Cannot resolve address for %s", bin_reloc_type_name (reloc));
 				continue;
 			}
 
@@ -2604,7 +2604,7 @@ static int bin_symbols(RCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at, 
 					r_str_newf ("%s.%s", r->bin->prefix, fn):
 					strdup (r_str_get (fn));
 				if (addr == UT64_MAX) {
-					R_LOG_WARN ("Cannot resolve symbol address %s", n);
+					R_LOG_DEBUG ("Cannot resolve symbol address %s", n);
 				} else {
 					RFlagItem *fi = r_flag_set (r->flags, fnp, addr, symbol->size);
 					if (fi) {
