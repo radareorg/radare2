@@ -1870,7 +1870,7 @@ static RList *entries(RBinFile *bf) {
 	return ret;
 }
 
-static int getoffset(RBinFile *bf, int type, int idx) {
+static ut64 getoffset(RBinFile *bf, int type, int idx) {
 	struct r_bin_dex_obj_t *dex = bf->o->bin_obj;
 	switch (type) {
 	case 'm': // methods
@@ -1893,7 +1893,7 @@ static int getoffset(RBinFile *bf, int type, int idx) {
 	case 'c': // class
 		return dex_get_type_offset (bf, idx);
 	}
-	return -1;
+	return UT64_MAX;
 }
 
 static const char *getname(RBinFile *bf, int type, int idx, bool sd) {

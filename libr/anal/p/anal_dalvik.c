@@ -6,7 +6,7 @@
 #define GETWIDE "32,v%u,<<,v%u,|"
 #define SETWIDE "DUP,v%u,=,32,SWAP,>>,v%u,="
 
-static inline int _anal_get_offset(RAnal *a, int type, int idx) {
+static inline ut64 _anal_get_offset(RAnal *a, int type, int idx) {
 	if (a && a->binb.bin && a->binb.get_offset) {
 		return a->binb.get_offset (a->binb.bin, type, idx);
 	}
@@ -522,7 +522,7 @@ static int dalvik_disassemble(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, 
 			vB = (buf[3] << 8) | buf[2];
 			if (buf[0] == 0x1a) {
 				offset = _anal_get_offset (a, 's', vB);
-				if (offset == -1) {
+				if (offset == UT64_MAX) {
 					snprintf (str, sizeof (str), " v%i, string+%i", vA, vB);
 				} else {
 					snprintf (str, sizeof (str), " v%i, 0x%"PFMT64x, vA, offset);
@@ -549,7 +549,7 @@ static int dalvik_disassemble(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, 
 			vB = (buf[1] & 0xf0) >> 4;
 			vC = (buf[3]<<8) | buf[2];
 			offset = _anal_get_offset (a, 'o', vC);
-			if (offset == -1) {
+			if (offset == UT64_MAX) {
 				snprintf (str, sizeof (str), " v%i, v%i, [obj+%04x]", vA, vB, vC);
 			} else {
 				snprintf (str, sizeof (str), " v%i, v%i, [0x%"PFMT64x"]", vA, vB, offset);
@@ -560,7 +560,7 @@ static int dalvik_disassemble(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, 
 			vA = (int) buf[1];
 			vB = (buf[3] << 8) | buf[2];
 			offset = _anal_get_offset (a, 't', vB);
-			if (offset == -1) {
+			if (offset == UT64_MAX) {
 				snprintf (str, sizeof (str), " v%i, thing+%i", vA, vB);
 			} else {
 				snprintf (str, sizeof (str), " v%i, 0x%"PFMT64x, vA, offset);
@@ -592,7 +592,7 @@ static int dalvik_disassemble(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, 
 			vA = (int) buf[1];
 			vB = (int) (buf[5] | (buf[4] << 8) | (buf[3] << 16) | (buf[2] << 24));
 			offset = _anal_get_offset (a, 's', vB);
-			if (offset == -1) {
+			if (offset == UT64_MAX) {
 				snprintf (str, sizeof (str), " v%i, string+%i", vA, vB);
 			} else {
 				snprintf (str, sizeof (str), " v%i, 0x%"PFMT64x, vA, offset);
