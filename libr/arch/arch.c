@@ -97,7 +97,6 @@ R_API bool r_arch_use(RArch *arch, RArchConfig *config, const char *name) {
 	if (arch->session) {
 		RArchPluginEncodeCallback encode = arch->session->plugin->encode;
 		if (!encode) {
-#if R2_590
 			RArchPlugin *ap = find_bestmatch (arch, config, name, true);
 			if (ap) {
 				RArchSession *es = r_arch_session (arch, config, ap);
@@ -107,7 +106,6 @@ R_API bool r_arch_use(RArch *arch, RArchConfig *config, const char *name) {
 					arch->session->encoder = es;
 				}
 			}
-#endif
 		}
 	}
 #if 0
@@ -242,12 +240,10 @@ R_API int r_arch_info(RArch *a, int query) {
 R_API bool r_arch_encode(RArch *a, RAnalOp *op, RArchEncodeMask mask) {
 	RArchSession *session = a->session;
 	RArchPluginEncodeCallback encode = R_UNWRAP3 (session, plugin, encode);
-#if R2_590
 	if (!encode && session->encoder) {
 		session = session->encoder;
 		encode = R_UNWRAP3 (session, plugin, encode);
 	}
-#endif
 	return encode? encode (session, op, mask): false;
 }
 

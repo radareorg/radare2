@@ -17,9 +17,9 @@ typedef enum {
 
 #if R2_590
 #define USE_REG_NAMES 1
-#define R_ARCH_INFO_MIN_OP_SIZE 0
-#define R_ARCH_INFO_MAX_OP_SIZE 1
-#define R_ARCH_INFO_INV_OP_SIZE 2
+#define R_ARCH_INFO_MINOP_SIZE 0
+#define R_ARCH_INFO_MAXOP_SIZE 1
+#define R_ARCH_INFO_INVOP_SIZE 2
 #define R_ARCH_INFO_ALIGN 4
 #define R_ARCH_INFO_DATA_ALIGN 8
 #define R_ARCH_INFO_DATA2_ALIGN 16
@@ -34,7 +34,6 @@ typedef enum {
 #define R_ANAL_ARCHINFO_DATA_ALIGN 8
 #endif
 
-
 // base + reg + regdelta * mul + delta
 typedef struct r_arch_value_t {
 	RArchValueType type;
@@ -45,16 +44,9 @@ typedef struct r_arch_value_t {
 	st64 delta; // numeric delta
 	st64 imm; // immediate value
 	int mul; // multiplier (reg*4+base)
-#if USE_REG_NAMES
-	const char * const seg;
-	const char * const reg;
-	const char * const regdelta;
-#else
-	// XXX can be invalidated if regprofile changes causing an UAF
-	RRegItem *seg; // segment selector register
-	RRegItem *reg; // register item reference
-	RRegItem *regdelta; // register index used
-#endif
+	const char *seg;
+	const char *reg;
+	const char *regdelta;
 } RArchValue;
 #include <r_anal/op.h>
 
@@ -101,9 +93,7 @@ typedef struct r_arch_config_t {
 	int invhex;
 	int bitshift;
 	char *abi;
-#if R2_590
 	ut64 gp;
-#endif
 	R_REF_TYPE;
 } RArchConfig;
 
@@ -146,13 +136,11 @@ typedef struct r_arch_t {
 } RArch;
 
 typedef struct r_arch_session_t {
-#if R2_590
 	char *name; // used by .use to chk if it was set already
 	// TODO: name it "peer" instead of encoder. so the encoder can back reference the decoder
-	struct r_arch_session_t *encoder; // used for encoding when plugin->encode is not set
-#endif
 	struct r_arch_t *arch;
 	struct r_arch_plugin_t *plugin; // used for decoding
+	struct r_arch_session_t *encoder; // used for encoding when plugin->encode is not set
 	RArchConfig *config; // TODO remove arch->config!
 	void *data;
 	void *user;
@@ -232,11 +220,6 @@ R_API bool r_arch_add(RArch *arch, RArchPlugin *ap);
 R_API bool r_arch_del(RArch *arch, const char *name);
 R_API void r_arch_free(RArch *arch);
 
-// R2_590 - deprecate
-R_API bool r_arch_set_bits(RArch *arch, ut32 bits);
-R_API bool r_arch_set_endian(RArch *arch, ut32 endian);
-R_API bool r_arch_set_arch(RArch *arch, char *archname);
-
 // aconfig.c
 R_API void r_arch_config_use(RArchConfig *config, R_NULLABLE const char *arch);
 R_API void r_arch_config_set_cpu(RArchConfig *config, R_NULLABLE const char *cpu);
@@ -250,9 +233,7 @@ R_API void r_arch_config_free(RArchConfig *);
 #define RAnalValue RArchValue
 R_API RArchValue *r_arch_value_new(void);
 
-#if R2_590
 R_API RArchValue *r_arch_value_new_reg(const char * const regname);
-#endif
 #if 0
 // switchop
 R_API RArchSwitchOp *r_arch_switch_op_new(ut64 addr, ut64 min_val, ut64 max_val, ut64 def_val);
@@ -269,6 +250,13 @@ R_API RAnalOp *r_arch_op_new(void);
 R_API void r_arch_op_init(RAnalOp *op);
 R_API void r_arch_op_fini(RAnalOp *op);
 R_API void r_arch_op_free(void *_op);
+#endif
+
+#if 1
+// Deprecate!
+R_API bool r_arch_set_endian(RArch *arch, ut32 endian);
+R_API bool r_arch_set_bits(RArch *arch, ut32 bits);
+R_API bool r_arch_set_arch(RArch *arch, char *archname);
 #endif
 
 R_API int r_arch_optype_from_string(const char *type);

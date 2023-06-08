@@ -35,21 +35,21 @@ static R_TH_LOCAL ut64 t9_pre = UT64_MAX;
 	dst = r_vector_push (&(op)->dsts, NULL);
 
 #define SET_SRC_DST_3_REGS(op) \
-	CREATE_SRC_DST_3 (op);\
-	dst->reg = r_reg_get (anal->reg, REG (0), R_REG_TYPE_GPR);\
-	src0->reg = r_reg_get (anal->reg, REG (1), R_REG_TYPE_GPR);\
-	src1->reg = r_reg_get (anal->reg, REG (2), R_REG_TYPE_GPR);
+	CREATE_SRC_DST_3 (op); \
+	dst->reg = REG (0); \
+	src0->reg = REG (1); \
+	src1->reg = REG (2);
 
 #define SET_SRC_DST_3_IMM(op) \
 	CREATE_SRC_DST_3 (op);\
-	dst->reg = r_reg_get (anal->reg, REG (0), R_REG_TYPE_GPR);\
-	src0->reg = r_reg_get (anal->reg, REG (1), R_REG_TYPE_GPR);\
+	dst->reg = REG (0);\
+	src0->reg = REG (1);\
 	src1->imm = IMM (2);
 
 #define SET_SRC_DST_2_REGS(op) \
 	CREATE_SRC_DST_2 (op);\
-	dst->reg = r_reg_get (anal->reg, REG (0), R_REG_TYPE_GPR);\
-	src0->reg = r_reg_get (anal->reg, REG (1), R_REG_TYPE_GPR);
+	dst->reg = REG (0);\
+	src0->reg = REG (1);
 
 #define SET_SRC_DST_3_REG_OR_IMM(op) \
 	if (OPERAND(2).type == MIPS_OP_IMM) {\
@@ -135,8 +135,11 @@ static void opex(RStrBuf *buf, csh handle, cs_insn *insn) {
 		pj_o (pj);
 		switch (op->type) {
 		case MIPS_OP_REG:
-			pj_ks (pj, "type", "reg");
-			pj_ks (pj, "value", cs_reg_name (handle, op->reg));
+			{
+				const char *rn = cs_reg_name (handle, op->reg);
+				pj_ks (pj, "type", "reg");
+				pj_ks (pj, "value", rn? rn: "");
+			}
 			break;
 		case MIPS_OP_IMM:
 			pj_ks (pj, "type", "imm");
@@ -668,43 +671,34 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 	return 0;
 }
 
-static int parse_reg_name(RRegItem *reg, csh handle, cs_insn *insn, int reg_num) {
-	if (!reg) {
-		return -1;
-	}
+static const char *parse_reg_name(csh handle, cs_insn *insn, int reg_num) {
 	switch (OPERAND (reg_num).type) {
 	case MIPS_OP_REG:
-		reg->name = (char *)cs_reg_name (handle, OPERAND (reg_num).reg);
-		break;
+		return cs_reg_name (handle, OPERAND (reg_num).reg);
 	case MIPS_OP_MEM:
 		if (OPERAND (reg_num).mem.base != MIPS_REG_INVALID) {
-			reg->name = (char *)cs_reg_name (handle, OPERAND (reg_num).mem.base);
+			return cs_reg_name (handle, OPERAND (reg_num).mem.base);
 		}
 	default:
 		break;
 	}
-	return 0;
+	return NULL;
 }
 
 static void op_fillval(RAnal *anal, RAnalOp *op, csh *handle, cs_insn *insn) {
-	static R_TH_LOCAL RRegItem reg = {0};
 	RAnalValue *dst, *src0, *src1;
 	switch (op->type & R_ANAL_OP_TYPE_MASK) {
 	case R_ANAL_OP_TYPE_LOAD:
 		if (OPERAND(1).type == MIPS_OP_MEM) {
-			ZERO_FILL (reg);
 			src0 = r_vector_push (&op->srcs, NULL);
-			src0->reg = &reg;
-			parse_reg_name (src0->reg, *handle, insn, 1);
+			src0->reg = parse_reg_name (*handle, insn, 1);
 			src0->delta = OPERAND(1).mem.disp;
 		}
 		break;
 	case R_ANAL_OP_TYPE_STORE:
 		if (OPERAND(1).type == MIPS_OP_MEM) {
-			ZERO_FILL (reg);
 			dst = r_vector_push (&op->dsts, NULL);
-			dst->reg = &reg;
-			parse_reg_name (dst->reg, *handle, insn, 1);
+			dst->reg = parse_reg_name (*handle, insn, 1);
 			dst->delta = OPERAND(1).mem.disp;
 		}
 		break;

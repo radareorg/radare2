@@ -1,27 +1,23 @@
-/* radare - LGPL - Copyright 2010-2022 - pancake, condret */
+/* radare - LGPL - Copyright 2010-2023 - pancake, condret */
 
 #include <r_arch.h>
 #include <r_io.h>
-#include <r_reg.h>
 
 R_API RArchValue *r_arch_value_new(void) { //macro for this ?
 	return R_NEW0 (RArchValue);
 }
 
-#if R2_590
 R_API RArchValue *r_arch_value_new_reg(const char * const reg) {
 	RArchValue *v = R_NEW0 (RArchValue);
-	v->reg = reg;
+	if (v) {
+		v->reg = reg;
+	}
 	return v;
 }
-#endif
 
 // TODO: move into .h as #define free
 R_API void r_anal_value_free(RArchValue *value) {
 	if (value) {
-		r_unref (value->seg);
-		r_unref (value->reg);
-		r_unref (value->regdelta);
 		free (value);
 	}
 #if 0

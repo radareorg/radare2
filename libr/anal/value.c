@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2010-2020 - pancake */
+/* radare - LGPL - Copyright 2010-2023 - pancake */
 
 #include <r_anal.h>
 
@@ -19,10 +19,10 @@ R_API ut64 r_anal_value_to_ut64(RAnal *anal, RAnalValue *val) {
 	}
 	num = val->base + (val->delta * (val->mul ? val->mul : 1));
 	if (val->reg) {
-		num += r_reg_get_value (anal->reg, val->reg);
+		num += r_reg_getv (anal->reg, val->reg);
 	}
 	if (val->regdelta) {
-		num += r_reg_get_value (anal->reg, val->regdelta);
+		num += r_reg_getv (anal->reg, val->regdelta);
 	}
 	switch (val->memref) {
 	case 1:
@@ -49,21 +49,17 @@ R_API int r_anal_value_set_ut64(RAnal *anal, RAnalValue *val, ut64 num) {
 		}
 	} else {
 		if (val->reg) {
-			r_reg_set_value (anal->reg, val->reg, num);
+			r_reg_setv (anal->reg, val->reg, num);
 		}
 	}
 	return false;							//is this necessary
 }
 
 R_API const char *r_anal_value_type_tostring(RAnalValue *value) {
-	if (value->type == R_ANAL_VAL_REG) {
-		return "reg";
-	}
-	if (value->type == R_ANAL_VAL_MEM) {
-		return "mem";
-	}
-	if (value->type == R_ANAL_VAL_IMM) {
-		return "imm";
+	switch (value->type) {
+	case R_ANAL_VAL_REG: return "reg";
+	case R_ANAL_VAL_MEM: return "mem";
+	case R_ANAL_VAL_IMM: return "imm";
 	}
 	return "unk";
 }
@@ -92,10 +88,10 @@ R_API char *r_anal_value_tostring(RAnalValue *value) {
 				out = r_str_appendf (out, "%d*", value->mul);
 			}
 			if (value->reg) {
-				out = r_str_appendf (out, "%s", value->reg->name);
+				out = r_str_appendf (out, "%s", value->reg);
 			}
 			if (value->regdelta) {
-				out = r_str_appendf (out, "+%s", value->regdelta->name);
+				out = r_str_appendf (out, "+%s", value->regdelta);
 			}
 			if (value->base != 0) {
 				out = r_str_appendf (out, "0x%" PFMT64x, value->base);

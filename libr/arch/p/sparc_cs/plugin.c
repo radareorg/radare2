@@ -54,23 +54,19 @@ static void opex(RStrBuf *buf, csh handle, cs_insn *insn) {
 	pj_free (pj);
 }
 
-static int parse_reg_name(RRegItem *reg, csh handle, cs_insn *insn, int reg_num) {
-	if (!reg) {
-		return -1;
-	}
+static const char *parse_reg_name(csh handle, cs_insn *insn, int reg_num) {
 	switch (INSOP (reg_num).type) {
 	case SPARC_OP_REG:
-		reg->name = (char *)cs_reg_name (handle, INSOP (reg_num).reg);
-		break;
+		return cs_reg_name (handle, INSOP (reg_num).reg);
 	case SPARC_OP_MEM:
 		if (INSOP (reg_num).mem.base != SPARC_REG_INVALID) {
-			reg->name = (char *)cs_reg_name (handle, INSOP (reg_num).mem.base);
-			break;
+			return cs_reg_name (handle, INSOP (reg_num).mem.base);
 		}
+		break;
 	default:
 		break;
 	}
-	return 0;
+	return NULL;
 }
 
 static int get_capstone_mode(RArchSession *as) {
@@ -105,8 +101,7 @@ static void op_fillval(PluginData *pd, RAnalOp *op, csh handle, cs_insn *insn) {
 		if (INSOP (0).type == SPARC_OP_MEM) {
 			memset (reg, 0, sizeof (RRegItem));
 			val = r_vector_push (&op->srcs, NULL);
-			val->reg = reg;
-			parse_reg_name (val->reg, handle, insn, 0);
+			val->reg = parse_reg_name (handle, insn, 0);
 			val->delta = INSOP(0).mem.disp;
 		}
 		break;
@@ -114,8 +109,7 @@ static void op_fillval(PluginData *pd, RAnalOp *op, csh handle, cs_insn *insn) {
 		if (INSOP (1).type == SPARC_OP_MEM) {
 			memset (reg, 0, sizeof (RRegItem));
 			val = r_vector_push (&op->dsts, NULL);
-			val->reg = reg;
-			parse_reg_name (val->reg, handle, insn, 1);
+			val->reg = parse_reg_name (handle, insn, 1);
 			val->delta = INSOP(1).mem.disp;
 		}
 		break;
