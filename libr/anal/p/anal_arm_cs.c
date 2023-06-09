@@ -4262,32 +4262,29 @@ jmp $$ + 4 + ( [delta] * 2 )
 	}
 }
 
-static bool is_valid(arm_reg reg) {
+static inline bool is_valid(arm_reg reg) {
 	return reg != ARM_REG_INVALID;
 }
 
 // XXX this function is a disaster
 static const char *parse_reg_name(RReg *reg, const char **reg_delta, csh handle, cs_insn *insn, int reg_num) {
-	const char *reg_base = NULL;
 	cs_arm_op armop = INSOP (reg_num);
 	switch (armop.type) {
 	case ARM_OP_REG:
-		reg_base = cs_reg_name (handle, armop.reg);
-		break;
+		return cs_reg_name (handle, armop.reg);
 	case ARM_OP_MEM:
 		if (is_valid (armop.mem.base) && is_valid (armop.mem.index)) {
-			reg_base = cs_reg_name (handle, armop.mem.base);
 			*reg_delta = cs_reg_name (handle, armop.mem.index);
+			return cs_reg_name (handle, armop.mem.base);
 		} else if (is_valid (armop.mem.base)) {
-			reg_base = cs_reg_name (handle, armop.mem.base);
+			return cs_reg_name (handle, armop.mem.base);
 		} else if (is_valid (armop.mem.index)) {
-			reg_base = cs_reg_name (handle, armop.mem.index);
+			return cs_reg_name (handle, armop.mem.index);
 		}
-		break;
+		return NULL;
 	default:
-		break;
+		return NULL;
 	}
-	return reg_base;
 }
 
 static bool is_valid64(arm64_reg reg) {

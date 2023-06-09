@@ -234,7 +234,6 @@ static bool is_delta_pointer_table(ReadAhead *ra, RAnal *anal, RAnalFunction *fc
 	    && mov_aop.disp && mov_aop.disp != UT64_MAX) {
 		// disp in this case should be tbl_loc_off
 		*jmptbl_addr += mov_aop.disp;
-		// if (o_reg_dst && reg_src && o_reg_dst->offset == reg_src->offset && omov_aop.disp != UT64_MAX) {
 		if (o_reg_dst && reg_src && !strcmp (o_reg_dst, reg_src) && omov_aop.disp != UT64_MAX) {
 			// Special case for indirection
 			// lea reg1, [base_addr]

@@ -62,11 +62,10 @@ static const char *parse_reg_name(csh handle, cs_insn *insn, int reg_num) {
 		if (INSOP (reg_num).mem.base != SPARC_REG_INVALID) {
 			return cs_reg_name (handle, INSOP (reg_num).mem.base);
 		}
-		break;
+		return NULL;
 	default:
-		break;
+		return NULL;
 	}
-	return NULL;
 }
 
 static int get_capstone_mode(RArchSession *as) {

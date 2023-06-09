@@ -267,7 +267,7 @@ static bool detect_casenum_shift(RAnalOp *op, const char **cmp_reg, st64 *start_
 	}
 	RAnalValue *dst = r_vector_at (&op->dsts, 0);
 	RAnalValue *src = r_vector_at (&op->srcs, 0);
-	if (dst && dst->reg && !strcmp (dst->reg, *cmp_reg)) { // dst->reg->offset == (*cmp_reg)->offset) {
+	if (dst && dst->reg && !strcmp (dst->reg, *cmp_reg)) {
 		if (op->type == R_ANAL_OP_TYPE_LEA && op->ptr == UT64_MAX) {
 			*start_casenum_shift = -(st64)op->disp;
 		} else if (op->val != UT64_MAX) {

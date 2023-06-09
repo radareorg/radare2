@@ -212,11 +212,10 @@ static const char *parse_reg_name(csh handle, cs_insn *insn, int reg_num) {
 		if (OPERAND (reg_num).mem.base_reg != M68K_REG_INVALID) {
 			return (char *)cs_reg_name (handle, OPERAND (reg_num).mem.base_reg);
 		}
-		break;
+		return NULL;
 	default:
-		break;
+		return NULL;
 	}
-	return NULL;
 }
 
 static void op_fillval(PluginData *pd, RAnalOp *op, csh handle, cs_insn *insn) {
