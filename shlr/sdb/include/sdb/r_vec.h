@@ -3,8 +3,6 @@
 
 #include <r_util/r_assert.h>
 #include <r_types.h>
-#include <stdlib.h>
-#include <stdbool.h>
 
 #ifdef __cplusplus
 extern "C" {
