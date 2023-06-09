@@ -7,6 +7,7 @@ R2DEPS+=r_cons
 R2DEPS+=r_reg
 R2DEPS+=r_asm
 R2DEPS+=r_arch
+R2DEPS+=r_esil
 R2DEPS+=r_syscall
 R2DEPS+=r_flag
 CFLAGS+=-DR2_PLUGIN_INCORE

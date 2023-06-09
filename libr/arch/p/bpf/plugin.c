@@ -1,7 +1,6 @@
 /* radare2 - LGPL - Copyright 2015-2023 - mrmacete, pancake */
 
 #include <r_arch.h>
-#include <r_esil.h>
 #include <r_anal/op.h>
 #include "bpf.h"
 
@@ -741,11 +740,6 @@ static bool encode(RArchSession *s, RAnalOp *op, ut32 mask) {
 // (k) >= 0 must also be true, but the value is already unsigned
 #define INSIDE_M(k) ((k) < 16)
 
-/*
-static bool bpf_int_exit(REsil *esil, ut32 interrupt, void *user);
-REsilInterruptHandler ih = { 0, NULL, NULL, &bpf_int_exit, NULL };
-*/
-
 #if 0
 static const char *M[] = {
 	"m[0]",
@@ -1214,6 +1208,8 @@ static bool esilcb(RArchSession *as, RArchEsilAction action) {
 	case R_ARCH_ESIL_FINI:
 		r_esil_del_interrupt (esil, 0);
 		break;
+	default:
+		return false;
 	}
 	return true;
 }
@@ -1230,6 +1226,7 @@ RArchPlugin r_arch_plugin_bpf = {
 	.encode = encode,
 	.decode = decode,
 	.regs = &regs,
+	.esilcb = &esilcb,
 };
 
 #ifndef R2_PLUGIN_INCORE

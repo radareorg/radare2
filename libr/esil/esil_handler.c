@@ -1,6 +1,9 @@
-#include <r_anal.h>
-#include <r_util.h>
-#include <sdb/sdb.h>
+/* radare - LGPL - Copyright 2014-2023 - pancake, condret */
+
+// TODO: esil_handler.c -> esil_syscall ? set_interrupts ? set_syscalls?
+#define R_LOG_ORIGIN "esil.syscall"
+
+#include <r_esil.h>
 
 static bool _set_interrupt(REsil *esil, REsilHandler *intr, ut32 intr_num) {
 	return intr_num ? dict_set (esil->interrupts, intr_num, intr_num, intr) : (esil->intr0 = intr, true);

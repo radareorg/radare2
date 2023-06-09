@@ -180,6 +180,7 @@ r_arch = library('r_arch', r_arch_sources,
   c_args: library_cflags,
   dependencies: [
     r_util_dep,
+    r_esil_dep,
     r_reg_dep,
     java_dep,
     capstone_dep,
@@ -217,6 +218,7 @@ pkgconfig_mod.generate(r_arch,
   libraries: pkgcfg_sanitize_libs,
   requires: [
     'r_util',
+    'r_esil',
     'r_reg',
   ],
   description: 'radare foundation libraries'
