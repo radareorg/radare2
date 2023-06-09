@@ -232,12 +232,18 @@ extern "C" {
 	static inline R_MAYBE_UNUSED void R_VEC_FUNC(name, shrink_to_fit)(R_VEC(name) *vec) { \
 		r_return_if_fail (vec); \
 		const size_t num_elems = R_VEC_FUNC(name, length) (vec); \
-		if (num_elems != R_VEC_FUNC(name, capacity) (vec)) { \
-			type *buf = realloc (vec->start, num_elems * sizeof (type)); \
-			if (R_LIKELY (buf)) { \
-				vec->start = buf; \
-				vec->end = buf + num_elems; \
-				vec->capacity = num_elems; \
+		const size_t capacity = R_VEC_FUNC(name, capacity) (vec); \
+		if (num_elems != capacity) { \
+			if (num_elems == 0) { \
+				free (vec->start); \
+				memset (vec, 0, sizeof (R_VEC(name))); \
+			} else { \
+				type *buf = realloc (vec->start, num_elems * sizeof (type)); \
+				if (R_LIKELY (buf)) { \
+					vec->start = buf; \
+					vec->end = buf + num_elems; \
+					vec->capacity = num_elems; \
+				} \
 			} \
 		} \
 	} \
