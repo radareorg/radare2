@@ -2265,11 +2265,7 @@ static bool cb_search_kwidx(void *user, void *data) {
 static bool cb_io_cache_mode(void *user, void *data) {
 	RCore *core = (RCore *)user;
 	RConfigNode *node = (RConfigNode *)data;
-	if (node->i_value) {
-		core->io->cachemode = true;
-	} else {
-		core->io->cachemode = false;
-	}
+	core->io->cachemode = node->i_value;
 	return true;
 }
 
@@ -2279,13 +2275,14 @@ static bool cb_io_cache_nodup(void *user, void *data) {
 	core->io->nodup = node->i_value;
 	return true;
 }
+
 static bool cb_io_cache_read(void *user, void *data) {
 	RCore *core = (RCore *)user;
 	RConfigNode *node = (RConfigNode *)data;
 	if (node->i_value) {
-		core->io->cached |= R_PERM_R;
+		core->io->cache.mode |= R_PERM_R;
 	} else {
-		core->io->cached &= ~R_PERM_R;
+		core->io->cache.mode &= ~R_PERM_R;
 	}
 	return true;
 }
@@ -2294,16 +2291,21 @@ static bool cb_io_cache_write(void *user, void *data) {
 	RCore *core = (RCore *)user;
 	RConfigNode *node = (RConfigNode *)data;
 	if (node->i_value) {
-		core->io->cached |= R_PERM_W;
+		core->io->cache.mode |= R_PERM_W;
 	} else {
-		core->io->cached &= ~R_PERM_W;
+		core->io->cache.mode &= ~R_PERM_W;
 	}
 	return true;
 }
 
 static bool cb_io_cache(void *user, void *data) {
-	(void)cb_io_cache_read (user, data);
-	(void)cb_io_cache_write (user, data);
+	RCore *core = (RCore *)user;
+	RConfigNode *node = (RConfigNode *)data;
+	if (node->i_value) {
+		core->io->cache.mode |= R_PERM_X;
+	} else {
+		core->io->cache.mode &= ~R_PERM_X;
+	}
 	return true;
 }
 
@@ -4341,10 +4343,11 @@ R_API int r_core_config_init(RCore *core) {
 
 	/* io */
 	SETCB ("io.cache", "false", &cb_io_cache, "change both of io.cache.{read,write}");
-	SETCB ("io.cache.auto", "false", &cb_io_cache_mode, "automatic cache all reads in the IO backend");
-	SETCB ("io.cache.read", "false", &cb_io_cache_read, "enable read cache for vaddr (or paddr when io.va=0)");
+	SETCB ("io.cache.read", "true", &cb_io_cache_read, "enable read cache for vaddr (or paddr when io.va=0)");
+	SETCB ("io.cache.write", "true", &cb_io_cache_write, "enable write cache for vaddr (or paddr when io.va=0)");
 	SETCB ("io.cache.nodup", "false", &cb_io_cache_nodup, "do not cache duplicated cache writes");
-	SETCB ("io.cache.write", "false", &cb_io_cache_write, "enable write cache for vaddr (or paddr when io.va=0)");
+	SETCB ("io.cache.auto", "false", &cb_io_cache_mode, "automatic cache all reads in the IO backend"); // renamed to slurp?
+	/* pcache */
 	SETCB ("io.pcache", "false", &cb_iopcache, "io.cache for p-level");
 	SETCB ("io.pcache.write", "false", &cb_iopcachewrite, "enable write-cache");
 	SETCB ("io.pcache.read", "false", &cb_iopcacheread, "enable read-cache");

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2017-2022 - condret, pancake */
+/* radare - LGPL - Copyright 2017-2023 - condret, pancake */
 
 #include <r_io.h>
 
@@ -15,18 +15,17 @@ R_API bool r_io_addr_is_mapped(RIO *io, ut64 vaddr) {
 // when io.va is false it only checks for the desc
 R_API bool r_io_is_valid_offset(RIO* io, ut64 offset, int hasperm) {
 	r_return_val_if_fail (io, false);
-	if (io->cached) {
+	if ((io->cache.mode & R_PERM_X) == R_PERM_X) {
+		// io.cache must be set to true for this codeblock to be executed
 		ut8 word[4] = { 0xff, 0xff, 0xff, 0xff};
-		(void) r_io_read_at (io, offset, (ut8*)&word, 4);
-		if (!r_io_cache_read (io, offset, (ut8*)&word, 4)) {
+		// TODO: check for (io->cache.mode & R_PERM_S) ?
+		(void)r_io_read_at (io, offset, (ut8*)&word, 4);
+		if (!r_io_cache_read_at (io, offset, (ut8*)&word, 4)) {
 			if (!r_io_read_at (io, offset, (ut8*)&word, 4)) {
 				return false;
 			}
 		}
-		if (!memcmp (word, "\xff\xff\xff\xff", 4)) {
-			return false;
-		}
-		return true;
+		return memcmp (word, "\xff\xff\xff\xff", 4) != 0;
 	}
 	if (io->mask) {
 		if (offset > io->mask && hasperm & R_PERM_X) {

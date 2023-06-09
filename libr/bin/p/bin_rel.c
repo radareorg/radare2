@@ -542,7 +542,7 @@ static RBinReloc *patch_reloc(RBin *b, const LoadedRel *rel, const RelReloc *rel
 }
 
 static RList *patch_relocs(RBin *b) {
-	if (!b->iob.io->cached) {
+	if (!r_io_cache_writable (b->iob.io)) {
 		R_LOG_WARN ("run r2 with -e bin.cache=true to fix relocations in disassembly");
 		return NULL;
 	}

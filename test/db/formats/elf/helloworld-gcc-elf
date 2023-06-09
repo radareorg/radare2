@@ -14,25 +14,41 @@ NAME=armr - functions bits
 FILE=bins/arm/elf/hello_world
 CMDS=<<EOF
 aaa
-pi 1@@f
+pid 1@@f
 EOF
 EXPECT=<<EOF
-mov.w fp, 0
-add ip, pc, 0, 12
-ldr r3, [0x00000460]
-ldr r0, [0x00000484]
-ldr r0, [0x000004b8]
-push {r3, lr}
-add ip, pc, 0, 12
-b sym.register_tm_clones
-bx lr
-push {r3, lr}
-push.w {r3, r4, r5, r6, r7, r8, sb, lr}
-push {r7, lr}
-add ip, pc, 0, 12
-push {r3, lr}
-add ip, pc, 0, 12
-str lr, [sp, -4]!
+0x000003fc   r15:
+0x000003fc             4ff0000b  mov.w fp, 0
+0x000003d8   sym.imp.__libc_start_main:
+0x000003d8             00c68fe2  add ip, pc, 0, 12
+0x00000444   sym.call_weak_fn:
+0x00000444             14309fe5  ldr r3, [pc, 0x14]
+0x00000468   sym.deregister_tm_clones:
+0x00000468                 0648  ldr r0, [pc, 0x18]
+0x00000494   sym.register_tm_clones:
+0x00000494                 0848  ldr r0, [pc, 0x20]
+0x000004c8   sym.__do_global_dtors_aux:
+0x000004c8                 08b5  push {r3, lr}
+0x000003c0   sym.imp.__cxa_finalize:
+0x000003c0             00c68fe2  add ip, pc, 0, 12
+0x00000508   sym.frame_dummy:
+0x00000508                 c4e7  b sym.register_tm_clones
+0x00000564   sym.__libc_csu_fini:
+0x00000564                 7047  bx lr
+0x00000568   sym._fini:
+0x00000568             08402de9  push {r3, lr}
+0x00000524   sym.__libc_csu_init:
+0x00000524             2de9f843  push.w {r3, r4, r5, r6, r7, r8, sb, lr}
+0x0000050c   sym.main:
+0x0000050c                 80b5  push {r7, lr}
+0x000003cc   sym.imp.puts:
+0x000003cc             00c68fe2  add ip, pc, 0, 12
+0x000003a0   sym._init:
+0x000003a0             08402de9  push {r3, lr}
+0x000003f0   sym.imp.abort:
+0x000003f0             00c68fe2  add ip, pc, 0, 12
+0x000003ac   sym..plt:
+0x000003ac             04e02de5  str lr, [sp, -4]!
 EOF
 RUN
 

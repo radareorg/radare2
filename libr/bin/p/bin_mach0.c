@@ -481,8 +481,9 @@ static RList* patch_relocs(RBin *b) {
 		return NULL;
 	}
 	struct MACH0_(obj_t) *mo = obj->bin_obj;
-	const bool apply_relocs = io->cached; // true; // !mo->b->readonly;
-	const bool cache_relocs = io->cached;
+	const bool writable = r_io_cache_writable (io);
+	const bool apply_relocs = writable;
+	const bool cache_relocs = writable;
 
 	const RSkipList *all_relocs = MACH0_(load_relocs)(mo);
 	if (!all_relocs) {

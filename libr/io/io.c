@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2008-2022 - condret, pancake, alvaro_fe */
+/* radare2 - LGPL - Copyright 2008-2023 - condret, pancake, alvaro_fe */
 
 #include <r_io.h>
 #include <sdb/sdb.h>
@@ -179,7 +179,7 @@ R_API void r_io_close_all(RIO* io) {
 	ls_free (io->plugins);
 	r_io_desc_init (io);
 	r_io_map_init (io);
-	r_io_cache_fini (io);
+	r_io_cache_reset (io);
 	r_io_plugin_init (io);
 }
 
@@ -233,8 +233,10 @@ static bool internal_r_io_read_at(RIO *io, ut64 addr, ut8 *buf, int len) {
 	bool ret = (io->va)
 		? r_io_vread_at (io, addr, buf, len)
 		: r_io_pread_at (io, addr, buf, len) > 0;
-	if (io->cached & R_PERM_R) {
-		(void)r_io_cache_read (io, addr, buf, len);
+	// if (io->cache.mode & R_PERM_X && io->cache.mode & R_PERM_R)
+	// read works even when io.cache=false, but io.cache.read=true
+	if (io->cache.mode & R_PERM_R) {
+		(void)r_io_cache_read_at (io, addr, buf, len);
 	}
 	return ret;
 }
@@ -287,8 +289,8 @@ R_API int r_io_nread_at(RIO *io, ut64 addr, ut8 *buf, int len) {
 	} else {
 		ret = r_io_pread_at (io, addr, buf, len);
 	}
-	if (ret > 0 && io->cached & R_PERM_R) {
-		(void)r_io_cache_read (io, addr, buf, len);
+	if (ret > 0 && io->cache.mode & R_PERM_R) {
+		(void)r_io_cache_read_at (io, addr, buf, len);
 	}
 	return ret;
 }
@@ -301,16 +303,22 @@ R_API bool r_io_write_at(RIO* io, ut64 addr, const ut8* buf, int len) {
 		mybuf = r_mem_dup ((void*)buf, len);
 		int i;
 		for (i = 0; i < len; i++) {
-			//this sucks
+			// this sucks
 			mybuf[i] &= io->write_mask[i % io->write_mask_len];
 		}
 	}
-	if (io->cached & R_PERM_W) {
-		ret = r_io_cache_write (io, addr, mybuf, len);
-	} else if (io->va) {
-		ret = r_io_vwrite_at (io, addr, mybuf, len);
+	if ((io->cache.mode & R_PERM_X) == R_PERM_X) {
+		if (io->cache.mode & R_PERM_W) {
+			ret = r_io_cache_write_at (io, addr, mybuf, len);
+		} else {
+			R_LOG_ERROR ("enable io.cache.write");
+		}
 	} else {
-		ret = r_io_pwrite_at (io, addr, mybuf, len) > 0; // == len;
+		if (io->va) {
+			ret = r_io_vwrite_at (io, addr, mybuf, len);
+		} else {
+			ret = r_io_pwrite_at (io, addr, mybuf, len) > 0; // == len;
+		}
 	}
 	if (buf != mybuf) {
 		free (mybuf);

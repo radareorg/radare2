@@ -891,7 +891,7 @@ static RList* patch_relocs(RBin *b) {
 	if (!g) {
 		return NULL;
 	}
-	if (!io->cached) {
+	if (!r_io_cache_writable (io)) {
 		R_LOG_WARN ("run r2 with -e bin.cache=true to fix relocations in disassembly");
 		return NULL;
 	}
@@ -899,6 +899,9 @@ static RList* patch_relocs(RBin *b) {
 	// reserve at least that space
 	size = bin->g_reloc_num * cdsz;
 	char *muri = r_str_newf ("malloc://%" PFMT64u, size);
+	if (!muri) {
+		return NULL;
+	}
 	RIODesc *gotr2desc = b->iob.open_at (io, muri, R_PERM_R, 0664, n_vaddr);
 	free (muri);
 	if (!gotr2desc) {
