@@ -26,6 +26,9 @@ static void __max_end(RBNode *node) {
 		if (node->child[i]) {
 			ut64 end = unwrap (node->child[i])->_max_end;
 			if (end > block->_max_end) {
+				if (i == 0) {
+					puts ("it happened");
+				}
 				block->_max_end = end;
 			}
 		}
