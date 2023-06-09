@@ -105,7 +105,11 @@ extern "C" {
 #define R_VEC_FORWARD_DECLARE(name) \
 	R_CONCAT(R_CONCAT(R_CONCAT(typedef struct r_vec_, name), _t), R_VEC(name))
 
+#ifdef _MSC_VER
+#define R_MAYBE_UNUSED
+#else
 #define R_MAYBE_UNUSED __attribute__((unused))
+#endif
 
 // The main macro that generates the implementation for a vector.
 // This should only be used once per type in a single compilation unit,
