@@ -182,9 +182,11 @@ static int archinfo(RArchSession *as, ut32 q) {
 }
 
 RArchPlugin r_arch_plugin_tricore = {
-	.name = "tricore",
-	.desc = "TRICORE analysis plugin",
-	.license = "LGPL3",
+	.meta = {
+		.name = "tricore",
+		.desc = "TRICORE analysis plugin",
+		.license = "LGPL3",
+	},
 	.arch = "tricore",
 	.bits = R_SYS_BITS_PACK1 (32),
 	.info = &archinfo,

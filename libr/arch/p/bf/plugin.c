@@ -310,9 +310,11 @@ static int archinfo(RArchSession *as, ut32 q) {
 }
 
 RArchPlugin r_arch_plugin_bf = {
-	.name = "bf",
-	.desc = "brainfuck code analysis plugin",
-	.license = "LGPL3",
+	.meta = {
+		.name = "bf",
+		.desc = "brainfuck code analysis plugin",
+		.license = "LGPL3",
+	},
 	.arch = "bf",
 	.bits = R_SYS_BITS_PACK (32),
 	.endian = R_SYS_ENDIAN_NONE,

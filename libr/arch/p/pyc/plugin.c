@@ -198,9 +198,11 @@ static bool finish(RArchSession *s) {
 }
 
 RArchPlugin r_arch_plugin_pyc = {
-	.name = "pyc",
-	.desc = "Python bytecode analysis plugin",
-	.license = "LGPL3",
+	.meta = {
+		.name = "pyc",
+		.desc = "Python bytecode analysis plugin",
+		.license = "LGPL3",
+	},
 	.arch = "pyc",
 	.bits = R_SYS_BITS_PACK1 (32),
 	.info = archinfo,

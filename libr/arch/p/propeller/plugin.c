@@ -125,9 +125,11 @@ static bool propeller_op(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 }
 
 RArchPlugin r_arch_plugin_propeller = {
-	.name = "propeller",
-	.desc = "Parallax propeller code analysis plugin",
-	.license = "LGPL3",
+	.meta = {
+		.name = "propeller",
+		.desc = "Parallax propeller code analysis plugin",
+		.license = "LGPL3",
+	},
 	.arch = "propeller",
 	.bits = 32,
 	.decode = propeller_op,

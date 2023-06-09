@@ -1462,9 +1462,11 @@ static bool fini(RArchSession *as) {
 }
 
 RArchPlugin r_arch_plugin_ppc_cs = {
-	.name = "ppc",
-	.desc = "Capstone (+vle+ps) PowerPC disassembler",
-	.license = "BSD",
+	.meta = {
+		.name = "ppc",
+		.desc = "Capstone (+vle+ps) PowerPC disassembler",
+		.license = "BSD",
+	},
 	.arch = "ppc",
 	.bits = R_SYS_BITS_PACK2 (32, 64),
 	.cpus = "ppc,vle,ps",

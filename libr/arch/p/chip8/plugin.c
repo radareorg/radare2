@@ -215,10 +215,12 @@ static bool chip8_anop(RArchSession *s, RAnalOp *op, RArchDecodeMask mask) {
 }
 
 RArchPlugin r_arch_plugin_chip8 = {
-	.name = "chip8",
-	.author = "maijin",
-	.desc = "CHIP8 analysis plugin",
-	.license = "LGPL3",
+	.meta = {
+		.name = "chip8",
+		.author = "maijin",
+		.desc = "CHIP8 analysis plugin",
+		.license = "LGPL3",
+	},
 	.arch = "chip8",
 	.bits = R_SYS_BITS_PACK1 (32),
 	.decode = &chip8_anop,

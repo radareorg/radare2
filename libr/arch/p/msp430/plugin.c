@@ -153,9 +153,11 @@ static int info(RArchSession *as, ut32 q) {
 }
 
 RArchPlugin r_arch_plugin_msp430 = {
-	.name = "msp430",
-	.desc = "TI MSP430 code analysis plugin",
-	.license = "LGPL3",
+	.meta = {
+		.name = "msp430",
+		.desc = "TI MSP430 code analysis plugin",
+		.license = "LGPL3",
+	},
 	.arch = "msp430",
 	.bits = R_SYS_BITS_PACK1 (16),
 	.decode = &decode,

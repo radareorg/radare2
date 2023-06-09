@@ -356,14 +356,16 @@ static bool i4004_encode(RArchSession *se, RAnalOp *op, RArchEncodeMask mask) {
 }
 
 RArchPlugin r_arch_plugin_i4004 = {
-	.name = "i4004",
-	.desc = "i4004 decoder plugin",
-	.license = "LGPL3",
+	.meta = {
+		.name = "i4004",
+		.author = "pancake, condret",
+		.desc = "i4004 decoder plugin",
+		.license = "LGPL3",
+	},
 	.arch = "i4004",
 	.endian = R_SYS_ENDIAN_BIG,
 	.bits = R_SYS_BITS_PACK1 (4),
 	.addr_bits = R_SYS_BITS_PACK1 (12),
-	.author = "pancake, condret",
 	.decode = &i4004_decode,
 	.encode = &i4004_encode,
 	.regs = &i4004_regs,

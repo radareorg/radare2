@@ -17,10 +17,12 @@ static char* regs(RArchSession *as) {
 #endif
 
 RArchPlugin r_arch_plugin_null = {
-	.name = "null",
-	.desc = "Fallback/Null arch plugin",
+	.meta = {
+		.name = "null",
+		.desc = "Fallback/Null arch plugin",
+		.license = "LGPL3",
+	},
 	.arch = "none",
-	.license = "LGPL3",
 	.bits = R_SYS_BITS_PACK4 (8, 16, 32, 64),
 //	.regs = regs
 };

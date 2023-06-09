@@ -280,10 +280,12 @@ static bool fini(RArchSession *s) {
 }
 
 RArchPlugin r_arch_plugin_s390_cs = {
-	.name = "s390",
-	.desc = "Capstone SystemZ microanalysis",
-	.author = "pancake",
-	.license = "BSD",
+	.meta = {
+		.name = "s390",
+		.desc = "Capstone SystemZ microanalysis",
+		.author = "pancake",
+		.license = "BSD",
+	},
 	.arch = "s390",
 	.bits = R_SYS_BITS_PACK2 (32, 64), // it's actually 31
 	.decode = &decode,

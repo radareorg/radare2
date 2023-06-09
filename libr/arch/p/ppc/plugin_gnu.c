@@ -219,10 +219,12 @@ static int archinfo(RArchSession *as, ut32 q) {
 }
 
 RArchPlugin r_arch_plugin_ppc_gnu = {
-	.name = "ppc.gnu",
-	.desc = "PowerPC analysis plugin",
+	.meta = {
+		.name = "ppc.gnu",
+		.desc = "PowerPC analysis plugin",
+		.license = "LGPL3",
+	},
 	.cpus = "booke,e300,e500,e500x2,e500mc,e440,e464,efs,ppcps,power4,power5,power6,power7,vsx",
-	.license = "LGPL3",
 	.arch = "ppc",
 	.info = archinfo,
 	.bits = R_SYS_BITS_PACK2 (32, 64),

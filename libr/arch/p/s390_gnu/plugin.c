@@ -131,9 +131,11 @@ static int archinfo(RArchSession *as, ut32 q) {
 }
 
 RArchPlugin r_arch_plugin_s390_gnu = {
-	.name = "s390.gnu",
-	.desc = "SystemZ S390 from binutils",
-	.license = "BSD",
+	.meta = {
+		.name = "s390.gnu",
+		.desc = "SystemZ S390 from binutils",
+		.license = "BSD",
+	},
 	.arch = "s390",
 	.cpus = "esa,zarch",
 	.bits = R_SYS_BITS_PACK2 (32, 64), // it's actually 31

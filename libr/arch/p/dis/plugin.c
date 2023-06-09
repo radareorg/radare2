@@ -391,10 +391,12 @@ static char *regs(RArchSession *as) {
 }
 
 RArchPlugin r_arch_plugin_dis = {
-	.name = "dis",
+	.meta = {
+		.name = "dis",
+		.desc = "Inferno Dis VM disassembler",
+		.license = "MIT",
+	},
 	.arch = "dis",
-	.desc = "Inferno Dis VM disassembler",
-	.license = "MIT",
 	.bits = R_SYS_BITS_PACK (32),
 	.addr_bits = R_SYS_BITS_PACK (32),
 	.endian = R_SYS_ENDIAN_BIG,

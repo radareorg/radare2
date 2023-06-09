@@ -13,10 +13,12 @@ static bool x86nz_encode(RArchSession *s, RAnalOp *op, RArchEncodeMask mask) {
 }
 
 RArchPlugin r_arch_plugin_x86_nz = {
-	.name = "x86.nz",
-	.desc = "x86 handmade assembler",
-	.author = "pancake",
-	.license = "LGPL3",
+	.meta = {
+		.name = "x86.nz",
+		.desc = "x86 handmade assembler",
+		.author = "pancake",
+		.license = "LGPL3",
+	},
 	.arch = "x86",
 	.bits = R_SYS_BITS_PACK3 (16, 32, 64),
 	.endian = R_SYS_ENDIAN_LITTLE,

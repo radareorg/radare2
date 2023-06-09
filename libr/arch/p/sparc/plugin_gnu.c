@@ -681,9 +681,11 @@ static int archinfo(RArchSession *as, ut32 q) {
 }
 
 RArchPlugin r_arch_plugin_sparc_gnu = {
-	.name = "sparc.gnu",
-	.desc = "Scalable Processor Architecture",
-	.license = "GPL3",
+	.meta = {
+		.name = "sparc.gnu",
+		.desc = "Scalable Processor Architecture",
+		.license = "GPL3",
+	},
 	.arch = "sparc",
 	.bits = R_SYS_BITS_PACK2 (32, 64),
 	.decode = &decode,

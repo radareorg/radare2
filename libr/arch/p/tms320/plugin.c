@@ -470,21 +470,26 @@ static int archinfo(RArchSession *as, ut32 q) {
 }
 
 RArchPlugin r_arch_plugin_tms320 = {
-	.name = "tms320",
+	.meta = {
+		.name = "tms320",
+		.license = "LGPLv3",
+#if CAPSTONE_HAS_TMS320C64X
+		.desc = "TMS320 DSP family (c54x,c55x,c55x+,c64x)",
+#else
+		.desc = "TMS320 DSP family (c54x,c55x,c55x+)",
+#endif
+	},
 	.arch = "tms320",
 	.bits = R_SYS_BITS_PACK1 (32),
 	.init = tms320_init,
 	.fini = tms320_fini,
-	.license = "LGPLv3",
 	.endian = R_SYS_ENDIAN_LITTLE | R_SYS_ENDIAN_BIG,
 	.info = archinfo,
 #if CAPSTONE_HAS_TMS320C64X
 	.cpus = "c54x,c55x,c55x+,c64x",
-	.desc = "TMS320 DSP family (c54x,c55x,c55x+,c64x)",
 	.mnemonics = mnemonics,
 #else
 	.cpus = "c54x,c55x,c55x+",
-	.desc = "TMS320 DSP family (c54x,c55x,c55x+)",
 #endif
 	.decode = decode,
 };

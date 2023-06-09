@@ -642,9 +642,11 @@ static bool cache_clean(RArchSession *s) {
 }
 
 RArchPlugin r_arch_plugin_wasm = {
-	.name = "wasm",
-	.desc = "WebAssembly analysis plugin",
-	.license = "LGPL3",
+	.meta = {
+		.name = "wasm",
+		.desc = "WebAssembly analysis plugin",
+		.license = "LGPL3",
+	},
 	.arch = "wasm",
 	.bits = R_SYS_BITS_PACK1 (64),
 	.regs = wasm_regs,

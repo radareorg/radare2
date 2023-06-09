@@ -476,13 +476,15 @@ static char *get_reg_profile(RArchSession *as) {
 }
 
 RArchPlugin r_arch_plugin_lm32 = {
-	.name = "lm32",
+	.meta = {
+		.name = "lm32",
+		.desc = "disassembly plugin for Lattice Micro 32 ISA",
+		.author = "Felix Held",
+		.license = "BSD",
+	},
 	.arch = "lm32",
 	.decode = &decode,
 	.regs = get_reg_profile,
-	.desc = "disassembly plugin for Lattice Micro 32 ISA",
-	.author = "Felix Held",
-	.license = "BSD",
 	.bits = R_SYS_BITS_PACK1 (32),
 	.endian = R_SYS_ENDIAN_BIG,
 };

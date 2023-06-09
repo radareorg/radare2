@@ -165,9 +165,11 @@ static bool fini(RArchSession *as) {
 }
 
 RArchPlugin r_arch_plugin_xcore_cs = {
-	.name = "xcore",
-	.desc = "Capstone XCORE analysis",
-	.license = "BSD",
+	.meta = {
+		.name = "xcore",
+		.desc = "Capstone XCORE analysis",
+		.license = "BSD",
+	},
 	.arch = "xcore",
 	.bits = R_SYS_BITS_PACK1 (32),
 	.decode = decode,

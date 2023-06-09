@@ -141,13 +141,15 @@ static int info(RArchSession *s, ut32 q) {
 }
 
 RArchPlugin r_arch_plugin_alpha = {
-	.name = "alpha",
+	.meta = {
+		.name = "alpha",
+		.desc = "ALPHA architecture plugin",
+		.license = "GPL",
+	},
 	.arch = "alpha",
-	.license = "GPL",
 	.bits = R_SYS_BITS_PACK1 (64),
 	.endian = R_SYS_ENDIAN_LITTLE,
 	.info = &info,
-	.desc = "ALPHA architecture plugin",
 	.regs = regs,
 	.decode = &decode
 };

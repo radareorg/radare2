@@ -254,9 +254,11 @@ static bool fini(RArchSession *s) {
 }
 
 RArchPlugin r_arch_plugin_6502_cs = {
-	.name = "6502.cs",
-	.desc = "Capstone mos65xx analysis plugin",
-	.license = "LGPL3",
+	.meta = {
+		.name = "6502.cs",
+		.desc = "Capstone mos65xx analysis plugin",
+		.license = "LGPL3",
+	},
 	.arch = "6502",
 	.bits = R_SYS_BITS_PACK1 (8),
 	.decode = decode,

@@ -340,7 +340,7 @@ R_API void r_esil_stats(REsil *esil, int enable);
 /* trace */
 R_API REsilTrace *r_esil_trace_new(REsil *esil);
 R_API void r_esil_trace_free(REsilTrace *trace);
-R_API void r_esil_trace_op(REsil *esil, RAnalOp *op);
+R_API void r_esil_trace_op(REsil *esil, struct r_anal_op_t *op);
 R_API void r_esil_trace_list(REsil *esil);
 R_API void r_esil_trace_show(REsil *esil, int idx);
 R_API void r_esil_trace_restore(REsil *esil, int idx);

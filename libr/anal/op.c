@@ -45,8 +45,8 @@ R_API int r_anal_opasm(RAnal *anal, ut64 addr, const char *s, ut8 *outbuf, int o
 			return -1;
 		}
 		if (!encode) {
-			oldname = strdup (as->plugin->name);
-			const char *arch_name = as->plugin->name;
+			oldname = strdup (as->plugin->meta.name);
+			const char *arch_name = as->plugin->meta.name;
 			const char *dot = strchr (arch_name, '.');
 			if (dot) {
 				char *an = r_str_ndup (arch_name, dot - arch_name);

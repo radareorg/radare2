@@ -156,12 +156,14 @@ static int info(RArchSession *as, ut32 q) {
 }
 
 RArchPlugin r_arch_plugin_hppa_gnu = {
-	.name = "hppa",
+	.meta = {
+		.name = "hppa",
+		.license = "GPL3",
+		.desc = "HP PA-RISC",
+	},
 	.arch = "hppa",
-	.license = "GPL3",
 	.bits = R_SYS_BITS_PACK1 (16),
 	.endian = R_SYS_ENDIAN_BIG,
-	.desc = "HP PA-RISC",
 	.info = info,
 	.regs = regs,
 	.decode = &decode

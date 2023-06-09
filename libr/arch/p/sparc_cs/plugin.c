@@ -439,9 +439,11 @@ static char *mnemonics(RArchSession *as, int id, bool json) {
 }
 
 RArchPlugin r_arch_plugin_sparc_cs = {
-	.name = "sparc",
-	.desc = "Capstone SPARC analysis",
-	.license = "BSD",
+	.meta = {
+		.name = "sparc",
+		.desc = "Capstone SPARC analysis",
+		.license = "BSD",
+	},
 	.arch = "sparc",
 	.bits = R_SYS_BITS_PACK2 (32, 64),
 	.endian = R_SYS_ENDIAN_LITTLE | R_SYS_ENDIAN_BIG,

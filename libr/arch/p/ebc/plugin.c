@@ -162,10 +162,12 @@ static int archinfo(RArchSession *as, ut32 q) {
 }
 
 RArchPlugin r_arch_plugin_ebc = {
-	.name = "ebc",
-	.desc = "EFI Bytecode architecture",
-	.license = "LGPL3",
-	.author = "Fedor Sakharov",
+	.meta = {
+		.name = "ebc",
+		.desc = "EFI Bytecode architecture",
+		.license = "LGPL3",
+		.author = "Fedor Sakharov",
+	},
 	.info = archinfo,
 	.arch = "ebc",
 	.bits = R_SYS_BITS_PACK2 (32, 64),

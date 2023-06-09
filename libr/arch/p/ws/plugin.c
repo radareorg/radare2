@@ -129,9 +129,11 @@ static bool decode(RArchSession *session, RAnalOp *op, RArchDecodeMask mask) {
 }
 
 RArchPlugin r_arch_plugin_ws = {
-	.name = "ws",
-	.desc = "Space, tab and linefeed analysis plugin",
-	.license = "LGPL3",
+	.meta = {
+		.name = "ws",
+		.desc = "Space, tab and linefeed analysis plugin",
+		.license = "LGPL3",
+	},
 	.endian = R_SYS_ENDIAN_LITTLE | R_SYS_ENDIAN_BIG,
 	.arch = "ws",
 	.bits = 32,

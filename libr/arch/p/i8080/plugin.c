@@ -62,9 +62,11 @@ static int archinfo (RArchSession *as, ut32 q) {
 }
 
 RArchPlugin r_arch_plugin_i8080 = {
-	.name = "i8080",
-	.desc = "I8080 CPU code arch plugin",
-	.license = "LGPL3",
+	.meta = {
+		.name = "i8080",
+		.desc = "I8080 CPU code arch plugin",
+		.license = "LGPL3",
+	},
 	.arch = "i8080",
 	.bits = R_SYS_BITS_PACK1 (16),
 	.endian = R_SYS_ENDIAN_LITTLE,

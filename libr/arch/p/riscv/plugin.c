@@ -1015,10 +1015,12 @@ static bool _fini(RArchSession *as) {
 }
 
 RArchPlugin r_arch_plugin_riscv = {
-	.name = "riscv",
-	.desc = "RISC-V analysis plugin",
-	.author = "pancake",
-	.license = "GPL",
+	.meta = {
+		.name = "riscv",
+		.desc = "RISC-V analysis plugin",
+		.author = "pancake",
+		.license = "GPL",
+	},
 	.arch = "riscv",
 	.endian = R_SYS_ENDIAN_LITTLE | R_SYS_ENDIAN_BIG,
 	.bits = R_SYS_BITS_PACK2 (32, 64),

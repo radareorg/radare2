@@ -462,9 +462,11 @@ static int archinfo(RArchSession *as, ut32 q) {
 }
 
 RArchPlugin r_arch_plugin_v810 = {
-	.name = "v810",
-	.desc = "V810 code analysis plugin",
-	.license = "LGPL3",
+	.meta = {
+		.name = "v810",
+		.desc = "V810 code analysis plugin",
+		.license = "LGPL3",
+	},
 	.arch = "v810",
 	.bits = R_SYS_BITS_PACK1 (32),
 	.decode = v810_decode,

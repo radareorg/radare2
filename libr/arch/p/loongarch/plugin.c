@@ -1406,9 +1406,11 @@ static bool fini(RArchSession *s) {
 }
 
 RArchPlugin r_arch_plugin_loongarch_gnu = {
-	.name = "loongarch",
-	.desc = "loongson loongarch code analysis plugin",
-	.license = "LGPL3",
+	.meta = {
+		.name = "loongarch",
+		.desc = "loongson loongarch code analysis plugin",
+		.license = "LGPL3",
+	},
 	.arch = "loongarch",
 	.bits = 64,
 	.info = archinfo,

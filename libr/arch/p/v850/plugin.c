@@ -908,9 +908,11 @@ static bool encode(RArchSession *s, RAnalOp *op, ut32 mask) {
 }
 
 RArchPlugin r_arch_plugin_v850 = {
-	.name = "v850",
-	.desc = "V850 code analysis plugin",
-	.license = "MIT",
+	.meta = {
+		.name = "v850",
+		.desc = "V850 code analysis plugin",
+		.license = "MIT",
+	},
 	.preludes = preludes,
 	.cpus = "e0,0,e,e1,e2,e2v3,e3v5,all",
 	.arch = "v850",

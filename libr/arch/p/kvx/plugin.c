@@ -310,8 +310,10 @@ static char *kvx_regs(RArchSession *a) {
 }
 
 RArchPlugin r_arch_plugin_kvx = {
-	.name = "kvx",
-	.desc = "Kalray VLIW core",
+	.meta = {
+		.name = "kvx",
+		.desc = "Kalray VLIW core",
+	},
 	.arch = "kvx",
 	.bits = R_SYS_BITS_PACK1 (64),
 	.endian = R_SYS_ENDIAN_LITTLE,

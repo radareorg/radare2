@@ -335,10 +335,12 @@ static bool snes_anop(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 }
 
 RArchPlugin r_arch_plugin_snes = {
-	.name = "snes",
-	.desc = "SNES analysis plugin",
-	.license = "LGPL3",
-	.author = "pancake",
+	.meta = {
+		.name = "snes",
+		.desc = "SNES analysis plugin",
+		.license = "LGPL3",
+		.author = "pancake",
+	},
 	.arch = "snes", // modified 6502 ?
 	.bits = R_SYS_BITS_PACK2 (8, 16),
 	.decode = snes_anop,

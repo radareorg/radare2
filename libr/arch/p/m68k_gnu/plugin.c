@@ -1,10 +1,7 @@
-/* radare - LGPL - Copyright 2016-2022 - pancake */
+/* radare - LGPL - Copyright 2016-2023 - pancake */
 
-#include <stdio.h>
-#include <stdarg.h>
-#include <string.h>
-#include "../../../asm/arch/include/opcode/m68k.h"
 #include <r_arch.h>
+#include "../../../asm/arch/include/opcode/m68k.h"
 #include "disas-asm.h"
 
 typedef struct {
@@ -117,15 +114,17 @@ static int info(RArchSession *as, ut32 q) {
 }
 
 RArchPlugin r_arch_plugin_m68k_gnu = {
-	.name = "m68k.gnu",
-	.author = "pancake",
+	.meta = {
+		.name = "m68k.gnu",
+		.author = "pancake",
+		.license = "GPL3",
+		.desc = "Binutils 2.36 based m68k disassembler",
+	},
 	.arch = "m68k",
-	.license = "GPL3",
 	.cpus = "m68000,m68010,m68020,m68030,m68040,m68060,m68881,m68851"
 		"m68000up,m68010up,m68020up,m68030up,m68040up",
 	.bits = R_SYS_BITS_PACK1 (32),
 	.endian = R_SYS_ENDIAN_BIG,
-	.desc = "Binutils 2.36 based m68k disassembler",
 	.decode = &decode,
 	.info = &info,
 };

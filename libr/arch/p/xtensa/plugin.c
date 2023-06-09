@@ -2109,9 +2109,11 @@ static bool fini(RArchSession *as) {
 }
 
 RArchPlugin r_arch_plugin_xtensa = {
-	.name = "xtensa",
-	.desc = "Xtensa disassembler",
-	.license = "LGPL3",
+	.meta = {
+		.name = "xtensa",
+		.desc = "Xtensa disassembler",
+		.license = "LGPL3",
+	},
 	.endian = R_SYS_ENDIAN_LITTLE | R_SYS_ENDIAN_BIG,
 	.info = archinfo,
 	.arch = "xtensa",

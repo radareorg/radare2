@@ -911,10 +911,12 @@ static bool fini(RArchSession *s) {
 }
 
 RArchPlugin r_arch_plugin_m68k_cs = {
-	.name = "m68k",
-	.desc = "Capstone M68K analyzer",
+	.meta = {
+		.name = "m68k",
+		.desc = "Capstone M68K analyzer",
+		.license = "BSD",
+	},
 	.cpus = "68000,68010,68020,68030,68040,68060",
-	.license = "BSD",
 	.arch = "m68k",
 	.info = archinfo,
 	.regs = regs,

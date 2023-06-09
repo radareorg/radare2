@@ -454,16 +454,16 @@ static int cmd_plugins(void *data, const char *input) {
 				switch (mode) {
 				case 'j':
 					pj_o (pj);
-					pj_ks (pj, "name", item->name);
-					pj_ks (pj, "desc", item->desc);
-					if (item->author) {
-						pj_ks (pj, "author", item->author);
+					pj_ks (pj, "name", item->meta.name);
+					pj_ks (pj, "desc", item->meta.desc);
+					if (item->meta.author) {
+						pj_ks (pj, "author", item->meta.author);
 					}
-					if (item->version) {
-						pj_ks (pj, "version", item->version);
+					if (item->meta.version) {
+						pj_ks (pj, "version", item->meta.version);
 					}
-					if (item->license) {
-						pj_ks (pj, "license", item->license);
+					if (item->meta.license) {
+						pj_ks (pj, "license", item->meta.license);
 					}
 					if (item->arch) {
 						pj_ks (pj, "arch", item->arch);
@@ -490,10 +490,14 @@ static int cmd_plugins(void *data, const char *input) {
 					pj_end (pj);
 					break;
 				case 'q':
-					r_cons_printf ("%s\n", item->name);
+					r_cons_printf ("%s\n", item->meta.name);
 					break;
 				default:
-					r_cons_printf ("%-12s %5s %s (%s)\n", item->name, item->license, item->desc, item->arch);
+					r_cons_printf ("%-12s %5s %s (%s)\n",
+						item->meta.name,
+						item->meta.license,
+						item->meta.desc,
+						item->arch);
 					break;
 				}
 			}

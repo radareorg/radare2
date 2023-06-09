@@ -164,7 +164,7 @@ bool ranal2_list(RCore *core, const char *arch, int fmt) {
 			RArch *ai = core->anal->arch;
 			RArchPlugin *arp;
 			r_list_foreach (ai->plugins, iter, arp) {
-				if (arp->cpus && !strcmp (arch, arp->name)) {
+				if (arp->cpus && !strcmp (arch, arp->meta.name)) {
 					char *c = strdup (arp->cpus);
 					int n = r_str_split (c, ',');
 					for (i = 0; i < n; i++) {
@@ -394,13 +394,13 @@ static void update_analarch_options(RCore *core, RConfigNode *node) {
 }
 
 static void update_archarch_options(RCore *core, RConfigNode *node) {
-	RArchPlugin *h;
+	RArchPlugin *ap;
 	RListIter *it;
 	if (core && core->anal && core->anal->arch && node) {
 		r_config_node_purge_options (node);
-		r_list_foreach (core->anal->arch->plugins, it, h) {
-			if (h->name) {
-				SETOPTIONS (node, h->name, NULL);
+		r_list_foreach (core->anal->arch->plugins, it, ap) {
+			if (ap->meta.name) {
+				SETOPTIONS (node, ap->meta.name, NULL);
 			}
 		}
 	}
@@ -443,10 +443,10 @@ static void update_archdecoder_options(RCore *core, RConfigNode *node) {
 	r_return_if_fail (core && core->anal && core->anal->arch && node);
 	r_config_node_purge_options (node);
 	RListIter *it;
-	RArchPlugin *p;
-	r_list_foreach (core->anal->arch->plugins, it, p) {
-		if (p->name) {
-			SETOPTIONS (node, p->name, NULL);
+	RArchPlugin *ap;
+	r_list_foreach (core->anal->arch->plugins, it, ap) {
+		if (ap->meta.name) {
+			SETOPTIONS (node, ap->meta.name, NULL);
 		}
 	}
 }
@@ -696,7 +696,7 @@ static void update_asmcpu_options(RCore *core, RConfigNode *node) {
 	r_config_node_purge_options (node);
 	RArchPlugin *h;
 	r_list_foreach (core->anal->arch->plugins, iter, h) {
-		if (h->cpus && !strcmp (arch, h->name)) {
+		if (h->cpus && !strcmp (arch, h->meta.name)) {
 			char *c = strdup (h->cpus);
 			int i, n = r_str_split (c, ',');
 			for (i = 0; i < n; i++) {
@@ -739,8 +739,8 @@ static void update_asmarch_options(RCore *core, RConfigNode *node) {
 	if (core && node && core->rasm) {
 		r_config_node_purge_options (node);
 		r_list_foreach (core->anal->arch->plugins, iter, h) {
-			if (h->name) {
-				SETOPTIONS (node, h->name, NULL);
+			if (h->meta.name) {
+				SETOPTIONS (node, h->meta.name, NULL);
 			}
 		}
 	}
