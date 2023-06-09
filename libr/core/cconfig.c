@@ -3498,7 +3498,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETBPREF ("anal.hasnext", "false", "continue analysis after each function");
 	SETICB ("anal.nonull", 0, &cb_anal_nonull, "do not analyze regions of N null bytes");
 	SETBPREF ("anal.esil", "false", "use the new ESIL code analysis");
-	SETCB ("anal.strings", "false", &cb_analstrings, "identify and register strings during analysis (aar only)");
+	SETCB ("anal.strings", "true", &cb_analstrings, "identify and register strings during analysis (aar only)");
 	SETPREF ("anal.types.spec", "gcc",  "set profile for specifying format chars used in type analysis");
 	SETBPREF ("anal.types.verbose", "false", "verbose output from type analysis");
 	SETBPREF ("anal.types.constraint", "false", "enable constraint types analysis for variables");
