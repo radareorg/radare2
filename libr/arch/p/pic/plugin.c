@@ -1185,10 +1185,12 @@ static int info(RArchSession *as, ut32 q) {
 }
 
 RArchPlugin r_arch_plugin_pic = {
-	.name = "pic",
-	.desc = "PIC analysis plugin",
+	.meta = {
+		.name = "pic",
+		.desc = "PIC analysis plugin",
+		.license = "LGPL3",
+	},
 	.cpus = "baseline,midrange,pic18",
-	.license = "LGPL3",
 	.arch = "pic",
 	.info = info,
 	.bits = R_SYS_BITS_PACK1 (8),

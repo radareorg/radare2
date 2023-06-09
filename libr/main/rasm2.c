@@ -216,10 +216,10 @@ static void rarch2_list(RAsmState *as, const char *arch) {
 		r_list_sort (bitslist, sizetsort);
 		char *bitstr = r_num_list_join (bitslist, " ");
 		if (as->quiet) {
-			printf ("%s\n", h->name);
+			printf ("%s\n", h->meta.name);
 		} else if (as->json) {
 			pj_o (pj);
-			pj_ks (pj, "name", h->name);
+			pj_ks (pj, "name", h->meta.name);
 			pj_k (pj, "bits");
 			pj_a (pj);
 			void *k;
@@ -227,18 +227,18 @@ static void rarch2_list(RAsmState *as, const char *arch) {
 				pj_i (pj, (int)(size_t)k);
 			}
 			pj_end (pj);
-			pj_ks (pj, "license", r_str_get_fail (h->license, "unknown"));
-			pj_ks (pj, "description", h->desc);
+			pj_ks (pj, "license", r_str_get_fail (h->meta.license, "unknown"));
+			pj_ks (pj, "description", h->meta.desc);
 			pj_ks (pj, "features", feat);
 			pj_end (pj);
 		} else {
-			printf ("%s %-11s %-11s %-7s %s", feat, bitstr, h->name,
-				r_str_get_fail (h->license, "unknown"), h->desc);
-			if (h->author) {
-				printf (" (by %s)", h->author);
+			printf ("%s %-11s %-11s %-7s %s", feat, bitstr, h->meta.name,
+				r_str_get_fail (h->meta.license, "unknown"), h->meta.desc);
+			if (h->meta.author) {
+				printf (" (by %s)", h->meta.author);
 			}
-			if (h->version) {
-				printf (" v%s", h->version);
+			if (h->meta.version) {
+				printf (" v%s", h->meta.version);
 			}
 			printf ("\n");
 		}

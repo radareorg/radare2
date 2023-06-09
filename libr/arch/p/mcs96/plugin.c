@@ -160,12 +160,14 @@ static char *regs(RArchSession *s) {
 }
 
 RArchPlugin r_arch_plugin_mcs96 = {
-	.name = "mcs96",
-	.desc = "Intel MCS96 microcontroller, also known as 8xC196 or 80196",
+	.meta = {
+		.name = "mcs96",
+		.desc = "Intel MCS96 microcontroller, also known as 8xC196 or 80196",
+		.license = "LGPL3",
+		.author = "condret",
+	},
 	.arch = "mcs96",
-	.license = "LGPL3",
 	.decode = &decode,
-	.author = "condret",
 	.regs = regs,
 	.info = archinfo,
 	.bits = R_SYS_BITS_PACK3 (16, 32, 64), // can work with 64bit registers too

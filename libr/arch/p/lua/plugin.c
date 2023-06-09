@@ -272,10 +272,12 @@ static bool fini(RArchSession *as) {
 }
 
 RArchPlugin r_arch_plugin_lua = {
-	.name = "lua",
-	.desc = "LUA Bytecode arch plugin",
-	.license = "MIT",
-	.author = "pancake",
+	.meta = {
+		.name = "lua",
+		.desc = "LUA Bytecode arch plugin",
+		.license = "MIT",
+		.author = "pancake",
+	},
 	.arch = "lua",
 	.bits = R_SYS_BITS_PACK (32),
 	.addr_bits = R_SYS_BITS_PACK (32),

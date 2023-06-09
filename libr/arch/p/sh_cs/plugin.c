@@ -414,9 +414,11 @@ static char *regs(RArchSession *s) {
 }
 
 RArchPlugin r_arch_plugin_sh_cs = {
-	.name = "sh.cs",
-	.desc = "Capstone SH analysis",
-	.license = "BSD",
+	.meta = {
+		.name = "sh.cs",
+		.desc = "Capstone SH analysis",
+		.license = "BSD",
+	},
 	.arch = "sh",
 	.bits = R_SYS_BITS_PACK1 (32),
 	.decode = decode,

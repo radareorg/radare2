@@ -255,9 +255,11 @@ static int archinfo(RArchSession *as, ut32 q) {
 }
 
 RArchPlugin r_arch_plugin_vax = {
-	.name = "vax",
-	.desc = "VAX code analysis plugin",
-	.license = "GPL",
+	.meta = {
+		.name = "vax",
+		.desc = "VAX code analysis plugin",
+		.license = "GPL",
+	},
 	.arch = "vax",
 	.bits = R_SYS_BITS_PACK1 (32),
 	.endian = R_SYS_ENDIAN_LITTLE,

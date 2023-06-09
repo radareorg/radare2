@@ -219,10 +219,12 @@ static int info(RArchSession *s, ut32 q) {
 }
 
 RArchPlugin r_arch_plugin_nios2 = {
-	.name = "nios2",
+	.meta = {
+		.name = "nios2",
+		.desc = "NIOS II code analysis plugin",
+		.license = "LGPL3",
+	},
 	.arch = "nios2",
-	.desc = "NIOS II code analysis plugin",
-	.license = "LGPL3",
 	.endian = R_SYS_ENDIAN_LITTLE | R_SYS_ENDIAN_BIG,
 	.info = info,
 	.regs = regs,

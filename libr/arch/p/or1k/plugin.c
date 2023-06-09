@@ -275,9 +275,11 @@ static int archinfo(RArchSession *a, ut32 q) {
 }
 
 RArchPlugin r_arch_plugin_or1k = {
-	.name = "or1k",
-	.desc = "OpenRISC 1000",
-	.license = "LGPL3",
+	.meta = {
+		.name = "or1k",
+		.desc = "OpenRISC 1000",
+		.license = "LGPL3",
+	},
 	.bits = 32,
 	.arch = "or1k",
 	.info = archinfo,

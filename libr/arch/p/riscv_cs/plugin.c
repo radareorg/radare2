@@ -636,9 +636,11 @@ static char *mnemonics(RArchSession *s, int id, bool json) {
 }
 
 RArchPlugin r_arch_plugin_riscv_cs = {
-	.name = "riscv.cs",
-	.desc = "RISC-V analysis plugin",
-	.license = "BSD",
+	.meta = {
+		.name = "riscv.cs",
+		.desc = "RISC-V analysis plugin",
+		.license = "BSD",
+	},
 	.arch = "riscv",
 	.endian = R_SYS_ENDIAN_LITTLE | R_SYS_ENDIAN_BIG,
 	.bits = R_SYS_BITS_PACK2 (32, 64),

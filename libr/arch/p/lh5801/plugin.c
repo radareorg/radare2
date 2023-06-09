@@ -70,12 +70,14 @@ static char* regs(RArchSession *as) {
 }
 
 RArchPlugin r_arch_plugin_lh5801 = {
-	.name = "lh5801",
+	.meta = {
+		.name = "lh5801",
+		.license = "LGPL3",
+		.desc = "SHARP LH5801 disassembler",
+	},
 	.arch = "LH5801",
-	.license = "LGPL3",
 	.bits = R_SYS_BITS_PACK1 (8),
 	.endian = R_SYS_ENDIAN_NONE,
-	.desc = "SHARP LH5801 disassembler",
 	.decode = &decode,
 	.info = info,
 	.regs = regs,

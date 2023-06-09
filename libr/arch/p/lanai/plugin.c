@@ -97,12 +97,14 @@ static int info(RArchSession *as, ut32 q) {
 }
 
 RArchPlugin r_arch_plugin_lanai = {
-	.name = "lanai",
+	.meta = {
+		.name = "lanai",
+		.license = "GPL3",
+		.desc = "Myricom's LANAI based on GNU binutils",
+	},
 	.arch = "lanai",
-	.license = "GPL3",
 	.bits = R_SYS_BITS_PACK1 (32),
 	.endian = R_SYS_ENDIAN_BIG,
-	.desc = "Myricom's LANAI based on GNU binutils",
 	.regs = regs,
 	.info = info,
 	.decode = &decode

@@ -126,9 +126,11 @@ static int archinfo(RArchSession *as, ut32 q) {
 }
 
 RArchPlugin r_arch_plugin_cr16 = {
-	.name = "cr16",
-	.desc = "Compact RISC processor",
-	.license = "LGPL3",
+	.meta = {
+		.name = "cr16",
+		.desc = "Compact RISC processor",
+		.license = "LGPL3",
+	},
 	.endian = R_SYS_ENDIAN_LITTLE,
 	.arch = "cr16",
 // 	.cpus = "crc16c,plus", only supported in the gnu plugin, which we dont have :D

@@ -116,12 +116,15 @@ static char *regs(RArchSession *as) {
 }
 
 RArchPlugin r_arch_plugin_pdp11 = {
-	.name = "pdp11",
+	.meta = {
+		.name = "pdp11",
+		.author = "pancake",
+		.license = "GPL3",
+		.desc = "PDP-11",
+	},
 	.arch = "pdp11",
-	.license = "GPL3",
 	.bits = R_SYS_BITS_PACK1 (16),
 	.endian = R_SYS_ENDIAN_LITTLE,
-	.desc = "PDP-11",
 	.info = info,
 	.regs = regs,
 	.decode = &pdp11_op

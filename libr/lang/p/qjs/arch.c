@@ -145,13 +145,13 @@ static JSValue r2plugin_arch(JSContext *ctx, JSValueConst this_val, int argc, JS
 	}
 	RArchPlugin *ap = R_NEW0 (RArchPlugin);
 	R2QJS_ASSERT (ap, "heap failure");
-	R2QJS_GETSTRING (ap->name, res, "name", "Missing name");
+	R2QJS_GETSTRING (ap->meta.name, res, "name", "Missing name");
 	R2QJS_GETSTRING (ap->arch, res, "arch", "Missing arch");
 	R2QJS_GETSTRING (ap->cpus, res, "cpus", NULL);
-	R2QJS_GETSTRING (ap->desc, res, "desc", NULL);
-	R2QJS_GETSTRING (ap->author, res, "author", NULL);
-	R2QJS_GETSTRING (ap->license, res, "license", NULL);
-	R2QJS_GETSTRING (ap->version, res, "version", NULL);
+	R2QJS_GETSTRING (ap->meta.desc, res, "desc", NULL);
+	R2QJS_GETSTRING (ap->meta.author, res, "author", NULL);
+	R2QJS_GETSTRING (ap->meta.license, res, "license", NULL);
+	R2QJS_GETSTRING (ap->meta.version, res, "version", NULL);
 
 	Gres = res;
 	ap->decode = r2qjs_arch_decode;
@@ -170,16 +170,16 @@ static JSValue r2plugin_arch(JSContext *ctx, JSValueConst this_val, int argc, JS
 #endif
 #endif
 
-	R2QJS_REGISTER_PLUGIN (R_LIB_TYPE_ARCH, ap->name, ap);
+	R2QJS_REGISTER_PLUGIN (R_LIB_TYPE_ARCH, ap->meta.name, ap);
 failure:
 	if (ap) {
-		free (ap->name);
+		free (ap->meta.name);
+		free (ap->meta.desc);
+		free (ap->meta.author);
+		free (ap->meta.license);
+		free (ap->meta.version);
 		free (ap->arch);
 		free (ap->cpus);
-		free (ap->desc);
-		free (ap->author);
-		free (ap->license);
-		free (ap->version);
 		free (ap);
 	}
 	if (errmsg) {

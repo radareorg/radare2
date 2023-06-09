@@ -2837,11 +2837,13 @@ static bool fini(RArchSession *s) {
 }
 
 RArchPlugin r_arch_plugin_z80 = {
-	.name = "z80",
+	.meta = {
+		.name = "z80",
+		.desc = "Z80 CPU code analysis plugin",
+		.license = "GPL",
+	},
 	.arch = "z80",
-	.license = "GPL",
 	.bits = R_SYS_BITS_PACK (16),
-	.desc = "Z80 CPU code analysis plugin",
 	.info = archinfo,
 	.decode = decode,
 	.encode = encode,

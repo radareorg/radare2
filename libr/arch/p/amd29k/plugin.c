@@ -697,9 +697,11 @@ static bool decode(RArchSession *a, RAnalOp *op, RArchDecodeMask mask) {
 }
 
 RArchPlugin r_arch_plugin_amd29k = {
-	.name = "amd29k",
-	.desc = "AMD 29k decoder",
-	.license = "BSD",
+	.meta = {
+		.name = "amd29k",
+		.desc = "AMD 29k decoder",
+		.license = "BSD",
+	},
 	.arch = "amd29k",
 	.bits = R_SYS_BITS_PACK1 (32),
 	.addr_bits = R_SYS_BITS_PACK1 (32),

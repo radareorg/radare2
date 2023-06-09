@@ -980,9 +980,11 @@ static int archinfo(RArchSession *a, ut32 q) {
 }
 
 RArchPlugin r_arch_plugin_6502 = {
-	.name = "6502",
-	.desc = "6502/NES analysis plugin",
-	.license = "LGPL3",
+	.meta = {
+		.name = "6502",
+		.desc = "6502/NES analysis plugin",
+		.license = "LGPL3",
+	},
 	.arch = "6502",
 	.bits = R_SYS_BITS_PACK1 (8),
 	.decode = &_6502_op,

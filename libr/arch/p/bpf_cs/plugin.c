@@ -659,10 +659,12 @@ static bool fini(RArchSession *s) {
 }
 
 RArchPlugin r_arch_plugin_bpf_cs = {
-	.name = "bpf",
-	.desc = "Capstone BPF plugin",
-	.license = "BSD",
-	.author = "terorie, aemmitt",
+	.meta = {
+		.name = "bpf",
+		.desc = "Capstone BPF plugin",
+		.license = "BSD",
+		.author = "terorie, aemmitt",
+	},
 	.arch = "bpf",
 	.endian = R_SYS_ENDIAN_LITTLE | R_SYS_ENDIAN_BIG,
 	.bits = R_SYS_BITS_PACK2 (32, 64),

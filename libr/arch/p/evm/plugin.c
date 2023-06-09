@@ -388,9 +388,11 @@ static char *mnemonics(RArchSession *s, int id, bool json) {
 }
 
 RArchPlugin r_arch_plugin_evm = {
-	.name = "evm",
-	.desc = "EthereumVM plugin",
-	.license = "BSD",
+	.meta = {
+		.name = "evm",
+		.desc = "EthereumVM plugin",
+		.license = "BSD",
+	},
 	.arch = "evm",
 	.regs = regs,
 	.info = archinfo,

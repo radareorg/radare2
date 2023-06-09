@@ -351,9 +351,11 @@ static int java_cmd_ext(RAnal *anal, const char* input) {
 #endif
 
 RArchPlugin r_arch_plugin_java = {
-	.name = "java",
-	.desc = "Java bytecode analysis plugin",
-	.license = "Apache",
+	.meta = {
+		.name = "java",
+		.desc = "Java bytecode analysis plugin",
+		.license = "Apache",
+	},
 	.arch = "java",
 	.bits = R_SYS_BITS_PACK1 (32),
 	.decode = decode,

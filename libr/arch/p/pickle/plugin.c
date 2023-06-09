@@ -989,9 +989,11 @@ static bool pickle_fini(RArchSession *s) {
 }
 
 RArchPlugin r_arch_plugin_pickle = {
-	.name = "pickle",
-	.desc = "Python Pickle Machine Disassembler",
-	.license = "BSD",
+	.meta = {
+		.name = "pickle",
+		.desc = "Python Pickle Machine Disassembler",
+		.license = "BSD",
+	},
 	.arch = "pickle",
 	.bits = R_SYS_BITS_PACK1 (8), // not sure
 	.decode = &pickle_decode,

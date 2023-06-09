@@ -22,11 +22,15 @@ static bool encode(RArchSession *as, RAnalOp *op, RArchEncodeMask mask) {
 	return false;
 }
 
+#define DESC "Use -a arm.vasm, 6502.vasm, 6809, c16x, jagrisc, m68k, pdp11, ppc, qnice, tr3200, vidcore, x86, z80"
+
 RArchPlugin r_arch_plugin_any_vasm = {
-	.name = "any.vasm",
-	.desc = "Use -a arm.vasm, 6502.vasm, 6809, c16x, jagrisc, m68k, pdp11, ppc, qnice, tr3200, vidcore, x86, z80",
-	.author = "http://sun.hasenbraten.de/vasm/ (r2pm -ci vasm)",
-	.license = "MIT",
+	.meta = {
+		.name = "any.vasm",
+		.desc = DESC,
+		.author = "http://sun.hasenbraten.de/vasm/ (r2pm -ci vasm)",
+		.license = "MIT",
+	},
 	.arch = "any", // on purpose because that's a multi-arch plugin
 	.bits = R_SYS_BITS_PACK4 (8, 16, 32, 64),
 	.endian = R_SYS_ENDIAN_LITTLE | R_SYS_ENDIAN_BIG,

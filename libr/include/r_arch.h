@@ -163,12 +163,15 @@ typedef bool (*RArchPluginFiniCallback)(RArchSession *s);
 
 // TODO: use `const char *const` instead of `char*`
 typedef struct r_arch_plugin_t {
+	RPluginMeta meta;
+#if 0
 	// RPluginMeta meta; //  = { .name = ... }
 	char *name;
 	char *desc;
 	char *author;
 	char *version;
 	char *license;
+#endif
 
 	// all const
 	char *arch;
@@ -185,10 +188,6 @@ typedef struct r_arch_plugin_t {
 	RArchPluginModifyCallback patch;
 	RArchPluginMnemonicsCallback mnemonics;
 	RArchPluginPreludesCallback preludes;
-//TODO: reenable this later? maybe it should be called reset() or setenv().. but esilinit/fini
-// 	seems to specific to esil and those functions may want to do moreo things like io stuff
-//	bool (*esil_init)(REsil *esil);
-//	void (*esil_fini)(REsil *esil);
 } RArchPlugin;
 
 // decoder.c

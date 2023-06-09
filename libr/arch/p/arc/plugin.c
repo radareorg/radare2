@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2012-2022 - pancake */
+/* radare - LGPL - Copyright 2012-2023 - pancake */
 
 #include <r_lib.h>
 #include <r_arch.h>
@@ -1226,12 +1226,14 @@ static char* regs(RArchSession *as) {
 }
 
 RArchPlugin r_arch_plugin_arc = {
-	.name = "arc",
+	.meta = {
+		.name = "arc",
+		.author = "pancake",
+		.license = "LGPL3",
+		.desc = "ARC code analysis plugin",
+	},
 	.arch = "arc",
-	.author = "pancake",
-	.license = "LGPL3",
 	.bits = 16 | 32,
-	.desc = "ARC code analysis plugin",
 	.decode = decode,
 	.info = archinfo,
 	.regs = regs

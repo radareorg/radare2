@@ -3368,9 +3368,11 @@ static bool encode(RArchSession *s, RAnalOp *op, ut32 mask) {
 #endif
 
 RArchPlugin r_arch_plugin_arm_v35 = {
-	.name = "arm.v35",
-	.desc = "Vector35 ARM analyzer",
-	.license = "BSD",
+	.meta = {
+		.name = "arm.v35",
+		.desc = "Vector35 ARM analyzer",
+		.license = "BSD",
+	},
 	.arch = "arm",
 	.info = archinfo,
 	.endian = R_SYS_ENDIAN_LITTLE,

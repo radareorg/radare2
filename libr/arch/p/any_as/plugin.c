@@ -79,10 +79,12 @@ static bool as_encode(RArchSession *s, RAnalOp *op, RArchEncodeMask mask) {
 }
 
 RArchPlugin r_arch_plugin_any_as = {
-	.name = "any.as",
-	.desc = "Uses system gnu/clang 'as' assembler",
-	.author = "pancake",
-	.license = "LGPL3",
+	.meta = {
+		.name = "any.as",
+		.desc = "Uses system gnu/clang 'as' assembler",
+		.author = "pancake",
+		.license = "LGPL3",
+	},
 	// TODO: add the "any" architecture to support any, instead of using null
 	.arch = "any", // on purpose because that's a multi-arch plugin
 	.bits = R_SYS_BITS_PACK3 (16, 32, 64),

@@ -338,10 +338,12 @@ static char *regs(RArchSession *as) {
 }
 
 RArchPlugin r_arch_plugin_tricore_cs = {
-	.name = "tricore.cs",
-	.desc = "Capstone TriCore analysis",
+	.meta = {
+		.name = "tricore.cs",
+		.desc = "Capstone TriCore analysis",
+		.license = "BSD",
+	},
 	.endian = R_SYS_ENDIAN_LITTLE,
-	.license = "BSD",
 	.arch = "tricore",
 	.bits = R_SYS_BITS_PACK1 (32),
 	.decode = decode,

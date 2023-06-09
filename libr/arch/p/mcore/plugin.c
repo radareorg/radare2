@@ -120,10 +120,12 @@ static int archinfo(RArchSession *s, ut32 q) {
 }
 
 RArchPlugin r_arch_plugin_mcore = {
-	.name = "mcore",
-	.desc = "MCore analysis plugin",
+	.meta = {
+		.name = "mcore",
+		.desc = "MCore analysis plugin",
+		.license = "LGPL3",
+	},
 	.arch = "mcore",
-	.license = "LGPL3",
 	.bits = 32,
 	.cpus = "mcore,c-sky",
 	.endian = R_SYS_ENDIAN_BIG,

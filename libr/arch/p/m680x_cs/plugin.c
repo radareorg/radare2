@@ -565,9 +565,11 @@ static char *mnemonics(RArchSession *as, int id, bool json) {
 }
 
 RArchPlugin r_arch_plugin_m680x_cs = {
-	.name = "m680x",
-	.desc = "Capstone M680X analysis plugin",
-	.license = "BSD",
+	.meta = {
+		.name = "m680x",
+		.desc = "Capstone M680X analysis plugin",
+		.license = "BSD",
+	},
 	.arch = "m680x",
 	.regs = regs,
 	.bits = R_SYS_BITS_PACK2 (16, 32),
@@ -578,9 +580,11 @@ RArchPlugin r_arch_plugin_m680x_cs = {
 };
 #else
 RArchPlugin r_anal_plugin_m680x_cs = {
-	.name = "m680x (unsupported)",
-	.desc = "Capstone M680X analyzer (unsupported)",
-	.license = "BSD",
+	.meta = {
+		.name = "m680x (unsupported)",
+		.desc = "Capstone M680X analyzer (unsupported)",
+		.license = "BSD",
+	},
 	.arch = "m680x",
 	.bits = R_SYS_BITS_PACK1 (32),
 };

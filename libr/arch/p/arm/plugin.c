@@ -141,10 +141,12 @@ static int archinfo(RArchSession *a, ut32 q) {
 }
 
 RArchPlugin r_arch_plugin_arm = {
-	.name = "arm.nz",
-	.desc = "custom thumb, arm32 and arm64 assembler",
-	.author = "pancake",
-	.license = "LGPL3",
+	.meta = {
+		.name = "arm.nz",
+		.desc = "custom thumb, arm32 and arm64 assembler",
+		.author = "pancake",
+		.license = "LGPL3",
+	},
 	.arch = "arm",
 	.info = archinfo,
 	.bits = R_SYS_BITS_PACK3 (16, 32, 64),

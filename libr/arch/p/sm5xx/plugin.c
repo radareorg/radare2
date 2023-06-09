@@ -67,9 +67,11 @@ static int archinfo(RArchSession *a, ut32 q) {
 }
 
 RArchPlugin r_arch_plugin_sm5xx = {
-	.name = "sm5xx",
-	.desc = "Sharp SM 5XX family MCUs",
-	.license = "BSD",
+	.meta = {
+		.name = "sm5xx",
+		.desc = "Sharp SM 5XX family MCUs",
+		.license = "BSD",
+	},
 	.bits = R_SYS_BITS_PACK1 (4),
 	.regs = regs,
 	.arch = "sm5xx",

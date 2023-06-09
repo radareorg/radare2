@@ -732,9 +732,11 @@ static int archinfo(RArchSession *as, ut32 q) {
 
 
 RArchPlugin r_arch_plugin_h8300 = {
-	.name = "h8300",
-	.desc = "H8300 code analysis plugin",
-	.license = "LGPL3",
+	.meta = {
+		.name = "h8300",
+		.desc = "H8300 code analysis plugin",
+		.license = "LGPL3",
+	},
 	.arch = "h8300",
 	.bits = R_SYS_BITS_PACK1 (16),
 	.decode = &decode,

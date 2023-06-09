@@ -19,9 +19,11 @@ static bool decode(RArchSession *s, RAnalOp *op, RArchDecodeMask mask) {
 }
 
 RArchPlugin r_arch_plugin_jdh8 = {
-	.name = "jdh8",
-	.desc = "jdh-8 toy architecture",
-	.license = "LGPL3",
+	.meta = {
+		.name = "jdh8",
+		.desc = "jdh-8 toy architecture",
+		.license = "LGPL3",
+	},
 	.arch = "jdh8",
 	.bits = R_SYS_BITS_PACK1 (16),
 	.endian = R_SYS_ENDIAN_LITTLE,
