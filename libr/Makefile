@@ -18,30 +18,14 @@ include libs.mk
 .PHONY: $(LIBS)
 
 all:
-ifneq ($(LIBS0),)
 	$(MAKE) $(LIBS0)
-endif
-ifneq ($(LIBS1),)
 	$(MAKE) $(LIBS1)
-endif
-ifneq ($(LIBS2),)
 	$(MAKE) $(LIBS2)
-endif
-ifneq ($(LIBS3),)
 	$(MAKE) $(LIBS3)
-endif
-ifneq ($(LIBS4),)
 	$(MAKE) $(LIBS4)
-endif
-ifneq ($(LIBS5),)
 	$(MAKE) $(LIBS5)
-endif
-ifneq ($(LIBS6),)
 	$(MAKE) $(LIBS6)
-endif
-ifneq ($(LIBS7),)
 	$(MAKE) $(LIBS7)
-endif
 ifneq ($(LIBS8),)
 	$(MAKE) $(LIBS8)
 endif

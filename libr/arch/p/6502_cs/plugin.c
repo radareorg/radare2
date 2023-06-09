@@ -278,9 +278,11 @@ R_API RLibStruct radare_plugin = {
 #else
 //  empty plugin
 RArchPlugin r_arch_plugin_6502_cs = {
-	.name = "6502.cs",
-	.desc = "Capstone mos65xx analysis plugin (not supported)",
-	.license = "LGPL3",
+	.meta {
+		.name = "6502.cs",
+		.desc = "Capstone mos65xx analysis plugin (not supported)",
+		.license = "LGPL3",
+	},
 	.arch = "6502",
 	.bits = R_SYS_BITS_PACK1 (8),
 };

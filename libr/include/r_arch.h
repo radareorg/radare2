@@ -6,6 +6,7 @@
 #include <r_util.h>
 #include <r_bin.h>
 #include <r_reg.h>
+#include <r_lib.h>
 
 // Rename to R_ARCH_VALTYPE_*
 typedef enum {
@@ -49,6 +50,7 @@ typedef struct r_arch_value_t {
 	const char *regdelta;
 } RArchValue;
 #include <r_anal/op.h>
+#include <r_esil.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -130,6 +132,7 @@ typedef enum {
 typedef struct r_arch_t {
 	RList *plugins;	       // all plugins
 	RBinBind binb; // required for java, dalvik, wasm, pickle and pyc plugin... pending refactor
+	struct r_esil_t *esil;
 	RNum *num; // XXX maybe not required
 	struct r_arch_session_t *session;
 	RArchConfig *cfg; // global / default config
@@ -141,11 +144,19 @@ typedef struct r_arch_session_t {
 	struct r_arch_t *arch;
 	struct r_arch_plugin_t *plugin; // used for decoding
 	struct r_arch_session_t *encoder; // used for encoding when plugin->encode is not set
-	RArchConfig *config; // TODO remove arch->config!
-	void *data;
-	void *user;
+	RArchConfig *config; // TODO remove arch->config and keep archsession->config
+	void *data; // store plugin-specific data
+	void *user; // holds user pointer provided by user
 	R_REF_TYPE;
 } RArchSession;
+
+typedef enum {
+	R_ARCH_ESIL_INIT,
+	R_ARCH_ESIL_MAPS,
+	// R_ARCH_ESIL_EVAL,
+	R_ARCH_ESIL_RESET,
+	R_ARCH_ESIL_FINI,
+} RArchEsilAction;
 
 typedef ut32 RArchDecodeMask;
 typedef ut32 RArchEncodeMask; // syntax ?
@@ -160,6 +171,7 @@ typedef bool (*RArchPluginModifyCallback)(RArchSession *s, struct r_anal_op_t *o
 typedef RList *(*RArchPluginPreludesCallback)(RArchSession *s);
 typedef bool (*RArchPluginInitCallback)(RArchSession *s);
 typedef bool (*RArchPluginFiniCallback)(RArchSession *s);
+typedef bool (*RArchPluginEsilCallback)(RArchSession *s, RArchEsilAction action);
 
 // TODO: use `const char *const` instead of `char*`
 typedef struct r_arch_plugin_t {
@@ -188,6 +200,7 @@ typedef struct r_arch_plugin_t {
 	RArchPluginModifyCallback patch;
 	RArchPluginMnemonicsCallback mnemonics;
 	RArchPluginPreludesCallback preludes;
+	RArchPluginEsilCallback esilcb;
 } RArchPlugin;
 
 // decoder.c
