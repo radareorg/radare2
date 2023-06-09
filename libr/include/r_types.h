@@ -82,7 +82,8 @@
 #define R_PERM_RX	(R_PERM_R|R_PERM_X)
 #define R_PERM_RWX	(R_PERM_R|R_PERM_W|R_PERM_X)
 #define R_PERM_WX	(R_PERM_W|R_PERM_X)
-#define R_PERM_SHAR	8
+#define R_PERM_S	8
+#define R_PERM_SHAR	8 /* just S_PERM, instead of _SHAR -- R2_590 */
 #define R_PERM_PRIV	16
 #define R_PERM_ACCESS	32
 #define R_PERM_CREAT	64

@@ -328,3 +328,4 @@ Do you want to restart to install these updates now or try tonight?
 Updates available
 This binary has not been analyzed. Would you like to analyze it now?
 The software is up to date. Just kidding, git pull again
+Caps lock is on.

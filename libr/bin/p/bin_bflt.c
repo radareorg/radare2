@@ -38,21 +38,19 @@ static int search_old_relocation(struct reloc_struct_t *reloc_table, ut32 addr_t
 }
 
 static RList *patch_relocs(RBin *b) {
+	r_return_val_if_fail (b && b->iob.io, NULL);
 	struct r_bin_bflt_obj *bin = NULL;
 	RList *list = NULL;
-	RBinObject *obj;
 	int i = 0;
-	if (!b || !b->iob.io || !b->iob.io->desc) {
+	if (!b->iob.io->desc) {
+		R_LOG_WARN ("No default descriptor loaded");
 		return NULL;
 	}
-	if (!(b->iob.io->cached & R_PERM_W)) {
-		eprintf (
-			"Warning: please run r2 with -e io.cache=true to patch "
-			"relocations\n");
+	if (!r_io_cache_writable (b->iob.io)) {
+		R_LOG_WARN ("Please run r2 with -e io.cache=true to patch relocations");
 		return NULL;
 	}
-
-	obj = r_bin_cur_object (b);
+	RBinObject *obj = r_bin_cur_object (b);
 	if (!obj) {
 		return NULL;
 	}

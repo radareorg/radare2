@@ -97,21 +97,38 @@ typedef struct r_io_undo_t {
 typedef struct r_io_undo_w_t {
 	bool set;
 	ut64 off;
-	ut8 *o;   /* old data */
-	ut8 *n;   /* new data */
-	size_t len;  /* length */
+	ut8 *o; /* old data */
+	ut8 *n; /* new data */
+	size_t len; /* length */
 } RIOUndoWrite;
 
+// io cache
+typedef struct io_cache_item_t {
+	RInterval *tree_itv;
+	RInterval itv;
+	ut8 *data;
+	ut8 *odata; // is this a good idea?
+	bool written;
+} RIOCacheItem;
+
+typedef struct r_io_cache_layer_t {
+	RPVector *vec; // a vector of items
+	RRBTree *tree; // faster access to the items
+	// RRBComparator ci_cmp_cb; // this comparator can be inside the rbtree impl
+} RIOCacheLayer;
+
 typedef struct r_io_cache_t {
-	RPVector *vec;
-	RRBTree *tree;
-	RRBComparator ci_cmp_cb;
+	RList *layers; // a list of cache layers-- must be a vector O(n)
+	int enabled;
+	ut32 mode; // read, write, exec (enabled) sperm = requires maps
 } RIOCache;
 
+// -io-cache-
+
 typedef struct r_io_t {
-	struct r_io_desc_t *desc; // XXX deprecate... we should use only the fd integer, not hold a weak pointer
+	struct r_io_desc_t *desc; // XXX R2_590 - deprecate... we should use only the fd integer, not hold a weak pointer
 	ut64 off;
-	ut32 bank;	// current bank
+	ut32 bank; // current bank
 	int bits;
 	int va;	// keep it as int, value can be 0, 1 or 2
 	bool ff;
@@ -119,14 +136,14 @@ typedef struct r_io_t {
 	size_t addrbytes; // XXX also available in RArchConfig.addrbytes
 	bool aslr;
 	bool autofd;
-	ut32 cached; // uses R_PERM_RWX // wtf cache for exec?
+	// moved into cache.mode // ut32 cached; // uses R_PERM_RWX // wtf cache for exec?
 	bool cachemode; // write in cache all the read operations (EXPERIMENTAL)
 	ut32 p_cache; // uses 1, 2, 4.. probably R_PERM_RWX :D
 	ut64 mts; // map "timestamps", this sucks somehow
 	RIDStorage *files; // RIODescs accessible by their fd
 	RIDStorage *maps;  // RIOMaps accessible by their id
 	RIDStorage *banks; // RIOBanks accessible by their id
-	RIOCache *cache;
+	RIOCache cache;
 	ut8 *write_mask;
 	int write_mask_len;
 	ut64 mask;
@@ -243,14 +260,6 @@ typedef struct r_io_bank_t {
 	ut32 id;	// for fast selection with RIDStorage
 	bool drain_me;	// speedup r_io_nread_at
 } RIOBank;
-
-typedef struct io_cache_item_t {
-	RInterval *tree_itv;
-	RInterval itv;
-	ut8 *data;
-	ut8 *odata;	//is this a good idea?
-	bool written;
-} RIOCacheItem;
 
 #define R_IO_DESC_CACHE_SIZE (sizeof (ut64) * 8)
 typedef struct r_io_desc_cache_t {
@@ -503,20 +512,24 @@ R_IPI bool r_io_desc_init(RIO *io);
 R_IPI void r_io_desc_fini(RIO *io);
 
 /* io/cache.c */
-R_API int r_io_cache_invalidate(RIO *io, ut64 from, ut64 to);
-R_API bool r_io_cache_at(RIO *io, ut64 addr);
-R_API void r_io_cache_commit(RIO *io, ut64 from, ut64 to);
 R_API void r_io_cache_init(RIO *io);
 R_API void r_io_cache_fini(RIO *io);
-R_API bool r_io_cache_list(RIO *io, int rad);
-R_API void r_io_cache_reset(RIO *io, int set);
+R_API void r_io_cache_list(RIO *io, int rad, bool many);
+R_API bool r_io_cache_empty(RIO *io);
+R_API void r_io_cache_reset(RIO *io);
+R_API bool r_io_cache_at(RIO *io, ut64 addr);
+R_API bool r_io_cache_writable(RIO *io);
+// apply patches in given buffer
 R_API bool r_io_cache_write_at(RIO *io, ut64 addr, const ut8 *buf, int len);
 R_API bool r_io_cache_read_at(RIO *io, ut64 addr, ut8 *buf, int len);
-R_API RIOCache *r_io_cache_clone(RIO *io);
-R_API void r_io_cache_replace(RIO *io, RIOCache *cache);
-R_API bool r_io_cache_write(RIO *io, ut64 addr, const ut8 *buf, int len);
-R_API bool r_io_cache_read(RIO *io, ut64 addr, ut8 *buf, int len);
-
+// invalidate ranges and commit to io
+R_API int r_io_cache_invalidate(RIO *io, ut64 from, ut64 to, bool many);
+R_API void r_io_cache_commit(RIO *io, ut64 from, ut64 to, bool many);
+// cache layers
+R_API void r_io_cache_push(RIO *io);
+R_API void r_io_cache_pop(RIO *io);
+R_API void r_io_cache_undo(RIO *io);
+R_API void r_io_cache_redo(RIO *io);
 
 /* io/p_cache.c */
 R_API bool r_io_desc_cache_init(RIODesc *desc);

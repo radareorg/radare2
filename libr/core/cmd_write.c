@@ -63,15 +63,20 @@ static RCoreHelpMessage help_msg_wa = {
 
 static RCoreHelpMessage help_msg_wc = {
 	"Usage:", "wc[jir+-*?]","  # See `e io.cache = true`",
-	"wc","","list all write changes",
+	"wc","","list all write changes in the current cache layer",
+	"wca","","list all write changes in all the cache layers",
 	"wcj","","list all write changes in JSON",
 	"wc-"," [from] [to]","remove write op at curseek or given addr",
+	"wc--","","pop (discard) last write cache layer",
 	"wc+"," [from] [to]","commit change from cache to io",
-	"wc*","","write commands",
+	"wc++","","push a new io cache layer",
+	"wc*","","print write commands to replicate the patches in the current cache layer",
+	"wc**","","same as 'wc*' but for all the cache layers",
 	"wcr","","revert all writes in the cache",
 	"wcu","","undo last change",
 	"wcU","","redo undone change (TODO)",
 	"wci","","commit write cache",
+	"wcl","","list io cache layers",
 	"wcs","","squash the consecutive write ops",
 	"wcf"," [file]","commit write cache into given file",
 	"wcp"," [fd]", "list all cached write-operations on p-layer for specified fd or current fd",
@@ -1331,11 +1336,17 @@ static void cmd_wcf(RCore *core, const char *dfn) {
 		R_LOG_ERROR ("Cannot determine source file");
 		return;
 	}
+	// XXX. apply all layers?
+	RIOCacheLayer *layer = r_list_last (core->io->cache.layers);
+	if (!layer) {
+		R_LOG_ERROR ("Cache is empty");
+		return;
+	}
 	size_t sfs;
 	ut8 *sfb = (ut8*)r_file_slurp (sfn, &sfs);
 	if (sfb) {
 		void **iter;
-		r_pvector_foreach (core->io->cache->vec, iter) {
+		r_pvector_foreach (layer->vec, iter) {
 			RIOCacheItem *c = *iter;
 			const ut64 ps = r_itv_size (c->itv);
 			const ut64 va = r_itv_begin (c->itv);
@@ -1353,42 +1364,43 @@ static void cmd_wcf(RCore *core, const char *dfn) {
 	free (sfn);
 }
 
-static void wcu(RCore *core) {
-	void **iter;
-	RIO *io = core->io;
-	r_pvector_foreach_prev (io->cache->vec, iter) {
-		RIOCacheItem *c = *iter;
-		int cached = io->cached;
-		io->cached = 0;
-		r_io_write_at (io, r_itv_begin (c->itv), c->odata, r_itv_size (c->itv));
-		c->written = false;
-		io->cached = cached;
-		r_pvector_remove_data (io->cache->vec, c);
-		RPVectorFree free_elem = io->cache->vec->v.free_user;
-		if (c->tree_itv) {
-			r_crbtree_delete (io->cache->tree, c, io->cache->ci_cmp_cb, NULL);
-		}
-		free_elem (c);
-		break;
-	}
-}
-
 static int cmd_wc(void *data, const char *input) {
 	RCore *core = (RCore *)data;
 	switch (input[0]) {
 	case '\0': // "wc"
-		//if (!r_config_get_i (core->config, "io.cache"))
-		//	eprintf ("[warning] e io.cache must be true\n");
-		r_io_cache_list (core->io, 0);
+		r_io_cache_list (core->io, 0, false);
+		break;
+	case 'a':
+		if (input[1] == 'j') {
+			r_io_cache_list (core->io, 'j', true);
+		} else {
+			r_io_cache_list (core->io, 0, true);
+		}
+		break;
+	case 'l': // "wcl"
+		if (r_list_empty (core->io->cache.layers)) {
+			R_LOG_INFO ("No layers");
+		} else {
+			RIOCacheLayer *layer;
+			RListIter *iter;
+			int i = 0;
+			int last = r_list_length (core->io->cache.layers) - 1;
+			r_list_foreach (core->io->cache.layers, iter, layer) {
+				int count = r_pvector_length (layer->vec);
+				const char ch = (i == last)? '*': '-';
+				r_cons_printf ("%c %d cache layer with %d patches\n", ch, i, count);
+				i++;
+			}
+		}
 		break;
 	case '?': // "wc?"
 		r_core_cmd_help (core, help_msg_wc);
 		break;
 	case 'u': // "wcu"
-		wcu (core);
+		r_io_cache_undo (core->io);
 		break;
 	case 'U': // "wcU"
-		R_LOG_ERROR ("TODO: Not implemented");
+		r_io_cache_redo (core->io);
 		break;
 	case 'f': // "wcf"
 		if (input[1] == ' ') {
@@ -1398,19 +1410,20 @@ static int cmd_wc(void *data, const char *input) {
 		}
 		break;
 	case '*': // "wc*"
-		r_io_cache_list (core->io, 1);
+		r_io_cache_list (core->io, 1, input[1] == '*');
 		break;
 	case '+': // "wc+"
-		if (input[1] == '*') { // "wc+*"
-			//r_io_cache_reset (core->io, core->io->cached);
-			R_LOG_TODO ("wc+*");
+		if (input[1] == '+') { // "wc++"
+			r_io_cache_push (core->io);
+		} else if (input[1] == '?') {
+			r_core_cmd_help_match (core, help_msg_wc, "wc+", false);
 		} else if (input[1] == ' ') { // "wc+ "
+			ut64 to;
+			ut64 from = r_num_math (core->num, input + 2);
 			char *p = strchr (input + 2, ' ');
-			ut64 to, from;
-			from = r_num_math (core->num, input+2);
 			if (p) {
 				*p = 0;
-				to = r_num_math (core->num, input+2);
+				to = r_num_math (core->num, input + 2);
 				if (to < from) {
 					R_LOG_ERROR ("Invalid range (from > to)");
 					return 0;
@@ -1418,53 +1431,54 @@ static int cmd_wc(void *data, const char *input) {
 			} else {
 				to = from + core->blocksize;
 			}
-			r_io_cache_commit (core->io, from, to);
+			r_io_cache_commit (core->io, from, to, false);
 		} else {
 			R_LOG_ERROR ("Invalidate write cache at 0x%08"PFMT64x, core->offset);
-			r_io_cache_commit (core->io, core->offset, core->offset+1);
+			r_io_cache_commit (core->io, core->offset, core->offset + 1, false);
 		}
 		break;
-	case '-': { // "wc-"
-		if (input[1] == '*') { // "wc-*"
-			r_io_cache_reset (core->io, core->io->cached);
-			break;
-		}
-		ut64 from, to;
-		if (input[1] == ' ') { // "wc- "
-			char *p = strchr (input+2, ' ');
-			if (p) {
-				*p = 0;
-				from = r_num_math (core->num, input+2);
-				to = r_num_math (core->num, p+1);
-				if (to < from) {
-					R_LOG_ERROR ("Invalid range (from > to)");
-					return 0;
+	case '-': // "wc-"
+		if (input[1] == '-') { // "wc--"
+			r_io_cache_pop (core->io);
+		} else if (input[1] == '?') {
+			r_core_cmd_help_match (core, help_msg_wc, "wc-", false);
+		} else {
+			ut64 from, to;
+			if (input[1] == ' ') { // "wc- "
+				char *p = strchr (input + 2, ' ');
+				if (p) {
+					*p = 0;
+					from = r_num_math (core->num, input+2);
+					to = r_num_math (core->num, p+1);
+					if (to < from) {
+						R_LOG_ERROR ("Invalid range (from > to)");
+						return 0;
+					}
+				} else {
+					from = r_num_math (core->num, input+2);
+					to = from + core->blocksize;
 				}
 			} else {
-				from = r_num_math (core->num, input+2);
-				to = from + core->blocksize;
+				R_LOG_INFO ("Invalidate write cache at 0x%08"PFMT64x, core->offset);
+				from = core->offset;
+				to = core->offset + core->blocksize;
 			}
-		} else {
-			R_LOG_INFO ("Invalidate write cache at 0x%08"PFMT64x, core->offset);
-			from = core->offset;
-			to = core->offset + core->blocksize;
+			R_LOG_INFO ("Invalidated %d cache(s)", r_io_cache_invalidate (core->io, from, to, false));
+			r_core_block_read (core);
 		}
-		R_LOG_INFO ("Invalidated %d cache(s)", r_io_cache_invalidate (core->io, from, to));
-		r_core_block_read (core);
 		break;
-	}
 	case 'i': // "wci"
-		r_io_cache_commit (core->io, 0, UT64_MAX);
+		r_io_cache_commit (core->io, 0, UT64_MAX, false);
 		r_core_block_read (core);
 		break;
 	case 'j': // "wcj"
-		r_io_cache_list (core->io, 2);
+		r_io_cache_list (core->io, 2, false);
 		break;
 	case 'p': // "wcp"
 		cmd_write_pcache (core, &input[1]);
 		break;
 	case 'r': // "wcr"
-		r_io_cache_reset (core->io, core->io->cached);
+		r_io_cache_reset (core->io);
 		/* Before loading the core block we have to make sure that if
 		 * the cache wrote past the original EOF these changes are no
 		 * longer displayed. */

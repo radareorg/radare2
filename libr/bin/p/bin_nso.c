@@ -91,7 +91,7 @@ static bool load_bytes(RBinFile *bf, void **bin_obj, const ut8 *buf, ut64 sz, ut
 	ut64 ba = baddr (bf);
 	ut8 *tmp = NULL;
 
-	if (rbin->iob.io && !(rbin->iob.io->cached & R_PERM_W)) {
+	if (!r_io_cache_writable (rbin->iob.io)) {
 		R_LOG_INFO ("Please add '-e io.cache=true' option to r2 command. This is required to decompress the code");
 		goto fail;
 	}

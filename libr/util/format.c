@@ -1295,7 +1295,7 @@ static void r_print_format_nulltermstring(const RPrint* p, int len, int endian, 
 			return;
 		}
 	}
-	if (p->flags & R_PRINT_FLAGS_UNALLOC && !(p->iob.io->cached & R_PERM_R)) {
+	if (p->flags & R_PRINT_FLAGS_UNALLOC && !(p->iob.io->cache.mode & R_PERM_R)) {
 		ut64 total_map_left = 0;
 		ut64 addr = seeki;
 		RIOMap *map;

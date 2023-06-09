@@ -496,10 +496,8 @@ static RList *patch_relocs(RBin *b) {
 	if (bin->hdr.f_flags & COFF_FLAGS_TI_F_EXEC) {
 		return NULL;
 	}
-	if (!(io->cached & R_PERM_W)) {
-		eprintf (
-			"Warning: please run r2 with -e io.cache=true to patch "
-			"relocations\n");
+	if (!r_io_cache_writable (io)) {
+		R_LOG_WARN ("please run r2 with -e io.cache=true to patch relocations");
 		return NULL;
 	}
 
