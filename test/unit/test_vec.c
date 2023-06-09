@@ -1,5 +1,5 @@
 #include <r_util.h>
-#include <sdb/r_vec.h>
+#include <r_vec.h>
 #include "minunit.h"
 
 typedef struct {
