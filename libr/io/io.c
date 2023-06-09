@@ -553,6 +553,20 @@ R_API ut64 r_io_seek(RIO* io, ut64 offset, int whence) {
 	return io->off;
 }
 
+R_API bool r_io_get_region_at(RIO *io, RIORegion *region, ut64 addr) {
+	r_return_val_if_fail (io && region, false);
+	if (!io->va) {
+		if (io->desc) {
+			region->perm = io->desc->perm;
+			region->itv.addr = 0ULL;
+			region->itv.size = r_io_desc_size (io->desc);
+			return addr < region->itv.size;
+		}
+		return false;
+	}
+	return r_io_bank_get_region_at (io, io->bank, region, addr);
+}
+
 #if HAVE_PTRACE
 
 #if USE_PTRACE_WRAP

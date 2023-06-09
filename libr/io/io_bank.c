@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2021-2022 - condret */
+/* radare2 - LGPL - Copyright 2021-2023 - condret */
 
 #include <r_io.h>
 
@@ -989,6 +989,111 @@ R_API void r_io_bank_drain(RIO *io, const ut32 bankid) {
 		node = next;
 	}
 	bank->drain_me = false;
+}
+
+R_API bool r_io_bank_get_region_at(RIO *io, const ut32 bankid, RIORegion *region, ut64 addr) {
+	r_return_val_if_fail (io && region, false);
+	RIOBank *bank = r_io_bank_get (io, bankid);
+	if (!bank) {
+		return false;
+	}
+	r_io_bank_drain (io, bankid);
+	RRBNode *node;
+	if (bank->last_used && r_io_submap_contain (((RIOSubMap *)bank->last_used->data), addr)) {
+		node = bank->last_used;
+	} else {
+		if (!(node = r_crbtree_find_node (bank->submaps, &addr, _find_sm_by_vaddr_cb, NULL))) {
+			return false;
+		}
+	}
+	RIOSubMap *sm = (RIOSubMap *)node->data;
+	RIOMap *map = r_io_map_get_by_ref (io, &sm->mapref);
+	region->perm = map->perm;
+	if (map->perm & R_PERM_RELOC) {
+		RQueue *q = r_queue_new (r_list_length (bank->maprefs));
+		if (!q) {
+			return false;
+		}
+		RListIter *iter;
+		RIOMapRef *mapref;
+		r_list_foreach_prev (bank->maprefs, iter, mapref) {
+			map = r_io_map_get_by_ref (io, mapref);
+			if (map->perm & R_PERM_RELOC) {
+				// ignore reloc maps
+				map = NULL;
+				continue;
+			}
+			if (r_io_map_contain (map, addr)) {
+				break;
+			}
+			r_queue_enqueue (q, map);
+			map = NULL;
+		}
+		if (!map) {
+			// usually this shouldn't happen
+			r_queue_free (q);
+			region->itv = sm->itv;
+			return true;
+		}
+		region->perm = map->perm;
+		region->itv.addr = map->itv.addr;
+		ut64 end = r_io_map_to (map);
+		while (!r_queue_is_empty (q)) {
+			map = (RIOMap *)r_queue_dequeue (q);
+			const ut64 to = r_io_map_to (map);
+			if (to < addr && to >= region->itv.addr) {
+				region->itv.addr = to + 1;
+				continue;
+			}
+			const ut64 from = r_io_map_from (map);
+			if (from > addr && from <= end) {
+				end = from - 1;
+			}
+		}
+		r_queue_free (q);
+		region->itv.size = (end - region->itv.addr) + 1;
+		return true;
+	}
+	region->itv.addr = r_io_submap_from (sm);
+	RRBNode *prev = r_rbnode_prev (node);
+	while (prev) {
+		RIOMap *prev_map = r_io_map_get_by_ref (io, &((RIOSubMap *)prev->data)->mapref);
+		if (prev_map == map) {
+			region->itv.addr = r_io_submap_from ((RIOSubMap *)prev->data);
+			prev = r_rbnode_prev (prev);
+			continue;
+		}
+		if (!(prev_map->perm & R_PERM_RELOC)) {
+			break;
+		}
+		// relocs should live fully inside of sections
+		if (r_io_map_from (prev_map) < r_io_map_from (map)) {
+			break;
+		}
+		region->itv.addr = r_io_submap_from ((RIOSubMap *)prev->data);
+		prev = r_rbnode_prev (prev);
+	}
+	ut64 end = r_io_submap_to (sm);
+	RRBNode *next = r_rbnode_next (node);
+	while (next) {
+		RIOMap *next_map = r_io_map_get_by_ref (io, &((RIOSubMap *)next->data)->mapref);
+		if (next_map == map) {
+			end = r_io_submap_to ((RIOSubMap *)next->data);
+			next = r_rbnode_next (next);
+			continue;
+		}
+		if (!(next_map->perm & R_PERM_RELOC)) {
+			break;
+		}
+		// relocs should live fully inside of sections
+		if (r_io_map_to (next_map) < r_io_map_to (map)) {
+			break;
+		}
+		end = r_io_submap_to ((RIOSubMap *)next->data);
+		next = r_rbnode_next (next);
+	}
+	region->itv.size = (end - region->itv.addr) + 1;
+	return true;
 }
 
 R_IPI bool io_bank_has_map(RIO *io, const ut32 bankid, const ut32 mapid) {

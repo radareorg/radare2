@@ -244,6 +244,11 @@ typedef struct r_io_bank_t {
 	bool drain_me;	// speedup r_io_nread_at
 } RIOBank;
 
+typedef struct r_io_region_t {
+	RInterval itv;
+	ut32 perm;
+} RIORegion;
+
 typedef struct io_cache_item_t {
 	RInterval *tree_itv;
 	RInterval itv;
@@ -401,6 +406,7 @@ R_API bool r_io_bank_write_at(RIO *io, const ut32 bankid, ut64 addr, const ut8 *
 R_API int r_io_bank_read_from_submap_at(RIO *io, const ut32 bankid, ut64 addr, ut8 *buf, int len);
 R_API int r_io_bank_write_to_submap_at(RIO *io, const ut32 bankid, ut64 addr, const ut8 *buf, int len);
 R_API void r_io_bank_drain(RIO *io, const ut32 bankid);
+R_API bool r_io_bank_get_region_at(RIO *io, const ut32 bankid, RIORegion *region, ut64 addr);
 
 //io.c
 R_API RIO *r_io_new(void);
@@ -431,6 +437,7 @@ R_API bool r_io_set_write_mask(RIO *io, const ut8 *mask, int len);
 R_API void r_io_bind(RIO *io, RIOBind *bnd);
 R_API bool r_io_shift(RIO *io, ut64 start, ut64 end, st64 move);
 R_API ut64 r_io_seek(RIO *io, ut64 offset, int whence);
+R_API bool r_io_get_region_at(RIO *io, RIORegion *region, ut64 addr);
 R_API void r_io_fini(RIO *io);
 R_API void r_io_free(RIO *io);
 #define r_io_bind_init(x) memset (&(x), 0, sizeof (x))
