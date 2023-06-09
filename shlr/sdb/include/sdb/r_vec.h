@@ -276,11 +276,8 @@ extern "C" {
 			} \
 			R_VEC_FUNC(name, reserve) (vec, new_capacity); \
 		} \
-		type *value; \
-		R_VEC_FOREACH (values, value) { \
-			*vec->end = *value; \
-			vec->end++; \
-		} \
+		memcpy (vec->end, values->start, num_values * sizeof (type)); \
+		vec->end += num_values; \
 	} \
 	static inline void R_VEC_FUNC(name, remove)(R_VEC(name) *vec, size_t index, R_VEC_FINI(name) fini_fn, void *user) { \
 		r_return_if_fail (vec && vec->start != vec->end && index < vec->start - vec->end); \
