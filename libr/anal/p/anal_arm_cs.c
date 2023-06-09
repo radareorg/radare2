@@ -4262,36 +4262,29 @@ jmp $$ + 4 + ( [delta] * 2 )
 	}
 }
 
-static bool is_valid(arm_reg reg) {
+static inline bool is_valid(arm_reg reg) {
 	return reg != ARM_REG_INVALID;
 }
 
 // XXX this function is a disaster
-static int parse_reg_name(RReg *reg, RRegItem **reg_base, RRegItem **reg_delta, csh handle, cs_insn *insn, int reg_num) {
+static const char *parse_reg_name(RReg *reg, const char **reg_delta, csh handle, cs_insn *insn, int reg_num) {
 	cs_arm_op armop = INSOP (reg_num);
 	switch (armop.type) {
 	case ARM_OP_REG:
-		r_unref (*reg_base);
-		*reg_base = r_reg_get (reg, cs_reg_name (handle, armop.reg), R_REG_TYPE_ALL);
-		break;
+		return cs_reg_name (handle, armop.reg);
 	case ARM_OP_MEM:
 		if (is_valid (armop.mem.base) && is_valid (armop.mem.index)) {
-			r_unref (*reg_base);
-			r_unref (*reg_delta);
-			*reg_base = r_reg_get (reg, cs_reg_name (handle, armop.mem.base), R_REG_TYPE_ALL);
-			*reg_delta = r_reg_get (reg, cs_reg_name (handle, armop.mem.index), R_REG_TYPE_ALL);
+			*reg_delta = cs_reg_name (handle, armop.mem.index);
+			return cs_reg_name (handle, armop.mem.base);
 		} else if (is_valid (armop.mem.base)) {
-			r_unref (*reg_base);
-			*reg_base = r_reg_get (reg, cs_reg_name (handle, armop.mem.base), R_REG_TYPE_ALL);
+			return cs_reg_name (handle, armop.mem.base);
 		} else if (is_valid (armop.mem.index)) {
-			r_unref (*reg_base);
-			*reg_base = r_reg_get (reg, cs_reg_name (handle, armop.mem.index), R_REG_TYPE_ALL);
+			return cs_reg_name (handle, armop.mem.index);
 		}
-		break;
+		return NULL;
 	default:
-		break;
+		return NULL;
 	}
-	return 0;
 }
 
 static bool is_valid64(arm64_reg reg) {
@@ -4308,29 +4301,30 @@ static char *reg_list[] = {
 	"x30"
 };
 
-static int parse_reg64_name(RReg *reg, RRegItem **reg_base, RRegItem **reg_delta, csh handle, cs_insn *insn, int reg_num) {
+static const char *parse_reg64_name(RReg *reg, const char **reg_delta, csh handle, cs_insn *insn, int reg_num) {
+	const char *reg_base = NULL;
 	cs_arm64_op armop = INSOP64 (reg_num);
 	switch (armop.type) {
 	case ARM64_OP_REG:
-		*reg_base = r_reg_get (reg, cs_reg_name (handle, armop.reg), R_REG_TYPE_ALL);
+		reg_base = cs_reg_name (handle, armop.reg);
 		break;
 	case ARM64_OP_MEM:
 		if (is_valid64 (armop.mem.base) && is_valid64 (armop.mem.index)) {
-			*reg_base = r_reg_get (reg, cs_reg_name (handle, armop.mem.base), R_REG_TYPE_ALL);
-			*reg_delta = r_reg_get (reg, cs_reg_name (handle, armop.mem.index), R_REG_TYPE_ALL);
+			reg_base = cs_reg_name (handle, armop.mem.base);
+			*reg_delta = cs_reg_name (handle, armop.mem.index);
 		} else if (is_valid64 (armop.mem.base)) {
-			*reg_base = r_reg_get (reg, cs_reg_name (handle, armop.mem.base), R_REG_TYPE_ALL);
+			reg_base = cs_reg_name (handle, armop.mem.base);
 		} else if (is_valid64 (armop.mem.index)) {
-			*reg_base = r_reg_get (reg, cs_reg_name (handle, armop.mem.index), R_REG_TYPE_ALL);
+			reg_base = cs_reg_name (handle, armop.mem.index);
 		}
 		break;
 	default:
 		break;
 	}
-	if (*reg_base && *(*reg_base)->name == 'w') {
-		*reg_base = r_reg_get (reg, reg_list[atoi ((*reg_base)->name + 1)], R_REG_TYPE_ALL);
+	if (reg_base && *reg_base == 'w') {
+		reg_base = reg_list[atoi (reg_base + 1)]; // XXX dont use atoi
 	}
-	return 0;
+	return reg_base;
 }
 
 static void set_opdir(RAnalOp *op) {
@@ -4364,9 +4358,9 @@ static void set_src_dst(RReg *reg, RAnalValue *val, csh *handle, cs_insn *insn, 
 	cs_arm_op armop = INSOP (x);
 	cs_arm64_op arm64op = INSOP64 (x);
 	if (bits == 64) {
-		parse_reg64_name (reg, &val->reg, &val->regdelta, *handle, insn, x);
+		val->reg = parse_reg64_name (reg, &val->regdelta, *handle, insn, x);
 	} else {
-		parse_reg_name (reg, &val->reg, &val->regdelta, *handle, insn, x);
+		val->reg = parse_reg_name (reg, &val->regdelta, *handle, insn, x);
 	}
 	if (bits == 64) {
 		switch (arm64op.type) {

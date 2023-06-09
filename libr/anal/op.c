@@ -678,7 +678,7 @@ R_API int r_anal_op_reg_delta(RAnal *anal, ut64 addr, const char *name) {
 	RAnalValue *dst = NULL;
 	if (r_anal_op (anal, &op, addr, buf, sizeof (buf), R_ARCH_OP_MASK_ALL) > 0) {
 		dst = r_vector_at (&op.dsts, 0);
-		if (dst && dst->reg && dst->reg->name && (!name || !strcmp (dst->reg->name, name))) {
+		if (dst && dst->reg && (!name || !strcmp (dst->reg, name))) {
 			if (r_vector_length (&op.srcs) > 0) {
 				r_anal_op_fini (&op);
 				return ((RAnalValue*)r_vector_at (&op.srcs, 0))->delta;

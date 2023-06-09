@@ -110,8 +110,8 @@ static inline void gb_anal_jmp_hl(RReg *reg, RAnalOp *op) {
 	RAnalValue *dst, *src;
 	dst = r_vector_push (&op->dsts, NULL);
 	src = r_vector_push (&op->srcs, NULL);
-	dst->reg = r_reg_get (reg, "pc", R_REG_TYPE_GPR);
-	src->reg = r_reg_get (reg, "hl", R_REG_TYPE_GPR);
+	dst->reg = "pc";
+	src->reg = "hl";
 	r_strbuf_set (&op->esil, "hl,pc,:=");
 }
 
@@ -123,7 +123,7 @@ static inline void gb_anal_id(RAnal *anal, RAnalOp *op, const ut8 data) {
 	src->absolute = true;
 	if (data == 0x34 || data == 0x35) {
 		dst->memref = 1;
-		dst->reg = r_reg_get (anal->reg, "hl", R_REG_TYPE_GPR);
+		dst->reg = "hl";
 		if (op->type == R_ANAL_OP_TYPE_ADD) {
 			r_strbuf_set (&op->esil, "1,hl,[1],+,hl,=[1],3,$c,H,:=,$z,Z,:=,0,N,:=");
 		} else {
@@ -131,14 +131,14 @@ static inline void gb_anal_id(RAnal *anal, RAnalOp *op, const ut8 data) {
 		}
 	} else {
 		if (!(data & (1<<2))) {
-			dst->reg = r_reg_get (anal->reg, regs_16[data>>4], R_REG_TYPE_GPR);
+			dst->reg = regs_16[data>>4];
 			if (op->type == R_ANAL_OP_TYPE_ADD) {
 				r_strbuf_setf (&op->esil, "1,%s,+=", regs_16[data>>4]);
 			} else {
 				r_strbuf_setf (&op->esil, "1,%s,-=", regs_16[data >> 4]);
 			}
 		} else {
-			dst->reg = r_reg_get (anal->reg, regs_8[data>>3], R_REG_TYPE_GPR);
+			dst->reg = regs_8[data>>3];
 			if (op->type == R_ANAL_OP_TYPE_ADD) {
 				r_strbuf_setf (&op->esil, "1,%s,+=,3,$c,H,:=,$z,Z,:=,0,N,:=", regs_8[data>>3]);
 			} else {
@@ -152,8 +152,8 @@ static inline void gb_anal_add_hl(RReg *reg, RAnalOp *op, const ut8 data) {
 	RAnalValue *dst, *src;
 	dst = r_vector_push (&op->dsts, NULL);
 	src = r_vector_push (&op->srcs, NULL);
-	dst->reg = r_reg_get (reg, "hl", R_REG_TYPE_GPR);
-	src->reg = r_reg_get (reg, regs_16[((data & 0xf0)>>4)], R_REG_TYPE_GPR);
+	dst->reg = "hl";
+	src->reg = regs_16[((data & 0xf0)>>4)];
 	r_strbuf_setf (&op->esil, "%s,hl,+=,0,N,:=", regs_16[((data & 0xf0)>>4)]);	//hl+=<reg>,N=0
 }
 
@@ -161,7 +161,7 @@ static inline void gb_anal_add_sp(RReg *reg, RAnalOp *op, const ut8 data) {
 	RAnalValue *dst, *src;
 	dst = r_vector_push (&op->dsts, NULL);
 	src = r_vector_push (&op->srcs, NULL);
-	dst->reg = r_reg_get (reg, "sp", R_REG_TYPE_GPR);
+	dst->reg = "sp";
 	src->imm = (st8)data;
 	if (data < 128) {
 		r_strbuf_setf (&op->esil, "0x%02x,sp,+=", data);
@@ -171,17 +171,17 @@ static inline void gb_anal_add_sp(RReg *reg, RAnalOp *op, const ut8 data) {
 	r_strbuf_append (&op->esil, ",0,Z,=,0,N,:=");
 }
 
-static void gb_anal_mov_imm(RReg *reg, RAnalOp *op, const ut8 *data) {
+static void gb_anal_mov_imm(RAnalOp *op, const ut8 *data) {
 	RAnalValue *dst = r_vector_push (&op->dsts, NULL);
 	RAnalValue *src = r_vector_push (&op->srcs, NULL);
 	if (data[0] & 1) {
-		dst->reg = r_reg_get (reg, regs_16[data[0]>>4], R_REG_TYPE_GPR);
+		dst->reg = regs_16[data[0]>>4];
 		dst->type = R_ANAL_VAL_REG;
 		src->imm = GB_SOFTCAST (data[1], data[2]);
 		src->type = R_ANAL_VAL_IMM;
 		r_strbuf_setf (&op->esil, "0x%04" PFMT64x ",%s,=", src->imm, regs_16[data[0]>>4]);
 	} else {
-		dst->reg = r_reg_get (reg, regs_8[data[0]>>3], R_REG_TYPE_GPR);
+		dst->reg = regs_8[data[0]>>3];
 		dst->type = R_ANAL_VAL_REG;
 		src->imm = data[1];
 		src->type = R_ANAL_VAL_IMM;
@@ -195,8 +195,8 @@ static inline void gb_anal_mov_sp_hl(RReg *reg, RAnalOp *op) {
 	RAnalValue *dst, *src;
 	dst = r_vector_push (&op->dsts, NULL);
 	src = r_vector_push (&op->srcs, NULL);
-	dst->reg = r_reg_get (reg, "sp", R_REG_TYPE_GPR);
-	src->reg = r_reg_get (reg, "hl", R_REG_TYPE_GPR);
+	dst->reg = "sp";
+	src->reg = "hl";
 	r_strbuf_set (&op->esil, "hl,sp,=");
 }
 
@@ -205,8 +205,8 @@ static inline void gb_anal_mov_hl_sp(RReg *reg, RAnalOp *op, const ut8 data) {
 	dst = r_vector_push (&op->dsts, NULL);
 	src0 = r_vector_push (&op->srcs, NULL);
 	src1 = r_vector_push (&op->srcs, NULL);
-	dst->reg = r_reg_get (reg, regs_16[2], R_REG_TYPE_GPR);
-	src0->reg = r_reg_get (reg, regs_16[3], R_REG_TYPE_GPR);
+	dst->reg = regs_16[2];
+	src0->reg = regs_16[3];
 	src1->imm = (st8)data;
 	src1->type = R_ANAL_VAL_IMM;
 	if (data < 128) {
@@ -221,8 +221,8 @@ static void gb_anal_mov_reg(RReg *reg, RAnalOp *op, const ut8 data) {
 	RAnalValue *dst, *src;
 	dst = r_vector_push (&op->dsts, NULL);
 	src = r_vector_push (&op->srcs, NULL);
-	dst->reg = r_reg_get (reg, regs_8[(data/8) - 8], R_REG_TYPE_GPR);
-	src->reg = r_reg_get (reg, regs_8[data & 7], R_REG_TYPE_GPR);
+	dst->reg = regs_8[(data/8) - 8];
+	src->reg = regs_8[data & 7];
 	r_strbuf_setf (&op->esil, "%s,%s,=", regs_8[data & 7], regs_8[(data/8) - 8]);
 }
 
@@ -230,7 +230,7 @@ static inline void gb_anal_mov_ime(RReg *reg, RAnalOp *op, const ut8 data) {
 	RAnalValue *dst, *src;
 	dst = r_vector_push (&op->dsts, NULL);
 	src = r_vector_push (&op->srcs, NULL);
-	dst->reg = r_reg_get (reg, "ime", R_REG_TYPE_GPR);
+	dst->reg = "ime";
 	src->absolute = true;
 	src->imm = (data != 0xf3);
 	r_strbuf_setf (&op->esil, "%d,ime,=", (int)src->imm);
@@ -243,7 +243,7 @@ static inline void gb_anal_mov_scf(RReg *reg, RAnalOp *op) {
 	RAnalValue *dst, *src;
 	dst = r_vector_push (&op->dsts, NULL);
 	src = r_vector_push (&op->srcs, NULL);
-	dst->reg = r_reg_get (reg, regs_1[3], R_REG_TYPE_GPR);
+	dst->reg = regs_1[3];
 	src->imm = 1;
 	r_strbuf_set (&op->esil, "1,C,:=");
 }
@@ -252,7 +252,7 @@ static inline void gb_anal_xor_cpl(RReg *reg, RAnalOp *op) {
 	RAnalValue *dst, *src;
 	dst = r_vector_push (&op->dsts, NULL);
 	src = r_vector_push (&op->srcs, NULL);
-	dst->reg = r_reg_get (reg, regs_8[7], R_REG_TYPE_GPR);
+	dst->reg = regs_8[7];
 	src->imm = 0xff;
 	r_strbuf_set (&op->esil, "0xff,a,^=,1,N,:=,1,H,:=");
 }
@@ -261,7 +261,7 @@ static inline void gb_anal_xor_ccf(RReg *reg, RAnalOp *op) {
 	RAnalValue *dst, *src;
 	dst = r_vector_push (&op->dsts, NULL);
 	src = r_vector_push (&op->srcs, NULL);
-	dst->reg = r_reg_get (reg, regs_1[3], R_REG_TYPE_GPR);
+	dst->reg = regs_1[3];
 	src->imm = 1;
 	r_strbuf_set (&op->esil, "C,!=");
 }
@@ -285,16 +285,16 @@ static inline void gb_anal_cond(RReg *reg, RAnalOp *op, const ut8 data) {
 	case 0xc8:
 	case 0xca:
 	case 0xcc:
-		dst->reg = r_reg_get (reg, regs_1[0], R_REG_TYPE_GPR);
+		dst->reg = regs_1[0];
 		break;
 	default:
-		dst->reg = r_reg_get (reg, regs_1[3], R_REG_TYPE_GPR);
+		dst->reg = regs_1[3];
 	}
 }
 
 static inline void gb_anal_pp(RReg *reg, RAnalOp *op, const ut8 data) {//push , pop
 	RAnalValue val = {0};
-	val.reg = r_reg_get (reg, regs_16_alt[(data>>4) - 12], R_REG_TYPE_GPR);
+	val.reg = regs_16_alt[(data>>4) - 12];
 	if ((data & 0xf) == 1) {
 		r_vector_push (&op->dsts, &val);
 		r_strbuf_setf (&op->esil, "sp,[2],%s,=,2,sp,+=", regs_16_alt[(data>>4) - 12]);		//pop
@@ -310,7 +310,7 @@ static inline void gb_anal_and_res(RAnal *anal, RAnalOp *op, const ut8 data) {
 	src = r_vector_push (&op->srcs, NULL);
 	src->imm = ((~(0x1 << ((data >> 3) & 7))) & 0xff);
 	dst->memref = ((data & 7) == 6);
-	dst->reg = r_reg_get (anal->reg, regs_x[data & 7], R_REG_TYPE_GPR);
+	dst->reg = regs_x[data & 7];
 	if (dst->memref) {
 		r_strbuf_setf (&op->esil, "0x%02" PFMT64x ",%s,[1],&,%s,=[1]", src->imm, regs_x[data & 7], regs_x[data & 7]);
 	} else {
@@ -324,7 +324,7 @@ static inline void gb_anal_and_bit(RReg *reg, RAnalOp *op, const ut8 data) {
 	src = r_vector_push (&op->srcs, NULL);
 	src->imm = 1<<((data>>3) & 7);
 	dst->memref = ((data & 7) == 6);
-	dst->reg = r_reg_get (reg, regs_x[data & 7], R_REG_TYPE_GPR);
+	dst->reg = regs_x[data & 7];
 	if (dst->memref) {
 		r_strbuf_setf (&op->esil, "%" PFMT64d ",%s,[1],&,0,==,$z,Z,:=,0,N,:=,1,H,:=", src->imm, regs_x[data & 7]);
 	} else {
@@ -338,7 +338,7 @@ static inline void gb_anal_or_set(RAnal *anal, RAnalOp *op, const ut8 data) {
 	src = r_vector_push (&op->srcs, NULL);
 	src->imm = (data>>3) & 7;
 	dst->memref = ((data & 7) == 6);
-	dst->reg = r_reg_get (anal->reg, regs_x[data & 7], R_REG_TYPE_GPR);
+	dst->reg = regs_x[data & 7];
 	if (dst->memref) {
 		r_strbuf_setf (&op->esil, "0x%02" PFMT64x ",%s,[1],|,%s,=[1]", src->imm, regs_x[data & 7], regs_x[data & 7]);
 	} else {
@@ -351,8 +351,8 @@ static void gb_anal_xoaasc(RReg *reg, RAnalOp *op, const ut8 *data) {
 	dst = r_vector_push (&op->dsts, NULL);
 	src0 = r_vector_push (&op->srcs, NULL);
 	src1 = r_vector_push (&op->srcs, NULL);
-	dst->reg = r_reg_get (reg, "a", R_REG_TYPE_GPR);
-	src0->reg = r_reg_get (reg, regs_x[data[0] & 7], R_REG_TYPE_GPR);
+	dst->reg = "a";
+	src0->reg = regs_x[data[0] & 7];
 	src0->memref = ((data[0] & 7) == 6);
 	switch (op->type) {
 	case R_ANAL_OP_TYPE_XOR:
@@ -379,14 +379,14 @@ static void gb_anal_xoaasc(RReg *reg, RAnalOp *op, const ut8 *data) {
 	case R_ANAL_OP_TYPE_ADD:
 		if (src0->memref) {
 			if (data[0] > 0x87) {
-				src1->reg = r_reg_get (reg, "C", R_REG_TYPE_GPR);
+				src1->reg = "C";
 				r_strbuf_setf (&op->esil, "C,%s,[1],+,a,+=,$z,Z,:=,3,$c,H,:=,7,$c,C,:=,0,N,:=", regs_x[data[0] & 7]);
 			} else {
 				r_strbuf_setf (&op->esil, "%s,[1],a,+=,$z,Z,:=,3,$c,H,:=,7,$c,C,:=,0,N,:=", regs_x[data[0] & 7]);
 			}
 		} else {
 			if (data[0] > 0x87) {
-				src1->reg = r_reg_get (reg, "C", R_REG_TYPE_GPR);
+				src1->reg = "C";
 				r_strbuf_setf (&op->esil, "C,%s,+,a,+=,$z,Z,:=,3,$c,H,:=,7,$c,C,:=,0,N,:=", regs_x[data[0] & 7]);
 			} else {
 				r_strbuf_setf (&op->esil, "%s,a,+=,$z,Z,:=,3,$c,H,:=,7,$c,C,:=,0,N,:=", regs_x[data[0] & 7]);
@@ -396,14 +396,14 @@ static void gb_anal_xoaasc(RReg *reg, RAnalOp *op, const ut8 *data) {
 	case R_ANAL_OP_TYPE_SUB:
 		if (src0->memref) {
 			if (data[0] > 0x97) {
-				src1->reg = r_reg_get (reg, "C", R_REG_TYPE_GPR);
+				src1->reg = "C";
 				r_strbuf_setf (&op->esil, "C,%s,[1],+,a,-=,$z,Z,:=,4,$b,H,:=,8,$b,C,:=,1,N,:=", regs_x[data[0] & 7]);
 			} else {
 				r_strbuf_setf (&op->esil, "%s,[1],a,-=,$z,Z,:=,4,$b,H,:=,8,$b,C,:=,1,N,:=", regs_x[data[0] & 7]);
 			}
 		} else {
 			if (data[0] > 0x97) {
-				src1->reg = r_reg_get (reg, "C", R_REG_TYPE_GPR);
+				src1->reg = "C";
 				r_strbuf_setf (&op->esil, "C,%s,+,a,-=,$z,Z,:=,4,$b,H,:=,8,$b,C,:=,1,N,:=", regs_x[data[0] & 7]);
 			} else {
 				r_strbuf_setf (&op->esil, "%s,a,-=,$z,Z,:=,4,$b,H,:=,8,$b,C,:=,1,N,:=", regs_x[data[0] & 7]);
@@ -429,7 +429,7 @@ static void gb_anal_xoaasc_imm(RReg *reg, RAnalOp *op, const ut8 *data) {
 	dst = r_vector_push (&op->dsts, NULL);
 	src0 = r_vector_push (&op->srcs, NULL);
 	src1 = r_vector_push (&op->srcs, NULL);
-	dst->reg = r_reg_get (reg, "a", R_REG_TYPE_GPR);
+	dst->reg = "a";
 	src0->absolute = true;
 	src0->imm = data[1];
 	src0->type = R_ANAL_VAL_IMM;
@@ -446,7 +446,7 @@ static void gb_anal_xoaasc_imm(RReg *reg, RAnalOp *op, const ut8 *data) {
 	case R_ANAL_OP_TYPE_ADD:
 		r_strbuf_setf (&op->esil, "0x%02x,", data[1]);
 		if (data[0] == 0xce) {					//adc
-			src1->reg = r_reg_get (reg, "C", R_REG_TYPE_GPR);
+			src1->reg = "C";
 			r_strbuf_append (&op->esil, "a,+=,C,NUM,7,$c,C,:=,3,$c,H,:=,a,+=,7,$c,C,|,C,:=,3,$c,H,|=,a,a,=,$z,Z,:=,0,N,:=");
 		} else {
 			r_strbuf_append (&op->esil, "a,+=,3,$c,H,:=,7,$c,C,:=,0,N,:=,a,a,=,$z,Z,:=");
@@ -455,7 +455,7 @@ static void gb_anal_xoaasc_imm(RReg *reg, RAnalOp *op, const ut8 *data) {
 	case R_ANAL_OP_TYPE_SUB:
 		r_strbuf_setf (&op->esil, "0x%02x,", data[1]);
 		if (data[0] == 0xde) {					//sbc
-			src1->reg = r_reg_get (reg, "C", R_REG_TYPE_GPR);
+			src1->reg = "C";
 			r_strbuf_append (&op->esil, "a,-=,C,NUM,8,$b,C,:=,4,$b,H,:=,a,-=,8,$b,C,|,C,=,4,$b,H,|,H,=,a,a,=,$z,Z,:=,1,N,:=");
 		} else {
 			r_strbuf_append (&op->esil, "a,-=,4,$b,H,:=,8,$b,C,:=,1,N,:=,a,a,=,$z,Z,:=");
@@ -471,10 +471,10 @@ static void gb_anal_xoaasc_imm(RReg *reg, RAnalOp *op, const ut8 *data) {
 static inline void gb_anal_load_hl(RReg *reg, RAnalOp *op, const ut8 data) {
 	RAnalValue *dst = r_vector_push (&op->dsts, NULL);
 	RAnalValue *src = r_vector_push (&op->srcs, NULL);
-	src->reg = r_reg_get (reg, "hl", R_REG_TYPE_GPR);
+	src->reg = "hl";
 	src->memref = 1;
 	src->absolute = true;
-	dst->reg = r_reg_get (reg, regs_8[((data & 0x38)>>3)], R_REG_TYPE_GPR);
+	dst->reg = regs_8[((data & 0x38) >> 3)];
 	r_strbuf_setf (&op->esil, "hl,[1],%s,=", regs_8[((data & 0x38)>>3)]);
 	if (data == 0x3a) {
 		r_strbuf_append (&op->esil, ",1,hl,-=");
@@ -488,7 +488,7 @@ static inline void gb_anal_load(RReg *reg, RAnalOp *op, const ut8 *data) {
 	RAnalValue *dst, *src;
 	dst = r_vector_push (&op->dsts, NULL);
 	src = r_vector_push (&op->srcs, NULL);
-	dst->reg = r_reg_get (reg, "a", R_REG_TYPE_GPR);
+	dst->reg = "a";
 	src->memref = 1;
 	switch (data[0]) {
 	case 0xf0:
@@ -497,7 +497,7 @@ static inline void gb_anal_load(RReg *reg, RAnalOp *op, const ut8 *data) {
 		break;
 	case 0xf2:
 		src->base = 0xff00;
-		src->regdelta = r_reg_get (reg, "c", R_REG_TYPE_GPR);
+		src->regdelta = "c";
 		r_strbuf_set (&op->esil, "0xff00,c,+,[1],a,=");
 		break;
 	case 0xfa:
@@ -512,7 +512,7 @@ static inline void gb_anal_load(RReg *reg, RAnalOp *op, const ut8 *data) {
 		r_strbuf_setf (&op->esil, "0x%04" PFMT64x ",[1],a,=", src->base);
 		break;
 	default:
-		src->reg = r_reg_get (reg, regs_16[(data[0] & 0xf0) >> 4], R_REG_TYPE_GPR);
+		src->reg = regs_16[(data[0] & 0xf0) >> 4];
 		r_strbuf_setf (&op->esil, "%s,[1],a,=", regs_16[(data[0] & 0xf0) >> 4]);
 		break;
 	}
@@ -522,14 +522,14 @@ static inline void gb_anal_store_hl(RReg *reg, RAnalOp *op, const ut8 *data) {
 	RAnalValue *dst, *src;
 	dst = r_vector_push (&op->dsts, NULL);
 	src = r_vector_push (&op->srcs, NULL);
-	dst->reg = r_reg_get (reg, "hl", R_REG_TYPE_GPR);
+	dst->reg = "hl";
 	dst->memref = 1;
 	src->absolute = true;
 	if (data[0] == 0x36) {
 		src->imm = data[1];
 		r_strbuf_setf (&op->esil, "0x%02x,hl,=[1]", data[1]);
 	} else {
-		src->reg = r_reg_get (reg, regs_8[data[0] & 0x07], R_REG_TYPE_GPR);
+		src->reg = regs_8[data[0] & 0x07];
 		r_strbuf_setf (&op->esil, "%s,hl,=[1]", regs_8[data[0] & 0x07]);
 	}
 	if (data[0] == 0x32) {
@@ -545,12 +545,12 @@ static void gb_anal_store(RReg *reg, RAnalOp *op, const ut8 *data) {
 	dst = r_vector_push (&op->dsts, NULL);
 	src = r_vector_push (&op->srcs, NULL);
 	dst->memref = 1;
-	src->reg = r_reg_get (reg, "a", R_REG_TYPE_GPR);
+	src->reg = "a";
 	switch (data[0]) {
 		case 0x08:
 			dst->memref = 2;
 			dst->base = GB_SOFTCAST (data[1], data[2]);
-			src->reg = r_reg_get (reg, "sp", R_REG_TYPE_GPR);
+			src->reg = "sp";
 			r_strbuf_setf (&op->esil, "sp,0x%04" PFMT64x ",=[2]", dst->base);
 			break;
 		case 0xe0:
@@ -559,7 +559,7 @@ static void gb_anal_store(RReg *reg, RAnalOp *op, const ut8 *data) {
 			break;
 		case 0xe2:
 			dst->base = 0xff00;
-			dst->regdelta = r_reg_get (reg, "c", R_REG_TYPE_GPR);
+			dst->regdelta = "c";
 			r_strbuf_set (&op->esil, "a,0xff00,c,+,=[1]");
 			break;
 		case 0xea:
@@ -567,7 +567,7 @@ static void gb_anal_store(RReg *reg, RAnalOp *op, const ut8 *data) {
 			r_strbuf_setf (&op->esil, "a,0x%04" PFMT64x ",=[1]", dst->base);
 			break;
 		default:
-			dst->reg = r_reg_get (reg, regs_16[(data[0] & 0xf0)>>4], R_REG_TYPE_GPR);
+			dst->reg = regs_16[(data[0] & 0xf0)>>4];
 			r_strbuf_setf (&op->esil , "a,%s,=[1]", regs_16[(data[0] & 0xf0)>>4]);
 	}
 }
@@ -577,7 +577,7 @@ static inline void gb_anal_cb_swap(RReg *reg, RAnalOp* op, const ut8 data) {
 	dst = r_vector_push (&op->dsts, NULL);
 	src = r_vector_push (&op->srcs, NULL);
 	src->imm = 4;
-	dst->reg = r_reg_get (reg, regs_x[data & 7], R_REG_TYPE_GPR);
+	dst->reg = regs_x[data & 7];
 	if ((data & 7) == 6) {
 		dst->memref = 1;
 		r_strbuf_setf (&op->esil, "4,%s,[1],>>,4,%s,[1],<<,|,%s,=[1],$z,Z,:=", regs_x[data & 7], regs_x[data & 7], regs_x[data & 7]);
@@ -591,7 +591,7 @@ static inline void gb_anal_cb_rlc(RReg *reg, RAnalOp *op, const ut8 data) {
 	dst = r_vector_push (&op->dsts, NULL);
 	src = r_vector_push (&op->srcs, NULL);
 	src->imm = 1;
-	dst->reg = r_reg_get (reg, regs_x[data & 7], R_REG_TYPE_GPR);
+	dst->reg = regs_x[data & 7];
 	if ((data & 7) == 6) {
 		dst->memref = 1;
 		r_strbuf_setf (&op->esil, "7,%s,[1],>>,1,&,C,:=,1,%s,[1],<<,C,|,%s,=[1],$z,Z,:=,0,H,:=,0,N,:=", regs_x[data & 7], regs_x[data & 7], regs_x[data & 7]);
@@ -605,7 +605,7 @@ static inline void gb_anal_cb_rl(RReg *reg, RAnalOp *op, const ut8 data) {
 	dst = r_vector_push (&op->dsts, NULL);
 	src = r_vector_push (&op->srcs, NULL);
 	src->imm = 1;
-	dst->reg = r_reg_get (reg, regs_x[data & 7], R_REG_TYPE_GPR);
+	dst->reg = regs_x[data & 7];
 	if ((data & 7) == 6) {
 		dst->memref = 1;
 		r_strbuf_setf (&op->esil, "1,%s,<<,C,|,%s,=[1],7,$c,C,:=,$z,Z,:=,0,H,:=,0,N,:=", regs_x[data & 7], regs_x[data & 7]);
@@ -619,7 +619,7 @@ static inline void gb_anal_cb_rrc(RReg *reg, RAnalOp *op, const ut8 data) {
 	dst = r_vector_push (&op->dsts, NULL);
 	src = r_vector_push (&op->srcs, NULL);
 	src->imm = 1;
-	dst->reg = r_reg_get(reg, regs_x[data & 7], R_REG_TYPE_GPR);
+	dst->reg = regs_x[data & 7];
 	if ((data &7) == 6) {
 		dst->memref = 1;
 		r_strbuf_setf (&op->esil, "1,%s,[1],&,C,:=,1,%s,[1],>>,7,C,<<,|,%s,=[1],$z,Z,:=,0,H,:=,0,N,:=", regs_x[data & 7], regs_x[data & 7], regs_x[data & 7]);
@@ -633,7 +633,7 @@ static inline void gb_anal_cb_rr(RReg *reg, RAnalOp *op, const ut8 data) {
 	dst = r_vector_push (&op->dsts, NULL);
 	src = r_vector_push (&op->srcs, NULL);
 	src->imm = 1;
-	dst->reg = r_reg_get (reg, regs_x[data & 7], R_REG_TYPE_GPR);
+	dst->reg = regs_x[data & 7];
 	if ((data & 7) == 6) {
 		dst->memref = 1;
 		r_strbuf_setf (&op->esil, "1,%s,[1],&,H,:=,1,%s,[1],>>,7,C,<<,|,%s,=[1],H,C,:=,0,H,:=,0,N,:=", regs_x[data & 7], regs_x[data & 7], regs_x[data & 7]);
@@ -648,7 +648,7 @@ static inline void gb_anal_cb_sla(RReg *reg, RAnalOp *op, const ut8 data) {
 	dst = r_vector_push (&op->dsts, NULL);
 	src = r_vector_push (&op->srcs, NULL);
 	src->imm = 1;
-	dst->reg = r_reg_get (reg, regs_x[data & 7], R_REG_TYPE_GPR);
+	dst->reg = regs_x[data & 7];
 	dst->memref = ((data & 7) == 6);
 	if (dst->memref) {
 		r_strbuf_setf (&op->esil, "1,%s,[1],<<,%s,=[1],7,$c,C,:=,%s,[1],%s,=[1],$z,Z,:=,0,H,:=,0,N,:=", regs_x[data & 7], regs_x[data & 7], regs_x[data & 7], regs_x[data & 7]);
@@ -662,7 +662,7 @@ static inline void gb_anal_cb_sra(RReg *reg, RAnalOp *op, const ut8 data) {
 	dst = r_vector_push (&op->dsts, NULL);
 	src = r_vector_push (&op->srcs, NULL);
 	src->imm = 1;
-	dst->reg = r_reg_get (reg, regs_x[data & 7], R_REG_TYPE_GPR);
+	dst->reg = regs_x[data & 7];
 	dst->memref = ((data & 7) == 6);
 	if (dst->memref) {
 		r_strbuf_setf (&op->esil, "1,%s,[1],&,C,:=,0x80,%s,[1],&,1,%s,[1],>>,|,%s,=[1],$z,Z,:=,0,N,:=,0,H,:=", regs_x[data & 7], regs_x[data & 7], regs_x[data & 7], regs_x[data & 7]);	//spaguesil
@@ -676,7 +676,7 @@ static inline void gb_anal_cb_srl(RReg *reg, RAnalOp *op, const ut8 data) {
 	dst = r_vector_push (&op->dsts, NULL);
 	src = r_vector_push (&op->srcs, NULL);
 	src->imm = 1;
-	dst->reg = r_reg_get (reg, regs_x[data & 7], R_REG_TYPE_GPR);
+	dst->reg = regs_x[data & 7];
 	dst->memref = ((data & 7) == 6);
 	if (dst->memref) {
 		r_strbuf_setf (&op->esil, "1,%s,[1],&,C,:=,1,%s,[1],>>,%s,=[1],$z,Z,:=,0,N,:=,0,H,:=", regs_x[data & 7], regs_x[data & 7], regs_x[data & 7]);
@@ -749,7 +749,7 @@ static int gb_anop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 		case 0x11:
 		case 0x21:
 		case 0x31:
-			gb_anal_mov_imm (anal->reg, op, data);
+			gb_anal_mov_imm (op, data);
 			op->cycles = 12;
 			op->type = R_ANAL_OP_TYPE_MOV;
 			break;
@@ -766,7 +766,7 @@ static int gb_anop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 		case 0x26:
 		case 0x2e:
 		case 0x3e:
-			gb_anal_mov_imm (anal->reg, op, data);
+			gb_anal_mov_imm (op, data);
 			op->cycles = 8;
 			op->type = R_ANAL_OP_TYPE_MOV;
 			break;
@@ -1538,14 +1538,14 @@ static int esil_gb_init(REsil *esil) {
 			esil->anal->iob.read_at (esil->anal->iob.io, 0x147, &user->mbc_id, 1);
 			esil->anal->iob.read_at (esil->anal->iob.io, 0x148, &user->romsz_id, 1);
 			esil->anal->iob.read_at (esil->anal->iob.io, 0x149, &user->ramsz_id, 1);
-			if (esil->anal->reg) {		//initial values
-				r_reg_set_value (esil->anal->reg, r_reg_get (esil->anal->reg, "mpc", -1), 0x100);
-				r_reg_set_value (esil->anal->reg, r_reg_get (esil->anal->reg, "sp", -1), 0xfffe);
-				r_reg_set_value (esil->anal->reg, r_reg_get (esil->anal->reg, "af", -1), 0x01b0);
-				r_reg_set_value (esil->anal->reg, r_reg_get (esil->anal->reg, "bc", -1), 0x0013);
-				r_reg_set_value (esil->anal->reg, r_reg_get (esil->anal->reg, "de", -1), 0x00d8);
-				r_reg_set_value (esil->anal->reg, r_reg_get (esil->anal->reg, "hl", -1), 0x014d);
-				r_reg_set_value (esil->anal->reg, r_reg_get (esil->anal->reg, "ime", -1), true);
+			if (esil->anal->reg) { //initial values
+				r_reg_setv (esil->anal->reg, "mpc", 0x100);
+				r_reg_setv (esil->anal->reg, "sp", 0xfffe);
+				r_reg_setv (esil->anal->reg, "af", 0x01b0);
+				r_reg_setv (esil->anal->reg, "bc", 0x0013);
+				r_reg_setv (esil->anal->reg, "de", 0x00d8);
+				r_reg_setv (esil->anal->reg, "hl", 0x014d);
+				r_reg_setv (esil->anal->reg, "ime", true);
 			}
 		}
 		esil->cb.user = user;

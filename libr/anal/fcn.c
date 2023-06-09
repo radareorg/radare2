@@ -179,7 +179,8 @@ static bool is_delta_pointer_table(ReadAhead *ra, RAnal *anal, RAnalFunction *fc
 	RAnalOp omov_aop = {0};
 	RAnalOp mov_aop = {0};
 	RAnalOp add_aop = {0};
-	RRegItem *reg_src = NULL, *o_reg_dst = NULL;
+	const char *reg_src = NULL;
+	const char *o_reg_dst = NULL;
 	RAnalValue cur_scr, cur_dst = {0};
 	read_ahead (ra, anal, addr, (ut8*)buf, sizeof (buf));
 	bool isValid = false;
@@ -233,7 +234,16 @@ static bool is_delta_pointer_table(ReadAhead *ra, RAnal *anal, RAnalFunction *fc
 	    && mov_aop.disp && mov_aop.disp != UT64_MAX) {
 		// disp in this case should be tbl_loc_off
 		*jmptbl_addr += mov_aop.disp;
-		if (o_reg_dst && reg_src && o_reg_dst->offset == reg_src->offset && omov_aop.disp != UT64_MAX) {
+#if 1
+		if (o_reg_dst && reg_src && omov_aop.disp != UT64_MAX) {
+			RRegItem *ri0 = r_reg_get (anal->reg, o_reg_dst, R_REG_TYPE_GPR);
+			RRegItem *ri1 = r_reg_get (anal->reg, reg_src, R_REG_TYPE_GPR);
+			if (ri0 && ri1 && ri0->offset == ri1->offset) {
+				*casetbl_addr += omov_aop.disp;
+			}
+		}
+#else
+		if (o_reg_dst && reg_src && !strcmp (o_reg_dst, reg_src) && omov_aop.disp != UT64_MAX) {
 			// Special case for indirection
 			// lea reg1, [base_addr]
 			// movzx reg2, byte [reg1 + tbl_off + casetbl_loc_off]
@@ -242,6 +252,7 @@ static bool is_delta_pointer_table(ReadAhead *ra, RAnal *anal, RAnalFunction *fc
 			// jmp reg3
 			*casetbl_addr += omov_aop.disp;
 		}
+#endif
 	}
 #if 0
 	// required for the last jmptbl.. but seems to work without it and breaks other tests
@@ -293,7 +304,7 @@ static ut64 try_get_cmpval_from_parents(RAnal *anal, RAnalFunction *fcn, RAnalBl
 
 static bool regs_exist(RAnalValue *src, RAnalValue *dst) {
 	r_return_val_if_fail (src && dst, false);
-	return src->reg && dst->reg && src->reg->name && dst->reg->name;
+	return src->reg && dst->reg;
 }
 
 // 0 if not skipped; 1 if skipped; 2 if skipped before
@@ -539,13 +550,13 @@ static inline bool has_vars(RAnal *anal, ut64 addr) {
 }
 
 static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int depth) {
-	RRegItem *variadic_reg = NULL;
+	const char *variadic_reg = NULL;
 	ReadAhead ra = {0};
 	ra.cache_addr = UT64_MAX; // invalidate the cache
-	char *bp_reg = NULL;
-	char *sp_reg = NULL;
-	char *op_dst = NULL;
-	char *op_src = NULL;
+	const char *bp_reg = NULL;
+	const char *sp_reg = NULL;
+	const char *op_dst = NULL;
+	const char *op_src = NULL;
 	if (depth < -1) {
 		// only happens when we want to analyze 1 basic block
 		return R_ANAL_RET_ERROR; // MUST BE TOO DEEP
@@ -557,9 +568,9 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int
 	// TODO Store all this stuff in the heap so we save memory in the stack
 	RAnalOp *op = NULL;
 	RAnalValue *dst = NULL, *src0 = NULL, *src1 = NULL;
-	char *movbasereg = NULL;
+	const char *movbasereg = NULL;
 	const int addrbytes = anal->iob.io ? anal->iob.io->addrbytes : 1;
-	char *last_reg_mov_lea_name = NULL;
+	const char *last_reg_mov_lea_name = NULL;
 	RAnalBlock *bb = NULL;
 	RAnalBlock *bbg = NULL;
 	int ret = R_ANAL_RET_END, skip_ret = 0;
@@ -678,18 +689,18 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int
 	const char *_sp_reg = anal->reg->name[R_REG_NAME_SP];
 	const bool has_stack_regs = _bp_reg && _sp_reg;
 	if (has_stack_regs) {
-		bp_reg = strdup (_bp_reg);
-		sp_reg = strdup (_sp_reg);
+		bp_reg = _bp_reg;
+		sp_reg = _sp_reg;
 	}
 	if (is_amd64) {
-		variadic_reg = r_reg_get (anal->reg, "rax", R_REG_TYPE_GPR);
+		variadic_reg = "rax";
 	}
 	bool has_variadic_reg = !!variadic_reg;
 
 	op = r_anal_op_new ();
 	while (addrbytes * idx < maxlen) {
 		if (!last_is_reg_mov_lea) {
-			R_FREE (last_reg_mov_lea_name);
+			last_reg_mov_lea_name = NULL;
 		}
 		if (anal->limit && anal->limit->to <= addr + idx) {
 			break;
@@ -724,11 +735,9 @@ repeat:
 			gotoBeach (R_ANAL_RET_END);
 		}
 		dst = r_vector_at (&op->dsts, 0);
-		free (op_dst);
-		op_dst = (dst && dst->reg && dst->reg->name)? strdup (dst->reg->name): NULL;
+		op_dst = dst? dst->reg: NULL;
 		src0 = r_vector_at (&op->srcs, 0);
-		free (op_src);
-		op_src = (src0 && src0->reg && src0->reg->name) ? strdup (src0->reg->name): NULL;
+		op_src = src0 ? src0->reg: NULL;
 		src1 = r_vector_at (&op->srcs, 1);
 
 		if (anal->opt.nopskip && fcn->addr == at) {
@@ -916,25 +925,18 @@ repeat:
 				fcn->bp_off = fcn->stack;
 			}
 			// Is this a mov of immediate value into a register?
-			if (dst && dst->reg && dst->reg->name && op->val > 0 && op->val != UT64_MAX) {
-				free (last_reg_mov_lea_name);
-				if ((last_reg_mov_lea_name = strdup (dst->reg->name))) {
-					last_reg_mov_lea_val = op->val;
-					last_is_reg_mov_lea = true;
-				}
+			if (dst && dst->reg && op->val > 0 && op->val != UT64_MAX) {
+				last_reg_mov_lea_name = dst->reg;
+				last_reg_mov_lea_val = op->val;
+				last_is_reg_mov_lea = true;
 			}
 			// skip mov reg, reg
 			if (anal->opt.jmptbl && op->scale && op->ireg) {
 				movdisp = op->disp;
 				movscale = op->scale;
-				if (src0 && src0->reg) {
-					free (movbasereg);
-					movbasereg = strdup (src0->reg->name);
-				} else {
-					R_FREE (movbasereg);
-				}
+				movbasereg = src0? src0->reg: NULL;
 			}
-			if (anal->opt.hpskip && regs_exist (src0, dst) && !strcmp (src0->reg->name, dst->reg->name)) {
+			if (anal->opt.hpskip && regs_exist (src0, dst) && !strcmp (src0->reg, dst->reg)) {
 				skip_ret = skip_hp (anal, fcn, op, bb, addr, oplen, delay.un_idx, &idx);
 				if (skip_ret == 1) {
 					r_anal_op_fini (op);
@@ -985,7 +987,7 @@ repeat:
 				pair->reg = op->reg
 					? strdup (op->reg)
 					: dst && dst->reg
-					? strdup (dst->reg->name)
+					? strdup (dst->reg)
 					: NULL;
 				lea_cnt++;
 				r_list_append (anal->leaddrs, pair);
@@ -993,17 +995,15 @@ repeat:
 			if (has_stack_regs && op_is_set_bp (op_dst, op_src, bp_reg, sp_reg)     ) {
 				fcn->bp_off = fcn->stack - src0->delta;
 			}
-			if (dst && dst->reg && dst->reg->name && op->ptr > 0 && op->ptr != UT64_MAX) {
-				free (last_reg_mov_lea_name);
-				if ((last_reg_mov_lea_name = strdup(dst->reg->name))) {
-					last_reg_mov_lea_val = op->ptr;
-					last_is_reg_mov_lea = true;
-				}
+			if (dst && dst->reg && op->ptr > 0 && op->ptr != UT64_MAX) {
+				last_reg_mov_lea_name = dst->reg;
+				last_reg_mov_lea_val = op->ptr;
+				last_is_reg_mov_lea = true;
 			}
 #endif
 			// skip lea reg,[reg]
 			if (anal->opt.hpskip && regs_exist (src0, dst)
-			&& !strcmp (src0->reg->name, dst->reg->name)) {
+			&& !strcmp (src0->reg, dst->reg)) {
 				skip_ret = skip_hp (anal, fcn, op, bb, at, oplen, delay.un_idx, &idx);
 				if (skip_ret == 1) {
 					r_anal_op_fini (op);
@@ -1302,10 +1302,10 @@ repeat:
 						anal->iob.read_at (anal->iob.io, op->addr - op->size, buf, sizeof (buf));
 						if (r_anal_op (anal, prev_op, op->addr - op->size, buf, sizeof (buf), R_ARCH_OP_MASK_VAL) > 0) {
 							RAnalValue *prev_dst = r_vector_at (&prev_op->dsts, 0);
-							bool prev_op_has_dst_name = prev_dst && prev_dst->reg && prev_dst->reg->name;
-							bool op_has_src_name = src0 && src0->reg && src0->reg->name;
-							bool same_reg = (op->ireg && prev_op_has_dst_name && !strcmp (op->ireg, prev_dst->reg->name))
-								|| (op_has_src_name && prev_op_has_dst_name && !strcmp (src0->reg->name, prev_dst->reg->name));
+							bool prev_op_has_dst_name = prev_dst && prev_dst->reg;
+							bool op_has_src_name = src0 && src0->reg;
+							bool same_reg = (op->ireg && prev_op_has_dst_name && !strcmp (op->ireg, prev_dst->reg))
+								|| (op_has_src_name && prev_op_has_dst_name && !strcmp (src0->reg, prev_dst->reg));
 							if (prev_op->type == R_ANAL_OP_TYPE_MOV && prev_op->disp && prev_op->disp != UT64_MAX && same_reg) {
 								//	movzx reg, byte [reg + case_table]
 								//	jmp dword [reg*4 + jump_table]
@@ -1420,7 +1420,7 @@ analopfinish:
 			break;
 		case R_ANAL_OP_TYPE_UPUSH:
 			if ((op->type & R_ANAL_OP_TYPE_REG) && last_is_reg_mov_lea && src0 && src0->reg
-				&& src0->reg->name && !strcmp (src0->reg->name, last_reg_mov_lea_name)) {
+				&& src0->reg && !strcmp (src0->reg, last_reg_mov_lea_name)) {
 				last_is_push = true;
 				last_push_addr = last_reg_mov_lea_val;
 				if (anal->iob.is_valid_offset (anal->iob.io, last_push_addr, 1)) {
@@ -1450,7 +1450,6 @@ analopfinish:
 			break;
 		}
 		if (has_stack_regs && arch_destroys_dst) {
-			// op->dst->reg->name is invalid pointer
 			if (op_is_set_bp (op_dst, op_src, bp_reg, sp_reg) && src1) {
 				switch (op->type & R_ANAL_OP_TYPE_MASK) {
 				case R_ANAL_OP_TYPE_ADD:
@@ -1479,10 +1478,20 @@ analopfinish:
 			last_is_mov_lr_pc = false;
 		}
 		if (has_variadic_reg && !fcn->is_variadic) {
-			r_unref (variadic_reg);
-			variadic_reg = r_reg_get (anal->reg, "rax", R_REG_TYPE_GPR);
-			bool dst_is_variadic = dst && dst->reg
-					&& variadic_reg && dst->reg->offset == variadic_reg->offset;
+			variadic_reg = "rax";
+#if 1
+			bool dst_is_variadic = dst && dst->reg && variadic_reg;
+			if (dst_is_variadic) {
+				dst_is_variadic = false;
+				RRegItem *ri0 = r_reg_get (anal->reg, dst->reg, R_REG_TYPE_GPR);
+				RRegItem *ri1 = r_reg_get (anal->reg, variadic_reg, R_REG_TYPE_GPR);
+				if (ri0 && ri1 && ri0->offset == ri1->offset) {
+					dst_is_variadic = true;
+				}
+			}
+#else
+			bool dst_is_variadic = dst && dst->reg && variadic_reg && !strcmp (dst->reg, variadic_reg);
+#endif
 			bool op_is_cmp = (op->type == R_ANAL_OP_TYPE_CMP) || op->type == R_ANAL_OP_TYPE_ACMP;
 			if (dst_is_variadic && !op_is_cmp) {
 				has_variadic_reg = false;
@@ -1494,23 +1503,16 @@ analopfinish:
 		}
 	}
 beach:
-	r_unref (variadic_reg);
-	free (op_src);
-	free (op_dst);
-	free (bp_reg);
-	free (sp_reg);
 	while (lea_cnt > 0) {
 		r_list_delete (anal->leaddrs, r_list_tail (anal->leaddrs));
 		lea_cnt--;
 	}
 	r_anal_op_free (op);
-	R_FREE (last_reg_mov_lea_name);
 	if (bb && bb->size == 0) {
 		r_anal_function_remove_block (fcn, bb);
 	}
 	r_anal_block_update_hash (bb);
 	r_anal_block_unref (bb);
-	free (movbasereg);
 	return ret;
 }
 
@@ -2126,8 +2128,8 @@ R_API bool r_anal_function_purity(RAnalFunction *fcn) {
 static bool can_affect_bp(RAnal *anal, RAnalOp* op) {
 	RAnalValue *dst = r_vector_at (&op->dsts, 0);
 	RAnalValue *src = r_vector_at (&op->srcs, 0);
-	const char *opdreg = (dst && dst->reg) ? dst->reg->name : NULL;
-	const char *opsreg = (src && src->reg) ? src->reg->name : NULL;
+	const char *opdreg = dst? dst->reg: NULL;
+	const char *opsreg = src? src->reg: NULL;
 	const char *bp_name = anal->reg->name[R_REG_NAME_BP];
 	bool dst_is_bp = opdreg && !dst->memref && !strcmp (opdreg, bp_name);
 	bool src_is_bp = opsreg && !src->memref && !strcmp (opsreg, bp_name);
@@ -2172,7 +2174,7 @@ R_API void r_anal_function_check_bp_use(RAnalFunction *fcn) {
 			case R_ANAL_OP_TYPE_LEA:
 				if (can_affect_bp (anal, &op)) {
 					const char *spreg = anal->reg->name[R_REG_NAME_SP];
-					if (src && src->reg && src->reg->name && strcmp (src->reg->name, spreg)) {
+					if (src && src->reg && strcmp (src->reg, spreg)) {
 						fcn->bp_frame = false;
 						r_anal_op_fini (&op);
 						free (buf);

@@ -9,7 +9,7 @@
 R_API bool r_anal_var_display(RAnal *anal, RAnalVar *var) {
 	r_return_val_if_fail (anal && var, false);
 	char *fmt = r_type_format (anal->sdb_types, var->type);
-	RRegItem *i;
+	RRegItem *ri;
 	if (!fmt) {
 		R_LOG_ERROR ("type:%s doesn't exist", var->type);
 		return false;
@@ -17,12 +17,12 @@ R_API bool r_anal_var_display(RAnal *anal, RAnalVar *var) {
 	bool usePxr = !strcmp (var->type, "int"); // hacky but useful
 	switch (var->kind) {
 	case R_ANAL_VAR_KIND_REG:
-		i = r_reg_index_get (anal->reg, var->delta);
-		if (i) {
+		ri = r_reg_index_get (anal->reg, var->delta);
+		if (ri) {
 			if (usePxr) {
-				anal->cb_printf ("pxr $w @r:%s\n", i->name);
+				anal->cb_printf ("pxr $w @r:%s\n", ri->name);
 			} else {
-				anal->cb_printf ("pf r (%s)\n", i->name);
+				anal->cb_printf ("pf r (%s)\n", ri->name);
 			}
 		} else {
 			R_LOG_ERROR ("register not found");
@@ -854,19 +854,24 @@ static bool var_add_structure_fields_to_list(RAnal *a, RAnalVar *av, RList *list
 	return false;
 }
 
+#if 0
+static const char *get_regname(RAnal *anal, RAnalValue *value) {
+	return value? value->reg: NULL;
+}
+#else
 static const char *get_regname(RAnal *anal, RAnalValue *value) {
 	// R2_590 - this is underperforming hard
 	const char *name = NULL;
-	if (value && value->reg && value->reg->name) {
-		name = value->reg->name;
-		RRegItem *ri = r_reg_get (anal->reg, value->reg->name, -1);
+	if (value && value->reg) {
+		name = value->reg;
+		RRegItem *ri = r_reg_get (anal->reg, value->reg, -1);
 		if (ri && (ri->size == 32) && (anal->config->bits == 64)) {
-			name = r_reg_32_to_64 (anal->reg, value->reg->name);
+			name = r_reg_32_to_64 (anal->reg, value->reg);
 		}
-		r_unref (ri);
 	}
 	return name;
 }
+#endif
 
 R_API R_OWN char *r_anal_function_autoname_var(RAnalFunction *fcn, char kind, const char *pfx, int ptr) {
 	void **it;
@@ -912,8 +917,8 @@ static void extract_arg(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const char
 	r_return_if_fail (anal && fcn && op && reg);
 
 	r_vector_foreach (&op->srcs, val) {
-		if (val && val->reg && val->reg->name) {
-			if (!strcmp (reg, val->reg->name)) {
+		if (val && val->reg) {
+			if (!strcmp (reg, val->reg)) {
 				st64 delta = val->delta;
 				if ((delta > 0 && *sign == '+') || (delta < 0 && *sign == '-')) {
 					ptr = R_ABS (val->delta);
@@ -949,7 +954,7 @@ static void extract_arg(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const char
 			if (!op->stackop && val) {
 				const char *sp = r_reg_get_name (anal->reg, R_REG_NAME_SP);
 				const char *bp = r_reg_get_name (anal->reg, R_REG_NAME_BP);
-				const char *rn = (val && val->reg) ? val->reg->name : NULL;
+				const char *rn = val? val->reg: NULL;
 				if (rn && ((bp && !strcmp (bp, rn)) || (sp && !strcmp (sp, rn)))) {
 					if (anal->verbose) {
 						R_LOG_WARN ("Analysis didn't fill op->stackop for instruction that alters stack at 0x%" PFMT64x, op->addr);

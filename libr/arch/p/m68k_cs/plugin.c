@@ -204,23 +204,18 @@ static void opex(RStrBuf *buf, csh handle, cs_insn *insn) {
 	pj_free (pj);
 }
 
-static int parse_reg_name(RRegItem *reg, csh handle, cs_insn *insn, int reg_num) {
-	if (!reg) {
-		return -1;
-	}
+static const char *parse_reg_name(csh handle, cs_insn *insn, int reg_num) {
 	switch (OPERAND (reg_num).type) {
 	case M68K_OP_REG:
-		reg->name = (char *)cs_reg_name (handle, OPERAND (reg_num).reg);
-		break;
+		return (char *)cs_reg_name (handle, OPERAND (reg_num).reg);
 	case M68K_OP_MEM:
 		if (OPERAND (reg_num).mem.base_reg != M68K_REG_INVALID) {
-			reg->name = (char *)cs_reg_name (handle, OPERAND (reg_num).mem.base_reg);
+			return (char *)cs_reg_name (handle, OPERAND (reg_num).mem.base_reg);
 		}
-		break;
+		return NULL;
 	default:
-		break;
+		return NULL;
 	}
-	return 0;
 }
 
 static void op_fillval(PluginData *pd, RAnalOp *op, csh handle, cs_insn *insn) {
@@ -230,13 +225,11 @@ static void op_fillval(PluginData *pd, RAnalOp *op, csh handle, cs_insn *insn) {
 		ZERO_FILL (pd->reg);
 		if (OPERAND(1).type == M68K_OP_MEM) {
 			src = r_vector_push (&op->srcs, NULL);
-			src->reg = &pd->reg;
-			parse_reg_name (src->reg, handle, insn, 1);
+			src->reg = parse_reg_name (handle, insn, 1);
 			src->delta = OPERAND(0).mem.disp;
 		} else if (OPERAND(0).type == M68K_OP_MEM) {
 			dst = r_vector_push (&op->dsts, NULL);
-			dst->reg = &pd->reg;
-			parse_reg_name (dst->reg, handle, insn, 0);
+			dst->reg = parse_reg_name (handle, insn, 0);
 			dst->delta = OPERAND(1).mem.disp;
 		}
 		break;
@@ -244,8 +237,7 @@ static void op_fillval(PluginData *pd, RAnalOp *op, csh handle, cs_insn *insn) {
 		ZERO_FILL (pd->reg);
 		if (OPERAND(1).type == M68K_OP_MEM) {
 			dst = r_vector_push (&op->dsts, NULL);
-			dst->reg = &pd->reg;
-			parse_reg_name (dst->reg, handle, insn, 1);
+			dst->reg = parse_reg_name (handle, insn, 1);
 			dst->delta = OPERAND(1).mem.disp;
 		}
 		break;
