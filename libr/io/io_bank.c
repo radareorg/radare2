@@ -1086,6 +1086,28 @@ R_API void r_io_bank_drain(RIO *io, const ut32 bankid) {
 	bank->drain_me = false;
 }
 
+R_API bool r_io_bank_get_region_at(RIO *io, const ut32 bankid, RIORegion *region, ut64 addr) {
+	r_return_val_if_fail (io && region, false);
+	RIOBank *bank = r_io_bank_get (io, bankid);
+	if (!bank) {
+		return false;
+	}
+	r_io_bank_drain (io, bankid);
+	RRBNode *node;
+	if (bank->last_used && r_io_submap_contain (((RIOSubMap *)bank->last_used->data), addr)) {
+		node = bank->last_used;
+	} else {
+		if (!(node = r_crbtree_find_node (bank->submaps, &addr, _find_sm_by_vaddr_cb, NULL))) {
+			return false;
+		}
+	}
+	RIOSubMap *sm = (RIOSubMap *)node->data;
+	RIOMap *map = r_io_map_get_by_ref (io, &sm->mapref);
+	region->perm = map->perm;
+	region->itv = sm->itv;
+	return true;
+}
+
 R_IPI bool io_bank_has_map(RIO *io, const ut32 bankid, const ut32 mapid) {
 	r_return_val_if_fail (io, false);
 	RIOBank *bank = r_io_bank_get (io, bankid);

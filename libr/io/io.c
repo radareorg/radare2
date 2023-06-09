@@ -585,6 +585,20 @@ R_API void r_io_drain_overlay(RIO *io) {
 	r_id_storage_foreach (io->maps, drain_cb, NULL);
 }
 
+R_API bool r_io_get_region_at(RIO *io, RIORegion *region, ut64 addr) {
+	r_return_val_if_fail (io && region, false);
+	if (!io->va) {
+		if (io->desc) {
+			region->perm = io->desc->perm;
+			region->itv.addr = 0ULL;
+			region->itv.size = r_io_desc_size (io->desc);
+			return addr < region->itv.size;
+		}
+		return false;
+	}
+	return r_io_bank_get_region_at (io, io->bank, region, addr);
+}
+
 #if HAVE_PTRACE
 
 #if USE_PTRACE_WRAP
