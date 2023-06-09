@@ -330,7 +330,6 @@ static bool test_vec_swap(void) {
 	mu_assert_eq (RVecUT32_length (&v1), 5, "swap length5");
 	mu_assert_eq (RVecUT32_length (&v2), 3, "swap length6");
 
-	ut32* value;
 	for (x = 0; x < 5; x++) {
 		mu_assert_eq (*RVecUT32_at (&v1, x), x, "at1");
 	}
@@ -429,13 +428,13 @@ static bool test_vec_capacity(void) {
 		RVecUT32_push_back (&v, &x);
 	}
 
-	mu_assert_eq (RVecUT32_capacity (&v), 8, "capacity3");
+	mu_assert_eq (RVecUT32_capacity (&v), 16, "capacity3");
 
 	RVecUT32_push_back (&v, &x);
 	mu_assert_eq (RVecUT32_capacity (&v), 16, "capacity4");
 
 	RVecUT32_clear (&v, NULL, NULL);
-	mu_assert_eq (RVecUT32_capacity (&v), 0, "clear capacity4");
+	mu_assert_eq (RVecUT32_capacity (&v), 16, "clear capacity4");
 
 	RVecUT32_fini (&v, NULL, NULL);
 	mu_end;
@@ -569,8 +568,6 @@ static bool test_vec_shrink_to_fit(void) {
 	RVecUT32_shrink_to_fit (&v);
 	mu_assert_eq (RVecUT32_length (&v), 0, "shrink_to_fit length1");
 	mu_assert_eq (RVecUT32_capacity (&v), 0, "shrink_to_fit capacity1");
-
-	ut32* start_iter = RVecUT32_start_iter (&v);
 
 	ut32 x;
 	for (x = 0; x < 9; x++) {
@@ -752,6 +749,7 @@ static int all_tests(void) {
 	mu_run_test (test_vec_swap);
 	mu_run_test (test_vec_clear);
 	mu_run_test (test_vec_length);
+	mu_run_test (test_vec_capacity);
 	mu_run_test (test_vec_empty);
 	mu_run_test (test_vec_start_iter);
 	mu_run_test (test_vec_end_iter);
