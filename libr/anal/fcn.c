@@ -234,6 +234,15 @@ static bool is_delta_pointer_table(ReadAhead *ra, RAnal *anal, RAnalFunction *fc
 	    && mov_aop.disp && mov_aop.disp != UT64_MAX) {
 		// disp in this case should be tbl_loc_off
 		*jmptbl_addr += mov_aop.disp;
+#if 1
+		if (o_reg_dst && reg_src && omov_aop.disp != UT64_MAX) {
+			RRegItem *ri0 = r_reg_get (anal->reg, o_reg_dst, R_REG_TYPE_GPR);
+			RRegItem *ri1 = r_reg_get (anal->reg, reg_src, R_REG_TYPE_GPR);
+			if (ri0 && ri1 && ri0->offset == ri1->offset) {
+				*casetbl_addr += omov_aop.disp;
+			}
+		}
+#else
 		if (o_reg_dst && reg_src && !strcmp (o_reg_dst, reg_src) && omov_aop.disp != UT64_MAX) {
 			// Special case for indirection
 			// lea reg1, [base_addr]
@@ -243,6 +252,7 @@ static bool is_delta_pointer_table(ReadAhead *ra, RAnal *anal, RAnalFunction *fc
 			// jmp reg3
 			*casetbl_addr += omov_aop.disp;
 		}
+#endif
 	}
 #if 0
 	// required for the last jmptbl.. but seems to work without it and breaks other tests
@@ -1469,8 +1479,19 @@ analopfinish:
 		}
 		if (has_variadic_reg && !fcn->is_variadic) {
 			variadic_reg = "rax";
-			bool dst_is_variadic = dst && dst->reg
-					&& variadic_reg && !strcmp (dst->reg, variadic_reg);
+#if 1
+			bool dst_is_variadic = dst && dst->reg && variadic_reg;
+			if (dst_is_variadic) {
+				dst_is_variadic = false;
+				RRegItem *ri0 = r_reg_get (anal->reg, dst->reg, R_REG_TYPE_GPR);
+				RRegItem *ri1 = r_reg_get (anal->reg, variadic_reg, R_REG_TYPE_GPR);
+				if (ri0 && ri1 && ri0->offset == ri1->offset) {
+					dst_is_variadic = true;
+				}
+			}
+#else
+			bool dst_is_variadic = dst && dst->reg && variadic_reg && !strcmp (dst->reg, variadic_reg);
+#endif
 			bool op_is_cmp = (op->type == R_ANAL_OP_TYPE_CMP) || op->type == R_ANAL_OP_TYPE_ACMP;
 			if (dst_is_variadic && !op_is_cmp) {
 				has_variadic_reg = false;
