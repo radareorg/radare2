@@ -92,7 +92,6 @@ if get_option('enable_tests')
         r_search_dep,
         r_crypto_dep,
         r_magic_dep,
-        r_sdb_dep,
         lrt,
       ],
       install: false,
