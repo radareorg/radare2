@@ -555,8 +555,8 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int
 	ra.cache_addr = UT64_MAX; // invalidate the cache
 	const char *bp_reg = NULL;
 	const char *sp_reg = NULL;
-	const char *op_dst = NULL;
-	const char *op_src = NULL;
+	char *op_dst = NULL;
+	char *op_src = NULL;
 	if (depth < -1) {
 		// only happens when we want to analyze 1 basic block
 		return R_ANAL_RET_ERROR; // MUST BE TOO DEEP
@@ -735,9 +735,11 @@ repeat:
 			gotoBeach (R_ANAL_RET_END);
 		}
 		dst = r_vector_at (&op->dsts, 0);
-		op_dst = dst? dst->reg: NULL;
+		free (op_dst);
+		op_dst = (dst && dst->reg)? strdup (dst->reg): NULL;
 		src0 = r_vector_at (&op->srcs, 0);
-		op_src = src0 ? src0->reg: NULL;
+		free (op_src);
+		op_src = (src0 && src0->reg)? strdup (src0->reg): NULL;
 		src1 = r_vector_at (&op->srcs, 1);
 
 		if (anal->opt.nopskip && fcn->addr == at) {
@@ -1503,6 +1505,8 @@ analopfinish:
 		}
 	}
 beach:
+	free (op_src);
+	free (op_dst);
 	while (lea_cnt > 0) {
 		r_list_delete (anal->leaddrs, r_list_tail (anal->leaddrs));
 		lea_cnt--;
