@@ -291,6 +291,7 @@ typedef RIOMap *(*RIOMapGetAt)(RIO *io, ut64 addr);
 typedef RIOMap *(*RIOMapGetPaddr)(RIO *io, ut64 paddr);
 typedef bool (*RIOAddrIsMapped)(RIO *io, ut64 addr);
 typedef RIOMap *(*RIOMapAdd)(RIO *io, int fd, int flags, ut64 delta, ut64 addr, ut64 size);
+typedef RIOMap *(*RIORelocMapAdd)(RIO *io, int fd, int perm, RIORelocMap *rm, ut64 addr, ut64 size);
 #if HAVE_PTRACE
 typedef long (*RIOPtraceFn)(RIO *io, r_ptrace_request_t request, pid_t pid, void *addr, r_ptrace_data_t data);
 typedef void *(*RIOPtraceFuncFn)(RIO *io, void *(*func)(void *), void *user);
@@ -328,6 +329,7 @@ typedef struct r_io_bind_t {
 	RIOMapGetAt map_get_at;
 	RIOMapGetPaddr map_get_paddr;
 	RIOMapAdd map_add;
+	RIORelocMapAdd reloc_map_add;
 	RIOV2P v2p;
 	RIOP2V p2v;
 #if HAVE_PTRACE

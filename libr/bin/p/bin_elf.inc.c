@@ -670,8 +670,55 @@ static RList* relocs(RBinFile *bf) {
 	return ret;
 }
 
+typedef struct _bin_elf_reloc_map_data_t {
+	RIORelocMap *rm;	//backreference for the free
+	ut8 *buf;
+} BElfRMD;
+
+static int _bin_elf_reloc_map_read (RIO *io, RIOMap *map, ut64 addr, ut8 *buf, int len) {
+	RIORelocMap *rm = map->reloc_map;
+	BElfRMD *rmd = (BElfRMD *)rm->data;
+	ut8 *data = rmd->buf;
+	if (!r_itv_contain (map->itv, addr)) {
+		return 0;
+	}
+	int _len = R_MIN (len, map->itv.size - (map->itv.addr - addr));
+	memcpy (buf, &data[addr - map->itv.addr], _len);
+	return len;
+}
+
+static int _bin_elf_reloc_map_fake_write (RIO *io, RIOMap *map, ut64 addr, const ut8 *buf, int len) {
+	if (!r_itv_contain (map->itv, addr)) {
+		return 0;
+	}
+	if (!r_itv_contain (map->itv, addr)) {
+		return 0;
+	}
+	return R_MIN (len, map->itv.size - (map->itv.addr - addr));
+}
+
+static void _bin_elf_reloc_map_data_free (void *data) {
+	BElfRMD *rmd = (BElfRMD *)data;
+	free (rmd->rm);
+	free (rmd->buf);
+	free (rmd);
+}
+
+static RIORelocMap *_bin_elf_reloc_map (ut8 *data, ut32 size) {
+	RIORelocMap *rm = R_NEW0 (RIORelocMap);
+	BElfRMD *rmd = R_NEW (BElfRMD);
+	rm->data = rmd;
+	rmd->rm = rm;
+	rmd->buf = R_NEWS (ut8, size);
+	memcpy (rmd->buf, data, size);
+	rm->read = _bin_elf_reloc_map_read;
+	rm->write = _bin_elf_reloc_map_fake_write;
+	rm->free = _bin_elf_reloc_map_data_free;
+	return rm;
+}
+
 // static void _patch_reloc(ELFOBJ *bo, ut16 e_machine, RIOBind *iob, RBinElfReloc *rel, ut64 S, ut64 B, ut64 L) {
-static void _patch_reloc(RBinObject *binobj, struct Elf_(obj_t) *bo, ut16 e_machine, RIOBind *iob, RBinElfReloc *rel, ut64 S, ut64 B, ut64 L) {
+static void _patch_reloc(RBinObject *binobj, int fd, struct Elf_(obj_t) *bo, ut16 e_machine, RIOBind *iob, RBinElfReloc *rel, ut64 S, ut64 B, ut64 L) {
 	ut64 V = 0;
 	ut64 A = rel->addend;
 	ut64 P = rel->rva;
@@ -685,7 +732,12 @@ static void _patch_reloc(RBinObject *binobj, struct Elf_(obj_t) *bo, ut16 e_mach
 			V = S + A;
 		}
 		r_write_le32 (buf, V);
-		iob->write_at (iob->io, rel->rva, buf, 4);
+		if (iob->io->cached) {
+			iob->write_at (iob->io, rel->rva, buf, 4);
+		} else {
+			iob->reloc_map_add (iob->io, fd, R_PERM_RX, _bin_elf_reloc_map (buf, 4),
+				rel->rva, 4);
+		}
 		break;
 	case EM_AARCH64:
 		V = S + A;
@@ -698,7 +750,12 @@ static void _patch_reloc(RBinObject *binobj, struct Elf_(obj_t) *bo, ut16 e_mach
 		// if the destination contains a different value it's a constant useful for static analysis
 		ut64 addr = r_read_le64 (buf);
 		r_write_le64 (buf, addr? A: S);
-		iob->write_at (iob->io, rel->rva, buf, 8);
+		if (iob->io->cached) {
+			iob->write_at (iob->io, rel->rva, buf, 8);
+		} else {
+			iob->reloc_map_add (iob->io, fd, R_PERM_RX, _bin_elf_reloc_map (buf, 8),
+				rel->rva, 8);
+		}
 #endif
 		break;
 	case EM_PPC64: {
@@ -734,13 +791,23 @@ static void _patch_reloc(RBinObject *binobj, struct Elf_(obj_t) *bo, ut16 e_mach
 				V &= (1 << 14) - 1;
 				iob->read_at (iob->io, rel->rva, buf, 2);
 				r_write_le32 (buf, (r_read_le32 (buf) & ~((1<<16) - (1<<2))) | V << 2);
-				iob->write_at (iob->io, rel->rva, buf, 2);
+				if (iob->io->cached) {
+					iob->write_at (iob->io, rel->rva, buf, 2);
+				} else {
+					iob->reloc_map_add (iob->io, fd, R_PERM_RX,
+						_bin_elf_reloc_map (buf, 2), rel->rva, 2);
+				}
 				break;
 			case 24:
 				V &= (1 << 24) - 1;
 				iob->read_at (iob->io, rel->rva, buf, 4);
 				r_write_le32 (buf, (r_read_le32 (buf) & ~((1<<26) - (1<<2))) | V << 2);
-				iob->write_at (iob->io, rel->rva, buf, 4);
+				if (iob->io->cached) {
+					iob->write_at (iob->io, rel->rva, buf, 4);
+				} else {
+					iob->reloc_map_add (iob->io, fd, R_PERM_RX,
+						_bin_elf_reloc_map (buf, 4), rel->rva, 4);
+				}
 				break;
 			}
 		} else if (word) {
@@ -748,11 +815,21 @@ static void _patch_reloc(RBinObject *binobj, struct Elf_(obj_t) *bo, ut16 e_mach
 			switch (word) {
 			case 2:
 				r_write_le16 (buf, V);
-				iob->write_at (iob->io, rel->rva, buf, 2);
+				if (iob->io->cached) {
+					iob->write_at (iob->io, rel->rva, buf, 2);
+				} else {
+					iob->reloc_map_add (iob->io, fd, R_PERM_RX,
+						_bin_elf_reloc_map (buf, 2), rel->rva, 2);
+				}
 				break;
 			case 4:
 				r_write_le32 (buf, V);
-				iob->write_at (iob->io, rel->rva, buf, 4);
+				if (iob->io->cached) {
+					iob->write_at (iob->io, rel->rva, buf, 4);
+				} else {
+					iob->reloc_map_add (iob->io, fd, R_PERM_RX,
+						_bin_elf_reloc_map (buf, 4), rel->rva, 4);
+				}
 				break;
 			}
 		}
@@ -769,7 +846,12 @@ static void _patch_reloc(RBinObject *binobj, struct Elf_(obj_t) *bo, ut16 e_mach
  				v -= P;
  			}
  			r_write_le32 (buf, v);
- 			r_io_write_at (iob->io, rel->rva, buf, 4);
+			if (iob->io->cached) {
+	 			r_io_write_at (iob->io, rel->rva, buf, 4);
+			} else {
+				iob->reloc_map_add (iob->io, fd, R_PERM_RX,
+					_bin_elf_reloc_map (buf, 4), rel->rva, 4);
+			}
 			}
  		default:
  			break;
@@ -833,19 +915,39 @@ static void _patch_reloc(RBinObject *binobj, struct Elf_(obj_t) *bo, ut16 e_mach
 			break;
 		case 1:
 			buf[0] = V;
-			iob->write_at (iob->io, rel->rva, buf, 1);
+			if (iob->io->cached) {
+				iob->write_at (iob->io, rel->rva, buf, 1);
+			} else {
+				iob->reloc_map_add (iob->io, fd, R_PERM_RX,
+					_bin_elf_reloc_map (buf, 1), rel->rva, 1);
+			}
 			break;
 		case 2:
 			r_write_le16 (buf, V);
-			iob->write_at (iob->io, rel->rva, buf, 2);
+			if (iob->io->cached) {
+				iob->write_at (iob->io, rel->rva, buf, 2);
+			} else {
+				iob->reloc_map_add (iob->io, fd, R_PERM_RX,
+					_bin_elf_reloc_map (buf, 2), rel->rva, 2);
+			}
 			break;
 		case 4:
 			r_write_le32 (buf, V);
-			iob->write_at (iob->io, rel->rva, buf, 4);
+			if (iob->io->cached) {
+				iob->write_at (iob->io, rel->rva, buf, 4);
+			} else {
+				iob->reloc_map_add (iob->io, fd, R_PERM_RX,
+					_bin_elf_reloc_map (buf, 4), rel->rva, 4);
+			}
 			break;
 		case 8:
 			r_write_le64 (buf, V);
-			iob->write_at (iob->io, rel->rva, buf, 8);
+			if (iob->io->cached) {
+				iob->write_at (iob->io, rel->rva, buf, 8);
+			} else {
+				iob->reloc_map_add (iob->io, fd, R_PERM_RX,
+					_bin_elf_reloc_map (buf, 8), rel->rva, 8);
+			}
 			break;
 		}
 		break;
@@ -863,6 +965,7 @@ static RList* patch_relocs(RBin *b) {
 	if (!io || !io->desc) {
 		return NULL;
 	}
+	int fd = b->cur->fd;
 	RBinObject *obj = r_bin_cur_object (b);
 	if (!obj) {
 	   	return NULL;
@@ -891,10 +994,12 @@ static RList* patch_relocs(RBin *b) {
 	if (!g) {
 		return NULL;
 	}
+#if 0
 	if (!io->cached) {
 		R_LOG_WARN ("run r2 with -e bin.cache=true to fix relocations in disassembly");
 		return NULL;
 	}
+#endif
 	ut64 n_vaddr = g->itv.addr + g->itv.size;
 	// reserve at least that space
 	size = bin->g_reloc_num * cdsz;
@@ -943,7 +1048,7 @@ static RList* patch_relocs(RBin *b) {
 		}
 		//ut64 raddr = sym_addr? sym_addr: vaddr;
 		ut64 raddr = (sym_addr && sym_addr != UT64_MAX)? sym_addr: vaddr;
-		_patch_reloc (obj, bin, bin->ehdr.e_machine, &b->iob, reloc, raddr, 0, plt_entry_addr);
+		_patch_reloc (obj, fd, bin, bin->ehdr.e_machine, &b->iob, reloc, raddr, 0, plt_entry_addr);
 		if (!(ptr = reloc_convert (bin, reloc, n_vaddr))) {
 			continue;
 		}
