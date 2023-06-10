@@ -773,10 +773,19 @@ static bool __core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int de
 	if (!fcn->name) {
 		fcn->name = r_str_newf ("%s.%08"PFMT64x, fcnpfx, at);
 	}
+	RIORegion region;
+	if (!r_io_get_region_at (core->io, &region, at + r_anal_function_linear_size (fcn))) {
+		goto error;
+	}
 	do {
 		RFlagItem *f;
 		ut64 delta = r_anal_function_linear_size (fcn);
-		if (!r_io_is_valid_offset (core->io, at + delta, !core->anal->opt.noncode)) {
+		if (!r_itv_contain (region.itv, at + delta)) {
+			if (!r_io_get_region_at (core->io, &region, at + delta)) {
+				goto error;
+			}
+		}
+		if (!core->anal->opt.noncode && (region.perm & R_PERM_RX) != R_PERM_RX) {
 			goto error;
 		}
 		if (r_cons_is_breaked ()) {
@@ -4266,10 +4275,16 @@ R_API int r_core_anal_search_xrefs(RCore *core, ut64 from, ut64 to, PJ *pj, int 
 		free (buf);
 		return -1;
 	}
+	RIORegion region;
+	if (!r_io_get_region_at (core->io, &region, at) || !(region.perm & R_PERM_X)) {
+		goto beach;
+	}
 	while (at < to && !r_cons_is_breaked ()) {
 		int i = 0, ret = bsz;
-		if (!r_io_is_valid_offset (core->io, at, R_PERM_X)) {
-			break;
+		if (!r_itv_contain (region.itv, at)) {
+			if (!r_io_get_region_at (core->io, &region, at) || !(region.perm & R_PERM_X)) {
+				break;
+			}
 		}
 		ut64 left = to - at;
 		if (bsz > left) {
@@ -4363,6 +4378,7 @@ R_API int r_core_anal_search_xrefs(RCore *core, ut64 from, ut64 to, PJ *pj, int 
 		}
 		at += i + 1;
 	}
+beach:
 	r_cons_break_pop ();
 	free (buf);
 	free (block);
