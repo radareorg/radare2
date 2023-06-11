@@ -32,6 +32,14 @@ R_API char *r_time_tostring(ut64 ts);
 R_API char *r_asctime_r(const struct tm *tm, char *buf);
 R_API char *r_ctime_r(const time_t *timer, char *buf);
 
+/** profiling */
+typedef struct r_prof_t {
+	struct timeval when;
+	double result;
+} RProfile;
+R_API void r_prof_start(RProfile *p);
+R_API double r_prof_end(RProfile *p);
+
 #define R_TIME_PROFILE_ENABLED 0
 
 #if R_TIME_PROFILE_ENABLED
