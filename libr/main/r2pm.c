@@ -1037,10 +1037,6 @@ R_API int r_main_r2pm(int argc, const char **argv) {
 	};
 	RGetopt opt;
 	r_getopt_init (&opt, argc, argv, "aqecdiIhH:flgrpst:uUv");
-	if (opt.ind < argc) {
-		r2pm.help = true;
-		r2pm.rc = 1;
-	}
 	int i, c;
 	r2pm_setenv ();
 	while ((c = r_getopt_next (&opt)) != -1) {
@@ -1111,6 +1107,10 @@ R_API int r_main_r2pm(int argc, const char **argv) {
 			r2pm.version = true;
 			break;
 		}
+	}
+	if (opt.ind < argc) {
+		r2pm.help = true;
+		r2pm.rc = 1;
 	}
 	if (r2pm.time) {
 		// set R2PM_TIME env var
