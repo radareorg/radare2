@@ -436,7 +436,8 @@ static bool lang_quickjs_file(RLangSession *s, const char *file) {
 
 static bool init(RLangSession *ls) {
 	if (ls == NULL) {
-		return false;
+		// when ls is null means that we want to check if we can use it
+		return true;
 	}
 	RCore *core = (RCore *)ls->lang->user;
 	JSRuntime *rt = JS_NewRuntime ();
