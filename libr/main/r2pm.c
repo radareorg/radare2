@@ -1039,52 +1039,64 @@ R_API int r_main_r2pm(int argc, const char **argv) {
 	r_getopt_init (&opt, argc, argv, "aqecdiIhH:flgrpst:uUv");
 	int i, c;
 	r2pm_setenv ();
+	bool action = false;
 	while ((c = r_getopt_next (&opt)) != -1) {
 		switch (c) {
 		case 'a':
 			r2pm.add = true;
+			action = true;
 			break;
 		case 'q':
 			r2pm.quiet = true;
 			break;
 		case 'c':
 			r2pm.clean = true;
+			action = true;
 			break;
 		case 'i':
 			r2pm.install = true;
+			action = true;
 			break;
 		case 'd':
 			r2pm.doc = true;
+			action = true;
 			break;
 		case 'p':
 			r2pm.plugdir = true;
 			break;
 		case 'I':
 			r2pm.info = true;
+			action = true;
 			break;
 		case 'u':
 			r2pm.uninstall = true;
+			action = true;
 			break;
 		case 'e':
 			r2pm.edit = true;
+			action = true;
 			break;
 		case 'f':
 			r2pm.force = true;
 			break;
 		case 'U':
 			r2pm.init = true;
+			action = true;
 			break;
 		case 'l':
 			r2pm.list = true;
+			action = true;
 			break;
 		case 's':
 			r2pm.search = true;
+			action = true;
 			break;
 		case 't':
 			r2pm.time = opt.arg;
 			break;
 		case 'r':
 			r2pm.run = true;
+			action = true;
 			break;
 		case 'g':
 			r2pm.global = true;
@@ -1102,13 +1114,15 @@ R_API int r_main_r2pm(int argc, const char **argv) {
 			} else {
 				r2pm.help = true;
 			}
+			action = true;
 			break;
 		case 'v':
 			r2pm.version = true;
+			action = true;
 			break;
 		}
 	}
-	if (opt.ind < argc) {
+	if (!action && opt.ind < argc) {
 		r2pm.help = true;
 		r2pm.rc = 1;
 	}
