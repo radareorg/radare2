@@ -152,11 +152,11 @@ static bool lang_go_file(RLangSession *session, const char *file) {
 	return 0;
 }
 
-static void *lang_go_init(RLangSession *s) {
+static bool lang_go_init(RLangSession *s) {
 	char *go = r_file_path ("go");
-	bool found = (go && *go != 'g');
+	bool found = go != NULL;
 	free (go);
-	return (void*)(size_t)found;
+	return found;
 }
 
 static bool lang_go_run(RLangSession *session, const char *code, int len) {

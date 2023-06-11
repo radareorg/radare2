@@ -117,18 +117,27 @@ static bool lang_tsc_run(RLangSession *s, const char *code, int len) {
 	return rv;
 }
 
-static void *lang_tsc_init(RLangSession *ls) {
-	bool found = true;
+static bool lang_tsc_init(RLangSession *ls) {
+	bool found = false;
 	if (ls == NULL) {
 		// TODO: check if "valac" is found in path
 		char *tsc = r_file_path ("tsc");
-		found = (tsc && *tsc != 't');
 		free (tsc);
+		found = (tsc != NULL);
 	}
-	return (void*)(size_t)found;
+	return found;
 }
 
 static RLangPlugin r_lang_plugin_tsc = {
+#if 0
+	// use RLibMeta for RLangPlugin too
+	.meta = {
+		.name = "tsc"
+		.author = "pancake",
+		.license = "LGPL",
+		.desc = "Use #!tsc script.ts",
+	},
+#endif
 	.name = "tsc",
 	.ext = "ts",
 	.author = "pancake",

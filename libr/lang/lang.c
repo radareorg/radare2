@@ -136,21 +136,20 @@ R_API bool r_lang_setup(RLang *lang) {
 	if (p) {
 		if (p->setup) {
 			return p->setup (lang->session);
-		} else {
-			if (p->fini) {
-				p->fini (lang->session);
-			}
-			if (p->init) {
-				p->init (lang->session);
-			}
-			return true;
 		}
+		if (p->fini) {
+			p->fini (lang->session);
+		}
+		if (p->init) {
+			(void)p->init (lang->session);
+		}
+		return true;
 	}
 	return false;
 }
 
 R_API bool r_lang_add(RLang *lang, RLangPlugin *foo) {
-	if (foo && (!r_lang_get_by_name (lang, foo->name))) {
+	if (foo && !r_lang_get_by_name (lang, foo->name)) {
 		bool supported = true;
 		if (foo->init) {
 			// when init takes null, we just check if
