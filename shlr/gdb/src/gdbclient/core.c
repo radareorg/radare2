@@ -1199,25 +1199,6 @@ end:
 	return ret;
 }
 
-// R2_590 - unused we can remove it
-int test_command(libgdbr_t *g, const char *command) {
-	int ret = -1;
-
-	if (!gdbr_lock_enter (g)) {
-		goto end;
-	}
-	if ((ret = send_msg (g, command)) < 0) {
-		goto end;
-	}
-	read_packet (g, false);
-	hexdump (g->read_buff, g->data_len, 0);
-
-	ret = 0;
-end:
-	gdbr_lock_leave (g);
-	return ret;
-}
-
 int send_vcont(libgdbr_t *g, const char *command, const char *thread_id) {
 	char tmp[255] = {0};
 	int ret = -1;

@@ -115,29 +115,6 @@ int pack_hex(const char *src, ut64 len, char *dst) {
 	return (len / 2);
 }
 
-// R2_590 UNUSED but public so we cant delete it now
-void hexdump(void *ptr, ut64 len, ut64 offset) {
-	unsigned char *data = (unsigned char *) ptr;
-	int x = 0;
-	char hex[49], *p;
-	char txt[17], *c;
-	ut64 curr_offset;
-	while (x < len) {
-		p = hex;
-		c = txt;
-		curr_offset = x + offset;
-
-		do {
-			p += sprintf (p, "%02x ", data[x]);
-			*c++ = (data[x] >= 32 && data[x] <= 127)? data[x]: '.';
-		} while (++x % 16 && x < len);
-
-		*c = '\0';
-		R_LOG_DEBUG ("%s: 0x%016"PFMT64x ": %-48s- %s",
-		        __func__, (curr_offset), hex, txt);
-	}
-}
-
 int write_thread_id(char *dest, int len, int pid, int tid, bool multiprocess) {
 	if (!multiprocess) {
 		if (tid < 0) {

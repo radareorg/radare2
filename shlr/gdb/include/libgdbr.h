@@ -184,7 +184,6 @@ typedef struct libgdbr_t {
 	int remote_type;
 	bool no_ack;
 	bool is_server;
-	R_DEPRECATE bool server_debug; // R2_590 no usages, to be removed
 	bool get_baddr;
 	libgdbr_stop_reason_t stop_reason;
 
