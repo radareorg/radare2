@@ -26,9 +26,9 @@ R_GENERATE_VEC_IMPL_FOR(S, S);
 static bool test_vec_init(void) {
 	RVecUT32 v;
 	RVecUT32_init (&v);
-	mu_assert_eq (v.start, NULL, "init start");
-	mu_assert_eq (v.end, NULL, "init end");
-	mu_assert_eq (v.capacity, 0, "init capacity");
+	mu_assert_eq (R_VEC_START_ITER (&v), NULL, "init start");
+	mu_assert_eq (R_VEC_END_ITER (&v), NULL, "init end");
+	mu_assert_eq (R_VEC_CAPACITY (&v), 0, "init capacity");
 	RVecUT32_fini (&v, NULL, NULL);
 	mu_end;
 }
@@ -43,14 +43,14 @@ static bool test_vec_fini(void) {
 	}
 
 	RVecUT32_fini (&v, NULL, NULL);
-	mu_assert_eq (v.start, NULL, "fini start");
-	mu_assert_eq (v.end, NULL, "fini end");
-	mu_assert_eq (v.capacity, 0, "fini capacity");
+	mu_assert_eq (R_VEC_START_ITER (&v), NULL, "fini start");
+	mu_assert_eq (R_VEC_END_ITER (&v), NULL, "fini end");
+	mu_assert_eq (R_VEC_CAPACITY (&v), 0, "fini capacity");
 
 	RVecUT32_fini (&v, NULL, NULL);
-	mu_assert_eq (v.start, NULL, "fini start2");
-	mu_assert_eq (v.end, NULL, "fini end2");
-	mu_assert_eq (v.capacity, 0, "fini capacity2");
+	mu_assert_eq (R_VEC_START_ITER (&v), NULL, "fini start2");
+	mu_assert_eq (R_VEC_END_ITER (&v), NULL, "fini end2");
+	mu_assert_eq (R_VEC_CAPACITY (&v), 0, "fini capacity2");
 
 	RVecS vS;
 	RVecS_init (&vS);
@@ -64,17 +64,17 @@ static bool test_vec_fini(void) {
 
 	RVecS_fini (&vS, fini_S, NULL);
 
-	mu_assert_eq (vS.start, NULL, "fini start3");
-	mu_assert_eq (vS.end, NULL, "fini end3");
-	mu_assert_eq (vS.capacity, 0, "fini capacity3");
+	mu_assert_eq (R_VEC_START_ITER (&vS), NULL, "fini start3");
+	mu_assert_eq (R_VEC_END_ITER (&vS), NULL, "fini end3");
+	mu_assert_eq (R_VEC_CAPACITY (&vS), 0, "fini capacity3");
 	mu_end;
 }
 
 static bool test_vec_new(void) {
 	RVecUT32 *v = RVecUT32_new ();
-	mu_assert_eq (v->start, NULL, "new start");
-	mu_assert_eq (v->end, NULL, "new end");
-	mu_assert_eq (v->capacity, 0, "new capacity");
+	mu_assert_eq (R_VEC_START_ITER (v), NULL, "new start");
+	mu_assert_eq (R_VEC_END_ITER (v), NULL, "new end");
+	mu_assert_eq (R_VEC_CAPACITY (v), 0, "new capacity");
 	RVecUT32_free (v, NULL, NULL);
 	mu_end;
 }
@@ -119,7 +119,7 @@ static bool test_vec_clone(void) {
 	}
 
 	mu_assert_eq (RVecUT32_length (v2), 3, "clone length");
-	mu_assert_eq (RVecUT32_capacity (v2), 8, "clone capacity");
+	mu_assert_eq (R_VEC_CAPACITY (v2), 8, "clone capacity");
 	mu_assert_eq (sum, 3, "clone sum"); // 0 + 1 + 2
 
 	RVecUT32_fini (&v, NULL, NULL);
@@ -141,7 +141,7 @@ static bool test_vec_clone(void) {
 	}
 
 	mu_assert_eq (RVecS_length (vS2), 3, "clone length2");
-	mu_assert_eq (RVecS_capacity (vS2), 8, "clone capacity2");
+	mu_assert_eq (R_VEC_CAPACITY (vS2), 8, "clone capacity2");
 	mu_assert_eq (sum, 6, "clone sum2"); // 0 + 2 + 4
 
 	RVecS_fini (&vS, fini_S, NULL);
@@ -152,22 +152,22 @@ static bool test_vec_clone(void) {
 static bool test_vec_push_back(void) {
 	RVecUT32 v;
 	RVecUT32_init (&v);
-	mu_assert_eq (v.start, NULL, "push_back start");
-	mu_assert_eq (v.end, NULL, "push_back end");
-	mu_assert_eq (v.capacity, 0, "push_back capacity");
+	mu_assert_eq (R_VEC_START_ITER (&v), NULL, "push_back start");
+	mu_assert_eq (R_VEC_END_ITER (&v), NULL, "push_back end");
+	mu_assert_eq (R_VEC_CAPACITY (&v), 0, "push_back capacity");
 
 	ut32 x;
 	for (x = 0; x < 8; x++) {
 		RVecUT32_push_back (&v, &x);
 	}
 
-	mu_assert_neq (v.start, NULL, "push_back start2");
-	mu_assert_neq (v.end, NULL, "push_back end2");
-	mu_assert_eq (v.capacity, 8, "push_back capacity2");
+	mu_assert_neq (R_VEC_START_ITER (&v), NULL, "push_back start2");
+	mu_assert_neq (R_VEC_END_ITER (&v), NULL, "push_back end2");
+	mu_assert_eq (R_VEC_CAPACITY (&v), 8, "push_back capacity2");
 	mu_assert_eq (RVecUT32_length (&v), 8, "push_back length2");
 
 	RVecUT32_push_back (&v, &x);
-	mu_assert_eq (v.capacity, 16, "push_back capacity3");
+	mu_assert_eq (R_VEC_CAPACITY (&v), 16, "push_back capacity3");
 	mu_assert_eq (RVecUT32_length (&v), 9, "push_back length3");
 
 	RVecUT32_fini (&v, NULL, NULL);
@@ -177,16 +177,16 @@ static bool test_vec_push_back(void) {
 static bool test_vec_push_front(void) {
 	RVecUT32 v;
 	RVecUT32_init (&v);
-	mu_assert_eq (v.start, NULL, "push_front start");
-	mu_assert_eq (v.end, NULL, "push_front end");
-	mu_assert_eq (v.capacity, 0, "push_front capacity");
+	mu_assert_eq (R_VEC_START_ITER (&v), NULL, "push_front start");
+	mu_assert_eq (R_VEC_END_ITER (&v), NULL, "push_front end");
+	mu_assert_eq (R_VEC_CAPACITY (&v), 0, "push_front capacity");
 
 	ut32 x;
 	for (x = 0; x < 8; x++) {
 		RVecUT32_push_front (&v, &x);
 	}
 
-	mu_assert_eq (RVecUT32_capacity (&v), 8, "push_front capacity2");
+	mu_assert_eq (R_VEC_CAPACITY (&v), 8, "push_front capacity2");
 	mu_assert_eq (RVecUT32_length (&v), 8, "push_front length2");
 
 	mu_assert_eq (*RVecUT32_at (&v, 0), 7, "push_front at1");
@@ -194,7 +194,7 @@ static bool test_vec_push_front(void) {
 	mu_assert_eq (*RVecUT32_at (&v, 2), 5, "push_front at3");
 
 	RVecUT32_push_front (&v, &x);
-	mu_assert_eq (RVecUT32_capacity (&v), 16, "push_front capacity3");
+	mu_assert_eq (R_VEC_CAPACITY (&v), 16, "push_front capacity3");
 	mu_assert_eq (RVecUT32_length (&v), 9, "push_front length3");
 
 	RVecUT32_fini (&v, NULL, NULL);
@@ -207,9 +207,9 @@ static bool test_vec_append(void) {
 	RVecUT32_init (&v2);
 
 	RVecUT32_append (&v1, &v2);
-	mu_assert_eq (RVecUT32_capacity (&v1), 0, "append capacity1");
+	mu_assert_eq (R_VEC_CAPACITY (&v1), 0, "append capacity1");
 	mu_assert_eq (RVecUT32_length (&v1), 0, "append length1");
-	mu_assert_eq (RVecUT32_capacity (&v2), 0, "append capacity2");
+	mu_assert_eq (R_VEC_CAPACITY (&v2), 0, "append capacity2");
 	mu_assert_eq (RVecUT32_length (&v2), 0, "append length2");
 
 	ut32 x;
@@ -222,9 +222,9 @@ static bool test_vec_append(void) {
 	}
 
 	RVecUT32_append (&v1, &v2);
-	mu_assert_eq (RVecUT32_capacity (&v1), 32, "append capacity3");
+	mu_assert_eq (R_VEC_CAPACITY (&v1), 32, "append capacity3");
 	mu_assert_eq (RVecUT32_length (&v1), 18, "append length3");
-	mu_assert_eq (RVecUT32_capacity (&v2), 16, "append capacity4");
+	mu_assert_eq (R_VEC_CAPACITY (&v2), 16, "append capacity4");
 	mu_assert_eq (RVecUT32_length (&v2), 10, "append length4");
 
 	RVecUT32_fini (&v1, NULL, NULL);
@@ -242,7 +242,7 @@ static bool test_vec_remove(void) {
 	}
 
 	RVecUT32_remove (&v, 0, NULL, NULL);
-	mu_assert_eq (RVecUT32_capacity (&v), 8, "remove capacity1");
+	mu_assert_eq (R_VEC_CAPACITY (&v), 8, "remove capacity1");
 	mu_assert_eq (RVecUT32_length (&v), 7, "remove length1");
 	mu_assert_eq (*RVecUT32_at (&v, 0), 1, "remove at1");
 	mu_assert_eq (*RVecUT32_at (&v, 1), 2, "remove at2");
@@ -266,7 +266,7 @@ static bool test_vec_pop_front(void) {
 	}
 
 	RVecUT32_pop_front (&v, NULL, NULL);
-	mu_assert_eq (RVecUT32_capacity (&v), 8, "pop_front capacity1");
+	mu_assert_eq (R_VEC_CAPACITY (&v), 8, "pop_front capacity1");
 	mu_assert_eq (RVecUT32_length (&v), 7, "pop_front length1");
 	mu_assert_eq (*RVecUT32_at (&v, 0), 1, "pop_front at1");
 	mu_assert_eq (*RVecUT32_at (&v, 1), 2, "pop_front at2");
@@ -291,7 +291,7 @@ static bool test_vec_pop_back(void) {
 	}
 
 	RVecUT32_pop_back (&v, NULL, NULL);
-	mu_assert_eq (RVecUT32_capacity (&v), 8, "pop_back capacity1");
+	mu_assert_eq (R_VEC_CAPACITY (&v), 8, "pop_back capacity1");
 	mu_assert_eq (RVecUT32_length (&v), 7, "pop_back length1");
 	mu_assert_eq (*RVecUT32_at (&v, 6), 6, "pop_back at1");
 	mu_assert_eq (*RVecUT32_at (&v, 5), 5, "pop_back at2");
@@ -348,7 +348,7 @@ static bool test_vec_clear(void) {
 
 	RVecUT32_clear (&v, NULL, NULL);
 	mu_assert_eq (RVecUT32_length (&v), 0, "clear length1");
-	mu_assert_eq (RVecUT32_capacity (&v), 0, "clear capacity1");
+	mu_assert_eq (R_VEC_CAPACITY (&v), 0, "clear capacity1");
 
 	ut32 x;
 	for (x = 0; x < 3; x++) {
@@ -356,16 +356,16 @@ static bool test_vec_clear(void) {
 	}
 
 	mu_assert_eq (RVecUT32_length (&v), 3, "clear length2");
-	mu_assert_eq (RVecUT32_capacity (&v), 8, "clear capacity2");
+	mu_assert_eq (R_VEC_CAPACITY (&v), 8, "clear capacity2");
 
 	RVecUT32_clear (&v, NULL, NULL);
 
 	mu_assert_eq (RVecUT32_length (&v), 0, "clear length3");
-	mu_assert_eq (RVecUT32_capacity (&v), 8, "clear capacity3");
+	mu_assert_eq (R_VEC_CAPACITY (&v), 8, "clear capacity3");
 
 	RVecUT32_clear (&v, NULL, NULL);
 	mu_assert_eq (RVecUT32_length (&v), 0, "clear length4");
-	mu_assert_eq (RVecUT32_capacity (&v), 8, "clear capacity4");
+	mu_assert_eq (R_VEC_CAPACITY (&v), 8, "clear capacity4");
 
 	ut32 counter = 0;
 	RVecS vS;
@@ -413,7 +413,7 @@ static bool test_vec_capacity(void) {
 	RVecUT32 v;
 	RVecUT32_init (&v);
 
-	mu_assert_eq (RVecUT32_capacity (&v), 0, "capacity1");
+	mu_assert_eq (R_VEC_CAPACITY (&v), 0, "capacity1");
 
 	ut32 x = 100;
 	RVecUT32_push_back (&v, &x);
@@ -422,19 +422,19 @@ static bool test_vec_capacity(void) {
 		RVecUT32_push_back (&v, &x);
 	}
 
-	mu_assert_eq (RVecUT32_capacity (&v), 8, "capacity2");
+	mu_assert_eq (R_VEC_CAPACITY (&v), 8, "capacity2");
 
 	for (x = 0; x < 5; x++) {
 		RVecUT32_push_back (&v, &x);
 	}
 
-	mu_assert_eq (RVecUT32_capacity (&v), 16, "capacity3");
+	mu_assert_eq (R_VEC_CAPACITY (&v), 16, "capacity3");
 
 	RVecUT32_push_back (&v, &x);
-	mu_assert_eq (RVecUT32_capacity (&v), 16, "capacity4");
+	mu_assert_eq (R_VEC_CAPACITY (&v), 16, "capacity4");
 
 	RVecUT32_clear (&v, NULL, NULL);
-	mu_assert_eq (RVecUT32_capacity (&v), 16, "clear capacity4");
+	mu_assert_eq (R_VEC_CAPACITY (&v), 16, "clear capacity4");
 
 	RVecUT32_fini (&v, NULL, NULL);
 	mu_end;
@@ -467,20 +467,20 @@ static bool test_vec_start_iter(void) {
 	RVecUT32 v;
 	RVecUT32_init (&v);
 
-	mu_assert_eq (RVecUT32_start_iter (&v), NULL, "start iter1");
+	mu_assert_eq (R_VEC_START_ITER (&v), NULL, "start iter1");
 
 	ut32 x = 100;
 	RVecUT32_push_back (&v, &x);
-	mu_assert_neq (RVecUT32_start_iter (&v), NULL, "start iter2");
+	mu_assert_neq (R_VEC_START_ITER (&v), NULL, "start iter2");
 
 	for (x = 0; x < 3; x++) {
 		RVecUT32_push_back (&v, &x);
 	}
 
-	mu_assert_neq (RVecUT32_start_iter (&v), NULL, "start iter3");
+	mu_assert_neq (R_VEC_START_ITER (&v), NULL, "start iter3");
 
 	RVecUT32_clear (&v, NULL, NULL);
-	mu_assert_neq (RVecUT32_start_iter (&v), NULL, "start iter4");
+	mu_assert_neq (R_VEC_START_ITER (&v), NULL, "start iter4");
 
 	RVecUT32_fini (&v, NULL, NULL);
 	mu_end;
@@ -490,20 +490,20 @@ static bool test_vec_end_iter(void) {
 	RVecUT32 v;
 	RVecUT32_init (&v);
 
-	mu_assert_eq (RVecUT32_end_iter (&v), NULL, "end iter1");
+	mu_assert_eq (R_VEC_END_ITER (&v), NULL, "end iter1");
 
 	ut32 x = 100;
 	RVecUT32_push_back (&v, &x);
-	mu_assert_neq (RVecUT32_end_iter (&v), NULL, "end iter2");
+	mu_assert_neq (R_VEC_END_ITER (&v), NULL, "end iter2");
 
 	for (x = 0; x < 3; x++) {
 		RVecUT32_push_back (&v, &x);
 	}
 
-	mu_assert_neq (RVecUT32_end_iter (&v), NULL, "end iter3");
+	mu_assert_neq (R_VEC_END_ITER (&v), NULL, "end iter3");
 
 	RVecUT32_clear (&v, NULL, NULL);
-	mu_assert_neq (RVecUT32_end_iter (&v), NULL, "end iter4");
+	mu_assert_neq (R_VEC_END_ITER (&v), NULL, "end iter4");
 
 	RVecUT32_fini (&v, NULL, NULL);
 	mu_end;
@@ -521,7 +521,7 @@ static bool test_vec_at(void) {
 	}
 
 	mu_assert_neq (RVecUT32_at (&v, 0), NULL, "at2");
-	mu_assert_eq (RVecUT32_at (&v, 0), v.start, "at3");
+	mu_assert_eq (RVecUT32_at (&v, 0), R_VEC_START_ITER (&v), "at3");
 	mu_assert_eq (*RVecUT32_at (&v, 0), 0, "at4");
 
 	*RVecUT32_at (&v, 0) = 10;
@@ -539,13 +539,13 @@ static bool test_vec_reserve(void) {
 	RVecUT32_init (&v);
 
 	mu_assert_eq (RVecUT32_length (&v), 0, "reserve length1");
-	mu_assert_eq (RVecUT32_capacity (&v), 0, "reserve capacity1");
+	mu_assert_eq (R_VEC_CAPACITY (&v), 0, "reserve capacity1");
 
 	RVecUT32_reserve (&v, 12);
 	mu_assert_eq (RVecUT32_length (&v), 0, "reserve length2");
-	mu_assert_eq (RVecUT32_capacity (&v), 12, "reserve capacity2");
+	mu_assert_eq (R_VEC_CAPACITY (&v), 12, "reserve capacity2");
 
-	ut32* start_iter = RVecUT32_start_iter (&v);
+	ut32* start_iter = R_VEC_START_ITER (&v);
 
 	ut32 x;
 	for (x = 0; x < 9; x++) {
@@ -553,8 +553,8 @@ static bool test_vec_reserve(void) {
 	}
 
 	mu_assert_eq (RVecUT32_length (&v), 9, "reserve length3");
-	mu_assert_eq (RVecUT32_capacity (&v), 12, "reserve capacity3");
-	mu_assert_eq (start_iter, RVecUT32_start_iter (&v), "reserve start iter3");
+	mu_assert_eq (R_VEC_CAPACITY (&v), 12, "reserve capacity3");
+	mu_assert_eq (start_iter, R_VEC_START_ITER (&v), "reserve start iter3");
 
 	RVecUT32_fini (&v, NULL, NULL);
 	mu_end;
@@ -567,7 +567,7 @@ static bool test_vec_shrink_to_fit(void) {
 	RVecUT32_reserve (&v, 12);
 	RVecUT32_shrink_to_fit (&v);
 	mu_assert_eq (RVecUT32_length (&v), 0, "shrink_to_fit length1");
-	mu_assert_eq (RVecUT32_capacity (&v), 0, "shrink_to_fit capacity1");
+	mu_assert_eq (R_VEC_CAPACITY (&v), 0, "shrink_to_fit capacity1");
 
 	ut32 x;
 	for (x = 0; x < 9; x++) {
@@ -576,11 +576,11 @@ static bool test_vec_shrink_to_fit(void) {
 
 	RVecUT32_shrink_to_fit (&v);
 	mu_assert_eq (RVecUT32_length (&v), 9, "shrink_to_fit length2");
-	mu_assert_eq (RVecUT32_capacity (&v), 9, "shrink_to_fit capacity2");
+	mu_assert_eq (R_VEC_CAPACITY (&v), 9, "shrink_to_fit capacity2");
 
 	RVecUT32_shrink_to_fit (&v);
 	mu_assert_eq (RVecUT32_length (&v), 9, "shrink_to_fit length3");
-	mu_assert_eq (RVecUT32_capacity (&v), 9, "shrink_to_fit capacity3");
+	mu_assert_eq (R_VEC_CAPACITY (&v), 9, "shrink_to_fit capacity3");
 
 	RVecUT32_fini (&v, NULL, NULL);
 	mu_end;
