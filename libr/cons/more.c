@@ -15,7 +15,7 @@ static const char *r_cons_more_help = \
 	" ?        - show this help\n"
 	"\n";
 
-// XXX dead code?
+#if 0
 R_API int r_cons_more_str(const char *str, const char *exitkeys) {
 	bool inHelp = false;
 	int lines_count = 0;
@@ -142,7 +142,7 @@ R_API int r_cons_more_str(const char *str, const char *exitkeys) {
 	return 0;
 }
 
-// XXX dead code?
 R_API void r_cons_more(void) {
 	(void)r_cons_more_str (r_cons_context ()->buffer, NULL);
 }
+#endif
