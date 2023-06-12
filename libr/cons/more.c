@@ -1,5 +1,6 @@
 /* radare2 - LGPL - Copyright 2008-2019 - pancake */
 
+#if 0
 #include <r_cons.h>
 #include <r_regex.h>
 #include <r_util.h>
@@ -144,3 +145,4 @@ R_API int r_cons_more_str(const char *str, const char *exitkeys) {
 R_API void r_cons_more(void) {
 	(void)r_cons_more_str (r_cons_context ()->buffer, NULL);
 }
+#endif
