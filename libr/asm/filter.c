@@ -1,10 +1,6 @@
-/* radare2 - LGPL - Copyright 2009-2019 - nibble, pancake, maijin */
+/* radare2 - LGPL - Copyright 2009-2023 - nibble, pancake, maijin */
 
-#include <stdio.h>
-#include <r_types.h>
 #include <r_parse.h>
-#include <config.h>
-#include <r_util/r_base36.h>
 
 #define isx86separator(x) ( \
 	(x) == ' '||(x) == '\t'||(x) == '\n'|| (x) == '\r'||(x) == ' '|| \

@@ -20,10 +20,9 @@ static bool get_functions_block_cb(RAnalBlock *block, void *user) {
 R_API RList *r_anal_get_functions_in(RAnal *anal, ut64 addr) {
 	r_return_val_if_fail (anal, NULL);
 	RList *list = r_list_new ();
-	if (!list) {
-		return NULL;
+	if (list) {
+		r_anal_blocks_foreach_in (anal, addr, get_functions_block_cb, list);
 	}
-	r_anal_blocks_foreach_in (anal, addr, get_functions_block_cb, list);
 	return list;
 }
 

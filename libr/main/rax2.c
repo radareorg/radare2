@@ -5,7 +5,6 @@
 #include <r_main.h>
 #include <r_util.h>
 #include <r_util/r_print.h>
-#include <r_util/r_base36.h>
 
 // XXX don't use fixed sized buffers
 #define STDIN_BUFFER_SIZE 354096
