@@ -25,7 +25,6 @@ r_util_sources = [
   'bitmap.c',
   'xdg.c',
   'buf.c',
-  'cache.c',
   'calc.c',
   'chmod.c',
   'debruijn.c',
