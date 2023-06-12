@@ -1,5 +1,6 @@
 /* radare2 - LGPL - Copyright 2008-2019 - pancake */
 
+#if 0
 #include <r_cons.h>
 #include <r_regex.h>
 #include <r_util.h>
@@ -15,7 +16,6 @@ static const char *r_cons_more_help = \
 	" ?        - show this help\n"
 	"\n";
 
-#if 0
 R_API int r_cons_more_str(const char *str, const char *exitkeys) {
 	bool inHelp = false;
 	int lines_count = 0;
