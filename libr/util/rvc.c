@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2021-2022 - RHL120, pancake */
+/* radare - LGPL - Copyright 2021-2023 - RHL120, pancake */
 
 #define R_LOG_ORIGIN "rvc"
 
@@ -15,11 +15,6 @@ R_API void rvc_free(Rvc *vc) {
 		free (vc->path);
 		free (vc);
 	}
-}
-
-R_API bool rvc_use(Rvc *vc, RvcType type) { // R2_590
-	R_LOG_ERROR ("rvc_use is deprecated. Don't use it");
-	return false;
 }
 
 R_API RvcType rvc_repo_type(const char *path) {
