@@ -1,7 +1,6 @@
 /* radare2 - LGPL - Copyright 2008-2022 - pancake */
 
 #include <r_cons.h>
-#include <r_th.h>
 
 typedef struct game_state_t {
 	ut8 twok_buf[4][4];

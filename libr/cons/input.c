@@ -4,19 +4,6 @@
 
 #define I r_cons_singleton ()
 
-typedef struct input_state_t {
-	char *readbuffer;
-	int readbuffer_length;
-	bool bufactive;
-} InputState;
-
-// TODO: Support binary, use RBuffer and remove globals
-static R_TH_LOCAL InputState input_state = {
-	.readbuffer = NULL,
-	.readbuffer_length = 0,
-	.bufactive = true,
-};
-
 #if 0
 //R2__UNIX__
 #include <poll.h>
@@ -587,25 +574,28 @@ R_API int r_cons_readchar_timeout(ut32 msec) {
 }
 
 R_API bool r_cons_readpush(const char *str, int len) {
-	char *res = (len + input_state.readbuffer_length > 0)
-		? realloc (input_state.readbuffer, len + input_state.readbuffer_length)
+	InputState *input_state = r_cons_input_state ();
+	char *res = (len + input_state->readbuffer_length > 0)
+		? realloc (input_state->readbuffer, len + input_state->readbuffer_length)
 		: NULL;
 	if (res) {
-		input_state.readbuffer = res;
-		memmove (input_state.readbuffer + input_state.readbuffer_length, str, len);
-		input_state.readbuffer_length += len;
+		input_state->readbuffer = res;
+		memmove (input_state->readbuffer + input_state->readbuffer_length, str, len);
+		input_state->readbuffer_length += len;
 		return true;
 	}
 	return false;
 }
 
 R_API void r_cons_readflush(void) {
-	R_FREE (input_state.readbuffer);
-	input_state.readbuffer_length = 0;
+	InputState *input_state = r_cons_input_state ();
+	R_FREE (input_state->readbuffer);
+	input_state->readbuffer_length = 0;
 }
 
 R_API void r_cons_switchbuf(bool active) {
-	input_state.bufactive = active;
+	InputState *input_state = r_cons_input_state ();
+	input_state->bufactive = active;
 }
 
 #if !R2__WINDOWS__
@@ -615,10 +605,11 @@ extern volatile sig_atomic_t sigwinchFlag;
 R_API int r_cons_readchar(void) {
 	char buf[2];
 	buf[0] = -1;
-	if (input_state.readbuffer_length > 0) {
-		int ch = *input_state.readbuffer;
-		input_state.readbuffer_length--;
-		memmove (input_state.readbuffer, input_state.readbuffer + 1, input_state.readbuffer_length);
+	InputState *input_state = r_cons_input_state ();
+	if (input_state->readbuffer_length > 0) {
+		int ch = *input_state->readbuffer;
+		input_state->readbuffer_length--;
+		memmove (input_state->readbuffer, input_state->readbuffer + 1, input_state->readbuffer_length);
 		return ch;
 	}
 	r_cons_set_raw (true);

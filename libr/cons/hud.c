@@ -17,6 +17,8 @@ R_API char *r_cons_hud_file(const char *f) {
 	return NULL;
 }
 
+static char *r_cons_hud_line(RList *list, const char *prompt);
+
 // Display a buffer in the hud (splitting it line-by-line and ignoring
 // the lines starting with # )
 R_API char *r_cons_hud_line_string(const char *s) {
@@ -342,7 +344,7 @@ _beach:
 	return NULL;
 }
 
-R_API char *r_cons_hud_line(RList *list, const char *prompt) {
+static char *r_cons_hud_line(RList *list, const char *prompt) {
 	char user_input[HUD_BUF_SIZE + 1];
 	char *selected_entry = NULL;
 	RListIter *iter;
