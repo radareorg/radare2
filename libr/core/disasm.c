@@ -6654,11 +6654,11 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 		pj_kn (pj, "type2_num", (ut64)(ds->analop.type2 & UT64_MAX));
 		// addr addrline info here
 		{
-			int line;
+			int line, colu;
 			char file[1024];
-			bool ret = r_bin_addr2line (core->bin, at, file, sizeof (file) - 1, &line);
+			bool ret = r_bin_addr2line (core->bin, at, file, sizeof (file) - 1, &line, &colu);
 			if (!ret) {
-				ret = r_bin_addr2line2 (core->bin, at, file, sizeof (file) - 1, &line);
+				ret = r_bin_addr2line2 (core->bin, at, file, sizeof (file) - 1, &line, &colu);
 			}
 			if (ret) {
 				pj_ko (pj, "addrline");

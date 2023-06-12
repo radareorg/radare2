@@ -1,9 +1,9 @@
-/* radare - LGPL - Copyright 2009-2020 - nibble, montekki, pancake */
+/* radare - LGPL - Copyright 2009-2023 - nibble, montekki, pancake */
 
 #include <r_bin.h>
 
 // TODO: use proper dwarf api here.. or deprecate
-static bool get_line(RBinFile *bf, ut64 addr, char *file, int len, int *line) {
+static bool get_line(RBinFile *bf, ut64 addr, char *file, int len, int *line, int *colu) {
 	if (bf->sdb_addrinfo) {
 		char offset[SDB_NUM_BUFSZ];
 		char *offset_ptr = sdb_itoa (addr, 16, offset, sizeof (offset));
@@ -11,9 +11,14 @@ static bool get_line(RBinFile *bf, ut64 addr, char *file, int len, int *line) {
 		if (ret) {
 			char *p = strchr (ret, '|');
 			if (p) {
-				*p = '\0';
+				*p++ = '\0';
+				char *c = strchr (p, ':');
+				if (c) {
+					*c++ = 0;
+					*colu = atoi (c);
+				}
 				r_str_ncpy (file, ret, len);
-				*line = atoi (p + 1);
+				*line = atoi (p);
 				return true;
 			}
 		}

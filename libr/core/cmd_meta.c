@@ -3,6 +3,8 @@
 #include <r_core.h>
 #include <sdb/sdb.h>
 
+// R2R db/cmd/cmd_meta
+
 char *getcommapath(RCore *core);
 
 static R_TH_LOCAL ut64 filter_offset = UT64_MAX;
@@ -165,7 +167,7 @@ static bool print_meta_offset(RCore *core, ut64 addr, PJ *pj) {
 	int line, line_old, i;
 	char file[1024];
 	int colu = 0; /// addr2line function cant retrieve column info
-	int ret = r_bin_addr2line (core->bin, addr, file, sizeof (file) - 1, &line);
+	int ret = r_bin_addr2line (core->bin, addr, file, sizeof (file) - 1, &line, &colu);
 	if (ret) {
 		if (pj) {
 			pj_o (pj);
