@@ -61,6 +61,7 @@ if get_option('enable_tests')
     'uleb128',
     'unum',
     'util',
+    'vec',
     'vector',
     'crbtree'
   ]
