@@ -174,6 +174,33 @@ static bool test_vec_push_back(void) {
 	mu_end;
 }
 
+static bool test_vec_emplace_back(void) {
+	RVecUT32 v;
+	RVecUT32_init (&v);
+	mu_assert_eq (R_VEC_START_ITER (&v), NULL, "emplace_back start");
+	mu_assert_eq (R_VEC_END_ITER (&v), NULL, "emplace_back end");
+	mu_assert_eq (R_VEC_CAPACITY (&v), 0, "emplace_back capacity");
+
+	ut32 x;
+	for (x = 0; x < 8; x++) {
+		ut32 *ptr = RVecUT32_emplace_back (&v);
+		*ptr = x;
+	}
+
+	mu_assert_neq (R_VEC_START_ITER (&v), NULL, "emplace_back start2");
+	mu_assert_neq (R_VEC_END_ITER (&v), NULL, "emplace_back end2");
+	mu_assert_eq (R_VEC_CAPACITY (&v), 8, "emplace_back capacity2");
+	mu_assert_eq (RVecUT32_length (&v), 8, "emplace_back length2");
+
+	ut32 *ptr = RVecUT32_emplace_back (&v);
+	*ptr = x;
+	mu_assert_eq (R_VEC_CAPACITY (&v), 16, "emplace_back capacity3");
+	mu_assert_eq (RVecUT32_length (&v), 9, "emplace_back length3");
+
+	RVecUT32_fini (&v, NULL, NULL);
+	mu_end;
+}
+
 static bool test_vec_push_front(void) {
 	RVecUT32 v;
 	RVecUT32_init (&v);
@@ -196,6 +223,35 @@ static bool test_vec_push_front(void) {
 	RVecUT32_push_front (&v, &x);
 	mu_assert_eq (R_VEC_CAPACITY (&v), 16, "push_front capacity3");
 	mu_assert_eq (RVecUT32_length (&v), 9, "push_front length3");
+
+	RVecUT32_fini (&v, NULL, NULL);
+	mu_end;
+}
+
+static bool test_vec_emplace_front(void) {
+	RVecUT32 v;
+	RVecUT32_init (&v);
+	mu_assert_eq (R_VEC_START_ITER (&v), NULL, "emplace_front start");
+	mu_assert_eq (R_VEC_END_ITER (&v), NULL, "emplace_front end");
+	mu_assert_eq (R_VEC_CAPACITY (&v), 0, "emplace_front capacity");
+
+	ut32 x;
+	for (x = 0; x < 8; x++) {
+		ut32 *ptr = RVecUT32_emplace_front (&v);
+		*ptr = x;
+	}
+
+	mu_assert_eq (R_VEC_CAPACITY (&v), 8, "emplace_front capacity2");
+	mu_assert_eq (RVecUT32_length (&v), 8, "emplace_front length2");
+
+	mu_assert_eq (*RVecUT32_at (&v, 0), 7, "emplace_front at1");
+	mu_assert_eq (*RVecUT32_at (&v, 1), 6, "emplace_front at2");
+	mu_assert_eq (*RVecUT32_at (&v, 2), 5, "emplace_front at3");
+
+	ut32 *ptr = RVecUT32_emplace_front (&v);
+	*ptr = x;
+	mu_assert_eq (R_VEC_CAPACITY (&v), 16, "emplace_front capacity3");
+	mu_assert_eq (RVecUT32_length (&v), 9, "emplace_front length3");
 
 	RVecUT32_fini (&v, NULL, NULL);
 	mu_end;
@@ -741,7 +797,9 @@ static int all_tests(void) {
 	mu_run_test (test_vec_free);
 	mu_run_test (test_vec_clone);
 	mu_run_test (test_vec_push_back);
+	mu_run_test (test_vec_emplace_back);
 	mu_run_test (test_vec_push_front);
+	mu_run_test (test_vec_emplace_front);
 	mu_run_test (test_vec_append);
 	mu_run_test (test_vec_remove);
 	mu_run_test (test_vec_pop_front);

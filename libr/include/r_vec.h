@@ -50,8 +50,14 @@ extern "C" {
  *   current number of elements it contains.
  * - void R_VEC_FUNC(name, push_back)(R_VEC(name) *vec, type *value): Appends a single element to
  *   the end of the vector.
+ * - type *R_VEC_FUNC(name, emplace_back)(R_VEC(name) *vec): Returns a pointer to a new uninitialized
+ *   element at the back of the vector. The pointer must be filled with data afterwards, or it can lead to
+ *   undefined behavior!
  * - void R_VEC_FUNC(name, push_front)(R_VEC(name) *vec, type *value): Prepends a single element to
  *   the front of the vector. All following elements are shifted one place.
+ * - type *R_VEC_FUNC(name, emplace_front)(R_VEC(name) *vec): Returns a pointer to a new uninitialized
+ *   element at the front of the vector. The pointer must be filled afterwards with data, or it can lead to
+ *   undefined behavior!
  * - void R_VEC_FUNC(name, append)(R_VEC(name) *vec, R_VEC(name) *values): Appends the elements of
  *   the second vector to the first. Note that only a shallow copy is made for each element, so do
  *   not pass in a fini_fn when you are freeing the second vector to avoid double frees!
@@ -257,6 +263,18 @@ extern "C" {
 		*vec->_end = *value; \
 		vec->_end++; \
 	} \
+	static inline R_MAYBE_UNUSED R_MUSTUSE type *R_VEC_FUNC(name, emplace_back)(R_VEC(name) *vec) { \
+		r_return_val_if_fail (vec, NULL); \
+		const size_t num_elems = R_VEC_FUNC(name, length) (vec); \
+		const size_t capacity = R_VEC_CAPACITY (vec); \
+		if (R_UNLIKELY (num_elems == capacity)) { \
+			const size_t new_capacity = capacity == 0 ? 8 : capacity * 2; \
+			R_VEC_FUNC(name, reserve) (vec, new_capacity); \
+		} \
+		type *ptr = vec->_end; \
+		vec->_end++; \
+		return ptr; \
+	} \
 	static inline R_MAYBE_UNUSED void R_VEC_FUNC(name, push_front)(R_VEC(name) *vec, type *value) { \
 		r_return_if_fail (vec && value); \
 		const size_t num_elems = R_VEC_FUNC(name, length) (vec); \
@@ -268,6 +286,18 @@ extern "C" {
 		memmove (vec->_start + 1, vec->_start, num_elems * sizeof (type)); \
 		*vec->_start = *value; \
 		vec->_end++; \
+	} \
+	static inline R_MAYBE_UNUSED R_MUSTUSE type *R_VEC_FUNC(name, emplace_front)(R_VEC(name) *vec) { \
+		r_return_val_if_fail (vec, NULL); \
+		const size_t num_elems = R_VEC_FUNC(name, length) (vec); \
+		const size_t capacity = R_VEC_CAPACITY (vec); \
+		if (R_UNLIKELY (num_elems == capacity)) { \
+			const size_t new_capacity = capacity == 0 ? 8 : capacity * 2; \
+			R_VEC_FUNC(name, reserve) (vec, new_capacity); \
+		} \
+		memmove (vec->_start + 1, vec->_start, num_elems * sizeof (type)); \
+		vec->_end++; \
+		return vec->_start; \
 	} \
 	static inline R_MAYBE_UNUSED void R_VEC_FUNC(name, append)(R_VEC(name) *vec, R_VEC(name) *values) { \
 		r_return_if_fail (vec && values); \
