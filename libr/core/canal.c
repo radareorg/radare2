@@ -4825,8 +4825,9 @@ bool fcn_merge_touch_cb(ut64 addr, struct r_merge_ctx_t *ctx) {
 	}
 
 	// Add it to the touch list
-	if (found)
+	if (found) {
 		r_list_append(&ctx->touch, bb);
+	}
 
 	return true;
 }
@@ -5830,7 +5831,7 @@ static bool isValidAddress(RCore *core, ut64 addr) {
 		return false;
 	}
 	// check if current map->fd is null://
-	if (!strncmp (desc->name, "null://", 7)) {
+	if (r_str_startswith (desc->name, "null://")) {
 		return false;
 	}
 	return true;
@@ -6021,11 +6022,10 @@ static bool printAnalPaths(RCoreAnalPaths *p, PJ *pj) {
 			r_cons_printf (" 0x%08"PFMT64x, path->addr);
 		}
 	}
-
 	if (pj) {
 		pj_end (pj);
 	} else {
-		r_cons_printf ("\n");
+		r_cons_newline ();
 	}
 	return (p->count < 1 || --p->count > 0);
 }
