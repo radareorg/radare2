@@ -151,9 +151,7 @@ typedef struct r_cons_palette_t {
 	RColor call;
 	RColor cjmp;
 	RColor cmp;
-#if R2_590
 	RColor hint;
-#endif
 	RColor comment;
 	RColor usercomment;
 	RColor creg;
@@ -1108,9 +1106,7 @@ struct r_line_t {
 	RLineHud *hud;
 	RList *sdbshell_hist;
 	RListIter *sdbshell_hist_iter;
-#if R2_590
 	int maxlength;
-#endif
 	int vtmode; // implemented but unused from the global RCons.vtmode
 	int hist_size;
 }; /* RLine */

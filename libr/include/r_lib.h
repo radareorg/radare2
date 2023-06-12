@@ -119,10 +119,8 @@ typedef struct r_lib_t {
 	RList /*RLibPlugin*/ *plugins;
 	RList /*RLibHandler*/ *handlers;
 	bool ignore_version;
-#if R2_590
 	// hashtable plugname = &plugin
 	HtPP *plugins_ht;
-#endif
 } RLib;
 
 #ifdef R_API
