@@ -5,7 +5,6 @@
 #include <errno.h>
 #include <math.h>  /* for ceill */
 #include <r_util.h>
-#include <r_util/r_base36.h>
 
 static ut64 r_num_tailff(RNum *num, const char *hex);
 

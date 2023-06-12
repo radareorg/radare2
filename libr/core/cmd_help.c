@@ -1,7 +1,6 @@
 /* radare - LGPL - Copyright 2009-2023 - pancake */
 
 #include <r_core.h>
-#include <r_util/r_base36.h>
 
 static RCoreHelpMessage help_msg_question_t = {
 	"Usage: ?t[0,1] [cmd]", "", "",
