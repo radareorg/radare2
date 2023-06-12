@@ -306,7 +306,7 @@ EOF
 EXPECT=<<EOF
 0x00000000 = 0x46
 0x00000001 = "ABCDE"
-[{"type":"b","offset":0,"value":70},{"type":"z","offset":1,"value":"ABCDE"}]
+[{"type":"b","offset":0,"addr":0,"value":70,"size": 1},{"type":"z","offset":1,"addr":1,"value":"ABCDE","size": 6}]
 EOF
 RUN
 
@@ -323,14 +323,11 @@ wz ABCDE
 EOF
 EXPECT=<<EOF
 0x00000000 = "ABCDE"
-[{"type":"z","offset":0,"value":"ABCDE"}]
-
+[{"type":"z","offset":0,"addr":0,"value":"ABCDE","size": 6}]
 0x00000000 = "ABC"
-[{"type":"z","offset":0,"value":"ABC"}]
-
+[{"type":"z","offset":0,"addr":0,"value":"ABC","size": 3}]
 0x00000000 = "ABCDE"
-[{"type":"z","offset":0,"value":"ABCDE"}]
-EOF
+[{"type":"z","offset":0,"addr":0,"value":"ABCDE","size": 7}]EOF
 RUN
 
 NAME=pf z overflow
@@ -394,7 +391,8 @@ pf [5]z
 pf z @ 0xfffff
 EOF
 EXPECT=<<EOF
---- io.unalloc = true ---
+0x00000000 = "ABCDE"
+[{"type":"z","offset":0,"addr":0,"value":"ABCDE","size": 6}]
 
 0x00000be6 = "AB"
 0x00000be6 = "AB"

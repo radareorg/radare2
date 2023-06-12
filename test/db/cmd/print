@@ -234,11 +234,12 @@ EOF
 EXPECT=<<EOF
 struct fmt {
     uint8_t foo; // 85
-    int8_t bar; // "H"
+    int8_t bar; // [ 'H' ]
     double baz; // 4.8537884927073429e+102
     int32_t cow; // 0x48535441
-    uleb128_t one; // "1193473"
+    uleb128_t one; // 1193473
     float two; // 131072.094
+}
 }
 EOF
 RUN
@@ -258,12 +259,13 @@ struct elf_header {
         enum data; // ELFDATA2LSB
         enum version; // EV_CURRENT
     }
+
     enum type; // ET_DYN
     enum machine; // EM_X86_64
     enum version; // EV_CURRENT
-    uint64_t entry; // 23264
-    uint64_t phoff; // 64
-    uint64_t shoff; // 136040
+    uint64_t entry; // 0x0000000000005ae0
+    uint64_t phoff; // 0x0000000000000040
+    uint64_t shoff; // 0x0000000000021368
     int32_t flags; // 0x00000000
     uint16_t ehsize; // 64
     uint16_t phentsize; // 56
