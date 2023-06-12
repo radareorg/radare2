@@ -222,26 +222,14 @@ typedef struct r_io_plugin_t {
 	bool (*check)(RIO *io, const char *, bool many);
 } RIOPlugin;
 
-struct r_io_map_t;
-
-typedef struct r_io_reloc_map_t {
-	void *data;
-	int (*read)(RIO *io, struct r_io_map_t *map, ut64 addr, ut8 *buf, int len);
-	int (*write)(RIO *io, struct r_io_map_t *map, ut64 addr, const ut8 *buf, int len);
-	bool (*remap)(RIO *io, struct r_io_map_t *map, ut64 addr);
-	void (*free)(void *data);
-} RIORelocMap;
-
 typedef struct r_io_map_t {
 	int fd;
 	int perm;
 	ut32 id;
 	ut64 ts;
 	RInterval itv;
-	union {
-		ut64 delta; // paddr = vaddr - itv.addr + delta
-		RIORelocMap *reloc_map;
-	};
+	ut64 delta; // paddr = vaddr - itv.addr + delta
+	RRBTree *overlay;
 	char *name;
 } RIOMap;
 
@@ -357,7 +345,6 @@ R_API bool r_io_map_exists(RIO *io, RIOMap *map);
 R_API bool r_io_map_exists_for_id(RIO *io, ut32 id);
 R_API RIOMap *r_io_map_get(RIO *io, ut32 id);
 R_API RIOMap *r_io_map_add(RIO *io, int fd, int flags, ut64 delta, ut64 addr, ut64 size);
-R_API RIOMap *r_io_reloc_map_add(RIO *io, int fd, int perm, RIORelocMap *rm, ut64 addr, ut64 size);
 R_API RIOMap *r_io_map_add_bottom(RIO *io, int fd, int flags, ut64 delta, ut64 addr, ut64 size);
 R_API RIOMap *r_io_map_get_at(RIO *io, ut64 vaddr); // returns the map at vaddr with the highest priority
 R_API RIOMap *r_io_map_get_by_ref(RIO *io, RIOMapRef *ref);
@@ -376,6 +363,9 @@ R_API void r_io_map_set_name(RIOMap *map, const char *name);
 R_API void r_io_map_del_name(RIOMap *map);
 R_API RList* r_io_map_get_by_fd(RIO *io, int fd);
 R_API bool r_io_map_resize(RIO *io, ut32 id, ut64 newsize);
+R_API void r_io_map_read_from_overlay(RIOMap *map, ut64 addr, ut8 *buf, int len);
+R_API bool r_io_map_write_to_overlay(RIOMap *map, ut64 addr, const ut8 *buf, int len);
+R_IPI bool _io_map_get_overlay_intersects(RIOMap *map, RQueue *q, ut64 addr, int len);
 
 // next free address to place a map.. maybe just unify
 R_API bool r_io_map_locate(RIO *io, ut64 *addr, const ut64 size, ut64 load_align);
@@ -411,6 +401,7 @@ R_API void r_io_bank_del_map(RIO *io, const ut32 bankid, const ut32 mapid);
 R_API RIOMap *r_io_bank_get_map_at(RIO *io, const ut32 bankid, const ut64 addr);
 R_API bool r_io_bank_read_at(RIO *io, const ut32 bankid, ut64 addr, ut8 *buf, int len);
 R_API bool r_io_bank_write_at(RIO *io, const ut32 bankid, ut64 addr, const ut8 *buf, int len);
+R_API bool r_io_bank_write_to_overlay_at(RIO *io, const ut32 bankid, ut64 addr, const ut8 *buf, int len);
 R_API int r_io_bank_read_from_submap_at(RIO *io, const ut32 bankid, ut64 addr, ut8 *buf, int len);
 R_API int r_io_bank_write_to_submap_at(RIO *io, const ut32 bankid, ut64 addr, const ut8 *buf, int len);
 R_API void r_io_bank_drain(RIO *io, const ut32 bankid);
@@ -418,7 +409,7 @@ R_API void r_io_bank_drain(RIO *io, const ut32 bankid);
 //io.c
 R_API RIO *r_io_new(void);
 R_API void r_io_init(RIO *io);
-R_API RIODesc *r_io_open_nomap(RIO *io, const char *uri, int flags, int mode);		//should return int
+R_API RIODesc *r_io_open_nomap(RIO *io, const char *uri, int flags, int mode);
 R_API RIODesc *r_io_open(RIO *io, const char *uri, int flags, int mode);
 R_API RIODesc *r_io_open_at(RIO *io, const char *uri, int flags, int mode, ut64 at);
 R_API RList *r_io_open_many(RIO *io, const char *uri, int flags, int mode);
@@ -430,6 +421,7 @@ R_API int r_io_pread_at(RIO *io, ut64 paddr, ut8 *buf, int len);
 R_API int r_io_pwrite_at(RIO *io, ut64 paddr, const ut8 *buf, int len);
 R_API bool r_io_vread_at(RIO *io, ut64 vaddr, ut8 *buf, int len);
 R_API bool r_io_vwrite_at(RIO *io, ut64 vaddr, const ut8 *buf, int len);
+R_API bool r_io_vwrite_to_overlay_at(RIO *io, ut64 caddr, const ut8 *buf, int len);
 R_API bool r_io_read_at(RIO *io, ut64 addr, ut8 *buf, int len);
 R_API int r_io_nread_at(RIO *io, ut64 addr, ut8 *buf, int len);
 R_API bool r_io_write_at(RIO *io, ut64 addr, const ut8 *buf, int len);
