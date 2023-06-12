@@ -55,6 +55,7 @@ typedef struct r_r2pm_t {
 	bool info;
 	bool install;
 	bool uninstall;
+	int rc;
 	const char *time;
 } R2Pm;
 
@@ -99,23 +100,6 @@ static int git_clone(const char *dir, const char *url) {
 	int rc = r_sandbox_system (cmd, 1);
 	free (cmd);
 	return rc;
-}
-
-static bool r2pm_actionword(R2Pm *r2pm, const char *action) {
-	// R2_590
-	if (!strcmp (action, "init") || !strcmp (action, "update")) {
-		R_LOG_WARN ("Action words will be deprecated in r2-5.9.x, use -U instead of %s", action);
-		r2pm->init = true;
-	} else if (!strcmp (action, "help")) {
-		R_LOG_WARN ("Action words will be deprecated in r2-5.9.x, use -h instead of %s", action);
-		r2pm->help = true;
-	} else if (!strcmp (action, "info")) {
-		R_LOG_WARN ("Action words will be deprecated in r2-5.9.x, use -I instead of %s", action);
-		r2pm->info = true;
-	} else {
-		return false;
-	}
-	return true;
 }
 
 static bool r2pm_add(R2Pm *r2pm, const char *repository) {
@@ -1053,58 +1037,66 @@ R_API int r_main_r2pm(int argc, const char **argv) {
 	};
 	RGetopt opt;
 	r_getopt_init (&opt, argc, argv, "aqecdiIhH:flgrpst:uUv");
-	if (opt.ind < argc) {
-		// TODO: fully deprecate during the 5.9.x cycle
-		r2pm_actionword (&r2pm, argv[opt.ind]);
-	}
 	int i, c;
 	r2pm_setenv ();
+	bool action = false;
 	while ((c = r_getopt_next (&opt)) != -1) {
 		switch (c) {
 		case 'a':
 			r2pm.add = true;
+			action = true;
 			break;
 		case 'q':
 			r2pm.quiet = true;
 			break;
 		case 'c':
 			r2pm.clean = true;
+			action = true;
 			break;
 		case 'i':
 			r2pm.install = true;
+			action = true;
 			break;
 		case 'd':
 			r2pm.doc = true;
+			action = true;
 			break;
 		case 'p':
 			r2pm.plugdir = true;
 			break;
 		case 'I':
 			r2pm.info = true;
+			action = true;
 			break;
 		case 'u':
 			r2pm.uninstall = true;
+			action = true;
 			break;
 		case 'e':
 			r2pm.edit = true;
+			action = true;
 			break;
 		case 'f':
 			r2pm.force = true;
 			break;
 		case 'U':
 			r2pm.init = true;
+			action = true;
 			break;
 		case 'l':
 			r2pm.list = true;
+			action = true;
 			break;
 		case 's':
 			r2pm.search = true;
+			action = true;
 			break;
 		case 't':
 			r2pm.time = opt.arg;
 			break;
 		case 'r':
 			r2pm.run = true;
+			action = true;
 			break;
 		case 'g':
 			r2pm.global = true;
@@ -1122,11 +1114,17 @@ R_API int r_main_r2pm(int argc, const char **argv) {
 			} else {
 				r2pm.help = true;
 			}
+			action = true;
 			break;
 		case 'v':
 			r2pm.version = true;
+			action = true;
 			break;
 		}
+	}
+	if (!action && opt.ind < argc) {
+		r2pm.help = true;
+		r2pm.rc = 1;
 	}
 	if (r2pm.time) {
 		// set R2PM_TIME env var
@@ -1161,7 +1159,7 @@ R_API int r_main_r2pm(int argc, const char **argv) {
 		if (r2pm.envhelp) {
 			r2pm_envhelp (true);
 		}
-		return 0;
+		return r2pm.rc;
 	}
 	if (r2pm.init) {
 		r2pm_update (r2pm.force);
