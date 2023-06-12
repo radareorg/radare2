@@ -214,12 +214,12 @@ static CPU_CONST *const_by_name(CPU_MODEL *cpu, int type, char *c) {
 }
 
 static int __esil_pop_argument(REsil *esil, ut64 *v) {
-	char *t = r_esil_pop (esil);
+	const char *t = r_esil_pop (esil);
 	if (!t || !r_esil_get_parm (esil, t, v)) {
-		free (t);
+		free ((char*)t);
 		return false;
 	}
-	free (t);
+	free ((char*)t);
 	return true;
 }
 

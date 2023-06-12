@@ -689,12 +689,12 @@ static bool gb_custom_daa(REsil *esil) {
 	if (!esil || !esil->anal || !esil->anal->reg) {
 		return false;
 	}
-	char *v = r_esil_pop (esil);
+	const char *v = r_esil_pop (esil);
 	ut64 n;
 	if (!v || !r_esil_get_parm (esil, v, &n)) {
 		return false;
 	}
-	R_FREE (v);
+	free ((char*)v);
 	ut8 val = (ut8)n;
 	r_esil_reg_read (esil, "H", &n, NULL);
 	const ut8 H = (ut8)n;

@@ -288,11 +288,8 @@ R_API bool r_esil_reg_read(REsil *esil, const char *regname, ut64 *num, int *siz
 R_API bool r_esil_reg_write(REsil *esil, const char *dst, ut64 num);
 R_API bool r_esil_pushnum(REsil *esil, ut64 num);
 R_API bool r_esil_push(REsil *esil, const char *str);
-#if R2_590
 R_API const char *r_esil_pop(REsil *esil);
-#else
-R_API char *r_esil_pop(REsil *esil);
-#endif
+
 typedef bool (*REsilOpCb)(REsil *esil);
 
 typedef struct r_esil_operation_t {
