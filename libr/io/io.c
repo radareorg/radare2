@@ -213,7 +213,7 @@ R_API bool r_io_vread_at(RIO *io, ut64 vaddr, ut8* buf, int len) {
 	return r_io_bank_read_at (io, io->bank, vaddr, buf, len);
 }
 
-R_API bool r_io_vwrite_at(RIO *io, ut64 vaddr, const ut8* buf, int len) {
+R_API bool r_io_vwrite_at(RIO *io, ut64 vaddr, const ut8 *buf, int len) {
 	r_return_val_if_fail (io && buf && len > 0, false);
 	if ((UT64_MAX - (len - 1)) < vaddr) {
 		int _len = UT64_MAX - vaddr + 1;
@@ -224,6 +224,19 @@ R_API bool r_io_vwrite_at(RIO *io, ut64 vaddr, const ut8* buf, int len) {
 		len = _len;
 	}
 	return r_io_bank_write_at (io, io->bank, vaddr, buf, len);
+}
+
+R_API bool r_io_vwrite_to_overlay_at(RIO *io, ut64 caddr, const ut8 *buf, int len) {
+	r_return_val_if_fail (io && buf && len > 0, false);
+	if ((UT64_MAX - (len - 1)) < vaddr) {
+		int _len = UT64_MAX - vaddr + 1;
+		len -= _len;
+		if (!r_io_vwrite_to_overlay_at (io, 0ULL, &buf[_len], len)) {
+			return false;
+		}
+		len = _len;
+	}
+	return r_io_bank_write_to_overlay_at (io, io->bank, vaddr, buf, len);
 }
 
 static bool internal_r_io_read_at(RIO *io, ut64 addr, ut8 *buf, int len) {

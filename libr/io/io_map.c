@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2017-2022 - condret, MaskRay */
+/* radare2 - LGPL - Copyright 2017-2023 - condret, MaskRay */
 
 #include <r_io.h>
 #include <stdlib.h>
@@ -23,7 +23,6 @@ static RIOMap *io_map_new(RIO* io, int fd, int perm, ut64 delta, ut64 addr, ut64
 	map->ts = io->mts++;
 	// RIOMap describes an interval of addresses
 	// r_io_map_from (map) -> r_io_map_to (map)
-	map->reloc_map = NULL;
 	map->itv = (RInterval){ addr, size };
 	map->perm = perm;
 	map->delta = delta;
@@ -39,13 +38,9 @@ R_API bool r_io_map_remap(RIO *io, ut32 id, ut64 addr) {
 	const ut64 ofrom = r_io_map_from (map);
 	const ut64 oto = r_io_map_to (map);
 	ut64 size = r_io_map_size (map);
-	if (map->perm & R_PERM_RELOC && map->reloc_map) {
+	if (map->overlay) {
 		if (R_UNLIKELY (UT64_MAX - size + 1 < addr)) {
-			R_LOG_ERROR ("Mapsplit for reloc maps is not possible");
-			return false;
-		}
-		if (map->reloc_map->remap && !map->reloc_map->remap (io, map, addr)) {
-			R_LOG_ERROR ("Remapping reloc map %u failed", map->id);
+			R_LOG_ERROR ("Mapsplit for overlay maps is not possible");
 			return false;
 		}
 	}
@@ -100,10 +95,7 @@ R_API bool r_io_map_remap_fd(RIO *io, int fd, ut64 addr) {
 static bool _map_free_cb(void *user, void *data, ut32 id) {
 	RIOMap *map = (RIOMap *)data;
 	if (map) {
-		if ((map->perm & R_PERM_RELOC) && map->reloc_map && map->reloc_map->free) {
-			map->reloc_map->free (map->reloc_map->data);
-			// don't free map->reloc_map here, could be static
-		}
+		r_crbtree_free (map->overlay);
 		free (map->name);
 		free (map);
 	}
@@ -149,7 +141,7 @@ R_API RIOMap *r_io_map_add(RIO *io, int fd, int perm, ut64 delta, ut64 addr, ut6
 	RIODesc* desc = r_io_desc_get (io, fd);
 	if (desc) {
 		//a map cannot have higher permissions than the desc belonging to it
-		perm &= (desc->perm | R_PERM_X) & ~R_PERM_RELOC;
+		perm &= (desc->perm | R_PERM_X);
 		RIOMap *map[2] = {NULL, NULL};
 		if (R_UNLIKELY ((UT64_MAX - size + 1) < addr)) {
 			const ut64 new_size = UT64_MAX - addr + 1;
@@ -185,37 +177,6 @@ R_API RIOMap *r_io_map_add(RIO *io, int fd, int perm, ut64 delta, ut64 addr, ut6
 		return map[1];
 	}
 	return NULL;
-}
-
-R_API RIOMap *r_io_reloc_map_add(RIO *io, int fd, int perm, RIORelocMap *rm, ut64 addr, ut64 size) {
-	r_return_val_if_fail (io && rm, NULL);
-	if (!size) {
-		return NULL;
-	}
-	//cannot split reloc maps
-	if ((UT64_MAX - size + 1) < addr) {
-		return NULL;
-	}
-	//check if desc exists
-	RIODesc* desc = r_io_desc_get (io, fd);
-	if (!desc) {
-		return NULL;
-	}
-	perm &= desc->perm | R_PERM_X;
-	perm |= R_PERM_RELOC;
-	RIOMap *map = io_map_new (io, fd, perm, 0, addr, size);
-	if (map) {
-		if (!r_io_bank_map_add_top (io, io->bank, map->id)) {
-			r_id_storage_delete (io->maps, map->id);
-			free (map);
-			if (rm->free) {
-				rm->free (rm->data);
-			}
-			return NULL;
-		}
-		map->reloc_map = rm;
-	}
-	return map;
 }
 
 R_API RIOMap *r_io_map_add_bottom(RIO *io, int fd, int perm, ut64 delta, ut64 addr, ut64 size) {
@@ -442,10 +403,6 @@ R_API bool r_io_map_resize(RIO *io, ut32 id, ut64 newsize) {
 	if (!newsize || !(map = r_io_map_get (io, id))) {
 		return false;
 	}
-	if (map->perm & R_PERM_RELOC) {
-		R_LOG_WARN ("Resizing reloc maps is not possible");
-		return false;
-	}
 	ut64 addr = r_io_map_begin (map);
 	const ut64 oto = r_io_map_to (map);
 	if (UT64_MAX - newsize + 1 < addr) {
@@ -492,4 +449,188 @@ R_API RIOMap *r_io_map_get_by_ref(RIO *io, RIOMapRef *ref) {
 	RIOMap *map = r_io_map_get (io, ref->id);
 	// trigger cleanup if ts don't match?
 	return (map && map->ts == ref->ts) ? map : NULL;
+}
+
+typedef struct map_overlay_chunk_t {
+	// itv is relative to the map vaddr
+	// this is to keep maps with overlay moveable in the va space
+	RInterval itv;
+	ut8 *buf;
+} MapOverlayChunk;
+
+static int _overlay_chunk_find (void *incoming, void *in, void *user) {
+	RInterval *itv = (RInterval *)incoming;
+	MapOverlayChunk *chunk = (MapOverlayChunk *)in;
+	if (r_itv_overlap (itv[0], chunk->itv)) {
+		return 0;
+	}
+	if (r_itv_begin (itv[0]) < r_itv_begin (chunk->itv)) {
+		return -1;
+	}
+	return 1;
+}
+
+R_API void r_io_map_read_from_overlay(RIOMap *map, ut64 addr, ut8 *buf, int len) {
+	r_return_if_fail (map && buf);
+	if (!map->overlay || !len || addr > r_io_map_to (map)) {
+		return;
+	}
+	RInterval x = {addr, len};
+	RInterval search_itv = r_itv_intersect (map->itv, x);
+	search_itv.addr -= map->itv.addr;	// to keep things remappable
+	RRBNode *node = r_crbtree_find_node (map->overlay, &search_itv, _overlay_chunk_find, NULL);
+	if (!node) {
+		return;
+	}
+	MapOverlayChunk *chunk = NULL;
+	RRBNode *prev = r_rbnode_prev (node);
+	while (prev) {
+		chunk = (MapOverlayChunk *)prev->data;
+		if (!r_itv_overlap (chunk->itv, search_itv)) {
+			break;
+		}
+		node = prev;
+		prev = r_rbnode_prev (prev);
+	}
+	chunk = (MapOverlayChunk *)node->data;
+	do {
+		addr = R_MAX (r_itv_begin (search_itv), r_itv_begin (chunk->itv));
+		ut8 *dst = &buf[addr - r_itv_begin (search_itv)];
+		ut8 *src = &chunk->buf[addr - r_itv_begin (chunk->itv)];
+		memcpy (dst, src, (size_t)(R_MIN (r_itv_end (search_itv), r_itv_end (chunk->itv)) - addr));
+		node = r_rbnode_next (node);
+		chunk = node? (MapOverlayChunk *)node->data: NULL;
+	} while (chunk && r_itv_overlap (chunk->itv, search_itv));
+}
+
+static void _overlay_chunk_free(void *data) {
+	if (!data) {
+		return;
+	}
+	MapOverlayChunk *chunk = (MapOverlayChunk *)data;
+	free (chunk->buf);
+	free (chunk);
+}
+
+static int _overlay_chunk_insert (void *incoming, void *in, void *user) {
+	MapOverlayChunk *incoming_chunk = (MapOverlayChunk *)incoming;
+	MapOverlayChunk *in_chunk = (MapOverlayChunk *)in;
+	if (r_itv_begin (incoming_chunk->itv) < r_itv_begin (in_chunk->itv)) {
+		return -1;
+	}
+	if (r_itv_begin (incoming_chunk->itv) > r_itv_begin (in_chunk->itv)) {
+		return 1;
+	}
+	return 0;
+}
+
+R_API bool r_io_map_write_to_overlay(RIOMap *map, ut64 addr, const ut8 *buf, int len) {
+	r_return_val_if_fail (map && buf, false);
+	RInterval x = {addr, len};
+	RInterval search_itv = r_itv_intersect (map->itv, x);
+	if (!r_itv_size (search_itv)) {
+		return true;	// is this correct?
+	}
+	if (!map->overlay) {
+		if (!(map->overlay = r_crbtree_new (_overlay_chunk_free))) {
+			return false;
+		}
+	}
+	search_itv.addr -= map->itv.addr;
+	RRBNode *node = r_crbtree_find_node (map->overlay, &search_itv, _overlay_chunk_find, NULL);
+	if (!node) {
+		MapOverlayChunk *chunk = R_NEW0 (MapOverlayChunk);
+		if (!chunk) {
+			return false;
+		}
+		chunk->buf = R_NEWS (ut8, r_itv_size (search_itv));
+		chunk->itv = search_itv;
+		if (!chunk->buf || !r_crbtree_insert (map->overlay, chunk, _overlay_chunk_insert, NULL)) {
+			free (chunk->buf);
+			free (chunk);
+			return false;
+		}
+		memcpy (chunk->buf, buf, r_itv_size (search_itv));
+		return true;
+	}
+	MapOverlayChunk *chunk = NULL;
+	RRBNode *prev = r_rbnode_prev (node);
+	while (prev) {
+		chunk = (MapOverlayChunk *)prev->data;
+		if (!r_itv_overlap (chunk->itv, search_itv)) {
+			break;
+		}
+		node = prev;
+		prev = r_rbnode_prev (prev);
+	}
+	chunk = (MapOverlayChunk *)node->data;
+	if (r_itv_include (chunk->itv, search_itv)) {
+		ut8 *dst = &chunk->buf[r_itv_begin (search_itv) - r_itv_begin (chunk->itv)];
+		memcpy (dst, buf, r_itv_size (search_itv));
+		return true;
+	}
+	if (r_itv_begin (chunk->itv) < r_itv_begin (search_itv)) {
+		chunk->itv.size = r_itv_begin (search_itv) - r_itv_begin (chunk->itv);
+		chunk->buf = realloc (chunk->buf, r_itv_size (chunk->itv));
+		node = r_rbnode_next (node);
+	}
+	if (node) {
+		chunk = (MapOverlayChunk *)node->data;
+		while (chunk && r_itv_include (search_itv, chunk->itv)) {
+			node = r_rbnode_next (node);
+			r_crbtree_delete (map->overlay, &chunk->itv, _overlay_chunk_find, NULL);
+			chunk = node? (MapOverlayChunk *)node->data: NULL;
+		}
+	}
+	if (chunk && r_itv_end (search_itv) >= r_itv_begin (chunk->itv)) {
+		chunk->buf = realloc (chunk->buf, r_itv_end (chunk->itv) - r_itv_begin (search_itv));
+		memmove (&chunk->buf[r_itv_size (search_itv)],
+			&chunk->buf[r_itv_end (search_itv) - r_itv_begin (chunk->itv)],
+			r_itv_end (chunk->itv) - r_itv_end (search_itv));
+		memcpy (chunk->buf, buf, r_itv_size (search_itv));
+		chunk->itv.size = r_itv_end (chunk->itv) - r_itv_begin (search_itv);
+		chunk->itv.addr = search_itv.addr;
+		return true;
+	}
+	chunk = R_NEW0 (MapOverlayChunk);
+	chunk->buf = R_NEWS (ut8, r_itv_size (search_itv));
+	chunk->itv = search_itv;
+	memcpy (chunk->buf, buf, r_itv_size (search_itv));
+	r_crbtree_insert (map->overlay, chunk, _overlay_chunk_insert, NULL);
+	return true;
+}
+
+R_IPI bool _io_map_get_overlay_intersects(RIOMap *map, RQueue *q, ut64 addr, int len) {
+	r_return_val_if_fail (map && q, false);
+	if (!map->overlay) {
+		return true;
+	}
+	RInterval search_itv = {addr - map->itv.addr, len};
+	RRBNode *node = r_crbtree_find_node (map->overlay, &search_itv, _overlay_chunk_find, NULL);
+	if (!node) {
+		return true;
+	}
+	MapOverlayChunk *chunk = NULL;
+	RRBNode *prev = r_rbnode_prev (node);
+	while (prev) {
+		chunk = (MapOverlayChunk *)prev->data;
+		if (!r_itv_overlap (chunk->itv, search_itv)) {
+			break;
+		}
+		node = prev;
+		prev = r_rbnode_prev (prev);
+	}
+	chunk = (MapOverlayChunk *)node->data;
+	do {
+		if (!r_queue_enqueue (q, &chunk->itv)) {
+			// allocation in r_queue failed
+			while (!r_queue_is_empty (q)) {
+				r_queue_dequeue (q);
+			}
+			return false;
+		}
+		node = r_rbnode_next (node);
+		chunk = node ? (MapOverlayChunk *)node->data : NULL;
+	} while (chunk && r_itv_overlap (search_itv, chunk->itv));
+	return true;
 }
