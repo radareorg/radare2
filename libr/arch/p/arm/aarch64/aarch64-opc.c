@@ -2809,6 +2809,7 @@ get_offset_int_reg_name (const aarch64_opnd_info *opnd)
 
     default:
       abort ();
+      return NULL; // redundant, but makes all compilers happy
     }
 }
 

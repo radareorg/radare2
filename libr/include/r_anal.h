@@ -463,7 +463,7 @@ typedef struct r_anal_t {
 	RCoreBind coreb;
 	int maxreflines; // asm.lines.maxref
 	int esil_goto_limit; // esil.gotolimit
-	struct r_esil_t *esil;
+	struct r_esil_t *esil; // R2_590 remove
 	struct r_anal_plugin_t *cur;
 	struct r_esil_plugin_t *esil_cur; // ???
 	RArch *arch;
@@ -1602,18 +1602,10 @@ R_API bool r_anal_tid_select(RAnal *anal, int tid);
 extern RAnalPlugin r_anal_plugin_null;
 extern RAnalPlugin r_anal_plugin_8051;
 extern RAnalPlugin r_anal_plugin_arm_cs;
-extern RAnalPlugin r_anal_plugin_avr;
 extern RAnalPlugin r_anal_plugin_dalvik;
 extern RAnalPlugin r_anal_plugin_mips_cs;
-extern RAnalPlugin r_anal_plugin_jdh8;
-extern RAnalPlugin r_anal_plugin_sh;
 extern RAnalPlugin r_anal_plugin_x86;
 extern RAnalPlugin r_anal_plugin_x86_cs;
-extern RAnalPlugin r_anal_plugin_x86_im;
-extern RAnalPlugin r_anal_plugin_x86_simple;
-extern RAnalPlugin r_anal_plugin_x86_udis;
-extern RAnalPlugin r_anal_plugin_pickle;
-extern RAnalPlugin r_anal_plugin_evm_cs;
 
 #ifdef __cplusplus
 }

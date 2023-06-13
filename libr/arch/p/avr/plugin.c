@@ -5,16 +5,12 @@ http://www.atmel.com/images/atmel-0856-avr-instruction-set-manual.pdf
 https://en.wikipedia.org/wiki/Atmel_AVR_instruction_set
 #endif
 
-#include <string.h>
-#include <r_types.h>
-#include <r_util.h>
 #include <r_crypto.h>
-#include <r_lib.h>
-#include <r_asm.h>
+#include <r_arch.h>
 #include <r_anal.h>
 
-#include "../../asm/arch/avr/disasm.h"
-#include "../../asm/arch/avr/assemble.h"
+#include "./disasm.h"
+#include "./assemble.h"
 
 typedef struct _cpu_const_tag {
 	const char *const key;
@@ -38,7 +34,7 @@ typedef struct _cpu_model_tag {
 static R_TH_LOCAL RDESContext desctx;
 static R_TH_LOCAL CPU_MODEL *Gcpu = NULL;
 
-typedef void (*inst_handler_t) (RAnal *anal, RAnalOp *op, const ut8 *buf, int len, int *fail, CPU_MODEL *cpu);
+typedef void (*inst_handler_t) (RArchSession *as, RAnalOp *op, const ut8 *buf, int len, int *fail, CPU_MODEL *cpu);
 
 typedef struct _opcodes_tag_ {
 	const char *const name;
@@ -50,7 +46,7 @@ typedef struct _opcodes_tag_ {
 	ut64 type;
 } OPCODE_DESC;
 
-static OPCODE_DESC* avr_op_analyze(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, CPU_MODEL *cpu);
+static OPCODE_DESC* avr_op_analyze(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, int len, CPU_MODEL *cpu);
 
 #define CPU_MODEL_DECL(model, pc, consts)\
 	{				 \
@@ -62,11 +58,11 @@ static OPCODE_DESC* avr_op_analyze(RAnal *anal, RAnalOp *op, ut64 addr, const ut
 #define CPU_PC_MASK(cpu)		MASK((cpu)->pc)
 #define CPU_PC_SIZE(cpu) cpu? ((((cpu)->pc) >> 3) + ((((cpu)->pc) & 0x07) ? 1 : 0)): 0
 
-#define INST_HANDLER(OPCODE_NAME)	static void _inst__ ## OPCODE_NAME (RAnal *anal, RAnalOp *op, const ut8 *buf, int len, int *fail, CPU_MODEL *cpu)
+#define INST_HANDLER(OPCODE_NAME)	static void _inst__ ## OPCODE_NAME (RArchSession *as, RAnalOp *op, const ut8 *buf, int len, int *fail, CPU_MODEL *cpu)
 #define INST_DECL(OP, M, SL, C, SZ, T)	{ #OP, (M), (SL), _inst__ ## OP, (C), (SZ), R_ANAL_OP_TYPE_ ## T }
 #define INST_LAST			{ "unknown", 0, 0, (void *) 0, 2, 1, R_ANAL_OP_TYPE_UNK }
 
-#define INST_CALL(OPCODE_NAME)		_inst__ ## OPCODE_NAME (anal, op, buf, len, fail, cpu)
+#define INST_CALL(OPCODE_NAME)		_inst__ ## OPCODE_NAME (as, op, buf, len, fail, cpu)
 #define INST_INVALID			{ *fail = 1; return; }
 #define INST_ASSERT(x)			{ if (!(x)) { INST_INVALID; } }
 
@@ -587,7 +583,7 @@ INST_HANDLER (cpse) {	// CPSE Rd, Rr
 
 	// calculate next instruction size (call recursively avr_op_analyze)
 	// and free next_op's esil string (we dont need it now)
-	avr_op_analyze (anal,
+	avr_op_analyze (as,
 			&next_op,
 			op->addr + op->size, buf + op->size, len - op->size,
 			cpu);
@@ -630,9 +626,9 @@ INST_HANDLER (eijmp) {	// EIJMP
 	ut64 z = 0;
 	ut64 eind = 0;
 	// read z and eind for calculating jump address on runtime
-	if (anal->esil) {
-		r_esil_reg_read (anal->esil, "z",    &z,    NULL);
-		r_esil_reg_read (anal->esil, "eind", &eind, NULL);
+	if (as->arch->esil) {
+		r_esil_reg_read (as->arch->esil, "z",    &z,    NULL);
+		r_esil_reg_read (as->arch->esil, "eind", &eind, NULL);
 	}
 	// real target address may change during execution, so this value will
 	// be changing all the time
@@ -728,8 +724,8 @@ INST_HANDLER (fmulsu) {	// FMULSU Rd, Rr
 INST_HANDLER (ijmp) {	// IJMP k
 	ut64 z = 0;
 	// read z for calculating jump address on runtime
-	if (anal->esil) {
-		r_esil_reg_read (anal->esil, "z", &z, NULL);
+	if (as->arch->esil) {
+		r_esil_reg_read (as->arch->esil, "z", &z, NULL);
 	}
 	// real target address may change during execution, so this value will
 	// be changing all the time
@@ -1308,7 +1304,7 @@ INST_HANDLER (sbix) {	// SBIC A, b
 
 	// calculate next instruction size (call recursively avr_op_analyze)
 	// and free next_op's esil string (we dont need it now)
-	avr_op_analyze (anal,
+	avr_op_analyze (as,
 			&next_op,
 			op->addr + op->size, buf + op->size,
 			len - op->size,
@@ -1360,7 +1356,7 @@ INST_HANDLER (sbrx) {	// SBRC Rr, b
 
 	// calculate next instruction size (call recursively avr_op_analyze)
 	// and free next_op's esil string (we dont need it now)
-	avr_op_analyze (anal,
+	avr_op_analyze (as,
 			&next_op,
 			op->addr + op->size, buf + op->size, len - op->size,
 			cpu);
@@ -1389,8 +1385,8 @@ INST_HANDLER (spm) { // SPM Z+
 	ut64 spmcsr = 0;
 
 	// read SPM Control Register (SPMCR)
-	if (anal->esil) {
-		r_esil_reg_read (anal->esil, "spmcsr", &spmcsr, NULL);
+	if (as->arch->esil) {
+		r_esil_reg_read (as->arch->esil, "spmcsr", &spmcsr, NULL);
 	}
 
 	// clear SPMCSR
@@ -1617,7 +1613,7 @@ static void set_invalid_op(RAnalOp *op, ut64 addr) {
 	r_strbuf_set (&op->esil, "1,$");
 }
 
-static OPCODE_DESC* avr_op_analyze(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, CPU_MODEL *cpu) {
+static OPCODE_DESC* avr_op_analyze(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, int len, CPU_MODEL *cpu) {
 	OPCODE_DESC *opcode_desc;
 	if (len < 2) {
 		return NULL;
@@ -1644,7 +1640,7 @@ static OPCODE_DESC* avr_op_analyze(RAnal *anal, RAnalOp *op, ut64 addr, const ut
 			r_strbuf_setf (&op->esil, "%s", "");
 
 			// handle opcode
-			opcode_desc->handler (anal, op, buf, len, &fail, cpu);
+			opcode_desc->handler (as, op, buf, len, &fail, cpu);
 			if (fail) {
 				goto INVALID_OP;
 			}
@@ -1692,14 +1688,31 @@ INVALID_OP:
 	return NULL;
 }
 
+static bool encode(RArchSession *as, RAnalOp *op, RArchEncodeMask mask) {
+	ut8 outbuf[4];
+
+	int size = avr_encode (as, op->addr, op->mnemonic, outbuf);
+	const bool is_valid = size > 0;
+	if (is_valid) {
+		free (op->bytes);
+		op->bytes = r_mem_dup (outbuf, size);
+		op->size = size;
+	}
+
+	return is_valid;
+}
+
 //TODO: remove register analysis comment when each avr cpu will be implemented in asm plugin
-static int avr_op (RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
+static bool decode(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
+	const ut64 addr = op->addr;
+	const ut8 *buf = op->bytes;
+	const int len = op->size;
 	const int mnemonic_len = 32;
 	op->mnemonic = calloc (mnemonic_len, 1);
 
 	set_invalid_op (op, addr);
 
-	int size = avr_anal (anal, op->mnemonic, mnemonic_len, addr, buf, len);
+	int size = avr_anal (as, op->mnemonic, mnemonic_len, addr, buf, len);
 
 	if (!strcmp (op->mnemonic, "invalid") || !strcmp (op->mnemonic, "truncated")) {
 		op->eob = true;
@@ -1708,27 +1721,27 @@ static int avr_op (RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 	}
 
 	// select cpu info
-	CPU_MODEL *cpu = get_cpu_model (anal->config->cpu);
+	CPU_MODEL *cpu = get_cpu_model (as->config->cpu);
 
 	// set memory layout registers
-	if (anal->esil) {
+	if (as->arch->esil) {
 		ut64 offset = 0;
-		r_esil_reg_write (anal->esil, "_prog", offset);
+		r_esil_reg_write (as->arch->esil, "_prog", offset);
 
 		offset += (1ULL << (cpu ? cpu->pc: 8));
-		r_esil_reg_write (anal->esil, "_io", offset);
+		r_esil_reg_write (as->arch->esil, "_io", offset);
 
 		offset += const_get_value (const_by_name (cpu, CPU_CONST_PARAM, "sram_start"));
-		r_esil_reg_write (anal->esil, "_sram", offset);
+		r_esil_reg_write (as->arch->esil, "_sram", offset);
 
 		offset += const_get_value (const_by_name (cpu, CPU_CONST_PARAM, "sram_size"));
-		r_esil_reg_write (anal->esil, "_eeprom", offset);
+		r_esil_reg_write (as->arch->esil, "_eeprom", offset);
 
 		offset += const_get_value (const_by_name (cpu, CPU_CONST_PARAM, "eeprom_size"));
-		r_esil_reg_write (anal->esil, "_page", offset);
+		r_esil_reg_write (as->arch->esil, "_page", offset);
 	}
 	// process opcode
-	avr_op_analyze (anal, op, addr, buf, len, cpu);
+	avr_op_analyze (as, op, addr, buf, len, cpu);
 
 	op->size = size;
 	if (op->size <= 0) {
@@ -1741,7 +1754,7 @@ static int avr_op (RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 static bool avr_custom_des(REsil *esil) {
 	ut64 key, encrypt, text,des_round;
 	ut32 key_lo, key_hi, buf_lo, buf_hi;
-	if (!esil || !esil->anal || !esil->anal->reg) {
+	if (!esil) {
 		return false;
 	}
 	if (!__esil_pop_argument (esil, &des_round)) {
@@ -1789,14 +1802,13 @@ static bool avr_custom_des(REsil *esil) {
 
 // ESIL operation SPM_PAGE_ERASE
 static bool avr_custom_spm_page_erase(REsil *esil) {
-	ut64 addr, i;
-
 	// sanity check
-	if (!esil || !esil->anal || !esil->anal->reg) {
+	if (!esil || !esil->anal) {
 		return false;
 	}
 
 	// get target address
+	ut64 addr;
 	if (!__esil_pop_argument(esil, &addr)) {
 		return false;
 	}
@@ -1811,6 +1823,7 @@ static bool avr_custom_spm_page_erase(REsil *esil) {
 	// perform erase
 	//eprintf ("SPM_PAGE_ERASE %ld bytes @ 0x%08" PFMT64x ".\n", page_size, addr);
 	ut8 c = 0xff;
+	ut64 i;
 	for (i = 0; i < (1ULL << page_size_bits); i++) {
 		r_esil_mem_write (
 			esil, (addr + i) & CPU_PC_MASK (cpu), &c, 1);
@@ -1825,7 +1838,7 @@ static bool avr_custom_spm_page_fill(REsil *esil) {
 	ut8 r0, r1;
 
 	// sanity check
-	if (!esil || !esil->anal || !esil->anal->reg) {
+	if (!esil || !esil->anal) {
 		return false;
 	}
 
@@ -1866,7 +1879,7 @@ static bool avr_custom_spm_page_write(REsil *esil) {
 	ut64 addr, page_size_bits, tmp_page;
 
 	// sanity check
-	if (!esil || !esil->anal || !esil->anal->reg) {
+	if (!esil || !esil->anal) {
 		return false;
 	}
 
@@ -1896,13 +1909,13 @@ static bool avr_custom_spm_page_write(REsil *esil) {
 }
 
 static bool esil_avr_hook_reg_write(REsil *esil, const char *name, ut64 *val) {
-	// r_return_val_if_fail (esil && esil->anal, false);
-	if (!esil || !esil->anal) {
+	RArchSession *as = R_UNWRAP4 (esil, anal, arch, session);
+	if (!as) {
 		return false;
 	}
 
 	// select cpu info
-	CPU_MODEL *cpu = get_cpu_model (esil->anal->config->cpu);
+	CPU_MODEL *cpu = get_cpu_model (as->config->cpu);
 
 	// crop registers and force certain values
 	if (!strcmp (name, "pc")) {
@@ -1919,10 +1932,9 @@ static bool esil_avr_hook_reg_write(REsil *esil, const char *name, ut64 *val) {
 	return false;
 }
 
-static int esil_avr_init(REsil *esil) {
-	if (!esil) {
-		return false;
-	}
+static bool esil_avr_init(REsil *esil) {
+	r_return_val_if_fail (esil, false);
+
 	desctx.round = 0;
 	r_esil_set_op (esil, "des", avr_custom_des, 0, 0, R_ESIL_OP_TYPE_CUSTOM);		//better meta info plz
 	r_esil_set_op (esil, "SPM_PAGE_ERASE", avr_custom_spm_page_erase, 0, 0, R_ESIL_OP_TYPE_CUSTOM);
@@ -1932,12 +1944,12 @@ static int esil_avr_init(REsil *esil) {
 	return true;
 }
 
-static int esil_avr_fini(REsil *esil) {
+static bool esil_avr_fini(REsil *esil) {
 	return true;
 }
 
-static bool set_reg_profile(RAnal *anal) {
-	char *registers_profile = strdup (
+static char *regs(RArchSession *as) {
+	const char *registers_profile =
 		"=PC	pcl\n"
 		"=SN	r24\n"
 		"=SP	sp\n"
@@ -2067,10 +2079,9 @@ static bool set_reg_profile(RAnal *anal) {
 		// other important MCU registers
 		//	spmcsr/spmcr
 		//		Store Program Memory Control and Status Register (SPMCSR)
-		"gpr    spmcsr  .8      64      0\n"
-	);
+		"gpr    spmcsr  .8      64      0\n";
 
-	if (!strcmp (r_str_get (anal->config->cpu), "ATmega328p")) {
+	if (!strcmp (r_str_get (as->config->cpu), "ATmega328p")) {
 		const char *section_two =
 			"gpr		pinb	.8		65		0\n"
 			"gpr		pinb0	.8		66		0\n"
@@ -2275,16 +2286,13 @@ static bool set_reg_profile(RAnal *anal) {
 			;
 		RStrBuf *sb = r_strbuf_new (registers_profile);
 		r_strbuf_append (sb, section_two);
-		free (registers_profile);
-		registers_profile = r_strbuf_drain (sb);
+		return r_strbuf_drain (sb);
 	}
 
-	int status = r_reg_set_profile_string (anal->reg, registers_profile);
-	free (registers_profile);
-	return status;
+	return strdup (registers_profile);
 }
 
-static int archinfo(RAnal *anal, int q) {
+static int info(RArchSession *as, ut32 q) {
 	if (q == R_ANAL_ARCHINFO_ALIGN) {
 		return 2;
 	}
@@ -2297,7 +2305,9 @@ static int archinfo(RAnal *anal, int q) {
 	return 2; // XXX
 }
 
-static ut8 *anal_mask_avr(RAnal *anal, int size, const ut8 *data, ut64 at) {
+#if 0
+// made obsolete by "e anal.mask = true"
+static ut8 *anal_mask_avr(RArchSession *as, int size, const ut8 *data, ut64 at) {
 	RAnalOp *op = NULL;
 	ut8 *ret = NULL;
 	int idx;
@@ -2313,10 +2323,10 @@ static ut8 *anal_mask_avr(RAnal *anal, int size, const ut8 *data, ut64 at) {
 
 	memset (ret, 0xff, size);
 
-	CPU_MODEL *cpu = get_cpu_model (anal->config->cpu);
+	CPU_MODEL *cpu = get_cpu_model (as->config->cpu);
 
 	for (idx = 0; idx + 1 < size; idx += op->size) {
-		OPCODE_DESC* opcode_desc = avr_op_analyze (anal, op, at + idx, data + idx, size - idx, cpu);
+		OPCODE_DESC* opcode_desc = avr_op_analyze (as, op, at + idx, data + idx, size - idx, cpu);
 
 		if (op->size < 1) {
 			break;
@@ -2343,22 +2353,39 @@ static ut8 *anal_mask_avr(RAnal *anal, int size, const ut8 *data, ut64 at) {
 
 	return ret;
 }
+#endif
 
-RAnalPlugin r_anal_plugin_avr = {
-	.name = "avr",
-	.desc = "AVR code analysis plugin",
-	.license = "LGPL3",
+static bool esil_cb(RArchSession *as, RArchEsilAction action) {
+	REsil *esil = as->arch->esil;
+	if (!esil) {
+		return false;
+	}
+
+	switch (action) {
+	case R_ARCH_ESIL_INIT:
+		return esil_avr_init (esil);
+	case R_ARCH_ESIL_FINI:
+		return esil_avr_fini (esil);
+	default:
+		return false;
+	}
+	return true;
+}
+
+RArchPlugin r_arch_plugin_avr = {
+	.meta = {
+		.name = "avr",
+		.desc = "AVR code analysis plugin",
+		.license = "LGPL3",
+	},
 	.arch = "avr",
-	.esil = true,
-	.archinfo = archinfo,
+	.info = info,
 	.endian = R_SYS_ENDIAN_LITTLE | R_SYS_ENDIAN_BIG,
-	.bits = 8 | 16, // 24 big regs conflicts
-	.op = &avr_op,
-	.opasm = &avr_encode,
-	.set_reg_profile = &set_reg_profile,
-	.esil_init = esil_avr_init,
-	.esil_fini = esil_avr_fini,
-	.anal_mask = anal_mask_avr,
+	.bits = R_SYS_BITS_PACK2 (8, 16), // 24 big regs conflicts
+	.decode = decode,
+	.encode = encode,
+	.regs = regs,
+	.esilcb = esil_cb,
 	.cpus =
 		"ATmega8," // First one is default
 		"ATmega1280,"
@@ -2376,8 +2403,8 @@ RAnalPlugin r_anal_plugin_avr = {
 
 #ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_ANAL,
-	.data = &r_anal_plugin_avr,
+	.type = R_LIB_TYPE_ARCH,
+	.data = &r_arch_plugin_avr,
 	.version = R2_VERSION
 };
 #endif

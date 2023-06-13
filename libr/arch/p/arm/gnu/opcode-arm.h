@@ -351,6 +351,12 @@ typedef struct
   ((CPU).core[0] == ((arm_feature_set)ARM_ANY).core[0] \
    && (CPU).core[1] == ((arm_feature_set)ARM_ANY).core[1])
 
+/* Given a bfd_mach_arm_XXX value, this function fills in the fields
+   of the supplied arm_feature_set structure with bitmasks indicating
+   the support base architectures and coprocessor extensions.
+
+   FIXME: This could more efficiently implemented as a constant array,
+   although it would also be less robust.  */
 #define ARM_MERGE_FEATURE_SETS(TARG,F1,F2)	\
   do {						\
     (TARG).core[0] = (F1).core[0] | (F2).core[0];\

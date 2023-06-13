@@ -305,7 +305,7 @@ Radare anal ESIL code example
 ==============================
 
 As an example implementation of ESIL analysis for the AVR family of
-microcontrollers there is a `avr_op` function in `/libr/anal/p/anal_avr.c`
+microcontrollers there is a `avr_op` function in `/libr/arch/p/avr/plugin.c`
 which contains information on how the instructions are expressed in ESIL and
 other opcode information such as cycle counts per instruction:
 

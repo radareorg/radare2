@@ -182,9 +182,34 @@ R_API void r_esil_free(REsil *esil) {
 	if (!esil) {
 		return;
 	}
+
+	// Try arch esil fini cb first, then anal as fallback
+	bool invoked_esil_cb = false;
+	RArchSession *as = R_UNWRAP4 (esil, anal, arch, session);
+	if (as) {
+		RArchPluginEsilCallback esil_cb = R_UNWRAP3 (as, plugin, esilcb);
+		if (esil_cb) {
+			if (!esil_cb (as, R_ARCH_ESIL_FINI)) {
+				R_LOG_WARN ("Failed to properly cleanup esil for arch plugin");
+			}
+		}
+
+		invoked_esil_cb = !!esil_cb;
+	}
+
+	// XXX potentially move this code back to after freeing esil->stack
+	if (!invoked_esil_cb && esil->anal && esil->anal->cur && esil->anal->cur->esil_fini) {
+		esil->anal->cur->esil_fini (esil);
+	}
+
 	if (esil->anal && esil == esil->anal->esil) {
 		esil->anal->esil = NULL;
 	}
+
+	if (as && esil == esil->anal->arch->esil) {
+		esil->anal->arch->esil = NULL;
+	}
+
 	r_esil_plugins_fini (esil);
 	r_esil_handlers_fini (esil);
 	ht_pp_free (esil->ops);
@@ -192,9 +217,7 @@ R_API void r_esil_free(REsil *esil) {
 	free (esil->pending);
 	r_esil_stack_free (esil);
 	free (esil->stack);
-	if (esil->anal && esil->anal->cur && esil->anal->cur->esil_fini) {
-		esil->anal->cur->esil_fini (esil);
-	}
+
 	r_esil_trace_free (esil->trace);
 	free (esil->cmd_intr);
 	free (esil->cmd_trap);
@@ -4001,6 +4024,16 @@ R_API bool r_esil_setup(REsil *esil, RAnal *anal, int romem, int stats, int nonu
 	r_esil_stats (esil, stats);
 	r_esil_setup_macros (esil);
 	r_esil_setup_ops (esil);
+
+	// Try arch esil init cb first, then anal as fallback
+	RArchSession *as = R_UNWRAP3 (anal, arch, session);
+	if (as) {
+		anal->arch->esil = esil;
+		RArchPluginEsilCallback esil_cb = R_UNWRAP3 (as, plugin, esilcb);
+		if (esil_cb) {
+			return esil_cb (as, R_ARCH_ESIL_INIT);
+		}
+	}
 
 	return (anal->cur && anal->cur->esil_init)
 		? anal->cur->esil_init (esil): true;
