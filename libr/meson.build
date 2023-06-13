@@ -156,13 +156,13 @@ if no_user_plugins
 anal_plugins += [
   '8051',
   'arm_cs',
-  'avr',
   'dalvik',
   'mips_cs',
   'x86_cs',
 ]
 
 arch_plugins += [
+  'avr',
   'java',
   'chip8',
   'wasm',
