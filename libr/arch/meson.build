@@ -143,7 +143,8 @@ r_arch_sources = [
   'p/pyc/opcode.c',
   'p/pyc/pyc_dis.c',
   'p/i8080/i8080.c',
-  'p/i8080/plugin.c'
+  'p/i8080/plugin.c',
+  'p/gb/plugin.c',
 ]
 
 if arch_plugins.contains('x86_nz')

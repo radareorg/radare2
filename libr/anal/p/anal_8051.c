@@ -722,7 +722,7 @@ static void analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf) {
 	}
 }
 
-static REsilCallbacks ocbs = {0};
+static R_TH_LOCAL REsilCallbacks ocbs = {0};
 
 #if 0
 // custom reg read/write temporarily disabled - see r2 issue #9242

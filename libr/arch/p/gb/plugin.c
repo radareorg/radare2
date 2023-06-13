@@ -1,23 +1,23 @@
 /* radare - LGPL - Copyright 2012-2023 - pancake, condret */
 
-#include <r_anal.h>
-#include "gb/gbdis.c"
-#include "gb/gbasm.c"
-#include "gb/gb_makros.h"
-#include "gb/meta_gb_cmt.c"
-#include "gb/gb_makros.h"
-#include "gb/gb.h"
+#include <r_arch.h>
+#include "./gbdis.c"
+#include "./gbasm.c"
+#include "./gb_makros.h"
+#include "./meta_gb_cmt.c"
+#include "./gb_makros.h"
+#include "./gb.h"
 
 static const char * const regs_1[] = { "Z", "N", "H", "C" };
-static const char * const regs_8[] = { "b", "c", "d", "e", "h", "l", "a", "a" }; //deprecate this and rename regs_x
+static const char * const regs_8[] = { "b", "c", "d", "e", "h", "l", "a", "a" }; // R2_590: deprecate this and rename regs_x
 static const char * const regs_x[] = { "b", "c", "d", "e", "h", "l", "hl", "a" };
 static const char * const regs_16[] = { "bc", "de", "hl", "sp" };
 static const char * const regs_16_alt[] = { "bc", "de", "hl", "af" };
 
-static ut8 gb_op_calljump(RAnal *a, RAnalOp *op, const ut8 *data, ut64 addr) {
+static ut8 gb_op_calljump(RArchSession *a, RAnalOp *op, const ut8 *data, ut64 addr) {
 	if (GB_IS_RAM_DST (data[1],data[2])) {
 		op->jump = GB_SOFTCAST (data[1], data[2]);
-		r_meta_set_string (a, R_META_TYPE_COMMENT, addr, "--> unpredictable");
+		// XXX r_meta_set_string (a, R_META_TYPE_COMMENT, addr, "--> unpredictable");
 		return false;
 	}
 	if (!GB_IS_VBANK_DST (data[1], data[2])) {
@@ -106,7 +106,7 @@ static inline void gb_anal_esil_jmp(RAnalOp *op) {
 	r_strbuf_setf (&op->esil, "0x%"PFMT64x",pc,:=", (op->jump & 0xffff));
 }
 
-static inline void gb_anal_jmp_hl(RReg *reg, RAnalOp *op) {
+static inline void gb_anal_jmp_hl(RAnalOp *op) {
 	RAnalValue *dst, *src;
 	dst = r_vector_push (&op->dsts, NULL);
 	src = r_vector_push (&op->srcs, NULL);
@@ -115,7 +115,7 @@ static inline void gb_anal_jmp_hl(RReg *reg, RAnalOp *op) {
 	r_strbuf_set (&op->esil, "hl,pc,:=");
 }
 
-static inline void gb_anal_id(RAnal *anal, RAnalOp *op, const ut8 data) {
+static inline void gb_anal_id(RArchSession *as, RAnalOp *op, const ut8 data) {
 	RAnalValue *dst, *src;
 	dst = r_vector_push (&op->dsts, NULL);
 	src = r_vector_push (&op->srcs, NULL);
@@ -148,7 +148,7 @@ static inline void gb_anal_id(RAnal *anal, RAnalOp *op, const ut8 data) {
 	}
 }
 
-static inline void gb_anal_add_hl(RReg *reg, RAnalOp *op, const ut8 data) {
+static inline void gb_anal_add_hl(RAnalOp *op, const ut8 data) {
 	RAnalValue *dst, *src;
 	dst = r_vector_push (&op->dsts, NULL);
 	src = r_vector_push (&op->srcs, NULL);
@@ -157,7 +157,7 @@ static inline void gb_anal_add_hl(RReg *reg, RAnalOp *op, const ut8 data) {
 	r_strbuf_setf (&op->esil, "%s,hl,+=,0,N,:=", regs_16[((data & 0xf0)>>4)]);	//hl+=<reg>,N=0
 }
 
-static inline void gb_anal_add_sp(RReg *reg, RAnalOp *op, const ut8 data) {
+static inline void gb_anal_add_sp(RAnalOp *op, const ut8 data) {
 	RAnalValue *dst, *src;
 	dst = r_vector_push (&op->dsts, NULL);
 	src = r_vector_push (&op->srcs, NULL);
@@ -191,7 +191,7 @@ static void gb_anal_mov_imm(RAnalOp *op, const ut8 *data) {
 	op->val = src->imm;
 }
 
-static inline void gb_anal_mov_sp_hl(RReg *reg, RAnalOp *op) {
+static inline void gb_anal_mov_sp_hl(RAnalOp *op) {
 	RAnalValue *dst, *src;
 	dst = r_vector_push (&op->dsts, NULL);
 	src = r_vector_push (&op->srcs, NULL);
@@ -200,7 +200,7 @@ static inline void gb_anal_mov_sp_hl(RReg *reg, RAnalOp *op) {
 	r_strbuf_set (&op->esil, "hl,sp,=");
 }
 
-static inline void gb_anal_mov_hl_sp(RReg *reg, RAnalOp *op, const ut8 data) {
+static inline void gb_anal_mov_hl_sp(RAnalOp *op, const ut8 data) {
 	RAnalValue *dst, *src0, *src1;
 	dst = r_vector_push (&op->dsts, NULL);
 	src0 = r_vector_push (&op->srcs, NULL);
@@ -217,7 +217,7 @@ static inline void gb_anal_mov_hl_sp(RReg *reg, RAnalOp *op, const ut8 data) {
 	r_strbuf_append (&op->esil, ",0,Z,=,0,N,:=");
 }
 
-static void gb_anal_mov_reg(RReg *reg, RAnalOp *op, const ut8 data) {
+static void gb_anal_mov_reg(RAnalOp *op, const ut8 data) {
 	RAnalValue *dst, *src;
 	dst = r_vector_push (&op->dsts, NULL);
 	src = r_vector_push (&op->srcs, NULL);
@@ -226,7 +226,7 @@ static void gb_anal_mov_reg(RReg *reg, RAnalOp *op, const ut8 data) {
 	r_strbuf_setf (&op->esil, "%s,%s,=", regs_8[data & 7], regs_8[(data/8) - 8]);
 }
 
-static inline void gb_anal_mov_ime(RReg *reg, RAnalOp *op, const ut8 data) {
+static inline void gb_anal_mov_ime(RAnalOp *op, const ut8 data) {
 	RAnalValue *dst, *src;
 	dst = r_vector_push (&op->dsts, NULL);
 	src = r_vector_push (&op->srcs, NULL);
@@ -239,7 +239,7 @@ static inline void gb_anal_mov_ime(RReg *reg, RAnalOp *op, const ut8 data) {
 	}
 }
 
-static inline void gb_anal_mov_scf(RReg *reg, RAnalOp *op) {
+static inline void gb_anal_mov_scf(RAnalOp *op) {
 	RAnalValue *dst, *src;
 	dst = r_vector_push (&op->dsts, NULL);
 	src = r_vector_push (&op->srcs, NULL);
@@ -248,7 +248,7 @@ static inline void gb_anal_mov_scf(RReg *reg, RAnalOp *op) {
 	r_strbuf_set (&op->esil, "1,C,:=");
 }
 
-static inline void gb_anal_xor_cpl(RReg *reg, RAnalOp *op) {
+static inline void gb_anal_xor_cpl(RAnalOp *op) {
 	RAnalValue *dst, *src;
 	dst = r_vector_push (&op->dsts, NULL);
 	src = r_vector_push (&op->srcs, NULL);
@@ -257,7 +257,7 @@ static inline void gb_anal_xor_cpl(RReg *reg, RAnalOp *op) {
 	r_strbuf_set (&op->esil, "0xff,a,^=,1,N,:=,1,H,:=");
 }
 
-static inline void gb_anal_xor_ccf(RReg *reg, RAnalOp *op) {
+static inline void gb_anal_xor_ccf(RAnalOp *op) {
 	RAnalValue *dst, *src;
 	dst = r_vector_push (&op->dsts, NULL);
 	src = r_vector_push (&op->srcs, NULL);
@@ -266,7 +266,7 @@ static inline void gb_anal_xor_ccf(RReg *reg, RAnalOp *op) {
 	r_strbuf_set (&op->esil, "C,!=");
 }
 
-static inline void gb_anal_cond(RReg *reg, RAnalOp *op, const ut8 data) {
+static inline void gb_anal_cond(RAnalOp *op, const ut8 data) {
 	RAnalValue *dst, *src;
 	dst = r_vector_push (&op->dsts, NULL);
 	src = r_vector_push (&op->srcs, NULL);
@@ -292,7 +292,7 @@ static inline void gb_anal_cond(RReg *reg, RAnalOp *op, const ut8 data) {
 	}
 }
 
-static inline void gb_anal_pp(RReg *reg, RAnalOp *op, const ut8 data) {//push , pop
+static inline void gb_anal_pp(RAnalOp *op, const ut8 data) {//push , pop
 	RAnalValue val = {0};
 	val.reg = regs_16_alt[(data>>4) - 12];
 	if ((data & 0xf) == 1) {
@@ -304,7 +304,7 @@ static inline void gb_anal_pp(RReg *reg, RAnalOp *op, const ut8 data) {//push , 
 	}
 }
 
-static inline void gb_anal_and_res(RAnal *anal, RAnalOp *op, const ut8 data) {
+static inline void gb_anal_and_res(RAnalOp *op, const ut8 data) {
 	RAnalValue *dst, *src;
 	dst = r_vector_push (&op->dsts, NULL);
 	src = r_vector_push (&op->srcs, NULL);
@@ -318,7 +318,7 @@ static inline void gb_anal_and_res(RAnal *anal, RAnalOp *op, const ut8 data) {
 	}
 }
 
-static inline void gb_anal_and_bit(RReg *reg, RAnalOp *op, const ut8 data) {
+static inline void gb_anal_and_bit(RAnalOp *op, const ut8 data) {
 	RAnalValue *dst, *src;
 	dst = r_vector_push (&op->dsts, NULL);
 	src = r_vector_push (&op->srcs, NULL);
@@ -332,7 +332,7 @@ static inline void gb_anal_and_bit(RReg *reg, RAnalOp *op, const ut8 data) {
 	}
 }
 
-static inline void gb_anal_or_set(RAnal *anal, RAnalOp *op, const ut8 data) {
+static inline void gb_anal_or_set(RAnalOp *op, const ut8 data) {
 	RAnalValue *dst, *src;
 	dst = r_vector_push (&op->dsts, NULL);
 	src = r_vector_push (&op->srcs, NULL);
@@ -346,7 +346,7 @@ static inline void gb_anal_or_set(RAnal *anal, RAnalOp *op, const ut8 data) {
 	}
 }
 
-static void gb_anal_xoaasc(RReg *reg, RAnalOp *op, const ut8 *data) {
+static void gb_anal_xoaasc(RAnalOp *op, const ut8 *data) {
 	RAnalValue *dst, *src0, *src1;
 	dst = r_vector_push (&op->dsts, NULL);
 	src0 = r_vector_push (&op->srcs, NULL);
@@ -424,7 +424,7 @@ static void gb_anal_xoaasc(RReg *reg, RAnalOp *op, const ut8 *data) {
 }
 
 // xor , or, and, add, adc, sub, sbc, cp
-static void gb_anal_xoaasc_imm(RReg *reg, RAnalOp *op, const ut8 *data) {
+static void gb_anal_xoaasc_imm(RAnalOp *op, const ut8 *data) {
 	RAnalValue *dst, *src0, *src1;
 	dst = r_vector_push (&op->dsts, NULL);
 	src0 = r_vector_push (&op->srcs, NULL);
@@ -468,7 +468,7 @@ static void gb_anal_xoaasc_imm(RReg *reg, RAnalOp *op, const ut8 *data) {
 }
 
 // load with [hl] as memref
-static inline void gb_anal_load_hl(RReg *reg, RAnalOp *op, const ut8 data) {
+static inline void gb_anal_load_hl(RAnalOp *op, const ut8 data) {
 	RAnalValue *dst = r_vector_push (&op->dsts, NULL);
 	RAnalValue *src = r_vector_push (&op->srcs, NULL);
 	src->reg = "hl";
@@ -484,7 +484,7 @@ static inline void gb_anal_load_hl(RReg *reg, RAnalOp *op, const ut8 data) {
 	}
 }
 
-static inline void gb_anal_load(RReg *reg, RAnalOp *op, const ut8 *data) {
+static inline void gb_anal_load(RAnalOp *op, const ut8 *data) {
 	RAnalValue *dst, *src;
 	dst = r_vector_push (&op->dsts, NULL);
 	src = r_vector_push (&op->srcs, NULL);
@@ -518,7 +518,7 @@ static inline void gb_anal_load(RReg *reg, RAnalOp *op, const ut8 *data) {
 	}
 }
 
-static inline void gb_anal_store_hl(RReg *reg, RAnalOp *op, const ut8 *data) {
+static inline void gb_anal_store_hl(RAnalOp *op, const ut8 *data) {
 	RAnalValue *dst, *src;
 	dst = r_vector_push (&op->dsts, NULL);
 	src = r_vector_push (&op->srcs, NULL);
@@ -540,7 +540,7 @@ static inline void gb_anal_store_hl(RReg *reg, RAnalOp *op, const ut8 *data) {
 	}
 }
 
-static void gb_anal_store(RReg *reg, RAnalOp *op, const ut8 *data) {
+static void gb_anal_store(RAnalOp *op, const ut8 *data) {
 	RAnalValue *dst, *src;
 	dst = r_vector_push (&op->dsts, NULL);
 	src = r_vector_push (&op->srcs, NULL);
@@ -572,7 +572,7 @@ static void gb_anal_store(RReg *reg, RAnalOp *op, const ut8 *data) {
 	}
 }
 
-static inline void gb_anal_cb_swap(RReg *reg, RAnalOp* op, const ut8 data) {
+static inline void gb_anal_cb_swap(RAnalOp* op, const ut8 data) {
 	RAnalValue *dst, *src;
 	dst = r_vector_push (&op->dsts, NULL);
 	src = r_vector_push (&op->srcs, NULL);
@@ -586,7 +586,7 @@ static inline void gb_anal_cb_swap(RReg *reg, RAnalOp* op, const ut8 data) {
 	}
 }
 
-static inline void gb_anal_cb_rlc(RReg *reg, RAnalOp *op, const ut8 data) {
+static inline void gb_anal_cb_rlc(RAnalOp *op, const ut8 data) {
 	RAnalValue *dst, *src;
 	dst = r_vector_push (&op->dsts, NULL);
 	src = r_vector_push (&op->srcs, NULL);
@@ -600,7 +600,7 @@ static inline void gb_anal_cb_rlc(RReg *reg, RAnalOp *op, const ut8 data) {
 	}
 }
 
-static inline void gb_anal_cb_rl(RReg *reg, RAnalOp *op, const ut8 data) {
+static inline void gb_anal_cb_rl(RAnalOp *op, const ut8 data) {
 	RAnalValue *dst, *src;
 	dst = r_vector_push (&op->dsts, NULL);
 	src = r_vector_push (&op->srcs, NULL);
@@ -614,7 +614,7 @@ static inline void gb_anal_cb_rl(RReg *reg, RAnalOp *op, const ut8 data) {
 	}
 }
 
-static inline void gb_anal_cb_rrc(RReg *reg, RAnalOp *op, const ut8 data) {
+static inline void gb_anal_cb_rrc(RAnalOp *op, const ut8 data) {
 	RAnalValue *dst, *src;
 	dst = r_vector_push (&op->dsts, NULL);
 	src = r_vector_push (&op->srcs, NULL);
@@ -628,7 +628,7 @@ static inline void gb_anal_cb_rrc(RReg *reg, RAnalOp *op, const ut8 data) {
 	}
 }
 
-static inline void gb_anal_cb_rr(RReg *reg, RAnalOp *op, const ut8 data) {
+static inline void gb_anal_cb_rr(RAnalOp *op, const ut8 data) {
 	RAnalValue *dst, *src;
 	dst = r_vector_push (&op->dsts, NULL);
 	src = r_vector_push (&op->srcs, NULL);
@@ -642,7 +642,7 @@ static inline void gb_anal_cb_rr(RReg *reg, RAnalOp *op, const ut8 data) {
 	}
 }
 
-static inline void gb_anal_cb_sla(RReg *reg, RAnalOp *op, const ut8 data) {
+static inline void gb_anal_cb_sla(RAnalOp *op, const ut8 data) {
 	RAnalValue *dst, *src;
 	//sra+sla+srl in one function, like xoaasc
 	dst = r_vector_push (&op->dsts, NULL);
@@ -657,7 +657,7 @@ static inline void gb_anal_cb_sla(RReg *reg, RAnalOp *op, const ut8 data) {
 	}
 }
 
-static inline void gb_anal_cb_sra(RReg *reg, RAnalOp *op, const ut8 data) {
+static inline void gb_anal_cb_sra(RAnalOp *op, const ut8 data) {
 	RAnalValue *dst, *src;
 	dst = r_vector_push (&op->dsts, NULL);
 	src = r_vector_push (&op->srcs, NULL);
@@ -671,7 +671,7 @@ static inline void gb_anal_cb_sra(RReg *reg, RAnalOp *op, const ut8 data) {
 	}
 }
 
-static inline void gb_anal_cb_srl(RReg *reg, RAnalOp *op, const ut8 data) {
+static inline void gb_anal_cb_srl(RAnalOp *op, const ut8 data) {
 	RAnalValue *dst, *src;
 	dst = r_vector_push (&op->dsts, NULL);
 	src = r_vector_push (&op->srcs, NULL);
@@ -719,12 +719,15 @@ static bool gb_custom_daa(REsil *esil) {
 	return r_esil_pushnum (esil, val);
 }
 
-static int gb_anop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len, RAnalOpMask mask) {
+static bool decode(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
+	const ut64 addr = op->addr;
+	const ut8 *data = op->bytes;
+	const int len = op->size;
 	const int ilen = gbOpLength (gb_op[data[0]].type);
 	if (ilen > len) {
 		op->type = R_ANAL_OP_TYPE_ILL;
 		op->size = 0;
-		return 0;
+		return false;
 	}
 	if (mask & R_ARCH_OP_MASK_DISASM) {
 		gbDisass (op, data);
@@ -754,7 +757,7 @@ static int gb_anop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 			op->type = R_ANAL_OP_TYPE_MOV;
 			break;
 		case 0xf8:
-			gb_anal_mov_hl_sp (anal->reg, op, data[1]);
+			gb_anal_mov_hl_sp (op, data[1]);
 			op->cycles = 12;
 			op->type = R_ANAL_OP_TYPE_MOV;
 			op->type2 = R_ANAL_OP_TYPE_ADD;
@@ -771,7 +774,7 @@ static int gb_anop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 			op->type = R_ANAL_OP_TYPE_MOV;
 			break;
 		case 0xf9:
-			gb_anal_mov_sp_hl (anal->reg, op);
+			gb_anal_mov_sp_hl (op);
 			op->cycles = 8;
 			op->type = R_ANAL_OP_TYPE_MOV;		// LD
 			break;
@@ -781,7 +784,7 @@ static int gb_anop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 		case 0x33:
 			op->cycles = 8;
 			op->type = R_ANAL_OP_TYPE_ADD;
-			gb_anal_id (anal, op, data[0]);
+			gb_anal_id (as, op, data[0]);
 			break;
 		case 0x04:
 		case 0x0c:
@@ -792,29 +795,29 @@ static int gb_anop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 		case 0x3c:
 			op->cycles = 4;
 			op->type = R_ANAL_OP_TYPE_ADD;		// INC
-			gb_anal_id (anal, op, data[0]);
+			gb_anal_id (as, op, data[0]);
 			break;
 		case 0x34:
 			op->cycles = 12;
 			op->type = R_ANAL_OP_TYPE_ADD;
-			gb_anal_id (anal, op, data[0]);
+			gb_anal_id (as, op, data[0]);
 			break;
 		case 0xea:
-			meta_gb_bankswitch_cmt (anal, addr, GB_SOFTCAST (data[1], data[2]));
-			gb_anal_store (anal->reg, op, data);
+			meta_gb_bankswitch_cmt (as, addr, GB_SOFTCAST (data[1], data[2]));
+			gb_anal_store (op, data);
 			op->cycles = 16;
 			op->type = R_ANAL_OP_TYPE_STORE;
 			break;
 		case 0x08:
-			meta_gb_bankswitch_cmt (anal, addr, GB_SOFTCAST (data[1], data[2]));
-			gb_anal_store (anal->reg, op, data);
+			meta_gb_bankswitch_cmt (as, addr, GB_SOFTCAST (data[1], data[2]));
+			gb_anal_store (op, data);
 			op->cycles = 20;
 			op->type = R_ANAL_OP_TYPE_STORE;
 			break;
 		case 0x02:
 		case 0x12:
 		case 0xe2:
-			gb_anal_store (anal->reg, op, data);
+			gb_anal_store (op, data);
 			op->cycles = 8;
 			op->type = R_ANAL_OP_TYPE_STORE;
 			break;
@@ -828,12 +831,12 @@ static int gb_anop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 		case 0x74:
 		case 0x75:
 		case 0x77:
-			gb_anal_store_hl (anal->reg, op, data);
+			gb_anal_store_hl (op, data);
 			op->cycles = 8;
 			op->type = R_ANAL_OP_TYPE_STORE;	//LD
 			break;
 		case 0xe0:
-			gb_anal_store (anal->reg, op, data);
+			gb_anal_store (op, data);
 			op->cycles = 12;
 			op->type = R_ANAL_OP_TYPE_STORE;
 			break;
@@ -879,14 +882,14 @@ static int gb_anop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 		case 0x7b:
 		case 0x7c:
 		case 0x7d:
-			gb_anal_mov_reg (anal->reg, op, data[0]);
+			gb_anal_mov_reg (op, data[0]);
 			op->cycles = 4;
 			op->type = R_ANAL_OP_TYPE_MOV;		// LD
 			break;
 		case 0x0a:
 		case 0x1a:
 		case 0xf2:
-			gb_anal_load (anal->reg, op, data);
+			gb_anal_load (op, data);
 			op->cycles = 8;
 			op->type = R_ANAL_OP_TYPE_LOAD;
 			break;
@@ -899,17 +902,17 @@ static int gb_anop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 		case 0x66:
 		case 0x6e:
 		case 0x7e:
-			gb_anal_load_hl (anal->reg, op, data[0]);
+			gb_anal_load_hl (op, data[0]);
 			op->cycles = 8;
 			op->type = R_ANAL_OP_TYPE_LOAD;
 			break;
 		case 0xf0:
-			gb_anal_load (anal->reg, op, data);
+			gb_anal_load (op, data);
 			op->cycles = 12;
 			op->type = R_ANAL_OP_TYPE_LOAD;
 			break;
 		case 0xfa:
-			gb_anal_load (anal->reg, op, data);
+			gb_anal_load (op, data);
 			op->cycles = 16;
 			op->type = R_ANAL_OP_TYPE_LOAD;
 			break;
@@ -929,30 +932,30 @@ static int gb_anop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 		case 0x8f:
 			op->cycles = 4;
 			op->type = R_ANAL_OP_TYPE_ADD;
-			gb_anal_xoaasc (anal->reg, op, data);
+			gb_anal_xoaasc (op, data);
 			break;
 		case 0x09:
 		case 0x19:
 		case 0x29:
 		case 0x39:
-			gb_anal_add_hl (anal->reg, op, data[0]);
+			gb_anal_add_hl (op, data[0]);
 			op->cycles = 8;
 			op->type = R_ANAL_OP_TYPE_ADD;
 			break;
 		case 0x86:
 		case 0x8e:
 			op->type = R_ANAL_OP_TYPE_ADD;
-			gb_anal_xoaasc (anal->reg, op, data);
+			gb_anal_xoaasc (op, data);
 			op->cycles = 8;
 			break;
 		case 0xc6:
 		case 0xce:
 			op->cycles = 8;
 			op->type = R_ANAL_OP_TYPE_ADD;
-			gb_anal_xoaasc_imm (anal->reg, op, data);
+			gb_anal_xoaasc_imm (op, data);
 			break;
 		case 0xe8:
-			gb_anal_add_sp (anal->reg, op, data[1]);
+			gb_anal_add_sp (op, data[1]);
 			op->cycles = 16;
 			op->type = R_ANAL_OP_TYPE_ADD;
 			break;
@@ -972,19 +975,19 @@ static int gb_anop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 		case 0x9f:
 			op->cycles = 4;
 			op->type = R_ANAL_OP_TYPE_SUB;
-			gb_anal_xoaasc (anal->reg, op, data);
+			gb_anal_xoaasc (op, data);
 			break;
 		case 0x96:
 		case 0x9e:
 			op->type = R_ANAL_OP_TYPE_SUB;
-			gb_anal_xoaasc (anal->reg, op, data);
+			gb_anal_xoaasc (op, data);
 			op->cycles = 8;
 			break;
 		case 0xd6:
 		case 0xde:
 			op->cycles = 8;
 			op->type = R_ANAL_OP_TYPE_SUB;
-			gb_anal_xoaasc_imm (anal->reg, op, data);
+			gb_anal_xoaasc_imm (op, data);
 			break;
 		case 0xa0:
 		case 0xa1:
@@ -995,45 +998,45 @@ static int gb_anop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 		case 0xa7:
 			op->cycles = 4;
 			op->type = R_ANAL_OP_TYPE_AND;
-			gb_anal_xoaasc (anal->reg, op, data);
+			gb_anal_xoaasc (op, data);
 			break;
 		case 0xe6:
 			op->cycles = 8;
 			op->type = R_ANAL_OP_TYPE_AND;
-			gb_anal_xoaasc_imm (anal->reg, op, data);
+			gb_anal_xoaasc_imm (op, data);
 			break;
 		case 0xa6:
 			op->type = R_ANAL_OP_TYPE_AND;
-			gb_anal_xoaasc (anal->reg, op, data);
+			gb_anal_xoaasc (op, data);
 			op->cycles = 8;
 			break;
 		case 0x07:					//rlca
 			op->cycles = 4;
 			op->type = R_ANAL_OP_TYPE_ROL;
-			gb_anal_cb_rlc (anal->reg, op, 7);
+			gb_anal_cb_rlc (op, 7);
 			break;
 		case 0x17:					//rla
 			op->cycles = 4;
 			op->type = R_ANAL_OP_TYPE_ROL;
-			gb_anal_cb_rl (anal->reg, op, 7);
+			gb_anal_cb_rl (op, 7);
 			break;
 		case 0x0f:					//rrca
 			op->cycles = 4;
 			op->type = R_ANAL_OP_TYPE_ROR;
-			gb_anal_cb_rrc (anal->reg, op, 7);
+			gb_anal_cb_rrc (op, 7);
 			break;
 		case 0x1f:					//rra
 			op->cycles = 4;
 			op->type = R_ANAL_OP_TYPE_ROR;
-			gb_anal_cb_rr (anal->reg, op, 7);
+			gb_anal_cb_rr (op, 7);
 			break;
 		case 0x2f:
-			gb_anal_xor_cpl (anal->reg, op);	//cpl
+			gb_anal_xor_cpl (op);	//cpl
 			op->cycles = 4;
 			op->type = R_ANAL_OP_TYPE_XOR;
 			break;
 		case 0x3f:					//ccf
-			gb_anal_xor_ccf (anal->reg, op);
+			gb_anal_xor_ccf (op);
 			op->cycles = 4;
 			op->type = R_ANAL_OP_TYPE_XOR;
 			break;
@@ -1046,16 +1049,16 @@ static int gb_anop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 		case 0xaf:
 			op->cycles = 4;
 			op->type = R_ANAL_OP_TYPE_XOR;
-			gb_anal_xoaasc (anal->reg, op, data);
+			gb_anal_xoaasc (op, data);
 			break;
 		case 0xee:
 			op->cycles = 8;
 			op->type = R_ANAL_OP_TYPE_XOR;
-			gb_anal_xoaasc_imm (anal->reg, op, data);
+			gb_anal_xoaasc_imm (op, data);
 			break;
 		case 0xae:
 			op->type = R_ANAL_OP_TYPE_XOR;
-			gb_anal_xoaasc (anal->reg, op, data);
+			gb_anal_xoaasc (op, data);
 			op->cycles = 8;
 			break;
 		case 0xb0:
@@ -1067,16 +1070,16 @@ static int gb_anop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 		case 0xb7:
 			op->cycles = 4;
 			op->type = R_ANAL_OP_TYPE_OR;
-			gb_anal_xoaasc (anal->reg, op, data);
+			gb_anal_xoaasc (op, data);
 			break;
 		case 0xf6:
 			op->cycles = 8;
 			op->type = R_ANAL_OP_TYPE_OR;
-			gb_anal_xoaasc_imm (anal->reg, op, data);
+			gb_anal_xoaasc_imm (op, data);
 			break;
 		case 0xb6:
 			op->type = R_ANAL_OP_TYPE_OR;
-			gb_anal_xoaasc (anal->reg, op, data);
+			gb_anal_xoaasc (op, data);
 			op->cycles = 8;
 			break;
 		case 0xb8:
@@ -1088,23 +1091,23 @@ static int gb_anop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 		case 0xbf:
 			op->cycles = 4;
 			op->type = R_ANAL_OP_TYPE_CMP;
-			gb_anal_xoaasc (anal->reg, op, data);
+			gb_anal_xoaasc (op, data);
 			break;
 		case 0xfe:
 			op->cycles = 8;
 			op->type = R_ANAL_OP_TYPE_CMP;
-			gb_anal_xoaasc_imm (anal->reg, op, data);
+			gb_anal_xoaasc_imm (op, data);
 			break;
 		case 0xbe:
 			op->type = R_ANAL_OP_TYPE_CMP;
-			gb_anal_xoaasc (anal->reg, op, data);
+			gb_anal_xoaasc (op, data);
 			op->cycles = 8;
 			break;
 		case 0xc0:
 		case 0xc8:
 		case 0xd0:
 		case 0xd8:
-			gb_anal_cond (anal->reg, op, data[0]);
+			gb_anal_cond (op, data[0]);
 			gb_anal_esil_cret (op, data[0]);
 			op->eob = true;
 			op->cycles = 20;
@@ -1112,7 +1115,7 @@ static int gb_anop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 			op->type = R_ANAL_OP_TYPE_CRET;
 			break;
 		case 0xd9:
-			gb_anal_mov_ime (anal->reg, op, data[0]);
+			gb_anal_mov_ime (op, data[0]);
 			op->type2 = R_ANAL_OP_TYPE_MOV;
 		case 0xc9:
 			op->eob = true;
@@ -1128,7 +1131,7 @@ static int gb_anop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 		case 0x3b:
 			op->cycles = 8;
 			op->type = R_ANAL_OP_TYPE_SUB;
-			gb_anal_id (anal, op, data[0]);
+			gb_anal_id (as, op, data[0]);
 			break;
 		case 0x05:
 		case 0x0d:
@@ -1139,18 +1142,18 @@ static int gb_anop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 		case 0x3d:
 			op->cycles = 4;
 			op->type = R_ANAL_OP_TYPE_SUB;		// DEC
-			gb_anal_id (anal, op, data[0]);
+			gb_anal_id (as, op, data[0]);
 			break;
 		case 0x35:
 			op->cycles = 12;
 			op->type = R_ANAL_OP_TYPE_SUB;
-			gb_anal_id (anal, op, data[0]);
+			gb_anal_id (as, op, data[0]);
 			break;
 		case 0xc5:
 		case 0xd5:
 		case 0xe5:
 		case 0xf5:
-			gb_anal_pp (anal->reg, op, data[0]);
+			gb_anal_pp (op, data[0]);
 			op->cycles = 16;
 			op->stackop = R_ANAL_STACK_INC;
 			op->stackptr = 2;
@@ -1160,14 +1163,14 @@ static int gb_anop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 		case 0xd1:
 		case 0xe1:
 		case 0xf1:
-			gb_anal_pp (anal->reg, op, data[0]);
+			gb_anal_pp (op, data[0]);
 			op->cycles = 12;
 			op->stackop = R_ANAL_STACK_INC;
 			op->stackptr = -2;
 			op->type = R_ANAL_OP_TYPE_POP;
 			break;
 		case 0xc3:
-			if (gb_op_calljump (anal, op, data, addr)) {
+			if (gb_op_calljump (as, op, data, addr)) {
 				op->type = R_ANAL_OP_TYPE_JMP;
 				gb_anal_esil_jmp (op);
 			} else {
@@ -1189,7 +1192,7 @@ static int gb_anop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 		case 0x28:
 		case 0x30:
 		case 0x38:					//JR cond
-			gb_anal_cond (anal->reg, op, data[0]);
+			gb_anal_cond (op, data[0]);
 			op->jump = addr + ilen + (st8)data[1];
 			op->fail = addr + ilen;
 			gb_anal_esil_cjmp (op, data[0]);
@@ -1202,13 +1205,13 @@ static int gb_anop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 		case 0xca:
 		case 0xd2:
 		case 0xda:
-			if (gb_op_calljump (anal, op, data, addr)) {
+			if (gb_op_calljump (as, op, data, addr)) {
 				op->type = R_ANAL_OP_TYPE_CJMP;
 			} else {
 				op->type = R_ANAL_OP_TYPE_UCJMP;
 			}
 			op->eob = true;
-			gb_anal_cond (anal->reg, op, data[0]);
+			gb_anal_cond (op, data[0]);
 			gb_anal_esil_cjmp (op, data[0]);
 			op->cycles = 16;
 			op->failcycles = 12;
@@ -1218,7 +1221,7 @@ static int gb_anop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 			op->cycles = 4;
 			op->eob = true;
 			op->type = R_ANAL_OP_TYPE_UJMP;
-			gb_anal_jmp_hl (anal->reg, op);
+			gb_anal_jmp_hl (op);
 			break;
 		case 0x76:
 			op->type = R_ANAL_OP_TYPE_CJMP;
@@ -1229,7 +1232,7 @@ static int gb_anop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 			}
 			break;
 		case 0xcd:
-			if (gb_op_calljump (anal, op, data, addr)) {
+			if (gb_op_calljump (as, op, data, addr)) {
 				op->type = R_ANAL_OP_TYPE_CALL;
 			} else {
 				op->type = R_ANAL_OP_TYPE_UCALL;
@@ -1243,8 +1246,8 @@ static int gb_anop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 		case 0xcc:
 		case 0xd4:
 		case 0xdc:
-			gb_anal_cond (anal->reg, op, data[0]);
-			if (gb_op_calljump (anal, op, data, addr)) {
+			gb_anal_cond (op, data[0]);
+			if (gb_op_calljump (as, op, data, addr)) {
 				op->type = R_ANAL_OP_TYPE_CCALL;
 			} else {
 				op->type = R_ANAL_OP_TYPE_UCCALL;
@@ -1321,12 +1324,12 @@ static int gb_anop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 			break;
 		case 0xf3:				//di
 		case 0xfb:				//ei
-			gb_anal_mov_ime (anal->reg, op, data[0]);
+			gb_anal_mov_ime (op, data[0]);
 			op->cycles = 4;
 			op->type = R_ANAL_OP_TYPE_MOV;
 			break;
 		case 0x37:
-			gb_anal_mov_scf (anal->reg, op);
+			gb_anal_mov_scf (op);
 			op->cycles = 4;
 			op->type = R_ANAL_OP_TYPE_MOV;
 			break;
@@ -1350,7 +1353,7 @@ static int gb_anop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 						op->cycles = 8;
 					}
 					op->type = R_ANAL_OP_TYPE_ROL;
-					gb_anal_cb_rlc (anal->reg, op, data[1]);
+					gb_anal_cb_rlc (op, data[1]);
 					break;
 				case 1:
 					if ((data[1] & 7) == 6) {
@@ -1359,7 +1362,7 @@ static int gb_anop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 						op->cycles = 8;
 					}
 					op->type = R_ANAL_OP_TYPE_ROR;
-					gb_anal_cb_rrc (anal->reg, op, data[1]);
+					gb_anal_cb_rrc (op, data[1]);
 					break;
 				case 2:
 					if ((data[1] & 7) == 6) {
@@ -1368,7 +1371,7 @@ static int gb_anop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 						op->cycles = 8;
 					}
 					op->type = R_ANAL_OP_TYPE_ROL;
-					gb_anal_cb_rl (anal->reg, op, data[1]);
+					gb_anal_cb_rl (op, data[1]);
 					break;
 				case 3:
 					if ((data[1] & 7) == 6) {
@@ -1377,7 +1380,7 @@ static int gb_anop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 						op->cycles = 8;
 					}
 					op->type = R_ANAL_OP_TYPE_ROR;
-					gb_anal_cb_rr (anal->reg, op, data[1]);
+					gb_anal_cb_rr (op, data[1]);
 					break;
 				case 4:
 					if ((data[1] & 7) == 6) {
@@ -1386,7 +1389,7 @@ static int gb_anop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 						op->cycles = 8;
 					}
 					op->type = R_ANAL_OP_TYPE_SAL;
-					gb_anal_cb_sla (anal->reg, op, data[1]);
+					gb_anal_cb_sla (op, data[1]);
 					break;
 				case 6:
 					if ((data[1] & 7) == 6) {
@@ -1395,7 +1398,7 @@ static int gb_anop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 						op->cycles = 8;
 					}
 					op->type = R_ANAL_OP_TYPE_ROL;
-					gb_anal_cb_swap (anal->reg, op, data[1]);
+					gb_anal_cb_swap (op, data[1]);
 					break;
 				case 5:
 					if ((data[1] & 7) == 6) {
@@ -1404,7 +1407,7 @@ static int gb_anop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 						op->cycles = 8;
 					}
 					op->type = R_ANAL_OP_TYPE_SAR;
-					gb_anal_cb_sra (anal->reg, op, data[1]);
+					gb_anal_cb_sra (op, data[1]);
 					break;
 				case 7:
 					if ((data[1] & 7) == 6) {
@@ -1413,7 +1416,7 @@ static int gb_anop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 						op->cycles = 8;
 					}
 					op->type = R_ANAL_OP_TYPE_SHR;
-					gb_anal_cb_srl (anal->reg, op, data[1]);
+					gb_anal_cb_srl (op, data[1]);
 					break;
 				case 8:
 				case 9:
@@ -1429,7 +1432,7 @@ static int gb_anop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 						op->cycles = 8;
 					}
 					op->type = R_ANAL_OP_TYPE_ACMP;
-					gb_anal_and_bit (anal->reg, op, data[1]);
+					gb_anal_and_bit (op, data[1]);
 					break;			//bit
 				case 16:
 				case 17:
@@ -1444,7 +1447,7 @@ static int gb_anop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 					} else {
 						op->cycles = 8;
 					}
-					gb_anal_and_res (anal, op, data[1]);
+					gb_anal_and_res (op, data[1]);
 					op->type = R_ANAL_OP_TYPE_AND;
 					break;			//res
 				case 24:
@@ -1460,7 +1463,7 @@ static int gb_anop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 					} else {
 						op->cycles = 8;
 					}
-					gb_anal_or_set (anal, op, data[1]);
+					gb_anal_or_set (op, data[1]);
 					op->type = R_ANAL_OP_TYPE_OR;
 					break;			//set
 			}
@@ -1470,14 +1473,21 @@ static int gb_anop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 		op->stackop = R_ANAL_STACK_INC;
 		op->stackptr = 2;
 	}
-	return op->size;
+	return op->size > 0;
 }
 
-static int gb_opasm(RAnal *a, ut64 addr, const char *str, ut8 *outbuf, int outsize) {
-	if (outsize < 3) {
-		return 0;
+static bool encode(RArchSession *as, RAnalOp *op, RArchEncodeMask mask) {
+	ut8* outbuf = NULL;
+	int size = gbAsm (op->mnemonic, &outbuf);
+	if (size < 3) {
+		free (outbuf);
+		return false;
 	}
-	return gbAsm (str, outbuf);
+
+	free (op->bytes);
+	op->bytes = outbuf;
+	op->size = size;
+	return size > 0;
 }
 
 /*
@@ -1487,7 +1497,7 @@ static int gb_opasm(RAnal *a, ut64 addr, const char *str, ut8 *outbuf, int outsi
 	the mbc can be seen as a register but it isn't. For the Gameboy the mbc is invisble.
 */
 
-static bool set_reg_profile(RAnal *anal) {
+static char* regs(RArchSession *as) {
 	const char *p =
 		"=PC	mpc\n"
 		"=SP	sp\n"
@@ -1527,7 +1537,7 @@ static bool set_reg_profile(RAnal *anal) {
 		"gpr	mbcram	.16	16	0\n"
 
 		"gpr	ime	.1	18	0\n";
-	return r_reg_set_profile_string (anal->reg, p);
+	return strdup (p);
 }
 
 static int esil_gb_init(REsil *esil) {
@@ -1558,7 +1568,7 @@ static int esil_gb_fini(REsil *esil) {
 	return true;
 }
 
-static int archinfo(RAnal *anal, int q) {
+static int info(RArchSession *as, ut32 q) {
 	switch (q) {
 	case R_ANAL_ARCHINFO_ALIGN:
 		return 0;
@@ -1572,25 +1582,45 @@ static int archinfo(RAnal *anal, int q) {
 	return -1;
 }
 
-RAnalPlugin r_anal_plugin_gb = {
-	.name = "gb",
-	.desc = "Gameboy CPU code analysis plugin",
-	.license = "LGPL3",
+static bool esil_cb(RArchSession *as, RArchEsilAction action) {
+	REsil *esil = as->arch->esil;
+	if (!esil) {
+		return false;
+	}
+
+	switch (action) {
+	case R_ARCH_ESIL_INIT:
+		esil_gb_init (esil);
+		break;
+	case R_ARCH_ESIL_FINI:
+		esil_gb_fini (esil);
+		break;
+	default:
+		return false;
+	}
+
+	return true;
+}
+
+RArchPlugin r_arch_plugin_gb = {
+	.meta = {
+		.name = "gb",
+		.desc = "Gameboy CPU code analysis plugin",
+		.license = "LGPL3",
+	},
 	.arch = "z80",
-	.esil = true,
-	.bits = 16,
-	.op = &gb_anop,
-	.opasm = &gb_opasm,
-	.set_reg_profile = &set_reg_profile,
-	.archinfo = archinfo,
-	.esil_init = esil_gb_init,
-	.esil_fini = esil_gb_fini,
+	.info = info,
+	.regs = regs,
+	.bits = R_SYS_BITS_PACK1 (16),
+	.decode = decode,
+	.encode = encode,
+	.esilcb = esil_cb,
 };
 
 #ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ANAL,
-	.data = &r_anal_plugin_gb,
+	.data = &r_arch_plugin_gb,
 	.version = R2_VERSION
 };
 #endif

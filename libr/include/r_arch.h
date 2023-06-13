@@ -351,6 +351,7 @@ extern RArchPlugin r_arch_plugin_tms320;
 extern RArchPlugin r_arch_plugin_ppc_cs;
 extern RArchPlugin r_arch_plugin_i8080;
 extern RArchPlugin r_arch_plugin_java;
+extern RArchPlugin r_arch_plugin_gb;
 
 #ifdef __cplusplus
 }
