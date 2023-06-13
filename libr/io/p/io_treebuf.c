@@ -182,8 +182,8 @@ static int __write(RIO *io, RIODesc *desc, const ut8 *buf, int len) {
 	if (r_itv_begin (chunk->itv) < r_itv_begin (search_itv)) {
 		chunk->itv.size = r_itv_begin (search_itv) - r_itv_begin (chunk->itv);
 		chunk->buf = realloc (chunk->buf, r_itv_size (chunk->itv));
+		node = r_rbnode_next (node);
 	}
-	node = r_rbnode_next (node);
 	if (node) {
 		chunk = (IOTreeBufChunk *)node->data;
 		while (chunk && r_itv_include (search_itv, chunk->itv)) {
