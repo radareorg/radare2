@@ -538,7 +538,11 @@ static inline bool op_is_set_bp(const char *op_dst, const char *op_src, const ch
 }
 
 static inline bool does_arch_destroys_dst(const char *arch) {
-	return arch && (!strncmp (arch, "arm", 3) || !strcmp (arch, "riscv") || !strcmp (arch, "ppc"));
+	return arch && (
+		r_str_startswith (arch, "arm") ||
+		!strcmp (arch, "riscv") ||
+		!strcmp (arch, "ppc")
+	);
 }
 
 static inline bool has_vars(RAnal *anal, ut64 addr) {
@@ -553,8 +557,8 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int
 	const char *variadic_reg = NULL;
 	ReadAhead ra = {0};
 	ra.cache_addr = UT64_MAX; // invalidate the cache
-	const char *bp_reg = NULL;
-	const char *sp_reg = NULL;
+	char *bp_reg = NULL;
+	char *sp_reg = NULL;
 	char *op_dst = NULL;
 	char *op_src = NULL;
 	if (depth < -1) {
@@ -689,8 +693,10 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int
 	const char *_sp_reg = anal->reg->name[R_REG_NAME_SP];
 	const bool has_stack_regs = _bp_reg && _sp_reg;
 	if (has_stack_regs) {
-		bp_reg = _bp_reg;
-		sp_reg = _sp_reg;
+		free (bp_reg);
+		bp_reg = strdup (_bp_reg);
+		free (sp_reg);
+		sp_reg = strdup (_sp_reg);
 	}
 	if (is_amd64) {
 		variadic_reg = "rax";
@@ -1507,6 +1513,8 @@ analopfinish:
 beach:
 	free (op_src);
 	free (op_dst);
+	free (bp_reg);
+	free (sp_reg);
 	while (lea_cnt > 0) {
 		r_list_delete (anal->leaddrs, r_list_tail (anal->leaddrs));
 		lea_cnt--;
