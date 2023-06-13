@@ -83,17 +83,6 @@ R_API void r_io_cache_reset(RIO *io) {
 	io->cache.mode = mode;
 }
 
-#if 0
-R_API void r_io_cache_perms(RIO *io, ut32 perm) {
-	io->cache.mode = perm;
-	// free all layers
-	r_list_free (io->cache.layers);
-	io->cached = set; // wtf ? this is not used
-	r_crbtree_clear (io->cache->tree);
-	r_pvector_clear (io->cache->vec);
-}
-#endif
-
 static int _find_lowest_intersection_ci_cb(void *incoming, void *in, void *user) {
 	RInterval *itv = (RInterval *)incoming;
 	RIOCacheItem *ci = (RIOCacheItem *)in;
@@ -130,7 +119,7 @@ R_API bool r_io_cache_write_at(RIO *io, ut64 addr, const ut8 *buf, int len) {
 	if (!ci) {
 		return false;
 	}
-	r_io_read_at (io, addr, ci->odata, len);
+	(void)r_io_read_at (io, addr, ci->odata, len); // ignore failed reads?
 	memcpy (ci->data, buf, len);
 	RIOCacheLayer *layer = r_list_last (io->cache.layers);
 	RRBNode *node = _find_entry_ci_node (layer->tree, &itv);
@@ -160,6 +149,9 @@ R_API bool r_io_cache_write_at(RIO *io, ut64 addr, const ut8 *buf, int len) {
 // read happens by iterating over all the layers
 R_API bool r_io_cache_read_at(RIO *io, ut64 addr, ut8 *buf, int len) {
 	r_return_val_if_fail (io && buf && (len > 0), false);
+	if (!(io->cache.mode & R_PERM_X)) {
+		return false;
+	}
 	RIOCacheLayer *layer;
 	RListIter *iter;
 	RInterval itv = (RInterval){addr, len};
