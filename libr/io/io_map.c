@@ -571,6 +571,7 @@ R_API bool r_io_map_write_to_overlay(RIOMap *map, ut64 addr, const ut8 *buf, int
 	}
 	if (r_itv_begin (chunk->itv) < r_itv_begin (search_itv)) {
 		chunk->itv.size = r_itv_begin (search_itv) - r_itv_begin (chunk->itv);
+		// realloc cannot fail here because the new size is smaller than the old size
 		chunk->buf = realloc (chunk->buf, r_itv_size (chunk->itv));
 		node = r_rbnode_next (node);
 	}
@@ -583,7 +584,11 @@ R_API bool r_io_map_write_to_overlay(RIOMap *map, ut64 addr, const ut8 *buf, int
 		}
 	}
 	if (chunk && r_itv_end (search_itv) >= r_itv_begin (chunk->itv)) {
-		chunk->buf = realloc (chunk->buf, r_itv_end (chunk->itv) - r_itv_begin (search_itv));
+		ut8 *ptr = realloc (chunk->buf, r_itv_end (chunk->itv) - r_itv_begin (search_itv));
+		if (!ptr) {
+			return false;
+		}
+		chunk->buf = ptr;
 		memmove (&chunk->buf[r_itv_size (search_itv)],
 			&chunk->buf[r_itv_end (search_itv) - r_itv_begin (chunk->itv)],
 			r_itv_end (chunk->itv) - r_itv_end (search_itv));
@@ -593,7 +598,13 @@ R_API bool r_io_map_write_to_overlay(RIOMap *map, ut64 addr, const ut8 *buf, int
 		return true;
 	}
 	chunk = R_NEW0 (MapOverlayChunk);
+	if (!chunk) {
+		return false;
+	}
 	chunk->buf = R_NEWS (ut8, r_itv_size (search_itv));
+	if (!chunk->buf) {
+		return false;
+	}
 	chunk->itv = search_itv;
 	memcpy (chunk->buf, buf, r_itv_size (search_itv));
 	r_crbtree_insert (map->overlay, chunk, _overlay_chunk_insert, NULL);
