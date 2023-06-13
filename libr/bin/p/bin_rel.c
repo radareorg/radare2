@@ -176,7 +176,7 @@ static bool vwriten_at_be32(RBin *b, ut32 vaddr, ut32 val, ut32 size) {
 	ut8 buf[4];
 	r_write_be32 (&buf, val);
 	assert (size <= sizeof (buf));
-	return b->iob.write_at (b->iob.io, vaddr, (void *)&buf, size);
+	return b->iob.overlay_write_at (b->iob.io, vaddr, (void *)&buf, size);
 }
 
 static bool file_has_rel_ext(RBinFile *bf) {
@@ -542,11 +542,6 @@ static RBinReloc *patch_reloc(RBin *b, const LoadedRel *rel, const RelReloc *rel
 }
 
 static RList *patch_relocs(RBin *b) {
-	if (!r_io_cache_writable (b->iob.io)) {
-		R_LOG_WARN ("run r2 with -e bin.cache=true to fix relocations in disassembly");
-		return NULL;
-	}
-
 	int i, j;
 	const LoadedRel *rel = b->cur->o->bin_obj;
 

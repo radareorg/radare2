@@ -394,7 +394,7 @@ static RBinInfo *info(RBinFile *bf) {
 	return ret;
 }
 
-static bool _patch_reloc(struct MACH0_(obj_t) *mo, RIOBind *iob, struct reloc_t *reloc, ut64 symbol_at, bool cache_relocs) {
+static bool _patch_reloc(struct MACH0_(obj_t) *mo, RIOBind *iob, struct reloc_t *reloc, ut64 symbol_at) {
 	ut64 pc = reloc->addr;
 	ut64 ins_len = 0;
 
@@ -433,13 +433,7 @@ static bool _patch_reloc(struct MACH0_(obj_t) *mo, RIOBind *iob, struct reloc_t 
 		R_LOG_WARN ("invalid reloc size %d at 0x%08"PFMT64x, reloc->size, reloc->addr);
 		return false;
 	}
-	int res;
-	if (cache_relocs) {
-		res = iob->write_at (iob->io, reloc->addr, buf, reloc->size);
-	} else {
-		res = r_buf_write_at (mo->b, reloc->addr, buf, reloc->size);
-	}
-	if (res != reloc->size) {
+	if (!iob->overlay_write_at (iob->io, reloc->addr, buf, reloc->size)) {
 		R_LOG_WARN ("cannot write reloc at 0x%"PFMT64x, reloc->addr);
 		return false;
 	}
@@ -464,9 +458,6 @@ static RList* patch_relocs(RBin *b) {
 		return NULL;
 	}
 	struct MACH0_(obj_t) *mo = obj->bin_obj;
-	const bool writable = r_io_cache_writable (io);
-	const bool apply_relocs = writable;
-	const bool cache_relocs = writable;
 
 	const RSkipList *all_relocs = MACH0_(load_relocs)(mo);
 	if (!all_relocs) {
@@ -483,10 +474,6 @@ static RList* patch_relocs(RBin *b) {
 		r_pvector_push (&ext_relocs, reloc);
 	}
 	if (mo->reloc_fixups && r_list_length (mo->reloc_fixups) > 0) {
-		if (!apply_relocs) {
-			R_LOG_WARN ("run r2 with -e bin.cache=true to fix relocations in disassembly");
-			goto beach;
-		}
 		RBinReloc *r;
 		RListIter *iter2;
 
@@ -494,30 +481,16 @@ static RList* patch_relocs(RBin *b) {
 			ut64 paddr = r->paddr + mo->baddr;
 			ut8 buf[8], obuf[8];
 			r_write_ble64 (buf, r->vaddr, false);
-			r_io_read_at (io, paddr, obuf, 8);
+			b->iob.read_at (b->iob.io, paddr, obuf, 8);
 			if (memcmp (buf, obuf, 8)) {
-				if (cache_relocs) {
-					r_io_write_at (io, paddr, buf, 8);
-				} else {
-					r_buf_write_at (mo->b, paddr, buf, 8);
-#if 0
-					RBuffer *b = mo->b;
-					int r = r_buf_write_at (b, paddr, buf, 8);
-					if (r != 8) {
-						R_LOG_ERROR ("write error at 0x%"PFMT64x, paddr);
-					}
-#endif
+				if (!b->iob.overlay_write_at (b->iob.io, paddr, buf, 8)) {
+					R_LOG_ERROR ("write error at 0x%"PFMT64x, paddr);
 				}
 			}
 		}
 	}
 	ut64 num_ext_relocs = r_pvector_length (&ext_relocs);
 	if (!num_ext_relocs) {
-		goto beach;
-	}
-
-	if (!cache_relocs) {
-		R_LOG_WARN ("run r2 with -e bin.cache=true to fix relocations in disassembly");
 		goto beach;
 	}
 
@@ -571,7 +544,7 @@ static RList* patch_relocs(RBin *b) {
 			ht_uu_insert (relocs_by_sym, reloc->ord, vaddr);
 			vaddr += cdsz;
 		}
-		if (!_patch_reloc (mo, &b->iob, reloc, sym_addr, cache_relocs)) {
+		if (!_patch_reloc (mo, &b->iob, reloc, sym_addr)) {
 			continue;
 		}
 		RBinReloc *ptr = R_NEW0 (RBinReloc);
