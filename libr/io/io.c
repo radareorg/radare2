@@ -226,7 +226,7 @@ R_API bool r_io_vwrite_at(RIO *io, ut64 vaddr, const ut8 *buf, int len) {
 	return r_io_bank_write_at (io, io->bank, vaddr, buf, len);
 }
 
-R_API bool r_io_vwrite_to_overlay_at(RIO *io, ut64 caddr, const ut8 *buf, int len) {
+R_API bool r_io_vwrite_to_overlay_at(RIO *io, ut64 vaddr, const ut8 *buf, int len) {
 	r_return_val_if_fail (io && buf && len > 0, false);
 	if ((UT64_MAX - (len - 1)) < vaddr) {
 		int _len = UT64_MAX - vaddr + 1;
@@ -491,6 +491,7 @@ R_API void r_io_bind(RIO *io, RIOBind *bnd) {
 	bnd->close = r_io_fd_close;
 	bnd->read_at = r_io_read_at;
 	bnd->write_at = r_io_write_at;
+	bnd->overlay_write_at = r_io_vwrite_to_overlay_at;
 	bnd->system = r_io_system;
 	bnd->fd_open = r_io_fd_open;
 	bnd->fd_close = r_io_fd_close;
