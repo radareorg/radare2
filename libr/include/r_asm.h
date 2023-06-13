@@ -80,7 +80,6 @@ R_API bool r_asm_use(RAsm *a, const char *name);
 R_API bool r_asm_use_assembler(RAsm *a, const char *name);
 
 // this is in archconfig
-R_API bool r_asm_set_arch(RAsm *a, const char *name, int bits);
 R_API int r_asm_set_bits(RAsm *a, int bits);
 R_API void r_asm_set_cpu(RAsm *a, const char *cpu);
 R_API bool r_asm_set_big_endian(RAsm *a, bool big_endian);
@@ -108,7 +107,7 @@ R_API RList *r_asm_cpus(RAsm *a);
 R_API RAsmCode *r_asm_code_new(void);
 R_API void r_asm_code_free(RAsmCode *acode);
 R_API void r_asm_equ_item_free(RAsmEqu *equ);
-R_API bool r_asm_code_set_equ(RAsmCode *code, const char *key, const char *value);
+R_API void r_asm_code_set_equ(RAsmCode *code, const char *key, const char *value);
 R_API char *r_asm_code_equ_replace(RAsmCode *code, char *str);
 R_API char* r_asm_code_get_hex(RAsmCode *acode);
 

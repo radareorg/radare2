@@ -196,7 +196,6 @@ R_API char *r_name_filter_dup(const char *name) {
 	return s;
 }
 
-#if R2_590
 // filter out shell special chars
 R_API char *r_name_filter_shell(const char *s) {
 	r_return_val_if_fail (s, NULL);
@@ -249,4 +248,3 @@ R_API char *r_name_filter_quoted_shell(const char *s) {
 	*b = 0;
 	return a;
 }
-#endif

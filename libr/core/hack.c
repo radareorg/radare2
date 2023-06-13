@@ -37,8 +37,7 @@ static bool r_core_hack_riscv(RCore *core, const char *op, const RAnalOp *analop
 	return true;
 }
 
-// R2_590 make it static
-R_API bool r_core_hack_dalvik(RCore *core, const char *op, const RAnalOp *analop) {
+static bool r_core_hack_dalvik(RCore *core, const char *op, const RAnalOp *analop) {
 	if (!strcmp (op, "nop")) {
 		r_core_cmdf (core, "wx 0000");
 	} else if (!strcmp (op, "ret2")) {

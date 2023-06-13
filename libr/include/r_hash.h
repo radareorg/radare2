@@ -386,9 +386,7 @@ enum HASH_INDICES {
 	R_HASH_IDX_FLETCHER32,
 	R_HASH_IDX_FLETCHER64,
 	R_HASH_IDX_SIP,
-#if R2_590
 	R_HASH_IDX_ELF,
-#endif
 	R_HASH_NUM_INDICES
 };
 
@@ -508,6 +506,7 @@ R_API ut8 *r_hash_do_sha256(RHash *ctx, const ut8 *input, int len);
 R_API ut8 *r_hash_do_sha384(RHash *ctx, const ut8 *input, int len);
 R_API ut8 *r_hash_do_sha512(RHash *ctx, const ut8 *input, int len);
 R_API ut8 *r_hash_do_hmac_sha256(RHash *ctx, const ut8 *input, int len, const ut8 *key, int klen);
+R_API ut8 *r_hash_do_elf(RHash *ctx, const ut8 *input, int len);
 
 R_API char *r_hash_tostring(RHash *ctx, const char *name, const ut8 *data, int len);
 

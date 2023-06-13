@@ -34,8 +34,7 @@ R_API int r_core_gdiff_fcn(RCore *c, ut64 addr, ut64 addr2) {
 }
 
 /* Fingerprint functions and blocks, then diff. */
-// R2_590 return bool
-R_API int r_core_gdiff(RCore *c, RCore *c2) {
+R_API bool r_core_gdiff(RCore *c, RCore *c2) {
 	RCore *cores[2] = {c, c2};
 	RAnalFunction *fcn;
 	RAnalBlock *bb;

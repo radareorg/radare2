@@ -777,11 +777,7 @@ static bool decode(RArchSession *a, RAnalOp *op, RArchDecodeMask mask) {
 	if (mask & R_ARCH_OP_MASK_DISASM) {
 		(void)disassemble (op, data, len);
 	}
-#if R2_590
-	ut64 gp = a->config->gp // r_reg_getv (r, "gp");
-#else
-	ut64 gp = 0; // XXX
-#endif
+	ut64 gp = a->config->gp; // r_reg_getv (r, "gp");
 
 	switch (f->code) {
 	case BPF_RET | BPF_A:

@@ -24,11 +24,7 @@ extern "C" {
 // unused, but could be a good replacement for eprintf when fully transitioned?
 #define etrace(m) eprintf ("--> %s:%d : %s\n", __FUNCTION__, __LINE__, m)
 
-#if R2_590
 #define R_LOGLVL_DEFAULT R_LOGLVL_TODO
-#else
-#define R_LOGLVL_DEFAULT R_LOGLVL_WARN
-#endif
 
 // TODO .rename to R_LOG_LEVEL_XXXX
 typedef enum r_log_level {

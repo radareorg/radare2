@@ -152,7 +152,6 @@ R_API ut8 *r_hash_do_sha512(RHash *ctx, const ut8 *input, int len) {
 	return ctx->digest;
 }
 
-#if R2_590
 // https://www.sco.com/developers/gabi/latest/ch5.dynamic.html#hash
 static unsigned long elf_hash(const unsigned char *name) {
 	unsigned long h = 0, g;
@@ -172,14 +171,13 @@ R_API ut8 *r_hash_do_elf(RHash *ctx, const ut8 *input, int len) {
 	if (len < 0) {
 		hash = elf_hash (input);
 	} else {
-		char *s = r_str_ndup (input, len);
+		ut8 *s = (ut8*) r_str_ndup ((const char*)input, len);
 		hash = elf_hash (s);
 		free (s);
 	}
 	memcpy (ctx->digest, &hash, sizeof (unsigned long));
 	return ctx->digest;
 }
-#endif
 
 R_API ut8 *r_hash_do_md5(RHash *ctx, const ut8 *input, int len) {
 	if (len < 0) {

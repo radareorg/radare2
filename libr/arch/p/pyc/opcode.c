@@ -139,8 +139,7 @@ bool pyc_opcodes_equal(pyc_opcodes *op, const char *version) {
 	return false;
 }
 
-// R2_590 - const char *version
-pyc_opcodes *get_opcode_by_version(char *version) {
+pyc_opcodes *get_opcode_by_version(const char *version) {
 	version_opcode *vop = version_op;
 	while (vop->version) {
 		if (!strcmp (vop->version, version)) {

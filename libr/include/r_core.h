@@ -188,11 +188,7 @@ typedef enum r_core_autocomplete_types_t {
 } RCoreAutocompleteType;
 
 typedef struct r_core_autocomplete_t {
-#if R2_590
 	char *cmd;
-#else
-	const char* cmd;
-#endif
 	int length;
 	int n_subcmds;
 	bool locked;
@@ -456,6 +452,7 @@ R_API void r_core_cmd_r(RCore *core, const char *cmd);
 R_API void r_core_cmd_queue(RCore *core, const char *line);
 R_API void r_core_cmd_queue_wait(RCore *core);
 R_API void r_core_cmd_init(RCore *core);
+R_API int r_core_cmd_call_at(RCore *core, const char *cmd, ut64 addr);
 R_API int r_core_cmd_call(RCore *core, const char *cmd);
 R_API int r_core_cmd_callf(RCore *core, const char *cmd, ...);
 R_API int r_core_cmd_pipe(RCore *core, char *radare_cmd, char *shell_cmd);
@@ -480,9 +477,11 @@ R_API void r_core_seek_arch_bits(RCore *core, ut64 addr);
 R_API int r_core_block_read(RCore *core);
 R_API int r_core_block_size(RCore *core, int bsize);
 R_API int r_core_seek_size(RCore *core, ut64 addr, int bsize);
-// R2_590 R_API bool r_core_is_valid_offset(RCore *core, ut64 offset);
-R_API int r_core_is_valid_offset(RCore *core, ut64 offset);
-R_API int r_core_shift_block(RCore *core, ut64 addr, ut64 b_size, st64 dist);
+#if 0
+/// XXX not implemented?
+R_API bool r_core_is_valid_offset(RCore *core, ut64 offset);
+#endif
+R_API bool r_core_shift_block(RCore *core, ut64 addr, ut64 b_size, st64 dist);
 R_API void r_core_autocomplete(R_NULLABLE RCore *core, RLineCompletion *completion, RLineBuffer *buf, RLinePromptType prompt_type);
 R_API void r_core_print_scrollbar(RCore *core);
 R_API void r_core_print_scrollbar_bottom(RCore *core);
@@ -724,7 +723,7 @@ R_API int r_core_pseudo_code(RCore *core, const char *input);
 
 /* gdiff.c */
 R_API int r_core_zdiff(RCore *c, RCore *c2);
-R_API int r_core_gdiff(RCore *core1, RCore *core2);
+R_API bool r_core_gdiff(RCore *core1, RCore *core2);
 R_API int r_core_gdiff_fcn(RCore *c, ut64 addr, ut64 addr2);
 
 /* project */

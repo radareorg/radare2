@@ -6228,8 +6228,7 @@ R_API char *r_core_cmd_strf(RCore *core, const char *fmt, ...) {
 }
 
 #if R2_590
-// R_API
-int r_core_cmd_call_at(RCore *core, const char *cmd, ut64 addr) {
+R_API int r_core_cmd_call_at(RCore *core, const char *cmd, ut64 addr) {
 	ut64 oaddr = core->offset;
 	if (addr != core->offset) {
 		r_core_seek (core, addr, 1);

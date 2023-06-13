@@ -14,10 +14,8 @@ R_API bool r_name_filter_flag(char *s);
 R_API bool r_name_filter_print(char *s);
 R_API bool r_name_filter(char *name, int maxlen);
 R_API char *r_name_filter_dup(const char *name);
-#if R2_590
 R_API char *r_name_filter_shell(const char *s);
 R_API char *r_name_filter_quoted_shell(const char *s);
-#endif
 
 #ifdef __cplusplus
 }

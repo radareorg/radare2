@@ -22,6 +22,8 @@ R_API char *r_hex_from_py_str(char *out, const char *code);
 R_API char *r_hex_from_py_array(char *out, const char *code);
 R_API char *r_hex_from_c_str(char *out, const char **code);
 R_API char *r_hex_from_c_array(char *out, const char *code);
+R_API void r_hex_from_byte(char *val, ut8 c);
+
 #ifdef __cplusplus
 }
 #endif
