@@ -799,6 +799,7 @@ R_API bool r_io_bank_write_at(RIO *io, const ut32 bankid, ut64 addr, const ut8 *
 	r_return_val_if_fail (io, false);
 	RIOBank *bank = r_io_bank_get (io, bankid);
 	if (!bank) {
+		R_LOG_WARN ("Tfw no bank(id %u) in the io", bankid);
 		return false;
 	}
 	RIOSubMap fake_sm = {{0}};
@@ -825,11 +826,10 @@ R_API bool r_io_bank_write_at(RIO *io, const ut32 bankid, ut64 addr, const ut8 *
 			ret = false;
 			continue;
 		}
-		// check for overlay here
 		const ut64 buf_off = R_MAX (addr, r_io_submap_from (sm)) - addr;
 		const int write_len = R_MIN (r_io_submap_to ((&fake_sm)),
 					     r_io_submap_to (sm)) - (addr + buf_off) + 1;
-		if (_io_map_get_overlay_intersects (map, bank->todo, addr + buf_off, write_len) &&
+		if (io_map_get_overlay_intersects (map, bank->todo, addr + buf_off, write_len) &&
 			!r_queue_is_empty (bank->todo)) {
 			ut64 _buf_off = buf_off;
 			int _write_len = write_len;

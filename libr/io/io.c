@@ -556,7 +556,7 @@ R_API bool r_io_shift(RIO* io, ut64 start, ut64 end, st64 move) {
 	return true;
 }
 
-R_API ut64 r_io_seek(RIO* io, ut64 offset, int whence) {
+R_API ut64 r_io_seek(RIO *io, ut64 offset, int whence) {
 	if (!io) {
 		return 0LL;
 	}
@@ -573,6 +573,15 @@ R_API ut64 r_io_seek(RIO* io, ut64 offset, int whence) {
 		break;
 	}
 	return io->off;
+}
+
+static bool drain_cb (void *user, void *data, ut32 id) {
+	r_io_map_drain_overlay ((RIOMap *)data);
+	return true;
+}
+
+R_API void r_io_drain_overlay(RIO *io) {
+	r_id_storage_foreach (io->maps, drain_cb, NULL);
 }
 
 #if HAVE_PTRACE

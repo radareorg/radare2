@@ -472,7 +472,7 @@ static int _overlay_chunk_find (void *incoming, void *in, void *user) {
 
 R_API void r_io_map_read_from_overlay(RIOMap *map, ut64 addr, ut8 *buf, int len) {
 	r_return_if_fail (map && buf);
-	if (!map->overlay || !len || addr > r_io_map_to (map)) {
+	if (!map->overlay || len < 1 || addr > r_io_map_to (map)) {
 		return;
 	}
 	RInterval x = {addr, len};
@@ -496,8 +496,9 @@ R_API void r_io_map_read_from_overlay(RIOMap *map, ut64 addr, ut8 *buf, int len)
 	do {
 		addr = R_MAX (r_itv_begin (search_itv), r_itv_begin (chunk->itv));
 		ut8 *dst = &buf[addr - r_itv_begin (search_itv)];
-		ut8 *src = &chunk->buf[addr - r_itv_begin (chunk->itv)];
-		memcpy (dst, src, (size_t)(R_MIN (r_itv_end (search_itv), r_itv_end (chunk->itv)) - addr));
+		const ut8 *src = &chunk->buf[addr - r_itv_begin (chunk->itv)];
+		const size_t read_len = (size_t)(R_MIN (r_itv_end (search_itv), r_itv_end (chunk->itv)) - addr);
+		memcpy (dst, src, read_len);
 		node = r_rbnode_next (node);
 		chunk = node? (MapOverlayChunk *)node->data: NULL;
 	} while (chunk && r_itv_overlap (chunk->itv, search_itv));
@@ -572,7 +573,7 @@ R_API bool r_io_map_write_to_overlay(RIOMap *map, ut64 addr, const ut8 *buf, int
 	if (r_itv_begin (chunk->itv) < r_itv_begin (search_itv)) {
 		chunk->itv.size = r_itv_begin (search_itv) - r_itv_begin (chunk->itv);
 		// realloc cannot fail here because the new size is smaller than the old size
-		chunk->buf = realloc (chunk->buf, r_itv_size (chunk->itv));
+		chunk->buf = realloc (chunk->buf, r_itv_size (chunk->itv) * sizeof (ut8));
 		node = r_rbnode_next (node);
 	}
 	if (node) {
@@ -584,7 +585,8 @@ R_API bool r_io_map_write_to_overlay(RIOMap *map, ut64 addr, const ut8 *buf, int
 		}
 	}
 	if (chunk && r_itv_end (search_itv) >= r_itv_begin (chunk->itv)) {
-		ut8 *ptr = realloc (chunk->buf, r_itv_end (chunk->itv) - r_itv_begin (search_itv));
+		ut8 *ptr = realloc (chunk->buf,
+			(r_itv_end (chunk->itv) - r_itv_begin (search_itv)) * sizeof (ut8));
 		if (!ptr) {
 			return false;
 		}
@@ -611,7 +613,7 @@ R_API bool r_io_map_write_to_overlay(RIOMap *map, ut64 addr, const ut8 *buf, int
 	return true;
 }
 
-R_IPI bool _io_map_get_overlay_intersects(RIOMap *map, RQueue *q, ut64 addr, int len) {
+R_IPI bool io_map_get_overlay_intersects(RIOMap *map, RQueue *q, ut64 addr, int len) {
 	r_return_val_if_fail (map && q, false);
 	if (!map->overlay) {
 		return true;
@@ -644,4 +646,77 @@ R_IPI bool _io_map_get_overlay_intersects(RIOMap *map, RQueue *q, ut64 addr, int
 		chunk = node ? (MapOverlayChunk *)node->data : NULL;
 	} while (chunk && r_itv_overlap (search_itv, chunk->itv));
 	return true;
+}
+
+R_API void r_io_map_drain_overlay(RIOMap *map) {
+	r_return_if_fail (map);
+	if (!map->overlay || map->overlay->size < 2) {
+		return;
+	}
+	RQueue *q = r_queue_new (map->overlay->size - 1);
+	if (!q) {
+		return;
+	}
+	RRBNode *start_n = r_crbtree_first_node (map->overlay);
+	RRBNode *cur_n = start_n;
+	RRBNode *next_n = r_rbnode_next (cur_n);
+	while (next_n) {
+		MapOverlayChunk *cur = (MapOverlayChunk *)cur_n->data;
+		MapOverlayChunk *next = (MapOverlayChunk *)next_n->data;
+		if (r_itv_end (cur->itv) == r_itv_begin (next->itv)) {
+			r_queue_enqueue (q, cur);	// cannot, because q was initialized with enough capacity
+			cur_n = next_n;
+		} else {
+			if (!r_queue_is_empty (q)) {
+				MapOverlayChunk *start = (MapOverlayChunk *)start_n->data;
+				const ut64 new_size = r_itv_end (cur->itv) - r_itv_begin (start->itv);
+				ut8 *buf = realloc (start->buf, new_size * sizeof (ut8));
+				if (buf) {
+					start->buf = buf;
+					memcpy (&buf[r_itv_begin (cur->itv) - r_itv_begin (start->itv)],
+						cur->buf, r_itv_size (cur->itv));
+					r_crbtree_delete (map->overlay, cur, _overlay_chunk_insert, NULL);
+					r_queue_dequeue (q);	// first elem is always start
+					while (!r_queue_is_empty (q)) {
+						cur = (MapOverlayChunk *)r_queue_dequeue (q);
+						memcpy (&buf[r_itv_begin (cur->itv) - r_itv_begin (start->itv)],
+							cur->buf, r_itv_size (cur->itv));
+						r_crbtree_delete (map->overlay, cur, _overlay_chunk_insert, NULL);
+					}
+					start->itv.size = new_size;
+				} else {
+					while (!r_queue_is_empty (q)) {
+						r_queue_dequeue (q);
+					}
+				}
+				start_n = cur_n = next_n;
+			}
+		}
+		next_n = r_rbnode_next (next_n);
+	}
+	if (!r_queue_is_empty (q)) {
+		MapOverlayChunk *cur = (MapOverlayChunk *)cur_n->data;
+		MapOverlayChunk *start = (MapOverlayChunk *)start_n->data;
+		const ut64 new_size = r_itv_end (cur->itv) - r_itv_begin (start->itv);
+		ut8 *buf = realloc (start->buf, new_size * sizeof (ut8));
+		if (buf) {
+			start->buf = buf;
+			memcpy (&buf[r_itv_begin (cur->itv) - r_itv_begin (start->itv)],
+				cur->buf, r_itv_size (cur->itv));
+			r_crbtree_delete (map->overlay, cur, _overlay_chunk_insert, NULL);
+			r_queue_dequeue (q);	//first elem is always start
+			while (!r_queue_is_empty (q)) {
+				cur = (MapOverlayChunk *)r_queue_dequeue (q);
+				memcpy (&buf[r_itv_begin (cur->itv) - r_itv_begin (start->itv)],
+					cur->buf, r_itv_size (cur->itv));
+				r_crbtree_delete (map->overlay, cur, _overlay_chunk_insert, NULL);
+			}
+			start->itv.size = new_size;
+		} else {
+			while (!r_queue_is_empty (q)) {
+				r_queue_dequeue (q);
+			}
+		}
+	}
+	r_queue_free (q);
 }

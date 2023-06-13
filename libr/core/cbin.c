@@ -1877,6 +1877,7 @@ static int bin_relocs(RCore *r, PJ *pj, int mode, int va) {
 		}
 		// r_core_cmd_call (r, "wcs"); // write cache squash
 	}
+	r_io_drain_overlay (r->io);
 
 	if (IS_MODE_RAD (mode)) {
 		r_cons_println ("fs relocs");

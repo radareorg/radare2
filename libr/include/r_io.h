@@ -367,7 +367,8 @@ R_API RList* r_io_map_get_by_fd(RIO *io, int fd);
 R_API bool r_io_map_resize(RIO *io, ut32 id, ut64 newsize);
 R_API void r_io_map_read_from_overlay(RIOMap *map, ut64 addr, ut8 *buf, int len);
 R_API bool r_io_map_write_to_overlay(RIOMap *map, ut64 addr, const ut8 *buf, int len);
-R_IPI bool _io_map_get_overlay_intersects(RIOMap *map, RQueue *q, ut64 addr, int len);
+R_IPI bool io_map_get_overlay_intersects(RIOMap *map, RQueue *q, ut64 addr, int len);
+R_API void r_io_map_drain_overlay(RIOMap *map);
 
 // next free address to place a map.. maybe just unify
 R_API bool r_io_map_locate(RIO *io, ut64 *addr, const ut64 size, ut64 load_align);
@@ -438,6 +439,7 @@ R_API bool r_io_set_write_mask(RIO *io, const ut8 *mask, int len);
 R_API void r_io_bind(RIO *io, RIOBind *bnd);
 R_API bool r_io_shift(RIO *io, ut64 start, ut64 end, st64 move);
 R_API ut64 r_io_seek(RIO *io, ut64 offset, int whence);
+R_API void r_io_drain_overlay(RIO *io);
 R_API void r_io_fini(RIO *io);
 R_API void r_io_free(RIO *io);
 #define r_io_bind_init(x) memset (&(x), 0, sizeof (x))
