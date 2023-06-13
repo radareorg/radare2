@@ -94,7 +94,7 @@ pyc_opcodes *opcode_37(void);
 pyc_opcodes *opcode_38(void);
 pyc_opcodes *opcode_39(void);
 
-pyc_opcodes *get_opcode_by_version(char *version);
+pyc_opcodes *get_opcode_by_version(const char *version);
 
 pyc_opcodes *new_pyc_opcodes();
 void free_opcode(pyc_opcodes *opcodes);

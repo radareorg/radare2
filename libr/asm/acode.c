@@ -33,22 +33,19 @@ static RAsmEqu *__asm_equ_new(const char *key, const char *value) {
 	return equ;
 }
 
-// R2_590. return void here
-R_API bool r_asm_code_set_equ(RAsmCode *code, const char *key, const char *value) {
-	r_return_val_if_fail (code && key && value, false);
+R_API void r_asm_code_set_equ(RAsmCode *code, const char *key, const char *value) {
+	r_return_if_fail (code && key && value);
 
 	if (code->equs) {
 		RAsmEqu *equ = r_asm_code_equ_get (code, key);
 		if (equ) {
 			free (equ->value);
 			equ->value = strdup (value);
-			return true;
 		}
 	} else {
 		code->equs = r_list_newf ((RListFree)r_asm_equ_item_free);
 	}
 	r_list_append (code->equs, __asm_equ_new (key, value));
-	return true;
 }
 
 R_API char *r_asm_code_equ_replace(RAsmCode *code, char *str) {

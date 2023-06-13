@@ -494,9 +494,7 @@ R_API RList *r_anal_function_get_xrefs(RAnalFunction *fcn) {
 	return fcn_get_refs (fcn, fcn->anal->dict_xrefs);
 }
 
-#if R2_590
 R_API RList *r_anal_function_get_all_xrefs(RAnalFunction *fcn) {
 	r_return_val_if_fail (fcn, NULL);
 	return fcn_get_all_refs (fcn, fcn->anal->dict_xrefs);
 }
-#endif

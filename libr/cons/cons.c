@@ -1203,6 +1203,44 @@ R_API void r_cons_visual_flush(void) {
 	}
 }
 
+R_API void r_cons_print_at(char *s, int x, int y, int w, int h) {
+	if (w < 0) {
+		w = 0;
+	}
+	if (h < 0) {
+		h = 0;
+	}
+	while (s) {
+		int pos = 0;
+		int ochar = s[pos];
+		char *n = strchr (s, '\n');
+		if (n) {
+			*n = 0;
+			if (w && r_str_ansi_len (s) > w) {
+				const char *p = r_str_ansi_chrn (s, w);
+				if (p) {
+					pos = p - s;
+					ochar = s[pos];
+					s[pos] = 0;
+				}
+			}
+		}
+		r_cons_gotoxy (x, y);
+		r_cons_printf ("%s", s);
+		if (n) {
+			s[pos] = ochar;
+			*n = '\n';
+			s = n + 1;
+		} else {
+			break;
+		}
+		if (h && y > h) {
+			break;
+		}
+		y++;
+	}
+}
+
 R_API void r_cons_print_fps(int col) {
 	int fps = 0, w = r_cons_get_size (NULL);
 	fps = 0;

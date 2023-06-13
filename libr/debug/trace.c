@@ -159,8 +159,7 @@ R_API bool r_debug_trace_ins_after(RDebug *dbg) {
 /*
  * something happened at the given pc that we need to trace
  */
-// R2_590 -> must be bool
-R_API int r_debug_trace_pc(RDebug *dbg, ut64 pc) {
+R_API bool r_debug_trace_pc(RDebug *dbg, ut64 pc) {
 	r_return_val_if_fail (dbg && dbg->trace, false);
 	ut8 buf[32];
 	RAnalOp op = {0};

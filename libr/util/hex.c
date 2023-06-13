@@ -16,10 +16,8 @@ R_API bool r_hex_to_byte(ut8 *val, ut8 c) {
 	return false;
 }
 
-// R2_590 make r_hex_from_byte public via R_API
-
 // takes 'c' byte and fills 2 bytes in the val string
-static void r_hex_from_byte(char *val, ut8 c) {
+R_API void r_hex_from_byte(char *val, ut8 c) {
 	const char abc[] = "0123456789abcdef";
 	val[0] = abc[(c >> 4) & 0xf];
 	val[1] = abc[c & 0xf];

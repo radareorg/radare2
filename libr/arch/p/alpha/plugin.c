@@ -85,10 +85,8 @@ static char *regs(RArchSession *as) {
 		"=PC    pc\n"
 		"=SP    r30\n"
 		"=BP    r28\n"
-#if R2_590
 		"=RA    r28\n"
 		"=GP    r29\n"
-#endif
 		"=A0    r15\n"
 		"=A1    r16\n"
 		"=A2    r17\n"
@@ -149,9 +147,9 @@ RArchPlugin r_arch_plugin_alpha = {
 	.arch = "alpha",
 	.bits = R_SYS_BITS_PACK1 (64),
 	.endian = R_SYS_ENDIAN_LITTLE,
-	.info = &info,
+	.info = info,
 	.regs = regs,
-	.decode = &decode
+	.decode = decode
 };
 
 #ifndef R2_PLUGIN_INCORE

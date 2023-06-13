@@ -1069,11 +1069,6 @@ R_API const RList* r_asm_get_plugins(RAsm *a) {
 	return a->plugins;
 }
 
-// XXX UNUSED! R2_590 delete
-R_API bool r_asm_set_arch(RAsm *a, const char *name, int bits) {
-	return r_asm_use (a, name)? r_asm_set_bits (a, bits): false;
-}
-
 /* to ease the use of the native bindings (not used in r2) */
 R_API char *r_asm_tostring(RAsm *a, ut64 addr, const ut8 *b, int l) {
 	r_return_val_if_fail (a && b && l >= 0, NULL);

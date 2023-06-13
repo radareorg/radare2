@@ -826,7 +826,7 @@ int * (r_anal_compare) (RAnalFunction , RAnalFunction );
 
 #ifdef R_API
 R_API ut64 r_anal_value_to_ut64(RAnal *anal, RArchValue *val);
-R_API int r_anal_value_set_ut64(RAnal *anal, RArchValue *val, ut64 num);
+R_API bool r_anal_value_set_ut64(RAnal *anal, RArchValue *val, ut64 num);
 /* --------- */ /* REFACTOR */ /* ---------- */
 R_API RListRange* r_listrange_new(void);
 R_API void r_listrange_free(RListRange *s);
