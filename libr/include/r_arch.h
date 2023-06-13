@@ -342,6 +342,7 @@ extern RArchPlugin r_arch_plugin_i8080;
 extern RArchPlugin r_arch_plugin_java;
 extern RArchPlugin r_arch_plugin_arm_gnu;
 extern RArchPlugin r_arch_plugin_gb;
+extern RArchPlugin r_arch_plugin_avr;
 
 #ifdef __cplusplus
 }

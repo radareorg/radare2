@@ -8,7 +8,7 @@ extern instructionInfo instructionSet[AVR_TOTAL_INSTRUCTIONS];
 typedef struct {
 	char ens[3][MAX_TOKEN_SIZE];
 } AvrToken;
-static int search_instruction(RAnal *a, AvrToken *tok, int args);
+static int search_instruction(RArchSession *as, AvrToken *tok, int args);
 // char instr[3][MAX_TOKEN_SIZE], int args);
 /* the next few functions and structures uses for detecting
  * AVR special regs, like X+, -Y, Z+3 in st(d), ld(d) and
@@ -41,7 +41,7 @@ specialregs RegsTable[REGS_TABLE] = {
 };
 
 
-int avr_encode(RAnal *a, ut64 pc, const char *str, ut8 *outbuf, int outlen) {
+int avr_encode(RArchSession *as, ut64 pc, const char *str, ut8 *outbuf) {
 	AvrToken tok;
 	char *token;
 	char *save_ptr = NULL;
@@ -63,7 +63,7 @@ int avr_encode(RAnal *a, ut64 pc, const char *str, ut8 *outbuf, int outlen) {
 
 	if (tokens_cnt > 0) {
 		// find nearest instruction that looks like supplied
-		instr_idx = search_instruction (a, &tok, tokens_cnt - 1);
+		instr_idx = search_instruction (as, &tok, tokens_cnt - 1);
 
 		if (instr_idx >= 0) {
 			// no operands -- just return opcode mask
@@ -131,6 +131,7 @@ int avr_encode(RAnal *a, ut64 pc, const char *str, ut8 *outbuf, int outlen) {
 	if (len > 0) {
 		memcpy (outbuf, (const ut8*)&coded, len);
 	}
+
 	return len;
 }
 
@@ -297,7 +298,7 @@ uint16_t packDataByMask(uint16_t data, uint16_t mask) {
 /* this function searches from instruction in instructionSet table
  * (see avr_disasm.h for more info)
  * returns index of the instruction in the table */
-static int search_instruction(RAnal *a, AvrToken *tok, int args) {
+static int search_instruction(RArchSession *as, AvrToken *tok, int args) {
 	int i, op1 = 0, op2 = 0;
 
 	for (i = 0; i < AVR_TOTAL_INSTRUCTIONS - 1; i++) {

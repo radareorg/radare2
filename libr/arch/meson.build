@@ -154,6 +154,11 @@ r_arch_sources = [
   'p/i8080/i8080.c',
   'p/i8080/plugin.c',
   'p/gb/plugin.c',
+  'p/avr/plugin.c',
+  'p/avr/avr_disasm.c',
+  'p/avr/format.c',
+  'p/avr/disasm.c',
+  'p/avr/assemble.c',
 ]
 
 if arch_plugins.contains('x86_nz')
@@ -192,6 +197,7 @@ r_arch = library('r_arch', r_arch_sources,
     r_util_dep,
     r_esil_dep,
     r_reg_dep,
+    r_crypto_dep,
     java_dep,
     capstone_dep,
   ],

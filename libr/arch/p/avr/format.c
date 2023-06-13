@@ -33,12 +33,12 @@
  * and so that the printing of the formatted operand is not hard coded into the format operand code.
  * If an addressLabelPrefix is specified in formattingOptions (option is set and string is not NULL),
  * it will print the relative branch/jump/call with this prefix and the destination address as the label. */
-static int formatDisassembledOperand(RAsm *a, avrDisassembleContext *context, char *strOperand, int strOperandSize, int operandNum, const disassembledInstruction dInstruction, formattingOptions fOptions);
-static int analFormatDisassembledOperand(RAnal *a, avrDisassembleContext *context, char *strOperand, int strOperandSize, int operandNum, const disassembledInstruction dInstruction, formattingOptions fOptions);
+static int formatDisassembledOperand(RArchSession *as, avrDisassembleContext *context, char *strOperand, int strOperandSize, int operandNum, const disassembledInstruction dInstruction, formattingOptions fOptions);
+static int analFormatDisassembledOperand(RArchSession *as, avrDisassembleContext *context, char *strOperand, int strOperandSize, int operandNum, const disassembledInstruction dInstruction, formattingOptions fOptions);
 
 
 /* Prints a disassembled instruction, formatted with options set in the formattingOptions structure. */
-int printDisassembledInstruction(RAsm *a, avrDisassembleContext *context, char *out, int out_len, const disassembledInstruction dInstruction, formattingOptions fOptions) {
+int printDisassembledInstruction(RArchSession *as, avrDisassembleContext *context, char *out, int out_len, const disassembledInstruction dInstruction, formattingOptions fOptions) {
 	//char fmt[64];
 	int retVal, i;
 	char strOperand[256];
@@ -62,7 +62,7 @@ int printDisassembledInstruction(RAsm *a, avrDisassembleContext *context, char *
 			r_strbuf_append (sb, ", ");
 		}
 		/* Format the disassembled operand into the string strOperand, and print it */
-		retVal = formatDisassembledOperand (a, context, strOperand, sizeof (strOperand), i, dInstruction, fOptions);
+		retVal = formatDisassembledOperand (as, context, strOperand, sizeof (strOperand), i, dInstruction, fOptions);
 		if (retVal < 0) {
 			r_strbuf_free (sb);
 			return retVal;
@@ -77,7 +77,7 @@ int printDisassembledInstruction(RAsm *a, avrDisassembleContext *context, char *
 }
 
 /* Prints a disassembled instruction, formatted with options set in the formattingOptions structure. */
-int analPrintDisassembledInstruction(RAnal *a, avrDisassembleContext *context, char *out, int out_len, const disassembledInstruction dInstruction, formattingOptions fOptions) {
+int analPrintDisassembledInstruction(RArchSession *as, avrDisassembleContext *context, char *out, int out_len, const disassembledInstruction dInstruction, formattingOptions fOptions) {
 	//char fmt[64];
 	int retVal, i;
 	char strOperand[256];
@@ -99,7 +99,7 @@ int analPrintDisassembledInstruction(RAnal *a, avrDisassembleContext *context, c
 			r_strbuf_append (sb, ", ");
 		}
 		/* Format the disassembled operand into the string strOperand, and print it */
-		retVal = analFormatDisassembledOperand (a, context, strOperand, sizeof (strOperand), i, dInstruction, fOptions);
+		retVal = analFormatDisassembledOperand (as, context, strOperand, sizeof (strOperand), i, dInstruction, fOptions);
 		if (retVal < 0) {
 			r_strbuf_free (sb);
 			return retVal;
@@ -114,7 +114,7 @@ int analPrintDisassembledInstruction(RAnal *a, avrDisassembleContext *context, c
 }
 
 
-static int formatDisassembledOperand(RAsm *a, avrDisassembleContext *context, char *strOperand, int strOperandSize, int operandNum, const disassembledInstruction dInstruction, formattingOptions fOptions) {
+static int formatDisassembledOperand(RArchSession *as, avrDisassembleContext *context, char *strOperand, int strOperandSize, int operandNum, const disassembledInstruction dInstruction, formattingOptions fOptions) {
 	char binary[9];
 	int retVal;
 
@@ -215,7 +215,7 @@ static int formatDisassembledOperand(RAsm *a, avrDisassembleContext *context, ch
 			break;
 		}
 
-		if (!strcmp (r_str_get (a->config->cpu), "ATmega328p")) {
+		if (!strcmp (r_str_get (as->config->cpu), "ATmega328p")) {
 			switch (dInstruction.operands[operandNum]) {
 			case 0x03:
 				current_register = "pinb";
@@ -388,7 +388,7 @@ static int formatDisassembledOperand(RAsm *a, avrDisassembleContext *context, ch
 				break;
 			}
 		}
-		if (!strcmp (r_str_get (a->config->cpu), "AT90S1200")) {
+		if (!strcmp (r_str_get (as->config->cpu), "AT90S1200")) {
 			switch (dInstruction.operands[operandNum]) {
 			case 0x08:
 				current_register = "acsr";
@@ -457,7 +457,7 @@ static int formatDisassembledOperand(RAsm *a, avrDisassembleContext *context, ch
  * and so that the printing of the formatted operand is not hard coded into the format operand code.
  * If an addressLabelPrefix is specified in formattingOptions (option is set and string is not NULL),
  * it will print the relative branch/jump/call with this prefix and the destination address as the label. */
-static int analFormatDisassembledOperand(RAnal *a, avrDisassembleContext *context, char *strOperand, int strOperandSize, int operandNum, const disassembledInstruction dInstruction, formattingOptions fOptions) {
+static int analFormatDisassembledOperand(RArchSession *as, avrDisassembleContext *context, char *strOperand, int strOperandSize, int operandNum, const disassembledInstruction dInstruction, formattingOptions fOptions) {
 	char binary[9];
 	int retVal;
 
@@ -558,7 +558,7 @@ static int analFormatDisassembledOperand(RAnal *a, avrDisassembleContext *contex
 			break;
 		}
 
-		if (!strcmp (r_str_get (a->config->cpu), "ATmega328p")) {
+		if (!strcmp (r_str_get (as->config->cpu), "ATmega328p")) {
 			switch (dInstruction.operands[operandNum]) {
 			case 0x03:
 				current_register = "pinb";

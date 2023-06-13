@@ -51,7 +51,7 @@ int avr_decode(RAsm *a, char *out, int out_len, ut64 addr, cut8 *buf, int len) {
 	return opsize;
 }
 
-int avr_anal(RAnal *a, char *out, int out_size, ut64 addr, cut8 *buf, int len) {
+int avr_anal(RArchSession *as, char *out, int out_size, ut64 addr, cut8 *buf, int len) {
 	formattingOptions opt = {0};
 	disassembledInstruction dins;
 	assembledInstruction ins;
@@ -85,11 +85,11 @@ int avr_anal(RAnal *a, char *out, int out_size, ut64 addr, cut8 *buf, int len) {
 		if (disassembleInstruction (&context, &dins, ins)) {
 			return -1;
 		}
-		if (analPrintDisassembledInstruction (a, &context, out, out_size, dins, opt) < 0) {
+		if (analPrintDisassembledInstruction (as, &context, out, out_size, dins, opt) < 0) {
 			return -1;
 		}
 		opsize = 4;
-	} else if (analPrintDisassembledInstruction (a, &context, out, out_size, dins, opt) < 0) {
+	} else if (analPrintDisassembledInstruction (as, &context, out, out_size, dins, opt) < 0) {
 		return -1;
 	}
 	if (out[0] == '.' || !out[0]) {
