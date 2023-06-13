@@ -685,20 +685,20 @@ static void _patch_reloc(RBinObject *binobj, struct Elf_(obj_t) *bo, ut16 e_mach
 			V = S + A;
 		}
 		r_write_le32 (buf, V);
-		iob->write_at (iob->io, rel->rva, buf, 4);
+		iob->overlay_write_at (iob->io, rel->rva, buf, 4);
 		break;
 	case EM_AARCH64:
 		V = S + A;
 #if 0
 		r_write_le64 (buf, V);
-		iob->write_at (iob->io, rel->rva, buf, 8);
+		iob->overlay_write_at (iob->io, rel->rva, buf, 8);
 #else
 		iob->read_at (iob->io, rel->rva, buf, 8);
 		// only patch the relocs that are initialized with zeroes
 		// if the destination contains a different value it's a constant useful for static analysis
 		ut64 addr = r_read_le64 (buf);
 		r_write_le64 (buf, addr? A: S);
-		iob->write_at (iob->io, rel->rva, buf, 8);
+		iob->overlay_write_at (iob->io, rel->rva, buf, 8);
 #endif
 		break;
 	case EM_PPC64: {
@@ -734,13 +734,13 @@ static void _patch_reloc(RBinObject *binobj, struct Elf_(obj_t) *bo, ut16 e_mach
 				V &= (1 << 14) - 1;
 				iob->read_at (iob->io, rel->rva, buf, 2);
 				r_write_le32 (buf, (r_read_le32 (buf) & ~((1<<16) - (1<<2))) | V << 2);
-				iob->write_at (iob->io, rel->rva, buf, 2);
+				iob->overlay_write_at (iob->io, rel->rva, buf, 2);
 				break;
 			case 24:
 				V &= (1 << 24) - 1;
 				iob->read_at (iob->io, rel->rva, buf, 4);
 				r_write_le32 (buf, (r_read_le32 (buf) & ~((1<<26) - (1<<2))) | V << 2);
-				iob->write_at (iob->io, rel->rva, buf, 4);
+				iob->overlay_write_at (iob->io, rel->rva, buf, 4);
 				break;
 			}
 		} else if (word) {
@@ -748,11 +748,11 @@ static void _patch_reloc(RBinObject *binobj, struct Elf_(obj_t) *bo, ut16 e_mach
 			switch (word) {
 			case 2:
 				r_write_le16 (buf, V);
-				iob->write_at (iob->io, rel->rva, buf, 2);
+				iob->overlay_write_at (iob->io, rel->rva, buf, 2);
 				break;
 			case 4:
 				r_write_le32 (buf, V);
-				iob->write_at (iob->io, rel->rva, buf, 4);
+				iob->overlay_write_at (iob->io, rel->rva, buf, 4);
 				break;
 			}
 		}
@@ -833,19 +833,19 @@ static void _patch_reloc(RBinObject *binobj, struct Elf_(obj_t) *bo, ut16 e_mach
 			break;
 		case 1:
 			buf[0] = V;
-			iob->write_at (iob->io, rel->rva, buf, 1);
+			iob->overlay_write_at (iob->io, rel->rva, buf, 1);
 			break;
 		case 2:
 			r_write_le16 (buf, V);
-			iob->write_at (iob->io, rel->rva, buf, 2);
+			iob->overlay_write_at (iob->io, rel->rva, buf, 2);
 			break;
 		case 4:
 			r_write_le32 (buf, V);
-			iob->write_at (iob->io, rel->rva, buf, 4);
+			iob->overlay_write_at (iob->io, rel->rva, buf, 4);
 			break;
 		case 8:
 			r_write_le64 (buf, V);
-			iob->write_at (iob->io, rel->rva, buf, 8);
+			iob->overlay_write_at (iob->io, rel->rva, buf, 8);
 			break;
 		}
 		break;
@@ -889,10 +889,6 @@ static RList* patch_relocs(RBin *b) {
 		}
 	}
 	if (!g) {
-		return NULL;
-	}
-	if (!r_io_cache_writable (io)) {
-		R_LOG_WARN ("run r2 with -e bin.cache=true to fix relocations in disassembly");
 		return NULL;
 	}
 	ut64 n_vaddr = g->itv.addr + g->itv.size;
