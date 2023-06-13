@@ -200,12 +200,12 @@ static bool gb_parse_ld3(ut8 *buf, char *buf_asm) {
 	return true;
 }
 
-static int gbAsm(const char *buf, ut8 *outbuf) {
+static int gbAsm(const char *buf, ut8 **outbuf) {
 	int mn_len, j, len = 1;
 	ut32 mn = 0;
 	ut64 num;
 	size_t i;
-	if (!buf || !outbuf) {
+	if (!buf) {
 		return 0;
 	}
 	ut8 opbuf[4] = {0};
@@ -683,6 +683,13 @@ static int gbAsm(const char *buf, ut8 *outbuf) {
 		break;
 	}
 	free (buf_asm);
-	memcpy (outbuf, opbuf, sizeof (ut8) * len);
+
+	const size_t num_bytes = sizeof (ut8) * len;
+	*outbuf = malloc (num_bytes);
+	if (!*outbuf) {
+		return 0;
+	}
+
+	memcpy (outbuf, opbuf, num_bytes);
 	return len;
 }

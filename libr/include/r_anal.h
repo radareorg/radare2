@@ -1604,7 +1604,6 @@ extern RAnalPlugin r_anal_plugin_arm_cs;
 extern RAnalPlugin r_anal_plugin_arm_gnu;
 extern RAnalPlugin r_anal_plugin_avr;
 extern RAnalPlugin r_anal_plugin_dalvik;
-extern RAnalPlugin r_anal_plugin_gb;
 extern RAnalPlugin r_anal_plugin_mips_cs;
 extern RAnalPlugin r_anal_plugin_jdh8;
 extern RAnalPlugin r_anal_plugin_sh;

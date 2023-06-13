@@ -48,7 +48,7 @@ r_anal_sources = [
   'p/anal_dalvik.c',
   '../arch/p/ebc/plugin.c',
   '../arch/p/ebc/ebc_disas.c',
-  'p/anal_gb.c',
+  '../arch/p/gb/plugin.c',
   '../arch/p/h8300/plugin.c',
   '../arch/p/h8300/h8300_disas.c',
   '../arch/p/lh5801/plugin.c',
