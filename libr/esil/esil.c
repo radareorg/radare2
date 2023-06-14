@@ -174,7 +174,7 @@ static bool r_esil_fire_trap(REsil *esil, int trap_type, int trap_code) {
 R_API bool r_esil_set_pc(REsil *esil, ut64 addr) {
 	r_return_val_if_fail (esil, false);
 	// r_reg_set_value_by_role (esil->anal->reg, R_REG_NAME_PC, addr);
-	esil->address = addr; // R2_590 - rename to 'addr' for consistency
+	esil->addr = addr; // R2_590 - rename to 'addr' for consistency
 	return true;
 }
 
@@ -253,7 +253,7 @@ static bool internal_esil_mem_read(REsil *esil, ut64 addr, ut8 *buf, int len) {
 			esil->trap_code = addr;
 		}
 		if (esil->cmd && esil->cmd_ioer && *esil->cmd_ioer) {
-			esil->cmd (esil, esil->cmd_ioer, esil->address, 0);
+			esil->cmd (esil, esil->cmd_ioer, esil->addr, 0);
 		}
 	}
 	return len;
@@ -353,7 +353,7 @@ static bool internal_esil_mem_write(REsil *esil, ut64 addr, const ut8 *buf, int 
 			esil->trap_code = addr;
 		}
 		if (esil->cmd && esil->cmd_ioer && *esil->cmd_ioer) {
-			esil->cmd (esil, esil->cmd_ioer, esil->address, 0);
+			esil->cmd (esil, esil->cmd_ioer, esil->addr, 0);
 		}
 	}
 	return ret;
@@ -799,7 +799,7 @@ static bool esil_address(REsil *esil) {
 	R_LOG_WARN ("Support for esil operation $$ is about to end soon, avoid using it!");
 	r_return_val_if_fail (esil, false);
 	// esil->address = r_reg_getv (esil->anal->reg, "pc");
-	return r_esil_pushnum (esil, esil->address);
+	return r_esil_pushnum (esil, esil->addr);
 }
 
 static bool esil_weak_eq(REsil *esil) {
@@ -833,7 +833,7 @@ static bool esil_eq(REsil *esil) {
 	char *dst = r_esil_pop (esil);
 	char *src = r_esil_pop (esil);
 	if (!src || !dst) {
-		R_LOG_DEBUG ("Missing elements in the esil stack for '=' at 0x%08"PFMT64x, esil->address);
+		R_LOG_DEBUG ("Missing elements in the esil stack for '=' at 0x%08"PFMT64x, esil->addr);
 		free (src);
 		free (dst);
 		return false;
@@ -894,7 +894,7 @@ static bool esil_neg(REsil *esil) {
 				ret = true;
 				r_esil_pushnum (esil, !num);
 			} else {
-				R_LOG_WARN ("0x%08"PFMT64x" esil_neg: unknown reg %s", esil->address, src);
+				R_LOG_WARN ("0x%08"PFMT64x" esil_neg: unknown reg %s", esil->addr, src);
 			}
 		}
 	} else {
@@ -1322,7 +1322,7 @@ static bool esil_lsreq(REsil *esil) {
 		if (src && r_esil_get_parm (esil, src, &num2)) {
 			if (num2 > 63) {
 				if (esil->verbose) {
-					R_LOG_WARN ("Invalid shift at 0x%08"PFMT64x, esil->address);
+					R_LOG_WARN ("Invalid shift at 0x%08"PFMT64x, esil->addr);
 				}
 				num2 = 63;
 			}
@@ -1375,21 +1375,21 @@ static bool esil_asreq(REsil *esil) {
 					int shift = regsize - 1;
 					if (shift < 0 || shift > regsize - 1) {
 						if (esil->verbose) {
-							R_LOG_WARN ("Invalid asreq shift of %d at 0x%"PFMT64x, shift, esil->address);
+							R_LOG_WARN ("Invalid asreq shift of %d at 0x%"PFMT64x, shift, esil->addr);
 						}
 						shift = 0;
 					}
 					if (param_num > regsize - 1) {
 						// capstone bug?
 						if (esil->verbose) {
-							R_LOG_WARN ("Invalid asreq shift of %"PFMT64d" at 0x%"PFMT64x, param_num, esil->address);
+							R_LOG_WARN ("Invalid asreq shift of %"PFMT64d" at 0x%"PFMT64x, param_num, esil->addr);
 						}
 						param_num = 30;
 					}
 					if (shift >= 63) {
 						// LL can't handle LShift of 63 or more
 						if (esil->verbose) {
-							R_LOG_WARN ("Invalid asreq shift of %d at 0x%08"PFMT64x, shift, esil->address);
+							R_LOG_WARN ("Invalid asreq shift of %d at 0x%08"PFMT64x, shift, esil->addr);
 						}
 					} else if (op_num & (1LL << shift)) {
 						left_bits = (1 << param_num) - 1;
@@ -1428,7 +1428,7 @@ static bool esil_asr(REsil *esil) {
 			if (param_num > regsize - 1) {
 				// capstone bug?
 				if (esil->verbose) {
-					R_LOG_WARN ("Invalid asr shift of %"PFMT64d" at 0x%"PFMT64x, param_num, esil->address);
+					R_LOG_WARN ("Invalid asr shift of %"PFMT64d" at 0x%"PFMT64x, param_num, esil->addr);
 				}
 				param_num = 30;
 			}
@@ -1653,7 +1653,7 @@ static bool esil_mod(REsil *esil) {
 	if (src && r_esil_get_parm (esil, src, &s)) {
 		if (dst && r_esil_get_parm (esil, dst, &d)) {
 			if (s == 0) {
-				R_LOG_DEBUG ("0x%08"PFMT64x" esil_mod: Division by zero!", esil->address);
+				R_LOG_DEBUG ("0x%08"PFMT64x" esil_mod: Division by zero!", esil->addr);
 				esil->trap = R_ANAL_TRAP_DIVBYZERO;
 				esil->trap_code = 0;
 			} else {
@@ -1677,7 +1677,7 @@ static bool esil_signed_mod(REsil *esil) {
 	if (src && r_esil_get_parm (esil, src, (ut64 *)&s)) {
 		if (dst && r_esil_get_parm (esil, dst, (ut64 *)&d)) {
 			if (ST64_DIV_OVFCHK (d, s)) {
-				R_LOG_DEBUG ("0x%08"PFMT64x" esil_mod: Division by zero!", esil->address);
+				R_LOG_DEBUG ("0x%08"PFMT64x" esil_mod: Division by zero!", esil->addr);
 				esil->trap = R_ANAL_TRAP_DIVBYZERO;
 				esil->trap_code = 0;
 			} else {
@@ -1783,7 +1783,7 @@ static bool esil_diveq(REsil *esil) {
 				esil->lastsz = esil_internal_sizeof_reg (esil, dst);
 				r_esil_reg_write (esil, dst, d / s);
 			} else {
-				// eprintf ("0x%08"PFMT64x" esil_diveq: Division by zero!\n", esil->address);
+				// eprintf ("0x%08"PFMT64x" esil_diveq: Division by zero!\n", esil->addr);
 				esil->trap = R_ANAL_TRAP_DIVBYZERO;
 				esil->trap_code = 0;
 			}
@@ -2232,7 +2232,7 @@ static bool esil_peek_n(REsil *esil, int bits) {
 	ut32 bytes = bits / 8;
 	char *dst = r_esil_pop (esil);
 	if (!dst) {
-		R_LOG_ERROR ("ESIL failed at 0x%08"PFMT64x": Won't peek the memory unless the users tells that", esil->address);
+		R_LOG_ERROR ("ESIL failed at 0x%08"PFMT64x": Won't peek the memory unless the users tells that", esil->addr);
 		return false;
 	}
 	//eprintf ("GONA PEEK %d dst:%s\n", bits, dst);
@@ -3623,7 +3623,7 @@ static int eval_word(REsil *esil, const char *ostr, const char **str) {
 	}
 	if (esil->parse_stop) {
 		if (esil->parse_stop == 2) {
-			R_LOG_DEBUG ("[esil at 0x%08"PFMT64x"] TODO: %s", esil->address, *str + 1);
+			R_LOG_DEBUG ("[esil at 0x%08"PFMT64x"] TODO: %s", esil->addr, *str + 1);
 		}
 		return 1;
 	}
@@ -3633,7 +3633,7 @@ static int eval_word(REsil *esil, const char *ostr, const char **str) {
 static bool __stepOut(REsil *esil, const char *cmd) {
 	if (cmd && esil && esil->cmd && !esil->in_cmd_step) {
 		esil->in_cmd_step = true;
-		if (esil->cmd (esil, cmd, esil->address, 0)) {
+		if (esil->cmd (esil, cmd, esil->addr, 0)) {
 			esil->in_cmd_step = false;
 			// if returns 1 we skip the impl
 			return true;
@@ -3667,7 +3667,7 @@ R_API bool r_esil_parse(REsil *esil, const char *str) {
 	esil->trap = 0;
 	if (esil->cmd && esil->cmd_todo) {
 		if (r_str_startswith (str, "TODO")) {
-			esil->cmd (esil, esil->cmd_todo, esil->address, 0);
+			esil->cmd (esil, esil->cmd_todo, esil->addr, 0);
 		}
 	}
 loop:

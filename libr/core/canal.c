@@ -4093,7 +4093,7 @@ static void add_string_ref(RCore *core, ut64 xref_from, ut64 xref_to) {
 		return;
 	}
 	if (!xref_from || xref_from == UT64_MAX) {
-		xref_from = core->anal->esil->address;
+		xref_from = core->anal->esil->addr;
 	}
 	char *str = is_string_at (core, xref_to, &len);
 	if (R_STR_ISNOTEMPTY (str) && len > 0) {
@@ -5005,10 +5005,10 @@ static bool esilbreak_mem_write(REsil *esil, ut64 addr, const ut8 *buf, int len)
 	// ignore writes in stack
 	if (myvalid (mycore->io, addr) && r_io_read_at (mycore->io, addr, (ut8*)buf, len)) {
 		if (!is_stack (mycore->io, addr)) {
-			r_anal_xrefs_set (mycore->anal, esil->address, addr, R_ANAL_REF_TYPE_DATA | R_ANAL_REF_TYPE_WRITE);
+			r_anal_xrefs_set (mycore->anal, esil->addr, addr, R_ANAL_REF_TYPE_DATA | R_ANAL_REF_TYPE_WRITE);
 			/** resolve ptr */
 			//if (ntarget == UT64_MAX || ntarget == addr || (ntarget == UT64_MAX && !validRef)) {
-	//			r_anal_xrefs_set (mycore->anal, esil->address, addr, R_ANAL_REF_TYPE_DATA);
+	//			r_anal_xrefs_set (mycore->anal, esil->addr, addr, R_ANAL_REF_TYPE_DATA);
 			//}
 		}
 	}
@@ -5056,16 +5056,16 @@ static bool esilbreak_mem_read(REsil *esil, ut64 addr, ut8 *buf, int len) {
 					//eprintf ("Invalid read\n");
 					str[0] = 0;
 				} else {
-					r_anal_xrefs_set (mycore->anal, esil->address, refptr, R_ANAL_REF_TYPE_DATA | R_ANAL_REF_TYPE_READ);
+					r_anal_xrefs_set (mycore->anal, esil->addr, refptr, R_ANAL_REF_TYPE_DATA | R_ANAL_REF_TYPE_READ);
 					str[sizeof (str) - 1] = 0;
-					add_string_ref (mycore, esil->address, refptr);
+					add_string_ref (mycore, esil->addr, refptr);
 					esilbreak_last_data = UT64_MAX;
 				}
 			}
 		}
 		if (myvalid (mycore->io, addr) && r_io_read_at (mycore->io, addr, (ut8*)buf, len)) {
 			if (!is_stack (mycore->io, addr)) {
-				r_anal_xrefs_set (mycore->anal, esil->address, addr, R_ANAL_REF_TYPE_DATA | R_ANAL_REF_TYPE_READ);
+				r_anal_xrefs_set (mycore->anal, esil->addr, addr, R_ANAL_REF_TYPE_DATA | R_ANAL_REF_TYPE_READ);
 			}
 		}
 	}
@@ -5109,11 +5109,11 @@ static bool esilbreak_reg_write(REsil *esil, const char *name, ut64 *val) {
 	}
 	if (core->rasm && core->rasm->config && core->rasm->config->bits == 32 && strstr (core->rasm->config->arch, "arm")) {
 		if ((!(at & 1)) && r_io_is_valid_offset (anal->iob.io, at, 0)) { //  !core->anal->opt.noncode)) {
-			add_string_ref (anal->coreb.core, esil->address, at);
+			add_string_ref (anal->coreb.core, esil->addr, at);
 		}
 	} else if (core->anal && core->anal->config && core->anal->config->bits == 32 && strstr (core->anal->config->arch, "arm")) {
 		if ((!(at & 1)) && r_io_is_valid_offset (anal->iob.io, at, 0)) { //  !core->anal->opt.noncode)) {
-			add_string_ref (anal->coreb.core, esil->address, at);
+			add_string_ref (anal->coreb.core, esil->addr, at);
 		}
 	}
 	return 0;

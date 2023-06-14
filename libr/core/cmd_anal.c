@@ -7149,7 +7149,7 @@ static bool regwrite_hook(REsil *esil, const char *name, ut64 *val) {
 	RCore *core = esil->user;
 	int type = core_type_by_addr (core, *val);
 	if (type != -1) {
-		r_anal_xrefs_set (core->anal, esil->address, *val, type);
+		r_anal_xrefs_set (core->anal, esil->addr, *val, type);
 	}
 	return false;
 }
