@@ -26,7 +26,8 @@ static Sdb *ref_db() {
 			"{\"arena\":5,\"bytes\":\"BQUFBQUFBQUFBQUFBQUFBQ==\",\"size\":16},"
 			"{\"arena\":6,\"bytes\":\"BgYGBgYGBgYGBgYGBgYGBg==\",\"size\":16},"
 			"{\"arena\":7,\"bytes\":\"BwcHBwcHBwcHBwcHBwcHBw==\",\"size\":16},"
-			"{\"arena\":8,\"bytes\":\"CAgICAgICAgICAgICAgICA==\",\"size\":16}"
+			"{\"arena\":8,\"bytes\":\"CAgICAgICAgICAgICAgICA==\",\"size\":16},"
+			"{\"arena\":9,\"bytes\":\"CQkJCQkJCQkJCQkJCQkJCQ==\",\"size\":16}"
 		"],"
 		"\"snaps\":["
 			"{\"name\":\"[stack]\",\"addr\":8796092882944,\"addr_end\":8796092883200,\"size\":256,\"data\":\"8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8A==\",\"perm\":7,\"user\":0,\"shared\":true}"
@@ -83,7 +84,7 @@ static RDebugSession *ref_session() {
 
 static void diff_cb(const SdbDiff *diff, void *user) {
 	char buf[2048];
-	if (sdb_diff_format (buf, sizeof(buf), diff) < 0) {
+	if (sdb_diff_format (buf, sizeof (buf), diff) < 0) {
 		return;
 	}
 	printf ("%s\n", buf);

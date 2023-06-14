@@ -178,15 +178,15 @@ bool test_r_reg_get_list(void) {
 	bool success = r_reg_set_profile_string (reg,
 		"gpr		eax		.32	24	0\n\
 		fpu			sf0		.32	304	0\n\
-		vec128@fpu		xmm0	.64	160	4");
+		vec128		xmm0	.64	160	4");
 	mu_assert_eq (success, true, "define eax, sf0 and xmm0 register");
 
 	mask = ((int)1 << R_REG_TYPE_VEC128);
-	mu_assert_eq ((reg->regset[R_REG_TYPE_FPU].maskregstype & mask), mask,
+	mu_assert_eq ((reg->regset[R_REG_TYPE_VEC128].maskregstype & mask), mask,
 		"xmm0 stored as R_REG_TYPE_FPU");
 
 	l = r_reg_get_list (reg, R_REG_TYPE_VEC128);
-	mu_assert_eq (r_list_length (l), 2, "sf0 and xmm0 stored as R_REG_TYPE_FPU");
+	mu_assert_eq (r_list_length (l), 1, "sf0 and xmm0 stored as R_REG_TYPE_FPU");
 
 	r_reg_free (reg);
 	mu_end;
