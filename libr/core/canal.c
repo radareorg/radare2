@@ -2993,6 +2993,25 @@ static int fcn_print_json(RCore *core, RAnalFunction *fcn, PJ *pj) {
 		pj_end (pj);
 	}
 	r_list_free (xrefs);
+	xrefs = r_anal_function_get_all_xrefs (fcn);
+	if (!r_list_empty (xrefs)) {
+		pj_k (pj, "allxrefs");
+		pj_a (pj);
+		r_list_foreach (xrefs, iter, refi) {
+			int rt = R_ANAL_REF_TYPE_MASK (refi->type);
+			if (rt == R_ANAL_REF_TYPE_CODE || rt == R_ANAL_REF_TYPE_CALL) {
+				indegree++;
+				pj_o (pj);
+				pj_kn (pj, "addr", refi->addr);
+				pj_ks (pj, "type", r_anal_ref_type_tostring (refi->type));
+				pj_kn (pj, "at", refi->at);
+				pj_end (pj);
+			}
+		}
+
+		pj_end (pj);
+	}
+	r_list_free (xrefs);
 
 	pj_ki (pj, "indegree", indegree);
 	pj_ki (pj, "outdegree", outdegree);
@@ -3192,7 +3211,6 @@ static int fcn_print_legacy(RCore *core, RAnalFunction *fcn) {
 			}
 		}
 	}
-#if R2_590
 	xrefs = r_anal_function_get_all_xrefs (fcn);
 	r_cons_printf ("\nall-code-xrefs:");
 	if (!r_list_empty (xrefs)) {
@@ -3204,7 +3222,6 @@ static int fcn_print_legacy(RCore *core, RAnalFunction *fcn) {
 			}
 		}
 	}
-#endif
 	r_cons_printf ("\nnoreturn: %s", r_str_bool (fcn->is_noreturn));
 	r_cons_printf ("\nin-degree: %d", indegree);
 	r_cons_printf ("\nout-degree: %d", outdegree);
@@ -3255,7 +3272,7 @@ static int fcn_list_detail(RCore *core, RList *fcns) {
 }
 
 static int fcn_list_table(RCore *core, const char *q, int fmt) {
-	char xref[128], refs[128], ccstr[128], castr[128];
+	char xref[128], axref[128], refs[128], ccstr[128], castr[128];
 	RAnalFunction *fcn;
 	RListIter *iter;
 	RTable *t = r_core_table (core, "fcns");
@@ -3269,6 +3286,7 @@ static int fcn_list_table(RCore *core, const char *q, int fmt) {
 	r_table_add_column (t, typeNumber, "nins", 0);
 	r_table_add_column (t, typeNumber, "refs", 0);
 	r_table_add_column (t, typeNumber, "xref", 0);
+	r_table_add_column (t, typeNumber, "axref", 0);
 	r_table_add_column (t, typeNumber, "calls", 0);
 	r_table_add_column (t, typeNumber, "cc", 0);
 	r_list_foreach (core->anal->fcns, iter, fcn) {
@@ -3284,6 +3302,10 @@ static int fcn_list_table(RCore *core, const char *q, int fmt) {
 
 		xrefs = r_anal_function_get_xrefs (fcn);
 		snprintf (xref, sizeof (xref), "%d", r_list_length (xrefs));
+		r_list_free (xrefs);
+
+		xrefs = r_anal_function_get_all_xrefs (fcn);
+		snprintf (axref, sizeof (axref), "%d", r_list_length (xrefs));
 		r_list_free (xrefs);
 
 		RList *calls = r_core_anal_fcn_get_calls (core, fcn);
