@@ -466,7 +466,7 @@ static RList *_relocs_list(RBin *rbin, struct r_bin_coff_obj *bin, bool patch, u
 					break;
 				}
 				if (patch && plen) {
-					rbin->iob.write_at (rbin->iob.io, reloc->vaddr, patch_buf, plen);
+					rbin->iob.overlay_write_at (rbin->iob.io, reloc->vaddr, patch_buf, plen);
 					if (symbol->is_imported) {
 						reloc->vaddr = sym_vaddr;
 					}
@@ -494,10 +494,6 @@ static RList *patch_relocs(RBin *b) {
 	}
 	struct r_bin_coff_obj *bin = (struct r_bin_coff_obj*)bo->bin_obj;
 	if (bin->hdr.f_flags & COFF_FLAGS_TI_F_EXEC) {
-		return NULL;
-	}
-	if (!r_io_cache_writable (io)) {
-		R_LOG_WARN ("please run r2 with -e io.cache=true to patch relocations");
 		return NULL;
 	}
 

@@ -769,7 +769,7 @@ static void _patch_reloc(RBinObject *binobj, struct Elf_(obj_t) *bo, ut16 e_mach
  				v -= P;
  			}
  			r_write_le32 (buf, v);
- 			r_io_write_at (iob->io, rel->rva, buf, 4);
+			iob->overlay_write_at (iob->io, rel->rva, buf, 4);
 			}
  		default:
  			break;

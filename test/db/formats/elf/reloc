@@ -55,7 +55,7 @@ RUN
 
 NAME=ELF: R_X86_64_PLT32 patch reloc
 FILE=bins/elf/radare2.c.obj
-ARGS=-e io.cache=true
+ARGS=-e bin.relocs.apply=true
 CMDS=<<EOF
 e asm.comments=false
 e asm.lines=false
@@ -68,7 +68,7 @@ RUN
 
 NAME=ELF: R_X86_64_PLT32 patch reloc 2
 FILE=bins/elf/test.ko
-ARGS=-e io.cache=true
+ARGS=-e bin.relocs.apply=true
 CMDS=<<EOF
 e asm.comments=false
 e asm.lines=false
@@ -103,7 +103,7 @@ RUN
 
 NAME=x86 32bit relocs in kernel module
 FILE=bins/elf/linux-example-x86-32.ko
-ARGS=-e bin.cache=true
+ARGS=-e bin.relocs.apply=true
 CMDS=<<EOF
 s 0x0800007c
 pi 15
@@ -132,7 +132,7 @@ ret
 EOF
 RUN
 
-NAME=x86 32bit relocs in kernel module (bin.cache=false)
+NAME=x86 32bit relocs in kernel module (bin.relocs.apply=false)
 FILE=bins/elf/linux-example-x86-32.ko
 CMDS=<<EOF
 s 0x0800007c
@@ -188,7 +188,7 @@ RUN
 
 NAME=ELF: relocs r2pay
 FILE=bins/elf/r2pay-arm64.so
-ARGS=-e bin.cache=true
+ARGS=-e bin.relocs.apply=true
 CMDS=<<EOF
 s section..init_array
 pd 10

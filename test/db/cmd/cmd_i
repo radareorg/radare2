@@ -3852,10 +3852,10 @@ EXPECT=<<EOF
             ;-- section..init_array:
             ;-- segment.LOAD1:
             ;-- segment.GNU_RELRO:
-            0x0021bfa8      .qword 0x0000000000005d20 ; entry.init0    ; [18] -rw- section size 8 named .init_array
+            0x0021bfa8      .qword 0x0000000000005d20 ; entry.init0    ; RELOC 64  ; [18] -rw- section size 8 named .init_array
 
             ;-- section..fini_array:
-            0x0021bfb0      .qword 0x0000000000005ce0 ; entry.fini0    ; [19] -rw- section size 8 named .fini_array
+            0x0021bfb0      .qword 0x0000000000005ce0 ; entry.fini0    ; RELOC 64  ; [19] -rw- section size 8 named .fini_array
 EOF
 EXPECT_ERR=<<EOF
 DEBUG: (section .dynstr) Css 1477 @ 0xf70

@@ -1282,6 +1282,7 @@ RUN
 
 NAME=reflines offset 2 (ascii)
 FILE=bins/elf/analysis/ls-alxchk
+ARGS=-e bin.relocs.apply=true
 CMDS=<<EOF
 e asm.sub.rel=false
 e asm.bytes=false
@@ -1320,8 +1321,7 @@ EXPECT=<<EOF
 |    ||||   0x00011411      cmp sil, cl
 |   ,=====< 0x00011414      jne 0x11424
 |   |||||   0x00011416      lea rbx, [rax + 4]
-|   |||||   0x0001141a      mov rax, qword [rip + 0xdeaf]              ; reloc.program_invocation_short_name
-|   |||||                                                              ; [0x1f2d0:8]=0
+|   |||||   0x0001141a      mov rax, qword [rip + 0xdeaf]              ; [0x1f2d0:8]=0x221f0 reloc.program_invocation_short_name
 |   |||||   0x00011421      mov qword [rax], rbx
 |   |||||   ; CODE XREFS from fcn.00011390 @ 0x113d0(x), 0x113e0(x), 0x113f4(x), 0x11414(x)
 |   ````--> 0x00011424      mov rax, qword [rip + 0xde3d]              ; [0x1f268:8]=0x21680
@@ -4004,7 +4004,7 @@ FILE=-
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
-e bin.cache=1
+e bin.relocs.apply=1
 e anal.onchange=1
 s 0x0
 f func

@@ -4,6 +4,7 @@
 #include <r_util.h>
 #include <r_lib.h>
 #include <r_bin.h>
+#include <r_io.h>
 #include <string.h>
 
 #define MAX_SECTION_COUNT 128
@@ -456,6 +457,10 @@ static bool reloc_step_vaddr(const LoadedRel *rel, const RelReloc *reloc, ut32 *
 #define hi(x) (((x) >> 16) & 0xffff)
 #define ha(x) ((((x) >> 16) + (((x)&0x8000) ? 1 : 0)) & 0xffff)
 
+static bool _overlay_write_at_hack(RIO *io, ut64 addr, const ut8 *buf, int len) {
+	return true;
+}
+
 // Applies a relocation on the current program.
 // Does not generate RBinReloc/RBinImport entries.
 static RBinReloc *patch_reloc(RBin *b, const LoadedRel *rel, const RelReloc *reloc, ut32 module, ut32 P) {
@@ -496,12 +501,14 @@ static RBinReloc *patch_reloc(RBin *b, const LoadedRel *rel, const RelReloc *rel
 	case R_PPC_ADDR16_HI:  size = 2; value = set_half16(value, hi(S + A));       break;
 	case R_PPC_ADDR16_HA:  size = 2; value = set_half16(value, ha(S + A));       break;
 	default:
-		R_LOG_ERROR ("REL: Unsupported reloc type %d", reloc->type);
+		if (b->iob.overlay_write_at != _overlay_write_at_hack) {
+			R_LOG_ERROR ("REL: Unsupported reloc type %d", reloc->type);
+		}
 		return NULL;
 	}
 	// clang-format on
 
-	if (r_log_match (R_LOGLVL_DEBUG, R_LOG_ORIGIN)) {
+	if (r_log_match (R_LOGLVL_DEBUG, R_LOG_ORIGIN) && b->iob.overlay_write_at != _overlay_write_at_hack) {
 		assert (size > 0 && size <= 8);
 		char value_old_hex[9], value_new_hex[9];
 		char fmt[] = "%08x";
@@ -549,7 +556,9 @@ static RList *patch_relocs(RBin *b) {
 	for (i = 0; i < rel->num_imps; i++) {
 		const RelImp *imp = &rel->imps[i];
 		if (imp->module != 0 && imp->module != rel->hdr.module_id) {
-			R_LOG_ERROR ("Imports from other REL (%08x) not yet implemented", imp->module);
+			if (b->iob.overlay_write_at != _overlay_write_at_hack) {
+				R_LOG_ERROR ("Imports from other REL (%08x) not yet implemented", imp->module);
+			}
 			continue;
 		}
 
@@ -567,6 +576,18 @@ static RList *patch_relocs(RBin *b) {
 			}
 		}
 	}
+	return ret;
+}
+
+static RList *relocs(RBinFile *bf) {
+	if (!bf || !bf->rbin) {
+		return NULL;
+	}
+	RBin *b = bf->rbin;
+	void *tmp = b->iob.overlay_write_at;
+	b->iob.overlay_write_at = _overlay_write_at_hack;
+	RList *ret = patch_relocs (b);
+	b->iob.overlay_write_at = tmp;
 	return ret;
 }
 
@@ -599,6 +620,7 @@ RBinPlugin r_bin_plugin_rel = {
 	.baddr = &baddr,
 	.sections = &sections,
 	.symbols = &symbols,
+	.relocs = &relocs,
 	.info = &info,
 	.patch_relocs = &patch_relocs
 };

@@ -21,10 +21,10 @@ static RList *entries(RBinFile *bf) {
 	return ret;
 }
 
-static void __patch_reloc(RBuffer *buf, ut32 addr_to_patch, ut32 data_offset) {
+static void __patch_reloc(RIOBind *iob, ut32 addr_to_patch, ut32 data_offset) {
 	ut8 val[4] = { 0 };
 	r_write_le32 (val, data_offset);
-	r_buf_write_at (buf, addr_to_patch, (void *) val, sizeof (val));
+	iob->overlay_write_at (iob->io, addr_to_patch, val, sizeof (val));
 }
 
 static int search_old_relocation(struct reloc_struct_t *reloc_table, ut32 addr_to_patch, int n_reloc) {
@@ -40,29 +40,20 @@ static int search_old_relocation(struct reloc_struct_t *reloc_table, ut32 addr_t
 static RList *patch_relocs(RBin *b) {
 	r_return_val_if_fail (b && b->iob.io, NULL);
 	struct r_bin_bflt_obj *bin = NULL;
-	RList *list = NULL;
-	int i = 0;
-	if (!b->iob.io->desc) {
-		R_LOG_WARN ("No default descriptor loaded");
-		return NULL;
-	}
-	if (!r_io_cache_writable (b->iob.io)) {
-		R_LOG_WARN ("Please run r2 with -e io.cache=true to patch relocations");
-		return NULL;
-	}
 	RBinObject *obj = r_bin_cur_object (b);
 	if (!obj) {
 		return NULL;
 	}
 	bin = obj->bin_obj;
-	list = r_list_newf ((RListFree) free);
+	RList *list = r_list_newf ((RListFree) free);
 	if (!list) {
 		return NULL;
 	}
 	if (bin->got_table) {
 		struct reloc_struct_t *got_table = bin->got_table;
+		int i;
 		for (i = 0; i < bin->n_got; i++) {
-			__patch_reloc (bin->b, got_table[i].addr_to_patch,
+			__patch_reloc (&b->iob, got_table[i].addr_to_patch,
 				got_table[i].data_offset);
 			RBinReloc *reloc = R_NEW0 (RBinReloc);
 			if (reloc) {
@@ -77,15 +68,15 @@ static RList *patch_relocs(RBin *b) {
 
 	if (bin->reloc_table) {
 		struct reloc_struct_t *reloc_table = bin->reloc_table;
+		int i = 0;
 		for (i = 0; i < bin->hdr->reloc_count; i++) {
 			int found = search_old_relocation (reloc_table,
-				reloc_table[i].addr_to_patch,
-				bin->hdr->reloc_count);
+				reloc_table[i].addr_to_patch, bin->hdr->reloc_count);
 			if (found != -1) {
-				__patch_reloc (bin->b, reloc_table[found].addr_to_patch,
+				__patch_reloc (&b->iob, reloc_table[found].addr_to_patch,
 					reloc_table[i].data_offset);
 			} else {
-				__patch_reloc (bin->b, reloc_table[i].addr_to_patch,
+				__patch_reloc (&b->iob, reloc_table[i].addr_to_patch,
 					reloc_table[i].data_offset);
 			}
 			RBinReloc *reloc = R_NEW0 (RBinReloc);
@@ -98,9 +89,6 @@ static RList *patch_relocs(RBin *b) {
 		}
 		R_FREE (bin->reloc_table);
 	}
-	ut64 tmpsz;
-	const ut8 *tmp = r_buf_data (bin->b, &tmpsz);
-	b->iob.write_at (b->iob.io, 0, tmp, tmpsz);
 	return list;
 }
 

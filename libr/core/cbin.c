@@ -1850,8 +1850,8 @@ static int bin_relocs(RCore *r, PJ *pj, int mode, int va) {
 	//this has been created for reloc object files
 	RRBTree *relocs = r_bin_get_relocs (r->bin);
 	bool apply_relocs = r_config_get_b (r->config, "bin.relocs.apply");
-	if (apply_relocs && relocs) {
-		r_bin_patch_relocs (r->bin);
+	if (apply_relocs) {
+		relocs = r_bin_patch_relocs (r->bin);
 		r_io_drain_overlay (r->io);
 	}
 	if (!relocs) {
