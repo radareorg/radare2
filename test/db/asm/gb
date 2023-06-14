@@ -614,8 +614,8 @@ aB "ld hl, 0xc3a0" 21a0c3
 aB "ld bc, 0x188" 018801
 aB "ld sp, 0xc3a0" 31a0c3
 aB "ld de, 0x188" 118801
-a "call 0x36e0" cde036
+aB "call 0x36e0" cde036
 aB "ld b, [hl]" 46
-a "ld [hl], a" 77
+aB "ld [hl], a" 77
 aB "ld a, 0x63" 3e63
-a "rlc [hl]" cb06
+aB "rlc [hl]" cb06
