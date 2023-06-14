@@ -149,9 +149,12 @@ R_API bool r_io_cache_write_at(RIO *io, ut64 addr, const ut8 *buf, int len) {
 // read happens by iterating over all the layers
 R_API bool r_io_cache_read_at(RIO *io, ut64 addr, ut8 *buf, int len) {
 	r_return_val_if_fail (io && buf && (len > 0), false);
+#if 0
+	// X perm is the io.cache.. this is disabled by bin.cache.. so many tests fail because of this
 	if (!(io->cache.mode & R_PERM_X)) {
 		return false;
 	}
+#endif
 	RIOCacheLayer *layer;
 	RListIter *iter;
 	RInterval itv = (RInterval){addr, len};

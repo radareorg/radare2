@@ -14,7 +14,7 @@ NAME=armr - functions bits
 FILE=bins/arm/elf/hello_world
 CMDS=<<EOF
 aaa
-pi 1@@f
+pid 1@@f
 EOF
 EXPECT=<<EOF
 mov.w fp, 0

@@ -1848,14 +1848,15 @@ static int bin_relocs(RCore *r, PJ *pj, int mode, int va) {
 
 	va = VA_TRUE; // XXX relocs always vaddr?
 	//this has been created for reloc object files
-	bool bin_cache = r_config_get_i (r->config, "bin.cache");
+	bool bin_cache = r_config_get_b (r->config, "bin.cache");
 	if (bin_cache) {
 		r_config_set_b (r->config, "io.cache", true);
 	}
 	RRBTree *relocs = r_bin_patch_relocs (r->bin);
 	if (!relocs) {
 		if (bin_cache) {
-			r_config_set_b (r->config, "io.cache", false);
+			// r_config_set_b (r->config, "io.cache", false);
+			r_config_set_b (r->config, "io.cache.write", false);
 			bin_cache = false;
 		}
 		relocs = r_bin_get_relocs (r->bin);
