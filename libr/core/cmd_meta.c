@@ -558,18 +558,16 @@ static int cmd_meta_comment(RCore *core, const char *input) {
 	case 'j': // "CCj"
 		r_meta_print_list_all (core->anal, R_META_TYPE_COMMENT, 'j', input + 2);
 		break;
-	case '!':
+	case '!': // "CC!"
 		{
 			const char *comment = r_meta_get_string (core->anal, R_META_TYPE_COMMENT, addr);
 			char *out = r_core_editor (core, NULL, comment);
 			if (out) {
 				r_str_ansi_strip (out);
 				//r_meta_set (core->anal->meta, R_META_TYPE_COMMENT, addr, 0, out);
-				r_core_cmdf (core, "CC-@0x%08"PFMT64x, addr);
-				// R2_590 - r_core_cmd_call_at (core, "CC-", addr);
+				r_core_cmd_call_at (core, addr, "CC-");
 				//r_meta_del (core->anal->meta, input[0], addr, addr+1);
-				r_meta_set_string (core->anal,
-						R_META_TYPE_COMMENT, addr, out);
+				r_meta_set_string (core->anal, R_META_TYPE_COMMENT, addr, out);
 				free (out);
 			}
 		}
@@ -840,13 +838,12 @@ static int cmd_meta_others(RCore *core, const char *input) {
 		break;
 	case '!': // "Cf!", "Cd!", ...
 		{
-			char *out;
 			const char *comment = r_meta_get_string (core->anal, R_META_TYPE_COMMENT, addr);
-			out = r_core_editor (core, NULL, comment);
+			char *out = r_core_editor (core, NULL, comment);
 			if (out) {
+				r_str_ansi_strip (out);
 				//r_meta_set (core->anal->meta, R_META_TYPE_COMMENT, addr, 0, out);
-				r_core_cmdf (core, "CC-@0x%08"PFMT64x, addr);
-				// R2_590 - r_core_cmd_call_at (core, "CC-", addr);
+				r_core_cmd_call_at (core, addr, "CC-");
 				//r_meta_del (core->anal->meta, input[0], addr, addr+1);
 				r_meta_set_string (core->anal, R_META_TYPE_COMMENT, addr, out);
 				free (out);
