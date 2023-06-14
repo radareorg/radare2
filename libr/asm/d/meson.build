@@ -10,6 +10,7 @@ sdb_files = [
   'chip8',
   'dalvik',
   'evm',
+  'gb',
   'i4004',
   'i8080',
   'java',

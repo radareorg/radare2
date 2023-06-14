@@ -1,17 +1,15 @@
-/* radare - LGPL - Copyright 2012-2022 - condret, pancake */
+/* radare - LGPL - Copyright 2012-2023 - condret, pancake */
 
 #include <r_util.h>
-#include <r_types.h>
-#include <string.h>
 
-static void str_op(char *c) {
+static inline void str_op(char *c) {
 	if ((c[0] <= 'Z') && (c[0] >= 'A')) {
 		c[0] += 0x20;
 	}
 }
 
 static int gb_reg_idx(char r) {
-	const char *rstr = "bcdehl a";
+	const char rstr[] = "bcdehl a";
 	const char *ptr = strchr (rstr, r);
 	return ptr ? (int)(size_t)(ptr - rstr) : -1;
 }
@@ -111,7 +109,7 @@ static int gb_parse_arith1(ut8 *buf, const int minlen, char *buf_asm, ut8 base, 
 	return 1;
 }
 
-static bool gb_parse_ld1(ut8 *buf, const int minlen, char *buf_asm) {
+static int gb_parse_ld1(ut8 *buf, const int minlen, char *buf_asm) {
 	int i;
 	r_str_replace_in (buf_asm, strlen (buf_asm), ", ", ",", true);
 	if (strlen (buf_asm) < minlen) {
@@ -126,23 +124,23 @@ static bool gb_parse_ld1(ut8 *buf, const int minlen, char *buf_asm) {
 		buf[0] = (ut8)(0x40 + (i * 8));
 		i = gb_reg_idx (buf_asm[5]);
 		if (i == -1) {
-			if (strncmp (buf_asm + 5, "[hl]", 4)) {
+			if (r_str_startswith (buf_asm + 5, "[hl]")) {
 				return false;
 			}
 			i = 6;
 		}
 		buf[0] |= (ut8)i;
-		return true;
+		return 1;
 	}
-	if (!strncmp (buf_asm + 3, "[hl],", 5)) {
-		if ((i = gb_reg_idx (buf_asm[8])) == (-1)) {
-			//'ld [hl], [hl]' does not exist
+	if (r_str_startswith (buf_asm + 3, "[hl],")) {
+		if ((i = gb_reg_idx (buf_asm[8])) == -1) {
+			// 'ld [hl], [hl]' does not exist
 			return false;
 		}
 		buf[0] = 0x70 | (ut8)i;
-		return true;
+		return 1;
 	}
-	return false;
+	return 0;
 }
 
 static bool gb_parse_ld2(ut8 *buf, char *buf_asm) {
@@ -200,12 +198,12 @@ static bool gb_parse_ld3(ut8 *buf, char *buf_asm) {
 	return true;
 }
 
-static int gbAsm(const char *buf, ut8 *outbuf) {
+static int gbAsm(const char *buf, ut8 **outbuf) {
 	int mn_len, j, len = 1;
 	ut32 mn = 0;
 	ut64 num;
 	size_t i;
-	if (!buf || !outbuf) {
+	if (!buf) {
 		return 0;
 	}
 	ut8 opbuf[4] = {0};
@@ -227,10 +225,10 @@ static int gbAsm(const char *buf, ut8 *outbuf) {
 		mn = (mn << 8) | buf_asm[j];
 	}
 	switch (mn) {
-	case 0x6e6f70: //nop
+	case 0x6e6f70: // nop
 		opbuf[0] = 0x00;
 		break;
-	case 0x696e63: //inc
+	case 0x696e63: // inc
 		if ((i = strlen (buf_asm)) < 5) {
 			free (buf_asm);
 			return 0;
@@ -301,30 +299,30 @@ static int gbAsm(const char *buf, ut8 *outbuf) {
 			break;
 		}
 		break;
-	case 0x726c6361: //rlca
+	case 0x726c6361: // rlca
 		opbuf[0] = 0x07;
 		break;
-	case 0x72726361: //rrca
+	case 0x72726361: // rrca
 		opbuf[0] = 0xf0;
 		break;
-	case 0x73746f70:		//stop
+	case 0x73746f70: // stop
 		opbuf[0] = 0x10;
 		break;
-	case 0x726c61:			//rla
+	case 0x726c61: // rla
 		opbuf[0] = 0x17;
 		break;
-	case 0x727261:			//rra
+	case 0x727261: // rra
 		opbuf[0] = 0x1f;
 		break;
-	case 0x646161:			//daa
+	case 0x646161: // daa
 		opbuf[0] = 0x27;
 		break;
-	case 0x63706c:			//cpl
+	case 0x63706c: // cpl
 		opbuf[0] = 0x2f;
 		break;
-	case 0x616464:			//add
+	case 0x616464: // add
 		r_str_replace_in (buf_asm, strlen(buf_asm), ", ", ",", true);
-		if (strlen(buf_asm) < 5) {
+		if (strlen (buf_asm) < 5) {
 			free (buf_asm);
 			return 0;
 		}
@@ -369,16 +367,16 @@ static int gbAsm(const char *buf, ut8 *outbuf) {
 	case 0x6370:			//cp
 		len = gb_parse_arith1 (opbuf, 4, buf_asm, 0xb8, 0xfe);
 		break;
-	case 0x736366:			//scf
+	case 0x736366: // scf
 		opbuf[0] = 0x37;
 		break;
-	case 0x636366:			//ccf
+	case 0x636366: // ccf
 		opbuf[0] = 0x3f;
 		break;
-	case 0x68616c74: //halt
+	case 0x68616c74: // halt
 		opbuf[0] = 0x76;
 		break;
-	case 0x726574: //ret
+	case 0x726574: // ret
 		if (strlen (buf_asm) < 5) {
 			opbuf[0] = 0xc9;
 		} else if (strlen (buf_asm) < 6) {
@@ -409,20 +407,21 @@ static int gbAsm(const char *buf, ut8 *outbuf) {
 			}
 		}
 		break;
-	case 0x72657469: //reti
+	case 0x72657469: // "reti"
 		opbuf[0] = 0xd9;
 		break;
-	case 0x6469: //di
+	case 0x6469: // "di"
 		opbuf[0] = 0xf3;
 		break;
-	case 0x6569: //ei
+	case 0x6569: // "ei"
 		opbuf[0] = 0xfb;
 		break;
-	case 0x6c64: //ld
+	case 0x6c64: // "ld"
 		i = strlen (buf_asm);
 		r_str_replace_in (buf_asm, (ut32)i, "[ ", "[", true);
 		r_str_replace_in (buf_asm, (ut32)i, " ]", "]", true);
-		if (!gb_parse_ld1 (opbuf, 6, buf_asm)) {
+		len = gb_parse_ld1 (opbuf, 6, buf_asm);
+		if (len < 1) {
 			len++;
 			if (!gb_parse_ld2 (opbuf, buf_asm)) {
 				len++;
@@ -683,6 +682,13 @@ static int gbAsm(const char *buf, ut8 *outbuf) {
 		break;
 	}
 	free (buf_asm);
-	memcpy (outbuf, opbuf, sizeof (ut8) * len);
+
+	const size_t num_bytes = sizeof (ut8) * len;
+	// XXX dont use the heap to write 2 bytes
+	*outbuf = malloc (num_bytes);
+	if (!*outbuf) {
+		return 0;
+	}
+	memcpy (*outbuf, opbuf, num_bytes);
 	return len;
 }

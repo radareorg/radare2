@@ -1109,7 +1109,7 @@ R_API void r_str_replace_in(char *str, ut32 sz, const char *key, const char *val
 	r_return_if_fail (str && key && val);
 	char *heaped = r_str_replace (strdup (str), key, val, g);
 	if (heaped) {
-		strncpy (str, heaped, sz);
+		r_str_ncpy (str, heaped, sz);
 		free (heaped);
 	}
 }
