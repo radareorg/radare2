@@ -161,7 +161,7 @@ x 8
 w wo
 x 8
 ?e ---
-e io.cache=0
+e io.cache.read=0
 x 8
 EOF
 EXPECT=<<EOF
