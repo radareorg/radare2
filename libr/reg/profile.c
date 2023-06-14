@@ -416,18 +416,11 @@ static char *gdb_to_r2_profile(const char *gdb) {
 		}
 		const char *type = ((type_bits & mmx) || (type_bits & float_) || (type_bits & sse)) ? "fpu" : "gpr";
 		if (isupper (*name)) {
-#if R2_590
 			// assume uppercase register names are only used for privileged registers
-			type = "pri";
-			char *loname = r_str_case (strdup (name), false);
-			r_strbuf_appendf (sb, "%s\t%s\t.%d\t%d\t0\n", type, loname, size * 8, offset);
-			free (loname);
-#else
-			R_LOG_DEBUG ("Ignoring upper case register '%s', considering it privileged", name);
-#endif
-		} else {
-			r_strbuf_appendf (sb, "%s\t%s\t.%d\t%d\t0\n", type, name, size * 8, offset);
+			type = "pri"; // family=priv
+			r_str_case (name, false);
 		}
+		r_strbuf_appendf (sb, "%s\t%s\t.%d\t%d\t0\n", type, name, size * 8, offset);
 		// Go to next line
 		if (!ptr1) {
 			break;
