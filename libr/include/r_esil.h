@@ -124,7 +124,7 @@ typedef struct r_esil_t {
 	int parse_goto_count;
 	int verbose;
 	ut64 flags;
-	ut64 address;
+	ut64 addr;
 	ut64 stack_addr;
 	ut32 stack_size;
 	int delay; 		// mapped to $ds in ESIL

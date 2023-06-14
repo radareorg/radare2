@@ -192,7 +192,7 @@ static bool esil2c_goto(REsil *esil) {
 	if (!src) {
 		return false;
 	}
-	r_strbuf_appendf (user->sb, "  goto addr_%08"PFMT64x"_%s;\n", esil->address, src);
+	r_strbuf_appendf (user->sb, "  goto addr_%08"PFMT64x"_%s;\n", esil->addr, src);
 	free (src);
 	return true;
 }
