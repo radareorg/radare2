@@ -15,11 +15,10 @@
 
 R_API RRegItem *r_reg_cond_get(RReg *reg, const char *name) {
 	r_return_val_if_fail (reg && name, NULL);
-	int i = R_REG_TYPE_GPR;
 	RListIter *iter;
 	RRegItem *r;
 
-	r_list_foreach (reg->regset[i].regs, iter, r) {
+	r_list_foreach (reg->regset[R_REG_TYPE_GPR].regs, iter, r) {
 		if (r->flags && !strcmp (name, r->flags)) {
 			return r;
 		}
