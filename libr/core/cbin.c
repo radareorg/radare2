@@ -1848,18 +1848,11 @@ static int bin_relocs(RCore *r, PJ *pj, int mode, int va) {
 
 	va = VA_TRUE; // XXX relocs always vaddr?
 	//this has been created for reloc object files
-	bool bin_cache = r_config_get_b (r->config, "bin.cache");
-	if (bin_cache) {
-		r_config_set_b (r->config, "io.cache", true);
-	}
-	RRBTree *relocs = r_bin_patch_relocs (r->bin);
-	if (!relocs) {
-		if (bin_cache) {
-			// r_config_set_b (r->config, "io.cache", false);
-			r_config_set_b (r->config, "io.cache.write", false);
-			bin_cache = false;
-		}
-		relocs = r_bin_get_relocs (r->bin);
+	RRBTree *relocs = r_bin_get_relocs (r->bin);
+	bool apply_relocs = r_config_get_b (r->config, "bin.relocs.apply");
+	if (apply_relocs && relocs) {
+		r_bin_patch_relocs (r->bin);
+		r_io_drain_overlay (r->io);
 	}
 	if (!relocs) {
 		if (pj) {
@@ -1869,15 +1862,6 @@ static int bin_relocs(RCore *r, PJ *pj, int mode, int va) {
 		r_table_free (table);
 		return false;
 	}
-	if (bin_cache) {
-		if (r_io_cache_empty (r->io)) {
-			r_config_set_b (r->config, "io.cache", false);
-		} else {
-			r_config_set_b (r->config, "io.cache.read", true);
-		}
-		// r_core_cmd_call (r, "wcs"); // write cache squash
-	}
-	r_io_drain_overlay (r->io);
 
 	if (IS_MODE_RAD (mode)) {
 		r_cons_println ("fs relocs");
