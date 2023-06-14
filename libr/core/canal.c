@@ -5441,6 +5441,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 	ESIL->user = &ctx;
 	ESIL->cb.hook_mem_read = &esilbreak_mem_read;
 	ESIL->cb.hook_mem_write = &esilbreak_mem_write;
+	// r_core_cmd0 (core, "e io.cache=true;wc++");
 
 	if (fcn && fcn->reg_save_area) {
 		if (newstack) {
@@ -5811,6 +5812,7 @@ repeat:
 	ESIL->user = NULL;
 	r_anal_op_fini (&op);
 	r_cons_break_pop ();
+	// r_core_cmd0 (core, "wc--");
 	// restore register
 	r_reg_arena_pop (core->anal->reg);
 }

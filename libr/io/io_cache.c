@@ -53,6 +53,7 @@ static void _io_cache_item_free(void *data) {
 R_API void r_io_cache_init(RIO *io) {
 	r_return_if_fail (io);
 	io->cache.layers = r_list_newf (iocache_layer_free);
+	io->cache.mode = R_PERM_X | R_PERM_R | R_PERM_W;
 	r_io_cache_push (io);
 }
 

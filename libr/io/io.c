@@ -307,12 +307,18 @@ R_API bool r_io_write_at(RIO* io, ut64 addr, const ut8* buf, int len) {
 			mybuf[i] &= io->write_mask[i % io->write_mask_len];
 		}
 	}
-	if (io->cache.mode & R_PERM_X && io->cache.mode & R_PERM_W) {
-		ret = r_io_cache_write_at (io, addr, mybuf, len);
-	} else if (io->va) {
-		ret = r_io_vwrite_at (io, addr, mybuf, len);
+	if (io->cache.mode & R_PERM_X) {
+		if (io->cache.mode & R_PERM_W) {
+			ret = r_io_cache_write_at (io, addr, mybuf, len);
+		} else {
+			R_LOG_ERROR ("enable io.cache.write");
+		}
 	} else {
-		ret = r_io_pwrite_at (io, addr, mybuf, len) > 0; // == len;
+		if (io->va) {
+			ret = r_io_vwrite_at (io, addr, mybuf, len);
+		} else {
+			ret = r_io_pwrite_at (io, addr, mybuf, len) > 0; // == len;
+		}
 	}
 	if (buf != mybuf) {
 		free (mybuf);
