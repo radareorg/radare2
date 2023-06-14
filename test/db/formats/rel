@@ -1,17 +1,16 @@
 NAME=uncached err
 FILE=bins/rel/d_profileNP.rel
-ARGS=-e bin.cache=false
+ARGS=-e bin.relocs.apply=false
 CMDS=
 EXPECT_ERR=<<EOF
 INFO: REL module ID 00000001
 INFO: REL version 3
-WARN: run r2 with -e bin.cache=true to fix relocations in disassembly
 EOF
 RUN
 
 NAME=sections
 FILE=bins/rel/d_profileNP.rel
-ARGS=-e bin.cache=true -B 0x80500000
+ARGS=-e bin.relocs.apply=true -B 0x80500000
 CMDS=iS
 EXPECT=<<EOF
 [Sections]
@@ -29,7 +28,7 @@ RUN
 
 NAME=dump relocs
 FILE=bins/rel/d_profileNP.rel
-ARGS=-e bin.cache=true -B 0x80500000 -e log.level=5
+ARGS=-e bin.relocs.apply=true -B 0x80500000 -e log.level=5
 CMDS=
 EXPECT_ERR=<<EOF
 DEBUG: RCoreCmd: =!
@@ -77,7 +76,7 @@ RUN
 
 NAME=R_PPC_ADDR16
 FILE=bins/rel/d_profileNP.rel
-ARGS=-e bin.cache=true -B 0x80500000
+ARGS=-e bin.relocs.apply=true -B 0x80500000
 CMDS=pd 3 @0x80500144
 EXPECT=<<EOF
             0x80500144      3c608024       lis r3, -0x7fdc             ; RELOC 16 
@@ -88,7 +87,7 @@ RUN
 
 NAME=R_PPC_REL24
 FILE=bins/rel/d_profileNP.rel
-ARGS=-e bin.cache=true -B 0x80500000
+ARGS=-e bin.relocs.apply=true -B 0x80500000
 CMDS=pd 1 @0x805000e4
 EXPECT=<<EOF
             0x805000e4      4bb1acbd       bl 0x8001ada0               ; RELOC 32 
@@ -97,7 +96,7 @@ RUN
 
 NAME=R_PPC_ADDR32
 FILE=bins/rel/d_profileNP.rel
-ARGS=-e bin.cache=true -B 0x80500000
+ARGS=-e bin.relocs.apply=true -B 0x80500000
 CMDS=pxW 16 @0x80500180
 EXPECT=<<EOF
 0x80500180 0x8023a588

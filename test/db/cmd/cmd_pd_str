@@ -56,13 +56,12 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=relocs and cache
+NAME=relocs and overlay
 FILE=bins/mach0/TrollStore.fat/TrollStore.arm_64.1
-ARGS=-e emu.str=true -e bin.cache=true
+ARGS=-e emu.str=true -e bin.relocs.apply=true
 CMDS=<<EOF
 pd 10 @ 0x100016c40
 pv8 1 @ 0x1000261e8
-uw~1000261e8
 ir~61e8
 EOF
 EXPECT=<<EOF
@@ -77,13 +76,12 @@ EXPECT=<<EOF
             0x100016c60      81000090       adrp x1, 0x100026000
             0x100016c64      218040f9       ldr x1, [x1, 0x100]        ; 0xdb ; 219 ; str.generalPasteboard
 0x000000010001c6e8
-idx=1809 addr=0x1000261e8 size=8 e8c6010001000800 -> e8c6010001000000 (not written)
 EOF
 RUN
 
 NAME=relocs without cache
 FILE=bins/mach0/TrollStore.fat/TrollStore.arm_64.1
-ARGS=-e emu.str=true -e bin.cache=false
+ARGS=-e emu.str=true -e bin.relocs.apply=false
 CMDS=<<EOF
 pd 10 @ 0x100016c40
 pv8 1 @ 0x1000261e8

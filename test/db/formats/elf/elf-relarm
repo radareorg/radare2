@@ -51,7 +51,7 @@ EOF
 RUN
 
 NAME=ELF: arm sh relocs
-ARGS=-e bin.cache=true
+ARGS=-e bin.relocs.apply=true
 FILE=bins/elf/r2pay-arm32.so
 CMDS=<<EOF
 ir*~reloc?
@@ -75,7 +75,7 @@ EOF
 RUN
 
 NAME=ELF: arm sh unpatched relocs
-ARGS=-e bin.cache=false
+ARGS=-e bin.relocs.apply=false
 FILE=bins/elf/r2pay-arm32.so
 CMDS=<<EOF
 ir*~reloc?
@@ -99,7 +99,7 @@ EOF
 RUN
 
 NAME=ELF: arm64 sh relocs
-ARGS=-e bin.cache=true
+ARGS=-e bin.relocs.apply=true
 FILE=bins/elf/r2pay-arm64.so
 CMDS=<<EOF
 ir*~reloc?
