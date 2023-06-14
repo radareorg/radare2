@@ -3767,6 +3767,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETI ("bin.laddr", 0, "base address for loading library ('*.so')");
 	SETCB ("bin.dbginfo", "true", &cb_bindbginfo, "load debug information at startup if available");
 	SETBPREF ("bin.relocs", "true", "load relocs information at startup if available");
+	SETBPREF ("bin.relocs.apply", "false", "apply reloc information");
 	SETICB ("bin.str.min", 0, &cb_binminstr, "minimum string length for r_bin");
 	SETICB ("bin.maxsymlen", 0, &cb_binmaxsymlen, "maximum length for symbol names");
 	SETICB ("bin.str.max", 0, &cb_binmaxstr, "maximum string length for r_bin");
