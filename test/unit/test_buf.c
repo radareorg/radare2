@@ -175,7 +175,6 @@ bool test_r_buf_mmap(void) {
 }
 
 bool test_r_buf_io(void) {
-	RBuffer *b;
 	const char *content = "Something To\nSay Here..";
 	const int length = 23;
 
@@ -189,7 +188,7 @@ bool test_r_buf_io(void) {
 	RIOBind bnd;
 	r_io_bind (io, &bnd);
 
-	b = r_buf_new_with_io(&bnd, desc->fd);
+	RBuffer *b = r_buf_new_with_io (&bnd, desc->fd);
 	mu_assert_notnull (b, "r_buf_new_file failed");
 
 	if (test_buf (b) != MU_PASSED) {

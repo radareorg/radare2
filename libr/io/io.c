@@ -307,7 +307,7 @@ R_API bool r_io_write_at(RIO* io, ut64 addr, const ut8* buf, int len) {
 			mybuf[i] &= io->write_mask[i % io->write_mask_len];
 		}
 	}
-	if (io->cache.mode & R_PERM_X) {
+	if ((io->cache.mode & R_PERM_X) == R_PERM_X) {
 		if (io->cache.mode & R_PERM_W) {
 			ret = r_io_cache_write_at (io, addr, mybuf, len);
 		} else {
