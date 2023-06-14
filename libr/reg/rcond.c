@@ -52,46 +52,21 @@ R_API const char *r_reg_cond_tostring(int n) {
 }
 
 R_API int r_reg_cond_from_string(const char *str) {
-	if (!strcmp (str, "eq")) {
-		return R_REG_COND_EQ;
+#define CK(x,y) ((x) | ((y)<<8))
+	switch (str[0] | (str[1] << 8)) {
+	case CK('e','q'): return R_REG_COND_EQ;
+	case CK('n','e'): return strcmp (str, "neg")? R_REG_COND_NE: R_REG_COND_NEG;
+	case CK('c','f'): return R_REG_COND_CF;
+	case CK('o','f'): return R_REG_COND_OF;
+	case CK('h','i'): return R_REG_COND_HI;
+	case CK('h','e'): return R_REG_COND_HE;
+	case CK('l','o'): return strcmp (str, "loe")? R_REG_COND_LO: R_REG_COND_LOE;
+	case CK('g','e'): return R_REG_COND_GE;
+	case CK('g','t'): return R_REG_COND_GT;
+	case CK('l','t'): return R_REG_COND_LT;
+	case CK('l','e'): return R_REG_COND_LE;
 	}
-	if (!strcmp (str, "ne")) {
-		return R_REG_COND_NE;
-	}
-	if (!strcmp (str, "cf")) {
-		return R_REG_COND_CF;
-	}
-	if (!strcmp (str, "neg")) {
-		return R_REG_COND_NEG;
-	}
-	if (!strcmp (str, "of")) {
-		return R_REG_COND_OF;
-	}
-	if (!strcmp (str, "hi")) {
-		return R_REG_COND_HI;
-	}
-	if (!strcmp (str, "he")) {
-		return R_REG_COND_HE;
-	}
-	if (!strcmp (str, "lo")) {
-		return R_REG_COND_LO;
-	}
-	if (!strcmp (str, "loe")) {
-		return R_REG_COND_LOE;
-	}
-	if (!strcmp (str, "ge")) {
-		return R_REG_COND_GE;
-	}
-	if (!strcmp (str, "gt")) {
-		return R_REG_COND_GT;
-	}
-	if (!strcmp (str, "lt")) {
-		return R_REG_COND_LT;
-	}
-	if (!strcmp (str, "le")) {
-		return R_REG_COND_LE;
-	}
-	// TODO: move this into core
+	// TODO: move this help message into the core
 	eprintf ("Usage: drc[=] [condition](=1,0)\n"
 		 "| eq    equal\n"
 		 "| ne    not equal\n"
