@@ -129,6 +129,7 @@ static void cons_stack_load(RConsStack *data, bool free_current) {
 }
 
 static void cons_context_init(RConsContext *context, R_NULLABLE RConsContext *parent) {
+	context->marks = r_list_newf ((RListFree)r_cons_mark_free);
 	context->breaked = false;
 	context->cmd_depth = R_CONS_CMD_DEPTH + 1;
 	context->buffer_sz = 0;
@@ -157,6 +158,9 @@ static void cons_context_init(RConsContext *context, R_NULLABLE RConsContext *pa
 
 static void cons_context_deinit(RConsContext *context) {
 	r_stack_free (context->cons_stack);
+#if R2_590
+	r_list_free (context->marks);
+#endif
 	context->cons_stack = NULL;
 	r_stack_free (context->break_stack);
 	context->break_stack = NULL;
@@ -1068,6 +1072,10 @@ R_API void r_cons_flush(void) {
 	if (I->null) {
 		r_cons_reset ();
 		return;
+	}
+	if (!r_list_empty (C->marks)) {
+		r_list_free (C->marks);
+		C->marks = r_list_newf ((RListFree)r_cons_mark_free);
 	}
 	if (lastMatters () && !C->lastMode) {
 		// snapshot of the output
@@ -2219,3 +2227,46 @@ R_API const RConsTheme* r_cons_themes(void) {
 	return NULL;
 }
 #endif
+
+R_API void r_cons_mark_free(RConsMark *m) {
+	if (m) {
+		free (m->name);
+		free (m);
+	}
+}
+
+R_API void r_cons_mark(ut64 addr, const char *name) {
+	RConsMark *mark = R_NEW0 (RConsMark);
+	if (mark) {
+		RConsContext *ctx = getctx ();
+		mark->addr = addr;
+		int row, col = r_cons_get_cursor (&row);
+		mark->name = strdup (name); // TODO. use a const pool
+		mark->pos = ctx->buffer_len;
+		mark->col = col;
+		mark->row = row;
+		r_list_append (ctx->marks, mark);
+	}
+};
+
+// must be called before
+R_API void r_cons_mark_flush(void) {
+	r_list_free (C->marks);
+}
+
+R_API RConsMark *r_cons_mark_at(ut64 addr, const char *name) {
+	RListIter *iter;
+	RConsMark *mark;
+	r_list_foreach (C->marks, iter, mark) {
+		if (R_STR_ISNOTEMPTY (name)) {
+			if (strcmp (mark->name, name)) {
+				continue;
+			}
+			return mark;
+		}
+		if (addr != UT64_MAX && mark->addr == addr) {
+			return mark;
+		}
+	}
+	return NULL;
+}

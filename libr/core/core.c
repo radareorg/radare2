@@ -47,7 +47,7 @@ static int on_fcn_delete(RAnal *_anal, void* _user, RAnalFunction *fcn) {
 static int on_fcn_rename(RAnal *_anal, void* _user, RAnalFunction *fcn, const char *oname) {
 	RCore *core = (RCore*)_user;
 	const char *cmd = r_config_get (core->config, "cmd.fcn.rename");
-	if (cmd && *cmd) {
+	if (R_STR_ISNOTEMPTY (cmd)) {
 		// XXX: wat do with old name here?
 		ut64 oaddr = core->offset;
 		ut64 addr = fcn->addr;
@@ -2425,7 +2425,7 @@ R_API char *r_core_anal_hasrefs_to_depth(RCore *core, ut64 value, PJ *pj, int de
 	}
 	if (type) {
 		const char *c = r_core_anal_optype_colorfor (core, fcn? fcn->addr: value, value, true);
-		const char *cend = (c && *c) ? Color_RESET: "";
+		const char *cend = (R_STR_ISNOTEMPTY (c)) ? Color_RESET: "";
 		if (!c) {
 			c = "";
 		}
@@ -2587,6 +2587,7 @@ R_API char *r_core_anal_hasrefs_to_depth(RCore *core, ut64 value, PJ *pj, int de
 	return res;
 }
 
+// XXX must be deprecated
 static R_TH_LOCAL char *const_color = NULL;
 
 R_API const char *colorforop(RCore *core, ut64 addr) {
