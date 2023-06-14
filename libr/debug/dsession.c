@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2017 - rkx1209 */
+/* radare - LGPL - Copyright 2017-2023 - rkx1209 */
 
 #include <r_debug.h>
 #include <r_util/r_json.h>
@@ -12,7 +12,7 @@ R_API void r_debug_session_free(RDebugSession *session) {
 		r_vector_free (session->checkpoints);
 		ht_up_free (session->registers);
 		ht_up_free (session->memory);
-		R_FREE (session);
+		free (session);
 	}
 }
 
@@ -593,7 +593,7 @@ static bool deserialize_checkpoints_cb(void *user, const char *cnum, const char 
 		baby = r_json_get (child, "arena");
 		CHECK_TYPE (baby, R_JSON_INTEGER);
 		int arena = baby->num.s_value;
-		if (arena < R_REG_TYPE_GPR || arena > R_REG_TYPE_SEG) {
+		if (arena < 0 || arena >= R_REG_TYPE_LAST) {
 			continue;
 		}
 		baby = r_json_get (child, "size");

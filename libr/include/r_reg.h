@@ -20,16 +20,16 @@ R_LIB_VERSION_HEADER (r_reg);
  * this enum aims to cover them all.
  */
 typedef enum {
-	R_REG_TYPE_GPR, // general purpose registers
+	R_REG_TYPE_GPR = 0, // general purpose registers
 	R_REG_TYPE_DRX, // debug register state
 	R_REG_TYPE_FPU, // floating point unit
-	R_REG_TYPE_PRI, // privileged registers
 	R_REG_TYPE_VEC64, // MMX
 	R_REG_TYPE_VEC128, // XMM
 	R_REG_TYPE_VEC256, // YMM
 	R_REG_TYPE_VEC512, // ZMM
 	R_REG_TYPE_FLG, // cpu flags
 	R_REG_TYPE_SEG, // segment registers
+	R_REG_TYPE_PRI, // privileged registers
 	R_REG_TYPE_LAST,
 	R_REG_TYPE_ALL = -1, // TODO; rename to ANY
 } RRegisterType;
