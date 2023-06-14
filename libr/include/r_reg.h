@@ -110,9 +110,7 @@ typedef struct r_reg_item_t {
 	char *comment;
 	int index;
 	int arena; /* in which arena is this reg living */
-#if R2_590
 	bool ro;
-#endif
 	R_REF_TYPE;
 } RRegItem;
 
@@ -139,10 +137,7 @@ typedef struct r_reg_t {
 	char *name[R_REG_NAME_LAST]; // aliases
 	RRegSet regset[R_REG_TYPE_LAST];
 	RList *allregs;
-#if R2_590
-#else
-	RList *roregs;
-#endif
+	char *roregs;
 	int iters;
 	int size;
 	int bits_default;
@@ -175,7 +170,7 @@ R_API bool r_reg_set_profile_string(RReg *reg, const char *profile);
 R_API char* r_reg_profile_to_cc(RReg *reg);
 R_API bool r_reg_set_profile(RReg *reg, const char *profile);
 R_API char *r_reg_parse_gdb_profile(const char *profile);
-R_API bool r_reg_is_readonly(RReg *reg, RRegItem *item);
+R_API bool r_reg_ro_reset(RReg *reg, const char *arg);
 
 R_API RRegSet *r_reg_regset_get(RReg *r, int type);
 R_API RRegSet *r_reg_regset_clone(RRegSet *r);

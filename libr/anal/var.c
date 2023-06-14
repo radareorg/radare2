@@ -1,5 +1,7 @@
 /* radare - LGPL - Copyright 2010-2023 - pancake, oddcoder */
 
+#define R_LOG_ORIGIN "anal.var"
+
 #include <r_core.h>
 
 #define ACCESS_CMP(x, y) ((st64)((ut64)(x) - ((RAnalVarAccess *)y)->offset))
@@ -25,7 +27,7 @@ R_API bool r_anal_var_display(RAnal *anal, RAnalVar *var) {
 				anal->cb_printf ("pf r (%s)\n", ri->name);
 			}
 		} else {
-			R_LOG_ERROR ("register not found");
+			R_LOG_ERROR ("register '%s' not found", ri->name);
 		}
 		break;
 	case R_ANAL_VAR_KIND_BPV:
@@ -153,9 +155,7 @@ R_API RAnalVar *r_anal_function_set_var(RAnalFunction *fcn, int delta, char kind
 	if (kind == R_ANAL_VAR_KIND_REG) {
 		reg = r_reg_index_get (fcn->anal->reg, R_ABS (delta));
 		if (!reg) {
-			if (fcn->anal->verbose) {
-				R_LOG_ERROR ("No register at index %d", delta);
-			}
+			R_LOG_DEBUG ("No register at index %d", delta);
 			return NULL;
 		}
 	}

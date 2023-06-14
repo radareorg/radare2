@@ -3040,24 +3040,7 @@ static bool cb_analcc(RCore *core, RConfigNode *node) {
 
 static bool cb_anal_roregs(RCore *core, RConfigNode *node) {
 	r_return_val_if_fail (core && core->anal && core->anal->reg, false);
-#if R2_590
-	// XXX TODO this wont work if a new regset is created. so it must be propagated via rreg api
-	RRegItem *reg;
-	const char *regname;
-	RListIter *iter;
-	RList *roregs = r_str_split_duplist (node->value, ",", true);
-	r_list_foreach (roregs, iter, regname) {
-		RRegItem *ri = r_reg_get (core->anal->reg, regname, -1);
-		if (ri) {
-			ri->ro = true;
-		} else {
-			R_LOG_WARN ("Cannot find register %s", regname);
-		}
-	}
-#else
-	r_list_free (core->anal->reg->roregs);
-	core->anal->reg->roregs = r_str_split_duplist (node->value, ",", true);
-#endif
+	r_reg_ro_reset (core->anal->reg, node->value);
 	return true;
 }
 
