@@ -298,7 +298,7 @@ d "ld b, d" 42
 d "ld b, e" 43
 d "ld b, h" 44
 d "ld b, l" 45
-d "ld bc, 0x0000" 010000
+dB "ld bc, 0x0000" 010000
 d "ld c, 0x00" 0e00
 d "ld c, [hl]" 4e
 d "ld c, a" 4f
@@ -347,7 +347,7 @@ d "ld l, d" 6a
 d "ld l, e" 6b
 d "ld l, h" 6c
 d "ld l, l" 6d
-d "ld sp, 0x0000" 310000
+dB "ld sp, 0x0000" 310000
 d "ld sp, hl" f9
 d "ldd [hl], a" 32
 d "ldd a, [hl]" 3a
@@ -610,12 +610,12 @@ d "xor d" aa
 d "xor e" ab
 d "xor h" ac
 d "xor l" ad
-a "ld hl, 0xc3a0" 21a0c3
-a "ld bc, 0x188" 018801
-a "ld sp, 0xc3a0" 31a0c3
-a "ld de, 0x188" 118801
+aB "ld hl, 0xc3a0" 21a0c3
+aB "ld bc, 0x188" 018801
+aB "ld sp, 0xc3a0" 31a0c3
+aB "ld de, 0x188" 118801
 a "call 0x36e0" cde036
-a "ld b, [hl]" 46
+aB "ld b, [hl]" 46
 a "ld [hl], a" 77
-a "ld a, 0x63" 3e63
+aB "ld a, 0x63" 3e63
 a "rlc [hl]" cb06

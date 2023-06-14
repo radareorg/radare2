@@ -54,6 +54,7 @@ OBJS+=d/6502.o
 OBJS+=d/8051.o
 OBJS+=d/LH5801.o
 OBJS+=d/arc.o
+OBJS+=d/gb.o
 OBJS+=d/evm.o
 OBJS+=d/arm.o
 OBJS+=d/avr.o

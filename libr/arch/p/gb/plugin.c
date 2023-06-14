@@ -1434,7 +1434,7 @@ static bool encode(RArchSession *as, RAnalOp *op, RArchEncodeMask mask) {
 	ut8* outbuf = NULL;
 	R_FREE (op->bytes);
 	int size = gbAsm (op->mnemonic, &outbuf);
-	if (size < 3) {
+	if (size < 1) {
 		free (outbuf);
 		return false;
 	}
