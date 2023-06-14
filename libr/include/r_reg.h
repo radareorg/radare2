@@ -41,10 +41,8 @@ typedef enum {
 typedef enum {
 	R_REG_NAME_PC, // program counter
 	R_REG_NAME_SP, // stack pointer
-#if R2_590
 	R_REG_NAME_GP, // global pointer
 	R_REG_NAME_RA, // return address register
-#endif
 	R_REG_NAME_SR, // status register
 	R_REG_NAME_BP, // base pointer
 	R_REG_NAME_LR, // link register
