@@ -477,6 +477,25 @@ int main(int argc, char **argv) {
 					arg = r_str_newf ("db/%s", arg + 1);
 				}
 			}
+			if (r_str_endswith (arg, ".c")) {
+				char *abspath = strdup (arg);
+				if (*arg != '/') {
+					free (abspath);
+					abspath = r_str_newf ("%s/%s", cwd, arg);
+				}
+				// load tests
+				RList *tests = r_list_newf (free);
+				r2r_from_sourcecomments (tests, abspath);
+				free (abspath);
+				RListIter *iter;
+				char *test;
+				r_list_foreach (tests, iter, test) {
+					eprintf ("Running %s\n", test);
+					r_sys_cmdf ("r2r %s %s", interactive? "-i": "", test);
+				}
+				r_list_free (tests);
+				continue;
+			}
 			char *tf = r_file_abspath_rel (cwd, arg);
 			if (!tf || !r2r_test_database_load (state.db, tf)) {
 				eprintf ("Failed to load tests from \"%s\"\n", tf);
