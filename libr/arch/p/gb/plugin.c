@@ -737,739 +737,693 @@ static bool decode(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
 	op->size = ilen;
 	op->nopcode = 1;
 	switch (data[0]) {
-		case 0x00:
-		case 0x40:
-		case 0x49:
-		case 0x52:
-		case 0x5b:
-		case 0x64:
-		case 0x6d:
-		case 0x7f:
-			op->cycles = 4;
-			op->type = R_ANAL_OP_TYPE_NOP;
-			break;
-		case 0x01:
-		case 0x11:
-		case 0x21:
-		case 0x31:
-			gb_anal_mov_imm (op, data);
-			op->cycles = 12;
-			op->type = R_ANAL_OP_TYPE_MOV;
-			break;
-		case 0xf8:
-			gb_anal_mov_hl_sp (op, data[1]);
-			op->cycles = 12;
-			op->type = R_ANAL_OP_TYPE_MOV;
-			op->type2 = R_ANAL_OP_TYPE_ADD;
-			break;
-		case 0x06:
-		case 0x0e:
-		case 0x16:
-		case 0x1e:
-		case 0x26:
-		case 0x2e:
-		case 0x3e:
-			gb_anal_mov_imm (op, data);
-			op->cycles = 8;
-			op->type = R_ANAL_OP_TYPE_MOV;
-			break;
-		case 0xf9:
-			gb_anal_mov_sp_hl (op);
-			op->cycles = 8;
-			op->type = R_ANAL_OP_TYPE_MOV;		// LD
-			break;
-		case 0x03:
-		case 0x13:
-		case 0x23:
-		case 0x33:
-			op->cycles = 8;
-			op->type = R_ANAL_OP_TYPE_ADD;
-			gb_anal_id (as, op, data[0]);
-			break;
-		case 0x04:
-		case 0x0c:
-		case 0x14:
-		case 0x1c:
-		case 0x24:
-		case 0x2c:
-		case 0x3c:
-			op->cycles = 4;
-			op->type = R_ANAL_OP_TYPE_ADD;		// INC
-			gb_anal_id (as, op, data[0]);
-			break;
-		case 0x34:
-			op->cycles = 12;
-			op->type = R_ANAL_OP_TYPE_ADD;
-			gb_anal_id (as, op, data[0]);
-			break;
-		case 0xea:
-			meta_gb_bankswitch_cmt (as, addr, GB_SOFTCAST (data[1], data[2]));
-			gb_anal_store (op, data);
-			op->cycles = 16;
-			op->type = R_ANAL_OP_TYPE_STORE;
-			break;
-		case 0x08:
-			meta_gb_bankswitch_cmt (as, addr, GB_SOFTCAST (data[1], data[2]));
-			gb_anal_store (op, data);
-			op->cycles = 20;
-			op->type = R_ANAL_OP_TYPE_STORE;
-			break;
-		case 0x02:
-		case 0x12:
-		case 0xe2:
-			gb_anal_store (op, data);
-			op->cycles = 8;
-			op->type = R_ANAL_OP_TYPE_STORE;
-			break;
-		case 0x36:
-		case 0x22:
-		case 0x32:
-		case 0x70:
-		case 0x71:
-		case 0x72:
-		case 0x73:
-		case 0x74:
-		case 0x75:
-		case 0x77:
-			gb_anal_store_hl (op, data);
-			op->cycles = 8;
-			op->type = R_ANAL_OP_TYPE_STORE;	//LD
-			break;
-		case 0xe0:
-			gb_anal_store (op, data);
-			op->cycles = 12;
-			op->type = R_ANAL_OP_TYPE_STORE;
-			break;
-		case 0x41:
-		case 0x42:
-		case 0x43:
-		case 0x44:
-		case 0x45:
-		case 0x47:
-		case 0x48:
-		case 0x4a:
-		case 0x4b:
-		case 0x4c:
-		case 0x4d:
-		case 0x4f:
-		case 0x50:
-		case 0x51:
-		case 0x53:
-		case 0x54:
-		case 0x55:
-		case 0x57:
-		case 0x58:
-		case 0x59:
-		case 0x5a:
-		case 0x5c:
-		case 0x5d:
-		case 0x5f:
-		case 0x60:
-		case 0x61:
-		case 0x62:
-		case 0x63:
-		case 0x65:
-		case 0x67:
-		case 0x68:
-		case 0x69:
-		case 0x6a:
-		case 0x6b:
-		case 0x6c:
-		case 0x6f:
-		case 0x78:
-		case 0x79:
-		case 0x7a:
-		case 0x7b:
-		case 0x7c:
-		case 0x7d:
-			gb_anal_mov_reg (op, data[0]);
-			op->cycles = 4;
-			op->type = R_ANAL_OP_TYPE_MOV;		// LD
-			break;
-		case 0x0a:
-		case 0x1a:
-		case 0xf2:
-			gb_anal_load (op, data);
-			op->cycles = 8;
-			op->type = R_ANAL_OP_TYPE_LOAD;
-			break;
-		case 0x2a:
-		case 0x3a:
-		case 0x46:
-		case 0x4e:
-		case 0x56:
-		case 0x5e:
-		case 0x66:
-		case 0x6e:
-		case 0x7e:
-			gb_anal_load_hl (op, data[0]);
-			op->cycles = 8;
-			op->type = R_ANAL_OP_TYPE_LOAD;
-			break;
-		case 0xf0:
-			gb_anal_load (op, data);
-			op->cycles = 12;
-			op->type = R_ANAL_OP_TYPE_LOAD;
-			break;
-		case 0xfa:
-			gb_anal_load (op, data);
-			op->cycles = 16;
-			op->type = R_ANAL_OP_TYPE_LOAD;
-			break;
-		case 0x80:
-		case 0x81:
-		case 0x82:
-		case 0x83:
-		case 0x84:
-		case 0x85:
-		case 0x87:
-		case 0x88:
-		case 0x89:
-		case 0x8a:
-		case 0x8b:
-		case 0x8c:
-		case 0x8d:
-		case 0x8f:
-			op->cycles = 4;
-			op->type = R_ANAL_OP_TYPE_ADD;
-			gb_anal_xoaasc (op, data);
-			break;
-		case 0x09:
-		case 0x19:
-		case 0x29:
-		case 0x39:
-			gb_anal_add_hl (op, data[0]);
-			op->cycles = 8;
-			op->type = R_ANAL_OP_TYPE_ADD;
-			break;
-		case 0x86:
-		case 0x8e:
-			op->type = R_ANAL_OP_TYPE_ADD;
-			gb_anal_xoaasc (op, data);
-			op->cycles = 8;
-			break;
-		case 0xc6:
-		case 0xce:
-			op->cycles = 8;
-			op->type = R_ANAL_OP_TYPE_ADD;
-			gb_anal_xoaasc_imm (op, data);
-			break;
-		case 0xe8:
-			gb_anal_add_sp (op, data[1]);
-			op->cycles = 16;
-			op->type = R_ANAL_OP_TYPE_ADD;
-			break;
-		case 0x90:
-		case 0x91:
-		case 0x92:
-		case 0x93:
-		case 0x94:
-		case 0x95:
-		case 0x97:
-		case 0x98:
-		case 0x99:
-		case 0x9a:
-		case 0x9b:
-		case 0x9c:
-		case 0x9d:
-		case 0x9f:
-			op->cycles = 4;
-			op->type = R_ANAL_OP_TYPE_SUB;
-			gb_anal_xoaasc (op, data);
-			break;
-		case 0x96:
-		case 0x9e:
-			op->type = R_ANAL_OP_TYPE_SUB;
-			gb_anal_xoaasc (op, data);
-			op->cycles = 8;
-			break;
-		case 0xd6:
-		case 0xde:
-			op->cycles = 8;
-			op->type = R_ANAL_OP_TYPE_SUB;
-			gb_anal_xoaasc_imm (op, data);
-			break;
-		case 0xa0:
-		case 0xa1:
-		case 0xa2:
-		case 0xa3:
-		case 0xa4:
-		case 0xa5:
-		case 0xa7:
-			op->cycles = 4;
-			op->type = R_ANAL_OP_TYPE_AND;
-			gb_anal_xoaasc (op, data);
-			break;
-		case 0xe6:
-			op->cycles = 8;
-			op->type = R_ANAL_OP_TYPE_AND;
-			gb_anal_xoaasc_imm (op, data);
-			break;
-		case 0xa6:
-			op->type = R_ANAL_OP_TYPE_AND;
-			gb_anal_xoaasc (op, data);
-			op->cycles = 8;
-			break;
-		case 0x07:					//rlca
-			op->cycles = 4;
-			op->type = R_ANAL_OP_TYPE_ROL;
-			gb_anal_cb_rlc (op, 7);
-			break;
-		case 0x17:					//rla
-			op->cycles = 4;
-			op->type = R_ANAL_OP_TYPE_ROL;
-			gb_anal_cb_rl (op, 7);
-			break;
-		case 0x0f:					//rrca
-			op->cycles = 4;
-			op->type = R_ANAL_OP_TYPE_ROR;
-			gb_anal_cb_rrc (op, 7);
-			break;
-		case 0x1f:					//rra
-			op->cycles = 4;
-			op->type = R_ANAL_OP_TYPE_ROR;
-			gb_anal_cb_rr (op, 7);
-			break;
-		case 0x2f:
-			gb_anal_xor_cpl (op);	//cpl
-			op->cycles = 4;
-			op->type = R_ANAL_OP_TYPE_XOR;
-			break;
-		case 0x3f:					//ccf
-			gb_anal_xor_ccf (op);
-			op->cycles = 4;
-			op->type = R_ANAL_OP_TYPE_XOR;
-			break;
-		case 0xa8:
-		case 0xa9:
-		case 0xaa:
-		case 0xab:
-		case 0xac:
-		case 0xad:
-		case 0xaf:
-			op->cycles = 4;
-			op->type = R_ANAL_OP_TYPE_XOR;
-			gb_anal_xoaasc (op, data);
-			break;
-		case 0xee:
-			op->cycles = 8;
-			op->type = R_ANAL_OP_TYPE_XOR;
-			gb_anal_xoaasc_imm (op, data);
-			break;
-		case 0xae:
-			op->type = R_ANAL_OP_TYPE_XOR;
-			gb_anal_xoaasc (op, data);
-			op->cycles = 8;
-			break;
-		case 0xb0:
-		case 0xb1:
-		case 0xb2:
-		case 0xb3:
-		case 0xb4:
-		case 0xb5:
-		case 0xb7:
-			op->cycles = 4;
-			op->type = R_ANAL_OP_TYPE_OR;
-			gb_anal_xoaasc (op, data);
-			break;
-		case 0xf6:
-			op->cycles = 8;
-			op->type = R_ANAL_OP_TYPE_OR;
-			gb_anal_xoaasc_imm (op, data);
-			break;
-		case 0xb6:
-			op->type = R_ANAL_OP_TYPE_OR;
-			gb_anal_xoaasc (op, data);
-			op->cycles = 8;
-			break;
-		case 0xb8:
-		case 0xb9:
-		case 0xba:
-		case 0xbb:
-		case 0xbc:
-		case 0xbd:
-		case 0xbf:
-			op->cycles = 4;
-			op->type = R_ANAL_OP_TYPE_CMP;
-			gb_anal_xoaasc (op, data);
-			break;
-		case 0xfe:
-			op->cycles = 8;
-			op->type = R_ANAL_OP_TYPE_CMP;
-			gb_anal_xoaasc_imm (op, data);
-			break;
-		case 0xbe:
-			op->type = R_ANAL_OP_TYPE_CMP;
-			gb_anal_xoaasc (op, data);
-			op->cycles = 8;
-			break;
-		case 0xc0:
-		case 0xc8:
-		case 0xd0:
-		case 0xd8:
-			gb_anal_cond (op, data[0]);
-			gb_anal_esil_cret (op, data[0]);
-			op->eob = true;
-			op->cycles = 20;
-			op->failcycles = 8;
-			op->type = R_ANAL_OP_TYPE_CRET;
-			break;
-		case 0xd9:
-			gb_anal_mov_ime (op, data[0]);
-			op->type2 = R_ANAL_OP_TYPE_MOV;
-		case 0xc9:
-			op->eob = true;
-			op->cycles = 16;
-			gb_anal_esil_ret (op);
-			op->stackop = R_ANAL_STACK_INC;
-			op->stackptr = -2;
-			op->type = R_ANAL_OP_TYPE_RET;
-			break;
-		case 0x0b:
-		case 0x1b:
-		case 0x2b:
-		case 0x3b:
-			op->cycles = 8;
-			op->type = R_ANAL_OP_TYPE_SUB;
-			gb_anal_id (as, op, data[0]);
-			break;
-		case 0x05:
-		case 0x0d:
-		case 0x15:
-		case 0x1d:
-		case 0x25:
-		case 0x2d:
-		case 0x3d:
-			op->cycles = 4;
-			op->type = R_ANAL_OP_TYPE_SUB;		// DEC
-			gb_anal_id (as, op, data[0]);
-			break;
-		case 0x35:
-			op->cycles = 12;
-			op->type = R_ANAL_OP_TYPE_SUB;
-			gb_anal_id (as, op, data[0]);
-			break;
-		case 0xc5:
-		case 0xd5:
-		case 0xe5:
-		case 0xf5:
-			gb_anal_pp (op, data[0]);
-			op->cycles = 16;
-			op->stackop = R_ANAL_STACK_INC;
-			op->stackptr = 2;
-			op->type = R_ANAL_OP_TYPE_RPUSH;
-			break;
-		case 0xc1:
-		case 0xd1:
-		case 0xe1:
-		case 0xf1:
-			gb_anal_pp (op, data[0]);
-			op->cycles = 12;
-			op->stackop = R_ANAL_STACK_INC;
-			op->stackptr = -2;
-			op->type = R_ANAL_OP_TYPE_POP;
-			break;
-		case 0xc3:
-			if (gb_op_calljump (as, op, data, addr)) {
-				op->type = R_ANAL_OP_TYPE_JMP;
-				gb_anal_esil_jmp (op);
-			} else {
-				op->type = R_ANAL_OP_TYPE_UJMP;
-			}
-			op->eob = true;
-			op->cycles = 16;
-			op->fail = addr+ilen;
-			break;
-		case 0x18:					// JR
-			op->jump = addr + ilen + (st8)data[1];
-			op->fail = addr + ilen;
-			gb_anal_esil_jmp (op);
-			op->cycles = 12;
-			op->eob = true;
+	case 0x00:
+	case 0x40:
+	case 0x49:
+	case 0x52:
+	case 0x5b:
+	case 0x64:
+	case 0x6d:
+	case 0x7f:
+		op->cycles = 4;
+		op->type = R_ANAL_OP_TYPE_NOP;
+		break;
+	case 0x01:
+	case 0x11:
+	case 0x21:
+	case 0x31:
+		gb_anal_mov_imm (op, data);
+		op->cycles = 12;
+		op->type = R_ANAL_OP_TYPE_MOV;
+		break;
+	case 0xf8:
+		gb_anal_mov_hl_sp (op, data[1]);
+		op->cycles = 12;
+		op->type = R_ANAL_OP_TYPE_MOV;
+		op->type2 = R_ANAL_OP_TYPE_ADD;
+		break;
+	case 0x06:
+	case 0x0e:
+	case 0x16:
+	case 0x1e:
+	case 0x26:
+	case 0x2e:
+	case 0x3e:
+		gb_anal_mov_imm (op, data);
+		op->cycles = 8;
+		op->type = R_ANAL_OP_TYPE_MOV;
+		break;
+	case 0xf9:
+		gb_anal_mov_sp_hl (op);
+		op->cycles = 8;
+		op->type = R_ANAL_OP_TYPE_MOV;		// LD
+		break;
+	case 0x03:
+	case 0x13:
+	case 0x23:
+	case 0x33:
+		op->cycles = 8;
+		op->type = R_ANAL_OP_TYPE_ADD;
+		gb_anal_id (as, op, data[0]);
+		break;
+	case 0x04:
+	case 0x0c:
+	case 0x14:
+	case 0x1c:
+	case 0x24:
+	case 0x2c:
+	case 0x3c:
+		op->cycles = 4;
+		op->type = R_ANAL_OP_TYPE_ADD;		// INC
+		gb_anal_id (as, op, data[0]);
+		break;
+	case 0x34:
+		op->cycles = 12;
+		op->type = R_ANAL_OP_TYPE_ADD;
+		gb_anal_id (as, op, data[0]);
+		break;
+	case 0xea:
+		meta_gb_bankswitch_cmt (as, addr, GB_SOFTCAST (data[1], data[2]));
+		gb_anal_store (op, data);
+		op->cycles = 16;
+		op->type = R_ANAL_OP_TYPE_STORE;
+		break;
+	case 0x08:
+		meta_gb_bankswitch_cmt (as, addr, GB_SOFTCAST (data[1], data[2]));
+		gb_anal_store (op, data);
+		op->cycles = 20;
+		op->type = R_ANAL_OP_TYPE_STORE;
+		break;
+	case 0x02:
+	case 0x12:
+	case 0xe2:
+		gb_anal_store (op, data);
+		op->cycles = 8;
+		op->type = R_ANAL_OP_TYPE_STORE;
+		break;
+	case 0x36:
+	case 0x22:
+	case 0x32:
+	case 0x70:
+	case 0x71:
+	case 0x72:
+	case 0x73:
+	case 0x74:
+	case 0x75:
+	case 0x77:
+		gb_anal_store_hl (op, data);
+		op->cycles = 8;
+		op->type = R_ANAL_OP_TYPE_STORE;	//LD
+		break;
+	case 0xe0:
+		gb_anal_store (op, data);
+		op->cycles = 12;
+		op->type = R_ANAL_OP_TYPE_STORE;
+		break;
+	case 0x41:
+	case 0x42:
+	case 0x43:
+	case 0x44:
+	case 0x45:
+	case 0x47:
+	case 0x48:
+	case 0x4a:
+	case 0x4b:
+	case 0x4c:
+	case 0x4d:
+	case 0x4f:
+	case 0x50:
+	case 0x51:
+	case 0x53:
+	case 0x54:
+	case 0x55:
+	case 0x57:
+	case 0x58:
+	case 0x59:
+	case 0x5a:
+	case 0x5c:
+	case 0x5d:
+	case 0x5f:
+	case 0x60:
+	case 0x61:
+	case 0x62:
+	case 0x63:
+	case 0x65:
+	case 0x67:
+	case 0x68:
+	case 0x69:
+	case 0x6a:
+	case 0x6b:
+	case 0x6c:
+	case 0x6f:
+	case 0x78:
+	case 0x79:
+	case 0x7a:
+	case 0x7b:
+	case 0x7c:
+	case 0x7d:
+		gb_anal_mov_reg (op, data[0]);
+		op->cycles = 4;
+		op->type = R_ANAL_OP_TYPE_MOV;		// LD
+		break;
+	case 0x0a:
+	case 0x1a:
+	case 0xf2:
+		gb_anal_load (op, data);
+		op->cycles = 8;
+		op->type = R_ANAL_OP_TYPE_LOAD;
+		break;
+	case 0x2a:
+	case 0x3a:
+	case 0x46:
+	case 0x4e:
+	case 0x56:
+	case 0x5e:
+	case 0x66:
+	case 0x6e:
+	case 0x7e:
+		gb_anal_load_hl (op, data[0]);
+		op->cycles = 8;
+		op->type = R_ANAL_OP_TYPE_LOAD;
+		break;
+	case 0xf0:
+		gb_anal_load (op, data);
+		op->cycles = 12;
+		op->type = R_ANAL_OP_TYPE_LOAD;
+		break;
+	case 0xfa:
+		gb_anal_load (op, data);
+		op->cycles = 16;
+		op->type = R_ANAL_OP_TYPE_LOAD;
+		break;
+	case 0x80:
+	case 0x81:
+	case 0x82:
+	case 0x83:
+	case 0x84:
+	case 0x85:
+	case 0x87:
+	case 0x88:
+	case 0x89:
+	case 0x8a:
+	case 0x8b:
+	case 0x8c:
+	case 0x8d:
+	case 0x8f:
+		op->cycles = 4;
+		op->type = R_ANAL_OP_TYPE_ADD;
+		gb_anal_xoaasc (op, data);
+		break;
+	case 0x09:
+	case 0x19:
+	case 0x29:
+	case 0x39:
+		gb_anal_add_hl (op, data[0]);
+		op->cycles = 8;
+		op->type = R_ANAL_OP_TYPE_ADD;
+		break;
+	case 0x86:
+	case 0x8e:
+		op->type = R_ANAL_OP_TYPE_ADD;
+		gb_anal_xoaasc (op, data);
+		op->cycles = 8;
+		break;
+	case 0xc6:
+	case 0xce:
+		op->cycles = 8;
+		op->type = R_ANAL_OP_TYPE_ADD;
+		gb_anal_xoaasc_imm (op, data);
+		break;
+	case 0xe8:
+		gb_anal_add_sp (op, data[1]);
+		op->cycles = 16;
+		op->type = R_ANAL_OP_TYPE_ADD;
+		break;
+	case 0x90:
+	case 0x91:
+	case 0x92:
+	case 0x93:
+	case 0x94:
+	case 0x95:
+	case 0x97:
+	case 0x98:
+	case 0x99:
+	case 0x9a:
+	case 0x9b:
+	case 0x9c:
+	case 0x9d:
+	case 0x9f:
+		op->cycles = 4;
+		op->type = R_ANAL_OP_TYPE_SUB;
+		gb_anal_xoaasc (op, data);
+		break;
+	case 0x96:
+	case 0x9e:
+		op->type = R_ANAL_OP_TYPE_SUB;
+		gb_anal_xoaasc (op, data);
+		op->cycles = 8;
+		break;
+	case 0xd6:
+	case 0xde:
+		op->cycles = 8;
+		op->type = R_ANAL_OP_TYPE_SUB;
+		gb_anal_xoaasc_imm (op, data);
+		break;
+	case 0xa0:
+	case 0xa1:
+	case 0xa2:
+	case 0xa3:
+	case 0xa4:
+	case 0xa5:
+	case 0xa7:
+		op->cycles = 4;
+		op->type = R_ANAL_OP_TYPE_AND;
+		gb_anal_xoaasc (op, data);
+		break;
+	case 0xe6:
+		op->cycles = 8;
+		op->type = R_ANAL_OP_TYPE_AND;
+		gb_anal_xoaasc_imm (op, data);
+		break;
+	case 0xa6:
+		op->type = R_ANAL_OP_TYPE_AND;
+		gb_anal_xoaasc (op, data);
+		op->cycles = 8;
+		break;
+	case 0x07:					//rlca
+		op->cycles = 4;
+		op->type = R_ANAL_OP_TYPE_ROL;
+		gb_anal_cb_rlc (op, 7);
+		break;
+	case 0x17:					//rla
+		op->cycles = 4;
+		op->type = R_ANAL_OP_TYPE_ROL;
+		gb_anal_cb_rl (op, 7);
+		break;
+	case 0x0f:					//rrca
+		op->cycles = 4;
+		op->type = R_ANAL_OP_TYPE_ROR;
+		gb_anal_cb_rrc (op, 7);
+		break;
+	case 0x1f:					//rra
+		op->cycles = 4;
+		op->type = R_ANAL_OP_TYPE_ROR;
+		gb_anal_cb_rr (op, 7);
+		break;
+	case 0x2f:
+		gb_anal_xor_cpl (op);	//cpl
+		op->cycles = 4;
+		op->type = R_ANAL_OP_TYPE_XOR;
+		break;
+	case 0x3f:					//ccf
+		gb_anal_xor_ccf (op);
+		op->cycles = 4;
+		op->type = R_ANAL_OP_TYPE_XOR;
+		break;
+	case 0xa8:
+	case 0xa9:
+	case 0xaa:
+	case 0xab:
+	case 0xac:
+	case 0xad:
+	case 0xaf:
+		op->cycles = 4;
+		op->type = R_ANAL_OP_TYPE_XOR;
+		gb_anal_xoaasc (op, data);
+		break;
+	case 0xee:
+		op->cycles = 8;
+		op->type = R_ANAL_OP_TYPE_XOR;
+		gb_anal_xoaasc_imm (op, data);
+		break;
+	case 0xae:
+		op->type = R_ANAL_OP_TYPE_XOR;
+		gb_anal_xoaasc (op, data);
+		op->cycles = 8;
+		break;
+	case 0xb0:
+	case 0xb1:
+	case 0xb2:
+	case 0xb3:
+	case 0xb4:
+	case 0xb5:
+	case 0xb7:
+		op->cycles = 4;
+		op->type = R_ANAL_OP_TYPE_OR;
+		gb_anal_xoaasc (op, data);
+		break;
+	case 0xf6:
+		op->cycles = 8;
+		op->type = R_ANAL_OP_TYPE_OR;
+		gb_anal_xoaasc_imm (op, data);
+		break;
+	case 0xb6:
+		op->type = R_ANAL_OP_TYPE_OR;
+		gb_anal_xoaasc (op, data);
+		op->cycles = 8;
+		break;
+	case 0xb8:
+	case 0xb9:
+	case 0xba:
+	case 0xbb:
+	case 0xbc:
+	case 0xbd:
+	case 0xbf:
+		op->cycles = 4;
+		op->type = R_ANAL_OP_TYPE_CMP;
+		gb_anal_xoaasc (op, data);
+		break;
+	case 0xfe:
+		op->cycles = 8;
+		op->type = R_ANAL_OP_TYPE_CMP;
+		gb_anal_xoaasc_imm (op, data);
+		break;
+	case 0xbe:
+		op->type = R_ANAL_OP_TYPE_CMP;
+		gb_anal_xoaasc (op, data);
+		op->cycles = 8;
+		break;
+	case 0xc0:
+	case 0xc8:
+	case 0xd0:
+	case 0xd8:
+		gb_anal_cond (op, data[0]);
+		gb_anal_esil_cret (op, data[0]);
+		op->eob = true;
+		op->cycles = 20;
+		op->failcycles = 8;
+		op->type = R_ANAL_OP_TYPE_CRET;
+		break;
+	case 0xd9:
+		gb_anal_mov_ime (op, data[0]);
+		op->type2 = R_ANAL_OP_TYPE_MOV;
+	case 0xc9:
+		op->eob = true;
+		op->cycles = 16;
+		gb_anal_esil_ret (op);
+		op->stackop = R_ANAL_STACK_INC;
+		op->stackptr = -2;
+		op->type = R_ANAL_OP_TYPE_RET;
+		break;
+	case 0x0b:
+	case 0x1b:
+	case 0x2b:
+	case 0x3b:
+		op->cycles = 8;
+		op->type = R_ANAL_OP_TYPE_SUB;
+		gb_anal_id (as, op, data[0]);
+		break;
+	case 0x05:
+	case 0x0d:
+	case 0x15:
+	case 0x1d:
+	case 0x25:
+	case 0x2d:
+	case 0x3d:
+		op->cycles = 4;
+		op->type = R_ANAL_OP_TYPE_SUB;		// DEC
+		gb_anal_id (as, op, data[0]);
+		break;
+	case 0x35:
+		op->cycles = 12;
+		op->type = R_ANAL_OP_TYPE_SUB;
+		gb_anal_id (as, op, data[0]);
+		break;
+	case 0xc5:
+	case 0xd5:
+	case 0xe5:
+	case 0xf5:
+		gb_anal_pp (op, data[0]);
+		op->cycles = 16;
+		op->stackop = R_ANAL_STACK_INC;
+		op->stackptr = 2;
+		op->type = R_ANAL_OP_TYPE_RPUSH;
+		break;
+	case 0xc1:
+	case 0xd1:
+	case 0xe1:
+	case 0xf1:
+		gb_anal_pp (op, data[0]);
+		op->cycles = 12;
+		op->stackop = R_ANAL_STACK_INC;
+		op->stackptr = -2;
+		op->type = R_ANAL_OP_TYPE_POP;
+		break;
+	case 0xc3:
+		if (gb_op_calljump (as, op, data, addr)) {
 			op->type = R_ANAL_OP_TYPE_JMP;
-			break;
-		case 0x20:
-		case 0x28:
-		case 0x30:
-		case 0x38:					//JR cond
-			gb_anal_cond (op, data[0]);
-			op->jump = addr + ilen + (st8)data[1];
-			op->fail = addr + ilen;
-			gb_anal_esil_cjmp (op, data[0]);
-			op->cycles = 12;
-			op->failcycles = 8;
-			op->eob = true;
-			op->type = R_ANAL_OP_TYPE_CJMP;
-			break;
-		case 0xc2:
-		case 0xca:
-		case 0xd2:
-		case 0xda:
-			if (gb_op_calljump (as, op, data, addr)) {
-				op->type = R_ANAL_OP_TYPE_CJMP;
-			} else {
-				op->type = R_ANAL_OP_TYPE_UCJMP;
-			}
-			op->eob = true;
-			gb_anal_cond (op, data[0]);
-			gb_anal_esil_cjmp (op, data[0]);
-			op->cycles = 16;
-			op->failcycles = 12;
-			op->fail = addr+ilen;
-			break;
-		case 0xe9:
-			op->cycles = 4;
-			op->eob = true;
+			gb_anal_esil_jmp (op);
+		} else {
 			op->type = R_ANAL_OP_TYPE_UJMP;
-			gb_anal_jmp_hl (op);
-			break;
-		case 0x76:
+		}
+		op->eob = true;
+		op->cycles = 16;
+		op->fail = addr+ilen;
+		break;
+	case 0x18:					// JR
+		op->jump = addr + ilen + (st8)data[1];
+		op->fail = addr + ilen;
+		gb_anal_esil_jmp (op);
+		op->cycles = 12;
+		op->eob = true;
+		op->type = R_ANAL_OP_TYPE_JMP;
+		break;
+	case 0x20:
+	case 0x28:
+	case 0x30:
+	case 0x38:					//JR cond
+		gb_anal_cond (op, data[0]);
+		op->jump = addr + ilen + (st8)data[1];
+		op->fail = addr + ilen;
+		gb_anal_esil_cjmp (op, data[0]);
+		op->cycles = 12;
+		op->failcycles = 8;
+		op->eob = true;
+		op->type = R_ANAL_OP_TYPE_CJMP;
+		break;
+	case 0xc2:
+	case 0xca:
+	case 0xd2:
+	case 0xda:
+		if (gb_op_calljump (as, op, data, addr)) {
 			op->type = R_ANAL_OP_TYPE_CJMP;
-			op->eob = true;			//halt might wait for interrupts
-			op->fail = addr + ilen;
-			if (len > 1) {
-				op->jump = addr + gbOpLength (gb_op[data[1]].type) + ilen;
-			}
-			break;
-		case 0xcd:
-			if (gb_op_calljump (as, op, data, addr)) {
-				op->type = R_ANAL_OP_TYPE_CALL;
-			} else {
-				op->type = R_ANAL_OP_TYPE_UCALL;
-			}
-			op->fail = addr + ilen;
-			op->eob = true;
-			gb_anal_esil_call (op);
-			op->cycles = 24;
-			break;
-		case 0xc4:
-		case 0xcc:
-		case 0xd4:
-		case 0xdc:
-			gb_anal_cond (op, data[0]);
-			if (gb_op_calljump (as, op, data, addr)) {
-				op->type = R_ANAL_OP_TYPE_CCALL;
-			} else {
-				op->type = R_ANAL_OP_TYPE_UCCALL;
-			}
-			op->fail = addr + ilen;
-			op->eob = true;
-			gb_anal_esil_ccall (op, data[0]);
-			op->cycles = 24;
-			op->failcycles = 12;
-			break;
-		case 0xc7:				//rst 0
-			op->jump = 0x00;
-			op->fail = addr + ilen;
-			op->eob = true;
-			gb_anal_esil_call (op);
-			op->cycles = 16;
+		} else {
+			op->type = R_ANAL_OP_TYPE_UCJMP;
+		}
+		op->eob = true;
+		gb_anal_cond (op, data[0]);
+		gb_anal_esil_cjmp (op, data[0]);
+		op->cycles = 16;
+		op->failcycles = 12;
+		op->fail = addr+ilen;
+		break;
+	case 0xe9:
+		op->cycles = 4;
+		op->eob = true;
+		op->type = R_ANAL_OP_TYPE_UJMP;
+		gb_anal_jmp_hl (op);
+		break;
+	case 0x76:
+		op->type = R_ANAL_OP_TYPE_CJMP;
+		op->eob = true;			//halt might wait for interrupts
+		op->fail = addr + ilen;
+		if (len > 1) {
+			op->jump = addr + gbOpLength (gb_op[data[1]].type) + ilen;
+		}
+		break;
+	case 0xcd:
+		if (gb_op_calljump (as, op, data, addr)) {
 			op->type = R_ANAL_OP_TYPE_CALL;
+		} else {
+			op->type = R_ANAL_OP_TYPE_UCALL;
+		}
+		op->fail = addr + ilen;
+		op->eob = true;
+		gb_anal_esil_call (op);
+		op->cycles = 24;
+		break;
+	case 0xc4:
+	case 0xcc:
+	case 0xd4:
+	case 0xdc:
+		gb_anal_cond (op, data[0]);
+		if (gb_op_calljump (as, op, data, addr)) {
+			op->type = R_ANAL_OP_TYPE_CCALL;
+		} else {
+			op->type = R_ANAL_OP_TYPE_UCCALL;
+		}
+		op->fail = addr + ilen;
+		op->eob = true;
+		gb_anal_esil_ccall (op, data[0]);
+		op->cycles = 24;
+		op->failcycles = 12;
+		break;
+	case 0xc7:				//rst 0
+		op->jump = 0x00;
+		op->fail = addr + ilen;
+		op->eob = true;
+		gb_anal_esil_call (op);
+		op->cycles = 16;
+		op->type = R_ANAL_OP_TYPE_CALL;
+		break;
+	case 0xcf:				//rst 8
+		op->jump = 0x08;
+		op->fail = addr + ilen;
+		op->eob = true;
+		gb_anal_esil_call (op);
+		op->cycles = 16;
+		op->type = R_ANAL_OP_TYPE_CALL;
+		break;
+	case 0xd7:				//rst 16
+		op->jump = 0x10;
+		op->fail = addr + ilen;
+		op->eob = true;
+		gb_anal_esil_call (op);
+		op->cycles = 16;
+		op->type = R_ANAL_OP_TYPE_CALL;
+		break;
+	case 0xdf:				//rst 24
+		op->jump = 0x18;
+		op->fail = addr + ilen;
+		op->eob = true;
+		gb_anal_esil_call (op);
+		op->cycles = 16;
+		op->type = R_ANAL_OP_TYPE_CALL;
+		break;
+	case 0xe7:				//rst 32
+		op->jump = 0x20;
+		op->fail = addr + ilen;
+		op->eob = true;
+		gb_anal_esil_call (op);
+		op->cycles = 16;
+		op->type = R_ANAL_OP_TYPE_CALL;
+		break;
+	case 0xef:				//rst 40
+		op->jump = 0x28;
+		op->fail = addr + ilen;
+		op->eob = true;
+		gb_anal_esil_call (op);
+		op->cycles = 16;
+		op->type = R_ANAL_OP_TYPE_CALL;
+		break;
+	case 0xf7:				//rst 48
+		op->jump = 0x30;
+		op->fail = addr + ilen;
+		op->eob = true;
+		gb_anal_esil_call (op);
+		op->cycles = 16;
+		op->type = R_ANAL_OP_TYPE_CALL;
+		break;
+	case 0xff:				//rst 56
+		op->jump = 0x38;
+		op->fail = addr + ilen;
+		op->eob = true;
+		gb_anal_esil_call (op);
+		op->cycles = 16;
+		op->type = R_ANAL_OP_TYPE_CALL;
+		break;
+	case 0xf3:				//di
+	case 0xfb:				//ei
+		gb_anal_mov_ime (op, data[0]);
+		op->cycles = 4;
+		op->type = R_ANAL_OP_TYPE_MOV;
+		break;
+	case 0x37:
+		gb_anal_mov_scf (op);
+		op->cycles = 4;
+		op->type = R_ANAL_OP_TYPE_MOV;
+		break;
+	case 0x27:				//daa
+		op->cycles = 4;
+		op->type = R_ANAL_OP_TYPE_XOR;
+		r_strbuf_set (&op->esil, "a,daa,a,=,$z,Z,:=,3,$c,H,:=,7,$c,C,:=");
+		break;
+	case 0x10:				//stop
+		op->type = R_ANAL_OP_TYPE_NULL;
+		r_strbuf_set (&op->esil, "TODO,stop");
+		break;
+	case 0xcb:
+		op->nopcode = 2;
+		switch (data[1] >> 3) {
+		case 0:
+			op->cycles = ((data[1] & 7) == 6)? 16: 8;
+			op->type = R_ANAL_OP_TYPE_ROL;
+			gb_anal_cb_rlc (op, data[1]);
 			break;
-		case 0xcf:				//rst 8
-			op->jump = 0x08;
-			op->fail = addr + ilen;
-			op->eob = true;
-			gb_anal_esil_call (op);
-			op->cycles = 16;
-			op->type = R_ANAL_OP_TYPE_CALL;
+		case 1:
+			op->cycles = ((data[1] & 7) == 6)? 16: 8;
+			op->type = R_ANAL_OP_TYPE_ROR;
+			gb_anal_cb_rrc (op, data[1]);
 			break;
-		case 0xd7:				//rst 16
-			op->jump = 0x10;
-			op->fail = addr + ilen;
-			op->eob = true;
-			gb_anal_esil_call (op);
-			op->cycles = 16;
-			op->type = R_ANAL_OP_TYPE_CALL;
+		case 2:
+			op->cycles = ((data[1] & 7) == 6)? 16: 8;
+			op->type = R_ANAL_OP_TYPE_ROL;
+			gb_anal_cb_rl (op, data[1]);
 			break;
-		case 0xdf:				//rst 24
-			op->jump = 0x18;
-			op->fail = addr + ilen;
-			op->eob = true;
-			gb_anal_esil_call (op);
-			op->cycles = 16;
-			op->type = R_ANAL_OP_TYPE_CALL;
+		case 3:
+			op->cycles = ((data[1] & 7) == 6)? 16: 8;
+			op->type = R_ANAL_OP_TYPE_ROR;
+			gb_anal_cb_rr (op, data[1]);
 			break;
-		case 0xe7:				//rst 32
-			op->jump = 0x20;
-			op->fail = addr + ilen;
-			op->eob = true;
-			gb_anal_esil_call (op);
-			op->cycles = 16;
-			op->type = R_ANAL_OP_TYPE_CALL;
+		case 4:
+			op->cycles = ((data[1] & 7) == 6)? 16: 8;
+			op->type = R_ANAL_OP_TYPE_SAL;
+			gb_anal_cb_sla (op, data[1]);
 			break;
-		case 0xef:				//rst 40
-			op->jump = 0x28;
-			op->fail = addr + ilen;
-			op->eob = true;
-			gb_anal_esil_call (op);
-			op->cycles = 16;
-			op->type = R_ANAL_OP_TYPE_CALL;
+		case 6:
+			op->cycles = ((data[1] & 7) == 6)? 16: 8;
+			op->type = R_ANAL_OP_TYPE_ROL;
+			gb_anal_cb_swap (op, data[1]);
 			break;
-		case 0xf7:				//rst 48
-			op->jump = 0x30;
-			op->fail = addr + ilen;
-			op->eob = true;
-			gb_anal_esil_call (op);
-			op->cycles = 16;
-			op->type = R_ANAL_OP_TYPE_CALL;
+		case 5:
+			op->cycles = ((data[1] & 7) == 6)? 16: 8;
+			op->type = R_ANAL_OP_TYPE_SAR;
+			gb_anal_cb_sra (op, data[1]);
 			break;
-		case 0xff:				//rst 56
-			op->jump = 0x38;
-			op->fail = addr + ilen;
-			op->eob = true;
-			gb_anal_esil_call (op);
-			op->cycles = 16;
-			op->type = R_ANAL_OP_TYPE_CALL;
+		case 7:
+			op->cycles = ((data[1] & 7) == 6)? 16: 8;
+			op->type = R_ANAL_OP_TYPE_SHR;
+			gb_anal_cb_srl (op, data[1]);
 			break;
-		case 0xf3:				//di
-		case 0xfb:				//ei
-			gb_anal_mov_ime (op, data[0]);
-			op->cycles = 4;
-			op->type = R_ANAL_OP_TYPE_MOV;
-			break;
-		case 0x37:
-			gb_anal_mov_scf (op);
-			op->cycles = 4;
-			op->type = R_ANAL_OP_TYPE_MOV;
-			break;
-		case 0x27:				//daa
-			op->cycles = 4;
-			op->type = R_ANAL_OP_TYPE_XOR;
-			r_strbuf_set (&op->esil, "a,daa,a,=,$z,Z,:=,3,$c,H,:=,7,$c,C,:=");
-			break;
-		case 0x10:				//stop
-			op->type = R_ANAL_OP_TYPE_NULL;
-			r_strbuf_set (&op->esil, "TODO,stop");
-			break;
-		case 0xcb:
-			op->nopcode = 2;
-			switch (data[1]>>3)
-			{
-				case 0:
-					if ((data[1] & 7) == 6) {
-						op->cycles = 16;
-					} else {
-						op->cycles = 8;
-					}
-					op->type = R_ANAL_OP_TYPE_ROL;
-					gb_anal_cb_rlc (op, data[1]);
-					break;
-				case 1:
-					if ((data[1] & 7) == 6) {
-						op->cycles = 16;
-					} else {
-						op->cycles = 8;
-					}
-					op->type = R_ANAL_OP_TYPE_ROR;
-					gb_anal_cb_rrc (op, data[1]);
-					break;
-				case 2:
-					if ((data[1] & 7) == 6) {
-						op->cycles = 16;
-					} else {
-						op->cycles = 8;
-					}
-					op->type = R_ANAL_OP_TYPE_ROL;
-					gb_anal_cb_rl (op, data[1]);
-					break;
-				case 3:
-					if ((data[1] & 7) == 6) {
-						op->cycles = 16;
-					} else {
-						op->cycles = 8;
-					}
-					op->type = R_ANAL_OP_TYPE_ROR;
-					gb_anal_cb_rr (op, data[1]);
-					break;
-				case 4:
-					if ((data[1] & 7) == 6) {
-						op->cycles = 16;
-					} else {
-						op->cycles = 8;
-					}
-					op->type = R_ANAL_OP_TYPE_SAL;
-					gb_anal_cb_sla (op, data[1]);
-					break;
-				case 6:
-					if ((data[1] & 7) == 6) {
-						op->cycles = 16;
-					} else {
-						op->cycles = 8;
-					}
-					op->type = R_ANAL_OP_TYPE_ROL;
-					gb_anal_cb_swap (op, data[1]);
-					break;
-				case 5:
-					if ((data[1] & 7) == 6) {
-						op->cycles = 16;
-					} else {
-						op->cycles = 8;
-					}
-					op->type = R_ANAL_OP_TYPE_SAR;
-					gb_anal_cb_sra (op, data[1]);
-					break;
-				case 7:
-					if ((data[1] & 7) == 6) {
-						op->cycles = 16;
-					} else {
-						op->cycles = 8;
-					}
-					op->type = R_ANAL_OP_TYPE_SHR;
-					gb_anal_cb_srl (op, data[1]);
-					break;
-				case 8:
-				case 9:
-				case 10:
-				case 11:
-				case 12:
-				case 13:
-				case 14:
-				case 15:
-					if ((data[1] & 7) == 6) {
-						op->cycles = 12;
-					} else {
-						op->cycles = 8;
-					}
-					op->type = R_ANAL_OP_TYPE_ACMP;
-					gb_anal_and_bit (op, data[1]);
-					break;			//bit
-				case 16:
-				case 17:
-				case 18:
-				case 19:
-				case 20:
-				case 21:
-				case 22:
-				case 23:
-					if ((data[1] & 7) == 6) {
-						op->cycles = 16;
-					} else {
-						op->cycles = 8;
-					}
-					gb_anal_and_res (op, data[1]);
-					op->type = R_ANAL_OP_TYPE_AND;
-					break;			//res
-				case 24:
-				case 25:
-				case 26:
-				case 27:
-				case 28:
-				case 29:
-				case 30:
-				case 31:
-					if ((data[1] & 7) == 6) {
-						op->cycles = 16;
-					} else {
-						op->cycles = 8;
-					}
-					gb_anal_or_set (op, data[1]);
-					op->type = R_ANAL_OP_TYPE_OR;
-					break;			//set
-			}
+		case 8:
+		case 9:
+		case 10:
+		case 11:
+		case 12:
+		case 13:
+		case 14:
+		case 15:
+			op->cycles = ((data[1] & 7) == 6)? 16: 8;
+			op->type = R_ANAL_OP_TYPE_ACMP;
+			gb_anal_and_bit (op, data[1]);
+			break;			//bit
+		case 16:
+		case 17:
+		case 18:
+		case 19:
+		case 20:
+		case 21:
+		case 22:
+		case 23:
+			op->cycles = ((data[1] & 7) == 6)? 16: 8;
+			gb_anal_and_res (op, data[1]);
+			op->type = R_ANAL_OP_TYPE_AND;
+			break;			//res
+		case 24:
+		case 25:
+		case 26:
+		case 27:
+		case 28:
+		case 29:
+		case 30:
+		case 31:
+			op->cycles = ((data[1] & 7) == 6)? 16: 8;
+			gb_anal_or_set (op, data[1]);
+			op->type = R_ANAL_OP_TYPE_OR;
+			break;			//set
+		}
 	}
-	if (op->type == R_ANAL_OP_TYPE_CALL)
-	{
+	if (op->type == R_ANAL_OP_TYPE_CALL) {
 		op->stackop = R_ANAL_STACK_INC;
 		op->stackptr = 2;
 	}
@@ -1478,27 +1432,26 @@ static bool decode(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
 
 static bool encode(RArchSession *as, RAnalOp *op, RArchEncodeMask mask) {
 	ut8* outbuf = NULL;
+	R_FREE (op->bytes);
 	int size = gbAsm (op->mnemonic, &outbuf);
 	if (size < 3) {
 		free (outbuf);
 		return false;
 	}
-
-	free (op->bytes);
 	op->bytes = outbuf;
 	op->size = size;
 	return size > 0;
 }
 
-/*
-	The reg-profile below does not represent the real gameboy registers.
-		->There is no such thing like m, mpc or mbc. there is only pc.
-	m and mbc should make it easier to inspect the current mbc-state, because
-	the mbc can be seen as a register but it isn't. For the Gameboy the mbc is invisble.
-*/
+#if 0
+The reg-profile below does not represent the real gameboy registers.
+->There is no such thing like m, mpc or mbc. there is only pc.
+m and mbc should make it easier to inspect the current mbc-state, because
+the mbc can be seen as a register but it isn't. For the Gameboy the mbc is invisble.
+#endif
 
 static char* regs(RArchSession *as) {
-	const char *p =
+	const char p[] =
 		"=PC	mpc\n"
 		"=SP	sp\n"
 		"=SN	a\n"
@@ -1541,6 +1494,7 @@ static char* regs(RArchSession *as) {
 }
 
 static int esil_gb_init(REsil *esil) {
+	// XXX esil-init shouldnt touch the registers or write into memory or antyhing like dat
 	GBUser *user = R_NEW0 (GBUser);
 	r_esil_set_op (esil, "daa", gb_custom_daa, 1, 1, R_ESIL_OP_TYPE_MATH | R_ESIL_OP_TYPE_CUSTOM);
 	if (user) {
@@ -1584,10 +1538,9 @@ static int info(RArchSession *as, ut32 q) {
 
 static bool esil_cb(RArchSession *as, RArchEsilAction action) {
 	REsil *esil = as->arch->esil;
-	if (!esil) {
+	if (esil) {
 		return false;
 	}
-
 	switch (action) {
 	case R_ARCH_ESIL_INIT:
 		esil_gb_init (esil);
@@ -1598,7 +1551,6 @@ static bool esil_cb(RArchSession *as, RArchEsilAction action) {
 	default:
 		return false;
 	}
-
 	return true;
 }
 

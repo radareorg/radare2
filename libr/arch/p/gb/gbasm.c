@@ -227,10 +227,10 @@ static int gbAsm(const char *buf, ut8 **outbuf) {
 		mn = (mn << 8) | buf_asm[j];
 	}
 	switch (mn) {
-	case 0x6e6f70: //nop
+	case 0x6e6f70: // nop
 		opbuf[0] = 0x00;
 		break;
-	case 0x696e63: //inc
+	case 0x696e63: // inc
 		if ((i = strlen (buf_asm)) < 5) {
 			free (buf_asm);
 			return 0;
@@ -369,16 +369,16 @@ static int gbAsm(const char *buf, ut8 **outbuf) {
 	case 0x6370:			//cp
 		len = gb_parse_arith1 (opbuf, 4, buf_asm, 0xb8, 0xfe);
 		break;
-	case 0x736366:			//scf
+	case 0x736366: // scf
 		opbuf[0] = 0x37;
 		break;
-	case 0x636366:			//ccf
+	case 0x636366: // ccf
 		opbuf[0] = 0x3f;
 		break;
-	case 0x68616c74: //halt
+	case 0x68616c74: // halt
 		opbuf[0] = 0x76;
 		break;
-	case 0x726574: //ret
+	case 0x726574: // ret
 		if (strlen (buf_asm) < 5) {
 			opbuf[0] = 0xc9;
 		} else if (strlen (buf_asm) < 6) {
@@ -685,11 +685,11 @@ static int gbAsm(const char *buf, ut8 **outbuf) {
 	free (buf_asm);
 
 	const size_t num_bytes = sizeof (ut8) * len;
+	// XXX dont use the heap to write 2 bytes
 	*outbuf = malloc (num_bytes);
 	if (!*outbuf) {
 		return 0;
 	}
-
 	memcpy (outbuf, opbuf, num_bytes);
 	return len;
 }
