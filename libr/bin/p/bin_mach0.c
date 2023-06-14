@@ -180,23 +180,6 @@ static RList *entries(RBinFile *bf) {
 	return ret;
 }
 
-// R2_590 remove this duplicate function once it is exposed in public API
-static RBinSymbol *r_bin_symbol_clone(RBinSymbol *bs) {
-	RBinSymbol *nbs = R_NEW (RBinSymbol);
-	memcpy (nbs, bs, sizeof (RBinSymbol));
-	nbs->name = strdup (nbs->name);
-	if (nbs->dname) {
-		nbs->dname = strdup (nbs->dname);
-	}
-	if (nbs->libname) {
-		nbs->libname = strdup (nbs->libname);
-	}
-	if (nbs->classname) {
-		nbs->classname = strdup (nbs->classname);
-	}
-	return nbs;
-}
-
 static RList *symbols(RBinFile *bf) {
 	RBinObject *obj = bf? bf->o: NULL;
 	const RVector *symbols = MACH0_(load_symbols) (bf, obj->bin_obj);
