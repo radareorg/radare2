@@ -54,23 +54,20 @@ R_API bool r_reg_hasbits_use(RReg *reg, int size) {
 // If there is no equivalent 64 bit register return NULL.
 // SLOW
 R_API const char *r_reg_32_to_64(RReg *reg, const char *rreg32) {
-	int i, j = -1;
+	int j = -1;
 	RListIter *iter;
 	RRegItem *item;
-	for (i = 0; i < R_REG_TYPE_LAST; i++) {
-		r_list_foreach (reg->regset[i].regs, iter, item) {
-			if (item->size == 32 && !r_str_casecmp (rreg32, item->name)) {
-				j = item->offset;
-				break;
-			}
+	const int i = R_REG_TYPE_GPR;
+	r_list_foreach (reg->regset[i].regs, iter, item) {
+		if (item->size == 32 && !r_str_casecmp (rreg32, item->name)) {
+			j = item->offset;
+			break;
 		}
 	}
 	if (j != -1) {
-		for (i = 0; i < R_REG_TYPE_LAST; i++) {
-			r_list_foreach (reg->regset[i].regs, iter, item) {
-				if (item->offset == j && item->size == 64) {
-					return item->name;
-				}
+		r_list_foreach (reg->regset[i].regs, iter, item) {
+			if (item->offset == j && item->size == 64) {
+				return item->name;
 			}
 		}
 	}
@@ -81,23 +78,20 @@ R_API const char *r_reg_32_to_64(RReg *reg, const char *rreg32) {
 // If there is no equivalent 32 bit register return NULL.
 // SLOW
 R_API const char *r_reg_64_to_32(RReg *reg, const char *rreg64) {
-	int i, j = -1;
+	int j = -1;
 	RListIter *iter;
 	RRegItem *item;
-	for (i = 0; i < R_REG_TYPE_LAST; i++) {
-		r_list_foreach (reg->regset[i].regs, iter, item) {
-			if (item->size == 64 && !r_str_casecmp (rreg64, item->name)) {
-				j = item->offset;
-				break;
-			}
+	const int i = R_REG_TYPE_GPR;
+	r_list_foreach (reg->regset[i].regs, iter, item) {
+		if (item->size == 64 && !r_str_casecmp (rreg64, item->name)) {
+			j = item->offset;
+			break;
 		}
 	}
 	if (j != -1) {
-		for (i = 0; i < R_REG_TYPE_LAST; i++) {
-			r_list_foreach (reg->regset[i].regs, iter, item) {
-				if (item->offset == j && item->size == 32) {
-					return item->name;
-				}
+		r_list_foreach (reg->regset[i].regs, iter, item) {
+			if (item->offset == j && item->size == 32) {
+				return item->name;
 			}
 		}
 	}
@@ -485,10 +479,6 @@ R_API ut64 r_reg_getv(RReg *reg, const char *name) {
 R_API RRegItem *r_reg_get(RReg *reg, const char *name, int type) {
 	int i, e;
 	r_return_val_if_fail (reg && name, NULL);
-	//TODO: define flag register as R_REG_TYPE_FLG
-	if (type == R_REG_TYPE_FLG) {
-		type = R_REG_TYPE_GPR;
-	}
 	if (type == -1) {
 		i = 0;
 		e = R_REG_TYPE_LAST;
@@ -500,8 +490,9 @@ R_API RRegItem *r_reg_get(RReg *reg, const char *name, int type) {
 			}
 		}
 	} else {
-		i = type;
-		e = type + 1;
+		//TODO: define flag register as R_REG_TYPE_FLG
+		i = (type == R_REG_TYPE_FLG)? R_REG_TYPE_GPR: type;
+		e = i + 1;
 	}
 	for (; i < e; i++) {
 		HtPP *pp = reg->regset[i].ht_regs;
