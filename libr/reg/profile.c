@@ -279,6 +279,7 @@ R_API bool r_reg_set_profile_string(RReg *reg, const char *str) {
 	// dup the last arena to allow regdiffing
 	r_reg_arena_push (reg);
 	r_reg_reindex (reg);
+	r_reg_ro_reset (reg, reg->roregs);
 	// reset arenas
 	return true;
 }

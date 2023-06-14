@@ -167,7 +167,7 @@ R_API bool r_reg_set_value(RReg *reg, RRegItem *item, ut64 value) {
 	r_return_val_if_fail (reg && item, false);
 	ut8 bytes[32] = {0};
 	ut8 *src = bytes;
-	if (r_reg_is_readonly (reg, item)) {
+	if (item->ro) {
 		return true;
 	}
 	if (item->offset < 0) {

@@ -178,9 +178,7 @@ R_API bool try_walkthrough_jmptbl(RAnal *anal, RAnalFunction *fcn, RAnalBlock *b
 	ut64 jmpptr, offs;
 	int jmptblsz = jmptbl_size * sz;
 	if (jmptblsz < 1) {
-		if (anal->verbose) {
-			eprintf ("Invalid jump table size\n");
-		}
+		R_LOG_DEBUG ("Invalid jump table size at 0x%08"PFMT64x, jmptbl_loc);
 		return false;
 	}
 	ut8 *jmptbl = calloc (jmptbl_size, sz);
@@ -190,7 +188,7 @@ R_API bool try_walkthrough_jmptbl(RAnal *anal, RAnalFunction *fcn, RAnalBlock *b
 	const char *sarch = R_UNWRAP3 (anal, cur, arch);
 	bool is_arm = sarch ? r_str_startswith (sarch, "arm"): false;
 	bool is_x86 = !is_arm && r_str_startswith (sarch, "x86");
-	const bool is_v850 = !is_arm && !is_x86 && ((sarch && !strncmp (sarch, "v850", 4)) || r_str_startswith (anal->coreb.cfgGet (anal->coreb.core, "asm.cpu"), "v850"));
+	const bool is_v850 = !is_arm && !is_x86 && ((sarch && r_str_startswith (sarch, "v850")) || r_str_startswith (anal->coreb.cfgGet (anal->coreb.core, "asm.cpu"), "v850"));
 	// eprintf ("JMPTBL AT 0x%"PFMT64x"\n", jmptbl_loc);
 	anal->iob.read_at (anal->iob.io, jmptbl_loc, jmptbl, jmptblsz);
 	for (offs = 0; offs + sz - 1 < jmptbl_size * sz; offs += sz) {
