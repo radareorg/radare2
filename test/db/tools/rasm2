@@ -506,16 +506,24 @@ RUN
 NAME=rasm2 -LL
 FILE=-
 REQUIRE=unix
-CMDS=!rasm2 -LL | grep -c arm.gnu
+CMDS=<<EOF
+!rasm2 -LL | grep -c arm
+!rasm2 -L | grep -c arm.gnu
+EOF
 EXPECT=<<EOF
+1
 1
 EOF
 RUN
 
 NAME=rasm2 -LL internal grep
 FILE=-
-CMDS=!!rasm2 -LL~arm.gnu?
+CMDS=<<EOF
+!!rasm2 -LL~arm?
+!!rasm2 -L~arm.gnu?
+EOF
 EXPECT=<<EOF
+1
 1
 EOF
 RUN
@@ -523,7 +531,7 @@ RUN
 NAME=rasm2 -qLL
 FILE=-
 REQUIRE=unix
-CMDS=!rasm2 -qLL | grep -c arm.gnu
+CMDS=!rasm2 -qLL | grep -c arm
 EXPECT=<<EOF
 1
 EOF
