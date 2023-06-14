@@ -1443,12 +1443,12 @@ static bool encode(RArchSession *as, RAnalOp *op, RArchEncodeMask mask) {
 	return size > 0;
 }
 
-#if 0
+/*
 The reg-profile below does not represent the real gameboy registers.
 ->There is no such thing like m, mpc or mbc. there is only pc.
 m and mbc should make it easier to inspect the current mbc-state, because
-the mbc can be seen as a register but it isn't. For the Gameboy the mbc is invisble.
-#endif
+the mbc can be seen as a register but it isnt. For the Gameboy the mbc is invisble.
+*/
 
 static char* regs(RArchSession *as) {
 	const char p[] =
