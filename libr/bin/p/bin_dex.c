@@ -8,15 +8,6 @@
 #include "../../crypto/hash/adler32.c"
 
 extern struct r_bin_dbginfo_t r_bin_dbginfo_dex;
-// R2_590 - move into rbin
-static RBinSymbol *r_bin_symbol_clone(RBinSymbol *s) {
-	RBinSymbol *c = r_mem_dup (s, sizeof (RBinSymbol));
-	c->name = s->name? strdup (s->name): NULL;
-	c->dname = s->dname? strdup (s->dname): NULL;
-	c->libname = s->libname? strdup (s->libname): NULL;
-	c->classname = s->classname? strdup (s->classname): NULL;
-	return c;
-}
 
 static ut64 get_method_flags(ut64 MA) {
 	ut64 flags = 0;

@@ -183,6 +183,23 @@ R_API RBinSymbol *r_bin_symbol_new(const char *name, ut64 paddr, ut64 vaddr) {
 	return sym;
 }
 
+R_API RBinSymbol *r_bin_symbol_clone(RBinSymbol *bs) {
+	r_return_val_if_fail (bs, NULL);
+	RBinSymbol *nbs = R_NEW (RBinSymbol);
+	memcpy (nbs, bs, sizeof (RBinSymbol));
+	nbs->name = strdup (nbs->name);
+	if (nbs->dname) {
+		nbs->dname = strdup (nbs->dname);
+	}
+	if (nbs->libname) {
+		nbs->libname = strdup (nbs->libname);
+	}
+	if (nbs->classname) {
+		nbs->classname = strdup (nbs->classname);
+	}
+	return nbs;
+}
+
 R_API void r_bin_symbol_free(void *_sym) {
 	RBinSymbol *sym = (RBinSymbol *)_sym;
 	if (sym) {

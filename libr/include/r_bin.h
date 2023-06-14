@@ -672,6 +672,7 @@ R_API void r_bin_info_free(RBinInfo *rb);
 R_API void r_bin_import_free(RBinImport *imp);
 R_API void r_bin_symbol_free(void *_sym);
 R_API RBinSymbol *r_bin_symbol_new(const char *name, ut64 paddr, ut64 vaddr);
+R_API RBinSymbol *r_bin_symbol_clone(RBinSymbol *bs);
 R_API void r_bin_string_free(void *_str);
 
 #ifdef R_API
