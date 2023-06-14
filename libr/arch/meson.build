@@ -69,6 +69,15 @@ r_arch_sources = [
   'p/arm/plugin.c',
   'p/arm/armass.c',
   'p/arm/armass64.c',
+
+	'p/arm/plugin_gnu.c',
+	'p/arm/winedbg/be_arm.c',
+	'p/arm/gnu/arm-dis.c',
+	'p/arm/aarch64/aarch64-dis.c',
+	'p/arm/aarch64/aarch64-dis-2.c',
+	'p/arm/aarch64/aarch64-opc.c',
+	'p/arm/aarch64/aarch64-opc-2.c',
+
   'p/any_as/plugin.c',
   'p/any_vasm/plugin.c',
   'p/i4004/plugin.c',
