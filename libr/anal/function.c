@@ -1,8 +1,6 @@
-/* radare - LGPL - Copyright 2019-2022 - pancake, thestr4ng3r */
+/* radare - LGPL - Copyright 2019-2023 - pancake, thestr4ng3r */
 
 #include <r_anal.h>
-
-#define D if (anal->verbose)
 
 static bool get_functions_block_cb(RAnalBlock *block, void *user) {
 	RList *list = user;
