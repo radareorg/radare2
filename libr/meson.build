@@ -181,11 +181,9 @@ arch_plugins += [
 
 if no_user_plugins
   if use_gpl
-    anal_plugins += [
-      'arm_gnu',
-    ]
     arch_plugins += [
       'loongarch_gnu',
+      'arm_gnu',
       'z80',
       'pdp11',
       'ppc_gnu',
