@@ -6,7 +6,7 @@
 #include <capstone/capstone.h>
 #include <capstone/arm.h>
 #include <r_util/r_assert.h>
-#include "./anal_arm_hacks.inc.c"
+#include "../../arch/p/arm/anal_arm_hacks.inc.c"
 #include "./anal_asm_arm_hacks.inc.c"
 
 typedef char RStringShort[32];
