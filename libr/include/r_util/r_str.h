@@ -1,11 +1,11 @@
 #ifndef R_STR_H
 #define R_STR_H
 
-#include <wchar.h>
-#include <stdarg.h>
 #include "r_str_util.h"
 #include <r_list.h>
 #include <r_types_base.h>
+#include <stdarg.h>
+#include <wchar.h>
 
 #ifdef __cplusplus
 extern "C" {
