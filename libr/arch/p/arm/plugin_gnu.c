@@ -40,10 +40,16 @@ static ut32 disarm_branch_offset(ut32 pc, ut32 insoff) {
 
 static int op_thumb(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *data, int len, ut32 mask) {
 	int op_code;
+	if (len < 2) {
+		return 0;
+	}
 	ut16 *_ins = (ut16 *) data;
 	ut16 ins = *_ins;
-	ut32 *_ins32 = (ut32 *) data;
-	ut32 ins32 = *_ins32;
+	ut32 ins32 = 0;
+	if (len > 3) {
+		ut32 *_ins32 = (ut32 *) data;
+		ins32 = *_ins32;
+	}
 
 	struct winedbg_arm_insn *arminsn = arm_new ();
 	arm_set_thumb (arminsn, true);

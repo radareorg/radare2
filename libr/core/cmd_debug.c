@@ -679,9 +679,9 @@ static void dot_trace_discover_child(RTreeNode *n, RTreeVisitor *vis) {
 	if (tn && tn_parent) {
 		RGraphNode *gn = get_graphtrace_node (g, gnodes, tn);
 		RGraphNode *gn_parent = get_graphtrace_node (g, gnodes, tn_parent);
-
-		if (!r_graph_adjacent (g, gn_parent, gn))
+		if (!r_graph_adjacent (g, gn_parent, gn)) {
 			r_graph_add_edge (g, gn_parent, gn);
+		}
 	}
 }
 
