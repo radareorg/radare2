@@ -6,6 +6,7 @@ R2DEPS+=r_util
 R2DEPS+=r_cons
 R2DEPS+=r_reg
 R2DEPS+=r_asm
+R2DEPS+=r_crypto
 R2DEPS+=r_arch
 R2DEPS+=r_esil
 R2DEPS+=r_syscall
