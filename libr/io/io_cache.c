@@ -523,11 +523,11 @@ R_API bool r_io_cache_pop(RIO *io) {
 		iocache_layer_free (cl);
 		return true;
 	}
-	return false:
+	return false;
 }
 
 R_API bool r_io_cache_undo(RIO *io) { // "wcu"
-	r_return_if_fail (io);
+	r_return_val_if_fail (io, false);
 	if (r_list_empty (io->cache.layers)) {
 		return false;
 	}
@@ -552,6 +552,7 @@ R_API bool r_io_cache_undo(RIO *io) { // "wcu"
 	return true;
 }
 
-R_API void r_io_cache_redo(RIO *io) { // "wcU"
-	// TODO
+R_API bool r_io_cache_redo(RIO *io) { // "wcU"
+	// TODO : not implemented
+	return false;
 }
