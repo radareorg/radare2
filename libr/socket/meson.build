@@ -19,7 +19,7 @@ if get_option('blob')
 endif
 
 if host_machine.system() == 'haiku'
-  dependencies += [
+  r_util_deps += [
     cc.find_library('network')
   ]
 endif

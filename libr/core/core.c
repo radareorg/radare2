@@ -4220,11 +4220,7 @@ R_API void r_core_autocomplete_free(RCoreAutocomplete *obj) {
 			obj->subcmds[i] = NULL;
 		}
 		free (obj->subcmds);
-#if R2_590
 		free (obj->cmd);
-#else
-		free ((char *)obj->cmd);
-#endif
 		free (obj);
 	}
 }
