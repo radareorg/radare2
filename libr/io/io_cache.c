@@ -517,17 +517,19 @@ R_API void r_io_cache_push(RIO *io) {
 	r_list_append (io->cache.layers, iocache_layer_new ());
 }
 
-R_API void r_io_cache_pop(RIO *io) {
+R_API bool r_io_cache_pop(RIO *io) {
 	if (!r_list_empty (io->cache.layers)) {
 		RIOCacheLayer *cl = r_list_pop (io->cache.layers);
 		iocache_layer_free (cl);
+		return true;
 	}
+	return false:
 }
 
-R_API void r_io_cache_undo(RIO *io) { // "wcu"
+R_API bool r_io_cache_undo(RIO *io) { // "wcu"
 	r_return_if_fail (io);
 	if (r_list_empty (io->cache.layers)) {
-		return;
+		return false;
 	}
 	RIOCacheLayer *layer = r_list_last (io->cache.layers);
 	void **iter;
@@ -547,6 +549,7 @@ R_API void r_io_cache_undo(RIO *io) { // "wcu"
 		free_elem (c);
 		break;
 	}
+	return true;
 }
 
 R_API void r_io_cache_redo(RIO *io) { // "wcU"

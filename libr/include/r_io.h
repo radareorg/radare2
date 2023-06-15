@@ -531,7 +531,7 @@ R_API int r_io_cache_invalidate(RIO *io, ut64 from, ut64 to, bool many);
 R_API void r_io_cache_commit(RIO *io, ut64 from, ut64 to, bool many);
 // cache layers
 R_API void r_io_cache_push(RIO *io);
-R_API void r_io_cache_pop(RIO *io);
+R_API bool r_io_cache_pop(RIO *io);
 R_API void r_io_cache_undo(RIO *io);
 R_API void r_io_cache_redo(RIO *io);
 

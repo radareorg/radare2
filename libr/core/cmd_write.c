@@ -1439,7 +1439,13 @@ static int cmd_wc(void *data, const char *input) {
 		break;
 	case '-': // "wc-"
 		if (input[1] == '-') { // "wc--"
-			r_io_cache_pop (core->io);
+			if (input[2] == '*') {
+				while (r_io_cache_pop (core->io)) {
+					// nothing here
+				}
+			} else {
+				r_io_cache_pop (core->io);
+			}
 		} else if (input[1] == '?') {
 			r_core_cmd_help_match (core, help_msg_wc, "wc-", false);
 		} else {
