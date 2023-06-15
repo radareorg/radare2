@@ -75,7 +75,6 @@ r_anal_sources = [
   '../arch/p/xcore_cs/plugin.c',
   '../arch/p/msp430/plugin.c',
   '../arch/p/msp430/msp430_disas.c',
-  '../asm/arch/amd29k/amd29k.c',
   '../arch/p/arm/winedbg/be_arm.c',
   '../arch/p/arm/gnu/floatformat.c',
   '../arch/p/arm/gnu/arm-dis.c',
