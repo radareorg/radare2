@@ -463,7 +463,7 @@ typedef struct r_anal_t {
 	RCoreBind coreb;
 	int maxreflines; // asm.lines.maxref
 	int esil_goto_limit; // esil.gotolimit
-	struct r_esil_t *esil;
+	struct r_esil_t *esil; // R2_590 remove
 	struct r_anal_plugin_t *cur;
 	struct r_esil_plugin_t *esil_cur; // ???
 	RArch *arch;
