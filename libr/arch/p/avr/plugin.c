@@ -1909,12 +1909,13 @@ static bool avr_custom_spm_page_write(REsil *esil) {
 }
 
 static bool esil_avr_hook_reg_write(REsil *esil, const char *name, ut64 *val) {
-	if (!esil || !esil->anal) {
+	RArchSession *as = R_UNWRAP4 (esil, anal, arch, session);
+	if (!as) {
 		return false;
 	}
 
 	// select cpu info
-	CPU_MODEL *cpu = get_cpu_model (esil->anal->config->cpu);
+	CPU_MODEL *cpu = get_cpu_model (as->config->cpu);
 
 	// crop registers and force certain values
 	if (!strcmp (name, "pc")) {
