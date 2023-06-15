@@ -1932,9 +1932,8 @@ static bool esil_avr_hook_reg_write(REsil *esil, const char *name, ut64 *val) {
 }
 
 static bool esil_avr_init(REsil *esil) {
-	if (!esil) {
-		return false;
-	}
+	r_return_val_if_fail (esil, false);
+
 	desctx.round = 0;
 	r_esil_set_op (esil, "des", avr_custom_des, 0, 0, R_ESIL_OP_TYPE_CUSTOM);		//better meta info plz
 	r_esil_set_op (esil, "SPM_PAGE_ERASE", avr_custom_spm_page_erase, 0, 0, R_ESIL_OP_TYPE_CUSTOM);

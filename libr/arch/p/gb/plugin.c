@@ -1494,6 +1494,8 @@ static char* regs(RArchSession *as) {
 }
 
 static int esil_gb_init(REsil *esil) {
+	r_return_val_if_fail (esil, false);
+
 	// XXX esil-init shouldnt touch the registers or write into memory or antyhing like dat
 	GBUser *user = R_NEW0 (GBUser);
 	r_esil_set_op (esil, "daa", gb_custom_daa, 1, 1, R_ESIL_OP_TYPE_MATH | R_ESIL_OP_TYPE_CUSTOM);
@@ -1518,6 +1520,8 @@ static int esil_gb_init(REsil *esil) {
 }
 
 static int esil_gb_fini(REsil *esil) {
+	r_return_val_if_fail (esil, false);
+
 	R_FREE (esil->cb.user);
 	return true;
 }
