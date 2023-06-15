@@ -5,6 +5,8 @@ s main
 aFr
 pif
 afi
+?e --
+afix~ref
 EOF
 EXPECT=<<EOF
 add 0xff9c, sp
@@ -45,15 +47,17 @@ minbound: 0x00004438
 maxbound: 0x00004476
 is-lineal: true
 end-bbs: 0
-call-refs: 0x00004558 C 0x0000447a C 0x00004484 C 0x00004558 C 0x0000446a J 0x00004558 C 0x0000449c C 0x00004470 J
-data-refs:
 noreturn: false
 in-degree: 0
 out-degree: 6
-data-xrefs:
 locals: 0
 args: 0
 diff: type: new
+--
+call-refs: 0x00004558 C 0x0000447a C 0x00004484 C 0x00004558 C 0x0000446a J 0x00004558 C 0x0000449c C 0x00004470 J
+data-refs:
+all-code-xrefs: 0x0000445c J 0x00004474 J
+data-xrefs:
 EOF
 RUN
 

@@ -304,13 +304,9 @@ minbound: 0x00001119
 maxbound: 0x00001133
 is-lineal: true
 end-bbs: 1
-call-refs:
-data-refs:
-code-xrefs: 0x00001165 C
 noreturn: false
 in-degree: 1
 out-degree: 0
-data-xrefs:
 locals: 2
 args: 2
 var int64_t var_4h @ rbp-0x4
