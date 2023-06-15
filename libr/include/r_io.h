@@ -40,7 +40,7 @@
 #if __sun
 #include <sys/types.h>
 #else
-#if DEBUGGER && HAVE_PTRACE && !R2__WINDOWS__ && !APPLE_SDK_IPHONEOS
+#if DEBUGGER && HAVE_PTRACE && !R2__WINDOWS__ && !APPLE_SDK_IPHONEOS && !defined(__HAIKU__)
 #include <sys/ptrace.h>
 #endif
 #endif
