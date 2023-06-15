@@ -67,18 +67,18 @@ aa
 afl,xref/sort/dec,any/head/10
 EOF
 EXPECT=<<EOF
-addr        size name                     noret nbbs nins refs xref calls cc
-----------------------------------------------------------------------------
-0x100004630 6    sym.imp.putchar          0     1    1    1    24   0     1
-0x10000462a 6    sym.imp.printf           0     1    1    1    22   0     1
-0x100004678 6    sym.imp.strlen           0     1    1    1    12   0     1
-0x10000456a 6    sym.imp.compat_mode      0     1    1    1    11   0     1
-0x10000451c 6    sym.imp.__snprintf_chk   0     1    1    1    9    0     1
-0x100004504 6    sym.imp.tputs            0     1    1    1    8    0     1
-0x1000045be 6    sym.imp.getenv           0     1    1    1    7    0     1
-0x100004522 6    sym.imp.__stack_chk_fail 1     1    1    1    7    0     1
-0x100003de3 13   sym.func.100003de3       0     1    6    1    6    1     1
-0x1000044f8 6    sym.imp.tgetstr          0     1    1    1    6    0     1
+addr        size name                     noret nbbs nins refs xref axref calls cc
+----------------------------------------------------------------------------------
+0x100004630 6    sym.imp.putchar          0     1    1    1    24   24    0     1
+0x10000462a 6    sym.imp.printf           0     1    1    1    22   22    0     1
+0x100004678 6    sym.imp.strlen           0     1    1    1    12   12    0     1
+0x10000456a 6    sym.imp.compat_mode      0     1    1    1    11   11    0     1
+0x10000451c 6    sym.imp.__snprintf_chk   0     1    1    1    9    9     0     1
+0x100004504 6    sym.imp.tputs            0     1    1    1    8    8     0     1
+0x1000045be 6    sym.imp.getenv           0     1    1    1    7    7     0     1
+0x100004522 6    sym.imp.__stack_chk_fail 1     1    1    1    7    7     0     1
+0x100003de3 13   sym.func.100003de3       0     1    6    1    6    6     1     1
+0x1000044f8 6    sym.imp.tgetstr          0     1    1    1    6    6     0     1
 
 EOF
 RUN
@@ -88,8 +88,12 @@ FILE=bins/mach0/twocalls
 CMDS=<<EOF
 af
 afij~{.callrefs}
+?e --
+afixj~{.callrefs}
 EOF
 EXPECT=<<EOF
+{"offset":4294983524,"name":"main","size":52,"is-pure":"false","realsz":52,"noreturn":false,"stackframe":32,"calltype":"arm64","cost":5,"cc":1,"bits":64,"type":"fcn","nbbs":1,"is-lineal":true,"ninstrs":13,"edges":0,"ebbs":1,"signature":"int main (int argc);","minbound":4294983524,"maxbound":4294983576,"indegree":0,"outdegree":2,"nlocals":2,"nargs":1,"bpvars":[],"spvars":[{"name":"argc","kind":"arg","type":"int64_t","ref":{"base":"sp","offset":64}},{"name":"var_8h","kind":"var","type":"int64_t","ref":{"base":"sp","offset":8}},{"name":"var_10h","kind":"var","type":"int64_t","ref":{"base":"sp","offset":16}}],"regvars":[],"difftype":"new"}
+--
 [{"addr":4294983576,"type":"CALL","at":4294983548},{"addr":4294983588,"type":"CALL","at":4294983556}]
 EOF
 RUN

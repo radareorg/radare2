@@ -2690,12 +2690,9 @@ minbound: 0x00000000
 maxbound: 0x00000007
 is-lineal: true
 end-bbs: 0
-call-refs:
-data-refs:
 noreturn: false
 in-degree: 0
 out-degree: 0
-data-xrefs:
 locals: 0
 args: 0
 diff: type: new
@@ -2752,12 +2749,9 @@ minbound: 0x00000000
 maxbound: 0x0000000d
 is-lineal: false
 end-bbs: 1
-call-refs: 0x00000004 J
-data-refs: 0x0000002c
 noreturn: false
 in-degree: 0
 out-degree: 0
-data-xrefs:
 locals: 0
 args: 0
 diff: type: new
@@ -2830,12 +2824,9 @@ minbound: 0x00000000
 maxbound: 0x0000000e
 is-lineal: false
 end-bbs: 0
-call-refs: 0x00000004 J 0x00000004 J
-data-refs: 0x0000002c
 noreturn: false
 in-degree: 0
 out-degree: 0
-data-xrefs:
 locals: 0
 args: 0
 diff: type: new
@@ -2916,12 +2907,9 @@ minbound: 0x00000000
 maxbound: 0x0000000e
 is-lineal: false
 end-bbs: 0
-call-refs: 0x00000004 J 0x00000005 J
-data-refs: 0x0000002c
 noreturn: false
 in-degree: 0
 out-degree: 0
-data-xrefs:
 locals: 0
 args: 0
 diff: type: new
@@ -3011,12 +2999,9 @@ minbound: 0x00000000
 maxbound: 0x00000013
 is-lineal: false
 end-bbs: 0
-call-refs: 0x00000009 J 0x00000003 J
-data-refs: 0x0000002c
 noreturn: false
 in-degree: 0
 out-degree: 0
-data-xrefs:
 locals: 0
 args: 0
 diff: type: new

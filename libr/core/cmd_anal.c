@@ -590,14 +590,13 @@ static RCoreHelpMessage help_msg_afC = {
 static RCoreHelpMessage help_msg_afi = {
 	"Usage:", "afi[jlp*]", " <addr>",
 	"afi", "", "show information of the function",
-	"afi.", "", "show function name in current offset",
-	"afi*", "", "function, variables and arguments",
-	"afij", "", "function info in json format",
+	"afi", "[.j*]", "function, variables and arguments",
 	"afii", "[-][import]", "show/add/delete imports used in function",
 	"afil", "", "verbose function info",
 	"afip", "", "show whether the function is pure or not",
 	"afiq", "", "show quite few info about the function",
 	"afis", "", "show function stats (opcode, meta)",
+	"afix", "[.j]", "function xrefs information",
 	NULL
 };
 
@@ -4296,6 +4295,24 @@ static void cmd_afci(RCore *core, RAnalFunction *fcn) {
 	r_core_cmdf (core, "afcll~%s (", cc);
 }
 
+static void cmd_afix(RCore *core, const char *input) {
+	switch (input[3]) {
+	case '?': // "afix?"
+		r_core_cmd_help_match (core, help_msg_afi, "afix", false);
+		break;
+	case 'q': // "afixq"
+	case 'j': // "afixj"
+		r_core_anal_fcn_list (core, input + 4, input + 2);
+		break;
+	case 0: // "afix"
+		r_core_anal_fcn_list (core, "", "x\x01");
+		break;
+	default:
+		R_LOG_ERROR ("Invalid argument");
+		break;
+	}
+}
+
 static int cmd_af(RCore *core, const char *input) {
 	r_cons_break_timeout (r_config_get_i (core->config, "anal.timeout"));
 	switch (input[1]) {
@@ -4555,6 +4572,9 @@ static int cmd_af(RCore *core, const char *input) {
 		case '?':
 			r_core_cmd_help (core, help_msg_afi);
 			break;
+		case 'x': // "afix"
+			cmd_afix (core, input);
+			break;
 		case '.': // "afi."
 			{
 				ut64 addr = core->offset;
@@ -4670,6 +4690,7 @@ static int cmd_af(RCore *core, const char *input) {
 			break;
 		default:
 			r_core_cmd_help (core, help_msg_afi);
+			break;
 		}
 		break;
 	case 'l': // "afl"
@@ -4937,21 +4958,21 @@ static int cmd_af(RCore *core, const char *input) {
 			}
 			break;
 		case 'o': { // "afco"
-			char *dbpath = r_str_trim_dup (input + 3);
-			if (R_STR_ISNOTEMPTY (dbpath) && r_file_exists (dbpath)) {
-				Sdb *db = sdb_new (0, dbpath, 0);
-				if (db) {
-					sdb_merge (core->anal->sdb_cc, db);
-					sdb_close (db);
-					sdb_free (db);
-				}
-			} else {
-				r_core_cmd_help_match (core, help_msg_afc, "afco", true);
-			}
-			free (dbpath);
+				  char *dbpath = r_str_trim_dup (input + 3);
+				  if (R_STR_ISNOTEMPTY (dbpath) && r_file_exists (dbpath)) {
+					  Sdb *db = sdb_new (0, dbpath, 0);
+					  if (db) {
+						  sdb_merge (core->anal->sdb_cc, db);
+						  sdb_close (db);
+						  sdb_free (db);
+					  }
+				  } else {
+					  r_core_cmd_help_match (core, help_msg_afc, "afco", true);
+				  }
+				  free (dbpath);
+			  }
 			break;
-		}
-		case 'r': {	// "afcr"
+		case 'r': { // "afcr"
 			int i;
 			PJ *pj = NULL;
 			bool json = input[3] == 'j';
@@ -4990,7 +5011,6 @@ static int cmd_af(RCore *core, const char *input) {
 			if (json) {
 				pj_end (pj);
 			}
-
 			cmd = r_str_newf ("cc.%s.self", fcn->cc);
 			regname = sdb_const_get (core->anal->sdb_cc, cmd, 0);
 			if (regname) {
