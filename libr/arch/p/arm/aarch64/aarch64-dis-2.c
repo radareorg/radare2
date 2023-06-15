@@ -19970,6 +19970,9 @@ aarch64_extract_operand (const aarch64_operand *self,
     case 189:
     case 191:
       return aarch64_ext_sve_reglist (self, info, code, inst, errors);
-    default: assert (0); abort ();
+    default:
+      assert (0);
+      abort ();
+      return 0; // redundant but makes all compilers happy
     }
 }

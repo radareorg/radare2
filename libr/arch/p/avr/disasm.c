@@ -3,7 +3,7 @@
 #include "r_asm.h"
 #include <string.h>
 
-int avr_decode(RAsm *a, char *out, int out_len, ut64 addr, cut8 *buf, int len) {
+int avr_decode(RArchSession *a, char *out, int out_len, ut64 addr, cut8 *buf, int len) {
 	formattingOptions opt = {0};
 	disassembledInstruction dins;
 	assembledInstruction ins;

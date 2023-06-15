@@ -254,6 +254,7 @@ compute_arch_mask (unsigned long mach)
       return SPARC_OPCODE_ARCH_MASK (SPARC_OPCODE_ARCH_V9B);
     }
   abort ();
+  return -1; // redundant but makes all compilers happy
 }
 
 /* Compare opcodes A and B.  */
