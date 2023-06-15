@@ -11,8 +11,6 @@ ifeq ($(WITHPIC),1)
 all: ${ALL_TARGETS}
 
 ALL_TARGETS=
-# TODO: rename to enabled plugins
-# ANAL_PLUGINS=null.mk avr.mk xap.mk bpf.mk dalvik.mk sh.mk ebc.mk lh5801.mk ws.mk h8300.mk cr16.mk v850.mk msp430.mk sparc_gnu.mk sparc_cs.mk x86_cs.mk cris.mk 6502.mk snes.mk riscv.mk vax.mk xtensa.mk rsp.mk tricore.mk s390_cs.mk pickle.mk
 include $(ANAL_PLUGINS)
 
 clean:

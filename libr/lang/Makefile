@@ -9,6 +9,7 @@ R2DEPS+=r_asm
 R2DEPS+=r_crypto
 R2DEPS+=r_arch
 R2DEPS+=r_esil
+R2DEPS+=r_search
 R2DEPS+=r_syscall
 R2DEPS+=r_flag
 CFLAGS+=-DR2_PLUGIN_INCORE

@@ -743,13 +743,13 @@ static RDisasmState *ds_init(RCore *core) {
 	ds->asm_instr = r_config_get_i (core->config, "asm.instr");
 	ds->show_emu = r_config_get_b (core->config, "asm.emu");
 	ds->show_emu_str = r_config_get_b (core->config, "emu.str");
-	ds->show_emu_stroff = r_config_get_i (core->config, "emu.str.off");
-	ds->show_emu_strinv = r_config_get_i (core->config, "emu.str.inv");
-	ds->show_emu_strflag = r_config_get_i (core->config, "emu.str.flag");
-	ds->show_emu_strlea = r_config_get_i (core->config, "emu.str.lea");
-	ds->show_emu_write = r_config_get_i (core->config, "emu.write");
-	ds->show_emu_ssa = r_config_get_i (core->config, "emu.ssa");
-	ds->show_emu_stack = r_config_get_i (core->config, "emu.stack");
+	ds->show_emu_stroff = r_config_get_b (core->config, "emu.str.off");
+	ds->show_emu_strinv = r_config_get_b (core->config, "emu.str.inv");
+	ds->show_emu_strflag = r_config_get_b (core->config, "emu.str.flag");
+	ds->show_emu_strlea = r_config_get_b (core->config, "emu.str.lea");
+	ds->show_emu_write = r_config_get_b (core->config, "emu.write");
+	ds->show_emu_ssa = r_config_get_b (core->config, "emu.ssa");
+	ds->show_emu_stack = r_config_get_b (core->config, "emu.stack");
 	ds->stackFd = -1;
 	if (ds->show_emu_stack) {
 		// TODO: initialize fake stack in here
@@ -782,8 +782,8 @@ static RDisasmState *ds_init(RCore *core) {
 	ds->show_reloff = r_config_get_i (core->config, "asm.offset.relative");
 	ds->show_reloff_flags = r_config_get_i (core->config, "asm.offset.flags");
 	ds->show_lines_fcn = ds->show_lines ? r_config_get_i (core->config, "asm.lines.fcn") : false;
-	ds->show_comments = r_config_get_i (core->config, "asm.comments");
-	ds->show_usercomments = r_config_get_i (core->config, "asm.usercomments");
+	ds->show_comments = r_config_get_b (core->config, "asm.comments");
+	ds->show_usercomments = r_config_get_b (core->config, "asm.usercomments");
 	ds->asm_hint_jmp = r_config_get_i (core->config, "asm.hint.jmp");
 	ds->asm_hint_call = r_config_get_i (core->config, "asm.hint.call");
 	ds->asm_hint_call_indirect = r_config_get_i (core->config, "asm.hint.call.indirect");
@@ -4659,8 +4659,8 @@ static void ssa_set(REsil *esil, const char *reg) {
 #define R_DISASM_MAX_STR 512
 static bool myregread(REsil *esil, const char *name, ut64 *res, int *size) {
 	RDisasmState *ds = esil->user;
-	if (ds && ds->show_emu_ssa) {
-		if (!isdigit ((unsigned char)*name)) {
+	if (ds != NULL && ds->show_emu_ssa && name) {
+		if (!isdigit ((ut8)*name)) {
 			char *r = ssa_get (esil, name);
 			ds_comment_esil (ds, true, false, "<%s", r);
 			free (r);

@@ -16,6 +16,7 @@
 
 typedef struct {
 	csh cs_handle;
+	// store cpu and endian too ?
 } CapstonePluginData;
 
 static void initcs(csh *ud) {

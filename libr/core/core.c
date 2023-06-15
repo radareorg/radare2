@@ -3349,6 +3349,9 @@ R_API void r_core_fini(RCore *c) {
 	r_unref (c->anal->reg->config);
 	r_unref (c->anal->config);
 	*/
+	if (c->anal->esil) {
+		c->anal->esil->anal = NULL;
+	}
 	r_anal_free (c->anal);
 	r_asm_free (c->rasm);
 	c->rasm = NULL;
