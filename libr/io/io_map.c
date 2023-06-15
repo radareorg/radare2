@@ -458,7 +458,7 @@ typedef struct map_overlay_chunk_t {
 	ut8 *buf;
 } MapOverlayChunk;
 
-static int _overlay_chunk_find (void *incoming, void *in, void *user) {
+static int _overlay_chunk_find(void *incoming, void *in, void *user) {
 	RInterval *itv = (RInterval *)incoming;
 	MapOverlayChunk *chunk = (MapOverlayChunk *)in;
 	if (r_itv_overlap (itv[0], chunk->itv)) {
@@ -605,6 +605,7 @@ R_API bool r_io_map_write_to_overlay(RIOMap *map, ut64 addr, const ut8 *buf, int
 	}
 	chunk->buf = R_NEWS (ut8, r_itv_size (search_itv));
 	if (!chunk->buf) {
+		free (chunk);
 		return false;
 	}
 	chunk->itv = search_itv;
