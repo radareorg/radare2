@@ -869,6 +869,7 @@ R_API bool r_io_bank_write_to_overlay_at(RIO *io, const ut32 bankid, ut64 addr, 
 	r_return_val_if_fail (io, false);
 	RIOBank *bank = r_io_bank_get (io, bankid);
 	if (!bank) {
+		R_LOG_WARN ("Tfw no bank(id: %u) in io", bankid);
 		return false;
 	}
 	RIOSubMap fake_sm = {{0}};
