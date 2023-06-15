@@ -1765,7 +1765,7 @@ R_API bool r_anal_function_add_bb(RAnal *a, RAnalFunction *fcn, ut64 addr, ut64 
 		block = NULL;
 	}
 
-	const bool is_x86 = a->cur->arch && !strcmp (a->cur->arch, "x86");
+	const bool is_x86 = (a->cur && a->cur->arch && !strcmp (a->cur->arch, "x86"));
 	// TODO fix this x86-ism
 	if (is_x86) {
 		fcn_recurse (a, fcn, addr, size, -1);
