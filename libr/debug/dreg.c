@@ -167,7 +167,9 @@ R_API bool r_debug_reg_list(RDebug *dbg, int type, int size, PJ *pj, int rad, co
 			if (type != item->type && R_REG_TYPE_FLG != item->type) {
 				continue;
 			}
-			if (size != 0 && size != item->size) {
+			if (size == 8 && item->size == 16) {
+				// avr workaround
+			} else if (size != 0 && size != item->size) {
 				continue;
 			}
 		}
