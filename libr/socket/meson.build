@@ -18,6 +18,12 @@ if get_option('blob')
   endif
 endif
 
+if host_machine.system() == 'haiku'
+  dependencies += [
+    cc.find_library('network')
+  ]
+endif
+
 if use_sys_openssl
   r_util_deps += [sys_openssl]
 endif
