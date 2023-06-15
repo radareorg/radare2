@@ -179,13 +179,19 @@ static bool r2r_chdir_fromtest(const char *test_path) {
 			break;
 		}
 		if (r_file_is_directory ("test")) {
-			r_sys_chdir ("test");
+			if (!r_sys_chdir ("test")) {
+				eprintf ("Cannot enter into the 'test' directory");
+				break;
+			}
 			if (r_file_is_directory ("db")) {
 				found = true;
 				eprintf ("Running from %s\n", cwd);
 				break;
 			}
-			r_sys_chdir ("..");
+			if (!r_sys_chdir ("..")) {
+				eprintf ("Cannot come back to test/..");
+				break;
+			}
 		}
 		if (r_file_is_directory ("db")) {
 			found = true;
@@ -245,7 +251,9 @@ static void r2r_git(void) {
 		if (r_file_is_directory (".git")) {
 			break;
 		}
-		chdir ("..");
+		if (chdir ("..") == -1) {
+			break;
+		}
 	}
 	char *changes = r_sys_cmd_strf ("git diff --name-only");
 	RList *lines = r_str_split_list (changes, "\n", 0);
