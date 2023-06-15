@@ -2601,18 +2601,10 @@ static int archinfo(RArchSession *anal, ut32 q) {
 }
 
 static RList *anal_preludes(RArchSession *as) {
-#if 0
-	RList *l = r_list_newf ((RListFree)r_search_keyword_free);
-#define KW(d,ds,m,ms) r_list_append (l, r_search_keyword_new ((const ut8*)d, ds, (const ut8*)m, ms, NULL))
-	KW ("\xf0\x00\x00\xd1", 4, "\xf0\x00\x00\xff", 4);
-	KW ("\xf0\x00\x00\xa9", 4, "\xf0\x00\x00\xff", 4);
-	KW ("\x7f\x23\x03\xd5\xff", 5, NULL, 0);
-#else
 	RList *l = r_list_newf (free);
 	r_list_append (l, r_str_newf ("f00000d1 f00000ff"));
 	r_list_append (l, r_str_newf ("f00000a9 f00000ff"));
 	r_list_append (l, r_str_newf ("7f2303d5ff"));
-#endif
 	return l;
 }
 

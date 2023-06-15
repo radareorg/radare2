@@ -5597,6 +5597,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 		if (newstack) {
 			opflags |= R_ARCH_OP_MASK_DISASM;
 		}
+		opflags |= R_ARCH_OP_MASK_DISASM;
 		if (!r_anal_op (core->anal, &op, cur, buf + i, iend - i, opflags)) {
 			i += minopsize - 1; // XXX dupe in op.size below
 			r_anal_op_fini (&op);
@@ -5646,6 +5647,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 				goto repeat;
 			}
 		}
+		// R2_590 - do this once and before the loop
 		const char *sn = r_reg_get_name (core->anal->reg, R_REG_NAME_SN);
 		if (!sn) {
 			R_LOG_WARN ("No SN reg alias for '%s'", r_config_get (core->config, "asm.arch"));
@@ -5673,6 +5675,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 			goto repeat;
 		}
 		r_esil_set_pc (ESIL, cur);
+		// R2_590 - if roregs is set we dont need to set that value everytime
 		r_reg_setv (core->anal->reg, pcname, cur + op.size);
 		if (gp_fixed && gp_reg) {
 			r_reg_setv (core->anal->reg, gp_reg, gp);
@@ -5710,6 +5713,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 			break;
 		case R_ANAL_OP_TYPE_ADD:
 			/* TODO: test if this is valid for other archs too */
+			eprintf ("ADDIU lets fuck for strigns\n");
 			if (core->anal->cur && archIsArm) {
 				/* This code is known to work on Thumb, ARM and ARM64 */
 				ut64 dst = ESIL->cur;
@@ -5722,7 +5726,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 				if (cfg_anal_strings) {
 					add_string_ref (core, op.addr, dst);
 				}
-			} else if ((core->anal->config->bits == 32 && core->anal->cur && arch == R2_ARCH_MIPS)) {
+			} else if ((core->anal->config->bits == 32 && arch == R2_ARCH_MIPS)) {
 				ut64 dst = ESIL->cur;
 				RAnalValue *opsrc0 = r_vector_at (&op.srcs, 0);
 				RAnalValue *opsrc1 = r_vector_at (&op.srcs, 1);
@@ -5759,6 +5763,13 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 						}
 					}
 				}
+#if 0
+			} else {
+				R_LOG_DEBUG ("add aae string refs for this arch here");
+				if (cfg_anal_strings) {
+					add_string_ref (core, op.addr, dst);
+				}
+#endif
 			}
 			break;
 		case R_ANAL_OP_TYPE_LOAD:

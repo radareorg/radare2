@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2013-2022 - pancake */
+/* radare2 - LGPL - Copyright 2013-2023 - pancake */
 
 #include <r_asm.h>
 #include <r_lib.h>
@@ -89,14 +89,14 @@ static R_TH_LOCAL ut64 t9_pre = UT64_MAX;
 #define ES_W(x) "0xffffffff,"x",&"
 
 // sign extend 32 -> 64
-#define ES_SIGN32_64(arg)	es_sign_n_64 (a, op, arg, 32)
-#define ES_SIGN16_64(arg)	es_sign_n_64 (a, op, arg, 16)
+#define ES_SIGN32_64(arg)	es_sign_n_64 (as, op, arg, 32)
+#define ES_SIGN16_64(arg)	es_sign_n_64 (as, op, arg, 16)
 
 #define ES_ADD_CK32_OVERF(x, y, z) es_add_ck (op, x, y, z, 32)
 #define ES_ADD_CK64_OVERF(x, y, z) es_add_ck (op, x, y, z, 64)
 
-static inline void es_sign_n_64(RAnal *a, RAnalOp *op, const char *arg, int bit) {
-	if (a->config->bits == 64) {
+static inline void es_sign_n_64(RArchSession *as, RAnalOp *op, const char *arg, int bit) {
+	if (as->config->bits == 64) {
 		r_strbuf_appendf (&op->esil, ",%d,%s,~,%s,=,", bit, arg, arg);
 	} else {
 		r_strbuf_append (&op->esil, ",");
@@ -202,7 +202,7 @@ static const char *arg(csh *handle, cs_insn *insn, char *buf, size_t buf_sz, int
 
 #define ARG(x) (*str[x] != 0)?str[x]:arg(handle, insn, str[x], sizeof (str[x]), x)
 
-static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh *handle, cs_insn *insn) {
+static int analop_esil(RArchSession *as, RAnalOp *op, csh *handle, cs_insn *insn) {
 	char str[8][32] = {{0}};
 	int i;
 
@@ -685,7 +685,7 @@ static const char *parse_reg_name(csh handle, cs_insn *insn, int reg_num) {
 	return NULL;
 }
 
-static void op_fillval(RAnal *anal, RAnalOp *op, csh *handle, cs_insn *insn) {
+static void op_fillval(RArchSession *as, RAnalOp *op, csh *handle, cs_insn *insn) {
 	RAnalValue *dst, *src0, *src1;
 	switch (op->type & R_ANAL_OP_TYPE_MASK) {
 	case R_ANAL_OP_TYPE_LOAD:
@@ -779,9 +779,9 @@ static void set_opdir(RAnalOp *op) {
 	}
 }
 
-static int get_capstone_mode (RAnal *anal) {
-	int mode = R_ARCH_CONFIG_IS_BIG_ENDIAN (anal->config)? CS_MODE_BIG_ENDIAN: CS_MODE_LITTLE_ENDIAN;
-	const char *cpu = anal->config->cpu;
+static int get_capstone_mode(RArchSession *as) {
+	int mode = R_ARCH_CONFIG_IS_BIG_ENDIAN (as->config)? CS_MODE_BIG_ENDIAN: CS_MODE_LITTLE_ENDIAN;
+	const char *cpu = as->config->cpu;
 	if (R_STR_ISNOTEMPTY (cpu)) {
 		if (!strcmp (cpu, "micro")) {
 			mode |= CS_MODE_MICRO;
@@ -795,33 +795,95 @@ static int get_capstone_mode (RAnal *anal) {
 #endif
 		}
 	}
-	mode |= (anal->config->bits == 64)? CS_MODE_MIPS64: CS_MODE_MIPS32;
+	mode |= (as->config->bits == 64)? CS_MODE_MIPS64: CS_MODE_MIPS32;
 	return mode;
 }
 
 #define CSINC MIPS
-#define CSINC_MODE get_capstone_mode(a)
-#include "capstone.inc.c"
+#define CSINC_MODE get_capstone_mode(as)
+#include "../capstone.inc.c"
 
-static int analop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
-	csh hndl = init_capstone (anal);
-	if (hndl == 0) {
-		return -1;
+typedef struct plugin_data_t {
+	CapstonePluginData cpd;
+	RRegItem reg;
+	char *cpu;
+	int bigendian;
+} PluginData;
+
+
+static bool init(RArchSession *as) {
+	r_return_val_if_fail (as, false);
+	if (as->data) {
+		R_LOG_WARN ("Already initialized");
+		return false;
 	}
+	PluginData *pd = R_NEW0 (PluginData);
+	if (!pd) {
+		return false;
+	}
+	pd->bigendian = R_ARCH_CONFIG_IS_BIG_ENDIAN (as->config);
+	pd->cpu = as->config->cpu? strdup (as->config->cpu): NULL;
+	if (!r_arch_cs_init (as, &pd->cpd.cs_handle)) {
+		R_LOG_ERROR ("Cannot initialize capstone");
+		R_FREE (as->data);
+		return false;
+	}
+	as->data = pd;
+	return true;
+}
 
-	if (anal->config->syntax == R_ARCH_SYNTAX_REGNUM) {
-		cs_option (hndl, CS_OPT_SYNTAX, CS_OPT_SYNTAX_NOREGNAME);
+static bool fini(RArchSession *as) {
+	r_return_val_if_fail (as, false);
+	PluginData *pd = as->data;
+	cs_close (&pd->cpd.cs_handle);
+	R_FREE (as->data);
+	return true;
+}
+
+static csh cs_handle_for_session(RArchSession *as) {
+	r_return_val_if_fail (as && as->data, 0);
+	CapstonePluginData *pd = as->data;
+	return pd->cs_handle;
+}
+
+static bool plugin_changed(RArchSession *as) {
+	PluginData *cpd = as->data;
+	if (R_ARCH_CONFIG_IS_BIG_ENDIAN (as->config) != cpd->bigendian) {
+		return true;
+	}
+	if (cpd->cpu && as->config->cpu && strcmp (cpd->cpu, as->config->cpu)) {
+		eprintf ("cpudif\n");
+		return true;
+	}
+	return false;
+}
+
+static bool decode(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
+	ut64 addr = op->addr;
+	const ut8 *buf = op->bytes;
+	const int len = op->size;
+	csh handle = cs_handle_for_session (as);
+	if (handle == 0) {
+		return false;
+	}
+	cs_insn *insn = NULL;
+	if (as->config->syntax == R_ARCH_SYNTAX_REGNUM) {
+		cs_option (handle, CS_OPT_SYNTAX, CS_OPT_SYNTAX_NOREGNAME);
 	} else {
-		cs_option (hndl, CS_OPT_SYNTAX, CS_OPT_SYNTAX_DEFAULT);
+		cs_option (handle, CS_OPT_SYNTAX, CS_OPT_SYNTAX_DEFAULT);
 	}
 
+	if (plugin_changed (as)) {
+		fini (as);
+		init (as);
+		handle = cs_handle_for_session (as);
+	}
 	int n, opsize = -1;
-	cs_insn* insn;
 
 // XXX no arch->cpu ?!?! CS_MODE_MICRO, N64
 	op->addr = addr;
 	op->size = 4;
-	n = cs_disasm (hndl, buf, len, addr, 1, &insn);
+	n = cs_disasm (handle, buf, len, addr, 1, &insn);
 	if (n < 1 || insn->size < 1) {
 		if (mask & R_ARCH_OP_MASK_DISASM) {
 			op->mnemonic = strdup ("invalid");
@@ -849,7 +911,7 @@ static int analop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, 
 	case MIPS_INS_LBU:
 	case MIPS_INS_LBUX:
 		op->refptr = 1;
-		 /* fallthrough */
+		/* fallthrough */
 	case MIPS_INS_LW:
 	case MIPS_INS_LWC1:
 	case MIPS_INS_LWC2:
@@ -859,7 +921,7 @@ static int analop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, 
 		if (!op->refptr) {
 			op->refptr = 4;
 		}
-		 /* fallthrough */
+		/* fallthrough */
 	case MIPS_INS_LD:
 	case MIPS_INS_LDC1:
 	case MIPS_INS_LDC2:
@@ -873,12 +935,12 @@ static int analop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, 
 		switch (OPERAND(1).type) {
 		case MIPS_OP_MEM:
 			if (OPERAND(1).mem.base == MIPS_REG_GP) {
-				op->ptr = anal->gp + OPERAND(1).mem.disp;
+				op->ptr = as->config->gp + OPERAND(1).mem.disp;
 				if (REGID(0) == MIPS_REG_T9) {
-						t9_pre = op->ptr;
+					t9_pre = op->ptr;
 				}
 			} else if (REGID(0) == MIPS_REG_T9) {
-						t9_pre = UT64_MAX;
+				t9_pre = UT64_MAX;
 			}
 			break;
 		case MIPS_OP_IMM:
@@ -949,11 +1011,11 @@ static int analop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, 
 		case MIPS_INS_BGTZALC:
 			// compact versions (no delay)
 			op->delay = 0;
-			op->fail = addr+4;
+			op->fail = addr + 4;
 			break;
 		default:
 			op->delay = 1;
-			op->fail = addr+8;
+			op->fail = addr + 8;
 			break;
 		}
 		break;
@@ -1146,23 +1208,23 @@ static int analop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, 
 beach:
 	set_opdir (op);
 	if (insn && mask & R_ARCH_OP_MASK_OPEX) {
-		opex (&op->opex, hndl, insn);
+		opex (&op->opex, handle, insn);
 	}
 	if (mask & R_ARCH_OP_MASK_ESIL) {
-		if (analop_esil (anal, op, addr, buf, len, &hndl, insn) != 0) {
+		if (analop_esil (as, op, &handle, insn) != 0) {
 			r_strbuf_fini (&op->esil);
 		}
 	}
 	if (mask & R_ARCH_OP_MASK_VAL) {
-		op_fillval (anal, op, &hndl, insn);
+		op_fillval (as, op, &handle, insn);
 	}
 	cs_free (insn, n);
 	return opsize;
 }
 
-static char *get_reg_profile(RAnal *anal) {
+static char *get_reg_profile(RArchSession * as) {
 	const char *p = NULL;
-	switch (anal->config->bits) {
+	switch (as->config->bits) {
 	default:
 	case 32: p =
 		"=PC    pc\n"
@@ -1264,9 +1326,9 @@ static char *get_reg_profile(RAnal *anal) {
 	return p? strdup (p): NULL;
 }
 
-static int archinfo(RAnal *anal, int q) {
+static int archinfo(RArchSession *as, ut32 q) {
 	if (q == R_ANAL_ARCHINFO_ALIGN || q == R_ANAL_ARCHINFO_MIN_OP_SIZE) {
-		const char *cpu = anal->config->cpu;
+		const char *cpu = as->config->cpu;
 		if (cpu && !strcmp (cpu, "micro")) {
 			return 2; // (anal->bits == 16) ? 2: 4;
 		}
@@ -1274,16 +1336,25 @@ static int archinfo(RAnal *anal, int q) {
 	return 4;
 }
 
-static RList *anal_preludes(RAnal *anal) {
-#define KW(d,ds,m,ms) r_list_append (l, r_search_keyword_new((const ut8*)d,ds,(const ut8*)m, ms, NULL))
-	RList *l = r_list_newf ((RListFree)r_search_keyword_free);
-	KW ("\x27\xbd\x00", 3, NULL, 0);
+static char *mnemonics(RArchSession *as, int id, bool json) {
+	r_return_val_if_fail (as && as->data, NULL);
+	CapstonePluginData *cpd = as->data;
+	return r_arch_cs_mnemonics (as, cpd->cs_handle, id, json);
+}
+
+static RList *preludes(RArchSession *as) {
+	RList *l = r_list_newf (free);
+	r_list_append (l, r_str_newf ("27bd0000 ffffff00"));
 	return l;
 }
 
-static int mips_cs_opasm(RAnal *anal, ut64 addr, const char *s, ut8 *buf, int len) {
-	int ret = mips_assemble (s, addr, buf);
-	if (R_ARCH_CONFIG_IS_BIG_ENDIAN (anal->config)) {
+static bool encode(RArchSession *as, RAnalOp *op, RArchEncodeMask mask) {
+	ut8 buf[4] = {0};
+	int ret = mips_assemble (op->mnemonic, op->addr, buf);
+	if (ret < 1) {
+		return false;
+	}
+	if (R_ARCH_CONFIG_IS_BIG_ENDIAN (as->config)) {
 		ut8 tmp = buf[0];
 		buf[0] = buf[3];
 		buf[3] = tmp;
@@ -1291,30 +1362,36 @@ static int mips_cs_opasm(RAnal *anal, ut64 addr, const char *s, ut8 *buf, int le
 		buf[1] = buf[2];
 		buf[2] = tmp;
 	}
-	return ret;
+	free (op->bytes);
+	op->bytes = r_mem_dup (buf, 4);
+	op->size = 4;
+	return true;
 }
 
-RAnalPlugin r_anal_plugin_mips_cs = {
-	.name = "mips",
-	.desc = "Capstone MIPS analyzer",
-	.license = "BSD",
-	.esil = true,
+RArchPlugin r_arch_plugin_mips_cs = {
+	.meta = {
+		.name = "mips",
+		.desc = "Capstone MIPS analyzer",
+		.license = "BSD",
+	},
 	.arch = "mips",
 	.cpus = "mips32/64,micro,r6,v3,v2",
-	.get_reg_profile = get_reg_profile,
-	.archinfo = archinfo,
-	.preludes = anal_preludes,
-	.bits = 16 | 32 | 64,
+	.regs = get_reg_profile,
+	.info = archinfo,
+	.preludes = preludes,
+	.bits = R_SYS_BITS_PACK3 (16, 32, 64),
 	.endian = R_SYS_ENDIAN_LITTLE | R_SYS_ENDIAN_BIG,
-	.op = &analop,
-	.opasm = &mips_cs_opasm,
-	.mnemonics = cs_mnemonics,
+	.init = init,
+	.fini = fini,
+	.decode = decode,
+	.encode = encode,
+	.mnemonics = mnemonics,
 };
 
 #ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_ANAL,
-	.data = &r_anal_plugin_mips_cs,
+	.type = R_LIB_TYPE_ARCH,
+	.data = &r_arch_plugin_mips_cs,
 	.version = R2_VERSION
 };
 #endif

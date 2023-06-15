@@ -137,6 +137,8 @@ r_arch_sources = [
   'p/h8300/plugin.c',
   'p/h8300/h8300_disas.c',
   'p/xcore_cs/plugin.c',
+  'p/mips/plugin_cs.c',
+  'p/mips/mipsasm.c',
   'p/mips_gnu/plugin.c',
   'p/mips_gnu/mips-dis.c',
   'p/mips_gnu/mips16-opc.c',
@@ -207,8 +209,7 @@ r_arch = library('r_arch', r_arch_sources,
   soversion: r2_libversion
 )
 
-r_arch_dep = declare_dependency(link_with: r_arch,
-                              include_directories: [platform_inc])
+r_arch_dep = declare_dependency(link_with: r_arch, include_directories: [platform_inc])
 
 if get_option('blob')
 r_arch_static = static_library('r_arch_static', r_arch_sources,
@@ -235,6 +236,7 @@ pkgconfig_mod.generate(r_arch,
   requires: [
     'r_util',
     'r_esil',
+    'r_crypto',
     'r_reg',
   ],
   description: 'radare foundation libraries'

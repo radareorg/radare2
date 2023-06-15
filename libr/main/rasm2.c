@@ -893,6 +893,10 @@ R_API int r_main_rasm2(int argc, const char *argv[]) {
 		goto beach;
 	}
 
+	if (cpu) {
+		r_asm_set_cpu (as->a, cpu);
+		// not necessary --- r_arch_config_set_cpu (as->a->config, cpu);
+	}
 	if (arch) {
 		if (!r_asm_use (as->a, arch)) {
 			R_LOG_ERROR ("Unknown asm plugin '%s'", arch);
@@ -911,11 +915,8 @@ R_API int r_main_rasm2(int argc, const char *argv[]) {
 		ret = 0;
 		goto beach;
 	}
-	if (cpu) {
-		r_asm_set_cpu (as->a, cpu);
-	}
-	r_asm_set_bits (as->a, (env_bits && *env_bits)? atoi (env_bits): bits);
-	r_anal_set_bits (as->anal, (env_bits && *env_bits)? atoi (env_bits): bits);
+	r_asm_set_bits (as->a, R_STR_ISNOTEMPTY (env_bits)? atoi (env_bits): bits);
+	r_anal_set_bits (as->anal, R_STR_ISNOTEMPTY (env_bits)? atoi (env_bits): bits);
 	as->a->syscall = r_syscall_new ();
 	r_syscall_setup (as->a->syscall, arch, bits, cpu, kernel);
 	{
