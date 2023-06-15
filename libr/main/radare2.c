@@ -417,6 +417,7 @@ typedef struct {
 } ThreadData;
 
 static void perform_analysis(RCore *r, int do_analysis) {
+	r->times->file_anal_time = r_time_now_mono ();
 	const char *acmd = "aaaaa";
 	switch (do_analysis) {
 	case 0: acmd = ""; break;
@@ -426,6 +427,7 @@ static void perform_analysis(RCore *r, int do_analysis) {
 	}
 	r_core_cmd_call (r, acmd);
 	r_cons_flush ();
+	r->times->file_anal_time = r_time_now_mono () - r->times->file_anal_time;
 }
 
 static RThreadFunctionRet th_analysis(RThread *th) {

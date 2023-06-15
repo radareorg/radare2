@@ -785,9 +785,7 @@ static int cmd_help(void *data, const char *input) {
 			pj_kn (pj, "plug.init", core->times->loadlibs_init_time);
 			pj_kn (pj, "plug.load", core->times->loadlibs_time);
 			pj_kn (pj, "file.load", core->times->file_open_time);
-#if R2_590
-			// file_anal_time
-#endif
+			pj_kn (pj, "file.anal", core->times->file_anal_time);
 			pj_end (pj);
 			char *s = pj_drain (pj);
 			r_cons_printf ("%s\n", s);
@@ -795,10 +793,12 @@ static int cmd_help(void *data, const char *input) {
 		} else {
 			r_cons_printf ("plug.init = %"PFMT64d"\n"
 				"plug.load = %"PFMT64d"\n"
-				"file.load = %"PFMT64d"\n",
+				"file.load = %"PFMT64d"\n"
+				"file.anal = %"PFMT64d"\n",
 				core->times->loadlibs_init_time,
 				core->times->loadlibs_time,
-				core->times->file_open_time);
+				core->times->file_open_time,
+				core->times->file_anal_time);
 		}
 		break;
 	case 'u': // "?u"

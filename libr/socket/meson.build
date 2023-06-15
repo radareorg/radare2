@@ -18,12 +18,6 @@ if get_option('blob')
   endif
 endif
 
-if host_machine.system() == 'haiku'
-  r_util_deps += [
-    cc.find_library('network')
-  ]
-endif
-
 if use_sys_openssl
   r_util_deps += [sys_openssl]
 endif
@@ -39,8 +33,16 @@ r_socket = library('r_socket', r_socket_sources,
   soversion: r2_libversion
 )
 
+r_socket_dependencies = [ r_util_dep ]
+
+if host_machine.system() == 'haiku'
+  r_socket_dependencies += [
+    cc.find_library('network')
+  ]
+endif
+
 r_socket_dep = declare_dependency(link_with: r_socket,
-  dependencies: [r_util_dep],
+  dependencies: r_socket_dependencies,
   include_directories: [platform_inc])
 
 if get_option('blob')

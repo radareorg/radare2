@@ -72,6 +72,12 @@ r_io_deps = [
   pth
 ]
 
+if host_machine.system() == 'haiku'
+  r_io_deps += [
+    cc.find_library('network')
+  ]
+endif
+
 if host_machine.system() == 'linux' or host_machine.system() == 'android'
   r_io_sources += [
     'p/io_r2k_linux.c',
