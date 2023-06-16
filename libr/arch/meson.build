@@ -190,7 +190,7 @@ r_arch_sources += [
 endif
 
 # must be deleted when anal refactor is done
-arch_inc = include_directories('../asm/arch/include')
+arch_inc = include_directories('../arch/include')
 
 r_arch = library('r_arch', r_arch_sources,
   include_directories: [platform_inc, arch_inc],

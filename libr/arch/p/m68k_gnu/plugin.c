@@ -1,7 +1,7 @@
 /* radare - LGPL - Copyright 2016-2023 - pancake */
 
 #include <r_arch.h>
-#include "../../../asm/arch/include/opcode/m68k.h"
+#include "../../include/opcode/m68k.h"
 #include "disas-asm.h"
 
 typedef struct {

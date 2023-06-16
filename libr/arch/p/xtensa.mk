@@ -8,7 +8,7 @@ STATIC_OBJ+=${OBJ_XTENSA}
 TARGET_XTENSA=arch_xtensa.${EXT_SO}
 
 ALL_TARGETS+=$(TARGET_XTENSA)
-CFLAGS+=-I$(LTOP)/asm/arch/include
+CFLAGS+=-I$(LTOP)/arch/include
 
 $(TARGET_XTENSA): $(OBJ_XTENSA)
 	$(CC) $(call libname,arch_xtensa) $(LDFLAGS) $(CFLAGS) -o arch_xtensa.$(EXT_SO) $(OBJ_XTENSA)

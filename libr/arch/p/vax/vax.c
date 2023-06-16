@@ -1,8 +1,8 @@
-/* radare - GPL - Copyright 2015-2022 - pancake, condret */
+/* radare - GPL - Copyright 2015-2023 - pancake, condret */
 
 #include <r_lib.h>
 #include <r_arch.h>
-#include "../../../asm/arch/include/disas-asm.h"
+#include "../../include/disas-asm.h"
 #include "vax.h"
 
 // XXX: this is just a PoC
