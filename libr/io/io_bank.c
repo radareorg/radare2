@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2021-2022 - condret */
+/* radare2 - LGPL - Copyright 2021-2023 - condret */
 
 #include <r_io.h>
 
@@ -965,9 +965,48 @@ R_API int r_io_bank_write_to_submap_at(RIO *io, const ut32 bankid, ut64 addr, co
 	if (!map || !(map->perm & R_PERM_W)) {
 		return -1;
 	}
-	const int write_len = R_MIN (len, r_io_submap_to (sm) - addr + 1);
-	const ut64 paddr = addr - r_io_map_from (map) + map->delta;
-	return r_io_fd_write_at (io, map->fd, paddr, buf, write_len);
+	ut64 buf_off = 0;
+	int write_len = R_MIN (len, r_io_submap_to (sm) - addr + 1);
+	int ret = 0;
+	if (io_map_get_overlay_intersects (map, bank->todo, addr, write_len) &&
+		!r_queue_is_empty (bank->todo)) {
+		do {
+			RInterval *itv = (RInterval *)r_queue_dequeue (bank->todo);
+			RInterval vitv = *itv;
+			vitv.addr += r_io_map_from (map);
+			if ((addr + buf_off) < r_itv_begin (vitv)) {
+				const int w = r_itv_begin (vitv) - (addr + buf_off);
+				const ut64 paddr = addr + buf_off - r_io_map_from (map) + map->delta;
+				const int _ret = r_io_fd_write_at (io, map->fd, paddr, &buf[buf_off], w);
+				ret += _ret;
+				if (_ret != w) {
+					while (r_queue_is_empty (bank->todo)) {
+						r_queue_dequeue (bank->todo);
+					}
+					if (_ret < 0) {
+						return _ret;
+					}
+					return ret;
+				}
+				buf_off += w;
+				write_len -= w;
+			}
+			const int w = R_MIN (write_len, r_itv_end (vitv) - (addr + buf_off));
+			r_io_map_write_to_overlay (map, addr + buf_off, &buf[buf_off], w);
+			buf_off += w;
+			write_len -= w;
+			ret += w;
+		} while (!r_queue_is_empty (bank->todo));
+	}
+	if (write_len) {
+		const ut64 paddr = addr + buf_off - r_io_map_from (map) + map->delta;
+		const int _ret = r_io_fd_write_at (io, map->fd, paddr, buf, write_len);
+		if (_ret < 0) {
+			return _ret;
+		}
+		ret += _ret;
+	}
+	return ret;
 }
 
 R_API RIOMap *r_io_bank_get_map_at(RIO *io, const ut32 bankid, ut64 addr) {
