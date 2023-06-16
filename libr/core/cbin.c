@@ -1851,8 +1851,20 @@ static int bin_relocs(RCore *r, PJ *pj, int mode, int va) {
 	RRBTree *relocs = r_bin_get_relocs (r->bin);
 	bool apply_relocs = r_config_get_b (r->config, "bin.relocs.apply");
 	if (apply_relocs) {
+		//TODO: remove the bin.cache crap
+		const bool bc = r_config_get_b (r->config, "bin.cache");
+		if (bc) {
+			if (!(r->io->cachemode & R_PERM_W)) {
+				r_config_set_b (r->config, "io.cache", true);
+			}
+			r->bin->iob.overlay_write_at = r_io_cache_write_at;
+		}
 		relocs = r_bin_patch_relocs (r->bin);
-		r_io_drain_overlay (r->io);
+		if (bc) {
+			r->bin->iob.overlay_write_at = r_io_vwrite_to_overlay_at;
+		} else {
+			r_io_drain_overlay (r->io);
+		}
 	}
 	if (!relocs) {
 		if (pj) {
