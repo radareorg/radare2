@@ -47,7 +47,6 @@ r_anal_sources = [
   '../arch/p/avr/format.c',
   '../arch/p/avr/disasm.c',
   '../arch/p/avr/assemble.c',
-  'p/anal_dalvik.c',
   '../arch/p/ebc/plugin.c',
   '../arch/p/ebc/ebc_disas.c',
   '../arch/p/gb/plugin.c',

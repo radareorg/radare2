@@ -135,7 +135,7 @@ if not no_user_plugins
   endif
   if user_plugins.contains('dalvik')
     bin_plugins += [ 'dex' ]
-    anal_plugins += [ 'dalvik' ]
+    arch_plugins += [ 'dalvik' ]
     parse_plugins += [ 'dalvik_pseudo' ]
   endif
   if user_plugins.contains('loongarch')
@@ -155,13 +155,13 @@ if no_user_plugins
 
 anal_plugins += [
   'arm_cs',
-  'dalvik',
   'x86_cs',
 ]
 
 arch_plugins += [
   '8051',
   'avr',
+  'dalvik',
   'java',
   'chip8',
   'wasm',

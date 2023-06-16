@@ -340,6 +340,7 @@ extern RArchPlugin r_arch_plugin_gb;
 extern RArchPlugin r_arch_plugin_mips_cs;
 extern RArchPlugin r_arch_plugin_avr;
 extern RArchPlugin r_arch_plugin_8051;
+extern RArchPlugin r_arch_plugin_dalvik;
 
 #ifdef __cplusplus
 }
