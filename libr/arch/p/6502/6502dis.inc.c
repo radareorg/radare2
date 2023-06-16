@@ -139,7 +139,10 @@ static int _6502Disass(ut64 pc, RAnalOp *op, const ut8 *buf, ut64 len) {
 	for (i = 0; ops[i].name; i++) {
 		if (ops[i].op == buf[0]) {
 			op->mnemonic = strdup ("invalid");
-			int len = ops[i].len;
+			int oplen = ops[i].len;
+			if (oplen > len) {
+				return 0;
+			}
 			switch (ops[i].len) {
 			case 1:
 				op->mnemonic = strdup (ops[i].name);
@@ -171,7 +174,7 @@ static int _6502Disass(ut64 pc, RAnalOp *op, const ut8 *buf, ut64 len) {
 			default:
 				goto beach;
 			}
-			return len;
+			return oplen;
 		}
 	}
 beach:

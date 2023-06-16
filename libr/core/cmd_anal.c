@@ -10034,8 +10034,8 @@ static void cmd_anal_hint(RCore *core, const char *input) {
 			ut8 code[128] = {0};
 			(void)r_io_read_at (core->io, core->offset, code, sizeof (code));
 			r_asm_set_pc (core->rasm, addr);
-			(void)r_asm_disassemble (core->rasm, &asmop, code, core->blocksize);
-			int ret = r_anal_op (core->anal, &op, core->offset, code, core->blocksize, R_ARCH_OP_MASK_VAL);
+			(void)r_asm_disassemble (core->rasm, &asmop, code, sizeof (code));
+			int ret = r_anal_op (core->anal, &op, core->offset, code, sizeof (code), R_ARCH_OP_MASK_VAL);
 			if (ret >= 0) {
 				// HACK: Just convert only the first imm seen
 				RAnalValue *src = NULL;
