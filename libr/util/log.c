@@ -12,6 +12,7 @@ static const char *level_tags[] = { // Log level to tag string lookup array
 	[R_LOGLVL_ERROR]     = "ERROR",
 	[R_LOGLVL_INFO]      = "INFO",
 	[R_LOGLVL_WARN]      = "WARN",
+	[R_LOGLVL_TODO]      = "TODO",
 	[R_LOGLVL_DEBUG]     = "DEBUG",
 };
 
