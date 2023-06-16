@@ -139,7 +139,7 @@ bool linux_reg_write(RDebug *dbg, int type, const ut8 *buf, int size);
 RList *linux_desc_list(int pid);
 bool linux_stop_threads(RDebug *dbg, int except);
 int linux_handle_signals(RDebug *dbg, int tid);
-int linux_dbg_wait(RDebug *dbg, int pid);
+RDebugReasonType linux_dbg_wait(RDebug *dbg, int pid);
 char *linux_reg_profile(RDebug *dbg);
 int match_pid(const void *pid_o, const void *th_o);
 

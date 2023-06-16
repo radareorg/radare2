@@ -274,7 +274,7 @@ typedef struct r_esil_active_plugin_t {
 } REsilActivePlugin;
 
 R_API REsil *r_esil_new(int stacksize, int iotrap, unsigned int addrsize);
-R_API bool r_esil_set_pc(REsil *esil, ut64 addr);
+R_API void r_esil_set_pc(REsil *esil, ut64 addr);
 R_API bool r_esil_setup(REsil *esil, struct r_anal_t *anal, int romem, int stats, int nonull);
 R_API void r_esil_setup_macros(REsil *esil);
 R_API void r_esil_setup_ops(REsil *esil);
@@ -297,8 +297,8 @@ typedef bool (*REsilOpCb)(REsil *esil);
 
 typedef struct r_esil_operation_t {
 	REsilOpCb code;
-	ut32 push;		// amount of operands pushed
-	ut32 pop;		// amount of operands popped
+	ut32 push; // amount of operands pushed
+	ut32 pop; // amount of operands popped
 	ut32 type;
 } REsilOp;
 

@@ -5531,6 +5531,12 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 	}
 
 	r_reg_arena_push (core->anal->reg);
+	char *sn = (char *)r_reg_get_name (core->anal->reg, R_REG_NAME_SN);
+	if (sn) {
+		sn = strdup (sn);
+	} else {
+		R_LOG_WARN ("No SN reg alias for '%s'", r_config_get (core->config, "asm.arch"));
+	}
 
 	IterCtx ictx = { start, end, fcn, NULL };
 	size_t i = addr - start;
@@ -5646,11 +5652,6 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 				i += op.size - 1;
 				goto repeat;
 			}
-		}
-		// R2_590 - do this once and before the loop
-		const char *sn = r_reg_get_name (core->anal->reg, R_REG_NAME_SN);
-		if (!sn) {
-			R_LOG_WARN ("No SN reg alias for '%s'", r_config_get (core->config, "asm.arch"));
 		}
 		if (sn && op.type == R_ANAL_OP_TYPE_SWI) {
 			r_strf_buffer (64);
@@ -5862,6 +5863,7 @@ repeat:
 			break;
 		}
 	} while (get_next_i (&ictx, &i));
+	free (sn);
 	free (pcname);
 	free (spname);
 	r_list_free (ictx.bbl);
