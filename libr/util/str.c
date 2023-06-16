@@ -4077,3 +4077,20 @@ R_API void r_str_fixspaces(char *str) {
 	r_str_trim_tail (str);
 }
 
+R_API char *r_str_tok_r(char *str, const char *delim, char **save_ptr) {
+	char *ret = NULL;
+	if (str == NULL) {
+		str = *save_ptr;
+	}
+	str += strspn (str, delim);
+	if (*str == '\0') {
+		return NULL;
+	}
+	ret = str;
+	str += strcspn (str, delim);
+	if (*str) {
+		*str++ = '\0';
+	}
+	*save_ptr = str;
+	return ret;
+}
