@@ -1,7 +1,7 @@
 /* radare - LGPL - Copyright 2015-2023 - pancake */
 
 #include <r_asm.h>
-#include "disas-asm.h"
+#include "../../include/disas-asm.h"
 
 static int hppa_buffer_read_memory(bfd_vma memaddr, bfd_byte *myaddr, ut32 length, struct disassemble_info *info) {
 	int delta = (memaddr - info->buffer_vma);

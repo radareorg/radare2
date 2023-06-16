@@ -7,12 +7,12 @@
 // R2R db/anal/arm.gnu_16 db/tools/rasm2 db/anal/arm
 
 /* DEPRECATE ?? */
-#include "wine-arm.h"
-#include "../arch/p/arm/asm-arm.h"
-#include "../arch/p/arm/winedbg/be_arm.h"
-#include "../arch/p/arm/anal_arm_hacks.inc.c"
-#include "disas-asm.h"
-#include "../arch/p/arm/gnu/opcode-arm.h"
+#include "../../include/wine-arm.h"
+#include "../../include/disas-asm.h"
+#include "asm-arm.h"
+#include "winedbg/be_arm.h"
+#include "anal_arm_hacks.inc.c"
+#include "gnu/opcode-arm.h"
 
 // R2_590 - eliminate those globals!
 static R_TH_LOCAL char *oldcpu = NULL;

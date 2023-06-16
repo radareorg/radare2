@@ -21,7 +21,7 @@ Foundation, Inc., 51 Franklin Street - Fifth Floor, Boston, MA 02110-1301, USA. 
 #if !defined (FLOATFORMAT_H)
 #define FLOATFORMAT_H 1
 
-#include "ansidecl.h"
+#include "../../../include/ansidecl.h"
 
 /* A floatformat consists of a sign bit, an exponent and a mantissa.  Once the
    bytes are concatenated according to the byteorder flag, then each of those

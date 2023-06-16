@@ -1,8 +1,8 @@
 /* radare - LGPL - Copyright 2010-2023 - pancake */
 
 #include <r_arch.h>
-#include "disas-asm.h"
-#include "opcode/mips.h"
+#include "../../include/disas-asm.h"
+#include "../../include/opcode/mips.h"
 
 typedef struct plugin_data_t {
 	char *pre_cpu;

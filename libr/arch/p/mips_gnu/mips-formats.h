@@ -22,7 +22,7 @@
 
 // Old libiberty.h works well for this header.
 /* For ARRAY_SIZE.  */
-#include "libiberty.h"
+#include "../../include/libiberty.h"
 
 #define INT_BIAS(SIZE, LSB, MAX_VAL, BIAS, SHIFT, PRINT_HEX) \
   { \

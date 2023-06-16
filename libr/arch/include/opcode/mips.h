@@ -27,7 +27,7 @@
 #ifndef _MIPS_H_
 #define _MIPS_H_
 
-#include "mybfd.h"
+#include "../../include/mybfd.h"
 #define ARRAY_SIZE(a) (sizeof (a) / sizeof ((a)[0]))
 // typedef unsigned long bfd_vma;
 // typedef int bfd_boolean;

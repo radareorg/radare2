@@ -190,10 +190,9 @@ r_arch_sources += [
 endif
 
 # must be deleted when anal refactor is done
-arch_inc = include_directories('../arch/include')
 
 r_arch = library('r_arch', r_arch_sources,
-  include_directories: [platform_inc, arch_inc],
+  include_directories: [platform_inc],
   c_args: library_cflags,
   dependencies: [
     r_util_dep,
@@ -213,7 +212,7 @@ r_arch_dep = declare_dependency(link_with: r_arch, include_directories: [platfor
 
 if get_option('blob')
 r_arch_static = static_library('r_arch_static', r_arch_sources,
-  include_directories: [platform_inc, arch_inc],
+  include_directories: [platform_inc],
   c_args: library_cflags,
   dependencies: [
     r_util_static_dep,

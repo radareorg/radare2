@@ -1,7 +1,7 @@
 /* radare - LGPL - Copyright 2016-2023 - pancake */
 
 #include <r_arch.h>
-#include "disas-asm.h"
+#include "../../include/disas-asm.h"
 
 static int lanai_buffer_read_memory(bfd_vma memaddr, bfd_byte *myaddr, ut32 length, struct disassemble_info *info) {
 	int delta = (memaddr - info->buffer_vma);

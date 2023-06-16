@@ -1,7 +1,7 @@
 /* radare - LGPL - Copyright 2011-2023 -- pancake */
 
 #include <r_arch.h>
-#include "disas-asm.h"
+#include "../../include/disas-asm.h"
 
 // XXX This can be a generic function defined in a macro
 static int sparc_buffer_read_memory(bfd_vma memaddr, bfd_byte *myaddr, unsigned int length, struct disassemble_info *info) {

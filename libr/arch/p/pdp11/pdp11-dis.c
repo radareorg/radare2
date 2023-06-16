@@ -18,9 +18,9 @@
    Foundation, Inc., 51 Franklin Street - Fifth Floor, Boston,
    MA 02110-1301, USA.  */
 
-#include "sysdep.h"
-#include "disas-asm.h"
-#include "opcode/pdp11.h"
+#include "../../include/sysdep.h"
+#include "../../include/disas-asm.h"
+#include "../../include/opcode/pdp11.h"
 
 #define AFTER_INSTRUCTION	"\t"
 #define OPERAND_SEPARATOR	", "

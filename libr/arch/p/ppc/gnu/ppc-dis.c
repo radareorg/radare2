@@ -23,9 +23,9 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include <sysdep.h>
-#include <disas-asm.h>
-#include <opcode/ppc.h>
+#include "../../../include/sysdep.h"
+#include "../../../include/disas-asm.h"
+#include "../../../include/opcode/ppc.h"
 
 /* This file provides several disassembler functions, all of which use
    the disassembler interface defined in disas-asm.h.  Several functions

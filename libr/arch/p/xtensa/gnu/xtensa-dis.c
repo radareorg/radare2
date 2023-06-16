@@ -20,8 +20,8 @@
    MA 02110-1301, USA.  */
 
 #include <r_types.h>
-#include "disas-asm.h"
-#include "xtensa-isa.h"
+#include "../../../include/disas-asm.h"
+#include "../../../include/xtensa-isa.h"
 
 #if 1
 static void nothing(void) {

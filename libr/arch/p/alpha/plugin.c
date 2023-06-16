@@ -4,7 +4,7 @@
 #include <r_asm.h>
 
 #define BUFSZ 8
-#include "disas-asm.h"
+#include "../../include/disas-asm.h"
 #include "opcode-alpha.h"
 
 static int alpha_buffer_read_memory(bfd_vma memaddr, bfd_byte *myaddr, ut32 length, struct disassemble_info *info) {

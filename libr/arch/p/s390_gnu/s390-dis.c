@@ -19,14 +19,13 @@
    Free Software Foundation, 51 Franklin Street - Fifth Floor, Boston,
    MA 02110-1301, USA.  */
 
-#include "sysdep.h"
 #include <stdio.h>
-#include "ansidecl.h"
-// #include "disassemble.h"
-#include "opintl.h"
-#include <disas-asm.h>
-#include "opcode/s390.h"
-#include "libiberty.h"
+#include "../../include/sysdep.h"
+#include "../../include/ansidecl.h"
+#include "../../include/opintl.h"
+#include "../../include/disas-asm.h"
+#include "../../include/opcode/s390.h"
+#include "../../include/libiberty.h"
 
 static int opc_index[256];
 static int current_arch_mask = 0;

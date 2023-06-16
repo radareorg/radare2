@@ -23,7 +23,7 @@
 #ifndef _NIOS2_H_
 #define _NIOS2_H_
 
-#include "mybfd.h"
+#include "../mybfd.h"
 
 /****************************************************************************
  * This file contains structures, bit masks and shift counts used

@@ -22,7 +22,7 @@
 #ifndef OPCODE_AARCH64_H
 #define OPCODE_AARCH64_H
 
-#include "mybfd.h"
+#include "../../../include/mybfd.h"
 // #include "bfd_stdint.h"
 #include <stdint.h>
 #include <stdlib.h>

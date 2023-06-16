@@ -27,8 +27,8 @@
 
 #include <stdio.h>
 #include <string.h>
-#include "sysdep.h"
-#include "opcode/sparc.h"
+#include "../../../include/sysdep.h"
+#include "../../../include/opcode/sparc.h"
 
 /* Some defines to make life easy.  */
 #define MASK_V6		SPARC_OPCODE_ARCH_MASK (SPARC_OPCODE_ARCH_V6)

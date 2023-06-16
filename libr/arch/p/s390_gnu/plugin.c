@@ -2,7 +2,7 @@
 
 #include <r_anal.h>
 #include <r_lib.h>
-#include "disas-asm.h"
+#include "../../include/disas-asm.h"
 
 #define INSOP(n) insn->detail->sysz.operands[n]
 

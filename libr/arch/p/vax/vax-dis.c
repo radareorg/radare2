@@ -19,14 +19,12 @@
    Foundation, Inc., 51 Franklin Street - Fifth Floor, Boston,
    MA 02110-1301, USA.  */
 
-#include "sysdep.h"
 #include <setjmp.h>
 #include <string.h>
 #include <stdlib.h>
-// #include "opcode/vax.h"
-// #include "disassemble.h"
+#include "../../include/sysdep.h"
+#include "../../include/disas-asm.h"
 #include "vax.h"
-#include "disas-asm.h"
 
 #if _MSC_VER || _WIN32
 #define OPCODES_SIGJMP_BUF void*

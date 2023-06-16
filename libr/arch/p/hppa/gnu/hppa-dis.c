@@ -22,10 +22,10 @@
    MA 02110-1301, USA.  */
 
 #include <r_types.h>
-#include "sysdep.h"
-#include "disas-asm.h"
-#include "libhppa.h"
-#include "opcode/hppa.h"
+#include "../../../include/sysdep.h"
+#include "../../../include/disas-asm.h"
+#include "../../../include/libhppa.h"
+#include "../../../include/opcode/hppa.h"
 /* Integer register names, indexed by the numbers which appear in the
    opcodes.  */
 static const char *const reg_names[] = {

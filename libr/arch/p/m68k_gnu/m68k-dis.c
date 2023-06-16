@@ -18,15 +18,14 @@
    Foundation, Inc., 51 Franklin Street - Fifth Floor, Boston,
    MA 02110-1301, USA.  */
 
-#include "sysdep.h"
-#include "mybfd.h"
-#include "disas-asm.h"
+#include "../../include/sysdep.h"
+#include "../../include/mybfd.h"
+#include "../../include/disas-asm.h"
 // #include "disassemble.h"
 #include "../arm/gnu/floatformat.h"
-#include "libiberty.h"
-#include "opintl.h"
-// #include "cpu-m68k.h"
-#include "opcode/m68k.h"
+#include "../../include/libiberty.h"
+#include "../../include/opintl.h"
+#include "../../include/opcode/m68k.h"
 
 /* Local function prototypes.  */
 

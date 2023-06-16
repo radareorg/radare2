@@ -28,8 +28,8 @@
    MA 02110-1301, USA.  */
 
 #include <stdio.h>
-#include "sysdep.h"
-#include "opcode/mips.h"
+#include "../../include/sysdep.h"
+#include "../../include/opcode/mips.h"
 #include "mips-formats.h"
 
 /* The 4-bit XYZW mask used in some VU0 instructions.  */
