@@ -44,7 +44,9 @@ R_API int r_anal_opasm(RAnal *anal, ut64 addr, const char *s, ut8 *outbuf, int o
 		if (!op) {
 			return -1;
 		}
-		if (!encode) {
+		if (encode) {
+			// ok we have an encoder
+		} else {
 			oldname = strdup (as->plugin->meta.name);
 			const char *arch_name = as->plugin->meta.name;
 			const char *dot = strchr (arch_name, '.');
@@ -63,6 +65,13 @@ R_API int r_anal_opasm(RAnal *anal, ut64 addr, const char *s, ut8 *outbuf, int o
 					}
 				}
 				free (an);
+			} else {
+				char *an2 = r_str_newf ("%s.nz", arch_name);
+				if (r_arch_use (anal->arch, anal->arch->cfg, an2)) {
+					tmparch = an2;
+				} else {
+					free (an2);
+				}
 			}
 			if (!tmparch) {
 				r_anal_op_free (op);
@@ -78,6 +87,7 @@ R_API int r_anal_opasm(RAnal *anal, ut64 addr, const char *s, ut8 *outbuf, int o
 					ret = 1;
 				}
 			}
+			op->size = ret;
 		}
 		int finlen = R_MIN (outlen, op->size);
 		ret = op->size;
@@ -133,6 +143,7 @@ beach:
 	return ret;
 }
 
+// R2_590 data and len are contained inside RAnalOp. those args must disapear same for addr.. and then we get r_arch_op xD
 R_API int r_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len, RAnalOpMask mask) {
 	r_return_val_if_fail (anal && op && len > 0, -1);
 	r_anal_op_init (op);

@@ -122,10 +122,10 @@ R_API bool r_debug_trace_ins_after(RDebug *dbg) {
 				R_LOG_ERROR ("invalid register, unable to trace register state");
 				continue;
 			}
-			RRegItem *ri = r_reg_get (dbg->reg, val->reg, -1);
+			RRegItem *ri = r_reg_get (dbg->reg, val->reg, R_REG_TYPE_GPR);
 			if (ri) {
 				// add reg write
-				ut64 data = r_reg_get_value (dbg->reg, ri);
+				ut64 data = r_reg_getv (dbg->reg, ri);
 				r_debug_session_add_reg_change (dbg->session, ri->arena, ri->offset, data);
 			} else {
 				R_LOG_WARN ("Missing register %s", val->reg);

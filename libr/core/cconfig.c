@@ -917,13 +917,6 @@ static bool cb_asmbits(void *user, void *data) {
 	if (!bits) {
 		return false;
 	}
-#if 0
-	if (core->rasm->config && core->anal->arch->cfg) {
-		const int endian = core->rasm->config->endian
-			? R_SYS_ENDIAN_BIG: R_SYS_ENDIAN_LITTLE;
-		core->anal->arch->cfg->endian = endian;
-	}
-#endif
 	if (bits == core->rasm->config->bits && bits == core->dbg->bits) {
 		// early optimization
 		return true;
@@ -1339,10 +1332,9 @@ static bool cb_bigendian(void *user, void *data) {
 	if (core->dbg && core->dbg->bp) {
 		core->dbg->bp->endian = isbig;
 	}
-#if 1
+
 	core->rasm->config->endian = endianType;
 	r_arch_set_endian (core->anal->arch, endianType);
-#endif
 	return true;
 }
 

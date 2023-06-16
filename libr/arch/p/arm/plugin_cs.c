@@ -1,19 +1,42 @@
 /* radare2 - LGPL - Copyright 2013-2023 - pancake */
 
-#include <r_anal.h>
-#include <r_lib.h>
+#include <r_arch.h>
 #include <sdb/ht_uu.h>
 #include <capstone/capstone.h>
 #include <capstone/arm.h>
 #include <r_util/r_assert.h>
-#include "../../arch/p/arm/anal_arm_hacks.inc.c"
-#include "./anal_asm_arm_hacks.inc.c"
+#include "arm_hacks.inc.c"
+#include "asm_arm_hacks.inc.c"
+#include "arm_regprofile.inc.c"
 
 typedef char RStringShort[32];
 
-static int init(void* user);
-static R_TH_LOCAL HtUU *ht_itblock = NULL;
-static R_TH_LOCAL HtUU *ht_it = NULL;
+typedef struct plugin_data_t {
+	bool bigendian;
+	int bits;
+	char *cpu;
+	csh cs_handle;
+	HtUU *ht_itblock;
+	HtUU *ht_it;
+} PluginData;
+
+static inline csh *cs_handle_for_session(RArchSession *as) {
+	r_return_val_if_fail (as && as->data, NULL);
+	PluginData *pd = (PluginData*) as->data;
+	return &(pd->cs_handle);
+}
+
+static inline HtUU *ht_itblock_for_session (RArchSession *as) {
+	r_return_val_if_fail (as && as->data, NULL);
+	PluginData *pd = (PluginData*) as->data;
+	return pd->ht_itblock;
+}
+
+static inline HtUU *ht_it_for_session (RArchSession *as) {
+	r_return_val_if_fail (as && as->data, NULL);
+	PluginData *pd = (PluginData*) as->data;
+	return pd->ht_it;
+}
 
 /* arm64 */
 #define IMM64(x) (ut64)(insn->detail->arm64.operands[x].imm)
@@ -878,14 +901,13 @@ static int regsize64(cs_insn *insn, int n) {
 static int vector_size(cs_arm64_op *op) {
 #if CS_API_MAJOR == 4
 	if (op->vess) {
-		return vess_size(op->vess);
+		return vess_size (op->vess);
 	}
 #endif
 	if (op->vas) {
-		return vas_size(op->vas);
-	} else {
-		return 64;
+		return vas_size (op->vas);
 	}
+	return 64;
 }
 
 // return postfix
@@ -964,7 +986,7 @@ const char* arm_prefix_cond(RAnalOp *op, int cond_type) {
 
 /* arm64 */
 
-static const char *arg(RAnal *a, csh *handle, cs_insn *insn, char *buf, size_t buf_sz, int n) {
+static const char *arg(RArchSession *as, csh *handle, cs_insn *insn, char *buf, size_t buf_sz, int n) {
 	buf[0] = 0;
 	switch (insn->detail->arm.operands[n].type) {
 	case ARM_OP_REG:
@@ -981,7 +1003,7 @@ static const char *arg(RAnal *a, csh *handle, cs_insn *insn, char *buf, size_t b
 		}
 		break;
 	case ARM_OP_IMM:
-		if (a->config->bits == 64) {
+		if (as->config->bits == 64) {
 			// 64bit only
 			snprintf (buf, buf_sz, "%"PFMT64d, (ut64)
 					insn->detail->arm.operands[n].imm);
@@ -1002,7 +1024,7 @@ static const char *arg(RAnal *a, csh *handle, cs_insn *insn, char *buf, size_t b
 	return buf;
 }
 
-#define ARG(x) arg(a, handle, insn, str[x], sizeof (str[x]), x)
+#define ARG(x) arg(as, handle, insn, str[x], sizeof (str[x]), x)
 
 #define VEC64(n) insn->detail->arm64.operands[n].vess
 #define VEC64_APPEND(sb, n, i) vector64_append(sb, handle, insn, n, i)
@@ -1010,11 +1032,9 @@ static const char *arg(RAnal *a, csh *handle, cs_insn *insn, char *buf, size_t b
 
 static void vector64_append(RStrBuf *sb, csh *handle, cs_insn *insn, int n, int i) {
 	cs_arm64_op op = INSOP64 (n);
-
 	if (op.vector_index != -1) {
 		i = op.vector_index;
 	}
-
 #if CS_API_MAJOR == 4
 	const bool isvessas = (op.vess || op.vas);
 #else
@@ -1163,11 +1183,11 @@ static void arg64_append(RStrBuf *sb, csh *handle, cs_insn *insn, int n, int i, 
 	}
 }
 
-#define OPCALL(opchar) arm64math(a, op, addr, buf, len, handle, insn, opchar, 0, 0)
-#define OPCALL_NEG(opchar) arm64math(a, op, addr, buf, len, handle, insn, opchar, 1, 0)
-#define OPCALL_SIGN(opchar, sign) arm64math(a, op, addr, buf, len, handle, insn, opchar, 0, sign)
+#define OPCALL(opchar) arm64math(as, op, addr, buf, len, handle, insn, opchar, 0, 0)
+#define OPCALL_NEG(opchar) arm64math(as, op, addr, buf, len, handle, insn, opchar, 1, 0)
+#define OPCALL_SIGN(opchar, sign) arm64math(as, op, addr, buf, len, handle, insn, opchar, 0, sign)
 
-static void arm64math(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh *handle, cs_insn *insn, const char *opchar, int negate, int sign) {
+static void arm64math(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh *handle, cs_insn *insn, const char *opchar, int negate, int sign) {
 	cs_arm64_op dst = INSOP64 (0);
 	int i, c = (OPCOUNT64 () > 2) ? 1 : 0;
 
@@ -1200,11 +1220,11 @@ static void arm64math(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 	}
 }
 
-#define FPOPCALL(opchar) arm64fpmath(a, op, addr, buf, len, handle, insn, opchar, 0)
-#define FPOPCALL_NEGATE(opchar) arm64fpmath(a, op, addr, buf, len, handle, insn, opchar, 1)
+#define FPOPCALL(opchar) arm64fpmath(as, op, addr, buf, len, handle, insn, opchar, 0)
+#define FPOPCALL_NEGATE(opchar) arm64fpmath(as, op, addr, buf, len, handle, insn, opchar, 1)
 
 // floating point math instruction helper
-static void arm64fpmath(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh *handle, cs_insn *insn, const char *opchar, int negate) {
+static void arm64fpmath(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh *handle, cs_insn *insn, const char *opchar, int negate) {
 	int i, size = REGSIZE64 (1)*8;
 
 	cs_arm64_op dst = INSOP64 (0);
@@ -1245,7 +1265,7 @@ static void arm64fpmath(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int le
 	}
 }
 
-static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh *handle, cs_insn *insn) {
+static int analop64_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh *handle, cs_insn *insn) {
 	const char *postfix = NULL;
 
 	r_strbuf_init (&op->esil);
@@ -2373,11 +2393,11 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 	return 0;
 }
 
-#define MATH32(opchar) arm32math(a, op, addr, buf, len, handle, insn, pcdelta, str, opchar, 0)
-#define MATH32_NEG(opchar) arm32math(a, op, addr, buf, len, handle, insn, pcdelta, str, opchar, 1)
-#define MATH32AS(opchar) arm32mathaddsub(a, op, addr, buf, len, handle, insn, pcdelta, str, opchar)
+#define MATH32(opchar) arm32math(as, op, addr, buf, len, handle, insn, pcdelta, str, opchar, 0)
+#define MATH32_NEG(opchar) arm32math(as, op, addr, buf, len, handle, insn, pcdelta, str, opchar, 1)
+#define MATH32AS(opchar) arm32mathaddsub(as, op, addr, buf, len, handle, insn, pcdelta, str, opchar)
 
-static void arm32math(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh *handle, cs_insn *insn, int pcdelta, RStringShort str[32], const char *opchar, int negate) {
+static void arm32math(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh *handle, cs_insn *insn, int pcdelta, RStringShort str[32], const char *opchar, int negate) {
 	const char *dest = ARG(0);
 	const char *op1;
 	const char *op2;
@@ -2415,7 +2435,7 @@ static void arm32math(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 	}
 }
 
-static void arm32mathaddsub(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh *handle, cs_insn *insn, int pcdelta, RStringShort str[32], const char *opchar) {
+static void arm32mathaddsub(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh *handle, cs_insn *insn, int pcdelta, RStringShort str[32], const char *opchar) {
 	const char *dst = ARG (0);
 	const char *src;
 	bool noflags = false;
@@ -2438,7 +2458,7 @@ static void arm32mathaddsub(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, in
 		(!strcmp (opchar, "+")? "30,$c,31,$c,^,31,$c": "30,$c,31,$c,^,32,$b"));
 }
 
-static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh *handle, cs_insn *insn, bool thumb) {
+static int analop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh *handle, cs_insn *insn, bool thumb) {
 	int i;
 	const char *postfix = NULL;
 	RStringShort str[32] = {{0}};
@@ -2604,8 +2624,8 @@ PUSH { r4, r5, r6, r7, lr }
 		width = 0;
 		for (i = 1; i < insn->detail->arm.op_count; i++) {
 			r_strbuf_appendf (&op->esil, "%s,%d,%s,+,=[%d],",
-				REG (i), width, ARG (0), REGSIZE32(i));
-			width += REGSIZE32(i);
+				REG (i), width, ARG (0), REGSIZE32 (i));
+			width += REGSIZE32 (i);
 		}
 		// increment if writeback
 		if (insn->detail->arm.writeback) {
@@ -2616,9 +2636,9 @@ PUSH { r4, r5, r6, r7, lr }
 		r_strbuf_set (&op->esil, "");
 		width = 0;
 		for (i = insn->detail->arm.op_count - 1; i > 0; i--) {
-			width += REGSIZE32(i);
+			width += REGSIZE32 (i);
 			r_strbuf_appendf (&op->esil, "%s,%d,%s,-,=[%d],",
-				REG (i), width, ARG (0), REGSIZE32(i));
+				REG (i), width, ARG (0), REGSIZE32 (i));
 		}
 		// decrement writeback is mandatory for VSTMDB
 		r_strbuf_appendf (&op->esil, "%d,%s,-=,", width, ARG (0));
@@ -2628,8 +2648,8 @@ PUSH { r4, r5, r6, r7, lr }
 		width = 0;
 		for (i = 1; i < insn->detail->arm.op_count; i++) {
 			r_strbuf_appendf (&op->esil, "%d,%s,+,[%d],%s,=,",
-				width, ARG (0), REGSIZE32(i), REG (i));
-			width += REGSIZE32(i);
+				width, ARG (0), REGSIZE32 (i), REG (i));
+			width += REGSIZE32 (i);
 		}
 		// increment if writeback
 		if (insn->detail->arm.writeback) {
@@ -2640,9 +2660,9 @@ PUSH { r4, r5, r6, r7, lr }
 		r_strbuf_set (&op->esil, "");
 		width = 0;
 		for (i = insn->detail->arm.op_count - 1; i > 0; i--) {
-			width += REGSIZE32(i);
+			width += REGSIZE32 (i);
 			r_strbuf_appendf (&op->esil, "%d,%s,-,[%d],%s,=,",
-				width, ARG (0), REGSIZE32(i), REG (i));
+				width, ARG (0), REGSIZE32 (i), REG (i));
 		}
 		// decrement writeback is mandatory for VLDMDB
 		r_strbuf_appendf (&op->esil, "%d,%s,-=,", width, ARG (0));
@@ -2713,7 +2733,7 @@ r6,r5,r4,3,sp,[*],12,sp,+=
 	case ARM_INS_MOV:
 	case ARM_INS_VMOV:
 	case ARM_INS_MOVW:
-		if (a->config->bits == 16) {
+		if (as->config->bits == 16) {
 			MATH32 ("=");
 		} else {
 			r_strbuf_appendf (&op->esil, "%s,%s,=", ARG (1), REG (0));
@@ -3741,9 +3761,10 @@ static void anop64(csh handle, RAnalOp *op, cs_insn *insn) {
 	}
 }
 
-static void anal_itblock(cs_insn *insn) {
+static void anal_itblock(RArchSession *as, cs_insn *insn) {
 	size_t i, size =  r_str_nlen (insn->mnemonic, 5);
-	init (NULL);
+	HtUU *ht_itblock = ht_itblock_for_session (as);
+	HtUU *ht_it = ht_it_for_session (as);
 	ht_uu_update (ht_itblock, insn->address,  size);
 	for (i = 1; i < size; i++) {
 		switch (insn->mnemonic[i]) {
@@ -3760,12 +3781,13 @@ static void anal_itblock(cs_insn *insn) {
 	}
 }
 
-static void check_itblock(cs_insn *insn) {
-	init (NULL);
-	size_t x;
+static void check_itblock(RArchSession *as, cs_insn *insn) {
+	HtUU *ht_itblock = ht_itblock_for_session (as);
+	HtUU *ht_it = ht_it_for_session (as);
 	bool found;
 	ut64 itlen = ht_uu_find (ht_itblock, insn->address, &found);
 	if (found) {
+		size_t x;
 		for (x = 1; x < itlen; x++) {
 			ht_uu_delete (ht_it, insn->address + (x*insn->size));
 		}
@@ -3773,12 +3795,10 @@ static void check_itblock(cs_insn *insn) {
 	}
 }
 
-static void anop32(RAnal *a, csh handle, RAnalOp *op, cs_insn *insn, bool thumb, const ut8 *buf, int len) {
+static void anop32(RArchSession *as, csh handle, RAnalOp *op, cs_insn *insn, bool thumb, const ut8 *buf, int len) {
 	const ut64 addr = op->addr;
 	const int pcdelta = thumb? 4: 8;
 	int i;
-	bool found = 0;
-	ut64 itcond;
 
 	op->cond = cond_cs2r2 (insn->detail->arm.cc);
 	if (op->cond == R_ANAL_COND_NV) {
@@ -3808,7 +3828,7 @@ static void anop32(RAnal *a, csh handle, RAnalOp *op, cs_insn *insn, bool thumb,
 	}
 
 	if (insn->id != ARM_INS_IT) {
-		check_itblock (insn);
+		check_itblock (as, insn);
 	}
 
 	switch (insn->id) {
@@ -3846,7 +3866,7 @@ jmp $$ + 4 + ( [delta] * 2 )
 		}
 		break;
 	case ARM_INS_IT:
-		anal_itblock (insn);
+		anal_itblock (as, insn);
 		op->cycles = 2;
 		break;
 	case ARM_INS_BKPT:
@@ -3883,15 +3903,15 @@ jmp $$ + 4 + ( [delta] * 2 )
 		break;
 	case ARM_INS_SUB:
 		if (ISREG (0) && REGID (0) == ARM_REG_SP) {
-				op->stackop = R_ANAL_STACK_INC;
-				if (ISIMM (1)) {
-					//0x0000bf4e      95b0           sub sp, 0x54
-					op->stackptr = IMM (1);
-				} else if (ISIMM (2) && ISREG (1) && REGID (1) == ARM_REG_SP) {
-					// 0x00008254    10d04de2     sub sp, sp, 0x10
-					op->stackptr = IMM (2);
-				}
-				op->val = op->stackptr;
+			op->stackop = R_ANAL_STACK_INC;
+			if (ISIMM (1)) {
+				//0x0000bf4e      95b0           sub sp, 0x54
+				op->stackptr = IMM (1);
+			} else if (ISIMM (2) && ISREG (1) && REGID (1) == ARM_REG_SP) {
+				// 0x00008254    10d04de2     sub sp, sp, 0x10
+				op->stackptr = IMM (2);
+			}
+			op->val = op->stackptr;
 		}
 		op->cycles = 1;
 		op->type = R_ANAL_OP_TYPE_SUB;
@@ -4151,7 +4171,7 @@ jmp $$ + 4 + ( [delta] * 2 )
 			op->type = R_ANAL_OP_TYPE_CALL;
 			op->jump = IMM(0) & UT32_MAX;
 			op->fail = addr + op->size;
-			op->hint.new_bits = (a->config->bits == 32)? 16 : 32;
+			op->hint.new_bits = as->config->bits == 32? 16 : 32;
 			//switch instruction set always with blx label
 			// r_anal_hint_set_bits (a, op->jump, a->config->bits == 32? 16 : 32);
 		}
@@ -4162,7 +4182,7 @@ jmp $$ + 4 + ( [delta] * 2 )
 		op->type = R_ANAL_OP_TYPE_CALL;
 		op->jump = IMM(0) & UT32_MAX;
 		op->fail = addr + op->size;
-		op->hint.new_bits = a->config->bits;
+		op->hint.new_bits = as->config->bits;
 		break;
 	case ARM_INS_CBZ:
 	case ARM_INS_CBNZ:
@@ -4190,7 +4210,7 @@ jmp $$ + 4 + ( [delta] * 2 )
 		}
 		op->jump = IMM(0) & UT32_MAX;
 		// propagate bits to create correctly hints ranges
-		op->hint.new_bits = a->config->bits;
+		op->hint.new_bits = as->config->bits;
 		break;
 	case ARM_INS_BX:
 	case ARM_INS_BXJ:
@@ -4248,50 +4268,61 @@ jmp $$ + 4 + ( [delta] * 2 )
 		R_LOG_DEBUG ("ARM analysis: Op type %d at 0x%" PFMT64x " not handled", insn->id, op->addr);
 		break;
 	}
+#if 0
+	// TODO needs rewrite
+	bool found = 0;
+	ut64 itcond;
+	HtUU *ht_it = ht_it_for_session (as);
 	itcond = ht_uu_find (ht_it,  addr, &found);
 	if (found) {
 		insn->detail->arm.cc = itcond;
 		insn->detail->arm.update_flags = 0;
 		free (op->mnemonic);
 		op->mnemonic = r_str_newf ("%s%s%s%s",
-			r_anal_optype_tostring (op->type),
+			r_arch_optype_tostring (op->type),
 			cc_name (itcond),
 			insn->op_str[0]? " ": "",
 			insn->op_str);
 		op->cond = itcond;
 	}
+#endif
 }
 
+#if 1
+// TODO arch plugins should NOT set register values
 static inline bool is_valid(arm_reg reg) {
 	return reg != ARM_REG_INVALID;
 }
 
 // XXX this function is a disaster
-static const char *parse_reg_name(RReg *reg, const char **reg_delta, csh handle, cs_insn *insn, int reg_num) {
+static int parse_reg_name(const char **reg_base, const char **reg_delta, csh handle, cs_insn *insn, int reg_num) {
 	cs_arm_op armop = INSOP (reg_num);
 	switch (armop.type) {
 	case ARM_OP_REG:
-		return cs_reg_name (handle, armop.reg);
+		*reg_base = cs_reg_name (handle, armop.reg);
+		break;
 	case ARM_OP_MEM:
 		if (is_valid (armop.mem.base) && is_valid (armop.mem.index)) {
+			*reg_base = cs_reg_name (handle, armop.mem.base);
 			*reg_delta = cs_reg_name (handle, armop.mem.index);
-			return cs_reg_name (handle, armop.mem.base);
 		} else if (is_valid (armop.mem.base)) {
-			return cs_reg_name (handle, armop.mem.base);
+			*reg_base = cs_reg_name (handle, armop.mem.base);
 		} else if (is_valid (armop.mem.index)) {
-			return cs_reg_name (handle, armop.mem.index);
+			*reg_base = cs_reg_name (handle, armop.mem.index);
 		}
-		return NULL;
+		break;
 	default:
-		return NULL;
+		break;
 	}
+
+	return 0;
 }
 
 static bool is_valid64(arm64_reg reg) {
 	return reg != ARM64_REG_INVALID;
 }
 
-static char *reg_list[] = {
+static const char *reg_list[] = {
 	"x0", "x1", "x2", "x3", "x4",
 	"x5", "x6", "x7", "x8", "x9",
 	"x10", "x11", "x12", "x13", "x14",
@@ -4301,31 +4332,31 @@ static char *reg_list[] = {
 	"x30"
 };
 
-static const char *parse_reg64_name(RReg *reg, const char **reg_delta, csh handle, cs_insn *insn, int reg_num) {
-	const char *reg_base = NULL;
+static int parse_reg64_name(const char** reg_base, const char **reg_delta, csh handle, cs_insn *insn, int reg_num) {
 	cs_arm64_op armop = INSOP64 (reg_num);
 	switch (armop.type) {
 	case ARM64_OP_REG:
-		reg_base = cs_reg_name (handle, armop.reg);
+		*reg_base = cs_reg_name (handle, armop.reg);
 		break;
 	case ARM64_OP_MEM:
 		if (is_valid64 (armop.mem.base) && is_valid64 (armop.mem.index)) {
-			reg_base = cs_reg_name (handle, armop.mem.base);
+			*reg_base = cs_reg_name (handle, armop.mem.base);
 			*reg_delta = cs_reg_name (handle, armop.mem.index);
 		} else if (is_valid64 (armop.mem.base)) {
-			reg_base = cs_reg_name (handle, armop.mem.base);
+			*reg_base = cs_reg_name (handle, armop.mem.base);
 		} else if (is_valid64 (armop.mem.index)) {
-			reg_base = cs_reg_name (handle, armop.mem.index);
+			*reg_base = cs_reg_name (handle, armop.mem.index);
 		}
 		break;
 	default:
 		break;
 	}
-	if (reg_base && *reg_base == 'w') {
-		reg_base = reg_list[atoi (reg_base + 1)]; // XXX dont use atoi
+	if (*reg_base && **reg_base == 'w') {
+		*reg_base = reg_list [atoi ((*reg_base) + 1)]; // XXX dont use atoi
 	}
-	return reg_base;
+	return 0;
 }
+#endif
 
 static void set_opdir(RAnalOp *op) {
 	switch (op->type & R_ANAL_OP_TYPE_MASK) {
@@ -4351,16 +4382,18 @@ static void set_opdir(RAnalOp *op) {
 	}
 }
 
-static void set_src_dst(RReg *reg, RAnalValue *val, csh *handle, cs_insn *insn, int x, int bits) {
+#if 1
+// TODO arch plugins should NOT set register values
+static void set_src_dst(RAnalValue *val, csh *handle, cs_insn *insn, int x, int bits) {
 	if (!val) {
 		return;
 	}
 	cs_arm_op armop = INSOP (x);
 	cs_arm64_op arm64op = INSOP64 (x);
 	if (bits == 64) {
-		val->reg = parse_reg64_name (reg, &val->regdelta, *handle, insn, x);
+		parse_reg64_name ((const char **)&val->reg, (const char **)&val->regdelta, *handle, insn, x);
 	} else {
-		val->reg = parse_reg_name (reg, &val->regdelta, *handle, insn, x);
+		parse_reg_name ((const char**)&val->reg, (const char**)&val->regdelta, *handle, insn, x);
 	}
 	if (bits == 64) {
 		switch (arm64op.type) {
@@ -4391,6 +4424,7 @@ static void set_src_dst(RReg *reg, RAnalValue *val, csh *handle, cs_insn *insn, 
 		}
 	}
 }
+#endif
 
 static void create_src_dst(RAnalOp *op) {
 	r_vector_push (&op->srcs, NULL);
@@ -4399,9 +4433,9 @@ static void create_src_dst(RAnalOp *op) {
 	r_vector_push (&op->dsts, NULL);
 }
 
-static void op_fillval(RAnal *anal, RAnalOp *op, csh handle, cs_insn *insn, int bits) {
+static void op_fillval(RArchSession *as, RAnalOp *op, csh handle, cs_insn *insn, int bits) {
 	create_src_dst (op);
-	int i, j;
+	int i;
 	int count = bits == 64 ? insn->detail->arm64.op_count : insn->detail->arm.op_count;
 	switch (op->type & R_ANAL_OP_TYPE_MASK) {
 	case R_ANAL_OP_TYPE_MOV:
@@ -4441,10 +4475,16 @@ static void op_fillval(RAnal *anal, RAnalOp *op, csh handle, cs_insn *insn, int 
 #endif
 			break;
 		}
-		for (j = 0; j < 3; j++, i++) {
-			set_src_dst (anal->reg, r_vector_at (&op->srcs, j), &handle, insn, i, bits);
+#if 1
+		// TODO arch plugins should NOT set register values
+		{
+			int j;
+			for (j = 0; j < 3; j++, i++) {
+				set_src_dst (r_vector_at (&op->srcs, j), &handle, insn, i, bits);
+			}
+			set_src_dst (r_vector_at (&op->dsts, 0), &handle, insn, 0, bits);
 		}
-		set_src_dst (anal->reg, r_vector_at (&op->dsts, 0), &handle, insn, 0, bits);
+#endif
 		break;
 	case R_ANAL_OP_TYPE_STORE:
 		if (count > 2) {
@@ -4460,10 +4500,16 @@ static void op_fillval(RAnal *anal, RAnalOp *op, csh handle, cs_insn *insn, int 
 				}
 			}
 		}
-		set_src_dst (anal->reg, r_vector_at (&op->dsts, 0), &handle, insn, --count, bits);
-		for (j = 0; j < 3 && j < count; j++) {
-			set_src_dst (anal->reg, r_vector_at (&op->srcs, j), &handle, insn, j, bits);
+#if 1
+		// TODO arch plugins should NOT set register values
+		{
+			set_src_dst (r_vector_at (&op->dsts, 0), &handle, insn, --count, bits);
+			int j;
+			for (j = 0; j < 3 && j < count; j++) {
+				set_src_dst (r_vector_at (&op->srcs, j), &handle, insn, j, bits);
+			}
 		}
+#endif
 		break;
 	default:
 		break;
@@ -4480,56 +4526,17 @@ static inline bool is_valid_mnemonic(const char *m) {
 	return !r_str_startswith (m, "hint") && !r_str_startswith (m, "udf");
 }
 
-static void initcs(csh ud) {
-	cs_opt_mem mem = {
-		.malloc = malloc,
-		.calloc = calloc,
-		.realloc = realloc,
-		.free = free,
-		.vsnprintf = vsnprintf,
-	};
-	cs_option (ud, CS_OPT_MEM, (size_t)&mem);
-}
-
-static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
-	R_CRITICAL_ENTER (a);
+static int analop(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
+	R_CRITICAL_ENTER (as);
+	csh *cs_handle = cs_handle_for_session (as);
 	cs_insn *insn = NULL;
-	int mode = (a->config->bits == 16)? CS_MODE_THUMB: CS_MODE_ARM;
-	int n, ret;
-	mode |= R_ARCH_CONFIG_IS_BIG_ENDIAN (a->config)? CS_MODE_BIG_ENDIAN: CS_MODE_LITTLE_ENDIAN;
-	if (R_STR_ISNOTEMPTY (a->config->cpu)) {
-		if (strstr (a->config->cpu, "cortex")) {
-			mode |= CS_MODE_MCLASS;
-		}
-		if (a->config->bits != 64 && strstr (a->config->cpu, "v8")) {
-			mode |= CS_MODE_V8;
-		}
-	}
-	if (mode != a->cs_omode || a->config->bits != a->cs_obits) {
-		if (a->cs_handle != 0) {
-			cs_close (&a->cs_handle);
-		}
-		a->cs_omode = mode;
-		a->cs_obits = a->config->bits;
-	}
-	op->size = (a->config->bits == 16)? 2: 4;
+	op->size = (as->config->bits == 16)? 2: 4;
 	op->addr = addr;
-	initcs (a->cs_handle);
-	if (a->cs_handle == 0) {
-		ret = (a->config->bits == 64)?
-			cs_open (CS_ARCH_ARM64, mode, &a->cs_handle):
-			cs_open (CS_ARCH_ARM, mode, &a->cs_handle);
-		if (ret != CS_ERR_OK) {
-			R_LOG_ERROR ("Capstone failed: cs_open(CS_ARCH_ARM%s, %x, ...): %s",
-				(a->config->bits == 64) ? "64" : "", mode, cs_strerror (ret));
-			cs_close (&a->cs_handle); // sets cs_handle to 0
-			R_CRITICAL_LEAVE (a);
-			return -1;
-		}
-		cs_option (a->cs_handle, CS_OPT_DETAIL, CS_OPT_ON);
+	if (!buf) {
+		buf = op->bytes;
+		len = op->size;
 	}
-	// TODO: use csh handle = init_capstone (a);
-	n = cs_disasm (a->cs_handle, (ut8*)buf, len, addr, 1, &insn);
+	int n = cs_disasm (*cs_handle, (ut8*)buf, len, addr, 1, &insn);
 	if (n > 0 && is_valid_mnemonic (insn->mnemonic)) {
 		if (mask & R_ARCH_OP_MASK_DISASM) {
 			free (op->mnemonic);
@@ -4540,29 +4547,29 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 			r_str_replace_char (op->mnemonic, '#', '\x00');
 		}
 		//bool thumb = cs_insn_group (cs_handle, insn, ARM_GRP_THUMB);
-		bool thumb = a->config->bits == 16;
+		bool thumb = as->config->bits == 16;
 		op->size = insn->size;
 		op->id = insn->id;
-		if (a->config->bits == 64) {
-			anop64 (a->cs_handle, op, insn);
+		if (as->config->bits == 64) {
+			anop64 (*cs_handle, op, insn);
 			if (mask & R_ARCH_OP_MASK_OPEX) {
-				opex64 (&op->opex, a->cs_handle, insn);
+				opex64 (&op->opex, *cs_handle, insn);
 			}
 			if (mask & R_ARCH_OP_MASK_ESIL) {
-				analop64_esil (a, op, addr, buf, len, &a->cs_handle, insn);
+				analop64_esil (as, op, addr, buf, len, cs_handle, insn);
 			}
 		} else {
-			anop32 (a, a->cs_handle, op, insn, thumb, (ut8*)buf, len);
+			anop32 (as, *cs_handle, op, insn, thumb, (ut8*)buf, len);
 			if (mask & R_ARCH_OP_MASK_OPEX) {
-				opex (&op->opex, a->cs_handle, insn);
+				opex (&op->opex, *cs_handle, insn);
 			}
 			if (mask & R_ARCH_OP_MASK_ESIL) {
-				analop_esil (a, op, addr, buf, len, &a->cs_handle, insn, thumb);
+				analop_esil (as, op, addr, buf, len, cs_handle, insn, thumb);
 			}
 		}
 		set_opdir (op);
 		if (mask & R_ARCH_OP_MASK_VAL) {
-			op_fillval (a, op, a->cs_handle, insn, a->config->bits);
+			op_fillval (as, op, *cs_handle, insn, as->config->bits);
 		}
 		cs_free (insn, n);
 	} else {
@@ -4574,100 +4581,49 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 				free (op->mnemonic);
 				op->mnemonic = strdup ("invalid");
 			}
-			R_CRITICAL_LEAVE (a);
+			R_CRITICAL_LEAVE (as);
 			return -1;
 		}
-		hackyArmAnal (a, op, buf, len);
+		hacky_arm_anal (as, op, buf, len);
 		if (mask & R_ARCH_OP_MASK_DISASM) {
-			if (hackyArmAsm (a, op, buf, len) < 1) {
+			if (hacky_arm_asm (as, op, buf, len) < 1) {
 				free (op->mnemonic);
 				op->mnemonic = strdup ("invalid");
 			} else if (op->type == R_ANAL_OP_TYPE_ILL) {
-				op->type = R_ANAL_OP_TYPE_UNK;	//this is because hackyArmAnal and hackyArmAsm work differently
+				op->type = R_ANAL_OP_TYPE_UNK;	// this is because hacky_arm_anal and hacky_arm_asm work differently
 			}
 		}
 	}
-	R_CRITICAL_LEAVE (a);
-	return op->size;
+	R_CRITICAL_LEAVE (as);
+	return true;
 }
 
-static char *arm_mnemonics(RAnal *a, int id, bool json) {
-	int mode = (a->config->bits == 16)? CS_MODE_THUMB: CS_MODE_ARM;
-	mode |= R_ARCH_CONFIG_IS_BIG_ENDIAN (a->config)? CS_MODE_BIG_ENDIAN: CS_MODE_LITTLE_ENDIAN;
-	if (R_STR_ISNOTEMPTY (a->config->cpu)) {
-		if (strstr (a->config->cpu, "cortex")) {
-			mode |= CS_MODE_MCLASS;
-		}
-		if (a->config->bits != 64 && strstr (a->config->cpu, "v8")) {
-			mode |= CS_MODE_V8;
-		}
+static bool plugin_changed(RArchSession *as) {
+	PluginData *pd = as->data;
+	if (as->config->bits != pd->bits) {
+		return true;
 	}
-	if (mode != a->cs_omode || a->config->bits != a->cs_obits) {
-		if (a->cs_handle != 0) {
-			cs_close (&a->cs_handle);
-		}
-		a->cs_omode = mode;
-		a->cs_obits = a->config->bits;
+	if (R_ARCH_CONFIG_IS_BIG_ENDIAN (as->config) != pd->bigendian) {
+		return true;
 	}
-	if (a->cs_handle == 0) {
-		int ret = (a->config->bits == 64)?
-			cs_open (CS_ARCH_ARM64, mode, &a->cs_handle):
-			cs_open (CS_ARCH_ARM, mode, &a->cs_handle);
-		cs_option (a->cs_handle, CS_OPT_DETAIL, CS_OPT_ON);
-		if (ret != CS_ERR_OK) {
-			R_LOG_ERROR ("Capstone failed: cs_open(CS_ARCH_ARM%s, %x, ...): %s",
-				(a->config->bits == 64) ? "64" : "", mode, cs_strerror (ret));
-			a->cs_handle = 0;
-			return NULL;
-		}
+	if (pd->cpu && as->config->cpu && strcmp (pd->cpu, as->config->cpu)) {
+		return true;
 	}
-
-	PJ *pj = NULL;
-	if (id != -1) {
-		const char *name = cs_insn_name (a->cs_handle, id);
-		if (name) {
-			if (json) {
-				pj = pj_new ();
-				pj_a (pj);
-				pj_s (pj, name);
-				pj_end (pj);
-				return pj_drain (pj);
-			}
-			return strdup (name);
-		}
-		return NULL;
-	}
-
-	RStrBuf *buf = NULL;
-	if (json) {
-		pj = pj_new ();
-		pj_a (pj);
-	} else {
-		buf = r_strbuf_new ("");
-	}
-	const int ins_ending = a->config->bits == 64 ? ARM64_INS_ENDING : ARM_INS_ENDING;
-	int i = 1;
-	for (; i < ins_ending; i++) {
-		const char *op = cs_insn_name (a->cs_handle, i);
-		if (!op) {
-			continue;
-		}
-		if (pj) {
-			pj_s (pj, op);
-		} else {
-			r_strbuf_append (buf, op);
-			r_strbuf_append (buf, "\n");
-		}
-	}
-	if (pj) {
-		pj_end (pj);
-	}
-	return pj? pj_drain (pj): r_strbuf_drain (buf);
+	return false;
 }
 
-#include "anal_arm_regprofile.inc.c"
+static bool init(RArchSession *as);
+static bool fini(RArchSession *as);
 
-static int archinfo(RAnal *anal, int q) {
+static bool decode(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
+	if (plugin_changed (as)) {
+		fini (as);
+		init (as);
+	}
+	return analop (as, op, op->addr, op->bytes, op->size, mask) >= 1;
+}
+
+static int archinfo(RArchSession *as, ut32 q) {
 	switch (q) {
 	case R_ANAL_ARCHINFO_DATA_ALIGN:
 	case R_ANAL_ARCHINFO_INV_OP_SIZE:
@@ -4675,7 +4631,7 @@ static int archinfo(RAnal *anal, int q) {
 		break;
 	case R_ANAL_ARCHINFO_MIN_OP_SIZE:
 	case R_ANAL_ARCHINFO_ALIGN: // espai de jocs
-		if (anal->config && anal->config->bits == 16) {
+		if (as->config && as->config->bits == 16) {
 			return 2;
 		}
 		break;
@@ -4683,11 +4639,12 @@ static int archinfo(RAnal *anal, int q) {
 	return 4; // XXX
 }
 
-static ut8 *anal_mask(RAnal *anal, int size, const ut8 *data, ut64 at) {
+#if 0
+// made obsolete by "e anal.mask = true"
+static ut8 *anal_mask(RArchSession *as, int size, const ut8 *data, ut64 at) {
 	RAnalOp *op = NULL;
 	ut8 *ret = NULL;
-	int oplen, idx = 0, oldbits = anal->config->bits;
-	RAnalHint *hint = NULL;
+	int oplen, idx = 0, oldbits = as->config->bits;
 
 	if (!data) {
 		return NULL;
@@ -4697,17 +4654,20 @@ static ut8 *anal_mask(RAnal *anal, int size, const ut8 *data, ut64 at) {
 	ret = malloc (size);
 	memset (ret, 0xff, size);
 
-	const bool be = R_ARCH_CONFIG_IS_BIG_ENDIAN (anal->config);
+	const bool be = R_ARCH_CONFIG_IS_BIG_ENDIAN (as->config);
 	while (idx < size) {
+#if 0
+		// TODO redundant / anti-pattern?
 		hint = r_anal_hint_get (anal, at + idx);
 		if (hint) {
 			if (hint->bits != 0) {
-				anal->config->bits = hint->bits;
+				as->config->bits = hint->bits;
 			}
 			free (hint);
 		}
+#endif
 
-		if ((oplen = analop (anal, op, at + idx, data + idx, size - idx, R_ARCH_OP_MASK_BASIC)) < 1) {
+		if ((oplen = analop (as, op, at + idx, data + idx, size - idx, R_ARCH_OP_MASK_BASIC)) < 1) {
 			break;
 		}
 		if (op->ptr != UT64_MAX || op->jump != UT64_MAX) {
@@ -4720,7 +4680,7 @@ static ut8 *anal_mask(RAnal *anal, int size, const ut8 *data, ut64 at) {
 				memcpy (ret + idx, "\xf0\x00", 2);
 				break;
 			case 4:
-				if (anal->config->bits == 64) {
+				if (as->config->bits == 64) {
 					switch (op->id) {
 					case ARM64_INS_LDP:
 					case ARM64_INS_LDXP:
@@ -4801,49 +4761,48 @@ static ut8 *anal_mask(RAnal *anal, int size, const ut8 *data, ut64 at) {
 		idx += oplen;
 	}
 
-	anal->config->bits = oldbits;
+	// as->config->bits = oldbits;
 	r_anal_op_free (op);
 
 	return ret;
 }
+#endif
 
-static RList *anal_preludes(RAnal *anal) {
-#define KW(d,ds,m,ms) r_list_append (l, r_search_keyword_new((const ut8*)d,ds,(const ut8*)m, ms, NULL))
-	RList *l = r_list_newf ((RListFree)r_search_keyword_free);
-	if (R_ARCH_CONFIG_IS_BIG_ENDIAN (anal->config)) {
-		switch (anal->config->bits) {
+static RList *anal_preludes(RArchSession *as) {
+	RList *l = r_list_newf ((RListFree)free);
+	if (R_ARCH_CONFIG_IS_BIG_ENDIAN (as->config)) {
+		switch (as->config->bits) {
 		case 16:
-			KW ("\xb5\x00", 2, "\xff\x0f", 2);
-			KW ("\xb5\x08", 2, "\xff\x0f", 2);
+			r_list_append (l, r_str_newf ("b500 ff0f"));
+			r_list_append (l, r_str_newf ("b508 ff0f"));
 			break;
 		case 32:
-			KW("\xe9\x2d\x00\x00", 4, "\xff\xff\x0f\x0f", 4);
+			r_list_append (l, r_str_newf ("e92d0000 ffff0f0f"));
 			break;
 		case 64:
-			KW ("\xf8\x00\x0f\xf0", 4, "\xff\x00\x0f\xf0", 4);
-			KW ("\xf0\x00\x00\xd1", 4, "\xff\x00\x00\xf0", 4);
-			KW ("\xf0\x00\x00\xa9", 4, "\xff\x00\x00\xf0", 4);
-			KW ("\xd5\x03\x23\x7f\x00\x00\x00\xff", 8,
-				"\xff\xff\xff\xff\x00\x00\x00\xff", 8);
+			r_list_append (l, r_str_newf ("f8000ff0 ff000ff0"));
+			r_list_append (l, r_str_newf ("f00000d1 ff0000f0"));
+			r_list_append (l, r_str_newf ("f00000a9 ff0000f0"));
+			r_list_append (l, r_str_newf ("d503237f000000ff ffffffff000000ff"));
 			break;
 		default:
 			r_list_free (l);
 			l = NULL;
 		}
 	} else {
-		switch (anal->config->bits) {
+		switch (as->config->bits) {
 		case 16:
-			KW ("\x00\xb5", 2, "\x0f\xff", 2);
-			KW ("\x08\xb5", 2, "\x0f\xff", 2);
+			r_list_append (l, r_str_newf ("00b5 0fff"));
+			r_list_append (l, r_str_newf ("08b5 0fff"));
 			break;
 		case 32:
-			KW("\x00\x00\x2d\xe9", 4, "\x0f\x0f\xff\xff", 4);
+			r_list_append (l, r_str_newf ("00002de9 0f0fffff"));
 			break;
 		case 64:
-			KW ("\xf0\x0f\x00\xf8", 4, "\xf0\x0f\x00\xff", 4);
-			KW ("\xf0\x00\x00\xd1", 4, "\xf0\x00\x00\xff", 4);
-			KW ("\xf0\x00\x00\xa9", 4, "\xf0\x00\x00\xff", 4);
-			KW ("\x7f\x23\x03\xd5\xff", 5, NULL, 0);
+			r_list_append (l, r_str_newf ("f00f00f8 f00f00ff"));
+			r_list_append (l, r_str_newf ("f00000d1 f00000ff"));
+			r_list_append (l, r_str_newf ("f00000a9 f00000ff"));
+			r_list_append (l, r_str_newf ("7f2303d5ff"));
 			break;
 		default:
 			r_list_free (l);
@@ -4853,46 +4812,103 @@ static RList *anal_preludes(RAnal *anal) {
 	return l;
 }
 
-static int init(void* user) {
-	if (!ht_it) {
-		ht_it = ht_uu_new0 ();
+extern char *r_arm_cs_mnemonics(RArchSession *as, csh *cs_handle, int id, bool json);
+extern char *r_arm64_cs_mnemonics(RArchSession *as, csh *cs_handle, int id, bool json);
+
+static char *arm_mnemonics(RArchSession *as, int id, bool json) {
+	csh *cs_handle = cs_handle_for_session (as);
+	if (as->config->bits == 64) {
+		return r_arm64_cs_mnemonics (as, cs_handle, id, json);
 	}
-	if (!ht_itblock) {
-		ht_itblock = ht_uu_new0 ();
-	}
-	return 0;
+	return r_arm_cs_mnemonics (as, cs_handle, id, json);
 }
 
-static int fini(void* user) {
-	ht_uu_free (ht_itblock);
-	ht_uu_free (ht_it);
-	ht_itblock = NULL;
-	ht_it = NULL;
-	return 0;
+extern bool r_arm_arch_cs_init(RArchSession *as, csh *cs_handle);
+extern bool r_arm64_arch_cs_init(RArchSession *as, csh *cs_handle);
+
+
+static inline bool cs_init(RArchSession *as, csh *cs_handle) {
+	if (as->config->bits == 64) {
+		return r_arm64_arch_cs_init (as, cs_handle);
+	}
+	return r_arm_arch_cs_init (as, cs_handle);
 }
 
-RAnalPlugin r_anal_plugin_arm_cs = {
-	.name = "arm",
-	.desc = "Capstone ARM analyzer",
-	.license = "BSD",
-	.esil = true,
+static bool init(RArchSession* as) {
+	r_return_val_if_fail (as, false);
+	if (as->data) {
+		R_LOG_WARN ("Already initialized");
+		return false;
+	}
+	as->data = R_NEW0 (PluginData);
+	csh *cs_handle = cs_handle_for_session (as);
+	if (!cs_init (as, cs_handle)) {
+		R_LOG_ERROR ("Cannot initialize capstone");
+		R_FREE (as->data);
+		return false;
+	}
+
+	PluginData *pd = as->data;
+	pd->bits = as->config->bits;
+	pd->bigendian = R_ARCH_CONFIG_IS_BIG_ENDIAN (as->config);
+	pd->cpu = as->config->cpu? strdup (as->config->cpu): NULL;
+	pd->ht_it = ht_uu_new0 ();
+	if (!pd->ht_it) {
+		R_LOG_ERROR ("Cannot initialize 'ht_it'");
+		cs_close (&(pd->cs_handle));
+		R_FREE (as->data);
+		return false;
+	}
+
+	pd->ht_itblock = ht_uu_new0 ();
+	if (!pd->ht_itblock) {
+		R_LOG_ERROR ("Cannot initialize 'ht_itblock'");
+		ht_uu_free (pd->ht_it);
+		cs_close (&(pd->cs_handle));
+		R_FREE (as->data);
+		return false;
+	}
+	return true;
+}
+
+static bool fini(RArchSession *as) {
+	r_return_val_if_fail (as, false);
+
+	PluginData *pd = (PluginData*) as->data;
+	ht_uu_free (pd->ht_itblock);
+	ht_uu_free (pd->ht_it);
+	free (pd->cpu);
+	cs_close (&(pd->cs_handle));
+	R_FREE (as->data);
+	return true;
+}
+
+RArchPlugin r_arch_plugin_arm_cs = {
+	.meta = {
+		.name = "arm",
+		.desc = "Capstone ARM analyzer",
+		.license = "BSD",
+	},
 	.arch = "arm",
 	.endian = R_SYS_ENDIAN_LITTLE | R_SYS_ENDIAN_BIG,
-	.archinfo = archinfo,
-	.get_reg_profile = get_reg_profile,
+	.bits = R_SYS_BITS_PACK3 (16, 32, 64),
+#if 0
+	// made obsolete by "e anal.mask = true"
 	.anal_mask = anal_mask,
+#endif
 	.preludes = anal_preludes,
-	.bits = 16 | 32 | 64,
+	.decode = decode,
+	.init = init,
+	.fini = fini,
+	.info = archinfo,
+	.regs = regs,
 	.mnemonics = arm_mnemonics,
-	.op = &analop,
-	.init = &init,
-	.fini = &fini,
 };
 
 #ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_ANAL,
-	.data = &r_anal_plugin_arm_cs,
+	.type = R_LIB_TYPE_ARCH,
+	.data = &r_arch_plugin_arm_cs,
 	.version = R2_VERSION
 };
 #endif

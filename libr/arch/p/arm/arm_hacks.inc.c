@@ -143,11 +143,11 @@ static int hack_handle_br_exc_sys(ut32 insn, RAnalOp *op) {
 	return -1;
 }
 
-static inline int hacky_arm_anal(RArchSession *as, RAnalOp *op, const ut8 *buf, int len) {
+static inline int hacky_arm_anal(RArchSession *a, RAnalOp *op, const ut8 *buf, int len) {
 	int ret = -1;
 	// Hacky support for ARMv8.3 and ARMv8.5
-	if (as->config->bits == 64 && len >= 4) {
-		ut32 insn = r_read_ble32 (buf, R_ARCH_CONFIG_IS_BIG_ENDIAN (as->config));
+	if (a->config->bits == 64 && len >= 4) {
+		ut32 insn = r_read_ble32 (buf, R_ARCH_CONFIG_IS_BIG_ENDIAN (a->config));
 		int insn_class = (insn >> 25) & 0xf;
 		// xpaci // e#43c1da
 		if (!memcmp (buf + 1, "\x43\xc1\xda", 3)) {

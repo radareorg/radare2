@@ -56,7 +56,7 @@ static bool r_arch_cs_init(RArchSession *as, csh *cs_handle) {
 	} else {
 		cs_option (*cs_handle, CS_OPT_DETAIL, CS_OPT_ON);
 #if CS_API_MAJOR >= 4
-		cs_option (*cs_handle, CS_OPT_UNSIGNED, CS_OPT_ON);
+		// cs_option (*cs_handle, CS_OPT_UNSIGNED, CS_OPT_ON);
 #endif
 	}
 #if 0

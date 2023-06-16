@@ -51,7 +51,7 @@ R_API bool r_anal_value_set_ut64(RAnal *anal, RAnalValue *val, ut64 num) {
 			r_reg_setv (anal->reg, val->reg, num);
 		}
 	}
-	return false;							//is this necessary
+	return false; // is this necessary?
 }
 
 R_API const char *r_anal_value_type_tostring(RAnalValue *value) {

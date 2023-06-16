@@ -108,7 +108,7 @@ RUN
 
 NAME=2: rasm2
 FILE=-
-CMDS=!rasm2 -a x86 -b 64 -d "5589e583ec2083f8000f8507000000b800000000eb05b80100000083c4205dc3" 
+CMDS=!rasm2 -a x86 -b 64 -d "5589e583ec2083f8000f8507000000b800000000eb05b80100000083c4205dc3"
 EXPECT=<<EOF
 push rbp
 mov ebp, esp
@@ -126,7 +126,7 @@ RUN
 
 NAME=rasm2 #1167
 FILE=-
-CMDS=!rasm2 -a x86 -b 64 "cmp rax,rbx" 
+CMDS=!rasm2 -a x86 -b 64 "cmp rax,rbx"
 EXPECT=<<EOF
 4839d8
 EOF
@@ -134,7 +134,7 @@ RUN
 
 NAME=rasm2 #1167 2
 FILE=-
-CMDS=!rasm2 -a x86 -b 64 "test rax, rbx" 
+CMDS=!rasm2 -a x86 -b 64 "test rax, rbx"
 EXPECT=<<EOF
 4885d8
 EOF
@@ -144,7 +144,7 @@ NAME=rasm2 #1167 3
 FILE=-
 BROKEN=1
 REQUIRE=gas linux x86
-CMDS=!rasm2 -s att -a x86.as -b 64 "test %rbx, %rax" 
+CMDS=!rasm2 -s att -a x86.as -b 64 "test %rbx, %rax"
 EXPECT=<<EOF
 4885d8
 EOF
@@ -164,7 +164,7 @@ NAME=rasm2 #1167 4
 BROKEN=1
 FILE=-
 REQUIRE=gas linux x86
-CMDS=!rasm2 -s intel -a x86.as -b 64 "test rax, rbx" 
+CMDS=!rasm2 -s intel -a x86.as -b 64 "test rax, rbx"
 EXPECT=<<EOF
 4885d8
 EOF
@@ -184,7 +184,7 @@ NAME=rasm2 #1167 6
 BROKEN=1
 FILE=-
 REQUIRE=gas linux x86
-CMDS=!rasm2 -s intel -a x86.as -b 64 "add rbx, 33" 
+CMDS=!rasm2 -s intel -a x86.as -b 64 "add rbx, 33"
 EXPECT=<<EOF
 4883c321
 EOF
@@ -255,7 +255,7 @@ RUN
 
 NAME=rasm2 #9197
 FILE=-
-CMDS=!rasm2 -a arm -b 64 "ldur x1, [x29, -8]" 
+CMDS=!rasm2 -a arm -b 64 "ldur x1, [x29, -8]"
 EXPECT=<<EOF
 a1835ff8
 EOF
@@ -311,7 +311,7 @@ RUN
 
 NAME=rasm2 -F pseudo
 FILE=-
-CMDS=!rasm2 -a x86 -b 32 -o 0xa -F x86.pseudo -D 31ed 
+CMDS=!rasm2 -a x86 -b 32 -o 0xa -F x86.pseudo -D 31ed
 EXPECT=<<EOF
 0x0000000a   2                     31ed  ebp = 0
 EOF
@@ -507,33 +507,40 @@ NAME=rasm2 -LL
 FILE=-
 REQUIRE=unix
 CMDS=<<EOF
-!rasm2 -LL | grep -c arm
-!rasm2 -L | grep -c arm.gnu
+!rasm2 -LL | grep -c null
 EOF
 EXPECT=<<EOF
-1
 1
 EOF
 RUN
 
-NAME=rasm2 -LL internal grep
+NAME=rasm2 -L
+FILE=-
+REQUIRE=unix
+CMDS=!rasm2 -L | grep -c arm.gnu
+EXPECT=<<EOF
+1
+EOF
+RUN
+
+NAME=rasm2 -L internal grep
 FILE=-
 CMDS=<<EOF
-!!rasm2 -LL~arm?
+!!rasm2 -L~arm?
 !!rasm2 -L~arm.gnu?
 EOF
 EXPECT=<<EOF
-1
+17
 1
 EOF
 RUN
 
-NAME=rasm2 -qLL
+NAME=rasm2 -qL
 FILE=-
 REQUIRE=unix
-CMDS=!rasm2 -qLL | grep -c arm
+CMDS=!rasm2 -qL | grep -c arm
 EXPECT=<<EOF
-1
+4
 EOF
 RUN
 

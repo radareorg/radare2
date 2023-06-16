@@ -93,7 +93,11 @@ R_API int r_anal_function_resize(RAnalFunction *fcn, int newsize) {
 	}
 
 	// XXX this is something we should probably do for all the archs
-	bool is_arm = anal->cur && anal->cur->arch && r_str_startswith (anal->cur->arch, "arm");
+	const char *sarch = R_UNWRAP3 (anal, cur, arch);
+	if (!sarch && anal->arch->session) {
+		sarch = anal->arch->session->config->arch;
+	}
+	const bool is_arm = sarch && r_str_startswith (sarch, "arm");
 	if (is_arm) {
 		return true;
 	}
@@ -302,7 +306,7 @@ static ut64 try_get_cmpval_from_parents(RAnal *anal, RAnalFunction *fcn, RAnalBl
 	return UT64_MAX;
 }
 
-static bool regs_exist(RAnalValue *src, RAnalValue *dst) {
+static inline bool regs_exist(RAnalValue *src, RAnalValue *dst) {
 	r_return_val_if_fail (src && dst, false);
 	return src->reg && dst->reg;
 }
@@ -750,7 +754,7 @@ repeat:
 
 		if (anal->opt.nopskip && fcn->addr == at) {
 			RFlagItem *fi = anal->flb.get_at (anal->flb.f, addr, false);
-			if (!fi || strncmp (fi->name, "sym.", 4)) {
+			if (!fi || r_str_startswith (fi->name, "sym.")) {
 				if ((addr + delay.un_idx - oplen) == fcn->addr) {
 					if (r_anal_block_relocate (bb, bb->addr + oplen, bb->size - oplen)) {
 						fcn->addr += oplen;
@@ -1000,7 +1004,7 @@ repeat:
 				lea_cnt++;
 				r_list_append (anal->leaddrs, pair);
 			}
-			if (has_stack_regs && op_is_set_bp (op_dst, op_src, bp_reg, sp_reg)     ) {
+			if (has_stack_regs && op_is_set_bp (op_dst, op_src, bp_reg, sp_reg)) {
 				fcn->bp_off = fcn->stack - src0->delta;
 			}
 			if (dst && dst->reg && op->ptr > 0 && op->ptr != UT64_MAX) {
@@ -1488,6 +1492,7 @@ analopfinish:
 		if (has_variadic_reg && !fcn->is_variadic) {
 			variadic_reg = "rax";
 #if 1
+			// XXX arm_cs plugin
 			bool dst_is_variadic = dst && dst->reg && variadic_reg;
 			if (dst_is_variadic) {
 				dst_is_variadic = false;
@@ -1765,7 +1770,11 @@ R_API bool r_anal_function_add_bb(RAnal *a, RAnalFunction *fcn, ut64 addr, ut64 
 		block = NULL;
 	}
 
-	const bool is_x86 = (a->cur && a->cur->arch && !strcmp (a->cur->arch, "x86"));
+	const char *sarch = R_UNWRAP3 (a, cur, arch);
+	if (!sarch && a->arch->cfg) {
+		sarch = a->arch->cfg->arch;
+	}
+	const bool is_x86 = sarch && !strcmp (sarch, "x86");
 	// TODO fix this x86-ism
 	if (is_x86) {
 		fcn_recurse (a, fcn, addr, size, -1);
@@ -1778,7 +1787,7 @@ R_API bool r_anal_function_add_bb(RAnal *a, RAnalFunction *fcn, ut64 addr, ut64 
 	}
 
 	if (!block) {
-		D R_LOG_WARN ("r_anal_function_add_bb failed in fcn 0x%08"PFMT64x" at 0x%08"PFMT64x, fcn->addr, addr);
+		R_LOG_DEBUG ("r_anal_function_add_bb failed in fcn 0x%08"PFMT64x" at 0x%08"PFMT64x, fcn->addr, addr);
 		return false;
 	}
 

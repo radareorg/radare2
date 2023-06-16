@@ -5133,12 +5133,12 @@ static bool esilbreak_reg_write(REsil *esil, const char *name, ut64 *val) {
 	RAnalOp *op = ctx->op;
 	RCore *core = anal->coreb.core;
 	handle_var_stack_access (esil, *val, R_ANAL_VAR_ACCESS_TYPE_PTR, esil->anal->config->bits / 8);
+	const bool is_arm = !strcmp (core->anal->config->arch, "arm");
 	//specific case to handle blx/bx cases in arm through emulation
 	// XXX this thing creates a lot of false positives
 	ut64 at = *val;
 	if (anal && anal->opt.armthumb) {
-		if (anal->cur && anal->cur->arch && anal->config->bits < 33 &&
-			strstr (anal->cur->arch, "arm") && !strcmp (name, "pc") && op) {
+		if (anal->config->bits < 33 && is_arm && !strcmp (name, "pc") && op) {
 			switch (op->type) {
 			case R_ANAL_OP_TYPE_UCALL: // BLX
 			case R_ANAL_OP_TYPE_UJMP: // BX
@@ -5714,7 +5714,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 			break;
 		case R_ANAL_OP_TYPE_ADD:
 			/* TODO: test if this is valid for other archs too */
-			if (core->anal->cur && archIsArm) {
+			if (archIsArm) {
 				/* This code is known to work on Thumb, ARM and ARM64 */
 				ut64 dst = ESIL->cur;
 				if ((target && dst == ntarget) || !target) {

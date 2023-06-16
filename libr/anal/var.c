@@ -862,6 +862,11 @@ static const char *get_regname(RAnal *anal, RAnalValue *value) {
 static const char *get_regname(RAnal *anal, RAnalValue *value) {
 	// R2_590 - this is underperforming hard
 	const char *name = NULL;
+#if 0
+	if (value && value->reg) {
+		name = (const char *)value->reg;
+	}
+#else
 	if (value && value->reg) {
 		name = value->reg;
 		RRegItem *ri = r_reg_get (anal->reg, value->reg, -1);
@@ -869,6 +874,7 @@ static const char *get_regname(RAnal *anal, RAnalValue *value) {
 			name = r_reg_32_to_64 (anal->reg, value->reg);
 		}
 	}
+#endif
 	return name;
 }
 #endif

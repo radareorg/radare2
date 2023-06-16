@@ -835,6 +835,7 @@ static bool init(RArchSession *as) {
 static bool fini(RArchSession *as) {
 	r_return_val_if_fail (as, false);
 	PluginData *pd = as->data;
+	R_FREE (pd->cpu);
 	cs_close (&pd->cpd.cs_handle);
 	R_FREE (as->data);
 	return true;

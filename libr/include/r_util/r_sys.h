@@ -16,6 +16,7 @@ extern "C" {
 #endif
 
 // no need for an enum or type here, its just 1:1
+// XXX deprecate because it's confusing, we can use the new RSYS_BITS_PACK macros
 #define R_SYS_BITS_8	1
 #define R_SYS_BITS_16	2
 #define R_SYS_BITS_32	4

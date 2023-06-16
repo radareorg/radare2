@@ -3116,6 +3116,11 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 					r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, pcbits, NULL, '=', use_color); // xxx detect which one is current usage
 				}
 				r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, bits, NULL, '=', use_color); // xxx detect which one is current usage
+#if 0
+				if (pcbits2) {
+					r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, pcbits2, NULL, '=', use_color); // xxx detect which one is current usage
+				}
+#endif
 				core->dbg->reg = orig;
 			}
 		}
