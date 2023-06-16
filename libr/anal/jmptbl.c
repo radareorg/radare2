@@ -1,7 +1,6 @@
 /* radare - LGPL - Copyright 2010-2023 - nibble, alvaro, pancake, th3str4ng3r */
 
 #include <r_anal.h>
-#include <r_parse.h>
 
 #define JMPTBL_MAXSZ 512
 
@@ -14,7 +13,7 @@ static void apply_case(RAnal *anal, RAnalBlock *block, ut64 switch_addr, ut64 of
 		r_anal_block_add_switch_case (block, switch_addr, id, case_addr);
 	}
 	if (anal->flb.set) {
-		char flagname[0x30];
+		char flagname[64];
 		int iid = R_ABS ((int)id);
 		snprintf (flagname, sizeof (flagname), "case.0x%"PFMT64x ".%d", (ut64)switch_addr, iid);
 		anal->flb.set (anal->flb.f, flagname, case_addr, 1);
@@ -22,7 +21,7 @@ static void apply_case(RAnal *anal, RAnalBlock *block, ut64 switch_addr, ut64 of
 }
 
 static void apply_switch(RAnal *anal, ut64 switch_addr, ut64 jmptbl_addr, ut64 cases_count, ut64 default_case_addr) {
-	char tmp[0x30];
+	char tmp[64];
 	snprintf (tmp, sizeof (tmp), "switch table (%"PFMT64u" cases) at 0x%"PFMT64x, cases_count, jmptbl_addr);
 	r_meta_set_string (anal, R_META_TYPE_COMMENT, switch_addr, tmp);
 	if (anal->flb.set) {
@@ -186,6 +185,9 @@ R_API bool try_walkthrough_jmptbl(RAnal *anal, RAnalFunction *fcn, RAnalBlock *b
 		return false;
 	}
 	const char *sarch = R_UNWRAP3 (anal, cur, arch);
+	if (!sarch && anal->arch->cfg) {
+		sarch = anal->arch->cfg->arch;
+	}
 	bool is_arm = sarch ? r_str_startswith (sarch, "arm"): false;
 	bool is_x86 = !is_arm && r_str_startswith (sarch, "x86");
 	const bool is_v850 = !is_arm && !is_x86 && ((sarch && r_str_startswith (sarch, "v850")) || r_str_startswith (anal->coreb.cfgGet (anal->coreb.core, "asm.cpu"), "v850"));
