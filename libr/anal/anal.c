@@ -445,22 +445,6 @@ R_API RList* r_anal_get_fcns(RAnal *anal) {
 	return anal->fcns;
 }
 
-R_API RAnalOp *r_anal_op_hexstr(RAnal *anal, ut64 addr, const char *str) {
-	RAnalOp *op = R_NEW0 (RAnalOp);
-	if (!op) {
-		return NULL;
-	}
-	ut8 *buf = calloc (1, strlen (str) + 1);
-	if (!buf) {
-		free (op);
-		return NULL;
-	}
-	int len = r_hex_str2bin (str, buf);
-	r_anal_op (anal, op, addr, buf, len, R_ARCH_OP_MASK_BASIC);
-	free (buf);
-	return op;
-}
-
 R_API bool r_anal_op_is_eob(RAnalOp *op) {
 	if (op->eob) {
 		return true;
