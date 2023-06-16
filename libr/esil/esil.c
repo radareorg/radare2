@@ -170,12 +170,10 @@ static bool r_esil_fire_trap(REsil *esil, int trap_type, int trap_code) {
 	return false;
 }
 
-// R2_590 R_API void r_esil_set_pc(REsil *esil, ut64 addr) {
-R_API bool r_esil_set_pc(REsil *esil, ut64 addr) {
-	r_return_val_if_fail (esil, false);
+R_API void r_esil_set_pc(REsil *esil, ut64 addr) {
+	r_return_if_fail (esil);
 	// r_reg_set_value_by_role (esil->anal->reg, R_REG_NAME_PC, addr);
-	esil->addr = addr; // R2_590 - rename to 'addr' for consistency
-	return true;
+	esil->addr = addr;
 }
 
 R_API void r_esil_free(REsil *esil) {
@@ -3817,10 +3815,8 @@ R_API int r_esil_condition(REsil *esil, const char *str) {
 #define	OT_REGW	R_ESIL_OP_TYPE_REG_WRITE
 #define	OT_MEMW	R_ESIL_OP_TYPE_MEM_WRITE
 #define	OT_MEMR	R_ESIL_OP_TYPE_MEM_READ
-#if R2_590
 #define	OT_FLAG R_ESIL_OP_TYPE_FLAG
 #define	OT_TRAP R_ESIL_OP_TYPE_TRAP
-#endif
 
 R_API void r_esil_setup_macros(REsil *esil) {
 	r_return_if_fail (esil);
