@@ -1,9 +1,14 @@
 /* radare2 - LGPL - Copyright 2013-2023 - pancake */
 
+#include <r_arch.h>
 #include <r_anal.h>
 #include <r_lib.h>
 #include <capstone/capstone.h>
 #include <capstone/x86.h>
+
+#define r_anal_value_new() R_NEW0 (RAnalValue)
+#define ARCH_HAVE_ESILCB 0
+#define ARCH_HAVE_READ 0
 
 #if 0
 CYCLES:
@@ -32,10 +37,56 @@ call = 4
 
 #define CSINC X86
 #define CSINC_MODE \
-	(a->config->bits == 64)? CS_MODE_64: \
-	(a->config->bits == 32)? CS_MODE_32: \
-	(a->config->bits == 16)? CS_MODE_16: 0
-#include "capstone.inc.c"
+	(as->config->bits == 64)? CS_MODE_64: \
+	(as->config->bits == 32)? CS_MODE_32: \
+	(as->config->bits == 16)? CS_MODE_16: 0
+#include "../capstone.inc.c"
+
+typedef struct plugin_data_t {
+	CapstonePluginData cpd;
+	RRegItem reg; // XXX ??
+	int bits;
+	int syntax;
+	int omode; // unused?
+// 	char *cpu;
+} PluginData;
+
+static bool init(RArchSession *as) {
+	r_return_val_if_fail (as, false);
+	if (as->data) {
+		R_LOG_WARN ("Already initialized");
+		return false;
+	}
+	PluginData *pd = R_NEW0 (PluginData);
+	if (!pd) {
+		return false;
+	}
+	// pd->cpu = as->config->cpu? strdup (as->config->cpu): NULL;
+	if (!r_arch_cs_init (as, &pd->cpd.cs_handle)) {
+		R_LOG_ERROR ("Cannot initialize capstone");
+		R_FREE (as->data);
+		return false;
+	}
+	pd->bits = as->config->bits;
+	pd->syntax = as->config->syntax;
+	as->data = pd;
+	return true;
+}
+
+static bool fini(RArchSession *as) {
+	r_return_val_if_fail (as, false);
+	PluginData *pd = as->data;
+	cs_close (&pd->cpd.cs_handle);
+	R_FREE (as->data);
+	return true;
+}
+
+static csh cs_handle_for_session(RArchSession *as) {
+	r_return_val_if_fail (as && as->data, 0);
+	CapstonePluginData *pd = as->data;
+	return pd->cs_handle;
+}
+
 
 #define opexprintf(op, fmt, ...) r_strbuf_setf (&op->opex, fmt, ##__VA_ARGS__)
 #define INSOP(n) insn->detail->x86.operands[n]
@@ -94,8 +145,8 @@ static void hidden_op(cs_insn *insn, cs_x86 *x, int mode) {
 	}
 }
 
-static void opex(RAnal *anal, RStrBuf *buf, cs_insn *insn, int mode) {
-	csh handle = anal->cs_handle;
+static void opex(RArchSession *as, RStrBuf *buf, cs_insn *insn, int mode) {
+	csh handle = cs_handle_for_session (as);
 
 	int i;
 	PJ *pj = pj_new ();
@@ -352,15 +403,25 @@ static int cond_x862r2(int id) {
 	return 0;
 }
 
+#if ARCH_HAVE_READ
 /* reg indices are based on Intel doc for 32-bit ModR/M byte */
 static const char *reg32_to_name(ut8 reg) {
 	const char * const names[] = { "eax", "ecx", "edx", "ebx", "esp", "ebp", "esi", "edi" };
 	return reg < R_ARRAY_SIZE (names) ? names[reg] : "unk";
 }
+#endif
 
-static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh handle, cs_insn *insn) {
+// R2_590 - review ;D
+static char *get64from32(const char *s) {
+	if (*s == 'e') {
+		return r_str_newf ("r%s", s + 1);
+	}
+	return strdup (s);
+}
+
+static void anop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh handle, cs_insn *insn) {
 	RAnalValue *val = NULL;
-	const int bits = a->config->bits;
+	const int bits = as->config->bits;
 	int rs = bits / 8;
 	const char *pc, *sp, *bp, *si;
 	switch (bits) {
@@ -799,7 +860,9 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 				src = getarg (&gop, 1, 0, NULL, NULL);
 				// dst is name of register from instruction.
 				dst = getarg (&gop, 0, 0, NULL, NULL);
-				const char *dst64 = r_reg_32_to_64 (a->reg, dst);
+				// const char *dst64 = r_reg_32_to_64 (as->reg, dst);
+				char *dst64 = get64from32 (dst); // XXX R2_590 no access to reg
+			//	const char *dst64 = dst; // XXX R2_590 no access to reg
 				if (bits == 64 && dst64) {
 					// Here it is still correct, because 'e** = X'
 					// turns into 'r** = X' (first one will keep higher bytes,
@@ -819,6 +882,7 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 				}
 				free (src);
 				free (dst);
+				free (dst64);
 			}
 			break;
 		}
@@ -1232,7 +1296,7 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 					// of the destination operand AFTER we increased
 					// the stack pointer.
 					//
-					// Qouting the Intel manual:
+					// Quoting the Intel manual:
 					//
 					// If the ESP register is used as a base register
 					// for addressing a destination operand in memory,
@@ -1242,16 +1306,17 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 						"%s,[%d],%d,%s,+=,%s",
 						sp, rs, rs, sp, dst);
 					free (dst);
-					break;
 				}
+				break;
 			case X86_OP_REG:
+#if ARCH_HAVE_READ
 				// check if previous instruction was a call to here
 				{
 					// handle CALLPOP sequence: 'CALL $$ + 5; POP REG'
 					ut8 buf[5] = {0};
 					if (a->read_at) {
 						const ut8 data[] = { 0xe8, 0, 0, 0, 0 };
-						a->read_at (a, addr - 5, buf, sizeof (buf));
+						a->read_at (as, addr - 5, buf, sizeof (buf));
 						if (!memcmp (buf, data, sizeof (buf))) {
 							dst = getarg (&gop, 0, 0, NULL, NULL);
 							esilprintf (op, "0x%"PFMT64x",%s,=", addr, dst);
@@ -1262,6 +1327,7 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 						R_LOG_DEBUG ("This shouldnt happen");
 					}
 				}
+#endif
 			default:
 				{
 					dst = getarg (&gop, 0, 0, NULL, NULL);
@@ -1416,9 +1482,11 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 		break;
 	case X86_INS_CALL:
 		{
+			arg0 = getarg (&gop, 0, 0, NULL, NULL);
+#if ARCH_HAVE_READ
 			if (a->read_at && bits != 16) {
 				ut8 thunk[4] = {0};
-				if (a->read_at (a, (ut64)INSOP (0).imm, thunk, sizeof (thunk))) {
+				if (a->read_at (as, (ut64)INSOP (0).imm, thunk, sizeof (thunk))) {
 					/* Handle CALL ebx_pc (callpop)
 					   8b xx x4    mov <reg>, dword [esp]
 					   c3          ret
@@ -1427,19 +1495,17 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 							&& (thunk[1] & 0xc7) == 4        /* 00rrr100 */
 							&& (thunk[2] & 0x3f) == 0x24) {  /* --100100: ignore scale in SIB byte */
 						ut8 reg = (thunk[1] & 0x38) >> 3;
-						esilprintf (op, "0x%"PFMT64x",%s,=", addr + op->size,
-								reg32_to_name (reg));
+						esilprintf (op, "0x%"PFMT64x",%s,=", addr + op->size, reg32_to_name (reg));
 						break;
 					}
 				}
 			}
-			arg0 = getarg (&gop, 0, 0, NULL, NULL);
 			if (a->read_at && bits == 32) {
 				ut8 b[4] = {0};
 				ut64 at = addr + op->size;
 				ut64 n = r_num_get (NULL, arg0);
 				if (n == at) {
-					if (a->read_at (a, at, b, sizeof (b))) {
+					if (a->read_at (as, at, b, sizeof (b))) {
 						if (b[0] == 0x5b) { // pop ebx
 							esilprintf (op, "0x%"PFMT64x",ebx,=", at);
 							break;
@@ -1447,6 +1513,7 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 					}
 				}
 			}
+#endif
 			esilprintf (op,
 					"%s,%s,"
 					"%d,%s,-=,%s,"
@@ -1574,7 +1641,7 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 			src = getarg (&gop, 1, 0, NULL, NULL);
 			dst = getarg (&gop, 0, 1, "^", &bitsize);
 			dst2 = getarg (&gop, 0, 0, NULL, NULL);
-			const char *dst_reg64 = r_reg_32_to_64 (a->reg, dst2);		// 64-bit destination if exists
+			const char *dst_reg64 = NULL; // XXX R2_590 access to regs - r_reg_32_to_64 (as->reg, dst2); // 64-bit destination if exists
 			if (bits == 64 && dst_reg64) {
 				// (64-bit ^ 32-bit) & 0xFFFF FFFF -> 64-bit, it's alright, higher bytes will be eliminated
 				// (consider this is operation with 32-bit regs in 64-bit environment).
@@ -1798,7 +1865,7 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 			src = getarg (&gop, 1, 0, NULL, NULL);
 			dst = getarg (&gop, 0, 1, "&", &bitsize);
 			dst2 = getarg (&gop, 0, 0, NULL, NULL);
-			const char *dst_reg64 = r_reg_32_to_64 (a->reg, dst2);		// 64-bit destination if exists
+			const char *dst_reg64 = NULL; // XXX R2_590 r_reg_32_to_64 (a->reg, dst2);		// 64-bit destination if exists
 			if (bits == 64 && dst_reg64) {
 				// (64-bit & 32-bit) & 0xFFFF FFFF -> 64-bit, it's alright, higher bytes will be eliminated
 				// (consider this is operation with 32-bit regs in 64-bit environment).
@@ -2391,7 +2458,7 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 	}
 }
 
-static void set_access_info(RReg *reg, RAnalOp *op, csh handle, cs_insn *insn, int mode) {
+static void set_access_info(RArchSession *as, RAnalOp *op, csh handle, cs_insn *insn, int mode) {
 	int i;
 	int regsz;
 	x86_reg sp;
@@ -2583,7 +2650,7 @@ static void set_access_info(RReg *reg, RAnalOp *op, csh handle, cs_insn *insn, i
 	src2 = r_vector_push (&(op)->srcs, NULL); \
 	dst = r_vector_push (&(op)->dsts, NULL);
 
-static void set_src_dst(RReg *reg, RAnalValue *val, csh handle, cs_insn *insn, int x) {
+static void set_src_dst(RArchSession *as, RAnalValue *val, csh handle, cs_insn *insn, int x) {
 	if (!val) {
 		return;
 	}
@@ -2607,9 +2674,9 @@ static void set_src_dst(RReg *reg, RAnalValue *val, csh handle, cs_insn *insn, i
 	}
 }
 
-static void op_fillval(RAnal *a, RAnalOp *op, csh handle, cs_insn *insn, int mode) {
+static void op_fillval(RArchSession *a, RAnalOp *op, csh handle, cs_insn *insn, int mode) {
 	RAnalValue *dst, *src0, *src1, *src2;
-	set_access_info (a->reg, op, handle, insn, mode);
+	set_access_info (a, op, handle, insn, mode);
 	switch (op->type & R_ANAL_OP_TYPE_MASK) {
 	case R_ANAL_OP_TYPE_MOV:
 	case R_ANAL_OP_TYPE_CMP:
@@ -2631,15 +2698,15 @@ static void op_fillval(RAnal *a, RAnalOp *op, csh handle, cs_insn *insn, int mod
 	case R_ANAL_OP_TYPE_NOT:
 	case R_ANAL_OP_TYPE_ACMP:
 		CREATE_SRC_DST (op);
-		set_src_dst (a->reg, dst, handle, insn, 0);
-		set_src_dst (a->reg, src0, handle, insn, 1);
-		set_src_dst (a->reg, src1, handle, insn, 2);
-		set_src_dst (a->reg, src2, handle, insn, 3);
+		set_src_dst (a, dst, handle, insn, 0);
+		set_src_dst (a, src0, handle, insn, 1);
+		set_src_dst (a, src1, handle, insn, 2);
+		set_src_dst (a, src2, handle, insn, 3);
 		break;
 	case R_ANAL_OP_TYPE_UPUSH:
 		if ((op->type & R_ANAL_OP_TYPE_REG)) {
 			CREATE_SRC_DST (op);
-			set_src_dst (a->reg, src0, handle, insn, 0);
+			set_src_dst (a, src0, handle, insn, 0);
 		}
 		break;
 	default:
@@ -2806,7 +2873,7 @@ static void inscmp(RAnalOp *op, ut64 addr, cs_insn *insn, int regsz) {
 	}
 }
 
-static void anop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh *handle, cs_insn *insn) {
+static void anop(RArchSession *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh *handle, cs_insn *insn) {
 	int bits = a->config->bits;
 	struct Getarg gop = {
 		.handle = *handle,
@@ -3734,12 +3801,33 @@ static int cs_len_prefix_opcode(uint8_t *item) {
 	return len;
 }
 
-static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
-	csh handle = init_capstone (a);
-	if (handle == 0) {
-		return -1;
+static bool plugin_changed(RArchSession *as) {
+	PluginData *cpd = as->data;
+	if (as->config->bits != cpd->bits) {
+		return true;
 	}
-	int mode = a->cs_omode;
+	if (as->config->syntax != cpd->syntax) {
+		return true;
+	}
+	return false;
+}
+
+static bool decode(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
+	csh handle = cs_handle_for_session (as);
+	if (handle == 0) {
+		return false;
+	}
+	int mode = as->config->bits;
+	switch (mode) {
+	case 16: mode = CS_MODE_16; break;
+	case 32: mode = CS_MODE_32; break;
+	case 64: mode = CS_MODE_64; break;
+	}
+	if (plugin_changed (as)) {
+		fini (as);
+		init (as);
+		handle = cs_handle_for_session (as);
+	}
 
 	cs_insn *insn = NULL;
 	int n;
@@ -3751,11 +3839,13 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 	cs_detail insnack_detail = {{0}};
 	cs_insn insnack = {0};
 	insnack.detail = &insnack_detail;
+	const ut64 addr = op->addr;
+	const ut8 *buf = op->bytes;
+	const int len = op->size;
 	ut64 naddr = addr;
 	size_t size = len;
 	insn = &insnack;
-	n = cs_disasm_iter (handle, (const uint8_t**)&buf,
-			&size, (uint64_t*)&naddr, insn);
+	n = cs_disasm_iter (handle, (const uint8_t**)&buf, &size, (uint64_t*)&naddr, insn);
 #else
 	n = cs_disasm (handle, (const ut8*)buf, len, addr, 1, &insn);
 #endif
@@ -3771,6 +3861,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 		if (mask & R_ARCH_OP_MASK_DISASM) {
 			op->mnemonic = strdup ("invalid");
 		}
+		op->size = 1;
 	} else {
 		if (mask & R_ARCH_OP_MASK_DISASM) {
 			op->mnemonic = r_str_newf ("%s%s%s",
@@ -3778,10 +3869,10 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 				insn->op_str[0]?" ":"",
 				insn->op_str);
 			if (op->mnemonic) {
-				if (a->config->syntax != R_ARCH_SYNTAX_MASM) {
+				if (as->config->syntax != R_ARCH_SYNTAX_MASM) {
 					op->mnemonic = r_str_replace (op->mnemonic, "ptr ", "", true);
 				}
-				if (a->config->syntax == R_ARCH_SYNTAX_JZ) {
+				if (as->config->syntax == R_ARCH_SYNTAX_JZ) {
 					if (r_str_startswith (op->mnemonic, "je ")) {
 						op->mnemonic[1] = 'z';
 					} else if (r_str_startswith (op->mnemonic, "jne ")) {
@@ -3809,16 +3900,16 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 			op->family = R_ANAL_OP_FAMILY_THREAD; // XXX ?
 			break;
 		}
-		anop (a, op, addr, buf, len, &handle, insn);
+		anop (as, op, addr, buf, len, &handle, insn);
 		set_opdir (op, insn);
 		if (mask & R_ARCH_OP_MASK_ESIL) {
-			anop_esil (a, op, addr, buf, len, handle, insn);
+			anop_esil (as, op, addr, buf, len, handle, insn);
 		}
 		if (mask & R_ARCH_OP_MASK_OPEX) {
-			opex (a, &op->opex, insn, mode);
+			opex (as, &op->opex, insn, mode);
 		}
 		if (mask & R_ARCH_OP_MASK_VAL) {
-			op_fillval (a, op, handle, insn, mode);
+			op_fillval (as, op, handle, insn, mode);
 		}
 	}
 //#if X86_GRP_PRIVILEGE>0
@@ -3832,8 +3923,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 		cs_free (insn, n);
 #endif
 	}
-	//cs_close (&handle);
-	return op->size;
+	return op->size > 0;
 }
 
 #if 0
@@ -3878,24 +3968,9 @@ static int esil_x86_cs_intr(REsil *esil, int intr) {
 }
 #endif
 
-static int esil_x86_cs_init(REsil *esil) {
-	if (!esil) {
-		return false;
-	}
-	// XXX. this depends on kernel
-	// r_esil_set_interrupt (esil, 0x80, x86_int_0x80);
-	/* disable by default */
-//	r_esil_set_interrupt (esil, 0x80, NULL);	// this is stupid, don't do this
-	return true;
-}
-
-static int esil_x86_cs_fini(REsil *esil) {
-	return true;
-}
-
-static char *get_reg_profile(RAnal *anal) {
+static char *get_reg_profile(RArchSession *as) {
 	const char *p = NULL;
-	switch (anal->config->bits) {
+	switch (as->config->bits) {
 	case 16: p =
 		"=PC	ip\n"
 		"=SP	sp\n"
@@ -4053,7 +4128,7 @@ static char *get_reg_profile(RAnal *anal) {
 		break;
 	case 64:
 	{
-		const char *cc = r_anal_cc_default (anal);
+		const char *cc = "cdecl"; // r_anal_cc_default (anal); // R2_590
 		const char *args_prof = cc && !strcmp (cc, "ms")
 		? // Microsoft x64 CC
 		"# RAX     return value\n"
@@ -4263,9 +4338,10 @@ static char *get_reg_profile(RAnal *anal) {
 	return (p && *p)? strdup (p): NULL;
 }
 
-static int archinfo(RAnal *anal, int q) {
+static int archinfo(RArchSession *as, ut32 q) {
 	switch (q) {
-	case R_ANAL_ARCHINFO_ALIGN:
+	case R_ARCH_INFO_ALIGN:
+	case R_ARCH_INFO_DATA_ALIGN:
 		return 0;
 	case R_ANAL_ARCHINFO_MAX_OP_SIZE:
 		return 16;
@@ -4277,51 +4353,80 @@ static int archinfo(RAnal *anal, int q) {
 	return 0;
 }
 
-static RList *anal_preludes(RAnal *anal) {
-#define KW(d,ds,m,ms) r_list_append (l, r_search_keyword_new((const ut8*)d,ds,(const ut8*)m, ms, NULL))
-	RList *l = r_list_newf ((RListFree)r_search_keyword_free);
-	switch (anal->config->bits) {
+static RList *anal_preludes(RArchSession *as) {
+	RList *l = NULL;
+	switch (as->config->bits) {
 	case 32:
-		KW ("\x8b\xff\x55\x8b\xec", 5, NULL, 0);
-		KW ("\x55\x89\xe5", 3, NULL, 0);
-		KW ("\x55\x8b\xec", 3, NULL, 0);
-		KW ("\xf3\x0f\x1e\xfb", 4, NULL, 0); // endbr32
-		KW ("\x55\x57\x56\x53", 4, NULL, 0); // push ebp, edi, esi, ebx
+		l = r_list_newf (free);
+		r_list_append (l, strdup ("8bff558bec"));
+		r_list_append (l, strdup ("5589e5"));
+		r_list_append (l, strdup ("558bec"));
+		r_list_append (l, strdup ("f30f1efb")); // endbr32
+		r_list_append (l, strdup ("55575653")); // push ebp, edi, esi, ebx
 		break;
 	case 64:
-		KW ("\x55\x48\x89\xe5", 4, NULL, 0);
-		KW ("\x55\x48\x8b\xec", 4, NULL, 0);
-		KW ("\xf3\x0f\x1e\xfa", 4, NULL, 0); // endbr64
+		l = r_list_newf (free);
+		r_list_append (l, strdup ("554889e5"));
+		r_list_append (l, strdup ("55488bec"));
+		r_list_append (l, strdup ("f30f1efa")); // endbr64
 		break;
 	default:
-		r_list_free (l);
-		l = NULL;
+		// nothing to do on x86-16
 		break;
 	}
 	return l;
 }
 
-RAnalPlugin r_anal_plugin_x86_cs = {
-	.name = "x86",
-	.desc = "Capstone X86 analysis",
-	.esil = true,
-	.license = "BSD",
+static char *mnemonics(RArchSession *as, int id, bool json) {
+	r_return_val_if_fail (as && as->data, NULL);
+	if (as && as->data) {
+		CapstonePluginData *cpd = as->data;
+		return r_arch_cs_mnemonics (as, cpd->cs_handle, id, json);
+	}
+	return NULL;
+}
+
+// esilcb
+#if ARCH_HAVE_ESILCB
+static int esil_x86_cs_init(REsil *esil) {
+	if (!esil) {
+		return false;
+	}
+	// XXX. this depends on kernel
+	// r_esil_set_interrupt (esil, 0x80, x86_int_0x80);
+	/* disable by default */
+//	r_esil_set_interrupt (esil, 0x80, NULL);	// this is stupid, don't do this
+	return true;
+}
+#endif
+
+RArchPlugin r_arch_plugin_x86_cs = {
+	.meta = {
+		.name = "x86",
+		.desc = "Capstone X86 analysis",
+		.license = "BSD",
+	},
 	.arch = "x86",
-	.bits = 16 | 32 | 64,
-	.op = &analop,
+	.bits = R_SYS_BITS_PACK3 (16, 32, 64),
+	.decode = &decode,
 	.preludes = anal_preludes,
-	.archinfo = archinfo,
-	.get_reg_profile = &get_reg_profile,
+	.init = init,
+	.fini = fini,
+	.info = archinfo,
+	.regs = &get_reg_profile,
+	// .esilcb = esilcb,
+#if 0
 	.esil_init = esil_x86_cs_init,
 	.esil_fini = esil_x86_cs_fini,
 //	.esil_intr = esil_x86_cs_intr,
-	.mnemonics = cs_mnemonics,
+#endif
+	.mnemonics = mnemonics,
 };
 
 #ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_ANAL,
-	.data = &r_anal_plugin_x86_cs,
+	.type = R_LIB_TYPE_ARCH,
+	.data = &r_arch_plugin_x86_cs,
 	.version = R2_VERSION
 };
 #endif

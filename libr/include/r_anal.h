@@ -1608,8 +1608,6 @@ R_API bool r_anal_tid_select(RAnal *anal, int tid);
 
 /* plugin pointers */
 extern RAnalPlugin r_anal_plugin_null;
-extern RAnalPlugin r_anal_plugin_x86;
-extern RAnalPlugin r_anal_plugin_x86_cs;
 
 #ifdef __cplusplus
 }

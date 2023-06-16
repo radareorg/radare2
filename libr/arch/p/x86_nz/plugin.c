@@ -1,4 +1,4 @@
-/* Copyright (C) 2008-2022 - pancake, unlogic, emvivre */
+/* Copyright (C) 2008-2023 - pancake, unlogic, emvivre */
 
 #include <r_arch.h>
 #include "nzasm.c"

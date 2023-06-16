@@ -57,7 +57,6 @@ R_IPI int mips_assemble(const char *str, ut64 pc, ut8 *out);
 		SET_SRC_DST_3_REGS (op);\
 	}
 
-
 // ESIL macros:
 
 // put the sign bit on the stack
@@ -1334,6 +1333,7 @@ static char *get_reg_profile(RArchSession * as) {
 }
 
 static int archinfo(RArchSession *as, ut32 q) {
+	// R2_590 - R_ARCH_INFO_ALIGN instead of R_ANAL_ARCHINF..
 	if (q == R_ANAL_ARCHINFO_ALIGN || q == R_ANAL_ARCHINFO_MIN_OP_SIZE) {
 		const char *cpu = as->config->cpu;
 		if (cpu && !strcmp (cpu, "micro")) {
@@ -1351,7 +1351,7 @@ static char *mnemonics(RArchSession *as, int id, bool json) {
 
 static RList *preludes(RArchSession *as) {
 	RList *l = r_list_newf (free);
-	r_list_append (l, r_str_newf ("27bd0000 ffffff00"));
+	r_list_append (l, strdup ("27bd0000 ffffff00"));
 	return l;
 }
 
