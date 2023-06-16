@@ -143,6 +143,7 @@ static JSValue r2plugin_arch(JSContext *ctx, JSValueConst this_val, int argc, JS
 	if (!JS_IsObject (res)) {
 		return JS_ThrowRangeError (ctx, "r2.plugin function must return an object");
 	}
+
 	RArchPlugin *ap = R_NEW0 (RArchPlugin);
 	R2QJS_ASSERT (ap, "heap failure");
 	R2QJS_GETSTRING (ap->meta.name, res, "name", "Missing name");

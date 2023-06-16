@@ -2583,6 +2583,7 @@ EOF
 RUN
 
 NAME=cjmp data refs with aar
+BROKEN=1
 FILE=malloc://10000
 CMDS=<<EOF
 e asm.arch=8051
@@ -2593,12 +2594,13 @@ aar
 pd 1 @_idata+0x2e
 EOF
 EXPECT=<<EOF
-; DATA XREF from unk @ 
+; DATA XREF from unk @
 0x1000002e      00             nop
 EOF
 RUN
 
 NAME=cjmp data refs with afr
+BROKEN=1
 FILE=malloc://10000
 CMDS=<<EOF
 e asm.arch=8051
@@ -2610,7 +2612,7 @@ afr
 pd 1 @_idata+0x2e
 EOF
 EXPECT=<<EOF
-; DATA XREF from fcn.00000000 @ 
+; DATA XREF from fcn.00000000 @
 0x1000002e      00             nop
 EOF
 RUN

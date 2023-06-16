@@ -165,14 +165,6 @@ typedef bool (*RArchPluginEsilCallback)(RArchSession *s, RArchEsilAction action)
 // TODO: use `const char *const` instead of `char*`
 typedef struct r_arch_plugin_t {
 	RPluginMeta meta;
-#if 0
-	// RPluginMeta meta; //  = { .name = ... }
-	char *name;
-	char *desc;
-	char *author;
-	char *version;
-	char *license;
-#endif
 
 	// all const
 	char *arch;
@@ -180,16 +172,18 @@ typedef struct r_arch_plugin_t {
 	ut32 endian;
 	RSysBits bits;
 	RSysBits addr_bits;
+
+	// R2_590 figure out a way to make init and decode const (better perf)
 	RArchPluginInitCallback init;
-	RArchPluginFiniCallback fini;
-	RArchPluginInfoCallback info;
-	RArchPluginRegistersCallback regs;
-	RArchPluginEncodeCallback encode;
+	const RArchPluginFiniCallback fini;
+	const RArchPluginInfoCallback info;
+	const RArchPluginRegistersCallback regs;
+	const RArchPluginEncodeCallback encode;
 	RArchPluginDecodeCallback decode;
-	RArchPluginModifyCallback patch;
-	RArchPluginMnemonicsCallback mnemonics;
-	RArchPluginPreludesCallback preludes;
-	RArchPluginEsilCallback esilcb;
+	const RArchPluginModifyCallback patch;
+	const RArchPluginMnemonicsCallback mnemonics;
+	const RArchPluginPreludesCallback preludes;
+	const RArchPluginEsilCallback esilcb;
 } RArchPlugin;
 
 // decoder.c
@@ -268,6 +262,7 @@ R_API const char *r_arch_op_family_tostring(int n);
 R_API int r_arch_op_family_from_string(const char *f);
 R_API const char *r_arch_op_direction_tostring(struct r_anal_op_t *op);
 
+// R2_590 mark all plugins as const in their corresponding files (better for perf)
 extern RArchPlugin r_arch_plugin_null;
 extern RArchPlugin r_arch_plugin_i4004;
 extern RArchPlugin r_arch_plugin_amd29k;
@@ -344,6 +339,7 @@ extern RArchPlugin r_arch_plugin_arm_gnu;
 extern RArchPlugin r_arch_plugin_gb;
 extern RArchPlugin r_arch_plugin_mips_cs;
 extern RArchPlugin r_arch_plugin_avr;
+extern RArchPlugin r_arch_plugin_8051;
 
 #ifdef __cplusplus
 }
