@@ -18,12 +18,12 @@
    along with this program; see the file COPYING3. If not,
    see <http://www.gnu.org/licenses/>.  */
 
-#include "sysdep.h"
-#include "disas-asm.h"
-#include "libiberty.h"
-#include "opintl.h"
+#include "../../../include/sysdep.h"
+#include "../../../include/disas-asm.h"
+#include "../../../include/libiberty.h"
+#include "../../../include/opintl.h"
+#include "../../../include/elf-bfd.h"
 #include "aarch64-dis.h"
-#include "elf-bfd.h"
 
 #define ERR_OK   0
 #define ERR_UND -1

@@ -2,7 +2,7 @@
 
 #include <r_arch.h>
 #include "../../include/opcode/m68k.h"
-#include "disas-asm.h"
+#include "../../include/disas-asm.h"
 
 typedef struct {
 	const char *name;

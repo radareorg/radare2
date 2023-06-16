@@ -22,8 +22,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1335 USA */
 #define DEFINE_TABLE
 
 #include "sh-opc.h"
-#include "disas-asm.h"
-#include "mybfd.h"
+#include "../../../include/disas-asm.h"
+#include "../../../include/mybfd.h"
 
 #define LITTLE_BIT 2
 

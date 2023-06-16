@@ -18,8 +18,8 @@
    Free Software Foundation, 51 Franklin Street - Fifth Floor, Boston,
    MA 02110-1301, USA.  */
 
-#include "sysdep.h"
-#include "opcode/m68k.h"
+#include "../../include/sysdep.h"
+#include "../../include/opcode/m68k.h"
 
 #define one(x) ((unsigned int) (x) << 16)
 #define two(x, y) (((unsigned int) (x) << 16) + (y))

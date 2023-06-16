@@ -20,11 +20,11 @@
    Free Software Foundation, 51 Franklin Street - Fifth Floor, Boston, MA
    02110-1301, USA.  */
 
-#include "sysdep.h"
 #include <stdio.h>
+#include "../../include/sysdep.h"
 #include "opcode-alpha.h"
-#include "mybfd.h"
-#include "opintl.h"
+#include "../../include/mybfd.h"
+#include "../../include/opintl.h"
 
 /* This file holds the Alpha AXP opcode table.  The opcode table includes
    almost all of the extended instruction mnemonics.  This permits the

@@ -18,15 +18,7 @@
    Foundation, Inc., 51 Franklin Street - Fifth Floor, Boston, MA
    02110-1301, USA.  */
 
-// #include "sysdep.h"
-// #include "disas-asm.h"
-
-//#include "libbfd.h"
-// #include "mybfd.h"
-// #include "elf/xtensa.h"
-//#include "splay-tree.h"
-#include "xtensa-isa.h"
-//#include "xtensa-config.h"
+#include "../../../include/xtensa-isa.h"
 
 #define XTENSA_NO_NOP_REMOVAL 0
 

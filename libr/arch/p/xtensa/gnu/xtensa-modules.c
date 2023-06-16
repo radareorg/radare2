@@ -21,9 +21,8 @@
 #ifndef ATTRIBUTE_UNUSED
 #define ATTRIBUTE_UNUSED
 #endif
-//#include "ansidecl.h"
-#include "xtensa-isa.h"
-#include "xtensa-isa-internal.h"
+#include "../../../include/xtensa-isa.h"
+#include "../../../include/xtensa-isa-internal.h"
 
 
 /* Sysregs.  */

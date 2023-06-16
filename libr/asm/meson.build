@@ -31,8 +31,6 @@ r_asm_inc = [
   platform_inc,
   include_directories(
     join_paths('../../shlr'),
-    join_paths('arch','include'),
-    join_paths('arch'),
   )
 ]
 

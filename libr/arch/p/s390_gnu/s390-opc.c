@@ -20,8 +20,8 @@
    MA 02110-1301, USA.  */
 
 #include <stdio.h>
-#include "ansidecl.h"
-#include "opcode/s390.h"
+#include "../../include/ansidecl.h"
+#include "../../include/opcode/s390.h"
 
 /* This file holds the S390 opcode table.  The opcode table
    includes almost all of the extended instruction mnemonics.  This

@@ -20,9 +20,9 @@
    Software Foundation, 51 Franklin Street - Fifth Floor, Boston, MA
    02110-1301, USA.  */
 
-#include "sysdep.h"
 #include <stdio.h>
-#include "disas-asm.h"
+#include "../../include/sysdep.h"
+#include "../../include/disas-asm.h"
 #include "opcode-alpha.h"
 
 /* OSF register names.  */

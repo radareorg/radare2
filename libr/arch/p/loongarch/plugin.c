@@ -1,7 +1,7 @@
-/* radare - LGPL - Copyright 2021-2022 - junchao82@qq.com;zhaojunchao@loongson.cn love lanhy*/
+/* radare - LGPL - Copyright 2021-2023 - junchao82@qq.com;zhaojunchao@loongson.cn love lanhy*/
 
 #include <r_arch.h>
-#include "disas-asm.h"
+#include "../../include/disas-asm.h"
 #include "loongarch-private.h"
 
 struct loongarch_anal_opcode {

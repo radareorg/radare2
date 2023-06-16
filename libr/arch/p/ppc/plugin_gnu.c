@@ -1,9 +1,9 @@
-/* radare - LGPL - Copyright 2009-2022 - pancake */
+/* radare - LGPL - Copyright 2009-2023 - pancake */
 
 #define R_LOG_ORIGIN "arch.ppc.gnu"
 
 #include <r_arch.h>
-#include "disas-asm.h"
+#include "../../include/disas-asm.h"
 
 static int ppc_buffer_read_memory(bfd_vma memaddr, bfd_byte *myaddr, ut32 length, struct disassemble_info *info) {
 	int delta = (memaddr - info->buffer_vma);

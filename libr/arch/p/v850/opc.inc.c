@@ -3,7 +3,7 @@
 */
 
 #include "v850dis.h"
-#include "mybfd.h"
+#include "../../include/mybfd.h"
 
 // TODO: delete this global
 

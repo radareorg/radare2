@@ -33,7 +33,7 @@
 
 // #include "config.h"
 
-#include "ansidecl.h"
+#include "../../../include/ansidecl.h"
 
 #ifdef HAVE_STDLIB_H
 #include <stdlib.h>

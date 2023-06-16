@@ -18,7 +18,7 @@
    Free Software Foundation, 51 Franklin Street - Fifth Floor, Boston,
    MA 02110-1301, USA.  */
 
-#include "opcode/pdp11.h"
+#include "../../include/opcode/pdp11.h"
 
 const struct pdp11_opcode pdp11_opcodes[] =
 {

@@ -20,19 +20,19 @@
    Free Software Foundation, 51 Franklin Street - Fifth Floor, Boston,
    MA 02110-1301, USA.  */
 
-#include "sysdep.h"
-#include "disas-asm.h"
-#include "opcode/nios2.h"
-#include "libiberty.h"
 #include <string.h>
 #include <assert.h>
 #include <stdlib.h>
+#include "../../include/sysdep.h"
+#include "../../include/disas-asm.h"
+#include "../../include/opcode/nios2.h"
+#include "../../include/libiberty.h"
 
 /* No symbol table is available when this code runs out in an embedded
    system as when it is used for disassembler support in a monitor.  */
 #if !defined(EMBEDDED_ENV)
 #define SYMTAB_AVAILABLE 1
-#include "elf-bfd.h"
+#include "../../include/elf-bfd.h"
 //#include "elf/nios2.h"
 #endif
 

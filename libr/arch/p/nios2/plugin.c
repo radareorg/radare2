@@ -3,7 +3,7 @@
 #include <r_lib.h>
 #include <r_asm.h>
 #include <r_anal.h>
-#include "disas-asm.h"
+#include "../../include/disas-asm.h"
 
 int print_insn_big_nios2(bfd_vma address, disassemble_info *info);
 int print_insn_little_nios2(bfd_vma address, disassemble_info *info);

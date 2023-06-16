@@ -20,15 +20,15 @@
    Foundation, Inc., 51 Franklin Street - Fifth Floor, Boston,
    MA 02110-1301, USA.  */
 
-#include "sysdep.h"
+#include "../../../include/sysdep.h"
 
-#include "disas-asm.h"
+#include "../../../include/disas-asm.h"
 #include "opcode-arm.h"
 // #include "opcode/arm.h"
-#include "opintl.h"
+#include "../../../include/opintl.h"
 // #include "safe-ctype.h"
 #ifndef _MSC_VER
-#include "libiberty.h"
+#include "../../../include/libiberty.h"
 #else
 #include <stdlib.h>
 #define XNEWVEC(T, N)		((T *) malloc (sizeof (T) * (N)))

@@ -21,9 +21,9 @@
    MA 02110-1301, USA.  */
 
 #include <stdio.h>
-#include "sysdep.h"
-#include "opcode/ppc.h"
-#include "opintl.h"
+#include "../../../include/sysdep.h"
+#include "../../../include/opcode/ppc.h"
+#include "../../../include/opintl.h"
 
 /* This file holds the PowerPC opcode table.  The opcode table
    includes almost all of the extended instruction mnemonics.  This

@@ -20,8 +20,8 @@ Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 02110-1335 USA.
 */
 
-#include "ansidecl.h"
-#include "opcode/tricore.h"
+#include "../../../include/ansidecl.h"
+#include "../../../include/opcode/tricore.h"
 /* The TriCore has a number of special function registers, which are
    described below.  Their actual address is some implementation
    specific base address, plus their 16-bit offset.  */

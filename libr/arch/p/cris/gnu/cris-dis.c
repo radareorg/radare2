@@ -23,10 +23,10 @@
 
 #include <stdlib.h>
 #include <string.h>
-#include "disas-asm.h"
-#include "sysdep.h"
-#include "opcode/cris.h"
-#include "libiberty.h"
+#include "../../../include/disas-asm.h"
+#include "../../../include/sysdep.h"
+#include "../../../include/opcode/cris.h"
+#include "../../../include/libiberty.h"
 
 /* No instruction will be disassembled longer than this.  In theory, and
    in silicon, address prefixes can be cascaded.  In practice, cascading

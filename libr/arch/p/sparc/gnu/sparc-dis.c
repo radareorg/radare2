@@ -26,11 +26,11 @@
 #include <string.h>
 #include <stdlib.h>
 
-#include "sysdep.h"
-#include "opcode/sparc.h"
-#include "disas-asm.h"
+#include "../../../include/sysdep.h"
+#include "../../../include/opcode/sparc.h"
+#include "../../../include/disas-asm.h"
 #ifndef _MSC_VER
-#include "libiberty.h"
+#include "../../../include/libiberty.h"
 #else
 #include <stdlib.h>
 #define XNEWVEC(T, N)		((T *) malloc (sizeof (T) * (N)))
@@ -38,7 +38,7 @@
 #define XNEW(T)			((T *) malloc (sizeof (T)))
 #define xmalloc malloc
 #endif
-#include "opintl.h"
+#include "../../../include/opintl.h"
 
 /* Bitmask of v9 architectures.  */
 #define MASK_V9 ((1 << SPARC_OPCODE_ARCH_V9) \

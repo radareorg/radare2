@@ -4,7 +4,7 @@
 #include <r_asm.h>
 #include <r_arch.h>
 
-#include "disas-asm.h"
+#include "../../include/disas-asm.h"
 
 #define BUFSZ 8
 enum {

@@ -36,8 +36,8 @@ Foundation, Inc., 51 Franklin Street - Fifth Floor, Boston, MA 02110-1301, USA. 
 #include <float.h>
 #endif
 
-#include "ansidecl.h"
-#include "libiberty.h"
+#include "../../../include/ansidecl.h"
+#include "../../../include/libiberty.h"
 #include "floatformat.h"
 
 #ifndef INFINITY

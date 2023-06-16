@@ -2,7 +2,7 @@
 
 #include <r_lib.h>
 #include <r_arch.h>
-#include "disas-asm.h"
+#include "../../include/disas-asm.h"
 
 #define BUFSZ 16
 #define LONG_SIZE 4

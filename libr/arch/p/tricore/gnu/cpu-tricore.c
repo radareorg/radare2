@@ -23,11 +23,9 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1335 USA */
 #include <sys/types.h>
 #include <stdbool.h>
 
-//#include "bfd.h"
-#include "sysdep.h"
-#include "disas-asm.h"
-//#include "libbfd.h"
-#include "opcode/tricore.h"
+#include "../../../include/sysdep.h"
+#include "../../../include/disas-asm.h"
+#include "../../../include/opcode/tricore.h"
 
 /* Opcode masks for TriCore's various instruction formats.  */
 

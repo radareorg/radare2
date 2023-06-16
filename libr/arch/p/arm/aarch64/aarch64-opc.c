@@ -26,9 +26,8 @@
 #include <stdarg.h>
 #include <inttypes.h>
 
-#include "opintl.h"
-#include "libiberty.h"
-
+#include "../../../include/opintl.h"
+#include "../../../include/libiberty.h"
 #include "aarch64-opc.h"
 
 #ifdef DEBUG_AARCH64

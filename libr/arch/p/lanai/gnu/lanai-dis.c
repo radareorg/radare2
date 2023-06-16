@@ -57,9 +57,9 @@
 #include <r_types.h>
 #include <r_th.h>
 
-#include "ansidecl.h"
-#include "opcode/lanai.h"
-#include "disas-asm.h"
+#include "../../../include/ansidecl.h"
+#include "../../../include/opcode/lanai.h"
+#include "../../../include/disas-asm.h"
 
 static  char *reg_names[] = {
   "r0", "r1", "pc", "ps", "sp", "fp", "r6", "r7",

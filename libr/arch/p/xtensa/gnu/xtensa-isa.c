@@ -21,9 +21,9 @@
 
 #include <r_types.h>
 #include <r_util.h>
-#include "disas-asm.h"
-#include "xtensa-isa.h"
-#include "xtensa-isa-internal.h"
+#include "../../../include/disas-asm.h"
+#include "../../../include/xtensa-isa.h"
+#include "../../../include/xtensa-isa-internal.h"
 
 static int filename_cmp(const char *s1, const char *s2) {
 #if !defined(HAVE_DOS_BASED_FILE_SYSTEM) \

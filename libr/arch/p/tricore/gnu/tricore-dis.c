@@ -22,10 +22,10 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1335 USA. */
 #include <stdlib.h>
 #include <r_util.h>
 
-#include "ansidecl.h"
-#include "sysdep.h"
-#include "opcode/tricore.h"
-#include "disas-asm.h"
+#include "../../../include/ansidecl.h"
+#include "../../../include/sysdep.h"
+#include "../../../include/opcode/tricore.h"
+#include "../../../include/disas-asm.h"
 #define XNEWVEC(T, N)		((T *) malloc (sizeof (T) * (N)))
 #define XCNEWVEC(T, N)		((T *) calloc ((N), sizeof (T)))
 #define XNEW(T)			((T *) malloc (sizeof (T)))

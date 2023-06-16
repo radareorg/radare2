@@ -2,7 +2,7 @@
 
 #include <r_util.h>
 #include "loongarch-private.h"
-#include "disas-asm.h"
+#include "../../include/disas-asm.h"
 
 #define INSNLEN 4
 

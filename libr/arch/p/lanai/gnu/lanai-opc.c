@@ -65,8 +65,8 @@
    `casx', `clrx', `clruw' synthetic instructions for v9.  */
 
 #include <stdio.h>
-#include "ansidecl.h"
-#include "opcode/lanai.h"
+#include "../../../include/ansidecl.h"
+#include "../../../include/opcode/lanai.h"
 
 const char *architecture_pname[] = {
 	"v0",
