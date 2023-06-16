@@ -167,6 +167,7 @@ R_API void r_anal_free(RAnal *a) {
 	r_th_lock_free (a->lock);
 	r_interval_tree_fini (&a->meta);
 	r_unref (a->config);
+	a->arch->esil = NULL;
 	r_arch_free (a->arch);
 	free (a->zign_path);
 	r_list_free (a->plugins);
@@ -181,10 +182,7 @@ R_API void r_anal_free(RAnal *a) {
 	r_list_free (a->threads);
 	r_list_free (a->leaddrs);
 	sdb_free (a->sdb);
-	if (a->esil) {
-		r_esil_free (a->esil);
-		a->esil = NULL;
-	}
+	r_esil_free (a->esil);
 	free (a->last_disasm_reg);
 	r_list_free (a->imports);
 	r_str_constpool_fini (&a->constpool);
