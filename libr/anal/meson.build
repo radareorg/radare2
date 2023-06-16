@@ -85,9 +85,6 @@ r_anal_sources = [
   '../arch/p/tms320/c55x_plus/hashtable.c',
   '../arch/p/tms320/c55x_plus/utils.c',
 ]
-incdirs = [
-    'arch'
-]
 
 r_anal_sources += r_anal_d_sources
 
@@ -98,10 +95,7 @@ tcc_files = [
   'c/tccpp.c'
 ]
 
-r_anal_inc = [
-  platform_inc,
-  include_directories(incdirs)
-]
+r_anal_inc = [ platform_inc ]
 
 r_anal = library('r_anal', r_anal_sources,
   include_directories: r_anal_inc,
