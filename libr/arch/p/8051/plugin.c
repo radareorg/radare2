@@ -6,9 +6,9 @@
 #include <r_asm.h>
 #include <r_anal.h>
 
-#include "../arch/8051/8051_ops.h"
-#include "../arch/8051/8051_ass.c"
-#include "../arch/8051/8051_disas.c"
+#include "8051_ops.h"
+#include "8051_ass.c"
+#include "8051_disas.c"
 
 typedef struct {
 	const char *name;
@@ -43,8 +43,10 @@ static const i8051_cpu_model cpu_models[] = {
 
 static R_TH_LOCAL bool i8051_is_init = false;
 static R_TH_LOCAL const i8051_cpu_model *cpu_curr_model = NULL;
+static R_TH_LOCAL REsilCallbacks ocbs = {0};
 
-static bool i8051_reg_write(RReg *reg, const char *regname, ut32 num) {
+static bool i8051_reg_write(RArchSession *as, const char *regname, ut32 num) {
+	RReg *reg = NULL; // TODO
 	if (reg) {
 		RRegItem *item = r_reg_get (reg, regname, R_REG_TYPE_GPR);
 		if (item) {
@@ -55,7 +57,8 @@ static bool i8051_reg_write(RReg *reg, const char *regname, ut32 num) {
 	return false;
 }
 
-static ut32 i8051_reg_read(RReg *reg, const char *regname) {
+static ut32 i8051_reg_read(RArchSession *as, const char *regname) {
+	RReg *reg = NULL; // TODO
 	if (reg) {
 		RRegItem *item = r_reg_get (reg, regname, R_REG_TYPE_GPR);
 		if (item) {
@@ -78,13 +81,14 @@ enum {
 	I8051_XDATA = 2
 };
 
+#if 0 // TODO
 static i8051_map_entry mem_map[3] = {
 	{ NULL, -1, UT32_MAX, "idata" },
 	{ NULL, -1, UT32_MAX, "sfr" },
 	{ NULL, -1, UT32_MAX, "xdata" }
 };
 
-static void map_cpu_memory(RAnal *anal, int entry, ut32 addr, ut32 size, bool force) {
+static void map_cpu_memory(RArchSession *as, int entry, ut32 addr, ut32 size, bool force) {
 	RIODesc *desc = mem_map[entry].desc; // XXX this is UAFable
 	int fd = desc? mem_map[entry].desc_fd: -1;
 	if (fd != -1 && anal->iob.fd_get_name (anal->iob.io, fd)) {
@@ -115,15 +119,16 @@ static void map_cpu_memory(RAnal *anal, int entry, ut32 addr, ut32 size, bool fo
 	mem_map[entry].desc_fd = fd;
 	mem_map[entry].addr = addr;
 }
+#endif
 
-static void set_cpu_model(RAnal *anal, bool force) {
+static void set_cpu_model(RArchSession *as, bool force) {
 	ut32 addr_idata, addr_sfr, addr_xdata;
 
-	if (!anal->reg) {
+	if (!as || !as->config) {
 		return;
 	}
 
-	const char *cpu = anal->config->cpu;
+	const char *cpu = as->config->cpu;
 	if (!cpu || !cpu[0]) {
 		cpu = cpu_models[0].name;
 	}
@@ -146,24 +151,26 @@ static void set_cpu_model(RAnal *anal, bool force) {
 		addr_idata = cpu_models[i].map_idata;
 		addr_sfr = cpu_models[i].map_sfr;
 		addr_xdata = cpu_models[i].map_xdata;
-		i8051_reg_write (anal->reg, "_code", cpu_models[i].map_code);
-		i8051_reg_write (anal->reg, "_idata", addr_idata);
-		i8051_reg_write (anal->reg, "_sfr", addr_sfr - 0x80);
-		i8051_reg_write (anal->reg, "_xdata", addr_xdata);
-		i8051_reg_write (anal->reg, "_pdata", cpu_models[i].map_pdata);
+		i8051_reg_write (as, "_code", cpu_models[i].map_code);
+		i8051_reg_write (as, "_idata", addr_idata);
+		i8051_reg_write (as, "_sfr", addr_sfr - 0x80);
+		i8051_reg_write (as, "_xdata", addr_xdata);
+		i8051_reg_write (as, "_pdata", cpu_models[i].map_pdata);
 	} else {
-		addr_idata = i8051_reg_read (anal->reg, "_idata");
-		addr_sfr = i8051_reg_read (anal->reg, "_sfr") + 0x80;
-		addr_xdata = i8051_reg_read (anal->reg, "_xdata");
+		addr_idata = i8051_reg_read (as, "_idata");
+		addr_sfr = i8051_reg_read (as, "_sfr") + 0x80;
+		addr_xdata = i8051_reg_read (as, "_xdata");
 	}
 
 	// (Re)allocate memory as needed.
 	// We assume that code is allocated with firmware image
+#if 0 // TODO
 	if (anal->iob.fd_get_name && anal->coreb.cmd) {
-		map_cpu_memory (anal, I8051_IDATA, addr_idata, 0x100, force);
-		map_cpu_memory (anal, I8051_SFR, addr_sfr, 0x80, force);
-		map_cpu_memory (anal, I8051_XDATA, addr_xdata, 0x10000, force);
+		map_cpu_memory (as, I8051_IDATA, addr_idata, 0x100, force);
+		map_cpu_memory (as, I8051_SFR, addr_sfr, 0x80, force);
+		map_cpu_memory (as, I8051_XDATA, addr_xdata, 0x10000, force);
 	}
+#endif
 }
 
 static ut8 bitindex[] = {
@@ -440,7 +447,7 @@ static void exi_rn(RAnalOp *op, ut8 reg, const char *operation) {
 	case base + 0xE: case base + 0xF: \
 		alu_op (rn, aluop, flags); break;
 
-static void analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf) {
+static void analop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf) {
 	r_strbuf_init (&op->esil);
 	r_strbuf_set (&op->esil, "");
 
@@ -722,8 +729,6 @@ static void analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf) {
 	}
 }
 
-static R_TH_LOCAL REsilCallbacks ocbs = {0};
-
 #if 0
 // custom reg read/write temporarily disabled - see r2 issue #9242
 static int i8051_hook_reg_read(REsil *, const char *, ut64 *, int *);
@@ -818,7 +823,7 @@ static int esil_i8051_fini(REsil *esil) {
 	return true;
 }
 
-static bool set_reg_profile(RAnal *anal) {
+static char *regs(RArchSession *as) {
 	const char *p =
 		"=PC	pc\n"
 		"=SP	sp\n"
@@ -872,25 +877,30 @@ static bool set_reg_profile(RAnal *anal) {
 		"gpr	_xdata	.32 32 0\n"
 		"gpr	_pdata	.32	36 0\n";
 
+#if 0
 	int retval = r_reg_set_profile_string (anal->reg, p);
 	if (retval) {
 		// reset emulation control registers based on cpu
 		set_cpu_model (anal, true);
 	}
+#endif
 
-	return retval;
+	return strdup (p);
 }
 
-static ut32 map_direct_addr(RAnal *anal, ut8 addr) {
+static ut32 map_direct_addr(RArchSession *as, ut8 addr) {
 	if (addr < 0x80) {
-		return addr + i8051_reg_read (anal->reg, "_idata");
+		return addr + i8051_reg_read (as, "_idata");
 	} else {
-		return addr + i8051_reg_read (anal->reg, "_sfr");
+		return addr + i8051_reg_read (as, "_sfr");
 	}
 }
 
-static int i8051_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
-	set_cpu_model (anal, false);
+static bool decode(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
+	const ut64 addr = op->addr;
+	const ut8 *buf = op->bytes;
+	const int len = op->size;
+	set_cpu_model (as, false);
 
 	int i = 0;
 	while (buf[0] && _8051_ops[i].string && _8051_ops[i].op != (buf[0] & ~_8051_ops[i].mask))	{
@@ -954,12 +964,12 @@ static int i8051_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 	switch (arg1) {
 	case A_DIRECT:
 		if (len > 1) {
-			op->ptr = map_direct_addr (anal, buf[1]);
+			op->ptr = map_direct_addr (as, buf[1]);
 		}
 		break;
 	case A_BIT:
 		if (len > 1) {
-			op->ptr = map_direct_addr (anal, arg_bit (buf[1]));
+			op->ptr = map_direct_addr (as, arg_bit (buf[1]));
 		}
 		break;
 	case A_IMMEDIATE:
@@ -973,21 +983,21 @@ static int i8051_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 		} else {
 			op->val = 0;
 		}
-		op->ptr = op->val + i8051_reg_read (anal->reg, "_xdata"); // best guess, it's a XRAM pointer
+		op->ptr = op->val + i8051_reg_read (as, "_xdata"); // best guess, it's a XRAM pointer
 		break;
 	}
 
 	switch (arg2) {
 	case A_DIRECT:
 		if (arg1 == A_RI || arg1 == A_RN) {
-			op->ptr = (len > 1)? map_direct_addr (anal, buf[1]): 0;
+			op->ptr = (len > 1)? map_direct_addr (as, buf[1]): 0;
 		} else if (arg1 != A_DIRECT) {
-			op->ptr = (len > 2)? map_direct_addr (anal, buf[2]): 0;
+			op->ptr = (len > 2)? map_direct_addr (as, buf[2]): 0;
 		}
 		break;
 	case A_BIT:
 		op->ptr = arg_bit ((arg1 == A_RI || arg1 == A_RN) ? buf[1] : buf[2]);
-		op->ptr = map_direct_addr (anal, op->ptr);
+		op->ptr = map_direct_addr (as, op->ptr);
 		break;
 	case A_IMMEDIATE:
 		if (len > 2) {
@@ -1056,16 +1066,48 @@ static int i8051_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 	if (mask & R_ARCH_OP_MASK_ESIL) {
 		ut8 copy[3] = {0, 0, 0};
 		memcpy (copy, buf, len >= 3 ? 3 : len);
-		analop_esil (anal, op, addr, copy);
+		analop_esil (as, op, addr, copy);
 	}
 
 	int olen = 0;
 	op->mnemonic = r_8051_disas (addr, buf, len, &olen);
 	op->size = olen;
-	return op->size;
+	return op->size > 0;
 }
 
-static int archinfo(RAnal *anal, int q) {
+static bool encode(RArchSession *as, RAnalOp *op, RArchEncodeMask mask) {
+	ut8 outbuf[4];
+	int size = assemble_8051 (op->addr, op->mnemonic, outbuf);
+	if (size > 0) {
+		free (op->bytes);
+		op->bytes = r_mem_dup (outbuf, size);
+		op->size = size;
+		return true;
+	}
+
+	return false;
+}
+
+static bool esil_cb(RArchSession *as, RArchEsilAction action) {
+	REsil *esil = as->arch->esil;
+	if (!esil) {
+		return false;
+	}
+
+	switch (action) {
+	case R_ARCH_ESIL_INIT:
+		esil_i8051_init (esil);
+		break;
+	case R_ARCH_ESIL_FINI:
+		esil_i8051_fini (esil);
+		break;
+	default:
+		return false;
+	}
+	return true;
+}
+
+static int archinfo(RArchSession *as, ut32 q) {
 	switch (q) {
 	case R_ANAL_ARCHINFO_MIN_OP_SIZE:
 		return 1;
@@ -1081,25 +1123,25 @@ static int archinfo(RAnal *anal, int q) {
 	return 0;
 }
 
-RAnalPlugin r_anal_plugin_8051 = {
-	.name = "8051",
+RArchPlugin r_arch_plugin_8051 = {
+	.meta = {
+		.name = "8051",
+		.desc = "8051 CPU code analysis plugin",
+		.license = "LGPL3",
+	},
 	.arch = "8051",
-	.esil = true,
-	.bits = 8 | 16,
-	.desc = "8051 CPU code analysis plugin",
-	.license = "LGPL3",
-	.op = &i8051_op,
-	.opasm = &assemble_8051,
-	.set_reg_profile = &set_reg_profile,
-	.esil_init = esil_i8051_init,
-	.esil_fini = esil_i8051_fini,
-	.archinfo = archinfo
+	.bits = R_SYS_BITS_PACK2 (8, 16),
+	.decode = decode,
+	.encode = encode,
+	.regs = regs,
+	.esilcb = esil_cb,
+	.info = archinfo
 };
 
 #ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_ANAL,
-	.data = &r_anal_plugin_8051,
+	.type = R_LIB_TYPE_ARCH,
+	.data = &r_arch_plugin_8051,
 	.version = R2_VERSION
 };
 #endif

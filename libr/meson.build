@@ -154,13 +154,13 @@ endif
 if no_user_plugins
 
 anal_plugins += [
-  '8051',
   'arm_cs',
   'dalvik',
   'x86_cs',
 ]
 
 arch_plugins += [
+  '8051',
   'avr',
   'java',
   'chip8',

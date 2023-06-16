@@ -1359,8 +1359,8 @@ static parse_mnem_args mnemonic(char const *user_asm, int*nargs) {
  * ## Section 7: radare2 glue and mnemonic tokenization
                  --------------------------------------*/
 
-int assemble_8051(RAnal *a, ut64 pc, char const *user_asm, ut8 *outbuf, int outlen) {
-	if (!a || !outbuf || !user_asm) {
+int assemble_8051(ut64 pc, char const *user_asm, ut8 *outbuf) {
+	if (!outbuf || !user_asm) {
 		return 0;
 	}
 	while (!terminates_asm_line (*user_asm)

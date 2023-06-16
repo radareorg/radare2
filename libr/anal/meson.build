@@ -40,7 +40,7 @@ r_anal_sources = [
   'vtable.c',
   'xrefs.c',
   '../arch/p/6502_cs/plugin.c',
-  'p/anal_8051.c',
+  '../arch/p/8051/plugin.c',
   'p/anal_arm_cs.c',
   '../arch/p/avr/plugin.c',
   '../arch/p/avr/avr_disasm.c',
