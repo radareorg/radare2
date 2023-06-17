@@ -786,7 +786,9 @@ R_API bool r_io_bank_read_at(RIO *io, const ut32 bankid, ut64 addr, ut8 *buf, in
 						     r_io_submap_to (sm)) - (addr + buf_off) + 1;
 			const ut64 paddr = addr + buf_off - r_io_map_from (map) + map->delta;
 			ret &= (r_io_fd_read_at (io, map->fd, paddr, buf + buf_off, read_len) == read_len);
-			r_io_map_read_from_overlay (map, addr + buf_off, buf + buf_off, read_len);
+			if (io->overlay) {
+				r_io_map_read_from_overlay (map, addr + buf_off, buf + buf_off, read_len);
+			}
 		}
 		// check return value here?
 		node = r_rbnode_next (node);
@@ -829,7 +831,7 @@ R_API bool r_io_bank_write_at(RIO *io, const ut32 bankid, ut64 addr, const ut8 *
 		const ut64 buf_off = R_MAX (addr, r_io_submap_from (sm)) - addr;
 		const int write_len = R_MIN (r_io_submap_to ((&fake_sm)),
 					     r_io_submap_to (sm)) - (addr + buf_off) + 1;
-		if (io_map_get_overlay_intersects (map, bank->todo, addr + buf_off, write_len) &&
+		if (io->overlay && io_map_get_overlay_intersects (map, bank->todo, addr + buf_off, write_len) &&
 			!r_queue_is_empty (bank->todo)) {
 			ut64 _buf_off = buf_off;
 			int _write_len = write_len;
@@ -932,7 +934,9 @@ R_API int r_io_bank_read_from_submap_at(RIO *io, const ut32 bankid, ut64 addr, u
 	const int read_len = R_MIN (len, r_io_submap_to (sm) - addr + 1);
 	const ut64 paddr = addr - r_io_map_from (map) + map->delta;
 	const int ret = r_io_fd_read_at (io, map->fd, paddr, buf, read_len);
-	r_io_map_read_from_overlay (map, addr, buf, read_len);
+	if (io->overlay) {
+		r_io_map_read_from_overlay (map, addr, buf, read_len);
+	}
 	return ret;
 }
 
@@ -968,7 +972,7 @@ R_API int r_io_bank_write_to_submap_at(RIO *io, const ut32 bankid, ut64 addr, co
 	ut64 buf_off = 0;
 	int write_len = R_MIN (len, r_io_submap_to (sm) - addr + 1);
 	int ret = 0;
-	if (io_map_get_overlay_intersects (map, bank->todo, addr, write_len) &&
+	if (io->overlay && io_map_get_overlay_intersects (map, bank->todo, addr, write_len) &&
 		!r_queue_is_empty (bank->todo)) {
 		do {
 			RInterval *itv = (RInterval *)r_queue_dequeue (bank->todo);

@@ -1976,6 +1976,13 @@ static bool cb_io_unalloc_ch(void *user, void *data) {
 	return true;
 }
 
+static bool cb_io_overlay(void *user, void *data) {
+	RCore *core = (RCore *) user;
+	RConfigNode *node = (RConfigNode *) data;
+	core->io->overlay = node->i_value;
+	return true;
+}
+
 static bool cb_hex_header(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
@@ -4338,6 +4345,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB ("io.autofd", "true", &cb_ioautofd, "change fd when opening a new file");
 	SETCB ("io.unalloc", "false", &cb_io_unalloc, "check each byte if it's allocated");
 	SETCB ("io.unalloc.ch", ".", &cb_io_unalloc_ch, "char to display if byte is unallocated");
+	SETCB ("io.overlay", "true", &cb_io_overlay, "honor io overlay");
 
 	/* file */
 	SETBPREF ("file.info", "true", "RBin info loaded");
