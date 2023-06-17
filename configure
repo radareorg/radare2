@@ -121,8 +121,8 @@ create_environ() {
 : ${SBINDIR:="${PREFIX}/sbin"}
 : ${ETCDIR:="${SPREFIX}/etc"}
 : ${LIBDIR:="${SPREFIX}/lib"}
-: ${PKGCFG_LIBDIR:="\${exec_prefix}/lib"}
-: ${PKGCFG_INCDIR:="\${prefix}/include"}
+: ${PKGCFG_LIBDIR:='${exec_prefix}/lib'}
+: ${PKGCFG_INCDIR:='${prefix}/include'}
 : ${LIBEXECDIR:="${SPREFIX}/libexec"}
 : ${INCLUDEDIR:="${SPREFIX}/include"}
 : ${DATADIR:="${SPREFIX}/share"}
