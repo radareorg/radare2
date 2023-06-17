@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2007-2022 - pancake */
+/* radare - LGPL - Copyright 2007-2023 - pancake */
 
 #include <r_anal.h>
 #include "ops.h"
@@ -226,7 +226,7 @@ R_API int java_print_opcode(RBinJavaObj *obj, ut64 addr, int idx, const ut8 *byt
 	case 0xb8: // invokestatic
 	case 0xb9: // invokeinterface
 	case 0xba: // invokedynamic
-		if (len > 1) {
+		if (len > 2) {
 			arg = r_bin_java_resolve_without_space (obj, (int)USHORT (bytes, 1));
 			if (arg) {
 				snprintf (output, outlen, "%s %s", JAVA_OPS[idx].name, arg);
@@ -273,6 +273,10 @@ R_API int java_print_opcode(RBinJavaObj *obj, ut64 addr, int idx, const ut8 *byt
 	}
 
 	/* process arguments */
+	if (JAVA_OPS[idx].size > len) {
+		snprintf (output, outlen, "truncated");
+		return -1;
+	}
 	switch (JAVA_OPS[idx].size) {
 	case 1: snprintf (output, outlen, "%s", JAVA_OPS[idx].name);
 		break;
