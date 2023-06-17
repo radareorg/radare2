@@ -175,7 +175,7 @@ R_API void r_cons_pal_init(RConsContext *ctx) {
 	ctx->cpal.args               = (RColor) RColor_YELLOW;
 	ctx->cpal.bin                = (RColor) RColor_YELLOW;
 	ctx->cpal.btext              = (RColor) RColor_YELLOW;
-	ctx->cpal.call               = (RColor) RColor_BGREEN;
+	ctx->cpal.call               = (RColor) RColor_GREEN;
 	ctx->cpal.call.attr          = R_CONS_ATTR_BOLD;
 	ctx->cpal.ucall              = (RColor) RColor_GREEN;
 	ctx->cpal.ujmp               = (RColor) RColor_GREEN;
@@ -192,17 +192,17 @@ R_API void r_cons_pal_init(RConsContext *ctx) {
 	ctx->cpal.fname              = (RColor) RColor_RED;
 	ctx->cpal.help               = (RColor) RColor_GREEN;
 	ctx->cpal.input              = (RColor) RColor_WHITE;
-	ctx->cpal.invalid            = (RColor) RColor_BRED;
+	ctx->cpal.invalid            = (RColor) RColor_RED;
 	ctx->cpal.invalid.attr       = R_CONS_ATTR_BOLD;
 	ctx->cpal.jmp                = (RColor) RColor_GREEN;
 	ctx->cpal.label              = (RColor) RColor_CYAN;
 	ctx->cpal.math               = (RColor) RColor_YELLOW;
 	// ctx->cpal.mov                = (RColor) RColor_WHITE;
-	ctx->cpal.mov                = (RColor) RColor_WHITE;
+	ctx->cpal.mov                = (RColor) RColor_CYAN; // works on white and black terminals
 	ctx->cpal.nop                = (RColor) RColor_BLUE;
 	ctx->cpal.num                = (RColor) RColor_YELLOW;
 	ctx->cpal.offset             = (RColor) RColor_GREEN;
-	ctx->cpal.other              = (RColor) RColor_WHITE;
+	ctx->cpal.other              = (RColor) RColor_CYAN;
 	ctx->cpal.pop                = (RColor) RColor_MAGENTA;
 	// ctx->cpal.pop.attr           = R_CONS_ATTR_BOLD;
 	ctx->cpal.prompt             = (RColor) RColor_YELLOW;
@@ -212,7 +212,7 @@ R_API void r_cons_pal_init(RConsContext *ctx) {
 	ctx->cpal.reg                = (RColor) RColor_CYAN;
 	ctx->cpal.ret                = (RColor) RColor_RED;
 	ctx->cpal.swi                = (RColor) RColor_MAGENTA;
-	ctx->cpal.trap               = (RColor) RColor_BRED;
+	ctx->cpal.trap               = (RColor) RColor_RED;
 	ctx->cpal.trap.attr          = R_CONS_ATTR_BOLD;
 
 	ctx->cpal.ai_read            = (RColor) RColor_GREEN;
