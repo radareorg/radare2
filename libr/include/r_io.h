@@ -140,6 +140,7 @@ typedef struct r_io_t {
 	size_t addrbytes; // XXX also available in RArchConfig.addrbytes
 	bool aslr;
 	bool autofd;
+	bool overlay;
 	// moved into cache.mode // ut32 cached; // uses R_PERM_RWX // wtf cache for exec?
 	bool cachemode; // write in cache all the read operations (EXPERIMENTAL)
 	ut32 p_cache; // uses 1, 2, 4.. probably R_PERM_RWX :D

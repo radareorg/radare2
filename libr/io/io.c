@@ -15,6 +15,7 @@ R_API RIO* r_io_new(void) {
 R_API void r_io_init(RIO* io) {
 	r_return_if_fail (io);
 	io->addrbytes = 1;
+	io->overlay = true;
 	io->cb_printf = printf;
 	r_io_desc_init (io);
 	r_io_bank_init (io);
