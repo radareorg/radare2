@@ -5787,7 +5787,7 @@ void cmd_anal_reg(RCore *core, const char *str) {
 			char *p = NULL;
 			char *bitstr = NULL;
 			if (str[1]) {
-				p = strdup (str + 1);
+				p = r_str_trim_dup (str + 1);
 				if (str[1] != ':') {
 					// Bits were specified
 					bitstr = r_str_tok_r (p, ":", &save_ptr);
