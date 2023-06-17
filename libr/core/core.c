@@ -1066,7 +1066,7 @@ static const char *radare_argv[] = {
 	"pd?", "pd", "pd--", "pD", "pda", "pdb", "pdc", "pdC", "pdf", "pdi", "pdj", "pdJ",
 	"pdk", "pdl", "pdp", "pdr", "pdr.", "pdR", "pds?", "pds", "pdsb", "pdsf", "pdt",
 	"pD",
-	"pf?", "pf", "pf??", "pf???", "pf.", "pfj", "pfj.", "pf*", "pf*.", "pfd", "pfd.",
+	"pf?", "pf", "pf??", "pf???", "pf.", "pfj", "pfj.", "pf*", "pf*.", "pfc", "pfc.", "pfd", "pfd.",
 	"pfo", "pfq", "pfv", "pfv.", "pfs", "pfs.",
 	"pF?", "pF", "pFa", "pFaq", "pFo", "pFp", "pFx",
 	"pg?", "pg", "pg*", "pg-*",
@@ -1921,6 +1921,12 @@ static bool check_tabhelp_exceptions(const char *s) {
 	if (r_str_startswith (s, "pf.")) {
 		return true;
 	}
+	if (r_str_startswith (s, "pfc.")) {
+		return true;
+	}
+	if (r_str_startswith (s, "pfj.")) {
+		return true;
+	}
 	return false;
 }
 
@@ -2056,11 +2062,13 @@ R_API void r_core_autocomplete(R_NULLABLE RCore *core, RLineCompletion *completi
 			ADDARG ("gui.alt_background");
 			ADDARG ("gui.border");
 		}
-	} else if (!strncmp (buf->data, "pf.", 3)
-			|| !strncmp (buf->data, "pf*.", 4)
-			|| !strncmp (buf->data, "pfd.", 4)
-			|| !strncmp (buf->data, "pfv.", 4)
-			|| !strncmp (buf->data, "pfj.", 4)) {
+	} else if (r_str_startswith (buf->data, "pf.")
+			|| r_str_startswith (buf->data, "pf*.")
+			|| r_str_startswith (buf->data, "pfd.")
+			|| r_str_startswith (buf->data, "pfc.")
+			|| r_str_startswith (buf->data, "pfv.")
+			|| r_str_startswith (buf->data, "pfj.")
+		  ) {
 		char pfx[2];
 		int chr = (buf->data[2] == '.')? 3: 4;
 		if (chr == 4) {
