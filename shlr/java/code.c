@@ -18,7 +18,6 @@ static void init_switch_op(void);
 static int enter_switch_op(ut64 addr, const ut8 * bytes, int len);
 static int update_switch_op(ut64 addr, const ut8 * bytes);
 static int update_bytes_consumed(int sz);
-static int handle_switch_op(ut64 addr, const ut8 * bytes, char *output, int outlen);
 
 static R_TH_LOCAL ut8 IN_SWITCH_OP = 0;
 typedef struct current_table_switch_t {
@@ -93,7 +92,11 @@ static int update_switch_op(ut64 addr, const ut8 * bytes) {
 	return update_bytes_consumed (sz);
 }
 
-static int handle_switch_op(ut64 addr, const ut8 * bytes, char *output, int outlen) {
+static int handle_switch_op(ut64 addr, const ut8 * bytes, int bytes_len, char *output, int outlen) {
+	if (bytes_len < 4) {
+		R_LOG_DEBUG ("truncated switch opcode");
+		return bytes_len;
+	}
 	int sz = 4;
 	ut32 jmp = (int)(UINT (bytes, 0)) + SWITCH_OP.addr;
 	update_switch_op (addr, bytes);
@@ -112,7 +115,7 @@ R_API int java_print_opcode(RBinJavaObj *obj, ut64 addr, int idx, const ut8 *byt
 	ut32 val_two = 0;
 	ut8 op_byte = JAVA_OPS[idx].byte;
 	if (IN_SWITCH_OP) {
-		return handle_switch_op (addr, bytes, output, outlen);
+		return handle_switch_op (addr, bytes, len, output, outlen);
 	}
 
 #if 0
@@ -149,26 +152,32 @@ R_API int java_print_opcode(RBinJavaObj *obj, ut64 addr, int idx, const ut8 *byt
 		}
 		break;
 	case 0x12: // ldc
-		arg = r_bin_java_resolve_without_space (obj, (ut16)bytes[1]);
-		if (arg) {
-			snprintf (output, outlen, "%s %s", JAVA_OPS[idx].name, arg);
-			free (arg);
-		} else {
-			snprintf (output, outlen, "%s #%d", JAVA_OPS[idx].name, USHORT (bytes, 1));
+		if (len > 1) {
+			arg = r_bin_java_resolve_without_space (obj, (ut16)bytes[1]);
+			if (arg) {
+				snprintf (output, outlen, "%s %s", JAVA_OPS[idx].name, arg);
+				free (arg);
+			} else {
+				snprintf (output, outlen, "%s #%d", JAVA_OPS[idx].name, USHORT (bytes, 1));
+			}
+			output[outlen - 1] = 0;
+			return update_bytes_consumed (JAVA_OPS[idx].size);
 		}
-		output[outlen-1] = 0;
-		return update_bytes_consumed (JAVA_OPS[idx].size);
+		return -1;
 	case 0x13:
 	case 0x14:
-		arg = r_bin_java_resolve_without_space (obj, (int)USHORT (bytes, 1));
-		if (arg) {
-			snprintf (output, outlen, "%s %s", JAVA_OPS[idx].name, arg);
-			free (arg);
-		} else {
-			snprintf (output, outlen, "%s #%d", JAVA_OPS[idx].name, USHORT (bytes, 1));
+		if (len > 2) {
+			arg = r_bin_java_resolve_without_space (obj, (int)USHORT (bytes, 1));
+			if (arg) {
+				snprintf (output, outlen, "%s %s", JAVA_OPS[idx].name, arg);
+				free (arg);
+			} else {
+				snprintf (output, outlen, "%s #%d", JAVA_OPS[idx].name, USHORT (bytes, 1));
+			}
+			output[outlen-1] = 0;
+			return update_bytes_consumed (JAVA_OPS[idx].size);
 		}
-		output[outlen-1] = 0;
-		return update_bytes_consumed (JAVA_OPS[idx].size);
+		return -1;
 	case 0x84: // iinc
 		val_one = (ut32)bytes[1];
 		val_two = (ut32) bytes[2];
@@ -193,7 +202,7 @@ R_API int java_print_opcode(RBinJavaObj *obj, ut64 addr, int idx, const ut8 *byt
 	case 0xa8: // jsr
 		snprintf (output, outlen, "%s 0x%04"PFMT64x, JAVA_OPS[idx].name,
 				(addr+(short)USHORT (bytes, 1)));
-		output[outlen-1] = 0;
+		output[outlen - 1] = 0;
 		return update_bytes_consumed (JAVA_OPS[idx].size);
 		// XXX - Figure out what constitutes the [<high>] value
 	case 0xab: // tableswitch

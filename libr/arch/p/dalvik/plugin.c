@@ -287,13 +287,15 @@ static int dalvik_disassemble(RArchSession *as, RAnalOp *op, ut64 addr, const ut
 			// ushort size
 			// int first_key
 			// int[size] = relative offsets
-			{
+			if (len > 7) {
 				ut16 array_size = buf[2] | (buf[3] << 8);
 				int first_key = buf[4] | (buf[5] << 8) | (buf[6] << 16) | (buf[7] << 24);
 				op->mnemonic = r_str_newf ("packed-switch-payload %d, %d", array_size, first_key);
 				size = 8;
 				payload = 2 * (array_size * 2);
 				len = 0;
+			} else {
+				return -1;
 			}
 			break;
 		case 0x02: /* sparse-switch-payload */

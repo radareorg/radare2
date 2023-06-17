@@ -1,4 +1,4 @@
-/* radare - Apache 2.0 - Copyright 2010-2022 - pancake and Adam Pridgen <dso@rice.edu || adam.pridgen@thecoverofnight.com> */
+/* radare - Apache 2.0 - Copyright 2010-2023 - pancake and Adam Pridgen <dso@rice.edu || adam.pridgen@thecoverofnight.com> */
 
 #include <r_arch.h>
 
@@ -43,7 +43,7 @@ static int java_switch_op(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *d
 				r_anal_switch_op_add_case (op->switch_op, addr + pos, cur_case + min_val, addr + offset);
 			}
 		} else {
-			R_LOG_ERROR ("Invalid switch boundaries at 0x%"PFMT64x, addr);
+			R_LOG_DEBUG ("Invalid switch boundaries at 0x%"PFMT64x, addr);
 		}
 	}
 	op->size = pos;

@@ -95,7 +95,7 @@ static int decode_known(struct state *s, struct directive *d) {
 	int idx = 1;
 	int imm = 0;
 	int rel = 0;
-	char fmt[16];
+	char fmt[128];
 	char tmp[128];
 	int fmtsz;
 	int branch = 0;
