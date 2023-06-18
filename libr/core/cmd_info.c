@@ -313,6 +313,9 @@ static int bin_is_executable(RBinObject *obj) {
 				return true;
 			}
 		}
+		if (obj->info && obj->info->bclass) {
+			return true;
+		}
 	}
 	return false;
 }

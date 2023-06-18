@@ -223,16 +223,6 @@ canary   false
 crypto   false
 endian   little
 havecode false
-laddr    0x0
-linenum  false
-lsyms    false
-nx       false
-pic      false
-relocs   false
-sanitize false
-static   true
-stripped false
-va       false
 [Imports]
 nth vaddr bind type lib name
 ----------------------------
@@ -297,16 +287,6 @@ canary   false
 crypto   false
 endian   little
 havecode false
-laddr    0x0
-linenum  false
-lsyms    false
-nx       false
-pic      false
-relocs   false
-sanitize false
-static   true
-stripped false
-va       false
 e cfg.bigendian=false
 e asm.bits=64
 e asm.dwarf=false

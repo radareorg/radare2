@@ -958,51 +958,53 @@ static int bin_info(RCore *r, PJ *pj, int mode, ut64 laddr) {
 			}
 		}
 		pair_bool (pj, "havecode", havecode);
-		if (info->claimed_checksum) {
-			/* checksum specified in header */
-			pair_str (pj, "hdr.csum", info->claimed_checksum);
-		}
-		pair_str (pj, "guid", info->guid);
-		pair_str (pj, "intrp", info->intrp);
-		pair_ut64x (pj, "laddr", laddr);
-		if (info->lang && *info->lang != '?') {
-			pair_str (pj, "lang", info->lang);
-		}
-		pair_bool (pj, "linenum", R_BIN_DBG_LINENUMS & info->dbg_info);
-		pair_bool (pj, "lsyms", R_BIN_DBG_SYMS & info->dbg_info);
-		pair_str (pj, "machine", info->machine);
-		pair_bool (pj, "nx", info->has_nx);
-		pair_str (pj, "os", info->os);
-		if (info->rclass && !strcmp (info->rclass, "pe")) {
-			pair_bool (pj, "overlay", info->pe_overlay);
-		}
-		pair_str (pj, "cc", info->default_cc);
-		pair_bool (pj, "pic", info->has_pi);
-		pair_bool (pj, "relocs", R_BIN_DBG_RELOCS & info->dbg_info);
-		Sdb *sdb_info = sdb_ns (obj->kv, "info", false);
-		if (sdb_info) {
-			tmp_buf = sdb_get (sdb_info, "elf.relro", 0);
-			if (R_STR_ISNOTEMPTY (tmp_buf)) {
-				pair_str (pj, "relro", tmp_buf);
+		if (havecode) {
+			if (info->claimed_checksum) {
+				/* checksum specified in header */
+				pair_str (pj, "hdr.csum", info->claimed_checksum);
 			}
-			free (tmp_buf);
-		}
-		pair_str (pj, "rpath", info->rpath);
-		if (info->rclass && !strcmp (info->rclass, "pe")) {
-			//this should be moved if added to mach0 (or others)
-			pair_bool (pj, "signed", info->signature);
-		}
-		pair_bool (pj, "sanitize", info->has_sanitizers);
-		pair_bool (pj, "static", r_bin_is_static (r->bin));
-		if (info->rclass && !strcmp (info->rclass, "mdmp")) {
-			v = sdb_num_get (bf->sdb, "mdmp.streams", 0);
-			if (v != -1) {
-				pair_int (pj, "streams", v);
+			pair_str (pj, "guid", info->guid);
+			pair_str (pj, "intrp", info->intrp);
+			pair_ut64x (pj, "laddr", laddr);
+			if (info->lang && *info->lang != '?') {
+				pair_str (pj, "lang", info->lang);
 			}
+			pair_bool (pj, "linenum", R_BIN_DBG_LINENUMS & info->dbg_info);
+			pair_bool (pj, "lsyms", R_BIN_DBG_SYMS & info->dbg_info);
+			pair_str (pj, "machine", info->machine);
+			pair_bool (pj, "nx", info->has_nx);
+			pair_str (pj, "os", info->os);
+			if (info->rclass && !strcmp (info->rclass, "pe")) {
+				pair_bool (pj, "overlay", info->pe_overlay);
+			}
+			pair_str (pj, "cc", info->default_cc);
+			pair_bool (pj, "pic", info->has_pi);
+			pair_bool (pj, "relocs", R_BIN_DBG_RELOCS & info->dbg_info);
+			Sdb *sdb_info = sdb_ns (obj->kv, "info", false);
+			if (sdb_info) {
+				tmp_buf = sdb_get (sdb_info, "elf.relro", 0);
+				if (R_STR_ISNOTEMPTY (tmp_buf)) {
+					pair_str (pj, "relro", tmp_buf);
+				}
+				free (tmp_buf);
+			}
+			pair_str (pj, "rpath", info->rpath);
+			if (info->rclass && !strcmp (info->rclass, "pe")) {
+				//this should be moved if added to mach0 (or others)
+				pair_bool (pj, "signed", info->signature);
+			}
+			pair_bool (pj, "sanitize", info->has_sanitizers);
+			pair_bool (pj, "static", r_bin_is_static (r->bin));
+			if (info->rclass && !strcmp (info->rclass, "mdmp")) {
+				v = sdb_num_get (bf->sdb, "mdmp.streams", 0);
+				if (v != -1) {
+					pair_int (pj, "streams", v);
+				}
+			}
+			pair_bool (pj, "stripped", R_BIN_DBG_STRIPPED & info->dbg_info);
+			pair_str (pj, "subsys", info->subsystem);
+			pair_bool (pj, "va", info->has_va);
 		}
-		pair_bool (pj, "stripped", R_BIN_DBG_STRIPPED & info->dbg_info);
-		pair_str (pj, "subsys", info->subsystem);
-		pair_bool (pj, "va", info->has_va);
 		if (IS_MODE_JSON (mode)) {
 			pj_ko (pj, "checksums");
 		}
