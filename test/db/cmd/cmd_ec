@@ -158,8 +158,8 @@ EXPECT=<<EOF
  [0m##[0m  bgprompt
  [32m##[0m  offset
  [37m##[0m  input
- [1;91m##[0m  invalid
- [37m##[0m  other
+ [1;31m##[0m  invalid
+ [36m##[0m  other
  [32m##[0m  b0x00
  [36m##[0m  b0x7f
  [31m##[0m  b0xff
@@ -171,10 +171,10 @@ EXPECT=<<EOF
  [44m##[0m  crypto
  [32m##[0m  jmp
  [32m##[0m  cjmp
- [1;92m##[0m  call
+ [1;32m##[0m  call
  [34m##[0m  nop
  [31m##[0m  ret
- [1;91m##[0m  trap
+ [1;31m##[0m  trap
  [32m##[0m  ucall
  [32m##[0m  ujmp
  [35m##[0m  swi
@@ -182,7 +182,7 @@ EXPECT=<<EOF
  [36m##[0m  reg
  [36m##[0m  creg
  [33m##[0m  num
- [37m##[0m  mov
+ [36m##[0m  mov
  [37m##[0m  func_var
  [34m##[0m  func_var_type
  [36m##[0m  func_var_addr
