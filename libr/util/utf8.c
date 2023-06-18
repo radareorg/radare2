@@ -648,7 +648,7 @@ R_API char *r_utf16_to_utf8_l(const wchar_t *wc, int len) {
 }
 
 R_API wchar_t *r_utf8_to_utf16_l(const char *cstring, int len) {
-	if (!cstring || len < 1) {
+	if (!cstring || len < -1) {
 		return NULL;
 	}
 	// r_return_val_if_fail (cstring && len >= -1, NULL);
@@ -672,7 +672,7 @@ R_API wchar_t *r_utf8_to_utf16_l(const char *cstring, int len) {
 }
 
 R_API char *r_utf8_to_acp_l(const char *str, int len) {
-	if (!str || len < 1) {
+	if (!str || len < -1) {
 		return NULL;
 	}
 	char *acp = NULL;
@@ -704,7 +704,7 @@ R_API char *r_utf8_to_acp_l(const char *str, int len) {
 R_API char *r_acp_to_utf8_l(const char *str, int len) {
 	// there are some asserts that are boring to debug, make the precondition at runtime
 	// r_return_val_if_fail (str && len >= -1, NULL);
-	if (!str || len < 1) {
+	if (!str || len < -1) {
 		return NULL;
 	}
 	if (len == -1) {
