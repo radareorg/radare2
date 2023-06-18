@@ -52,7 +52,7 @@ symstall install-symlink:
 	mkdir -p "$P"
 	for FILE in * ; do \
 		if [ "$$FILE" != Makefile ]; then \
-			ln -fs "${CWD}/$$FILE" "$P/$$FILE" ; \
+			[ ! -d "$P/$$FILE" ] && ln -fs "${CWD}/$$FILE" "$P/$$FILE" ; \
 		fi ; \
 	done
 
