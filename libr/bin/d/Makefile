@@ -51,7 +51,7 @@ CWD=$(shell pwd)
 symstall install-symlink:
 	mkdir -p "$P"
 	for FILE in * ; do \
-		if [ "$$FILE" != Makefile  -a "$$FILE" != dll ]; then \
+		if [ "$$FILE" != Makefile ]; then \
 			ln -fs "${CWD}/$$FILE" "$P/$$FILE" ; \
 		fi ; \
 	done
