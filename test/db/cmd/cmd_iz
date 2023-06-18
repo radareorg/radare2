@@ -226,9 +226,9 @@ iz~Mountain
 izz~Linux_wide
 EOF
 EXPECT=<<EOF
-17  0x0000258c 0x0040258c 55  224  .rodata utf32le utf32le> \\u00a2\\u20ac\\U00010348 in cyan:\e[36m ¢€𐍈 \e[0m\n blocks=Basic Latin,Latin-1 Supplement,Currency Symbols,Gothic
-18  0x0000266c 0x0040266c 48  196  .rodata utf32le Mountain range with embedded quad zeros: 𐌀A𐌀A𐌀A\n blocks=Basic Latin,Old Italic
-136 0x00002528 0x00402528 24  100  .rodata            utf32le \tLinux_wide\\esc: \e[0m¡\r\n blocks=Basic Latin,Latin-1 Supplement
+17  0x0000258c 0x0040258c 55  224  .rodata utf32le utf32le> \\u00a2\\u20ac\\U00010348 in cyan:\e[36m ¢€𐍈 \e[0m\n
+18  0x0000266c 0x0040266c 48  196  .rodata utf32le Mountain range with embedded quad zeros: 𐌀A𐌀A𐌀A\n
+136 0x00002528 0x00402528 24  100  .rodata            utf32le \tLinux_wide\\esc: \e[0m¡\r\n
 EOF
 RUN
 
@@ -241,8 +241,8 @@ e str.escbslash=false
 iz~Linux_wide
 EOF
 EXPECT=<<EOF
-16  0x00002528 0x00402528 24  100  .rodata utf32le \tLinux_wide\\esc: \e[0m¡\r\n blocks=Basic Latin,Latin-1 Supplement
-16  0x00002528 0x00402528 24  100  .rodata utf32le \tLinux_wide\esc: \e[0m¡\r\n blocks=Basic Latin,Latin-1 Supplement
+16  0x00002528 0x00402528 24  100  .rodata utf32le \tLinux_wide\\esc: \e[0m¡\r\n
+16  0x00002528 0x00402528 24  100  .rodata utf32le \tLinux_wide\esc: \e[0m¡\r\n
 EOF
 RUN
 
@@ -255,7 +255,7 @@ iz~123456
 EOF
 EXPECT=<<EOF
 1   0x0000060c 0x0040060c 6   28   .rodata utf32le ABCDEF
-2   0x00000650 0x00400650 10  44   .rodata utf32le abcdef𐍈  g blocks=Basic Latin,Gothic
+2   0x00000650 0x00400650 10  44   .rodata utf32le abcdef𐍈  g
 3   0x00000694 0x00400694 6   28   .rodata utf32le 123456
 EOF
 RUN
@@ -310,13 +310,13 @@ EXPECT=<<EOF
 0   0x00000004 0x00000004 8   9            ascii abcdefgh
 0   0x00000004 0x00000004 8   9            ascii abcdefgh
 0   0x00000004 0x00000004 8   9            ascii abcdefgh
-0   0x00000000 0x00000000 6   14           utf16le ki扡摣晥桧 blocks=Basic Latin,CJK Unified Ideographs
+0   0x00000000 0x00000000 6   14           utf16le ki扡摣晥桧
 
 0   0x00000001 0x00000001 4   9            utf16le %%%%
-0   0x00000000 0x00000000 4   10           utf16le ──── blocks=Box Drawing
+0   0x00000000 0x00000000 4   10           utf16le ────
 
 0   0x00000000 0x00000000 8   9            ascii &%&%&%&%
-0   0x00000000 0x00000000 4   10           utf16le ┦┦┦┦ blocks=Box Drawing
+0   0x00000000 0x00000000 4   10           utf16le ┦┦┦┦
 EOF
 RUN
 
@@ -340,7 +340,7 @@ EXPECT=<<EOF
 0   0x000004b0 0x080484b0 12  13   .rodata ascii Hello world!
 0   0x000004b4 0x080484b4 8   9    .rodata ascii abcdefgh
 0   0x000004b4 0x080484b4 8   9    .rodata ascii abcdefgh
-0   0x000004b0 0x080484b0 6   13   .rodata utf16le ki扡摣晥桧 blocks=Basic Latin,CJK Unified Ideographs
+0   0x000004b0 0x080484b0 6   13   .rodata utf16le ki扡摣晥桧
 EOF
 RUN
 
