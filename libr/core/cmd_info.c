@@ -294,7 +294,6 @@ static void r_core_file_info(RCore *core, PJ *pj, int mode) {
 		if (desc && desc->referer && *desc->referer) {
 			pair ("referer", desc->referer);
 		}
-
 		if (info) {
 			pair ("type", info->type);
 		}
