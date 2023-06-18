@@ -442,7 +442,7 @@ static void ds_print_ref_lines(char *line, char *line_col, RDisasmState *ds) {
 static void get_bits_comment(RCore *core, RAnalFunction *f, char *cmt, int cmt_size) {
 	if (core && f && cmt && cmt_size > 0 && f->bits && f->bits != core->rasm->config->bits) {
 		const char *asm_arch = r_config_get (core->config, "asm.arch");
-		if (asm_arch && *asm_arch && strstr (asm_arch, "arm")) {
+		if (R_STR_ISNOTEMPTY (asm_arch) && strstr (asm_arch, "arm")) {
 			switch (f->bits) {
 			case 16: strcpy (cmt, " (thumb)"); break;
 			case 32: strcpy (cmt, " (arm)"); break;
@@ -453,7 +453,7 @@ static void get_bits_comment(RCore *core, RAnalFunction *f, char *cmt, int cmt_s
 		}
 	} else {
 		if (cmt) {
-			cmt[0] = 0;
+			*cmt = 0;
 		}
 	}
 }
@@ -622,6 +622,7 @@ static RDisasmState *ds_init(RCore *core) {
 	if (!ds) {
 		return NULL;
 	}
+	ds->ssa = sdb_new0 ();
 	ds->core = core;
 	ds->addrbytes = core->io->addrbytes;
 	ds->strip = r_config_get (core->config, "asm.strip");
@@ -2056,7 +2057,7 @@ static void ds_show_functions(RDisasmState *ds) {
 				case R_ANAL_VAR_KIND_REG: {
 					RRegItem *i = r_reg_index_get (anal->reg, var->delta);
 					if (!i) {
-						eprintf ("Register not found\n");
+						R_LOG_ERROR ("Register not found");
 						break;
 					}
 					r_cons_printf ("%sarg %s%s%s%s %s@ %s", COLOR_ARG (ds, color_func_var),
@@ -4640,25 +4641,22 @@ static bool mymemwrite2(REsil *esil, ut64 addr, const ut8 *buf, int len) {
 }
 
 static char *ssa_get(REsil *esil, const char *reg) {
-	RDisasmState *ds = esil->user;
-	if (isdigit ((unsigned char)*reg)) {
+	//RCore *core = esil->user;
+	RDisasmState *ds = esil->cb.user;
+	if (isdigit ((ut8)*reg)) {
 		return strdup (reg);
-	}
-	if (!ds->ssa) {
-		ds->ssa = sdb_new0 ();
 	}
 	int n = sdb_num_get (ds->ssa, reg, NULL);
 	return r_str_newf ("%s_%d", reg, n);
 }
 
 static void ssa_set(REsil *esil, const char *reg) {
-	RDisasmState *ds = esil->user;
+	RDisasmState *ds = esil->cb.user;
 	(void)sdb_num_inc (ds->ssa, reg, 1, 0);
 }
 
-#define R_DISASM_MAX_STR 512
 static bool myregread(REsil *esil, const char *name, ut64 *res, int *size) {
-	RDisasmState *ds = esil->user;
+	RDisasmState *ds = esil->cb.user;
 	if (ds != NULL && ds->show_emu_ssa && name) {
 		if (!isdigit ((ut8)*name)) {
 			char *r = ssa_get (esil, name);
@@ -4761,6 +4759,7 @@ static bool myregwrite(REsil *esil, const char *name, ut64 *val) {
 				const char *prefix;
 				ut32 len = sizeof (str) -1;
 #if 0
+#define R_DISASM_MAX_STR 512
 				RCore *core = ds->core;
 				ut32 len = core->blocksize + 256;
 				if (len < core->blocksize || len > R_DISASM_MAX_STR) {
@@ -6152,12 +6151,9 @@ toro:
 		}
 		R_FREE (nbuf);
 		ds->buf = buf = nbuf = malloc (len);
-		if (!buf) {
-			eprintf ("Cannot allocate %d bytes\n", len);
-		}
 
 		// only try again if we still need more lines
-		if (!count_bytes && ds->lines < ds->count) {
+		if (buf && !count_bytes && ds->lines < ds->count) {
 			ds->addr += ds->index;
 			r_io_read_at (core->io, ds->addr, buf, len);
 
@@ -6472,7 +6468,7 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 			nb_opcodes = -nb_opcodes;
 
 			if (nb_opcodes > 0xffff) {
-				eprintf ("Too many backward instructions\n");
+				R_LOG_ERROR ("Too many backward instructions");
 				return false;
 			}
 
