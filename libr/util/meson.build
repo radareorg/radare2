@@ -103,8 +103,11 @@ if get_option('sdb_cgen')
   r_util_sources += r_util_d_sources
 endif
 
-r_util_deps = [ldl, mth, spp_dep, pth, utl, sdb_dep, lz4_dep, zlib_dep, platform_deps]
+if not get_option('use_sys_lz4')
+  library_cflags += ['-DUSE_SMALLZ4']
+endif
 
+r_util_deps = [ldl, mth, spp_dep, pth, utl, sdb_dep, lz4_dep, zlib_dep, platform_deps]
 
 if host_machine.system().startswith('freebsd') or host_machine.system().startswith('netbsd') or host_machine.system().startswith('haiku')
   # backtrace_symbols_fd requires -lexecinfo
@@ -118,10 +121,6 @@ else
   r_util_sources += ['big.c']
 endif
 
-if get_option('use_smallz4')
-  library_cflags += ['-DUSE_SMALLZ4']
-  r_util_deps += [smallz4_dep]
-endif
 
 r_util = library('r_util', r_util_sources,
   include_directories: platform_inc,

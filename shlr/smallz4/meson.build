@@ -1,4 +1,8 @@
-if get_option('use_smallz4')
+lz4_dep = dependency('liblz4', required: false)
+if lz4_dep.found() and get_option('use_sys_lz4')
+  message('Using system-provided lz4 library')
+else
+  message('Using smallz4')
   smallz4_files = [
     'smallz4cat.c',
     ]
@@ -8,9 +12,8 @@ if get_option('use_smallz4')
     include_directories: smallz4_inc,
     implicit_include_directories: false
     )
-  smallz4_dep = declare_dependency(
+  lz4_dep = declare_dependency(
     link_with: libr2smallz4,
     include_directories: smallz4_inc
     )
-
 endif

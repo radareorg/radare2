@@ -348,7 +348,6 @@ SHLRS+=capstone/libcapstone.a
 SHLRS+=gdb/lib/libgdbr.a
 SHLRS+=grub/libgrubfs.a
 SHLRS+=java/libr_java.a
-SHLRS+=lz4/liblz4.a
 SHLRS+=qnx/lib/libqnxr.a
 SHLRS+=winkd/libr_winkd.a
 SHLRS+=zip/librz.a

@@ -27,20 +27,17 @@ OBJS+=d/iso8859_1.o
 endif
 
 ifeq ($(USE_SYSLZ4),1)
-CFLAGS+=@LZ4_CFLAGS@
+CFLAGS+=${LZ4_CFLAGS}
 PCLIBS+=@LZ4_LDFLAGS@
+LDFLAGS+=${LZ4_LDFLAGS}
 else
-OBJS+=$(SHLR)/lz4/lz4.o
+CFLAGS+=-DUSE_SMALLZ4
+OBJS+=$(SHLR)/smallz4/smallz4cat.o
 endif
 
 OBJS+=big_gmp.o
 OBJS+=big_ssl.o
 OBJS+=big.o
-
-ifeq ($(USE_SMALLZ4),1)
-CFLAGS+=-DUSE_SMALLZ4
-OBJS+=$(SHLR)/smallz4/smallz4cat.o
-endif
 
 CWD=$(shell pwd)
 
