@@ -2,7 +2,6 @@
 
 #include <r_util.h>
 #include <zlib.h>
-#include "../../../shlr/lz4/lz4.h"
 
 // set a maximum output buffer of 50MB
 #define MAXOUT 50000000
@@ -35,6 +34,8 @@ unsigned char smallz4GetByte(void *userPtr) {
   struct UserPtr* user = (struct UserPtr*)userPtr;
   return *(user->input + (user->inputPos++));
 }
+#else
+#include <lz4.h>
 #endif
 
 static const char *gzerr(int n) {

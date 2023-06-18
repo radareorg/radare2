@@ -66,19 +66,11 @@ IFAND WITH_CAPSTONE HAVE_PKGCFG_CAPSTONE {
 (( LZ4 ))
 PKGCFG LZ4_CFLAGS LZ4_LDFLAGS liblz4
 ARG_WITH WITH_SYSLZ4 syslz4 force to use system's liblz4 ;
-IFAND WITH_SYSLZ4 LZ4_CFLAGS {
+IFAND WITH_SYSLZ4 HAVE_PKGCFG_LIBLZ4 {
 	USE_SYSLZ4 = 1 ;
 }{
 	USE_SYSLZ4 = 0 ;
 
-}
-
-(( SMALLZ4 ))
-ARG_WITH WITH_SMALLZ4 smallz4 build with smallz4 use it as the lz4 decompressor ;
-IF WITH_SMALLZ4 {
-	USE_SMALLZ4 = 1 ;
-}{
-	USE_SMALLZ4 = 0 ;
 }
 
 (( ZIP ))

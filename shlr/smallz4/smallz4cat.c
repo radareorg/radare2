@@ -78,6 +78,7 @@ struct UserPtr
 };
 
 /// read a single byte (with simple buffering)
+#if 0
 static unsigned char getByteFromIn(void* userPtr) // parameter "userPtr" not needed
 {
 	/// cast user-specific data
@@ -103,6 +104,7 @@ static void sendBytesToOut(const unsigned char* data, unsigned int numBytes, voi
 	if (data != NULL && numBytes > 0)
 		fwrite (data, 1, numBytes, user->out);
 }
+#endif
 
 
 // ==================== LZ4 DECOMPRESSOR ====================
@@ -392,6 +394,7 @@ void unlz4(GET_BYTE getByte, SEND_BYTES sendBytes, const char* dictionary)
 
 
 /// parse command-line
+#if 0
 int main(int argc, const char* argv[])
 {
 	// default input/output streams
@@ -433,3 +436,4 @@ int main(int argc, const char* argv[])
 	unlz4_userPtr (getByteFromIn, sendBytesToOut, dictionary, &user);
 	return 0;
 }
+#endif
