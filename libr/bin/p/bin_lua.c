@@ -347,7 +347,7 @@ RBinPlugin r_bin_plugin_lua = {
 	.entries = &entries,
 };
 
-#ifndef CORELIB
+#ifndef R2_PLUGIN_INCORE
 RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_BIN,
 	.data = &r_bin_plugin_lua,
