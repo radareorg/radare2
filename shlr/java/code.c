@@ -123,14 +123,14 @@ R_API int java_print_opcode(RBinJavaObj *obj, ut64 addr, int idx, const ut8 *byt
 	case 0x10: // "bipush"
 		if (len > 1) {
 			snprintf (output, outlen, "%s %d", JAVA_OPS[idx].name, (char) bytes[1]);
-			output[outlen-1] = 0;
+			output[outlen - 1] = 0;
 			return update_bytes_consumed (JAVA_OPS[idx].size);
 		}
 		return -1;
 	case 0x11:
-		if (len > 1) {
+		if (len > 2) {
 			snprintf (output, outlen, "%s %d", JAVA_OPS[idx].name, (int)USHORT (bytes, 1));
-			output[outlen-1] = 0;
+			output[outlen - 1] = 0;
 			return update_bytes_consumed (JAVA_OPS[idx].size);
 		}
 		return -1;

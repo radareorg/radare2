@@ -1402,7 +1402,7 @@ R_API RBinJavaField *r_bin_java_read_next_method(RBinJavaObj *bin, const ut64 of
 		for (i = 0; i < method->attr_count; i++) {
 			attr = r_bin_java_read_next_attr (bin, adv + offset, buf, len);
 			if (!attr) {
-				R_LOG_ERROR ("Error unable to parse remainder of classfile after Method Attribute: %d", i);
+				R_LOG_ERROR ("unable to parse remainder of classfile after Method Attribute: %d", i);
 				return NULL;
 			}
 			if ((r_bin_java_get_attr_type_by_name (attr->name))->type == R_BIN_JAVA_ATTR_TYPE_CODE_ATTR) {
@@ -2309,7 +2309,7 @@ R_API int r_bin_java_load_bin(RBinJavaObj *bin, const ut8 *buf, ut64 buf_sz) {
 	}
 	adv += r_bin_java_parse_fields (bin, adv, buf, buf_sz);
 	if (adv > buf_sz) {
-		R_LOG_ERROR ("Error unable to parse remainder of classfile after Fields");
+		R_LOG_ERROR ("unable to parse remainder of classfile after Fields");
 		return true;
 	}
 	adv += r_bin_java_parse_methods (bin, adv, buf, buf_sz);
