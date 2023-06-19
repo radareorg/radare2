@@ -57,7 +57,7 @@ static bool test_vec_fini(void) {
 
 	for (x = 0; x < 3; x++) {
 		float *y = malloc (sizeof (float));
-		*y = 3.14;
+		*y = (float)3.14;
 		S s = { .x = x, .y = y };
 		RVecS_push_back (&vS, &s);
 	}
@@ -93,7 +93,7 @@ static bool test_vec_free(void) {
 
 	for (x = 0; x < 3; x++) {
 		float *y = malloc (sizeof (float));
-		*y = 3.14;
+		*y = (float)3.14;
 		S s = { .x = x, .y = y };
 		RVecS_push_back (vS, &s);
 	}
@@ -431,7 +431,7 @@ static bool test_vec_clear(void) {
 
 	for (x = 0; x < 3; x++) {
 		float *y = malloc (sizeof (float));
-		*y = 3.14;
+		*y = (float)3.14;
 		S s = { .x = x, .y = y };
 		RVecS_push_back (&vS, &s);
 	}
