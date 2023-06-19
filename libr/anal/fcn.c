@@ -803,8 +803,10 @@ repeat:
 			if (newbbsize > MAX_FCN_SIZE) {
 				gotoBeach (R_ANAL_RET_ERROR);
 			}
-			r_anal_bb_set_offset (bb, bb->ninstr++, at - bb->addr);
 			r_anal_block_set_size (bb, newbbsize);
+			if (!r_anal_bb_set_offset (bb, bb->ninstr++, at - bb->addr)) {
+				gotoBeach (R_ANAL_RET_ERROR);
+			}
 			fcn->ninstr++;
 		}
 		if (anal->opt.trycatch) {
