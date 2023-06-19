@@ -67,12 +67,23 @@ R_API bool r_anal_bb_set_offset(RAnalBlock *bb, int i, ut16 v) {
 	if (i > 0 && v > 0) {
 		if (i >= bb->op_pos_size) {
 			int new_pos_size = i * 2;
+			if (new_pos_size >= UT16_MAX) {
+				R_LOG_WARN ("Basic block at 0x%08"PFMT64x" is too large", bb->addr);
+				return false;
+			}
 			ut16 *tmp_op_pos = realloc (bb->op_pos, new_pos_size * sizeof (*bb->op_pos));
 			if (!tmp_op_pos) {
 				return false;
 			}
-			bb->op_pos_size = new_pos_size;
 			bb->op_pos = tmp_op_pos;
+#if 0
+			// initialize the uninitialized
+			// not necessary because its catched earlier when ut16max limit is reached
+			for (i = bb->op_pos_size; i < new_pos_size; i++) {
+				bb->op_pos[i] = 0;
+			}
+#endif
+			bb->op_pos_size = new_pos_size;
 		}
 		bb->op_pos[i - 1] = v;
 		return true;

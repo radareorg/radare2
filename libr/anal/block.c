@@ -346,7 +346,9 @@ R_API RAnalBlock *r_anal_block_split(RAnalBlock *bbi, ut64 addr) {
 			if (off_op >= bbi->size + bb->size) {
 				break;
 			}
-			r_anal_bb_set_offset (bb, bb->ninstr, off_op - bbi->size);
+			if (!r_anal_bb_set_offset (bb, bb->ninstr, off_op - bbi->size)) {
+				break;
+			}
 			bb->ninstr++;
 			i++;
 		}
@@ -381,7 +383,10 @@ R_API bool r_anal_block_merge(RAnalBlock *a, RAnalBlock *b) {
 	// merge ops from b into a
 	size_t i;
 	for (i = 0; i < b->ninstr; i++) {
-		r_anal_bb_set_offset (a, a->ninstr++, a->size + r_anal_bb_offset_inst (b, i));
+		ut64 addr = a->size + r_anal_bb_offset_inst (b, i);
+		if (!r_anal_bb_set_offset (a, a->ninstr++, addr)) {
+			break;
+		}
 	}
 
 	// merge everything else into a
