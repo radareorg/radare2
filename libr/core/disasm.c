@@ -949,6 +949,7 @@ static void ds_free(RDisasmState *ds) {
 	ds_reflines_fini (ds);
 	ds_print_esil_anal_fini (ds);
 	sdb_free (ds->ssa);
+	ds->core->anal->esil->cb.user = NULL;
 	free (ds->comment);
 	free (ds->line);
 	free (ds->line_col);
@@ -4657,7 +4658,7 @@ static void ssa_set(REsil *esil, const char *reg) {
 
 static bool myregread(REsil *esil, const char *name, ut64 *res, int *size) {
 	RDisasmState *ds = esil->cb.user;
-	if (ds != NULL && ds->show_emu_ssa && name) {
+	if (ds && ds->show_emu_ssa && name) {
 		if (!isdigit ((ut8)*name)) {
 			char *r = ssa_get (esil, name);
 			ds_comment_esil (ds, true, false, "<%s", r);
