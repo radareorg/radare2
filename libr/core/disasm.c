@@ -614,6 +614,7 @@ static void ds_print_esil_anal_fini(RDisasmState *ds) {
 	if (core && core->anal && core->anal->esil) {
 		// make sure to remove reference to ds to avoid UAF
 		core->anal->esil->user = NULL;
+		ds->core->anal->esil->cb.user = NULL;
 	}
 }
 
@@ -945,11 +946,9 @@ static void ds_free(RDisasmState *ds) {
 	r_anal_op_fini (&ds->asmop);
 	r_anal_op_fini (&ds->analop);
 	r_anal_hint_free (ds->hint);
-	ds_print_esil_anal_fini (ds);
 	ds_reflines_fini (ds);
 	ds_print_esil_anal_fini (ds);
 	sdb_free (ds->ssa);
-	ds->core->anal->esil->cb.user = NULL;
 	free (ds->comment);
 	free (ds->line);
 	free (ds->line_col);
