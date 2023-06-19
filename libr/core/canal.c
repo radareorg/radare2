@@ -3171,6 +3171,7 @@ static int fcn_print_legacy(RCore *core, RAnalFunction *fcn, bool dorefs) {
 
 	r_cons_printf ("#\noffset: 0x%08"PFMT64x"\nname: %s\nsize: %"PFMT64u,
 			fcn->addr, name, r_anal_function_linear_size (fcn));
+	free (name);
 	r_cons_printf ("\nis-pure: %s", r_str_bool (r_anal_function_purity (fcn)));
 	r_cons_printf ("\nrealsz: %" PFMT64d, r_anal_function_realsize (fcn));
 	r_cons_printf ("\nstackframe: %d", fcn->maxstack);
@@ -3275,22 +3276,21 @@ static int fcn_print_legacy(RCore *core, RAnalFunction *fcn, bool dorefs) {
 	const int args_count = r_anal_var_count_args (fcn);
 	const int var_count = r_anal_var_count_locals (fcn);
 	r_cons_printf ("\nlocals: %d\nargs: %d\n", var_count, args_count);
+	r_anal_var_list_show (core->anal, fcn, 'b', 0, NULL);
+	r_anal_var_list_show (core->anal, fcn, 's', 0, NULL);
+	r_anal_var_list_show (core->anal, fcn, 'r', 0, NULL);
 
-	if (fcn->type == R_ANAL_FCN_TYPE_FCN || fcn->type == R_ANAL_FCN_TYPE_SYM) {
-		r_anal_var_list_show (core->anal, fcn, 'b', 0, NULL);
-		r_anal_var_list_show (core->anal, fcn, 's', 0, NULL);
-		r_anal_var_list_show (core->anal, fcn, 'r', 0, NULL);
-		if (fcn->diff->addr != UT64_MAX) {
+	if (fcn->diff->addr != UT64_MAX) {
+		if (fcn->type == R_ANAL_FCN_TYPE_FCN || fcn->type == R_ANAL_FCN_TYPE_SYM) {
 			r_cons_printf ("diff: %s",
 					fcn->diff->type == R_ANAL_DIFF_TYPE_MATCH?"match":
 					fcn->diff->type == R_ANAL_DIFF_TYPE_UNMATCH?"unmatch":"new");
 			r_cons_printf ("addr: 0x%"PFMT64x, fcn->diff->addr);
-		}
-		if (fcn->diff->name) {
-			r_cons_printf ("function: %s", fcn->diff->name);
+			if (fcn->diff->name) {
+				r_cons_printf ("function: %s", fcn->diff->name);
+			}
 		}
 	}
-	free (name);
 
 	// traced
 	if (core->dbg->trace->enabled) {
