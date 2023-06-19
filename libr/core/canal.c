@@ -3272,18 +3272,18 @@ static int fcn_print_legacy(RCore *core, RAnalFunction *fcn, bool dorefs) {
 	r_cons_printf ("\nin-degree: %d", indegree);
 	r_cons_printf ("\nout-degree: %d", outdegree);
 
-	if (fcn->type == R_ANAL_FCN_TYPE_FCN || fcn->type == R_ANAL_FCN_TYPE_SYM) {
-		int args_count = r_anal_var_count_args (fcn);
-		int var_count = r_anal_var_count_locals (fcn);
+	const int args_count = r_anal_var_count_args (fcn);
+	const int var_count = r_anal_var_count_locals (fcn);
+	r_cons_printf ("\nlocals: %d\nargs: %d\n", var_count, args_count);
 
-		r_cons_printf ("\nlocals: %d\nargs: %d\n", var_count, args_count);
+	if (fcn->type == R_ANAL_FCN_TYPE_FCN || fcn->type == R_ANAL_FCN_TYPE_SYM) {
 		r_anal_var_list_show (core->anal, fcn, 'b', 0, NULL);
 		r_anal_var_list_show (core->anal, fcn, 's', 0, NULL);
 		r_anal_var_list_show (core->anal, fcn, 'r', 0, NULL);
-		r_cons_printf ("diff: type: %s",
-				fcn->diff->type == R_ANAL_DIFF_TYPE_MATCH?"match":
-				fcn->diff->type == R_ANAL_DIFF_TYPE_UNMATCH?"unmatch":"new");
-		if (fcn->diff->addr != -1) {
+		if (fcn->diff->addr != UT64_MAX) {
+			r_cons_printf ("diff: %s",
+					fcn->diff->type == R_ANAL_DIFF_TYPE_MATCH?"match":
+					fcn->diff->type == R_ANAL_DIFF_TYPE_UNMATCH?"unmatch":"new");
 			r_cons_printf ("addr: 0x%"PFMT64x, fcn->diff->addr);
 		}
 		if (fcn->diff->name) {
