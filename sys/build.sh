@@ -47,11 +47,14 @@ for a in $* ; do
 	esac
 done
 
+ABSPREFIX=`realpath ${PREFIX}`
+[ -n "${ABSPREFIX}" ] && PREFIX="${ABSPREFIX}"
+
 if [ "${USE_CS4}" = 1 ]; then
 	CFGARG="${CFGARG} --with-capstone4"
 fi
 
-if [ "${OSNAME}" = Linux ] && [ -n "${PREFIX}" ] && [ "${PREFIX}" != /usr ]; then
+if [ "${OSNAME}" = Linux -a -n "${PREFIX}" -a "${PREFIX}" != /usr ]; then
 	CFGARG="${CFGARG} --with-rpath"
 fi
 
