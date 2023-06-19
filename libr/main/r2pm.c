@@ -379,14 +379,24 @@ static void r2pm_setenv(void) {
 	free (bindir);
 
 	char *oldpath = r_sys_getenv ("PATH");
+	if (!oldpath) {
+		oldpath = strdup ("/bin");
+	}
 	if (!strstr (oldpath, r2_prefix)) {
 		char *newpath = r_str_newf ("%s/bin:%s", r2_prefix, oldpath);
 		r_sys_setenv ("PATH", newpath);
 		free (newpath);
 	}
 	free (oldpath);
-	free (r2_prefix);
-
+#if R2__WINDOWS__
+	const char *ldpathvar = NULL;
+#elif __HAIKU__
+	const char *ldpathvar = "LIBRARY_PATH";
+#elif __APPLE__
+	const char *ldpathvar = "DYLD_LIBRARY_PATH";
+#else
+	const char *ldpathvar = "LD_LIBRARY_PATH";
+#endif
 	char *opath = r_sys_getenv ("PATH");
 	if (opath) {
 		char *bindir = r2pm_bindir ();
@@ -399,6 +409,40 @@ static void r2pm_setenv(void) {
 		free (bindir);
 	}
 
+	char *ldpath = r_sys_getenv (ldpathvar);
+	if (!ldpath) {
+		ldpath = strdup ("");
+	}
+	if (!strstr (ldpath, r2_prefix)) {
+		char *newpath = r_str_newf ("%s/lib:%s", r2_prefix, ldpath);
+		r_sys_setenv (ldpathvar, newpath);
+		free (ldpath);
+		ldpath = newpath;
+	}
+	char *gr2_prefix = r_sys_cmd_str ("radare2 -H R2_PREFIX", NULL, NULL);
+	if (gr2_prefix) {
+		r_str_trim (gr2_prefix);
+		if (R_STR_ISNOTEMPTY (gr2_prefix)) {
+			if (!strstr (ldpath, gr2_prefix)) {
+				char *newpath = r_str_newf ("%s/lib:%s", gr2_prefix, ldpath);
+				r_sys_setenv (ldpathvar, newpath);
+				if (R_STR_ISNOTEMPTY (pd)) {
+					r_str_trim (pd);
+					r_sys_setenv ("R2_USER_PLUGINS", pd);
+					r_sys_mkdirp (pd);
+				}
+			}
+		}
+		free (gr2_prefix);
+	}
+
+	if (!strstr (ldpath, r2_prefix)) {
+		char *newpath = r_str_newf ("%s/lib:%s", r2_prefix, ldpath);
+		r_sys_setenv (ldpathvar, newpath);
+		free (newpath);
+	}
+	free (ldpath);
+	free (r2_prefix);
 	// GLOBAL = 0 # depends on r2pm.global, which is set on r2pm_install
 	static const char *python_bins[] = {
 		"python3",
