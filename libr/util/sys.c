@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2022 - pancake */
+/* radare - LGPL - Copyright 2009-2023 - pancake */
 
 #include <r_userconf.h>
 #include <stdlib.h>
@@ -469,7 +469,7 @@ static void signal_handler(int signum) {
 
 static int checkcmd(const char *c) {
 	char oc = 0;
-	for (;*c;c++) {
+	for (; *c; c++) {
 		if (oc == '%') {
 			if (*c != 'd' && *c != '%') {
 				return 0;
@@ -623,7 +623,6 @@ R_API bool r_sys_aslr(int val) {
 		R_LOG_ERROR ("Failed to set RVA");
 		ret = false;
 	}
-#elif __DragonFly__
 #endif
 	return ret;
 }
@@ -781,7 +780,6 @@ R_API int r_sys_cmd_str_full(const char *cmd, const char *input, int ilen, char 
 			// free (escmd);
 			ret = false;
 		}
-
 		if (len) {
 			*len = out_len;
 		}
@@ -913,9 +911,11 @@ R_API bool r_sys_mkdirp(const char *dir) {
 		}
 		*ptr = 0;
 		if (!r_sys_mkdir (path) && r_sys_mkdir_failed ()) {
-			if (r_sandbox_check (R_SANDBOX_GRAIN_FILES)) {
+#if 0
+			if (!r_sandbox_check (R_SANDBOX_GRAIN_FILES)) {
 				R_LOG_ERROR ("fail '%s' of '%s'", path, dir);
 			}
+#endif
 			free (path);
 			return false;
 		}
@@ -939,7 +939,7 @@ R_API void r_sys_perror_str(const char *fun) {
 	LPTSTR lpMsgBuf;
 	DWORD dw = GetLastError();
 
-	if (FormatMessage ( FORMAT_MESSAGE_ALLOCATE_BUFFER |
+	if (FormatMessage (FORMAT_MESSAGE_ALLOCATE_BUFFER |
 			FORMAT_MESSAGE_FROM_SYSTEM |
 			FORMAT_MESSAGE_IGNORE_INSERTS,
 			NULL,
@@ -981,6 +981,7 @@ R_API bool r_sys_arch_match(const char *archstr, const char *arch) {
 }
 
 R_API int r_sys_arch_id(const char *arch) {
+	r_return_val_if_fail (arch, 0);
 	int i;
 	for (i = 0; arch_bit_array[i].name; i++) {
 		if (!strcmp (arch, arch_bit_array[i].name)) {
@@ -1004,9 +1005,6 @@ R_API const char *r_sys_arch_str(int arch) {
 R_API int r_sys_run(const ut8 *buf, int len) {
 	const int sz = 4096;
 	int pdelta, ret, (*cb)();
-#if USE_FORK
-	int st, pid;
-#endif
 // TODO: define R_SYS_ALIGN_FORWARD in r_util.h
 	ut8 *ptr, *p = malloc ((sz + len) << 1);
 	ptr = p;
@@ -1024,11 +1022,7 @@ R_API int r_sys_run(const ut8 *buf, int len) {
 	//r_mem_protect (ptr, sz, "rwx"); // try, ignore if fail
 	cb = (int (*)())ptr;
 #if USE_FORK
-#if R2__UNIX__
-	pid = r_sys_fork ();
-#else
-	pid = -1;
-#endif
+	int pid = r_sys_fork ();
 	if (pid < 0) {
 		return cb ();
 	}
@@ -1037,7 +1031,7 @@ R_API int r_sys_run(const ut8 *buf, int len) {
 		exit (ret);
 		return ret;
 	}
-	st = 0;
+	int st = 0;
 	waitpid (pid, &st, 0);
 	if (WIFSIGNALED (st)) {
 		int num = WTERMSIG(st);
