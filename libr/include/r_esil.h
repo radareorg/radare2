@@ -86,6 +86,93 @@ typedef struct r_esil_trace_t {
 	Sdb *db;
 } REsilTrace;
 
+typedef void (*REsilObsHookMemReadCB)(void *user, ut64 addr, ut8 *buf, int len);
+//observer hook
+typedef bool (*REsilModHookMemReadCB)(void *user, ESIL *esil, ut64 addr, ut8 *buf, int len);
+//modifier hook
+//returns true if continue
+typedef int (*REsilImpHookMemReadCB)(void *user, ut64 addr, ut8 *buf, int len);
+//implementation hook
+
+typedef void (*REsilObsHookMemWriteCB)(void *user, ut64 addr, ut8 *buf, int len);
+typedef bool (*REsilModHookMemWriteCB)(void *user, ESIL *esil, ut64 addr, ut8 *buf, int len);
+typedef int (*REsilImpHookMemWriteCB)(void *user, ut64 addr, ut8 *buf, int len);
+
+typedef void (*REsilObsHookRegReadCB)(void *user, const char *regname);
+typedef bool (*REsilModHookRegReadCB)(void *user, ESIL *esil, const char *regname, ut64 *val, ut32 *size);
+typedef bool (*REsilImpHookRegReadCB)(void *user, const char *regname, ut64 *val, ut32 *size);
+
+typedef void (*REsilObsHookRegWriteCB)(void *user, const char *regname, ut64 val);
+typedef bool (*REsilModHookRegWriteCB)(void *user, ESIL *esil, const char *regname, ut64 val);
+typedef bool (*REsilImpHookRegWriteCB)(void *user, const char *regname, ut64 val);
+
+typedef struct r_esil_hook_t {
+	void *user;
+	union {
+		REsilImpHookMemReadCB imr;		//implementation memory read
+		REsilModHookMemReadCB mmr;		//modifier memory read
+		REsilObsHookMemReadCB omr;		//observer memory read
+		REsilImpHookMemWriteCB imw;		//implementation memory write
+		REsilModHookMemWriteCB mmw;		//modifier memory write
+		REsilObsHookMemWriteCB omw;		//observer memory write
+		REsilImpHookRegReadCB irr;		//implementation register read
+		REsilModHookRegReadCB mrr;		//modifier register read
+		REsilObsHookRegReadCB orr;		//observer register read
+		REsilImpHookRegWriteCB irw;		//implementation register write
+		REsilModHookRegWriteCB mrw;		//modifier register write
+		REsilObsHookRegWriteCB orw;		//observer register write
+		void *fcn;
+	};
+} REsilHook;
+
+typedef struct r_esil_hooks_t {
+	RIDStorage *mem_read_observers;
+	RIDStorage *mem_write_observers;
+	RIDStorage *reg_read_observers;
+	RIDStorage *reg_write_observers;
+	REsilHook *mem_read_implementation;
+	REsilHook *mem_write_implementation;
+	REsilHook *reg_read_implementation;
+	REsilHook *reg_write_implementation;
+	REsilHook *mem_read_modifier;
+	REsilHook *mem_write_modifier;
+	REsilHook *reg_read_modifier;
+	REsilHook *reg_write_modifier;
+} REsilHooks;
+
+R_API bool r_esil_set_mem_read_imp(ESIL *esil, REsilImpHookMemReadCB imp, void *user);
+R_API void r_esil_del_mem_read_imp(ESIL *esil);
+R_API bool r_esil_set_mem_write_imp(ESIL *esil, REsilImpHookMemWriteCB imp, void *user);
+R_API void r_esil_del_mem_write_imp(ESIL *esil);
+R_API bool r_esil_set_reg_read_imp(ESIL *esil, REsilImpHookRegReadCB imp, void *user);
+R_API void r_esil_del_reg_read_imp(ESIL *esil);
+R_API bool r_esil_set_reg_write_imp(ESIL *esil, REsilImpHookRegWriteCB imp, void *user);
+R_API void r_esil_del_reg_write_imp(ESIL *esil);
+R_API bool r_esil_set_mem_read_mod(ESIL *esil, REsilModHookMemReadCB mod, void *user);
+R_API void r_esil_del_mem_read_mod(ESIL *esil);
+R_API bool r_esil_set_mem_write_mod(ESIL *esil, REsilModHookMemWriteCB mod, void *user);
+R_API void r_esil_del_mem_write_mod(ESIL *esil);
+R_API bool r_esil_set_reg_read_mod(ESIL *esil, REsilModHookRegReadCB mod, void *user);
+R_API void r_esil_del_reg_read_mod(ESIL *esil);
+R_API bool r_esil_set_reg_write_mod(ESIL *esil, REsilModHookRegWriteCB mod, void *user);
+R_API void r_esil_del_reg_write_mod(ESIL *esil);
+R_API ut32 r_esil_add_mem_read_obs(ESIL *esil, REsilObsHookMemReadCB obs, void *user);
+R_API ut32 r_esil_add_mem_write_obs(ESIL *esil, REsilObsHookMemWriteCB obs, void *user);
+R_API ut32 r_esil_add_reg_read_obs(ESIL *esil, REsilObsHookRegReadCB obs, void *user);
+R_API ut32 r_esil_add_reg_write_obs(ESIL *esil, REsilObsHookRegWriteCB obs, void *user);
+R_API void r_esil_del_mem_read_obs(ESIL *esil, ut32 id);
+R_API void r_esil_del_mem_write_obs(ESIL *esil, ut32 id);
+R_API void r_esil_del_reg_read_obs(ESIL *esil, ut32 id);
+R_API void r_esil_del_reg_write_obs(ESIL *esil, ut32 id);
+R_API int r_esil_mem_read_at1(ESIL *esil, ut64 addr, ut8 *buf, int len);
+R_API int r_esil_mem_read_at2(ESIL *esil, ut64 addr, ut8 *buf, int len);
+R_API int r_esil_mem_write_at1(ESIL *esil, ut64 addr, ut8 *buf, int len);
+R_API int r_esil_mem_write_at2(ESIL *esil, ut64 addr, ut8 *buf, int len);
+R_API bool r_esil_reg_read1(ESIL *esil, const char *regname, ut64 *val, ut32 *size);
+R_API bool r_esil_reg_read2(ESIL *esil, const char *regname, ut64 *val, ut32 *size);
+R_API bool r_esil_reg_write1(ESIL *esil, const char *regname, ut64 val);
+R_API bool r_esil_reg_write2(ESIL *esil, const char *regname, ut64 val);
+
 typedef bool (*REsilHookRegWriteCB)(ESIL *esil, const char *name, ut64 *val);
 
 typedef struct r_esil_callbacks_t {
@@ -151,6 +238,7 @@ typedef struct r_esil_t {
 	Sdb *stats;
 	REsilTrace *trace;
 	REsilCallbacks cb;
+	REsilHooks *hooks;
 #if 0
 	struct r_anal_reil_t *Reil;
 #endif
