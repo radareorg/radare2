@@ -177,20 +177,15 @@ R_API char *r_syscmd_ls(const char *input, int cons_width) {
 		}
 		if ((!strncmp (input, "-e", 2))) {
 			printfmt = FMT_EMOJI;
-			path = r_str_trim_head_ro (path + 1);
+			path = r_str_trim_head_ro (input + 2);
 		} else if ((!strncmp (input, "-q", 2))) {
 			printfmt = FMT_QUIET;
-			path = r_str_trim_head_ro (path + 1);
+			path = r_str_trim_head_ro (input + 2);
 		} else if ((!strncmp (input, "-l", 2)) || (!strncmp (input, "-j", 2))) {
-			// mode = 'l';
-			if (input[2]) {
-				printfmt = (input[2] == 'j') ? FMT_JSON : FMT_RAW;
-				path = r_str_trim_head_ro (input + 2);
-				if (!*path) {
-					path = ".";
-				}
-			} else {
-				printfmt = FMT_RAW;
+			printfmt = (input[1] == 'j') ? FMT_JSON : FMT_RAW;
+			path = r_str_trim_head_ro (input + 2);
+			if (!*path) {
+				path = ".";
 			}
 		} else {
 			path = input;
