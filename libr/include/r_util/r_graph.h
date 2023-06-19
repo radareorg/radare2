@@ -40,6 +40,11 @@ typedef struct r_graph_visitor_t {
 typedef void (*RGraphNodeCallback)(RGraphNode *n, RGraphVisitor *vis);
 typedef void (*RGraphEdgeCallback)(const RGraphEdge *e, RGraphVisitor *vis);
 
+typedef struct r_graph_dom_node_t {
+	RGraphNode *node;
+	ut32 idx;
+} RGraphDomNode;
+
 // Contrructs a new RGraph, returns heap-allocated graph.
 R_API RGraph *r_graph_new(void);
 // Destroys the graph and all nodes.
@@ -65,6 +70,7 @@ R_API bool r_graph_adjacent(const RGraph *g, const RGraphNode *from, const RGrap
 R_API void r_graph_dfs_node(RGraph *g, RGraphNode *n, RGraphVisitor *vis);
 R_API void r_graph_dfs_node_reverse(RGraph *g, RGraphNode *n, RGraphVisitor *vis);
 R_API void r_graph_dfs(RGraph *g, RGraphVisitor *vis);
+R_API RGraph *r_graph_dom_tree (RGraph *graph, RGraphNode *root);
 
 #ifdef __cplusplus
 }
