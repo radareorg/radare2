@@ -942,11 +942,11 @@ R_API int r_main_rasm2(int argc, const char *argv[]) {
 		if (p) {
 			*p = 0;
 			if (*filters) {
-				// R2_580 r_asm_input_filter (as->a, filters);
+				// R2_590 r_asm_input_filter (as->a, filters);
 				r_asm_sub_names_input (as->a, filters);
 			}
 			if (p[1]) {
-				// R2_580 r_asm_output_filter (as->a, p + 1);
+				// R2_590 r_asm_output_filter (as->a, p + 1);
 				r_asm_sub_names_output (as->a, p + 1);
 			}
 			*p = ':';

@@ -596,7 +596,7 @@ R_API bool r_parse_filter(RParse *p, ut64 addr, RFlag *f, RAnalHint *hint, char 
 // r_asm_subvar()
 // r_asm_replace()
 
-// R2_580 - easier to use, should replace r_asm_filter(), but its not using rflag, analhint, endian, etc
+// R2_590 - easier to use, should replace r_asm_filter(), but its not using rflag, analhint, endian, etc
 // this function is unused, but there's data we are missing, like the analhint.. that we must ensure that is called before calling this. so we need more tests for this.
 R_API char *r_parse_filter_dup(RParse *p, ut64 addr, const char *opstr) {
 	const size_t out_len = 256;

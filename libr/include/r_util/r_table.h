@@ -47,7 +47,7 @@ typedef struct {
 	RList *cols;
 	int totalCols;
 	bool showHeader;
-	/// R2_580 - squash them all as int showMode and switch it
+	/// R2_590 - squash them all as int showMode and switch it
 	bool showFancy;
 	bool showSQL;
 	bool showJSON;
