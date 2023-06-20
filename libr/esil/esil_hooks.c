@@ -3,7 +3,7 @@
 #include <r_esil.h>
 #include <r_util.h>
 
-R_API REsilHooks *r_esil_hooks_new() {
+R_API REsilHooks *r_esil_hooks_new(void) {
 	REsilHooks *hooks = R_NEW0 (REsilHooks);
 	r_return_val_if_fail (hooks, NULL);
 	hooks->mem_read_observers = r_id_storage_new (0, UT32_MAX - 1);
@@ -27,7 +27,7 @@ static bool free_hook_cb(void *user, void *data, ut32 id) {
 	return true;
 }
 
-R_API void r_esil_hooks_free (REsilHooks *hooks) {
+R_API void r_esil_hooks_free(REsilHooks *hooks) {
 	if (hooks) {
 		r_id_storage_foreach (hooks->mem_read_observers, free_hook_cb, NULL);
 		r_id_storage_foreach (hooks->mem_write_observers, free_hook_cb, NULL);
@@ -227,9 +227,9 @@ R_API void r_esil_del_reg_write_obs(REsil *esil, ut32 id) {
 	free (r_id_storage_take (esil->hooks->mem_write_observers, id));
 }
 
-R_API int r_esil_mem_read_at1(REsil *esil, ut64 addr, ut8 *buf, int len) {
+R_API bool r_esil_mem_read_at1(REsil *esil, ut64 addr, ut8 *buf, int len) {
 	r_return_val_if_fail (buf && esil && esil->hooks &&
-		esil->hooks->mem_read_implementation, -1);
+		esil->hooks->mem_read_implementation, false);
 	return esil->hooks->mem_read_implementation->imr (
 		esil->hooks->mem_read_implementation->user, addr, buf, len);
 }
@@ -249,30 +249,30 @@ static bool mem_read_obsv_wrap(void *user, void *data, ut32 id) {
 	return true;
 }
 
-R_API int r_esil_mem_read_at2(REsil *esil, ut64 addr, ut8 *buf, int len) {
-	r_return_val_if_fail (buf && esil && esil->hooks, -1);
+R_API bool r_esil_mem_read_at2(REsil *esil, ut64 addr, ut8 *buf, int len) {
+	r_return_val_if_fail (buf && esil && esil->hooks, false);
 	if (esil->hooks->mem_read_modifier) {
 		if (!esil->hooks->mem_read_modifier->mmr (
 			esil->hooks->mem_read_modifier->user, esil,
 			addr, buf, len)) {
-			return len;
+			return true;
 		}
 	}
-	const int ret = r_esil_mem_read_at1 (esil, addr, buf, len);
-	if (ret == len) {
+	if (r_esil_mem_read_at1 (esil, addr, buf, len)) {
 		MemUser mu = { addr, len, buf, R_NEWS (ut8, len)};
 		if (mu.dup) {
 			r_id_storage_foreach (esil->hooks->mem_read_observers,
 				mem_read_obsv_wrap, &mu);
 			free (mu.dup);
 		}
+		return true;
 	}
-	return ret;
+	return false;
 }
 
-R_API int r_esil_mem_write_at1(REsil *esil, ut64 addr, ut8 *buf, int len) {
+R_API bool r_esil_mem_write_at1(REsil *esil, ut64 addr, ut8 *buf, int len) {
 	r_return_val_if_fail (buf && esil && esil->hooks &&
-		esil->hooks->mem_write_implementation, -1);
+		esil->hooks->mem_write_implementation, false);
 	return esil->hooks->mem_write_implementation->imw (
 		esil->hooks->mem_write_implementation->user, addr, buf, len);
 }
@@ -285,13 +285,13 @@ static bool mem_write_obsv_wrap(void *user, void *data, ut32 id) {
 	return true;
 }
 
-R_API int r_esil_mem_write_at2(REsil *esil, ut64 addr, ut8 *buf, int len) {
-	r_return_val_if_fail (buf && esil && esil->hooks, -1);
+R_API bool r_esil_mem_write_at2(REsil *esil, ut64 addr, ut8 *buf, int len) {
+	r_return_val_if_fail (buf && esil && esil->hooks, false);
 	if (esil->hooks->mem_write_modifier) {
 		if (!esil->hooks->mem_write_modifier->mmw (
 			esil->hooks->mem_write_implementation->user,
 			esil, addr, buf, len)) {
-			return len;
+			return true;
 		}
 	}
 	MemUser mu = { addr, len, buf, R_NEWS (ut8, len)};
@@ -310,10 +310,15 @@ R_API bool r_esil_reg_read1(REsil *esil, const char *regname, ut64 *val, ut32 *s
 		esil->hooks->reg_read_implementation->user, regname, val, size);
 }
 
+typedef struct reg_user_t {
+	const char *regname;
+	const ut64 val;
+} RegUser;
+
 static bool reg_read_obsv_wrap(void *user, void *data, ut32 id) {
-	const char *regname = (const char *)user;
+	RegUser *ru = (RegUser *)user;
 	REsilHook *hook = (REsilHook *)data;
-	hook->orr (hook->user, regname);
+	hook->orr (hook->user, ru->regname);
 	return true;
 }
 
@@ -325,7 +330,8 @@ R_API bool r_esil_reg_read2(REsil *esil, const char *regname, ut64 *val, ut32 *s
 			return true;
 		}
 	}
-	r_id_storage_foreach (esil->hooks->reg_read_observers, reg_read_obsv_wrap, regname);
+	RegUser ru = {regname, 0ULL};
+	r_id_storage_foreach (esil->hooks->reg_read_observers, reg_read_obsv_wrap, &ru);
 	return r_esil_reg_read1 (esil, regname, val, size);
 }
 
@@ -335,11 +341,6 @@ R_API bool r_esil_reg_write1(REsil *esil, const char *regname, ut64 val) {
 	return esil->hooks->reg_write_implementation->irw (
 		esil->hooks->reg_write_implementation->user, regname, val);
 }
-
-typedef struct reg_user_t {
-	const char *regname;
-	const ut64 val;
-} RegUser;
 
 static bool reg_write_obsv_wrap(void *user, void *data, ut32 id) {
 	RegUser *ru = (RegUser *)user;

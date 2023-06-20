@@ -91,12 +91,12 @@ typedef void (*REsilObsHookMemReadCB)(void *user, ut64 addr, ut8 *buf, int len);
 typedef bool (*REsilModHookMemReadCB)(void *user, ESIL *esil, ut64 addr, ut8 *buf, int len);
 //modifier hook
 //returns true if continue
-typedef int (*REsilImpHookMemReadCB)(void *user, ut64 addr, ut8 *buf, int len);
+typedef bool (*REsilImpHookMemReadCB)(void *user, ut64 addr, ut8 *buf, int len);
 //implementation hook
 
 typedef void (*REsilObsHookMemWriteCB)(void *user, ut64 addr, ut8 *buf, int len);
 typedef bool (*REsilModHookMemWriteCB)(void *user, ESIL *esil, ut64 addr, ut8 *buf, int len);
-typedef int (*REsilImpHookMemWriteCB)(void *user, ut64 addr, ut8 *buf, int len);
+typedef bool (*REsilImpHookMemWriteCB)(void *user, ut64 addr, ut8 *buf, int len);
 
 typedef void (*REsilObsHookRegReadCB)(void *user, const char *regname);
 typedef bool (*REsilModHookRegReadCB)(void *user, ESIL *esil, const char *regname, ut64 *val, ut32 *size);
@@ -140,6 +140,8 @@ typedef struct r_esil_hooks_t {
 	REsilHook *reg_write_modifier;
 } REsilHooks;
 
+R_API REsilHooks *r_esil_hooks_new(void);
+R_API void r_esil_hooks_free(REsilHooks *hooks);
 R_API bool r_esil_set_mem_read_imp(ESIL *esil, REsilImpHookMemReadCB imp, void *user);
 R_API void r_esil_del_mem_read_imp(ESIL *esil);
 R_API bool r_esil_set_mem_write_imp(ESIL *esil, REsilImpHookMemWriteCB imp, void *user);
@@ -164,10 +166,10 @@ R_API void r_esil_del_mem_read_obs(ESIL *esil, ut32 id);
 R_API void r_esil_del_mem_write_obs(ESIL *esil, ut32 id);
 R_API void r_esil_del_reg_read_obs(ESIL *esil, ut32 id);
 R_API void r_esil_del_reg_write_obs(ESIL *esil, ut32 id);
-R_API int r_esil_mem_read_at1(ESIL *esil, ut64 addr, ut8 *buf, int len);
-R_API int r_esil_mem_read_at2(ESIL *esil, ut64 addr, ut8 *buf, int len);
-R_API int r_esil_mem_write_at1(ESIL *esil, ut64 addr, ut8 *buf, int len);
-R_API int r_esil_mem_write_at2(ESIL *esil, ut64 addr, ut8 *buf, int len);
+R_API bool r_esil_mem_read_at1(ESIL *esil, ut64 addr, ut8 *buf, int len);
+R_API bool r_esil_mem_read_at2(ESIL *esil, ut64 addr, ut8 *buf, int len);
+R_API bool r_esil_mem_write_at1(ESIL *esil, ut64 addr, ut8 *buf, int len);
+R_API bool r_esil_mem_write_at2(ESIL *esil, ut64 addr, ut8 *buf, int len);
 R_API bool r_esil_reg_read1(ESIL *esil, const char *regname, ut64 *val, ut32 *size);
 R_API bool r_esil_reg_read2(ESIL *esil, const char *regname, ut64 *val, ut32 *size);
 R_API bool r_esil_reg_write1(ESIL *esil, const char *regname, ut64 val);

@@ -113,6 +113,7 @@ R_API REsil *r_esil_new(int stacksize, int iotrap, unsigned int addrsize) {
 	r_esil_plugins_init (esil);
 	esil->addrmask = genmask (addrsize - 1);
 	esil->trace = r_esil_trace_new (esil);
+	esil->hooks = r_esil_hooks_new ();
 	return esil;
 }
 
@@ -208,6 +209,7 @@ R_API void r_esil_free(REsil *esil) {
 		esil->anal->arch->esil = NULL;
 	}
 
+	r_esil_hooks_free (esil->hooks);
 	r_esil_plugins_fini (esil);
 	r_esil_handlers_fini (esil);
 	ht_pp_free (esil->ops);
@@ -885,7 +887,7 @@ static bool esil_eq(REsil *esil) {
 		}
 		free (newreg);
 		free (src2);
-	} else if (src && dst && r_esil_reg_read_nocallback (esil, dst, &num, NULL)) {
+	} else if (src && dst && r_esil_reg_read1 (esil, dst, &num, NULL)) {
 		if (r_esil_get_parm (esil, src, &num2)) {
 			ret = r_esil_reg_write (esil, dst, num2);
 			esil->cur = num2;
@@ -4003,6 +4005,7 @@ R_API bool r_esil_setup(REsil *esil, RAnal *anal, int romem, int stats, int nonu
 	esil->trap_code = 0;
 	//esil->user = NULL;
 	esil->cb.reg_read = internal_esil_reg_read;
+	r_esil_set_reg_read_imp (esil, (REsilImpHookRegReadCB)internal_esil_reg_read, esil);
 	if (nonull) {
 		// this is very questionable, most platforms allow accessing NULL
 		// never writes zero to PC, BP, SP, why? because writing
@@ -4011,10 +4014,16 @@ R_API bool r_esil_setup(REsil *esil, RAnal *anal, int romem, int stats, int nonu
 		esil->cb.reg_write = internal_esil_reg_write_no_null;
 		esil->cb.mem_read = internal_esil_mem_read_no_null;
 		esil->cb.mem_write = internal_esil_mem_write_no_null;
+		r_esil_set_reg_write_imp (esil, (REsilImpHookRegWriteCB)internal_esil_reg_write_no_null, esil);
+		r_esil_set_mem_read_imp (esil, (REsilImpHookMemReadCB)internal_esil_mem_read_no_null, esil);
+		r_esil_set_mem_write_imp (esil, (REsilImpHookMemWriteCB)internal_esil_mem_write_no_null, esil);
 	} else {
 		esil->cb.reg_write = internal_esil_reg_write;
 		esil->cb.mem_read = internal_esil_mem_read;
 		esil->cb.mem_write = internal_esil_mem_write;
+		r_esil_set_reg_write_imp (esil, (REsilImpHookRegWriteCB)internal_esil_reg_write, esil);
+		r_esil_set_mem_read_imp (esil, (REsilImpHookMemReadCB)internal_esil_mem_read, esil);
+		r_esil_set_mem_write_imp (esil, (REsilImpHookMemWriteCB)internal_esil_mem_write, esil);
 	}
 	r_esil_mem_ro (esil, romem);
 	r_esil_stats (esil, stats);
