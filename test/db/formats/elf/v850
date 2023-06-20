@@ -30,6 +30,7 @@ binsz    973677
 bintype  elf
 bits     32
 canary   false
+injprot  true
 class    ELF32
 compiler GCC: (GNU) 9.3.0
 flags    0xf0100000

@@ -220,6 +220,7 @@ block    0x100
 binsz    1025
 bits     64
 canary   false
+injprot  false
 crypto   false
 endian   little
 havecode false
@@ -284,6 +285,7 @@ e asm.pcalign=1
 binsz    1024
 bits     64
 canary   false
+injprot  false
 crypto   false
 endian   little
 havecode false
@@ -311,6 +313,7 @@ binsz    4899
 bintype  elf
 bits     32
 canary   false
+injprot  false
 class    ELF32
 compiler GCC: (GNU) 4.8.2
 crypto   false
@@ -399,6 +402,7 @@ binsz    1024
 bintype  class
 bits     32
 canary   false
+injprot  false
 retguard false
 class    0x3200 0x0000
 crypto   false
@@ -1706,6 +1710,7 @@ binsz    4899
 bintype  elf
 bits     32
 canary   false
+injprot  false
 class    ELF32
 compiler GCC: (GNU) 4.8.2
 crypto   false
@@ -1742,6 +1747,7 @@ EXPECT=<<EOF
   "bintype": "elf",
   "bits": 32,
   "canary": false,
+  "injprot": false,
   "class": "ELF32",
   "compiled": "",
   "compiler": "GCC: (GNU) 4.8.2",
@@ -3178,6 +3184,7 @@ binsz    6710
 bintype  elf
 bits     64
 canary   false
+injprot  false
 class    ELF64
 compiler GCC: (GNU) 4.7.2
 crypto   false
@@ -3267,6 +3274,7 @@ binsz    6710
 bintype  elf
 bits     64
 canary   false
+injprot  false
 class    ELF64
 compiler GCC: (GNU) 4.7.2
 crypto   false

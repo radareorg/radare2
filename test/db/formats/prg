@@ -11,6 +11,7 @@ baddr    0x801
 binsz    38
 bits     8
 canary   false
+injprot  false
 retguard false
 crypto   false
 endian   little

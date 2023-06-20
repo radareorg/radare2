@@ -448,6 +448,7 @@ binsz    643108
 bintype  elf
 bits     64
 canary   false
+injprot  true
 class    ELF64
 compiler GCC: (GNU) 5.2.0
 crypto   false

@@ -657,6 +657,7 @@ binsz    4899
 bintype  elf
 bits     32
 canary   false
+injprot  false
 class    ELF32
 compiler GCC: (GNU) 4.8.2
 crypto   false
@@ -762,6 +763,7 @@ binsz    7051
 bintype  elf
 bits     64
 canary   false
+injprot  false
 class    ELF64
 compiler GCC: (Ubuntu 7.3.0-16ubuntu3) 7.3.0
 crypto   false
@@ -797,6 +799,7 @@ binsz    1603255
 bintype  elf
 bits     64
 canary   false
+injprot  false
 class    ELF64
 compiler GCC: (Debian 8.2.0-5) 8.2.0 clang version 6.0.1-6 (tags/RELEASE_601/final)
 crypto   false
@@ -832,6 +835,7 @@ binsz    9828
 bintype  mach0
 bits     64
 canary   false
+injprot  false
 class    MACH064
 compiler clang
 crypto   false

@@ -29,6 +29,7 @@ baddr    0x0
 binsz    69632
 bits     64
 canary   false
+injprot  false
 retguard false
 crypto   false
 endian   big

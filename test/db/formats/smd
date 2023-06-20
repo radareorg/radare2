@@ -15,6 +15,7 @@ baddr    0x0
 binsz    160504
 bits     16
 canary   false
+injprot  false
 retguard false
 class    SEGA MEGASIS    (C)2015 James L.
 crypto   false

@@ -11,6 +11,7 @@ binsz    47904
 bintype  mach0
 bits     64
 canary   false
+injprot  false
 class    MACH064
 compiler clang
 crypto   false

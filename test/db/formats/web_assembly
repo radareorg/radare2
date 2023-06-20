@@ -26,6 +26,7 @@ binsz    2812058
 bintype  wasm
 bits     32
 canary   false
+injprot  false
 retguard false
 class    module
 crypto   false

@@ -24,6 +24,7 @@ arch     snes
 binsz    65536
 bits     16
 canary   false
+injprot  false
 retguard false
 crypto   false
 endian   little
