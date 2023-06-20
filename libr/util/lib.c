@@ -20,7 +20,7 @@ static const char *__lib_types_get(int idx) {
 
 R_API int r_lib_types_get_i(const char *str) {
 	int i;
-	eprintf ("slow types.geti\n");
+	// eprintf ("slow types.geti\n");
 	for (i = 0; r_lib_types[i]; i++) {
 		if (!strcmp (str, r_lib_types[i])) {
 			return i;
@@ -164,6 +164,10 @@ R_API RLib *r_lib_new(const char *symname, const char *symnamefunc) {
 		}
 		lib->ignore_version = r_sys_getenv_asbool ("R2_IGNVER");
 		lib->handlers = r_list_newf (free);
+		int i;
+		for (i = 0; i < R_LIB_TYPE_LAST; i++) {
+			lib->handlers_bytype[i] = NULL;
+		}
 		lib->plugins = r_list_newf (free);
 		lib->plugins_ht = ht_pp_new0 ();
 		lib->symname = strdup (symname? symname: R_LIB_SYMNAME);
@@ -443,31 +447,15 @@ R_API bool r_lib_opendir(RLib *lib, const char *path) {
 	return true;
 }
 
-R_API bool r_lib_add_handler(RLib *lib,
-	int type, const char *desc,
-	RLibLifeCycleCallback cb, /* constructor */
-	RLibLifeCycleCallback dt, /* destructor */
-	void *user)
-{
+#define LibCB RLibLifeCycleCallback
+R_API bool r_lib_add_handler(RLib *lib, int type, const char *desc, LibCB cb, LibCB dt, void *user) {
+	r_return_val_if_fail (lib && desc, false);
 	// TODO r2_590 resolve using lib->handlers_ht
 	RLibHandler *handler = NULL;
-#if 0
-	RLibHandler *h;
-	RListIter *iter;
-
-	r_list_foreach (lib->handlers, iter, h) {
-		if (type == h->type) {
-			R_LOG_DEBUG ("Redefining library handler constructor for %d", type);
-			handler = h;
-			break;
-		}
-	}
-#else
 	if (lib->handlers_bytype[type]) {
 		R_LOG_DEBUG ("Redefining library handler constructor for %d", type);
-		handler = lib->handlers_bytype[type];;
+		handler = lib->handlers_bytype[type];
 	}
-#endif
 	if (!handler) {
 		handler = R_NEW (RLibHandler);
 		if (!handler) {
@@ -480,7 +468,9 @@ R_API bool r_lib_add_handler(RLib *lib,
 		}
 		lib->handlers_bytype[type] = handler;
 	}
-	r_str_ncpy (handler->desc, desc, sizeof (handler->desc) - 1);
+	if (desc) {
+		r_str_ncpy (handler->desc, desc, sizeof (handler->desc) - 1);
+	}
 	handler->user = user;
 	handler->constructor = cb;
 	handler->destructor = dt;
@@ -492,9 +482,8 @@ R_API bool r_lib_add_handler(RLib *lib,
 R_API bool r_lib_del_handler(RLib *lib, int type) {
 	RLibHandler *h = NULL;
 	RListIter *iter;
-	eprintf ("del handler is slow\n");
-	// XXX delete plugin by name, by filename or by type >? wtf this function is broken
 #if R2_590
+	// XXX slow - delete plugin by name, by filename or by type >? wtf this function is broken
 	{
 		bool found;
 		h = ht_pp_find (lib->plugins_ht, fileName, &found);
