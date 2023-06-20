@@ -1103,9 +1103,7 @@ static RBinInfo* info(RBinFile *bf) {
 	}
 	if (Elf_(is_static) (obj)) {
 		ret->dbg_info |= R_BIN_DBG_STATIC;
-#if R2_590
 		ret->has_libinjprot = true;
-#endif
 	}
 	lookup_sections (bf, ret);
 	lookup_symbols (bf, ret);

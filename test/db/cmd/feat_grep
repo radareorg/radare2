@@ -559,6 +559,7 @@ json.bin.binsz = 7441;
 json.bin.bintype = "elf";
 json.bin.bits = 64;
 json.bin.canary = false;
+json.bin.injprot = false;
 json.bin.class = "ELF64";
 json.bin.compiled = "";
 json.bin.compiler = "GCC: (Debian 4.4.5-8) 4.4.5";

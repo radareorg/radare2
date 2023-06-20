@@ -525,6 +525,7 @@ binsz    20668
 bintype  elf
 bits     32
 canary   true
+injprot  false
 class    ELF32
 crypto   false
 endian   little
@@ -629,6 +630,7 @@ binsz    65536
 bintype  mach0
 bits     32
 canary   false
+injprot  false
 class    MACH0
 compiler clang
 crypto   false

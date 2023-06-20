@@ -351,9 +351,7 @@ static RBinInfo *info(RBinFile *bf) {
 		ret->has_canary = mo->has_canary;
 		ret->has_retguard = -1;
 		ret->has_sanitizers = mo->has_sanitizers;
-#if R2_590
 		ret->has_libinjprot = mo->has_libinjprot;
-#endif
 		ret->dbg_info = mo->dbg_info;
 		ret->lang = mo->lang;
 		if (mo->dyld_info) {
