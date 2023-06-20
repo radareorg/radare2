@@ -158,9 +158,7 @@ static void cons_context_init(RConsContext *context, R_NULLABLE RConsContext *pa
 
 static void cons_context_deinit(RConsContext *context) {
 	r_stack_free (context->cons_stack);
-#if R2_590
 	r_list_free (context->marks);
-#endif
 	context->cons_stack = NULL;
 	r_stack_free (context->break_stack);
 	context->break_stack = NULL;
