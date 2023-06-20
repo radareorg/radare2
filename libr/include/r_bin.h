@@ -467,7 +467,7 @@ typedef struct r_bin_plugin_t {
 	RList/*<RBinTrycatch>*/* (*trycatch)(RBinFile *bf);
 	RList/*<RBinClass>*/* (*classes)(RBinFile *bf);
 	RList/*<RBinMem>*/* (*mem)(RBinFile *bf);
-	RList/*<RBinReloc>*/* (*patch_relocs)(RBin *bin); // R2_590 RBinFile instead of RBin
+	RList/*<RBinReloc>*/* (*patch_relocs)(RBinFile *bf);
 	RList/*<RBinMap>*/* (*maps)(RBinFile *bf);
 	RList/*<RBinFileHash>*/* (*hashes)(RBinFile *bf);
 	void (*header)(RBinFile *bf);
@@ -724,7 +724,7 @@ R_API const RList *r_bin_get_entries(RBin *bin);
 R_API RList *r_bin_get_fields(RBin *bin);
 R_API const RList *r_bin_get_imports(RBin *bin);
 R_API RList *r_bin_get_libs(RBin *bin);
-R_API RRBTree *r_bin_patch_relocs(RBin *bin);
+R_API RRBTree *r_bin_patch_relocs(RBinFile *bin);
 R_API RRBTree *r_bin_get_relocs(RBin *bin);
 R_API RList *r_bin_get_sections(RBin *bin);
 R_API RList *r_bin_get_classes(RBin *bin);

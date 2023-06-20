@@ -422,11 +422,11 @@ R_API int r_bin_object_set_items(RBinFile *bf, RBinObject *bo) {
 	return true;
 }
 
-R_IPI RRBTree *r_bin_object_patch_relocs(RBin *bin, RBinObject *bo) {
-	r_return_val_if_fail (bin && bo, NULL);
+R_IPI RRBTree *r_bin_object_patch_relocs(RBinFile *bf, RBinObject *bo) {
+	r_return_val_if_fail (bf && bo, NULL);
 
 	if (!bo->is_reloc_patched && bo->plugin && bo->plugin->patch_relocs) {
-		RList *tmp = bo->plugin->patch_relocs (bin);
+		RList *tmp = bo->plugin->patch_relocs (bf);
 		if (!tmp) {
 			return bo->relocs;
 		}

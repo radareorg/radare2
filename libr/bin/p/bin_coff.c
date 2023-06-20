@@ -485,10 +485,11 @@ static RList *relocs(RBinFile *bf) {
 	return _relocs_list (bf->rbin, bin, false, UT64_MAX);
 }
 
-static RList *patch_relocs(RBin *b) {
-	r_return_val_if_fail (b && b->iob.io && b->iob.io->desc, NULL);
+static RList *patch_relocs(RBinFile *bf) {
+	r_return_val_if_fail (bf && bf->rbin && bf->rbin->iob.io && bf->rbin->iob.io->desc, NULL);
+	RBin *b = bf->rbin;
 	RBinObject *bo = r_bin_cur_object (b);
-	RIO *io = b->iob.io;
+	RIO *io = bf->rbin->iob.io;
 	if (!bo || !bo->bin_obj) {
 		return NULL;
 	}

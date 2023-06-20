@@ -670,8 +670,7 @@ static RList* relocs(RBinFile *bf) {
 	return ret;
 }
 
-// static void _patch_reloc(ELFOBJ *bo, ut16 e_machine, RIOBind *iob, RBinElfReloc *rel, ut64 S, ut64 B, ut64 L) {
-static void _patch_reloc(RBinObject *binobj, struct Elf_(obj_t) *bo, ut16 e_machine, RIOBind *iob, RBinElfReloc *rel, ut64 S, ut64 B, ut64 L) {
+static void _patch_reloc(ELFOBJ *bo, ut16 e_machine, RIOBind *iob, RBinElfReloc *rel, ut64 S, ut64 B, ut64 L) {
 	ut64 V = 0;
 	ut64 A = rel->addend;
 	ut64 P = rel->rva;
@@ -853,12 +852,12 @@ static void _patch_reloc(RBinObject *binobj, struct Elf_(obj_t) *bo, ut16 e_mach
 	}
 }
 
-static RList* patch_relocs(RBin *b) {
-	r_return_val_if_fail (b, NULL);
+static RList* patch_relocs(RBinFile *bf) {
+	r_return_val_if_fail (bf && bf->rbin, NULL);
 	RList *ret = NULL;
 	RBinReloc *ptr = NULL;
 	HtUU *relocs_by_sym;
-
+	RBin *b = bf->rbin;
 	RIO *io = b->iob.io;
 	if (!io || !io->desc) {
 		return NULL;
@@ -942,7 +941,7 @@ static RList* patch_relocs(RBin *b) {
 		}
 		//ut64 raddr = sym_addr? sym_addr: vaddr;
 		ut64 raddr = (sym_addr && sym_addr != UT64_MAX)? sym_addr: vaddr;
-		_patch_reloc (obj, bin, bin->ehdr.e_machine, &b->iob, reloc, raddr, 0, plt_entry_addr);
+		_patch_reloc (bin, bin->ehdr.e_machine, &b->iob, reloc, raddr, 0, plt_entry_addr);
 		if (!(ptr = reloc_convert (bin, reloc, n_vaddr))) {
 			continue;
 		}
