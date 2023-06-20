@@ -420,7 +420,7 @@ typedef struct r_bin_ldr_plugin_t {
 	bool (*load)(RBin *bin);
 } RBinLdrPlugin;
 
-// R2_580 - deprecate this struct which looks dupe from RArchConfig
+// R2_590 - deprecate this struct which looks dupe from RArchConfig
 typedef struct r_bin_arch_options_t {
 	const char *arch;
 	int bits;

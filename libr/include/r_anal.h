@@ -582,7 +582,7 @@ R_DEPRECATE typedef struct r_anal_var_field_t {
 	bool field;
 } RAnalVarField;
 
-// TO DEPRECATE R2_580
+// TO DEPRECATE R2_590
 // Use r_anal_get_functions_in¿() instead
 R_DEPRECATE R_API RAnalFunction *r_anal_get_fcn_in(RAnal *anal, ut64 addr, int type);
 R_DEPRECATE R_API RAnalFunction *r_anal_get_fcn_in_bounds(RAnal *anal, ut64 addr, int type);

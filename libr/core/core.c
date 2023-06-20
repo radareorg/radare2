@@ -3066,7 +3066,7 @@ R_API bool r_core_init(RCore *core) {
 	core->print->offsize = r_core_print_offsize;
 	core->print->cb_printf = r_cons_printf;
 #if R2__WINDOWS__
-	// XXX R2_580 deprecate this callback? we have the rlog apis
+	// XXX R2_590 deprecate this callback? we have the rlog apis
 	core->print->cb_eprintf = win_eprintf;
 #endif
 	core->print->cb_color = r_cons_rainbow_get;

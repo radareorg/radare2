@@ -313,7 +313,7 @@ R_API bool r_core_hack(RCore *core, const char *op) {
 		return false;
 	}
 #if R2_580
-	// TODO: call RArch.patch() if available, otherwise just do this hack until all anal plugs are moved to arch
+	// R2_590 TODO: call RArch.patch() if available, otherwise just do this hack until all anal plugs are moved to arch
 	// r_arch_patch (aop, 0);
 	RArchSession *acur = R_UNWRAP3 (core, rasm, acur);
 	if (acur && acur->plugin->patch) {
