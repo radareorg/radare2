@@ -119,7 +119,7 @@ static int archinfo(RArchSession *s, ut32 q) {
 	return 2;
 }
 
-RArchPlugin r_arch_plugin_mcore = {
+const RArchPlugin r_arch_plugin_mcore = {
 	.meta = {
 		.name = "mcore",
 		.desc = "MCore analysis plugin",

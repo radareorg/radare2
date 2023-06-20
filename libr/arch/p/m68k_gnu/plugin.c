@@ -113,7 +113,7 @@ static int info(RArchSession *as, ut32 q) {
 	return 0;
 }
 
-RArchPlugin r_arch_plugin_m68k_gnu = {
+const RArchPlugin r_arch_plugin_m68k_gnu = {
 	.meta = {
 		.name = "m68k.gnu",
 		.author = "pancake",

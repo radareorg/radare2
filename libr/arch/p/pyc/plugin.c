@@ -197,7 +197,7 @@ static bool finish(RArchSession *s) {
 	return true;
 }
 
-RArchPlugin r_arch_plugin_pyc = {
+const RArchPlugin r_arch_plugin_pyc = {
 	.meta = {
 		.name = "pyc",
 		.desc = "Python bytecode analysis plugin",

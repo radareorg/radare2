@@ -69,7 +69,7 @@ static char* regs(RArchSession *as) {
 	return strdup (reg);
 }
 
-RArchPlugin r_arch_plugin_lh5801 = {
+const RArchPlugin r_arch_plugin_lh5801 = {
 	.meta = {
 		.name = "lh5801",
 		.license = "LGPL3",

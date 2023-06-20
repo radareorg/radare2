@@ -274,7 +274,7 @@ static int archinfo(RArchSession *a, ut32 q) {
 	return 1;
 }
 
-RArchPlugin r_arch_plugin_or1k = {
+const RArchPlugin r_arch_plugin_or1k = {
 	.meta = {
 		.name = "or1k",
 		.desc = "OpenRISC 1000",

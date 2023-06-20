@@ -24,7 +24,7 @@ static bool encode(RArchSession *as, RAnalOp *op, RArchEncodeMask mask) {
 
 #define DESC "Use -a arm.vasm, 6502.vasm, 6809, c16x, jagrisc, m68k, pdp11, ppc, qnice, tr3200, vidcore, x86, z80"
 
-RArchPlugin r_arch_plugin_any_vasm = {
+const RArchPlugin r_arch_plugin_any_vasm = {
 	.meta = {
 		.name = "any.vasm",
 		.desc = DESC,

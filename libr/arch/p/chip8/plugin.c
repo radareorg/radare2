@@ -214,7 +214,7 @@ static bool chip8_anop(RArchSession *s, RAnalOp *op, RArchDecodeMask mask) {
 	return true;
 }
 
-RArchPlugin r_arch_plugin_chip8 = {
+const RArchPlugin r_arch_plugin_chip8 = {
 	.meta = {
 		.name = "chip8",
 		.author = "maijin",

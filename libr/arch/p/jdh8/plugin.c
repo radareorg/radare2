@@ -18,7 +18,7 @@ static bool decode(RArchSession *s, RAnalOp *op, RArchDecodeMask mask) {
 	return is_valid;
 }
 
-RArchPlugin r_arch_plugin_jdh8 = {
+const RArchPlugin r_arch_plugin_jdh8 = {
 	.meta = {
 		.name = "jdh8",
 		.desc = "jdh-8 toy architecture",

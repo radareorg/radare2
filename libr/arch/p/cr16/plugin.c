@@ -125,7 +125,7 @@ static int archinfo(RArchSession *as, ut32 q) {
 	return 0;
 }
 
-RArchPlugin r_arch_plugin_cr16 = {
+const RArchPlugin r_arch_plugin_cr16 = {
 	.meta = {
 		.name = "cr16",
 		.desc = "Compact RISC processor",

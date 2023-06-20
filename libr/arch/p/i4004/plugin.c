@@ -355,7 +355,7 @@ static bool i4004_encode(RArchSession *se, RAnalOp *op, RArchEncodeMask mask) {
 	return true;
 }
 
-RArchPlugin r_arch_plugin_i4004 = {
+const RArchPlugin r_arch_plugin_i4004 = {
 	.meta = {
 		.name = "i4004",
 		.author = "pancake, condret",

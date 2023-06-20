@@ -341,7 +341,7 @@ static int archinfo(RArchSession *as, ut32 q) {
 	return 4;
 }
 
-RArchPlugin r_arch_plugin_cris = {
+const RArchPlugin r_arch_plugin_cris = {
 	.meta = {
 		.name = "cris",
 		.desc = "Axis Communications 32-bit embedded processor",

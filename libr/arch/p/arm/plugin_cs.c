@@ -4883,7 +4883,7 @@ static bool fini(RArchSession *as) {
 	return true;
 }
 
-RArchPlugin r_arch_plugin_arm_cs = {
+const RArchPlugin r_arch_plugin_arm_cs = {
 	.meta = {
 		.name = "arm",
 		.desc = "Capstone ARM analyzer",

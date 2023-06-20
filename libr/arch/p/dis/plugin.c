@@ -390,7 +390,7 @@ static char *regs(RArchSession *as) {
 	);
 }
 
-RArchPlugin r_arch_plugin_dis = {
+const RArchPlugin r_arch_plugin_dis = {
 	.meta = {
 		.name = "dis",
 		.desc = "Inferno Dis VM disassembler",

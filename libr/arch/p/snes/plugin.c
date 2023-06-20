@@ -334,7 +334,7 @@ static bool snes_anop(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 	return true;
 }
 
-RArchPlugin r_arch_plugin_snes = {
+const RArchPlugin r_arch_plugin_snes = {
 	.meta = {
 		.name = "snes",
 		.desc = "SNES analysis plugin",

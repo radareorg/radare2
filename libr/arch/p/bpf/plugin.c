@@ -1210,7 +1210,7 @@ static bool esilcb(RArchSession *as, RArchEsilAction action) {
 	return true;
 }
 
-RArchPlugin r_arch_plugin_bpf = {
+const RArchPlugin r_arch_plugin_bpf = {
 	.meta = {
 		.name = "bpf.mr",
 		.desc = "Classic BPF analysis plugin",

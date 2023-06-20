@@ -564,7 +564,7 @@ static char *mnemonics(RArchSession *as, int id, bool json) {
 	return r_arch_cs_mnemonics (as, cpd->cs_handle, id, json);
 }
 
-RArchPlugin r_arch_plugin_m680x_cs = {
+const RArchPlugin r_arch_plugin_m680x_cs = {
 	.meta = {
 		.name = "m680x",
 		.desc = "Capstone M680X analysis plugin",
@@ -579,7 +579,7 @@ RArchPlugin r_arch_plugin_m680x_cs = {
 	.fini = fini,
 };
 #else
-RArchPlugin r_anal_plugin_m680x_cs = {
+const RArchPlugin r_anal_plugin_m680x_cs = {
 	.meta = {
 		.name = "m680x (unsupported)",
 		.desc = "Capstone M680X analyzer (unsupported)",

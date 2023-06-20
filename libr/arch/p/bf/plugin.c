@@ -309,7 +309,7 @@ static int archinfo(RArchSession *as, ut32 q) {
 	return 1;
 }
 
-RArchPlugin r_arch_plugin_bf = {
+const RArchPlugin r_arch_plugin_bf = {
 	.meta = {
 		.name = "bf",
 		.desc = "brainfuck code analysis plugin",

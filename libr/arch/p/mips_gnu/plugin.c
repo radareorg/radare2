@@ -1945,7 +1945,7 @@ static bool fini(RArchSession *as) {
 	return true;
 }
 
-RArchPlugin r_arch_plugin_mips_gnu = {
+const RArchPlugin r_arch_plugin_mips_gnu = {
 	.meta = {
 		.name = "mips.gnu",
 		.desc = "MIPS code analysis plugin",

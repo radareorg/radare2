@@ -635,7 +635,7 @@ static char *mnemonics(RArchSession *s, int id, bool json) {
 	return r_arch_cs_mnemonics (s, cpd->cs_handle, id, json);
 }
 
-RArchPlugin r_arch_plugin_riscv_cs = {
+const RArchPlugin r_arch_plugin_riscv_cs = {
 	.meta = {
 		.name = "riscv.cs",
 		.desc = "RISC-V analysis plugin",
@@ -662,7 +662,7 @@ R_API RLibStruct radare_plugin = {
 #endif
 
 #else
-RArchPlugin r_arch_plugin_riscv_cs = {0};
+const RArchPlugin r_arch_plugin_riscv_cs = {0};
 #ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ARCH,

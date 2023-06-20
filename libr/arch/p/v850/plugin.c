@@ -897,7 +897,7 @@ static bool encode(RArchSession *s, RAnalOp *op, ut32 mask) {
 	return 0;
 }
 
-RArchPlugin r_arch_plugin_v850 = {
+const RArchPlugin r_arch_plugin_v850 = {
 	.meta = {
 		.name = "v850",
 		.desc = "V850 code analysis plugin",

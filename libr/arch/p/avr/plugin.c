@@ -2372,7 +2372,7 @@ static bool esil_cb(RArchSession *as, RArchEsilAction action) {
 	return true;
 }
 
-RArchPlugin r_arch_plugin_avr = {
+const RArchPlugin r_arch_plugin_avr = {
 	.meta = {
 		.name = "avr",
 		.desc = "AVR code analysis plugin",

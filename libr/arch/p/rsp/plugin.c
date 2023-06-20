@@ -779,7 +779,7 @@ static int archinfo(RArchSession *s, ut32 q) {
 	return 4;
 }
 
-RArchPlugin r_arch_plugin_rsp = {
+const RArchPlugin r_arch_plugin_rsp = {
 	.meta = {
 		.name = "rsp",
 		.desc = "RSP code analysis plugin",

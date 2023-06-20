@@ -438,7 +438,7 @@ static char *mnemonics(RArchSession *as, int id, bool json) {
 	return r_arch_cs_mnemonics (as, cpd->cs_handle, id, json);
 }
 
-RArchPlugin r_arch_plugin_sparc_cs = {
+const RArchPlugin r_arch_plugin_sparc_cs = {
 	.meta = {
 		.name = "sparc",
 		.desc = "Capstone SPARC analysis",

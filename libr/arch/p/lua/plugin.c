@@ -271,7 +271,7 @@ static bool fini(RArchSession *as) {
 	return true;
 }
 
-RArchPlugin r_arch_plugin_lua = {
+const RArchPlugin r_arch_plugin_lua = {
 	.meta = {
 		.name = "lua",
 		.desc = "LUA Bytecode arch plugin",

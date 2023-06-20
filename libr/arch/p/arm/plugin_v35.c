@@ -3359,7 +3359,7 @@ static bool encode(RArchSession *s, RAnalOp *op, ut32 mask) {
 }
 #endif
 
-RArchPlugin r_arch_plugin_arm_v35 = {
+const RArchPlugin r_arch_plugin_arm_v35 = {
 	.meta = {
 		.name = "arm.v35",
 		.desc = "Vector35 ARM analyzer",

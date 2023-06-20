@@ -61,7 +61,7 @@ static int archinfo (RArchSession *as, ut32 q) {
 	return 1;
 }
 
-RArchPlugin r_arch_plugin_i8080 = {
+const RArchPlugin r_arch_plugin_i8080 = {
 	.meta = {
 		.name = "i8080",
 		.desc = "I8080 CPU code arch plugin",

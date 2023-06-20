@@ -12,7 +12,7 @@ static bool x86nz_encode(RArchSession *s, RAnalOp *op, RArchEncodeMask mask) {
 	return false;
 }
 
-RArchPlugin r_arch_plugin_x86_nz = {
+const RArchPlugin r_arch_plugin_x86_nz = {
 	.meta = {
 		.name = "x86.nz",
 		.desc = "x86 handmade assembler",

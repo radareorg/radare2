@@ -16,7 +16,7 @@ static char* regs(RArchSession *as) {
 }
 #endif
 
-RArchPlugin r_arch_plugin_null = {
+const RArchPlugin r_arch_plugin_null = {
 	.meta = {
 		.name = "null",
 		.desc = "Fallback/Null arch plugin",

@@ -309,7 +309,7 @@ static char *kvx_regs(RArchSession *a) {
 	return strdup (kvx_reg_profile);
 }
 
-RArchPlugin r_arch_plugin_kvx = {
+const RArchPlugin r_arch_plugin_kvx = {
 	.meta = {
 		.name = "kvx",
 		.desc = "Kalray VLIW core",

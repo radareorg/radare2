@@ -181,7 +181,7 @@ static int archinfo(RArchSession *as, ut32 q) {
 	return 4; // XXX
 }
 
-RArchPlugin r_arch_plugin_tricore = {
+const RArchPlugin r_arch_plugin_tricore = {
 	.meta = {
 		.name = "tricore",
 		.desc = "TRICORE analysis plugin",

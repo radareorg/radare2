@@ -910,7 +910,7 @@ static bool fini(RArchSession *s) {
 	return true;
 }
 
-RArchPlugin r_arch_plugin_m68k_cs = {
+const RArchPlugin r_arch_plugin_m68k_cs = {
 	.meta = {
 		.name = "m68k",
 		.desc = "Capstone M68K analyzer",
@@ -927,7 +927,7 @@ RArchPlugin r_arch_plugin_m68k_cs = {
 	.fini = fini,
 };
 #else
-RArchPlugin r_arch_plugin_m68k_cs = {
+const RArchPlugin r_arch_plugin_m68k_cs = {
 	.name = "m68k (unsupported)",
 	.desc = "Capstone M68K analyzer (unsupported)",
 	.license = "BSD",

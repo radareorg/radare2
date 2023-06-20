@@ -731,7 +731,7 @@ static int archinfo(RArchSession *as, ut32 q) {
 }
 
 
-RArchPlugin r_arch_plugin_h8300 = {
+const RArchPlugin r_arch_plugin_h8300 = {
 	.meta = {
 		.name = "h8300",
 		.desc = "H8300 code analysis plugin",

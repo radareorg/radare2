@@ -161,7 +161,7 @@ static int archinfo(RArchSession *as, ut32 q) {
 	return 1;
 }
 
-RArchPlugin r_arch_plugin_ebc = {
+const RArchPlugin r_arch_plugin_ebc = {
 	.meta = {
 		.name = "ebc",
 		.desc = "EFI Bytecode architecture",

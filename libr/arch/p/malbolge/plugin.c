@@ -63,7 +63,7 @@ static bool mal_decode(RArchSession *s, RAnalOp *op, RArchEncodeMask mask) {
 	return true;
 }
 
-RArchPlugin r_arch_plugin_malbolge = {
+const RArchPlugin r_arch_plugin_malbolge = {
 	.name = "malbolge",
 	.desc = "Malbolge analysis plugin",
 	.arch = "malbolge",

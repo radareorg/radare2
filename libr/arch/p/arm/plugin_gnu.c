@@ -639,7 +639,7 @@ static bool fini(RArchSession *as) {
 	return true;
 }
 
-RArchPlugin r_arch_plugin_arm_gnu = {
+const RArchPlugin r_arch_plugin_arm_gnu = {
 	.meta = {
 		.name = "arm.gnu",
 		.license = "LGPL3",

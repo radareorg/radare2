@@ -1693,7 +1693,7 @@ static int archinfo(RArchSession *as, ut32 q) {
 	return 0;
 }
 
-RArchPlugin r_arch_plugin_dalvik = {
+const RArchPlugin r_arch_plugin_dalvik = {
 	.meta = {
 		.name = "dalvik",
 		.desc = "Dalvik (Android VM) bytecode analysis plugin",

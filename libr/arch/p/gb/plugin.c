@@ -1557,7 +1557,7 @@ static bool esil_cb(RArchSession *as, RArchEsilAction action) {
 	return true;
 }
 
-RArchPlugin r_arch_plugin_gb = {
+const RArchPlugin r_arch_plugin_gb = {
 	.meta = {
 		.name = "gb",
 		.desc = "Gameboy CPU code analysis plugin",

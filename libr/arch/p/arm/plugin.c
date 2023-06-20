@@ -140,7 +140,7 @@ static int archinfo(RArchSession *a, ut32 q) {
 	return 4; // XXX
 }
 
-RArchPlugin r_arch_plugin_arm = {
+const RArchPlugin r_arch_plugin_arm = {
 	.meta = {
 		.name = "arm.nz",
 		.desc = "custom thumb, arm32 and arm64 assembler",

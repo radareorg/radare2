@@ -253,7 +253,7 @@ static bool fini(RArchSession *s) {
 	return true;
 }
 
-RArchPlugin r_arch_plugin_6502_cs = {
+const RArchPlugin r_arch_plugin_6502_cs = {
 	.meta = {
 		.name = "6502.cs",
 		.desc = "Capstone mos65xx analysis plugin",
@@ -277,7 +277,7 @@ R_API RLibStruct radare_plugin = {
 #endif
 #else
 //  empty plugin
-RArchPlugin r_arch_plugin_6502_cs = {
+const RArchPlugin r_arch_plugin_6502_cs = {
 	.meta = {
 		.name = "6502.cs",
 		.desc = "Capstone mos65xx analysis plugin (not supported)",

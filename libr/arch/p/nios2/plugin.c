@@ -218,7 +218,7 @@ static int info(RArchSession *s, ut32 q) {
 	return 4;
 }
 
-RArchPlugin r_arch_plugin_nios2 = {
+const RArchPlugin r_arch_plugin_nios2 = {
 	.meta = {
 		.name = "nios2",
 		.desc = "NIOS II code analysis plugin",

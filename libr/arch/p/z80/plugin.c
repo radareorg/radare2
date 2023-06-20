@@ -2836,7 +2836,7 @@ static bool fini(RArchSession *s) {
 	return true;
 }
 
-RArchPlugin r_arch_plugin_z80 = {
+const RArchPlugin r_arch_plugin_z80 = {
 	.meta = {
 		.name = "z80",
 		.desc = "Z80 CPU code analysis plugin",

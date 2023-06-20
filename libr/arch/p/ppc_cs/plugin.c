@@ -1461,7 +1461,7 @@ static bool fini(RArchSession *as) {
 	return true;
 }
 
-RArchPlugin r_arch_plugin_ppc_cs = {
+const RArchPlugin r_arch_plugin_ppc_cs = {
 	.meta = {
 		.name = "ppc",
 		.desc = "Capstone (+vle+ps) PowerPC disassembler",

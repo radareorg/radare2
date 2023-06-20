@@ -66,7 +66,7 @@ static int archinfo(RArchSession *a, ut32 q) {
 	return 1;
 }
 
-RArchPlugin r_arch_plugin_sm5xx = {
+const RArchPlugin r_arch_plugin_sm5xx = {
 	.meta = {
 		.name = "sm5xx",
 		.desc = "Sharp SM 5XX family MCUs",

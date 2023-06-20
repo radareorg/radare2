@@ -1320,7 +1320,7 @@ static bool decode(RArchSession *s, RAnalOp *op, RArchDecodeMask mask) {
 	return true;
 }
 
-RArchPlugin r_arch_plugin_sh = {
+const RArchPlugin r_arch_plugin_sh = {
 	.meta = {
 		.name = "sh",
 		.desc = "SH-4 code analysis plugin",
