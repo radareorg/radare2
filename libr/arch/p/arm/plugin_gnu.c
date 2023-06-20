@@ -14,9 +14,10 @@
 #include "anal_arm_hacks.inc.c"
 #include "gnu/opcode-arm.h"
 
-// R2_590 - eliminate those globals!
-static R_TH_LOCAL char *oldcpu = NULL;
-static R_TH_LOCAL int oldcpucode = 0;
+typedef struct plugin_data_t {
+	char *oldcpu;
+	int oldcpucode;
+} PluginData;
 
 static ut32 disarm_branch_offset(ut32 pc, ut32 insoff) {
 	ut32 add = insoff << 2;
@@ -249,7 +250,8 @@ static int disassemble(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf,
 	/* select cpu */
 	// XXX oldcpu leaks
 	char *cpu = as->config->cpu;
-	if (oldcpu != cpu) {
+	PluginData *pd = as->data;
+	if (pd->oldcpu != cpu) {
 		int cpucode = 0;
 		if (cpu) {
  			int i;
@@ -261,12 +263,12 @@ static int disassemble(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf,
 				}
 			}
 		}
-		oldcpu = cpu;
-		oldcpucode = cpucode;
+		pd->oldcpu = cpu;
+		pd->oldcpucode = cpucode;
 	}
 
 	obj.arch = 0;
-	obj.mach = oldcpucode;
+	obj.mach = pd->oldcpucode;
 	if (obj.mach) {
 		obj.flags |= USER_SPECIFIED_MACHINE_TYPE;
 	}
@@ -620,6 +622,23 @@ static int archinfo(RArchSession *as, ut32 q) {
 	return 4; // XXX
 }
 
+static bool init(RArchSession *as) {
+	r_return_val_if_fail (as, false);
+	if (as->data) {
+		R_LOG_WARN ("Already initialized");
+		return false;
+	}
+
+	as->data = R_NEW0 (PluginData);
+	return !!as->data;
+}
+
+static bool fini(RArchSession *as) {
+	r_return_val_if_fail (as, false);
+	R_FREE (as->data);
+	return true;
+}
+
 RArchPlugin r_arch_plugin_arm_gnu = {
 	.meta = {
 		.name = "arm.gnu",
@@ -638,8 +657,10 @@ RArchPlugin r_arch_plugin_arm_gnu = {
 	.endian = R_SYS_ENDIAN_LITTLE | R_SYS_ENDIAN_BIG,
 	.bits = R_SYS_BITS_PACK3 (16, 32, 64),
 	.info = archinfo,
-	.decode = &arm_op,
+	.decode = arm_op,
 	.regs = set_reg_profile,
+	.init = init,
+	.fini = fini,
 };
 
 #ifndef R2_PLUGIN_INCORE
