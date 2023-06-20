@@ -20,6 +20,7 @@ static const char *__lib_types_get(int idx) {
 
 R_API int r_lib_types_get_i(const char *str) {
 	int i;
+	eprintf ("slow types.geti\n");
 	for (i = 0; r_lib_types[i]; i++) {
 		if (!strcmp (str, r_lib_types[i])) {
 			return i;
@@ -164,6 +165,7 @@ R_API RLib *r_lib_new(const char *symname, const char *symnamefunc) {
 		lib->ignore_version = r_sys_getenv_asbool ("R2_IGNVER");
 		lib->handlers = r_list_newf (free);
 		lib->plugins = r_list_newf (free);
+		lib->plugins_ht = ht_pp_new0 ();
 		lib->symname = strdup (symname? symname: R_LIB_SYMNAME);
 		lib->symnamefunc = strdup (symnamefunc? symnamefunc: R_LIB_SYMFUNC);
 	}
@@ -196,13 +198,20 @@ R_API int r_lib_run_handler(RLib *lib, RLibPlugin *plugin, RLibStruct *symbol) {
 }
 
 R_API RLibHandler *r_lib_get_handler(RLib *lib, int type) {
-	RLibHandler *h;
+#if 1
+	if (type < 0 || type >= R_LIB_TYPE_LAST) {
+		return NULL;
+	}
+	return lib->handlers_bytype[type];
+#else
 	RListIter *iter;
+	RLibHandler *h;
 	r_list_foreach (lib->handlers, iter, h) {
 		if (h->type == type) {
 			return h;
 		}
 	}
+#endif
 	return NULL;
 }
 
@@ -224,6 +233,7 @@ R_API int r_lib_close(RLib *lib, const char *file) {
 			if (file) {
 				return ret;
 			}
+			break;
 		}
 	}
 	if (!file) {
@@ -239,39 +249,26 @@ R_API int r_lib_close(RLib *lib, const char *file) {
 			}
 			free (p->file);
 			r_list_delete (lib->plugins, iter);
-#if R2_590
 			{
 				const char *fileName = r_str_rstr (file, R_SYS_DIR);
 				if (fileName) {
 					ht_pp_delete (lib->plugins_ht, fileName + 1);
 				}
 			}
-#endif
 			return ret;
 		}
 	}
 	return -1;
 }
 
-static bool __already_loaded(RLib *lib, const char *file) {
+static bool already_loaded(RLib *lib, const char *file) {
 	const char *fileName = r_str_rstr (file, R_SYS_DIR);
 	if (fileName) {
-		RLibPlugin *p;
-#if R2_590
 		bool found;
-		p = ht_pp_find (lib->plugins_ht, fileName + 1, &found);
+		RLibPlugin *p = ht_pp_find (lib->plugins_ht, fileName + 1, &found);
 		if (found && p) {
 			return true;
 		}
-#else
-		RListIter *iter;
-		r_list_foreach (lib->plugins, iter, p) {
-			const char *pFileName = r_str_rstr (p->file, R_SYS_DIR);
-			if (pFileName && !strcmp (fileName, pFileName)) {
-				return true;
-			}
-		}
-#endif
 	}
 	return false;
 }
@@ -283,7 +280,7 @@ R_API int r_lib_open(RLib *lib, const char *file) {
 		return -1;
 	}
 
-	if (__already_loaded (lib, file)) {
+	if (already_loaded (lib, file)) {
 		R_LOG_ERROR ("Not loading library because it has already been loaded from '%s'", file);
 		return -1;
 	}
@@ -368,12 +365,10 @@ R_API int r_lib_open_ptr(RLib *lib, const char *file, void *handler, RLibStruct 
 		r_lib_dl_close (handler);
 	} else {
 		r_list_append (lib->plugins, p);
-#if R2_590
 		const char *fileName = r_str_rstr (file, R_SYS_DIR);
 		if (fileName) {
 			ht_pp_insert (lib->plugins_ht, strdup (fileName), p);
 		}
-#endif
 	}
 	return ret;
 }
@@ -450,15 +445,16 @@ R_API bool r_lib_opendir(RLib *lib, const char *path) {
 
 R_API bool r_lib_add_handler(RLib *lib,
 	int type, const char *desc,
-	int (*cb)(RLibPlugin *, void *, void *),  /* constructor */
-	int (*dt)(RLibPlugin *, void *, void *),  /* destructor */
+	RLibLifeCycleCallback cb, /* constructor */
+	RLibLifeCycleCallback dt, /* destructor */
 	void *user)
 {
+	// TODO r2_590 resolve using lib->handlers_ht
+	RLibHandler *handler = NULL;
+#if 0
 	RLibHandler *h;
 	RListIter *iter;
-	RLibHandler *handler = NULL;
 
-	// TODO r2_590 resolve using lib->handlers_ht
 	r_list_foreach (lib->handlers, iter, h) {
 		if (type == h->type) {
 			R_LOG_DEBUG ("Redefining library handler constructor for %d", type);
@@ -466,6 +462,12 @@ R_API bool r_lib_add_handler(RLib *lib,
 			break;
 		}
 	}
+#else
+	if (lib->handlers_bytype[type]) {
+		R_LOG_DEBUG ("Redefining library handler constructor for %d", type);
+		handler = lib->handlers_bytype[type];;
+	}
+#endif
 	if (!handler) {
 		handler = R_NEW (RLibHandler);
 		if (!handler) {
@@ -473,6 +475,10 @@ R_API bool r_lib_add_handler(RLib *lib,
 		}
 		handler->type = type;
 		r_list_append (lib->handlers, handler);
+		if (lib->handlers_bytype[type]) {
+			R_LOG_WARN ("we have a handler for this type already set");
+		}
+		lib->handlers_bytype[type] = handler;
 	}
 	r_str_ncpy (handler->desc, desc, sizeof (handler->desc) - 1);
 	handler->user = user;
@@ -486,18 +492,21 @@ R_API bool r_lib_add_handler(RLib *lib,
 R_API bool r_lib_del_handler(RLib *lib, int type) {
 	RLibHandler *h = NULL;
 	RListIter *iter;
+	eprintf ("del handler is slow\n");
+	// XXX delete plugin by name, by filename or by type >? wtf this function is broken
 #if R2_590
-// XXX delete plugin by name, by filename or by type >? wtf this function is broken
+	{
 		bool found;
-		// h = ht_pp_find (lib->plugins_ht, fileName, &found);
+		h = ht_pp_find (lib->plugins_ht, fileName, &found);
 		if (found && h) {
 			// ht_pp_delete (lib->plugins_ht, fileName);
 			return true;
 		}
-#else
+	}
 #endif
 	// TODO: remove all handlers for that type? or only one?
 	/* No _safe loop necessary because we return immediately after the delete. */
+	lib->handlers_bytype[type] = NULL;
 	r_list_foreach (lib->handlers, iter, h) {
 		if (type == h->type) {
 			r_list_delete (lib->handlers, iter);
