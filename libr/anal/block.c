@@ -633,6 +633,9 @@ R_API bool r_anal_block_op_starts_at(RAnalBlock *bb, ut64 addr) {
 		return false;
 	}
 	ut64 off = addr - bb->addr;
+	if (off == 0) {
+		return true;
+	}
 	if (off > UT16_MAX) {
 		return false;
 	}
