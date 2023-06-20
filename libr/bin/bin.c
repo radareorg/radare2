@@ -710,10 +710,10 @@ R_API RList *r_bin_get_libs(RBin *bin) {
 	return o ? o->libs : NULL;
 }
 
-R_API RRBTree *r_bin_patch_relocs(RBin *bin) {
-	r_return_val_if_fail (bin, NULL);
-	RBinObject *o = r_bin_cur_object (bin);
-	return o? r_bin_object_patch_relocs (bin, o): NULL;
+R_API RRBTree *r_bin_patch_relocs(RBinFile *bf) {
+	r_return_val_if_fail (bf && bf->rbin, NULL);
+	RBinObject *o = r_bin_cur_object (bf->rbin);
+	return o? r_bin_object_patch_relocs (bf, o): NULL;
 }
 
 R_API RRBTree *r_bin_get_relocs(RBin *bin) {

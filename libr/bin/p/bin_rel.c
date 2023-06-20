@@ -548,8 +548,9 @@ static RBinReloc *patch_reloc(RBin *b, const LoadedRel *rel, const RelReloc *rel
 	return ret;
 }
 
-static RList *patch_relocs(RBin *b) {
+static RList *patch_relocs(RBinFile *bf) {
 	int i, j;
+	RBin *b = bf->rbin;
 	const LoadedRel *rel = b->cur->o->bin_obj;
 
 	RList *ret = r_list_new ();
@@ -586,7 +587,7 @@ static RList *relocs(RBinFile *bf) {
 	RBin *b = bf->rbin;
 	void *tmp = b->iob.overlay_write_at;
 	b->iob.overlay_write_at = _overlay_write_at_hack;
-	RList *ret = patch_relocs (b);
+	RList *ret = patch_relocs (bf);
 	b->iob.overlay_write_at = tmp;
 	return ret;
 }

@@ -1861,7 +1861,7 @@ static int bin_relocs(RCore *r, PJ *pj, int mode, int va) {
 			}
 			r->bin->iob.overlay_write_at = r_io_cache_write_at;
 		}
-		relocs = r_bin_patch_relocs (r->bin);
+		relocs = r_bin_patch_relocs (r->bin->cur); // XXX other way to get RBinFile?
 		if (bc) {
 			r->bin->iob.overlay_write_at = r_io_vwrite_to_overlay_at;
 		} else {
