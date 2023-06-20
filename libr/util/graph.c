@@ -322,7 +322,7 @@ typedef struct _dfs_inserter {
 	bool fail;
 } DfsInserter;
 
-static void _dfs_ins_node (RGraphNode *n, RGraphVisitor *vi) {
+static void _dfs_ins_node(RGraphNode *n, RGraphVisitor *vi) {
 	DfsInserter *di = (DfsInserter *)vi->data;
 	if (di->fail) {
 		return;
@@ -346,7 +346,7 @@ static void _dfs_ins_node (RGraphNode *n, RGraphVisitor *vi) {
 	dn->idx = di->idx++;
 }
 
-static void _dfs_ins_edge (const RGraphEdge *e, RGraphVisitor *vi) {
+static void _dfs_ins_edge(const RGraphEdge *e, RGraphVisitor *vi) {
 	DfsInserter *di = (DfsInserter *)vi->data;
 	if (di->fail) {
 		return;
@@ -363,7 +363,7 @@ static void _dfs_ins_edge (const RGraphEdge *e, RGraphVisitor *vi) {
 	r_graph_add_edge (di->g, from, to);
 }
 
-R_API RGraph *r_graph_dom_tree (RGraph *graph, RGraphNode *root) {
+R_API RGraph *r_graph_dom_tree(RGraph *graph, RGraphNode *root) {
 	r_return_val_if_fail (graph && root, NULL);
 	RGraph *g = r_graph_new ();
 	if (!g) {
