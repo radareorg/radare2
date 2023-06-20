@@ -72,8 +72,7 @@ R_API void r_cons_grep_help(void) {
 
 #define R_CONS_GREP_BUFSIZE 4096
 
-// R2_590 - rename to public r_cons_grep_expression()
-static void parse_grep_expression(const char *str) {
+R_API void r_cons_grep_expression(const char *str) {
 	char buf[R_CONS_GREP_BUFSIZE];
 	char *ptrs[R_CONS_GREP_COUNT];
 	int wlen, len, is_range, num_is_parsed, fail = false;
@@ -453,7 +452,7 @@ R_API void r_cons_grep_parsecmd(char *cmd, const char *quotestr) {
 	char *ptr = preprocess_filter_expr (cmd, quotestr);
 	if (ptr) {
 		r_str_trim (cmd);
-		parse_grep_expression (ptr);
+		r_cons_grep_expression (ptr);
 		free (ptr);
 	}
 }
@@ -465,14 +464,6 @@ R_API char *r_cons_grep_strip(char *cmd, const char *quotestr) {
 		r_str_trim (cmd);
 	}
 	return ptr;
-}
-
-// R2_590 - Deprecate this function. as its just an owned version of parse_grep_expression()
-R_API void r_cons_grep_process(char *grep) {
-	if (grep) {
-		parse_grep_expression (grep);
-		free (grep);
-	}
 }
 
 static int cmp(const void *a, const void *b) {
@@ -1031,6 +1022,6 @@ R_API int r_cons_grep_line(char *buf, int len) {
 
 R_API void r_cons_grep(const char *grep) {
 	r_return_if_fail (grep);
-	parse_grep_expression (grep);
+	r_cons_grep_expression (grep);
 	r_cons_grepbuf ();
 }
