@@ -4400,7 +4400,7 @@ static int esil_x86_cs_init(REsil *esil) {
 }
 #endif
 
-RArchPlugin r_arch_plugin_x86_cs = {
+const RArchPlugin r_arch_plugin_x86_cs = {
 	.meta = {
 		.name = "x86",
 		.desc = "Capstone X86 analysis",
