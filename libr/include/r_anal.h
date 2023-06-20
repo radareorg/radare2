@@ -860,7 +860,7 @@ R_API void r_anal_block_reset(RAnal *a);
 R_API RAnalBlock *r_anal_create_block(RAnal *anal, ut64 addr, ut64 size);
 
 static inline bool r_anal_block_contains(RAnalBlock *bb, ut64 addr) {
-	return addr >= bb->addr && addr < bb->addr + bb->size;
+	return (addr >= bb->addr) && (addr < bb->addr + bb->size);
 }
 
 // Split the block at the given address into two blocks.
