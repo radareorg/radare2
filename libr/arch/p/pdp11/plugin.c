@@ -115,7 +115,7 @@ static char *regs(RArchSession *as) {
 	return strdup (p);
 }
 
-RArchPlugin r_arch_plugin_pdp11 = {
+const RArchPlugin r_arch_plugin_pdp11 = {
 	.meta = {
 		.name = "pdp11",
 		.author = "pancake",

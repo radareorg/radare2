@@ -641,7 +641,7 @@ static bool cache_clean(RArchSession *s) {
 	return true;
 }
 
-RArchPlugin r_arch_plugin_wasm = {
+const RArchPlugin r_arch_plugin_wasm = {
 	.meta = {
 		.name = "wasm",
 		.desc = "WebAssembly analysis plugin",

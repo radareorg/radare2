@@ -159,7 +159,7 @@ static char *regs(RArchSession *s) {
 	return strdup (p);
 }
 
-RArchPlugin r_arch_plugin_mcs96 = {
+const RArchPlugin r_arch_plugin_mcs96 = {
 	.meta = {
 		.name = "mcs96",
 		.desc = "Intel MCS96 microcontroller, also known as 8xC196 or 80196",

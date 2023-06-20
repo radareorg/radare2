@@ -78,7 +78,7 @@ static bool as_encode(RArchSession *s, RAnalOp *op, RArchEncodeMask mask) {
 	return len > 0;
 }
 
-RArchPlugin r_arch_plugin_any_as = {
+const RArchPlugin r_arch_plugin_any_as = {
 	.meta = {
 		.name = "any.as",
 		.desc = "Uses system gnu/clang 'as' assembler",

@@ -52,7 +52,7 @@ static bool encode(RArchSession *a, RAnalOp *op, RArchEncodeMask mask) {
 	return true;
 }
 
-RArchPlugin r_arch_plugin_x86_nasm = {
+const RArchPlugin r_arch_plugin_x86_nasm = {
 	.meta = {
 		.name = "x86.nasm",
 		.desc = "X86 nasm assembler",

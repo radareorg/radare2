@@ -279,7 +279,7 @@ static bool fini(RArchSession *s) {
 	return true;
 }
 
-RArchPlugin r_arch_plugin_s390_cs = {
+const RArchPlugin r_arch_plugin_s390_cs = {
 	.meta = {
 		.name = "s390",
 		.desc = "Capstone SystemZ microanalysis",

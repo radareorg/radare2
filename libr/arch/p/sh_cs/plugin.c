@@ -413,7 +413,7 @@ static char *regs(RArchSession *s) {
 	return strdup (p);
 }
 
-RArchPlugin r_arch_plugin_sh_cs = {
+const RArchPlugin r_arch_plugin_sh_cs = {
 	.meta = {
 		.name = "sh.cs",
 		.desc = "Capstone SH analysis",
@@ -439,7 +439,7 @@ R_API RLibStruct radare_plugin = {
 
 #else
 
-RArchPlugin r_arch_plugin_sh_cs = {
+const RArchPlugin r_arch_plugin_sh_cs = {
 	0
 };
 

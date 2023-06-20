@@ -1006,7 +1006,7 @@ static bool _fini(RArchSession *as) {
 	return true;
 }
 
-RArchPlugin r_arch_plugin_riscv = {
+const RArchPlugin r_arch_plugin_riscv = {
 	.meta = {
 		.name = "riscv",
 		.desc = "RISC-V analysis plugin",

@@ -980,7 +980,7 @@ static int archinfo(RArchSession *a, ut32 q) {
 	return 0;
 }
 
-RArchPlugin r_arch_plugin_6502 = {
+const RArchPlugin r_arch_plugin_6502 = {
 	.meta = {
 		.name = "6502",
 		.desc = "6502/NES analysis plugin",

@@ -128,7 +128,7 @@ static bool decode(RArchSession *session, RAnalOp *op, RArchDecodeMask mask) {
 	return op->size;
 }
 
-RArchPlugin r_arch_plugin_ws = {
+const RArchPlugin r_arch_plugin_ws = {
 	.meta = {
 		.name = "ws",
 		.desc = "Space, tab and linefeed analysis plugin",

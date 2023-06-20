@@ -1225,7 +1225,7 @@ static char* regs(RArchSession *as) {
 	return strdup (p16);
 }
 
-RArchPlugin r_arch_plugin_arc = {
+const RArchPlugin r_arch_plugin_arc = {
 	.meta = {
 		.name = "arc",
 		.author = "pancake",

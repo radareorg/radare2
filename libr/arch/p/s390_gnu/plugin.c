@@ -130,7 +130,7 @@ static int archinfo(RArchSession *as, ut32 q) {
 	return 2;
 }
 
-RArchPlugin r_arch_plugin_s390_gnu = {
+const RArchPlugin r_arch_plugin_s390_gnu = {
 	.meta = {
 		.name = "s390.gnu",
 		.desc = "SystemZ S390 from binutils",

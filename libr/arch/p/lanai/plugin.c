@@ -96,7 +96,7 @@ static int info(RArchSession *as, ut32 q) {
 	return 0;
 }
 
-RArchPlugin r_arch_plugin_lanai = {
+const RArchPlugin r_arch_plugin_lanai = {
 	.meta = {
 		.name = "lanai",
 		.license = "GPL3",

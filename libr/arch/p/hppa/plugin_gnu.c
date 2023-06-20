@@ -155,7 +155,7 @@ static int info(RArchSession *as, ut32 q) {
 	return 4; /* :D */
 }
 
-RArchPlugin r_arch_plugin_hppa_gnu = {
+const RArchPlugin r_arch_plugin_hppa_gnu = {
 	.meta = {
 		.name = "hppa",
 		.license = "GPL3",

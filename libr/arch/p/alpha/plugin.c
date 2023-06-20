@@ -138,7 +138,7 @@ static int info(RArchSession *s, ut32 q) {
 	return 4;
 }
 
-RArchPlugin r_arch_plugin_alpha = {
+const RArchPlugin r_arch_plugin_alpha = {
 	.meta = {
 		.name = "alpha",
 		.desc = "ALPHA architecture plugin",

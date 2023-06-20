@@ -658,7 +658,7 @@ static bool fini(RArchSession *s) {
 	return true;
 }
 
-RArchPlugin r_arch_plugin_bpf_cs = {
+const RArchPlugin r_arch_plugin_bpf_cs = {
 	.meta = {
 		.name = "bpf",
 		.desc = "Capstone BPF plugin",
@@ -677,7 +677,7 @@ RArchPlugin r_arch_plugin_bpf_cs = {
 };
 
 #else
-RArchPlugin r_arch_plugin_bpf_cs = {0};
+const RArchPlugin r_arch_plugin_bpf_cs = {0};
 #endif // CS_API_MAJOR
 
 #ifndef R2_PLUGIN_INCORE

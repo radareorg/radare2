@@ -1369,7 +1369,7 @@ static bool encode(RArchSession *as, RAnalOp *op, RArchEncodeMask mask) {
 	return true;
 }
 
-RArchPlugin r_arch_plugin_mips_cs = {
+const RArchPlugin r_arch_plugin_mips_cs = {
 	.meta = {
 		.name = "mips",
 		.desc = "Capstone MIPS analyzer",

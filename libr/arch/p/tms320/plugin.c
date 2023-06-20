@@ -469,7 +469,7 @@ static int archinfo(RArchSession *as, ut32 q) {
 	return -1;
 }
 
-RArchPlugin r_arch_plugin_tms320 = {
+const RArchPlugin r_arch_plugin_tms320 = {
 	.meta = {
 		.name = "tms320",
 		.license = "LGPLv3",

@@ -680,7 +680,7 @@ static int archinfo(RArchSession *as, ut32 q) {
 	return 4; /* :D */
 }
 
-RArchPlugin r_arch_plugin_sparc_gnu = {
+const RArchPlugin r_arch_plugin_sparc_gnu = {
 	.meta = {
 		.name = "sparc.gnu",
 		.desc = "Scalable Processor Architecture",

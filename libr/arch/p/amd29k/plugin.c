@@ -696,7 +696,7 @@ static bool decode(RArchSession *a, RAnalOp *op, RArchDecodeMask mask) {
 	return op->size;
 }
 
-RArchPlugin r_arch_plugin_amd29k = {
+const RArchPlugin r_arch_plugin_amd29k = {
 	.meta = {
 		.name = "amd29k",
 		.desc = "AMD 29k decoder",

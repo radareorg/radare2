@@ -152,7 +152,7 @@ static int info(RArchSession *as, ut32 q) {
 	return 0;
 }
 
-RArchPlugin r_arch_plugin_msp430 = {
+const RArchPlugin r_arch_plugin_msp430 = {
 	.meta = {
 		.name = "msp430",
 		.desc = "TI MSP430 code analysis plugin",

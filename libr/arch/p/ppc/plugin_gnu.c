@@ -218,7 +218,7 @@ static int archinfo(RArchSession *as, ut32 q) {
 	return 4; /* :D */
 }
 
-RArchPlugin r_arch_plugin_ppc_gnu = {
+const RArchPlugin r_arch_plugin_ppc_gnu = {
 	.meta = {
 		.name = "ppc.gnu",
 		.desc = "PowerPC analysis plugin",

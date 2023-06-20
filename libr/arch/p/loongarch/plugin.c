@@ -1405,7 +1405,7 @@ static bool fini(RArchSession *s) {
 	return true;
 }
 
-RArchPlugin r_arch_plugin_loongarch_gnu = {
+const RArchPlugin r_arch_plugin_loongarch_gnu = {
 	.meta = {
 		.name = "loongarch",
 		.desc = "loongson loongarch code analysis plugin",

@@ -164,7 +164,7 @@ static bool fini(RArchSession *as) {
 	return true;
 }
 
-RArchPlugin r_arch_plugin_xcore_cs = {
+const RArchPlugin r_arch_plugin_xcore_cs = {
 	.meta = {
 		.name = "xcore",
 		.desc = "Capstone XCORE analysis",

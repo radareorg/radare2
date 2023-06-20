@@ -2106,7 +2106,7 @@ static bool fini(RArchSession *as) {
 	return true;
 }
 
-RArchPlugin r_arch_plugin_xtensa = {
+const RArchPlugin r_arch_plugin_xtensa = {
 	.meta = {
 		.name = "xtensa",
 		.desc = "Xtensa disassembler",

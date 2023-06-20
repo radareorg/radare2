@@ -461,7 +461,7 @@ static int archinfo(RArchSession *as, ut32 q) {
 	return 0;
 }
 
-RArchPlugin r_arch_plugin_v810 = {
+const RArchPlugin r_arch_plugin_v810 = {
 	.meta = {
 		.name = "v810",
 		.desc = "V810 code analysis plugin",

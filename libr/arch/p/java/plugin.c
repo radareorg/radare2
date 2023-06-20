@@ -350,7 +350,7 @@ static int java_cmd_ext(RAnal *anal, const char* input) {
 }
 #endif
 
-RArchPlugin r_arch_plugin_java = {
+const RArchPlugin r_arch_plugin_java = {
 	.meta = {
 		.name = "java",
 		.desc = "Java bytecode analysis plugin",

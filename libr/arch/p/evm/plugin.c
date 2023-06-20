@@ -387,7 +387,7 @@ static char *mnemonics(RArchSession *s, int id, bool json) {
 	return r_arch_cs_mnemonics (s, epd->cs_handle, id, json);
 }
 
-RArchPlugin r_arch_plugin_evm = {
+const RArchPlugin r_arch_plugin_evm = {
 	.meta = {
 		.name = "evm",
 		.desc = "EthereumVM plugin",
@@ -413,7 +413,7 @@ R_API RLibStruct radare_plugin = {
 #endif
 
 #else
-RArchPlugin r_arch_plugin_evm = { 0 };
+const RArchPlugin r_arch_plugin_evm = { 0 };
 #ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ARCH,

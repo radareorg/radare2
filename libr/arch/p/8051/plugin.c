@@ -1123,7 +1123,7 @@ static int archinfo(RArchSession *as, ut32 q) {
 	return 0;
 }
 
-RArchPlugin r_arch_plugin_8051 = {
+const RArchPlugin r_arch_plugin_8051 = {
 	.meta = {
 		.name = "8051",
 		.desc = "8051 CPU code analysis plugin",

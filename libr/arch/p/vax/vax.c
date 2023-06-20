@@ -254,7 +254,7 @@ static int archinfo(RArchSession *as, ut32 q) {
 	return 1;
 }
 
-RArchPlugin r_arch_plugin_vax = {
+const RArchPlugin r_arch_plugin_vax = {
 	.meta = {
 		.name = "vax",
 		.desc = "VAX code analysis plugin",

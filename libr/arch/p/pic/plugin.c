@@ -1184,7 +1184,7 @@ static int info(RArchSession *as, ut32 q) {
 	return 2;
 }
 
-RArchPlugin r_arch_plugin_pic = {
+const RArchPlugin r_arch_plugin_pic = {
 	.meta = {
 		.name = "pic",
 		.desc = "PIC analysis plugin",

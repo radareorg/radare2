@@ -5,7 +5,7 @@
 #include <capstone/capstone.h>
 
 #if CS_API_MAJOR < 5
-RArchPlugin r_arch_plugin_tricore_cs = {
+const RArchPlugin r_arch_plugin_tricore_cs = {
 	0
 };
 #else
@@ -337,7 +337,7 @@ static char *regs(RArchSession *as) {
 	return strdup (p);
 }
 
-RArchPlugin r_arch_plugin_tricore_cs = {
+const RArchPlugin r_arch_plugin_tricore_cs = {
 	.meta = {
 		.name = "tricore.cs",
 		.desc = "Capstone TriCore analysis",

@@ -988,7 +988,7 @@ static bool pickle_fini(RArchSession *s) {
 	return true;
 }
 
-RArchPlugin r_arch_plugin_pickle = {
+const RArchPlugin r_arch_plugin_pickle = {
 	.meta = {
 		.name = "pickle",
 		.desc = "Python Pickle Machine Disassembler",
