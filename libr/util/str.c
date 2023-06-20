@@ -4094,3 +4094,10 @@ R_API char *r_str_tok_r(char *str, const char *delim, char **save_ptr) {
 	*save_ptr = str;
 	return ret;
 }
+
+R_API char *r_str_tok_next(char *s) {
+	if (s) {
+		return s + strlen (s) + 1;
+	}
+	return NULL;
+}

@@ -331,14 +331,6 @@ static char *riscv_disassemble(RArchSession *s, ut64 addr, const ut8 *buf, int l
 	return NULL;
 }
 
-// R2_590 - make it public as r_str_tok_next ();
-static char *r_str_next_split(char *s) {
-	if (s) {
-		return s + strlen (s) + 1;
-	}
-	return NULL;
-}
-
 static bool riscv_decode(RArchSession *s, RAnalOp *op, RArchDecodeMask mask) {
 	ut64 addr = op->addr;
 	const ut8 *buf = op->bytes;
@@ -764,7 +756,7 @@ static bool riscv_decode(RArchSession *s, RAnalOp *op, RArchDecodeMask mask) {
 			// dst->reg = args.arg[1];
 			// dst->reg = r_reg_get (anal->reg, args.arg[0], -1);
 		}
-		comma = r_str_next_split (comma);
+		comma = r_str_tok_next (comma);
 		for (; i < args.num; i++) {
 			src = r_vector_push (&op->srcs, NULL);
 			if (comma && strchr (comma, '(')) {
@@ -778,7 +770,7 @@ static bool riscv_decode(RArchSession *s, RAnalOp *op, RArchDecodeMask mask) {
 			} else {
 				src->imm = r_num_get (NULL, args.arg[i]);
 			}
-			comma = r_str_next_split (comma);
+			comma = r_str_tok_next (comma);
 		}
 		free (argf);
 	}
