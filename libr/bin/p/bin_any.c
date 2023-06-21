@@ -35,8 +35,7 @@ static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadadd
 	return true;
 }
 
-// R2_590 rename to fini
-static void destroy(RBinFile *bf) {
+static void fini(RBinFile *bf) {
 	r_buf_free (bf->o->bin_obj);
 }
 
@@ -44,8 +43,8 @@ RBinPlugin r_bin_plugin_any = {
 	.name = "any",
 	.desc = "Dummy format r_bin plugin",
 	.license = "LGPL3",
-	.load_buffer = &load_buffer,
-	.destroy = &destroy,
+	.load_buffer = load_buffer,
+	.destroy = fini,
 	.info = info,
 	.minstrlen = 0,
 };
