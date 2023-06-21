@@ -9,7 +9,7 @@
 #define CMP_REG_CHANGE(x, y) ((x) - ((REsilRegChange *)y)->idx)
 #define CMP_MEM_CHANGE(x, y) ((x) - ((REsilMemChange *)y)->idx)
 
-static R_TH_LOCAL int ocbs_set = false;
+static R_TH_LOCAL bool ocbs_set = false;
 static R_TH_LOCAL REsilCallbacks ocbs = {0};
 
 static void htup_vector_free(HtUPKv *kv) {
@@ -57,7 +57,7 @@ R_API REsilTrace *r_esil_trace_new(REsil *esil) {
 		if (!b) {
 			goto error;
 		}
-		if (b->bytes && a->bytes && b->size > 0) {
+		if (a->bytes && b->bytes && b->size > 0) {
 			memcpy (b->bytes, a->bytes, b->size);
 		}
 		trace->arena[i] = b;
@@ -81,7 +81,7 @@ R_API void r_esil_trace_free(REsilTrace *trace) {
 		// eprintf ("sdb free %p%c", trace->db, 10);
 		sdb_free (trace->db);
 		trace->db = NULL;
-		R_FREE (trace);
+		free (trace);
 	}
 }
 
@@ -247,6 +247,7 @@ R_API void r_esil_trace_op(REsil *esil, RAnalOp *op) {
 	//eprintf ("[ESIL] OPCODE %s\n", op->mnemonic);
 	//eprintf ("[ESIL] EXPR = %s\n", expr);
 	/* set hooks */
+	// TODO: esil->cb.user = &globals;
 	esil->cb.hook_reg_read = trace_hook_reg_read;
 	esil->cb.hook_reg_write = trace_hook_reg_write;
 	esil->cb.hook_mem_read = trace_hook_mem_read;

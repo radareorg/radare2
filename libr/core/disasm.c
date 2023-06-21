@@ -113,7 +113,7 @@ typedef struct r_disasm_state_t {
 	bool show_lines_call;
 	bool show_lines_fcn;
 	bool linesright;
-	int tracespace;
+	bool tracespace;
 	int cyclespace;
 	int cmtfold;
 	int show_indent;
@@ -719,7 +719,7 @@ static RDisasmState *ds_init(RCore *core) {
 	ds->linesright = r_config_get_i (core->config, "asm.lines.right");
 	ds->show_indent = r_config_get_i (core->config, "asm.indent");
 	ds->indent_space = r_config_get_i (core->config, "asm.indentspace");
-	ds->tracespace = r_config_get_i (core->config, "asm.trace.space");
+	ds->tracespace = r_config_get_b (core->config, "asm.trace.space");
 	ds->cyclespace = r_config_get_i (core->config, "asm.cyclespace");
 	ds->show_dwarf = r_config_get_i (core->config, "asm.dwarf");
 	ds->dwarfFile = r_config_get_i (ds->core->config, "asm.dwarf.file");
