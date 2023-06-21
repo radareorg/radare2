@@ -127,8 +127,8 @@ static bool decode(RArchSession *a, RAnalOp *op, RArchDecodeMask mask) {
 		//op->jump = INSOP (0).imm;
 		op->fail = addr + op->size;
 		break;
-	case SYSZ_INS_B:
-		op->type = R_ANAL_OP_TYPE_JMP;
+	case SYSZ_INS_B: // "b 1(r15)"
+		op->type = R_ANAL_OP_TYPE_UJMP;
 		op->jump = addr + r_num_get (NULL, insn->op_str);
 		break;
 #endif
