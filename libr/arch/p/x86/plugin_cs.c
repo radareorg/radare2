@@ -8,7 +8,7 @@
 
 #define r_anal_value_new() R_NEW0 (RAnalValue)
 #define ARCH_HAVE_ESILCB 0
-#define ARCH_HAVE_READ 0
+#define ARCH_HAVE_READ 1
 
 #if 0
 CYCLES:
@@ -1314,9 +1314,9 @@ static void anop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, 
 				{
 					// handle CALLPOP sequence: 'CALL $$ + 5; POP REG'
 					ut8 buf[5] = {0};
-					if (a->read_at) {
-						const ut8 data[] = { 0xe8, 0, 0, 0, 0 };
-						a->read_at (as, addr - 5, buf, sizeof (buf));
+					const ut8 data[] = { 0xe8, 0, 0, 0, 0 };
+					RBin *bin = as->arch->binb.bin;
+					if (bin->iob.read_at (bin->iob.io, addr - 5, buf, sizeof (buf))) {
 						if (!memcmp (buf, data, sizeof (buf))) {
 							dst = getarg (&gop, 0, 0, NULL, NULL);
 							esilprintf (op, "0x%"PFMT64x",%s,=", addr, dst);
@@ -1327,6 +1327,7 @@ static void anop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, 
 						R_LOG_DEBUG ("This shouldnt happen");
 					}
 				}
+				// ??? break;
 #endif
 			default:
 				{
@@ -1483,10 +1484,15 @@ static void anop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, 
 	case X86_INS_CALL:
 		{
 			arg0 = getarg (&gop, 0, 0, NULL, NULL);
-#if ARCH_HAVE_READ
-			if (a->read_at && bits != 16) {
+			if (bits != 16) {
 				ut8 thunk[4] = {0};
+#if ARCH_HAVE_READ
+#if 0
 				if (a->read_at (as, (ut64)INSOP (0).imm, thunk, sizeof (thunk))) {
+#else
+				RBin *bin = as->arch->binb.bin;
+				if (bin->iob.read_at (bin->iob.io, (ut64)INSOP (0).imm, thunk, sizeof (thunk))) {
+#endif
 					/* Handle CALL ebx_pc (callpop)
 					   8b xx x4    mov <reg>, dword [esp]
 					   c3          ret
@@ -1500,12 +1506,14 @@ static void anop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, 
 					}
 				}
 			}
-			if (a->read_at && bits == 32) {
+			if (bits == 32) {
 				ut8 b[4] = {0};
 				ut64 at = addr + op->size;
 				ut64 n = r_num_get (NULL, arg0);
 				if (n == at) {
-					if (a->read_at (as, at, b, sizeof (b))) {
+					RBin *bin = as->arch->binb.bin;
+					if (bin->iob.read_at (bin->iob.io, at, b, sizeof (b))) {
+					// if (a->read_at (as, at, b, sizeof (b))) {
 						if (b[0] == 0x5b) { // pop ebx
 							esilprintf (op, "0x%"PFMT64x",ebx,=", at);
 							break;

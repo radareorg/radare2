@@ -2653,7 +2653,7 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 			}
 #if 0
 // no opex here to avoid lot of tests broken..and having json in here is not much useful imho
-			if (opexstr && *opexstr) {
+			if (R_STR_ISNOTEMPTY (opexstr)) {
 				printline ("opex", "%s\n", opexstr);
 			}
 #endif
@@ -2671,7 +2671,8 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 				printline ("ptr", "0x%08" PFMT64x "\n", op.ptr);
 			}
 			if (op.disp && op.disp != UT64_MAX) {
-				printline ("disp", "0x%08" PFMT64x "\n", op.disp);
+				// printline ("disp", "0x%08" PFMT64x "\n", op.disp);
+				printline ("disp", "%" PFMT64d "\n", op.disp);
 			}
 			if (op.refptr != -1 && op.refptr > 0) {
 				printline ("refptr", "%d\n", op.refptr);

@@ -1598,7 +1598,8 @@ R_API void r_anal_trim_jmprefs(RAnal *anal, RAnalFunction *fcn) {
 	RAnalRef *ref;
 	RList *refs = r_anal_function_get_refs (fcn);
 	RListIter *iter;
-	const bool is_x86 = anal->cur->arch && !strcmp (anal->cur->arch, "x86"); // HACK
+	const char *arch = R_UNWRAP4 (anal, arch, session, name);
+	const bool is_x86 = arch && !strcmp (arch, "x86"); // HACK
 
 	r_list_foreach (refs, iter, ref) {
 		int rt = R_ANAL_REF_TYPE_MASK (ref->type);

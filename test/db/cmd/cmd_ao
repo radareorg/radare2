@@ -300,7 +300,7 @@ mask: ffffffffffffff
 id: 460
 bytes: c745f400000000
 val: 0x00000000
-disp: 0xfffffffffffffff4
+disp: -12
 refptr: 4
 size: 7
 sign: false
