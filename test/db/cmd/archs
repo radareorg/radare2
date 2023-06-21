@@ -91,7 +91,7 @@ e cfg.bigendian=false
 pi 1
 EOF
 EXPECT=<<EOF
-call 0x55222794
+invalid
 call 0x55222794
 EOF
 RUN
@@ -110,6 +110,23 @@ EOF
 EXPECT=<<EOF
 call 0x55222794
 invalid
+EOF
+RUN
+
+NAME=endian tests: sparc.cs
+FILE=-
+CMDS=<<EOF
+e asm.arch=sparc
+e asm.bits=64
+wx 554889e5
+e cfg.bigendian=true
+pi 1
+e cfg.bigendian=false
+pi 1
+EOF
+EXPECT=<<EOF
+invalid
+call 0x55222794
 EOF
 RUN
 

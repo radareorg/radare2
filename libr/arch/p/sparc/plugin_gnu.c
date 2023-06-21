@@ -49,7 +49,7 @@ static bool disassemble(RArchSession *a, RAnalOp *op, ut8 *bytes, RArchDecodeMas
 	disasm_obj.symbol_at_address_func = &symbol_at_address;
 	disasm_obj.memory_error_func = &memory_error_func;
 	disasm_obj.print_address_func = &generic_print_address_func;
-	disasm_obj.endian = 0; // a->config->big_endian;
+	disasm_obj.endian = a->config->big_endian;
 	disasm_obj.fprintf_func = &generic_fprintf_func;
 	disasm_obj.stream = sb;
 	disasm_obj.mach = ((a->config->bits == 64)
@@ -449,21 +449,21 @@ static void anal_branch(RAnalOp *op, const ut32 insn, const ut64 addr) {
 static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 	const ut64 addr = op->addr;
 	int sz = 4;
-	ut32 insn = 0;
 
 	op->family = R_ANAL_OP_FAMILY_CPU;
 	op->addr = addr;
+	op->size = 4;
 	if (op->size < 4) {
 		return false;
 	}
 
-	r_mem_swaporcopy ((ut8*)&insn, op->bytes, 4, !R_ARCH_CONFIG_IS_BIG_ENDIAN (as->config));
+	ut32 insn = r_read_ble32 (op->bytes, R_ARCH_CONFIG_IS_BIG_ENDIAN (as->config));
 	if (mask & R_ARCH_OP_MASK_DISASM) {
 		disassemble (as, op, (ut8*)&insn, mask);
 	}
 
 	if (X_OP (insn) == OP_0) {
-		switch(X_OP2 (insn)) {
+		switch (X_OP2 (insn)) {
 		case OP2_ILLTRAP:
 		case OP2_INV:
 			op->type = R_ANAL_OP_TYPE_ILL;
