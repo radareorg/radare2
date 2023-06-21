@@ -20,7 +20,7 @@ typedef enum {
 #define R_ARCH_INFO_MINOP_SIZE 0
 #define R_ARCH_INFO_MAXOP_SIZE 1
 #define R_ARCH_INFO_INVOP_SIZE 2
-#define R_ARCH_INFO_ALIGN 4
+#define R_ARCH_INFO_CODE_ALIGN 4
 #define R_ARCH_INFO_DATA_ALIGN 8
 #define R_ARCH_INFO_DATA2_ALIGN 16
 #define R_ARCH_INFO_DATA4_ALIGN 32
@@ -81,11 +81,11 @@ typedef struct r_arch_config_t {
 	char *os;
 	int bits;
 	union {
-		int big_endian;
+		int big_endian; // R2_590 - deprecate and just use typed endian for more than little+big
 		ut32 endian;
 	};
 	int syntax;
-	int pcalign;
+	int pcalign; // R2_590 - rename to codealign
 	int dataalign;
 	int addrbytes;
 	int segbas;
