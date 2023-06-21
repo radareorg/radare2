@@ -91,8 +91,8 @@ e cfg.bigendian=false
 pi 1
 EOF
 EXPECT=<<EOF
-invalid
 call 0x55222794
+invalid
 EOF
 RUN
 
@@ -125,8 +125,8 @@ e cfg.bigendian=false
 pi 1
 EOF
 EXPECT=<<EOF
-invalid
 call 0x55222794
+invalid
 EOF
 RUN
 

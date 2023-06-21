@@ -13,7 +13,7 @@ endif
 all: $(BINS)
 
 asan:
-	$(MAKE) ASAN=1
+	CFLAGS=-fsanitize=address $(MAKE) ASAN=1
 
 $(BINDIR)/%: %.c
 	mkdir -p "$(BINDIR)"
