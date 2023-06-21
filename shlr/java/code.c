@@ -18,7 +18,7 @@ static int enter_switch_op(ut64 addr, const ut8 * bytes, int len);
 static int update_switch_op(ut64 addr, const ut8 * bytes);
 static int update_bytes_consumed(int sz);
 
-static R_TH_LOCAL ut8 IN_SWITCH_OP = 0;
+static R_TH_LOCAL bool IN_SWITCH_OP = false;
 
 typedef struct current_table_switch_t {
 	ut64 addr;
@@ -53,7 +53,7 @@ static int enter_switch_op(ut64 addr, const ut8* bytes, int len) {
 			sz2, BYTES_CONSUMED, sz);
 	}
 	init_switch_op ();
-	IN_SWITCH_OP = 1;
+	IN_SWITCH_OP = true;
 	SWITCH_OP.addr = addr;
 	SWITCH_OP.def_jmp = (UINT (bytes, sz));
 	SWITCH_OP.min_val = (UINT (bytes, sz + 4));
@@ -86,7 +86,7 @@ static int update_switch_op(ut64 addr, const ut8 * bytes) {
 	}
 	int ccase = SWITCH_OP.cur_val + SWITCH_OP.min_val;
 	if (ccase + 1 > SWITCH_OP.max_val) {
-		IN_SWITCH_OP = 0;
+		IN_SWITCH_OP = false;
 	}
 	R_LOG_DEBUG ("Addr approach: 0x%04"PFMT64x" and BYTES_CONSUMED approach: 0x%04"PFMT64x, addr, BYTES_CONSUMED);
 	return update_bytes_consumed (sz);
@@ -293,7 +293,7 @@ R_API int java_print_opcode(RBinJavaObj *obj, ut64 addr, int idx, const ut8 *byt
 R_API void r_java_new_method(void) {
 	IFDBG eprintf ("Reseting the bytes consumed, they were: 0x%04"PFMT64x".\n", BYTES_CONSUMED);
 	init_switch_op ();
-	IN_SWITCH_OP = 0;
+	IN_SWITCH_OP = false;
 	BYTES_CONSUMED = 0;
 }
 
