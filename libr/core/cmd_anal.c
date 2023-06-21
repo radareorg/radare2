@@ -2321,6 +2321,8 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 			}
 		}
 		if (ret < 1 && fmt != 'd') {
+			ret = op.size;
+#if 0
 			RStrBuf *sb = r_strbuf_new ("");
 			for (i = idx, j = 0; i < core->blocksize && j < 3; i++, j++) {
 				r_strbuf_appendf (sb, "%02x ", buf[i]);
@@ -2329,6 +2331,7 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 			r_strbuf_free (sb);
 			free (mnem);
 			break;
+#endif
 		}
 		size = op.size;
 		if (fmt == 'd') {

@@ -155,16 +155,17 @@ R_API int r_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 		anal->coreb.archbits (anal->coreb.core, addr);
 	}
 	const int pcalign = anal->config->pcalign;
-	if (pcalign && (addr % pcalign)) {
+	if (pcalign > 1 && (addr % pcalign)) {
 		op->type = R_ANAL_OP_TYPE_ILL;
 		op->addr = addr;
 		op->size = pcalign - (addr % pcalign);
 		r_anal_op_set_mnemonic (op, addr, "unaligned");
 		if (op->size > len) {
-			ut8 *fakedata = malloc (op->size);
-			memcpy (fakedata, data, len);
-			r_anal_op_set_bytes (op, addr, fakedata, op->size);
-			free (fakedata);
+			ut8 *fakedata = r_mem_dup (data, op->size);
+			if (fakedata) {
+				r_anal_op_set_bytes (op, addr, fakedata, op->size);
+				free (fakedata);
+			}
 		} else {
 			r_anal_op_set_bytes (op, addr, data, op->size);
 		}
@@ -179,6 +180,7 @@ R_API int r_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 			if (op->size < 0) {
 				op->size = 1;
 			}
+			ret = -1;
 		} else {
 			ret = op->size;
 		}
@@ -205,6 +207,7 @@ R_API int r_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 			op->size = r_anal_archinfo (anal, R_ANAL_ARCHINFO_INV_OP_SIZE);
 			if (op->size < 0) {
 				op->size = 1;
+				ret = -1;
 			}
 		}
 		op->addr = addr;
@@ -213,6 +216,7 @@ R_API int r_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 			op->nopcode = 1;
 		}
 	} else if (!memcmp (data, "\xff\xff\xff\xff", R_MIN (4, len))) {
+		ret = -1;
 		op->type = R_ANAL_OP_TYPE_ILL;
 		op->size = 1;
 		op->type = R_ANAL_OP_TYPE_MOV;
@@ -230,6 +234,17 @@ R_API int r_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 		if (hint) {
 			r_anal_op_hint (op, hint);
 			r_anal_hint_free (hint);
+		}
+	}
+	if (ret == -1) {
+		free (op->mnemonic);
+		op->mnemonic = strdup ("invalid");
+		int minop = r_arch_info (anal->arch, R_ANAL_ARCHINFO_MIN_OP_SIZE);
+		op->size = minop;
+		ut64 nextpc = op->addr + op->size;
+		int padding = (nextpc % pcalign);
+		if (pcalign > 1 && padding != 0) {
+			op->size += padding;
 		}
 	}
 	return ret;

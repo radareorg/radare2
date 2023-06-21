@@ -120,7 +120,6 @@ static bool lang_tsc_run(RLangSession *s, const char *code, int len) {
 static bool lang_tsc_init(RLangSession *ls) {
 	bool found = false;
 	if (ls == NULL) {
-		// TODO: check if "valac" is found in path
 		char *tsc = r_file_path ("tsc");
 		free (tsc);
 		found = (tsc != NULL);
