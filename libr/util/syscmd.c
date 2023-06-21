@@ -167,20 +167,19 @@ R_API char *r_syscmd_ls(const char *input, int cons_width) {
 		R_LOG_ERROR ("Sandbox forbids listing directories");
 		return NULL;
 	}
-	if (*input && input[0] == ' ') {
-		input++;
-	}
+	input = r_str_trim_head_ro (input);
 	if (*input) {
 		if (r_str_startswith (input, "-h") || *input == '?') {
 			eprintf ("Usage: ls [-e,-l,-j,-q] [path] # long, json, quiet\n");
 			return NULL;
 		}
-		if ((!strncmp (input, "-e", 2))) {
+		if (r_str_startswith (input, "-e")) {
 			printfmt = FMT_EMOJI;
 			path = r_str_trim_head_ro (input + 2);
-		} else if ((!strncmp (input, "-q", 2))) {
+		} else if (r_str_startswith (input, "-q")) {
 			printfmt = FMT_QUIET;
 			path = r_str_trim_head_ro (input + 2);
+		} else if (r_str_startswith (input, "-l")) {
 		} else if ((!strncmp (input, "-l", 2)) || (!strncmp (input, "-j", 2))) {
 			printfmt = (input[1] == 'j') ? FMT_JSON : FMT_RAW;
 			path = r_str_trim_head_ro (input + 2);
@@ -191,7 +190,7 @@ R_API char *r_syscmd_ls(const char *input, int cons_width) {
 			path = input;
 		}
 	}
-	if (!path || !*path) {
+	if (R_STR_ISEMPTY (path)) {
 		path = ".";
 	} else if (!strncmp (path, "~/", 2)) {
 		homepath = r_file_home (path + 2);
