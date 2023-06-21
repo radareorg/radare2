@@ -1730,9 +1730,7 @@ static void ds_print_show_cursor(RDisasmState *ds) {
 		res[1] = '~';
 	}
 	if (q) {
-#if R2_590
 		r_cons_mark (UT64_MAX, "cursor");
-#endif
 		if (cursor_addr == ds->at) {
 			res[2] = '*';
 		} else {
