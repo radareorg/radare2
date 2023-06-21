@@ -4417,17 +4417,16 @@ static void visual_refresh(RCore *core) {
 	blocksize = core->num->value? core->num->value: core->blocksize;
 	core->cons->context->noflush = false;
 
-#if R2_590
-	RConsMark *mark = r_cons_mark_at (NULL, "cursor");
+	RConsMark *mark = r_cons_mark_at (0, "cursor");
 	if (mark) {
 		int x = 60;
-		r_cons_gotoxy (x, mark->row-2); r_cons_print ("   .-------------.");
-		r_cons_gotoxy (x, mark->row-1); r_cons_print ("   |             |");
-		r_cons_gotoxy (x, mark->row);   r_cons_print ("--<  Hello world |");
-		r_cons_gotoxy (x, mark->row+1); r_cons_print ("   |             |");
-		r_cons_gotoxy (x, mark->row+2); r_cons_print ("   `-------------'");
+		r_cons_gotoxy (x, mark->row - 2); r_cons_print ("   .-------------.");
+		r_cons_gotoxy (x, mark->row - 1); r_cons_print ("   |             |");
+		r_cons_gotoxy (x, mark->row);     r_cons_print ("--<  Hello world |");
+		r_cons_gotoxy (x, mark->row + 1); r_cons_print ("   |             |");
+		r_cons_gotoxy (x, mark->row + 2); r_cons_print ("   `-------------'");
 	}
-#endif
+
 	/* this is why there's flickering */
 	if (core->print->vflush) {
 		r_cons_visual_flush ();
