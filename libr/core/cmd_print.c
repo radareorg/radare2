@@ -3789,7 +3789,7 @@ static bool cmd_print_blocks(RCore *core, const char *input) {
 		if (!t) {
 			goto cleanup;
 		}
-		t->showSum = true;
+		t->showMode |= SHOW_SUM;
 		r_table_set_columnsf (t, "sddddd", "offset", "flags", "funcs", "cmts", "syms", "str");
 		break;
 	}
