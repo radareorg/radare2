@@ -3977,6 +3977,7 @@ static int esil_x86_cs_intr(REsil *esil, int intr) {
 #endif
 
 static char *get_reg_profile(RArchSession *as) {
+	r_return_val_if_fail (as && as->config, NULL);
 	const char *p = NULL;
 	switch (as->config->bits) {
 	case 16: p =
@@ -4343,7 +4344,7 @@ static char *get_reg_profile(RArchSession *as) {
 		return prof;
 	}
 	}
-	return (p && *p)? strdup (p): NULL;
+	return (R_STR_ISNOTEMPTY (p))? strdup (p): NULL;
 }
 
 static int archinfo(RArchSession *as, ut32 q) {
@@ -4362,6 +4363,7 @@ static int archinfo(RArchSession *as, ut32 q) {
 }
 
 static RList *anal_preludes(RArchSession *as) {
+	r_return_val_if_fail (as && as->config, NULL);
 	RList *l = NULL;
 	switch (as->config->bits) {
 	case 32:
@@ -4387,16 +4389,14 @@ static RList *anal_preludes(RArchSession *as) {
 
 static char *mnemonics(RArchSession *as, int id, bool json) {
 	r_return_val_if_fail (as && as->data, NULL);
-	if (as && as->data) {
-		CapstonePluginData *cpd = as->data;
-		return r_arch_cs_mnemonics (as, cpd->cs_handle, id, json);
-	}
-	return NULL;
+	CapstonePluginData *cpd = as->data;
+	return r_arch_cs_mnemonics (as, cpd->cs_handle, id, json);
 }
 
 // esilcb
 #if ARCH_HAVE_ESILCB
 static int esil_x86_cs_init(REsil *esil) {
+	// not implemented
 	if (!esil) {
 		return false;
 	}

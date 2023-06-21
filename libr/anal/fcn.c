@@ -2064,12 +2064,14 @@ R_API RAnalBlock *r_anal_function_bbget_in(RAnal *anal, RAnalFunction *fcn, ut64
 	}
 	RListIter *iter;
 	RAnalBlock *bb;
-	const bool jmpmid = r_anal_is_aligned (anal, addr);
+	const bool aligned = r_anal_is_aligned (anal, addr);
 	r_list_foreach (fcn->bbs, iter, bb) {
 		if (r_anal_block_contains (bb, addr)) {
-			if ((!anal->opt.jmpmid || !jmpmid || r_anal_block_op_starts_at (bb, addr))) {
+			if ((!anal->opt.jmpmid || !aligned || r_anal_block_op_starts_at (bb, addr))) {
+			// if (r_anal_block_op_starts_at (bb, addr)) {
 				return bb;
 			}
+			//return bb;
 		}
 	}
 	return NULL;
