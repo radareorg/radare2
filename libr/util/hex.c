@@ -288,7 +288,7 @@ R_API char *r_hex_from_js(const char *code) {
 		return NULL;
 	}
 
-	char * out = r_hex_bin2strdup (b64d, olen);
+	char *out = r_hex_bin2strdup (b64d, olen);
 	free (b64d);
 	return out;
 }
@@ -378,16 +378,19 @@ R_API int r_hex_bin2str(const ut8 *in, int len, char *out) {
 }
 
 R_API char *r_hex_bin2strdup(const ut8 *in, int len) {
+	if (!in || len < 1) {
+		return strdup ("");
+	}
 	int i, idx;
-	char tmp[5], *out;
 
 	if ((len + 1) * 2 < len) {
 		return NULL;
 	}
-	out = malloc ((len + 1) * 2);
+	char *out = malloc ((len + 1) * 2);
 	if (!out) {
 		return NULL;
 	}
+	char tmp[5];
 	for (i = idx = 0; i < len; i++, idx += 2)  {
 		r_hex_from_byte (tmp, in[i]);
 		memcpy (out+idx, tmp, 2);
@@ -397,6 +400,7 @@ R_API char *r_hex_bin2strdup(const ut8 *in, int len) {
 }
 
 R_API int r_hex_str2bin(const char *in, ut8 *out) {
+	r_return_val_if_fail (in, 0);
 	long nibbles = 0;
 
 	while (in && *in) {
