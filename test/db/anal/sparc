@@ -513,7 +513,7 @@ EXPECT=<<EOF
 0x000100f8      d203a058       ld [sp+0x58], o1
 0x000100fc      9403a05c       add sp, 0x5c, o2
 ;-- main:
-0x000104b4      fc3ba038       empty
+0x000104b4      fc3ba038       invalid
 0x000104b8      9c03bfa0       add sp, -0x60, sp
 0x000104bc      bc23bfa0       sub sp, -0x60, fp
 0x000104c0      be10000f       mov o7, i7

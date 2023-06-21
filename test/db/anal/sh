@@ -46,3 +46,29 @@ EOF
 EXPECT=<<EOF
 EOF
 RUN
+
+NAME=SuperH s af pdf
+FILE=bins/sh/loop.elf
+CMDS=<<EOF
+e asm.flags=false
+s sym._called_in_loop
+af
+pdf
+EOF
+EXPECT=<<EOF
+/ 26: entry0 ();
+|           0x00001000      2fe6           mov.l r14, @-r15            ; [01] -r-x section size 116 named .text
+|           0x00001002      6ef3           mov r15, r14
+|           0x00001004      d105           invalid
+|           0x00001006      6112           mov.l @r1, r1
+|           0x00001008      6213           mov r1, r2
+|           0x0000100a      7201           add 0x01, r2
+|           0x0000100c      d103           invalid
+|           0x0000100e      2122           mov.l r2, @r1
+|           0x00001010      0009           nop
+|           0x00001012      6fe3           mov r14, r15
+|           0x00001014      6ef6           mov.l @r15+, r14
+|           0x00001016      000b           rts
+\           0x00001018      0009           nop
+EOF
+RUN
