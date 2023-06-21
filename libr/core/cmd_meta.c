@@ -185,11 +185,8 @@ static bool print_meta_offset(RCore *core, ut64 addr, PJ *pj) {
 			pj_end (pj);
 			return ret;
 		}
-#if R2_590
+
 		r_cons_printf ("file: %s\nline: %d\ncolu: %d\naddr: 0x%08"PFMT64x"\n", file, line, colu, addr);
-#else
-		r_cons_printf ("file: %s\nline: %d\naddr: 0x%08"PFMT64x"\n", file, line, addr);
-#endif
 		line_old = line;
 		if (line >= 2) {
 			line -= 2;
@@ -298,19 +295,15 @@ static bool print_addrinfo(void *user, const char *k, const char *v) {
 		} else {
 			*colonpos++ = 0;
 			int line = atoi (colonpos);
-#if R2_590
 			int colu = 0;
 			char *columnpos = strchr (colonpos, '|');
 			if (columnpos) {
 				*columnpos ++ = 0;
 				colu = atoi (columnpos);
 			}
+
 			r_cons_printf ("file: %s\nline: %d\ncolu: %d\naddr: 0x%08"PFMT64x"\n",
 				subst, line, colu, offset);
-#else
-			r_cons_printf ("file: %s\nline: %d\naddr: 0x%08"PFMT64x"\n",
-				subst, line, offset);
-#endif
 		}
 		filter_count++;
 	}

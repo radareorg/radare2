@@ -6,21 +6,27 @@ EOF
 EXPECT=<<EOF
 file: ../../../src/libgcc/config/i386/crtfastmath.c
 line: 84
+colu: 1
 addr: 0x00001050
 file: ../../../src/libgcc/config/i386/crtfastmath.c
 line: 94
+colu: 3
 addr: 0x00001054
 file: ../../../src/libgcc/config/i386/crtfastmath.c
 line: 95
+colu: 3
 addr: 0x00001059
 file: ../../../src/libgcc/config/i386/crtfastmath.c
 line: 96
+colu: 3
 addr: 0x00001061
 file: ../../../src/libgcc/config/i386/crtfastmath.c
 line: 98
+colu: 1
 addr: 0x00001066
 file: ../../../src/libgcc/config/i386/crtfastmath.c
 line: 98
+colu: 1
 addr: 0x00001067
 EOF
 RUN
@@ -35,27 +41,35 @@ EOF
 EXPECT=<<EOF
 file: /_test.c
 line: 6
+colu: 1
 addr: 0x00001165
 file: /_test.c
 line: 11
+colu: 1
 addr: 0x00001184
 file: /_test.c
 line: 11
+colu: 1
 addr: 0x00001186
 file: /_test.c
 line: 5
+colu: 5
 addr: 0x00001159
 file: /_test.c
 line: 8
+colu: 12
 addr: 0x00001168
 file: /_test.c
 line: 4
+colu: 28
 addr: 0x00001149
 file: /_test.c
 line: 9
+colu: 5
 addr: 0x00001170
 file: /_test.c
 line: 10
+colu: 12
 addr: 0x0000117f
 - offset -  6061 6263 6465 6667 6869 6A6B 6C6D 6E6F  0123456789ABCDEF  comment
 0x00001060  f30f 1efa 31ed 4989 d15e 4889 e248 83e4  ....1.I..^H..H..  ; rip ; [16] -r-x section size 294 named .text ; arg3
@@ -85,24 +99,31 @@ EOF
 EXPECT=<<EOF
 file: /Users/pancake/hello.c
 line: 2
+colu: 0
 addr: 0x100003f64
 file: /Users/pancake/hello.c
 line: 5
+colu: 2
 addr: 0x100003f80
 file: /Users/pancake/hello.c
 line: 0
+colu: 0
 addr: 0x100003f78
 file: /Users/pancake/hello.c
 line: 0
+colu: 0
 addr: 0x100003f6c
 file: /Users/pancake/hello.c
 line: 3
+colu: 2
 addr: 0x100003f74
 file: /Users/pancake/hello.c
 line: 6
+colu: 1
 addr: 0x100003f90
 file: /Users/pancake/hello.c
 line: 6
+colu: 1
 addr: 0x100003f88
 EOF
 RUN
@@ -131,6 +152,7 @@ EOF
 EXPECT=<<EOF
 file: /Users/ftamagni/src/TestRTTI/TestRTTI//TestRTTI.cpp
 line: 18
+colu: 0
 addr: 0x0000a24e
 EOF
 RUN
