@@ -41,23 +41,24 @@ typedef struct {
 	RList *items;
 } RTableRow;
 
+#define SHOW_HEADER 1
+#define SHOW_FANCY 2
+#define SHOW_SQL 4
+#define SHOW_JSON 8
+#define SHOW_CSV 16
+#define SHOW_TSV 32
+#define SHOW_HTML 64
+#define SHOW_R2 128
+#define SHOW_SUM 256
+
 typedef struct {
+	void *cons;
 	char *name;
 	RList *rows;
 	RList *cols;
 	int totalCols;
-	bool showHeader;
-	/// R2_590 - squash them all as int showMode and switch it
-	bool showFancy;
-	bool showSQL;
-	bool showJSON;
-	bool showCSV;
-	bool showTSV;
-	bool showHTML;
-	bool showR2;
-	bool showSum;
+	ut16 showMode;
 	bool adjustedCols;
-	void *cons;
 } RTable;
 
 typedef void (*RTableSelector)(RTableRow *acc, RTableRow *new_row, int nth);
