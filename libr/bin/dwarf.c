@@ -2577,29 +2577,27 @@ R_API RList *r_bin_dwarf_parse_line(RBin *bin, int mode) {
 	return list;
 }
 
-// R2_590 - this function always return NULL, just make it void x"D
-R_API RList *r_bin_dwarf_parse_aranges(RBin *bin, int mode) {
+R_API void r_bin_dwarf_parse_aranges(RBin *bin, int mode) {
 	RBinSection *section = getsection (bin, "debug_aranges");
 	RBinFile *binfile = bin ? bin->cur: NULL;
 	if (binfile && section) {
 		size_t len = section->size;
 		if (len < 1 || len > ST32_MAX) {
-			return NULL;
+			return;
 		}
 		ut8 *buf = calloc (1, len);
 		if (!buf) {
-			return NULL;
+			return;
 		}
 		int ret = r_buf_read_at (binfile->buf, section->paddr, buf, len);
 		if (!ret) {
 			free (buf);
-			return NULL;
+			return;
 		}
 		/* set the endianity global [HOTFIX] */
 		parse_aranges_raw (bin, buf, len, mode);
 		free (buf);
 	}
-	return NULL;
 }
 
 R_API RBinDwarfDebugAbbrev *r_bin_dwarf_parse_abbrev(RBin *bin, int mode) {
