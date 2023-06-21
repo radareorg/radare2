@@ -176,7 +176,8 @@ static bool decode(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
 	// get opcode size
 	if (len < 1) {
 		op->type = R_ANAL_OP_TYPE_ILL;
-		return true; // XXX return false; ?
+		op->size = 1;
+		return false;
 	}
 
 	ut8 op_byte = data[0];
@@ -197,7 +198,7 @@ static bool decode(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
 	// handle lookup and table switch offsets
 	if (op_byte == 0xaa || op_byte == 0xab) {
 		java_switch_op (as, op, addr, data, len);
-		// IN_SWITCH_OP = 1;
+		// IN_SWITCH_OP = true;
 	}
 
 	if (mask & R_ARCH_OP_MASK_DISASM) {
@@ -258,7 +259,7 @@ static bool decode(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
 		op->stackop = R_ANAL_STACK_INC;
 		op->stackptr = 8;
 	}
-		op->direction = R_ANAL_OP_DIR_EXEC;
+	op->direction = R_ANAL_OP_DIR_EXEC;
 	if (op->type == R_ANAL_OP_TYPE_PUSH) {
 		op->stackop = R_ANAL_STACK_INC;
 		op->stackptr = -8;
@@ -287,7 +288,6 @@ static bool encode(RArchSession *as, RAnalOp *op, ut32 mask) {
 		op->size = size;
 		return true;
 	}
-
 	return false;
 }
 
