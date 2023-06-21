@@ -266,6 +266,8 @@ FILE=bins/dex/HelloWorld.dex
 CMDS=<<EOF
 CL 0x00000290;CL.@0x000002f4;CL.@0x00000318
 CL~?
+?e --
+CL
 EOF
 EXPECT=<<EOF
 file: Hello.java
@@ -280,7 +282,76 @@ file: World.java
 line: 11
 colu: 0
 addr: 0x00000318
-51
+68
+--
+file: Hello.java
+line: 10
+colu: 0
+addr: 0x000002b1
+file: Hello.java
+line: 15
+colu: 0
+addr: 0x00000263
+file: Hello.java
+line: 9
+colu: 0
+addr: 0x00000290
+file: World.java
+line: 7
+colu: 0
+addr: 0x000002fa
+file: Hello.java
+line: 4
+colu: 0
+addr: 0x00000238
+file: World.java
+line: 8
+colu: 0
+addr: 0x000002fd
+file: Hello.java
+line: 17
+colu: 0
+addr: 0x0000026c
+file: World.java
+line: 11
+colu: 0
+addr: 0x00000318
+file: Hello.java
+line: 14
+colu: 0
+addr: 0x0000025c
+file: World.java
+line: 5
+colu: 0
+addr: 0x000002f4
+file: World.java
+line: 12
+colu: 0
+addr: 0x00000339
+file: World.java
+line: 6
+colu: 0
+addr: 0x000002f7
+file: Hello.java
+line: 6
+colu: 0
+addr: 0x0000023e
+file: Hello.java
+line: 7
+colu: 0
+addr: 0x00000241
+file: Hello.java
+line: 5
+colu: 0
+addr: 0x0000023b
+file: Hello.java
+line: 16
+colu: 0
+addr: 0x00000268
+file: Hello.java
+line: 11
+colu: 0
+addr: 0x000002b9
 EOF
 RUN
 
