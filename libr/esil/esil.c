@@ -114,6 +114,10 @@ R_API REsil *r_esil_new(int stacksize, int iotrap, unsigned int addrsize) {
 	esil->addrmask = genmask (addrsize - 1);
 	esil->trace = r_esil_trace_new (esil);
 	esil->hooks = r_esil_hooks_new ();
+	esil->stats_mr_handle = UT32_MAX;
+	esil->stats_mw_handle = UT32_MAX;
+	esil->stats_rr_handle = UT32_MAX;
+	esil->stats_rw_handle = UT32_MAX;
 	return esil;
 }
 

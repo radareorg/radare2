@@ -238,6 +238,10 @@ typedef struct r_esil_t {
 	RList *active_plugins;
 	/* deep esil parsing fills this */
 	Sdb *stats;
+	ut32 stats_mr_handle;
+	ut32 stats_mw_handle;
+	ut32 stats_rr_handle;
+	ut32 stats_rw_handle;
 	REsilTrace *trace;
 	REsilCallbacks cb;
 	REsilHooks *hooks;
