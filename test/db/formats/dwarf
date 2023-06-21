@@ -163,18 +163,23 @@ Raw dump of debug contents of section .debug_line:
 0x00001149	/home/pancake/prg/radare2/test/bins/elf/dwarf/hello.c	3
 file: /home/pancake/prg/radare2/test/bins/elf/dwarf/hello.c
 line: 5
+colu: 2
 addr: 0x00001160
 file: /home/pancake/prg/radare2/test/bins/elf/dwarf/hello.c
 line: 6
+colu: 1
 addr: 0x00001176
 file: /home/pancake/prg/radare2/test/bins/elf/dwarf/hello.c
 line: 4
+colu: 2
 addr: 0x00001151
 file: /home/pancake/prg/radare2/test/bins/elf/dwarf/hello.c
 line: 6
+colu: 1
 addr: 0x00001174
 file: /home/pancake/prg/radare2/test/bins/elf/dwarf/hello.c
 line: 3
+colu: 12
 addr: 0x00001149
 EOF
 RUN
@@ -336,18 +341,23 @@ Raw dump of debug contents of section .debug_line:
 0x00001149	/home/pancake/prg/radare2/test/bins/elf/dwarf/hello.c	3
 file: /home/pancake/prg/radare2/test/bins/elf/dwarf/hello.c
 line: 5
+colu: 2
 addr: 0x00001160
 file: /home/pancake/prg/radare2/test/bins/elf/dwarf/hello.c
 line: 6
+colu: 1
 addr: 0x00001176
 file: /home/pancake/prg/radare2/test/bins/elf/dwarf/hello.c
 line: 4
+colu: 2
 addr: 0x00001151
 file: /home/pancake/prg/radare2/test/bins/elf/dwarf/hello.c
 line: 6
+colu: 1
 addr: 0x00001174
 file: /home/pancake/prg/radare2/test/bins/elf/dwarf/hello.c
 line: 3
+colu: 12
 addr: 0x00001149
 EOF
 RUN
@@ -509,18 +519,23 @@ Raw dump of debug contents of section .debug_line:
 0x00001149	/home/pancake/prg/radare2/test/bins/elf/dwarf/hello.c	3
 file: /home/pancake/prg/radare2/test/bins/elf/dwarf/hello.c
 line: 5
+colu: 2
 addr: 0x00001160
 file: /home/pancake/prg/radare2/test/bins/elf/dwarf/hello.c
 line: 6
+colu: 1
 addr: 0x00001176
 file: /home/pancake/prg/radare2/test/bins/elf/dwarf/hello.c
 line: 4
+colu: 2
 addr: 0x00001151
 file: /home/pancake/prg/radare2/test/bins/elf/dwarf/hello.c
 line: 6
+colu: 1
 addr: 0x00001174
 file: /home/pancake/prg/radare2/test/bins/elf/dwarf/hello.c
 line: 3
+colu: 12
 addr: 0x00001149
 EOF
 RUN
@@ -686,18 +701,23 @@ Raw dump of debug contents of section .debug_line:
 0x00001149	/home/pancake/prg/radare2/test/bins/elf/dwarf/hello.c	3
 file: /home/pancake/prg/radare2/test/bins/elf/dwarf/hello.c
 line: 5
+colu: 2
 addr: 0x00001160
 file: /home/pancake/prg/radare2/test/bins/elf/dwarf/hello.c
 line: 6
+colu: 1
 addr: 0x00001176
 file: /home/pancake/prg/radare2/test/bins/elf/dwarf/hello.c
 line: 4
+colu: 2
 addr: 0x00001151
 file: /home/pancake/prg/radare2/test/bins/elf/dwarf/hello.c
 line: 6
+colu: 1
 addr: 0x00001174
 file: /home/pancake/prg/radare2/test/bins/elf/dwarf/hello.c
 line: 3
+colu: 12
 addr: 0x00001149
 EOF
 EXPECT_ERR=<<EOF
