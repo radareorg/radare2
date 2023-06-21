@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2022 - pancake */
+/* radare - LGPL - Copyright 2009-2023 - pancake */
 
 #include <r_asm.h>
 
@@ -65,4 +65,17 @@ R_API char* r_asm_code_get_hex(RAsmCode *acode) {
 		r_hex_bin2str (acode->bytes, acode->len, str);
 	}
 	return str;
+}
+
+R_API RAsmEqu *r_asm_code_equ_get(RAsmCode *code, const char *key) { // R2_590
+	// TODO: use a hashtable or sdb
+	void *equ;
+	RListIter *iter;
+	r_list_foreach (code->equs, iter, equ) {
+		RAsmEqu *e = (RAsmEqu*) equ;
+		if (!strcmp (e->key, key)) {
+			return e;
+		}
+	}
+	return NULL;
 }

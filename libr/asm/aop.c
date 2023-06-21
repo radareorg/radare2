@@ -25,8 +25,8 @@ R_DEPRECATE R_API void r_asm_op_fini(RAnalOp *op) {
 	r_anal_op_fini (op);
 }
 
-// accessors
-R_API char *r_asm_op_get_hex(RAnalOp *op) {
+// R2_600 - must use RArchOp.getHex()
+R_DEPRECATE R_API char *r_asm_op_get_hex(RAnalOp *op) {
 	r_return_val_if_fail (op && op->bytes, NULL);
 	const int size = op->size;
 	if (size < 1) {
@@ -42,16 +42,19 @@ R_API char *r_asm_op_get_hex(RAnalOp *op) {
 	return str;
 }
 
-// XXX
+// XXX R2_600
 R_DEPRECATE R_API char *r_asm_op_get_asm(RAnalOp *op) {
 	r_return_val_if_fail (op, NULL);
 	return op->mnemonic;
 }
 
+#if 0
+UNUSED
 R_API ut8 *r_asm_op_get_buf(RAnalOp *op) {
 	r_return_val_if_fail (op, NULL);
 	return op->bytes;
 }
+#endif
 
 R_API int r_asm_op_get_size(RAnalOp *op) {
 	r_return_val_if_fail (op, 1);

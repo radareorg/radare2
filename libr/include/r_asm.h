@@ -44,14 +44,6 @@ typedef struct r_asm_t {
 	void *user;
 	RArchSession *ecur; // encode current
 	RArchSession *dcur; // decode current
-#if 0
-	void *cur; // deprecate
-	void *acur; // deprecate
-#endif
-//	_RAsmPlugin *cur; // disassemble .. should be RArchPlugin DEPRECATE
-//	_RAsmPlugin *acur; // assemble DEPRECATE
-	// RArchSession *cur;
-	// RArchSession *acur;
 	RList *plugins;
 	RAnalBind analb; // Should be RArchBind instead, but first we need to move all the anal plugins.. well not really we can kill it imho
 	RParse *ifilter;
@@ -60,6 +52,7 @@ typedef struct r_asm_t {
 	RSyscall *syscall;
 	RNum *num;
 	int dataalign;
+	int codealign;
 	HtPP *flags;
 	bool pseudo; // should be implicit by RParse
 	RParse *parse;
@@ -82,6 +75,7 @@ R_API bool r_asm_use_assembler(RAsm *a, const char *name);
 // this is in archconfig
 R_API int r_asm_set_bits(RAsm *a, int bits);
 R_API void r_asm_set_cpu(RAsm *a, const char *cpu);
+// TODO: must be set_endian (BIG; MIDDLE; LITTLE, ..)
 R_API bool r_asm_set_big_endian(RAsm *a, bool big_endian);
 
 R_API bool r_asm_set_syntax(RAsm *a, int syntax); // This is in RArchConfig
@@ -110,21 +104,9 @@ R_API void r_asm_equ_item_free(RAsmEqu *equ);
 R_API void r_asm_code_set_equ(RAsmCode *code, const char *key, const char *value);
 R_API char *r_asm_code_equ_replace(RAsmCode *code, char *str);
 R_API char* r_asm_code_get_hex(RAsmCode *acode);
+R_API RAsmEqu *r_asm_code_equ_get(RAsmCode *code, const char *key);
 
-static inline RAsmEqu *r_asm_code_equ_get(RAsmCode *code, const char *key) { // R2_590
-	// TODO: use a hashtable or sdb
-	void *equ;
-	RListIter *iter;
-	r_list_foreach (code->equs, iter, equ) {
-		RAsmEqu *e = (RAsmEqu*) equ;
-		if (!strcmp (e->key, key)) {
-			return e;
-		}
-	}
-	return NULL;
-}
-
-/* op.c XXX deprecate we have RArchOp which does the same */
+/* op.c XXX Deprecate the use of all those apis and just use RArchOp */
 R_API RAnalOp *r_asm_op_new(void);
 R_API void r_asm_op_init(RAnalOp *op);
 R_API void r_asm_op_free(RAnalOp *op);
@@ -136,7 +118,7 @@ R_API void r_asm_op_set_asm(RAnalOp *op, const char *str);
 R_API int r_asm_op_set_hex(RAnalOp *op, const char *str);
 R_API int r_asm_op_set_hexbuf(RAnalOp *op, const ut8 *buf, int len);
 R_API void r_asm_op_set_buf(RAnalOp *op, const ut8 *str, int len);
-R_API ut8 *r_asm_op_get_buf(RAnalOp *op);
+// R_DEPRECATE R_API ut8 *r_asm_op_get_buf(RAnalOp *op);
 
 #endif
 
