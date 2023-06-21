@@ -6157,7 +6157,7 @@ static int arm_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 				if (!strcmpnull (ao->op, "movs")) {
 					ao->o = 0xb0e1;
 				}
-				ao->o |= getreg (ao->a[0]) << 20;
+				ao->o |= (ut64)getreg (ao->a[0]) << 20;
 				ret = getreg (ao->a[1]);
 				if (ret != -1) {
 					ao->o |= ret << 24;
