@@ -11,15 +11,15 @@
 #include "../js_r2papi.c"
 
 typedef struct {
-	R_BORROW RCore *core;
-	char *name; // if name != NULL its a plugin reference
-	R_BORROW JSRuntime *r;
 	R_BORROW JSContext *ctx;
 	JSValue func;
 } QjsContext;
 
-typedef struct qjs_core_plugin_state {
+typedef struct qjs_core_plugin {
 	QjsContext qctx;
+	char *name;
+	char *desc;
+	char *license;
 	// void *data;  // can be added later if needed
 } QjsCorePlugin;
 
@@ -28,56 +28,53 @@ typedef void (*CorePluginFini)(QjsCorePlugin *ps, void *user);
 R_GENERATE_VEC_IMPL_FOR(CorePlugin, QjsCorePlugin);
 
 typedef struct qjs_plugin_manager_t {
-	RVecCorePlugin core_plugins;  // XXX replace Gcalls / GcallsData uses with this
+	R_BORROW RCore *core;
+	R_BORROW JSRuntime *rt;
+	RVecCorePlugin core_plugins;
 	CorePluginFini fini_core_plugin;
 	// XXX add arch state here too
 } QjsPluginManager;
 
 typedef struct qjs_plugin_data_t {
 	QjsPluginManager pm;
-	QjsContext qc;  // default context for running normal JS code in
+	QjsContext qc;  // default context for running normal JS code
 	// R2_590 add more state as needed to remove all globals
 } QjsPluginData;
 
-static void qjsctx_fini(QjsContext *c) {
-	free (c->name);
-}
-
 static void core_plugin_fini (QjsCorePlugin *cp, void *user) {
-	qjsctx_fini (&cp->qctx);
+	free (cp->name);
+	free (cp->desc);
+	free (cp->license);
 }
 
-static bool plugin_manager_init (QjsPluginManager *pm) {
+static bool plugin_manager_init (QjsPluginManager *pm, RCore *core, JSRuntime *rt) {
+	pm->core = core;
+	pm->rt = rt;
 	RVecCorePlugin_init (&pm->core_plugins);
 	pm->fini_core_plugin = core_plugin_fini;
 	return true;
 }
 
-static QjsCorePlugin *plugin_manager_add_core_plugin(QjsPluginManager *pm, RCore *core,
-	const char *name, JSContext *ctx, JSValue func) {
-	r_return_val_if_fail (pm && core, NULL);
+static void plugin_manager_add_core_plugin(QjsPluginManager *pm, const char *name, const char *desc,
+	const char *license, JSContext *ctx, JSValue func) {
+	r_return_if_fail (pm);
 
 	QjsCorePlugin *cp = RVecCorePlugin_emplace_back (&pm->core_plugins);
 	if (cp) {
-		cp->qctx.name = name? strdup (name): NULL;
-		cp->qctx.core = core;
+		cp->name = name? strdup (name): NULL;
+		cp->desc = desc? strdup (desc): NULL;
+		cp->license = license? strdup (license): NULL;
 		cp->qctx.ctx = ctx;
 		cp->qctx.func = func;
 	}
-
-	return cp;
 }
 
-static QjsCorePlugin *plugin_manager_find_core_plugin(const QjsPluginManager *pm, RCore *core, const char *name) {
-	r_return_val_if_fail (pm && core, NULL);
+static QjsCorePlugin *plugin_manager_find_core_plugin(const QjsPluginManager *pm, const char *name) {
+	r_return_val_if_fail (pm, NULL);
 
 	QjsCorePlugin *cp;
 	R_VEC_FOREACH (&pm->core_plugins, cp) {
-		if (name && core) {
-			if (cp->qctx.core == core && cp->qctx.name && !strcmp (cp->qctx.name, name)) {
-				return cp;
-			}
-		} else if (core && cp->qctx.core == core) {
+		if (!strcmp (cp->name, name)) {
 			return cp;
 		}
 	}
@@ -85,14 +82,14 @@ static QjsCorePlugin *plugin_manager_find_core_plugin(const QjsPluginManager *pm
 	return NULL;
 }
 
-static bool plugin_manager_remove_core_plugin(QjsPluginManager *pm, RCore *core, const char *name) {
-	r_return_val_if_fail (pm && core, false);
+static bool plugin_manager_remove_core_plugin(QjsPluginManager *pm, const char *name) {
+	r_return_val_if_fail (pm, false);
 
 	bool found = false;
 	size_t i = 0;
 	QjsCorePlugin *cp;
 	R_VEC_FOREACH (&pm->core_plugins, cp) {
-		if (cp->qctx.core == core && name && cp->qctx.name && !strcmp (cp->qctx.name, name)) {
+		if (!strcmp (cp->name, name)) {
 			found = true;
 			break;
 		}
@@ -110,6 +107,8 @@ static bool plugin_manager_remove_core_plugin(QjsPluginManager *pm, RCore *core,
 
 static void plugin_manager_fini (QjsPluginManager *pm) {
 	RVecCorePlugin_fini (&pm->core_plugins, pm->fini_core_plugin, NULL);
+	JS_FreeRuntime (pm->rt);
+	pm->rt = NULL;
 }
 
 #include "qjs/loader.c"
@@ -207,7 +206,7 @@ static JSValue r2plugin(JSContext *ctx, JSValueConst this_val, int argc, JSValue
 	const char *n = JS_ToCStringLen2 (ctx, &plen, argv[0], false);
 	if (R_STR_ISNOTEMPTY (n)) {
 		if (!strcmp (n, "core")) {
-			return r2plugin_core (ctx, this_val, argc, argv);
+			return r2plugin_core_load (ctx, this_val, argc, argv);
 		} else if (!strcmp (n, "arch")) {
 			return r2plugin_arch (ctx, this_val, argc, argv);
 #if 0
@@ -230,11 +229,10 @@ static JSValue r2plugin_unload(JSContext *ctx, JSValueConst this_val, int argc, 
 	}
 	JSRuntime *rt = JS_GetRuntime (ctx);
 	QjsPluginData *pd = JS_GetRuntimeOpaque (rt);
-	QjsContext *k = &pd->qc;
 	size_t plen;
 	const char *name = JS_ToCStringLen2 (ctx, &plen, argv[0], false);
-	k->core->lang->cmdf (k->core, "L-%s", name);
-	bool res = plugin_manager_remove_core_plugin (&pd->pm, k->core, name);
+	pd->pm.core->lang->cmdf (pd->pm.core, "L-%s", name);
+	bool res = plugin_manager_remove_core_plugin (&pd->pm, name);
 	// invalid throw exception here
 	// return JS_ThrowRangeError(ctx, "invalid r2plugin type");
 	return JS_NewBool (ctx, res);
@@ -244,12 +242,11 @@ static JSValue r2plugin_unload(JSContext *ctx, JSValueConst this_val, int argc, 
 static JSValue r2cmd0(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
 	JSRuntime *rt = JS_GetRuntime (ctx);
 	QjsPluginData *pd = JS_GetRuntimeOpaque (rt);
-	QjsContext *k = &pd->qc;
 	size_t plen;
 	const char *n = JS_ToCStringLen2 (ctx, &plen, argv[0], false);
 	int ret = 0;
 	if (R_STR_ISNOTEMPTY (n)) {
-		ret = k->core->lang->cmdf (k->core, "%s@e:scr.null=true", n);
+		ret = pd->pm.core->lang->cmdf (pd->pm.core, "%s@e:scr.null=true", n);
 	}
 	// JS_FreeValue (ctx, argv[0]);
 	return JS_NewInt32 (ctx, ret);
@@ -259,14 +256,13 @@ static JSValue r2cmd0(JSContext *ctx, JSValueConst this_val, int argc, JSValueCo
 static JSValue r2call0(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
 	JSRuntime *rt = JS_GetRuntime (ctx);
 	QjsPluginData *pd = JS_GetRuntimeOpaque (rt);
-	QjsContext *k = &pd->qc;
 	size_t plen;
 	const char *n = JS_ToCStringLen2 (ctx, &plen, argv[0], false);
 	int ret = 0;
 	if (R_STR_ISNOTEMPTY (n)) {
-		k->core->lang->cmdf (k->core, "\"\"e scr.null=true");
-		ret = k->core->lang->cmdf (k->core, "\"\"%s", n);
-		k->core->lang->cmdf (k->core, "\"\"e scr.null=false");
+		pd->pm.core->lang->cmdf (pd->pm.core, "\"\"e scr.null=true");
+		ret = pd->pm.core->lang->cmdf (pd->pm.core, "\"\"%s", n);
+		pd->pm.core->lang->cmdf (pd->pm.core, "\"\"e scr.null=false");
 	}
 	// JS_FreeValue (ctx, argv[0]);
 	return JS_NewInt32 (ctx, ret);
@@ -275,12 +271,11 @@ static JSValue r2call0(JSContext *ctx, JSValueConst this_val, int argc, JSValueC
 static JSValue r2cmd(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
 	JSRuntime *rt = JS_GetRuntime (ctx);
 	QjsPluginData *pd = JS_GetRuntimeOpaque (rt);
-	QjsContext *k = &pd->qc;
 	size_t plen;
 	const char *n = JS_ToCStringLen2 (ctx, &plen, argv[0], false);
 	char *ret = NULL;
 	if (R_STR_ISNOTEMPTY (n)) {
-		ret = k->core->lang->cmd_str (k->core, n);
+		ret = pd->pm.core->lang->cmd_str (pd->pm.core, n);
 	}
 	// JS_FreeValue (ctx, argv[0]);
 	return JS_NewString (ctx, r_str_get (ret));
@@ -539,12 +534,16 @@ static bool init(RLangSession *ls) {
 		return true;
 	}
 
+	RCore *core = ls->lang->user;
+	if (!r2plugin_install_core_plugin (core)) {
+		return false;
+	}
+
 	if (ls->plugin_data) {
 		R_LOG_ERROR ("qjs lang plugin already loaded");
 		return false;
 	}
 
-	RCore *core = ls->lang->user;
 	JSRuntime *rt = JS_NewRuntime ();
 	if (!rt) {
 		return false;
@@ -563,16 +562,12 @@ static bool init(RLangSession *ls) {
 		return false;
 	}
 
-	plugin_manager_init (&pd->pm);
+	plugin_manager_init (&pd->pm, core, rt);
 
 	JSValue func = JS_NewBool (ctx, false); // fake function
 	QjsContext *qc = &pd->qc;
-	qc->name = NULL;
-	qc->core = core;
 	qc->ctx = ctx;
 	qc->func = func;
-	qc->r = rt;
-	qc->core = core;
 	r2qjs_modules (ctx);
 	JS_SetRuntimeOpaque (rt, pd);  // expose pd to all qjs native functions in R2
 
@@ -588,14 +583,13 @@ static bool fini(RLangSession *s) {
 	plugin_manager_fini (&pd->pm);
 
 	QjsContext *qctx = &pd->qc;
-	JS_FreeRuntime (qctx->r);
 	JS_FreeContext (qctx->ctx);
 	qctx->ctx = NULL;
-	qctx->r = NULL;
-	qjsctx_fini (qctx);
 
 	free (pd);
 	s->plugin_data = NULL;
+
+	// XXX do we also remove core qjs plugin here?
 	return true;
 }
 

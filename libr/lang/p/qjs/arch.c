@@ -23,7 +23,7 @@ r2.plugin("arch", archPlugin);
 
 typedef struct {
 	JSContext *ctx;
-	RCore *core;
+	RCore *core; // XXX remove
 	JSValue decode; // decode function
 } R2QJSArch;
 
@@ -128,8 +128,7 @@ static JSValue r2plugin_arch(JSContext *ctx, JSValueConst this_val, int argc, JS
 	const char *errmsg = NULL;
 	JSRuntime *rt = JS_GetRuntime (ctx);
 	QjsPluginData *pd = JS_GetRuntimeOpaque (rt);
-	QjsContext *k = &pd->qc;
- 	RCore *core = k->core;
+ 	RCore *core = pd->pm.core;
 
 	if (argc != 2) {
 		return JS_ThrowRangeError (ctx, "r2.plugin expects two arguments");
