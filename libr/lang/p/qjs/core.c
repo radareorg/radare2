@@ -115,29 +115,37 @@ static JSValue r2plugin_core_load(JSContext *ctx, JSValueConst this_val, int arg
 		return JS_NewBool (ctx, false);
 	}
 
+	RCorePlugin *ap = R_NEW0 (RCorePlugin);
+	if (!ap) {
+		return JS_ThrowRangeError (ctx, "could not allocate qjs core plugin");
+	}
+
 	JSValue desc = JS_GetPropertyStr (ctx, res, "desc");
 	JSValue license = JS_GetPropertyStr (ctx, res, "license");
 	const char *descptr = JS_ToCStringLen2 (ctx, &namelen, desc, false);
 	const char *licenseptr = JS_ToCStringLen2 (ctx, &namelen, license, false);
-	plugin_manager_add_core_plugin (pm, nameptr, descptr, licenseptr, ctx, func);
-	return JS_NewBool (ctx, true);
-}
 
-// XXX move to same directory as other core plugins?
-RCorePlugin r_core_plugin_qjs = {
-	.name = "qjs",
-	.desc = "Generic QuickJS core plugin, allows attaching other plugins dynamically",
-	.license = "LGPLv3",
-	.call = r_cmd_qjs_call,
-};
+	ap->name = nameptr;  // TODO no strdup here?
+	if (descptr) {
+		ap->desc = strdup (descptr);
+	}
+	if (licenseptr) {
+		ap->license = strdup (licenseptr);
+	}
 
-RLibStruct radare_plugin_qjs = {
-	.type = R_LIB_TYPE_CORE,
-	.data = &r_core_plugin_qjs,
-	.version = R2_VERSION
-};
+	ap->call = r_cmd_qjs_call;
 
-static bool r2plugin_install_core_plugin(RCore *core) {
-	int res = r_lib_open_ptr (core->lib, "qjs", NULL, &radare_plugin_qjs);
-	return res != -1;
+	plugin_manager_add_core_plugin (pm, nameptr, ctx, func);
+
+	RLibStruct *lib = R_NEW0 (RLibStruct);
+	if (!lib) {
+		free (ap);
+		return JS_NewBool (ctx, false);
+	}
+
+	lib->type = R_LIB_TYPE_CORE;
+	lib->data = ap;
+	lib->version = R2_VERSION;
+	int ret = r_lib_open_ptr (pd->pm.core->lib, ap->name, NULL, lib);
+	return JS_NewBool (ctx, ret == 0);
 }
