@@ -286,7 +286,9 @@ R_API void r_debug_trace_list(RDebug *dbg, int mode, ut64 offset) {
 		RIO *io = dbg->iob.io;
 		r_table_visual_list (table, info_list, offset, 1,
 			r_cons_get_size (NULL), io->va);
-		io->cb_printf ("\n%s\n", r_table_tostring (table));
+		char *s = r_table_tostring (table);
+		io->cb_printf ("\n%s\n", s);
+		free (s);
 		r_table_free (table);
 		r_list_free (info_list);
 	}

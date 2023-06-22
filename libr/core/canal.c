@@ -3466,7 +3466,9 @@ R_API int r_core_anal_fcn_list(RCore *core, const char *input, const char *rad) 
 		RTable *table = r_core_table (core, "functions");
 		r_table_visual_list (table, flist, core->offset, core->blocksize,
 			r_cons_get_size (NULL), r_config_get_i (core->config, "scr.color"));
-		r_cons_printf ("\n%s\n", r_table_tostring (table));
+		char *s = r_table_tostring (table);
+		r_cons_printf ("\n%s\n", s);
+		free (s);
 		r_table_free (table);
 		r_list_free (flist);
 		break;

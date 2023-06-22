@@ -4,6 +4,7 @@ cd "$(dirname $0)"/..
 
 # NAME=no preincrement/predecrement in 3rd part of for statement
 (git grep -n -e '++[a-z][a-z]*[);]' libr | grep -v arch) && exit 1
+(git grep table_tostring libr | grep -e printf -e cons_print) && exit 1
 
 # Bad: static void foo() {
 # Good: static void foo(void) {
