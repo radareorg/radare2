@@ -3,6 +3,7 @@
 # QuickJS core plugin example
 
 ```js
+
 (function() {
 	let { log } = console;
 
@@ -37,7 +38,7 @@
 	}
 
 	log("Installing the `qjs-example` core plugin");
-	log("Type 'test' to confirm it works");
+	log("Type 't1' or 't2' to confirm it works");
 	console.log("load true", r2.plugin("core", examplePlugin));
 	console.log("load true", r2.plugin("core", examplePlugin2));
 	if (false) {
@@ -51,12 +52,13 @@
 		log(r2cmd("Lc"));
 	}
 })();
+
 ```
 
 #endif
 
 // TODO maybe add a function to call by plugin name? (is 1 extra arg)
-static int r2plugin_core_call(void *c, const char *input) {
+static int r_cmd_qjs_call(void *c, const char *input) {
 	RCore *core = c;
 	QjsPluginData *pd = R_UNWRAP4 (core, lang, session, plugin_data);
 
@@ -74,11 +76,9 @@ static int r2plugin_core_call(void *c, const char *input) {
 	return false;
 }
 
-static JSValue r2plugin_core(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
+static JSValue r2plugin_core_load(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
 	JSRuntime *rt = JS_GetRuntime (ctx);
 	QjsPluginData *pd = JS_GetRuntimeOpaque (rt);
-	QjsContext *k = &pd->qc;
-	RCore *core = k->core;
 
 	if (argc != 2) {
 		return JS_ThrowRangeError (ctx, "r2.plugin expects two arguments");
@@ -92,31 +92,12 @@ static JSValue r2plugin_core(JSContext *ctx, JSValueConst this_val, int argc, JS
 		return JS_ThrowRangeError (ctx, "r2.plugin function must return an object");
 	}
 
-	RCorePlugin *ap = R_NEW0 (RCorePlugin);
-	if (!ap) {
-		return JS_ThrowRangeError (ctx, "heap stuff");
-	}
-
 	JSValue name = JS_GetPropertyStr (ctx, res, "name");
 	size_t namelen;
 	const char *nameptr = JS_ToCStringLen2 (ctx, &namelen, name, false);
-	if (nameptr) {
-		ap->name = nameptr;
-	} else {
+	if (!nameptr) {
 		R_LOG_WARN ("r2.plugin requires the function to return an object with the `name` field");
 		return JS_NewBool (ctx, false);
-	}
-
-	JSValue desc = JS_GetPropertyStr (ctx, res, "desc");
-	const char *descptr = JS_ToCStringLen2 (ctx, &namelen, desc, false);
-	if (descptr) {
-		ap->desc = strdup (descptr);
-	}
-
-	JSValue license = JS_GetPropertyStr (ctx, res, "license");
-	const char *licenseptr = JS_ToCStringLen2 (ctx, &namelen, license, false);
-	if (licenseptr) {
-		ap->license = strdup (licenseptr);
 	}
 
 	JSValue func = JS_GetPropertyStr (ctx, res, "call");
@@ -127,26 +108,36 @@ static JSValue r2plugin_core(JSContext *ctx, JSValueConst this_val, int argc, JS
 	}
 
 	QjsPluginManager *pm = &pd->pm;
-	QjsCorePlugin *cp = plugin_manager_find_core_plugin (pm, core, ap->name);
+	QjsCorePlugin *cp = plugin_manager_find_core_plugin (pm, nameptr);
 	if (cp) {
-		R_LOG_WARN ("r2.plugin with name %s is already registered", ap->name);
-		free (ap);
+		R_LOG_WARN ("r2.plugin with name %s is already registered", nameptr);
 		// return JS_ThrowRangeError (ctx, "r2.plugin core already registered (only one exists)");
 		return JS_NewBool (ctx, false);
 	}
 
-	/* QjsCorePlugin *plugin = */ plugin_manager_add_core_plugin (pm, core, nameptr, ctx, func);
+	JSValue desc = JS_GetPropertyStr (ctx, res, "desc");
+	JSValue license = JS_GetPropertyStr (ctx, res, "license");
+	const char *descptr = JS_ToCStringLen2 (ctx, &namelen, desc, false);
+	const char *licenseptr = JS_ToCStringLen2 (ctx, &namelen, license, false);
+	plugin_manager_add_core_plugin (pm, nameptr, descptr, licenseptr, ctx, func);
+	return JS_NewBool (ctx, true);
+}
 
-	// XXX split this function into 2 parts, plugin adding should be separate from running
-	ap->call = r2plugin_core_call;
+// XXX move to same directory as other core plugins?
+RCorePlugin r_core_plugin_qjs = {
+	.name = "qjs",
+	.desc = "Generic QuickJS core plugin, allows attaching other plugins dynamically",
+	.license = "LGPLv3",
+	.call = r_cmd_qjs_call,
+};
 
-	int ret = -1;
-	RLibStruct *lib = R_NEW0 (RLibStruct);
-	if (lib) {
-		lib->type = R_LIB_TYPE_CORE;
-		lib->data = ap;
-		lib->version = R2_VERSION;
-		ret = r_lib_open_ptr (core->lib, nameptr, NULL, lib);
-	}
-	return JS_NewBool (ctx, ret == 0);
+RLibStruct radare_plugin_qjs = {
+	.type = R_LIB_TYPE_CORE,
+	.data = &r_core_plugin_qjs,
+	.version = R2_VERSION
+};
+
+static bool r2plugin_install_core_plugin(RCore *core) {
+	int res = r_lib_open_ptr (core->lib, "qjs", NULL, &radare_plugin_qjs);
+	return res != -1;
 }
