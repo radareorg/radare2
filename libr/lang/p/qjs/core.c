@@ -60,14 +60,14 @@
 // TODO maybe add a function to call by plugin name? (is 1 extra arg)
 static int r_cmd_qjs_call(void *c, const char *input) {
 	RCore *core = c;
-	QjsPluginData *pd = R_UNWRAP4 (core, lang, session, plugin_data);
+	QjsPluginManager *pm = R_UNWRAP4 (core, lang, session, plugin_data);
 
 	// Iterate over plugins until one returns "true" (meaning the plugin handled the input)
 	QjsCorePlugin *plugin;
-	R_VEC_FOREACH (&pd->pm.core_plugins, plugin) {
+	R_VEC_FOREACH (&pm->core_plugins, plugin) {
 		QjsContext *qc = &plugin->qctx;
 		JSValueConst args[1] = { JS_NewString (qc->ctx, input) };
-		JSValue res = JS_Call (qc->ctx, qc->func, JS_UNDEFINED, countof (args), args);
+		JSValue res = JS_Call (qc->ctx, qc->call_func, JS_UNDEFINED, countof (args), args);
 		if (JS_ToBool (qc->ctx, res)) {
 			return true;
 		}
@@ -78,7 +78,7 @@ static int r_cmd_qjs_call(void *c, const char *input) {
 
 static JSValue r2plugin_core_load(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
 	JSRuntime *rt = JS_GetRuntime (ctx);
-	QjsPluginData *pd = JS_GetRuntimeOpaque (rt);
+	QjsPluginManager *pm = JS_GetRuntimeOpaque (rt);
 
 	if (argc != 2) {
 		return JS_ThrowRangeError (ctx, "r2.plugin expects two arguments");
@@ -107,7 +107,6 @@ static JSValue r2plugin_core_load(JSContext *ctx, JSValueConst this_val, int arg
 		return JS_NewBool (ctx, false);
 	}
 
-	QjsPluginManager *pm = &pd->pm;
 	QjsCorePlugin *cp = plugin_manager_find_core_plugin (pm, nameptr);
 	if (cp) {
 		R_LOG_WARN ("r2.plugin with name %s is already registered", nameptr);
@@ -133,7 +132,7 @@ static JSValue r2plugin_core_load(JSContext *ctx, JSValueConst this_val, int arg
 		ap->license = strdup (licenseptr);
 	}
 
-	ap->call = r_cmd_qjs_call;
+	ap->call = r_cmd_qjs_call;  // Technically this could all be handled by a single generic plugin
 
 	plugin_manager_add_core_plugin (pm, nameptr, ctx, func);
 
@@ -146,6 +145,6 @@ static JSValue r2plugin_core_load(JSContext *ctx, JSValueConst this_val, int arg
 	lib->type = R_LIB_TYPE_CORE;
 	lib->data = ap;
 	lib->version = R2_VERSION;
-	int ret = r_lib_open_ptr (pd->pm.core->lib, ap->name, NULL, lib);
+	int ret = r_lib_open_ptr (pm->core->lib, ap->name, NULL, lib);
 	return JS_NewBool (ctx, ret == 0);
 }
