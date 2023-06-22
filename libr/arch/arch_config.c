@@ -21,11 +21,9 @@ R_API void r_arch_config_free(RArchConfig *r) {
 
 R_API void r_arch_config_use(RArchConfig *config, R_NULLABLE const char *arch) {
 	r_return_if_fail (config);
-	// R_LOG_DEBUG ("RArch.USE (%s)", arch);
 	if (arch && !strcmp (arch, "null")) {
 		return;
 	}
-	free (config->arch);
 	config->arch = R_STR_ISNOTEMPTY (arch) ? strdup (arch) : NULL;
 }
 

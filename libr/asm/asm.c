@@ -185,6 +185,7 @@ R_API RAsm *r_asm_new(void) {
 	if (!a) {
 		return NULL;
 	}
+	a->codealign = 1;
 	a->dataalign = 1;
 	a->plugins = r_list_newf (NULL);
 	if (!a->plugins) {
@@ -301,7 +302,7 @@ R_API bool r_asm_use(RAsm *a, const char *name) {
 	if (a->analb.anal) {
 		if (a->analb.use (a->analb.anal, name)) {
 			load_asm_descriptions (a);
-			//a->cur = NULL;
+			// a->cur = NULL;
 			// a->acur = NULL;
 			return true;
 		}

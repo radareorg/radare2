@@ -1316,7 +1316,7 @@ static void anop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, 
 					ut8 buf[5] = {0};
 					const ut8 data[] = { 0xe8, 0, 0, 0, 0 };
 					RBin *bin = as->arch->binb.bin;
-					if (bin->iob.read_at (bin->iob.io, addr - 5, buf, sizeof (buf))) {
+					if (bin && bin->iob.read_at (bin->iob.io, addr - 5, buf, sizeof (buf))) {
 						if (!memcmp (buf, data, sizeof (buf))) {
 							dst = getarg (&gop, 0, 0, NULL, NULL);
 							esilprintf (op, "0x%"PFMT64x",%s,=", addr, dst);
@@ -1324,10 +1324,10 @@ static void anop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, 
 							break;
 						}
 					} else {
-						R_LOG_DEBUG ("This shouldnt happen");
+						R_LOG_ERROR ("Missing read callback");
 					}
 				}
-				// ??? break;
+				// dont break;
 #endif
 			default:
 				{
