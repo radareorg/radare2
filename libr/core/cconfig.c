@@ -3693,6 +3693,8 @@ R_API int r_core_config_init(RCore *core) {
 	SETBPREF ("asm.tabs.once", "false", "only tabulate the opcode, not the arguments");
 	SETI ("asm.tabs.off", 0, "tabulate spaces after the offset");
 	SETBPREF ("asm.trace", "false", "show execution traces for each opcode");
+	SETBPREF ("asm.trace.stats", "true", "indent disassembly with trace.count information");
+	SETBPREF ("asm.trace.color", "true", "indent disassembly with trace.count information");
 	SETBPREF ("asm.trace.space", "false", "indent disassembly with trace.count information");
 	SETBPREF ("asm.ucase", "false", "use uppercase syntax at disassembly");
 	SETBPREF ("asm.capitalize", "false", "use camelcase at disassembly");

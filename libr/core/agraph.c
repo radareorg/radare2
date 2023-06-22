@@ -377,6 +377,17 @@ static void normal_RANode_print(const RAGraph *g, const RANode *n, int cur) {
 	int color = n->difftype;
 	const bool showTitle = g->show_node_titles;
 	const bool showBody = g->show_node_body;
+	if (n->color) {
+#if 0
+		const char *pad = r_str_pad ('#', n->w);
+		char *f = r_str_newf ("%s%s%s%s", n->color, pad, Color_RESET, nc);
+		G (n->x, n->y);
+		W (f);
+		free (f);
+#endif
+		// r_cons_canvas_bgfill (g->can, n->x-1, n->y-1, n->w+2, n->h+2, n->color);
+		r_cons_canvas_box (g->can, n->x-1, n->y, n->w+2, n->h, n->color);
+	}
 
 	x = n->x + g->can->sx;
 	y = n->y + g->can->sy;
@@ -454,22 +465,27 @@ static void normal_RANode_print(const RAGraph *g, const RANode *n, int cur) {
 		}
 	}
 
+#if 1
 	// TODO: check if node is traced or not and show proper color
 	// This info must be stored inside RANode* from RCore*
 	const char *nc = get_node_color (color, cur);
 	if (g->show_node_bubble) {
 		r_cons_canvas_bgfill (g->can, n->x, n->y, n->w, n->h, get_node_bgcolor (color, cur));
-		// r_cons_canvas_circle (g->can, n->x, n->y, n->w, n->h, get_node_color (color, cur));
+	// r_cons_canvas_circle (g->can, n->x, n->y, n->w, n->h, get_node_color (color, cur));
 	} else {
 		r_cons_canvas_box (g->can, n->x, n->y, n->w, n->h, nc);
 	}
 	if (n->color) {
+#if 0
 		const char *pad = r_str_pad ('#', n->w);
 		char *f = r_str_newf ("%s%s%s%s", n->color, pad, Color_RESET, nc);
 		G (n->x, n->y);
 		W (f);
 		free (f);
+#endif
+		r_cons_canvas_box (g->can, n->x - 1, n->y, n->w + 2, n->h, n->color);
 	}
+#endif
 }
 
 static int **get_crossing_matrix(const RGraph *g, const struct layer_t layers[], int maxlayer, int i, int from_up, int *n_rows) {

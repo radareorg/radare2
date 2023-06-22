@@ -120,6 +120,8 @@ typedef struct r_disasm_state_t {
 	bool show_dwarf;
 	bool show_size;
 	bool show_trace;
+	bool show_trace_stats;
+	bool show_trace_color;
 	bool show_family;
 	bool asm_describe;
 	int linesout;
@@ -728,6 +730,8 @@ static RDisasmState *ds_init(RCore *core) {
 	ds->show_lines_ret = ds->show_lines ? r_config_get_i (core->config, "asm.lines.ret") : false;
 	ds->show_size = r_config_get_i (core->config, "asm.size");
 	ds->show_trace = r_config_get_b (core->config, "asm.trace");
+	ds->show_trace_stats = r_config_get_b (core->config, "asm.trace.stats");
+	ds->show_trace_color = r_config_get_b (core->config, "asm.trace.color");
 	ds->linesout = r_config_get_i (core->config, "asm.lines.out");
 	ds->adistrick = r_config_get_i (core->config, "asm.middle"); // TODO: find better name
 	ds->asm_demangle = r_config_get_b (core->config, "asm.demangle");
@@ -1058,6 +1062,27 @@ static const char *get_reg_at(RAnalFunction *fcn, st64 delta, ut64 addr) {
 static void ds_build_op_str(RDisasmState *ds, bool print_color) {
 	RCore *core = ds->core;
 	const bool be = R_ARCH_CONFIG_IS_BIG_ENDIAN (ds->core->rasm->config);
+	if (ds->show_trace && ds->show_trace_color) {
+		bool extraspace = true;
+		if (ds->fcn) {
+			RAnalBlock *bb = r_anal_function_bbget_in (ds->core->anal, ds->fcn, ds->at);
+			if (bb && bb->color.r && bb->color.g && bb->color.b) {
+				RColor bg = { .r2 = bb->color.r, .g2 = bb->color.g, .b2 = bb->color.b, };
+				bg.a = ALPHA_FGBG;
+				bg.r2 = bb->color.r;
+				bg.g2 = bb->color.g;
+				bg.b2 = bb->color.b;
+				// RColor bg = { .r2 = bb->color.r, .g2 = bb->color.g, .b2 = bb->color.b, };
+				char *color = r_cons_rgb_str (NULL, -1, &bg); // &bb->color);
+				r_cons_printf ("%s_%s ", color, Color_RESET);
+				free (color);
+				extraspace = false;
+			}
+		}
+		if (extraspace) {
+			r_cons_printf ("  ");
+		}
+	}
 	if (ds->use_esil) {
 		free (ds->opstr);
 		if (*R_STRBUF_SAFEGET (&ds->analop.esil)) {
@@ -1077,8 +1102,8 @@ static void ds_build_op_str(RDisasmState *ds, bool print_color) {
 		ds->opstr = strdup (r_str_get (r_asm_op_get_asm (&ds->asmop)));
 	}
 	/* initialize */
-	core->parser->subrel = r_config_get_i (core->config, "asm.sub.rel");
-	core->parser->subreg = r_config_get_i (core->config, "asm.sub.reg");
+	core->parser->subrel = r_config_get_b (core->config, "asm.sub.rel");
+	core->parser->subreg = r_config_get_b (core->config, "asm.sub.reg");
 	core->parser->subrel_addr = 0;
 	if (core->parser->subrel
 			&& (ds->analop.type == R_ANAL_OP_TYPE_LEA
@@ -3111,7 +3136,7 @@ static void ds_print_op_size(RDisasmState *ds) {
 
 static void ds_print_trace(RDisasmState *ds) {
 	RDebugTracepoint *tp = NULL;
-	if (ds->show_trace) {
+	if (ds->show_trace && ds->show_trace_stats) {
 		tp = r_debug_trace_get (ds->core->dbg, ds->at);
 		r_cons_printf ("%02x:%04x ", tp?tp->times:0, tp?tp->count:0);
 	}
