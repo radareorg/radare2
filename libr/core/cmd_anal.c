@@ -2963,35 +2963,38 @@ static void anal_bb_list(RCore *core, const char *input) {
 		default:
 			r_cons_printf ("0x%08" PFMT64x , block->addr);
 			if (block->jump != UT64_MAX) {
-				r_cons_printf (" .j 0x%08" PFMT64x, block->jump);
+				r_cons_printf (" jump=0x%08" PFMT64x, block->jump);
 			}
 			if (block->fail != UT64_MAX) {
-				r_cons_printf (" .f 0x%08" PFMT64x, block->fail);
+				r_cons_printf (" fail=0x%08" PFMT64x, block->fail);
 			}
-			if (xrefs) {
+			if (block->traced) {
+				r_cons_printf (" trace=0x%08" PFMT64x, block->traced);
+			}
+			if (xrefs && !r_list_empty (xrefs)) {
 				RListIter *iter2;
-				r_cons_printf (" .x");
+				r_cons_printf (" xrefs=");
 				ut64 *addr;
 				r_list_foreach (xrefs, iter2, addr) {
 					r_cons_printf (" 0x%08" PFMT64x, *addr);
 				}
 			}
-			if (calls) {
-				r_cons_printf (" .c");
+			if (calls && !r_list_empty (calls)) {
+				r_cons_printf (" calls=");
 				RListIter *iter2;
 				ut64 *addr;
 				r_list_foreach (calls, iter2, addr) {
 					r_cons_printf (" 0x%08" PFMT64x, *addr);
 				}
 			}
-			if (block->fcns) {
+			if (block->fcns && !r_list_empty (block->fcns)) {
 				RListIter *iter2;
 				RAnalFunction *fcn;
 				r_list_foreach (block->fcns, iter2, fcn) {
-					r_cons_printf (" .u 0x%" PFMT64x, fcn->addr);
+					r_cons_printf (" func=0x%" PFMT64x, fcn->addr);
 				}
 			}
-			r_cons_printf (" .s %" PFMT64d "\n", block->size);
+			r_cons_printf (" size=%" PFMT64d "\n", block->size);
 		}
 		r_list_free (calls);
 		r_list_free (xrefs);
@@ -13226,7 +13229,7 @@ static void cmd_anal_aC(RCore *core, const char *input) {
 	ut64 pcv = r_num_math (core->num, iarg);
 	if (input[0] == 'e') { // "aCe"
 		is_aCer = (input[1] == '*');
-		r_core_cmdf (core, ".abte 0x%08"PFMT64x, pcv);
+		r_core_cmdf (core, ".abpe 0x%08"PFMT64x, pcv);
 	}
 	RAnalOp* op = r_core_anal_op (core, pcv, -1);
 	if (!op) {

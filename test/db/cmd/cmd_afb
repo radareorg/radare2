@@ -7,7 +7,7 @@ afi.
 afb.
 EOF
 EXPECT=<<EOF
-32
+33
 main
 0x1000011e8 0x100001211 00:0000 41 j 0x100001216 f 0x100001211
 EOF
@@ -38,7 +38,7 @@ size: 41
 inputs: 0
 outputs: 2
 ninstr: 14
-traced: false
+traced: 0x0
 opaddr: 0x1000011e9
 opaddr: 0x1000011e9
 {
@@ -66,7 +66,7 @@ opaddr: 0x1000011e9
     4294971917,
     4294971919
   ],
-  "traced": false
+  "traced": "0x0"
 }
 opaddr: 0x1000011e9
 opaddr: 0x1000011ec
