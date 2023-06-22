@@ -142,13 +142,12 @@ enum { R_CONS_ATTR_BOLD = 1u << 1,
 };
 
 typedef struct rcolor_t {
-	// bold, italic, underline, ...
-	ut8 attr;
-	ut8 a;
-	ut8 r;
-	ut8 g;
-	ut8 b;
-	ut8 r2; // Background color
+	ut8 attr; // bold, italic, underline, ...
+	ut8 a; // alpha ?
+	ut8 r; // red
+	ut8 g; // green
+	ut8 b; // blue
+	ut8 r2; // Background colors
 	ut8 g2; // Only used when a &= ALPHA_FGBG
 	ut8 b2;
 	st8 id16; // Mapping to 16-color table
