@@ -171,13 +171,12 @@ typedef struct r_arch_plugin_t {
 	RSysBits bits;
 	RSysBits addr_bits;
 
-	// R2_590 figure out a way to make init and decode const (better perf)
-	RArchPluginInitCallback init;
-	RArchPluginFiniCallback fini;
+	const RArchPluginInitCallback init;
+	const RArchPluginFiniCallback fini;
 	const RArchPluginInfoCallback info;
 	const RArchPluginRegistersCallback regs;
 	const RArchPluginEncodeCallback encode;
-	RArchPluginDecodeCallback decode;
+	const RArchPluginDecodeCallback decode;
 	const RArchPluginModifyCallback patch;
 	const RArchPluginMnemonicsCallback mnemonics;
 	const RArchPluginPreludesCallback preludes;
