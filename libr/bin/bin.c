@@ -1089,7 +1089,9 @@ R_API void r_bin_list_archs(RBin *bin, PJ *pj, int mode) {
 			str_fmt = get_arch_string (arch, bits, info);
 			r_table_add_rowf (table, fmt, 0, boffset, obj_size, str_fmt, machine);
 			free (str_fmt);
-			bin->cb_printf ("%s", r_table_tostring (table));
+			char *s = r_table_tostring (table);
+			bin->cb_printf ("%s", s);
+			free (s);
 		}
 		snprintf (archline, sizeof (archline) - 1,
 			"0x%08" PFMT64x ":%" PFMT64u ":%s:%d:%s",
@@ -1124,7 +1126,9 @@ R_API void r_bin_list_archs(RBin *bin, PJ *pj, int mode) {
 				str_fmt = get_arch_string (arch, bits, info);
 				r_table_add_rowf (table, fmt, 0, boffset, obj_size, str_fmt, "");
 				free (str_fmt);
-				bin->cb_printf ("%s", r_table_tostring (table));
+				char *s = r_table_tostring (table);
+				bin->cb_printf ("%s", s);
+				free (s);
 			}
 			snprintf (archline, sizeof (archline),
 				"0x%08" PFMT64x ":%" PFMT64u ":%s:%d",
@@ -1147,7 +1151,9 @@ R_API void r_bin_list_archs(RBin *bin, PJ *pj, int mode) {
 				break;
 			default:
 				r_table_add_rowf (table, fmt, 0, boffset, obj_size, "", "");
-				bin->cb_printf ("%s", r_table_tostring (table));
+				char *s = r_table_tostring (table);
+				bin->cb_printf ("%s", s);
+				free (s);
 			}
 			snprintf (archline, sizeof (archline),
 				"0x%08" PFMT64x ":%" PFMT64u ":%s:%d",

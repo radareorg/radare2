@@ -590,7 +590,7 @@ static bool GetSegmentHeapBlocks(RDebug *dbg, HANDLE h_proc, PVOID heapBase, PHe
 	WPARAM lfhKeyLocation = RtlpHpHeapGlobalsOffset + sizeof (WPARAM);
 	if (!ReadProcessMemory (h_proc, (PVOID)lfhKeyLocation, &lfhKey, sizeof (WPARAM), &bytesRead)) {
 		r_sys_perror ("ReadProcessMemory");
-		eprintf ("LFH key not found.\n");
+		R_LOG_ERROR ("LFH key not found");
 		return false;
 	}
 
@@ -1225,9 +1225,13 @@ static void w32_list_heaps(RCore *core, const char format) {
 	}
 	if (format == 'j') {
 		pj_end (pj);
-		r_cons_println (pj_string (pj));
+		char *s = pj_string (pj);
+		r_cons_println (s);
+		free (s);
 	} else {
-		r_cons_println (r_table_tostring (tbl));
+		char *s = r_table_tostring (tbl);
+		r_cons_println (s);
+		free (s);
 	}
 	r_table_free (tbl);
 	pj_free (pj);
@@ -1315,7 +1319,9 @@ static void w32_list_heaps_blocks(RCore *core, const char format) {
 		pj_end (pj);
 		r_cons_println (pj_string (pj));
 	} else if (format != 'f') {
-		r_cons_println (r_table_tostring (tbl));
+		char *s = r_table_tostring (tbl);
+		r_cons_println (s);
+		free (s);
 	}
 	r_table_free (tbl);
 	pj_free (pj);
@@ -1355,7 +1361,9 @@ static void cmd_debug_map_heap_block_win(RCore *core, const char *input) {
 			switch (input[0]) {
 			case ' ':
 				r_table_add_rowf (tbl, "xxnnns", headerAddr, off, (ut64)hb->dwSize, granularity, (ut64)hb->extraInfo->unusedBytes, type);
-				r_cons_println (r_table_tostring (tbl));
+				char *s = r_table_tostring (tbl);
+				r_cons_println (s);
+				free (s);
 				break;
 			case 'j':
 				pj_o (pj);
