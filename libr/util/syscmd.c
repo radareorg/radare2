@@ -179,8 +179,7 @@ R_API char *r_syscmd_ls(const char *input, int cons_width) {
 		} else if (r_str_startswith (input, "-q")) {
 			printfmt = FMT_QUIET;
 			path = r_str_trim_head_ro (input + 2);
-		} else if (r_str_startswith (input, "-l")) {
-		} else if ((!strncmp (input, "-l", 2)) || (!strncmp (input, "-j", 2))) {
+		} else if (r_str_startswith (input, "-l") || r_str_startswith (input, "-j")) {
 			printfmt = (input[1] == 'j') ? FMT_JSON : FMT_RAW;
 			path = r_str_trim_head_ro (input + 2);
 			if (!*path) {
