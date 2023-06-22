@@ -127,7 +127,8 @@ static JSValue r2plugin_arch(JSContext *ctx, JSValueConst this_val, int argc, JS
 	Gctx = ctx; // XXX no globals
 	const char *errmsg = NULL;
 	JSRuntime *rt = JS_GetRuntime (ctx);
-	QjsContext *k = JS_GetRuntimeOpaque (rt);
+	QjsPluginData *pd = JS_GetRuntimeOpaque (rt);
+	QjsContext *k = &pd->qc;
  	RCore *core = k->core;
 
 	if (argc != 2) {
