@@ -7,6 +7,7 @@ EXPECT=<<EOF
 key               value
 -----------------------
 asm.bytes.opcolor false
+asm.trace.color   true
 log.color         false
 scr.color         0
 scr.color.args    true

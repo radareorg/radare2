@@ -2757,13 +2757,14 @@ static void __fcn_print_default(RCore *core, RAnalFunction *fcn, bool quiet) {
 	if (quiet) {
 		r_cons_printf ("0x%08"PFMT64x" ", fcn->addr);
 	} else {
-#if 0
+#if 1
 		char *name = r_core_anal_fcn_name (core, fcn);
 		ut64 realsize = r_anal_function_realsize (fcn);
 		r_cons_printf ("0x%08"PFMT64x" %4d %6"PFMT64d" %s\n",
 				fcn->addr, r_list_length (fcn->bbs), realsize, name);
 		free (name);
 #else
+		// R2_590 -- trace color functionlisting
 		char *name = r_core_anal_fcn_name (core, fcn);
 		ut64 realsize = r_anal_function_realsize (fcn);
 		RAnalBlock *firstBlock = r_list_first (fcn->bbs);
@@ -3211,6 +3212,10 @@ static int fcn_print_legacy(RCore *core, RAnalFunction *fcn, bool dorefs) {
 	r_cons_printf ("\nmaxbound: 0x%08" PFMT64x, r_anal_function_max_addr (fcn));
 	r_cons_printf ("\nis-lineal: %s" , r_str_bool (r_anal_function_islineal (fcn)));
 	r_cons_printf ("\nend-bbs: %d", ebbs);
+	const int coverage = r_anal_function_coverage (fcn);
+	if (coverage > 0) {
+		r_cons_printf ("\ntrace-coverage: %d", coverage);
+	}
 	int outdegree = 0;
 	int indegree = 0;
 	if (dorefs) {
