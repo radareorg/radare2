@@ -2757,11 +2757,27 @@ static void __fcn_print_default(RCore *core, RAnalFunction *fcn, bool quiet) {
 	if (quiet) {
 		r_cons_printf ("0x%08"PFMT64x" ", fcn->addr);
 	} else {
+#if 0
 		char *name = r_core_anal_fcn_name (core, fcn);
 		ut64 realsize = r_anal_function_realsize (fcn);
 		r_cons_printf ("0x%08"PFMT64x" %4d %6"PFMT64d" %s\n",
 				fcn->addr, r_list_length (fcn->bbs), realsize, name);
 		free (name);
+#else
+		char *name = r_core_anal_fcn_name (core, fcn);
+		ut64 realsize = r_anal_function_realsize (fcn);
+		RAnalBlock *firstBlock = r_list_first (fcn->bbs);
+		char *color = firstBlock? r_cons_rgb_str (NULL, 0, &firstBlock->color): "";
+		int coverage = r_anal_function_coverage (fcn);
+		if (firstBlock->traced) {
+			color = strdup (Color_RED);
+		}
+		r_cons_printf ("%s0x%08"PFMT64x" %4d cov=%d%% %6"PFMT64d" %s%s\n",
+				color, fcn->addr, r_list_length (fcn->bbs),
+				coverage, realsize, name, Color_RESET);
+		free (color);
+		free (name);
+#endif
 	}
 }
 
@@ -2915,6 +2931,7 @@ static int fcn_print_json(RCore *core, RAnalFunction *fcn, bool dorefs, PJ *pj) 
 	pj_ki (pj, "bits", fcn->bits);
 	pj_ks (pj, "type", r_anal_functiontype_tostring (fcn->type));
 	pj_ki (pj, "nbbs", r_list_length (fcn->bbs));
+	pj_ki (pj, "tracecov", r_anal_function_coverage(fcn));
 	pj_kb (pj, "is-lineal", r_anal_function_islineal (fcn));
 	pj_ki (pj, "ninstrs", r_anal_function_instrcount (fcn));
 	pj_ki (pj, "edges", r_anal_function_count_edges (fcn, &ebbs));

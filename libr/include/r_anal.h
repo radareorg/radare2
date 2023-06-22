@@ -516,6 +516,7 @@ typedef struct r_anal_t {
 	int uses; // 0 = nothing, 1 = anal plugin, 2 = arch plugin
 	int thread; // see apt command
 	RList *threads;
+	RColor tracetagcolors[64]; // each trace color for each bit
 	/* end private */
 	R_DIRTY_VAR;
 } RAnal;
@@ -622,12 +623,11 @@ typedef struct r_anal_cond_t {
 typedef struct r_anal_bb_t {
 	RBNode _rb;     // private, node in the RBTree
 	ut64 _max_end;  // private, augmented value for RBTree
-
 	ut64 addr;
 	ut64 size;
 	ut64 jump;
 	ut64 fail;
-	bool traced;
+	ut64 traced; // bitfield (each bit represents 1 trace)
 	bool folded;
 	RColor color;
 	ut8 *fingerprint;
@@ -1022,6 +1022,7 @@ R_API bool r_anal_set_os(RAnal *anal, const char *os);
 R_API ut8 *r_anal_mask(RAnal *anal, int size, const ut8 *data, ut64 at);
 R_API void r_anal_trace_bb(RAnal *anal, ut64 addr);
 R_API const char *r_anal_functiontype_tostring(int type);
+R_API int r_anal_function_coverage(RAnalFunction *fcn);
 R_API int r_anal_function_bb(RAnal *anal, RAnalFunction *fcn, ut64 addr, int depth);
 R_API void r_anal_bind(RAnal *b, RAnalBind *bnd);
 R_API bool r_anal_set_triplet(RAnal *anal, const char *os, const char *arch, int bits);

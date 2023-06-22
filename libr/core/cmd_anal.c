@@ -2893,7 +2893,7 @@ static void anal_bb_list(RCore *core, const char *input) {
 			char *addr = r_str_newf ("0x%" PFMT64x, block->addr);
 			pj_ks (pj, "addr", addr);
 			free (addr);
-			pj_kb (pj, "traced", block->traced);
+			pj_kn (pj, "traced", block->traced);
 			pj_kn (pj, "ninstr", block->ninstr);
 			pj_kn (pj, "size", block->size);
 			if (block->jump != UT64_MAX) {
@@ -3070,7 +3070,7 @@ static void print_bb(PJ *pj, const RAnalBlock *b, const RAnalFunction *fcn, cons
 			}
 		}
 		pj_end (pj);
-		pj_kb (pj, "traced", b->traced);
+		pj_kn (pj, "traced", b->traced);
 		pj_end (pj);
 	} else {
 		if (b->switch_op) {
@@ -3084,8 +3084,8 @@ static void print_bb(PJ *pj, const RAnalBlock *b, const RAnalFunction *fcn, cons
 			r_cons_printf ("fail: 0x%08"PFMT64x"\n", b->fail);
 		}
 		r_cons_printf ("opaddr: 0x%08"PFMT64x"\n", opaddr);
-		r_cons_printf ("addr: 0x%08" PFMT64x "\nsize: %" PFMT64d "\ninputs: %d\noutputs: %d\nninstr: %d\ntraced: %s\n",
-			b->addr, b->size, inputs, outputs, b->ninstr, r_str_bool (b->traced));
+		r_cons_printf ("addr: 0x%08" PFMT64x "\nsize: %" PFMT64d "\ninputs: %d\noutputs: %d\nninstr: %d\ntraced: 0x%"PFMT64x"\n",
+			b->addr, b->size, inputs, outputs, b->ninstr, b->traced);
 	}
 }
 
@@ -3162,6 +3162,9 @@ static bool anal_fcn_list_bb(RCore *core, const char *input, bool one) {
 			r_list_append (flist, info);
 		}
 		RTable *table = r_core_table (core, "fcnbbs");
+		if (!table) {
+			return false;
+		}
 		r_table_visual_list (table, flist, core->offset, core->blocksize,
 			r_cons_get_size (NULL), r_config_get_i (core->config, "scr.color"));
 		char *s = r_table_tostring (table);

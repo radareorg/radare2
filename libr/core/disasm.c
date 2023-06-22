@@ -3073,7 +3073,7 @@ static void ds_print_offset(RDisasmState *ds) {
 			if (ds->show_offset_focus) {
 				ut64 bb = r_anal_get_bbaddr (core->anal, at);
 				bool incur = core->print->cur_enabled && (at == core->offset + ds->cursor);
-			       if (incur || bb == at || bb == UT64_MAX || ds->analop.jump != UT64_MAX) {
+				if (incur || bb == at || bb == UT64_MAX || ds->analop.jump != UT64_MAX) {
 					r_print_offset (core->print, at, (at == ds->dest) || show_trace, delta, label);
 				} else {
 					char atstr[64];
