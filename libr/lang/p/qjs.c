@@ -18,8 +18,6 @@ typedef struct {
 typedef struct qjs_core_plugin {
 	QjsContext qctx;
 	char *name;
-	char *desc;
-	char *license;
 	// void *data;  // can be added later if needed
 } QjsCorePlugin;
 
@@ -43,8 +41,6 @@ typedef struct qjs_plugin_data_t {
 
 static void core_plugin_fini (QjsCorePlugin *cp, void *user) {
 	free (cp->name);
-	free (cp->desc);
-	free (cp->license);
 }
 
 static bool plugin_manager_init (QjsPluginManager *pm, RCore *core, JSRuntime *rt) {
@@ -55,15 +51,12 @@ static bool plugin_manager_init (QjsPluginManager *pm, RCore *core, JSRuntime *r
 	return true;
 }
 
-static void plugin_manager_add_core_plugin(QjsPluginManager *pm, const char *name, const char *desc,
-	const char *license, JSContext *ctx, JSValue func) {
+static void plugin_manager_add_core_plugin(QjsPluginManager *pm, const char *name, JSContext *ctx, JSValue func) {
 	r_return_if_fail (pm);
 
 	QjsCorePlugin *cp = RVecCorePlugin_emplace_back (&pm->core_plugins);
 	if (cp) {
 		cp->name = name? strdup (name): NULL;
-		cp->desc = desc? strdup (desc): NULL;
-		cp->license = license? strdup (license): NULL;
 		cp->qctx.ctx = ctx;
 		cp->qctx.func = func;
 	}
@@ -534,11 +527,6 @@ static bool init(RLangSession *ls) {
 		return true;
 	}
 
-	RCore *core = ls->lang->user;
-	if (!r2plugin_install_core_plugin (core)) {
-		return false;
-	}
-
 	if (ls->plugin_data) {
 		R_LOG_ERROR ("qjs lang plugin already loaded");
 		return false;
@@ -562,6 +550,7 @@ static bool init(RLangSession *ls) {
 		return false;
 	}
 
+	RCore *core = ls->lang->user;
 	plugin_manager_init (&pd->pm, core, rt);
 
 	JSValue func = JS_NewBool (ctx, false); // fake function
