@@ -4,175 +4,36 @@
 
 ```js
 
-function archPlugin() {
-	return {
-		name: "myarch",
-		description: "this is a test arch",
-		decode: function(op) {
-			op.mnemonic = "nop";
-			return true;
+(function() {
+	function archPlugin() {
+		return {
+			name: "myarch qjs plugin",
+			arch: "myarch",
+			desc: "this is a test arch",
+			license: "LGPL3",
+			cpus: "mycpu",
+			decode: function(op) {
+				op.mnemonic = "nop";
+				return true;
+			}
 		}
 	}
-}
 
-r2.plugin("arch", archPlugin);
+	r2.plugin("arch", archPlugin);
+})()
 
 ```
 
 #endif
 
-typedef struct {
-	JSContext *ctx;
-	RCore *core; // XXX remove
-	JSValue decode; // decode function
-} R2QJSArch;
+typedef struct qjs_arch_plugin_data_t {
+	R_BORROW RCore *core;
+	R_BORROW JSContext *ctx;
+	JSValue decode_func;
+	// JSValue encode_func;
+} QjsArchPluginData;
 
-
-static R_TH_LOCAL JSContext *Gctx = NULL; // XXX no globals
-static R_TH_LOCAL JSValue Gres; //  = JS_UNDEFINED;
-
-#define R2QJS_ASSERT(x, msg) if (!(x)) { return JS_ThrowRangeError (ctx, msg); }
-#define R2QJS_GETNUMBER(dst, src, nam, msg) { \
-	JSValue name = JS_GetPropertyStr (ctx, (src), (nam)); \
-	ut32 v; \
-	if (JS_ToUint32 (ctx, &v, name)) { \
-		(dst) = -1; \
-	} else {\
-		(dst) = v; \
-	} \
-}
-#define R2QJS_GETSTRING(dst, src, nam, msg) { \
-	JSValue name = JS_GetPropertyStr (ctx, (src), (nam)); \
-	size_t namelen; \
-	const char *strp = JS_ToCStringLen2 (ctx, &namelen, name, false); \
-	if (strp && namelen > 0) { \
-		(dst) = strdup (strp); \
-	} else { \
-		if (msg) { \
-			errmsg = (msg); \
-			goto failure; \
-		} else { \
-			(dst) = NULL; \
-		} \
-	} \
-}
-
-#define R2QJS_REGISTER_PLUGIN(typ, nam, ap) { \
-	int ret = -1; \
-	RLibStruct *lib = R_NEW0 (RLibStruct); \
-	if (lib) { \
-		lib->type = (typ); \
-		lib->data = (ap); \
-		lib->version = R2_VERSION; \
-		ret = r_lib_open_ptr (core->lib, (nam), NULL, lib); \
-	} \
-	return JS_NewBool (ctx, (ret == 1)); }
-static bool r2qjs_arch_decode(RArchSession *s, struct r_anal_op_t *op, RArchDecodeMask mask) {
-	const char *errmsg = NULL;
-	R2QJSArch *rqa = (R2QJSArch *)s->data;
-	JSContext *ctx = rqa->ctx;
-	// build object with RAnalOp info
-		JSValue obj = JS_NewObject(ctx);
-		// JS_SetPropertyStr (ctx, obj, "mnemonic", val);
-		// JS_SetPropertyStr (ctx, obj, "bytes", val); // tied with size!
-		JSValue jsv_size = JS_NewUint32 (ctx, op->size);
-		JS_SetPropertyStr (ctx, obj, "size", jsv_size);
-	// call js function
-		JSValue args[1] = { obj };
-		JSValue res = JS_Call (ctx, rqa->decode, obj, 1, args);
-		if (JS_IsException (res)) {
-			R_LOG_WARN ("exception in qjs decode");
-			return false;
-		}
-		if (!JS_IsBool (res)) {
-			R_LOG_WARN ("return is not bool");
-			return false;
-		}
-	// deserialize the data
-		free (op->mnemonic);
-		R2QJS_GETSTRING (op->mnemonic, obj, "mnemonic", NULL);
-		R2QJS_GETNUMBER (op->size, obj, "size", NULL);
-		if (op->mnemonic) {
-			op->mnemonic = strdup (op->mnemonic);
-		}
-		R2QJS_GETNUMBER (op->type, obj, "type", NULL);
-	// return value
-	return JS_ToBool (ctx, res);
-failure:
-	if (errmsg) {
-		R_LOG_ERROR ("%s", errmsg);
-		return false;
-	}
-	return false;
-}
-
-static bool r2qjs_arch_init(RArchSession *s) {
-	R2QJSArch *qa = R_NEW0 (R2QJSArch);
-	if (qa && Gctx) {
-		qa->ctx = Gctx;
-		qa->core = s->user;
-		JSValue func = JS_GetPropertyStr (qa->ctx, Gres, "decode");
-		if (!JS_IsFunction (qa->ctx, func)) {
-			R_LOG_WARN ("r2.plugin requires the function to return an object with the `call` field to be a function");
-			free (qa);
-			return false;
-		}
-		qa->decode = func;
-		s->data = qa;
-	}
-	return true;
-}
-
-static JSValue r2plugin_arch(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
-	Gctx = ctx; // XXX no globals
-	const char *errmsg = NULL;
-	JSRuntime *rt = JS_GetRuntime (ctx);
-	QjsPluginData *pd = JS_GetRuntimeOpaque (rt);
- 	RCore *core = pd->pm.core;
-
-	if (argc != 2) {
-		return JS_ThrowRangeError (ctx, "r2.plugin expects two arguments");
-	}
-
-	JSValueConst args[1] = {
-		JS_NewString (ctx, ""),
-	};
-	JSValue res = JS_Call (ctx, argv[1], JS_UNDEFINED, countof (args), args);
-
-	// check if res is an object
-	if (!JS_IsObject (res)) {
-		return JS_ThrowRangeError (ctx, "r2.plugin function must return an object");
-	}
-
-	RArchPlugin *ap = R_NEW0 (RArchPlugin);
-	R2QJS_ASSERT (ap, "heap failure");
-	R2QJS_GETSTRING (ap->meta.name, res, "name", "Missing name");
-	R2QJS_GETSTRING (ap->arch, res, "arch", "Missing arch");
-	R2QJS_GETSTRING (ap->cpus, res, "cpus", NULL);
-	R2QJS_GETSTRING (ap->meta.desc, res, "desc", NULL);
-	R2QJS_GETSTRING (ap->meta.author, res, "author", NULL);
-	R2QJS_GETSTRING (ap->meta.license, res, "license", NULL);
-	R2QJS_GETSTRING (ap->meta.version, res, "version", NULL);
-
-	Gres = res;
-	ap->decode = r2qjs_arch_decode;
-	ap->init = r2qjs_arch_init;
-	// ap->fini = r2qjs_arch_fini;
-	// TODO bits, endian
-#if 0
-	JSValue func = JS_GetPropertyStr (ctx, res, "decode");
-	if (!JS_IsFunction (ctx, func)) {
-		errmsg = "r2.plugin requires the function to return an object with the `call` field to be a function";
-		goto failure;
-	}
-#if 0
-	R2QJS_GETFUNCTION (ap->decode, res, "decode", NULL);
-	R2QJS_GETFUNCTION (ap->encode, res, "encode", NULL);
-#endif
-#endif
-
-	R2QJS_REGISTER_PLUGIN (R_LIB_TYPE_ARCH, ap->meta.name, ap);
-failure:
+static inline void cleanup_arch_plugin(RArchPlugin *ap) {
 	if (ap) {
 		free (ap->meta.name);
 		free (ap->meta.desc);
@@ -183,8 +44,175 @@ failure:
 		free (ap->cpus);
 		free (ap);
 	}
-	if (errmsg) {
-		return JS_ThrowRangeError (ctx, "%s", errmsg);
+}
+
+static inline char *qjs_get_string(JSContext *ctx, JSValue obj, const char *key) {
+	JSValue value = JS_GetPropertyStr (ctx, obj, key);
+	if (JS_IsUndefined (value)) {
+		return NULL;
 	}
-	return JS_NewBool (ctx, false);
+
+	size_t valuelen;
+	const char *str = JS_ToCStringLen2 (ctx, &valuelen, value, false);
+	return str && valuelen > 0 ? strdup (str) : NULL;
+}
+
+static inline ut32 qjs_get_ut32(JSContext *ctx, JSValue obj, const char *key) {
+	JSValue size = JS_GetPropertyStr (ctx, obj, key);
+	ut32 value = -1;
+	return JS_ToUint32 (ctx, &value, size) ? -1 : value;
+}
+
+static bool r2qjs_arch_init(RArchSession *s) {
+	r_return_val_if_fail (s, false);
+
+	QjsArchPluginData *pd = R_NEW0 (QjsArchPluginData);
+	if (!pd) {
+		return false;
+	}
+
+	RCore *core = s->user;
+	QjsPluginManager *pm = R_UNWRAP4 (core, lang, session, plugin_data);
+	const char *arch = R_UNWRAP3 (s, plugin, arch);
+	QjsArchPlugin *plugin = plugin_manager_find_arch_plugin (pm, arch);
+	if (!plugin) {
+		R_LOG_ERROR ("Could not find matching qjs arch plugin");
+		free (pd);
+		return false;
+	}
+
+	pd->core = core;
+	pd->ctx = plugin->ctx;
+	pd->decode_func = plugin->decode_func;
+	s->data = pd;
+	return true;
+}
+
+static bool r2qjs_arch_fini(RArchSession *s) {
+	r_return_val_if_fail (s, false);
+
+	RCore *core = s->user;
+	QjsPluginManager *pm = R_UNWRAP4 (core, lang, session, plugin_data);
+	const char *arch = R_UNWRAP3 (s, plugin, arch);
+	bool success = plugin_manager_remove_arch_plugin (pm, arch);
+	if (!success) {
+		R_LOG_ERROR ("Failed to remove qjs arch plugin");
+		return false;
+	}
+
+	R_FREE (s->data);
+	return true;
+}
+
+static bool r2qjs_arch_decode(RArchSession *s, RAnalOp *op, RArchDecodeMask mask) {
+	r_return_val_if_fail (s, false);
+
+	QjsArchPluginData *pd = s->data;
+	JSContext *ctx = pd->ctx;
+
+	// build object with RAnalOp info
+	JSValue obj = JS_NewObject(ctx);
+	// JS_SetPropertyStr (ctx, obj, "mnemonic", val);
+	// JS_SetPropertyStr (ctx, obj, "bytes", val); // tied with size!
+	JSValue jsv_size = JS_NewUint32 (ctx, op->size);
+	JS_SetPropertyStr (ctx, obj, "size", jsv_size);
+
+	// call js function
+	JSValue args[1] = { obj };
+	JSValue res = JS_Call (ctx, pd->decode_func, obj, 1, args);
+	if (JS_IsException (res)) {
+		R_LOG_WARN ("exception in qjs decode");
+		return false;
+	}
+
+	if (!JS_IsBool (res)) {
+		R_LOG_WARN ("return is not bool");
+		return false;
+	}
+
+	// deserialize the data
+	free (op->mnemonic);
+	op->mnemonic = qjs_get_string (ctx, obj, "mnemonic");
+	op->size = qjs_get_ut32 (ctx, obj, "size");
+	op->type = qjs_get_ut32 (ctx, obj, "type");
+
+	// return decode result
+	return JS_ToBool (ctx, res);
+}
+
+static JSValue r2plugin_arch(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
+	JSRuntime *rt = JS_GetRuntime (ctx);
+	QjsPluginManager *pm = JS_GetRuntimeOpaque (rt);
+ 	RCore *core = pm->core;
+
+	if (argc != 2) {
+		return JS_ThrowRangeError (ctx, "r2.plugin expects two arguments");
+	}
+
+	JSValueConst args[1] = { JS_NewString (ctx, ""), };
+	JSValue res = JS_Call (ctx, argv[1], JS_UNDEFINED, countof (args), args);
+
+	// check if res is an object
+	if (!JS_IsObject (res)) {
+		return JS_ThrowRangeError (ctx, "r2.plugin function must return an object");
+	}
+
+	RArchPlugin *ap = R_NEW0 (RArchPlugin);
+	if (!ap) {
+		return JS_ThrowRangeError (ctx, "could not allocate arch plugin");
+	}
+
+	ap->meta.name = qjs_get_string (ctx, res, "name");
+	if (!ap->meta.name) {
+		cleanup_arch_plugin (ap);
+		return JS_ThrowRangeError (ctx, "Missing name");
+	}
+
+	ap->arch = qjs_get_string (ctx, res, "arch");
+	if (!ap->arch) {
+		cleanup_arch_plugin (ap);
+		return JS_ThrowRangeError (ctx, "Missing arch");
+	}
+
+	// TODO initialize bits, endian
+
+	JSValue decode_func = JS_GetPropertyStr (ctx, res, "decode");
+	if (!JS_IsFunction (ctx, decode_func)) {
+		cleanup_arch_plugin (ap);
+		return JS_ThrowRangeError (ctx, "r2.plugin requires the function to return an object with the `decode` field to be a function");
+	}
+
+	// TODO encode
+
+	ap->cpus = qjs_get_string (ctx, res, "cpus");
+	ap->meta.desc = qjs_get_string (ctx, res, "desc");
+	ap->meta.author = qjs_get_string (ctx, res, "author");
+	ap->meta.license = qjs_get_string (ctx, res, "license");
+	ap->meta.version = qjs_get_string (ctx, res, "version");
+	ap->decode = r2qjs_arch_decode;
+	ap->init = r2qjs_arch_init;
+	ap->fini = r2qjs_arch_fini;
+
+	// TODO remove duplicate plugin check?
+	QjsArchPlugin *plugin = plugin_manager_find_arch_plugin (pm, ap->arch);
+	if (plugin) {
+		R_LOG_WARN ("r2.plugin with name %s is already registered", ap->meta.name);
+		cleanup_arch_plugin (ap);
+		return JS_NewBool (ctx, false);
+	}
+
+	plugin_manager_add_arch_plugin (pm, ap->arch, ctx, decode_func);
+
+	RLibStruct *lib = R_NEW0 (RLibStruct);
+	if (!lib) {
+		R_LOG_WARN ("r2.plugin with name %s is already registered", ap->meta.name);
+		cleanup_arch_plugin (ap);
+		return JS_NewBool (ctx, false);
+	}
+
+	lib->type = R_LIB_TYPE_ARCH;
+	lib->data = ap;
+	lib->version = R2_VERSION;
+	int ret = r_lib_open_ptr (core->lib, ap->meta.name, NULL, lib);
+	return JS_NewBool (ctx, ret == 1);
 }

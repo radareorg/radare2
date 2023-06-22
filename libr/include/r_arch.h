@@ -173,7 +173,7 @@ typedef struct r_arch_plugin_t {
 
 	// R2_590 figure out a way to make init and decode const (better perf)
 	RArchPluginInitCallback init;
-	const RArchPluginFiniCallback fini;
+	RArchPluginFiniCallback fini;
 	const RArchPluginInfoCallback info;
 	const RArchPluginRegistersCallback regs;
 	const RArchPluginEncodeCallback encode;
