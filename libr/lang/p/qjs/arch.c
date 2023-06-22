@@ -189,9 +189,11 @@ static JSValue r2plugin_arch(JSContext *ctx, JSValueConst this_val, int argc, JS
 	ap->meta.author = qjs_get_string (ctx, res, "author");
 	ap->meta.license = qjs_get_string (ctx, res, "license");
 	ap->meta.version = qjs_get_string (ctx, res, "version");
-	ap->decode = r2qjs_arch_decode;
-	ap->init = r2qjs_arch_init;
-	ap->fini = r2qjs_arch_fini;
+
+	// removing const is valid here, because malloc itself doesn't return const qualified object
+	*((RArchPluginDecodeCallback*)&ap->decode) = r2qjs_arch_decode;
+	*((RArchPluginFiniCallback*)&ap->init) = r2qjs_arch_init;
+	*((RArchPluginFiniCallback*)&ap->fini) = r2qjs_arch_fini;
 
 	// TODO remove duplicate plugin check?
 	QjsArchPlugin *plugin = plugin_manager_find_arch_plugin (pm, ap->arch);
