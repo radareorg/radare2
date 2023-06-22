@@ -4,7 +4,7 @@ CMDS=<<EOF
 e anal.calls=false
 af
 echo $(ablq)
-abt
+abp
 ablt fail/str/0x,addr/cols/size/jump/calls
 abl~?
 aflc
