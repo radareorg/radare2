@@ -41,7 +41,7 @@ s sym._retbool
 af
 agf
 ?e path
-abt $$ 0x100007f1c
+abp $$ 0x100007f1c
 ?e fromblocks
 f final.block=0x100007f1c
 abf final.block
@@ -121,7 +121,7 @@ aeim
 s sym._retbool
 af
 ?e path
-abt $$ 0x100007f1c
+abp $$ 0x100007f1c
 ?e fromblocks
 f final.block=0x100007f1c
 abf final.block

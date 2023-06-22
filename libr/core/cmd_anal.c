@@ -231,17 +231,19 @@ static RCoreHelpMessage help_msg_aar = {
 static RCoreHelpMessage help_msg_ab = {
 	"Usage:", "ab", "# analyze basic block",
 	"ab", " [addr]", "show basic block information at given address",
-	"ab.", "", "same as: ab $$",
 	"ab-", "[addr]", "delete basic block at given address",
+	"ab.", "", "same as: ab $$",
 	"aba", " [addr]", "analyze esil accesses in basic block (see aea?)",
 	"abb", " [length]", "analyze N bytes and extract basic blocks",
 	"abe", " [addr]", "emulate basic block (alias for aeb)",
 	"abf", " [addr]", "address of incoming (from) basic blocks",
+	"abi", "", "same as ab. or ab",
 	"abj", " [addr]", "display basic block information in JSON",
 	"abl", "[?] [.-cqj]", "list all basic blocks",
 	"abo", "", "list opcode offsets of current basic block",
+	"abp", "[?] [addr] [num]", "follow basic blocks paths from current offset to addr",
+	"abt", "[tag] ([color])", "trace tags are bitfields, 0 means nontraced, withuot arguments show current value",
 	"abx", " [hexpair-bytes]", "analyze N bytes",
-	"abt", "[?] [addr] [num]", "find num paths from current offset to addr",
 	NULL
 };
 
@@ -255,11 +257,11 @@ static RCoreHelpMessage help_msg_abl = {
 	NULL
 };
 
-static RCoreHelpMessage help_msg_abt = {
-	"Usage:", "abt", "[addr] [num] # find num paths from current offset to addr",
-	"abt", " [addr] [num]", "find num paths from current offset to addr",
-	"abte", " [addr]", "emulate from beginning of function to the given address",
-	"abtj", " [addr] [num]", "display paths in JSON",
+static RCoreHelpMessage help_msg_abp = {
+	"Usage:", "abp", "[addr] [num] # find num paths from current offset to addr",
+	"abp", " [addr] [num]", "find num paths from current offset to addr",
+	"abpe", " [addr]", "emulate from beginning of function to the given address",
+	"abpj", " [addr] [num]", "display paths in JSON",
 	NULL
 };
 
@@ -11811,14 +11813,45 @@ beach:
 }
 
 static void cmd_anal_abt(RCore *core, const char *input) {
+	RAnalBlock *bb = r_anal_get_block_at (core->anal, core->offset);
+	if (bb) {
+		if (R_STR_ISEMPTY (input)) {
+			r_cons_printf ("0x%"PFMT64x"\n", bb->traced);
+		} else if (*input == ' ') {
+			char *first = (char *)r_str_trim_head_ro (input);
+			char *arg = strchr (first, ' ');
+			int tag = atoi (first);
+			if (tag < 0 || tag > 63) {
+				R_LOG_ERROR ("Invalid trace tag number");
+				return;
+			}
+			if (arg) {
+				RColor k = {0};
+				char *s = r_cons_pal_parse (arg + 1, &k);
+				if (s)  {
+					core->anal->tracetagcolors[tag] = k;
+					free (s);
+				} else {
+					R_LOG_ERROR ("Invalid error");
+				}
+			} else {
+				bb->traced = tag;
+			}
+		}
+	} else {
+		R_LOG_ERROR ("Cannot find any basic block here");
+	}
+}
+
+static void cmd_anal_abp(RCore *core, const char *input) {
 	switch (*input) {
-	case 'e': // "abte"
+	case 'e': // "abpe"
 		{
 		int n = 1;
 		char *p = strchr (input + 1, ' ');
 		if (!p) {
 			// TODO use r_cons_cmd_help_match () instead
-			r_core_cmd_help (core, help_msg_abt);
+			r_core_cmd_help (core, help_msg_abp);
 			return;
 		}
 		ut64 addr = r_num_math (core->num, p + 1);
@@ -11851,9 +11884,9 @@ static void cmd_anal_abt(RCore *core, const char *input) {
 		}
 		break;
 	case '?':
-		r_core_cmd_help (core, help_msg_abt);
+		r_core_cmd_help (core, help_msg_abp);
 		break;
-	case 'j': { // "aetj"
+	case 'j': { // "abpj"
 		ut64 addr = r_num_math (core->num, input + 1);
 		RAnalBlock *block = r_anal_get_block_at (core->anal, core->offset);
 		if (!block) {
@@ -13473,14 +13506,17 @@ static int cmd_anal(void *data, const char *input) {
 		case 'a': // "aba"
 			r_core_cmdf (core, "aeab%s", input + 1);
 			break;
+		case 'b': // "abb"
+			core_anal_bbs (core, input + 2);
+			break;
+		case 'c': // "abc"
+			cmd_afbc (core, r_str_trim_head_ro (input + 2));
+			break;
 		case 'o': // "abo"
 			abo (core);
 			break;
 		case 'e': // "aeb"
 			r_core_cmdf (core, "aeb%s", input + 2);
-			break;
-		case 'b': // "abb"
-			core_anal_bbs (core, input + 2);
 			break;
 		case 'f': // "abf"
 			core_anal_abf (core, input + 2);
@@ -13488,9 +13524,12 @@ static int cmd_anal(void *data, const char *input) {
 		case 'r': // "abr"
 			core_anal_bbs_range (core, input + 2);
 			break;
-		case ',': // "ab,"
-		case 't': // "abt"
+		case 't':
 			cmd_anal_abt (core, input + 2);
+			break;
+		case ',': // "ab,"
+		case 'p': // "abp"
+			cmd_anal_abp (core, input + 2);
 			break;
 		case 'l': // "abl"
 			if (input[2] == '?') {
