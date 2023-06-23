@@ -38,6 +38,11 @@ R_API int r_bp_plugin_add(RBreakpoint *bp, RBreakpointPlugin *foo) {
 	return true;
 }
 
+R_API int r_bp_plugin_remove(RBreakpoint *bp, RBreakpointPlugin *plugin) {
+	// R2_590 TODO
+	return true;
+}
+
 R_API int r_bp_use(RBreakpoint *bp, const char *name, int bits) {
 	RListIter *iter;
 	bp->bits = bits;

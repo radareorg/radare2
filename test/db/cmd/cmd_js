@@ -1,4 +1,4 @@
-NAME=js tests
+NAME=js tests, variable scoping
 FILE=-
 CMDS=<<EOF
 js var a = 123
@@ -28,3 +28,119 @@ EOF
 EXPECT_ERR=
 RUN
 
+NAME=qjs loading, running and unloading of core plugins
+FILE=-
+CMDS=<<EOF
+Lc~qjs?
+?e
+""js (function() { function examplePlugin() { function coreCall(input) { if (input.startsWith("t1")) { console.log("This is a QJS test"); return true; } return false; } return { name: "qjs-example", desc: "Example QJS plugin (type 't1') in the r2 shell", call: coreCall, }; }; console.log("load qjs-example", r2.plugin("core", examplePlugin)); })();
+Lc~qjs
+?e
+""js (function() { function examplePlugin() { function coreCall(input) { if (input.startsWith("t1")) { console.log("This is a QJS test"); return true; } return false; } return { name: "qjs-example", desc: "Example QJS plugin (type 't1') in the r2 shell", call: coreCall, }; }; console.log("load qjs-example", r2.plugin("core", examplePlugin)); })();
+Lc~qjs
+?e
+""js (function() { function examplePlugin2() { function coreCall(input) { if (input.startsWith("t2")) { console.log("This is another QJS test"); return true; } return false; } return { name: "qjs-example2", desc: "Example QJS plugin (type 't2') in the r2 shell", call: coreCall, }; }; console.log("load qjs-example2", r2.plugin("core", examplePlugin2)); })();
+Lc~qjs
+t1
+t2
+""js console.log("unload unknown", r2.unload("core", "unknownPlugin"))
+Lc~qjs
+?e
+""js console.log("unload qjs-example", r2.unload("core", "qjs-example"))
+Lc~qjs
+?e
+""js console.log("unload qjs-example again", r2.unload("core", "qjs-example"))
+Lc~qjs
+?e
+""js console.log("unload qjs-example2", r2.unload("core", "qjs-example2"))
+?e
+Lc~qjs?
+EOF
+EXPECT=<<EOF
+0
+
+qjs-example Example QJS plugin (type 't1') in the r2 shell
+
+qjs-example Example QJS plugin (type 't1') in the r2 shell
+
+qjs-example Example QJS plugin (type 't1') in the r2 shell
+qjs-example2 Example QJS plugin (type 't2') in the r2 shell
+qjs-example Example QJS plugin (type 't1') in the r2 shell
+qjs-example2 Example QJS plugin (type 't2') in the r2 shell
+
+qjs-example2 Example QJS plugin (type 't2') in the r2 shell
+
+qjs-example2 Example QJS plugin (type 't2') in the r2 shell
+
+
+0
+load qjs-example true
+load qjs-example false
+load qjs-example2 true
+This is a QJS test
+This is another QJS test
+unload unknown false
+unload qjs-example true
+unload qjs-example again false
+unload qjs-example2 true
+EOF
+EXPECT_ERR=<<EOF
+WARN: r2.plugin with name qjs-example is already registered
+EOF
+RUN
+
+NAME=qjs loading and unloading of arch plugins
+FILE=-
+CMDS=<<EOF
+LA~qjs?
+?e
+""js (function() { function archPlugin() { return { name: "myarch qjs plugin", arch: "myarch_qjs", desc: "this is a test arch", license: "LGPL3", decode: function(op) { op.mnemonic = "nop"; return true; } } }; console.log('load plugin1', r2.plugin("arch", archPlugin)); })()
+LA~qjs
+?e
+""js (function() { function archPlugin() { return { name: "myarch qjs plugin", arch: "myarch_qjs", desc: "this is a test arch", license: "LGPL3", decode: function(op) { op.mnemonic = "nop"; return true; } } }; console.log('load plugin1 again', r2.plugin("arch", archPlugin)); })()
+LA~qjs
+?e
+""js (function() { function archPlugin2() { return { name: "myarch qjs plugin2", arch: "myarch_qjs2", desc: "this is a test arch2", license: "LGPL3", decode: function(op) { op.mnemonic = "nop"; return true; } } }; console.log('load plugin2', r2.plugin("arch", archPlugin2)); })()
+LA~qjs
+?e
+""js console.log("unload unknown", r2.unload("arch", "unknownPlugin"))
+LA~qjs
+?e
+""js console.log("unload qjs-example", r2.unload("arch", "myarch_qjs"))
+LA~qjs
+?e
+""js console.log("unload qjs-example again", r2.unload("arch", "myarch_qjs"))
+LA~qjs
+?e
+""js console.log("unload qjs-example2", r2.unload("arch", "myarch_qjs2"))
+?e
+LA~qjs?
+EOF
+EXPECT=<<EOF
+0
+
+myarch qjs plugin LGPL3 this is a test arch (myarch_qjs)
+
+myarch qjs plugin LGPL3 this is a test arch (myarch_qjs)
+
+myarch qjs plugin LGPL3 this is a test arch (myarch_qjs)
+myarch qjs plugin2 LGPL3 this is a test arch2 (myarch_qjs2)
+
+myarch qjs plugin2 LGPL3 this is a test arch2 (myarch_qjs2)
+
+myarch qjs plugin2 LGPL3 this is a test arch2 (myarch_qjs2)
+
+
+0
+load plugin1 true
+load plugin1 again false
+load plugin2 true
+unload unknown false
+unload qjs-example true
+unload qjs-example again false
+unload qjs-example2 true
+EOF
+EXPECT_ERR=<<EOF
+WARN: r2.plugin with name myarch qjs plugin is already registered
+EOF
+RUN

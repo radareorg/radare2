@@ -20,6 +20,7 @@
 	}
 
 	r2.plugin("arch", archPlugin);
+	r2.unload("arch", archPlugin);
 })()
 
 ```
@@ -140,7 +141,7 @@ static bool r2qjs_arch_decode(RArchSession *s, RAnalOp *op, RArchDecodeMask mask
 	return JS_ToBool (ctx, res);
 }
 
-static JSValue r2plugin_arch(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
+static JSValue r2plugin_arch_load(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
 	JSRuntime *rt = JS_GetRuntime (ctx);
 	QjsPluginManager *pm = JS_GetRuntimeOpaque (rt);
  	RCore *core = pm->core;
@@ -203,7 +204,7 @@ static JSValue r2plugin_arch(JSContext *ctx, JSValueConst this_val, int argc, JS
 		return JS_NewBool (ctx, false);
 	}
 
-	plugin_manager_add_arch_plugin (pm, ap->arch, ctx, decode_func);
+	plugin_manager_add_arch_plugin (pm, ap->meta.name, ap->arch, ctx, decode_func);
 
 	RLibStruct *lib = R_NEW0 (RLibStruct);
 	if (!lib) {

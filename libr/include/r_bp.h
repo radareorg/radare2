@@ -113,7 +113,8 @@ R_API RBreakpoint *r_bp_free(RBreakpoint *bp);
 R_API bool r_bp_del(RBreakpoint *bp, ut64 addr);
 R_API bool r_bp_del_all(RBreakpoint *bp);
 
-R_API int r_bp_plugin_add(RBreakpoint *bp, RBreakpointPlugin *foo);
+R_API int r_bp_plugin_add(RBreakpoint *bp, RBreakpointPlugin *plugin);
+R_API int r_bp_plugin_remove(RBreakpoint *bp, RBreakpointPlugin *plugin);
 R_API int r_bp_use(RBreakpoint *bp, const char *name, int bits);
 R_API int r_bp_plugin_del(RBreakpoint *bp, const char *name);
 R_API void r_bp_plugin_list(RBreakpoint *bp);

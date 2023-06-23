@@ -100,6 +100,11 @@ R_API bool r_debug_plugin_add(RDebug *dbg, RDebugPlugin *foo) {
 	return true;
 }
 
+R_API bool r_debug_plugin_remove(RDebug *dbg, RDebugPlugin *plugin) {
+	// R2_590 TODO
+	return true;
+}
+
 R_API bool r_debug_plugin_set_reg_profile(RDebug *dbg, const char *profile) {
 	char *str = r_file_slurp (profile, NULL);
 	if (!str) {

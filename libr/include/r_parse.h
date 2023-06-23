@@ -62,7 +62,8 @@ R_API void r_parse_free(RParse *p);
 
 /* plugins */
 R_API void r_parse_set_user_ptr(RParse *p, void *user);
-R_API bool r_parse_add(RParse *p, RParsePlugin *foo);
+R_API bool r_parse_plugin_add(RParse *p, RParsePlugin *plugin);
+R_API bool r_parse_plugin_remove(RParse *p, RParsePlugin *plugin);
 R_API bool r_parse_use(RParse *p, const char *name);
 
 /* action */

@@ -635,7 +635,7 @@ static bool rasm_asm(RAsmState *as, const char *buf, ut64 offset, ut64 len, int 
 static int __lib_anal_cb(RLibPlugin *pl, void *user, void *data) {
 	RAnalPlugin *hand = (RAnalPlugin *)data;
 	RAsmState *as = (RAsmState *)user;
-	r_anal_add (as->anal, hand);
+	r_anal_plugin_add (as->anal, hand);
 	return true;
 }
 
@@ -643,7 +643,7 @@ static int __lib_anal_cb(RLibPlugin *pl, void *user, void *data) {
 static int __lib_arch_cb(RLibPlugin *pl, void *user, void *data) {
 	RArchPlugin *hand = (RArchPlugin *)data;
 	RAsmState *as = (RAsmState *)user;
-	r_arch_add (as->anal->arch, hand);
+	r_arch_plugin_add (as->anal->arch, hand);
 	return true;
 }
 

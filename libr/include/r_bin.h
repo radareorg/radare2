@@ -699,7 +699,8 @@ R_API RBinFile *r_bin_file_open(RBin *bin, const char *file, RBinFileOptions *op
 
 // plugins/bind functions
 R_API void r_bin_bind(RBin *b, RBinBind *bnd);
-R_API bool r_bin_add(RBin *bin, RBinPlugin *foo);
+R_API bool r_bin_plugin_add(RBin *bin, RBinPlugin *plugin);
+R_API bool r_bin_plugin_remove(RBin *bin, RBinPlugin *plugin);
 R_API bool r_bin_xtr_add(RBin *bin, RBinXtrPlugin *foo);
 R_API bool r_bin_ldr_add(RBin *bin, RBinLdrPlugin *foo);
 R_API void r_bin_list(RBin *bin, PJ *pj, int format);

@@ -65,7 +65,7 @@ R_API R_MUSTUSE RFS* r_fs_new(void) {
 				continue;
 			}
 			memcpy (static_plugin, fs_static_plugins[i], sizeof (RFSPlugin));
-			r_fs_add (fs, static_plugin);
+			r_fs_plugin_add (fs, static_plugin);
 			free (static_plugin);
 		}
 	}
@@ -95,8 +95,8 @@ R_API void r_fs_free(RFS* fs) {
 }
 
 /* plugins */
-R_API void r_fs_add(RFS* fs, RFSPlugin* p) {
-	r_return_if_fail (fs && p);
+R_API bool r_fs_plugin_add(RFS* fs, RFSPlugin* p) {
+	r_return_val_if_fail (fs && p, false);
 	if (p->init) {
 		p->init ();
 	}
@@ -104,7 +104,14 @@ R_API void r_fs_add(RFS* fs, RFSPlugin* p) {
 	if (sp) {
 		memcpy (sp, p, sizeof (RFSPlugin));
 		r_list_append (fs->plugins, sp);
+		return true;
 	}
+	return false;
+}
+
+R_API bool r_fs_plugin_remove(RFS *fs, RFSPlugin *p) {
+	// R2_590 TODO
+	return true;
 }
 
 R_API void r_fs_del(RFS* fs, RFSPlugin* p) {

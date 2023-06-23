@@ -45,11 +45,11 @@
 		console.log("load true", r2.plugin("core", examplePlugin));
 		console.log("load true", r2.plugin("core", examplePlugin2));
 		console.log("load false", r2.plugin("core", examplePlugin));
-		console.log("unload false", r2.unload("false"));
-		console.log("unload true", r2.unload("qjs-example"));
-		console.log("unload false", r2.unload("qjs-example"));
+		console.log("unload false", r2.unload("core", "false"));
+		console.log("unload true", r2.unload("core", "qjs-example"));
+		console.log("unload false", r2.unload("core", "qjs-example"));
 		log("Plugins:");
-		log(r2cmd("Lc"));
+		log(r2.cmd("Lc"));
 	}
 })();
 
@@ -146,5 +146,5 @@ static JSValue r2plugin_core_load(JSContext *ctx, JSValueConst this_val, int arg
 	lib->data = ap;
 	lib->version = R2_VERSION;
 	int ret = r_lib_open_ptr (pm->core->lib, ap->name, NULL, lib);
-	return JS_NewBool (ctx, ret == 0);
+	return JS_NewBool (ctx, ret == 1);
 }

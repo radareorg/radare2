@@ -477,7 +477,7 @@ static int __lib_bin_cb(RLibPlugin *pl, void *user, void *data) {
 	struct r_bin_plugin_t *hand = (struct r_bin_plugin_t *)data;
 	RBin *bin = user;
 	//printf(" * Added (dis)assembly plugin\n");
-	r_bin_add (bin, hand);
+	r_bin_plugin_add (bin, hand);
 	return true;
 }
 
