@@ -136,7 +136,8 @@ R_API RFS *r_fs_new(void);
 R_API void r_fs_free(RFS* fs);
 
 R_API void r_fs_view(RFS* fs, int view);
-R_API void r_fs_add(RFS *fs, RFSPlugin *p);
+R_API bool r_fs_plugin_add(RFS *fs, RFSPlugin *p);
+R_API bool r_fs_plugin_remove(RFS *fs, RFSPlugin *p);
 R_API void r_fs_del(RFS *fs, RFSPlugin *p);
 
 R_API RFSRoot *r_fs_mount(RFS* fs, const char *fstype, const char *path, ut64 delta);

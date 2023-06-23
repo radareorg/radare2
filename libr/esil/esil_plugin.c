@@ -42,6 +42,11 @@ R_API bool r_esil_plugin_add(REsil *esil, REsilPlugin *plugin) {
 	return true;
 }
 
+R_API bool r_esil_plugin_remove(REsil *esil, REsilPlugin *plugin) {
+	// R2_590 TODO
+	return true;
+}
+
 static REsilActivePlugin *_get_active_plugin(REsil *esil, const char *name) {
 	RListIter *iter;
 	REsilActivePlugin *eap;

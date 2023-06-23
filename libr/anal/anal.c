@@ -138,11 +138,16 @@ R_API RAnal *r_anal_new(void) {
 	anal->plugins = r_list_newf ((RListFree) r_anal_plugin_free);
 	if (anal->plugins) {
 		for (i = 0; anal_static_plugins[i]; i++) {
-			r_anal_add (anal, anal_static_plugins[i]);
+			r_anal_plugin_add (anal, anal_static_plugins[i]);
 		}
 	}
 	R_DIRTY (anal);
 	return anal;
+}
+
+R_API bool r_anal_plugin_remove(RAnal *anal, RAnalPlugin *plugin) {
+	// R2_590 TODO
+	return true;
 }
 
 R_API void r_anal_plugin_free(RAnalPlugin *p) {
@@ -209,7 +214,7 @@ R_API bool r_esil_use(RAnal *anal, const char *name) {
 	return false;
 }
 
-R_API int r_anal_add(RAnal *anal, RAnalPlugin *foo) {
+R_API int r_anal_plugin_add(RAnal *anal, RAnalPlugin *foo) {
 	if (foo->init) {
 		foo->init (anal->user);
 	}

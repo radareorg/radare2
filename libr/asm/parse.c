@@ -59,7 +59,7 @@ R_API RParse *r_parse_new(void) {
 	p->localvar_only = false;
 	size_t i;
 	for (i = 0; parse_static_plugins[i]; i++) {
-		r_parse_add (p, parse_static_plugins[i]);
+		r_parse_plugin_add (p, parse_static_plugins[i]);
 	}
 	return p;
 }
@@ -71,12 +71,16 @@ R_API void r_parse_free(RParse *p) {
 	}
 }
 
-R_API bool r_parse_add(RParse *p, RParsePlugin *foo) {
+R_API bool r_parse_plugin_add(RParse *p, RParsePlugin *foo) {
 	r_return_val_if_fail (p && foo, false);
 	bool itsFine = foo->init? foo->init (p, p->user): true;
 	if (itsFine) {
 		r_list_append (p->parsers, foo);
 	}
+	return true;
+}
+
+R_API bool r_parse_plugin_remove(RParse *p, RParsePlugin *plugin) {
 	return true;
 }
 

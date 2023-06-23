@@ -326,6 +326,7 @@ R_API void r_esil_handlers_fini(REsil *esil);
 R_API void r_esil_plugins_init(REsil *esil);
 R_API void r_esil_plugins_fini(REsil *esil);
 R_API bool r_esil_plugin_add(REsil *esil, REsilPlugin *plugin);
+R_API bool r_esil_plugin_remove(REsil *esil, REsilPlugin *plugin);
 R_API bool r_esil_plugin_activate(REsil *esil, const char *name);
 R_API void r_esil_plugin_deactivate(REsil *esil, const char *name);
 

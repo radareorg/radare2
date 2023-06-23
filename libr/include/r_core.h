@@ -32,7 +32,7 @@
 #include <r_bind.h>
 #include <r_codemeta.h>
 
-// TODO: thois var should be 1 at some point :D
+// TODO: this var should be 1 at some point :D
 #define SHELLFILTER 0
 
 #ifdef __cplusplus
@@ -992,6 +992,7 @@ extern RCorePlugin r_core_plugin_a2f;
 extern RCorePlugin r_core_plugin_sixref;
 R_API bool r_core_plugin_init(RCmd *cmd);
 R_API bool r_core_plugin_add(RCmd *cmd, RCorePlugin *plugin);
+R_API bool r_core_plugin_remove(RCmd *cmd, RCorePlugin *plugin);
 R_API bool r_core_plugin_check(RCmd *cmd, const char *a0);
 R_API void r_core_plugin_fini(RCmd *cmd);
 

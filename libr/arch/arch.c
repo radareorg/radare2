@@ -23,7 +23,7 @@ R_API RArch *r_arch_new(void) {
 	a->cfg = r_arch_config_new ();
 	ut32 i = 0;
 	while (arch_static_plugins[i]) {
-		r_arch_add (a, (RArchPlugin*)arch_static_plugins[i++]);
+		r_arch_plugin_add (a, (RArchPlugin*)arch_static_plugins[i++]);
 	}
 	return a;
 }
@@ -201,12 +201,17 @@ R_API bool r_arch_set_arch(RArch *arch, char *archname) {
 	return true;
 }
 
-R_API bool r_arch_add(RArch *a, RArchPlugin *ap) {
+R_API bool r_arch_plugin_add(RArch *a, RArchPlugin *ap) {
 	r_return_val_if_fail (a && ap, false);
 	if (!ap->meta.name || !ap->arch) {
 		return false;
 	}
 	return r_list_append (a->plugins, ap) != NULL;
+}
+
+R_API bool r_arch_plugin_remove(RArch *arch, RArchPlugin *ap) {
+	// R2_590 TODO
+	return true;
 }
 
 R_API bool r_arch_del(RArch *arch, const char *name) {

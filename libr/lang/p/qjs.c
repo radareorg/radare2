@@ -24,6 +24,7 @@ typedef struct qjs_core_plugin {
 R_GENERATE_VEC_IMPL_FOR(CorePlugin, QjsCorePlugin);
 
 typedef struct qjs_arch_plugin_t {
+	char *name;
 	char *arch;
 	R_BORROW JSContext *ctx;
 	JSValue decode_func;
@@ -45,6 +46,7 @@ static void core_plugin_fini(QjsCorePlugin *cp, void *user) {
 }
 
 static void arch_plugin_fini(QjsArchPlugin *ap, void *user) {
+	free (ap->name);
 	free (ap->arch);
 }
 
@@ -96,6 +98,7 @@ static bool plugin_manager_remove_core_plugin(QjsPluginManager *pm, const char *
 	}
 
 	if (found) {
+		pm->core->lang->cmdf (pm->core, "L-%s", name);
 		RVecCorePlugin_remove (&pm->core_plugins, i, core_plugin_fini, NULL);
 		return true;
 	}
@@ -103,13 +106,14 @@ static bool plugin_manager_remove_core_plugin(QjsPluginManager *pm, const char *
 	return false;
 }
 
-static void plugin_manager_add_arch_plugin(QjsPluginManager *pm, const char *arch,
-	JSContext *ctx, JSValue decode_func) {
+static void plugin_manager_add_arch_plugin(QjsPluginManager *pm, const char *name,
+	const char *arch, JSContext *ctx, JSValue decode_func) {
 	r_return_if_fail (pm);
 
 	QjsArchPlugin *ap = RVecArchPlugin_emplace_back (&pm->arch_plugins);
 	if (ap) {
-		ap->arch = arch? strdup (arch): NULL;
+		ap->name = strdup (name);
+		ap->arch = strdup (arch);
 		ap->ctx = ctx;
 		ap->decode_func = decode_func;
 	}
@@ -145,10 +149,31 @@ static bool plugin_manager_remove_arch_plugin(QjsPluginManager *pm, const char *
 	}
 
 	if (found) {
+		// XXX Can arch plugins be properly removed with L-name?
+		pm->core->lang->cmdf (pm->core, "L-%s", ap->name);
 		RVecArchPlugin_remove (&pm->arch_plugins, i, arch_plugin_fini, NULL);
 		return true;
 	}
 
+	return false;
+}
+
+static bool plugin_manager_remove_plugin(QjsPluginManager *pm, const char *type, const char *plugin_id) {
+	r_return_val_if_fail (pm, false);
+
+	if (R_STR_ISNOTEMPTY (type)) {
+		if (!strcmp (type, "core")) {
+			return plugin_manager_remove_core_plugin (pm, plugin_id);
+		}
+
+		if (!strcmp (type, "arch")) {
+			return plugin_manager_remove_arch_plugin (pm, plugin_id);
+		}
+	}
+
+	// TODO extend for bin / io / ... plugins
+	// invalid throw exception here
+	// return JS_ThrowRangeError(ctx, "invalid r2plugin type");
 	return false;
 }
 
@@ -256,7 +281,7 @@ static JSValue r2plugin(JSContext *ctx, JSValueConst this_val, int argc, JSValue
 		if (!strcmp (n, "core")) {
 			return r2plugin_core_load (ctx, this_val, argc, argv);
 		} else if (!strcmp (n, "arch")) {
-			return r2plugin_arch (ctx, this_val, argc, argv);
+			return r2plugin_arch_load (ctx, this_val, argc, argv);
 #if 0
 		} else if (!strcmp (n, "bin")) {
 			return r2plugin_bin (ctx, this_val, argc, argv);
@@ -272,17 +297,16 @@ static JSValue r2plugin(JSContext *ctx, JSValueConst this_val, int argc, JSValue
 }
 
 static JSValue r2plugin_unload(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
-	if (argc != 1 || !JS_IsString (argv[0])) {
+	if (argc != 2 || !JS_IsString (argv[0]) || !JS_IsString (argv[1])) {
 		return JS_ThrowRangeError (ctx, "r2.unload takes only one string as argument");
 	}
 	JSRuntime *rt = JS_GetRuntime (ctx);
 	QjsPluginManager *pm = JS_GetRuntimeOpaque (rt);
-	size_t plen;
-	const char *name = JS_ToCStringLen2 (ctx, &plen, argv[0], false);
-	pm->core->lang->cmdf (pm->core, "L-%s", name);
-	bool res = plugin_manager_remove_core_plugin (pm, name);
-	// invalid throw exception here
-	// return JS_ThrowRangeError(ctx, "invalid r2plugin type");
+
+	size_t len;
+	const char *type = JS_ToCStringLen2 (ctx, &len, argv[0], false);
+	const char *name_or_arch = JS_ToCStringLen2 (ctx, &len, argv[1], false);
+	const bool res = plugin_manager_remove_plugin (pm, type, name_or_arch);
 	return JS_NewBool (ctx, res);
 }
 
@@ -423,9 +447,9 @@ static JSModuleDef *js_init_module_os(JSContext *ctx) {
 }
 
 static const JSCFunctionListEntry js_r2_funcs[] = {
-	JS_CFUNC_DEF ("cmd", 1, r2cmd),
+	JS_CFUNC_DEF ("cmd", 1, r2cmd), // XXX deprecate, we have r2.cmd already
 	JS_CFUNC_DEF ("plugin", 2, r2plugin),
-	JS_CFUNC_DEF ("unload", 1, r2plugin_unload),
+	JS_CFUNC_DEF ("unload", 2, r2plugin_unload),
 	// JS_CFUNC_DEF ("cmdj", 1, r2cmdj), // can be implemented in js
 	JS_CFUNC_DEF ("log", 1, r2log),
 	JS_CFUNC_DEF ("error", 1, r2error),
@@ -624,15 +648,14 @@ static bool fini(RLangSession *s) {
 
 	QjsPluginManager *pm = s->plugin_data;
 
-	plugin_manager_fini (pm);
-
 	QjsContext *qctx = &pm->default_ctx;
 	JS_FreeContext (qctx->ctx);
 	qctx->ctx = NULL;
 
+	plugin_manager_fini (pm);
+
 	free (pm);
 	s->plugin_data = NULL;
-
 	return true;
 }
 

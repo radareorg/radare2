@@ -245,18 +245,20 @@ R_API int r_lib_close(RLib *lib, const char *file) {
 	}
 	// delete similar plugin name
 	r_list_foreach (lib->plugins, iter, p) {
+		eprintf("similar p->file: %s\n", p->file);
 		if (strstr (p->file, file)) {
 			int ret = 0;
 			if (p->handler && p->handler->destructor) {
 				ret = p->handler->destructor (p,
 					p->handler->user, p->data);
 			}
+			eprintf("similar deleting: %s\n", p->file);
 			free (p->file);
 			r_list_delete (lib->plugins, iter);
 			{
-				const char *fileName = r_str_rstr (file, R_SYS_DIR);
-				if (fileName) {
-					ht_pp_delete (lib->plugins_ht, fileName + 1);
+				const char *file_name = r_str_rstr (file, R_SYS_DIR);
+				if (file_name) {
+					ht_pp_delete (lib->plugins_ht, file_name + 1);
 				}
 			}
 			return ret;

@@ -69,7 +69,8 @@ typedef struct r_lang_session_t {
 R_API RLang *r_lang_new(void);
 R_API void r_lang_free(RLang *lang);
 R_API bool r_lang_setup(RLang *lang);
-R_API bool r_lang_add(RLang *lang, RLangPlugin *foo);
+R_API bool r_lang_plugin_add(RLang *lang, RLangPlugin *plugin);
+R_API bool r_lang_plugin_remove(RLang *lang, RLangPlugin *plugin);
 R_API void r_lang_list(RLang *lang, int mode);
 R_API bool r_lang_use(RLang *lang, const char *name);
 R_API bool r_lang_use_plugin(RLang *lang, RLangPlugin *h);
@@ -82,7 +83,6 @@ R_API bool r_lang_run_file(RLang *lang, const char *file);
 R_API bool r_lang_prompt(RLang *lang);
 R_API RLangPlugin *r_lang_get_by_name(RLang *lang, const char *name);
 R_API RLangPlugin *r_lang_get_by_extension(RLang *lang, const char *ext);
-// TODO: rename r_Lang_add for r_lang_plugin_add
 
 R_API bool r_lang_define(RLang *lang, const char *type, const char *name, void *value);
 R_API void r_lang_undef(RLang *lang, const char *name);

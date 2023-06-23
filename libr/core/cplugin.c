@@ -31,6 +31,20 @@ R_API bool r_core_plugin_add(RCmd *cmd, RCorePlugin *plugin) {
 	return true;
 }
 
+R_API bool r_core_plugin_remove(RCmd *cmd, RCorePlugin *plugin) {
+	const char *name = plugin->name;
+	RListIter *iter, *iter2;
+	RCorePlugin *p;
+	r_list_foreach_safe (cmd->plist, iter, iter2, p) {
+		if (p && !strcmp (name, p->name)) {
+			r_list_delete (cmd->plist, iter);
+			return true;
+		}
+	}
+
+	return false;
+}
+
 R_API bool r_core_plugin_init(RCmd *cmd) {
 	r_return_val_if_fail (cmd, false);
 	size_t i;

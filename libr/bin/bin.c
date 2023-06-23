@@ -418,7 +418,7 @@ static void r_bin_plugin_free(RBinPlugin *p) {
 }
 
 // rename to r_bin_plugin_add like the rest
-R_API bool r_bin_add(RBin *bin, RBinPlugin *foo) {
+R_API bool r_bin_plugin_add(RBin *bin, RBinPlugin *foo) {
 	RListIter *it;
 	RBinPlugin *plugin;
 
@@ -435,6 +435,11 @@ R_API bool r_bin_add(RBin *bin, RBinPlugin *foo) {
 	plugin = R_NEW0 (RBinPlugin);
 	memcpy (plugin, foo, sizeof (RBinPlugin));
 	r_list_append (bin->plugins, plugin);
+	return true;
+}
+
+R_API bool r_bin_plugin_remove(RBin *bin, RBinPlugin *plugin) {
+	// R2_590 TODO
 	return true;
 }
 
@@ -851,7 +856,7 @@ R_API RBin *r_bin_new(void) {
 	/* bin parsers */
 	bin->binfiles = r_list_newf ((RListFree)r_bin_file_free);
 	for (i = 0; bin_static_plugins[i]; i++) {
-		r_bin_add (bin, bin_static_plugins[i]);
+		r_bin_plugin_add (bin, bin_static_plugins[i]);
 	}
 	/* extractors */
 	bin->binxtrs = r_list_new ();

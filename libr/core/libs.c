@@ -8,10 +8,14 @@
 		struct r_ ## x ## _plugin_t *hand = (struct r_ ## x ## _plugin_t *)data;\
 		RCore *core = (RCore *) user;\
 		pl->free = NULL; \
-		r_ ## x ## _add (core->y, hand);\
+		r_ ## x ## _plugin_add (core->y, hand);\
 		return true;\
 	}\
-	static int __lib_ ## x ## _dt (RLibPlugin * pl, void *p, void *u) { return true; }
+	static int __lib_ ## x ## _dt (RLibPlugin * pl, void *user, void *data) { \
+		struct r_ ## x ## _plugin_t *hand = (struct r_ ## x ## _plugin_t *)data; \
+		RCore *core = (RCore *) user; \
+		return r_ ## x ## _plugin_remove (core->y, hand); \
+	}
 
 // TODO: deprecate this
 #define CB_COPY(x, y)\
@@ -21,23 +25,21 @@
 		RCore *core = (RCore *) user;\
 		instance = R_NEW (struct r_ ## x ## _plugin_t);\
 		memcpy (instance, hand, sizeof (struct r_ ## x ## _plugin_t));\
-		r_ ## x ## _add (core->y, instance);\
+		r_ ## x ## _plugin_add (core->y, instance);\
 		return true;\
 	}\
-	static int __lib_ ## x ## _dt (RLibPlugin * pl, void *p, void *u) { return true; }
+	static int __lib_ ## x ## _dt (RLibPlugin *pl, void *user, void *data) { \
+		struct r_ ## x ## _plugin_t *hand = (struct r_ ## x ## _plugin_t *)data; \
+		RCore *core = (RCore *) user; \
+		return r_ ## x ## _plugin_remove (core->y, hand); \
+	}
 
-// XXX R2_590 : api consistency issues
-#define r_io_add r_io_plugin_add
 CB_COPY (io, io)
-#define r_core_add r_core_plugin_add
 CB (core, rcmd)
-#define r_debug_add r_debug_plugin_add
 CB (debug, dbg)
-#define r_bp_add r_bp_plugin_add
 CB (bp, dbg->bp)
 CB (lang, lang)
 CB (anal, anal)
-#define r_esil_add r_esil_plugin_add
 CB (esil, anal->esil)
 CB (parse, parser)
 CB (bin, bin)

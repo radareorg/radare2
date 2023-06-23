@@ -75,7 +75,7 @@ R_API REgg *r_egg_new(void) {
 	}
 	egg->plugins = r_list_new ();
 	for (i = 0; egg_static_plugins[i]; i++) {
-		r_egg_add (egg, egg_static_plugins[i]);
+		r_egg_plugin_add (egg, egg_static_plugins[i]);
 	}
 	return egg;
 
@@ -84,7 +84,7 @@ beach:
 	return NULL;
 }
 
-R_API bool r_egg_add(REgg *a, REggPlugin *foo) {
+R_API bool r_egg_plugin_add(REgg *a, REggPlugin *foo) {
 	r_return_val_if_fail (a && foo, false);
 	RListIter *iter;
 	// TODO: cache foo->name length and use memcmp instead of strcmp
@@ -98,6 +98,11 @@ R_API bool r_egg_add(REgg *a, REggPlugin *foo) {
 		}
 	}
 	r_list_append (a->plugins, foo);
+	return true;
+}
+
+R_API bool r_egg_plugin_remove(REgg *a, REggPlugin *plugin) {
+	// R2_590 TODO
 	return true;
 }
 
