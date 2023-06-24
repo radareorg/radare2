@@ -122,6 +122,8 @@ R_API bool r_syscall_setup(RSyscall *s, const char *arch, int bits, const char *
 		s->sysport = sysport_avr;
 	} else if (!strcmp (os, "darwin") || !strcmp (os, "osx") || !strcmp (os, "macos")) {
 		os = "darwin";
+	} else if (!strcmp (os, "android")) {
+		os = "linux";
 	} else if (!strcmp (arch, "x86")) {
 		s->sysport = sysport_x86;
 	}
