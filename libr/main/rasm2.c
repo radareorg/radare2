@@ -748,7 +748,9 @@ R_API int r_main_rasm2(int argc, const char *argv[]) {
 	}
 	R_FREE (log_level);
 	RAsmState *as = __as_new ();
-
+	if (!as) {
+		return 1;
+	}
 	// TODO set addrbytes
 	char *r2arch = r_sys_getenv ("R2_ARCH");
 	if (r2arch) {
