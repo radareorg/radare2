@@ -555,7 +555,7 @@ static RCoreHelpMessage help_msg_afb = {
 	"afb.", " [addr]", "show info of current basic block",
 	"afb=", "", "display ascii-art bars for basic block regions",
 	"afb+", " fcn_at bbat bbsz [jump] [fail] ([diff])", "add basic block by hand",
-	"afbc", " [color] ([addr])", "colorize basic block",
+	"afbc", " [color] ([addr])", "colorize basic block (same as 'abc')",
 	"afbe", " bbfrom bbto", "add basic-block edge for switch-cases",
 	"afbi", "[j]", "print current basic block information",
 	"afbj", " [addr]", "show basic blocks information in json",
