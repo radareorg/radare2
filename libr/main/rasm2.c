@@ -191,9 +191,6 @@ static void rarch2_list(RAsmState *as, const char *arch) {
 	RListIter *iter, *iter2;
 	const char *feat;
 	PJ *pj = NULL;
-	if(!as){
-		return;
-	}
 	if (as->json) {
 		pj = pj_new ();
 		pj_a (pj);
