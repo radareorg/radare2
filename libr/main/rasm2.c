@@ -751,7 +751,7 @@ R_API int r_main_rasm2(int argc, const char *argv[]) {
 	}
 	R_FREE (log_level);
 	RAsmState *as = __as_new ();
-	if(!as){
+	if (!as) {
 		return 0;
 	}
 	// TODO set addrbytes
