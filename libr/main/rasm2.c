@@ -191,6 +191,9 @@ static void rarch2_list(RAsmState *as, const char *arch) {
 	RListIter *iter, *iter2;
 	const char *feat;
 	PJ *pj = NULL;
+	if(!as){
+		return;
+	}
 	if (as->json) {
 		pj = pj_new ();
 		pj_a (pj);
@@ -748,7 +751,9 @@ R_API int r_main_rasm2(int argc, const char *argv[]) {
 	}
 	R_FREE (log_level);
 	RAsmState *as = __as_new ();
-
+	if(!as){
+		return 0;
+	}
 	// TODO set addrbytes
 	char *r2arch = r_sys_getenv ("R2_ARCH");
 	if (r2arch) {
