@@ -6350,6 +6350,11 @@ toro:
 			ret = 1;
 		}
 		len += R_MAX (0, ret);
+		int pcalign = core->anal->config->pcalign;
+		bool unaligned = (pcalign > 1 && (ds->at % pcalign));
+		if (unaligned) {
+			ds->analop.type = R_ANAL_OP_TYPE_ILL;
+		}
 		if (ds->hint && ds->hint->opcode) {
 			free (ds->opstr);
 			ds->opstr = strdup (ds->hint->opcode);
@@ -6419,8 +6424,7 @@ toro:
 			const char *opcolor = NULL;
 			if (R_STR_ISEMPTY (ds->opstr)) {
 				free (ds->opstr);
-				const int pcalign = core->anal->config->pcalign;
-				if (pcalign > 1 && (ds->at % pcalign)) {
+				if (unaligned) {
 					ds->opstr = strdup ("unaligned");
 				} else {
 					ds->opstr = strdup ("invalid");
