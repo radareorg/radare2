@@ -1,3 +1,33 @@
+NAME=/re in calls
+FILE=bins/mach0/ls-m1
+CMDS=<<EOF
+s 0x1000071e8
+/re $$
+pd 1
+EOF
+EXPECT=<<EOF
+            ;-- func.1000071e8:
+            ; CALL XREFS from main @ +0x4c(x), +0x668(x)
+            0x1000071e8      7f2303d5       pacibsp
+EOF
+RUN
+
+NAME=/r in calls
+FILE=bins/mach0/ls-m1
+CMDS=<<EOF
+s 0x1000071e8
+/r $$
+pd 1
+EOF
+EXPECT=<<EOF
+(nofunc) 0x100003adc [CALL] bl sym.func.1000071e8
+(nofunc) 0x1000040f8 [CALL] bl sym.func.1000071e8
+            ;-- func.1000071e8:
+            ; CALL XREFS from main @ +0x4c(x), +0x668(x)
+            0x1000071e8      7f2303d5       pacibsp
+EOF
+RUN
+
 NAME=ldr x25, [sp, 0x28]
 FILE=malloc://0x200
 CMDS=<<EOF
