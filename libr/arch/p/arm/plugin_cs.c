@@ -4778,6 +4778,7 @@ static RList *anal_preludes(RArchSession *as) {
 			break;
 		case 32:
 			r_list_append (l, r_str_newf ("e92d0000 ffff0f0f"));
+			r_list_append (l, r_str_newf ("e92d47f0 ffffffff"));
 			break;
 		case 64:
 			r_list_append (l, r_str_newf ("f8000ff0 ff000ff0"));
@@ -4797,6 +4798,9 @@ static RList *anal_preludes(RArchSession *as) {
 			break;
 		case 32:
 			r_list_append (l, r_str_newf ("00002de9 0f0fffff"));
+			r_list_append (l, r_str_newf ("f0472de9 ffffffff"));
+			r_list_append (l, r_str_newf ("1eff2fe1 ffffffff"));
+			r_list_append (l, r_str_newf ("10482de9 ffffffff")); // push {r4, fp, lr}
 			break;
 		case 64:
 			r_list_append (l, r_str_newf ("f00f00f8 f00f00ff"));
