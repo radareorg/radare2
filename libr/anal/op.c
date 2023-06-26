@@ -161,11 +161,14 @@ R_API int r_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 		op->size = pcalign - (addr % pcalign);
 		r_anal_op_set_mnemonic (op, addr, "unaligned");
 		if (op->size > len) {
+			// truncated
+#if 0
 			ut8 *fakedata = r_mem_dup (data, op->size);
 			if (fakedata) {
 				r_anal_op_set_bytes (op, addr, fakedata, op->size);
 				free (fakedata);
 			}
+#endif
 		} else {
 			r_anal_op_set_bytes (op, addr, data, op->size);
 		}
