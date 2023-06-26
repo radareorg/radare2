@@ -5430,6 +5430,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 	ut64 end = 0LL;
 	ut64 cur;
 	esil_anal_stop = false;
+	// R_LOG_INFO ("start is %llx", addr);
 
 	mycore = core;
 	if (!strcmp (str, "?")) {
@@ -5451,7 +5452,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 			ntarget = UT64_MAX;
 			refptr = 0LL;
 		}
-		start = ntarget;
+//		start = ntarget;
 		end_address_set = true;
 	} else {
 		ntarget = core->offset;
@@ -5485,6 +5486,10 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 
 	R_LOG_DEBUG ("aae length (%s) 0x%"PFMT64x, str, end);
 	R_LOG_DEBUG ("aae addr (%s) 0x%"PFMT64x, target, start);
+#if 0
+	R_LOG_INFO ("-%llx -> %llx", start, end);
+	R_LOG_INFO ("+%llx -> %llx", core->offset, end);
+#endif
 
 	if (end < start) {
 		R_LOG_DEBUG ("end < start");
@@ -5846,7 +5851,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 		case R_ANAL_OP_TYPE_CALL:
 			{
 				ut64 dst = op.jump;
-				if (CHECKREF (dst)) {
+				if (CHECKREF (dst) || (target && dst == ntarget)) {
 					if (myvalid (core->io, dst)) {
 						r_anal_xrefs_set (core->anal, cur, dst, R_ANAL_REF_TYPE_CALL | R_ANAL_REF_TYPE_EXEC);
 					}
