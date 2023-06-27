@@ -46,6 +46,9 @@ extern "C" {
  * - type *R_VEC_FUNC(name, find)(const R_VEC(name) *vec, void *value, R_VEC_FIND_CMP(type) cmp_fn):
  *   Searches for the first value in the vector that is equal (compare returns 0) to the value passed in.
  *   Otherwise returns NULL.
+ * - type *R_VEC_FUNC(name, find_index)(const R_VEC(name) *vec, void *value, R_VEC_FIND_CMP(type) cmp_fn):
+ *   Searches for the index of the first value in the vector that is equal (compare returns 0) to the
+ *   value passed in. Otherwise returns UT64_MAX.
  * - R_VEC(name) *R_VEC_FUNC(name, clone)(const R_VEC(name) *vec): Creates a shallow clone of a vector.
  * - void R_VEC_FUNC(name, reserve)(R_VEC(name) *vec, size_t new_capacity): Ensures the vector has
  *   atleast a capacity of "new_capacity".
@@ -218,6 +221,18 @@ extern "C" {
 			} \
 		} \
 		return NULL; \
+	} \
+	static inline R_MAYBE_UNUSED R_MUSTUSE ut64 R_VEC_FUNC(name, find_index)(const R_VEC(name) *vec, void *value, R_VEC_FIND_CMP(name) cmp_fn) { \
+		r_return_val_if_fail (vec && value, UT64_MAX); \
+		ut64 index = 0; \
+		type *val; \
+		R_VEC_FOREACH (vec, val) { \
+			if (!cmp_fn (val, value)) { \
+				return index; \
+			} \
+			index++; \
+		} \
+		return UT64_MAX; \
 	} \
 	static inline R_MAYBE_UNUSED R_MUSTUSE R_VEC(name) *R_VEC_FUNC(name, clone)(const R_VEC(name) *vec) { \
 		r_return_val_if_fail (vec, NULL); \

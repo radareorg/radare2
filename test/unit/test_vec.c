@@ -626,6 +626,34 @@ static bool test_vec_find(void) {
 	mu_end;
 }
 
+static bool test_vec_find_index(void) {
+	RVecST32 v;
+	RVecST32_init (&v);
+
+	st32 x = 0;
+	mu_assert_eq (RVecST32_find_index (&v, &x, find_compare_st32), UT64_MAX, "find_index1");
+
+	for (x = 0; x < 3; x++) {
+		RVecST32_push_back (&v, &x);
+	}
+
+	x = 0;
+	mu_assert_eq (RVecST32_find_index (&v, &x, find_compare_st32), 0, "find_index2");
+	x = 1;
+	mu_assert_eq (RVecST32_find_index (&v, &x, find_compare_st32), 1, "find_index3");
+	x = 2;
+	mu_assert_eq (RVecST32_find_index (&v, &x, find_compare_st32), 2, "find_index4");
+	x = 3;
+	mu_assert_eq (RVecST32_find_index (&v, &x, find_compare_st32), UT64_MAX, "find_index5");
+
+	RVecST32_clear (&v, NULL, NULL);
+	x = 0;
+	mu_assert_eq (RVecST32_find_index (&v, &x, find_compare_st32), UT64_MAX, "find_index6");
+
+	RVecST32_fini (&v, NULL, NULL);
+	mu_end;
+}
+
 static bool test_vec_reserve(void) {
 	RVecUT32 v;
 	RVecUT32_init (&v);
@@ -845,6 +873,7 @@ static int all_tests(void) {
 	mu_run_test (test_vec_end_iter);
 	mu_run_test (test_vec_at);
 	mu_run_test (test_vec_find);
+	mu_run_test (test_vec_find_index);
 	mu_run_test (test_vec_reserve);
 	mu_run_test (test_vec_shrink_to_fit);
 	mu_run_test (test_vec_foreach);
