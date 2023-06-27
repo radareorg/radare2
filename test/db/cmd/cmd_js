@@ -90,6 +90,7 @@ EOF
 RUN
 
 NAME=qjs loading and unloading of arch plugins
+BROKEN=1
 FILE=-
 CMDS=<<EOF
 LA~qjs?

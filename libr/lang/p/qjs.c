@@ -149,7 +149,6 @@ static bool plugin_manager_remove_arch_plugin(QjsPluginManager *pm, const char *
 	}
 
 	if (found) {
-		// XXX Can arch plugins be properly removed with L-name?
 		pm->core->lang->cmdf (pm->core, "L-%s", ap->name);
 		RVecArchPlugin_remove (&pm->arch_plugins, i, arch_plugin_fini, NULL);
 		return true;
@@ -180,7 +179,8 @@ static bool plugin_manager_remove_plugin(QjsPluginManager *pm, const char *type,
 static void plugin_manager_fini (QjsPluginManager *pm) {
 	RVecCorePlugin_fini (&pm->core_plugins, core_plugin_fini, NULL);
 	RVecArchPlugin_fini (&pm->arch_plugins, arch_plugin_fini, NULL);
-	JS_FreeRuntime (pm->rt);
+	// XXX leaks, but calling it causes crash because not all JS objects are freed
+	// JS_FreeRuntime (pm->rt);
 	pm->rt = NULL;
 }
 
