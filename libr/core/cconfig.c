@@ -4399,7 +4399,7 @@ R_API int r_core_config_init(RCore *core) {
 	{
 		char *p = r_file_path ("git");
 		SETPREF ("prj.vc.message", "", "default commit message for rvc/git");
-		if (strcmp (p, "git")) {
+		if (R_STR_ISNOTEMPTY (p)) {
 			SETCB ("prj.vc.type", "git", &cb_prjvctype, "what should projects use as a vc");
 		} else {
 			SETBPREF ("prj.vc", "false", "use your version control system of choice (rvc, git) to manage projects");
