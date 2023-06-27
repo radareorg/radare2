@@ -1387,7 +1387,7 @@ R_API bool r_file_copy(const char *src, const char *dst) {
 #else
 	char *src2 = r_str_replace (strdup (src), "'", "\\'", 1);
 	char *dst2 = r_str_replace (strdup (dst), "'", "\\'", 1);
-	int rc = r_sys_cmdf ("cp -f '%s' '%s'", src2, dst2);
+	int rc = r_sys_cmdf ("cp -f %s %s", src2, dst2);
 	free (src2);
 	free (dst2);
 	return rc == 0;
