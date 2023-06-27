@@ -350,21 +350,25 @@ static void check_purity(HtUP *ht, RAnalFunction *fcn) {
 	ht_up_insert (ht, fcn->addr, NULL);
 	fcn->is_pure = true;
 	r_list_foreach (refs, iter, ref) {
-		int rt = R_ANAL_REF_TYPE_MASK (ref->type);
-		if (rt == R_ANAL_REF_TYPE_CALL || rt == R_ANAL_REF_TYPE_CODE) {
-			RAnalFunction *called_fcn = r_anal_get_fcn_in (fcn->anal, ref->addr, 0);
-			if (!called_fcn) {
-				continue;
+		const int rt = R_ANAL_REF_TYPE_MASK (ref->type);
+		switch (rt) {
+		case R_ANAL_REF_TYPE_CALL:
+		case R_ANAL_REF_TYPE_CODE:
+			{
+				RAnalFunction *called_fcn = r_anal_get_fcn_in (fcn->anal, ref->addr, 0);
+				if (!called_fcn) {
+					continue;
+				}
+				if (!purity_checked (ht, called_fcn)) {
+					check_purity (ht, called_fcn);
+				}
+				if (!called_fcn->is_pure) {
+					fcn->is_pure = false;
+					break;
+				}
 			}
-			if (!purity_checked (ht, called_fcn)) {
-				check_purity (ht, called_fcn);
-			}
-			if (!called_fcn->is_pure) {
-				fcn->is_pure = false;
-				break;
-			}
-		}
-		if (R_ANAL_REF_TYPE_MASK (ref->type) == R_ANAL_REF_TYPE_DATA) {
+			break;
+		case R_ANAL_REF_TYPE_DATA:
 			fcn->is_pure = false;
 			break;
 		}
