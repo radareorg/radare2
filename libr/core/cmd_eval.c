@@ -420,7 +420,7 @@ static int cmd_eval(void *data, const char *input) {
 		switch (input[1]) {
 		case '\0': r_core_cmd_help (core, help_msg_e); break;
 		case '?': r_config_list (core->config, input + 2, 2); break;
-		default: r_config_list (core->config, input + 1, 2); break;
+		default: r_config_list (core->config, input + 1, 3); break;
 		}
 		break;
 	case 't': // "et"

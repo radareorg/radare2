@@ -163,7 +163,7 @@ R_API void r_config_list(RConfig *cfg, const char *str, int rad) {
 	const char *sfx = "";
 	const char *pfx = "";
 	int len = 0;
-	bool verbose = false;
+	bool found, verbose = false;
 	PJ *pj = NULL;
 
 	if (!IS_NULLSTR (str)) {
@@ -215,15 +215,21 @@ R_API void r_config_list(RConfig *cfg, const char *str, int rad) {
 	case 2:
 		r_list_foreach (cfg->nodes, iter, node) {
 			if (!str || (str && (!strncmp (str, node->name, len)))) {
-				if (!str || !strncmp (str, node->name, len)) {
-					if (R_STR_ISNOTEMPTY (str)) {
-						cfg->cb_printf ("%s\n", r_str_get (node->desc));
-					} else {
-						cfg->cb_printf ("%20s: %s\n", node->name,
-							r_str_get (node->desc));
-					}
-				}
+				cfg->cb_printf ("%20s: %s\n", node->name, r_str_get (node->desc));
 			}
+		}
+		break;
+	case 3:
+		found = false;
+		r_list_foreach (cfg->nodes, iter, node) {
+			if (!str || (str && (!strcmp (str, node->name)))) {
+				found = true;
+				cfg->cb_printf ("%s\n", r_str_get (node->desc));
+				break;
+			}
+		}
+		if (!found) {
+			cfg->cb_printf ("Key not found. Try e??%s\n", str);
 		}
 		break;
 	case 's':
