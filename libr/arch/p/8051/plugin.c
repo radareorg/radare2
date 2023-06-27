@@ -41,9 +41,11 @@ static const i8051_cpu_model cpu_models[] = {
 	}
 };
 
-static R_TH_LOCAL bool i8051_is_init = false;
-static R_TH_LOCAL const i8051_cpu_model *cpu_curr_model = NULL;
-static R_TH_LOCAL REsilCallbacks ocbs = {0};
+typedef struct plugin_data_t {
+	const i8051_cpu_model *cpu_curr_model;
+	REsilCallbacks ocbs;
+	bool i8051_is_init;
+} PluginData;
 
 static bool i8051_reg_write(RArchSession *as, const char *regname, ut32 num) {
 	RReg *reg = NULL; // TODO
@@ -124,7 +126,7 @@ static void map_cpu_memory(RArchSession *as, int entry, ut32 addr, ut32 size, bo
 static void set_cpu_model(RArchSession *as, bool force) {
 	ut32 addr_idata, addr_sfr, addr_xdata;
 
-	if (!as || !as->config) {
+	if (!as || !as->config || !as->data) {
 		return;
 	}
 
@@ -134,7 +136,8 @@ static void set_cpu_model(RArchSession *as, bool force) {
 	}
 
 	// if cpu model changed, reinitialize emulation
-	if (force || !cpu_curr_model || r_str_casecmp (cpu, cpu_curr_model->name)) {
+	PluginData *pd = as->data;
+	if (force || !pd->cpu_curr_model || r_str_casecmp (cpu, pd->cpu_curr_model->name)) {
 		// find model by name
 		int i = 0;
 		while (cpu_models[i].name && r_str_casecmp (cpu, cpu_models[i].name)) {
@@ -143,7 +146,7 @@ static void set_cpu_model(RArchSession *as, bool force) {
 		if (!cpu_models[i].name) {
 			i = 0;	// if not found, default to generic 8051
 		}
-		cpu_curr_model = &cpu_models[i];
+		pd->cpu_curr_model = &cpu_models[i];
 
 		// TODO: Add flags as needed - seek using pseudo registers works w/o flags
 
@@ -799,27 +802,31 @@ static int i8051_hook_reg_write(REsil *esil, const char *name, ut64 *val) {
 }
 #endif
 
-static int esil_i8051_init(REsil *esil) {
+static int esil_i8051_init(RArchSession *as, REsil *esil) {
+	PluginData *pd = as->data;
 	if (esil->cb.user) {
 		return true;
 	}
-	ocbs = esil->cb;
+	pd->ocbs = esil->cb;
 	/* these hooks break esil emulation */
 	/* pc is not read properly, mem mapped registers are not shown in ar, ... */
 	/* all 8051 regs are mem mapped, and reg access via mem is very common */
 //  disabled to make esil work, before digging deeper
 //	esil->cb.hook_reg_read = i8051_hook_reg_read;
 //	esil->cb.hook_reg_write = i8051_hook_reg_write;
-	i8051_is_init = true;
+	pd->i8051_is_init = true;
 	return true;
 }
 
-static int esil_i8051_fini(REsil *esil) {
-	if (!i8051_is_init) {
+static int esil_i8051_fini(RArchSession *as, REsil *esil) {
+	PluginData *pd = as->data;
+
+	if (!pd || !pd->i8051_is_init) {
 		return false;
 	}
-	R_FREE (ocbs.user);
-	i8051_is_init = false;
+
+	R_FREE (pd->ocbs.user);
+	pd->i8051_is_init = false;
 	return true;
 }
 
@@ -1096,10 +1103,10 @@ static bool esil_cb(RArchSession *as, RArchEsilAction action) {
 
 	switch (action) {
 	case R_ARCH_ESIL_INIT:
-		esil_i8051_init (esil);
+		esil_i8051_init (as, esil);
 		break;
 	case R_ARCH_ESIL_FINI:
-		esil_i8051_fini (esil);
+		esil_i8051_fini (as, esil);
 		break;
 	default:
 		return false;
@@ -1123,6 +1130,24 @@ static int archinfo(RArchSession *as, ut32 q) {
 	return 0;
 }
 
+static bool init(RArchSession *as) {
+	r_return_val_if_fail (as, false);
+
+	if (as->data) {
+		R_LOG_WARN ("Already initialized");
+		return false;
+	}
+
+	as->data = R_NEW0 (PluginData);
+	return !!as->data;
+}
+
+static bool fini(RArchSession *as) {
+	r_return_val_if_fail (as, false);
+	R_FREE (as->data);
+	return true;
+}
+
 const RArchPlugin r_arch_plugin_8051 = {
 	.meta = {
 		.name = "8051",
@@ -1135,7 +1160,9 @@ const RArchPlugin r_arch_plugin_8051 = {
 	.encode = encode,
 	.regs = regs,
 	.esilcb = esil_cb,
-	.info = archinfo
+	.info = archinfo,
+	.init = init,
+	.fini = fini,
 };
 
 #ifndef R2_PLUGIN_INCORE

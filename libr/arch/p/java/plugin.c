@@ -9,10 +9,8 @@
 #define DO_THE_DBG 0
 #define IFDBG  if (DO_THE_DBG)
 
-static R_TH_LOCAL ut64 METHOD_START = 0;
-
-static ut64 java_get_method_start(void) {
-	return METHOD_START;
+static inline ut64 java_get_method_start(void) {
+	return 0;
 }
 
 static int java_switch_op(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *data, int len) {
