@@ -69,37 +69,24 @@ static void plugin_manager_add_core_plugin(QjsPluginManager *pm, const char *nam
 	}
 }
 
+static inline int compare_core_plugin_name(QjsCorePlugin *cp, void *data) {
+	const char *name = data;
+	return strcmp (cp->name, name);
+}
+
 static QjsCorePlugin *plugin_manager_find_core_plugin(const QjsPluginManager *pm, const char *name) {
 	r_return_val_if_fail (pm, NULL);
 
-	QjsCorePlugin *cp;
-	R_VEC_FOREACH (&pm->core_plugins, cp) {
-		if (!strcmp (cp->name, name)) {
-			return cp;
-		}
-	}
-
-	return NULL;
+	return RVecCorePlugin_find (&pm->core_plugins, (void*) name, compare_core_plugin_name);
 }
 
 static bool plugin_manager_remove_core_plugin(QjsPluginManager *pm, const char *name) {
 	r_return_val_if_fail (pm, false);
 
-	bool found = false;
-	size_t i = 0;
-	QjsCorePlugin *cp;
-	R_VEC_FOREACH (&pm->core_plugins, cp) {
-		if (!strcmp (cp->name, name)) {
-			found = true;
-			break;
-		}
-
-		i++;
-	}
-
-	if (found) {
+	ut64 index = RVecCorePlugin_find_index (&pm->core_plugins, (void*) name, compare_core_plugin_name);
+	if (index != UT64_MAX) {
 		pm->core->lang->cmdf (pm->core, "L-%s", name);
-		RVecCorePlugin_remove (&pm->core_plugins, i, core_plugin_fini, NULL);
+		RVecCorePlugin_remove (&pm->core_plugins, index, core_plugin_fini, NULL);
 		return true;
 	}
 
@@ -119,38 +106,25 @@ static void plugin_manager_add_arch_plugin(QjsPluginManager *pm, const char *nam
 	}
 }
 
+static inline int compare_arch_plugin_arch(QjsArchPlugin *ap, void *data) {
+	// TODO also lookup plugin by endian-ness and bits (pass in data struct)
+	const char *arch = data;
+	return strcmp (ap->arch, arch);
+}
+
 static QjsArchPlugin *plugin_manager_find_arch_plugin(const QjsPluginManager *pm, const char *arch) {
 	r_return_val_if_fail (pm, NULL);
-
-	QjsArchPlugin *ap;
-	R_VEC_FOREACH (&pm->arch_plugins, ap) {
-		// TODO also lookup plugin by endian-ness and bits
-		if (!strcmp (ap->arch, arch)) {
-			return ap;
-		}
-	}
-
-	return NULL;
+	return RVecArchPlugin_find (&pm->arch_plugins, (void*) arch, compare_arch_plugin_arch);
 }
 
 static bool plugin_manager_remove_arch_plugin(QjsPluginManager *pm, const char *arch) {
 	r_return_val_if_fail (pm, false);
 
-	bool found = false;
-	size_t i = 0;
-	QjsArchPlugin *ap;
-	R_VEC_FOREACH (&pm->arch_plugins, ap) {
-		if (!strcmp (ap->arch, arch)) {
-			found = true;
-			break;
-		}
-
-		i++;
-	}
-
-	if (found) {
+	ut64 index = RVecArchPlugin_find_index (&pm->arch_plugins, (void*) arch, compare_arch_plugin_arch);
+	if (index != UT64_MAX) {
+		QjsArchPlugin *ap = RVecArchPlugin_at (&pm->arch_plugins, index);
 		pm->core->lang->cmdf (pm->core, "L-%s", ap->name);
-		RVecArchPlugin_remove (&pm->arch_plugins, i, arch_plugin_fini, NULL);
+		RVecArchPlugin_remove (&pm->arch_plugins, index, arch_plugin_fini, NULL);
 		return true;
 	}
 
