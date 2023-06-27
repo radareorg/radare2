@@ -24,26 +24,32 @@ static const char *level_name(int i) {
 }
 
 // shouldnt be necessary as global thread-local instance
-R_API void r_log_init(void) {
+R_API bool r_log_init(void) {
 	if (!rlog) {
 		rlog = R_NEW0 (RLog);
+		if (!rlog) {
+			return false;
+		}
 		rlog->level = R_LOGLVL_DEFAULT;
 	}
+	return true;
 }
 
 R_API void r_log_fini(void) {
 	if (rlog) {
-		r_list_free (rlog->cbs);
-		free (rlog->file);
-		free (rlog->filter);
-		free (rlog);
+		RLog *log = rlog;
 		rlog = NULL;
+		r_list_free (log->cbs);
+		free (log->file);
+		free (log->filter);
+		free (log);
 	}
 }
 
 R_API void r_log_show_ts(bool ts) {
-	r_log_init ();
-	rlog->show_ts = ts;
+	if (r_log_init ()) {
+		rlog->show_ts = ts;
+	}
 }
 
 R_API RLogLevel r_log_get_level(void) {
@@ -51,55 +57,65 @@ R_API RLogLevel r_log_get_level(void) {
 }
 
 R_API RLogLevel r_log_get_traplevel(void) {
-	return rlog->traplevel;
+	return rlog? rlog->traplevel: R_LOG_LEVEL_FATAL;
 }
 
 R_API void r_log_set_level(RLogLevel level) {
-	r_log_init ();
-	rlog->level = level;
+	if (r_log_init ()) {
+		rlog->level = level;
+	}
 }
 
 R_API void r_log_set_traplevel(RLogLevel level) {
-	r_log_init ();
-	rlog->traplevel = level;
+	if (r_log_init ()) {
+		rlog->traplevel = level;
+	}
 }
 
 R_API void r_log_set_filter(const char *s) {
-	r_log_init ();
-	R_FREE (rlog->filter);
-	if (R_STR_ISNOTEMPTY (s)) {
-		rlog->filter = strdup (s);
+	if (r_log_init ()) {
+		R_FREE (rlog->filter);
+		if (R_STR_ISNOTEMPTY (s)) {
+			rlog->filter = strdup (s);
+		}
 	}
 }
 
 R_API void r_log_set_file(const char *filename) {
-	r_log_init ();
-	free (rlog->file);
-	rlog->file = strdup (filename);
+	if (r_log_init ()) {
+		free (rlog->file);
+		rlog->file = strdup (filename);
+	}
 }
 
 R_API void r_log_show_origin(bool show_origin) {
-	r_log_init ();
-	rlog->show_origin = show_origin;
+	if (r_log_init ()) {
+		rlog->show_origin = show_origin;
+	}
 }
 
 R_API void r_log_show_source(bool show_source) {
-	r_log_init ();
-	rlog->show_source = show_source;
+	if (r_log_init ()) {
+		rlog->show_source = show_source;
+	}
 }
 
 R_API void r_log_set_colors(bool color) {
-	r_log_init ();
-	rlog->color = color;
+	if (r_log_init ()) {
+		rlog->color = color;
+	}
 }
 
 R_API void r_log_set_quiet(bool bq) {
-	r_log_init ();
-	rlog->quiet = bq;
+	if (r_log_init ()) {
+		rlog->quiet = bq;
+	}
 }
 
-R_API bool r_log_match(int level, const char *origin) { // , const char *sub_origin, const char *fmt, ...) {
-	r_log_init ();
+R_API bool r_log_match(int level, const char *origin) {
+	if (!r_log_init ()) {
+		return false;
+	}
 	if (R_STR_ISNOTEMPTY (origin) && R_STR_ISNOTEMPTY (rlog->filter)) {
 		if (!strstr (origin, rlog->filter)) {
 			return false;
@@ -120,7 +136,9 @@ R_API bool r_log_match(int level, const char *origin) { // , const char *sub_ori
 R_API void r_log_vmessage(RLogLevel level, const char *origin, const char *func, int line, const char *fmt, va_list ap) {
 	char out[512];
 	int type = 3;
-	r_log_init ();
+	if (!r_log_init ()) {
+		return;
+	}
 	vsnprintf (out, sizeof (out), fmt, ap);
 	if (rlog->cbs) {
 		RListIter *iter;
@@ -180,7 +198,7 @@ R_API void r_log_vmessage(RLogLevel level, const char *origin, const char *func,
 		}
 	}
 	r_strbuf_appendf (sb, "%s %s\n", ts, out);
-	char * s = r_strbuf_drain (sb);
+	char *s = r_strbuf_drain (sb);
 	sb = NULL;
 	if (!rlog->quiet) {
 		eprintf ("%s", s);
@@ -188,11 +206,11 @@ R_API void r_log_vmessage(RLogLevel level, const char *origin, const char *func,
 	if (R_STR_ISNOTEMPTY (rlog->file)) {
 		r_file_dump (rlog->file, (const ut8*)s, strlen (s), true);
 	}
+	free (s);
 	if (rlog->traplevel && (level >= rlog->traplevel || level == R_LOGLVL_FATAL)) {
 		r_sys_backtrace ();
 		r_sys_breakpoint ();
 	}
-	free (s);
 }
 
 R_API void r_log_message(RLogLevel level, const char *origin, const char *func, int line, const char *fmt, ...) {
@@ -203,7 +221,9 @@ R_API void r_log_message(RLogLevel level, const char *origin, const char *func, 
 }
 
 R_API void r_log_add_callback(RLogCallback cb, void *user) {
-	r_log_init ();
+	if (!r_log_init ()) {
+		return;
+	}
 	if (!rlog->cbs) {
 		rlog->cbs = r_list_new ();
 	}
@@ -216,8 +236,9 @@ R_API void r_log_add_callback(RLogCallback cb, void *user) {
 }
 
 R_API void r_log_del_callback(RLogCallback cb) {
-	r_log_init ();
-	r_list_delete_data (rlog->cbs, cb);
+	if (r_log_init ()) {
+		r_list_delete_data (rlog->cbs, cb);
+	}
 }
 
 R_API void r_log(const char *funcname, const char *filename, ut32 lineno, RLogLevel level, const char *origin, const char *fmtstr, ...) {
