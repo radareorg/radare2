@@ -57,7 +57,7 @@ R_API RLogLevel r_log_get_level(void) {
 }
 
 R_API RLogLevel r_log_get_traplevel(void) {
-	return rlog? rlog->traplevel: R_LOG_LEVEL_FATAL;
+	return rlog? rlog->traplevel: R_LOGLVL_FATAL;
 }
 
 R_API void r_log_set_level(RLogLevel level) {
