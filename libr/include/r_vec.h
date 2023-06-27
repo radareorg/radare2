@@ -43,7 +43,7 @@ extern "C" {
  * - type *R_VEC_FUNC(name, at)(const R_VEC(name) *vec, size_t index): Returns a pointer to an
  *   element in the vector. Note that this can be used for reading or writing from/to the element,
  *   but not deleting (see the pop and remove functions for this).
- * - type *R_VEC_FUNC(name, find)(const R_VEC(name) *vec, type *value, R_VEC_CMP(type) cmp_fn):
+ * - type *R_VEC_FUNC(name, find)(const R_VEC(name) *vec, void *value, R_VEC_FIND_CMP(type) cmp_fn):
  *   Searches for the first value in the vector that is equal (compare returns 0) to the value passed in.
  *   Otherwise returns NULL.
  * - R_VEC(name) *R_VEC_FUNC(name, clone)(const R_VEC(name) *vec): Creates a shallow clone of a vector.
@@ -112,6 +112,7 @@ extern "C" {
 
 // Helper macro for referring to comparison functions of types stored in a "R_VEC(type)".
 #define R_VEC_CMP(name) R_CONCAT(RVecCompare, name)
+#define R_VEC_FIND_CMP(name) R_CONCAT(RVecFindCompare, name)
 
 // Helper macro for referring to functions of a "R_VEC(name)". It is only used internally
 // to simplify some of the macro code.
@@ -145,6 +146,7 @@ extern "C" {
 	} R_VEC(name); \
 	typedef void (*R_VEC_FINI(name))(type *elem, void *user); \
 	typedef int (*R_VEC_CMP(name))(type *a, type *b); \
+	typedef int (*R_VEC_FIND_CMP(name))(type *a, void *b); \
 	static inline R_MAYBE_UNUSED void R_VEC_FUNC(name, init)(R_VEC(name) *vec) { \
 		r_return_if_fail (vec); \
 		memset (vec, 0, sizeof (R_VEC(name))); \
@@ -207,11 +209,11 @@ extern "C" {
 		} \
 		return NULL; \
 	} \
-	static inline R_MAYBE_UNUSED R_MUSTUSE type *R_VEC_FUNC(name, find)(const R_VEC(name) *vec, type *value, R_VEC_CMP(name) cmp_fn) { \
+	static inline R_MAYBE_UNUSED R_MUSTUSE type *R_VEC_FUNC(name, find)(const R_VEC(name) *vec, void *value, R_VEC_FIND_CMP(name) cmp_fn) { \
 		r_return_val_if_fail (vec && value, NULL); \
 		type *val; \
 		R_VEC_FOREACH (vec, val) { \
-			if (!cmp_fn (value, val)) { \
+			if (!cmp_fn (val, value)) { \
 				return val; \
 			} \
 		} \
