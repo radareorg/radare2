@@ -22,6 +22,10 @@ static inline int compare_st32(st32 *a, st32 *b) {
 	return *a - *b;
 }
 
+static inline int find_compare_st32(st32 *a, void *b) {
+	return compare_st32(a, (st32*) b);
+}
+
 R_GENERATE_VEC_IMPL_FOR(UT32, ut32);
 R_GENERATE_VEC_IMPL_FOR(ST32, st32);
 R_GENERATE_VEC_IMPL_FOR(S, S);
@@ -599,24 +603,24 @@ static bool test_vec_find(void) {
 	RVecST32_init (&v);
 
 	st32 x = 0;
-	mu_assert_eq (RVecST32_find (&v, &x, compare_st32), NULL, "find1");
+	mu_assert_eq (RVecST32_find (&v, &x, find_compare_st32), NULL, "find1");
 
 	for (x = 0; x < 3; x++) {
 		RVecST32_push_back (&v, &x);
 	}
 
 	x = 0;
-	mu_assert_eq (*RVecST32_find (&v, &x, compare_st32), 0, "find2");
+	mu_assert_eq (*RVecST32_find (&v, &x, find_compare_st32), 0, "find2");
 	x = 1;
-	mu_assert_eq (*RVecST32_find (&v, &x, compare_st32), 1, "find3");
+	mu_assert_eq (*RVecST32_find (&v, &x, find_compare_st32), 1, "find3");
 	x = 2;
-	mu_assert_eq (*RVecST32_find (&v, &x, compare_st32), 2, "find4");
+	mu_assert_eq (*RVecST32_find (&v, &x, find_compare_st32), 2, "find4");
 	x = 3;
-	mu_assert_eq (RVecST32_find (&v, &x, compare_st32), NULL, "find5");
+	mu_assert_eq (RVecST32_find (&v, &x, find_compare_st32), NULL, "find5");
 
 	RVecST32_clear (&v, NULL, NULL);
 	x = 0;
-	mu_assert_eq (RVecST32_find (&v, &x, compare_st32), NULL, "find6");
+	mu_assert_eq (RVecST32_find (&v, &x, find_compare_st32), NULL, "find6");
 
 	RVecST32_fini (&v, NULL, NULL);
 	mu_end;
