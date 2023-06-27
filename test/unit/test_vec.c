@@ -18,6 +18,10 @@ void fini_S (S* s, void *user) {
 	}
 }
 
+static inline int compare_st32(st32 *a, st32 *b) {
+	return *a - *b;
+}
+
 R_GENERATE_VEC_IMPL_FOR(UT32, ut32);
 R_GENERATE_VEC_IMPL_FOR(ST32, st32);
 R_GENERATE_VEC_IMPL_FOR(S, S);
@@ -590,6 +594,34 @@ static bool test_vec_at(void) {
 	mu_end;
 }
 
+static bool test_vec_find(void) {
+	RVecST32 v;
+	RVecST32_init (&v);
+
+	st32 x = 0;
+	mu_assert_eq (RVecST32_find (&v, &x, compare_st32), NULL, "find1");
+
+	for (x = 0; x < 3; x++) {
+		RVecST32_push_back (&v, &x);
+	}
+
+	x = 0;
+	mu_assert_eq (*RVecST32_find (&v, &x, compare_st32), 0, "find2");
+	x = 1;
+	mu_assert_eq (*RVecST32_find (&v, &x, compare_st32), 1, "find3");
+	x = 2;
+	mu_assert_eq (*RVecST32_find (&v, &x, compare_st32), 2, "find4");
+	x = 3;
+	mu_assert_eq (RVecST32_find (&v, &x, compare_st32), NULL, "find5");
+
+	RVecST32_clear (&v, NULL, NULL);
+	x = 0;
+	mu_assert_eq (RVecST32_find (&v, &x, compare_st32), NULL, "find6");
+
+	RVecST32_fini (&v, NULL, NULL);
+	mu_end;
+}
+
 static bool test_vec_reserve(void) {
 	RVecUT32 v;
 	RVecUT32_init (&v);
@@ -718,10 +750,6 @@ static bool test_vec_foreach_prev(void) {
 	mu_end;
 }
 
-static inline int compare_st32(st32 *a, st32 *b) {
-	return *a - *b;
-}
-
 static bool test_vec_lower_bound(void) {
 	RVecST32 v;
 	RVecST32_init (&v);
@@ -812,6 +840,7 @@ static int all_tests(void) {
 	mu_run_test (test_vec_start_iter);
 	mu_run_test (test_vec_end_iter);
 	mu_run_test (test_vec_at);
+	mu_run_test (test_vec_find);
 	mu_run_test (test_vec_reserve);
 	mu_run_test (test_vec_shrink_to_fit);
 	mu_run_test (test_vec_foreach);

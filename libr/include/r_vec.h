@@ -43,6 +43,9 @@ extern "C" {
  * - type *R_VEC_FUNC(name, at)(const R_VEC(name) *vec, size_t index): Returns a pointer to an
  *   element in the vector. Note that this can be used for reading or writing from/to the element,
  *   but not deleting (see the pop and remove functions for this).
+ * - type *R_VEC_FUNC(name, find)(const R_VEC(name) *vec, type *value, R_VEC_CMP(type) cmp_fn):
+ *   Searches for the first value in the vector that is equal (compare returns 0) to the value passed in.
+ *   Otherwise returns NULL.
  * - R_VEC(name) *R_VEC_FUNC(name, clone)(const R_VEC(name) *vec): Creates a shallow clone of a vector.
  * - void R_VEC_FUNC(name, reserve)(R_VEC(name) *vec, size_t new_capacity): Ensures the vector has
  *   atleast a capacity of "new_capacity".
@@ -201,6 +204,16 @@ extern "C" {
 		r_return_val_if_fail (vec, NULL); \
 		if (R_LIKELY (index < R_VEC_FUNC(name, length) (vec))) { \
 			return vec->_start + index; \
+		} \
+		return NULL; \
+	} \
+	static inline R_MAYBE_UNUSED R_MUSTUSE type *R_VEC_FUNC(name, find)(const R_VEC(name) *vec, type *value, R_VEC_CMP(name) cmp_fn) { \
+		r_return_val_if_fail (vec && value, NULL); \
+		type *val; \
+		R_VEC_FOREACH (vec, val) { \
+			if (!cmp_fn (value, val)) { \
+				return val; \
+			} \
 		} \
 		return NULL; \
 	} \
