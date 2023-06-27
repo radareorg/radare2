@@ -31,8 +31,10 @@ typedef struct _cpu_model_tag {
 	CPU_CONST *consts[10];
 } CPU_MODEL;
 
-static R_TH_LOCAL RDESContext desctx;
-static R_TH_LOCAL CPU_MODEL *Gcpu = NULL;
+typedef struct plugin_data_t {
+	RDESContext desctx;
+	CPU_MODEL *cpu;
+} PluginData;
 
 typedef void (*inst_handler_t) (RArchSession *as, RAnalOp *op, const ut8 *buf, int len, int *fail, CPU_MODEL *cpu);
 
@@ -154,9 +156,9 @@ CPU_MODEL cpu_models[] = {
 };
 
 /// XXX this code is awful
-static CPU_MODEL *get_cpu_model(const char *model);
+static CPU_MODEL *get_cpu_model(PluginData *pd, const char *model);
 
-static CPU_MODEL *__get_cpu_model_recursive(const char *model) {
+static CPU_MODEL *__get_cpu_model_recursive(PluginData *pd, const char *model) {
 	CPU_MODEL *cpu = NULL;
 	for (cpu = cpu_models; cpu < cpu_models + ((sizeof (cpu_models) / sizeof (CPU_MODEL))) - 1; cpu++) {
 		if (!r_str_casecmp (model, cpu->model)) {
@@ -165,7 +167,7 @@ static CPU_MODEL *__get_cpu_model_recursive(const char *model) {
 	}
 	// fix inheritance tree
 	if (cpu && cpu->inherit && !cpu->inherit_cpu_p) {
-		cpu->inherit_cpu_p = get_cpu_model (cpu->inherit);
+		cpu->inherit_cpu_p = get_cpu_model (pd, cpu->inherit);
 		if (!cpu->inherit_cpu_p) {
 			R_LOG_ERROR ("Cannot inherit from unknown CPU model '%s'", cpu->inherit);
 		}
@@ -173,16 +175,17 @@ static CPU_MODEL *__get_cpu_model_recursive(const char *model) {
 	return cpu;
 }
 
-static CPU_MODEL *get_cpu_model(const char *model) {
+static CPU_MODEL *get_cpu_model(PluginData *pd, const char *model) {
 	if (!model) {
 		model = "ATmega8";
 	}
 	// cache
-	if (Gcpu && Gcpu->model && !r_str_casecmp (model, Gcpu->model)) {
-		return Gcpu;
+	if (pd->cpu && pd->cpu->model && !r_str_casecmp (model, pd->cpu->model)) {
+		return pd->cpu;
 	}
-	Gcpu = __get_cpu_model_recursive (model);
-	return Gcpu;
+
+	pd->cpu = __get_cpu_model_recursive (pd, model);
+	return pd->cpu;
 }
 
 static ut32 const_get_value(CPU_CONST *c) {
@@ -615,10 +618,11 @@ INST_HANDLER (dec) {	// DEC Rd
 }
 
 INST_HANDLER (des) {	// DES k
-	if (desctx.round < 16) {	//DES
+	PluginData *pd = as->data;
+	if (pd->desctx.round < 16) {	//DES
 		op->type = R_ANAL_OP_TYPE_CRYPTO;
 		op->cycles = 1;		//redo this
-		r_strbuf_setf (&op->esil, "%d,des", desctx.round);
+		r_strbuf_setf (&op->esil, "%d,des", pd->desctx.round);
 	}
 }
 
@@ -1721,7 +1725,7 @@ static bool decode(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
 	}
 
 	// select cpu info
-	CPU_MODEL *cpu = get_cpu_model (as->config->cpu);
+	CPU_MODEL *cpu = get_cpu_model (as->data, as->config->cpu);
 
 	// set memory layout registers
 	if (as->arch->esil) {
@@ -1754,7 +1758,8 @@ static bool decode(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
 static bool avr_custom_des(REsil *esil) {
 	ut64 key, encrypt, text,des_round;
 	ut32 key_lo, key_hi, buf_lo, buf_hi;
-	if (!esil) {
+	PluginData *pd = R_UNWRAP5 (esil, anal, arch, session, data);
+	if (!esil || !pd) {
 		return false;
 	}
 	if (!__esil_pop_argument (esil, &des_round)) {
@@ -1769,31 +1774,31 @@ static bool avr_custom_des(REsil *esil) {
 	buf_lo = text & UT32_MAX;
 	buf_hi = text >> 32;
 
-	if (des_round != desctx.round) {
-		desctx.round = des_round;
+	if (des_round != pd->desctx.round) {
+		pd->desctx.round = des_round;
 	}
 
-	if (!desctx.round) {
+	if (!pd->desctx.round) {
 		int i;
 		//generating all round keys
 		r_des_permute_key (&key_lo, &key_hi);
 		for (i = 0; i < 16; i++) {
-			r_des_round_key (i, &desctx.round_key_lo[i], &desctx.round_key_hi[i], &key_lo, &key_hi);
+			r_des_round_key (i, &pd->desctx.round_key_lo[i], &pd->desctx.round_key_hi[i], &key_lo, &key_hi);
 		}
 		r_des_permute_block0 (&buf_lo, &buf_hi);
 	}
 
 	if (encrypt) {
-		r_des_round (&buf_lo, &buf_hi, &desctx.round_key_lo[desctx.round], &desctx.round_key_hi[desctx.round]);
+		r_des_round (&buf_lo, &buf_hi, &pd->desctx.round_key_lo[pd->desctx.round], &pd->desctx.round_key_hi[pd->desctx.round]);
 	} else {
-		r_des_round (&buf_lo, &buf_hi, &desctx.round_key_lo[15 - desctx.round], &desctx.round_key_hi[15 - desctx.round]);
+		r_des_round (&buf_lo, &buf_hi, &pd->desctx.round_key_lo[15 - pd->desctx.round], &pd->desctx.round_key_hi[15 - pd->desctx.round]);
 	}
 
-	if (desctx.round == 15) {
+	if (pd->desctx.round == 15) {
 		r_des_permute_block1 (&buf_hi, &buf_lo);
-		desctx.round = 0;
+		pd->desctx.round = 0;
 	} else {
-		desctx.round++;
+		pd->desctx.round++;
 	}
 
 	r_esil_reg_write (esil, "text", text);
@@ -1803,7 +1808,8 @@ static bool avr_custom_des(REsil *esil) {
 // ESIL operation SPM_PAGE_ERASE
 static bool avr_custom_spm_page_erase(REsil *esil) {
 	// sanity check
-	if (!esil || !esil->anal) {
+	PluginData *pd = R_UNWRAP5 (esil, anal, arch, session, data);
+	if (!esil || !esil->anal || !pd) {
 		return false;
 	}
 
@@ -1814,7 +1820,7 @@ static bool avr_custom_spm_page_erase(REsil *esil) {
 	}
 
 	// get details about current MCU and fix input address
-	CPU_MODEL *cpu = get_cpu_model (esil->anal->config->cpu);
+	CPU_MODEL *cpu = get_cpu_model (pd, esil->anal->config->cpu);
 	ut64 page_size_bits = const_get_value (const_by_name (cpu, CPU_CONST_PARAM, "page_size"));
 
 	// align base address to page_size_bits
@@ -1838,7 +1844,8 @@ static bool avr_custom_spm_page_fill(REsil *esil) {
 	ut8 r0, r1;
 
 	// sanity check
-	if (!esil || !esil->anal) {
+	PluginData *pd = R_UNWRAP5 (esil, anal, arch, session, data);
+	if (!esil || !esil->anal || !pd) {
 		return false;
 	}
 
@@ -1858,7 +1865,7 @@ static bool avr_custom_spm_page_fill(REsil *esil) {
 	r1 = i;
 
 	// get details about current MCU and fix input address
-	CPU_MODEL *cpu = get_cpu_model (esil->anal->config->cpu);
+	CPU_MODEL *cpu = get_cpu_model (pd, esil->anal->config->cpu);
 	ut64 page_size_bits = const_get_value (const_by_name (cpu, CPU_CONST_PARAM, "page_size"));
 
 	// align and crop base address
@@ -1879,7 +1886,8 @@ static bool avr_custom_spm_page_write(REsil *esil) {
 	ut64 addr, page_size_bits, tmp_page;
 
 	// sanity check
-	if (!esil || !esil->anal) {
+	PluginData *pd = R_UNWRAP5 (esil, anal, arch, session, data);
+	if (!esil || !esil->anal || !pd) {
 		return false;
 	}
 
@@ -1890,7 +1898,7 @@ static bool avr_custom_spm_page_write(REsil *esil) {
 
 	// get details about current MCU and fix input address and base address
 	// of the internal temporary page
-	cpu = get_cpu_model (esil->anal->config->cpu);
+	cpu = get_cpu_model (pd, esil->anal->config->cpu);
 	page_size_bits = const_get_value (const_by_name (cpu, CPU_CONST_PARAM, "page_size"));
 	r_esil_reg_read (esil, "_page", &tmp_page, NULL);
 
@@ -1915,7 +1923,7 @@ static bool esil_avr_hook_reg_write(REsil *esil, const char *name, ut64 *val) {
 	}
 
 	// select cpu info
-	CPU_MODEL *cpu = get_cpu_model (as->config->cpu);
+	CPU_MODEL *cpu = get_cpu_model (as->data, as->config->cpu);
 
 	// crop registers and force certain values
 	if (!strcmp (name, "pc")) {
@@ -1932,10 +1940,11 @@ static bool esil_avr_hook_reg_write(REsil *esil, const char *name, ut64 *val) {
 	return false;
 }
 
-static bool esil_avr_init(REsil *esil) {
-	r_return_val_if_fail (esil, false);
+static bool esil_avr_init(RArchSession *as, REsil *esil) {
+	r_return_val_if_fail (as && as->data && esil, false);
 
-	desctx.round = 0;
+	PluginData *pd = as->data;
+	pd->desctx.round = 0;
 	r_esil_set_op (esil, "des", avr_custom_des, 0, 0, R_ESIL_OP_TYPE_CUSTOM);		//better meta info plz
 	r_esil_set_op (esil, "SPM_PAGE_ERASE", avr_custom_spm_page_erase, 0, 0, R_ESIL_OP_TYPE_CUSTOM);
 	r_esil_set_op (esil, "SPM_PAGE_FILL", avr_custom_spm_page_fill, 0, 0, R_ESIL_OP_TYPE_CUSTOM);
@@ -1944,7 +1953,7 @@ static bool esil_avr_init(REsil *esil) {
 	return true;
 }
 
-static bool esil_avr_fini(REsil *esil) {
+static bool esil_avr_fini(RArchSession *as, REsil *esil) {
 	return true;
 }
 
@@ -2323,7 +2332,7 @@ static ut8 *anal_mask_avr(RArchSession *as, int size, const ut8 *data, ut64 at) 
 
 	memset (ret, 0xff, size);
 
-	CPU_MODEL *cpu = get_cpu_model (as->config->cpu);
+	CPU_MODEL *cpu = get_cpu_model (as->data, as->config->cpu);
 
 	for (idx = 0; idx + 1 < size; idx += op->size) {
 		OPCODE_DESC* opcode_desc = avr_op_analyze (as, op, at + idx, data + idx, size - idx, cpu);
@@ -2363,12 +2372,29 @@ static bool esil_cb(RArchSession *as, RArchEsilAction action) {
 
 	switch (action) {
 	case R_ARCH_ESIL_INIT:
-		return esil_avr_init (esil);
+		return esil_avr_init (as, esil);
 	case R_ARCH_ESIL_FINI:
-		return esil_avr_fini (esil);
+		return esil_avr_fini (as, esil);
 	default:
 		return false;
 	}
+	return true;
+}
+
+static bool init(RArchSession *as) {
+	r_return_val_if_fail (as, false);
+	if (as->data) {
+		R_LOG_WARN ("Already initialized");
+		return false;
+	}
+
+	as->data = R_NEW0 (PluginData);
+	return !!as->data;
+}
+
+static bool fini(RArchSession *as) {
+	r_return_val_if_fail (as, false);
+	R_FREE (as->data);
 	return true;
 }
 
@@ -2386,6 +2412,8 @@ const RArchPlugin r_arch_plugin_avr = {
 	.encode = encode,
 	.regs = regs,
 	.esilcb = esil_cb,
+	.init = init,
+	.fini = fini,
 	.cpus =
 		"ATmega8," // First one is default
 		"ATmega1280,"

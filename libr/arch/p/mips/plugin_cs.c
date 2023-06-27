@@ -7,7 +7,6 @@
 
 R_IPI int mips_assemble(const char *str, ut64 pc, ut8 *out);
 
-static R_TH_LOCAL ut64 t9_pre = UT64_MAX;
 // http://www.mrc.uidaho.edu/mrc/people/jff/digital/MIPSir.html
 
 #define OPERAND(x) insn->detail->mips.operands[x]
@@ -808,19 +807,24 @@ typedef struct plugin_data_t {
 	RRegItem reg;
 	char *cpu;
 	int bigendian;
+	ut64 t9_pre;
 } PluginData;
 
 
 static bool init(RArchSession *as) {
 	r_return_val_if_fail (as, false);
+
 	if (as->data) {
 		R_LOG_WARN ("Already initialized");
 		return false;
 	}
+
 	PluginData *pd = R_NEW0 (PluginData);
 	if (!pd) {
 		return false;
 	}
+
+	pd->t9_pre = UT64_MAX;
 	pd->bigendian = R_ARCH_CONFIG_IS_BIG_ENDIAN (as->config);
 	pd->cpu = as->config->cpu? strdup (as->config->cpu): NULL;
 	if (!r_arch_cs_init (as, &pd->cpd.cs_handle)) {
@@ -828,6 +832,7 @@ static bool init(RArchSession *as) {
 		R_FREE (as->data);
 		return false;
 	}
+
 	as->data = pd;
 	return true;
 }
@@ -860,11 +865,12 @@ static bool plugin_changed(RArchSession *as) {
 }
 
 static bool decode(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
+	PluginData *pd = as->data;
 	ut64 addr = op->addr;
 	const ut8 *buf = op->bytes;
 	const int len = op->size;
 	csh handle = cs_handle_for_session (as);
-	if (handle == 0) {
+	if (!pd || handle == 0) {
 		return false;
 	}
 	cs_insn *insn = NULL;
@@ -938,10 +944,10 @@ static bool decode(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
 			if (OPERAND(1).mem.base == MIPS_REG_GP) {
 				op->ptr = as->config->gp + OPERAND(1).mem.disp;
 				if (REGID(0) == MIPS_REG_T9) {
-					t9_pre = op->ptr;
+					pd->t9_pre = op->ptr;
 				}
 			} else if (REGID(0) == MIPS_REG_T9) {
-				t9_pre = UT64_MAX;
+				pd->t9_pre = UT64_MAX;
 			}
 			break;
 		case MIPS_OP_IMM:
@@ -979,8 +985,8 @@ static bool decode(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
 		op->type = R_ANAL_OP_TYPE_UCALL;
 		op->delay = 1;
 		if (REGID(0) == MIPS_REG_25) {
-			op->jump = t9_pre;
-			t9_pre = UT64_MAX;
+			op->jump = pd->t9_pre;
+			pd->t9_pre = UT64_MAX;
 			op->type = R_ANAL_OP_TYPE_RCALL;
 		}
 		break;
@@ -1039,7 +1045,7 @@ static bool decode(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
 		op->sign = (insn->id == MIPS_INS_ADDI || insn->id == MIPS_INS_ADD);
 		op->type = R_ANAL_OP_TYPE_ADD;
 		if (REGID(0) == MIPS_REG_T9) {
-				t9_pre += IMM(2);
+				pd->t9_pre += IMM(2);
 		}
 		if (REGID(0) == MIPS_REG_SP) {
 			op->stackop = R_ANAL_STACK_INC;
@@ -1170,11 +1176,11 @@ static bool decode(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
 		// register is $ra, so jmp is a return
 		if (insn->detail->mips.operands[0].reg == MIPS_REG_RA) {
 			op->type = R_ANAL_OP_TYPE_RET;
-			t9_pre = UT64_MAX;
+			pd->t9_pre = UT64_MAX;
 		}
 		if (REGID(0) == MIPS_REG_25) {
-				op->jump = t9_pre;
-				t9_pre = UT64_MAX;
+				op->jump = pd->t9_pre;
+				pd->t9_pre = UT64_MAX;
 		}
 
 		break;
