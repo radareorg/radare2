@@ -3983,7 +3983,7 @@ struct addr_t *MACH0_(get_entrypoint)(struct MACH0_(obj_t) *bin) {
 		int i;
 		for (i = 0; i < bin->nsects; i++) {
 			// XXX: section name shoudnt matter .. just check for exec flags
-			if (!strncmp (bin->sects[i].sectname, "__text", 6)) {
+			if (r_str_startswith (bin->sects[i].sectname, "__text")) {
 				entry->offset = (ut64)bin->sects[i].offset;
 				sdb_num_set (bin->kv, "mach0.entry", entry->offset, 0);
 				entry->addr = (ut64)bin->sects[i].addr;

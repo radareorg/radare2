@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2012-2017 - pancake */
+/* radare - LGPL - Copyright 2012-2023 - pancake */
 
 #include <r_anal.h>
 
@@ -283,6 +283,10 @@ R_API RAnalData *r_anal_data(RAnal *anal, ut64 addr, const ut8 *buf, int size, i
 	if (size < 4) {
 		return NULL;
 	}
+	switch (is_string (buf, size, &nsize)) {
+	case 1: return r_anal_data_new_string (addr, (const char *)buf, nsize, R_ANAL_DATA_TYPE_STRING);
+	case 2: return r_anal_data_new_string (addr, (const char *)buf, nsize, R_ANAL_DATA_TYPE_WIDE_STRING);
+	}
 	if (size >= word && is_invalid (buf, word)) {
 		return r_anal_data_new (addr, R_ANAL_DATA_TYPE_INVALID, -1, buf, word);
 	}
@@ -290,10 +294,13 @@ R_API RAnalData *r_anal_data(RAnal *anal, ut64 addr, const ut8 *buf, int size, i
 		int i, len = R_MIN (size, 64);
 		int is_pattern = 0;
 		int is_sequence = 0;
+		int zeros = 0;
 		char ch = buf[0];
 		char ch2 = ch + 1;
 		for (i = 1; i < len; i++) {
-			if (ch2 == buf[i]) {
+			if (buf[i] == 0) {
+				zeros++;
+			} else if (ch2 == buf[i]) {
 				ch2++;
 				is_sequence++;
 			} else {
@@ -303,13 +310,14 @@ R_API RAnalData *r_anal_data(RAnal *anal, ut64 addr, const ut8 *buf, int size, i
 				is_pattern++;
 			}
 		}
+		if (zeros == len) {
+			return r_anal_data_new (addr, R_ANAL_DATA_TYPE_INVALID, -1, buf, 0); // XXX should be TYPE_ZERO
+		}
 		if (is_sequence > len - 2) {
-			return r_anal_data_new (addr, R_ANAL_DATA_TYPE_SEQUENCE, -1,
-						buf, is_sequence);
+			return r_anal_data_new (addr, R_ANAL_DATA_TYPE_SEQUENCE, -1, buf, is_sequence);
 		}
 		if (is_pattern > len - 2) {
-			return r_anal_data_new (addr, R_ANAL_DATA_TYPE_PATTERN, -1,
-						buf, is_pattern);
+			return r_anal_data_new (addr, R_ANAL_DATA_TYPE_PATTERN, -1, buf, is_pattern);
 		}
 	}
 	if (size >= word && is_null (buf, word)) {
@@ -323,10 +331,6 @@ R_API RAnalData *r_anal_data(RAnal *anal, ut64 addr, const ut8 *buf, int size, i
 		if (dst) {
 			return r_anal_data_new (addr, R_ANAL_DATA_TYPE_POINTER, dst, buf, word);
 		}
-	}
-	switch (is_string (buf, size, &nsize)) {
-	case 1: return r_anal_data_new_string (addr, (const char *)buf, nsize, R_ANAL_DATA_TYPE_STRING);
-	case 2: return r_anal_data_new_string (addr, (const char *)buf, nsize, R_ANAL_DATA_TYPE_WIDE_STRING);
 	}
 	if (size >= word) {
 		n = is_number (buf, word);
@@ -343,14 +347,30 @@ R_API const char *r_anal_data_kind(RAnal *a, ut64 addr, const ut8 *buf, int len)
 	int str = 0;
 	int num = 0;
 	int i, j;
-	RAnalData *data;
 	len = R_MIN (len, 32); // smoler dim causes some tests to fail
 	int word = a->config->bits / 8;
+	if (word < 1) {
+		word = 4;
+	}
+	ut8 *lbuf = NULL;
+	if (!buf) {
+		RIOBind *iob = &a->iob;
+		if (!iob || !iob->read_at) {
+			R_LOG_ERROR ("RAnal.dataKind() requires ioBind");
+			return "error";
+		}
+		len = 64;
+		lbuf = malloc (len);
+		if (!lbuf || iob->read_at (iob->io, addr, lbuf, len) != len) {
+			return "invalid";
+		}
+		buf = lbuf;
+	}
 	for (i = j = 0; i < len; j++) {
 		if (R_UNLIKELY (str && !buf[i])) {
 			str++;
 		}
-		data = r_anal_data (a, addr + i, buf + i, len - i, 0);
+		RAnalData *data = r_anal_data (a, addr + i, buf + i, len - i, 0);
 		if (R_UNLIKELY (!data)) {
 			i += word;
 			continue;
@@ -380,9 +400,11 @@ R_API const char *r_anal_data_kind(RAnal *a, ut64 addr, const ut8 *buf, int len)
 			break;
 		default:
 			i += word;
+			break;
 		}
 		r_anal_data_free (data);
 	}
+	free (lbuf);
 	if (j < 1) {
 		return "unknown";
 	}

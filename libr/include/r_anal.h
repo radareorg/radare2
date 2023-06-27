@@ -109,6 +109,7 @@ enum {
 	R_ANAL_DATA_TYPE_HEADER = 7,
 	R_ANAL_DATA_TYPE_SEQUENCE = 8,
 	R_ANAL_DATA_TYPE_PATTERN = 9,
+	R_ANAL_DATA_TYPE_ZERO = 10,
 };
 
 // used from core/anal.c
@@ -655,10 +656,12 @@ typedef struct r_anal_bb_t {
 typedef enum {
 	R_ANAL_REF_TYPE_NULL = 0, // find better name
 	R_ANAL_REF_TYPE_CODE = 'c', // code ref
-	R_ANAL_REF_TYPE_CALL = 'C', // code ref (call)
+	R_ANAL_REF_TYPE_CALL = 'C', // code ref (call) -- maybe use 'k' for kall?
 	R_ANAL_REF_TYPE_JUMP = 'j', // code ref (call)
 	R_ANAL_REF_TYPE_DATA = 'd', // mem ref
-	R_ANAL_REF_TYPE_STRING = 's',  // string ref
+	R_ANAL_REF_TYPE_STRING = 's',  // string ref // R_DEPRECATE
+	R_ANAL_REF_TYPE_STRN = 's',  // string ref
+	// perm / direction
 	R_ANAL_REF_TYPE_READ = 4 << 8,
 	R_ANAL_REF_TYPE_WRITE = 2 << 8,
 	R_ANAL_REF_TYPE_EXEC = 1 << 8,
@@ -1117,6 +1120,7 @@ typedef bool (* RAnalRefCmp)(RAnalRef *ref, void *data);
 R_API RList *r_anal_ref_list_new(void);
 R_API const char *r_anal_ref_type_tostring(RAnalRefType t);
 R_API ut64 r_anal_xrefs_count(RAnal *anal);
+R_API int r_anal_ref_typemask(int x);
 R_DEPRECATE R_API RAnalRefType r_anal_xrefs_type(char ch);
 
 R_API const char *r_anal_ref_perm_tostring(RAnalRef *ref);
