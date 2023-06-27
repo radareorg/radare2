@@ -13712,8 +13712,7 @@ static int cmd_anal(void *data, const char *input) {
 			r_core_anal_data (core, core->offset, a, b, 0);
 		} break;
 		case 'k': // "adk"
-			r = r_anal_data_kind (core->anal,
-					core->offset, core->block, core->blocksize);
+			r = r_anal_data_kind (core->anal, core->offset, core->block, core->blocksize);
 			r_cons_println (r);
 			break;
 		case '\0': // "ad"

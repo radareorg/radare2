@@ -1914,14 +1914,13 @@ R_API bool r_core_anal_bb_seek(RCore *core, ut64 addr) {
 }
 
 R_API int r_core_anal_esil_fcn(RCore *core, ut64 at, ut64 from, int reftype, int depth) {
-	const char *esil;
 	while (1) {
 		// TODO: Implement the proper logic for doing esil analysis
 		RAnalOp *op = r_core_anal_op (core, at, R_ARCH_OP_MASK_ESIL);
 		if (!op) {
 			break;
 		}
-		esil = R_STRBUF_SAFEGET (&op->esil);
+		const char *esil = R_STRBUF_SAFEGET (&op->esil);
 		eprintf ("0x%08"PFMT64x" %d %s\n", at, op->size, esil);
 		// at += op->size;
 		// esilIsRet()
@@ -4250,7 +4249,7 @@ static bool found_xref(RCore *core, ut64 at, ut64 xref_to, RAnalRefType type, PJ
 
 R_API int r_core_anal_search_xrefs(RCore *core, ut64 from, ut64 to, PJ *pj, int rad) {
 	const bool cfg_debug = r_config_get_b (core->config, "cfg.debug");
-	bool cfg_anal_strings = r_config_get_i (core->config, "anal.strings");
+	bool cfg_anal_strings = r_config_get_b (core->config, "anal.strings");
 	ut64 at;
 	int count = 0;
 	int bsz = 8096;
@@ -5412,7 +5411,7 @@ static inline bool get_next_i(IterCtx *ctx, size_t *next_i) {
 }
 
 R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *target /* addr */) {
-	bool cfg_anal_strings = r_config_get_i (core->config, "anal.strings");
+	bool cfg_anal_strings = r_config_get_b (core->config, "anal.strings");
 	bool emu_lazy = r_config_get_b (core->config, "emu.lazy");
 	bool gp_fixed = r_config_get_b (core->config, "anal.gpfixed");
 	bool newstack = r_config_get_b (core->config, "anal.var.newstack");
@@ -5540,11 +5539,8 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 	// r_core_cmd0 (core, "e io.cache=true;wc++");
 
 	if (fcn && fcn->reg_save_area) {
-		if (newstack) {
-			r_reg_setv (core->anal->reg, ctx.spname, fcn->reg_save_area);
-		} else {
-			r_reg_setv (core->anal->reg, ctx.spname, ctx.initial_sp - fcn->reg_save_area);
-		}
+		ut64 v = newstack?  fcn->reg_save_area: ctx.initial_sp - fcn->reg_save_area;
+		r_reg_setv (core->anal->reg, ctx.spname, v);
 	}
 	//eprintf ("Analyzing ESIL refs from 0x%"PFMT64x" - 0x%"PFMT64x"\n", addr, end);
 	// TODO: backup/restore register state before/after analysis

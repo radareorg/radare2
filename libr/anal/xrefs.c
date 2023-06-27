@@ -384,10 +384,10 @@ R_API const char *r_anal_ref_type_tostring(RAnalRefType type) {
 R_API RAnalRefType r_anal_xrefs_type_from_string(const char *s) {
 	RAnalRefType rt = R_ANAL_REF_TYPE_NULL;
 	if (strchr (s, 'r')) {
-		rt |= R_ANAL_REF_TYPE_READ | R_ANAL_REF_TYPE_DATA;
+		rt |= (R_ANAL_REF_TYPE_DATA | R_ANAL_REF_TYPE_READ);
 	}
 	if (strchr (s, 'w')) {
-		rt |= R_ANAL_REF_TYPE_WRITE | R_ANAL_REF_TYPE_DATA;
+		rt |= (R_ANAL_REF_TYPE_DATA | R_ANAL_REF_TYPE_WRITE);
 	}
 	if (strchr (s, 'x')) {
 		rt |= R_ANAL_REF_TYPE_EXEC;
@@ -410,13 +410,29 @@ R_API RAnalRefType r_anal_xrefs_type_from_string(const char *s) {
 	return rt;
 }
 
+R_API int r_anal_ref_typemask(int x) {
+	const int maskedType = x & 0xff;
+	switch (maskedType) {
+	case R_ANAL_REF_TYPE_NULL:
+	case R_ANAL_REF_TYPE_CODE: // 'c' // code ref
+	case R_ANAL_REF_TYPE_CALL: // 'C' // code ref (call)
+	case R_ANAL_REF_TYPE_JUMP: // 'j' // code ref (call)
+	case R_ANAL_REF_TYPE_DATA: // 'd' // mem ref
+	case R_ANAL_REF_TYPE_STRN: // 's'  // string ref
+		return maskedType;
+	}
+	R_LOG_ERROR ("Invalid reftype mask '%c' (0x%02x)", x, x);
+	// SHOULD NEVER HAPPEN MAYBE WARN HERE
+	return 0;
+}
+
 // TODO: deprecate
 R_API RAnalRefType r_anal_xrefs_type(char ch) {
 	switch (ch) {
 	case R_ANAL_REF_TYPE_CODE:
 	case R_ANAL_REF_TYPE_CALL:
 	case R_ANAL_REF_TYPE_DATA:
-	case R_ANAL_REF_TYPE_STRING:
+	case R_ANAL_REF_TYPE_STRN:
 	case R_ANAL_REF_TYPE_NULL:
 		return (RAnalRefType)ch;
 	default:
@@ -479,7 +495,7 @@ static RList *fcn_get_refs(RAnalFunction *fcn, HtUP *ht) {
 	RList *list = r_anal_ref_list_new ();
 	if (R_LIKELY (list)) {
 		// XXX assume first basic block is the entrypoint
-				listxrefs (ht, fcn->addr, list);
+		listxrefs (ht, fcn->addr, list);
 	}
 	return list;
 }
