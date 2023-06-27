@@ -38,7 +38,7 @@ typedef struct qjs_plugin_manager_t {
 	R_BORROW JSRuntime *rt;
 	QjsContext default_ctx;  // context for running normal JS code
 	RVecCorePlugin core_plugins;
-	RVecArchPlugin arch_plugins; // XXX update all pm functions
+	RVecArchPlugin arch_plugins;
 } QjsPluginManager;
 
 static void core_plugin_fini(QjsCorePlugin *cp, void *user) {

@@ -457,8 +457,8 @@ typedef struct r_bin_plugin_t {
 	RList/*<RBinAddr>*/* (*entries)(RBinFile *bf);
 	RList/*<RBinSection>*/* (*sections)(RBinFile *bf);
 	R_BORROW RList/*<RBinDwarfRow>*/* (*lines)(RBinFile *bf);
-	RList/*<RBinSymbol>*/* (*symbols)(RBinFile *bf);
-	RList/*<RBinImport>*/* (*imports)(RBinFile *bf);
+	RList/*<RBinSymbol>*/* (*symbols)(RBinFile *bf); // R2_590: return VecBinSymbol* for better memory usage and perf
+	RList/*<RBinImport>*/* (*imports)(RBinFile *bf); // R2_590: return VecBinImport*
 	RList/*<RBinString>*/* (*strings)(RBinFile *bf);
 	RBinInfo/*<RBinInfo>*/* (*info)(RBinFile *bf);
 	RList/*<RBinField>*/* (*fields)(RBinFile *bf);
