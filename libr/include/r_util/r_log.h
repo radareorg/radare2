@@ -59,7 +59,7 @@ typedef struct r_log_source_t {
 	const char *source;
 } RLogSource;
 
-R_API void r_log_init(void);
+R_API bool r_log_init(void);
 R_API void r_log_fini(void);
 R_API bool r_log_match(int level, const char *origin);
 R_API void r_log_message(RLogLevel level, const char *origin, const char *func, int line, const char *fmt, ...);
