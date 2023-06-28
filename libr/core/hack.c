@@ -7,25 +7,6 @@
  * have several modes/alignment requirements.
  */
 
-void r_core_hack_help(const RCore *core) {
-	const char* help_msg[] = {
-		"wao", " [op]", "performs a modification on current opcode",
-		"wao", " nop", "nop current opcode",
-		"wao", " jinf", "assemble an infinite loop",
-		"wao", " jz", "make current opcode conditional (same as je) (zero)",
-		"wao", " jnz", "make current opcode conditional (same as jne) (not zero)",
-		"wao", " ret1", "make the current opcode return 1",
-		"wao", " ret0", "make the current opcode return 0",
-		"wao", " retn", "make the current opcode return -1",
-		"wao", " nocj", "remove conditional operation from branch (make it unconditional)",
-		"wao", " trap", "make the current opcode a trap",
-		"wao", " recj", "reverse (swap) conditional branch instruction",
-		"WIP:", "", "not all archs are supported and not all commands work on all archs",
-		NULL
-	};
-	r_core_cmd_help (core, help_msg);
-}
-
 static bool r_core_hack_riscv(RCore *core, const char *op, const RAnalOp *analop) {
 	if (!strcmp (op, "nop")) {
 		// TODO honor analop->size
@@ -305,6 +286,10 @@ R_API bool r_core_hack(RCore *core, const char *op) {
 	bool (*hack)(RCore *core, const char *op, const RAnalOp *analop) = NULL;
 	const char *asmarch = r_config_get (core->config, "asm.arch");
 	const int asmbits = core->rasm->config->bits;
+	const bool doseek = (*op == '+');
+	if (doseek) {
+		op++;
+	}
 
 	if (!asmarch) {
 		return false;
@@ -355,7 +340,11 @@ R_API bool r_core_hack(RCore *core, const char *op) {
 			R_LOG_ERROR ("anal op fail");
 			return false;
 		}
-		return hack (core, op, &aop);
+		bool res = hack (core, op, &aop);
+		if (doseek) {
+			r_core_seek (core, core->offset + aop.size, 1);
+		}
+		return res;
 	}
 	return false;
 }

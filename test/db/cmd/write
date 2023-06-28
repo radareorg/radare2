@@ -514,3 +514,48 @@ EXPECT=<<EOF
        ,==< 0x00000004      4d000054       b.le 0xc
 EOF
 RUN
+
+NAME=wao+
+FILE=-
+ARGS=-a x86 -b 32
+CMDS=<<EOF
+3wao+nop
+s 0
+pi 3@0
+EOF
+EXPECT=<<EOF
+nop
+nop
+nop
+EOF
+RUN
+
+NAME=wao+2
+# BROKEN=1
+FILE=-
+ARGS=-a x86 -b 32
+CMDS=<<EOF
+3(;wao+nop)()
+pi 3@0
+EOF
+EXPECT=<<EOF
+nop
+nop
+nop
+EOF
+RUN
+
+NAME=wao+3
+BROKEN=1
+FILE=-
+ARGS=-a x86 -b 32
+CMDS=<<EOF
+3wao+nop@0
+pi 3@0
+EOF
+EXPECT=<<EOF
+nop
+nop
+nop
+EOF
+RUN
