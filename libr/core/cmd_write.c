@@ -37,6 +37,23 @@ static RCoreHelpMessage help_msg_w = {
 	NULL
 };
 
+static RCoreHelpMessage help_msg_wao = {
+	"wao", " [op]", "performs a modification on current opcode",
+	"wao+", "[op]", "same as 'wao', but seeks forward after writing",
+	"wao", " nop", "nop current opcode",
+	"wao", " jinf", "assemble an infinite loop",
+	"wao", " jz", "make current opcode conditional (same as je) (zero)",
+	"wao", " jnz", "make current opcode conditional (same as jne) (not zero)",
+	"wao", " ret1", "make the current opcode return 1",
+	"wao", " ret0", "make the current opcode return 0",
+	"wao", " retn", "make the current opcode return -1",
+	"wao", " nocj", "remove conditional operation from branch (make it unconditional)",
+	"wao", " trap", "make the current opcode a trap",
+	"wao", " recj", "reverse (swap) conditional branch instruction",
+	"WIP:", "", "not all archs are supported and not all commands work on all archs",
+	NULL
+};
+
 static RCoreHelpMessage help_msg_ws = {
 	"Usage:", "ws[124?] [string]", "Pascal strings are not null terminated and store the length in binary at the beginning",
 	"ws", " str", "write pascal string using first byte as length",
@@ -1942,14 +1959,10 @@ static int cmd_wa(void *data, const char *input) {
 	RCore *core = (RCore *)data;
 	switch (input[0]) {
 	case 'o': // "wao"
-		if (input[1] == ' ') {
-			char *op = r_str_trim_dup (input + 2);
-			if (op) {
-				r_core_hack (core, op);
-				free (op);
-			}
+		if (input[1] == ' ' || input[1] == '+') {
+			r_core_hack (core, r_str_trim_head_ro (input + 1));
 		} else {
-			r_core_hack_help (core);
+			r_core_cmd_help (core, help_msg_wao);
 		}
 		break;
 	case ' ':
