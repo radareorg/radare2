@@ -1311,9 +1311,7 @@ static void type_cmd(RCore *core, const char *input) {
 
 static void find_refs(RCore *core, const char *glob) {
 	ut64 curseek = core->offset;
-	while (*glob == ' ') {
-		glob++;
-	}
+	glob = r_str_trim_head_ro (glob);
 	if (!*glob) {
 		glob = "str.";
 	}
