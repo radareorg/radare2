@@ -1016,6 +1016,7 @@ static RCoreHelpMessage help_msg_ax = {
 	"axg", " [addr]", "show xrefs graph to reach current function",
 	"axg*", " [addr]", "show xrefs graph to given address, use .axg*;aggv",
 	"axgj", " [addr]", "show xrefs graph to reach current function in json format",
+	"axi", " addr [at]", "add indirect code reference (see ax?)",
 	"axj", "", "add jmp reference", // list refs in json format",
 	"axl", "[jcq]", "list xrefs (axlc = count, axlq = quiet, axlj = json)",
 	"axm", " addr [at]", "copy data/code references pointing to addr to also point to curseek (or at)",
@@ -5284,6 +5285,7 @@ static int cmd_af(RCore *core, const char *input) {
 								r_cons_printf ("0x%08" PFMT64x " ", ref->addr);
 								break;
 							case R_ANAL_REF_TYPE_CODE:
+							case R_ANAL_REF_TYPE_ICOD:
 							case R_ANAL_REF_TYPE_JUMP:
 							case R_ANAL_REF_TYPE_CALL:
 							case R_ANAL_REF_TYPE_DATA:
@@ -9672,31 +9674,36 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 		break;
 	case 'C': // "axC"
 	case 'c': // "axc"
+	case 'i': // "axi"
 	case 'r': // "axr"
 	case 'w': // "axw"
 	case 'j': // "axj"
 	case 'd': // "axd"
 	case 's': // "axs"
 	case ' ': // "ax "
-		{
-		char *ptr = strdup (r_str_trim_head_ro ((char *)input + 1));
-		int n = r_str_word_set0 (ptr);
-		ut64 at = core->offset;
-		ut64 addr = UT64_MAX;
-		RAnalRefType reftype = r_anal_xrefs_type (input[0]);
-		switch (n) {
-		case 2: // get at
-			at = r_num_math (core->num, r_str_word_get0 (ptr, 1));
-		/* fall through */
-		case 1: // get addr
-			addr = r_num_math (core->num, r_str_word_get0 (ptr, 0));
-			break;
-		default:
+		if (input[1] == '?') {
+			char *s = r_str_newf ("ax%c", input[0]);
+			r_core_cmd_help_match (core, help_msg_ax, s, true);
+			free (s);
+		} else {
+			char *ptr = strdup (r_str_trim_head_ro ((char *)input + 1));
+			int n = r_str_word_set0 (ptr);
+			ut64 at = core->offset;
+			ut64 addr = UT64_MAX;
+			RAnalRefType reftype = r_anal_xrefs_type (input[0]);
+			switch (n) {
+			case 2: // get at
+				at = r_num_math (core->num, r_str_word_get0 (ptr, 1));
+			/* fall through */
+			case 1: // get addr
+				addr = r_num_math (core->num, r_str_word_get0 (ptr, 0));
+				break;
+			default:
+				free (ptr);
+				return false;
+			}
+			r_anal_xrefs_set (core->anal, at, addr, reftype);
 			free (ptr);
-			return false;
-		}
-		r_anal_xrefs_set (core->anal, at, addr, reftype);
-		free (ptr);
 		}
 	   	break;
 	default:

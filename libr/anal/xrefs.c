@@ -364,8 +364,8 @@ R_API const char *r_anal_ref_type_tostring(RAnalRefType type) {
 	case ' ':
 	case R_ANAL_REF_TYPE_NULL:
 		return "NULL";
-	case R_ANAL_REF_TYPE_CODE | R_ANAL_REF_TYPE_DATA:
-		return "ICOD"; // indirect code reference
+	case R_ANAL_REF_TYPE_ICOD:
+		return "ICOD";
 	case R_ANAL_REF_TYPE_CODE:
 		return "CODE";
 	case R_ANAL_REF_TYPE_CALL:
@@ -374,9 +374,10 @@ R_API const char *r_anal_ref_type_tostring(RAnalRefType type) {
 		return "JUMP";
 	case R_ANAL_REF_TYPE_DATA:
 		return "DATA";
-	case R_ANAL_REF_TYPE_STRING:
+	case R_ANAL_REF_TYPE_STRN:
 		return "STRN";
 	default:
+		// R_LOG_ERROR("Invalid unknown ref type %c", R_ANAL_REF_TYPE_MASK (type));
 		return "UNKN";
 	}
 }
@@ -414,12 +415,16 @@ R_API int r_anal_ref_typemask(int x) {
 	const int maskedType = x & 0xff;
 	switch (maskedType) {
 	case R_ANAL_REF_TYPE_NULL:
+	case R_ANAL_REF_TYPE_CODE | R_ANAL_REF_TYPE_DATA: // 'g' // XXX R2_590 - this is a conflictive type
 	case R_ANAL_REF_TYPE_CODE: // 'c' // code ref
 	case R_ANAL_REF_TYPE_CALL: // 'C' // code ref (call)
 	case R_ANAL_REF_TYPE_JUMP: // 'j' // code ref (call)
 	case R_ANAL_REF_TYPE_DATA: // 'd' // mem ref
-	case R_ANAL_REF_TYPE_STRN: // 's'  // string ref
+	case R_ANAL_REF_TYPE_STRN: // 's' // string ref
+	case R_ANAL_REF_TYPE_ICOD: // 'i' // indirect cod reference
 		return maskedType;
+	case ' ':
+		return R_ANAL_REF_TYPE_NULL;
 	}
 	R_LOG_ERROR ("Invalid reftype mask '%c' (0x%02x)", x, x);
 	// SHOULD NEVER HAPPEN MAYBE WARN HERE
@@ -433,6 +438,7 @@ R_API RAnalRefType r_anal_xrefs_type(char ch) {
 	case R_ANAL_REF_TYPE_CALL:
 	case R_ANAL_REF_TYPE_DATA:
 	case R_ANAL_REF_TYPE_STRN:
+	case R_ANAL_REF_TYPE_ICOD:
 	case R_ANAL_REF_TYPE_NULL:
 		return (RAnalRefType)ch;
 	default:
