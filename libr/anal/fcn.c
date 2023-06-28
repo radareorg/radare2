@@ -354,6 +354,7 @@ static void check_purity(HtUP *ht, RAnalFunction *fcn) {
 		switch (rt) {
 		case R_ANAL_REF_TYPE_CALL:
 		case R_ANAL_REF_TYPE_CODE:
+		case R_ANAL_REF_TYPE_ICOD:
 			{
 				RAnalFunction *called_fcn = r_anal_get_fcn_in (fcn->anal, ref->addr, 0);
 				if (!called_fcn) {
@@ -1059,24 +1060,30 @@ repeat:
 			}
 			break;
 		case R_ANAL_OP_TYPE_LOAD:
+			// R2R db/anal/arm db/esil/apple
 			if (anal->iob.is_valid_offset (anal->iob.io, op->ptr, 0)) {
 				// TODO: what about the qword loads!??!?
 				ut8 dd[4] = {0};
 				(void)anal->iob.read_at (anal->iob.io, op->ptr, (ut8 *) dd, sizeof (dd));
 				// if page have exec perms
 				ut64 da = (ut64)r_read_ble32 (dd, R_ARCH_CONFIG_IS_BIG_ENDIAN (anal->config));
-				if (da != UT32_MAX && anal->iob.is_valid_offset (anal->iob.io, da, 0)) {
+				if (da != UT32_MAX && da != UT64_MAX && anal->iob.is_valid_offset (anal->iob.io, da, 0)) {
 					/// R2_590 - this must be CODE | READ , not CODE|DATA, but raises 10 fails
-					r_anal_xrefs_set (anal, op->addr, da, R_ANAL_REF_TYPE_CODE | R_ANAL_REF_TYPE_DATA);
+					// r_anal_xrefs_set (anal, op->addr, da, R_ANAL_REF_TYPE_CODE | R_ANAL_REF_TYPE_DATA);
+					r_anal_xrefs_set (anal, op->addr, da, R_ANAL_REF_TYPE_ICOD | R_ANAL_REF_TYPE_EXEC);
+				} else {
+					R_LOG_DEBUG ("Invalid refs 0x%08"PFMT64x" .. 0x%08"PFMT64x" .. 0x%08"PFMT64x" not adding", op->addr, op->ptr, da);
+					/// XXX this breaks the db/esil/apple tests
+				//	r_meta_set (anal, R_META_TYPE_DATA, op->ptr, 4, "");
 				}
-				r_anal_xrefs_set (anal, op->addr, op->ptr, R_ANAL_REF_TYPE_DATA);
+				// maybe optional or in the else
+				// r_anal_xrefs_set (anal, op->addr, op->ptr, R_ANAL_REF_TYPE_DATA);
 				if (anal->opt.loads) {
 					// set this address as data if destination is not code
-					if (anal->iob.is_valid_offset (anal->iob.io, op->ptr, 0)) {
 						r_meta_set (anal, R_META_TYPE_DATA, op->ptr, 4, "");
-					}
 				}
 			}
+			break;
 			break;
 			// Case of valid but unused "add [rax], al"
 		case R_ANAL_OP_TYPE_ADD:
