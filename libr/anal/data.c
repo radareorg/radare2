@@ -2,6 +2,105 @@
 
 #include <r_anal.h>
 
+// TODO: integrate this code in a better way.. maybe reftype as name?
+R_API int r_anal_data_type(RAnal *anal, ut64 da) {
+	ut8 buf[64] = {0};
+	if (!anal->iob.read_at (anal->iob.io, da, buf, sizeof (buf))) {
+		R_LOG_ERROR ("Cannot read at 0x%08"PFMT64x, da);
+		return 0;
+	}
+#if 0
+	if (buf[0] == 0x10 && buf[1] == 0x48) {
+		return R_ANAL_REF_TYPE_CODE;
+	}
+	return 0;
+#endif
+#if 1
+	int k = 0;
+	RAnalOp op = {0};
+	int oplen = r_anal_op (anal, &op, da, buf, sizeof (buf), -1);
+	if (oplen > 2) {
+		if (op.type == R_ANAL_OP_TYPE_PUSH) {
+			k = R_ANAL_REF_TYPE_CODE;
+		} else if (op.type == R_ANAL_OP_TYPE_RET) {
+			k = R_ANAL_REF_TYPE_CODE;
+		} else if (r_anal_is_prelude (anal, da, buf, sizeof (buf))) {
+			k = R_ANAL_REF_TYPE_CODE;
+		}
+	}
+	r_anal_op_fini (&op);
+	return k;
+#endif
+#if 0
+	const char *kind = r_anal_data_kind (anal, da, buf, sizeof (buf));
+	if (!kind) {
+		return 0;
+	}
+	// TODO: move into RAnalKind
+	int i, zeros = 0;
+	// XXX move this into datakind
+	for (i = 0; i < R_MIN (8, sizeof (buf)); i++) {
+		if (buf[i] == 0 || buf[i] == 0xff) {
+			zeros++;
+		}
+	}
+	if (!strcmp (kind, "data")) {
+		// reduce false positives
+		RAnalOp op = {0};
+		int oplen = r_anal_op (anal, &op, da, buf, sizeof (buf), -1);
+		if (oplen > 2) {
+			if (op.type == R_ANAL_OP_TYPE_PUSH) {
+				kind = "code";
+			} else if (op.type == R_ANAL_OP_TYPE_RET) {
+				kind = "code";
+			} else if (r_anal_is_prelude (anal, da, buf, sizeof (buf))) {
+				kind = "code";
+			} else if (zeros > 2) {
+				kind = "data";
+			}
+		}
+		r_anal_op_fini (&op);
+	}
+	if (!strcmp (kind, "text")) {
+		// TODO: honor anal.strings
+		return R_ANAL_REF_TYPE_DATA | R_ANAL_REF_TYPE_READ;
+	}
+	if (!strcmp (kind, "data")) {
+		if (zeros > 1) {
+			return R_ANAL_REF_TYPE_DATA | R_ANAL_REF_TYPE_READ;
+		}
+		// check if destination is code or data.. data use to have null bytes
+		// return R_ANAL_REF_TYPE_CODE | R_ANAL_REF_TYPE_READ;
+	}
+	if (strcmp (kind, "code")) {
+		R_LOG_DEBUG ("%s xref at 0x%08"PFMT64x, kind, da);
+		return R_ANAL_REF_TYPE_DATA | R_ANAL_REF_TYPE_READ;
+	}
+#if 0
+	{
+		// try to reduce false positives, but it actually increases them
+		RAnalOp op = {0};
+		int oplen = r_anal_op (anal, &op, da, buf, sizeof (buf), -1);
+		if (oplen > 2) {
+			if (op.type == R_ANAL_OP_TYPE_PUSH) {
+				kind = "code";
+			} else if (op.type == R_ANAL_OP_TYPE_RET) {
+				kind = "code";
+			} else if (r_anal_is_prelude (anal, da, buf, sizeof (buf))) {
+				kind = "code";
+			} else {
+				r_anal_op_fini (&op);
+				return R_ANAL_REF_TYPE_DATA | R_ANAL_REF_TYPE_READ;
+			}
+		}
+		r_anal_op_fini (&op);
+	}
+	// should be code i guess
+#endif
+	return R_ANAL_REF_TYPE_CODE | R_ANAL_REF_TYPE_READ;
+#endif
+}
+
 #define MINLEN 1
 static int is_string(const ut8 *buf, int size, int *len) {
 	int i;
@@ -283,6 +382,16 @@ R_API RAnalData *r_anal_data(RAnal *anal, ut64 addr, const ut8 *buf, int size, i
 	if (size < 4) {
 		return NULL;
 	}
+#if 0
+	if (!buf) {
+		int type = r_anal_data_type (anal, addr);
+		switch (R_ANAL_REF_TYPE_MASK (type)) {
+		case R_ANAL_REF_TYPE_CODE:
+		case R_ANAL_REF_TYPE_DATA:
+			break;
+		}
+	}
+#endif
 	switch (is_string (buf, size, &nsize)) {
 	case 1: return r_anal_data_new_string (addr, (const char *)buf, nsize, R_ANAL_DATA_TYPE_STRING);
 	case 2: return r_anal_data_new_string (addr, (const char *)buf, nsize, R_ANAL_DATA_TYPE_WIDE_STRING);
