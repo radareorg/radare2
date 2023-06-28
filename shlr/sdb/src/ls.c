@@ -133,7 +133,7 @@ SDB_API bool ls_merge_sort(SdbList *list, SdbListComparator cmp) {
 }
 
 SDB_API bool ls_sort(SdbList *list, SdbListComparator cmp) {
-	if (!cmp || list->cmp == cmp) {
+	if (!cmp || !list || list->cmp == cmp) {
 		return false;
 	}
 	if (list->length > MERGELIMIT) {
