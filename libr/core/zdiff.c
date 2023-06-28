@@ -45,7 +45,9 @@ R_API int r_core_zdiff(RCore *c, RCore *c2) {
 	SdbList *a = sdb_foreach_list (c->anal->sdb_zigns, false);
 	SdbList *b = sdb_foreach_list (c2->anal->sdb_zigns, false);
 
-	eprintf ("Diff %d %d\n", (int)ls_length (a), (int)ls_length (b));
+	if (a && b) {
+		eprintf ("Diff %d %d\n", (int)ls_length (a), (int)ls_length (b));
+	}
 	SdbListIter *iter;
 	SdbKv *kv;
 	RList *la = r_list_new ();
