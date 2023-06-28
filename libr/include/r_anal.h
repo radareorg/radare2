@@ -1279,6 +1279,7 @@ typedef struct r_anal_data_t {
 
 R_API RAnalData *r_anal_data(RAnal *anal, ut64 addr, const ut8 *buf, int size, int wordsize);
 R_API const char *r_anal_data_kind(RAnal *anal, ut64 addr, const ut8 *buf, int len);
+R_API int r_anal_data_type(RAnal *a, ut64 da);
 R_API RAnalData *r_anal_data_new_string(ut64 addr, const char *p, int size, int wide);
 R_API RAnalData *r_anal_data_new(ut64 addr, int type, ut64 n, const ut8 *buf, int len);
 R_API void r_anal_data_free(RAnalData *d);
