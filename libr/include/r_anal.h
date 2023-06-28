@@ -671,7 +671,8 @@ typedef enum {
 } RAnalRefType;
 
 #define R_ANAL_REF_TYPE_PERM(x) (((x)>>8) & 0xff)
-#define R_ANAL_REF_TYPE_MASK(x) ((x) & 0xff)
+// #define R_ANAL_REF_TYPE_MASK(x) ((x) & 0xff)
+#define R_ANAL_REF_TYPE_MASK(x) r_anal_ref_typemask((x))
 
 typedef struct r_anal_ref_t {
 	ut64 addr;
