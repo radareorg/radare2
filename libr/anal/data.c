@@ -174,7 +174,7 @@ static ut64 is_pointer(RAnal *anal, const ut8 *buf, int size) {
 	if (n < 0x1000) {
 		return 0;	// probably wrong
 	}
-	if (n > 0xffffffffffffLL) {
+	if (n > UT48_MAX) {
 		return 0; // probably wrong
 	}
 	if (iob->read_at (iob->io, n, buf2, size) != size) {
@@ -186,11 +186,13 @@ static ut64 is_pointer(RAnal *anal, const ut8 *buf, int size) {
 
 static bool is_bin(const ut8 *buf, int size) {
 	// TODO: add more magic signatures heres
-	if ((size >= 4 && !memcmp (buf, "\xcf\xfa\xed\xfe", 4))) {
-		return true;
-	}
-	if ((size >= 4 && !memcmp (buf, "\x7f\x45\x4c\x46", 4))) { // \x7fELF
-		return true;
+	if (size >= 4) {
+		if (!memcmp (buf, "\xcf\xfa\xed\xfe", 4)) {
+			return true;
+		}
+		if (!memcmp (buf, "\x7f\x45\x4c\x46", 4)) { // \x7fELF
+			return true;
+		}
 	}
 	if ((size >= 2 && !memcmp (buf, "MZ", 2))) {
 		return true;

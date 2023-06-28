@@ -648,7 +648,7 @@ static bool r_anal_try_get_fcn(RCore *core, RAnalRef *ref, int fcndepth, int ref
 	return 1;
 }
 
-static int r_anal_analyze_fcn_refs(RCore *core, RAnalFunction *fcn, int depth) {
+static void r_anal_analyze_fcn_refs(RCore *core, RAnalFunction *fcn, int depth) {
 	RListIter *iter;
 	RAnalRef *ref;
 	RList *refs = r_anal_function_get_refs (fcn);
@@ -889,11 +889,10 @@ static bool __core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int de
 					}
 				}
 			}
-			if (!r_anal_analyze_fcn_refs (core, fcn, depth)) {
-				goto error;
-			}
+			r_anal_analyze_fcn_refs (core, fcn, depth);
 		}
 	} while (fcnlen != R_ANAL_RET_END);
+
 	r_list_free (core->anal->leaddrs);
 	core->anal->leaddrs = NULL;
 	if (has_next) {
@@ -3258,6 +3257,7 @@ static int fcn_print_legacy(RCore *core, RAnalFunction *fcn, bool dorefs) {
 		if (!r_list_empty (xrefs)) {
 			r_list_foreach (xrefs, iter, refi) {
 				int rt = R_ANAL_REF_TYPE_MASK (refi->type);
+				// TODO: just check for the exec perm
 				if (rt == R_ANAL_REF_TYPE_CODE || rt == R_ANAL_REF_TYPE_CALL) {
 					r_cons_printf (" 0x%08"PFMT64x" %c", refi->addr,
 							rt == R_ANAL_REF_TYPE_CALL?'C':'J');
