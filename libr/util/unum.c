@@ -108,7 +108,9 @@ R_API RNum *r_num_new(RNumCallback cb, RNumCallback2 cb2, void *ptr) {
 }
 
 R_API void r_num_free(RNum *num) {
-	free (num);
+	if (num) {
+		free (num);
+	}
 }
 
 #define KB (1ULL << 10)
