@@ -104,6 +104,7 @@ r2pm -l <pkg>  # list installed packages
 Most popular packages are:
 
 * [esilsolve](https://github.com/radareorg/esilsolve): The symbolic execution plugin, based on esil and z3
+* [r2diaphora](https://github.com/FernandoDoming/r2diaphora): [Diaphora](https://github.com/joxeankoret/diaphora)'s diffing engine working on top of radare2
 * [iaito](https://github.com/radareorg/iaito): The official Qt graphical interface
 * [radius2](https://github.com/nowsecure/radius2): A fast symbolic execution engine based on boolector and esil
 * [r2dec](https://github.com/wargio/r2dec-js): A decompiler based on r2 written in JS, accessed with the `pdd` command
