@@ -181,7 +181,6 @@ static bool decode(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
 	ut8 op_byte = data[0];
 	int sz = JAVA_OPS[op_byte].size;
 	if (!op) {
-		op->type = R_ANAL_OP_TYPE_ILL;
 		return sz > 0;
 	}
 	IFDBG {
