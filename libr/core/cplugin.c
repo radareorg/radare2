@@ -32,6 +32,9 @@ R_API bool r_core_plugin_add(RCmd *cmd, RCorePlugin *plugin) {
 }
 
 R_API bool r_core_plugin_remove(RCmd *cmd, RCorePlugin *plugin) {
+	if (!cmd) {
+		return false;
+	}
 	const char *name = plugin->name;
 	RListIter *iter, *iter2;
 	RCorePlugin *p;
