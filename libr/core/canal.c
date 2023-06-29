@@ -921,7 +921,9 @@ static bool __core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int de
 		}
 		free (next);
 	}
-	if (core->anal->cur && core->anal->cur->arch && !strcmp (core->anal->cur->arch, "x86")) {
+	const char *sarch = R_UNWRAP6 (core, anal, arch, session, config, arch);
+	const bool is_x86 = (sarch && r_str_startswith (sarch, "x86"));
+	if (is_x86) {
 		r_anal_function_check_bp_use (fcn);
 		if (fcn && !fcn->bp_frame) {
 			r_anal_function_delete_vars_by_kind (fcn, R_ANAL_VAR_KIND_BPV);
@@ -968,7 +970,7 @@ error:
 			}
 		}
 	}
-	if (fcn && core->anal->cur && core->anal->cur->arch && !strcmp (core->anal->cur->arch, "x86")) {
+	if (fcn && is_x86) {
 		r_anal_function_check_bp_use (fcn);
 		if (!fcn->bp_frame) {
 			r_anal_function_delete_vars_by_kind (fcn, R_ANAL_VAR_KIND_BPV);

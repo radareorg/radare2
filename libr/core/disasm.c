@@ -5777,7 +5777,7 @@ toro:
 	int ret = 0;
 	for (ds->index = 0; ds_left (ds) > 0 && ds->lines < ds->count
 				&& (pdu_condition? !pdu_condition_met: true);
-			ds->index += inc>0?inc:1, count_bytes? ds->lines += inc>0?inc:1: ds->lines++) {
+			ds->index += inc, count_bytes? ds->lines += inc: ds->lines++) {
 		ds->at = ds->addr + ds->index;
 		ds->vat = r_core_pava (core, ds->at);
 
@@ -5895,9 +5895,6 @@ toro:
 				// always round up when calculating byte_size from bit_size of types
 				// could be struct with a bitfield entry
 				inc = (type_bitsize >> 3) + (!!(type_bitsize & 0x7));
-				if (inc < 1) {
-					inc = 1;
-				}
 				free (fmt);
 				continue;
 			}
