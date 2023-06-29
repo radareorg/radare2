@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2015-2022 - inisider, pancake */
+/* radare - LGPL - Copyright 2015-2023 - inisider, pancake */
 
 #include "../../i/private.h"
 #include "mach0_classes.h"
@@ -139,6 +139,23 @@ static mach0_ut va2pa(mach0_ut p, ut32 *offset, ut32 *left, RBinFile *bf) {
 	}
 
 	mach0_ut addr = p;
+#if 1
+	RList *sections = MACH0_(get_segments) (bf, bin);
+	RListIter *iter;
+	RBinSection *s;
+	r_list_foreach (sections, iter, s) {
+		if (addr >= s->vaddr && addr < s->vaddr + s->vsize) {
+			if (offset) {
+				*offset = addr - s->vaddr;
+			}
+			if (left) {
+				*left = s->vsize - (addr - s->vaddr);
+			}
+			r = (s->paddr - obj->boffset  + (addr - s->vaddr));
+			return r;
+		}
+	}
+#else
 	const RVector *sections = MACH0_(load_sections) (obj->bin_obj);
 	if (!sections) {
 		return 0; // UT64_MAX;
@@ -157,7 +174,7 @@ static mach0_ut va2pa(mach0_ut p, ut32 *offset, ut32 *left, RBinFile *bf) {
 			return r;
 		}
 	}
-
+#endif
 	if (offset) {
 		*offset = 0;
 	}
