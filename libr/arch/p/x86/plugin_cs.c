@@ -1492,7 +1492,7 @@ static void anop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, 
 				if (a->read_at (as, (ut64)INSOP (0).imm, thunk, sizeof (thunk))) {
 #else
 				RBin *bin = as->arch->binb.bin;
-				if (bin->iob.read_at (bin->iob.io, (ut64)INSOP (0).imm, thunk, sizeof (thunk))) {
+				if (bin && bin->iob.read_at (bin->iob.io, (ut64)INSOP (0).imm, thunk, sizeof (thunk))) {
 #endif
 					/* Handle CALL ebx_pc (callpop)
 					   8b xx x4    mov <reg>, dword [esp]

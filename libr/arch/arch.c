@@ -78,7 +78,7 @@ static RArchPlugin *find_bestmatch(RArch *arch, RArchConfig *cfg, const char *na
 			ap = p;
 		}
 	}
-	// retry accepting only encoders just in case
+	// fallback: retry accepting only encoders just in case
 	if (!ap) {
 		RListIter *iter;
 		RArchPlugin *p;
