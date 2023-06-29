@@ -639,9 +639,15 @@ R_API bool r_anal_block_op_starts_at(RAnalBlock *bb, ut64 addr) {
 	if (off > UT16_MAX) {
 		return false;
 	}
+	if (bb->ninstr < 1) {
+		return true;
+	}
 	size_t i;
 	for (i = 0; i < bb->ninstr; i++) {
 		ut16 inst_off = r_anal_bb_offset_inst (bb, i);
+		if (inst_off > off) {
+			break;
+		}
 		if (off == inst_off) {
 			return true;
 		}
