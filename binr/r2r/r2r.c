@@ -79,7 +79,7 @@ static int help(bool verbose) {
 		" -q           quiet\n"
 		" -s [test]    set R2R_SKIP_(TEST)=1 to skip running that test type\n"
 		" -t [seconds] timeout per test (default is "TIMEOUT_DEFAULT_STR")\n"
-		" -u           do not git pull/clone test/bins\n"
+		" -u           do not git pull/clone test/bins (See R2R_OFFLINE)\n"
 		" -v           show version\n"
 		"\n"
 		"R2R_SKIP_ARCHOS=1  # do not run the arch-os-specific tests\n"
@@ -88,6 +88,7 @@ static int help(bool verbose) {
 		"R2R_SKIP_UNIT=1    # do not run the unit tests\n"
 		"R2R_SKIP_CMD=1     # do not run the cmds tests\n"
 		"R2R_SKIP_ASM=1     # do not run the rasm2 tests\n"
+		"R2R_OFFLINE=1      # same as passing -u\n"
 		"\n"
 		"Supported test types: @asm @json @unit @fuzz @arch @cmd\n"
 		"OS/Arch for archos tests: "R2R_ARCH_OS"\n");
@@ -285,7 +286,7 @@ int main(int argc, char **argv) {
 	char *fuzz_dir = NULL;
 	const char *r2r_dir = NULL;
 	ut64 timeout_sec = TIMEOUT_DEFAULT;
-	bool get_bins = true;
+	bool get_bins = r_sys_getenv_asbool ("R2R_OFFLINE");
 	int ret = 0;
 
 #if R2__WINDOWS__
@@ -301,6 +302,7 @@ int main(int argc, char **argv) {
 		}
 	}
 #endif
+
 	RGetopt opt;
 	r_getopt_init (&opt, argc, (const char **)argv, "hqvj:r:m:f:C:LnVt:F:io:s:ug");
 
