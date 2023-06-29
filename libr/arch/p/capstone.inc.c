@@ -56,7 +56,10 @@ static bool r_arch_cs_init(RArchSession *as, csh *cs_handle) {
 	} else {
 		cs_option (*cs_handle, CS_OPT_DETAIL, CS_OPT_ON);
 #if CS_API_MAJOR >= 4
-		// cs_option (*cs_handle, CS_OPT_UNSIGNED, CS_OPT_ON);
+		// R2R db/anal/emu db/cmd/cmd_ahi
+		if (CSINC_ARCH == CS_ARCH_X86) {
+			cs_option (*cs_handle, CS_OPT_UNSIGNED, CS_OPT_ON);
+		}
 #endif
 	}
 #if 0
@@ -69,6 +72,18 @@ static bool r_arch_cs_init(RArchSession *as, csh *cs_handle) {
 #endif
 		} else {
 			cs_option (a->cs_handle, CS_OPT_SYNTAX, CS_OPT_SYNTAX_INTEL);
+		}
+	}
+#else
+	if (*cs_handle) {
+		if (as->config->syntax == R_ARCH_SYNTAX_ATT) {
+			cs_option (*cs_handle, CS_OPT_SYNTAX, CS_OPT_SYNTAX_ATT);
+#if CS_API_MAJOR >= 4
+		} else if (as->config->syntax == R_ARCH_SYNTAX_MASM) {
+			cs_option (*cs_handle, CS_OPT_SYNTAX, CS_OPT_SYNTAX_MASM);
+#endif
+		} else {
+			cs_option (*cs_handle, CS_OPT_SYNTAX, CS_OPT_SYNTAX_INTEL);
 		}
 	}
 #endif
