@@ -139,7 +139,6 @@ static mach0_ut va2pa(mach0_ut p, ut32 *offset, ut32 *left, RBinFile *bf) {
 	}
 
 	mach0_ut addr = p;
-#if 1
 	RList *sections = MACH0_(get_segments) (bf, bin);
 	RListIter *iter;
 	RBinSection *s;
@@ -155,26 +154,6 @@ static mach0_ut va2pa(mach0_ut p, ut32 *offset, ut32 *left, RBinFile *bf) {
 			return r;
 		}
 	}
-#else
-	const RVector *sections = MACH0_(load_sections) (obj->bin_obj);
-	if (!sections) {
-		return 0; // UT64_MAX;
-	}
-
-	struct section_t *s;
-	r_vector_foreach (sections, s) {
-		if (addr >= s->addr && addr < s->addr + s->vsize) {
-			if (offset) {
-				*offset = addr - s->addr;
-			}
-			if (left) {
-				*left = s->vsize - (addr - s->addr);
-			}
-			r = (s->offset - obj->boffset  + (addr - s->addr));
-			return r;
-		}
-	}
-#endif
 	if (offset) {
 		*offset = 0;
 	}
