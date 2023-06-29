@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2015-2022 - inisider, pancake */
+/* radare - LGPL - Copyright 2015-2023 - inisider, pancake */
 
 #include "../../i/private.h"
 #include "mach0_classes.h"
@@ -130,25 +130,24 @@ static bool is_thumb(RBinFile *bf) {
 static mach0_ut va2pa(mach0_ut p, ut32 *offset, ut32 *left, RBinFile *bf) {
 	r_return_val_if_fail (bf && bf->o && bf->o->bin_obj, 0);
 
-	mach0_ut addr, r;
-	RListIter *iter = NULL;
-	RBinSection *s = NULL;
+	mach0_ut r = 0;
 	RBinObject *obj = bf->o;
 
+	if (offset) {
+		*offset = 0;
+	}
+	if (left) {
+		*left = 0;
+	}
 	struct MACH0_(obj_t) *bin = (struct MACH0_(obj_t)*) obj->bin_obj;
 	if (bin->va2pa) {
 		return bin->va2pa (p, offset, left, bf);
 	}
-
-	RList *sctns = r_bin_plugin_mach.sections (bf);
-	if (!sctns) {
-		// retain just for debug
-		// eprintf ("there is no sections\n");
-		return 0;
-	}
-
-	addr = p;
-	r_list_foreach (sctns, iter, s) {
+	mach0_ut addr = p;
+	RList *sections = MACH0_(get_segments) (bf, bin);
+	RListIter *iter;
+	RBinSection *s;
+	r_list_foreach (sections, iter, s) {
 		if (addr >= s->vaddr && addr < s->vaddr + s->vsize) {
 			if (offset) {
 				*offset = addr - s->vaddr;
@@ -157,18 +156,11 @@ static mach0_ut va2pa(mach0_ut p, ut32 *offset, ut32 *left, RBinFile *bf) {
 				*left = s->vsize - (addr - s->vaddr);
 			}
 			r = (s->paddr - obj->boffset  + (addr - s->vaddr));
-			return r;
+			break;
 		}
 	}
-
-	if (offset) {
-		*offset = 0;
-	}
-	if (left) {
-		*left = 0;
-	}
-
-	return 0;
+	r_list_free (sections);
+	return r;
 }
 
 static void copy_sym_name_with_namespace(char *class_name, char *read_name, RBinSymbol *sym) {
