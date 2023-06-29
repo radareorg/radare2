@@ -29,8 +29,8 @@ static int reloc_cmp(void *incoming, void *in, void *user) {
 }
 
 static void object_delete_items(RBinObject *o) {
-	ut32 i = 0;
 	r_return_if_fail (o);
+	ut32 i = 0;
 	ht_up_free (o->addr2klassmethod);
 	r_list_free (o->entries);
 	r_list_free (o->fields);
@@ -427,15 +427,14 @@ R_IPI RRBTree *r_bin_object_patch_relocs(RBinFile *bf, RBinObject *bo) {
 
 	if (!bo->is_reloc_patched && bo->plugin && bo->plugin->patch_relocs) {
 		RList *tmp = bo->plugin->patch_relocs (bf);
-		if (!tmp) {
-			return bo->relocs;
+		if (R_LIKELY (tmp)) {
+			r_crbtree_free (bo->relocs);
+			REBASE_PADDR (bo, tmp, RBinReloc);
+			bo->relocs = list2rbtree (tmp);
+			bo->is_reloc_patched = true;
+			tmp->free = NULL;
+			r_list_free (tmp);
 		}
-		r_crbtree_free (bo->relocs);
-		REBASE_PADDR (bo, tmp, RBinReloc);
-		bo->relocs = list2rbtree (tmp);
-		bo->is_reloc_patched = true;
-		tmp->free = NULL;
-		r_list_free (tmp);
 	}
 	return bo->relocs;
 }
