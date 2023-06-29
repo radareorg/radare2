@@ -12,3 +12,7 @@ Read https://github.com/radareorg/radare2/blob/master/DEVELOPERS.md
 **Description**
 
 <!-- explain your changes if necessary -->
+
+**Copilot**
+
+copilot:all
