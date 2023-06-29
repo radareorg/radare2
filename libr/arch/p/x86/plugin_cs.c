@@ -4140,6 +4140,7 @@ static char *get_reg_profile(RArchSession *as) {
 		break;
 	case 64:
 	{
+#if 0
 		const char *cc = "cdecl"; // r_anal_cc_default (anal); // R2_590
 		const char *args_prof = cc && !strcmp (cc, "ms")
 		? // Microsoft x64 CC
@@ -4164,6 +4165,9 @@ static char *get_reg_profile(RArchSession *as) {
 		"=A3	r9\n"
 		"=SN	rax\n"
 		 : // System V AMD64 ABI
+#endif
+		// R2_590 - this info shouldnt be used as a calling convention if anal.cc is set
+		const char *args_prof =
 		"=PC	rip\n"
 		"=SP	rsp\n"
 		"=BP	rbp\n"
