@@ -286,7 +286,7 @@ int main(int argc, char **argv) {
 	char *fuzz_dir = NULL;
 	const char *r2r_dir = NULL;
 	ut64 timeout_sec = TIMEOUT_DEFAULT;
-	bool get_bins = r_sys_getenv_asbool ("R2R_OFFLINE");
+	bool get_bins = !r_sys_getenv_asbool ("R2R_OFFLINE");
 	int ret = 0;
 
 #if R2__WINDOWS__
