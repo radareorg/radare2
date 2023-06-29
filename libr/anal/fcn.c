@@ -1783,12 +1783,9 @@ R_API bool r_anal_function_add_bb(RAnal *a, RAnalFunction *fcn, ut64 addr, ut64 
 		block = NULL;
 	}
 
-	const char *sarch = R_UNWRAP3 (a, cur, arch);
-	if (!sarch && a->arch->cfg) {
-		sarch = a->arch->cfg->arch;
-	}
-	const bool is_x86 = sarch && !strcmp (sarch, "x86");
-	// TODO fix this x86-ism
+	// XXX R2_592 - try to remove this check, no need to be x86 specific
+	const char *sarch = R_UNWRAP5 (a, arch, session, config, arch);
+	const bool is_x86 = sarch && r_str_startswith (sarch, "x86");
 	if (is_x86) {
 		fcn_recurse (a, fcn, addr, size, -1);
 		block = r_anal_get_block_at (a, addr);
