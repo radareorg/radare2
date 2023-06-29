@@ -123,6 +123,7 @@ E+=../shlr/ar/libr_ar.${EXT_AR}
 E+=../shlr/winkd/libr_winkd.${EXT_AR}
 E+=../shlr/qnx/lib/libqnxr.${EXT_AR}
 E+=../shlr/bochs/lib/libbochs.${EXT_AR}
+
 E+=../libr/arch/p/arm/v35/arm64dis.${EXT_AR}
 E+=../libr/arch/p/arm/v35/armv7dis.${EXT_AR}
 

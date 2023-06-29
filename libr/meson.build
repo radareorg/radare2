@@ -96,8 +96,7 @@ if not no_user_plugins
     ]
   endif
   if user_plugins.contains('x86')
-    arch_plugins += [ 'x86_nz' ]
-    anal_plugins += [ 'x86_cs' ]
+    arch_plugins += [ 'x86_cs', 'x86_nz' ]
     bp_plugins += [ 'x86' ]
     parse_plugins += [ 'x86_pseudo' ]
   endif
@@ -154,7 +153,6 @@ endif
 if no_user_plugins
 
 anal_plugins += [
-  'x86_cs',
 ]
 
 arch_plugins += [
@@ -177,6 +175,7 @@ arch_plugins += [
   'sparc_cs',
   'ppc_cs',
   'gb',
+  'x86_cs',
 ]
 
 if no_user_plugins

@@ -45,7 +45,7 @@ a "and dword[rax], 0x1234" 812034120000
 a "and dword[rax], 0x123490" 812090341200
 a "and dword[rax], 0x12349012" 812012903412
 a "and qword[rax], 0x12349012" 48812012903412
-a "and r15b, 0x2a" ff2a
+aB "and r15b, 0x2a" ff2a
 a "and ebx, 0x1234" 81e334120000
 a "and byte[rax-0x2a], 12" 8060d60c
 a "and byte[rbx], 99" 802363

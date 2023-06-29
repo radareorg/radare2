@@ -4139,7 +4139,8 @@ R_API RBuffer *r_core_syscall(RCore *core, const char *name, const char *args) {
 	char code[1024];
 
 	// arch check
-	if (strcmp (core->anal->cur->arch, "x86")) {
+	const char *arch = R_UNWRAP5 (core, anal, arch, session, name);
+	if (arch && strcmp (arch, "x86")) {
 		R_LOG_ERROR ("architecture not yet supported!");
 		return 0;
 	}

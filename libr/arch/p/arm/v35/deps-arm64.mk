@@ -24,8 +24,10 @@ V35ARM64_LIBS=$(V35ARM64_HOME)/arm64dis.a
 
 ${V35ARM64_LINK}: $(V35ARM64_SRCDIR)
 $(V35ARM64_SRCDIR):
-	$(MAKE) $(V35ARM64_HOME)/arm64dis.a
-	# $(MAKE) git-clone-arm64v35
+
+#	$(MAKE) -C $(V35ARM64_HOME) arch-arm64
+#	$(MAKE) $(V35ARM64_HOME)/arm64dis.a
+#	$(MAKE) git-clone-arm64v35
 
 git-clone-arm64v35: # $(V35ARM64_HOME)/arm64dis.a:
 	$(MAKE) -C $(V35ARM64_HOME) arch-arm64
