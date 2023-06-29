@@ -865,7 +865,7 @@ static void anop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, 
 				// dst is name of register from instruction.
 				dst = getarg (&gop, 0, 0, NULL, NULL);
 				// const char *dst64 = r_reg_32_to_64 (as->reg, dst);
-				char *dst64 = get64from32 (dst); // XXX R2_590 no access to reg
+				char *dst64 = get64from32 (dst);
 			//	const char *dst64 = dst; // XXX R2_590 no access to reg
 				if (bits == 64 && dst64) {
 					// Here it is still correct, because 'e** = X'
@@ -1653,7 +1653,8 @@ static void anop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, 
 			src = getarg (&gop, 1, 0, NULL, NULL);
 			dst = getarg (&gop, 0, 1, "^", &bitsize);
 			dst2 = getarg (&gop, 0, 0, NULL, NULL);
-			const char *dst_reg64 = NULL; // XXX R2_590 access to regs - r_reg_32_to_64 (as->reg, dst2); // 64-bit destination if exists
+			// const char *dst_reg64 = NULL; // XXX R2_590 access to regs - r_reg_32_to_64 (as->reg, dst2); // 64-bit destination if exists
+			char *dst_reg64 = get64from32(dst2);
 			if (bits == 64 && dst_reg64) {
 				// (64-bit ^ 32-bit) & 0xFFFF FFFF -> 64-bit, it's alright, higher bytes will be eliminated
 				// (consider this is operation with 32-bit regs in 64-bit environment).
@@ -1666,6 +1667,7 @@ static void anop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, 
 			R_FREE (src);
 			R_FREE (dst);
 			R_FREE (dst2);
+			R_FREE (dst_reg64);
 		}
 		break;
 	case X86_INS_XORPS:
@@ -1877,7 +1879,8 @@ static void anop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, 
 			src = getarg (&gop, 1, 0, NULL, NULL);
 			dst = getarg (&gop, 0, 1, "&", &bitsize);
 			dst2 = getarg (&gop, 0, 0, NULL, NULL);
-			const char *dst_reg64 = NULL; // XXX R2_590 r_reg_32_to_64 (a->reg, dst2);		// 64-bit destination if exists
+			char *dst_reg64 = get64from32(dst2);
+			// const char *dst_reg64 = NULL; // XXX R2_590 r_reg_32_to_64 (a->reg, dst2);		// 64-bit destination if exists
 			if (bits == 64 && dst_reg64) {
 				// (64-bit & 32-bit) & 0xFFFF FFFF -> 64-bit, it's alright, higher bytes will be eliminated
 				// (consider this is operation with 32-bit regs in 64-bit environment).
@@ -1889,6 +1892,7 @@ static void anop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, 
 			free (src);
 			free (dst);
 			free (dst2);
+			free (dst_reg64);
 		}
 		break;
 	case X86_INS_PANDN:
