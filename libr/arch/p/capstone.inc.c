@@ -57,10 +57,9 @@ static bool r_arch_cs_init(RArchSession *as, csh *cs_handle) {
 		cs_option (*cs_handle, CS_OPT_DETAIL, CS_OPT_ON);
 #if CS_API_MAJOR >= 4
 		// R2_590 can we enable this for all archs?
-		const bool is_x86 = r_str_startswith (as->config->arch, "x86");
-		if (is_x86) {
-			cs_option (*cs_handle, CS_OPT_UNSIGNED, CS_OPT_ON);
-		}
+#if CSINC == X86
+		cs_option (*cs_handle, CS_OPT_UNSIGNED, CS_OPT_ON);
+#endif
 #endif
 	}
 #if 0
