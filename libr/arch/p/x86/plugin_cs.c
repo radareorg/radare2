@@ -416,7 +416,7 @@ static char *get64from32(const char *s) {
 	if (*s == 'e') {
 		return r_str_newf ("r%s", s + 1);
 	} else if (*s == 'r' && isdigit (s[1])) {
-		if (s[2] == 'd') {
+		if (s[2] == 'd' || (s[2] != 0 && isdigit(s[2]) && s[3] == 'd')) {
 			return r_str_newf ("r%d", atoi (s + 1));
 		}
 	}
