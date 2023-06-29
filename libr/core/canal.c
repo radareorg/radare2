@@ -757,6 +757,8 @@ static bool __core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int de
 //		r_sys_backtrace ();
 		return false;
 	}
+	const char *sarch = r_config_get (core->config, "asm.arch");
+	const bool is_x86 = (sarch && r_str_startswith (sarch, "x86"));
 	bool has_next = r_config_get_b (core->config, "anal.hasnext");
 	RAnalHint *hint = NULL;
 	int i, nexti = 0;
@@ -921,8 +923,6 @@ static bool __core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int de
 		}
 		free (next);
 	}
-	const char *sarch = R_UNWRAP6 (core, anal, arch, session, config, arch);
-	const bool is_x86 = (sarch && r_str_startswith (sarch, "x86"));
 	if (is_x86) {
 		r_anal_function_check_bp_use (fcn);
 		if (fcn && !fcn->bp_frame) {
