@@ -130,14 +130,19 @@ static bool is_thumb(RBinFile *bf) {
 static mach0_ut va2pa(mach0_ut p, ut32 *offset, ut32 *left, RBinFile *bf) {
 	r_return_val_if_fail (bf && bf->o && bf->o->bin_obj, 0);
 
-	mach0_ut r;
+	mach0_ut r = 0;
 	RBinObject *obj = bf->o;
 
+	if (offset) {
+		*offset = 0;
+	}
+	if (left) {
+		*left = 0;
+	}
 	struct MACH0_(obj_t) *bin = (struct MACH0_(obj_t)*) obj->bin_obj;
 	if (bin->va2pa) {
 		return bin->va2pa (p, offset, left, bf);
 	}
-
 	mach0_ut addr = p;
 	RList *sections = MACH0_(get_segments) (bf, bin);
 	RListIter *iter;
@@ -151,17 +156,11 @@ static mach0_ut va2pa(mach0_ut p, ut32 *offset, ut32 *left, RBinFile *bf) {
 				*left = s->vsize - (addr - s->vaddr);
 			}
 			r = (s->paddr - obj->boffset  + (addr - s->vaddr));
-			return r;
+			break;
 		}
 	}
-	if (offset) {
-		*offset = 0;
-	}
-	if (left) {
-		*left = 0;
-	}
-
-	return 0;
+	r_list_free (sections);
+	return r;
 }
 
 static void copy_sym_name_with_namespace(char *class_name, char *read_name, RBinSymbol *sym) {
