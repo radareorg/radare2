@@ -497,12 +497,17 @@ int main(int argc, char **argv) {
 				free (abspath);
 				RListIter *iter;
 				char *test;
+				int grc = 0;
 				r_list_foreach (tests, iter, test) {
 					eprintf ("Running %s\n", test);
-					r_sys_cmdf ("r2r %s %s", interactive? "-i": "", test);
+					int rc = r_sys_cmdf ("r2r %s %s", interactive? "-i": "", test);
+					if (rc != 0) {
+						grc = rc;
+					}
 				}
 				r_list_free (tests);
-				continue;
+				return grc;
+				// continue;
 			}
 			char *tf = r_file_abspath_rel (cwd, arg);
 			if (!tf || !r2r_test_database_load (state.db, tf)) {
