@@ -415,6 +415,10 @@ static const char *reg32_to_name(ut8 reg) {
 static char *get64from32(const char *s) {
 	if (*s == 'e') {
 		return r_str_newf ("r%s", s + 1);
+	} else if (*s == 'r' && isdigit (s[1])) {
+		if (s[2] == 'd') {
+			return r_str_newf ("r%d", atoi (s + 1));
+		}
 	}
 	return strdup (s);
 }
