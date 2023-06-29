@@ -130,9 +130,7 @@ static bool is_thumb(RBinFile *bf) {
 static mach0_ut va2pa(mach0_ut p, ut32 *offset, ut32 *left, RBinFile *bf) {
 	r_return_val_if_fail (bf && bf->o && bf->o->bin_obj, 0);
 
-	mach0_ut addr, r;
-	RListIter *iter = NULL;
-	RBinSection *s = NULL;
+	mach0_ut r;
 	RBinObject *obj = bf->o;
 
 	struct MACH0_(obj_t) *bin = (struct MACH0_(obj_t)*) obj->bin_obj;
@@ -140,23 +138,22 @@ static mach0_ut va2pa(mach0_ut p, ut32 *offset, ut32 *left, RBinFile *bf) {
 		return bin->va2pa (p, offset, left, bf);
 	}
 
-	RList *sctns = r_bin_plugin_mach.sections (bf);
-	if (!sctns) {
-		// retain just for debug
-		// eprintf ("there is no sections\n");
-		return 0;
+	mach0_ut addr = p;
+	const RVector *sections = MACH0_(load_sections) (obj->bin_obj);
+	if (!sections) {
+		return 0; // UT64_MAX;
 	}
 
-	addr = p;
-	r_list_foreach (sctns, iter, s) {
-		if (addr >= s->vaddr && addr < s->vaddr + s->vsize) {
+	struct section_t *s;
+	r_vector_foreach (sections, s) {
+		if (addr >= s->addr && addr < s->addr + s->vsize) {
 			if (offset) {
-				*offset = addr - s->vaddr;
+				*offset = addr - s->addr;
 			}
 			if (left) {
-				*left = s->vsize - (addr - s->vaddr);
+				*left = s->vsize - (addr - s->addr);
 			}
-			r = (s->paddr - obj->boffset  + (addr - s->vaddr));
+			r = (s->offset - obj->boffset  + (addr - s->addr));
 			return r;
 		}
 	}
