@@ -2069,7 +2069,7 @@ static void do_syscall_search(RCore *core, struct search_parameters *param) {
 				}
 			}
 #endif
-			if ((aop.type == R_ANAL_OP_TYPE_SWI) && ret) { // && (aop.val > 10)) {
+			if ((aop.type == R_ANAL_OP_TYPE_SWI) && ret > 0) { // && (aop.val > 10)) {
 				int scVector = aop.val; // int 0x80, svc 0x70, ...
 				int scNumber = 0; // r0/eax/...
 #if USE_EMULATION
@@ -2082,6 +2082,9 @@ static void do_syscall_search(RCore *core, struct search_parameters *param) {
 #else
 				scNumber = syscallNumber;
 #endif
+				if (isx86 && aop.val == 0 && (aop.bytes[0] == 0xcd || aop.bytes[0] == 0x64)) {
+					goto theverynext;
+				}
 #if 1
 				// scNumber = aop.val;
 				if (scNumber < 0 || scNumber > 0xFFFFF) {
