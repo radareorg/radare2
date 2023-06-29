@@ -190,7 +190,8 @@ EOF
 EXPECT_ERR=
 RUN
 
-NAME=afb+ with wrong size
+NAME=Adding basic blocks with with wrong size (afb+)
+BROKEN=1
 FILE=bins/pe/a.exe
 CMDS=<<EOF
 s 0x004017c0

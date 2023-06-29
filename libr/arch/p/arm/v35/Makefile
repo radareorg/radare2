@@ -15,7 +15,6 @@ RANLIB?=ranlib
 EXT_AR?=a
 
 clean:
-	rm -rf arch-arm64 arm64dis.$(EXT_AR)
 	rm -rf arch-armv7 armv7dis.$(EXT_AR)
 
 mrproper: clean

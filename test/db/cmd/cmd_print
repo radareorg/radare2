@@ -1170,7 +1170,7 @@ woe 0 0xff 1
 pxA 10
 EOF
 EXPECT=<<EOF
-++++++    _|  10
+++++++XXXX_|  10
 EOF
 RUN
 

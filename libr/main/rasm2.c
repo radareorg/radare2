@@ -19,8 +19,9 @@ typedef struct {
 static void __load_plugins(RAsmState *as);
 
 static void __as_set_archbits(RAsmState *as) {
-	r_asm_use (as->a, R_SYS_ARCH);
-	r_anal_use (as->anal, R_SYS_ARCH);
+	const char *arch = as->a->config->arch; // R_SYS_ARCH;
+	r_asm_use (as->a, arch);
+	r_anal_use (as->anal, arch);
 	int sysbits = (R_SYS_BITS & R_SYS_BITS_64)? 64: 32;
 	r_asm_set_bits (as->a, sysbits);
 	r_anal_set_bits (as->anal, sysbits);
@@ -52,6 +53,7 @@ static void __as_free(RAsmState *as) {
 		}
 		r_asm_free (as->a);
 		r_anal_free (as->anal);
+		// r_unref (as->a->config);
 		r_lib_free (as->l);
 		free (as);
 	}
@@ -252,6 +254,7 @@ static void rarch2_list(RAsmState *as, const char *arch) {
 	pj_free (pj);
 }
 
+// R2_590 - deprecate this
 static void ranal2_list(RAsmState *as, const char *arch) {
 	char bits[32];
 	RAnalPlugin *h;
@@ -884,6 +887,7 @@ R_API int r_main_rasm2(int argc, const char *argv[]) {
 		ret = rasm_show_help (help > 1? 2: 0);
 		goto beach;
 	}
+	// R2_590 - deprecate this
 	if (list_anal_plugins) {
 		ranal2_list (as, opt.argv[opt.ind]);
 		ret = 1;
@@ -912,7 +916,10 @@ R_API int r_main_rasm2(int argc, const char *argv[]) {
 			ret = 0;
 			goto beach;
 		}
-	} else if (!r_asm_use (as->a, R_SYS_ARCH)) {
+		r_anal_use (as->anal, env_arch);
+	} else if (r_asm_use (as->a, R_SYS_ARCH)) {
+		r_anal_use (as->anal, R_SYS_ARCH);
+	} else {
 		R_LOG_ERROR ("Cannot find " R_SYS_ARCH " plugin");
 		ret = 0;
 		goto beach;

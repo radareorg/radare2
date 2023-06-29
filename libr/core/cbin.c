@@ -4643,9 +4643,14 @@ R_API bool r_core_bin_update_arch_bits(RCore *r) {
 		return 0;
 	}
 	const char *arch = NULL;
+	// R2_590
 	if (!arch && r->anal && r->anal->cur) {
 		bits = r->anal->config->bits;
 		arch = r->anal->cur->arch;
+	}
+	if (!arch && r->anal->arch && r->anal->arch->session) {
+		bits = r->anal->arch->session->config->bits;
+		arch = r->anal->arch->session->config->arch;
 	}
 	RBinFile *binfile = r_bin_cur (r->bin);
 	const char *name = binfile ? binfile->file : NULL;

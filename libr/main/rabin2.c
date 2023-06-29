@@ -925,19 +925,17 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 				R_FREE (res);
 				R_FREE (file);
 			}
-			char *r = stdin_gets (&state);
-			free (r);
+			free (stdin_gets (&state));
 		} else {
 			res = __demangleAs (bin, type, file);
-			if (res && *res) {
+			if (R_STR_ISNOTEMPTY (res)) {
 				printf ("%s\n", res);
 				free (res);
 				r_core_fini (&core);
 				free (state.stdin_buf);
 				return 0;
-			} else {
-				printf ("%s\n", file);
 			}
+			printf ("%s\n", file);
 		}
 		free (res);
 		//eprintf ("%s\n", file);
@@ -965,7 +963,7 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 		ptr = strchr (arch, '_');
 		if (ptr) {
 			*ptr = '\0';
-			bits = r_num_math (NULL, ptr+1);
+			bits = r_num_math (NULL, ptr + 1);
 		}
 	}
 	if (action & R_BIN_REQ_CREATE) {
@@ -1033,7 +1031,7 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 		return 1;
 	}
 
-	if (file && *file && action & R_BIN_REQ_DLOPEN) {
+	if (R_STR_ISNOTEMPTY (file) && action & R_BIN_REQ_DLOPEN) {
 #if R2__UNIX__ && HAVE_FORK
 		int child = r_sys_fork ();
 		if (child == -1) {
@@ -1093,7 +1091,7 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 		return rc;
 	}
 
-	if (file && *file) {
+	if (R_STR_ISNOTEMPTY (file)) {
 		if (r_core_file_open (&core, file, R_PERM_R, 0)) {
 			fd = r_io_fd_get_current (core.io);
 			if (fd == -1) {

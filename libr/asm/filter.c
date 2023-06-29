@@ -150,13 +150,11 @@ static bool filter(RParse *p, ut64 addr, RFlag *f, RAnalHint *hint, char *data, 
 	bool arm = false;
 	const char *pname = (p && p->cur && p->cur->name) ? p->cur->name: NULL;
 	if (pname) {
-		if (strstr (pname, "x86")) {
+		if (r_str_startswith (pname, "x86")) {
 			x86 = true;
-		}
-		if (strstr (pname, "m68k")) {
+		} else if (r_str_startswith (pname, "m68k")) {
 			x86 = true; /// w t f? trick or wat
-		}
-		if (strstr (pname, "arm")) {
+		} else if (r_str_startswith (pname, "arm")) {
 			arm = true;
 		}
 	}

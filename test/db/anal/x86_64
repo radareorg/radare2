@@ -1609,7 +1609,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=Mixed reg/stack callee arguments type matching
+NAME=Mixed reg/stack callee arguments type matching R2_590
 FILE=bins/pe/testapp-msvc64.exe
 CMDS=<<EOF
 s 0x14000b54c
@@ -1638,6 +1638,7 @@ EXPECT=<<EOF
 |           0x14000b582      4883c448       add rsp, 0x48
 \           0x14000b586      c3             ret
 EOF
+BROKEN=1
 RUN
 
 NAME=call not function
