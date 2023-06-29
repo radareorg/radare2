@@ -57,13 +57,40 @@ static RArchPlugin *find_bestmatch(RArch *arch, RArchConfig *cfg, const char *na
 	RListIter *iter;
 	RArchPlugin *p;
 	r_list_foreach (arch->plugins, iter, p) {
+#if 1
+		if (enc) {
+			if (!p->encode) {
+				continue;
+			}
+		} else {
+			if (!p->decode) {
+				continue;
+			}
+		}
+#else
 		if (enc && !p->encode) {
 			continue;
 		}
+#endif
 		const ut32 score = _rate_compat (p, cfg, name);
 		if (score > 0 && score > best_score) {
 			best_score = score;
 			ap = p;
+		}
+	}
+	// retry accepting only encoders just in case
+	if (!ap) {
+		RListIter *iter;
+		RArchPlugin *p;
+		r_list_foreach (arch->plugins, iter, p) {
+			if (enc && !p->encode) {
+				continue;
+			}
+			const ut32 score = _rate_compat (p, cfg, name);
+			if (score > 0 && score > best_score) {
+				best_score = score;
+				ap = p;
+			}
 		}
 	}
 	return ap;
@@ -94,7 +121,7 @@ R_API bool r_arch_use(RArch *arch, RArchConfig *config, const char *name) {
 	}
 	r_unref (arch->session);
 	arch->session = r_arch_session (arch, config, ap);
-	if (arch->session) {
+	if (arch->session && !arch->session->encoder) {
 		RArchPluginEncodeCallback encode = arch->session->plugin->encode;
 		if (!encode) {
 			RArchPlugin *ap = find_bestmatch (arch, config, name, true);

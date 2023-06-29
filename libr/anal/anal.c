@@ -257,10 +257,6 @@ R_API bool r_anal_use(RAnal *anal, const char *name) {
 			// R_LOG_DEBUG ("plugin found in arch");
 			anal->uses = 2;
 			return true;
-#if 0
-		} else {
-			anal->arch->current = NULL;
-#endif
 		}
 	}
 	anal->uses = 0;
