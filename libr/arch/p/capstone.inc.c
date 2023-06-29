@@ -56,10 +56,10 @@ static bool r_arch_cs_init(RArchSession *as, csh *cs_handle) {
 	} else {
 		cs_option (*cs_handle, CS_OPT_DETAIL, CS_OPT_ON);
 #if CS_API_MAJOR >= 4
-		// R2_590 can we enable this for all archs?
-#if CSINC == X86
-		cs_option (*cs_handle, CS_OPT_UNSIGNED, CS_OPT_ON);
-#endif
+		// R2R db/anal/emu db/cmd/cmd_ahi
+		if (CSINC_ARCH == CS_ARCH_X86) {
+			cs_option (*cs_handle, CS_OPT_UNSIGNED, CS_OPT_ON);
+		}
 #endif
 	}
 #if 0

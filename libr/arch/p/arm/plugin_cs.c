@@ -4832,7 +4832,6 @@ static char *arm_mnemonics(RArchSession *as, int id, bool json) {
 extern bool r_arm_arch_cs_init(RArchSession *as, csh *cs_handle);
 extern bool r_arm64_arch_cs_init(RArchSession *as, csh *cs_handle);
 
-
 static inline bool cs_init(RArchSession *as, csh *cs_handle) {
 	if (as->config->bits == 64) {
 		return r_arm64_arch_cs_init (as, cs_handle);
