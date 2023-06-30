@@ -224,34 +224,6 @@ typedef struct r_snap_entry {
 	int perm;
 } RSnapEntry;
 
-typedef struct r_debug_trace_t {
-	RList *traces;
-	int count;
-	int enabled;
-	int tag;
-	int dup;
-	char *addresses;
-	HtPP *ht; // use rbtree like the iocache?
-} RDebugTrace;
-
-// R2_590 rename to traceitem for consistency?
-#define r_debug_tracepoint_free(x) free((x))
-typedef struct r_debug_tracepoint_t {
-	ut64 addr;
-	ut64 tags; // XXX
-	int tag; // XXX
-	int size;
-	int count;
-	int times;
-	ut64 stamp;
-#if 0
-	// registers accessed
-	// memory access
-	ut64 refaddr;
-	int direction
-#endif
-} RDebugTracepoint;
-
 typedef struct r_debug_t {
 	// R2_590 use RArchConfig instead
 	char *arch;

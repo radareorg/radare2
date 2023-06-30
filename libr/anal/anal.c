@@ -481,7 +481,6 @@ R_API void r_anal_purge(RAnal *anal) {
 	r_anal_purge_imports (anal);
 }
 
-
 static int default_archinfo(int res, int q) {
 	if (res < 1) {
 		return 1;
@@ -588,7 +587,7 @@ R_API bool r_anal_noreturn_add(RAnal *anal, const char *name, ut64 addr) {
 			return true;
 		}
 	}
-	if (name && *name) {
+	if (R_STR_ISNOTEMPTY (name)) {
 		tmp_name = name;
 	} else {
 		RAnalFunction *fcn = r_anal_get_fcn_in (anal, addr, -1);

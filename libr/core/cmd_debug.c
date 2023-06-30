@@ -491,7 +491,7 @@ static RCoreHelpMessage help_msg_dt = {
 	"dte", "[?]", "show esil trace logs",
 	"dtg", "", "graph call/ret trace",
 	"dtg*", "", "graph in agn/age commands. use .dtg*;aggi for visual",
-	"dtgi", "", "interactive debug trace",
+	"dtgv", "", "visual / interactive debug trace graph view",
 	"dts", "[?]", "trace sessions",
 	"dtt", " [tag]", "select trace tag (no arg unsets)",
 	NULL
@@ -514,7 +514,7 @@ static RCoreHelpMessage help_msg_dts = {
 	"dts-", "", "stop trace session",
 	"dtst", " [dir] ", "save trace sessions to disk",
 	"dtsf", " [dir] ", "read trace sessions from disk",
-	"dtsm", "", "list current memory map and hash",
+	"dtsl", "", "list current memory map and hash",
 	NULL
 };
 
@@ -5605,13 +5605,15 @@ static int cmd_debug(void *data, const char *input) {
 				core->dbg->session = r_debug_session_new ();
 				r_debug_session_load (core->dbg, input + 4);
 				break;
-			case 'm': // "dtsm"
+			case 'l': // "dtsl"
+			case 'm': // "dtsm" // DEPRECATE dstm command, dtsl is a better name
 				if (core->dbg->session) {
 					r_debug_session_list_memory (core->dbg);
 				}
 				break;
 			default:
 				r_core_cmd_help (core, help_msg_dts);
+				break;
 			}
 			break;
 		case '?':

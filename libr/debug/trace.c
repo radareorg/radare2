@@ -40,6 +40,7 @@ R_API int r_debug_trace_tag(RDebug *dbg, int tag) {
 	return ntag;
 }
 
+// this function belongs to dsession
 R_API bool r_debug_trace_ins_before(RDebug *dbg) {
 	RListIter *it, *it_tmp;
 	RAnalValue *val;
@@ -104,6 +105,7 @@ R_API bool r_debug_trace_ins_before(RDebug *dbg) {
 	return true;
 }
 
+// this function belongs to dsession.c instead of trace.c
 R_API bool r_debug_trace_ins_after(RDebug *dbg) {
 	RListIter *it;
 	RAnalValue *val;
@@ -159,6 +161,7 @@ R_API bool r_debug_trace_ins_after(RDebug *dbg) {
 /*
  * something happened at the given pc that we need to trace
  */
+// this belongs to dsession.c
 R_API bool r_debug_trace_pc(RDebug *dbg, ut64 pc) {
 	r_return_val_if_fail (dbg && dbg->trace, false);
 	ut8 buf[32];
@@ -177,6 +180,7 @@ R_API bool r_debug_trace_pc(RDebug *dbg, ut64 pc) {
 	return true;
 }
 
+// belongs to dsession
 R_API void r_debug_trace_op(RDebug *dbg, RAnalOp *op) {
 	r_return_if_fail (dbg && dbg->trace);
 	static ut64 oldpc = UT64_MAX; // Must trace the previously traced instruction

@@ -454,15 +454,10 @@ R_API bool r_debug_session_save(RDebugSession *session, const char *path) {
 		return false;
 	}
 	r_debug_session_serialize (session, db);
-
-	if (!session_sdb_save (db, path)) {
-		sdb_free (db);
-		return false;
-	}
+	bool res = session_sdb_save (db, path);
 	sdb_free (db);
-	return true;
+	return res;
 }
-
 
 #define CHECK_TYPE(v,t) \
 	if (!v || v->type != t) \
