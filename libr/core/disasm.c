@@ -5672,6 +5672,7 @@ R_API int r_core_print_disasm(RCore *core, ut64 addr, ut8 *buf, int len, int cou
 	/* pdu vars */
 	bool pdu_condition_met = false;
 	char *opstr_nocolor = NULL;
+	char *tidy_asm = NULL;
 	int opcode_len = -1;
 	//const char *pdu_condition_esil = NULL;
 	const char *pdu_condition_instruction = NULL;
@@ -5693,13 +5694,19 @@ R_API int r_core_print_disasm(RCore *core, ut64 addr, ut8 *buf, int len, int cou
 		ds->count_bytes = false;
 		ds->count = INT_MAX;
 
+		tidy_asm = r_asm_string_tidy(core->rasm, pdu_condition);
+		if (!tidy_asm) {
+			ds_free (ds);
+			return 0;
+		}
+
 		/*if (pdu_condition_type == esil) {
 			pdu_condition_esil = (const char *)pdu_condition;
 		} else*/
 		if (pdu_condition_type == pdu_instruction) {
-			pdu_condition_instruction = (const char *)pdu_condition;
+			pdu_condition_instruction = (const char *)tidy_asm;
 		} else if (pdu_condition_type == pdu_opcode) {
-			pdu_condition_opcode = (const char *)pdu_condition;
+			pdu_condition_opcode = (const char *)tidy_asm;
 			opcode_len = strlen (pdu_condition_opcode);
 		}
 	}
@@ -6232,6 +6239,9 @@ toro:
 	// TODO: this too (must review)
 	ds_print_esil_anal_fini (ds);
 	ds_reflines_fini (ds);
+	if (tidy_asm) {
+		R_FREE (tidy_asm);
+	}
 	R_FREE (nbuf);
 	p->calc_row_offsets = calc_row_offsets;
 	/* used by asm.emu */

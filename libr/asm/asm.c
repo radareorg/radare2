@@ -1098,6 +1098,28 @@ R_API ut8 *r_asm_from_string(RAsm *a, ut64 addr, const char *b, int *l) {
 	return NULL;
 }
 
+R_API char *r_asm_string_tidy(RAsm *a, const char *name) {
+	r_return_val_if_fail (name, NULL);
+	int l;
+	RAsmCode *code = r_asm_massemble (a, name);
+	if (code) {
+		ut8 *buf = code->bytes;
+		l = code->len;
+		RAsmCode *newcode = r_asm_mdisassemble (a, buf, l);
+		r_asm_code_free (code);
+		if (newcode) {
+			char *buf_asm = newcode->assembly;
+			buf_asm[strlen(newcode->assembly) - 1] = (char) 0; // overwrite newline char
+			newcode->assembly = NULL;
+			r_asm_code_free (newcode);
+			return buf_asm;
+		}
+	} else {
+		eprintf("Invalid code\n");
+	}
+	return NULL;
+}
+
 R_API int r_asm_syntax_from_string(const char *name) {
 	r_return_val_if_fail (name, -1);
 	if (!strcmp (name, "regnum")) {
