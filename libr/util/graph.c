@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2007-2020 - pancake, ret2libc */
+/* radare - LGPL - Copyright 2007-2023 - pancake, ret2libc, condret */
 
 #include <r_util.h>
 
@@ -392,7 +392,7 @@ R_API RGraph *r_graph_dom_tree(RGraph *graph, RGraphNode *root) {
 	while (r_list_length (di.mi)) {
 		RGraphNode *n = r_list_pop (di.mi);
 		RGraphNode *p = (RGraphNode *)r_list_get_n (n->in_nodes, 0);
-		if (((RGraphDomNode *)(p->data))->idx == 0) {
+		if (p && ((RGraphDomNode *)(p->data))->idx == 0) {
 			//parent is root node
 			continue;
 		}
@@ -411,7 +411,7 @@ R_API RGraph *r_graph_dom_tree(RGraph *graph, RGraphNode *root) {
 				max_n = in;
 			}
 		}
-		while (((RGraphDomNode *)max_n->data)->idx > dn->idx) {
+		while (max_n && ((RGraphDomNode *)max_n->data)->idx > dn->idx) {
 			max_n = (RGraphNode *)r_list_get_n (max_n->in_nodes, 0);
 		}
 		r_graph_del_edge (g, p, n);

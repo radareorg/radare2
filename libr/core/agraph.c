@@ -4339,6 +4339,7 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 	} else {
 		o_can = g->can;
 	}
+
 	g->can = can;
 	g->movspeed = r_config_get_i (core->config, "graph.scroll");
 	const int graph_zoom = r_config_get_i (core->config, "graph.zoom");
@@ -4390,6 +4391,21 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 	core->cons->event_resize = (RConsEvent) agraph_refresh_oneshot;
 
 	r_cons_break_push (NULL, NULL);
+#if 0
+	// XXX wrong usage or buggy RGraph.domTree()
+	// dominance tree here
+	const RList *l = r_graph_get_nodes (g->graph);
+	RGraphNode *root = r_list_first (l);
+	if (root) {
+		RGraph *dg = r_graph_dom_tree (g->graph, root);
+		if (dg) {
+			g->graph = dg;
+		} else {
+			R_LOG_WARN ("Cannot compute the dominance tree");
+			sleep (1);
+		}
+	}
+#endif
 
 	while (!exit_graph && !is_error && !r_cons_is_breaked ()) {
 		w = r_cons_get_size (&h);

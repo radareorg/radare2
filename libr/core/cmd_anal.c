@@ -10860,7 +10860,7 @@ static void r_core_graph_print(RCore *core, RGraph /*<RGraphNodeInfo>*/ *graph, 
 	RGraphNode *graphNode, *target;
 	RGraphNodeInfo *print_node;
 	if (use_utf != -1) {
-		r_config_set_i (core->config, "scr.utf8", use_utf);
+		r_config_set_b (core->config, "scr.utf8", use_utf);
 	}
 	switch (*input) {
 	case 0:
