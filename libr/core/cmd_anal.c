@@ -7374,15 +7374,19 @@ static void cmd_aeg(RCore *core, int argc, char *argv[]) {
 		const ut64 osc = r_config_get_i (core->config, "scr.color");
 		r_config_set_i (core->config, "scr.color", 0);
 		ut64 oseek = core->offset;
-		agraph->need_update_dim = true;
-		agraph->layout = r_config_get_i (core->config, "graph.layout");
-		int update_seek = r_core_visual_graph (core, agraph, NULL, true);
-		r_cons_show_cursor (true);
-		r_cons_enable_mouse (false);
-		if (update_seek != -1) {
-			r_core_seek (core, oseek, false);
+		if (agraph) {
+			agraph->need_update_dim = true;
+			// layout
+			agraph->layout = r_config_get_i (core->config, "graph.layout");
+			agraph->need_set_layout = true;
+			int update_seek = r_core_visual_graph (core, agraph, NULL, true);
+			r_cons_show_cursor (true);
+			r_cons_enable_mouse (false);
+			if (update_seek != -1) {
+				r_core_seek (core, oseek, false);
+			}
+			r_agraph_free (agraph);
 		}
-		r_agraph_free (agraph);
 		r_config_set_i (core->config, "scr.color", osc);
 	}
 		break;
