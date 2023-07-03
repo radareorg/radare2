@@ -1973,6 +1973,10 @@ static bool bin_relocs(RCore *r, PJ *pj, int mode, int va) {
 						r->bin->prefix ? "." : "", n, reloc_size, saddr);
 				}
 #endif
+			} else {
+				ut64 v = reloc->symbol? reloc->symbol->vaddr: reloc->addend;
+				ut64 a = addr;
+				r_cons_printf ("wv8 0x%"PFMT64x" @ 0x%"PFMT64x"\n", v, a);
 			}
 		} else if (IS_MODE_JSON (mode)) {
 			pj_o (pj);
