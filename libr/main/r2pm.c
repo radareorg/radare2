@@ -350,7 +350,7 @@ static void r2pm_setenv(void) {
 			r_sys_setenv ("R2_USER_PLUGINS", pd);
 			r_sys_mkdirp (pd);
 		}
-		free (pd);
+		R_FREE (pd);
 	}
 
 	char *r2_prefix = r_xdg_datadir ("prefix");
@@ -426,11 +426,7 @@ static void r2pm_setenv(void) {
 			if (!strstr (ldpath, gr2_prefix)) {
 				char *newpath = r_str_newf ("%s/lib:%s", gr2_prefix, ldpath);
 				r_sys_setenv (ldpathvar, newpath);
-				if (R_STR_ISNOTEMPTY (pd)) {
-					r_str_trim (pd);
-					r_sys_setenv ("R2_USER_PLUGINS", pd);
-					r_sys_mkdirp (pd);
-				}
+				free (newpath);
 			}
 		}
 		free (gr2_prefix);
