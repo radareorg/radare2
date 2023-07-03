@@ -2747,6 +2747,9 @@ static void op0_memimmhandle(RAnalOp *op, cs_insn *insn, ut64 addr, int regsz) {
 			if (op->ptr < 0x1000) {
 				op->ptr = UT64_MAX;
 			}
+		} else {
+			op->ptr = op->disp;
+			op->disp = UT64_MAX;
 		}
 		if (INSOP(1).type == X86_OP_IMM) {
 			op->val = INSOP(1).imm;
@@ -3148,6 +3151,18 @@ static void anop(RArchSession *a, RAnalOp *op, ut64 addr, const ut8 *buf, int le
 	case X86_INS_VMOVUPS:
 		op->type = R_ANAL_OP_TYPE_MOV;
 		op->family = R_ANAL_OP_FAMILY_VEC;
+		switch (INSOP(1).type) {
+		case X86_OP_MEM:
+			op->ptr = addr + op->size + op->disp;
+			break;
+		case X86_OP_IMM:
+			if (INSOP(1).imm > 10) {
+				op->ptr = INSOP(1).imm;
+			}
+			break;
+		default:
+			break;
+		}
 		break;
 	case X86_INS_PCMPEQB:
 	case X86_INS_PCMPEQD:
@@ -3210,6 +3225,8 @@ static void anop(RArchSession *a, RAnalOp *op, ut64 addr, const ut8 *buf, int le
 	case X86_INS_MOVSW:
 	case X86_INS_MOVD:
 	case X86_INS_MOVQ:
+	case X86_INS_MOVDQU:
+	case X86_INS_MOVDQA:
 	case X86_INS_MOVDQ2Q:
 		{
 		op->type = R_ANAL_OP_TYPE_MOV;
