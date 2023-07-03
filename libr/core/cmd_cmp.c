@@ -35,7 +35,7 @@ static RCoreHelpMessage help_msg_c = {
 	// "cc", " [offset]", "code bindiff current block against offset"
 	// "cD", " [file]", "like above, but using radiff -b",
 	"cf", " [file]", "compare contents of file at current seek",
-	"cg", "[fo?] [file]", "graphdiff current file and [file]",
+	"cg", "[?][afo] [file]", "compare graphdiff current file and find similar functions",
 	"ci", "[?] [obid] ([obid2])", "compare two bin-objects (symbols, imports, ...)",
 	"cl|cls|clear", "", "clear screen, (clear0 to goto 0, 0 only)",
 	"cmp", " [file] [file]", "compare two files",
