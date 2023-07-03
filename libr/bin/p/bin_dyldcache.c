@@ -1187,7 +1187,7 @@ static RList *create_cache_bins(RBinFile *bf, RDyldCache *cache) {
 		ut32 j;
 		if (target_libs) {
 			HtPU *path_to_idx = NULL;
-			const ut32 depListCount = cache->accel->depListCount;
+			const ut32 depListCount = (cache->accel)? cache->accel->depListCount: 0;
 			if (cache->accel && depListCount > 0) {
 				depArray = R_NEWS0 (ut16, depListCount);
 				if (!depArray) {
