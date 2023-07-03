@@ -1906,14 +1906,14 @@ static int bin_relocs(RCore *r, PJ *pj, int mode, int va) {
 			char *name = reloc->import
 				? strdup (reloc->import->name)
 				: (reloc->symbol ? strdup (reloc->symbol->name) : NULL);
-			if (name && bin_demangle) {
-				char *mn = r_bin_demangle (r->bin->cur, NULL, name, addr, keep_lib);
-				if (mn) {
-					free (name);
-					name = mn;
-				}
-			}
 			if (name) {
+				if (bin_demangle) {
+					char *mn = r_bin_demangle (r->bin->cur, NULL, name, addr, keep_lib);
+					if (mn) {
+						free (name);
+						name = mn;
+					}
+				}
 				int reloc_size = 4;
 				char *n = r_name_filter_quoted_shell (name);
 				r_cons_printf ("\"f %s%s%s %d 0x%08"PFMT64x"\"\n",
@@ -1949,7 +1949,9 @@ static int bin_relocs(RCore *r, PJ *pj, int mode, int va) {
 			if (relname && *relname) {
 				pj_ks (pj, "name", relname);
 			}
-			pj_ks (pj, "demname", r_str_get (mn));
+			if (R_STR_ISNOTEMPTY (mn)) {
+				pj_ks (pj, "demname", mn);
+			}
 			pj_ks (pj, "type", bin_reloc_type_name (reloc));
 			pj_kn (pj, "vaddr", reloc->vaddr);
 			pj_kn (pj, "paddr", reloc->paddr);
@@ -4493,7 +4495,7 @@ R_API bool r_core_bin_info(RCore *core, int action, PJ *pj, int mode, int va, RC
 	if ((action & R_CORE_BIN_ACC_SECTIONS_MAPPING)) {
 		ret &= bin_map_sections_to_segments (core->bin, pj, mode);
 	}
-	if (r_config_get_i (core->config, "bin.relocs")) {
+	if (r_config_get_b (core->config, "bin.relocs")) {
 		if ((action & R_CORE_BIN_ACC_RELOCS)) {
 			ret &= bin_relocs (core, pj, mode, va);
 		}
