@@ -4003,3 +4003,42 @@ aft
 EOF
 EXPECT=
 RUN
+
+NAME=vecref test
+FILE=bins/pe/plscrackme.exe
+CMDS=<<EOF
+aar
+0x140001358
+ao
+pd 1
+0x140021040
+pd 1
+EOF
+EXPECT=<<EOF
+address: 0x140001358
+opcode: movdqa xmm0, xmmword [rip + 0x1fce0]
+esilcost: 16
+disasm: movdqa xmm0, xmmword [str._n_2.__1__a]
+pseudo: xmm0 = xmmword [str._n_2.__1__a]
+mnemonic: movdqa
+description: move aligned double quadword
+mask: ffffff0000000000
+id: 468
+bytes: 660f6f05e0fc0100
+ptr: 0x140021040
+disp: 130272
+refptr: 16
+size: 8
+sign: false
+type: mov
+cycles: 1
+scale: 1
+esil: 0x1fce0,rip,+,[16],xmm0,=
+direction: read
+family: vec
+            0x140001358      660f6f05e0fc.  movdqa xmm0, xmmword [str._n_2.__1__a] ; [0x140021040:16]=-1 ; "\n*,2.)%#1%#)a~\x7f"
+            ;-- str._n_2.__1__a:
+            ; DATA XREF from main @ +0x38(r)
+            0x140021040     .string "\n*,2.)%#1%#)a~" ; len=15
+EOF
+RUN
