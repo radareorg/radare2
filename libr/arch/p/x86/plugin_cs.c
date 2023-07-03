@@ -2747,7 +2747,7 @@ static void op0_memimmhandle(RAnalOp *op, cs_insn *insn, ut64 addr, int regsz) {
 			if (op->ptr < 0x1000) {
 				op->ptr = UT64_MAX;
 			}
-		} else {
+		} else if (op->disp > 1000) {
 			op->ptr = op->disp;
 			op->disp = UT64_MAX;
 		}
