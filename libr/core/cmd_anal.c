@@ -4064,20 +4064,25 @@ static void cmd_afbc(RCore *core, const char *input) {
 		}
 	} else {
 		ut64 addr = core->offset;
+		const bool del = (*ptr == '-');
+		if (del) {
+			ptr++;
+		}
+
 		char *space = strchr (ptr, ' ');
 		if (space) {
 			*space++ = 0;
 			addr = r_num_math (core->num, space);
 		}
 		RColor color = {0};
-		(void)r_cons_pal_parse (ptr, &color);
-		if (color.r || color.g || color.b) {
-			RAnalBlock *bb = r_anal_get_block_at (core->anal, addr);
-			if (bb) {
-				bb->color = color;
-			}
+		if (del) {
+			ptr--;
 		} else {
-			R_LOG_ERROR ("Invalid color: '%s'", ptr);
+			(void)r_cons_pal_parse (ptr, &color);
+		}
+		RAnalBlock *bb = r_anal_get_block_at (core->anal, addr);
+		if (bb) {
+			bb->color = color;
 		}
 	}
 	free (ptr);
