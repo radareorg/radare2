@@ -3523,6 +3523,7 @@ static void ds_print_bytes(RDisasmState *ds) {
 	if (ds->show_flag_in_bytes) {
 		flagstr = r_flag_get_liststr (core->flags, ds->at);
 	}
+	bool off = false;
 	int nb = R_MIN (100, ds->nb);
 	if (flagstr) {
 		if (nb > 3 && strlen (flagstr) >= nb) {
@@ -3582,20 +3583,27 @@ static void ds_print_bytes(RDisasmState *ds) {
 				}
 			}
 #endif
-			if (r_str_ansi_len (str) > nb) {
-				char *p = (char *)r_str_ansi_chrn (str, nb);
-				if (p)  {
-					p[0] = '.';
-					p[1] = '\0';
-				}
-			}
 			ds->print->cur_enabled = (ds->cursor != -1);
 			if (ds->show_bytes_opcolor) {
 				ds->print->nbcolor = (ds->analop.nopcode > 1)? ds->analop.nopcode: 1;
 			} else {
 				ds->print->nbcolor = 0;
 			}
+			// R2R db/cmd/cmd_disassembly
 			nstr = r_print_hexpair (ds->print, str, n);
+			if (r_str_ansi_len (nstr) > nb) {
+				char *p = (char *)r_str_ansi_chrn (nstr, nb);
+				if (p)  {
+					off = true;
+					p[0] = '.';
+					if (core->print->bytespace) {
+						p[1] = '.';
+						p[2] = '\0';
+					} else {
+						p[1] = '\0';
+					}
+				}
+			}
 			ds->print->nbcolor = 0;
 			if (ds->print->bytespace) {
 				k = (nb + (nb / 2)) - r_str_ansi_len (nstr) + 2;
@@ -3624,7 +3632,13 @@ static void ds_print_bytes(RDisasmState *ds) {
 		}
 	}
 	if (ds->show_bytes_align) {
-		r_cons_printf ("%s%s%s  ", (*extra)? extra + 1: extra, str, pad);
+		if (core->print->bytespace) {
+			const int d = off? 2: 1;
+			const char *air = off? " ":"";
+			r_cons_printf ("%s%s%s  %s", (extra[0] && extra[1])? extra + d: extra, str, pad, air);
+		} else {
+			r_cons_printf ("%s%s%s  ", (extra[0])? extra + 1: extra, str, pad);
+		}
 	} else {
 		r_cons_printf ("%s%s %s", pad, str, extra);
 	}
