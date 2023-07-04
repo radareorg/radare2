@@ -272,8 +272,8 @@ regset 8 (seg)
    es seg @ seg (offset: 192  size: 8)
    fs seg @ seg (offset: 200  size: 8)
    gs seg @ seg (offset: 208  size: 8)
-regset 9 ((null))
-* arena (null) size 1
+regset 9 (pri)
+* arena pri size 1
 EOF
 RUN
 
