@@ -5,10 +5,8 @@
 R_LIB_VERSION (r_reg);
 
 static const char * const types[R_REG_TYPE_LAST + 1] = {
-	// PAST "gpr", "drx", "fpu", "mmx", "xmm", "ymm", "flg", "seg", NULL
-	// R2_590 Add "pri", // for privileged registers
-	"gpr", "drx", "fpu", "vec64", "vec128", "vec256", "vec512", "flg", "seg", NULL
-	// FUTURE "gpr", "drx", "fpu", "vec", "flg", "seg", NULL
+	"gpr", "drx", "fpu", "vec64", "vec128", "vec256", "vec512", "flg", "seg", "pri", NULL
+	// FUTURE?  vec* -> vec
 };
 
 R_API bool r_reg_hasbits_check(RReg *reg, int size) {
@@ -156,10 +154,8 @@ R_API int r_reg_get_name_idx(const char *type) {
 	case 'S' + ('R' << 8): return R_REG_NAME_SR;
 	case 'L' + ('R' << 8): return R_REG_NAME_LR;
 	case 'S' + ('P' << 8): return R_REG_NAME_SP;
-#if R2_590
 	case 'G' + ('P' << 8): return R_REG_NAME_GP;
 	case 'R' + ('A' << 8): return R_REG_NAME_RA;
-#endif
 	case 'B' + ('P' << 8): return R_REG_NAME_BP;
 	case 'S' + ('N' << 8): return R_REG_NAME_SN;
 	/* args */
