@@ -2065,8 +2065,8 @@ static const char * const theme_chrome = \
 	"ec ai.seq rgb:fff\n" \
 	"ec ai.ascii rgb:fff\n" \
 	"ec widget_bg rgb:fff rgb:333\n" \
-	"ec widget_sel rgb:333 rgb:fff\n" \
-};
+	"ec widget_sel rgb:333 rgb:fff\n"
+;
 					 ;
 RConsTheme d_themes[] = {
 	{ "ayu", theme_ayu },
