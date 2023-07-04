@@ -2004,6 +2004,70 @@ static const char * const theme_zenburn = \
 	"ec widget_bg rgb:8dd rgb:333\n"
 	"ec widget_sel white rgb:b52 bold\n"
 ;
+static const char * const theme_chrome = \
+	"ecd\n" \
+	"ec b0x00 rgb:ccc\n" \
+	"ec b0x7f rgb:777\n" \
+	"ec b0xff rgb:333\n" \
+	"ec args rgb:fff\n" \
+	"ec bin rgb:fff\n" \
+	"ec btext rgb:fff\n" \
+	"ec call white\n" \
+	"ec cjmp white\n" \
+	"ec cmp rgb:aaa\n" \
+	"ec comment white\n" \
+	"ec usrcmt rgb:333 white\n" \
+	"ec reg rgb:fff\n" \
+	"ec creg rgb:fff\n" \
+	"ec flag rgb:fff\n" \
+	"ec fline rgb:aaa\n" \
+	"ec flow rgb:fff\n" \
+	"ec flow2 rgb:fff\n" \
+	"ec fname rgb:fff\n" \
+	"ec help rgb:fff\n" \
+	"ec input rgb:fff\n" \
+	"ec jmp rgb:fff\n" \
+	"ec label rgb:fff\n" \
+	"ec math rgb:777\n" \
+	"ec mov rgb:ddd\n" \
+	"ec nop rgb:333\n" \
+	"ec num rgb:fff\n" \
+	"ec offset rgb:555\n" \
+	"ec other rgb:999\n" \
+	"ec pop rgb:999\n" \
+	"ec prompt rgb:fff\n" \
+	"ec push rgb:ddd\n" \
+	"ec ret rgb:777\n" \
+	"ec swi rgb:fff\n" \
+	"ec trap rgb:fff\n" \
+	"ec ucall rgb:fff rgb:333\n" \
+	"ec ujmp rgb:fff\n" \
+	"ec graph.true rgb:fff\n" \
+	"ec graph.false rgb:777\n" \
+	"ec graph.trufae rgb:ddd\n" \
+	"ec graph.current rgb:fff\n" \
+	"ec graph.traced rgb:f00\n" \
+	"ec graph.box rgb:fff\n" \
+	"ec graph.box2 rgb:fff\n" \
+	"ec graph.box3 rgb:000\n" \
+	"ec graph.box4 rgb:000\n" \
+	"ec gui.cflow rgb:fff\n" \
+	"ec gui.dataoffset rgb:fff\n" \
+	"ec crypto rgb:fff\n" \
+	"ec floc rgb:777\n" \
+	"ec linehl rgb:111\n" \
+	"ec func_var rgb:fff\n" \
+	"ec func_var_type rgb:777\n" \
+	"ec func_var_addr rgb:555\n" \
+	"ec ai.read rgb:eee\n" \
+	"ec ai.write rgb:ddd\n" \
+	"ec ai.exec rgb:fff\n" \
+	"ec ai.seq rgb:fff\n" \
+	"ec ai.ascii rgb:fff\n" \
+	"ec widget_bg rgb:fff rgb:333\n" \
+	"ec widget_sel rgb:333 rgb:fff\n"
+;
+					 ;
 RConsTheme d_themes[] = {
 	{ "ayu", theme_ayu },
 	{ "basic", theme_basic },
@@ -2035,5 +2099,6 @@ RConsTheme d_themes[] = {
 	{ "white", theme_white },
 	{ "white2", theme_white2 },
 	{ "zenburn", theme_zenburn },
+	{ "chrome", theme_chrome },
 	{0,0}
 };
