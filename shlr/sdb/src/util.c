@@ -72,15 +72,16 @@ SDB_API ut32 sdb_hash_len(const char *s, ut32 *len) {
 	}
 #else
 	ut32 count = 0;
+	if (!len) {
+		return h;
+	}
 	if (s) {
 		while (*s) {
 			h = (h + (h << 5)) ^ *s++;
 			count++;
 		}
 	}
-	if (len) {
-		*len = count;
-	}
+	*len = count;
 #endif
 	return h;
 }
