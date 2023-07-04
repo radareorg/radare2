@@ -1,0 +1,64 @@
+ecd
+ec b0x00 rgb:ccc
+ec b0x7f rgb:777
+ec b0xff rgb:333
+ec args rgb:fff
+ec bin rgb:fff
+ec btext rgb:fff
+ec call white
+ec cjmp white
+ec cmp rgb:aaa
+ec comment white
+ec usrcmt rgb:333 white
+ec reg rgb:fff
+ec creg rgb:fff
+ec flag rgb:fff
+ec fline rgb:aaa
+ec flow rgb:fff
+ec flow2 rgb:fff
+ec fname rgb:fff
+ec help rgb:fff
+ec input rgb:fff
+ec jmp rgb:fff
+ec label rgb:fff
+ec math rgb:777
+ec mov rgb:ddd
+ec nop rgb:333
+ec num rgb:fff
+ec offset rgb:555
+ec other rgb:999
+ec pop rgb:999
+ec prompt rgb:fff
+ec push rgb:ddd
+ec ret rgb:777
+ec swi rgb:fff
+ec trap rgb:fff
+ec ucall rgb:fff rgb:333
+ec ujmp rgb:fff
+ec graph.true rgb:fff
+ec graph.false rgb:777
+ec graph.trufae rgb:ddd
+ec graph.current rgb:fff
+ec graph.traced rgb:f00
+ec graph.box rgb:fff
+ec graph.box2 rgb:fff
+ec graph.box3 rgb:000
+ec graph.box4 rgb:000
+ec gui.cflow rgb:fff
+ec gui.dataoffset rgb:fff
+ec crypto rgb:fff
+ec floc rgb:777
+ec linehl rgb:111
+
+ec func_var rgb:fff
+ec func_var_type rgb:777
+ec func_var_addr rgb:555
+
+ec ai.read rgb:eee
+ec ai.write rgb:ddd
+ec ai.exec rgb:fff
+ec ai.seq rgb:fff
+ec ai.ascii rgb:fff
+
+ec widget_bg rgb:fff rgb:333
+ec widget_sel rgb:333 rgb:fff
