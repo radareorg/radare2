@@ -235,6 +235,7 @@ static RCoreHelpMessage help_msg_ab = {
 	"ab.", "", "same as: ab $$",
 	"aba", " [addr]", "analyze esil accesses in basic block (see aea?)",
 	"abb", " [length]", "analyze N bytes and extract basic blocks",
+	"abc", "[-] [color]", "change color of the current basic block (same as afbc, abc- to unset)",
 	"abe", " [addr]", "emulate basic block (alias for aeb)",
 	"abf", " [addr]", "address of incoming (from) basic blocks",
 	"abi", "", "same as ab. or ab",
@@ -555,7 +556,7 @@ static RCoreHelpMessage help_msg_afb = {
 	"afb.", " [addr]", "show info of current basic block",
 	"afb=", "", "display ascii-art bars for basic block regions",
 	"afb+", " fcn_at bbat bbsz [jump] [fail] ([diff])", "add basic block by hand",
-	"afbc", " [color] ([addr])", "colorize basic block (same as 'abc')",
+	"afbc", "[-] [color] ([addr])", "colorize basic block (same as 'abc', afbc- to unset)",
 	"afbe", " bbfrom bbto", "add basic-block edge for switch-cases",
 	"afbi", "[j]", "print current basic block information",
 	"afbj", " [addr]", "show basic blocks information in json",
@@ -4064,20 +4065,25 @@ static void cmd_afbc(RCore *core, const char *input) {
 		}
 	} else {
 		ut64 addr = core->offset;
+		const bool del = (*ptr == '-');
+		if (del) {
+			ptr++;
+		}
+
 		char *space = strchr (ptr, ' ');
 		if (space) {
 			*space++ = 0;
 			addr = r_num_math (core->num, space);
 		}
 		RColor color = {0};
-		(void)r_cons_pal_parse (ptr, &color);
-		if (color.r || color.g || color.b) {
-			RAnalBlock *bb = r_anal_get_block_at (core->anal, addr);
-			if (bb) {
-				bb->color = color;
-			}
+		if (del) {
+			ptr--;
 		} else {
-			R_LOG_ERROR ("Invalid color: '%s'", ptr);
+			(void)r_cons_pal_parse (ptr, &color);
+		}
+		RAnalBlock *bb = r_anal_get_block_at (core->anal, addr);
+		if (bb) {
+			bb->color = color;
 		}
 	}
 	free (ptr);
