@@ -1488,29 +1488,31 @@ static bool init_dynstr(ELFOBJ *eo) {
 		return false;
 	}
 
+	ut8 name[128] = {0};
 	int i;
 	for (i = 0; i < eo->ehdr.e_shnum; i++) {
 		const size_t sh_name = eo->shdr[i].sh_name;
 		const size_t shstrtab_size = eo->shstrtab_size;
 
 		bool inshstrtab = (sh_name < shstrtab_size);
-
+#if 0
 		if (eo->shdr[i].sh_name > eo->shstrtab_size) {
-			// return false;
+			return false;
 		}
+#endif
 		if (sh_name >= eo->size) {
 			R_LOG_DEBUG ("section %d name is beyond eof", i);
 			return false;
 		}
-		const char *section_name;
+		const char *section_name = NULL;
 		if (inshstrtab) {
 			section_name = eo->shstrtab + eo->shdr[i].sh_name;
 		} else {
 			R_LOG_DEBUG ("section name is beyond the sh string tab section size");
 			// return false;
-			ut8 name[128] = {0};
 			ut64 at = eo->shstrtab_section->sh_offset + sh_name;
 			(void)r_buf_read_at (eo->b, at, name, sizeof (name));
+			name[sizeof (name) - 1] = 0;
 			section_name = (const char *)name;
 		}
 		if (eo->shdr[i].sh_type == SHT_STRTAB && !strcmp (section_name, ".dynstr")) {
