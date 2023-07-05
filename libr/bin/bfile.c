@@ -550,6 +550,7 @@ R_API bool r_bin_file_object_new_from_xtr_data(RBin *bin, RBinFile *bf, ut64 bas
 
 	RBinPlugin *plugin = get_plugin_from_buffer (bin, bf, NULL, data->buf);
 	bf->buf = r_buf_ref (data->buf);
+	bf->user_baddr = baseaddr;
 
 	RBinObject *o = r_bin_object_new (bf, plugin, baseaddr, loadaddr, offset, sz);
 	if (!o) {
@@ -602,6 +603,7 @@ R_IPI RBinFile *r_bin_file_new_from_buffer(RBin *bin, const char *file, RBuffer 
 	if (bf) {
 		RListIter *item = r_list_append (bin->binfiles, bf);
 		bf->buf = r_buf_ref (buf);
+		bf->user_baddr = baseaddr;
 		RBinPlugin *plugin = get_plugin_from_buffer (bin, bf, pluginname, bf->buf);
 		RBinObject *o = r_bin_object_new (bf, plugin, baseaddr, loadaddr, 0, r_buf_size (bf->buf));
 		if (!o) {

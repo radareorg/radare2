@@ -1640,7 +1640,7 @@ static ut64 get_import_addr_arm(ELFOBJ *eo, RBinElfReloc *rel) {
 		return UT64_MAX;
 	}
 
-	ut64 pos = COMPUTE_PLTGOT_POSITION (rel, got_addr, 0x3);
+	const ut64 pos = COMPUTE_PLTGOT_POSITION (rel, got_addr, 0x3);
 
 	switch (rel->type) {
 	case R_ARM_JUMP_SLOT:
@@ -4316,7 +4316,7 @@ static RVector* parse_gnu_debugdata(ELFOBJ *eo, size_t *ret_size) {
 			ut8 *odata = r_sys_unxz (data, size, &osize);
 			if (odata) {
 				RBuffer *newelf = r_buf_new_with_pointers (odata, osize, false);
-				ELFOBJ* newobj = Elf_(new_buf) (newelf, false);
+				ELFOBJ* newobj = Elf_(new_buf) (newelf, eo->user_baddr, false);
 				RVector *symbols = NULL;
 				if (newobj) {
 					symbols = Elf_(load_symbols) (newobj);
@@ -4829,13 +4829,14 @@ void Elf_(free)(ELFOBJ* eo) {
 	free (eo);
 }
 
-ELFOBJ* Elf_(new_buf)(RBuffer *buf, bool verbose) {
+ELFOBJ* Elf_(new_buf)(RBuffer *buf, ut64 baddr, bool verbose) {
 	ELFOBJ *eo = R_NEW0 (ELFOBJ);
 	if (eo) {
 		eo->kv = sdb_new0 ();
 		eo->size = r_buf_size (buf);
 		eo->verbose = verbose;
 		eo->b = r_buf_ref (buf);
+		eo->user_baddr = baddr;
 		if (!elf_init (eo)) {
 			Elf_(free) (eo);
 			return NULL;
@@ -4880,7 +4881,6 @@ ut64 Elf_(p2v) (ELFOBJ *eo, ut64 paddr) {
 // Deprecated temporarily. Use r_bin_elf_v2p_new in new code for now.
 ut64 Elf_(v2p)(ELFOBJ *eo, ut64 vaddr) {
 	r_return_val_if_fail (eo, 0); // UT64_MAX or vaddr?
-	// r_return_val_if_fail (eo, UT64_MAX);
 	if (!eo->phdr) {
 		if (is_bin_etrel (eo)) {
 			return vaddr - eo->baddr;
