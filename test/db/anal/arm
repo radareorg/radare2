@@ -606,7 +606,7 @@ f~sym?
 afl~?
 EOF
 EXPECT=<<EOF
-42
+46
 15
 EOF
 RUN

@@ -70,6 +70,7 @@ typedef struct r_bin_elf_reloc_t {
 	ut64 rva;
 	ut16 section;
 	ut64 sto;
+	ut64 laddr; // local symbol address
 } RBinElfReloc;
 
 typedef struct r_bin_elf_field_t {

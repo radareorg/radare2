@@ -577,6 +577,8 @@ typedef struct r_bin_reloc_t {
 	ut8 additive;
 	RBinSymbol *symbol;
 	RBinImport *import;
+	ut64 laddr; // local symbol address | UT64_MAX
+	// RBinSymbol *lsymbol; // still unused
 	st64 addend;
 	ut64 vaddr;
 	ut64 paddr;
