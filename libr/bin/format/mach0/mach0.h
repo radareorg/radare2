@@ -46,8 +46,8 @@ typedef enum {
 #define R_FIXUP_EVENT_MASK_ALL (R_FIXUP_EVENT_MASK_BIND_ALL | R_FIXUP_EVENT_MASK_REBASE_ALL)
 
 struct section_t {
-	ut64 offset; // paddr R2_590
-	ut64 addr; // vaddr
+	ut64 paddr;
+	ut64 vaddr;
 	ut64 size;
 	ut64 vsize;
 	ut32 align;

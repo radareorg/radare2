@@ -579,14 +579,14 @@ static ut64 estimate_slide(RBinFile *bf, RDyldCache *cache, ut64 value_mask, ut6
 		struct section_t *classlist_section = r_vector_at (sections, classlist_idx);
 		int classlist_sample_size = R_MIN (64, classlist_section->size);
 		int n_classes = classlist_sample_size / 8;
-		ut64 sect_offset = classlist_section->offset + bin->hdr_offset;
+		ut64 sect_offset = classlist_section->paddr + bin->hdr_offset;
 
 		if (r_buf_fread_at (cache->buf, sect_offset, (ut8*) classlist, "l", n_classes) != classlist_sample_size) {
 			goto next_bin;
 		}
 
 		struct section_t *data_section = r_vector_at (sections, data_idx);
-		ut64 data_addr = data_section->addr;
+		ut64 data_addr = data_section->vaddr;
 		ut64 data_tail = data_addr & 0xfff;
 		ut64 data_tail_end = (data_addr + data_section->size) & 0xfff;
 		for (i = 0; i < n_classes; i++) {
@@ -1830,7 +1830,7 @@ static objc_cache_opt_info *get_objc_opt_info(RBinFile *bf, RDyldCache *cache) {
 				continue;
 			}
 			if (strstr (section->name, "__objc_scoffs")) {
-				scoffs_offset = va2pa (section->addr, cache->n_maps, cache->maps, cache->buf, slide, NULL, NULL);
+				scoffs_offset = va2pa (section->vaddr, cache->n_maps, cache->maps, cache->buf, slide, NULL, NULL);
 				scoffs_size = section->size;
 				remaining--;
 				if (remaining == 0) {
@@ -1838,7 +1838,7 @@ static objc_cache_opt_info *get_objc_opt_info(RBinFile *bf, RDyldCache *cache) {
 				}
 			}
 			if (strstr (section->name, "__DATA.__objc_selrefs")) {
-				selrefs_offset = va2pa (section->addr, cache->n_maps, cache->maps, cache->buf, slide, NULL, NULL);
+				selrefs_offset = va2pa (section->vaddr, cache->n_maps, cache->maps, cache->buf, slide, NULL, NULL);
 				selrefs_size = section->size;
 				remaining--;
 				if (remaining == 0) {
@@ -1846,7 +1846,7 @@ static objc_cache_opt_info *get_objc_opt_info(RBinFile *bf, RDyldCache *cache) {
 				}
 			}
 			if (strstr (section->name, "__DATA_CONST.__objc_selrefs")) {
-				const_selrefs_offset = va2pa (section->addr, cache->n_maps, cache->maps, cache->buf, slide, NULL, NULL);
+				const_selrefs_offset = va2pa (section->vaddr, cache->n_maps, cache->maps, cache->buf, slide, NULL, NULL);
 				const_selrefs_size = section->size;
 				remaining--;
 				if (remaining == 0) {
@@ -2113,8 +2113,8 @@ static void sections_from_bin(RList *ret, RBinFile *bf, RDyldBinImage *bin) {
 		ptr->is_data = __is_data_section (ptr->name);
 		ptr->size = section->size;
 		ptr->vsize = section->vsize;
-		ptr->vaddr = section->addr;
-		ptr->paddr = va2pa (section->addr, cache->n_maps, cache->maps, cache->buf, slide, NULL, NULL);
+		ptr->vaddr = section->vaddr;
+		ptr->paddr = va2pa (section->vaddr, cache->n_maps, cache->maps, cache->buf, slide, NULL, NULL);
 		if (!ptr->vaddr) {
 			ptr->vaddr = ptr->paddr;
 		}
@@ -2293,7 +2293,7 @@ static RList *classes(RBinFile *bf) {
 				continue;
 			}
 
-			ut64 offset = va2pa (section->addr, cache->n_maps, cache->maps, cache->buf, slide, NULL, NULL);
+			ut64 offset = va2pa (section->vaddr, cache->n_maps, cache->maps, cache->buf, slide, NULL, NULL);
 			if (r_buf_read_at (cache->buf, offset, pointers, section->size) < section->size) {
 				R_FREE (pointers);
 				continue;

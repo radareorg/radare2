@@ -2532,8 +2532,8 @@ const RVector *MACH0_(load_sections)(struct MACH0_(obj_t) *bin) {
 		for (i = 0; i < bin->nsegs; i++) {
 			struct section_t *section = r_vector_end (&bin->sections_cache);
 			seg = &bin->segs[i];
-			section->addr = seg->vmaddr;
-			section->offset = seg->fileoff;
+			section->vaddr = seg->vmaddr;
+			section->paddr = seg->fileoff;
 			section->size = seg->vmsize;
 			section->vsize = seg->vmsize;
 			section->align = 4096;
@@ -2559,8 +2559,8 @@ const RVector *MACH0_(load_sections)(struct MACH0_(obj_t) *bin) {
 	}
 	for (i = 0; i < to; i++) {
 		struct section_t *section = r_vector_end (&bin->sections_cache);
-		section->offset = (ut64)bin->sects[i].offset;
-		section->addr = (ut64)bin->sects[i].addr;
+		section->paddr = (ut64)bin->sects[i].offset;
+		section->vaddr = (ut64)bin->sects[i].addr;
 		section->size = (bin->sects[i].flags == S_ZEROFILL) ? 0 : (ut64)bin->sects[i].size;
 		section->vsize = (ut64)bin->sects[i].size;
 		section->align = bin->sects[i].align;
@@ -2569,8 +2569,8 @@ const RVector *MACH0_(load_sections)(struct MACH0_(obj_t) *bin) {
 		r_str_filter (sectname, -1);
 		r_str_ncpy (raw_segname, bin->sects[i].segname, 16);
 		for (j = 0; j < bin->nsegs; j++) {
-			if (section->addr >= bin->segs[j].vmaddr &&
-				section->addr < (bin->segs[j].vmaddr + bin->segs[j].vmsize)) {
+			if (section->vaddr >= bin->segs[j].vmaddr &&
+				section->vaddr < (bin->segs[j].vmaddr + bin->segs[j].vmsize)) {
 				section->perm = prot2perm (bin->segs[j].initprot);
 				break;
 			}
