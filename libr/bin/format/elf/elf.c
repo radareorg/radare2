@@ -3995,7 +3995,7 @@ static bool _read_symbols_from_phdr(ELFOBJ *eo, ReadPhdrSymbolState *state) {
 		}
 
 		if (new_symbol->st_name + 2 > eo->strtab_size) {
-			R_LOG_WARN ("Symbol name outside the strtab section");
+			R_LOG_DEBUG ("Symbol name outside the strtab section");
 			// Since we are reading beyond the symbol table what's happening
 			// is that some entry is trying to dereference the strtab beyond its capacity
 			// this can't be a symbol so this is the end
@@ -4483,7 +4483,6 @@ static bool _process_symbols_and_imports_in_section(ELFOBJ *eo, int type, Proces
 		R_LOG_ERROR ("nsym < 1");
 		return false;
 	}
-	eprintf ("NSYM %d\n", nsym);
 
 	ut64 sh_begin = eo->shdr[i].sh_offset;
 	ut64 sh_end = sh_begin + eo->shdr[i].sh_size;
