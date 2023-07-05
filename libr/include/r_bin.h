@@ -325,6 +325,18 @@ typedef struct r_bin_file_options_t {
 	const char *filename;
 } RBinFileOptions;
 
+typedef struct r_bin_create_options_t {
+	const char *pluginname;
+	ut64 baseaddr; // where the linker maps the binary in memory
+	ut64 loadaddr; // starting physical address to read from the target file
+	ut8 *code;
+	int codelen;
+	ut8 *data;
+	int datalen;
+	const char *arch;
+	int bits;
+} RBinCreateOptions;
+
 struct r_bin_t {
 	const char *file;
 	RBinFile *cur; // TODO: deprecate
@@ -480,6 +492,7 @@ typedef struct r_bin_plugin_t {
 	const char* (*get_name)(RBinFile *bf, int type, int idx, bool simplified);
 	ut64 (*get_vaddr)(RBinFile *bf, ut64 baddr, ut64 paddr, ut64 vaddr);
 	RBuffer* (*create)(RBin *bin, const ut8 *code, int codelen, const ut8 *data, int datalen, RBinArchOptions *opt);
+	// TODO: R2_600 RBuffer* (*create)(RBin *bin, RBinCreateOptions *opt);
 	char* (*demangle)(const char *str);
 	char* (*regstate)(RBinFile *bf);
 	int (*file_type)(RBinFile *bf);
@@ -684,6 +697,7 @@ typedef void (*RBinSymbolCallback)(RBinObject *obj, RBinSymbol *symbol);
 // options functions
 R_API void r_bin_file_options_init(RBinFileOptions *opt, int fd, ut64 baseaddr, ut64 loadaddr, int rawstr);
 R_API void r_bin_arch_options_init(RBinArchOptions *opt, const char *arch, int bits);
+// R_API void r_bin_create_options_init(RBinCreateOptions *opt, const char *arch, int bits);
 
 // open/close/reload functions
 R_API RBin *r_bin_new(void);

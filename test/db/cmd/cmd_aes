@@ -109,3 +109,24 @@ aep puts @ 0x1050
 Hello World
 EOF
 RUN
+
+NAME=esil plugins
+FILE=malloc://128
+CMDS=<<EOF
+aeim
+aeL
+?e --
+aeL dummy
+?e --
+ae dummy_op
+EOF
+EXPECT=<<EOF
+dummy
+--
+--
+EOF
+EXPECT_ERR=<<EOF
+INFO: esil.dummy: Activated
+INFO: Dummy: Operation executed
+EOF
+RUN

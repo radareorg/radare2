@@ -203,7 +203,7 @@ R_API bool r_esil_use(RAnal *anal, const char *name) {
 	REsilPlugin *h;
 
 	if (anal) {
-		r_list_foreach (anal->esil_plugins, it, h) {
+		r_list_foreach (anal->esil->plugins, it, h) {
 			if (!h->name || strcmp (h->name, name)) {
 				continue;
 			}

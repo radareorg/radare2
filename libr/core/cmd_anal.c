@@ -338,7 +338,7 @@ static RCoreHelpMessage help_msg_ae = {
 	"aegf", " [expr] [register]", "esil data flow graph filter",
 	"aei", "[?]", "initialize ESIL VM state (aei- to deinitialize)",
 	"aek", "[?] [query]", "perform sdb query on ESIL.info",
-	"aeL", "", "list ESIL plugins",
+	"aeL", "[?][-] [name]", "list ESIL plugins",
 	"aep", "[?] [addr]", "manage esil pin hooks (see 'e cmd.esil.pin')",
 	"aepc", " [addr]", "change esil PC to this address",
 	"aer", "[?] [..]", "handle ESIL registers like 'ar' or 'dr' does",
@@ -7883,12 +7883,22 @@ static void cmd_anal_esil(RCore *core, const char *input, bool verbose) {
 			break;
 		}
 		break;
-	case 'L': // aeL commands
-		{
+	case 'L': // "aeL" esil plugins
+		if (input[1] == ' ') { // "aeL"
+			const char *name = r_str_trim_head_ro (input + 2);
+			r_esil_plugin_activate (core->anal->esil, name);
+		} else if (input[1] == '-') { // "aeL-"
+			const char *name = r_str_trim_head_ro (input + 2);
+			r_esil_plugin_deactivate (core->anal->esil, name);
+		} else {
 			REsilPlugin *p;
 			RListIter *iter;
-			r_list_foreach (core->anal->esil_plugins, iter, p) {
-				r_cons_printf ("%s\n", p->name);
+			if (core->anal->esil) {
+				r_list_foreach (core->anal->esil->plugins, iter, p) {
+					r_cons_printf ("%s\n", p->name);
+				}
+			} else {
+				R_LOG_WARN ("Run 'aei'");
 			}
 		}
 		break;

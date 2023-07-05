@@ -1,9 +1,9 @@
-/* radare2 - LGPL - Copyright 2021 - condret */
+/* radare2 - LGPL - Copyright 2021-2023 - condret */
 
 #include <r_anal.h>
-#include <r_list.h>
-#include <config.h>
 #include "../config.h"
+
+// R2R db/cmd/cmd_aes
 
 static REsilPlugin *esil_static_plugins[] = {
 	R_ESIL_STATIC_PLUGINS
@@ -43,8 +43,16 @@ R_API bool r_esil_plugin_add(REsil *esil, REsilPlugin *plugin) {
 }
 
 R_API bool r_esil_plugin_remove(REsil *esil, REsilPlugin *plugin) {
-	// R2_590 TODO
-	return true;
+	r_esil_plugin_deactivate(esil, plugin->name);
+	RListIter *iter;
+	REsilActivePlugin *eap;
+	r_list_foreach (esil->plugins, iter, eap) {
+		if (eap->plugin == plugin) {
+			r_list_delete (esil->plugins, iter);
+			return true;
+		}
+	}
+	return false;
 }
 
 static REsilActivePlugin *_get_active_plugin(REsil *esil, const char *name) {
