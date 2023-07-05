@@ -135,6 +135,7 @@ struct Elf_(obj_t) {
 	int bss;
 	ut64 size;
 	ut64 baddr;
+	ut64 user_baddr;
 	ut64 boffset;
 	int endian;
 	bool verbose;
@@ -198,7 +199,7 @@ const RVector* Elf_(load_fields)(struct Elf_(obj_t) *bin);  // RBinElfField
 char *Elf_(get_rpath)(struct Elf_(obj_t) *bin);
 
 struct Elf_(obj_t)* Elf_(new)(const char* file, bool verbose);
-struct Elf_(obj_t)* Elf_(new_buf)(RBuffer *buf, bool verbose);
+struct Elf_(obj_t)* Elf_(new_buf)(RBuffer *buf, ut64 user_baddr, bool verbose);
 void Elf_(free)(struct Elf_(obj_t)* bin);
 
 ut64 Elf_(resize_section)(RBinFile *bf, const char *name, ut64 size);

@@ -58,7 +58,8 @@ static Sdb* get_sdb(RBinFile *bf) {
 }
 
 static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
-	ELFOBJ *res = Elf_(new_buf) (buf, bf->rbin->verbose);
+	ut64 user_baddr = bf->user_baddr;
+	ELFOBJ *res = Elf_(new_buf) (buf, user_baddr, bf->rbin->verbose);
 	if (res) {
 	//	sdb_ns_set (sdb, "info", res->kv);
 		*bin_obj = res;
@@ -453,9 +454,9 @@ static RList* libs(RBinFile *bf) {
 	return ret;
 }
 
-static RBinReloc *reloc_convert(ELFOBJ* bin, RBinElfReloc *rel, ut64 got_addr) {
-	r_return_val_if_fail (bin && rel, NULL);
-	ut64 B = bin->baddr;
+static RBinReloc *reloc_convert(ELFOBJ* eo, RBinElfReloc *rel, ut64 got_addr) {
+	r_return_val_if_fail (eo && rel, NULL);
+	ut64 B = eo->baddr;
 	ut64 P = rel->rva; // rva has taken baddr into account
 	RBinReloc *r = R_NEW0 (RBinReloc);
 	if (!r) {
@@ -466,19 +467,20 @@ static RBinReloc *reloc_convert(ELFOBJ* bin, RBinElfReloc *rel, ut64 got_addr) {
 	r->is_ifunc = false;
 	r->addend = rel->addend;
 	if (rel->sym) {
-		if (rel->sym < bin->imports_by_ord_size && bin->imports_by_ord[rel->sym]) {
-			r->import = bin->imports_by_ord[rel->sym];
-		} else if (rel->sym < bin->symbols_by_ord_size && bin->symbols_by_ord[rel->sym]) {
-			r->symbol = bin->symbols_by_ord[rel->sym];
+		if (rel->sym < eo->imports_by_ord_size && eo->imports_by_ord[rel->sym]) {
+			r->import = eo->imports_by_ord[rel->sym];
+		} else if (rel->sym < eo->symbols_by_ord_size && eo->symbols_by_ord[rel->sym]) {
+			r->symbol = eo->symbols_by_ord[rel->sym];
 		}
 	}
 	r->vaddr = rel->rva;
 	r->paddr = rel->offset;
+	r->laddr = rel->laddr;
 
 	#define SET(T) r->type = R_BIN_RELOC_ ## T; r->additive = 0; return r
 	#define ADD(T, A) r->type = R_BIN_RELOC_ ## T; r->addend += A; r->additive = rel->mode == DT_RELA; return r
 
-	switch (bin->ehdr.e_machine) {
+	switch (eo->ehdr.e_machine) {
 	case EM_386: switch (rel->type) {
 		case R_386_NONE:     break; // malloc then free. meh. then again, there's no real world use for _NONE.
 		case R_386_32:       ADD(32, 0); break;
