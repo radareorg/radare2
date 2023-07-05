@@ -66,8 +66,12 @@ static int __rap_breakpoint(RBreakpoint *bp, RBreakpointItem *b, bool set) {
 }
 
 RDebugPlugin r_debug_plugin_rap = {
-	.name = "rap",
-	.license = "LGPL3",
+	.meta = {
+		.name = "rap",
+		.author = "pancake",
+		.desc = "rap debug plugin",
+		.license = "LGPL3",
+	},
 	.arch = "any",
 	.bits = R_SYS_BITS_32,
 	.step = __rap_step,

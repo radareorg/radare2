@@ -20,7 +20,7 @@ R_API bool r_debug_use(RDebug *dbg, const char *str) {
 		RDebugPlugin *h;
 		RListIter *iter;
 		r_list_foreach (dbg->plugins, iter, h) {
-			if (h->name && !strcmp (str, h->name)) {
+			if (h->meta.name && !strcmp (str, h->meta.name)) {
 				dbg->h = h;
 				if (dbg->anal && dbg->anal->cur) {
 					r_debug_set_arch (dbg, dbg->anal->cur->arch, dbg->bits);
@@ -44,7 +44,7 @@ R_API bool r_debug_use(RDebug *dbg, const char *str) {
 			r_reg_set_profile_string (dbg->reg, p);
 			free (p);
 		} else {
-			R_LOG_ERROR ("Cannot retrieve reg profile from debug plugin (%s)", dbg->h->name);
+			R_LOG_ERROR ("Cannot retrieve reg profile from debug plugin (%s)", dbg->h->meta.name);
 		}
 	}
 	return (dbg && dbg->h);
@@ -66,19 +66,19 @@ R_API bool r_debug_plugin_list(RDebug *dbg, int mode) {
 		pj_a (pj);
 	}
 	r_list_foreach (dbg->plugins, iter, h) {
-		int sp = 8-strlen (h->name);
+		int sp = 8 - strlen (h->meta.name);
 		spaces[sp] = 0;
 		if (mode == 'q') {
-			dbg->cb_printf ("%s\n", h->name);
+			dbg->cb_printf ("%s\n", h->meta.name);
 		} else if (mode == 'j') {
 			pj_o (pj);
-			pj_ks (pj, "name", h->name);
-			pj_ks (pj, "license", h->license);
+			pj_ks (pj, "name", h->meta.name);
+			pj_ks (pj, "license", h->meta.license);
 			pj_end (pj);
 		} else {
 			dbg->cb_printf ("%d  %s  %s %s%s\n",
 					count, (h == dbg->h)? "dbg": "---",
-					h->name, spaces, h->license);
+					h->meta.name, spaces, h->meta.license);
 		}
 		spaces[sp] = ' ';
 		count++;
@@ -91,7 +91,7 @@ R_API bool r_debug_plugin_list(RDebug *dbg, int mode) {
 }
 
 R_API bool r_debug_plugin_add(RDebug *dbg, RDebugPlugin *foo) {
-	if (!dbg || !foo || !foo->name) {
+	if (!dbg || !foo || !foo->meta.name) {
 		return false;
 	}
 	RDebugPlugin *dp = R_NEW (RDebugPlugin);

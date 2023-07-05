@@ -373,14 +373,7 @@ typedef struct r_debug_info_t {
 /* TODO: pass dbg and user data pointer everywhere */
 typedef int (*RDebugCmdCb)(RDebug *dbg, const char *cmd);
 typedef struct r_debug_plugin_t {
-	const char *name;
-	const char *license;
-	const char *author;
-	const char *version;
-#if R2_590
-	const char *description;
-#endif
-	//const char **archs; // MUST BE DEPRECATED!!!!
+	RPluginMeta meta;
 	ut32 bits;
 	const char *arch;
 	int canstep;

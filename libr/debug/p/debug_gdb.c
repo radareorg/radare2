@@ -561,9 +561,13 @@ static RList* r_debug_gdb_frames(RDebug *dbg, ut64 at) {
 }
 
 RDebugPlugin r_debug_plugin_gdb = {
-	.name = "gdb",
+	.meta = {
+		.name = "gdb",
+		.author = "pancake, defragger",
+		.desc = "gdb debug plugin",
+		.license = "LGPL3",
+	},
 	/* TODO: Add support for more architectures here */
-	.license = "LGPL3",
 	.arch = "x86,arm,sh,mips,avr,lm32,v850,ba2",
 	.bits = R_SYS_BITS_16 | R_SYS_BITS_32 | R_SYS_BITS_64,
 	.step = r_debug_gdb_step,
