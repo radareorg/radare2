@@ -450,7 +450,7 @@ static bool is_shidx_valid(ELFOBJ *eo, Elf_(Half) value) {
 	return value < eo->ehdr.e_shnum && !R_BETWEEN (SHN_LORESERVE, value, SHN_HIRESERVE);
 }
 
-static int init_strtab(ELFOBJ *eo) {
+static bool init_strtab(ELFOBJ *eo) {
 	r_return_val_if_fail (!eo->strtab, false);
 
 	if (!eo->shdr) {
@@ -459,19 +459,23 @@ static int init_strtab(ELFOBJ *eo) {
 
 	Elf_(Half) shstrndx = eo->ehdr.e_shstrndx;
 	if (shstrndx != SHN_UNDEF && !is_shidx_valid (eo, shstrndx)) {
+		R_LOG_DEBUG ("invalid section header index");
 		return false;
 	}
 
 	// sh_size must not be zero, to avoid bugs with malloc()
 	if (!eo->shdr[shstrndx].sh_size) {
+		R_LOG_DEBUG ("empty section header size cant be zero");
 		return false;
 	}
 	eo->shstrtab_section = eo->strtab_section = &eo->shdr[shstrndx];
 	eo->shstrtab_size = eo->shstrtab_section->sh_size;
 	if (eo->shstrtab_size > eo->size) {
+		R_LOG_DEBUG ("sh string tab section is larger than the whole file");
 		return false;
 	}
 	if (eo->shstrtab_section->sh_offset > eo->size) {
+		R_LOG_DEBUG ("sh string tab section is larger than the whole file");
 		return false;
 	}
 	if (eo->shstrtab_section->sh_offset + eo->shstrtab_section->sh_size > eo->size) {
@@ -712,14 +716,12 @@ static int init_dynamic_section(ELFOBJ *eo) {
 
 	char *strtab = calloc (1, strsize + 1);
 	if (!strtab) {
-		eprintf ("some\n");
 		return false;
 	}
 
 	int r = r_buf_read_at (eo->b, strtabaddr, (ut8 *)strtab, strsize);
 	if (r != strsize) {
 		free (strtab);
-		eprintf ("early\n");
 		return false;
 	}
 
@@ -1479,34 +1481,58 @@ static Sdb *store_versioninfo(ELFOBJ *eo) {
 }
 
 static bool init_dynstr(ELFOBJ *eo) {
-	if (!eo || !eo->shdr || !eo->shstrtab) {
+	r_return_val_if_fail (eo, false);
+	if (!eo->shdr || !eo->shstrtab) {
+		R_LOG_DEBUG ("no section header or sh string tab");
 		return false;
 	}
 
 	int i;
 	for (i = 0; i < eo->ehdr.e_shnum; i++) {
+		const size_t sh_name = eo->shdr[i].sh_name;
+		const size_t shstrtab_size = eo->shstrtab_size;
+
+		bool inshstrtab = (sh_name < shstrtab_size);
+
 		if (eo->shdr[i].sh_name > eo->shstrtab_size) {
+			// return false;
+		}
+		if (sh_name >= eo->size) {
+			R_LOG_DEBUG ("section %d name is beyond eof", i);
 			return false;
 		}
-
-		const char *section_name = &eo->shstrtab[eo->shdr[i].sh_name];
+		const char *section_name;
+		if (inshstrtab) {
+			section_name = eo->shstrtab + eo->shdr[i].sh_name;
+		} else {
+			R_LOG_DEBUG ("section name is beyond the sh string tab section size");
+			// return false;
+			ut8 name[128] = {0};
+			ut64 at = eo->shstrtab_section->sh_offset + sh_name;
+			(void)r_buf_read_at (eo->b, at, name, sizeof (name));
+			section_name = (const char *)name;
+		}
 		if (eo->shdr[i].sh_type == SHT_STRTAB && !strcmp (section_name, ".dynstr")) {
 			size_t shsz = eo->shdr[i].sh_size;
 			if (shsz > 0xffffff || !(eo->dynstr = (char*) calloc (shsz + 1, sizeof (char)))) {
 				R_LOG_ERROR ("Cannot allocate memory for dynamic strings");
-				return false;
+			//	return false;
 			}
 			if (eo->shdr[i].sh_offset > eo->size) {
+				R_LOG_DEBUG ("section offset is beyond eof");
 				return false;
 			}
 			if (eo->shdr[i].sh_offset + eo->shdr[i].sh_size > eo->size) {
+				R_LOG_DEBUG ("section end is beyond eof");
 				return false;
 			}
 			if (eo->shdr[i].sh_offset + eo->shdr[i].sh_size < eo->shdr[i].sh_size) {
+				R_LOG_DEBUG ("section end is beyond section boundaries");
 				return false;
 			}
 			int r = r_buf_read_at (eo->b, eo->shdr[i].sh_offset, (ut8*)eo->dynstr, eo->shdr[i].sh_size);
 			if (r < 1) {
+				R_LOG_DEBUG ("cannot read the dynstr");
 				R_FREE (eo->dynstr);
 				eo->dynstr_size = 0;
 				return false;
@@ -2772,7 +2798,6 @@ static inline bool needle(ELFOBJ *eo, const char *s) {
 		}
 		return (bool) r_mem_mem ((const ut8*)eo->shstrtab, len, (const ut8*)s, strlen (s));
 	}
-
 	return false;
 }
 
@@ -3903,7 +3928,7 @@ typedef struct {
 	Elf_(Addr) addr_sym_table;
 } ReadPhdrSymbolState;
 
-static bool _read_symbols_from_phdr (ELFOBJ *eo, ReadPhdrSymbolState *state) {
+static bool _read_symbols_from_phdr(ELFOBJ *eo, ReadPhdrSymbolState *state) {
 	int type = state->type;
 	RVector *ret = state->ret;
 	RVector *sym = state->sym;
@@ -3952,6 +3977,7 @@ static bool _read_symbols_from_phdr (ELFOBJ *eo, ReadPhdrSymbolState *state) {
 			toffset = (ut64) new_symbol->st_value;
 			is_sht_null = new_symbol->st_shndx == SHT_NULL;
 		} else {
+			// why continue here?
 			continue;
 		}
 
@@ -3969,6 +3995,7 @@ static bool _read_symbols_from_phdr (ELFOBJ *eo, ReadPhdrSymbolState *state) {
 		}
 
 		if (new_symbol->st_name + 2 > eo->strtab_size) {
+			R_LOG_DEBUG ("Symbol name outside the strtab section");
 			// Since we are reading beyond the symbol table what's happening
 			// is that some entry is trying to dereference the strtab beyond its capacity
 			// this can't be a symbol so this is the end
@@ -3996,6 +4023,12 @@ static bool _read_symbols_from_phdr (ELFOBJ *eo, ReadPhdrSymbolState *state) {
 		psym->ordinal = i;
 		psym->in_shdr = false;
 		psym->name[ELF_STRING_LENGTH - 2] = '\0';
+#define PERMIT_UNNAMED_SYMBOLS 0
+#if PERMIT_UNNAMED_SYMBOLS
+		if (!*psym->name) {
+			strcpy (psym->name, "unksym");
+		}
+#endif
 		if (!*psym->name) {
 			R_LOG_DEBUG ("empty symbol name", psym->name);
 			ret->len--;
@@ -4100,9 +4133,9 @@ static RVector *Elf_(load_phdr_imports)(ELFOBJ *eo) {
 }
 
 static RVector *Elf_(load_symbols_type)(ELFOBJ *eo, int type) {
-	return (type != R_BIN_ELF_IMPORT_SYMBOLS)
-		? Elf_(load_phdr_symbols) (eo)
-		: Elf_(load_phdr_imports) (eo);
+	return (type == R_BIN_ELF_IMPORT_SYMBOLS)
+		? Elf_(load_phdr_imports) (eo)
+		: Elf_(load_phdr_symbols) (eo);
 }
 
 static int Elf_(fix_symbols)(ELFOBJ *eo, int nsym, int type, RVector *symbols) {
@@ -4422,6 +4455,7 @@ static bool _process_symbols_and_imports_in_section(ELFOBJ *eo, int type, Proces
 
 	if (!memory->strtab) {
 		if (strtab_section->sh_offset > eo->size || strtab_section->sh_offset + strtab_section->sh_size > eo->size) {
+			R_LOG_ERROR ("invalid sh size");
 			return false;
 		}
 
@@ -4446,23 +4480,26 @@ static bool _process_symbols_and_imports_in_section(ELFOBJ *eo, int type, Proces
 
 	int nsym = (int)(eo->shdr[i].sh_size / sizeof (Elf_(Sym)));
 	if (nsym < 1) {
+		R_LOG_ERROR ("nsym < 1");
 		return false;
 	}
 
 	ut64 sh_begin = eo->shdr[i].sh_offset;
 	ut64 sh_end = sh_begin + eo->shdr[i].sh_size;
 	if (sh_begin > eo->size) {
+		R_LOG_ERROR ("invalid sh egin");
 		return false;
 	}
 
 	if (sh_end > eo->size) {
 		st64 newshsize = eo->size - sh_begin;
 		nsym = (int)(newshsize / sizeof (Elf_(Sym)));
+		if (nsym < 1) {
+			R_LOG_ERROR ("nsym < 1 again");
+			return false;
+		}
 	}
 
-	if (nsym < 1) {
-		return false;
-	}
 
 	memory->sym = calloc (nsym, sizeof (Elf_(Sym)));
 	if (!memory->sym) {
@@ -4472,12 +4509,15 @@ static bool _process_symbols_and_imports_in_section(ELFOBJ *eo, int type, Proces
 
 	ut32 size = 0;
 	if (!UT32_MUL (&size, nsym, sizeof (Elf_(Sym)))) {
+		R_LOG_ERROR ("mul overflow");
 		return false;
 	}
 	if (size < 1 || size > eo->size) {
+		R_LOG_ERROR ("wrong size");
 		return false;
 	}
 	if (eo->shdr[i].sh_offset > eo->size || eo->shdr[i].sh_offset + size > eo->size) {
+		R_LOG_ERROR ("inval");
 		return false;
 	}
 
@@ -4513,7 +4553,6 @@ static bool _process_symbols_and_imports_in_section(ELFOBJ *eo, int type, Proces
 		if (!ret) {
 			return false;
 		}
-
 		*state->ret = ret;
 		memory->symbols = ret;
 	}
@@ -4568,12 +4607,18 @@ static bool _process_symbols_and_imports_in_section(ELFOBJ *eo, int type, Proces
 			continue;
 		}
 
-		int st_name = memory->sym[k].st_name;
+		const size_t st_name = memory->sym[k].st_name;
 		int maxsize = R_MIN (r_buf_size (eo->b), strtab_section->sh_size);
 		if (is_section_local_sym (eo, &memory->sym[k])) {
 			const size_t sym_section = memory->sym[k].st_shndx;
+#if 0
+			// TODO: find better name to resolve names outside section bounadries
+			const ut64 at = strtab_section->sh_offset + eo->shdr[sym_section].sh_name;
+			r_buf_read_at (eo->b, at, (ut8*)es->name, sizeof (es->name));
+#else
 			const char *shname = &eo->shstrtab[eo->shdr[sym_section].sh_name];
 			r_str_ncpy (es->name, shname, ELF_STRING_LENGTH - 1);
+#endif
 		} else if (st_name <= 0 || st_name >= maxsize) {
 			es->name[0] = 0;
 		} else {

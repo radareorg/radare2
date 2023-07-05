@@ -2,11 +2,8 @@
 
 #define R_LOG_ORIGIN "bin.elf"
 
-#include <r_util.h>
 #include <r_lib.h>
 #include <r_bin.h>
-#include <r_io.h>
-#include <r_cons.h>
 #include "../i/private.h"
 #include "elf/elf.h"
 #include <sdb/ht_uu.h>
