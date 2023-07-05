@@ -1429,13 +1429,13 @@ RList *MACH0_(parse_classes)(RBinFile *bf, objc_cache_opt_info *oi) {
 		const char *sname = section->name;
 		if (strstr (sname, "__objc_classlist")) {
 			is_found = true;
-			paddr = section->offset;
+			paddr = section->paddr;
 			s_size = section->size;
 		} else if (strstr (sname, "swift5_types")) {
-			swift5_types_addr = section->offset;
+			swift5_types_addr = section->paddr;
 			swift5_types_size = section->size;
 		} else if (strstr (sname, "swift5_fieldmd")) {
-			swift5_fieldmd_addr = section->offset;
+			swift5_fieldmd_addr = section->paddr;
 			swift5_fieldmd_size = section->size;
 		}
 	}
@@ -1564,7 +1564,7 @@ static RList *MACH0_(parse_categories)(RBinFile *bf, const RSkipList *relocs, ob
 	r_vector_foreach (sections, section) {
 		if (strstr (section->name, "__objc_catlist")) {
 			is_found = true;
-			paddr = section->offset;
+			paddr = section->paddr;
 			s_size = section->size;
 			break;
 		}

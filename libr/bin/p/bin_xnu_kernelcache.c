@@ -321,7 +321,7 @@ static RPrelinkRange *get_prelink_info_range_from_mach0(struct MACH0_(obj_t) *ma
 	struct section_t *section;
 	r_vector_foreach (sections, section) {
 		if (strstr (section->name, "__PRELINK_INFO.__info")) {
-			prelink_range->range.offset = section->offset;
+			prelink_range->range.offset = section->paddr;
 			prelink_range->range.size = section->size;
 			if (!--incomplete) {
 				break;
@@ -329,14 +329,14 @@ static RPrelinkRange *get_prelink_info_range_from_mach0(struct MACH0_(obj_t) *ma
 		}
 
 		if (strstr (section->name, "__PRELINK_TEXT.__text")) {
-			prelink_range->pa2va_exec = section->addr - section->offset;
+			prelink_range->pa2va_exec = section->vaddr - section->paddr;
 			if (!--incomplete) {
 				break;
 			}
 		}
 
 		if (strstr (section->name, "__PRELINK_DATA.__data")) {
-			prelink_range->pa2va_data = section->addr - section->offset;
+			prelink_range->pa2va_data = section->vaddr - section->paddr;
 			if (!--incomplete) {
 				break;
 			}
@@ -499,20 +499,20 @@ static RList *carve_kexts(RKernelCacheObj *obj, RBinFile *bf) {
 			break;
 		}
 		if (strstr (section->name, "__TEXT_EXEC.__text")) {
-			pa2va_exec = section->addr - section->offset;
+			pa2va_exec = section->vaddr - section->paddr;
 			incomplete--;
 		}
 		if (strstr (section->name, "__DATA.__data")) {
-			pa2va_data = section->addr - section->offset;
+			pa2va_data = section->vaddr - section->paddr;
 			incomplete--;
 		}
 		if (strstr (section->name, "__PRELINK_INFO.__kmod_start")) {
-			kmod_start = section->offset;
+			kmod_start = section->paddr;
 			kmod_end = kmod_start + section->size;
 			incomplete--;
 		}
 		if (strstr (section->name, "__PRELINK_INFO.__kmod_info")) {
-			kmod_info = section->offset;
+			kmod_info = section->paddr;
 			kmod_info_end = kmod_info + section->size;
 			incomplete--;
 		}
@@ -726,9 +726,9 @@ static void r_kext_fill_text_range(RKext *kext) {
 	struct section_t *section;
 	r_vector_foreach (sections, section) {
 		if (strstr (section->name, "__TEXT_EXEC.__text")) {
-			kext->text_range.offset = section->offset;
+			kext->text_range.offset = section->paddr;
 			kext->text_range.size = section->size;
-			kext->vaddr = section->addr;
+			kext->vaddr = section->vaddr;
 			break;
 		}
 	}
@@ -896,7 +896,7 @@ static void process_kmod_init_term(RKernelCacheObj *obj, RKext *kext, RList *ret
 			if (!target || !n_ptrs) {
 				continue;
 			}
-			start_paddr = section->offset;
+			start_paddr = section->paddr;
 			int j = 0;
 			ut8 bytes[8];
 			for (; j < n_ptrs; j++) {
@@ -986,7 +986,7 @@ static void process_constructors(RKernelCacheObj *obj, struct MACH0_(obj_t) *mac
 		if (!buf) {
 			break;
 		}
-		if (r_buf_read_at (obj->cache_buf, section->offset + paddr, buf, section->size) < section->size) {
+		if (r_buf_read_at (obj->cache_buf, section->paddr + paddr, buf, section->size) < section->size) {
 			free (buf);
 			break;
 		}
@@ -994,7 +994,7 @@ static void process_constructors(RKernelCacheObj *obj, struct MACH0_(obj_t) *mac
 		int count = 0;
 		for (j = 0; j < section->size; j += 8) {
 			ut64 addr64 = K_RPTR (buf + j);
-			ut64 paddr64 = section->offset + paddr + j;
+			ut64 paddr64 = section->paddr + paddr + j;
 			if (mode == R_K_CONSTRUCTOR_TO_ENTRY) {
 				RBinAddr *ba = newEntry (paddr64, addr64, type);
 				r_list_append (ret, ba);
@@ -1136,8 +1136,8 @@ static void sections_from_mach0(RList *ret, struct MACH0_(obj_t) *mach0, RBinFil
 		handle_data_sections (ptr);
 		ptr->size = section->size;
 		ptr->vsize = section->vsize;
-		ptr->paddr = section->offset + bf->o->boffset + paddr;
-		ptr->vaddr = K_PPTR (section->addr);
+		ptr->paddr = section->paddr + bf->o->boffset + paddr;
+		ptr->vaddr = K_PPTR (section->vaddr);
 		if (!ptr->vaddr) {
 			ptr->vaddr = ptr->paddr;
 		}
@@ -1302,9 +1302,9 @@ static RList *resolve_syscalls(RKernelCacheObj *obj, ut64 enosys_addr) {
 	struct section_t *section;
 	r_vector_foreach (sections, section) {
 		if (strstr (section->name, "__DATA_CONST.__const")) {
-			data_const_offset = section->offset;
+			data_const_offset = section->paddr;
 			data_const_size = section->size;
-			data_const_vaddr = K_PPTR (section->addr);
+			data_const_vaddr = K_PPTR (section->vaddr);
 			break;
 		}
 	}
@@ -1463,15 +1463,15 @@ static RList *resolve_mig_subsystem(RKernelCacheObj *obj) {
 	struct section_t *section;
 	r_vector_foreach (sections, section) {
 		if (strstr (section->name, "__DATA_CONST.__const")) {
-			data_const_offset = section->offset;
+			data_const_offset = section->paddr;
 			data_const_size = section->size;
-			data_const_vaddr = K_PPTR (section->addr);
+			data_const_vaddr = K_PPTR (section->vaddr);
 			incomplete--;
 		}
 		if (strstr (section->name, "__TEXT_EXEC.__text")) {
-			text_exec_offset = section->offset;
+			text_exec_offset = section->paddr;
 			text_exec_size = section->size;
-			text_exec_vaddr = K_PPTR (section->addr);
+			text_exec_vaddr = K_PPTR (section->vaddr);
 			incomplete--;
 		}
 	}
@@ -1726,16 +1726,16 @@ static RStubsInfo *get_stubs_info(struct MACH0_(obj_t) *mach0, ut64 paddr, RKern
 	struct section_t *section;
 	r_vector_foreach (sections, section) {
 		if (strstr (section->name, "__DATA_CONST.__got")) {
-			stubs_info->got.offset = section->offset + paddr;
+			stubs_info->got.offset = section->paddr + paddr;
 			stubs_info->got.size = section->size;
-			stubs_info->got_addr = K_PPTR (section->addr);
+			stubs_info->got_addr = K_PPTR (section->vaddr);
 			if (!--incomplete) {
 				break;
 			}
 		}
 
 		if (strstr (section->name, "__TEXT_EXEC.__stubs")) {
-			stubs_info->stubs.offset = section->offset + paddr;
+			stubs_info->stubs.offset = section->paddr + paddr;
 			stubs_info->stubs.size = section->size;
 			if (!--incomplete) {
 				break;
@@ -1827,7 +1827,7 @@ static RRebaseInfo *r_rebase_info_new_from_mach0(RBuffer *cache_buf, struct MACH
 	struct section_t *section;
 	r_vector_foreach (sections, section) {
 		if (strstr (section->name, "__TEXT.__thread_starts")) {
-			starts_offset = section->offset;
+			starts_offset = section->paddr;
 			starts_size = section->size;
 			break;
 		}
@@ -1929,8 +1929,8 @@ static ut64 r_rebase_offset_to_paddr(RKernelCacheObj *obj, const RVector *sectio
 	ut64 vaddr = obj->rebase_info->kernel_base + offset;
 	struct section_t *section;
 	r_vector_foreach (sections, section) {
-		if (section->addr <= vaddr && vaddr < (section->addr + section->vsize)) {
-			return section->offset + (vaddr - section->addr);
+		if (section->vaddr <= vaddr && vaddr < (section->vaddr + section->vsize)) {
+			return section->paddr + (vaddr - section->vaddr);
 		}
 	}
 	return offset;
