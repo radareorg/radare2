@@ -1619,19 +1619,7 @@ typedef struct {
 	const char *lang;
 	bool is_sandbox;
 	bool is_pe;
-	bool is_elf;
 	bool is32;
-
-	// section boundaries and availability
-	bool got;
-	ut64 got_min;
-	ut64 got_max;
-	ut64 got_va;
-
-	bool plt;
-	ut64 plt_min;
-	ut64 plt_max;
-	ut64 plt_va;
 } RelocInfo;
 
 static void ri_init(RCore *core, RelocInfo *ri) {
@@ -1643,27 +1631,6 @@ static void ri_init(RCore *core, RelocInfo *ri) {
 	const char *rclass = info->rclass;
 	ri->is32 = r_config_get_i (core->config, "asm.bits") <= 32;
 	ri->is_pe = rclass && r_str_startswith (rclass, "pe");
-	ri->is_elf = rclass && r_str_startswith (rclass, "elf");
-	RBinSection *s;
-	RListIter *iter;
-	RList *sections = r_bin_get_sections (core->bin);
-	r_list_foreach (sections, iter, s) {
-		if (!strcmp (s->name, ".got")) {
-			ri->got = true;
-			ri->got_min = s->paddr;
-			ri->got_max = s->paddr + s->size;
-			ri->got_va = s->vaddr;
-		}
-		if (!strcmp (s->name, ".plt")) {
-			ri->plt_min = s->paddr;
-			ri->plt_max = s->paddr + s->size;
-			ri->plt_va = s->vaddr;
-			ri->plt = true;
-		}
-		if (ri->got && ri->plt) {
-			break;
-		}
-	}
 }
 
 static void set_bin_relocs(RelocInfo *ri, RBinReloc *reloc, ut64 addr, Sdb **db, char **sdb_module) {
@@ -1733,34 +1700,10 @@ static void set_bin_relocs(RelocInfo *ri, RBinReloc *reloc, ut64 addr, Sdb **db,
 	} else {
 		snprintf (flagname, R_FLAG_NAME_SIZE, "reloc.%s", reloc_name);
 	}
-	// R2_590 - move this logic into rbinelf, requires RBinReloc to hold a plt address if the symbol is internal
-	if (ri->is_elf && reloc->symbol && ri->got && ri->plt) {
-		ut64 raddr = reloc->paddr;
-		if (raddr >= ri->got_min && raddr < ri->got_max) {
-			ut64 rvaddr = rva (r->bin, reloc->paddr, reloc->vaddr, true);
-			ut64 pltptr = 0; // relocated buf tells the section to look at
-			if (ri->is32) {
-				ut32 n32;
-				r_io_read_at (r->io, rvaddr, (ut8*)&n32, 4);
-				pltptr = n32;
-			} else {
-				r_io_read_at (r->io, rvaddr, (ut8*)&pltptr, 8);
-			}
-			if (pltptr != 0 && pltptr != -1) {
-				if (pltptr >= ri->plt_min && pltptr < ri->plt_max) {
-					ut64 saddr = reloc->vaddr - ri->got_va;
-					int index = (saddr / 4) - 4;
-					ut64 naddr = r_bin_a2b (r->bin, ri->plt_va + (index * 12) + 0x20);
-					if (naddr == UT64_MAX) {
-						R_LOG_DEBUG ("Cannot resolve reloc reference %s", reloc_name);
-					} else {
-						char *internal_reloc = r_str_newf ("rsym.%s", reloc_name);
-						(void)r_flag_set (r->flags, internal_reloc, naddr, bin_reloc_size (reloc));
-						free (internal_reloc);
-					}
-				}
-			}
-		}
+	if (reloc->laddr) {
+		char *internal_reloc = r_str_newf ("rsym.%s", reloc_name);
+		(void)r_flag_set (r->flags, internal_reloc, reloc->laddr, bin_reloc_size (reloc));
+		free (internal_reloc);
 	}
 	free (reloc_name);
 	char *demname = NULL;

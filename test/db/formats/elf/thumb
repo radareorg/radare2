@@ -73,7 +73,7 @@ EXPECT=<<EOF
 push {r7, lr}
 add r7, sp, 0
 movs r0, 0xa
-bl 0x82d4
+bl rsym.putchar
 adds r0, r3, 0
 mov sp, r7
 pop {r7, pc}
@@ -87,7 +87,7 @@ EXPECT=<<EOF
 push {r7, lr}
 add r7, sp, 0
 movs r0, 0xa
-bl 0x82d4
+bl rsym.putchar
 adds r0, r3, 0
 mov sp, r7
 pop {r7, pc}

@@ -51,6 +51,7 @@
 #define EF_MIPS_ARCH_ASE_MDMX  0x08000000 /* Has MDMX multimedia extensions */
 #define EF_MIPS_ARCH_ASE       0x0f000000 /* Mask for EF_MIPS_ARCH_ASE_xxx flags */
 
+static bool reloc_fill_local_address(ELFOBJ *eo);
 static inline bool is_elfclass64(Elf_(Ehdr) *h) {
 	return h->e_ident[EI_CLASS] == ELFCLASS64;
 }
@@ -1596,6 +1597,7 @@ static bool elf_init(ELFOBJ *eo) {
 	eo->rel_cache = ht_uu_new_opt (&opt);
 	(void) Elf_(load_relocs) (eo);
 	sdb_ns_set (eo->kv, "versioninfo", store_versioninfo (eo));
+	reloc_fill_local_address (eo);
 	return true;
 }
 
@@ -5101,4 +5103,94 @@ char *Elf_(compiler)(ELFOBJ *eo) {
 bool Elf_(is_executable)(ELFOBJ *eo) {
 	const int t = eo->ehdr.e_type;
 	return t == ET_EXEC || t == ET_DYN;
+}
+
+typedef struct {
+	bool got;
+	ut64 got_min;
+	ut64 got_max;
+	ut64 got_va;
+	bool plt;
+	ut64 plt_min;
+	ut64 plt_max;
+	ut64 plt_va;
+} GotPltBounds;
+
+static bool reloc_fill_local_address(ELFOBJ *eo) {
+	RBinElfReloc *reloc;
+	GotPltBounds ri = {0};
+	RBinElfSection *s;
+
+	// find got/plt section bounadries
+	r_vector_foreach (&eo->g_sections, s) {
+		if (!strcmp (s->name, ".got")) {
+			ri.got = true;
+			ri.got_min = s->offset;
+			ri.got_max = s->offset + s->size;
+			ri.got_va = s->rva;
+		}
+		if (!strcmp (s->name, ".plt")) {
+			ri.plt_min = s->offset;
+			ri.plt_max = s->offset + s->size;
+			ri.plt_va = s->rva;
+			ri.plt = true;
+		}
+		if (ri.got && ri.plt) {
+			break;
+		}
+	}
+	if (!ri.got || !ri.plt) {
+		return false;
+	}
+	ut64 baddr = eo->user_baddr; // 0x10000;
+	if (baddr == UT64_MAX) {
+		baddr = eo->baddr;
+	}
+	int index = -2;
+	// resolve got and plt
+	r_vector_foreach (&eo->g_relocs, reloc) {
+		const ut64 raddr = reloc->offset;
+		if (raddr < ri.got_min || raddr >= ri.got_max) {
+			continue;
+		}
+		ut64 rvaddr = reloc->offset; // rva (eo, reloc->offset, reloc->rva);
+		ut64 pltptr = 0; // relocated buf tells the section to look at
+#if R_BIN_ELF64
+		r_buf_read_at (eo->b, rvaddr, (ut8*)&pltptr, 8);
+#else
+		ut32 n32 = 0;
+		r_buf_read_at (eo->b, rvaddr, (ut8*)&n32, 4);
+		pltptr = n32;
+#endif
+		bool ismagic = (reloc->type == 21 || reloc->type == 22);
+		// if (pltptr && pltptr != -1 && ismagic) {
+		if (ismagic) {
+			// text goes after the plt. so its possible that some symbols are pointed locally, thats all lsym is about
+			if (pltptr > baddr) {
+				pltptr -= baddr;
+			}
+			if (pltptr >= ri.plt_min && pltptr < ri.plt_max) {
+#if 0
+				ut64 saddr = reloc->rva - ri.got_va;
+				if ((int)saddr < 4) {
+					index = 0;
+					continue;
+				} else {
+					index = (saddr / 4) - 4;
+				}
+#else
+				index++;
+#endif
+				// TODO: if (reloc->type == 22) { // on arm!  // extra check of bounds
+				ut64 naddr = baddr + pltptr + (index * 12) + 0x20;
+				if (naddr != UT64_MAX) {
+					// this thing registers an 'rsym.${importname}' as a flag when loading the relocs from core/cbin.c
+					reloc->laddr = naddr;
+				} else {
+					R_LOG_DEBUG ("Cannot resolve reloc reference");
+				}
+			}
+		}
+	}
+	return true;
 }

@@ -321,6 +321,7 @@ EXPECT=<<EOF
             0x000074e4      0ee08fe0       add lr, pc, lr
             0x000074e8      08f0bee5       ldr pc, [lr, 8]!
             0x000074ec      10560400       andeq r5, r4, r0, lsl r6
+            ;-- rsym.gnutls_x509_crt_get_expiration_time:
             ;-- gnutls_x509_crt_get_expiration_time:
             0x000074f0      00c68fe2       add ip, pc, 0, 12
             0x000074f4      45ca8ce2       add ip, ip, 0x45000
@@ -337,6 +338,7 @@ EXPECT=<<EOF
             0x00007514      00c68fe2       add ip, pc, 0, 12
             0x00007518      45ca8ce2       add ip, ip, 0x45000
             0x0000751c      f8f5bce5       ldr pc, [ip, 0x5f8]!
+            ;-- rsym.freeifaddrs:
             ;-- freeifaddrs:
             0x00007520      00c68fe2       add ip, pc, 0, 12
             0x00007524      45ca8ce2       add ip, ip, 0x45000
@@ -505,6 +507,7 @@ EXPECT=<<EOF
             0x000174e4      0ee08fe0       add lr, pc, lr
             0x000174e8      08f0bee5       ldr pc, [lr, 8]!
             0x000174ec      10560400       andeq r5, r4, r0, lsl r6
+            ;-- rsym.gnutls_x509_crt_get_expiration_time:
             ;-- gnutls_x509_crt_get_expiration_time:
             0x000174f0      00c68fe2       add ip, pc, 0, 12
             0x000174f4      45ca8ce2       add ip, ip, 0x45000
@@ -521,6 +524,7 @@ EXPECT=<<EOF
             0x00017514      00c68fe2       add ip, pc, 0, 12
             0x00017518      45ca8ce2       add ip, ip, 0x45000
             0x0001751c      f8f5bce5       ldr pc, [ip, 0x5f8]!
+            ;-- rsym.freeifaddrs:
             ;-- freeifaddrs:
             0x00017520      00c68fe2       add ip, pc, 0, 12
             0x00017524      45ca8ce2       add ip, ip, 0x45000
