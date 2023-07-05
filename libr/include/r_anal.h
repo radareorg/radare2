@@ -470,7 +470,6 @@ typedef struct r_anal_t {
 	RArch *arch;
 	RAnalRange *limit; // anal.from, anal.to
 	RList *plugins; // anal plugins
-	RList *esil_plugins;
 	Sdb *sdb_types;
 	Sdb *sdb_fmts;
 	Sdb *sdb_zigns;

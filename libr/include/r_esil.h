@@ -110,7 +110,7 @@ typedef struct r_esil_options_t {
 } REsilOptions;
 
 typedef struct r_esil_t {
-	struct r_anal_t *anal; // R2_590 use arch_config once all anal plugins are ported
+	struct r_anal_t *anal; // required for io, reg, and call esil_init/fini of the selected arch plugin
 	char **stack;
 	ut64 addrmask;
 	int stacksize;
