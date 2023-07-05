@@ -131,8 +131,12 @@ static bool __io_kill(RDebug *dbg, int pid, int tid, int sig) {
 }
 
 RDebugPlugin r_debug_plugin_io = {
-	.name = "io",
-	.license = "MIT",
+	.meta = {
+		.name = "io",
+		.author = "pancake",
+		.license = "MIT",
+		.desc = "io debug plugin",
+	},
 	.arch = "any", // TODO: exception!
 	.bits = R_SYS_BITS_32 | R_SYS_BITS_64,
 	.step = __io_step,

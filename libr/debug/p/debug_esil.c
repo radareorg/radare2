@@ -136,8 +136,12 @@ static bool __reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 }
 
 RDebugPlugin r_debug_plugin_esil = {
-	.name = "esil",
-	.license = "LGPL3",
+	.meta = {
+		.name = "esil",
+		.author = "pancake",
+		.desc = "esil debug plugin",
+		.license = "LGPL3",
+	},
 	.arch = "any", // TODO: exception!
 	.bits = R_SYS_BITS_32 | R_SYS_BITS_64,
 	.init = __esil_init,

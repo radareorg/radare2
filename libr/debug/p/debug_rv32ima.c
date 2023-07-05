@@ -212,10 +212,12 @@ static bool __reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 }
 
 RDebugPlugin r_debug_plugin_rv32ima = {
-	.name = "rv32ima",
-	.author = "pancake",
-	// .description = "experimental riscv32ima emulator",
-	.license = "MIT",
+	.meta = {
+		.name = "rv32ima",
+		.author = "pancake",
+		.desc = "experimental riscv32ima emulator",
+		.license = "MIT",
+	},
 	.arch = "riscv",
 	.bits = R_SYS_BITS_32,
 	.init = __rv32ima_init,

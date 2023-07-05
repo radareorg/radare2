@@ -1642,8 +1642,12 @@ struct r_debug_desc_plugin_t r_debug_desc_plugin_native = {
 };
 
 RDebugPlugin r_debug_plugin_native = {
-	.name = "native",
-	.license = "LGPL3",
+	.meta = {
+		.name = "native",
+		.author = "pancake",
+		.license = "LGPL3",
+		.desc = "native debug plugin",
+	},
 #if __i386__
 	.bits = R_SYS_BITS_32,
 	.arch = "x86",

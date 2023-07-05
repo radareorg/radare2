@@ -539,8 +539,12 @@ static const char *r_debug_bochs_reg_profile(RDebug *dbg) {
 }
 
 RDebugPlugin r_debug_plugin_bochs = {
-	.name = "bochs",
-	.license = "LGPL3",
+	.meta = {
+		.name = "bochs",
+		.author = "SkUaTeR",
+		.desc = "bochs debug plugin",
+		.license = "LGPL3",
+	},
 	.arch = "x86",
 	.bits = R_SYS_BITS_16 | R_SYS_BITS_32 | R_SYS_BITS_64,
 	.step = r_debug_bochs_step,

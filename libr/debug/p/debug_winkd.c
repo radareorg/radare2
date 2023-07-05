@@ -264,8 +264,12 @@ static RList *r_debug_winkd_modules(RDebug *dbg) {
 }
 
 RDebugPlugin r_debug_plugin_winkd = {
-	.name = "winkd",
-	.license = "LGPL3",
+	.meta = {
+		.name = "winkd",
+		.author = "The Lemon Man",
+		.desc = "winkd debug plugin",
+		.license = "LGPL3",
+	},
 	.arch = "x86",
 	.bits = R_SYS_BITS_32 | R_SYS_BITS_64,
 	.init = &r_debug_winkd_init,

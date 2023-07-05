@@ -1669,10 +1669,10 @@ R_API bool r_debug_is_dead(RDebug *dbg) {
 		return false;
 	}
 	// workaround for debug.io.. should be generic
-	if (!strcmp (dbg->h->name, "io")) {
+	if (!strcmp (dbg->h->meta.name, "io")) {
 		return false;
 	}
-	bool is_dead = (dbg->pid < 0 && strncmp (dbg->h->name, "gdb", 3)) || (dbg->reason.type == R_DEBUG_REASON_DEAD);
+	bool is_dead = (dbg->pid < 0 && strncmp (dbg->h->meta.name, "gdb", 3)) || (dbg->reason.type == R_DEBUG_REASON_DEAD);
 	if (dbg->pid > 0 && dbg->h && dbg->h->kill) {
 		is_dead = !dbg->h->kill (dbg, dbg->pid, false, 0);
 	}

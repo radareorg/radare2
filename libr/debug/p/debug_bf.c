@@ -206,9 +206,13 @@ static int r_debug_bf_stop(RDebug *dbg) {
 }
 
 RDebugPlugin r_debug_plugin_bf = {
-	.name = "bf",
+	.meta = {
+		.name = "bf",
+		.author = "pancake",
+		.desc = "BF debug plugin",
+		.license = "LGPL3",
+	},
 	.arch = "bf",
-	.license = "LGPL3",
 	.bits = R_SYS_BITS_32 | R_SYS_BITS_64,
 	.step = r_debug_bf_step,
 	.step_over = r_debug_bf_step_over,

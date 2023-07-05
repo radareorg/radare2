@@ -338,8 +338,12 @@ static int r_debug_qnx_breakpoint(RBreakpoint *bp, RBreakpointItem *b, bool set)
 }
 
 RDebugPlugin r_debug_plugin_qnx = {
-	.name = "qnx",
-	.license = "LGPL3",
+	.meta = {
+		.name = "qnx",
+		.author = "pancake, defragger, madprogrammer",
+		.desc = "qnx debug plugin",
+		.license = "LGPL3",
+	},
 	.arch = "x86,arm",
 	.bits = R_SYS_BITS_32,
 	.step = r_debug_qnx_step,

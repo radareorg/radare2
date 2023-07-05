@@ -4,8 +4,12 @@
 #include <r_debug.h>
 
 RDebugPlugin r_debug_plugin_null = {
-	.name = "null",
-	.license = "MIT",
+	.meta = {
+		.name = "null",
+		.author = "pancake",
+		.desc = "null debug plugin (does nothing)",
+		.license = "MIT",
+	},
 	.arch = "any",
 	.bits = R_SYS_BITS_32 | R_SYS_BITS_64,
 };
