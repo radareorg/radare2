@@ -3924,14 +3924,12 @@ typedef struct {
 	int type;
 	int nsym;
 	RVector *ret;
-	RVector *sym;
 	Elf_(Addr) addr_sym_table;
 } ReadPhdrSymbolState;
 
 static bool _read_symbols_from_phdr(ELFOBJ *eo, ReadPhdrSymbolState *state) {
 	int type = state->type;
 	RVector *ret = state->ret;
-	RVector *sym = state->sym;
 	Elf_(Addr) addr_sym_table = state->addr_sym_table;
 	int i;
 	for (i = 1; i < state->nsym; i++) {
@@ -3943,21 +3941,21 @@ static bool _read_symbols_from_phdr(ELFOBJ *eo, ReadPhdrSymbolState *state) {
 		}
 
 		int j = 0;
-		Elf_(Sym) *new_symbol = r_vector_end (sym);
+		Elf_(Sym) new_symbol = {0};
 #if R_BIN_ELF64
-		new_symbol->st_name = READ32 (s, j);
-		new_symbol->st_info = READ8 (s, j);
-		new_symbol->st_other = READ8 (s, j);
-		new_symbol->st_shndx = READ16 (s, j);
-		new_symbol->st_value = READ64 (s, j);
-		new_symbol->st_size = READ64 (s, j);
+		new_symbol.st_name = READ32 (s, j);
+		new_symbol.st_info = READ8 (s, j);
+		new_symbol.st_other = READ8 (s, j);
+		new_symbol.st_shndx = READ16 (s, j);
+		new_symbol.st_value = READ64 (s, j);
+		new_symbol.st_size = READ64 (s, j);
 #else
-		new_symbol->st_name = READ32 (s, j);
-		new_symbol->st_value = READ32 (s, j);
-		new_symbol->st_size = READ32 (s, j);
-		new_symbol->st_info = READ8 (s, j);
-		new_symbol->st_other = READ8 (s, j);
-		new_symbol->st_shndx = READ16 (s, j);
+		new_symbol.st_name = READ32 (s, j);
+		new_symbol.st_value = READ32 (s, j);
+		new_symbol.st_size = READ32 (s, j);
+		new_symbol.st_info = READ8 (s, j);
+		new_symbol.st_other = READ8 (s, j);
+		new_symbol.st_shndx = READ16 (s, j);
 #endif
 		bool is_sht_null = false;
 		bool is_vaddr = false;
@@ -3965,17 +3963,17 @@ static bool _read_symbols_from_phdr(ELFOBJ *eo, ReadPhdrSymbolState *state) {
 		ut64 toffset = 0;
 		// Zero symbol is always empty
 		// Examine entry and maybe store
-		if (type == R_BIN_ELF_IMPORT_SYMBOLS && new_symbol->st_shndx == SHT_NULL) {
-			if (new_symbol->st_value) {
-				toffset = new_symbol->st_value;
+		if (type == R_BIN_ELF_IMPORT_SYMBOLS && (new_symbol.st_shndx == SHT_NULL || new_symbol.st_shndx == SHT_DYNSYM)) {
+			if (new_symbol.st_value) {
+				toffset = new_symbol.st_value;
 			} else if ((toffset = get_import_addr (eo, i)) == UT64_MAX) {
 				// toffset = 0;
 			}
 			tsize = 16;
 		} else if (type == R_BIN_ELF_ALL_SYMBOLS) {
-			tsize = new_symbol->st_size;
-			toffset = (ut64) new_symbol->st_value;
-			is_sht_null = new_symbol->st_shndx == SHT_NULL;
+			tsize = new_symbol.st_size;
+			toffset = (ut64) new_symbol.st_value;
+			is_sht_null = new_symbol.st_shndx == SHT_NULL;
 		} else {
 			// why continue here?
 			continue;
@@ -3983,8 +3981,8 @@ static bool _read_symbols_from_phdr(ELFOBJ *eo, ReadPhdrSymbolState *state) {
 
 		// Since we don't know the size of the sym table in this case,
 		// let's stop at the first invalid entry
-		if (!strcmp (bind2str (new_symbol), R_BIN_BIND_UNKNOWN_STR) ||
-			!strcmp (type2str (NULL, NULL, new_symbol), R_BIN_TYPE_UNKNOWN_STR)) {
+		if (!strcmp (bind2str (&new_symbol), R_BIN_BIND_UNKNOWN_STR) ||
+			!strcmp (type2str (NULL, NULL, &new_symbol), R_BIN_TYPE_UNKNOWN_STR)) {
 			break;
 		}
 
@@ -3994,7 +3992,7 @@ static bool _read_symbols_from_phdr(ELFOBJ *eo, ReadPhdrSymbolState *state) {
 			is_vaddr = true;
 		}
 
-		if (new_symbol->st_name + 2 > eo->strtab_size) {
+		if (new_symbol.st_name + 2 > eo->strtab_size) {
 			R_LOG_DEBUG ("Symbol name outside the strtab section");
 			// Since we are reading beyond the symbol table what's happening
 			// is that some entry is trying to dereference the strtab beyond its capacity
@@ -4011,8 +4009,8 @@ static bool _read_symbols_from_phdr(ELFOBJ *eo, ReadPhdrSymbolState *state) {
 		psym->size = tsize;
 
 		int rest = ELF_STRING_LENGTH - 1;
-		int st_name = new_symbol->st_name;
-		int maxsize = R_MIN (eo->size, eo->strtab_size);
+		int st_name = new_symbol.st_name;
+		int maxsize = eo->size; //R_MIN (eo->size, eo->strtab_size);
 		if (st_name < 0 || st_name >= maxsize) {
 			psym->name[0] = 0;
 		} else {
@@ -4028,14 +4026,15 @@ static bool _read_symbols_from_phdr(ELFOBJ *eo, ReadPhdrSymbolState *state) {
 		if (!*psym->name) {
 			strcpy (psym->name, "unksym");
 		}
-#endif
+#else
 		if (!*psym->name) {
 			R_LOG_DEBUG ("empty symbol name", psym->name);
 			ret->len--;
 			continue;
 		}
+#endif
 
-		fill_symbol_bind_and_type (eo, psym, new_symbol);
+		fill_symbol_bind_and_type (eo, psym, &new_symbol);
 		psym->is_sht_null = is_sht_null;
 		psym->is_vaddr = is_vaddr;
 	}
@@ -4071,24 +4070,19 @@ static RVector* load_symbols_from_phdr(ELFOBJ *eo, int type) {
 
 	// we reserve room for 4096 and grow as needed.
 	const size_t initial_capacity = 4096;
-	RVector sym;
-	r_vector_init (&sym, sym_size, NULL, NULL);
 	RVector *ret = r_vector_new (sizeof (RBinElfSymbol), NULL, NULL);
-	if (!ret || !r_vector_reserve (&sym, initial_capacity) || !r_vector_reserve (ret, initial_capacity)) {
-		r_vector_fini (&sym);
+	if (!ret || !r_vector_reserve (ret, initial_capacity)) {
 		r_vector_free (ret);
 		return NULL;
 	}
 
-	ReadPhdrSymbolState state = { .type = type, .ret = ret, .sym = &sym, .nsym = nsym, .addr_sym_table = addr_sym_table, };
+	ReadPhdrSymbolState state = { .type = type, .ret = ret, .nsym = nsym, .addr_sym_table = addr_sym_table, };
 	if (!_read_symbols_from_phdr (eo, &state)) {
-		r_vector_fini (&sym);
 		r_vector_free (ret);
 		return NULL;
 	}
 
 	if (!r_vector_shrink (ret)) {
-		r_vector_fini (&sym);
 		r_vector_free (ret);
 		return NULL;
 	}
@@ -4111,7 +4105,6 @@ static RVector* load_symbols_from_phdr(ELFOBJ *eo, int type) {
 		}
 	}
 
-	r_vector_fini (&sym);
 	return ret;
 }
 
@@ -4211,8 +4204,9 @@ static bool is_section_local_sym(ELFOBJ *eo, Elf_(Sym) *sym) {
 	if (!is_shidx_valid (eo, sym->st_shndx)) {
 		return false;
 	}
-	Elf_(Word) sh_name = eo->shdr[sym->st_shndx].sh_name;
-	return eo->shstrtab && sh_name < eo->shstrtab_size;
+	return true;
+	// Elf_(Word) sh_name = eo->shdr[sym->st_shndx].sh_name;
+	// return eo->shstrtab && sh_name < eo->shstrtab_size;
 }
 
 static void setsymord(ELFOBJ* eobj, ut32 ord, RBinSymbol *ptr) {
@@ -4374,14 +4368,12 @@ static int _find_max_symbol_ordinal(const RVector *symbols) {
 typedef struct elf_symbol_memory_t {
 	RVector *symbols;
 	Elf_(Sym) *sym;
-	char *strtab;
 } ElfSymbolMemory;
 
 static void _symbol_memory_free(ElfSymbolMemory *memory) {
 	r_vector_free (memory->symbols);
 	memory->symbols = NULL;
 	R_FREE (memory->sym);
-	R_FREE (memory->strtab);
 }
 
 typedef struct import_info_t {
@@ -4453,34 +4445,36 @@ static bool _process_symbols_and_imports_in_section(ELFOBJ *eo, int type, Proces
 		return false;
 	}
 
-	if (!memory->strtab) {
-		if (strtab_section->sh_offset > eo->size || strtab_section->sh_offset + strtab_section->sh_size > eo->size) {
-			R_LOG_ERROR ("invalid sh size");
-			return false;
-		}
+	if (strtab_section->sh_offset > eo->size || strtab_section->sh_offset + strtab_section->sh_size > eo->size) {
+		R_LOG_ERROR ("invalid sh size");
+		return false;
+	}
 
-		memory->strtab = calloc (1, 8 + strtab_section->sh_size);
-		if (!memory->strtab) {
-			R_LOG_ERROR ("malloc (syms strtab)");
-			return false;
-		}
+	// TODO don't calloc and copy from buf, read from buf directly
+	char *strtab = calloc (1, 8 + strtab_section->sh_size);
+	if (!strtab) {
+		R_LOG_ERROR ("malloc (syms strtab)");
+		return false;
+	}
 
-		if (r_buf_read_at (eo->b, strtab_section->sh_offset, (ut8*)memory->strtab, strtab_section->sh_size) == -1) {
-			R_LOG_ERROR ("read (syms strtab)");
-			return false;
-		}
+	if (r_buf_read_at (eo->b, strtab_section->sh_offset, (ut8*)strtab, strtab_section->sh_size) == -1) {
+		R_LOG_ERROR ("read (syms strtab)");
+		free (strtab);
+		return false;
 	}
 
 	// bounds check
 	int newsize = 1 + eo->shdr[i].sh_size;
 	if (newsize < 0 || newsize > eo->size) {
 		R_LOG_ERROR ("invalid shdr %d size", i);
+		free (strtab);
 		return false;
 	}
 
 	int nsym = (int)(eo->shdr[i].sh_size / sizeof (Elf_(Sym)));
 	if (nsym < 1) {
 		R_LOG_ERROR ("nsym < 1");
+		free (strtab);
 		return false;
 	}
 
@@ -4488,6 +4482,7 @@ static bool _process_symbols_and_imports_in_section(ELFOBJ *eo, int type, Proces
 	ut64 sh_end = sh_begin + eo->shdr[i].sh_size;
 	if (sh_begin > eo->size) {
 		R_LOG_ERROR ("invalid sh egin");
+		free (strtab);
 		return false;
 	}
 
@@ -4496,6 +4491,7 @@ static bool _process_symbols_and_imports_in_section(ELFOBJ *eo, int type, Proces
 		nsym = (int)(newshsize / sizeof (Elf_(Sym)));
 		if (nsym < 1) {
 			R_LOG_ERROR ("nsym < 1 again");
+			free (strtab);
 			return false;
 		}
 	}
@@ -4504,31 +4500,36 @@ static bool _process_symbols_and_imports_in_section(ELFOBJ *eo, int type, Proces
 	memory->sym = calloc (nsym, sizeof (Elf_(Sym)));
 	if (!memory->sym) {
 		R_LOG_ERROR ("calloc (syms)");
+		free (strtab);
 		return false;
 	}
 
 	ut32 size = 0;
 	if (!UT32_MUL (&size, nsym, sizeof (Elf_(Sym)))) {
 		R_LOG_ERROR ("mul overflow");
+		free (strtab);
 		return false;
 	}
 	if (size < 1 || size > eo->size) {
 		R_LOG_ERROR ("wrong size");
+		free (strtab);
 		return false;
 	}
 	if (eo->shdr[i].sh_offset > eo->size || eo->shdr[i].sh_offset + size > eo->size) {
 		R_LOG_ERROR ("inval");
+		free (strtab);
 		return false;
 	}
 
-	ut8 s[sizeof (Elf_(Sym))] = {0};
 	int j;
 	for (j = 0; j < nsym; j++) {
 		int k = 0;
+		ut8 s[sizeof (Elf_(Sym))] = {0};
 		ut64 sym_addr = eo->shdr[i].sh_offset + (j * sizeof (Elf_(Sym)));
 		int r = r_buf_read_at (eo->b, sym_addr, s, sizeof (Elf_(Sym)));
 		if (r < 1) {
 			R_LOG_ERROR ("read (sym)");
+			free (strtab);
 			return false;
 		}
 #if R_BIN_ELF64
@@ -4551,6 +4552,7 @@ static bool _process_symbols_and_imports_in_section(ELFOBJ *eo, int type, Proces
 	if (!(*state->ret)) {
 		RVector *ret = r_vector_new (sizeof (RBinElfSymbol), NULL, NULL);
 		if (!ret) {
+			free (strtab);
 			return false;
 		}
 		*state->ret = ret;
@@ -4562,6 +4564,7 @@ static bool _process_symbols_and_imports_in_section(ELFOBJ *eo, int type, Proces
 	ut64 len = r_vector_length (ret);
 	if (!r_vector_reserve (ret, increment + len)) {
 		R_LOG_ERROR ("Cannot allocate %d symbols", (int)(nsym + increment));
+		free (strtab);
 		return false;
 	}
 
@@ -4608,7 +4611,7 @@ static bool _process_symbols_and_imports_in_section(ELFOBJ *eo, int type, Proces
 		}
 
 		const size_t st_name = memory->sym[k].st_name;
-		int maxsize = R_MIN (r_buf_size (eo->b), strtab_section->sh_size);
+		int maxsize = strtab_section->sh_size; // R_MIN (r_buf_size (eo->b), strtab_section->sh_size);
 		if (is_section_local_sym (eo, &memory->sym[k])) {
 			const size_t sym_section = memory->sym[k].st_shndx;
 #if 0
@@ -4622,7 +4625,7 @@ static bool _process_symbols_and_imports_in_section(ELFOBJ *eo, int type, Proces
 		} else if (st_name <= 0 || st_name >= maxsize) {
 			es->name[0] = 0;
 		} else {
-			r_str_ncpy (es->name, &memory->strtab[st_name], ELF_STRING_LENGTH - 1);
+			r_str_ncpy (es->name, &strtab[st_name], ELF_STRING_LENGTH - 1);
 			es->type = type2str (eo, es, &memory->sym[k]);
 		}
 
@@ -4637,6 +4640,7 @@ static bool _process_symbols_and_imports_in_section(ELFOBJ *eo, int type, Proces
 		}
 	}
 
+	free (strtab);
 	return true;
 }
 
@@ -4662,7 +4666,7 @@ static RVector /* <RBinElfSymbol> */ *Elf_(_r_bin_elf_load_symbols_and_imports)(
 	size_t import_ret_ctr = 0;
 	size_t ret_ctr = 0; // amount of symbols stored in ret
 	RVector *ret = parse_gnu_debugdata (eo, &ret_ctr);
-	ElfSymbolMemory memory = { .symbols = ret, .sym = NULL, .strtab = NULL };
+	ElfSymbolMemory memory = { .symbols = ret, .sym = NULL };
 	int i;
 	for (i = 0; i < eo->ehdr.e_shnum; i++) {
 		if (!section_matters (eo, i, type, shdr_size)) {
@@ -4681,7 +4685,6 @@ static RVector /* <RBinElfSymbol> */ *Elf_(_r_bin_elf_load_symbols_and_imports)(
 			return NULL;
 		}
 
-		R_FREE (memory.strtab)
 		R_FREE (memory.sym);
 
 		if (type == R_BIN_ELF_IMPORT_SYMBOLS) {

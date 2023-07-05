@@ -8,7 +8,7 @@
 
 #define IFDBG_BIN_JAVA if (0)
 
-// XXX we need to refactor rbin i guess to get rid of this
+// R2_590 XXX we need to refactor rbin to get rid of this
 static R_TH_LOCAL Sdb *DB = NULL;
 
 static void add_bin_obj_to_sdb(RBinJavaObj *bin);
