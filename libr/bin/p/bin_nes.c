@@ -53,28 +53,28 @@ static RList* symbols(RBinFile *bf) {
 	if (R_UNLIKELY (!ret)) {
 		return NULL;
 	}
-	addsym (ret, "NMI_VECTOR_START_ADDRESS", NMI_VECTOR_START_ADDRESS,2);
-	addsym (ret, "RESET_VECTOR_START_ADDRESS", RESET_VECTOR_START_ADDRESS,2);
-	addsym (ret, "IRQ_VECTOR_START_ADDRESS", IRQ_VECTOR_START_ADDRESS,2);
-	addsym (ret, "PPU_CTRL_REG1", PPU_CTRL_REG1,0x1);
-	addsym (ret, "PPU_CTRL_REG2", PPU_CTRL_REG2,0x1);
-	addsym (ret, "PPU_STATUS", PPU_STATUS,0x1);
-	addsym (ret, "PPU_SPR_ADDR", PPU_SPR_ADDR,0x1);
-	addsym (ret, "PPU_SPR_DATA", PPU_SPR_DATA,0x1);
-	addsym (ret, "PPU_SCROLL_REG", PPU_SCROLL_REG,0x1);
-	addsym (ret, "PPU_ADDRESS", PPU_ADDRESS,0x1);
-	addsym (ret, "PPU_DATA", PPU_DATA,0x1);
+	addsym (ret, "NMI_VECTOR_START_ADDRESS", NMI_VECTOR_START_ADDRESS, 2);
+	addsym (ret, "RESET_VECTOR_START_ADDRESS", RESET_VECTOR_START_ADDRESS, 2);
+	addsym (ret, "IRQ_VECTOR_START_ADDRESS", IRQ_VECTOR_START_ADDRESS, 2);
+	addsym (ret, "PPU_CTRL_REG1", PPU_CTRL_REG1, 1);
+	addsym (ret, "PPU_CTRL_REG2", PPU_CTRL_REG2, 1);
+	addsym (ret, "PPU_STATUS", PPU_STATUS, 1);
+	addsym (ret, "PPU_SPR_ADDR", PPU_SPR_ADDR, 1);
+	addsym (ret, "PPU_SPR_DATA", PPU_SPR_DATA, 1);
+	addsym (ret, "PPU_SCROLL_REG", PPU_SCROLL_REG, 1);
+	addsym (ret, "PPU_ADDRESS", PPU_ADDRESS, 1);
+	addsym (ret, "PPU_DATA", PPU_DATA, 1);
 	addsym (ret, "SND_REGISTER", SND_REGISTER,0x15);
-	addsym (ret, "SND_SQUARE1_REG", SND_SQUARE1_REG,0x4);
-	addsym (ret, "SND_SQUARE2_REG", SND_SQUARE2_REG,0x4);
-	addsym (ret, "SND_TRIANGLE_REG", SND_TRIANGLE_REG,0x4);
-	addsym (ret, "SND_NOISE_REG", SND_NOISE_REG,0x2);
-	addsym (ret, "SND_DELTA_REG", SND_DELTA_REG,0x4);
-	addsym (ret, "SND_MASTERCTRL_REG", SND_MASTERCTRL_REG,0x5);
-	addsym (ret, "SPR_DMA", SPR_DMA,0x2);
-	addsym (ret, "JOYPAD_PORT", JOYPAD_PORT,0x1);
-	addsym (ret, "JOYPAD_PORT1", JOYPAD_PORT1,0x1);
-	addsym (ret, "JOYPAD_PORT2", JOYPAD_PORT2,0x1);
+	addsym (ret, "SND_SQUARE1_REG", SND_SQUARE1_REG, 4);
+	addsym (ret, "SND_SQUARE2_REG", SND_SQUARE2_REG, 4);
+	addsym (ret, "SND_TRIANGLE_REG", SND_TRIANGLE_REG, 4);
+	addsym (ret, "SND_NOISE_REG", SND_NOISE_REG, 2);
+	addsym (ret, "SND_DELTA_REG", SND_DELTA_REG, 4);
+	addsym (ret, "SND_MASTERCTRL_REG", SND_MASTERCTRL_REG, 5);
+	addsym (ret, "SPR_DMA", SPR_DMA, 2);
+	addsym (ret, "JOYPAD_PORT", JOYPAD_PORT, 1);
+	addsym (ret, "JOYPAD_PORT1", JOYPAD_PORT1, );
+	addsym (ret, "JOYPAD_PORT2", JOYPAD_PORT2, 1);
 	return ret;
 }
 
@@ -205,6 +205,11 @@ static RList* entries(RBinFile *bf) { //Should be 3 offsets pointed by NMI, RESE
 	return ret;
 }
 
+RBinPluginPriv priv = {
+	.sections_vector = 
+	.segments_vector = 
+}
+
 RBinPlugin r_bin_plugin_nes = {
 	.name = "nes",
 	.desc = "NES",
@@ -216,6 +221,7 @@ RBinPlugin r_bin_plugin_nes = {
 	.symbols = &symbols,
 	.info = &info,
 	.mem = &mem,
+	.priv = &priv
 };
 
 #ifndef R2_PLUGIN_INCORE

@@ -282,7 +282,13 @@ typedef struct r_bin_object_t {
 	HtUP *addr2klassmethod;
 	void *bin_obj; // internal pointer used by formats
 	bool is_reloc_patched; // used to indicate whether relocations were patched or not
+	// the new stuff
+	void *priv; // RBinObjectPriv 
 } RBinObject;
+
+typedef struct {
+	RVecSection *bla;
+} RBinObjectPriv;
 
 // XXX: RbinFile may hold more than one RBinObject
 /// XX curplugin == o->plugin
