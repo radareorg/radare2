@@ -525,7 +525,6 @@ ireturn
 EOF
 RUN
 
-BROKEN=1
 NAME=java simple switch statement 4 values
 FILE=malloc://128
 BROKEN=1
