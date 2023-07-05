@@ -548,8 +548,6 @@ typedef struct r_bin_symbol_t {
 	bool is_imported;
 	/* only used by java */
 	const char *visibility_str;
-	// ----------------
-	//char descriptor[R_BIN_SIZEOF_STRINGS+1];
 	ut64 vaddr;
 	ut64 paddr;
 	ut32 size;
