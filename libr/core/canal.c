@@ -5650,7 +5650,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 
 		/* realign address if needed */
 		r_core_seek_arch_bits (core, cur);
-		int opalign = core->anal->config->pcalign;
+		int opalign = core->anal->config->codealign;
 		if (opalign > 0) {
 			cur -= (cur % opalign);
 		}

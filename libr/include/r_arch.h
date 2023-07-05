@@ -85,7 +85,7 @@ typedef struct r_arch_config_t {
 		ut32 endian;
 	};
 	int syntax;
-	int pcalign; // R2_590 - rename to codealign
+	int codealign;
 	int dataalign;
 	int addrbytes;
 	int segbas;

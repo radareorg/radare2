@@ -154,11 +154,11 @@ R_API int r_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 	if (anal && anal->coreb.archbits) {
 		anal->coreb.archbits (anal->coreb.core, addr);
 	}
-	const int pcalign = anal->config->pcalign;
-	if (pcalign > 1 && (addr % pcalign)) {
+	const int codealign = anal->config->codealign;
+	if (codealign > 1 && (addr % codealign)) {
 		op->type = R_ANAL_OP_TYPE_ILL;
 		op->addr = addr;
-		op->size = pcalign - (addr % pcalign);
+		op->size = codealign - (addr % codealign);
 		r_anal_op_set_mnemonic (op, addr, "unaligned");
 		if (op->size > len) {
 			// truncated
@@ -245,8 +245,8 @@ R_API int r_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 		int minop = r_arch_info (anal->arch, R_ANAL_ARCHINFO_MIN_OP_SIZE);
 		op->size = minop;
 		ut64 nextpc = op->addr + op->size;
-		if (pcalign > 1) {
-			op->size += (nextpc % pcalign);
+		if (codealign > 1) {
+			op->size += (nextpc % codealign);
 		}
 	}
 	return ret;

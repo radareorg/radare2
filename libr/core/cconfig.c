@@ -539,12 +539,12 @@ static bool cb_analcpu(void *user, void *data) {
 	}
 	// r_anal_set_cpu (core->anal, node->value);
 	r_arch_config_set_cpu (core->anal->config, node->value);
-	/* set pcalign */
+	/* set codealign */
 	int v = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_ALIGN);
  	if (v != -1) {
- 		core->anal->config->pcalign = v;
+ 		core->anal->config->codealign = v;
  	}
-	r_config_set_i (core->config, "asm.pcalign", (v != -1)? v: 0);
+	r_config_set_i (core->config, "asm.codealign", (v != -1)? v: 0);
 	return true;
 }
 #endif
@@ -718,9 +718,9 @@ static bool cb_asmcpu(void *user, void *data) {
 	r_arch_config_set_cpu (core->rasm->config, node->value);
 	int v = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_ALIGN);
  	if (v != -1) {
- 		core->anal->config->pcalign = v;
+ 		core->anal->config->codealign = v;
  	}
-	r_config_set_i (core->config, "asm.pcalign", (v != -1)? v: 0);
+	r_config_set_i (core->config, "asm.codealign", (v != -1)? v: 0);
 	return true;
 }
 
@@ -842,7 +842,7 @@ static bool cb_asmarch(void *user, void *data) {
 			free (s);
 		}
 	}
-	// set pcalign
+	// set codealign
 	if (core->anal) {
 		const char *asmcpu = r_config_get (core->config, "asm.cpu");
 		const char *asmos = r_config_get (core->config, "asm.os");
@@ -872,7 +872,7 @@ static bool cb_asmarch(void *user, void *data) {
 	}
 	{
 		int v = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_ALIGN);
-		r_config_set_i (core->config, "asm.pcalign", (v != -1)? v: 0);
+		r_config_set_i (core->config, "asm.codealign", (v != -1)? v: 0);
 	}
 	/* reload types and cc info */
 	// changing asm.arch changes anal.arch
@@ -975,9 +975,9 @@ static bool cb_asmbits(void *user, void *data) {
 			r_bp_use (core->dbg->bp, asmarch, core->anal->config->bits);
 			r_config_set_i (core->config, "dbg.bpsize", r_bp_size (core->dbg->bp));
 		}
-		/* set pcalign */
+		/* set codealign */
 		int v = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_ALIGN);
-		r_config_set_i (core->config, "asm.pcalign", (v != -1)? v: 0);
+		r_config_set_i (core->config, "asm.codealign", (v != -1)? v: 0);
 	}
 	return ret;
 }
@@ -1062,14 +1062,14 @@ static bool cb_asm_invhex(void *user, void *data) {
 	return true;
 }
 
-static bool cb_asm_pcalign(void *user, void *data) {
+static bool cb_asm_codealign(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
 	int align = node->i_value;
 	if (align < 0) {
 		align = 0;
 	}
-	core->anal->config->pcalign = align;
+	core->anal->config->codealign = align;
 	return true;
 }
 
@@ -3590,7 +3590,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETBPREF ("asm.cmt.right", "true", "show comments at right of disassembly if they fit in screen");
 	SETBPREF ("asm.cmt.esil", "false", "show ESIL expressions as comments");
 	SETI ("asm.cmt.col", 71, "column to align comments");
-	SETICB ("asm.pcalign", 0, &cb_asm_pcalign, "only recognize as valid instructions aligned to this value");
+	SETICB ("asm.codealign", 0, &cb_asm_codealign, "only recognize as valid instructions aligned to this value");
 	// maybe rename to asm.cmt.calls
 	SETBPREF ("asm.calls", "true", "show callee function related info as comments in disasm");
 	SETBPREF ("asm.comments", "true", "show comments in disassembly view");

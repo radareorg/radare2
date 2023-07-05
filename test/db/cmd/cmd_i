@@ -234,7 +234,7 @@ nth paddr vaddr bind type size lib name demangled
 e cfg.bigendian=false
 e asm.bits=64
 e asm.dwarf=false
-e asm.pcalign=1
+e asm.codealign=1
 fs imports
 fs symbols
 fs exports
@@ -281,7 +281,7 @@ block    0x100
 e cfg.bigendian=false
 e asm.bits=64
 e asm.dwarf=false
-e asm.pcalign=1
+e asm.codealign=1
 binsz    1024
 bits     64
 canary   false
@@ -292,7 +292,7 @@ havecode false
 e cfg.bigendian=false
 e asm.bits=64
 e asm.dwarf=false
-e asm.pcalign=1
+e asm.codealign=1
 EOF
 RUN
 
@@ -484,9 +484,9 @@ NAME=icg
 FILE=bins/elf/libmagic.so
 CMDS=<<EOF
 icg
-?e 
+?e
 icg _JNIEnv
-?e 
+?e
 icg System
 EOF
 EXPECT=<<EOF
