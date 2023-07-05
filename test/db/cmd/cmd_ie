@@ -133,6 +133,9 @@ DEBUG: (section .dynstr) Css 674 @ 0x484
 DEBUG: RCoreCmd: Css 674 @ 0x484
 DEBUG: RCoreCmd: Cz@0x00000484
 DEBUG: RCoreCmd: o;om
+DEBUG: (section .rel.plt) Cd 4[98] @ 0x940
+DEBUG: RCoreCmd: Cd 4[98] @ 0x940
+DEBUG: (cannot find opening [) in (98])
 DEBUG: (section .dynamic) Cd 4[48] @ 0x12000
 DEBUG: RCoreCmd: Cd 4[48] @ 0x12000
 DEBUG: (cannot find opening [) in (48])
@@ -140,6 +143,9 @@ DEBUG: (section .dynstr) Css 674 @ 0x484
 DEBUG: RCoreCmd: Css 674 @ 0x484
 DEBUG: RCoreCmd: Cz@0x00000484
 DEBUG: RCoreCmd: o;om
+DEBUG: (section .rel.plt) Cd 4[98] @ 0x940
+DEBUG: RCoreCmd: Cd 4[98] @ 0x940
+DEBUG: (cannot find opening [) in (98])
 DEBUG: (section .dynamic) Cd 4[48] @ 0x12000
 DEBUG: RCoreCmd: Cd 4[48] @ 0x12000
 DEBUG: (cannot find opening [) in (48])

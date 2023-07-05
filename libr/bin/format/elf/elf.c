@@ -3428,7 +3428,17 @@ static bool is_data_section(const char *name) {
 }
 
 static bool is_wordable_section(const char *name) {
-	const char *sections[] = {".init_array", ".fini_array", ".data.rel.ro", ".dynamic"}; // , ".got", ".rel.plt", ".rela.plt"};
+	// R2R db/cmd/cmd_ie
+	const char *sections[] = {
+		".init_array",
+		".fini_array",
+		".data.rel.ro",
+		".dynamic",
+		".rel.plt"
+		// R2_590 - try to uncomment this and hope not to break things
+		//".got"
+		//".rela.plt"
+	};
 	int i;
 	for (i = 0; i < R_ARRAY_SIZE (sections); i++) {
 		if (!strcmp (name, sections[i])) {

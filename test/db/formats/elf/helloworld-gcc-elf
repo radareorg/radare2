@@ -89,6 +89,12 @@ EXPECT=<<EOF
 0x08048250 CCu "[08] -r-- section size 32 named .gnu.version_r"
 0x08048270 CCu "[09] -r-- section size 8 named .rel.dyn"
 0x08048278 CCu "[10] -r-- section size 24 named .rel.plt"
+0x08048278 data Cd 4
+0x0804827c data Cd 4
+0x08048280 data Cd 4
+0x08048284 data Cd 4
+0x08048288 data Cd 4
+0x0804828c data Cd 4
 0x08048290 CCu "[11] -r-x section size 35 named .init"
 0x080482c0 CCu "[12] -r-x section size 64 named .plt"
 0x08048300 CCu "[13] -r-x section size 404 named .text"
@@ -193,6 +199,12 @@ CCu base64:WzA3XSAtci0tIHNlY3Rpb24gc2l6ZSAxMCBuYW1lZCAuZ251LnZlcnNpb24= @ 0x0804
 CCu base64:WzA4XSAtci0tIHNlY3Rpb24gc2l6ZSAzMiBuYW1lZCAuZ251LnZlcnNpb25fcg== @ 0x08048250
 CCu base64:WzA5XSAtci0tIHNlY3Rpb24gc2l6ZSA4IG5hbWVkIC5yZWwuZHlu @ 0x08048270
 CCu base64:WzEwXSAtci0tIHNlY3Rpb24gc2l6ZSAyNCBuYW1lZCAucmVsLnBsdA== @ 0x08048278
+Cd 4 @ 0x08048278
+Cd 4 @ 0x0804827c
+Cd 4 @ 0x08048280
+Cd 4 @ 0x08048284
+Cd 4 @ 0x08048288
+Cd 4 @ 0x0804828c
 CCu base64:WzExXSAtci14IHNlY3Rpb24gc2l6ZSAzNSBuYW1lZCAuaW5pdA== @ 0x08048290
 CCu base64:WzEyXSAtci14IHNlY3Rpb24gc2l6ZSA2NCBuYW1lZCAucGx0 @ 0x080482c0
 CCu base64:WzEzXSAtci14IHNlY3Rpb24gc2l6ZSA0MDQgbmFtZWQgLnRleHQ= @ 0x08048300
