@@ -598,7 +598,7 @@ R_API void r_cons_pal_list(int rad, const char *arg) {
 				};
 				int j;
 				if (rcolor->a != ALPHA_FGBG) {
-					r_cons_strcat (" .");
+					r_cons_print (" .");
 				}
 				for (j = 0; j < R_ARRAY_SIZE (attrs); j++) {
 					if (rcolor->attr & attrs[j].val) {

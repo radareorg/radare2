@@ -2046,11 +2046,11 @@ R_API void r_core_debug_ri(RCore *core, RReg *reg, int mode) {
 		if (list) {
 			RListIter *iter;
 			const char *r;
-			r_cons_strcat (Color_YELLOW);
+			r_cons_print (Color_YELLOW);
 			r_list_foreach (list, iter, r) {
 				r_cons_printf (" %s", r);
 			}
-			r_cons_strcat (Color_RESET);
+			r_cons_print (Color_RESET);
 			ut64 o_offset = core->offset;
 			char *rrstr = r_core_anal_hasrefs (core, *addr, true);
 			core->offset = o_offset;
@@ -2121,7 +2121,7 @@ R_API void r_core_debug_rr(RCore *core, RReg *reg, int mode) {
 		if (delta && use_colors) {
 			namestr = r_str_newf ("%s%s%s", color, r->name, colorend);
 			valuestr = r_str_newf ("%s%"PFMT64x"%s", color, value, colorend);
-			r_cons_strcat (Color_RESET);
+			r_cons_print (Color_RESET);
 		} else {
 			namestr = r_str_new (r->name);
 			valuestr = r_str_newf ("%"PFMT64x, value);

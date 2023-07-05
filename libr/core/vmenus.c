@@ -1861,10 +1861,10 @@ R_API int r_core_visual_view_rop(RCore *core) {
 		r_list_foreach (core->ropchain, iter, msg) {
 			int extra = strlen (chainstr) / scr_w;
 			r_cons_gotoxy (0, extra + 22 + count);
-			r_cons_strcat (msg);
+			r_cons_print (msg);
 			const char *cmt = r_meta_get_string (core->anal, R_META_TYPE_COMMENT, r_num_get (NULL, msg));
 			if (cmt) {
-				r_cons_strcat (cmt);
+				r_cons_print (cmt);
 			}
 			count ++;
 		}
@@ -2357,7 +2357,7 @@ R_API int r_core_visual_comments(RCore *core) {
 
 	for (;;) {
 		r_cons_clear00 ();
-		r_cons_strcat ("Comments:\n");
+		r_cons_print ("Comments:\n");
 		RIntervalTreeIter it;
 		RAnalMetaItem *item;
 		i = 0;
@@ -3380,9 +3380,9 @@ static ut64 r_core_visual_anal_refresh(RCore *core) {
 	case 0:
 		buf = r_strbuf_new ("");
 		if (color) {
-			r_cons_strcat (core->cons->context->pal.prompt);
+			r_cons_print (core->cons->context->pal.prompt);
 		}
-		r_cons_strcat (".-- functions -----------------------------------------.");
+		r_cons_print (".-- functions -----------------------------------------.");
 		r_cons_gotoxy (20, 0);
 		if (selectPanel) {
 			r_cons_printf ("[%s]", printCmds[printMode]);
@@ -3390,30 +3390,30 @@ static ut64 r_core_visual_anal_refresh(RCore *core) {
 			r_cons_printf (" %s ", printCmds[printMode]);
 		}
 		if (color) {
-			r_cons_strcat (Color_RESET);
+			r_cons_print (Color_RESET);
 		}
 		r_cons_newline ();
-		r_cons_strcat ("| (a)nalyze (-)delete (x)xrefs (X)refs (j/k) next/prev |\n");
-		r_cons_strcat ("| (r)ename  (c)alls   (d)efine (Tab)disasm (_) hud     |\n");
-		r_cons_strcat ("| (d)efine  (v)ars    (?)help  (:)shell    (q) quit    |\n");
-		r_cons_strcat ("| (s)ignature edit                                     |\n");
+		r_cons_print ("| (a)nalyze (-)delete (x)xrefs (X)refs (j/k) next/prev |\n");
+		r_cons_print ("| (r)ename  (c)alls   (d)efine (Tab)disasm (_) hud     |\n");
+		r_cons_print ("| (d)efine  (v)ars    (?)help  (:)shell    (q) quit    |\n");
+		r_cons_print ("| (s)ignature edit                                     |\n");
 		r_cons_printf ("'------------------------------------------------------'");
 		addr = var_functions_show (core, option, 1, cols);
 		break;
 	case 1:
 		buf = r_strbuf_new ("");
 		if (color) {
-			r_cons_strcat (core->cons->context->pal.prompt);
+			r_cons_print (core->cons->context->pal.prompt);
 		}
-		r_cons_strcat (".-[ variables ]---------------------------.");
+		r_cons_print (".-[ variables ]---------------------------.");
 		if (color) {
-			r_cons_strcat ("\n" Color_RESET);
+			r_cons_print ("\n" Color_RESET);
 		}
 		r_cons_gotoxy (22, 0);
 		r_cons_printf (" 0x%08"PFMT64x" \n", addr);
-		r_cons_strcat ("| (a)dd     (x)refs       (r)rename       |\n");
-		r_cons_strcat ("| (t)ype    (g)o          (-)delete       |\n");
-		r_cons_strcat ("| (q)uit    (s)signature  (q)uit          |\n");
+		r_cons_print ("| (a)dd     (x)refs       (r)rename       |\n");
+		r_cons_print ("| (t)ype    (g)o          (-)delete       |\n");
+		r_cons_print ("| (q)uit    (s)signature  (q)uit          |\n");
 		r_cons_printf ("'-----------------------------------------'");
 		char *drained = r_strbuf_drain (buf);
 		r_cons_printf ("%s", drained);
@@ -3424,11 +3424,11 @@ static ut64 r_core_visual_anal_refresh(RCore *core) {
 	case 2:
 		r_cons_printf ("Press 'q' to quit call refs\n");
 		if (color) {
-			r_cons_strcat (core->cons->context->pal.prompt);
+			r_cons_print (core->cons->context->pal.prompt);
 		}
 		r_cons_printf ("-[ calls ]----------------------- 0x%08"PFMT64x" (TODO)\n", addr);
 		if (color) {
-			r_cons_strcat ("\n" Color_RESET);
+			r_cons_print ("\n" Color_RESET);
 		}
 		// TODO: filter only the callrefs. but we cant grep here
 		char *output = r_core_cmd_strf (core, "afi @ 0x%08"PFMT64x, addr);

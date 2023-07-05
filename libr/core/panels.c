@@ -5922,7 +5922,7 @@ static void demo_begin(RCore *core, RConsCanvas *can) {
 			char *r = r_str_scale (s, w, H);
 			r_cons_clear00 ();
 			r_cons_gotoxy (0, (h / 2) - (H / 2));
-			r_cons_strcat (r);
+			r_cons_print (r);
 			r_cons_flush ();
 			free (r);
 			r_sys_usleep (5000);
@@ -5952,7 +5952,7 @@ static void demo_end(RCore *core, RConsCanvas *can) {
 			r_cons_clear00 ();
 			r_cons_gotoxy (0, (h / 2) - (H / 2)); // center
 			//r_cons_gotoxy (0, h-H); // bottom
-			r_cons_strcat (r);
+			r_cons_print (r);
 			r_cons_flush ();
 			free (r);
 			r_sys_usleep (3000);

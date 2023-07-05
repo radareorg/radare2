@@ -391,7 +391,7 @@ R_API void r_core_echo(RCore *core, const char *input) {
 	} else {
 		char *p = strchr (input, ' ');
 		if (p) {
-			r_cons_strcat (p + 1);
+			r_cons_print (p + 1);
 			r_cons_newline ();
 		}
 	}

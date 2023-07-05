@@ -29,7 +29,7 @@ R_API void r_cons_w32_clear(void) {
 	COORD startCoords;
 	DWORD dummy;
 	if (I->vtmode) {
-		r_cons_strcat (Color_RESET R_CONS_CLEAR_SCREEN);
+		r_cons_print (Color_RESET R_CONS_CLEAR_SCREEN);
 		return;
 	}
 	if (I->is_wine == 1) {

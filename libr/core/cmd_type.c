@@ -1417,7 +1417,7 @@ static int cmd_type(void *data, const char *input) {
 						char *errmsg = NULL;
 						char *out = r_anal_cparse (core->anal, tmp, &errmsg);
 						if (out) {
-							// r_cons_strcat (out);
+							// r_cons_print (out);
 							r_anal_save_parsed_type (core->anal, out);
 							free (out);
 						}
@@ -1431,7 +1431,7 @@ static int cmd_type(void *data, const char *input) {
 					char *errmsg = NULL;
 					char *out = r_anal_cparse_file (core->anal, filename, dir, &errmsg);
 					if (out) {
-						//r_cons_strcat (out);
+						//r_cons_print (out);
 						r_anal_save_parsed_type (core->anal, out);
 						free (out);
 					}
