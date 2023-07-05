@@ -421,6 +421,11 @@ static char *anal_fcn_autoname(RCore *core, RAnalFunction *fcn, int dump, int mo
 						do_call = strdup (f->name + 4);
 						continue;
 					}
+					if (!strncmp (f->name, "rsym.", 5)) {
+						free (do_call);
+						do_call = strdup (f->name + 5);
+						continue;
+					}
 					if (!strncmp (f->name, "sym.imp.", 8)) {
 						free (do_call);
 						do_call = strdup (f->name + 8);
@@ -2688,6 +2693,8 @@ static int fcn_print_verbose(RCore *core, RAnalFunction *fcn, bool use_color) {
 		color_end = Color_RESET;
 		if (strstr (name, "sym.imp.")) {
 			color = Color_YELLOW;
+		} else if (strstr (name, "rsym.")) {
+			color = Color_GREEN;
 		} else if (strstr (name, "sym.")) {
 			color = Color_GREEN;
 		} else if (strstr (name, "sub.")) {
@@ -4461,8 +4468,8 @@ R_API int r_core_anal_all(RCore *core) {
 	RBinAddr *binmain;
 	RBinAddr *entry;
 	RBinSymbol *symbol;
-	const bool anal_vars = r_config_get_i (core->config, "anal.vars");
-	const bool anal_calls = r_config_get_i (core->config, "anal.calls");
+	const bool anal_vars = r_config_get_b (core->config, "anal.vars");
+	const bool anal_calls = r_config_get_b (core->config, "anal.calls");
 
 	/* Analyze Functions */
 	/* Entries */
@@ -4523,7 +4530,7 @@ R_API int r_core_anal_all(RCore *core) {
 				break;
 			}
 			r_core_recover_vars (core, fcni, true);
-			if (!strncmp (fcni->name, "dbg.", 4) || !strncmp (fcni->name, "sym.", 4) || !strncmp (fcni->name, "main", 4)) {
+			if (!strncmp (fcni->name, "dbg.", 4) || !strncmp (fcni->name, "rsym.", 4) || !strncmp (fcni->name, "sym.", 4) || !strncmp (fcni->name, "main", 4)) {
 				fcni->type = R_ANAL_FCN_TYPE_SYM;
 			}
 		}

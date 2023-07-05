@@ -162,8 +162,9 @@ static bool is_invalid_memory(RAnal *anal, const ut8 *buf, int len) {
 static bool is_symbol_flag(const char *name) {
 	return strstr (name, "imp.")
 		|| strstr (name, "dbg.")
+		// implicit in sym. || r_str_startswith (name, "rsym.")
 		|| strstr (name, "sym.")
-		|| !strncmp (name, "entry", 5)
+		|| r_str_startswith (name, "entry")
 		|| !strcmp (name, "main");
 }
 
@@ -754,7 +755,7 @@ repeat:
 
 		if (anal->opt.nopskip && fcn->addr == at) {
 			RFlagItem *fi = anal->flb.get_at (anal->flb.f, addr, false);
-			if (!fi || r_str_startswith (fi->name, "sym.")) {
+			if (!fi || strstr (fi->name, "sym.")) {
 				if ((addr + delay.un_idx - oplen) == fcn->addr) {
 					if (r_anal_block_relocate (bb, bb->addr + oplen, bb->size - oplen)) {
 						fcn->addr += oplen;
@@ -1117,7 +1118,7 @@ repeat:
 				if (fi) {
 					if (strstr (fi->name, "imp.")) {
 						gotoBeach (R_ANAL_RET_END);
-					} else if (r_str_startswith (fi->name, "sym.") || r_str_startswith (fi->name, "fcn.")) {
+					} else if (strstr (fi->name, "sym.") || r_str_startswith (fi->name, "fcn.")) {
 						gotoBeach (R_ANAL_RET_END);
 					}
 				}

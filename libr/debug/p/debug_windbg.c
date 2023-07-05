@@ -596,7 +596,7 @@ RList *windbg_pids(RDebug *dbg, int pid) {
 		for (i = 0; i < ids_cnt; i++) {
 			char path[MAX_PATH];
 			if (SUCCEEDED (ITHISCALL (dbgClient, GetRunningProcessDescription,
-				    idbg->server, ids[i], DEBUG_PROC_DESC_DEFAULT,
+					idbg->server, ids[i], DEBUG_PROC_DESC_DEFAULT,
 					path, sizeof (path), NULL, NULL, 0, NULL))) {
 				RDebugPid *pid = r_debug_pid_new (path, ids[i], 0, 'r', 0);
 				r_list_append (list, pid);
@@ -607,8 +607,12 @@ RList *windbg_pids(RDebug *dbg, int pid) {
 }
 
 RDebugPlugin r_debug_plugin_windbg = {
-	.name = "windbg",
-	.license = "LGPL3",
+	.meta = {
+		.name = "windbg",
+		.license = "LGPL3",
+		.author = "pancake",
+		.desc = "comunicate with a windbg",
+	},
 	.bits = R_SYS_BITS_64,
 	.arch = "x86,x64,arm,arm64",
 	.canstep = 1,

@@ -1797,7 +1797,6 @@ static void add_metadata(RCore *r, RBinReloc *reloc, ut64 addr, int mode) {
 	if (cdsz == 0) {
 		return;
 	}
-
 	RIOMap *map = r_io_map_get_at (r->io, addr);
 	if (!map || map ->perm & R_PERM_X) {
 		return;
@@ -1835,7 +1834,7 @@ static bool is_file_reloc(RBinReloc *r) {
 }
 
 static int bin_relocs(RCore *r, PJ *pj, int mode, int va) {
-	bool bin_demangle = r_config_get_i (r->config, "bin.demangle");
+	bool bin_demangle = r_config_get_b (r->config, "bin.demangle");
 	bool keep_lib = r_config_get_i (r->config, "bin.demangle.libs");
 	const char *lang = r_config_get (r->config, "bin.lang");
 	RTable *table = r_core_table (r, "relocs");
@@ -4192,9 +4191,7 @@ static void bin_elf_versioninfo(RCore *r, PJ *pj, int mode) {
 		} else {
 			r_cons_printf ("Version need section '%s' contains %d entries:\n",
 				section_name, (int)sdb_num_get (sdb, "num_entries", 0));
-
 			r_cons_printf (" Addr: 0x%08"PFMT64x, address);
-
 			r_cons_printf ("  Offset: 0x%08"PFMT64x"  Link to section: %"PFMT64d" (%s)\n",
 				offset, link, link_section_name);
 		}
