@@ -12,7 +12,7 @@ minopsz 2
 maxopsz 8
 invopsz 1
 dtalign 2
-pcalign 2
+codealign 2
 --
 fd       3
 file     bins/v850/ired_v850

@@ -380,11 +380,11 @@ R_API int r_asm_disassemble(RAsm *a, RAnalOp *op, const ut8 *buf, int len) {
 	op->size = 4;
 	// op->bitsize = 0;
 	r_anal_op_set_mnemonic (op, op->addr, "");
-	if (a->config->pcalign) {
-		const int mod = a->pc % a->config->pcalign;
+	if (a->config->codealign) {
+		const int mod = a->pc % a->config->codealign;
 		if (mod) {
 			r_anal_op_set_mnemonic (op, op->addr, "unaligned");
-			op->size = a->config->pcalign - mod;
+			op->size = a->config->codealign - mod;
 			return -1;
 		}
 	}

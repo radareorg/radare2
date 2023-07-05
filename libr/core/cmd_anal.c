@@ -6149,8 +6149,8 @@ R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr,
 			R_LOG_ERROR ("Invalid program counter PC=-1 coming from 0x%08"PFMT64x, addr);
 			break;
 		}
-		if (core->anal->config->pcalign > 0) {
-			pc -= (pc % core->anal->config->pcalign);
+		if (core->anal->config->codealign > 0) {
+			pc -= (pc % core->anal->config->codealign);
 			r_reg_setv (core->anal->reg, pcname, pc);
 			r_reg_setv (core->dbg->reg, pcname, pc);
 		}
@@ -6319,7 +6319,7 @@ static void cmd_anal_info(RCore *core, const char *input) {
 			v = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_DATA_ALIGN);
 			pj_ki (pj, "dtalign", v);
 			v = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_ALIGN);
-			pj_ki (pj, "pcalign", v);
+			pj_ki (pj, "codealign", v);
 			pj_end (pj);
 			char *s = pj_drain (pj);
 			r_cons_printf ("%s\n", s);
@@ -6334,7 +6334,7 @@ static void cmd_anal_info(RCore *core, const char *input) {
 			v = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_DATA_ALIGN);
 			r_cons_printf ("dtalign %d\n", v);
 			v = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_ALIGN);
-			r_cons_printf ("pcalign %d\n", v);
+			r_cons_printf ("codealign %d\n", v);
 		}
 		break;
 	case 'i': // "aii"

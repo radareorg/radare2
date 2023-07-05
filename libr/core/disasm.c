@@ -6364,8 +6364,8 @@ toro:
 			ret = 1;
 		}
 		len += R_MAX (0, ret);
-		int pcalign = core->anal->config->pcalign;
-		bool unaligned = (pcalign > 1 && (ds->at % pcalign));
+		int codealign = core->anal->config->codealign;
+		bool unaligned = (codealign > 1 && (ds->at % codealign));
 		if (unaligned) {
 			ds->analop.type = R_ANAL_OP_TYPE_ILL;
 		}

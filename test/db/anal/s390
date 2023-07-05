@@ -12,7 +12,7 @@ minopsz 2
 maxopsz 6
 invopsz 2
 dtalign 1
-pcalign 1
+codealign 1
 --
 fd       3
 file     bins/s390/zos/prueba/prueba
