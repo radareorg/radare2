@@ -3536,7 +3536,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			break;
 		case 'Y':
 			if (!core->yank_buf) {
-				r_cons_strcat ("Cannot paste, clipboard is empty.\n");
+				r_cons_print ("Cannot paste, clipboard is empty.\n");
 				r_cons_flush ();
 				r_cons_any_key (NULL);
 				r_cons_clear00 ();
@@ -4022,7 +4022,7 @@ R_API void r_core_visual_title(RCore *core, int color) {
 	}
 
 	if (color) {
-		r_cons_strcat (BEGIN);
+		r_cons_print (BEGIN);
 	}
 	const char *cmd_visual = r_config_get (core->config, "cmd.visual");
 	if (R_STR_ISNOTEMPTY (cmd_visual)) {
@@ -4125,7 +4125,7 @@ R_API void r_core_visual_title(RCore *core, int color) {
 		free (address);
 	}
 	if (color) {
-		r_cons_strcat (Color_RESET);
+		r_cons_print (Color_RESET);
 	}
 }
 
@@ -4195,7 +4195,7 @@ R_API void r_core_print_scrollbar(RCore *core) {
 	}
 	char *s = r_str_newf ("[0x%08"PFMT64x"]", from);
 	r_cons_gotoxy (w - strlen (s) + 1, 2);
-	r_cons_strcat (s);
+	r_cons_print (s);
 	free (s);
 
 	ut64 block = (to - from) / h;
@@ -4226,7 +4226,7 @@ R_API void r_core_print_scrollbar(RCore *core) {
 	s = r_str_newf ("[0x%08"PFMT64x"]", to);
 	if (s) {
 		r_cons_gotoxy (w - strlen (s) + 1, h + 1);
-		r_cons_strcat (s);
+		r_cons_print (s);
 		free (s);
 	}
 	r_list_free (words);
@@ -4253,7 +4253,7 @@ R_API void r_core_print_scrollbar_bottom(RCore *core) {
 	char *s = r_str_newf ("[0x%08"PFMT64x"]", from);
 	int slen = strlen (s) + 1;
 	r_cons_gotoxy (0, h + 1);
-	r_cons_strcat (s);
+	r_cons_print (s);
 	free (s);
 
 	int linew = (w - (slen * 2)) + 1;
@@ -4265,15 +4265,15 @@ R_API void r_core_print_scrollbar_bottom(RCore *core) {
 	for (i = 0; i < linew + 1; i++) {
 		r_cons_gotoxy (i + slen, h + 1);
 		if (hadMatch) {
-			r_cons_strcat ("-");
+			r_cons_print ("-");
 		} else {
 			ut64 cur = from + (block * i);
 			ut64 nex = from + (block * (i + 2));
 			if (R_BETWEEN (cur, core->offset, nex)) {
-				r_cons_strcat (Color_INVERT"-"Color_RESET);
+				r_cons_print (Color_INVERT"-"Color_RESET);
 				hadMatch = true;
 			} else {
-				r_cons_strcat ("-");
+				r_cons_print ("-");
 			}
 		}
 	}
@@ -4293,7 +4293,7 @@ R_API void r_core_print_scrollbar_bottom(RCore *core) {
 	s = r_str_newf ("[0x%08"PFMT64x"]", to);
 	if (s) {
 		r_cons_gotoxy (linew + slen + 1, h + 1);
-		r_cons_strcat (s);
+		r_cons_print (s);
 		free (s);
 	}
 	r_list_free (words);
@@ -4328,7 +4328,7 @@ static void visual_refresh(RCore *core) {
 	}
 	r_cons_flush ();
 	r_cons_print_clear ();
-	r_cons_strcat (core->cons->context->pal.bgprompt);
+	r_cons_print (core->cons->context->pal.bgprompt);
 	core->cons->context->noflush = true;
 
 	int hex_cols = r_config_get_i (core->config, "hex.cols");
@@ -4409,7 +4409,7 @@ static void visual_refresh(RCore *core) {
 		if (vsplit) {
 			res = r_str_ansi_crop (res, 0, 0, split_w, -1);
 		}
-		r_cons_strcat (res);
+		r_cons_print (res);
 		free (res);
 	}
 	free (cmd_str);
@@ -4722,7 +4722,7 @@ dodo:
 
 	r_cons_enable_mouse (false);
 	if (color) {
-		r_cons_strcat (Color_RESET);
+		r_cons_print (Color_RESET);
 	}
 	r_config_set_i (core->config, "scr.color", color);
 	core->print->cur_enabled = false;

@@ -74,10 +74,10 @@ static bool siglistcb(void *p, const char *k, const char *v) {
 		if (opt) {
 			r_cons_printf ("%s %s", k, v);
 			if (opt & R_DBG_SIGNAL_CONT) {
-				r_cons_strcat (" cont");
+				r_cons_print (" cont");
 			}
 			if (opt & R_DBG_SIGNAL_SKIP) {
-				r_cons_strcat (" skip");
+				r_cons_print (" skip");
 			}
 			r_cons_newline ();
 		} else {

@@ -929,7 +929,7 @@ static int cmd_alias(void *data, const char *input) {
 			if (v->is_data) {
 				char *v_str = r_cmd_alias_val_strdup (v);
 				if (v_str) {
-					r_cons_strcat (v_str);
+					r_cons_print (v_str);
 					r_cons_newline ();
 					free (v_str);
 				}
@@ -1353,7 +1353,7 @@ R_API bool r_core_run_script(RCore *core, const char *file) {
 		const char *dir = r_config_get (core->config, "dir.types");
 		char *out = r_anal_cparse_file (core->anal, file, dir, NULL);
 		if (out) {
-			r_cons_strcat (out);
+			r_cons_print (out);
 			sdb_query_lines (core->anal->sdb_types, out);
 			free (out);
 		}
@@ -5661,7 +5661,7 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 						buf = strdup (buf);
 					}
 					r_cons_pop ();
-					// r_cons_strcat (buf);
+					// r_cons_print (buf);
 					r_strbuf_append (sb, buf);
 					free (buf);
 #else
@@ -5675,7 +5675,7 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 				}
 				char *s = r_strbuf_drain (sb);
 				if (s) {
-					r_cons_strcat (s);
+					r_cons_print (s);
 					free (s);
 				}
 				core->cons->context->grep = grep;
@@ -5889,7 +5889,7 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 					buf = tmp? strdup (tmp): NULL;
 					r_cons_pop ();
 					if (buf) {
-						r_cons_strcat (buf);
+						r_cons_print (buf);
 						free (buf);
 					}
 					if (!foreach_newline (core)) {

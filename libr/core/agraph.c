@@ -3551,7 +3551,7 @@ static int agraph_print(RAGraph *g, int is_interactive, RCore *core, RAnalFuncti
 		}
 		if (R_STR_ISNOTEMPTY (cmdv)) {
 			r_cons_gotoxy (0, 2);
-			r_cons_strcat (Color_RESET);
+			r_cons_print (Color_RESET);
 			r_core_cmd0 (core, cmdv);
 			mustFlush = true;
 		}

@@ -306,7 +306,7 @@ R_API void r_cons_strcat_at(const char *_str, int x, char y, int w, int h) {
 		}
 	}
 	char *str = r_str_ansi_crop (_str, 0, 0, w + 1, h);
-	r_cons_strcat (R_CONS_CURSOR_SAVE);
+	r_cons_print (R_CONS_CURSOR_SAVE);
 	for (o = i = len = 0; str[i]; i++, len++) {
 		if (w < 0 || rows > w) {
 			break;
@@ -327,8 +327,8 @@ R_API void r_cons_strcat_at(const char *_str, int x, char y, int w, int h) {
 		r_cons_gotoxy (x, y + rows);
 		r_cons_write (str + o, len);
 	}
-	r_cons_strcat (Color_RESET);
-	r_cons_strcat (R_CONS_CURSOR_RESTORE);
+	r_cons_print (Color_RESET);
+	r_cons_print (R_CONS_CURSOR_RESTORE);
 	free (str);
 }
 
@@ -787,7 +787,7 @@ R_API void r_cons_gotoxy(int x, int y) {
 }
 
 R_API void r_cons_print_clear(void) {
-	r_cons_strcat ("\x1b[0;0H\x1b[0m");
+	r_cons_print ("\x1b[0;0H\x1b[0m");
 }
 
 R_API void r_cons_fill_line(void) {
@@ -800,7 +800,7 @@ R_API void r_cons_fill_line(void) {
 	if (p) {
 		memset (p, ' ', cols);
 		p[cols] = 0;
-		r_cons_strcat (p);
+		r_cons_print (p);
 		if (white != p) {
 			free (p);
 		}
@@ -835,7 +835,7 @@ R_API void r_cons_clear00(void) {
 }
 
 R_API void r_cons_reset_colors(void) {
-	r_cons_strcat (Color_RESET_BG Color_RESET);
+	r_cons_print (Color_RESET_BG Color_RESET);
 }
 
 R_API void r_cons_clear(void) {
@@ -843,7 +843,7 @@ R_API void r_cons_clear(void) {
 #if R2__WINDOWS__
 	r_cons_w32_clear ();
 #else
-	r_cons_strcat (Color_RESET R_CONS_CLEAR_SCREEN);
+	r_cons_print (Color_RESET R_CONS_CLEAR_SCREEN);
 #endif
 }
 
@@ -994,7 +994,7 @@ R_API void r_cons_echo(const char *msg) {
 	} else {
 		if (echodata) {
 			char *data = r_strbuf_drain (echodata);
-			r_cons_strcat (data);
+			r_cons_print (data);
 			r_cons_newline ();
 			echodata = NULL;
 			free (data);
@@ -1389,7 +1389,7 @@ club:
 			C->buffer_len += written;
 		}
 	} else {
-		r_cons_strcat (format);
+		r_cons_print (format);
 	}
 	va_end (ap2);
 	va_end (ap3);
@@ -1459,7 +1459,7 @@ R_API void r_cons_memset(char ch, int len) {
 	}
 }
 
-R_API void r_cons_strcat(const char *str) {
+R_API void r_cons_print(const char *str) {
 	r_return_if_fail (str);
 	if (!I || I->null) {
 		return;
@@ -1472,7 +1472,7 @@ R_API void r_cons_strcat(const char *str) {
 
 R_API void r_cons_newline(void) {
 	if (!I->null) {
-		r_cons_strcat ("\n");
+		r_cons_print ("\n");
 	}
 #if 0
 This place is wrong to manage the color reset, can interfire with r2pipe output sending resetchars
@@ -1483,9 +1483,9 @@ now the console color is reset with each \n (same stuff do it here but in correc
 #if R2__WINDOWS__
 	r_cons_reset_colors();
 #else
-	r_cons_strcat (Color_RESET_ALL"\n");
+	r_cons_print (Color_RESET_ALL"\n");
 #endif
-	if (I->is_html) r_cons_strcat ("<br />\n");
+	if (I->is_html) r_cons_print ("<br />\n");
 #endif
 }
 
@@ -1905,7 +1905,7 @@ R_API void r_cons_set_utf8(bool b) {
 }
 
 R_API void r_cons_invert(int set, int color) {
-	r_cons_strcat (R_CONS_INVERT (set, color));
+	r_cons_print (R_CONS_INVERT (set, color));
 }
 
 #if 0

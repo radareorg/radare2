@@ -310,7 +310,7 @@ R_API int r_core_bind(RCore *core, RCoreBind *bnd) {
 	bnd->cmdf = (RCoreCmdF)r_core_cmdf;
 	bnd->cmdstr = (RCoreCmdStr)r_core_cmd_str;
 	bnd->cmdstrf = (RCoreCmdStrF)r_core_cmd_strf;
-	bnd->puts = (RCorePuts)r_cons_strcat;
+	bnd->puts = (RCorePuts)r_cons_print;
 	bnd->setab = (RCoreSetArchBits)setab;
 	bnd->getName = (RCoreGetName)getName;
 	bnd->getNameDelta = (RCoreGetNameDelta)getNameDelta;

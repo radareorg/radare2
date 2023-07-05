@@ -2128,11 +2128,11 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 		snprintf (bytes + j + i, bytes_size - j - i, "%0X", i % 17);
 	}
 	if (usecolor) {
-		r_cons_strcat (Color_GREEN);
-		r_cons_strcat (bytes);
-		r_cons_strcat (Color_RESET);
+		r_cons_print (Color_GREEN);
+		r_cons_print (bytes);
+		r_cons_print (Color_RESET);
 	} else {
-		r_cons_strcat (bytes);
+		r_cons_print (bytes);
 	}
 	r_cons_newline ();
 
@@ -2414,15 +2414,15 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 			}
 			out[out_sz - 1] = 0;
 			if (hasline) {
-				r_cons_strcat (addrpad);
-				r_cons_strcat (out + 1);
+				r_cons_print (addrpad);
+				r_cons_print (out + 1);
 				r_cons_newline ();
 			}
 			marks = false;
 			free (out);
 		}
-		r_cons_strcat (bytes);
-		r_cons_strcat (chars);
+		r_cons_print (bytes);
+		r_cons_print (chars);
 
 		if (core->print->use_comments) {
 			for (j = 0; j < nb_cols; j++) {
@@ -6627,7 +6627,7 @@ static int cmd_print(void *data, const char *input) {
 						break;
 					}
 				}
-				r_cons_strcat ((const char *) b);
+				r_cons_print ((const char *) b);
 				r_cons_newline ();
 				// r_print_string (core->print, core->offset, b,
 				// (size_t)(e-b), 0);

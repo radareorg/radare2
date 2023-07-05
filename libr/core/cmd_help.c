@@ -1302,7 +1302,7 @@ static int cmd_help(void *data, const char *input) {
 						  r_cons_clear_line (0);
 						  r_cons_printf ("Downloading the Gibson...\n\n");
 						  r_core_cmdf (core, "?e=%d", i);
-						  r_cons_strcat (d);
+						  r_cons_print (d);
 						  r_cons_clear_line (0);
 						  r_cons_newline ();
 						  free (d);
