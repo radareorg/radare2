@@ -3037,7 +3037,7 @@ static void ds_print_offset(RDisasmState *ds) {
 			}
 		}
 	}
-	r_print_set_screenbounds (core->print, at);
+	// r_print_set_screenbounds (core->print, at);
 	if (ds->show_offset) {
 		const char *label = NULL;
 		int delta = -1;

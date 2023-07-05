@@ -1492,6 +1492,9 @@ now the console color is reset with each \n (same stuff do it here but in correc
 /* return the aproximated x,y of cursor before flushing */
 // XXX this function is a huge bottleneck
 R_API int r_cons_get_cursor(int *rows) {
+	// This implementation is very slow
+	return 0;
+#if 0
 	RConsContext *c = C;
 	int i, col = 0;
 	int row = 0;
@@ -1523,6 +1526,7 @@ R_API int r_cons_get_cursor(int *rows) {
 		*rows = row;
 	}
 	return col;
+#endif
 }
 
 R_API bool r_cons_is_windows(void) {
