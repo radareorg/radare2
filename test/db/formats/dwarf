@@ -721,23 +721,23 @@ colu: 12
 addr: 0x00001149
 EOF
 EXPECT_ERR=<<EOF
-DEBUG: [cbin.c:3225] (section .dynstr) Css 141 @ 0x480
-DEBUG: [cbin.c:3225] (section .rela.dyn) Cd 8[24] @ 0x550
-DEBUG: [cbin.c:3225] (section .rela.plt) Cd 8[3] @ 0x610
-DEBUG: [cbin.c:3225] (section .init_array) Cd 8[1] @ 0x3db8
-DEBUG: [cbin.c:3225] (section .fini_array) Cd 8[1] @ 0x3dc0
-DEBUG: [cbin.c:3225] (section .dynamic) Cd 8[62] @ 0x3dc8
-DEBUG: [cbin.c:3225] (section .dynstr) Css 141 @ 0x480
-DEBUG: [cbin.c:3225] (section .rela.dyn) Cd 8[24] @ 0x550
-DEBUG: [cbin.c:3225] (section .rela.plt) Cd 8[3] @ 0x610
-DEBUG: [cbin.c:3225] (section .init_array) Cd 8[1] @ 0x3db8
-DEBUG: [cbin.c:3225] (section .fini_array) Cd 8[1] @ 0x3dc0
-DEBUG: [cbin.c:3225] (section .dynamic) Cd 8[62] @ 0x3dc8
-DEBUG: [cbin.c:2493] Cannot resolve symbol address __libc_start_main
-DEBUG: [cbin.c:2493] Cannot resolve symbol address _ITM_deregisterTMCloneTable
-DEBUG: [cbin.c:2493] Cannot resolve symbol address __gmon_start__
-DEBUG: [cbin.c:2493] Cannot resolve symbol address _ITM_registerTMCloneTable
-DEBUG: [cbin.c:2493] Cannot resolve symbol address __cxa_finalize
+DEBUG: [cbin.c:3233] (section .dynstr) Css 141 @ 0x480
+DEBUG: [cbin.c:3233] (section .rela.dyn) Cd 8[24] @ 0x550
+DEBUG: [cbin.c:3233] (section .rela.plt) Cd 8[3] @ 0x610
+DEBUG: [cbin.c:3233] (section .init_array) Cd 8[1] @ 0x3db8
+DEBUG: [cbin.c:3233] (section .fini_array) Cd 8[1] @ 0x3dc0
+DEBUG: [cbin.c:3233] (section .dynamic) Cd 8[62] @ 0x3dc8
+DEBUG: [cbin.c:3233] (section .dynstr) Css 141 @ 0x480
+DEBUG: [cbin.c:3233] (section .rela.dyn) Cd 8[24] @ 0x550
+DEBUG: [cbin.c:3233] (section .rela.plt) Cd 8[3] @ 0x610
+DEBUG: [cbin.c:3233] (section .init_array) Cd 8[1] @ 0x3db8
+DEBUG: [cbin.c:3233] (section .fini_array) Cd 8[1] @ 0x3dc0
+DEBUG: [cbin.c:3233] (section .dynamic) Cd 8[62] @ 0x3dc8
+DEBUG: [cbin.c:2501] Cannot resolve symbol address __libc_start_main
+DEBUG: [cbin.c:2501] Cannot resolve symbol address _ITM_deregisterTMCloneTable
+DEBUG: [cbin.c:2501] Cannot resolve symbol address __gmon_start__
+DEBUG: [cbin.c:2501] Cannot resolve symbol address _ITM_registerTMCloneTable
+DEBUG: [cbin.c:2501] Cannot resolve symbol address __cxa_finalize
 EOF
 RUN
 

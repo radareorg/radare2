@@ -1362,9 +1362,17 @@ static int bin_source(RCore *r, PJ *pj, int mode) {
 	return true;
 }
 
+static ut64 a2b(RBin *bin, ut64 addr) {
+	r_return_val_if_fail (bin, UT64_MAX);
+	RBinObject *o = r_bin_cur_object (bin);
+	if (o) {
+		return o->baddr_shift + addr;
+	}
+	return addr;
+}
+
 static int bin_main(RCore *r, PJ *pj, int mode, int va) {
 	RBinAddr *binmain = r_bin_get_sym (r->bin, R_BIN_SYM_MAIN);
-	ut64 addr;
 	if (!binmain) {
 		if (IS_MODE_JSON (mode)) {
 			pj_o (pj);
@@ -1372,7 +1380,7 @@ static int bin_main(RCore *r, PJ *pj, int mode, int va) {
 		}
 		return false;
 	}
-	addr = va ? r_bin_a2b (r->bin, binmain->vaddr) : binmain->paddr;
+	ut64 addr = va ? a2b (r->bin, binmain->vaddr) : binmain->paddr;
 
 	if (IS_MODE_SET (mode)) {
 		r_flag_space_set (r->flags, R_FLAGS_FS_SYMBOLS);

@@ -1310,16 +1310,6 @@ R_API ut64 r_bin_get_vaddr(RBin *bin, ut64 paddr, ut64 vaddr) {
 	return r_bin_file_get_vaddr (bin->cur, paddr, vaddr);
 }
 
-// XXX R2_590 remove this public api
-R_API ut64 r_bin_a2b(RBin *bin, ut64 addr) {
-	r_return_val_if_fail (bin, UT64_MAX);
-	RBinObject *o = r_bin_cur_object (bin);
-	if (o) {
-		return o->baddr_shift + addr;
-	}
-	return addr;
-}
-
 R_API ut64 r_bin_get_size(RBin *bin) {
 	r_return_val_if_fail (bin, UT64_MAX);
 	RBinObject *o = r_bin_cur_object (bin);
