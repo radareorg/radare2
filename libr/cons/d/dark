@@ -47,10 +47,10 @@ ec graph.trufae rgb:06c
 ec graph.current rgb:99a
 ec graph.traced rgb:bbb
 
-ec func_var rgb:99a
-ec func_var_type rgb:636
-ec func_var_addr rgb:366
-ec func_var_name rgb:99a
+ec var rgb:99a
+ec var.type rgb:636
+ec var.addr rgb:366
+ec var.name rgb:99a
 
 ec ai.read rgb:266
 ec ai.write rgb:366
@@ -58,5 +58,5 @@ ec ai.exec rgb:368
 ec ai.seq rgb:d38
 ec ai.ascii rgb:99a
 
-ec widget_bg rgb:366 black
-ec widget_sel rgb:44f rgb:123
+ec widget.bg rgb:366 black
+ec widget.sel rgb:44f rgb:123

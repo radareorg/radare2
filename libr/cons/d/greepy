@@ -50,10 +50,10 @@ ec crypto rgb:f0f
 ec floc rgb:fff
 ec linehl rgb:111
 
-ec func_var rgb:f0f
-ec func_var_type rgb:fff
-ec func_var_addr rgb:0f0
-ec func_var_name rgb:f0f
+ec var rgb:f0f
+ec var.type rgb:fff
+ec var.addr rgb:0f0
+ec var.name rgb:f0f
 
 ec ai.read rgb:eee
 ec ai.write rgb:0f0
@@ -61,5 +61,5 @@ ec ai.exec rgb:fff
 ec ai.seq rgb:f0f
 ec ai.ascii rgb:f0f
 
-ec widget_bg rgb:f0f rgb:0f0
-ec widget_sel rgb:0f0 rgb:f0f
+ec widget.bg rgb:f0f rgb:0f0
+ec widget.sel rgb:0f0 rgb:f0f

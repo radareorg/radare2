@@ -65,10 +65,10 @@ ec ai.exec rgb:f0f
 ec ai.seq rgb:f0f
 ec ai.ascii rgb:f0f
 
-ec func_var rgb:f0f
-ec func_var_type rgb:f0f
-ec func_var_addr rgb:0ff
-ec func_var_name rgb:f0f
+ec var rgb:f0f
+ec var.type rgb:f0f
+ec var.addr rgb:0ff
+ec var.name rgb:f0f
 
-ec widget_bg rgb:f0f rgb:000
-ec widget_sel rgb:0ff rgb:000
+ec widget.bg rgb:f0f rgb:000
+ec widget.sel rgb:0ff rgb:000

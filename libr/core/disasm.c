@@ -255,10 +255,10 @@ typedef struct r_disasm_state_t {
 	const char *color_gui_alt_background;
 	const char *color_gui_border;
 	const char *color_linehl;
-	const char *color_func_var;
-	const char *color_func_var_name;
-	const char *color_func_var_type;
-	const char *color_func_var_addr;
+	const char *color_var;
+	const char *color_var_name;
+	const char *color_var_type;
+	const char *color_var_addr;
 	const char *cmtoken; // ";"
 
 	RFlagItem *lastflag;
@@ -668,10 +668,10 @@ static RDisasmState *ds_init(RCore *core) {
 	ds->color_gui_alt_background = P(gui_alt_background): Color_GRAY;
 	ds->color_gui_border = P(gui_border): Color_BGGRAY;
 	ds->color_linehl = P(linehl): Color_BGBLUE;
-	ds->color_func_var = P(func_var): Color_WHITE;
-	ds->color_func_var_type = P(func_var_type): Color_BLUE;
-	ds->color_func_var_addr = P(func_var_addr): Color_CYAN;
-	ds->color_func_var_name = P(func_var_name): Color_RED;
+	ds->color_var = P(var): Color_WHITE;
+	ds->color_var_type = P(var_type): Color_BLUE;
+	ds->color_var_addr = P(var_addr): Color_CYAN;
+	ds->color_var_name = P(var_name): Color_RED;
 
 	ds->immstr = r_config_get_i (core->config, "asm.imm.str");
 	ds->immtrim = r_config_get_i (core->config, "asm.imm.trim");
@@ -1803,10 +1803,10 @@ static void ds_show_functions_argvar(RDisasmState *ds, RAnalFunction *fcn, RAnal
 	const char *pfx = is_var ? VARPREFIX: ARGPREFIX;
 	char *constr = r_anal_var_get_constraints_readable (var);
 	r_cons_printf ("%s%s %s%s%s%s%s %s%s%s%s@ %s%c0x%x",
-			COLOR_ARG (ds, color_func_var), pfx,
-			COLOR_ARG (ds, color_func_var_type), var->type, r_str_endswith (var->type, "*") ? "" : " ",
-			COLOR_ARG (ds, color_func_var_name), var->name,
-			COLOR_ARG (ds, color_func_var_addr), constr? " { ":"", r_str_get (constr), constr? " } ":"",
+			COLOR_ARG (ds, color_var), pfx,
+			COLOR_ARG (ds, color_var_type), var->type, r_str_endswith (var->type, "*") ? "" : " ",
+			COLOR_ARG (ds, color_var_name), var->name,
+			COLOR_ARG (ds, color_var_addr), constr? " { ":"", r_str_get (constr), constr? " } ":"",
 			base, sign, delta);
 	if (ds->show_varsum == -1) {
 		char *val = r_core_cmd_strf (ds->core, ".afvd %s", var->name);
@@ -2071,7 +2071,7 @@ static void ds_show_functions(RDisasmState *ds) {
 				if (ds->show_flgoff) {
 					ds_print_offset (ds);
 				}
-				r_cons_printf ("%s; ", COLOR_ARG (ds, color_func_var));
+				r_cons_printf ("%s; ", COLOR_ARG (ds, color_var));
 				switch (var->kind) {
 				case R_ANAL_VAR_KIND_BPV: {
 					char sign = var->isarg || (-var->delta <= f->bp_off) ? '+' : '-';
@@ -2086,11 +2086,11 @@ static void ds_show_functions(RDisasmState *ds) {
 						R_LOG_ERROR ("Register not found");
 						break;
 					}
-					r_cons_printf ("%sarg %s%s%s%s%s %s@ %s", COLOR_ARG (ds, color_func_var),
-						COLOR_ARG (ds, color_func_var_type),
+					r_cons_printf ("%sarg %s%s%s%s%s %s@ %s", COLOR_ARG (ds, color_var),
+						COLOR_ARG (ds, color_var_type),
 						var->type, r_str_endswith (var->type, "*") ? "" : " ",
-						COLOR_ARG (ds, color_func_var_name), var->name,
-						COLOR_ARG (ds, color_func_var_addr), i->name);
+						COLOR_ARG (ds, color_var_name), var->name,
+						COLOR_ARG (ds, color_var_addr), i->name);
 					if (ds->show_varsum == -1) {
 						char *val = r_core_cmd_strf (ds->core, ".afvd %s", var->name);
 						if (val) {
@@ -2269,7 +2269,7 @@ static void ds_show_comments_right(RDisasmState *ds) {
 	if (!comment) {
 		if (vartype) {
 			R_FREE (ds->comment);
-			ds->comment = r_str_newf ("%s%s %s", COLOR_ARG (ds, color_func_var_type), ds->cmtoken, vartype);
+			ds->comment = r_str_newf ("%s%s %s", COLOR_ARG (ds, color_var_type), ds->cmtoken, vartype);
 		} else if (item && R_STR_ISNOTEMPTY (item->comment)) {
 			ds->ocomment = item->comment;
 			R_FREE (ds->comment);
@@ -2277,7 +2277,7 @@ static void ds_show_comments_right(RDisasmState *ds) {
 		}
 	} else if (vartype) {
 		ds->comment = r_str_newf ("%s%s %s %s%s%s %s",
-				COLOR_ARG (ds, color_func_var_type), ds->cmtoken, vartype, Color_RESET,
+				COLOR_ARG (ds, color_var_type), ds->cmtoken, vartype, Color_RESET,
 				COLOR (ds, color_usrcmt), ds->cmtoken, comment);
 	} else {
 		ds->comment = r_str_newf ("%s%s %s", COLOR_ARG (ds, color_usrcmt), ds->cmtoken, comment);

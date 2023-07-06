@@ -450,7 +450,7 @@ R_API void r_codemeta_print_internal(RCodeMeta *code, RVector *line_offsets, RAn
 			    : Color_MAGENTA;
 			break;
 		case R_SYNTAX_HIGHLIGHT_TYPE_DATATYPE:
-			color = PALETTE (func_var_type)
+			color = PALETTE (var_type)
 			    : Color_BLUE;
 			break;
 		case R_SYNTAX_HIGHLIGHT_TYPE_FUNCTION_NAME:

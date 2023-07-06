@@ -52,10 +52,10 @@ ec graph.box2 rgb:b97
 ec graph.box3 rgb:b97
 ec graph.box4 rgb:b97
 
-ec func_var rgb:c64
-ec func_var_type rgb:aa6
-ec func_var_addr rgb:788
-ec func_var_name rgb:c64
+ec var rgb:c64
+ec var.type rgb:aa6
+ec var.addr rgb:788
+ec var.name rgb:c64
 
 ec ai.read rgb:db7
 ec ai.write rgb:ca6
@@ -63,5 +63,5 @@ ec ai.exec rgb:ffd
 ec ai.seq rgb:bb7
 ec ai.ascii rgb:bb7
 
-ec widget_bg rgb:ffd rgb:344
-ec widget_sel black rgb:ca6
+ec widget.bg rgb:ffd rgb:344
+ec widget.sel black rgb:ca6

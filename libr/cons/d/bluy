@@ -46,10 +46,10 @@ ec gui.alt_background rgb:e34
 ec gui.border rgb:23f
 ec graph.current rgb:aaf
 
-ec func_var rgb:555
-ec func_var_name rgb:09f
-ec func_var_type rgb:99a
-ec func_var_addr rgb:666
+ec var rgb:555
+ec var.name rgb:09f
+ec var.type rgb:99a
+ec var.addr rgb:666
 
 # ec graph.box4=white
 # ""e graph.gv.node=fillcolor="#303030" color=lightgray bgcolor=red fontcolor=white penwidth=2 style=filled fontname="Courier Bold" fontsize=14 shape=box

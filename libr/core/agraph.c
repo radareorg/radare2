@@ -345,11 +345,11 @@ static char *get_node_bgcolor(int color, int cur) {
 	}
 	return color
 		? (color == R_ANAL_DIFF_TYPE_MATCH
-			? cons->context->pal.graph_diff_match
+			? cons->context->pal.diff_match
 			: color == R_ANAL_DIFF_TYPE_UNMATCH
-				? cons->context->pal.graph_diff_unmatch
-				: cons->context->pal.graph_diff_new)
-		: cons->context->pal.graph_diff_unknown;
+				? cons->context->pal.diff_unmatch
+				: cons->context->pal.diff_new)
+		: cons->context->pal.diff_unknown;
 #endif
 }
 
@@ -360,11 +360,11 @@ static char *get_node_color(int color, int cur) {
 	}
 	return color
 		? (color == R_ANAL_DIFF_TYPE_MATCH
-			? cons->context->pal.graph_diff_match
+			? cons->context->pal.diff_match
 			: color == R_ANAL_DIFF_TYPE_UNMATCH
-				? cons->context->pal.graph_diff_unmatch
-				: cons->context->pal.graph_diff_new)
-		: cons->context->pal.graph_diff_unknown;
+				? cons->context->pal.diff_unmatch
+				: cons->context->pal.diff_new)
+		: cons->context->pal.diff_unknown;
 }
 
 static void normal_RANode_print(const RAGraph *g, const RANode *n, int cur) {

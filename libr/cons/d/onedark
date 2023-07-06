@@ -1,10 +1,10 @@
 #Inspired by onedark.vim
 # e scr.color = 3 // to enable 16m color
 ecd
-ec func_var rgb:61afef
-ec func_var_type white
-ec func_var_addr rgb:4b5263
-ec func_var_name rgb:61afef
+ec var rgb:61afef
+ec var.type white
+ec var.addr rgb:4b5263
+ec var.name rgb:61afef
 ec b0x00 rgb:c678dd
 ec b0xff rgb:be5046
 ec prompt rgb:d19a66
@@ -65,5 +65,5 @@ ec graph.current rgb:61afef
 ec graph.traced rgb:d19a66
 ec linehl rgb:5c6370
 
-ec widget_bg rgb:ec7 rgb:366
-ec widget_sel black rgb:98c379
+ec widget.bg rgb:ec7 rgb:366
+ec widget.sel black rgb:98c379
