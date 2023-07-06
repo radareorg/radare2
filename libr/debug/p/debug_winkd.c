@@ -272,7 +272,7 @@ RDebugPlugin r_debug_plugin_winkd = {
 	},
 	.arch = "x86",
 	.bits = R_SYS_BITS_32 | R_SYS_BITS_64,
-	.init = &r_debug_winkd_init,
+	.init_debugger = &r_debug_winkd_init,
 	.step = &r_debug_winkd_step,
 	.cont = &r_debug_winkd_continue,
 	.attach = &r_debug_winkd_attach,

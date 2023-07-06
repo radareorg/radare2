@@ -144,7 +144,7 @@ RDebugPlugin r_debug_plugin_esil = {
 	},
 	.arch = "any", // TODO: exception!
 	.bits = R_SYS_BITS_32 | R_SYS_BITS_64,
-	.init = __esil_init,
+	.init_debugger = __esil_init,
 	.step = __esil_step,
 	.step_over = __esil_step_over,
 	.cont = __esil_continue,

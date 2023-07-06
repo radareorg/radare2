@@ -150,7 +150,7 @@ RDebugPlugin r_debug_plugin_io = {
 	.step_over = __io_step_over,
 	.canstep = 1,
 #if 0
-	.init = __esil_init,
+	.init_debugger = __esil_init,
 	.contsc = __esil_continue_syscall,
 	.detach = &__esil_detach,
 	.stop = __esil_stop,

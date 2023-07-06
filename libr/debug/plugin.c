@@ -10,6 +10,10 @@ static RDebugPlugin *debug_static_plugins[] = {
 };
 
 static inline void debug_plugin_session_fini(RDebugPluginSession *ds, void *user) {
+	RDebug *dbg = user;
+	if (ds->plugin.fini_plugin && !ds->plugin.fini_plugin (dbg, ds)) {
+		R_LOG_DEBUG ("Failed to finalize debug plugin");
+	}
 	R_FREE (ds->plugin_data);
 }
 
@@ -22,14 +26,7 @@ R_API void r_debug_init_debug_plugins(RDebug *dbg) {
 }
 
 R_API void r_debug_fini_debug_plugins(RDebug *dbg) {
-	RDebugPluginSession *ds;
-	R_VEC_FOREACH (dbg->plugins, ds) {
-		if (ds->plugin.fini && !ds->plugin.fini (dbg)) {
-			R_LOG_DEBUG ("Failed to finalize debug plugin");
-		}
-	}
-
-	RVecDebugPluginSession_free (dbg->plugins, debug_plugin_session_fini, NULL);
+	RVecDebugPluginSession_free (dbg->plugins, debug_plugin_session_fini, dbg);
 }
 
 R_API bool r_debug_use(RDebug *dbg, const char *str) {
@@ -54,9 +51,8 @@ R_API bool r_debug_use(RDebug *dbg, const char *str) {
 				r_reg_free (dbg->anal->reg);
 				dbg->anal->reg = dbg->reg;
 			}
-			if (dbg->h->init) {
-				// TODO pass in plugin data instead of looking it up again
-				dbg->h->init (dbg);
+			if (dbg->h->init_debugger) {
+				dbg->h->init_debugger (dbg);
 			}
 			r_reg_set_profile_string (dbg->reg, p);
 			free (p);
@@ -119,6 +115,12 @@ R_API bool r_debug_plugin_add(RDebug *dbg, RDebugPlugin *plugin) {
 
 	memcpy (&ds->plugin, plugin, sizeof (RDebugPlugin));
 	ds->plugin_data = NULL;
+
+	if (ds->plugin.init_plugin && !ds->plugin.init_plugin (dbg, ds)) {
+		R_LOG_DEBUG ("Failed to initialize debug plugin");
+		return false;
+	}
+
 	return true;
 }
 
@@ -137,12 +139,7 @@ R_API bool r_debug_plugin_remove(RDebug *dbg, RDebugPlugin *plugin) {
 		return false;
 	}
 
-	// TODO pass in plugin data instead of looking it up again inside fini function
-	if (ds->plugin.fini && !ds->plugin.fini (dbg)) {
-		return false;
-	}
-
-	RVecDebugPluginSession_pop_back (dbg->plugins, debug_plugin_session_fini, NULL);
+	RVecDebugPluginSession_pop_back (dbg->plugins, debug_plugin_session_fini, dbg);
 	return true;
 }
 
