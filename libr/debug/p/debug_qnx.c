@@ -27,9 +27,9 @@ typedef struct {
 	libqnxr_t desc;
 } RIOQnx;
 
-static libqnxr_t *desc = NULL;
-static ut8 *reg_buf = NULL;
-static int buf_size = 0;
+static R_TH_LOCAL libqnxr_t *desc = NULL;
+static R_TH_LOCAL ut8 *reg_buf = NULL;
+static R_TH_LOCAL int buf_size = 0;
 
 static void pidlist_cb(void *ctx, pid_t pid, char *name) {
 	RList *list = ctx;
