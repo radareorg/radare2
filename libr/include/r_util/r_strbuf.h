@@ -27,9 +27,9 @@ R_API bool r_strbuf_append_n(RStrBuf *sb, const char *s, size_t l);
 R_API bool r_strbuf_prepend(RStrBuf *sb, const char *s);
 R_API bool r_strbuf_appendf(RStrBuf *sb, const char *fmt, ...) R_PRINTF_CHECK(2, 3);
 R_API bool r_strbuf_vappendf(RStrBuf *sb, const char *fmt, va_list ap);
-R_API char *r_strbuf_get(RStrBuf *sb); // rename _tostring
+R_API char *r_strbuf_get(RStrBuf *sb); // R2_590 rename _tostring
 R_API char *r_strbuf_drain(RStrBuf *sb);
-R_API char *r_strbuf_drain_nofree(RStrBuf *sb);
+R_API char *r_strbuf_drain_nofree(RStrBuf *sb); // rename to _tostring() or asstring() ?
 R_API bool r_strbuf_replace(RStrBuf *sb, const char *key, const char *val);
 R_API bool r_strbuf_replacef(RStrBuf *sb, const char *key, const char *fmt, ...) R_PRINTF_CHECK(3, 4);
 R_API int r_strbuf_length(RStrBuf *sb);
@@ -37,6 +37,7 @@ R_API int r_strbuf_size(RStrBuf *sb);
 R_API void r_strbuf_free(RStrBuf *sb);
 R_API void r_strbuf_fini(RStrBuf *sb);
 R_API void r_strbuf_init(RStrBuf *sb);
+R_API char *r_strbuf_tostring(RStrBuf *sb);
 R_API const char *r_strbuf_initf(RStrBuf *sb, const char *fmt, ...); // same as init + setf for convenience
 R_API bool r_strbuf_copy(RStrBuf *dst, RStrBuf *src);
 R_API bool r_strbuf_equals(RStrBuf *sa, RStrBuf *sb);
