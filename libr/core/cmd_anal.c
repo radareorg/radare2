@@ -12411,8 +12411,8 @@ static int cmd_anal_all(RCore *core, const char *input) {
 
 			// Run pending analysis immediately after analysis
 			// Usefull when running commands with ";" or via r2 -c,-i
-			dh_orig = core->dbg->h
-				? strdup (core->dbg->h->meta.name)
+			dh_orig = core->dbg->current
+				? strdup (core->dbg->current->plugin.meta.name)
 				: strdup ("esil");
 			if (core->io->desc && core->io->desc->plugin && !core->io->desc->plugin->isdbg) {
 				//use dh_origin if we are debugging

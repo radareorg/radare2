@@ -1256,7 +1256,7 @@ static bool r_debug_native_kill(RDebug *dbg, int pid, int tid, int sig) {
 }
 
 static bool r_debug_native_init(RDebug *dbg) {
-	dbg->h->desc = r_debug_desc_plugin_native;
+	dbg->current->plugin.desc = r_debug_desc_plugin_native;
 #if R2__WINDOWS__
 	r_w32_init ();
 	if (!dbg->user && dbg->iob.io->dbgwrap) {

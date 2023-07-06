@@ -7881,8 +7881,8 @@ static int cmd_print(void *data, const char *input) {
 			RListIter *iter;
 			RDebugPid *pid;
 			const char *arg = strchr (input, ' ');
-			RList *pids = (core->dbg->h && core->dbg->h->pids)
-			? core->dbg->h->pids (core->dbg, 0): NULL;
+			RList *pids = (core->dbg->current && core->dbg->current->plugin.pids)
+				? core->dbg->current->plugin.pids (core->dbg, 0): NULL;
 			if (R_STR_ISNOTEMPTY (arg)) {
 				arg++;
 				r_list_foreach (pids, iter, pid) {

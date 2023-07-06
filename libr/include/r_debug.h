@@ -400,7 +400,7 @@ typedef struct r_debug_t {
 	PrintfCallback cb_printf;
 	RIOBind iob;
 
-	struct r_debug_plugin_t *h;
+	R_BORROW RDebugPluginSession *current;
 	RVecDebugPluginSession *plugins;
 	void *user; // R2_590 XXX(jjd): used by windbg?? meant for caller's use??
 

@@ -923,7 +923,7 @@ R_API RIODesc *r_core_file_open(RCore *r, const char *file, int flags, ut64 load
 
 	if (r_config_get_b (r->config, "cfg.debug")) {
 		bool swstep = true;
-		if (r->dbg->h && r->dbg->h->canstep) {
+		if (r->dbg->current && r->dbg->current->plugin.canstep) {
 			swstep = false;
 		}
 		r_config_set_b (r->config, "dbg.swstep", swstep);

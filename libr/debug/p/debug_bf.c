@@ -25,7 +25,9 @@ struct bfvm_regs {
 	ut32 memi;
 };
 
-static R_TH_LOCAL struct bfvm_regs r = {0};
+typedef struct plugin_data_t {
+	struct bfvm_regs r;
+} PluginData;
 
 static bool is_io_bf(RDebug *dbg) {
 	RIODesc *d = dbg->iob.io->desc;
@@ -70,17 +72,18 @@ static bool r_debug_bf_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 		return false;
 	}
 	RIOBdescbg *o = dbg->iob.io->desc->data;
-	if (o) {
-		r.pc = o->bfvm->eip;
-		r.ptr = o->bfvm->ptr;
-		r.sp = o->bfvm->esp;
-		r.scr = o->bfvm->screen;
-		r.scri = o->bfvm->screen_idx;
-		r.inp = o->bfvm->input;
-		r.inpi = o->bfvm->input_idx;
-		r.mem = o->bfvm->base;
-		r.memi = o->bfvm->ptr;
-		memcpy (buf, &r, sizeof (r));
+	if (o && dbg->current) {
+		PluginData *pd = dbg->current->plugin_data;
+		pd->r.pc = o->bfvm->eip;
+		pd->r.ptr = o->bfvm->ptr;
+		pd->r.sp = o->bfvm->esp;
+		pd->r.scr = o->bfvm->screen;
+		pd->r.scri = o->bfvm->screen_idx;
+		pd->r.inp = o->bfvm->input;
+		pd->r.inpi = o->bfvm->input_idx;
+		pd->r.mem = o->bfvm->base;
+		pd->r.memi = o->bfvm->ptr;
+		memcpy (buf, &pd->r, sizeof (pd->r));
 	}
 	//r_io_system (dbg->iob.io, "dr");
 	return true; // sizeof (r);
@@ -95,17 +98,18 @@ static bool r_debug_bf_reg_write(RDebug *dbg, int type, const ut8 *buf, int size
 		return 0;
 	}
 	RIOBdescbg *o = dbg->iob.io->desc->data;
-	if (o) {
-		memcpy (&r, buf, sizeof (r));
-		o->bfvm->eip = r.pc;
-		o->bfvm->ptr = r.ptr; // dup
-		o->bfvm->esp = r.sp;
-		o->bfvm->screen = r.scr;
-		o->bfvm->screen_idx = r.scri;
-		o->bfvm->input = r.inp;
-		o->bfvm->input_idx = r.inpi;
-		o->bfvm->base = r.mem;
-		o->bfvm->ptr = r.memi; // dup
+	if (o && dbg->current) {
+		PluginData *pd = dbg->current->plugin_data;
+		memcpy (&pd->r, buf, sizeof (pd->r));
+		o->bfvm->eip = pd->r.pc;
+		o->bfvm->ptr = pd->r.ptr; // dup
+		o->bfvm->esp = pd->r.sp;
+		o->bfvm->screen = pd->r.scr;
+		o->bfvm->screen_idx = pd->r.scri;
+		o->bfvm->input = pd->r.inp;
+		o->bfvm->input_idx = pd->r.inpi;
+		o->bfvm->base = pd->r.mem;
+		o->bfvm->ptr = pd->r.memi; // dup
 	}
 	return true;
 }
@@ -205,6 +209,24 @@ static int r_debug_bf_stop(RDebug *dbg) {
 	return true;
 }
 
+static bool init_plugin(RDebug *dbg, RDebugPluginSession *ds) {
+	r_return_val_if_fail (dbg && ds, false);
+
+	ds->plugin_data = R_NEW0 (PluginData);
+	return !!ds->plugin_data;
+}
+
+static bool fini_plugin(RDebug *dbg, RDebugPluginSession *ds) {
+	r_return_val_if_fail (dbg && ds, false);
+
+	if (!ds->plugin_data) {
+		return false;
+	}
+
+	R_FREE (ds->plugin_data);
+	return true;
+}
+
 RDebugPlugin r_debug_plugin_bf = {
 	.meta = {
 		.name = "bf",
@@ -214,6 +236,8 @@ RDebugPlugin r_debug_plugin_bf = {
 	},
 	.arch = "bf",
 	.bits = R_SYS_BITS_32 | R_SYS_BITS_64,
+	.init_plugin = init_plugin,
+	.fini_plugin = fini_plugin,
 	.step = r_debug_bf_step,
 	.step_over = r_debug_bf_step_over,
 	.cont = r_debug_bf_continue,

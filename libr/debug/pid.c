@@ -25,8 +25,8 @@ R_API RDebugPid *r_debug_pid_free(RDebugPid *pid) {
 }
 
 R_API RList *r_debug_pids(RDebug *dbg, int pid) {
-	if (dbg && dbg->h && dbg->h->pids) {
-		return dbg->h->pids (dbg, pid);
+	if (dbg && dbg->current && dbg->current->plugin.pids) {
+		return dbg->current->plugin.pids (dbg, pid);
 	}
 	return NULL;
 }
@@ -36,8 +36,8 @@ R_API int r_debug_pid_list(RDebug *dbg, int pid, char fmt) {
 	RList *list;
 	RListIter *iter;
 	RDebugPid *p;
-	if (dbg && dbg->h && dbg->h->pids) {
-		list = dbg->h->pids (dbg, R_MAX (0, pid));
+	if (dbg && dbg->current && dbg->current->plugin.pids) {
+		list = dbg->current->plugin.pids (dbg, R_MAX (0, pid));
 		if (!list) {
 			return false;
 		}
@@ -82,8 +82,8 @@ R_API int r_debug_thread_list(RDebug *dbg, int pid, char fmt) {
 	if (pid == -1) {
 		return false;
 	}
-	if (dbg && dbg->h && dbg->h->threads) {
-		list = dbg->h->threads (dbg, pid);
+	if (dbg && dbg->current && dbg->current->plugin.threads) {
+		list = dbg->current->plugin.threads (dbg, pid);
 		if (!list) {
 			return false;
 		}
