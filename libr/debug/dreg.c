@@ -4,17 +4,17 @@
 #include <r_debug.h>
 
 R_API bool r_debug_reg_sync(RDebug *dbg, int type, int must_write) {
-	r_return_val_if_fail (dbg && dbg->reg && dbg->h, false);
+	r_return_val_if_fail (dbg && dbg->reg && dbg->current, false);
 	int n, size;
 	if (r_debug_is_dead (dbg)) {
 		return false;
 	}
 	if (must_write) {
-		if (!dbg->h->reg_write) {
+		if (!dbg->current->plugin.reg_write) {
 			return false;
 		}
 	} else {
-		if (!dbg->h->reg_read) {
+		if (!dbg->current->plugin.reg_read) {
 			return false;
 		}
 	}
@@ -42,7 +42,7 @@ R_API bool r_debug_reg_sync(RDebug *dbg, int type, int must_write) {
 	do {
 		if (must_write) {
 			ut8 *buf = r_reg_get_bytes (dbg->reg, i, &size);
-			if (!buf || !dbg->h->reg_write (dbg, i, buf, size)) {
+			if (!buf || !dbg->current->plugin.reg_write (dbg, i, buf, size)) {
 				if (i == R_REG_TYPE_GPR) {
 					R_LOG_ERROR ("cannot write registers %d to %d", i, dbg->tid);
 				}
@@ -60,8 +60,8 @@ R_API bool r_debug_reg_sync(RDebug *dbg, int type, int must_write) {
 					return false;
 				}
 #if 0
-				//we have already checked dbg->h and dbg->h->reg_read above
-				size = dbg->h->reg_read (dbg, i, buf, bufsize);
+				//we have already checked dbg->current.plugin and dbg->current->plugin.reg_read above
+				size = dbg->current->plugin.reg_read (dbg, i, buf, bufsize);
 				// we need to check against zero because reg_read can return false
 				if (size > 0) {
 					r_reg_set_bytes (dbg->reg, i, buf, size); //R_MIN (size, bufsize));
@@ -69,7 +69,7 @@ R_API bool r_debug_reg_sync(RDebug *dbg, int type, int must_write) {
 			//		return true;
 				}
 #else
-				if (dbg->h->reg_read (dbg, i, buf, bufsize)) {
+				if (dbg->current->plugin.reg_read (dbg, i, buf, bufsize)) {
 					r_reg_set_bytes (dbg->reg, i, buf, bufsize);
 				}
 #endif

@@ -446,11 +446,11 @@ static int get_pid_of(RIO *io, const char *procname) {
 		return -1;
 	}
 	// check sandbox
-	if (c && c->dbg && c->dbg->h) {
+	if (c && c->dbg && c->dbg->current) {
 		RListIter *iter;
 		RDebugPid *proc;
 		RDebug *d = c->dbg;
-		RList *pids = d->h->pids (d, 0);
+		RList *pids = d->current->plugin.pids (d, 0);
 		r_list_foreach (pids, iter, proc) {
 			if (strstr (proc->path, procname)) {
 				R_LOG_INFO ("Matching PID %d %s", proc->pid, proc->path);

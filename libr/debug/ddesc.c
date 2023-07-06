@@ -22,44 +22,44 @@ R_API void r_debug_desc_free(RDebugDesc *p) {
 }
 
 R_API int r_debug_desc_open(RDebug *dbg, const char *path) {
-	r_return_val_if_fail (dbg && dbg->h, -1);
-	if (dbg && dbg->h && dbg->h->desc.open) {
-		return dbg->h->desc.open (path);
+	r_return_val_if_fail (dbg && dbg->current, -1);
+	if (dbg && dbg->current && dbg->current->plugin.desc.open) {
+		return dbg->current->plugin.desc.open (path);
 	}
 	return -1;
 }
 
 R_API int r_debug_desc_close(RDebug *dbg, int fd) {
-	if (dbg && dbg->h && dbg->h->desc.close) {
-		return dbg->h->desc.close (fd);
+	if (dbg && dbg->current && dbg->current->plugin.desc.close) {
+		return dbg->current->plugin.desc.close (fd);
 	}
 	return false;
 }
 
 R_API int r_debug_desc_dup(RDebug *dbg, int fd, int newfd) {
-	if (dbg && dbg->h && dbg->h->desc.dup) {
-		return dbg->h->desc.dup (fd, newfd);
+	if (dbg && dbg->current && dbg->current->plugin.desc.dup) {
+		return dbg->current->plugin.desc.dup (fd, newfd);
 	}
 	return false;
 }
 
 R_API int r_debug_desc_read(RDebug *dbg, int fd, ut64 addr, int len) {
-	if (dbg && dbg->h && dbg->h->desc.read) {
-		return dbg->h->desc.read (fd, addr, len);
+	if (dbg && dbg->current && dbg->current->plugin.desc.read) {
+		return dbg->current->plugin.desc.read (fd, addr, len);
 	}
 	return false;
 }
 
 R_API int r_debug_desc_seek(RDebug *dbg, int fd, ut64 addr) {
-	if (dbg && dbg->h && dbg->h->desc.seek) {
-		return dbg->h->desc.seek (fd, addr);
+	if (dbg && dbg->current && dbg->current->plugin.desc.seek) {
+		return dbg->current->plugin.desc.seek (fd, addr);
 	}
 	return false;
 }
 
 R_API int r_debug_desc_write(RDebug *dbg, int fd, ut64 addr, int len) {
-	if (dbg && dbg->h && dbg->h->desc.write) {
-		return dbg->h->desc.write (fd, addr, len);
+	if (dbg && dbg->current && dbg->current->plugin.desc.write) {
+		return dbg->current->plugin.desc.write (fd, addr, len);
 	}
 	return false;
 }
@@ -69,8 +69,8 @@ R_API int r_debug_desc_list(RDebug *dbg, bool show_commands) {
 	RDebugDesc *p;
 	int count = 0;
 
-	if (dbg && dbg->h && dbg->h->desc.list) {
-		RList *list = dbg->h->desc.list (dbg->pid);
+	if (dbg && dbg->current && dbg->current->plugin.desc.list) {
+		RList *list = dbg->current->plugin.desc.list (dbg->pid);
 		r_list_foreach (list, iter, p) {
 			if (show_commands) {
 				// Skip over std streams
