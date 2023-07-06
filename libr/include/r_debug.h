@@ -402,7 +402,9 @@ typedef struct r_debug_t {
 
 	R_BORROW RDebugPluginSession *current;
 	RVecDebugPluginSession *plugins;
-	void *user; // R2_590 XXX(jjd): used by windbg?? meant for caller's use??
+	// R2_590 only used by windbg, set from an io plugin??
+	// possible solution: io plugin should start windbg debug plugin and set/update plugin_data?
+	void *user;
 
 	bool pc_at_bp; /* after a breakpoint, is the pc at the bp? */
 	bool pc_at_bp_set; /* is the pc_at_bp variable set already? */
