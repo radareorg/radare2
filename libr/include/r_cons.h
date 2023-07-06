@@ -204,7 +204,7 @@ typedef struct r_cons_palette_t {
 	RColor gui_cflow;
 	RColor gui_dataoffset;
 	RColor gui_background;
-	RColor gui_alt_background;
+	RColor gui_background2;
 	RColor gui_border;
 	RColor wordhl;
 	RColor linehl;
@@ -282,7 +282,7 @@ typedef struct r_cons_printable_palette_t {
 	char *gui_cflow;
 	char *gui_dataoffset;
 	char *gui_background;
-	char *gui_alt_background;
+	char *gui_background2;
 	char *gui_border;
 	char *wordhl;
 	char *linehl;

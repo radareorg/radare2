@@ -48,7 +48,7 @@ ec graph.box4 rgb:f5d
 ec gui.cflow rgb:f5d
 ec gui.dataoffset rgb:f5d
 ec gui.background black
-## gui.alt_background
+ec gui.background2 magenta
 ## gui.border
 
 ec var rgb:72d

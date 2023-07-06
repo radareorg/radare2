@@ -51,7 +51,7 @@ ec ai.ascii rgb:ffff00
 ec gui.cflow rgb:d19a66
 ec gui.dataoffset rgb:d19a66
 ec gui.background black
-ec gui.alt_background white
+ec gui.background2 white
 ec gui.border black
 ec linehl rgb:61afef
 ec graph.box rgb:d19a66

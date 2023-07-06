@@ -85,7 +85,7 @@ static struct {
 	{ "gui.cflow", r_offsetof (RConsPrintablePalette, gui_cflow), r_offsetof (RConsPalette, gui_cflow) },
 	{ "gui.dataoffset", r_offsetof (RConsPrintablePalette, gui_dataoffset), r_offsetof (RConsPalette, gui_dataoffset) },
 	{ "gui.background", r_offsetof (RConsPrintablePalette, gui_background), r_offsetof (RConsPalette, gui_background) },
-	{ "gui.alt_background", r_offsetof (RConsPrintablePalette, gui_alt_background), r_offsetof (RConsPalette, gui_alt_background) },
+	{ "gui.background2", r_offsetof (RConsPrintablePalette, gui_background2), r_offsetof (RConsPalette, gui_background2) },
 	{ "gui.border", r_offsetof (RConsPrintablePalette, gui_border), r_offsetof (RConsPalette, gui_border) },
 	{ "wordhl", r_offsetof (RConsPrintablePalette, wordhl), r_offsetof (RConsPalette, wordhl) },
 	{ "linehl", r_offsetof (RConsPrintablePalette, linehl), r_offsetof (RConsPalette, linehl) },
@@ -227,7 +227,7 @@ R_API void r_cons_pal_init(RConsContext *ctx) {
 	ctx->cpal.gui_cflow          = (RColor) RColor_YELLOW;
 	ctx->cpal.gui_dataoffset     = (RColor) RColor_YELLOW;
 	ctx->cpal.gui_background     = (RColor) RColor_BLACK;
-	ctx->cpal.gui_alt_background = (RColor) RColor_WHITE;
+	ctx->cpal.gui_background2    = (RColor) RColor_WHITE;
 	ctx->cpal.gui_border         = (RColor) RColor_BLACK;
 	ctx->cpal.wordhl             = (RColor) RColor_BGRED;
 	// No good choice for fallback ansi16 color
@@ -238,9 +238,9 @@ R_API void r_cons_pal_init(RConsContext *ctx) {
 #endif
 
 	ctx->cpal.var           = (RColor) RColor_WHITE;
-	ctx->cpal.var_type      = (RColor) RColor_BLUE;
-	ctx->cpal.var_name      = (RColor) RColor_RED;
-	ctx->cpal.var_addr      = (RColor) RColor_CYAN;
+	ctx->cpal.var_type      = (RColor) RColor_CYAN;
+	ctx->cpal.var_name      = (RColor) RColor_YELLOW;
+	ctx->cpal.var_addr      = (RColor) RColor_GREEN;
 
 	ctx->cpal.widget_bg          = (RColor) RCOLOR (ALPHA_BG, 0x30, 0x30, 0x30, 0x00, 0x00, 0x00, 0);
 	ctx->cpal.widget_sel         = (RColor) RColor_BGRED;
