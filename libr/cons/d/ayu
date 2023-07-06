@@ -50,10 +50,10 @@ ec ucall rgb:5ccfe6
 ec ujmp rgb:c2d94c
 ec usrcmt rgb:fa6e32
 
-ec func_var rgb:95e6cb
-ec func_var_type rgb:ffd580
-ec func_var_addr rgb:f28779
-ec func_var_name rgb:95e6cb
+ec var rgb:95e6cb
+ec var.type rgb:ffd580
+ec var.addr rgb:f28779
+ec var.name rgb:95e6cb
 
-ec widget_bg rgb:888 rgb:000
-ec widget_sel rgb:5de rgb:333
+ec widget.bg rgb:888 rgb:000
+ec widget.sel rgb:5de rgb:333

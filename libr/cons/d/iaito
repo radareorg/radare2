@@ -38,12 +38,12 @@ ec reg rgb:005f87
 ec creg rgb:005f87
 ec num rgb:ef5919
 ec mov rgb:da3192
-ec func_var rgb:d03080
-ec func_var_type rgb:876ac1
-ec func_var_addr rgb:b0b0b0
-ec func_var_name rgb:d03080
-ec widget_bg rgb:303030
-ec widget_sel rgb:ff0000
+ec var rgb:d03080
+ec var.type rgb:876ac1
+ec var.addr rgb:b0b0b0
+ec var.name rgb:d03080
+ec widget.bg rgb:303030
+ec widget.sel rgb:ff0000
 ec ai.read rgb:1080d0
 ec ai.write rgb:005f87
 ec ai.exec rgb:b08000
@@ -66,5 +66,5 @@ ec gui.border rgb:000000
 ec wordhl rgb:ff0000
 ec linehl rgb:efefef
 
-ec widget_bg rgb:4cf rgb:058
-ec widget_sel black rgb:d39
+ec widget.bg rgb:4cf rgb:058
+ec widget.sel black rgb:d39

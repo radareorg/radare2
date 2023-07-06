@@ -24,7 +24,7 @@ themes.c:
 	done ; \
 	echo "	{0,0}" >> themes.c ; \
 	echo "};" >> themes.c
-	mv themes.c ../d_themes.inc
+	mv themes.c ../d_themes.inc.c
 
 install: ${F_SDB}
 	rm -rf "$P"

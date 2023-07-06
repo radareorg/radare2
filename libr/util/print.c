@@ -2316,7 +2316,7 @@ R_API char* r_print_colorize_opcode(RPrint *print, char *p, const char *reg, con
 				j += strlen (reset);
 				o[j] = p[i];
 				if (!(p[i + 1] == '$' || isdigit (p[i + 1]))) {
-					const char *color = found_var ? print->cons->context->pal.func_var_type : reg;
+					const char *color = found_var ? print->cons->context->pal.var_type : reg;
 					expect_reg = false;
 					if (is_flag (p + i)) {
 						color = color_flag;

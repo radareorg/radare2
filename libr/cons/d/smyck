@@ -51,10 +51,10 @@ ec graph.false rgb:d66
 ec graph.trufae rgb:9c4
 ec graph.current rgb:fff
 
-ec func_var rgb:9df
-ec func_var_type rgb:fd6
-ec func_var_addr rgb:bb5
-ec func_var_name rgb:9df
+ec var rgb:9df
+ec var.type rgb:fd6
+ec var.addr rgb:bb5
+ec var.name rgb:9df
 
-ec widget_bg rgb:bb5 rgb:222
-ec widget_sel black rgb:9c4
+ec widget.bg rgb:bb5 rgb:222
+ec widget.sel black rgb:9c4

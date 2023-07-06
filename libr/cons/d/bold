@@ -60,10 +60,10 @@ ec floc rgb:777
 ec invalid red
 ec linehl rgb:008
 
-ec func_var yellow . bold
-ec func_var_type blue . bold
-ec func_var_addr cyan . bold
-ec func_var_name yellow
+ec var yellow . bold
+ec var.type blue . bold
+ec var.addr cyan . bold
+ec var.name yellow
 
 ec ai.read white . bold
 ec ai.write white . bold
@@ -71,5 +71,5 @@ ec ai.exec red . bold
 ec ai.seq green . bold
 ec ai.ascii yellow . bold
 
-ec widget_bg yellow black
-ec widget_sel black yellow
+ec widget.bg yellow black
+ec widget.sel black yellow

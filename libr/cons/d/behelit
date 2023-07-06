@@ -59,10 +59,10 @@ ec linehl rgb:1f1f1f
 # foreground of the terminal must be #5fff5f
 # xterm -bg rgb:12/12/12 -fg rgb:5f/ff/5f
 
-ec func_var rgb:ff005f
-ec func_var_type blue
-ec func_var_addr rgb:5f87ff
-ec func_var_name rgb:ff005f
+ec var rgb:ff005f
+ec var.type blue
+ec var.addr rgb:5f87ff
+ec var.name rgb:ff005f
 
-ec widget_bg rgb:68f rgb:555
-ec widget_sel black rgb:0f6
+ec widget.bg rgb:68f rgb:555
+ec widget.sel black rgb:0f6

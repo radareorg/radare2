@@ -51,12 +51,13 @@ static struct {
 	{ "creg", r_offsetof (RConsPrintablePalette, creg), r_offsetof (RConsPalette, creg) },
 	{ "num", r_offsetof (RConsPrintablePalette, num), r_offsetof (RConsPalette, num) },
 	{ "mov", r_offsetof (RConsPrintablePalette, mov), r_offsetof (RConsPalette, mov) },
-	{ "func_var", r_offsetof (RConsPrintablePalette, func_var), r_offsetof (RConsPalette, func_var) },
-	{ "func_var_name", r_offsetof (RConsPrintablePalette, func_var_name), r_offsetof (RConsPalette, func_var_name) },
-	{ "func_var_type", r_offsetof (RConsPrintablePalette, func_var_type), r_offsetof (RConsPalette, func_var_type) },
-	{ "func_var_addr", r_offsetof (RConsPrintablePalette, func_var_addr), r_offsetof (RConsPalette, func_var_addr) },
-	{ "widget_bg", r_offsetof (RConsPrintablePalette, widget_bg), r_offsetof (RConsPalette, widget_bg) },
-	{ "widget_sel", r_offsetof (RConsPrintablePalette, widget_sel), r_offsetof (RConsPalette, widget_sel) },
+	{ "var", r_offsetof (RConsPrintablePalette, var), r_offsetof (RConsPalette, var) },
+	{ "var.name", r_offsetof (RConsPrintablePalette, var_name), r_offsetof (RConsPalette, var_name) },
+	{ "var.type", r_offsetof (RConsPrintablePalette, var_type), r_offsetof (RConsPalette, var_type) },
+	{ "var.addr", r_offsetof (RConsPrintablePalette, var_addr), r_offsetof (RConsPalette, var_addr) },
+	// widget.bg/sel
+	{ "widget.bg", r_offsetof (RConsPrintablePalette, widget_bg), r_offsetof (RConsPalette, widget_bg) },
+	{ "widget.sel", r_offsetof (RConsPrintablePalette, widget_sel), r_offsetof (RConsPalette, widget_sel) },
 
 	{ "ai.read", r_offsetof (RConsPrintablePalette, ai_read), r_offsetof (RConsPalette, ai_read) },
 	{ "ai.write", r_offsetof (RConsPrintablePalette, ai_write), r_offsetof (RConsPalette, ai_write) },
@@ -75,10 +76,11 @@ static struct {
 	{ "graph.current", r_offsetof (RConsPrintablePalette, graph_current), r_offsetof (RConsPalette, graph_current) },
 	{ "graph.traced", r_offsetof (RConsPrintablePalette, graph_traced), r_offsetof (RConsPalette, graph_traced) },
 
-	{ "graph.diff.unknown", r_offsetof (RConsPrintablePalette, graph_diff_unknown), r_offsetof (RConsPalette, graph_diff_unknown) },
-	{ "graph.diff.new", r_offsetof (RConsPrintablePalette, graph_diff_new), r_offsetof (RConsPalette, graph_diff_new) },
-	{ "graph.diff.match", r_offsetof (RConsPrintablePalette, graph_diff_match), r_offsetof (RConsPalette, graph_diff_match) },
-	{ "graph.diff.unmatch", r_offsetof (RConsPrintablePalette, graph_diff_unmatch), r_offsetof (RConsPalette, graph_diff_unmatch) },
+	// rename to diff, no need for graph prefix here
+	{ "diff.unknown", r_offsetof (RConsPrintablePalette, diff_unknown), r_offsetof (RConsPalette, diff_unknown) },
+	{ "diff.new", r_offsetof (RConsPrintablePalette, diff_new), r_offsetof (RConsPalette, diff_new) },
+	{ "diff.match", r_offsetof (RConsPrintablePalette, diff_match), r_offsetof (RConsPalette, diff_match) },
+	{ "diff.unmatch", r_offsetof (RConsPrintablePalette, diff_unmatch), r_offsetof (RConsPalette, diff_unmatch) },
 
 	{ "gui.cflow", r_offsetof (RConsPrintablePalette, gui_cflow), r_offsetof (RConsPalette, gui_cflow) },
 	{ "gui.dataoffset", r_offsetof (RConsPrintablePalette, gui_dataoffset), r_offsetof (RConsPalette, gui_dataoffset) },
@@ -235,10 +237,10 @@ R_API void r_cons_pal_init(RConsContext *ctx) {
 	ctx->cpal.linehl             = (RColor) RCOLOR (ALPHA_BG, 0x00, 0x00, 0x80, 0x00, 0x00, 0x00, 4);
 #endif
 
-	ctx->cpal.func_var           = (RColor) RColor_WHITE;
-	ctx->cpal.func_var_type      = (RColor) RColor_BLUE;
-	ctx->cpal.func_var_name      = (RColor) RColor_RED;
-	ctx->cpal.func_var_addr      = (RColor) RColor_CYAN;
+	ctx->cpal.var           = (RColor) RColor_WHITE;
+	ctx->cpal.var_type      = (RColor) RColor_BLUE;
+	ctx->cpal.var_name      = (RColor) RColor_RED;
+	ctx->cpal.var_addr      = (RColor) RColor_CYAN;
 
 	ctx->cpal.widget_bg          = (RColor) RCOLOR (ALPHA_BG, 0x30, 0x30, 0x30, 0x00, 0x00, 0x00, 0);
 	ctx->cpal.widget_sel         = (RColor) RColor_BGRED;
@@ -252,10 +254,10 @@ R_API void r_cons_pal_init(RConsContext *ctx) {
 	ctx->cpal.graph_trufae       = (RColor) RColor_CYAN; // single jump
 	ctx->cpal.graph_traced       = (RColor) RColor_YELLOW;
 	ctx->cpal.graph_current      = (RColor) RColor_BLUE;
-	ctx->cpal.graph_diff_unknown = (RColor) RColor_MAGENTA;
-	ctx->cpal.graph_diff_new     =  (RColor) RColor_RED;
-	ctx->cpal.graph_diff_match   =  (RColor) RColor_GRAY;
-	ctx->cpal.graph_diff_unmatch =  (RColor) RColor_YELLOW;
+	ctx->cpal.diff_unknown = (RColor) RColor_MAGENTA;
+	ctx->cpal.diff_new     =  (RColor) RColor_RED;
+	ctx->cpal.diff_match   =  (RColor) RColor_GRAY;
+	ctx->cpal.diff_unmatch =  (RColor) RColor_YELLOW;
 	ctx->pal.reset = Color_RESET; // reset is not user accessible, const char* is ok
 	__cons_pal_update_event (ctx);
 	r_th_lock_leave (lock);

@@ -208,10 +208,10 @@ typedef struct r_cons_palette_t {
 	RColor gui_border;
 	RColor wordhl;
 	RColor linehl;
-	RColor func_var;
-	RColor func_var_name;
-	RColor func_var_type;
-	RColor func_var_addr;
+	RColor var;
+	RColor var_name;
+	RColor var_type;
+	RColor var_addr;
 	RColor widget_bg;
 	RColor widget_sel;
 
@@ -225,10 +225,10 @@ typedef struct r_cons_palette_t {
 	RColor graph_trufae;
 	RColor graph_traced;
 	RColor graph_current;
-        RColor graph_diff_match;
-        RColor graph_diff_unmatch;
-        RColor graph_diff_unknown;
-        RColor graph_diff_new;
+        RColor diff_match;
+        RColor diff_unmatch;
+        RColor diff_unknown;
+        RColor diff_new;
 } RConsPalette;
 
 typedef struct r_cons_printable_palette_t {
@@ -286,10 +286,10 @@ typedef struct r_cons_printable_palette_t {
 	char *gui_border;
 	char *wordhl;
 	char *linehl;
-	char *func_var;
-	char *func_var_name;
-	char *func_var_type;
-	char *func_var_addr;
+	char *var;
+	char *var_name;
+	char *var_type;
+	char *var_addr;
 	char *widget_bg;
 	char *widget_sel;
 
@@ -298,10 +298,10 @@ typedef struct r_cons_printable_palette_t {
 	char *graph_box2;
 	char *graph_box3;
 	char *graph_box4;
-	char *graph_diff_match;
-	char *graph_diff_unmatch;
-	char *graph_diff_unknown;
-	char *graph_diff_new;
+	char *diff_match;
+	char *diff_unmatch;
+	char *diff_unknown;
+	char *diff_new;
 	char *graph_true;
 	char *graph_false;
 	char *graph_trufae;

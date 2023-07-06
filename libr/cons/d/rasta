@@ -52,10 +52,10 @@ ec graph.trufae green
 ec graph.current green
 ec graph.traced yellow
 
-ec func_var green
-ec func_var_type red
-ec func_var_addr yellow
-ec func_var_name green
+ec var green
+ec var.type red
+ec var.addr yellow
+ec var.name green
 
 ec ai.read green
 ec ai.write green
@@ -63,5 +63,5 @@ ec ai.exec yellow
 ec ai.seq red
 ec ai.ascii red
 
-ec widget_bg yellow black
-ec widget_sel black green
+ec widget.bg yellow black
+ec widget.sel black green

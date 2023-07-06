@@ -52,12 +52,13 @@ static const char * const theme_ayu = \
 	"ec ujmp rgb:c2d94c\n"
 	"ec usrcmt rgb:fa6e32\n"
 	"\n"
-	"ec func_var rgb:95e6cb\n"
-	"ec func_var_type rgb:ffd580\n"
-	"ec func_var_addr rgb:f28779\n"
+	"ec var rgb:95e6cb\n"
+	"ec var.type rgb:ffd580\n"
+	"ec var.addr rgb:f28779\n"
+	"ec var.name rgb:95e6cb\n"
 	"\n"
-	"ec widget_bg rgb:888 rgb:000\n"
-	"ec widget_sel rgb:5de rgb:333\n"
+	"ec widget.bg rgb:888 rgb:000\n"
+	"ec widget.sel rgb:5de rgb:333\n"
 ;
 static const char * const theme_basic = \
 	"# optimized for windows\n"
@@ -107,12 +108,13 @@ static const char * const theme_basic = \
 	"ec graph.box3 gray\n"
 	"ec graph.box4 gray\n"
 	"\n"
-	"ec func_var white\n"
-	"ec func_var_type blue\n"
-	"ec func_var_addr cyan\n"
+	"ec var white\n"
+	"ec var.type blue\n"
+	"ec var.addr cyan\n"
+	"ec var.name white\n"
 	"\n"
-	"ec widget_bg white gray\n"
-	"ec widget_sel black cyan\n"
+	"ec widget.bg white gray\n"
+	"ec widget.sel black cyan\n"
 ;
 static const char * const theme_behelit = \
 	"ecd\n"
@@ -176,12 +178,13 @@ static const char * const theme_behelit = \
 	"# foreground of the terminal must be #5fff5f\n"
 	"# xterm -bg rgb:12/12/12 -fg rgb:5f/ff/5f\n"
 	"\n"
-	"ec func_var rgb:ff005f\n"
-	"ec func_var_type blue\n"
-	"ec func_var_addr rgb:5f87ff\n"
+	"ec var rgb:ff005f\n"
+	"ec var.type blue\n"
+	"ec var.addr rgb:5f87ff\n"
+	"ec var.name rgb:ff005f\n"
 	"\n"
-	"ec widget_bg rgb:68f rgb:555\n"
-	"ec widget_sel black rgb:0f6\n"
+	"ec widget.bg rgb:68f rgb:555\n"
+	"ec widget.sel black rgb:0f6\n"
 ;
 static const char * const theme_bluy = \
 	"ecd\n"
@@ -231,6 +234,15 @@ static const char * const theme_bluy = \
 	"ec gui.alt_background rgb:e34\n"
 	"ec gui.border rgb:23f\n"
 	"ec graph.current rgb:aaf\n"
+	"\n"
+	"ec var rgb:555\n"
+	"ec var.name rgb:09f\n"
+	"ec var.type rgb:99a\n"
+	"ec var.addr rgb:666\n"
+	"\n"
+	"# ec graph.box4=white\n"
+	"# \"\"e graph.gv.node=fillcolor=\"#303030\" color=lightgray bgcolor=red fontcolor=white penwidth=2 style=filled fontname=\"Courier Bold\" fontsize=14 shape=box\n"
+	"# e graph.gv.graph=bgcolor=black\n"
 ;
 static const char * const theme_bobcrawl = \
 	"ecd\n"
@@ -293,9 +305,10 @@ static const char * const theme_bobcrawl = \
 	"ec gui.alt_background rgb:ffffff\n"
 	"ec gui.border rgb:5fd700\n"
 	"\n"
-	"ec func_var rgb:64604f\n"
-	"ec func_var_type rgb:00afd7\n"
-	"ec func_var_addr rgb:afafaf\n"
+	"ec var rgb:64604f\n"
+	"ec var.type rgb:00afd7\n"
+	"ec var.addr rgb:afafaf\n"
+	"ec var.name rgb:64604f\n"
 	"\n"
 	"ec ai.read rgb:a55f00\n"
 	"ec ai.write rgb:d75f00\n"
@@ -303,8 +316,8 @@ static const char * const theme_bobcrawl = \
 	"ec ai.seq rgb:9dd600\n"
 	"ec ai.ascii rgb:d25032\n"
 	"\n"
-	"ec widget_bg rgb:099 rgb:444\n"
-	"ec widget_sel rgb:000 yellow\n"
+	"ec widget.bg rgb:099 rgb:444\n"
+	"ec widget.sel rgb:000 yellow\n"
 ;
 static const char * const theme_bold = \
 	"ecd\n"
@@ -369,9 +382,10 @@ static const char * const theme_bold = \
 	"ec invalid red\n"
 	"ec linehl rgb:008\n"
 	"\n"
-	"ec func_var yellow . bold\n"
-	"ec func_var_type blue . bold\n"
-	"ec func_var_addr cyan . bold\n"
+	"ec var yellow . bold\n"
+	"ec var.type blue . bold\n"
+	"ec var.addr cyan . bold\n"
+	"ec var.name yellow\n"
 	"\n"
 	"ec ai.read white . bold\n"
 	"ec ai.write white . bold\n"
@@ -379,8 +393,8 @@ static const char * const theme_bold = \
 	"ec ai.seq green . bold\n"
 	"ec ai.ascii yellow . bold\n"
 	"\n"
-	"ec widget_bg yellow black\n"
-	"ec widget_sel black yellow\n"
+	"ec widget.bg yellow black\n"
+	"ec widget.sel black yellow\n"
 ;
 static const char * const theme_bright = \
 	"# r2 default palette but with bright colors for all\n"
@@ -439,12 +453,13 @@ static const char * const theme_bright = \
 	"ec wordhl rgb:ff0000\n"
 	"ec linehl rgb:000080\n"
 	"\n"
-	"ec func_var rgb:ffffff\n"
-	"ec func_var_type rgb:ffff00\n"
-	"ec func_var_addr rgb:00ffff\n"
+	"ec var rgb:ffffff\n"
+	"ec var.type rgb:ffff00\n"
+	"ec var.addr rgb:00ffff\n"
+	"ec var.name rgb:ffffff\n"
 	"\n"
-	"ec widget_bg rgb:303030\n"
-	"ec widget_sel rgb:ff0000\n"
+	"ec widget.bg rgb:303030\n"
+	"ec widget.sel rgb:ff0000\n"
 	"\n"
 	"ec graph.box rgb:0000ff\n"
 	"ec graph.box2 rgb:00ff00\n"
@@ -524,12 +539,80 @@ static const char * const theme_cga = \
 	"ec ai.seq rgb:f0f\n"
 	"ec ai.ascii rgb:f0f\n"
 	"\n"
-	"ec func_var rgb:f0f\n"
-	"ec func_var_type rgb:f0f\n"
-	"ec func_var_addr rgb:0ff\n"
+	"ec var rgb:f0f\n"
+	"ec var.type rgb:f0f\n"
+	"ec var.addr rgb:0ff\n"
+	"ec var.name rgb:f0f\n"
 	"\n"
-	"ec widget_bg rgb:f0f rgb:000\n"
-	"ec widget_sel rgb:0ff rgb:000\n"
+	"ec widget.bg rgb:f0f rgb:000\n"
+	"ec widget.sel rgb:0ff rgb:000\n"
+;
+static const char * const theme_chrome = \
+	"ecd\n"
+	"ec b0x00 rgb:ccc\n"
+	"ec b0x7f rgb:777\n"
+	"ec b0xff rgb:333\n"
+	"ec args rgb:fff\n"
+	"ec bin rgb:fff\n"
+	"ec btext rgb:fff\n"
+	"ec call white\n"
+	"ec cjmp white\n"
+	"ec cmp rgb:aaa\n"
+	"ec comment white\n"
+	"ec usrcmt rgb:333 white\n"
+	"ec reg rgb:fff\n"
+	"ec creg rgb:fff\n"
+	"ec flag rgb:fff\n"
+	"ec fline rgb:aaa\n"
+	"ec flow rgb:fff\n"
+	"ec flow2 rgb:fff\n"
+	"ec fname rgb:fff\n"
+	"ec help rgb:fff\n"
+	"ec input rgb:fff\n"
+	"ec jmp rgb:fff\n"
+	"ec label rgb:fff\n"
+	"ec math rgb:777\n"
+	"ec mov rgb:ddd\n"
+	"ec nop rgb:333\n"
+	"ec num rgb:fff\n"
+	"ec offset rgb:555\n"
+	"ec other rgb:999\n"
+	"ec pop rgb:999\n"
+	"ec prompt rgb:fff\n"
+	"ec push rgb:ddd\n"
+	"ec ret rgb:777\n"
+	"ec swi rgb:fff\n"
+	"ec trap rgb:fff\n"
+	"ec ucall rgb:fff rgb:333\n"
+	"ec ujmp rgb:fff\n"
+	"ec graph.true rgb:fff\n"
+	"ec graph.false rgb:777\n"
+	"ec graph.trufae rgb:ddd\n"
+	"ec graph.current rgb:fff\n"
+	"ec graph.traced rgb:f00\n"
+	"ec graph.box rgb:fff\n"
+	"ec graph.box2 rgb:fff\n"
+	"ec graph.box3 rgb:000\n"
+	"ec graph.box4 rgb:000\n"
+	"ec gui.cflow rgb:fff\n"
+	"ec gui.dataoffset rgb:fff\n"
+	"ec crypto rgb:fff\n"
+	"ec floc rgb:777\n"
+	"ec linehl rgb:111\n"
+	"\n"
+	"ec var rgb:fff\n"
+	"ec var.type rgb:777\n"
+	"ec var.addr rgb:555\n"
+	"ec var.name rgb:fff\n"
+	"\n"
+	"ec ai.read rgb:eee\n"
+	"ec ai.write rgb:ddd\n"
+	"ec ai.exec rgb:fff\n"
+	"ec ai.seq rgb:fff\n"
+	"ec ai.ascii rgb:fff\n"
+	"\n"
+	"ec widget.bg rgb:fff rgb:333\n"
+	"ec widget.sel rgb:333 rgb:fff\n"
 ;
 static const char * const theme_consonance = \
 	"# background of the terminal must be 134 o 033\n"
@@ -584,9 +667,10 @@ static const char * const theme_consonance = \
 	"ec graph.current rgb:af2\n"
 	"ec graph.traced rgb:090\n"
 	"\n"
-	"ec func_var rgb:fcc\n"
-	"ec func_var_type rgb:f2a\n"
-	"ec func_var_addr white\n"
+	"ec var rgb:fcc\n"
+	"ec var.type rgb:f2a\n"
+	"ec var.addr white\n"
+	"ec var.name rgb:fcc\n"
 	"\n"
 	"ec ai.read rgb:fcc\n"
 	"ec ai.write rgb:f2a\n"
@@ -594,8 +678,8 @@ static const char * const theme_consonance = \
 	"ec ai.seq rgb:f0f\n"
 	"ec ai.ascii rgb:fff\n"
 	"\n"
-	"ec widget_bg rgb:4cf rgb:344\n"
-	"ec widget_sel black rgb:4cf\n"
+	"ec widget.bg rgb:4cf rgb:344\n"
+	"ec widget.sel black rgb:4cf\n"
 ;
 static const char * const theme_dark = \
 	"ecd\n"
@@ -647,9 +731,10 @@ static const char * const theme_dark = \
 	"ec graph.current rgb:99a\n"
 	"ec graph.traced rgb:bbb\n"
 	"\n"
-	"ec func_var rgb:99a\n"
-	"ec func_var_type rgb:636\n"
-	"ec func_var_addr rgb:366\n"
+	"ec var rgb:99a\n"
+	"ec var.type rgb:636\n"
+	"ec var.addr rgb:366\n"
+	"ec var.name rgb:99a\n"
 	"\n"
 	"ec ai.read rgb:266\n"
 	"ec ai.write rgb:366\n"
@@ -657,8 +742,8 @@ static const char * const theme_dark = \
 	"ec ai.seq rgb:d38\n"
 	"ec ai.ascii rgb:99a\n"
 	"\n"
-	"ec widget_bg rgb:366 black\n"
-	"ec widget_sel rgb:44f rgb:123\n"
+	"ec widget.bg rgb:366 black\n"
+	"ec widget.sel rgb:44f rgb:123\n"
 ;
 static const char * const theme_darkda = \
 	"ecd\n"
@@ -711,9 +796,10 @@ static const char * const theme_darkda = \
 	"ec graph.trufae rgb:0043cb\n"
 	"ec graph.current rgb:fff\n"
 	"\n"
-	"ec func_var rgb:99a\n"
-	"ec func_var_type rgb:df077e\n"
-	"ec func_var_addr rgb:ababab\n"
+	"ec var rgb:99a\n"
+	"ec var.type rgb:df077e\n"
+	"ec var.addr rgb:ababab\n"
+	"ec var.name rgb:99a\n"
 	"\n"
 	"ec ai.read rgb:be077e\n"
 	"ec ai.write rgb:df077e\n"
@@ -721,8 +807,8 @@ static const char * const theme_darkda = \
 	"ec ai.seq rgb:9dd600\n"
 	"ec ai.ascii rgb:d25032\n"
 	"\n"
-	"ec widget_bg rgb:099 rgb:444\n"
-	"ec widget_sel rgb:000 yellow\n"
+	"ec widget.bg rgb:099 rgb:444\n"
+	"ec widget.sel rgb:000 yellow\n"
 ;
 static const char * const theme_focus = \
 	"ecd\n"
@@ -775,9 +861,10 @@ static const char * const theme_focus = \
 	"ec graph.current blue\n"
 	"ec graph.traced red\n"
 	"\n"
-	"ec func_var cyan\n"
-	"ec func_var_type rgb:f3f\n"
-	"ec func_var_addr white\n"
+	"ec var cyan\n"
+	"ec var.type rgb:f3f\n"
+	"ec var.addr white\n"
+	"ec var.name cyan\n"
 	"\n"
 	"ec ai.read rgb:8f0\n"
 	"ec ai.write rgb:6f0\n"
@@ -785,8 +872,8 @@ static const char * const theme_focus = \
 	"ec ai.seq white\n"
 	"ec ai.ascii yellow\n"
 	"\n"
-	"ec widget_bg rgb:ff0 rgb:000\n"
-	"ec widget_sel rgb:000 rgb:0f0\n"
+	"ec widget.bg rgb:ff0 rgb:000\n"
+	"ec widget.sel rgb:000 rgb:0f0\n"
 ;
 static const char * const theme_gb = \
 	"ecd\n"
@@ -855,12 +942,13 @@ static const char * const theme_gb = \
 	"ec ai.seq rgb:86c06c\n"
 	"ec ai.ascii rgb:86c06c\n"
 	"\n"
-	"ec func_var rgb:86c06c\n"
-	"ec func_var_type rgb:86c06c\n"
-	"ec func_var_addr rgb:e0f8cf\n"
+	"ec var rgb:86c06c\n"
+	"ec var.type rgb:86c06c\n"
+	"ec var.addr rgb:e0f8cf\n"
+	"ec var.name rgb:86c06c\n"
 	"\n"
-	"ec widget_bg rgb:86c06c rgb:000\n"
-	"ec widget_sel rgb:e0f8cf rgb:000\n"
+	"ec widget.bg rgb:86c06c rgb:000\n"
+	"ec widget.sel rgb:e0f8cf rgb:000\n"
 ;
 static const char * const theme_gentoo = \
 	"ecd\n"
@@ -903,11 +991,10 @@ static const char * const theme_gentoo = \
 	"ec creg yellow\n"
 	"ec num yellow black\n"
 	"ec mov rgb:d0d0d0\n"
-	"ec func_var white\n"
-	"ec func_var_type yellow\n"
-	"ec func_var_addr white\n"
-	"ec widget_bg rgb:303030\n"
-	"ec widget_sel rgb:ff0000\n"
+	"ec var white\n"
+	"ec var.type yellow\n"
+	"ec var.addr white\n"
+	"ec var.name white\n"
 	"ec ai.read rgb:e0e0e0\n"
 	"ec ai.write rgb:d0d0d0\n"
 	"ec ai.exec rgb:f0f0f0\n"
@@ -930,8 +1017,75 @@ static const char * const theme_gentoo = \
 	"ec wordhl rgb:ff0000\n"
 	"ec linehl rgb:101010\n"
 	"\n"
-	"ec widget_bg cyan rgb:3030f0\n"
-	"ec widget_sel yellow rgb:090\n"
+	"ec widget.bg cyan rgb:3030f0\n"
+	"ec widget.sel yellow rgb:090\n"
+;
+static const char * const theme_greepy = \
+	"ecd\n"
+	"ec b0x00 rgb:ccc\n"
+	"ec b0x7f rgb:fff\n"
+	"ec b0xff rgb:fff\n"
+	"ec args rgb:fff\n"
+	"ec bin rgb:fff\n"
+	"ec btext rgb:fff\n"
+	"ec call rgb:f0f\n"
+	"ec cjmp rgb:f0f\n"
+	"ec cmp rgb:aaa\n"
+	"ec comment rgb:0f0\n"
+	"ec usrcmt rgb:0f0\n"
+	"ec reg rgb:fff\n"
+	"ec creg rgb:f0f\n"
+	"ec flag rgb:f0f\n"
+	"ec fline rgb:aaa\n"
+	"ec flow rgb:f0f\n"
+	"ec flow2 rgb:fff\n"
+	"ec fname rgb:f0f\n"
+	"ec help rgb:f0f\n"
+	"ec input rgb:f0f\n"
+	"ec jmp rgb:f0f\n"
+	"ec label rgb:f0f\n"
+	"ec math rgb:fff\n"
+	"ec mov rgb:fff\n"
+	"ec nop rgb:fff\n"
+	"ec num rgb:0f0\n"
+	"ec offset rgb:0f0\n"
+	"ec other rgb:999\n"
+	"ec pop rgb:999\n"
+	"ec prompt rgb:f0f\n"
+	"ec push rgb:0f0\n"
+	"ec ret rgb:fff\n"
+	"ec swi rgb:f0f\n"
+	"ec trap rgb:f0f\n"
+	"ec ucall rgb:f0f\n"
+	"ec ujmp rgb:f0f\n"
+	"ec graph.true rgb:f0f\n"
+	"ec graph.false rgb:fff\n"
+	"ec graph.trufae rgb:0f0\n"
+	"ec graph.current rgb:f0f\n"
+	"ec graph.traced rgb:f00\n"
+	"ec graph.box rgb:fff\n"
+	"ec graph.box2 rgb:f0f\n"
+	"ec graph.box3 rgb:000\n"
+	"ec graph.box4 rgb:000\n"
+	"ec gui.cflow rgb:f0f\n"
+	"ec gui.dataoffset rgb:f0f\n"
+	"ec crypto rgb:f0f\n"
+	"ec floc rgb:fff\n"
+	"ec linehl rgb:111\n"
+	"\n"
+	"ec var rgb:f0f\n"
+	"ec var.type rgb:fff\n"
+	"ec var.addr rgb:0f0\n"
+	"ec var.name rgb:f0f\n"
+	"\n"
+	"ec ai.read rgb:eee\n"
+	"ec ai.write rgb:0f0\n"
+	"ec ai.exec rgb:fff\n"
+	"ec ai.seq rgb:f0f\n"
+	"ec ai.ascii rgb:f0f\n"
+	"\n"
+	"ec widget.bg rgb:f0f rgb:0f0\n"
+	"ec widget.sel rgb:0f0 rgb:f0f\n"
 ;
 static const char * const theme_iaito = \
 	"ecd\n"
@@ -946,7 +1100,7 @@ static const char * const theme_iaito = \
 	"ec help rgb:005f87\n"
 	"ec flow rgb:5f8700\n"
 	"ec flow2 rgb:5f8700\n"
-	"ec prompt rgb:000000\n"
+	"ec prompt rgb:30a000\n"
 	"ec offset rgb:8e8c8b\n"
 	"ec input rgb:000000\n"
 	"ec invalid rgb:e03030\n"
@@ -956,7 +1110,7 @@ static const char * const theme_iaito = \
 	"ec b0xff rgb:e03030\n"
 	"ec math rgb:005f87\n"
 	"ec bin rgb:005f87\n"
-	"ec btext rgb:000000\n"
+	"ec btext rgb:30a000\n"
 	"ec push rgb:da3192\n"
 	"ec pop rgb:da3192\n"
 	"ec crypto rgb:d03080\n"
@@ -974,11 +1128,12 @@ static const char * const theme_iaito = \
 	"ec creg rgb:005f87\n"
 	"ec num rgb:ef5919\n"
 	"ec mov rgb:da3192\n"
-	"ec func_var rgb:d03080\n"
-	"ec func_var_type rgb:876ac1\n"
-	"ec func_var_addr rgb:b0b0b0\n"
-	"ec widget_bg rgb:303030\n"
-	"ec widget_sel rgb:ff0000\n"
+	"ec var rgb:d03080\n"
+	"ec var.type rgb:876ac1\n"
+	"ec var.addr rgb:b0b0b0\n"
+	"ec var.name rgb:d03080\n"
+	"ec widget.bg rgb:303030\n"
+	"ec widget.sel rgb:ff0000\n"
 	"ec ai.read rgb:1080d0\n"
 	"ec ai.write rgb:005f87\n"
 	"ec ai.exec rgb:b08000\n"
@@ -1001,8 +1156,8 @@ static const char * const theme_iaito = \
 	"ec wordhl rgb:ff0000\n"
 	"ec linehl rgb:efefef\n"
 	"\n"
-	"ec widget_bg rgb:4cf rgb:058\n"
-	"ec widget_sel black rgb:d39\n"
+	"ec widget.bg rgb:4cf rgb:058\n"
+	"ec widget.sel black rgb:d39\n"
 ;
 static const char * const theme_lima = \
 	"ecd\n"
@@ -1059,9 +1214,10 @@ static const char * const theme_lima = \
 	"ec graph.current rgb:af2\n"
 	"ec graph.traced rgb:090\n"
 	"\n"
-	"ec func_var yellow\n"
-	"ec func_var_type green\n"
-	"ec func_var_addr yellow\n"
+	"ec var yellow\n"
+	"ec var.type green\n"
+	"ec var.addr yellow\n"
+	"ec var.name yellow\n"
 	"\n"
 	"ec ai.read rgb:8e2\n"
 	"ec ai.write rgb:9e2\n"
@@ -1069,8 +1225,8 @@ static const char * const theme_lima = \
 	"ec ai.seq rgb:ef0\n"
 	"ec ai.ascii rgb:ef0\n"
 	"\n"
-	"ec widget_bg rgb:ef0 rgb:060\n"
-	"ec widget_sel black rgb:af2\n"
+	"ec widget.bg rgb:ef0 rgb:060\n"
+	"ec widget.sel black rgb:af2\n"
 ;
 static const char * const theme_matrix = \
 	"ecd\n"
@@ -1123,9 +1279,10 @@ static const char * const theme_matrix = \
 	"ec graph.current green\n"
 	"ec graph.traced rgb:060\n"
 	"\n"
-	"ec func_var rgb:060\n"
-	"ec func_var_type rgb:383\n"
-	"ec func_var_addr rgb:060\n"
+	"ec var rgb:060\n"
+	"ec var.type rgb:383\n"
+	"ec var.addr rgb:060\n"
+	"ec var.name rgb:060\n"
 	"\n"
 	"ec ai.read rgb:0a1\n"
 	"ec ai.write rgb:1a1\n"
@@ -1133,8 +1290,8 @@ static const char * const theme_matrix = \
 	"ec ai.seq rgb:3f3\n"
 	"ec ai.ascii rgb:3f3\n"
 	"\n"
-	"ec widget_bg rgb:0b0 rgb:000\n"
-	"ec widget_sel black rgb:0c0\n"
+	"ec widget.bg rgb:0b0 rgb:000\n"
+	"ec widget.sel black rgb:0c0\n"
 ;
 static const char * const theme_monokai = \
 	"ecd\n"
@@ -1188,12 +1345,13 @@ static const char * const theme_monokai = \
 	"ec graph.trufae rgb:a398e5\n"
 	"ec graph.current rgb:fff\n"
 	"\n"
-	"ec func_var cyan\n"
-	"ec func_var_type rgb:a398e5\n"
-	"ec func_var_addr rgb:f92672\n"
+	"ec var cyan\n"
+	"ec var.type rgb:a398e5\n"
+	"ec var.addr rgb:f92672\n"
+	"ec var.name cyan\n"
 	"\n"
-	"ec widget_bg rgb:f1c40f rgb:555\n"
-	"ec widget_sel white rgb:f92672\n"
+	"ec widget.bg rgb:f1c40f rgb:555\n"
+	"ec widget.sel white rgb:f92672\n"
 ;
 static const char * const theme_ogray = \
 	"ecd\n"
@@ -1248,9 +1406,10 @@ static const char * const theme_ogray = \
 	"ec floc rgb:777\n"
 	"ec linehl rgb:111\n"
 	"\n"
-	"ec func_var rgb:f72\n"
-	"ec func_var_type rgb:777\n"
-	"ec func_var_addr rgb:555\n"
+	"ec var rgb:f72\n"
+	"ec var.type rgb:777\n"
+	"ec var.addr rgb:555\n"
+	"ec var.name rgb:f72\n"
 	"\n"
 	"ec ai.read rgb:eee\n"
 	"ec ai.write rgb:ddd\n"
@@ -1258,16 +1417,17 @@ static const char * const theme_ogray = \
 	"ec ai.seq rgb:f72\n"
 	"ec ai.ascii rgb:f72\n"
 	"\n"
-	"ec widget_bg rgb:f72 rgb:333\n"
-	"ec widget_sel rgb:333 rgb:f72\n"
+	"ec widget.bg rgb:f72 rgb:333\n"
+	"ec widget.sel rgb:333 rgb:f72\n"
 ;
 static const char * const theme_onedark = \
 	"#Inspired by onedark.vim\n"
 	"# e scr.color = 3 // to enable 16m color\n"
 	"ecd\n"
-	"ec func_var_type white\n"
-	"ec func_var rgb:61afef\n"
-	"ec func_var_addr rgb:4b5263\n"
+	"ec var rgb:61afef\n"
+	"ec var.type white\n"
+	"ec var.addr rgb:4b5263\n"
+	"ec var.name rgb:61afef\n"
 	"ec b0x00 rgb:c678dd\n"
 	"ec b0xff rgb:be5046\n"
 	"ec prompt rgb:d19a66\n"
@@ -1328,8 +1488,8 @@ static const char * const theme_onedark = \
 	"ec graph.traced rgb:d19a66\n"
 	"ec linehl rgb:5c6370\n"
 	"\n"
-	"ec widget_bg rgb:ec7 rgb:366\n"
-	"ec widget_sel black rgb:98c379\n"
+	"ec widget.bg rgb:ec7 rgb:366\n"
+	"ec widget.sel black rgb:98c379\n"
 ;
 static const char * const theme_pink = \
 	"ecd\n"
@@ -1382,12 +1542,13 @@ static const char * const theme_pink = \
 	"ec gui.cflow rgb:f5d\n"
 	"ec gui.dataoffset rgb:f5d\n"
 	"ec gui.background black\n"
-	"##  gui.alt_background\n"
-	"##  gui.border\n"
+	"## gui.alt_background\n"
+	"## gui.border\n"
 	"\n"
-	"ec func_var rgb:72d\n"
-	"ec func_var_type blue\n"
-	"ec func_var_addr rgb:72d\n"
+	"ec var rgb:72d\n"
+	"ec var.type blue\n"
+	"ec var.addr rgb:72d\n"
+	"ec var.name rgb:72d\n"
 	"\n"
 	"ec ai.read rgb:f6e\n"
 	"ec ai.write rgb:f5d\n"
@@ -1395,8 +1556,8 @@ static const char * const theme_pink = \
 	"ec ai.seq rgb:72d\n"
 	"ec ai.ascii rgb:72d\n"
 	"\n"
-	"ec widget_bg rgb:72d rgb:222\n"
-	"ec widget_sel white rgb:f5d\n"
+	"ec widget.bg rgb:72d rgb:222\n"
+	"ec widget.sel white rgb:f5d\n"
 ;
 static const char * const theme_rasta = \
 	"ecd\n"
@@ -1453,9 +1614,10 @@ static const char * const theme_rasta = \
 	"ec graph.current green\n"
 	"ec graph.traced yellow\n"
 	"\n"
-	"ec func_var green\n"
-	"ec func_var_type red\n"
-	"ec func_var_addr yellow\n"
+	"ec var green\n"
+	"ec var.type red\n"
+	"ec var.addr yellow\n"
+	"ec var.name green\n"
 	"\n"
 	"ec ai.read green\n"
 	"ec ai.write green\n"
@@ -1463,8 +1625,8 @@ static const char * const theme_rasta = \
 	"ec ai.seq red\n"
 	"ec ai.ascii red\n"
 	"\n"
-	"ec widget_bg yellow black\n"
-	"ec widget_sel black green\n"
+	"ec widget.bg yellow black\n"
+	"ec widget.sel black green\n"
 ;
 static const char * const theme_sepia = \
 	"# requires e scr.color=3\n"
@@ -1525,9 +1687,10 @@ static const char * const theme_sepia = \
 	"ec gui.background rgb:000000\n"
 	"ec gui.border rgb:000000\n"
 	"\n"
-	"ec func_var rgb:fd9\n"
-	"ec func_var_type rgb:850\n"
-	"ec func_var_addr rgb:960\n"
+	"ec var rgb:fd9\n"
+	"ec var.type rgb:850\n"
+	"ec var.addr rgb:960\n"
+	"ec var.name rgb:fd9\n"
 	"\n"
 	"ec ai.read rgb:cb7\n"
 	"ec ai.write rgb:ca6\n"
@@ -1535,15 +1698,15 @@ static const char * const theme_sepia = \
 	"ec ai.seq rgb:960\n"
 	"ec ai.ascii rgb:fec\n"
 	"\n"
-	"ec widget_bg rgb:db7 rgb:000000\n"
-	"ec widget_sel rgb:000000 rgb:fec\n"
+	"ec widget.bg rgb:db7 rgb:000000\n"
+	"ec widget.sel rgb:000000 rgb:fec\n"
 	"\n"
 	"# Linux default colors (need to be sepiaized)\n"
 	"\n"
-	"ec graph.diff.unknown rgb:881798\n"
-	"ec graph.diff.new rgb:c50f1f\n"
-	"ec graph.diff.match rgb:767676\n"
-	"ec graph.diff.unmatch rgb:c19c00\n"
+	"ec diff.unknown rgb:881798\n"
+	"ec diff.new rgb:c50f1f\n"
+	"ec diff.match rgb:767676\n"
+	"ec diff.unmatch rgb:c19c00\n"
 ;
 static const char * const theme_smyck = \
 	"# ref: http://color.smyck.org/\n"
@@ -1599,12 +1762,13 @@ static const char * const theme_smyck = \
 	"ec graph.trufae rgb:9c4\n"
 	"ec graph.current rgb:fff\n"
 	"\n"
-	"ec func_var rgb:9df\n"
-	"ec func_var_type rgb:fd6\n"
-	"ec func_var_addr rgb:bb5\n"
+	"ec var rgb:9df\n"
+	"ec var.type rgb:fd6\n"
+	"ec var.addr rgb:bb5\n"
+	"ec var.name rgb:9df\n"
 	"\n"
-	"ec widget_bg rgb:bb5 rgb:222\n"
-	"ec widget_sel black rgb:9c4\n"
+	"ec widget.bg rgb:bb5 rgb:222\n"
+	"ec widget.sel black rgb:9c4\n"
 ;
 static const char * const theme_solarized = \
 	"ecd\n"
@@ -1656,9 +1820,10 @@ static const char * const theme_solarized = \
 	"ec graph.current rgb:f00\n"
 	"ec graph.traced red\n"
 	"\n"
-	"ec func_var rgb:28d\n"
-	"ec func_var_type rgb:cc8\n"
-	"ec func_var_addr rgb:9aa\n"
+	"ec var rgb:28d\n"
+	"ec var.type rgb:cc8\n"
+	"ec var.addr rgb:9aa\n"
+	"ec var.name rgb:28d\n"
 	"\n"
 	"ec ai.read rgb:39e\n"
 	"ec ai.write rgb:577\n"
@@ -1669,8 +1834,8 @@ static const char * const theme_solarized = \
 	"# background of the terminal must be 134 o 033\n"
 	"# xterm -fn 10x20 -bg rgb:00/30/30 -fg rgb:e0/e0/e0 -e \"r2 -c 'eco solarized' /bin/ls\"\n"
 	"\n"
-	"ec widget_bg rgb:bb5 rgb:033\n"
-	"ec widget_sel white rgb:c41\n"
+	"ec widget.bg rgb:bb5 rgb:033\n"
+	"ec widget.sel white rgb:c41\n"
 ;
 static const char * const theme_tango = \
 	"# background of the terminal must be 134 o 033\n"
@@ -1739,9 +1904,10 @@ static const char * const theme_tango = \
 	"ec graph.box3 rgb:950\n"
 	"ec graph.box4 rgb:950\n"
 	"\n"
-	"ec func_var rgb:370\n"
-	"ec func_var_type rgb:a41\n"
-	"ec func_var_addr rgb:aaa\n"
+	"ec var rgb:370\n"
+	"ec var.type rgb:a41\n"
+	"ec var.addr rgb:aaa\n"
+	"ec var.name rgb:370\n"
 	"\n"
 	"ec ai.read rgb:a81\n"
 	"ec ai.write rgb:a41\n"
@@ -1749,8 +1915,8 @@ static const char * const theme_tango = \
 	"ec ai.seq rgb:ca0\n"
 	"ec ai.ascii rgb:ca0\n"
 	"\n"
-	"ec widget_bg rgb:bb5 rgb:030\n"
-	"ec widget_sel black rgb:840\n"
+	"ec widget.bg rgb:bb5 rgb:030\n"
+	"ec widget.sel black rgb:840\n"
 ;
 static const char * const theme_twilight = \
 	"# background of the terminal must be 134 o 033\n"
@@ -1762,26 +1928,28 @@ static const char * const theme_twilight = \
 	"ec b0xff rgb:c64\n"
 	"ec bin rgb:ffd\n"
 	"ec other rgb:aaa\n"
-	"ec btext rgb:bb7\n"
-	"ec ucall rgb:9b7\n"
-	"ec call rgb:9b7\n"
-	"ec ujmp rgb:788\n"
-	"ec cjmp rgb:788\n"
-	"ec jmp rgb:788\n"
-	"ec cmp rgb:ffd\n"
+	"ec btext rgb:ab7\n"
+	"ec ucall rgb:ffd\n"
+	"ec call rgb:ffd\n"
+	"# rgb:788 is grayish better use for nops than calls\n"
+	"# rgb:ab7 is greenish was for jumps but better highlight them with whitish (ffd)\n"
+	"ec ujmp rgb:ffd\n"
+	"ec cjmp rgb:ffd\n"
+	"ec jmp rgb:ffd\n"
+	"ec cmp rgb:ab7\n"
 	"ec comment rgb:c64\n"
 	"ec usrcmt rgb:9b7\n"
 	"ec ret rgb:ab7\n"
 	"ec fline rgb:ca6\n"
 	"ec flow rgb:446\n"
 	"ec flow2 rgb:446\n"
-	"ec fname rgb:bb7\n"
+	"ec fname rgb:c64\n"
 	"ec label rgb:788\n"
-	"ec math rgb:ffd\n"
+	"ec math rgb:aaa\n"
 	"ec invalid rgb:c64\n"
-	"ec mov rgb:ffd\n"
+	"ec mov rgb:aaa\n"
 	"ec nop rgb:445\n"
-	"ec num rgb:ffd\n"
+	"ec num rgb:aaa\n"
 	"ec offset rgb:788\n"
 	"ec pop rgb:bb7\n"
 	"ec prompt rgb:788\n"
@@ -1805,9 +1973,10 @@ static const char * const theme_twilight = \
 	"ec graph.box3 rgb:b97\n"
 	"ec graph.box4 rgb:b97\n"
 	"\n"
-	"ec func_var rgb:c64\n"
-	"ec func_var_type rgb:aa6\n"
-	"ec func_var_addr rgb:788\n"
+	"ec var rgb:c64\n"
+	"ec var.type rgb:aa6\n"
+	"ec var.addr rgb:788\n"
+	"ec var.name rgb:c64\n"
 	"\n"
 	"ec ai.read rgb:db7\n"
 	"ec ai.write rgb:ca6\n"
@@ -1815,8 +1984,8 @@ static const char * const theme_twilight = \
 	"ec ai.seq rgb:bb7\n"
 	"ec ai.ascii rgb:bb7\n"
 	"\n"
-	"ec widget_bg rgb:ffd rgb:344\n"
-	"ec widget_sel black rgb:ca6\n"
+	"ec widget.bg rgb:ffd rgb:344\n"
+	"ec widget.sel black rgb:ca6\n"
 ;
 static const char * const theme_white = \
 	"ecd\n"
@@ -1867,9 +2036,10 @@ static const char * const theme_white = \
 	"ec graph.current rgb:0ff\n"
 	"ec graph.traced red\n"
 	"\n"
-	"ec func_var magenta\n"
-	"ec func_var_type blue\n"
-	"ec func_var_addr magenta\n"
+	"ec var magenta\n"
+	"ec var.type blue\n"
+	"ec var.addr magenta\n"
+	"ec var.name magenta\n"
 	"\n"
 	"ec ai.read magenta\n"
 	"ec ai.write magenta\n"
@@ -1877,8 +2047,8 @@ static const char * const theme_white = \
 	"ec ai.seq black\n"
 	"ec ai.ascii black\n"
 	"\n"
-	"ec widget_bg blue white\n"
-	"ec widget_sel black yellow\n"
+	"ec widget.bg blue white\n"
+	"ec widget.sel black yellow\n"
 ;
 static const char * const theme_white2 = \
 	"ecd\n"
@@ -1931,12 +2101,13 @@ static const char * const theme_white2 = \
 	"ec ujmp rgb:376B4C 0 bold underline\n"
 	"ec usrcmt rgb:007D96 0 bold           # user comment\n"
 	"\n"
-	"ec func_var rgb:400080      # var name in function\n"
-	"ec func_var_type rgb:305F65 0 italic     # function variable\n"
-	"ec func_var_addr magenta\n"
+	"ec var rgb:400080      # var name in function\n"
+	"ec var.type rgb:305F65 0 italic     # function variable\n"
+	"ec var.addr magenta\n"
+	"ec var.name rgb:400080\n"
 	"\n"
-	"ec widget_bg rgb:2f6f9f white\n"
-	"ec widget_sel white rgb:f73 bold\n"
+	"ec widget.bg rgb:2f6f9f white\n"
+	"ec widget.sel white rgb:f73 bold\n"
 ;
 static const char * const theme_zenburn = \
 	"# background of the terminal must be 134 o 033 # xterm -fn 10x20 -bg rgb:20/20/20 -fg rgb:ff/ff/c7\n"
@@ -1991,9 +2162,10 @@ static const char * const theme_zenburn = \
 	"ec graph.current blue\n"
 	"ec graph.traced red\n"
 	"\n"
-	"ec func_var rgb:7a7\n"
-	"ec func_var_type rgb:eec\n"
-	"ec func_var_addr rgb:aaa\n"
+	"ec var rgb:7a7\n"
+	"ec var.type rgb:eec\n"
+	"ec var.addr rgb:aaa\n"
+	"ec var.name rgb:7a7\n"
 	"\n"
 	"ec ai.read rgb:f87\n"
 	"ec ai.write rgb:c88\n"
@@ -2001,73 +2173,9 @@ static const char * const theme_zenburn = \
 	"ec ai.seq rgb:ddc\n"
 	"ec ai.ascii rgb:ddc\n"
 	"\n"
-	"ec widget_bg rgb:8dd rgb:333\n"
-	"ec widget_sel white rgb:b52 bold\n"
+	"ec widget.bg rgb:8dd rgb:333\n"
+	"ec widget.sel white rgb:b52 bold\n"
 ;
-static const char * const theme_chrome = \
-	"ecd\n" \
-	"ec b0x00 rgb:ccc\n" \
-	"ec b0x7f rgb:777\n" \
-	"ec b0xff rgb:333\n" \
-	"ec args rgb:fff\n" \
-	"ec bin rgb:fff\n" \
-	"ec btext rgb:fff\n" \
-	"ec call white\n" \
-	"ec cjmp white\n" \
-	"ec cmp rgb:aaa\n" \
-	"ec comment white\n" \
-	"ec usrcmt rgb:333 white\n" \
-	"ec reg rgb:fff\n" \
-	"ec creg rgb:fff\n" \
-	"ec flag rgb:fff\n" \
-	"ec fline rgb:aaa\n" \
-	"ec flow rgb:fff\n" \
-	"ec flow2 rgb:fff\n" \
-	"ec fname rgb:fff\n" \
-	"ec help rgb:fff\n" \
-	"ec input rgb:fff\n" \
-	"ec jmp rgb:fff\n" \
-	"ec label rgb:fff\n" \
-	"ec math rgb:777\n" \
-	"ec mov rgb:ddd\n" \
-	"ec nop rgb:333\n" \
-	"ec num rgb:fff\n" \
-	"ec offset rgb:555\n" \
-	"ec other rgb:999\n" \
-	"ec pop rgb:999\n" \
-	"ec prompt rgb:fff\n" \
-	"ec push rgb:ddd\n" \
-	"ec ret rgb:777\n" \
-	"ec swi rgb:fff\n" \
-	"ec trap rgb:fff\n" \
-	"ec ucall rgb:fff rgb:333\n" \
-	"ec ujmp rgb:fff\n" \
-	"ec graph.true rgb:fff\n" \
-	"ec graph.false rgb:777\n" \
-	"ec graph.trufae rgb:ddd\n" \
-	"ec graph.current rgb:fff\n" \
-	"ec graph.traced rgb:f00\n" \
-	"ec graph.box rgb:fff\n" \
-	"ec graph.box2 rgb:fff\n" \
-	"ec graph.box3 rgb:000\n" \
-	"ec graph.box4 rgb:000\n" \
-	"ec gui.cflow rgb:fff\n" \
-	"ec gui.dataoffset rgb:fff\n" \
-	"ec crypto rgb:fff\n" \
-	"ec floc rgb:777\n" \
-	"ec linehl rgb:111\n" \
-	"ec func_var rgb:fff\n" \
-	"ec func_var_type rgb:777\n" \
-	"ec func_var_addr rgb:555\n" \
-	"ec ai.read rgb:eee\n" \
-	"ec ai.write rgb:ddd\n" \
-	"ec ai.exec rgb:fff\n" \
-	"ec ai.seq rgb:fff\n" \
-	"ec ai.ascii rgb:fff\n" \
-	"ec widget_bg rgb:fff rgb:333\n" \
-	"ec widget_sel rgb:333 rgb:fff\n"
-;
-					 ;
 RConsTheme d_themes[] = {
 	{ "ayu", theme_ayu },
 	{ "basic", theme_basic },
@@ -2077,12 +2185,14 @@ RConsTheme d_themes[] = {
 	{ "bold", theme_bold },
 	{ "bright", theme_bright },
 	{ "cga", theme_cga },
+	{ "chrome", theme_chrome },
 	{ "consonance", theme_consonance },
 	{ "dark", theme_dark },
 	{ "darkda", theme_darkda },
 	{ "focus", theme_focus },
 	{ "gb", theme_gb },
 	{ "gentoo", theme_gentoo },
+	{ "greepy", theme_greepy },
 	{ "iaito", theme_iaito },
 	{ "lima", theme_lima },
 	{ "matrix", theme_matrix },
@@ -2099,6 +2209,5 @@ RConsTheme d_themes[] = {
 	{ "white", theme_white },
 	{ "white2", theme_white2 },
 	{ "zenburn", theme_zenburn },
-	{ "chrome", theme_chrome },
 	{0,0}
 };

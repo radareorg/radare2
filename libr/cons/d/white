@@ -46,10 +46,10 @@ ec graph.trufae blue
 ec graph.current rgb:0ff
 ec graph.traced red
 
-ec func_var magenta
-ec func_var_type blue
-ec func_var_addr magenta
-ec func_var_name magenta
+ec var magenta
+ec var.type blue
+ec var.addr magenta
+ec var.name magenta
 
 ec ai.read magenta
 ec ai.write magenta
@@ -57,5 +57,5 @@ ec ai.exec blue
 ec ai.seq black
 ec ai.ascii black
 
-ec widget_bg blue white
-ec widget_sel black yellow
+ec widget.bg blue white
+ec widget.sel black yellow
