@@ -517,8 +517,8 @@ R_API RList *r_debug_kill_list(RDebug *dbg);
 R_API int r_debug_kill_setup(RDebug *dbg, int sig, int action);
 
 /* handle.c */
-R_API void r_debug_init_debug_plugins(RDebug *dbg);
-R_API void r_debug_fini_debug_plugins(RDebug *dbg);
+R_API void r_debug_init_plugins(RDebug *dbg);
+R_API void r_debug_fini_plugins(RDebug *dbg);
 R_API int r_debug_plugin_set(RDebug *dbg, const char *str);
 R_API bool r_debug_plugin_list(RDebug *dbg, int mode);
 R_API bool r_debug_plugin_add(RDebug *dbg, RDebugPlugin *plugin);

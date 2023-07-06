@@ -392,7 +392,7 @@ R_API RDebug *r_debug_new(int hard) {
 	r_debug_signal_init (dbg);
 	if (hard) {
 		dbg->bp = r_bp_new ();
-		r_debug_init_debug_plugins (dbg);
+		r_debug_init_plugins (dbg);
 		dbg->bp->iob.init = false;
 		dbg->bp->baddr = 0;
 	}
@@ -423,7 +423,7 @@ R_API void r_debug_free(RDebug *dbg) {
 		r_tree_free (dbg->tree);
 		sdb_foreach (dbg->tracenodes, (SdbForeachCallback)free_tracenodes_entry, dbg);
 		sdb_free (dbg->tracenodes);
-		r_debug_fini_debug_plugins (dbg);
+		r_debug_fini_plugins (dbg);
 		r_list_free (dbg->call_frames);
 		free (dbg->btalgo);
 		r_debug_signal_fini (dbg);
