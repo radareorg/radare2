@@ -218,7 +218,7 @@ bool gdbr_set_architecture(libgdbr_t *g, int arch, int bits);
  * \param architecture and bit size.
  * \returns a failure code
  */
-const char *gdbr_get_reg_profile(int arch, int bits);
+char *gdbr_get_reg_profile(int arch, int bits);
 
 /*!
  * \brief Function set the gdbr internal registers profile
