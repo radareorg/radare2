@@ -349,6 +349,11 @@ R_API char *r_strbuf_drain(RStrBuf *sb) {
 	return ret;
 }
 
+R_API char *r_strbuf_tostring(RStrBuf *sb) {
+	r_return_val_if_fail (sb, NULL);
+	return drain (sb);
+}
+
 R_API char *r_strbuf_drain_nofree(RStrBuf *sb) {
 	r_return_val_if_fail (sb, NULL);
 	char *ret = drain (sb);

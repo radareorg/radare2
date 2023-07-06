@@ -4548,6 +4548,7 @@ static void flush_stdin(void) {
 #endif
 
 R_API int r_core_visual(RCore *core, const char *input) {
+	RStrBuf *highlight_sb = NULL;
 	const char *teefile;
 	int flags, ch;
 	bool skip;
@@ -4588,7 +4589,7 @@ R_API int r_core_visual(RCore *core, const char *input) {
 		}
 		input += len;
 	}
-
+	bool highlight_mode = false;
 	core->vmode = true;
 	// disable tee in cons
 	teefile = r_cons_singleton ()->teefile;
@@ -4619,7 +4620,7 @@ dodo:
 				free (dr1);
 			}
 
-			if (cmdvhex && *cmdvhex) {
+			if (R_STR_ISNOTEMPTY (cmdvhex)) {
 				snprintf (debugstr, sizeof (debugstr),
 					"?t0;f tmp;sr %s;%s;?t1;%s;%s?t1;"
 					"ss tmp;f-tmp;pd $r", reg, cmdvhex,
@@ -4663,9 +4664,20 @@ dodo:
 			r_core_cmd (core, cmdprompt, 0);
 		}
 #endif
+		if (highlight_mode && highlight_sb) {
+			char *s = r_strbuf_tostring (highlight_sb);
+			r_config_set (core->config, "scr.highlight", s);
+			free (s);
+		}
 		core->print->vflush = !skip;
-
 		visual_refresh (core);
+		if (highlight_mode && highlight_sb) {
+			r_cons_gotoxy (0, 0);
+			char *s = r_strbuf_tostring (highlight_sb);
+			r_cons_printf ("%s[Highlight] %s|", R_CONS_CLEAR_LINE, s);
+			r_cons_flush ();
+			free (s);
+		}
 		if (insert_mode_enabled (core)) {
 			goto dodo;
 		}
@@ -4678,6 +4690,53 @@ dodo:
 				}
 			} else {
 				ch = r_cons_readchar ();
+			}
+			if (highlight_mode) {
+				switch (ch) {
+				case 0:
+				case '\r':
+				case '\n':
+					r_strbuf_free (highlight_sb);
+					highlight_sb = NULL;
+					highlight_mode = false;
+					break;
+				case 27: // escape
+					r_config_set (core->config, "scr.highlight", "");
+					r_strbuf_free (highlight_sb);
+					highlight_sb = NULL;
+					highlight_mode = false;
+					goto dodo;
+				case 127: // backspace
+					if (r_strbuf_length (highlight_sb) > 0) {
+						char *s = r_strbuf_drain (highlight_sb);
+						s[strlen (s) - 1] = 0;
+						highlight_sb = r_strbuf_new (s);
+						free (s);
+					} else {
+						r_config_set (core->config, "scr.highlight", "");
+						r_strbuf_free (highlight_sb);
+						highlight_sb = NULL;
+						highlight_mode = false;
+					}
+					break;
+				default:
+					if (IS_PRINTABLE (ch)) {
+						r_strbuf_append_n (highlight_sb, (const char*)&ch, 1);
+						char *s = r_strbuf_tostring (highlight_sb);
+						r_config_set (core->config, "scr.highlight", s);
+						free (s);
+					}
+					break;
+				}
+				// r_cons_visual_flush ();
+				goto dodo;
+			} else if (ch == '/') {
+				highlight_mode = true;
+				r_strbuf_free (highlight_sb);
+				highlight_sb = r_strbuf_new (NULL);
+				// r_cons_visual_flush ();
+				goto dodo;
+				continue;
 			}
 			if (I->vtmode == 2 && !is_mintty (core->cons)) {
 				// Prevent runaway scrolling
