@@ -925,8 +925,10 @@ static void ds_reflines_init(RDisasmState *ds) {
 	RAnal *anal = ds->core->anal;
 
 	lastaddr = UT64_MAX;
+	int limit = r_config_get_i (ds->core->config, "asm.lines.limit");
+	const bool inlimit = (limit > 0 && ds->len < limit);
 
-	if (ds->show_lines_bb || ds->pj) {
+	if (inlimit && (ds->show_lines_bb || ds->pj)) {
 		ds_reflines_fini (ds);
 		anal->reflines = r_anal_reflines_get (anal,
 			ds->addr, ds->buf, ds->len, ds->count,
