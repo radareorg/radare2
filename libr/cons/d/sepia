@@ -52,8 +52,8 @@ ec graph.box3 rgb:ca6
 ec graph.box4 rgb:ca6
 ec gui.cflow rgb:ffff00
 ec gui.dataoffset rgb:ffff00
-ec gui.alt_background rgb:ffffff
 ec gui.background rgb:000000
+ec gui.background2 rgb:ffffff
 ec gui.border rgb:000000
 
 ec var rgb:fd9

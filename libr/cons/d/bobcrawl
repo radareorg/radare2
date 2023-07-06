@@ -55,7 +55,7 @@ ec graph.traced rgb:ffff00
 ec gui.cflow rgb:ffff00
 ec gui.dataoffset rgb:ffff00
 ec gui.background rgb:303030
-ec gui.alt_background rgb:ffffff
+ec gui.background2 rgb:ffffff
 ec gui.border rgb:5fd700
 
 ec var rgb:64604f

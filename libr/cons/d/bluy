@@ -42,7 +42,7 @@ ec ai.ascii rgb:fff
 ec gui.cflow rgb:09f
 ec gui.dataoffset rgb:99a
 ec gui.background rgb:7c5
-ec gui.alt_background rgb:e34
+ec gui.background2 rgb:e34
 ec gui.border rgb:23f
 ec graph.current rgb:aaf
 

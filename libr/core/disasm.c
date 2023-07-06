@@ -252,7 +252,7 @@ typedef struct r_disasm_state_t {
 	const char *color_gui_cflow;
 	const char *color_gui_dataoffset;
 	const char *color_gui_background;
-	const char *color_gui_alt_background;
+	const char *color_gui_background2;
 	const char *color_gui_border;
 	const char *color_linehl;
 	const char *color_var;
@@ -665,7 +665,7 @@ static RDisasmState *ds_init(RCore *core) {
 	ds->color_gui_cflow = P(gui_cflow): Color_YELLOW;
 	ds->color_gui_dataoffset = P(gui_dataoffset): Color_YELLOW;
 	ds->color_gui_background = P(gui_background): Color_BLACK;
-	ds->color_gui_alt_background = P(gui_alt_background): Color_GRAY;
+	ds->color_gui_background2 = P(gui_background2): Color_GRAY;
 	ds->color_gui_border = P(gui_border): Color_BGGRAY;
 	ds->color_linehl = P(linehl): Color_BGBLUE;
 	ds->color_var = P(var): Color_WHITE;

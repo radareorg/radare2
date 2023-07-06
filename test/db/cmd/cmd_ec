@@ -70,11 +70,12 @@ ec reg rgb:c0a060
 ec creg rgb:906000
 ec num rgb:906000
 ec mov rgb:d0b070
-ec func_var rgb:f0d090
-ec func_var_type rgb:805000
-ec func_var_addr rgb:906000
-ec widget_bg rgb:d0b070 rgb:000000
-ec widget_sel rgb:000000 rgb:f0e0c0
+ec var rgb:f0d090
+ec var.name rgb:f0d090
+ec var.type rgb:805000
+ec var.addr rgb:906000
+ec widget.bg rgb:d0b070 rgb:000000
+ec widget.sel rgb:000000 rgb:f0e0c0
 ec ai.read rgb:c0b070
 ec ai.write rgb:c0a060
 ec ai.exec rgb:d0b070
@@ -89,14 +90,14 @@ ec graph.false rgb:403010
 ec graph.trufae rgb:f0d090
 ec graph.current rgb:0000ff
 ec graph.traced rgb:0000ff
-ec graph.diff.unknown rgb:881798
-ec graph.diff.new rgb:c50f1f
-ec graph.diff.match rgb:767676
-ec graph.diff.unmatch rgb:c19c00
+ec diff.unknown rgb:881798
+ec diff.new rgb:c50f1f
+ec diff.match rgb:767676
+ec diff.unmatch rgb:c19c00
 ec gui.cflow rgb:ffff00
 ec gui.dataoffset rgb:ffff00
 ec gui.background rgb:000000
-ec gui.alt_background rgb:ffffff
+ec gui.background2 rgb:ffffff
 ec gui.border rgb:000000
 ec wordhl rgb:ff0000
 ec linehl rgb:201000
@@ -183,11 +184,12 @@ EXPECT=<<EOF
  [36m##[0m  creg
  [33m##[0m  num
  [36m##[0m  mov
- [37m##[0m  func_var
- [34m##[0m  func_var_type
- [36m##[0m  func_var_addr
- [40m##[0m  widget_bg
- [41m##[0m  widget_sel
+ [37m##[0m  var
+ [33m##[0m  var.name
+ [36m##[0m  var.type
+ [32m##[0m  var.addr
+ [40m##[0m  widget.bg
+ [41m##[0m  widget.sel
  [32m##[0m  ai.read
  [34m##[0m  ai.write
  [31m##[0m  ai.exec
@@ -202,14 +204,14 @@ EXPECT=<<EOF
  [36m##[0m  graph.trufae
  [34m##[0m  graph.current
  [33m##[0m  graph.traced
- [35m##[0m  graph.diff.unknown
- [31m##[0m  graph.diff.new
- [90m##[0m  graph.diff.match
- [33m##[0m  graph.diff.unmatch
+ [35m##[0m  diff.unknown
+ [31m##[0m  diff.new
+ [90m##[0m  diff.match
+ [33m##[0m  diff.unmatch
  [33m##[0m  gui.cflow
  [33m##[0m  gui.dataoffset
  [30m##[0m  gui.background
- [37m##[0m  gui.alt_background
+ [37m##[0m  gui.background2
  [30m##[0m  gui.border
  [41m##[0m  wordhl
  [44m##[0m  linehl
@@ -254,11 +256,12 @@ EXPECT=<<EOF
  [96m##[0m  creg
  [93m##[0m  num
  [97m##[0m  mov
- [97m##[0m  func_var
- [93m##[0m  func_var_type
- [96m##[0m  func_var_addr
- [47m##[0m  widget_bg
- [101m##[0m  widget_sel
+ [97m##[0m  var
+ [97m##[0m  var.name
+ [93m##[0m  var.type
+ [96m##[0m  var.addr
+ [47m##[0m  widget.bg
+ [101m##[0m  widget.sel
  [92m##[0m  ai.read
  [94m##[0m  ai.write
  [91m##[0m  ai.exec
@@ -273,14 +276,14 @@ EXPECT=<<EOF
  [94m##[0m  graph.trufae
  [94m##[0m  graph.current
  [93m##[0m  graph.traced
- [35m##[0m  graph.diff.unknown
- [31m##[0m  graph.diff.new
- [90m##[0m  graph.diff.match
- [33m##[0m  graph.diff.unmatch
+ [35m##[0m  diff.unknown
+ [31m##[0m  diff.new
+ [90m##[0m  diff.match
+ [33m##[0m  diff.unmatch
  [93m##[0m  gui.cflow
  [93m##[0m  gui.dataoffset
  [37m##[0m  gui.background
- [97m##[0m  gui.alt_background
+ [97m##[0m  gui.background2
  [37m##[0m  gui.border
  [101m##[0m  wordhl
  [44m##[0m  linehl
