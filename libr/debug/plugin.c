@@ -3,25 +3,26 @@
 #include <r_debug.h>
 #include <config.h>
 
+R_GENERATE_VEC_IMPL_FOR(DebugPluginData, RDebugPluginData);
+
 static RDebugPlugin *debug_static_plugins[] = {
 	R_DEBUG_STATIC_PLUGINS
 };
 
-R_API void r_debug_plugin_init(RDebug *dbg) {
+R_API void r_debug_init_debug_plugins(RDebug *dbg) {
 	int i;
-	dbg->plugins = r_list_newf (free);
+	dbg->plugins = RVecDebugPluginData_new ();
 	for (i = 0; debug_static_plugins[i]; i++) {
 		r_debug_plugin_add (dbg, debug_static_plugins[i]);
 	}
 }
 
 R_API bool r_debug_use(RDebug *dbg, const char *str) {
+	RDebugPluginData *dpd = NULL;
 	if (dbg && str) {
-		RDebugPlugin *h;
-		RListIter *iter;
-		r_list_foreach (dbg->plugins, iter, h) {
-			if (h->meta.name && !strcmp (str, h->meta.name)) {
-				dbg->h = h;
+		R_VEC_FOREACH (dbg->plugins, dpd) {
+			if (dpd->plugin.meta.name && !strcmp (str, dpd->plugin.meta.name)) {
+				dbg->h = &dpd->plugin;
 				if (dbg->anal && dbg->anal->cur) {
 					r_debug_set_arch (dbg, dbg->anal->cur->arch, dbg->bits);
 				}
@@ -39,6 +40,7 @@ R_API bool r_debug_use(RDebug *dbg, const char *str) {
 				dbg->anal->reg = dbg->reg;
 			}
 			if (dbg->h->init) {
+				// TODO pass in plugin data instead of looking it up again
 				dbg->h->init (dbg);
 			}
 			r_reg_set_profile_string (dbg->reg, p);
@@ -55,8 +57,6 @@ R_API bool r_debug_plugin_list(RDebug *dbg, int mode) {
 	int count = 0;
 	memset (spaces, ' ', 15);
 	spaces[15] = 0;
-	RDebugPlugin *h;
-	RListIter *iter;
 	PJ *pj = NULL;
 	if (mode == 'j') {
 		pj = dbg->pj;
@@ -65,20 +65,22 @@ R_API bool r_debug_plugin_list(RDebug *dbg, int mode) {
 		}
 		pj_a (pj);
 	}
-	r_list_foreach (dbg->plugins, iter, h) {
-		int sp = 8 - strlen (h->meta.name);
+
+	RDebugPluginData *dpd;
+	R_VEC_FOREACH (dbg->plugins, dpd) {
+		int sp = 8 - strlen (dpd->plugin.meta.name);
 		spaces[sp] = 0;
 		if (mode == 'q') {
-			dbg->cb_printf ("%s\n", h->meta.name);
+			dbg->cb_printf ("%s\n", dpd->plugin.meta.name);
 		} else if (mode == 'j') {
 			pj_o (pj);
-			pj_ks (pj, "name", h->meta.name);
-			pj_ks (pj, "license", h->meta.license);
+			pj_ks (pj, "name", dpd->plugin.meta.name);
+			pj_ks (pj, "license", dpd->plugin.meta.license);
 			pj_end (pj);
 		} else {
 			dbg->cb_printf ("%d  %s  %s %s%s\n",
-					count, (h == dbg->h)? "dbg": "---",
-					h->meta.name, spaces, h->meta.license);
+					count, (&dpd->plugin == dbg->h)? "dbg": "---",
+					dpd->plugin.meta.name, spaces, dpd->plugin.meta.license);
 		}
 		spaces[sp] = ' ';
 		count++;
@@ -90,18 +92,46 @@ R_API bool r_debug_plugin_list(RDebug *dbg, int mode) {
 	return true;
 }
 
-R_API bool r_debug_plugin_add(RDebug *dbg, RDebugPlugin *foo) {
-	if (!dbg || !foo || !foo->meta.name) {
+R_API bool r_debug_plugin_add(RDebug *dbg, RDebugPlugin *plugin) {
+	if (!dbg || !plugin || !plugin->meta.name) {
 		return false;
 	}
-	RDebugPlugin *dp = R_NEW (RDebugPlugin);
-	memcpy (dp, foo, sizeof (RDebugPlugin));
-	r_list_append (dbg->plugins, dp);
+
+	RDebugPluginData *dpd = RVecDebugPluginData_emplace_back (dbg->plugins);
+	if (!dpd) {
+		return false;
+	}
+
+	memcpy (&dpd->plugin, plugin, sizeof (RDebugPlugin));
+	dpd->plugin_data = NULL;
 	return true;
 }
 
+static inline int find_debug_plugin_by_name(RDebugPluginData *dpd, void *p) {
+	RDebugPlugin *plugin = p;
+	return strcmp (dpd->plugin.meta.name, plugin->meta.name);
+}
+
+static inline void debug_plugin_fini(RDebugPluginData *dpd, void *user) {
+	R_FREE (dpd->plugin_data);
+}
+
 R_API bool r_debug_plugin_remove(RDebug *dbg, RDebugPlugin *plugin) {
-	// R2_590 TODO
+	if (!dbg || !plugin) {
+		return false;
+	}
+
+	RDebugPluginData *dpd = RVecDebugPluginData_find (dbg->plugins, plugin, find_debug_plugin_by_name);
+	if (!dpd) {
+		return false;
+	}
+
+	// TODO pass in plugin data instead of looking it up again inside fini function
+	if (dpd->plugin.fini && !dpd->plugin.fini (dbg)) {
+		return false;
+	}
+
+	RVecDebugPluginData_pop_back (dbg->plugins, debug_plugin_fini, NULL);
 	return true;
 }
 

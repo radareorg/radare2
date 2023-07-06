@@ -46,7 +46,7 @@ extern "C" {
  * - type *R_VEC_FUNC(name, find)(const R_VEC(name) *vec, void *value, R_VEC_FIND_CMP(type) cmp_fn):
  *   Searches for the first value in the vector that is equal (compare returns 0) to the value passed in.
  *   Otherwise returns NULL.
- * - type *R_VEC_FUNC(name, find_index)(const R_VEC(name) *vec, void *value, R_VEC_FIND_CMP(type) cmp_fn):
+ * - ut64 R_VEC_FUNC(name, find_index)(const R_VEC(name) *vec, void *value, R_VEC_FIND_CMP(type) cmp_fn):
  *   Searches for the index of the first value in the vector that is equal (compare returns 0) to the
  *   value passed in. Otherwise returns UT64_MAX.
  * - R_VEC(name) *R_VEC_FUNC(name, clone)(const R_VEC(name) *vec): Creates a shallow clone of a vector.
@@ -125,7 +125,7 @@ extern "C" {
 // to use a vector in a header file that is used in a lot of places without
 // generating all the code for the implementation (at the cost of a pointer-indirection).
 #define R_VEC_FORWARD_DECLARE(name) \
-	R_CONCAT(R_CONCAT(R_CONCAT(typedef struct r_vec_, name), _t), R_VEC(name))
+	typedef struct R_CONCAT(R_CONCAT(r_vec_, name), _t) R_VEC(name)
 
 #ifdef _MSC_VER
 #define R_MAYBE_UNUSED
