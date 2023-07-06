@@ -410,6 +410,10 @@ R_API void r_debug_tracenodes_reset(RDebug *dbg) {
 	sdb_reset (dbg->tracenodes);
 }
 
+static inline void debug_plugin_session_fini(RDebugPluginSession *dpd, void *user) {
+	R_FREE (dpd->plugin_data);
+}
+
 R_API void r_debug_free(RDebug *dbg) {
 	if (dbg) {
 		// TODO: free it correctly.. we must ensure this is an instance and not a reference..
@@ -423,7 +427,7 @@ R_API void r_debug_free(RDebug *dbg) {
 		r_tree_free (dbg->tree);
 		sdb_foreach (dbg->tracenodes, (SdbForeachCallback)free_tracenodes_entry, dbg);
 		sdb_free (dbg->tracenodes);
-		r_list_free (dbg->plugins);
+		r_debug_fini_debug_plugins (dbg);
 		r_list_free (dbg->call_frames);
 		free (dbg->btalgo);
 		r_debug_signal_fini (dbg);

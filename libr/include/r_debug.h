@@ -337,12 +337,12 @@ typedef struct r_debug_plugin_t {
 	// TODO: use RVec here
 } RDebugPlugin;
 
-typedef struct r_debug_plugin_data_t {
+typedef struct r_debug_plugin_session_t {
 	RDebugPlugin plugin;
 	void *plugin_data;
-} RDebugPluginData;
+} RDebugPluginSession;
 
-R_VEC_FORWARD_DECLARE(DebugPluginData);
+R_VEC_FORWARD_DECLARE(DebugPluginSession);
 
 typedef struct r_debug_t {
 	// R2_590 use RArchConfig instead
@@ -401,7 +401,7 @@ typedef struct r_debug_t {
 	RIOBind iob;
 
 	struct r_debug_plugin_t *h;
-	RVecDebugPluginData *plugins;
+	RVecDebugPluginSession *plugins;
 	void *user; // R2_590 XXX(jjd): used by windbg?? meant for caller's use??
 
 	bool pc_at_bp; /* after a breakpoint, is the pc at the bp? */
@@ -518,6 +518,7 @@ R_API int r_debug_kill_setup(RDebug *dbg, int sig, int action);
 
 /* handle.c */
 R_API void r_debug_init_debug_plugins(RDebug *dbg);
+R_API void r_debug_fini_debug_plugins(RDebug *dbg);
 R_API int r_debug_plugin_set(RDebug *dbg, const char *str);
 R_API bool r_debug_plugin_list(RDebug *dbg, int mode);
 R_API bool r_debug_plugin_add(RDebug *dbg, RDebugPlugin *plugin);
