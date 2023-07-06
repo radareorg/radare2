@@ -150,7 +150,7 @@ R_API bool r_debug_plugin_set_reg_profile(RDebug *dbg, const char *profile) {
 		return false;
 	}
 	if (dbg && dbg->current && dbg->current->plugin.set_reg_profile) {
-		return dbg->current->plugin.set_reg_profile (str);
+		return dbg->current->plugin.set_reg_profile (dbg, str);
 	}
 	free (str);
 	return false;

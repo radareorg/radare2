@@ -323,7 +323,7 @@ typedef struct r_debug_plugin_t {
 	bool (*reg_read)(RDebug *dbg, int type, ut8 *buf, int size);
 	bool (*reg_write)(RDebug *dbg, int type, const ut8 *buf, int size);
 	char* (*reg_profile)(RDebug *dbg);
-	int (*set_reg_profile)(const char *str);
+	int (*set_reg_profile)(RDebug *dbg, const char *str);
 	/* memory */
 	RList *(*map_get)(RDebug *dbg);
 	RList *(*modules_get)(RDebug *dbg);

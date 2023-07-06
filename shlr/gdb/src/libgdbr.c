@@ -55,12 +55,13 @@ bool gdbr_set_architecture(libgdbr_t *g, int arch, int bits) {
 		return true;
 	}
 
-	const char *regprofile = gdbr_get_reg_profile (arch, bits);
+	char *regprofile = gdbr_get_reg_profile (arch, bits);
 	if (!regprofile) {
 		R_LOG_ERROR ("%s: cannot find gdb reg_profile", __func__);
 		return false;
 	}
 	if (!gdbr_set_reg_profile (g, regprofile)) {
+		free (regprofile);
 		return false;
 	}
 	g->target.arch = arch;
@@ -70,7 +71,7 @@ bool gdbr_set_architecture(libgdbr_t *g, int arch, int bits) {
 	return true;
 }
 
-const char *gdbr_get_reg_profile(int arch, int bits) {
+char *gdbr_get_reg_profile(int arch, int bits) {
 	switch (arch) {
 	case R_SYS_ARCH_X86:
 		if (bits == 32) {
