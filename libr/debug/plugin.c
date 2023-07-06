@@ -17,7 +17,7 @@ static inline void debug_plugin_session_fini(RDebugPluginSession *ds, void *user
 	R_FREE (ds->plugin_data);
 }
 
-R_API void r_debug_init_debug_plugins(RDebug *dbg) {
+R_API void r_debug_init_plugins(RDebug *dbg) {
 	int i;
 	dbg->plugins = RVecDebugPluginSession_new ();
 	for (i = 0; debug_static_plugins[i]; i++) {
@@ -25,7 +25,7 @@ R_API void r_debug_init_debug_plugins(RDebug *dbg) {
 	}
 }
 
-R_API void r_debug_fini_debug_plugins(RDebug *dbg) {
+R_API void r_debug_fini_plugins(RDebug *dbg) {
 	RVecDebugPluginSession_free (dbg->plugins, debug_plugin_session_fini, dbg);
 }
 
@@ -107,7 +107,8 @@ R_API bool r_debug_plugin_list(RDebug *dbg, int mode) {
 }
 
 R_API bool r_debug_plugin_add(RDebug *dbg, RDebugPlugin *plugin) {
-	if (!dbg || !plugin || !plugin->meta.name) {
+	r_return_val_if_fail (dbg && plugin, false);
+	if (!plugin->meta.name) {
 		return false;
 	}
 

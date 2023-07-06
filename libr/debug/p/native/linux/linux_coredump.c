@@ -1044,8 +1044,8 @@ static int *get_unique_thread_id(RDebug *dbg, int n_threads) {
 	int i = 0;
 	bool found = false;
 
-	if (dbg->h) {
-		list = dbg->h->threads (dbg, dbg->pid);
+	if (dbg->current) {
+		list = dbg->current->plugin.threads (dbg, dbg->pid);
 		if (!list) {
 			return NULL;
 		}
