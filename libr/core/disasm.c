@@ -256,6 +256,7 @@ typedef struct r_disasm_state_t {
 	const char *color_gui_border;
 	const char *color_linehl;
 	const char *color_func_var;
+	const char *color_func_var_name;
 	const char *color_func_var_type;
 	const char *color_func_var_addr;
 	const char *cmtoken; // ";"
@@ -670,6 +671,7 @@ static RDisasmState *ds_init(RCore *core) {
 	ds->color_func_var = P(func_var): Color_WHITE;
 	ds->color_func_var_type = P(func_var_type): Color_BLUE;
 	ds->color_func_var_addr = P(func_var_addr): Color_CYAN;
+	ds->color_func_var_name = P(func_var_name): Color_RED;
 
 	ds->immstr = r_config_get_i (core->config, "asm.imm.str");
 	ds->immtrim = r_config_get_i (core->config, "asm.imm.trim");
@@ -1800,13 +1802,11 @@ static void ds_show_functions_argvar(RDisasmState *ds, RAnalFunction *fcn, RAnal
 	int delta = var->kind == 'b' ? R_ABS (var->delta + fcn->bp_off) : R_ABS (var->delta);
 	const char *pfx = is_var ? VARPREFIX: ARGPREFIX;
 	char *constr = r_anal_var_get_constraints_readable (var);
-	r_cons_printf ("%s%s %s%s%s%s %s%s%s%s@ %s%c0x%x", COLOR_ARG (ds, color_func_var), pfx,
-			COLOR_ARG (ds, color_func_var_type), var->type,
-			r_str_endswith (var->type, "*") ? "" : " ",
-			var->name, COLOR_ARG (ds, color_func_var_addr),
-			constr? " { ":"",
-			r_str_get (constr),
-			constr? " } ":"",
+	r_cons_printf ("%s%s %s%s%s%s%s %s%s%s%s@ %s%c0x%x",
+			COLOR_ARG (ds, color_func_var), pfx,
+			COLOR_ARG (ds, color_func_var_type), var->type, r_str_endswith (var->type, "*") ? "" : " ",
+			COLOR_ARG (ds, color_func_var_name), var->name,
+			COLOR_ARG (ds, color_func_var_addr), constr? " { ":"", r_str_get (constr), constr? " } ":"",
 			base, sign, delta);
 	if (ds->show_varsum == -1) {
 		char *val = r_core_cmd_strf (ds->core, ".afvd %s", var->name);
@@ -2086,10 +2086,11 @@ static void ds_show_functions(RDisasmState *ds) {
 						R_LOG_ERROR ("Register not found");
 						break;
 					}
-					r_cons_printf ("%sarg %s%s%s%s %s@ %s", COLOR_ARG (ds, color_func_var),
+					r_cons_printf ("%sarg %s%s%s%s%s %s@ %s", COLOR_ARG (ds, color_func_var),
 						COLOR_ARG (ds, color_func_var_type),
 						var->type, r_str_endswith (var->type, "*") ? "" : " ",
-						var->name, COLOR_ARG (ds, color_func_var_addr), i->name);
+						COLOR_ARG (ds, color_func_var_name), var->name,
+						COLOR_ARG (ds, color_func_var_addr), i->name);
 					if (ds->show_varsum == -1) {
 						char *val = r_core_cmd_strf (ds->core, ".afvd %s", var->name);
 						if (val) {

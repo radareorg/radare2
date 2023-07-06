@@ -53,6 +53,7 @@ ec linehl rgb:111
 ec func_var rgb:f0f
 ec func_var_type rgb:fff
 ec func_var_addr rgb:0f0
+ec func_var_name rgb:f0f
 
 ec ai.read rgb:eee
 ec ai.write rgb:0f0

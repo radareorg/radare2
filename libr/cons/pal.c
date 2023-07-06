@@ -52,6 +52,7 @@ static struct {
 	{ "num", r_offsetof (RConsPrintablePalette, num), r_offsetof (RConsPalette, num) },
 	{ "mov", r_offsetof (RConsPrintablePalette, mov), r_offsetof (RConsPalette, mov) },
 	{ "func_var", r_offsetof (RConsPrintablePalette, func_var), r_offsetof (RConsPalette, func_var) },
+	{ "func_var_name", r_offsetof (RConsPrintablePalette, func_var_name), r_offsetof (RConsPalette, func_var_name) },
 	{ "func_var_type", r_offsetof (RConsPrintablePalette, func_var_type), r_offsetof (RConsPalette, func_var_type) },
 	{ "func_var_addr", r_offsetof (RConsPrintablePalette, func_var_addr), r_offsetof (RConsPalette, func_var_addr) },
 	{ "widget_bg", r_offsetof (RConsPrintablePalette, widget_bg), r_offsetof (RConsPalette, widget_bg) },
@@ -236,6 +237,7 @@ R_API void r_cons_pal_init(RConsContext *ctx) {
 
 	ctx->cpal.func_var           = (RColor) RColor_WHITE;
 	ctx->cpal.func_var_type      = (RColor) RColor_BLUE;
+	ctx->cpal.func_var_name      = (RColor) RColor_RED;
 	ctx->cpal.func_var_addr      = (RColor) RColor_CYAN;
 
 	ctx->cpal.widget_bg          = (RColor) RCOLOR (ALPHA_BG, 0x30, 0x30, 0x30, 0x00, 0x00, 0x00, 0);

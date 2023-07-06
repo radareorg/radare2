@@ -3653,7 +3653,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETBPREF ("asm.lbytes", "true", "align disasm bytes to left");
 	SETBPREF ("asm.lines", "true", "show ASCII-art lines at disassembly");
 	SETBPREF ("asm.lines.jmp", "true", "show flow lines at jumps");
-	SETI ("asm.lines.limit", 8096, "dont show control flow lines if function is larger than X bytes");
+	SETI ("asm.lines.limit", 4096*4, "dont show control flow lines if function is larger than X bytes");
 	SETBPREF ("asm.lines.bb", "false", "show empty line after every basic block");
 	SETBPREF ("asm.lines.call", "false", "enable call lines");
 	SETBPREF ("asm.lines.ret", "false", "show separator lines after ret");

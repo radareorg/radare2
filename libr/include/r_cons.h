@@ -209,6 +209,7 @@ typedef struct r_cons_palette_t {
 	RColor wordhl;
 	RColor linehl;
 	RColor func_var;
+	RColor func_var_name;
 	RColor func_var_type;
 	RColor func_var_addr;
 	RColor widget_bg;
@@ -286,6 +287,7 @@ typedef struct r_cons_printable_palette_t {
 	char *wordhl;
 	char *linehl;
 	char *func_var;
+	char *func_var_name;
 	char *func_var_type;
 	char *func_var_addr;
 	char *widget_bg;
