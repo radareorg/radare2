@@ -4628,14 +4628,17 @@ static bool _process_symbols_and_imports_in_section(ELFOBJ *eo, int type, Proces
 		int maxsize = strtab_section->sh_size; // R_MIN (r_buf_size (eo->b), strtab_section->sh_size);
 		if (is_section_local_sym (eo, &memory->sym[k])) {
 			const size_t sym_section = memory->sym[k].st_shndx;
-#if 0
-			// TODO: find better name to resolve names outside section bounadries
-			const ut64 at = strtab_section->sh_offset + eo->shdr[sym_section].sh_name;
-			r_buf_read_at (eo->b, at, (ut8*)es->name, sizeof (es->name));
-#else
-			const char *shname = &eo->shstrtab[eo->shdr[sym_section].sh_name];
-			r_str_ncpy (es->name, shname, ELF_STRING_LENGTH - 1);
-#endif
+			if (eo->shstrtab) {
+				const char *shname = &eo->shstrtab[eo->shdr[sym_section].sh_name];
+				if (shname) {
+					r_str_ncpy (es->name, shname, ELF_STRING_LENGTH - 1);
+				} else {
+					es->name[0] = 0;
+				}
+			} else {
+				const ut64 at = strtab_section->sh_offset + eo->shdr[sym_section].sh_name;
+				r_buf_read_at (eo->b, at, (ut8*)es->name, sizeof (es->name));
+			}
 		} else if (st_name <= 0 || st_name >= maxsize) {
 			es->name[0] = 0;
 		} else {
