@@ -67,6 +67,7 @@ ec ai.ascii rgb:86c06c
 ec func_var rgb:86c06c
 ec func_var_type rgb:86c06c
 ec func_var_addr rgb:e0f8cf
+ec func_var_name rgb:86c06c
 
 ec widget_bg rgb:86c06c rgb:000
 ec widget_sel rgb:e0f8cf rgb:000

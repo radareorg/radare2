@@ -41,6 +41,7 @@ ec mov rgb:d0d0d0
 ec func_var white
 ec func_var_type yellow
 ec func_var_addr white
+ec func_var_name white
 ec widget_bg rgb:303030
 ec widget_sel rgb:ff0000
 ec ai.read rgb:e0e0e0

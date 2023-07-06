@@ -42,15 +42,16 @@ R_API bool r_anal_var_display(RAnal *anal, RAnalVar *var) {
 			}
 		}
 		break;
-	case R_ANAL_VAR_KIND_SPV: {
-		ut32 udelta = R_ABS (var->delta + var->fcn->maxstack);
-		if (usePxr) {
-			anal->cb_printf ("pxr $w @%s+0x%x\n", anal->reg->name[R_REG_NAME_SP], udelta);
-		} else {
-			anal->cb_printf ("pf %s @ %s+0x%x\n", fmt, anal->reg->name[R_REG_NAME_SP], udelta);
+	case R_ANAL_VAR_KIND_SPV:
+		{
+			ut32 udelta = R_ABS (var->delta + var->fcn->maxstack);
+			if (usePxr) {
+				anal->cb_printf ("pxr $w @%s+0x%x\n", anal->reg->name[R_REG_NAME_SP], udelta);
+			} else {
+				anal->cb_printf ("pf %s @ %s+0x%x\n", fmt, anal->reg->name[R_REG_NAME_SP], udelta);
+			}
 		}
 		break;
-	}
 	}
 	free (fmt);
 	return true;
@@ -923,13 +924,11 @@ static void extract_arg(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const char
 	r_return_if_fail (anal && fcn && op && reg);
 
 	r_vector_foreach (&op->srcs, val) {
-		if (val && val->reg) {
-			if (!strcmp (reg, val->reg)) {
-				st64 delta = val->delta;
-				if ((delta > 0 && *sign == '+') || (delta < 0 && *sign == '-')) {
-					ptr = R_ABS (val->delta);
-					break;
-				}
+		if (val && val->reg && !strcmp (reg, val->reg)) {
+			st64 delta = val->delta;
+			if ((delta > 0 && *sign == '+') || (delta < 0 && *sign == '-')) {
+				ptr = R_ABS (val->delta);
+				break;
 			}
 		}
 	}

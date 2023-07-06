@@ -10,7 +10,7 @@ ec label rgb:0068bd
 ec help rgb:005f87
 ec flow rgb:5f8700
 ec flow2 rgb:5f8700
-ec prompt rgb:000000
+ec prompt rgb:30a000
 ec offset rgb:8e8c8b
 ec input rgb:000000
 ec invalid rgb:e03030
@@ -20,7 +20,7 @@ ec b0x7f rgb:7f7f7f
 ec b0xff rgb:e03030
 ec math rgb:005f87
 ec bin rgb:005f87
-ec btext rgb:000000
+ec btext rgb:30a000
 ec push rgb:da3192
 ec pop rgb:da3192
 ec crypto rgb:d03080
@@ -41,6 +41,7 @@ ec mov rgb:da3192
 ec func_var rgb:d03080
 ec func_var_type rgb:876ac1
 ec func_var_addr rgb:b0b0b0
+ec func_var_name rgb:d03080
 ec widget_bg rgb:303030
 ec widget_sel rgb:ff0000
 ec ai.read rgb:1080d0

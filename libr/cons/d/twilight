@@ -55,6 +55,7 @@ ec graph.box4 rgb:b97
 ec func_var rgb:c64
 ec func_var_type rgb:aa6
 ec func_var_addr rgb:788
+ec func_var_name rgb:c64
 
 ec ai.read rgb:db7
 ec ai.write rgb:ca6

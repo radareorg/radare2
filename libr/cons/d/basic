@@ -48,6 +48,7 @@ ec graph.box4 gray
 ec func_var white
 ec func_var_type blue
 ec func_var_addr cyan
+ec func_var_name white
 
 ec widget_bg white gray
 ec widget_sel black cyan

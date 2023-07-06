@@ -50,6 +50,7 @@ ec graph.traced rgb:bbb
 ec func_var rgb:99a
 ec func_var_type rgb:636
 ec func_var_addr rgb:366
+ec func_var_name rgb:99a
 
 ec ai.read rgb:266
 ec ai.write rgb:366

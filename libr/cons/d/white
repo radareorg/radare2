@@ -49,6 +49,7 @@ ec graph.traced red
 ec func_var magenta
 ec func_var_type blue
 ec func_var_addr magenta
+ec func_var_name magenta
 
 ec ai.read magenta
 ec ai.write magenta
