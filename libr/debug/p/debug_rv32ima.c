@@ -220,7 +220,7 @@ RDebugPlugin r_debug_plugin_rv32ima = {
 	},
 	.arch = "riscv",
 	.bits = R_SYS_BITS_32,
-	.init = __rv32ima_init,
+	.init_debugger = __rv32ima_init,
 	.step = __rv32ima_step,
 	.cont = __rv32ima_continue,
 	.contsc = __rv32ima_continue_syscall,

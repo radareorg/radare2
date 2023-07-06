@@ -225,8 +225,6 @@ typedef struct r_snap_entry {
 	int perm;
 } RSnapEntry;
 
-// R2_590 make callbacks const
-
 typedef struct r_debug_trace_t {
 	RList *traces;
 	int count;
@@ -278,6 +276,8 @@ typedef struct r_debug_info_t {
 	// /proc/pid/syscall ???
 } RDebugInfo;
 
+// R2_590 make callbacks const (also further below)
+
 typedef struct r_debug_desc_plugin_t {
 	int (*open)(const char *path);
 	int (*close)(int fd);
@@ -288,6 +288,7 @@ typedef struct r_debug_desc_plugin_t {
 	RList* (*list)(int pid);
 } RDebugDescPlugin;
 
+typedef struct r_debug_plugin_session_t RDebugPluginSession;
 typedef int (*RDebugCmdCb)(RDebug *dbg, const char *cmd);
 typedef struct r_debug_plugin_t {
 	RPluginMeta meta;
@@ -296,8 +297,8 @@ typedef struct r_debug_plugin_t {
 	int canstep;
 	int keepio;
 	/* life */
-	bool (*init_plugin)(RDebug *dbg);
-	bool (*fini_plugin)(RDebug *dbg);
+	bool (*init_plugin)(RDebug *dbg, RDebugPluginSession *ds);
+	bool (*fini_plugin)(RDebug *dbg, RDebugPluginSession *ds);
 	RDebugInfo* (*info)(RDebug *dbg, const char *arg);
 	int (*startv)(int argc, char **argv);
 	bool (*attach)(RDebug *dbg, int pid);
@@ -329,8 +330,7 @@ typedef struct r_debug_plugin_t {
 	RDebugMap* (*map_alloc)(RDebug *dbg, ut64 addr, int size, bool thp);
 	int (*map_dealloc)(RDebug *dbg, ut64 addr, int size);
 	int (*map_protect)(RDebug *dbg, ut64 addr, int size, int perms);
-	bool (*init)(RDebug *dbg);
-	bool (*fini)(RDebug *dbg);
+	bool (*init_debugger)(RDebug *dbg);
 	int (*drx)(RDebug *dbg, int n, ut64 addr, int size, int rwx, int g, int api_type);
 	RDebugDescPlugin desc;
 	RDebugCmdCb cmd;
