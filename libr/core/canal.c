@@ -4222,6 +4222,7 @@ static void add_string_ref(RCore *core, ut64 xref_from, ut64 xref_to) {
 	free (str);
 }
 
+// R2R db/anal/mach0
 static bool found_xref(RCore *core, ut64 at, ut64 xref_to, RAnalRefType type, PJ *pj, int rad, bool cfg_debug, bool cfg_anal_strings) {
 	// Validate the reference. If virtual addressing is enabled, we
 	// allow only references to virtual addresses in order to reduce
@@ -4288,8 +4289,7 @@ R_API int r_core_anal_search_xrefs(RCore *core, ut64 from, ut64 to, PJ *pj, int 
 		return -1;
 	}
 	if (from > to) {
-		eprintf ("Invalid range (0x%"PFMT64x
-		" >= 0x%"PFMT64x")\n", from, to);
+		R_LOG_ERROR ("Invalid range (0x%"PFMT64x " >= 0x%"PFMT64x")", from, to);
 		return -1;
 	}
 
@@ -4435,7 +4435,7 @@ R_API int r_core_anal_search_xrefs(RCore *core, ut64 from, ut64 to, PJ *pj, int 
 		if (i < 1) {
 			break;
 		}
-		at += i + 1;
+		at += i + 1; // XXX i think this causes code unalignment problems
 	}
 beach:
 	r_cons_break_pop ();
@@ -4478,6 +4478,12 @@ R_API int r_core_anal_all(RCore *core) {
 	RBinSymbol *symbol;
 	const bool anal_vars = r_config_get_b (core->config, "anal.vars");
 	const bool anal_calls = r_config_get_b (core->config, "anal.calls");
+
+	// required for noreturn
+	if (r_config_get_b (core->config, "anal.imports")) {
+		R_LOG_INFO ("Analyze imports (af@@@@i)");
+		r_core_cmd0 (core, "af@@@i");
+	}
 
 	/* Analyze Functions */
 	/* Entries */
