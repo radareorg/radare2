@@ -392,7 +392,7 @@ R_API RDebug *r_debug_new(int hard) {
 	r_debug_signal_init (dbg);
 	if (hard) {
 		dbg->bp = r_bp_new ();
-		r_debug_plugin_init (dbg);
+		r_debug_init_debug_plugins (dbg);
 		dbg->bp->iob.init = false;
 		dbg->bp->baddr = 0;
 	}
