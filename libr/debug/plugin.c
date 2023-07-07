@@ -29,7 +29,7 @@ R_API void r_debug_fini_plugins(RDebug *dbg) {
 	RVecDebugPluginSession_free (dbg->plugins, debug_plugin_session_fini, dbg);
 }
 
-static inline int find_plugin_by_name(RDebugPluginSession *ds, void *name) {
+static inline int find_plugin_by_name(const RDebugPluginSession *ds, const void *name) {
 	return strcmp (ds->plugin.meta.name, name);
 }
 
