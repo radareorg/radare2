@@ -818,11 +818,11 @@ static int r2pm_install(RList *targets, bool uninstall, bool clean, bool force, 
 			free (sudo);
 			sudo = strdup ("sudo");
 		}
-		r_sys_setenv ("R2PM_SUDO", sudo);
+		r_sys_setenv ("SUDO", sudo);
 		free (sudo);
 	} else {
 		r_sys_setenv ("GLOBAL", "0");
-		r_sys_setenv ("R2PM_SUDO", "");
+		r_sys_setenv ("SUDO", "");
 	}
 	if (!r2pm_have_packages ()) {
 		R_LOG_ERROR ("Please run r2pm -U to initialize/update the database");
