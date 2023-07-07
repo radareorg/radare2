@@ -347,6 +347,7 @@ struct r_bin_t {
 	int minstrlen;
 	int maxstrlen;
 	int maxsymlen;
+	int limit; // max symbols
 	ut64 maxstrbuf;
 	int rawstr;
 	bool strings_nofp; // move to options struct passed instead of min, dump raw on every getstrings call
