@@ -3621,7 +3621,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETBPREF ("asm.decode", "false", "use code analysis as a disassembler");
 	SETBPREF ("asm.imm.str", "true", "show immediates values as strings");
 	SETBPREF ("asm.imm.trim", "false", "remove all offsets and constants from disassembly");
-	SETBPREF ("asm.indent", "false", "indent disassembly based on reflines depth");
+	SETBPREF ("asm.indent", "false", "indent disassembly based on refline/bb depth (EXPERIMENTAL)");
 	SETI ("asm.indentspace", 2, "how many spaces to indent the code");
 	SETBPREF ("asm.dwarf", "false", "show dwarf comment at disassembly");
 	SETBPREF ("asm.dwarf.abspath", "false", "show absolute path in asm.dwarf");
