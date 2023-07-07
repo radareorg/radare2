@@ -1,6 +1,10 @@
 /* radare - LGPL - Copyright 2019 - pancake */
 
 #include <r_core.h>
+#include <r_vec.h>
+
+R_GENERATE_VEC_IMPL_FOR(AnalRef, RAnalRef);
+
 #define SORT_ADDRESS 0
 #define SORT_NAME 1
 
@@ -67,13 +71,17 @@ static char *print_item(void *_core, void *_item, bool selected) {
 
 static RList *__xrefs(RCore *core, ut64 addr) {
 	RList *r = r_list_newf (free);
-	RListIter *iter;
+	RVecAnalRef *xrefs = r_anal_xrefs_get (core->anal, addr);
+	if (!xrefs) {
+		return r;
+	}
+
 	RAnalRef *ref;
-	RList *xrefs = r_anal_xrefs_get (core->anal, addr);
-	r_list_foreach (xrefs, iter, ref) {
+	R_VEC_FOREACH (xrefs, ref) {
 		if (ref->type != 'C') {
 			continue;
 		}
+
 		RCoreVisualViewGraphItem *item = R_NEW0 (RCoreVisualViewGraphItem);
 		RFlagItem *f = r_flag_get_at (core->flags, ref->addr, 0);
 		item->addr = ref->addr;
@@ -85,22 +93,29 @@ static RList *__xrefs(RCore *core, ut64 addr) {
 		}
 		r_list_append (r, item);
 	}
+
+	RVecAnalRef_free (xrefs, NULL, NULL);
 	return r;
 }
 
 static RList *__refs(RCore *core, ut64 addr) {
 	RList *r = r_list_newf (free);
-	RListIter *iter;
-	RAnalRef *ref;
 	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, addr, 0);
 	if (!fcn) {
 		return r;
 	}
-	RList *refs = r_anal_function_get_refs (fcn);
-	r_list_foreach (refs, iter, ref) {
+
+	RVecAnalRef *refs = r_anal_function_get_refs (fcn);
+	if (!refs) {
+		return r;
+	}
+
+	RAnalRef *ref;
+	R_VEC_FOREACH (refs, ref) {
 		if (ref->type != 'C') {
 			continue;
 		}
+
 		RCoreVisualViewGraphItem *item = R_NEW0 (RCoreVisualViewGraphItem);
 		RFlagItem *f = r_flag_get_at (core->flags, ref->addr, 0);
 		item->addr = ref->addr;
@@ -112,6 +127,8 @@ static RList *__refs(RCore *core, ut64 addr) {
 		}
 		r_list_append (r, item);
 	}
+
+	RVecAnalRef_free (refs, NULL, NULL);
 	return r;
 }
 

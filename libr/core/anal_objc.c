@@ -9,7 +9,9 @@
 #define R_LOG_ORIGIN "anal.objc"
 
 #include <r_core.h>
+#include <r_vec.h>
 
+R_GENERATE_VEC_IMPL_FOR(AnalRef, RAnalRef);
 
 typedef struct {
 	RCore *core;
@@ -297,15 +299,15 @@ static bool objc_find_refs(RCore *core) {
 				break;
 			}
 
-			RList *list = r_anal_xrefs_get (core->anal, selRefVA);
-			if (list) {
-				RListIter *iter;
+			RVecAnalRef *xrefs = r_anal_xrefs_get (core->anal, selRefVA);
+			if (xrefs) {
 				RAnalRef *ref;
-				r_list_foreach (list, iter, ref) {
+				R_VEC_FOREACH (xrefs, ref) {
 					r_anal_xrefs_set (core->anal, ref->addr, funcVA, R_ANAL_REF_TYPE_CODE);
 					total_xrefs++;
 				}
 			}
+			RVecAnalRef_free (xrefs, NULL, NULL);
 		}
 	}
 

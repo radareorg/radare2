@@ -184,8 +184,7 @@ R_API void r_anal_free(RAnal *a) {
 	r_anal_pin_fini (a);
 	r_syscall_free (a->syscall);
 	r_reg_free (a->reg);
-	ht_up_free (a->dict_refs);
-	ht_up_free (a->dict_xrefs);
+	r_anal_xrefs_free (a);
 	r_list_free (a->threads);
 	r_list_free (a->leaddrs);
 	sdb_free (a->sdb);

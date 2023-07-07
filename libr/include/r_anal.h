@@ -401,6 +401,8 @@ typedef struct r_anal_thread_t {
 	RReg *reg;
 } RAnalThread;
 
+typedef struct r_ref_manager_t RefManager;
+
 typedef struct r_anal_t {
 	RArchConfig *config;
 	int lineswidth; // asm.lines.width
@@ -437,8 +439,7 @@ typedef struct r_anal_t {
 	Sdb *sdb_types;
 	Sdb *sdb_fmts;
 	Sdb *sdb_zigns;
-	HtUP *dict_refs;
-	HtUP *dict_xrefs;
+	RefManager *rm;
 	RSpaces zign_spaces;
 	char *zign_path; // dir.zigns
 	PrintfCallback cb_printf;
@@ -623,7 +624,6 @@ typedef enum {
 	R_ANAL_REF_TYPE_JUMP = 'j', // code ref (call)
 	R_ANAL_REF_TYPE_DATA = 'd', // mem ref
 	R_ANAL_REF_TYPE_ICOD = 'i', // indirect code reference
-	R_ANAL_REF_TYPE_STRING = 's', // string ref // R_DEPRECATE
 	R_ANAL_REF_TYPE_STRN = 's', // string ref
 	// perm / direction
 	R_ANAL_REF_TYPE_READ = 4 << 8,
@@ -638,10 +638,12 @@ typedef enum {
 #define R_ANAL_REF_TYPE_MASK(x) r_anal_ref_typemask((x))
 
 typedef struct r_anal_ref_t {
-	ut64 addr;
 	ut64 at;
+	ut64 addr;
 	RAnalRefType type;
 } RAnalRef;
+
+typedef struct r_vec_AnalRef_t RVecAnalRef;
 
 /* represents a reference line from one address (from) to another (to) */
 typedef struct r_anal_refline_t {
@@ -774,7 +776,7 @@ int * (r_anal_compare) (RAnalFunction , RAnalFunction );
 #ifdef R_API
 R_API ut64 r_anal_value_to_ut64(RAnal *anal, RArchValue *val);
 R_API bool r_anal_value_set_ut64(RAnal *anal, RArchValue *val, ut64 num);
-/* --------- */ /* REFACTOR */ /* ---------- */
+/* --------- */ /* R2_590 REFACTOR */ /* ---------- */
 R_API RListRange* r_listrange_new(void);
 R_API void r_listrange_free(RListRange *s);
 R_API void r_listrange_add(RListRange *s, RAnalFunction *f);
@@ -1065,7 +1067,6 @@ R_API bool r_anal_pin_set(RAnal *a, const char *name, const char *cmd);
 typedef bool (* RAnalRefCmp)(RAnalRef *ref, void *data);
 R_API RList *r_anal_ref_list_new(void);
 R_API const char *r_anal_ref_type_tostring(RAnalRefType t);
-R_API ut64 r_anal_xrefs_count(RAnal *anal);
 R_API int r_anal_ref_typemask(int x);
 R_DEPRECATE R_API RAnalRefType r_anal_xrefs_type(char ch);
 
@@ -1073,18 +1074,20 @@ R_API const char *r_anal_ref_perm_tostring(RAnalRef *ref);
 R_API char r_anal_ref_perm_tochar(RAnalRef *ref);
 R_API char r_anal_ref_permchar_tostring(RAnalRef *ref);
 
+R_API bool r_anal_xrefs_init(RAnal *anal);
+R_API void r_anal_xrefs_free(RAnal *anal);
 R_API RAnalRefType r_anal_xrefs_type_from_string(const char *s);
-R_API RList *r_anal_xrefs_get(RAnal *anal, ut64 to);
-R_API RList *r_anal_refs_get(RAnal *anal, ut64 to);
-R_API RList *r_anal_xrefs_get_from(RAnal *anal, ut64 from);
+R_API RVecAnalRef *r_anal_xrefs_get(RAnal *anal, ut64 to);
+R_API RVecAnalRef *r_anal_refs_get(RAnal *anal, ut64 from);
+R_API RVecAnalRef *r_anal_xrefs_get_from(RAnal *anal, ut64 to);
 R_API void r_anal_xrefs_list(RAnal *anal, int rad, const char *arg);
-R_API RList *r_anal_function_get_refs(RAnalFunction *fcn);
-R_API RList *r_anal_function_get_xrefs(RAnalFunction *fcn);
-R_API RList *r_anal_function_get_all_xrefs(RAnalFunction *fcn);
-R_API bool r_anal_xrefs_from(RAnal *anal, RList *list, const char *kind, const RAnalRefType type, ut64 addr);
+R_API ut64 r_anal_xrefs_count(RAnal *anal);
+R_API RVecAnalRef *r_anal_function_get_refs(RAnalFunction *fcn);
+R_API RVecAnalRef *r_anal_function_get_all_xrefs(RAnalFunction *fcn);
+R_API RVecAnalRef *r_anal_function_get_xrefs(RAnalFunction *fcn);
 R_API bool r_anal_xrefs_set(RAnal *anal, ut64 from, ut64 to, const RAnalRefType type);
 R_API bool r_anal_xrefs_deln(RAnal *anal, ut64 from, ut64 to, const RAnalRefType type);
-R_API bool r_anal_xref_del(RAnal *anal, ut64 at, ut64 addr);
+R_API bool r_anal_xref_del(RAnal *anal, ut64 from, ut64 to);
 
 R_API RList *r_anal_get_fcns(RAnal *anal);
 
@@ -1146,8 +1149,6 @@ R_API char *r_anal_function_format_sig(R_NONNULL RAnal *anal, R_NONNULL RAnalFun
 
 
 /* project */
-R_API bool r_anal_xrefs_init(RAnal *anal);
-
 #define R_ANAL_THRESHOLDFCN 0.7F
 #define R_ANAL_THRESHOLDBB 0.7F
 

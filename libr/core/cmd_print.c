@@ -5026,11 +5026,13 @@ static char *__op_refs(RCore *core, RAnalOp *op, int n) {
 	RStrBuf *sb = r_strbuf_new ("");
 	if (n) {
 		// RList *list = r_anal_xrefs_get_from (core->anal, op->addr);
-		RList *list = r_anal_xrefs_get (core->anal, op->addr);
-		RAnalRef *ref;
-		RListIter *iter;
-		r_list_foreach (list, iter, ref) {
-			r_strbuf_appendf (sb, "0x%08"PFMT64x" ", ref->at);
+		RVecAnalRef *xrefs = r_anal_xrefs_get (core->anal, op->addr);
+		if (xrefs) {
+			RAnalRef *ref;
+			R_VEC_FOREACH (xrefs, ref) {
+				r_strbuf_appendf (sb, "0x%08"PFMT64x" ", ref->at);
+			}
+			RVecAnalRef_free (xrefs, NULL, NULL);
 		}
 	} else {
 		if (op->jump != UT64_MAX) {
@@ -5363,9 +5365,6 @@ static bool cmd_pi(RCore *core, const char *input, int len, int l, ut8 *block) {
 		} else if (input[2] == 'j') {
 			r_core_cmdf (core, "pdfj%s", input + 3);
 		} else if (input[2] == 'c') { // "pifc"
-			RListIter *iter;
-			RAnalRef *refi;
-			RList *refs = NULL;
 			PJ *pj = NULL;
 
 			// check for bounds
@@ -5389,16 +5388,15 @@ static bool cmd_pi(RCore *core, const char *input, int len, int l, ut8 *block) {
 				}
 				break;
 			}
+
 			// get all the calls of the function
-			refs = r_core_anal_fcn_get_calls (core, f);
+			RVecAnalRef *refs = r_core_anal_fcn_get_calls (core, f);
 
 			// sanity check
-			if (!r_list_empty (refs)) {
-
+			if (refs && !RVecAnalRef_empty (refs)) {
 				// store current configurations
 				RConfigHold *hc = r_config_hold_new (core->config);
 				r_config_hold (hc, "asm.offset", "asm.comments", "asm.tabs", "asm.bytes", "emu.str", NULL);
-
 
 				// temporarily replace configurations
 				r_config_set_b (core->config, "asm.offset", false);
@@ -5408,7 +5406,8 @@ static bool cmd_pi(RCore *core, const char *input, int len, int l, ut8 *block) {
 				r_config_set_b (core->config, "emu.str", false);
 
 				// iterate over all call references
-				r_list_foreach (refs, iter, refi) {
+				RAnalRef *refi;
+				R_VEC_FOREACH (refs, refi) {
 					if (pj) {
 						RAnalFunction *f = r_anal_get_fcn_in (core->anal, refi->addr,
 								R_ANAL_FCN_TYPE_FCN | R_ANAL_FCN_TYPE_SYM);
@@ -5442,8 +5441,9 @@ static bool cmd_pi(RCore *core, const char *input, int len, int l, ut8 *block) {
 				// restore saved configuration
 				r_config_hold_restore (hc);
 				r_config_hold_free (hc);
-				r_list_free (refs);
 			}
+			RVecAnalRef_free (refs, NULL, NULL);
+
 			// print json object
 			if (pj) {
 				pj_end (pj);

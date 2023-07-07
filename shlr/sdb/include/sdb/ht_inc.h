@@ -90,11 +90,11 @@ typedef struct Ht_(options_t) {
 
 /* Ht is the hashtable structure */
 typedef struct Ht_(t) {
+	HT_(Bucket) *table;  // Actual table.
+	HT_(Options) opt;
 	ut32 size;	  // size of the hash table in buckets.
 	ut32 count;	  // number of stored elements.
-	HT_(Bucket)* table;  // Actual table.
 	ut32 prime_idx;
-	HT_(Options) opt;
 } HtName_(Ht);
 
 // Create a new Ht with the provided Options

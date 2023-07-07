@@ -1,4 +1,4 @@
-NAME=pia20
+NAME=pia20 (1)
 FILE=bins/mach0/BatteryLife
 ARGS=-a arm -b 64
 CMDS=<<EOF
@@ -14,7 +14,7 @@ invalid
 EOF
 RUN
 
-NAME=pia20
+NAME=pia20 (2)
 FILE=bins/mach0/BatteryLife
 ARGS=-a arm -b 64
 CMDS=pia 20
@@ -27,7 +27,7 @@ mov x19, x1
 EOF
 RUN
 
-NAME=pia20
+NAME=pia20 (3)
 FILE=bins/mach0/BatteryLife
 ARGS=-a arm -b 16
 CMDS=pia 20
