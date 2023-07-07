@@ -3066,6 +3066,17 @@ static void print_bb(PJ *pj, const RAnalBlock *b, const RAnalFunction *fcn, cons
 		pj_kn (pj, "opaddr", opaddr);
 		pj_ki (pj, "inputs", inputs);
 		pj_ki (pj, "outputs", outputs);
+		{
+			RColor k = b->color;
+			if (k.r || k.g || k.b) {
+				char *s = r_str_newf ("rgb:%x%x%x",
+						16 * k.r / 255,
+						16 * k.g / 255,
+						16 * k.b / 255);
+				pj_ks (pj, "color", s);
+				free (s);
+			}
+		}
 		pj_ki (pj, "ninstr", b->ninstr);
 		pj_ka (pj, "instrs");
 		{
