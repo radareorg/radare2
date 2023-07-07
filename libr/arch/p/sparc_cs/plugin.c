@@ -245,7 +245,10 @@ performed in big-endian byte order.
 				if (INSCC != SPARC_CC_ICC_N) { // never
 					op->jump = INSOP (1).imm;
 				}
-				if (INSCC != SPARC_CC_ICC_A) { // always
+				if (INSCC == SPARC_CC_ICC_A) { // always
+					op->type = R_ANAL_OP_TYPE_JMP;
+					op->delay = 0;
+				} else {
 					op->fail = addr + 8;
 				}
 				break;
@@ -255,7 +258,10 @@ performed in big-endian byte order.
 				if (INSCC != SPARC_CC_ICC_N) { // never
 					op->jump = INSOP (0).imm;
 				}
-				if (INSCC != SPARC_CC_ICC_A) { // always
+				if (INSCC == SPARC_CC_ICC_A) { // always
+					op->type = R_ANAL_OP_TYPE_JMP;
+					op->delay = 0;
+				} else {
 					op->fail = addr + 8;
 				}
 				break;
