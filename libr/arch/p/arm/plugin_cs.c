@@ -83,6 +83,10 @@ static inline HtUU *ht_it_for_session (RArchSession *as) {
 #define ISSHIFTED(x) (insn->detail->arm.operands[x].shift.type != ARM_SFT_INVALID && insn->detail->arm.operands[x].shift.value != 0)
 #define ISSHIFTED64(x) (insn->detail->arm64.operands[x].shift.type != ARM64_SFT_INVALID && insn->detail->arm64.operands[x].shift.value != 0)
 #define SHIFTTYPE(x) insn->detail->arm.operands[x].shift.type
+#define SHIFTTYPEREG(x) (\
+		SHIFTTYPE(x) == ARM_SFT_ASR_REG || SHIFTTYPE(x) == ARM_SFT_LSL_REG || \
+		SHIFTTYPE(x) == ARM_SFT_LSR_REG || SHIFTTYPE(x) == ARM_SFT_ROR_REG || \
+		SHIFTTYPE(x) == ARM_SFT_RRX_REG)
 #define SHIFTVALUE(x) insn->detail->arm.operands[x].shift.value
 
 #define ISWRITEBACK32() insn->detail->arm.writeback
@@ -991,11 +995,15 @@ static const char *arg(RArchSession *as, csh *handle, cs_insn *insn, char *buf, 
 	switch (insn->detail->arm.operands[n].type) {
 	case ARM_OP_REG:
 		if (ISSHIFTED (n)) {
-			snprintf (buf, buf_sz, "%u,%s,%s",
-			LSHIFT2 (n),
-			r_str_getf (cs_reg_name (*handle,
-				insn->detail->arm.operands[n].reg)),
-			DECODE_SHIFT (n));
+			if (SHIFTTYPEREG (n)) {
+				snprintf (buf, buf_sz, "%s,%s,%s",
+						cs_reg_name(*handle, LSHIFT2(n)),
+						REG (n), DECODE_SHIFT (n));
+			} else {
+				snprintf (buf, buf_sz, "%u,%s,%s",
+						LSHIFT2 (n),
+						REG (n), DECODE_SHIFT (n));
+			}
 		} else {
 			snprintf (buf, buf_sz, "%s",
 			r_str_getf (cs_reg_name (*handle,
@@ -2836,11 +2844,11 @@ r6,r5,r4,3,sp,[*],12,sp,+=
 			}
 		}
 		if (OPCOUNT() == 3) { // e.g. 'str r2, [r3], 4
-			if (ISIMM(2)) { // e.g. 'str r2, [r3], 4
+			if (ISIMM (2) && str_ldr_bytes != 8) { // e.g. 'str r2, [r3], 4
 				r_strbuf_appendf (&op->esil, "%s,%s,0xffffffff,&,=[%d],%d,%s,+=",
 					       REG(0), MEMBASE(1), str_ldr_bytes, IMM(2), MEMBASE(1));
-			}
-			if (ISREG(2)) { // e.g. 'str r2, [r3], r1
+			} else if (str_ldr_bytes != 8) {
+				// if (ISREG(2)) // e.g. 'str r2, [r3], r1
 				if (ISSHIFTED(2)) { // e.g. 'str r2, [r3], r1, lsl 4'
 					switch (SHIFTTYPE(2)) {
 					case ARM_SFT_LSL:
@@ -2886,18 +2894,19 @@ r6,r5,r4,3,sp,[*],12,sp,+=
 					if (ISSHIFTED (2)) {
 						// it seems strd does not support SHIFT which is good, but have a check nonetheless
 					} else {
-						r_strbuf_appendf (&op->esil, "%s,%s,%s,+,0xffffffff,&,=[4],%s,4,%s,+,%s,+,0xffffffff,&,=[4]",
-								  REG(0), MEMINDEX(2), MEMBASE(2), REG(1), MEMINDEX(2), MEMBASE(2));
+						r_strbuf_appendf (&op->esil, "%s,%s,+,0xffffffff,&,=[4],%s,4,%s,+,0xffffffff,&,=[4]",
+								  REG(0), MEMBASE(2), REG(1), MEMBASE(2));
 						if (insn->detail->arm.writeback) {
-							r_strbuf_appendf (&op->esil, ",%s,%s,+,%s,=",
-									  MEMINDEX(2), MEMBASE(2), MEMBASE(2));
+							const char sign = ISMEMINDEXSUB(2) ? '-' : '+';
+							r_strbuf_appendf (&op->esil, ",%s,%s,%c=",
+									  MEMINDEX(2), MEMBASE(2), sign);
 						}
 					}
 				}
 			}
 		}
 		if (OPCOUNT() == 4) { // e.g. 'strd r2, r3, [r4], 4' or 'strd r2, r3, [r4], r5'
-			if (ISIMM(3)) { // e.g. 'strd r2, r3, [r4], 4'
+			if (ISIMM (3)) { // e.g. 'strd r2, r3, [r4], 4'
 				r_strbuf_appendf (&op->esil, "%s,%s,0xffffffff,&,=[%d],%s,4,%s,+,0xffffffff,&,=[%d],%d,%s,+=,",
 					       REG(0), MEMBASE(2), str_ldr_bytes, REG(1), MEMBASE(2), str_ldr_bytes, IMM(3), MEMBASE(2));
 			}
