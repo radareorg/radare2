@@ -4313,6 +4313,7 @@ R_API int r_core_anal_search_xrefs(RCore *core, ut64 from, ut64 to, PJ *pj, int 
 	st64 asm_sub_varmin = r_config_get_i (core->config, "asm.sub.varmin");
 	int maxopsz = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_MAX_OP_SIZE);
 	int minopsz = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_MIN_OP_SIZE);
+	int codealign = r_anal_archinfo (core->anal, R_ARCH_INFO_CODE_ALIGN);
 	if (maxopsz < 1) {
 		maxopsz = 4;
 	}
@@ -4344,13 +4345,13 @@ R_API int r_core_anal_search_xrefs(RCore *core, ut64 from, ut64 to, PJ *pj, int 
 		(void)r_io_read_at (core->io, at, buf, bsz);
 		memset (block, -1, bsz);
 		if (!memcmp (buf, block, bsz)) {
-		//	R_LOG_ERROR ("skipping uninitialized block ");
+			R_LOG_ERROR ("skipping uninitialized block ");
 			at += ret;
 			continue;
 		}
 		memset (block, 0, bsz);
 		if (!memcmp (buf, block, bsz)) {
-		//	R_LOG_ERROR ("skipping uninitialized block");
+			R_LOG_ERROR ("skipping uninitialized block");
 			at += ret;
 			continue;
 		}
@@ -4359,7 +4360,14 @@ R_API int r_core_anal_search_xrefs(RCore *core, ut64 from, ut64 to, PJ *pj, int 
 			r_anal_op_fini (&op);
 			ret = r_anal_op (core->anal, &op, at + i, buf + i, bsz - i, R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_HINT);
 			if (ret < 1) {
+				R_LOG_DEBUG ("aar invalid op %llx %d", at + i, codealign);
 				i += minopsz;
+				if (codealign > 1) {
+					int d = (at + i) % codealign;
+					if (d) {
+						i += d;
+					}
+				}
 				r_anal_op_fini (&op);
 				continue;
 			}

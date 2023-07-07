@@ -48,3 +48,126 @@ EXPECT=<<EOF
             0x00008094      .dword 0x0006bf66
 EOF
 RUN
+
+NAME=analysis macho test
+FILE=bins/mach0/ls-m1
+ARGS=-a arm -b 64
+CMDS=<<EOF
+aa
+pd 4
+EOF
+EXPECT=<<EOF
+            ;-- entry0:
+            ;-- func.100003a90:
+/ 2656: int main (int argc, char **argv); // noreturn
+|           ; arg int argc @ x0
+|           ; arg char **argv @ x1
+|           ; var int64_t var_8h @ sp+0x8
+|           ; var int64_t var_14h @ sp+0x14
+|           ; var int64_t var_18h @ sp+0x18
+|           ; var int64_t var_20h @ sp+0x20
+|           ; var int64_t var_220h @ sp+0x220
+|           ; var int64_t var_50h @ sp+0x690
+|           0x100003a90      7f2303d5       pacibsp
+|           0x100003a94      fc6fbaa9       stp x28, x27, [sp, -0x60]!
+|           0x100003a98      fa6701a9       stp x26, x25, [sp, 0x10]
+|           0x100003a9c      f85f02a9       stp x24, x23, [sp, 0x20]
+EOF
+RUN
+
+NAME=analysis macho test
+FILE=bins/mach0/hello-objc
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+aar
+axq
+EOF
+EXPECT=<<EOF
+0x1000000b2 -> 0x100000119  CODE:--x
+0x1000000b4 -> 0x10000012a  CODE:--x
+0x100000102 -> 0x100000178  CODE:--x
+0x100000104 -> 0x100000168  CODE:--x
+0x100000106 -> 0x100000108  CODE:--x
+0x100000152 -> 0x1000001c8  CODE:--x
+0x100000154 -> 0x1000001b8  CODE:--x
+0x10000015c -> 0x10000015e  CODE:--x
+0x1000001a3 -> 0x100000219  CODE:--x
+0x1000001a5 -> 0x100000210  CODE:--x
+0x1000001f8 -> 0x100000263  CODE:--x
+0x10000024a -> 0x1000002bf  CODE:--x
+0x100000260 -> 0x100000271  CODE:--x
+0x100000298 -> 0x100000303  CODE:--x
+0x10000029b -> 0x100000316  CODE:--x
+0x10000029d -> 0x100000304  CODE:--x
+0x1000002b0 -> 0x1000002c1  CODE:--x
+0x1000002e2 -> 0x100000352  CODE:--x
+0x1000002e4 -> 0x10000034f  CODE:--x
+0x100000350 -> 0x100000361  CODE:--x
+0x100000360 -> 0x100000371  CODE:--x
+0x1000003cd -> 0x100000448  CODE:--x
+0x1000003d4 -> 0x10000044a  CODE:--x
+0x1000003d6 -> 0x1000003d8  CODE:--x
+0x10000041d -> 0x100000498  CODE:--x
+0x100000424 -> 0x10000049a  CODE:--x
+0x100000426 -> 0x100000428  CODE:--x
+0x100000472 -> 0x1000004e7  CODE:--x
+0x100000512 -> 0x100000588  CODE:--x
+0x10000055f -> 0x1000005c6  CODE:--x
+0x100000562 -> 0x1000005c9  CODE:--x
+0x100000564 -> 0x100000567  CODE:--x
+0x1000005b2 -> 0x100000627  CODE:--x
+0x1000005b4 -> 0x10000061b  CODE:--x
+0x1000005b6 -> 0x100000618  CODE:--x
+0x1000005c8 -> 0x1000005db  CODE:--x
+0x1000005d8 -> 0x1000005eb  CODE:--x
+0x100000618 -> 0x10000062b  CODE:--x
+0x100000628 -> 0x10000063b  CODE:--x
+0x100000651 -> 0x1000006b4  CODE:--x
+0x100000785 -> 0x1000007fa  CODE:--x
+0x100000787 -> 0x1000007b8  CODE:--x
+0x100000801 -> 0x100000876  CODE:--x
+0x100000803 -> 0x100000834  CODE:--x
+0x100000810 -> 0x100000882  CODE:--x
+0x100000839 -> 0x1000008ae  CODE:--x
+0x10000083b -> 0x10000086c  CODE:--x
+0x100000845 -> 0x1000008ba  CODE:--x
+0x100000847 -> 0x1000008ae  CODE:--x
+0x10000084a -> 0x1000008bc  CODE:--x
+0x100000db4 -> 0x100001150  DATA:r--
+0x100000dc6 -> 0x100000eee  CALL:--x
+0x100000dcb -> 0x100000f20  DATA:r--
+0x100000dd7 -> 0x100000ef4  CALL:--x
+0x100000e00 -> 0x100001178  DATA:r--
+0x100000e34 -> 0x100001178  DATA:r--
+0x100000e58 -> 0x100001170  DATA:r--
+0x100000e5f -> 0x100001158  DATA:r--
+0x100000e69 -> 0x100000eee  CALL:--x
+0x100000e6e -> 0x100000f45  DATA:r--
+0x100000e7d -> 0x100001160  DATA:r--
+0x100000e87 -> 0x100000eee  CALL:--x
+0x100000e90 -> 0x100001168  DATA:r--
+0x100000e9a -> 0x100000eee  CALL:--x
+0x100000e9f -> 0x100001170  DATA:r--
+0x100000ea6 -> 0x100001158  DATA:r--
+0x100000eb0 -> 0x100000eee  CALL:--x
+0x100000eb5 -> 0x100000f4e  DATA:r--
+0x100000ec4 -> 0x100001160  DATA:r--
+0x100000ece -> 0x100000eee  CALL:--x
+0x100000ed7 -> 0x100001168  DATA:r--
+0x100000ee1 -> 0x100000eee  CALL:--x
+0x100000eee -> 0x100001010  CODE:--x
+0x100000ef4 -> 0x100001018  CODE:--x
+0x100000efc -> 0x100001008  DATA:r--
+0x100000f05 -> 0x100001000  CODE:--x
+0x100000f11 -> 0x100000efc  CODE:--x
+0x100000f1b -> 0x100000efc  CODE:--x
+0x100000f28 -> 0x100000f4a  CODE:--x
+0x100000f4c -> 0x100000f4e  CODE:--x
+0x100000f5e -> 0x100000fa8  CODE:--x
+0x100000f67 -> 0x100000fb7  CODE:--x
+0x100000f6f -> 0x100000f72  CODE:--x
+0x100000f73 -> 0x100000fe9  CODE:--x
+0x100000f89 -> 0x100000fbd  CODE:--x
+0x100000fed -> 0x100000fff  CODE:--x
+EOF
+RUN
