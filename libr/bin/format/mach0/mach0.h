@@ -185,6 +185,7 @@ struct MACH0_(obj_t) {
 	RList *reloc_fixups;
 	ut8 *internal_buffer;
 	int internal_buffer_size;
+	int limit; // user defined
 };
 
 typedef struct {

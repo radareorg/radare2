@@ -73,13 +73,13 @@ static void destroy(RBinFile *bf) {
 
 static ut64 baddr(RBinFile *bf) {
 	r_return_val_if_fail (bf && bf->o && bf->o->bin_obj, UT64_MAX);
-	struct MACH0_(obj_t) *bin = bf->o->bin_obj;
-	return MACH0_(get_baddr)(bin);
+	struct MACH0_(obj_t) *mo = bf->o->bin_obj;
+	return MACH0_(get_baddr)(mo);
 }
 
 static RList *sections(RBinFile *bf) {
-	struct MACH0_(obj_t) *bin = bf->o->bin_obj;
-	return MACH0_(get_segments) (bf, bin);
+	struct MACH0_(obj_t) *mo = bf->o->bin_obj;
+	return MACH0_(get_segments) (bf, mo);
 }
 
 static RBinAddr *newEntry(ut64 hpaddr, ut64 paddr, int type, int bits) {
