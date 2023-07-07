@@ -197,11 +197,11 @@ R_API bool r_arch_encode(RArch *a, RAnalOp *op, RArchEncodeMask mask);
 //R_API void r_arch_esil_fini(RArch *arch, const char *dname, REsil *esil);
 
 R_API RArchSession *r_arch_session(RArch *arch, RArchConfig *cfg, RArchPlugin *ap);
-R_API bool r_arch_session_decode(RArchSession *ai, RAnalOp *op, RArchDecodeMask mask);
-R_API bool r_arch_session_encode(RArchSession *ai, RAnalOp *op, RArchEncodeMask mask);
-R_API bool r_arch_session_patch(RArchSession *ai, RAnalOp *op, RArchModifyMask mask);
-R_API int r_arch_session_info(RArchSession *ai, int q);
-R_API RList *r_arch_session_preludes(RArchSession *ai);
+R_API bool r_arch_session_decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask);
+R_API bool r_arch_session_encode(RArchSession *as, RAnalOp *op, RArchEncodeMask mask);
+R_API bool r_arch_session_patch(RArchSession *as, RAnalOp *op, RArchModifyMask mask);
+R_API int r_arch_session_info(RArchSession *as, int q);
+R_API RList *r_arch_session_preludes(RArchSession *as);
 
 // arch.c
 R_API RArch *r_arch_new(void);

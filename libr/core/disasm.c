@@ -2038,6 +2038,9 @@ static void ds_show_functions(RDisasmState *ds) {
 		char *sig = r_anal_function_format_sig (core->anal, f, fcn_name, &vars_cache, COLOR (ds, color_fname), COLOR_RESET (ds));
 		if (sig) {
 			r_cons_print (sig);
+			if (f->is_noreturn) {
+				r_cons_printf (" // noreturn");
+			}
 			free (sig);
 		}
 		ds_newline (ds);
