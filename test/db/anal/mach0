@@ -48,3 +48,28 @@ EXPECT=<<EOF
             0x00008094      .dword 0x0006bf66
 EOF
 RUN
+
+NAME=analysis macho test
+FILE=bins/mach0/ls-m1
+CMDS=<<EOF
+aa
+pd 4
+EOF
+EXPECT=<<EOF
+            ;-- entry0:
+            ;-- func.100003a90:
+/ 2656: int main (int argc, char **argv); // noreturn
+|           ; arg int argc @ x0
+|           ; arg char **argv @ x1
+|           ; var int64_t var_8h @ sp+0x8
+|           ; var int64_t var_14h @ sp+0x14
+|           ; var int64_t var_18h @ sp+0x18
+|           ; var int64_t var_20h @ sp+0x20
+|           ; var int64_t var_220h @ sp+0x220
+|           ; var int64_t var_50h @ sp+0x690
+|           0x100003a90      7f2303d5       pacibsp
+|           0x100003a94      fc6fbaa9       stp x28, x27, [sp, -0x60]!
+|           0x100003a98      fa6701a9       stp x26, x25, [sp, 0x10]
+|           0x100003a9c      f85f02a9       stp x24, x23, [sp, 0x20]
+EOF
+RUN

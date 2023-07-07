@@ -221,7 +221,8 @@ static RCoreHelpMessage help_msg_ai = {
 
 static RCoreHelpMessage help_msg_aar = {
 	"Usage:", "aar", "[j*] [sz] # search and analyze xrefs",
-	"aar", " [sz]", "analyze xrefs in current section or sz bytes of code",
+	"aar", "", "analyze xrefs in current section ",
+	"aar", " [sz]", "analyze xrefs starting in current offset until sz bytes are consumed",
 	"aarr", "", "analyze all function reference graph to find more functions (EXPERIMENTAL)",
 	"aar*", " [sz]", "list found xrefs in radare commands format",
 	"aarj", " [sz]", "list found xrefs in JSON format",
