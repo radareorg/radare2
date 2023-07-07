@@ -1066,7 +1066,7 @@ static const char *get_reg_at(RAnalFunction *fcn, st64 delta, ut64 addr) {
 static void ds_build_op_str(RDisasmState *ds, bool print_color) {
 	RCore *core = ds->core;
 	const bool be = R_ARCH_CONFIG_IS_BIG_ENDIAN (ds->core->rasm->config);
-	if (ds->show_trace && ds->show_trace_color) {
+	if (ds->show_trace_color) {
 		bool extraspace = true;
 		if (ds->fcn) {
 			RAnalBlock *bb = r_anal_function_bbget_in (ds->core->anal, ds->fcn, ds->at);
