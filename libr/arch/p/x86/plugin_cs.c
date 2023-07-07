@@ -419,7 +419,7 @@ static char *get64from32(const char *s) {
 			return r_str_newf ("r%d", atoi (s + 1));
 		}
 	}
-	return NULL; // strdup (s);
+	return NULL; 
 }
 
 static void anop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh handle, cs_insn *insn) {
