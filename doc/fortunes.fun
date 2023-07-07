@@ -329,3 +329,4 @@ Updates available
 This binary has not been analyzed. Would you like to analyze it now?
 The software is up to date. Just kidding, git pull again
 Caps lock is on.
+$10 or mistery box?
