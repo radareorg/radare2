@@ -4282,7 +4282,7 @@ R_API int r_core_anal_search_xrefs(RCore *core, ut64 from, ut64 to, PJ *pj, int 
 	bool cfg_anal_strings = r_config_get_b (core->config, "anal.strings");
 	ut64 at;
 	int count = 0;
-	int bsz = 8096;
+	int bsz = 4 * 4096;
 	RAnalOp op = {0};
 
 	if (from == to) {
@@ -4345,13 +4345,13 @@ R_API int r_core_anal_search_xrefs(RCore *core, ut64 from, ut64 to, PJ *pj, int 
 		(void)r_io_read_at (core->io, at, buf, bsz);
 		memset (block, -1, bsz);
 		if (!memcmp (buf, block, bsz)) {
-			R_LOG_ERROR ("skipping uninitialized block ");
+			R_LOG_ERROR ("skipping -1 uninitialized block 0x%08"PFMT64x, ret);
 			at += ret;
 			continue;
 		}
 		memset (block, 0, bsz);
 		if (!memcmp (buf, block, bsz)) {
-			R_LOG_ERROR ("skipping uninitialized block");
+			R_LOG_ERROR ("skipping 0 uninitialized block at 0x%08"PFMT64x, ret);
 			at += ret;
 			continue;
 		}
