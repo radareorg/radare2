@@ -3700,11 +3700,23 @@ static void ds_print_bytes(RDisasmState *ds) {
 
 static void ds_print_indent(RDisasmState *ds) {
 	if (ds->show_indent) {
+		int num = 0;
+		RAnalBlock *bb = ds->fcn? r_anal_function_bbget_in (ds->core->anal, ds->fcn, ds->at): NULL;
+		if (bb) {
+			// find how many bbs since start need to be traversed to reach here
+			char *res = r_core_cmd_strf (ds->core, "abp 0x%08"PFMT64x" @ $F~?", bb->addr);
+			if (res) {
+				num = atoi (res);
+				free (res);
+			}
+		} else {
+			num = ds->indent_level;
+		}
 		char indent[128];
-		int num = ds->indent_level * ds->indent_space;
 		if (num < 0) {
 			num = 0;
 		}
+		num *= ds->indent_space;
 		if (num >= sizeof (indent)) {
 			num = sizeof (indent) - 1;
 		}
