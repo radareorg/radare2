@@ -3,6 +3,7 @@
 #define INTERACTIVE_MAX_REP 1024
 
 #include <r_core.h>
+#include <r_vec.h>
 #if R2__UNIX__
 #include <sys/utsname.h>
 #ifndef __wasi__
@@ -29,6 +30,8 @@ static int bb_cmpaddr(const void *_a, const void *_b) {
 }
 
 static void cmd_debug_reg(RCore *core, const char *str);
+
+R_GENERATE_VEC_IMPL_FOR(AnalRef, RAnalRef);
 
 #include "cmd_quit.c"
 #include "cmd_hash.c"

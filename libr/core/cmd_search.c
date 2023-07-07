@@ -2201,48 +2201,48 @@ beach:
 
 static void do_ref_search(RCore *core, ut64 addr,ut64 from, ut64 to, struct search_parameters *param) {
 	const int size = 12;
-	bool be = R_ARCH_CONFIG_IS_BIG_ENDIAN (core->print->config);
+	const bool be = R_ARCH_CONFIG_IS_BIG_ENDIAN (core->print->config);
 	char str[512];
-	RAnalFunction *fcn;
-	RAnalRef *ref;
-	RListIter *iter;
 	ut8 buf[12];
-	RList *list = r_anal_xrefs_get (core->anal, addr);
-	if (list) {
-		r_list_foreach (list, iter, ref) {
-			RAnalOp asmop;
-			r_io_read_at (core->io, ref->addr, buf, size);
-			r_asm_set_pc (core->rasm, ref->addr);
-			r_asm_disassemble (core->rasm, &asmop, buf, size);
-			fcn = r_anal_get_fcn_in (core->anal, ref->addr, 0);
-			RAnalHint *hint = r_anal_hint_get (core->anal, ref->addr);
-			r_parse_filter (core->parser, ref->addr, core->flags, hint, asmop.mnemonic, str, sizeof (str), be);
-			r_anal_hint_free (hint);
-			const char *comment = r_meta_get_string (core->anal, R_META_TYPE_COMMENT, ref->addr);
-			char *print_comment = NULL;
-			const char *nl = comment ? strchr (comment, '\n') : NULL;
-			if (nl) { // display only until the first newline
-				comment = print_comment = r_str_ndup (comment, nl - comment);
-			}
-			char *buf_fcn = comment
-				? r_str_newf ("%s; %s", fcn ?  fcn->name : "(nofunc)", comment)
-				: r_str_newf ("%s", fcn ? fcn->name : "(nofunc)");
-			free (print_comment);
-			if (from <= ref->addr && to >= ref->addr) {
-				r_cons_printf ("%s 0x%" PFMT64x " [%s] %s\n",
-						buf_fcn, ref->addr, r_anal_ref_type_tostring (ref->type), str);
-				if (*param->cmd_hit) {
-					ut64 here = core->offset;
-					r_core_seek (core, ref->addr, true);
-					r_core_cmd (core, param->cmd_hit, 0);
-					r_core_seek (core, here, true);
-				}
-			}
-			free (buf_fcn);
-			r_anal_op_fini (&asmop);
-		}
+	RVecAnalRef *xrefs = r_anal_xrefs_get (core->anal, addr);
+	if (!xrefs) {
+		return;
 	}
-	r_list_free (list);
+
+	RAnalRef *ref;
+	R_VEC_FOREACH (xrefs, ref) {
+		RAnalOp asmop;
+		r_io_read_at (core->io, ref->addr, buf, size);
+		r_asm_set_pc (core->rasm, ref->addr);
+		r_asm_disassemble (core->rasm, &asmop, buf, size);
+		RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, ref->addr, 0);
+		RAnalHint *hint = r_anal_hint_get (core->anal, ref->addr);
+		r_parse_filter (core->parser, ref->addr, core->flags, hint, asmop.mnemonic, str, sizeof (str), be);
+		r_anal_hint_free (hint);
+		const char *comment = r_meta_get_string (core->anal, R_META_TYPE_COMMENT, ref->addr);
+		char *print_comment = NULL;
+		const char *nl = comment ? strchr (comment, '\n') : NULL;
+		if (nl) { // display only until the first newline
+			comment = print_comment = r_str_ndup (comment, nl - comment);
+		}
+		char *buf_fcn = comment
+			? r_str_newf ("%s; %s", fcn ?  fcn->name : "(nofunc)", comment)
+			: r_str_newf ("%s", fcn ? fcn->name : "(nofunc)");
+		free (print_comment);
+		if (from <= ref->addr && to >= ref->addr) {
+			r_cons_printf ("%s 0x%" PFMT64x " [%s] %s\n",
+					buf_fcn, ref->addr, r_anal_ref_type_tostring (ref->type), str);
+			if (*param->cmd_hit) {
+				ut64 here = core->offset;
+				r_core_seek (core, ref->addr, true);
+				r_core_cmd (core, param->cmd_hit, 0);
+				r_core_seek (core, here, true);
+			}
+		}
+		free (buf_fcn);
+		r_anal_op_fini (&asmop);
+	}
+	RVecAnalRef_free (xrefs, NULL, NULL);
 }
 
 static void cmd_search_aF(RCore *core, const char *input) {

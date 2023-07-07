@@ -5,6 +5,7 @@
 #define JMPTBL_MAXSZ 512
 
 static void apply_case(RAnal *anal, RAnalBlock *block, ut64 switch_addr, ut64 offset_sz, ut64 case_addr, ut64 id, ut64 case_addr_loc) {
+	// eprintf("case!\n");
 	// eprintf ("** apply_case: 0x%"PFMT64x " from 0x%"PFMT64x "\n", case_addr, case_addr_loc);
 	r_meta_set_data_at (anal, case_addr_loc, offset_sz);
 	r_anal_hint_set_immbase (anal, case_addr_loc, 10);

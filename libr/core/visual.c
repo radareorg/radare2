@@ -1,6 +1,9 @@
 /* radare - LGPL - Copyright 2009-2023 - pancake */
 
 #include <r_core.h>
+#include <r_vec.h>
+
+R_GENERATE_VEC_IMPL_FOR(AnalRef, RAnalRef);
 
 #define NPF 5
 #define PIDX (R_ABS (core->visual.printidx % NPF))
@@ -1376,25 +1379,28 @@ static void add_ref(RCore *core) {
 	free (fn);
 }
 
-static bool delete_ref(RCore *core, RList *xrefs, int choice, int xref) {
+static bool delete_ref(RCore *core, RVecAnalRef *xrefs, int choice, int xref) {
 	if (!xrefs) {
-		return 0;
+		return false;
 	}
-	RAnalRef *refi = r_list_get_n (xrefs, choice);
+
+	RAnalRef *refi = RVecAnalRef_at (xrefs, choice);
 	if (refi) {
 		if (core->print->cur_enabled) {
 			core->print->cur = 0;
 		}
 		return r_anal_xref_del (core->anal, refi->addr, refi->at);
 	}
+
 	return false;
 }
 
-static int follow_ref(RCore *core, RList *xrefs, int choice, int xref) {
+static int follow_ref(RCore *core, RVecAnalRef *xrefs, int choice, int xref) {
 	if (!xrefs) {
 		return 0;
 	}
-	RAnalRef *refi = r_list_get_n (xrefs, choice);
+
+	RAnalRef *refi = RVecAnalRef_at (xrefs, choice);
 	if (refi) {
 		if (core->print->cur_enabled) {
 			core->print->cur = 0;
@@ -1404,6 +1410,7 @@ static int follow_ref(RCore *core, RList *xrefs, int choice, int xref) {
 		r_core_seek (core, addr, true);
 		return 1;
 	}
+
 	return 0;
 }
 
@@ -1428,9 +1435,8 @@ R_API int r_core_visual_refs(RCore *core, bool xref, bool fcnInsteadOfAddr) {
 	int ret = 0;
 	char ch;
 	int count = 0;
-	RList *xrefs = NULL;
+	RVecAnalRef *xrefs = NULL;
 	RAnalRef *refi;
-	RListIter *iter;
 	int skip = 0;
 	int idx = 0;
 	char cstr[32];
@@ -1441,7 +1447,7 @@ R_API int r_core_visual_refs(RCore *core, bool xref, bool fcnInsteadOfAddr) {
 		addr += core->print->cur;
 	}
 repeat:
-	r_list_free (xrefs);
+	RVecAnalRef_free (xrefs, NULL, NULL);
 	if (xrefsMode) {
 		RAnalFunction *fun = r_anal_get_fcn_in (core->anal, addr, R_ANAL_FCN_TYPE_NULL);
 		if (fun) {
@@ -1471,8 +1477,8 @@ repeat:
 				xrefsMode? "fcn.": "addr.", xref ? "x": "", address);
 		free (address);
 	}
-	if (!xrefs || r_list_empty (xrefs)) {
-		r_list_free (xrefs);
+	if (!xrefs || RVecAnalRef_empty (xrefs)) {
+		RVecAnalRef_free (xrefs, NULL, NULL);
 		xrefs = NULL;
 		r_cons_printf ("\n\n(no %srefs)\n", xref ? "x": "");
 	} else {
@@ -1488,14 +1494,17 @@ repeat:
 		rows -= 4;
 		idx = 0;
 		ut64 curat = UT64_MAX;
-		r_list_foreach (xrefs, iter, refi) {
+		const ut64 num_xrefs = RVecAnalRef_length (xrefs);
+		R_VEC_FOREACH (xrefs, refi) {
 			if (idx - skip > maxcount) {
 				r_cons_printf ("...");
 				break;
 			}
-			if (!iter->n && idx < skip) {
+
+			if (idx == num_xrefs - 1 && idx < skip) {
 				skip = idx;
 			}
+
 			if (idx >= skip) {
 				if (count > maxcount) {
 					strcpy (cstr, "?");
@@ -1690,7 +1699,7 @@ repeat:
 		}
 		break;
 	}
-	r_list_free (xrefs);
+	RVecAnalRef_free (xrefs, NULL, NULL);
 
 	return ret;
 }

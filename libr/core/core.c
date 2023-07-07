@@ -3,6 +3,7 @@
 #define R_LOG_ORIGIN "core"
 
 #include <r_core.h>
+#include <r_vec.h>
 #if R2__UNIX__
 #include <signal.h>
 #endif
@@ -10,6 +11,8 @@
 #define DB core->sdb
 
 R_LIB_VERSION (r_core);
+
+R_GENERATE_VEC_IMPL_FOR(AnalRef, RAnalRef);
 
 static ut64 letter_divs[R_CORE_ASMQJMPS_LEN_LETTERS - 1] = {
 	R_CORE_ASMQJMPS_LETTERS * R_CORE_ASMQJMPS_LETTERS * R_CORE_ASMQJMPS_LETTERS * R_CORE_ASMQJMPS_LETTERS,
@@ -334,26 +337,28 @@ R_API RCore *r_core_cast(void *p) {
 
 static ut64 getref(RCore *core, int n, char t, int type) {
 	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, 0);
-	RListIter *iter;
-	RAnalRef *r;
-	int i = 0;
 	if (!fcn) {
 		return UT64_MAX;
 	}
-	RList *list = (t == 'r')
+
+	RVecAnalRef *anal_refs = (t == 'r')
 		? r_anal_function_get_refs (fcn)
 		: r_anal_function_get_xrefs (fcn);
-	r_list_foreach (list, iter, r) {
-		if (r->type == type) {
-			if (i == n) {
-				ut64 addr = r->addr;
-				r_list_free (list);
-				return addr;
+	int i = 0;
+	if (anal_refs) {
+		RAnalRef *r;
+		R_VEC_FOREACH (anal_refs, r) {
+			if (r->type == type) {
+				if (i == n) {
+					ut64 addr = r->addr;
+					RVecAnalRef_free (anal_refs, NULL, NULL);
+					return addr;
+				}
+				i++;
 			}
-			i++;
 		}
 	}
-	r_list_free (list);
+	RVecAnalRef_free (anal_refs, NULL, NULL);
 	return UT64_MAX;
 }
 

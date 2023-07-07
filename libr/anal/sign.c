@@ -1,11 +1,14 @@
 /* radare - LGPL - Copyright 2009-2023 - pancake, nibble */
 
 #include <r_core.h>
+#include <r_vec.h>
 
 R_LIB_VERSION (r_sign);
 
 #define SIGN_DIFF_MATCH_BYTES_THRESHOLD 1.0
 #define SIGN_DIFF_MATCH_GRAPH_THRESHOLD 1.0
+
+R_GENERATE_VEC_IMPL_FOR(AnalRef, RAnalRef);
 
 const char *getRealRef(RCore *core, ut64 off) {
 	RFlagItem *item;
@@ -35,7 +38,6 @@ int list_str_cmp (const void *a, const void *b) {
 }
 
 R_API RList *r_sign_fcn_xrefs(RAnal *a, RAnalFunction *fcn) {
-	RListIter *iter = NULL;
 	RAnalRef *refi = NULL;
 
 	r_return_val_if_fail (a && fcn, NULL);
@@ -47,9 +49,13 @@ R_API RList *r_sign_fcn_xrefs(RAnal *a, RAnalFunction *fcn) {
 	}
 
 	RList *ret = r_list_newf ((RListFree) free);
-	RList *xrefs = r_anal_function_get_xrefs (fcn);
-	r_list_foreach (xrefs, iter, refi) {
-		int rt = R_ANAL_REF_TYPE_MASK (refi->type);
+	RVecAnalRef *xrefs = r_anal_function_get_xrefs (fcn);
+	if (!xrefs) {
+		return ret;
+	}
+
+	R_VEC_FOREACH (xrefs, refi) {
+		RAnalRefType rt = R_ANAL_REF_TYPE_MASK (refi->type);
 		if (rt == R_ANAL_REF_TYPE_CODE || rt == R_ANAL_REF_TYPE_CALL) {
 			const char *flag = getRealRef (core, refi->addr);
 			if (flag) {
@@ -57,12 +63,11 @@ R_API RList *r_sign_fcn_xrefs(RAnal *a, RAnalFunction *fcn) {
 			}
 		}
 	}
-	r_list_free (xrefs);
+	RVecAnalRef_free (xrefs, NULL, NULL);
 	return ret;
 }
 
 R_API RList *r_sign_fcn_refs(RAnal *a, RAnalFunction *fcn) {
-	RListIter *iter = NULL;
 	RAnalRef *refi = NULL;
 
 	r_return_val_if_fail (a && fcn, NULL);
@@ -74,9 +79,13 @@ R_API RList *r_sign_fcn_refs(RAnal *a, RAnalFunction *fcn) {
 	}
 
 	RList *ret = r_list_newf ((RListFree) free);
-	RList *refs = r_anal_function_get_refs (fcn);
-	r_list_foreach (refs, iter, refi) {
-		int rt = R_ANAL_REF_TYPE_MASK (refi->type);
+	RVecAnalRef *refs = r_anal_function_get_refs (fcn);
+	if (!refs) {
+		return ret;
+	}
+
+	R_VEC_FOREACH (refs, refi) {
+		RAnalRefType rt = R_ANAL_REF_TYPE_MASK (refi->type);
 		if (rt == R_ANAL_REF_TYPE_CODE || rt == R_ANAL_REF_TYPE_CALL) {
 			const char *flag = getRealRef (core, refi->addr);
 			if (flag) {
@@ -84,7 +93,7 @@ R_API RList *r_sign_fcn_refs(RAnal *a, RAnalFunction *fcn) {
 			}
 		}
 	}
-	r_list_free (refs);
+	RVecAnalRef_free (refs, NULL, NULL);
 	return ret;
 }
 

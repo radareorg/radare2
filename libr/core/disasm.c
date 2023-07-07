@@ -3,6 +3,9 @@
 #define R_LOG_ORIGIN "disasm"
 
 #include "r_core.h"
+#include <r_vec.h>
+
+R_GENERATE_VEC_IMPL_FOR(AnalRef, RAnalRef);
 
 #define HASRETRY 1
 #define HAVE_LOCALS 1
@@ -1137,17 +1140,18 @@ static void ds_build_op_str(RDisasmState *ds, bool print_color) {
 			ds->opstr = strdup (ds->strsub);
 		}
 		if (core->parser->subrel) {
-			RList *list = r_anal_refs_get (core->anal, at);
-			RListIter *iter;
-			RAnalRef *ref;
-			r_list_foreach (list, iter, ref) {
-				int rt = R_ANAL_REF_TYPE_MASK (ref->type);
-				if ((rt == R_ANAL_REF_TYPE_DATA || rt == R_ANAL_REF_TYPE_STRING) && ds->analop.type == R_ANAL_OP_TYPE_LEA) {
-					core->parser->subrel_addr = ref->addr;
-					break;
+			RVecAnalRef *refs = r_anal_refs_get (core->anal, at);
+			if (refs) {
+				RAnalRef *ref;
+				R_VEC_FOREACH (refs, ref) {
+					int rt = R_ANAL_REF_TYPE_MASK (ref->type);
+					if ((rt == R_ANAL_REF_TYPE_DATA || rt == R_ANAL_REF_TYPE_STRN) && ds->analop.type == R_ANAL_OP_TYPE_LEA) {
+						core->parser->subrel_addr = ref->addr;
+						break;
+					}
 				}
 			}
-			r_list_free (list);
+			RVecAnalRef_free (refs, NULL, NULL);
 		}
 	}
 	ds->opstr = ds_sub_jumps (ds, ds->opstr);
@@ -1386,15 +1390,17 @@ static void ds_print_pins(RDisasmState *ds) {
 }
 
 static void ds_show_refs(RDisasmState *ds) {
-	RAnalRef *ref;
-	RListIter *iter;
-
 	if (!ds->show_cmtrefs) {
 		return;
 	}
-	RList *list = r_anal_xrefs_get_from (ds->core->anal, ds->at);
 
-	r_list_foreach (list, iter, ref) {
+	RVecAnalRef *refs = r_anal_xrefs_get_from (ds->core->anal, ds->at);
+	if (!refs) {
+		return;
+	}
+
+	RAnalRef *ref;
+	R_VEC_FOREACH (refs, ref) {
 		const char *cmt = r_meta_get_string (ds->core->anal, R_META_TYPE_COMMENT, ref->addr);
 		const RList *fls = r_flag_get_list (ds->core->flags, ref->addr);
 		RListIter *iter2;
@@ -1431,14 +1437,12 @@ static void ds_show_refs(RDisasmState *ds) {
 		}
 		ds_print_color_reset (ds);
 	}
-	r_list_free (list);
+	RVecAnalRef_free (refs, NULL, NULL);
 }
 
 static void ds_show_xrefs(RDisasmState *ds) {
 	char xrefs_char[32] = {0}; // no more than 32 xrefs meh
 	int xci = 0;
-	RAnalRef *refi;
-	RListIter *iter, *it;
 	RCore *core = ds->core;
 	char *name, *realname;
 	int count = 0;
@@ -1446,26 +1450,27 @@ static void ds_show_xrefs(RDisasmState *ds) {
 		return;
 	}
 	/* show xrefs */
-	RList *xrefs = r_anal_xrefs_get (core->anal, ds->at);
+	RVecAnalRef *xrefs = r_anal_xrefs_get (core->anal, ds->at);
 	if (!xrefs) {
 		return;
 	}
+
 	// only show fcnline in xrefs when addr is not the beginning of a function
 	bool fcnlines = (ds->fcn && ds->fcn->addr == ds->at);
-	if (r_list_length (xrefs) > ds->maxrefs) {
+	if (RVecAnalRef_length (xrefs) > ds->maxrefs) {
 		ds_begin_line (ds);
 		ds_pre_xrefs (ds, fcnlines);
 		ds_comment (ds, false, "%s; XREFS(%d)",
 			ds->show_color? ds->pal_comment: "",
-			r_list_length (xrefs));
+			RVecAnalRef_length (xrefs));
 		if (ds->show_color) {
 			ds_print_color_reset (ds);
 		}
 		ds_newline (ds);
-		r_list_free (xrefs);
+		RVecAnalRef_free (xrefs, NULL, NULL);
 		return;
 	}
-	if (r_list_length (xrefs) > ds->foldxrefs) {
+	if (RVecAnalRef_length (xrefs) > ds->foldxrefs) {
 		int cols = r_cons_get_size (NULL);
 		cols -= 15;
 		cols /= 23;
@@ -1473,7 +1478,11 @@ static void ds_show_xrefs(RDisasmState *ds) {
 		ds_begin_line (ds);
 		ds_pre_xrefs (ds, fcnlines);
 		ds_comment (ds, false, "%s; XREFS: ", ds->show_color? ds->pal_comment: "");
-		r_list_foreach (xrefs, iter, refi) {
+		const ut64 length = RVecAnalRef_length (xrefs);
+		ut64 i = 0;
+		RAnalRef *refi;
+		R_VEC_FOREACH (xrefs, refi) {
+			const bool is_at_second_last = i == length - 1;
 			const char *t = r_anal_ref_type_tostring (refi->type);
 			if (t && strcmp (t, "NULL")) {
 				ds_comment (ds, false, "%s 0x%08"PFMT64x"  ", t, refi->addr);
@@ -1481,7 +1490,7 @@ static void ds_show_xrefs(RDisasmState *ds) {
 				ds_comment (ds, false, "0x%08"PFMT64x"  ", refi->addr);
 			}
 			if (count == cols) {
-				if (iter->n) {
+				if (!is_at_second_last) {
 					ds_print_color_reset (ds);
 					ds_newline (ds);
 					ds_begin_line (ds);
@@ -1492,33 +1501,41 @@ static void ds_show_xrefs(RDisasmState *ds) {
 			} else {
 				count++;
 			}
+			i++;
 		}
 		ds_print_color_reset (ds);
 		ds_newline (ds);
-		r_list_free (xrefs);
+		RVecAnalRef_free (xrefs, NULL, NULL);
 		return;
 	}
 
 	RList *addrs = r_list_newf (free);
 	RAnalFunction *fun, *next_fun;
+	ut64 i = 0;
+	const ut64 length = RVecAnalRef_length (xrefs);
 	RFlagItem *f, *next_f;
-	r_list_foreach (xrefs, iter, refi) {
+	RAnalRef *refi;
+	R_VEC_FOREACH (xrefs, refi) {
 		int rt = R_ANAL_REF_TYPE_MASK (refi->type);
 		if (!ds->asm_xrefs_code && rt == R_ANAL_REF_TYPE_CODE) {
+			i++;
 			continue;
 		}
 		if (refi->at == ds->at) {
 			realname = NULL;
 			fun = fcnIn (ds, refi->addr, -1);
+			const bool is_at_second_last = i == length - 1;
 			if (fun) {
-				if (iter != xrefs->tail) {
-					ut64 next_addr = ((RAnalRef *)(iter->n->data))->addr;
+				if (!is_at_second_last) {
+					const RAnalRef *next = RVecAnalRef_at (xrefs, i + 1);
+					ut64 next_addr = next->addr;
 					next_fun = r_anal_get_fcn_in (core->anal, next_addr, -1);
 					if (next_fun && next_fun->addr == fun->addr) {
 						if (xci < 32) {
 							xrefs_char[xci++] = r_anal_ref_perm_tochar (refi);
 						}
 						r_list_append (addrs, r_num_dup (refi->addr));
+						i++;
 						continue;
 					}
 				}
@@ -1536,14 +1553,16 @@ static void ds_show_xrefs(RDisasmState *ds) {
 			} else {
 				f = r_flag_get_at (core->flags, refi->addr, true);
 				if (f) {
-					if (iter != xrefs->tail) {
-						ut64 next_addr = ((RAnalRef *)(iter->n->data))->addr;
+					if (!is_at_second_last) {
+						const RAnalRef *next = RVecAnalRef_at (xrefs, i + 1);
+						ut64 next_addr = next->addr;
 						next_f = r_flag_get_at (core->flags, next_addr, true);
 						if (next_f && f->offset == next_f->offset) {
 							if (xci < 32) {
 								xrefs_char[xci++] = r_anal_ref_perm_tochar (refi);
 							}
 							r_list_append (addrs, r_num_dup (refi->addr - f->offset));
+							i++;
 							continue;
 						}
 					}
@@ -1577,6 +1596,7 @@ static void ds_show_xrefs(RDisasmState *ds) {
 			ut64 *addrptr;
 
 			int i = 0;
+			RListIter *it;
 			r_list_foreach (addrs, it, addrptr) {
 				if (R_STR_ISNOTEMPTY (addrptr)) {
 					char ch = xrefs_char [i++];
@@ -1601,9 +1621,10 @@ static void ds_show_xrefs(RDisasmState *ds) {
 		} else {
 			R_LOG_ERROR ("Corrupted database?");
 		}
+		i++;
 	}
 	r_list_free (addrs);
-	r_list_free (xrefs);
+	RVecAnalRef_free (xrefs, NULL, NULL);
 }
 
 static void ds_atabs_option(RDisasmState *ds) {
@@ -4377,20 +4398,22 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 			}
 		}
 	}
-	RList *list = NULL;
-	RListIter *iter;
-	RAnalRef *ref;
-	list = r_anal_refs_get (core->anal, ds->at);
-	r_list_foreach (list, iter, ref) {
-		int rt = R_ANAL_REF_TYPE_MASK (ref->type);
-		if (rt == R_ANAL_REF_TYPE_STRING || rt == R_ANAL_REF_TYPE_DATA) {
-			if ((f = r_flag_get_i (core->flags, ref->addr))) {
-				refaddr = ref->addr;
-				break;
+
+	RVecAnalRef *refs = r_anal_refs_get (core->anal, ds->at);
+	if (refs) {
+		RAnalRef *ref;
+		R_VEC_FOREACH (refs, ref) {
+			int rt = R_ANAL_REF_TYPE_MASK (ref->type);
+			if (rt == R_ANAL_REF_TYPE_STRN || rt == R_ANAL_REF_TYPE_DATA) {
+				if ((f = r_flag_get_i (core->flags, ref->addr))) {
+					refaddr = ref->addr;
+					break;
+				}
 			}
 		}
 	}
-	r_list_free (list);
+	RVecAnalRef_free (refs, NULL, NULL);
+
 	if (ds->analop.type == (R_ANAL_OP_TYPE_MOV | R_ANAL_OP_TYPE_REG)
 	    && ds->analop.stackop == R_ANAL_STACK_SET
 	    && ds->analop.val != UT64_MAX && ds->analop.val > 10) {
@@ -6849,13 +6872,12 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 		}
 		/* add refs */
 		{
-			RAnalRef *ref;
-			RListIter *iter;
-			RList *refs = r_anal_refs_get (core->anal, at);
-			if (refs && !r_list_empty (refs)) {
+			RVecAnalRef *refs = r_anal_refs_get (core->anal, at);
+			if (refs && !RVecAnalRef_empty (refs)) {
 				pj_k (pj, "refs");
 				pj_a (pj);
-				r_list_foreach (refs, iter, ref) {
+				RAnalRef *ref;
+				R_VEC_FOREACH (refs, ref) {
 					pj_o (pj);
 					pj_kn (pj, "addr", ref->addr);
 					pj_ks (pj, "type", r_anal_ref_type_tostring (ref->type));
@@ -6864,17 +6886,16 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 				}
 				pj_end (pj);
 			}
-			r_list_free (refs);
+			RVecAnalRef_free (refs, NULL, NULL);
 		}
 		/* add xrefs */
 		{
-			RAnalRef *ref;
-			RListIter *iter;
-			RList *xrefs = r_anal_xrefs_get (core->anal, at);
-			if (xrefs && !r_list_empty (xrefs)) {
+			RVecAnalRef *xrefs = r_anal_xrefs_get (core->anal, at);
+			if (xrefs && !RVecAnalRef_empty (xrefs)) {
 				pj_k (pj, "xrefs");
 				pj_a (pj);
-				r_list_foreach (xrefs, iter, ref) {
+				RAnalRef *ref;
+				R_VEC_FOREACH (xrefs, ref) {
 					pj_o (pj);
 					pj_kn (pj, "addr", ref->addr);
 					pj_ks (pj, "type", r_anal_ref_type_tostring (ref->type));
@@ -6883,7 +6904,7 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 				}
 				pj_end (pj);
 			}
-			r_list_free (xrefs);
+			RVecAnalRef_free (xrefs, NULL, NULL);
 		}
 
 		pj_end (pj);

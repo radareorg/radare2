@@ -2785,20 +2785,23 @@ static ut64 __opaddr(const RAnalBlock *b, ut64 addr) {
 	return UT64_MAX;
 }
 
+// R2_590 XXX seems wasteful, why not just return RVecAnalRef* directly instead?
 static RList *get_xrefs(RAnalBlock *block) {
-	RListIter *iter;
-	RAnalRef *ref;
 	RList *list = NULL;
 	size_t i;
 	for (i = 0; i < block->ninstr; i++) {
 		ut64 ia = block->addr + block->op_pos[i];
-		RList *xrefs = r_anal_xrefs_get (block->anal, ia);
-		r_list_foreach (xrefs, iter, ref) {
-			if (!list) {
-				list = r_list_newf (free);
+		RVecAnalRef *xrefs = r_anal_xrefs_get (block->anal, ia);
+		if (xrefs) {
+			RAnalRef *ref;
+			R_VEC_FOREACH (xrefs, ref) {
+				if (!list) {
+					list = r_list_newf (free);
+				}
+				r_list_push (list, ut64_new (ref->addr));
 			}
-			r_list_push (list, ut64_new (ref->addr));
 		}
+		RVecAnalRef_free (xrefs, NULL, NULL);
 	}
 	return list;
 }
@@ -4106,8 +4109,7 @@ static void cmd_afbc(RCore *core, const char *input) {
 
 // Fcn Xrefs Map
 static void xrefs_map(RCore *core, const char *input) {
-	RListIter *iter, *iter2, *iter3;
-	RAnalRef *r;
+	RListIter *iter, *iter2;
 	RAnalFunction *f, *f2;
 	int col = 0;
 	int count = 0;
@@ -4129,14 +4131,15 @@ static void xrefs_map(RCore *core, const char *input) {
 
 	int total = 0;
 	r_list_foreach (core->anal->fcns, iter, f) {
-		RList *refs = r_anal_function_get_refs (f);
+		RVecAnalRef *refs = r_anal_function_get_refs (f);
 		r_cons_printf ("0x%08"PFMT64x"  ", f->addr);
 		total = 0;
 		r_list_foreach (core->anal->fcns, iter2, f2) {
 			int count = 0;
-			r_list_foreach (refs, iter3, r) {
+			RAnalRef *r;
+			R_VEC_FOREACH (refs, r) {
 				if (r->addr == f2->addr) {
-					count ++;
+					count++;
 				}
 			}
 			if (count > 0) {
@@ -4155,7 +4158,7 @@ static void xrefs_map(RCore *core, const char *input) {
 		} else {
 			r_cons_printf ("\r");
 		}
-		r_list_free (refs);
+		RVecAnalRef_free (refs, NULL, NULL);
 	}
 }
 
@@ -4181,10 +4184,9 @@ R_API void r_core_af(RCore *core, ut64 addr, const char *name, bool anal_calls) 
 		SetU *visited = set_u_new ();
 		fcn = r_anal_get_fcn_in (core->anal, addr, 0); /// XXX wrong in case of nopskip
 		if (fcn) {
+			RVecAnalRef *refs = r_anal_function_get_refs (fcn);
 			RAnalRef *ref;
-			RListIter *iter;
-			RList *refs = r_anal_function_get_refs (fcn);
-			r_list_foreach (refs, iter, ref) {
+			R_VEC_FOREACH (refs, ref) {
 				if (set_u_contains (visited, ref->addr)) {
 					continue;
 				}
@@ -4206,10 +4208,9 @@ R_API void r_core_af(RCore *core, ut64 addr, const char *name, bool anal_calls) 
 #if 1
 				RAnalFunction *f = r_anal_get_function_at (core->anal, ref->addr);
 				if (f) {
-					RListIter *iter;
+					RVecAnalRef *refs1 = r_anal_function_get_refs (f);
 					RAnalRef *ref;
-					RList *refs1 = r_anal_function_get_refs (f);
-					r_list_foreach (refs1, iter, ref) {
+					R_VEC_FOREACH (refs1, ref) {
 						const ut64 raddr = ref->addr;
 						if (set_u_contains (visited, raddr)) {
 							continue;
@@ -4228,7 +4229,7 @@ R_API void r_core_af(RCore *core, ut64 addr, const char *name, bool anal_calls) 
 							r_core_anal_fcn (core, raddr, f->addr, R_ANAL_REF_TYPE_CALL, depth - 1);
 						}
 					}
-					r_list_free (refs1);
+					RVecAnalRef_free (refs1, NULL, NULL);
 				} else {
 					f = r_anal_get_fcn_in (core->anal, fcn->addr, 0);
 					if (f) {
@@ -4243,7 +4244,7 @@ R_API void r_core_af(RCore *core, ut64 addr, const char *name, bool anal_calls) 
 				}
 #endif
 			}
-			r_list_free (refs);
+			RVecAnalRef_free (refs, NULL, NULL);
 			if (core->anal->opt.vars) {
 				r_core_recover_vars (core, fcn, true);
 			}
@@ -4275,15 +4276,16 @@ R_API void r_core_af(RCore *core, ut64 addr, const char *name, bool anal_calls) 
 static void cmd_aflxj(RCore *core) {
 	ut64 addr = faddr (core, core->offset, NULL);
 	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, addr, R_ANAL_FCN_TYPE_ANY);
-	RList *xrefs = r_anal_xrefs_get (core->anal, addr);
 	Sdb *db = sdb_new0 ();
-	RListIter *iter;
-	RAnalRef *ref;
-	r_list_foreach (xrefs, iter, ref) {
-		bool nr = false;
-		ut64 fa = faddr (core, ref->addr, &nr);
-		char *key = r_str_newf ("0x%08"PFMT64x, fa);
-		sdb_array_add_num (db, key, ref->addr, 0);
+	RVecAnalRef *xrefs = r_anal_xrefs_get (core->anal, addr);
+	if (xrefs) {
+		RAnalRef *ref;
+		R_VEC_FOREACH (xrefs, ref) {
+			bool nr = false;
+			ut64 fa = faddr (core, ref->addr, &nr);
+			char *key = r_str_newf ("0x%08"PFMT64x, fa);
+			sdb_array_add_num (db, key, ref->addr, 0);
+		}
 	}
 	SdbList *keys = sdb_foreach_list (db, true);
 	SdbListIter *liter;
@@ -4314,6 +4316,7 @@ static void cmd_aflxj(RCore *core) {
 	char *s = pj_drain (pj);
 	r_cons_printf ("%s\n", s);
 	free (s);
+	RVecAnalRef_free (xrefs, NULL, NULL);
 	sdb_free (db);
 	ls_free (keys);
 }
@@ -4737,16 +4740,17 @@ static int cmd_af(RCore *core, const char *input) {
 			case 0: // default for "aflx"
 			{
 				ut64 addr = faddr (core, core->offset, NULL);
-				RList *xrefs = r_anal_xrefs_get (core->anal, addr);
 				Sdb *db = sdb_new0 ();
 				// sort by function and uniq to avoid dupped results
-				RListIter *iter;
-				RAnalRef *ref;
-				r_list_foreach (xrefs, iter, ref) {
-					bool nr = false;
-					ut64 fa = faddr (core, ref->addr, &nr);
-					char *key = r_str_newf ("0x%08"PFMT64x, fa);
-					sdb_array_add_num (db, key, ref->addr, 0);
+				RVecAnalRef *xrefs = r_anal_xrefs_get (core->anal, addr);
+				if (xrefs) {
+					RAnalRef *ref;
+					R_VEC_FOREACH (xrefs, ref) {
+						bool nr = false;
+						ut64 fa = faddr (core, ref->addr, &nr);
+						char *key = r_str_newf ("0x%08"PFMT64x, fa);
+						sdb_array_add_num (db, key, ref->addr, 0);
+					}
 				}
 				SdbList *keys = sdb_foreach_list (db, true);
 				SdbListIter *liter;
@@ -5233,7 +5237,7 @@ static int cmd_af(RCore *core, const char *input) {
 		break;
 	}
 #if 0
-	/* this is undocumented and probably have no uses. plz discuss */
+	/* this is undocumented, broken and probably have no uses. plz discuss */
 	case 'e': // "afe"
 		{
 		RAnalFunction *fcn;
@@ -5288,10 +5292,9 @@ static int cmd_af(RCore *core, const char *input) {
 				RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, addr, R_ANAL_FCN_TYPE_NULL);
 				if (fcn) {
 					ut64 oaddr = core->offset;
+					RVecAnalRef *refs = r_anal_function_get_refs (fcn);
 					RAnalRef *ref;
-					RListIter *iter;
-					RList *refs = r_anal_function_get_refs (fcn);
-					r_list_foreach (refs, iter, ref) {
+					R_VEC_FOREACH (refs, ref) {
 						if (input[2] == 'j') {
 							pj_o (pj);
 							pj_ks (pj, "type", r_anal_ref_type_tostring (ref->type));
@@ -5313,7 +5316,7 @@ static int cmd_af(RCore *core, const char *input) {
 								r_core_seek (core, ref->at, 1);
 								r_core_print_disasm_instructions (core, 0, 1);
 								break;
-							case R_ANAL_REF_TYPE_STRING:
+							case R_ANAL_REF_TYPE_STRN:
 								{
 									char *s = r_core_cmd_strf (core, "pxr 8 @ 0x%08"PFMT64x, ref->addr);
 									char *nl = strchr (s, '\n');
@@ -5330,7 +5333,7 @@ static int cmd_af(RCore *core, const char *input) {
 							}
 						}
 					}
-					r_list_free (refs);
+					RVecAnalRef_free (refs, NULL, NULL);
 					r_core_seek (core, oaddr, 1);
 				} else {
 					R_LOG_ERROR ("afx: Cannot find function at 0x%08"PFMT64x, addr);
@@ -7120,7 +7123,7 @@ R_IPI int core_type_by_addr(RCore *core, ut64 addr) {
 		if (strchr (item->name, '.')) {
 			has_flag = true;
 			if (r_str_startswith (item->name, "str")) {
-				type = R_ANAL_REF_TYPE_STRING;
+				type = R_ANAL_REF_TYPE_STRN;
 				break;
 			}
 		}
@@ -8936,7 +8939,6 @@ static void cmd_anal_syscall(RCore *core, const char *input) {
 
 static void anal_axg(RCore *core, const char *input, int level, Sdb *db, int opts, PJ* pj) {
 	char arg[32], pre[128];
-	RListIter *iter;
 	RAnalRef *ref;
 	ut64 addr = core->offset;
 	bool is_json = opts & R_CORE_ANAL_JSON;
@@ -8955,9 +8957,9 @@ static void anal_axg(RCore *core, const char *input, int level, Sdb *db, int opt
 	memset (pre, ' ', sizeof (pre));
 	strcpy (pre + spaces, "- ");
 
-	RList *xrefs = r_anal_xrefs_get (core->anal, addr);
+	RVecAnalRef *xrefs = r_anal_xrefs_get (core->anal, addr);
 	bool open_object = false;
-	if (!r_list_empty (xrefs)) {
+	if (xrefs && !RVecAnalRef_empty (xrefs)) {
 		RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, addr, -1);
 		if (fcn) {
 			if (is_r2) {
@@ -8998,77 +9000,79 @@ static void anal_axg(RCore *core, const char *input, int level, Sdb *db, int opt
 			}
 		}
 	}
-	r_list_foreach (xrefs, iter, ref) {
-		RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, ref->addr, -1);
-		if (fcn) {
-			if (is_r2) {
-				r_cons_printf ("agn 0x%08"PFMT64x" %s\n", fcn->addr, fcn->name);
-				r_cons_printf ("age 0x%08"PFMT64x" 0x%08"PFMT64x"\n", fcn->addr, addr);
-			} else if (is_json) {
-				if (level == 0) {
+	if (xrefs) {
+		R_VEC_FOREACH (xrefs, ref) {
+			RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, ref->addr, -1);
+			if (fcn) {
+				if (is_r2) {
+					r_cons_printf ("agn 0x%08"PFMT64x" %s\n", fcn->addr, fcn->name);
+					r_cons_printf ("age 0x%08"PFMT64x" 0x%08"PFMT64x"\n", fcn->addr, addr);
+				} else if (is_json) {
+					if (level == 0) {
+						char taddr[64];
+						pj_o (pj);
+						pj_k (pj, sdb_itoa (ref->addr, 10, taddr, sizeof (taddr)));
+						pj_o (pj);
+						pj_ks (pj, "type", "fcn");
+						pj_kn (pj, "fcn_addr", fcn->addr);
+						pj_ks (pj, "name", fcn->name);
+						pj_k (pj, "refs");
+						pj_a (pj);
+						open_object = true;
+					} else {
+						char taddr[64];
+						pj_end (pj);
+						pj_end (pj);
+						pj_end (pj);
+						pj_o (pj);
+						pj_k (pj, sdb_itoa (ref->addr, 10, taddr, sizeof (taddr)));
+						pj_o (pj);
+						pj_ks (pj, "type", "fcn");
+						pj_kn (pj, "fcn_addr", fcn->addr);
+						pj_ks (pj, "name", fcn->name);
+						pj_k (pj, "refs");
+						pj_a (pj);
+					}
+				} else {
+					r_cons_printf ("%s0x%08"PFMT64x" fcn 0x%08"PFMT64x" %s\n", pre, ref->addr, fcn->addr, fcn->name);
+				}
+				if (sdb_add (db, fcn->name, "1", 0)) {
+					snprintf (arg, sizeof (arg), "0x%08"PFMT64x, fcn->addr);
+					anal_axg (core, arg, level + 1, db, opts, pj);
+				} else {
+					if (is_json) {
+						pj_end (pj);
+						pj_end (pj);
+						pj_end (pj);
+						open_object = false;
+					}
+				}
+			} else {
+				if (is_r2) {
+					r_cons_printf ("agn 0x%08"PFMT64x" ???\n", ref->addr);
+					r_cons_printf ("age 0x%08"PFMT64x" 0x%08"PFMT64x"\n", ref->addr, addr);
+				} else if (is_json) {
 					char taddr[64];
 					pj_o (pj);
 					pj_k (pj, sdb_itoa (ref->addr, 10, taddr, sizeof (taddr)));
 					pj_o (pj);
-					pj_ks (pj, "type", "fcn");
-					pj_kn (pj, "fcn_addr", fcn->addr);
-					pj_ks (pj, "name", fcn->name);
+					pj_ks (pj, "type", "???");
 					pj_k (pj, "refs");
 					pj_a (pj);
 					open_object = true;
 				} else {
-					char taddr[64];
-					pj_end (pj);
-					pj_end (pj);
-					pj_end (pj);
-					pj_o (pj);
-					pj_k (pj, sdb_itoa (ref->addr, 10, taddr, sizeof (taddr)));
-					pj_o (pj);
-					pj_ks (pj, "type", "fcn");
-					pj_kn (pj, "fcn_addr", fcn->addr);
-					pj_ks (pj, "name", fcn->name);
-					pj_k (pj, "refs");
-					pj_a (pj);
+					r_cons_printf ("%s0x%08"PFMT64x" ???\n", pre, ref->addr);
 				}
-			} else {
-				r_cons_printf ("%s0x%08"PFMT64x" fcn 0x%08"PFMT64x" %s\n", pre, ref->addr, fcn->addr, fcn->name);
-			}
-			if (sdb_add (db, fcn->name, "1", 0)) {
-				snprintf (arg, sizeof (arg), "0x%08"PFMT64x, fcn->addr);
-				anal_axg (core, arg, level + 1, db, opts, pj);
-			} else {
-				if (is_json) {
-					pj_end (pj);
-					pj_end (pj);
-					pj_end (pj);
-					open_object = false;
-				}
-			}
-		} else {
-			if (is_r2) {
-				r_cons_printf ("agn 0x%08"PFMT64x" ???\n", ref->addr);
-				r_cons_printf ("age 0x%08"PFMT64x" 0x%08"PFMT64x"\n", ref->addr, addr);
-			} else if (is_json) {
-				char taddr[64];
-				pj_o (pj);
-				pj_k (pj, sdb_itoa (ref->addr, 10, taddr, sizeof (taddr)));
-				pj_o (pj);
-				pj_ks (pj, "type", "???");
-				pj_k (pj, "refs");
-				pj_a (pj);
-				open_object = true;
-			} else {
-				r_cons_printf ("%s0x%08"PFMT64x" ???\n", pre, ref->addr);
-			}
-			snprintf (arg, sizeof (arg), "0x%08"PFMT64x, ref->addr);
-			if (sdb_add (db, arg, "1", 0)) {
-				anal_axg (core, arg, level + 1, db, opts, pj);
-			} else {
-				if (is_json) {
-					pj_end (pj);
-					pj_end (pj);
-					pj_end (pj);
-					open_object = false;
+				snprintf (arg, sizeof (arg), "0x%08"PFMT64x, ref->addr);
+				if (sdb_add (db, arg, "1", 0)) {
+					anal_axg (core, arg, level + 1, db, opts, pj);
+				} else {
+					if (is_json) {
+						pj_end (pj);
+						pj_end (pj);
+						pj_end (pj);
+						open_object = false;
+					}
 				}
 			}
 		}
@@ -9087,7 +9091,7 @@ static void anal_axg(RCore *core, const char *input, int level, Sdb *db, int opt
 			}
 		}
 	}
-	r_list_free (xrefs);
+	RVecAnalRef_free (xrefs, NULL, NULL);
 }
 
 static void cmd_anal_ucall_ref(RCore *core, ut64 addr) {
@@ -9166,29 +9170,72 @@ static const char *axtm_name(RCore *core, ut64 addr) {
 	return name;
 }
 
-static bool axtm_cb(void *u, const ut64 k, const void *v) {
-	RCore *core = (RCore*)u;
-	const char *name = axtm_name (core, k);
-	RListIter *iter;
-	RAnalRef *ref;
-	RList *list = r_anal_xrefs_get (core->anal, k);
-	if (list && r_list_length (list) > 0) {
-		r_cons_printf ("0x%"PFMT64x": %s\n", k, name? name: "?");
-		r_list_foreach (list, iter, ref) {
-			name = axtm_name (core, ref->addr);
-			r_cons_printf ("  0x%"PFMT64x": %s\n", ref->addr, name? name: "?");
-		}
+// Alternative sorting, first by "addr"/"from", then by "at"/"to"
+static inline int compare_ref(const RAnalRef *a, const RAnalRef *b) {
+	if (a->addr < b->addr) {
+		return -1;
 	}
-	r_list_free (list);
-	return true;
+	if (a->addr > b->addr) {
+		return 1;
+	}
+	if (a->at < b->at) {
+		return -1;
+	}
+	if (a->at > b->at) {
+		return 1;
+	}
+
+	return 0;
 }
 
 static void axtm(RCore *core) {
-	ht_up_foreach (core->anal->dict_refs, axtm_cb, core);
+	RVecAnalRef *refs = r_anal_xrefs_get (core->anal, UT64_MAX);
+	if (refs && !RVecAnalRef_empty (refs)) {
+		RVecAnalRef_sort (refs, compare_ref);
+
+		ut64 last_addr = UT64_MAX;
+		RAnalRef *ref;
+		R_VEC_FOREACH (refs, ref) {
+			const bool is_first = ref->addr != last_addr;
+			const char *name;
+			if (is_first) {
+				name = axtm_name (core, ref->addr);
+				r_cons_printf ("0x%"PFMT64x": %s\n", ref->addr, name? name: "?");
+			}
+
+			name = axtm_name (core, ref->at);
+			r_cons_printf ("  0x%"PFMT64x": %s\n", ref->at, name? name: "?");
+
+			last_addr = ref->addr;
+		}
+	}
+
+	RVecAnalRef_free (refs, NULL, NULL);
 }
 
 static void axfm(RCore *core) {
-	ht_up_foreach (core->anal->dict_xrefs, axtm_cb, core);
+	RVecAnalRef *refs = r_anal_xrefs_get_from (core->anal, UT64_MAX);
+	if (refs && !RVecAnalRef_empty (refs)) {
+		RVecAnalRef_sort (refs, compare_ref);
+
+		ut64 last_addr = UT64_MAX;
+		RAnalRef *ref;
+		R_VEC_FOREACH (refs, ref) {
+			const bool is_first = ref->addr != last_addr;
+			const char *name;
+			if (is_first) {
+				name = axtm_name (core, ref->addr);
+				r_cons_printf ("0x%"PFMT64x": %s\n", ref->addr, name? name: "?");
+			}
+
+			name = axtm_name (core, ref->at);
+			r_cons_printf ("  0x%"PFMT64x": %s\n", ref->at, name? name: "?");
+
+			last_addr = ref->addr;
+		}
+	}
+
+	RVecAnalRef_free (refs, NULL, NULL);
 }
 
 static bool cmd_anal_refs(RCore *core, const char *input) {
@@ -9196,9 +9243,6 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 	ut64 addr = core->offset;
 	switch (input[0]) {
 	case '-': { // "ax-"
-		RList *list;
-		RListIter *iter;
-		RAnalRef *ref;
 		char *cp_inp = strdup (input + 1);
 		char *ptr = cp_inp;
 		r_str_trim_head (ptr);
@@ -9218,18 +9262,19 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 				to = core->offset;
 				break;
 			}
-			list = r_anal_xrefs_get (core->anal, to);
-			if (list) {
-				r_list_foreach (list, iter, ref) {
-					if (from != UT64_MAX && from == ref->addr) {
-						r_anal_xref_del (core->anal, ref->addr, ref->at);
-					}
-					if (from == UT64_MAX) {
-						r_anal_xref_del (core->anal, ref->addr, ref->at);
-					}
+
+			// R2_590 slow, we should add a function that deletes several xrefs
+			RVecAnalRef *list = r_anal_xrefs_get (core->anal, to);
+			RAnalRef *ref;
+			R_VEC_FOREACH (list, ref) {
+				if (from != UT64_MAX && from == ref->addr) {
+					r_anal_xref_del (core->anal, ref->addr, ref->at);
+				}
+				if (from == UT64_MAX) {
+					r_anal_xref_del (core->anal, ref->addr, ref->at);
 				}
 			}
-			r_list_free (list);
+			RVecAnalRef_free (list, NULL, NULL);
 		}
 		free (cp_inp);
 	} break;
@@ -9268,9 +9313,6 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 		free (fInput);
 	} break;
 	case 'm': { // "axm"
-		RList *list;
-		RAnalRef *ref;
-		RListIter *iter;
 		char *ptr = strdup (r_str_trim_head_ro (input + 1));
 		int n = r_str_word_set0 (ptr);
 		ut64 at = core->offset;
@@ -9287,14 +9329,15 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 			return false;
 		}
 		//get all xrefs pointing to addr
-		list = r_anal_xrefs_get (core->anal, addr);
-		r_list_foreach (list, iter, ref) {
+		RVecAnalRef *list = r_anal_xrefs_get (core->anal, addr);
+		RAnalRef *ref;
+		R_VEC_FOREACH (list, ref) {
 			r_cons_printf ("0x%"PFMT64x" %s %s\n", ref->addr,
 				r_anal_ref_perm_tostring (ref),
 				r_anal_ref_type_tostring (ref->type));
 			r_anal_xrefs_set (core->anal, ref->addr, at, ref->type);
 		}
-		r_list_free (list);
+		RVecAnalRef_free (list, NULL, NULL);
 		free (ptr);
 	} break;
 	case 'v': // "axv"
@@ -9337,8 +9380,6 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 			break;
 		}
 		RAnalFunction *fcn;
-		RAnalRef *ref;
-		RListIter *iter;
 		char *space = strchr (input, ' ');
 		if (space) {
 			addr = r_num_math (core->num, space + 1);
@@ -9349,10 +9390,11 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 		} else {
 			addr = core->offset;
 		}
-		RList *list = r_anal_xrefs_get (core->anal, addr);
+		RVecAnalRef *list = r_anal_xrefs_get (core->anal, addr);
 		if (list) {
 			if (input[1] == 'q') { // "axtq"
-				r_list_foreach (list, iter, ref) {
+				RAnalRef *ref;
+				R_VEC_FOREACH (list, ref) {
 					r_cons_printf ("0x%" PFMT64x "\n", ref->addr);
 				}
 			} else if (input[1] == 'j') { // "axtj"
@@ -9361,7 +9403,8 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 					return false;
 				}
 				pj_a (pj);
-				r_list_foreach (list, iter, ref) {
+				RAnalRef *ref;
+				R_VEC_FOREACH (list, ref) {
 					fcn = r_anal_get_fcn_in (core->anal, ref->addr, 0);
 					char *str = get_buf_asm (core, addr, ref->addr, fcn, false);
 					pj_o (pj);
@@ -9420,7 +9463,8 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 				pj_free (pj);
 				r_cons_newline ();
 			} else if (input[1] == 'g') { // axtg
-				r_list_foreach (list, iter, ref) {
+				RAnalRef *ref;
+				R_VEC_FOREACH (list, ref) {
 					char *str = r_core_cmd_strf (core, "fd 0x%"PFMT64x, ref->addr);
 					if (!str) {
 						str = strdup ("?\n");
@@ -9433,18 +9477,24 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 					RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, addr, 0);
 					r_cons_printf ("agn 0x%" PFMT64x " \"%s\"\n", addr, fcn?fcn->name: "$$");
 				}
-				r_list_foreach (list, iter, ref) {
+				R_VEC_FOREACH (list, ref) {
 					r_cons_printf ("age 0x%" PFMT64x " 0x%"PFMT64x"\n", ref->addr, addr);
 				}
 			} else if (input[1] == '*') { // axt*
 				// TODO: implement multi-line comments
-				r_list_foreach (list, iter, ref) {
+				const ut64 length = RVecAnalRef_length (list);
+				ut64 i = 0;
+				RAnalRef *ref;
+				R_VEC_FOREACH (list, ref) {
+					const bool is_at_end = i == length;
 					r_cons_printf ("CCa 0x%" PFMT64x " \"XREF type %d at 0x%" PFMT64x"%s\n",
-						ref->addr, ref->type, addr, iter->n? ",": "");
+						ref->addr, ref->type, addr, is_at_end? "": ",");
+					i++;
 				}
 			} else if (input[1] == ' ' || input[1] == 0) { // "axt"
 				RAnalFunction *fcn;
-				r_list_foreach (list, iter, ref) {
+				RAnalRef *ref;
+				R_VEC_FOREACH (list, ref) {
 					fcn = r_anal_get_fcn_in (core->anal, ref->addr, 0);
 					char *buf_asm = get_buf_asm (core, addr, ref->addr, fcn, true);
 					const char *comment = r_meta_get_string (core->anal, R_META_TYPE_COMMENT, ref->addr);
@@ -9479,22 +9529,21 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 				pj_free (pj);
 			}
 		}
-		r_list_free (list);
+		RVecAnalRef_free (list, NULL, NULL);
 	} break;
 	case 'f':
 		if (input[1] == 'f') { // "axff"
 			RAnalFunction * fcn = r_anal_get_fcn_in (core->anal, addr, 0);
-			RListIter *iter;
 			PJ *pj = NULL;
-			RAnalRef *refi;
 			if (input[2] == 'j') { // "axffj"
 				// start a new JSON object
 				pj = pj_new ();
 				pj_a (pj);
 			}
 			if (fcn) {
-				RList *refs = r_anal_function_get_refs (fcn);
-				r_list_foreach (refs, iter, refi) {
+				RVecAnalRef *refs = r_anal_function_get_refs (fcn);
+				RAnalRef *refi;
+				R_VEC_FOREACH (refs, refi) {
 					RFlagItem *f = r_flag_get_at (core->flags, refi->addr, true);
 					const char *name = f ? f->name: "";
 					if (pj) {
@@ -9509,6 +9558,7 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 							r_anal_ref_type_tostring(refi->type), refi->at, refi->addr, name);
 					}
 				}
+				RVecAnalRef_free (refs, NULL, NULL);
 				if (pj) {
 					pj_end (pj);
 					r_cons_println (pj_string (pj));
@@ -9528,9 +9578,6 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 				break;
 			}
 			RAnalOp asmop;
-			RList *list = NULL;
-			RAnalRef *ref;
-			RListIter *iter;
 			char *space = strchr (input, ' ');
 			if (space) {
 				addr = r_num_math (core->num, space + 1);
@@ -9542,6 +9589,7 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 				addr = core->offset;
 			}
 			RAnalFunction * fcn = r_anal_get_fcn_in (core->anal, addr, 0);
+			RVecAnalRef *list;
 			if (input[1] == '.') { // "axf."
 				list = r_anal_xrefs_get_from (core->anal, addr);
 				if (!list) {
@@ -9553,7 +9601,8 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 
 			if (list) {
 				if (input[1] == 'q') { // "axfq"
-					r_list_foreach (list, iter, ref) {
+					RAnalRef *ref;
+					R_VEC_FOREACH (list, ref) {
 						r_cons_printf ("0x%" PFMT64x "\n", ref->at);
 					}
 				} else if (input[1] == 'j') { // "axfj"
@@ -9562,7 +9611,8 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 						return false;
 					}
 					pj_a (pj);
-					r_list_foreach (list, iter, ref) {
+					RAnalRef *ref;
+					R_VEC_FOREACH (list, ref) {
 						// TODO: Use r_core_anal_op(DISASM) instead of all those 4 lines
 						ut8 buf[16];
 						r_io_read_at (core->io, ref->addr, buf, sizeof (buf));
@@ -9581,14 +9631,16 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 					pj_free (pj);
 				} else if (input[1] == '*') { // "axf*"
 					// TODO: implement multi-line comments
-					r_list_foreach (list, iter, ref) {
+					RAnalRef *ref;
+					R_VEC_FOREACH (list, ref) {
 						r_cons_printf ("CCa 0x%" PFMT64x " \"XREF from 0x%u \n",
 								ref->at, ref->type);
 					}
 				} else { // "axf"
 					char str[512];
 					int has_color = core->print->flags & R_PRINT_FLAGS_COLOR;
-					r_list_foreach (list, iter, ref) {
+					RAnalRef *ref;
+					R_VEC_FOREACH (list, ref) {
 						ut8 buf[16] = {0};
 						char *desc;
 						char *desc_to_free = NULL;
@@ -9630,7 +9682,7 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 					r_cons_print ("[]\n");
 				}
 			}
-			r_list_free (list);
+			RVecAnalRef_free (list, NULL, NULL);
 		}
 		break;
 	case 'F': // "axF"
@@ -11554,16 +11606,14 @@ static int compute_code(RCore* core) {
 }
 
 static int compute_calls(RCore *core) {
+	int cov = 0;
 	RListIter *iter;
 	RAnalFunction *fcn;
-	RList *xrefs;
-	int cov = 0;
 	r_list_foreach (core->anal->fcns, iter, fcn) {
-		xrefs = r_anal_function_get_xrefs (fcn);
+		RVecAnalRef *xrefs = r_anal_function_get_xrefs (fcn);
 		if (xrefs) {
-			cov += r_list_length (xrefs);
-			r_list_free (xrefs);
-			xrefs = NULL;
+			cov += RVecAnalRef_length (xrefs);
+			RVecAnalRef_free (xrefs, NULL, NULL);
 		}
 	}
 	return cov;
@@ -11611,16 +11661,14 @@ static void r_core_anal_info(RCore *core, const char *input) {
 }
 
 static void cmd_anal_aad(RCore *core, const char *input) {
-	RListIter *iter;
+	RVecAnalRef *list = r_anal_refs_get (core->anal, UT64_MAX);
 	RAnalRef *ref;
-	RList *list = r_list_newf (NULL);
-	r_anal_xrefs_from (core->anal, list, "xref", R_ANAL_REF_TYPE_DATA, UT64_MAX);
-	r_list_foreach (list, iter, ref) {
+	R_VEC_FOREACH (list, ref) {
 		if (r_io_is_valid_offset (core->io, ref->addr, false)) {
 			r_core_anal_fcn (core, ref->at, ref->addr, R_ANAL_REF_TYPE_NULL, 1);
 		}
 	}
-	r_list_free (list);
+	RVecAnalRef_free (list, NULL, NULL);
 }
 
 static bool archIsThumbable(RCore *core) {
@@ -12154,23 +12202,23 @@ static bool funref(void *_core, ut64 from, ut64 addr) {
 static void anal_aarr(RCore *core) {
 	SetU *visited = set_u_new ();
 	RAnalFunction *fcn;
-	RAnalRef *refi;
-	RListIter *it, *iter;
+	RListIter *it;
 	r_list_foreach (core->anal->fcns, it, fcn) {
 #if 0
 		r_anal_analyze_fcn_refs (core, fcn, depth);
 		continue;
 #endif
-		RList *refs = r_anal_function_get_refs (fcn);
-		r_list_foreach (refs, iter, refi) {
+		RVecAnalRef *refs = r_anal_function_get_refs (fcn);
+		RAnalRef *refi;
+		R_VEC_FOREACH (refs, refi) {
 			ut64 ra = refi->addr;
 			if (set_u_contains (visited, ra)) {
 				continue;
 			}
 			set_u_add (visited, ra);
-			funref(core, refi->at, ra);
+			funref (core, refi->at, ra);
 		}
-		r_list_free (refs);
+		RVecAnalRef_free (refs, NULL, NULL);
 	}
 	set_u_free (visited);
 }

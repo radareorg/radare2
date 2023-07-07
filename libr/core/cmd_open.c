@@ -1,5 +1,7 @@
 /* radare - LGPL - Copyright 2009-2023 - pancake */
 
+static R_TH_LOCAL int fdsz = 0;
+
 static RCoreHelpMessage help_msg_o = {
 	"Usage: o","[file] ([offset])","Open and close files, maps, and banks",
 	"o","","list opened files",
@@ -1273,23 +1275,15 @@ static bool __rebase_flags(RFlagItem *flag, void *user) {
 	return true;
 }
 
-static bool __rebase_refs_i(void *user, const ut64 k, const void *v) {
-	struct __rebase_struct *reb = (void *)user;
-	RAnalRef *ref = (RAnalRef *)v;
-	ref->addr += reb->diff;
-	ref->at += reb->diff;
-	if (reb->type) {
-		r_anal_xrefs_set (reb->core->anal, ref->addr, ref->at, ref->type);
+static void __rebase_refs(RAnal *anal, RAnalRef *ref, ut64 type, ut64 diff) {
+	ref->addr += diff;
+	ref->at += diff;
+	// R2_590 this does double work, setting adds in both directions already
+	if (type) {
+		r_anal_xrefs_set (anal, ref->addr, ref->at, ref->type);
 	} else {
-		r_anal_xrefs_set (reb->core->anal, ref->at, ref->addr, ref->type);
+		r_anal_xrefs_set (anal, ref->at, ref->addr, ref->type);
 	}
-	return true;
-}
-
-static bool __rebase_refs(void *user, const ut64 k, const void *v) {
-	HtUP *ht = (HtUP *)v;
-	ht_up_foreach (ht, __rebase_refs_i, user);
-	return true;
 }
 
 static void __rebase_everything(RCore *core, RList *old_sections, ut64 old_base) {
@@ -1341,17 +1335,28 @@ static void __rebase_everything(RCore *core, RList *old_sections, ut64 old_base)
 	r_meta_rebase (core->anal, diff);
 
 	// REFS
-	HtUP *old_refs = core->anal->dict_refs;
-	HtUP *old_xrefs = core->anal->dict_xrefs;
-	core->anal->dict_refs = NULL;
-	core->anal->dict_xrefs = NULL;
+	// R2_590: this does double work, xrefs are always in sync now with refs (but flipped)
+	// better to expose an API that rebases xrefs by adding diff to addr, at (no free/init needed)
+	RVecAnalRef *old_refs = r_anal_refs_get (core->anal, UT64_MAX);
+	RVecAnalRef *old_xrefs = r_anal_xrefs_get (core->anal, UT64_MAX);
+	r_anal_xrefs_free (core->anal);
 	r_anal_xrefs_init (core->anal);
-	reb.type = 0;
-	ht_up_foreach (old_refs, __rebase_refs, &reb);
-	reb.type = 1;
-	ht_up_foreach (old_xrefs, __rebase_refs, &reb);
-	ht_up_free (old_refs);
-	ht_up_free (old_xrefs);
+
+	if (old_refs) {
+		RAnalRef *ref;
+		R_VEC_FOREACH (old_refs, ref) {
+			__rebase_refs (core->anal, ref, 0, diff);
+		}
+	}
+	if (old_xrefs) {
+		RAnalRef *ref;
+		R_VEC_FOREACH (old_xrefs, ref) {
+			__rebase_refs (core->anal, ref, 1, diff);
+		}
+	}
+
+	RVecAnalRef_free (old_refs, NULL, NULL);
+	RVecAnalRef_free (old_xrefs, NULL, NULL);
 
 	// BREAKPOINTS
 	r_debug_bp_rebase (core->dbg, old_base, new_base);
@@ -1463,8 +1468,6 @@ R_API void r_core_file_reopen_debug(RCore *core, const char *args) {
 	free (escaped_path);
 	free (binpath);
 }
-
-static R_TH_LOCAL int fdsz = 0;
 
 static bool init_desc_list_visual_cb(void *user, void *data, ut32 id) {
 	RIODesc *desc = (RIODesc *)data;

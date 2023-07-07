@@ -1,6 +1,7 @@
 /* Copyright radare2 - 2014-2023 - pancake, ret2libc */
 
 #include <r_core.h>
+#include <r_vec.h>
 
 static R_TH_LOCAL int mousemode = 0;
 static R_TH_LOCAL int disMode = 0;
@@ -42,6 +43,8 @@ static const char * const mousemodes[] = {
 #define BODY_COMMENTS   0x4
 
 #define NORMALIZE_MOV(x) ((x) < 0 ? -1 : ((x) > 0 ? 1 : 0))
+
+R_GENERATE_VEC_IMPL_FOR(AnalRef, RAnalRef);
 
 static void hash_set(Sdb *db, const void *k, ut64 v) {
 	r_strf_var (ks, 32, "%"PFMT64u, (ut64) (size_t) (k));
@@ -2508,10 +2511,6 @@ cleanup:
  * information */
 static bool get_cgnodes(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 	RAnalFunction *f = r_anal_get_fcn_in (core->anal, core->offset, 0);
-	RANode *node, *fcn_anode;
-	RListIter *iter;
-	RAnalRef *ref;
-	RList *refs;
 	if (!f) {
 		return false;
 	}
@@ -2522,7 +2521,7 @@ static bool get_cgnodes(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 	r_core_seek (core, f->addr, true);
 
 	char *title = get_title (fcn->addr);
-	fcn_anode = r_agraph_add_node (g, title, "", NULL);
+	RANode *fcn_anode = r_agraph_add_node (g, title, "", NULL);
 
 	free (title);
 	if (!fcn_anode) {
@@ -2532,38 +2531,42 @@ static bool get_cgnodes(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 	fcn_anode->x = 10;
 	fcn_anode->y = 3;
 
-	refs = r_anal_function_get_refs (fcn);
-	r_list_foreach (refs, iter, ref) {
-		title = get_title (ref->addr);
-		if (r_agraph_get_node (g, title)) {
-			continue;
+	RVecAnalRef *refs = r_anal_function_get_refs (fcn);
+	if (refs) {
+		RAnalRef *ref;
+		R_VEC_FOREACH (refs, ref) {
+			title = get_title (ref->addr);
+			if (r_agraph_get_node (g, title)) {
+				continue;
+			}
+			free (title);
+
+			int size = 0;
+			RAnalBlock *bb = r_anal_bb_from_offset (core->anal, ref->addr);
+			if (bb) {
+				size = bb->size;
+			}
+
+			char *body = get_body (core, ref->addr, size, mode2opts (g));
+			title = get_title (ref->addr);
+
+			RANode *node = r_agraph_add_node (g, title, body, NULL);
+			if (!node) {
+				RVecAnalRef_free (refs, NULL, NULL);
+				return false;
+			}
+
+			free (title);
+			free (body);
+
+			node->x = 10;
+			node->y = 10;
+
+			r_agraph_add_edge (g, fcn_anode, node, false);
 		}
-		free (title);
-
-		int size = 0;
-		RAnalBlock *bb = r_anal_bb_from_offset (core->anal, ref->addr);
-		if (bb) {
-			size = bb->size;
-		}
-
-		char *body = get_body (core, ref->addr, size, mode2opts (g));
-		title = get_title (ref->addr);
-
-		node = r_agraph_add_node (g, title, body, NULL);
-		if (!node) {
-			return false;
-		}
-
-		free (title);
-		free (body);
-
-		node->x = 10;
-		node->y = 10;
-
-		r_agraph_add_edge (g, fcn_anode, node, false);
 	}
-	r_list_free (refs);
 
+	RVecAnalRef_free (refs, NULL, NULL);
 	return true;
 }
 

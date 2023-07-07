@@ -4,6 +4,7 @@
 
 #include <r_anal.h>
 #include <r_parse.h>
+#include <r_vec.h>
 
 #define READ_AHEAD 1
 #define SDB_KEY_BB "bb.0x%"PFMT64x ".0x%"PFMT64x
@@ -34,6 +35,8 @@
 #define DB a->sdb_fcns
 #define EXISTS(x, ...) snprintf (key, sizeof (key) - 1, x, ## __VA_ARGS__), sdb_exists (DB, key)
 #define SETKEY(x, ...) snprintf (key, sizeof (key) - 1, x, ## __VA_ARGS__);
+
+R_GENERATE_VEC_IMPL_FOR(AnalRef, RAnalRef);
 
 R_API const char *r_anal_functiontype_tostring(int type) {
 	switch (type) {
@@ -342,12 +345,16 @@ static bool purity_checked(HtUP *ht, RAnalFunction *fcn) {
  * (or any function called by fcn) MODIFIES external data.
  */
 static void check_purity(HtUP *ht, RAnalFunction *fcn) {
-	RListIter *iter;
-	RList *refs = r_anal_function_get_refs (fcn);
-	RAnalRef *ref;
-	ht_up_insert (ht, fcn->addr, NULL);
 	fcn->is_pure = true;
-	r_list_foreach (refs, iter, ref) {
+	ht_up_insert (ht, fcn->addr, NULL);
+
+	RVecAnalRef *refs = r_anal_function_get_refs (fcn);
+	if (!refs) {
+		return;
+	}
+
+	RAnalRef *ref;
+	R_VEC_FOREACH (refs, ref) {
 		const int rt = R_ANAL_REF_TYPE_MASK (ref->type);
 		switch (rt) {
 		case R_ANAL_REF_TYPE_CALL:
@@ -363,16 +370,19 @@ static void check_purity(HtUP *ht, RAnalFunction *fcn) {
 				}
 				if (!called_fcn->is_pure) {
 					fcn->is_pure = false;
-					break;
+					RVecAnalRef_free (refs, NULL, NULL);
+					return;
 				}
 			}
 			break;
 		case R_ANAL_REF_TYPE_DATA:
 			fcn->is_pure = false;
-			break;
+			RVecAnalRef_free (refs, NULL, NULL);
+			return;
 		}
 	}
-	r_list_free (refs);
+
+	RVecAnalRef_free (refs, NULL, NULL);
 }
 
 typedef struct {
@@ -1207,7 +1217,10 @@ repeat:
 		case R_ANAL_OP_TYPE_RCJMP:
 		case R_ANAL_OP_TYPE_UCJMP:
 			if (anal->opt.cjmpref) {
-				(void) r_anal_xrefs_set (anal, op->addr, op->jump, R_ANAL_REF_TYPE_CODE);
+				const bool is_success = r_anal_xrefs_set (anal, op->addr, op->jump, R_ANAL_REF_TYPE_CODE);
+				if (!is_success) {
+					R_LOG_DEBUG ("failed to add xref @ %"PFMT64u" -> %"PFMT64u"\n", op->addr, op->jump);
+				}
 			}
 			if (!overlapped) {
 				bb->jump = op->jump;
@@ -1430,7 +1443,6 @@ analopfinish:
 				}
 			}
 			break;
-			/* fallthru */
 		case R_ANAL_OP_TYPE_PUSH:
 			last_is_push = true;
 			last_push_addr = op->val;
@@ -1593,13 +1605,17 @@ R_API bool r_anal_check_fcn(RAnal *anal, ut8 *buf, ut16 bufsz, ut64 addr, ut64 l
 
 R_API void r_anal_trim_jmprefs(RAnal *anal, RAnalFunction *fcn) {
 	r_return_if_fail (anal && fcn);
-	RAnalRef *ref;
-	RList *refs = r_anal_function_get_refs (fcn);
-	RListIter *iter;
+
 	const char *arch = R_UNWRAP4 (anal, arch, session, name);
 	const bool is_x86 = arch && !strcmp (arch, "x86"); // HACK
 
-	r_list_foreach (refs, iter, ref) {
+	RVecAnalRef *refs = r_anal_function_get_refs (fcn);
+	if (!refs) {
+		return;
+	}
+
+	RAnalRef *ref;
+	R_VEC_FOREACH (refs, ref) {
 		int rt = R_ANAL_REF_TYPE_MASK (ref->type);
 		// TODO: honor REF_TYPE_ICOD too?
 		if (rt == R_ANAL_REF_TYPE_CODE && r_anal_function_contains (fcn, ref->addr)
@@ -1607,23 +1623,27 @@ R_API void r_anal_trim_jmprefs(RAnal *anal, RAnalFunction *fcn) {
 			r_anal_xrefs_deln (anal, ref->at, ref->addr, ref->type);
 		}
 	}
-	r_list_free (refs);
+
+	RVecAnalRef_free (refs, NULL, NULL);
 }
 
 R_API void r_anal_del_jmprefs(RAnal *anal, RAnalFunction *fcn) {
 	r_return_if_fail (anal && fcn);
-	RAnalRef *ref;
-	RList *refs = r_anal_function_get_refs (fcn);
-	RListIter *iter;
 
-	r_list_foreach (refs, iter, ref) {
-		int rt = R_ANAL_REF_TYPE_MASK (ref->type);
+	RVecAnalRef *refs = r_anal_function_get_refs (fcn);
+	if (!refs) {
+		return;
+	}
+
+	RAnalRef *ref;
+	R_VEC_FOREACH (refs, ref) {
+		RAnalRefType rt = R_ANAL_REF_TYPE_MASK (ref->type);
 		// TODO: honor REF_TYPE_ICOD too?
 		if (rt == R_ANAL_REF_TYPE_CODE) {
 			r_anal_xrefs_deln (anal, ref->at, ref->addr, ref->type);
 		}
 	}
-	r_list_free (refs);
+	RVecAnalRef_free (refs, NULL, NULL);
 }
 
 /* Does NOT invalidate read-ahead cache. */

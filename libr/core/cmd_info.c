@@ -158,17 +158,16 @@ static void cmd_info_here(RCore *core, PJ *pj, int mode) {
 		if (item->comment) {
 			pj_ks (pj, "comment", item->comment);
 		}
-		RListIter *iter;
-		RAnalRef *ref;
 		if (item->data) {
 			pj_ks (pj, "data", item->data);
 		}
 		{
-			RList *refs = r_anal_refs_get (core->anal, core->offset);
-			if (refs && r_list_length (refs) > 0) {
+			RVecAnalRef *refs = r_anal_refs_get (core->anal, core->offset);
+			if (refs && !RVecAnalRef_empty (refs)) {
 				pj_k (pj, "refs");
 				pj_a (pj);
-				r_list_foreach (refs, iter, ref) {
+				RAnalRef *ref;
+				R_VEC_FOREACH (refs, ref) {
 					pj_o (pj);
 					pj_ks (pj, "type", r_anal_ref_type_tostring (ref->type));
 					pj_kn (pj, "addr", ref->addr);
@@ -176,13 +175,15 @@ static void cmd_info_here(RCore *core, PJ *pj, int mode) {
 				}
 				pj_end (pj);
 			}
+			RVecAnalRef_free (refs, NULL, NULL);
 		}
 		{
-			RList *refs = r_anal_xrefs_get (core->anal, core->offset);
-			if (refs && r_list_length (refs) > 0) {
+			RVecAnalRef *refs = r_anal_xrefs_get (core->anal, core->offset);
+			if (refs && !RVecAnalRef_empty (refs)) {
 				pj_k (pj, "xrefs");
 				pj_a (pj);
-				r_list_foreach (refs, iter, ref) {
+				RAnalRef *ref;
+				R_VEC_FOREACH (refs, ref) {
 					pj_o (pj);
 					pj_ks (pj, "type", r_anal_ref_type_tostring (ref->type));
 					pj_kn (pj, "addr", ref->addr);
@@ -190,6 +191,7 @@ static void cmd_info_here(RCore *core, PJ *pj, int mode) {
 				}
 				pj_end (pj);
 			}
+			RVecAnalRef_free (refs, NULL, NULL);
 		}
 		pj_end (pj);
 		r_core_item_free (item);

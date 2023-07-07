@@ -57,7 +57,7 @@ extern "C" {
  *   atleast a capacity of "new_capacity". Returns true on success, otherwise false.
  * - void R_VEC_FUNC(name, shrink_to_fit)(R_VEC(name) *vec): Shrinks the vector to exactly fit the
  *   current number of elements it contains.
- * - void R_VEC_FUNC(name, push_back)(R_VEC(name) *vec, type *value): Appends a single element to
+ * - void R_VEC_FUNC(name, push_back)(R_VEC(name) *vec, const type *value): Appends a single element to
  *   the end of the vector.
  * - type *R_VEC_FUNC(name, emplace_back)(R_VEC(name) *vec): Returns a pointer to a new uninitialized
  *   element at the back of the vector. The pointer must be filled with data afterwards, or it can lead to
@@ -227,7 +227,7 @@ extern "C" {
 		return NULL; \
 	} \
 	static inline R_MAYBE_UNUSED R_MUSTUSE type *R_VEC_FUNC(name, find)(const R_VEC(name) *vec, void *value, R_VEC_FIND_CMP(name) cmp_fn) { \
-		r_return_val_if_fail (vec && value, NULL); \
+		r_return_val_if_fail (vec, NULL); \
 		type *val; \
 		R_VEC_FOREACH (vec, val) { \
 			if (!cmp_fn (val, value)) { \
@@ -309,7 +309,7 @@ extern "C" {
 			} \
 		} \
 	} \
-	static inline R_MAYBE_UNUSED void R_VEC_FUNC(name, push_back)(R_VEC(name) *vec, type *value) { \
+	static inline R_MAYBE_UNUSED void R_VEC_FUNC(name, push_back)(R_VEC(name) *vec, const type *value) { \
 		r_return_if_fail (vec && value); \
 		const ut64 num_elems = R_VEC_FUNC(name, length) (vec); \
 		const ut64 capacity = R_VEC_CAPACITY (vec); \
@@ -356,7 +356,7 @@ extern "C" {
 		vec->_end++; \
 		return vec->_start; \
 	} \
-	static inline R_MAYBE_UNUSED void R_VEC_FUNC(name, append)(R_VEC(name) *vec, R_VEC(name) *values) { \
+	static inline R_MAYBE_UNUSED void R_VEC_FUNC(name, append)(R_VEC(name) *vec, const R_VEC(name) *values) { \
 		r_return_if_fail (vec && values); \
 		const ut64 num_elems = R_VEC_FUNC(name, length) (vec); \
 		const ut64 capacity = R_VEC_CAPACITY (vec); \
