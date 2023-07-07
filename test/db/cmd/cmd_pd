@@ -2204,7 +2204,7 @@ aaa
 pdf @ 0x08048484~:1
 EOF
 EXPECT=<<EOF
-66: sym.parell (char *s);
+66: sym.parell (char *s); // noreturn
 EOF
 RUN
 
@@ -2218,7 +2218,7 @@ aaa
 pdf @ 0x08048484~:1
 EOF
 EXPECT=<<EOF
-66: parell (char *s);
+66: parell (char *s); // noreturn
 EOF
 RUN
 

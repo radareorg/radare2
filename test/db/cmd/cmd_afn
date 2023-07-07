@@ -61,29 +61,29 @@ EXPECT=<<EOF
 mymain
 The main flag shouldnt be renamed, it comes from bin:
 0x080483f4 33 fcn.080483f4
-0x08048540 92 mymain
+0x08048540 85 mymain
 --
 0x080483f4 33 fcn.080483f4
 0x08048540 92 main
 0x08048540 92 sym.main
-0x08048540 92 mymain
+0x08048540 85 mymain
 myfunc
 Here the flag is owned by the fcn and should be renamed:
 0x080483f4 33 myfunc
-0x08048540 92 mymain
+0x08048540 85 mymain
 --
 0x080483f4 33 myfunc
 0x08048540 92 main
 0x08048540 92 sym.main
-0x08048540 92 mymain
+0x08048540 85 mymain
 Non-existing flags should be created
 0x080483f4 33 createdflag
-0x08048540 92 mymain
+0x08048540 85 mymain
 --
 0x080483f4 33 createdflag
 0x08048540 92 main
 0x08048540 92 sym.main
-0x08048540 92 mymain
+0x08048540 85 mymain
 EOF
 RUN
 

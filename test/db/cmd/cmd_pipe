@@ -27,14 +27,14 @@ EOF
 EXPECT=<<EOF
 
 Function names:
-entry0
 sym.imp._Exit
+entry0
 
 Disassembly of entry0:
             ;-- section..text:
             ;-- .text:
             ;-- _start():
-/ 16: entry0 ();
+/ 16: entry0 (); // noreturn
 |           0x08049020      55             push ebp                    ; [10] -r-x section size 16 named .text
 |           0x08049021      89e5           mov ebp, esp
 |           0x08049023      83ec08         sub esp, 8

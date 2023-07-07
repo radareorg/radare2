@@ -62,6 +62,7 @@ EXPECT=<<EOF
       "acoshf=func",
       "acoshl=func",
       "acosl=func",
+      "addr.8048360.noreturn=true",
       "arc4random=func",
       "asctime=func",
       "asin=func",

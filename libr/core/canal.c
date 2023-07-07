@@ -4222,6 +4222,7 @@ static void add_string_ref(RCore *core, ut64 xref_from, ut64 xref_to) {
 	free (str);
 }
 
+// R2R db/anal/mach0
 static bool found_xref(RCore *core, ut64 at, ut64 xref_to, RAnalRefType type, PJ *pj, int rad, bool cfg_debug, bool cfg_anal_strings) {
 	// Validate the reference. If virtual addressing is enabled, we
 	// allow only references to virtual addresses in order to reduce
@@ -4281,15 +4282,14 @@ R_API int r_core_anal_search_xrefs(RCore *core, ut64 from, ut64 to, PJ *pj, int 
 	bool cfg_anal_strings = r_config_get_b (core->config, "anal.strings");
 	ut64 at;
 	int count = 0;
-	int bsz = 8096;
+	int bsz = 4 * 4096;
 	RAnalOp op = {0};
 
 	if (from == to) {
 		return -1;
 	}
 	if (from > to) {
-		eprintf ("Invalid range (0x%"PFMT64x
-		" >= 0x%"PFMT64x")\n", from, to);
+		R_LOG_ERROR ("Invalid range (0x%"PFMT64x " >= 0x%"PFMT64x")", from, to);
 		return -1;
 	}
 
@@ -4331,6 +4331,7 @@ R_API int r_core_anal_search_xrefs(RCore *core, ut64 from, ut64 to, PJ *pj, int 
 	if (!r_io_get_region_at (core->io, &region, at) || !(region.perm & R_PERM_X)) {
 		goto beach;
 	}
+	bool uninit = true;
 	while (at < to && !r_cons_is_breaked ()) {
 		int i = 0, ret = bsz;
 		if (!r_itv_contain (region.itv, at)) {
@@ -4345,16 +4346,23 @@ R_API int r_core_anal_search_xrefs(RCore *core, ut64 from, ut64 to, PJ *pj, int 
 		(void)r_io_read_at (core->io, at, buf, bsz);
 		memset (block, -1, bsz);
 		if (!memcmp (buf, block, bsz)) {
-			R_LOG_ERROR ("skipping uninitialized block ");
-			at += ret;
+			if (!uninit) {
+				R_LOG_ERROR ("skipping -1 uninitialized block 0x%08"PFMT64x, at);
+			}
+			uninit = true;
+			at += bsz;
 			continue;
 		}
 		memset (block, 0, bsz);
 		if (!memcmp (buf, block, bsz)) {
-			R_LOG_ERROR ("skipping uninitialized block");
-			at += ret;
+			if (!uninit) {
+				R_LOG_ERROR ("skipping 0 uninitialized block at 0x%08"PFMT64x, at);
+			}
+			uninit = true;
+			at += bsz;
 			continue;
 		}
+		uninit = false;
 		(void) r_anal_op (core->anal, &op, at, buf, bsz, R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_HINT);
 		while ((i + maxopsz) < bsz && !r_cons_is_breaked ()) {
 			r_anal_op_fini (&op);
@@ -4435,7 +4443,7 @@ R_API int r_core_anal_search_xrefs(RCore *core, ut64 from, ut64 to, PJ *pj, int 
 		if (i < 1) {
 			break;
 		}
-		at += i + 1;
+		at += i + 1; // XXX i think this causes code unalignment problems
 	}
 beach:
 	r_cons_break_pop ();
@@ -4478,6 +4486,12 @@ R_API int r_core_anal_all(RCore *core) {
 	RBinSymbol *symbol;
 	const bool anal_vars = r_config_get_b (core->config, "anal.vars");
 	const bool anal_calls = r_config_get_b (core->config, "anal.calls");
+
+	// required for noreturn
+	if (r_config_get_b (core->config, "anal.imports")) {
+		R_LOG_INFO ("Analyze imports (af@@@@i)");
+		r_core_cmd0 (core, "af@@@i");
+	}
 
 	/* Analyze Functions */
 	/* Entries */
