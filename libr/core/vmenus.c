@@ -4345,6 +4345,7 @@ onemoretime:
 		handleHints (core);
 		break;
 	case 'r': // "Vdr"
+		r_core_cmdf (core, "cls;pd 10 @ 0x%08"PFMT64x, off);
 		r_core_cmdf (core, "?i new function name;afn `yp` @ 0x%08"PFMT64x, off);
 		break;
 	case 'z': // "Vdz"
