@@ -4331,6 +4331,7 @@ R_API int r_core_anal_search_xrefs(RCore *core, ut64 from, ut64 to, PJ *pj, int 
 	if (!r_io_get_region_at (core->io, &region, at) || !(region.perm & R_PERM_X)) {
 		goto beach;
 	}
+	bool uninit = true;
 	while (at < to && !r_cons_is_breaked ()) {
 		int i = 0, ret = bsz;
 		if (!r_itv_contain (region.itv, at)) {
@@ -4345,16 +4346,23 @@ R_API int r_core_anal_search_xrefs(RCore *core, ut64 from, ut64 to, PJ *pj, int 
 		(void)r_io_read_at (core->io, at, buf, bsz);
 		memset (block, -1, bsz);
 		if (!memcmp (buf, block, bsz)) {
-			R_LOG_ERROR ("skipping -1 uninitialized block 0x%08"PFMT64x, ret);
-			at += ret;
+			if (!uninit) {
+				R_LOG_ERROR ("skipping -1 uninitialized block 0x%08"PFMT64x, at);
+			}
+			uninit = true;
+			at += bsz;
 			continue;
 		}
 		memset (block, 0, bsz);
 		if (!memcmp (buf, block, bsz)) {
-			R_LOG_ERROR ("skipping 0 uninitialized block at 0x%08"PFMT64x, ret);
-			at += ret;
+			if (!uninit) {
+				R_LOG_ERROR ("skipping 0 uninitialized block at 0x%08"PFMT64x, at);
+			}
+			uninit = true;
+			at += bsz;
 			continue;
 		}
+		uninit = false;
 		(void) r_anal_op (core->anal, &op, at, buf, bsz, R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_HINT);
 		while ((i + maxopsz) < bsz && !r_cons_is_breaked ()) {
 			r_anal_op_fini (&op);
