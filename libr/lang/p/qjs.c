@@ -69,7 +69,7 @@ static void plugin_manager_add_core_plugin(QjsPluginManager *pm, const char *nam
 	}
 }
 
-static inline int compare_core_plugin_name(QjsCorePlugin *cp, void *data) {
+static inline int compare_core_plugin_name(const QjsCorePlugin *cp, const void *data) {
 	const char *name = data;
 	return strcmp (cp->name, name);
 }
@@ -106,7 +106,7 @@ static void plugin_manager_add_arch_plugin(QjsPluginManager *pm, const char *nam
 	}
 }
 
-static inline int compare_arch_plugin_arch(QjsArchPlugin *ap, void *data) {
+static inline int compare_arch_plugin_arch(const QjsArchPlugin *ap, const void *data) {
 	// TODO also lookup plugin by endian-ness and bits (pass in data struct)
 	const char *arch = data;
 	return strcmp (ap->arch, arch);

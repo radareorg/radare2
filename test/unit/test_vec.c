@@ -18,11 +18,11 @@ void fini_S (S* s, void *user) {
 	}
 }
 
-static inline int compare_st32(st32 *a, st32 *b) {
+static inline int compare_st32(const st32 *a, const st32 *b) {
 	return *a - *b;
 }
 
-static inline int find_compare_st32(st32 *a, void *b) {
+static inline int find_compare_st32(const st32 *a, const void *b) {
 	return compare_st32(a, (st32*) b);
 }
 
@@ -850,6 +850,74 @@ static bool test_vec_upper_bound(void) {
 	mu_end;
 }
 
+static int compare_S(const S *a, const S *b) {
+	if (*a->y < *b->y) {
+		return -1;
+	}
+	if (*a->y > *b->y) {
+		return 1;
+	}
+	return 0;
+}
+
+static bool test_vec_sort(void) {
+	RVecST32 v;
+	RVecST32_init (&v);
+
+	st32 x = 123;
+	RVecST32_push_back (&v, &x);
+	x = 47;
+	RVecST32_push_back (&v, &x);
+	x = 59;
+	RVecST32_push_back (&v, &x);
+	x = 38;
+	RVecST32_push_back (&v, &x);
+	x = 250;
+	RVecST32_push_back (&v, &x);
+
+	RVecST32_sort (&v, compare_st32);
+	mu_assert_eq (*RVecST32_at (&v, 0), 38, "sort1");
+	mu_assert_eq (*RVecST32_at (&v, 1), 47, "sort2");
+	mu_assert_eq (*RVecST32_at (&v, 2), 59, "sort3");
+	mu_assert_eq (*RVecST32_at (&v, 3), 123, "sort4");
+	mu_assert_eq (*RVecST32_at (&v, 4), 250, "sort5");
+
+	RVecST32_fini (&v, NULL, NULL);
+
+
+	RVecS vS;
+	RVecS_init (&vS);
+
+	S s = { 0 };
+	float *y;
+
+	y = malloc (sizeof (float));
+	*y = 3.14;
+	s.y = y;
+	RVecS_push_back (&vS, &s);
+	y = malloc (sizeof (float));
+	*y = 1.42;
+	s.y = y;
+	RVecS_push_back (&vS, &s);
+	y = malloc (sizeof (float));
+	*y = 9000.1;
+	s.y = y;
+	RVecS_push_back (&vS, &s);
+	y = malloc (sizeof (float));
+	*y = 13.37;
+	s.y = y;
+	RVecS_push_back (&vS, &s);
+
+	RVecS_sort (&vS, compare_S);
+	mu_assert_eq (*RVecS_at (&vS, 0)->y, 1.42, "sort6");
+	mu_assert_eq (*RVecS_at (&vS, 1)->y, 3.14, "sort7");
+	mu_assert_eq (*RVecS_at (&vS, 2)->y, 13.37, "sort8");
+	mu_assert_eq (*RVecS_at (&vS, 3)->y, 9000.1, "sort9");
+
+	RVecS_fini (&vS, fini_S, NULL);
+	mu_end;
+}
+
 static int all_tests(void) {
 	mu_run_test (test_vec_init);
 	mu_run_test (test_vec_fini);
@@ -880,6 +948,7 @@ static int all_tests(void) {
 	mu_run_test (test_vec_foreach_prev);
 	mu_run_test (test_vec_lower_bound);
 	mu_run_test (test_vec_upper_bound);
+	mu_run_test (test_vec_sort);
 
 	return tests_passed != tests_run;
 }
