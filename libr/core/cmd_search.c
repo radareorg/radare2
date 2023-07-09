@@ -1222,7 +1222,7 @@ static RList *construct_rop_gadget(RCore *core, ut64 addr, ut8 *buf, int buflen,
 		// opsz = r_strbuf_length (asmop.buf);
 		char *opst = aop.mnemonic;
 		if (!opst) {
-			R_LOG_ERROR ("Missing mnemonic after disasm with '%s'", core->anal->cur->name);
+			R_LOG_ERROR ("Missing mnemonic after disasm");
 			RAnalOp asmop;
 			r_asm_set_pc (core->rasm, addr);
 			if (r_asm_disassemble (core->rasm, &asmop, buf + idx, buflen - idx) < 0) {

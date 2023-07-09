@@ -35,12 +35,13 @@ static inline int find_plugin_by_name(const RDebugPluginSession *ds, const void 
 
 R_API bool r_debug_use(RDebug *dbg, const char *str) {
 	RDebugPluginSession *ds = NULL;
-	if (dbg && str) {
+	if (dbg && R_STR_ISNOTEMPTY (str)) {
 		ds = RVecDebugPluginSession_find (dbg->plugins, (void*)str, find_plugin_by_name);
 		if (ds) {
 			dbg->current = ds;
 			if (dbg->anal && dbg->anal->cur) {
-				r_debug_set_arch (dbg, dbg->anal->cur->arch, dbg->bits);
+				const char *arch = dbg->anal->config->arch;
+				r_debug_set_arch (dbg, arch, dbg->bits);
 			}
 			dbg->bp->breakpoint = dbg->current->plugin.breakpoint;
 			dbg->bp->user = dbg;

@@ -37,7 +37,7 @@ R_API int r_anal_opasm(RAnal *anal, ut64 addr, const char *s, ut8 *outbuf, int o
 	char *tmparch = NULL;
 	int ret = 0;
 	char *oldname = NULL;
-	if (outlen > 0 && anal->arch->session && anal->uses == 2) {
+	if (outlen > 0 && anal->arch->session && anal->uses) {
 		RArchSession *as = R_UNWRAP3 (anal, arch, session);
 		RArchPluginEncodeCallback encode = R_UNWRAP3 (as, plugin, encode);
 		RAnalOp *op = r_anal_op_new ();
@@ -104,12 +104,6 @@ R_API int r_anal_opasm(RAnal *anal, ut64 addr, const char *s, ut8 *outbuf, int o
 			r_arch_use (anal->arch, anal->arch->cfg, oldname);
 			R_FREE (oldname);
 		}
-		/* consider at least 1 byte to be part of the opcode */
-	} else if (anal && outbuf && outlen > 0 && anal->cur && anal->cur->opasm) {
-		// use core binding to set asm.bits correctly based on the addr
-		// this is because of the hassle of arm/thumb
-		ret = anal->cur->opasm (anal, addr, s, outbuf, outlen);
-		/* consider at least 1 byte to be part of the opcode */
 	} else {
 		// try to find a matchiing plugin in r_arch
 		r_arch_use (anal->arch, anal->config, anal->config->arch);
@@ -175,7 +169,7 @@ R_API int r_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 		return -1;
 	}
 	int ret = R_MIN (2, len);
-	if (len > 0 && anal->uses == 2 && anal->arch->session) {
+	if (len > 0 && anal->uses && anal->arch->session) {
 		r_anal_op_set_bytes (op, addr, data, len);
 		if (!r_arch_decode (anal->arch, op, mask) || op->size <= 0) {
 			op->type = R_ANAL_OP_TYPE_ILL;

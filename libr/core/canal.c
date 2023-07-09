@@ -3733,12 +3733,14 @@ R_API void r_core_recover_vars(RCore *core, RAnalFunction *fcn, bool argonly) {
 	if (core->anal->opt.bb_max_size < 1) {
 		return;
 	}
+#if 0
 	if (core->anal->cur && core->anal->cur->arch) {
 		if (!strcmp (core->anal->cur->arch, "java") || !strcmp (core->anal->cur->arch, "dalvik")) {
 			// var/arg info in dalvik is provided by the bin format, same goes for java
 			return;
 		}
 	}
+#endif
 	BlockRecurseCtx ctx = { 0, {{0}}, argonly, fcn, core };
 	r_pvector_init (&ctx.reg_set, free);
 	int *reg_set = R_NEWS0 (int, REG_SET_SIZE);
@@ -6026,10 +6028,10 @@ R_IPI int r_core_search_value_in_range(RCore *core, bool relative, RInterval sea
 		return -1;
 	}
 	bool maybeThumb = false;
-	if (align && core->anal->cur && core->anal->cur->arch) {
-		if (!strcmp (core->anal->cur->arch, "arm") && core->anal->config->bits != 64) {
-			maybeThumb = true;
-		}
+	const bool is_arm = !strcmp (core->anal->config->arch, "arm");
+	const int bits = core->anal->config->bits;
+	if (align && is_arm && bits != 64) {
+		maybeThumb = true;
 	}
 
 	if (vmin >= vmax) {

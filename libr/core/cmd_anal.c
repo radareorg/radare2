@@ -6091,9 +6091,12 @@ R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr,
 				core->dbg->reg = reg;
 			} else if (R_STR_ISNOTEMPTY (e)) {
 				r_esil_parse (esil, e);
+#if 0
+				// XXX thats not related to arch plugins, and wonder if its useful at all or we want it as part of the anal or esil plugs
 				if (core->anal->cur && core->anal->cur->esil_post_loop) {
 					core->anal->cur->esil_post_loop (esil, &op);
 				}
+#endif
 				r_esil_stack_free (esil);
 			}
 			bool isNextFall = false;
@@ -13757,6 +13760,8 @@ static int cmd_anal(void *data, const char *input) {
 	case 'h': // "ah"
 		cmd_anal_hint (core, input + 1);
 		break;
+#if 0
+	/// XXX this must be renamed to 'a:' // "a:" and cmd_ext must be command like in io
 	case '!': // "a!"
 		if (core->anal && core->anal->cur && core->anal->cur->cmd_ext) {
 			return core->anal->cur->cmd_ext (core->anal, input + 1);
@@ -13764,6 +13769,7 @@ static int cmd_anal(void *data, const char *input) {
 			r_cons_printf ("No plugins for this analysis plugin\n");
 		}
 		break;
+#endif
 	case 'j': // "aj"
 		r_core_cmd_call (core, "aflj");
 		break;

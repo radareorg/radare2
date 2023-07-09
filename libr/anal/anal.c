@@ -223,43 +223,39 @@ R_API int r_anal_plugin_add(RAnal *anal, RAnalPlugin *foo) {
 }
 
 R_API char *r_anal_mnemonics(RAnal *anal, int id, bool json) {
+	r_return_val_if_fail (anal, NULL);
 	RArchSession *session = R_UNWRAP3 (anal, arch, session);
-	RArchPluginMnemonicsCallback arch_mnemonics = R_UNWRAP3 (session, plugin, mnemonics);
-	if (arch_mnemonics) {
-		return arch_mnemonics (session, id, json);
-	} else if (anal->cur && anal->cur->mnemonics) {
-		return anal->cur->mnemonics (anal, id, json);
-	}
-	return NULL;
+	RArchPluginMnemonicsCallback am = R_UNWRAP3 (session, plugin, mnemonics);
+	return am? am (session, id, json): NULL;
 }
 
 R_API bool r_anal_use(RAnal *anal, const char *name) {
 	r_return_val_if_fail (anal, false);
+#if 0
 	RListIter *it;
 	RAnalPlugin *h;
 	// r_anal plugins
 	r_list_foreach (anal->plugins, it, h) {
-		if (!h->name || strcmp (h->name, name)) {
+		if (!h->meta.name || strcmp (h->meta.name, name)) {
 			continue;
 		}
 		anal->cur = h;
 		r_arch_config_use (anal->config, h->arch);
-		r_anal_set_reg_profile (anal, NULL);
 		// R_LOG_DEBUG ("plugin found in analysis");
-		anal->uses = 1;
+		anal->uses = 1; // XXX must be always 2 or 0
 		return true;
 	}
+#endif
 	if (anal->arch) {
 		bool res = r_arch_use (anal->arch, anal->config, name);
 		if (res) {
 			anal->cur = NULL;
 			r_anal_set_reg_profile (anal, NULL);
-			// R_LOG_DEBUG ("plugin found in arch");
-			anal->uses = 2;
+			anal->uses = true;
 			return true;
 		}
 	}
-	anal->uses = 0;
+	anal->uses = false;
 	// R_LOG_DEBUG ("no plugin found");
 	return false;
 }
@@ -330,7 +326,7 @@ R_API bool r_anal_set_triplet(RAnal *anal, R_NULLABLE const char *os, R_NULLABLE
 		os = R_SYS_OS;
 	}
 	if (R_STR_ISEMPTY (arch)) {
-		arch = anal->cur? anal->cur->arch: R_SYS_ARCH;
+		arch = anal->config? anal->config->arch: R_SYS_ARCH;
 	}
 	if (bits < 1) {
 		bits = anal->config->bits;
@@ -496,7 +492,7 @@ R_API R_DEPRECATE int r_anal_archinfo(RAnal *anal, int query) {
 	// this check wont be needed when all the anal plugs move to archland
 	// const char *const b = anal->cur->name;
 	// eprintf ("%s %s\n", a, b);
-	if (anal->uses == 2 && anal->arch->session) {
+	if (anal->uses && anal->arch->session) {
 		const char *const a = anal->arch->session? anal->arch->session->config->arch: "";
 		const char *const b = anal->config->arch;
 		if (!strcmp (a, b)) {
@@ -764,7 +760,7 @@ R_API void r_anal_bind(RAnal *anal, RAnalBind *b) {
 }
 
 R_API RList *r_anal_preludes(RAnal *anal) {
-	if (anal->uses == 2 && anal->arch->session) {
+	if (anal->uses && anal->arch->session) {
 		const char *const a = anal->arch->session? anal->arch->session->config->arch: "";
 		const char *const b = anal->config->arch;
 		if (!strcmp (a, b)) {

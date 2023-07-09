@@ -513,7 +513,7 @@ typedef struct r_anal_t {
 	int cs_obits;
 	int cs_omode;
 	size_t cs_handle;
-	int uses; // 0 = nothing, 1 = anal plugin, 2 = arch plugin
+	bool uses; // false = nothing, true = arch plugin
 	int thread; // see apt command
 	RList *threads;
 	RColor tracetagcolors[64]; // each trace color for each bit
@@ -783,17 +783,21 @@ typedef int (*REsilLoopCB)(REsil *esil, RAnalOp *op);
 typedef int (*REsilTrapCB)(REsil *esil, int trap_type, int trap_code);
 
 typedef struct r_anal_plugin_t {
+	RPluginMeta meta;
+#if 0
 	char *name;
 	char *desc;
 	char *license;
 	char *arch;
 	char *author;
 	char *version;
+
 	int endian; // bitmask to define little, big, etc.
 	char *cpus;
 	int bits;
 	int esil; // can do esil or not
 	int jmpmid;	// can do jump in the middle
+#endif
 	int fileformat_type;
 	int (*init)(void *user);
 	int (*fini)(void *user);
@@ -804,24 +808,23 @@ typedef struct r_anal_plugin_t {
 
 	// legacy r_anal_functions
 	RAnalOpCallback op;
+#if 0
 	RAnalOpAsmCallback opasm;
+#endif
 
 	// command extension to directly call any analysis functions
-	RAnalCmdExt cmd_ext;
+//	RAnalCmdExt cmd_ext;
 
 	RAnalRegProfCallback set_reg_profile;
 	RAnalRegProfGetCallback get_reg_profile;
+#if 1
+	/// XXX unused but referenced, maybe worth checking in case we want them for anal
 	RAnalFPBBCallback fingerprint_bb;
 	RAnalFPFcnCallback fingerprint_fcn;
 	RAnalDiffBBCallback diff_bb;
 	RAnalDiffFcnCallback diff_fcn;
 	RAnalDiffEvalCallback diff_eval;
-
-	REsilCB esil_init; // initialize esil-related stuff
-	REsilLoopCB esil_post_loop;	//cycle-counting, firing interrupts, ...
-	REsilTrapCB esil_trap; // traps / exceptions
-	REsilCB esil_fini; // deinitialize
-	char *(*mnemonics)(RAnal *a, int id, bool json);
+#endif
 } RAnalPlugin;
 
 /*----------------------------------------------------------------------------------------------*/
