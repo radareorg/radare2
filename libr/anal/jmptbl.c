@@ -184,14 +184,10 @@ R_API bool try_walkthrough_jmptbl(RAnal *anal, RAnalFunction *fcn, RAnalBlock *b
 	if (!jmptbl) {
 		return false;
 	}
-	const char *sarch = NULL;
-	if (anal->uses == 2) {
-		RArchConfig *cfg = R_UNWRAP4 (anal, arch, session, config);
-		if (cfg) {
-			sarch = cfg->arch;
-		}
-	} else {
-		sarch = R_UNWRAP3 (anal, cur, arch);
+	const char *sarch = R_UNWRAP3 (anal, config, arch);
+	if (!sarch) {
+		R_LOG_DEBUG ("Cannot find any valid arch");
+		return false;
 	}
 	bool is_arm = sarch ? r_str_startswith (sarch, "arm"): false;
 	bool is_x86 = !is_arm && r_str_startswith (sarch, "x86");

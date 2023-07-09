@@ -93,10 +93,7 @@ R_API int r_anal_function_resize(RAnalFunction *fcn, int newsize) {
 	}
 
 	// XXX this is something we should probably do for all the archs
-	const char *sarch = R_UNWRAP3 (anal, cur, arch);
-	if (!sarch && anal->arch->session) {
-		sarch = anal->arch->session->config->arch;
-	}
+	const char *sarch = R_UNWRAP5 (anal, arch, session, config, arch);
 	const bool is_arm = sarch && r_str_startswith (sarch, "arm");
 	if (is_arm) {
 		return true;

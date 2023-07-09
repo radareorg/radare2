@@ -1165,28 +1165,11 @@ R_API RAsmCode* r_asm_rasm_assemble(RAsm *a, const char *buf, bool use_spp) {
 }
 
 R_API RList *r_asm_cpus(RAsm *a) {
-#if R2_590
-	// use r_arch api instead
-	a->arch->session->plugin->cpus;
-#else
-	// get asm plugin
-	RList *list = (a->config && a->config->cpu)
-		? r_str_split_duplist (a->config->cpu, ",", 0)
+	// R2_600 move to r_arch api instead?
+	const char *cpus = R_UNWRAP5 (a, arch, session, plugin, cpus);
+	RList *list = cpus
+		? r_str_split_duplist (cpus, ",", 0)
 		: r_list_newf (free);
-	// get anal plugin
-	if (a->analb.anal && a->analb.anal->cur && a->analb.anal->cur->cpus) {
-		char *item;
-		RListIter *iter;
-		const char *cpus = a->analb.anal->cur->cpus;
-		RList *al = r_str_split_duplist (cpus, ",", 0);
-		r_list_foreach (al, iter, item) {
-			if (!r_list_find (list, item, (RListComparator)strcmp)) {
-				r_list_append (list, strdup (item));
-			}
-		}
-		r_list_free (al);
-	}
 	r_list_sort (list, (RListComparator)strcmp);
-#endif
 	return list;
 }

@@ -5709,6 +5709,7 @@ R_API int r_core_print_disasm(RCore *core, ut64 addr, ut8 *buf, int len, int cou
 	ds->buf_line_begin = 0;
 	ds->pdf = pdf;
 
+	int minopsz = 4;
 	if (pdu_condition) {
 		ds->count_bytes = false;
 		ds->count = INT_MAX;
@@ -5837,7 +5838,7 @@ toro:
 		ret = r_anal_op (core->anal, &ds->analop, ds->at, ds_bufat (ds), ds_left (ds), R_ARCH_OP_MASK_ALL);
 		if (ret < 1) {
 			ret = ds->analop.size;
-			inc = ret;
+			inc = minopsz;
 		}
 		ds->oplen = ds->analop.size;
 		if (ds_must_strip (ds)) {
@@ -5944,6 +5945,7 @@ toro:
 
 		ds_atabs_option (ds);
 		if (ds->analop.addr != ds->at) {
+			// TODO : check for error
 			r_anal_op (core->anal, &ds->analop, ds->at, ds_bufat (ds), ds_left (ds), R_ARCH_OP_MASK_ALL);
 		}
 		if (ret < 1) {
@@ -6208,6 +6210,9 @@ toro:
 		}
 		if (skip_bytes_bb && skip_bytes_bb < inc) {
 			inc = skip_bytes_bb;
+		}
+		if (inc < 1) {
+			inc = 1;
 		}
 		inc += ds->asmop.payload + (ds->asmop.payload % ds->core->rasm->dataalign);
 	}

@@ -154,6 +154,8 @@ static bool r_esil_fire_trap(REsil *esil, int trap_type, int trap_code) {
 			return true;
 		}
 	}
+#if 0
+	/// XXX
 	if (esil->anal) {
 		RAnalPlugin *ap = esil->anal->cur;
 		if (ap && ap->esil_trap) {
@@ -162,6 +164,7 @@ static bool r_esil_fire_trap(REsil *esil, int trap_type, int trap_code) {
 			}
 		}
 	}
+#endif
 #if 0
 	REsilTrapCB icb;
 	icb = (REsilTrapCB)sdb_ptr_get (esil->traps, i, 0);
@@ -182,7 +185,6 @@ R_API void r_esil_free(REsil *esil) {
 	}
 
 	// Try arch esil fini cb first, then anal as fallback
-	bool invoked_esil_cb = false;
 	RArchSession *as = R_UNWRAP4 (esil, anal, arch, session);
 	if (as) {
 		RArchPluginEsilCallback esil_cb = R_UNWRAP3 (as, plugin, esilcb);
@@ -191,23 +193,13 @@ R_API void r_esil_free(REsil *esil) {
 				R_LOG_WARN ("Failed to properly cleanup esil for arch plugin");
 			}
 		}
-
-		invoked_esil_cb = !!esil_cb;
 	}
-
-	// XXX potentially move this code back to after freeing esil->stack
-	if (!invoked_esil_cb && esil->anal && esil->anal->cur && esil->anal->cur->esil_fini) {
-		esil->anal->cur->esil_fini (esil);
-	}
-
 	if (esil->anal && esil == esil->anal->esil) {
 		esil->anal->esil = NULL;
 	}
-
 	if (as && esil == esil->anal->arch->esil) {
 		esil->anal->arch->esil = NULL;
 	}
-
 	r_esil_plugins_fini (esil);
 	r_esil_handlers_fini (esil);
 	ht_pp_free (esil->ops);
@@ -4030,7 +4022,10 @@ R_API bool r_esil_setup(REsil *esil, RAnal *anal, int romem, int stats, int nonu
 			return esil_cb (as, R_ARCH_ESIL_INIT);
 		}
 	}
-
+	return true;
+#if 0
+	// ESIL from arch
 	return (anal->cur && anal->cur->esil_init)
 		? anal->cur->esil_init (esil): true;
+#endif
 }

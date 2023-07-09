@@ -168,19 +168,6 @@ static int show_analinfo(RAsmState *as, const char *arg, ut64 offset) {
 	return ret;
 }
 
-static const char *has_esil(RAsmState *as, const char *name) {
-	if (as && name) {
-		RListIter *iter;
-		RAnalPlugin *h;
-		r_list_foreach (as->anal->plugins, iter, h) {
-			if (h->name && !strcmp (name, h->name)) {
-				return h->esil? "Ae": "A_";
-			}
-		}
-	}
-	return "__";
-}
-
 static int sizetsort(const void *a, const void *b) {
 	size_t sa = (size_t)a;
 	size_t sb = (size_t)b;
@@ -254,6 +241,7 @@ static void rarch2_list(RAsmState *as, const char *arch) {
 	pj_free (pj);
 }
 
+#if 0
 // R2_590 - deprecate this
 static void ranal2_list(RAsmState *as, const char *arch) {
 	char bits[32];
@@ -322,6 +310,7 @@ static void ranal2_list(RAsmState *as, const char *arch) {
 	}
 	pj_free (pj);
 }
+#endif
 
 static int rasm_show_help(int v) {
 	if (v < 2) {
@@ -729,7 +718,6 @@ R_API int r_main_rasm2(int argc, const char *argv[]) {
 	const char *filters = NULL;
 	const char *file = NULL;
 	bool list_plugins = false;
-	bool list_anal_plugins = false;
 	bool isbig = false;
 	bool rad = false;
 	bool use_spp = false;
@@ -821,13 +809,7 @@ R_API int r_main_rasm2(int argc, const char *argv[]) {
 			len = r_num_math (NULL, opt.arg);
 			break;
 		case 'L':
-			if (list_anal_plugins) {
-				// ignored
-			} else if (list_plugins) {
-				list_anal_plugins = true;
-			} else {
-				list_plugins = true;
-			}
+			list_plugins = true;
 			break;
 		case '@':
 		case 'o':
@@ -885,12 +867,6 @@ R_API int r_main_rasm2(int argc, const char *argv[]) {
 
 	if (help > 0) {
 		ret = rasm_show_help (help > 1? 2: 0);
-		goto beach;
-	}
-	// R2_590 - deprecate this
-	if (list_anal_plugins) {
-		ranal2_list (as, opt.argv[opt.ind]);
-		ret = 1;
 		goto beach;
 	}
 	if (list_plugins) {

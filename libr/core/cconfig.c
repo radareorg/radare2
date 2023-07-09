@@ -118,20 +118,10 @@ fail:
 	return false;
 }
 
-static const char *has_esil(RCore *core, const char *name) {
-	RListIter *iter;
-	RAnalPlugin *h;
-	r_return_val_if_fail (core && core->anal && name, NULL);
-	r_list_foreach (core->anal->plugins, iter, h) {
-		if (h->name && !strcmp (name, h->name)) {
-			return h->esil? "Ae": "A_";
-		}
-	}
-	return "__";
-}
-
 // more copypasta
 bool ranal2_list(RCore *core, const char *arch, int fmt) {
+	return false;
+#if 0
 	int i;
 	const char *feat2, *feat;
 	RAnal *a = core->anal;
@@ -197,7 +187,7 @@ bool ranal2_list(RCore *core, const char *arch, int fmt) {
 			bits = r_strbuf_drain (sb);
 			feat = "__";
 			feat = "_d";
-			feat2 = has_esil (core, h->name);
+			feat2 = "__";
 			if (fmt == 'q') {
 				r_cons_println (h->name);
 			} else if (fmt == 'j') {
@@ -238,6 +228,7 @@ bool ranal2_list(RCore *core, const char *arch, int fmt) {
 		pj_free (pj);
 	}
 	return any;
+#endif
 }
 
 static inline void __setsegoff(RConfig *cfg, const char *asmarch, int asmbits) {
@@ -372,13 +363,14 @@ static bool cb_analhpskip(void *user, void *data) {
 }
 
 static void update_analarch_options(RCore *core, RConfigNode *node) {
+	// XXX R2_590 - does nothing, but needs testing to proove that
 	RAnalPlugin *h;
 	RListIter *it;
 	if (core && core->anal && node) {
 		r_config_node_purge_options (node);
 		r_list_foreach (core->anal->plugins, it, h) {
-			if (h->name) {
-				SETOPTIONS (node, h->name, NULL);
+			if (h->meta.name) {
+				SETOPTIONS (node, h->meta.name, NULL);
 			}
 		}
 	}
@@ -701,25 +693,35 @@ static void update_asmcpu_options(RCore *core, RConfigNode *node) {
 		}
 	}
 }
+static void list_cpus(RCore *core) {
+	RArchPlugin *ap = R_UNWRAP5 (core, anal, arch, session, plugin);
+	if (ap && ap->cpus) {
+		char *c = strdup (ap->cpus);
+		int i, n = r_str_split (c, ',');
+		for (i = 0; i < n; i++) {
+			r_cons_println (r_str_word_get0 (c, i));
+		}
+		free (c);
+	}
+}
 
 static bool cb_asmcpu(void *user, void *data) {
-// cb_analcpu (user, data);
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
 	if (*node->value == '?') {
+		list_cpus (core);
+#if 0
 		update_asmcpu_options (core, node);
-		// XXX not working const char *asm_arch = core->anal->config->arch;
-		const char *asm_arch = r_config_get (core->config, "asm.arch");
-		/* print verbose help instead of plain option listing */
-		ranal2_list (core, asm_arch, node->value[1]);
+#endif
 		return 0;
 	}
 	r_asm_set_cpu (core->rasm, node->value);
 	r_arch_config_set_cpu (core->rasm->config, node->value);
-	int v = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_ALIGN);
- 	if (v != -1) {
+	int v = r_anal_archinfo (core->anal, R_ARCH_INFO_CODE_ALIGN);
+ 	if (v >= 0) {
  		core->anal->config->codealign = v;
  	}
+	// R2_590 - rename to arch.codealign
 	r_config_set_i (core->config, "asm.codealign", (v != -1)? v: 0);
 	return true;
 }
