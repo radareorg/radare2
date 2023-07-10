@@ -125,7 +125,7 @@ R_API bool r_syscall_setup(RSyscall *s, const char *arch, int bits, const char *
 	} else if (!strcmp (arch, "x86")) {
 		s->sysport = sysport_x86;
 	}
-	if (r_str_startswith (arch, "arm") && bits == 16) {
+	if (r_str_startswith (arch, "arm") && bits == 16 && !strcmp (os, "linux")) {
 	//	syscall_changed = true;
 		bits = 32;
 	}
