@@ -1925,42 +1925,55 @@ static const char *get_syscall_register(RCore *core) {
 	return a0;
 }
 
-// IMHO This code must be deleted
 static int emulateSyscallPrelude(RCore *core, ut64 at, ut64 curpc) {
-	int i, inslen, bsize = R_MIN (64, core->blocksize);
+	int i, bsize = R_MIN (64, core->blocksize);
 	RAnalOp aop;
 	const int mininstrsz = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_MIN_OP_SIZE);
 	const int minopcode = R_MAX (1, mininstrsz);
 	const char *a0 = get_syscall_register (core);
 	const char *pc = r_reg_get_name (core->dbg->reg, R_REG_NAME_PC);
-	RRegItem *r = r_reg_get (core->dbg->reg, pc, -1);
+	RRegItem *reg_pc = r_reg_get (core->dbg->reg, pc, -1);
 	RRegItem *reg_a0 = r_reg_get (core->dbg->reg, a0, -1);
 
 	ut8 *arr = malloc (bsize);
 	if (!arr) {
 		return -1;
 	}
-	r_reg_set_value (core->dbg->reg, r, curpc);
+	int codealign = r_anal_archinfo (core->anal, R_ARCH_INFO_CODE_ALIGN);
+	r_reg_set_value (core->dbg->reg, reg_pc, curpc);
+	// XXX maybe i is not necessary
 	for (i = 0; curpc < at; curpc++, i++) {
 		if (i >= (bsize - 32)) {
 			i = 0;
 		}
+		if (codealign > 1) {
+			int rest = curpc % codealign;
+			if (rest) {
+				curpc += (rest - 1);
+				continue;
+			}
+		}
 		if (!i) {
 			r_io_read_at (core->io, curpc, arr, bsize);
 		}
-		inslen = r_anal_op (core->anal, &aop, curpc, arr + i, bsize - i, R_ARCH_OP_MASK_BASIC);
-		if (inslen) {
- 			int incr = (core->search->align > 0)? core->search->align - 1:  inslen - 1;
+		int result = r_anal_op (core->anal, &aop, curpc, arr + i, bsize - i, R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_ESIL);
+		if (result > 0) {
+			int incr = ((core->search->align > 0)? core->search->align:  aop.size) - 1;
 			if (incr < 0) {
 				incr = minopcode;
 			}
 			i += incr;
 			curpc += incr;
 			if (r_anal_op_nonlinear (aop.type)) {
-				r_reg_set_value (core->dbg->reg, r, curpc + 1);
+				r_reg_set_value (core->dbg->reg, reg_pc, curpc + 1);
 			} else {
-				r_core_esil_step (core, UT64_MAX, NULL, NULL, false);
+				const char *ee = r_strbuf_get (&aop.esil);
+				r_esil_parse (core->anal->esil, ee);
+				// r_core_esil_step (core, UT64_MAX, NULL, NULL, false);
 			}
+		} else {
+			// next op, honoring code align
+		//	i += 1;
 		}
 		r_anal_op_fini (&aop);
 	}
@@ -2007,6 +2020,9 @@ static void do_syscall_search(RCore *core, struct search_parameters *param) {
 		free (previnstr);
 		return;
 	}
+
+	r_core_cmd0 (core, "aei"); // requied to have core->anal->esil initialized.. imho esil should never be NULL!
+	// r_core_cmd0 (core, "aeim");
 	ut64 oldoff = core->offset;
 #if !USE_EMULATION
 	int syscallNumber = 0;
@@ -2090,7 +2106,7 @@ static void do_syscall_search(RCore *core, struct search_parameters *param) {
 				if (scNumber < 0 || scNumber > 0xFFFFF) {
 					scNumber = aop.val;
 					if (scNumber < 0 || scNumber > 0xFFFFF) {
-						R_LOG_DEBUG ("INVALID SYSCALL at 0x%08"PFMT64x" NUMBER %d", aop.addr, scNumber);
+						R_LOG_DEBUG ("Invalid syscall number %d at 0x%08"PFMT64x, scNumber, aop.addr);
 						// r_core_cmd0 (core, "dr0");
 						goto theverynext;
 					}
@@ -2130,6 +2146,8 @@ static void do_syscall_search(RCore *core, struct search_parameters *param) {
 						r_cons_printf ("0x%08"PFMT64x" %d\n", at, scNumber);
 					}
 #endif
+				} else {
+					R_LOG_DEBUG ("Cant find an syscall for %d %d", scNumber, scVector);
 				}
 				memset (previnstr, 0, (MAXINSTR + 1) * sizeof (*previnstr)); // clearing the buffer
 				if (searchflags) {
@@ -2171,7 +2189,6 @@ beach:
 		pj_end (param->pj);
 		pj_end (param->pj);
 	}
-	// r_core_cmd0 (core, "dr0");
 	r_core_seek (core, oldoff, true);
 	r_esil_free (esil);
 	r_cons_break_pop ();
