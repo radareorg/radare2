@@ -77,7 +77,7 @@ On x86 according to Wikipedia
 #define R_ANAL_OP_TYPE_MASK 0x8000ffff
 #define R_ANAL_OP_HINT_MASK 0xf0000000
 typedef enum {
-	R_ANAL_OP_TYPE_COND  = 0x80000000, // TODO must be moved to prefix?
+	R_ANAL_OP_TYPE_COND  = 0x80000000, // TODO must be moved to prefix? // should not be TYPE those are modifiers!
 	//TODO: MOVE TO PREFIX .. it is used by anal_java.. must be updated
 	R_ANAL_OP_TYPE_REP   = 0x40000000, /* repeats next instruction N times */
 	R_ANAL_OP_TYPE_MEM   = 0x20000000, // TODO must be moved to prefix?

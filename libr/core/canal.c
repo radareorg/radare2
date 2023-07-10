@@ -5615,6 +5615,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 		}
 		archIsArm = true;
 	}
+	bool is_thumb = arch == R2_ARCH_THUMB;
 
 	ut64 gp = r_config_get_i (core->config, "anal.gp");
 	const char *gp_reg = NULL;
@@ -5698,12 +5699,15 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 		}
 		opflags |= R_ARCH_OP_MASK_DISASM;
 		if (!r_anal_op (core->anal, &op, cur, buf + i, iend - i, opflags)) {
-			i += minopsize - 1; // XXX dupe in op.size below
+			i += minopsize - 1;
 			r_anal_op_fini (&op);
 			goto repeat;
 		}
 		if (op.type == R_ANAL_OP_TYPE_ILL || op.type == R_ANAL_OP_TYPE_UNK || op.type == R_ANAL_OP_TYPE_NULL) {
-			// i += 2
+			R_LOG_DEBUG ("thumb unaligned or invalid instructions at 0x%08"PFMT64x, cur);
+			if (is_thumb) {
+				i++; // codelalign is not always the best option to catch unaligned instructions
+			}
 			r_anal_op_fini (&op);
 			goto repeat;
 		}
@@ -5747,21 +5751,25 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 			}
 		}
 		if (sn && op.type == R_ANAL_OP_TYPE_SWI) {
+			// check if aligned
+			// check if conditional (done by R_ANAL_OP_MASK_COND) CSWI exists but its not used properly on arm16
 			r_strf_buffer (64);
-			r_flag_space_set (core->flags, R_FLAGS_FS_SYSCALLS);
 			int snv = (arch == R2_ARCH_THUMB)? op.val: (int)r_reg_getv (core->anal->reg, sn);
-			RSyscallItem *si = r_syscall_get (core->anal->syscall, snv, -1);
-			if (si) {
-			//	eprintf ("0x%08"PFMT64x" SYSCALL %-4d %s\n", cur, snv, si->name);
-				r_flag_set_next (core->flags, r_strf ("syscall.%s", si->name), cur, 1);
-			} else {
-				//todo were doing less filtering up top because we can't match against 80 on all platforms
-				// might get too many of this path now..
-			//	eprintf ("0x%08"PFMT64x" SYSCALL %d\n", cur, snv);
-				r_flag_set_next (core->flags, r_strf ("syscall.%d", snv), cur, 1);
+			if (snv > 0 && snv < 0xFFFF) {
+				r_flag_space_set (core->flags, R_FLAGS_FS_SYSCALLS);
+				RSyscallItem *si = r_syscall_get (core->anal->syscall, snv, -1);
+				if (si) {
+				//	eprintf ("0x%08"PFMT64x" SYSCALL %-4d %s\n", cur, snv, si->name);
+					r_flag_set_next (core->flags, r_strf ("syscall.%s", si->name), cur, 1);
+					r_syscall_item_free (si);
+				} else {
+					//todo were doing less filtering up top because we can't match against 80 on all platforms
+					// might get too many of this path now..
+				//	eprintf ("0x%08"PFMT64x" SYSCALL %d\n", cur, snv);
+					r_flag_set_next (core->flags, r_strf ("syscall.%d", snv), cur, 1);
+				}
+				r_flag_space_set (core->flags, NULL);
 			}
-			r_flag_space_set (core->flags, NULL);
-			r_syscall_item_free (si);
 		}
 		const char *esilstr = R_STRBUF_SAFEGET (&op.esil);
 		i += op.size - 1;

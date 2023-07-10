@@ -1202,16 +1202,21 @@ CMDS=<<EOF
 e bin.baddr = 0x16000;
 aae $s @ 0x00016000
 fs
+afl
 EOF
 EXPECT=<<EOF
     0 * classes
     0 * format
-    3 * functions
+    4 * functions
    24 * registers
     0 * sections
     0 * segments
     0 * symbols
-   23 * syscalls
+   25 * syscalls
+0x00016918   18    134 fcn.00016918
+0x000160c0    5     60 fcn.000160c0
+0x00017600    1     72 fcn.00017600
+0x000164b2    1      8 fcn.000164b2
 EOF
 RUN
 

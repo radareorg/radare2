@@ -467,6 +467,7 @@ afvR
     var_ch  0x18,0x22
     var_eh  0x16,0x1e
     var_fh  0x10
+    var_4h  0x2c
 afvW
       arg1
       arg2
@@ -475,6 +476,7 @@ afvW
     var_ch  0x6
     var_eh  0xa
     var_fh  0xe
+    var_4h
 / 50: fcn.00000000 (int16_t arg1, int16_t arg2, int16_t arg3);
 |           ; arg int16_t arg1 @ r0
 |           ; arg int16_t arg2 @ r1
@@ -483,6 +485,7 @@ afvW
 |           ; var int8_t var_fh @ sp+0x1
 |           ; var int16_t var_eh @ sp+0x2
 |           ; var int32_t var_ch @ sp+0x4
+|           ; var int16_t var_4h @ sp+0xc
 |           0x00000000      80b4           push {r7}
 |           0x00000002      83b0           sub sp, 0xc
 |           0x00000004      00af           add r7, var_10h
