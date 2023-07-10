@@ -1078,7 +1078,7 @@ static bool cb_asm_codealign(void *user, void *data) {
 static bool cb_asmos(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	int asmbits = r_config_get_i (core->config, "asm.bits");
-	RConfigNode *asmarch, *node = (RConfigNode*) data;
+	RConfigNode *node = (RConfigNode*) data;
 
 	if (*node->value == '?') {
 		print_node_options (node);
@@ -1088,7 +1088,7 @@ static bool cb_asmos(void *user, void *data) {
 		free (node->value);
 		node->value = strdup (R_SYS_OS);
 	}
-	asmarch = r_config_node_get (core->config, "asm.arch");
+	RConfigNode *asmarch = r_config_node_get (core->config, "asm.arch");
 	if (asmarch) {
 		const char *asmcpu = r_config_get (core->config, "asm.cpu");
 		r_syscall_setup (core->anal->syscall, asmarch->value, core->anal->config->bits, asmcpu, node->value);

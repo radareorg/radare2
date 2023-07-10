@@ -1,0 +1,19 @@
+NAME=list syscalls
+FILE=-
+CMDS=<<EOF
+-a arm
+-b 32
+-e asm.os=linux
+asl~?
+-e asm.os=android
+asl~?
+-b 16
+asl~?
+EOF
+EXPECT=<<EOF
+44
+44
+44
+EOF
+EXPECT_ERR=
+RUN
