@@ -1,10 +1,6 @@
-/* radare - Copyright 2008-2021 - LGPL -- pancake */
+/* radare - Copyright 2008-2023 - LGPL -- pancake */
 
-#include <r_types.h>
-#include <r_util.h>
 #include <r_syscall.h>
-#include <stdio.h>
-#include <string.h>
 
 R_LIB_VERSION (r_syscall);
 
@@ -120,12 +116,18 @@ R_API bool r_syscall_setup(RSyscall *s, const char *arch, int bits, const char *
 	}
 	if (!strcmp (arch, "avr")) {
 		s->sysport = sysport_avr;
-	} else if (!strcmp (os, "darwin") || !strcmp (os, "osx") || !strcmp (os, "macos")) {
+	}
+	if (!strcmp (os, "darwin") || !strcmp (os, "osx") || !strcmp (os, "macos")) {
 		os = "darwin";
 	} else if (!strcmp (os, "android")) {
 		os = "linux";
+	//	syscall_changed = true;
 	} else if (!strcmp (arch, "x86")) {
 		s->sysport = sysport_x86;
+	}
+	if (r_str_startswith (arch, "arm") && bits == 16 && !strcmp (os, "linux")) {
+	//	syscall_changed = true;
+		bits = 32;
 	}
 
 	if (syscall_changed) {
