@@ -77,6 +77,7 @@ R_API const char *r_str_pad(const char ch, int len);
 R_API const char *r_str_rstr(const char *base, const char *p);
 R_API const char *r_strstr_ansi(const char *a, const char *b);
 R_API const char *r_str_rchr(const char *base, const char *p, int ch);
+R_API const char *r_str_nchr(const char *str, char chr, int maxlen);
 R_API const char *r_str_closer_chr(const char *b, const char *s);
 R_API int r_str_bounds(const char *str, int *h);
 R_API bool r_str_eq(const char *s1, const char *s2);

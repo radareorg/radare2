@@ -73,19 +73,27 @@ On x86 according to Wikipedia
 	0x67: Address-size override prefix
 #endif
 
-// XXX: this definition is plain wrong. use enum or empower bits
 #define R_ANAL_OP_TYPE_MASK 0x8000ffff
+#define R_ANAL_OP_MOD_MASK 0x8000ffff
 #define R_ANAL_OP_HINT_MASK 0xf0000000
+
 typedef enum {
+	// R2_590 - DEPRECATE
 	R_ANAL_OP_TYPE_COND  = 0x80000000, // TODO must be moved to prefix? // should not be TYPE those are modifiers!
-	//TODO: MOVE TO PREFIX .. it is used by anal_java.. must be updated
 	R_ANAL_OP_TYPE_REP   = 0x40000000, /* repeats next instruction N times */
 	R_ANAL_OP_TYPE_MEM   = 0x20000000, // TODO must be moved to prefix?
 	R_ANAL_OP_TYPE_REG   = 0x10000000, // operand is a register
 	R_ANAL_OP_TYPE_IND   = 0x08000000, // operand is indirect
 	R_ANAL_OP_TYPE_NULL  = 0,  // this is like unknown, but acts like a nop. aka undefined type. rename?
-	R_ANAL_OP_TYPE_JMP   = 1,  /* mandatory jump */
-	R_ANAL_OP_TYPE_UJMP  = 2,  /* unknown jump (register or so) */
+#if 1
+	R_ARCH_OP_MOD_COND  = 0x80000000, // conditional instruction
+	R_ARCH_OP_MOD_REP   = 0x40000000, // repeats instruction N times
+	R_ARCH_OP_MOD_MEM   = 0x20000000, // requires memory access
+	R_ARCH_OP_MOD_REG   = 0x10000000, // operand is a register
+	R_ARCH_OP_MOD_IND   = 0x08000000, // operand is indirect
+#endif
+	R_ANAL_OP_TYPE_JMP   = 1, /* mandatory jump */
+	R_ANAL_OP_TYPE_UJMP  = 2, /* unknown jump (register or so) */
 	R_ANAL_OP_TYPE_RJMP  = R_ANAL_OP_TYPE_UJMP| R_ANAL_OP_TYPE_REG,
 	R_ANAL_OP_TYPE_UCJMP = R_ANAL_OP_TYPE_UJMP | R_ANAL_OP_TYPE_COND, /* conditional unknown jump */
 	R_ANAL_OP_TYPE_IJMP  = R_ANAL_OP_TYPE_UJMP | R_ANAL_OP_TYPE_IND,
@@ -94,7 +102,7 @@ typedef enum {
 	R_ANAL_OP_TYPE_MJMP  = R_ANAL_OP_TYPE_JMP | R_ANAL_OP_TYPE_MEM,   /* memory jump */
 	R_ANAL_OP_TYPE_RCJMP = R_ANAL_OP_TYPE_CJMP | R_ANAL_OP_TYPE_REG,  /* conditional jump register */
 	R_ANAL_OP_TYPE_MCJMP = R_ANAL_OP_TYPE_CJMP | R_ANAL_OP_TYPE_MEM,  /* memory conditional jump */
-	R_ANAL_OP_TYPE_CALL  = 3,  /* call to subroutine (branch+link) */
+	R_ANAL_OP_TYPE_CALL  = 3, /* call to subroutine (branch+link) */
 	R_ANAL_OP_TYPE_UCALL = 4, /* unknown call (register or so) */
 	R_ANAL_OP_TYPE_RCALL = R_ANAL_OP_TYPE_UCALL | R_ANAL_OP_TYPE_REG,
 	R_ANAL_OP_TYPE_ICALL = R_ANAL_OP_TYPE_UCALL | R_ANAL_OP_TYPE_IND,
@@ -109,14 +117,14 @@ typedef enum {
 	R_ANAL_OP_TYPE_MOV   = 9, /* register move */
 	R_ANAL_OP_TYPE_CMOV  = 9 | R_ANAL_OP_TYPE_COND, /* conditional move */
 	R_ANAL_OP_TYPE_TRAP  = 10, /* it's a trap! */
-	R_ANAL_OP_TYPE_SWI   = 11,  /* syscall, software interrupt */
+	R_ANAL_OP_TYPE_SWI   = 11, /* syscall, software interrupt */
 	R_ANAL_OP_TYPE_CSWI  = 11 | R_ANAL_OP_TYPE_COND,  /* syscall, software interrupt */
 	R_ANAL_OP_TYPE_UPUSH = 12, /* unknown push of data into stack */
 	R_ANAL_OP_TYPE_RPUSH = R_ANAL_OP_TYPE_UPUSH | R_ANAL_OP_TYPE_REG, /* push register */
-	R_ANAL_OP_TYPE_PUSH  = 13,  /* push value into stack */
-	R_ANAL_OP_TYPE_POP   = 14,   /* pop value from stack to register */
-	R_ANAL_OP_TYPE_CMP   = 15,  /* compare something */
-	R_ANAL_OP_TYPE_ACMP  = 16,  /* compare via and */
+	R_ANAL_OP_TYPE_PUSH  = 13, /* push value into stack */
+	R_ANAL_OP_TYPE_POP   = 14, /* pop value from stack to register */
+	R_ANAL_OP_TYPE_CMP   = 15, /* compare something */
+	R_ANAL_OP_TYPE_ACMP  = 16, /* compare via and */
 	R_ANAL_OP_TYPE_ADD   = 17,
 	R_ANAL_OP_TYPE_SUB   = 18,
 	R_ANAL_OP_TYPE_IO    = 19,
@@ -131,9 +139,10 @@ typedef enum {
 	R_ANAL_OP_TYPE_XOR   = 28,
 	R_ANAL_OP_TYPE_NOR   = 29,
 	R_ANAL_OP_TYPE_NOT   = 30,
-	R_ANAL_OP_TYPE_STORE = 31,  /* store from register to memory */
-	R_ANAL_OP_TYPE_LOAD  = 32,  /* load from memory to register */
-	R_ANAL_OP_TYPE_LEA   = 33, /* TODO add ulea */
+	R_ANAL_OP_TYPE_STORE = 31, /* store from register to memory */
+	R_ANAL_OP_TYPE_LOAD  = 32, /* load from memory to register */
+	R_ANAL_OP_TYPE_LEA   = 33, /* like mov, but using memory addresspace */
+	R_ANAL_OP_TYPE_ULEA  = 33 | R_ARCH_OP_MOD_REG, // destination cant be computed without emulation
 	R_ANAL_OP_TYPE_LEAVE = 34,
 	R_ANAL_OP_TYPE_ROR   = 35,
 	R_ANAL_OP_TYPE_ROL   = 36,
@@ -145,14 +154,10 @@ typedef enum {
 	R_ANAL_OP_TYPE_CAST = 42,
 	R_ANAL_OP_TYPE_NEW = 43,
 	R_ANAL_OP_TYPE_ABS = 44,
-	R_ANAL_OP_TYPE_CPL = 45,	/* complement */
+	R_ANAL_OP_TYPE_CPL = 45, /* complement */
 	R_ANAL_OP_TYPE_CRYPTO = 46,
 	R_ANAL_OP_TYPE_SYNC = 47,
-	//R_ANAL_OP_TYPE_DEBUG = 43, // monitor/trace/breakpoint
-#if 0
-	R_ANAL_OP_TYPE_PRIV = 40, /* privileged instruction */
-	R_ANAL_OP_TYPE_FPU = 41, /* floating point stuff */
-#endif
+	R_ANAL_OP_TYPE_DEBUG = 48, // monitor/trace/breakpoint
 } _RAnalOpType;
 
 
@@ -255,7 +260,7 @@ typedef struct r_anal_op_t {
 	const char *reg; /* destination register rename to dreg or dst_reg */
 	const char *ireg; /* register used for indirect memory computation . TODO rename to ind_reg */
 	int scale;
-	ut64 disp;
+	ut64 disp; // displace, used as offset to be added from a register base
 	RAnalSwitchOp *switch_op;
 	RAnalHint hint;
 	RAnalDataType datatype;

@@ -129,7 +129,7 @@ R_API ut64 r_core_get_asmqjmps(RCore *core, const char *str) {
 	}
 	if (core->is_asmqjmps_letter) {
 		int i, pos = 0;
-		int len = strlen (str);
+		const int len = strlen (str);
 		for (i = 0; i < len - 1; i++) {
 			if (!isupper ((ut8)str[i])) {
 				return UT64_MAX;
@@ -146,7 +146,7 @@ R_API ut64 r_core_get_asmqjmps(RCore *core, const char *str) {
 			return core->asmqjmps[pos + 1];
 		}
 	} else if (str[0] > '0' && str[1] <= '9') {
-		int pos = str[0] - '0';
+		const int pos = str[0] - '0';
 		if (pos <= core->asmqjmps_count) {
 			return core->asmqjmps[pos];
 		}
@@ -481,7 +481,7 @@ static ut64 numvar_instruction(RCore *core, const char *input) {
 	ut64 addr = core->offset;
 	// N forward instructions
 	ut8 data[32];
-	int i, ret;
+	int i;
 	ut64 val = addr;
 	int n = 1;
 	if (input[0] == '{') {
@@ -493,15 +493,14 @@ static ut64 numvar_instruction(RCore *core, const char *input) {
 	}
 	for (i = 0; i < n; i++) {
 		r_io_read_at (core->io, val, data, sizeof (data));
-		RAnalOp op;
-		ret = r_anal_op (core->anal, &op, val, data,
+		RAnalOp op = {0};
+		int ret = r_anal_op (core->anal, &op, val, data,
 			sizeof (data), R_ARCH_OP_MASK_BASIC);
 		if (ret < 1) {
-			ret = 1;
+			R_LOG_DEBUG ("cannot decode at 0x%08"PFMT64x, val);
 		}
 		val += op.size;
 		r_anal_op_fini (&op);
-		//val += ret;
 	}
 	return val;
 

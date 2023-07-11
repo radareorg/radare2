@@ -607,6 +607,20 @@ R_API const char *r_sub_str_rchr(const char *str, int start, int end, char chr) 
 	return str[start] == chr ? str + start : NULL;
 }
 
+R_API const char *r_str_nchr(const char *str, char chr, int maxlen) {
+	int count = 0;
+	while (*str) {
+		if (maxlen > 0 && count++ >= maxlen) {
+			return NULL;
+		}
+		if (*str == chr) {
+			return str;
+		}
+		str++;
+	}
+	return *str? str: NULL;
+}
+
 R_API const char *r_str_sep(const char *base, const char *sep) {
 	int i;
 	while (*base) {
