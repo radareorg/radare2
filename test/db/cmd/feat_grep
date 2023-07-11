@@ -613,3 +613,13 @@ json.maxopsz = 16;
 json.invopsz = 1;
 EOF
 RUN
+
+NAME=ij.json.grep.inv
+FILE=-
+CMDS=<<EOF
+ij~{}~fo
+EOF
+EXPECT=<<EOF
+    "format": "any"
+EOF
+RUN

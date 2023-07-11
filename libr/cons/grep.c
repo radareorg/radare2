@@ -5,6 +5,8 @@
 #include <r_util/r_json.h>
 #include <sdb/sdb.h>
 
+// R2R db/cmd/feat_grep
+
 #define I(x) r_cons_singleton ()->x
 
 static char *strchr_ns(char *s, const char ch) {
@@ -108,6 +110,7 @@ R_API void r_cons_grep_expression(const char *str) {
 	ptrs_length = 1;
 	ptrs[0] = ptr;
 
+	// TODO: replace with r_str_split_by ("~");
 	while ((ptrs[ptrs_length] = (strchr (ptr, '~')))) {
 		*(ptrs[ptrs_length]) = '\0';
 		ptrs[ptrs_length]++;
@@ -390,9 +393,8 @@ R_API void r_cons_grep_expression(const char *str) {
 // Finds and returns next intgrep expression,
 // unescapes escaped twiddles
 static char *find_next_intgrep(char *cmd, const char *quotes) {
-	char *p;
 	do {
-		p = (char *)r_str_firstbut (cmd, '~', quotes);
+		char *p = (char *)r_str_firstbut (cmd, '~', quotes);
 		if (!p) {
 			break;
 		}
@@ -442,9 +444,7 @@ static char *preprocess_filter_expr(char *cmd, const char *quotes) {
 		ns = r_str_append (ns, "~");
 	}
 
-	ns = r_str_append (ns, p1 + 1);
-
-	return ns;
+	return r_str_append (ns, p1 + 1);
 }
 
 R_API void r_cons_grep_parsecmd(char *cmd, const char *quotestr) {
@@ -561,7 +561,7 @@ R_API void r_cons_grepbuf(void) {
 	size_t len = cons->context->buffer_len;
 	RConsGrep *grep = &cons->context->grep;
 	const char *in = buf;
-	int ret, total_lines = 0, l = 0, tl = 0;
+	int ret, l = 0, tl = 0;
 	bool show = false;
 	if (cons->context->filter) {
 		cons->context->buffer_len = 0;
@@ -675,15 +675,40 @@ R_API void r_cons_grepbuf(void) {
 			cons->context->buffer_len = strlen (out);
 			cons->context->buffer_sz = cons->context->buffer_len + 1;
 			grep->json = 0;
+			in = buf = out;
+			len = cons->context->buffer_len;
+			cons->context->grep_color = true;
+			R_FREE (grep->str);
+			if (grep->nstrings > 0) {
+				cons->context->grep_color = false;
+				// shift them all!!
+				int i;
+				for (i = 0; i < grep->nstrings; i++) {
+					r_str_cpy (grep->strings[i], grep->strings[i + 1]);
+				}
+				grep->nstrings--;
+			}
+			grep->json = false;
+#if 1
 			if (grep->hud) {
 				grep->hud = false;
 				r_cons_hud_string (cons->context->buffer);
-			} else if (grep->less) {
+				return;
+			}
+			if (grep->less) {
 				grep->less = 0;
 				r_cons_less_str (cons->context->buffer, NULL);
+				return;
 			}
+			if (grep->nstrings < 1) {
+				return;
+			}
+#endif
 		}
-		return;
+		buf = cons->context->buffer;
+		len = cons->context->buffer_len;
+		grep->range_line = 1;
+		goto continuation;
 		// cons->lines = ?? return 3;
 	}
 	if (grep->less) {
@@ -704,9 +729,7 @@ R_API void r_cons_grepbuf(void) {
 		} else {
 			r_cons_less_str (buf, NULL);
 			cons->context->buffer_len = 0;
-			if (cons->context->buffer) {
-				cons->context->buffer[0] = 0;
-			}
+			cons->context->buffer_sz = 0;
 			R_FREE (cons->context->buffer);
 		}
 		return;
@@ -717,31 +740,35 @@ continuation:
 	// if we modify cons->lines we should update I.context->buffer too
 	cons->lines = 0;
 	// used to count lines and change negative grep.line values
-	while ((int) (size_t) (in - buf) < len) {
-		char *p = strchr (in, '\n');
-		if (!p) {
-			break;
+	if ((!grep->range_line && grep->line < 0) || grep->range_line) {
+		int total_lines = 0;
+		while ((int) (size_t) (in - buf) < len) {
+			char *p = strchr (in, '\n');
+			if (!p) {
+				break;
+			}
+			l = p - in;
+			if (l > 0) {
+				in += l + 1;
+			} else {
+				in++;
+			}
+			total_lines++;
 		}
-		l = p - in;
-		if (l > 0) {
-			in += l + 1;
-		} else {
-			in++;
+		if (!grep->range_line && grep->line < 0) {
+			grep->line = total_lines + grep->line;
 		}
-		total_lines++;
-	}
-	if (!grep->range_line && grep->line < 0) {
-		grep->line = total_lines + grep->line;
-	}
-	if (grep->range_line == 1) {
-		if (grep->f_line < 0) {
-			grep->f_line = total_lines + grep->f_line;
-		}
-		if (grep->l_line <= 0) {
-			grep->l_line = total_lines + grep->l_line;
+		if (grep->range_line == 1) {
+			if (grep->f_line < 0) {
+				grep->f_line = total_lines + grep->f_line;
+			}
+			if (grep->l_line <= 0) {
+				grep->l_line = total_lines + grep->l_line;
+			}
 		}
 	}
 	bool is_range_line_grep_only = grep->range_line != 2 && grep->str && *grep->str == '\0';
+
 	in = buf;
 	while ((int) (size_t) (in - buf) < len) {
 		char *p = strchr (in, '\n');
@@ -817,12 +844,11 @@ continuation:
 		}
 	}
 
-	cons->context->buffer_len = r_strbuf_length (ob);
+	const int ob_len = r_strbuf_length (ob);
+	cons->context->buffer_len = ob_len;
 	if (grep->counter) {
 		int cnt = grep->charCounter? strlen (cons->context->buffer): cons->lines;
-		if (cons->context->buffer) {
-			free (cons->context->buffer);
-		}
+		free (cons->context->buffer);
 		cons->context->buffer = r_str_newf ("%d\n", cnt);
 		cons->context->buffer_len = strlen (cons->context->buffer);
 		cons->context->buffer_sz = cons->context->buffer_len+1;
@@ -831,7 +857,6 @@ continuation:
 		return;
 	}
 
-	const int ob_len = r_strbuf_length (ob);
 	if (ob_len >= cons->context->buffer_sz) {
 		cons->context->buffer_sz = ob_len + 1;
 		cons->context->buffer = r_strbuf_drain (ob);
@@ -840,7 +865,6 @@ continuation:
 		cons->context->buffer[ob_len] = 0;
 		r_strbuf_free (ob);
 	}
-	cons->context->buffer_len = ob_len;
 
 	if (grep->sort != -1 || grep->sort_invert) {
 #define INSERT_LINES(list)\

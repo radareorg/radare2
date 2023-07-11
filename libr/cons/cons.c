@@ -152,7 +152,6 @@ static void cons_context_init(RConsContext *context, R_NULLABLE RConsContext *pa
 		context->color_mode = COLOR_MODE_DISABLED;
 		r_cons_pal_init (context);
 	}
-
 	cons_grep_reset (&context->grep);
 }
 
