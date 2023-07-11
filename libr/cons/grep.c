@@ -122,8 +122,7 @@ R_API void r_cons_grep_expression(const char *str) {
 		}
 	}
 
-	free (grep->str);
-	grep->str = NULL;
+	R_FREE (grep->str);
 	bool first = true;
 	ctx->sorted_column = 0;
 	size_t i;
@@ -674,10 +673,11 @@ R_API void r_cons_grepbuf(void) {
 			cons->context->buffer = out;
 			cons->context->buffer_len = strlen (out);
 			cons->context->buffer_sz = cons->context->buffer_len + 1;
-			grep->json = 0;
+			grep->json = false;
 			in = buf = out;
 			len = cons->context->buffer_len;
 			cons->context->grep_color = true;
+			// R2R db/cmd/cmd_iz
 			R_FREE (grep->str);
 			if (grep->nstrings > 0) {
 				cons->context->grep_color = false;
@@ -688,7 +688,6 @@ R_API void r_cons_grepbuf(void) {
 				}
 				grep->nstrings--;
 			}
-			grep->json = false;
 #if 1
 			if (grep->hud) {
 				grep->hud = false;
@@ -704,6 +703,9 @@ R_API void r_cons_grepbuf(void) {
 				return;
 			}
 #endif
+		}
+		if (grep->nstrings < 1) {
+			return;
 		}
 		buf = cons->context->buffer;
 		len = cons->context->buffer_len;
