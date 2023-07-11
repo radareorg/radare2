@@ -46,12 +46,15 @@ extern "C" {
  * - type *R_VEC_FUNC(name, find)(const R_VEC(name) *vec, void *value, R_VEC_FIND_CMP(name) cmp_fn):
  *   Searches for the first value in the vector that is equal (compare returns 0) to the value passed in.
  *   Otherwise returns NULL.
+ * - type *R_VEC_FUNC(name, find_if_not)(const R_VEC(name) *vec, void *value, R_VEC_FIND_CMP(name) cmp_fn):
+ *   Searches for the first value in the vector that is NOT equal (compare returns != 0) to the value
+ *   passed in. Otherwise returns NULL.
  * - ut64 R_VEC_FUNC(name, find_index)(const R_VEC(name) *vec, void *value, R_VEC_FIND_CMP(name) cmp_fn):
  *   Searches for the index of the first value in the vector that is equal (compare returns 0) to the
  *   value passed in. Otherwise returns UT64_MAX.
  * - R_VEC(name) *R_VEC_FUNC(name, clone)(const R_VEC(name) *vec): Creates a shallow clone of a vector.
- * - void R_VEC_FUNC(name, reserve)(R_VEC(name) *vec, ut64 new_capacity): Ensures the vector has
- *   atleast a capacity of "new_capacity".
+ * - bool R_VEC_FUNC(name, reserve)(R_VEC(name) *vec, ut64 new_capacity): Ensures the vector has
+ *   atleast a capacity of "new_capacity". Returns true on success, otherwise false.
  * - void R_VEC_FUNC(name, shrink_to_fit)(R_VEC(name) *vec): Shrinks the vector to exactly fit the
  *   current number of elements it contains.
  * - void R_VEC_FUNC(name, push_back)(R_VEC(name) *vec, type *value): Appends a single element to
@@ -60,10 +63,11 @@ extern "C" {
  *   element at the back of the vector. The pointer must be filled with data afterwards, or it can lead to
  *   undefined behavior!
  * - void R_VEC_FUNC(name, push_front)(R_VEC(name) *vec, type *value): Prepends a single element to
- *   the front of the vector. All following elements are shifted one place.
+ *   the front of the vector. All following elements are shifted one place. Note that "push_back"
+ *   should be preferred, since it is much more efficient.
  * - type *R_VEC_FUNC(name, emplace_front)(R_VEC(name) *vec): Returns a pointer to a new uninitialized
  *   element at the front of the vector. The pointer must be filled afterwards with data, or it can lead to
- *   undefined behavior!
+ *   undefined behavior! Note that "emplace_back" is preferred, since it is much more efficient.
  * - void R_VEC_FUNC(name, append)(R_VEC(name) *vec, R_VEC(name) *values): Appends the elements of
  *   the second vector to the first. Note that only a shallow copy is made for each element, so do
  *   not pass in a fini_fn when you are freeing the second vector to avoid double frees!
@@ -72,17 +76,26 @@ extern "C" {
  *   elements are shifted 1 toward the beginning of the vector.
  * - void R_VEC_FUNC(name, pop_front)(R_VEC(name) *vec, R_VEC_FINI(name) fini_fn, void *user):
  *   Calls the fini_fn on the first element of the vector, and then removes it. All subsequent
- *   elements are shifted 1 toward the beginning of the vector.
+ *   elements are shifted 1 toward the beginning of the vector. Note that this is much slower than "pop_back".
  * - void R_VEC_FUNC(name, pop_back)(R_VEC(name) *vec, R_VEC_FINI(name) fini_fn, void *user):
  *   Calls the fini_fn on the last element of the vector, and then removes it.
+ * - void R_VEC_FUNC(name, erase_back)(R_VEC(name) *vec, type *iter, R_VEC_FINI(name) fini_fn, void *user):
+ *   Removes all elements from the back of the vector starting from "iter". Does not shrink the vector.
  * - ut64 R_VEC_FUNC(name, lower_bound)(R_VEC(name) *vec, type *value, R_VEC_CMP(name) cmp_fn):
  *   Calculates the lower bound of a value in a vector. Returns the index to the element containing
  *   the lower bound.
  * - ut64 R_VEC_FUNC(name, upper_bound)(R_VEC(name) *vec, type *value, R_VEC_CMP(name) cmp_fn):
  *   Calculates the upper bound of a value in a vector. Returns the index to the element containing
  *   the upper bound.
+ * - type *R_VEC_FUNC(name, partition)(R_VEC(name) *vec, R_VEC_CMP(name) cmp_fn):
+ *   Partitions the vector such that elements for which the compare function returns true come first,
+ *   followed by elements for which predicate returns false. Returns a pointer to the first element
+ *   in the vector for which the predicate returns false.
  * - void R_VEC_FUNC(name, sort)(R_VEC(name) *vec, R_VEC_CMP(name) cmp_fn):
  *   Sorts the vector in place using a comparison function.
+ * - void R_VEC_FUNC(name, uniq)(R_VEC(name) *vec, R_VEC_CMP(name) cmp_fn, R_VEC_FINI(name) fini_fn, void *user):
+ *   Removes duplicates from the vector. The vector has to be sorted before this function is called!
+ *   Calls the fini_fn for every removed duplicate element. Does not shrink the vector.
  */
 
 // Helper macro for accessing the start iterator of a vector.
@@ -100,10 +113,10 @@ extern "C" {
 // performed. Use this macro instead of directly accessing the field, to avoid future breakage.
 #define R_VEC_CAPACITY(vec) (vec)->_capacity
 
-// Helper macro for doing a foreach-style loop over the elements of a vector.
-#define R_VEC_FOREACH(vec, iter) for (iter = (vec)->_start; iter != (vec)->_end; iter++)
+// Helper macros for doing a foreach-style loop over the elements of a vector.
+#define R_VEC_FOREACH(vec, iter) if (vec) for (iter = (vec)->_start; iter != (vec)->_end; iter++)
 #define R_VEC_FOREACH_PREV(vec, iter) \
-	for (iter = (vec)->_end - 1; iter >= (vec)->_start; iter--)
+	if (vec) for (iter = (vec)->_end - 1; iter >= (vec)->_start; iter--)
 
 #define R_CONCAT_INNER(a, b) a ## b
 #define R_CONCAT(a, b) R_CONCAT_INNER(a, b)
@@ -224,6 +237,16 @@ extern "C" {
 		} \
 		return NULL; \
 	} \
+	static inline R_MAYBE_UNUSED R_MUSTUSE type *R_VEC_FUNC(name, find_if_not)(const R_VEC(name) *vec, void *value, R_VEC_FIND_CMP(name) cmp_fn) { \
+		r_return_val_if_fail (vec && value, NULL); \
+		type *val; \
+		R_VEC_FOREACH (vec, val) { \
+			if (cmp_fn (val, value)) { \
+				return val; \
+			} \
+		} \
+		return NULL; \
+	} \
 	static inline R_MAYBE_UNUSED R_MUSTUSE ut64 R_VEC_FUNC(name, find_index)(const R_VEC(name) *vec, void *value, R_VEC_FIND_CMP(name) cmp_fn) { \
 		r_return_val_if_fail (vec && value, UT64_MAX); \
 		ut64 index = 0; \
@@ -254,17 +277,20 @@ extern "C" {
 		} \
 		return NULL; \
 	} \
-	static inline R_MAYBE_UNUSED void R_VEC_FUNC(name, reserve)(R_VEC(name) *vec, ut64 new_capacity) { \
-		r_return_if_fail (vec); \
+	static inline R_MAYBE_UNUSED bool R_VEC_FUNC(name, reserve)(R_VEC(name) *vec, ut64 new_capacity) { \
+		r_return_val_if_fail (vec, false); \
 		if (new_capacity > R_VEC_CAPACITY (vec)) { \
 			type *buf = realloc (vec->_start, new_capacity * sizeof (type)); \
-			if (R_LIKELY (buf)) { \
+			const bool is_success = buf != NULL; \
+			if (R_LIKELY (is_success)) { \
 				const ut64 num_elems = R_VEC_FUNC(name, length) (vec); \
 				vec->_start = buf; \
 				vec->_end = buf + num_elems; \
 				vec->_capacity = new_capacity; \
 			} \
+			return is_success; \
 		} \
+		return true; \
 	} \
 	static inline R_MAYBE_UNUSED void R_VEC_FUNC(name, shrink_to_fit)(R_VEC(name) *vec) { \
 		r_return_if_fail (vec); \
@@ -337,13 +363,8 @@ extern "C" {
 		const ut64 capacity = R_VEC_CAPACITY (vec); \
 		const ut64 num_values = R_VEC_FUNC(name, length) (values); \
 		const ut64 total_count = num_elems + num_values; \
-		if (total_count >= capacity) { \
-			/* TODO compute new_capacity without loop? */ \
-			ut64 new_capacity = capacity * 2; \
-			while (new_capacity < total_count) { \
-				new_capacity = new_capacity * 2; \
-			} \
-			R_VEC_FUNC(name, reserve) (vec, new_capacity); \
+		if (total_count > capacity) { \
+			R_VEC_FUNC(name, reserve) (vec, total_count); \
 		} \
 		memcpy (vec->_end, values->_start, num_values * sizeof (type)); \
 		vec->_end += num_values; \
@@ -368,6 +389,19 @@ extern "C" {
 			fini_fn (last, user); \
 		} \
 		vec->_end = last; \
+	} \
+	static inline R_MAYBE_UNUSED void R_VEC_FUNC(name, erase_back)(R_VEC(name) *vec, type *iter, R_VEC_FINI(name) fini_fn, void *user) { \
+		r_return_if_fail (vec && iter >= vec->_start && iter <= vec->_end); \
+		if (iter == vec->_end) { \
+			return; \
+		} \
+		if (fini_fn) { \
+			type *start; \
+			for (start = iter; start != vec->_end; start++) { \
+				fini_fn (start, user); \
+			} \
+		}\
+		vec->_end = iter; \
 	} \
 	static inline R_MAYBE_UNUSED R_MUSTUSE ut64 R_VEC_FUNC(name, lower_bound)(R_VEC(name) *vec, type *value, R_VEC_CMP(name) cmp_fn) { \
 		r_return_val_if_fail (vec && value && cmp_fn, 0); \
@@ -397,10 +431,45 @@ extern "C" {
 		} \
 		return pos; \
 	} \
+	static inline R_MAYBE_UNUSED type *R_VEC_FUNC(name, partition)(R_VEC(name) *vec, void *user, R_VEC_FIND_CMP(name) cmp_fn) { \
+		r_return_val_if_fail (vec && cmp_fn, vec->_start); \
+		type *first = R_VEC_FUNC(name, find) (vec, user, cmp_fn); \
+		if (first == NULL) { \
+			return vec->_start; \
+		} \
+		type *next; \
+		for (next = first + 1; next != vec->_end; next++) { \
+			if (cmp_fn (next, user)) { \
+				type tmp = *next; \
+				*next = *first; \
+				*first = tmp; \
+				first++; \
+			} \
+		} \
+		return first; \
+	} \
 	static inline R_MAYBE_UNUSED void R_VEC_FUNC(name, sort)(R_VEC(name) *vec, R_VEC_CMP(name) cmp_fn) { \
 		r_return_if_fail (vec && cmp_fn); \
 		qsort (vec->_start, R_VEC_FUNC(name, length) (vec), sizeof (type), \
 			(int (*)(const void *, const void *)) cmp_fn); \
+	} \
+	static inline R_MAYBE_UNUSED void R_VEC_FUNC(name, uniq)(R_VEC(name) *vec, R_VEC_CMP(name) cmp_fn, R_VEC_FINI(name) fini_fn, void *user) { \
+		r_return_if_fail (vec && cmp_fn); \
+		if (vec->_start == vec->_end) { \
+			return; \
+		} \
+		type *current = vec->_start; \
+		type *iter = current; \
+		while (++current != vec->_end) { \
+			if (cmp_fn (iter, current) && ++iter != current) { \
+				if (fini_fn) { \
+					fini_fn (iter, user); \
+				} \
+				*iter = *current; \
+			} \
+		} \
+		iter++; \
+		vec->_end = iter; \
 	}
 
 #ifdef __cplusplus

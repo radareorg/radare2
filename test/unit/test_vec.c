@@ -7,7 +7,7 @@ typedef struct {
 	float *y;
 } S;
 
-void fini_S (S* s, void *user) {
+static inline void fini_S (S* s, void *user) {
 	if (s) {
 		free (s->y);
 	}
@@ -286,7 +286,7 @@ static bool test_vec_append(void) {
 	}
 
 	RVecUT32_append (&v1, &v2);
-	mu_assert_eq (R_VEC_CAPACITY (&v1), 32, "append capacity3");
+	mu_assert_eq (R_VEC_CAPACITY (&v1), 18, "append capacity3");
 	mu_assert_eq (RVecUT32_length (&v1), 18, "append length3");
 	mu_assert_eq (R_VEC_CAPACITY (&v2), 16, "append capacity4");
 	mu_assert_eq (RVecUT32_length (&v2), 10, "append length4");
@@ -364,6 +364,47 @@ static bool test_vec_pop_back(void) {
 	mu_assert_eq (RVecUT32_length (&v), 6, "pop_back length2");
 	mu_assert_eq (*RVecUT32_at (&v, 5), 5, "pop_back at3");
 	mu_assert_eq (*RVecUT32_at (&v, 4), 4, "pop_back at4");
+
+	RVecUT32_fini (&v, NULL, NULL);
+	mu_end;
+}
+
+static inline void fini_count_ut32 (ut32* s, void *user) {
+	if (user) {
+		ut32* x = user;
+		(*x)++;
+	}
+}
+
+static bool test_vec_erase_back(void) {
+	RVecUT32 v;
+	RVecUT32_init (&v);
+
+	// on empty vector
+	RVecUT32_erase_back (&v, v._end, NULL, NULL);
+	mu_assert_eq (R_VEC_CAPACITY (&v), 0, "erase_back capacity1");
+	mu_assert_eq (RVecUT32_length (&v), 0, "erase_back length1");
+
+	ut32 x;
+	for (x = 0; x < 8; x++) {
+		RVecUT32_push_back (&v, &x);
+	}
+
+	// try removing nothing on non-empty vector
+	RVecUT32_erase_back (&v, v._end, NULL, NULL);
+	mu_assert_eq (R_VEC_CAPACITY (&v), 8, "erase_back capacity2");
+	mu_assert_eq (RVecUT32_length (&v), 8, "erase_back length2");
+	mu_assert_eq (*RVecUT32_at (&v, 7), 7, "erase_back at1");
+	mu_assert_eq (*RVecUT32_at (&v, 6), 6, "erase_back at2");
+
+	// remove last elems of non-empty vector
+	ut32 count = 0;
+	RVecUT32_erase_back (&v, RVecUT32_at (&v, 4), fini_count_ut32, &count);
+	mu_assert_eq (R_VEC_CAPACITY (&v), 8, "erase_back capacity3");
+	mu_assert_eq (RVecUT32_length (&v), 4, "erase_back length3");
+	mu_assert_eq (RVecUT32_at (&v, 4), NULL, "erase_back at3");
+	mu_assert_eq (*RVecUT32_at (&v, 3), 3, "erase_back at4");
+	mu_assert_eq (count, 4, "erase count");
 
 	RVecUT32_fini (&v, NULL, NULL);
 	mu_end;
@@ -626,6 +667,37 @@ static bool test_vec_find(void) {
 	mu_end;
 }
 
+static inline int greater_than_ut32(const st32 *a, const void *b_) {
+	const ut32 *b = b_;
+	return *a > *b;
+}
+
+static bool test_vec_find_if_not(void) {
+	RVecST32 v;
+	RVecST32_init (&v);
+
+	st32 x = 0;
+	mu_assert_eq (RVecST32_find_if_not (&v, &x, greater_than_ut32), NULL, "find_if_not1");
+
+	for (x = 0; x < 3; x++) {
+		RVecST32_push_back (&v, &x);
+	}
+
+	x = 0;
+	mu_assert_eq (*RVecST32_find_if_not (&v, &x, greater_than_ut32), 1, "find_if_not2");
+	x = 1;
+	mu_assert_eq (*RVecST32_find_if_not (&v, &x, greater_than_ut32), 2, "find_if_not3");
+	x = 2;
+	mu_assert_eq (RVecST32_find_if_not (&v, &x, greater_than_ut32), NULL, "find_if_not4");
+
+	RVecST32_clear (&v, NULL, NULL);
+	x = 0;
+	mu_assert_eq (RVecST32_find_if_not (&v, &x, greater_than_ut32), NULL, "find_if_not6");
+
+	RVecST32_fini (&v, NULL, NULL);
+	mu_end;
+}
+
 static bool test_vec_find_index(void) {
 	RVecST32 v;
 	RVecST32_init (&v);
@@ -661,7 +733,8 @@ static bool test_vec_reserve(void) {
 	mu_assert_eq (RVecUT32_length (&v), 0, "reserve length1");
 	mu_assert_eq (R_VEC_CAPACITY (&v), 0, "reserve capacity1");
 
-	RVecUT32_reserve (&v, 12);
+	const bool success = RVecUT32_reserve (&v, 12);
+	mu_assert_eq (success, true, "reserve success2");
 	mu_assert_eq (RVecUT32_length (&v), 0, "reserve length2");
 	mu_assert_eq (R_VEC_CAPACITY (&v), 12, "reserve capacity2");
 
@@ -860,6 +933,57 @@ static int compare_S(const S *a, const S *b) {
 	return 0;
 }
 
+static inline int greater_than_st32(const st32 *a, const void *b_) {
+	const st32 *b = b_;
+	return *a > *b;
+}
+
+static bool test_vec_partition(void) {
+	RVecST32 v;
+	RVecST32_init (&v);
+
+	st32 x = 123;
+	RVecST32_push_back (&v, &x);
+	x = 47;
+	RVecST32_push_back (&v, &x);
+	x = 59;
+	RVecST32_push_back (&v, &x);
+	x = 38;
+	RVecST32_push_back (&v, &x);
+	x = 250;
+	RVecST32_push_back (&v, &x);
+
+	x = 100;
+	st32 *pivot = RVecST32_partition (&v, &x, greater_than_st32);
+	mu_assert_eq (*RVecST32_at (&v, 0), 123, "partition1");
+	mu_assert_eq (*RVecST32_at (&v, 1), 250, "partition2");
+	mu_assert_eq (*RVecST32_at (&v, 2), 59, "partition3");
+	mu_assert_eq (*RVecST32_at (&v, 3), 38, "partition4");
+	mu_assert_eq (*RVecST32_at (&v, 4), 47, "partition5");
+	mu_assert_eq (*pivot, 59, "partition6");
+
+	x = 200;
+	pivot = RVecST32_partition (&v, &x, greater_than_st32);
+	mu_assert_eq (*RVecST32_at (&v, 0), 250, "partition7");
+	mu_assert_eq (*RVecST32_at (&v, 1), 123, "partition8");
+	mu_assert_eq (*RVecST32_at (&v, 2), 59, "partition9");
+	mu_assert_eq (*RVecST32_at (&v, 3), 38, "partition10");
+	mu_assert_eq (*RVecST32_at (&v, 4), 47, "partition11");
+	mu_assert_eq (*pivot, 123, "partition12");
+
+	x = 300;
+	pivot = RVecST32_partition (&v, &x, greater_than_st32);
+	mu_assert_eq (*RVecST32_at (&v, 0), 250, "partition13");
+	mu_assert_eq (*RVecST32_at (&v, 1), 123, "partition14");
+	mu_assert_eq (*RVecST32_at (&v, 2), 59, "partition15");
+	mu_assert_eq (*RVecST32_at (&v, 3), 38, "partition16");
+	mu_assert_eq (*RVecST32_at (&v, 4), 47, "partition17");
+	mu_assert_eq (pivot, v._start, "partition18");
+
+	RVecST32_fini (&v, NULL, NULL);
+	mu_end;
+}
+
 static bool test_vec_sort(void) {
 	RVecST32 v;
 	RVecST32_init (&v);
@@ -918,6 +1042,84 @@ static bool test_vec_sort(void) {
 	mu_end;
 }
 
+static bool test_vec_uniq(void) {
+	RVecST32 v;
+	RVecST32_init (&v);
+
+	mu_assert_eq (RVecST32_length (&v), 0, "uniq1");
+	// Always need to sort before calling uniq
+	RVecST32_sort (&v, compare_st32);
+	RVecST32_uniq (&v, compare_st32, NULL, NULL);
+	mu_assert_eq (RVecST32_length (&v), 0, "uniq2");
+
+	st32 x = 123;
+	RVecST32_push_back (&v, &x);
+	x = 47;
+	RVecST32_push_back (&v, &x);
+	RVecST32_push_back (&v, &x);
+	x = 38;
+	RVecST32_push_back (&v, &x);
+	x = 250;
+	RVecST32_push_back (&v, &x);
+	RVecST32_push_back (&v, &x);
+	x = 47;
+	RVecST32_push_back (&v, &x);
+
+	mu_assert_eq (RVecST32_length (&v), 7, "uniq3");
+
+	RVecST32_sort (&v, compare_st32);
+	RVecST32_uniq (&v, compare_st32, NULL, NULL);
+	mu_assert_eq (RVecST32_length (&v), 4, "uniq4");
+	mu_assert_eq (*RVecST32_at (&v, 0), 38, "uniq5");
+	mu_assert_eq (*RVecST32_at (&v, 1), 47, "uniq6");
+	mu_assert_eq (*RVecST32_at (&v, 2), 123, "uniq7");
+	mu_assert_eq (*RVecST32_at (&v, 3), 250, "uniq8");
+
+	RVecST32_fini (&v, NULL, NULL);
+
+	RVecS vS;
+	RVecS_init (&vS);
+
+	S s = { 0 };
+	float *y;
+
+	y = malloc (sizeof (float));
+	*y = 3.14;
+	s.y = y;
+	RVecS_push_back (&vS, &s);
+	y = malloc (sizeof (float));
+	*y = 1.42;
+	s.y = y;
+	RVecS_push_back (&vS, &s);
+	y = malloc (sizeof (float));
+	*y = 9000.1;
+	s.y = y;
+	RVecS_push_back (&vS, &s);
+	RVecS_push_back (&vS, &s);
+	y = malloc (sizeof (float));
+	*y = 3.14;
+	s.y = y;
+	RVecS_push_back (&vS, &s);
+	y = malloc (sizeof (float));
+	*y = 13.37;
+	s.y = y;
+	RVecS_push_back (&vS, &s);
+	RVecS_push_back (&vS, &s);
+	RVecS_push_back (&vS, &s);
+
+	mu_assert_eq (RVecS_length (&vS), 8, "uniq9");
+	RVecS_sort (&vS, compare_S);
+	RVecS_uniq (&vS, compare_S, NULL, NULL);
+	mu_assert_eq (RVecS_length (&vS), 4, "uniq10");
+	mu_assert_eq (*RVecS_at (&vS, 0)->y, 1.42, "uniq11");
+	mu_assert_eq (*RVecS_at (&vS, 1)->y, 3.14, "uniq12");
+	mu_assert_eq (*RVecS_at (&vS, 2)->y, 13.37, "uniq13");
+	mu_assert_eq (*RVecS_at (&vS, 3)->y, 9000.1, "uniq14");
+
+	RVecS_fini (&vS, fini_S, NULL);
+	mu_end;
+}
+
 static int all_tests(void) {
 	mu_run_test (test_vec_init);
 	mu_run_test (test_vec_fini);
@@ -932,6 +1134,7 @@ static int all_tests(void) {
 	mu_run_test (test_vec_remove);
 	mu_run_test (test_vec_pop_front);
 	mu_run_test (test_vec_pop_back);
+	mu_run_test (test_vec_erase_back);
 	mu_run_test (test_vec_swap);
 	mu_run_test (test_vec_clear);
 	mu_run_test (test_vec_length);
@@ -941,6 +1144,7 @@ static int all_tests(void) {
 	mu_run_test (test_vec_end_iter);
 	mu_run_test (test_vec_at);
 	mu_run_test (test_vec_find);
+	mu_run_test (test_vec_find_if_not);
 	mu_run_test (test_vec_find_index);
 	mu_run_test (test_vec_reserve);
 	mu_run_test (test_vec_shrink_to_fit);
@@ -948,7 +1152,9 @@ static int all_tests(void) {
 	mu_run_test (test_vec_foreach_prev);
 	mu_run_test (test_vec_lower_bound);
 	mu_run_test (test_vec_upper_bound);
+	mu_run_test (test_vec_partition);
 	mu_run_test (test_vec_sort);
+	mu_run_test (test_vec_uniq);
 
 	return tests_passed != tests_run;
 }
