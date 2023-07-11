@@ -7,7 +7,7 @@ These strings can be evaluated in order to emulate code.
 
 Each element of an esil expression is separated by a comma. The VM can be described as this:
 
-    while ((word=haveCommand())) {
+    while ((word = haveCommand())) {
       if (word.isKeyword()) {
         esilCommands[word](esil);
       } else {
@@ -130,8 +130,7 @@ As discussed on irc, current implementation works like this:
 
 This approach is more readable, but it's less stack-friendly
 
-Special instructions
-====================
+# Special instructions
 
 NOPs are represented as empty strings. Unknown or invalid instructions
 
@@ -143,8 +142,7 @@ Traps are implemented with the `<trap>,<code>,$$` command. They are used to
 throw exceptions like invalid instructions, division by zero, memory read
 error, etc.
 
-Quick analysis
-==============
+# Quick analysis
 
 Here's a list of some quick checks to retrieve information from an esil string.
 Relevant information will be probably found in the first expression of the
@@ -165,7 +163,7 @@ list.
     indexOf("LOOP")    ->    is a loop (rep?)
     equalsTo("")       ->    empty string, means: nop (wrong, if we append pc+=x)
 
-Common operations:
+## Common operations:
 
  * Check dstreg
  * Check srcreg
@@ -175,13 +173,11 @@ Common operations:
  * Evulate
  * Is syscall
 
-CPU Flags
-=========
+# CPU Flags
 
 CPU flags are usually defined as 1 bit registers in the RReg profile. and sometimes under the 'flg' register type.
 
-ESIL Flags
-==========
+# ESIL Flags
 
 ESIL VM have an internal state flags that can are read only and can be used to
 export those values to the underlying CPU flags. This is because the ESIL vm
@@ -198,8 +194,7 @@ p - parity
 r - regsize ( asm.bits/8 )
 ```
 
-Variables
-=========
+# Variables
 
 1. No predefined bitness (should be easy to extend them to 128,256 and 512bits, e.g. for MMX, SSE, AVX, Neon)
 2. Infinite number (for SSA-form compatibility)
@@ -207,12 +202,12 @@ Variables
 4. Numbers can be specified in any base supported by RNum (dec, hex, oct, binary ...)
 5. Each ESIL backend should have an associated RReg profile to describe the esil register specs
 
-Bitarrays
-=========
+# Bitarrays
+
 What to do with them? What about bit arithmetic if use variables instead of registers?
 
-Arithmetic
-===========
+# Arithmetic
+
 1. ADD ("+")
 2. MUL ("*")
 3. SUB ("-")
@@ -220,8 +215,8 @@ Arithmetic
 5. MOD ("%")
 
 
-Bit arithmetic
-===============
+# Bit arithmetic
+
 1. AND  "&"
 2. OR   "|"
 3. XOR  "^"
@@ -231,8 +226,7 @@ Bit arithmetic
 7. ROR  ">>>"
 8. NEG  "!"
 
-Floating point
-==============
+# Floating point
 
 _TODO_
 
@@ -252,15 +246,15 @@ take care to not reuse any of the following:
 Usage example:
 
 ### rep cmpsb
----------
 
-	ecx,!,?{,BREAK,},edi,[1],esi,[1],==,$z,zf,:=,8,$b,cf,:=,$p,pf,:=,7,$s,sf,:=,edi,[1],0x80,-,!,7,$o,^,of,:=,3,$b,af,:=,df,?{,1,edi,-=,1,esi,-=,}{,1,edi,+=,1,esi,+=,},ecx,--=,zf,!,?{,BREAK,},0,GOTO
+```
+ecx,!,?{,BREAK,},edi,[1],esi,[1],==,$z,zf,:=,8,$b,cf,:=,$p,pf,:=,7,$s,sf,:=,edi,[1],0x80,-,!,7,$o,^,of,:=,3,$b,af,:=,df,?{,1,edi,-=,1,esi,-=,}{,1,edi,+=,1,esi,+=,},ecx,--=,zf,!,?{,BREAK,},0,GOTO
+```
 
 ## Executing r2 commands
 
 
 ## Unimplemented/unhandled instructions
-====================================
 
 Those are expressed with the 'TODO' command. which acts as a 'BREAK', but
 displaying a warning message describing which instruction is not implemented
@@ -270,8 +264,7 @@ For example:
 
 	fmulp ST(1), ST(0)      =>      TODO,fmulp ST(1),ST(0)
 
-Disassembly example:
-====================
+## Disassembly example:
 
 ```
 [0x1000010f8]> e asm.esil=true
@@ -301,8 +294,7 @@ Disassembly example:
     │ │││   0x100001147    48394a38     rdx,56,+,[8],rcx,==,cz,?=
 ```
 
-Radare anal ESIL code example
-==============================
+# Radare anal ESIL code example
 
 As an example implementation of ESIL analysis for the AVR family of
 microcontrollers there is a `avr_op` function in `/libr/arch/p/avr/plugin.c`
@@ -336,8 +328,7 @@ Looking at other architectures which already have mature ESIL support such as
 x86 can help in understanding the syntax and conventions of radare's ESIL.
 
 
-Introspection
-=============
+# Introspection
 
 To ease esil parsing we should have a way to express introspection expressions
 to extract the data we want. For example. We want to get the target address of
@@ -360,8 +351,7 @@ expressions to get:
 - all regs modified (write)
 - all regs accessed (read)
 
-API HOOKS
-=========
+# API HOOKS
 
 It is important for emulation to be able to setup hooks in the parser, so we
 can extend the parser to implement the analysis without having to write the
