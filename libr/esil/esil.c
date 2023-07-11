@@ -874,6 +874,9 @@ static bool esil_eq(REsil *esil) {
 		char *newreg = r_str_newf ("%sl", dst);
 		if (r_esil_get_parm (esil, src2, &num2)) {
 			ret = r_esil_reg_write (esil, newreg, num2);
+		} else {
+			ut64 n0 = r_num_get (NULL, src);
+			ret = r_esil_reg_write (esil, dst, n0);
 		}
 		free (newreg);
 		free (src2);
