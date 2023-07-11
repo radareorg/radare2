@@ -261,62 +261,24 @@ R_API bool r_anal_use(RAnal *anal, const char *name) {
 }
 
 R_API char *r_anal_get_reg_profile(RAnal *anal) {
-	if (anal && anal->cur && anal->cur->get_reg_profile) {
-		return anal->cur->get_reg_profile (anal);
-	}
 	RArchSession *session = R_UNWRAP3 (anal, arch, session);
 	RArchPluginRegistersCallback regs = R_UNWRAP3 (session, plugin, regs);
-	if (regs) {
-		return regs (session);
-	}
-#if 0
-	if (anal->arch && anal->arch->current && anal->arch->current->p && anal->arch->current->p->set_reg_profile) {
-		eprintf ("WINRAR must get wat awat at\n");
-	}
-#endif
-	return (anal && anal->cur && anal->cur->get_reg_profile)
-		? anal->cur->get_reg_profile (anal) : NULL;
+	return regs? regs (session): NULL;
 }
 
 // deprecate.. or at least reuse get_reg_profile...
 R_DEPRECATE R_API bool r_anal_set_reg_profile(RAnal *anal, const char *p) {
 	r_return_val_if_fail (anal, false);
-	if (p) {
-		return r_reg_set_profile_string (anal->reg, p);
-	}
-	/// if the code goes this way, it means that we are expecting the anal plugin to give us the regprofile which should be deprecated
+	char *rp = NULL;
 	bool ret = false;
-	if (anal->cur && anal->cur->set_reg_profile) {
-		ret = anal->cur->set_reg_profile (anal);
-	} else if (anal->cur && anal->cur->get_reg_profile) {
-		char *rp = r_anal_get_reg_profile (anal);
-		if (R_STR_ISNOTEMPTY (rp)) {
-			r_reg_set_profile_string (anal->reg, rp);
-			ret = true;
-		}
-		free (rp);
-	} else if (anal->arch && anal->arch->session && anal->arch->session->plugin && anal->arch->session->plugin->regs) {
-		char *rp = anal->arch->session->plugin->regs (anal->arch->session);
-		if (R_STR_ISNOTEMPTY (rp)) {
-			r_reg_set_profile_string (anal->reg, rp);
-			ret = true;
-		}
-		free (rp);
-#if 0
-	} else if (anal->arch && anal->arch->current && anal->arch->current->p && anal->arch->current->p->set_reg_profile) {
-		// RArchPluginRegistersCallback set_reg_profile = R_UNWRAP5 (anal, arch, current, p, regs);
-		ret = anal->arch->current->p->set_reg_profile (anal->arch->cfg, anal->reg);
-	} else if (anal->arch && anal->arch->current && anal->arch->current->p && anal->arch->current->p->set_reg_profile) {
-		ret = anal->arch->current->p->set_reg_profile (anal->arch->cfg, anal->reg);
-#endif
-	} else {
-		char *p = r_anal_get_reg_profile (anal);
-		if (R_STR_ISNOTEMPTY (p)) {
-			r_reg_set_profile_string (anal->reg, p);
-			ret = true;
-		}
-		free (p);
+	if (!p) {
+		rp = r_anal_get_reg_profile (anal);
+		p = (const char *)rp;
 	}
+	if (R_STR_ISNOTEMPTY (p)) {
+		ret = r_reg_set_profile_string (anal->reg, p);
+	}
+	free (rp);
 	return ret;
 }
 

@@ -754,15 +754,9 @@ typedef struct r_anal_plugin_t {
 	bool (*init)(RAnal *a);
 	bool (*fini)(RAnal *a);
 
-	int (*archinfo)(RAnal *anal, int query);
-	// ut8* (*anal_mask)(RAnal *anal, int size, const ut8 *data, ut64 at);
-	// RList* (*preludes)(RAnal *anal);
-
 	// legacy r_anal_functions
 	RAnalOpCallback op;
 	RAnalCmdCallback cmd;
-	RAnalRegProfCallback set_reg_profile;
-	RAnalRegProfGetCallback get_reg_profile;
 #if 1
 	/// XXX unused but referenced, maybe worth checking in case we want them for anal
 	RAnalFPBBCallback fingerprint_bb;
