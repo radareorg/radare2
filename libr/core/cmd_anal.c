@@ -5963,7 +5963,8 @@ R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr,
 		startTime = r_time_now_mono ();
 	}
 	r_cons_break_push (NULL, NULL);
-	for (; ; r_anal_op_fini (&op)) {
+	for (; true; r_anal_op_fini (&op)) {
+		R_LOG_DEBUG ("esil step at 0x%08"PFMT64x, addr);
 		if (r_cons_is_breaked ()) {
 			R_LOG_INFO ("[+] ESIL emulation interrupted at 0x%08" PFMT64x, addr);
 			return_tail (0);
@@ -6012,6 +6013,7 @@ R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr,
 			r_core_cmd0 (core, pincmd);
 			ut64 pc = r_reg_getv (core->anal->reg, pcname);
 			if (addr != pc) {
+		eprintf ("pincmd fail\n");
 				return_tail (1);
 			}
 		}
@@ -6022,7 +6024,7 @@ R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr,
 					esil->cmd (esil, esil->cmd_trap, addr, R_ANAL_TRAP_UNALIGNED);
 				}
 				if (breakoninvalid) {
-					r_cons_printf ("[ESIL] Stopped execution in an unaligned instruction (see e??esil.breakoninvalid)\n");
+					R_LOG_INFO ("Execution stopped on unaligned instruction (see e?esil.breakoninvalid)");
 					return_tail (0);
 				}
 			}
@@ -6038,7 +6040,7 @@ R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr,
 				esil->cmd (esil, esil->cmd_trap, addr, R_ANAL_TRAP_INVALID);
 			}
 			if (breakoninvalid) {
-				R_LOG_INFO ("[ESIL] Stopped execution in an invalid instruction (see e??esil.breakoninvalid)");
+				R_LOG_INFO ("Stopped execution in an invalid instruction (see e??esil.breakoninvalid)");
 				return_tail (0);
 			}
 			op.size = 1; // avoid inverted stepping
@@ -6061,6 +6063,7 @@ R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr,
 					r_reg_setv (core->anal->reg, pcname, op.addr + op.size);
 					r_reg_setv (core->dbg->reg, pcname, op.addr + op.size);
 				}
+		eprintf ("blaaa\n");
 				return_tail (1);
 			}
 		}
@@ -6092,6 +6095,13 @@ R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr,
 				core->dbg->reg = reg;
 			} else if (R_STR_ISNOTEMPTY (e)) {
 				r_esil_parse (esil, e);
+				if (esil->trap) {
+					R_LOG_WARN ("ESIL TRAP ON %s at 0x%08"PFMT64x"\n", e,addr );
+					if (r_config_get_b (core->config, "esil.exectrap")) {
+						R_LOG_INFO ("ESIL TRAP ignored");
+						esil->trap = false;
+					}
+				}
 #if 0
 				// XXX thats not related to arch plugins, and wonder if its useful at all or we want it as part of the anal or esil plugs
 				if (core->anal->cur && core->anal->cur->esil_post_loop) {
@@ -6139,6 +6149,7 @@ R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr,
 					const char *e = R_STRBUF_SAFEGET (&op2.esil);
 					if (R_STR_ISNOTEMPTY (e)) {
 						r_esil_parse (esil, e);
+						esil->trap = false; // ignore traps on delayed instructions for now
 					}
 				} else {
 					R_LOG_ERROR ("Invalid instruction at 0x%08"PFMT64x, naddr);
@@ -6167,7 +6178,7 @@ R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr,
 		}
 		// check breakpoints
 		if (r_bp_get_at (core->dbg->bp, pc)) {
-			r_cons_printf ("[ESIL] hit breakpoint at 0x%"PFMT64x "\n", pc);
+			R_LOG_INFO ("esil breakpoint hit at 0x%"PFMT64x, pc);
 			return_tail (0);
 		}
 		// check addr
@@ -6177,15 +6188,19 @@ R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr,
 			}
 			continue;
 		}
+#if 1
 		if (esil->trap) {
-			R_LOG_DEBUG ("TRAP");
+			R_LOG_INFO ("TRAP");
 			return_tail (0);
 		}
+#endif
 		if (until_expr) {
+			// eprintf ("CHK %s\n", until_expr);
 			if (r_esil_condition (esil, until_expr)) {
-				R_LOG_DEBUG ("ESIL BREAK!");
+				R_LOG_INFO ("ESIL BREAK!");
 				return_tail (0);
 			}
+			esil->trap = false;
 			continue;
 		}
 		break;
@@ -7609,7 +7624,7 @@ static void cmd_anal_esil(RCore *core, const char *input, bool verbose) {
 				r_core_cmd_help_match (core, help_msg_aes, "aesu", true);
 			} else switch (input[2]) {
 			case 'e': // "aesue"
-				until_expr = input + 3;
+				until_expr = r_str_trim_head_ro (input + 3);
 				break;
 			case ' ': // "aesu"
 				until_addr = r_num_math (core->num, input + 2);

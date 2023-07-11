@@ -597,3 +597,18 @@ EXPECT=<<EOF
 0x00000000000000000000000000000001
 EOF
 RUN
+
+NAME=step until esil
+FILE=bins/mach0/ls-m1
+ARGS=-a arm -b 64
+CMDS=<<EOF
+aeim
+ar?pc
+aesue pc,0x100003ad0,==,$z
+ar?pc
+EOF
+EXPECT=<<EOF
+0x100003a90
+0x100003ad0
+EOF
+RUN
