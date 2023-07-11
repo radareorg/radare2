@@ -4825,7 +4825,7 @@ static int cmd_af(RCore *core, const char *input) {
 			char *sig = r_core_cmd_str (core, "afs");
 			char *data = r_core_editor (core, NULL, sig);
 			if (sig && data) {
-				r_core_cmdf (core, "\"\"afs %s", data);
+				r_core_cmd_callf (core, "afs %s", data);
 			}
 			free (sig);
 			free (data);
@@ -6522,8 +6522,8 @@ static void cmd_esil_mem(RCore *core, const char *input) {
 	v = sdb_itoa (esil->stack_fd, 10, val, sizeof (val));
 	sdb_set (core->sdb, "aeim.fd", v, 0);
 
-	r_config_set_i (core->config, "io.va", true);
-	if (patt && *patt) {
+	r_config_set_b (core->config, "io.va", true);
+	if (R_STR_ISNOTEMPTY (patt)) {
 		switch (*patt) {
 		case '0':
 			// do nothing
@@ -13575,7 +13575,7 @@ static int cmd_anal(void *data, const char *input) {
 			if (input[2] && input[2] != '.') {
 				addr = r_num_math (core->num, input + 2);
 			}
-			r_core_cmdf (core, "afbij @ 0x%"PFMT64x, addr);
+			r_core_cmd_call_at (core, addr, "afbij");
 			break;
 		}
 		case '-': // "ab-"
@@ -13590,15 +13590,16 @@ static int cmd_anal(void *data, const char *input) {
 			  }
 			  break;
 		case 0:
-		case ' ': { // "ab "
-			// find block
-			ut64 addr = core->offset;
-			if (input[1] && input[1] != '.') {
-				addr = r_num_math (core->num, input + 1);
+		case ' ': // "ab "
+			{
+				// find block
+				ut64 addr = core->offset;
+				if (input[1] && input[1] != '.') {
+					addr = r_num_math (core->num, input + 1);
+				}
+				r_core_cmd_call_at (core, addr, "afbi");
 			}
-			r_core_cmdf (core, "afbi @ 0x%"PFMT64x, addr);
 			break;
-		}
 		default:
 			r_core_cmd_help (core, help_msg_ab);
 			break;

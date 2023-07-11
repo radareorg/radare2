@@ -1,7 +1,4 @@
-/* radare - LGPL - Copyright 2009-2022 - pancake */
-
-#include <r_bin.h>
-#include <r_debug.h>
+/* radare - LGPL - Copyright 2009-2023 - pancake */
 
 static RCoreHelpMessage help_msg_o = {
 	"Usage: o","[file] ([offset])","Open and close files, maps, and banks",
