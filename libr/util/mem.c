@@ -309,6 +309,15 @@ R_API void *r_mem_dup(const void *s, int l) {
 	return d;
 }
 
+R_API void *r_mem_set(ut8 ch, int l) {
+	void *d = malloc (l);
+	if (d) {
+		memset (d, ch, l);
+	}
+	return d;
+}
+
+
 R_API void r_mem_reverse(ut8 *b, int l) {
 	ut8 tmp;
 	int i, end = l / 2;
