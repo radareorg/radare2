@@ -2827,6 +2827,7 @@ R_API size_t r_str_len_utf8_ansi(const char *str) {
 
 // XXX must find across the ansi tags, as well as support utf8
 R_API const char *r_strstr_ansi(const char *a, const char *b) {
+	// XXX not working well if "\x1b[32mF\x1b[32mOO" -> FOO not found
 	const char *ch, *p = a;
 	do {
 		ch = strchr (p, '\x1b');
