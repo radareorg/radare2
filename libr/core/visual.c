@@ -4187,7 +4187,7 @@ R_API void r_core_print_scrollbar(RCore *core) {
 	if (r_config_get_b (core->config, "cfg.debug")) {
 		from = r_num_math (core->num, "$D");
 		to = r_num_math (core->num, "$D+$DD");
-	} else if (r_config_get_i (core->config, "io.va")) {
+	} else if (r_config_get_b (core->config, "io.va")) {
 		from = r_num_math (core->num, "$S");
 		to = r_num_math (core->num, "$S+$SS");
 	} else {
@@ -4244,7 +4244,7 @@ R_API void r_core_print_scrollbar_bottom(RCore *core) {
 	if (r_config_get_b (core->config, "cfg.debug")) {
 		from = r_num_math (core->num, "$D");
 		to = r_num_math (core->num, "$D+$DD");
-	} else if (r_config_get_i (core->config, "io.va")) {
+	} else if (r_config_get_b (core->config, "io.va")) {
 		from = r_num_math (core->num, "$S");
 		to = r_num_math (core->num, "$S+$SS");
 	} else {
