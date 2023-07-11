@@ -860,3 +860,14 @@ R_API void r_anal_purge_imports(RAnal *anal) {
 	r_list_purge (anal->imports);
 	R_DIRTY (anal);
 }
+
+R_API bool r_anal_cmd(RAnal *anal, const char *cmd) {
+	RListIter *iter;
+	RAnalPlugin *ap;
+	r_list_foreach (anal->plugins, iter, ap) {
+		if (ap->cmd && ap->cmd (anal, cmd)) {
+			return true;
+		}
+	}
+	return false;
+}

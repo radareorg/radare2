@@ -765,7 +765,7 @@ typedef struct r_anal_esil_dfg_node_t {
 	ut32 /*RAnalEsilDFGTagType*/ type;
 } RAnalEsilDFGNode;
 
-typedef int (*RAnalCmdExt)(/* Rcore */RAnal *anal, const char* input);
+typedef int (*RAnalCmdCallback)(/* Rcore */RAnal *anal, const char* input);
 
 typedef int (*RAnalOpCallback)(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *data, int len, RAnalOpMask mask);
 typedef int (*RAnalOpAsmCallback)(RAnal *a, ut64 addr, const char *str, ut8 *outbuf, int outlen);
@@ -784,21 +784,7 @@ typedef int (*REsilTrapCB)(REsil *esil, int trap_type, int trap_code);
 
 typedef struct r_anal_plugin_t {
 	RPluginMeta meta;
-#if 0
-	char *name;
-	char *desc;
-	char *license;
-	char *arch;
-	char *author;
-	char *version;
 
-	int endian; // bitmask to define little, big, etc.
-	char *cpus;
-	int bits;
-	int esil; // can do esil or not
-	int jmpmid;	// can do jump in the middle
-#endif
-	int fileformat_type;
 	int (*init)(void *user);
 	int (*fini)(void *user);
 	//int (*reset_counter) (RAnal *anal, ut64 start_addr);
@@ -808,13 +794,7 @@ typedef struct r_anal_plugin_t {
 
 	// legacy r_anal_functions
 	RAnalOpCallback op;
-#if 0
-	RAnalOpAsmCallback opasm;
-#endif
-
-	// command extension to directly call any analysis functions
-//	RAnalCmdExt cmd_ext;
-
+	RAnalCmdCallback cmd;
 	RAnalRegProfCallback set_reg_profile;
 	RAnalRegProfGetCallback get_reg_profile;
 #if 1
@@ -852,6 +832,8 @@ R_API const char *r_anal_datatype_tostring(RAnalDataType t);
 R_API RAnalType *r_anal_str_to_type(RAnal *a, const char* s);
 R_API RAnalType *r_anal_type_free(RAnalType *t);
 R_API RAnalType *r_anal_type_loadfile(RAnal *a, const char *path);
+
+R_API bool r_anal_cmd(RAnal *a, const char *cmd);
 
 /* block.c */
 typedef bool (*RAnalBlockCb)(RAnalBlock *block, void *user);
