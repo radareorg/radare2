@@ -36,7 +36,8 @@ R_API RMemoryPool *r_mem_pool_new(int nodesize, int poolsize, int poolcount);
 R_API RMemoryPool *r_mem_pool_free(RMemoryPool *pool);
 R_API void* r_mem_pool_alloc(RMemoryPool *pool);
 R_API void *r_mem_dup(const void *s, int l);
-R_API void *r_mem_alloc(int sz);
+R_API void *r_mem_set(ut8 ch, int l);
+R_API void *r_mem_alloc(int sz); // mem_new ?
 R_API void r_mem_free(void *);
 R_API void r_mem_zero(void *, size_t);
 R_API void r_mem_reverse(ut8 *b, int l);

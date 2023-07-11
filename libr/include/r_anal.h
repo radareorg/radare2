@@ -62,42 +62,6 @@ typedef struct r_anal_range_t {
 	RBNode rb;
 } RAnalRange;
 
-#if 0
-typedef struct r_lib_plugin_description_t {
-	const char *name;
-	const char *author;
-	const char *license;
-} RLibpluginDescription;
-
-typedef bool (*RAnalPluginCheckCallback)(RAnal *anal);
-typedef bool (*RAnalPluginRunCallback)(RAnal *anal, const char *args);
-
-typedef struct r_anal_plugin_t {
-	RLibPluginDescription data;
-	RAnalPluginCheckCallback check;
-	const char *depends; // comma separated list of dependencies
-	RAnalPluginRunCallback run;
-} RAnalPlugin;
-
-static bool p_check(Ranal *anal) {
-	// if arch is x86 or arm, otherwise return false
-}
-
-static bool p_run(Ranal *anal, const char *args) {
-}
-
-RAnalPlugin p = {
-	.data = {
-		.name = "objc",
-		.author = "pancake",
-		.license = "MIT",
-	},
-	.check = p_check,
-	.depends = p_depends,
-	.run = p_run,
-};
-#endif
-
 enum {
 	R_ANAL_DATA_TYPE_NULL = 0,
 	R_ANAL_DATA_TYPE_UNKNOWN = 1,
@@ -765,7 +729,7 @@ typedef struct r_anal_esil_dfg_node_t {
 	ut32 /*RAnalEsilDFGTagType*/ type;
 } RAnalEsilDFGNode;
 
-typedef int (*RAnalCmdCallback)(/* Rcore */RAnal *anal, const char* input);
+typedef bool (*RAnalCmdCallback)(/* Rcore */RAnal *anal, const char* input);
 
 typedef int (*RAnalOpCallback)(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *data, int len, RAnalOpMask mask);
 typedef int (*RAnalOpAsmCallback)(RAnal *a, ut64 addr, const char *str, ut8 *outbuf, int outlen);
@@ -785,12 +749,14 @@ typedef int (*REsilTrapCB)(REsil *esil, int trap_type, int trap_code);
 typedef struct r_anal_plugin_t {
 	RPluginMeta meta;
 
-	int (*init)(void *user);
-	int (*fini)(void *user);
-	//int (*reset_counter) (RAnal *anal, ut64 start_addr);
+	const char *depends; // comma separated list of dependencies
+
+	bool (*init)(RAnal *a);
+	bool (*fini)(RAnal *a);
+
 	int (*archinfo)(RAnal *anal, int query);
-	ut8* (*anal_mask)(RAnal *anal, int size, const ut8 *data, ut64 at);
-	RList* (*preludes)(RAnal *anal);
+	// ut8* (*anal_mask)(RAnal *anal, int size, const ut8 *data, ut64 at);
+	// RList* (*preludes)(RAnal *anal);
 
 	// legacy r_anal_functions
 	RAnalOpCallback op;
