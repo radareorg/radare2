@@ -452,6 +452,7 @@ static void cmd_ic_comma(RCore *core, const char *input) {
 	r_table_add_column (t, typeString, "type", 0);
 	r_table_add_column (t, typeString, "klass", 0);
 	r_table_add_column (t, typeString, "name", 0);
+	const bool iova = r_config_get_b (core->config, "io.va");
 	r_list_foreach (objs, objs_iter, bf) {
 		RBinObject *obj = bf->o;
 		RBinClass *klass;
@@ -463,13 +464,13 @@ static void cmd_ic_comma(RCore *core, const char *input) {
 			}
 			RBinSymbol *method;
 			r_list_foreach (klass->methods, iter2, method) {
-				char *addr = r_str_newf ("0x%08"PFMT64x, method->vaddr);
+				char *addr = r_str_newf ("0x%08"PFMT64x, iova? method->vaddr: method->paddr);
 				r_table_add_row (t, addr, "method", klass->name, method->name, NULL);
 				free (addr);
 			}
 			RBinField *field;
 			r_list_foreach (klass->fields, iter2, field) {
-				char *addr = r_str_newf ("0x%08"PFMT64x, field->vaddr);
+				char *addr = r_str_newf ("0x%08"PFMT64x, iova? field->vaddr: field->paddr);
 				r_table_add_row (t, addr, "field", klass->name, field->name, NULL);
 				free (addr);
 			}
@@ -1288,6 +1289,7 @@ static int cmd_info(void *data, const char *input) {
 				}
 				goto done;
 			} else if (input[1] == ' ' || input[1] == '.' || input[1] == 's' || input[1] == 'q' || input[1] == 'j' || input[1] == 'l' || input[1] == 'c' || input[1] == '*') {
+				const bool iova = r_config_get_b (core->config, "io.va");
 				RList *objs = r_core_bin_files (core);
 				RListIter *objs_iter;
 				RBinFile *bf;
@@ -1327,7 +1329,8 @@ static int cmd_info(void *data, const char *input) {
 							if (radare2) {
 								r_cons_printf ("ac %s\n", cls->name);
 								r_list_foreach (cls->methods, iter2, sym) {
-									r_cons_printf ("ac %s %s 0x%08"PFMT64x"\n", cls->name, sym->name, sym->vaddr);
+									r_cons_printf ("ac %s %s 0x%08"PFMT64x"\n", cls->name,
+											sym->name, iova? sym->vaddr: sym->paddr);
 								}
 								continue;
 							}
@@ -1339,14 +1342,15 @@ static int cmd_info(void *data, const char *input) {
 							case '*':
 								r_list_foreach (cls->methods, iter2, sym) {
 									r_cons_printf ("f sym.%s @ 0x%"PFMT64x "\n",
-											sym->name, sym->vaddr);
+										sym->name, iova? sym->vaddr: sym->paddr);
 								}
 								input++;
 								break;
 							case 'l':
 								r_list_foreach (cls->methods, iter2, sym) {
 									const char *comma = iter2->p? " ": "";
-									r_cons_printf ("%s0x%"PFMT64d, comma, sym->vaddr);
+									r_cons_printf ("%s0x%"PFMT64d, comma,
+										iova? sym->vaddr: sym->paddr);
 								}
 								r_cons_newline ();
 								input++;
@@ -1365,6 +1369,7 @@ static int cmd_info(void *data, const char *input) {
 										free (flags);
 									}
 									pj_kN (pj, "vaddr", sym->vaddr);
+									pj_kN (pj, "paddr", sym->paddr);
 									pj_end (pj);
 								}
 								pj_end (pj);
@@ -1374,7 +1379,8 @@ static int cmd_info(void *data, const char *input) {
 								r_list_foreach (cls->methods, iter2, sym) {
 									char *flags = r_core_bin_method_flags_str (sym->method_flags, 0);
 									r_cons_printf ("0x%08"PFMT64x " method %s %s %s\n",
-											sym->vaddr, cls->name, flags, sym->name);
+											iova? sym->vaddr: sym->paddr,
+											cls->name, flags, sym->name);
 									R_FREE (flags);
 								}
 								break;
@@ -1383,6 +1389,7 @@ static int cmd_info(void *data, const char *input) {
 						}
 						goto done;
 					} else if (obj->classes) {
+						const bool iova = r_config_get_b (core->config, "io.va");
 						playMsg (core, "classes", r_list_length (obj->classes));
 						if (strstr (input, "qq")) { // "icqq"
 							r_list_foreach (obj->classes, iter, cls) {
@@ -1393,18 +1400,20 @@ static int cmd_info(void *data, const char *input) {
 						} else if (input[1] == 's') { // "ics"
 							r_list_foreach (obj->classes, iter, cls) {
 								r_list_foreach (cls->methods, iter2, sym) {
-									if (sym->vaddr == 0 || sym->vaddr == UT64_MAX) {
+									ut64 addr = iova? sym->vaddr: sym->paddr;
+									if (addr == 0 || addr == UT64_MAX) {
 										continue;
 									}
 									r_cons_printf ("0x%"PFMT64d" [%s] %s\n",
-										sym->vaddr, cls->name, sym->name);
+										addr, cls->name, sym->name);
 								}
 							}
 						} else if (input[1] == 'l') { // "icl"
 							r_list_foreach (obj->classes, iter, cls) {
 								r_list_foreach (cls->methods, iter2, sym) {
 									const char *comma = iter2->p? " ": "";
-									r_cons_printf ("%s0x%"PFMT64d, comma, sym->vaddr);
+									r_cons_printf ("%s0x%"PFMT64d, comma,
+										iova? sym->vaddr: sym->paddr);
 								}
 								if (!r_list_empty (cls->methods)) {
 									r_cons_newline ();
@@ -1418,13 +1427,14 @@ static int cmd_info(void *data, const char *input) {
 							r_list_foreach (obj->classes, iter, cls) {
 								method = NULL;
 								r_list_foreach (cls->methods, iter2, sym) {
-									if (sym->vaddr < min) {
-										min = sym->vaddr;
+									ut64 at = iova? sym->vaddr: sym->paddr;
+									if (at < min) {
+										min = at;
 									}
-									if (sym->vaddr + sym->size > max) {
-										max = sym->vaddr + sym->size;
+									if (at + sym->size > max) {
+										max = at + sym->size;
 									}
-									if (addr >= sym->vaddr && addr <= sym->vaddr + sym->size) {
+									if (addr >= at && addr <= at + sym->size) {
 										method = sym->name;
 									}
 								}
