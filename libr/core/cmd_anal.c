@@ -21,6 +21,7 @@ static RCoreHelpMessage help_msg_aex = {
 static RCoreHelpMessage help_msg_a = {
 	"Usage:", "a", "[abdefFghoprxstc] [...]",
 	"a", "", "alias for aai - analysis information",
+	"a:", "[cmd]", "run a command implemented by an analysis plugin (like : for io)",
 	"a*", "", "same as afl*;ah*;ax*",
 	"aa", "[?]", "analyze all (fcns + bbs) (aa0 to avoid sub renaming)",
 	"a8", " [hexpairs]", "analyze bytes",
@@ -13760,16 +13761,9 @@ static int cmd_anal(void *data, const char *input) {
 	case 'h': // "ah"
 		cmd_anal_hint (core, input + 1);
 		break;
-#if 0
-	/// XXX this must be renamed to 'a:' // "a:" and cmd_ext must be command like in io
-	case '!': // "a!"
-		if (core->anal && core->anal->cur && core->anal->cur->cmd_ext) {
-			return core->anal->cur->cmd_ext (core->anal, input + 1);
-		} else {
-			r_cons_printf ("No plugins for this analysis plugin\n");
-		}
+	case ':':
+		r_anal_cmd (core->anal, r_str_trim_head_ro (input + 1));
 		break;
-#endif
 	case 'j': // "aj"
 		r_core_cmd_call (core, "aflj");
 		break;
