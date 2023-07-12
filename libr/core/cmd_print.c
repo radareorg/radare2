@@ -31,6 +31,7 @@ static RCoreHelpMessage help_msg_p8 = {
 	"Usage: p8[*fjx]", " [len]", "8bit hexpair list of bytes (see pcj)",
 	"p8", " ([len])", "print hexpairs string",
 	"p8*", "","display r2 commands to write this block",
+	"p8d", "", "space separated list of byte values in decimal",
 	"p8f", "", "print hexpairs of function (linear)",
 	"p8j", "", "print hexpairs in JSON array",
 	"p8x", "","print hexpairs honoring hex.cols",
@@ -159,7 +160,7 @@ static RCoreHelpMessage help_msg_p = {
 	"p2", " [len]", "8x8 2bpp-tiles",
 	"p3", " [file]", "print 3D stereogram image of current block",
 	"p6", "[de] [len]", "base64 decode/encode",
-	"p8", "[?][j] [len]", "8bit hexpair list of bytes",
+	"p8", "[?][dfjx] [len]", "8bit hexpair list of bytes",
 	"p=", "[?][bep] [N] [L] [b]", "show entropy/printable chars/chars bars",
 	"pa", "[edD] [arg]", "pa:assemble  pa[dD]:disasm or pae: esil from hex",
 	"pA", "[n_ops]", "show n_ops address and type",
@@ -7891,6 +7892,12 @@ static int cmd_print(void *data, const char *input) {
 					}
 					r_print_bytes (core->print, block + i, R_MIN (cols, len - cols), "%02x");
 				}
+			} else if (input[1] == 'd') { // "p8d"
+				int i;
+				for (i = 0; i < len; i ++) {
+					r_cons_printf ("%d ", block[i]);
+				}
+				r_cons_newline ();
 			} else if (input[1] == 'f') { // "p8f"
 				r_core_cmdf (core, "p8 $FS @ $FB");
 			} else {
