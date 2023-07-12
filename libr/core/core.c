@@ -553,10 +553,7 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 {
 		ut64 n = 0LL;
 		int refsz = core->rasm->config->bits / 8;
-		const char *p = NULL;
-		if (strlen (str) > 5) {
-			p = strchr (str + 5, ':');
-		}
+		const char *p = strchr (str, ':');
 		if (p) {
 			refsz = atoi (str + 1);
 			str = p;
