@@ -1066,11 +1066,12 @@ static const char *get_reg_at(RAnalFunction *fcn, st64 delta, ut64 addr) {
 static void ds_build_op_str(RDisasmState *ds, bool print_color) {
 	RCore *core = ds->core;
 	const bool be = R_ARCH_CONFIG_IS_BIG_ENDIAN (ds->core->rasm->config);
-	if (ds->show_trace && ds->show_trace_color) {
+	// if (ds->show_trace_color && ds->show_trace) {
+	if (ds->show_trace_color) {
 		bool extraspace = true;
 		if (ds->fcn) {
 			RAnalBlock *bb = r_anal_function_bbget_in (ds->core->anal, ds->fcn, ds->at);
-			if (bb && bb->color.r && bb->color.g && bb->color.b) {
+			if (bb && (bb->color.r || bb->color.g || bb->color.b)) {
 				RColor bg = { .r2 = bb->color.r, .g2 = bb->color.g, .b2 = bb->color.b, };
 				bg.a = ALPHA_FGBG;
 				bg.r2 = bb->color.r;
@@ -1082,6 +1083,9 @@ static void ds_build_op_str(RDisasmState *ds, bool print_color) {
 				free (color);
 				extraspace = false;
 			}
+		}
+		if (!ds->show_trace) {
+			extraspace = false;
 		}
 		if (extraspace) {
 			r_cons_printf ("  ");
