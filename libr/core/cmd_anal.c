@@ -6190,7 +6190,7 @@ R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr,
 		}
 #if 1
 		if (esil->trap) {
-			R_LOG_INFO ("TRAP");
+			R_LOG_DEBUG ("TRAP");
 			return_tail (0);
 		}
 #endif
