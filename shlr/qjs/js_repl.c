@@ -132,192 +132,198 @@ static const char *const js_repl_qjs = "" \
   "[\"true\",\"false\",\"null\",\"this\"].includes(base)||!isNaN(+base)?"\
   "eval(base):(obj=get_context_object(line,pos-base.length),null"\
   "==obj?obj:obj===g&&void 0===obj[base]?eval(base):obj[base])):"\
-  "{}}}function get_completions(e,r){let t,n,o;var i=get_context"\
-  "_word(e,r),s=[];for(n=0,t=e=get_context_object(e,r-i.length);"\
-  "n<10&&null!=t;n++){const e=Object.getOwnPropertyNames(t);for("\
-  "o=0;o<e.length;o++){const r=e[o];\"string\"==typeof r&&\"\"+ +r!="\
-  "=r&&r.startsWith(i)&&s.push(r)}t=Object.getPrototypeOf(t)}if("\
-  "1<s.length){for(s.sort((function(e,r){if(e[0]!==r[0]){if(\"_\"="\
-  "==e[0])return 1;if(\"_\"===r[0])return-1}return e<r?-1:r<e?1:0}"\
-  ")),n=o=1;n<s.length;n++)s[n]!==s[n-1]&&(s[o++]=s[n]);s.length"\
-  "=o}return{tab:s,pos:i.length,ctx:e}}function completion(){let"\
-  " e,r,t,n,o,i,s,c,a,l;var _=get_completions(cmd,cursor_pos),u="\
-  "_.tab;if(0!==u.length){for(e=u[0],n=e.length,r=1;r<u.length;r"\
-  "++)for(o=u[r],t=0;t<n;t++)if(o[t]!==e[t]){n=t;break}for(r=_.p"\
-  "os;r<n;r++)insert(e[r]);if(last_fun===completion&&1===u.lengt"\
-  "h){const e=_.ctx[u[0]];\"function\"==typeof e?(insert(\"(\"),0==="\
-  "e.length&&insert(\")\")):\"object\"==typeof e&&insert(\".\")}if(las"\
-  "t_fun===completion&&2<=u.length){for(i=0,r=0;r<u.length;r++)i"\
-  "=Math.max(i,u[r].length);for(i+=2,c=Math.max(1,Math.floor((te"\
-  "rm_width+1)/i)),l=Math.ceil(u.length/c),write(\"\\n\"),a=0;a<l;a"\
-  "++){for(s=0;s<c&&!((r=s*l+a)>=u.length);s++)e=u[r],s!==c-1&&("\
-  "e=e.padEnd(i)),write(e);write(\"\\n\")}readline_print_prompt()}}"\
-  "}const commands={\"""\x01""\":beginning_of_line,\"""\x02""\":backward_cha"\
-  "r,\"""\x03""\":control_c,\"""\x04""\":control_d,\"""\x05""\":end_of_line,\"""\x06""\""\
-  ":forward_char,\"""\x07""\":abort,\"\\b\":backward_delete_char,\"\\t\":com"\
-  "pletion,\"\\n\":accept_line,\"\\v\":kill_line,\"\\r\":accept_line,\"""\x0e"""\
-  "\":next_history,\"""\x10""\":previous_history,\"""\x11""\":quoted_insert,\""\
-  """\x12""\":alert,\"""\x13""\":alert,\"""\x14""\":transpose_chars,\"""\x17""\":backwa"\
-  "rd_kill_word,\"""\x18""\":reset,\"""\x19""\":yank,\"""\x1b""OA\":previous_histo"\
-  "ry,\"""\x1b""OB\":next_history,\"""\x1b""OC\":forward_char,\"""\x1b""OD\":backw"\
-  "ard_char,\"""\x1b""OF\":forward_word,\"""\x1b""OH\":backward_word,\"""\x1b""[1"\
-  ";5C\":forward_word,\"""\x1b""[1;5D\":backward_word,\"""\x1b""[1~\":beginni"\
-  "ng_of_line,\"""\x1b""[3~\":delete_char,\"""\x1b""[4~\":end_of_line,\"""\x1b""["\
-  "5~\":history_search_backward,\"""\x1b""[6~\":history_search_forward,"\
-  "\"""\x1b""[A\":previous_history,\"""\x1b""[B\":next_history,\"""\x1b""[C\":forw"\
-  "ard_char,\"""\x1b""[D\":backward_char,\"""\x1b""[F\":end_of_line,\"""\x1b""[H\""\
-  ":beginning_of_line,\"""\x1b""""\x7f""\":backward_kill_word,\"""\x1b""b\":back"\
-  "ward_word,\"""\x1b""d\":kill_word,\"""\x1b""f\":forward_word,\"""\x1b""k\":back"\
-  "ward_kill_line,\"""\x1b""l\":downcase_word,\"""\x1b""t\":transpose_words,"\
-  "\"""\x1b""u\":upcase_word,\"""\x7f""\":backward_delete_char};function dup"\
-  "str(e,r){let t=\"\";for(;0<r--;)t+=e;return t}let readline_keys"\
-  ",readline_state,readline_cb;function readline_print_prompt(){"\
-  "write(prompt),term_cursor_x=ucs_length(prompt)%term_width,las"\
-  "t_cmd=\"\",last_cursor_pos=0}function readline_start(e,r){if(cm"\
-  "d=e||\"\",cursor_pos=cmd.length,history_index=history.length,re"\
-  "adline_cb=r,prompt=pstate,mexpr)prompt=(prompt+=dupstr(\" \",pl"\
-  "en-prompt.length))+ps2;else{if(show_time){let e=Math.round(ev"\
-  "al_time)+\" \";eval_time=0,e=dupstr(\"0\",5-e.length)+e,prompt+=e"\
-  ".substring(0,e.length-4)+\".\"+e.substring(e.length-4)}plen=pro"\
-  "mpt.length,show_colors&&(prompt+=colors.yellow),prompt+=ps1,s"\
-  "how_colors&&(prompt+=colors.none)}readline_print_prompt(),upd"\
-  "ate(),readline_state=0}function handle_char(e){var r=String.f"\
-  "romCodePoint(e);switch(readline_state){case 0:\"""\x1b""\"===r?(rea"\
-  "dline_keys=r,readline_state=1):handle_key(r);break;case 1:rea"\
-  "dline_keys+=r,readline_state=\"[\"===r?2:\"O\"===r?3:(handle_key("\
-  "readline_keys),0);break;case 2:readline_keys+=r,\";\"===r||\"0\"<"\
-  "=r&&r<=\"9\"||(handle_key(readline_keys),readline_state=0);brea"\
-  "k;case 3:handle_key(readline_keys+=r),readline_state=0}}funct"\
-  "ion handle_key(e){var r;if(quote_flag)1===ucs_length(e)&&inse"\
-  "rt(e),quote_flag=!1;else if(r=commands[e]){switch((this_fun=r"\
-  ")(e)){case-1:return readline_cb(cmd);case-2:return readline_c"\
-  "b(null);case-3:return}last_fun=this_fun}else 1===ucs_length(e"\
-  ")&&\" \"<=e?(insert(e),last_fun=insert):alert();cursor_pos=curs"\
-  "or_pos<0?0:cursor_pos>cmd.length?cmd.length:cursor_pos,update"\
-  "()}let hex_mode=!1,eval_mode=\"std\";function number_to_string("\
-  "e,r){if(isFinite(e)){let t;return 0===e?t=1/e<0?\"-0\":\"0\":16=="\
-  "=r&&e===Math.floor(e)?(t=e<0?(e=-e,\"-\"):\"\",t+=\"0x\"+e.toString"\
-  "(16)):t=e.toString(),t}return e.toString()}function bigfloat_"\
-  "to_string(e,r){let t;return BigFloat.isFinite(e)?(0===e?t=1/e"\
-  "<0?\"-0\":\"0\":16===r?(t=e<0?(e=-e,\"-\"):\"\",t+=\"0x\"+e.toString(16"\
-  ")):t=e.toString(),\"bigfloat\"==typeof e&&\"math\"!==eval_mode?t+"\
-  "=\"l\":\"std\"!==eval_mode&&t.indexOf(\".\")<0&&(16===r&&t.indexOf("\
-  "\"p\")<0||10===r&&t.indexOf(\"e\")<0)&&(t+=\".0\"),t):\"math\"!==eval"\
-  "_mode?\"BigFloat(\"+e.toString()+\")\":e.toString()}function bigi"\
-  "nt_to_string(e,r){let t;return 16===r?(t=e<0?(e=-e,\"-\"):\"\",t+"\
-  "=\"0x\"+e.toString(16)):t=e.toString(),\"std\"===eval_mode&&(t+=\""\
-  "n\"),t}function print(e){const r=[];!function e(t){let n,o,i,s"\
-  ",c;var a=typeof t;if(\"object\"==a)if(null===t)write(t);else if"\
-  "(0<=r.indexOf(t))write(\"[circular]\");else if(has_jscalc&&(t i"\
-  "nstanceof Fraction||t instanceof Complex||t instanceof Mod||t"\
-  " instanceof Polynomial||t instanceof PolyMod||t instanceof Ra"\
-  "tionalFunction||t instanceof Series))write(t.toString());else"\
-  "{if(r.push(t),Array.isArray(t)){for(n=t.length,write(\"[ \"),o="\
-  "0;o<n;o++)if(0!==o&&write(\", \"),o in t?e(t[o]):write(\"<empty>"\
-  "\"),20<o){write(\"...\");break}write(\" ]\")}else if(\"RegExp\"===Ob"\
-  "ject.__getClass(t))write(t.toString());else{for(i=Object.keys"\
-  "(t),n=i.length,write(\"{ \"),o=0;o<n;o++)0!==o&&write(\", \"),s=i"\
-  "[o],write(s,\": \"),e(t[s]);write(\" }\")}r.pop(t)}else\"string\"=="\
-  "a?(79<(c=t.__quote()).length&&(c=c.substring(0,75)+'...\"'),wr"\
-  "ite(c)):\"number\"==a?write(number_to_string(t,hex_mode?16:10))"\
-  ":\"bigint\"==a?write(bigint_to_string(t,hex_mode?16:10)):\"bigfl"\
-  "oat\"==a?write(bigfloat_to_string(t,hex_mode?16:10)):\"bigdecim"\
-  "al\"==a?write(t.toString()+\"m\"):\"symbol\"==a?write(String(t)):\""\
-  "function\"==a?write(\"function \"+t.name+\"()\"):write(t)}(e)}func"\
-  "tion extract_directive(e){let r;if(\"\\\\\"!==e[0])return\"\";for(r"\
-  "=1;r<e.length&&is_alpha(e[r]);r++);return e.substring(1,r)}fu"\
-  "nction handle_directive(e,r){let t,n,o;if(\"h\"===e||\"?\"===e||\""\
-  "help\"===e)help();else{if(\"load\"===e){let t=r.substring(e.leng"\
-  "th+1).trim();return t.lastIndexOf(\".\")<=t.lastIndexOf(\"/\")&&("\
-  "t+=\".js\"),0}if(\"x\"===e)hex_mode=!0;else if(\"d\"===e)hex_mode=!"\
-  "1;else if(\"t\"===e)show_time=!show_time;else{if(has_bignum&&\"p"\
-  "\"===e){if(1===(t=r.substring(e.length+1).trim().split(\" \")).l"\
-  "ength&&\"\"===t[0])write(\"BigFloat precision=\"+prec+\" bits (~\"+"\
-  "Math.floor(prec/log2_10)+\" digits), exponent size=\"+expBits+\""\
-  " bits\\n\");else if(\"f16\"===t[0])prec=11,expBits=5;else if(\"f32"\
-  "\"===t[0])prec=24,expBits=8;else if(\"f64\"===t[0])prec=53,expBi"\
-  "ts=11;else if(\"f128\"===t[0])prec=113,expBits=15;else{if(n=par"\
-  "seInt(t[0]),o=2<=t.length?parseInt(t[1]):BigFloatEnv.expBitsM"\
-  "ax,Number.isNaN(n)||n<BigFloatEnv.precMin||n>BigFloatEnv.prec"\
-  "Max)return write(\"Invalid precision\\n\"),0;if(Number.isNaN(o)|"\
-  "|o<BigFloatEnv.expBitsMin||o>BigFloatEnv.expBitsMax)return wr"\
-  "ite(\"Invalid exponent bits\\n\"),0;prec=n,expBits=o}return}if(h"\
-  "as_bignum&&\"digits\"===e)return t=r.substring(e.length+1).trim"\
-  "(),(n=Math.ceil(parseFloat(t)*log2_10))<BigFloatEnv.precMin||"\
-  "n>BigFloatEnv.precMax?write(\"Invalid precision\\n\"):(prec=n,ex"\
-  "pBits=BigFloatEnv.expBitsMax),0;if(has_bignum&&\"mode\"===e)ret"\
-  "urn\"\"===(t=r.substring(e.length+1).trim())?write(\"Running mod"\
-  "e=\"+eval_mode+\"\\n\"):\"std\"===t||\"math\"===t?eval_mode=t:write(\""\
-  "Invalid mode\\n\"),0;if(\"clear\"===e)write(\"""\x1b""[H""\x1b""[J\");else "\
-  "if(\"c\"===e)show_colors=!show_colors;else{if(\"q\"===e)return ru"\
-  "nning=!1,1;if(has_jscalc&&\"a\"===e)algebraicMode=!0;else{if(!h"\
-  "as_jscalc||\"n\"!==e)return write(\"Unknown directive: \"+e+\"\\n\")"\
-  ",0;algebraicMode=!1}}}}return 1}function help(){function e(e)"\
-  "{return e?\"*\":\" \"}write(\"\\\\h          this help\\n\\\\x         "\
-  "\"+e(hex_mode)+\"hexadecimal number display\\n\\\\c          toggl"\
-  "e colors\\n\\\\d         \"+e(!hex_mode)+\"decimal number display\\"\
-  "n\\\\clear      clear the terminal\\n\"),has_jscalc&&write(\"\\\\a  "\
-  "       \"+e(algebraicMode)+\"algebraic mode\\n\\\\n         \"+e(!a"\
-  "lgebraicMode)+\"numeric mode\\n\"),has_bignum&&(write(\"\\\\p [m [e"\
-  "]]  set the BigFloat precision to 'm' bits\\n\\\\digits n   set "\
-  "the BigFloat precision to 'ceil(n*log2(10))' bits\\n\"),has_jsc"\
-  "alc||write(\"\\\\mode [std|math] change the running mode (curren"\
-  "t = \"+eval_mode+\")\\n\")),config_numcalc||write(\"\\\\q          e"\
-  "xit\\n\")}function eval_and_print(expr){let result;try{\"math\"=="\
-  "=eval_mode&&(expr='\"use math\"; void 0;'+expr);const now=(new "\
-  "Date).getTime();result=eval(expr),eval_time=(new Date).getTim"\
-  "e()-now,write(colors[styles.result]),print(result),write(\"\\n\""\
-  "),write(colors.none),g._=result}catch(e){show_colors&&write(c"\
-  "olors[styles.error_msg]),e instanceof Error?(console.log(e),e"\
-  ".stack&&write(e.stack)):write(\"Throw: \"),show_colors&&write(c"\
-  "olors.none)}}function cmd_start(){var e;config_numcalc||(e=ha"\
-  "s_jscalc?\"QJSCalc\":\"QuickJS\",console.log(e,'- Type \"\\\\h\" for "\
-  "help')),has_bignum&&(log2_10=Math.log(10)/Math.log(2),prec=11"\
-  "3,expBits=15,has_jscalc)&&(eval_mode=\"math\",g.algebraicMode=c"\
-  "onfig_numcalc),cmd_readline_start()}function cmd_readline_sta"\
-  "rt(){try{readline_start(dupstr(\"    \",level),readline_handle_"\
-  "cmd)}catch(e){console.error(\"ERROR\",e)}}function readline_han"\
-  "dle_cmd(e){handle_cmd(e),os.pending(),cmd_readline_start()}fu"\
-  "nction handle_cmd(e){if(null===e)return\"\";if(\"?\"===e||\"h\"===e"\
-  ")return help();var r=extract_directive(e);if(0<r.length){if(!"\
-  "handle_directive(r,e))return;e=e.substring(r.length+1)}\"\"!==e"\
-  "&&(r=colorize_js(e=mexpr?mexpr+\"\\n\"+e:e),pstate=r[0],level=r["\
-  "1],pstate?mexpr=e:(mexpr=\"\",has_bignum?BigFloatEnv.setPrec(ev"\
-  "al_and_print.bind(null,e),prec,expBits):eval_and_print(e),lev"\
-  "el=0))}function colorize_js(e){let r,t,n;const o=e.length;let"\
-  " i,s=\"\",c=0,a=1;const l=[];function _(e){s+=e}function u(){re"\
-  "turn s.substring(s.length-1)}function d(){var e=u();return s="\
-  "s.substring(0,s.length-1),e}function f(e,r){for(;l.length<e;)"\
-  "l.push(\"default\");for(;l.length<r;)l.push(i)}for(r=0;r<o;){sw"\
-  "itch(i=null,n=r,t=e[r++]){case\" \":case\"\\t\":case\"\\r\":case\"\\n\":"\
-  "continue;case\"+\":case\"-\":if(r<o&&e[r]===t){r++;continue}a=1;c"\
-  "ontinue;case\"/\":if(r<o&&\"*\"===e[r]){for(i=\"comment\",_(\"/\"),r+"\
-  "+;r<o-1;r++)if(\"*\"===e[r]&&\"/\"===e[r+1]){r+=2,d();break}break"\
-  "}if(r<o&&\"/\"===e[r]){for(i=\"comment\",r++;r<o&&\"\\n\"!==e[r];r++"\
-  ");break}if(a){for(i=\"regex\",_(\"/\");r<o;)if(\"\\n\"!==(t=e[r++]))"\
-  "if(\"\\\\\"!==t)if(\"[\"!==u())if(\"[\"!==t){if(\"/\"===t){for(d();r<o&"\
-  "&is_word(e[r]);)r++;break}}else _(\"[\"),\"[\"!==e[r]&&\"]\"!==e[r]"\
-  "||r++;else\"]\"===t&&d();else r<o&&r++;else i=\"error\";a=0;break"\
-  "}a=1;continue;case\"'\":case'\"':case\"`\":(function(n){for(i=\"str"\
-  "ing\",_(n);r<o;)if(\"\\n\"!==(t=e[r++])){if(\"\\\\\"===t){if(r>=o)bre"\
-  "ak;r++}else if(t===n){d();break}}else i=\"error\"})(t),a=0;brea"\
-  "k;case\"(\":case\"[\":case\"{\":a=1,c++,_(t);continue;case\")\":case\""\
-  "]\":case\"}\":if((a=0)<c&&is_balanced(u(),t)){c--,d();continue}i"\
-  "=\"error\";break;default:if(is_digit(t)){for(i=\"number\";r<o&&(i"\
-  "s_word(e[r])||\".\"===e[r]&&(r===o-1||\".\"!==e[r+1]));)r++;a=0}e"\
-  "lse{if(!is_word(t)&&\"$\"!==t){a=1;continue}!function(){for(a=1"\
-  ";r<o&&is_word(e[r]);)r++;var t=\"|\"+e.substring(n,r)+\"|\";if(0<"\
-  "=\"|break|case|catch|continue|debugger|default|delete|do|else|"\
-  "finally|for|function|if|in|instanceof|new|return|switch|this|"\
-  "throw|try|typeof|while|with|class|const|enum|import|export|ex"\
-  "tends|super|implements|interface|let|package|private|protecte"\
-  "d|public|static|yield|undefined|null|true|false|Infinity|NaN|"\
-  "eval|arguments|await|\".indexOf(t))return i=\"keyword\",0<=\"|thi"\
-  "s|super|undefined|null|true|false|Infinity|NaN|arguments|\".in"\
-  "dexOf(t)&&(a=0);let s=r;for(;s<o&&\" \"===e[s];)s++;s<o&&\"(\"==="\
-  "e[s]?i=\"function\":0<=\"|void|var|\".indexOf(t)?i=\"type\":(i=\"ide"\
-  "ntifier\",a=0)}()}}i&&f(n,r)}return f(o,o),[s,c,l]}config_numc"\
-  "alc&&(g.execCmd=function(e){switch(e){case\"dec\":hex_mode=!1;b"\
-  "reak;case\"hex\":hex_mode=!0;break;case\"num\":algebraicMode=!1;b"\
-  "reak;case\"alg\":algebraicMode=!0}});try{termInit()}catch(e){co"\
-  "nsole.error(e)}}(globalThis)}));\n";
+  "{}}}function get_completions(e,r){let t,n,o;if(e.startsWith(\""\
+  ":\")){const t=get_context_word(e+1,r);let n=e.slice(1).trim(),"\
+  "o=\"\";const i=n.lastIndexOf(\".\");let s=t;o=-1!==i?\": console.l"\
+  "og(Object.keys(\"+(n=n.slice(0,i))+\"))\":\": console.log(Object."\
+  "keys(global))\";const c=r2.cmd(o).trim().split(\",\").filter((e="\
+  ">e.startsWith(s))),a=get_context_object(e,r-t.length);return{"\
+  "tab:c,pos:t.length,ctx:a}}const i=get_context_word(e,r),s=get"\
+  "_context_object(e,r-i.length),c=[];for(n=0,t=s;n<10&&null!=t;"\
+  "n++){const e=Object.getOwnPropertyNames(t);for(o=0;o<e.length"\
+  ";o++){const r=e[o];\"string\"==typeof r&&\"\"+ +r!==r&&r.startsWi"\
+  "th(i)&&c.push(r)}t=Object.getPrototypeOf(t)}if(1<c.length){fo"\
+  "r(c.sort((function(e,r){if(e[0]!==r[0]){if(\"_\"===e[0])return "\
+  "1;if(\"_\"===r[0])return-1}return e<r?-1:r<e?1:0})),n=o=1;n<c.l"\
+  "ength;n++)c[n]!==c[n-1]&&(c[o++]=c[n]);c.length=o}return{tab:"\
+  "c,pos:i.length,ctx:s}}function completion(){let e,r,t,n,o,i,s"\
+  ",c,a,l;var _=get_completions(cmd,cursor_pos),u=_.tab;if(0!==u"\
+  ".length){for(e=u[0],n=e.length,r=1;r<u.length;r++)for(o=u[r],"\
+  "t=0;t<n;t++)if(o[t]!==e[t]){n=t;break}for(r=_.pos;r<n;r++)ins"\
+  "ert(e[r]);if(last_fun===completion&&1===u.length){const e=_.c"\
+  "tx[u[0]];\"function\"==typeof e?(insert(\"(\"),0===e.length&&inse"\
+  "rt(\")\")):\"object\"==typeof e&&insert(\".\")}if(last_fun===comple"\
+  "tion&&2<=u.length){for(i=0,r=0;r<u.length;r++)i=Math.max(i,u["\
+  "r].length);for(i+=2,c=Math.max(1,Math.floor((term_width+1)/i)"\
+  "),l=Math.ceil(u.length/c),write(\"\\n\"),a=0;a<l;a++){for(s=0;s<"\
+  "c&&!((r=s*l+a)>=u.length);s++)e=u[r],s!==c-1&&(e=e.padEnd(i))"\
+  ",write(e);write(\"\\n\")}readline_print_prompt()}}}const command"\
+  "s={\"""\x01""\":beginning_of_line,\"""\x02""\":backward_char,\"""\x03""\":contr"\
+  "ol_c,\"""\x04""\":control_d,\"""\x05""\":end_of_line,\"""\x06""\":forward_char,"\
+  "\"""\x07""\":abort,\"\\b\":backward_delete_char,\"\\t\":completion,\"\\n\":a"\
+  "ccept_line,\"\\v\":kill_line,\"\\r\":accept_line,\"""\x0e""\":next_histor"\
+  "y,\"""\x10""\":previous_history,\"""\x11""\":quoted_insert,\"""\x12""\":alert,\""\
+  """\x13""\":alert,\"""\x14""\":transpose_chars,\"""\x17""\":backward_kill_word,"\
+  "\"""\x18""\":reset,\"""\x19""\":yank,\"""\x1b""OA\":previous_history,\"""\x1b""OB\":n"\
+  "ext_history,\"""\x1b""OC\":forward_char,\"""\x1b""OD\":backward_char,\"""\x1b"""\
+  "OF\":forward_word,\"""\x1b""OH\":backward_word,\"""\x1b""[1;5C\":forward_w"\
+  "ord,\"""\x1b""[1;5D\":backward_word,\"""\x1b""[1~\":beginning_of_line,\"""\x1b"""\
+  "[3~\":delete_char,\"""\x1b""[4~\":end_of_line,\"""\x1b""[5~\":history_sear"\
+  "ch_backward,\"""\x1b""[6~\":history_search_forward,\"""\x1b""[A\":previou"\
+  "s_history,\"""\x1b""[B\":next_history,\"""\x1b""[C\":forward_char,\"""\x1b""[D"\
+  "\":backward_char,\"""\x1b""[F\":end_of_line,\"""\x1b""[H\":beginning_of_li"\
+  "ne,\"""\x1b""""\x7f""\":backward_kill_word,\"""\x1b""b\":backward_word,\"""\x1b""d"\
+  "\":kill_word,\"""\x1b""f\":forward_word,\"""\x1b""k\":backward_kill_line,\""\
+  """\x1b""l\":downcase_word,\"""\x1b""t\":transpose_words,\"""\x1b""u\":upcase_w"\
+  "ord,\"""\x7f""\":backward_delete_char};function dupstr(e,r){let t=\""\
+  "\";for(;0<r--;)t+=e;return t}let readline_keys,readline_state,"\
+  "readline_cb;function readline_print_prompt(){write(prompt),te"\
+  "rm_cursor_x=ucs_length(prompt)%term_width,last_cmd=\"\",last_cu"\
+  "rsor_pos=0}function readline_start(e,r){if(cmd=e||\"\",cursor_p"\
+  "os=cmd.length,history_index=history.length,readline_cb=r,prom"\
+  "pt=pstate,mexpr)prompt=(prompt+=dupstr(\" \",plen-prompt.length"\
+  "))+ps2;else{if(show_time){let e=Math.round(eval_time)+\" \";eva"\
+  "l_time=0,e=dupstr(\"0\",5-e.length)+e,prompt+=e.substring(0,e.l"\
+  "ength-4)+\".\"+e.substring(e.length-4)}plen=prompt.length,show_"\
+  "colors&&(prompt+=colors.yellow),prompt+=ps1,show_colors&&(pro"\
+  "mpt+=colors.none)}readline_print_prompt(),update(),readline_s"\
+  "tate=0}function handle_char(e){var r=String.fromCodePoint(e);"\
+  "switch(readline_state){case 0:\"""\x1b""\"===r?(readline_keys=r,rea"\
+  "dline_state=1):handle_key(r);break;case 1:readline_keys+=r,re"\
+  "adline_state=\"[\"===r?2:\"O\"===r?3:(handle_key(readline_keys),0"\
+  ");break;case 2:readline_keys+=r,\";\"===r||\"0\"<=r&&r<=\"9\"||(han"\
+  "dle_key(readline_keys),readline_state=0);break;case 3:handle_"\
+  "key(readline_keys+=r),readline_state=0}}function handle_key(e"\
+  "){var r;if(quote_flag)1===ucs_length(e)&&insert(e),quote_flag"\
+  "=!1;else if(r=commands[e]){switch((this_fun=r)(e)){case-1:ret"\
+  "urn readline_cb(cmd);case-2:return readline_cb(null);case-3:r"\
+  "eturn}last_fun=this_fun}else 1===ucs_length(e)&&\" \"<=e?(inser"\
+  "t(e),last_fun=insert):alert();cursor_pos=cursor_pos<0?0:curso"\
+  "r_pos>cmd.length?cmd.length:cursor_pos,update()}let hex_mode="\
+  "!1,eval_mode=\"std\";function number_to_string(e,r){if(isFinite"\
+  "(e)){let t;return 0===e?t=1/e<0?\"-0\":\"0\":16===r&&e===Math.flo"\
+  "or(e)?(t=e<0?(e=-e,\"-\"):\"\",t+=\"0x\"+e.toString(16)):t=e.toStri"\
+  "ng(),t}return e.toString()}function bigfloat_to_string(e,r){l"\
+  "et t;return BigFloat.isFinite(e)?(0===e?t=1/e<0?\"-0\":\"0\":16=="\
+  "=r?(t=e<0?(e=-e,\"-\"):\"\",t+=\"0x\"+e.toString(16)):t=e.toString("\
+  "),\"bigfloat\"==typeof e&&\"math\"!==eval_mode?t+=\"l\":\"std\"!==eva"\
+  "l_mode&&t.indexOf(\".\")<0&&(16===r&&t.indexOf(\"p\")<0||10===r&&"\
+  "t.indexOf(\"e\")<0)&&(t+=\".0\"),t):\"math\"!==eval_mode?\"BigFloat("\
+  "\"+e.toString()+\")\":e.toString()}function bigint_to_string(e,r"\
+  "){let t;return 16===r?(t=e<0?(e=-e,\"-\"):\"\",t+=\"0x\"+e.toString"\
+  "(16)):t=e.toString(),\"std\"===eval_mode&&(t+=\"n\"),t}function p"\
+  "rint(e){const r=[];!function e(t){let n,o,i,s,c;var a=typeof "\
+  "t;if(\"object\"==a)if(null===t)write(t);else if(0<=r.indexOf(t)"\
+  ")write(\"[circular]\");else if(has_jscalc&&(t instanceof Fracti"\
+  "on||t instanceof Complex||t instanceof Mod||t instanceof Poly"\
+  "nomial||t instanceof PolyMod||t instanceof RationalFunction||"\
+  "t instanceof Series))write(t.toString());else{if(r.push(t),Ar"\
+  "ray.isArray(t)){for(n=t.length,write(\"[ \"),o=0;o<n;o++)if(0!="\
+  "=o&&write(\", \"),o in t?e(t[o]):write(\"<empty>\"),20<o){write(\""\
+  "...\");break}write(\" ]\")}else if(\"RegExp\"===Object.__getClass("\
+  "t))write(t.toString());else{for(i=Object.keys(t),n=i.length,w"\
+  "rite(\"{ \"),o=0;o<n;o++)0!==o&&write(\", \"),s=i[o],write(s,\": \""\
+  "),e(t[s]);write(\" }\")}r.pop(t)}else\"string\"==a?(79<(c=t.__quo"\
+  "te()).length&&(c=c.substring(0,75)+'...\"'),write(c)):\"number\""\
+  "==a?write(number_to_string(t,hex_mode?16:10)):\"bigint\"==a?wri"\
+  "te(bigint_to_string(t,hex_mode?16:10)):\"bigfloat\"==a?write(bi"\
+  "gfloat_to_string(t,hex_mode?16:10)):\"bigdecimal\"==a?write(t.t"\
+  "oString()+\"m\"):\"symbol\"==a?write(String(t)):\"function\"==a?wri"\
+  "te(\"function \"+t.name+\"()\"):write(t)}(e)}function extract_dir"\
+  "ective(e){let r;if(\"\\\\\"!==e[0])return\"\";for(r=1;r<e.length&&i"\
+  "s_alpha(e[r]);r++);return e.substring(1,r)}function handle_di"\
+  "rective(e,r){let t,n,o;if(\"h\"===e||\"?\"===e||\"help\"===e)help()"\
+  ";else{if(\"load\"===e){let t=r.substring(e.length+1).trim();ret"\
+  "urn t.lastIndexOf(\".\")<=t.lastIndexOf(\"/\")&&(t+=\".js\"),0}if(\""\
+  "x\"===e)hex_mode=!0;else if(\"d\"===e)hex_mode=!1;else if(\"t\"==="\
+  "e)show_time=!show_time;else{if(has_bignum&&\"p\"===e){if(1===(t"\
+  "=r.substring(e.length+1).trim().split(\" \")).length&&\"\"===t[0]"\
+  ")write(\"BigFloat precision=\"+prec+\" bits (~\"+Math.floor(prec/"\
+  "log2_10)+\" digits), exponent size=\"+expBits+\" bits\\n\");else i"\
+  "f(\"f16\"===t[0])prec=11,expBits=5;else if(\"f32\"===t[0])prec=24"\
+  ",expBits=8;else if(\"f64\"===t[0])prec=53,expBits=11;else if(\"f"\
+  "128\"===t[0])prec=113,expBits=15;else{if(n=parseInt(t[0]),o=2<"\
+  "=t.length?parseInt(t[1]):BigFloatEnv.expBitsMax,Number.isNaN("\
+  "n)||n<BigFloatEnv.precMin||n>BigFloatEnv.precMax)return write"\
+  "(\"Invalid precision\\n\"),0;if(Number.isNaN(o)||o<BigFloatEnv.e"\
+  "xpBitsMin||o>BigFloatEnv.expBitsMax)return write(\"Invalid exp"\
+  "onent bits\\n\"),0;prec=n,expBits=o}return}if(has_bignum&&\"digi"\
+  "ts\"===e)return t=r.substring(e.length+1).trim(),(n=Math.ceil("\
+  "parseFloat(t)*log2_10))<BigFloatEnv.precMin||n>BigFloatEnv.pr"\
+  "ecMax?write(\"Invalid precision\\n\"):(prec=n,expBits=BigFloatEn"\
+  "v.expBitsMax),0;if(has_bignum&&\"mode\"===e)return\"\"===(t=r.sub"\
+  "string(e.length+1).trim())?write(\"Running mode=\"+eval_mode+\"\\"\
+  "n\"):\"std\"===t||\"math\"===t?eval_mode=t:write(\"Invalid mode\\n\")"\
+  ",0;if(\"clear\"===e)write(\"""\x1b""[H""\x1b""[J\");else if(\"c\"===e)show_"\
+  "colors=!show_colors;else{if(\"q\"===e)return running=!1,1;if(ha"\
+  "s_jscalc&&\"a\"===e)algebraicMode=!0;else{if(!has_jscalc||\"n\"!="\
+  "=e)return write(\"Unknown directive: \"+e+\"\\n\"),0;algebraicMode"\
+  "=!1}}}}return 1}function help(){function e(e){return e?\"*\":\" "\
+  "\"}write(\"\\\\h          this help\\n\\\\x         \"+e(hex_mode)+\"h"\
+  "exadecimal number display\\n\\\\c          toggle colors\\n\\\\d   "\
+  "      \"+e(!hex_mode)+\"decimal number display\\n\\\\clear      cl"\
+  "ear the terminal\\n\"),has_jscalc&&write(\"\\\\a         \"+e(algeb"\
+  "raicMode)+\"algebraic mode\\n\\\\n         \"+e(!algebraicMode)+\"n"\
+  "umeric mode\\n\"),has_bignum&&(write(\"\\\\p [m [e]]  set the BigF"\
+  "loat precision to 'm' bits\\n\\\\digits n   set the BigFloat pre"\
+  "cision to 'ceil(n*log2(10))' bits\\n\"),has_jscalc||write(\"\\\\mo"\
+  "de [std|math] change the running mode (current = \"+eval_mode+"\
+  "\")\\n\")),config_numcalc||write(\"\\\\q          exit\\n\")}function"\
+  " eval_and_print(expr){let result;try{\"math\"===eval_mode&&(exp"\
+  "r='\"use math\"; void 0;'+expr);const now=(new Date).getTime();"\
+  "result=expr.startsWith(\":\")?r2.cmd(expr):eval(expr),eval_time"\
+  "=(new Date).getTime()-now,write(colors[styles.result]),print("\
+  "result),write(\"\\n\"),write(colors.none),g._=result}catch(e){sh"\
+  "ow_colors&&write(colors[styles.error_msg]),e instanceof Error"\
+  "?(console.log(e),e.stack&&write(e.stack)):write(\"Throw: \"),sh"\
+  "ow_colors&&write(colors.none)}}function cmd_start(){var e;con"\
+  "fig_numcalc||(e=has_jscalc?\"QJSCalc\":\"QuickJS\",console.log(e,"\
+  "'- Type \"\\\\h\" for help')),has_bignum&&(log2_10=Math.log(10)/M"\
+  "ath.log(2),prec=113,expBits=15,has_jscalc)&&(eval_mode=\"math\""\
+  ",g.algebraicMode=config_numcalc),cmd_readline_start()}functio"\
+  "n cmd_readline_start(){try{readline_start(dupstr(\"    \",level"\
+  "),readline_handle_cmd)}catch(e){console.error(\"ERROR\",e)}}fun"\
+  "ction readline_handle_cmd(e){handle_cmd(e),os.pending(),cmd_r"\
+  "eadline_start()}function handle_cmd(e){if(null===e)return\"\";i"\
+  "f(\"?\"===e||\"h\"===e)return help();var r=extract_directive(e);i"\
+  "f(0<r.length){if(!handle_directive(r,e))return;e=e.substring("\
+  "r.length+1)}\"\"!==e&&(r=colorize_js(e=mexpr?mexpr+\"\\n\"+e:e),ps"\
+  "tate=r[0],level=r[1],pstate?mexpr=e:(mexpr=\"\",has_bignum?BigF"\
+  "loatEnv.setPrec(eval_and_print.bind(null,e),prec,expBits):eva"\
+  "l_and_print(e),level=0))}function colorize_js(e){let r,t,n;co"\
+  "nst o=e.length;let i,s=\"\",c=0,a=1;const l=[];function _(e){s+"\
+  "=e}function u(){return s.substring(s.length-1)}function d(){v"\
+  "ar e=u();return s=s.substring(0,s.length-1),e}function f(e,r)"\
+  "{for(;l.length<e;)l.push(\"default\");for(;l.length<r;)l.push(i"\
+  ")}for(r=0;r<o;){switch(i=null,n=r,t=e[r++]){case\" \":case\"\\t\":"\
+  "case\"\\r\":case\"\\n\":continue;case\"+\":case\"-\":if(r<o&&e[r]===t){"\
+  "r++;continue}a=1;continue;case\"/\":if(r<o&&\"*\"===e[r]){for(i=\""\
+  "comment\",_(\"/\"),r++;r<o-1;r++)if(\"*\"===e[r]&&\"/\"===e[r+1]){r+"\
+  "=2,d();break}break}if(r<o&&\"/\"===e[r]){for(i=\"comment\",r++;r<"\
+  "o&&\"\\n\"!==e[r];r++);break}if(a){for(i=\"regex\",_(\"/\");r<o;)if("\
+  "\"\\n\"!==(t=e[r++]))if(\"\\\\\"!==t)if(\"[\"!==u())if(\"[\"!==t){if(\"/\""\
+  "===t){for(d();r<o&&is_word(e[r]);)r++;break}}else _(\"[\"),\"[\"!"\
+  "==e[r]&&\"]\"!==e[r]||r++;else\"]\"===t&&d();else r<o&&r++;else i"\
+  "=\"error\";a=0;break}a=1;continue;case\"'\":case'\"':case\"`\":(func"\
+  "tion(n){for(i=\"string\",_(n);r<o;)if(\"\\n\"!==(t=e[r++])){if(\"\\\\"\
+  "\"===t){if(r>=o)break;r++}else if(t===n){d();break}}else i=\"er"\
+  "ror\"})(t),a=0;break;case\"(\":case\"[\":case\"{\":a=1,c++,_(t);cont"\
+  "inue;case\")\":case\"]\":case\"}\":if((a=0)<c&&is_balanced(u(),t)){"\
+  "c--,d();continue}i=\"error\";break;default:if(is_digit(t)){for("\
+  "i=\"number\";r<o&&(is_word(e[r])||\".\"===e[r]&&(r===o-1||\".\"!==e"\
+  "[r+1]));)r++;a=0}else{if(!is_word(t)&&\"$\"!==t){a=1;continue}!"\
+  "function(){for(a=1;r<o&&is_word(e[r]);)r++;var t=\"|\"+e.substr"\
+  "ing(n,r)+\"|\";if(0<=\"|break|case|catch|continue|debugger|defau"\
+  "lt|delete|do|else|finally|for|function|if|in|instanceof|new|r"\
+  "eturn|switch|this|throw|try|typeof|while|with|class|const|enu"\
+  "m|import|export|extends|super|implements|interface|let|packag"\
+  "e|private|protected|public|static|yield|undefined|null|true|f"\
+  "alse|Infinity|NaN|eval|arguments|await|\".indexOf(t))return i="\
+  "\"keyword\",0<=\"|this|super|undefined|null|true|false|Infinity|"\
+  "NaN|arguments|\".indexOf(t)&&(a=0);let s=r;for(;s<o&&\" \"===e[s"\
+  "];)s++;s<o&&\"(\"===e[s]?i=\"function\":0<=\"|void|var|\".indexOf(t"\
+  ")?i=\"type\":(i=\"identifier\",a=0)}()}}i&&f(n,r)}return f(o,o),["\
+  "s,c,l]}config_numcalc&&(g.execCmd=function(e){switch(e){case\""\
+  "dec\":hex_mode=!1;break;case\"hex\":hex_mode=!0;break;case\"num\":"\
+  "algebraicMode=!1;break;case\"alg\":algebraicMode=!0}});try{term"\
+  "Init()}catch(e){console.error(e)}}(globalThis)}));\n";
