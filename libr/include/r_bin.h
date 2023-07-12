@@ -251,6 +251,36 @@ typedef struct r_bin_info_t {
 	char *charset;
 } RBinInfo;
 
+typedef struct r_bin_symbol_t {
+	/* heap-allocated */
+	char *name;
+	char *dname;
+	char *libname;
+	char *classname;
+	/* const-unique-strings */
+	const char *forwarder;
+	const char *bind;
+	const char *type;
+  	const char *rtype;
+	bool is_imported;
+	/* only used by java */
+	const char *visibility_str;
+	ut64 vaddr;
+	ut64 paddr;
+	ut32 size;
+	ut32 ordinal;
+	ut32 visibility;
+	int lang;
+	int bits;
+	/* see R_BIN_METH_* constants */
+	ut64 method_flags;
+	int dup_count;
+} RBinSymbol;
+
+#include <r_vec.h>
+
+R_GENERATE_VEC_IMPL_FOR(RBinSymbol, RBinSymbol);
+
 typedef struct r_bin_object_t {
 	ut64 baddr;
 	st64 baddr_shift;
@@ -260,7 +290,8 @@ typedef struct r_bin_object_t {
 	ut64 obj_size;
 	RList/*<RBinSection>*/ *sections;
 	RList/*<RBinImport>*/ *imports;
-	RList/*<RBinSymbol>*/ *symbols;
+	RList/*<RBinSymbol>*/ *symbols; // DEPRECATE
+	RVecRBinSymbol *symbols_vec;
 	RList/*<??>*/ *entries;
 	RList/*<??>*/ *fields;
 	RList/*<??>*/ *libs;
@@ -472,6 +503,7 @@ typedef struct r_bin_plugin_t {
 	RList/*<RBinSection>*/* (*sections)(RBinFile *bf);
 	R_BORROW RList/*<RBinDwarfRow>*/* (*lines)(RBinFile *bf);
 	RList/*<RBinSymbol>*/* (*symbols)(RBinFile *bf); // R2_590: return VecBinSymbol* for better memory usage and perf
+	RVecRBinSymbol* (*symbols_vec)(RBinFile *bf); // must deprecate symbols
 	RList/*<RBinImport>*/* (*imports)(RBinFile *bf); // R2_590: return VecBinImport*
 	RList/*<RBinString>*/* (*strings)(RBinFile *bf);
 	RBinInfo/*<RBinInfo>*/* (*info)(RBinFile *bf);
@@ -549,31 +581,6 @@ typedef struct r_bin_class_t {
 	} while (0)
 
 
-typedef struct r_bin_symbol_t {
-	/* heap-allocated */
-	char *name;
-	char *dname;
-	char *libname;
-	char *classname;
-	/* const-unique-strings */
-	const char *forwarder;
-	const char *bind;
-	const char *type;
-  	const char *rtype;
-	bool is_imported;
-	/* only used by java */
-	const char *visibility_str;
-	ut64 vaddr;
-	ut64 paddr;
-	ut32 size;
-	ut32 ordinal;
-	ut32 visibility;
-	int lang;
-	int bits;
-	/* see R_BIN_METH_* constants */
-	ut64 method_flags;
-	int dup_count;
-} RBinSymbol;
 
 typedef struct r_bin_import_t {
 	char *name;
@@ -748,6 +755,7 @@ R_API RList *r_bin_get_classes(RBin *bin);
 R_API RList *r_bin_get_strings(RBin *bin);
 R_API RList *r_bin_file_get_trycatch(RBinFile *bf);
 R_API RList *r_bin_get_symbols(RBin *bin);
+R_API RVecRBinSymbol *r_bin_get_symbols_vec(RBin *bin);
 R_API RList *r_bin_reset_strings(RBin *bin);
 R_API int r_bin_is_string(RBin *bin, ut64 va);
 R_API int r_bin_is_big_endian(RBin *bin);
@@ -781,6 +789,7 @@ R_API void r_bin_file_free(void /*RBinFile*/ *bf_);
 R_API RBinFile *r_bin_file_at(RBin *bin, ut64 addr);
 R_API RBinFile *r_bin_file_find_by_object_id(RBin *bin, ut32 binobj_id);
 R_API RList *r_bin_file_get_symbols(RBinFile *bf);
+R_API RVecRBinSymbol *r_bin_file_get_symbols_vec(RBinFile *bf);
 //
 R_API ut64 r_bin_file_get_vaddr(RBinFile *bf, ut64 paddr, ut64 vaddr);
 // RBinFile.add

@@ -802,10 +802,24 @@ R_API int r_bin_is_string(RBin *bin, ut64 va) {
 	return false;
 }
 
+// TODO: Deprecate because we must use the internal representation
 R_API RList *r_bin_get_symbols(RBin *bin) {
 	r_return_val_if_fail (bin, NULL);
 	RBinObject *o = r_bin_cur_object (bin);
-	return o? o->symbols: NULL;
+	if (o) {
+		if (o->symbols) {
+			return o->symbols;
+		}
+		if (o->symbols_vec) {
+			RList *list = r_list_newf (NULL);
+			RBinSymbol *s;
+			R_VEC_FOREACH (o->symbols_vec, s) {
+				r_list_append (list, s);
+			}
+			return list;
+		}
+	}
+	return NULL;
 }
 
 R_API RList *r_bin_get_mem(RBin *bin) {

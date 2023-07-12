@@ -3113,28 +3113,33 @@ static void _parse_symbols(RBinFile *bf, struct MACH0_(obj_t) *mo, HtPP *symcach
 	ht_pp_free (hash);
 }
 
-static void _parse_function_start_symbols(RBinFile *bf, struct MACH0_(obj_t) *bin, HtPP *symcache) {
+static void _parse_function_start_symbols(RBinFile *bf, struct MACH0_(obj_t) *mo, HtPP *symcache) {
 	RBinObject *obj = bf? bf->o: NULL;
 	if (!obj) {
 		return;
 	}
+	if (mo->nofuncstarts) {
+		return;
+	}
 
-	int wordsize = MACH0_(get_bits) (bin);
+	int wordsize = MACH0_(get_bits) (mo);
 	bool is_stripped = false;
-	ut32 i = r_vector_length (&bin->symbols_cache);
+	ut32 i = r_vector_length (&mo->symbols_cache);
 
 	// functions from LC_FUNCTION_STARTS
-	if (bin->func_start) {
+	if (mo->func_start) {
 		char symstr[128];
 		ut64 value = 0, address = 0;
-		const ut8 *temp = bin->func_start;
-		const ut8 *temp_end = bin->func_start + bin->func_size;
+		const ut8 *temp = mo->func_start;
+		const ut8 *temp_end = mo->func_start + mo->func_size;
 		strcpy (symstr, "sym0x");
 		while (temp + 3 < temp_end && *temp) {
 			temp = r_uleb128_decode (temp, NULL, &value);
 			address += value;
-			RBinSymbol *sym = r_vector_end (&bin->symbols_cache);
-			sym->vaddr = bin->baddr + address;
+		//	RBinSymbol *sym = RVecRBinSymbol_push_back (&mo->symbols_vec);
+			RBinSymbol *sym = r_vector_end (&mo->symbols_cache);
+			// RBinSymbol *sym = r_vec_emplace_back (&mo->symbols_vec);
+			sym->vaddr = mo->baddr + address;
 			sym->paddr = address + obj->boffset;
 			sym->size = 0;
 			sym->name = r_str_newf ("func.%08"PFMT64x, sym->vaddr);
@@ -3142,10 +3147,11 @@ static void _parse_function_start_symbols(RBinFile *bf, struct MACH0_(obj_t) *bi
 			sym->forwarder = "NONE";
 			sym->bind = R_BIN_BIND_LOCAL_STR;
 			sym->ordinal = i++;
-			if (bin->hdr.cputype == CPU_TYPE_ARM && wordsize < 64) {
+			if (mo->hdr.cputype == CPU_TYPE_ARM && wordsize < 64) {
 				_handle_arm_thumb (sym);
 			}
 			// if any func is not found in syms then we consider it to be stripped
+			// XXX this is slow. we can check with addr ht/set
 			if (!is_stripped) {
 				snprintf (symstr + 5, sizeof (symstr) - 5 , "%" PFMT64x, sym->vaddr);
 				bool found = false;
@@ -3162,11 +3168,20 @@ static void _parse_function_start_symbols(RBinFile *bf, struct MACH0_(obj_t) *bi
 		}
 	}
 	if (is_stripped) {
-		bin->dbg_info |= R_BIN_DBG_STRIPPED;
+		mo->dbg_info |= R_BIN_DBG_STRIPPED;
 	}
 }
 
 static bool _check_if_debug_build(RBinFile *bf, struct MACH0_(obj_t) *mo) {
+#if 0
+	// R2_590
+	RBinSection *s;
+	R_VEC_FOREACH (bf->segments_vec, s) {
+		if (strstr (s->name, "DWARF.__debug_line")) {
+			return true;
+		}
+	}
+#else
 	RList *sections = MACH0_(get_segments) (bf, mo);
 	if (!sections) {
 		return false;
@@ -3181,6 +3196,7 @@ static bool _check_if_debug_build(RBinFile *bf, struct MACH0_(obj_t) *mo) {
 	}
 
 	r_list_free (sections);
+#endif
 	return false;
 }
 
@@ -3193,44 +3209,47 @@ static void _r_bin_symbol_fini(void *_sym, void *user) {
 	}
 }
 
-const RVector *MACH0_(load_symbols)(RBinFile *bf, struct MACH0_(obj_t) *bin) {
-	r_return_val_if_fail (bin, NULL);
-	if (bin->symbols_loaded) {
-		return &bin->symbols_cache;
+const RVector *MACH0_(load_symbols)(RBinFile *bf, struct MACH0_(obj_t) *mo) {
+	r_return_val_if_fail (bf, NULL);
+	if (!mo) {
+		return NULL;
+	}
+	if (mo->symbols_loaded) {
+		return &mo->symbols_cache;
 	}
 
-	bin->symbols_loaded = true;
+	mo->symbols_loaded = true;
 
-	r_vector_init (&bin->symbols_cache, sizeof (RBinSymbol), (RVectorFree) _r_bin_symbol_fini, NULL);
+	r_vector_init (&mo->symbols_cache, sizeof (RBinSymbol), (RVectorFree) _r_bin_symbol_fini, NULL);
 
 	HtPP *symcache = ht_pp_new0 ();
 	if (!symcache) {
 		return NULL;
 	}
 
-	bool is_debug = _check_if_debug_build (bf, bin);
-	_parse_symbols (bf, bin, symcache);
-	if (bin->parse_start_symbols) {
-		_parse_function_start_symbols (bf, bin, symcache);
+	const bool is_debug = _check_if_debug_build (bf, mo);
+	_parse_symbols (bf, mo, symcache);
+	if (mo->parse_start_symbols) {
+		_parse_function_start_symbols (bf, mo, symcache);
 	}
 	ht_pp_free (symcache);
 
 	if (is_debug) {
-		bin->dbg_info |= R_BIN_DBG_LINENUMS;
+		mo->dbg_info |= R_BIN_DBG_LINENUMS;
 	}
 
-	return &bin->symbols_cache;
+	return &mo->symbols_cache;
 }
 
-static int parse_import_ptr(struct MACH0_(obj_t) *bin, struct reloc_t *reloc, int idx) {
+static int parse_import_ptr(struct MACH0_(obj_t) *mo, struct reloc_t *reloc, int idx) {
 	int i, j, sym;
 	size_t wordsize;
 	ut32 stype;
-	wordsize = get_word_size (bin);
-	if (idx < 0 || idx >= bin->nsymtab) {
+	wordsize = get_word_size (mo);
+	if (idx < 0 || idx >= mo->nsymtab) {
 		return 0;
 	}
-	if ((bin->symtab[idx].n_desc & REFERENCE_TYPE) == REFERENCE_FLAG_UNDEFINED_LAZY) {
+	if ((mo->symtab[idx].n_desc & REFERENCE_TYPE) == REFERENCE_FLAG_UNDEFINED_LAZY) {
 		stype = S_LAZY_SYMBOL_POINTERS;
 	} else {
 		stype = S_NON_LAZY_SYMBOL_POINTERS;
@@ -3249,20 +3268,20 @@ static int parse_import_ptr(struct MACH0_(obj_t) *bin, struct reloc_t *reloc, in
 	}
 #undef CASE
 
-	for (i = 0; i < bin->nsects; i++) {
-		if ((bin->sects[i].flags & SECTION_TYPE) == stype) {
-			for (j = 0, sym = -1; bin->sects[i].reserved1 + j < bin->nindirectsyms; j++) {
-				int indidx = bin->sects[i].reserved1 + j;
-				if (indidx < 0 || indidx >= bin->nindirectsyms) {
+	for (i = 0; i < mo->nsects; i++) {
+		if ((mo->sects[i].flags & SECTION_TYPE) == stype) {
+			for (j = 0, sym = -1; mo->sects[i].reserved1 + j < mo->nindirectsyms; j++) {
+				int indidx = mo->sects[i].reserved1 + j;
+				if (indidx < 0 || indidx >= mo->nindirectsyms) {
 					break;
 				}
-				if (idx == bin->indirectsyms[indidx]) {
+				if (idx == mo->indirectsyms[indidx]) {
 					sym = j;
 					break;
 				}
 			}
-			reloc->offset = sym == -1 ? 0 : bin->sects[i].offset + sym * wordsize;
-			reloc->addr = sym == -1 ? 0 : bin->sects[i].addr + sym * wordsize;
+			reloc->offset = sym == -1 ? 0 : mo->sects[i].offset + sym * wordsize;
+			reloc->addr = sym == -1 ? 0 : mo->sects[i].addr + sym * wordsize;
 			return true;
 		}
 	}
@@ -4506,7 +4525,7 @@ static void walk_codesig(RBinFile *bf, ut32 addr, ut32 size) {
 }
 
 void MACH0_(mach_headerfields)(RBinFile *bf) {
-	struct MACH0_(obj_t) *bin = bf->o->bin_obj;
+	struct MACH0_(obj_t) *mo = bf->o->bin_obj;
 	PrintfCallback cb_printf = bf->rbin->cb_printf;
 	if (!cb_printf) {
 		cb_printf = printf;
@@ -4558,7 +4577,7 @@ void MACH0_(mach_headerfields)(RBinFile *bf) {
 		addr += 4;
 		pvaddr += 4;
 	}
-	init_sdb_formats (bin);
+	init_sdb_formats (mo);
 	for (n = 0; n < mh->ncmds && addr < length; n++) {
 		READWORD ();
 		ut32 lcType = word;

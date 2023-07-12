@@ -180,9 +180,13 @@ static RList *entries(RBinFile *bf) {
 	return ret;
 }
 
-static RList *symbols(RBinFile *bf) {
+// XXX this is very slooow
+static RList *symbols(RBinFile *bf, struct MACH0_(obj_t) *mo) {
 	RBinObject *obj = bf? bf->o: NULL;
-	const RVector *symbols = MACH0_(load_symbols) (bf, obj->bin_obj);
+	if (!mo && obj) {
+		mo = obj->bin_obj;
+	}
+	const RVector *symbols = MACH0_(load_symbols) (bf, mo);
 	if (!symbols) {
 		return NULL;
 	}
@@ -195,6 +199,18 @@ static RList *symbols(RBinFile *bf) {
 		r_list_append (list, r_bin_symbol_clone (sym));
 	}
 	return list;
+}
+
+static RVecRBinSymbol *symbols_vec(RBinFile *bf, struct MACH0_(obj_t) *mo) {
+	RBinObject *obj = bf? bf->o: NULL;
+	if (!mo && obj) {
+		mo = obj->bin_obj;
+	}
+	const RVector *symbols = MACH0_(load_symbols) (bf, mo);
+	if (!symbols) {
+		return NULL;
+	}
+	return mo->symbols_vec;
 }
 
 static RBinImport *import_from_name(RBin *rbin, const char *orig_name, HtPP *imports_by_name) {
@@ -979,6 +995,7 @@ RBinPlugin r_bin_plugin_mach0 = {
 	.signature = &entitlements,
 	.sections = &sections,
 	.symbols = &symbols,
+	.symbols_vec = &symbols_vec,
 	.imports = &imports,
 	.size = &size,
 	.info = &info,
