@@ -29,9 +29,9 @@ static Sdb *get_sdb(RBinFile *bf) {
 }
 
 static char *entitlements(RBinFile *bf, bool json) {
-	struct MACH0_(obj_t) *bin = R_UNWRAP3 (bf, o, bin_obj);
-	if (bin) {
-		const char *s = (const char *)bin->signature;
+	struct MACH0_(obj_t) *mo = R_UNWRAP3 (bf, o, bin_obj);
+	if (mo) {
+		const char *s = (const char *)mo->signature;
 		if (s) {
 			if (json) {
 				PJ *pj = pj_new ();
@@ -50,18 +50,18 @@ static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadadd
 	MACH0_(opts_set_default) (&opts, bf);
 	opts.parse_start_symbols = true;
 
-	struct MACH0_(obj_t) *res = MACH0_(new_buf) (buf, &opts);
-	if (res) {
-		if (res->chained_starts) {
+	struct MACH0_(obj_t) *mo = MACH0_(new_buf) (buf, &opts);
+	if (mo) {
+		if (mo->chained_starts) {
 			RIO *io = bf->rbin->iob.io;
-			RBuffer *nb = swizzle_io_read (bf, res, io);
+			RBuffer *nb = swizzle_io_read (bf, mo, io);
 			if (nb != bf->buf) {
 				r_buf_free (bf->buf);
 			}
 			bf->buf = nb;
 		}
-		sdb_ns_set (sdb, "info", res->kv);
-		*bin_obj = res;
+		sdb_ns_set (sdb, "info", mo->kv);
+		*bin_obj = mo;
 		return true;
 	}
 	return false;

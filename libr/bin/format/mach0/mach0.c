@@ -1196,46 +1196,48 @@ wrong_read:
 	return false;
 }
 
-static int parse_function_starts(struct MACH0_(obj_t) *bin, ut64 off) {
+static bool parse_function_starts(struct MACH0_(obj_t) *mo, ut64 off) {
 	struct linkedit_data_command fc;
 	ut8 sfc[sizeof (struct linkedit_data_command)] = {0};
-	int len;
-
-	if (off > bin->size || off + sizeof (struct linkedit_data_command) > bin->size) {
-		bprintf ("Likely overflow while parsing LC_FUNCTION_STARTS command");
+	if (mo->nofuncstarts) {
+		return false;
 	}
-	bin->func_start = NULL;
-	len = r_buf_read_at (bin->b, off, sfc, sizeof (struct linkedit_data_command));
+
+	if (off > mo->size || off + sizeof (struct linkedit_data_command) > mo->size) {
+		R_LOG_DEBUG ("Likely overflow while parsing LC_FUNCTION_STARTS command");
+	}
+	mo->func_start = NULL;
+	int len = r_buf_read_at (mo->b, off, sfc, sizeof (struct linkedit_data_command));
 	if (len < 1) {
 		R_LOG_WARN ("Failed to get data while parsing LC_FUNCTION_STARTS command");
 	}
-	fc.cmd = r_read_ble32 (&sfc[0], bin->big_endian);
-	fc.cmdsize = r_read_ble32 (&sfc[4], bin->big_endian);
-	fc.dataoff = r_read_ble32 (&sfc[8], bin->big_endian);
-	fc.datasize = r_read_ble32 (&sfc[12], bin->big_endian);
+	fc.cmd = r_read_ble32 (&sfc[0], mo->big_endian);
+	fc.cmdsize = r_read_ble32 (&sfc[4], mo->big_endian);
+	fc.dataoff = r_read_ble32 (&sfc[8], mo->big_endian);
+	fc.datasize = r_read_ble32 (&sfc[12], mo->big_endian);
 
 	if ((int)fc.datasize > 0) {
 		ut8 *buf = calloc (1, fc.datasize + 1);
 		if (!buf) {
 			return false;
 		}
-		bin->func_size = fc.datasize;
-		if (fc.dataoff > bin->size || fc.dataoff + fc.datasize > bin->size) {
+		mo->func_size = fc.datasize;
+		if (fc.dataoff > mo->size || fc.dataoff + fc.datasize > mo->size) {
 			free (buf);
 			R_LOG_WARN ("Likely overflow while parsing LC_FUNCTION_STARTS command");
 			return false;
 		}
-		len = r_buf_read_at (bin->b, fc.dataoff, buf, fc.datasize);
+		len = r_buf_read_at (mo->b, fc.dataoff, buf, fc.datasize);
 		if (len != fc.datasize) {
 			free (buf);
 			R_LOG_WARN ("Failed to get data while parsing LC_FUNCTION_STARTS");
 			return false;
 		}
 		buf[fc.datasize] = 0; // null-terminated buffer
-		bin->func_start = buf;
+		mo->func_start = buf;
 		return true;
 	}
-	bin->func_start = NULL;
+	mo->func_start = NULL;
 	return false;
 
 }
@@ -2054,7 +2056,7 @@ static int init_items(struct MACH0_(obj_t) *bin) {
 			} else {
 				sdb_set (bin->kv, cmd_flagname, "function_starts", 0);
 				if (!parse_function_starts (bin, off)) {
-					R_LOG_WARN ("Cannot parse LC_FUNCTION_STARTS");
+					R_LOG_DEBUG ("Unable to parse the LC_FUNCTION_STARTS");
 				}
 			}
 			break;
@@ -3090,7 +3092,7 @@ static void _parse_symbols(RBinFile *bf, struct MACH0_(obj_t) *mo, HtPP *symcach
 			}
 			const int limit = bf->rbin->limit;
 			if (limit > 0 && ordinal > limit) {
-				R_LOG_WARN ("mo.limit reached");
+				R_LOG_WARN ("symbols2 mo.limit reached");
 				break;
 			}
 			RBinSymbol *sym = r_vector_end (&mo->symbols_cache);
@@ -3153,7 +3155,7 @@ static void _parse_function_start_symbols(RBinFile *bf, struct MACH0_(obj_t) *bi
 			}
 			const int limit = bf->rbin->limit;
 			if (limit > 0 && sym->ordinal > limit) {
-				R_LOG_WARN ("mo.limit reached");
+				R_LOG_WARN ("funcstart mo.limit reached");
 				break;
 			}
 		}
