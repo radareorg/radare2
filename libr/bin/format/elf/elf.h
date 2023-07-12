@@ -161,6 +161,7 @@ struct Elf_(obj_t) {
 	RVector g_libs; // RBinElfLib
 	bool fields_loaded;
 	RVector g_fields;  // RBinElfField
+	int limit;
 };
 
 int Elf_(has_va)(struct Elf_(obj_t) *bin);

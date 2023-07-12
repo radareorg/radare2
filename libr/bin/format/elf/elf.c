@@ -3699,13 +3699,18 @@ static bool _add_sections_from_phdr(RBinFile *bf, ELFOBJ *eo, bool *found_load) 
 	ut64 num = Elf_(get_phnum) (eo);
 	r_vector_reserve (&eo->cached_sections, r_vector_length (&eo->cached_sections) + num);
 
+	const int limit = bf->rbin->limit;
+	if (limit > 0 && num > limit) {
+		R_LOG_WARN ("eo.limit reached for sections");
+		num = limit;
+	}
+
 	int i = 0, n = 0;
 	for (i = 0; i < num; i++) {
 		RBinSection *ptr = r_vector_end (&eo->cached_sections);
 		if (!ptr) {
 			return false;
 		}
-
 		ptr->add = false;
 		ptr->size = phdr[i].p_filesz;
 		ptr->vsize = phdr[i].p_memsz;
@@ -3788,7 +3793,7 @@ static bool _add_sections_from_phdr(RBinFile *bf, ELFOBJ *eo, bool *found_load) 
 	return true;
 }
 
-static void _add_ehdr_section (RBinFile *bf, ELFOBJ *eo) {
+static void _add_ehdr_section(RBinFile *bf, ELFOBJ *eo) {
 	// add entry for ehdr
 	RBinSection *ptr = r_vector_end (&eo->cached_sections);
 	if (!ptr) {
@@ -4090,6 +4095,11 @@ static RVector* load_symbols_from_phdr(ELFOBJ *eo, int type) {
 		return NULL;
 	}
 
+	const int limit = eo->limit;
+	if (limit > 0 && nsym > limit) {
+		R_LOG_WARN ("eo.limit reached for phdr symbols");
+		nsym = limit;
+	}
 	ReadPhdrSymbolState state = { .type = type, .ret = ret, .nsym = nsym, .addr_sym_table = addr_sym_table, };
 	if (!_read_symbols_from_phdr (eo, &state)) {
 		r_vector_free (ret);
@@ -4301,19 +4311,27 @@ RBinSymbol *Elf_(_r_bin_elf_convert_symbol)(struct Elf_(obj_t) *eo, RBinElfSymbo
 	return ptr;
 }
 
+static RBinElfSection *getsection_byname(ELFOBJ *eo, const char *name, size_t *_i) {
+	RBinElfSection *s;
+	size_t i = 0;
+	r_vector_foreach (&eo->g_sections, s) {
+		if (!strcmp (s->name, ".gnu_debugdata")) {
+			return s;
+			i++;
+		}
+	}
+	*_i = i;
+	return NULL;
+}
+
 static RVector* parse_gnu_debugdata(ELFOBJ *eo, size_t *ret_size) {
 	if (ret_size) {
 		*ret_size = 0;
 	}
 	if (eo->sections_loaded) {
-		size_t i = 0;
-		RBinElfSection *section;
-		r_vector_foreach (&eo->g_sections, section) {
-			if (strcmp (section->name, ".gnu_debugdata")) {
-				i++;
-				continue;
-			}
-
+		size_t rs = 0;
+		RBinElfSection *section = getsection_byname (eo, ".gnu_debugdata", &rs);
+		if (section) {
 			ut64 addr = section->offset;
 			ut64 size = section->size;
 			if (size < 10) {
@@ -4331,6 +4349,7 @@ static RVector* parse_gnu_debugdata(ELFOBJ *eo, size_t *ret_size) {
 			if (odata) {
 				RBuffer *newelf = r_buf_new_with_pointers (odata, osize, false);
 				ELFOBJ* newobj = Elf_(new_buf) (newelf, eo->user_baddr, false);
+				newobj->limit = eo->limit;
 				RVector *symbols = NULL;
 				if (newobj) {
 					symbols = Elf_(load_symbols) (newobj);
@@ -4338,7 +4357,7 @@ static RVector* parse_gnu_debugdata(ELFOBJ *eo, size_t *ret_size) {
 					Elf_(free)(newobj);
 				}
 				if (ret_size) {
-					*ret_size = i;
+					*ret_size = rs;
 				}
 				r_buf_free (newelf);
 				free (odata);
@@ -4422,6 +4441,8 @@ static RVector *_load_additional_imported_symbols(ELFOBJ *eo, ImportInfo *import
 	}
 
 	RBinElfSymbol *symbol;
+	const int limit = eo->limit;
+	int count = 0;
 	r_vector_foreach (import_info->memory.symbols, symbol) {
 		RBinSymbol *import_sym_ptr = Elf_(_r_bin_elf_convert_symbol) (eo, symbol, "%s");
 		if (!import_sym_ptr) {
@@ -4430,6 +4451,10 @@ static RVector *_load_additional_imported_symbols(ELFOBJ *eo, ImportInfo *import
 
 		setsymord (eo, import_sym_ptr->ordinal, import_sym_ptr);
 		if (symbol->is_imported) {
+			if (limit > 0 && count++ > limit) {
+				R_LOG_WARN ("eo.limit reached for imports");
+				break;
+			}
 			RBinElfSymbol *import = r_vector_end (import_symbols);
 			memcpy (import, symbol, sizeof (RBinElfSymbol));
 		}
@@ -4456,6 +4481,11 @@ static bool _process_symbols_and_imports_in_section(ELFOBJ *eo, int type, Proces
 	Elf_(Shdr) *strtab_section = &eo->shdr[eo->shdr[i].sh_link];
 	if (strtab_section->sh_size > ST32_MAX || strtab_section->sh_size + 8 > eo->size) {
 		R_LOG_ERROR ("size (syms strtab)");
+		return false;
+	}
+	int nsym = (int)(eo->shdr[i].sh_size / sizeof (Elf_(Sym)));
+	if (nsym < 1) {
+		R_LOG_ERROR ("nsym < 1");
 		return false;
 	}
 
@@ -4485,13 +4515,6 @@ static bool _process_symbols_and_imports_in_section(ELFOBJ *eo, int type, Proces
 		return false;
 	}
 
-	int nsym = (int)(eo->shdr[i].sh_size / sizeof (Elf_(Sym)));
-	if (nsym < 1) {
-		R_LOG_ERROR ("nsym < 1");
-		free (strtab);
-		return false;
-	}
-
 	ut64 sh_begin = eo->shdr[i].sh_offset;
 	ut64 sh_end = sh_begin + eo->shdr[i].sh_size;
 	if (sh_begin > eo->size) {
@@ -4509,7 +4532,11 @@ static bool _process_symbols_and_imports_in_section(ELFOBJ *eo, int type, Proces
 			return false;
 		}
 	}
-
+	const int limit = eo->limit;
+	if (limit > 0 && nsym > limit) {
+		R_LOG_WARN ("eo.limit for symbols");
+		nsym = limit;
+	}
 
 	memory->sym = calloc (nsym, sizeof (Elf_(Sym)));
 	if (!memory->sym) {
@@ -4685,11 +4712,11 @@ static RVector /* <RBinElfSymbol> */ *Elf_(_r_bin_elf_load_symbols_and_imports)(
 	RVector *ret = parse_gnu_debugdata (eo, &ret_ctr);
 	ElfSymbolMemory memory = { .symbols = ret, .sym = NULL };
 	int i;
-	for (i = 0; i < eo->ehdr.e_shnum; i++) {
+	size_t shnum = eo->ehdr.e_shnum;
+	for (i = 0; i < shnum; i++) {
 		if (!section_matters (eo, i, type, shdr_size)) {
 			continue;
 		}
-
 		ProcessSectionState state = {
 			.i = i,
 			.memory = &memory,

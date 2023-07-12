@@ -877,7 +877,7 @@ static char *demangle_classname(const char *s) {
 	int modlen, len;
 	const char *kstr;
 	char *ret, *klass, *module;
-	if (!strncmp (s, "_TtC", 4)) {
+	if (r_str_startswith (s, "_TtC")) {
 		int off = 4;
 		while (s[off] && (s[off] < '0' || s[off] > '9')) {
 			off++;
@@ -985,21 +985,17 @@ static char *get_class_name(mach0_ut p, RBinFile *bf) {
 		if (bin->has_crypto) {
 			return strdup ("some_encrypted_data");
 		} else {
-			int name_len = R_MIN (MAX_CLASS_NAME_LEN, left);
-			char *name = malloc (name_len + 1);
-			if (name) {
-				int rc = r_buf_read_at (bf->buf, r, (ut8 *)name, name_len);
-				if (rc != name_len) {
-					rc = 0;
-				}
-				name[rc] = 0;
-				char * result = demangle_classname (name);
-				free (name);
-				return result;
+			char name[MAX_CLASS_NAME_LEN];
+			int name_len = R_MIN (sizeof (name), left);
+			int rc = r_buf_read_at (bf->buf, r, (ut8 *)name, name_len);
+			if (rc != name_len) {
+				rc = 0;
 			}
+			name[rc] = 0;
+			char *result = demangle_classname (name);
+			return result;
 		}
 	}
-
 	return NULL;
 }
 
@@ -1390,6 +1386,8 @@ static void parse_type(RList *list, RBinFile *bf, SwiftType st, HtUP *symbols_ht
 }
 
 RList *MACH0_(parse_classes)(RBinFile *bf, objc_cache_opt_info *oi) {
+	r_return_val_if_fail (bf && bf->o, NULL);
+
 	RList /*<RBinClass>*/ *ret = NULL;
 	ut64 num_of_unnamed_class = 0;
 	RBinClass *klass = NULL;
@@ -1403,7 +1401,7 @@ RList *MACH0_(parse_classes)(RBinFile *bf, objc_cache_opt_info *oi) {
 	ut64 s_size = 0;
 	ut8 pp[sizeof (mach0_ut)] = {0};
 
-	r_return_val_if_fail (bf && bf->o, NULL);
+	const int limit = bf->rbin->limit;
 
 	if (!bf->o->bin_obj || !bf->o->info) {
 		return NULL;
@@ -1449,6 +1447,7 @@ RList *MACH0_(parse_classes)(RBinFile *bf, objc_cache_opt_info *oi) {
 	}
 
 	bool want_swift = !r_sys_getenv_asbool ("RABIN2_NOSWIFT");
+	// 2s / 16s
 	if (want_swift && swift5_types_addr != UT64_MAX) {
 		const int aligned_fieldmd_size = swift5_fieldmd_size + (swift5_fieldmd_size % 4);
 		st32 *fieldmd = malloc (aligned_fieldmd_size);
@@ -1461,8 +1460,11 @@ RList *MACH0_(parse_classes)(RBinFile *bf, objc_cache_opt_info *oi) {
 				int i;
 				int res = r_buf_read_at (bf->buf, swift5_types_addr, (ut8*)words, aligned_size);
 				if (res >= aligned_size) {
+					if (limit > 0 && amount > limit) {
+						R_LOG_WARN ("swift class limit reached");
+						amount = limit;
+					}
 					HtUP *symbols_ht = _load_symbol_by_vaddr_hashtable (bf);
-
 					for (i = 0; i < amount; i++) {
 						st32 word = r_read_le32 (&words[i]);
 						ut64 type_address = swift5_types_addr + (i * 4) + word;
@@ -1476,7 +1478,6 @@ RList *MACH0_(parse_classes)(RBinFile *bf, objc_cache_opt_info *oi) {
 							parse_type (ret, bf, st, symbols_ht);
 						}
 					}
-
 					ht_up_free (symbols_ht);
 				} else {
 					R_LOG_DEBUG ("Invalid read of swift5 type section");
@@ -1498,8 +1499,13 @@ RList *MACH0_(parse_classes)(RBinFile *bf, objc_cache_opt_info *oi) {
 	// end of seaching of section with name __objc_classlist
 	// start of getting information about each class in file
 	ut32 i;
+	ut32 ordinal = 0;
 	for (i = 0; i < s_size; i += sizeof (mach0_ut)) {
 		left = s_size - i;
+		if (limit > 0 && ordinal++ > limit) {
+			R_LOG_WARN ("classes mo.limit reached");
+			break;
+		}
 		if (left < sizeof (mach0_ut)) {
 			R_LOG_ERROR ("Chopped classlist data");
 			break;
