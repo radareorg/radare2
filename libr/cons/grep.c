@@ -31,8 +31,9 @@ static RCoreHelpMessage help_detail_tilde = {
 	" $!!",      "", "reverse the lines (like the `tac` tool)",
 	" ,",        "", "token to define another keyword",
 	" +",        "", "case insensitive grep (grep -i)",
+	" *",        "", "zoom level",
 	" ^",        "", "words must be placed at the beginning of line",
-	" <",        "", "perform zoom operation on the buffer",
+	" *",        "", "perform zoom operation on the buffer",
 	" !",        "", "negate grep",
 	" ?",        "", "count number of matching lines",
 	" ?.",       "", "count number chars",
@@ -43,6 +44,7 @@ static RCoreHelpMessage help_detail_tilde = {
 	" ...",      "", "internal 'hud' (like V_)",
 	" ....",     "", "internal 'hud' in one line",
 	" :)",       "", "parse C-like output from decompiler",
+	" <>",       "", "xml indentation",
 	" {:",       "", "human friendly indentation (yes, it's a smiley)",
 	" {:..",     "", "less the output of {:",
 	" {:...",    "", "hud the output of {:",
@@ -215,8 +217,11 @@ R_API void r_cons_grep_expression(const char *str) {
 				break;
 			case '<':
 				ptr++;
+				grep->xml = true;
+				break;
+			case '*':
+				ptr++;
 				grep->zoom = atoi (ptr);
-				//grep->zoomy = atoi (arg);
 				break;
 			case '+':
 				if (first) {
@@ -639,6 +644,16 @@ R_API void r_cons_grepbuf(void) {
 		free (a);
 		free (s);
 		goto continuation;
+	}
+	if (grep->xml) {
+		// parse and indent xml
+		char *x = r_str_ndup (buf, len);
+		char *xi = r_xml_indent (x);
+		free (cons->context->buffer);
+		in = buf = cons->context->buffer = xi;
+		len = cons->context->buffer_len = strlen (xi);
+		free (x);
+		return;
 	}
 	if (grep->json) {
 		if (grep->json_path) {

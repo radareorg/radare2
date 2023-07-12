@@ -1,5 +1,5 @@
 /* Copyright (c) 2013-2014 Yoran Heling
- // Copyright (c) 2022 - pancake
+ // Copyright (c) 2023 - pancake
 
   Permission is hereby granted, free of charge, to any person obtaining
   a copy of this software and associated documentation files (the
@@ -198,6 +198,7 @@ R_API RXmlRet r_xml_parse(RXml *, int);
 
 R_API RXml *r_xml_new(int stacksize);
 R_API void r_xml_free(RXml *);
+R_API char *r_xml_indent(const char *s);
 
 /* May be called after the last character has been given to r_xml_parse().
  * Returns R_XML_OK if the XML document is valid, R_XML_EEOF otherwise.  Using
