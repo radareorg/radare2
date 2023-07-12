@@ -644,6 +644,7 @@ static bool rebase_buffer_callback2(void *context, RFixupEventDetails * event_de
 }
 
 static RList *classes(RBinFile *bf) {
+	// 8s / 16s
 	return MACH0_(parse_classes) (bf, NULL);
 }
 

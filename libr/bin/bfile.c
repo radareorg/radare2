@@ -111,6 +111,7 @@ static int string_scan_range(RList *list, RBinFile *bf, int min, const ut64 from
 	ut64 str_start, needle = from;
 	int count = 0, i, rc, runes;
 	int str_type = R_STRING_TYPE_DETECT;
+	const int limit = bf->rbin->limit;
 
 	// if list is null it means its gonna dump
 	r_return_val_if_fail (bf, -1);
@@ -362,6 +363,10 @@ static int string_scan_range(RList *list, RBinFile *bf, int min, const ut64 from
 			bs->length = runes;
 			bs->size = needle - str_start;
 			bs->ordinal = count++;
+			if (limit > 0 && count > limit) {
+				R_LOG_WARN ("el.limit for strings");
+				break;
+			}
 			// TODO: move into adjust_offset
 			switch (str_type) {
 			case R_STRING_TYPE_WIDE:
