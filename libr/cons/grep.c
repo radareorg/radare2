@@ -33,7 +33,6 @@ static RCoreHelpMessage help_detail_tilde = {
 	" +",        "", "case insensitive grep (grep -i)",
 	" *",        "", "zoom level",
 	" ^",        "", "words must be placed at the beginning of line",
-	" *",        "", "perform zoom operation on the buffer",
 	" !",        "", "negate grep",
 	" ?",        "", "count number of matching lines",
 	" ?.",       "", "count number chars",
@@ -44,6 +43,7 @@ static RCoreHelpMessage help_detail_tilde = {
 	" ...",      "", "internal 'hud' (like V_)",
 	" ....",     "", "internal 'hud' in one line",
 	" :)",       "", "parse C-like output from decompiler",
+	" <50",      "", "perform zoom to the given text width on the buffer",
 	" <>",       "", "xml indentation",
 	" {:",       "", "human friendly indentation (yes, it's a smiley)",
 	" {:..",     "", "less the output of {:",
@@ -217,11 +217,11 @@ R_API void r_cons_grep_expression(const char *str) {
 				break;
 			case '<':
 				ptr++;
-				grep->xml = true;
-				break;
-			case '*':
-				ptr++;
-				grep->zoom = atoi (ptr);
+				if (*ptr == '>') {
+					grep->xml = true;
+				} else {
+					grep->zoom = atoi (ptr);
+				}
 				break;
 			case '+':
 				if (first) {
