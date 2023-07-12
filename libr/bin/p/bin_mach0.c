@@ -181,10 +181,10 @@ static RList *entries(RBinFile *bf) {
 }
 
 // XXX this is very slooow
-static RList *symbols(RBinFile *bf, struct MACH0_(obj_t) *mo) {
-	RBinObject *obj = bf? bf->o: NULL;
-	if (!mo && obj) {
-		mo = obj->bin_obj;
+static RList *symbols(RBinFile *bf) {
+	struct MACH0_(obj_t) *mo = R_UNWRAP3 (bf, o, bin_obj);
+	if (!mo) {
+		return NULL;
 	}
 	const RVector *symbols = MACH0_(load_symbols) (bf, mo);
 	if (!symbols) {
@@ -201,10 +201,10 @@ static RList *symbols(RBinFile *bf, struct MACH0_(obj_t) *mo) {
 	return list;
 }
 
-static RVecRBinSymbol *symbols_vec(RBinFile *bf, struct MACH0_(obj_t) *mo) {
-	RBinObject *obj = bf? bf->o: NULL;
-	if (!mo && obj) {
-		mo = obj->bin_obj;
+static RVecRBinSymbol *symbols_vec(RBinFile *bf) {
+	struct MACH0_(obj_t) *mo = R_UNWRAP3 (bf, o, bin_obj);
+	if (!mo) {
+		return NULL;
 	}
 	const RVector *symbols = MACH0_(load_symbols) (bf, mo);
 	if (!symbols) {
