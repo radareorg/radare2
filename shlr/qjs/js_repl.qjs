@@ -584,9 +584,28 @@ import('os').catch(console.error).then((os) => {
 
     function get_completions (line, pos) {
       let obj, i, j;
+      if (line.startsWith(':')) {
+        const s = get_context_word(line + 1, pos);
+	let arg = line.slice (1).trim();
+        let cmd = "";
+	const dot = arg.lastIndexOf(".");
+	let rest = s;
+	if (dot !== -1) {
+	  arg = arg.slice(0, dot);
+          cmd = ": console.log(Object.keys("+ arg + "))";
+	} else {
+          cmd = ": console.log(Object.keys(global))";
+	}
+	// console.error("CMD", cmd);
+	// console.error("FIL", rest);
+        const r = r2.cmd(cmd).trim().split(",").filter((x) => x.startsWith(rest));
+        const ctx_obj = get_context_object(line, pos - s.length);
+        return { tab: r, pos: s.length, ctx: ctx_obj };
+      }
 
       const s = get_context_word(line, pos);
       const ctx_obj = get_context_object(line, pos - s.length);
+      //console.log("CTXOBJ(", line,")", Object.keys(ctx_obj));
       const r = [];
       /* enumerate properties from object and its prototype chain, *
        * add non-numeric regular properties with s as e prefix     */
@@ -616,6 +635,8 @@ import('os').catch(console.error).then((os) => {
         }
         r.length = j;
       }
+      //console.log("R", JSON.stringify(r));
+      //console.log("s", s.length);
       /* 'tab' = list of completions, 'pos' = cursor position inside
            the completions */
       return { tab: r, pos: s.length, ctx: ctx_obj };
@@ -1164,7 +1185,11 @@ import('os').catch(console.error).then((os) => {
         // expr = expr.replace(/;$//);
         // result = (new Function('return ({' + expr + '});')).call(global);
         // // // result = eval(expr);
-        result = eval(expr);
+	if (expr.startsWith (":")) {
+          result = r2.cmd(expr); // ": " + expr.slice(1).trim());
+	} else {
+          result = eval(expr);
+	}
         eval_time = (new Date()).getTime() - now;
         write(colors[styles.result]);
         print(result);
