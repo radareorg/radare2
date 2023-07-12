@@ -128,6 +128,7 @@ typedef struct r_cons_grep_t {
 	int neg[R_CONS_GREP_WORDS];
 	int begin[R_CONS_GREP_WORDS];
 	int end[R_CONS_GREP_WORDS];
+	bool xml;
 	bool icase;
 	bool ascart;
 	bool code;

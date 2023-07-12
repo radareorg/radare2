@@ -29,6 +29,8 @@ static RCoreHelpMessage help_msg_at = {
 	"~", "??", "show internal grep help",
 	"~", "..", "internal less",
 	"~", "{}", "json indent",
+	"~", "<>", "xml indent",
+	"~", "<100", "ascii-art zoom of console buffer",
 	"~", "{}..", "json indent and less",
 	"~", "word", "grep for lines matching word",
 	"~", "!word", "grep for lines NOT matching word",
