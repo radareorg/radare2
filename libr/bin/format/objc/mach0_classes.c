@@ -1446,7 +1446,7 @@ RList *MACH0_(parse_classes)(RBinFile *bf, objc_cache_opt_info *oi) {
 		goto get_classes_error;
 	}
 
-	bool want_swift = !r_sys_getenv_asbool ("RABIN2_NOSWIFT");
+	bool want_swift = !r_sys_getenv_asbool ("RABIN2_MACHO_NOSWIFT");
 	// 2s / 16s
 	if (want_swift && swift5_types_addr != UT64_MAX) {
 		const int aligned_fieldmd_size = swift5_fieldmd_size + (swift5_fieldmd_size % 4);
