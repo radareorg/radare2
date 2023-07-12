@@ -3813,6 +3813,9 @@ static int cmd_search(void *data, const char *input) {
 	searchflags = r_config_get_i (core->config, "search.flags");
 	core->search->maxhits = r_config_get_i (core->config, "search.maxhits");
 	searchprefix = r_config_get (core->config, "search.prefix");
+	if (r_config_get_b (core->config, "search.named")) {
+		searchprefix = r_str_newf ("hit.%s.", r_str_trim_head_ro (input));;
+	}
 	core->search->overlap = r_config_get_i (core->config, "search.overlap");
 	core->search->bckwrds = false;
 

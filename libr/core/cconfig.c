@@ -4313,6 +4313,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETI ("search.distance", 0, "search string distance");
 	SETBPREF ("search.badpages", "true", "scan and stop searching when finding bad pages");
 	SETBPREF ("search.flags", "true", "all search results are flagged, otherwise only printed");
+	SETBPREF ("search.named", "false", "name flags with given string instead of search.prefix");
 	SETBPREF ("search.overlap", "false", "look for overlapped search hits");
 	SETI ("search.maxhits", 0, "maximum number of hits (0: no limit)");
 	SETI ("search.from", -1, "search start address");
