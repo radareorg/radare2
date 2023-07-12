@@ -1320,10 +1320,13 @@ static void parse_type(RList *list, RBinFile *bf, SwiftType st, HtUP *symbols_ht
 	klass->lang = R_BIN_LANG_SWIFT;
 	// eprintf ("methods:\n");
 	if (st.members != UT64_MAX) {
-		ut8 buf[512];
+		ut8 buf[512] = {0};
 		int i = 0;
-		r_buf_read_at (bf->buf, st.members, buf, sizeof (buf));
-		ut32 count = R_MIN (32, r_read_le32 (buf + 3));
+		if (r_buf_read_at (bf->buf, st.members, buf, sizeof (buf)) != sizeof (buf)) {
+			return;
+		}
+		ut32 maxcount = r_read_le32 (buf + 3);
+		ut32 count = R_MIN (32, maxcount);
 		for (i = 0; i < count; i++) {
 			int pos = (i * 8) + 3 + 8 + 8;
 			st32 n = r_read_le32 (buf + pos);
