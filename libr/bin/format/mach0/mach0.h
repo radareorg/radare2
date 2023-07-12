@@ -186,6 +186,7 @@ struct MACH0_(obj_t) {
 	ut8 *internal_buffer;
 	int internal_buffer_size;
 	int limit; // user defined
+	bool nofuncstarts;
 };
 
 typedef struct {
