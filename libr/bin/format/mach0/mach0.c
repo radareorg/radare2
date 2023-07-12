@@ -2312,6 +2312,7 @@ struct MACH0_(obj_t) *MACH0_(new_buf)(RBuffer *buf, struct MACH0_(opts_t) *optio
 		mo->main_addr = UT64_MAX;
 		mo->kv = sdb_new (NULL, "bin.mach0", 0);
 		mo->limit = options->bf->rbin->limit;
+		mo->nofuncstarts = r_sys_getenv_asbool ("RABIN2_MACHO_NOFUNCSTARTS");
 		ut64 sz = r_buf_size (buf); // bin->b);
 		if (options) {
 #if 0
