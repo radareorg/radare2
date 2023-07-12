@@ -335,6 +335,10 @@ static RBinSection *getsection(RBin *a, const char *sn) {
 	if (R_LIKELY (o && o->sections)) {
 		r_list_foreach (o->sections, iter, section) {
 			if (strstr (section->name, sn)) {
+				if (strstr (section->name, "zdebug")) {
+					R_LOG_WARN ("Compressed dwarf sections not yet supported");
+					return NULL;
+				}
 				return section;
 			}
 		}
@@ -1935,12 +1939,8 @@ static const ut8 *parse_attr_value(RBin *bin, const ut8 *obuf, int obuf_len, RBi
 		value->kind = DW_AT_KIND_STRING;
 		value->string.offset = dwarf_read_offset (hdr->is_64bit, &buf, buf_end, be);
 		// const char *section_name = def->attr_form == DW_FORM_strp? "debug_str": "debug_line_str";
-		RBinSection *section;
-		if (def->attr_form == DW_FORM_strp) {
-			section = getsection (bin, "debug_str");
-		} else {
-			section = getsection (bin, "debug_line_str");
-		}
+		RBinSection *section = (def->attr_form == DW_FORM_strp)
+			? getsection (bin, "debug_str") : getsection (bin, "debug_line_str");
 		char *str = get_section_string (bin, section, value->string.offset);
 		if (str) {
 			r_str_ansi_strip (str);
