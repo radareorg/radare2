@@ -293,6 +293,7 @@ RBinPlugin r_bin_plugin_mach064 = {
 	.sections = &sections,
 	.signature = &entitlements,
 	.symbols = &symbols,
+	.symbols_vec = &symbols_vec,
 	.imports = &imports,
 	.info = &info,
 	.libs = &libs,
