@@ -4507,9 +4507,17 @@ R_API int r_core_anal_all(RCore *core) {
 	r_core_task_yield (&core->tasks);
 
 	r_cons_break_push (NULL, NULL);
+
+#if 0
+	RBinFile *bf = NULL; // core->bin->cur;
+	RVecRBinSymbol *v = r_bin_file_get_symbols_vec (bf);
+	if (v) {
+		R_VEC_FOREACH (v, symbol) {
+#else
 	/* Symbols (Imports are already analyzed by rabin2 on init) */
 	if ((list = r_bin_get_symbols (core->bin))) {
 		r_list_foreach (list, iter, symbol) {
+#endif
 			if (r_cons_is_breaked ()) {
 				break;
 			}

@@ -22,6 +22,8 @@ typedef struct qjs_core_plugin {
 } QjsCorePlugin;
 
 R_GENERATE_VEC_IMPL_FOR(CorePlugin, QjsCorePlugin);
+// R2_590 - discuss for simpler typing v--
+// R_VEC_TYPE (RVecCorePlugin, QjsCorePlugin);
 
 typedef struct qjs_arch_plugin_t {
 	char *name;

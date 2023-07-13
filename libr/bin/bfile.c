@@ -1153,6 +1153,12 @@ R_API RList *r_bin_file_get_symbols(RBinFile *bf) {
 	return o? o->symbols: NULL;
 }
 
+R_API RVecRBinSymbol *r_bin_file_get_symbols_vec(RBinFile *bf) {
+	r_return_val_if_fail (bf, NULL);
+	RBinObject *o = bf->o;
+	return o? o->symbols_vec: NULL;
+}
+
 R_API RBinFile *r_bin_file_open(RBin *bin, const char *file, RBinFileOptions *opt) {
 	if (r_bin_open (bin, file, opt)) {
 		return r_bin_cur (bin);
