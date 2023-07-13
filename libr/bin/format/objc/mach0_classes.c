@@ -991,7 +991,7 @@ static char *get_class_name(mach0_ut p, RBinFile *bf) {
 			if (rc != name_len) {
 				rc = 0;
 			}
-			name[rc] = 0;
+			name[sizeof (name) - 1] = 0;
 			char *result = demangle_classname (name);
 			return result;
 		}
