@@ -156,8 +156,14 @@ static char *qjs_io_system(RIO *io, RIODesc *fd, const char *input) {
 		JSContext *ctx = plugin->ctx;
 		JSValueConst args[1] = { JS_NewString (ctx, input) };
 		JSValue res = JS_Call (ctx, plugin->fn_system_js, JS_UNDEFINED, countof (args), args);
-		if (JS_ToBool (ctx, res)) {
-			return strdup ("true");
+		if (JS_IsString (res)) {
+			size_t namelen;
+			const char *nameptr = JS_ToCStringLen2 (ctx, &namelen, res, false);
+			if (!nameptr) {
+				R_LOG_WARN ("r2.plugin requires the function to return an object with the `name` field");
+				return NULL;
+			}
+			return strdup (nameptr);
 		}
 	}
 
