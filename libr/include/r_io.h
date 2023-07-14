@@ -81,8 +81,8 @@ typedef struct r_io_undos_t {
 } RIOUndos;
 
 typedef struct r_io_undo_t {
-	int s_enable;
-	int w_enable;
+	int s_enable; // R2_590 - can be bool imho
+	int w_enable; // R2_590 - can be bool
 	/* write stuff */
 	RList *w_list;
 	int w_init;
@@ -90,8 +90,7 @@ typedef struct r_io_undo_t {
 	int idx;
 	int undos; /* available undos */
 	int redos; /* available redos */
-	RIOUndos seek[R_IO_UNDOS];
-	/*int fd[R_IO_UNDOS]; // XXX: Must be RIODesc* */
+	RIOUndos seek[R_IO_UNDOS]; // XXX R2_590 - use an RVec here
 } RIOUndo;
 
 typedef struct r_io_undo_w_t {
@@ -192,6 +191,7 @@ typedef struct {
 } RIORap;
 
 typedef struct r_io_plugin_t {
+	// RPluginMeta
 	const char *name;
 	const char *desc;
 	const char *version;
@@ -204,18 +204,21 @@ typedef struct r_io_plugin_t {
 	RIOUndo undo;
 	bool isdbg;
 	// int (*is_file_opened)(RIO *io, RIODesc *fd, const char *);
-	char *(*system)(RIO *io, RIODesc *fd, const char *);
+	char *(*system)(RIO *io, RIODesc *fd, const char *); // Rename to call? or cmd? unify with anal and core
 	RIODesc* (*open)(RIO *io, const char *, int perm, int mode);
 	RList* /*RIODesc* */ (*open_many)(RIO *io, const char *, int perm, int mode);
 	int (*read)(RIO *io, RIODesc *fd, ut8 *buf, int count);
 	ut64 (*seek)(RIO *io, RIODesc *fd, ut64 offset, int whence);
 	int (*write)(RIO *io, RIODesc *fd, const ut8 *buf, int count);
 	bool (*close)(RIODesc *desc);
+	// maybe just have a getinfo() that returns this struct
+	// RIOInfo * = struct { isblock, ischar, pid, tid, base, size }
 	bool (*is_blockdevice)(RIODesc *desc);
 	bool (*is_chardevice)(RIODesc *desc);
 	int (*getpid)(RIODesc *desc);
 	int (*gettid)(RIODesc *desc);
 	bool (*getbase)(RIODesc *desc, ut64 *base);
+	///
 	bool (*resize)(RIO *io, RIODesc *fd, ut64 size);
 	int (*extend)(RIO *io, RIODesc *fd, ut64 size);
 	bool (*accept)(RIO *io, RIODesc *desc, int fd);

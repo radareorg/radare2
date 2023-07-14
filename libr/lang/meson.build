@@ -15,6 +15,8 @@ r_lang = library('r_lang', r_lang_sources,
   c_args: library_cflags,
   dependencies: [
     r_util_dep,
+    r_io_dep,
+    r_socket_dep,
     r_asm_dep,
     r_arch_dep,
     r_esil_dep,
