@@ -33,14 +33,29 @@ typedef struct qjs_arch_plugin_t {
 	// JSValue encode_func;
 } QjsArchPlugin;
 
+typedef struct qjs_io_plugin_t {
+	char *name;
+	RIOPlugin *iop;
+	R_BORROW JSContext *ctx;
+	JSValue fn_check_js;
+	JSValue fn_open_js;
+	JSValue fn_seek_js;
+	JSValue fn_read_js;
+	JSValue fn_close_js;
+	JSValue fn_system_js;
+	// JSValue encode_func;
+} QjsIoPlugin;
+
 R_GENERATE_VEC_IMPL_FOR(ArchPlugin, QjsArchPlugin);
+R_GENERATE_VEC_IMPL_FOR(IoPlugin, QjsIoPlugin);
 
 typedef struct qjs_plugin_manager_t {
 	R_BORROW RCore *core;
 	R_BORROW JSRuntime *rt;
-	QjsContext default_ctx;  // context for running normal JS code
+	QjsContext default_ctx; // context for running normal JS code
 	RVecCorePlugin core_plugins;
 	RVecArchPlugin arch_plugins;
+	RVecIoPlugin io_plugins;
 } QjsPluginManager;
 
 static void core_plugin_fini(QjsCorePlugin *cp, void *user) {
@@ -57,6 +72,7 @@ static bool plugin_manager_init(QjsPluginManager *pm, RCore *core, JSRuntime *rt
 	pm->rt = rt;
 	RVecCorePlugin_init (&pm->core_plugins);
 	RVecArchPlugin_init (&pm->arch_plugins);
+	RVecIoPlugin_init (&pm->io_plugins);
 	return true;
 }
 
@@ -71,7 +87,27 @@ static void plugin_manager_add_core_plugin(QjsPluginManager *pm, const char *nam
 	}
 }
 
+static QjsIoPlugin *plugin_manager_add_io_plugin(QjsPluginManager *pm, const char *name, JSContext *ctx, RIOPlugin *iop, JSValue func) {
+	r_return_val_if_fail (pm, NULL);
+
+	QjsIoPlugin *cp = RVecIoPlugin_emplace_back (&pm->io_plugins);
+	if (cp) {
+		cp->name = name? strdup (name): NULL;
+		cp->ctx = ctx;
+		cp->iop = iop;
+		cp->fn_check_js = func;
+		// cp->qctx.open_func = func;
+		// cp->qctx.read_func = func;
+	}
+	return cp;
+}
+
 static inline int compare_core_plugin_name(const QjsCorePlugin *cp, const void *data) {
+	const char *name = data;
+	return strcmp (cp->name, name);
+}
+
+static inline int compare_io_plugin_name(const QjsIoPlugin *cp, const void *data) {
 	const char *name = data;
 	return strcmp (cp->name, name);
 }
@@ -80,6 +116,12 @@ static QjsCorePlugin *plugin_manager_find_core_plugin(const QjsPluginManager *pm
 	r_return_val_if_fail (pm, NULL);
 
 	return RVecCorePlugin_find (&pm->core_plugins, (void*) name, compare_core_plugin_name);
+}
+
+static QjsIoPlugin *plugin_manager_find_io_plugin(const QjsPluginManager *pm, const char *name) {
+	r_return_val_if_fail (pm, NULL);
+
+	return RVecIoPlugin_find (&pm->io_plugins, (void*) name, compare_io_plugin_name);
 }
 
 static bool plugin_manager_remove_core_plugin(QjsPluginManager *pm, const char *name) {
@@ -163,6 +205,7 @@ static void plugin_manager_fini (QjsPluginManager *pm) {
 #include "qjs/loader.c"
 #include "qjs/arch.c"
 #include "qjs/core.c"
+#include "qjs/io.c"
 
 ///////////////////////////////////////////////////////////
 
@@ -258,11 +301,11 @@ static JSValue r2plugin(JSContext *ctx, JSValueConst this_val, int argc, JSValue
 			return r2plugin_core_load (ctx, this_val, argc, argv);
 		} else if (!strcmp (n, "arch")) {
 			return r2plugin_arch_load (ctx, this_val, argc, argv);
+		} else if (!strcmp (n, "io")) {
+			return r2plugin_io (ctx, this_val, argc, argv);
 #if 0
 		} else if (!strcmp (n, "bin")) {
 			return r2plugin_bin (ctx, this_val, argc, argv);
-		} else if (!strcmp (n, "io")) {
-			return r2plugin_io (ctx, this_val, argc, argv);
 #endif
 		} else {
 			// invalid throw exception here

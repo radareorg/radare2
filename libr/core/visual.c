@@ -2899,7 +2899,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			int distance = numbuf_pull ();
 			r_core_visual_define (core, arg + 1, distance - 1);
 			r_core_visual_showcursor (core, false);
-			r_cons_enable_mouse (mouse_state && r_config_get_i(core->config, "scr.wheel"));
+			r_cons_enable_mouse (mouse_state && r_config_get_i (core->config, "scr.wheel"));
 		}
 			break;
 		case 'D':
@@ -2945,7 +2945,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 					}
 				}
 			}
-			r_cons_enable_mouse (mouse_state && r_config_get_i(core->config, "scr.wheel"));
+			r_cons_enable_mouse (mouse_state && r_config_get_i (core->config, "scr.wheel"));
 		}
 			r_core_visual_showcursor (core, false);
 			break;

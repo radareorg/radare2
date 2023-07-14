@@ -3,6 +3,7 @@ include ../config.mk
 NAME=r_lang
 OBJS=lang.o
 R2DEPS+=r_util
+R2DEPS+=r_io
 R2DEPS+=r_cons
 R2DEPS+=r_reg
 R2DEPS+=r_asm
