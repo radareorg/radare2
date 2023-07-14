@@ -72,13 +72,13 @@ static int qjs_io_read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 		};
 		JSValue res = JS_Call (ctx, plugin->fn_read_js, JS_UNDEFINED, countof (args), args);
 		if (JS_IsArray (ctx, res)) {
-			JSObject *jo = JS_VALUE_GET_OBJ (res);
+			// JSObject *jo = JS_VALUE_GET_OBJ (res);
 			int len = 10; //eS_ToArrayLengthFree (ctx, &le, res, true);
 			// jint length = JS_GetProperty (ctx, res, JS_ATOM_Array);
 			int i;
 			JSValue jlen = JS_GetPropertyStr(ctx, res, "length");
 			int64_t arrayLength = 10;
-			int ilen = JS_ToInt64 (ctx, &arrayLength, jlen);
+			JS_ToInt64 (ctx, &arrayLength, jlen);
 			int length = R_MIN (arrayLength, count);
 			for (i = 0; i < length; i++) {
 				ut32 u;
@@ -116,7 +116,7 @@ static ut64 qjs_io_seek(RIO *io, RIODesc *fd, ut64 addr, int whence) {
 		};
 		JSValue res = JS_Call (ctx, plugin->fn_seek_js, JS_UNDEFINED, countof (args), args);
 		int64_t radix = 10;
-		int64_t rv = JS_ToInt64 (ctx, &radix, res);
+		JS_ToInt64 (ctx, &radix, res);
 		return (ut64)radix;
 	}
 	return addr;
