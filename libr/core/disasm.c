@@ -4964,6 +4964,7 @@ static void ds_print_esil_anal_init(RDisasmState *ds) {
 	if (!pc) {
 		return;
 	}
+	r_esil_setup (core->anal->esil, core->anal, 0, 0, 1);
 	ds->esil_old_pc = r_reg_getv (core->anal->reg, pc);
 	if (!ds->esil_old_pc || ds->esil_old_pc == UT64_MAX) {
 		ds->esil_old_pc = core->offset;
@@ -4971,17 +4972,6 @@ static void ds_print_esil_anal_init(RDisasmState *ds) {
 	if (!ds->show_emu) {
 		// XXX. stackptr not computed without asm.emu, when its not required
 		return;
-	}
-	if (!core->anal->esil) {
-		int iotrap = r_config_get_i (core->config, "esil.iotrap");
-		int esd = r_config_get_i (core->config, "esil.stack.depth");
-		unsigned int addrsize = r_config_get_i (core->config, "esil.addr.size");
-
-		if (!(core->anal->esil = r_esil_new (esd, iotrap, addrsize))) {
-			R_FREE (ds->esil_regstate);
-			return;
-		}
-		r_esil_setup (core->anal->esil, core->anal, 0, 0, 1);
 	}
 	core->anal->esil->user = ds;
 	free (ds->esil_regstate);

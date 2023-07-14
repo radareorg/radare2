@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2022 - pancake */
+/* radare - LGPL - Copyright 2009-2023 - pancake */
 
 #define R_LOG_ORIGIN "cfile"
 #include <r_core.h>
@@ -867,6 +867,7 @@ R_API RIODesc *r_core_file_open_many(RCore *r, const char *file, int perm, ut64 
 				const int pillow = 0x4000;
 				loadaddr += sz + rest + pillow;
 			}
+			r_esil_setup (r->anal->esil, r->anal, 0, 0, false);
 		}
 	}
 	return first;
@@ -921,6 +922,7 @@ R_API RIODesc *r_core_file_open(RCore *r, const char *file, int flags, ut64 load
 
 	r_io_use_fd (r->io, fd->fd);
 
+	r_esil_setup (r->anal->esil, r->anal, 0, 0, false);
 	if (r_config_get_b (r->config, "cfg.debug")) {
 		bool swstep = true;
 		if (r->dbg->current && r->dbg->current->plugin.canstep) {

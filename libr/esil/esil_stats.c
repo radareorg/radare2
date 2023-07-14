@@ -38,7 +38,7 @@ static bool hook_NOP_mem_write(REsil *esil, ut64 addr, const ut8 *buf, int len) 
 	return true;
 }
 
-R_API void r_esil_mem_ro(REsil *esil, int mem_readonly) {
+R_API void r_esil_mem_ro(REsil *esil, bool mem_readonly) {
 	if (mem_readonly) {
 		esil->cb.hook_mem_write = hook_NOP_mem_write;
 	} else {
@@ -46,7 +46,7 @@ R_API void r_esil_mem_ro(REsil *esil, int mem_readonly) {
 	}
 }
 
-R_API void r_esil_stats(REsil *esil, int enable) {
+R_API void r_esil_stats(REsil *esil, bool enable) {
 	if (enable) {
 		if (esil->stats) {
 			sdb_reset (esil->stats);

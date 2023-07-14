@@ -2209,11 +2209,15 @@ static inline REsil *esil_new_setup(RCore *core) {
 	unsigned int addrsize = r_config_get_i (core->config, "esil.addr.size");
 	REsil *esil = r_esil_new (stacksize, iotrap, addrsize);
 	if (esil) {
-		int romem = r_config_get_i (core->config, "esil.romem");
-		int stats = r_config_get_i (core->config, "esil.stats");
+		esil->anal = core->anal;
+		bool romem = r_config_get_b (core->config, "esil.romem");
+		bool stats = r_config_get_b (core->config, "esil.stats");
 		bool nonull = r_config_get_b (core->config, "esil.nonull");
 		r_esil_setup (esil, core->anal, romem, stats, nonull);
 		esil->verbose = r_config_get_i (core->config, "esil.verbose");
+		esil->cmd = r_core_esil_cmd;
+		esil->cmd_trap = strdup (r_config_get (core->config, "cmd.esil.trap"));
+
 	}
 	return esil;
 }
@@ -5907,50 +5911,6 @@ void cmd_anal_reg(RCore *core, const char *str) {
 	}
 }
 
-static ut64 initializeEsil(RCore *core) {
-	int exectrap = r_config_get_i (core->config, "esil.exectrap");
-	REsil *esil = esil_new_setup (core);
-	if (esil) {
-		r_esil_free (core->anal->esil);
-		core->anal->esil = esil;
-	} else {
-		return UT64_MAX;
-	}
-	ut64 addr;
-	esil->cmd = r_core_esil_cmd;
-	{
-		const char *cmd_esil_step = r_config_get (core->config, "cmd.esil.step");
-		if (cmd_esil_step && *cmd_esil_step) {
-			esil->cmd_step = strdup (cmd_esil_step);
-		}
-		const char *cmd_esil_step_out = r_config_get (core->config, "cmd.esil.stepout");
-		if (cmd_esil_step_out && *cmd_esil_step_out) {
-			esil->cmd_step_out = strdup (cmd_esil_step_out);
-		}
-		{
-			const char *s = r_config_get (core->config, "cmd.esil.intr");
-			if (s) {
-				char *my = strdup (s);
-				if (my) {
-					r_config_set (core->config, "cmd.esil.intr", my);
-					free (my);
-				}
-			}
-		}
-	}
-	esil->exectrap = exectrap;
-	const RList *entries = r_bin_get_entries (core->bin);
-	if (entries && !r_list_empty (entries)) {
-		RBinAddr *entry = (RBinAddr *)r_list_get_n (entries, 0);
-		RBinInfo *info = r_bin_get_info (core->bin);
-		addr = info->has_va? entry->vaddr: entry->paddr;
-	} else {
-		addr = core->offset;
-	}
-	// set memory read only
-	return addr;
-}
-
 R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr, ut64 *prev_addr, bool stepOver) {
 #define return_tail(x) { tail_return_value = x; goto tail_return; }
 	int tail_return_value = 0;
@@ -5958,13 +5918,13 @@ R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr,
 	ut8 code[32];
 	RAnalOp op = {0};
 	REsil *esil = core->anal->esil;
+	esil->trap = 0;
 	const char *_pcname = r_reg_get_name (core->anal->reg, R_REG_NAME_PC);
 	if (R_STR_ISEMPTY (_pcname)) {
 		R_LOG_ERROR ("Cannot find =PC in current reg profile");
 		return 0;
 	}
 	char *pcname = strdup (_pcname);
-	ut64 addr = r_reg_getv (core->anal->reg, pcname);
 	const bool r2wars = r_config_get_b (core->config, "cfg.r2wars");
 	const bool breakoninvalid = r_config_get_b (core->config, "esil.breakoninvalid");
 	const int esiltimeout = r_config_get_i (core->config, "esil.timeout");
@@ -5974,13 +5934,25 @@ R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr,
 		startTime = r_time_now_mono ();
 	}
 	r_cons_break_push (NULL, NULL);
+	ut64 addr = -1;
+	ut64 oaddr = -1;
+	int minopsz = r_arch_info (core->anal->arch, R_ARCH_INFO_MIN_OP_SIZE);
+	ut64 naddr = addr + minopsz;
+	bool notfirst = false;
 	for (; true; r_anal_op_fini (&op)) {
+		oaddr = addr;
+		addr = r_reg_getv (core->anal->reg, "PC");
+		if (notfirst && addr == oaddr) {
+			r_reg_setv (core->anal->reg, "PC", naddr);
+			addr = naddr;
+			// break;
+		}
 		R_LOG_DEBUG ("esil step at 0x%08"PFMT64x, addr);
 		if (r_cons_is_breaked ()) {
 			R_LOG_INFO ("[+] ESIL emulation interrupted at 0x%08" PFMT64x, addr);
 			return_tail (0);
 		}
-		//Break if we have exceeded esil.timeout
+		// Break if we have exceeded esil.timeout
 		if (esiltimeout > 0) {
 			ut64 elapsedTime = r_time_now_mono () - startTime;
 			elapsedTime >>= 20;
@@ -5989,34 +5961,17 @@ R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr,
 				return_tail (0);
 			}
 		}
-		if (!esil) {
-			addr = initializeEsil (core);
-			esil = core->anal->esil;
-			if (!esil) {
-				return_tail (0);
-			}
-		} else {
-			esil->trap = 0;
-			addr = r_reg_getv (core->anal->reg, pcname);
-		}
 		if (prev_addr) {
 			*prev_addr = addr;
 		}
-		if (esil->exectrap) {
-			if (!r_io_is_valid_offset (core->io, addr, R_PERM_X)) {
-				esil->trap = R_ANAL_TRAP_EXEC_ERR;
-				esil->trap_code = addr;
-				R_LOG_INFO ("[ESIL] Trap, trying to execute on non-executable memory");
-				return_tail (1);
-			}
-		} else {
-			if (!r_io_is_valid_offset (core->io, addr, 0)) {
-				esil->trap = R_ANAL_TRAP_EXEC_ERR;
-				esil->trap_code = addr;
-				R_LOG_INFO ("[ESIL] Trap, trying to execute on non-executable memory");
-				return_tail (1);
-			}
+		const int perm = esil->exectrap ? R_PERM_X: 0;
+		if (!r_io_is_valid_offset (core->io, addr, perm)) {
+			esil->trap = R_ANAL_TRAP_EXEC_ERR;
+			esil->trap_code = addr;
+			R_LOG_INFO ("[ESIL] Trap, trying to execute on non-executable memory");
+			return_tail (1);
 		}
+		// eprintf ("addr %llx\n", addr);
 		r_asm_set_pc (core->rasm, addr);
 		// run esil pin command here
 		const char *pincmd = r_anal_pin_call (core->anal, addr);
@@ -6024,7 +5979,7 @@ R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr,
 			r_core_cmd0 (core, pincmd);
 			ut64 pc = r_reg_getv (core->anal->reg, pcname);
 			if (addr != pc) {
-		eprintf ("pincmd fail\n");
+				R_LOG_ERROR ("pincmd fail");
 				return_tail (1);
 			}
 		}
@@ -6043,10 +5998,12 @@ R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr,
 		(void) r_io_read_at (core->io, addr, code, sizeof (code));
 		// TODO: sometimes this is dupe
 		ret = r_anal_op (core->anal, &op, addr, code, sizeof (code), R_ARCH_OP_MASK_ESIL | R_ARCH_OP_MASK_HINT);
+		naddr = addr + op.size;
 		// if type is JMP then we execute the next N instructions
 		// update the esil pointer because RAnal.op() can change it
 		esil = core->anal->esil;
 		if (op.size < 1 || ret < 1) {
+			// eprintf ("esil trap\n");
 			if (esil->cmd && esil->cmd_trap) {
 				esil->cmd (esil, esil->cmd_trap, addr, R_ANAL_TRAP_INVALID);
 			}
@@ -6054,7 +6011,9 @@ R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr,
 				R_LOG_INFO ("Stopped execution in an invalid instruction (see e??esil.breakoninvalid)");
 				return_tail (0);
 			}
-			op.size = 1; // avoid inverted stepping
+			if (op.size < 1) {
+				op.size = 1; // avoid inverted stepping
+			}
 		}
 		if (stepOver) {
 			switch (op.type) {
@@ -6074,7 +6033,6 @@ R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr,
 					r_reg_setv (core->anal->reg, pcname, op.addr + op.size);
 					r_reg_setv (core->dbg->reg, pcname, op.addr + op.size);
 				}
-		eprintf ("blaaa\n");
 				return_tail (1);
 			}
 		}
@@ -6440,24 +6398,6 @@ static void cmd_esil_mem(RCore *core, const char *input) {
 	RFlagItem *fi;
 	char uri[32];
 	char nomalloc[256];
-	if (!esil) {
-		esil = esil_new_setup (core);
-		if (!esil) {
-			return;
-		}
-		r_esil_free (core->anal->esil);
-		core->anal->esil = esil;
-		{
-			const char *s = r_config_get (core->config, "cmd.esil.intr");
-			if (s) {
-				char *my = strdup (s);
-				if (my) {
-					r_config_set (core->config, "cmd.esil.intr", my);
-					free (my);
-				}
-			}
-		}
-	}
 	if (*input == '?') {
 		r_core_cmd_help (core, help_msg_aeim);
 		return;
@@ -6576,37 +6516,6 @@ static void cmd_esil_mem(RCore *core, const char *input) {
 	initialize_stack (core, addr, size);
 	r_core_seek (core, curoff, false);
 }
-
-#if 0
-static ut64 opc = UT64_MAX;
-static ut8 *regstate = NULL;
-
-static void esil_init(RCore *core) {
-	const char *pc = r_reg_get_name (core->anal->reg, R_REG_NAME_PC);
-	int nonull = r_config_get_i (core->config, "esil.nonull");
-	opc = r_reg_getv (core->anal->reg, pc);
-	if (!opc || opc==UT64_MAX) {
-		opc = core->offset;
-	}
-	if (!core->anal->esil) {
-		core->anal->esil = esil_new_from_core (core);
-		if (!core->anal->esil) {
-			R_FREE (regstate);
-			return;
-		}
-		r_esil_setup (core->anal->esil, core->anal, 0, 0, nonull);
-	}
-	free (regstate);
-	regstate = r_reg_arena_peek (core->anal->reg);
-}
-
-static void esil_fini(RCore *core) {
-	const char *pc = r_reg_get_name (core->anal->reg, R_REG_NAME_PC);
-	r_reg_arena_poke (core->anal->reg, regstate);
-	r_reg_setv (core->anal->reg, pc, opc);
-	R_FREE (regstate);
-}
-#endif
 
 typedef struct {
 	RList *regs;
@@ -6996,10 +6905,12 @@ static void cmd_aespc(RCore *core, ut64 addr, ut64 until_addr, int ninstr) {
 	// eprintf ("   aesB %llx %llx %d\n", addr, until_addr, off); // 0x%08llx %d  %s\n", aop.addr, ret, aop.mnemonic);
 	if (!esil) {
 		R_LOG_DEBUG ("cmd_espc: creating new esil instance");
-		core->anal->esil = esil = esil_new_setup (core);
+		esil = esil_new_setup (core);
 		if (!esil) {
 			return;
 		}
+		r_esil_free (core->anal->esil);
+		core->anal->esil = esil;
 	}
 	buf = malloc (bsize);
 	if (!buf) {
@@ -7559,24 +7470,13 @@ static void cmd_anal_esil(RCore *core, const char *input, bool verbose) {
 		break;
 	case '*':
 		// XXX: this is wip, not working atm
-		if (core->anal->esil) {
-			r_cons_printf ("trap: %d\n", core->anal->esil->trap);
-			r_cons_printf ("trap-code: %d\n", core->anal->esil->trap_code);
-		} else {
-			R_LOG_WARN ("esil vm is not initialized. Please run `aei`");
-		}
+		r_cons_printf ("trap: %d\n", core->anal->esil->trap);
+		r_cons_printf ("trap-code: %d\n", core->anal->esil->trap_code);
 		break;
 	case ' ':
 	case 'q':
-		//r_esil_eval (core->anal, input + 1);
-		if (!esil) {
-			core->anal->esil = esil = esil_new_setup (core);
-			if (!esil) {
-				return;
-			}
-		}
 		r_esil_set_pc (esil, core->offset);
-		r_esil_parse (esil, input + 1);
+		r_esil_parse (esil, r_str_trim_head_ro (input + 1));
 		if (verbose && *input != 'q') {
 			r_esil_dumpstack (esil);
 		}
@@ -7852,20 +7752,13 @@ static void cmd_anal_esil(RCore *core, const char *input, bool verbose) {
 			cmd_esil_mem (core, "?");
 			break;
 		case '-':
-			if (esil) {
-				sdb_reset (esil->stats);
-			}
-			r_esil_free (esil);
-			core->anal->esil = NULL;
+			r_esil_reset (esil);
 			break;
 		case 0: // "aei"
-			r_esil_free (esil);
-			esil = core->anal->esil = esil_new_setup (core);
-			if (!esil) {
-				return;
-			}
-			// reinitialize
-			{
+		//	esil = core->anal->esil = esil_new_setup (core);
+		//	esil = core->anal->esil = esil_new_setup (core);
+			if (esil) {
+				r_esil_reset (esil);
 				const char *pc = r_reg_get_name (core->anal->reg, R_REG_NAME_PC);
 				if (pc && r_reg_getv (core->anal->reg, pc) == 0LL) {
 					reg_name_roll_set (core, "PC", core->offset);

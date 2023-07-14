@@ -1,0 +1,10 @@
+NAME=cmd.esil.trap
+FILE=-
+CMDS=<<EOF
+e cmd.esil.trap=?e hello world
+ae 2,1,TRAP
+EOF
+EXPECT=<<EOF
+hello world 1 2
+EOF
+RUN
