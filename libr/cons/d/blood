@@ -1,0 +1,65 @@
+ecd
+ec b0x00 rgb:d00
+ec b0x7f rgb:900
+ec b0xff rgb:500
+ec args rgb:f00
+ec bin rgb:f00
+ec btext rgb:f00
+ec call rgb:faa
+ec cjmp rgb:faa
+ec ujmp rgb:faa
+ec jmp rgb:faa
+ec ret rgb:faa
+ec cmp rgb:a00
+ec comment rgb:700
+ec usrcmt rgb:f00
+ec reg rgb:f00
+ec creg rgb:f00
+ec flag rgb:f00
+ec fline rgb:a00
+ec flow rgb:f00
+ec flow2 rgb:f00
+ec fname rgb:f00
+ec help rgb:f00
+ec input rgb:f00
+ec label rgb:f00
+ec math rgb:700
+ec mov rgb:d00
+ec nop rgb:300
+ec num rgb:f00
+ec offset rgb:500
+ec other rgb:900
+ec pop rgb:900
+ec prompt rgb:f00
+ec push rgb:d00
+ec swi rgb:f00
+ec trap rgb:f00
+ec ucall rgb:f00 rgb:300
+ec graph.true rgb:f00
+ec graph.false rgb:700
+ec graph.trufae rgb:d00
+ec graph.current rgb:f00
+ec graph.traced rgb:f00
+ec graph.box rgb:f00
+ec graph.box2 rgb:f00
+ec graph.box3 rgb:000
+ec graph.box4 rgb:000
+ec gui.cflow rgb:f00
+ec gui.dataoffset rgb:f00
+ec crypto rgb:f00
+ec floc rgb:700
+ec linehl rgb:111
+
+ec var rgb:f00
+ec var.type rgb:700
+ec var.addr rgb:500
+ec var.name rgb:f00
+
+ec ai.read rgb:eee
+ec ai.write rgb:d00
+ec ai.exec rgb:f00
+ec ai.seq rgb:f00
+ec ai.ascii rgb:f00
+
+ec widget.bg rgb:f00 rgb:300
+ec widget.sel rgb:300 rgb:f00
