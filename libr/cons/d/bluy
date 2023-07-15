@@ -24,7 +24,7 @@ ec pop rgb:09f
 ec crypto rgb:fff
 ec jmp rgb:e71
 ec cjmp rgb:e71
-ec call rgb:fc1 rgb:333
+ec call magenta
 ec nop rgb:7c5
 ec ret rgb:e34
 ec trap rgb:e34
