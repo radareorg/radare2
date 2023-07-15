@@ -484,7 +484,7 @@ pd 3 @ 0x3ec1
 EOF
 EXPECT=<<EOF
 |           0x00003ec1      add rax, rbx
-|           ;-- switch
+|           ;-- switch:
 |           0x00003ec4      jmp rax                                    ; switch table (275 cases) at 0x172d8
 |           ;-- case 110:                                              ; from 0x00003ec4
 |           ; CODE XREF from main @ 0x3ec4(x)
