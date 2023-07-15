@@ -127,6 +127,7 @@ typedef struct r_disasm_state_t {
 	int linesout;
 	int adistrick;
 	bool asm_meta;
+	bool flags_prefix;
 	bool asm_xrefs_code;
 	int asm_demangle;
 	bool asm_instr;
@@ -849,6 +850,7 @@ static RDisasmState *ds_init(RCore *core) {
 	ds->show_marks = r_config_get_i (core->config, "asm.marks");
 	ds->show_noisy_comments = r_config_get_i (core->config, "asm.noisy");
 	ds->pre = DS_PRE_NONE;
+	ds->flags_prefix = r_config_get_b (ds->core->config, "asm.flags.prefix");
 	ds->ocomment = NULL;
 	ds->linesopts = 0;
 	ds->lastfail = 0;
@@ -927,7 +929,7 @@ static void ds_reflines_init(RDisasmState *ds) {
 	RAnal *anal = ds->core->anal;
 
 	lastaddr = UT64_MAX;
-	int limit = r_config_get_i (ds->core->config, "asm.lines.limit");
+	st64 limit = r_config_get_i (ds->core->config, "asm.lines.limit");
 	const bool inlimit = (limit > 0 && ds->len < limit);
 
 	if (inlimit && (ds->show_lines_bb || ds->pj)) {
@@ -2553,23 +2555,29 @@ static void ds_show_flags(RDisasmState *ds, bool overlapped) {
 
 		if (ds->asm_demangle && flag->realname) {
 			if (!strncmp (flag->name, "switch.", 7)) {
-				r_cons_printf (FLAG_PREFIX"switch");
+				if (ds->flags_prefix) {
+					r_cons_printf (FLAG_PREFIX);
+				}
+				r_cons_printf ("switch:");
 			} else if (!strncmp (flag->name, "case.", 5)) {
 				if (nth > 0) {
 					__preline_flag (ds, flag);
 				}
+				if (ds->flags_prefix) {
+					r_cons_printf (FLAG_PREFIX);
+				}
 				if (!strncmp (flag->name + 5, "default", 7)) {
-					r_cons_printf (FLAG_PREFIX "default:"); // %s:", flag->name);
+					r_cons_printf ("default:"); // %s:", flag->name);
 					r_str_ncpy (addr, flag->name + 5 + strlen ("default."), sizeof (addr));
 					nth = 0;
 				} else if (case_prev != case_start) {
-					r_cons_printf (FLAG_PREFIX "case %d...%d:", case_start, case_prev);
+					r_cons_printf ("case %d...%d:", case_start, case_prev);
 					if (iter != uniqlist->head && iter != uniqlist->tail) {
 						iter = iter->p;
 					}
 					case_start = case_current;
 				} else {
-					r_cons_printf (FLAG_PREFIX "case %d:", case_prev);
+					r_cons_printf ("case %d:", case_prev);
 					case_start = -1;
 				}
 				case_prev = case_current;
@@ -2589,7 +2597,9 @@ static void ds_show_flags(RDisasmState *ds, bool overlapped) {
 				if (name) {
 					r_str_ansi_filter (name, NULL, NULL, -1);
 					if (!ds->flags_inline || nth == 0) {
-						r_cons_printf (FLAG_PREFIX);
+						if (ds->flags_prefix) {
+							r_cons_printf (FLAG_PREFIX);
+						}
 						if (overlapped) {
 							r_cons_printf ("%s(0x%08"PFMT64x")%s ",
 									ds->show_color ? ds->color_offset : "", ds->at,

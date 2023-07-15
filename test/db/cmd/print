@@ -147,7 +147,7 @@ EXPECT=<<EOF
 0x10000116e call sym.func.100004401
 0x100001179 str.1_ABCFGHLOPRSTUWabcdefghiklmnopqrstuvwx
 0x100001186 call sym.imp.getopt
-;-- switch
+;-- switch:
 0x100001233 str.CLICOLOR
 0x100001246 call sym.imp.setenv
 0x100001253 str.bin_ls
