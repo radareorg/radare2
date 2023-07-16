@@ -5570,6 +5570,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 	}
 	esilbreak_last_read = UT64_MAX;
 	r_io_read_at (core->io, start, buf, iend + 1);
+#if 0
 	if (!ESIL) {
 		r_core_cmd_call (core, "aei");
 		ESIL = core->anal->esil;
@@ -5580,6 +5581,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 		r_core_cmd_call (core, "aeim");
 		ESIL = core->anal->esil;
 	}
+#endif
 	const char *kspname = r_reg_get_name (core->anal->reg, R_REG_NAME_SP);
 	if (R_STR_ISEMPTY (kspname)) {
 		R_LOG_ERROR ("No =SP defined in the reg profile");

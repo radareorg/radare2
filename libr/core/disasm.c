@@ -7350,12 +7350,14 @@ R_API int r_core_disasm_pde(RCore *core, int nb_opcodes, int mode) {
 		}
 		pj_a (pj);
 	}
+#if 0
 	if (!core->anal->esil) {
 		r_core_cmd_call (core, "aei");
 		if (!r_config_get_b (core->config, "cfg.debug")) {
 			r_core_cmd_call (core, "aeim");
 		}
 	}
+#endif
 	REsil *esil = core->anal->esil;
 	r_reg_arena_push (reg);
 	RConfigHold *chold = r_config_hold_new (core->config);
@@ -7374,6 +7376,16 @@ R_API int r_core_disasm_pde(RCore *core, int nb_opcodes, int mode) {
 	ut8 *buf = malloc (buf_sz);
 	if (!buf) {
 		goto leave;
+	}
+	const ut64 op_addr = r_reg_get_value (reg, pc);
+	if (op_addr == 0) {
+		const RList *entries = r_bin_get_entries (core->bin);
+		if (entries && !r_list_empty (entries)) {
+			RBinAddr *entry = (RBinAddr *)r_list_get_n (entries, 0);
+			RBinInfo *info = r_bin_get_info (core->bin);
+			block_start = info->has_va? entry->vaddr: entry->paddr;
+			r_reg_set_value (reg, pc, block_start);
+		}
 	}
 	for (i = 0; i < nb_opcodes; i++) {
 		const ut64 op_addr = r_reg_get_value (reg, pc);
