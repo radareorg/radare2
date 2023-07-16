@@ -645,9 +645,13 @@ static int r2pm_clone(const char *pkg) {
 		if (git_source) {
 			char *srcdir = r2pm_gitdir ();
 			R_LOG_INFO ("Going back to %s", r2pm_time);
-			r_sys_cmdf ("cd %s/%s && git reset --hard && git pull && git checkout @{%s}",
+			int rc = r_sys_cmdf ("cd %s/%s && git reset --hard && git pull --tags && git reset --hard %s",
 				srcdir, pkg, r2pm_time);
 			free (srcdir);
+			if (rc != 0) {
+				R_LOG_ERROR ("Unable to travel back in time");
+				return 1;
+			}
 		} else {
 			R_LOG_WARN ("Cannot go back in time with tarball packages");
 		}
