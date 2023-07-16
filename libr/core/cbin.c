@@ -3640,7 +3640,9 @@ static int bin_classes(RCore *r, PJ *pj, int mode) {
 		} else if (IS_MODE_SIMPLEST (mode)) {
 			r_cons_printf ("%s\n", c->name);
 		} else if (IS_MODE_SIMPLE (mode)) {
-			char *supers = r_str_list_join (c->super, ", ");
+			char *supers = c->super
+				? r_str_list_join (c->super, ", ")
+				: strdup ("");
 			r_cons_printf ("0x%08"PFMT64x" [0x%08"PFMT64x" - 0x%08"PFMT64x"] %s %s%s%s\n",
 				c->addr, at_min, at_max, r_bin_lang_tostring (c->lang), c->name, c->super ? " " : "",
 				r_str_get (supers));
