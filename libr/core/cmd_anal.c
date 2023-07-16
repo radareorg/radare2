@@ -6065,7 +6065,8 @@ R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr,
 			} else if (R_STR_ISNOTEMPTY (e)) {
 				r_esil_parse (esil, e);
 				if (esil->trap) {
-					R_LOG_WARN ("ESIL TRAP ON %s at 0x%08"PFMT64x, e,addr );
+					R_LOG_WARN ("ESIL TRAP %d/%d ON %s at 0x%08"PFMT64x,
+							esil->trap, esil->trap_code, e, addr);
 					if (r_config_get_b (core->config, "esil.exectrap")) {
 						R_LOG_INFO ("ESIL TRAP ignored");
 						esil->trap = false;
@@ -6405,6 +6406,10 @@ static void cmd_esil_mem(RCore *core, const char *input) {
 		r_core_cmd_help (core, help_msg_aeim);
 		return;
 	}
+	if (r_config_get_b (core->config, "cfg.debug")) {
+		R_LOG_WARN ("When cfg.debug is set, I refuse to create a fake stack");
+		return;
+	}
 
 	if (input[0] == 'p') {
 		fi = r_flag_get (core->flags, "aeim.stack");
@@ -6462,7 +6467,7 @@ static void cmd_esil_mem(RCore *core, const char *input) {
 		name = r_str_newf ("mem.0x%" PFMT64x "_0x%x", addr, size);
 	}
 	if (*input == '-') {
-		if (esil->stack_fd > 2) {	//0, 1, 2 are reserved for stdio/stderr
+		if (esil->stack_fd > 2) { // 0, 1, 2 are reserved for stdio/stderr
 			r_io_fd_close (core->io, esil->stack_fd);
 			// no need to kill the maps, r_io_map_cleanup does that for us in the close
 			esil->stack_fd = 0;
