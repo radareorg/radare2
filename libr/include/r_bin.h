@@ -757,7 +757,6 @@ R_API RList *r_bin_file_get_trycatch(RBinFile *bf);
 R_API RList *r_bin_get_symbols(RBin *bin);
 R_API RVecRBinSymbol *r_bin_get_symbols_vec(RBin *bin);
 R_API RList *r_bin_reset_strings(RBin *bin);
-R_API bool r_bin_is_string(RBin *bin, ut64 va);
 R_API int r_bin_is_big_endian(RBin *bin);
 R_API int r_bin_is_static(RBin *bin);
 R_API ut64 r_bin_get_vaddr(RBin *bin, ut64 paddr, ut64 vaddr);

@@ -785,24 +785,6 @@ R_API RList *r_bin_get_strings(RBin *bin) {
 	return o ? o->strings : NULL;
 }
 
-// XXX R2_590 this is super slow - remove this function because is used 1 time and from core and we can use rflags for this
-R_API bool r_bin_is_string(RBin *bin, ut64 va) {
-	RBinString *string;
-	RListIter *iter;
-	RList *list = r_bin_get_strings (bin);
-	if (list) {
-		r_list_foreach (list, iter, string) {
-			if (string->vaddr == va) {
-				return true;
-			}
-			if (string->vaddr > va) {
-				return false;
-			}
-		}
-	}
-	return false;
-}
-
 // TODO: Deprecate because we must use the internal representation
 R_API RList *r_bin_get_symbols(RBin *bin) {
 	r_return_val_if_fail (bin, NULL);
