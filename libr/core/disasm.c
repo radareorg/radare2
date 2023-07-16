@@ -4964,6 +4964,7 @@ static void ds_print_esil_anal_init(RDisasmState *ds) {
 	if (!pc) {
 		return;
 	}
+	r_esil_setup (core->anal->esil, core->anal, 0, 0, 1);
 	ds->esil_old_pc = r_reg_getv (core->anal->reg, pc);
 	if (!ds->esil_old_pc || ds->esil_old_pc == UT64_MAX) {
 		ds->esil_old_pc = core->offset;
@@ -4971,17 +4972,6 @@ static void ds_print_esil_anal_init(RDisasmState *ds) {
 	if (!ds->show_emu) {
 		// XXX. stackptr not computed without asm.emu, when its not required
 		return;
-	}
-	if (!core->anal->esil) {
-		int iotrap = r_config_get_i (core->config, "esil.iotrap");
-		int esd = r_config_get_i (core->config, "esil.stack.depth");
-		unsigned int addrsize = r_config_get_i (core->config, "esil.addr.size");
-
-		if (!(core->anal->esil = r_esil_new (esd, iotrap, addrsize))) {
-			R_FREE (ds->esil_regstate);
-			return;
-		}
-		r_esil_setup (core->anal->esil, core->anal, 0, 0, 1);
 	}
 	core->anal->esil->user = ds;
 	free (ds->esil_regstate);
@@ -7344,6 +7334,7 @@ static bool read_ahead(RIO *io, ut8 **buf, size_t *buf_sz, ut64 address, size_t 
 }
 
 R_API int r_core_disasm_pde(RCore *core, int nb_opcodes, int mode) {
+	// R2R db/cmd/cmd_pde
 	if (nb_opcodes < 1) {
 		return 0;
 	}
@@ -7360,14 +7351,8 @@ R_API int r_core_disasm_pde(RCore *core, int nb_opcodes, int mode) {
 		}
 		pj_a (pj);
 	}
-	if (!core->anal->esil) {
-		r_core_cmd_call (core, "aei");
-		if (!r_config_get_b (core->config, "cfg.debug")) {
-			r_core_cmd_call (core, "aeim");
-		}
-	}
+	// R2_590 - maybe here r_core_cmd_call (core, "aeim");
 	REsil *esil = core->anal->esil;
-	r_reg_arena_push (reg);
 	RConfigHold *chold = r_config_hold_new (core->config);
 	r_config_hold (chold, "io.cache", "asm.lines", NULL);
 	r_config_set_b (core->config, "io.cache", true);
@@ -7381,7 +7366,19 @@ R_API int r_core_disasm_pde(RCore *core, int nb_opcodes, int mode) {
 	size_t buf_sz = 0x100, block_sz = 0, block_instr = 0;
 	ut64 block_start = r_reg_get_value (reg, pc);
 	size_t i = 0;
+	const ut64 op_addr = r_reg_get_value (reg, pc);
 	ut8 *buf = malloc (buf_sz);
+	if (op_addr == 0) {
+		const RList *entries = r_bin_get_entries (core->bin);
+		if (entries && !r_list_empty (entries)) {
+			RBinAddr *entry = (RBinAddr *)r_list_get_n (entries, 0);
+			RBinInfo *info = r_bin_get_info (core->bin);
+			block_start = info->has_va? entry->vaddr: entry->paddr;
+			r_reg_set_value (reg, pc, block_start);
+			r_core_cmd0 (core, ".dr*");
+		}
+	}
+	r_reg_arena_push (reg);
 	if (!buf) {
 		goto leave;
 	}

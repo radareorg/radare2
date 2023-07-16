@@ -785,7 +785,8 @@ R_API RList *r_bin_get_strings(RBin *bin) {
 	return o ? o->strings : NULL;
 }
 
-R_API int r_bin_is_string(RBin *bin, ut64 va) {
+// XXX R2_590 this is super slow - remove this function because is used 1 time and from core and we can use rflags for this
+R_API bool r_bin_is_string(RBin *bin, ut64 va) {
 	RBinString *string;
 	RListIter *iter;
 	RList *list = r_bin_get_strings (bin);

@@ -4,7 +4,6 @@ const ioqjsPlugin = {
 	desc: "Simple io plugin in javascript",
 	license: "MIT",
 	check: function (uri, perm) {
-		console.log("CHECK.JS");
 		return uri.startsWith("qjs://");
 	},
 	open: function (uri, perm) {

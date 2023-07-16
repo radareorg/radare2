@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2022 - pancake */
+/* radare - LGPL - Copyright 2009-2023 - pancake */
 
 #define R_LOG_ORIGIN "cfile"
 #include <r_core.h>
@@ -34,14 +34,18 @@ static bool its_a_mips(RCore *core) {
 }
 
 static void loadGP(RCore *core) {
+	// R2R db/cmd/cmd_eval
 	if (its_a_mips (core)) {
 		ut64 e0 = r_num_math (core->num, "entry0");
 		ut64 gp = r_num_math (core->num, "loc._gp");
 		if ((!gp || gp == UT64_MAX) && (e0 && e0 != UT64_MAX)) {
-			r_config_set (core->config, "anal.roregs", "zero");
-			r_core_cmd0 (core, "10aes@entry0");
-			r_config_set (core->config, "anal.roregs", "zero,gp");
+			r_core_cmd0 (core, "aeim; s entry0;dr PC=entry0");
+			r_config_set (core->config, "anal.roregs", "zero"); // gp is writable here
+			r_core_cmd0 (core, "10aes");
 			gp = r_reg_getv (core->anal->reg, "gp");
+			r_core_cmd0 (core, "dr0;aeim");
+			r_reg_setv (core->anal->reg, "gp", gp);
+			r_config_set (core->config, "anal.roregs", "zero,gp");
 		}
 		R_LOG_DEBUG ("[mips] gp: 0x%08"PFMT64x, gp);
 		r_config_set_i (core->config, "anal.gp", gp);
@@ -867,6 +871,7 @@ R_API RIODesc *r_core_file_open_many(RCore *r, const char *file, int perm, ut64 
 				const int pillow = 0x4000;
 				loadaddr += sz + rest + pillow;
 			}
+			r_esil_setup (r->anal->esil, r->anal, 0, 0, false);
 		}
 	}
 	return first;
@@ -921,6 +926,7 @@ R_API RIODesc *r_core_file_open(RCore *r, const char *file, int flags, ut64 load
 
 	r_io_use_fd (r->io, fd->fd);
 
+	r_esil_setup (r->anal->esil, r->anal, 0, 0, false);
 	if (r_config_get_b (r->config, "cfg.debug")) {
 		bool swstep = true;
 		if (r->dbg->current && r->dbg->current->plugin.canstep) {

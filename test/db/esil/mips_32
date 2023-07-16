@@ -1748,6 +1748,7 @@ CMDS=<<EOF
 e io.va=true
 e asm.arch=mips
 e asm.bits=32
+aeim
 ar > /dev/null
 ar v0=8
 ar a0=0x00400b48

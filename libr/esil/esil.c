@@ -113,6 +113,9 @@ R_API REsil *r_esil_new(int stacksize, int iotrap, unsigned int addrsize) {
 	r_esil_plugins_init (esil);
 	esil->addrmask = genmask (addrsize - 1);
 	esil->trace = r_esil_trace_new (esil);
+	int stats = 1;
+	r_esil_stats (esil, stats);
+	r_esil_setup_ops (esil);
 	return esil;
 }
 
@@ -149,22 +152,11 @@ R_API void r_esil_del_op(REsil *esil, const char *op) {
 
 static bool r_esil_fire_trap(REsil *esil, int trap_type, int trap_code) {
 	r_return_val_if_fail (esil, false);
-	if (esil->cmd) {
+	if (esil->cmd && R_STR_ISNOTEMPTY (esil->cmd_trap)) {
 		if (esil->cmd (esil, esil->cmd_trap, trap_type, trap_code)) {
 			return true;
 		}
 	}
-#if 0
-	/// XXX
-	if (esil->anal) {
-		RAnalPlugin *ap = esil->anal->cur;
-		if (ap && ap->esil_trap) {
-			if (ap->esil_trap (esil, trap_type, trap_code)) {
-				return true;
-			}
-		}
-	}
-#endif
 #if 0
 	REsilTrapCB icb;
 	icb = (REsilTrapCB)sdb_ptr_get (esil->traps, i, 0);
@@ -190,7 +182,7 @@ R_API void r_esil_free(REsil *esil) {
 		RArchPluginEsilCallback esil_cb = R_UNWRAP3 (as, plugin, esilcb);
 		if (esil_cb) {
 			if (!esil_cb (as, R_ARCH_ESIL_FINI)) {
-				R_LOG_WARN ("Failed to properly cleanup esil for arch plugin");
+				R_LOG_DEBUG ("Failed to properly cleanup esil for arch plugin");
 			}
 		}
 	}
@@ -3989,7 +3981,7 @@ R_API void r_esil_setup_ops(REsil *esil) {
 }
 
 /* register callbacks using this anal module. */
-R_API bool r_esil_setup(REsil *esil, RAnal *anal, int romem, int stats, int nonull) {
+R_API bool r_esil_setup(REsil *esil, RAnal *anal, bool romem, bool stats, bool nonull) {
 	r_return_val_if_fail (esil, false);
 	//esil->debug = 0;
 	esil->anal = anal;
@@ -4026,9 +4018,10 @@ R_API bool r_esil_setup(REsil *esil, RAnal *anal, int romem, int stats, int nonu
 		}
 	}
 	return true;
-#if 0
-	// ESIL from arch
-	return (anal->cur && anal->cur->esil_init)
-		? anal->cur->esil_init (esil): true;
-#endif
+}
+
+R_API void r_esil_reset(REsil *esil) {
+	esil->trap = 0;
+	r_return_if_fail (esil);
+	sdb_reset (esil->stats);
 }

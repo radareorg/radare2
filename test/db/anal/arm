@@ -940,6 +940,8 @@ pd 9 @ main
 EOF
 EXPECT=<<EOF
             ;-- main:
+            ;-- pc:
+            ;-- r15:
             0x0000050c      80b5           push {r7, lr}
             0x0000050e      00af           add r7, sp, 0
             0x00000510      034b           ldr r3, [0x00000520]        ; [0x520:4]=94

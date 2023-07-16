@@ -274,8 +274,9 @@ typedef struct r_esil_active_plugin_t {
 } REsilActivePlugin;
 
 R_API REsil *r_esil_new(int stacksize, int iotrap, unsigned int addrsize);
+R_API void r_esil_reset(REsil *esil);
 R_API void r_esil_set_pc(REsil *esil, ut64 addr);
-R_API bool r_esil_setup(REsil *esil, struct r_anal_t *anal, int romem, int stats, int nonull);
+R_API bool r_esil_setup(REsil *esil, struct r_anal_t *anal, bool romem, bool stats, bool nonull);
 R_API void r_esil_setup_macros(REsil *esil);
 R_API void r_esil_setup_ops(REsil *esil);
 R_API void r_esil_free(REsil *esil);
@@ -330,8 +331,8 @@ R_API bool r_esil_plugin_remove(REsil *esil, REsilPlugin *plugin);
 R_API bool r_esil_plugin_activate(REsil *esil, const char *name);
 R_API void r_esil_plugin_deactivate(REsil *esil, const char *name);
 
-R_API void r_esil_mem_ro(REsil *esil, int mem_readonly);
-R_API void r_esil_stats(REsil *esil, int enable);
+R_API void r_esil_mem_ro(REsil *esil, bool mem_readonly);
+R_API void r_esil_stats(REsil *esil, bool enable);
 
 /* trace */
 R_API REsilTrace *r_esil_trace_new(REsil *esil);

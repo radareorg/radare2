@@ -452,6 +452,7 @@ CMDS=<<EOF
 e asm.flags=false
 e asm.comments=false
 e anal.vars.stackname = true
+aeim
 wx 80b483b000af78600b467b8013467b707b78002b03d07a887b689a6103e07b881a047b689a6100bf0c37bd465df8047b7047
 af
 aaef

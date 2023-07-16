@@ -5,9 +5,7 @@
 #define LOOP_MAX 10
 
 static bool anal_emul_init(RCore *core, RConfigHold *hc, RDebugTrace **dt, REsilTrace **et) {
-	if (!core->anal->esil) {
-		return false;
-	}
+	r_return_val_if_fail (core && core->anal && core->anal->esil, false);
 	*dt = core->dbg->trace;
 	*et = core->anal->esil->trace;
 	core->dbg->trace = r_debug_trace_new ();
@@ -456,55 +454,6 @@ static int bb_cmpaddr(const void *_a, const void *_b) {
 	return a->addr > b->addr ? 1 : (a->addr < b->addr ? -1 : 0);
 }
 
-#define SLOW_STEP 1
-static bool fast_step(RCore *core, RAnalOp *aop) {
-#if SLOW_STEP
-	return r_core_esil_step (core, UT64_MAX, NULL, NULL, false);
-#else
-	REsil *esil = core->anal->esil;
-	const char *e = R_STRBUF_SAFEGET (&aop->esil);
-	if (R_STR_ISEMPTY (e)) {
-		return false;
-	}
-	if (!esil) {
-		r_core_cmd_call (core, "aei");
-		// addr = initializeEsil (core);
-		esil = core->anal->esil;
-		if (!esil) {
-			return false;
-		}
-	} else {
-		esil->trap = 0;
-		//eprintf ("PC=0x%"PFMT64x"\n", (ut64)addr);
-	}
-	// const char *name = r_reg_get_name (core->anal->reg, R_REG_NAME_PC);
-	// ut64 addr = r_reg_getv (core->anal->reg, name);
-	int ret = (aop->type == R_ANAL_OP_TYPE_ILL) ? -1: aop->size;
-	// TODO: sometimes this is dupe
-	// if type is JMP then we execute the next N instructions
-	// update the esil pointer because RAnal.op() can change it
-	esil = core->anal->esil;
-	if (aop->size < 1 || ret < 1) {
-		return false;
-	}
-	// r_esil_parse (esil, e);
-#if 1
-	RReg *reg = core->dbg->reg;
-	core->dbg->reg = core->anal->reg;
-	r_esil_set_pc (esil, aop->addr);
-	r_debug_trace_op (core->dbg, aop); // calls esil.parse() internally
-	core->dbg->reg = reg;
-#else
-	r_debug_trace_op (core->dbg, aop); // calls esil.parse() internally
-#endif
-	// select next instruction
-	const char *pcname = r_reg_get_name (core->anal->reg, R_REG_NAME_PC);
-	r_reg_setv (core->anal->reg, pcname, aop->addr + aop->size);
-	r_esil_stack_free (esil);
-	return true;
-#endif
-}
-
 R_API void r_core_anal_type_match(RCore *core, RAnalFunction *fcn) {
 	const int op_tions = R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_VAL | R_ARCH_OP_MASK_ESIL | R_ARCH_OP_MASK_HINT;
 	RAnalBlock *bb;
@@ -513,11 +462,6 @@ R_API void r_core_anal_type_match(RCore *core, RAnalFunction *fcn) {
 	bool resolved = false;
 
 	r_return_if_fail (core && core->anal && fcn);
-
-	if (!core->anal->esil) {
-		R_LOG_WARN ("Please run aeim");
-		return;
-	}
 
 	RAnal *anal = core->anal;
 	Sdb *TDB = anal->sdb_types;
@@ -629,7 +573,7 @@ repeat:
 				// just analyze statically the instruction if its a call, dont emulate it
 				r_reg_setv (core->dbg->reg, pc, addr + ret);
 			} else {
-				fast_step (core, &aop);
+				r_core_esil_step (core, UT64_MAX, NULL, NULL, false);
 			}
 
 			// maybe the basic block is gone after the step...
