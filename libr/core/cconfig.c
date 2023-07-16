@@ -3654,6 +3654,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETBPREF ("asm.flags.right", "false", "show flags as comments at the right side of the disassembly");
 	SETBPREF ("asm.flags.offset", "false", "show offset in flags");
 	SETBPREF ("asm.flags.inbytes", "false",  "display flags inside the bytes space");
+	SETBPREF ("asm.flags.inoffset", "false",  "display flags inside the offset column");
 	SETBPREF ("asm.flags.inline", "false",  "display flags in line separated by commas instead of newlines");
 	n = NODEICB ("asm.flags.middle", 2, &cb_midflags);
 	SETOPTIONS (n, "0 = do not show flag", "1 = show without realign", "2 = realign at middle flag",
