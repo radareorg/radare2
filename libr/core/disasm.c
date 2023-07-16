@@ -7334,6 +7334,7 @@ static bool read_ahead(RIO *io, ut8 **buf, size_t *buf_sz, ut64 address, size_t 
 }
 
 R_API int r_core_disasm_pde(RCore *core, int nb_opcodes, int mode) {
+	// R2R db/cmd/cmd_pde
 	if (nb_opcodes < 1) {
 		return 0;
 	}
@@ -7373,7 +7374,6 @@ R_API int r_core_disasm_pde(RCore *core, int nb_opcodes, int mode) {
 	ut64 block_start = r_reg_get_value (reg, pc);
 	size_t i = 0;
 	const ut64 op_addr = r_reg_get_value (reg, pc);
-	ut64 source_pc = op_addr;
 	ut8 *buf = malloc (buf_sz);
 	if (op_addr == 0) {
 		const RList *entries = r_bin_get_entries (core->bin);
@@ -7382,7 +7382,7 @@ R_API int r_core_disasm_pde(RCore *core, int nb_opcodes, int mode) {
 			RBinInfo *info = r_bin_get_info (core->bin);
 			block_start = info->has_va? entry->vaddr: entry->paddr;
 			r_reg_set_value (reg, pc, block_start);
-			source_pc = block_start;
+			r_core_cmd0 (core, ".dr*");
 		}
 	}
 	r_reg_arena_push (reg);
