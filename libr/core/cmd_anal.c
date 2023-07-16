@@ -2205,11 +2205,12 @@ static void cmd_syscall_do(RCore *core, st64 n, ut64 addr) {
 
 static inline REsil *esil_new_setup(RCore *core) {
 	int stacksize = r_config_get_i (core->config, "esil.stack.depth");
-	int iotrap = r_config_get_i (core->config, "esil.iotrap");
+	bool iotrap = r_config_get_b (core->config, "esil.iotrap");
 	unsigned int addrsize = r_config_get_i (core->config, "esil.addr.size");
 	REsil *esil = r_esil_new (stacksize, iotrap, addrsize);
 	if (esil) {
 		esil->anal = core->anal;
+		r_io_bind (core->io, &(core->anal->iob));
 		bool romem = r_config_get_b (core->config, "esil.romem");
 		bool stats = r_config_get_b (core->config, "esil.stats");
 		bool nonull = r_config_get_b (core->config, "esil.nonull");
@@ -2550,21 +2551,14 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 			pj_end (pj);
 		} else if (fmt == 'r') {
 			if (R_STR_ISNOTEMPTY (esilstr)) {
-				if (core->anal->esil) {
-					if (use_color) {
-						r_cons_printf ("%s0x%" PFMT64x Color_RESET " %s\n", color, core->offset + idx, esilstr);
-					} else {
-						r_cons_printf ("0x%" PFMT64x " %s\n", core->offset + idx, esilstr);
-					}
-					esil = core->anal->esil;
-					r_esil_parse (esil, esilstr);
-					r_esil_dumpstack (esil);
-					r_esil_stack_free (esil);
-					esil = NULL;
+				if (use_color) {
+					r_cons_printf ("%s0x%" PFMT64x Color_RESET " %s\n", color, core->offset + idx, esilstr);
 				} else {
-					R_LOG_ERROR ("ESIL is not initialized. Run `aei`");
-					break;
+					r_cons_printf ("0x%" PFMT64x " %s\n", core->offset + idx, esilstr);
 				}
+				r_esil_parse (core->anal->esil, esilstr);
+				r_esil_dumpstack (core->anal->esil);
+				r_esil_stack_free (core->anal->esil);
 			} else {
 				// ignored/skipped eprintf ("No esil for '%s'\n", op.mnemonic);
 			}
@@ -6189,12 +6183,14 @@ tail_return:
 
 R_API bool r_core_esil_step_back(RCore *core) {
 	r_return_val_if_fail (core && core->anal, false);
+#if 0
 	if (!core->anal->esil || !core->anal->esil->trace) {
 		R_LOG_INFO ("Run `aeim` to initialize the esil VM and enable e dbg.trace=true");
 		return false;
 	}
+#endif
 	REsil *esil = core->anal->esil;
-	if (esil->trace->idx > 0) {
+	if (esil && esil->trace->idx > 0) {
 		r_esil_trace_restore (esil, esil->trace->idx - 1);
 		return true;
 	}
@@ -6901,13 +6897,13 @@ static bool cmd_aea(RCore* core, int mode, ut64 addr, int length) {
 static void cmd_aespc(RCore *core, ut64 addr, ut64 until_addr, int ninstr) {
 	REsil *esil = core->anal->esil;
 	int i, j = 0;
-	ut8 *buf;
 	RAnalOp aop = {0};
 	int ret , bsize = R_MAX (4096, core->blocksize);
 	const int mininstrsz = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_MIN_OP_SIZE);
 	const int minopcode = R_MAX (1, mininstrsz);
 	const char *pc = r_reg_get_name (core->dbg->reg, R_REG_NAME_PC);
 
+#if 0
 	// eprintf ("   aesB %llx %llx %d\n", addr, until_addr, off); // 0x%08llx %d  %s\n", aop.addr, ret, aop.mnemonic);
 	if (!esil) {
 		R_LOG_DEBUG ("cmd_espc: creating new esil instance");
@@ -6918,12 +6914,13 @@ static void cmd_aespc(RCore *core, ut64 addr, ut64 until_addr, int ninstr) {
 		r_esil_free (core->anal->esil);
 		core->anal->esil = esil;
 	}
-	buf = malloc (bsize);
+#endif
+	ut8 *buf = malloc (bsize);
 	if (!buf) {
 		R_LOG_ERROR ("Cannot allocate %d byte(s)", bsize);
 		return;
 	}
-	if (addr == -1) {
+	if (addr == UT64_MAX) {
 		addr = r_reg_getv (core->dbg->reg, pc);
 	}
 	ut64 cursp = r_reg_getv (core->dbg->reg, "SP");
@@ -7140,9 +7137,13 @@ static bool regwrite_hook(REsil *esil, const char *name, ut64 *val) {
 static void __anal_esil_function(RCore *core, ut64 addr) {
 	RListIter *iter;
 	RAnalBlock *bb;
+#if 0
 	if (!core->anal->esil) {
 		r_core_cmd_call (core, "aei");
-		r_core_cmd_call (core, "aeim");
+	}
+#endif
+	if (!sdb_const_get (core->sdb, "aeim.fd", 0)) {
+		r_core_cmd_call (core, "aeim"); // should be set by default imho
 	}
 	void *u = core->anal->esil->user;
 	core->anal->esil->user = core;
@@ -7884,10 +7885,12 @@ static void cmd_anal_esil(RCore *core, const char *input, bool verbose) {
 		case 's': // "aets"
 			switch (input[2]) {
 			case '+': // "aets+"
+#if 0
 				if (!esil) {
 					R_LOG_ERROR ("ESIL is not initialized. Use `aeim` first");
 					break;
 				}
+#endif
 				if (esil->trace) {
 					R_LOG_INFO ("ESIL trace already started");
 					break;
