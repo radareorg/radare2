@@ -353,6 +353,7 @@ static RCoreHelpMessage help_msg_dr = {
 	"dr", " <register>=<val>", "set register value",
 	"dr.", " >$snapshot", "capture current register values in r2 alias file",
 	"dr,", " [table-query]", "enumerate registers in table format",
+	"dr0", "", "zero-fill the register arena, reset their state",
 	"dr8", "[1|2|4|8] [type]", "display hexdump of gpr arena (WIP)",
 	"dr=", "", "show registers in columns",
 	"dr?", "<register>", "show value of given register",
