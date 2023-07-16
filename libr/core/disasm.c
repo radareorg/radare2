@@ -7351,14 +7351,7 @@ R_API int r_core_disasm_pde(RCore *core, int nb_opcodes, int mode) {
 		}
 		pj_a (pj);
 	}
-#if 0
-	if (!core->anal->esil) {
-		r_core_cmd_call (core, "aei");
-		if (!r_config_get_b (core->config, "cfg.debug")) {
-			r_core_cmd_call (core, "aeim");
-		}
-	}
-#endif
+	// R2_590 - maybe here r_core_cmd_call (core, "aeim");
 	REsil *esil = core->anal->esil;
 	RConfigHold *chold = r_config_hold_new (core->config);
 	r_config_hold (chold, "io.cache", "asm.lines", NULL);

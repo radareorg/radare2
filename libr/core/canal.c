@@ -3685,20 +3685,11 @@ static bool anal_block_cb(RAnalBlock *bb, BlockRecurseCtx *ctx) {
 		if (r_cons_is_breaked ()) {
 			break;
 		}
-#if 0
-		RAnalOp *hop = r_core_anal_op (core, opaddr, mask);
-		if (!hop) {
-			break;
-		}
-		memcpy (&op, hop, sizeof (RAnalOp));
-		free (hop);
-#else
 		pos = (opaddr - bb->addr);
 		if (r_anal_op (core->anal, &op, opaddr, buf + pos, bb->size - pos, mask) < 1) {
 			r_anal_op_fini (&op);
 			break;
 		}
-#endif
 		r_anal_extract_rarg (core->anal, &op, fcn, reg_set, &ctx->count);
 		if (!ctx->argonly) {
 			if (op.stackop == R_ANAL_STACK_INC) {
@@ -5241,7 +5232,7 @@ static bool esilbreak_reg_write(REsil *esil, const char *name, ut64 *val) {
 			switch (op->type) {
 			case R_ANAL_OP_TYPE_UCALL: // BLX
 			case R_ANAL_OP_TYPE_UJMP: // BX
-				// maybe UJMP/UCALL is enough here
+				// R2_590 - maybe UJMP/UCALL is enough here
 				if (!(*val & 1)) {
 					r_anal_hint_set_bits (anal, *val, 32);
 				} else {
@@ -5570,18 +5561,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 	}
 	esilbreak_last_read = UT64_MAX;
 	r_io_read_at (core->io, start, buf, iend + 1);
-#if 0
-	if (!ESIL) {
-		r_core_cmd_call (core, "aei");
-		ESIL = core->anal->esil;
-		if (!ESIL) {
-			R_LOG_ERROR ("ESIL is not initialized");
-			return;
-		}
-		r_core_cmd_call (core, "aeim");
-		ESIL = core->anal->esil;
-	}
-#endif
+	// maybe r_core_cmd_call (core, "aeim");
 	const char *kspname = r_reg_get_name (core->anal->reg, R_REG_NAME_SP);
 	if (R_STR_ISEMPTY (kspname)) {
 		R_LOG_ERROR ("No =SP defined in the reg profile");
