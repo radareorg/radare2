@@ -12609,6 +12609,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 				*addr = 0;
 				addr = (char *)r_str_trim_head_ro (addr + 1);
 			}
+			r_core_cmd0 (core, "aeim");
 			r_core_anal_esil (core, len, addr);
 			free (arg);
 		} else {
