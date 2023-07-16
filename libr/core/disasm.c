@@ -7359,7 +7359,6 @@ R_API int r_core_disasm_pde(RCore *core, int nb_opcodes, int mode) {
 	}
 #endif
 	REsil *esil = core->anal->esil;
-	r_reg_arena_push (reg);
 	RConfigHold *chold = r_config_hold_new (core->config);
 	r_config_hold (chold, "io.cache", "asm.lines", NULL);
 	r_config_set_b (core->config, "io.cache", true);
@@ -7373,11 +7372,9 @@ R_API int r_core_disasm_pde(RCore *core, int nb_opcodes, int mode) {
 	size_t buf_sz = 0x100, block_sz = 0, block_instr = 0;
 	ut64 block_start = r_reg_get_value (reg, pc);
 	size_t i = 0;
-	ut8 *buf = malloc (buf_sz);
-	if (!buf) {
-		goto leave;
-	}
 	const ut64 op_addr = r_reg_get_value (reg, pc);
+	ut64 source_pc = op_addr;
+	ut8 *buf = malloc (buf_sz);
 	if (op_addr == 0) {
 		const RList *entries = r_bin_get_entries (core->bin);
 		if (entries && !r_list_empty (entries)) {
@@ -7385,7 +7382,12 @@ R_API int r_core_disasm_pde(RCore *core, int nb_opcodes, int mode) {
 			RBinInfo *info = r_bin_get_info (core->bin);
 			block_start = info->has_va? entry->vaddr: entry->paddr;
 			r_reg_set_value (reg, pc, block_start);
+			source_pc = block_start;
 		}
+	}
+	r_reg_arena_push (reg);
+	if (!buf) {
+		goto leave;
 	}
 	for (i = 0; i < nb_opcodes; i++) {
 		const ut64 op_addr = r_reg_get_value (reg, pc);

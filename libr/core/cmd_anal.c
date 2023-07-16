@@ -12581,6 +12581,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 			if (input[2] == '?') {
 				r_core_cmd_help_match (core, help_msg_aae, "aaef", true);
 			} else {
+				r_core_cmd0 (core, "aeim");
 				RListIter *it;
 				RAnalFunction *fcn;
 				ut64 cur_seek = core->offset;
