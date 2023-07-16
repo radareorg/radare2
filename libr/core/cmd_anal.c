@@ -5944,7 +5944,8 @@ R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr,
 		if (notfirst && addr == oaddr) {
 			r_reg_setv (core->anal->reg, "PC", naddr);
 			addr = naddr;
-			// break;
+		} else {
+			notfirst = true;
 		}
 		R_LOG_DEBUG ("esil step at 0x%08"PFMT64x, addr);
 		if (r_cons_is_breaked ()) {
@@ -6095,7 +6096,7 @@ R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr,
 			// only support 1 slot for now
 			if (op.delay && !isNextFall) {
 				ut8 code2[32];
-				ut64 naddr = addr + op.size;
+				// ut64 naddr = addr + op.size;
 				RAnalOp op2 = {0};
 				// emulate only 1 instruction
 				r_esil_set_pc (esil, naddr);
@@ -7473,15 +7474,15 @@ static void cmd_anal_esil(RCore *core, const char *input, bool verbose) {
 		break;
 	case 'r': // "aer"
 		// 'aer' is an alias for 'ar'
-		cmd_anal_reg (core, r_str_trim_head_ro (input + 1));
+		cmd_anal_reg (core, input + 1);
 		break;
-	case '*':
+	case '*': // "aeq"
 		// XXX: this is wip, not working atm
 		r_cons_printf ("trap: %d\n", core->anal->esil->trap);
 		r_cons_printf ("trap-code: %d\n", core->anal->esil->trap_code);
 		break;
 	case ' ':
-	case 'q':
+	case 'q': // "aeq"
 		r_esil_set_pc (esil, core->offset);
 		r_esil_parse (esil, r_str_trim_head_ro (input + 1));
 		if (verbose && *input != 'q') {
