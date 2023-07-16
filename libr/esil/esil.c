@@ -152,7 +152,7 @@ R_API void r_esil_del_op(REsil *esil, const char *op) {
 
 static bool r_esil_fire_trap(REsil *esil, int trap_type, int trap_code) {
 	r_return_val_if_fail (esil, false);
-	if (esil->cmd && esil->cmd_trap) {
+	if (esil->cmd && R_STR_ISNOTEMPTY (esil->cmd_trap)) {
 		if (esil->cmd (esil, esil->cmd_trap, trap_type, trap_code)) {
 			return true;
 		}

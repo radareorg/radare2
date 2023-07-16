@@ -2216,7 +2216,8 @@ static inline REsil *esil_new_setup(RCore *core) {
 		r_esil_setup (esil, core->anal, romem, stats, nonull);
 		esil->verbose = r_config_get_i (core->config, "esil.verbose");
 		esil->cmd = r_core_esil_cmd;
-		esil->cmd_trap = strdup (r_config_get (core->config, "cmd.esil.trap"));
+		const char *et = r_config_get (core->config, "cmd.esil.trap");
+		esil->cmd_trap = R_STR_ISNOTEMPTY (et)? strdup (et): NULL;
 
 	}
 	return esil;
@@ -2279,14 +2280,17 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 	ut64 addr;
 	PJ *pj = NULL;
 	int totalsize = 0;
-#if 0
+#if 1
 	REsil *esil = r_esil_new (256, 0, 0);
 	r_esil_setup (esil, core->anal, false, false, false);
-	esil->user = &ec;
+	esil->user = &core;
 	esil->cb.mem_read = mr;
 	esil->cb.mem_write = mw;
 #else
-	REsil *esil = NULL;
+	REsil *esil = core->anal->esil;
+	//esil->user = &ec;
+	esil->cb.mem_read = mr;
+	esil->cb.mem_write = mw;
 #endif
 
 	// Variables required for setting up ESIL to REIL conversion
@@ -5918,7 +5922,7 @@ R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr,
 	ut8 code[32];
 	RAnalOp op = {0};
 	REsil *esil = core->anal->esil;
-	esil->trap = 0;
+	// esil->trap = 0;
 	const char *_pcname = r_reg_get_name (core->anal->reg, R_REG_NAME_PC);
 	if (R_STR_ISEMPTY (_pcname)) {
 		R_LOG_ERROR ("Cannot find =PC in current reg profile");
@@ -5940,6 +5944,7 @@ R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr,
 	ut64 naddr = addr + minopsz;
 	bool notfirst = false;
 	for (; true; r_anal_op_fini (&op)) {
+		esil->trap = 0;
 		oaddr = addr;
 		addr = r_reg_getv (core->anal->reg, "PC");
 		if (notfirst && addr == oaddr) {
@@ -5986,7 +5991,7 @@ R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr,
 		int dataAlign = r_anal_archinfo (esil->anal, R_ANAL_ARCHINFO_DATA_ALIGN);
 		if (dataAlign > 1) {
 			if (addr % dataAlign) {
-				if (esil->cmd && esil->cmd_trap) {
+				if (esil->cmd && R_STR_ISNOTEMPTY (esil->cmd_trap)) {
 					esil->cmd (esil, esil->cmd_trap, addr, R_ANAL_TRAP_UNALIGNED);
 				}
 				if (breakoninvalid) {
@@ -6004,7 +6009,7 @@ R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr,
 		esil = core->anal->esil;
 		if (op.size < 1 || ret < 1) {
 			// eprintf ("esil trap\n");
-			if (esil->cmd && esil->cmd_trap) {
+			if (esil->cmd && R_STR_ISNOTEMPTY (esil->cmd_trap)) {
 				esil->cmd (esil, esil->cmd_trap, addr, R_ANAL_TRAP_INVALID);
 			}
 			if (breakoninvalid) {
@@ -6077,6 +6082,7 @@ R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr,
 					core->anal->cur->esil_post_loop (esil, &op);
 				}
 #endif
+				// warn if esil stack is not empty
 				r_esil_stack_free (esil);
 			}
 			bool isNextFall = false;
@@ -7466,7 +7472,7 @@ static void cmd_anal_esil(RCore *core, const char *input, bool verbose) {
 		break;
 	case 'r': // "aer"
 		// 'aer' is an alias for 'ar'
-		cmd_anal_reg (core, input + 1);
+		cmd_anal_reg (core, r_str_trim_head_ro (input + 1));
 		break;
 	case '*':
 		// XXX: this is wip, not working atm
@@ -7483,6 +7489,11 @@ static void cmd_anal_esil(RCore *core, const char *input, bool verbose) {
 		r_esil_stack_free (esil);
 		break;
 	case 's': // "aes" "aeso" "aesu" "aesue"
+#if 0
+		r_core_cmd0 (core, "ae `aoe@r:PC`");
+		r_core_cmd0 (core, ".ar*");
+		break;
+#endif
 		// aes -> single step
 		// aesb -> single step back
 		// aeso -> single step over
@@ -7755,9 +7766,10 @@ static void cmd_anal_esil(RCore *core, const char *input, bool verbose) {
 			r_esil_reset (esil);
 			break;
 		case 0: // "aei"
-		//	esil = core->anal->esil = esil_new_setup (core);
-		//	esil = core->anal->esil = esil_new_setup (core);
+			esil = core->anal->esil = esil_new_setup (core);
 			if (esil) {
+				r_esil_free (core->anal->esil);
+				core->anal->esil = esil;
 				r_esil_reset (esil);
 				const char *pc = r_reg_get_name (core->anal->reg, R_REG_NAME_PC);
 				if (pc && r_reg_getv (core->anal->reg, pc) == 0LL) {
