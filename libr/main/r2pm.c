@@ -1059,8 +1059,11 @@ R_API int r_main_r2pm(int argc, const char **argv) {
 		r_cons_new ();
 	}
 #if R2__UNIX__
-	while (!getcwd (NULL,0)) {
-		chdir ("..");
+	while (!getcwd (NULL, 0)) {
+		if (chdir ("..") == -1) {
+			R_LOG_ERROR ("Cannot chdir one dir up");
+			return 1;
+		}
 	}
 #endif
 	int level = r_sys_getenv_asint ("R2_LOG_LEVEL");
