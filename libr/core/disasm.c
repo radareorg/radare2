@@ -3741,10 +3741,8 @@ static int inbounds(RList *bbs, ut64 addr) {
 	return count;
 }
 
-static int instruction_depth(RCore *core, ut64 addr) {
-	RList *fcns = r_anal_get_functions_in (core->anal, addr);
-	RAnalFunction *f = r_list_head (fcns)->data;
-	if (f) {
+static int instruction_depth(RCore *core, RAnalFunction *f, RAnalBlock *obb) {
+	if (!obb->depth && f) {
 		RAnalBlock *bb;
 		RListIter *iter;
 		r_list_sort (f->bbs, bb_cmp);
@@ -3755,12 +3753,8 @@ static int instruction_depth(RCore *core, ut64 addr) {
 			}
 			bb->depth = inbounds (f->bbs, bb->addr);
 		}
-		bb = r_anal_function_bbget_in (core->anal, f, addr);
-		if (bb) {
-			return bb->depth;
-		}
 	}
-	return 0;
+	return obb->depth;
 }
 
 static void ds_print_indent(RDisasmState *ds) {
@@ -3768,7 +3762,11 @@ static void ds_print_indent(RDisasmState *ds) {
 		int num = 0;
 		RAnalBlock *bb = ds->fcn? r_anal_function_bbget_in (ds->core->anal, ds->fcn, ds->at): NULL;
 		if (bb) {
-			num = instruction_depth (ds->core, bb->addr);
+			if (bb->depth) {
+				num = bb->depth;
+			} else {
+				num = instruction_depth (ds->core, ds->fcn, bb);
+			}
 #if 0
 			// find how many bbs since start need to be traversed to reach here
 			char *res = r_core_cmd_strf (ds->core, "abp 0x%08"PFMT64x" @ $F~?", bb->addr);
