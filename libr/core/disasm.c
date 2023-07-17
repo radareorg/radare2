@@ -3698,19 +3698,87 @@ static void ds_print_bytes(RDisasmState *ds) {
 	core->print->flags = oldFlags;
 }
 
+R_GENERATE_VEC_IMPL_FOR(UT64, ut64);
+
+static int bb_cmp(const void *a, const void *b) {
+	const RAnalBlock *ba = a;
+	const RAnalBlock *bb = b;
+	return ba->addr - bb->addr;
+}
+
+static int cmp_ut64(const ut64 *a, const void *_b) {
+	ut64 *b = (ut64*)_b;
+	return *a-*b;
+}
+
+static int inbounds(RList *bbs, ut64 addr) {
+	int count = 0;
+	RAnalBlock *bb;
+	RListIter *iter;
+	RVecUT64 vec;
+	RVecUT64_init (&vec);
+	r_list_foreach (bbs, iter, bb) {
+		if (bb->jump == UT64_MAX) {
+			continue;
+		}
+		ut64 *found = RVecUT64_find (&vec, &bb->jump, cmp_ut64);
+		if (found) {
+			// ignore duplicated destinations
+			continue;
+		}
+		RVecUT64_push_back (&vec, &bb->jump);
+		if (bb->jump < bb->addr) {
+			if (addr >= bb->jump && addr < bb->addr) {
+				count++;
+			}
+		} else {
+			if (addr >= (bb->addr + bb->size) && addr < bb->jump) {
+				count++;
+			}
+		}
+	}
+	RVecUT64_fini (&vec, NULL, NULL);
+	return count;
+}
+
+static int instruction_depth(RCore *core, ut64 addr) {
+	RList *fcns = r_anal_get_functions_in (core->anal, addr);
+	RAnalFunction *f = r_list_head (fcns)->data;
+	if (f) {
+		RAnalBlock *bb;
+		RListIter *iter;
+		r_list_sort (f->bbs, bb_cmp);
+		r_list_foreach (f->bbs, iter, bb) {
+			if (bb->depth) {
+				// dont compute twice
+				break;
+			}
+			bb->depth = inbounds (f->bbs, bb->addr);
+		}
+		bb = r_anal_function_bbget_in (core->anal, f, addr);
+		if (bb) {
+			return bb->depth;
+		}
+	}
+	return 0;
+}
+
 static void ds_print_indent(RDisasmState *ds) {
 	if (ds->show_indent) {
 		int num = 0;
 		RAnalBlock *bb = ds->fcn? r_anal_function_bbget_in (ds->core->anal, ds->fcn, ds->at): NULL;
 		if (bb) {
+			num = instruction_depth (ds->core, bb->addr);
+#if 0
 			// find how many bbs since start need to be traversed to reach here
 			char *res = r_core_cmd_strf (ds->core, "abp 0x%08"PFMT64x" @ $F~?", bb->addr);
 			if (res) {
 				num = atoi (res);
 				free (res);
 			}
+#endif
 		} else {
-			num = ds->indent_level;
+			num = 0; // ds->indent_level;
 		}
 		char indent[128];
 		if (num < 0) {
