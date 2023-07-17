@@ -1,3 +1,4 @@
 ad "nop" 13000000
+ad "auipc t0, 0x280" 97022800
 # ad "lui sp, 0x8" 37810000
 # ad "addi s0, sp, 16" 13040101
