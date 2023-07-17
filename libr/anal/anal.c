@@ -175,6 +175,7 @@ R_API void r_anal_free(RAnal *a) {
 	r_unref (a->config);
 	a->arch->esil = NULL;
 	r_arch_free (a->arch);
+	a->arch = NULL;
 	free (a->zign_path);
 	r_list_free (a->plugins);
 	r_rbtree_free (a->bb_tree, __block_free_rb, NULL);
@@ -188,6 +189,7 @@ R_API void r_anal_free(RAnal *a) {
 	r_list_free (a->threads);
 	r_list_free (a->leaddrs);
 	sdb_free (a->sdb);
+	a->esil->anal = NULL;
 	r_esil_free (a->esil);
 	free (a->last_disasm_reg);
 	r_list_free (a->imports);
