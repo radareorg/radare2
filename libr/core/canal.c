@@ -4307,6 +4307,8 @@ R_API int r_core_anal_search_xrefs(RCore *core, ut64 from, ut64 to, PJ *pj, int 
 		return -1;
 	}
 
+	const bool search_badpages = r_config_get_b (core->config, "search.badpages");
+
 	if (core->blocksize <= OPSZ) {
 		R_LOG_ERROR ("block size too small");
 		return -1;
@@ -4358,25 +4360,31 @@ R_API int r_core_anal_search_xrefs(RCore *core, ut64 from, ut64 to, PJ *pj, int 
 			bsz = left;
 		}
 		(void)r_io_read_at (core->io, at, buf, bsz);
-		memset (block, -1, bsz);
-		if (!memcmp (buf, block, bsz)) {
-			if (!uninit) {
-				R_LOG_WARN ("skipping -1 uninitialized block 0x%08"PFMT64x, at);
+		if (!search_badpages) {
+			memset (block, -1, bsz);
+			if (!memcmp (buf, block, bsz)) {
+				if (!uninit) {
+					if (bsz != left) {
+						R_LOG_WARN ("skipping -1 uninitialized %d bytes at 0x%08"PFMT64x, bsz, at);
+					}
+				}
+				uninit = true;
+				at += bsz;
+				continue;
 			}
-			uninit = true;
-			at += bsz;
-			continue;
-		}
-		memset (block, 0, bsz);
-		if (!memcmp (buf, block, bsz)) {
-			if (!uninit) {
-				R_LOG_WARN ("skipping 0 uninitialized block at 0x%08"PFMT64x, at);
+			memset (block, 0, bsz);
+			if (!memcmp (buf, block, bsz)) {
+				if (!uninit) {
+					if (bsz != left) {
+						R_LOG_WARN ("skipping 0 uninitialized %d bytes at 0x%08"PFMT64x, bsz, at);
+					}
+				}
+				uninit = true;
+				at += bsz;
+				continue;
 			}
-			uninit = true;
-			at += bsz;
-			continue;
+			uninit = false;
 		}
-		uninit = false;
 		(void) r_anal_op (core->anal, &op, at, buf, bsz, R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_HINT);
 		while ((i + maxopsz) < bsz && !r_cons_is_breaked ()) {
 			r_anal_op_fini (&op);
