@@ -4361,7 +4361,7 @@ R_API int r_core_anal_search_xrefs(RCore *core, ut64 from, ut64 to, PJ *pj, int 
 		memset (block, -1, bsz);
 		if (!memcmp (buf, block, bsz)) {
 			if (!uninit) {
-				R_LOG_ERROR ("skipping -1 uninitialized block 0x%08"PFMT64x, at);
+				R_LOG_WARN ("skipping -1 uninitialized block 0x%08"PFMT64x, at);
 			}
 			uninit = true;
 			at += bsz;
@@ -4370,7 +4370,7 @@ R_API int r_core_anal_search_xrefs(RCore *core, ut64 from, ut64 to, PJ *pj, int 
 		memset (block, 0, bsz);
 		if (!memcmp (buf, block, bsz)) {
 			if (!uninit) {
-				R_LOG_ERROR ("skipping 0 uninitialized block at 0x%08"PFMT64x, at);
+				R_LOG_WARN ("skipping 0 uninitialized block at 0x%08"PFMT64x, at);
 			}
 			uninit = true;
 			at += bsz;
