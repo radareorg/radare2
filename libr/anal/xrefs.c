@@ -49,7 +49,6 @@ static RefManager *ref_manager_new(void) {
 			free (rm);
 			return NULL;
 		}
-
 		rm->xrefs = ht_up_new (NULL, adjacency_list_free, NULL);
 		if (R_UNLIKELY (!rm->xrefs)) {
 			free (rm->refs);
@@ -57,7 +56,6 @@ static RefManager *ref_manager_new(void) {
 			return NULL;
 		}
 	}
-
 	return rm;
 }
 
@@ -66,7 +64,6 @@ static void ref_manager_free(RefManager *rm) {
 		ht_up_free (rm->refs);
 		ht_up_free (rm->xrefs);
 	}
-
 	free (rm);
 }
 
@@ -83,7 +80,6 @@ static void _add_ref(AdjacencyList *adj_list, ut64 from, ut64 to, RAnalRefType t
 
 		ht_up_insert (adj_list, from, edges); // adds the new (empty) hashtable
 	}
-
 	ht_uu_update (edges, to, (ut64) type); // and adds the ref
 }
 
@@ -420,11 +416,10 @@ static void r_anal_xrefs_list_hex(RAnal *anal, RVecAnalRef *anal_refs) {
 static void r_anal_xrefs_list_mapping(RAnal *anal, RVecAnalRef *anal_refs) {
 	RAnalRef *ref;
 	R_VEC_FOREACH (anal_refs, ref) {
-		int t = R_ANAL_REF_TYPE_MASK (ref->type);
+		RAnalRefType t = R_ANAL_REF_TYPE_MASK (ref->type);
 		if (!t) {
 			t = ' ';
 		}
-
 		anal->cb_printf ("0x%08"PFMT64x" -> 0x%08"PFMT64x"  %s:%s\n", ref->at, ref->addr,
 			r_anal_ref_type_tostring (t), r_anal_ref_perm_tostring (ref));
 	}

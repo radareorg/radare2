@@ -28,7 +28,7 @@ static int on_fcn_new(RAnal *_anal, void* _user, RAnalFunction *fcn) {
 		ut64 oaddr = core->offset;
 		ut64 addr = fcn->addr;
 		r_core_seek (core, addr, true);
-		r_core_cmd0 (core, cmd);
+		r_core_cmd0 (core, cmd); // TODO: use r_core_cmd_at
 		r_core_seek (core, oaddr, true);
 	}
 	return 0;
@@ -41,7 +41,7 @@ static int on_fcn_delete(RAnal *_anal, void* _user, RAnalFunction *fcn) {
 		ut64 oaddr = core->offset;
 		ut64 addr = fcn->addr;
 		r_core_seek (core, addr, true);
-		r_core_cmd0 (core, cmd);
+		r_core_cmd0 (core, cmd); // use r_core_cmd_at
 		r_core_seek (core, oaddr, true);
 	}
 	return 0;
@@ -55,7 +55,7 @@ static int on_fcn_rename(RAnal *_anal, void* _user, RAnalFunction *fcn, const ch
 		ut64 oaddr = core->offset;
 		ut64 addr = fcn->addr;
 		r_core_seek (core, addr, true);
-		r_core_cmd0 (core, cmd);
+		r_core_cmd0 (core, cmd); // use r_core_cmd_at
 		r_core_seek (core, oaddr, true);
 	}
 	return 0;
