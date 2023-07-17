@@ -389,49 +389,49 @@ static void anal_LOAD_CLOSURE(RAnalOp *op, pyc_opcode_object *op_obj, ut32 oparg
 }
 
 static void anal_LOAD_CONST(RAnalOp *op, pyc_opcode_object *op_obj, ut32 oparg) {
-	anal_push (op, op_obj, oparg, R_ANAL_OP_TYPE_UNK, 1);
+	anal_push (op, op_obj, oparg, R_ANAL_OP_TYPE_LOAD, 1);
 }
 
 static void anal_LOAD_DEREF(RAnalOp *op, pyc_opcode_object *op_obj, ut32 oparg) {
-	anal_push (op, op_obj, oparg, R_ANAL_OP_TYPE_UNK, 1);
+	anal_push (op, op_obj, oparg, R_ANAL_OP_TYPE_LOAD, 1);
 }
 
 static void anal_LOAD_FAST(RAnalOp *op, pyc_opcode_object *op_obj, ut32 oparg) {
-	anal_push (op, op_obj, oparg, R_ANAL_OP_TYPE_UNK, 1);
+	anal_push (op, op_obj, oparg, R_ANAL_OP_TYPE_LOAD, 1);
 }
 
 static void anal_LOAD_GLOBAL(RAnalOp *op, pyc_opcode_object *op_obj, ut32 oparg) {
-	anal_push (op, op_obj, oparg, R_ANAL_OP_TYPE_UNK, 1);
+	anal_push (op, op_obj, oparg, R_ANAL_OP_TYPE_LOAD, 1);
 }
 
 static void anal_LOAD_GLOBALS(RAnalOp *op, pyc_opcode_object *op_obj, ut32 oparg) {
 	// https://github.com/python/cpython/blob/24260ec91623c18569225229d5becb852010ae2c/Include/opcode.h#L80
 	// Can't find this opcode
-	op->type = R_ANAL_OP_TYPE_UNK;
+	op->type = R_ANAL_OP_TYPE_LOAD;
 }
 
 static void anal_LOAD_LOCAL(RAnalOp *op, pyc_opcode_object *op_obj, ut32 oparg) {
-	anal_push (op, op_obj, oparg, R_ANAL_OP_TYPE_UNK, 1);
+	anal_push (op, op_obj, oparg, R_ANAL_OP_TYPE_LOAD, 1);
 }
 
 static void anal_LOAD_LOCALS(RAnalOp *op, pyc_opcode_object *op_obj, ut32 oparg) {
-	anal_push (op, op_obj, oparg, R_ANAL_OP_TYPE_UNK, 1);
+	anal_push (op, op_obj, oparg, R_ANAL_OP_TYPE_LOAD, 1);
 }
 
 static void anal_LOAD_METHOD(RAnalOp *op, pyc_opcode_object *op_obj, ut32 oparg) {
-	anal_push (op, op_obj, oparg, R_ANAL_OP_TYPE_UNK, 1);
+	anal_push (op, op_obj, oparg, R_ANAL_OP_TYPE_LOAD, 1);
 }
 
 static void anal_LOAD_NAME(RAnalOp *op, pyc_opcode_object *op_obj, ut32 oparg) {
-	anal_push (op, op_obj, oparg, R_ANAL_OP_TYPE_UNK, 1);
+	anal_push (op, op_obj, oparg, R_ANAL_OP_TYPE_LOAD, 1);
 }
 
 static void anal_MAKE_CLOSURE(RAnalOp *op, pyc_opcode_object *op_obj, ut32 oparg) {
-	anal_pop (op, op_obj, oparg, R_ANAL_OP_TYPE_UNK, oparg);
+	anal_pop (op, op_obj, oparg, R_ANAL_OP_TYPE_NEW, oparg);
 }
 
 static void anal_MAKE_FUNCTION(RAnalOp *op, pyc_opcode_object *op_obj, ut32 oparg) {
-	anal_pop (op, op_obj, oparg, R_ANAL_OP_TYPE_UNK, oparg);
+	anal_pop (op, op_obj, oparg, R_ANAL_OP_TYPE_NEW, oparg);
 }
 
 static void anal_MAP_ADD(RAnalOp *op, pyc_opcode_object *op_obj, ut32 oparg) {
@@ -461,37 +461,37 @@ static void anal_POP_TOP(RAnalOp *op, pyc_opcode_object *op_obj, ut32 oparg) {
 }
 
 static void anal_PRINT_EXPR(RAnalOp *op, pyc_opcode_object *op_obj, ut32 oparg) {
-	anal_pop (op, op_obj, oparg, R_ANAL_OP_TYPE_UNK, 1);
+	anal_pop (op, op_obj, oparg, R_ANAL_OP_TYPE_SWI, 1);
 }
 
 static void anal_PRINT_ITEM(RAnalOp *op, pyc_opcode_object *op_obj, ut32 oparg) {
-	anal_pop (op, op_obj, oparg, R_ANAL_OP_TYPE_UNK, 1);
+	anal_pop (op, op_obj, oparg, R_ANAL_OP_TYPE_SWI, 1);
 }
 
 static void anal_PRINT_ITEM_TO(RAnalOp *op, pyc_opcode_object *op_obj, ut32 oparg) {
-	anal_pop (op, op_obj, oparg, R_ANAL_OP_TYPE_UNK, 2);
+	anal_pop (op, op_obj, oparg, R_ANAL_OP_TYPE_SWI, 2);
 }
 
 static void anal_PRINT_NEWLINE(RAnalOp *op, pyc_opcode_object *op_obj, ut32 oparg) {
-	op->type = R_ANAL_OP_TYPE_UNK;
+	op->type = R_ANAL_OP_TYPE_SWI;
 }
 
 static void anal_PRINT_NEWLINE_TO(RAnalOp *op, pyc_opcode_object *op_obj, ut32 oparg) {
-	anal_pop (op, op_obj, oparg, R_ANAL_OP_TYPE_UNK, 1);
+	anal_pop (op, op_obj, oparg, R_ANAL_OP_TYPE_SWI, 1);
 }
 
 static void anal_RAISE_EXCEPTION(RAnalOp *op, pyc_opcode_object *op_obj, ut32 oparg) {
 	// https://github.com/python/cpython/blob/6c3a3aa17b028f6b93067083d32c7eaa4338757c/Include/opcode.h#L89
 	// Can't find this opcode
-	op->type = R_ANAL_OP_TYPE_UNK;
+	op->type = R_ANAL_OP_TYPE_TRAP;
 }
 
 static void anal_RAISE_VARARGS(RAnalOp *op, pyc_opcode_object *op_obj, ut32 oparg) {
-	anal_pop (op, op_obj, oparg, R_ANAL_OP_TYPE_UNK, oparg);
+	anal_pop (op, op_obj, oparg, R_ANAL_OP_TYPE_TRAP, oparg);
 }
 
 static void anal_RERAISE(RAnalOp *op, pyc_opcode_object *op_obj, ut32 oparg) {
-	anal_pop (op, op_obj, oparg, R_ANAL_OP_TYPE_UNK, 3);
+	anal_pop (op, op_obj, oparg, R_ANAL_OP_TYPE_TRAP, 3);
 }
 
 static void anal_RESERVE_FAST(RAnalOp *op, pyc_opcode_object *op_obj, ut32 oparg) {
@@ -561,61 +561,61 @@ static void anal_STOP_CODE(RAnalOp *op, pyc_opcode_object *op_obj, ut32 oparg) {
 }
 
 static void anal_STORE_ANNOTATION(RAnalOp *op, pyc_opcode_object *op_obj, ut32 oparg) {
-	anal_pop (op, op_obj, oparg, R_ANAL_OP_TYPE_UNK, 1);
+	anal_pop (op, op_obj, oparg, R_ANAL_OP_TYPE_STORE, 1);
 }
 
 static void anal_STORE_ATTR(RAnalOp *op, pyc_opcode_object *op_obj, ut32 oparg) {
-	op->type = R_ANAL_OP_TYPE_UNK;
+	op->type = R_ANAL_OP_TYPE_STORE;
 }
 
 static void anal_STORE_DEREF(RAnalOp *op, pyc_opcode_object *op_obj, ut32 oparg) {
-	anal_pop (op, op_obj, oparg, R_ANAL_OP_TYPE_UNK, 1);
+	anal_pop (op, op_obj, oparg, R_ANAL_OP_TYPE_STORE, 1);
 }
 
 static void anal_STORE_FAST(RAnalOp *op, pyc_opcode_object *op_obj, ut32 oparg) {
-	anal_pop (op, op_obj, oparg, R_ANAL_OP_TYPE_UNK, 1);
+	anal_pop (op, op_obj, oparg, R_ANAL_OP_TYPE_STORE, 1);
 }
 
 static void anal_STORE_GLOBAL(RAnalOp *op, pyc_opcode_object *op_obj, ut32 oparg) {
-	anal_pop (op, op_obj, oparg, R_ANAL_OP_TYPE_UNK, 1);
+	anal_pop (op, op_obj, oparg, R_ANAL_OP_TYPE_STORE, 1);
 }
 
 static void anal_STORE_LOCALS(RAnalOp *op, pyc_opcode_object *op_obj, ut32 oparg) {
-	anal_pop (op, op_obj, oparg, R_ANAL_OP_TYPE_UNK, 1);
+	anal_pop (op, op_obj, oparg, R_ANAL_OP_TYPE_STORE, 1);
 }
 
 static void anal_STORE_MAP(RAnalOp *op, pyc_opcode_object *op_obj, ut32 oparg) {
-	anal_pop (op, op_obj, oparg, R_ANAL_OP_TYPE_UNK, 2);
+	anal_pop (op, op_obj, oparg, R_ANAL_OP_TYPE_STORE, 2);
 }
 
 static void anal_STORE_NAME(RAnalOp *op, pyc_opcode_object *op_obj, ut32 oparg) {
-	op->type = R_ANAL_OP_TYPE_UNK;
+	op->type = R_ANAL_OP_TYPE_STORE;
 }
 
 static void anal_STORE_SLICE_0(RAnalOp *op, pyc_opcode_object *op_obj, ut32 oparg) {
-	anal_pop (op, op_obj, oparg, R_ANAL_OP_TYPE_UNK, 2);
+	anal_pop (op, op_obj, oparg, R_ANAL_OP_TYPE_STORE, 2);
 }
 
 static void anal_STORE_SLICE_1(RAnalOp *op, pyc_opcode_object *op_obj, ut32 oparg) {
-	anal_pop (op, op_obj, oparg, R_ANAL_OP_TYPE_UNK, 3);
+	anal_pop (op, op_obj, oparg, R_ANAL_OP_TYPE_STORE, 3);
 }
 
 static void anal_STORE_SLICE_2(RAnalOp *op, pyc_opcode_object *op_obj, ut32 oparg) {
-	anal_pop (op, op_obj, oparg, R_ANAL_OP_TYPE_UNK, 3);
+	anal_pop (op, op_obj, oparg, R_ANAL_OP_TYPE_STORE, 3);
 }
 
 static void anal_STORE_SLICE_3(RAnalOp *op, pyc_opcode_object *op_obj, ut32 oparg) {
-	anal_pop (op, op_obj, oparg, R_ANAL_OP_TYPE_UNK, 4);
+	anal_pop (op, op_obj, oparg, R_ANAL_OP_TYPE_STORE, 4);
 }
 
 static void anal_STORE_SUBSCR(RAnalOp *op, pyc_opcode_object *op_obj, ut32 oparg) {
-	anal_pop (op, op_obj, oparg, R_ANAL_OP_TYPE_UNK, 3);
+	anal_pop (op, op_obj, oparg, R_ANAL_OP_TYPE_STORE, 3);
 }
 
 static void anal_UNARY_CALL(RAnalOp *op, pyc_opcode_object *op_obj, ut32 oparg) {
 	// https://github.com/python/cpython/blob/v1.4b3/Include/opcode.h
 	// I can not find this opcode even in v1.4 version source code.
-	op->type = R_ANAL_OP_TYPE_UNK;
+	op->type = R_ANAL_OP_TYPE_CALL;
 }
 
 static void anal_UNARY_CONVERT(RAnalOp *op, pyc_opcode_object *op_obj, ut32 oparg) {
@@ -623,11 +623,11 @@ static void anal_UNARY_CONVERT(RAnalOp *op, pyc_opcode_object *op_obj, ut32 opar
 }
 
 static void anal_UNARY_INVERT(RAnalOp *op, pyc_opcode_object *op_obj, ut32 oparg) {
-	op->type = R_ANAL_OP_TYPE_NOT;
+	op->type = R_ANAL_OP_TYPE_UNK;
 }
 
 static void anal_UNARY_NEGATIVE(RAnalOp *op, pyc_opcode_object *op_obj, ut32 oparg) {
-	op->type = R_ANAL_OP_TYPE_UNK;
+	op->type = R_ANAL_OP_TYPE_NOT;
 }
 
 static void anal_UNARY_NOT(RAnalOp *op, pyc_opcode_object *op_obj, ut32 oparg) {
