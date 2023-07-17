@@ -112,7 +112,7 @@ static bool qjs_io_close(RIODesc *fd) {
 	QjsIoPlugin *plugin;
 	R_VEC_FOREACH (&pm->io_plugins, plugin) {
 		JSContext *ctx = plugin->ctx;
-		JSValueConst args[0] = { };
+		JSValueConst args[1] = { JS_NewInt32 (ctx, fd->fd) };
 		JSValue res = JS_Call (ctx, plugin->fn_close_js, JS_UNDEFINED, countof (args), args);
 		if (JS_ToBool (ctx, res)) {
 			return true;
