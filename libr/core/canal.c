@@ -4399,6 +4399,7 @@ static bool found_xref(RCore *core, ut64 at, ut64 xref_to, RAnalRefType type, PJ
 }
 
 R_API int r_core_anal_search_xrefs(RCore *core, ut64 from, ut64 to, PJ *pj, int rad) {
+	const bool anal_jmp_ref = r_config_get_b (core->config, "anal.jmp.ref");
 	const bool cfg_debug = r_config_get_b (core->config, "cfg.debug");
 	bool cfg_anal_strings = r_config_get_b (core->config, "anal.strings");
 	ut64 at;
@@ -4533,6 +4534,12 @@ R_API int r_core_anal_search_xrefs(RCore *core, ut64 from, ut64 to, PJ *pj, int 
 			}
 			switch (op.type) {
 			case R_ANAL_OP_TYPE_JMP:
+				if (anal_jmp_ref) {
+					if (found_xref (core, op.addr, op.jump, R_ANAL_REF_TYPE_CODE, pj, rad, cfg_debug, cfg_anal_strings)) {
+						count++;
+					}
+				}
+				break;
 			case R_ANAL_OP_TYPE_CJMP:
 				if (found_xref (core, op.addr, op.jump, R_ANAL_REF_TYPE_CODE, pj, rad, cfg_debug, cfg_anal_strings)) {
 					count++;

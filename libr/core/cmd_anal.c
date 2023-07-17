@@ -9352,16 +9352,16 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 		case '?':
 			r_core_cmd_help (core, help_msg_axl);
 			break;
-		case 'j':
+		case 'j': // "axlj"
 			r_anal_xrefs_list (core->anal, 'j', "");
 			break;
-		case 'c':
+		case 'c': // "axlc"
 			{
 				ut64 count = r_anal_xrefs_count (core->anal);
 				r_cons_printf ("%"PFMT64d"\n", count);
 			}
 			break;
-		case 'q':
+		case 'q': // "axlq"
 			r_core_cmd_call (core, "axq");
 			break;
 		default:
