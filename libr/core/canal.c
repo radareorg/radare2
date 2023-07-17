@@ -4360,7 +4360,7 @@ R_API int r_core_anal_search_xrefs(RCore *core, ut64 from, ut64 to, PJ *pj, int 
 			bsz = left;
 		}
 		(void)r_io_read_at (core->io, at, buf, bsz);
-		if (!search_badpages) {
+		if (search_badpages) {
 			memset (block, -1, bsz);
 			if (!memcmp (buf, block, bsz)) {
 				if (!uninit) {

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2017 - condret, pancake */
+/* radare - LGPL - Copyright 2017-2023 - condret, pancake */
 
 #include <r_io.h>
 #include <r_lib.h>
@@ -9,11 +9,10 @@ typedef struct {
 } RIONull;
 
 static int __write(RIO* io, RIODesc* fd, const ut8* buf, int count) {
-	RIONull* null;
 	if (!fd || !fd->data || !buf) {
 		return -1;
 	}
-	null = (RIONull*) fd->data;
+	RIONull* null = (RIONull*) fd->data;
 	if ((null->offset + count) > null->size) {
 		int ret = null->size - null->offset;
 		return ret;
@@ -27,11 +26,7 @@ static bool __resize(RIO* io, RIODesc* fd, ut64 count) {
 		RIONull* null = (RIONull*) fd->data;
 		null->size = count;
 		if (null->offset >= count) {
-			if (count) {
-				null->offset = count - 1;
-			} else {
-				null->offset = 0LL;
-			}
+			null->offset = (count != 0)? count - 1: 0LL;
 		}
 		return true;
 	}
@@ -39,11 +34,10 @@ static bool __resize(RIO* io, RIODesc* fd, ut64 count) {
 }
 
 static int __read(RIO* io, RIODesc* fd, ut8* buf, int count) {
-	RIONull* null;
 	if (!fd || !fd->data || !buf) {
 		return -1;
 	}
-	null = (RIONull*) fd->data;
+	RIONull* null = (RIONull*) fd->data;
 	if ((null->offset + count) > null->size) {
 		int ret = null->size - null->offset;
 		memset (buf, 0x00, ret);
