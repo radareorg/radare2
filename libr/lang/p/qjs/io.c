@@ -102,6 +102,25 @@ static int qjs_io_read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 	return count;
 }
 
+// static bool qjs_io_close(RIO *io, RIODesc *fd) {
+static bool qjs_io_close(RIODesc *fd) {
+	RIO *io = fd->io;
+	RCore *core = io->coreb.core;
+	QjsPluginManager *pm = R_UNWRAP4 (core, lang, session, plugin_data);
+
+	// Iterate over plugins until one returns "true" (meaning the plugin handled the input)
+	QjsIoPlugin *plugin;
+	R_VEC_FOREACH (&pm->io_plugins, plugin) {
+		JSContext *ctx = plugin->ctx;
+		JSValueConst args[0] = { };
+		JSValue res = JS_Call (ctx, plugin->fn_close_js, JS_UNDEFINED, countof (args), args);
+		if (JS_ToBool (ctx, res)) {
+			return true;
+		}
+	}
+	return false;
+}
+
 static ut64 qjs_io_seek(RIO *io, RIODesc *fd, ut64 addr, int whence) {
 	RCore *core = io->coreb.core;
 	QjsPluginManager *pm = R_UNWRAP4 (core, lang, session, plugin_data);
@@ -198,6 +217,7 @@ static JSValue r2plugin_io(JSContext *ctx, JSValueConst this_val, int argc, JSVa
 	JSValue fn_open_js = JS_GetPropertyStr (ctx, res, "open");
 	JSValue fn_read_js = JS_GetPropertyStr (ctx, res, "read");
 	JSValue fn_seek_js = JS_GetPropertyStr (ctx, res, "seek");
+	JSValue fn_close_js = JS_GetPropertyStr (ctx, res, "close");
 
 	if (!JS_IsFunction (ctx, fn_check_js)
 	 || !JS_IsFunction (ctx, fn_open_js)
@@ -238,10 +258,7 @@ static JSValue r2plugin_io(JSContext *ctx, JSValueConst this_val, int argc, JSVa
 	ap->open = qjs_io_open;
 	ap->read = qjs_io_read;
 	ap->seek = qjs_io_seek;
-#if 0
-	ap->check = qjs_io_check;
 	ap->close = qjs_io_close;
-#endif
 	ap->system = qjs_io_system;  // Technically this could all be handled by a single generic plugin
 
 	QjsIoPlugin *iop = plugin_manager_add_io_plugin (pm, nameptr, ctx, ap, fn_check_js);
@@ -249,6 +266,7 @@ static JSValue r2plugin_io(JSContext *ctx, JSValueConst this_val, int argc, JSVa
 	iop->fn_open_js = fn_open_js;
 	iop->fn_seek_js = fn_seek_js;
 	iop->fn_read_js = fn_read_js;
+	iop->fn_close_js = fn_close_js;
 
 	RLibStruct *lib = R_NEW0 (RLibStruct);
 	if (!lib) {
