@@ -1093,6 +1093,7 @@ static RBinInfo* info(RBinFile *bf) {
 	ret->big_endian = Elf_(is_big_endian) (obj);
 	ret->has_va = Elf_(has_va) (obj);
 	ret->has_nx = Elf_(has_nx) (obj);
+	ret->has_nobtcfi = Elf_(has_nobtcfi) (obj);
 	ret->intrp = Elf_(intrp) (obj);
 	ret->compiler = Elf_(compiler) (obj);
 	ret->dbg_info = 0;

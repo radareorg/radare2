@@ -1893,8 +1893,12 @@ static ut64 get_import_addr(ELFOBJ *eo, int sym) {
 	}
 }
 
+bool Elf_(has_nobtcfi)(ELFOBJ *eo) {
+	return eo->has_nobtcfi;
+}
+
 /// XXX this is O(n) and can be cached to avoid walking the sections again
-int Elf_(has_nx)(ELFOBJ *eo) {
+bool Elf_(has_nx)(ELFOBJ *eo) {
 	r_return_val_if_fail (eo, 0);
 
 	if (eo && eo->phdr) {
@@ -3770,6 +3774,9 @@ static bool _add_sections_from_phdr(RBinFile *bf, ELFOBJ *eo, bool *found_load) 
 			break;
 		case PT_HIPROC:
 			ptr->name = strdup ("HIPROC");
+			break;
+		case PT_OPENBSD_NOBTCFI:
+			ptr->name = strdup ("OPENBSD_NOBTCFI");
 			break;
 		case PT_OPENBSD_RANDOMIZE:
 			ptr->name = strdup ("OPENBSD_RANDOMIZE");

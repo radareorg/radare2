@@ -928,7 +928,10 @@ static int bin_info(RCore *r, PJ *pj, int mode, ut64 laddr) {
 		}
 		pair_int (pj, "bits", info->bits);
 		pair_bool (pj, "canary", info->has_canary);
-		pair_bool (pj, "injprot", info->has_libinjprot);  // XXX better name than "injprot"?
+		if (info->has_nobtcfi) {
+			pair_bool (pj, "nobtcfi", info->has_nobtcfi);
+		}
+		pair_bool (pj, "injprot", info->has_libinjprot);
 		if (info->has_retguard != -1) {
 			pair_bool (pj, "retguard", info->has_retguard);
 		}
