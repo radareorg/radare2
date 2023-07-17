@@ -184,13 +184,13 @@
 #define EM_AMDGPU              224        /* AMD GPU architecture */
 #define EM_RISCV               243        /* RISC-V */
 
-
 // specific OpenBSD sections
 #ifndef PT_OPENBSD_RANDOMIZE
 #define PT_OPENBSD_RANDOMIZE	0x65a3dbe6	/* Random data */
 #define PT_OPENBSD_WXNEEDED	0x65a3dbe7	/* Allowing writable/executable mapping */
+// https://undeadly.org/cgi?action=article;sid=20230714121907 // -Wl,-z,nobtcfi */
+#define PT_OPENBSD_NOBTCFI      0x65a3dbe8	/* Branch Target Control Flow Integrity disabled */
 #define PT_OPENBSD_BOOTDATA	0x65a41be6	/* Boot time data */
 #endif
-
 
 #endif // _INCLUDE_ELF_SPECS_H

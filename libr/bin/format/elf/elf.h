@@ -140,6 +140,7 @@ struct Elf_(obj_t) {
 	ut64 boffset;
 	int endian;
 	bool verbose;
+	bool has_nobtcfi;
 	const char* file;
 	RBuffer *b;
 	Sdb *kv;
@@ -212,7 +213,8 @@ bool Elf_(del_rpath)(RBinFile *bf);
 ut64 Elf_(get_phnum)(ELFOBJ *bin);
 bool Elf_(is_executable)(ELFOBJ *bin);
 int Elf_(has_relro)(struct Elf_(obj_t) *bin);
-int Elf_(has_nx)(struct Elf_(obj_t) *bin);
+bool Elf_(has_nx)(struct Elf_(obj_t) *bin);
+bool Elf_(has_nobtcfi)(ELFOBJ *eo);
 ut8 *Elf_(grab_regstate)(struct Elf_(obj_t) *bin, int *len);
 RList *Elf_(get_maps)(ELFOBJ *bin);
 RBinSymbol *Elf_(_r_bin_elf_convert_symbol)(struct Elf_(obj_t) *bin,

@@ -236,6 +236,7 @@ typedef struct r_bin_info_t {
 	bool has_sanitizers;
 	bool has_crypto;
 	bool has_nx;
+	bool has_nobtcfi; // only used by OpenBSD for now no branch target control flow integrity
 	bool has_libinjprot; // binary allows libraries to be injected
 	int big_endian;
 	bool has_lit;
