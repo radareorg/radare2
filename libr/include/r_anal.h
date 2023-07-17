@@ -614,6 +614,7 @@ typedef struct r_anal_bb_t {
 	RList *fcns;
 	RAnal *anal;
 	int ref;
+	int depth;
 #undef RAnalBlock
 } RAnalBlock;
 
