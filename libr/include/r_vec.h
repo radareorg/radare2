@@ -256,9 +256,9 @@ extern "C" {
 	static inline R_MAYBE_UNUSED R_MUSTUSE vec_type *R_VEC_FUNC(vec_type, clone)(const vec_type *vec) { \
 		r_return_val_if_fail (vec, NULL); \
 		const ut64 capacity = R_VEC_CAPACITY (vec); \
-		type *buf = malloc (capacity * sizeof (type)); \
+		type *buf = (type *)malloc (capacity * sizeof (type)); \
 		if (R_LIKELY (buf)) { \
-			vec_type *cloned_vec = malloc (sizeof (vec_type)); \
+			vec_type *cloned_vec = (vec_type *)malloc (sizeof (vec_type)); \
 			if (R_LIKELY (cloned_vec)) { \
 				const ut64 num_elems = R_VEC_FUNC(vec_type, length) (vec); \
 				memcpy (buf, vec->_start, num_elems * sizeof (type)); \
@@ -274,7 +274,7 @@ extern "C" {
 	static inline R_MAYBE_UNUSED bool R_VEC_FUNC(vec_type, reserve)(vec_type *vec, ut64 new_capacity) { \
 		r_return_val_if_fail (vec, false); \
 		if (new_capacity > R_VEC_CAPACITY (vec)) { \
-			type *buf = realloc (vec->_start, new_capacity * sizeof (type)); \
+			type *buf = (type *)realloc (vec->_start, new_capacity * sizeof (type)); \
 			const bool is_success = buf != NULL; \
 			if (R_LIKELY (is_success)) { \
 				const ut64 num_elems = R_VEC_FUNC(vec_type, length) (vec); \
@@ -295,7 +295,7 @@ extern "C" {
 				free (vec->_start); \
 				memset (vec, 0, sizeof (vec_type)); \
 			} else { \
-				type *buf = realloc (vec->_start, num_elems * sizeof (type)); \
+				type *buf = (type *)realloc (vec->_start, num_elems * sizeof (type)); \
 				if (R_LIKELY (buf)) { \
 					vec->_start = buf; \
 					vec->_end = buf + num_elems; \
