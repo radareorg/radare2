@@ -670,9 +670,6 @@ typedef struct r_bin_write_t {
 	bool (*addlib)(RBinFile *bf, const char *lib);
 } RBinWrite;
 
-// TODO: deprecate r_bin_is_big_endian
-// TODO: has_dbg_syms... maybe flags?
-
 typedef int (*RBinGetOffset)(RBin *bin, int type, int idx);
 typedef const char *(*RBinGetName)(RBin *bin, int type, int idx, bool sd);
 typedef RList *(*RBinGetSections)(RBin *bin);
@@ -759,8 +756,8 @@ R_API RList *r_bin_file_get_trycatch(RBinFile *bf);
 R_API RList *r_bin_get_symbols(RBin *bin);
 R_API RVecRBinSymbol *r_bin_get_symbols_vec(RBin *bin);
 R_API RList *r_bin_reset_strings(RBin *bin);
-R_API int r_bin_is_big_endian(RBin *bin);
-R_API int r_bin_is_static(RBin *bin);
+R_API int r_bin_is_big_endian(RBin *bin); // R2_590: deprecate. also it returns -1, false and true
+R_API bool r_bin_is_static(RBin *bin); // R2_590: deprecate
 R_API ut64 r_bin_get_vaddr(RBin *bin, ut64 paddr, ut64 vaddr);
 R_API ut64 r_bin_file_get_vaddr(RBinFile *bf, ut64 paddr, ut64 vaddr);
 

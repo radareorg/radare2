@@ -136,7 +136,7 @@ R_API void r_bin_filter_symbols(RBinFile *bf, RList *list) {
 	RListIter *iter;
 	RBinSymbol *sym;
 	r_list_foreach (list, iter, sym) {
-		if (sym && sym->name && *sym->name) {
+		if (sym && R_STR_ISNOTEMPTY (sym->name)) {
 			r_bin_filter_sym (bf, ht, sym->vaddr, sym);
 		}
 	}

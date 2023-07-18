@@ -98,16 +98,8 @@ typedef enum {
 	R_CORE_VISUAL_MODE_CD = 4
 } RCoreVisualMode;
 
-/*
-#define R_CORE_VISUAL_MODE_PC    4
-#define R_CORE_VISUAL_MODE_PXA   5
-#define R_CORE_VISUAL_MODE_PSS   6
-#define R_CORE_VISUAL_MODE_PRC   7
-#define R_CORE_VISUAL_MODE_PXa   8
-#define R_CORE_VISUAL_MODE_PXR   9
-*/
-
 typedef struct r_core_plugin_t {
+	// R2_590 Use RPluginMeta
 	const char *name;
 	const char *desc;
 	const char *license;
@@ -476,10 +468,6 @@ R_API void r_core_seek_arch_bits(RCore *core, ut64 addr);
 R_API int r_core_block_read(RCore *core);
 R_API int r_core_block_size(RCore *core, int bsize);
 R_API int r_core_seek_size(RCore *core, ut64 addr, int bsize);
-#if 0
-/// XXX not implemented?
-R_API bool r_core_is_valid_offset(RCore *core, ut64 offset);
-#endif
 R_API bool r_core_shift_block(RCore *core, ut64 addr, ut64 b_size, st64 dist);
 R_API void r_core_autocomplete(R_NULLABLE RCore *core, RLineCompletion *completion, RLineBuffer *buf, RLinePromptType prompt_type);
 R_API void r_core_print_scrollbar(RCore *core);

@@ -1021,14 +1021,13 @@ static void process_constructors(RKernelCacheObj *obj, struct MACH0_(obj_t) *mac
 
 static RBinAddr *newEntry(ut64 haddr, ut64 vaddr, int type) {
 	RBinAddr *ptr = R_NEW0 (RBinAddr);
-	if (!ptr) {
-		return NULL;
+	if (ptr) {
+		ptr->paddr = haddr;
+		ptr->vaddr = vaddr;
+		ptr->hpaddr = haddr;
+		ptr->bits = 64;
+		ptr->type = type;
 	}
-	ptr->paddr = haddr;
-	ptr->vaddr = vaddr;
-	ptr->hpaddr = haddr;
-	ptr->bits = 64;
-	ptr->type = type;
 	return ptr;
 }
 
