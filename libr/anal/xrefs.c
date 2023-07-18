@@ -8,7 +8,7 @@
 #include <sdb/ht_up.h>
 #include <sdb/ht_uu.h>
 
-R_GENERATE_VEC_IMPL_FOR (AnalRef, RAnalRef);
+R_VEC_TYPE (RVecAnalRef, RAnalRef);
 
 // xrefs are stored as an adjacency list (in both directions),
 // as a hastable mapping at (from) to hashtables mapping addr (at) to a ref type.

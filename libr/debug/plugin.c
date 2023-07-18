@@ -3,7 +3,7 @@
 #include <r_debug.h>
 #include <config.h>
 
-R_GENERATE_VEC_IMPL_FOR(DebugPluginSession, RDebugPluginSession);
+R_VEC_TYPE(RVecDebugPluginSession, RDebugPluginSession);
 
 static RDebugPlugin *debug_static_plugins[] = {
 	R_DEBUG_STATIC_PLUGINS

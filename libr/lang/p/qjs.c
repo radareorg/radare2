@@ -21,9 +21,7 @@ typedef struct qjs_core_plugin {
 	// void *data;  // can be added later if needed
 } QjsCorePlugin;
 
-R_GENERATE_VEC_IMPL_FOR(CorePlugin, QjsCorePlugin);
-// R2_590 - discuss for simpler typing v--
-// R_VEC_TYPE (RVecCorePlugin, QjsCorePlugin);
+R_VEC_TYPE (RVecCorePlugin, QjsCorePlugin);
 
 typedef struct qjs_arch_plugin_t {
 	char *name;
@@ -46,8 +44,8 @@ typedef struct qjs_io_plugin_t {
 	// JSValue encode_func;
 } QjsIoPlugin;
 
-R_GENERATE_VEC_IMPL_FOR(ArchPlugin, QjsArchPlugin);
-R_GENERATE_VEC_IMPL_FOR(IoPlugin, QjsIoPlugin);
+R_VEC_TYPE (RVecArchPlugin, QjsArchPlugin);
+R_VEC_TYPE (RVecIoPlugin, QjsIoPlugin);
 
 typedef struct qjs_plugin_manager_t {
 	R_BORROW RCore *core;

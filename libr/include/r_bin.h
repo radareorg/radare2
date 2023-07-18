@@ -280,7 +280,8 @@ typedef struct r_bin_symbol_t {
 
 #include <r_vec.h>
 
-R_GENERATE_VEC_IMPL_FOR(RBinSymbol, RBinSymbol);
+// R2_590 only forward declare here for better compile times
+R_VEC_TYPE(RVecRBinSymbol, RBinSymbol);
 
 typedef struct r_bin_object_t {
 	ut64 baddr;

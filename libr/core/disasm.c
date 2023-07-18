@@ -5,7 +5,7 @@
 #include "r_core.h"
 #include <r_vec.h>
 
-R_GENERATE_VEC_IMPL_FOR(AnalRef, RAnalRef);
+R_VEC_TYPE(RVecAnalRef, RAnalRef);
 
 #define HASRETRY 1
 #define HAVE_LOCALS 1
@@ -3698,7 +3698,7 @@ static void ds_print_bytes(RDisasmState *ds) {
 	core->print->flags = oldFlags;
 }
 
-R_GENERATE_VEC_IMPL_FOR(UT64, ut64);
+R_VEC_TYPE(RVecUT64, ut64);
 
 static int bb_cmp(const void *a, const void *b) {
 	const RAnalBlock *ba = a;

@@ -8,7 +8,7 @@ R_LIB_VERSION (r_sign);
 #define SIGN_DIFF_MATCH_BYTES_THRESHOLD 1.0
 #define SIGN_DIFF_MATCH_GRAPH_THRESHOLD 1.0
 
-R_GENERATE_VEC_IMPL_FOR(AnalRef, RAnalRef);
+R_VEC_TYPE (RVecAnalRef, RAnalRef);
 
 const char *getRealRef(RCore *core, ut64 off) {
 	RFlagItem *item;

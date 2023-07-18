@@ -8,7 +8,7 @@
 
 HEAPTYPE (ut64);
 
-R_GENERATE_VEC_IMPL_FOR(AnalRef, RAnalRef);
+R_VEC_TYPE(RVecAnalRef, RAnalRef);
 
 static R_TH_LOCAL RCore *mycore = NULL;
 static R_TH_LOCAL bool esil_anal_stop = false;
