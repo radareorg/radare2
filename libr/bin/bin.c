@@ -811,13 +811,14 @@ R_API RList *r_bin_get_mem(RBin *bin) {
 	return o ? o->mem : NULL;
 }
 
+// XXX badly designed api, should not exist, aka DEPRECATE
 R_API int r_bin_is_big_endian(RBin *bin) {
 	r_return_val_if_fail (bin, -1);
 	RBinObject *o = r_bin_cur_object (bin);
 	return (o && o->info) ? o->info->big_endian : -1;
 }
 
-R_API int r_bin_is_static(RBin *bin) {
+R_API bool r_bin_is_static(RBin *bin) {
 	r_return_val_if_fail (bin, false);
 	RBinObject *o = r_bin_cur_object (bin);
 	if (o && o->libs && r_list_length (o->libs) > 0) {

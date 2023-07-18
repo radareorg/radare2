@@ -81,8 +81,8 @@ typedef struct r_io_undos_t {
 } RIOUndos;
 
 typedef struct r_io_undo_t {
-	int s_enable; // R2_590 - can be bool imho
-	int w_enable; // R2_590 - can be bool
+	bool s_enable;
+	bool w_enable;
 	/* write stuff */
 	RList *w_list;
 	int w_init;
@@ -122,7 +122,7 @@ typedef struct r_io_cache_layer_t {
 
 typedef struct r_io_cache_t {
 	RList *layers; // a list of cache layers-- must be a vector O(n)
-	int enabled;
+	int enabled; // R2_590 bool?
 	ut32 mode; // read, write, exec (enabled) sperm = requires maps
 } RIOCache;
 

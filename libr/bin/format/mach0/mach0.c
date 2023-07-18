@@ -3296,7 +3296,7 @@ static RBinImport *import_from_name(RBin *rbin, const char *orig_name) {
 	char *name = (char*) orig_name;
 	const char *const _objc_class = "_OBJC_CLASS_$";
 	const char *const _objc_metaclass = "_OBJC_METACLASS_$";
-	const char * type = "FUNC";
+	const char *type;
 
 	if (r_str_startswith (name, _objc_class)) {
 		name += strlen (_objc_class);
@@ -3304,6 +3304,8 @@ static RBinImport *import_from_name(RBin *rbin, const char *orig_name) {
 	} else if (r_str_startswith (name, _objc_metaclass)) {
 		name += strlen (_objc_metaclass);
 		type = "OBJC_METACLASS";
+	} else {
+		type = "FUNC";
 	}
 
 	// Remove the extra underscore that every import seems to have in Mach-O.

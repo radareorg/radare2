@@ -61,6 +61,7 @@ typedef struct r_flag_t {
 	ut64 mask;
 	RThreadLock *lock;
 	R_DIRTY_VAR;
+	// ??? RStrpool *pool; // stringpool can be tricky because removing flags wont free memory
 } RFlag;
 
 /* compile time dependency */

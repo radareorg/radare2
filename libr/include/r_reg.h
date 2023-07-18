@@ -101,8 +101,8 @@ typedef enum {
 typedef struct r_reg_item_t {
 	char *name;
 	int /*RRegisterType*/ type;
-	int size;	/* 8,16,32,64 ... 128/256 ??? rename to bitsize */
-	int offset;      /* offset in data structure */
+	int size; /* 8,16,32,64 ... 128/256 ??? rename to bitsize */
+	int offset; /* offset in data structure */
 	int packed_size; /* 0 means no packed register, 1byte pack, 2b pack... */
 	bool is_float;
 	char *flags;

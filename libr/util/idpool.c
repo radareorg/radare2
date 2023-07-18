@@ -102,15 +102,12 @@ static bool id_storage_reallocate(RIDStorage* storage, ut32 size) {
 }
 
 static bool oid_storage_preallocate(ROIDStorage *st, ut32 size) {
-	ut32 *permutation;
-	if (!st) {
-		return false;
-	}
+	r_return_val_if_fail (st, false);
 	if (!size) {
 		R_FREE (st->permutation);
 		st->psize = 0;
 	}
-	permutation = realloc (st->permutation, size * sizeof (ut32));
+	ut32 *permutation = realloc (st->permutation, size * sizeof (ut32));
 	if (!permutation) {
 		return false;
 	}
@@ -123,7 +120,8 @@ static bool oid_storage_preallocate(ROIDStorage *st, ut32 size) {
 }
 
 R_API bool r_id_storage_set(RIDStorage* storage, void* data, ut32 id) {
-	if (!storage || !storage->pool || (id >= storage->pool->next_id)) {
+	r_return_val_if_fail (storage && storage->pool, false);
+	if (id >= storage->pool->next_id) {
 		return false;
 	}
 	ut32 n = get_msb (id + 1);
@@ -264,8 +262,8 @@ R_API void r_id_storage_free(RIDStorage* storage) {
 	if (storage) {
 		r_id_pool_free (storage->pool);
 		free (storage->data);
+		free (storage);
 	}
-	free (storage);
 }
 
 static bool _list(void* user, void* data, ut32 id) {
@@ -273,7 +271,7 @@ static bool _list(void* user, void* data, ut32 id) {
 	return true;
 }
 
-R_API RList *r_id_storage_list(RIDStorage *s) {		//remove this pls
+R_API RList *r_id_storage_list(RIDStorage *s) { // remove this pls
 	RList *list = r_list_newf (NULL);
 	r_id_storage_foreach (s, _list, list);
 	return list;
@@ -281,12 +279,12 @@ R_API RList *r_id_storage_list(RIDStorage *s) {		//remove this pls
 
 R_API ROIDStorage *r_oids_new(ut32 start_id, ut32 last_id) {
 	ROIDStorage *storage = R_NEW0 (ROIDStorage);
-	if (!storage) {
-		return NULL;
-	}
-	if (!(storage->data = r_id_storage_new (start_id, last_id))) {
-		free (storage);
-		return NULL;
+	if (storage) {
+		storage->data = r_id_storage_new (start_id, last_id);
+		if (!storage->data) {
+			free (storage);
+			return NULL;
+		}
 	}
 	return storage;
 }

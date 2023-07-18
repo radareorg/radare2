@@ -1,11 +1,6 @@
-/* radare - LGPL - Copyright 2009-2022 - pancake */
+/* radare - LGPL - Copyright 2009-2023 - pancake */
 
 #include <r_core.h>
-#include <r_types.h>
-#include <r_util.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <r_main.h>
 #include "../../libr/bin/format/pdb/pdb_downloader.h"
 
 typedef struct rabin2_state_t {
