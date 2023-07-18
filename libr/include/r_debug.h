@@ -342,7 +342,7 @@ typedef struct r_debug_plugin_session_t {
 	void *plugin_data;
 } RDebugPluginSession;
 
-R_VEC_FORWARD_DECLARE(DebugPluginSession);
+R_VEC_FORWARD_DECLARE(RVecDebugPluginSession);
 
 typedef struct r_debug_t {
 	// R2_590 use RArchConfig instead

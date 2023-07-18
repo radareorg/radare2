@@ -102,7 +102,7 @@ static const char * const mousemodes[] = {
 
 #define NORMALIZE_MOV(x) ((x) < 0 ? -1 : ((x) > 0 ? 1 : 0))
 
-R_GENERATE_VEC_IMPL_FOR(AnalRef, RAnalRef);
+R_VEC_TYPE (RVecAnalRef, RAnalRef);
 
 static void hash_set(Sdb *db, const void *k, ut64 v) {
 	r_strf_var (ks, 32, "%"PFMT64u, (ut64) (size_t) (k));

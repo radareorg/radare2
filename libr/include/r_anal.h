@@ -644,7 +644,7 @@ typedef struct r_anal_ref_t {
 	RAnalRefType type;
 } RAnalRef;
 
-typedef struct r_vec_AnalRef_t RVecAnalRef;
+typedef struct r_vec_RVecAnalRef_t RVecAnalRef;
 
 /* represents a reference line from one address (from) to another (to) */
 typedef struct r_anal_refline_t {

@@ -31,7 +31,7 @@ static int bb_cmpaddr(const void *_a, const void *_b) {
 
 static void cmd_debug_reg(RCore *core, const char *str);
 
-R_GENERATE_VEC_IMPL_FOR(AnalRef, RAnalRef);
+R_VEC_TYPE(RVecAnalRef, RAnalRef);
 
 #include "cmd_quit.c"
 #include "cmd_hash.c"

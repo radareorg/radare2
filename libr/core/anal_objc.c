@@ -11,7 +11,7 @@
 #include <r_core.h>
 #include <r_vec.h>
 
-R_GENERATE_VEC_IMPL_FOR(AnalRef, RAnalRef);
+R_VEC_TYPE(RVecAnalRef, RAnalRef);
 
 typedef struct {
 	RCore *core;
