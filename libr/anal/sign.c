@@ -63,7 +63,7 @@ R_API RList *r_sign_fcn_xrefs(RAnal *a, RAnalFunction *fcn) {
 			}
 		}
 	}
-	RVecAnalRef_free (xrefs, NULL, NULL);
+	RVecAnalRef_free (xrefs);
 	return ret;
 }
 
@@ -93,7 +93,7 @@ R_API RList *r_sign_fcn_refs(RAnal *a, RAnalFunction *fcn) {
 			}
 		}
 	}
-	RVecAnalRef_free (refs, NULL, NULL);
+	RVecAnalRef_free (refs);
 	return ret;
 }
 

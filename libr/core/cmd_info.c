@@ -175,7 +175,7 @@ static void cmd_info_here(RCore *core, PJ *pj, int mode) {
 				}
 				pj_end (pj);
 			}
-			RVecAnalRef_free (refs, NULL, NULL);
+			RVecAnalRef_free (refs);
 		}
 		{
 			RVecAnalRef *refs = r_anal_xrefs_get (core->anal, core->offset);
@@ -191,7 +191,7 @@ static void cmd_info_here(RCore *core, PJ *pj, int mode) {
 				}
 				pj_end (pj);
 			}
-			RVecAnalRef_free (refs, NULL, NULL);
+			RVecAnalRef_free (refs);
 		}
 		pj_end (pj);
 		r_core_item_free (item);

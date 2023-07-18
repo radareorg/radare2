@@ -307,7 +307,7 @@ static bool objc_find_refs(RCore *core) {
 					total_xrefs++;
 				}
 			}
-			RVecAnalRef_free (xrefs, NULL, NULL);
+			RVecAnalRef_free (xrefs);
 		}
 	}
 

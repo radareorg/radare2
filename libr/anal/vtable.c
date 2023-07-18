@@ -147,7 +147,7 @@ static bool vtable_is_addr_vtable_start_msvc(RVTableContext *context, ut64 curAd
 	// total xrefs to curAddress
 	RVecAnalRef *xrefs = r_anal_xrefs_get (context->anal, curAddress);
 	if (!xrefs || RVecAnalRef_empty (xrefs)) {
-		RVecAnalRef_free (xrefs, NULL, NULL);
+		RVecAnalRef_free (xrefs);
 		return false;
 	}
 
@@ -160,7 +160,7 @@ static bool vtable_is_addr_vtable_start_msvc(RVTableContext *context, ut64 curAd
 			RAnalOp analop = {0};
 			r_anal_op (context->anal, &analop, xref->addr, buf, sizeof (buf), R_ARCH_OP_MASK_BASIC);
 			if (analop.type == R_ANAL_OP_TYPE_MOV || analop.type == R_ANAL_OP_TYPE_LEA) {
-				RVecAnalRef_free (xrefs, NULL, NULL);
+				RVecAnalRef_free (xrefs);
 				r_anal_op_fini (&analop);
 				return true;
 			}
@@ -168,7 +168,7 @@ static bool vtable_is_addr_vtable_start_msvc(RVTableContext *context, ut64 curAd
 		}
 	}
 
-	RVecAnalRef_free (xrefs, NULL, NULL);
+	RVecAnalRef_free (xrefs);
 	return false; // XXX true?
 }
 
@@ -212,7 +212,7 @@ R_API RVTableInfo *r_anal_vtable_parse_at(RVTableContext *context, ut64 addr) {
 		// TODO add R_API function that only returns if there are xrefs for an addr
 		// to avoid several allocations
 		const bool has_refs = ll && !RVecAnalRef_empty (ll);
-		RVecAnalRef_free (ll, NULL, NULL);
+		RVecAnalRef_free (ll);
 		if (has_refs) {
 			break;
 		}

@@ -5032,7 +5032,7 @@ static char *__op_refs(RCore *core, RAnalOp *op, int n) {
 			R_VEC_FOREACH (xrefs, ref) {
 				r_strbuf_appendf (sb, "0x%08"PFMT64x" ", ref->at);
 			}
-			RVecAnalRef_free (xrefs, NULL, NULL);
+			RVecAnalRef_free (xrefs);
 		}
 	} else {
 		if (op->jump != UT64_MAX) {
@@ -5442,7 +5442,7 @@ static bool cmd_pi(RCore *core, const char *input, int len, int l, ut8 *block) {
 				r_config_hold_restore (hc);
 				r_config_hold_free (hc);
 			}
-			RVecAnalRef_free (refs, NULL, NULL);
+			RVecAnalRef_free (refs);
 
 			// print json object
 			if (pj) {

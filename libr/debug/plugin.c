@@ -19,14 +19,14 @@ static inline void debug_plugin_session_fini(RDebugPluginSession *ds, void *user
 
 R_API void r_debug_init_plugins(RDebug *dbg) {
 	int i;
-	dbg->plugins = RVecDebugPluginSession_new ();
+	dbg->plugins = RVecDebugPluginSession_new (debug_plugin_session_fini, dbg);
 	for (i = 0; debug_static_plugins[i]; i++) {
 		r_debug_plugin_add (dbg, debug_static_plugins[i]);
 	}
 }
 
 R_API void r_debug_fini_plugins(RDebug *dbg) {
-	RVecDebugPluginSession_free (dbg->plugins, debug_plugin_session_fini, dbg);
+	RVecDebugPluginSession_free (dbg->plugins);
 }
 
 static inline int find_plugin_by_name(const RDebugPluginSession *ds, const void *name) {
@@ -140,7 +140,7 @@ R_API bool r_debug_plugin_remove(RDebug *dbg, RDebugPlugin *plugin) {
 		return false;
 	}
 
-	RVecDebugPluginSession_pop_back (dbg->plugins, debug_plugin_session_fini, dbg);
+	RVecDebugPluginSession_pop_back (dbg->plugins);
 	return true;
 }
 
