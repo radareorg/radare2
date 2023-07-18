@@ -449,6 +449,9 @@ extern "C" {
 	} \
 	static inline R_MAYBE_UNUSED void R_VEC_FUNC(name, sort)(R_VEC(name) *vec, R_VEC_CMP(name) cmp_fn) { \
 		r_return_if_fail (vec && cmp_fn); \
+		if (R_VEC_FUNC(name, empty) (vec)) { \
+			return; \
+		} \
 		qsort (vec->_start, R_VEC_FUNC(name, length) (vec), sizeof (type), \
 			(int (*)(const void *, const void *)) cmp_fn); \
 	} \
