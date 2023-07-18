@@ -370,19 +370,19 @@ static void check_purity(HtUP *ht, RAnalFunction *fcn) {
 				}
 				if (!called_fcn->is_pure) {
 					fcn->is_pure = false;
-					RVecAnalRef_free (refs, NULL, NULL);
+					RVecAnalRef_free (refs);
 					return;
 				}
 			}
 			break;
 		case R_ANAL_REF_TYPE_DATA:
 			fcn->is_pure = false;
-			RVecAnalRef_free (refs, NULL, NULL);
+			RVecAnalRef_free (refs);
 			return;
 		}
 	}
 
-	RVecAnalRef_free (refs, NULL, NULL);
+	RVecAnalRef_free (refs);
 }
 
 typedef struct {
@@ -1624,7 +1624,7 @@ R_API void r_anal_trim_jmprefs(RAnal *anal, RAnalFunction *fcn) {
 		}
 	}
 
-	RVecAnalRef_free (refs, NULL, NULL);
+	RVecAnalRef_free (refs);
 }
 
 R_API void r_anal_del_jmprefs(RAnal *anal, RAnalFunction *fcn) {
@@ -1643,7 +1643,7 @@ R_API void r_anal_del_jmprefs(RAnal *anal, RAnalFunction *fcn) {
 			r_anal_xrefs_deln (anal, ref->at, ref->addr, ref->type);
 		}
 	}
-	RVecAnalRef_free (refs, NULL, NULL);
+	RVecAnalRef_free (refs);
 }
 
 /* Does NOT invalidate read-ahead cache. */

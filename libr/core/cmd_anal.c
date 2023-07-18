@@ -2801,7 +2801,7 @@ static RList *get_xrefs(RAnalBlock *block) {
 				r_list_push (list, ut64_new (ref->addr));
 			}
 		}
-		RVecAnalRef_free (xrefs, NULL, NULL);
+		RVecAnalRef_free (xrefs);
 	}
 	return list;
 }
@@ -4158,7 +4158,7 @@ static void xrefs_map(RCore *core, const char *input) {
 		} else {
 			r_cons_printf ("\r");
 		}
-		RVecAnalRef_free (refs, NULL, NULL);
+		RVecAnalRef_free (refs);
 	}
 }
 
@@ -4229,7 +4229,7 @@ R_API void r_core_af(RCore *core, ut64 addr, const char *name, bool anal_calls) 
 							r_core_anal_fcn (core, raddr, f->addr, R_ANAL_REF_TYPE_CALL, depth - 1);
 						}
 					}
-					RVecAnalRef_free (refs1, NULL, NULL);
+					RVecAnalRef_free (refs1);
 				} else {
 					f = r_anal_get_fcn_in (core->anal, fcn->addr, 0);
 					if (f) {
@@ -4244,7 +4244,7 @@ R_API void r_core_af(RCore *core, ut64 addr, const char *name, bool anal_calls) 
 				}
 #endif
 			}
-			RVecAnalRef_free (refs, NULL, NULL);
+			RVecAnalRef_free (refs);
 			if (core->anal->opt.vars) {
 				r_core_recover_vars (core, fcn, true);
 			}
@@ -4316,7 +4316,7 @@ static void cmd_aflxj(RCore *core) {
 	char *s = pj_drain (pj);
 	r_cons_printf ("%s\n", s);
 	free (s);
-	RVecAnalRef_free (xrefs, NULL, NULL);
+	RVecAnalRef_free (xrefs);
 	sdb_free (db);
 	ls_free (keys);
 }
@@ -5333,7 +5333,7 @@ static int cmd_af(RCore *core, const char *input) {
 							}
 						}
 					}
-					RVecAnalRef_free (refs, NULL, NULL);
+					RVecAnalRef_free (refs);
 					r_core_seek (core, oaddr, 1);
 				} else {
 					R_LOG_ERROR ("afx: Cannot find function at 0x%08"PFMT64x, addr);
@@ -9091,7 +9091,7 @@ static void anal_axg(RCore *core, const char *input, int level, Sdb *db, int opt
 			}
 		}
 	}
-	RVecAnalRef_free (xrefs, NULL, NULL);
+	RVecAnalRef_free (xrefs);
 }
 
 static void cmd_anal_ucall_ref(RCore *core, ut64 addr) {
@@ -9210,7 +9210,7 @@ static void axtm(RCore *core) {
 		}
 	}
 
-	RVecAnalRef_free (refs, NULL, NULL);
+	RVecAnalRef_free (refs);
 }
 
 static void axfm(RCore *core) {
@@ -9235,7 +9235,7 @@ static void axfm(RCore *core) {
 		}
 	}
 
-	RVecAnalRef_free (refs, NULL, NULL);
+	RVecAnalRef_free (refs);
 }
 
 static bool cmd_anal_refs(RCore *core, const char *input) {
@@ -9274,7 +9274,7 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 					r_anal_xref_del (core->anal, ref->addr, ref->at);
 				}
 			}
-			RVecAnalRef_free (list, NULL, NULL);
+			RVecAnalRef_free (list);
 		}
 		free (cp_inp);
 	} break;
@@ -9337,7 +9337,7 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 				r_anal_ref_type_tostring (ref->type));
 			r_anal_xrefs_set (core->anal, ref->addr, at, ref->type);
 		}
-		RVecAnalRef_free (list, NULL, NULL);
+		RVecAnalRef_free (list);
 		free (ptr);
 	} break;
 	case 'v': // "axv"
@@ -9529,7 +9529,7 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 				pj_free (pj);
 			}
 		}
-		RVecAnalRef_free (list, NULL, NULL);
+		RVecAnalRef_free (list);
 	} break;
 	case 'f':
 		if (input[1] == 'f') { // "axff"
@@ -9558,7 +9558,7 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 							r_anal_ref_type_tostring(refi->type), refi->at, refi->addr, name);
 					}
 				}
-				RVecAnalRef_free (refs, NULL, NULL);
+				RVecAnalRef_free (refs);
 				if (pj) {
 					pj_end (pj);
 					r_cons_println (pj_string (pj));
@@ -9682,7 +9682,7 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 					r_cons_print ("[]\n");
 				}
 			}
-			RVecAnalRef_free (list, NULL, NULL);
+			RVecAnalRef_free (list);
 		}
 		break;
 	case 'F': // "axF"
@@ -11613,7 +11613,7 @@ static int compute_calls(RCore *core) {
 		RVecAnalRef *xrefs = r_anal_function_get_xrefs (fcn);
 		if (xrefs) {
 			cov += RVecAnalRef_length (xrefs);
-			RVecAnalRef_free (xrefs, NULL, NULL);
+			RVecAnalRef_free (xrefs);
 		}
 	}
 	return cov;
@@ -11668,7 +11668,7 @@ static void cmd_anal_aad(RCore *core, const char *input) {
 			r_core_anal_fcn (core, ref->at, ref->addr, R_ANAL_REF_TYPE_NULL, 1);
 		}
 	}
-	RVecAnalRef_free (list, NULL, NULL);
+	RVecAnalRef_free (list);
 }
 
 static bool archIsThumbable(RCore *core) {
@@ -12218,7 +12218,7 @@ static void anal_aarr(RCore *core) {
 			set_u_add (visited, ra);
 			funref (core, refi->at, ra);
 		}
-		RVecAnalRef_free (refs, NULL, NULL);
+		RVecAnalRef_free (refs);
 	}
 	set_u_free (visited);
 }

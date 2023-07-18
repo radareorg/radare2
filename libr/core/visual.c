@@ -1447,7 +1447,7 @@ R_API int r_core_visual_refs(RCore *core, bool xref, bool fcnInsteadOfAddr) {
 		addr += core->print->cur;
 	}
 repeat:
-	RVecAnalRef_free (xrefs, NULL, NULL);
+	RVecAnalRef_free (xrefs);
 	if (xrefsMode) {
 		RAnalFunction *fun = r_anal_get_fcn_in (core->anal, addr, R_ANAL_FCN_TYPE_NULL);
 		if (fun) {
@@ -1478,7 +1478,7 @@ repeat:
 		free (address);
 	}
 	if (!xrefs || RVecAnalRef_empty (xrefs)) {
-		RVecAnalRef_free (xrefs, NULL, NULL);
+		RVecAnalRef_free (xrefs);
 		xrefs = NULL;
 		r_cons_printf ("\n\n(no %srefs)\n", xref ? "x": "");
 	} else {
@@ -1699,7 +1699,7 @@ repeat:
 		}
 		break;
 	}
-	RVecAnalRef_free (xrefs, NULL, NULL);
+	RVecAnalRef_free (xrefs);
 
 	return ret;
 }

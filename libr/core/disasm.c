@@ -1151,7 +1151,7 @@ static void ds_build_op_str(RDisasmState *ds, bool print_color) {
 					}
 				}
 			}
-			RVecAnalRef_free (refs, NULL, NULL);
+			RVecAnalRef_free (refs);
 		}
 	}
 	ds->opstr = ds_sub_jumps (ds, ds->opstr);
@@ -1437,7 +1437,7 @@ static void ds_show_refs(RDisasmState *ds) {
 		}
 		ds_print_color_reset (ds);
 	}
-	RVecAnalRef_free (refs, NULL, NULL);
+	RVecAnalRef_free (refs);
 }
 
 static void ds_show_xrefs(RDisasmState *ds) {
@@ -1467,7 +1467,7 @@ static void ds_show_xrefs(RDisasmState *ds) {
 			ds_print_color_reset (ds);
 		}
 		ds_newline (ds);
-		RVecAnalRef_free (xrefs, NULL, NULL);
+		RVecAnalRef_free (xrefs);
 		return;
 	}
 	if (RVecAnalRef_length (xrefs) > ds->foldxrefs) {
@@ -1505,7 +1505,7 @@ static void ds_show_xrefs(RDisasmState *ds) {
 		}
 		ds_print_color_reset (ds);
 		ds_newline (ds);
-		RVecAnalRef_free (xrefs, NULL, NULL);
+		RVecAnalRef_free (xrefs);
 		return;
 	}
 
@@ -1624,7 +1624,7 @@ static void ds_show_xrefs(RDisasmState *ds) {
 		i++;
 	}
 	r_list_free (addrs);
-	RVecAnalRef_free (xrefs, NULL, NULL);
+	RVecAnalRef_free (xrefs);
 }
 
 static void ds_atabs_option(RDisasmState *ds) {
@@ -3716,7 +3716,7 @@ static int inbounds(RList *bbs, ut64 addr) {
 	RAnalBlock *bb;
 	RListIter *iter;
 	RVecUT64 vec;
-	RVecUT64_init (&vec);
+	RVecUT64_init (&vec, NULL, NULL);
 	r_list_foreach (bbs, iter, bb) {
 		if (bb->jump == UT64_MAX) {
 			continue;
@@ -3737,7 +3737,7 @@ static int inbounds(RList *bbs, ut64 addr) {
 			}
 		}
 	}
-	RVecUT64_fini (&vec, NULL, NULL);
+	RVecUT64_fini (&vec);
 	return count;
 }
 
@@ -4490,7 +4490,7 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 			}
 		}
 	}
-	RVecAnalRef_free (refs, NULL, NULL);
+	RVecAnalRef_free (refs);
 
 	if (ds->analop.type == (R_ANAL_OP_TYPE_MOV | R_ANAL_OP_TYPE_REG)
 	    && ds->analop.stackop == R_ANAL_STACK_SET
@@ -6964,7 +6964,7 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 				}
 				pj_end (pj);
 			}
-			RVecAnalRef_free (refs, NULL, NULL);
+			RVecAnalRef_free (refs);
 		}
 		/* add xrefs */
 		{
@@ -6982,7 +6982,7 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 				}
 				pj_end (pj);
 			}
-			RVecAnalRef_free (xrefs, NULL, NULL);
+			RVecAnalRef_free (xrefs);
 		}
 
 		pj_end (pj);

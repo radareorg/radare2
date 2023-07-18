@@ -351,14 +351,14 @@ static ut64 getref(RCore *core, int n, char t, int type) {
 			if (r->type == type) {
 				if (i == n) {
 					ut64 addr = r->addr;
-					RVecAnalRef_free (anal_refs, NULL, NULL);
+					RVecAnalRef_free (anal_refs);
 					return addr;
 				}
 				i++;
 			}
 		}
 	}
-	RVecAnalRef_free (anal_refs, NULL, NULL);
+	RVecAnalRef_free (anal_refs);
 	return UT64_MAX;
 }
 

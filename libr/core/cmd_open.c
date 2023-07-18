@@ -1355,8 +1355,8 @@ static void __rebase_everything(RCore *core, RList *old_sections, ut64 old_base)
 		}
 	}
 
-	RVecAnalRef_free (old_refs, NULL, NULL);
-	RVecAnalRef_free (old_xrefs, NULL, NULL);
+	RVecAnalRef_free (old_refs);
+	RVecAnalRef_free (old_xrefs);
 
 	// BREAKPOINTS
 	r_debug_bp_rebase (core->dbg, old_base, new_base);

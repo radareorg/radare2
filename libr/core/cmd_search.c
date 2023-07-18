@@ -2242,7 +2242,7 @@ static void do_ref_search(RCore *core, ut64 addr,ut64 from, ut64 to, struct sear
 		free (buf_fcn);
 		r_anal_op_fini (&asmop);
 	}
-	RVecAnalRef_free (xrefs, NULL, NULL);
+	RVecAnalRef_free (xrefs);
 }
 
 static void cmd_search_aF(RCore *core, const char *input) {

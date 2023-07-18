@@ -2610,7 +2610,7 @@ static bool get_cgnodes(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 
 			RANode *node = r_agraph_add_node (g, title, body, NULL);
 			if (!node) {
-				RVecAnalRef_free (refs, NULL, NULL);
+				RVecAnalRef_free (refs);
 				return false;
 			}
 
@@ -2624,7 +2624,7 @@ static bool get_cgnodes(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 		}
 	}
 
-	RVecAnalRef_free (refs, NULL, NULL);
+	RVecAnalRef_free (refs);
 	return true;
 }
 

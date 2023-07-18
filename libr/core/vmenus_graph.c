@@ -94,7 +94,7 @@ static RList *__xrefs(RCore *core, ut64 addr) {
 		r_list_append (r, item);
 	}
 
-	RVecAnalRef_free (xrefs, NULL, NULL);
+	RVecAnalRef_free (xrefs);
 	return r;
 }
 
@@ -128,7 +128,7 @@ static RList *__refs(RCore *core, ut64 addr) {
 		r_list_append (r, item);
 	}
 
-	RVecAnalRef_free (refs, NULL, NULL);
+	RVecAnalRef_free (refs);
 	return r;
 }
 
