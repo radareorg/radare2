@@ -34,7 +34,6 @@ arch_plugins = [ 'null',
   'any_vasm',
   'jdh8',
   'kvx',
-  'xtensa',
   'xap',
   'mcore',
   'riscv',
@@ -181,6 +180,7 @@ arch_plugins += [
 if no_user_plugins
   if use_gpl
     arch_plugins += [
+      'xtensa',
       'loongarch_gnu',
       'arm_gnu',
       'z80',
