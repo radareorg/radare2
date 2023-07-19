@@ -27,7 +27,6 @@ r_arch_sources = [
   'p/lm32/plugin.c',
   'p/s390/plugin.c',
   'p/mcs96/plugin.c',
-  'p/xtensa/plugin.c',
   'p/lanai/plugin.c',
   'p/lanai/gnu/lanai-dis.c',
   'p/lanai/gnu/lanai-opc.c',
@@ -57,10 +56,6 @@ r_arch_sources = [
 # error LNK2005: SocketNotificationRetrieveEvents already defined in p_hppa_gnu_hppa-dis.c.obj
   'p/hppa/plugin_gnu.c',
   'p/hppa/gnu/hppa-dis.c',
-  'p/xtensa/gnu/elf32-xtensa.c',
-  'p/xtensa/gnu/xtensa-dis.c',
-  'p/xtensa/gnu/xtensa-isa.c',
-  'p/xtensa/gnu/xtensa-modules.c',
   'p/dis/plugin.c',
   'p/evm/plugin.c',
   'p/propeller/plugin.c',
@@ -173,6 +168,16 @@ if arch_plugins.contains('x86_nz')
   r_arch_sources += [
     'p/x86_nz/plugin.c'
   ]
+endif
+
+if arch_plugins.contains('xtensa')
+r_arch_sources += [
+  'p/xtensa/plugin.c',
+  'p/xtensa/gnu/elf32-xtensa.c',
+  'p/xtensa/gnu/xtensa-dis.c',
+  'p/xtensa/gnu/xtensa-isa.c',
+  'p/xtensa/gnu/xtensa-modules.c',
+]
 endif
 
 if get_option('use_v35')

@@ -1,7 +1,7 @@
 /* radare2 - LGPL - Copyright 2016-2023 - pancake */
 
 #include <r_arch.h>
-#include "../../include/xtensa-isa.h"
+#include "gnu/xtensa-isa.h"
 #include "../../include/disas-asm.h"
 
 #define INSN_BUFFER_SIZE 4

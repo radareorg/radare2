@@ -18,7 +18,9 @@
    Foundation, Inc., 51 Franklin Street - Fifth Floor, Boston, MA
    02110-1301, USA.  */
 
-#include "../../../include/xtensa-isa.h"
+#include "xtensa-isa.h"
+
+xtensa_isa xtensa_default_isa = {0};
 
 #define XTENSA_NO_NOP_REMOVAL 0
 
@@ -132,7 +134,6 @@ typedef struct xtensa_relax_info_struct xtensa_relax_info;
 
 #endif
 
-xtensa_isa xtensa_default_isa;
 // xtensa_default_isa = xtensa_isa_init (0, 0);
 
 #if 0

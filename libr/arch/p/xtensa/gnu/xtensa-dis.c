@@ -21,7 +21,7 @@
 
 #include <r_types.h>
 #include "../../../include/disas-asm.h"
-#include "../../../include/xtensa-isa.h"
+#include "xtensa-isa.h"
 
 #if 1
 static void nothing(void) {
