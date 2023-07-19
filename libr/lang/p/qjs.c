@@ -327,6 +327,29 @@ static JSValue r2plugin_unload(JSContext *ctx, JSValueConst this_val, int argc, 
 	return JS_NewBool (ctx, res);
 }
 
+static JSValue r2syscmd(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
+	size_t plen;
+	const char *n = JS_ToCStringLen2 (ctx, &plen, argv[0], false);
+	int ret = 0;
+	if (R_STR_ISNOTEMPTY (n)) {
+		ret = r_sys_cmd (n);
+	}
+	// JS_FreeValue (ctx, argv[0]);
+	return JS_NewInt32 (ctx, ret);
+}
+
+static JSValue r2syscmds(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
+	size_t plen;
+	const char *n = JS_ToCStringLen2 (ctx, &plen, argv[0], false);
+	char *ret = NULL;
+	if (R_STR_ISNOTEMPTY (n)) {
+		ret = r_sys_cmd_str (n, NULL, NULL);
+	}
+	JSValue v = JS_NewString (ctx, r_str_get (ret));
+	free (ret);
+	return v;
+}
+
 // WIP experimental
 static JSValue r2cmd0(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
 	JSRuntime *rt = JS_GetRuntime (ctx);
@@ -473,6 +496,8 @@ static const JSCFunctionListEntry js_r2_funcs[] = {
 	JS_CFUNC_DEF ("cmd0", 1, r2cmd0),
 	// implemented in js JS_CFUNC_DEF ("call", 1, r2call);
 	JS_CFUNC_DEF ("call0", 1, r2call0),
+	JS_CFUNC_DEF ("syscmd", 1, r2syscmd),
+	JS_CFUNC_DEF ("syscmds", 1, r2syscmds),
 };
 
 static int js_r2_init(JSContext *ctx, JSModuleDef *m) {
