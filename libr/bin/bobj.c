@@ -44,7 +44,9 @@ static void object_delete_items(RBinObject *o) {
 
 	if (!RVecRBinSymbol_empty (&o->symbols_vec)) {
 		RVecRBinSymbol_fini (&o->symbols_vec);
-		o->symbols->free = NULL;
+		if (o->symbols) {
+			o->symbols->free = NULL;
+		}
 	}
 	r_list_free (o->symbols);
 
@@ -331,16 +333,14 @@ R_API int r_bin_object_set_items(RBinFile *bf, RBinObject *bo) {
 		}
 	}
 	if (p->symbols_vec) {
-		RList *list = r_list_newf ((RListFree) r_bin_symbol_free);
+		p->symbols_vec (bf);
 		RBinSymbol *sym;
-		R_VEC_FOREACH (&bo->symbols_vec, sym) {
-			r_list_append (list, r_bin_symbol_clone (sym));
-		}
-		bo->symbols = list;
-		bo->symbols->free = r_bin_symbol_free;
-		REBASE_PADDR (bo, bo->symbols, RBinSymbol);
-		if (bin->filter) {
-			r_bin_filter_symbols (bf, bo->symbols); // 5s
+		HtPP *ht = ht_pp_new0 ();
+		if (ht) {
+			R_VEC_FOREACH (&bo->symbols_vec, sym) {
+				r_bin_filter_sym (bf, ht, sym->vaddr, sym);
+			}
+			ht_pp_free (ht);
 		}
 	} else if (p->symbols) {
 		bo->symbols = p->symbols (bf); // 5s

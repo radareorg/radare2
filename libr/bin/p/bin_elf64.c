@@ -135,8 +135,12 @@ RBinPlugin r_bin_plugin_elf64 = {
 	.boffset = &boffset,
 	.binsym = &binsym,
 	.entries = &entries,
+#if R2_590
+	.sections_vec = &sections_vec,
+#else
 	.sections = &sections,
-	.symbols = &symbols,
+#endif
+	.symbols_vec = symbols_vec,
 	.imports = &imports,
 	.minstrlen = 4,
 	.info = &info,

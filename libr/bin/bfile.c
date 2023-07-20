@@ -1151,6 +1151,7 @@ R_API RList *r_bin_file_get_trycatch(RBinFile *bf) {
 	return NULL;
 }
 
+// TODO: Deprecate, we dont want to clone the vec into a list
 R_API RList *r_bin_file_get_symbols(RBinFile *bf) {
 	r_return_val_if_fail (bf, NULL);
 	RBinObject *bo = bf->o;

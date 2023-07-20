@@ -77,150 +77,188 @@ static inline bool check_pascal(RBinSymbol *sym) {
 	return strstr (sym->name, "_$$_");
 }
 
+typedef struct {
+	Langs cantbe;
+	bool phobosIsChecked;
+	bool swiftIsChecked;
+	bool canBeCxx;
+	bool cxxIsChecked;
+	bool isMsvc;
+	bool isBlocks;
+	bool isObjC;
+} LangCheck;
+
+static bool check_symbol_lang(RBinFile *bf, LangCheck *lc, RBinSymbol *sym, int *type) {
+	RBinObject *bo = bf->o;
+	RBinInfo *info = bo->info;
+	char *lib;
+	if (!lc->cantbe.rust) {
+		if (check_rust (sym)) {
+			info->lang = "rust";
+			*type = R_BIN_LANG_RUST;
+			return false;
+		}
+	}
+	if (check_golang (sym)) {
+		info->lang = "go";
+		*type = R_BIN_LANG_GO;
+		return false;
+	}
+	if (!lc->cantbe.swift) {
+		bool hasswift = false;
+		if (!lc->swiftIsChecked) {
+			RListIter *iter;
+			r_list_foreach (bo->libs, iter, lib) {
+				if (strstr (lib, "swift")) {
+					hasswift = true;
+					break;
+				}
+			}
+			lc->swiftIsChecked = true;
+		}
+		if (hasswift || check_swift (sym)) {
+			info->lang = "swift";
+			*type = R_BIN_LANG_SWIFT;
+			return false;
+		}
+	}
+	if (!lc->cantbe.cxx) {
+		bool hascxx = false;
+		if (!lc->cxxIsChecked) {
+			RListIter *iter;
+			r_list_foreach (bo->libs, iter, lib) {
+				if (strstr (lib, "stdc++") || strstr (lib, "c++")) {
+					hascxx = true;
+					break;
+				}
+				if (strstr (lib, "msvcp")) {
+					info->lang = "msvc";
+					return R_BIN_LANG_MSVC;
+				}
+			}
+			lc->cxxIsChecked = true;
+		}
+		if (hascxx || check_cxx (sym)) {
+			lc->canBeCxx = true; // wtf?
+			lc->cantbe.cxx = true; // should be false?
+		}
+	}
+	if (!lc->cantbe.objc) {
+		if (check_objc (sym)) {
+			info->lang = "objc";
+			*type = R_BIN_LANG_OBJC;
+			return false;
+		}
+	}
+	if (!lc->cantbe.dlang) {
+		bool hasdlang = false;
+		if (!lc->phobosIsChecked) {
+			RListIter *iter;
+			r_list_foreach (bo->libs, iter, lib) {
+				if (strstr (lib, "phobos")) {
+					hasdlang = true;
+					break;
+				}
+			}
+			lc->phobosIsChecked = true;
+		}
+		if (hasdlang || check_dlang (sym)) {
+			info->lang = "dlang";
+			*type = R_BIN_LANG_DLANG;
+			return false;
+		}
+	}
+	if (!lc->cantbe.msvc) {
+		if (!lc->isMsvc && check_msvc (sym)) {
+			lc->isMsvc = true;
+			lc->cantbe.msvc = true;
+		}
+	}
+	if (!lc->cantbe.cxx) {
+		if (check_kotlin (sym)) {
+			info->lang = "kotlin";
+			*type = R_BIN_LANG_KOTLIN;
+			return false;
+		}
+		if (check_groovy (sym)) {
+			info->lang = "groovy";
+			*type = R_BIN_LANG_GROOVY;
+			return false;
+		}
+		if (check_dart (sym)) {
+			info->lang = "dart";
+			*type = R_BIN_LANG_DART;
+			return false;
+		}
+		if (check_pascal (sym)) {
+			info->lang = "pascal";
+			*type = R_BIN_LANG_PASCAL;
+			return false;
+		}
+	}
+	return true;
+}
+
 /* This is about 10% of the loading time, optimize if possible */
-R_API int r_bin_load_languages(RBinFile *binfile) {
-	r_return_val_if_fail (binfile, R_BIN_LANG_NONE);
-	r_return_val_if_fail (binfile->o, R_BIN_LANG_NONE);
-	r_return_val_if_fail (binfile->o->info, R_BIN_LANG_NONE);
-	RBinObject *o = binfile->o;
+R_API int r_bin_load_languages(RBinFile *bf) {
+	r_return_val_if_fail (bf, R_BIN_LANG_NONE);
+	r_return_val_if_fail (bf->o, R_BIN_LANG_NONE);
+	r_return_val_if_fail (bf->o->info, R_BIN_LANG_NONE);
+	RBinObject *o = bf->o;
 	RBinInfo *info = o->info;
 	RBinSymbol *sym = NULL;
-	RListIter *iter, *iter2;
-	Langs cantbe = {0};
-	bool phobosIsChecked = false;
-	bool swiftIsChecked = false;
-	bool canBeCxx = false;
-	bool cxxIsChecked = false;
-	bool isMsvc = false;
-
+	RListIter *iter;
+	LangCheck lc = {0};
 	const char *ft = r_str_get (info->rclass);
-	bool unknownType = info->rclass == NULL;
-	bool isMacho = strstr (ft, "mach");
-	bool isElf = strstr (ft, "elf");
-	bool isPe = strstr (ft, "pe");
-	bool isBlocks = false;
-	bool isObjC = false;
+	const bool unknownType = info->rclass == NULL;
+	const bool isMacho = strstr (ft, "mach");
+	const bool isElf = strstr (ft, "elf");
+	const bool isPe = strstr (ft, "pe");
 
 	if (unknownType || !(isMacho || isElf || isPe)) {
 		return R_BIN_LANG_NONE;
 	}
-
-	// check in imports . can be slow
+#if R2_590
+	R_VEC_FOREACH (&o->imports_vec, sym) {
+#else
 	r_list_foreach (o->imports, iter, sym) {
+#endif
 		const char *name = sym->name;
 		if (!strcmp (name, "_NSConcreteGlobalBlock")) {
-			isBlocks = true;
+			lc.isBlocks = true;
 		} else if (r_str_startswith (name, "objc_")) {
-			isObjC = true;
-			cantbe.objc = true;
+			lc.isObjC = true;
+			lc.cantbe.objc = true;
 		}
 	}
-
-	r_list_foreach (o->symbols, iter, sym) {
-		char *lib;
-		if (!cantbe.rust) {
-			if (check_rust (sym)) {
-				info->lang = "rust";
-				return R_BIN_LANG_RUST;
+	int type = -1;
+	if (o->symbols) {
+		// deprecate
+		r_list_foreach (o->symbols, iter, sym) {
+			if (!check_symbol_lang (bf, &lc, sym, &type)) {
+				break;
 			}
 		}
-		if (check_golang (sym)) {
-			info->lang = "go";
-			return R_BIN_LANG_GO;
-		}
-		if (!cantbe.swift) {
-			bool hasswift = false;
-			if (!swiftIsChecked) {
-				r_list_foreach (o->libs, iter2, lib) {
-					if (strstr (lib, "swift")) {
-						hasswift = true;
-						break;
-					}
-				}
-				swiftIsChecked = true;
-			}
-			if (hasswift || check_swift (sym)) {
-				info->lang = "swift";
-				return R_BIN_LANG_SWIFT;
-			}
-		}
-		if (!cantbe.cxx) {
-			bool hascxx = false;
-			if (!cxxIsChecked) {
-				r_list_foreach (o->libs, iter2, lib) {
-					if (strstr (lib, "stdc++") ||
-					    strstr (lib, "c++")) {
-						hascxx = true;
-						break;
-					}
-					if (strstr (lib, "msvcp")) {
-						info->lang = "msvc";
-						return R_BIN_LANG_MSVC;
-					}
-				}
-				cxxIsChecked = true;
-			}
-			if (hascxx || check_cxx (sym)) {
-				canBeCxx = true;
-				cantbe.cxx = true;
-			}
-		}
-		if (!cantbe.objc) {
-			if (check_objc (sym)) {
-				info->lang = "objc";
-				return R_BIN_LANG_OBJC;
-			}
-		}
-		if (!cantbe.dlang) {
-			bool hasdlang = false;
-			if (!phobosIsChecked) {
-				r_list_foreach (o->libs, iter2, lib) {
-					if (strstr (lib, "phobos")) {
-						hasdlang = true;
-						break;
-					}
-				}
-				phobosIsChecked = true;
-			}
-			if (hasdlang || check_dlang (sym)) {
-				info->lang = "dlang";
-				return R_BIN_LANG_DLANG;
-			}
-		}
-		if (!cantbe.msvc) {
-			if (!isMsvc && check_msvc (sym)) {
-				isMsvc = true;
+	} else {
+		R_VEC_FOREACH (&o->symbols_vec, sym) {
+			if (!check_symbol_lang (bf, &lc, sym, &type)) {
+				break;
 			}
 		}
 	}
-	if (isObjC) {
-		return R_BIN_LANG_OBJC | (isBlocks?R_BIN_LANG_BLOCKS:0);
+	if (type != -1) {
+		return type;
 	}
-	if (sym) {
-		if (check_kotlin (sym)) {
-			info->lang = "kotlin";
-			return R_BIN_LANG_KOTLIN;
-		}
-		if (check_groovy (sym)) {
-			info->lang = "groovy";
-			return R_BIN_LANG_GROOVY;
-		}
-		if (check_dart (sym)) {
- 			info->lang = "dart";
- 			return R_BIN_LANG_DART;
- 		}
-		if (check_pascal (sym)) {
- 			info->lang = "pascal";
- 			return R_BIN_LANG_PASCAL;
- 		}
+	if (lc.isObjC) {
+		return R_BIN_LANG_OBJC | (lc.isBlocks?R_BIN_LANG_BLOCKS:0);
 	}
-	if (canBeCxx) {
-		return R_BIN_LANG_CXX | (isBlocks? R_BIN_LANG_BLOCKS: 0);
+	if (lc.canBeCxx) {
+		return R_BIN_LANG_CXX | (lc.isBlocks? R_BIN_LANG_BLOCKS: 0);
 	}
-	if (isMsvc) {
+	if (lc.isMsvc) {
 		return R_BIN_LANG_MSVC;
 	}
-	return R_BIN_LANG_C | (isBlocks? R_BIN_LANG_BLOCKS: 0);
+	return R_BIN_LANG_C | (lc.isBlocks? R_BIN_LANG_BLOCKS: 0);
 }
 
 // if its ipi no need to be prefixed with r_

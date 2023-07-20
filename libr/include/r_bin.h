@@ -523,7 +523,10 @@ typedef struct r_bin_plugin_t {
 	ut64 (*boffset)(RBinFile *bf);
 	RBinAddr* (*binsym)(RBinFile *bf, int num);
 	RList/*<RBinAddr>*/* (*entries)(RBinFile *bf);
-	RList/*<RBinSection>*/* (*sections)(RBinFile *bf);
+	RList/*<RBinSection>*/* (*sections)(RBinFile *bf); // R2_600 - deprecate
+#if R2_590
+	bool (*sections_vec)(RBinFile *bf);
+#endif
 	R_BORROW RList/*<RBinDwarfRow>*/* (*lines)(RBinFile *bf);
 	RList/*<RBinSymbol>*/* (*symbols)(RBinFile *bf); // R2_590: return VecBinSymbol* for better memory usage and perf
 	bool (*symbols_vec)(RBinFile *bf);

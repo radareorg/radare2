@@ -31,7 +31,6 @@ static GHT GH(je_get_va_symbol)(RCore *core, const char *path, const char *sym_n
 	RBinFileOptions opt = {0};
 	r_bin_file_options_init (&opt, -1, 0, 0, false);
 	RBinSymbol *s;
-	RListIter *iter;
 	RBinFile *current_bf = r_bin_cur (core->bin);
 	if (!r_bin_open (core->bin, path, &opt)) {
 		return vaddr;
@@ -40,8 +39,8 @@ static GHT GH(je_get_va_symbol)(RCore *core, const char *path, const char *sym_n
  	if (!libc_bf) {
  		return vaddr;
  	}
- 	RList *syms = r_bin_get_symbols (core->bin);
- 	r_list_foreach (syms, iter, s) {
+	RVecRBinSymbol *syms = r_bin_get_symbols_vec (core->bin);
+	R_VEC_FOREACH (syms, s) {
  		if (!strcmp (s->name, sym_name)) {
  			vaddr = s->vaddr;
  			break;
