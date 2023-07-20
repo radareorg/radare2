@@ -97,7 +97,7 @@ i~elf
 EOF
 EXPECT=<<EOF
 [Entrypoints]
-vaddr=0x00000d28 paddr=0x00000d28 haddr=0x00000018 hvaddr=0x00000018 type=program
+vaddr=0x00000d28 paddr=0x00000d28 haddr=0x00000018 type=program
 
 1 entrypoints
 file     bins/elf/libexploit.so
@@ -126,6 +126,7 @@ DEBUG: add dt.dyn.entry tag=1 value=0x0000028f
 DEBUG: add dt.dyn.entry tag=1 value=0x00000298
 DEBUG: add dt.dyn.entry tag=16 value=0x00000000
 DEBUG: add dt.dyn.entry tag=30 value=0x00000002
+DEBUG: Loading symbols 0x109559740
 ERROR: Cannot determine entrypoint, using 0x00000d28
 DEBUG: empty symbol name
 DEBUG: empty symbol name
@@ -149,7 +150,6 @@ DEBUG: (cannot find opening [) in (98])
 DEBUG: (section .dynamic) Cd 4[48] @ 0x12000
 DEBUG: RCoreCmd: Cd 4[48] @ 0x12000
 DEBUG: (cannot find opening [) in (48])
-DEBUG: cloning symbols list into a vec
 DEBUG: RCoreCmd: =!
 DEBUG: RCoreCmd: ieq
 DEBUG: RCoreCmd: ie
