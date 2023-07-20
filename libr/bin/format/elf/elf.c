@@ -4458,7 +4458,7 @@ static RVector *_load_additional_imported_symbols(ELFOBJ *eo, ImportInfo *import
 	const int limit = eo->limit;
 	int count = 0;
 	r_vector_foreach (import_info->memory.symbols, symbol) {
-		RBinSymbol *import_sym_ptr = Elf_(_r_bin_elf_convert_symbol) (eo, symbol, "%s");
+		RBinSymbol *import_sym_ptr = Elf_(convert_symbol) (eo, symbol, "%s");
 		if (!import_sym_ptr) {
 			continue;
 		}
@@ -4703,7 +4703,7 @@ static bool _process_symbols_and_imports_in_section(ELFOBJ *eo, int type, Proces
 }
 
 // TODO: return RList<RBinSymbol*> .. or run a callback with that symbol constructed, so we don't have to do it twice
-static RVector /* <RBinElfSymbol> */ *Elf_(_r_bin_elf_load_symbols_and_imports)(ELFOBJ *eo, int type) {
+static RVector /* <RBinElfSymbol> */ *Elf_(load_symbols_from)(ELFOBJ *eo, int type) {
 	r_return_val_if_fail (eo, NULL);
 
 	if (!eo->shdr || !eo->ehdr.e_shnum || eo->ehdr.e_shnum == 0xffff) {
@@ -4758,14 +4758,13 @@ static RVector /* <RBinElfSymbol> */ *Elf_(_r_bin_elf_load_symbols_and_imports)(
 	int nsym = Elf_(fix_symbols) (eo, ret_ctr, type, ret);
 	if (nsym == -1) {
 		_symbol_memory_free (&memory);
-		eprintf ("fix fail\n");
 		return NULL;
 	}
 
 	if (type == R_BIN_ELF_IMPORT_SYMBOLS) {
 		ImportInfo ii = {
 			.memory = memory,
-			.ret = ret,
+			//.ret = ret,
 			.ret_ctr = ret_ctr,
 			.import_ret_ctr = import_ret_ctr,
 			.nsym = nsym,
@@ -4776,20 +4775,20 @@ static RVector /* <RBinElfSymbol> */ *Elf_(_r_bin_elf_load_symbols_and_imports)(
 	return ret;
 }
 
-bool Elf_(load_symbols)(ELFOBJ *eo) {
+RVector *Elf_(load_symbols)(ELFOBJ *eo) {
 	r_return_val_if_fail (eo, NULL);
-	if (!eo->g_symbols_vec) {
-		eo->g_symbols_vec = Elf_(load_symbols_from) (eo, R_BIN_ELF_ALL_SYMBOLS);
+	if (!eo->g_symbols) {
+		eo->g_symbols = Elf_(load_symbols_from) (eo, R_BIN_ELF_ALL_SYMBOLS);
 	}
-	return eo->g_symbols_vec != NULL;
+	return eo->g_symbols;
 }
 
-RVecRBinElfSymbol *Elf_(load_imports)(ELFOBJ *eo) {
+RVector *Elf_(load_imports)(ELFOBJ *eo) {
 	r_return_val_if_fail (eo, NULL);
-	if (!eo->g_imports_vec) {
-		eo->g_imports_vec = Elf_(load_symbols_from) (eo, R_BIN_ELF_IMPORT_SYMBOLS);
+	if (!eo->g_imports) {
+		eo->g_imports = Elf_(load_symbols_from) (eo, R_BIN_ELF_IMPORT_SYMBOLS);
 	}
-	return eo->g_imports_vec;
+	return eo->g_imports;
 }
 
 const RVector* Elf_(load_fields)(ELFOBJ *eo) {

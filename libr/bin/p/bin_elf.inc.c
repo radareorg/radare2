@@ -345,14 +345,14 @@ static RList* entries(RBinFile *bf) {
 static RList* symbols(RBinFile *bf) {
 	r_return_val_if_fail (bf && bf->o && bf->o->bin_obj, NULL);
 
-	ELFOBJ *bin = bf->o->bin_obj;
+	ELFOBJ *eo = bf->o->bin_obj;
 	RList *ret = r_list_newf (free);  // XXX should be r_bin_symbol_free?
 	if (!ret) {
 		return NULL;
 	}
 
 	// traverse symbols
-	const RVector *symbols = Elf_(load_symbols) (bin);
+	const RVector *symbols = Elf_(load_symbols) (eo);
 	if (!symbols) {
 		return ret;
 	}
@@ -364,7 +364,7 @@ static RList* symbols(RBinFile *bf) {
 			continue;
 		}
 
-		RBinSymbol *ptr = Elf_(_r_bin_elf_convert_symbol) (bin, symbol, "%s");
+		RBinSymbol *ptr = Elf_(convert_symbol) (eo, symbol, "%s");
 		if (!ptr) {
 			break;
 		}
@@ -373,7 +373,7 @@ static RList* symbols(RBinFile *bf) {
 	}
 
 	// traverse imports
-	const RVector *import_symbols = Elf_(load_imports) (bin);
+	const RVector *import_symbols = Elf_(load_imports) (eo);
 	if (!import_symbols) {
 		return ret;
 	}
