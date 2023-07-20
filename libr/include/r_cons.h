@@ -1132,6 +1132,7 @@ struct r_line_t {
 	RListIter *sdbshell_hist_iter;
 	int maxlength;
 	int vtmode; // implemented but unused from the global RCons.vtmode
+	bool demo;
 	int hist_size;
 }; /* RLine */
 
