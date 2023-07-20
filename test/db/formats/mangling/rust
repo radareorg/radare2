@@ -26,7 +26,7 @@ NAME=rust static type
 FILE=-
 CMDS=!rabin2 -D rust "_ZN71_\$LT\$Test\$u20\$\$u2b\$\$u20\$\$u27\$static\$u20\$as\$u20\$foo..Bar\$LT\$Test\$GT\$\$GT\$3barE"
 EXPECT=<<EOF
-<Test + 'static as foo::Bar<Test>>::bar
+_<Test + 'static as foo::Bar<Test>>::bar
 EOF
 RUN
 
@@ -34,7 +34,7 @@ NAME=rust static type with hash
 FILE=-
 CMDS=!rabin2 -D rust "_ZN96_\$LT\$core..fmt..Write..write_fmt..Adapter\$LT\$\$u27\$a\$C\$\$u20\$T\$GT\$\$u20\$as\$u20\$core..fmt..Write\$GT\$9write_str17he4f4768a2f446facE"
 EXPECT=<<EOF
-<core::fmt::Write::write_fmt::Adapter<'a, T> as core::fmt::Write>::write_str::he4f4768a2f446fac
+_<core::fmt::Write::write_fmt::Adapter<'a, T> as core::fmt::Write>::write_str::he4f4768a2f446fac
 EOF
 RUN
 
@@ -45,7 +45,7 @@ aa
 afl~example
 EOF
 EXPECT=<<EOF
-0x00002b30    2     15 sym._example::Foo_as_example::Bar_::bar::h26dc608664264fb6
+0x00002b30    2     15 sym.__example::Foo_as_example::Bar_::bar::h26dc608664264fb6
 0x00002b40    1     31 sym.example::main::hf45903a20ef2ad21
 EOF
 RUN
