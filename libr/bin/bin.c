@@ -200,12 +200,16 @@ R_API RBinSymbol *r_bin_symbol_clone(RBinSymbol *bs) {
 	return nbs;
 }
 
+R_API void r_bin_symbol_fini(RBinSymbol *sym) {
+	free (sym->name);
+	free (sym->libname);
+	free (sym->classname);
+}
+
 R_API void r_bin_symbol_free(void *_sym) {
 	RBinSymbol *sym = (RBinSymbol *)_sym;
 	if (sym) {
-		free (sym->name);
-		free (sym->libname);
-		free (sym->classname);
+		r_bin_symbol_fini (sym);
 		free (sym);
 	}
 }
@@ -788,19 +792,18 @@ R_API RList *r_bin_get_strings(RBin *bin) {
 // TODO: Deprecate because we must use the internal representation
 R_API RList *r_bin_get_symbols(RBin *bin) {
 	r_return_val_if_fail (bin, NULL);
-	RBinObject *o = r_bin_cur_object (bin);
-	if (o) {
-		if (o->symbols) {
-			return o->symbols;
-		}
-		if (o->symbols_vec) {
-			RList *list = r_list_newf (NULL);
-			RBinSymbol *s;
-			R_VEC_FOREACH (o->symbols_vec, s) {
-				r_list_append (list, s);
-			}
-			return list;
-		}
+	RBinFile *bf = bin->cur;
+	if (bf) {
+		return r_bin_file_get_symbols (bf);
+	}
+	return NULL;
+}
+
+R_API RVecRBinSymbol *r_bin_get_symbols_vec(RBin *bin) {
+	r_return_val_if_fail (bin, NULL);
+	RBinFile *bf = bin->cur;
+	if (bf) {
+		return r_bin_file_get_symbols_vec (bf);
 	}
 	return NULL;
 }

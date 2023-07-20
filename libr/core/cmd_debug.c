@@ -1823,10 +1823,9 @@ static int cmd_debug_map(RCore *core, const char *input) {
 				map = get_closest_map (core, addr);
 				if (map) {
 					ut64 closest_addr = UT64_MAX;
-					RList *symbols = r_bin_get_symbols (core->bin);
+					RVecRBinSymbol *symbols = r_bin_get_symbols_vec (core->bin);
 					RBinSymbol *symbol, *closest_symbol = NULL;
-
-					r_list_foreach (symbols, iter, symbol) {
+					R_VEC_FOREACH (symbols, symbol) {
 						if (symbol->vaddr > addr) {
 							if (symbol->vaddr - addr < closest_addr) {
 								closest_addr = symbol->vaddr - addr;
@@ -3640,9 +3639,9 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 		break;
 	case 'f':
 		{
-		RList *symbols = r_bin_get_symbols (core->bin);
+		RVecRBinSymbol *symbols = r_bin_get_symbols_vec (core->bin);
 		RBinSymbol *symbol;
-		r_list_foreach (symbols, iter, symbol) {
+		R_VEC_FOREACH (symbols, symbol) {
 			if (symbol->type && !strcmp (symbol->type, R_BIN_TYPE_FUNC_STR)) {
 				if (r_anal_noreturn_at (core->anal, symbol->vaddr)) {
 					bpi = r_debug_bp_add (core->dbg, symbol->vaddr, hwbp, false, 0, NULL, 0);

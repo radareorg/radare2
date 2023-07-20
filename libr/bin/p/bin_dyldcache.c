@@ -2021,19 +2021,22 @@ static ut64 baddr(RBinFile *bf) {
 }
 
 void symbols_from_bin(RDyldCache *cache, RList *ret, RBinFile *bf, RDyldBinImage *bin, SetU *hash) {
-	struct MACH0_(obj_t) *mach0 = bin_to_mach0 (bf, bin);
-	if (!mach0) {
+	struct MACH0_(obj_t) *mo = bin_to_mach0 (bf, bin);
+	if (!mo) {
 		return;
 	}
 
-	const RVector *symbols = MACH0_(load_symbols) (bf, mach0);
+	if (!MACH0_(load_symbols) (mo)) {
+		return;
+	}
+	RVecRBinSymbol *symbols = mo->symbols_vec;
 	if (!symbols) {
 		return;
 	}
 
 	int i = 0;
 	RBinSymbol *sym;
-	r_vector_foreach (symbols, sym) {
+	R_VEC_FOREACH (symbols, sym) {
 		if (strstr (sym->name, "<redacted>")) {
 			i++;
 			continue;
@@ -2056,7 +2059,7 @@ void symbols_from_bin(RDyldCache *cache, RList *ret, RBinFile *bf, RDyldBinImage
 		r_list_append (ret, ret_sym);
 		i++;
 	}
-	MACH0_(mach0_free) (mach0);
+	MACH0_(mach0_free) (mo);
 }
 
 static bool __is_data_section(const char *name) {

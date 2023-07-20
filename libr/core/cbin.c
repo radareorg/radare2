@@ -1932,7 +1932,7 @@ static int bin_relocs(RCore *r, PJ *pj, int mode, int va) {
 				: NULL;
 			if (bin_demangle) {
 				char *mn = r_bin_demangle (r->bin->cur, NULL, name, addr, keep_lib);
-				if (mn && *mn) {
+				if (R_STR_ISNOTEMPTY (mn)) {
 					free (name);
 					name = mn;
 				}
@@ -1991,17 +1991,18 @@ static int bin_relocs(RCore *r, PJ *pj, int mode, int va) {
 /* R2_590 - this is a VERY VERY VERY hacky and bad workaround that needs proper refactoring in Rbin to use Sdb */
 #if MYDB
 R_DEPRECATE static R_TH_LOCAL Sdb *mydb = NULL;
-R_DEPRECATE static R_TH_LOCAL RList *osymbols = NULL;
+R_DEPRECATE static R_TH_LOCAL RVecRBinSymbol *osymbols = NULL;
 
-R_DEPRECATE static RBinSymbol *get_import(RBin *bin, RList *symbols, const char *name, ut64 addr) {
+R_DEPRECATE static RBinSymbol *get_import(RBin *bin, RVecRBinSymbol *symbols, const char *name, ut64 addr) {
 	r_strf_buffer(64);
 	RBinSymbol *symbol, *res = NULL;
-	RListIter *iter;
+#if 1
 	if (mydb && symbols && symbols != osymbols) {
 		sdb_free (mydb);
 		mydb = NULL;
 		osymbols = symbols;
 	}
+#endif
 	if (mydb) {
 		if (name) {
 			res = (RBinSymbol*)(void*)(size_t)
@@ -2012,7 +2013,7 @@ R_DEPRECATE static RBinSymbol *get_import(RBin *bin, RList *symbols, const char 
 		}
 	} else {
 		mydb = sdb_new0 ();
-		r_list_foreach (symbols, iter, symbol) {
+		R_VEC_FOREACH (symbols, symbol) {
 			if (!symbol->name || !symbol->is_imported) {
 				continue;
 			}
@@ -2065,7 +2066,7 @@ R_API ut64 r_core_bin_impaddr(RBin *bin, int va, const char *name) {
 	if (!name || !*name) {
 		return addr;
 	}
-	RList *symbols = r_bin_get_symbols (bin);
+	RVecRBinSymbol *symbols = r_bin_get_symbols_vec (bin);
 	if (!symbols) {
 		return addr;
 	}
@@ -2087,7 +2088,7 @@ R_API ut64 r_core_bin_impaddr(RBin *bin, int va, const char *name) {
 
 static int bin_imports(RCore *r, PJ *pj, int mode, int va, const char *name) {
 	RBinInfo *info = r_bin_get_info (r->bin);
-	int bin_demangle = r_config_get_i (r->config, "bin.demangle");
+	bool bin_demangle = r_config_get_b (r->config, "bin.demangle");
 	bool keep_lib = r_config_get_b (r->config, "bin.demangle.libs");
 	RTable *table = r_core_table (r, "imports");
 	r_return_val_if_fail (table, false);
@@ -2382,7 +2383,6 @@ static void select_flag_space(RCore *core, RBinSymbol *symbol) {
 static int bin_symbols(RCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at, const char *name, bool exponly, const char *args) {
 	RBinInfo *info = r_bin_get_info (r->bin);
 	const RList *entries = r_bin_get_entries (r->bin);
-	RBinSymbol *symbol;
 	RBinAddr *entry;
 	RListIter *iter;
 	bool firstexp = true;
@@ -2391,7 +2391,7 @@ static int bin_symbols(RCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at, 
 
 	int lastfs = 's';
 	RTable *table = r_core_table (r, "symbols");
-	bool bin_demangle = r_config_get_i (r->config, "bin.demangle");
+	bool bin_demangle = r_config_get_b (r->config, "bin.demangle");
 	if (IS_MODE_JSON (mode)) {
 		if (!printHere) {
 			pj_a (pj);
@@ -2411,7 +2411,7 @@ static int bin_symbols(RCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at, 
 	bool is_arm = info && info->arch && r_str_startswith (info->arch, "arm");
 	const char *lang = bin_demangle ? r_config_get (r->config, "bin.lang") : NULL;
 
-	RList *symbols = r_bin_get_symbols (r->bin);
+	RVecRBinSymbol *symbols = r_bin_get_symbols_vec (r->bin);
 	r_spaces_push (&r->anal->meta_spaces, "bin");
 
 	if (IS_MODE_SET (mode)) {
@@ -2433,7 +2433,8 @@ static int bin_symbols(RCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at, 
 		r_table_set_columnsf (table, "dXXssdsss", "nth", "paddr","vaddr","bind", "type", "size", "lib", "name", "demangled");
 	}
 
-	r_list_foreach (symbols, iter, symbol) {
+	RBinSymbol *symbol;
+	R_VEC_FOREACH (symbols, symbol) {
 		if (!symbol->name) {
 			continue;
 		}
@@ -3235,7 +3236,7 @@ static int bin_sections(RCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at,
 			if (section->vsize < 1024 * 1024 * 2) {
 				R_LOG_DEBUG ("(section %s) %s @ 0x%" PFMT64x, section->name, section->format, section->vaddr);
 #if R2_590
-				r_core_cmdf_at (r, addr, "%s @ 0x%"..);
+				r_core_cmdf_at (r, section->vaddr, "%s", section->format);
 #else
 				r_core_cmdf (r, "%s @ 0x%" PFMT64x, section->format, section->vaddr);
 #endif

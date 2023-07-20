@@ -885,11 +885,10 @@ static bool __core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int de
 			if (f && f->name && strncmp (f->name, "sect", 4)) { /* Check if it's already flagged */
 				char *new_name = strdup (f->name);
 				if (is_entry_flag (f)) {
-					RListIter *iter;
-					RBinSymbol *sym;
-					const RList *syms = r_bin_get_symbols (core->bin);
 					ut64 baddr = r_config_get_i (core->config, "bin.baddr");
-					r_list_foreach (syms, iter, sym) {
+					RBinSymbol *sym;
+					RVecRBinSymbol *syms = r_bin_get_symbols_vec (core->bin);
+					R_VEC_FOREACH (syms, sym) {
 						if (sym->type && (sym->paddr + baddr) == fcn->addr && !strcmp (sym->type, R_BIN_TYPE_FUNC_STR)) {
 							free (new_name);
 							new_name = r_str_newf ("sym.%s", sym->name);
@@ -2877,10 +2876,6 @@ R_API RVecAnalRef *r_core_anal_fcn_get_calls(RCore *core, RAnalFunction *fcn) {
 	// get all references from this function
 	RVecAnalRef *refs = r_anal_function_get_refs (fcn);
 	RAnalRef *ref;
-	if (refs) R_VEC_FOREACH (refs, ref) {
-		if (ref->at == 0x100003de7)
-			eprintf("found it\n");
-	}
 
 	RVecAnalRef *call_refs = RVecAnalRef_new ();
 	R_VEC_FOREACH (refs, ref) {
@@ -2891,7 +2886,6 @@ R_API RVecAnalRef *r_core_anal_fcn_get_calls(RCore *core, RAnalFunction *fcn) {
 
 	RVecAnalRef_free (refs);
 	return call_refs;
-
 #if 0
 	// R2_590 fix vec partition
 	// sanity check
@@ -4609,7 +4603,7 @@ R_API int r_core_anal_all(RCore *core) {
 
 	// required for noreturn
 	if (r_config_get_b (core->config, "anal.imports")) {
-		R_LOG_INFO ("Analyze imports (af@@@@i)");
+		R_LOG_INFO ("Analyze imports (af@@@i)");
 		r_core_cmd0 (core, "af@@@i");
 	}
 
@@ -4626,16 +4620,9 @@ R_API int r_core_anal_all(RCore *core) {
 
 	r_cons_break_push (NULL, NULL);
 
-#if 0
-	RBinFile *bf = NULL; // core->bin->cur;
-	RVecRBinSymbol *v = r_bin_file_get_symbols_vec (bf);
+	RVecRBinSymbol *v = r_bin_get_symbols_vec (core->bin);
 	if (v) {
 		R_VEC_FOREACH (v, symbol) {
-#else
-	/* Symbols (Imports are already analyzed by rabin2 on init) */
-	if ((list = r_bin_get_symbols (core->bin))) {
-		r_list_foreach (list, iter, symbol) {
-#endif
 			if (r_cons_is_breaked ()) {
 				break;
 			}
@@ -4822,7 +4809,8 @@ R_API RCoreAnalStats* r_core_anal_get_stats(RCore *core, ut64 from, ut64 to, ut6
 		}
 	}
 	// iter all symbols
-	r_list_foreach (r_bin_get_symbols (core->bin), iter, S) {
+	RVecRBinSymbol *syms = r_bin_get_symbols_vec (core->bin);
+	R_VEC_FOREACH (syms, S) {
 		if (S->vaddr < from || S->vaddr > to) {
 			continue;
 		}

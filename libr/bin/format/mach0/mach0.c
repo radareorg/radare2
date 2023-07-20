@@ -2217,12 +2217,12 @@ void *MACH0_(mach0_free)(struct MACH0_(obj_t) *mo) {
 	free (mo->signature);
 	free (mo->intrp);
 	free (mo->compiler);
-	if (mo->symbols_loaded) {
-		r_vector_fini (&mo->symbols_cache);
-	}
+#if R2_590
+#else
 	if (mo->imports_loaded) {
 		r_pvector_fini (&mo->imports_cache);
 	}
+#endif
 	if (mo->sections_loaded) {
 		r_vector_fini (&mo->sections_cache);
 	}
@@ -2255,6 +2255,8 @@ void MACH0_(opts_set_default)(struct MACH0_(opts_t) *options, RBinFile *bf) {
 	options->parse_start_symbols = false;
 }
 
+#if 0
+
 static void *duplicate_ptr(void *p) {
 	return p;
 }
@@ -2267,41 +2269,43 @@ static size_t ptr_size(void *c) {
 	// :D
 	return 8;
 }
-
 // XXX should be deprecated its never called
 struct MACH0_(obj_t) *MACH0_(mach0_new)(const char *file, struct MACH0_(opts_t) *options) {
-	struct MACH0_(obj_t) *bin = R_NEW0 (struct MACH0_(obj_t));
-	if (!bin) {
+	struct MACH0_(obj_t) *mo = R_NEW0 (struct MACH0_(obj_t));
+	if (!mo) {
 		return NULL;
 	}
 	if (options) {
-		bin->verbose = options->verbose;
-		bin->header_at = options->header_at;
-		bin->symbols_off = options->symbols_off;
-		bin->parse_start_symbols = options->parse_start_symbols;
+		mo->verbose = options->verbose;
+		mo->header_at = options->header_at;
+		mo->symbols_off = options->symbols_off;
+		mo->parse_start_symbols = options->parse_start_symbols;
 	}
-	bin->file = file;
+	mo->symbols_vec = &options->bf->o->symbols_vec; // probably unnecessary indirection if we pass bf or bo to the apis instead of mo
+	mo->options = *options;
+	mo->file = file;
 	size_t binsz = 0;
 	ut8 *buf = (ut8 *)r_file_slurp (file, &binsz);
-	bin->size = binsz;
+	mo->size = binsz;
 	if (!buf) {
-		return MACH0_(mach0_free)(bin);
+		return MACH0_(mach0_free)(mo);
 	}
-	bin->b = r_buf_new ();
-	if (!r_buf_set_bytes (bin->b, buf, bin->size)) {
+	mo->b = r_buf_new ();
+	if (!r_buf_set_bytes (mo->b, buf, mo->size)) {
 		free (buf);
-		return MACH0_(mach0_free)(bin);
+		return MACH0_(mach0_free)(mo);
 	}
 	free (buf);
-	bin->dyld_info = NULL;
-	if (!init (bin)) {
-		return MACH0_(mach0_free)(bin);
+	mo->dyld_info = NULL;
+	if (!init (mo)) {
+		return MACH0_(mach0_free)(mo);
 	}
-	bin->imports_by_ord_size = 0;
-	bin->imports_by_ord = NULL;
-	bin->imports_by_name = ht_pp_new ((HtPPDupValue)duplicate_ptr, free_only_key, (HtPPCalcSizeV)ptr_size);
-	return bin;
+	mo->imports_by_ord_size = 0;
+	mo->imports_by_ord = NULL;
+	mo->imports_by_name = ht_pp_new ((HtPPDupValue)duplicate_ptr, free_only_key, (HtPPCalcSizeV)ptr_size);
+	return mo;
 }
+#endif
 
 struct MACH0_(obj_t) *MACH0_(new_buf)(RBuffer *buf, struct MACH0_(opts_t) *options) {
 	r_return_val_if_fail (buf, NULL);
@@ -2310,6 +2314,13 @@ struct MACH0_(obj_t) *MACH0_(new_buf)(RBuffer *buf, struct MACH0_(opts_t) *optio
 		mo->b = r_buf_ref (buf);
 		mo->main_addr = UT64_MAX;
 		mo->kv = sdb_new (NULL, "bin.mach0", 0);
+		// probably unnecessary indirection if we pass bf or bo to the apis instead of mo
+		// RVecRBinSymbol_init (&options->bf->o->symbols_vec);
+		if (!options->bf->o) {
+			R_LOG_WARN ("bf->bo is not initialized yet"); // R2_590 should not be a runtime chk
+		}
+		mo->symbols_vec = &(options->bf->o->symbols_vec); // R2_590 -> rename bf->o to bf->bo for consistency
+		mo->options = *options;
 		mo->limit = options->bf->rbin->limit;
 		mo->nofuncstarts = r_sys_getenv_asbool ("RABIN2_MACHO_NOFUNCSTARTS");
 		ut64 sz = r_buf_size (buf); // bin->b);
@@ -2915,14 +2926,14 @@ typedef struct fill_context_t {
 	ut32 *ordinal;
 } FillCtx;
 
-static void _fill_exports(struct MACH0_(obj_t) *bin, const char *name, ut64 flags, ut64 offset, void *ctx) {
+static void _fill_exports(struct MACH0_(obj_t) *mo, const char *name, ut64 flags, ut64 offset, void *ctx) {
 	FillCtx *context = ctx;
-	ut64 vaddr = offset_to_vaddr (bin, offset);
+	ut64 vaddr = offset_to_vaddr (mo, offset);
 	if (hash_find_or_insert (context->hash, name, vaddr)) {
 		return;
 	}
 
-	RBinSymbol *sym = r_vector_end (&bin->symbols_cache);
+	RBinSymbol *sym = RVecRBinSymbol_emplace_back (mo->symbols_vec);
 	memset (sym, 0, sizeof (RBinSymbol));
 	sym->vaddr = vaddr;
 	sym->paddr = offset + context->boffset;
@@ -2930,7 +2941,7 @@ static void _fill_exports(struct MACH0_(obj_t) *bin, const char *name, ut64 flag
 	sym->name = strdup (name);
 	sym->bind = R_BIN_BIND_GLOBAL_STR;
 	sym->ordinal = (*context->ordinal)++;
-	_enrich_symbol (context->bf, bin, context->symcache, sym);
+	_enrich_symbol (context->bf, mo, context->symcache, sym);
 }
 
 static void _parse_symbols(RBinFile *bf, struct MACH0_(obj_t) *mo, HtPP *symcache) {
@@ -3021,7 +3032,7 @@ static void _parse_symbols(RBinFile *bf, struct MACH0_(obj_t) *mo, HtPP *symcach
 				free (sym_name);
 				j--;
 			} else {
-				RBinSymbol *sym = r_vector_end (&mo->symbols_cache);
+				RBinSymbol *sym = RVecRBinSymbol_emplace_back (mo->symbols_vec);
 				memset (sym, 0, sizeof (RBinSymbol));
 				sym->vaddr = vaddr;
 				sym->paddr = addr_to_offset (mo, sym->vaddr) + obj->boffset;
@@ -3051,7 +3062,7 @@ static void _parse_symbols(RBinFile *bf, struct MACH0_(obj_t) *mo, HtPP *symcach
 		}
 		if (parse_import_stub (mo, &symbol, i) && symbol.addr >= 100) {
 			j++;
-			RBinSymbol *sym = r_vector_end (&mo->symbols_cache);
+			RBinSymbol *sym = RVecRBinSymbol_emplace_back (mo->symbols_vec);
 			memset (sym, 0, sizeof (RBinSymbol));
 			sym->lang = R_BIN_LANG_C;
 			sym->vaddr = symbol.addr;
@@ -3095,7 +3106,7 @@ static void _parse_symbols(RBinFile *bf, struct MACH0_(obj_t) *mo, HtPP *symcach
 				R_LOG_WARN ("symbols2 mo.limit reached");
 				break;
 			}
-			RBinSymbol *sym = r_vector_end (&mo->symbols_cache);
+			RBinSymbol *sym = RVecRBinSymbol_emplace_back (mo->symbols_vec);
 			memset (sym, 0, sizeof (RBinSymbol));
 			sym->name = sym_name;
 			sym->vaddr = vaddr;
@@ -3123,7 +3134,7 @@ static void _parse_function_start_symbols(RBinFile *bf, struct MACH0_(obj_t) *mo
 
 	int wordsize = MACH0_(get_bits) (mo);
 	bool is_stripped = false;
-	ut32 i = r_vector_length (&mo->symbols_cache);
+	ut32 i = RVecRBinSymbol_length (mo->symbols_vec);
 
 	// functions from LC_FUNCTION_STARTS
 	if (mo->func_start) {
@@ -3135,9 +3146,9 @@ static void _parse_function_start_symbols(RBinFile *bf, struct MACH0_(obj_t) *mo
 		while (temp + 3 < temp_end && *temp) {
 			temp = r_uleb128_decode (temp, NULL, &value);
 			address += value;
-		//	RBinSymbol *sym = RVecRBinSymbol_push_back (&mo->symbols_vec);
-			RBinSymbol *sym = r_vector_end (&mo->symbols_cache);
-			// RBinSymbol *sym = r_vec_emplace_back (&mo->symbols_vec);
+			RBinSymbol *sym = RVecRBinSymbol_emplace_back (mo->symbols_vec);
+			// probably not necessary if we fill all the fields below, just in case.. but maybe we can have another rvec method for this
+			memset (sym, 0, sizeof (RBinSymbol));
 			sym->vaddr = mo->baddr + address;
 			sym->paddr = address + obj->boffset;
 			sym->size = 0;
@@ -3175,7 +3186,7 @@ static bool _check_if_debug_build(RBinFile *bf, struct MACH0_(obj_t) *mo) {
 #if 0
 	// R2_590
 	RBinSection *s;
-	R_VEC_FOREACH (bf->segments_vec, s) {
+	R_VEC_FOREACH (bf->o->segments_vec, s) {
 		if (strstr (s->name, "DWARF.__debug_line")) {
 			return true;
 		}
@@ -3199,60 +3210,39 @@ static bool _check_if_debug_build(RBinFile *bf, struct MACH0_(obj_t) *mo) {
 	return false;
 }
 
-static void _r_bin_symbol_fini(void *_sym, void *user) {
-	RBinSymbol *sym = _sym;
-	if (sym) {
-		free (sym->name);
-		free (sym->libname);
-		free (sym->classname);
-	}
-}
-
-const RVector *MACH0_(load_symbols)(RBinFile *bf, struct MACH0_(obj_t) *mo) {
-	r_return_val_if_fail (bf, NULL);
-	if (!mo) {
-		return NULL;
-	}
+// R2_590 - should return bool
+const bool MACH0_(load_symbols)(struct MACH0_(obj_t) *mo) {
+	r_return_val_if_fail (mo, false);
 	if (mo->symbols_loaded) {
-		return &mo->symbols_cache;
+		return true;
 	}
 
 	mo->symbols_loaded = true;
-
-	r_vector_init (&mo->symbols_cache, sizeof (RBinSymbol), (RVectorFree) _r_bin_symbol_fini, NULL);
-
 	HtPP *symcache = ht_pp_new0 ();
-	if (!symcache) {
-		return NULL;
+	if (R_LIKELY (symcache)) {
+		RBinFile *bf = mo->options.bf;
+		_parse_symbols (bf, mo, symcache);
+		if (mo->parse_start_symbols) {
+			_parse_function_start_symbols (bf, mo, symcache);
+		}
+		ht_pp_free (symcache);
 	}
 
-	const bool is_debug = _check_if_debug_build (bf, mo);
-	_parse_symbols (bf, mo, symcache);
-	if (mo->parse_start_symbols) {
-		_parse_function_start_symbols (bf, mo, symcache);
-	}
-	ht_pp_free (symcache);
-
+	const bool is_debug = _check_if_debug_build (mo->options.bf, mo);
 	if (is_debug) {
 		mo->dbg_info |= R_BIN_DBG_LINENUMS;
 	}
-
-	return &mo->symbols_cache;
+	return !RVecRBinSymbol_empty (mo->symbols_vec);
 }
 
-static int parse_import_ptr(struct MACH0_(obj_t) *mo, struct reloc_t *reloc, int idx) {
+static bool parse_import_ptr(struct MACH0_(obj_t) *mo, struct reloc_t *reloc, int idx) {
 	int i, j, sym;
-	size_t wordsize;
-	ut32 stype;
-	wordsize = get_word_size (mo);
 	if (idx < 0 || idx >= mo->nsymtab) {
-		return 0;
+		return false;
 	}
-	if ((mo->symtab[idx].n_desc & REFERENCE_TYPE) == REFERENCE_FLAG_UNDEFINED_LAZY) {
-		stype = S_LAZY_SYMBOL_POINTERS;
-	} else {
-		stype = S_NON_LAZY_SYMBOL_POINTERS;
-	}
+	const size_t wordsize = get_word_size (mo);
+	const ut32 stype = ((mo->symtab[idx].n_desc & REFERENCE_TYPE) == REFERENCE_FLAG_UNDEFINED_LAZY)
+		? S_LAZY_SYMBOL_POINTERS: S_NON_LAZY_SYMBOL_POINTERS;
 
 	reloc->offset = 0;
 	reloc->addr = 0;
@@ -4388,7 +4378,7 @@ char *MACH0_(get_filetype)(struct MACH0_(obj_t) *mo) {
 	return mo? MACH0_(get_filetype_from_hdr) (&mo->hdr): strdup ("Unknown");
 }
 
-ut64 MACH0_(get_main)(RBinFile *bf, struct MACH0_(obj_t) *mo) {
+ut64 MACH0_(get_main)(struct MACH0_(obj_t) *mo) {
 	ut64 addr = UT64_MAX;
 	int i;
 
@@ -4396,7 +4386,7 @@ ut64 MACH0_(get_main)(RBinFile *bf, struct MACH0_(obj_t) *mo) {
 	// -1 = not scanned, so no main
 	// other = valid main addr
 	if (mo->main_addr == UT64_MAX) {
-		 (void)MACH0_(load_symbols) (bf, mo);
+		 MACH0_(load_symbols) (mo);
 	}
 	if (mo->main_addr != 0 && mo->main_addr != UT64_MAX) {
 		return mo->main_addr;

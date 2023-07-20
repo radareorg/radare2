@@ -1153,14 +1153,40 @@ R_API RList *r_bin_file_get_trycatch(RBinFile *bf) {
 
 R_API RList *r_bin_file_get_symbols(RBinFile *bf) {
 	r_return_val_if_fail (bf, NULL);
-	RBinObject *o = bf->o;
-	return o? o->symbols: NULL;
+	RBinObject *bo = bf->o;
+	if (!bo->symbols) {
+		if (!RVecRBinSymbol_empty (&bo->symbols_vec)) {
+			R_LOG_DEBUG ("cloning symbols vector into a list"); // R2_600
+			RList *list = r_list_newf (NULL);
+			RBinSymbol *s;
+			R_VEC_FOREACH (&bo->symbols_vec, s) {
+				r_list_append (list, s);
+			}
+			bo->symbols = list;
+		}
+	}
+	return bo? bo->symbols: NULL;
 }
 
 R_API RVecRBinSymbol *r_bin_file_get_symbols_vec(RBinFile *bf) {
 	r_return_val_if_fail (bf, NULL);
-	RBinObject *o = bf->o;
-	return o? o->symbols_vec: NULL;
+	RBinObject *bo = bf->o;
+	if (bo) {
+		if (bo->symbols) {
+			if (RVecRBinSymbol_empty (&bo->symbols_vec)) {
+				R_LOG_DEBUG ("cloning symbols list into a vec"); // R2_600
+				RBinSymbol *symbol;
+				// Create a vector for those plugins not loading the rvec
+				RList *list = bo->symbols;
+				RListIter *iter;
+				r_list_foreach (list, iter, symbol) {
+					RVecRBinSymbol_push_back (&bo->symbols_vec, symbol);
+				}
+			}
+		}
+		return &bo->symbols_vec;
+	}
+	return NULL;
 }
 
 R_API RBinFile *r_bin_file_open(RBin *bin, const char *file, RBinFileOptions *opt) {

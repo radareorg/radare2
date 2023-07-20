@@ -180,37 +180,34 @@ static RList *entries(RBinFile *bf) {
 	return ret;
 }
 
+#if 0
 // XXX this is very slooow
 static RList *symbols(RBinFile *bf) {
 	struct MACH0_(obj_t) *mo = R_UNWRAP3 (bf, o, bin_obj);
 	if (!mo) {
 		return NULL;
 	}
-	const RVector *symbols = MACH0_(load_symbols) (bf, mo);
-	if (!symbols) {
+	if (!MACH0_(load_symbols) (mo)) {
 		return NULL;
 	}
-
+	// R2_590 -- remove this thing we dont want to return cloned symbols, can be infered
 	RList *list = r_list_newf ((RListFree) r_bin_symbol_free);
 	RBinSymbol *sym;
-	r_vector_foreach (symbols, sym) {
-		// need to clone here, in bobj.c the list free function is forced to `r_bin_symbol_free`
-		// otherwise, a shallow copy of a list with no free function could be returned here..
+	R_VEC_FOREACH (&bf->o->symbols_vec, sym) {
 		r_list_append (list, r_bin_symbol_clone (sym));
 	}
 	return list;
 }
+#endif
 
-static RVecRBinSymbol *symbols_vec(RBinFile *bf) {
+static bool symbols_vec(RBinFile *bf) {
 	struct MACH0_(obj_t) *mo = R_UNWRAP3 (bf, o, bin_obj);
-	if (!mo) {
-		return NULL;
+	if (R_LIKELY (mo)) {
+		if (MACH0_(load_symbols) (mo)) {
+			return !RVecRBinSymbol_empty (&bf->o->symbols_vec);
+		}
 	}
-	const RVector *symbols = MACH0_(load_symbols) (bf, mo);
-	if (!symbols) {
-		return NULL;
-	}
-	return mo->symbols_vec;
+	return false;
 }
 
 static RBinImport *import_from_name(RBin *rbin, const char *orig_name, HtPP *imports_by_name) {
@@ -946,19 +943,20 @@ static RBuffer *create(RBin *bin, const ut8 *code, int clen, const ut8 *data, in
 }
 
 static RBinAddr *binsym(RBinFile *bf, int sym) {
-	ut64 addr;
 	RBinAddr *ret = NULL;
 	switch (sym) {
 	case R_BIN_SYM_MAIN:
-		addr = MACH0_(get_main) (bf, bf->o->bin_obj);
-		if (addr == UT64_MAX || !(ret = R_NEW0 (RBinAddr))) {
-			return NULL;
+		{
+			struct MACH0_(obj_t) *mo = R_UNWRAP3 (bf, o, bin_obj);
+			ut64 addr = MACH0_(get_main) (mo);
+			if (addr != UT64_MAX && addr != 0) {
+				ret = R_NEW0 (RBinAddr);
+				if (ret) {
+					ret->vaddr = ((addr >> 1) << 1);
+					ret->paddr = ret->vaddr;
+				}
+			}
 		}
-		//if (bf->o->info && bf->o->info->bits == 16) {
-		// align for thumb
-		ret->vaddr = ((addr >> 1) << 1);
-		//}
-		ret->paddr = ret->vaddr;
 		break;
 	}
 	return ret;
@@ -994,7 +992,7 @@ RBinPlugin r_bin_plugin_mach0 = {
 	.entries = &entries,
 	.signature = &entitlements,
 	.sections = &sections,
-	.symbols = &symbols,
+	// .symbols = &symbols,
 	.symbols_vec = &symbols_vec,
 	.imports = &imports,
 	.size = &size,

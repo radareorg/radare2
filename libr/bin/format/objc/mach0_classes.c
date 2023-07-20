@@ -1285,8 +1285,7 @@ ut32 fields_offset;
 }
 
 static inline HtUP *_load_symbol_by_vaddr_hashtable(RBinFile *bf) {
-	const RVector *symbols = MACH0_(load_symbols) (bf, bf->o->bin_obj);
-	if (!symbols) {
+	if (!MACH0_(load_symbols) (bf->o->bin_obj)) {
 		return NULL;
 	}
 
@@ -1295,8 +1294,9 @@ static inline HtUP *_load_symbol_by_vaddr_hashtable(RBinFile *bf) {
 		return NULL;
 	}
 
+	RVecRBinSymbol *symbols = &bf->o->symbols_vec;
 	RBinSymbol *sym;
-	r_vector_foreach (symbols, sym) {
+	R_VEC_FOREACH (symbols, sym) {
 		ht_up_insert (ht, sym->vaddr, sym);
 	}
 
