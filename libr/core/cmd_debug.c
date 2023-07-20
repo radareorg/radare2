@@ -5320,6 +5320,8 @@ static ut8 *getFileData(RCore *core, const char *arg, int *sz) {
 	return out;
 }
 
+R_VEC_TYPE(RVecDebugTracepoint, RDebugTracepoint);
+
 static int cmd_debug(void *data, const char *input) {
 	RCore *core = (RCore *)data;
 	RDebugTracepoint *t;
@@ -5410,7 +5412,7 @@ static int cmd_debug(void *data, const char *input) {
 			min = r_num_math (core->num, input[2]? input + 3: input + 2);
 			if (input[2] == 'q') { // "dtdq"
 				int n = 0;
-				r_list_foreach (core->dbg->trace->traces, iter, trace) {
+				R_VEC_FOREACH (core->dbg->trace->traces, trace) {
 					if (n >= min) {
 						r_cons_printf ("%d  ", trace->count);
 						r_cons_printf ("0x%08"PFMT64x"\n", trace->addr);
@@ -5420,7 +5422,7 @@ static int cmd_debug(void *data, const char *input) {
 				}
 			} else if (input[2] == 'i') {
 				int n = 0;
-				r_list_foreach (core->dbg->trace->traces, iter, trace) {
+				R_VEC_FOREACH (core->dbg->trace->traces, trace) {
 					op = r_core_anal_op (core, trace->addr, R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_DISASM);
 					if (n >= min) {
 						r_cons_printf ("%d %s\n", trace->count, op->mnemonic);
@@ -5430,7 +5432,7 @@ static int cmd_debug(void *data, const char *input) {
 				}
 			} else if (input[2] == ' ') {
 				int n = 0;
-				r_list_foreach (core->dbg->trace->traces, iter, trace) {
+				R_VEC_FOREACH (core->dbg->trace->traces, trace) {
 					op = r_core_anal_op (core, trace->addr, R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_DISASM);
 					if (n >= min) {
 						const char *opstr = op? op->mnemonic: "?";
@@ -5442,7 +5444,7 @@ static int cmd_debug(void *data, const char *input) {
 			} else {
 				// TODO: reimplement using the api
 				//r_core_cmd0 (core, "pd 1 @@= `dtq`");
-				r_list_foreach (core->dbg->trace->traces, iter, trace) {
+				R_VEC_FOREACH (core->dbg->trace->traces, trace) {
 					op = r_core_anal_op (core, trace->addr, R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_DISASM);
 					const char *opstr = op? op->mnemonic: "?";
 					r_cons_printf ("0x%08"PFMT64x" %s\n", trace->addr, opstr);

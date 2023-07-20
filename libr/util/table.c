@@ -1,6 +1,7 @@
 /* radare - LGPL - Copyright 2019-2023 - pancake */
 
 #include <r_util/r_table.h>
+#include <r_core.h>
 #include "r_cons.h"
 
 #define READ_SHOW_FLAG(t, bitflag) (((t)->showMode & bitflag) != 0)
@@ -1291,21 +1292,116 @@ R_API void r_table_hide_header(RTable *t) {
 	SET_SHOW_HEADER (t, false);
 }
 
-R_API void r_table_visual_list(RTable *table, RList *list, ut64 seek, ut64 len, int width, bool va) {
-	ut64 mul, min = -1, max = -1;
+typedef struct r_table_visual_state_t TableVisualState;
+typedef int (*RenderTableRows)(RTable *table, TableVisualState *state);
+
+typedef struct r_table_visual_state_t {
+	ut64 min;
+	ut64 mul;
+	int width;
+	ut64 seek;
+	ut64 len;
+	bool va;
+	RenderTableRows render_fn;
+	void *user;
+} TableVisualState;
+
+static void r_table_visual_row(RTable *table, const RListInfo *info, int i, TableVisualState *state) {
+	RCons *cons = (RCons *) table->cons;
+	const ut64 min = state->min;
+	const ut64 mul = state->mul;
+	const ut64 seek = state->seek;
+	const int width = state->width;
+	const bool va = state->va;
+	const char *block = cons->use_utf8 ? R_UTF8_BLOCK : "#";
+	const char *h_line = cons->use_utf8 ? RUNE_LONG_LINE_HORIZ : "-";
+	RStrBuf *buf = r_strbuf_new ("");
+	int j;
+	for (j = 0; j < width; j++) {
+		ut64 pos = min + j * mul;
+		ut64 npos = min + (j + 1) * mul;
+		const char *arg = (info->pitv.addr < npos && (info->pitv.addr + info->pitv.size) > pos)
+			? block: h_line;
+		r_strbuf_append (buf, arg);
+	}
+	r_strf_var (a0, 64, "%d%c", i, (va
+		? r_itv_contain (info->vitv, seek)
+		: r_itv_contain (info->pitv, seek))? '*' : ' ');
+	r_strf_var (a1, 64, "0x%08"PFMT64x, va
+		? info->vitv.addr: info->pitv.addr);
+	r_strf_var (a2, 64, "0x%08"PFMT64x, va
+		? r_itv_end (info->vitv): r_itv_end (info->pitv));
+	char *b = r_strbuf_drain (buf);
+
+	r_table_add_rowf (table, "sssssss",
+		a0, a1, b, a2,
+		(info->perm != -1)? r_str_rwx_i (info->perm) : "",
+		(info->extra)?info->extra : "",
+		(info->name)?info->name :"");
+
+	free (b);
+}
+
+static void r_table_visual_current_seek(RTable *table, TableVisualState *state) {
+	const int width = state->width;
+	const ut64 mul = state->mul;
+	const ut64 min = state->min;
+	const ut64 seek = state->seek;
+	const ut64 len = state->len;
+	RCons *cons = (RCons *) table->cons;
+	const char *h_line = cons->use_utf8 ? RUNE_LONG_LINE_HORIZ : "-";
+	RStrBuf *buf = r_strbuf_new ("");
+	int j;
+	for (j = 0; j < width; j++) {
+		r_strbuf_append (buf,((j * mul) + min >= seek && (j * mul) + min <= seek + len) ? "^" : h_line);
+	}
+	r_strf_var (a0, 64, "0x%08"PFMT64x, seek);
+	r_strf_var (a1, 64, "0x%08"PFMT64x, seek + len);
+	char *b = r_strbuf_drain (buf);
+	r_table_add_rowf (table, "sssssss", "=>", a0, b, a1, "", "", "");
+	free (b);
+}
+
+static void r_table_visual(RTable *table, TableVisualState *state) {
+	const ut64 min = state->min;
+	const ut64 mul = state->mul;
+	const ut64 len = state->len;
+
+	SET_SHOW_HEADER (table, false);
+	r_table_set_columnsf (table, "sssssss", "No.", "offset", "blocks", "offset", "perms", "extra", "name");
+	if (min != -1 && mul > 0) {
+		int i = state->render_fn (table, state);
+		/* current seek */
+		if (i > 0 && len != 0) {
+			r_table_visual_current_seek (table, state);
+		}
+	}
+}
+
+static inline int render_table_rows_from_list(RTable *table, TableVisualState *state) {
+	int i = 0;
+
+	RList *list = state->user;
 	RListIter *iter;
 	RListInfo *info;
-	RCons *cons = (RCons *) table->cons;
-	SET_SHOW_HEADER (table, false);
-	const char *h_line = cons->use_utf8 ? RUNE_LONG_LINE_HORIZ : "-";
-	const char *block = cons->use_utf8 ? R_UTF8_BLOCK : "#";
-	int j, i;
+	r_list_foreach (list, iter, info) {
+		r_table_visual_row (table, info, i, state);
+		i++;
+	}
+
+	return i;
+}
+
+R_API void r_table_visual_list(RTable *table, RList *list, ut64 seek, ut64 len, int width, bool va) {
 	width -= 80;
 	if (width < 1) {
 		width = 30;
 	}
 
-	r_table_set_columnsf (table, "sssssss", "No.", "offset", "blocks", "offset", "perms", "extra", "name");
+	ut64 min = -1;
+	ut64 max = -1;
+	RListIter *iter;
+	RListInfo *info;
 	r_list_foreach (list, iter, info) {
 		if (min == -1 || info->pitv.addr < min) {
 			min = info->pitv.addr;
@@ -1314,51 +1410,66 @@ R_API void r_table_visual_list(RTable *table, RList *list, ut64 seek, ut64 len, 
 			max = info->pitv.addr + info->pitv.size;
 		}
 	}
-	mul = (max - min) / width;
-	if (min != -1 && mul > 0) {
-		i = 0;
-		r_list_foreach (list, iter, info) {
-			RStrBuf *buf = r_strbuf_new ("");
-			for (j = 0; j < width; j++) {
-				ut64 pos = min + j * mul;
-				ut64 npos = min + (j + 1) * mul;
-				const char *arg = (info->pitv.addr < npos && (info->pitv.addr + info->pitv.size) > pos)
-					? block: h_line;
-				r_strbuf_append (buf, arg);
-			}
-			r_strf_var (a0, 64, "%d%c", i, (va
-				? r_itv_contain (info->vitv, seek)
-				: r_itv_contain (info->pitv, seek))? '*' : ' ');
-			r_strf_var (a1, 64, "0x%08"PFMT64x, va
-				? info->vitv.addr: info->pitv.addr);
-			r_strf_var (a2, 64, "0x%08"PFMT64x, va
-				? r_itv_end (info->vitv): r_itv_end (info->pitv));
-			char *b = r_strbuf_drain (buf);
-			r_table_add_rowf (table, "sssssss",
-				a0, a1, b, a2,
-				(info->perm != -1)? r_str_rwx_i (info->perm) : "",
-				(info->extra)?info->extra : "",
-				(info->name)?info->name :"");
-			free (b);
-			i++;
+
+	const ut64 mul = (max - min) / width;
+	TableVisualState state = {
+		.min = min,
+		.mul = mul,
+		.width = width,
+		.seek = seek == UT64_MAX ? 0 : seek,
+		.len = len,
+		.va = va,
+		.render_fn = render_table_rows_from_list,
+		.user = list,
+	};
+	r_table_visual (table, &state);
+}
+
+R_VEC_TYPE_WITH_FINI(RVecListInfo, RListInfo, r_listinfo_fini);
+
+static inline int render_table_rows_from_vec(RTable *table, TableVisualState *state) {
+	int i = 0;
+
+	RVecListInfo *vec = state->user;
+	RListInfo *info;
+	R_VEC_FOREACH (vec, info) {
+		r_table_visual_row (table, info, i, state);
+		i++;
+	}
+
+	return i;
+}
+
+R_API void r_table_visual_vec(RTable *table, RVecListInfo* vec, ut64 seek, ut64 len, int width, bool va) {
+	width -= 80;
+	if (width < 1) {
+		width = 30;
+	}
+
+	ut64 min = -1;
+	ut64 max = -1;
+	RListInfo *info;
+	R_VEC_FOREACH (vec, info) {
+		if (min == -1 || info->pitv.addr < min) {
+			min = info->pitv.addr;
 		}
-		/* current seek */
-		if (i > 0 && len != 0) {
-			RStrBuf *buf = r_strbuf_new ("");
-			if (seek == UT64_MAX) {
-				seek = 0;
-			}
-			for (j = 0; j < width; j++) {
-				r_strbuf_append (buf,((j * mul) + min >= seek &&
-						     (j * mul) + min <= seek + len) ? "^" : h_line);
-			}
-			r_strf_var (a0, 64, "0x%08"PFMT64x, seek);
-			r_strf_var (a1, 64, "0x%08"PFMT64x, seek + len);
-			char *b = r_strbuf_drain (buf);
-			r_table_add_rowf (table, "sssssss", "=>", a0, b, a1, "", "", "");
-			free (b);
+		if (max == -1 || info->pitv.addr + info->pitv.size > max) {
+			max = info->pitv.addr + info->pitv.size;
 		}
 	}
+
+	const ut64 mul = (max - min) / width;
+	TableVisualState state = {
+		.min = min,
+		.mul = mul,
+		.width = width,
+		.seek = seek == UT64_MAX ? 0 : seek,
+		.len = len,
+		.va = va,
+		.render_fn = render_table_rows_from_vec,
+		.user = vec,
+	};
+	r_table_visual (table, &state);
 }
 
 R_API RTable *r_table_clone(const RTable *t) {
