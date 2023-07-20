@@ -29,12 +29,11 @@ R_API char *r_bin_demangle_rust(RBinFile *binfile, const char *sym, ut64 vaddr) 
 	char *in = str;
 	char *out = str;
 	size_t len = strlen (str);
-#if 0
-	while (*in == '_') {
+
+	if (*in == '_' && in[1] != '_') {
 		in++;
 		len--;
 	}
-#endif
 	while ((len = strlen (in)) > 0) {
 		if (!(*in == '$' && (RS ("$SP$", '@')
 				|| RS ("$BP$", '*')
