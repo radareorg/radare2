@@ -338,6 +338,7 @@ typedef struct r_debug_plugin_t {
 } RDebugPlugin;
 
 typedef struct r_debug_plugin_session_t {
+	RDebug *dbg;
 	RDebugPlugin plugin;
 	void *plugin_data;
 } RDebugPluginSession;

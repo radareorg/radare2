@@ -3,23 +3,22 @@
 #include <r_debug.h>
 #include <config.h>
 
-R_VEC_TYPE(RVecDebugPluginSession, RDebugPluginSession);
-
-static RDebugPlugin *debug_static_plugins[] = {
-	R_DEBUG_STATIC_PLUGINS
-};
-
-static inline void debug_plugin_session_fini(RDebugPluginSession *ds, void *user) {
-	RDebug *dbg = user;
-	if (ds->plugin.fini_plugin && !ds->plugin.fini_plugin (dbg, ds)) {
+static inline void debug_plugin_session_fini(RDebugPluginSession *ds) {
+	if (ds->plugin.fini_plugin && !ds->plugin.fini_plugin (ds->dbg, ds)) {
 		R_LOG_DEBUG ("Failed to finalize debug plugin");
 	}
 	R_FREE (ds->plugin_data);
 }
 
+R_VEC_TYPE_WITH_FINI(RVecDebugPluginSession, RDebugPluginSession, debug_plugin_session_fini);
+
+static RDebugPlugin *debug_static_plugins[] = {
+	R_DEBUG_STATIC_PLUGINS
+};
+
 R_API void r_debug_init_plugins(RDebug *dbg) {
 	int i;
-	dbg->plugins = RVecDebugPluginSession_new (debug_plugin_session_fini, dbg);
+	dbg->plugins = RVecDebugPluginSession_new ();
 	for (i = 0; debug_static_plugins[i]; i++) {
 		r_debug_plugin_add (dbg, debug_static_plugins[i]);
 	}
@@ -118,6 +117,7 @@ R_API bool r_debug_plugin_add(RDebug *dbg, RDebugPlugin *plugin) {
 		return false;
 	}
 
+	ds->dbg = dbg;
 	memcpy (&ds->plugin, plugin, sizeof (RDebugPlugin));
 	ds->plugin_data = NULL;
 

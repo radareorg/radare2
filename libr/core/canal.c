@@ -2872,22 +2872,6 @@ static inline int is_call_ref(const RAnalRef *ref, const void *user) {
 	return rt == R_ANAL_REF_TYPE_CALL;
 }
 
-static inline int compare_ref(const RAnalRef *a, const RAnalRef *b) {
-	if (a->at < b->at) {
-		return -1;
-	}
-	if (a->at > b->at) {
-		return 1;
-	}
-	if (a->addr < b->addr) {
-		return -1;
-	}
-	if (a->addr > b->addr) {
-		return 1;
-	}
-	return 0;
-}
-
 // for a given function returns an RVecAnalRef of all functions that were called in it
 R_API RVecAnalRef *r_core_anal_fcn_get_calls(RCore *core, RAnalFunction *fcn) {
 	// get all references from this function
@@ -2898,7 +2882,7 @@ R_API RVecAnalRef *r_core_anal_fcn_get_calls(RCore *core, RAnalFunction *fcn) {
 			eprintf("found it\n");
 	}
 
-	RVecAnalRef *call_refs = RVecAnalRef_new (NULL, NULL);
+	RVecAnalRef *call_refs = RVecAnalRef_new ();
 	R_VEC_FOREACH (refs, ref) {
 		if (is_call_ref (ref, NULL)) {
 			RVecAnalRef_push_back (call_refs, ref);

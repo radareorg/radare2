@@ -21,8 +21,6 @@ typedef struct qjs_core_plugin {
 	// void *data;  // can be added later if needed
 } QjsCorePlugin;
 
-R_VEC_TYPE (RVecCorePlugin, QjsCorePlugin);
-
 typedef struct qjs_arch_plugin_t {
 	char *name;
 	char *arch;
@@ -44,8 +42,18 @@ typedef struct qjs_io_plugin_t {
 	// JSValue encode_func;
 } QjsIoPlugin;
 
-R_VEC_TYPE (RVecArchPlugin, QjsArchPlugin);
-R_VEC_TYPE (RVecIoPlugin, QjsIoPlugin);
+static void core_plugin_fini(QjsCorePlugin *cp) {
+	free (cp->name);
+}
+
+static void arch_plugin_fini(QjsArchPlugin *ap) {
+	free (ap->name);
+	free (ap->arch);
+}
+
+R_VEC_TYPE_WITH_FINI (RVecCorePlugin, QjsCorePlugin, core_plugin_fini);
+R_VEC_TYPE_WITH_FINI (RVecArchPlugin, QjsArchPlugin, arch_plugin_fini);
+R_VEC_TYPE (RVecIoPlugin, QjsIoPlugin); // R2_590 add finalizer function
 
 typedef struct qjs_plugin_manager_t {
 	R_BORROW RCore *core;
@@ -56,21 +64,12 @@ typedef struct qjs_plugin_manager_t {
 	RVecIoPlugin io_plugins;
 } QjsPluginManager;
 
-static void core_plugin_fini(QjsCorePlugin *cp, void *user) {
-	free (cp->name);
-}
-
-static void arch_plugin_fini(QjsArchPlugin *ap, void *user) {
-	free (ap->name);
-	free (ap->arch);
-}
-
 static bool plugin_manager_init(QjsPluginManager *pm, RCore *core, JSRuntime *rt) {
 	pm->core = core;
 	pm->rt = rt;
-	RVecCorePlugin_init (&pm->core_plugins, core_plugin_fini, NULL);
-	RVecArchPlugin_init (&pm->arch_plugins, arch_plugin_fini, NULL);
-	RVecIoPlugin_init (&pm->io_plugins, NULL, NULL);  // TODO
+	RVecCorePlugin_init (&pm->core_plugins);
+	RVecArchPlugin_init (&pm->arch_plugins);
+	RVecIoPlugin_init (&pm->io_plugins);
 	return true;
 }
 
