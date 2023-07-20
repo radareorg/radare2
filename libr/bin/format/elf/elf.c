@@ -5,6 +5,9 @@
 #include <r_util.h>
 #include "elf.h"
 
+/// XXX this should be a runtime option
+#define PERMIT_UNNAMED_SYMBOLS 0
+
 #define MIPS_PLT_OFFSET 0x20
 #define RISCV_PLT_OFFSET 0x20
 #define LOONGARCH_PLT_OFFSET 0x20
@@ -56,7 +59,7 @@ static inline bool is_elfclass64(Elf_(Ehdr) *h) {
 	return h->e_ident[EI_CLASS] == ELFCLASS64;
 }
 
-static bool is_intel(ELFOBJ *eo) {
+static bool is_intel(const ELFOBJ *eo) {
 	switch (eo->ehdr.e_machine) {
 	case EM_386:
 	case EM_X86_64:
@@ -733,12 +736,18 @@ static int init_dynamic_section(ELFOBJ *eo) {
 	return true;
 }
 
-static RBinElfSection* get_section_by_name(ELFOBJ *eo, const char *section_name) {
+// TODO: use a hashtable. and maybe just have a public api in rbin(obj|file) for that
+/// R2_590 this is O(n)
+static RBinElfSection* get_section_by_name(ELFOBJ *eo, const char *name) {
 	if (eo->sections_loaded) {
-		RBinElfSection *section;
-		r_vector_foreach (&eo->g_sections, section) {
-			if (!strcmp (section->name, section_name)) {
-				return section;
+		RBinElfSection *sec;
+#if R2_590
+		R_VEC_FOREACH (eo->g_sections_vec, sec) {
+#else
+		r_vector_foreach (&eo->g_sections, sec) {
+#endif
+			if (!strcmp (sec->name, name)) {
+				return sec;
 			}
 		}
 	}
@@ -879,7 +888,6 @@ static inline bool _maybe_parse_aux_ver_needed_info(ELFOBJ *eo, ParseVernauxStat
 			state->check_def = false;
 			return true;
 		}
-
 		offset += vn.vn_next;
 	} while (vn.vn_next);
 
@@ -1028,11 +1036,7 @@ static Sdb *store_versioninfo_gnu_versym(ELFOBJ *eo, Elf_(Shdr) *shdr, int sz) {
 }
 
 typedef struct process_verdef_state_t {
-#ifdef R_BIN_ELF64
-	Elf64_Half vd_cnt;
-#else
-	Elf32_Half vd_cnt;
-#endif
+	Elf_(Half) vd_cnt;
 	int i;
 	const char *const end;
 	Elf_(Shdr) *shdr;
@@ -1196,6 +1200,7 @@ static Sdb *store_versioninfo_gnu_verdef(ELFOBJ *eo, Elf_(Shdr) *shdr, int sz) {
 		return false;
 	}
 #ifdef R_BIN_ELF64
+	// R2_590 delete the else block , this chk must be generic
 	if ((int)shdr->sh_size < 1 || shdr->sh_size > SIZE_MAX) {
 		return false;
 	}
@@ -1366,6 +1371,7 @@ static Sdb *store_versioninfo_gnu_verneed(ELFOBJ *eo, Elf_(Shdr) *shdr, int sz) 
 		return NULL;
 	}
 #ifdef R_BIN_ELF64
+	// R2_590 delete the else block , this chk must be generic
 	if ((int)shdr->sh_size < 1 || shdr->sh_size > SIZE_MAX) {
 		return NULL;
 	}
@@ -1493,7 +1499,6 @@ static bool init_dynstr(ELFOBJ *eo) {
 	for (i = 0; i < eo->ehdr.e_shnum; i++) {
 		const size_t sh_name = eo->shdr[i].sh_name;
 		const size_t shstrtab_size = eo->shstrtab_size;
-
 		bool inshstrtab = (sh_name < shstrtab_size);
 #if 0
 		if (eo->shdr[i].sh_name > eo->shstrtab_size) {
@@ -1622,10 +1627,8 @@ static ut64 get_got_entry(ELFOBJ *eo, RBinElfReloc *rel) {
 	if (!rel || !rel->rva || rel->rva == UT64_MAX) {
 		return UT64_MAX;
 	}
-
 	ut64 p_sym_got_addr = Elf_(v2p_new) (eo, rel->rva);
 	ut64 addr = R_BIN_ELF_BREADWORD (eo->b, p_sym_got_addr);
-
 	return (!addr || addr == R_BIN_ELF_WORD_MAX) ? UT64_MAX : addr;
 }
 
@@ -2001,7 +2004,7 @@ ut64 Elf_(get_init_offset)(ELFOBJ *eo) {
 			}
 		}
 	}
-	return 0;
+	return 0; // XXX should be UT64_MAX
 }
 
 ut64 Elf_(get_fini_offset)(ELFOBJ *eo) {
@@ -2022,7 +2025,7 @@ ut64 Elf_(get_fini_offset)(ELFOBJ *eo) {
 			return Elf_(v2p) (eo, addr);
 		}
 	}
-	return 0;
+	return 0; // XXX should be UT64_MAX
 }
 
 static ut64 get_entry_offset_from_shdr(ELFOBJ *eo) {
@@ -3634,19 +3637,20 @@ static const char *elf_section_type_tostring(int shtype) {
 }
 
 static char *setphname(ut16 mach, Elf_(Word) ptyp) {
+	const char *s = "UNKNOWN";
 	// TODO to complete over time
 	if (mach == EM_ARM) {
 		if (ptyp == SHT_ARM_EXIDX) {
-			return strdup ("EXIDX");
+			s = "EXIDX";
 		}
 	} else if (mach == EM_MIPS) {
 		if (ptyp == PT_MIPS_ABIFLAGS) {
-			return strdup ("ABIFLAGS");
+			s = "ABIFLAGS";
 		} else if (ptyp == PT_MIPS_REGINFO) {
-			return strdup ("REGINFO");
+			s = "REGINFO";
 		}
 	}
-	return strdup ("UNKNOWN");
+	return strdup (s);
 }
 
 static void _store_bin_sections(ELFOBJ *eo, const RVector *elf_bin_sections) {
@@ -4086,6 +4090,9 @@ static RVector* load_symbols_from_phdr(ELFOBJ *eo, int type) {
 
 	// since ELF doesn't specify the symbol table size we may read until the end of the buffer
 	int nsym = (eo->size - addr_sym_table) / sym_size;
+	if (nsym < 1) {
+		return NULL;
+	}
 	ut32 size = 0;
 	if (!UT32_MUL (&size, nsym, sizeof (Elf_ (Sym)))) {
 		return NULL;
@@ -4241,11 +4248,10 @@ static bool is_section_local_sym(ELFOBJ *eo, Elf_(Sym) *sym) {
 }
 
 static void setsymord(ELFOBJ* eobj, ut32 ord, RBinSymbol *ptr) {
-	if (!eobj->symbols_by_ord || ord >= eobj->symbols_by_ord_size) {
-		return;
+	if (eobj->symbols_by_ord && ord < eobj->symbols_by_ord_size) {
+		r_bin_symbol_free (eobj->symbols_by_ord[ord]);
+		eobj->symbols_by_ord[ord] = ptr;
 	}
-	r_bin_symbol_free (eobj->symbols_by_ord[ord]);
-	eobj->symbols_by_ord[ord] = ptr;
 }
 
 static void _set_arm_thumb_bits(struct Elf_(obj_t) *eo, RBinSymbol **sym) {
@@ -4272,7 +4278,6 @@ static void _set_arm_thumb_bits(struct Elf_(obj_t) *eo, RBinSymbol **sym) {
 			break;
 		}
 	}
-
 	ptr->bits = bin_bits;
 	if (bin_bits != 64) {
 		ptr->bits = 32;
@@ -4289,7 +4294,8 @@ static void _set_arm_thumb_bits(struct Elf_(obj_t) *eo, RBinSymbol **sym) {
 	}
 }
 
-RBinSymbol *Elf_(_r_bin_elf_convert_symbol)(struct Elf_(obj_t) *eo, RBinElfSymbol *symbol, const char *namefmt) {
+// XXX this is slow because we can directly use RBinSymbol instead of RBinElfSymbol imho
+RBinSymbol *Elf_(convert_symbol)(ELFOBJ *eo, RBinElfSymbol *symbol, const char *namefmt) {
 	ut64 paddr, vaddr;
 	if (symbol->is_vaddr) {
 		paddr = UT64_MAX;
@@ -4299,6 +4305,7 @@ RBinSymbol *Elf_(_r_bin_elf_convert_symbol)(struct Elf_(obj_t) *eo, RBinElfSymbo
 		vaddr = Elf_(p2v_new) (eo, paddr);
 	}
 
+	// unnecessary alo
 	RBinSymbol *ptr = R_NEW0 (RBinSymbol);
 	if (R_LIKELY (ptr)) {
 		ptr->name = symbol->name[0] ? r_str_newf (namefmt, &symbol->name[0]) : strdup ("");
@@ -4451,7 +4458,7 @@ static RVector *_load_additional_imported_symbols(ELFOBJ *eo, ImportInfo *import
 	const int limit = eo->limit;
 	int count = 0;
 	r_vector_foreach (import_info->memory.symbols, symbol) {
-		RBinSymbol *import_sym_ptr = Elf_(_r_bin_elf_convert_symbol) (eo, symbol, "%s");
+		RBinSymbol *import_sym_ptr = Elf_(convert_symbol) (eo, symbol, "%s");
 		if (!import_sym_ptr) {
 			continue;
 		}
@@ -4522,8 +4529,8 @@ static bool _process_symbols_and_imports_in_section(ELFOBJ *eo, int type, Proces
 		return false;
 	}
 
-	ut64 sh_begin = eo->shdr[i].sh_offset;
-	ut64 sh_end = sh_begin + eo->shdr[i].sh_size;
+	const ut64 sh_begin = eo->shdr[i].sh_offset;
+	const ut64 sh_end = sh_begin + eo->shdr[i].sh_size;
 	if (sh_begin > eo->size) {
 		R_LOG_ERROR ("invalid sh egin");
 		free (strtab);
@@ -4696,7 +4703,7 @@ static bool _process_symbols_and_imports_in_section(ELFOBJ *eo, int type, Proces
 }
 
 // TODO: return RList<RBinSymbol*> .. or run a callback with that symbol constructed, so we don't have to do it twice
-static RVector /* <RBinElfSymbol> */ *Elf_(_r_bin_elf_load_symbols_and_imports)(ELFOBJ *eo, int type) {
+static RVector /* <RBinElfSymbol> */ *Elf_(load_symbols_from)(ELFOBJ *eo, int type) {
 	r_return_val_if_fail (eo, NULL);
 
 	if (!eo->shdr || !eo->ehdr.e_shnum || eo->ehdr.e_shnum == 0xffff) {
@@ -4732,6 +4739,7 @@ static RVector /* <RBinElfSymbol> */ *Elf_(_r_bin_elf_load_symbols_and_imports)(
 			.import_ret_ctr = &import_ret_ctr,
 		};
 		if (!_process_symbols_and_imports_in_section (eo, type, &state)) {
+			eprintf ("faile here\n");
 			_symbol_memory_free (&memory);
 			return NULL;
 		}
@@ -4754,13 +4762,14 @@ static RVector /* <RBinElfSymbol> */ *Elf_(_r_bin_elf_load_symbols_and_imports)(
 	}
 
 	if (type == R_BIN_ELF_IMPORT_SYMBOLS) {
-		ImportInfo import_info = {
+		ImportInfo ii = {
 			.memory = memory,
+			//.ret = ret,
 			.ret_ctr = ret_ctr,
 			.import_ret_ctr = import_ret_ctr,
 			.nsym = nsym,
 		};
-		return _load_additional_imported_symbols (eo, &import_info);
+		return _load_additional_imported_symbols (eo, &ii);
 	}
 
 	return ret;
@@ -4768,18 +4777,16 @@ static RVector /* <RBinElfSymbol> */ *Elf_(_r_bin_elf_load_symbols_and_imports)(
 
 RVector *Elf_(load_symbols)(ELFOBJ *eo) {
 	r_return_val_if_fail (eo, NULL);
-
 	if (!eo->g_symbols) {
-		eo->g_symbols = Elf_(_r_bin_elf_load_symbols_and_imports) (eo, R_BIN_ELF_ALL_SYMBOLS);
+		eo->g_symbols = Elf_(load_symbols_from) (eo, R_BIN_ELF_ALL_SYMBOLS);
 	}
 	return eo->g_symbols;
 }
 
 RVector *Elf_(load_imports)(ELFOBJ *eo) {
 	r_return_val_if_fail (eo, NULL);
-
 	if (!eo->g_imports) {
-		eo->g_imports = Elf_(_r_bin_elf_load_symbols_and_imports) (eo, R_BIN_ELF_IMPORT_SYMBOLS);
+		eo->g_imports = Elf_(load_symbols_from) (eo, R_BIN_ELF_IMPORT_SYMBOLS);
 	}
 	return eo->g_imports;
 }
