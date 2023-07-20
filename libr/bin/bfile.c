@@ -836,8 +836,12 @@ R_IPI RBinFile *r_bin_file_xtr_load_buffer(RBin *bin, RBinXtrPlugin *xtr, const 
 		//populate xtr_data with baddr and laddr that will be used later on
 		//r_bin_file_object_new_from_xtr_data
 		r_list_foreach (bf->xtr_data, iter, x) {
-			x->baddr = baseaddr? baseaddr : UT64_MAX;
-			x->laddr = loadaddr? loadaddr : UT64_MAX;
+			if (x == NULL) {
+				R_LOG_WARN ("Null entry found in xtrdata list");
+			} else {
+				x->baddr = baseaddr? baseaddr : UT64_MAX;
+				x->laddr = loadaddr? loadaddr : UT64_MAX;
+			}
 		}
 	}
 	bf->loadaddr = loadaddr;
