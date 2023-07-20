@@ -263,12 +263,18 @@ static bool test_vec_emplace_front(void) {
 	mu_end;
 }
 
+void copy_S(S *dst, const S *src) {
+	dst->x = src->x;
+	dst->y = malloc (sizeof (float));
+	*dst->y = *src->y;
+}
+
 static bool test_vec_append(void) {
 	RVecUT32 v1, v2;
 	RVecUT32_init (&v1);
 	RVecUT32_init (&v2);
 
-	RVecUT32_append (&v1, &v2);
+	RVecUT32_append (&v1, &v2, NULL);
 	mu_assert_eq (R_VEC_CAPACITY (&v1), 0, "append capacity1");
 	mu_assert_eq (RVecUT32_length (&v1), 0, "append length1");
 	mu_assert_eq (R_VEC_CAPACITY (&v2), 0, "append capacity2");
@@ -283,7 +289,7 @@ static bool test_vec_append(void) {
 		RVecUT32_push_back (&v2, &x);
 	}
 
-	RVecUT32_append (&v1, &v2);
+	RVecUT32_append (&v1, &v2, NULL);
 	mu_assert_eq (R_VEC_CAPACITY (&v1), 18, "append capacity3");
 	mu_assert_eq (RVecUT32_length (&v1), 18, "append length3");
 	mu_assert_eq (R_VEC_CAPACITY (&v2), 16, "append capacity4");
@@ -291,6 +297,27 @@ static bool test_vec_append(void) {
 
 	RVecUT32_fini (&v1);
 	RVecUT32_fini (&v2);
+
+	RVecS v3, v4;
+	RVecS_init (&v3);
+	RVecS_init (&v4);
+
+	S s = { .x = 0, .y = malloc (sizeof (float)) };
+	*s.y = 1.23;
+	RVecS_push_back (&v3, &s);
+
+	for (x = 0; x < 10; x++) {
+		S s = { .x = 0, .y = malloc (sizeof (float)) };
+		*s.y = 4.56;
+		RVecS_push_back (&v4, &s);
+	}
+
+	RVecS_append (&v3, &v4, copy_S);
+	mu_assert_neq (RVecS_at (&v3, 2)->y, RVecS_at (&v4, 0)->y, "append copy1");
+	mu_assert_neq (RVecS_at (&v3, 3)->y, RVecS_at (&v4, 1)->y, "append copy1");
+
+	RVecS_fini (&v3);
+	RVecS_fini (&v4);
 	mu_end;
 }
 
