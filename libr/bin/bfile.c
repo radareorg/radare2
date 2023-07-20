@@ -1173,16 +1173,14 @@ R_API RVecRBinSymbol *r_bin_file_get_symbols_vec(RBinFile *bf) {
 	r_return_val_if_fail (bf, NULL);
 	RBinObject *bo = bf->o;
 	if (bo) {
-		if (bo->symbols) {
-			if (RVecRBinSymbol_empty (&bo->symbols_vec)) {
-				R_LOG_DEBUG ("cloning symbols list into a vec"); // R2_600
-				RBinSymbol *symbol;
-				// Create a vector for those plugins not loading the rvec
-				RList *list = bo->symbols;
-				RListIter *iter;
-				r_list_foreach (list, iter, symbol) {
-					RVecRBinSymbol_push_back (&bo->symbols_vec, symbol);
-				}
+		if (bo->symbols && RVecRBinSymbol_empty (&bo->symbols_vec)) {
+			R_LOG_DEBUG ("SLOW: cloning symbols list into a vec"); // R2_600
+			RBinSymbol *symbol;
+			// Create a vector for those plugins not loading the rvec
+			RList *list = bo->symbols;
+			RListIter *iter;
+			r_list_foreach (list, iter, symbol) {
+				RVecRBinSymbol_push_back (&bo->symbols_vec, symbol);
 			}
 		}
 		return &bo->symbols_vec;

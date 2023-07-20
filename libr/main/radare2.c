@@ -1605,19 +1605,19 @@ R_API int r_main_radare2(int argc, const char **argv) {
 	if (r_config_get_b (r->config, "scr.demo")) {
 		int count = 0;
 		while (true) {
-			const char *msg = "Preparing installation...";
+			const char *msg = "Loading shards...";
 			if (count > 17) {
 				break;
 			} else if (count > 15) {
-				msg = "DONE!";
+				msg = "OK";
 			} else if (count > 10) {
-				msg = "Everything looks good.";
+				msg = "Deltifying monads...";
 			}
 			r_print_spinbar (r->print, msg);
 			count ++;
-			r_sys_usleep (200000);
+			r_sys_usleep (100000);
 		}
-		eprintf ("\n");
+		eprintf ("\r");
 	}
 	if (do_analysis > 0) {
 		if (threaded) {

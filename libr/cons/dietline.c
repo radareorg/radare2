@@ -241,7 +241,7 @@ static int r_line_readchar_utf8(ut8 *s, int slen) {
 	}
 	int ch = -1;
 	if (I.demo) {
-		ch = r_cons_readchar_timeout (50);
+		ch = r_cons_readchar_timeout (80);
 	} else {
 		ch = r_cons_readchar ();
 	}
@@ -988,15 +988,16 @@ static void __print_prompt(void) {
 	}
 #endif
 	if (I.demo) {
+		// 15% cpu usage, but yeah its fancy demoscene. may be good to optimize
 		int pos = (count > 0)? count % strlen (I.prompt) : 0;
 		char *a = strdup (I.prompt);
 		char *kb = (char *)r_str_ansi_chrn (a, pos);
-		char *kc = (char *)r_str_ansi_chrn (a, pos + 2);
+		char *kc = (char *)r_str_ansi_chrn (kb, 3);
 		char *b = r_str_ndup (kb, kc - kb);
 		char *c = strdup (kc);
 		char *rb = r_str_newf (Color_WHITE"%s%s", b, promptcolor ());
 		*kb = 0;
-		printf ("\r%s%s%s%s%s", promptcolor (), a, rb, c, promptcolor ());
+		printf ("\r%s%s%s%s%s", promptcolor (), a, rb, c, Color_RESET);
 		free (a);
 		free (b);
 		free (rb);
