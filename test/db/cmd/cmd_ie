@@ -149,6 +149,7 @@ DEBUG: (cannot find opening [) in (98])
 DEBUG: (section .dynamic) Cd 4[48] @ 0x12000
 DEBUG: RCoreCmd: Cd 4[48] @ 0x12000
 DEBUG: (cannot find opening [) in (48])
+DEBUG: cloning symbols list into a vec
 DEBUG: RCoreCmd: =!
 DEBUG: RCoreCmd: ieq
 DEBUG: RCoreCmd: ie

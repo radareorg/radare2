@@ -31,6 +31,7 @@ static int reloc_cmp(void *incoming, void *in, void *user) {
 static void object_delete_items(RBinObject *o) {
 	r_return_if_fail (o);
 	ut32 i = 0;
+	r_strpool_free (o->pool);
 	ht_up_free (o->addr2klassmethod);
 	r_list_free (o->entries);
 	r_list_free (o->fields);
@@ -40,7 +41,13 @@ static void object_delete_items(RBinObject *o) {
 	r_list_free (o->sections);
 	r_list_free (o->strings);
 	ht_up_free (o->strings_db);
+
+	if (!RVecRBinSymbol_empty (&o->symbols_vec)) {
+		RVecRBinSymbol_fini (&o->symbols_vec);
+		o->symbols->free = NULL;
+	}
 	r_list_free (o->symbols);
+
 	r_list_free (o->classes);
 	ht_pp_free (o->classes_ht);
 	ht_pp_free (o->methods_ht);
@@ -143,21 +150,24 @@ R_IPI RBinObject *r_bin_object_new(RBinFile *bf, RBinPlugin *plugin, ut64 basead
 	bo->baddr_shift = 0;
 	bo->plugin = plugin;
 	bo->loadaddr = loadaddr != UT64_MAX ? loadaddr : 0;
+	RVecRBinSymbol_init (&bo->symbols_vec);
+	bo->pool = r_strpool_new (0);
+	bf->o = bo;
 
 	Sdb *sdb = bf->sdb; // should be bo->kv ?
 	if (plugin && plugin->load_buffer) {
 		if (!plugin->load_buffer (bf, &bo->bin_obj, bf->buf, loadaddr, sdb)) {
-			if (bf->rbin->verbose) {
-				R_LOG_ERROR ("r_bin_object_new: load_buffer failed for %s plugin", plugin->name);
-			}
+			R_LOG_DEBUG ("load_buffer failed for %s plugin", plugin->name);
 			sdb_free (bo->kv);
 			free (bo);
+			bf->o = NULL;
 			return NULL;
 		}
 	} else {
 		R_LOG_WARN ("Plugin %s should implement load_buffer method", plugin->name);
 		sdb_free (bo->kv);
 		free (bo);
+		bf->o = NULL;
 		return NULL;
 	}
 
@@ -320,7 +330,19 @@ R_API int r_bin_object_set_items(RBinFile *bf, RBinObject *bo) {
 			bo->imports->free = (RListFree)r_bin_import_free;
 		}
 	}
-	if (p->symbols) {
+	if (p->symbols_vec) {
+		RList *list = r_list_newf ((RListFree) r_bin_symbol_free);
+		RBinSymbol *sym;
+		R_VEC_FOREACH (&bo->symbols_vec, sym) {
+			r_list_append (list, r_bin_symbol_clone (sym));
+		}
+		bo->symbols = list;
+		bo->symbols->free = r_bin_symbol_free;
+		REBASE_PADDR (bo, bo->symbols, RBinSymbol);
+		if (bin->filter) {
+			r_bin_filter_symbols (bf, bo->symbols); // 5s
+		}
+	} else if (p->symbols) {
 		bo->symbols = p->symbols (bf); // 5s
 		if (bo->symbols) {
 			bo->symbols->free = r_bin_symbol_free;

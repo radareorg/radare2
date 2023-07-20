@@ -126,6 +126,7 @@ struct MACH0_(obj_t) {
 	size_t imports_by_ord_size;
 	HtPP *imports_by_name;
 	RList *cached_segments;
+	struct MACH0_(opts_t) options;
 
 	struct dysymtab_command dysymtab;
 	struct load_command main_cmd;
@@ -169,8 +170,8 @@ struct MACH0_(obj_t) {
 	ut64 header_at;
 	bool parse_start_symbols;
 	bool symbols_loaded;
-	RVector symbols_cache;
-	RVecRBinSymbol *symbols_vec;
+	//RVector symbols_cache;
+	RVecRBinSymbol *symbols_vec; // pointer to &bf->o->symbols_vec
 	ut64 symbols_off;
 	void *user;
 	ut64 (*va2pa)(ut64 p, ut32 *offset, ut32 *left, RBinFile *bf);
@@ -249,7 +250,7 @@ struct MACH0_(obj_t) *MACH0_(new_buf)(RBuffer *buf, struct MACH0_(opts_t) *optio
 void *MACH0_(mach0_free)(struct MACH0_(obj_t) *bin);
 const RVector *MACH0_(load_sections)(struct MACH0_(obj_t) *mo);
 RList *MACH0_(get_segments)(RBinFile *bf, struct MACH0_(obj_t) *mo);
-const RVector *MACH0_(load_symbols)(RBinFile *bf, struct MACH0_(obj_t) *mo);
+const bool MACH0_(load_symbols)(struct MACH0_(obj_t) *mo);
 void MACH0_(pull_symbols)(struct MACH0_(obj_t) *mo, RBinSymbolCallback cb, void *user);
 const RPVector *MACH0_(load_imports)(RBinFile* bf, struct MACH0_(obj_t) *bin);
 const RSkipList *MACH0_(load_relocs)(struct MACH0_(obj_t) *bin);
@@ -268,7 +269,7 @@ char *MACH0_(get_cpusubtype)(struct MACH0_(obj_t) *bin);
 char *MACH0_(get_cpusubtype_from_hdr)(struct MACH0_(mach_header) *hdr);
 char *MACH0_(get_filetype)(struct MACH0_(obj_t) *bin);
 char *MACH0_(get_filetype_from_hdr)(struct MACH0_(mach_header) *hdr);
-ut64 MACH0_(get_main)(RBinFile *bf, struct MACH0_(obj_t) *bin);
+ut64 MACH0_(get_main)(struct MACH0_(obj_t) *mo);
 const char *MACH0_(get_cputype_from_hdr)(struct MACH0_(mach_header) *hdr);
 int MACH0_(get_bits_from_hdr)(struct MACH0_(mach_header) *hdr);
 struct MACH0_(mach_header) *MACH0_(get_hdr)(RBuffer *buf);

@@ -601,10 +601,9 @@ static bool linkcb(void *user, void *data, ut32 id) {
 
 	RBinFile *bf = r_bin_file_find_by_fd (ld->bin, desc->fd);
 	if (bf) {
-		RListIter *iter;
 		RBinSymbol *sym;
-		RList *symbols = r_bin_file_get_symbols (bf);
-		r_list_foreach (symbols, iter, sym) {
+		RVecRBinSymbol *symbols = r_bin_file_get_symbols_vec (bf);
+		R_VEC_FOREACH (symbols, sym) {
 			if (!strcmp (sym->name, ld->name)) {
 				ld->addr = sym->vaddr;
 				return false;

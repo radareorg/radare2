@@ -5182,9 +5182,9 @@ static RList *foreach3list(RCore *core, char type, const char *glob) {
 	case 'E':
 		{
 			RBinSymbol *sym;
-			RList *symlist = r_bin_get_symbols (core->bin);
-			bool va = r_config_get_b (core->config, "io.va");
-			r_list_foreach (symlist, iter, sym) {
+			RVecRBinSymbol *symbols = r_bin_get_symbols_vec (core->bin);
+			const bool va = r_config_get_b (core->config, "io.va");
+			R_VEC_FOREACH (symbols, sym) {
 				if (!isAnExport (sym)) {
 					continue;
 				}
@@ -5196,8 +5196,8 @@ static RList *foreach3list(RCore *core, char type, const char *glob) {
 	case 's': // @@@s symbols
 		{
 			RBinSymbol *sym;
-			RList *syms = r_bin_get_symbols (core->bin);
-			r_list_foreach (syms, iter, sym) {
+			RVecRBinSymbol *symbols = r_bin_get_symbols_vec (core->bin);
+			R_VEC_FOREACH (symbols, sym) {
 				ut64 addr = va? sym->vaddr: sym->paddr;
 				append_item (list, NULL, addr, sym->size);
 			}

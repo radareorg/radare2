@@ -265,15 +265,19 @@ static RBuffer* create(RBin* bin, const ut8 *code, int codelen, const ut8 *data,
 }
 
 static RBinAddr* binsym(RBinFile *bf, int sym) {
-	ut64 addr;
 	RBinAddr *ret = NULL;
 	switch (sym) {
 	case R_BIN_SYM_MAIN:
-		addr = MACH0_(get_main) (bf, bf->o->bin_obj);
-		if (!addr || !(ret = R_NEW0 (RBinAddr))) {
-			return NULL;
+		{
+			struct MACH0_(obj_t) *mo = R_UNWRAP3 (bf, o, bin_obj);
+			ut64 addr = MACH0_(get_main) (mo);
+			if (addr != UT64_MAX && addr) {
+				ret = R_NEW0 (RBinAddr);
+				if (ret) {
+					ret->paddr = ret->vaddr = addr;
+				}
+			}
 		}
-		ret->paddr = ret->vaddr = addr;
 		break;
 	}
 	return ret;
@@ -292,7 +296,6 @@ RBinPlugin r_bin_plugin_mach064 = {
 	.entries = &entries,
 	.sections = &sections,
 	.signature = &entitlements,
-	.symbols = &symbols,
 	.symbols_vec = &symbols_vec,
 	.imports = &imports,
 	.info = &info,

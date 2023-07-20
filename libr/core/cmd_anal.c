@@ -1352,10 +1352,9 @@ static RList *collect_addresses(RCore *core) {
 	result is then sorted and uniqified
 #endif
 	RList *list = r_list_newf (free);
-	RListIter *iter;
 	RBinSymbol *sym;
-	RList *syms = r_bin_get_symbols (core->bin);
-	r_list_foreach (syms, iter, sym) {
+	RVecRBinSymbol *symbols = r_bin_get_symbols_vec (core->bin);
+	R_VEC_FOREACH (symbols, sym) {
 		r_list_append (list, ut64_new (sym->vaddr));
 	}
 	// find all calls and mark the destinations as function entrypoints
