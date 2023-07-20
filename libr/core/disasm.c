@@ -24,7 +24,6 @@ R_VEC_TYPE(RVecAnalRef, RAnalRef);
 // ugly globals but meh
 static R_TH_LOCAL ut64 emustack_min = 0LL;
 static R_TH_LOCAL ut64 emustack_max = 0LL;
-static R_TH_LOCAL ut64 lastaddr = UT64_MAX;
 static R_TH_LOCAL char *hint_syntax = NULL;
 static R_TH_LOCAL RFlagItem sfi = {0};
 
@@ -548,10 +547,10 @@ static void ds_comment_(RDisasmState *ds, bool align, bool nl, const char *forma
 		if (multiline) {
 			if (!first) {
 				ds_begin_line (ds);
-				//ds_print_labels (ds, f);
+				// ds_print_labels (ds, f);
 				ds_setup_print_pre (ds, false, false);
 				ds_print_lines_left (ds);
-				//core->print->resetbg = (ds->asm_highlight == UT64_MAX);
+				// core->print->resetbg = (ds->asm_highlight == UT64_MAX);
 				r_cons_printf ("%s ", ds->cmtoken);
 			}
 		}
@@ -932,8 +931,6 @@ static void ds_reflines_fini(RDisasmState *ds) {
 
 static void ds_reflines_init(RDisasmState *ds) {
 	RAnal *anal = ds->core->anal;
-
-	lastaddr = UT64_MAX;
 	st64 limit = r_config_get_i (ds->core->config, "asm.lines.limit");
 	const bool inlimit = (limit > 0 && ds->len < limit);
 
