@@ -197,14 +197,14 @@ static _RAnalCond cond_invert(RAnal *anal, _RAnalCond cond) {
 	the opposite of any condition not in the list above is "always"? */
 }
 
-static RList *parse_format(RCore *core, char *fmt) {
+typedef const char* String;
+R_VEC_TYPE(RVecString, String);  // no fini, these are owned by SDB
+
+static bool parse_format(RCore *core, char *fmt, RVecString *vec) {
 	if (!fmt || !*fmt) {
-		return NULL;
+		return false;
 	}
-	RList *ret = r_list_new ();
-	if (!ret) {
-		return NULL;
-	}
+
 	Sdb *s = core->anal->sdb_fmts;
 	const char *spec = r_config_get (core->config, "anal.types.spec");
 	char arr[10] = {0};
@@ -223,13 +223,14 @@ static RList *parse_format(RCore *core, char *fmt) {
 		}
 		*tmp = '\0';
 		r_strf_var (query, 128, "spec.%s.%s", spec, arr);
-		char *type = (char *) sdb_const_get (s, query, 0);
+		const char *type = sdb_const_get (s, query, 0);
 		if (type) {
-			r_list_append (ret, type);
+			RVecString_push_back (vec, &type);
 		}
 		ptr = strchr (ptr, '%');
 	}
-	return ret;
+
+	return true;
 }
 
 static void retype_callee_arg(RAnal *anal, const char *callee_name, bool in_stack, const char *place, int size, const char *type) {
@@ -283,7 +284,6 @@ static void type_match(RCore *core, char *fcn_name, ut64 addr, ut64 baddr, const
 	Sdb *trace = core->anal->esil->trace->db;
 	Sdb *TDB = core->anal->sdb_types;
 	RAnal *anal = core->anal;
-	RList *types = NULL;
 	int idx = sdb_num_get (trace, "idx", 0);
 	bool verbose = r_config_get_b (core->config, "anal.types.verbose");
 	bool stack_rev = false, in_stack = false, format = false;
@@ -316,16 +316,21 @@ static void type_match(RCore *core, char *fcn_name, ut64 addr, ut64 baddr, const
 	if (max > 7) {
 		max = DEFAULT_MAX;
 	}
+
+	RVecString types;
+	RVecString_init (&types);
 	const int bytes = anal->config->bits / 8;
 	for (i = 0; i < max; i++) {
 		int arg_num = stack_rev ? (max - 1 - i) : i;
 		char *type = NULL;
 		const char *name = NULL;
 		if (format) {
-			if (r_list_empty (types)) {
+			if (RVecString_empty (&types)) {
 				break;
 			}
-			type = r_str_new (r_list_get_n (types, pos++));
+
+			const String *type_ = RVecString_at (&types, pos++);
+			type = type_ ? r_str_new (*type_) : NULL;
 		} else {
 			type = r_type_func_args_type (TDB, fcn_name, arg_num);
 			name = r_type_func_args_name (TDB, fcn_name, arg_num);
@@ -383,8 +388,9 @@ static void type_match(RCore *core, char *fcn_name, ut64 addr, ut64 baddr, const
 							int read = r_io_nread_at (core->io, f->offset, (ut8 *)formatstr, R_MIN (sizeof (formatstr) - 1, f->size));
 							if (read > 0) {
 								formatstr[read] = '\0';
-								if ((types = parse_format (core, formatstr))) {
-									max += r_list_length (types);
+								RVecString_clear (&types);
+								if (parse_format (core, formatstr, &types)) {
+									max += RVecString_length (&types);
 								}
 								format = true;
 							}
@@ -445,7 +451,7 @@ static void type_match(RCore *core, char *fcn_name, ut64 addr, ut64 baddr, const
 		size += bytes;
 		free (type);
 	}
-	r_list_free (types);
+	RVecString_fini (&types);
 	r_cons_break_pop ();
 }
 
