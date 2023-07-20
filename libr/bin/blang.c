@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2018-2019 - pancake */
+/* radare2 - LGPL - Copyright 2018-2023 - pancake */
 
 #include <r_bin.h>
 
@@ -24,20 +24,17 @@ static inline bool check_objc(RBinSymbol *sym) {
 }
 
 static bool check_dlang(RBinSymbol *sym) {
-	if (!strncmp (sym->name, "_D2", 3)) {
+	if (r_str_startswith (sym->name, "_D2")) {
 		return true;
 	}
-	if (!strncmp (sym->name, "_D4", 3)) {
+	if (r_str_startswith (sym->name, "_D4")) {
 		return true;
 	}
 	return false;
 }
 
 static bool check_swift(RBinSymbol *sym) {
-	if (sym->name && strstr (sym->name, "swift_once")) {
-		return true;
-	}
-	return false;
+	return (sym->name && strstr (sym->name, "swift_once"));
 }
 
 static bool check_golang(RBinSymbol *sym) {
@@ -46,10 +43,10 @@ static bool check_golang(RBinSymbol *sym) {
 
 static inline bool is_cxx_symbol(const char *name) {
 	r_return_val_if_fail (name, false);
-	if (!strncmp (name, "_Z", 2)) {
+	if (r_str_startswith (name, "_Z")) {
 		return true;
 	}
-	if (!strncmp (name, "__Z", 3)) {
+	if (r_str_startswith (name, "__Z")) {
 		return true;
 	}
 	return false;
@@ -113,7 +110,7 @@ R_API int r_bin_load_languages(RBinFile *binfile) {
 		const char *name = sym->name;
 		if (!strcmp (name, "_NSConcreteGlobalBlock")) {
 			isBlocks = true;
-		} else if (!strncmp (name, "objc_", 5)) {
+		} else if (r_str_startswith (name, "objc_")) {
 			isObjC = true;
 			cantbe.objc = true;
 		}
@@ -218,36 +215,38 @@ R_API int r_bin_load_languages(RBinFile *binfile) {
  		}
 	}
 	if (canBeCxx) {
-		return R_BIN_LANG_CXX | (isBlocks?R_BIN_LANG_BLOCKS:0);
+		return R_BIN_LANG_CXX | (isBlocks? R_BIN_LANG_BLOCKS: 0);
 	}
 	if (isMsvc) {
 		return R_BIN_LANG_MSVC;
 	}
-	return R_BIN_LANG_C | (isBlocks?R_BIN_LANG_BLOCKS:0);
+	return R_BIN_LANG_C | (isBlocks? R_BIN_LANG_BLOCKS: 0);
 }
 
 // if its ipi no need to be prefixed with r_
 R_IPI int r_bin_lang_type(RBinFile *binfile, const char *def, const char *sym) {
-	int type = 0;
-	RBinPlugin *plugin;
-	if (sym && sym[0] == sym[1] && sym[0] == '_') {
-		type = R_BIN_LANG_CXX;
+	int type = R_BIN_LANG_NONE;
+	if (sym) {
+		if (r_str_startswith (sym, "__")) {
+			type = R_BIN_LANG_CXX;
+		}
+		if (r_str_startswith (sym, "_Z")) {
+			return R_BIN_LANG_RUST;
+		}
 	}
-	if (def && *def) {
+	if (R_STR_ISNOTEMPTY (def)) {
 		type = r_bin_demangle_type (def);
 		if (type != R_BIN_LANG_NONE) {
 			return type;
 		}
 	}
-	plugin = r_bin_file_cur_plugin (binfile);
-	if (plugin && plugin->demangle_type) {
+	RBinPlugin *plugin = r_bin_file_cur_plugin (binfile);
+	if (def && plugin && plugin->demangle_type) {
 		type = plugin->demangle_type (def);
-	} else {
-		if (binfile && binfile->o && binfile->o->info) {
-			type = r_bin_demangle_type (binfile->o->info->lang);
-		}
+	} else if (binfile && binfile->o && binfile->o->info) {
+		type = r_bin_demangle_type (binfile->o->info->lang);
 	}
-	if (type == R_BIN_LANG_NONE) {
+	if (def && type == R_BIN_LANG_NONE) {
 		type = r_bin_demangle_type (def);
 	}
 	return type;

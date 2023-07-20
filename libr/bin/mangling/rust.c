@@ -1,6 +1,8 @@
-/* radare - LGPL - Copyright 2011-2018 - pancake */
+/* radare - LGPL - Copyright 2011-2023 - pancake */
 
 #include <r_bin.h>
+
+// R2R db/formats/mangling/rust
 
 #define RS(from, to) (replace_seq ((const char **)&in, &out, (const char *)(from), to))
 
@@ -20,23 +22,21 @@ static bool replace_seq(const char **in, char **out, const char *seq, char value
 }
 
 R_API char *r_bin_demangle_rust(RBinFile *binfile, const char *sym, ut64 vaddr) {
-	int len;
-	char *str, *out, *in;
-
-	str = r_bin_demangle_cxx (binfile, sym, vaddr);
+	char *str = r_bin_demangle_cxx (binfile, sym, vaddr);
 
 	if (!str) {
 		return str;
 	}
 
-	out = in = str;
-	len = strlen (str);
-
-	if (*in == '_') {
+	char *in = str;
+	char *out = str;
+	size_t len = strlen (str);
+#if 0
+	if (*in == '_' && in[1] != '_') {
 		in++;
 		len--;
 	}
-
+#endif
 	while ((len = strlen (in)) > 0) {
 		if (!(*in == '$' && (RS ("$SP$", '@')
 				|| RS ("$BP$", '*')

@@ -390,7 +390,7 @@ EXPECT=<<EOF
 |           0x000052c2      4889442468     mov qword [var_68h], rax
 |           0x000052c7      488b7c2460     mov rdi, qword [var_60h]    ; int64_t arg1
 |           0x000052cc      488b742468     mov rsi, qword [var_68h]    ; int64_t arg2
-|           0x000052d1      e83a140000     call sym <I as core::iter::traits::collect::IntoIterator>::into_iter::h12f1e7995fb38cf5 ; dbg.into_iter<core::ops::range::Range<usize>>
+|           0x000052d1      e83a140000     call sym _<I as core::iter::traits::collect::IntoIterator>::into_iter::h12f1e7995fb38cf5 ; dbg.into_iter<core::ops::range::Range<usize>>
 |           0x000052d6      4889442438     mov qword [var_38h], rax
 |           0x000052db      4889542430     mov qword [var_30h], rdx
 |           0x000052e0      488b442438     mov rax, qword [var_38h]

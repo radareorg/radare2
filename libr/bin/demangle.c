@@ -48,7 +48,7 @@ R_API char *r_bin_demangle_plugin(RBin *bin, const char *name, const char *str) 
 }
 
 R_API int r_bin_demangle_type(const char *str) {
-	if (str && *str) {
+	if (R_STR_ISNOTEMPTY (str)) {
 		if (!strcmp (str, "swift")) {
 			return R_BIN_LANG_SWIFT;
 		}
