@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2007-2022 - pancake */
+/* radare - LGPL - Copyright 2007-2023 - pancake */
 /* dietline is a lightweight and portable library similar to GNU readline */
 
 #include <r_cons.h>
@@ -239,9 +239,14 @@ static int r_line_readchar_utf8(ut8 *s, int slen) {
 	if (slen < 1) {
 		return 0;
 	}
-	int ch = r_cons_readchar ();
+	int ch = -1;
+	if (I.demo) {
+		ch = r_cons_readchar_timeout (50);
+	} else {
+		ch = r_cons_readchar ();
+	}
 	if (ch == -1) {
-		return -1;
+		return I.demo? 0: -1;
 	}
 	*s = ch;
 	*s = r_cons_controlz (*s);
@@ -951,9 +956,13 @@ static inline void delete_till_end(void) {
 }
 
 static const char *promptcolor (void) {
-	return r_cons_singleton ()->context->pal.bgprompt;
+	if (I.demo) {
+		return r_cons_singleton ()->context->pal.prompt;
+	}
+	return Color_RESET;
 }
 
+static R_TH_LOCAL int count = 0;
 static void __print_prompt(void) {
 	RCons *cons = r_cons_singleton ();
 	int columns = r_cons_get_size (NULL) - 2;
@@ -978,7 +987,27 @@ static void __print_prompt(void) {
 		}
 	}
 #endif
-	printf ("\r%s%s%s", promptcolor (), I.prompt, promptcolor ());
+	if (I.demo) {
+		int pos = (count > 0)? count % strlen (I.prompt) : 0;
+		char *a = strdup (I.prompt);
+		char *kb = (char *)r_str_ansi_chrn (a, pos);
+		char *kc = (char *)r_str_ansi_chrn (a, pos + 2);
+		char *b = r_str_ndup (kb, kc - kb);
+		char *c = strdup (kc);
+		char *rb = r_str_newf (Color_WHITE"%s%s", b, promptcolor ());
+		*kb = 0;
+		printf ("\r%s%s%s%s%s", promptcolor (), a, rb, c, promptcolor ());
+		free (a);
+		free (b);
+		free (rb);
+		free (c);
+		count += 1;
+		if (count > strlen (I.prompt)) {
+			count = 0;
+		}
+	} else {
+		printf ("\r%s%s%s", promptcolor (), I.prompt, promptcolor ());
+	}
 	if (I.buffer.index > cols) {
 		printf ("< ");
 		i = I.buffer.index - cols;
@@ -1229,7 +1258,8 @@ static void __vi_mode(void) {
 					I.buffer.length -= I.buffer.index;
 					I.buffer.index = 0;
 					break;
-				} __print_prompt ();
+				}
+				__print_prompt ();
 			} // end of while (rep--)
 			break;
 		} // end of case 'd'
@@ -1437,11 +1467,17 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 		}
 #if USE_UTF8
 		utflen = r_line_readchar_utf8 ((ut8 *) buf, sizeof (buf));
-		if (utflen < 1) {
+		if (utflen < (I.demo?0:1)) {
 			r_cons_break_pop ();
 			return NULL;
 		}
 		buf[utflen] = 0;
+		if (I.demo && utflen == 0) {
+			// refresh
+			__print_prompt ();
+			count++;
+			continue;
+		}
 #else
 #if R2__WINDOWS__
 		{
