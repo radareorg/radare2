@@ -2,6 +2,8 @@
 
 #include <r_debug.h>
 
+R_VEC_TYPE(RVecDebugTracepoint, RDebugTracepoint);
+
 R_API RDebugTrace *r_debug_trace_new(void) {
 	RDebugTrace *t = R_NEW0 (RDebugTrace);
 	if (!t) {
@@ -10,7 +12,7 @@ R_API RDebugTrace *r_debug_trace_new(void) {
 	t->tag = 1; // UT32_MAX;
 	t->addresses = NULL;
 	t->enabled = false;
-	t->traces = r_list_newf ((RListFree)free);
+	t->traces = RVecDebugTracepoint_new ();
 	if (!t->traces) {
 		r_debug_trace_free (t);
 		return NULL;
@@ -25,7 +27,7 @@ R_API RDebugTrace *r_debug_trace_new(void) {
 
 R_API void r_debug_trace_free(RDebugTrace *trace) {
 	if (trace) {
-		r_list_free (trace->traces);
+		RVecDebugTracepoint_free (trace->traces);
 		ht_pp_free (trace->ht);
 		free (trace);
 	}
@@ -218,7 +220,6 @@ static int cmpaddr(const void *_a, const void *_b) {
 R_API void r_debug_trace_list(RDebug *dbg, int mode, ut64 offset) {
 	r_return_if_fail (dbg && dbg->trace);
 	int tag = dbg->trace->tag;
-	RListIter *iter;
 	bool flag = false;
 	RList *info_list = r_list_new ();
 	if (!info_list && mode == '=') {
@@ -233,7 +234,7 @@ R_API void r_debug_trace_list(RDebug *dbg, int mode, ut64 offset) {
 		pj_ka (pj, "traces");
 	}
 	RDebugTracepoint *trace;
-	r_list_foreach (dbg->trace->traces, iter, trace) {
+	R_VEC_FOREACH (dbg->trace->traces, trace) {
 		if (!trace->tag || (tag & trace->tag)) {
 			switch (mode) {
 			case 'j':
@@ -313,15 +314,14 @@ R_API RDebugTracepoint *r_debug_trace_add(RDebug *dbg, ut64 addr, int size) {
 		return NULL;
 	}
 	r_anal_trace_bb (dbg->anal, addr);
-	RDebugTracepoint *tp = R_NEW0 (RDebugTracepoint);
-	if (tp) {
+	RDebugTracepoint *tp = RVecDebugTracepoint_emplace_back (dbg->trace->traces);
+	if (R_LIKELY (tp)) {
 		tp->stamp = r_time_now ();
 		tp->addr = addr;
 		tp->tags = tag;
 		tp->size = size;
 		tp->count = ++dbg->trace->count;
 		tp->times = 1;
-		r_list_append (dbg->trace->traces, tp);
 		r_strf_var (key, 64, "trace.%d.%"PFMT64x, tag, addr);
 		ht_pp_update (dbg->trace->ht, key, tp);
 	}
@@ -333,6 +333,6 @@ R_API void r_debug_trace_reset(RDebug *dbg) {
 	RDebugTrace *t = dbg->trace;
 	ht_pp_free (t->ht);
 	t->ht = ht_pp_new0 ();
-	r_list_free (t->traces);
-	t->traces = r_list_newf ((RListFree)free);
+	RVecDebugTracepoint_free (t->traces);
+	t->traces = RVecDebugTracepoint_new ();
 }

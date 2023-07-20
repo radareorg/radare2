@@ -225,8 +225,10 @@ typedef struct r_snap_entry {
 	int perm;
 } RSnapEntry;
 
+R_VEC_FORWARD_DECLARE(RVecDebugTracepoint);
+
 typedef struct r_debug_trace_t {
-	RList *traces;
+	RVecDebugTracepoint *traces;
 	int count;
 	int enabled;
 	int tag;
