@@ -122,8 +122,8 @@ extern "C" {
 #define R_CONCAT_INNER(a, b) a ## b
 #define R_CONCAT(a, b) R_CONCAT_INNER(a, b)
 
-// Helper macro for referring to finalizer functions of types stored in a "vec_type".
-#define R_VEC_FINI(vec_type) R_CONCAT(vec_type, Fini)
+// Helper macro for referring to functions that can deep copy types stored in a "vec_type".
+#define R_VEC_COPY(vec_type) R_CONCAT(vec_type, Copy)
 
 // Helper macros for referring to comparison functions of types stored in a "vec_type".
 #define R_VEC_CMP(vec_type) R_CONCAT(vec_type, Compare)
@@ -167,6 +167,7 @@ extern "C" {
 		type *_end; \
 		size_t _capacity; \
 	} vec_type; \
+	typedef void (*R_VEC_COPY(vec_type))(type *dst, const type *src); \
 	typedef int (*R_VEC_CMP(vec_type))(const type *a, const type *b); \
 	typedef int (*R_VEC_FIND_CMP(vec_type))(const type *a, const void *b); \
 	static inline R_MAYBE_UNUSED void R_VEC_FUNC(vec_type, init)(vec_type *vec) { \
@@ -361,7 +362,7 @@ extern "C" {
 		vec->_end++; \
 		return vec->_start; \
 	} \
-	static inline R_MAYBE_UNUSED void R_VEC_FUNC(vec_type, append)(vec_type *vec, const vec_type *values) { \
+	static inline R_MAYBE_UNUSED void R_VEC_FUNC(vec_type, append)(vec_type *vec, const vec_type *values, R_VEC_COPY(vec_type) copy_fn) { \
 		r_return_if_fail (vec && values); \
 		const ut64 num_elems = R_VEC_FUNC(vec_type, length) (vec); \
 		const ut64 capacity = R_VEC_CAPACITY (vec); \
@@ -370,8 +371,16 @@ extern "C" {
 		if (total_count > capacity) { \
 			R_VEC_FUNC(vec_type, reserve) (vec, total_count); \
 		} \
-		memcpy (vec->_end, values->_start, num_values * sizeof (type)); \
-		vec->_end += num_values; \
+		if (copy_fn) { \
+			const type *src; \
+			R_VEC_FOREACH (values, src) { \
+				type *dst = R_VEC_FUNC(vec_type, emplace_back) (vec); \
+				copy_fn (dst, src); \
+			} \
+		} else { \
+			memcpy (vec->_end, values->_start, num_values * sizeof (type)); \
+			vec->_end += num_values; \
+		} \
 	} \
 	static inline R_MAYBE_UNUSED void R_VEC_FUNC(vec_type, remove)(vec_type *vec, ut64 index) { \
 		r_return_if_fail (vec && vec->_start != vec->_end && index < vec->_start - vec->_end); \

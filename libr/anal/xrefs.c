@@ -523,7 +523,7 @@ static RVecAnalRef *fcn_get_all_refs(RAnalFunction *fcn, RefManager *rm, Collect
 					continue;
 				}
 
-				RVecAnalRef_append (anal_refs, refs);
+				RVecAnalRef_append (anal_refs, refs, NULL);
 				RVecAnalRef_free (refs);
 			}
 		}
