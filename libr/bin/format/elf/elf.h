@@ -108,6 +108,9 @@ typedef struct r_bin_elf_lib_t {
 	char name[ELF_STRING_LENGTH];
 } RBinElfLib;
 
+#include <r_vec.h>
+R_VEC_TYPE (RVecRBinElfSymbol, RBinElfSymbol);
+
 struct Elf_(obj_t) {
 	Elf_(Ehdr) ehdr;
 	Elf_(Phdr) *phdr;
@@ -145,10 +148,10 @@ struct Elf_(obj_t) {
 	RBuffer *b;
 	Sdb *kv;
 	/*cache purpose*/
-	RVector *g_symbols;  // RBinElfSymbol
-	RVector *g_imports;  // RBinElfSymbol
-	RVector *phdr_symbols;  // RBinElfSymbol
-	RVector *phdr_imports;  // RBinElfSymbol
+	RVecRBinElfSymbol *g_symbols_vec;
+	RVecRBinElfSymbol *g_imports_vec;
+	RVecRBinElfSymbol *phdr_symbols_vec;
+	RVecRBinElfSymbol *phdr_imports_vec;
 	RList *inits;
 	HtUU *rel_cache;
 	ut32 g_reloc_num;
@@ -156,7 +159,11 @@ struct Elf_(obj_t) {
 	RVector g_relocs;  // RBinElfReloc
 	bool sections_loaded;
 	bool sections_cached;
+#if R2_590
+	RVecRBinElfSection g_sections_elf;
+#else
 	RVector g_sections; // RBinElfSection
+#endif
 	RVector cached_sections; // RBinSection
 	bool libs_loaded;
 	RVector g_libs; // RBinElfLib
@@ -195,9 +202,9 @@ char* Elf_(get_osabi_name)(struct Elf_(obj_t) *bin);
 int Elf_(is_big_endian)(struct Elf_(obj_t) *bin);
 const RVector *Elf_(load_relocs)(struct Elf_(obj_t) *bin);  // RBinElfReloc
 const RVector* Elf_(load_libs)(struct Elf_(obj_t) *bin);  // RBinElfLib
-const RVector* Elf_(load_sections)(RBinFile *bf, struct Elf_(obj_t) *bin);
-RVector* Elf_(load_symbols)(struct Elf_(obj_t) *bin);  // RBinElfSymbol
-RVector* Elf_(load_imports)(struct Elf_(obj_t) *bin);  // RBinElfSymbol
+const RVector* Elf_(load_sections)(RBinFile *bf, ELFOBJ *eo);
+bool Elf_(load_symbols)(ELFOBJ *eo);
+bool Elf_(load_imports)(ELFOBJ *eo);
 const RVector* Elf_(load_fields)(struct Elf_(obj_t) *bin);  // RBinElfField
 char *Elf_(get_rpath)(struct Elf_(obj_t) *bin);
 

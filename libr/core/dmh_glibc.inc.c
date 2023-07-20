@@ -46,10 +46,9 @@ static GHT GH(get_va_symbol)(RCore *core, const char *path, const char *sym_name
 	RBinFileOptions opt;
 	r_bin_file_options_init (&opt, -1, 0, 0, false);
 	if (r_bin_open (bin, path, &opt)) {
-		RList *syms = r_bin_get_symbols (bin);
-		RListIter *iter;
+		RVecRBinSymbol *syms = r_bin_get_symbols_vec (bin);
 		RBinSymbol *s;
-		r_list_foreach (syms, iter, s) {
+		R_VEC_FOREACH (syms, s) {
 			if (!strcmp (s->name, sym_name)) {
 				vaddr = s->vaddr;
 				break;

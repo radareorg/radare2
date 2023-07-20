@@ -2060,10 +2060,10 @@ ut64 Elf_(get_entry_offset)(ELFOBJ *eo) {
 }
 
 static ut64 lookup_main_symbol_offset(ELFOBJ *eo) {
-	const RVector *symbols = Elf_(load_symbols) (eo);
-	if (symbols) {
+	if (Elf_(load_symbols) (eo)) {
 		RBinElfSymbol *symbol;
-		r_vector_foreach (symbols, symbol) {
+		RVecRBinElfSymbol *symbols = eo->g_symbols_vec;
+		R_VEC_FOREACH (symbols, symbol) {
 			if (!strcmp (symbol->name, "main")) {
 				return symbol->offset;
 			}
@@ -2765,10 +2765,13 @@ int Elf_(get_bits)(ELFOBJ *eo) {
 	// Hack for Thumb
 	if (eo->ehdr.e_machine == EM_ARM) {
 		if (eo->ehdr.e_type != ET_EXEC) {
-			const RVector *symbols = Elf_(load_symbols) (eo);
+			RVecRBinElfSymbol *symbols = NULL;
+			if (Elf_(load_symbols) (eo)) {
+				symbols = eo->g_symbols_vec;
+			}
 			if (symbols) {
 				RBinElfSymbol *symbol;
-				r_vector_foreach (symbols, symbol) {
+				R_VEC_FOREACH (symbols, symbol) {
 					ut64 paddr = symbol->offset;
 					if (paddr & 1) {
 						return 16;
@@ -3953,13 +3956,13 @@ static void fill_symbol_bind_and_type(ELFOBJ *eo, struct r_bin_elf_symbol_t *ret
 typedef struct {
 	int type;
 	int nsym;
-	RVector *ret;
+	RVecRBinElfSymbol *ret;
 	Elf_(Addr) addr_sym_table;
 } ReadPhdrSymbolState;
 
 static bool _read_symbols_from_phdr(ELFOBJ *eo, ReadPhdrSymbolState *state) {
 	int type = state->type;
-	RVector *ret = state->ret;
+	RVecRBinElfSymbol *ret = state->ret; // TODO: rename to elf_symbols_vec
 	Elf_(Addr) addr_sym_table = state->addr_sym_table;
 	int i;
 	for (i = 1; i < state->nsym; i++) {
@@ -4030,49 +4033,49 @@ static bool _read_symbols_from_phdr(ELFOBJ *eo, ReadPhdrSymbolState *state) {
 			break;
 		}
 
-		RBinElfSymbol *psym = r_vector_end (ret);
+		// R2_590 - getting symbol name requires a unified function to read outside strtab, current code is wrong
+		// get name before alocating it in the vector
+		int st_name = new_symbol.st_name;
+		const size_t rest = ELF_STRING_LENGTH - 1;
+		int maxsize = eo->size; //R_MIN (eo->size, eo->strtab_size);
+		int namelen = 0;
+		if (st_name < 0 || st_name >= maxsize) {
+			namelen = 0;
+		} else {
+			namelen = r_str_nlen (eo->strtab + st_name, rest) + 1;
+		}
+		const char *symname;
+		if (namelen < 1) {
+#if PERMIT_UNNAMED_SYMBOLS
+			symname = "unksym";
+#else
+			R_LOG_DEBUG ("empty symbol name");
+			continue;
+#endif
+		} else {
+			symname = eo->strtab + st_name;
+		}
+
+		RBinElfSymbol *psym = RVecRBinElfSymbol_emplace_back (ret);
 		if (!psym) {
 			return false;
 		}
 
+		memset (psym, 0, sizeof (RBinElfSymbol));
 		psym->offset = tmp_offset;
 		psym->size = tsize;
-
-		int rest = ELF_STRING_LENGTH - 1;
-		int st_name = new_symbol.st_name;
-		int maxsize = eo->size; //R_MIN (eo->size, eo->strtab_size);
-		if (st_name < 0 || st_name >= maxsize) {
-			psym->name[0] = 0;
-		} else {
-			const int len = r_str_nlen (eo->strtab + st_name, rest);
-			memcpy (psym->name, &eo->strtab[st_name], len);
-		}
+		r_str_ncpy (psym->name, symname, R_MIN (rest, namelen));
 
 		psym->ordinal = i;
 		psym->in_shdr = false;
-		psym->name[ELF_STRING_LENGTH - 2] = '\0';
-#define PERMIT_UNNAMED_SYMBOLS 0
-#if PERMIT_UNNAMED_SYMBOLS
-		if (!*psym->name) {
-			strcpy (psym->name, "unksym");
-		}
-#else
-		if (!*psym->name) {
-			R_LOG_DEBUG ("empty symbol name", psym->name);
-			ret->len--;
-			continue;
-		}
-#endif
-
 		fill_symbol_bind_and_type (eo, psym, &new_symbol);
 		psym->is_sht_null = is_sht_null;
 		psym->is_vaddr = is_vaddr;
 	}
-
 	return true;
 }
 
-static RVector* load_symbols_from_phdr(ELFOBJ *eo, int type) {
+static RVecRBinElfSymbol* load_symbols_from_phdr(ELFOBJ *eo, int type) {
 	r_return_val_if_fail (eo, NULL);
 
 	if (!eo->phdr || !eo->ehdr.e_phnum) {
@@ -4102,10 +4105,10 @@ static RVector* load_symbols_from_phdr(ELFOBJ *eo, int type) {
 	}
 
 	// we reserve room for 4096 and grow as needed.
-	const size_t initial_capacity = 4096;
-	RVector *ret = r_vector_new (sizeof (RBinElfSymbol), NULL, NULL);
-	if (!ret || !r_vector_reserve (ret, initial_capacity)) {
-		r_vector_free (ret);
+	// const size_t initial_capacity = 4096;
+	// RVector *ret = r_vector_new (sizeof (RBinElfSymbol), NULL, NULL);
+	RVecRBinElfSymbol *ret = RVecRBinElfSymbol_new ();
+	if (!ret) { //  || !r_vector_reserve (ret, initial_capacity))
 		return NULL;
 	}
 
@@ -4116,17 +4119,12 @@ static RVector* load_symbols_from_phdr(ELFOBJ *eo, int type) {
 	}
 	ReadPhdrSymbolState state = { .type = type, .ret = ret, .nsym = nsym, .addr_sym_table = addr_sym_table, };
 	if (!_read_symbols_from_phdr (eo, &state)) {
-		r_vector_free (ret);
+		RVecRBinElfSymbol_free (ret);
 		return NULL;
 	}
-
-	if (!r_vector_shrink (ret)) {
-		r_vector_free (ret);
-		return NULL;
-	}
-
+	RVecRBinElfSymbol_shrink_to_fit (ret);
 	// XXX refactor this code, also allocated in another place, but this is used in other situations..
-	size_t ret_size = r_vector_length (ret) + 1;  // + 1 because ordinals are 1-based
+	size_t ret_size = RVecRBinElfSymbol_length (ret) + 1;  // + 1 because ordinals are 1-based
 	if (type == R_BIN_ELF_IMPORT_SYMBOLS && !eo->imports_by_ord_size) {
 		eo->imports_by_ord_size = ret_size;
 		if (ret_size > 0) {
@@ -4146,43 +4144,40 @@ static RVector* load_symbols_from_phdr(ELFOBJ *eo, int type) {
 	return ret;
 }
 
-static RVector *Elf_(load_phdr_symbols)(ELFOBJ *eo) {
+static RVecRBinElfSymbol *Elf_(load_phdr_symbols)(ELFOBJ *eo) {
 	r_return_val_if_fail (eo, NULL);
-
-	if (!eo->phdr_symbols) {
-		eo->phdr_symbols = load_symbols_from_phdr (eo, R_BIN_ELF_ALL_SYMBOLS);
+	if (!eo->phdr_symbols_vec) {
+		eo->phdr_symbols_vec = load_symbols_from_phdr (eo, R_BIN_ELF_ALL_SYMBOLS);
 	}
-	return eo->phdr_symbols;
+	return eo->phdr_symbols_vec;
 }
 
-static RVector *Elf_(load_phdr_imports)(ELFOBJ *eo) {
+static RVecRBinElfSymbol *Elf_(load_phdr_imports)(ELFOBJ *eo) {
 	r_return_val_if_fail (eo, NULL);
-	if (!eo->phdr_imports) {
-		eo->phdr_imports = load_symbols_from_phdr (eo, R_BIN_ELF_IMPORT_SYMBOLS);
+	if (!eo->phdr_imports_vec) {
+		eo->phdr_imports_vec = load_symbols_from_phdr (eo, R_BIN_ELF_IMPORT_SYMBOLS);
 	}
-	return eo->phdr_imports;
+	return eo->phdr_imports_vec;
 }
 
-static RVector *Elf_(load_symbols_type)(ELFOBJ *eo, int type) {
+static RVecRBinElfSymbol *Elf_(load_symbols_type)(ELFOBJ *eo, int type) {
 	return (type == R_BIN_ELF_IMPORT_SYMBOLS)
 		? Elf_(load_phdr_imports) (eo)
 		: Elf_(load_phdr_symbols) (eo);
 }
 
-static int Elf_(fix_symbols)(ELFOBJ *eo, int nsym, int type, RVector *symbols) {
+static int Elf_(fix_symbols)(ELFOBJ *eo, int nsym, int type, RVecRBinElfSymbol *symbols) {
 	int result = -1;
 	HtUP *phd_offset_map = ht_up_new0 ();
 	HtUP *phd_ordinal_map = ht_up_new0 ();
-	const RVector *phdr_symbols = Elf_(load_symbols_type) (eo, type);
-
-	if (phdr_symbols) {
+	RVecRBinElfSymbol *uhsymbols = Elf_(load_symbols_type) (eo, type);
+	if (uhsymbols) {
 		RBinElfSymbol *symbol;
-		r_vector_foreach (symbols, symbol) {
+		R_VEC_FOREACH (symbols, symbol) {
 			ht_up_insert (phd_offset_map, symbol->offset, symbol);
 			ht_up_insert (phd_ordinal_map, symbol->ordinal, symbol);
 		}
-
-		r_vector_foreach (phdr_symbols, symbol) {
+		R_VEC_FOREACH (uhsymbols, symbol) {
 			// find match in phdr
 			RBinElfSymbol *d = ht_up_find (phd_offset_map, symbol->offset, NULL);
 			if (!d) {
@@ -4197,7 +4192,7 @@ static int Elf_(fix_symbols)(ELFOBJ *eo, int nsym, int type, RVector *symbols) {
 		}
 
 		int count = 0;
-		r_vector_foreach (phdr_symbols, symbol) {
+		R_VEC_FOREACH (uhsymbols, symbol) {
 			if (!symbol->in_shdr) {
 				count++;
 			}
@@ -4207,22 +4202,21 @@ static int Elf_(fix_symbols)(ELFOBJ *eo, int nsym, int type, RVector *symbols) {
 		// This should only should happen with fucked up binaries
 		if (count > 0) {
 			// what happens if a shdr says it has only one symbol? we should look anyway into phdr
-			if (!r_vector_reserve (symbols, nsym + count)) {
+			if (!RVecRBinElfSymbol_reserve (symbols, nsym + count)) {
 				result = -1;
 				ht_up_free (phd_offset_map);
 				ht_up_free (phd_ordinal_map);
 				return result;
 			}
-
-			r_vector_foreach (phdr_symbols, symbol) {
+			R_VEC_FOREACH (uhsymbols, symbol) {
 				if (!symbol->in_shdr) {
-					memcpy (r_vector_end (symbols), symbol, sizeof (RBinElfSymbol));
+					RVecRBinElfSymbol_push_back (symbols, symbol);
+					// memcpy (r_vector_end (symbols), symbol, sizeof (RBinElfSymbol));
 					nsym++;
 				}
 			}
 		}
 	}
-
 	result = nsym;
 	ht_up_free (phd_offset_map);
 	ht_up_free (phd_ordinal_map);
@@ -4338,50 +4332,54 @@ static RBinElfSection *getsection_byname(ELFOBJ *eo, const char *name, size_t *_
 	return NULL;
 }
 
-static RVector* parse_gnu_debugdata(ELFOBJ *eo, size_t *ret_size) {
+static RVecRBinElfSymbol *parse_gnu_debugdata(ELFOBJ *eo, size_t *ret_size) {
 	if (ret_size) {
 		*ret_size = 0;
 	}
-	if (eo->sections_loaded) {
-		size_t rs = 0;
-		RBinElfSection *section = getsection_byname (eo, ".gnu_debugdata", &rs);
-		if (section) {
-			ut64 addr = section->offset;
-			ut64 size = section->size;
-			if (size < 10) {
-				return NULL;
-			}
-			ut8 *data = malloc (size + 1);
-			if (!data) {
-				return NULL;
-			}
-			if (r_buf_read_at (eo->b, addr, data, size) != size) {
-				R_LOG_ERROR ("Cannot read");
-			}
-			size_t osize;
-			ut8 *odata = r_sys_unxz (data, size, &osize);
-			if (odata) {
-				RBuffer *newelf = r_buf_new_with_pointers (odata, osize, false);
-				ELFOBJ* newobj = Elf_(new_buf) (newelf, eo->user_baddr, false);
-				newobj->limit = eo->limit;
-				RVector *symbols = NULL;
-				if (newobj) {
-					symbols = Elf_(load_symbols) (newobj);
-					newobj->g_symbols = NULL;
-					Elf_(free)(newobj);
-				}
-				if (ret_size) {
-					*ret_size = rs;
-				}
-				r_buf_free (newelf);
-				free (odata);
-				free (data);
-				return symbols;
-			}
-			free (data);
-			return NULL;
-		}
+	if (!eo->sections_loaded) {
+		// parse sections pls
+		_load_elf_sections (eo);
 	}
+	size_t rs = 0;
+	RBinElfSection *section = getsection_byname (eo, ".gnu_debugdata", &rs);
+	if (!section) {
+		return NULL;
+	}
+	ut64 addr = section->offset;
+	ut64 size = section->size;
+	if (size < 10) {
+		return NULL;
+	}
+	ut8 *data = malloc (size + 1);
+	if (!data) {
+		return NULL;
+	}
+	if (r_buf_read_at (eo->b, addr, data, size) != size) {
+		R_LOG_ERROR ("Cannot read");
+	}
+	size_t osize;
+	ut8 *odata = r_sys_unxz (data, size, &osize);
+	if (odata) {
+		RBuffer *newelf = r_buf_new_with_pointers (odata, osize, false);
+		ELFOBJ* newobj = Elf_(new_buf) (newelf, eo->user_baddr, false);
+		newobj->limit = eo->limit;
+		RVecRBinElfSymbol *symbols = NULL;
+		if (newobj) {
+			if (Elf_(load_symbols) (newobj)) {
+				symbols = newobj->g_symbols_vec;
+				newobj->g_symbols_vec = NULL;
+			}
+			Elf_(free)(newobj);
+		}
+		if (ret_size) {
+			*ret_size = rs;
+		}
+		r_buf_free (newelf);
+		free (odata);
+		free (data);
+		return symbols;
+	}
+	free (data);
 	return NULL;
 }
 
@@ -4398,90 +4396,92 @@ static bool section_matters(ELFOBJ *eo, int i, int type, ut32 shdr_size) {
 	return false;
 }
 
-static int _find_max_symbol_ordinal(const RVector *symbols) {
+static int _find_max_symbol_ordinal(const RVecRBinElfSymbol *symbols) {
 	int max = 0;
-
 	RBinElfSymbol *symbol;
-	r_vector_foreach (symbols, symbol) {
+	R_VEC_FOREACH (symbols, symbol) {
 		int ordinal = (int) symbol->ordinal;
 		if (ordinal > max) {
 			max = ordinal;
 		}
 	}
-
 	return max;
 }
 
 typedef struct elf_symbol_memory_t {
-	RVector *symbols;
+	RVecRBinElfSymbol *symbols_vec;
 	Elf_(Sym) *sym;
 } ElfSymbolMemory;
 
-static void _symbol_memory_free(ElfSymbolMemory *memory) {
-	r_vector_free (memory->symbols);
-	memory->symbols = NULL;
-	R_FREE (memory->sym);
+static void _symbol_memory_free(ElfSymbolMemory *em) {
+	// RVecRBinElfSymbol_fini (em->symbols_vec, NULL, NULL);
+	R_FREE (em->sym);
 }
 
 typedef struct import_info_t {
 	ElfSymbolMemory memory;
+	RVecRBinElfSymbol *ret; // very bad name
 	int ret_ctr;
 	int import_ret_ctr;
 	int nsym;
 } ImportInfo;
 
-static RVector *_load_additional_imported_symbols(ELFOBJ *eo, ImportInfo *import_info) {
+static RVecRBinElfSymbol *_load_additional_imported_symbols(ELFOBJ *eo, ImportInfo *ii) {
 	// Elf_(fix_symbols) may find additional symbols, some of which could be
 	// imported symbols. Let's reserve additional space for them.
-	int nsym = import_info->nsym;
-	int ret_ctr = import_info->ret_ctr;
-	r_warn_if_fail (nsym >= ret_ctr);
+	int ret_ctr = ii->ret_ctr;
+	r_warn_if_fail (ii->nsym >= ret_ctr);
 
-	int import_ret_ctr = import_info->import_ret_ctr + nsym - ret_ctr;
-	nsym = _find_max_symbol_ordinal (import_info->memory.symbols);
+	int nsym = _find_max_symbol_ordinal (ii->memory.symbols_vec);
+	if (nsym < 0) {
+		return NULL;
+	}
 
 	R_FREE (eo->imports_by_ord);
 	eo->imports_by_ord_size = nsym + 1;
 	eo->imports_by_ord = (RBinImport**)calloc (nsym + 1, sizeof (RBinImport*));
+
 	R_FREE (eo->symbols_by_ord);
 	eo->symbols_by_ord_size = nsym + 1;
 	eo->symbols_by_ord = (RBinSymbol**)calloc (nsym + 1, sizeof (RBinSymbol*));
 
-	RVector *import_symbols = r_vector_new (sizeof (RBinElfSymbol), NULL, NULL);
-	if (!import_symbols || !r_vector_reserve (import_symbols, import_ret_ctr)) {
+	RVecRBinElfSymbol *imports = NULL; // ii->ret;
+	if (!imports) {
+		imports = RVecRBinElfSymbol_new ();
+	}
+	const int import_ret_ctr = ii->import_ret_ctr + nsym - ret_ctr;
+	if (!imports || !RVecRBinElfSymbol_reserve (imports, import_ret_ctr)) {
 		R_LOG_DEBUG ("Cannot allocate %d symbols", nsym);
-		_symbol_memory_free (&import_info->memory);
+		_symbol_memory_free (&ii->memory);
 		return NULL;
 	}
 
 	RBinElfSymbol *symbol;
 	const int limit = eo->limit;
 	int count = 0;
-	r_vector_foreach (import_info->memory.symbols, symbol) {
-		RBinSymbol *import_sym_ptr = Elf_(convert_symbol) (eo, symbol, "%s");
-		if (!import_sym_ptr) {
+	R_VEC_FOREACH (ii->memory.symbols_vec, symbol) {
+		RBinSymbol *isym = Elf_(convert_symbol) (eo, symbol, "%s");
+		if (!isym) {
 			continue;
 		}
-
-		setsymord (eo, import_sym_ptr->ordinal, import_sym_ptr);
+		setsymord (eo, isym->ordinal, isym);
 		if (symbol->is_imported) {
 			if (limit > 0 && count++ > limit) {
 				R_LOG_WARN ("eo.limit reached for imports");
 				break;
 			}
-			RBinElfSymbol *import = r_vector_end (import_symbols);
-			memcpy (import, symbol, sizeof (RBinElfSymbol));
+			RVecRBinElfSymbol_push_back (imports, symbol);
 		}
 	}
 
-	_symbol_memory_free (&import_info->memory);
-	return import_symbols;
+	_symbol_memory_free (&ii->memory);
+	return imports;
 }
 
 typedef struct process_section_state_t {
 	int i;
 	ElfSymbolMemory *const memory;
-	RVector **ret;
+	RVecRBinElfSymbol **ret;
 	size_t *const ret_ctr;
 	size_t *const import_ret_ctr;
 } ProcessSectionState;
@@ -4605,19 +4605,19 @@ static bool _process_symbols_and_imports_in_section(ELFOBJ *eo, int type, Proces
 	}
 
 	if (!(*state->ret)) {
-		RVector *ret = r_vector_new (sizeof (RBinElfSymbol), NULL, NULL);
+		RVecRBinElfSymbol *ret = RVecRBinElfSymbol_new ();
 		if (!ret) {
 			free (strtab);
 			return false;
 		}
 		*state->ret = ret;
-		memory->symbols = ret;
+		memory->symbols_vec = ret;
 	}
 
-	RVector *ret = *state->ret;
+	RVecRBinElfSymbol *ret = *state->ret;
 	int increment = nsym;
-	ut64 len = r_vector_length (ret);
-	if (!r_vector_reserve (ret, increment + len)) {
+	ut64 len = RVecRBinElfSymbol_length (ret);
+	if (!RVecRBinElfSymbol_reserve (ret, increment + len)) {
 		R_LOG_ERROR ("Cannot allocate %d symbols", (int)(nsym + increment));
 		free (strtab);
 		return false;
@@ -4627,7 +4627,8 @@ static bool _process_symbols_and_imports_in_section(ELFOBJ *eo, int type, Proces
 	for (k = 1; k < nsym; k++, (*ret_ctr)++) {
 		ut64 toffset;
 		int tsize;
-		RBinElfSymbol *es = r_vector_end (ret);
+		RBinElfSymbol *es = RVecRBinElfSymbol_emplace_back (ret); // r_vector_end (ret);
+		memset (es, 0, sizeof (RBinElfSymbol));
 		bool is_sht_null = false;
 		bool is_vaddr = false;
 		bool is_imported = false;
@@ -4697,13 +4698,12 @@ static bool _process_symbols_and_imports_in_section(ELFOBJ *eo, int type, Proces
 			(*import_ret_ctr)++;
 		}
 	}
-
 	free (strtab);
 	return true;
 }
 
 // TODO: return RList<RBinSymbol*> .. or run a callback with that symbol constructed, so we don't have to do it twice
-static RVector /* <RBinElfSymbol> */ *Elf_(load_symbols_from)(ELFOBJ *eo, int type) {
+static RVecRBinElfSymbol *Elf_(load_symbols_from)(ELFOBJ *eo, int type) {
 	r_return_val_if_fail (eo, NULL);
 
 	if (!eo->shdr || !eo->ehdr.e_shnum || eo->ehdr.e_shnum == 0xffff) {
@@ -4723,8 +4723,8 @@ static RVector /* <RBinElfSymbol> */ *Elf_(load_symbols_from)(ELFOBJ *eo, int ty
 
 	size_t import_ret_ctr = 0;
 	size_t ret_ctr = 0; // amount of symbols stored in ret
-	RVector *ret = parse_gnu_debugdata (eo, &ret_ctr);
-	ElfSymbolMemory memory = { .symbols = ret, .sym = NULL };
+	RVecRBinElfSymbol *ret = parse_gnu_debugdata (eo, &ret_ctr);
+	ElfSymbolMemory memory = { .symbols_vec = ret, .sym = NULL };
 	int i;
 	size_t shnum = eo->ehdr.e_shnum;
 	for (i = 0; i < shnum; i++) {
@@ -4775,20 +4775,20 @@ static RVector /* <RBinElfSymbol> */ *Elf_(load_symbols_from)(ELFOBJ *eo, int ty
 	return ret;
 }
 
-RVector *Elf_(load_symbols)(ELFOBJ *eo) {
+bool Elf_(load_symbols)(ELFOBJ *eo) {
 	r_return_val_if_fail (eo, NULL);
-	if (!eo->g_symbols) {
-		eo->g_symbols = Elf_(load_symbols_from) (eo, R_BIN_ELF_ALL_SYMBOLS);
+	if (!eo->g_symbols_vec) {
+		eo->g_symbols_vec = Elf_(load_symbols_from) (eo, R_BIN_ELF_ALL_SYMBOLS);
 	}
-	return eo->g_symbols;
+	return eo->g_symbols_vec != NULL;
 }
 
-RVector *Elf_(load_imports)(ELFOBJ *eo) {
+bool Elf_(load_imports)(ELFOBJ *eo) {
 	r_return_val_if_fail (eo, NULL);
-	if (!eo->g_imports) {
-		eo->g_imports = Elf_(load_symbols_from) (eo, R_BIN_ELF_IMPORT_SYMBOLS);
+	if (!eo->g_imports_vec) {
+		eo->g_imports_vec = Elf_(load_symbols_from) (eo, R_BIN_ELF_IMPORT_SYMBOLS);
 	}
-	return eo->g_imports;
+	return eo->g_imports_vec != NULL;
 }
 
 const RVector* Elf_(load_fields)(ELFOBJ *eo) {
@@ -4853,18 +4853,27 @@ void Elf_(free)(ELFOBJ* eo) {
 		free (eo->symbols_by_ord);
 	}
 	r_buf_free (eo->b);
-	if (eo->phdr_symbols != eo->g_symbols) {
-		r_vector_free (eo->phdr_symbols);
+	if (eo->phdr_symbols_vec != eo->g_symbols_vec) {
+		RVecRBinElfSymbol_free (eo->phdr_symbols_vec);
+		eo->phdr_symbols_vec = NULL;
 	}
+	RVecRBinElfSymbol_free (eo->phdr_symbols_vec);
+	RVecRBinElfSymbol_free (eo->phdr_imports_vec);
+	RVecRBinElfSymbol_free (eo->g_symbols_vec);
+	RVecRBinElfSymbol_free (eo->g_imports_vec);
+#if 0
+	// R2_590
 	r_vector_free (eo->g_symbols);
 	eo->g_symbols = NULL;
-	eo->phdr_symbols = NULL;
+	// eo->phdr_symbols = NULL;
+
 	if (eo->phdr_imports != eo->g_imports) {
 		r_vector_free (eo->phdr_imports);
 	}
+	eo->phdr_imports = NULL;
 	r_vector_free (eo->g_imports);
 	eo->g_imports = NULL;
-	eo->phdr_imports = NULL;
+#endif
 	if (eo->sections_loaded) {
 		r_vector_fini (&eo->g_sections);
 	}
