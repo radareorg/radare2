@@ -4820,11 +4820,15 @@ R_API RListInfo *r_listinfo_new(const char *name, RInterval pitv, RInterval vitv
 	return info;
 }
 
-R_API void r_listinfo_free(RListInfo *info) {
+R_API void r_listinfo_fini(RListInfo *info) {
 	if (!info) {
 		return;
 	}
 	free (info->name);
 	free (info->extra);
+}
+
+R_API void r_listinfo_free(RListInfo *info) {
+	r_listinfo_fini (info);
 	free (info);
 }

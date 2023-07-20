@@ -519,6 +519,7 @@ R_API void r_core_anal_paths(RCore *core, ut64 from, ut64 to, bool followCalls, 
 
 R_API void r_core_list_io(RCore *core);
 R_API RListInfo *r_listinfo_new(const char *name, RInterval pitv, RInterval vitv, int perm, const char *extra);
+R_API void r_listinfo_fini(RListInfo *info);
 R_API void r_listinfo_free(RListInfo *info);
 R_API void r_core_visual_slides(RCore *core, const char *file);
 /* visual marks */

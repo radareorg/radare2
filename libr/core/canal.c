@@ -3283,12 +3283,12 @@ static int fcn_print_detail(RCore *core, RAnalFunction *fcn) {
 	return 0;
 }
 
+R_VEC_TYPE(RVecDebugTracepoint, RDebugTracepoint);
+
 static bool is_fcn_traced(RDebugTrace *traced, RAnalFunction *fcn) {
 	int tag = traced->tag;
-	RListIter *iter;
 	RDebugTracepoint *trace;
-
-	r_list_foreach (traced->traces, iter, trace) {
+	R_VEC_FOREACH (traced->traces, trace) {
 		if (!trace->tag || (tag & trace->tag)) {
 			if (r_anal_function_contains (fcn, trace->addr)) {
 				r_cons_printf ("\ntraced: %d\n", trace->times);
