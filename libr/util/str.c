@@ -1831,10 +1831,19 @@ R_API char *r_str_escape_utf8_for_json(const char *buf, int buf_size) {
 		} else { // ch_bytes == 0
 			// Outside JSON spec, but apparently no better
 			// alternative if need to reconstruct the original string
+#if 1
+			*q++ = '\\';
+			*q++ = 'u';
+			*q++ = '0';
+			*q++ = '0';
+			*q++ = "0123456789abcdef"[*p >> 4 & 0xf];
+			*q++ = "0123456789abcdef"[*p & 0xf];
+#else
 			*q++ = '\\';
 			*q++ = 'x';
 			*q++ = "0123456789abcdef"[*p >> 4 & 0xf];
 			*q++ = "0123456789abcdef"[*p & 0xf];
+#endif
 			ch_bytes = 1;
 		}
 		p += ch_bytes;

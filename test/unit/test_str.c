@@ -525,7 +525,7 @@ bool test_r_str_encoded_json(void) {
 	free ((void *)stripped);
 
 	const char *none = r_str_encoded_json (invalidJsonString, len, PJ_ENCODING_STR_DEFAULT);
-	mu_assert_streq (none, "This is my \\xe2 sample © string\\n", "default encoding");
+	mu_assert_streq (none, "This is my \\u00e2 sample © string\\n", "default encoding");
 	free ((void *)none);
 
 	mu_end;
