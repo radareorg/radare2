@@ -3716,7 +3716,7 @@ static int inbounds(RList *bbs, ut64 addr) {
 	RAnalBlock *bb;
 	RListIter *iter;
 	RVecUT64 vec;
-	RVecUT64_init (&vec, NULL, NULL);
+	RVecUT64_init (&vec);
 	r_list_foreach (bbs, iter, bb) {
 		if (bb->jump == UT64_MAX) {
 			continue;

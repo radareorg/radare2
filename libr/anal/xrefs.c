@@ -156,7 +156,7 @@ static inline bool _collect_refs_cb(void *user, const ut64 k, const void *v) {
 }
 
 static RVecAnalRef *_collect_all_refs(RefManager *rm, const AdjacencyList *adj_list) {
-	RVecAnalRef *result = RVecAnalRef_new (NULL, NULL);
+	RVecAnalRef *result = RVecAnalRef_new ();
 	if (R_UNLIKELY (!result)) {
 		return NULL;
 	}
@@ -179,7 +179,7 @@ static RVecAnalRef *_collect_all_refs(RefManager *rm, const AdjacencyList *adj_l
 
 static RVecAnalRef *_collect_refs_from(const AdjacencyList *adj_list, ut64 from) {
 	// only finds entries with matching "from"
-	RVecAnalRef *result = RVecAnalRef_new (NULL, NULL);
+	RVecAnalRef *result = RVecAnalRef_new ();
 	if (R_UNLIKELY (!result)) {
 		return NULL;
 	}
@@ -510,7 +510,7 @@ R_API RVecAnalRef *r_anal_function_get_xrefs(RAnalFunction *fcn) {
 typedef RVecAnalRef *(*CollectFn)(RefManager *rm, ut64 addr);
 
 static RVecAnalRef *fcn_get_all_refs(RAnalFunction *fcn, RefManager *rm, CollectFn collect_refs) {
-	RVecAnalRef *anal_refs = RVecAnalRef_new (NULL, NULL);
+	RVecAnalRef *anal_refs = RVecAnalRef_new ();
 	if (R_LIKELY (anal_refs)) {
 		RListIter *iter;
 		RAnalBlock *bb;
