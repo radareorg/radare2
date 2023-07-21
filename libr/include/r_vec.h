@@ -158,8 +158,8 @@ extern "C" {
 // header files, or the pre-processor will include the generated code in each
 // of the files that includes this header file. If you want to avoid this,
 // you can forward declare a vector type (at the cost of a pointer-indirection).
-#define R_VEC_TYPE(vec_type, type) R_VEC_TYPE_INNER(vec_type, type, _, false)
-#define R_VEC_TYPE_WITH_FINI(vec_type, type, fini_fn) R_VEC_TYPE_INNER(vec_type, type, fini_fn, true)
+#define R_VEC_TYPE(vec_type, type) R_VEC_TYPE_INNER(vec_type, type, _, 0)
+#define R_VEC_TYPE_WITH_FINI(vec_type, type, fini_fn) R_VEC_TYPE_INNER(vec_type, type, fini_fn, 1)
 
 #define R_VEC_TYPE_INNER(vec_type, type, fini_fn, has_fini) \
 	typedef struct r_vec_ ## vec_type ## _t { \
