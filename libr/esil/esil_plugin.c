@@ -42,7 +42,7 @@ R_API bool r_esil_plugin_add(REsil *esil, REsilPlugin *plugin) {
 	return true;
 }
 
-R_API void r_esil_plugin_remove(REsil *esil, const char *name) {
+R_API void r_esil_plugin_del(REsil *esil, const char *name) {
 	r_return_if_fail (esil && esil->plugins && name);
 	r_esil_plugin_deactivate(esil, name);
 	RListIter *iter;
@@ -53,6 +53,20 @@ R_API void r_esil_plugin_remove(REsil *esil, const char *name) {
 			return;
 		}
 	}
+}
+
+//this crap solely exists for trash generics in core
+R_API bool r_esil_plugin_remove(REsil *esil, REsilPlugin *plugin) {
+	r_return_val_if_fail (esil && esil->plugins && plugin && plugin->name, false);
+	RListIter *iter;
+	REsilPlugin *ep;
+	r_list_foreach (esil->plugins, iter, ep) {
+		if (ep == plugin) {
+			r_esil_plugin_del (esil, ep->name);
+			return true;
+		}
+	}
+	return false;
 }
 
 static REsilActivePlugin *_get_active_plugin(REsil *esil, const char *name) {
