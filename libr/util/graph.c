@@ -354,11 +354,25 @@ static void _dfs_ins_edge(const RGraphEdge *e, RGraphVisitor *vi) {
 	bool found;
 	RGraphNode *from = (RGraphNode *)ht_up_find (di->reverse, (ut64)(size_t)e->from, &found);
 	if (!found) {
-		return;
+		_dfs_ins_node (e->from, vi);
+		if (di->fail) {
+			return;
+		}
+		from = (RGraphNode *)ht_up_find (di->reverse, (ut64)(size_t)e->from, &found);
+		if (!found) {
+			return;
+		}
 	}
 	RGraphNode *to = (RGraphNode *)ht_up_find (di->reverse, (ut64)(size_t)e->to, &found);
 	if (!found) {
-		return;
+		_dfs_ins_node (e->to, vi);
+		if (di->fail) {
+			return;
+		}
+		to = (RGraphNode *)ht_up_find (di->reverse, (ut64)(size_t)e->to, &found);
+		if (!found) {
+			return;
+		}
 	}
 	r_graph_add_edge (di->g, from, to);
 }
@@ -380,11 +394,8 @@ R_API RGraph *r_graph_dom_tree(RGraph *graph, RGraphNode *root) {
 		r_graph_free (g);
 		return NULL;
 	}
-	RGraphVisitor vi = {_dfs_ins_node, NULL, NULL, NULL, NULL, &di};
+	RGraphVisitor vi = { NULL, NULL, _dfs_ins_edge, NULL, NULL, &di};
 	//create a spanning tree
-	r_graph_dfs_node (graph, root, &vi);
-	vi.discover_node = NULL;
-	vi.tree_edge = _dfs_ins_edge;
 	r_graph_dfs_node (graph, root, &vi);
 	if (di.fail) {
 		r_list_free (di.mi);
