@@ -14,7 +14,7 @@ static bool anal_emul_init(RCore *core, RConfigHold *hc, RDebugTrace **dt, REsil
 	r_config_set_b (core->config, "esil.romem", true);
 	r_config_set_b (core->config, "dbg.trace", true);
 	r_config_set_b (core->config, "esil.nonull", true);
-	r_config_set_i (core->config, "dbg.follow", false);
+	r_config_set_b (core->config, "dbg.follow", false);
 	const char *bp = r_reg_get_name (core->anal->reg, R_REG_NAME_BP);
 	const char *sp = r_reg_get_name (core->anal->reg, R_REG_NAME_SP);
 	if ((bp && !r_reg_getv (core->anal->reg, bp)) && (sp && !r_reg_getv (core->anal->reg, sp))) {

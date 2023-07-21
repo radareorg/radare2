@@ -345,7 +345,7 @@ static RCoreHelpMessage help_msg_ae = {
 	"aepc", " [addr]", "change esil PC to this address",
 	"aer", "[?] [..]", "handle ESIL registers like 'ar' or 'dr' does",
 	"aes", "[?]", "perform emulated debugger step",
-	"aets", "[?]", "esil Trace session",
+	"aet", "[?][s]", "esil trace listing and session management (requires aeim)",
 	"aev", " [esil]", "visual esil debugger for the given expression or current instruction",
 	"aex", " [hex]", "evaluate opcode expression",
 	NULL
@@ -7926,6 +7926,9 @@ static void cmd_anal_esil(RCore *core, const char *input, bool verbose) {
 				r_core_cmd_help (core, help_msg_aets);
 				break;
 			}
+			break;
+		case 0: // "aet"
+			r_esil_trace_list (core->anal->esil);
 			break;
 		default:
 			R_LOG_ERROR ("Unknown command");

@@ -1432,7 +1432,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 					r_core_cmd0 (r, ".ies*");
 				}
 			}
-		} else {
+		} else if (pfile) {
 			RIODesc *f = r_core_file_open (r, pfile, perms, mapaddr);
 			if (f) {
 				fh = f;
