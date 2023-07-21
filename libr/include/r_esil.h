@@ -4,6 +4,7 @@
 #define R_ESIL_H
 
 #include <r_reg.h>
+#include <r_vec.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -73,7 +74,51 @@ typedef struct r_esil_change_mem_t {
 	ut8 data;
 } REsilMemChange;
 
+typedef struct {
+	const char *reg;
+	ut64 value;
+	// TODO: size
+} REsilRegAccess;
+
+typedef struct {
+	char *data;
+	ut64 addr;
+	// TODO: size
+} REsilMemoryAccess;
+
+typedef struct {
+	union {
+		REsilRegAccess reg;
+		REsilMemoryAccess mem;
+	};
+	bool is_write;
+	bool is_reg;
+} REsilTraceAccess;
+
+typedef struct {
+	ut64 addr;
+	ut32 start;
+	ut32 end; // 1 past the end of the op for this index
+} REsilTraceOp;
+
+static inline void fini_access(REsilTraceAccess *access) {
+	if (access->is_reg) {
+		return;
+	}
+
+	free (access->mem.data);
+}
+
+R_VEC_TYPE(RVecTraceOp, REsilTraceOp);
+R_VEC_TYPE_WITH_FINI(RVecAccess, REsilTraceAccess, fini_access);
+
+typedef struct {
+	RVecTraceOp ops;
+	RVecAccess accesses;
+} REsilTraceDB;
+
 typedef struct r_esil_trace_t {
+	REsilTraceDB db;
 	int idx;
 	int end_idx;
 	HtUP *registers;
@@ -82,8 +127,6 @@ typedef struct r_esil_trace_t {
 	ut64 stack_addr;
 	ut64 stack_size;
 	ut8 *stack_data;
-	//TODO remove `db` and reuse info above
-	Sdb *db;
 } REsilTrace;
 
 typedef bool (*REsilHookRegWriteCB)(ESIL *esil, const char *name, ut64 *val);
@@ -341,8 +384,8 @@ R_API void r_esil_stats(REsil *esil, bool enable);
 R_API REsilTrace *r_esil_trace_new(REsil *esil);
 R_API void r_esil_trace_free(REsilTrace *trace);
 R_API void r_esil_trace_op(REsil *esil, struct r_anal_op_t *op);
-R_API void r_esil_trace_list(REsil *esil);
-R_API void r_esil_trace_show(REsil *esil, int idx);
+R_API void r_esil_trace_list(REsil *esil, int format);
+R_API void r_esil_trace_show(REsil *esil, int idx, int format);
 R_API void r_esil_trace_restore(REsil *esil, int idx);
 
 extern REsilPlugin r_esil_plugin_dummy;

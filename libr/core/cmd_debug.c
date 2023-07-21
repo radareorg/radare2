@@ -5509,7 +5509,10 @@ static int cmd_debug(void *data, const char *input) {
 			}
 			switch (input[2]) {
 			case 0: // "dte"
-				r_esil_trace_list (core->anal->esil);
+				r_esil_trace_list (core->anal->esil, 0);
+				break;
+			case '*': // "dte"
+				r_esil_trace_list (core->anal->esil, '*');
 				break;
 			case 'i': { // "dtei"
 				ut64 addr = r_num_math (core->num, input + 3);
@@ -5524,22 +5527,27 @@ static int cmd_debug(void *data, const char *input) {
 			} break;
 			case '-': // "dte-"
 				if (!strcmp (input + 3, "*")) {
+					r_esil_trace_free (core->anal->esil->trace);
+					core->anal->esil->trace = r_esil_trace_new (core->anal->esil);
+#if 0
 					if (core->anal->esil && core->anal->esil->trace) {
 						sdb_free (core->anal->esil->trace->db);
 						core->anal->esil->trace->db = sdb_new0 ();
 					}
+#endif
 				} else {
 					R_LOG_TODO ("dte- cannot delete specific logs. Use dte-*");
 				}
 				break;
 			case ' ': { // "dte "
 					int idx = atoi (input + 3);
-					r_esil_trace_show (core->anal->esil, idx);
+					r_esil_trace_show (core->anal->esil, idx, 0);
 				}
 				break;
 			case 'd':
 				r_core_cmd0 (core, "pd 1 @@=`dte~addr[1]`");
 				break;
+#if 0
 			case 'k': // "dtek"
 				if (input[3] == 0) {
 					Sdb *db = core->anal->esil->trace->db;
@@ -5565,6 +5573,7 @@ static int cmd_debug(void *data, const char *input) {
 					r_core_cmd_help_match (core, help_msg_dte, "dtek", true);
 				}
 				break;
+#endif
 			default:
 				r_core_cmd_help (core, help_msg_dte);
 				break;

@@ -7949,7 +7949,7 @@ static void cmd_anal_esil(RCore *core, const char *input, bool verbose) {
 			}
 			break;
 		case 0: // "aet"
-			r_esil_trace_list (core->anal->esil);
+			r_esil_trace_list (core->anal->esil, 0);
 			break;
 		default:
 			R_LOG_ERROR ("Unknown command");
