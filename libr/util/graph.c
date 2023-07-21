@@ -380,8 +380,11 @@ R_API RGraph *r_graph_dom_tree(RGraph *graph, RGraphNode *root) {
 		r_graph_free (g);
 		return NULL;
 	}
-	RGraphVisitor vi = {_dfs_ins_node, NULL, _dfs_ins_edge, NULL, NULL, &di};
+	RGraphVisitor vi = {_dfs_ins_node, NULL, NULL, NULL, NULL, &di};
 	//create a spanning tree
+	r_graph_dfs_node (graph, root, &vi);
+	vi.discover_node = NULL;
+	vi.tree_edge = _dfs_ins_edge;
 	r_graph_dfs_node (graph, root, &vi);
 	if (di.fail) {
 		r_list_free (di.mi);
