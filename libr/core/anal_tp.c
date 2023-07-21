@@ -519,6 +519,7 @@ R_API void r_core_anal_type_match(RCore *core, RAnalFunction *fcn) {
 	r_cons_break_push (NULL, NULL);
 	RVecUT64 bblist;
 	RVecUT64_init (&bblist);
+	r_list_sort (fcn->bbs, bb_cmpaddr); // TODO: The algorithm can be more accurate if blocks are followed by their jmp/fail, not just by address
 repeat:
 	RVecUT64_clear (&bblist);
 	if (retries < 0) {
@@ -526,7 +527,6 @@ repeat:
 		free (pc);
 		return;
 	}
-	r_list_sort (fcn->bbs, bb_cmpaddr); // TODO: The algorithm can be more accurate if blocks are followed by their jmp/fail, not just by address
 	// TODO: Use ut64
 	size_t bblist_size = r_list_length (fcn->bbs);
 	RVecUT64_reserve (&bblist, bblist_size);
