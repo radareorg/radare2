@@ -460,6 +460,8 @@ static int bb_cmpaddr(const void *_a, const void *_b) {
 	return a->addr > b->addr ? 1 : (a->addr < b->addr ? -1 : 0);
 }
 
+R_VEC_TYPE(RVecUT64, ut64);
+
 R_API void r_core_anal_type_match(RCore *core, RAnalFunction *fcn) {
 	const int op_tions = R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_VAL | R_ARCH_OP_MASK_ESIL | R_ARCH_OP_MASK_HINT;
 	RAnalBlock *bb;
@@ -515,7 +517,10 @@ R_API void r_core_anal_type_match(RCore *core, RAnalFunction *fcn) {
 	int retries = 2;
 	char *pc = strdup (_pc);
 	r_cons_break_push (NULL, NULL);
+	RVecUT64 bblist;
+	RVecUT64_init (&bblist);
 repeat:
+	RVecUT64_clear (&bblist);
 	if (retries < 0) {
 		anal_emul_restore (core, hc, dt, et);
 		free (pc);
@@ -524,19 +529,20 @@ repeat:
 	r_list_sort (fcn->bbs, bb_cmpaddr); // TODO: The algorithm can be more accurate if blocks are followed by their jmp/fail, not just by address
 	// TODO: Use ut64
 	size_t bblist_size = r_list_length (fcn->bbs);
-	ut64 *bblist = calloc (sizeof (ut64), bblist_size + 1);
-	int j = 0;
+	RVecUT64_reserve (&bblist, bblist_size);
 	r_list_foreach (fcn->bbs, it, bb) {
-		bblist[j] = bb->addr;
-		j++;
+		RVecUT64_push_back (&bblist, &bb->addr);
 	}
+	int j;
 	for (j = 0; j < bblist_size; j++) {
-		bb = r_anal_get_block_at (core->anal, bblist[j]);
-		if (!bb) {
-			R_LOG_WARN ("basic block at 0x%08"PFMT64x" was removed during analysis", bblist[j]);
-			retries--;
-			free (bblist);
-			goto repeat;
+		{
+			const ut64 addr = *RVecUT64_at (&bblist, j);
+			bb = r_anal_get_block_at (core->anal, addr);
+			if (!bb) {
+				R_LOG_WARN ("basic block at 0x%08"PFMT64x" was removed during analysis", addr);
+				retries--;
+				goto repeat;
+			}
 		}
 		ut64 bb_addr = bb->addr;
 		ut64 bb_size = bb->size;
@@ -586,9 +592,8 @@ repeat:
 			if (i < bblist_size) {
 				bb = r_anal_get_block_at (core->anal, bb_addr);
 				if (!bb) {
-					R_LOG_WARN ("basic block at 0x%08"PFMT64x" was removed during analysis", bblist[i]);
+					R_LOG_WARN ("basic block at 0x%08"PFMT64x" was removed during analysis", *RVecUT64_at (&bblist, i));
 					retries--;
-					free (bblist);
 					goto repeat;
 				}
 			}
@@ -804,8 +809,8 @@ repeat:
 		}
 		free (buf);
 	}
-	R_FREE (bblist);
-	// Type propgation for register based args
+	RVecUT64_fini (&bblist);
+	// Type propagation for register based args
 	RList *list = r_anal_var_list (anal, fcn, R_ANAL_VAR_KIND_REG);
 	RAnalVar *rvar;
 	RListIter *iter;
@@ -828,7 +833,7 @@ out_function:
 	R_FREE (ret_type);
 	r_anal_op_fini (&aop);
 	r_cons_break_pop();
-	free (bblist);
+	RVecUT64_fini (&bblist);
 	anal_emul_restore (core, hc, dt, et);
 	free (pc);
 }
