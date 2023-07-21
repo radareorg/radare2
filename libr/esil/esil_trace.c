@@ -1,11 +1,6 @@
 /* radare - LGPL - Copyright 2015-2023 - pancake, rkx1209 */
 
 #include <r_anal.h>
-
-#define DB esil->trace->db
-#define KEY(x) r_strf ("%d."x, esil->trace->idx)
-#define KEYAT(x,y) r_strf ("%d."x".0x%"PFMT64x, esil->trace->idx, y)
-#define KEYREG(x,y) r_strf ("%d."x".%s", esil->trace->idx, y)
 #define CMP_REG_CHANGE(x, y) ((x) - ((REsilRegChange *)y)->idx)
 #define CMP_MEM_CHANGE(x, y) ((x) - ((REsilMemChange *)y)->idx)
 
@@ -13,6 +8,11 @@ static void htup_vector_free(HtUPKv *kv) {
 	if (kv) {
 		r_vector_free (kv->value);
 	}
+}
+
+static void trace_db_init(REsilTraceDB *db) {
+	RVecTraceOp_init (&db->ops);
+	RVecAccess_init (&db->accesses);
 }
 
 R_API REsilTrace *r_esil_trace_new(REsil *esil) {
@@ -26,16 +26,13 @@ R_API REsilTrace *r_esil_trace_new(REsil *esil) {
 	if (!trace) {
 		return NULL;
 	}
+	trace_db_init (&trace->db);
 	trace->registers = ht_up_new (NULL, htup_vector_free, NULL);
 	if (!trace->registers) {
 		goto error;
 	}
 	trace->memory = ht_up_new (NULL, htup_vector_free, NULL);
 	if (!trace->memory) {
-		goto error;
-	}
-	trace->db = sdb_new0 ();
-	if (!trace->db) {
 		goto error;
 	}
 	// Save initial ESIL stack memory
@@ -66,6 +63,13 @@ error:
 	return NULL;
 }
 
+static void trace_db_fini(REsilTraceDB *db) {
+	if (db) {
+		RVecAccess_fini (&db->accesses);
+		RVecTraceOp_fini (&db->ops);
+	}
+}
+
 R_API void r_esil_trace_free(REsilTrace *trace) {
 	size_t i;
 	if (trace) {
@@ -75,9 +79,7 @@ R_API void r_esil_trace_free(REsilTrace *trace) {
 			r_reg_arena_free (trace->arena[i]);
 		}
 		free (trace->stack_data);
-		// eprintf ("sdb free %p%c", trace->db, 10);
-		sdb_free (trace->db);
-		trace->db = NULL;
+		trace_db_fini (&trace->db);
 		R_FREE (trace);
 	}
 }
@@ -113,9 +115,20 @@ static void add_mem_change(REsilTrace *trace, int idx, ut64 addr, ut8 data) {
 	r_vector_push (vmem, &mem);
 }
 
+// TODO better name
+static void update_last_trace_op(REsil *esil) {
+	ut32 trace_op_length = RVecTraceOp_length (&esil->trace->db.ops);
+	if (trace_op_length > 0) {
+		REsilTraceOp *last = RVecTraceOp_at (&esil->trace->db.ops, trace_op_length - 1);
+		if (last) {
+			ut32 vec_idx = RVecAccess_length (&esil->trace->db.accesses);
+			last->end = vec_idx + 1;
+		}
+	}
+}
+
 static bool trace_hook_reg_read(REsil *esil, const char *name, ut64 *res, int *size) {
 	r_return_val_if_fail (esil && name && res, -1);
-	r_strf_buffer (128);
 	bool ret = false;
 	if (*name == '0') {
 		// eprintf ("Register not found in profile\n");
@@ -131,23 +144,41 @@ static bool trace_hook_reg_read(REsil *esil, const char *name, ut64 *res, int *s
 		ret = esil->cb.reg_read (esil, name, res, size);
 	}
 	if (ret) {
-		ut64 val = *res;
+		REsilTraceAccess *access = RVecAccess_emplace_back (&esil->trace->db.accesses);
+		if (!access) {
+			R_LOG_ERROR ("Failed to allocate memory for storing access");
+			return false;
+		}
+
+		access->is_reg = true;
 		// eprintf ("[ESIL] REG READ %s 0x%08"PFMT64x"\n", name, val);
-		sdb_array_add (DB, KEY ("reg.read"), name, 0); // XXX this is very slow and memory hungry
-		sdb_num_set (DB, KEYREG ("reg.read", name), val, 0);
+		access->reg.reg = name;
+		access->reg.value = *res;
+		// TODO size
+		access->is_write = false;
 		// eprintf ("select it %p%c", DB, 10);
+		update_last_trace_op (esil);
 	}
 	return ret;
 }
 
 static bool trace_hook_reg_write(REsil *esil, const char *name, ut64 *val) {
-	r_strf_buffer (128);
 	bool ret = false;
 	// eprintf ("[ESIL] REG WRITE %s 0x%08"PFMT64x"\n", name, *val);
 	RRegItem *ri = r_reg_get (esil->anal->reg, name, -1);
 	if (ri) {
-		sdb_array_add (DB, KEY ("reg.write"), name, 0);
-		sdb_num_set (DB, KEYREG ("reg.write", name), *val, 0);
+		REsilTraceAccess *access = RVecAccess_emplace_back (&esil->trace->db.accesses);
+		if (!access) {
+			R_LOG_ERROR ("Failed to allocate memory for storing access");
+			return false;
+		}
+		access->is_reg = true;
+		access->reg.reg = name;
+		access->reg.value = *val;
+		// TODO size
+		access->is_write = true;
+		update_last_trace_op (esil);
+
 		add_reg_change (esil->trace, esil->trace->idx + 1, ri, *val);
 		if (esil->ocb.hook_reg_write) {
 			REsilCallbacks cbs = esil->cb;
@@ -161,17 +192,30 @@ static bool trace_hook_reg_write(REsil *esil, const char *name, ut64 *val) {
 }
 
 static bool trace_hook_mem_read(REsil *esil, ut64 addr, ut8 *buf, int len) {
-	char *hexbuf = calloc ((1 + len), 4);
-	r_strf_buffer (128);
 	int ret = 0;
 	if (esil->cb.mem_read) {
 		ret = esil->cb.mem_read (esil, addr, buf, len);
 	}
-	sdb_array_add_num (DB, KEY ("mem.read"), addr, 0);
+
+	char *hexbuf = calloc ((1 + len), 4);
+	if (!hexbuf) {
+		return false;
+	}
+
 	r_hex_bin2str (buf, len, hexbuf);
-	sdb_set (DB, KEYAT ("mem.read.data", addr), hexbuf, 0);
 	//eprintf ("[ESIL] MEM READ 0x%08"PFMT64x" %s\n", addr, hexbuf);
-	free (hexbuf);
+
+	REsilTraceAccess *access = RVecAccess_emplace_back (&esil->trace->db.accesses);
+	if (!access) {
+		free (hexbuf);
+		return false;
+	}
+
+	access->is_reg = false;
+	access->mem.data = hexbuf;
+	access->mem.addr = addr;
+	access->is_write = false;
+	update_last_trace_op (esil);
 
 	if (esil->ocb.hook_mem_read) {
 		REsilCallbacks cbs = esil->cb;
@@ -189,11 +233,19 @@ static bool trace_hook_mem_write(REsil *esil, ut64 addr, const ut8 *buf, int len
 	if (!hexbuf) {
 		return false;
 	}
-	r_strf_buffer (128);
-	sdb_array_add_num (DB, KEY ("mem.write"), addr, 0);
-	sdb_set (DB, KEYAT ("mem.write.data", addr), hexbuf, 0);
+
 	//eprintf ("[ESIL] MEM WRITE 0x%08"PFMT64x" %s\n", addr, hexbuf);
-	free (hexbuf);
+	REsilTraceAccess *access = RVecAccess_emplace_back (&esil->trace->db.accesses);
+	if (!access) {
+		free (hexbuf);
+		return false;
+	}
+	access->is_reg = false;
+	access->mem.data = hexbuf;
+	access->mem.addr = addr;
+	access->is_write = true;
+	update_last_trace_op (esil);
+
 	for (i = 0; i < len; i++) {
 		add_mem_change (esil->trace, esil->trace->idx + 1, addr + i, buf[i]);
 	}
@@ -209,7 +261,6 @@ static bool trace_hook_mem_write(REsil *esil, ut64 addr, const ut8 *buf, int len
 
 R_API void r_esil_trace_op(REsil *esil, RAnalOp *op) {
 	r_return_if_fail (esil && op);
-	r_strf_buffer (128);
 	const char *expr = r_strbuf_get (&op->esil);
 	if (!esil->trace) {
 		esil->trace = r_esil_trace_new (esil);
@@ -222,6 +273,7 @@ R_API void r_esil_trace_op(REsil *esil, RAnalOp *op) {
 		// do nothing
 		return;
 	}
+	// XXX condition should not happen?
 	/* restore from trace when `idx` is not at the end */
 	if (esil->trace->idx != esil->trace->end_idx) {
 		// eprintf ("j %d\n", esil->trace->idx);
@@ -234,15 +286,24 @@ R_API void r_esil_trace_op(REsil *esil, RAnalOp *op) {
 	}
 	esil->ocb = esil->cb;
 	esil->ocb_set = true;
-	sdb_num_set (DB, "idx", esil->trace->idx, 0);
-	sdb_num_set (DB, KEY ("addr"), op->addr, 0);
-	RRegItem *pc_ri = r_reg_get (esil->anal->reg, "PC", -1);
-	add_reg_change (esil->trace, esil->trace->idx, pc_ri, op->addr);
-//	sdb_set (DB, KEY ("opcode"), op->mnemonic, 0);
-//	sdb_set (DB, KEY ("addr"), expr, 0);
+
+	REsilTraceOp *to = RVecTraceOp_emplace_back (&esil->trace->db.ops);
+	if (!to) {
+		R_LOG_ERROR ("r_esil_trace_op: Failed to allocate memory");
+		return;
+	}
+	ut32 vec_idx = RVecAccess_length (&esil->trace->db.accesses);
+	to->start = vec_idx;
+	to->end = vec_idx;
+	to->addr = op->addr;
+	//sdb_set (DB, KEY ("opcode"), op->mnemonic, 0);
+	//sdb_set (DB, KEY ("addr"), expr, 0);
 	//eprintf ("[ESIL] ADDR 0x%08"PFMT64x"\n", op->addr);
 	//eprintf ("[ESIL] OPCODE %s\n", op->mnemonic);
 	//eprintf ("[ESIL] EXPR = %s\n", expr);
+
+	RRegItem *pc_ri = r_reg_get (esil->anal->reg, "PC", -1);
+	add_reg_change (esil->trace, esil->trace->idx, pc_ri, op->addr);
 	/* set hooks */
 	esil->cb.hook_reg_read = trace_hook_reg_read;
 	esil->cb.hook_reg_write = trace_hook_reg_write;
@@ -317,72 +378,45 @@ R_API void r_esil_trace_restore(REsil *esil, int idx) {
 	ht_up_foreach (trace->memory, restore_memory_cb, esil);
 }
 
-static int cmp_strings_by_leading_number(void *data1, void *data2) {
-	const char* a = sdbkv_key ((const SdbKv *)data1);
-	const char* b = sdbkv_key ((const SdbKv *)data2);
-	int i = 0;
-	int j = 0;
-	int k = 0;
-	while (isdigit (a[i])) {
-		i++;
-	}
-	while (isdigit (b[j])) {
-		j++;
-	}
-	if (!i || !j) {
-		return 1;
-	}
-	i--;
-	j--;
-	if (i > j) {
-		return 1;
-	}
-	if (j > i) {
-		return -1;
-	}
-	while (k <= i) {
-		if (a[k] < b[k]) {
-			return -1;
+static void print_access(PrintfCallback p, int idx, REsilTraceAccess *a, int format) {
+	const char *direction = a->is_write ? "write" : "read";
+
+	switch (format) {
+	case '*':
+		if (a->is_reg) {
+			p ("ar %s = %"PFMT64u"\n", a->reg.reg, a->reg.value);
+		} else {
+			p ("wx %s @ %"PFMT64u"\n", a->mem.data, a->mem.addr);
 		}
-		if (a[k] > b[k]) {
-			return 1;
+		break;
+	default:
+		if (a->is_reg) {
+			p ("%d.reg.%s=0x%"PFMT64x, idx, direction, a->reg.value);
+		} else {
+			p ("%d.mem.%s.data=0x%"PFMT64x, idx, direction, a->mem.data);
 		}
-		k++;
+		break;
 	}
-	for (; a[i] && b[i]; i++) {
-		if (a[i] > b[i]) {
-			return 1;
-		}
-		if (a[i] < b[i]) {
-			return -1;
-		}
-	}
-	if (!a[i] && b[i]) {
-		return -1;
-	}
-	if (!b[i] && a[i]) {
-		return 1;
-	}
-	return 0;
 }
 
-R_API void r_esil_trace_list(REsil *esil) {
+R_API void r_esil_trace_list(REsil *esil, int format) {
 	r_return_if_fail (esil && esil->anal);
-	PrintfCallback p = esil->anal->cb_printf;
-	SdbKv *kv;
-	SdbListIter *iter;
 	if (esil->trace) {
-		SdbList *list = sdb_foreach_list (esil->trace->db, true);
-		ls_sort (list, (SdbListComparator) cmp_strings_by_leading_number);
-		ls_foreach (list, iter, kv) {
-			p ("%s=%s\n", sdbkv_key (kv), sdbkv_value (kv));
+		int idx = 0;
+		REsilTraceOp *op;
+		R_VEC_FOREACH (&esil->trace->db.ops, op) {
+			r_esil_trace_show (esil, idx, format);
+			idx++;
 		}
-		ls_free (list);
 	}
 }
 
-R_API void r_esil_trace_show(REsil *esil, int idx) {
-	r_strf_buffer (128);
+static ut64 lookup_pc(REsilTraceDB *db, int idx) {
+	REsilTraceOp *to = RVecTraceOp_at (&db->ops, idx);
+	return to ? to->addr : UT64_MAX;
+}
+
+R_API void r_esil_trace_show(REsil *esil, int idx, int format) {
 	PrintfCallback p = esil->anal->cb_printf;
 	if (!esil->trace) {
 		return;
@@ -390,49 +424,29 @@ R_API void r_esil_trace_show(REsil *esil, int idx) {
 	int trace_idx = esil->trace->idx;
 	esil->trace->idx = idx;
 
-	const char *str2 = sdb_const_get (DB, KEY ("addr"), 0);
-	if (!str2) {
+	const ut64 pc = lookup_pc (&esil->trace->db, esil->trace->idx);
+	if (pc == UT64_MAX) {
 		return;
 	}
-	p ("ar PC = %s\n", str2);
-	/* registers */
-	const char *str = sdb_const_get (DB, KEY ("reg.read"), 0);
-	if (R_STR_ISNOTEMPTY (str)) {
-		char regname[32];
-		const char *next, *ptr = str;
-		do {
-			next = sdb_const_anext (ptr);
-			int len = next? (int)(size_t)(next - ptr) - 1 : strlen (ptr);
-			if (len < sizeof (regname)) {
-				memcpy (regname, ptr, len);
-				regname[len] = 0;
-				str2 = sdb_const_get (DB, KEYREG ("reg.read", regname), 0);
-				p ("ar %s = %s\n", regname, str2);
-			} else {
-				R_LOG_ERROR ("Invalid entry in reg.read");
-			}
-			ptr = next;
-		} while (next);
+
+	REsilTraceOp *op = RVecTraceOp_at (&esil->trace->db.ops, idx);
+	switch (format) {
+	case '*': // radare
+		p ("ar PC = %"PFMT64u"\n", pc);
+		break;
+	default: // sdb
+		p ("%d.addr=0x"PFMT64x, idx, op->addr);
+		const ut32 start_idx = op->start;
+		const ut32 end_idx = op->end;
+
+		REsilTraceAccess *start = RVecAccess_at (&esil->trace->db.accesses, start_idx);
+		REsilTraceAccess *end = RVecAccess_at (&esil->trace->db.accesses, end_idx);
+		while (start != end) {
+			print_access (p, idx, start, format);
+			start++;
+		}
+		break;
 	}
-	/* memory */
-	str = sdb_const_get (DB, KEY ("mem.read"), 0);
-	if (R_STR_ISNOTEMPTY (str)) {
-		char addr[64];
-		const char *next, *ptr = str;
-		do {
-			next = sdb_const_anext (ptr);
-			int len = next? (int)(size_t)(next - ptr) - 1 : strlen (ptr);
-			if (len < sizeof (addr)) {
-				memcpy (addr, ptr, len);
-				addr[len] = 0;
-				str2 = sdb_const_get (DB, KEYAT ("mem.read.data",
-					r_num_get (NULL, addr)), 0);
-				p ("wx %s @ %s\n", str2, addr);
-			} else {
-				R_LOG_ERROR ("Invalid entry in reg.read");
-			}
-			ptr = next;
-		} while (next);
-	}
+
 	esil->trace->idx = trace_idx;
 }
