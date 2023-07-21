@@ -15,4 +15,6 @@ Read https://github.com/radareorg/radare2/blob/master/DEVELOPERS.md
 
 **Copilot**
 
+<!--
 copilot:all
+-->
