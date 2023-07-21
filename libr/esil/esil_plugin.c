@@ -42,17 +42,17 @@ R_API bool r_esil_plugin_add(REsil *esil, REsilPlugin *plugin) {
 	return true;
 }
 
-R_API bool r_esil_plugin_remove(REsil *esil, REsilPlugin *plugin) {
-	r_esil_plugin_deactivate(esil, plugin->name);
+R_API void r_esil_plugin_remove(REsil *esil, const char *name) {
+	r_return_if_fail (esil && esil->plugins && name);
+	r_esil_plugin_deactivate(esil, name);
 	RListIter *iter;
-	REsilActivePlugin *eap;
-	r_list_foreach (esil->plugins, iter, eap) {
-		if (eap->plugin == plugin) {
+	REsilPlugin *ep;
+	r_list_foreach (esil->plugins, iter, ep) {
+		if (!strcmp (ep->name, name)) {
 			r_list_delete (esil->plugins, iter);
-			return true;
+			return;
 		}
 	}
-	return false;
 }
 
 static REsilActivePlugin *_get_active_plugin(REsil *esil, const char *name) {
