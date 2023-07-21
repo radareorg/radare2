@@ -71,6 +71,7 @@ R_API void r_graph_dfs_node(RGraph *g, RGraphNode *n, RGraphVisitor *vis);
 R_API void r_graph_dfs_node_reverse(RGraph *g, RGraphNode *n, RGraphVisitor *vis);
 R_API void r_graph_dfs(RGraph *g, RGraphVisitor *vis);
 R_API RGraph *r_graph_dom_tree(RGraph *graph, RGraphNode *root);
+R_API RGraph *r_graph_pdom_tree(RGraph *graph, RGraphNode *root);
 
 #ifdef __cplusplus
 }

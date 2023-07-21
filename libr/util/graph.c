@@ -444,3 +444,24 @@ cont:;
 	}
 	return g;
 }
+
+static void _invert_edges (RGraph *g) {
+	RListIter *iter;
+	RGraphNode *n;
+	r_list_foreach (g->nodes, iter, n) {
+		n->in_nodes = (RList *)(((size_t)n->in_nodes) ^ ((size_t)n->out_nodes));
+		n->out_nodes = (RList *)(((size_t)n->in_nodes) ^ ((size_t)n->out_nodes));
+		n->in_nodes = (RList *)(((size_t)n->in_nodes) ^ ((size_t)n->out_nodes));
+	}
+}
+
+R_API RGraph *r_graph_pdom_tree(RGraph *graph, RGraphNode *root) {
+	r_return_val_if_fail (graph && root, NULL);
+	_invert_edges (graph);
+	RGraph *g = r_graph_dom_tree (graph, root);
+	_invert_edges (graph);
+	if (g) {
+		_invert_edges (graph);
+	}
+	return g;
+}
