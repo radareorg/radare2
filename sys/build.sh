@@ -47,7 +47,7 @@ for a in $* ; do
 	esac
 done
 
-ABSPREFIX=`realpath ${PREFIX}`
+ABSPREFIX=`realpath ${PREFIX} 2> /dev/null`
 [ -n "${ABSPREFIX}" ] && PREFIX="${ABSPREFIX}"
 
 if [ "${USE_CS4}" = 1 ]; then
