@@ -11,11 +11,10 @@ static bool r_core_hack_riscv(RCore *core, const char *op, const RAnalOp *analop
 	if (!strcmp (op, "nop")) {
 		// TODO honor analop->size
 		r_core_cmdf (core, "wx 13000000");
-	} else {
-		R_LOG_ERROR ("Unsupported operation '%s'", op);
-		return false;
+		return true;
 	}
-	return true;
+	R_LOG_ERROR ("Unsupported operation '%s'", op);
+	return false;
 }
 
 static bool r_core_hack_dalvik(RCore *core, const char *op, const RAnalOp *analop) {

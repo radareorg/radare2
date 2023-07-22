@@ -53,6 +53,9 @@ ABSPREFIX=`realpath ${PREFIX} 2> /dev/null`
 if [ "${USE_CS4}" = 1 ]; then
 	CFGARG="${CFGARG} --with-capstone4"
 fi
+if [ "${USE_CSNEXT}" = 1 ]; then
+	CFGARG="${CFGARG} --with-capstone-next"
+fi
 
 if [ "${OSNAME}" = Linux -a -n "${PREFIX}" -a "${PREFIX}" != /usr ]; then
 	CFGARG="${CFGARG} --with-rpath"

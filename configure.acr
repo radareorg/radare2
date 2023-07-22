@@ -50,7 +50,9 @@ ARG_WITH WITH_LIBR libr build libr.a and libr.dylib ;
 ARG_WITH WITH_STATIC_THEMES static-themes default themes are compiled and fallback if not available on disk ;
 
 (( CAPSTONE ))
-ARG_WITH USE_CS5 capstone5 build next branch of capstone5 (default) ;
+ARG_WITH USE_CSNEXT capstone-next build next branch of the capstone disassembler ;
+(( TODO rename to capstone-v5 and capstone-v4 ))
+ARG_WITH USE_CS5 capstone5 build v5 branch of capstone5 (default) ;
 ARG_WITH USE_CS4 capstone4 build v4 branch of capstone ;
 
 ARG_WITH WITH_CAPSTONE syscapstone force to use system-wide capstone ;

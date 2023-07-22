@@ -27,6 +27,7 @@ if [ $? = 0 ]; then
 fi
 
 export USE_CS4=0
+export USE_CSNEXT=0
 # if owner of sys/install.sh != uid && uid == 0 { exec sudo -u id -A $SUDO_UID sys/install.sh $* }
 ARGS=""
 while : ; do
