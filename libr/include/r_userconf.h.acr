@@ -21,8 +21,10 @@ extern "C" {
 #define HAVE_LINUX_CAN_H @HAVE_LINUX_CAN_H@
 
 #define R_BUILDSYSTEM "@R2_BUILDSYSTEM@"
-#if @USE_CS4@ > 0
+#if @USE_CS4@ == 1
 #define R2_CSVERSION 4
+#elif @USE_CSNEXT@ == 1
+#define R2_CSVERSION 6
 #else
 #define R2_CSVERSION 5
 #endif

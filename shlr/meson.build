@@ -18,27 +18,32 @@ if not capstone_dep.found() or not get_option('use_sys_capstone')
 
     patches_files = []
     # NOTE: when you update CS_TIP or CS_BRA, also update them in shlr/Makefile
-    if capstone_version == 'v5'
-      CS_TIP = '8ae8f68ea3abb7a68071908bad02baa39742870c'
+    if capstone_version == 'next'
+      CS_TIP = 'a4df92eda647e739432860682be638da1b8b901a'
       CS_BRA = 'next'
       patches_files = [
         'fix-x86-16.patch',
-        'mmm.patch'
       ]
-    elif capstone_version == 'v3'
-      CS_TIP = '61bf71c771680033651f16cff832446e421847b1'
-      CS_BRA = 'v3'
+    elif capstone_version == 'v5'
+      CS_TIP = 'e1af2e249ab85c70594a8c975f27d072278257fb'
+      CS_BRA = 'v5'
       patches_files = [
-        'capstone-include.patch'
+        'fix-x86-16.patch'
       ]
     elif capstone_version == 'v4'
-      CS_TIP = '1d230532840a37ac032c6ab80128238fc930c6c1'
+      CS_TIP = '0efa3cc530ea188c0e03c945ab884ee19dd16342'
       CS_BRA = 'v4'
       patches_files = [
         'capstone-calloc.patch',
         'fix-x86-16.patch',
         'sparc-crash.patch',
         'sstream-null.patch'
+      ]
+    elif capstone_version == 'v3'
+      CS_TIP = '61bf71c771680033651f16cff832446e421847b1'
+      CS_BRA = 'v3'
+      patches_files = [
+        'capstone-include.patch'
       ]
     else
       error('Wrong capstone version selected. Please use one of the supported versions.')

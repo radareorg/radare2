@@ -26,14 +26,16 @@ fatal_msg() {
 patch_capstone() {
 	echo "[capstone] Applying patches..."
 	if [ "$CS_BRA" = next ]; then
-		CV=v5
+		CV=v6
 	else
-		CV=v4
+		CV=v5
 	fi
-	for patchfile in ../capstone-patches/$CV/*.patch ; do
-		echo "Patch $patchFile"
-		patch -p 1 < "${patchfile}"
-	done
+	if [ -n "`ls ../capstone-patches/$CV/ 2> /dev/null`" ]; then
+		for patchfile in ../capstone-patches/$CV/*.patch ; do
+			echo "Patch $patchFile"
+			patch -p 1 < "${patchfile}"
+		done
+	fi
 }
 
 parse_capstone_tip() {

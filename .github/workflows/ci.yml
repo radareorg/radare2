@@ -102,15 +102,16 @@ jobs:
       with:
         name: r2r.json
         path: /tmp/r2r.json
+  # TODO: Add job to build with capstone-next, for now v5 is stable
   build-syscapstone:
     name: linux-sys-capstone
     runs-on: ubuntu-20.04
     steps:
     - name: Checkout
       uses: actions/checkout@v3
-    - name: Installing capstone
+    - name: Installing capstone v5
       run: |
-        git clone --branch next --single-branch --depth=1 https://github.com/capstone-engine/capstone
+        git clone --branch v5 --single-branch --depth=1 https://github.com/capstone-engine/capstone
         cd capstone && ( git log | head ) && sh make.sh && sudo make install
     - name: Installing r2 with sys-capstone
       run: |
