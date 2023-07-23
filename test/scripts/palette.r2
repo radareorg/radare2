@@ -37,11 +37,11 @@ ec reg rgb:3a96dd
 ec creg rgb:3a96dd
 ec num rgb:c19c00
 ec mov rgb:cccccc
-ec func_var rgb:cccccc
-ec func_var_type rgb:0037da
-ec func_var_addr rgb:3a96dd
-ec widget_bg rgb:303030
-ec widget_sel rgb:c50f1f
+ec var rgb:cccccc
+ec var.type rgb:0037da
+ec var.addr rgb:3a96dd
+ec widget.bg rgb:303030
+ec widget.sel rgb:c50f1f
 ec ai.read rgb:13a10e
 ec ai.write rgb:0037da
 ec ai.exec rgb:c50f1f
