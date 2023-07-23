@@ -2037,11 +2037,12 @@ R_API void r_core_autocomplete(R_NULLABLE RCore *core, RLineCompletion *completi
 			ADDARG ("creg");
 			ADDARG ("num");
 			ADDARG ("mov");
-			ADDARG ("func_var");
-			ADDARG ("func_var_type");
-			ADDARG ("func_var_addr");
-			ADDARG ("widget_bg");
-			ADDARG ("widget_sel");
+			ADDARG ("var");
+			ADDARG ("var.type");
+			ADDARG ("var.addr");
+			ADDARG ("var.name");
+			ADDARG ("widget.bg");
+			ADDARG ("widget.sel");
 			ADDARG ("ai.read");
 			ADDARG ("ai.write");
 			ADDARG ("ai.exec");
@@ -2062,6 +2063,10 @@ R_API void r_core_autocomplete(R_NULLABLE RCore *core, RLineCompletion *completi
 			ADDARG ("gui.background");
 			ADDARG ("gui.alt_background");
 			ADDARG ("gui.border");
+			ADDARG ("diff.unknown");
+			ADDARG ("diff.new");
+			ADDARG ("diff.match");
+			ADDARG ("diff.unmatch");
 		}
 	} else if (r_str_startswith (buf->data, "pf.")
 			|| r_str_startswith (buf->data, "pf*.")
