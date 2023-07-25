@@ -4503,11 +4503,12 @@ R_API int r_core_anal_search_xrefs(RCore *core, ut64 from, ut64 to, PJ *pj, int 
 				if (found_xref (core, op.addr, op.ptr, R_ANAL_REF_TYPE_DATA, pj, rad, cfg_debug, cfg_anal_strings)) {
 					count++;
 				}
-			}
-			// find references
-			if (op.addr > 512 && op.disp > 512 && op.disp && op.disp != UT64_MAX) {
-				if (found_xref (core, op.addr, op.disp, R_ANAL_REF_TYPE_DATA, pj, rad, cfg_debug, cfg_anal_strings)) {
-					count++;
+			} else {
+				// check for using reg+disp, which shouldnt be valid if op.ptr is set
+				if (op.addr > 512 && op.disp > 512 && op.disp && op.disp != UT64_MAX) {
+					if (found_xref (core, op.addr, op.disp, R_ANAL_REF_TYPE_DATA, pj, rad, cfg_debug, cfg_anal_strings)) {
+						count++;
+					}
 				}
 			}
 			switch (op.type) {
