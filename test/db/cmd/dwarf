@@ -374,7 +374,6 @@ EXPECT=<<EOF
 |           0x0000527f      4889b4249800.  mov qword [var_98h], rsi    ; arg2
 |           0x00005287      48897c2448     mov qword [var_48h], rdi    ; arg1
 |           0x0000528c      4889742440     mov qword [var_40h], rsi    ; arg2
-|           ; DATA XREF from core::fmt::builders::DebugTuple::finish::hfbbe40c195c334d6 @ 0x28b56(r)
 |           0x00005291      e8ea090000     call sym core::slice::_<impl [T]>::len::hbaf7153778228b73 ; dbg.len<i32>
 |           0x00005296      4889442450     mov qword [n], rax
 |           0x0000529b      c644245f01     mov byte [swapped], 1

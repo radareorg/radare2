@@ -12481,13 +12481,14 @@ static int cmd_anal_all(RCore *core, const char *input) {
 				r_core_task_yield (&core->tasks);
 				R_LOG_INFO ("Finding and parsing C++ vtables (avrr)");
 				r_core_cmd_call (core, "avrr");
+				r_core_cmd0 (core, "af @@ method.*");
 				r_core_task_yield (&core->tasks);
 				// r_config_set_b (core->config, "anal.calls", c);
 				r_core_task_yield (&core->tasks);
 				if (r_cons_is_breaked ()) {
 					goto jacuzzi;
 				}
-				bool isPreludableArch = core->rasm->config->bits == 64 && r_str_startswith (r_config_get (core->config, "asm.arch"), "arm");
+				const bool isPreludableArch = core->rasm->config->bits == 64 && r_str_startswith (r_config_get (core->config, "asm.arch"), "arm");
 
 				if (!didAap && isPreludableArch) {
 					didAap = true;
@@ -12502,12 +12503,12 @@ static int cmd_anal_all(RCore *core, const char *input) {
 						R_LOG_INFO ("Skipping function emulation in debugger mode (aaef)");
 						// nothing to do
 					} else {
-						bool ioCache = r_config_get_i (core->config, "io.pcache");
-						r_config_set_i (core->config, "io.pcache", 1);
+						const bool io_cache = r_config_get_i (core->config, "io.pcache");
+						r_config_set_b (core->config, "io.pcache", true);
 						R_LOG_INFO ("Emulate functions to find computed references (aaef)");
 						r_core_cmd_call (core, "aaef");
 						r_core_task_yield (&core->tasks);
-						r_config_set_i (core->config, "io.pcache", ioCache);
+						r_config_set_b (core->config, "io.pcache", io_cache);
 					}
 					if (r_cons_is_breaked ()) {
 						goto jacuzzi;
@@ -12530,7 +12531,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 							r_list_free (list);
 							continue;
 						}
-						//extract only reg based var here
+						// extract only reg based var here
 						r_core_recover_vars (core, fcni, true);
 						r_list_free (list);
 					}
