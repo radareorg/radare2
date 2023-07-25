@@ -4857,8 +4857,9 @@ void Elf_(free)(ELFOBJ* eo) {
 		RVecRBinElfSymbol_free (eo->phdr_symbols_vec);
 		eo->phdr_symbols_vec = NULL;
 	}
-	RVecRBinElfSymbol_free (eo->phdr_symbols_vec);
-	RVecRBinElfSymbol_free (eo->phdr_imports_vec);
+	// causes double free in g_symbols_vec.free() 2 lines below
+	// RVecRBinElfSymbol_free (eo->phdr_symbols_vec);
+	// RVecRBinElfSymbol_free (eo->phdr_imports_vec);
 	RVecRBinElfSymbol_free (eo->g_symbols_vec);
 	RVecRBinElfSymbol_free (eo->g_imports_vec);
 #if 0
