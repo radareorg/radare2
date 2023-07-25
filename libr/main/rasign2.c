@@ -13,8 +13,8 @@ struct rasignconf {
 
 static void rasign_show_help(void) {
 	printf ("Usage: rasign2 [options] [file]\n"
-		" -a [-a]          add extra 'a' to analysis command\n"
-		" -A               make signatures from all .o files in the provided .a file\n"
+		" -a               make signatures from all .o files in the provided .a file\n"
+		" -A[AAA]          same as r2 -A, the more 'A's the more analysis is performed\n"
 		" -f               interpret the file as a FLIRT .sig file and dump signatures\n"
 		" -h               help menu\n"
 		" -j               show signatures in json\n"
@@ -66,6 +66,7 @@ static void find_functions(RCore *core, size_t count) {
 	case 0: cmd = "aa"; break;
 	case 1: cmd = "aaa"; break;
 	case 2: cmd = "aaaa"; break;
+	case 3: cmd = "aaaaa"; break;
 	}
 	r_core_cmd0 (core, cmd);
 }
@@ -239,10 +240,10 @@ R_API int r_main_rasign2(int argc, const char **argv) {
 	r_getopt_init (&opt, argc, argv, "Aafhjmo:qrSs:cv");
 	while ((c = r_getopt_next (&opt)) != -1) {
 		switch (c) {
-		case 'A':
+		case 'a':
 			conf.ar = true;
 			break;
-		case 'a':
+		case 'A':
 			conf.a_cnt++;
 			break;
 		case 'o':

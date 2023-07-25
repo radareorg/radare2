@@ -38,9 +38,9 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=rasign2 -aarj
+NAME=rasign2 -AArj
 FILE=-
-CMDS=!!rasign2 -aarj bins/elf/hello_world~main?
+CMDS=!!rasign2 -AArj bins/elf/hello_world~main?
 EXPECT=<<EOF
 18
 EOF
@@ -57,7 +57,7 @@ RUN
 
 NAME=rasign2 graph metrics
 FILE=-
-CMDS=!!rasign2 -aarj bins/elf/hello_world~za main g
+CMDS=!!rasign2 -AArj bins/elf/hello_world~za main g
 EXPECT=<<EOF
 za main g cc=2 nbbs=3 edges=3 ebbs=1 bbsum=157
 EOF
@@ -65,7 +65,7 @@ RUN
 
 NAME=rasign2 original offset
 FILE=-
-CMDS=!!rasign2 -aarj bins/elf/hello_world~^za main o
+CMDS=!!rasign2 -AArj bins/elf/hello_world~^za main o
 EXPECT=<<EOF
 za main o 0x000007aa
 EOF
@@ -73,7 +73,7 @@ RUN
 
 NAME=rasign2 references
 FILE=-
-CMDS=!!rasign2 -aarj bins/elf/hello_world~^za main r
+CMDS=!!rasign2 -AArj bins/elf/hello_world~^za main r
 EXPECT=<<EOF
 za main r sym.imp.strlen sym.imp.strlen sym.imp.malloc sym.imp.strcpy sym.imp.strcat sym.imp.puts sym.imp.free
 EOF
@@ -81,7 +81,7 @@ RUN
 
 NAME=rasign2 bbhash
 FILE=-
-CMDS=!!rasign2 -aarj bins/elf/hello_world~^za main h
+CMDS=!!rasign2 -AArj bins/elf/hello_world~^za main h
 EXPECT=<<EOF
 za main h 44004dffff87483150d4f315ea8426b4d0c471ce4c56176c874513b24d0266b4
 EOF
@@ -89,7 +89,7 @@ RUN
 
 NAME=rasign2 vars/args
 FILE=-
-CMDS=!!rasign2 -aarj bins/elf/hello_world~^za main v
+CMDS=!!rasign2 -AArj bins/elf/hello_world~^za main v
 EXPECT=<<EOF
 za main v fb-32:src:char *, fb-24:s2:char *, fb-40:var_20h:size_t, fb-36:size:size_t, fb-16:dest:char *
 EOF
@@ -98,7 +98,7 @@ RUN
 
 NAME=rasign2 spaces check
 FILE=-
-CMDS=!!rasign2 -s spacename -aj bins/elf/hello_world~{0[zignspace]}
+CMDS=!!rasign2 -s spacename -Aj bins/elf/hello_world~{0[zignspace]}
 EXPECT=<<EOF
 spacename
 EOF
@@ -130,9 +130,9 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=rasign2 -Ar libc-v10.sig
+NAME=rasign2 -ar libc-v10.sig
 FILE=
-CMDS=!!rasign2 -Ar bins/ar/libgdbr.a~ g ?
+CMDS=!!rasign2 -ar bins/ar/libgdbr.a~ g ?
 EXPECT=<<EOF
 94
 EOF
