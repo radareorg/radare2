@@ -1686,8 +1686,16 @@ static int var_cmd(RCore *core, const char *str) {
 	RAnalVar *v1;
 	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, -1);
 	if (!fcn) {
-		if (str[0] == 'j') { // "afvj"
+		switch (str[0]) {
+		case '?':
+			r_core_cmd_help (core, help_msg_afv);
+			break;
+		case 'j':
 			r_cons_println ("{}");
+			break;
+		default:
+			R_LOG_ERROR ("No function found in current offset");
+			break;
 		}
 		return false;
 	}
