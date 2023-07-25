@@ -42,6 +42,11 @@ static int list_str_cmp(const void *a, const void *b) {
 	return strcmp ((const char *)a, (const char *)b);
 }
 
+static ut64 valstr(const void *_a) {
+	const char *a = _a;
+	return r_str_hash64 (a);
+}
+
 R_API RList *r_sign_fcn_xrefs(RAnal *a, RAnalFunction *fcn) {
 	r_return_val_if_fail (a && fcn, NULL);
 
@@ -67,7 +72,8 @@ R_API RList *r_sign_fcn_xrefs(RAnal *a, RAnalFunction *fcn) {
 			}
 		// }
 	}
-	// r_list_uniq (ret, (RListComparatorItem)list_str_cmp);
+
+	r_list_uniq (ret, valstr);
 	RVecAnalRef_free (xrefs);
 	return ret;
 }
