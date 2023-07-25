@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2013-2022 - pancake, fenugrec */
+/* radare - LGPL - Copyright 2013-2023 - pancake, fenugrec */
 
 /*
 *** .hex format description : every line follows this pattern
@@ -115,14 +115,14 @@ static int __write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
 	return 0;
 }
 
-//write contiguous block of data to file; ret 0 if ok
-//max 65535 bytes; assumes a 04 rec was written before
+// write contiguous block of data to file; ret 0 if ok
+// max 65535 bytes; assumes a 04 rec was written before
 static int fwblock(FILE *fd, ut8 *b, ut32 start_addr, ut16 size) {
 	ut8 cks;
 	char linebuf[80];
 	ut16 last_addr;
 	int j;
-	ut32 i;	//has to be bigger than size !
+	ut32 i;	// has to be larger than size!
 
 	if (size < 1 || !fd || !b) {
 		return -1;
@@ -155,13 +155,14 @@ static int fwblock(FILE *fd, ut8 *b, ut32 start_addr, ut16 size) {
 	if (i == size) {
 		return 0;
 	}
-	//write crumbs
+	//  write crumbs
 	last_addr = i+start_addr;
 	cks = -last_addr;
 	cks -= last_addr>>8;
 	for (j = 0; i < size; i++, j++) {
+		const size_t delta = 2 * j;
 		cks -= b[j];
-		snprintf (linebuf + (2 * j), 2, "%02X", b[j]);
+		snprintf (linebuf + delta, sizeof (linebuf) - delta, "%02X", b[j]);
 	}
 	cks -= j;
 
