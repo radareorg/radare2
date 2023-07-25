@@ -32,14 +32,12 @@ const char *getRealRef(RCore *core, ut64 off) {
 	return NULL;
 }
 
-int list_str_cmp (const void *a, const void *b) {
+static int list_str_cmp(const void *a, const void *b) {
 	// prevent silent failure if RListComparator changes
 	return strcmp ((const char *)a, (const char *)b);
 }
 
 R_API RList *r_sign_fcn_xrefs(RAnal *a, RAnalFunction *fcn) {
-	RAnalRef *refi = NULL;
-
 	r_return_val_if_fail (a && fcn, NULL);
 
 	RCore *core = a->coreb.core;
@@ -49,20 +47,22 @@ R_API RList *r_sign_fcn_xrefs(RAnal *a, RAnalFunction *fcn) {
 	}
 
 	RList *ret = r_list_newf ((RListFree) free);
-	RVecAnalRef *xrefs = r_anal_function_get_xrefs (fcn);
+	RVecAnalRef *xrefs = r_anal_xrefs_get (a, fcn->addr);
 	if (!xrefs) {
 		return ret;
 	}
 
+	RAnalRef *refi;
 	R_VEC_FOREACH (xrefs, refi) {
-		RAnalRefType rt = R_ANAL_REF_TYPE_MASK (refi->type);
-		if (rt == R_ANAL_REF_TYPE_CODE || rt == R_ANAL_REF_TYPE_CALL) {
-			const char *flag = getRealRef (core, refi->addr);
+		// RAnalRefType rt = R_ANAL_REF_TYPE_MASK (refi->type);
+		// if (rt == R_ANAL_REF_TYPE_CODE || rt == R_ANAL_REF_TYPE_CALL) {
+			const char *flag = get_xrefname (core, refi->addr);
 			if (flag) {
-				r_list_append (ret, r_str_new (flag));
+				r_list_append (ret, strdup (flag));
 			}
-		}
+		// }
 	}
+	// r_list_uniq (ret, (RListComparatorItem)list_str_cmp);
 	RVecAnalRef_free (xrefs);
 	return ret;
 }
@@ -85,13 +85,13 @@ R_API RList *r_sign_fcn_refs(RAnal *a, RAnalFunction *fcn) {
 	}
 
 	R_VEC_FOREACH (refs, refi) {
-		RAnalRefType rt = R_ANAL_REF_TYPE_MASK (refi->type);
-		if (rt == R_ANAL_REF_TYPE_CODE || rt == R_ANAL_REF_TYPE_CALL) {
-			const char *flag = getRealRef (core, refi->addr);
+		// RAnalRefType rt = R_ANAL_REF_TYPE_MASK (refi->type);
+		// if (rt == R_ANAL_REF_TYPE_CODE || rt == R_ANAL_REF_TYPE_CALL) {
+			const char *flag = get_refname (core, refi->addr);
 			if (flag) {
-				r_list_append (ret, r_str_new (flag));
+				r_list_append (ret, strdup (flag));
 			}
-		}
+		// }
 	}
 	RVecAnalRef_free (refs);
 	return ret;
