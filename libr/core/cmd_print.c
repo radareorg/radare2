@@ -27,6 +27,16 @@ static RCoreHelpMessage help_msg_psz = {
 	NULL
 };
 
+static RCoreHelpMessage help_msg_psp = {
+	"Usage: psp[124j]", "", "Print pascal string",
+	"psp", "", "print zero-terminated string, taking length defined by the first byte (psp1)",
+	"psp1", "", "same as psp",
+	"psp2", "", "same as psp, but taking 2 byte for length",
+	"psp4", "", "same as psp, but using 4 byte dword (honoring cfg.bigendian) for length",
+	"pspj", "", "print pascal string in JSON",
+	NULL
+};
+
 static RCoreHelpMessage help_msg_p8 = {
 	"Usage: p8[*fjx]", " [len]", "8bit hexpair list of bytes (see pcj)",
 	"p8", " ([len])", "print hexpairs string",
@@ -494,7 +504,7 @@ static RCoreHelpMessage help_msg_ps = {
 	"psi", "", "print string inside curseek",
 	"psj", "", "print string in JSON format",
 	"psn", "[l] [len]", "print string until newline",
-	"psp", "[j]", "print pascal string",
+	"psp", "[?][j]", "print pascal string",
 	"psq", "", "alias for pqs",
 	"pss", "", "print string in screen (wrap width)",
 	"psu", "[zj]", "print utf16 unicode (json)",
@@ -3471,6 +3481,9 @@ static void cmd_print_pv(RCore *core, const char *input, bool useBytes) {
 	case 'p': // "pvp"
 		input++;
 		break;
+	case '0':
+		// pvp0 == 'pvp 0'
+		return;
 	case '1': // "pv1"
 		n = 1;
 		input++;
@@ -5608,6 +5621,72 @@ static void cmd_psa(RCore *core, const char *_) {
 	r_core_return_value (core, rc);
 }
 
+
+static void print_pascal_string(RCore *core, const char *input, int len) {
+	int disp = 1;
+	int slen = -1;
+	bool dojson = false;
+	switch (input[0]) {
+	case 'j': // "pspj"
+		dojson = true;
+		break;
+	case '?': // "psp?"
+		r_core_cmd_help (core, help_msg_psp);
+		return;
+	case '0': // "psp0"
+		return;
+	case '1': // "psp1"
+		disp = 1;
+		break;
+	case '2': // "psp2"
+		disp = 2;
+		break;
+	case '4': // "psp4"
+		disp = 4;
+		break;
+	case ' ':
+		input++;
+		break;
+	}
+	if (len < 1) {
+		return;
+	}
+	if (input[0] && input[1] != ' ' && input[3] == 'j') {
+		dojson = true;
+	}
+	ut8 buf[4];
+	if (core->blocksize < sizeof (buf)) {
+		return;
+	}
+	memcpy (buf, core->block, 4);
+	const bool be = r_config_get_b (core->config, "cfg.bigendian");
+	slen = core->block[0];
+	switch (disp) {
+	case 2:
+		slen = r_read_ble16 (buf, be);
+		break;
+	case 4:
+		slen = r_read_ble32 (buf, be);
+		break;
+	default:
+		slen = buf[0];
+		break;
+	}
+	if (slen + disp < core->blocksize) {
+		if (dojson) {
+			print_json_string (core, (const char *) core->block + disp, slen, NULL);
+		} else {
+			r_print_string (core->print, core->offset,
+					core->block + disp, slen,
+					R_PRINT_STRING_ZEROEND);
+		}
+		core->num->value = slen;
+	} else {
+		R_LOG_WARN ("String longer than current block");
+		core->num->value = 0; // error
+	}
+}
+
 static int cmd_print(void *data, const char *input) {
 	RCore *core = (RCore *) data;
 	st64 l;
@@ -6763,21 +6842,7 @@ static int cmd_print(void *data, const char *input) {
 			}
 			break;
 		case 'p': // "psp"
-			if (l > 0) {
-				int mylen = core->block[0];
-				// TODO: add support for 2-4 byte length pascal strings
-				if (mylen < core->blocksize) {
-					if (input[2] == 'j') { // pspj
-						print_json_string (core, (const char *) core->block + 1, mylen, NULL);
-					} else {
-						r_print_string (core->print, core->offset,
-							core->block + 1, mylen, R_PRINT_STRING_ZEROEND);
-					}
-					core->num->value = mylen;
-				} else {
-					core->num->value = 0; // error
-				}
-			}
+			print_pascal_string (core, input + 2, l);
 			break;
 		case 'w': // "psw"
 			if (l > 0) {
