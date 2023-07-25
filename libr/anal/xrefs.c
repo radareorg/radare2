@@ -297,7 +297,7 @@ R_API RVecAnalRef *r_anal_refs_get(RAnal *anal, ut64 from) {
 R_API RVecAnalRef *r_anal_xrefs_get(RAnal *anal, ut64 to) {
 	r_return_val_if_fail (anal && anal->rm, NULL);
 
-	RVecAnalRef *anal_refs = ref_manager_get_xrefs(anal->rm, to);
+	RVecAnalRef *anal_refs = ref_manager_get_xrefs (anal->rm, to);
 	if (!anal_refs || RVecAnalRef_empty (anal_refs)) {
 		RVecAnalRef_free (anal_refs);
 		return NULL;
