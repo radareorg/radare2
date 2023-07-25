@@ -295,7 +295,6 @@ static ut64 valstr(const void *_a) {
 	return r_str_hash64 (a);
 }
 
-
 static int cmpstr(const void *_a, const void *_b) {
 	const char *a = _a, *b = _b;
 	return (int)strcmp (a, b);
