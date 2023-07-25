@@ -10,20 +10,25 @@ R_LIB_VERSION (r_sign);
 
 R_VEC_TYPE (RVecAnalRef, RAnalRef);
 
-const char *getRealRef(RCore *core, ut64 off) {
+static inline const char *get_xrefname(RCore *core, ut64 addr) {
+	RAnalFunction *f = r_anal_get_fcn_in (core->anal, addr, 0);
+	if (f) {
+		return f->name;
+	}
+	return NULL;
+}
+
+static const char *get_refname(RCore *core, ut64 addr) {
 	RFlagItem *item;
 	RListIter *iter;
 
-	const RList *list = r_flag_get_list (core->flags, off);
+	const RList *list = r_flag_get_list (core->flags, addr);
 	if (!list) {
 		return NULL;
 	}
 
 	r_list_foreach (list, iter, item) {
-		if (!item->name) {
-			continue;
-		}
-		if (strncmp (item->name, "sym.", 4)) {
+		if (!item->name || !r_str_startswith (item->name, "sym.")) {
 			continue;
 		}
 		return item->name;
