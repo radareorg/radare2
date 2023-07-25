@@ -3343,6 +3343,11 @@ const RPVector *MACH0_(load_imports)(RBinFile *bf, struct MACH0_(obj_t) *bin) {
 
 	int i, num_imports;
 	const int limit = bf->rbin->limit;
+	bin->has_canary = false;
+	bin->has_retguard = -1;
+	bin->has_sanitizers = false;
+	bin->has_blocks_ext = false;
+
 	for (i = num_imports = 0; i < nundefsym; i++) {
 		int idx = bin->dysymtab.iundefsym + i;
 		if (idx < 0 || idx >= bin->nsymtab) {
@@ -3372,11 +3377,6 @@ const RPVector *MACH0_(load_imports)(RBinFile *bf, struct MACH0_(obj_t) *bin) {
 		check_for_special_import_names (bin, import);
 		free (imp_name);
 	}
-
-	bin->has_canary = false;
-	bin->has_retguard = -1;
-	bin->has_sanitizers = false;
-	bin->has_blocks_ext = false;
 
 	if (num_imports > 0) {
 		bin->imports_by_ord_size = num_imports;
