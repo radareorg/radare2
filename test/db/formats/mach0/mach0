@@ -355,3 +355,10 @@ pf.mach0_symtab_command @ 0x00000200
 EOF
 RUN
 
+NAME=mach0 canary
+FILE=bins/mach0/ls-m1
+CMDS=i~canary
+EXPECT=<<EOF
+canary   true
+EOF
+RUN
