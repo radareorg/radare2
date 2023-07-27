@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2018 - pancake */
+/* radare - LGPL - Copyright 2009-2023 - pancake */
 
 #include <r_core.h>
 
@@ -34,13 +34,13 @@ static int readline_callback(void *_a, const char *str) {
 		a->acode = r_asm_massemble (a->core->rasm, str);
 		if (a->acode) {
 			char* hex = r_asm_code_get_hex (a->acode);
-			r_cons_printf ("[VA:%d]> %s\n", a->acode? a->acode->len: 0, str);
+			r_cons_printf ("[VA:%d]> %s (%s)\n", a->acode? a->acode->len: 0, str, hex);
 			if (a->acode && a->acode->len) {
 				r_cons_printf ("* %s\n\n", hex);
 			} else {
 				r_cons_print ("\n\n");
 			}
-			int xlen = R_MIN (strlen (hex), R_VISUAL_ASM_BUFSIZE - 2);
+			int xlen = R_MIN ((2 * a->acode->len), R_VISUAL_ASM_BUFSIZE - 2);
 			strcpy (a->codebuf, a->blockbuf);
 			memcpy (a->codebuf, hex, xlen);
 			if (xlen >= strlen (a->blockbuf)) {
@@ -53,16 +53,14 @@ static int readline_callback(void *_a, const char *str) {
 		{
 			int rows = 0;
 			int cols = r_cons_get_size (&rows);
-			core->print->cur_enabled = 1;
+			core->print->cur_enabled = true;
 			core->print->ocur = 0;
 			core->print->cur = (a->acode && a->acode->len) ? a->acode->len - 1: 0;
-			char *cmd = r_str_newf ("pd %d @x:%s @0x%"PFMT64x, rows - 11, a->codebuf, a->off);
-			char *res = r_core_cmd_str (a->core, cmd);
-			char *msg = r_str_ansi_crop (res, 0,0, cols - 2, rows - 5);
+			char *res = r_core_cmd_strf (a->core, "pd %d @x:%s @0x%08"PFMT64x, rows - 11, a->codebuf, a->off);
+			char *msg = r_str_ansi_crop (res, 0, 0, cols - 2, rows - 5);
 			r_cons_printf ("%s\n", msg);
 			free (msg);
 			free (res);
-			free (cmd);
 		}
 	}
 	r_cons_flush ();
@@ -85,7 +83,6 @@ R_API void r_core_visual_asm(RCore *core, ut64 off) {
 				R_LOG_ERROR ("Cannot write in here, check map permissions or reopen the file with oo+");
 				r_cons_any_key (NULL);
 			}
-			// r_core_cmdf (core, "wx %s @ 0x%"PFMT64x, cva.acode->buf_hex, off);
 		}
 #if 0
 	} else if (!cva.acode || cva.acode->len == 0) {

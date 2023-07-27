@@ -234,6 +234,7 @@ R_API char *r_anal_mnemonics(RAnal *anal, int id, bool json) {
 R_API bool r_anal_use(RAnal *anal, const char *name) {
 	r_return_val_if_fail (anal, false);
 #if 0
+	// R2_590
 	RListIter *it;
 	RAnalPlugin *h;
 	// r_anal plugins

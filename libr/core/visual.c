@@ -2867,7 +2867,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			core->print->cur_enabled = oce;
 			core->print->cur = occ;
 			core->print->ocur = oco;
-			if (r_config_get_i (core->config, "scr.wheel")) {
+			if (r_config_get_b (core->config, "scr.wheel")) {
 				r_cons_enable_mouse (true);
 			}
 		}

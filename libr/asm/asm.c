@@ -3,10 +3,6 @@
 // needed for spp
 #define USE_R2 1
 #include <r_core.h>
-#include <r_types.h>
-#include <r_util.h>
-#include <r_asm.h>
-#include <r_anal.h> // for RAnalBind.. but we should directly use RArch
 #include <spp/spp.h>
 #include <config.h>
 
@@ -493,17 +489,6 @@ R_API void r_asm_list_directives(void) {
 	}
 }
 
-R_API RAnalOp *r_asm_assemble2(RAsm *a, const char *str) {
-	RAnalOp *op = r_anal_op_new ();
-	r_anal_op_set_mnemonic (op, a->pc, str);
-	bool res = r_arch_session_encode (a->ecur, op, R_ARCH_SYNTAX_INTEL);
-	if (!res) {
-		r_anal_op_free (op);
-		return NULL;
-	}
-	return op;
-}
-
 // returns instruction size
 static int r_asm_assemble(RAsm *a, RAnalOp *op, const char *buf) {
 	r_return_val_if_fail (a && op && buf, 0);
@@ -515,38 +500,15 @@ static int r_asm_assemble(RAsm *a, RAnalOp *op, const char *buf) {
 	if (a->ifilter) {
 		r_parse_parse (a->ifilter, buf, b);
 	}
-
 	r_str_case (b, false); // to-lower
-#if 0
-	r_asm_op_init (op);
-	Ase ase = find_assembler (a, NULL);
-	if (!ase) {
-		ase = find_assembler (a, ".ks");
-		if (!ase) {
-			ase = find_assembler (a, ".nz");
-#if 0
-			if (!ase) {
-				ase = find_assembler (a, NULL);
-			}
-#endif
-		}
-	}
-	if (!ase && a->analb.anal) {
-		ase = NULL;
-#else
 	if (a->analb.anal) {
-#endif
-		// disassemble using the analysis plugin if found
-		//RAnalOp aop;
-		//a->analb.opinit (&aop);
 		ut8 buf[256] = {0};
 		a->analb.anal->arch->cfg->endian = a->config->endian;
 		// XXX we shuold use just RArch and ecur/dcur
 		ret = a->analb.encode (a->analb.anal, a->pc, b, buf, sizeof (buf));
 		if (ret > 0) {
 			r_anal_op_set_bytes (op, a->pc, buf, R_MIN (ret, sizeof (buf)));
-		} // else fail to assemble
-		// a->analb.opfini (&aop);
+		}
 #if 0
 	} else if (ase) {
 		/* find callback if no assembler support in current plugin */

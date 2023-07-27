@@ -123,7 +123,9 @@ R_API bool r_arch_use(RArch *arch, RArchConfig *config, const char *name) {
 	arch->session = r_arch_session (arch, config, ap);
 	if (arch->session && !arch->session->encoder) {
 		RArchPluginEncodeCallback encode = arch->session->plugin->encode;
-		if (!encode) {
+		if (encode) {
+			arch->session->encoder = arch->session;
+		} else {
 			RArchPlugin *ap = find_bestmatch (arch, config, name, true);
 			if (ap) {
 				RArchSession *es = r_arch_session (arch, config, ap);

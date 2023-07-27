@@ -38,15 +38,19 @@ R_API int r_anal_opasm(RAnal *anal, ut64 addr, const char *s, ut8 *outbuf, int o
 	int ret = 0;
 	char *oldname = NULL;
 	if (outlen > 0 && anal->arch->session && anal->uses) {
+		// no else branch and anal->uses must die imho
 		RArchSession *as = R_UNWRAP3 (anal, arch, session);
 		RArchPluginEncodeCallback encode = R_UNWRAP3 (as, plugin, encode);
 		RAnalOp *op = r_anal_op_new ();
 		if (!op) {
 			return -1;
 		}
-		if (encode) {
-			// ok we have an encoder
-		} else {
+		if (!encode && as->encoder) {
+			encode = as->encoder->plugin->encode;
+			as = as->encoder;
+		}
+		// ok we have an encoder
+		if (!encode) {
 			oldname = strdup (as->plugin->meta.name);
 			const char *arch_name = as->plugin->meta.name;
 			const char *dot = strchr (arch_name, '.');
@@ -54,7 +58,7 @@ R_API int r_anal_opasm(RAnal *anal, ut64 addr, const char *s, ut8 *outbuf, int o
 				char *an = r_str_ndup (arch_name, dot - arch_name);
 				if (r_arch_use (anal->arch, anal->arch->cfg, an)) {
 					if (anal->arch->session->plugin->encode) {
-						tmparch = NULL;// strdup (an);
+						tmparch = strdup (an);
 					} else {
 						char *an2 = r_str_newf ("%s.nz", an);
 						if (r_arch_use (anal->arch, anal->arch->cfg, an2)) {
