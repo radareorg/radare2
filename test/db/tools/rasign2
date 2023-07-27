@@ -30,9 +30,9 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=rasign2 -raa 
+NAME=rasign2 -rAA
 FILE=-
-CMDS=!!rasign2 -raa bins/elf/hello_world~main?
+CMDS=!!rasign2 -rAA bins/elf/hello_world~main?
 EXPECT=<<EOF
 17
 EOF
