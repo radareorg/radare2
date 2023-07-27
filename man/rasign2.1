@@ -1,4 +1,4 @@
-.Dd Aug 6, 2020
+.Dd Aug 6, 2023
 .Dt RASIGN2 1
 .Sh NAME
 .Nm RASIGN2
@@ -14,10 +14,10 @@ rasign2 collects signatures into a database file
 .Pp
 .Bl -tag -width Fl
 .It Fl a
-Analyze binary after loading it with RCore and use -AA to run aaaa instead of aaa.
-.It Fl A
 Treat the provided input file as an ar archive of .o files, and create
 signatures for all functions in the .o files.
+.It Fl A
+Analyze binary after loading it with RCore, this runs aa, aaa, aaaa or aaaaa, depending on how many -A you pass
 .It Fl c
 After finding all signatures, find all signature collisions.
 .It Fl f
