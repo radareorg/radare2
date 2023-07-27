@@ -886,8 +886,9 @@ R_API void r_cons_filter(void) {
 		}
 		free (input);
 	}
-	if (C->was_html) {
-		C->is_html = true;
+	if (C->tmp_html) {
+		C->is_html = C->was_html;
+		C->tmp_html = false;
 		C->was_html = false;
 	}
 }
@@ -1150,7 +1151,6 @@ R_API void r_cons_flush(void) {
 	}
 	r_cons_highlight (I->highlight);
 
-	// is_html must be a filter, not a write endpoint
 	if (r_cons_is_interactive () && !r_sandbox_enable (false)) {
 		if (I->linesleep > 0 && I->linesleep < 1000) {
 			int i = 0;
@@ -1182,6 +1182,11 @@ R_API void r_cons_flush(void) {
 	if (I->newline) {
 		eprintf ("\n");
 		I->newline = false;
+	}
+	if (C->tmp_html) {
+		C->is_html = C->was_html;
+		C->tmp_html = false;
+		C->was_html = false;
 	}
 }
 
