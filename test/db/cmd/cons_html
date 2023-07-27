@@ -1,0 +1,40 @@
+NAME=html filter
+FILE=bins/elf/crackme
+CMDS=<<EOF
+so
+pd 2
+?e --
+e scr.html=1
+pd 2
+?e --
+e scr.html=0
+pd 2
+?e --
+pd 2|H
+?e --
+pd 2
+?e --
+pd 2@e:scr.html=1
+pd 2
+?e --
+EOF
+EXPECT=<<EOF
+            0x004005c2      4989d1         mov r9, rdx
+            0x004005c5      5e             pop rsi
+--
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;0x004005c2&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4989d1&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;mov&nbsp;r9,&nbsp;rdx<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;0x004005c5&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;5e&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;pop&nbsp;rsi
+--
+            0x004005c2      4989d1         mov r9, rdx
+            0x004005c5      5e             pop rsi
+--
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;0x004005c2&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4989d1&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;mov&nbsp;r9,&nbsp;rdx<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;0x004005c5&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;5e&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;pop&nbsp;rsi
+--
+            0x004005c2      4989d1         mov r9, rdx
+            0x004005c5      5e             pop rsi
+--
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;0x004005c2&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4989d1&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;mov&nbsp;r9,&nbsp;rdx<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;0x004005c5&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;5e&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;pop&nbsp;rsi
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;0x004005c2&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4989d1&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;mov&nbsp;r9,&nbsp;rdx<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;0x004005c5&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;5e&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;pop&nbsp;rsi
+--
+EOF
+RUN
+

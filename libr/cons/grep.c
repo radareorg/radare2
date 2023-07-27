@@ -5,7 +5,7 @@
 #include <r_util/r_json.h>
 #include <sdb/sdb.h>
 
-// R2R db/cmd/feat_grep
+// R2R db/cmd/cons_grep
 
 #define I(x) r_cons_singleton ()->x
 

@@ -4182,8 +4182,9 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon, bool *tmpseek
 				} else if (ptr[1] == 'H') { // "|H"
 					scr_html = r_config_get_b (core->config, "scr.html");
 					r_config_set_b (core->config, "scr.html", true);
+					r_cons_context ()->tmp_html = true;
 					r_cons_context ()->is_html = true;
-					r_cons_context ()->was_html = false;
+					r_cons_context ()->was_html = scr_html;
 					return r_core_cmd0 (core, cmd);
 				} else if (!ptr[1] || !strcmp (ptr + 1, "T")) { // "|T"
 					scr_html = r_config_get_b (core->config, "scr.html");

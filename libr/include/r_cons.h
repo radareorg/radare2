@@ -443,6 +443,7 @@ typedef struct r_cons_context_t {
 	int sorted_column; // -1
 	bool demo;
 	bool is_html;
+	bool tmp_html;
 	bool was_html;
 	bool grep_color;
 	bool grep_highlight;
