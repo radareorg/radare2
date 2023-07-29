@@ -908,20 +908,24 @@ R_API void r_cons_set_utf8(bool b);
 R_API void r_cons_grep(const char *grep);
 
 /* output */
+// DEPRECATE R2_600
+
+#define r_cons_strcat r_cons_print
+#define r_cons_strcat_at r_cons_print_at
+#define r_cons_strcat_justify r_cons_print_justify
+
 R_API int r_cons_printf(const char *format, ...) R_PRINTF_CHECK(1, 2);
 R_API void r_cons_printf_list(const char *format, va_list ap);
 R_API void r_cons_print(const char *str);
-R_API void r_cons_strcat_at(const char *str, int x, char y, int w, int h);
+R_API void r_cons_print_at(const char *str, int x, char y, int w, int h);
 R_API void r_cons_println(const char* str);
-
-R_API void r_cons_strcat_justify(const char *str, int j, char c);
+R_API void r_cons_print_justify(const char *str, int j, char c);
 R_API void r_cons_printat(const char *str, int x, char y);
 R_API int r_cons_write(const char *str, int len);
 R_API void r_cons_newline(void);
 R_API void r_cons_filter(void);
 R_API void r_cons_flush(void);
 R_API char *r_cons_drain(void);
-R_API void r_cons_print_at(char *s, int x, int y, int w, int h);
 R_API void r_cons_print_fps(int col);
 R_API void r_cons_last(void);
 R_API int r_cons_less_str(const char *str, const char *exitkeys);

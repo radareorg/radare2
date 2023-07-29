@@ -2364,7 +2364,7 @@ static void ds_show_comments_right(RDisasmState *ds) {
 				r_cons_print (ds->pal_comment);
 			}
 			r_cons_print ("  ;  ");
-			r_cons_strcat_justify (item->comment, mycols, ';');
+			r_cons_print_justify (item->comment, mycols, ';');
 			ds_newline (ds);
 			if (ds->show_color) {
 				ds_print_color_reset (ds);
@@ -5580,7 +5580,7 @@ static void ds_print_comments_right(RDisasmState *ds) {
 					}
 				}
 			}
-			//r_cons_strcat_justify (comment, strlen (ds->refline) + 5, ';');
+			// r_cons_print_justify (comment, strlen (ds->refline) + 5, ';');
 			ds_print_color_reset (ds);
 			R_FREE (ds->comment);
 		}

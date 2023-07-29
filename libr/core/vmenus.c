@@ -1849,7 +1849,7 @@ R_API int r_core_visual_view_rop(RCore *core) {
 				// get comment
 				char *output = r_core_cmd_strf (core, "piu 10 @ 0x%08"PFMT64x, addr + delta);
 				if (output) {
-					r_cons_strcat_at (output, 0, 10, scr_w, 10);
+					r_cons_print_at (output, 0, 10, scr_w, 10);
 					free (output);
 				}
 			}

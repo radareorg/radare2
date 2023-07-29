@@ -1534,7 +1534,7 @@ static void cmd_print_gadget(RCore *core, const char *_input) {
 		r_list_foreach (core->gadgets, iter, g) {
 			char *res = r_core_cmd_str (core, g->cmd);
 			if (res) {
-				r_cons_strcat_at (res, g->x, g->y, g->w, g->h);
+				r_cons_print_at (res, g->x, g->y, g->w, g->h);
 				free (res);
 			}
 		}

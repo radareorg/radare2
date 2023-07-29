@@ -269,7 +269,7 @@ R_API void r_cons_printat(const char *str, int x, char y) {
 	}
 }
 
-R_API void r_cons_strcat_justify(const char *str, int j, char c) {
+R_API void r_cons_print_justify(const char *str, int j, char c) {
 	int i, o, len;
 	for (o = i = len = 0; str[i]; i++, len++) {
 		if (str[i] == '\n') {
@@ -291,7 +291,48 @@ R_API void r_cons_strcat_justify(const char *str, int j, char c) {
 	}
 }
 
-R_API void r_cons_strcat_at(const char *_str, int x, char y, int w, int h) {
+
+#if 0
+// TODO: review and remove
+R_API void r_cons_print_at(char *s, int x, int y, int w, int h) {
+	if (w < 0) {
+		w = 0;
+	}
+	if (h < 0) {
+		h = 0;
+	}
+	while (s) {
+		int pos = 0;
+		int ochar = s[pos];
+		char *n = strchr (s, '\n');
+		if (n) {
+			*n = 0;
+			if (w && r_str_ansi_len (s) > w) {
+				const char *p = r_str_ansi_chrn (s, w);
+				if (p) {
+					pos = p - s;
+					ochar = s[pos];
+					s[pos] = 0;
+				}
+			}
+		}
+		r_cons_gotoxy (x, y);
+		r_cons_printf ("%s", s);
+		if (n) {
+			s[pos] = ochar;
+			*n = '\n';
+			s = n + 1;
+		} else {
+			break;
+		}
+		if (h && y > h) {
+			break;
+		}
+		y++;
+	}
+}
+#endif
+R_API void r_cons_print_at(const char *_str, int x, char y, int w, int h) {
 	int i, o, len;
 	int cols = 0;
 	int rows = 0;
@@ -1213,44 +1254,6 @@ R_API void r_cons_visual_flush(void) {
 	}
 }
 
-R_API void r_cons_print_at(char *s, int x, int y, int w, int h) {
-	if (w < 0) {
-		w = 0;
-	}
-	if (h < 0) {
-		h = 0;
-	}
-	while (s) {
-		int pos = 0;
-		int ochar = s[pos];
-		char *n = strchr (s, '\n');
-		if (n) {
-			*n = 0;
-			if (w && r_str_ansi_len (s) > w) {
-				const char *p = r_str_ansi_chrn (s, w);
-				if (p) {
-					pos = p - s;
-					ochar = s[pos];
-					s[pos] = 0;
-				}
-			}
-		}
-		r_cons_gotoxy (x, y);
-		r_cons_printf ("%s", s);
-		if (n) {
-			s[pos] = ochar;
-			*n = '\n';
-			s = n + 1;
-		} else {
-			break;
-		}
-		if (h && y > h) {
-			break;
-		}
-		y++;
-	}
-}
-
 R_API void r_cons_print_fps(int col) {
 	int fps = 0, w = r_cons_get_size (NULL);
 	fps = 0;
@@ -1958,7 +1961,7 @@ R_API void r_cons_column(int c) {
 	b[C->buffer_len] = 0;
 	r_cons_reset ();
 	// align current buffer N chars right
-	r_cons_strcat_justify (b, c, 0);
+	r_cons_print_justify (b, c, 0);
 	r_cons_gotoxy (0, 0);
 	free (b);
 }
