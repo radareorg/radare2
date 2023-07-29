@@ -463,7 +463,7 @@ static RList *filter_kexts(RKernelCacheObj *obj, RBinFile *bf) {
 	}
 
 	if (!is_sorted) {
-		eprintf ("SORTING KEXTs...\n");
+		R_LOG_DEBUG ("Sorting KEXTs");
 		r_list_sort (kexts, kexts_sort_vaddr_func);
 	}
 	return kexts;
@@ -1076,10 +1076,9 @@ static RList *sections(RBinFile *bf) {
 	int nsegs = R_MIN (kobj->mach0->nsegs, 128);
 	int i;
 	for (i = 0; i < nsegs; i++) {
-		RBinSection *ptr;
 		char segname[17];
-
-		if (!(ptr = R_NEW0 (RBinSection))) {
+		RBinSection *ptr = R_NEW0 (RBinSection);
+		if (!ptr) {
 			break;
 		}
 
@@ -1136,7 +1135,7 @@ static void sections_from_mach0(RList *ret, struct MACH0_(obj_t) *mach0, RBinFil
 		ptr->size = section->size;
 		ptr->vsize = section->vsize;
 		ptr->paddr = section->paddr + bf->o->boffset + paddr;
-		ptr->vaddr = K_PPTR (section->vaddr);
+		ptr->vaddr = K_PPTR (section->vaddr) + 0x1c;
 		if (!ptr->vaddr) {
 			ptr->vaddr = ptr->paddr;
 		}
@@ -1771,7 +1770,7 @@ static RBinInfo *info(RBinFile *bf) {
 
 static ut64 baddr(RBinFile *bf) {
 	if (!bf || !bf->o || !bf->o->bin_obj) {
-		return 8LL;
+		return 0; // 8LL; // w t f
 	}
 	RKernelCacheObj *obj = (RKernelCacheObj*) bf->o->bin_obj;
 	return MACH0_(get_baddr)(obj->mach0);
