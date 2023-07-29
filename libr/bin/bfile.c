@@ -1053,7 +1053,7 @@ R_API RList *r_bin_file_set_hashes(RBin *bin, RList/*<RBinFileHash*/ *new_hashes
 	return prev_hashes;
 }
 
-R_IPI RBinClass *r_bin_class_new(const char *name, const char *super, int view) {
+R_API RBinClass *r_bin_class_new(const char *name, const char *super, int view) {
 	r_return_val_if_fail (name, NULL);
 	RBinClass *c = R_NEW0 (RBinClass);
 	if (c) {
@@ -1069,7 +1069,7 @@ R_IPI RBinClass *r_bin_class_new(const char *name, const char *super, int view) 
 	return c;
 }
 
-R_IPI void r_bin_class_free(RBinClass *k) {
+R_API void r_bin_class_free(RBinClass *k) {
 	if (k) {
 		free (k->name);
 		r_list_free (k->super);
