@@ -1,7 +1,5 @@
-/* radare - LGPL - Copyright 2009-2022 - pancake */
+/* radare - LGPL - Copyright 2009-2023 - pancake */
 
-#include "r_config.h"
-#include "r_cons.h"
 #include "r_core.h"
 
 bool ranal2_list(RCore *core, const char *arch, int fmt);
@@ -401,6 +399,9 @@ static int cmd_plugins(void *data, const char *input) {
 		} else {
 			r_core_cmd_call (core, "eco");
 		}
+		break;
+	case 'b': // "Lb"
+		r_bin_list (core->bin, NULL, 0);
 		break;
 	case 'm': // "Lm"
 		if (input[1] == 'j') {
