@@ -1,5 +1,6 @@
 /* radare - LGPL - Copyright 2008-2023 - nibble, pancake, alvaro_fe */
 
+// R2R db/formats/elf/versioninfo
 #define R_LOG_ORIGIN "elf"
 #include <r_types.h>
 #include <r_util.h>
@@ -1257,12 +1258,25 @@ typedef struct process_verneed_state_t {
 	Elf_(Shdr) *shdr;
 } ProcessVerneedState;
 
+#define USE_SINGLE_SDB 0
+#if USE_SINGLE_SDB
+static inline bool _process_verneed_state(ELFOBJ *eo, ProcessVerneedState *state) {
+	// R2_590
+	// TODO: rewrite the function to use only one SDB instead of 65000 with mutated.
+}
+#else
+
 static inline bool _process_verneed_state(ELFOBJ *eo, ProcessVerneedState *state) {
 	Elf_(Shdr) *shdr = state->shdr;
 	ut8* need = state->need;
 	ut8 *end = need + shdr->sh_size;
 	int cnt;
 	ut64 i;
+	ut8 *fend = need - shdr->sh_offset + eo->size;
+	end = R_MIN (fend, end);
+
+	char key[32] = {0};
+
 	//XXX we should use DT_VERNEEDNUM instead of sh_info
 	//TODO https://sourceware.org/ml/binutils/2014-11/msg00353.html
 	for (i = 0, cnt = 0; cnt < shdr->sh_info; cnt++) {
@@ -1308,8 +1322,8 @@ static inline bool _process_verneed_state(ELFOBJ *eo, ProcessVerneedState *state
 		ut32 vn_cnt = entry->vn_cnt;
 		int isum = i + entry->vn_aux;
 		for (j = 0; j < vn_cnt && vstart + sizeof (Elf_(Vernaux)) <= end; j++) {
-			Elf_(Vernaux) *aux = NULL;
 			Elf_(Vernaux) vaux = {0};
+			Elf_(Vernaux) *aux = NULL;
 			aux = (Elf_(Vernaux)*)&vaux;
 			int k = 0;
 			vaux.vna_hash = READ32 (vstart, k);
@@ -1321,6 +1335,7 @@ static inline bool _process_verneed_state(ELFOBJ *eo, ProcessVerneedState *state
 				sdb_free (sdb_version);
 				return false;
 			}
+			// XXX this is awfully slow and unnecessary
 			Sdb *sdb_vernaux = sdb_new0 ();
 			if (!sdb_vernaux) {
 				sdb_free (sdb_vernaux);
@@ -1342,14 +1357,11 @@ static inline bool _process_verneed_state(ELFOBJ *eo, ProcessVerneedState *state
 			char key[32] = {0};
 			snprintf (key, sizeof (key), "vernaux%d", j);
 			sdb_ns_set (sdb_version, key, sdb_vernaux);
+			if ((int)aux->vna_next < 1) {
+				break;
+			}
 		}
 
-		if ((int)entry->vn_next < 0) {
-			R_LOG_DEBUG ("Invalid vn_next at 0x%08" PFMT64x, (ut64)shdr->sh_offset);
-			break;
-		}
-
-		char key[32] = {0};
 		snprintf (key, sizeof (key), "version%d", cnt);
 		sdb_ns_set (state->sdb, key, sdb_version);
 
@@ -1362,6 +1374,7 @@ static inline bool _process_verneed_state(ELFOBJ *eo, ProcessVerneedState *state
 
 	return true;
 }
+#endif
 
 static Sdb *store_versioninfo_gnu_verneed(ELFOBJ *eo, Elf_(Shdr) *shdr, int sz) {
 	if (!eo || !eo->dynstr) {
