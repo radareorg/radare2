@@ -144,7 +144,6 @@ book](https://book.rada.re), here are some methods to contact us:
 * [Discord server](https://discord.gg/YBey7CR9jf)
 
 * Mastodon: [@radareorg](https://infosec.exchange/@radareorg)
-* Twitter: [@radareorg](https://twitter.com/radareorg)
 * Website: [https://www.radare.org/](https://www.radare.org/)
 
 # Supported Platforms
