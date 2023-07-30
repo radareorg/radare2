@@ -6,6 +6,8 @@ cd "$(dirname $0)"/..
 (git grep -n -e '++[a-z][a-z]*[);]' libr | grep -v arch) && exit 1
 (git grep table_tostring libr | grep -e printf -e cons_print) && exit 1
 
+(git grep 'shuold' libr) && exit 1
+
 # Bad: static void foo() {
 # Good: static void foo(void) {
 # NAME=use void on functions without parameters
