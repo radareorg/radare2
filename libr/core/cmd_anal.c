@@ -289,6 +289,13 @@ static RCoreHelpMessage help_msg_ac = {
 	NULL
 };
 
+static RCoreHelpMessage help_msg_acolon = {
+	"Usage:", "a:", "[plugin-command]",
+	"a:", "", "list the analysis plugins",
+	"a:", "a2f", "run the command associated with the 'a2f' analysis plugin",
+	NULL
+};
+
 static RCoreHelpMessage help_msg_ad = {
 	"Usage:", "ad", "[kt] [...]",
 	"ad", " [N] [D]", "analyze N data words at D depth",
@@ -13763,8 +13770,18 @@ static int cmd_anal(void *data, const char *input) {
 	case 'h': // "ah"
 		cmd_anal_hint (core, input + 1);
 		break;
-	case ':':
-		r_anal_cmd (core->anal, r_str_trim_head_ro (input + 1));
+	case ':': // "a:"
+		if (input[1] == '?') {
+			r_core_cmd_help (core, help_msg_acolon);
+		} else if (input[1] == 'l' || !input[1]) {
+			RListIter *iter;
+			RAnalPlugin *ap;
+			r_list_foreach (core->anal->plugins, iter, ap) {
+				r_cons_println (ap->meta.name);
+			}
+		} else {
+			r_anal_cmd (core->anal, r_str_trim_head_ro (input + 1));
+		}
 		break;
 	case 'j': // "aj"
 		r_core_cmd_call (core, "aflj");
