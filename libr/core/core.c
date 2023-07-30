@@ -227,6 +227,10 @@ R_API void r_core_set_asmqjmps(RCore *core, char *str, size_t len, int pos) {
 	}
 }
 
+static void core_help(RCore *core, RCoreHelpMessage help) {
+	r_core_cmd_help (core, help);
+}
+
 static void setab(RCore *core, const char *arch, int bits) {
 	if (arch) {
 		r_config_set (core->config, "asm.arch", arch);
@@ -313,6 +317,7 @@ R_API int r_core_bind(RCore *core, RCoreBind *bnd) {
 	bnd->cmdf = (RCoreCmdF)r_core_cmdf;
 	bnd->cmdstr = (RCoreCmdStr)r_core_cmd_str;
 	bnd->cmdstrf = (RCoreCmdStrF)r_core_cmd_strf;
+	bnd->help = (RCoreBindHelp)core_help;
 	bnd->puts = (RCorePuts)r_cons_print;
 	bnd->setab = (RCoreSetArchBits)setab;
 	bnd->getName = (RCoreGetName)getName;
