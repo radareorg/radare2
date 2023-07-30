@@ -12,6 +12,7 @@ typedef int (*RCoreCmdF)(void *user, const char *fmt, ...);
 typedef int (*RCoreDebugBpHit)(void *core, void *bp);
 typedef void (*RCoreDebugSyscallHit)(void *core);
 typedef char* (*RCoreCmdStr)(void *core, const char *cmd);
+typedef char* (*RCoreBindHelp)(void *core, struct {}*help); // const char *cmd);
 typedef char* (*RCoreCmdStrF)(void *core, const char *cmd, ...);
 typedef void (*RCorePuts)(const char *cmd);
 typedef void (*RCoreSetArchBits)(void *core, const char *arch, int bits);
@@ -29,8 +30,9 @@ typedef struct r_core_bind_t {
 	void *core;
 	RCoreCmd cmd;
 	RCoreCmdF cmdf;
-	RCoreCmdStr cmdstr;
+	RCoreCmdStr cmdstr; // should be cmdStr if we care about snake
 	RCoreCmdStrF cmdstrf;
+	RCoreBindHelp help;
 	RCorePuts puts;
 	RCoreDebugBpHit bphit;
 	RCoreDebugSyscallHit syshit;
@@ -38,7 +40,7 @@ typedef struct r_core_bind_t {
 	RCoreGetName getName;
 	RCoreGetNameDelta getNameDelta;
 	RCoreSeekArchBits archbits;
-	RCoreConfigGetI cfggeti;
+	RCoreConfigGetI cfggeti; // inconsistent flat vs snake below
 	RCoreConfigGet cfgGet;
 	RCoreNumGet numGet;
 	RCoreIsMapped isMapped;
