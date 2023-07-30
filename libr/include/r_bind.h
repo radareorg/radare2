@@ -7,12 +7,16 @@
 extern "C" {
 #endif
 
+#ifndef R2_CONS_H
+typedef const char * const RCoreHelpMessage[];
+#endif
+
 typedef int (*RCoreCmd)(void *core, const char *cmd);
 typedef int (*RCoreCmdF)(void *user, const char *fmt, ...);
 typedef int (*RCoreDebugBpHit)(void *core, void *bp);
 typedef void (*RCoreDebugSyscallHit)(void *core);
 typedef char* (*RCoreCmdStr)(void *core, const char *cmd);
-typedef char* (*RCoreBindHelp)(void *core, struct {}*help); // const char *cmd);
+typedef char* (*RCoreBindHelp)(void *core, RCoreHelpMessage *help);
 typedef char* (*RCoreCmdStrF)(void *core, const char *cmd, ...);
 typedef void (*RCorePuts)(const char *cmd);
 typedef void (*RCoreSetArchBits)(void *core, const char *arch, int bits);

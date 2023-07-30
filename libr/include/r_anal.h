@@ -1554,6 +1554,7 @@ R_API bool r_anal_tid_select(RAnal *anal, int tid);
 
 /* plugin pointers */
 extern RAnalPlugin r_anal_plugin_null;
+extern RAnalPlugin r_anal_plugin_a2f;
 
 #ifdef __cplusplus
 }
