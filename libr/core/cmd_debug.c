@@ -553,7 +553,7 @@ struct trace_node {
 	int refs;
 };
 
-// XXX those tmp files are never removed and we shuoldnt use files for this
+// XXX those tmp files are never removed and we shouldnt use files for this
 static void setRarunProfileString(RCore *core, const char *str) {
 	char *file = r_file_temp ("rarun2");
 	char *s = strdup (str);

@@ -921,7 +921,7 @@ R_API int r_debug_step_soft(RDebug *dbg) {
 			bpi->swstep = true;
 		}
 	}
-	// XXX this causes an stack exhaustion problem so it shuold be done by the caller
+	// XXX this causes an stack exhaustion problem so it should be done by the caller
 	bool ret = r_debug_continue (dbg);
 
 	for (i = 0; i < br; i++) {
