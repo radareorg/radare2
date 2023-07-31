@@ -504,7 +504,7 @@ static int r_asm_assemble(RAsm *a, RAnalOp *op, const char *buf) {
 	if (a->analb.anal) {
 		ut8 buf[256] = {0};
 		a->analb.anal->arch->cfg->endian = a->config->endian;
-		// XXX we shuold use just RArch and ecur/dcur
+		// XXX we should use just RArch and ecur/dcur
 		ret = a->analb.encode (a->analb.anal, a->pc, b, buf, sizeof (buf));
 		if (ret > 0) {
 			r_anal_op_set_bytes (op, a->pc, buf, R_MIN (ret, sizeof (buf)));
