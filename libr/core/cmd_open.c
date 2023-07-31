@@ -1339,8 +1339,8 @@ static void __rebase_everything(RCore *core, RList *old_sections, ut64 old_base)
 	// better to expose an API that rebases xrefs by adding diff to addr, at (no free/init needed)
 	RVecAnalRef *old_refs = r_anal_refs_get (core->anal, UT64_MAX);
 	RVecAnalRef *old_xrefs = r_anal_xrefs_get (core->anal, UT64_MAX);
-	r_anal_xrefs_free (core->anal);
-	r_anal_xrefs_init (core->anal);
+	// r_anal_xrefs_free (core->anal);
+	r_anal_xrefs_init (core->anal); // init already calls free
 
 	if (old_refs) {
 		RAnalRef *ref;
