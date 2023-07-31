@@ -35,6 +35,7 @@ R_API char *r_cons_html_filter(const char *ptr, int *newlen) {
 	bool inv = false;
 	char text_color[16] = {0};
 	char background_color[16] = {0};
+	bool has_bold = false;
 	bool has_set = false;
 	bool need_to_set = false;
 	bool need_to_clear = false;
@@ -67,6 +68,11 @@ R_API char *r_cons_html_filter(const char *ptr, int *newlen) {
 				if (inv) {
 					r_strbuf_append (res, first_style? " style='": ";");
 					r_strbuf_append (res, "text-decoration:underline overline");
+					first_style = false;
+				}
+				if (has_bold) {
+					r_strbuf_append (res, first_style? " style='": ";");
+					r_strbuf_append (res, "font-weight:bold");
 					first_style = false;
 				}
 				r_strbuf_append (res, first_style? ">": "'>");
@@ -129,6 +135,9 @@ R_API char *r_cons_html_filter(const char *ptr, int *newlen) {
 				ptr += 2;
 				esc = 0;
 				str = ptr;
+			} else if (ptr[0] == '1') {
+				// ignore bold
+				has_bold = true;
 			} else if (!memcmp (ptr, "2K", 2)) {
 				ptr += 2;
 				esc = 0;
