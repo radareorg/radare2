@@ -63,15 +63,6 @@ typedef struct {
 	/* followed by dynamic content as located by offset fields above */
 } CodeDirectory;
 
-static inline void r_bin_section_fini(RBinSection *bs) {
-	if (bs) {
-		free (bs->name);
-		free (bs->format);
-	}
-}
-
-R_VEC_TYPE_WITH_FINI(RVecSegment, RBinSection, r_bin_section_fini);
-
 // OMG; THIS SHOULD BE KILLED; this var exposes the local native endian, which is completely unnecessary
 // USE THIS: int ws = bf->o->info->big_endian;
 #define mach0_endian 1
@@ -2453,7 +2444,7 @@ static const char *macho_section_type_tostring(int flags) {
 	return "";
 }
 
-static inline RVecSegment *MACH0_(get_segments_vec)(RBinFile *bf, struct MACH0_(obj_t) *mo) {
+RVecSegment *MACH0_(get_segments_vec)(RBinFile *bf, struct MACH0_(obj_t) *mo) {
 	if (mo->segments_vec) {
 		return mo->segments_vec;
 	}
@@ -3234,7 +3225,7 @@ static inline bool is_debug_segment(const RBinSection *s, const void *user) {
 }
 
 static inline bool _check_if_debug_build(RBinFile *bf, struct MACH0_(obj_t) *mo) {
-	return RVecSegment_find (bf->o->segments_vec, NULL, is_debug_segment) != NULL;
+	return RVecSegment_find (mo->segments_vec, NULL, is_debug_segment) != NULL;
 }
 #else
 static bool _check_if_debug_build(RBinFile *bf, struct MACH0_(obj_t) *mo) {
