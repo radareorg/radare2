@@ -30,7 +30,7 @@ static int defaultCycles(RAnalOp *op) {
 	}
 }
 
-// R2R db/asm/arm.v35_64 db/asm/arm.gnu_32
+// R2R db/asm/arm.v35_64 db/asm/arm.gnu_32 db/anal/arm
 // XXX deprecate!! or at least call r_arch_bath tradition
 R_API int r_anal_opasm(RAnal *anal, ut64 addr, const char *s, ut8 *outbuf, int outlen) {
 	// XXX this is a hack because RArch needs to hold two pointers one for the encoder and one for the decoder plugins (optionally)
@@ -65,7 +65,7 @@ R_API int r_anal_opasm(RAnal *anal, ut64 addr, const char *s, ut8 *outbuf, int o
 						if (r_arch_use (anal->arch, anal->arch->cfg, an2)) {
 							encode = anal->arch->session->plugin->encode;
 							//r_arch_use (anal->arch, anal->arch->cfg, oldname);
-							R_FREE (oldname);
+							// R_FREE (oldname);
 							as = R_UNWRAP3 (anal, arch, session);
 							tmparch = an2;
 						} else {

@@ -1,3 +1,28 @@
+NAME=arm asm disasm
+FILE=malloc://32
+CMDS=<<EOF
+-b 32
+-a arm.gnu
+pd 5
+wa nop
+?e --
+pd 5
+EOF
+EXPECT=<<EOF
+            0x00000000      00000000       andeq r0, r0, r0
+            0x00000004      00000000       andeq r0, r0, r0
+            0x00000008      00000000       andeq r0, r0, r0
+            0x0000000c      00000000       andeq r0, r0, r0
+            0x00000010      00000000       andeq r0, r0, r0
+--
+            0x00000000      0000a0e1       nop   ; (mov r0, r0)
+            0x00000004      00000000       andeq r0, r0, r0
+            0x00000008      00000000       andeq r0, r0, r0
+            0x0000000c      00000000       andeq r0, r0, r0
+            0x00000010      00000000       andeq r0, r0, r0
+EOF
+RUN
+
 NAME=noreturn errno
 FILE=malloc://32
 CMDS=<<EOF
