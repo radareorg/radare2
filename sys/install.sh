@@ -139,6 +139,16 @@ else
 	fi
 fi
 
+# handle home installations of capstone via r2pm
+export PKG_CONFIG_PATH="${HOME}/.local/share/radare2/prefix/lib/pkgconfig/"
+if [ -d "$HOME/.local/share/radare2/prefix/include/capstone" ]; then
+	# capstone's pkg-config is wrong :_____
+	# export CFLAGS="$(pkg-config --cflags capstone)"
+	# export LDFLAGS="$(pkg-config --libs capstone)"
+	export CFLAGS="-I$HOME/.local/share/radare2/prefix/include"
+	export LDFLAGS="-L$HOME/.local/share/radare2/prefix/lib"
+fi
+
 NEED_CAPSTONE=1
 pkg-config --cflags capstone > /dev/null 2>&1
 if [ $? = 0 ]; then
