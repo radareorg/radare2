@@ -179,17 +179,12 @@ R_API bool r_debug_trace_pc(RDebug *dbg, ut64 pc) {
 	return true;
 }
 
+static R_TH_LOCAL ut64 oldpc = UT64_MAX; // XXX Must trace the previously traced instruction
+
 R_API void r_debug_trace_op(RDebug *dbg, RAnalOp *op) {
 	r_return_if_fail (dbg && dbg->trace);
-	static ut64 oldpc = UT64_MAX; // Must trace the previously traced instruction
 	if (dbg->trace->enabled) {
-		if (dbg->anal->esil) {
-			r_esil_trace_op (dbg->anal->esil, op);
-		} else {
-			if (dbg->verbose) {
-				R_LOG_ERROR ("Run aeim to get dbg->anal->esil initialized");
-			}
-		}
+		r_esil_trace_op (dbg->anal->esil, op);
 		if (oldpc != UT64_MAX) {
 			r_debug_trace_add (dbg, oldpc, op->size); //XXX review what this line really do
 		}

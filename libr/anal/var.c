@@ -199,11 +199,13 @@ R_API bool r_anal_function_set_var_prot(RAnalFunction *fcn, RList *l) {
 	return true;
 }
 
+// TODO: add an owned variant for this because we already own the type name before calling this
 R_API void r_anal_var_set_type(RAnalVar *var, const char * const type) {
 	char *nt = strdup (type);
 	if (nt) {
 		free (var->type);
 		var->type = nt;
+		R_LOG_DEBUG ("set type %s for %s", type, var->name);
 		shadow_var_struct_members (var);
 	}
 }

@@ -76,7 +76,7 @@ typedef struct r_esil_change_mem_t {
 } REsilMemChange;
 
 typedef struct {
-	const char *reg;
+	const char *name;
 	ut64 value;
 	// TODO: size
 } REsilRegAccess;
@@ -123,6 +123,7 @@ typedef struct r_esil_trace_t {
 	REsilTraceDB db;
 	int idx;
 	int end_idx;
+	int cur_idx;
 	HtUP *registers;
 	HtUP *memory;
 	RRegArena *arena[R_REG_TYPE_LAST];
