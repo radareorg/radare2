@@ -144,10 +144,9 @@ static mach0_ut va2pa(mach0_ut p, ut32 *offset, ut32 *left, RBinFile *bf) {
 		return bin->va2pa (p, offset, left, bf);
 	}
 	mach0_ut addr = p;
-	RList *sections = MACH0_(get_segments) (bf, bin);  // XXX slow, don't allocate each time
-	RListIter *iter;
+	RVecSegment *sections = MACH0_(get_segments_vec) (bf, bin);  // don't free, cached by bin
 	RBinSection *s;
-	r_list_foreach (sections, iter, s) {
+	R_VEC_FOREACH (sections, s) {
 		if (addr >= s->vaddr && addr < s->vaddr + s->vsize) {
 			if (offset) {
 				*offset = addr - s->vaddr;
@@ -155,11 +154,10 @@ static mach0_ut va2pa(mach0_ut p, ut32 *offset, ut32 *left, RBinFile *bf) {
 			if (left) {
 				*left = s->vsize - (addr - s->vaddr);
 			}
-			r = (s->paddr - obj->boffset  + (addr - s->vaddr));
+			r = s->paddr - obj->boffset + (addr - s->vaddr);
 			break;
 		}
 	}
-	r_list_free (sections);
 	return r;
 }
 

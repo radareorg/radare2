@@ -100,7 +100,14 @@ struct MACH0_(opts_t) {
 	RBinFile *bf;
 };
 
-R_VEC_FORWARD_DECLARE(RVecSegment);
+static inline void r_bin_section_fini(RBinSection *bs) {
+	if (bs) {
+		free (bs->name);
+		free (bs->format);
+	}
+}
+
+R_VEC_TYPE_WITH_FINI(RVecSegment, RBinSection, r_bin_section_fini);
 
 struct MACH0_(obj_t) {
 	struct MACH0_(mach_header) hdr;
@@ -251,6 +258,7 @@ struct MACH0_(obj_t) *MACH0_(new_buf)(RBuffer *buf, struct MACH0_(opts_t) *optio
 void *MACH0_(mach0_free)(struct MACH0_(obj_t) *bin);
 const RVector *MACH0_(load_sections)(struct MACH0_(obj_t) *mo);
 RList *MACH0_(get_segments)(RBinFile *bf, struct MACH0_(obj_t) *mo);
+RVecSegment *MACH0_(get_segments_vec)(RBinFile *bf, struct MACH0_(obj_t) *mo);
 const bool MACH0_(load_symbols)(struct MACH0_(obj_t) *mo);
 void MACH0_(pull_symbols)(struct MACH0_(obj_t) *mo, RBinSymbolCallback cb, void *user);
 const RPVector *MACH0_(load_imports)(RBinFile* bf, struct MACH0_(obj_t) *bin);
