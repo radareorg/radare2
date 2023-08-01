@@ -78,13 +78,6 @@ static const char *etrace_regwrite(REsilTrace *etrace, ut32 idx) {
 	return NULL;
 }
 
-static int etrace_loopcount(REsilTrace *etrace, ut64 addr) {
-	return 0;
-}
-
-static void etrace_loopcount_increment(REsilTrace *etrace, ut64 addr) {
-}
-
 /// END ///////////////////// esil trace helpers ///////////////////////
 
 static bool anal_emul_init(RCore *core, RConfigHold *hc, RDebugTrace **dt, REsilTrace **et) {
@@ -670,12 +663,12 @@ repeat:
 			}
 			// r_strf_var (addr_count, 32, "0x%"PFMT64x".count", addr);
 			// sdb_num_get (anal->esil->trace->db, addr_count, 0);
-			const int loop_count = etrace_loopcount (etrace, addr);
+			const int loop_count = r_esil_trace_loopcount (etrace, addr);
 			if (loop_count > LOOP_MAX || aop.type == R_ANAL_OP_TYPE_RET) {
 				r_anal_op_fini (&aop);
 				break;
 			}
-			etrace_loopcount_increment (etrace, addr);
+			r_esil_trace_loopcount_increment (etrace, addr);
 			// sdb_num_set (anal->esil->trace->db, addr_count, loop_count + 1, 0);
 			if (r_anal_op_nonlinear (aop.type)) {   // skip the instr
 				// just analyze statically the instruction if its a call, dont emulate it

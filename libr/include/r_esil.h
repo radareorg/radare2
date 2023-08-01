@@ -5,6 +5,7 @@
 
 #include <r_reg.h>
 #include <r_vec.h>
+#include <sdb/ht_uu.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -115,6 +116,7 @@ R_VEC_TYPE_WITH_FINI(RVecAccess, REsilTraceAccess, fini_access);
 typedef struct {
 	RVecTraceOp ops;
 	RVecAccess accesses;
+	HtUU *loop_counts;
 } REsilTraceDB;
 
 typedef struct r_esil_trace_t {
@@ -387,6 +389,8 @@ R_API void r_esil_trace_op(REsil *esil, struct r_anal_op_t *op);
 R_API void r_esil_trace_list(REsil *esil, int format);
 R_API void r_esil_trace_show(REsil *esil, int idx, int format);
 R_API void r_esil_trace_restore(REsil *esil, int idx);
+R_API ut64 r_esil_trace_loopcount(REsilTrace *etrace, ut64 addr);
+R_API void r_esil_trace_loopcount_increment(REsilTrace *etrace, ut64 addr);
 
 extern REsilPlugin r_esil_plugin_dummy;
 
