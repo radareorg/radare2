@@ -62,6 +62,10 @@ R_API int r_anal_opasm(RAnal *anal, ut64 addr, const char *s, ut8 *outbuf, int o
 					} else {
 						char *an2 = r_str_newf ("%s.nz", an);
 						if (r_arch_use (anal->arch, anal->arch->cfg, an2)) {
+							encode = anal->arch->session->plugin->encode;
+							r_arch_use (anal->arch, anal->arch->cfg, oldname);
+							R_FREE (oldname);
+							as = R_UNWRAP3 (anal, arch, session);
 							tmparch = an2;
 						} else {
 							free (an2);
