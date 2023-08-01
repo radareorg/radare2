@@ -174,7 +174,7 @@ extern "C" {
 		r_return_if_fail (vec); \
 		memset (vec, 0, sizeof (vec_type)); \
 	} \
-	static inline R_MAYBE_UNUSED R_MUSTUSE vec_type *R_VEC_FUNC(vec_type, new)() { \
+	static inline R_MAYBE_UNUSED R_MUSTUSE vec_type *R_VEC_FUNC(vec_type, new)(void) { \
 		vec_type *vec = R_NEW (vec_type); \
 		if (R_LIKELY (vec)) { \
 			R_VEC_FUNC(vec_type, init) (vec); \

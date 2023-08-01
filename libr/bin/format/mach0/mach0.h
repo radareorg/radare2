@@ -100,6 +100,8 @@ struct MACH0_(opts_t) {
 	RBinFile *bf;
 };
 
+R_VEC_FORWARD_DECLARE(RVecSegment);
+
 struct MACH0_(obj_t) {
 	struct MACH0_(mach_header) hdr;
 	struct MACH0_(segment_command) *segs;
@@ -125,7 +127,6 @@ struct MACH0_(obj_t) {
 	RBinImport **imports_by_ord;
 	size_t imports_by_ord_size;
 	HtPP *imports_by_name;
-	RList *cached_segments;
 	struct MACH0_(opts_t) options;
 
 	struct dysymtab_command dysymtab;
@@ -170,8 +171,8 @@ struct MACH0_(obj_t) {
 	ut64 header_at;
 	bool parse_start_symbols;
 	bool symbols_loaded;
-	//RVector symbols_cache;
 	RVecRBinSymbol *symbols_vec; // pointer to &bf->o->symbols_vec
+	RVecSegment *segments_vec;  // R2_590 pointer of &bf->o->segments_vec
 	ut64 symbols_off;
 	void *user;
 	ut64 (*va2pa)(ut64 p, ut32 *offset, ut32 *left, RBinFile *bf);

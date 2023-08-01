@@ -63,6 +63,15 @@ typedef struct {
 	/* followed by dynamic content as located by offset fields above */
 } CodeDirectory;
 
+static inline void r_bin_section_fini(RBinSection *bs) {
+	if (bs) {
+		free (bs->name);
+		free (bs->format);
+	}
+}
+
+R_VEC_TYPE_WITH_FINI(RVecSegment, RBinSection, r_bin_section_fini);
+
 // OMG; THIS SHOULD BE KILLED; this var exposes the local native endian, which is completely unnecessary
 // USE THIS: int ws = bf->o->info->big_endian;
 #define mach0_endian 1
@@ -1753,7 +1762,7 @@ static int init_items(struct MACH0_(obj_t) *mo) {
 	mo->uuidn = 0;
 	mo->os = 0;
 	mo->has_crypto = 0;
-	mo->cached_segments = NULL;
+	mo->segments_vec = NULL;
 	r_pvector_init (&mo->libs_cache, (RPVectorFree) free);
 
 	if (mo->hdr.sizeofcmds > mo->size) {
@@ -2226,8 +2235,8 @@ void *MACH0_(mach0_free)(struct MACH0_(obj_t) *mo) {
 	if (mo->sections_loaded) {
 		r_vector_fini (&mo->sections_cache);
 	}
-	r_list_free (mo->cached_segments);
-	mo->cached_segments = NULL;
+	RVecSegment_free (mo->segments_vec);
+	mo->segments_vec = NULL;
 	if (mo->relocs_loaded) {
 		r_skiplist_free (mo->relocs_cache);
 	}
@@ -2444,84 +2453,120 @@ static const char *macho_section_type_tostring(int flags) {
 	return "";
 }
 
-RList *MACH0_(get_segments)(RBinFile *bf, struct MACH0_(obj_t) *macho) {
-	if (macho->cached_segments) {
-		return r_list_clone (macho->cached_segments, (RListClone)r_bin_section_clone);
+static inline RVecSegment *MACH0_(get_segments_vec)(RBinFile *bf, struct MACH0_(obj_t) *mo) {
+	if (mo->segments_vec) {
+		return mo->segments_vec;
 	}
 
-	RList *list = r_list_newf ((RListFree)r_bin_section_free);
-	size_t i, j;
+	mo->segments_vec = RVecSegment_new ();
 
 	/* for core files */
-	if (macho->nsegs > 0) {
-		struct MACH0_(segment_command) *seg;
-		for (i = 0; i < macho->nsegs; i++) {
-			seg = &macho->segs[i];
-			if (!seg->initprot) {
-				continue;
-			}
-			RBinSection *s = r_bin_section_new (NULL);
-			if (!s) {
-				break;
-			}
-			s->vaddr = seg->vmaddr;
-			s->vsize = seg->vmsize;
-			s->size = seg->vmsize;
-			s->paddr = seg->fileoff;
-			s->paddr += bf->o->boffset;
-			//TODO s->flags = seg->flags;
-			s->name = r_str_ndup (seg->segname, 16);
-			s->is_segment = true;
-			r_str_filter (s->name, -1);
-			s->perm = prot2perm (seg->initprot);
-			s->add = true;
-			r_list_append (list, s);
-		}
-	}
-	const int ws = R_BIN_MACH0_WORD_SIZE;
-	if (macho->nsects > 0) {
-		int last_section = R_MIN (macho->nsects, MACHO_MAX_SECTIONS);
-		for (i = 0; i < last_section; i++) {
-			RBinSection *s = R_NEW0 (RBinSection);
-			if (!s) {
-				break;
-			}
-			s->vaddr = (ut64)macho->sects[i].addr;
-			s->vsize = (ut64)macho->sects[i].size;
-			s->is_segment = false;
-			s->size = (macho->sects[i].flags == S_ZEROFILL) ? 0 : (ut64)macho->sects[i].size;
-			s->type = macho_section_type_tostring (macho->sects[i].flags);
-			s->paddr = (ut64)macho->sects[i].offset;
-			int segment_index = 0;
-			for (j = 0; j < macho->nsegs; j++) {
-				if (s->vaddr >= macho->segs[j].vmaddr &&
-						s->vaddr < (macho->segs[j].vmaddr + macho->segs[j].vmsize)) {
-					s->perm = prot2perm (macho->segs[j].initprot);
-					segment_index = j;
+	if (mo->nsegs > 0) {
+		if (RVecSegment_reserve (mo->segments_vec, mo->nsegs)) {
+			size_t i;
+			for (i = 0; i < mo->nsegs; i++) {
+				struct MACH0_(segment_command) *seg = &mo->segs[i];
+				if (!seg->initprot) {
+					continue;
+				}
+
+				RBinSection *s = RVecSegment_emplace_back (mo->segments_vec);
+				if (!s) {
 					break;
 				}
+				memset (s, 0, sizeof (RBinSection)); // XXX redundant?
+
+				s->vaddr = seg->vmaddr;
+				s->vsize = seg->vmsize;
+				s->size = seg->vmsize;
+				s->paddr = seg->fileoff;
+				s->paddr += bf->o->boffset;
+				//TODO s->flags = seg->flags;
+				s->name = r_str_ndup (seg->segname, 16);
+				s->is_segment = true;
+				r_str_filter (s->name, -1);
+				s->perm = prot2perm (seg->initprot);
+				s->add = true;
 			}
-			char *section_name = r_str_ndup (macho->sects[i].sectname, 16);
-			char *segment_name = r_str_newf ("%u.%s", (ut32)i, macho->segs[segment_index].segname);
-			s->name = r_str_newf ("%s.%s", segment_name, section_name);
-			if (strstr (s->name, "__const")) {
-				s->format = r_str_newf ("Cd %d %"PFMT64d, ws, s->size / ws);
-			}
-			s->is_data = is_data_section (s);
-			if (strstr (section_name, "interpos") || strstr (section_name, "__mod_")) {
-				s->format = r_str_newf ("Cd %d[%"PFMT64d"]", ws, s->vsize / ws);
-			}
-			// https://github.com/radareorg/ideas/issues/104
-			// https://stackoverflow.com/questions/29665371/compiling-a-binary-immune-to-library-redirection-on-mac-os-x
-			if (strstr (section_name, "restrict") || strstr (section_name, "RESTRICT")) {
-				macho->has_libinjprot = true;
-			}
-			r_list_append (list, s);
-			free (segment_name);
-			free (section_name);
 		}
 	}
-	macho->cached_segments = r_list_clone (list, (RListClone)r_bin_section_clone);
+
+	const int ws = R_BIN_MACH0_WORD_SIZE;
+	if (mo->nsects > 0) {
+		const int last_section = R_MIN (mo->nsects, MACHO_MAX_SECTIONS);
+		const ut64 total_size = RVecSegment_length (mo->segments_vec) + last_section;
+		if (RVecSegment_reserve (mo->segments_vec, total_size)) {
+			size_t i;
+			for (i = 0; i < last_section; i++) {
+				RBinSection *s = RVecSegment_emplace_back (mo->segments_vec);
+				if (!s) {
+					break;
+				}
+				memset (s, 0, sizeof (RBinSection)); // XXX redundant?
+
+				s->vaddr = (ut64)mo->sects[i].addr;
+				s->vsize = (ut64)mo->sects[i].size;
+				s->is_segment = false;
+				s->size = (mo->sects[i].flags == S_ZEROFILL) ? 0 : (ut64)mo->sects[i].size;
+				s->type = macho_section_type_tostring (mo->sects[i].flags);
+				s->paddr = (ut64)mo->sects[i].offset;
+
+				int segment_index = 0;
+				size_t j;
+				for (j = 0; j < mo->nsegs; j++) {
+					if (s->vaddr >= mo->segs[j].vmaddr &&
+							s->vaddr < (mo->segs[j].vmaddr + mo->segs[j].vmsize)) {
+						s->perm = prot2perm (mo->segs[j].initprot);
+						segment_index = j;
+						break;
+					}
+				}
+
+				char *section_name = r_str_ndup (mo->sects[i].sectname, 16);
+				char *segment_name = r_str_newf ("%u.%s", (ut32)i, mo->segs[segment_index].segname);
+				s->name = r_str_newf ("%s.%s", segment_name, section_name);
+				if (strstr (s->name, "__const")) {
+					s->format = r_str_newf ("Cd %d %"PFMT64d, ws, s->size / ws);
+				}
+
+				s->is_data = is_data_section (s);
+				if (strstr (section_name, "interpos") || strstr (section_name, "__mod_")) {
+					free (s->format);
+					s->format = r_str_newf ("Cd %d[%"PFMT64d"]", ws, s->vsize / ws);
+				}
+				// https://github.com/radareorg/ideas/issues/104
+				// https://stackoverflow.com/questions/29665371/compiling-a-binary-immune-to-library-redirection-on-mac-os-x
+				if (strstr (section_name, "restrict") || strstr (section_name, "RESTRICT")) {
+					mo->has_libinjprot = true;
+				}
+
+				free (segment_name);
+				free (section_name);
+			}
+		}
+	}
+
+	return mo->segments_vec;
+}
+
+RList *MACH0_(get_segments)(RBinFile *bf, struct MACH0_(obj_t) *macho) {
+	RList *list = r_list_newf ((RListFree)r_bin_section_free);
+	if (!list) {
+		return NULL;
+	}
+
+	// R2_590 slow, should return vec directly
+	RVecSegment *segments = MACH0_(get_segments_vec)(bf, macho);
+	RBinSection *s;
+	R_VEC_FOREACH (segments, s) {
+		RBinSection *s_copy = r_bin_section_clone (s);
+		if (!s_copy) {
+			r_list_free (list);
+			return NULL;
+		}
+		r_list_append (list, s_copy);
+	}
+
 	return list;
 }
 
@@ -3182,16 +3227,17 @@ static void _parse_function_start_symbols(RBinFile *bf, struct MACH0_(obj_t) *mo
 	}
 }
 
-static bool _check_if_debug_build(RBinFile *bf, struct MACH0_(obj_t) *mo) {
 #if 0
-	// R2_590
-	RBinSection *s;
-	R_VEC_FOREACH (bf->o->segments_vec, s) {
-		if (strstr (s->name, "DWARF.__debug_line")) {
-			return true;
-		}
-	}
+// R2_590
+static inline bool is_debug_segment(const RBinSection *s, const void *user) {
+	return strstr (s->name, "DWARF.__debug_line") != NULL;
+}
+
+static inline bool _check_if_debug_build(RBinFile *bf, struct MACH0_(obj_t) *mo) {
+	return RVecSegment_find (bf->o->segments_vec, NULL, is_debug_segment) != NULL;
+}
 #else
+static bool _check_if_debug_build(RBinFile *bf, struct MACH0_(obj_t) *mo) {
 	RList *sections = MACH0_(get_segments) (bf, mo);
 	if (!sections) {
 		return false;
@@ -3206,11 +3252,10 @@ static bool _check_if_debug_build(RBinFile *bf, struct MACH0_(obj_t) *mo) {
 	}
 
 	r_list_free (sections);
-#endif
 	return false;
 }
+#endif
 
-// R2_590 - should return bool
 const bool MACH0_(load_symbols)(struct MACH0_(obj_t) *mo) {
 	r_return_val_if_fail (mo, false);
 	if (mo->symbols_loaded) {
