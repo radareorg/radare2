@@ -13,6 +13,7 @@ static void htup_vector_free(HtUPKv *kv) {
 static void trace_db_init(REsilTraceDB *db) {
 	RVecTraceOp_init (&db->ops);
 	RVecAccess_init (&db->accesses);
+	db->loop_counts = ht_uu_new0 ();
 }
 
 R_API REsilTrace *r_esil_trace_new(REsil *esil) {
@@ -67,7 +68,19 @@ static void trace_db_fini(REsilTraceDB *db) {
 	if (db) {
 		RVecAccess_fini (&db->accesses);
 		RVecTraceOp_fini (&db->ops);
+		ht_uu_free (db->loop_counts);
 	}
+}
+
+R_API ut64 r_esil_trace_loopcount(REsilTrace *etrace, ut64 addr) {
+	bool found = false;
+	const ut64 count = ht_uu_find (etrace->db.loop_counts, addr, &found);
+	return found ? count : 0;
+}
+
+R_API void r_esil_trace_loopcount_increment(REsilTrace *etrace, ut64 addr) {
+	const ut64 count = r_esil_trace_loopcount (etrace, addr);
+	ht_uu_update (etrace->db.loop_counts, addr, count + 1);
 }
 
 R_API void r_esil_trace_free(REsilTrace *trace) {
