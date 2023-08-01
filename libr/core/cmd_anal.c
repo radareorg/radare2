@@ -6215,7 +6215,7 @@ R_API bool r_core_esil_step_back(RCore *core) {
 	}
 #endif
 	REsil *esil = core->anal->esil;
-	if (esil && esil->trace->idx > 0) {
+	if (esil && esil->trace && esil->trace->idx > 0) {
 		r_esil_trace_restore (esil, esil->trace->idx - 1);
 		return true;
 	}
