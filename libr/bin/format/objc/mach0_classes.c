@@ -144,7 +144,7 @@ static mach0_ut va2pa(mach0_ut p, ut32 *offset, ut32 *left, RBinFile *bf) {
 		return bin->va2pa (p, offset, left, bf);
 	}
 	mach0_ut addr = p;
-	RList *sections = MACH0_(get_segments) (bf, bin);
+	RList *sections = MACH0_(get_segments) (bf, bin);  // XXX slow, don't allocate each time
 	RListIter *iter;
 	RBinSection *s;
 	r_list_foreach (sections, iter, s) {
