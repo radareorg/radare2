@@ -30,8 +30,10 @@ static int defaultCycles(RAnalOp *op) {
 	}
 }
 
+// R2R db/asm/arm.v35_64 db/asm/arm.gnu_32 db/anal/arm db/asm/arm.gnu_wd_32
 // XXX deprecate!! or at least call r_arch_bath tradition
 R_API int r_anal_opasm(RAnal *anal, ut64 addr, const char *s, ut8 *outbuf, int outlen) {
+//	RArchConfig *ac = anal->arch->config;
 	// XXX this is a hack because RArch needs to hold two pointers one for the encoder and one for the decoder plugins (optionally)
 	bool arch_set = false;
 	char *tmparch = NULL;
@@ -49,7 +51,7 @@ R_API int r_anal_opasm(RAnal *anal, ut64 addr, const char *s, ut8 *outbuf, int o
 			encode = as->encoder->plugin->encode;
 			as = as->encoder;
 		}
-		// ok we have an encoder
+		// ok we dont have an encoder
 		if (!encode) {
 			oldname = strdup (as->plugin->meta.name);
 			const char *arch_name = as->plugin->meta.name;
@@ -63,8 +65,8 @@ R_API int r_anal_opasm(RAnal *anal, ut64 addr, const char *s, ut8 *outbuf, int o
 						char *an2 = r_str_newf ("%s.nz", an);
 						if (r_arch_use (anal->arch, anal->arch->cfg, an2)) {
 							encode = anal->arch->session->plugin->encode;
-							r_arch_use (anal->arch, anal->arch->cfg, oldname);
-							R_FREE (oldname);
+							// r_arch_use (anal->arch, anal->arch->cfg, oldname);
+							// R_FREE (oldname);
 							as = R_UNWRAP3 (anal, arch, session);
 							tmparch = an2;
 						} else {
@@ -133,7 +135,9 @@ R_API int r_anal_opasm(RAnal *anal, ut64 addr, const char *s, ut8 *outbuf, int o
 	}
 beach:
 	if (tmparch) {
-		if (!arch_set) {
+		if (oldname) {
+			r_arch_use (anal->arch, anal->arch->cfg, oldname);
+		} else if (!arch_set) {
 			r_arch_use (anal->arch, anal->arch->cfg, tmparch);
 		}
 		free (tmparch);

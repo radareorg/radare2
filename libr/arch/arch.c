@@ -34,6 +34,7 @@ static ut32 _rate_compat(RArchPlugin *p, RArchConfig *cfg, const char *name) {
 	if (name && !strcmp (p->meta.name, name)) {
 		score += 100;
 	}
+	//eprintf ("compare %s %s\n", p->arch, cfg->arch);
 	if (cfg->arch && !strcmp (p->arch, cfg->arch)) {
 		score += 50;
 	}
@@ -126,6 +127,8 @@ R_API bool r_arch_use(RArch *arch, RArchConfig *config, const char *name) {
 		if (encode) {
 			arch->session->encoder = arch->session;
 		} else {
+			free (config->arch);
+			config->arch = strdup (arch->session->plugin->arch);
 			RArchPlugin *ap = find_bestmatch (arch, config, name, true);
 			if (ap) {
 				RArchSession *es = r_arch_session (arch, config, ap);
