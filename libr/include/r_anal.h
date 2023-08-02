@@ -478,7 +478,6 @@ typedef struct r_anal_t {
 	int cs_obits;
 	int cs_omode;
 	size_t cs_handle;
-	bool uses; // false = nothing, true = arch plugin
 	int thread; // see apt command
 	RList *threads;
 	RColor tracetagcolors[64]; // each trace color for each bit

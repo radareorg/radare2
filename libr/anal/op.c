@@ -39,8 +39,8 @@ R_API int r_anal_opasm(RAnal *anal, ut64 addr, const char *s, ut8 *outbuf, int o
 	char *tmparch = NULL;
 	int ret = 0;
 	char *oldname = NULL;
-	if (outlen > 0 && anal->arch->session && anal->uses) {
-		// no else branch and anal->uses must die imho
+	if (outlen > 0 && anal->arch->session) {
+		// no else branch
 		RArchSession *as = R_UNWRAP3 (anal, arch, session);
 		RArchPluginEncodeCallback encode = R_UNWRAP3 (as, plugin, encode);
 		RAnalOp *op = r_anal_op_new ();
@@ -181,7 +181,7 @@ R_API int r_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 		return -1;
 	}
 	int ret = R_MIN (2, len);
-	if (len > 0 && anal->uses && anal->arch->session) {
+	if (len > 0 && anal->arch->session) {
 		r_anal_op_set_bytes (op, addr, data, len);
 		if (!r_arch_decode (anal->arch, op, mask) || op->size <= 0) {
 			op->type = R_ANAL_OP_TYPE_ILL;
