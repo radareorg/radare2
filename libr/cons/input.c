@@ -126,7 +126,13 @@ R_API int r_cons_arrow_to_hjkl(int ch) {
 			ch = r_cons_readchar ();
 		}
 #else
-		ch = 0xf1 + (ch & 0xf);
+		switch (ch) { // Arrow keys
+		case 'A': ch = 'k'; break;
+		case 'B': ch = 'j'; break;
+		case 'C': ch = 'l'; break;
+		case 'D': ch = 'h'; break;
+		default: ch = 0xf1 + (ch & 0xf); break;
+		}
 		break;
 	case '[': // function keys (2)
 		ch = r_cons_readchar ();
