@@ -2045,7 +2045,10 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 					buf[1] = r_cons_readchar_timeout (50);
 				}
 #endif
-				if (buf[0] == '[') {	// [
+				if (buf[0] == 'O' && strchr("ABCDFH", buf[1]) != NULL) { // O
+					buf[0] = '[';
+				}
+				if (buf[0] == '[') { // [
 					switch (buf[1]) {
 					case '3':	// supr or mouse click
 						__delete_current_char ();
