@@ -57,7 +57,7 @@ static RefManager *ref_manager_new(void) {
 
 static inline void adjacency_list_fini(AdjacencyList *adj_list) {
 	const AdjacencyList_Entry *entry;
-	R_ADJACENCY_LIST_FOREACH(adj_list, entry) {
+	R_ADJACENCY_LIST_FOREACH (adj_list, entry) {
 		Edges *edges = entry->val;
 		Edges_destroy (edges);
 		free (edges);
@@ -128,7 +128,7 @@ static ut64 ref_manager_count_xrefs(RefManager *rm) {
 	ut64 count = 0;
 
 	const AdjacencyList_Entry *entry;
-	R_ADJACENCY_LIST_FOREACH(&rm->xrefs, entry) {
+	R_ADJACENCY_LIST_FOREACH (&rm->xrefs, entry) {
 		count += Edges_size (entry->val);
 	}
 
@@ -148,9 +148,9 @@ static RVecAnalRef *_collect_all_refs(RefManager *rm, const AdjacencyList *adj_l
 	}
 
 	const AdjacencyList_Entry *entry;
-	R_ADJACENCY_LIST_FOREACH(adj_list, entry) {
+	R_ADJACENCY_LIST_FOREACH (adj_list, entry) {
 		const Edges_Entry *edge_entry;
-		R_EDGES_FOREACH(entry->val, edge_entry) {
+		R_EDGES_FOREACH (entry->val, edge_entry) {
 			RAnalRef *ref = RVecAnalRef_emplace_back (result);
 			if (R_UNLIKELY (!ref)) {
 				RVecAnalRef_free (result);
