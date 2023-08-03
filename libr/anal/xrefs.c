@@ -17,6 +17,13 @@ CWISS_DECLARE_FLAT_HASHMAP(AdjacencyList, ut64, Edges*);
 
 #define INITIAL_CAPACITY 0
 
+#define R_HM_FOREACH(type, hm, entry) \
+	type##_CIter iter; \
+	for (iter = type##_citer ((hm)); (entry = type##_CIter_get (&iter)) != NULL; type##_CIter_next (&iter))
+
+#define R_ADJACENCY_LIST_FOREACH(adj_list, entry) R_HM_FOREACH(AdjacencyList, adj_list, entry)
+#define R_EDGES_FOREACH(edges, entry) R_HM_FOREACH(Edges, edges, entry)
+
 // NOTE: this is heavy in memory usage, but needed due to performance reasons for large amounts of xrefs..
 typedef struct r_ref_manager_t {
 	AdjacencyList refs;   // forward refs
@@ -49,11 +56,8 @@ static RefManager *ref_manager_new(void) {
 }
 
 static inline void adjacency_list_fini(AdjacencyList *adj_list) {
-	AdjacencyList_CIter iter;
 	const AdjacencyList_Entry *entry;
-	for (iter = AdjacencyList_citer (adj_list);
-		(entry = AdjacencyList_CIter_get (&iter)) != NULL;
-		AdjacencyList_CIter_next (&iter)) {
+	R_ADJACENCY_LIST_FOREACH (adj_list, entry) {
 		Edges *edges = entry->val;
 		Edges_destroy (edges);
 		free (edges);
@@ -123,11 +127,8 @@ static ut64 ref_manager_count_xrefs(RefManager *rm) {
 
 	ut64 count = 0;
 
-	AdjacencyList_CIter iter;
 	const AdjacencyList_Entry *entry;
-	for (iter = AdjacencyList_citer (&rm->xrefs);
-		(entry = AdjacencyList_CIter_get (&iter)) != NULL;
-		AdjacencyList_CIter_next (&iter)) {
+	R_ADJACENCY_LIST_FOREACH (&rm->xrefs, entry) {
 		count += Edges_size (entry->val);
 	}
 
@@ -146,14 +147,10 @@ static RVecAnalRef *_collect_all_refs(RefManager *rm, const AdjacencyList *adj_l
 		return NULL;
 	}
 
-	AdjacencyList_CIter iter;
 	const AdjacencyList_Entry *entry;
-	for (iter = AdjacencyList_citer (adj_list);
-		(entry = AdjacencyList_CIter_get (&iter)) != NULL;
-		AdjacencyList_CIter_next (&iter)) {
-		Edges_CIter iter;
+	R_ADJACENCY_LIST_FOREACH (adj_list, entry) {
 		const Edges_Entry *edge_entry;
-		for (iter = Edges_citer (entry->val); (edge_entry = Edges_CIter_get (&iter)) != NULL; Edges_CIter_next (&iter)) {
+		R_EDGES_FOREACH (entry->val, edge_entry) {
 			RAnalRef *ref = RVecAnalRef_emplace_back (result);
 			if (R_UNLIKELY (!ref)) {
 				RVecAnalRef_free (result);
@@ -193,9 +190,8 @@ static RVecAnalRef *_collect_refs_from(const AdjacencyList *adj_list, ut64 from)
 		return NULL;
 	}
 
-	Edges_CIter iter;
 	const Edges_Entry *entry;
-	for (iter = Edges_citer (edges); (entry = Edges_CIter_get (&iter)) != NULL; Edges_CIter_next (&iter)) {
+	R_EDGES_FOREACH(edges, entry) {
 		RAnalRef *ref = RVecAnalRef_emplace_back (result);
 		if (R_UNLIKELY (!ref)) {
 			RVecAnalRef_free (result);
