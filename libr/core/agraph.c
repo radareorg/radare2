@@ -597,7 +597,7 @@ static int **get_crossing_matrix(const RGraph *g, const struct layer_t layers[],
 							// this should never happen
 							// but it happens if we do graph.dummy = false, so better hide it for now
 #if 0
-							eprintf ("(WARNING) \"%s\" (%d) or \"%s\" (%d) are not on the right layer (%d)\n",
+							R_LOG_WARN ("%s (%d) or \"%s\" (%d) are not on the right layer (%d)",
 								ak->title, ak->layer,
 								at->title, at->layer,
 								i);
@@ -1024,7 +1024,7 @@ static void set_dist_nodes(const RAGraph *g, int l, int cur, int next) {
 	}
 }
 
-static int is_valid_pos(const RAGraph *g, int l, int pos) {
+static inline int is_valid_pos(const RAGraph *g, int l, int pos) {
 	return pos >= 0 && pos < g->layers[l].n_nodes;
 }
 
@@ -1151,14 +1151,11 @@ static void adjust_class(const RAGraph *g, int is_left, RList **classes, Sdb *re
 	bool is_first = true;
 
 	graph_foreach_anode (classes[c], it, gn, an) {
-		const RGraphNode *sibling;
-		const RANode *sibl_anode;
-
-		sibling = get_sibling (g, an, is_left, true);
+		const RGraphNode *sibling = get_sibling (g, an, is_left, true);
 		if (!sibling) {
 			continue;
 		}
-		sibl_anode = get_anode (sibling);
+		const RANode *sibl_anode = get_anode (sibling);
 		if (sibl_anode->klass == c) {
 			continue;
 		}
@@ -1169,7 +1166,6 @@ static void adjust_class(const RAGraph *g, int is_left, RList **classes, Sdb *re
 
 	if (is_first) {
 		RList *heap = r_list_new ();
-		int len;
 
 		graph_foreach_anode (classes[c], it, gn, an) {
 			const RList *neigh = r_graph_all_neighbours (g->graph, gn);
@@ -1186,8 +1182,7 @@ static void adjust_class(const RAGraph *g, int is_left, RList **classes, Sdb *re
 				}
 			}
 		}
-
-		len = r_list_length (heap);
+		int len = r_list_length (heap);
 		if (len == 0) {
 			dist = 0;
 		} else {
@@ -1302,7 +1297,6 @@ static int free_vertical_nodes_cb(void *user UNUSED, const char *k UNUSED, const
 /* computes two different placements (called "left"/"right") and set the final
  * position of each node to the average of the values in the two placements */
 static void place_dummies(const RAGraph *g) {
-	const RList *nodes;
 	const RGraphNode *gn;
 	const RListIter *it;
 	RANode *n;
@@ -1320,7 +1314,7 @@ static void place_dummies(const RAGraph *g) {
 		goto xplus_err;
 	}
 
-	nodes = r_graph_get_nodes (g->graph);
+	const RList *nodes = r_graph_get_nodes (g->graph);
 	graph_foreach_anode (nodes, it, gn, n) {
 		n->x = (hash_get_int (xminus, gn) + hash_get_int (xplus, gn)) / 2;
 	}
@@ -2455,7 +2449,7 @@ static void add_child(RCore *core, RAGraph *g, RANode *u, ut64 jump) {
 		bool hl = sdb_exists (core->sdb, key);
 		r_agraph_add_edge (g, u, v, hl);
 	} else {
-		eprintf ("[!!] Failed to add child node 0x%" PFMT64x " to %s. Child not found\n", jump, u->title);
+		R_LOG_WARN ("Failed to add child node 0x%" PFMT64x " to %s, child not found", jump, u->title);
 	}
 	free (title);
 }
@@ -3470,7 +3464,7 @@ static void agraph_update_title(RCore *core, RAGraph *g, RAnalFunction *fcn) {
 
 /* look for any change in the state of the graph
  * and update what's necessary */
-static bool check_changes(RAGraph *g, int is_interactive, RCore *core, RAnalFunction *fcn) {
+static bool check_changes(RAGraph *g, bool is_interactive, RCore *core, RAnalFunction *fcn) {
 	int oldpos[2] = {
 		0, 0
 	};
@@ -3540,7 +3534,7 @@ static bool check_changes(RAGraph *g, int is_interactive, RCore *core, RAnalFunc
 	return true;
 }
 
-static int agraph_print(RAGraph *g, int is_interactive, RCore *core, RAnalFunction *fcn) {
+static int agraph_print(RAGraph *g, bool is_interactive, RCore *core, RAnalFunction *fcn) {
 	int h, w = r_cons_get_size (&h);
 	bool ret = check_changes (g, is_interactive, core, fcn);
 	if (!ret) {
@@ -4194,7 +4188,7 @@ static void applyDisMode(RCore *core) {
 
 static void rotateColor(RCore *core) {
 	int color = r_config_get_i (core->config, "scr.color");
-	if (++color > 2) {
+	if (++color > 3) {
 		color = 0;
 	}
 	r_config_set_i (core->config, "scr.color", color);
@@ -4219,7 +4213,7 @@ static char *get_graph_string(RCore *core, RAGraph *g) {
 	int c = r_config_get_i (core->config, "scr.color");
 	bool u = r_config_get_b (core->config, "scr.utf8");
 	r_config_set_i (core->config, "scr.color", 0);
-	r_config_set_i (core->config, "scr.utf8", 0);
+	r_config_set_b (core->config, "scr.utf8", false);
 	r_core_visual_graph (core, g, NULL, false);
 	char *s = strdup (r_cons_get_buffer ());
 	r_cons_reset ();
@@ -5095,7 +5089,7 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 	}
 	r_vector_fini (&g->ghits.word_list);
 	r_cons_break_pop ();
-	r_config_set (core->config, "asm.comments", r_str_bool (asm_comments));
+	r_config_set_b (core->config, "asm.comments", asm_comments);
 	core->cons->event_resize = NULL;
 	core->cons->event_data = NULL;
 	core->vmode = o_vmode;
