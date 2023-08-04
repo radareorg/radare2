@@ -7069,6 +7069,9 @@ static int cmd_print(void *data, const char *input) {
 				cmd_printmsg (core, input + 4);
 			} else if (input[2] == '1') {
 				bitimage (core, 1);
+			} else if (input[2] == 's') {
+				int cols = r_config_get_i (core->config, "hex.cols");
+				r_cons_image (core->block, core->blocksize, cols, 's');
 			} else {
 				// TODO: do colormap and palette conversions here
 				int mode = r_config_get_i (core->config, "scr.color")? 0: 'a';
