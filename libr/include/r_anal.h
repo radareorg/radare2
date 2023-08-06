@@ -1082,6 +1082,7 @@ R_API RVecAnalRef *r_anal_refs_get(RAnal *anal, ut64 from);
 R_API RVecAnalRef *r_anal_xrefs_get_from(RAnal *anal, ut64 to);
 R_API void r_anal_xrefs_list(RAnal *anal, int rad, const char *arg);
 R_API ut64 r_anal_xrefs_count(RAnal *anal);
+R_API ut64 r_anal_xrefs_count_at(RAnal *anal, ut64 to);
 R_API RVecAnalRef *r_anal_function_get_refs(RAnalFunction *fcn);
 R_API RVecAnalRef *r_anal_function_get_all_xrefs(RAnalFunction *fcn);
 R_API RVecAnalRef *r_anal_function_get_xrefs(RAnalFunction *fcn);
