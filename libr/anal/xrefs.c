@@ -62,7 +62,6 @@ static inline void adjacency_list_fini(AdjacencyList *adj_list) {
 		Edges_destroy (edges);
 		free (edges);
 	}
-
 	AdjacencyList_destroy (adj_list);
 }
 
@@ -138,19 +137,11 @@ static ut64 ref_manager_count_xrefs(RefManager *rm) {
 static ut64 ref_manager_count_xrefs_at(RefManager *rm, ut64 to) {
 	r_return_val_if_fail (rm, 0);
 
-	ut64 count = 0;
+	AdjacencyList_CIter iter = AdjacencyList_cfind (&rm->xrefs, &to);
+	const AdjacencyList_Entry *entry = AdjacencyList_CIter_get (&iter);
+	const Edges *edges = entry? entry->val: NULL;
 
-	const Edges *edges = NULL;
-	{
-		AdjacencyList_CIter iter = AdjacencyList_cfind (&rm->xrefs, &to);
-		const AdjacencyList_Entry *entry = AdjacencyList_CIter_get (&iter);
-		edges = entry? entry->val: NULL;
-	}
-
-	if (edges) {
-		count = Edges_size (edges);
-	}
-	return count;
+	return edges? Edges_size (edges): 0;
 }
 
 static RVecAnalRef *_collect_all_refs(RefManager *rm, const AdjacencyList *adj_list) {
