@@ -135,6 +135,24 @@ static ut64 ref_manager_count_xrefs(RefManager *rm) {
 	return count;
 }
 
+static ut64 ref_manager_count_xrefs_at(RefManager *rm, ut64 to) {
+	r_return_val_if_fail (rm, 0);
+
+	ut64 count = 0;
+
+	const Edges *edges = NULL;
+	{
+		AdjacencyList_CIter iter = AdjacencyList_cfind (&rm->xrefs, &to);
+		const AdjacencyList_Entry *entry = AdjacencyList_CIter_get (&iter);
+		edges = entry? entry->val: NULL;
+	}
+
+	if (edges) {
+		count = Edges_size (edges);
+	}
+	return count;
+}
+
 static RVecAnalRef *_collect_all_refs(RefManager *rm, const AdjacencyList *adj_list) {
 	RVecAnalRef *result = RVecAnalRef_new ();
 	if (R_UNLIKELY (!result)) {
@@ -498,6 +516,11 @@ R_API void r_anal_xrefs_list(RAnal *anal, int rad, const char *arg) {
 R_API ut64 r_anal_xrefs_count(RAnal *anal) {
 	r_return_val_if_fail (anal && anal->rm, 0);
 	return ref_manager_count_xrefs (anal->rm);
+}
+
+R_API ut64 r_anal_xrefs_count_at(RAnal *anal, ut64 to) {
+	r_return_val_if_fail (anal && anal->rm, 0);
+	return ref_manager_count_xrefs_at (anal->rm, to);
 }
 
 R_API RVecAnalRef *r_anal_function_get_xrefs(RAnalFunction *fcn) {

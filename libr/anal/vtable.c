@@ -208,11 +208,8 @@ R_API RVTableInfo *r_anal_vtable_parse_at(RVTableContext *context, ut64 addr) {
 		addr += context->word_size;
 
 		// a ref means the vtable has ended
-		RVecAnalRef *ll = r_anal_xrefs_get (context->anal, addr);
-		// TODO add R_API function that only returns if there are xrefs for an addr
-		// to avoid several allocations
-		const bool has_refs = ll && !RVecAnalRef_empty (ll);
-		RVecAnalRef_free (ll);
+		const ut64 number_of_refs = r_anal_xrefs_count_at (context->anal, addr);
+		const bool has_refs = number_of_refs > 0;
 		if (has_refs) {
 			break;
 		}
