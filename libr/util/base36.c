@@ -5,7 +5,7 @@
 static const char cb36[] = "0123456789abcdefghijklmnopqrstuvwxyz";
 
 R_API void b36_fromnum(char *s, ut64 n) {
-	const int amount = n? (log (n) / log (36)): 0;
+	const int amount = n? (log ((double)n) / log ((double)36)): 0;
 	char *p = s;
 	*p++ = '0';
 	*p++ = '_';
