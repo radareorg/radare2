@@ -201,7 +201,7 @@
 /// quite believe in it.
 #if CWISS_IS_MSVC
 #define CWISS_alignas(align_) __declspec(align(align_))
-#define alignof __alignof 
+#define alignof __alignof
 
 #else
 #include <stdalign.h>
@@ -2020,7 +2020,6 @@ typedef struct {
 /// types.
 ///
 /// See the header documentation for more information.
-/// 
 
 /// Declares a hash set policy with pointer-stable storage for the given type.
 ///
@@ -2052,7 +2051,6 @@ typedef struct {
 		V_ v;                                                    \
 	} kPolicy_##_Entry;                                        \
 	CWISS_DECLARE_POLICY_(kPolicy_, kPolicy_##_Entry, K_, obj_copy, obj_dtor, key_hash, key_eq)
-
 
 #define CWISS_DECLARE_POLICY_(kPolicy_, Type_, Key_, obj_copy, obj_dtor, key_hash, key_eq)      \
 	CWISS_BEGIN                                                            \
