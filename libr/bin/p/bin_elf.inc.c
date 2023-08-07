@@ -127,11 +127,9 @@ static RBinAddr* binsym(RBinFile *bf, int sym) {
 
 #if R2_590
 static bool sections_vec(RBinFile *bf) {
-	ELFOBJ *eo = (bf && bf->o)? bf->o->bin_obj : NULL;
-	if (eo) {
-		return Elf_(load_sections) (bf, eo) != NULL;
-	}
-	return false;
+	r_return_val_if_fail (bf && bf->o, false);
+	ELFOBJ *eo = bf->o->bin_obj
+	return eo? Elf_(load_sections) (bf, eo) != NULL: false;
 }
 #else
 
@@ -366,7 +364,7 @@ static RList* entries(RBinFile *bf) {
 // fill bf->o->symbols_vec (RBinSymbol) with the processed contents of eo->g_symbols_vec (RBinElfSymbol)
 // thats kind of dup because rbinelfsymbol shouldnt exist, rbinsymbol should be enough, rvec makes this easily typed
 static bool symbols_vec(RBinFile *bf) {
-	r_return_val_if_fail (bf && bf->o && bf->o->bin_obj, NULL);
+	r_return_val_if_fail (bf && bf->o && bf->o->bin_obj, false);
 
 	ELFOBJ *eo = bf->o->bin_obj;
 	// traverse symbols

@@ -79,7 +79,7 @@ static void render_sixel(PrintfCallback cb_printf, const ut8 *c, const ut8 *d) {
 	b = (d[3] * 100 / 255);
 	cb_printf ("#1;2;%d;%d;%d", r, g, b); // fg is color
 	// cb_printf ("#%d!6%c", 1, 0x3f); // 6x6 pixel block
-	cb_printf ("#%d~~~~~~", 1, 0x3f); // 6x6 pixel block
+	cb_printf ("#%d~~~~~~", 1); // 6x6 pixel block
 }
 
 static void render_256(PrintfCallback cb_printf, const ut8 *c, const ut8 *d) {
