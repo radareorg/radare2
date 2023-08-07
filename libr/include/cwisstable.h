@@ -2749,8 +2749,7 @@ static inline size_t CWISS_RawTable_capacity(const CWISS_Policy* policy,
 }
 
 /// Clears the table, erasing every element contained therein.
-static inline void CWISS_RawTable_clear(const CWISS_Policy* policy,
-		CWISS_RawTable* self) {
+static inline void CWISS_RawTable_clear(const CWISS_Policy* policy, CWISS_RawTable* self) {
 	// Iterating over this container is O(bucket_count()). When bucket_count()
 	// is much greater than size(), iteration becomes prohibitively expensive.
 	// For clear() it is more important to reuse the allocated array when the
@@ -2762,8 +2761,7 @@ static inline void CWISS_RawTable_clear(const CWISS_Policy* policy,
 		CWISS_RawTable_DestroySlots(policy, self);
 
 		// infoz().RecordClearedReservation();
-	}
-	else if (self->capacity_) {
+	} else if (self->capacity_) {
 		if (policy->slot->del != NULL) {
 			size_t i;
 			for (i = 0; i != self->capacity_; i++) {
@@ -3214,7 +3212,7 @@ static inline size_t HashSet_##_capacity(const HashSet_* self) {             \
 }                                                                            \
 \
 static inline void HashSet_##_clear(HashSet_* self) {                        \
-	return CWISS_RawTable_clear(&kPolicy_, &self->set_);                       \
+	CWISS_RawTable_clear(&kPolicy_, &self->set_);                       \
 }                                                                            \
 \
 typedef struct {                                                             \
