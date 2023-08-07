@@ -509,11 +509,12 @@ R_API void r_type_del(Sdb *TDB, const char *name) {
 		sdb_unset (TDB, r_strf ("type.%s.meta", name), 0);
 		sdb_unset (TDB, name, 0);
 	} else if (!strcmp (kind, "struct") || !strcmp (kind, "union")) {
-		int i, n = sdb_array_length (TDB, r_strf ("%s.%s", kind, name));
 		char *elements_key = r_str_newf ("%s.%s", kind, name);
+		int i, n = sdb_array_length (TDB, elements_key);
 		for (i = 0; i < n; i++) {
 			char *p = sdb_array_get (TDB, elements_key, i, NULL);
 			sdb_unset (TDB, r_strf ("%s.%s", elements_key, p), 0);
+			sdb_unset (TDB, r_strf ("%s.%s.meta", elements_key, p), 0);
 			free (p);
 		}
 		sdb_unset (TDB, elements_key, 0);
