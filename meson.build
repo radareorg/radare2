@@ -118,7 +118,7 @@ platform_inc = include_directories(platform_inc)
 
 
 if cc.get_id() == 'msvc'
-  add_project_arguments('/Zc:preprocessor')
+#  add_project_arguments('/Zc:preprocessor', language: 'c')
   if get_option('static_runtime')
     add_project_arguments('/MT', language: 'c')
   endif
