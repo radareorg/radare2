@@ -622,30 +622,6 @@ typedef int8_t CWISS_ControlByte;
 // TODO: Wrap CWISS_ControlByte in a single-field struct to get strict-aliasing
 // benefits.
 
-#if 0
-static_assert(
-    (CWISS_kEmpty& CWISS_kDeleted& CWISS_kSentinel & 0x80) != 0,
-    "Special markers need to have the MSB to make checking for them efficient");
-static_assert(
-    CWISS_kEmpty < CWISS_kSentinel&& CWISS_kDeleted < CWISS_kSentinel,
-    "CWISS_kEmpty and CWISS_kDeleted must be smaller than "
-    "CWISS_kSentinel to make the SIMD test of IsEmptyOrDeleted() efficient");
-static_assert(
-    CWISS_kSentinel == -1,
-    "CWISS_kSentinel must be -1 to elide loading it from memory into SIMD "
-    "registers (pcmpeqd xmm, xmm)");
-static_assert(CWISS_kEmpty == -128,
-    "CWISS_kEmpty must be -128 to make the SIMD check for its "
-    "existence efficient (psignb xmm, xmm)");
-static_assert(
-    (~CWISS_kEmpty & ~CWISS_kDeleted & CWISS_kSentinel & 0x7F) != 0,
-    "CWISS_kEmpty and CWISS_kDeleted must share an unset bit that is not "
-    "shared by CWISS_kSentinel to make the scalar test for "
-    "MatchEmptyOrDeleted() efficient");
-static_assert(CWISS_kDeleted == -2,
-    "CWISS_kDeleted must be -2 to make the implementation of "
-    "ConvertSpecialToEmptyAndFullToDeleted efficient");
-#endif
 
 /// Returns a pointer to a control byte group that can be used by empty tables.
 static inline CWISS_ControlByte* CWISS_EmptyGroup(void) {
@@ -2059,14 +2035,6 @@ typedef struct {
 ///
 /// See the header documentation for more information.
 /// 
-#if 0
-#define CWISS_DECLARE_FLAT_MAP_POLICY(kPolicy_, K_, V_, ...) \
-  typedef struct {                                           \
-    K_ k;                                                    \
-    V_ v;                                                    \
-  } kPolicy_##_Entry;                                        \
-  CWISS_DECLARE_POLICY_(kPolicy_, kPolicy_##_Entry, K_, __VA_ARGS__)
-#endif
 
 /// Declares a hash set policy with pointer-stable storage for the given type.
 ///
@@ -2090,76 +2058,6 @@ typedef struct {
                         CWISS_NODE_OVERRIDES_(kPolicy_))
 
 // ---- PUBLIC API ENDS HERE! ----
-#if 0
-#define CWISS_DECLARE_POLICY_(kPolicy_, Type_, Key_, ...)                \
-  CWISS_BEGIN                                                            \
-  CWISS_EXTRACT_RAW(modifiers, static, __VA_ARGS__)                      \
-  inline void kPolicy_##_DefaultCopy(void* dst, const void* src) {       \
-    memcpy(dst, src, sizeof(Type_));                                     \
-  }                                                                      \
-  CWISS_EXTRACT_RAW(modifiers, static, __VA_ARGS__)                      \
-  inline size_t kPolicy_##_DefaultHash(const void* val) {                \
-    CWISS_AbslHash_State state = CWISS_AbslHash_kInit;                   \
-    CWISS_AbslHash_Write(&state, val, sizeof(Key_));                     \
-    return CWISS_AbslHash_Finish(state);                                 \
-  }                                                                      \
-  CWISS_EXTRACT_RAW(modifiers, static, __VA_ARGS__)                      \
-  inline bool kPolicy_##_DefaultEq(const void* a, const void* b) {       \
-    return memcmp(a, b, sizeof(Key_)) == 0;                              \
-  }                                                                      \
-  CWISS_EXTRACT_RAW(modifiers, static, __VA_ARGS__)                      \
-  inline void kPolicy_##_DefaultSlotInit(void* slot) {}                  \
-  CWISS_EXTRACT_RAW(modifiers, static, __VA_ARGS__)                      \
-  inline void kPolicy_##_DefaultSlotTransfer(void* dst, void* src) {     \
-    memcpy(dst, src, sizeof(Type_));                                     \
-  }                                                                      \
-  CWISS_EXTRACT_RAW(modifiers, static, __VA_ARGS__)                      \
-  inline void* kPolicy_##_DefaultSlotGet(void* slot) { return slot; }    \
-  CWISS_EXTRACT_RAW(modifiers, static, __VA_ARGS__)                      \
-  inline void kPolicy_##_DefaultSlotDtor(void* slot){                   \
-    if (CWISS_EXTRACT(obj_dtor, NULL, __VA_ARGS__) != NULL) {            \
-      CWISS_EXTRACT(obj_dtor, (void (*)(void*))NULL, __VA_ARGS__)(slot); \
-    }                                                                    \
-  }                                                                      \
-                                                                         \
-  CWISS_EXTRACT_RAW(modifiers, static, __VA_ARGS__)                      \
-  const CWISS_ObjectPolicy kPolicy_##_ObjectPolicy = {                   \
-      sizeof(Type_),                                                     \
-      alignof(Type_),                                                    \
-      CWISS_EXTRACT(obj_copy, kPolicy_##_DefaultCopy, __VA_ARGS__),      \
-      CWISS_EXTRACT(obj_dtor, NULL, __VA_ARGS__),                        \
-  };                                                                     \
-  CWISS_EXTRACT_RAW(modifiers, static, __VA_ARGS__)                      \
-  const CWISS_KeyPolicy kPolicy_##_KeyPolicy = {                         \
-      CWISS_EXTRACT(key_hash, kPolicy_##_DefaultHash, __VA_ARGS__),      \
-      CWISS_EXTRACT(key_eq, kPolicy_##_DefaultEq, __VA_ARGS__),          \
-  };                                                                     \
-  CWISS_EXTRACT_RAW(modifiers, static, __VA_ARGS__)                      \
-  const CWISS_AllocPolicy kPolicy_##_AllocPolicy = {                     \
-      CWISS_EXTRACT(alloc_alloc, CWISS_DefaultMalloc, __VA_ARGS__),      \
-      CWISS_EXTRACT(alloc_free, CWISS_DefaultFree, __VA_ARGS__),         \
-  };                                                                     \
-  CWISS_EXTRACT_RAW(modifiers, static, __VA_ARGS__)                      \
-  const CWISS_SlotPolicy kPolicy_##_SlotPolicy = {                       \
-      CWISS_EXTRACT(slot_size, sizeof(Type_), __VA_ARGS__),              \
-      CWISS_EXTRACT(slot_align, sizeof(Type_), __VA_ARGS__),             \
-      CWISS_EXTRACT(slot_init, kPolicy_##_DefaultSlotInit, __VA_ARGS__), \
-      CWISS_EXTRACT(slot_dtor, kPolicy_##_DefaultSlotDtor, __VA_ARGS__), \
-      CWISS_EXTRACT(slot_transfer, kPolicy_##_DefaultSlotTransfer,       \
-                    __VA_ARGS__),                                        \
-      CWISS_EXTRACT(slot_get, kPolicy_##_DefaultSlotGet, __VA_ARGS__),   \
-  };                                                                     \
-  CWISS_END                                                              \
-  CWISS_EXTRACT_RAW(modifiers, static, __VA_ARGS__)                      \
-  const CWISS_Policy kPolicy_ = {                                        \
-      &kPolicy_##_ObjectPolicy,                                          \
-      &kPolicy_##_KeyPolicy,                                             \
-      &kPolicy_##_AllocPolicy,                                           \
-      &kPolicy_##_SlotPolicy,                                            \
-  }
-#endif
-
-// AAAA
 
 
 #define CWISS_DECLARE_FLAT_MAP_POLICY(kPolicy_, K_, V_, obj_copy, obj_dtor, key_hash, key_eq) \
@@ -3154,32 +3052,54 @@ CWISS_BEGIN_EXTERN
 /// plain-old-data policies.
 ///
 /// See header documentation for examples of generated API.
-#define CWISS_DECLARE_FLAT_HASHSET(HashSet_, Type_)                 \
-  CWISS_DECLARE_FLAT_SET_POLICY(HashSet_##_kPolicy, Type_, (_, _)); \
+#define CWISS_DECLARE_FLAT_HASHSET(HashSet_, Type_,a,b,c,d)          \
+  CWISS_DECLARE_FLAT_SET_POLICY(HashSet_##_kPolicy, Type_, a,b,c,d); \
   CWISS_DECLARE_HASHSET_WITH(HashSet_, Type_, HashSet_##_kPolicy)
 
 /// Generates a new hash set type with outline storage and the default
 /// plain-old-data policies.
 ///
 /// See header documentation for examples of generated API.
-#define CWISS_DECLARE_NODE_HASHSET(HashSet_, Type_)                 \
-  CWISS_DECLARE_NODE_SET_POLICY(HashSet_##_kPolicy, Type_, (_, _)); \
+#define CWISS_DECLARE_NODE_HASHSET(HashSet_, Type_,a,b,c,d)          \
+  CWISS_DECLARE_NODE_SET_POLICY(HashSet_##_kPolicy, Type_, a,b,c,d); \
   CWISS_DECLARE_HASHSET_WITH(HashSet_, Type_, HashSet_##_kPolicy)
 
 /// Generates a new hash map type with inline storage and the default
 /// plain-old-data policies.
 ///
 /// See header documentation for examples of generated API.
-#define CWISS_DECLARE_FLAT_HASHMAP(HashMap_, K_, V_)                 \
-  CWISS_DECLARE_FLAT_MAP_POLICY(HashMap_##_kPolicy, K_, V_, (_, _)); \
+#define CWISS_DECLARE_FLAT_HASHMAP(HashMap_, K_, V_, a,b,c,d)         \
+  CWISS_DECLARE_FLAT_MAP_POLICY(HashMap_##_kPolicy, K_, V_, a,b,c,d); \
+  CWISS_DECLARE_HASHMAP_WITH(HashMap_, K_, V_, HashMap_##_kPolicy)
+
+#define CWISS_DECLARE_FLAT_HASHMAP_DEFAULT(HashMap_, K_, V_)         \
+  static inline void HashMap_##_default_dtor(void* val) { } \
+  typedef struct {                                           \
+    K_ k;                                                    \
+    V_ v;                                                    \
+  } HashMap_##_Entry2;                                        \
+  static inline void HashMap_##_default_copy(void* dst_, const void* src_) { \
+    memcpy(dst_, src_, sizeof(HashMap_##_Entry2));            \
+  } \
+  static inline size_t HashMap_##_default_hash(const void* val) { \
+    CWISS_AbslHash_State state = CWISS_AbslHash_kInit;            \
+    CWISS_AbslHash_Write(&state, val, sizeof(K_));              \
+    return CWISS_AbslHash_Finish(state);                          \
+  } \
+  static inline bool HashMap_##_default_eq(const void* a, const void* b) { return memcmp (a,b,sizeof(K_)) == 0; } \
+  CWISS_DECLARE_FLAT_MAP_POLICY(HashMap_##_kPolicy, K_, V_, \
+	  HashMap_##_default_copy, \
+	  HashMap_##_default_dtor, \
+	  HashMap_##_default_hash, \
+	  HashMap_##_default_eq);  \
   CWISS_DECLARE_HASHMAP_WITH(HashMap_, K_, V_, HashMap_##_kPolicy)
 
 /// Generates a new hash map type with outline storage and the default
 /// plain-old-data policies.
 ///
 /// See header documentation for examples of generated API.
-#define CWISS_DECLARE_NODE_HASHMAP(HashMap_, K_, V_)                 \
-  CWISS_DECLARE_NODE_MAP_POLICY(HashMap_##_kPolicy, K_, V_, (_, _)); \
+#define CWISS_DECLARE_NODE_HASHMAP(HashMap_, K_, V_, a,b,c,d)                 \
+  CWISS_DECLARE_NODE_MAP_POLICY(HashMap_##_kPolicy, K_, V_, a,b,c,d); \
   CWISS_DECLARE_HASHMAP_WITH(HashMap_, K_, V_, HashMap_##_kPolicy)
 
 /// Generates a new hash set type using the given policy.

@@ -11,9 +11,9 @@ R_VEC_TYPE (RVecAnalRef, RAnalRef);
 
 // xrefs are stored as an adjacency list (in both directions),
 // as a hastable mapping at (from) to hashtables mapping addr (at) to a ref type.
-CWISS_DECLARE_FLAT_HASHMAP(Edges, ut64, RAnalRefType);
+CWISS_DECLARE_FLAT_HASHMAP_DEFAULT(Edges, ut64, RAnalRefType);
 // TODO store Edges directly in other hashmap, but how to hash & compare the hashmap itself?
-CWISS_DECLARE_FLAT_HASHMAP(AdjacencyList, ut64, Edges*);
+CWISS_DECLARE_FLAT_HASHMAP_DEFAULT(AdjacencyList, ut64, Edges*);
 
 #define INITIAL_CAPACITY 0
 
