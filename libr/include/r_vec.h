@@ -383,7 +383,7 @@ extern "C" {
 		} \
 	} \
 	static inline R_MAYBE_UNUSED void R_VEC_FUNC(vec_type, remove)(vec_type *vec, ut64 index) { \
-		r_return_if_fail (vec && vec->_start != vec->_end && index < vec->_start - vec->_end); \
+		r_return_if_fail (vec && vec->_start != vec->_end && index < (ut64)(size_t)(vec->_start - vec->_end)); \
 		type *ptr = R_VEC_FUNC(vec_type, at) (vec, index); \
 		const ut64 num_elems_after = vec->_end - ptr; \
 		R_MAYBE_GENERATE(has_fini, fini_fn (ptr)); \
