@@ -2308,7 +2308,7 @@ struct MACH0_(obj_t) *MACH0_(mach0_new)(const char *file, struct MACH0_(opts_t) 
 #endif
 
 struct MACH0_(obj_t) *MACH0_(new_buf)(RBuffer *buf, struct MACH0_(opts_t) *options) {
-	r_return_val_if_fail (buf, NULL);
+	r_return_val_if_fail (buf && options->bf->o, NULL);
 	struct MACH0_(obj_t) *mo = R_NEW0 (struct MACH0_(obj_t));
 	if (mo) {
 		mo->b = r_buf_ref (buf);
@@ -2316,10 +2316,7 @@ struct MACH0_(obj_t) *MACH0_(new_buf)(RBuffer *buf, struct MACH0_(opts_t) *optio
 		mo->kv = sdb_new (NULL, "bin.mach0", 0);
 		// probably unnecessary indirection if we pass bf or bo to the apis instead of mo
 		// RVecRBinSymbol_init (&options->bf->o->symbols_vec);
-		if (!options->bf->o) {
-			R_LOG_WARN ("bf->bo is not initialized yet"); // R2_590 should not be a runtime chk
-		}
-		mo->symbols_vec = &(options->bf->o->symbols_vec); // R2_590 -> rename bf->o to bf->bo for consistency
+		mo->symbols_vec = &(options->bf->o->symbols_vec);
 		mo->options = *options;
 		mo->limit = options->bf->rbin->limit;
 		mo->nofuncstarts = r_sys_getenv_asbool ("RABIN2_MACHO_NOFUNCSTARTS");
