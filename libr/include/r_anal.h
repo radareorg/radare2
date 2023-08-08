@@ -1087,7 +1087,6 @@ R_API RVecAnalRef *r_anal_function_get_refs(RAnalFunction *fcn);
 R_API RVecAnalRef *r_anal_function_get_all_xrefs(RAnalFunction *fcn);
 R_API RVecAnalRef *r_anal_function_get_xrefs(RAnalFunction *fcn);
 R_API bool r_anal_xrefs_set(RAnal *anal, ut64 from, ut64 to, const RAnalRefType type);
-R_API bool r_anal_xrefs_deln(RAnal *anal, ut64 from, ut64 to, const RAnalRefType type);
 R_API bool r_anal_xref_del(RAnal *anal, ut64 from, ut64 to);
 
 R_API RList *r_anal_get_fcns(RAnal *anal);
