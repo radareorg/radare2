@@ -190,7 +190,7 @@ static RList *sections(RBinFile *bf) {
 	RList *ret = NULL;
 	RBinSection *ptr = NULL;
 	RBuffer *b = bf->buf;
-	if (!bf->o->info) {
+	if (!bf->bo->info) {
 		return NULL;
 	}
 	if (!(ret = r_list_new ())) {

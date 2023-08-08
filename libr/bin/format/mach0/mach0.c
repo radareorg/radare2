@@ -64,7 +64,7 @@ typedef struct {
 } CodeDirectory;
 
 // OMG; THIS SHOULD BE KILLED; this var exposes the local native endian, which is completely unnecessary
-// USE THIS: int ws = bf->o->info->big_endian;
+// USE THIS: int ws = bf->bo->info->big_endian;
 #define mach0_endian 1
 
 static ut64 read_uleb128(ut8 **p, ut8 *end) {
@@ -125,7 +125,7 @@ static ut64 pa2va(RBinFile *bf, ut64 offset) {
 	if (!io || !io->va) {
 		return offset;
 	}
-	struct MACH0_(obj_t) *mo = bf->o->bin_obj;
+	struct MACH0_(obj_t) *mo = bf->bo->bin_obj;
 	return mo? offset_to_vaddr (mo, offset): offset;
 }
 
@@ -2281,7 +2281,7 @@ struct MACH0_(obj_t) *MACH0_(mach0_new)(const char *file, struct MACH0_(opts_t) 
 		mo->symbols_off = options->symbols_off;
 		mo->parse_start_symbols = options->parse_start_symbols;
 	}
-	mo->symbols_vec = &options->bf->o->symbols_vec; // probably unnecessary indirection if we pass bf or bo to the apis instead of mo
+	mo->symbols_vec = &options->bf->bo->symbols_vec; // probably unnecessary indirection if we pass bf or bo to the apis instead of mo
 	mo->options = *options;
 	mo->file = file;
 	size_t binsz = 0;
@@ -2308,15 +2308,15 @@ struct MACH0_(obj_t) *MACH0_(mach0_new)(const char *file, struct MACH0_(opts_t) 
 #endif
 
 struct MACH0_(obj_t) *MACH0_(new_buf)(RBuffer *buf, struct MACH0_(opts_t) *options) {
-	r_return_val_if_fail (buf && options->bf->o, NULL);
+	r_return_val_if_fail (buf && options->bf->bo, NULL);
 	struct MACH0_(obj_t) *mo = R_NEW0 (struct MACH0_(obj_t));
 	if (mo) {
 		mo->b = r_buf_ref (buf);
 		mo->main_addr = UT64_MAX;
 		mo->kv = sdb_new (NULL, "bin.mach0", 0);
 		// probably unnecessary indirection if we pass bf or bo to the apis instead of mo
-		// RVecRBinSymbol_init (&options->bf->o->symbols_vec);
-		mo->symbols_vec = &(options->bf->o->symbols_vec);
+		// RVecRBinSymbol_init (&options->bf->bo->symbols_vec);
+		mo->symbols_vec = &(options->bf->bo->symbols_vec);
 		mo->options = *options;
 		mo->limit = options->bf->rbin->limit;
 		mo->nofuncstarts = r_sys_getenv_asbool ("RABIN2_MACHO_NOFUNCSTARTS");
@@ -2468,7 +2468,7 @@ RVecSegment *MACH0_(get_segments_vec)(RBinFile *bf, struct MACH0_(obj_t) *mo) {
 				s->vsize = seg->vmsize;
 				s->size = seg->vmsize;
 				s->paddr = seg->fileoff;
-				s->paddr += bf->o->boffset;
+				s->paddr += bf->bo->boffset;
 				//TODO s->flags = seg->flags;
 				s->name = r_str_ndup (seg->segname, 16);
 				s->is_segment = true;
@@ -2983,7 +2983,7 @@ static void _parse_symbols(RBinFile *bf, struct MACH0_(obj_t) *mo, HtPP *symcach
 	ut32 from = UT32_MAX;
 	ut32 ordinal = 0;
 
-	RBinObject *obj = bf? bf->o: NULL;
+	RBinObject *obj = bf? bf->bo: NULL;
 	if (!obj) {
 		return;
 	}
@@ -3157,7 +3157,7 @@ static void _parse_symbols(RBinFile *bf, struct MACH0_(obj_t) *mo, HtPP *symcach
 }
 
 static void _parse_function_start_symbols(RBinFile *bf, struct MACH0_(obj_t) *mo, HtPP *symcache) {
-	RBinObject *obj = bf? bf->o: NULL;
+	RBinObject *obj = bf? bf->bo: NULL;
 	if (!obj) {
 		return;
 	}
@@ -4472,7 +4472,7 @@ static void walk_codesig(RBinFile *bf, ut32 addr, ut32 size) {
 	if (!cb_printf) {
 		cb_printf = printf;
 	}
-	struct MACH0_(obj_t) *bo = bf->o->bin_obj;
+	struct MACH0_(obj_t) *bo = bf->bo->bin_obj;
 	SuperBlob sb;
 	if (r_buf_fread_at (bo->b, addr, (ut8*)&sb, "3I", 1) != -1) {
 		cb_printf ("0x%08"PFMT64x" superblob.magic = 0x%08x\n", (ut64)addr, sb.magic);
@@ -4549,7 +4549,7 @@ static void walk_codesig(RBinFile *bf, ut32 addr, ut32 size) {
 }
 
 void MACH0_(mach_headerfields)(RBinFile *bf) {
-	struct MACH0_(obj_t) *mo = bf->o->bin_obj;
+	struct MACH0_(obj_t) *mo = bf->bo->bin_obj;
 	PrintfCallback cb_printf = bf->rbin->cb_printf;
 	if (!cb_printf) {
 		cb_printf = printf;

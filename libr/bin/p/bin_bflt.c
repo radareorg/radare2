@@ -12,7 +12,7 @@ static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadadd
 static RList *entries(RBinFile *bf) {
 	RList *ret = r_list_newf (free);
 	if (ret) {
-		struct r_bin_bflt_obj *obj = (struct r_bin_bflt_obj *) R_UNWRAP3 (bf, o, bin_obj);
+		struct r_bin_bflt_obj *obj = (struct r_bin_bflt_obj *) R_UNWRAP3 (bf, bo, bin_obj);
 		RBinAddr *ptr = r_bflt_get_entry (obj);
 		if (ptr) {
 			r_list_append (ret, ptr);
@@ -118,7 +118,7 @@ static ut32 get_ngot_entries(struct r_bin_bflt_obj *obj) {
 }
 
 static RList *relocs(RBinFile *bf) {
-	struct r_bin_bflt_obj *obj = (struct r_bin_bflt_obj *) bf->o->bin_obj;
+	struct r_bin_bflt_obj *obj = (struct r_bin_bflt_obj *) bf->bo->bin_obj;
 	RList *list = r_list_newf ((RListFree) free);
 	ut32 i, len, n_got, amount;
 	if (!list || !obj) {
@@ -232,7 +232,7 @@ out_error:
 static RBinInfo *info(RBinFile *bf) {
 	RBinInfo *info = R_NEW0 (RBinInfo);
 	if (info) {
-		struct r_bin_bflt_obj *obj = R_UNWRAP3 (bf, o, bin_obj);
+		struct r_bin_bflt_obj *obj = R_UNWRAP3 (bf, bo, bin_obj);
 		info->file = bf->file? strdup (bf->file): NULL;
 		info->rclass = strdup ("bflt");
 		info->bclass = strdup ("bflt" );
@@ -256,7 +256,7 @@ static bool check_buffer(RBinFile *bf, RBuffer *buf) {
 }
 
 static void destroy(RBinFile *bf) {
-	r_bin_bflt_free (bf->o->bin_obj);
+	r_bin_bflt_free (bf->bo->bin_obj);
 }
 
 RBinPlugin r_bin_plugin_bflt = {

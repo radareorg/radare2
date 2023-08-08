@@ -13,7 +13,7 @@ static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadadd
 }
 
 static void destroy(RBinFile *bf) {
-	r_bin_xcoff64_free ((struct r_bin_xcoff64_obj*)bf->o->bin_obj);
+	r_bin_xcoff64_free ((struct r_bin_xcoff64_obj*)bf->bo->bin_obj);
 }
 
 static ut64 baddr(RBinFile *bf) {
@@ -61,7 +61,7 @@ static bool _fill_bin_symbol(RBin *rbin, struct r_bin_xcoff64_obj *bin, int idx,
 }
 
 static RList *entries(RBinFile *bf) {
-	struct r_bin_xcoff64_obj *obj = (struct r_bin_xcoff64_obj*)bf->o->bin_obj;
+	struct r_bin_xcoff64_obj *obj = (struct r_bin_xcoff64_obj*)bf->bo->bin_obj;
 	RList *ret;
 	if (!(ret = r_list_newf (free))) {
 		return NULL;
@@ -123,7 +123,7 @@ static RList *sections(RBinFile *bf) {
 	char *tmp = NULL;
 	size_t i;
 	RBinSection *ptr = NULL;
-	struct r_bin_xcoff64_obj *obj = (struct r_bin_xcoff64_obj*)bf->o->bin_obj;
+	struct r_bin_xcoff64_obj *obj = (struct r_bin_xcoff64_obj*)bf->bo->bin_obj;
 
 	RList *ret = r_list_newf ((RListFree)r_bin_section_free);
 	if (!ret) {
@@ -163,7 +163,7 @@ static RList *sections(RBinFile *bf) {
 static RList *symbols(RBinFile *bf) {
 	int i;
 	RBinSymbol *ptr = NULL;
-	struct r_bin_xcoff64_obj *obj = (struct r_bin_xcoff64_obj*)bf->o->bin_obj;
+	struct r_bin_xcoff64_obj *obj = (struct r_bin_xcoff64_obj*)bf->bo->bin_obj;
 	RList *ret = r_list_newf ((RListFree)r_bin_symbol_free);
 	if (!ret) {
 		return NULL;
@@ -188,7 +188,7 @@ static RList *symbols(RBinFile *bf) {
 
 static RBinInfo *info(RBinFile *bf) {
 	RBinInfo *ret = R_NEW0 (RBinInfo);
-	struct r_bin_xcoff64_obj *obj = (struct r_bin_xcoff64_obj*)bf->o->bin_obj;
+	struct r_bin_xcoff64_obj *obj = (struct r_bin_xcoff64_obj*)bf->bo->bin_obj;
 
 	ret->file = bf->file? strdup (bf->file): NULL;
 	ret->rclass = strdup ("xcoff64");

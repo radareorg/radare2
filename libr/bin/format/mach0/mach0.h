@@ -178,8 +178,8 @@ struct MACH0_(obj_t) {
 	ut64 header_at;
 	bool parse_start_symbols;
 	bool symbols_loaded;
-	RVecRBinSymbol *symbols_vec; // pointer to &bf->o->symbols_vec
-	RVecSegment *segments_vec;  // R2_590 pointer of &bf->o->segments_vec
+	RVecRBinSymbol *symbols_vec; // pointer to &bf->bo->symbols_vec
+	RVecSegment *segments_vec;  // R2_590 pointer of &bf->bo->segments_vec
 	ut64 symbols_off;
 	void *user;
 	ut64 (*va2pa)(ut64 p, ut32 *offset, ut32 *left, RBinFile *bf);

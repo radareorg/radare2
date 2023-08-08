@@ -297,8 +297,8 @@ static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadadd
 
 static RList *sections(RBinFile *bf) {
 	RList *res = r_list_newf ((RListFree)r_bin_section_free);
-	r_return_val_if_fail (res && bf->o && bf->o->bin_obj, res);
-	RCoreSymCacheElement *element = bf->o->bin_obj;
+	r_return_val_if_fail (res && bf->bo && bf->bo->bin_obj, res);
+	RCoreSymCacheElement *element = bf->bo->bin_obj;
 	size_t i;
 	if (element->segments) {
 		for (i = 0; i < element->hdr->n_segments; i++) {
@@ -350,8 +350,8 @@ static bool check_buffer(RBinFile *bf, RBuffer *b) {
 }
 
 static RList *symbols(RBinFile *bf) {
-	r_return_val_if_fail (bf && bf->o && bf->o->bin_obj, NULL);
-	RCoreSymCacheElement *element = bf->o->bin_obj;
+	r_return_val_if_fail (bf && bf->bo && bf->bo->bin_obj, NULL);
+	RCoreSymCacheElement *element = bf->bo->bin_obj;
 	size_t i;
 	HtUU *hash = ht_uu_new0 ();
 	if (!hash) {
@@ -398,13 +398,13 @@ static ut64 size(RBinFile *bf) {
 }
 
 static void destroy(RBinFile *bf) {
-	r_coresym_cache_element_free (bf->o->bin_obj);
+	r_coresym_cache_element_free (bf->bo->bin_obj);
 }
 
 static void header(RBinFile *bf) {
-	r_return_if_fail (bf && bf->o);
+	r_return_if_fail (bf && bf->bo);
 
-	RCoreSymCacheElement *element = bf->o->bin_obj;
+	RCoreSymCacheElement *element = bf->bo->bin_obj;
 	if (!element) {
 		return;
 	}

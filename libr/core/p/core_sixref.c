@@ -359,7 +359,7 @@ static int r_cmdsixref_call(void *user, const char *input) {
 			R_LOG_INFO ("Current offset is not 4-byte aligned, using 0x%"PFMT64x" instaed", offset);
 		}
 
-		RBinSection *s = r_bin_get_section_at (core->bin->cur->o, offset, true);
+		RBinSection *s = r_bin_get_section_at (core->bin->cur->bo, offset, true);
 		if (!s || !(s->perm & R_PERM_X)) {
 			R_LOG_WARN ("Current section is not executable");
 			goto done;

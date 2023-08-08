@@ -110,7 +110,7 @@ static RList* sections(RBinFile *bf) {
 	const int buf_size = R_MIN (sizeof (buf), r_buf_size (bf->buf));
 
 	r_buf_read_at (bf->buf, 0, buf, buf_size);
-	if (!bf->o->info) {
+	if (!bf->bo->info) {
 		return NULL;
 	}
 
@@ -172,10 +172,10 @@ static RBinInfo* info(RBinFile *bf) {
 
 static ut64 size(RBinFile *bf) {
 	ut8 buf[4] = {0};
-	if (!bf->o->info) {
-		bf->o->info = info (bf);
+	if (!bf->bo->info) {
+		bf->bo->info = info (bf);
 	}
-	if (!bf->o->info) {
+	if (!bf->bo->info) {
 		return 0;
 	}
 	r_buf_read_at (bf->buf, 16, buf, 4);

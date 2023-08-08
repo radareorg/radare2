@@ -62,7 +62,7 @@ static void add_bin_obj_to_sdb(RBinJavaObj *bin) {
 }
 
 static Sdb *get_sdb(RBinFile *bf) {
-	RBinObject *o = bf->o;
+	RBinObject *o = bf->bo;
 	struct r_bin_java_obj_t *bin;
 	if (!o) {
 		return NULL;
@@ -91,29 +91,29 @@ static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadadd
 }
 
 static void destroy(RBinFile *bf) {
-	r_bin_java_free ((struct r_bin_java_obj_t *) bf->o->bin_obj);
+	r_bin_java_free ((struct r_bin_java_obj_t *) bf->bo->bin_obj);
 	sdb_free (DB);
 	DB = NULL;
 }
 
 static RList *entries(RBinFile *bf) {
-	return r_bin_java_get_entrypoints (bf->o->bin_obj);
+	return r_bin_java_get_entrypoints (bf->bo->bin_obj);
 }
 
 static RList *classes(RBinFile *bf) {
-	return r_bin_java_get_classes ((struct r_bin_java_obj_t *) bf->o->bin_obj);
+	return r_bin_java_get_classes ((struct r_bin_java_obj_t *) bf->bo->bin_obj);
 }
 
 static RList *symbols(RBinFile *bf) {
-	return r_bin_java_get_symbols ((struct r_bin_java_obj_t *) bf->o->bin_obj);
+	return r_bin_java_get_symbols ((struct r_bin_java_obj_t *) bf->bo->bin_obj);
 }
 
 static RList *strings(RBinFile *bf) {
-	return r_bin_java_get_strings ((struct r_bin_java_obj_t *) bf->o->bin_obj);
+	return r_bin_java_get_strings ((struct r_bin_java_obj_t *) bf->bo->bin_obj);
 }
 
 static RBinInfo *info(RBinFile *bf) {
-	RBinJavaObj *jo = bf->o->bin_obj;
+	RBinJavaObj *jo = bf->bo->bin_obj;
 	RBinInfo *ret = R_NEW0 (RBinInfo);
 	if (!ret) {
 		return NULL;
@@ -121,7 +121,7 @@ static RBinInfo *info(RBinFile *bf) {
 	ret->lang = (jo && jo->lang) ? jo->lang : "java";
 	ret->file = strdup (bf->file);
 	ret->type = strdup ("JAVA CLASS");
-	ret->bclass = r_bin_java_get_version (bf->o->bin_obj);
+	ret->bclass = r_bin_java_get_version (bf->bo->bin_obj);
 	ret->has_va = 0;
 	// ret->has_lit = true;
 	ret->rclass = strdup ("class");
@@ -155,7 +155,7 @@ static int retdemangle(const char *str) {
 }
 
 static RBinAddr *binsym(RBinFile *bf, int sym) {
-	return r_bin_java_get_entrypoint (bf->o->bin_obj, sym);
+	return r_bin_java_get_entrypoint (bf->bo->bin_obj, sym);
 }
 
 static R_BORROW RList *lines(RBinFile *bf) {
@@ -167,7 +167,7 @@ static R_BORROW RList *lines(RBinFile *bf) {
 	file = r_str_replace (file, ".class", ".java", 0);
 	/*
 	   int i;
-	   RBinJavaObj *b = bf->o->bin_obj;
+	   RBinJavaObj *b = bf->bo->bin_obj;
 	   for (i = 0; i < b->lines.count; i++) {
 	        RBinDwarfRow *row = R_NEW0 (RBinDwarfRow);
 	        r_bin_dwarf_line_new (row, b->lines.addr[i], file, b->lines.line[i]);
@@ -179,15 +179,15 @@ static R_BORROW RList *lines(RBinFile *bf) {
 }
 
 static RList *sections(RBinFile *bf) {
-	return r_bin_java_get_sections (bf->o->bin_obj);
+	return r_bin_java_get_sections (bf->bo->bin_obj);
 }
 
 static RList *imports(RBinFile *bf) {
-	return r_bin_java_get_imports (bf->o->bin_obj);
+	return r_bin_java_get_imports (bf->bo->bin_obj);
 }
 
 static RList *libs(RBinFile *bf) {
-	return r_bin_java_get_lib_names (bf->o->bin_obj);
+	return r_bin_java_get_lib_names (bf->bo->bin_obj);
 }
 
 RBinPlugin r_bin_plugin_java = {

@@ -11,7 +11,7 @@
 static RBinInfo* info(RBinFile *bf);
 
 static int get_file_type(RBinFile *bf) {
-	ELFOBJ *eo = bf->o->bin_obj;
+	ELFOBJ *eo = bf->bo->bin_obj;
 	char *type = Elf_(get_file_type (eo));
 	int res = type? (r_str_startswith (type, "CORE") ? R_BIN_TYPE_CORE : R_BIN_TYPE_DEFAULT) : -1;
 	free (type);
@@ -19,12 +19,12 @@ static int get_file_type(RBinFile *bf) {
 }
 
 static RList *maps(RBinFile *bf) {
-	r_return_val_if_fail (bf && bf->o, NULL);
-	return Elf_(get_maps)(bf->o->bin_obj);
+	r_return_val_if_fail (bf && bf->bo, NULL);
+	return Elf_(get_maps)(bf->bo->bin_obj);
 }
 
 static char* regstate(RBinFile *bf) {
-	ELFOBJ *eo = bf->o->bin_obj;
+	ELFOBJ *eo = bf->bo->bin_obj;
 	switch (eo->ehdr.e_machine) {
 	case EM_ARM:
 	case EM_AARCH64:
@@ -52,7 +52,7 @@ static void setimpord(ELFOBJ* eo, ut32 ord, RBinImport *ptr) {
 }
 
 static Sdb* get_sdb(RBinFile *bf) {
-	ELFOBJ *eo = R_UNWRAP3 (bf, o, bin_obj);
+	ELFOBJ *eo = R_UNWRAP3 (bf, bo, bin_obj);
 	return eo? eo->kv: NULL;
 }
 
@@ -69,7 +69,7 @@ static bool load_buffer(RBinFile *bf, void **bo, RBuffer *buf, ut64 loadaddr, Sd
 }
 
 static void destroy(RBinFile *bf) {
-	ELFOBJ* eo = bf->o->bin_obj;
+	ELFOBJ* eo = bf->bo->bin_obj;
 	if (eo && eo->imports_by_ord) {
 		int i;
 		for (i = 0; i < eo->imports_by_ord_size; i++) {
@@ -86,15 +86,15 @@ static void destroy(RBinFile *bf) {
 }
 
 static ut64 baddr(RBinFile *bf) {
-	return Elf_(get_baddr) (bf->o->bin_obj);
+	return Elf_(get_baddr) (bf->bo->bin_obj);
 }
 
 static ut64 boffset(RBinFile *bf) {
-	return Elf_(get_boffset) (bf->o->bin_obj);
+	return Elf_(get_boffset) (bf->bo->bin_obj);
 }
 
 static RBinAddr* binsym(RBinFile *bf, int sym) {
-	ELFOBJ* eo = bf->o->bin_obj;
+	ELFOBJ* eo = bf->bo->bin_obj;
 	RBinAddr *ret = NULL;
 	ut64 addr = 0LL; // must be ut64_max
 
@@ -127,15 +127,15 @@ static RBinAddr* binsym(RBinFile *bf, int sym) {
 
 #if R2_590
 static bool sections_vec(RBinFile *bf) {
-	r_return_val_if_fail (bf && bf->o, false);
-	ELFOBJ *eo = bf->o->bin_obj
+	r_return_val_if_fail (bf && bf->bo, false);
+	ELFOBJ *eo = bf->bo->bin_obj
 	return eo? Elf_(load_sections) (bf, eo) != NULL: false;
 }
 #else
 
 // DEPRECATE: we must use sections_vec instead
 static RList* sections(RBinFile *bf) {
-	ELFOBJ *eo = (bf && bf->o)? bf->o->bin_obj : NULL;
+	ELFOBJ *eo = (bf && bf->bo)? bf->bo->bin_obj : NULL;
 	if (!eo) {
 		return NULL;
 	}
@@ -160,11 +160,11 @@ static RList* sections(RBinFile *bf) {
 #endif
 
 static RBinAddr* newEntry(RBinFile *bf, ut64 hpaddr, ut64 hvaddr, ut64 vaddr, int type, int bits) {
-	r_return_val_if_fail (bf && bf->o && bf->o->bin_obj, NULL);
+	r_return_val_if_fail (bf && bf->bo && bf->bo->bin_obj, NULL);
 
 	RBinAddr *ptr = R_NEW0 (RBinAddr);
 	if (ptr) {
-		ELFOBJ *eo = bf->o->bin_obj;
+		ELFOBJ *eo = bf->bo->bin_obj;
 		ptr->paddr = Elf_(v2p) (eo, vaddr);
 		ptr->vaddr = vaddr;
 		ptr->hpaddr = hpaddr;
@@ -185,7 +185,7 @@ static void process_constructors(RBinFile *bf, RList *ret, int bits) {
 	if (!sections_vec (bf)) {
 		return;
 	}
-	RVecRBinSection *secs = &(bf->o->sections_vec);
+	RVecRBinSection *secs = &(bf->bo->sections_vec);
 	RBinSection *sec;
 	R_VEC_FOREACH (secs, sec) {
 #else
@@ -255,14 +255,14 @@ static void process_constructors(RBinFile *bf, RList *ret, int bits) {
 }
 
 static RList* entries(RBinFile *bf) {
-	r_return_val_if_fail (bf && bf->o && bf->o->bin_obj, NULL);
+	r_return_val_if_fail (bf && bf->bo && bf->bo->bin_obj, NULL);
 
 	RList *ret = r_list_newf ((RListFree)free);
 	if (!ret) {
 		return NULL;
 	}
 
-	ELFOBJ* eo = bf->o->bin_obj;
+	ELFOBJ* eo = bf->bo->bin_obj;
 	ut64 paddr = Elf_(get_entry_offset) (eo);
 	if (paddr != UT64_MAX) {
 		RBinAddr *ptr = R_NEW0 (RBinAddr);
@@ -279,9 +279,9 @@ static RList* entries(RBinFile *bf) {
 			R_LOG_ERROR ("Cannot determine entrypoint, using 0x%08" PFMT64x, ptr->vaddr);
 		}
 
-		if (bf->o->sections) {
+		if (bf->bo->sections) {
 			// XXX store / cache sections by name in hashmap
-			const RVector *sections = Elf_(load_sections) (bf, bf->o->bin_obj);
+			const RVector *sections = Elf_(load_sections) (bf, bf->bo->bin_obj);
 			RBinSection *section;
 			r_vector_foreach_prev (sections, section) {
 				if (!strcmp (section->name, "ehdr")) {
@@ -361,20 +361,20 @@ static RList* entries(RBinFile *bf) {
 	return ret;
 }
 
-// fill bf->o->symbols_vec (RBinSymbol) with the processed contents of eo->g_symbols_vec (RBinElfSymbol)
+// fill bf->bo->symbols_vec (RBinSymbol) with the processed contents of eo->g_symbols_vec (RBinElfSymbol)
 // thats kind of dup because rbinelfsymbol shouldnt exist, rbinsymbol should be enough, rvec makes this easily typed
 static bool symbols_vec(RBinFile *bf) {
-	r_return_val_if_fail (bf && bf->o && bf->o->bin_obj, false);
+	r_return_val_if_fail (bf && bf->bo && bf->bo->bin_obj, false);
 
-	ELFOBJ *eo = bf->o->bin_obj;
+	ELFOBJ *eo = bf->bo->bin_obj;
 	// traverse symbols
 	if (!Elf_(load_symbols) (eo)) {
 		return false;
 	}
-	if (!RVecRBinSymbol_empty (&bf->o->symbols_vec)) {
+	if (!RVecRBinSymbol_empty (&bf->bo->symbols_vec)) {
 		return true;
 	}
-	RVecRBinSymbol *list = &bf->o->symbols_vec;
+	RVecRBinSymbol *list = &bf->bo->symbols_vec;
 #if 1
 	RVecRBinElfSymbol *elf_symbols = eo->g_symbols_vec;
 	RBinElfSymbol *symbol;
@@ -420,14 +420,14 @@ static bool symbols_vec(RBinFile *bf) {
 }
 
 static RList* imports(RBinFile *bf) {
-	r_return_val_if_fail (bf && bf->o, NULL);
+	r_return_val_if_fail (bf && bf->bo, NULL);
 
 	RList *ret = r_list_newf ((RListFree)r_bin_import_free);
 	if (!ret) {
 		return NULL;
 	}
 
-	ELFOBJ *eo = bf->o->bin_obj;
+	ELFOBJ *eo = bf->bo->bin_obj;
 	if (!Elf_(load_imports) (eo)) {
 		r_list_free (ret);
 		return NULL;
@@ -451,7 +451,7 @@ static RList* imports(RBinFile *bf) {
 }
 
 static RList* libs(RBinFile *bf) {
-	r_return_val_if_fail (bf && bf->o && bf->o->bin_obj, NULL);
+	r_return_val_if_fail (bf && bf->bo && bf->bo->bin_obj, NULL);
 
 	RList *ret = r_list_newf (free);
 	if (!ret) {
@@ -459,7 +459,7 @@ static RList* libs(RBinFile *bf) {
 	}
 
 	// No leak, libs is automatically freed when r_bin_elf_free is called
-	const RVector *libs = Elf_(load_libs) (bf->o->bin_obj);
+	const RVector *libs = Elf_(load_libs) (bf->bo->bin_obj);
 	if (libs) {
 		RBinElfLib *lib;
 		r_vector_foreach (libs, lib) {
@@ -641,9 +641,9 @@ static RBinReloc *reloc_convert(ELFOBJ* eo, RBinElfReloc *rel, ut64 got_addr) {
 }
 
 static RList* relocs(RBinFile *bf) {
-	r_return_val_if_fail (bf && bf->o && bf->o->bin_obj, NULL);
+	r_return_val_if_fail (bf && bf->bo && bf->bo->bin_obj, NULL);
 	RList *ret = NULL;
-	ELFOBJ *eo = bf->o->bin_obj;
+	ELFOBJ *eo = bf->bo->bin_obj;
 	if (!(ret = r_list_newf (free))) {
 		return NULL;
 	}
@@ -977,7 +977,7 @@ static void lookup_symbols(RBinFile *bf, RBinInfo *ret) {
 	if (!symbols_vec (bf)) {
 		return;
 	}
-	RVecRBinSymbol* symbols = &bf->o->symbols_vec;
+	RVecRBinSymbol* symbols = &bf->bo->symbols_vec;
 	RBinSymbol *symbol;
 	bool is_rust = false;
 	if (symbols) {
@@ -1011,7 +1011,7 @@ static void lookup_sections(RBinFile *bf, RBinInfo *ret) {
 	if (!sections_vec (bf)) {
 		return;
 	}
-	RVecRBinSection *sections = &(bf->o->sections_vec);
+	RVecRBinSection *sections = &(bf->bo->sections_vec);
 	R_VEC_FOREACH (sections, section) {
 #else
 	RList *secs = sections (bf);
@@ -1060,7 +1060,7 @@ static RBinInfo* info(RBinFile *bf) {
 	ret->file = bf->file
 		? strdup (bf->file)
 		: NULL;
-	void *obj = bf->o->bin_obj;
+	void *obj = bf->bo->bin_obj;
 	char *str;
 	if ((str = Elf_(get_rpath)(obj))) {
 		ret->rpath = strdup (str);
@@ -1192,12 +1192,12 @@ static ut64 size(RBinFile *bf) {
 	ut64 off = 0;
 	ut64 len = 0;
 #if R2_590
-	if (!bf->o->sections && sections_vec (bf)) {
+	if (!bf->bo->sections && sections_vec (bf)) {
 		RBinSection *section;
-		RVecRBinSection *sections = &(bf->o->sections_vec);
+		RVecRBinSection *sections = &(bf->bo->sections_vec);
 		R_VEC_FOREACH (sections, section) {
 #else
-	if (!bf->o->sections) {
+	if (!bf->bo->sections) {
 		RBinSection *section;
 		RList *secs = sections (bf);
 		RListIter *iter;

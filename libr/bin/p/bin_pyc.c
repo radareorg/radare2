@@ -102,17 +102,17 @@ static RList *symbols(RBinFile *arch) {
 	}
 	r_list_append (shared, cobjs);
 	r_list_append (shared, interned_table);
-	arch->o->bin_obj = shared;
+	arch->bo->bin_obj = shared;
 	RList *sections = r_list_newf (NULL); // (RListFree)free);
 	if (!sections) {
 		r_list_free (shared);
-		arch->o->bin_obj = NULL;
+		arch->bo->bin_obj = NULL;
 		return NULL;
 	}
 	RList *symbols = r_list_newf ((RListFree)free);
 	if (!symbols) {
 		r_list_free (shared);
-		arch->o->bin_obj = NULL;
+		arch->bo->bin_obj = NULL;
 		r_list_free (sections);
 		return NULL;
 	}

@@ -6,7 +6,7 @@
 #include "coff/coff.h"
 
 static Sdb* get_sdb(RBinFile *bf) {
-	struct r_bin_coff_obj *bin = (struct r_bin_coff_obj *) R_UNWRAP3 (bf, o, bin_obj);
+	struct r_bin_coff_obj *bin = (struct r_bin_coff_obj *) R_UNWRAP3 (bf, bo, bin_obj);
 	return bin? bin->kv: NULL;
 }
 
@@ -21,7 +21,7 @@ static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadadd
 }
 
 static void destroy(RBinFile *bf) {
-	r_bin_coff_free ((struct r_bin_coff_obj*)bf->o->bin_obj);
+	r_bin_coff_free ((struct r_bin_coff_obj*)bf->bo->bin_obj);
 }
 
 static RBinAddr *binsym(RBinFile *bf, int sym) {
@@ -139,7 +139,7 @@ static RBinImport *_fill_bin_import(struct r_bin_coff_obj *bin, int idx) {
 }
 
 static RList *entries(RBinFile *bf) {
-	struct r_bin_coff_obj *obj = (struct r_bin_coff_obj*)bf->o->bin_obj;
+	struct r_bin_coff_obj *obj = (struct r_bin_coff_obj*)bf->bo->bin_obj;
 	RList *ret;
 	if (!(ret = r_list_newf (free))) {
 		return NULL;
@@ -191,7 +191,7 @@ static RList *sections(RBinFile *bf) {
 	char *tmp = NULL;
 	size_t i;
 	RBinSection *ptr = NULL;
-	struct r_bin_coff_obj *obj = (struct r_bin_coff_obj*)bf->o->bin_obj;
+	struct r_bin_coff_obj *obj = (struct r_bin_coff_obj*)bf->bo->bin_obj;
 
 	RList *ret = r_list_newf ((RListFree)r_bin_section_free);
 	if (!ret) {
@@ -243,7 +243,7 @@ static RList *sections(RBinFile *bf) {
 static RList *symbols(RBinFile *bf) {
 	int i;
 	RBinSymbol *ptr = NULL;
-	struct r_bin_coff_obj *obj = (struct r_bin_coff_obj*)bf->o->bin_obj;
+	struct r_bin_coff_obj *obj = (struct r_bin_coff_obj*)bf->bo->bin_obj;
 	RList *ret = r_list_newf ((RListFree)r_bin_symbol_free);
 	if (!ret) {
 		return NULL;
@@ -268,7 +268,7 @@ static RList *symbols(RBinFile *bf) {
 
 static RList *imports(RBinFile *bf) {
 	int i;
-	struct r_bin_coff_obj *obj = (struct r_bin_coff_obj*)bf->o->bin_obj;
+	struct r_bin_coff_obj *obj = (struct r_bin_coff_obj*)bf->bo->bin_obj;
 	RList *ret = r_list_newf ((RListFree)r_bin_import_free);
 	if (!ret) {
 		return NULL;
@@ -481,7 +481,7 @@ static RList *_relocs_list(RBin *rbin, struct r_bin_coff_obj *bin, bool patch, u
 }
 
 static RList *relocs(RBinFile *bf) {
-	struct r_bin_coff_obj *bin = (struct r_bin_coff_obj*)bf->o->bin_obj;
+	struct r_bin_coff_obj *bin = (struct r_bin_coff_obj*)bf->bo->bin_obj;
 	return _relocs_list (bf->rbin, bin, false, UT64_MAX);
 }
 
@@ -541,7 +541,7 @@ static RList *patch_relocs(RBinFile *bf) {
 
 static RBinInfo *info(RBinFile *bf) {
 	RBinInfo *ret = R_NEW0 (RBinInfo);
-	struct r_bin_coff_obj *obj = (struct r_bin_coff_obj*)bf->o->bin_obj;
+	struct r_bin_coff_obj *obj = (struct r_bin_coff_obj*)bf->bo->bin_obj;
 
 	ret->file = bf->file? strdup (bf->file): NULL;
 	ret->rclass = strdup ("coff");

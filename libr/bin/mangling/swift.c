@@ -3,7 +3,7 @@
 #include <r_bin.h>
 
 R_IPI bool r_bin_lang_swift(RBinFile *binfile) {
-	RBinObject *o = binfile? binfile->o: NULL;
+	RBinObject *o = binfile? binfile->bo: NULL;
 	RBinInfo *info = o? o->info: NULL;
 	RBinSymbol *sym;
 	RListIter *iter;

@@ -430,7 +430,7 @@ static void cmd_open_bin(RCore *core, const char *input) {
 				return;
 			}
 			r_list_foreach (bin->binfiles, iter, bf) {
-				RInterval inter = (RInterval) {bf->o->baddr, bf->o->size};
+				RInterval inter = (RInterval) {bf->bo->baddr, bf->bo->size};
 				RListInfo *info = r_listinfo_new (bf->file, inter, inter, -1, sdb_itoa (bf->fd, 10, temp, sizeof (temp)));
 				if (!info) {
 					break;
@@ -1289,7 +1289,7 @@ static void __rebase_refs(RAnal *anal, RAnalRef *ref, ut64 type, ut64 diff) {
 static void __rebase_everything(RCore *core, RList *old_sections, ut64 old_base) {
 	RListIter *it, *itit, *ititit;
 	RAnalFunction *fcn;
-	ut64 new_base = (core->bin->cur && core->bin->cur->o)? core->bin->cur->o->baddr_shift: 0;
+	ut64 new_base = (core->bin->cur && core->bin->cur->bo)? core->bin->cur->bo->baddr_shift: 0;
 	RBinSection *old_section;
 	ut64 diff = new_base - old_base;
 	if (!diff) {
@@ -1373,7 +1373,7 @@ R_API void r_core_file_reopen_remote_debug(RCore *core, char *uri, ut64 addr) {
 	}
 
 	RList *old_sections = __save_old_sections (core);
-	ut64 old_base = core->bin->cur->o->baddr_shift;
+	ut64 old_base = core->bin->cur->bo->baddr_shift;
 	int bits = core->rasm->config->bits;
 	r_config_set_i (core->config, "asm.bits", bits);
 	r_config_set_b (core->config, "cfg.debug", true);
@@ -1443,7 +1443,7 @@ R_API void r_core_file_reopen_debug(RCore *core, const char *args) {
 	}
 
 	RList *old_sections = __save_old_sections (core);
-	ut64 old_base = (core->bin->cur && core->bin->cur->o)? core->bin->cur->o->baddr_shift: 0;
+	ut64 old_base = (core->bin->cur && core->bin->cur->bo)? core->bin->cur->bo->baddr_shift: 0;
 	int bits = core->rasm->config->bits;
 	char *bin_abspath = r_file_abspath (binpath);
 	if (strstr (bin_abspath, "://")) {
@@ -1526,7 +1526,7 @@ static bool desc_list_cmds_cb(void *user, void *data, ut32 id) {
 	RIODesc *desc = (RIODesc *)data;
 	RBinFile *bf = r_bin_file_find_by_fd (core->bin, desc->fd);
 	if (bf) {
-		p->cb_printf ("o \"%s\" 0x%08"PFMT64x" %s\n", desc->uri, bf->o->baddr, r_str_rwx_i (desc->perm));
+		p->cb_printf ("o \"%s\" 0x%08"PFMT64x" %s\n", desc->uri, bf->bo->baddr, r_str_rwx_i (desc->perm));
 	} else {
 		p->cb_printf ("onnu %s %s\n", desc->uri, r_str_rwx_i (desc->perm));
 	}
@@ -1711,8 +1711,8 @@ static int cmd_open(void *data, const char *input) {
 				RListIter *iter;
 				RBinFile *bf = NULL;
 				r_list_foreach (core->bin->binfiles, iter, bf) {
-					if (bf && bf->o && bf->o->info) {
-						r_cons_printf ("oa %s %d %s\n", bf->o->info->arch, bf->o->info->bits, bf->file);
+					if (bf && bf->bo && bf->bo->info) {
+						r_cons_printf ("oa %s %d %s\n", bf->bo->info->arch, bf->bo->info->bits, bf->file);
 					}
 				}
 				return 1;
@@ -1754,10 +1754,10 @@ static int cmd_open(void *data, const char *input) {
 				free (ptr);
 				return 0;
 			}
-			if (file->o && file->o->info) {
-				free (file->o->info->arch);
-				file->o->info->arch = strdup (arch);
-				file->o->info->bits = bits;
+			if (file->bo && file->bo->info) {
+				free (file->bo->info->arch);
+				file->bo->info->arch = strdup (arch);
+				file->bo->info->bits = bits;
 				r_core_bin_set_env (core, file);
 			}
 			free (ptr);
@@ -2290,7 +2290,7 @@ static int cmd_open(void *data, const char *input) {
 						char *file = r_str_path_escape (bf->file);
 						// Backup the baddr and sections that were already rebased to
 						// revert the rebase after the debug session is closed
-						ut64 orig_baddr = core->bin->cur->o->baddr_shift;
+						ut64 orig_baddr = core->bin->cur->bo->baddr_shift;
 						RList *orig_sections = __save_old_sections (core);
 
 						r_core_cmd0 (core, "ob-*");

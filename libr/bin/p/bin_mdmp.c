@@ -5,17 +5,17 @@
 #include "mdmp/mdmp.h"
 
 static Sdb *get_sdb(RBinFile *bf) {
-	r_return_val_if_fail (bf && bf->o, NULL);
-	RBinMdmpObj *mdmp = (RBinMdmpObj*)bf->o->bin_obj;
+	r_return_val_if_fail (bf && bf->bo, NULL);
+	RBinMdmpObj *mdmp = (RBinMdmpObj*)bf->bo->bin_obj;
 	return (mdmp && mdmp->kv) ? mdmp->kv: NULL;
 }
 
 static void destroy(RBinFile *bf) {
-	r_bin_mdmp_free ((RBinMdmpObj *)bf->o->bin_obj);
+	r_bin_mdmp_free ((RBinMdmpObj *)bf->bo->bin_obj);
 }
 
 static RList* entries(RBinFile *bf) {
-	RBinMdmpObj *mdmp = (RBinMdmpObj*)bf->o->bin_obj;
+	RBinMdmpObj *mdmp = (RBinMdmpObj*)bf->bo->bin_obj;
 	struct Pe32_r_bin_mdmp_pe_bin *pe32_bin;
 	struct Pe64_r_bin_mdmp_pe_bin *pe64_bin;
 	RListIter *it;
@@ -44,7 +44,7 @@ static RBinInfo *info(RBinFile *bf) {
 	if (!ret) {
 		return NULL;
 	}
-	RBinMdmpObj *mdmp = bf->o->bin_obj;
+	RBinMdmpObj *mdmp = bf->bo->bin_obj;
 	if (!mdmp) {
 		return NULL;
 	}
@@ -125,14 +125,14 @@ static RList* libs(RBinFile *bf) {
 	RList *ret = NULL;
 	RListIter *it;
 
-	if (!bf || !bf->o || !bf->o->bin_obj) {
+	if (!bf || !bf->bo || !bf->bo->bin_obj) {
 		return NULL;
 	}
 	if (!(ret = r_list_newf (free))) {
 		return NULL;
 	}
 
-	RBinMdmpObj *mdmp = (RBinMdmpObj*)bf->o->bin_obj;
+	RBinMdmpObj *mdmp = (RBinMdmpObj*)bf->bo->bin_obj;
 
 	/* TODO: Resolve module name for lib, or filter to remove duplicates,
 	** rather than the vaddr :) */
@@ -183,7 +183,7 @@ static RList *sections(RBinFile *bf) {
 	RBinSection *ptr;
 	ut64 index;
 
-	obj = (struct r_bin_mdmp_obj *)bf->o->bin_obj;
+	obj = (struct r_bin_mdmp_obj *)bf->bo->bin_obj;
 
 	if (!(ret = r_list_newf (free))) {
 		return NULL;
@@ -310,7 +310,7 @@ static RList *mem(RBinFile *bf) {
 		return NULL;
 	}
 
-	struct r_bin_mdmp_obj *obj = (struct r_bin_mdmp_obj *)R_UNWRAP3 (bf, o, bin_obj);
+	struct r_bin_mdmp_obj *obj = (struct r_bin_mdmp_obj *)R_UNWRAP3 (bf, bo, bin_obj);
 	if (!obj) {
 		return ret;
 	}
@@ -376,7 +376,7 @@ static RList* relocs(RBinFile *bf) {
 	if (!ret) {
 		return NULL;
 	}
-	RBinMdmpObj *mdmp = (RBinMdmpObj*)bf->o->bin_obj;
+	RBinMdmpObj *mdmp = (RBinMdmpObj*)bf->bo->bin_obj;
 	r_list_foreach (mdmp->pe32_bins, it, pe32_bin) {
 		if (pe32_bin->bin && pe32_bin->bin->relocs) {
 			r_list_join (ret, pe32_bin->bin->relocs);
@@ -399,7 +399,7 @@ static RList* imports(RBinFile *bf) {
 	if (!(ret = r_list_newf ((RListFree)r_bin_import_free))) {
 		return NULL;
 	}
-	RBinMdmpObj *mdmp = (RBinMdmpObj*)bf->o->bin_obj;
+	RBinMdmpObj *mdmp = (RBinMdmpObj*)bf->bo->bin_obj;
 	r_list_foreach (mdmp->pe32_bins, it, pe32_bin) {
 		list = Pe32_r_bin_mdmp_pe_get_imports (pe32_bin);
 		if (list) {
@@ -427,7 +427,7 @@ static RList* symbols(RBinFile *bf) {
 		return NULL;
 	}
 
-	RBinMdmpObj *mdmp = (RBinMdmpObj*)bf->o->bin_obj;
+	RBinMdmpObj *mdmp = (RBinMdmpObj*)bf->bo->bin_obj;
 
 	r_list_foreach (mdmp->pe32_bins, it, pe32_bin) {
 		list = Pe32_r_bin_mdmp_pe_get_symbols (bf->rbin, pe32_bin);

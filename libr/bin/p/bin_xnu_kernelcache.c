@@ -837,7 +837,7 @@ static struct MACH0_(obj_t) *create_kext_shared_mach0(RKernelCacheObj *obj, RKex
 
 static RList *entries(RBinFile *bf) {
 	RList *ret;
-	RBinObject *obj = bf ? bf->o : NULL;
+	RBinObject *obj = bf ? bf->bo : NULL;
 
 	if (!obj || !obj->bin_obj || !(ret = r_list_newf (free))) {
 		return NULL;
@@ -1044,7 +1044,7 @@ static bool check_buffer(RBinFile *bf, RBuffer *b) {
 
 static RList *sections(RBinFile *bf) {
 	RList *ret = NULL;
-	RBinObject *obj = bf ? bf->o : NULL;
+	RBinObject *obj = bf ? bf->bo : NULL;
 
 	if (!obj || !obj->bin_obj || !(ret = r_list_newf ((RListFree)free))) {
 		return NULL;
@@ -1088,7 +1088,7 @@ static RList *sections(RBinFile *bf) {
 		ptr->name = r_str_newf ("%d.%s", i, segname);
 		ptr->size = seg->vmsize;
 		ptr->vsize = seg->vmsize;
-		ptr->paddr = seg->fileoff + bf->o->boffset;
+		ptr->paddr = seg->fileoff + bf->bo->boffset;
 		ptr->vaddr = seg->vmaddr;
 		ptr->add = true;
 		ptr->is_segment = true;
@@ -1134,7 +1134,7 @@ static void sections_from_mach0(RList *ret, struct MACH0_(obj_t) *mach0, RBinFil
 		handle_data_sections (ptr);
 		ptr->size = section->size;
 		ptr->vsize = section->vsize;
-		ptr->paddr = section->paddr + bf->o->boffset + paddr;
+		ptr->paddr = section->paddr + bf->bo->boffset + paddr;
 		ptr->vaddr = K_PPTR (section->vaddr) + 0x1c;
 		if (!ptr->vaddr) {
 			ptr->vaddr = ptr->paddr;
@@ -1167,7 +1167,7 @@ static RList *symbols(RBinFile *bf) {
 		return NULL;
 	}
 
-	RKernelCacheObj *obj = (RKernelCacheObj*) bf->o->bin_obj;
+	RKernelCacheObj *obj = (RKernelCacheObj*) bf->bo->bin_obj;
 
 	symbols_from_mach0 (ret, obj->mach0, bf, 0, 0);
 
@@ -1769,15 +1769,15 @@ static RBinInfo *info(RBinFile *bf) {
 }
 
 static ut64 baddr(RBinFile *bf) {
-	if (!bf || !bf->o || !bf->o->bin_obj) {
+	if (!bf || !bf->bo || !bf->bo->bin_obj) {
 		return 0; // 8LL; // w t f
 	}
-	RKernelCacheObj *obj = (RKernelCacheObj*) bf->o->bin_obj;
+	RKernelCacheObj *obj = (RKernelCacheObj*) bf->bo->bin_obj;
 	return MACH0_(get_baddr)(obj->mach0);
 }
 
 static void destroy(RBinFile *bf) {
-	r_kernel_cache_free ((RKernelCacheObj*) bf->o->bin_obj);
+	r_kernel_cache_free ((RKernelCacheObj*) bf->bo->bin_obj);
 }
 
 static void r_kernel_cache_free(RKernelCacheObj *obj) {
@@ -1981,8 +1981,8 @@ static int kernelcache_io_read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 	RListIter *iter;
 	RBinFile *bf;
 	r_list_foreach (core->bin->binfiles, iter, bf) {
-		if (bf->fd == fd->fd && bf->o && bf->o->bin_obj) {
-			cache = bf->o->bin_obj;
+		if (bf->fd == fd->fd && bf->bo && bf->bo->bin_obj) {
+			cache = bf->bo->bin_obj;
 			if (pending_bin_files) {
 				RListIter *to_remove = r_list_contains (pending_bin_files, bf);
 				if (to_remove) {
@@ -1999,8 +1999,8 @@ static int kernelcache_io_read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 
 	if (!cache) {
 		r_list_foreach (pending_bin_files, iter, bf) {
-			if (bf->fd == fd->fd && bf->o) {
-				cache = bf->o->bin_obj;
+			if (bf->fd == fd->fd && bf->bo) {
+				cache = bf->bo->bin_obj;
 				break;
 			}
 		}

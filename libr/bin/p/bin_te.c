@@ -8,7 +8,7 @@
 #include "te/te.h"
 
 static Sdb *get_sdb(RBinFile *bf) {
-	RBinObject *o = bf->o;
+	RBinObject *o = bf->bo;
 	if (!o) {
 		return NULL;
 	}
@@ -31,11 +31,11 @@ static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *b, ut64 loadaddr,
 }
 
 static void destroy(RBinFile *bf) {
-	r_bin_te_free ((struct r_bin_te_obj_t *) bf->o->bin_obj);
+	r_bin_te_free ((struct r_bin_te_obj_t *) bf->bo->bin_obj);
 }
 
 static ut64 baddr(RBinFile *bf) {
-	return r_bin_te_get_image_base (bf->o->bin_obj);
+	return r_bin_te_get_image_base (bf->bo->bin_obj);
 }
 
 static RBinAddr *binsym(RBinFile *bf, int type) {
@@ -45,7 +45,7 @@ static RBinAddr *binsym(RBinFile *bf, int type) {
 		if (!(ret = R_NEW (RBinAddr))) {
 			return NULL;
 		}
-		ret->paddr = ret->vaddr = r_bin_te_get_main_paddr (bf->o->bin_obj);
+		ret->paddr = ret->vaddr = r_bin_te_get_main_paddr (bf->bo->bin_obj);
 		break;
 	}
 	return ret;
@@ -54,7 +54,7 @@ static RBinAddr *binsym(RBinFile *bf, int type) {
 static RList *entries(RBinFile *bf) {
 	RList *ret = r_list_newf (free);
 	if (ret) {
-		RBinAddr *entry = r_bin_te_get_entrypoint (bf->o->bin_obj);
+		RBinAddr *entry = r_bin_te_get_entrypoint (bf->bo->bin_obj);
 		if (entry) {
 			RBinAddr *ptr = R_NEW0 (RBinAddr);
 			if (ptr) {
@@ -78,7 +78,7 @@ static RList *sections(RBinFile *bf) {
 		return NULL;
 	}
 	ret->free = free;
-	if (!(sections = r_bin_te_get_sections (bf->o->bin_obj))) {
+	if (!(sections = r_bin_te_get_sections (bf->bo->bin_obj))) {
 		free (ret);
 		return NULL;
 	}
@@ -125,14 +125,14 @@ static RBinInfo *info(RBinFile *bf) {
 	ret->file = strdup (bf->file);
 	ret->bclass = strdup ("TE");
 	ret->rclass = strdup ("te");
-	if (bf->o->bin_obj) {
-		ret->os = r_bin_te_get_os (bf->o->bin_obj);
-		const char *arch = r_bin_te_get_arch (bf->o->bin_obj);
+	if (bf->bo->bin_obj) {
+		ret->os = r_bin_te_get_os (bf->bo->bin_obj);
+		const char *arch = r_bin_te_get_arch (bf->bo->bin_obj);
 		ret->arch = arch? strdup (arch): NULL;
-		ret->machine = r_bin_te_get_machine (bf->o->bin_obj);
-		ret->subsystem = r_bin_te_get_subsystem (bf->o->bin_obj);
+		ret->machine = r_bin_te_get_machine (bf->bo->bin_obj);
+		ret->subsystem = r_bin_te_get_subsystem (bf->bo->bin_obj);
 		ret->type = strdup ("EXEC (Executable file)");
-		ret->bits = r_bin_te_get_bits (bf->o->bin_obj);
+		ret->bits = r_bin_te_get_bits (bf->bo->bin_obj);
 	}
 	ret->big_endian = true;
 	ret->dbg_info = 0;

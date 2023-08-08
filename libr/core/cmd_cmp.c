@@ -978,7 +978,7 @@ static void _core_cmp_info_symbols(RCore *core, int id0, int id1) {
 
 static void _core_cmp_info(RCore *core, const char *input) {
 	RBinFile *cur = core->bin->cur;
-	int id0 = (cur && cur->o) ? cur->id: 0;
+	int id0 = (cur && cur->bo) ? cur->id: 0;
 	int id1 = atoi (input + 1);
 	// do the magic
 	switch (input[0]) {

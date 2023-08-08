@@ -432,11 +432,11 @@ static void r_dyldcache_free(RDyldCache *cache) {
 }
 
 static ut64 bin_obj_va2pa(ut64 p, ut32 *offset, ut32 *left, RBinFile *bf) {
-	if (!bf || !bf->o || !bf->o->bin_obj) {
+	if (!bf || !bf->bo || !bf->bo->bin_obj) {
 		return 0;
 	}
 
-	RDyldCache *cache = (RDyldCache*) ((struct MACH0_(obj_t)*)bf->o->bin_obj)->user;
+	RDyldCache *cache = (RDyldCache*) ((struct MACH0_(obj_t)*)bf->bo->bin_obj)->user;
 	if (!cache) {
 		return 0;
 	}
@@ -454,7 +454,7 @@ static struct MACH0_(obj_t) *bin_to_mach0(RBinFile *bf, RDyldBinImage *bin) {
 		return NULL;
 	}
 
-	RDyldCache *cache = (RDyldCache*) bf->o->bin_obj;
+	RDyldCache *cache = (RDyldCache*) bf->bo->bin_obj;
 	if (!cache) {
 		return NULL;
 	}
@@ -1504,10 +1504,10 @@ static int dyldcache_io_read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 	RBinFile *bf;
 	r_list_foreach (core->bin->binfiles, iter, bf) {
 		if (bf->fd == fd->fd ) {
-			if (!strncmp ((char*) bf->o->bin_obj, "dyldcac", 7)) {
-				cache = bf->o->bin_obj;
+			if (!strncmp ((char*) bf->bo->bin_obj, "dyldcac", 7)) {
+				cache = bf->bo->bin_obj;
 			} else {
-				cache = ((struct MACH0_(obj_t)*) bf->o->bin_obj)->user;
+				cache = ((struct MACH0_(obj_t)*) bf->bo->bin_obj)->user;
 			}
 			if (pending_bin_files) {
 				RListIter *to_remove = r_list_contains (pending_bin_files, bf);
@@ -1524,11 +1524,11 @@ static int dyldcache_io_read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 	}
 	if (!cache) {
 		r_list_foreach (pending_bin_files, iter, bf) {
-			if (bf->fd == fd->fd && bf->o) {
-				if (!strncmp ((char*) bf->o->bin_obj, "dyldcac", 7)) {
-					cache = bf->o->bin_obj;
+			if (bf->fd == fd->fd && bf->bo) {
+				if (!strncmp ((char*) bf->bo->bin_obj, "dyldcac", 7)) {
+					cache = bf->bo->bin_obj;
 				} else {
-					cache = ((struct MACH0_(obj_t)*) bf->o->bin_obj)->user;
+					cache = ((struct MACH0_(obj_t)*) bf->bo->bin_obj)->user;
 				}
 				break;
 			}
@@ -1976,11 +1976,11 @@ static RList *entries(RBinFile *bf) {
 static RBinInfo *info(RBinFile *bf) {
 	RBinInfo *ret = NULL;
 
-	if (!bf || !bf->o) {
+	if (!bf || !bf->bo) {
 		return NULL;
 	}
 
-	RDyldCache *cache = (RDyldCache*) bf->o->bin_obj;
+	RDyldCache *cache = (RDyldCache*) bf->bo->bin_obj;
 	if (!cache) {
 		return NULL;
 	}
@@ -2082,7 +2082,7 @@ static bool __is_data_section(const char *name) {
 }
 
 static void sections_from_bin(RList *ret, RBinFile *bf, RDyldBinImage *bin) {
-	RDyldCache *cache = (RDyldCache*) bf->o->bin_obj;
+	RDyldCache *cache = (RDyldCache*) bf->bo->bin_obj;
 	if (!cache) {
 		return;
 	}
@@ -2128,7 +2128,7 @@ static void sections_from_bin(RList *ret, RBinFile *bf, RDyldBinImage *bin) {
 }
 
 static RList *sections(RBinFile *bf) {
-	RDyldCache *cache = (RDyldCache*) bf->o->bin_obj;
+	RDyldCache *cache = (RDyldCache*) bf->bo->bin_obj;
 	if (!cache) {
 		return NULL;
 	}
@@ -2180,7 +2180,7 @@ static RList *sections(RBinFile *bf) {
 }
 
 static RList *symbols(RBinFile *bf) {
-	RDyldCache *cache = (RDyldCache*) bf->o->bin_obj;
+	RDyldCache *cache = (RDyldCache*) bf->bo->bin_obj;
 	if (!cache) {
 		return NULL;
 	}
@@ -2232,13 +2232,13 @@ static RList *symbols(RBinFile *bf) {
 } */
 
 static void destroy(RBinFile *bf) {
-	RDyldCache *cache = (RDyldCache*) bf->o->bin_obj;
+	RDyldCache *cache = (RDyldCache*) bf->bo->bin_obj;
 	// unswizzle_io_read (cache, bf->rbin->iob.io); // XXX io may be dead here
 	r_dyldcache_free (cache);
 }
 
 static RList *classes(RBinFile *bf) {
-	RDyldCache *cache = (RDyldCache*) bf->o->bin_obj;
+	RDyldCache *cache = (RDyldCache*) bf->bo->bin_obj;
 	if (!cache) {
 		return NULL;
 	}
@@ -2317,14 +2317,14 @@ static RList *classes(RBinFile *bf) {
 					goto beach;
 				}
 
-				bf->o->bin_obj = mach0;
+				bf->bo->bin_obj = mach0;
 				bf->buf = cache->buf;
 				if (is_classlist) {
 					MACH0_(get_class_t) (pointer_to_class, bf, klass, false, NULL, cache->oi);
 				} else {
 					MACH0_(get_category_t) (pointer_to_class, bf, klass, NULL, cache->oi);
 				}
-				bf->o->bin_obj = cache;
+				bf->bo->bin_obj = cache;
 				bf->buf = orig_buf;
 
 				if (!klass->name) {
@@ -2357,11 +2357,11 @@ beach:
 }
 
 static void header(RBinFile *bf) {
-	if (!bf || !bf->o) {
+	if (!bf || !bf->bo) {
 		return;
 	}
 
-	RDyldCache *cache = (RDyldCache*) bf->o->bin_obj;
+	RDyldCache *cache = (RDyldCache*) bf->bo->bin_obj;
 	if (!cache) {
 		return;
 	}

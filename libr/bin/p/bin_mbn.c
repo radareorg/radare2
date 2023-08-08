@@ -18,7 +18,7 @@ typedef struct sbl_header {
 	ut32 cert_sz;
 } SblHeader;
 
-// TODO move this global into the bf->obj
+// TODO move this global into the bf->bobj
 static R_TH_LOCAL SblHeader sb = {0};
 
 static bool check_buffer(RBinFile *bf, RBuffer *b) {

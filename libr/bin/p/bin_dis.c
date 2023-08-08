@@ -166,7 +166,7 @@ invalid:
 }
 
 static void destroy(RBinFile *bf) {
-	RBinDisObj *o = (RBinDisObj *)bf->o->bin_obj;
+	RBinDisObj *o = (RBinDisObj *)bf->bo->bin_obj;
 	ht_uu_free (o->pcs);
 	free (o);
 }
@@ -175,7 +175,7 @@ static RList *entries(RBinFile *bf) {
 	bool found;
 	RList *ret;
 	RBinAddr *ptr = NULL;
-	RBinDisObj *o = (RBinDisObj *)bf->o->bin_obj;
+	RBinDisObj *o = (RBinDisObj *)bf->bo->bin_obj;
 
 	ut64 entry_address = ht_uu_find (o->pcs, o->header.entry_pc, &found);
 	if (!found) {
@@ -200,9 +200,9 @@ static RList *entries(RBinFile *bf) {
 static RList *sections(RBinFile *bf) {
 	RList *ret = NULL;
 	RBinSection *ptr = NULL;
-	RBinDisObj *o = (RBinDisObj *)bf->o->bin_obj;
+	RBinDisObj *o = (RBinDisObj *)bf->bo->bin_obj;
 
-	if (!bf->o->info) {
+	if (!bf->bo->info) {
 		return NULL;
 	}
 

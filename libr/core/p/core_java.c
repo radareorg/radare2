@@ -1611,12 +1611,12 @@ static RBinJavaObj *r_cmd_java_get_bin_obj(RAnal *anal) {
 		return NULL;
 	}
 	b = anal->binb.bin;
-	if (!b->cur || !b->cur->o) {
+	if (!b->cur || !b->cur->bo) {
 		return NULL;
 	}
-	plugin = b->cur->o->plugin;
+	plugin = b->cur->bo->plugin;
 	is_java = (plugin && strcmp (plugin->name, "java") == 0)? 1: 0;
-	return is_java? b->cur->o->bin_obj: NULL;
+	return is_java? b->cur->bo->bin_obj: NULL;
 }
 
 static int r_cmd_java_resolve_cp_idx(RBinJavaObj *obj, ut16 idx) {

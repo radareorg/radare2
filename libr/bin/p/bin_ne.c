@@ -34,12 +34,12 @@ static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadadd
 }
 
 static void destroy(RBinFile *bf) {
-	r_bin_ne_free (bf->o->bin_obj);
+	r_bin_ne_free (bf->bo->bin_obj);
 }
 
 static void header(RBinFile *bf) {
 	struct r_bin_t *rbin = bf->rbin;
-	r_bin_ne_obj_t *ne = bf->o->bin_obj;
+	r_bin_ne_obj_t *ne = bf->bo->bin_obj;
 	rbin->cb_printf ("Signature: NE\n");
 	rbin->cb_printf ("MajLinkerVersion: %d\n", ne->ne_header->MajLinkerVersion);
 	rbin->cb_printf ("MinLinkerVersion: %d\n", ne->ne_header->MinLinkerVersion);
@@ -75,7 +75,7 @@ static void header(RBinFile *bf) {
 }
 
 static RBinInfo *info(RBinFile *bf) {
-	r_bin_ne_obj_t *ne = bf->o->bin_obj;
+	r_bin_ne_obj_t *ne = bf->bo->bin_obj;
 	RBinInfo *i = R_NEW0 (RBinInfo);
 	if (i) {
 		i->bits = 16;
@@ -87,23 +87,23 @@ static RBinInfo *info(RBinFile *bf) {
 }
 
 static RList *entries(RBinFile *bf) {
-	return r_bin_ne_get_entrypoints (bf->o->bin_obj);
+	return r_bin_ne_get_entrypoints (bf->bo->bin_obj);
 }
 
 static RList *symbols(RBinFile *bf) {
-	return r_bin_ne_get_symbols (bf->o->bin_obj);
+	return r_bin_ne_get_symbols (bf->bo->bin_obj);
 }
 
 static RList *imports(RBinFile *bf) {
-	return r_bin_ne_get_imports (bf->o->bin_obj);
+	return r_bin_ne_get_imports (bf->bo->bin_obj);
 }
 
 static RList *sections(RBinFile *bf) {
-	return r_bin_ne_get_segments (bf->o->bin_obj);
+	return r_bin_ne_get_segments (bf->bo->bin_obj);
 }
 
 static RList *relocs(RBinFile *bf) {
-	return r_bin_ne_get_relocs (bf->o->bin_obj);
+	return r_bin_ne_get_relocs (bf->bo->bin_obj);
 }
 
 RBinPlugin r_bin_plugin_ne = {

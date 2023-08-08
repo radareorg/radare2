@@ -72,7 +72,7 @@ static int bootimg_header_load(BootImageObj *obj, Sdb *db) {
 }
 
 static Sdb *get_sdb(RBinFile *bf) {
-	BootImageObj *ao = (BootImageObj *)R_UNWRAP3 (bf, o, bin_obj);
+	BootImageObj *ao = (BootImageObj *)R_UNWRAP3 (bf, bo, bin_obj);
 	return ao? ao->kv: NULL;
 }
 
@@ -97,13 +97,13 @@ static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadadd
 }
 
 static void destroy(RBinFile *bf) {
-	BootImageObj *bio = bf->o->bin_obj;
+	BootImageObj *bio = bf->bo->bin_obj;
 	r_buf_free (bio->buf);
-	R_FREE (bf->o->bin_obj);
+	R_FREE (bf->bo->bin_obj);
 }
 
 static ut64 baddr(RBinFile *bf) {
-	BootImageObj *bio = bf->o->bin_obj;
+	BootImageObj *bio = bf->bo->bin_obj;
 	return bio? bio->bi.kernel_addr: 0;
 }
 
@@ -112,7 +112,7 @@ static RList *strings(RBinFile *bf) {
 }
 
 static RBinInfo *info(RBinFile *bf) {
-	if (!bf || !bf->o || !bf->o->bin_obj) {
+	if (!bf || !bf->bo || !bf->bo->bin_obj) {
 		return NULL;
 	}
 	RBinInfo *ret = R_NEW0 (RBinInfo);
@@ -140,7 +140,7 @@ static bool check_buffer(RBinFile *bf, RBuffer *buf) {
 }
 
 static RList *entries(RBinFile *bf) {
-	BootImageObj *bio = R_UNWRAP3 (bf, o, bin_obj);
+	BootImageObj *bio = R_UNWRAP3 (bf, bo, bin_obj);
 	RBinAddr *ptr = NULL;
 	if (!bio) {
 		return NULL;
@@ -161,7 +161,7 @@ static RList *entries(RBinFile *bf) {
 }
 
 static RList *sections(RBinFile *bf) {
-	BootImageObj *bio = bf->o->bin_obj;
+	BootImageObj *bio = bf->bo->bin_obj;
 	if (!bio) {
 		return NULL;
 	}

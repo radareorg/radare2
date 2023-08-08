@@ -14,7 +14,7 @@ R_API bool r_bin_addr2line(RBin *bin, ut64 addr, char *file, int len, int *line,
 		baddr = 0;
 	}
 	if (cp && cp->dbginfo) {
-		if (o && addr >= baddr && addr < baddr + bin->cur->o->size) {
+		if (o && addr >= baddr && addr < baddr + bin->cur->bo->size) {
 			if (cp->dbginfo->get_line) {
 				return cp->dbginfo->get_line (bin->cur, addr, file, len, line, column);
 			}

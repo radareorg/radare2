@@ -8,7 +8,7 @@
 /* TODO: Real error handling */
 /* TODO: Resize sections before .init */
 ut64 Elf_(resize_section)(RBinFile *bf, const char *name, ut64 size) {
-	struct Elf_(obj_t) *bin = bf->o->bin_obj; // , const char *name, ut64 size) {
+	struct Elf_(obj_t) *bin = bf->bo->bin_obj; // , const char *name, ut64 size) {
 	Elf_(Ehdr) *ehdr = &bin->ehdr;
 	Elf_(Phdr) *phdr = bin->phdr, *phdrp;
 	Elf_(Shdr) *shdr = bin->shdr, *shdrp;
@@ -187,7 +187,7 @@ ut64 Elf_(resize_section)(RBinFile *bf, const char *name, ut64 size) {
 
 /* XXX Endianness? */
 bool Elf_(del_rpath)(RBinFile *bf) {
-	struct Elf_(obj_t) *bin = bf->o->bin_obj;
+	struct Elf_(obj_t) *bin = bf->bo->bin_obj;
 	Elf_(Dyn) *dyn = NULL;
 	ut64 stroff = 0LL;
 	int ndyn, i, j;
@@ -233,7 +233,7 @@ bool Elf_(del_rpath)(RBinFile *bf) {
 }
 
 bool Elf_(section_perms)(RBinFile *bf, const char *name, int perms) {
-	struct Elf_(obj_t) *bin = bf->o->bin_obj;
+	struct Elf_(obj_t) *bin = bf->bo->bin_obj;
 	Elf_(Ehdr) *ehdr = &bin->ehdr;
 	Elf_(Shdr) *shdr = bin->shdr, *shdrp;
 	const char *strtab = bin->shstrtab;

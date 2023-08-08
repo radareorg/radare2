@@ -331,7 +331,7 @@ static RBinSection *getsection(RBin *a, const char *sn) {
 	RListIter *iter;
 	RBinSection *section = NULL;
 	RBinFile *binfile = a ? a->cur: NULL;
-	RBinObject *o = binfile ? binfile->o : NULL;
+	RBinObject *o = binfile ? binfile->bo : NULL;
 	if (R_LIKELY (o && o->sections)) {
 		r_list_foreach (o->sections, iter, section) {
 			if (strstr (section->name, sn)) {
@@ -982,7 +982,7 @@ static const ut8 *parse_ext_opcode(RBin *bin, const ut8 *obuf, size_t len, const
 	buf = obuf;
 	st64 op_len;
 	RBinFile *binfile = bin->cur;
-	RBinObject *o = binfile->o;
+	RBinObject *o = binfile->bo;
 	ut32 addr_size = o && o->info && o->info->bits ? o->info->bits / 8 : 4;
 	const char *filename;
 

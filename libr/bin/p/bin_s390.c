@@ -146,7 +146,7 @@ static void add_symbol(RList *ret, char *name, ut64 addr) {
 } */
 
 static RList *symbols(RBinFile *bf) {
-	s390user *su = bf->o->bin_obj;
+	s390user *su = bf->bo->bin_obj;
 	RList *ret = NULL;
 	RListIter *iter;
 	RBinSymbol *sym;
@@ -176,7 +176,7 @@ static void add_section(RList *ret, char *name, ut64 addr, ut64 len) {
 }
 
 static RList *sections(RBinFile *bf) {
-	s390user *su = bf->o->bin_obj;
+	s390user *su = bf->bo->bin_obj;
 	RList *ret = NULL;
 	if (!(ret = r_list_new ())) {
 		return NULL;
@@ -345,7 +345,7 @@ static RList *sections(RBinFile *bf) {
 }
 
 static RList *entries(RBinFile *bf) {
-	s390user *su = bf->o->bin_obj;
+	s390user *su = bf->bo->bin_obj;
 	RList *ret = r_list_new ();
 	RBinAddr *ptr = R_NEW0 (RBinAddr);
 	if (!ret || !ptr) {
@@ -361,15 +361,15 @@ static RList *entries(RBinFile *bf) {
 }
 
 static void headers(RBinFile *bf) {
-	s390user *su = bf->o->bin_obj;
+	s390user *su = bf->bo->bin_obj;
 	char *s = r_strbuf_get (su->sb);
 	bf->rbin->cb_printf ("%s\n", s);
 }
 
 static int fini(void *user) {
 	RBinFile *bf = (RBinFile*)user;
-	if (bf && bf->o && bf->o->bin_obj) {
-		s390user *su = bf->o->bin_obj;
+	if (bf && bf->bo && bf->bo->bin_obj) {
+		s390user *su = bf->bo->bin_obj;
 		r_strbuf_free (su->sb);
 		free (su);
 	}

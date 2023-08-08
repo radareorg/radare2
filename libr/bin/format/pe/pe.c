@@ -38,7 +38,7 @@ typedef struct {
 } SCV_RSDS_HEADER;
 
 R_API RBinPEObj* PE_(get)(RBinFile *bf) {
-	return (bf && bf->o)? bf->o->bin_obj: NULL;
+	return (bf && bf->bo)? bf->bo->bin_obj: NULL;
 }
 
 static inline int is_thumb(RBinPEObj* pe) {

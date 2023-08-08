@@ -55,7 +55,7 @@ static int art_header_load(ArtObj *ao, Sdb *db) {
 }
 
 static Sdb *get_sdb(RBinFile *bf) {
-	RBinObject *o = bf->o;
+	RBinObject *o = bf->bo;
 	if (!o) {
 		return NULL;
 	}
@@ -81,23 +81,23 @@ static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadadd
 }
 
 static void destroy(RBinFile *bf) {
-	ArtObj *obj = bf->o->bin_obj;
+	ArtObj *obj = bf->bo->bin_obj;
 	r_buf_free (obj->buf);
 	free (obj);
 }
 
 static ut64 baddr(RBinFile *bf) {
-	ArtObj *ao = bf->o->bin_obj;
+	ArtObj *ao = bf->bo->bin_obj;
 	return ao? ao->art.image_base: 0;
 }
 
 static RBinInfo *info(RBinFile *bf) {
-	r_return_val_if_fail (bf && bf->o && bf->o->bin_obj, NULL);
+	r_return_val_if_fail (bf && bf->bo && bf->bo->bin_obj, NULL);
 	RBinInfo *ret = R_NEW0 (RBinInfo);
 	if (!ret) {
 		return NULL;
 	}
-	ArtObj *ao = bf->o->bin_obj;
+	ArtObj *ao = bf->bo->bin_obj;
 	ret->lang = NULL;
 	ret->file = bf->file? strdup (bf->file): NULL;
 	ret->type = strdup ("ART");
@@ -139,7 +139,7 @@ static RList *entries(RBinFile *bf) {
 }
 
 static RList *sections(RBinFile *bf) {
-	ArtObj *ao = bf->o->bin_obj;
+	ArtObj *ao = bf->bo->bin_obj;
 	if (!ao) {
 		return NULL;
 	}

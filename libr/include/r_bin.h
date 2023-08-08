@@ -349,7 +349,7 @@ typedef struct r_bin_file_t {
 	ut32 id;
 	RBuffer *buf;
 	ut64 offset; // XXX
-	RBinObject *o; // R2_590 -> rename bf->o to bf->bo for consistency
+	RBinObject *bo;
 	void *xtr_obj;
 	ut64 user_baddr; // XXX
 	ut64 loadaddr; // XXX

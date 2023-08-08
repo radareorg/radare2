@@ -100,7 +100,7 @@ static char *swiftField(const char *dn, const char *cn) {
 static RList *classes_from_symbols(RBinFile *bf) {
 	RBinSymbol *sym;
 	RListIter *iter;
-	r_list_foreach (bf->o->symbols, iter, sym) {
+	r_list_foreach (bf->bo->symbols, iter, sym) {
 		if (!sym->name || sym->name[0] != '_') {
 			continue;
 		}
@@ -129,7 +129,7 @@ static RList *classes_from_symbols(RBinFile *bf) {
 			}
 		}
 	}
-	return bf->o->classes;
+	return bf->bo->classes;
 }
 
 // TODO: kill offset and sz, because those should be inferred from binfile->buf
@@ -154,7 +154,7 @@ R_IPI RBinObject *r_bin_object_new(RBinFile *bf, RBinPlugin *plugin, ut64 basead
 	bo->loadaddr = loadaddr != UT64_MAX ? loadaddr : 0;
 	RVecRBinSymbol_init (&bo->symbols_vec);
 	bo->pool = r_strpool_new (0);
-	bf->o = bo;
+	bf->bo = bo;
 
 	Sdb *sdb = bf->sdb; // should be bo->kv ?
 	if (plugin && plugin->load_buffer) {
@@ -162,14 +162,14 @@ R_IPI RBinObject *r_bin_object_new(RBinFile *bf, RBinPlugin *plugin, ut64 basead
 			R_LOG_DEBUG ("load_buffer failed for %s plugin", plugin->name);
 			sdb_free (bo->kv);
 			free (bo);
-			bf->o = NULL;
+			bf->bo = NULL;
 			return NULL;
 		}
 	} else {
 		R_LOG_WARN ("Plugin %s should implement load_buffer method", plugin->name);
 		sdb_free (bo->kv);
 		free (bo);
-		bf->o = NULL;
+		bf->bo = NULL;
 		return NULL;
 	}
 
@@ -282,7 +282,7 @@ R_API int r_bin_object_set_items(RBinFile *bf, RBinObject *bo) {
 	RBin *bin = bf->rbin;
 	RBinPlugin *p = bo->plugin;
 	int minlen = (bf->rbin->minstrlen > 0) ? bf->rbin->minstrlen : p->minstrlen;
-	bf->o = bo;
+	bf->bo = bo;
 
 	if (p->file_type) {
 		int type = p->file_type (bf);
@@ -463,18 +463,18 @@ R_IPI RRBTree *r_bin_object_patch_relocs(RBinFile *bf, RBinObject *bo) {
 
 R_IPI RBinObject *r_bin_object_get_cur(RBin *bin) {
 	r_return_val_if_fail (bin && bin->cur, NULL);
-	return bin->cur->o;
+	return bin->cur->bo;
 }
 
 R_IPI RBinObject *r_bin_object_find_by_arch_bits(RBinFile *bf, const char *arch, int bits, const char *name) {
 	r_return_val_if_fail (bf && arch && name, NULL);
-	if (bf->o) {
-		RBinInfo *info = bf->o->info;
+	if (bf->bo) {
+		RBinInfo *info = bf->bo->info;
 		if (info && info->arch && info->file &&
 				(bits == info->bits) &&
 				!strcmp (info->arch, arch) &&
 				!strcmp (info->file, name)) {
-			return bf->o;
+			return bf->bo;
 		}
 	}
 	return NULL;
@@ -490,7 +490,7 @@ R_API bool r_bin_object_delete(RBin *bin, ut32 bf_id) {
 			bin->cur = NULL;
 		}
 		// wtf
-		if (!bf->o) {
+		if (!bf->bo) {
 			r_list_delete_data (bin->binfiles, bf);
 		}
 	}

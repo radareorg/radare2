@@ -25,8 +25,8 @@ static const struct {
 static const int MACHINES_MAX = sizeof (_machines) / sizeof (_machines[0]);
 
 static Sdb* get_sdb(RBinFile *bf) {
-	r_return_val_if_fail (bf && bf->o && bf->o->bin_obj, NULL);
-	struct r_bin_vsf_obj* bin = (struct r_bin_vsf_obj*) bf->o->bin_obj;
+	r_return_val_if_fail (bf && bf->bo && bf->bo->bin_obj, NULL);
+	struct r_bin_vsf_obj* bin = (struct r_bin_vsf_obj*) bf->bo->bin_obj;
 	return bin->kv;
 }
 
@@ -115,7 +115,7 @@ static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *b, ut64 loadaddr,
 
 static RList *mem(RBinFile *bf) {
 	// FIXME: What does Mem do? Should I remove it ?
-	struct r_bin_vsf_obj* vsf_obj = (struct r_bin_vsf_obj*) bf->o->bin_obj;
+	struct r_bin_vsf_obj* vsf_obj = (struct r_bin_vsf_obj*) bf->bo->bin_obj;
 	if (!vsf_obj) {
 		return NULL;
 	}
@@ -138,7 +138,7 @@ static RList *mem(RBinFile *bf) {
 }
 
 static RList* sections(RBinFile* bf) {
-	struct r_bin_vsf_obj* vsf_obj = (struct r_bin_vsf_obj*) bf->o->bin_obj;
+	struct r_bin_vsf_obj* vsf_obj = (struct r_bin_vsf_obj*) bf->bo->bin_obj;
 	if (!vsf_obj) {
 		return NULL;
 	}
@@ -295,7 +295,7 @@ static RList* sections(RBinFile* bf) {
 
 static RBinInfo* info(RBinFile *bf) {
 
-	struct r_bin_vsf_obj* vsf_obj = (struct r_bin_vsf_obj*) bf->o->bin_obj;
+	struct r_bin_vsf_obj* vsf_obj = (struct r_bin_vsf_obj*) bf->bo->bin_obj;
 	if (!vsf_obj) {
 		return NULL;
 	}
@@ -472,7 +472,7 @@ static RList* symbols(RBinFile *bf) {
 		{0xDD0F, "CIA2_CRB" },
 	};
 	static const int SYMBOLS_MAX = sizeof (_symbols) / sizeof (_symbols[0]);
-	struct r_bin_vsf_obj* vsf_obj = (struct r_bin_vsf_obj*) bf->o->bin_obj;
+	struct r_bin_vsf_obj* vsf_obj = (struct r_bin_vsf_obj*) bf->bo->bin_obj;
 	if (!vsf_obj) {
 		return NULL;
 	}
@@ -506,13 +506,13 @@ static RList* symbols(RBinFile *bf) {
 }
 
 static void destroy(RBinFile *bf) {
-	struct r_bin_vsf_obj *obj = (struct r_bin_vsf_obj *)bf->o->bin_obj;
+	struct r_bin_vsf_obj *obj = (struct r_bin_vsf_obj *)bf->bo->bin_obj;
 	free (obj->maincpu);
 	free (obj);
 }
 
 static RList* entries(RBinFile *bf) {
-	struct r_bin_vsf_obj* vsf_obj = (struct r_bin_vsf_obj*) bf->o->bin_obj;
+	struct r_bin_vsf_obj* vsf_obj = (struct r_bin_vsf_obj*) bf->bo->bin_obj;
 	if (!vsf_obj) {
 		return NULL;
 	}

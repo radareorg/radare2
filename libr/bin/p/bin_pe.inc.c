@@ -36,10 +36,10 @@ static ut64 baddr(RBinFile *bf) {
 static RBinAddr* binsym(RBinFile *bf, int type) {
 	struct r_bin_pe_addr_t *peaddr = NULL;
 	RBinAddr *ret = NULL;
-	if (bf && bf->o && bf->o->bin_obj) {
+	if (bf && bf->bo && bf->bo->bin_obj) {
 		switch (type) {
 		case R_BIN_SYM_MAIN:
-			peaddr = PE_(r_bin_pe_get_main_vaddr) (bf->o->bin_obj);
+			peaddr = PE_(r_bin_pe_get_main_vaddr) (bf->bo->bin_obj);
 			break;
 		}
 	}
@@ -431,7 +431,7 @@ static bool check_inlined_canary(RBinFile *bf) {
 		ut64 canaddr = 0;
 		r_buf_read_at (bf->buf, calldst + 16, (ut8*)&canaddr, 4);
 
-		ut32 panaddr = canaddr - 0x40; // PE_(va2pa)(bf->o->bin_obj, canaddr);
+		ut32 panaddr = canaddr - 0x40; // PE_(va2pa)(bf->bo->bin_obj, canaddr);
 
 		ut8 can0[8] = {0};
 		r_buf_read_at (bf->buf, panaddr, can0, 8);
