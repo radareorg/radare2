@@ -33,7 +33,7 @@ x xxx cxx:
 	$(MAKE) CC=g++ CFLAGS="-fPIC -x c++ -Wall -fpermissive -I../include -Werror"
 
 o xo xoxo ox:
-	g++ -o sdb src/*.c  -I include/
+	g++ -o sdb $(filter-out src/ht.inc.c, src/*.c)  -I include/
 
 wasi wasm: $(WASI_SDK)
 	${MAKE} include/sdb/version.h
@@ -102,11 +102,12 @@ w32dist:
 	rm -rf sdb-${SDBVER}
 
 install-dirs:
-	$(INSTALL_DIR) ${DESTDIR}${MANDIR} ${DESTDIR}${LIBDIR}/pkgconfig ${DESTDIR}${BINDIR} 
+	$(INSTALL_DIR) ${DESTDIR}${MANDIR} ${DESTDIR}${LIBDIR}/pkgconfig ${DESTDIR}${BINDIR}
 	$(INSTALL_DIR) ${DESTDIR}${DATADIR}/vala/vapi ${DESTDIR}${INCDIR}/sdb
 
-INCFLS=sdb.h version.h cdb.h ht_uu.h ht_up.h ht_pp.h types.h
+INCFLS=sdb.h version.h cdb.h ht_uu.h ht_up.h ht_pp.h types.h heap.h
 INCFLS+=ls.h cdb_make.h buffer.h config.h ht.h dict.h set.h ht_inc.h
+INCFLS+=rangstr.h
 INCFILES=$(addprefix include/sdb/,$(INCFLS))
 
 install: pkgconfig install-dirs
@@ -138,6 +139,25 @@ ifeq ($(BUILD_MEMCACHE),1)
 	$(INSTALL_DATA) ${VALADIR}/mcsdb.vapi ${DESTDIR}${DATADIR}/vala/vapi
 endif
 endif
+
+
+PGOFLAG=-fprofile-instr-generate
+# PGOFLAG=-fcs-profile-generate
+# PGOFLAG=-fprofile-generate
+# PROFDATA=/opt/homebrew/Cellar//llvm/16.0.4/bin/llvm-profdata
+PROFDATA=xcrun llvm-profdata
+pgo:
+	$(MAKE) clean
+	$(MAKE) CFLAGS="-O3 $(PGOFLAG)" LDFLAGS="$(PGOFLAG)"
+	rm -f test/test-*.prof
+	export LLVM_PROFILE_FILE="code-%p.prof" ; $(MAKE) -C test \
+		CFLAGS="-O3 $(PGOFLAG)" LDFLAGS="$(PGOFLAG)"
+	$(PROFDATA) merge -sparse -output=code.prof test/co*.prof
+	rm -f test/test-*.prof
+	$(MAKE) clean
+	$(MAKE) CFLAGS="-O3 -fprofile-use=$(shell pwd)/code.prof"
+	touch code.prof
+# xcrun llvm-cov show src/sdb -instr-profile=$(shell pwd)/code.prof
 
 deinstall uninstall:
 	rm -rf ${DESTDIR}${INCDIR}/sdb

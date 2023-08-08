@@ -489,9 +489,8 @@ static int sdb_dump(MainOptions *mo) {
 		if (!mo->textmode && mo->format == cgen && ls_length (l) > SDB_MAX_GPERF_KEYS) {
 			ls_free (l);
 			eprintf ("Error: gperf doesn't work with datasets with more than 15.000 keys.\n");
-			sdb_gh_free (name);
-			sdb_gh_free (cname);
-			return -1;
+			ret = -1;
+			goto fail;
 		}
 		SdbKv *kv;
 		SdbListIter *it;
@@ -538,9 +537,10 @@ static int sdb_dump(MainOptions *mo) {
 			break;
 		}
 	}
-	// sdb_free (db);
+fail:
 	sdb_gh_free (cname);
 	sdb_gh_free (name);
+	sdb_free (db);
 	return ret;
 }
 

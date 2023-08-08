@@ -1,5 +1,5 @@
-#ifndef _INCLUDE_RANGSTR_H_
-#define _INCLUDE_RANGSTR_H_
+#ifndef SDB_INCLUDE_RANGSTR_H
+#define SDB_INCLUDE_RANGSTR_H
 
 #include <sys/types.h>
 #include "sdb/types.h"
