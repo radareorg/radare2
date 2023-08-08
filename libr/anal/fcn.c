@@ -1620,7 +1620,7 @@ R_API void r_anal_trim_jmprefs(RAnal *anal, RAnalFunction *fcn) {
 		// TODO: honor REF_TYPE_ICOD too?
 		if (rt == R_ANAL_REF_TYPE_CODE && r_anal_function_contains (fcn, ref->addr)
 			&& (!is_x86 || !r_anal_function_contains (fcn, ref->at))) {
-			r_anal_xrefs_deln (anal, ref->at, ref->addr, ref->type);
+			r_anal_xref_del (anal, ref->at, ref->addr);
 		}
 	}
 
@@ -1640,7 +1640,7 @@ R_API void r_anal_del_jmprefs(RAnal *anal, RAnalFunction *fcn) {
 		RAnalRefType rt = R_ANAL_REF_TYPE_MASK (ref->type);
 		// TODO: honor REF_TYPE_ICOD too?
 		if (rt == R_ANAL_REF_TYPE_CODE) {
-			r_anal_xrefs_deln (anal, ref->at, ref->addr, ref->type);
+			r_anal_xref_del (anal, ref->at, ref->addr);
 		}
 	}
 	RVecAnalRef_free (refs);
