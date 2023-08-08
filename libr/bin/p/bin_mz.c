@@ -8,8 +8,8 @@
 
 static Sdb *get_sdb(RBinFile *bf) {
 	const struct r_bin_mz_obj_t *bin;
-	if (bf && bf->o && bf->o->bin_obj) {
-		bin = (struct r_bin_mz_obj_t *)bf->o->bin_obj;
+	if (bf && bf->bo && bf->bo->bin_obj) {
+		bin = (struct r_bin_mz_obj_t *)bf->bo->bin_obj;
 		if (bin && bin->kv) {
 			return bin->kv;
 		}
@@ -115,15 +115,15 @@ static bool load(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb 
 }
 
 static void destroy(RBinFile *bf) {
-	r_bin_mz_free ((struct r_bin_mz_obj_t *)bf->o->bin_obj);
+	r_bin_mz_free ((struct r_bin_mz_obj_t *)bf->bo->bin_obj);
 }
 
 static RBinAddr *binsym(RBinFile *bf, int type) {
 	RBinAddr *mzaddr = NULL;
-	if (bf && bf->o && bf->o->bin_obj) {
+	if (bf && bf->bo && bf->bo->bin_obj) {
 		switch (type) {
 		case R_BIN_SYM_MAIN:
-			mzaddr = r_bin_mz_get_main_vaddr (bf->o->bin_obj);
+			mzaddr = r_bin_mz_get_main_vaddr (bf->bo->bin_obj);
 			break;
 		}
 	}
@@ -133,7 +133,7 @@ static RBinAddr *binsym(RBinFile *bf, int type) {
 static RList *entries(RBinFile *bf) {
 	RList *res = r_list_newf (free);
 	if (R_LIKELY (res)) {
-		RBinAddr *ptr = r_bin_mz_get_entrypoint (bf->o->bin_obj);
+		RBinAddr *ptr = r_bin_mz_get_entrypoint (bf->bo->bin_obj);
 		if (R_LIKELY (ptr)) {
 			r_list_append (res, ptr);
 		}
@@ -142,7 +142,7 @@ static RList *entries(RBinFile *bf) {
 }
 
 static RList *sections(RBinFile *bf) {
-	return r_bin_mz_get_segments (bf->o->bin_obj);
+	return r_bin_mz_get_segments (bf->bo->bin_obj);
 }
 
 static RBinInfo *info(RBinFile *bf) {
@@ -171,7 +171,7 @@ static RBinInfo *info(RBinFile *bf) {
 }
 
 static void header(RBinFile *bf) {
-	const struct r_bin_mz_obj_t *mz = (struct r_bin_mz_obj_t *)bf->o->bin_obj;
+	const struct r_bin_mz_obj_t *mz = (struct r_bin_mz_obj_t *)bf->bo->bin_obj;
 	eprintf ("[0000:0000]  Signature           %c%c\n",
 		mz->dos_header->signature & 0xFF,
 		mz->dos_header->signature >> 8);
@@ -209,13 +209,13 @@ static RList *relocs(RBinFile *bf) {
 	const struct r_bin_mz_reloc_t *relocs = NULL;
 	int i;
 
-	if (!bf || !bf->o || !bf->o->bin_obj) {
+	if (!bf || !bf->bo || !bf->bo->bin_obj) {
 		return NULL;
 	}
 	if (!(ret = r_list_newf (free))) {
 		return NULL;
 	}
-	if (!(relocs = r_bin_mz_get_relocs (bf->o->bin_obj))) {
+	if (!(relocs = r_bin_mz_get_relocs (bf->bo->bin_obj))) {
 		return ret;
 	}
 	for (i = 0; !relocs[i].last; i++) {

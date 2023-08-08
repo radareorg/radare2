@@ -656,9 +656,9 @@ R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 		binfile->fd = desc->fd;
 	}
 	binfile = r_bin_cur (r->bin);
-	if (r->bin->cur && r->bin->cur->o && r->bin->cur->o->plugin && r->bin->cur->o->plugin->strfilter) {
+	if (r->bin->cur && r->bin->cur->bo && r->bin->cur->bo->plugin && r->bin->cur->bo->plugin->strfilter) {
 		char msg[2];
-		msg[0] = r->bin->cur->o->plugin->strfilter;
+		msg[0] = r->bin->cur->bo->plugin->strfilter;
 		msg[1] = 0;
 		r_config_set (r->config, "bin.str.filter", msg);
 	}
@@ -780,8 +780,8 @@ R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 			r_config_set_i (r->config, "asm.bits", inf->bits);
 			r_bin_info_free (inf);
 		}
-		if (binfile->o->regstate) {
-			if (r_reg_arena_set_bytes (r->anal->reg, binfile->o->regstate)) {
+		if (binfile->bo->regstate) {
+			if (r_reg_arena_set_bytes (r->anal->reg, binfile->bo->regstate)) {
 				R_LOG_INFO ("Setting up coredump: Problem while setting the registers");
 			} else {
 				R_LOG_INFO ("Setting up coredump: Registers have been set");
@@ -804,7 +804,7 @@ R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 			}
 		}
 
-		RBinObject *o = binfile->o;
+		RBinObject *o = binfile->bo;
 		int map = 0;
 		if (o && o->maps) {
 			RList *maps = o->maps;

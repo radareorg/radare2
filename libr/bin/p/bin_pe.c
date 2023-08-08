@@ -104,7 +104,7 @@ static RBuffer* create(RBin* bin, const ut8 *code, int codelen, const ut8 *data,
 }
 
 static char *signature(RBinFile *bf, bool json) {
-	r_return_val_if_fail (bf && bf->o && bf->o->bin_obj, NULL);
+	r_return_val_if_fail (bf && bf->bo && bf->bo->bin_obj, NULL);
 	RBinPEObj *pe = PE_(get)(bf);
 	if (json) {
 		PJ *pj = r_pkcs7_cms_json (pe->cms);

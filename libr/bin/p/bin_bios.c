@@ -39,7 +39,7 @@ static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadadd
 }
 
 static void destroy(RBinFile *bf) {
-	r_buf_free (bf->o->bin_obj);
+	r_buf_free (bf->bo->bin_obj);
 }
 
 static ut64 baddr(RBinFile *bf) {
@@ -74,7 +74,7 @@ static RBinInfo *info(RBinFile *bf) {
 static RList *sections(RBinFile *bf) {
 	RList *ret = NULL;
 	RBinSection *ptr = NULL;
-	RBuffer *obj = bf->o->bin_obj;
+	RBuffer *obj = bf->bo->bin_obj;
 
 	if (!(ret = r_list_newf ((RListFree) r_bin_section_free))) {
 		return NULL;

@@ -201,11 +201,11 @@ static bool decode(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
 	if (mask & R_ARCH_OP_MASK_DISASM) {
 		RBinJavaObj *obj = NULL;
 		RBin *bin = as->arch->binb.bin;
-		RBinPlugin *plugin = bin && bin->cur && bin->cur->o ?
-			bin->cur->o->plugin : NULL;
+		RBinPlugin *plugin = bin && bin->cur && bin->cur->bo ?
+			bin->cur->bo->plugin : NULL;
 		if (plugin && plugin->name) {
 			if (!strcmp (plugin->name, "java")) { // XXX slow
-				obj = bin->cur->o->bin_obj; //o;
+				obj = bin->cur->bo->bin_obj; //o;
 				//eprintf("Handling: %s disasm.\n", b->cur.file);
 			}
 		}

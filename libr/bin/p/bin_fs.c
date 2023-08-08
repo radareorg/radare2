@@ -52,7 +52,7 @@ static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadadd
 }
 
 static void destroy(RBinFile *bf) {
-	//r_bin_fs_free ((struct r_bin_fs_obj_t*)bf->o->bin_obj);
+	//r_bin_fs_free ((struct r_bin_fs_obj_t*)bf->bo->bin_obj);
 }
 
 /* accelerate binary load */

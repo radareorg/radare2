@@ -315,7 +315,7 @@ beach:
 
 static void destroy(RBinFile *bf) {
 	int i;
-	const LoadedRel *rel = bf->o->bin_obj;
+	const LoadedRel *rel = bf->bo->bin_obj;
 	if (!rel) {
 		return;
 	}
@@ -331,7 +331,7 @@ static void destroy(RBinFile *bf) {
 }
 
 static ut64 baddr(RBinFile *bf) {
-	return bf->o->baddr;
+	return bf->bo->baddr;
 }
 
 static RList *sections(RBinFile *bf) {
@@ -339,7 +339,7 @@ static RList *sections(RBinFile *bf) {
 	RList *ret;
 	const RelSection *rel_s;
 	RBinSection *s;
-	const LoadedRel *rel = bf->o->bin_obj;
+	const LoadedRel *rel = bf->bo->bin_obj;
 	if (!(ret = r_list_new ())) {
 		return NULL;
 	}
@@ -356,7 +356,7 @@ static RList *sections(RBinFile *bf) {
 			break;
 		}
 		s->paddr = rel_section_paddr (rel_s);
-		s->vaddr = bf->o->baddr + s->paddr;
+		s->vaddr = bf->bo->baddr + s->paddr;
 		s->size = s->vsize = rel_s->size;
 		s->add = true;
 		if (s->paddr == 0) {
@@ -369,7 +369,7 @@ static RList *sections(RBinFile *bf) {
 			s->name = strdup ("bss");
 			assert (s->name);
 			// Place after end of REL file
-			s->vaddr = bf->o->baddr + bf->size + 0x3c;
+			s->vaddr = bf->bo->baddr + bf->size + 0x3c;
 		} else if (executable) {
 			s->name = r_str_newf ("text_%d", i);
 		} else {
@@ -389,7 +389,7 @@ static RList *sections(RBinFile *bf) {
 }
 
 static void register_header_symbol(RBinFile *bf, RList *syms, const char *name, ut8 section, ut32 offset) {
-	const LoadedRel *rel = bf->o->bin_obj;
+	const LoadedRel *rel = bf->bo->bin_obj;
 	if (section == 0 || section >= rel->hdr.num_sections) {
 		return;
 	}
@@ -401,7 +401,7 @@ static void register_header_symbol(RBinFile *bf, RList *syms, const char *name, 
 	ret->libname = strdup (rel->libname);
 	ret->name = strdup (name);
 	ret->paddr = rel_section_paddr (&rel->sections[section]) + offset;
-	ret->vaddr = bf->o->baddr + ret->paddr;
+	ret->vaddr = bf->bo->baddr + ret->paddr;
 	r_list_append (syms, ret);
 }
 
@@ -411,7 +411,7 @@ static RList *symbols(RBinFile *bf) {
 		return NULL;
 	}
 
-	const LoadedRel *rel = bf->o->bin_obj;
+	const LoadedRel *rel = bf->bo->bin_obj;
 	register_header_symbol (bf, syms, "prolog", rel->hdr.prolog_section, rel->hdr.prolog_offset);
 	register_header_symbol (bf, syms, "epilog", rel->hdr.epilog_section, rel->hdr.epilog_offset);
 	register_header_symbol (bf, syms, "unresolved", rel->hdr.unresolved_section, rel->hdr.unresolved_offset);
@@ -541,9 +541,9 @@ static RBinReloc *patch_reloc(RBin *b, const LoadedRel *rel, const RelReloc *rel
 	}
 	ret->addend = A;
 	ret->vaddr = P;
-	RBinSection *s = r_bin_get_section_at (b->cur->o, P, true);
+	RBinSection *s = r_bin_get_section_at (b->cur->bo, P, true);
 	if (s && s->paddr != 0) {
-		ret->paddr = P - b->cur->o->baddr;
+		ret->paddr = P - b->cur->bo->baddr;
 	}
 	return ret;
 }
@@ -551,7 +551,7 @@ static RBinReloc *patch_reloc(RBin *b, const LoadedRel *rel, const RelReloc *rel
 static RList *patch_relocs(RBinFile *bf) {
 	int i, j;
 	RBin *b = bf->rbin;
-	const LoadedRel *rel = b->cur->o->bin_obj;
+	const LoadedRel *rel = b->cur->bo->bin_obj;
 
 	RList *ret = r_list_new ();
 	for (i = 0; i < rel->num_imps; i++) {

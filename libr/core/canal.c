@@ -92,8 +92,8 @@ static int cmpaddr(const void *_a, const void *_b) {
 
 static char *get_function_name(RCore *core, ut64 addr) {
 	RBinFile *bf = r_bin_cur (core->bin);
-	if (bf && bf->o) {
-		RBinSymbol *sym = ht_up_find (bf->o->addr2klassmethod, addr, NULL);
+	if (bf && bf->bo) {
+		RBinSymbol *sym = ht_up_find (bf->bo->addr2klassmethod, addr, NULL);
 		if (sym && sym->classname && sym->name) {
 			return r_str_newf ("method.%s.%s", sym->classname, sym->name);
 		}

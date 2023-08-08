@@ -75,11 +75,11 @@ static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *b, ut64 loadaddr,
 }
 
 static void destroy(RBinFile *bf) {
-	free (bf->o->bin_obj);
+	free (bf->bo->bin_obj);
 }
 
 static ut64 baddr(RBinFile *bf) {
-	RBinPlan9Obj *o = (RBinPlan9Obj *)bf->o->bin_obj;
+	RBinPlan9Obj *o = (RBinPlan9Obj *)bf->bo->bin_obj;
 
 	switch (o->header.magic) {
 	case MAGIC_ARM64:
@@ -121,7 +121,7 @@ static RBinAddr *binsym(RBinFile *bf, int type) {
 static RList *entries(RBinFile *bf) {
 	RList *ret;
 	RBinAddr *ptr = NULL;
-	RBinPlan9Obj *o = (RBinPlan9Obj *)bf->o->bin_obj;
+	RBinPlan9Obj *o = (RBinPlan9Obj *)bf->bo->bin_obj;
 
 	if (!(ret = r_list_new ())) {
 		return NULL;
@@ -145,9 +145,9 @@ static RList *entries(RBinFile *bf) {
 static RList *sections(RBinFile *bf) {
 	RList *ret = NULL;
 	RBinSection *ptr = NULL;
-	RBinPlan9Obj *o = (RBinPlan9Obj *)bf->o->bin_obj;
+	RBinPlan9Obj *o = (RBinPlan9Obj *)bf->bo->bin_obj;
 
-	if (!bf->o->info) {
+	if (!bf->bo->info) {
 		return NULL;
 	}
 
@@ -280,7 +280,7 @@ typedef struct {
 
 static st64 sym_read(RBinFile *bf, Sym *sym, const ut64 offset) {
 	st64 size = 0;
-	const RBinPlan9Obj *o = (RBinPlan9Obj *)bf->o->bin_obj;
+	const RBinPlan9Obj *o = (RBinPlan9Obj *)bf->bo->bin_obj;
 	const ut64 syms = o->header_size + o->header.text + o->header.data;
 
 	ut64 value;
@@ -382,7 +382,7 @@ static RList *symbols(RBinFile *bf) {
 	RVector *history = NULL; // <Sym>
 	HtUP *histories = NULL; // <ut64, RVector<Sym> *>
 	RPVector *names = NULL; // <char *>
-	const RBinPlan9Obj *o = (RBinPlan9Obj *)bf->o->bin_obj;
+	const RBinPlan9Obj *o = (RBinPlan9Obj *)bf->bo->bin_obj;
 	ut64 i;
 	Sym sym = {0};
 
@@ -632,10 +632,10 @@ static ut64 size(RBinFile *bf) {
 	if (!bf) {
 		return 0;
 	}
-	if (!bf->o->info) {
-		bf->o->info = info (bf);
+	if (!bf->bo->info) {
+		bf->bo->info = info (bf);
 	}
-	if (!bf->o->info) {
+	if (!bf->bo->info) {
 		return 0;
 	}
 

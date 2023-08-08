@@ -758,29 +758,29 @@ R_API RBinSection *r_bin_get_section_at(RBinObject *o, ut64 off, int va) {
 R_API RList *r_bin_reset_strings(RBin *bin) {
 	RBinFile *bf = r_bin_cur (bin);
 
-	if (!bf || !bf->o) {
+	if (!bf || !bf->bo) {
 		return NULL;
 	}
-	if (bf->o->strings) {
-		r_list_free (bf->o->strings);
-		bf->o->strings = NULL;
+	if (bf->bo->strings) {
+		r_list_free (bf->bo->strings);
+		bf->bo->strings = NULL;
 	}
 
-	ht_up_free (bf->o->strings_db);
-	bf->o->strings_db = ht_up_new0 ();
+	ht_up_free (bf->bo->strings_db);
+	bf->bo->strings_db = ht_up_new0 ();
 
 	bf->rawstr = bin->rawstr;
 	RBinPlugin *plugin = r_bin_file_cur_plugin (bf);
 
 	if (plugin && plugin->strings) {
-		bf->o->strings = plugin->strings (bf);
+		bf->bo->strings = plugin->strings (bf);
 	} else {
-		bf->o->strings = r_bin_file_get_strings (bf, bin->minstrlen, 0, bf->rawstr);
+		bf->bo->strings = r_bin_file_get_strings (bf, bin->minstrlen, 0, bf->rawstr);
 	}
 	if (bin->debase64) {
-		r_bin_object_filter_strings (bf->o);
+		r_bin_object_filter_strings (bf->bo);
 	}
-	return bf->o->strings;
+	return bf->bo->strings;
 }
 
 R_API RList *r_bin_get_strings(RBin *bin) {
@@ -914,7 +914,7 @@ R_API bool r_bin_use_arch(RBin *bin, const char *arch, int bits, const char *nam
 				return false;
 			}
 		}
-		obj = binfile->o;
+		obj = binfile->bo;
 	}
 	return r_bin_file_set_obj (bin, binfile, obj);
 }
@@ -1047,7 +1047,7 @@ R_API void r_bin_list_archs(RBin *bin, PJ *pj, int mode) {
 	if (mode == 'j') {
 		pj_ka (pj, "bins");
 	}
-	RBinObject *obj = nbinfile->o;
+	RBinObject *obj = nbinfile->bo;
 	RBinInfo *info = obj->info;
 	char bits = info? info->bits: 0;
 	ut64 boffset = obj->boffset;
@@ -1175,10 +1175,10 @@ R_API void r_bin_set_user_ptr(RBin *bin, void *user) {
 
 static RBinSection* __get_vsection_at(RBin *bin, ut64 vaddr) {
 	r_return_val_if_fail (bin, NULL);
-	if (!bin->cur || !bin->cur->o) {
+	if (!bin->cur || !bin->cur->bo) {
 		return NULL;
 	}
-	return r_bin_get_section_at (bin->cur->o, vaddr, true);
+	return r_bin_get_section_at (bin->cur->bo, vaddr, true);
 }
 
 R_API void r_bin_bind(RBin *bin, RBinBind *b) {
@@ -1291,12 +1291,12 @@ R_API ut64 r_bin_get_vaddr(RBin *bin, ut64 paddr, ut64 vaddr) {
 		return paddr;
 	}
 	/* hack to realign thumb symbols */
-	if (bin->cur->o && bin->cur->o->info && bin->cur->o->info->arch) {
-		if (bin->cur->o->info->bits == 16) {
-			RBinSection *s = r_bin_get_section_at (bin->cur->o, paddr, false);
+	if (bin->cur->bo && bin->cur->bo->info && bin->cur->bo->info->arch) {
+		if (bin->cur->bo->info->bits == 16) {
+			RBinSection *s = r_bin_get_section_at (bin->cur->bo, paddr, false);
 			// autodetect thumb
 			if (s && (s->perm & R_PERM_X) && strstr (s->name, "text")) {
-				if (!strcmp (bin->cur->o->info->arch, "arm") && (vaddr & 1)) {
+				if (!strcmp (bin->cur->bo->info->arch, "arm") && (vaddr & 1)) {
 					vaddr = (vaddr >> 1) << 1;
 				}
 			}
@@ -1319,7 +1319,7 @@ R_API RBinFile *r_bin_cur(RBin *bin) {
 R_API RBinObject *r_bin_cur_object(RBin *bin) {
 	r_return_val_if_fail (bin, NULL);
 	RBinFile *bf = r_bin_cur (bin);
-	return bf ? bf->o : NULL;
+	return bf ? bf->bo : NULL;
 }
 
 R_API void r_bin_force_plugin(RBin *bin, const char *name) {
@@ -1463,12 +1463,12 @@ R_API RBinFile *r_bin_file_at(RBin *bin, ut64 at) {
 	r_list_foreach (bin->binfiles, it, bf) {
 		// chk for baddr + size of no section is covering anything
 		// we should honor maps not sections imho
-		r_list_foreach (bf->o->sections, it2, s) {
+		r_list_foreach (bf->bo->sections, it2, s) {
 			if (at >= s->vaddr  && at < (s->vaddr + s->vsize)) {
 				return bf;
 			}
 		}
-		if (at >= bf->o->baddr && at < (bf->o->baddr + bf->size)) {
+		if (at >= bf->bo->baddr && at < (bf->bo->baddr + bf->size)) {
 			return bf;
 		}
 	}

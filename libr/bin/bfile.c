@@ -9,19 +9,19 @@
 #define R_STRING_MAX_UNI_BLOCKS 4
 
 static RBinClass *__getClass(RBinFile *bf, const char *name) {
-	r_return_val_if_fail (bf && bf->o && bf->o->classes_ht && name, NULL);
-	return ht_pp_find (bf->o->classes_ht, name, NULL);
+	r_return_val_if_fail (bf && bf->bo && bf->bo->classes_ht && name, NULL);
+	return ht_pp_find (bf->bo->classes_ht, name, NULL);
 }
 
 static RBinSymbol *__getMethod(RBinFile *bf, const char *klass, const char *method) {
-	r_return_val_if_fail (bf && bf->o && bf->o->methods_ht && klass && method, NULL);
+	r_return_val_if_fail (bf && bf->bo && bf->bo->methods_ht && klass && method, NULL);
 	r_strf_var (name, 128, "%s::%s", klass, method);
-	return ht_pp_find (bf->o->methods_ht, name, NULL);
+	return ht_pp_find (bf->bo->methods_ht, name, NULL);
 }
 
 static RBinString *__stringAt(RBinFile *bf, RList *ret, ut64 addr) {
 	if (R_LIKELY (addr != 0 && addr != UT64_MAX)) {
-		return ht_up_find (bf->o->strings_db, addr, NULL);
+		return ht_up_find (bf->bo->strings_db, addr, NULL);
 	}
 	return NULL;
 }
@@ -38,7 +38,7 @@ static void print_string(RBinFile *bf, RBinString *string, int raw, PJ *pj) {
 	if (!io) {
 		return;
 	}
-	RBinSection *s = r_bin_get_section_at (bf->o, string->paddr, false);
+	RBinSection *s = r_bin_get_section_at (bf->bo, string->paddr, false);
 	if (s) {
 		string->vaddr = s->vaddr + (string->paddr - s->paddr);
 	}
@@ -389,15 +389,15 @@ static int string_scan_range(RList *list, RBinFile *bf, int min, const ut64 from
 			if (!s) {
 				if (section) {
 					s = section;
-				} else if (bf->o) {
-					s = r_bin_get_section_at (bf->o, str_start, false);
+				} else if (bf->bo) {
+					s = r_bin_get_section_at (bf->bo, str_start, false);
 				}
 				if (s) {
 					vdelta = s->vaddr;
 					pdelta = s->paddr;
 				}
 			}
-			ut64 baddr = bf->loadaddr && bf->o? bf->o->baddr: bf->loadaddr;
+			ut64 baddr = bf->loadaddr && bf->bo? bf->bo->baddr: bf->loadaddr;
 			bs->paddr = str_start + baddr;
 			bs->vaddr = str_start - pdelta + vdelta + baddr;
 			bs->string = r_str_ndup ((const char *)tmp, i); // Use stringviews to save memory
@@ -406,8 +406,8 @@ static int string_scan_range(RList *list, RBinFile *bf, int min, const ut64 from
 			}
 			if (list) {
 				r_list_append (list, bs);
-				if (bf->o) {
-					ht_up_insert (bf->o->strings_db, bs->vaddr, bs);
+				if (bf->bo) {
+					ht_up_insert (bf->bo->strings_db, bs->vaddr, bs);
 				}
 			} else {
 				print_string (bf, bs, raw, pj);
@@ -587,7 +587,7 @@ R_API bool r_bin_file_object_new_from_xtr_data(RBin *bin, RBinFile *bf, ut64 bas
 		}
 		o->info->bits = data->metadata->bits;
 	}
-	o->info->has_crypto = bf->o->info->has_crypto;
+	o->info->has_crypto = bf->bo->info->has_crypto;
 	data->loaded = true;
 	return true;
 }
@@ -734,9 +734,9 @@ R_IPI bool r_bin_file_set_obj(RBin *bin, RBinFile *bf, RBinObject *obj) {
 	bin->cur = bf;
 	bin->narch = bf->narch;
 	if (obj) {
-		bf->o = obj;
+		bf->bo = obj;
 	} else {
-		obj = bf->o;
+		obj = bf->bo;
 	}
 	RBinPlugin *plugin = r_bin_file_cur_plugin (bf);
 	if (bin->minstrlen < 1) {
@@ -756,7 +756,7 @@ R_IPI bool r_bin_file_set_obj(RBin *bin, RBinFile *bf, RBinObject *obj) {
 
 R_API bool r_bin_file_set_cur_binfile(RBin *bin, RBinFile *bf) {
 	r_return_val_if_fail (bin && bf, false);
-	return r_bin_file_set_obj (bin, bf, bf->o);
+	return r_bin_file_set_obj (bin, bf, bf->bo);
 }
 
 R_API bool r_bin_file_set_cur_by_name(RBin *bin, const char *name) {
@@ -796,7 +796,7 @@ R_API void r_bin_file_free(void /*RBinFile*/ *_bf) {
 		bf->sdb_addrinfo = NULL;
 	}
 	free (bf->file);
-	r_bin_object_free (bf->o);
+	r_bin_object_free (bf->bo);
 	r_list_free (bf->xtr_data);
 	if (bf->id != -1) {
 		// TODO: use r_storage api
@@ -861,7 +861,7 @@ R_IPI bool r_bin_file_set_bytes(RBinFile *bf, const ut8 *bytes, ut64 sz, bool st
 }
 
 R_API RBinPlugin *r_bin_file_cur_plugin(RBinFile *bf) {
-	return (bf && bf->o)? bf->o->plugin: NULL;
+	return (bf && bf->bo)? bf->bo->plugin: NULL;
 }
 
 // TODO: searchStrings() instead
@@ -872,8 +872,8 @@ R_IPI RList *r_bin_file_get_strings(RBinFile *bf, int min, int dump, int raw) {
 	RBinSection *section;
 	RList *ret = dump? NULL: r_list_newf (r_bin_string_free);
 
-	if (!raw && bf && bf->o && bf->o->sections && !r_list_empty (bf->o->sections)) {
-		RBinObject *o = bf->o;
+	if (!raw && bf && bf->bo && bf->bo->sections && !r_list_empty (bf->bo->sections)) {
+		RBinObject *o = bf->bo;
 		r_list_foreach (o->sections, iter, section) {
 			if (__isDataSection (bf, section)) {
 				get_strings_range (bf, ret, min, raw, nofp, section->paddr,
@@ -882,7 +882,7 @@ R_IPI RList *r_bin_file_get_strings(RBinFile *bf, int min, int dump, int raw) {
 		}
 		r_list_foreach (o->sections, iter, section) {
 			/* load objc/swift strings */
-			const int bits = (bf->o && bf->o->info) ? bf->o->info->bits : 32;
+			const int bits = (bf->bo && bf->bo->info) ? bf->bo->info->bits : 32;
 			const int cfstr_size = (bits == 64) ? 32 : 16;
 			const int cfstr_offs = (bits == 64) ? 16 :  8;
 			if (strstr (section->name, "__cfstring")) {
@@ -934,8 +934,8 @@ R_IPI RList *r_bin_file_get_strings(RBinFile *bf, int min, int dump, int raw) {
 }
 
 R_API ut64 r_bin_file_get_baddr(RBinFile *bf) {
-	if (bf && bf->o) {
-		return bf->o->baddr;
+	if (bf && bf->bo) {
+		return bf->bo->baddr;
 	}
 	return UT64_MAX;
 }
@@ -954,10 +954,10 @@ R_API bool r_bin_file_close(RBin *bin, int bd) {
 
 // TODO: do not compute md5 or sha1, those are weak and vulnerable hashes
 R_API RList *r_bin_file_compute_hashes(RBin *bin, ut64 limit) {
-	r_return_val_if_fail (bin && bin->cur && bin->cur->o, NULL);
+	r_return_val_if_fail (bin && bin->cur && bin->cur->bo, NULL);
 	ut64 buf_len = 0, r = 0;
 	RBinFile *bf = bin->cur;
-	RBinObject *o = bf->o;
+	RBinObject *o = bf->bo;
 
 	RIODesc *iod = r_io_desc_get (bin->iob.io, bf->fd);
 	if (!iod) {
@@ -1043,9 +1043,9 @@ R_API RList *r_bin_file_compute_hashes(RBin *bin, ut64 limit) {
 
 // Set new hashes to current RBinInfo, caller should free the returned RList
 R_API RList *r_bin_file_set_hashes(RBin *bin, RList/*<RBinFileHash*/ *new_hashes) {
-	r_return_val_if_fail (bin && bin->cur && bin->cur->o && bin->cur->o->info, NULL);
+	r_return_val_if_fail (bin && bin->cur && bin->cur->bo && bin->cur->bo->info, NULL);
 	RBinFile *bf = bin->cur;
-	RBinInfo *info = bf->o->info;
+	RBinInfo *info = bf->bo->info;
 
 	RList *prev_hashes = info->file_hashes;
 	info->file_hashes = new_hashes;
@@ -1081,7 +1081,7 @@ R_API void r_bin_class_free(RBinClass *k) {
 }
 
 R_API RBinClass *r_bin_file_add_class(RBinFile *bf, const char *name, const char *super, int view) {
-	r_return_val_if_fail (name && bf && bf->o, NULL);
+	r_return_val_if_fail (name && bf && bf->bo, NULL);
 	RBinClass *c = __getClass (bf, name);
 	if (c) {
 		if (super) {
@@ -1094,9 +1094,9 @@ R_API RBinClass *r_bin_file_add_class(RBinFile *bf, const char *name, const char
 	c = r_bin_class_new (name, super, view);
 	if (c) {
 		// XXX. no need for a list, the ht is iterable too
-		c->index = r_list_length (bf->o->classes);
-		r_list_append (bf->o->classes, c);
-		ht_pp_insert (bf->o->classes_ht, name, c);
+		c->index = r_list_length (bf->bo->classes);
+		r_list_append (bf->bo->classes, c);
+		ht_pp_insert (bf->bo->classes_ht, name, c);
 	}
 	return c;
 }
@@ -1118,7 +1118,7 @@ R_API RBinSymbol *r_bin_file_add_method(RBinFile *bf, const char *klass, const c
 			sym->name = strdup (method);
 			sym->lang = lang;
 			char *name = r_str_newf ("%s::%s", klass, method);
-			ht_pp_insert (bf->o->methods_ht, name, sym);
+			ht_pp_insert (bf->bo->methods_ht, name, sym);
 			// RBinSymbol *dsym = r_bin_symbol_clone (sym);
 			r_list_append (c->methods, sym);
 			free (name);
@@ -1136,17 +1136,17 @@ R_API RBinField *r_bin_file_add_field(RBinFile *binfile, const char *classname, 
 /* returns vaddr, rebased with the baseaddr of binfile, if va is enabled for
  * bin, paddr otherwise */
 R_API ut64 r_bin_file_get_vaddr(RBinFile *bf, ut64 paddr, ut64 vaddr) {
-	r_return_val_if_fail (bf && bf->o, paddr);
-	if (bf->o->info && bf->o->info->has_va) {
-		return bf->o->baddr_shift + vaddr;
+	r_return_val_if_fail (bf && bf->bo, paddr);
+	if (bf->bo->info && bf->bo->info->has_va) {
+		return bf->bo->baddr_shift + vaddr;
 	}
 	return paddr;
 }
 
 R_API RList *r_bin_file_get_trycatch(RBinFile *bf) {
-	r_return_val_if_fail (bf && bf->o && bf->o->plugin, NULL);
-	if (bf->o->plugin->trycatch) {
-		return bf->o->plugin->trycatch (bf);
+	r_return_val_if_fail (bf && bf->bo && bf->bo->plugin, NULL);
+	if (bf->bo->plugin->trycatch) {
+		return bf->bo->plugin->trycatch (bf);
 	}
 	return NULL;
 }
@@ -1154,7 +1154,7 @@ R_API RList *r_bin_file_get_trycatch(RBinFile *bf) {
 // TODO: Deprecate, we dont want to clone the vec into a list
 R_API RList *r_bin_file_get_symbols(RBinFile *bf) {
 	r_return_val_if_fail (bf, NULL);
-	RBinObject *bo = bf->o;
+	RBinObject *bo = bf->bo;
 	if (!bo->symbols) {
 		if (!RVecRBinSymbol_empty (&bo->symbols_vec)) {
 			R_LOG_DEBUG ("cloning symbols vector into a list"); // R2_600
@@ -1171,7 +1171,7 @@ R_API RList *r_bin_file_get_symbols(RBinFile *bf) {
 
 R_API RVecRBinSymbol *r_bin_file_get_symbols_vec(RBinFile *bf) {
 	r_return_val_if_fail (bf, NULL);
-	RBinObject *bo = bf->o;
+	RBinObject *bo = bf->bo;
 	if (bo) {
 		if (bo->symbols && RVecRBinSymbol_empty (&bo->symbols_vec)) {
 			R_LOG_DEBUG ("SLOW: cloning symbols list into a vec"); // R2_600
@@ -1199,7 +1199,7 @@ R_API RBinFile *r_bin_file_open(RBin *bin, const char *file, RBinFileOptions *op
 R_API void r_bin_file_merge(RBinFile *dst, RBinFile *src) {
 	// merge imports
 	// merge dbginfo
-	sdb_merge (dst->o->kv, src->o->kv);
+	sdb_merge (dst->bo->kv, src->bo->kv);
 	sdb_merge (dst->sdb_addrinfo, src->sdb_addrinfo);
 	sdb_merge (dst->sdb_info, src->sdb_info);
 }

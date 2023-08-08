@@ -26,9 +26,9 @@ static int pyversion_toi(const char *version) {
 
 static bool disassemble(RArchSession *s, RAnalOp *op, RArchDecodeMask mask, int pyversion) {
 	RBin *bin = s->arch->binb.bin;
-	RBinPlugin *plugin = bin && bin->cur && bin->cur->o? bin->cur->o->plugin: NULL;
+	RBinPlugin *plugin = bin && bin->cur && bin->cur->bo? bin->cur->bo->plugin: NULL;
 	RList *shared = (plugin && !strcmp (plugin->name, "pyc"))?
-		bin->cur->o->bin_obj: NULL;
+		bin->cur->bo->bin_obj: NULL;
 	RList *cobjs = NULL;
 	RList *interned_table = NULL;
 	if (shared) {
@@ -94,9 +94,9 @@ static char *regs(RArchSession *as) {
 
 static RList *get_pyc_code_obj(RArchSession *as) {
 	RBin *b = as->arch->binb.bin;
-	RBinPlugin *plugin = b->cur && b->cur->o? b->cur->o->plugin: NULL;
+	RBinPlugin *plugin = b->cur && b->cur->bo? b->cur->bo->plugin: NULL;
 	bool is_pyc = (plugin && strcmp (plugin->name, "pyc") == 0);
-	return is_pyc? b->cur->o->bin_obj: NULL;
+	return is_pyc? b->cur->bo->bin_obj: NULL;
 }
 
 static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {

@@ -269,7 +269,7 @@ static RBinAddr* binsym(RBinFile *bf, int sym) {
 	switch (sym) {
 	case R_BIN_SYM_MAIN:
 		{
-			struct MACH0_(obj_t) *mo = R_UNWRAP3 (bf, o, bin_obj);
+			struct MACH0_(obj_t) *mo = R_UNWRAP3 (bf, bo, bin_obj);
 			ut64 addr = MACH0_(get_main) (mo);
 			if (addr != UT64_MAX && addr) {
 				ret = R_NEW0 (RBinAddr);

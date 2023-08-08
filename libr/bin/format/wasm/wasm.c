@@ -989,9 +989,9 @@ void wasm_obj_free(RBinWasmObj *bin) {
 }
 
 void r_bin_wasm_destroy(RBinFile *bf) {
-	if (bf && bf->o) {
-		wasm_obj_free (bf->o->bin_obj);
-		bf->o->bin_obj = NULL;
+	if (bf && bf->bo) {
+		wasm_obj_free (bf->bo->bin_obj);
+		bf->bo->bin_obj = NULL;
 	}
 }
 

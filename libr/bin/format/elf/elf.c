@@ -3477,7 +3477,7 @@ static bool is_wordable_section(const char *name) {
 }
 
 static void dtproceed(RBinFile *bf, ut64 preinit_addr, ut64 preinit_size, int symtype) {
-	ELFOBJ *eo = R_UNWRAP3 (bf, o, bin_obj);
+	ELFOBJ *eo = R_UNWRAP3 (bf, bo, bin_obj);
 	RListIter *iter;
 	RBinAddr *ba;
 	r_list_foreach (eo->inits, iter, ba) {
@@ -3487,7 +3487,7 @@ static void dtproceed(RBinFile *bf, ut64 preinit_addr, ut64 preinit_size, int sy
 	}
 
 	int big_endian = Elf_(is_big_endian) (eo);
-	ut64 _baddr = Elf_(get_baddr) (bf->o->bin_obj);
+	ut64 _baddr = Elf_(get_baddr) (bf->bo->bin_obj);
 	ut64 from = Elf_(v2p) (eo, preinit_addr);
 	ut64 to = from + preinit_size;
 	ut64 at;
@@ -3521,7 +3521,7 @@ static void dtproceed(RBinFile *bf, ut64 preinit_addr, ut64 preinit_size, int sy
 }
 
 static bool parse_pt_dynamic(RBinFile *bf, RBinSection *ptr) {
-	ELFOBJ *eo = R_UNWRAP3 (bf, o, bin_obj);
+	ELFOBJ *eo = R_UNWRAP3 (bf, bo, bin_obj);
 	int big_endian = Elf_(is_big_endian) (eo);
 	Elf_(Dyn) entry;
 	ut64 preinit_addr = UT64_MAX;
@@ -3857,7 +3857,7 @@ static void _cache_bin_sections(RBinFile *bf, ELFOBJ *eo, const RVector *elf_bin
 
 	if (r_vector_empty (&eo->cached_sections)) {
 		if (!bf->size) {
-			ELFOBJ *eo = bf->o->bin_obj;
+			ELFOBJ *eo = bf->bo->bin_obj;
 			bf->size = eo? eo->size: 0x9999;
 		}
 		if (!found_load) {

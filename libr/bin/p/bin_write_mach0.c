@@ -13,7 +13,7 @@ typedef struct machoPointers_t {
 } MachoPointers;
 
 static MachoPointers findLastCommand(RBinFile *bf) {
-	struct MACH0_(obj_t) *bin = bf->o->bin_obj;
+	struct MACH0_(obj_t) *bin = bf->bo->bin_obj;
 	int i = 0;
 	ut64 off;
 	MachoPointers mp = {0};

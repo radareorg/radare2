@@ -39,7 +39,7 @@ static RList *fields(RBinFile *bf) {
 		r_list_append (ret, r_bin_field_new (addr, addr, siz, nam, \
 				r_strf ("0x%08"PFMT64x, (ut64)val), fmt, false));
 
-	struct PE_(r_bin_pe_obj_t) * bin = bf->o->bin_obj;
+	struct PE_(r_bin_pe_obj_t) * bin = bf->bo->bin_obj;
 	ut64 addr = bin->rich_header_offset ? bin->rich_header_offset : 128;
 
 	RListIter *it;
@@ -208,7 +208,7 @@ static RList *fields(RBinFile *bf) {
 }
 
 static void header(RBinFile *bf) {
-	struct PE_(r_bin_pe_obj_t) * bin = bf->o->bin_obj;
+	struct PE_(r_bin_pe_obj_t) * bin = bf->bo->bin_obj;
 	struct r_bin_t *rbin = bf->rbin;
 	rbin->cb_printf ("PE file header:\n");
 	rbin->cb_printf ("IMAGE_NT_HEADERS\n");
@@ -318,12 +318,12 @@ extern struct r_bin_write_t r_bin_write_pe64;
 
 static RList *trycatch(RBinFile *bf) {
 	RIO *io = bf->rbin->iob.io;
-	ut64 baseAddr = bf->o->baddr;
+	ut64 baseAddr = bf->bo->baddr;
 	int i;
 	ut64 offset;
 	ut32 c_handler = 0;
 
-	struct PE_(r_bin_pe_obj_t) * bin = bf->o->bin_obj;
+	struct PE_(r_bin_pe_obj_t) * bin = bf->bo->bin_obj;
 	PE_(image_data_directory) *expdir = &bin->optional_header->DataDirectory[PE_IMAGE_DIRECTORY_ENTRY_EXCEPTION];
 	if (!expdir->Size) {
 		return NULL;

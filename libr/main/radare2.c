@@ -458,7 +458,7 @@ static RThreadFunctionRet th_binload(RThread *th) {
 	(void)r_core_bin_load (r, filepath, baddr);
 	// check if bin info is loaded and complain if -B was used
 	RBinFile *bi = r_bin_cur (r->bin);
-	bool haveBinInfo = bi && bi->o && bi->o->info && bi->o->info->type;
+	bool haveBinInfo = bi && bi->bo && bi->bo->info && bi->bo->info->type;
 	if (!haveBinInfo && baddr != UT64_MAX) {
 		R_LOG_WARN ("Don't use -B on unknown files. Consider using -m");
 	}
@@ -472,7 +472,7 @@ static void binload(RCore *r, const char *filepath, ut64 baddr) {
 	(void)r_core_bin_load (r, filepath, baddr);
 	// check if bin info is loaded and complain if -B was used
 	RBinFile *bi = r_bin_cur (r->bin);
-	bool haveBinInfo = bi && bi->o && bi->o->info && bi->o->info->type;
+	bool haveBinInfo = bi && bi->bo && bi->bo->info && bi->bo->info->type;
 	if (!haveBinInfo && baddr != UT64_MAX) {
 		R_LOG_WARN ("Don't use -B on unknown files. Consider using -m");
 	}
@@ -1486,8 +1486,8 @@ R_API int r_main_radare2(int argc, const char **argv) {
 			ret = 1;
 			goto beach;
 		}
-		if (r->bin->cur && r->bin->cur->o && r->bin->cur->o->info && r->bin->cur->o->info->rclass && !strcmp ("fs", r->bin->cur->o->info->rclass)) {
-			const char *fstype = r->bin->cur->o->info->bclass;
+		if (r->bin->cur && r->bin->cur->bo && r->bin->cur->bo->info && r->bin->cur->bo->info->rclass && !strcmp ("fs", r->bin->cur->bo->info->rclass)) {
+			const char *fstype = r->bin->cur->bo->info->bclass;
 			r_core_cmdf (r, "m /root %s @ 0", fstype);
 		}
 		r_core_cmd0 (r, "=!"); // initalize io subsystem
@@ -1695,8 +1695,8 @@ R_API int r_main_radare2(int argc, const char **argv) {
 		}
 		// no flagspace selected by default the beginning
 		r_flag_space_set (r->flags, NULL);
-		if (!debug && r->bin && r->bin->cur && r->bin->cur->o && r->bin->cur->o->info) {
-			if (r->bin->cur->o->info->arch) {
+		if (!debug && r->bin && r->bin->cur && r->bin->cur->bo && r->bin->cur->bo->info) {
+			if (r->bin->cur->bo->info->arch) {
 				r_core_cmd0 (r, "aeip");
 			}
 		}

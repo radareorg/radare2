@@ -88,7 +88,7 @@ static RList *sections(RBinFile *bf) {
 	RList *ret = NULL;
 	RBinSection *ptr = NULL;
 	RBuffer *b = bf->buf;
-	if (!bf->o->info) {
+	if (!bf->bo->info) {
 		return NULL;
 	}
 	if (!(ret = r_list_new ())) {
@@ -194,19 +194,19 @@ static RList *sections(RBinFile *bf) {
 
 static RList *symbols(RBinFile *bf) {
 	RBinNXOObj *bin;
-	if (!bf || !bf->o || !bf->o->bin_obj) {
+	if (!bf || !bf->bo || !bf->bo->bin_obj) {
 		return NULL;
 	}
-	bin = (RBinNXOObj*) bf->o->bin_obj;
+	bin = (RBinNXOObj*) bf->bo->bin_obj;
 	return bin->methods_list;
 }
 
 static RList *imports(RBinFile *bf) {
 	RBinNXOObj *bin;
-	if (!bf || !bf->o || !bf->o->bin_obj) {
+	if (!bf || !bf->bo || !bf->bo->bin_obj) {
 		return NULL;
 	}
-	bin = (RBinNXOObj*) bf->o->bin_obj;
+	bin = (RBinNXOObj*) bf->bo->bin_obj;
 	return bin->imports_list;
 }
 

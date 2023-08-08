@@ -78,11 +78,11 @@ dol_err:
 }
 
 static RList *sections(RBinFile *bf) {
-	r_return_val_if_fail (bf && bf->o && bf->o->bin_obj, NULL);
+	r_return_val_if_fail (bf && bf->bo && bf->bo->bin_obj, NULL);
 	int i;
 	RList *ret;
 	RBinSection *s;
-	DolHeader *dol = bf->o->bin_obj;
+	DolHeader *dol = bf->bo->bin_obj;
 	if (!(ret = r_list_new ())) {
 		return NULL;
 	}
@@ -132,10 +132,10 @@ static RList *sections(RBinFile *bf) {
 }
 
 static RList *entries(RBinFile *bf) {
-	r_return_val_if_fail (bf && bf->o && bf->o->bin_obj, NULL);
+	r_return_val_if_fail (bf && bf->bo && bf->bo->bin_obj, NULL);
 	RList *ret = r_list_new ();
 	RBinAddr *addr = R_NEW0 (RBinAddr);
-	DolHeader *dol = bf->o->bin_obj;
+	DolHeader *dol = bf->bo->bin_obj;
 	addr->vaddr = (ut64) dol->entrypoint;
 	addr->paddr = addr->vaddr & 0xFFFF;
 	r_list_append (ret, addr);

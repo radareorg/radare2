@@ -161,7 +161,7 @@ static RList* sections(RBinFile *bf) {
 	const int buf_size = R_MIN (sizeof (buf), r_buf_size (bf->buf));
 
 	r_buf_read_at (bf->buf, 0, buf, buf_size);
-	if (!bf->o->info) {
+	if (!bf->bo->info) {
 		return NULL;
 	}
 

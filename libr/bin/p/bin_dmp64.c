@@ -5,17 +5,17 @@
 #include "dmp/dmp64.h"
 
 static Sdb *get_sdb(RBinFile *bf) {
-	r_return_val_if_fail (bf && bf->o, NULL);
-	struct r_bin_dmp64_obj_t *obj = (struct r_bin_dmp64_obj_t *)bf->o->bin_obj;
+	r_return_val_if_fail (bf && bf->bo, NULL);
+	struct r_bin_dmp64_obj_t *obj = (struct r_bin_dmp64_obj_t *)bf->bo->bin_obj;
 	return (obj && obj->kv) ? obj->kv: NULL;
 }
 
 static void destroy(RBinFile *bf) {
-	r_bin_dmp64_free ((struct r_bin_dmp64_obj_t*)bf->o->bin_obj);
+	r_bin_dmp64_free ((struct r_bin_dmp64_obj_t*)bf->bo->bin_obj);
 }
 
 static void header(RBinFile *bf) {
-	struct r_bin_dmp64_obj_t *obj = (struct r_bin_dmp64_obj_t *)bf->o->bin_obj;
+	struct r_bin_dmp64_obj_t *obj = (struct r_bin_dmp64_obj_t *)bf->bo->bin_obj;
 	struct r_bin_t *rbin = bf->rbin;
 	rbin->cb_printf ("DUMP_HEADER64:\n");
 	rbin->cb_printf ("  MajorVersion : 0x%08"PFMT32x"\n", obj->header->MajorVersion);
@@ -49,7 +49,7 @@ static RBinInfo *info(RBinFile *bf) {
 	if (!(ret = R_NEW0 (RBinInfo))) {
 		return NULL;
 	}
-	struct r_bin_dmp64_obj_t *obj = (struct r_bin_dmp64_obj_t *)bf->o->bin_obj;
+	struct r_bin_dmp64_obj_t *obj = (struct r_bin_dmp64_obj_t *)bf->bo->bin_obj;
 
 	ret->arch = strdup ("x86");
 	ret->bits = 64;
@@ -86,7 +86,7 @@ static RList *sections(RBinFile *bf) {
 	RList *ret;
 	RListIter *it;
 	RBinSection *ptr;
-	struct r_bin_dmp64_obj_t *obj = (struct r_bin_dmp64_obj_t *)bf->o->bin_obj;
+	struct r_bin_dmp64_obj_t *obj = (struct r_bin_dmp64_obj_t *)bf->bo->bin_obj;
 
 	if (!(ret = r_list_newf (free))) {
 		return NULL;

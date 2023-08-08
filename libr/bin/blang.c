@@ -89,7 +89,7 @@ typedef struct {
 } LangCheck;
 
 static bool check_symbol_lang(RBinFile *bf, LangCheck *lc, RBinSymbol *sym, int *type) {
-	RBinObject *bo = bf->o;
+	RBinObject *bo = bf->bo;
 	RBinInfo *info = bo->info;
 	char *lib;
 	if (!lc->cantbe.rust) {
@@ -202,9 +202,9 @@ static bool check_symbol_lang(RBinFile *bf, LangCheck *lc, RBinSymbol *sym, int 
 /* This is about 10% of the loading time, optimize if possible */
 R_API int r_bin_load_languages(RBinFile *bf) {
 	r_return_val_if_fail (bf, R_BIN_LANG_NONE);
-	r_return_val_if_fail (bf->o, R_BIN_LANG_NONE);
-	r_return_val_if_fail (bf->o->info, R_BIN_LANG_NONE);
-	RBinObject *o = bf->o;
+	r_return_val_if_fail (bf->bo, R_BIN_LANG_NONE);
+	r_return_val_if_fail (bf->bo->info, R_BIN_LANG_NONE);
+	RBinObject *o = bf->bo;
 	RBinInfo *info = o->info;
 	RBinSymbol *sym = NULL;
 	RListIter *iter;
@@ -281,8 +281,8 @@ R_IPI int r_bin_lang_type(RBinFile *binfile, const char *def, const char *sym) {
 	RBinPlugin *plugin = r_bin_file_cur_plugin (binfile);
 	if (def && plugin && plugin->demangle_type) {
 		type = plugin->demangle_type (def);
-	} else if (binfile && binfile->o && binfile->o->info) {
-		type = r_bin_demangle_type (binfile->o->info->lang);
+	} else if (binfile && binfile->bo && binfile->bo->info) {
+		type = r_bin_demangle_type (binfile->bo->info->lang);
 	}
 	if (def && type == R_BIN_LANG_NONE) {
 		type = r_bin_demangle_type (def);

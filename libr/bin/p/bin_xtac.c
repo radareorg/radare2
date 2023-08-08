@@ -31,7 +31,7 @@ static inline bool has_backward_edge_addr(ut8 meta) {
 }
 
 static RList *sections(RBinFile *bf) {
-	RBinXtacObj *bin = bf->o->bin_obj;
+	RBinXtacObj *bin = bf->bo->bin_obj;
 
 	RList *ret = NULL;
 	if (!(ret = r_list_newf ((RListFree)r_bin_section_free))) {
@@ -99,7 +99,7 @@ static RList *fields(RBinFile *bf) {
 	r_strf_buffer (128);
 #define ROWL(nam, siz, val, fmt) \
 	r_list_append (ret, r_bin_field_new (addr, addr, siz, nam, r_strf ("0x%08x", val), fmt, false));
-	RBinXtacObj *bin = bf->o->bin_obj;
+	RBinXtacObj *bin = bf->bo->bin_obj;
 
 	ut64 addr = 0;
 	ROWL ("magic", 4, bin->header->magic, "x");
@@ -221,7 +221,7 @@ static RList *fields(RBinFile *bf) {
 }
 
 static void header(RBinFile *bf) {
-	RBinXtacObj *bin = bf->o->bin_obj;
+	RBinXtacObj *bin = bf->bo->bin_obj;
 	struct r_bin_t *rbin = bf->rbin;
 	rbin->cb_printf ("XTAC file header:\n");
 	rbin->cb_printf ("  magic : 0x%x\n", bin->header->magic);
@@ -526,11 +526,11 @@ static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadadd
 }
 
 static void destroy(RBinFile *bf) {
-	r_bin_xtac_free ((RBinXtacObj *)bf->o->bin_obj);
+	r_bin_xtac_free ((RBinXtacObj *)bf->bo->bin_obj);
 }
 
 static ut64 baddr(RBinFile *bf) {
-	return bf->o->baddr;
+	return bf->bo->baddr;
 }
 
 static RBinInfo *info(RBinFile *bf) {
@@ -569,7 +569,7 @@ static bool check_buffer(RBinFile *file, RBuffer *b) {
 }
 
 static RList *symbols(RBinFile *bf) {
-	RBinXtacObj *bin = bf->o->bin_obj;
+	RBinXtacObj *bin = bf->bo->bin_obj;
 
 	ut64 x86_baddr = baddr (bf), arm_baddr = 0x0;
 

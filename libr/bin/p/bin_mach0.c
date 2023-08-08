@@ -24,12 +24,12 @@ static RBuffer *swizzle_io_read(RBinFile *bf, struct MACH0_(obj_t) *obj, RIO *io
 #define IS_PTR_BIND(x) ((x & (1ULL << 62)) != 0)
 
 static Sdb *get_sdb(RBinFile *bf) {
-	struct MACH0_(obj_t) *mo = (struct MACH0_(obj_t) *) R_UNWRAP3 (bf, o, bin_obj);
+	struct MACH0_(obj_t) *mo = (struct MACH0_(obj_t) *) R_UNWRAP3 (bf, bo, bin_obj);
 	return mo? mo->kv: NULL;
 }
 
 static char *entitlements(RBinFile *bf, bool json) {
-	struct MACH0_(obj_t) *mo = R_UNWRAP3 (bf, o, bin_obj);
+	struct MACH0_(obj_t) *mo = R_UNWRAP3 (bf, bo, bin_obj);
 	if (mo) {
 		const char *s = (const char *)mo->signature;
 		if (s) {
@@ -68,18 +68,18 @@ static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadadd
 }
 
 static void destroy(RBinFile *bf) {
-	MACH0_(mach0_free) (bf->o->bin_obj);
+	MACH0_(mach0_free) (bf->bo->bin_obj);
 }
 
 static ut64 baddr(RBinFile *bf) {
-	r_return_val_if_fail (bf && bf->o && bf->o->bin_obj, UT64_MAX);
-	struct MACH0_(obj_t) *mo = bf->o->bin_obj;
+	r_return_val_if_fail (bf && bf->bo && bf->bo->bin_obj, UT64_MAX);
+	struct MACH0_(obj_t) *mo = bf->bo->bin_obj;
 	return MACH0_(get_baddr)(mo);
 }
 
 // R2_590 return RVecSegment
 static RList *sections(RBinFile *bf) {
-	struct MACH0_(obj_t) *mo = bf->o->bin_obj;
+	struct MACH0_(obj_t) *mo = bf->bo->bin_obj;
 	return MACH0_(get_segments) (bf, mo); // TODO split up sections and segments?
 }
 
@@ -146,7 +146,7 @@ static void process_constructors(RBinFile *bf, RList *ret, int bits) {
 }
 
 static RList *entries(RBinFile *bf) {
-	r_return_val_if_fail (bf && bf->o, NULL);
+	r_return_val_if_fail (bf && bf->bo, NULL);
 
 	RBinAddr *ptr = NULL;
 	struct addr_t *entry = NULL;
@@ -156,12 +156,12 @@ static RList *entries(RBinFile *bf) {
 		return NULL;
 	}
 
-	int bits = MACH0_(get_bits) (bf->o->bin_obj);
-	if (!(entry = MACH0_(get_entrypoint) (bf->o->bin_obj))) {
+	int bits = MACH0_(get_bits) (bf->bo->bin_obj);
+	if (!(entry = MACH0_(get_entrypoint) (bf->bo->bin_obj))) {
 		return ret;
 	}
 	if ((ptr = R_NEW0 (RBinAddr))) {
-		ptr->paddr = entry->offset + bf->o->boffset;
+		ptr->paddr = entry->offset + bf->bo->boffset;
 		ptr->vaddr = entry->addr;
 		ptr->hpaddr = entry->haddr;
 		ptr->bits = bits;
@@ -184,7 +184,7 @@ static RList *entries(RBinFile *bf) {
 #if 0
 // XXX this is very slooow
 static RList *symbols(RBinFile *bf) {
-	struct MACH0_(obj_t) *mo = R_UNWRAP3 (bf, o, bin_obj);
+	struct MACH0_(obj_t) *mo = R_UNWRAP3 (bf, bo, bin_obj);
 	if (!mo) {
 		return NULL;
 	}
@@ -194,7 +194,7 @@ static RList *symbols(RBinFile *bf) {
 	// R2_590 -- remove this thing we dont want to return cloned symbols, can be infered
 	RList *list = r_list_newf ((RListFree) r_bin_symbol_free);
 	RBinSymbol *sym;
-	R_VEC_FOREACH (&bf->o->symbols_vec, sym) {
+	R_VEC_FOREACH (&bf->bo->symbols_vec, sym) {
 		r_list_append (list, r_bin_symbol_clone (sym));
 	}
 	return list;
@@ -202,10 +202,10 @@ static RList *symbols(RBinFile *bf) {
 #endif
 
 static bool symbols_vec(RBinFile *bf) {
-	struct MACH0_(obj_t) *mo = R_UNWRAP3 (bf, o, bin_obj);
+	struct MACH0_(obj_t) *mo = R_UNWRAP3 (bf, bo, bin_obj);
 	if (R_LIKELY (mo)) {
 		if (MACH0_(load_symbols) (mo)) {
-			return !RVecRBinSymbol_empty (&bf->o->symbols_vec);
+			return !RVecRBinSymbol_empty (&bf->bo->symbols_vec);
 		}
 	}
 	return false;
@@ -254,7 +254,7 @@ static RBinImport *import_from_name(RBin *rbin, const char *orig_name, HtPP *imp
 }
 
 static RList *imports(RBinFile *bf) {
-	RBinObject *obj = bf? bf->o: NULL;
+	RBinObject *obj = bf? bf->bo: NULL;
 	const RPVector *imports = MACH0_(load_imports) (bf, obj->bin_obj);
 	if (!imports) {
 		return NULL;
@@ -283,13 +283,13 @@ static void _r_bin_reloc_free(RBinReloc *reloc) {
 
 static RList *relocs(RBinFile *bf) {
 	RList *ret = NULL;
-	RBinObject *obj = bf ? bf->o : NULL;
-	struct MACH0_(obj_t) *bin = (bf && bf->o)? bf->o->bin_obj: NULL;
+	RBinObject *obj = bf ? bf->bo : NULL;
+	struct MACH0_(obj_t) *bin = (bf && bf->bo)? bf->bo->bin_obj: NULL;
 	if (!obj || !obj->bin_obj || !(ret = r_list_newf ((RListFree)_r_bin_reloc_free))) {
 		return NULL;
 	}
 	ret->free = free;
-	const RSkipList *relocs = MACH0_(load_relocs) (bf->o->bin_obj);
+	const RSkipList *relocs = MACH0_(load_relocs) (bf->bo->bin_obj);
 	if (!relocs) {
 		return ret;
 	}
@@ -328,7 +328,7 @@ static RList *relocs(RBinFile *bf) {
 }
 
 static RList *libs(RBinFile *bf) {
-	RBinObject *obj = bf ? bf->o : NULL;
+	RBinObject *obj = bf ? bf->bo : NULL;
 	if (!obj) {
 		return NULL;
 	}
@@ -347,12 +347,12 @@ static RList *libs(RBinFile *bf) {
 }
 
 static RBinInfo *info(RBinFile *bf) {
-	r_return_val_if_fail (bf && bf->o, NULL);
+	r_return_val_if_fail (bf && bf->bo, NULL);
 	RBinInfo *ret = R_NEW0 (RBinInfo);
 	if (!ret) {
 		return NULL;
 	}
-	struct MACH0_(obj_t) *mo = bf->o->bin_obj;
+	struct MACH0_(obj_t) *mo = bf->bo->bin_obj;
 	if (bf->file) {
 		ret->file = strdup (bf->file);
 	}
@@ -948,7 +948,7 @@ static RBinAddr *binsym(RBinFile *bf, int sym) {
 	switch (sym) {
 	case R_BIN_SYM_MAIN:
 		{
-			struct MACH0_(obj_t) *mo = R_UNWRAP3 (bf, o, bin_obj);
+			struct MACH0_(obj_t) *mo = R_UNWRAP3 (bf, bo, bin_obj);
 			ut64 addr = MACH0_(get_main) (mo);
 			if (addr != UT64_MAX && addr != 0) {
 				ret = R_NEW0 (RBinAddr);
@@ -966,11 +966,11 @@ static RBinAddr *binsym(RBinFile *bf, int sym) {
 static ut64 size(RBinFile *bf) {
 	ut64 off = 0;
 	ut64 len = 0;
-	if (!bf->o->sections) {
+	if (!bf->bo->sections) {
 		RListIter *iter;
 		RBinSection *section;
-		bf->o->sections = sections (bf);
-		r_list_foreach (bf->o->sections, iter, section) {
+		bf->bo->sections = sections (bf);
+		r_list_foreach (bf->bo->sections, iter, section) {
 			if (section->paddr > off) {
 				off = section->paddr;
 				len = section->size;

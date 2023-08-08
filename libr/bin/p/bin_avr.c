@@ -74,7 +74,7 @@ static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadadd
 }
 
 static void destroy(RBinFile *bf) {
-	r_buf_free (bf->o->bin_obj);
+	r_buf_free (bf->bo->bin_obj);
 }
 
 static RBinInfo* info(RBinFile *bf) {
@@ -136,7 +136,7 @@ static void addptr(RList *ret, const char *name, ut64 addr, RBuffer *b) {
 
 static RList *symbols(RBinFile *bf) {
 	RList *ret = NULL;
-	RBuffer *obj = bf->o->bin_obj;
+	RBuffer *obj = bf->bo->bin_obj;
 
 	if (!(ret = r_list_newf (free))) {
 		return NULL;

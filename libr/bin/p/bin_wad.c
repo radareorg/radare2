@@ -24,7 +24,7 @@ static int wad_header_load(WadObj *wo, Sdb *kv) {
 }
 
 static Sdb *get_sdb(RBinFile *bf) {
-	RBinObject *o = bf->o;
+	RBinObject *o = bf->bo;
 	if (!o) {
 		return NULL;
 	}
@@ -98,7 +98,7 @@ static RList *symbols(RBinFile *bf) {
 	}
 	WAD_DIR_Entry dir;
 	size_t i = 0;
-	WadObj *wo = bf->o->bin_obj;
+	WadObj *wo = bf->bo->bin_obj;
 	while (i < wo->hdr.numlumps) {
 		memset (&dir, 0, sizeof (dir));
 		r_buf_read_at (bf->buf, wo->hdr.diroffset + (i * 16), (ut8*)&dir, sizeof (dir));
@@ -137,7 +137,7 @@ static RList *wad_fields(RBinFile *bf) {
 }
 
 static void destroy(RBinFile *bf) {
-	WadObj *obj = bf->o->bin_obj;
+	WadObj *obj = bf->bo->bin_obj;
 	r_buf_free (obj->buf);
 	free (obj);
 }

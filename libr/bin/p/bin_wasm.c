@@ -73,8 +73,8 @@ static RBinAddr *binsym(RBinFile *bf, int type) {
 }
 
 static RList *entries(RBinFile *bf) {
-	r_return_val_if_fail (bf && bf->o && bf->o->bin_obj, NULL);
-	RBinWasmObj *bin = (RBinWasmObj *)bf->o->bin_obj;
+	r_return_val_if_fail (bf && bf->bo && bf->bo->bin_obj, NULL);
+	RBinWasmObj *bin = (RBinWasmObj *)bf->bo->bin_obj;
 	// TODO
 	ut64 addr = (ut64)r_bin_wasm_get_entrypoint (bin);
 	if (!addr) {
@@ -105,7 +105,7 @@ static RList *entries(RBinFile *bf) {
 }
 
 static RList *sections(RBinFile *bf) {
-	RBinWasmObj *bin = bf && bf->o? bf->o->bin_obj: NULL;
+	RBinWasmObj *bin = bf && bf->bo? bf->bo->bin_obj: NULL;
 	RList *ret = r_list_newf ((RListFree)r_bin_section_free);
 	RList *secs = r_bin_wasm_get_sections (bin);
 	if (!ret || !secs) {
@@ -309,8 +309,8 @@ static inline bool symbols_add_globals(RBinWasmObj *bin, RList *list) {
 }
 
 static RList *symbols(RBinFile *bf) {
-	r_return_val_if_fail (bf && bf->o && bf->o->bin_obj, NULL);
-	RBinWasmObj *bin = bf->o->bin_obj;
+	r_return_val_if_fail (bf && bf->bo && bf->bo->bin_obj, NULL);
+	RBinWasmObj *bin = bf->bo->bin_obj;
 	RList *ret = r_list_newf ((RListFree)free);
 	if (!ret) {
 		goto bad_alloc;
@@ -340,8 +340,8 @@ bad_alloc:
 }
 
 static RList *get_imports(RBinFile *bf) {
-	r_return_val_if_fail (bf && bf->o && bf->o->bin_obj, NULL);
-	RBinWasmObj *bin = bf->o->bin_obj;
+	r_return_val_if_fail (bf && bf->bo && bf->bo->bin_obj, NULL);
+	RBinWasmObj *bin = bf->bo->bin_obj;
 	RList *ret = r_list_newf ((RListFree)r_bin_import_free);
 	if (!ret) {
 		goto bad_alloc;
@@ -417,7 +417,7 @@ static RBuffer *create(RBin *bin, const ut8 *code, int codelen, const ut8 *data,
 }
 
 static ut64 get_fcn_offset_from_id(RBinFile *bf, int ordinal) {
-	RBinWasmObj *bin = bf->o->bin_obj;
+	RBinWasmObj *bin = bf->bo->bin_obj;
 	ut32 min = first_ord_not_import (bin, R_BIN_WASM_EXTERNALKIND_Function);
 	RPVector *codes = r_bin_wasm_get_codes (bin);
 	if (min <= ordinal && codes) {
@@ -443,7 +443,7 @@ static int _code_frm_addr(const void *_code, const void *_needle) {
 }
 
 static ut64 get_fcn_offset_from_addr(RBinFile *bf, int addr, bool start) {
-	RBinWasmObj *bin = R_UNWRAP3 (bf, o, bin_obj);
+	RBinWasmObj *bin = R_UNWRAP3 (bf, bo, bin_obj);
 	if (bin) {
 		RPVector *codes = r_bin_wasm_get_codes (bin);
 		if (codes) {
@@ -473,7 +473,7 @@ static ut64 getoffset(RBinFile *bf, int type, int idx) {
 }
 
 static const char *getname(RBinFile *bf, int type, int idx, bool sd) {
-	RBinWasmObj *bin = bf->o->bin_obj;
+	RBinWasmObj *bin = bf->bo->bin_obj;
 	switch (type) {
 	case 'f': // fcnidx
 		{

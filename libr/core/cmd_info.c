@@ -409,7 +409,7 @@ static RList *r_core_bin_files(RCore *core) {
 		}
 	} else {
 		RBinFile *bf = r_bin_cur (core->bin);
-		if (bf && bf->o) {
+		if (bf && bf->bo) {
 			r_list_append (list, bf);
 		}
 	}
@@ -456,7 +456,7 @@ static void cmd_ic_comma(RCore *core, const char *input) {
 	r_table_add_column (t, typeString, "name", 0);
 	const bool iova = r_config_get_b (core->config, "io.va");
 	r_list_foreach (objs, objs_iter, bf) {
-		RBinObject *obj = bf->o;
+		RBinObject *obj = bf->bo;
 		RBinClass *klass;
 		RListIter *iter, *iter2;
 		core->bin->cur = bf;
@@ -790,7 +790,7 @@ static int cmd_info(void *data, const char *input) {
 					RBinFile *bf;
 					RBinFile *cur = core->bin->cur;
 					r_list_foreach (objs, iter, bf) {
-						RBinObject *obj = bf->o;
+						RBinObject *obj = bf->bo;
 						core->bin->cur = bf;
 						RBININFO (name, action, input + 1 + param_shift,
 								(obj && obj->sections)? r_list_length (obj->sections): 0);
@@ -826,7 +826,7 @@ static int cmd_info(void *data, const char *input) {
 			RBinFile *bf;
 			RBinFile *cur = core->bin->cur;
 			r_list_foreach (objs, iter, bf) {
-				RBinObject *obj = bf->o;
+				RBinObject *obj = bf->bo;
 				core->bin->cur = bf;
 				RBININFO ("libs", R_CORE_BIN_ACC_LIBS, NULL, (obj && obj->libs)? r_list_length (obj->libs): 0);
 			}
@@ -860,7 +860,7 @@ static int cmd_info(void *data, const char *input) {
 				mode = R_MODE_SIMPLEST;
 			}
 			r_list_foreach (objs, iter, bf) {
-				RBinObject *obj = bf->o;
+				RBinObject *obj = bf->bo;
 				if (!obj) {
 					continue;
 				}
@@ -1029,7 +1029,7 @@ static int cmd_info(void *data, const char *input) {
 			RBinFile *bf;
 			RBinFile *cur = core->bin->cur;
 			r_list_foreach (objs, iter, bf) {
-				RBinObject *obj = bf->o;
+				RBinObject *obj = bf->bo;
 				core->bin->cur = bf;
 				RBININFO ("imports", R_CORE_BIN_ACC_IMPORTS, NULL,
 					(obj && obj->imports)? r_list_length (obj->imports): 0);
@@ -1301,7 +1301,7 @@ static int cmd_info(void *data, const char *input) {
 				RBinFile *bf;
 				RBinFile *cur = core->bin->cur;
 				r_list_foreach (objs, objs_iter, bf) {
-					RBinObject *obj = bf->o;
+					RBinObject *obj = bf->bo;
 					RBinClass *cls;
 					RBinSymbol *sym;
 					RListIter *iter, *iter2;
@@ -1479,7 +1479,7 @@ static int cmd_info(void *data, const char *input) {
 				RBinFile *cur = core->bin->cur;
 				r_list_foreach (objs, iter, bf) {
 					core->bin->cur = bf;
-					RBinObject *obj = bf->o;
+					RBinObject *obj = bf->bo;
 					if (obj && obj->classes) {
 						int len = r_list_length (obj->classes);
 						RBININFO ("classes", R_CORE_BIN_ACC_CLASSES, NULL, len);

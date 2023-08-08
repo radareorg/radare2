@@ -279,7 +279,7 @@ R_API bool r_core_bin_set_by_name(RCore *core, const char *name) {
 R_API bool r_core_bin_set_env(RCore *r, RBinFile *binfile) {
 	r_return_val_if_fail (r, false);
 
-	RBinObject *binobj = binfile? binfile->o: NULL;
+	RBinObject *binobj = binfile? binfile->bo: NULL;
 	RBinInfo *info = binobj? binobj->info: NULL;
 	if (info) {
 		int va = info->has_va;
@@ -581,7 +581,7 @@ static bool bin_raw_strings(RCore *r, PJ *pj, int mode, int va) {
 			return false;
 		}
 		bf->buf = r_buf_new_with_io (&r->bin->iob, r->io->desc->fd);
-		bf->o = NULL;
+		bf->bo = NULL;
 		bf->rbin = r->bin;
 		new_bf = true;
 		va = false;
@@ -806,7 +806,7 @@ static int bin_info(RCore *r, PJ *pj, int mode, ut64 laddr) {
 		}
 		return false;
 	}
-	RBinObject *obj = bf->o;
+	RBinObject *obj = bf->bo;
 
 	if (!info || !obj) {
 		if (IS_MODE_JSON (mode)) {
@@ -1261,8 +1261,8 @@ R_API bool r_core_pdb_info(RCore *core, const char *file, PJ *pj, int mode) {
 	r_return_val_if_fail (core && file, false);
 
 	ut64 baddr = r_config_get_i (core->config, "bin.baddr");
-	if (!baddr && core->bin->cur && core->bin->cur->o && core->bin->cur->o->baddr) {
-		baddr = core->bin->cur->o->baddr;
+	if (!baddr && core->bin->cur && core->bin->cur->bo && core->bin->cur->bo->baddr) {
+		baddr = core->bin->cur->bo->baddr;
 	}
 	if (baddr == UT64_MAX) {
 		R_LOG_WARN ("Cannot find base address, flags will probably be misplaced");
@@ -1744,7 +1744,7 @@ static void set_bin_relocs(RelocInfo *ri, RBinReloc *reloc, ut64 addr, Sdb **db,
 /* Define new data at relocation address if it's not in an executable section */
 static void add_metadata(RCore *r, RBinReloc *reloc, ut64 addr, int mode) {
 	RBinFile * binfile = r->bin->cur;
-	RBinObject *binobj = binfile ? binfile->o: NULL;
+	RBinObject *binobj = binfile ? binfile->bo: NULL;
 	RBinInfo *info = binobj ? binobj->info: NULL;
 
 	int cdsz = info? (info->bits == 64? 8: info->bits == 32? 4: info->bits == 16 ? 4: 0): 0;
@@ -3654,10 +3654,10 @@ static int bin_classes(RCore *r, PJ *pj, int mode) {
 		} else if (IS_MODE_CLASSDUMP (mode)) {
 			if (c) {
 				RBinFile *bf = r_bin_cur (r->bin);
-				if (bf && bf->o) {
+				if (bf && bf->bo) {
 					if (IS_MODE_RAD (mode)) {
 						classdump_c (r, c);
-					} else if (bf->o->lang == R_BIN_LANG_JAVA || (bf->o->info && bf->o->info->lang && strstr (bf->o->info->lang, "dalvik"))) {
+					} else if (bf->bo->lang == R_BIN_LANG_JAVA || (bf->bo->info && bf->bo->info->lang && strstr (bf->bo->info->lang, "dalvik"))) {
 						classdump_java (r, c);
 					} else {
 						classdump_objc (r, c);
@@ -4626,7 +4626,7 @@ R_API bool r_core_bin_delete(RCore *core, ut32 bf_id) {
 
 static bool r_core_bin_file_print(RCore *core, RBinFile *bf, PJ *pj, int mode) {
 	r_return_val_if_fail (core && bf, false);
-	if (!bf->o) {
+	if (!bf->bo) {
 		return false;
 	}
 	const char *name = bf ? bf->file : NULL;
@@ -4637,7 +4637,7 @@ static bool r_core_bin_file_print(RCore *core, RBinFile *bf, PJ *pj, int mode) {
 	switch (mode) {
 	case '*': {
 		char *n = r_name_filter_shell (name);
-		r_cons_printf ("oba 0x%08"PFMT64x" %s # %d\n", bf->o->boffset, n, bf->id);
+		r_cons_printf ("oba 0x%08"PFMT64x" %s # %d\n", bf->bo->boffset, n, bf->id);
 		free (n);
 		break;
 	}
@@ -4651,7 +4651,7 @@ static bool r_core_bin_file_print(RCore *core, RBinFile *bf, PJ *pj, int mode) {
 		pj_ki (pj, "bfid", bf->id);
 		pj_ki (pj, "size", bin_sz);
 		pj_ko (pj, "obj");
-		RBinObject *obj = bf->o;
+		RBinObject *obj = bf->bo;
 		RBinInfo *info = obj->info;
 		ut8 bits = info ? info->bits : 0;
 		const char *asmarch = r_config_get (core->config, "asm.arch");
@@ -4670,13 +4670,13 @@ static bool r_core_bin_file_print(RCore *core, RBinFile *bf, PJ *pj, int mode) {
 	}
 	default:
 		{
-			RBinInfo *info = bf->o->info;
+			RBinInfo *info = bf->bo->info;
 			ut8 bits = info ? info->bits : 0;
 			const char *asmarch = r_config_get (core->config, "asm.arch");
 			const char *arch = info ? info->arch ? info->arch: asmarch: "unknown";
 			const char *curstr = (core->allbins || bf == r_bin_cur (core->bin)) ? "*": "-";
 			r_cons_printf ("%s %d %d %s-%d ba:0x%08"PFMT64x" sz:%"PFMT64d"%s%s\n",
-				curstr, bf->id, bf->fd, arch, bits, bf->o->baddr, bf->o->size,
+				curstr, bf->id, bf->fd, arch, bits, bf->bo->baddr, bf->bo->size,
 				R_STR_ISNOTEMPTY (name)? " ": "", R_STR_ISNOTEMPTY (name)? name: "");
 		}
 		break;
@@ -4785,9 +4785,9 @@ R_API bool r_core_bin_rebase(RCore *core, ut64 baddr) {
 		return false;
 	}
 	RBinFile *bf = core->bin->cur;
-	bf->o->baddr = baddr;
-	bf->o->loadaddr = baddr;
-	r_bin_object_set_items (bf, bf->o);
+	bf->bo->baddr = baddr;
+	bf->bo->loadaddr = baddr;
+	r_bin_object_set_items (bf, bf->bo);
 	return true;
 }
 

@@ -48,14 +48,14 @@ static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadadd
 }
 
 static void destroy(RBinFile *bf) {
-	R_FREE (bf->o->bin_obj);
+	R_FREE (bf->bo->bin_obj);
 }
 
 static RBinAddr *binsym(RBinFile *bf, int type) {
 	if (!bf || !bf->buf || type != R_BIN_SYM_MAIN) {
 		return NULL;
 	}
-	r_bin_xbe_obj_t *obj = bf->o->bin_obj;
+	r_bin_xbe_obj_t *obj = bf->bo->bin_obj;
 	RBinAddr *ret = R_NEW0 (RBinAddr);
 	if (!ret) {
 		return NULL;
@@ -69,7 +69,7 @@ static RList *entries(RBinFile *bf) {
 	const r_bin_xbe_obj_t *obj;
 	RList *ret;
 	RBinAddr *ptr = R_NEW0 (RBinAddr);
-	if (!bf || !bf->buf || !bf->o->bin_obj || !ptr) {
+	if (!bf || !bf->buf || !bf->bo->bin_obj || !ptr) {
 		free (ptr);
 		return NULL;
 	}
@@ -79,7 +79,7 @@ static RList *entries(RBinFile *bf) {
 		return NULL;
 	}
 	ret->free = free;
-	obj = bf->o->bin_obj;
+	obj = bf->bo->bin_obj;
 	ptr->vaddr = obj->header.ep ^ obj->ep_key;
 	ptr->paddr = ptr->vaddr - obj->header.base;
 	r_list_append (ret, ptr);
@@ -95,10 +95,10 @@ static RList *sections(RBinFile *bf) {
 	int i, r;
 	ut32 addr;
 
-	if (!bf || !bf->o || !bf->o->bin_obj || !bf->buf) {
+	if (!bf || !bf->bo || !bf->bo->bin_obj || !bf->buf) {
 		return NULL;
 	}
-	obj = bf->o->bin_obj;
+	obj = bf->bo->bin_obj;
 	h = &obj->header;
 	if (h->sections < 1) {
 		return NULL;
@@ -170,10 +170,10 @@ static RList *libs(RBinFile *bf) {
 	char *s;
 	ut32 addr;
 
-	if (!bf || !bf->o || !bf->o->bin_obj) {
+	if (!bf || !bf->bo || !bf->bo->bin_obj) {
 		return NULL;
 	}
-	obj = bf->o->bin_obj;
+	obj = bf->bo->bin_obj;
 	h = &obj->header;
 	ret = r_list_new ();
 	if (!ret) {
@@ -252,11 +252,11 @@ static RList *symbols(RBinFile *bf) {
 	xbe_section sect;
 	ut32 addr;
 
-	if (!bf || !bf->o || !bf->o->bin_obj) {
+	if (!bf || !bf->bo || !bf->bo->bin_obj) {
 		return NULL;
 	}
 
-	obj = bf->o->bin_obj;
+	obj = bf->bo->bin_obj;
 	h = &obj->header;
 	kt_addr = h->kernel_thunk_addr ^ obj->kt_key;
 	ret = r_list_new ();
@@ -328,7 +328,7 @@ static RBinInfo *info(RBinFile *bf) {
 		return NULL;
 	}
 
-	obj = bf->o->bin_obj;
+	obj = bf->bo->bin_obj;
 
 	memset (dbg_name, 0, sizeof (dbg_name));
 	r_buf_read_at (bf->buf, obj->header.debug_name_addr -\
@@ -349,7 +349,7 @@ static RBinInfo *info(RBinFile *bf) {
 }
 
 static ut64 baddr(RBinFile *bf) {
-	r_bin_xbe_obj_t *obj = bf->o->bin_obj;
+	r_bin_xbe_obj_t *obj = bf->bo->bin_obj;
 	return obj->header.base;
 }
 

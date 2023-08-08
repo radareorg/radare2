@@ -93,7 +93,7 @@ R_API char *r_bin_demangle(RBinFile *bf, const char *def, const char *str, ut64 
 	}
 	RBin *bin = bf? bf->rbin: NULL;
 	bool trylib = bin? bin->demangle_trylib: true;
-	RBinObject *o = bf? bf->o: NULL;
+	RBinObject *o = bf? bf->bo: NULL;
 	RListIter *iter;
 	const char *lib = NULL;
 	if (r_str_startswith (str, "reloc.")) {

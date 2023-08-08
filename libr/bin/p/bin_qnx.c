@@ -34,10 +34,10 @@ static bool check_buffer(RBinFile *bf, RBuffer *buf) {
 
 // Frees the bin_obj of the binary file
 static void destroy(RBinFile *bf) {
-	QnxObj *qo = bf->o->bin_obj;
+	QnxObj *qo = bf->bo->bin_obj;
 	r_list_free (qo->sections);
 	r_list_free (qo->fixups);
-	bf->o->bin_obj = NULL;
+	bf->bo->bin_obj = NULL;
 	free (qo);
 }
 
@@ -147,7 +147,7 @@ beach:
  * @return RBinInfo file with the info
  */
 static RBinInfo *info(RBinFile *bf) {
-	r_return_val_if_fail (bf && bf->o && bf->o->bin_obj, NULL);
+	r_return_val_if_fail (bf && bf->bo && bf->bo->bin_obj, NULL);
 	RBinInfo *ret = R_NEW0 (RBinInfo);
 	if (!ret) {
 		return NULL;
@@ -166,14 +166,14 @@ static RBinInfo *info(RBinFile *bf) {
 }
 
 static RList *relocs(RBinFile *bf) {
-	r_return_val_if_fail (bf && bf->o, NULL);
-	QnxObj *qo = bf->o->bin_obj;
+	r_return_val_if_fail (bf && bf->bo, NULL);
+	QnxObj *qo = bf->bo->bin_obj;
 	return r_list_clone (qo->fixups, NULL);
 }
 
 static void header(RBinFile *bf) {
-	r_return_if_fail (bf && bf->o && bf->rbin);
-	QnxObj *bin = bf->o->bin_obj;
+	r_return_if_fail (bf && bf->bo && bf->rbin);
+	QnxObj *bin = bf->bo->bin_obj;
 	RBin *rbin = bf->rbin;
 	rbin->cb_printf ("QNX file header:\n");
 	rbin->cb_printf ("version : 0x%xH\n", bin->lmfh.version);
@@ -201,8 +201,8 @@ static RList* symbols(RBinFile *bf) {
 
 // Returns the sections
 static RList* sections(RBinFile *bf) {
-	r_return_val_if_fail (bf && bf->o, NULL);
-	QnxObj *qo = bf->o->bin_obj;
+	r_return_val_if_fail (bf && bf->bo, NULL);
+	QnxObj *qo = bf->bo->bin_obj;
 	return r_list_clone (qo->sections, NULL);
 }
 
@@ -212,7 +212,7 @@ static RList* sections(RBinFile *bf) {
  * @return sdb of the bin_obj
  */
 static Sdb *get_sdb(RBinFile *bf) {
-	RBinObject *o = bf->o;
+	RBinObject *o = bf->bo;
 	if (!o) {
 		return NULL;
 	}
@@ -226,7 +226,7 @@ static Sdb *get_sdb(RBinFile *bf) {
  * @return image_base address
  */
 static ut64 baddr(RBinFile *bf) {
-	QnxObj *qo = bf->o->bin_obj;
+	QnxObj *qo = bf->bo->bin_obj;
 	return qo? qo->lmfh.image_base: 0;
 }
 
@@ -237,7 +237,7 @@ static ut64 baddr(RBinFile *bf) {
 static RList* entries(RBinFile *bf) {
 	RList *ret;
 	RBinAddr *ptr = NULL;
-	QnxObj *qo = bf->o->bin_obj;
+	QnxObj *qo = bf->bo->bin_obj;
 	if (!(ret = r_list_new ())) {
 		return NULL;
 	}
@@ -253,7 +253,7 @@ static RList* entries(RBinFile *bf) {
 
 static char *signature(RBinFile *bf, bool json) {
  	char buf[SDB_NUM_BUFSZ];
- 	QnxObj *qo = bf->o->bin_obj;
+ 	QnxObj *qo = bf->bo->bin_obj;
 	return qo? strdup (sdb_itoa (qo->rwend.signature, 10, buf, sizeof (buf))): NULL;
 }
 

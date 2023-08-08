@@ -15,8 +15,8 @@ static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *b, ut64 loadaddr,
 }
 
 static void destroy(RBinFile *bf) {
-	r_bin_free_all_omf_obj (bf->o->bin_obj);
-	bf->o->bin_obj = NULL;
+	r_bin_free_all_omf_obj (bf->bo->bin_obj);
+	bf->bo->bin_obj = NULL;
 }
 
 static bool check_buffer(RBinFile *bf, RBuffer *b) {
@@ -69,7 +69,7 @@ static RList *entries(RBinFile *bf) {
 		r_list_free (ret);
 		return NULL;
 	}
-	if (!r_bin_omf_get_entry (bf->o->bin_obj, addr)) {
+	if (!r_bin_omf_get_entry (bf->bo->bin_obj, addr)) {
 		R_FREE (addr);
 	} else {
 		r_list_append (ret, addr);
@@ -81,10 +81,10 @@ static RList *sections(RBinFile *bf) {
 	RList *ret;
 	ut32 ct_omf_sect = 0;
 
-	if (!bf || !bf->o || !bf->o->bin_obj) {
+	if (!bf || !bf->bo || !bf->bo->bin_obj) {
 		return NULL;
 	}
-	r_bin_omf_obj *obj = bf->o->bin_obj;
+	r_bin_omf_obj *obj = bf->bo->bin_obj;
 
 	if (!(ret = r_list_new ())) {
 		return NULL;
@@ -92,7 +92,7 @@ static RList *sections(RBinFile *bf) {
 
 	while (ct_omf_sect < obj->nb_section) {
 		if (!r_bin_omf_send_sections (ret,\
-			    obj->sections[ct_omf_sect++], bf->o->bin_obj)) {
+			    obj->sections[ct_omf_sect++], bf->bo->bin_obj)) {
 			return ret;
 		}
 	}
@@ -104,7 +104,7 @@ static RList *symbols(RBinFile *bf) {
 	RBinSymbol *sym;
 	OMF_symbol *sym_omf;
 	int ct_sym = 0;
-	if (!bf || !bf->o || !bf->o->bin_obj) {
+	if (!bf || !bf->bo || !bf->bo->bin_obj) {
 		return NULL;
 	}
 	if (!(ret = r_list_new ())) {
@@ -113,15 +113,15 @@ static RList *symbols(RBinFile *bf) {
 
 	ret->free = free;
 
-	while (ct_sym < ((r_bin_omf_obj *) bf->o->bin_obj)->nb_symbol) {
+	while (ct_sym < ((r_bin_omf_obj *) bf->bo->bin_obj)->nb_symbol) {
 		if (!(sym = R_NEW0 (RBinSymbol))) {
 			return ret;
 		}
-		sym_omf = ((r_bin_omf_obj *) bf->o->bin_obj)->symbols[ct_sym++];
+		sym_omf = ((r_bin_omf_obj *) bf->bo->bin_obj)->symbols[ct_sym++];
 		sym->name = strdup (sym_omf->name);
 		sym->forwarder = "NONE";
-		sym->paddr = r_bin_omf_get_paddr_sym (bf->o->bin_obj, sym_omf);
-		sym->vaddr = r_bin_omf_get_vaddr_sym (bf->o->bin_obj, sym_omf);
+		sym->paddr = r_bin_omf_get_paddr_sym (bf->bo->bin_obj, sym_omf);
+		sym->vaddr = r_bin_omf_get_vaddr_sym (bf->bo->bin_obj, sym_omf);
 		sym->ordinal = ct_sym;
 		sym->size = 0;
 		r_list_append (ret, sym);
@@ -146,7 +146,7 @@ static RBinInfo *info(RBinFile *bf) {
 	ret->big_endian = false;
 	ret->has_va = true;
 	ret->has_lit = true;
-	ret->bits = r_bin_omf_get_bits (bf->o->bin_obj);
+	ret->bits = r_bin_omf_get_bits (bf->bo->bin_obj);
 	ret->dbg_info = 0;
 	ret->has_nx = false;
 	return ret;

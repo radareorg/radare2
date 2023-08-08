@@ -11974,8 +11974,8 @@ static void cmd_anal_abp(RCore *core, const char *input) {
 }
 
 static bool is_unknown_file(RCore *core) {
-	if (core->bin->cur && core->bin->cur->o) {
-		return r_list_empty (core->bin->cur->o->sections);
+	if (core->bin->cur && core->bin->cur->bo) {
+		return r_list_empty (core->bin->cur->bo->sections);
 	}
 	return true;
 }

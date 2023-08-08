@@ -82,8 +82,8 @@ R_API void r_bin_filter_sym(RBinFile *bf, HtPP *ht, ut64 vaddr, RBinSymbol *sym)
 	const char *name = sym->name;
 	// if (!strncmp (sym->name, "imp.", 4)) {
 	// demangle symbol name depending on the language specs if any
-	if (bf && bf->o && bf->o->lang) {
-		const char *lang = r_bin_lang_tostring (bf->o->lang);
+	if (bf && bf->bo && bf->bo->lang) {
+		const char *lang = r_bin_lang_tostring (bf->bo->lang);
 		char *dn = r_bin_demangle (bf, lang, sym->name, sym->vaddr, false);
 		if (dn && *dn) {
 			sym->dname = dn;

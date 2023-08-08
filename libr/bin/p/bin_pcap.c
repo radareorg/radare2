@@ -8,12 +8,12 @@
 #define CUSTOM_STRINGS 0
 
 static RBinInfo *info(RBinFile *bf) {
-	r_return_val_if_fail (bf && bf->o && bf->o->bin_obj, NULL);
+	r_return_val_if_fail (bf && bf->bo && bf->bo->bin_obj, NULL);
 	RBinInfo *ret = R_NEW0 (RBinInfo);
 	if (!ret) {
 		return NULL;
 	}
-	pcap_obj_t *obj = bf->o->bin_obj;
+	pcap_obj_t *obj = bf->bo->bin_obj;
 	pcap_hdr_t *header = obj->header;
 	ret->file = strdup (bf->file);
 	ret->big_endian = true;
@@ -51,10 +51,10 @@ static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadadd
 }
 
 static RList *symbols(RBinFile *bf) {
-	r_return_val_if_fail (bf && bf->o && bf->o->bin_obj, NULL);
+	r_return_val_if_fail (bf && bf->bo && bf->bo->bin_obj, NULL);
 
 	RBinSymbol *ptr;
-	pcap_obj_t *obj = bf->o->bin_obj;
+	pcap_obj_t *obj = bf->bo->bin_obj;
 	ut64 size = r_buf_size (obj->b);
 	if (size == 0 || size == UT64_MAX) {
 		return NULL;
@@ -94,10 +94,10 @@ static RList *symbols(RBinFile *bf) {
 
 #if CUSTOM_STRINGS
 static RList *strings(RBinFile *bf) {
-	r_return_val_if_fail (bf && bf->o && bf->o->bin_obj, NULL);
+	r_return_val_if_fail (bf && bf->bo && bf->bo->bin_obj, NULL);
 
 	RBinString *ptr;
-	pcap_obj_t *obj = bf->o->bin_obj;
+	pcap_obj_t *obj = bf->bo->bin_obj;
 	RList *ret = r_list_newf (free);
 	if (!ret) {
 		return NULL;
@@ -131,7 +131,7 @@ static RList *strings(RBinFile *bf) {
 #endif
 
 static RList* libs(RBinFile *bf) {
-	r_return_val_if_fail (bf && bf->o && bf->o->bin_obj, NULL);
+	r_return_val_if_fail (bf && bf->bo && bf->bo->bin_obj, NULL);
 	RList *ret = r_list_newf (free);
 	if (ret) {
 		r_list_append (ret, strdup ("ether"));
