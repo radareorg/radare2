@@ -2887,7 +2887,7 @@ R_API RVecAnalRef *r_core_anal_fcn_get_calls(RCore *core, RAnalFunction *fcn) {
 	RVecAnalRef_free (refs);
 	return call_refs;
 #if 0
-	// R2_590 fix vec partition
+	// R2_590 fix vec algorithms: partition / erase_back?
 	// sanity check
 	if (refs && !RVecAnalRef_empty (refs)) {
 		// remove all references that aren't of type call

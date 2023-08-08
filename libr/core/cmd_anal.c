@@ -4,6 +4,8 @@
 
 #define MAX_SCAN_SIZE 0x7ffffff
 
+R_VEC_TYPE(RVecUT64, ut64);
+
 static RCoreHelpMessage help_msg_af_plus = {
 	"Usage:", "af+", " [addr] ([name] ([type] [diff]))",
 	"af+", "$$", "add a raw function element. See afb+ to add basic blocks to it",
@@ -2799,25 +2801,30 @@ static ut64 __opaddr(const RAnalBlock *b, ut64 addr) {
 	return UT64_MAX;
 }
 
-// R2_590 XXX seems wasteful, why not just return RVecAnalRef* directly instead?
-static RList *get_xrefs(RAnalBlock *block) {
-	RList *list = NULL;
+static RVecUT64 *get_xrefs(RAnalBlock *block) {
+	RVecUT64 *result = RVecUT64_new ();
+
 	size_t i;
 	for (i = 0; i < block->ninstr; i++) {
-		ut64 ia = block->addr + block->op_pos[i];
+		const ut64 ia = block->addr + block->op_pos[i];
 		RVecAnalRef *xrefs = r_anal_xrefs_get (block->anal, ia);
 		if (xrefs) {
 			RAnalRef *ref;
 			R_VEC_FOREACH (xrefs, ref) {
-				if (!list) {
-					list = r_list_newf (free);
+				ut64 *addr = RVecUT64_emplace_back (result);
+				if (R_UNLIKELY (!addr)) {
+					RVecUT64_free (result);
+					return NULL;
 				}
-				r_list_push (list, ut64_new (ref->addr));
+
+				*addr = ref->addr;
 			}
 		}
+
 		RVecAnalRef_free (xrefs);
 	}
-	return list;
+
+	return result;
 }
 
 static char *fcnjoin(RList *list) {
@@ -2870,8 +2877,9 @@ static RList *get_calls(RAnalBlock *block) {
 				i += op.size - 1;
 			}
 		}
-
 	}
+
+	// free (data); // XXX
 	return list;
 }
 
@@ -2909,7 +2917,7 @@ static void anal_bb_list(RCore *core, const char *input) {
 	}
 
 	r_rbtree_foreach (core->anal->bb_tree, iter, block, RAnalBlock, _rb) {
-		RList *xrefs = get_xrefs (block);
+		RVecUT64 *xrefs = get_xrefs (block);
 		RList *calls = get_calls (block);
 		switch (mode) {
 		case 'j':
@@ -2928,9 +2936,8 @@ static void anal_bb_list(RCore *core, const char *input) {
 			}
 			if (xrefs) {
 				pj_ka (pj, "xrefs");
-				RListIter *iter2;
 				ut64 *addr;
-				r_list_foreach (xrefs, iter2, addr) {
+				R_VEC_FOREACH (xrefs, addr) {
 					pj_n (pj, *addr);
 				}
 				pj_end (pj);
@@ -2994,9 +3001,8 @@ static void anal_bb_list(RCore *core, const char *input) {
 				r_cons_printf (" trace=0x%08" PFMT64x, block->traced);
 			}
 			if (xrefs) {
-				RListIter *iter2;
 				ut64 *addr;
-				r_list_foreach (xrefs, iter2, addr) {
+				R_VEC_FOREACH (xrefs, addr) {
 					r_cons_printf (" xref=0x%08" PFMT64x, *addr);
 				}
 			}
@@ -3017,7 +3023,7 @@ static void anal_bb_list(RCore *core, const char *input) {
 			r_cons_printf (" size=%" PFMT64d "\n", block->size);
 		}
 		r_list_free (calls);
-		r_list_free (xrefs);
+		RVecUT64_free (xrefs);
 	}
 	if (mode == 'j') {
 		pj_end (pj);
