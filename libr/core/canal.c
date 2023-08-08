@@ -2062,11 +2062,7 @@ R_API bool r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dep
 			return 0;  // already analyzed function
 		}
 		if (r_anal_function_contains (fcn, from)) { // inner function
-			// R2_590 add r_anal_has_xrefs(RAnal *anal, ut64 from) function to API for better performance
-			RVecAnalRef *refs = r_anal_xrefs_get (core->anal, from);
-			const bool has_refs = refs && !RVecAnalRef_empty (refs);
-			RVecAnalRef_free (refs);
-			if (has_refs) {
+			if (r_anal_xrefs_has_xrefs_at (core->anal, from)) {
 				return true;
 			}
 
