@@ -32,11 +32,13 @@ DEBUG: (section .rel.plt) Cd 4[6] @ 0x3d4
 DEBUG: (section .init_array) Cd 4[1] @ 0x173c
 DEBUG: (section .fini_array) Cd 4[1] @ 0x1740
 DEBUG: (section .dynamic) Cd 4[58] @ 0x1748
+DEBUG: (section .got) Cd 4[6] @ 0x1830
 DEBUG: (section .dynstr) Css 194 @ 0x280
 DEBUG: (section .rel.plt) Cd 4[6] @ 0x3d4
 DEBUG: (section .init_array) Cd 4[1] @ 0x173c
 DEBUG: (section .fini_array) Cd 4[1] @ 0x1740
 DEBUG: (section .dynamic) Cd 4[58] @ 0x1748
+DEBUG: (section .got) Cd 4[6] @ 0x1830
 DEBUG: Cannot resolve symbol address _ITM_deregisterTMCloneTable
 DEBUG: Cannot resolve symbol address _Jv_RegisterClasses
 DEBUG: Cannot resolve symbol address _ITM_registerTMCloneTable
