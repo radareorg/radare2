@@ -2879,7 +2879,7 @@ static RList *get_calls(RAnalBlock *block) {
 		}
 	}
 
-	// free (data); // XXX
+	free (data);
 	return list;
 }
 
