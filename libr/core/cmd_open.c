@@ -1275,17 +1275,6 @@ static bool __rebase_flags(RFlagItem *flag, void *user) {
 	return true;
 }
 
-static void __rebase_refs(RAnal *anal, RAnalRef *ref, ut64 type, ut64 diff) {
-	ref->addr += diff;
-	ref->at += diff;
-	// R2_590 this does double work, setting adds in both directions already
-	if (type) {
-		r_anal_xrefs_set (anal, ref->addr, ref->at, ref->type);
-	} else {
-		r_anal_xrefs_set (anal, ref->at, ref->addr, ref->type);
-	}
-}
-
 static void __rebase_everything(RCore *core, RList *old_sections, ut64 old_base) {
 	RListIter *it, *itit, *ititit;
 	RAnalFunction *fcn;
@@ -1335,28 +1324,20 @@ static void __rebase_everything(RCore *core, RList *old_sections, ut64 old_base)
 	r_meta_rebase (core->anal, diff);
 
 	// REFS
-	// R2_590: this does double work, xrefs are always in sync now with refs (but flipped)
-	// better to expose an API that rebases xrefs by adding diff to addr, at (no free/init needed)
 	RVecAnalRef *old_refs = r_anal_refs_get (core->anal, UT64_MAX);
-	RVecAnalRef *old_xrefs = r_anal_xrefs_get (core->anal, UT64_MAX);
 	// r_anal_xrefs_free (core->anal);
 	r_anal_xrefs_init (core->anal); // init already calls free
 
 	if (old_refs) {
 		RAnalRef *ref;
 		R_VEC_FOREACH (old_refs, ref) {
-			__rebase_refs (core->anal, ref, 0, diff);
-		}
-	}
-	if (old_xrefs) {
-		RAnalRef *ref;
-		R_VEC_FOREACH (old_xrefs, ref) {
-			__rebase_refs (core->anal, ref, 1, diff);
+			ref->addr += diff;
+			ref->at += diff;
+			r_anal_xrefs_set (core->anal, ref->at, ref->addr, ref->type);
 		}
 	}
 
 	RVecAnalRef_free (old_refs);
-	RVecAnalRef_free (old_xrefs);
 
 	// BREAKPOINTS
 	r_debug_bp_rebase (core->dbg, old_base, new_base);
