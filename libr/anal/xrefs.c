@@ -326,6 +326,14 @@ R_API RVecAnalRef *r_anal_xrefs_get_from(RAnal *anal, ut64 to) {
 	return anal_refs;
 }
 
+R_API bool r_anal_xrefs_has_xrefs_at(RAnal *anal, ut64 at) {
+	r_return_val_if_fail (anal && anal->rm, NULL);
+
+	AdjacencyList_CIter iter = AdjacencyList_cfind (&anal->rm->xrefs, &at);
+	const AdjacencyList_Entry *entry = AdjacencyList_CIter_get (&iter);
+	return !!entry;
+}
+
 static void r_anal_xrefs_list_table(RAnal *anal, RVecAnalRef *anal_refs, const char *arg) {
 	RTable *table = r_table_new ("xrefs");
 	r_table_set_columnsf (table, "ddssss", "from", "to", "type", "perm", "fromname", "toname");
