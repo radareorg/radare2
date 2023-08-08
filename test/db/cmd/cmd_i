@@ -3853,6 +3853,7 @@ DEBUG: (section .init_array) Cd 8[1] @ 0x21bfa8
 DEBUG: (section .fini_array) Cd 8[1] @ 0x21bfb0
 DEBUG: (section .data.rel.ro) Cd 8[329] @ 0x21bfc0
 DEBUG: (section .dynamic) Cd 8[64] @ 0x21ca08
+DEBUG: (section .got) Cd 8[124] @ 0x21cc08
 DEBUG: (section .dynstr) Css 1477 @ 0xf70
 DEBUG: (section .rela.dyn) Cd 8[609] @ 0x16b0
 DEBUG: (section .rela.plt) Cd 8[324] @ 0x29b8
@@ -3860,6 +3861,7 @@ DEBUG: (section .init_array) Cd 8[1] @ 0x21bfa8
 DEBUG: (section .fini_array) Cd 8[1] @ 0x21bfb0
 DEBUG: (section .data.rel.ro) Cd 8[329] @ 0x21bfc0
 DEBUG: (section .dynamic) Cd 8[64] @ 0x21ca08
+DEBUG: (section .got) Cd 8[124] @ 0x21cc08
 DEBUG: Cannot resolve symbol address __progname
 DEBUG: Cannot resolve symbol address _ITM_deregisterTMCloneTable
 DEBUG: Cannot resolve symbol address stdout

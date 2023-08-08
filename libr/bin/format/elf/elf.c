@@ -3461,10 +3461,9 @@ static bool is_wordable_section(const char *name) {
 		".fini_array",
 		".data.rel.ro",
 		".dynamic",
-		".rel.plt"
-		// R2_590 - try to uncomment this and hope not to break things
-		//".got"
-		//".rela.plt"
+		".rel.plt",
+		".got",
+		".rela.plt"
 	};
 	int i;
 	for (i = 0; i < R_ARRAY_SIZE (sections); i++) {
