@@ -3,6 +3,7 @@
 #define R_LOG_ORIGIN "bin.obj"
 
 #include <r_bin.h>
+#include <sdb/ht_su.h>
 #include <r_util.h>
 #include "i/private.h"
 
@@ -208,7 +209,7 @@ R_IPI RBinObject *r_bin_object_new(RBinFile *bf, RBinPlugin *plugin, ut64 basead
 }
 
 static void filter_classes(RBinFile *bf, RList *list) {
-	HtPU *db = ht_pu_new0 ();
+	HtSU *db = ht_su_new0 ();
 	HtPP *ht = ht_pp_new0 ();
 	RListIter *iter, *iter2;
 	RBinClass *cls;
@@ -224,6 +225,7 @@ static void filter_classes(RBinFile *bf, RList *list) {
 			strcpy (namepad, cls->name);
 			p = r_bin_filter_name (bf, db, cls->index, namepad);
 			if (p) {
+				free (namepad);
 				namepad = p;
 			}
 			free (cls->name);
@@ -235,7 +237,7 @@ static void filter_classes(RBinFile *bf, RList *list) {
 			}
 		}
 	}
-	ht_pu_free (db);
+	ht_su_free (db);
 	ht_pp_free (ht);
 }
 

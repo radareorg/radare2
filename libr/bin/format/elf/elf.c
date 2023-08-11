@@ -1613,8 +1613,7 @@ static bool elf_init(ELFOBJ *eo) {
 	eo->symbols_by_ord = NULL;
 	(void) _load_elf_sections (eo);
 	eo->boffset = Elf_(get_boffset) (eo);
-	HtUUOptions opt = {0};
-	eo->rel_cache = ht_uu_new_opt (&opt);
+	eo->rel_cache = ht_uu_new0 ();
 	(void) Elf_(load_relocs) (eo);
 	sdb_ns_set (eo->kv, "versioninfo", store_versioninfo (eo));
 	reloc_fill_local_address (eo);

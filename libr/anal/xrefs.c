@@ -5,7 +5,7 @@
 #include <r_anal.h>
 #include <r_cons.h>
 #include <r_vec.h>
-#include <cwisstable.h>
+#include <sdb/cwisstable.h>
 
 R_VEC_TYPE (RVecAnalRef, RAnalRef);
 

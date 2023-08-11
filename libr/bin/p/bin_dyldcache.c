@@ -1,6 +1,7 @@
 /* radare2 - LGPL - Copyright 2018-2023 - pancake, mrmacete, keegan */
 
 #include <r_core.h>
+#include <sdb/ht_su.h>
 // #include "../format/mach0/mach0_defines.h"
 #define R_BIN_MACH064 1
 #include "../format/mach0/mach0.h"
@@ -1008,8 +1009,8 @@ static int string_contains(const void *a, const void *b) {
 	return !strstr ((const char*) a, (const char*) b);
 }
 
-static HtPU *create_path_to_index(RBuffer *cache_buf, cache_img_t *img, cache_hdr_t *hdr) {
-	HtPU *path_to_idx = ht_pu_new0 ();
+static HtSU *create_path_to_index(RBuffer *cache_buf, cache_img_t *img, cache_hdr_t *hdr) {
+	HtSU *path_to_idx = ht_su_new0 ();
 	if (!path_to_idx) {
 		return NULL;
 	}
@@ -1020,7 +1021,7 @@ static HtPU *create_path_to_index(RBuffer *cache_buf, cache_img_t *img, cache_hd
 			continue;
 		}
 		file[sizeof (file) - 1] = 0;
-		ht_pu_insert (path_to_idx, file, (ut64)i);
+		ht_su_insert (path_to_idx, file, (ut64)i);
 
 		const char versions_pattern[] = ".framework/Versions/";
 		char *versions = strstr (file, versions_pattern);
@@ -1033,14 +1034,14 @@ static HtPU *create_path_to_index(RBuffer *cache_buf, cache_img_t *img, cache_hd
 				}
 				strcpy (versions + 10, tail);
 				free (tail);
-				ht_pu_insert (path_to_idx, file, (ut64)i);
+				ht_su_insert (path_to_idx, file, (ut64)i); // XXX already inserted?
 			}
 		}
 	}
 	return path_to_idx;
 }
 
-static void carve_deps_at_address(RDyldCache *cache, cache_img_t *img, HtPU *path_to_idx, ut64 address, int *deps, bool printing) {
+static void carve_deps_at_address(RDyldCache *cache, cache_img_t *img, HtSU *path_to_idx, ut64 address, int *deps, bool printing) {
 	ut64 pa = va2pa (address, cache->n_maps, cache->maps, cache->buf, 0, NULL, NULL);
 	if (pa == UT64_MAX) {
 		return;
@@ -1072,7 +1073,7 @@ static void carve_deps_at_address(RDyldCache *cache, cache_img_t *img, HtPU *pat
 				break;
 			}
 			const char *key = (const char *) cursor + 24;
-			size_t dep_index = (size_t)ht_pu_find (path_to_idx, key, &found);
+			size_t dep_index = (size_t)ht_su_find (path_to_idx, key, &found);
 			if (!found || dep_index >= cache->hdr->imagesCount) {
 				R_LOG_WARN ("alien dep '%s'", key);
 				continue;
@@ -1186,7 +1187,7 @@ static RList *create_cache_bins(RBinFile *bf, RDyldCache *cache) {
 
 		ut32 j;
 		if (target_libs) {
-			HtPU *path_to_idx = NULL;
+			HtSU *path_to_idx = NULL;
 			const ut32 depListCount = (cache->accel)? cache->accel->depListCount: 0;
 			if (cache->accel && depListCount > 0) {
 				depArray = R_NEWS0 (ut16, depListCount);
@@ -1250,7 +1251,7 @@ static RList *create_cache_bins(RBinFile *bf, RDyldCache *cache) {
 				}
 			}
 
-			ht_pu_free (path_to_idx);
+			ht_su_free (path_to_idx);
 			R_FREE (depArray);
 			R_FREE (extras);
 		}

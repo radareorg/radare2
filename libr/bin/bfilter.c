@@ -1,78 +1,67 @@
 /* radare - LGPL - Copyright 2015-2023 - pancake */
 
 #include <r_bin.h>
+#include <sdb/ht_su.h>
 #include "i/private.h"
 
-static char *__hashify(char *s, ut64 vaddr) {
+static char *__hashify(const char *s, ut64 vaddr) {
 	r_return_val_if_fail (s, NULL);
 
-	char *os = s;
+	const char *os = s;
 	while (*s) {
 		if (!IS_PRINTABLE (*s)) {
 			if (vaddr && vaddr != UT64_MAX) {
-				char *ret = r_str_newf ("_%" PFMT64d, vaddr);
-				if (ret) {
-					free (os);
-				}
-				return ret;
+				return r_str_newf ("_%" PFMT64d, vaddr);
 			}
 			ut32 hash = sdb_hash (s);
-			char *ret = r_str_newf ("%x", hash);
-			if (ret) {
-				free (os);
-			}
-			return ret;
+			return r_str_newf ("%x", hash);
 		}
 		s++;
 	}
-	return os;
+	return strdup (os);
 }
 
-// - name should be allocated on the heap
-R_API char *r_bin_filter_name(RBinFile *bf, HtPU *db, ut64 vaddr, char *name) {
+R_API char *r_bin_filter_name(RBinFile *bf, HtSU *db, ut64 vaddr, const char *name) {
 	r_return_val_if_fail (db && name, NULL);
 
-	char *resname = name;
 	int count = 0;
 
-	HtPUKv *kv = ht_pu_find_kv (db, name, NULL);
-	if (kv) {
-		kv->value++;
-		count = kv->value;
+	bool found = false;
+	const ut64 value = ht_su_find (db, name, &found);
+	if (found) {
+		count = value + 1;
+		ht_su_update (db, name, count);
 	} else {
 		count = 1;
-		ht_pu_insert (db, name, 1ULL);
+		ht_su_insert (db, name, 1ULL);
 	}
 
 	// check if there's another symbol with the same name and address);
 	char *uname = r_str_newf ("%" PFMT64x ".%s", vaddr, name);
-	bool found = false;
-	ht_pu_find (db, uname, &found);
+	found = false;
+	(void)ht_su_find (db, uname, &found);
 	if (found) {
 		// TODO: symbol is dupped, so symbol can be removed!
 		free (uname);
 		return NULL; // r_str_newf ("%s_%d", name, count);
 	}
-	HtPUKv tmp = {
-		.key = uname,
-		.key_len = strlen (uname),
-		.value = count,
-		.value_len = sizeof (ut64)
-	};
-	ht_pu_insert_kv (db, &tmp, false);
+
+	(void)ht_su_insert (db, uname, count);
+
+	char *resname = NULL;
 	if (vaddr) {
-		char *p = __hashify (resname, vaddr);
-		if (p) {
-			resname = p;
-		}
+		resname = __hashify (name, vaddr);
 	}
 	if (count > 1) {
-		char *p = r_str_appendf (resname, "_%d", count - 1);
-		if (p) {
-			resname = p;
-		}
+		resname = r_str_appendf (resname, "_%d", count - 1);
 		// two symbols at different addresses and same name wtf
 		R_LOG_DEBUG ("Found duplicated symbol '%s'", resname);
+	}
+
+	free (uname);
+
+	if (!resname) {
+		resname = strdup (name);
 	}
 	return resname;
 }
@@ -145,15 +134,16 @@ R_API void r_bin_filter_symbols(RBinFile *bf, RList *list) {
 
 R_API void r_bin_filter_sections(RBinFile *bf, RList *list) {
 	RBinSection *sec;
-	HtPU *db = ht_pu_new0 ();
+	HtSU *db = ht_su_new0 ();
 	RListIter *iter;
 	r_list_foreach (list, iter, sec) {
 		char *p = r_bin_filter_name (bf, db, sec->vaddr, sec->name);
 		if (p) {
+			free (sec->name);
 			sec->name = p;
 		}
 	}
-	ht_pu_free (db);
+	ht_su_free (db);
 }
 
 static bool false_positive(const char *str) {
