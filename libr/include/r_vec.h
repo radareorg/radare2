@@ -45,6 +45,9 @@ extern "C" {
  * - type *R_VEC_FUNC(vec_type, at)(const vec_type *vec, ut64 index): Returns a pointer to an
  *   element in the vector. Note that this can be used for reading or writing from/to the element,
  *   but not deleting (see the pop and remove functions for this).
+ * - type *R_VEC_FUNC(vec_type, last)(const vec_type *vec): Returns a pointer to the last element
+ *   in the vector. Note that this can be used for reading or writing from/to the element, but not
+ *   deleting (see the pop and remove functions for this). Returns NULL if the vector is empty.
  * - type *R_VEC_FUNC(vec_type, find)(const vec_type *vec, void *value, R_VEC_FIND_CMP(vec_type) cmp_fn):
  *   Searches for the first value in the vector that is equal (compare returns 0) to the value passed in.
  *   Otherwise returns NULL.
@@ -231,6 +234,13 @@ extern "C" {
 			return vec->_start + index; \
 		} \
 		return NULL; \
+	} \
+	static inline R_MAYBE_UNUSED R_MUSTUSE type *R_VEC_FUNC(vec_type, last)(const vec_type *vec) { \
+		r_return_val_if_fail (vec, NULL); \
+		if (R_UNLIKELY (vec->_start == vec->_end)) { \
+			return NULL; \
+		} \
+		return vec->_end - 1; \
 	} \
 	static inline R_MAYBE_UNUSED R_MUSTUSE type *R_VEC_FUNC(vec_type, find)(const vec_type *vec, void *value, R_VEC_FIND_CMP(vec_type) cmp_fn) { \
 		r_return_val_if_fail (vec, NULL); \
