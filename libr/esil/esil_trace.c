@@ -9,9 +9,6 @@
 #define CMP_REG_CHANGE(x, y) ((x) - ((REsilRegChange *)y)->idx)
 #define CMP_MEM_CHANGE(x, y) ((x) - ((REsilMemChange *)y)->idx)
 
-static R_TH_LOCAL int ocbs_set = false;
-static R_TH_LOCAL REsilCallbacks ocbs = {0};
-
 static void htup_vector_free(HtUPKv *kv) {
 	if (kv) {
 		r_vector_free (kv->value);
@@ -124,10 +121,10 @@ static bool trace_hook_reg_read(REsil *esil, const char *name, ut64 *res, int *s
 		// eprintf ("Register not found in profile\n");
 		return false;
 	}
-	if (ocbs.hook_reg_read) {
+	if (esil->ocb.hook_reg_read) {
 		REsilCallbacks cbs = esil->cb;
-		esil->cb = ocbs;
-		ret = ocbs.hook_reg_read (esil, name, res, size);
+		esil->cb = esil->ocb;
+		ret = esil->ocb.hook_reg_read (esil, name, res, size);
 		esil->cb = cbs;
 	}
 	if (!ret && esil->cb.reg_read) {
@@ -152,10 +149,10 @@ static bool trace_hook_reg_write(REsil *esil, const char *name, ut64 *val) {
 		sdb_array_add (DB, KEY ("reg.write"), name, 0);
 		sdb_num_set (DB, KEYREG ("reg.write", name), *val, 0);
 		add_reg_change (esil->trace, esil->trace->idx + 1, ri, *val);
-		if (ocbs.hook_reg_write) {
+		if (esil->ocb.hook_reg_write) {
 			REsilCallbacks cbs = esil->cb;
-			esil->cb = ocbs;
-			ret = ocbs.hook_reg_write (esil, name, val);
+			esil->cb = esil->ocb;
+			ret = esil->ocb.hook_reg_write (esil, name, val);
 			esil->cb = cbs;
 		}
 		r_unref (ri);
@@ -176,10 +173,10 @@ static bool trace_hook_mem_read(REsil *esil, ut64 addr, ut8 *buf, int len) {
 	//eprintf ("[ESIL] MEM READ 0x%08"PFMT64x" %s\n", addr, hexbuf);
 	free (hexbuf);
 
-	if (ocbs.hook_mem_read) {
+	if (esil->ocb.hook_mem_read) {
 		REsilCallbacks cbs = esil->cb;
-		esil->cb = ocbs;
-		ret = ocbs.hook_mem_read (esil, addr, buf, len);
+		esil->cb = esil->ocb;
+		ret = esil->ocb.hook_mem_read (esil, addr, buf, len);
 		esil->cb = cbs;
 	}
 	return ret;
@@ -201,10 +198,10 @@ static bool trace_hook_mem_write(REsil *esil, ut64 addr, const ut8 *buf, int len
 		add_mem_change (esil->trace, esil->trace->idx + 1, addr + i, buf[i]);
 	}
 
-	if (ocbs.hook_mem_write) {
+	if (esil->ocb.hook_mem_write) {
 		REsilCallbacks cbs = esil->cb;
-		esil->cb = ocbs;
-		ret = ocbs.hook_mem_write (esil, addr, buf, len);
+		esil->cb = esil->ocb;
+		ret = esil->ocb.hook_mem_write (esil, addr, buf, len);
 		esil->cb = cbs;
 	}
 	return ret != 0;
@@ -232,11 +229,11 @@ R_API void r_esil_trace_op(REsil *esil, RAnalOp *op) {
 		return;
 	}
 	/* save old callbacks */
-	if (ocbs_set) {
+	if (esil->ocb_set) {
 		R_LOG_WARN ("r_esil_trace_op: Cannot call recursively");
 	}
-	ocbs = esil->cb;
-	ocbs_set = true;
+	esil->ocb = esil->cb;
+	esil->ocb_set = true;
 	sdb_num_set (DB, "idx", esil->trace->idx, 0);
 	sdb_num_set (DB, KEY ("addr"), op->addr, 0);
 	RRegItem *pc_ri = r_reg_get (esil->anal->reg, "PC", -1);
@@ -258,8 +255,8 @@ R_API void r_esil_trace_op(REsil *esil, RAnalOp *op) {
 	r_esil_stack_free (esil);
 	esil->verbose = esil_verbose;
 	/* restore hooks */
-	esil->cb = ocbs;
-	ocbs_set = false;
+	esil->cb = esil->ocb;
+	esil->ocb_set = false;
 	/* increment idx */
 	esil->trace->idx++;
 	esil->trace->end_idx++;

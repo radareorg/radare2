@@ -151,6 +151,8 @@ typedef struct r_esil_t {
 	Sdb *stats;
 	REsilTrace *trace;
 	REsilCallbacks cb;
+	REsilCallbacks ocb;
+	bool ocb_set;
 #if 0
 	struct r_anal_reil_t *Reil;
 #endif

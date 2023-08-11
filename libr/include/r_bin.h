@@ -297,7 +297,7 @@ typedef struct r_bin_section_t {
 
 #include <r_vec.h>
 
-// R2_590 only forward declare here for better compile times
+// XXX only forward declare here for better compile times
 R_API void r_bin_symbol_fini(RBinSymbol *sym);
 R_VEC_TYPE_WITH_FINI (RVecRBinSymbol, RBinSymbol, r_bin_symbol_fini);
 R_VEC_TYPE(RVecRBinSection, RBinSection);
