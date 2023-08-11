@@ -1697,9 +1697,7 @@ static bool decode(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
 			}
 
 			if (rs == 28) {
-#if R2_590
 				op->ptr = as->config->gp + imm;
-#endif
 			} else {
 				op->ptr = imm;
 			}

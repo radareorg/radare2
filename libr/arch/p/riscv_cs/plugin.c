@@ -156,7 +156,7 @@ static int parse_reg_name(RRegItem *reg, csh handle, cs_insn *insn, int reg_num)
 }
 #endif
 
-// static R_TH_LOCAL RRegItem reg;
+// static R_TH_LOCAL RRegItem reg; // R2_590 store in session plugindata
 static void op_fillval(RArchSession *as, RAnalOp *op, csh *handle, cs_insn *insn) {
 #if R2_590
 	// using reg names instead
