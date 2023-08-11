@@ -147,7 +147,7 @@ R_API RAnal *r_anal_new(void) {
 }
 
 R_API bool r_anal_plugin_remove(RAnal *anal, RAnalPlugin *plugin) {
-	// R2_590 TODO
+	// XXX TODO
 	return true;
 }
 

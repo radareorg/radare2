@@ -600,8 +600,8 @@ static int cmd_plugins(void *data, const char *input) {
 			pj_a (pj);
 			r_list_foreach (core->rcmd->plist, iter, cp) {
 				pj_o (pj);
-				pj_ks (pj, "name", cp->name);
-				pj_ks (pj, "desc", cp->desc);
+				pj_ks (pj, "name", cp->meta.name);
+				pj_ks (pj, "desc", cp->meta.desc);
 				pj_end (pj);
 			}
 			pj_end (pj);
@@ -617,12 +617,12 @@ static int cmd_plugins(void *data, const char *input) {
 			break;
 		case 'q':
 			r_list_foreach (core->rcmd->plist, iter, cp) {
-				r_cons_printf ("%s\n", cp->name);
+				r_cons_printf ("%s\n", cp->meta.name);
 			}
 			break;
 		case 0:
 			r_list_foreach (core->rcmd->plist, iter, cp) {
-				r_cons_printf ("%-10s %s\n", cp->name, cp->desc);
+				r_cons_printf ("%-10s %s\n", cp->meta.name, cp->meta.desc);
 			}
 			break;
 		default:

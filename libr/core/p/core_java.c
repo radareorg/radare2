@@ -376,7 +376,7 @@ static int r_cmd_java_handle_help(RCore *core, const char *input) {
 	const char **help_msg = (const char **)malloc (sizeof (char *) * END_CMDS * 4);
 	help_msg[0] = "Usage:";
 	help_msg[1] = "java [cmd] [arg..] ";
-	help_msg[2] = r_core_plugin_java.desc;
+	help_msg[2] = r_core_plugin_java.meta.desc;
 	for (i = 0; JAVA_CMDS[i].name; i++) {
 		RCmdJavaCmd *cmd = &JAVA_CMDS[i];
 		help_msg[3 + (i * 3) + 0] = cmd->name;
@@ -1947,9 +1947,11 @@ static int r_cmd_java_handle_print_exceptions(RCore *core, const char *input) {
 
 // PLUGIN Definition Info
 RCorePlugin r_core_plugin_java = {
-	.name = "java",
-	.desc = "Suite of java commands, java help for more info",
-	.license = "Apache",
+	.meta = {
+		.name = "java",
+		.desc = "Suite of java commands, java help for more info",
+		.license = "Apache",
+	},
 	.call = r_cmd_java_call,
 };
 

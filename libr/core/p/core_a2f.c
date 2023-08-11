@@ -425,9 +425,11 @@ static int r_cmd_anal_call(void *user, const char *input) {
 
 // PLUGIN Definition Info
 RCorePlugin r_core_plugin_a2f = {
-	.name = "a2f",
-	.desc = "The reworked analysis from scratch thing",
-	.license = "LGPL3",
+	.meta = {
+		.name = "a2f",
+		.desc = "The reworked analysis from scratch thing",
+		.license = "LGPL3",
+	},
 	.call = r_cmd_anal_call,
 };
 

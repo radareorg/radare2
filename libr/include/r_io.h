@@ -191,7 +191,7 @@ typedef struct {
 } RIORap;
 
 typedef struct r_io_plugin_t {
-	// RPluginMeta
+	// R2_590 RPluginMeta
 	const char *name;
 	const char *desc;
 	const char *version;
