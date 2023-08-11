@@ -123,8 +123,8 @@ typedef struct r_io_cache_layer_t {
 
 typedef struct r_io_cache_t {
 	RList *layers; // a list of cache layers-- must be a vector O(n)
-	int enabled; // R2_590 bool?
 	ut32 mode; // read, write, exec (enabled) sperm = requires maps
+	bool enabled;
 } RIOCache;
 
 // -io-cache-
