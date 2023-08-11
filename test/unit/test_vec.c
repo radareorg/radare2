@@ -1122,6 +1122,46 @@ static bool test_vec_uniq(void) {
 	mu_end;
 }
 
+static inline void fini_buf(char** buf) {
+	if (buf) {
+		free (*buf);
+	}
+}
+
+// This is mainly to test there are no warnings when generating code for a vec containing pointers.
+R_VEC_TYPE_WITH_FINI(RVecBuf, char*, fini_buf);
+
+static int find_compare_buf(char *const *const buf, void const *user) {
+	char *const *const ptr = user;
+	if (*buf == *ptr) {
+		return 0;
+	}
+	return 1;
+}
+
+static bool test_vec_with_pointers(void) {
+	RVecBuf buf;
+	RVecBuf_init (&buf);
+
+	char *ptr = NULL;
+	mu_assert_eq (RVecBuf_find (&buf, &ptr, find_compare_buf), NULL, "pointer find1");
+
+	ut32 x = 0;
+	for (x = 0; x < 3; x++) {
+		ptr = malloc (8);
+		RVecBuf_push_back (&buf, &ptr);
+	}
+
+	ptr = malloc (8);
+	RVecBuf_push_back (&buf, &ptr);
+
+	char **ptr2 = RVecBuf_at (&buf, 3);
+	mu_assert_eq (RVecBuf_find (&buf, &ptr, find_compare_buf), ptr2, "pointer find2");
+
+	RVecBuf_fini (&buf);
+	mu_end;
+}
+
 static int all_tests(void) {
 	mu_run_test (test_vec_init);
 	mu_run_test (test_vec_fini);
@@ -1157,6 +1197,7 @@ static int all_tests(void) {
 	mu_run_test (test_vec_partition);
 	mu_run_test (test_vec_sort);
 	mu_run_test (test_vec_uniq);
+	mu_run_test (test_vec_with_pointers);
 
 	return tests_passed != tests_run;
 }
