@@ -194,6 +194,7 @@ static bool plugin_manager_remove_plugin(QjsPluginManager *pm, const char *type,
 static void plugin_manager_fini (QjsPluginManager *pm) {
 	RVecCorePlugin_fini (&pm->core_plugins);
 	RVecArchPlugin_fini (&pm->arch_plugins);
+	RVecIoPlugin_fini (&pm->io_plugins);
 	// XXX leaks, but calling it causes crash because not all JS objects are freed
 	// JS_FreeRuntime (pm->rt);
 	pm->rt = NULL;
