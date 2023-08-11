@@ -443,7 +443,7 @@ R_API bool r_bin_plugin_add(RBin *bin, RBinPlugin *foo) {
 }
 
 R_API bool r_bin_plugin_remove(RBin *bin, RBinPlugin *plugin) {
-	// R2_590 TODO
+	// XXX TODO
 	return true;
 }
 
