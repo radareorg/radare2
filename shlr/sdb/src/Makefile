@@ -3,7 +3,7 @@ include ../config.mk
 # CFLAGS:=-g $(CFLAGS)
 OBJ=cdb.o buffer.o cdb_make.o ls.o ht.o ht_uu.o sdb.o num.o base64.o match.o
 OBJ+=json.o ns.o lock.o util.o disk.o query.o array.o fmt.o journal.o text.o
-OBJ+=dict.o ht_pp.o ht_up.o ht_pu.o set.o diff.o heap.o main.o
+OBJ+=dict.o ht_pp.o ht_up.o ht_pu.o ht_su.o set.o diff.o heap.o main.o
 SDB_CFLAGS+=-I../include
 SDB_CXXFLAGS+=-I../include
 SOBJ=$(subst .o,.o.o,${OBJ})
