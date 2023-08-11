@@ -403,10 +403,12 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 }
 
 RIOPlugin r_io_plugin_gdb = {
+	.meta = {
+		.name = "gdb",
+		.license = "LGPL3",
+		.desc = "Attach to gdbserver instance",
+	},
 	//void *plugin;
-	.name = "gdb",
-	.license = "LGPL3",
-	.desc = "Attach to gdbserver instance",
 	.uris = "gdb://",
 	.open = __open,
 	.close = __close,

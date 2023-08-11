@@ -559,9 +559,11 @@ static int __get_pid(RIODesc *desc) {
 
 // TODO: rename ptrace to io_mach .. err io.ptrace ??
 RIOPlugin r_io_plugin_mach = {
-	.name = "mach",
-	.desc = "Attach to mach debugger instance",
-	.license = "LGPL",
+	.meta = {
+		.name = "mach",
+		.desc = "Attach to mach debugger instance",
+		.license = "LGPL",
+	},
 	.uris = "attach://,mach://,smach://",
 	.open = __open,
 	.close = __close,
@@ -577,9 +579,11 @@ RIOPlugin r_io_plugin_mach = {
 
 #else
 RIOPlugin r_io_plugin_mach = {
-	.name = "mach",
-	.desc = "mach debug io (unsupported in this platform)",
-	.license = "LGPL"
+	.meta = {
+		.name = "mach",
+		.desc = "mach debug io (unsupported in this platform)",
+		.license = "LGPL"
+	},
 };
 #endif
 

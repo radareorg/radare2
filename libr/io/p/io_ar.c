@@ -144,9 +144,11 @@ static int r_io_ar_write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
 }
 
 RIOPlugin r_io_plugin_ar = {
-	.name = "ar",
-	.desc = "Open ar/lib files",
-	.license = "LGPL3",
+	.meta = {
+		.name = "ar",
+		.desc = "Open ar/lib files",
+		.license = "LGPL3",
+	},
 	.uris = "ar://,lib://,arall://,liball://",
 	.open = r_io_ar_open,
 	.open_many = r_io_ar_open_many,

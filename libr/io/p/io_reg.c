@@ -100,9 +100,11 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 }
 
 RIOPlugin r_io_plugin_reg = {
-	.name = "reg",
-	.desc = "read and write the register arena",
-	.license = "LGPL3",
+	.meta = {
+		.name = "reg",
+		.desc = "read and write the register arena",
+		.license = "LGPL3",
+	},
 	.uris = "reg://",
 	.open = __open,
 	.close = __close,

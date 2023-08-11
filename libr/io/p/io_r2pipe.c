@@ -180,9 +180,11 @@ static char *__system(RIO *io, RIODesc *fd, const char *msg) {
 }
 
 RIOPlugin r_io_plugin_r2pipe = {
-	.name = "r2pipe",
-	.desc = "r2pipe io plugin",
-	.license = "MIT",
+	.meta = {
+		.name = "r2pipe",
+		.desc = "r2pipe io plugin",
+		.license = "MIT",
+	},
 	.uris = "r2pipe://",
 	.open = __open,
 	.close = __close,

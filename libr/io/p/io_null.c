@@ -100,9 +100,11 @@ static RIODesc* __open(RIO* io, const char* pathname, int rw, int mode) {
 }
 
 RIOPlugin r_io_plugin_null = {
-	.name = "null",
-	.desc = "Null plugin",
-	.license = "LGPL3",
+	.meta = {
+		.name = "null",
+		.desc = "Null plugin",
+		.license = "LGPL3",
+	},
 	.uris = "null://",
 	.open = __open,
 	.close = __close,

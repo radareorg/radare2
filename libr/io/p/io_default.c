@@ -315,9 +315,11 @@ static bool __is_blockdevice(RIODesc *desc) {
 #endif
 
 RIOPlugin r_io_plugin_default = {
-	.name = "default",
-	.desc = "Open local files",
-	.license = "LGPL3",
+	.meta = {
+		.name = "default",
+		.desc = "Open local files",
+		.license = "LGPL3",
+	},
 	.uris = "file://,nocache://",
 	.open = __open_default,
 	.close = __close,

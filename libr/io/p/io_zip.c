@@ -610,10 +610,12 @@ static bool r_io_zip_close(RIODesc *fd) {
 }
 
 RIOPlugin r_io_plugin_zip = {
-	.name = "zip",
-	.desc = "Open zip files",
+	.meta = {
+		.name = "zip",
+		.desc = "Open zip files",
+		.license = "BSD",
+	},
 	.uris = "zip://,apk://,ipa://,jar://,zip0://,zipall://,apkall://,ipaall://,jarall://",
-	.license = "BSD",
 	.open = r_io_zip_open,
 	.open_many = r_io_zip_open_many,
 	.write = r_io_zip_write,

@@ -5,6 +5,7 @@
 
 #include <r_list.h>
 #include <r_util.h>
+#include <r_lib.h>
 #include <r_socket.h>
 #include <r_vector.h>
 #include <r_util/r_w32dw.h>
@@ -191,12 +192,7 @@ typedef struct {
 } RIORap;
 
 typedef struct r_io_plugin_t {
-	// R2_590 RPluginMeta
-	const char *name;
-	const char *desc;
-	const char *version;
-	const char *author;
-	const char *license;
+	const RPluginMeta meta;
 	void *widget;
 	const char *uris;
 	int (*listener)(RIODesc *io);

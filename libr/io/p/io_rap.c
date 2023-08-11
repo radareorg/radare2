@@ -274,10 +274,12 @@ static char *__rap_system(RIO *io, RIODesc *fd, const char *command) {
 }
 
 RIOPlugin r_io_plugin_rap = {
-	.name = "rap",
-	.desc = "Remote binary protocol plugin",
+	.meta = {
+		.name = "rap",
+		.desc = "Remote binary protocol plugin",
+		.license = "MIT",
+	},
 	.uris = "rap://,raps://",
-	.license = "MIT",
 	.listener = __rap_listener,
 	.open = __rap_open,
 	.close = __rap_close,

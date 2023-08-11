@@ -21,8 +21,8 @@ typedef struct plugin_data_t {
 static bool is_bochs(RDebug *dbg) {
 	if (dbg && dbg->iob.io) {
 		RIODesc *d = dbg->iob.io->desc;
-		if (d && d->plugin && d->plugin->name) {
-			if (!strcmp ("bochs", d->plugin->name)) {
+		if (d && d->plugin && d->plugin->meta.name) {
+			if (!strcmp ("bochs", d->plugin->meta.name)) {
 				return true;
 			}
 		}
@@ -365,8 +365,8 @@ static bool r_debug_bochs_attach(RDebug *dbg, int pid) {
 	RIODesc *d = dbg->iob.io->desc;
 	//eprintf ("bochs_attach:\n");
 	dbg->swstep = false;
-	if (d && d->plugin && d->plugin->name && d->data) {
-		if (!strcmp ("bochs", d->plugin->name)) {
+	if (d && d->plugin && d->plugin->meta.name && d->data) {
+		if (!strcmp ("bochs", d->plugin->meta.name)) {
 			RIOBochs *g = d->data;
 			//int arch = r_sys_arch_id (dbg->arch);
 			// int bits = dbg->anal->bits;

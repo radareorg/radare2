@@ -31,8 +31,8 @@ typedef struct plugin_data_t {
 
 static bool is_io_bf(RDebug *dbg) {
 	RIODesc *d = dbg->iob.io->desc;
-	if (d && d->plugin && d->plugin->name) {
-		if (!strcmp ("bfdbg", d->plugin->name)) {
+	if (d && d->plugin && d->plugin->meta.name) {
+		if (!strcmp ("bfdbg", d->plugin->meta.name)) {
 			return true;
 		}
 	}

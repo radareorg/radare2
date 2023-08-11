@@ -184,9 +184,11 @@ static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 }
 
 RIOPlugin r_io_plugin_gzip = {
-	.name = "gzip",
-	.desc = "Read/write gzipped files",
-	.license = "LGPL3",
+	.meta = {
+		.name = "gzip",
+		.desc = "Read/write gzipped files",
+		.license = "LGPL3",
+	},
 	.uris = "gzip://",
 	.open = __open,
 	.close = __close,

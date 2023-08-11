@@ -151,9 +151,11 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 }
 
 RIOPlugin r_io_plugin_qnx = {
-	.name = "qnx",
-	.license = "GPL3",
-	.desc = "Attach to QNX pdebug instance",
+	.meta = {
+		.name = "qnx",
+		.desc = "Attach to QNX pdebug instance",
+		.license = "GPL3",
+	},
 	.uris = "qnx://",
 	.open = __open,
 	.close = __close,
@@ -176,9 +178,11 @@ R_API RLibStruct radare_plugin = {
 #else
 
 RIOPlugin r_io_plugin_qnx = {
-	.name = "qnx",
-	.license = "GPL3",
-	.desc = "Attach to QNX pdebug instance (compiled without GPL)",
+	.meta = {
+		.name = "qnx",
+		.license = "GPL3",
+		.desc = "Attach to QNX pdebug instance (compiled without GPL)",
+	},
 };
 #endif
 

@@ -1718,7 +1718,7 @@ R_API ut64 r_debug_get_baddr(RDebug *dbg, const char *file) {
 	if (!dbg || !dbg->iob.io || !dbg->iob.io->desc) {
 		return 0LL;
 	}
-	if (!strcmp (dbg->iob.io->desc->plugin->name, "gdb")) {		//this is very bad
+	if (!strcmp (dbg->iob.io->desc->plugin->meta.name, "gdb")) { // this is very bad
 		// Tell gdb that we want baddr, not full mem map
 		dbg->iob.system (dbg->iob.io, "baddr");
 	}

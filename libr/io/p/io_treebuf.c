@@ -213,10 +213,12 @@ static int __write(RIO *io, RIODesc *desc, const ut8 *buf, int len) {
 }
 
 RIOPlugin r_io_plugin_treebuf = {
-	.name = "treebuf",
-	.desc = "Dynamic sparse like buffer without size restriction",
+	.meta = {
+		.name = "treebuf",
+		.desc = "Dynamic sparse like buffer without size restriction",
+		.license = "LGPL",
+	},
 	.uris = "treebuf://",
-	.license = "LGPL",
 	.system = __system,
 	.open = __open,
 	.close = __close,

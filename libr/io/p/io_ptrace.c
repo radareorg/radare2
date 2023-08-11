@@ -342,9 +342,11 @@ static int __getpid(RIODesc *fd) {
 
 // TODO: rename ptrace to io_ptrace .. err io.ptrace ??
 RIOPlugin r_io_plugin_ptrace = {
-	.name = "ptrace",
-	.desc = "Ptrace and /proc/pid/mem (if available) io plugin",
-	.license = "LGPL3",
+	.meta = {
+		.name = "ptrace",
+		.desc = "Ptrace and /proc/pid/mem (if available) io plugin",
+		.license = "LGPL3",
+	},
 	.uris = "ptrace://,attach://",
 	.open = __open,
 	.close = __close,
@@ -359,7 +361,9 @@ RIOPlugin r_io_plugin_ptrace = {
 };
 #else
 struct r_io_plugin_t r_io_plugin_ptrace = {
-	.name = NULL
+	.meta = {
+		.name = NULL
+	},
 };
 #endif
 
