@@ -99,12 +99,7 @@ typedef enum {
 } RCoreVisualMode;
 
 typedef struct r_core_plugin_t {
-	// R2_590 Use RPluginMeta
-	const char *name;
-	const char *desc;
-	const char *license;
-	const char *author;
-	const char *version;
+	RPluginMeta meta;
 	RCmdCb call; // returns true if command was handled, false otherwise.
 	RCmdCb init;
 	RCmdCb fini;

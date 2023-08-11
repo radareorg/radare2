@@ -17,7 +17,7 @@ R_API bool r_io_plugin_add(RIO *io, RIOPlugin *plugin) {
 }
 
 R_API bool r_io_plugin_remove(RIO *io, RIOPlugin *plugin) {
-	// R2_590 TODO
+	// XXX TODO
 	return true;
 }
 

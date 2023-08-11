@@ -110,7 +110,7 @@ R_API bool r_fs_plugin_add(RFS* fs, RFSPlugin* p) {
 }
 
 R_API bool r_fs_plugin_remove(RFS *fs, RFSPlugin *p) {
-	// R2_590 TODO
+	// XXX TODO
 	return true;
 }
 

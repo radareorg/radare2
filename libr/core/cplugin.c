@@ -35,11 +35,11 @@ R_API bool r_core_plugin_remove(RCmd *cmd, RCorePlugin *plugin) {
 	if (!cmd) {
 		return false;
 	}
-	const char *name = plugin->name;
+	const char *name = plugin->meta.name;
 	RListIter *iter, *iter2;
 	RCorePlugin *p;
 	r_list_foreach_safe (cmd->plist, iter, iter2, p) {
-		if (p && !strcmp (name, p->name)) {
+		if (p && !strcmp (name, p->meta.name)) {
 			r_list_delete (cmd->plist, iter);
 			return true;
 		}
