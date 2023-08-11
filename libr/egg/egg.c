@@ -102,7 +102,7 @@ R_API bool r_egg_plugin_add(REgg *a, REggPlugin *foo) {
 }
 
 R_API bool r_egg_plugin_remove(REgg *a, REggPlugin *plugin) {
-	// R2_590 TODO
+	// XXX TODO
 	return true;
 }
 

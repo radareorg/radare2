@@ -181,26 +181,6 @@ static RList *entries(RBinFile *bf) {
 	return ret;
 }
 
-#if 0
-// XXX this is very slooow
-static RList *symbols(RBinFile *bf) {
-	struct MACH0_(obj_t) *mo = R_UNWRAP3 (bf, bo, bin_obj);
-	if (!mo) {
-		return NULL;
-	}
-	if (!MACH0_(load_symbols) (mo)) {
-		return NULL;
-	}
-	// R2_590 -- remove this thing we dont want to return cloned symbols, can be infered
-	RList *list = r_list_newf ((RListFree) r_bin_symbol_free);
-	RBinSymbol *sym;
-	R_VEC_FOREACH (&bf->bo->symbols_vec, sym) {
-		r_list_append (list, r_bin_symbol_clone (sym));
-	}
-	return list;
-}
-#endif
-
 static bool symbols_vec(RBinFile *bf) {
 	struct MACH0_(obj_t) *mo = R_UNWRAP3 (bf, bo, bin_obj);
 	if (R_LIKELY (mo)) {
@@ -993,7 +973,6 @@ RBinPlugin r_bin_plugin_mach0 = {
 	.entries = &entries,
 	.signature = &entitlements,
 	.sections = &sections,
-	// .symbols = &symbols,
 	.symbols_vec = &symbols_vec,
 	.imports = &imports,
 	.size = &size,
