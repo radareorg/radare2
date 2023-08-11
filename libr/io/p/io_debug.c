@@ -555,19 +555,23 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 }
 
 RIOPlugin r_io_plugin_debug = {
-	.name = "debug",
-	.desc = "Attach to native debugger instance",
-	.license = "LGPL3",
+	.meta = {
+		.name = "debug",
+		.desc = "Attach to native debugger instance",
+		.license = "LGPL3",
+		.author = "pancake",
+	},
 	.uris = "dbg://,pidof://,waitfor://",
-	.author = "pancake",
 	.open = __open,
 	.check = __plugin_open,
 	.isdbg = true,
 };
 #else
 RIOPlugin r_io_plugin_debug = {
-	.name = "debug",
-	.desc = "Debug a program or pid. (NOT SUPPORTED FOR THIS PLATFORM)",
+	.meta = {
+		.name = "debug",
+		.desc = "Debug a program or pid. (NOT SUPPORTED FOR THIS PLATFORM)",
+	},
 };
 #endif
 

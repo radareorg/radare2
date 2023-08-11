@@ -443,8 +443,8 @@ static bool r_debug_gdb_attach(RDebug *dbg, int pid) {
 	RIODesc *d = dbg->iob.io->desc;
 	// TODO: the core must update the dbg.swstep config var when this var is changed
 	dbg->swstep = false;
-	if (d && d->plugin && d->plugin->name && d->data) {
-		if (!strcmp ("gdb", d->plugin->name)) {
+	if (d && d->plugin && d->plugin->meta.name && d->data) {
+		if (!strcmp ("gdb", d->plugin->meta.name)) {
 			RIOGdb *g = d->data;
 			pd->origriogdb = (RIOGdb **)&d->data;	//TODO bit of a hack, please improve
 			pd->support_sw_bp = UNKNOWN;

@@ -41,10 +41,12 @@ static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 }
 
 RIOPlugin r_io_plugin_xalz = {
-	.name = "xalz",
-	.desc = "XAmarin LZ4 assemblies",
+	.meta = {
+		.name = "xalz",
+		.desc = "XAmarin LZ4 assemblies",
+		.license = "MIT",
+	},
 	.uris = "xalz://",
-	.license = "MIT",
 	.open = __open,
 	.close = io_memory_close,
 	.read = io_memory_read,

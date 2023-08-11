@@ -9,7 +9,7 @@ static RIOPlugin *io_static_plugins[] = {
 
 R_API bool r_io_plugin_add(RIO *io, RIOPlugin *plugin) {
 	r_return_val_if_fail (io && plugin && io->plugins, false);
-	if (!plugin->name) {
+	if (!plugin->meta.name) {
 		return false;
 	}
 	ls_append (io->plugins, plugin);
@@ -29,7 +29,7 @@ R_API bool r_io_plugin_init(RIO *io) {
 	}
 	io->plugins = ls_newf (free);
 	for (i = 0; io_static_plugins[i]; i++) {
-		if (!io_static_plugins[i]->name) {
+		if (!io_static_plugins[i]->meta.name) {
 			continue;
 		}
 		static_plugin = R_NEW0 (RIOPlugin);
@@ -66,7 +66,7 @@ R_API RIOPlugin *r_io_plugin_byname(RIO *io, const char *name) {
 	SdbListIter *iter;
 	RIOPlugin *iop;
 	ls_foreach (io->plugins, iter, iop) {
-		if (!strcmp (name, iop->name)) {
+		if (!strcmp (name, iop->meta.name)) {
 			return iop;
 		}
 	}
@@ -85,7 +85,7 @@ R_API int r_io_plugin_list(RIO *io) {
 		str[2] = plugin->isdbg ? 'd' : '_';
 		str[3] = 0;
 		io->cb_printf ("%s  %-8s %-6s %s.", str,
-			r_str_get (plugin->name), r_str_get (plugin->license), r_str_get (plugin->desc));
+			r_str_get (plugin->meta.name), r_str_get (plugin->meta.license), r_str_get (plugin->meta.desc));
 		if (plugin->uris) {
 			io->cb_printf (" %s", plugin->uris);
 		}
@@ -114,14 +114,14 @@ R_API int r_io_plugin_list_json(RIO *io) {
 
 		pj_o (pj);
 		pj_ks (pj, "permissions", str);
-		if (plugin->name) {
-			pj_ks (pj, "name", plugin->name);
+		if (plugin->meta.name) {
+			pj_ks (pj, "name", plugin->meta.name);
 		}
-		if (plugin->desc) {
-			pj_ks (pj, "description", plugin->desc);
+		if (plugin->meta.desc) {
+			pj_ks (pj, "description", plugin->meta.desc);
 		}
-		if (plugin->license) {
-			pj_ks (pj, "license", plugin->license);
+		if (plugin->meta.license) {
+			pj_ks (pj, "license", plugin->meta.license);
 		}
 		if (plugin->uris) {
 			char *uri;
@@ -137,11 +137,11 @@ R_API int r_io_plugin_list_json(RIO *io) {
 			r_list_free (plist);
 			free (uris);
 		}
-		if (plugin->version) {
-			pj_ks (pj, "version", plugin->version);
+		if (plugin->meta.version) {
+			pj_ks (pj, "version", plugin->meta.version);
 		}
-		if (plugin->author) {
-			pj_ks (pj, "author", plugin->author);
+		if (plugin->meta.author) {
+			pj_ks (pj, "author", plugin->meta.author);
 		}
 		pj_end (pj);
 		n++;

@@ -428,10 +428,12 @@ static bool __resize(RIO *io, RIODesc *fd, ut64 size) {
 }
 
 RIOPlugin r_io_plugin_ihex = {
-	.name = "ihex",
-	.desc = "Open intel HEX file",
+	.meta = {
+		.name = "ihex",
+		.desc = "Open intel HEX file",
+		.license = "LGPL",
+	},
 	.uris = "ihex://",
-	.license = "LGPL",
 	.open = __open,
 	.close = __close,
 	.read = __read,

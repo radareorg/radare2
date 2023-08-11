@@ -82,15 +82,17 @@ static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 }
 
 RIOPlugin r_io_plugin_fd = {
+	.meta = {
 #if R2__WINDOWS__
-	.name = "handle",
-	.desc = "Local process file handle IO",
+		.name = "handle",
+		.desc = "Local process file handle IO",
 #else
-	.name = "fd",
-	.desc = "Local process filedescriptor IO",
+		.name = "fd",
+		.desc = "Local process filedescriptor IO",
 #endif
+		.license = "MIT",
+	},
 	.uris = FDURI,
-	.license = "MIT",
 	.open = __open,
 	.close = __close,
 	.read = __read,

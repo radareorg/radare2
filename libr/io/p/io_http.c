@@ -31,10 +31,12 @@ static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 }
 
 RIOPlugin r_io_plugin_http = {
-	.name = "http",
-	.desc = "Make http get requests",
+	.meta = {
+		.name = "http",
+		.desc = "Make http get requests",
+		.license = "LGPL3",
+	},
 	.uris = "http://",
-	.license = "LGPL3",
 	.open = __open,
 	.close = io_memory_close,
 	.read = io_memory_read,

@@ -193,9 +193,11 @@ static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 }
 
 RIOPlugin r_io_plugin_bfdbg = {
-	.name = "bfdbg",
-	.desc = "Attach to brainFuck Debugger instance",
-	.license = "LGPL3",
+	.meta = {
+		.name = "bfdbg",
+		.desc = "Attach to brainFuck Debugger instance",
+		.license = "LGPL3",
+	},
 	.uris = "bfdbg://",
 	.open = __open,
 	.close = __close,

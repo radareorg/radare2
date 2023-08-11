@@ -185,10 +185,12 @@ static bool __resize(RIO *io, RIODesc *fd, ut64 size) {
 }
 
 RIOPlugin r_io_plugin_mmap = {
-	.name = "mmap",
-	.desc = "Open files using mmap",
+	.meta = {
+		.name = "mmap",
+		.desc = "Open files using mmap",
+		.license = "LGPL3",
+	},
 	.uris = "mmap://",
-	.license = "LGPL3",
 	.open = __open,
 	.close = __close,
 	.read = __read,

@@ -73,10 +73,12 @@ static char *w32__system(RIO *io, RIODesc *fd, const char *cmd) {
 }
 
 RIOPlugin r_io_plugin_w32 = {
-	.name = "w32",
-	.desc = "w32 API io",
-	.license = "LGPL3",
-	.author = "pancake",
+	.meta = {
+		.name = "w32",
+		.desc = "w32 API io",
+		.author = "pancake",
+		.license = "LGPL3",
+	},
 	.uris = "w32://",
 	.open = w32__open,
 	.close = w32__close,
@@ -97,7 +99,9 @@ R_API RLibStruct radare_plugin = {
 
 #else
 struct r_io_plugin_t r_io_plugin_w32 = {
-	.name = (void*)0
+	.meta = {
+		.name = (void*)0
+	}
 };
 
 #endif

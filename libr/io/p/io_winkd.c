@@ -110,10 +110,12 @@ static bool __close(RIODesc *fd) {
 }
 
 RIOPlugin r_io_plugin_winkd = {
-	.name = "winkd",
-	.desc = "Attach to a KD debugger via UDP or socket file",
+	.meta = {
+		.name = "winkd",
+		.desc = "Attach to a KD debugger via UDP or socket file",
+		.license = "LGPL3",
+	},
 	.uris = "winkd://",
-	.license = "LGPL3",
 	.open = __open,
 	.close = __close,
 	.read = __read,

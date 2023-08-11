@@ -246,13 +246,12 @@ static JSValue r2plugin_io(JSContext *ctx, JSValueConst this_val, int argc, JSVa
 	const char *descptr = JS_ToCStringLen2 (ctx, &namelen, desc, false);
 	const char *licenseptr = JS_ToCStringLen2 (ctx, &namelen, license, false);
 
-	ap->name = nameptr;  // TODO no strdup here?
-	if (descptr) {
-		ap->desc = strdup (descptr);
-	}
-	if (licenseptr) {
-		ap->license = strdup (licenseptr);
-	}
+	RPluginMeta meta = {
+		.name = strdup (nameptr),
+		.desc = descptr ? strdup (descptr) : NULL,
+		.license = descptr ? strdup (licenseptr) : NULL,
+	};
+	memcpy ((void*)&ap->meta, &meta, sizeof (RPluginMeta));
 
 	ap->check = qjs_io_check;
 	ap->open = qjs_io_open;
@@ -277,6 +276,6 @@ static JSValue r2plugin_io(JSContext *ctx, JSValueConst this_val, int argc, JSVa
 	lib->type = R_LIB_TYPE_IO;
 	lib->data = ap;
 	lib->version = R2_VERSION;
-	int ret = r_lib_open_ptr (pm->core->lib, ap->name, NULL, lib);
+	int ret = r_lib_open_ptr (pm->core->lib, ap->meta.name, NULL, lib);
 	return JS_NewBool (ctx, ret == 1);
 }

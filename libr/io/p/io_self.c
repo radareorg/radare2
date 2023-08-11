@@ -587,10 +587,12 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 }
 
 RIOPlugin r_io_plugin_self = {
-	.name = "self",
-	.desc = "Read memory from self",
+	.meta = {
+		.name = "self",
+		.desc = "Read memory from self",
+		.license = "LGPL3",
+	},
 	.uris = "self://",
-	.license = "LGPL3",
 	.open = __open,
 	.read = __read,
 	.check = __plugin_open,
@@ -942,8 +944,10 @@ exit:
 
 #else // DEBUGGER
 RIOPlugin r_io_plugin_self = {
-	.name = "self",
-	.desc = "read memory from myself using 'self://' (UNSUPPORTED)",
+	.meta = {
+		.name = "self",
+		.desc = "read memory from myself using 'self://' (UNSUPPORTED)",
+	},
 };
 
 #ifndef R2_PLUGIN_INCORE

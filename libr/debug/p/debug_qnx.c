@@ -210,8 +210,8 @@ static bool r_debug_qnx_attach(RDebug *dbg, int pid) {
 		return false;
 	}
 
-	if (d && d->plugin && d->plugin->name && d->data) {
-		if (!strcmp ("qnx", d->plugin->name)) {
+	if (d && d->plugin && d->plugin->meta.name && d->data) {
+		if (!strcmp ("qnx", d->plugin->meta.name)) {
 			RIOQnx *g = d->data;
 			int arch = r_sys_arch_id (dbg->arch);
 			int bits = dbg->anal->config->bits;

@@ -31,8 +31,8 @@ static RDebugReasonType __rap_wait(RDebug *dbg, int pid) {
 static bool __rap_attach(RDebug *dbg, int pid) {
 // XXX TODO PID must be a socket here !!1
 	RIODesc *d = dbg->iob.io->desc;
-	if (d && d->plugin && d->plugin->name) {
-		if (!strcmp ("rap", d->plugin->name)) {
+	if (d && d->plugin && d->plugin->meta.name) {
+		if (!strcmp ("rap", d->plugin->meta.name)) {
 			eprintf ("SUCCESS: rap attach with inferior rap rio worked\n");
 		} else {
 			R_LOG_ERROR ("Underlying IO descriptor is not a rap one");

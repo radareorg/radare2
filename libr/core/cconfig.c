@@ -36,7 +36,7 @@ static void set_options(RConfigNode *node, ...) {
 
 static bool isGdbPlugin(RCore *core) {
 	if (core->io && core->io->desc && core->io->desc->plugin) {
-		if (core->io->desc->plugin->name && !strcmp (core->io->desc->plugin->name, "gdb")) {
+		if (core->io->desc->plugin->meta.name && !strcmp (core->io->desc->plugin->meta.name, "gdb")) {
 			return true;
 		}
 	}

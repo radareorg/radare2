@@ -162,10 +162,12 @@ static char *__system(RIO *io, RIODesc *desc, const char *cmd) {
 }
 
 RIOPlugin r_io_plugin_socket = {
-	.name = "socket",
-	.desc = "Connect or listen via TCP on a growing io",
+	.meta = {
+		.name = "socket",
+		.desc = "Connect or listen via TCP on a growing io",
+		.license = "MIT",
+	},
 	.uris = SOCKETURI,
-	.license = "MIT",
 	.open = __open,
 	.close = __close,
 	.read = __read,

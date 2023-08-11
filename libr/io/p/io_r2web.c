@@ -151,10 +151,12 @@ static char *__system(RIO *io, RIODesc *fd, const char *command) {
 }
 
 RIOPlugin r_io_plugin_r2web = {
-	.name = "r2web",
-	.desc = "r2web io client plugin",
+	.meta = {
+		.name = "r2web",
+		.desc = "r2web io client plugin",
+		.license = "LGPL3",
+	},
 	.uris = "r2web://",
-	.license = "LGPL3",
 	.open = __open,
 	.close = __close,
 	.read = __read,

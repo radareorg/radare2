@@ -125,9 +125,11 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 }
 
 RIOPlugin r_io_plugin_procpid = {
-	.name = "procpid",
-	.desc = "Open /proc/[pid]/mem io",
-	.license = "LGPL3",
+	.meta = {
+		.name = "procpid",
+		.desc = "Open /proc/[pid]/mem io",
+		.license = "LGPL3",
+	},
 	.uris = "procpid://",
 	.open = __open,
 	.close = __close,
@@ -140,7 +142,9 @@ RIOPlugin r_io_plugin_procpid = {
 
 #else
 RIOPlugin r_io_plugin_procpid = {
-	.name = NULL
+	.meta = {
+		.name = NULL
+	},
 };
 #endif
 

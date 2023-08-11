@@ -97,9 +97,11 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 }
 
 RIOPlugin r_io_plugin_bochs = {
-	.name = "bochs",
-	.desc = "Attach to a BOCHS debugger instance",
-	.license = "LGPL3",
+	.meta = {
+		.name = "bochs",
+		.desc = "Attach to a BOCHS debugger instance",
+		.license = "LGPL3",
+	},
 	.uris = "bochs://",
 	.open = __open,
 	.close = __close,
