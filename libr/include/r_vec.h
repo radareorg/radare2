@@ -59,7 +59,7 @@ extern "C" {
  *   atleast a capacity of "new_capacity". Returns true on success, otherwise false.
  * - void R_VEC_FUNC(vec_type, shrink_to_fit)(vec_type *vec): Shrinks the vector to exactly fit the
  *   current number of elements it contains.
- * - void R_VEC_FUNC(vec_type, push_back)(vec_type *vec, const type *value): Appends a single element to
+ * - void R_VEC_FUNC(vec_type, push_back)(vec_type *vec, type const *value): Appends a single element to
  *   the end of the vector.
  * - type *R_VEC_FUNC(vec_type, emplace_back)(vec_type *vec): Returns a pointer to a new uninitialized
  *   element at the back of the vector. The pointer must be filled with data afterwards, or it can lead to
@@ -167,9 +167,9 @@ extern "C" {
 		type *_end; \
 		size_t _capacity; \
 	} vec_type; \
-	typedef void (*R_VEC_COPY(vec_type))(type *dst, const type *src); \
-	typedef int (*R_VEC_CMP(vec_type))(const type *a, const type *b); \
-	typedef int (*R_VEC_FIND_CMP(vec_type))(const type *a, const void *b); \
+	typedef void (*R_VEC_COPY(vec_type))(type *dst, type const *src); \
+	typedef int (*R_VEC_CMP(vec_type))(type const *a, type const *b); \
+	typedef int (*R_VEC_FIND_CMP(vec_type))(type const *a, const void *b); \
 	static inline R_MAYBE_UNUSED void R_VEC_FUNC(vec_type, init)(vec_type *vec) { \
 		r_return_if_fail (vec); \
 		memset (vec, 0, sizeof (vec_type)); \
@@ -315,7 +315,7 @@ extern "C" {
 			} \
 		} \
 	} \
-	static inline R_MAYBE_UNUSED void R_VEC_FUNC(vec_type, push_back)(vec_type *vec, const type *value) { \
+	static inline R_MAYBE_UNUSED void R_VEC_FUNC(vec_type, push_back)(vec_type *vec, type const *value) { \
 		r_return_if_fail (vec && value); \
 		const ut64 num_elems = R_VEC_FUNC(vec_type, length) (vec); \
 		const ut64 capacity = R_VEC_CAPACITY (vec); \
@@ -372,7 +372,7 @@ extern "C" {
 			R_VEC_FUNC(vec_type, reserve) (vec, total_count); \
 		} \
 		if (copy_fn) { \
-			const type *src; \
+			type const *src; \
 			R_VEC_FOREACH (values, src) { \
 				type *dst = R_VEC_FUNC(vec_type, emplace_back) (vec); \
 				copy_fn (dst, src); \
