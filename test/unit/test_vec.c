@@ -660,6 +660,30 @@ static bool test_vec_at(void) {
 	mu_end;
 }
 
+static bool test_vec_last(void) {
+	RVecUT32 v;
+	RVecUT32_init (&v);
+
+	mu_assert_eq (RVecUT32_last (&v), NULL, "last1");
+
+	ut32 x;
+	for (x = 0; x < 3; x++) {
+		RVecUT32_push_back (&v, &x);
+	}
+
+	mu_assert_neq (RVecUT32_last (&v), NULL, "last2");
+	mu_assert_eq (*RVecUT32_last (&v), 2, "last4");
+
+	*RVecUT32_last (&v) = 10;
+	mu_assert_eq (*RVecUT32_last (&v), 10, "last5");
+
+	RVecUT32_clear (&v);
+	mu_assert_eq (RVecUT32_last (&v), NULL, "last6");
+
+	RVecUT32_fini (&v);
+	mu_end;
+}
+
 static bool test_vec_find(void) {
 	RVecST32 v;
 	RVecST32_init (&v);
@@ -1185,6 +1209,7 @@ static int all_tests(void) {
 	mu_run_test (test_vec_start_iter);
 	mu_run_test (test_vec_end_iter);
 	mu_run_test (test_vec_at);
+	mu_run_test (test_vec_last);
 	mu_run_test (test_vec_find);
 	mu_run_test (test_vec_find_if_not);
 	mu_run_test (test_vec_find_index);
