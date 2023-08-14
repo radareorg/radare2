@@ -434,7 +434,7 @@ static inline uint32_t CWISS_LeadingZeroes64(uint64_t x) {
 	if ((x >> 32) && _BitScanReverse(&result, (unsigned long)(x >> 32))) {
 		return 31 - result;
 	}
-	if (_BitScanReverse(&result, static_cast<unsigned long>(x))) {
+	if (_BitScanReverse(&result, (unsigned long)(x))) {
 		return 63 - result;
 	}
 #endif
