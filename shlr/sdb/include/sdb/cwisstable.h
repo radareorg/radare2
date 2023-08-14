@@ -1852,7 +1852,7 @@ static inline CWISS_RawIter CWISS_RawTable_iter_at(const CWISS_Policy* policy,
 	CWISS_RawIter iter = {
 		self,
 		self->ctrl_ + index,
-		self->slots_ + index * policy->slot->size,
+		self->slots_ ? self->slots_ + index * policy->slot->size : NULL,
 	};
 	CWISS_RawIter_SkipEmptyOrDeleted(policy, &iter);
 	CWISS_AssertIsValid(iter.ctrl_);
