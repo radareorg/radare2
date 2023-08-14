@@ -3053,7 +3053,7 @@ static void core_visual_init(RCoreVisual *visual) {
 	visual->zoom = 0;
 	visual->currentFormat = 0;
 	visual->current0format = 0;
-	memset (visual->numbuf, 0, sizeof (char[32]));
+	memset (visual->numbuf, 0, sizeof (visual->numbuf));
 	visual->numbuf_i = 0;
 	visual->splitView = false;
 	visual->splitPtr = UT64_MAX;
@@ -3063,7 +3063,11 @@ static void core_visual_init(RCoreVisual *visual) {
 	visual->hold = NULL;
 	visual->oldpc = 0;
 	visual->oseek = UT64_MAX;
-	memset (visual->debugstr, 0, sizeof (char[512]));
+	memset (visual->debugstr, 0, sizeof (visual->debugstr));
+
+	visual->firstRun = true;
+	visual->fromVisual = false;
+	memset (visual->menus_Colors, 0, sizeof (visual->menus_Colors));
 }
 
 R_API bool r_core_init(RCore *core) {

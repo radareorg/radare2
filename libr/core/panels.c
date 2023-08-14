@@ -66,11 +66,6 @@ static void __panels_refresh(RCore *core);
 
 #define COUNT(x) (sizeof ((x)) / sizeof ((*x)) - 1)
 
-// TODO: kill mutable globals
-static R_TH_LOCAL bool firstRun = true;
-static R_TH_LOCAL bool fromVisual = false;
-static R_TH_LOCAL char *menus_Colors[128];
-
 typedef enum {
 	LEFT,
 	RIGHT,
@@ -2456,7 +2451,7 @@ static RPanels *__panels_new(RCore *core) {
 		return NULL;
 	}
 	int h, w = r_cons_get_size (&h);
-	firstRun = true;
+	core->visual.firstRun = true;
 	if (!__init (core, panels, w, h)) {
 		free (panels);
 		return NULL;
@@ -5581,7 +5576,7 @@ static void __init_menu_color_settings_layout(void *_core, const char *parent) {
 	char *now = r_core_cmd_str (core, "eco.");
 	r_str_split (now, '\n');
 	parent = "Settings.Colors";
-	RList *list = __sorted_list (core, (const char **)menus_Colors, COUNT (menus_Colors));
+	RList *list = __sorted_list (core, (const char **)core->visual.menus_Colors, COUNT (core->visual.menus_Colors));
 	char *pos;
 	RListIter* iter;
 	RStrBuf *buf = r_strbuf_new (NULL);
@@ -5648,7 +5643,7 @@ static void __load_config_menu(RCore *core) {
 	char *th;
 	int i = 0;
 	r_list_foreach (themes_list, th_iter, th) {
-		menus_Colors[i++] = th;
+		core->visual.menus_Colors[i++] = th;
 	}
 }
 
@@ -5936,9 +5931,9 @@ static void demo_end(RCore *core, RConsCanvas *can) {
 	r_config_set_b (core->config, "scr.utf8", false);
 	RPanel *cur = __get_cur_panel (core->panels);
 	cur->view->refresh = true;
-	firstRun= false;
+	core->visual.firstRun = false;
 	__panels_refresh (core);
-	firstRun= true;
+	core->visual.firstRun = true;
 	r_config_set_b (core->config, "scr.utf8", utf8);
 	char *s = r_cons_canvas_tostring (can);
 	if (s) {
@@ -6018,7 +6013,7 @@ static void __panels_refresh(RCore *core) {
 	}
 	RStrBuf *title = r_strbuf_new (" ");
 	bool utf8 = r_config_get_b (core->config, "scr.utf8");
-	if (firstRun) {
+	if (core->visual.firstRun) {
 		r_config_set_b (core->config, "scr.utf8", false);
 	}
 
@@ -6104,13 +6099,13 @@ static void __panels_refresh(RCore *core) {
 		__print_snow (panels);
 	}
 
-	if (firstRun) {
+	if (core->visual.firstRun) {
 		if (core->panels_root->n_panels < 2) {
 			if (r_config_get_b (core->config, "scr.demo")) {
 				demo_begin (core, can);
 			}
 		}
-		firstRun = false;
+		core->visual.firstRun = false;
 		r_config_set_b (core->config, "scr.utf8", utf8);
 		RPanel *cur = __get_cur_panel (core->panels);
 		cur->view->refresh = true;
@@ -7286,7 +7281,7 @@ virtualmouse:
 		__set_root_state (core, QUIT);
 		goto exit;
 	case '!':
-		fromVisual = true;
+		core->visual.fromVisual = true;
 	case 'q':
 	case -1: // EOF
 		__set_root_state (core, DEL);
@@ -7339,7 +7334,7 @@ static void __del_panels(RCore *core) {
 }
 
 R_API bool r_core_panels_root(RCore *core, RPanelsRoot *panels_root) {
-	fromVisual = core->vmode;
+	core->visual.fromVisual = core->vmode;
 	if (!panels_root) {
 		panels_root = R_NEW0 (RPanelsRoot);
 		if (!panels_root) {
@@ -7396,7 +7391,7 @@ R_API bool r_core_panels_root(RCore *core, RPanelsRoot *panels_root) {
 		}
 	}
 	r_config_set_i (core->config, "scr.maxpage", maxpage);
-	if (fromVisual) {
+	if (core->visual.fromVisual) {
 		r_core_visual (core, "");
 	} else {
 		r_cons_enable_mouse (false);
