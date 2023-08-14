@@ -209,6 +209,37 @@ typedef struct r_core_visual_t {
 	RCoreVisualMode printidx;
 	RList *tabs;
 	int tab;
+	bool textedit_mode;
+	int obs;
+	bool ime;
+	bool imes;
+	int nib;
+	int blocksize;
+	bool autoblocksize;
+	int disMode;
+	int hexMode;
+	int printMode;
+	bool snowMode;
+	RList *snows;
+	int color;
+	int zoom;
+	int currentFormat;
+	int current0format;
+	char numbuf[32];
+	int numbuf_i;
+	bool splitView;
+	ut64 splitPtr;
+	int current3format;
+	int current4format;
+	int current5format;
+	RConfigHold *hold;  // TODO should be a tab-specific var
+	ut64 oldpc;
+	ut64 oseek;
+	char debugstr[512];
+
+	bool firstRun;
+	bool fromVisual;
+	char *menus_Colors[128];
 } RCoreVisual;
 
 typedef struct {

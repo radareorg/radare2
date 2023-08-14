@@ -65,14 +65,14 @@ static void visual_tabset(RCore *core, RCoreVisualTab *tab) {
 	core->print->cur_enabled = tab->cur_enabled;
 	core->print->cur = tab->cur;
 	core->print->ocur = tab->ocur;
-	disMode = tab->disMode;
-	hexMode = tab->hexMode;
-	printMode = tab->printMode;
-	current3format = tab->current3format;
-	current4format = tab->current4format;
-	current5format = tab->current5format;
-	r_core_visual_applyDisMode (core, disMode);
-	r_core_visual_applyHexMode (core, hexMode);
+	core->visual.disMode = tab->disMode;
+	core->visual.hexMode = tab->hexMode;
+	core->visual.printMode = tab->printMode;
+	core->visual.current3format = tab->current3format;
+	core->visual.current4format = tab->current4format;
+	core->visual.current5format = tab->current5format;
+	r_core_visual_applyDisMode (core, core->visual.disMode);
+	r_core_visual_applyHexMode (core, core->visual.hexMode);
 	r_config_set_i (core->config, "asm.offset", tab->asm_offset);
 	r_config_set_i (core->config, "asm.instr", tab->asm_instr);
 	r_config_set_i (core->config, "asm.bytes", tab->asm_bytes);
@@ -80,10 +80,10 @@ static void visual_tabset(RCore *core, RCoreVisualTab *tab) {
 	r_config_set_i (core->config, "asm.cmt.col", tab->asm_cmt_col);
 	r_config_set_i (core->config, "hex.cols", tab->cols);
 	r_config_set_b (core->config, "scr.dumpcols", tab->dumpCols);
-	printfmtSingle[0] = printHexFormats[R_ABS(hexMode) % PRINT_HEX_FORMATS];
-	printfmtSingle[2] = print3Formats[R_ABS(current3format) % PRINT_3_FORMATS];
-	printfmtSingle[3] = print4Formats[R_ABS(current4format) % PRINT_4_FORMATS];
-	printfmtSingle[4] = print5Formats[R_ABS(current5format) % PRINT_5_FORMATS];
+	printfmtSingle[0] = printHexFormats[R_ABS(core->visual.hexMode) % PRINT_HEX_FORMATS];
+	printfmtSingle[2] = print3Formats[R_ABS(core->visual.current3format) % PRINT_3_FORMATS];
+	printfmtSingle[3] = print4Formats[R_ABS(core->visual.current4format) % PRINT_4_FORMATS];
+	printfmtSingle[4] = print5Formats[R_ABS(core->visual.current5format) % PRINT_5_FORMATS];
 }
 
 static void visual_tabget(RCore *core, RCoreVisualTab *tab) {
@@ -101,12 +101,12 @@ static void visual_tabget(RCore *core, RCoreVisualTab *tab) {
 	tab->ocur = core->print->ocur;
 	tab->cols = r_config_get_i (core->config, "hex.cols");
 	tab->dumpCols = r_config_get_b (core->config, "scr.dumpcols");
-	tab->disMode = disMode;
-	tab->hexMode = hexMode;
-	tab->printMode = printMode;
-	tab->current3format = current3format;
-	tab->current4format = current4format;
-	tab->current5format = current5format;
+	tab->disMode = core->visual.disMode;
+	tab->hexMode = core->visual.hexMode;
+	tab->printMode = core->visual.printMode;
+	tab->current3format = core->visual.current3format;
+	tab->current4format = core->visual.current4format;
+	tab->current5format = core->visual.current5format;
 	// tab->cols = core->print->cols;
 }
 

@@ -3035,6 +3035,41 @@ static void cmdusr2(int p) {
 }
 #endif
 
+static void core_visual_init(RCoreVisual *visual) {
+	visual->printidx = 0;
+	visual->textedit_mode = true;
+	visual->obs = 0;
+	visual->ime = false;
+	visual->imes = false;
+	visual->nib = -1;
+	visual->blocksize = 0;
+	visual->autoblocksize = true;
+	visual->disMode = 0;
+	visual->hexMode = 0;
+	visual->printMode = 0;
+	visual->snowMode = false;
+	visual->snows = NULL;
+	visual->color = 1;
+	visual->zoom = 0;
+	visual->currentFormat = 0;
+	visual->current0format = 0;
+	memset (visual->numbuf, 0, sizeof (visual->numbuf));
+	visual->numbuf_i = 0;
+	visual->splitView = false;
+	visual->splitPtr = UT64_MAX;
+	visual->current3format = 0;
+	visual->current4format = 0;
+	visual->current5format = 0;
+	visual->hold = NULL;
+	visual->oldpc = 0;
+	visual->oseek = UT64_MAX;
+	memset (visual->debugstr, 0, sizeof (visual->debugstr));
+
+	visual->firstRun = true;
+	visual->fromVisual = false;
+	memset (visual->menus_Colors, 0, sizeof (visual->menus_Colors));
+}
+
 R_API bool r_core_init(RCore *core) {
 #if R2__UNIX__
 	Gcore = core;
@@ -3098,7 +3133,8 @@ R_API bool r_core_init(RCore *core) {
 	core->scriptstack->free = (RListFree)free;
 	core->times = R_NEW0 (RCoreTimes);
 	core->vmode = false;
-	core->visual.printidx = 0;
+	core_visual_init (&core->visual);
+
 	core->lastcmd = NULL;
 
 	if (core->print->charset) {
