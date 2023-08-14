@@ -13,8 +13,8 @@ static size_t countChar(const ut8 *buf, int len, char ch) {
 }
 
 static int getid(char ch) {
-	const char *keys = "[]<>+-,.";
-	const char *cidx = strchr (keys, ch);
+	const char *const keys = "[]<>+-,.";
+	const char *const cidx = strchr (keys, ch);
 	return cidx? cidx - keys + 1: 0;
 }
 
@@ -136,13 +136,11 @@ static int assemble(const char *buf, ut8 **outbuf) {
 #define BUFSIZE_INC 32
 static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 	int len = op->size;
-	const ut8 *_buf = op->bytes;
-	const ut64 addr = op->addr;
 	if (len < 1) {
 		return false;
 	}
-
-	ut8 *buf = (ut8*)_buf; // XXX
+	ut8 *buf = op->bytes;
+	const ut64 addr = op->addr;
 	ut64 dst = 0LL;
 	if (!op) {
 		return 1;
@@ -169,29 +167,32 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 		}
 		r_strbuf_set (&op->esil, "1,pc,-,brk,=[4],4,brk,+=");
 #if 1
-		{
+		if (len > 1) {
 			const ut8 *p = buf + 1;
 			int lev = 0, i = 1;
 			len--;
 			while (i < len && *p) {
-				if (*p == '[') {
+				switch (*p) {
+				case '[':
 					lev++;
-				}
-				if (*p == ']') {
+					break;
+				case ']':
 					lev--;
-					if (lev == -1) {
-						dst = addr + (size_t)(p - buf) + 1;
+					if (lev < 1) {
+						size_t delta = p - buf;
+						dst = addr + (size_t)delta + 1;
 						op->jump = dst;
 						r_strbuf_set (&op->esil, "1,pc,-,brk,=[4],4,brk,+=,");
 						goto beach;
 					}
-				}
-				if (*p == 0x00 || *p == 0xff) {
+					break;
+				case 0:
+				case 0xff:
 					op->type = R_ANAL_OP_TYPE_ILL;
 					goto beach;
 				}
 				if (read_at && i == len - 1) {
-					break;
+#if 0
 					// XXX unnecessary just break
 					int new_buf_len = len + 1 + BUFSIZE_INC;
 					ut8 *new_buf = calloc (new_buf_len, 1);
@@ -203,6 +204,9 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 						p = buf + i;
 						len += BUFSIZE_INC;
 					}
+#else
+					break;
+#endif
 				}
 				p++;
 				i++;

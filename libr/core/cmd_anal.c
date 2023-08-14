@@ -8719,9 +8719,9 @@ static void _anal_calls(RCore *core, ut64 addr, ut64 addr_end, bool printCommand
 					isValidCall = false;
 				}
 				if (isValidCall) {
-					ut8 buf[4] = {0};
-					r_io_read_at (core->io, op.jump, buf, 4);
-					isValidCall = memcmp (buf, "\x00\x00\x00\x00", 4);
+					ut8 zbuf[4] = {0};
+					r_io_read_at (core->io, op.jump, zbuf, 4);
+					isValidCall = memcmp (zbuf, "\x00\x00\x00\x00", 4);
 				}
 				if (isValidCall) {
 #if JAYRO_03
@@ -8817,9 +8817,8 @@ static void cmd_anal_calls(RCore *core, const char *input, bool printCommands, b
 }
 
 static void cmd_sdbk(Sdb *db, const char *input) {
-	char *out = (input[0] == ' ')
-		? sdb_querys (db, NULL, 0, input + 1)
-		: sdb_querys (db, NULL, 0, "*");
+	const char *arg = (input[0] == ' ')? input + 1: "*";
+	char *out = sdb_querys (db, NULL, 0, arg);
 	if (out) {
 		r_cons_println (out);
 		free (out);
@@ -9118,7 +9117,7 @@ static void anal_axg(RCore *core, const char *input, int level, Sdb *db, int opt
 }
 
 static void cmd_anal_ucall_ref(RCore *core, ut64 addr) {
-	RAnalFunction * fcn = r_anal_get_function_at (core->anal, addr);
+	RAnalFunction *fcn = r_anal_get_function_at (core->anal, addr);
 	if (fcn) {
 		r_cons_printf (" ; %s", fcn->name);
 	} else {
@@ -9257,7 +9256,6 @@ static void axfm(RCore *core) {
 			last_addr = ref->addr;
 		}
 	}
-
 	RVecAnalRef_free (refs);
 }
 
