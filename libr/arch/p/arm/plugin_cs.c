@@ -2507,7 +2507,7 @@ static int analop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf,
 			if (ISIMM (0)) {
 				r_strbuf_appendf (&op->esil, "%s,pc,:=", ARG (0));
 			} else {
-				r_strbuf_appendf (&op->esil, "%d,%s,-,pc,:=", thumb, ARG (0));
+                r_strbuf_appendf (&op->esil, "%s,pc,:=,-1,1,<<,pc,&", ARG (0));
 			}
 		}
 		break;
