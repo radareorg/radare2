@@ -473,6 +473,7 @@ sdb_files = [
   'shlr/sdb/src/ht_up.c',
   'shlr/sdb/src/ht_pp.c',
   'shlr/sdb/src/ht_pu.c',
+  'shlr/sdb/src/ht_su.c',
   'shlr/sdb/src/journal.c',
   'shlr/sdb/src/json.c',
   'shlr/sdb/src/lock.c',
