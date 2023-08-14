@@ -196,6 +196,14 @@
 #endif
 #endif
 
+#ifdef __aarch64__
+#define USE_128_MIX 0
+#elif DCWISS_HAVE_MUL128
+#define USE_128_MIX 1
+#else
+#define USE_128_MIX 0
+#endif
+
 /// `CWISS_ALIGN` is a cross-platform `alignas()`: specifically, MSVC doesn't
 /// quite believe in it.
 #if CWISS_IS_MSVC
@@ -1221,7 +1229,7 @@ CWISS_BEGIN
 CWISS_BEGIN_EXTERN
 
 static inline uint64_t CWISS_AbslHash_LowLevelMix(uint64_t v0, uint64_t v1) {
-#ifndef __aarch64__
+#if USE_128_MIX
 	// The default bit-mixer uses 64x64->128-bit multiplication.
 	CWISS_U128 p = CWISS_Mul128(v0, v1);
 	return p.hi ^ p.lo;
