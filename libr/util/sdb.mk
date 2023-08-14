@@ -18,6 +18,7 @@ SDB_OBJS+=ht_uu.o
 SDB_OBJS+=ht_up.o
 SDB_OBJS+=ht_pp.o
 SDB_OBJS+=ht_pu.o
+SDB_OBJS+=ht_su.o
 SDB_OBJS+=ht.o
 SDB_OBJS+=json.o
 SDB_OBJS+=text.o

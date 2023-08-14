@@ -930,8 +930,7 @@ static RList* patch_relocs(RBinFile *bf) {
 	if (!(ret = r_list_newf ((RListFree)free))) {
 		return NULL;
 	}
-	HtUUOptions opt = { 0 };
-	if (!(relocs_by_sym = ht_uu_new_opt (&opt))) {
+	if (!(relocs_by_sym = ht_uu_new0 ())) {
 		r_list_free (ret);
 		return NULL;
 	}

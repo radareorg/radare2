@@ -2187,8 +2187,7 @@ R_API int r_core_print_bb_gml(RCore *core, RAnalFunction *fcn) {
 		return false;
 	}
 	int id = 0;
-	HtUUOptions opt = {0};
-	HtUU *ht = ht_uu_new_opt (&opt);
+	HtUU *ht = ht_uu_new0 ();
 
 	r_cons_printf ("graph\n[\n" "hierarchic 1\n" "label \"\"\n" "directed 1\n");
 

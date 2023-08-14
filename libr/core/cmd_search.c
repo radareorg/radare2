@@ -1185,8 +1185,7 @@ static RList *construct_rop_gadget(RCore *core, ut64 addr, ut8 *buf, int buflen,
 	int grep_find;
 	int search_hit;
 	char *rx = NULL;
-	HtUUOptions opt = {0};
-	HtUU *localbadstart = ht_uu_new_opt (&opt);
+	HtUU *localbadstart = ht_uu_new0 ();
 	int count = 0;
 
 	if (grep) {
@@ -1560,8 +1559,7 @@ static int r_core_search_rop(RCore *core, RInterval search_itv, int opt, const c
 	r_cons_break_push (NULL, NULL);
 
 	r_list_foreach (param->boundaries, itermap, map) {
-		HtUUOptions opt = {0};
-		HtUU *badstart = ht_uu_new_opt (&opt);
+		HtUU *badstart = ht_uu_new0 ();
 		if (!r_itv_overlap (search_itv, map->itv)) {
 			continue;
 		}
