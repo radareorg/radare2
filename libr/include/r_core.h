@@ -209,6 +209,29 @@ typedef struct r_core_visual_t {
 	RCoreVisualMode printidx;
 	RList *tabs;
 	int tab;
+	bool textedit_mode;
+	int obs;
+	bool __ime;
+	int __nib;
+	bool __imes;
+	int blocksize;
+	bool autoblocksize;
+	int disMode;
+	int hexMode;
+	int printMode;
+	bool snowMode;
+	RList *snows;
+	int color;
+	int zoom;
+	int currentFormat;
+	int current0format;
+	char numbuf[32];
+	int numbuf_i;
+	bool splitView;
+	ut64 splitPtr;
+	int current3format;
+	int current4format;
+	int current5format;
 } RCoreVisual;
 
 typedef struct {
