@@ -211,9 +211,9 @@ typedef struct r_core_visual_t {
 	int tab;
 	bool textedit_mode;
 	int obs;
-	bool __ime;
-	int __nib;
-	bool __imes;
+	bool ime;
+	bool imes;
+	int nib;
 	int blocksize;
 	bool autoblocksize;
 	int disMode;
@@ -232,6 +232,10 @@ typedef struct r_core_visual_t {
 	int current3format;
 	int current4format;
 	int current5format;
+	RConfigHold *hold;  // XXX should be a tab-specific var
+	ut64 oldpc;
+	ut64 oseek;
+	char debugstr[512];
 } RCoreVisual;
 
 typedef struct {

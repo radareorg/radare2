@@ -3039,9 +3039,9 @@ static void core_visual_init(RCoreVisual *visual) {
 	visual->printidx = 0;
 	visual->textedit_mode = true;
 	visual->obs = 0;
-	visual->__ime = false;
-	visual->__nib = -1;
-	visual->__imes = false;
+	visual->ime = false;
+	visual->imes = false;
+	visual->nib = -1;
 	visual->blocksize = 0;
 	visual->autoblocksize = true;
 	visual->disMode = 0;
@@ -3060,6 +3060,10 @@ static void core_visual_init(RCoreVisual *visual) {
 	visual->current3format = 0;
 	visual->current4format = 0;
 	visual->current5format = 0;
+	visual->hold = NULL;
+	visual->oldpc = 0;
+	visual->oseek = UT64_MAX;
+	memset (visual->debugstr, 0, sizeof (char[512]));
 }
 
 R_API bool r_core_init(RCore *core) {
