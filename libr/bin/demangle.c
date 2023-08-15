@@ -4,6 +4,17 @@
 #include "i/private.h"
 #include <cxx/demangle.h>
 
+typedef char *(*Demangle)(const char *);
+
+static inline void print_plugin_when_demangle_is_supported(RBinSession *bs, void *user) {
+	RBin *bin = user;
+	Demangle demangle = R_UNWRAP3 (bs, plugin, demangle);
+	if (demangle) {
+		bin->cb_printf ("%s\n", bs->plugin->name);
+	}
+}
+
+
 R_API void r_bin_demangle_list(RBin *bin) {
 	const char *langs[] = {
 		"c++",
@@ -18,8 +29,6 @@ R_API void r_bin_demangle_list(RBin *bin) {
 		"swift",
 		NULL
 	};
-	RBinPlugin *plugin;
-	RListIter *it;
 	int i;
 	if (!bin) {
 		return;
@@ -27,21 +36,16 @@ R_API void r_bin_demangle_list(RBin *bin) {
 	for (i = 0; langs[i]; i++) {
 		bin->cb_printf ("%s\n", langs[i]);
 	}
-	r_list_foreach (bin->plugins, it, plugin) {
-		if (plugin->demangle) {
-			bin->cb_printf ("%s\n", plugin->name);
-		}
-	}
+
+	r_bin_plugin_foreach (bin, print_plugin_when_demangle_is_supported, bin);
 }
 
 R_API char *r_bin_demangle_plugin(RBin *bin, const char *name, const char *str) {
-	RBinPlugin *plugin;
-	RListIter *it;
 	if (bin && name && str) {
-		r_list_foreach (bin->plugins, it, plugin) {
-			if (plugin->demangle && !strncmp (plugin->name, name, strlen (plugin->name))) {
-				return plugin->demangle (str);
-			}
+		RBinSession *bs = r_bin_get_binsession_by_name(bin, name);
+		Demangle demangle = R_UNWRAP3 (bs, plugin, demangle);
+		if (demangle) {
+			return demangle (str);
 		}
 	}
 	return NULL;

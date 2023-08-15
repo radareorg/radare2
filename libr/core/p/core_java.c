@@ -520,6 +520,8 @@ static int r_cmd_java_reload_bin_from_buf(RCore *core, RBinJavaObj *obj, ut8 *bu
 	}
 	int res = r_bin_java_load_bin (obj, buffer, len);
 
+#if 0
+	// XXX wtf?
 	if (res == true) {
 		//RBinPlugin *cp = NULL;
 		RBinPlugin *tmp;
@@ -535,6 +537,7 @@ static int r_cmd_java_reload_bin_from_buf(RCore *core, RBinJavaObj *obj, ut8 *bu
 		// and parse the file
 		//if (cp) r_bin_update_items (core->bin, cp);
 	}
+#endif
 	return res;
 }
 

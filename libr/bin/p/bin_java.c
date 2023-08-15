@@ -14,7 +14,7 @@ static R_TH_LOCAL Sdb *DB = NULL;
 static void add_bin_obj_to_sdb(RBinJavaObj *bin);
 static int add_sdb_bin_obj(const char *key, RBinJavaObj *bin_obj);
 
-static int init(void *user) {
+static int init(RBinSession *bs, void *user) {
 	R_LOG_DEBUG ("Calling plugin init = %d", DB? 1: 0);
 	if (!DB) {
 		R_LOG_DEBUG ("plugin DB beeing initted");
@@ -25,7 +25,7 @@ static int init(void *user) {
 	return 0;
 }
 
-static int fini(void *user) {
+static int fini(RBinSession *bs, void *user) {
 	R_LOG_DEBUG ("Calling plugin fini = %d", DB? 1: 0);
 	if (!DB) {
 		IFDBG_BIN_JAVA eprintf ("plugin DB already uninited.\n");

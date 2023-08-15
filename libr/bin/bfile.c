@@ -532,19 +532,27 @@ R_IPI RBinFile *r_bin_file_new(RBin *bin, const char *file, ut64 file_sz, int ra
 }
 
 static RBinPlugin *get_plugin_from_buffer(RBin *bin, RBinFile *bf, const char *pluginname, RBuffer *buf) {
-	RBinPlugin *plugin = bin->force? r_bin_get_binplugin_by_name (bin, bin->force): NULL;
+	RBinSession *session = bin->force? r_bin_get_binsession_by_name (bin, bin->force): NULL;
+	RBinPlugin *plugin = R_UNWRAP2 (session, plugin);
 	if (plugin) {
 		return plugin;
 	}
-	plugin = pluginname? r_bin_get_binplugin_by_name (bin, pluginname): NULL;
+
+	session = pluginname? r_bin_get_binsession_by_name (bin, pluginname): NULL;
+	plugin = R_UNWRAP2 (session, plugin);
 	if (plugin) {
 		return plugin;
 	}
-	plugin = r_bin_get_binplugin_by_buffer (bin, bf, buf);
+
+	session = r_bin_get_binsession_by_buffer (bin, bf, buf);
+	plugin = R_UNWRAP2 (session, plugin);
 	if (plugin) {
 		return plugin;
 	}
-	return r_bin_get_binplugin_by_name (bin, "any");
+
+	session = r_bin_get_binsession_by_name (bin, "any");
+	return R_UNWRAP2 (session, plugin);
+
 }
 
 R_API bool r_bin_file_object_new_from_xtr_data(RBin *bin, RBinFile *bf, ut64 baseaddr, ut64 loadaddr, RBinXtrData *data) {

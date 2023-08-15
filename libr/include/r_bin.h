@@ -390,6 +390,13 @@ typedef struct r_bin_create_options_t {
 	int bits;
 } RBinCreateOptions;
 
+typedef struct r_bin_session_t {
+	struct r_bin_plugin_t *plugin;
+	void *plugin_data;
+} RBinSession;
+
+R_VEC_FORWARD_DECLARE(RVecBinPluginSession);
+
 struct r_bin_t {
 	const char *file;
 	RBinFile *cur; // TODO: deprecate
@@ -406,7 +413,7 @@ struct r_bin_t {
 	bool strings_nofp; // move to options struct passed instead of min, dump raw on every getstrings call
 	Sdb *sdb;
 	RIDStorage *ids;
-	RList/*<RBinPlugin>*/ *plugins;
+	RVecBinPluginSession *plugins;
 	RList/*<RBinXtrPlugin>*/ *binxtrs;
 	RList/*<RBinLdrPlugin>*/ *binldrs;
 	RList/*<RBinFile>*/ *binfiles;
@@ -506,13 +513,14 @@ R_API RBinTrycatch *r_bin_trycatch_new(ut64 source, ut64 from, ut64 to, ut64 han
 R_API void r_bin_trycatch_free(RBinTrycatch *tc);
 
 typedef struct r_bin_plugin_t {
+	// R2_590 RPluginMeta
 	char *name;
 	char *desc;
 	char *author;
 	char *version;
 	char *license;
-	int (*init)(void *user);
-	int (*fini)(void *user);
+	int (*init)(RBinSession *s, void *user);
+	int (*fini)(RBinSession *s, void *user);
 	Sdb * (*get_sdb)(RBinFile *obj);
 	bool (*load_buffer)(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb);
 	ut64 (*size)(RBinFile *bin); // return ut64 maybe? meh
@@ -561,7 +569,6 @@ typedef struct r_bin_plugin_t {
 } RBinPlugin;
 
 typedef void (*RBinSymbollCallback)(RBinObject *obj, void *symbol);
-
 
 typedef struct r_bin_class_t {
 	char *name;
@@ -734,8 +741,11 @@ R_API bool r_bin_xtr_add(RBin *bin, RBinXtrPlugin *foo);
 R_API bool r_bin_ldr_add(RBin *bin, RBinLdrPlugin *foo);
 R_API void r_bin_list(RBin *bin, PJ *pj, int format);
 R_API bool r_bin_list_plugin(RBin *bin, const char *name, PJ *pj, int json);
-R_API RBinPlugin *r_bin_get_binplugin_by_buffer(RBin *bin, RBinFile *bf, RBuffer *buf);
+R_API RBinSession *r_bin_get_binsession_by_buffer(RBin *bin, RBinFile *bf, RBuffer *buf);
+R_API RBinSession *r_bin_get_binsession_by_name(RBin *bin, const char *name);
 R_API void r_bin_force_plugin(RBin *bin, const char *pname);
+typedef void (*BinPluginForeachCallback)(RBinSession *, void *);
+R_API void r_bin_plugin_foreach(RBin *bin, BinPluginForeachCallback callback, void *user);
 
 // get/set various bin information
 R_API ut64 r_bin_get_baddr(RBin *bin);

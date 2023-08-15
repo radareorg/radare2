@@ -366,7 +366,7 @@ static void headers(RBinFile *bf) {
 	bf->rbin->cb_printf ("%s\n", s);
 }
 
-static int fini(void *user) {
+static int fini(RBinSession *bs, void *user) {
 	RBinFile *bf = (RBinFile*)user;
 	if (bf && bf->bo && bf->bo->bin_obj) {
 		s390user *su = bf->bo->bin_obj;
@@ -380,15 +380,15 @@ RBinPlugin r_bin_plugin_s390 = {
 	.desc = "s390 Load Module parser",
 	.license = "LGPL3",
 	.author = "Jose Antonio Romero",
-	.load_buffer = &load_buffer,
-	.check_buffer = &check_buffer,
-	.baddr = &baddr,
-	.header = &headers,
-	.entries = &entries,
-	.sections = &sections,
-	.symbols = &symbols,
-	.info = &info,
-	.fini = &fini,
+	.load_buffer = load_buffer,
+	.check_buffer = check_buffer,
+	.baddr = baddr,
+	.header = headers,
+	.entries = entries,
+	.sections = sections,
+	.symbols = symbols,
+	.info = info,
+	.fini = fini,
 	.minstrlen = 3
 };
 

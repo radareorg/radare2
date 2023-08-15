@@ -27,6 +27,9 @@ R_LIB_VERSION (r_bin);
 #define R_BIN_LDR_STATIC_PLUGINS 0
 #endif
 
+static void session_fini(RBinSession *session);
+R_VEC_TYPE_WITH_FINI(RVecBinPluginSession, RBinSession, session_fini);
+
 static RBinPlugin *bin_static_plugins[] = { R_BIN_STATIC_PLUGINS, NULL };
 static RBinXtrPlugin *bin_xtr_static_plugins[] = { R_BIN_XTR_STATIC_PLUGINS, NULL };
 static RBinLdrPlugin *bin_ldr_static_plugins[] = { R_BIN_LDR_STATIC_PLUGINS, NULL };
@@ -369,34 +372,43 @@ R_API bool r_bin_open_io(RBin *bin, RBinFileOptions *opt) {
 	return res;
 }
 
-R_IPI RBinPlugin *r_bin_get_binplugin_by_name(RBin *bin, const char *name) {
-	RBinPlugin *plugin;
-	RListIter *it;
-
-	r_return_val_if_fail (bin && name, NULL);
-
-	r_list_foreach (bin->plugins, it, plugin) {
-		if (!strcmp (plugin->name, name)) {
-			return plugin;
-		}
+static int find_by_name(const RBinSession *s, const void *name_) {
+	const char *name = name_;
+	if (!strcmp (s->plugin->name, name)) {
+		return 0;
 	}
-	return NULL;
+	return 1;
 }
 
-R_API RBinPlugin *r_bin_get_binplugin_by_buffer(RBin *bin, RBinFile *bf, RBuffer *buf) {
-	RBinPlugin *plugin;
-	RListIter *it;
+R_API RBinSession *r_bin_get_binsession_by_name(RBin *bin, const char *name) {
+	r_return_val_if_fail (bin && name, NULL);
+	return RVecBinPluginSession_find (bin->plugins, (void*) name, find_by_name);
+}
 
-	r_return_val_if_fail (bin && buf, NULL);
+typedef struct {
+	RBinFile *bf;
+	RBuffer *buf;
+} FindByBufferState;
 
-	r_list_foreach (bin->plugins, it, plugin) {
-		if (plugin->check_buffer) {
-			if (plugin->check_buffer (bf, buf)) {
-				return plugin;
-			}
-		}
+static int find_by_buffer(const RBinSession *s, const void *user) {
+	const FindByBufferState *state = user;
+	if (s->plugin->check_buffer && s->plugin->check_buffer (state->bf, state->buf)) {
+		return 0;
 	}
-	return NULL;
+	return 1;
+}
+
+R_API RBinSession *r_bin_get_binsession_by_buffer(RBin *bin, RBinFile *bf, RBuffer *buf) {
+	r_return_val_if_fail (bin && buf, NULL);
+	FindByBufferState state = { .bf = bf, .buf = buf };
+	return RVecBinPluginSession_find (bin->plugins, (void*) &state, find_by_buffer);
+}
+
+R_API void r_bin_plugin_foreach(RBin *bin, BinPluginForeachCallback callback, void *user) {
+	RBinSession *bs;
+	R_VEC_FOREACH (bin->plugins, bs) {
+		callback (bs, user);
+	}
 }
 
 R_IPI RBinXtrPlugin *r_bin_get_xtrplugin_by_name(RBin *bin, const char *name) {
@@ -414,36 +426,51 @@ R_IPI RBinXtrPlugin *r_bin_get_xtrplugin_by_name(RBin *bin, const char *name) {
 	return NULL;
 }
 
-static void r_bin_plugin_free(RBinPlugin *p) {
-	if (p && p->fini) {
-		p->fini (NULL);
+static void session_fini(RBinSession *session) {
+	if (session->plugin->fini) {
+		// this callback should free the plugin_data
+		session->plugin->fini (session, NULL);
 	}
-	R_FREE (p);
+
+	R_FREE (session->plugin);
 }
 
-// rename to r_bin_plugin_add like the rest
-R_API bool r_bin_plugin_add(RBin *bin, RBinPlugin *foo) {
-	RListIter *it;
-	RBinPlugin *plugin;
+R_API bool r_bin_plugin_add(RBin *bin, RBinPlugin *bp) {
+	r_return_val_if_fail (bin && bp, false);
 
-	r_return_val_if_fail (bin && foo, false);
-
-	if (foo->init) {
-		foo->init (bin->user);
-	}
-	r_list_foreach (bin->plugins, it, plugin) {
-		if (!strcmp (plugin->name, foo->name)) {
+	RBinSession *session;
+	R_VEC_FOREACH (bin->plugins, session) {
+		if (!strcmp (session->plugin->name, bp->name)) {
 			return false;
 		}
 	}
-	plugin = R_NEW0 (RBinPlugin);
-	memcpy (plugin, foo, sizeof (RBinPlugin));
-	r_list_append (bin->plugins, plugin);
+
+	RBinPlugin *plugin = R_NEW0 (RBinPlugin);
+	if (!plugin) {
+		R_LOG_WARN ("Failed to allocate bin plugin");
+		return false;
+	}
+
+	RBinSession *new_session = RVecBinPluginSession_emplace_back (bin->plugins);
+	if (!new_session) {
+		free (plugin);
+		R_LOG_WARN ("Failed to allocate bin plugin session");
+		return false;
+	}
+
+	new_session->plugin_data = NULL;
+	new_session->plugin = plugin;
+	memcpy (new_session->plugin, bp, sizeof (RBinPlugin));
+
+	if (new_session->plugin->init) {
+		new_session->plugin->init (new_session, bin->user);
+	}
+
 	return true;
 }
 
 R_API bool r_bin_plugin_remove(RBin *bin, RBinPlugin *plugin) {
-	// XXX TODO
+	// XXX TODO cleanup session and plugin
 	return true;
 }
 
@@ -494,7 +521,7 @@ R_API void r_bin_free(RBin *bin) {
 		//r_bin_free_bin_files (bin);
 		r_list_free (bin->binfiles);
 		r_list_free (bin->binxtrs);
-		r_list_free (bin->plugins);
+		RVecBinPluginSession_free (bin->plugins);
 		r_list_free (bin->binldrs);
 		sdb_free (bin->sdb);
 		r_id_storage_free (bin->ids);
@@ -553,18 +580,18 @@ static void __printXtrPluginDetails(RBin *bin, RBinXtrPlugin *bx, int json) {
 }
 
 R_API bool r_bin_list_plugin(RBin *bin, const char* name, PJ *pj, int json) {
-	RListIter *it;
-	RBinPlugin *bp;
-	RBinXtrPlugin *bx;
-
 	r_return_val_if_fail (bin && name, false);
 
-	r_list_foreach (bin->plugins, it, bp) {
-		if (r_str_startswith (bp->name, name)) {
+	RBinSession *session;
+	R_VEC_FOREACH (bin->plugins, session) {
+		if (r_str_startswith (session->plugin->name, name)) {
 			continue;
 		}
-		return r_bin_print_plugin_details (bin, bp, pj, json);
+		return r_bin_print_plugin_details (bin, session->plugin, pj, json);
 	}
+
+	RBinXtrPlugin *bx;
+	RListIter *it;
 	r_list_foreach (bin->binxtrs, it, bx) {
 		if (r_str_startswith (bx->name, name)) {
 			continue;
@@ -579,13 +606,13 @@ R_API bool r_bin_list_plugin(RBin *bin, const char* name, PJ *pj, int json) {
 
 R_API void r_bin_list(RBin *bin, PJ *pj, int format) {
 	RListIter *it;
-	RBinPlugin *bp;
 	RBinXtrPlugin *bx;
 	RBinLdrPlugin *ld;
 
 	if (format == 'q') {
-		r_list_foreach (bin->plugins, it, bp) {
-			bin->cb_printf ("%s\n", bp->name);
+		RBinSession *session;
+		R_VEC_FOREACH (bin->plugins, session) {
+			bin->cb_printf ("%s\n", session->plugin->name);
 		}
 		r_list_foreach (bin->binxtrs, it, bx) {
 			bin->cb_printf ("%s\n", bx->name);
@@ -593,7 +620,9 @@ R_API void r_bin_list(RBin *bin, PJ *pj, int format) {
 	} else if (format) {
 		pj_o (pj);
 		pj_ka (pj, "bin");
-		r_list_foreach (bin->plugins, it, bp) {
+		RBinSession *session;
+		R_VEC_FOREACH (bin->plugins, session) {
+			RBinPlugin *bp = session->plugin;
 			pj_o (pj);
 			pj_ks (pj, "name", bp->name);
 			pj_ks (pj, "description", bp->desc);
@@ -621,7 +650,9 @@ R_API void r_bin_list(RBin *bin, PJ *pj, int format) {
 		pj_end (pj);
 		pj_end (pj);
 	} else {
-		r_list_foreach (bin->plugins, it, bp) {
+		RBinSession *session;
+		R_VEC_FOREACH (bin->plugins, session) {
+			RBinPlugin *bp = session->plugin;
 			bin->cb_printf ("bin  %-11s %s (%s) %s %s\n",
 				bp->name, bp->desc, r_str_get_fail (bp->license, "???"),
 				r_str_get (bp->version),
@@ -840,7 +871,7 @@ R_API RBin *r_bin_new(void) {
 	bin->filter_rules = UT64_MAX;
 	bin->sdb = sdb_new0 ();
 	bin->cb_printf = (PrintfCallback)printf;
-	bin->plugins = r_list_newf ((RListFree)r_bin_plugin_free);
+	bin->plugins = RVecBinPluginSession_new ();
 	bin->minstrlen = 0;
 	bin->strpurge = NULL;
 	bin->strenc = NULL;
@@ -1199,18 +1230,18 @@ R_API RBuffer *r_bin_create(RBin *bin, const char *p,
 
 	r_return_val_if_fail (bin && p && opt, NULL);
 
-	RBinPlugin *plugin = r_bin_get_binplugin_by_name (bin, p);
-	if (!plugin) {
+	RBinSession *session = r_bin_get_binsession_by_name (bin, p);
+	if (!session) {
 		R_LOG_WARN ("Cannot find RBin plugin named '%s'", p);
 		return NULL;
 	}
-	if (!plugin->create) {
+	if (!session->plugin->create) {
 		R_LOG_WARN ("RBin plugin '%s' does not implement \"create\" method", p);
 		return NULL;
 	}
 	codelen = R_MAX (codelen, 0);
 	datalen = R_MAX (datalen, 0);
-	return plugin->create (bin, code, codelen, data, datalen, opt);
+	return session->plugin->create (bin, code, codelen, data, datalen, opt);
 }
 
 R_API RBuffer *r_bin_package(RBin *bin, const char *type, const char *file, RList *files) {
