@@ -142,7 +142,7 @@ RIOMMapFileObj *r_io_def_mmap_create_new_file(RIO  *io, const char *filename, in
 }
 
 static bool r_io_def_mmap_check_default(const char *filename) {
-	r_return_val_if_fail (filename && *filename, false);
+	r_return_val_if_fail (filename, false);
 	if (r_str_startswith (filename, "file://")) {
 		filename += strlen ("file://");
 	}
@@ -265,7 +265,7 @@ static bool __plugin_open_default(RIO *io, const char *file, bool many) {
 
 // default open should permit opening
 static RIODesc *__open_default(RIO *io, const char *file, int perm, int mode) {
-	if (r_io_def_mmap_check_default (file)) {
+	if (*file && r_io_def_mmap_check_default (file)) {
 		return r_io_def_mmap_open (io, file, perm, mode);
 	}
 	return NULL;
