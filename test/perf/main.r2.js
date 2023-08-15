@@ -35,7 +35,10 @@ function parseLogs() {
 		}
 	}
 	const logs = [];
-	for (const kount of Object.keys (o)) {
+	const keys = Object.keys (o).sort((x)=> {
+		return (+x.count) - (+this.count);
+	});
+	for (const kount of keys) {
 		const run = o[kount];
 		let average = 0|0;
 		let total = 0|0;
@@ -77,12 +80,14 @@ console.log('<script src="https://d3js.org/d3.v3.min.js"></script>');
 console.log('<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.4/Chart.js"></script>');
 
 
-console.log("<body style='link:red;background-color:white;color:black;font-family:Verdana;font-size:1em'>");
+console.log("<body style='link:red;background-color:white;color:black;font-weight:bold;font-family:Verdana;font-size:1em'>");
 console.log("<h1>Radare2 Benchmark</h1>\n");
 console.log("<h3>Lower is Better</h3>\n");
 // console.log(JSON.stringify(logs, null, 2));
+console.log('<div style="position:absolute;right:0">');
 console.log('<canvas id="myChart" style="width:100%;max-width:600px"></canvas>');
 console.log('<canvas id="myChart2" style="width:100%;max-width:600px"></canvas>');
+console.log('</div>');
 const totals = logs.map((x) => x.total);
 const yvalues = '['+totals.reverse().join(',')+']';
 const averages = logs.map((x) => (11)*x.average);
@@ -115,7 +120,7 @@ function getdata(log, two, log2) {
 		if (two) {
 			const dk = log2data[k];
 			console.log(dk, num, "<br>");
-			const kolor = (dk > num)?"green": "red";
+			const kolor = (dk > num)?"80ff80": "#ff8080";
 			ret.push('<td style="background-color:'+kolor+'" title='+key+'>'+num+'</td>');
 		} else {
 			ret.push(num);
@@ -195,7 +200,7 @@ new Chart("myChart2", {
 `;
 console.log(msg);
 
-console.log("<table border=1>");
+console.log("<table style='background-color:#a0a0a0' border=1>");
 let line = "<tr style='background-color:#404040'>\n  ";
 line += "<td>count</td>";
 // line += "<td>commit</td>";
@@ -206,7 +211,7 @@ line += "<td>tests</td>";
 line += "</tr>";
 console.log(line);
 // todo add log.diff computing it with the aveage
-const logKeys = Object.keys(logs).sort();
+const logKeys = Object.keys(logs).sort((x) => x - this);
 for (let n = 0; n < logKeys.length; n++) {
 	const kount = logKeys[n];
 	const log = logs[kount];
@@ -215,7 +220,7 @@ for (let n = 0; n < logKeys.length; n++) {
 	let line = "<tr>";
 	// line += "<td>"+log.count+"</td>";
 	line += "<td><a href='https://github.com/radareorg/radare2/commit/"+log.commit+"'>"+log.count+"</a></td>";
-	var bg = log.diff > 10? "red": "green";
+	var bg = log.diff > 10? "#ff8080": "#80ff80";
 	line += "<td style='background-color:"+bg+"'>"+log.diff+"</td>";
 	line += "<td>"+log.total+"</td>";
 	line += "<td>"+log.average+"</td>";
@@ -225,8 +230,9 @@ for (let n = 0; n < logKeys.length; n++) {
 	for (let i = 0; i<lldata_a.length; i++) {
 		const ka = lldata_a[i] || 0;
 		const kb = lldata_b[i] || 0;
-		var bg = (ka <= kb)? "green": "red";
-		lldata.push('<td style="background-color:'+bg+'">'+ka+'</td>\n');
+		var bg = (ka <= kb)? "#80ff80": "#ff8080";
+		const title = log.tests[n];
+		lldata.push('<td title="'+title+'" style="background-color:'+bg+'">'+ka+'</td>\n');
 	}
 	line += lldata.join('');
 	line += "</tr>";
