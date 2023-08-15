@@ -42,8 +42,10 @@ use: $(TMP)/radare2 lint
 $(TMP)/radare2:
 	git clone https://github.com/radareorg/radare2 $(TMP)/radare2
 
+count=20
 world:
-	for a in `make lsa|head -n 20` ; do echo $$a ; sleep 1 ; make use r2=$$a ; make run r2=$$a ;  done
+	for a in `make lsa|head -n $(count)` ; do if [ -d tmp/radare2-$$a ]; then continue ; fi ; echo $$a ; sleep 1 ; make use r2=$$a ; make run r2=$$a ;  done
+# for a in `make lsa|head -n 20` ; do echo $$a ; sleep 1 ; make use r2=$$a ; make run r2=$$a ;  done
 
 ls:
 	@cd tmp && ls | grep radare2- |cut -d - -f 2
