@@ -20,13 +20,14 @@ r2:
 use: $(TMP)/radare2
 	if [ ! -d tmp/radare2-$(r2) ]; then git clone tmp/radare2 tmp/radare2-$(r2) && cd tmp/radare2-$(r2) && git reset --hard $(r2) ; fi
 	if [ -d tmp/radare2-$(r2) ]; then cd tmp/radare2-$(r2) && git log |head -n9  ; \
+	echo $(r2) > $(TMP)/radare2-$(r2)/commit.txt
 	git log|grep ^commit|wc -l | awk '{print $$1}' > ../radare2-$(r2)/count.txt ; fi
 	export CFLAGS=-Ofast && cd tmp/radare2-$(r2) && \
-		r2pm -r -- ./configure --with-syscapstone --prefix=$(PREFIX) --without-dylink --with-checks-level=0 > $(TMP)/configure.log 2>&1 && \
-		$(MAKE) -j > $(TMP)/build.log 2>&1
-	$(MAKE) -C tmp/radare2-$(r2) symstall > $(TMP)/install.log 2>&1
+		r2pm -r -- ./configure --with-syscapstone --prefix=$(PREFIX) --without-dylink --with-checks-level=0 > $(TMP)/radare2-$(r2)/configure.log 2>&1 && \
+		$(MAKE) -j > $(TMP)/radare2-$(r2)/build.log 2>&1
+	$(MAKE) -C tmp/radare2-$(r2) symstall > $(TMP)/radare2-$(r2)/install.log 2>&1
 	cp -f tmp/radare2-$(r2)/count.txt tmp/prefix/count.txt
-	echo $(r2) > tmp/prefix/commit.txt
+	cp -f tmp/radare2-$(r2)/commit.txt tmp/prefix/commit.txt
 
 $(TMP)/radare2:
 	git clone https://github.com/radareorg/radare2 $(TMP)/radare2
