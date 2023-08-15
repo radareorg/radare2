@@ -44,7 +44,10 @@ run:
 	r2r -o logs/$(CNT)-$(r2)-1.json -i ../db/perf
 	r2r -o logs/$(CNT)-$(r2)-2.json -i ../db/perf
 	r2r -o logs/$(CNT)-$(r2)-3.json -i ../db/perf
-	cd logs && r2 -qi ../main.r2.js --
+	$(MAKE) main
+
+main:
+	@cd logs && r2 -qi ../main.r2.js --
 
 .PHONY: all ls lsa html run use r2
 
