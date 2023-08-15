@@ -1,5 +1,5 @@
-r2=$(shell git log|head -n1|awk '{print $$2}')
-CNT=$(shell cat tmp/radare2-$(r2)/count.txt 2> /dev/null || cat tmp/prefix/count.txt || git log|grep ^commit|wc -l | awk '{print $$1}')
+r2=$(shell cat tmp/prefix/commit.txt 2> /dev/null || git log|head -n1|awk '{print $$2}')
+CNT=$(shell cat tmp/prefix/count.txt 2> /dev/null || cat tmp/prefix/count.txt || git log|grep ^commit|wc -l | awk '{print $$1}')
 TMP=$(shell pwd)/tmp
 PREFIX=$(TMP)/prefix
 
@@ -20,9 +20,11 @@ use: $(TMP)/radare2
 	if [ ! -d tmp/radare2-$(r2) ]; then git clone tmp/radare2 tmp/radare2-$(r2) && cd tmp/radare2-$(r2) && git reset --hard $(r2) ; fi
 	if [ -d tmp/radare2-$(r2) ]; then cd tmp/radare2-$(r2) && git log |head -n9  ; \
 	git log|grep ^commit|wc -l | awk '{print $$1}' > ../radare2-$(r2)/count.txt ; fi
-	r2pm -r $(MAKE) -C tmp/radare2-$(r2) -j
-	$(MAKE) -C tmp/radare2-$(r2) symstall
+	cd tmp/radare2-$(r2) && r2pm -r "./configure --prefix=$(PREFIX) --without-dylink --with-checks-level=0" && \
+	$(MAKE) -C tmp/radare2-$(r2) -j > $(TMP)/build.log 2>&1
+	$(MAKE) -C tmp/radare2-$(r2) symstall > $(TMP)/install.log 2>&1
 	cp -f tmp/radare2-$(r2)/count.txt tmp/prefix/count.txt
+	echo $(r2) > tmp/prefix/commit.txt
 
 $(TMP)/radare2:
 	git clone https://github.com/radareorg/radare2 $(TMP)/radare2
@@ -38,7 +40,9 @@ html:
 
 run:
 	mkdir -p logs
-	r2r -o logs/$(CNT)-$(r2).json -i ../db/perf
+	r2r -o logs/$(CNT)-$(r2)-1.json -i ../db/perf
+	r2r -o logs/$(CNT)-$(r2)-2.json -i ../db/perf
+	r2r -o logs/$(CNT)-$(r2)-3.json -i ../db/perf
 	cd logs && r2 -qi ../main.r2.js --
 
 .PHONY: all ls lsa html run use r2
