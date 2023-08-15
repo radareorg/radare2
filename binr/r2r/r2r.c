@@ -389,14 +389,19 @@ int main(int argc, char **argv) {
 			return -1;
 		}
 	} else {
-		const char *avi = argv[opt.ind];
-		if (!strcmp (avi, ".")) {
-			avi = cwd;
-			argv[opt.ind] = cwd;
+		bool dir_found = false;
+		if (opt.ind < argc) {
+			const char *avi = argv[opt.ind];
+			if (!strcmp (avi, ".")) {
+				avi = cwd;
+				argv[opt.ind] = cwd;
+			}
+			dir_found = (avi[0] != '.' || (*avi && !avi[1]))
+				? r2r_chdir_fromtest (avi)
+				: r2r_chdir (argv[0]);
+		} else {
+			dir_found = r2r_chdir (argv[0]);
 		}
-		bool dir_found = (opt.ind < argc && (avi[0] != '.' || (*avi && !avi[1])))
-			? r2r_chdir_fromtest (avi)
-			: r2r_chdir (argv[0]);
 		if (!dir_found) {
 			eprintf ("Cannot find db/ directory related to the given test.\n");
 			return -1;
