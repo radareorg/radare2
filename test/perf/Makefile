@@ -34,7 +34,7 @@ use: $(TMP)/radare2 lint
 		git log|grep ^commit|wc -l | awk '{print $$1}' > ../radare2-$(r2)/count.txt ; fi
 	export CFLAGS=-Ofast && cd tmp/radare2-$(r2) && \
 		r2pm -r -- ./configure --with-syscapstone --prefix=$(PREFIX) --without-dylink --with-checks-level=0 > $(TMP)/radare2-$(r2)/configure.log 2>&1 && \
-		r2pm -r $(MAKE) -j > $(TMP)/radare2-$(r2)/build.log 2>&1
+		time r2pm -r $(MAKE) -j > $(TMP)/radare2-$(r2)/build.log 2>&1
 	$(MAKE) -C tmp/radare2-$(r2) symstall > $(TMP)/radare2-$(r2)/install.log 2>&1
 	cp -f tmp/radare2-$(r2)/count.txt tmp/prefix/count.txt
 	cp -f tmp/radare2-$(r2)/commit.txt tmp/prefix/commit.txt
@@ -43,7 +43,7 @@ $(TMP)/radare2:
 	git clone https://github.com/radareorg/radare2 $(TMP)/radare2
 
 world:
-	for a in `make lsa|head -n 10` ; do echo $$a ; sleep 1 ; make use r2=$$a ; make run r2=$$a ;  done
+	for a in `make lsa|head -n 20` ; do echo $$a ; sleep 1 ; make use r2=$$a ; make run r2=$$a ;  done
 
 ls:
 	@cd tmp && ls | grep radare2- |cut -d - -f 2

@@ -37,12 +37,12 @@ function parseLogs() {
 	const logs = [];
 	for (const kount of Object.keys (o)) {
 		const run = o[kount];
-		let average = 0;
-		let total = 0;
+		let average = 0|0;
+		let total = 0|0;
 		for (let k of Object.keys(run.tests)) {
 			const tests = run.tests[k];
 			for (const t of tests) { // run.tests[k]) {
-				total += t.time_elapsed;
+				total += 0 | (t.time_elapsed / 1000);
 				if (average == 0) {
 					average = t.time_elapsed;
 				} else {
@@ -54,7 +54,7 @@ function parseLogs() {
 			count: kount,
 			total: total,
 			commit: run.commit,
-			average: average,
+			average: 0|(average / 1000),
 			tests: run.tests
 		});
 	}
@@ -62,24 +62,80 @@ function parseLogs() {
 		return (+x.count) - (+this.count);
 	});
 	// compute diff
-	logs.reverse();
-	for (let i = 0; i + 1 < logs.length; i++) {
+	for (let i = 1; i < logs.length; i++) {
 		const log = logs[i];
-		log.diff = log.total - logs[i+1].total;
+	//	console.log(logs[i].total, '-', logs[i-1].total);
+		log.diff = 0 | (log.total - logs[i-1].total);
 	}
+	logs.reverse();
 	return logs;
 }
 
 const logs = parseLogs();
 console.log("<html>");
-console.log("<body style='background-color:black;color:white;font-family:Verdana;font-size:1em'>");
+console.log('<script src="https://d3js.org/d3.v3.min.js"></script>');
+console.log('<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.4/Chart.js"></script>');
+
+
+console.log("<body style='link:red;background-color:white;color:black;font-family:Verdana;font-size:1em'>");
+console.log("<h1>Radare2 Benchmark</h1>\n");
+console.log("<h3>Lower is Better</h3>\n");
 // console.log(JSON.stringify(logs, null, 2));
+console.log('<canvas id="myChart" style="width:100%;max-width:600px"></canvas>');
+console.log('<canvas id="myChart2" style="width:100%;max-width:600px"></canvas>');
+const totals = logs.map((x) => x.total);
+const yvalues = '['+totals.reverse().join(',')+']';
+const averages = logs.map((x) => (4.5)*x.average);
+const avalues = '['+averages.reverse().join(',')+']';
+const xvalues = '[' + logs.map((x) => x.count).reverse().join(',')+']';
+const msg = `
+<script>
+const xValues = ${xvalues}; // [50,60,70,80,90,100,110,120,130,140,150];
+// const yValues = [7,8,8,9,9,9,10,11,14,14,15];
+const yValues = ${yvalues}; // [7,8,8,9,9,9,10,11,14,14,15];
+const aValues = ${avalues}; // [7,8,8,9,9,9,10,11,14,14,15];
+  new Chart("myChart", {
+  type: "line",
+  data: {
+    labels: xValues,
+    datasets: [{
+      label: 'total',
+      backgroundColor:"rgba(0,0,200,0.4)",
+      borderColor: "rgba(0,0,250,0.8)",
+      data: yValues
+    },{
+      label: 'average',
+      backgroundColor:"rgba(0,200,0,0.4)",
+      borderColor: "rgba(0,250,0,0.8)",
+      data: aValues
+    }]
+  },
+  options:{}
+});
+new Chart("myChart2", {
+  type: "line",
+  data: {
+    labels: xValues,
+    datasets: [{
+      label: 'time',
+      backgroundColor:"rgba(0,200,0,0.4)",
+      borderColor: "rgba(0,250,0,0.8)",
+      data: aValues
+    }]
+  },
+  options:{}
+});
+</script>
+`;
+console.log(msg);
+
 console.log("<table border=1>");
-let line = "<tr style='background-color:#404040'>";
+let line = "<tr style='background-color:#404040'>\n  ";
 line += "<td>count</td>";
 line += "<td>commit</td>";
 line += "<td>diff</td>";
-line += "<td>time</td>";
+line += "<td>total</td>";
+line += "<td>average</td>";
 line += "<td>tests</td>";
 line += "</tr>";
 console.log(line);
@@ -88,10 +144,11 @@ for (const kount of Object.keys(logs)) {
 	const log = logs[kount];
 	// console.log(JSON.stringify(log, null, 2));
 	let line = "<tr>";
-	console.log();
 	line += "<td>"+log.count+"</td>";
-	line += "<td>"+log.commit+"</td>";
-	line += "<td>"+log.diff+"</td>";
+	line += "<td><a href='https://github.com/radareorg/radare2/commit/"+log.commit+"'>"+log.commit+"</a></td>";
+	const bg = log.diff > 0? "red": "green";
+	line += "<td style='background-color:"+bg+"'>"+log.diff+"</td>";
+	line += "<td>"+log.total+"</td>";
 	line += "<td>"+log.average+"</td>";
 	line += "<td>"+Object.keys(log.tests).join('<br />')+"</td>";
 	line += "</tr>";
