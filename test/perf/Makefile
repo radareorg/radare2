@@ -15,7 +15,8 @@ r2:
 	tmp/prefix/bin/radare2 -v
 
 use: $(TMP)/radare2
-	if [ ! -d tmp/radare2-$(r2) ]; git clone tmp/radare2 tmp/radare2-$(r2) && cd tmp/radare2-$(r2) && git reset --hard $(r2) ; fi
+	if [ ! -d tmp/radare2-$(r2) ]; then git clone tmp/radare2 tmp/radare2-$(r2) && cd tmp/radare2-$(r2) && git reset --hard $(r2) ; fi
+	if [ -d tmp/radare2-$(r2) ]; then cd tmp/radare2-$(r2) && git log |head -n9 ; fi
 	r2pm -r $(MAKE) -C tmp/radare2-$(r2) -j
 	$(MAKE) -C tmp/radare2-$(r2) symstall
 
