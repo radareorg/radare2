@@ -72,10 +72,10 @@ function parseLogs() {
 
 const logs = parseLogs();
 console.log("<html>");
-console.log("<body style='background-color:black;color:white'>");
+console.log("<body style='background-color:black;color:white;font-family:Verdana;font-size:1em'>");
 // console.log(JSON.stringify(logs, null, 2));
 console.log("<table border=1>");
-let line = "<tr>";
+let line = "<tr style='background-color:#404040'>";
 line += "<td>count</td>";
 line += "<td>commit</td>";
 line += "<td>diff</td>";
