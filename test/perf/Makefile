@@ -1,5 +1,5 @@
 r2=$(shell git log|head -n1|awk '{print $$2}')
-CNT=$(shell cat tmp/radare2-$(r2)/count.txt 2> /dev/null || git log|grep ^commit|wc -l | awk '{print $$1}')
+CNT=$(shell cat tmp/radare2-$(r2)/count.txt 2> /dev/null || cat tmp/prefix/count.txt || git log|grep ^commit|wc -l | awk '{print $$1}')
 TMP=$(shell pwd)/tmp
 PREFIX=$(TMP)/prefix
 
@@ -10,15 +10,19 @@ all:
 	@echo "make ls        # list installed versions of r2"
 	@echo "make lsa       # list all/available versions of r2"
 	@echo "make lsa       # list all/available versions of r2"
+	@echo "make run       # run benchmarks testsuite with current r2"
+	@echo "make html      # generate index.html"
 
 r2:
 	tmp/prefix/bin/radare2 -v
 
 use: $(TMP)/radare2
 	if [ ! -d tmp/radare2-$(r2) ]; then git clone tmp/radare2 tmp/radare2-$(r2) && cd tmp/radare2-$(r2) && git reset --hard $(r2) ; fi
-	if [ -d tmp/radare2-$(r2) ]; then cd tmp/radare2-$(r2) && git log |head -n9 ; fi
+	if [ -d tmp/radare2-$(r2) ]; then cd tmp/radare2-$(r2) && git log |head -n9  ; \
+	git log|grep ^commit|wc -l | awk '{print $$1}' > ../radare2-$(r2)/count.txt ; fi
 	r2pm -r $(MAKE) -C tmp/radare2-$(r2) -j
 	$(MAKE) -C tmp/radare2-$(r2) symstall
+	cp -f tmp/radare2-$(r2)/count.txt tmp/prefix/count.txt
 
 $(TMP)/radare2:
 	git clone https://github.com/radareorg/radare2 $(TMP)/radare2
@@ -30,7 +34,7 @@ lsa:
 	@cd tmp/radare2 && git log |grep ^commit | awk '{print $$2}'
 
 html:
-	r2 -i index.r2.js -- > index.html
+	r2 -qi index.r2.js -- > index.html
 
 run:
 	mkdir -p logs
