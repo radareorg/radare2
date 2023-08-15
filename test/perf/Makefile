@@ -20,8 +20,9 @@ use: $(TMP)/radare2
 	if [ ! -d tmp/radare2-$(r2) ]; then git clone tmp/radare2 tmp/radare2-$(r2) && cd tmp/radare2-$(r2) && git reset --hard $(r2) ; fi
 	if [ -d tmp/radare2-$(r2) ]; then cd tmp/radare2-$(r2) && git log |head -n9  ; \
 	git log|grep ^commit|wc -l | awk '{print $$1}' > ../radare2-$(r2)/count.txt ; fi
-	cd tmp/radare2-$(r2) && r2pm -r "./configure --prefix=$(PREFIX) --without-dylink --with-checks-level=0" && \
-	$(MAKE) -C tmp/radare2-$(r2) -j > $(TMP)/build.log 2>&1
+	export CFLAGS=-Ofast && cd tmp/radare2-$(r2) && \
+		r2pm -r -- ./configure --prefix=$(PREFIX) --without-dylink --with-checks-level=0 && \
+		$(MAKE) -j > $(TMP)/build.log 2>&1
 	$(MAKE) -C tmp/radare2-$(r2) symstall > $(TMP)/install.log 2>&1
 	cp -f tmp/radare2-$(r2)/count.txt tmp/prefix/count.txt
 	echo $(r2) > tmp/prefix/commit.txt
