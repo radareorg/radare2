@@ -1,0 +1,13 @@
+NAME=count lines
+FILE=--
+CMDS=<<EOF
+100000?e hello~?
+100000?e hello~?
+100000?e hello~?
+EOF
+EXPECT=<<EOF
+100000
+100000
+100000
+EOF
+RUN

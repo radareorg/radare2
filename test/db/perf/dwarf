@@ -1,0 +1,9 @@
+NAME=dwarf test
+FILE=bins/elf/dwarf_rust_bubble
+CMDS=<<EOF
+CL~?
+EOF
+EXPECT=<<EOF
+59884
+EOF
+RUN

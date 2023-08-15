@@ -1,0 +1,20 @@
+NAME=macho loading
+FILE=bins/mach0/Mastodon
+CMDS=<<EOF
+izq~?
+EOF
+EXPECT=<<EOF
+4190
+EOF
+RUN
+
+NAME=macho nostrings
+FILE=bins/mach0/Mastodon
+ARGS=-ebin.strings=false
+CMDS=<<EOF
+izq~?
+EOF
+EXPECT=<<EOF
+0
+EOF
+RUN
