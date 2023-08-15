@@ -1,4 +1,5 @@
-r2=$(shell cat tmp/prefix/commit.txt 2> /dev/null || git log|head -n1|awk '{print $$2}')
+r2?=$(shell cat tmp/prefix/commit.txt 2> /dev/null || HEAD)
+#git log|head -n1|awk '{print $$2}')
 CNT=$(shell cat tmp/prefix/count.txt 2> /dev/null || cat tmp/prefix/count.txt || git log|grep ^commit|wc -l | awk '{print $$1}')
 TMP=$(shell pwd)/tmp
 PREFIX=$(TMP)/prefix
