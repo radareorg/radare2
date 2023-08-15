@@ -389,8 +389,13 @@ int main(int argc, char **argv) {
 			return -1;
 		}
 	} else {
-		bool dir_found = (opt.ind < argc && argv[opt.ind][0] != '.')
-			? r2r_chdir_fromtest (argv[opt.ind])
+		const char *avi = argv[opt.ind];
+		if (!strcmp (avi, ".")) {
+			avi = cwd;
+			argv[opt.ind] = cwd;
+		}
+		bool dir_found = (opt.ind < argc && (avi[0] != '.' || (*avi && !avi[1])))
+			? r2r_chdir_fromtest (avi)
 			: r2r_chdir (argv[0]);
 		if (!dir_found) {
 			eprintf ("Cannot find db/ directory related to the given test.\n");
@@ -1218,10 +1223,14 @@ static void interact_fix(R2RTestResultInfo *result, RPVector *fixup_results) {
 	R2RCmdTest *test = result->test->cmd_test;
 	R2RProcessOutput *out = result->proc_out;
 	if (test->expect.value && out->out) {
-		replace_cmd_kv_file (result->test->path, test->expect.line_begin, test->expect.line_end, "EXPECT", out->out, fixup_results);
+		replace_cmd_kv_file (result->test->path,
+			test->expect.line_begin, test->expect.line_end,
+			"EXPECT", out->out, fixup_results);
 	}
 	if (test->expect_err.value && out->err) {
-		replace_cmd_kv_file (result->test->path, test->expect_err.line_begin, test->expect_err.line_end, "EXPECT_ERR", out->err, fixup_results);
+		replace_cmd_kv_file (result->test->path,
+			test->expect_err.line_begin, test->expect_err.line_end,
+			"EXPECT_ERR", out->err, fixup_results);
 	}
 }
 
