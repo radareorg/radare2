@@ -1,0 +1,3 @@
+# Performance Suite
+
+Run `make`
