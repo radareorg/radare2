@@ -7,13 +7,15 @@ PREFIX=$(TMP)/prefix
 
 all: lint
 	@echo "Usage: make [action] [option=value]"
-	@echo "make r2        # get version of current r2"
-	@echo "make use r2=x  # build and install new r2 ($(r2))"
-	@echo "make ls        # list installed versions of r2"
-	@echo "make lsa       # list all/available versions of r2"
-	@echo "make lsa       # list all/available versions of r2"
-	@echo "make run       # run benchmarks testsuite with current r2"
-	@echo "make html      # generate index.html"
+	@echo "make r2             # get version of current r2"
+	@echo "make use r2=x       # build and install new r2 ($(r2))"
+	@echo "make ls             # list installed versions of r2"
+	@echo "make lsa            # list all/available versions of r2"
+	@echo "make lsa            # list all/available versions of r2"
+	@echo "make run            # run benchmarks testsuite with current r2"
+	@echo "make html           # generate index.html"
+	@echo "make world count=10 # build the last 10 commits from r2"
+	@echo "make force-world    # like 'world', but ignores if logs are generated"
 
 lint:
 ifeq ($(r2),)
@@ -45,7 +47,9 @@ $(TMP)/radare2:
 count=20
 world:
 	for a in `make lsa|head -n $(count)` ; do if [ -d tmp/radare2-$$a ]; then continue ; fi ; echo $$a ; sleep 1 ; make use r2=$$a ; make run r2=$$a ;  done
-# for a in `make lsa|head -n 20` ; do echo $$a ; sleep 1 ; make use r2=$$a ; make run r2=$$a ;  done
+
+force-world:
+	for a in `make lsa|head -n $(count)` ; do echo $$a ; sleep 1 ; make use r2=$$a ; make run r2=$$a ;  done
 
 ls:
 	@cd tmp && ls | grep radare2- |cut -d - -f 2

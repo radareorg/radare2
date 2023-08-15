@@ -119,7 +119,7 @@ function getdata(log, two, log2) {
 		const num = 0 | (o[key] / 1000);
 		if (two) {
 			const dk = log2data[k];
-			console.log(dk, num, "<br>");
+			//console.log(dk, num, "<br>");
 			const kolor = (dk > num)?"80ff80": "#ff8080";
 			ret.push('<td style="background-color:'+kolor+'" title='+key+'>'+num+'</td>');
 		} else {
@@ -200,8 +200,8 @@ new Chart("myChart2", {
 `;
 console.log(msg);
 
-console.log("<table style='background-color:#a0a0a0' border=1>");
-let line = "<tr style='background-color:#404040'>\n  ";
+console.log("<table style='background-color:#a0a0a0;color:black' border=1>");
+let line = "<tr style='background-color:#404040;color:white'>\n  ";
 line += "<td>count</td>";
 // line += "<td>commit</td>";
 line += "<td>diff</td>";
@@ -210,6 +210,9 @@ line += "<td>average</td>";
 line += "<td>tests</td>";
 line += "</tr>";
 console.log(line);
+function gettitle(log, i) {
+	return Object.keys(log.tests).sort()[i];
+}
 // todo add log.diff computing it with the aveage
 const logKeys = Object.keys(logs).sort((x) => x - this);
 for (let n = 0; n < logKeys.length; n++) {
@@ -231,7 +234,8 @@ for (let n = 0; n < logKeys.length; n++) {
 		const ka = lldata_a[i] || 0;
 		const kb = lldata_b[i] || 0;
 		var bg = (ka <= kb)? "#80ff80": "#ff8080";
-		const title = log.tests[n];
+		const title = gettitle(log, i);
+//		console.log(JSON.stringify(logs[kount]));
 		lldata.push('<td title="'+title+'" style="background-color:'+bg+'">'+ka+'</td>\n');
 	}
 	line += lldata.join('');
