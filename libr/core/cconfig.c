@@ -3461,6 +3461,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETICB ("anal.from", -1, (RConfigCallback)&cb_anal_from, "lower limit on the address range for analysis");
 	SETICB ("anal.to", -1, (RConfigCallback)&cb_anal_from, "upper limit on the address range for analysis");
 	n = NODECB ("anal.in", "io.maps.x", &cb_searchin); // TODO: use io.sections.x seems to break db/anal/calls.. why?
+	n = NODECB ("anal.in", "bin.ormaps.x", &cb_searchin); // R2R db/anal/calls
 	SETDESC (n, "specify search boundaries for analysis");
 	SETOPTIONS (n, "raw", "block",
 		"bin.segment", "bin.segments", "bin.segments.x", "bin.segments.r", "bin.section", "bin.sections", "bin.sections.rwx", "bin.sections.r", "bin.sections.rw", "bin.sections.rx", "bin.sections.wx", "bin.sections.x",
