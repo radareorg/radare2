@@ -465,6 +465,7 @@ include_files = [
   'include/r_types_overflow.h',
   'include/r_util.h',
   'include/r_vector.h',
+  'include/r_vec.h',
 ]
 install_headers(include_files, install_dir: r2_incdir)
 

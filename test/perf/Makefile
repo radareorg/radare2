@@ -4,8 +4,9 @@ r2?=$(shell cat tmp/prefix/commit.txt 2> /dev/null || (cd tmp/radare2 && git log
 CNT=$(shell cat tmp/prefix/count.txt 2> /dev/null || (cd tmp/radare2 && git log|grep ^commit|wc -l | awk '{print $$1}'))
 TMP=$(shell pwd)/tmp
 PREFIX=$(TMP)/prefix
+SO_EXT=$(shell r2 -H R2_LIBEXT)
 
-all: lint
+all: lint mem.$(SO_EXT)
 	@echo "Usage: make [action] [option=value]"
 	@echo "make r2             # get version of current r2"
 	@echo "make use r2=x       # build and install new r2 ($(r2))"
@@ -16,6 +17,10 @@ all: lint
 	@echo "make html           # generate index.html"
 	@echo "make world count=10 # build the last 10 commits from r2"
 	@echo "make force-world    # like 'world', but ignores if logs are generated"
+
+mem.$(SO_EXT):
+	$(CC) -fPIC -shared mem.c -o mem.$(SO_EXT)
+# $(CC) -arch x86_64 -arch arm64 -fPIC -shared mem.c -o mem.$(SO_EXT)
 
 lint:
 ifeq ($(r2),)
