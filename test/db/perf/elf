@@ -1,0 +1,24 @@
+NAME=glibc symbol count
+FILE=bins/elf/glibc-2.34-39.el9.x86_64_libc.so.6
+CMDS=<<EOF
+isq~?
+EOF
+EXPECT=<<EOF
+10921
+EOF
+RUN
+
+NAME=glibc analysis
+FILE=bins/elf/glibc-2.34-39.el9.x86_64_libc.so.6
+CMDS=<<EOF
+afr
+s sym.__nss_lookup
+e anal.hasnext=true
+afr
+aaft
+aflc
+EOF
+EXPECT=<<EOF
+575
+EOF
+RUN

@@ -1,0 +1,39 @@
+NAME=simple type propagation
+FILE=bins/mach0/simple-retype
+CMDS=<<EOF
+af
+aaft
+afv
+?e ---
+pdf
+EOF
+EXPECT=<<EOF
+arg int64_t argc @ sp+0x40
+var char * ptr @ sp+0x8
+var int64_t var_10h @ sp+0x10
+---
+            ;-- section.0.__TEXT.__text:
+            ;-- entry0:
+            ;-- _main:
+            ;-- func.100003f68:
+            ;-- pc:
+/ 56: int main (int64_t argc);
+|           ; arg int64_t argc @ sp+0x40
+|           ; var char *ptr @ sp+0x8
+|           ; var int64_t var_10h @ sp+0x10
+|           0x100003f68      ff8300d1       sub sp, sp, 0x20           ; [00] -r-x section size 56 named 0.__TEXT.__text
+|           0x100003f6c      fd7b01a9       stp x29, x30, [sp, 0x10]
+|           0x100003f70      fd430091       add x29, var_10h
+|           0x100003f74      08000090       adrp x8, 0x100003000
+|           0x100003f78      08b13e91       add x8, x8, 0xfac
+|           0x100003f7c      e80700f9       str x8, [sp, 8]
+|           0x100003f80      e10740f9       ldr x1, [ptr]              ; 0x5 ; 5 ; const char *ptr
+|           0x100003f84      20008052       mov w0, 1
+|           0x100003f88      420180d2       mov x2, 0xa                ; size_t nbytes
+|           0x100003f8c      05000094       bl sym.imp.write           ; ssize_t write(int fd, const char *ptr, size_t nbytes)
+|           0x100003f90      00008052       mov w0, 0
+|           0x100003f94      fd7b41a9       ldp x29, x30, [var_10h]
+|           0x100003f98      ff830091       add sp, argc
+\           0x100003f9c      c0035fd6       ret
+EOF
+RUN
