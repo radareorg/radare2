@@ -107,7 +107,7 @@ install-dirs:
 
 INCFLS=sdb.h version.h cdb.h ht_uu.h ht_up.h ht_pp.h types.h heap.h
 INCFLS+=ls.h cdb_make.h buffer.h config.h ht.h dict.h set.h ht_inc.h
-INCFLS+=rangstr.h
+INCFLS+=rangstr.h asserts.h cwisstable.h gcc_stdatomic.h msvc_stdatomic.h
 INCFILES=$(addprefix include/sdb/,$(INCFLS))
 
 install: pkgconfig install-dirs

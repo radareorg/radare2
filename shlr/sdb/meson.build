@@ -120,6 +120,7 @@ if not meson.is_subproject()
     'include/sdb/ht.h',
     'include/sdb/set.h',
     'include/sdb/types.h',
+    'include/sdb/asserts.h',
     'include/sdb/cwisstable.h',
     'include/sdb/gcc_stdatomic.h',
     'include/sdb/msvc_stdatomic.h',
