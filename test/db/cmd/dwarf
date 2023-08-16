@@ -157,6 +157,16 @@ addr: 0x0000a24e
 EOF
 RUN
 
+NAME="Mach-O dSYM symbols (armv7)"
+FILE=bins/mach0/TestRTTI-armv7-dSYM
+CMDS=<<EOF
+is~main[1]
+EOF
+EXPECT=<<EOF
+0x00006376
+EOF
+RUN
+
 NAME="function info integration c++"
 FILE=bins/elf/dwarf3_many_comp_units.elf 
 CMDS=<<EOF

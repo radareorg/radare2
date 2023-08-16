@@ -3001,13 +3001,12 @@ static void _parse_symbols(RBinFile *bf, struct MACH0_(obj_t) *mo, HtPP *symcach
 		return;
 	}
 	/* parse dynamic symbol table */
-	symbols_count = mo->dysymtab.nextdefsym + mo->dysymtab.nlocalsym + mo->dysymtab.nundefsym;
+	symbols_count = mo->dysymtab.nextdefsym + mo->dysymtab.nlocalsym + mo->dysymtab.nundefsym + mo->nsymtab;
 	if (symbols_count == 0) {
 		ht_pp_free (hash);
 		return;
 	}
 
-	symbols_count += mo->nsymtab;
 	if (SZT_MUL_OVFCHK (symbols_count, 2 * sizeof (RBinSymbol))) {
 		// overflow may happen here
 		ht_pp_free (hash);
