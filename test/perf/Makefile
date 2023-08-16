@@ -19,7 +19,7 @@ all: lint mem.$(SO_EXT)
 	@echo "make force-world    # like 'world', but ignores if logs are generated"
 
 mem.$(SO_EXT):
-	$(CC) -fPIC -shared mem.c -o mem.$(SO_EXT)
+	$(CC) -fPIC -dynamiclib mem.c -o mem.$(SO_EXT)
 # $(CC) -arch x86_64 -arch arm64 -fPIC -shared mem.c -o mem.$(SO_EXT)
 
 lint:
