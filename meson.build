@@ -521,6 +521,10 @@ sdb_inc_files = [
   'shlr/sdb/include/sdb/set.h',
   'shlr/sdb/include/sdb/types.h',
   'shlr/sdb/include/sdb/version.h',
+  'shlr/sdb/include/sdb/asserts.h',
+  'shlr/sdb/include/sdb/cwisstable.h',
+  'shlr/sdb/include/sdb/gcc_stdatomic.h',
+  'shlr/sdb/include/sdb/msvc_stdatomic.h',
 ]
 install_headers(sdb_inc_files, install_dir: join_paths(r2_incdir, 'sdb'))
 
