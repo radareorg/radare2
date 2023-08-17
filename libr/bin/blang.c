@@ -199,7 +199,7 @@ static bool check_symbol_lang(RBinFile *bf, LangCheck *lc, RBinSymbol *sym, int 
 	return true;
 }
 
-/* This is about 10% of the loading time, optimize if possible */
+/* This is about 10% of the loading time, optimize checking when registering the symbols */
 R_API int r_bin_load_languages(RBinFile *bf) {
 	r_return_val_if_fail (bf && bf->bo && bf->bo->info, R_BIN_LANG_NONE);
 	RBinObject *bo = bf->bo;

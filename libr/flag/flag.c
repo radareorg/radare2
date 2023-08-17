@@ -142,6 +142,7 @@ static char *filter_item_name(const char *name) {
 }
 
 static void set_name(RFlagItem *item, char *name) {
+	r_return_if_fail (item && name);
 	free_item_name (item);
 	item->name = name;
 	free_item_realname (item);
@@ -169,31 +170,30 @@ static bool update_flag_item_offset(RFlag *f, RFlagItem *item, ut64 newoff, bool
 }
 
 static bool update_flag_item_name(RFlag *f, RFlagItem *item, const char *newname, bool force) {
-	if (!f || !item || !newname) {
-		return false;
-	}
+	r_return_val_if_fail (f && item && newname, false);
 	if (!force && (item->name == newname || (item->name && !strcmp (item->name, newname)))) {
 		return false;
 	}
 	char *fname = filter_item_name (newname);
-	if (!fname) {
-		return false;
+	if (fname) {
+		bool res = (item->name)
+			? ht_pp_update_key (f->ht_name, item->name, fname)
+			: ht_pp_insert (f->ht_name, fname, item);
+		if (res) {
+			set_name (item, fname);
+			R_DIRTY (f);
+			return true;
+		}
+		free (fname);
 	}
-	bool res = (item->name)
-		? ht_pp_update_key (f->ht_name, item->name, fname)
-		: ht_pp_insert (f->ht_name, fname, item);
-	if (res) {
-		set_name (item, fname);
-		R_DIRTY (f);
-		return true;
-	}
-	free (fname);
 	return false;
 }
 
 static void ht_free_flag(HtPPKv *kv) {
-	free (kv->key);
-	r_flag_item_free (kv->value);
+	if (kv) {
+		free (kv->key);
+		r_flag_item_free (kv->value);
+	}
 }
 
 static bool count_flags(RFlagItem *fi, void *user) {
@@ -280,18 +280,18 @@ R_API void r_flag_item_free(RFlagItem *item) {
 	free (item);
 }
 
-R_API RFlag *r_flag_free(RFlag *f) {
-	r_return_val_if_fail (f, NULL);
-	r_th_lock_free (f->lock);
-	f->lock = NULL;
-	r_skiplist_free (f->by_off);
-	ht_pp_free (f->ht_name);
-	sdb_free (f->tags);
-	r_spaces_fini (&f->spaces);
-	r_num_free (f->num);
-	r_list_free (f->zones);
-	free (f);
-	return NULL;
+R_API void r_flag_free(RFlag *f) {
+	if (f) {
+		r_th_lock_free (f->lock);
+		f->lock = NULL;
+		r_skiplist_free (f->by_off);
+		ht_pp_free (f->ht_name);
+		sdb_free (f->tags);
+		r_spaces_fini (&f->spaces);
+		r_num_free (f->num);
+		r_list_free (f->zones);
+		free (f);
+	}
 }
 
 static bool print_flag_name(RFlagItem *fi, void *user) {
