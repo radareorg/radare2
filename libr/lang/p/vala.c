@@ -129,11 +129,13 @@ static bool lang_vala_run(RLangSession *s, const char *code, int len) {
 }
 
 static RLangPlugin r_lang_plugin_vala = {
-	.name = "vala",
+	.meta = {
+		.name = "vala",
+		.author = "pancake",
+		.license = "LGPL",
+		.desc = "Vala language extension",
+	},
 	.ext = "vala",
-	.author = "pancake",
-	.license = "LGPL",
-	.desc = "Vala language extension",
 	.run = lang_vala_run,
 	.init = lang_vala_init,
 	.run_file = (void*)vala_run_file,

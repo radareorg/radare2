@@ -123,11 +123,13 @@ static bool lang_c_run(RLangSession *s, const char *code, int len) {
 	""
 
 static RLangPlugin r_lang_plugin_c = {
-	.name = "c",
+	.meta = {
+		.name = "c",
+		.desc = "C language extension",
+		.author = "pancake",
+		.license = "LGPL",
+	},
 	.ext = "c",
-	.desc = "C language extension",
-	.author = "pancake",
-	.license = "LGPL",
 	.example = r_lang_c_example,
 	.run = lang_c_run,
 	.init = (void*)lang_c_init,

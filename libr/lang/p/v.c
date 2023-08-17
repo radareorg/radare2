@@ -176,12 +176,14 @@ static bool lang_v_run(RLangSession *s, const char *code, int len) {
 	"}\n"
 
 static RLangPlugin r_lang_plugin_v = {
-	.name = "v",
+	.meta = {
+		.name = "v",
+		.author = "pancake",
+		.desc = "V language extension",
+		.license = "MIT",
+	},
 	.ext = "v",
-	.author = "pancake",
 	.example = r_lang_v_example,
-	.desc = "V language extension",
-	.license = "MIT",
 	.run = lang_v_run,
 	.run_file = (void*)lang_v_file,
 };

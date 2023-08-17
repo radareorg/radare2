@@ -37,10 +37,12 @@ static bool lang_lib_file_run(RLangSession *user, const char *file) {
 }
 
 static RLangPlugin r_lang_plugin_lib = {
-	.name = "lib",
-	.author = "pancake",
+	.meta = {
+		.name = "lib",
+		.author = "pancake",
+		.desc = "Load libs directly into r2",
+		.license = "LGPL",
+	},
 	.ext = R_LIB_EXT,
-	.desc = "Load libs directly into r2",
-	.license = "LGPL",
 	.run_file = lang_lib_file_run,
 };

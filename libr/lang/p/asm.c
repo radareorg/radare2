@@ -36,11 +36,13 @@ static bool lang_asm_run(RLangSession *s, const char *code, int len) {
 	".string \"?E Hello Asm\"\n"
 
 static RLangPlugin r_lang_plugin_asm = {
-	.name = "asm",
+	.meta = {
+		.name = "asm",
+		.desc = "rasm2 assembly language extension",
+		.author = "pancake",
+		.license = "LGPL",
+	},
 	.ext = "asm",
-	.desc = "rasm2 assembly language extension",
-	.author = "pancake",
-	.license = "LGPL",
 	.example = r_lang_asm_example,
 	.run = lang_asm_run,
 #if 0

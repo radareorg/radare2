@@ -34,13 +34,13 @@ typedef bool (*RLangPluginRun)(_RLangSession *s, const char *code, int len);
 typedef bool (*RLangPluginRunFile)(_RLangSession *s, const char *file);
 typedef int (*RLangPluginSetArgv)(_RLangSession *s, int argc, char **argv);
 
+#include <r_lib.h>
+
 typedef struct r_lang_plugin_t {
-	const char *name;
+	RPluginMeta meta;
+	// TODO add those into meta too?
 	const char *alias;
-	const char *desc;
-	const char *author;
 	const char *example;
-	const char *license;
 	const char **help;
 	const char *ext;
 	RLangPluginInit init;

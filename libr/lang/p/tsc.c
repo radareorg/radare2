@@ -128,20 +128,13 @@ static bool lang_tsc_init(RLangSession *ls) {
 }
 
 static RLangPlugin r_lang_plugin_tsc = {
-#if 0
 	// use RLibMeta for RLangPlugin too
 	.meta = {
-		.name = "tsc"
+		.name = "tsc",
 		.author = "pancake",
 		.license = "LGPL",
 		.desc = "Use #!tsc script.ts",
 	},
-#endif
-	.name = "tsc",
-	.ext = "ts",
-	.author = "pancake",
-	.license = "LGPL",
-	.desc = "Use #!tsc script.ts",
 	.init = lang_tsc_init,
 	.run = lang_tsc_run,
 	.run_file = (void*)lang_tsc_file,

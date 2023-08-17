@@ -702,10 +702,12 @@ static bool fini(RLangSession *s) {
 }
 
 static RLangPlugin r_lang_plugin_qjs = {
-	.name = "qjs",
+	.meta = {
+		.name = "qjs",
+		.license = "MIT",
+		.desc = "JavaScript extension language using QuickJS",
+	},
 	.ext = "qjs",
-	.license = "MIT",
-	.desc = "JavaScript extension language using QuickJS",
 	.run = lang_quickjs_run,
 	.run_file = lang_quickjs_file,
 	.init = init,

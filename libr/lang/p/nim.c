@@ -55,12 +55,14 @@ static bool lang_nim_init(RLangSession *s) {
 }
 
 static RLangPlugin r_lang_plugin_nim = {
-	.name = "nim",
+	.meta = {
+		.name = "nim",
+		.author = "pancake",
+		.license = "LGPL",
+		.desc = "Use #!nim script.nim",
+	},
 	.ext = "ts",
-	.author = "pancake",
-	.license = "LGPL",
 	.init = lang_nim_init,
-	.desc = "Use #!nim script.nim",
 	.run = lang_nim_run,
 	.run_file = (void*)lang_nim_file,
 };
