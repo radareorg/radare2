@@ -366,15 +366,14 @@ static void headers(RBinFile *bf) {
 	bf->rbin->cb_printf ("%s\n", s);
 }
 
-static int fini(void *user) {
-	RBinFile *bf = (RBinFile*)user;
+static void destroy(RBinFile *bf) {
 	if (bf && bf->bo && bf->bo->bin_obj) {
 		s390user *su = bf->bo->bin_obj;
 		r_strbuf_free (su->sb);
 		free (su);
 	}
-	return 0;
 }
+
 RBinPlugin r_bin_plugin_s390 = {
 	.name = "s390",
 	.desc = "s390 Load Module parser",
@@ -388,7 +387,7 @@ RBinPlugin r_bin_plugin_s390 = {
 	.sections = &sections,
 	.symbols = &symbols,
 	.info = &info,
-	.fini = &fini,
+	.destroy = &destroy,
 	.minstrlen = 3
 };
 

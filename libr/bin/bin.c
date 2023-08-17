@@ -415,9 +415,6 @@ R_IPI RBinXtrPlugin *r_bin_get_xtrplugin_by_name(RBin *bin, const char *name) {
 }
 
 static void r_bin_plugin_free(RBinPlugin *p) {
-	if (p && p->fini) {
-		p->fini (NULL);
-	}
 	R_FREE (p);
 }
 
@@ -428,9 +425,6 @@ R_API bool r_bin_plugin_add(RBin *bin, RBinPlugin *foo) {
 
 	r_return_val_if_fail (bin && foo, false);
 
-	if (foo->init) {
-		foo->init (bin->user);
-	}
 	r_list_foreach (bin->plugins, it, plugin) {
 		if (!strcmp (plugin->name, foo->name)) {
 			return false;
@@ -453,9 +447,6 @@ R_API bool r_bin_ldr_add(RBin *bin, RBinLdrPlugin *foo) {
 
 	r_return_val_if_fail (bin && foo, false);
 
-	if (foo->init) {
-		foo->init (bin->user);
-	}
 	// avoid duplicates
 	r_list_foreach (bin->binldrs, it, ldr) {
 		if (!strcmp (ldr->name, foo->name)) {
@@ -472,9 +463,6 @@ R_API bool r_bin_xtr_add(RBin *bin, RBinXtrPlugin *foo) {
 
 	r_return_val_if_fail (bin && foo, false);
 
-	if (foo->init) {
-		foo->init (bin->user);
-	}
 	// avoid duplicates
 	r_list_foreach (bin->binxtrs, it, xtr) {
 		if (!strcmp (xtr->name, foo->name)) {
