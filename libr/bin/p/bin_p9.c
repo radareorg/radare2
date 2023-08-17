@@ -17,7 +17,7 @@ static bool check_buffer(RBinFile *bf, RBuffer *buf) {
 	return r_bin_p9_get_arch (buf, &arch, &bits, &big_endian);
 }
 
-static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *b, ut64 loadaddr, Sdb *sdb) {
+static bool load_buffer(RBinFile *bf, RBuffer *b, ut64 loadaddr) {
 	if (!check_buffer (bf, b)) {
 		return false;
 	}
@@ -67,10 +67,7 @@ static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *b, ut64 loadaddr,
 		break;
 	}
 
-	if (bin_obj) {
-		*bin_obj = o;
-	}
-
+	bf->bo->bin_obj = o;
 	return true;
 }
 

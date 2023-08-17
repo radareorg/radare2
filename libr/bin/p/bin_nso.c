@@ -146,12 +146,12 @@ fail:
 	return false;
 }
 
-static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
+static bool load_buffer(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
 	r_return_val_if_fail (bf && buf, false);
 	const ut64 la = bf->loadaddr;
 	ut64 sz = 0;
 	const ut8 *bytes = r_buf_data (buf, &sz);
-	return load_bytes (bf, bin_obj, bytes, sz, la, bf->sdb);
+	return load_bytes (bf, bf->bo->bin_obj, bytes, sz, la, bf->sdb);
 }
 
 static RBinAddr *binsym(RBinFile *bf, int type) {

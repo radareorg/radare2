@@ -22,10 +22,10 @@ static bool check_buffer(RBinFile *bf, RBuffer *b) {
 	return false;
 }
 
-static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *b, ut64 loadaddr, Sdb *sdb) {
+static bool load_buffer(RBinFile *bf, RBuffer *b, ut64 loadaddr) {
 	r_buf_read_at (b, 0, (ut8*)&loaded_header, sizeof (loaded_header));
-	*bin_obj = &loaded_header;
-	return (*bin_obj);
+	bf->bo->bin_obj = &loaded_header;
+	return bf->bo->bin_obj;
 }
 
 static ut64 baddr(RBinFile *bf) {

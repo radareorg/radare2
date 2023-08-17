@@ -333,11 +333,11 @@ typedef struct r_bin_object_t {
 	int lang;
 	Sdb *kv;
 	HtUP *addr2klassmethod;
-	void *bin_obj; // internal pointer used by formats
+	void *bin_obj; // internal pointer used by formats... TODO: RENAME TO internal object or sthg
 	bool is_reloc_patched; // used to indicate whether relocations were patched or not
 } RBinObject;
 
-// XXX: RbinFile may hold more than one RBinObject
+// XXX: RbinFile may hold more than one RBinObject?
 /// XX curplugin == o->plugin
 typedef struct r_bin_file_t {
 	char *file;
@@ -506,15 +506,16 @@ R_API RBinTrycatch *r_bin_trycatch_new(ut64 source, ut64 from, ut64 to, ut64 han
 R_API void r_bin_trycatch_free(RBinTrycatch *tc);
 
 typedef struct r_bin_plugin_t {
+	// R2_590 - use RPluginMeta
 	char *name;
 	char *desc;
 	char *author;
 	char *version;
 	char *license;
-	int (*init)(void *user);
-	int (*fini)(void *user);
+	int (*init)(void *user); // unused?
+	int (*fini)(void *user); // unused?
 	Sdb * (*get_sdb)(RBinFile *obj);
-	bool (*load_buffer)(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb);
+	bool (*load_buffer)(RBinFile *bf, RBuffer *buf, ut64 laddr); // TODO: R2_590 - rename to load()
 	ut64 (*size)(RBinFile *bin); // return ut64 maybe? meh
 	void (*destroy)(RBinFile *bf);
 	bool (*check_buffer)(RBinFile *bf, RBuffer *buf);

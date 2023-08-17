@@ -1,17 +1,16 @@
-/* radare - LGPL - Copyright 2015-2019 - ampotos, pancake */
+/* radare - LGPL - Copyright 2015-2023 - ampotos, pancake */
 
-#include <r_types.h>
-#include <r_util.h>
 #include <r_lib.h>
 #include <r_bin.h>
 #include "omf/omf.h"
 
-static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *b, ut64 loadaddr, Sdb *sdb) {
+static bool load_buffer(RBinFile *bf, RBuffer *b, ut64 loadaddr) {
+	r_return_val_if_fail (bf && b, false);
 	ut64 size;
 	const ut8 *buf = r_buf_data (b, &size);
 	r_return_val_if_fail (buf, false);
-	*bin_obj = r_bin_internal_omf_load (buf, size);
-	return *bin_obj;
+	bf->bo->bin_obj = r_bin_internal_omf_load (buf, size);
+	return bf->bo->bin_obj != NULL;
 }
 
 static void destroy(RBinFile *bf) {

@@ -1,4 +1,4 @@
-/* radare2 - MIT - 2021 - pancake */
+/* radare2 - MIT - 2021-2023 - pancake */
 // https://en.wikipedia.org/wiki/OS/360_Object_File_Format
 
 #include <r_bin.h>
@@ -20,10 +20,9 @@ static bool check_buffer(RBinFile *bf, RBuffer *b) {
 	return true;
 }
 
-static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
-	OffObj *wo = R_NEW0 (OffObj);
-	r_return_val_if_fail (wo, false);
-	*bin_obj = wo;
+static bool load_buffer(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
+	r_return_val_if_fail (bf && buf, false);
+	bf->bo->bin_obj = R_NEW0 (OffObj);
 	return true;
 }
 

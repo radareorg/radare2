@@ -1,4 +1,4 @@
-/* radare - LGPL3 - Copyright 2016-2022 - c0riolis, x0urc3 */
+/* radare - LGPL3 - Copyright 2016-2023 - c0riolis, x0urc3 */
 
 #include <r_bin.h>
 #include "../format/pyc/pyc.h"
@@ -18,7 +18,7 @@ static bool check_buffer(RBinFile *bf, RBuffer *b) {
 	return false;
 }
 
-static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
+static bool load_buffer(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
 	return check_buffer (bf, buf);
 }
 

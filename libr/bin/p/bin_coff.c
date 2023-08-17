@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2014-2019 - Fedor Sakharov */
+/* radare - LGPL - Copyright 2014-2023 - Fedor Sakharov */
 
 #include <r_bin.h>
 #include <sdb/ht_uu.h>
@@ -15,9 +15,9 @@ static bool r_coff_is_stripped(struct r_bin_coff_obj *obj) {
 		COFF_FLAGS_TI_F_LNNO | COFF_FLAGS_TI_F_LSYMS));
 }
 
-static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
-	*bin_obj = r_bin_coff_new_buf (buf, bf->rbin->verbose);
-	return *bin_obj;
+static bool load_buffer(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
+	bf->bo->bin_obj = r_bin_coff_new_buf (buf, bf->rbin->verbose);
+	return bf->bo->bin_obj != NULL;
 }
 
 static void destroy(RBinFile *bf) {

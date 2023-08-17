@@ -76,7 +76,7 @@ static Sdb *get_sdb(RBinFile *bf) {
 	return ao? ao->kv: NULL;
 }
 
-static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
+static bool load_buffer(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
 	BootImageObj *bio = R_NEW0 (BootImageObj);
 	if (R_UNLIKELY (!bio)) {
 		return false;
@@ -91,8 +91,8 @@ static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadadd
 		free (bio);
 		return false;
 	}
-	sdb_ns_set (sdb, "info", bio->kv);
-	*bin_obj = bio;
+	sdb_ns_set (bf->sdb, "info", bio->kv);
+	bf->bo->bin_obj = bio;
 	return true;
 }
 

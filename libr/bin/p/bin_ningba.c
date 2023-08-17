@@ -1,4 +1,4 @@
-/* radare - LGPL - 2014-2019 - condret@runas-racer.com */
+/* radare - LGPL - 2014-2023 - condret@runas-racer.com */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -14,7 +14,7 @@ static bool check_buffer(RBinFile *bf, RBuffer *b) {
 	return !memcmp (lict, lic_gba, 156);
 }
 
-static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
+static bool load_buffer(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
 	return check_buffer (bf, buf);
 }
 

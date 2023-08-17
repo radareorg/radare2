@@ -19,7 +19,7 @@ static bool check_buffer(RBinFile *bf, RBuffer *b) {
 	return false;
 }
 
-static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
+static bool load_buffer(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
 	r_bin_xbe_obj_t *obj = R_NEW (r_bin_xbe_obj_t);
 	if (!obj) {
 		return false;
@@ -43,7 +43,7 @@ static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadadd
 		obj->ep_key = XBE_EP_RETAIL;
 		obj->kt_key = XBE_KP_RETAIL;
 	}
-	*bin_obj = obj;
+	bf->bo->bin_obj = obj;
 	return true;
 }
 

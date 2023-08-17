@@ -104,11 +104,11 @@ static bool check_buffer(RBinFile *bf, RBuffer *b) {
 	return true;
 }
 
-static bool load(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
+static bool load(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
 	struct r_bin_mz_obj_t *mz_obj = r_bin_mz_new_buf (buf);
 	if (mz_obj) {
-		sdb_ns_set (sdb, "info", mz_obj->kv);
-		*bin_obj = mz_obj;
+		sdb_ns_set (bf->sdb, "info", mz_obj->kv);
+		bf->bo->bin_obj = mz_obj;
 		return true;
 	}
 	return false;

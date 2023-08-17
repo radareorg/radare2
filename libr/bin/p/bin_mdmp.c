@@ -159,12 +159,12 @@ static RList* libs(RBinFile *bf) {
 	return ret;
 }
 
-static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
+static bool load_buffer(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
 	r_return_val_if_fail (buf, false);
 	struct r_bin_mdmp_obj *res = r_bin_mdmp_new_buf (buf);
 	if (res) {
-		sdb_ns_set (sdb, "info", res->kv);
-		*bin_obj = res;
+		sdb_ns_set (bf->sdb, "info", res->kv);
+		bf->bo->bin_obj = res;
 		return true;
 	}
 	return false;

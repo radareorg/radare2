@@ -56,13 +56,13 @@ static Sdb* get_sdb(RBinFile *bf) {
 	return eo? eo->kv: NULL;
 }
 
-static bool load_buffer(RBinFile *bf, void **bo, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
+static bool load_buffer(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
 	ut64 user_baddr = bf->user_baddr;
 	ELFOBJ *res = Elf_(new_buf) (buf, user_baddr, bf->rbin->verbose);
 	if (res) {
 	//	sdb_ns_set (sdb, "info", res->kv);
 		res->limit = bf->rbin->limit;
-		*bo= res;
+		bf->bo->bin_obj = res;
 		return true;
 	}
 	return false;

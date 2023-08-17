@@ -1920,7 +1920,7 @@ beach:
 	return result;
 }
 
-static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
+static bool load_buffer(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
 	RDyldCache *cache = R_NEW0 (RDyldCache);
 	if (!cache) {
 		return false;
@@ -1958,7 +1958,7 @@ static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadadd
 			swizzle_io_read (cache, bf->rbin->iob.io);
 		}
 	}
-	*bin_obj = cache;
+	bf->bo->bin_obj = cache;
 	return true;
 }
 

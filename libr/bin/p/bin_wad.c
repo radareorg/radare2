@@ -1,11 +1,11 @@
-/* radare - LGPL3 - 2021 - murphy */
+/* radare - LGPL3 - 2023 - murphy */
 
 #include <r_bin.h>
 #include <r_lib.h>
 #include "wad/wad.h"
 
 typedef struct {
-	Sdb *kv;
+	Sdb *kv; // we can just use bf->sdb
 	WADHeader hdr;
 	RBuffer *buf;
 } WadObj;
@@ -44,18 +44,21 @@ static bool check_buffer(RBinFile *bf, RBuffer *b) {
 	return true;
 }
 
-static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
+static bool load_buffer(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
 	WadObj *wo = R_NEW0 (WadObj);
 	r_return_val_if_fail (wo, false);
+#if 0
+	// we can just use bf->sdb in here
+	wad_header_load (wo, bf->sdb);
+#else
 	wo->kv = sdb_new0 ();
-	if (!wo->kv) {
-		free (wo);
-		return false;
+	if (wo->kv) {
+		wad_header_load (wo, wo->kv);
+		sdb_ns_set (bf->sdb, "info", wo->kv);
 	}
+#endif
 	wo->buf = r_buf_ref (buf);
-	wad_header_load (wo, wo->kv);
-	sdb_ns_set (sdb, "info", wo->kv);
-	*bin_obj = wo;
+	bf->bo->bin_obj = wo;
 	return true;
 }
 

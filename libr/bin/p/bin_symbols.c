@@ -250,7 +250,7 @@ static RCoreSymCacheElement *parse_dragons(RBinFile *bf, RBuffer *buf, int off, 
 	return r_coresym_cache_element_new (bf, buf, off + 16, bits, file_name);
 }
 
-static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
+static bool load_buffer(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
 #if 0
 	SYMBOLS HEADER
 
@@ -272,7 +272,7 @@ static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadadd
 	// 0 - magic check, version ...
 	SymbolsHeader sh = parseHeader (buf);
 	if (!sh.valid) {
-		eprintf ("Invalid headers\n");
+		R_LOG_ERROR ("Invalid symbols header");
 		return false;
 	}
 	SymbolsMetadata sm = parseMetadata (buf, 0x40);
@@ -288,7 +288,7 @@ static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadadd
 	}
 	RCoreSymCacheElement *element = parse_dragons (bf, buf, sm.addr + sm.size, sm.bits, file_name);
 	if (element) {
-		*bin_obj = element;
+		bf->bo->bin_obj = element;
 		return true;
 	}
 	free (file_name);

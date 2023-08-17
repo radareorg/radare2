@@ -1,8 +1,5 @@
-/* radare - LGPL - Copyright 2015-2018 - Dax89, pancake */
+/* radare - LGPL - Copyright 2015-2023 - Dax89, pancake */
 
-#include <string.h>
-#include <r_types.h>
-#include <r_lib.h>
 #include <r_bin.h>
 #include "../i/private.h"
 #include "psxexe/psxexe.h"
@@ -15,7 +12,7 @@ static bool check_buffer(RBinFile *bf, RBuffer *b) {
 	return false;
 }
 
-static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *b, ut64 loadaddr, Sdb *sdb) {
+static bool load_buffer(RBinFile *bf, RBuffer *b, ut64 loadaddr) {
 	return check_buffer (bf, b);
 }
 

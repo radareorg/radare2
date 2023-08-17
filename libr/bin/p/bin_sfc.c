@@ -31,7 +31,7 @@ static bool check_buffer(RBinFile *bf, RBuffer *b) {
 	return (cksum1 == (ut16)~cksum2);
 }
 
-static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *b, ut64 loadaddr, Sdb *sdb) {
+static bool load_buffer(RBinFile *bf, RBuffer *b, ut64 loadaddr) {
 	return check_buffer (bf, b);
 }
 

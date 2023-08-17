@@ -50,11 +50,11 @@ static inline RBinWasmExportEntry *find_export(RPVector *exports, ut8 kind, ut32
 	return n >= 0? vector_at (exports, n): NULL;
 }
 
-static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
+static bool load_buffer(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
 	r_return_val_if_fail (bf && buf && r_buf_size (buf) != UT64_MAX, false);
 
 	if (check_buffer (bf, buf)) {
-		*bin_obj = r_bin_wasm_init (bf, buf);
+		bf->bo->bin_obj = r_bin_wasm_init (bf, buf);
 		return true;
 	}
 	return false;

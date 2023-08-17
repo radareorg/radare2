@@ -39,7 +39,7 @@ static bool check_buffer(RBinFile *bf, RBuffer *b) {
 }
 
 // XXX b vs bf->buf
-static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *b, ut64 loadaddr, Sdb *sdb) {
+static bool load_buffer(RBinFile *bf, RBuffer *b, ut64 loadaddr) {
 	ut64 offset = 0;
 	struct r_bin_vsf_obj* res = NULL;
 	if (check_buffer (bf, bf->buf)) {
@@ -47,7 +47,7 @@ static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *b, ut64 loadaddr,
 		if (!(res = R_NEW0 (struct r_bin_vsf_obj))) {
 		    return false;
 		}
-		offset = r_offsetof(struct vsf_hdr, machine);
+		offset = r_offsetof (struct vsf_hdr, machine);
 		if (offset > bf->size) {
 			free (res);
 			return false;
@@ -63,13 +63,13 @@ static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *b, ut64 loadaddr,
 				free (res);
 				return false;
 			}
-			if (!strncmp (machine, _machines[i].name, strlen (_machines[i].name))) {
+			if (r_str_startswith (machine, _machines[i].name)) {
 				res->machine_idx = i;
 				break;
 			}
 		}
 		if (i >= MACHINES_MAX) {
-			eprintf ("Unsupported machine type\n");
+			R_LOG_WARN ("Unsupported machine type");
 			free (res);
 			return false;
 		}
@@ -100,16 +100,16 @@ static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *b, ut64 loadaddr,
 #undef CMP_MODULE
 			offset += module.length;
 			if (module.length == 0) {
-				eprintf ("Malformed VSF module with length 0\n");
+				R_LOG_ERROR ("Malformed VSF module with length 0");
 				break;
 			}
 		}
 	}
 	if (res) {
 		res->kv = sdb_new0 ();
-		sdb_ns_set (sdb, "info", res->kv);
+		sdb_ns_set (bf->sdb, "info", res->kv);
 	}
-	*bin_obj = res;
+	bf->bo->bin_obj = res;
 	return true;
 }
 
