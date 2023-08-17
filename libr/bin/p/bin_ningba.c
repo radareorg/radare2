@@ -7,15 +7,15 @@
 #include <string.h>
 #include "../format/nin/gba.h"
 
-static bool check_buffer(RBinFile *bf, RBuffer *b) {
+static bool check(RBinFile *bf, RBuffer *b) {
 	ut8 lict[156];
 	r_return_val_if_fail (b, false);
 	r_buf_read_at (b, 4, (ut8*)lict, sizeof (lict));
 	return !memcmp (lict, lic_gba, 156);
 }
 
-static bool load_buffer(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
-	return check_buffer (bf, buf);
+static bool load(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
+	return check (bf, buf);
 }
 
 static RList *entries(RBinFile *bf) {
@@ -86,8 +86,8 @@ RBinPlugin r_bin_plugin_ningba = {
 	.name = "ningba",
 	.desc = "Game Boy Advance format r_bin plugin",
 	.license = "LGPL3",
-	.load_buffer = &load_buffer,
-	.check_buffer = &check_buffer,
+	.load = &load,
+	.check = &check,
 	.entries = &entries,
 	.info = &info,
 	.sections = &sections,

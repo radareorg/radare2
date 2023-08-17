@@ -82,7 +82,7 @@ static ut64 baddr(RBinFile *bf) {
 	return S390_BADDR;
 }
 
-static bool check_buffer(RBinFile *bf, RBuffer *b) {
+static bool check(RBinFile *bf, RBuffer *b) {
 	ut8 buf[8] = {0};
 	if (r_buf_read_at (b, 0, buf, sizeof (buf)) != sizeof (buf)) {
 		return false;
@@ -96,8 +96,8 @@ static bool check_buffer(RBinFile *bf, RBuffer *b) {
 	return false;
 }
 
-static bool load_buffer(RBinFile *bf, RBuffer *b, ut64 loadaddr) {
-	bool res = check_buffer (bf, b);
+static bool load(RBinFile *bf, RBuffer *b, ut64 loadaddr) {
+	bool res = check (bf, b);
 	if (res) {
 		s390user *su = R_NEW0 (s390user);
 		if (su) {
@@ -379,8 +379,8 @@ RBinPlugin r_bin_plugin_s390 = {
 	.desc = "s390 Load Module parser",
 	.license = "LGPL3",
 	.author = "Jose Antonio Romero",
-	.load_buffer = &load_buffer,
-	.check_buffer = &check_buffer,
+	.load = &load,
+	.check = &check,
 	.baddr = &baddr,
 	.header = &headers,
 	.entries = &entries,

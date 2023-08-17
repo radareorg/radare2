@@ -73,7 +73,7 @@ static bool checkEntrypointBuffer(RBuffer *b) {
 	return false;
 }
 
-static bool check_buffer(RBinFile *bf, RBuffer *b) {
+static bool check(RBinFile *bf, RBuffer *b) {
 	r_return_val_if_fail (b, false);
 	ut64 b_size = r_buf_size (b);
 	if (b_size <= 0x3d) {
@@ -238,9 +238,9 @@ RBinPlugin r_bin_plugin_mz = {
 	.desc = "MZ bin plugin",
 	.license = "MIT",
 	.get_sdb = &get_sdb,
-	.load_buffer = &load,
+	.load = &load,
 	.destroy = &destroy,
-	.check_buffer = &check_buffer,
+	.check = &check,
 	.binsym = &binsym,
 	.entries = &entries,
 	.sections = &sections,

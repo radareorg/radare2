@@ -515,7 +515,7 @@ static RBinXtacObj *r_bin_xtac_new_buf(RBuffer *buf, bool verbose) {
 	return bin;
 }
 
-static bool load_buffer(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
+static bool load(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
 	r_return_val_if_fail (bf && buf, false);
 	RBinXtacObj *res = r_bin_xtac_new_buf (buf, bf->rbin->verbose);
 	if (res) {
@@ -557,7 +557,7 @@ static RBinInfo *info(RBinFile *bf) {
 	return ret;
 }
 
-static bool check_buffer(RBinFile *file, RBuffer *b) {
+static bool check(RBinFile *file, RBuffer *b) {
 	ut64 length = r_buf_size (b);
 	if (length <= sizeof (RBinXtacHeader)) {
 		return false;
@@ -607,9 +607,9 @@ RBinPlugin r_bin_plugin_xtac = {
 	.name = "xtac",
 	.desc = "XTAC format r2 plugin",
 	.license = "Apache License 2.0",
-	.load_buffer = &load_buffer,
+	.load = &load,
 	.destroy = &destroy,
-	.check_buffer = &check_buffer,
+	.check = &check,
 	.baddr = &baddr,
 	.minstrlen = 6,
 	.info = &info,

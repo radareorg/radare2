@@ -2,7 +2,7 @@
 
 #include <r_bin.h>
 
-static bool load_buffer(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
+static bool load(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
 	return true;
 }
 
@@ -57,7 +57,7 @@ static RBinInfo *info(RBinFile *bf) {
 }
 
 // TODO: test with all these programs http://brainfuck.org
-static bool check_buffer(RBinFile *bf, RBuffer *buf) {
+static bool check(RBinFile *bf, RBuffer *buf) {
 	r_return_val_if_fail (buf, false);
 
 	ut8 tmp[64] = {0};
@@ -115,9 +115,9 @@ RBinPlugin r_bin_plugin_bf = {
 	.name = "bf",
 	.desc = "brainfuck",
 	.license = "LGPL3",
-	.load_buffer = &load_buffer,
+	.load = &load,
 	.destroy = &destroy,
-	.check_buffer = &check_buffer,
+	.check = &check,
 	.entries = entries,
 	.strings = &strings,
 	.info = &info,

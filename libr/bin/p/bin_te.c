@@ -16,7 +16,7 @@ static Sdb *get_sdb(RBinFile *bf) {
 	return bin? bin->kv: NULL;
 }
 
-static bool load_buffer(RBinFile *bf, RBuffer *b, ut64 loadaddr) {
+static bool load(RBinFile *bf, RBuffer *b, ut64 loadaddr) {
 	r_return_val_if_fail (bf && b, false);
 	ut64 sz = r_buf_size (b);
 	if (sz == 0 || sz == UT64_MAX) {
@@ -141,7 +141,7 @@ static RBinInfo *info(RBinFile *bf) {
 	return ret;
 }
 
-static bool check_buffer(RBinFile *bf, RBuffer *b) {
+static bool check(RBinFile *bf, RBuffer *b) {
 	ut8 buf[2];
 	if (r_buf_read_at (b, 0, buf, 2) == 2) {
 		return !memcmp (buf, "\x56\x5a", 2);
@@ -154,9 +154,9 @@ RBinPlugin r_bin_plugin_te = {
 	.desc = "TE bin plugin", // Terse Executable format
 	.license = "LGPL3",
 	.get_sdb = &get_sdb,
-	.load_buffer = &load_buffer,
+	.load = &load,
 	.destroy = &destroy,
-	.check_buffer = &check_buffer,
+	.check = &check,
 	.baddr = &baddr,
 	.binsym = &binsym,
 	.entries = &entries,

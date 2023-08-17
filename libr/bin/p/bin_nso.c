@@ -50,7 +50,7 @@ static ut64 baddr(RBinFile *bf) {
 	return 0x8000000;
 }
 
-static bool check_buffer(RBinFile *bf, RBuffer *b) {
+static bool check(RBinFile *bf, RBuffer *b) {
 	if (r_buf_size (b) >= 0x20) {
 		ut8 magic[4];
 		if (r_buf_read_at (b, 0, magic, sizeof (magic)) != 4) {
@@ -145,7 +145,7 @@ fail:
 	return false;
 }
 
-static bool load_buffer(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
+static bool load(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
 	r_return_val_if_fail (bf && buf, false);
 	const ut64 la = bf->loadaddr;
 	ut64 sz = 0;
@@ -291,8 +291,8 @@ RBinPlugin r_bin_plugin_nso = {
 	.name = "nso",
 	.desc = "Nintendo Switch NSO0 binaries",
 	.license = "MIT",
-	.load_buffer = &load_buffer,
-	.check_buffer = &check_buffer,
+	.load = &load,
+	.check = &check,
 	.baddr = &baddr,
 	.binsym = &binsym,
 	.entries = &entries,

@@ -7,7 +7,7 @@
 
 static R_TH_LOCAL struct nds_hdr loaded_header = {0};
 
-static bool check_buffer(RBinFile *bf, RBuffer *b) {
+static bool check(RBinFile *bf, RBuffer *b) {
 	ut8 ninlogohead[6];
 	if (r_buf_read_at (b, 0xc0, ninlogohead, sizeof (ninlogohead)) == 6) {
 		/* begin of nintendo logo =    \x24\xff\xae\x51\x69\x9a */
@@ -22,7 +22,7 @@ static bool check_buffer(RBinFile *bf, RBuffer *b) {
 	return false;
 }
 
-static bool load_buffer(RBinFile *bf, RBuffer *b, ut64 loadaddr) {
+static bool load(RBinFile *bf, RBuffer *b, ut64 loadaddr) {
 	r_buf_read_at (b, 0, (ut8*)&loaded_header, sizeof (loaded_header));
 	bf->bo->bin_obj = &loaded_header;
 	return bf->bo->bin_obj != NULL;
@@ -123,8 +123,8 @@ RBinPlugin r_bin_plugin_ninds = {
 	.name = "ninds",
 	.desc = "Nintendo DS format r_bin plugin",
 	.license = "LGPL3",
-	.load_buffer = &load_buffer,
-	.check_buffer = &check_buffer,
+	.load = &load,
+	.check = &check,
 	.baddr = &baddr,
 	.entries = &entries,
 	.sections = &sections,

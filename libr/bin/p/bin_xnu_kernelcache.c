@@ -175,7 +175,7 @@ static void r_kernel_cache_free(RKernelCacheObj *obj);
 
 static R_TH_LOCAL RList *pending_bin_files = NULL;
 
-static bool load_buffer(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
+static bool load(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
 	RBuffer *fbuf = r_buf_ref (buf);
 	struct MACH0_(opts_t) opts;
 	MACH0_(opts_set_default) (&opts, bf);
@@ -1027,7 +1027,7 @@ static RBinAddr *newEntry(ut64 haddr, ut64 vaddr, int type) {
 	return ptr;
 }
 
-static bool check_buffer(RBinFile *bf, RBuffer *b) {
+static bool check(RBinFile *bf, RBuffer *b) {
 	if (r_buf_size (b) > 4) {
 		ut8 buf[4];
 		r_buf_read_at (b, 0, buf, sizeof (buf));
@@ -2199,12 +2199,12 @@ RBinPlugin r_bin_plugin_xnu_kernelcache = {
 	.desc = "kernelcache bin plugin",
 	.license = "LGPL3",
 	.destroy = &destroy,
-	.load_buffer = &load_buffer,
+	.load = &load,
 	.entries = &entries,
 	.baddr = &baddr,
 	.symbols = &symbols,
 	.sections = &sections,
-	.check_buffer = &check_buffer,
+	.check = &check,
 	.info = &info
 };
 

@@ -34,7 +34,7 @@ typedef struct {
 	// 0x100 -- start of data section
 }) DolHeader;
 
-static bool check_buffer(RBinFile *bf, RBuffer *buf) {
+static bool check(RBinFile *bf, RBuffer *buf) {
 	ut8 tmp[6];
 	int r = r_buf_read_at (buf, 0, tmp, sizeof (tmp));
 	bool one = r == sizeof (tmp) && !memcmp (tmp, "\x00\x00\x01\x00\x00\x00", sizeof (tmp));
@@ -48,7 +48,7 @@ static bool check_buffer(RBinFile *bf, RBuffer *buf) {
 	return false;
 }
 
-static bool load_buffer(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
+static bool load(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
 	if (r_buf_size (buf) < sizeof (DolHeader)) {
 		return false;
 	}
@@ -172,9 +172,9 @@ RBinPlugin r_bin_plugin_dol = {
 	.name = "dol",
 	.desc = "Nintendo Dolphin binary format",
 	.license = "BSD",
-	.load_buffer = &load_buffer,
+	.load = &load,
 	.baddr = &baddr,
-	.check_buffer = &check_buffer,
+	.check = &check,
 	.entries = &entries,
 	.sections = &sections,
 	.info = &info,

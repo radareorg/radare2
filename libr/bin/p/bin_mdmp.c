@@ -159,7 +159,7 @@ static RList* libs(RBinFile *bf) {
 	return ret;
 }
 
-static bool load_buffer(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
+static bool load(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
 	r_return_val_if_fail (buf, false);
 	struct r_bin_mdmp_obj *res = r_bin_mdmp_new_buf (buf);
 	if (res) {
@@ -442,7 +442,7 @@ static RList* symbols(RBinFile *bf) {
 	return ret;
 }
 
-static bool check_buffer(RBinFile *bf, RBuffer *b) {
+static bool check(RBinFile *bf, RBuffer *b) {
 	ut8 magic[6];
 	if (r_buf_read_at (b, 0, magic, sizeof (magic)) == 6) {
 		return !memcmp (magic, MDMP_MAGIC, 6);
@@ -460,8 +460,8 @@ RBinPlugin r_bin_plugin_mdmp = {
 	.imports = &imports,
 	.info = &info,
 	.libs = &libs,
-	.load_buffer = &load_buffer,
-	.check_buffer = &check_buffer,
+	.load = &load,
+	.check = &check,
 	.mem = &mem,
 	.relocs = &relocs,
 	.sections = &sections,

@@ -3,7 +3,7 @@
 #include <r_bin.h>
 #include "nes/nes_specs.h"
 
-static bool check_buffer(RBinFile *bf, RBuffer *b) {
+static bool check(RBinFile *bf, RBuffer *b) {
 	if (r_buf_size (b) > 4) {
 		ut8 buf[4];
 		if (r_buf_read_at (b, 0, buf, sizeof (buf)) == sizeof (buf)) {
@@ -13,8 +13,8 @@ static bool check_buffer(RBinFile *bf, RBuffer *b) {
 	return false;
 }
 
-static bool load_buffer(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
-	return check_buffer (bf, buf);
+static bool load(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
+	return check (bf, buf);
 }
 
 static RBinInfo *info(RBinFile *bf) {
@@ -209,8 +209,8 @@ RBinPlugin r_bin_plugin_nes = {
 	.name = "nes",
 	.desc = "NES",
 	.license = "MIT",
-	.load_buffer = &load_buffer,
-	.check_buffer = &check_buffer,
+	.load = &load,
+	.check = &check,
 	.entries = &entries,
 	.sections = sections,
 	.symbols = &symbols,

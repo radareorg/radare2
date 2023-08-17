@@ -30,7 +30,7 @@ static Sdb* get_sdb(RBinFile *bf) {
 	return bin->kv;
 }
 
-static bool check_buffer(RBinFile *bf, RBuffer *b) {
+static bool check(RBinFile *bf, RBuffer *b) {
 	ut8 magic[VICE_MAGIC_LEN];
 	if (r_buf_read_at (b, 0, magic, VICE_MAGIC_LEN) == VICE_MAGIC_LEN) {
 		return !memcmp (magic, VICE_MAGIC, VICE_MAGIC_LEN);
@@ -39,10 +39,10 @@ static bool check_buffer(RBinFile *bf, RBuffer *b) {
 }
 
 // XXX b vs bf->buf
-static bool load_buffer(RBinFile *bf, RBuffer *b, ut64 loadaddr) {
+static bool load(RBinFile *bf, RBuffer *b, ut64 loadaddr) {
 	ut64 offset = 0;
 	struct r_bin_vsf_obj* res = NULL;
-	if (check_buffer (bf, bf->buf)) {
+	if (check (bf, bf->buf)) {
 		int i = 0;
 		if (!(res = R_NEW0 (struct r_bin_vsf_obj))) {
 		    return false;
@@ -547,8 +547,8 @@ RBinPlugin r_bin_plugin_vsf = {
 	.desc = "VICE Snapshot File",
 	.license = "LGPL3",
 	.get_sdb = &get_sdb,
-	.load_buffer = &load_buffer,
-	.check_buffer = &check_buffer,
+	.load = &load,
+	.check = &check,
 	.entries = &entries,
 	.sections = sections,
 	.symbols = &symbols,

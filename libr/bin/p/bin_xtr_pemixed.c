@@ -17,7 +17,7 @@ static void destroy(RBin *bin) {
 	free_xtr (bin->cur->xtr_obj);
 }
 
-static bool check_buffer(RBinFile *bf, RBuffer *b) {
+static bool check(RBinFile *bf, RBuffer *b) {
 	return false;
 #if 0
 	if (!bytes) {
@@ -109,7 +109,7 @@ RBinXtrPlugin r_bin_xtr_plugin_xtr_pemixed = {
 	.extract_from_bytes = &oneshot,
 	.extractall_from_bytes = &oneshotall,
 	.free_xtr = &free_xtr,
-	.check_buffer = &check_buffer,
+	.check = &check,
 };
 
 #ifndef R2_PLUGIN_INCORE

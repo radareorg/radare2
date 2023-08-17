@@ -36,7 +36,7 @@ static Sdb *get_sdb(RBinFile *bf) {
 	return bin? bin->kv: NULL;
 }
 
-static bool load_buffer(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
+static bool load(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
 	RBuffer *tbuf = r_buf_ref (buf);
 	struct r_bin_java_obj_t *tbo = r_bin_java_new_buf (tbuf, loadaddr, bf->sdb);
 	if (tbo) {
@@ -94,7 +94,7 @@ static RBinInfo *info(RBinFile *bf) {
 	return ret;
 }
 
-static bool check_buffer(RBinFile *bf, RBuffer *b) {
+static bool check(RBinFile *bf, RBuffer *b) {
 	if (r_buf_size (b) > 32) {
 		ut8 buf[4];
 		r_buf_read_at (b, 0, buf, sizeof (buf));
@@ -154,9 +154,9 @@ RBinPlugin r_bin_plugin_java = {
 	.desc = "java bin plugin",
 	.license = "LGPL3",
 	.get_sdb = &get_sdb, // XXX we should remove this imho
-	.load_buffer = &load_buffer,
+	.load = &load,
 	.destroy = &destroy,
-	.check_buffer = &check_buffer,
+	.check = &check,
 	.binsym = binsym,
 	.entries = &entries,
 	.sections = sections,

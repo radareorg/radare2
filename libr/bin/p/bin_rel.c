@@ -211,7 +211,7 @@ static LoadedRel *load_rel_header(RBinFile *bf) {
 	return rel;
 }
 
-static bool check_buffer(RBinFile *bf, RBuffer *buf) {
+static bool check(RBinFile *bf, RBuffer *buf) {
 	if (!file_has_rel_ext (bf)) {
 		return false;
 	}
@@ -227,7 +227,7 @@ static bool check_buffer(RBinFile *bf, RBuffer *buf) {
 }
 
 // RBinPlugin method setting up sections and fixing up PIC.
-static bool load_buffer(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
+static bool load(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
 	RelSection *sections = NULL;
 	int i;
 	int num_imps;
@@ -615,8 +615,8 @@ RBinPlugin r_bin_plugin_rel = {
 	.desc = "Nintendo Wii REL format",
 	.license = "LGPL3",
 	.author = "terorie",
-	.check_buffer = &check_buffer,
-	.load_buffer = &load_buffer,
+	.check = &check,
+	.load = &load,
 	.destroy = &destroy,
 	.baddr = &baddr,
 	.sections = &sections,

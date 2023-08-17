@@ -28,13 +28,13 @@ static ut32 get_buffer(RBinFile *bf, RBuffer *b) {
 	return UT32_MAX;
 }
 
-static bool check_buffer(RBinFile *bf, RBuffer *b) {
+static bool check(RBinFile *bf, RBuffer *b) {
 	ut32 res = get_buffer (bf, b);
 	return res != UT32_MAX;
 }
 
-static bool load_buffer(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
-	return check_buffer (bf, buf);
+static bool load(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
+	return check (bf, buf);
 }
 
 static RBinInfo *info(RBinFile *bf) {
@@ -105,8 +105,8 @@ RBinPlugin r_bin_plugin_sms = {
 	.name = "sms",
 	.desc = "SEGA MasterSystem/GameGear",
 	.license = "LGPL3",
-	.load_buffer = &load_buffer,
-	.check_buffer = &check_buffer,
+	.load = &load,
+	.check = &check,
 	.info = &info,
 	.minstrlen = 10,
 	.strfilter = 'U'

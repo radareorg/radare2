@@ -11,14 +11,14 @@
 
 extern struct r_bin_dbginfo_t r_bin_dbginfo_p9;
 
-static bool check_buffer(RBinFile *bf, RBuffer *buf) {
+static bool check(RBinFile *bf, RBuffer *buf) {
 	RSysArch arch;
 	int bits, big_endian;
 	return r_bin_p9_get_arch (buf, &arch, &bits, &big_endian);
 }
 
-static bool load_buffer(RBinFile *bf, RBuffer *b, ut64 loadaddr) {
-	if (!check_buffer (bf, b)) {
+static bool load(RBinFile *bf, RBuffer *b, ut64 loadaddr) {
+	if (!check (bf, b)) {
 		return false;
 	}
 
@@ -107,7 +107,7 @@ static ut64 baddr(RBinFile *bf) {
 		return 0x1000ULL;
 	}
 
-	// unreachable because check_buffer only supports the above architectures
+	// unreachable because check only supports the above architectures
 	return 0;
 }
 
@@ -683,10 +683,10 @@ RBinPlugin r_bin_plugin_p9 = {
 	.name = "p9",
 	.desc = "Plan 9 bin plugin",
 	.license = "MIT",
-	.load_buffer = &load_buffer,
+	.load = &load,
 	.size = &size,
 	.destroy = &destroy,
-	.check_buffer = &check_buffer,
+	.check = &check,
 	.baddr = &baddr,
 	.binsym = &binsym,
 	.entries = &entries,

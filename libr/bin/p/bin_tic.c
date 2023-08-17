@@ -64,7 +64,7 @@ static const char *chunk_name(int chunk_type) {
 	return "";
 }
 
-static bool check_buffer(RBinFile *bf, RBuffer *buf) {
+static bool check(RBinFile *bf, RBuffer *buf) {
 	r_return_val_if_fail (buf, false);
 	if (bf && !r_str_endswith (bf->file, ".tic")) {
 		return false;
@@ -120,8 +120,8 @@ static bool check_buffer(RBinFile *bf, RBuffer *buf) {
 	return true;
 }
 
-static bool load_buffer(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
-	if (!check_buffer (bf, buf)) {
+static bool load(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
+	if (!check (bf, buf)) {
 		return false;
 	}
 	bf->bo->bin_obj = r_buf_ref (buf);
@@ -292,9 +292,9 @@ RBinPlugin r_bin_plugin_tic = {
 	.name = "tic",
 	.desc = "TIC-80 cartridge parser",
 	.license = "MIT",
-	.load_buffer = &load_buffer,
+	.load = &load,
 	.destroy = &destroy,
-	.check_buffer = &check_buffer,
+	.check = &check,
 	.baddr = &baddr,
 	.entries = entries,
 	.sections = sections,

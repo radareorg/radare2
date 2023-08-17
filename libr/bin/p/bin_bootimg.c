@@ -76,7 +76,7 @@ static Sdb *get_sdb(RBinFile *bf) {
 	return ao? ao->kv: NULL;
 }
 
-static bool load_buffer(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
+static bool load(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
 	BootImageObj *bio = R_NEW0 (BootImageObj);
 	if (R_UNLIKELY (!bio)) {
 		return false;
@@ -133,7 +133,7 @@ static RBinInfo *info(RBinFile *bf) {
 	return ret;
 }
 
-static bool check_buffer(RBinFile *bf, RBuffer *buf) {
+static bool check(RBinFile *bf, RBuffer *buf) {
 	ut8 tmp[13];
 	int r = r_buf_read_at (buf, 0, tmp, sizeof (tmp));
 	return r > 12 && !strncmp ((const char *)tmp, "ANDROID!", 8);
@@ -236,9 +236,9 @@ RBinPlugin r_bin_plugin_bootimg = {
 	.desc = "Android Boot Image",
 	.license = "LGPL3",
 	.get_sdb = &get_sdb,
-	.load_buffer = &load_buffer,
+	.load = &load,
 	.destroy = &destroy,
-	.check_buffer = &check_buffer,
+	.check = &check,
 	.baddr = &baddr,
 	.sections = &sections,
 	.entries = entries,

@@ -713,12 +713,12 @@ static Sdb *get_sdb(RBinFile *bf) {
 	return bin->kv;
 }
 
-static bool load_buffer(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
+static bool load(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
 	bf->bo->bin_obj = r_bin_dex_new_buf (buf, bf->rbin->verbose);
 	return bf->bo->bin_obj != NULL;
 }
 
-static bool check_buffer(RBinFile *bf, RBuffer *buf) {
+static bool check(RBinFile *bf, RBuffer *buf) {
 	ut8 tmp[8];
 	int r = r_buf_read_at (buf, 0, tmp, sizeof (tmp));
 	if (r < sizeof (tmp)) {
@@ -2195,8 +2195,8 @@ RBinPlugin r_bin_plugin_dex = {
 	.license = "LGPL3",
 	.destroy = &destroy,
 	.get_sdb = &get_sdb,
-	.load_buffer = &load_buffer,
-	.check_buffer = check_buffer,
+	.load = &load,
+	.check = check,
 	.entries = entries,
 	.classes = classes,
 	.sections = sections,

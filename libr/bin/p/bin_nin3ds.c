@@ -3,13 +3,13 @@
 #include <r_bin.h>
 #include "nin/n3ds.h"
 
-static bool check_buffer(RBinFile *bf, RBuffer *b) {
+static bool check(RBinFile *bf, RBuffer *b) {
 	ut8 magic[4];
 	r_buf_read_at (b, 0, magic, sizeof (magic));
 	return (!memcmp (magic, "FIRM", 4));
 }
 
-static bool load_buffer(RBinFile *bf, RBuffer *b, ut64 loadaddr) {
+static bool load(RBinFile *bf, RBuffer *b, ut64 loadaddr) {
 	struct n3ds_firm_hdr *loaded_header = R_NEW0 (struct n3ds_firm_hdr);
 	if (r_buf_read_at (b, 0, (ut8*)loaded_header, sizeof (*loaded_header)) == sizeof (*loaded_header)) {
 		bf->bo->bin_obj = loaded_header;
@@ -127,8 +127,8 @@ RBinPlugin r_bin_plugin_nin3ds = {
 	.name = "nin3ds",
 	.desc = "Nintendo 3DS FIRM format r_bin plugin",
 	.license = "LGPL3",
-	.load_buffer = &load_buffer,
-	.check_buffer = &check_buffer,
+	.load = &load,
+	.check = &check,
 	.entries = &entries,
 	.sections = &sections,
 	.info = &info,
