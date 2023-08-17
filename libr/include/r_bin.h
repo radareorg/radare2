@@ -505,7 +505,6 @@ typedef struct r_bin_plugin_t {
 	void (*destroy)(RBinFile *bf);
 	bool (*check)(RBinFile *bf, RBuffer *buf);
 	ut64 (*baddr)(RBinFile *bf);
-	ut64 (*boffset)(RBinFile *bf);
 	RBinAddr* (*binsym)(RBinFile *bf, int num);
 	RList/*<RBinAddr>*/* (*entries)(RBinFile *bf);
 	RList/*<RBinSection>*/* (*sections)(RBinFile *bf); // R2_600 - deprecate

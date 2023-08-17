@@ -88,10 +88,6 @@ static ut64 baddr(RBinFile *bf) {
 	return Elf_(get_baddr) (bf->bo->bin_obj);
 }
 
-static ut64 boffset(RBinFile *bf) {
-	return Elf_(get_boffset) (bf->bo->bin_obj);
-}
-
 static RBinAddr* binsym(RBinFile *bf, int sym) {
 	ELFOBJ* eo = bf->bo->bin_obj;
 	RBinAddr *ret = NULL;

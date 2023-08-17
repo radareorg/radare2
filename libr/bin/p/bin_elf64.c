@@ -134,7 +134,6 @@ RBinPlugin r_bin_plugin_elf64 = {
 	.load = &load,
 	.destroy = &destroy,
 	.baddr = &baddr,
-	.boffset = &boffset,
 	.binsym = &binsym,
 	.entries = &entries,
 #if R2_590

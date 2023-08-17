@@ -104,7 +104,6 @@ RBinPlugin r_bin_plugin_cgc = {
 	.destroy = &destroy,
 	.check = &check,
 	.baddr = &baddr,
-	.boffset = &boffset,
 	.binsym = &binsym,
 	.entries = &entries,
 	.sections = &sections,

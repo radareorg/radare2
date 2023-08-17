@@ -135,7 +135,6 @@ RBinPlugin r_bin_plugin_elf = {
 	.destroy = &destroy,
 	.check = &check,
 	.baddr = &baddr,
-	.boffset = &boffset,
 	.binsym = &binsym,
 	.entries = &entries,
 	.sections = &sections,
