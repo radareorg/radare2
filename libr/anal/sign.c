@@ -3023,7 +3023,7 @@ static int signdb_type(const char *file) {
 			t = SIGNDB_TYPE_KV;
 		}
 	}
-	free (data);
+	free ((void*)data);
 	return t;
 }
 
