@@ -25,11 +25,13 @@ static bool lang_poke_run(RLangSession *s, const char *code, int len) {
 }
 
 static RLangPlugin r_lang_plugin_poke = {
-	.name = "poke",
-	.author = "pancake",
+	.meta = {
+		.name = "poke",
+		.author = "pancake",
+		.desc = "Run GNU/Poke script file or oneliner",
+		.license = "LGPL",
+	},
 	.ext = "pk",
-	.desc = "Run GNU/Poke script file or oneliner",
-	.license = "LGPL",
 	.run = lang_poke_run,
 	.run_file = lang_poke_file_run,
 };

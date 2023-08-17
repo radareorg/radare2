@@ -120,11 +120,13 @@ static bool lang_rust_run(RLangSession *s, const char *code, int len) {
 }
 
 static RLangPlugin r_lang_plugin_rust = {
-	.name = "rust",
+	.meta = {
+		.name = "rust",
+		.author = "pancake",
+		.license = "MIT",
+		.desc = "Rust language extension",
+	},
 	.ext = "rs",
-	.author = "pancake",
-	.license = "MIT",
-	.desc = "Rust language extension",
 	.run = lang_rust_run,
 	.init = (void*)lang_rust_init,
 	.run_file = (void*)lang_rust_file,

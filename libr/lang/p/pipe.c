@@ -309,11 +309,13 @@ static bool lang_pipe_file(RLangSession *s, const char *file) {
 }
 
 static RLangPlugin r_lang_plugin_pipe = {
-	.name = "pipe",
+	.meta = {
+		.name = "pipe",
+		.author = "pancake",
+		.license = "LGPL",
+		.desc = "Use #!pipe node script.js",
+	},
 	.ext = "pipe",
-	.author = "pancake",
-	.license = "LGPL",
-	.desc = "Use #!pipe node script.js",
 	.run = lang_pipe_run,
 	.run_file = (void*)lang_pipe_file,
 };

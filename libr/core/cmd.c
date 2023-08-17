@@ -1364,7 +1364,7 @@ R_API bool r_core_run_script(RCore *core, const char *file) {
 	} else {
 		p = r_lang_get_by_extension (core->lang, file);
 		if (p) {
-			r_lang_use (core->lang, p->name);
+			r_lang_use (core->lang, p->meta.name);
 			ret = lang_run_file (core, core->lang, file);
 		} else {
 // XXX this is an ugly hack, we need to use execve here and specify args properly

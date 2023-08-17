@@ -149,7 +149,7 @@ R_API bool r_lang_setup(RLang *lang) {
 }
 
 R_API bool r_lang_plugin_add(RLang *lang, RLangPlugin *foo) {
-	if (foo && !r_lang_get_by_name (lang, foo->name)) {
+	if (foo && !r_lang_get_by_name (lang, foo->meta.name)) {
 		bool supported = true;
 		if (foo->init) {
 			// when init takes null, we just check if
@@ -190,24 +190,24 @@ R_API void r_lang_list(RLang *lang, int mode) {
 		r_table_add_column (table, typeString, "desc", 0);
 	}
 	r_list_foreach (lang->langs, iter, h) {
-		const char *license = h->license
-			? h->license : "???";
+		const char *license = h->meta.license
+			? h->meta.license : "???";
 		if (mode == 'j') {
 			pj_o (pj);
-			pj_ks (pj, "name", r_str_get (h->name));
-			pj_ks (pj, "license", r_str_get (h->license));
-			pj_ks (pj, "description", r_str_get (h->desc));
+			pj_ks (pj, "name", r_str_get (h->meta.name));
+			pj_ks (pj, "license", license);
+			pj_ks (pj, "description", r_str_get (h->meta.desc));
 			pj_end (pj);
 		} else if (mode == 'q') {
-			lang->cb_printf ("%s\n", h->name);
+			lang->cb_printf ("%s\n", h->meta.name);
 		} else if (mode == ',') {
 			r_table_add_row (table,
-				r_str_get (h->name),
-				r_str_get (h->license),
-				r_str_get (h->desc), 0);
+				r_str_get (h->meta.name),
+				r_str_get (h->meta.license),
+				r_str_get (h->meta.desc), 0);
 		} else {
 			lang->cb_printf ("%-8s %6s  %s\n",
-				h->name, license, h->desc);
+				h->meta.name, license, h->meta.desc);
 		}
 	}
 	if (pj) {
@@ -242,7 +242,7 @@ R_API RLangPlugin *r_lang_get_by_name(RLang *lang, const char *name) {
 	RListIter *iter;
 	RLangPlugin *h;
 	r_list_foreach (lang->langs, iter, h) {
-		if (!r_str_casecmp (h->name, name)) {
+		if (!r_str_casecmp (h->meta.name, name)) {
 			return h;
 		}
 		if (h->alias && !r_str_casecmp (h->alias, name)) {
@@ -386,7 +386,7 @@ R_API bool r_lang_prompt(RLang *lang) {
 	/* foo */
 	for (;;) {
 		r_cons_flush ();
-		snprintf (buf, sizeof (buf)-1, "%s> ", plugin->name);
+		snprintf (buf, sizeof (buf)-1, "%s> ", plugin->meta.name);
 		r_line_set_prompt (buf);
 #if 0
 		printf ("%s> ", lang->cur->name);
@@ -436,7 +436,7 @@ R_API bool r_lang_prompt(RLang *lang) {
 					"  !command - run system command\n"
 					"  . file   - interpret file\n"
 					"  q	- quit prompt\n");
-			eprintf ("%s example:\n", plugin->name);
+			eprintf ("%s example:\n", plugin->meta.name);
 			if (plugin->help) {
 				eprintf ("%s", *plugin->help);
 			}
