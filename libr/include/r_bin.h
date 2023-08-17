@@ -534,7 +534,6 @@ typedef struct r_bin_plugin_t {
 	bool (*sections_vec)(RBinFile *bf); // R2_590
 	bool (*symbols_vec)(RBinFile *bf);
 	bool (*imports_vec)(RBinFile *bf);
-	// 
 	R_BORROW RList/*<RBinDwarfRow>*/* (*lines)(RBinFile *bf);
 	RList/*<RBinString>*/* (*strings)(RBinFile *bf);
 	RBinInfo/*<RBinInfo>*/* (*info)(RBinFile *bf);
