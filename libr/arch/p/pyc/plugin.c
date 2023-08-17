@@ -27,7 +27,7 @@ static int pyversion_toi(const char *version) {
 static bool disassemble(RArchSession *s, RAnalOp *op, RArchDecodeMask mask, int pyversion) {
 	RBin *bin = s->arch->binb.bin;
 	RBinPlugin *plugin = bin && bin->cur && bin->cur->bo? bin->cur->bo->plugin: NULL;
-	RList *shared = (plugin && !strcmp (plugin->name, "pyc"))?
+	RList *shared = (plugin && !strcmp (plugin->meta.name, "pyc"))?
 		bin->cur->bo->bin_obj: NULL;
 	RList *cobjs = NULL;
 	RList *interned_table = NULL;
@@ -95,7 +95,7 @@ static char *regs(RArchSession *as) {
 static RList *get_pyc_code_obj(RArchSession *as) {
 	RBin *b = as->arch->binb.bin;
 	RBinPlugin *plugin = b->cur && b->cur->bo? b->cur->bo->plugin: NULL;
-	bool is_pyc = (plugin && strcmp (plugin->name, "pyc") == 0);
+	bool is_pyc = (plugin && strcmp (plugin->meta.name, "pyc") == 0);
 	return is_pyc? b->cur->bo->bin_obj: NULL;
 }
 

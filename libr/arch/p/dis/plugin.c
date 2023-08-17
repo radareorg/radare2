@@ -72,7 +72,7 @@ static bool decode(RArchSession *s, RAnalOp *op, RArchDecodeMask mask) {
 	// require dis bin plugin for resolving pcs into addresses
 	RBinDisObj *o = NULL;
 	RBin *bin = s->arch->binb.bin;
-	RBinPlugin *plugin = R_UNWRAP5 (bin, cur, bo, plugin);
+	RBinPlugin *plugin = R_UNWRAP4 (bin, cur, bo, plugin);
 	if (plugin) {
 		if (!strcmp (plugin->meta.name, "dis")) {
 			o = bin->cur->bo->bin_obj;

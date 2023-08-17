@@ -203,8 +203,8 @@ static bool decode(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
 		RBin *bin = as->arch->binb.bin;
 		RBinPlugin *plugin = bin && bin->cur && bin->cur->bo ?
 			bin->cur->bo->plugin : NULL;
-		if (plugin && plugin->name) {
-			if (!strcmp (plugin->name, "java")) { // XXX slow
+		if (plugin && plugin->meta.name) {
+			if (!strcmp (plugin->meta.name, "java")) { // XXX slow
 				obj = bin->cur->bo->bin_obj; //o;
 				//eprintf("Handling: %s disasm.\n", b->cur.file);
 			}
