@@ -3,12 +3,12 @@
 #include <r_bin.h>
 #include <r_lib.h>
 
-static bool check_buffer(RBinFile *bf, RBuffer *b) {
+static bool check(RBinFile *bf, RBuffer *b) {
 	// no magic
 	return false;
 }
 
-static bool load_buffer(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
+static bool load(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
 	return true;
 }
 
@@ -75,9 +75,9 @@ RBinPlugin r_bin_plugin_prg = {
 	.name = "prg",
 	.desc = "C64 PRG",
 	.license = "LGPL3",
-	.load_buffer = load_buffer,
+	.load = load,
 	.baddr = baddr,
-	.check_buffer = check_buffer,
+	.check = check,
 	.entries = entries,
 	.sections = sections,
 	.info = info,

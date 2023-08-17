@@ -87,7 +87,7 @@ the '0407' is a BR instruction which skips over the header to the first location
 
 #endif
 
-static bool check_buffer(RBinFile *bf, RBuffer *b) {
+static bool check(RBinFile *bf, RBuffer *b) {
 	ut8 buf[16];
 	if (r_buf_read_at (b, 0, buf, sizeof (buf)) != sizeof (buf)) {
 		return false;
@@ -126,8 +126,8 @@ static bool check_buffer(RBinFile *bf, RBuffer *b) {
 	return false;
 }
 
-static bool load_buffer(RBinFile *bf, RBuffer *b, ut64 loadaddr) {
-	return check_buffer (bf, b);
+static bool load(RBinFile *bf, RBuffer *b, ut64 loadaddr) {
+	return check (bf, b);
 }
 
 static ut64 baddr(RBinFile *bf) {
@@ -225,9 +225,9 @@ RBinPlugin r_bin_plugin_pdp11 = {
 	.name = "pdp11",
 	.desc = "PDP11",
 	.license = "MIT",
-	.load_buffer = &load_buffer,
+	.load = &load,
 	.size = &size,
-	.check_buffer = &check_buffer,
+	.check = &check,
 	.baddr = &baddr,
 	.entries = &entries,
 	.sections = &sections,

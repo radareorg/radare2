@@ -8,7 +8,7 @@ typedef struct {
 	RBuffer *buf;
 } OffObj;
 
-static bool check_buffer(RBinFile *bf, RBuffer *b) {
+static bool check(RBinFile *bf, RBuffer *b) {
 	r_return_val_if_fail (b, false);
 	ut8 sig[4];
 	if (r_buf_read_at (b, 0, sig, sizeof (sig)) != 4) {
@@ -20,7 +20,7 @@ static bool check_buffer(RBinFile *bf, RBuffer *b) {
 	return true;
 }
 
-static bool load_buffer(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
+static bool load(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
 	r_return_val_if_fail (bf && buf, false);
 	bf->bo->bin_obj = R_NEW0 (OffObj);
 	return true;
@@ -98,8 +98,8 @@ RBinPlugin r_bin_plugin_off = {
 	.license = "MIT",
 	.author = "pancake",
 	.entries = entries,
-	.check_buffer = &check_buffer,
-	.load_buffer = &load_buffer,
+	.check = &check,
+	.load = &load,
 	.baddr = &baddr,
 	.info = &info,
 	.header = &off_header_fields,

@@ -55,7 +55,7 @@ static Sdb* get_sdb(RBinFile *bf) {
 	return eo? eo->kv: NULL;
 }
 
-static bool load_buffer(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
+static bool load(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
 	ut64 user_baddr = bf->user_baddr;
 	ELFOBJ *res = Elf_(new_buf) (buf, user_baddr, bf->rbin->verbose);
 	if (res) {

@@ -3,7 +3,7 @@
 #define R_BIN_PE64 1
 #include "bin_pe.inc.c"
 
-static bool check_buffer(RBinFile *bf, RBuffer *b) {
+static bool check(RBinFile *bf, RBuffer *b) {
 	ut64 length = r_buf_size (b);
 	if (length <= 0x3d) {
 		return false;
@@ -457,9 +457,9 @@ RBinPlugin r_bin_plugin_pe64 = {
 	.desc = "PE64 (PE32+) bin plugin",
 	.license = "LGPL3",
 	.get_sdb = &get_sdb,
-	.load_buffer = &load_buffer,
+	.load = &load,
 	.destroy = &destroy,
-	.check_buffer = &check_buffer,
+	.check = &check,
 	.baddr = &baddr,
 	.binsym = &binsym,
 	.entries = &entries,

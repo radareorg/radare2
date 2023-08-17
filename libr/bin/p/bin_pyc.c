@@ -8,7 +8,7 @@ static R_TH_LOCAL struct pyc_version version;
 static R_TH_LOCAL RList *sections_cache = NULL;
 RList R_TH_LOCAL *interned_table = NULL; // used from marshall.c
 
-static bool check_buffer(RBinFile *bf, RBuffer *b) {
+static bool check(RBinFile *bf, RBuffer *b) {
 	if (r_buf_size (b) > 4) {
 		ut32 buf;
 		r_buf_read_at (b, 0, (ut8 *)&buf, sizeof (buf));
@@ -18,8 +18,8 @@ static bool check_buffer(RBinFile *bf, RBuffer *b) {
 	return false;
 }
 
-static bool load_buffer(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
-	return check_buffer (bf, buf);
+static bool load(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
+	return check (bf, buf);
 }
 
 static ut64 get_entrypoint(RBuffer *buf) {
@@ -128,8 +128,8 @@ RBinPlugin r_bin_plugin_pyc = {
 	.desc = "Python byte-compiled file plugin",
 	.license = "LGPL3",
 	.info = &info,
-	.load_buffer = &load_buffer,
-	.check_buffer = &check_buffer,
+	.load = &load,
+	.check = &check,
 	.entries = &entries,
 	.sections = &sections,
 	.baddr = &baddr,

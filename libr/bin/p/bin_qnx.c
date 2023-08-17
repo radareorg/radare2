@@ -26,7 +26,7 @@ static int lmf_header_load(lmf_header *lmfh, RBuffer *buf, Sdb *db) {
 	return true;
 }
 
-static bool check_buffer(RBinFile *bf, RBuffer *buf) {
+static bool check(RBinFile *bf, RBuffer *buf) {
 	ut8 tmp[6];
 	int r = r_buf_read_at (buf, 0, tmp, sizeof (tmp));
 	return r == sizeof (tmp) && !memcmp (tmp, QNX_MAGIC, sizeof (tmp));
@@ -41,7 +41,7 @@ static void destroy(RBinFile *bf) {
 	free (qo);
 }
 
-static bool load_buffer(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
+static bool load(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
 	QnxObj *qo = R_NEW0 (QnxObj);
 	if (!qo) {
 		return false;
@@ -266,12 +266,12 @@ RBinPlugin r_bin_plugin_qnx = {
 	.name = "qnx",
 	.desc = "QNX executable file support",
 	.license = "LGPL3",
-	.load_buffer = &load_buffer,
+	.load = &load,
 	.destroy = &destroy,
 	.relocs = &relocs,
 	.baddr = &baddr,
 	.author = "deepakchethan",
-	.check_buffer = &check_buffer,
+	.check = &check,
 	.header = &header,
 	.get_sdb = &get_sdb,
 	.entries = &entries,

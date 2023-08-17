@@ -38,7 +38,7 @@ static ut64 jmp_dest(RBuffer* b, ut64 addr) {
 	return (r_buf_read8_at (b, addr + 2) + (r_buf_read8_at (b, addr + 3) << 8)) * 2;
 }
 
-static bool check_buffer_rjmp(RBuffer *b) {
+static bool check_rjmp(RBuffer *b) {
 	CHECK3INSTR (b, rjmp, 4);
 	ut64 dst = rjmp_dest (0, b);
 	if (dst < 1 || dst > r_buf_size (b)) {
@@ -49,7 +49,7 @@ static bool check_buffer_rjmp(RBuffer *b) {
 }
 
 
-static bool check_buffer_jmp(RBuffer *b) {
+static bool check_jmp(RBuffer *b) {
 	CHECK4INSTR (b, jmp, 4);
 	ut64 dst = jmp_dest (b, 0);
 	if (dst < 1 || dst > r_buf_size (b)) {
@@ -59,18 +59,18 @@ static bool check_buffer_jmp(RBuffer *b) {
 	return true;
 }
 
-static bool check_buffer(RBinFile *bf, RBuffer *buf) {
+static bool check(RBinFile *bf, RBuffer *buf) {
 	if (r_buf_size (buf) < 32) {
 		return false;
 	}
 	if (!rjmp (buf, 0)) {
-		return check_buffer_jmp (buf);
+		return check_jmp (buf);
 	}
-	return check_buffer_rjmp (buf);
+	return check_rjmp (buf);
 }
 
-static bool load_buffer(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
-	return check_buffer (bf, buf);
+static bool load(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
+	return check (bf, buf);
 }
 
 static void destroy(RBinFile *bf) {
@@ -160,12 +160,12 @@ RBinPlugin r_bin_plugin_avr = {
 	.name = "avr",
 	.desc = "ATmel AVR MCUs",
 	.license = "LGPL3",
-	.load_buffer = load_buffer,
+	.load = load,
 	.destroy = destroy,
 	.entries = entries,
 	.strings = strings,
 	.symbols = symbols,
-	.check_buffer = check_buffer,
+	.check = check,
 	.info = info,
 };
 

@@ -539,6 +539,9 @@ R_API ut8 *r_file_slurp_hexpairs(const char *str, int *usz) {
 }
 
 R_API char *r_file_slurp_range(const char *file, ut64 off, int sz, int *osz) {
+	if (sz < 1) {
+		return NULL;
+	}
 	size_t read_items;
 	FILE *fd = r_sandbox_fopen (file, "rb");
 	if (!fd) {

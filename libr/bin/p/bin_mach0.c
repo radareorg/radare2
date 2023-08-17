@@ -44,7 +44,7 @@ static char *entitlements(RBinFile *bf, bool json) {
 	return NULL;
 }
 
-static bool load_buffer(RBinFile *bf, RBuffer *buf, ut64 laddr) {
+static bool load(RBinFile *bf, RBuffer *buf, ut64 laddr) {
 	r_return_val_if_fail (bf && buf, false);
 	struct MACH0_(opts_t) opts;
 	MACH0_(opts_set_default) (&opts, bf);
@@ -644,7 +644,7 @@ static RList *classes(RBinFile *bf) {
 
 #if !R_BIN_MACH064
 
-static bool check_buffer(RBinFile *bf, RBuffer *b) {
+static bool check(RBinFile *bf, RBuffer *b) {
 	if (r_buf_size (b) >= 4) {
 		ut8 buf[4] = {0};
 		if (r_buf_read_at (b, 0, buf, 4)) {
@@ -965,9 +965,9 @@ RBinPlugin r_bin_plugin_mach0 = {
 	.desc = "mach0 bin plugin",
 	.license = "LGPL3",
 	.get_sdb = &get_sdb,
-	.load_buffer = &load_buffer,
+	.load = &load,
 	.destroy = &destroy,
-	.check_buffer = &check_buffer,
+	.check = &check,
 	.baddr = &baddr,
 	.binsym = &binsym,
 	.entries = &entries,

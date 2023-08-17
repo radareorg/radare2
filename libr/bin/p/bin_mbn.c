@@ -21,7 +21,7 @@ typedef struct sbl_header {
 // TODO move this global into the bf->bobj
 static R_TH_LOCAL SblHeader sb = {0};
 
-static bool check_buffer(RBinFile *bf, RBuffer *b) {
+static bool check(RBinFile *bf, RBuffer *b) {
 	r_return_val_if_fail (b, false);
 	ut64 bufsz = r_buf_size (b);
 	if (sizeof (SblHeader) < bufsz) {
@@ -71,8 +71,8 @@ static bool check_buffer(RBinFile *bf, RBuffer *b) {
 	return false;
 }
 
-static bool load_buffer(RBinFile *bf, RBuffer *b, ut64 loadaddr) {
-	return check_buffer (bf, b);
+static bool load(RBinFile *bf, RBuffer *b, ut64 loadaddr) {
+	return check (bf, b);
 }
 
 static ut64 baddr(RBinFile *bf) {
@@ -182,9 +182,9 @@ RBinPlugin r_bin_plugin_mbn = {
 	.desc = "MBN/SBL bootloader things",
 	.license = "LGPL3",
 	.minstrlen = 10,
-	.load_buffer = &load_buffer,
+	.load = &load,
 	.size = &size,
-	.check_buffer = &check_buffer,
+	.check = &check,
 	.baddr = &baddr,
 	.entries = &entries,
 	.sections = &sections,

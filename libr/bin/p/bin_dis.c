@@ -7,7 +7,7 @@
 #include "../../arch/p/dis/dis.h"
 #include "../../arch/p/dis/dis.c"
 
-static bool check_buffer(RBinFile *bf, RBuffer *buf) {
+static bool check(RBinFile *bf, RBuffer *buf) {
 	ut64 pos = r_buf_tell (buf);
 	r_buf_seek (buf, 0, R_BUF_SET);
 	st32 magic;
@@ -20,10 +20,10 @@ static bool check_buffer(RBinFile *bf, RBuffer *buf) {
 	return (magic == XMAGIC || magic == SMAGIC) && r_buf_size (buf) > 12;
 }
 
-static bool load_buffer(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
+static bool load(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
 	ut32 i;
 
-	if (!check_buffer (bf, buf)) {
+	if (!check (bf, buf)) {
 		return false;
 	}
 
@@ -288,9 +288,9 @@ RBinPlugin r_bin_plugin_dis = {
 	.name = "dis",
 	.desc = "Inferno Dis VM bin plugin",
 	.license = "MIT",
-	.load_buffer = &load_buffer,
+	.load = &load,
 	.destroy = &destroy,
-	.check_buffer = &check_buffer,
+	.check = &check,
 	.entries = &entries,
 	.sections = &sections,
 	.info = &info,

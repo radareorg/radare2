@@ -18,7 +18,7 @@ static inline void *vector_at(RPVector *vec, ut64 n) {
 	return NULL;
 }
 
-static bool check_buffer(RBinFile *bf, RBuffer *rbuf) {
+static bool check(RBinFile *bf, RBuffer *rbuf) {
 	ut8 buf[4] = {0};
 	return rbuf && r_buf_read_at (rbuf, 0, buf, 4) == 4 && !memcmp (buf, R_BIN_WASM_MAGIC_BYTES, 4);
 }
@@ -50,10 +50,10 @@ static inline RBinWasmExportEntry *find_export(RPVector *exports, ut8 kind, ut32
 	return n >= 0? vector_at (exports, n): NULL;
 }
 
-static bool load_buffer(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
+static bool load(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
 	r_return_val_if_fail (bf && buf && r_buf_size (buf) != UT64_MAX, false);
 
-	if (check_buffer (bf, buf)) {
+	if (check (bf, buf)) {
 		bf->bo->bin_obj = r_bin_wasm_init (bf, buf);
 		return true;
 	}
@@ -488,10 +488,10 @@ RBinPlugin r_bin_plugin_wasm = {
 	.name = "wasm",
 	.desc = "WebAssembly bin plugin",
 	.license = "MIT",
-	.load_buffer = &load_buffer,
+	.load = &load,
 	.size = &size,
 	.destroy = &destroy,
-	.check_buffer = &check_buffer,
+	.check = &check,
 	.baddr = &baddr,
 	.binsym = &binsym,
 	.entries = &entries,

@@ -250,7 +250,7 @@ static RCoreSymCacheElement *parse_dragons(RBinFile *bf, RBuffer *buf, int off, 
 	return r_coresym_cache_element_new (bf, buf, off + 16, bits, file_name);
 }
 
-static bool load_buffer(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
+static bool load(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
 #if 0
 	SYMBOLS HEADER
 
@@ -343,7 +343,7 @@ static RBinInfo *info(RBinFile *bf) {
 	return ret;
 }
 
-static bool check_buffer(RBinFile *bf, RBuffer *b) {
+static bool check(RBinFile *bf, RBuffer *b) {
 	ut8 buf[4];
 	r_buf_read_at (b, 0, buf, sizeof (buf));
 	return !memcmp (buf, "\x02\xff\x01\xff", 4);
@@ -443,8 +443,8 @@ RBinPlugin r_bin_plugin_symbols = {
 	.name = "symbols",
 	.desc = "Apple Symbols file",
 	.license = "MIT",
-	.load_buffer = &load_buffer,
-	.check_buffer = &check_buffer,
+	.load = &load,
+	.check = &check,
 	.symbols = &symbols,
 	.sections = &sections,
 	.size = &size,

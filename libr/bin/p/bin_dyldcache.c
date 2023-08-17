@@ -956,7 +956,7 @@ static bool check_magic(const char *magic) {
 		|| !strcmp (magic, "dyld_v1 x86_64h");
 }
 
-static bool check_buffer(RBinFile *bf, RBuffer *buf) {
+static bool check(RBinFile *bf, RBuffer *buf) {
 	if (r_buf_size (buf) < 32) {
 		return false;
 	}
@@ -1920,7 +1920,7 @@ beach:
 	return result;
 }
 
-static bool load_buffer(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
+static bool load(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
 	RDyldCache *cache = R_NEW0 (RDyldCache);
 	if (!cache) {
 		return false;
@@ -2513,13 +2513,13 @@ RBinPlugin r_bin_plugin_dyldcache = {
 	.name = "dyldcache",
 	.desc = "dyldcache bin plugin",
 	.license = "LGPL3",
-	.load_buffer = &load_buffer,
+	.load = &load,
 	.entries = &entries,
 	.baddr = &baddr,
 	.symbols = &symbols,
 	.sections = &sections,
 	.minstrlen = 5,
-	.check_buffer = &check_buffer,
+	.check = &check,
 	.destroy = &destroy,
 	.classes = &classes,
 	.header = &header,

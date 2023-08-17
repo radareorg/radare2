@@ -4,7 +4,7 @@
 #include <r_io.h>
 #include "bflt/bflt.h"
 
-static bool load_buffer(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
+static bool load(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
 	bf->bo->bin_obj = r_bin_bflt_new_buf (buf);
 	return bf->bo->bin_obj != NULL;
 }
@@ -249,7 +249,7 @@ static RBinInfo *info(RBinFile *bf) {
 	return info;
 }
 
-static bool check_buffer(RBinFile *bf, RBuffer *buf) {
+static bool check(RBinFile *bf, RBuffer *buf) {
 	ut8 tmp[4] = {0};
 	int r = r_buf_read_at (buf, 0, tmp, sizeof (tmp));
 	return r == sizeof (tmp) && !memcmp (tmp, "bFLT", 4);
@@ -263,9 +263,9 @@ RBinPlugin r_bin_plugin_bflt = {
 	.name = "bflt",
 	.desc = "bFLT format r_bin plugin",
 	.license = "LGPL3",
-	.load_buffer = &load_buffer,
+	.load = &load,
 	.destroy = &destroy,
-	.check_buffer = &check_buffer,
+	.check = &check,
 	.entries = &entries,
 	.info = &info,
 	.relocs = &relocs,

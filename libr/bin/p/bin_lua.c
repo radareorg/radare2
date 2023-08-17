@@ -24,7 +24,7 @@ static bool check(RBinFile *bf) {
 }
 #endif
 
-static bool check_buffer(RBinFile *bf, RBuffer *b) {
+static bool check(RBinFile *bf, RBuffer *b) {
 	if (r_buf_size (b) > 4) {
 		ut8 buf[4];
 		r_buf_read_at (b, 0, buf, sizeof (buf));
@@ -40,7 +40,7 @@ static bool check_buffer(RBinFile *bf, RBuffer *b) {
 	return false;
 }
 
-static bool load_buffer(RBinFile *bf, RBuffer *b, ut64 loadaddr) {
+static bool load(RBinFile *bf, RBuffer *b, ut64 loadaddr) {
 	ut8 *buf = malloc (bf->size);
 	if (!buf) {
 		R_LOG_ERROR ("cannot malloc filesize");
@@ -339,8 +339,8 @@ RBinPlugin r_bin_plugin_lua = {
 	.license = "MIT",
 	.author = "pancake",
 	.sections = &sections,
-	.load_buffer = &load_buffer,
-	.check_buffer = &check_buffer,
+	.load = &load,
+	.check = &check,
 	.symbols = &symbols,
 	.strings = &strings,
 	.info = &info,

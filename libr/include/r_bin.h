@@ -460,7 +460,7 @@ typedef struct r_bin_xtr_plugin_t {
 	char *name;
 	char *desc;
 	char *license;
-	bool (*check_buffer)(RBinFile *bf, RBuffer *buf);
+	bool (*check)(RBinFile *bf, RBuffer *buf);
 
 	RBinXtrData *(*extract_from_bytes)(RBin *bin, const ut8 *buf, ut64 size, int idx);
 	RBinXtrData *(*extract_from_buffer)(RBin *bin, RBuffer *buf, int idx);
@@ -509,10 +509,10 @@ typedef struct r_bin_plugin_t {
 	char *version;
 	char *license;
 	Sdb * (*get_sdb)(RBinFile *obj);
-	bool (*load_buffer)(RBinFile *bf, RBuffer *buf, ut64 laddr); // TODO: R2_590 - rename to load()
+	bool (*load)(RBinFile *bf, RBuffer *buf, ut64 laddr); // TODO: R2_590 - rename to load()
 	ut64 (*size)(RBinFile *bin); // return ut64 maybe? meh
 	void (*destroy)(RBinFile *bf);
-	bool (*check_buffer)(RBinFile *bf, RBuffer *buf);
+	bool (*check)(RBinFile *bf, RBuffer *buf);
 	ut64 (*baddr)(RBinFile *bf);
 	ut64 (*boffset)(RBinFile *bf);
 	RBinAddr* (*binsym)(RBinFile *bf, int num);

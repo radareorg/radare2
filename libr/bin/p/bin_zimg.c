@@ -12,7 +12,7 @@ static Sdb *get_sdb(RBinFile *bf) {
 	return bin? bin->kv: NULL;
 }
 
-static bool load_buffer(RBinFile *bf, RBuffer *b, ut64 loadaddr) {
+static bool load(RBinFile *bf, RBuffer *b, ut64 loadaddr) {
 	bf->bo->bin_obj = r_bin_zimg_new_buf (b);
 	return bf->bo->bin_obj != NULL;
 }
@@ -21,7 +21,7 @@ static ut64 baddr(RBinFile *bf) {
 	return 0;
 }
 
-static bool check_buffer(RBinFile *bf, RBuffer *b) {
+static bool check(RBinFile *bf, RBuffer *b) {
 	ut8 zimghdr[8];
 	if (r_buf_read_at (b, 0, zimghdr, sizeof (zimghdr))) {
 		// Checking ARM zImage kernel
@@ -58,8 +58,8 @@ RBinPlugin r_bin_plugin_zimg = {
 	.desc = "zimg format bin plugin",
 	.license = "LGPL3",
 	.get_sdb = &get_sdb,
-	.load_buffer = &load_buffer,
-	.check_buffer = &check_buffer,
+	.load = &load,
+	.check = &check,
 	.baddr = &baddr,
 	.info = &info,
 };

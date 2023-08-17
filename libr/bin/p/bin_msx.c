@@ -22,7 +22,7 @@ static ut64 baddr(RBinFile *bf) {
 	return 0;
 }
 
-static bool check_buffer(RBinFile *bf, RBuffer *b) {
+static bool check(RBinFile *bf, RBuffer *b) {
 	ut8 buf[2] = {0};
 	if (!bf) {
 		// not eligible for carving
@@ -56,8 +56,8 @@ static bool check_buffer(RBinFile *bf, RBuffer *b) {
 	return false;
 }
 
-static bool load_buffer(RBinFile *bf, RBuffer *b, ut64 loadaddr) {
-	return check_buffer (bf, b);
+static bool load(RBinFile *bf, RBuffer *b, ut64 loadaddr) {
+	return check (bf, b);
 }
 
 static RBinInfo *info(RBinFile *bf) {
@@ -215,8 +215,8 @@ RBinPlugin r_bin_plugin_msx = {
 	.desc = "MSX rom/bin parser",
 	.license = "LGPL3",
 	.author = "Jose Antonio Romero",
-	.load_buffer = &load_buffer,
-	.check_buffer = &check_buffer,
+	.load = &load,
+	.check = &check,
 	.baddr = &baddr,
 	.entries = &entries,
 	.sections = &sections,

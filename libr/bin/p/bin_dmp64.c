@@ -110,7 +110,7 @@ static RList *sections(RBinFile *bf) {
 	return ret;
 }
 
-static bool load_buffer(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
+static bool load(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
 	r_return_val_if_fail (buf, false);
 	struct r_bin_dmp64_obj_t *res = r_bin_dmp64_new_buf (buf);
 	if (res) {
@@ -121,7 +121,7 @@ static bool load_buffer(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
 	return false;
 }
 
-static bool check_buffer(RBinFile *bf, RBuffer *b) {
+static bool check(RBinFile *bf, RBuffer *b) {
 	ut8 magic[8];
 	if (r_buf_read_at (b, 0, magic, sizeof (magic)) == 8) {
 		return !memcmp (magic, DMP64_MAGIC, 8);
@@ -137,8 +137,8 @@ RBinPlugin r_bin_plugin_dmp64 = {
 	.get_sdb = &get_sdb,
 	.header = &header,
 	.info = &info,
-	.load_buffer = &load_buffer,
-	.check_buffer = &check_buffer,
+	.load = &load,
+	.check = &check,
 	.sections = &sections
 };
 

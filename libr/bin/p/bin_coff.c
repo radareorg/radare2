@@ -15,7 +15,7 @@ static bool r_coff_is_stripped(struct r_bin_coff_obj *obj) {
 		COFF_FLAGS_TI_F_LNNO | COFF_FLAGS_TI_F_LSYMS));
 }
 
-static bool load_buffer(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
+static bool load(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
 	bf->bo->bin_obj = r_bin_coff_new_buf (buf, bf->rbin->verbose);
 	return bf->bo->bin_obj != NULL;
 }
@@ -659,7 +659,7 @@ static RBinInfo *info(RBinFile *bf) {
 	return ret;
 }
 
-static bool check_buffer(RBinFile *bf, RBuffer *buf) {
+static bool check(RBinFile *bf, RBuffer *buf) {
 #if 0
 TODO: do more checks here to avoid false positives
 
@@ -682,9 +682,9 @@ RBinPlugin r_bin_plugin_coff = {
 	.desc = "COFF format r_bin plugin",
 	.license = "LGPL3",
 	.get_sdb = &get_sdb,
-	.load_buffer = &load_buffer,
+	.load = &load,
 	.destroy = &destroy,
-	.check_buffer = &check_buffer,
+	.check = &check,
 	.binsym = &binsym,
 	.entries = &entries,
 	.sections = &sections,

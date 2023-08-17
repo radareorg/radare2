@@ -4,7 +4,7 @@
 #include <r_bin.h>
 #include "omf/omf.h"
 
-static bool load_buffer(RBinFile *bf, RBuffer *b, ut64 loadaddr) {
+static bool load(RBinFile *bf, RBuffer *b, ut64 loadaddr) {
 	r_return_val_if_fail (bf && b, false);
 	ut64 size;
 	const ut8 *buf = r_buf_data (b, &size);
@@ -18,7 +18,7 @@ static void destroy(RBinFile *bf) {
 	bf->bo->bin_obj = NULL;
 }
 
-static bool check_buffer(RBinFile *bf, RBuffer *b) {
+static bool check(RBinFile *bf, RBuffer *b) {
 	int i;
 	ut8 ch;
 	if (r_buf_read_at (b, 0, &ch, 1) != 1) {
@@ -159,9 +159,9 @@ RBinPlugin r_bin_plugin_omf = {
 	.name = "omf",
 	.desc = "omf bin plugin",
 	.license = "LGPL3",
-	.load_buffer = &load_buffer,
+	.load = &load,
 	.destroy = &destroy,
-	.check_buffer = &check_buffer,
+	.check = &check,
 	.baddr = &baddr,
 	.entries = &entries,
 	.sections = &sections,

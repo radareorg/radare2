@@ -39,7 +39,7 @@ static char *fsname(RBuffer *b) {
 	return NULL;
 }
 
-static bool check_buffer(RBinFile *bf, RBuffer *b) {
+static bool check(RBinFile *bf, RBuffer *b) {
 	r_return_val_if_fail (b, false);
 	char *p = fsname (b);
 	bool hasFs = p;
@@ -47,8 +47,8 @@ static bool check_buffer(RBinFile *bf, RBuffer *b) {
 	return hasFs;
 }
 
-static bool load_buffer(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
-	return check_buffer (bf, buf);
+static bool load(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
+	return check (bf, buf);
 }
 
 static void destroy(RBinFile *bf) {
@@ -89,9 +89,9 @@ RBinPlugin r_bin_plugin_fs = {
 	.author = "pancake",
 	.version = "1.0",
 	.license = "LGPL3",
-	.load_buffer = &load_buffer,
+	.load = &load,
 	.destroy = &destroy,
-	.check_buffer = &check_buffer,
+	.check = &check,
 	.strings = &strings,
 	.info = &info,
 };
