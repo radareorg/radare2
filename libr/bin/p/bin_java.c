@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2022 - pancake, nibble, Adam Pridgen <dso@rice.edu || adam.pridgen@thecoverofnight.com> */
+/* radare - LGPL - Copyright 2009-2023 - pancake, nibble, Adam Pridgen <dso@rice.edu || adam.pridgen@thecoverofnight.com> */
 
 #define R_LOG_ORIGIN "bin.java"
 
@@ -6,36 +6,8 @@
 #include "../../shlr/java/class.h"
 #include "../../shlr/java/code.h"
 
-#define IFDBG_BIN_JAVA if (0)
-
-// R2_590 XXX we need to refactor rbin to get rid of this
-static R_TH_LOCAL Sdb *DB = NULL;
-
 static void add_bin_obj_to_sdb(RBinJavaObj *bin);
 static int add_sdb_bin_obj(const char *key, RBinJavaObj *bin_obj);
-
-static int init(void *user) {
-	R_LOG_DEBUG ("Calling plugin init = %d", DB? 1: 0);
-	if (!DB) {
-		R_LOG_DEBUG ("plugin DB beeing initted");
-		DB = sdb_new ("bin.java", NULL, 0);
-	} else {
-		R_LOG_DEBUG ("plugin DB already initted");
-	}
-	return 0;
-}
-
-static int fini(void *user) {
-	R_LOG_DEBUG ("Calling plugin fini = %d", DB? 1: 0);
-	if (!DB) {
-		IFDBG_BIN_JAVA eprintf ("plugin DB already uninited.\n");
-	} else {
-		IFDBG_BIN_JAVA eprintf ("plugin DB beeing uninited.\n");
-		sdb_free (DB);
-		DB = NULL;
-	}
-	return 0;
-}
 
 static int add_sdb_bin_obj(const char *key, RBinJavaObj *bin_obj) {
 	int result = false;
@@ -43,35 +15,25 @@ static int add_sdb_bin_obj(const char *key, RBinJavaObj *bin_obj) {
 		0
 	};
 	addr = sdb_itoa ((ut64) (size_t) bin_obj, 16, value, sizeof (value));
-	if (key && bin_obj && DB) {
-		IFDBG_BIN_JAVA eprintf("Adding %s:%s to the bin_objs db\n", key, addr);
-		sdb_set (DB, key, addr, 0);
+	if (key && bin_obj && bin_obj->kv) {
+		R_LOG_DEBUG ("Adding %s:%s to the bin_objs db", key, addr);
+		sdb_set (bin_obj->kv, key, addr, 0);
 		result = true;
 	}
 	return result;
 }
 
-static void add_bin_obj_to_sdb(RBinJavaObj *bin) {
-	if (!bin) {
-		return;
-	}
-	char *jvcname = r_bin_java_build_obj_key (bin);
-	add_sdb_bin_obj (jvcname, bin);
-	bin->AllJavaBinObjs = DB;
+static void add_bin_obj_to_sdb(RBinJavaObj *bj) {
+	r_return_if_fail (bj);
+	char *jvcname = r_bin_java_build_obj_key (bj);
+	add_sdb_bin_obj (jvcname, bj);
+	bj->AllJavaBinObjs = bj->kv; // XXX that was a global.. so this must be inside bin->sdb namespace
 	free (jvcname);
 }
 
 static Sdb *get_sdb(RBinFile *bf) {
-	RBinObject *o = bf->bo;
-	struct r_bin_java_obj_t *bin;
-	if (!o) {
-		return NULL;
-	}
-	bin = (struct r_bin_java_obj_t *) o->bin_obj;
-	if (bin->kv) {
-		return bin->kv;
-	}
-	return NULL;
+	struct r_bin_java_obj_t *bin = R_UNWRAP3 (bf, bo, bin_obj);
+	return bin? bin->kv: NULL;
 }
 
 static bool load_buffer(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
@@ -91,8 +53,6 @@ static bool load_buffer(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
 
 static void destroy(RBinFile *bf) {
 	r_bin_java_free ((struct r_bin_java_obj_t *) bf->bo->bin_obj);
-	sdb_free (DB);
-	DB = NULL;
 }
 
 static RList *entries(RBinFile *bf) {
@@ -193,9 +153,7 @@ RBinPlugin r_bin_plugin_java = {
 	.name = "java",
 	.desc = "java bin plugin",
 	.license = "LGPL3",
-	.init = init,
-	.fini = fini,
-	.get_sdb = &get_sdb,
+	.get_sdb = &get_sdb, // XXX we should remove this imho
 	.load_buffer = &load_buffer,
 	.destroy = &destroy,
 	.check_buffer = &check_buffer,

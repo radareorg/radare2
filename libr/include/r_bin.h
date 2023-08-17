@@ -460,8 +460,6 @@ typedef struct r_bin_xtr_plugin_t {
 	char *name;
 	char *desc;
 	char *license;
-	int (*init)(void *user);
-	int (*fini)(void *user);
 	bool (*check_buffer)(RBinFile *bf, RBuffer *buf);
 
 	RBinXtrData *(*extract_from_bytes)(RBin *bin, const ut8 *buf, ut64 size, int idx);
@@ -482,8 +480,6 @@ typedef struct r_bin_ldr_plugin_t {
 	char *name;
 	char *desc;
 	char *license;
-	int (*init)(void *user);
-	int (*fini)(void *user);
 	bool (*load)(RBin *bin);
 } RBinLdrPlugin;
 
@@ -512,8 +508,6 @@ typedef struct r_bin_plugin_t {
 	char *author;
 	char *version;
 	char *license;
-	int (*init)(void *user); // unused?
-	int (*fini)(void *user); // unused?
 	Sdb * (*get_sdb)(RBinFile *obj);
 	bool (*load_buffer)(RBinFile *bf, RBuffer *buf, ut64 laddr); // TODO: R2_590 - rename to load()
 	ut64 (*size)(RBinFile *bin); // return ut64 maybe? meh
