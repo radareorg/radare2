@@ -1278,7 +1278,7 @@ static uint64_t CWISS_AbslHash_LowLevelHash(const void* data, size_t len,
 			len -= 64;
 		} while (len > 64);
 
-			current_state = current_state ^ duplicated_state;
+		current_state = current_state ^ duplicated_state;
 	}
 
 	// We now have a data `ptr` with at most 64 bytes and the current state

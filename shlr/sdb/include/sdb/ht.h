@@ -36,7 +36,7 @@ SDB_API SdbKv* sdbkv_new2(const char *k, int kl, const char *v, int vl);
 SDB_API SdbKv* sdbkv_new(const char *k, const char *v);
 extern SDB_API void sdbkv_free(SdbKv *kv);
 
-extern SDB_API ut32 sdb_hash(const char *key);
+// extern SDB_API ut32 sdb_hash(const char *key);
 
 SDB_API HtPP* sdb_ht_new(void);
 // Destroy a hashtable and all of its entries.

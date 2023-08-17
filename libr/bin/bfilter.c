@@ -13,7 +13,7 @@ static char *__hashify(const char *s, ut64 vaddr) {
 			if (vaddr && vaddr != UT64_MAX) {
 				return r_str_newf ("_%" PFMT64d, vaddr);
 			}
-			ut32 hash = sdb_hash (s);
+			const ut32 hash = sdb_hash (s);
 			return r_str_newf ("%x", hash);
 		}
 		s++;

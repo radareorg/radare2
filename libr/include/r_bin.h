@@ -327,8 +327,8 @@ typedef struct r_bin_object_t {
 	ut64 size;
 	ut64 obj_size;
 	RStrpool *pool;
-	RList/*<RBinSection>*/ *sections;
-	RList/*<RBinImport>*/ *imports;
+	RList/*<RBinSection>*/ *sections; // DEPRECATE
+	RList/*<RBinImport>*/ *imports; // DEPRECATE
 	RList/*<RBinSymbol>*/ *symbols; // DEPRECATE
 	RVecRBinImport imports_vec;
 	RVecRBinSymbol symbols_vec;
