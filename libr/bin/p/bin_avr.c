@@ -20,6 +20,7 @@
 
 typedef struct {
 	ut64 tmp_entry;
+	RBuffer *b;
 } AvrPriv;
 
 static bool rjmp(RBuffer* b, ut64 addr) {
@@ -43,7 +44,6 @@ static ut64 jmp_dest(RBuffer* b, ut64 addr) {
 static ut64 check_rjmp(RBuffer *b) {
 	CHECK3INSTR (b, rjmp, 4);
 	ut64 dst = rjmp_dest (0, b);
-	eprintf ("RES IS %llx\n", dst);
 	if (dst < 1 || dst > r_buf_size (b)) {
 		return UT64_MAX;
 	}
@@ -53,7 +53,6 @@ static ut64 check_rjmp(RBuffer *b) {
 static ut64 check_jmp(RBuffer *b) {
 	CHECK4INSTR (b, jmp, 4);
 	ut64 dst = jmp_dest (b, 0);
-	eprintf ("RES IS %llx\n", dst);
 	if (dst < 1 || dst > r_buf_size (b)) {
 		return UT64_MAX;
 	}
@@ -68,6 +67,7 @@ static bool check_or_load(RBinFile *bf, RBuffer *buf, bool doload) {
 	if (doload) {
 		if (res != UT64_MAX) {
 			AvrPriv *ap = R_NEW0 (AvrPriv);
+			ap->b = buf; // add a reference imho we dont own that pointer and its ugly
 			ap->tmp_entry = res;
 			bf->bo->bin_obj = ap;
 			return true;
@@ -85,8 +85,9 @@ static bool load(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
 }
 
 static void destroy(RBinFile *bf) {
+	AvrPriv *ap = (AvrPriv*)(bf->bo->bin_obj);
+	r_buf_free (ap->b);
 	R_FREE (bf->bo->bin_obj);
-	// r_buf_free (bf->bo->bin_obj);
 }
 
 static RBinInfo* info(RBinFile *bf) {
@@ -148,19 +149,20 @@ static void addptr(RList *ret, const char *name, ut64 addr, RBuffer *b) {
 }
 
 static RList *symbols(RBinFile *bf) {
+	AvrPriv *ap = bf->bo->bin_obj;
 	RList *ret = NULL;
-	RBuffer *obj = bf->bo->bin_obj;
+	RBuffer *b = ap->b;
 
 	if (!(ret = r_list_newf (free))) {
 		return NULL;
 	}
 	/* atmega8 */
-	addptr (ret, "int0", 2, obj);
-	addptr (ret, "int1", 4, obj);
-	addptr (ret, "timer2cmp", 6, obj);
-	addptr (ret, "timer2ovf", 8, obj);
-	addptr (ret, "timer1capt", 10, obj);
-	addptr (ret, "timer1cmpa", 12, obj);
+	addptr (ret, "int0", 2, b);
+	addptr (ret, "int1", 4, b);
+	addptr (ret, "timer2cmp", 6, b);
+	addptr (ret, "timer2ovf", 8, b);
+	addptr (ret, "timer1capt", 10, b);
+	addptr (ret, "timer1cmpa", 12, b);
 	return ret;
 }
 
