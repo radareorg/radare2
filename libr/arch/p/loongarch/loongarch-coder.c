@@ -111,7 +111,7 @@ loongarch_decode_imm (const char *bit_field, insn_t insn, int si)
   if (si)
     {
       int sh = sizeof (ret) * 8 - len;
-      if (sh >= 31) {
+      if (sh > 31) {
 	ret = 0;
       } else {
         uint32_t t = (ret << sh);
