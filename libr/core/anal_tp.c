@@ -301,8 +301,16 @@ static _RAnalCond cond_invert(RAnal *anal, _RAnalCond cond) {
 		return R_ANAL_COND_LT;
 	case R_ANAL_COND_GT:
 		return R_ANAL_COND_LE;
+	case R_ANAL_COND_AL:
+		return R_ANAL_COND_NV;
+	case R_ANAL_COND_NV:
+		return R_ANAL_COND_AL;
+	case R_ANAL_COND_EQ:
+		return R_ANAL_COND_NE;
+	case R_ANAL_COND_NE:
+		return R_ANAL_COND_EQ;
 	default:
-		R_LOG_WARN ("unhandled condition for swapping");
+		R_LOG_WARN ("unhandled condition for swapping %d", cond);
 		break;
 	}
 	return 0; // 0 is COND_ALways...
