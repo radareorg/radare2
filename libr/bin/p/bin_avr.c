@@ -18,7 +18,9 @@
 		return false;             \
 	}
 
-static R_TH_LOCAL ut64 tmp_entry = UT64_MAX;
+typedef struct {
+	ut64 tmp_entry;
+} AvrPriv;
 
 static bool rjmp(RBuffer* b, ut64 addr) {
 	return (r_buf_read8_at (b, addr + 1) & 0xf0) == 0xc0;
@@ -38,35 +40,39 @@ static ut64 jmp_dest(RBuffer* b, ut64 addr) {
 	return (r_buf_read8_at (b, addr + 2) + (r_buf_read8_at (b, addr + 3) << 8)) * 2;
 }
 
-static bool check_rjmp(RBuffer *b) {
+static ut64 check_rjmp(RBuffer *b) {
 	CHECK3INSTR (b, rjmp, 4);
 	ut64 dst = rjmp_dest (0, b);
 	if (dst < 1 || dst > r_buf_size (b)) {
-		return false;
+		return UT64_MAX;
 	}
-	tmp_entry = dst;
-	return true;
+	return dst;
 }
 
 
-static bool check_jmp(RBuffer *b) {
+static ut64 check_jmp(RBuffer *b) {
 	CHECK4INSTR (b, jmp, 4);
 	ut64 dst = jmp_dest (b, 0);
 	if (dst < 1 || dst > r_buf_size (b)) {
-		return false;
+		return UT64_MAX;
 	}
-	tmp_entry = dst;
-	return true;
+	return dst;
 }
 
 static bool check(RBinFile *bf, RBuffer *buf) {
 	if (r_buf_size (buf) < 32) {
 		return false;
 	}
-	if (!rjmp (buf, 0)) {
-		return check_jmp (buf);
+	ut64 res = rjmp (buf, 0)
+		? check_rjmp (buf)
+		: check_jmp (buf);
+	if (res != UT64_MAX) {
+		AvrPriv *ap = R_NEW0 (AvrPriv);
+		ap->tmp_entry = res;
+		bf->bo->bin_obj = ap;
+		return true;
 	}
-	return check_rjmp (buf);
+	return false;
 }
 
 static bool load(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
@@ -74,7 +80,8 @@ static bool load(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
 }
 
 static void destroy(RBinFile *bf) {
-	r_buf_free (bf->bo->bin_obj);
+	R_FREE (bf->bo->bin_obj);
+	// r_buf_free (bf->bo->bin_obj);
 }
 
 static RBinInfo* info(RBinFile *bf) {
@@ -96,7 +103,8 @@ static RBinInfo* info(RBinFile *bf) {
 static RList* entries(RBinFile *bf) {
 	RList *ret;
 	RBinAddr *ptr = NULL;
-	if (tmp_entry == UT64_MAX) {
+	AvrPriv *ap = bf->bo->bin_obj;
+	if (ap->tmp_entry == UT64_MAX) {
 		return false;
 	}
 	if (!(ret = r_list_new ())) {
@@ -104,7 +112,7 @@ static RList* entries(RBinFile *bf) {
 	}
 	ret->free = free;
 	if ((ptr = R_NEW0 (RBinAddr))) {
-		ut64 addr = tmp_entry;
+		ut64 addr = ap->tmp_entry;
 		ptr->vaddr = ptr->paddr = addr;
 		r_list_append (ret, ptr);
 	}
