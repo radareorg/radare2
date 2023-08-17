@@ -201,11 +201,9 @@ static bool check_symbol_lang(RBinFile *bf, LangCheck *lc, RBinSymbol *sym, int 
 
 /* This is about 10% of the loading time, optimize if possible */
 R_API int r_bin_load_languages(RBinFile *bf) {
-	r_return_val_if_fail (bf, R_BIN_LANG_NONE);
-	r_return_val_if_fail (bf->bo, R_BIN_LANG_NONE);
-	r_return_val_if_fail (bf->bo->info, R_BIN_LANG_NONE);
-	RBinObject *o = bf->bo;
-	RBinInfo *info = o->info;
+	r_return_val_if_fail (bf && bf->bo && bf->bo->info, R_BIN_LANG_NONE);
+	RBinObject *bo = bf->bo;
+	RBinInfo *info = bo->info;
 	RBinSymbol *sym = NULL;
 	RListIter *iter;
 	LangCheck lc = {0};
@@ -218,29 +216,39 @@ R_API int r_bin_load_languages(RBinFile *bf) {
 	if (unknownType || !(isMacho || isElf || isPe)) {
 		return R_BIN_LANG_NONE;
 	}
-#if R2_590
-	R_VEC_FOREACH (&o->imports_vec, sym) {
-#else
-	r_list_foreach (o->imports, iter, sym) {
-#endif
-		const char *name = sym->name;
-		if (!strcmp (name, "_NSConcreteGlobalBlock")) {
-			lc.isBlocks = true;
-		} else if (r_str_startswith (name, "objc_")) {
-			lc.isObjC = true;
-			lc.cantbe.objc = true;
+	RBinImport *imp;
+	if (bo->imports) {
+		// R2_600 deprecate when all plugins use the imports vec
+		r_list_foreach (bo->imports, iter, imp) {
+			const char *name = imp->name;
+			if (!strcmp (name, "_NSConcreteGlobalBlock")) {
+				lc.isBlocks = true;
+			} else if (r_str_startswith (name, "objc_")) {
+				lc.isObjC = true;
+				lc.cantbe.objc = true;
+			}
+		}
+	} else {
+		R_VEC_FOREACH (&bo->imports_vec, imp) {
+			const char *name = imp->name;
+			if (!strcmp (name, "_NSConcreteGlobalBlock")) {
+				lc.isBlocks = true;
+			} else if (r_str_startswith (name, "objc_")) {
+				lc.isObjC = true;
+				lc.cantbe.objc = true;
+			}
 		}
 	}
 	int type = -1;
-	if (o->symbols) {
+	if (bo->symbols) {
 		// deprecate
-		r_list_foreach (o->symbols, iter, sym) {
+		r_list_foreach (bo->symbols, iter, sym) {
 			if (!check_symbol_lang (bf, &lc, sym, &type)) {
 				break;
 			}
 		}
 	} else {
-		R_VEC_FOREACH (&o->symbols_vec, sym) {
+		R_VEC_FOREACH (&bo->symbols_vec, sym) {
 			if (!check_symbol_lang (bf, &lc, sym, &type)) {
 				break;
 			}
