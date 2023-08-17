@@ -714,7 +714,8 @@ static Sdb *get_sdb(RBinFile *bf) {
 }
 
 static bool load_buffer(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
-	return bf->bo->bin_obj = r_bin_dex_new_buf (buf, bf->rbin->verbose);
+	bf->bo->bin_obj = r_bin_dex_new_buf (buf, bf->rbin->verbose);
+	return bf->bo->bin_obj != NULL;
 }
 
 static bool check_buffer(RBinFile *bf, RBuffer *buf) {

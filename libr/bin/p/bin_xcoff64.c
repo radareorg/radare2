@@ -1,14 +1,12 @@
 /* radare - LGPL - Copyright 2023 - terorie */
 
-#include <r_types.h>
-#include <r_util.h>
 #include <r_lib.h>
 #include <r_bin.h>
-
 #include "coff/xcoff64.h"
 
 static bool load_buffer(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
-	return bf->bo->bin_obj = r_bin_xcoff64_new_buf (buf, bf->rbin->verbose);
+	bf->bo->bin_obj = r_bin_xcoff64_new_buf (buf, bf->rbin->verbose);
+	return bf->bo->bin_obj != NULL;
 }
 
 static void destroy(RBinFile *bf) {

@@ -123,10 +123,6 @@ static RList *sections(RBinFile *bf) {
 	return ret;
 }
 
-static ut64 boffset(RBinFile *bf) {
-	return 0LL;
-}
-
 static RBinInfo *info(RBinFile *bf) {
 	char GameName[21] = {0};
 	RBinInfo *ret = R_NEW0 (RBinInfo);
@@ -154,7 +150,6 @@ RBinPlugin r_bin_plugin_z64 = {
 	.load_buffer = &load_buffer,
 	.check_buffer = &check_buffer,
 	.baddr = baddr,
-	.boffset = &boffset,
 	.entries = &entries,
 	.sections = &sections,
 	.info = &info

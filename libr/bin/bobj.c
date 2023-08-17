@@ -298,6 +298,7 @@ R_API int r_bin_object_set_items(RBinFile *bf, RBinObject *bo) {
 	}
 
 	if (p->boffset) {
+		// XXX this is implemented only for ELF. so im not sure why its useful
 		bo->boffset = p->boffset (bf);
 	}
 	// XXX: no way to get info from xtr pluginz?

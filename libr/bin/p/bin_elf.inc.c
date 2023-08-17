@@ -40,7 +40,6 @@ static char* regstate(RBinFile *bf) {
 	}
 	R_LOG_ERROR ("Cannot retrieve regstate on unsupported arch %s", Elf_(get_machine_name)(eo));
 	return NULL;
-
 }
 
 static void setimpord(ELFOBJ* eo, ut32 ord, RBinImport *ptr) {
