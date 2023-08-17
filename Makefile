@@ -183,14 +183,13 @@ clean:
 	rm -rf libr/.libr
 	-rm -f `find * | grep arm | grep dis.a$$`
 	for DIR in shlr libr binr ; do $(MAKE) -C "$$DIR" clean ; done
-	-rm -f `find . -type f -name '*.d'`
-	rm -f `find . -type f -name '*.o'`
+	rm -f `find . -type f -name '*.d'` || for a in `find . -type f -name '*.d'` ; do rm -f "$$a" ; done
+	rm -f `find . -type f -name '*.o'` || for a in `find . -type f -name '*.o'` ; do rm -f "$$a" ; done
 	rm -f config-user.mk plugins.cfg libr/config.h
 	rm -f libr/include/r_userconf.h libr/config.mk
 	rm -f pkgcfg/*.pc
 
 distclean mrproper: clean
-	rm -f `find . -type f -iname '*.d'`
 	rm -rf libr/arch/p/arm/v35/arch-arm*
 	rm -rf shlr/capstone
 
