@@ -17,6 +17,7 @@
 typedef bool (*ROnRebaseFunc) (ut64 offset, ut64 decorated_addr, void *user_data);
 
 typedef struct _RKernelCacheObj {
+	RList *pending_bin_files; // GLOBAL list
 	RBuffer *cache_buf;
 	RCFValueDict *prelink_info;
 	ut64 pa2va_exec;
@@ -134,7 +135,7 @@ static void r_rebase_info_populate(RRebaseInfo *info, RKernelCacheObj *obj);
 static ut64 iterate_rebase_list(RBuffer *cache_buf, ut64 multiplier, ut64 start_offset, ROnRebaseFunc func, void *user_data);
 static ut64 r_rebase_offset_to_paddr(RKernelCacheObj *obj, const RVector *sections, ut64 offset);
 static void swizzle_io_read(RKernelCacheObj *obj, RIO *io);
-static int kernelcache_io_read(RIO *io, RIODesc *fd, ut8 *buf, int count);
+static int kc_read(RIO *io, RIODesc *fd, ut8 *buf, int count);
 static void rebase_buffer(RKernelCacheObj *obj, ut64 off, RIODesc *fd, ut8 *buf, int count);
 static void rebase_buffer_fixup(RKernelCacheObj *kobj, ut64 off, RIODesc *fd, ut8 *buf, int count);
 
@@ -173,8 +174,6 @@ static void ensure_kexts_initialized(RKernelCacheObj *obj, RBinFile *bf);
 
 static void r_kernel_cache_free(RKernelCacheObj *obj);
 
-static R_TH_LOCAL RList *pending_bin_files = NULL;
-
 static bool load(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
 	RBuffer *fbuf = r_buf_ref (buf);
 	struct MACH0_(opts_t) opts;
@@ -211,9 +210,9 @@ static bool load(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
 		}
 	}
 
-	if (!pending_bin_files) {
-		pending_bin_files = r_list_new ();
-		if (!pending_bin_files) {
+	if (!obj->pending_bin_files) {
+		obj->pending_bin_files = r_list_new ();
+		if (!obj->pending_bin_files) {
 			R_FREE (prelink_range);
 			R_FREE (obj);
 			R_FREE (prelink_info);
@@ -229,7 +228,7 @@ static bool load(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
 	obj->pa2va_data = prelink_range->pa2va_data;
 	R_FREE (prelink_range);
 	bf->bo->bin_obj = obj;
-	r_list_push (pending_bin_files, bf);
+	r_list_push (obj->pending_bin_files, bf);
 
 	if (rebase_info || main_mach0->chained_starts) {
 		RIO *io = bf->rbin->iob.io;
@@ -1774,6 +1773,7 @@ static ut64 baddr(RBinFile *bf) {
 
 static void destroy(RBinFile *bf) {
 	r_kernel_cache_free ((RKernelCacheObj*) bf->bo->bin_obj);
+	bf->bo->bin_obj = NULL;
 }
 
 static void r_kernel_cache_free(RKernelCacheObj *obj) {
@@ -1805,6 +1805,9 @@ static void r_kernel_cache_free(RKernelCacheObj *obj) {
 	if (obj->rebase_info) {
 		r_rebase_info_free (obj->rebase_info);
 		obj->rebase_info = NULL;
+	}
+	if (obj->pending_bin_files) {
+		r_list_free (obj->pending_bin_files);
 	}
 
 	R_FREE (obj);
@@ -1962,10 +1965,10 @@ static void swizzle_io_read(RKernelCacheObj *obj, RIO *io) {
 	r_return_if_fail (io && io->desc && io->desc->plugin);
 	RIOPlugin *plugin = io->desc->plugin;
 	obj->original_io_read = plugin->read;
-	plugin->read = &kernelcache_io_read;
+	plugin->read = &kc_read;
 }
 
-static int kernelcache_io_read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
+static int kc_read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 	r_return_val_if_fail (io, -1);
 	RCore *core = (RCore*) io->coreb.core;
 
@@ -1979,13 +1982,13 @@ static int kernelcache_io_read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 	r_list_foreach (core->bin->binfiles, iter, bf) {
 		if (bf->fd == fd->fd && bf->bo && bf->bo->bin_obj) {
 			cache = bf->bo->bin_obj;
-			if (pending_bin_files) {
-				RListIter *to_remove = r_list_contains (pending_bin_files, bf);
+			if (cache->pending_bin_files) {
+				RListIter *to_remove = r_list_contains (cache->pending_bin_files, bf);
 				if (to_remove) {
-					r_list_delete (pending_bin_files, to_remove);
-					if (r_list_empty (pending_bin_files)) {
-						r_list_free (pending_bin_files);
-						pending_bin_files = NULL;
+					r_list_delete (cache->pending_bin_files, to_remove);
+					if (r_list_empty (cache->pending_bin_files)) {
+						r_list_free (cache->pending_bin_files);
+						cache->pending_bin_files = NULL;
 					}
 				}
 			}
@@ -1993,8 +1996,8 @@ static int kernelcache_io_read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 		}
 	}
 
-	if (!cache) {
-		r_list_foreach (pending_bin_files, iter, bf) {
+	if (!cache && cache->pending_bin_files) {
+		r_list_foreach (cache->pending_bin_files, iter, bf) {
 			if (bf->fd == fd->fd && bf->bo) {
 				cache = bf->bo->bin_obj;
 				break;
@@ -2003,7 +2006,7 @@ static int kernelcache_io_read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 	}
 	if (!cache || !cache->original_io_read || cache->rebasing_buffer) {
 		if (cache) {
-			if ((!cache->rebasing_buffer && fd->plugin->read == &kernelcache_io_read) ||
+			if ((!cache->rebasing_buffer && fd->plugin->read == &kc_read) ||
 					(cache->rebasing_buffer && !cache->original_io_read)) {
 				return -1;
 			}
@@ -2011,10 +2014,8 @@ static int kernelcache_io_read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 				return cache->original_io_read (io, fd, buf, count);
 			}
 		}
-		if (fd->plugin->read == kernelcache_io_read) {
-			if (core->bin->verbose) {
-				eprintf ("Avoid recursive reads\n");
-			}
+		if (fd->plugin->read == kc_read) {
+			R_LOG_WARN ("Prevented recursive reads");
 			return -1;
 		}
 		return fd->plugin->read (io, fd, buf, count);
@@ -2177,7 +2178,7 @@ static void rebase_buffer_fixup(RKernelCacheObj *kobj, ut64 off, RIODesc *fd, ut
 							ptr_value += obj->baddr;
 						}
 					} else {
-						eprintf ("Unsupported pointer format: %u\n", obj->chained_starts[i]->pointer_format);
+						R_LOG_WARN ("Unsupported pointer format: %u", obj->chained_starts[i]->pointer_format);
 					}
 					ut64 in_buf = cursor - off;
 					if (cursor >= off && cursor <= eob - 8) {
