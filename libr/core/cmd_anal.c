@@ -11990,8 +11990,8 @@ static bool is_apple_target(RCore *core) {
 		return false;
 	}
 	RBinObject *bo = r_bin_cur_object (core->bin);
-	r_return_val_if_fail (!bo || (bo->plugin && bo->plugin->name), false);
-	return bo? strstr (bo->plugin->name, "mach"): false;
+	r_return_val_if_fail (!bo || (bo->plugin && bo->plugin->meta.name), false);
+	return bo? strstr (bo->plugin->meta.name, "mach"): false;
 }
 
 static bool is_valid_code(RCore *core, ut64 addr, int n) {

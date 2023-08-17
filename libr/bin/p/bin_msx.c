@@ -211,10 +211,12 @@ static RList *entries(RBinFile *bf) {
 }
 
 RBinPlugin r_bin_plugin_msx = {
-	.name = "msx",
-	.desc = "MSX rom/bin parser",
-	.license = "LGPL3",
-	.author = "Jose Antonio Romero",
+	.meta = {
+		.name = "msx",
+		.desc = "MSX rom/bin parser",
+		.license = "LGPL3",
+		.author = "Jose Antonio Romero",
+	},
 	.load = &load,
 	.check = &check,
 	.baddr = &baddr,

@@ -289,9 +289,11 @@ static RList *entries(RBinFile *bf) {
 }
 
 RBinPlugin r_bin_plugin_tic = {
-	.name = "tic",
-	.desc = "TIC-80 cartridge parser",
-	.license = "MIT",
+	.meta = {
+		.name = "tic",
+		.desc = "TIC-80 cartridge parser",
+		.license = "MIT",
+	},
 	.load = &load,
 	.destroy = &destroy,
 	.check = &check,

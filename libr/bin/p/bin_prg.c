@@ -1,4 +1,4 @@
-/* radare - LGPL3 - 2019 - thestr4ng3r */
+/* radare - LGPL3 - 2019-2023 - thestr4ng3r */
 
 #include <r_bin.h>
 #include <r_lib.h>
@@ -72,9 +72,11 @@ static RList *entries(RBinFile *bf) {
 }
 
 RBinPlugin r_bin_plugin_prg = {
-	.name = "prg",
-	.desc = "C64 PRG",
-	.license = "LGPL3",
+	.meta = {
+		.name = "prg",
+		.desc = "C64 PRG",
+		.license = "LGPL3",
+	},
 	.load = load,
 	.baddr = baddr,
 	.check = check,

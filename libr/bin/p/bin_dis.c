@@ -285,9 +285,11 @@ static RBinInfo *info(RBinFile *bf) {
 }
 
 RBinPlugin r_bin_plugin_dis = {
-	.name = "dis",
-	.desc = "Inferno Dis VM bin plugin",
-	.license = "MIT",
+	.meta = {
+		.name = "dis",
+		.desc = "Inferno Dis VM bin plugin",
+		.license = "MIT",
+	},
 	.load = &load,
 	.destroy = &destroy,
 	.check = &check,

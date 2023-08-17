@@ -120,9 +120,11 @@ static RBinInfo *info(RBinFile *bf) {
 }
 
 RBinPlugin r_bin_plugin_ninds = {
-	.name = "ninds",
-	.desc = "Nintendo DS format r_bin plugin",
-	.license = "LGPL3",
+	.meta = {
+		.name = "ninds",
+		.desc = "Nintendo DS format r_bin plugin",
+		.license = "LGPL3",
+	},
 	.load = &load,
 	.check = &check,
 	.baddr = &baddr,

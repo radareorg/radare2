@@ -107,10 +107,12 @@ static RList *relocs(RBinFile *bf) {
 }
 
 RBinPlugin r_bin_plugin_ne = {
-	.name = "ne",
-	.desc = "NE format r2 plugin",
-	.author = "GustavoLCR",
-	.license = "LGPL3",
+	.meta = {
+		.name = "ne",
+		.desc = "NE format r2 plugin",
+		.author = "GustavoLCR",
+		.license = "LGPL3",
+	},
 	.check = &check,
 	.load = &load,
 	.destroy = &destroy,

@@ -961,9 +961,11 @@ static ut64 size(RBinFile *bf) {
 }
 
 RBinPlugin r_bin_plugin_mach0 = {
-	.name = "mach0",
-	.desc = "mach0 bin plugin",
-	.license = "LGPL3",
+	.meta = {
+		.name = "mach0",
+		.desc = "mach0 bin plugin",
+		.license = "LGPL3",
+	},
 	.get_sdb = &get_sdb,
 	.load = &load,
 	.destroy = &destroy,

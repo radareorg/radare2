@@ -159,14 +159,14 @@ R_IPI RBinObject *r_bin_object_new(RBinFile *bf, RBinPlugin *plugin, ut64 basead
 
 	if (plugin && plugin->load) {
 		if (!plugin->load (bf, bf->buf, loadaddr)) {
-			R_LOG_DEBUG ("load failed for %s plugin", plugin->name);
+			R_LOG_DEBUG ("load failed for %s plugin", plugin->meta.name);
 			sdb_free (bo->kv);
 			free (bo);
 			bf->bo = NULL;
 			return NULL;
 		}
 	} else {
-		R_LOG_WARN ("Plugin %s should implement load method", plugin->name);
+		R_LOG_WARN ("Plugin %s should implement load method", plugin->meta.name);
 		sdb_free (bo->kv);
 		free (bo);
 		bf->bo = NULL;

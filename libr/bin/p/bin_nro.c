@@ -253,9 +253,11 @@ static RBinInfo *info(RBinFile *bf) {
 #if !R_BIN_NRO
 
 RBinPlugin r_bin_plugin_nro = {
-	.name = "nro",
-	.desc = "Nintendo Switch NRO0 binaries",
-	.license = "MIT",
+	.meta = {
+		.name = "nro",
+		.desc = "Nintendo Switch NRO0 binaries",
+		.license = "MIT",
+	},
 	.load = &load,
 	.check = &check,
 	.baddr = &baddr,

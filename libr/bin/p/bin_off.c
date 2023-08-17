@@ -93,10 +93,12 @@ static RList *entries(RBinFile *bf) {
 }
 
 RBinPlugin r_bin_plugin_off = {
-	.name = "off",
-	.desc = "OS/360 Object File Format",
-	.license = "MIT",
-	.author = "pancake",
+	.meta = {
+		.name = "off",
+		.desc = "OS/360 Object File Format",
+		.license = "MIT",
+		.author = "pancake",
+	},
 	.entries = entries,
 	.check = &check,
 	.load = &load,

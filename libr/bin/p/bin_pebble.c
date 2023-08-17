@@ -192,9 +192,11 @@ static RList* entries(RBinFile *bf) {
 }
 
 RBinPlugin r_bin_plugin_pebble = {
-	.name = "pebble",
-	.desc = "Pebble Watch App",
-	.license = "LGPL",
+	.meta = {
+		.name = "pebble",
+		.desc = "Pebble Watch App",
+		.license = "LGPL",
+	},
 	.load = &load,
 	.check = &check,
 	.baddr = &baddr,

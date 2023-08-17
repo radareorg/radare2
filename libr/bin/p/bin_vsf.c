@@ -543,9 +543,11 @@ static RList* entries(RBinFile *bf) {
 }
 
 RBinPlugin r_bin_plugin_vsf = {
-	.name = "vsf",
-	.desc = "VICE Snapshot File",
-	.license = "LGPL3",
+	.meta = {
+		.name = "vsf",
+		.desc = "VICE Snapshot File",
+		.license = "LGPL3",
+	},
 	.get_sdb = &get_sdb,
 	.load = &load,
 	.check = &check,

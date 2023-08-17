@@ -130,9 +130,11 @@ static bool check(RBinFile *bf, RBuffer *b) {
 }
 
 RBinPlugin r_bin_plugin_dmp64 = {
-	.name = "dmp64",
-	.desc = "Windows Crash Dump x64 r_bin plugin",
-	.license = "LGPL3",
+	.meta = {
+		.name = "dmp64",
+		.desc = "Windows Crash Dump x64 r_bin plugin",
+		.license = "LGPL3",
+	},
 	.destroy = &destroy,
 	.get_sdb = &get_sdb,
 	.header = &header,

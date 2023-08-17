@@ -178,9 +178,11 @@ static ut64 size(RBinFile *bf) {
 }
 
 RBinPlugin r_bin_plugin_mbn = {
-	.name = "mbn",
-	.desc = "MBN/SBL bootloader things",
-	.license = "LGPL3",
+	.meta = {
+		.name = "mbn",
+		.desc = "MBN/SBL bootloader things",
+		.license = "LGPL3",
+	},
 	.minstrlen = 10,
 	.load = &load,
 	.size = &size,

@@ -334,10 +334,12 @@ static RList *entries(RBinFile *bf) {
 }
 
 RBinPlugin r_bin_plugin_lua = {
-	.name = "lua",
-	.desc = "Compiled LUA bin plugin (lua 5.3)",
-	.license = "MIT",
-	.author = "pancake",
+	.meta = {
+		.name = "lua",
+		.desc = "Compiled LUA bin plugin (lua 5.3)",
+		.license = "MIT",
+		.author = "pancake",
+	},
 	.sections = &sections,
 	.load = &load,
 	.check = &check,

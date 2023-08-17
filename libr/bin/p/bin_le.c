@@ -144,10 +144,12 @@ static RBinInfo *info(RBinFile *bf) {
 }
 
 RBinPlugin r_bin_plugin_le = {
-	.name = "le",
-	.desc = "LE/LX format r2 plugin",
-	.author = "GustavoLCR",
-	.license = "LGPL3",
+	.meta = {
+		.name = "le",
+		.desc = "LE/LX format r2 plugin",
+		.author = "GustavoLCR",
+		.license = "LGPL3",
+	},
 	.check = &check,
 	.load = &load,
 	.destroy = &destroy,

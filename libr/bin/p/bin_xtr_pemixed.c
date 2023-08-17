@@ -103,8 +103,10 @@ static RBinXtrData *oneshot(RBin *bin, const ut8 *buf, ut64 size, int sub_bin_ty
 }
 
 RBinXtrPlugin r_bin_xtr_plugin_xtr_pemixed = {
-	.name = "xtr.pemixed",
-	.desc = "Extract sub-binaries in PE files",
+	.meta = {
+		.name = "xtr.pemixed",
+		.desc = "Extract sub-binaries in PE files",
+	},
 	.destroy = &destroy,
 	.extract_from_bytes = &oneshot,
 	.extractall_from_bytes = &oneshotall,

@@ -166,9 +166,11 @@ static RList *oneshotall(RBin *bin, const ut8* buf, ut64 size) {
 }
 
 RBinXtrPlugin r_bin_xtr_plugin_xtr_dyldcache = {
-	.name = "xtr.dyldcache",
-	.desc = "dyld cache bin extractor plugin",
-	.license = "LGPL3",
+	.meta = {
+		.name = "xtr.dyldcache",
+		.desc = "dyld cache bin extractor plugin",
+		.license = "LGPL3",
+	},
 	.load = &load,
 	.extract = &extract,
 	.extractall = &extractall,

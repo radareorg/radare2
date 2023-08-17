@@ -263,14 +263,16 @@ static ut64 get_vaddr(RBinFile *bf, ut64 baddr, ut64 paddr, ut64 vaddr) {
 
 // Declaration of the plugin
 RBinPlugin r_bin_plugin_qnx = {
-	.name = "qnx",
-	.desc = "QNX executable file support",
-	.license = "LGPL3",
+	.meta = {
+		.name = "qnx",
+		.author = "deepakchethan",
+		.desc = "QNX executable file support",
+		.license = "LGPL3",
+	},
 	.load = &load,
 	.destroy = &destroy,
 	.relocs = &relocs,
 	.baddr = &baddr,
-	.author = "deepakchethan",
 	.check = &check,
 	.header = &header,
 	.get_sdb = &get_sdb,

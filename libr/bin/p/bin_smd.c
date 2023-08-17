@@ -318,9 +318,11 @@ static RList *entries(RBinFile *bf) { // Should be 3 offsets pointed by NMI, RES
 }
 
 RBinPlugin r_bin_plugin_smd = {
-	.name = "smd",
-	.desc = "SEGA Genesis/Megadrive",
-	.license = "LGPL3",
+	.meta = {
+		.name = "smd",
+		.desc = "SEGA Genesis/Megadrive",
+		.license = "LGPL3",
+	},
 	.load = &load,
 	.check = &check,
 	.baddr = &baddr,

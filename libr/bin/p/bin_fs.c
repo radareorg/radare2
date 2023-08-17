@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2011-2022 - pancake */
+/* radare - LGPL - Copyright 2011-2023 - pancake */
 
 #include <r_bin.h>
 #include <r_fs.h>
@@ -84,11 +84,13 @@ static RBinInfo* info(RBinFile *bf) {
 }
 
 RBinPlugin r_bin_plugin_fs = {
-	.name = "fs",
-	.desc = "filesystem bin plugin",
-	.author = "pancake",
-	.version = "1.0",
-	.license = "LGPL3",
+	.meta = {
+		.name = "fs",
+		.desc = "filesystem bin plugin",
+		.author = "pancake",
+		.version = "1.0",
+		.license = "LGPL3",
+	},
 	.load = &load,
 	.destroy = &destroy,
 	.check = &check,

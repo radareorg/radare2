@@ -29,7 +29,7 @@ R_API void r_bin_demangle_list(RBin *bin) {
 	}
 	r_list_foreach (bin->plugins, it, plugin) {
 		if (plugin->demangle) {
-			bin->cb_printf ("%s\n", plugin->name);
+			bin->cb_printf ("%s\n", plugin->meta.name);
 		}
 	}
 }
@@ -39,7 +39,7 @@ R_API char *r_bin_demangle_plugin(RBin *bin, const char *name, const char *str) 
 	RListIter *it;
 	if (bin && name && str) {
 		r_list_foreach (bin->plugins, it, plugin) {
-			if (plugin->demangle && !strncmp (plugin->name, name, strlen (plugin->name))) {
+			if (plugin->demangle && !strncmp (plugin->meta.name, name, strlen (plugin->meta.name))) {
 				return plugin->demangle (str);
 			}
 		}

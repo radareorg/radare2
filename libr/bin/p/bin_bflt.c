@@ -260,9 +260,12 @@ static void destroy(RBinFile *bf) {
 }
 
 RBinPlugin r_bin_plugin_bflt = {
-	.name = "bflt",
-	.desc = "bFLT format r_bin plugin",
-	.license = "LGPL3",
+	.meta = {
+		.name = "bflt",
+		.author = "Oscar Salvador",
+		.desc = "bFLT format r_bin plugin",
+		.license = "LGPL3",
+	},
 	.load = &load,
 	.destroy = &destroy,
 	.check = &check,

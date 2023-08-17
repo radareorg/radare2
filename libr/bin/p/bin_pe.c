@@ -435,9 +435,11 @@ static void header(RBinFile *bf) {
 }
 
 RBinPlugin r_bin_plugin_pe = {
-	.name = "pe",
-	.desc = "PE bin plugin",
-	.license = "LGPL3",
+	.meta = {
+		.name = "pe",
+		.desc = "PE bin plugin",
+		.license = "LGPL3",
+	},
 	.get_sdb = &get_sdb,
 	.load = &load,
 	.destroy = &destroy,

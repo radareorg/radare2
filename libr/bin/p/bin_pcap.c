@@ -142,10 +142,12 @@ static ut64 baddr(RBinFile *bf) {
 }
 
 RBinPlugin r_bin_plugin_pcap = {
-	.name = "pcap",
-	.desc = "libpcap/.pcap format",
-	.license = "LGPL3",
-	.author = "srimanta,pancake",
+	.meta = {
+		.name = "pcap",
+		.desc = "libpcap/.pcap format",
+		.license = "LGPL3",
+		.author = "srimanta,pancake",
+	},
 	.info = info,
 	.libs = libs,
 	.baddr = baddr,

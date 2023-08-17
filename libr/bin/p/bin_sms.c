@@ -102,9 +102,11 @@ static RBinInfo *info(RBinFile *bf) {
 }
 
 RBinPlugin r_bin_plugin_sms = {
-	.name = "sms",
-	.desc = "SEGA MasterSystem/GameGear",
-	.license = "LGPL3",
+	.meta = {
+		.name = "sms",
+		.desc = "SEGA MasterSystem/GameGear",
+		.license = "LGPL3",
+	},
 	.load = &load,
 	.check = &check,
 	.info = &info,

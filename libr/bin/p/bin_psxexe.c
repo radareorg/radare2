@@ -110,9 +110,11 @@ static RList* strings(RBinFile* bf) {
 }
 
 RBinPlugin r_bin_plugin_psxexe = {
-	.name = "psxexe",
-	.desc = "Sony PlayStation 1 Executable",
-	.license = "LGPL3",
+	.meta = {
+		.name = "psxexe",
+		.desc = "Sony PlayStation 1 Executable",
+		.license = "LGPL3",
+	},
 	.load = &load,
 	.check = &check,
 	.info = &info,

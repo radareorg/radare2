@@ -83,9 +83,11 @@ static RList *sections(RBinFile *bf) {
 }
 
 RBinPlugin r_bin_plugin_ningba = {
-	.name = "ningba",
-	.desc = "Game Boy Advance format r_bin plugin",
-	.license = "LGPL3",
+	.meta = {
+		.name = "ningba",
+		.desc = "Game Boy Advance format r_bin plugin",
+		.license = "LGPL3",
+	},
 	.load = &load,
 	.check = &check,
 	.entries = &entries,

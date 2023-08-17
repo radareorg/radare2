@@ -94,9 +94,11 @@ static RBuffer* create(RBin* bin, const ut8 *code, int codelen, const ut8 *data,
 }
 
 RBinPlugin r_bin_plugin_cgc = {
-	.name = "cgc",
-	.desc = "CGC format r_bin plugin",
-	.license = "LGPL3",
+	.meta = {
+		.name = "cgc",
+		.desc = "CGC format r_bin plugin",
+		.license = "LGPL3",
+	},
 	.get_sdb = &get_sdb,
 	.load = load,
 	.destroy = &destroy,
