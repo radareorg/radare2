@@ -40,7 +40,7 @@ static bool check_buffer(RBinFile *bf, RBuffer *b) {
 	return false;
 }
 
-static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *b, ut64 loadaddr, Sdb *sdb) {
+static bool load_buffer(RBinFile *bf, RBuffer *b, ut64 loadaddr) {
 	ut8 *buf = malloc (bf->size);
 	if (!buf) {
 		R_LOG_ERROR ("cannot malloc filesize");

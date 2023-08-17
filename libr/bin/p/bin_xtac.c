@@ -515,11 +515,11 @@ static RBinXtacObj *r_bin_xtac_new_buf(RBuffer *buf, bool verbose) {
 	return bin;
 }
 
-static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
-	r_return_val_if_fail (bf && bin_obj && buf, false);
+static bool load_buffer(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
+	r_return_val_if_fail (bf && buf, false);
 	RBinXtacObj *res = r_bin_xtac_new_buf (buf, bf->rbin->verbose);
 	if (res) {
-		*bin_obj = res;
+		bf->bo->bin_obj = res;
 		return true;
 	}
 	return false;

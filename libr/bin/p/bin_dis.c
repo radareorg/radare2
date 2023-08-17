@@ -20,7 +20,7 @@ static bool check_buffer(RBinFile *bf, RBuffer *buf) {
 	return (magic == XMAGIC || magic == SMAGIC) && r_buf_size (buf) > 12;
 }
 
-static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
+static bool load_buffer(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
 	ut32 i;
 
 	if (!check_buffer (bf, buf)) {
@@ -153,10 +153,7 @@ static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadadd
 		}
 	}
 	o->link_size = r_buf_tell (buf) - addr;
-
-	if (bin_obj) {
-		*bin_obj = o;
-	}
+	bf->bo->bin_obj = o;
 
 	return true;
 invalid:

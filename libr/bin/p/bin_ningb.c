@@ -1,4 +1,4 @@
-/* radare - LGPL - 2013 - 2017 - condret@runas-racer.com */
+/* radare - LGPL - 2013-2023 - condret@runas-racer.com */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -15,7 +15,7 @@ static bool check_buffer(RBinFile *bf, RBuffer *b) {
 	return false;
 }
 
-static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
+static bool load_buffer(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
 	return check_buffer (bf, buf);
 }
 
@@ -24,34 +24,30 @@ static ut64 baddr(RBinFile *bf) {
 }
 
 static RBinAddr* binsym(RBinFile *bf, int type) {
-	if (type == R_BIN_SYM_MAIN && bf && bf->buf) {
+	r_return_val_if_fail (bf && bf->buf, NULL);
+	if (type == R_BIN_SYM_MAIN) {
 		ut8 init_jmp[4];
 		RBinAddr *ret = R_NEW0 (RBinAddr);
-		if (!ret) {
-			return NULL;
+		if (ret) {
+			r_buf_read_at (bf->buf, 0x100, init_jmp, 4);
+			if (init_jmp[1] == 0xc3) {
+				ret->paddr = ret->vaddr = init_jmp[3]*0x100 + init_jmp[2];
+				return ret;
+			}
+			free (ret);
 		}
-		r_buf_read_at (bf->buf, 0x100, init_jmp, 4);
-		if (init_jmp[1] == 0xc3) {
-			ret->paddr = ret->vaddr = init_jmp[3]*0x100 + init_jmp[2];
-			return ret;
-		}
-		free (ret);
 	}
 	return NULL;
 }
 
 static RList* entries(RBinFile *bf) {
-	RList *ret = r_list_new ();
-	RBinAddr *ptr = NULL;
-
-	if (bf && bf->buf) {
-		if (!ret) {
-			return NULL;
-		}
-		ret->free = free;
-		if (!(ptr = R_NEW0 (RBinAddr))) {
-			return ret;
-		}
+	r_return_val_if_fail (bf && bf->buf, NULL);
+	RList *ret = r_list_newf (free);
+	if (!ret) {
+		return NULL;
+	}
+	RBinAddr *ptr = R_NEW0 (RBinAddr);
+	if (ptr) {
 		ptr->paddr = ptr->vaddr = ptr->hpaddr = 0x100;
 		r_list_append (ret, ptr);
 	}

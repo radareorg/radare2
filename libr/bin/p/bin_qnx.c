@@ -41,7 +41,7 @@ static void destroy(RBinFile *bf) {
 	free (qo);
 }
 
-static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
+static bool load_buffer(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
 	QnxObj *qo = R_NEW0 (QnxObj);
 	if (!qo) {
 		return false;
@@ -129,10 +129,10 @@ static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadadd
 		}
 		offset += lrec.data_nbytes;
 	}
-	sdb_ns_set (sdb, "info", qo->kv);
+	sdb_ns_set (bf->sdb, "info", qo->kv);
 	qo->sections = sections;
 	qo->fixups = fixups;
-	*bin_obj = qo;
+	bf->bo->bin_obj = qo;
 	return true;
 beach:
 	free (qo);

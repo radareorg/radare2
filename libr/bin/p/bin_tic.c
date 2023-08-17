@@ -120,11 +120,11 @@ static bool check_buffer(RBinFile *bf, RBuffer *buf) {
 	return true;
 }
 
-static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
+static bool load_buffer(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
 	if (!check_buffer (bf, buf)) {
 		return false;
 	}
-	*bin_obj = r_buf_ref (buf);
+	bf->bo->bin_obj = r_buf_ref (buf);
 	return true;
 }
 

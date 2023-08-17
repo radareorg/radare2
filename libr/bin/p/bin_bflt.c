@@ -4,9 +4,9 @@
 #include <r_io.h>
 #include "bflt/bflt.h"
 
-static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
-	*bin_obj = r_bin_bflt_new_buf (buf);
-	return *bin_obj;
+static bool load_buffer(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
+	bf->bo->bin_obj = r_bin_bflt_new_buf (buf);
+	return bf->bo->bin_obj != NULL;
 }
 
 static RList *entries(RBinFile *bf) {

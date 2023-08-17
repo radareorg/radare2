@@ -44,14 +44,15 @@ static char *entitlements(RBinFile *bf, bool json) {
 	return NULL;
 }
 
-static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
-	r_return_val_if_fail (bf && bin_obj && buf, false);
+static bool load_buffer(RBinFile *bf, RBuffer *buf, ut64 laddr) {
+	r_return_val_if_fail (bf && buf, false);
 	struct MACH0_(opts_t) opts;
 	MACH0_(opts_set_default) (&opts, bf);
 	opts.parse_start_symbols = true;
 
 	struct MACH0_(obj_t) *mo = MACH0_(new_buf) (buf, &opts);
 	if (mo) {
+		bf->bo->bin_obj = mo;
 		if (mo->chained_starts) {
 			RIO *io = bf->rbin->iob.io;
 			RBuffer *nb = swizzle_io_read (bf, mo, io);
@@ -60,8 +61,7 @@ static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadadd
 			}
 			bf->buf = nb;
 		}
-		sdb_ns_set (sdb, "info", mo->kv);
-		*bin_obj = mo;
+		sdb_ns_set (bf->sdb, "info", mo->kv);
 		return true;
 	}
 	return false;

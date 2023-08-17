@@ -1,8 +1,5 @@
-/* radare - LGPL - Copyright 2009-2022 - nibble, pancake, alvarofe */
+/* radare - LGPL - Copyright 2009-2023 - nibble, pancake, alvarofe */
 
-#include <r_types.h>
-#include <r_util.h>
-#include <r_lib.h>
 #include <r_bin.h>
 #include "../i/private.h"
 #include "pe/pe.h"
@@ -12,12 +9,12 @@ static Sdb* get_sdb(RBinFile *bf) {
 	return pe? pe->kv: NULL;
 }
 
-static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
-	r_return_val_if_fail (bf && bin_obj && buf && sdb, false);
+static bool load_buffer(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
+	r_return_val_if_fail (bf && buf, false);
 	RBinPEObj *res = PE_(r_bin_pe_new_buf) (buf, bf->rbin->verbose);
 	if (res) {
-		sdb_ns_set (sdb, "info", res->kv);
-		*bin_obj = res;
+		sdb_ns_set (bf->sdb, "info", res->kv);
+		bf->bo->bin_obj = res;
 		return true;
 	}
 	return false;

@@ -713,10 +713,8 @@ static Sdb *get_sdb(RBinFile *bf) {
 	return bin->kv;
 }
 
-static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
-	RBinDexObj *o = r_bin_dex_new_buf (buf, bf->rbin->verbose);
-	*bin_obj = o;
-	return o;
+static bool load_buffer(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
+	return bf->bo->bin_obj = r_bin_dex_new_buf (buf, bf->rbin->verbose);
 }
 
 static bool check_buffer(RBinFile *bf, RBuffer *buf) {

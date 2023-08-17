@@ -16,17 +16,17 @@ static Sdb *get_sdb(RBinFile *bf) {
 	return bin? bin->kv: NULL;
 }
 
-static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *b, ut64 loadaddr, Sdb *sdb) {
-	r_return_val_if_fail (bf && bin_obj && b, false);
+static bool load_buffer(RBinFile *bf, RBuffer *b, ut64 loadaddr) {
+	r_return_val_if_fail (bf && b, false);
 	ut64 sz = r_buf_size (b);
 	if (sz == 0 || sz == UT64_MAX) {
 		return false;
 	}
 	struct r_bin_te_obj_t *res = r_bin_te_new_buf (b);
 	if (res) {
-		sdb_ns_set (sdb, "info", res->kv);
+		sdb_ns_set (bf->sdb, "info", res->kv);
 	}
-	*bin_obj = res;
+	bf->bo->bin_obj = res;
 	return true;
 }
 

@@ -227,7 +227,7 @@ static bool check_buffer(RBinFile *bf, RBuffer *buf) {
 }
 
 // RBinPlugin method setting up sections and fixing up PIC.
-static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
+static bool load_buffer(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
 	RelSection *sections = NULL;
 	int i;
 	int num_imps;
@@ -301,7 +301,7 @@ static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadadd
 		rel->libname = "";
 	}
 
-	*bin_obj = rel;
+	bf->bo->bin_obj = rel;
 	return true;
 
 beach:

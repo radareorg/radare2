@@ -25,11 +25,11 @@ static bool check_buffer(RBinFile *bf, RBuffer *b) {
 	return false;
 }
 
-static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
-	r_return_val_if_fail (bf && bin_obj && buf, false);
+static bool load_buffer(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
+	r_return_val_if_fail (bf && buf, false);
 	RBinLEObj *res = r_bin_le_new_buf (buf);
 	if (res) {
-		*bin_obj = res;
+		bf->bo->bin_obj = res;
 		return true;
 	}
 	return false;

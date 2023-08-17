@@ -78,11 +78,11 @@ static bool check_buffer(RBinFile *bf, RBuffer *b) {
 	return !memcmp (magic, "\x80\x37\x12\x40", 4);
 }
 
-static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *b, ut64 loadaddr, Sdb *sdb) {
+static bool load_buffer(RBinFile *bf, RBuffer *b, ut64 loadaddr) {
 	if (check_buffer (bf, b)) {
 		ut8 buf[sizeof (N64Header)] = {0};
 		r_buf_read_at (b, 0, buf, sizeof (buf));
-		*bin_obj = memcpy (&n64_header, buf, sizeof (N64Header));
+		bf->bo->bin_obj = memcpy (&n64_header, buf, sizeof (N64Header));
 		return true;
 	}
 	return false;

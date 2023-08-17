@@ -7,9 +7,8 @@
 
 #include "coff/xcoff64.h"
 
-static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
-	*bin_obj = r_bin_xcoff64_new_buf (buf, bf->rbin->verbose);
-	return *bin_obj;
+static bool load_buffer(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
+	return bf->bo->bin_obj = r_bin_xcoff64_new_buf (buf, bf->rbin->verbose);
 }
 
 static void destroy(RBinFile *bf) {

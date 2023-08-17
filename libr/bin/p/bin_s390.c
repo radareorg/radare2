@@ -96,14 +96,14 @@ static bool check_buffer(RBinFile *bf, RBuffer *b) {
 	return false;
 }
 
-static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *b, ut64 loadaddr, Sdb *sdb) {
+static bool load_buffer(RBinFile *bf, RBuffer *b, ut64 loadaddr) {
 	bool res = check_buffer (bf, b);
 	if (res) {
 		s390user *su = R_NEW0 (s390user);
 		if (su) {
 			su->sb = r_strbuf_new ("");
 			su->symbols = r_list_newf (r_bin_symbol_free);
-			*bin_obj = (void*)su;
+			bf->bo->bin_obj = (void*)su;
 		}
 	}
 	return res;
