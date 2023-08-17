@@ -5151,7 +5151,7 @@ static void print_fcn_arg(RCore *core, const char *type, const char *name,
 	} else {
 		r_cons_printf ("-1");
 	}
-	r_cons_chop ();
+	r_cons_trim ();
 }
 
 static void delete_last_comment(RDisasmState *ds) {

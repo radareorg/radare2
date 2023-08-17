@@ -2151,7 +2151,7 @@ R_API bool r_cons_drop(int n) {
 	return true;
 }
 
-R_API void r_cons_chop(void) {
+R_API void r_cons_trim(void) {
 	RConsContext *c = C;
 	while (c->buffer_len > 0) {
 		char ch = c->buffer[c->buffer_len - 1];
