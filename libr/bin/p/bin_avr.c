@@ -8,14 +8,14 @@
 		!instr ((b), (size)) ||   \
 		!instr ((b), (size)*2) || \
 		!instr ((b), (size)*3)) { \
-		return false;             \
+		return UT64_MAX;             \
 	}
 
 #define CHECK3INSTR(b, instr, size)       \
 	if (!instr ((b), (size)) ||       \
 		!instr ((b), (size)*2) || \
 		!instr ((b), (size)*3)) { \
-		return false;             \
+		return UT64_MAX;             \
 	}
 
 typedef struct {
@@ -43,40 +43,45 @@ static ut64 jmp_dest(RBuffer* b, ut64 addr) {
 static ut64 check_rjmp(RBuffer *b) {
 	CHECK3INSTR (b, rjmp, 4);
 	ut64 dst = rjmp_dest (0, b);
+	eprintf ("RES IS %llx\n", dst);
 	if (dst < 1 || dst > r_buf_size (b)) {
 		return UT64_MAX;
 	}
 	return dst;
 }
-
 
 static ut64 check_jmp(RBuffer *b) {
 	CHECK4INSTR (b, jmp, 4);
 	ut64 dst = jmp_dest (b, 0);
+	eprintf ("RES IS %llx\n", dst);
 	if (dst < 1 || dst > r_buf_size (b)) {
 		return UT64_MAX;
 	}
 	return dst;
 }
 
-static bool check(RBinFile *bf, RBuffer *buf) {
+static bool check_or_load(RBinFile *bf, RBuffer *buf, bool doload) {
 	if (r_buf_size (buf) < 32) {
 		return false;
 	}
-	ut64 res = rjmp (buf, 0)
-		? check_rjmp (buf)
-		: check_jmp (buf);
-	if (res != UT64_MAX) {
-		AvrPriv *ap = R_NEW0 (AvrPriv);
-		ap->tmp_entry = res;
-		bf->bo->bin_obj = ap;
-		return true;
+	ut64 res = rjmp (buf, 0) ? check_rjmp (buf) : check_jmp (buf);
+	if (doload) {
+		if (res != UT64_MAX) {
+			AvrPriv *ap = R_NEW0 (AvrPriv);
+			ap->tmp_entry = res;
+			bf->bo->bin_obj = ap;
+			return true;
+		}
 	}
-	return false;
+	return res != UT64_MAX;
+}
+
+static bool check(RBinFile *bf, RBuffer *buf) {
+	return check_or_load (bf, buf, false);
 }
 
 static bool load(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
-	return check (bf, buf);
+	return check_or_load (bf, buf, true);
 }
 
 static void destroy(RBinFile *bf) {
