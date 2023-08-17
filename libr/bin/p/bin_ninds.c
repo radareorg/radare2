@@ -1,4 +1,4 @@
-/* radare - LGPL - 2015-2022 - a0rtega */
+/* radare - LGPL - 2015-2023 - a0rtega */
 
 #include <r_lib.h>
 #include <r_bin.h>
@@ -25,15 +25,11 @@ static bool check_buffer(RBinFile *bf, RBuffer *b) {
 static bool load_buffer(RBinFile *bf, RBuffer *b, ut64 loadaddr) {
 	r_buf_read_at (b, 0, (ut8*)&loaded_header, sizeof (loaded_header));
 	bf->bo->bin_obj = &loaded_header;
-	return bf->bo->bin_obj;
+	return bf->bo->bin_obj != NULL;
 }
 
 static ut64 baddr(RBinFile *bf) {
 	return (ut64) loaded_header.arm9_ram_address;
-}
-
-static ut64 boffset(RBinFile *bf) {
-	return 0LL;
 }
 
 static RList *sections(RBinFile *bf) {
@@ -130,7 +126,6 @@ RBinPlugin r_bin_plugin_ninds = {
 	.load_buffer = &load_buffer,
 	.check_buffer = &check_buffer,
 	.baddr = &baddr,
-	.boffset = &boffset,
 	.entries = &entries,
 	.sections = &sections,
 	.info = &info,
