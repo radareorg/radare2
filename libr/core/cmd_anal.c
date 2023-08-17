@@ -12492,6 +12492,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 				r_core_task_yield (&core->tasks);
 				R_LOG_INFO ("Finding and parsing C++ vtables (avrr)");
 				r_core_cmd_call (core, "avrr");
+				R_LOG_INFO ("Analyzing methods");
 				r_core_cmd0 (core, "af @@ method.*");
 				r_core_task_yield (&core->tasks);
 				// r_config_set_b (core->config, "anal.calls", c);
@@ -12531,6 +12532,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 					r_core_task_yield (&core->tasks);
 				}
 				if (core->anal->opt.vars) {
+					R_LOG_INFO ("Recovering local variables (afva)");
 					RAnalFunction *fcni;
 					RListIter *iter;
 					r_list_foreach (core->anal->fcns, iter, fcni) {
