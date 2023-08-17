@@ -2,6 +2,7 @@
 
 #include <r_core.h>
 #include <r_vec.h>
+#include <r_util/r_json.h>
 
 R_LIB_VERSION (r_sign);
 
@@ -2955,6 +2956,215 @@ R_API char *r_sign_path(RAnal *a, const char *file) {
 	return NULL;
 }
 
+enum {
+	SIGNDB_TYPE_SDB,
+	SIGNDB_TYPE_KV,
+	SIGNDB_TYPE_JSON,
+	SIGNDB_TYPE_R2,
+	SIGNDB_TYPE_INVALID = -1,
+};
+
+static int signdb_type(const char *file) {
+	if (r_str_endswith (file, ".sdb")) {
+		return SIGNDB_TYPE_SDB;
+	}
+	if (r_str_endswith (file, ".sdb.txt")) {
+		return SIGNDB_TYPE_KV;
+	}
+	if (r_str_endswith (file, ".json")) {
+		return SIGNDB_TYPE_JSON;
+	}
+	if (r_str_endswith (file, ".r2")) {
+		return SIGNDB_TYPE_R2;
+	}
+	int i, sz;
+	char *data = r_file_slurp_range (file, 0, 0x200, &sz);
+	if (!data) {
+		return SIGNDB_TYPE_INVALID;
+	}
+	int is_sdb = 16;
+	int is_kv = 4;
+	int is_r2 = 4;
+	int t = SIGNDB_TYPE_INVALID;
+	if (r_str_startswith (data, "[{\"name\":")) {
+		t = SIGNDB_TYPE_JSON;
+	} else {
+		for (i = 0; i < sz; i++) {
+			if (!strncmp (data + i, "\nza ", sz - i)) {
+				is_r2--;
+				i++;
+				continue;
+			}
+			switch (i) {
+			case 3:
+			case 7:
+			case 0xb:
+			case 0xf:
+				if (data[i] == 0) {
+					is_sdb--;
+				}
+				break;
+			case '=':
+			case '\n':
+				is_kv--;
+				break;
+			default:
+				if (data[i] != 0) {
+					is_sdb--;
+				}
+				break;
+			}
+		}
+		if (is_sdb == 0) {
+			t = SIGNDB_TYPE_SDB;
+		} else if (is_r2 < 0) {
+			t = SIGNDB_TYPE_R2;
+		} else if (is_kv < 0) {
+			t = SIGNDB_TYPE_KV;
+		}
+	}
+	free (data);
+	return t;
+}
+
+static bool sign_load_r2(RAnal *a, const char *path) {
+	char *cmd = r_str_newf (". %s", path);
+	a->coreb.cmd (a->coreb.core, cmd);
+	free (cmd);
+	return true;
+}
+
+static bool load_json_signature(RAnal *a, const RJson *child) {
+	const char *n = r_json_type (child);
+	if (strcmp (n, "object")) {
+		return false;
+	}
+	RSignItem *it = r_sign_item_new ();
+
+	const RJson *name = r_json_get (child, "name");
+	if (name && name->type == R_JSON_STRING) {
+		it->name = strdup (name->str_value);
+	}
+	const RJson *rname = r_json_get (child, "realname");
+	if (rname && rname->type == R_JSON_STRING) {
+		it->realname = strdup (rname->str_value);
+	}
+	const RJson *bytes = r_json_get (child, "bytes");
+	const RJson *mask = r_json_get (child, "mask");
+	if (bytes && mask) {
+		it->bytes = R_NEW0 (RSignBytes);
+		it->bytes->bytes = (ut8*)strdup (bytes->str_value);
+		it->bytes->size = r_hex_str2bin (bytes->str_value, it->bytes->bytes);
+		it->bytes->mask = (ut8*)strdup (mask->str_value);
+		(void)r_hex_str2bin (mask->str_value, it->bytes->mask);
+	}
+
+	const RJson *types = r_json_get (child, "types");
+	if (types && types->type == R_JSON_STRING) {
+		it->types = strdup (types->str_value);
+	}
+
+	const RJson *next = r_json_get (child, "next");
+	if (next && next->type == R_JSON_STRING) {
+		it->next = strdup (next->str_value);
+	}
+	const RJson *addr = r_json_get (child, "addr");
+	if (addr) {
+		it->addr = addr->num.u_value;
+	}
+	const RJson *graph = r_json_get (child, "graph");
+	if (graph && graph ->type == R_JSON_OBJECT) {
+		const RJson *bcc = r_json_get (graph, "cc");
+		const RJson *nbb = r_json_get (graph, "nbbs");
+		const RJson *edg = r_json_get (graph, "edges");
+		const RJson *ebb = r_json_get (graph, "ebbs");
+		const RJson *bbs = r_json_get (graph, "bbsum");
+		it->graph = R_NEW0 (RSignGraph);
+		it->graph->cc = bcc? bcc->num.u_value: 0;
+		it->graph->nbbs = nbb? nbb->num.u_value: 0;
+		it->graph->edges = edg? edg->num.u_value: 0;
+		it->graph->ebbs = ebb? ebb->num.u_value: 0;
+		it->graph->bbsum = bbs? bbs->num.u_value: 0;
+	}
+	const RJson *refs = r_json_get (child, "refs");
+	if (refs) {
+		it->refs = r_list_new ();
+		RJson *p = refs->children.first;
+		while (p) {
+			if (p->type == R_JSON_STRING) {
+				r_list_append (it->refs, strdup (p->str_value));
+			}
+			p = p->next;
+		}
+	}
+	const RJson *xrefs = r_json_get (child, "xrefs");
+	if (xrefs) {
+		it->xrefs = r_list_new ();
+		RJson *p = xrefs->children.first;
+		while (p) {
+			if (p->type == R_JSON_STRING) {
+				r_list_append (it->xrefs, strdup (p->str_value));
+			}
+			p = p->next;
+		}
+	}
+	const RJson *hash = r_json_get (child, "hash");
+	if (hash && hash->type == R_JSON_OBJECT) {
+		const RJson *bbhash = r_json_get (hash, "bbhash");
+		it->hash = R_NEW0 (RSignHash);
+		it->hash->bbhash = strdup (bbhash->str_value);
+	}
+
+	r_sign_set_item (a->sdb_zigns, it, NULL);
+	r_sign_item_free (it);
+	return true;
+}
+
+static bool sign_load_json(RAnal *a, const char *path) {
+	size_t sz;
+	char *text = r_file_slurp (path, &sz);
+	if (!text) {
+		return false;
+	}
+	bool res = false;
+	RJson *rj = r_json_parse (text);
+	if (rj->type != R_JSON_ARRAY) {
+		R_LOG_ERROR ("Invalid json");
+	} else {
+		res = true;
+		// walk the array
+		int i = 0;
+		for (i = 0;; i++) {
+			const RJson *child = r_json_item (rj, i);
+			if (!child) {
+				break;
+			}
+			if (!load_json_signature (a, child)) {
+				R_LOG_WARN ("invalid json");
+				res = false;
+				break;
+			}
+		}
+	}
+	r_json_free (rj);
+	return res;
+}
+
+static bool sign_load_sdb(RAnal *a, const char *path, bool merge) {
+	Sdb *db = sdb_new (NULL, path, 0);
+	if (db) {
+		struct load_sign_data u = {
+			.anal = a,
+			.merge = merge
+		};
+		sdb_foreach (db, loadCB, &u);
+		sdb_close (db);
+		sdb_free (db);
+		return true;
+	}
+	return false;
+}
+
 R_API bool r_sign_load(RAnal *a, const char *file, bool merge) {
 	r_return_val_if_fail (a && file, false);
 	char *path = r_sign_path (a, file);
@@ -2967,17 +3177,26 @@ R_API bool r_sign_load(RAnal *a, const char *file, bool merge) {
 		free (path);
 		return false;
 	}
-	Sdb *db = sdb_new (NULL, path, 0);
-	if (!db) {
-		free (path);
-		return false;
+	bool res = false;
+	const int type = signdb_type (path);
+	switch (type) {
+	case SIGNDB_TYPE_R2:
+		res = sign_load_r2 (a, path);
+		break;
+	case SIGNDB_TYPE_JSON:
+		res = sign_load_json (a, path);
+		break;
+	case SIGNDB_TYPE_KV:
+	case SIGNDB_TYPE_SDB:
+		res = sign_load_sdb (a, path, merge);
+		break;
+	default:
+		R_LOG_ERROR ("Unsupported signature file format");
+		break;
 	}
-	struct load_sign_data u = { .anal = a, .merge = merge };
-	sdb_foreach (db, loadCB, &u);
-	sdb_close (db);
-	sdb_free (db);
+	// TODO: check if file is an r2 script, sdb database, keyvalue plaintext or json
 	free (path);
-	return true;
+	return res;
 }
 
 R_API bool r_sign_load_gz(RAnal *a, const char *filename, bool merge) {

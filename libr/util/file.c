@@ -538,10 +538,9 @@ R_API ut8 *r_file_slurp_hexpairs(const char *str, int *usz) {
 	return ret;
 }
 
-R_API char *r_file_slurp_range(const char *str, ut64 off, int sz, int *osz) {
-	char *ret;
+R_API char *r_file_slurp_range(const char *file, ut64 off, int sz, int *osz) {
 	size_t read_items;
-	FILE *fd = r_sandbox_fopen (str, "rb");
+	FILE *fd = r_sandbox_fopen (file, "rb");
 	if (!fd) {
 		return NULL;
 	}
@@ -550,7 +549,7 @@ R_API char *r_file_slurp_range(const char *str, ut64 off, int sz, int *osz) {
 		fclose (fd);
 		return NULL;
 	}
-	ret = (char *) malloc (sz + 1);
+	char *ret = (char *) malloc (sz + 1);
 	if (ret) {
 		if (osz) {
 			*osz = (int)(size_t) fread (ret, 1, sz, fd);

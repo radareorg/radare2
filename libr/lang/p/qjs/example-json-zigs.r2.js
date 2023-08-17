@@ -26,4 +26,3 @@ for (const e of a) {
   console.log("za ", e.name, "v", vars(e.vars));
   console.log("za ", e.name, "h", e.hash.bbhash);
 }
-

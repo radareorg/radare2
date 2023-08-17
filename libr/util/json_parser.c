@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2020-2022 - thestr4ng3r, Yaroslav Stavnichiy, pancake */
+/* radare - LGPL - Copyright 2020-2023 - thestr4ng3r, Yaroslav Stavnichiy, pancake */
 
 #define R_LOG_ORIGIN "json.parse"
 
@@ -345,7 +345,7 @@ static char *parse_value(RJson *parent, const char *key, char *p) {
 		R_LOG_ERROR ("unexpected chars (%s)", p);
 		return NULL; // error
 	case 'f':
-		if (!strncmp (p, "false", 5)) {
+		if (r_str_startswith (p, "false")) {
 			js = create_json (R_JSON_BOOLEAN, key, parent);
 			js->num.u_value = 0;
 			return p + 5;
