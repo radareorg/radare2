@@ -525,7 +525,7 @@ static int r_cmd_java_reload_bin_from_buf(RCore *core, RBinJavaObj *obj, ut8 *bu
 		RBinPlugin *tmp;
 		RListIter *iter;
 		r_list_foreach (core->bin->plugins, iter, tmp) {
-			if (!strncmp ("java", tmp->name, 4)) {
+			if (!strncmp ("java", tmp->meta.name, 4)) {
 				//cp = tmp;
 				break;
 			}
@@ -1615,7 +1615,7 @@ static RBinJavaObj *r_cmd_java_get_bin_obj(RAnal *anal) {
 		return NULL;
 	}
 	plugin = b->cur->bo->plugin;
-	is_java = (plugin && strcmp (plugin->name, "java") == 0)? 1: 0;
+	is_java = (plugin && strcmp (plugin->meta.name, "java") == 0)? 1: 0;
 	return is_java? b->cur->bo->bin_obj: NULL;
 }
 

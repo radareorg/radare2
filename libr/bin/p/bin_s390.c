@@ -375,10 +375,12 @@ static void destroy(RBinFile *bf) {
 }
 
 RBinPlugin r_bin_plugin_s390 = {
-	.name = "s390",
-	.desc = "s390 Load Module parser",
-	.license = "LGPL3",
-	.author = "Jose Antonio Romero",
+	.meta = {
+		.name = "s390",
+		.desc = "s390 Load Module parser",
+		.license = "LGPL3",
+		.author = "Jose Antonio Romero",
+	},
 	.load = &load,
 	.check = &check,
 	.baddr = &baddr,

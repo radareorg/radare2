@@ -54,9 +54,11 @@ static RBinInfo *info(RBinFile *bf) {
 }
 
 RBinPlugin r_bin_plugin_zimg = {
-	.name = "zimg",
-	.desc = "zimg format bin plugin",
-	.license = "LGPL3",
+	.meta = {
+		.name = "zimg",
+		.desc = "zimg format bin plugin",
+		.license = "LGPL3",
+	},
 	.get_sdb = &get_sdb,
 	.load = &load,
 	.check = &check,

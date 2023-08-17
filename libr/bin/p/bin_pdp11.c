@@ -222,9 +222,11 @@ static ut64 size(RBinFile *bf) {
 }
 
 RBinPlugin r_bin_plugin_pdp11 = {
-	.name = "pdp11",
-	.desc = "PDP11",
-	.license = "MIT",
+	.meta = {
+		.name = "pdp11",
+		.desc = "PDP11",
+		.license = "MIT",
+	},
 	.load = &load,
 	.size = &size,
 	.check = &check,

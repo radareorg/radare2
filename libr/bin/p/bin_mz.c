@@ -234,9 +234,11 @@ static RList *relocs(RBinFile *bf) {
 }
 
 RBinPlugin r_bin_plugin_mz = {
-	.name = "mz",
-	.desc = "MZ bin plugin",
-	.license = "MIT",
+	.meta = {
+		.name = "mz",
+		.desc = "MZ bin plugin",
+		.license = "MIT",
+	},
 	.get_sdb = &get_sdb,
 	.load = &load,
 	.destroy = &destroy,

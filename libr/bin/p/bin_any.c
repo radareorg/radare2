@@ -40,9 +40,11 @@ static void fini(RBinFile *bf) {
 }
 
 RBinPlugin r_bin_plugin_any = {
-	.name = "any",
-	.desc = "Dummy format r_bin plugin",
-	.license = "LGPL3",
+	.meta = {
+		.name = "any",
+		.desc = "Dummy format r_bin plugin",
+		.license = "LGPL3",
+	},
 	.load = load,
 	.destroy = fini,
 	.info = info,

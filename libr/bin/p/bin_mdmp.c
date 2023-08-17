@@ -451,9 +451,11 @@ static bool check(RBinFile *bf, RBuffer *b) {
 }
 
 RBinPlugin r_bin_plugin_mdmp = {
-	.name = "mdmp",
-	.desc = "Minidump format r_bin plugin",
-	.license = "LGPL3",
+	.meta = {
+		.name = "mdmp",
+		.desc = "Minidump format r_bin plugin",
+		.license = "LGPL3",
+	},
 	.destroy = &destroy,
 	.entries = entries,
 	.get_sdb = &get_sdb,

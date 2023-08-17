@@ -2195,9 +2195,11 @@ static void rebase_buffer_fixup(RKernelCacheObj *kobj, ut64 off, RIODesc *fd, ut
 }
 
 RBinPlugin r_bin_plugin_xnu_kernelcache = {
-	.name = "kernelcache",
-	.desc = "kernelcache bin plugin",
-	.license = "LGPL3",
+	.meta = {
+		.name = "kernelcache",
+		.desc = "kernelcache bin plugin",
+		.license = "LGPL3",
+	},
 	.destroy = &destroy,
 	.load = &load,
 	.entries = &entries,

@@ -124,9 +124,11 @@ static RBinInfo *info(RBinFile *bf) {
 }
 
 RBinPlugin r_bin_plugin_nin3ds = {
-	.name = "nin3ds",
-	.desc = "Nintendo 3DS FIRM format r_bin plugin",
-	.license = "LGPL3",
+	.meta = {
+		.name = "nin3ds",
+		.desc = "Nintendo 3DS FIRM format r_bin plugin",
+		.license = "LGPL3",
+	},
 	.load = &load,
 	.check = &check,
 	.entries = &entries,

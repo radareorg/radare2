@@ -157,9 +157,11 @@ static RList *strings(RBinFile *bf) {
 }
 
 RBinPlugin r_bin_plugin_avr = {
-	.name = "avr",
-	.desc = "ATmel AVR MCUs",
-	.license = "LGPL3",
+	.meta = {
+		.name = "avr",
+		.desc = "ATmel AVR MCUs",
+		.license = "LGPL3",
+	},
 	.load = load,
 	.destroy = destroy,
 	.entries = entries,

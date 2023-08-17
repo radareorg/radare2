@@ -2190,9 +2190,11 @@ static ut64 baddr(RBinFile *bf) {
 }
 
 RBinPlugin r_bin_plugin_dex = {
-	.name = "dex",
-	.desc = "dex format bin plugin",
-	.license = "LGPL3",
+	.meta = {
+		.name = "dex",
+		.desc = "dex format bin plugin",
+		.license = "LGPL3",
+	},
 	.destroy = &destroy,
 	.get_sdb = &get_sdb,
 	.load = &load,

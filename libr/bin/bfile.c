@@ -811,7 +811,7 @@ R_IPI RBinFile *r_bin_file_xtr_load(RBin *bin, RBinXtrPlugin *xtr, const char *f
 
 	RBinFile *bf = r_bin_file_find_by_name (bin, filename);
 	if (!bf) {
-		bf = r_bin_file_new (bin, filename, r_buf_size (buf), rawstr, fd, xtr->name, bin->sdb, false);
+		bf = r_bin_file_new (bin, filename, r_buf_size (buf), rawstr, fd, xtr->meta.name, bin->sdb, false);
 		if (!bf) {
 			return NULL;
 		}
@@ -827,7 +827,7 @@ R_IPI RBinFile *r_bin_file_xtr_load(RBin *bin, RBinXtrPlugin *xtr, const char *f
 	} else if (xtr->extractall_from_bytes) {
 		ut64 sz = 0;
 		const ut8 *bytes = r_buf_data (buf, &sz);
-		R_LOG_WARN ("TODO: Implement extractall_from_buffer in '%s' xtr.bin plugin", xtr->name);
+		R_LOG_WARN ("TODO: Implement extractall_from_buffer in '%s' xtr.bin plugin", xtr->meta.name);
 		bf->xtr_data = xtr->extractall_from_bytes (bin, bytes, sz);
 	}
 	if (bf->xtr_data) {

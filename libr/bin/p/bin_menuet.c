@@ -201,9 +201,11 @@ static RBuffer* create(RBin* bin, const ut8 *code, int codelen, const ut8 *data,
 }
 
 RBinPlugin r_bin_plugin_menuet = {
-	.name = "menuet",
-	.desc = "Menuet/KolibriOS bin plugin",
-	.license = "LGPL3",
+	.meta = {
+		.name = "menuet",
+		.desc = "Menuet/KolibriOS bin plugin",
+		.license = "LGPL3",
+	},
 	.load = &load,
 	.size = &size,
 	.check = &check,

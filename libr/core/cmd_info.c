@@ -251,10 +251,10 @@ static void r_core_file_info(RCore *core, PJ *pj, int mode) {
 		pj_ki (pj, "block", core->blocksize);
 		if (binfile) {
 			if (binfile->curxtr) {
-				pj_ks (pj, "packet", binfile->curxtr->name);
+				pj_ks (pj, "packet", binfile->curxtr->meta.name);
 			}
 			if (plugin) {
-				pj_ks (pj, "format", plugin->name);
+				pj_ks (pj, "format", plugin->meta.name);
 			}
 		}
 		pj_end (pj);
@@ -283,7 +283,7 @@ static void r_core_file_info(RCore *core, PJ *pj, int mode) {
 			pair ("mode", r_str_rwx_i (desc->perm & R_PERM_RWX));
 		}
 		if (plugin) {
-			pair ("format", plugin->name);
+			pair ("format", plugin->meta.name);
 		}
 		if (desc) {
 			pair ("iorw", r_str_bool (io_cache || desc->perm & R_PERM_W));
@@ -291,7 +291,7 @@ static void r_core_file_info(RCore *core, PJ *pj, int mode) {
 		pair ("block", r_strf ("0x%x", core->blocksize));
 
 		if (binfile && binfile->curxtr) {
-			pair ("packet", binfile->curxtr->name);
+			pair ("packet", binfile->curxtr->meta.name);
 		}
 		if (desc && desc->referer && *desc->referer) {
 			pair ("referer", desc->referer);

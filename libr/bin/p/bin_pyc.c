@@ -124,9 +124,11 @@ static RList *symbols(RBinFile *arch) {
 }
 
 RBinPlugin r_bin_plugin_pyc = {
-	.name = "pyc",
-	.desc = "Python byte-compiled file plugin",
-	.license = "LGPL3",
+	.meta = {
+		.name = "pyc",
+		.desc = "Python byte-compiled file plugin",
+		.license = "LGPL3",
+	},
 	.info = &info,
 	.load = &load,
 	.check = &check,

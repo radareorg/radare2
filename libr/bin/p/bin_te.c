@@ -150,9 +150,11 @@ static bool check(RBinFile *bf, RBuffer *b) {
 }
 
 RBinPlugin r_bin_plugin_te = {
-	.name = "te",
-	.desc = "TE bin plugin", // Terse Executable format
-	.license = "LGPL3",
+	.meta = {
+		.name = "te",
+		.desc = "TE bin plugin", // Terse Executable format
+		.license = "LGPL3",
+	},
 	.get_sdb = &get_sdb,
 	.load = &load,
 	.destroy = &destroy,

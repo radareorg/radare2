@@ -232,9 +232,11 @@ static RList *sections(RBinFile *bf) {
 }
 
 RBinPlugin r_bin_plugin_bootimg = {
-	.name = "bootimg",
-	.desc = "Android Boot Image",
-	.license = "LGPL3",
+	.meta = {
+		.name = "bootimg",
+		.desc = "Android Boot Image",
+		.license = "LGPL3",
+	},
 	.get_sdb = &get_sdb,
 	.load = &load,
 	.destroy = &destroy,

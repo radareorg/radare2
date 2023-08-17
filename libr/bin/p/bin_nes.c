@@ -206,9 +206,11 @@ static RList* entries(RBinFile *bf) { //Should be 3 offsets pointed by NMI, RESE
 }
 
 RBinPlugin r_bin_plugin_nes = {
-	.name = "nes",
-	.desc = "NES",
-	.license = "MIT",
+	.meta = {
+		.name = "nes",
+		.desc = "NES",
+		.license = "MIT",
+	},
 	.load = &load,
 	.check = &check,
 	.entries = &entries,

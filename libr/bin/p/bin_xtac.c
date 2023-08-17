@@ -604,9 +604,11 @@ static RList *symbols(RBinFile *bf) {
 }
 
 RBinPlugin r_bin_plugin_xtac = {
-	.name = "xtac",
-	.desc = "XTAC format r2 plugin",
-	.license = "Apache License 2.0",
+	.meta = {
+		.name = "xtac",
+		.desc = "XTAC format r2 plugin",
+		.license = "Apache License 2.0",
+	},
 	.load = &load,
 	.destroy = &destroy,
 	.check = &check,

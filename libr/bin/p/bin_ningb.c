@@ -280,9 +280,11 @@ RList *mem (RBinFile *bf) {
 }
 
 RBinPlugin r_bin_plugin_ningb = {
-	.name = "ningb",
-	.desc = "Gameboy format r_bin plugin",
-	.license = "LGPL3",
+	.meta = {
+		.name = "ningb",
+		.desc = "Gameboy format r_bin plugin",
+		.license = "LGPL3",
+	},
 	.load = &load,
 	.check = &check,
 	.baddr = &baddr,

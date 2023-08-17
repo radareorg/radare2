@@ -146,13 +146,13 @@ static void destroy(RBinFile *bf) {
 }
 
 RBinPlugin r_bin_plugin_wad = {
-	.name = "wad",
-	.desc = "DOOM WAD format r_bin plugin",
-	.license = "LGPL3",
-	.author = "murphy",
+	.meta = {
+		.name = "wad",
+		.desc = "DOOM WAD format r_bin plugin",
+		.license = "LGPL3",
+		.author = "murphy",
+	},
 	.get_sdb = &get_sdb,
-	.entries = NULL,
-	.sections = NULL,
 	.symbols = &symbols,
 	.check = &check,
 	.load = &load,

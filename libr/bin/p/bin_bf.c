@@ -112,9 +112,11 @@ static RList *entries(RBinFile *bf) {
 }
 
 RBinPlugin r_bin_plugin_bf = {
-	.name = "bf",
-	.desc = "brainfuck",
-	.license = "LGPL3",
+	.meta = {
+		.name = "bf",
+		.desc = "brainfuck",
+		.license = "LGPL3",
+	},
 	.load = &load,
 	.destroy = &destroy,
 	.check = &check,

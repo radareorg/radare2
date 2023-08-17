@@ -288,9 +288,11 @@ static RBinInfo *info(RBinFile *bf) {
 #if !R_BIN_NSO
 
 RBinPlugin r_bin_plugin_nso = {
-	.name = "nso",
-	.desc = "Nintendo Switch NSO0 binaries",
-	.license = "MIT",
+	.meta = {
+		.name = "nso",
+		.desc = "Nintendo Switch NSO0 binaries",
+		.license = "MIT",
+	},
 	.load = &load,
 	.check = &check,
 	.baddr = &baddr,

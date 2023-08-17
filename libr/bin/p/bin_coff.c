@@ -678,9 +678,11 @@ ut16 CHARACTERISTICS
 }
 
 RBinPlugin r_bin_plugin_coff = {
-	.name = "coff",
-	.desc = "COFF format r_bin plugin",
-	.license = "LGPL3",
+	.meta = {
+		.name = "coff",
+		.desc = "COFF format r_bin plugin",
+		.license = "LGPL3",
+	},
 	.get_sdb = &get_sdb,
 	.load = &load,
 	.destroy = &destroy,

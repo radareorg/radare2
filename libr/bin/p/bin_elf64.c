@@ -124,9 +124,11 @@ static RBuffer* create(RBin* bin, const ut8 *code, int codelen, const ut8 *data,
 }
 
 RBinPlugin r_bin_plugin_elf64 = {
-	.name = "elf64",
-	.desc = "elf64 bin plugin",
-	.license = "LGPL3",
+	.meta = {
+		.name = "elf64",
+		.desc = "elf64 bin plugin",
+		.license = "LGPL3",
+	},
 	.get_sdb = &get_sdb,
 	.check = &check,
 	.load = &load,

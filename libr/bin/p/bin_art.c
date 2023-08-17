@@ -200,9 +200,11 @@ static RList *sections(RBinFile *bf) {
 }
 
 RBinPlugin r_bin_plugin_art = {
-	.name = "art",
-	.desc = "Android Runtime",
-	.license = "LGPL3",
+	.meta = {
+		.name = "art",
+		.desc = "Android Runtime",
+		.license = "LGPL3",
+	},
 	.get_sdb = &get_sdb,
 	.load = &load,
 	.destroy = &destroy,

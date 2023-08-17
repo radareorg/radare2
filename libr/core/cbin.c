@@ -609,8 +609,8 @@ static bool bin_strings(RCore *r, PJ *pj, int mode, int va) {
 	if (!r_config_get_i (r->config, "bin.strings")) {
 		return false;
 	}
-	if (plugin->info && plugin->name) {
-		if (!strcmp (plugin->name, "any") && !rawstr) {
+	if (plugin->info && plugin->meta.name) {
+		if (!strcmp (plugin->meta.name, "any") && !rawstr) {
 			if (IS_MODE_JSON (mode)) {
 				pj_a (pj);
 				pj_end (pj);
@@ -2581,8 +2581,8 @@ static int bin_symbols(RCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at, 
 			}
 			binfile = r_bin_cur (r->bin);
 			plugin = r_bin_file_cur_plugin (binfile);
-			if (plugin && plugin->name) {
-				if (r_str_startswith (plugin->name, "pe")) {
+			if (plugin && plugin->meta.name) {
+				if (r_str_startswith (plugin->meta.name, "pe")) {
 					char *module = strdup (r_symbol_name);
 					char *p = strstr (module, ".dll_");
 					if (p && symbol->is_imported) {

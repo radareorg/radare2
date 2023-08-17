@@ -229,9 +229,11 @@ static bool check(RBinFile *bf, RBuffer *b) {
 }
 
 RBinPlugin r_bin_plugin_xcoff64 = {
-	.name = "xcoff64",
-	.desc = "xcoff64 r_bin plugin",
-	.license = "LGPL3",
+	.meta = {
+		.name = "xcoff64",
+		.desc = "xcoff64 r_bin plugin",
+		.license = "LGPL3",
+	},
 	.load = &load,
 	.destroy = &destroy,
 	.check = &check,

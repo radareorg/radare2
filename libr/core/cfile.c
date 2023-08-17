@@ -402,7 +402,8 @@ static int r_core_file_do_load_for_debug(RCore *r, ut64 baseaddr, R_NULLABLE con
 	binfile = r_bin_cur (r->bin);
 	r_core_bin_set_env (r, binfile);
 	plugin = r_bin_file_cur_plugin (binfile);
-	if (plugin && !strcmp (plugin->name, "any")) {
+	const char *plugin_name = plugin? plugin->meta.name: "";
+	if (!strcmp (plugin_name, "any")) {
 		// set use of raw strings
 		// r_config_set_i (r->config, "io.va", false);
 		// r_config_set_b (r->config, "bin.str.raw", true);
@@ -416,8 +417,7 @@ static int r_core_file_do_load_for_debug(RCore *r, ut64 baseaddr, R_NULLABLE con
 			r_core_bin_set_arch_bits (r, binfile->file, info->arch, info->bits);
 		}
 	}
-
-	if (plugin && !strcmp (plugin->name, "dex")) {
+	if (!strcmp (plugin_name, "dex")) {
 		r_core_cmd0 (r, "\"(fix-dex;wx `ph sha1 $s-32 @32` @12 ; wx `ph adler32 $s-12 @12` @8)\"");
 	}
 
@@ -450,7 +450,7 @@ static int r_core_file_do_load_for_io_plugin(RCore *r, ut64 baseaddr, ut64 loada
 		}
 	}
 	plugin = r_bin_file_cur_plugin (binfile);
-	if (plugin && !strcmp (plugin->name, "any")) {
+	if (plugin && !strcmp (plugin->meta.name, "any")) {
 		RBinObject *obj = r_bin_cur_object (r->bin);
 		RBinInfo *info = obj? obj->info: NULL;
 		if (!info) {
@@ -478,7 +478,7 @@ static int r_core_file_do_load_for_io_plugin(RCore *r, ut64 baseaddr, ut64 loada
 		}
 	}
 
-	if (plugin && !strcmp (plugin->name, "dex")) {
+	if (plugin && !strcmp (plugin->meta.name, "dex")) {
 		r_core_cmd0 (r, "\"(fix-dex;wx `ph sha1 $s-32 @32` @12 ; wx `ph adler32 $s-12 @12` @8)\"");
 	}
 	R_CRITICAL_LEAVE (r);
@@ -675,8 +675,8 @@ R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 		r_core_cmd (r, cmd_load, 0);
 	}
 
-	if (plugin && plugin->name) {
-		if (!strcmp (plugin->name, "any")) {
+	if (plugin && plugin->meta.name) {
+		if (!strcmp (plugin->meta.name, "any")) {
 			ut64 size = (desc->name && (r_str_startswith (desc->name, "rap") && strstr (desc->name, "://")))
 				? UT64_MAX : r_io_desc_size (desc);
 			r_io_map_add (r->io, desc->fd, desc->perm, 0, laddr, size);
@@ -721,7 +721,7 @@ R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 	if (desc && r_config_get_i (r->config, "io.exec")) {
 		desc->perm |= R_PERM_X;
 	}
-	if (plugin && plugin->name && !strcmp (plugin->name, "dex")) {
+	if (plugin && plugin->meta.name && !strcmp (plugin->meta.name, "dex")) {
 		r_core_cmd0 (r, "\"(fix-dex;wx `ph sha1 $s-32 @32` @12;wx `ph adler32 $s-12 @12` @8)\"");
 	}
 	if (!r_config_get_b (r->config, "cfg.debug")) {

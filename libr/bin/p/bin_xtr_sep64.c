@@ -472,9 +472,11 @@ static ut32 read_arm64_ins(RBuffer *b, int idx) {
 }
 
 RBinXtrPlugin r_bin_xtr_plugin_xtr_sep64 = {
-	.name = "xtr.sep64",
-	.desc = "64-bit SEP bin extractor plugin",
-	.license = "LGPL3",
+	.meta = {
+		.name = "xtr.sep64",
+		.desc = "64-bit SEP bin extractor plugin",
+		.license = "LGPL3",
+	},
 	.check = check,
 	.load = &load,
 	.destroy = &destroy,

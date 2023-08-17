@@ -457,11 +457,9 @@ R_API RBinXtrData *r_bin_xtrdata_new(RBuffer *buf, ut64 offset, ut64 size, ut32 
 R_API void r_bin_xtrdata_free(void /*RBinXtrData*/ *data);
 
 typedef struct r_bin_xtr_plugin_t {
-	char *name;
-	char *desc;
-	char *license;
-	bool (*check)(RBinFile *bf, RBuffer *buf);
+	RPluginMeta meta;
 
+	bool (*check)(RBinFile *bf, RBuffer *buf);
 	RBinXtrData *(*extract_from_bytes)(RBin *bin, const ut8 *buf, ut64 size, int idx);
 	RBinXtrData *(*extract_from_buffer)(RBin *bin, RBuffer *buf, int idx);
 	RList *(*extractall_from_bytes)(RBin *bin, const ut8 *buf, ut64 size);
@@ -477,9 +475,7 @@ typedef struct r_bin_xtr_plugin_t {
 } RBinXtrPlugin;
 
 typedef struct r_bin_ldr_plugin_t {
-	char *name;
-	char *desc;
-	char *license;
+	RPluginMeta meta;
 	bool (*load)(RBin *bin);
 } RBinLdrPlugin;
 
@@ -502,14 +498,9 @@ R_API RBinTrycatch *r_bin_trycatch_new(ut64 source, ut64 from, ut64 to, ut64 han
 R_API void r_bin_trycatch_free(RBinTrycatch *tc);
 
 typedef struct r_bin_plugin_t {
-	// R2_590 - use RPluginMeta
-	char *name;
-	char *desc;
-	char *author;
-	char *version;
-	char *license;
+	RPluginMeta meta;
 	Sdb * (*get_sdb)(RBinFile *obj);
-	bool (*load)(RBinFile *bf, RBuffer *buf, ut64 laddr); // TODO: R2_590 - rename to load()
+	bool (*load)(RBinFile *bf, RBuffer *buf, ut64 laddr);
 	ut64 (*size)(RBinFile *bin); // return ut64 maybe? meh
 	void (*destroy)(RBinFile *bf);
 	bool (*check)(RBinFile *bf, RBuffer *buf);

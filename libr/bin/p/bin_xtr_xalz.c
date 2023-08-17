@@ -60,9 +60,11 @@ static RList *oneshotall_buffer(RBin *bin, RBuffer *b) {
 }
 
 RBinXtrPlugin r_bin_xtr_plugin_xtr_xalz = {
-	.name = "xtr.xalz",
-	.desc = "XAmarin LZ4 assemblies",
-	.license = "MIT",
+	.meta = {
+		.name = "xtr.xalz",
+		.desc = "XAmarin LZ4 assemblies",
+		.license = "MIT",
+	},
 	.extractall_from_buffer = &oneshotall_buffer,
 	.check = check,
 };

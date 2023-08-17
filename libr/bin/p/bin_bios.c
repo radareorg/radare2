@@ -123,9 +123,11 @@ static RList *entries(RBinFile *bf) {
 }
 
 RBinPlugin r_bin_plugin_bios = {
-	.name = "bios",
-	.desc = "BIOS bin plugin",
-	.license = "LGPL",
+	.meta = {
+		.name = "bios",
+		.desc = "BIOS bin plugin",
+		.license = "LGPL",
+	},
 	.load = &load,
 	.destroy = &destroy,
 	.check = &check,

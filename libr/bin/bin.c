@@ -282,7 +282,7 @@ R_API bool r_bin_open_buf(RBin *bin, RBuffer *buf, RBinFileOptions *opt) {
 		// <xtr_name>:<bin_type_name>
 		r_list_foreach (bin->binxtrs, it, xtr) {
 			if (!xtr->check) {
-				R_LOG_ERROR ("Missing check callback for '%s'", xtr->name);
+				R_LOG_ERROR ("Missing check callback for '%s'", xtr->meta.name);
 				continue;
 			}
 			if (xtr->check (bf, buf)) {
@@ -376,7 +376,7 @@ R_IPI RBinPlugin *r_bin_get_binplugin_by_name(RBin *bin, const char *name) {
 	r_return_val_if_fail (bin && name, NULL);
 
 	r_list_foreach (bin->plugins, it, plugin) {
-		if (!strcmp (plugin->name, name)) {
+		if (!strcmp (plugin->meta.name, name)) {
 			return plugin;
 		}
 	}
@@ -407,7 +407,7 @@ R_IPI RBinXtrPlugin *r_bin_get_xtrplugin_by_name(RBin *bin, const char *name) {
 
 	// TODO: use a hashtable here
 	r_list_foreach (bin->binxtrs, it, xtr) {
-		if (!strcmp (xtr->name, name)) {
+		if (!strcmp (xtr->meta.name, name)) {
 			return xtr;
 		}
 	}
@@ -426,7 +426,7 @@ R_API bool r_bin_plugin_add(RBin *bin, RBinPlugin *foo) {
 	r_return_val_if_fail (bin && foo, false);
 
 	r_list_foreach (bin->plugins, it, plugin) {
-		if (!strcmp (plugin->name, foo->name)) {
+		if (!strcmp (plugin->meta.name, foo->meta.name)) {
 			return false;
 		}
 	}
@@ -449,7 +449,7 @@ R_API bool r_bin_ldr_add(RBin *bin, RBinLdrPlugin *foo) {
 
 	// avoid duplicates
 	r_list_foreach (bin->binldrs, it, ldr) {
-		if (!strcmp (ldr->name, foo->name)) {
+		if (!strcmp (ldr->meta.name, foo->meta.name)) {
 			return false;
 		}
 	}
@@ -465,7 +465,7 @@ R_API bool r_bin_xtr_add(RBin *bin, RBinXtrPlugin *foo) {
 
 	// avoid duplicates
 	r_list_foreach (bin->binxtrs, it, xtr) {
-		if (!strcmp (xtr->name, foo->name)) {
+		if (!strcmp (xtr->meta.name, foo->meta.name)) {
 			return false;
 		}
 	}
@@ -491,51 +491,53 @@ R_API void r_bin_free(RBin *bin) {
 	}
 }
 
+// TODO: this is now a generic function that can reuse RPluginMeta
 static bool r_bin_print_plugin_details(RBin *bin, RBinPlugin *bp, PJ *pj, int json) {
 	if (json == 'q') {
-		bin->cb_printf ("%s\n", bp->name);
+		bin->cb_printf ("%s\n", bp->meta.name);
 	} else if (json) {
 		pj_o (pj);
-		pj_ks (pj, "name", bp->name);
-		pj_ks (pj, "description", bp->desc);
-		pj_ks (pj, "license", r_str_get_fail (bp->license, "???"));
+		pj_ks (pj, "name", bp->meta.name);
+		pj_ks (pj, "description", bp->meta.desc);
+		pj_ks (pj, "license", r_str_get_fail (bp->meta.license, "???"));
 		pj_end (pj);
 	} else {
-		bin->cb_printf ("Name: %s\n", bp->name);
-		bin->cb_printf ("Description: %s\n", bp->desc);
-		if (bp->license) {
-			bin->cb_printf ("License: %s\n", bp->license);
+		bin->cb_printf ("Name: %s\n", bp->meta.name);
+		bin->cb_printf ("Description: %s\n", bp->meta.desc);
+		if (bp->meta.license) {
+			bin->cb_printf ("License: %s\n", bp->meta.license);
 		}
-		if (bp->version) {
-			bin->cb_printf ("Version: %s\n", bp->version);
+		if (bp->meta.version) {
+			bin->cb_printf ("Version: %s\n", bp->meta.version);
 		}
-		if (bp->author) {
-			bin->cb_printf ("Author: %s\n", bp->author);
+		if (bp->meta.author) {
+			bin->cb_printf ("Author: %s\n", bp->meta.author);
 		}
 	}
 	return true;
 }
 
+// TODO: this is now a generic function that can reuse RPluginMeta
 static void __printXtrPluginDetails(RBin *bin, RBinXtrPlugin *bx, int json) {
 	if (json == 'q') {
-		bin->cb_printf ("%s\n", bx->name);
+		bin->cb_printf ("%s\n", bx->meta.name);
 	} else if (json) {
 		PJ *pj = pj_new ();
 		if (!pj) {
 			return;
 		}
 		pj_o (pj);
-		pj_ks (pj, "name", bx->name);
-		pj_ks (pj, "description", bx->desc);
-		pj_ks (pj, "license", r_str_get_fail (bx->license, "???"));
+		pj_ks (pj, "name", bx->meta.name);
+		pj_ks (pj, "description", bx->meta.desc);
+		pj_ks (pj, "license", r_str_get_fail (bx->meta.license, "???"));
 		pj_end (pj);
 		bin->cb_printf ("%s\n", pj_string (pj));
 		pj_free (pj);
 	} else {
-		bin->cb_printf ("Name: %s\n", bx->name);
-		bin->cb_printf ("Description: %s\n", bx->desc);
-		if (bx->license) {
-			bin->cb_printf ("License: %s\n", bx->license);
+		bin->cb_printf ("Name: %s\n", bx->meta.name);
+		bin->cb_printf ("Description: %s\n", bx->meta.desc);
+		if (bx->meta.license) {
+			bin->cb_printf ("License: %s\n", bx->meta.license);
 		}
 	}
 }
@@ -548,13 +550,13 @@ R_API bool r_bin_list_plugin(RBin *bin, const char* name, PJ *pj, int json) {
 	r_return_val_if_fail (bin && name, false);
 
 	r_list_foreach (bin->plugins, it, bp) {
-		if (r_str_startswith (bp->name, name)) {
+		if (r_str_startswith (bp->meta.name, name)) {
 			continue;
 		}
 		return r_bin_print_plugin_details (bin, bp, pj, json);
 	}
 	r_list_foreach (bin->binxtrs, it, bx) {
-		if (r_str_startswith (bx->name, name)) {
+		if (r_str_startswith (bx->meta.name, name)) {
 			continue;
 		}
 		__printXtrPluginDetails (bin, bx, json);
@@ -565,6 +567,7 @@ R_API bool r_bin_list_plugin(RBin *bin, const char* name, PJ *pj, int json) {
 	return false;
 }
 
+// TODO: this is now a generic function that can reuse RPluginMeta
 R_API void r_bin_list(RBin *bin, PJ *pj, int format) {
 	RListIter *it;
 	RBinPlugin *bp;
@@ -573,37 +576,37 @@ R_API void r_bin_list(RBin *bin, PJ *pj, int format) {
 
 	if (format == 'q') {
 		r_list_foreach (bin->plugins, it, bp) {
-			bin->cb_printf ("%s\n", bp->name);
+			bin->cb_printf ("%s\n", bp->meta.name);
 		}
 		r_list_foreach (bin->binxtrs, it, bx) {
-			bin->cb_printf ("%s\n", bx->name);
+			bin->cb_printf ("%s\n", bx->meta.name);
 		}
 	} else if (format) {
 		pj_o (pj);
 		pj_ka (pj, "bin");
 		r_list_foreach (bin->plugins, it, bp) {
 			pj_o (pj);
-			pj_ks (pj, "name", bp->name);
-			pj_ks (pj, "description", bp->desc);
-			pj_ks (pj, "license", r_str_get_fail (bp->license, "???"));
+			pj_ks (pj, "name", bp->meta.name);
+			pj_ks (pj, "description", bp->meta.desc);
+			pj_ks (pj, "license", r_str_get_fail (bp->meta.license, "???"));
 			pj_end (pj);
 		}
 		pj_end (pj);
 		pj_ka (pj, "xtr");
 		r_list_foreach (bin->binxtrs, it, bx) {
 			pj_o (pj);
-			pj_ks (pj, "name", bx->name);
-			pj_ks (pj, "description", bx->desc);
-			pj_ks (pj, "license", r_str_get_fail (bx->license, "???"));
+			pj_ks (pj, "name", bx->meta.name);
+			pj_ks (pj, "description", bx->meta.desc);
+			pj_ks (pj, "license", r_str_get_fail (bx->meta.license, "???"));
 			pj_end (pj);
 		}
 		pj_end (pj);
 		pj_ka (pj, "ldr");
 		r_list_foreach (bin->binxtrs, it, ld) {
 			pj_o (pj);
-			pj_ks (pj, "name", ld->name);
-			pj_ks (pj, "description", ld->desc);
-			pj_ks (pj, "license", r_str_get_fail (ld->license, "???"));
+			pj_ks (pj, "name", ld->meta.name);
+			pj_ks (pj, "description", ld->meta.desc);
+			pj_ks (pj, "license", r_str_get_fail (ld->meta.license, "???"));
 			pj_end (pj);
 		}
 		pj_end (pj);
@@ -611,19 +614,19 @@ R_API void r_bin_list(RBin *bin, PJ *pj, int format) {
 	} else {
 		r_list_foreach (bin->plugins, it, bp) {
 			bin->cb_printf ("bin  %-11s %s (%s) %s %s\n",
-				bp->name, bp->desc, r_str_get_fail (bp->license, "???"),
-				r_str_get (bp->version),
-				r_str_get (bp->author));
+				bp->meta.name, bp->meta.desc, r_str_get_fail (bp->meta.license, "???"),
+				r_str_get (bp->meta.version),
+				r_str_get (bp->meta.author));
 		}
 		r_list_foreach (bin->binxtrs, it, bx) {
-			const char *name = strncmp (bx->name, "xtr.", 4)? bx->name : bx->name + 3;
+			const char *name = strncmp (bx->meta.name, "xtr.", 4)? bx->meta.name : bx->meta.name + 3;
 			bin->cb_printf ("xtr  %-11s %s (%s)\n", name,
-				bx->desc, r_str_get_fail (bx->license, "???"));
+				bx->meta.desc, r_str_get_fail (bx->meta.license, "???"));
 		}
 		r_list_foreach (bin->binldrs, it, ld) {
-			const char *name = strncmp (ld->name, "ldr.", 4)? ld->name : ld->name + 3;
+			const char *name = strncmp (ld->meta.name, "ldr.", 4)? ld->meta.name : ld->meta.name + 3;
 			bin->cb_printf ("ldr  %-11s %s (%s)\n", name,
-				ld->desc, r_str_get_fail (ld->license, "???"));
+				ld->meta.desc, r_str_get_fail (ld->meta.license, "???"));
 		}
 	}
 }

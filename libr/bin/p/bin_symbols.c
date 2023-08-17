@@ -440,9 +440,11 @@ static void header(RBinFile *bf) {
 }
 
 RBinPlugin r_bin_plugin_symbols = {
-	.name = "symbols",
-	.desc = "Apple Symbols file",
-	.license = "MIT",
+	.meta = {
+		.name = "symbols",
+		.desc = "Apple Symbols file",
+		.license = "MIT",
+	},
 	.load = &load,
 	.check = &check,
 	.symbols = &symbols,

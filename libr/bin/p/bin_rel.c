@@ -611,10 +611,12 @@ static RBinInfo *info(RBinFile *bf) {
 }
 
 RBinPlugin r_bin_plugin_rel = {
-	.name = "rel",
-	.desc = "Nintendo Wii REL format",
-	.license = "LGPL3",
-	.author = "terorie",
+	.meta = {
+		.name = "rel",
+		.desc = "Nintendo Wii REL format",
+		.license = "LGPL3",
+		.author = "terorie",
+	},
 	.check = &check,
 	.load = &load,
 	.destroy = &destroy,

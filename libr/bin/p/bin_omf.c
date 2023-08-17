@@ -156,9 +156,11 @@ static ut64 get_vaddr(RBinFile *bf, ut64 baddr, ut64 paddr, ut64 vaddr) {
 }
 
 RBinPlugin r_bin_plugin_omf = {
-	.name = "omf",
-	.desc = "omf bin plugin",
-	.license = "LGPL3",
+	.meta = {
+		.name = "omf",
+		.desc = "omf bin plugin",
+		.license = "LGPL3",
+	},
 	.load = &load,
 	.destroy = &destroy,
 	.check = &check,

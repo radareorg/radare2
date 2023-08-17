@@ -125,9 +125,11 @@ static RBuffer* create(RBin* bin, const ut8 *code, int codelen, const ut8 *data,
 }
 
 RBinPlugin r_bin_plugin_elf = {
-	.name = "elf",
-	.desc = "ELF format r2 plugin",
-	.license = "LGPL3",
+	.meta = {
+		.name = "elf",
+		.desc = "ELF format r2 plugin",
+		.license = "LGPL3",
+	},
 	.get_sdb = &get_sdb,
 	.load = &load,
 	.destroy = &destroy,

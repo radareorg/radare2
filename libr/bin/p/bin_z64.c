@@ -144,9 +144,11 @@ static RBinInfo *info(RBinFile *bf) {
 #if !R_BIN_Z64
 
 RBinPlugin r_bin_plugin_z64 = {
-	.name = "z64",
-	.desc = "Nintendo 64 binaries big endian r_bin plugin",
-	.license = "LGPL3",
+	.meta = {
+		.name = "z64",
+		.desc = "Nintendo 64 binaries big endian r_bin plugin",
+		.license = "LGPL3",
+	},
 	.load = &load,
 	.check = &check,
 	.baddr = baddr,

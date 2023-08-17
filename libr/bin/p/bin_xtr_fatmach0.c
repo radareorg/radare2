@@ -148,9 +148,11 @@ static RList *oneshotall_buffer(RBin *bin, RBuffer *b) {
 }
 
 RBinXtrPlugin r_bin_xtr_plugin_xtr_fatmach0 = {
-	.name = "xtr.fatmach0",
-	.desc = "fat mach0 bin extractor plugin",
-	.license = "LGPL3",
+	.meta = {
+		.name = "xtr.fatmach0",
+		.desc = "fat mach0 bin extractor plugin",
+		.license = "LGPL3",
+	},
 	.load = &load,
 	.size = &size,
 	.extract = &extract,

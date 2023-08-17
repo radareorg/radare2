@@ -100,9 +100,11 @@ static RList* entries(RBinFile *bf) { //Should be 3 offsets pointed by NMI, RESE
 }
 
 RBinPlugin r_bin_plugin_hunk = {
-	.name = "hunk",
-	.desc = "AmigaOS Hunk executable binary",
-	.license = "MIT",
+	.meta = {
+		.name = "hunk",
+		.desc = "AmigaOS Hunk executable binary",
+		.license = "MIT",
+	},
 	.load = &load,
 	.check = &check,
 	.entries = &entries,

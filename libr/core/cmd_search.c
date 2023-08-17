@@ -332,10 +332,10 @@ static void cmd_search_bin(RCore *core, RInterval itv) {
 		RBuffer *ref = r_buf_new_slice (b, from, to);
 		RBinPlugin *plug = r_bin_get_binplugin_by_buffer (core->bin, NULL, ref);
 		if (plug) {
-			r_cons_printf ("0x%08" PFMT64x "  %s\n", from, plug->name);
+			r_cons_printf ("0x%08" PFMT64x "  %s\n", from, plug->meta.name);
 			if (plug->size) {
 				RBinFileOptions opt = {
-					.pluginname = plug->name,
+					.pluginname = plug->meta.name,
 					.baseaddr = 0,
 					.loadaddr = 0,
 					.sz = 4096,

@@ -2510,9 +2510,11 @@ beach:
 }
 
 RBinPlugin r_bin_plugin_dyldcache = {
-	.name = "dyldcache",
-	.desc = "dyldcache bin plugin",
-	.license = "LGPL3",
+	.meta = {
+		.name = "dyldcache",
+		.desc = "dyldcache bin plugin",
+		.license = "LGPL3",
+	},
 	.load = &load,
 	.entries = &entries,
 	.baddr = &baddr,

@@ -150,9 +150,11 @@ static RList *libs(RBinFile *bf) {
 }
 
 RBinPlugin r_bin_plugin_java = {
-	.name = "java",
-	.desc = "java bin plugin",
-	.license = "LGPL3",
+	.meta = {
+		.name = "java",
+		.desc = "java bin plugin",
+		.license = "LGPL3",
+	},
 	.get_sdb = &get_sdb, // XXX we should remove this imho
 	.load = &load,
 	.destroy = &destroy,

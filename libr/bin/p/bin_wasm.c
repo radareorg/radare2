@@ -485,9 +485,11 @@ static const char *getname(RBinFile *bf, int type, int idx, bool sd) {
 }
 
 RBinPlugin r_bin_plugin_wasm = {
-	.name = "wasm",
-	.desc = "WebAssembly bin plugin",
-	.license = "MIT",
+	.meta = {
+		.name = "wasm",
+		.desc = "WebAssembly bin plugin",
+		.license = "MIT",
+	},
 	.load = &load,
 	.size = &size,
 	.destroy = &destroy,
