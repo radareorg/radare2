@@ -1,4 +1,5 @@
-const lines = r2.cmd('cat mem.log').split(/\n/);
+const logfile = 'a.txt';
+const lines = r2.cmd('cat '+logfile).split(/\n/);
 let total = 0;
 let leaked = 0;
 var track = {};

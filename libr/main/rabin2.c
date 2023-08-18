@@ -75,6 +75,7 @@ static int rabin_show_help(int v) {
 	if (v) {
 		printf ("Environment:\n"
 		" R2_NOPLUGINS:     1|0|               # do not load shared plugins (speedup loading)\n"
+		" RABIN2_ARGS:                         # ignore cli and use these program arguments\n"
 		" RABIN2_CHARSET:   e cfg.charset      # set default value charset for -z strings\n"
 		" RABIN2_DEBASE64:  e bin.str.debase64 # try to debase64 all strings\n"
 		" RABIN2_DEMANGLE=0:e bin.demangle     # do not demangle symbols\n"

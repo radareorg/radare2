@@ -171,6 +171,7 @@ static int main_help(int line) {
 		" R2_USER_ZIGNS   ${XDG_DATA_DIR:=~/.local/share/radare2}/zigns\n"
 		"Environment:\n"
 		" R2_COLOR        sets the initial value for 'scr.color'. set to 0 for no color\n"
+		" R2_ARGS         ignore cli arguments and use these ones instead\n"
 		" R2_DEBUG        if defined, show error messages and crash signal.\n"
 		" R2_DEBUG_NOPAPI do not load r2papi in the -j qjs shell\n"
 		" R2_DEBUG_ASSERT set a breakpoint when hitting an assert.\n"
