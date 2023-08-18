@@ -405,7 +405,7 @@ static void _print_strings(RCore *r, RList *list, PJ *pj, int mode, int va) {
 			if (fi && realstr) {
 				char *es = r_str_escape (string->string);
 				char *s = r_str_newf ("\"%s\"", es);
-				r_flag_item_set_realname (fi, s);
+				r_flag_item_set_realname (r->flags, fi, s);
 				free (s);
 				free (es);
 			}
@@ -1733,7 +1733,7 @@ static void set_bin_relocs(RelocInfo *ri, RBinReloc *reloc, ut64 addr, Sdb **db,
 			char *realname = (r->bin->prefix)
 				? r_str_newf ("%s.reloc.%s", r->bin->prefix, demname)
 				: r_str_newf ("%s", demname);
-			r_flag_item_set_realname (fi, realname);
+			r_flag_item_set_realname (r->flags, fi, realname);
 			free (realname);
 		}
 	}
@@ -2482,7 +2482,7 @@ static int bin_symbols(RCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at, 
 					r_name_filter (sn.methflag, -1);
 				}
 				if (fi) {
-					r_flag_item_set_realname (fi, sn.methname);
+					r_flag_item_set_realname (r->flags, fi, sn.methname);
 					if ((fi->offset - r->flags->base) == addr) {
 				//		char *comment = fi->comment ? strdup (fi->comment) : NULL;
 						r_flag_unset (r->flags, fi);
@@ -2491,7 +2491,7 @@ static int bin_symbols(RCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at, 
 					fi = r_flag_set (r->flags, sn.methflag, addr, symbol->size);
 					char *comment = (fi && fi->comment) ? strdup (fi->comment) : NULL;
 					if (comment) {
-						r_flag_item_set_comment (fi, comment);
+						r_flag_item_set_comment (r->flags, fi, comment);
 						R_FREE (comment);
 					}
 				}
@@ -2506,7 +2506,7 @@ static int bin_symbols(RCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at, 
 				} else {
 					RFlagItem *fi = r_flag_set (r->flags, fnp, addr, symbol->size);
 					if (fi) {
-						r_flag_item_set_realname (fi, n);
+						r_flag_item_set_realname (r->flags, fi, n);
 						fi->demangled = (bool)(size_t)sn.demname;
 					} else {
 						if (fn) {
@@ -3753,7 +3753,7 @@ static int bin_classes(RCore *r, PJ *pj, int mode) {
 				pj_ks (pj, "name", sym->name);
 				RFlagItem *fi = r_flag_get_at (r->flags, sym->vaddr, false);
 				if (fi) {
-					pj_ks (pj, "flag", fi->realname? fi->realname: fi->name);
+					pj_ks (pj, "flag", r_strpool_get (r->flags->strings, fi->realname? fi->realname: fi->name));
 				}
 				if (bin_filter) {
 					// XXX SUPER SLOW and probably unnecessary

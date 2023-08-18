@@ -171,7 +171,11 @@ static bool is_symbol_flag(const char *name) {
 static bool next_instruction_is_symbol(RAnal *anal, RAnalOp *op) {
 	r_return_val_if_fail (anal && op && anal->flb.get_at, false);
 	RFlagItem *fi = anal->flb.get_at (anal->flb.f, op->addr + op->size, false);
-	return (fi && fi->name && is_symbol_flag (fi->name));
+	if (fi) {
+		const char *name = r_strpool_get (anal->flb.f->strings, fi->name);
+		return is_symbol_flag (name);
+	}
+	return false;
 }
 
 static bool is_delta_pointer_table(ReadAhead *ra, RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 lea_ptr, ut64 *jmptbl_addr, ut64 *casetbl_addr, RAnalOp *jmp_aop) {
@@ -513,8 +517,10 @@ static void fcn_takeover_block_recursive(RAnalFunction *fcn, RAnalBlock *start_b
 static const char *retpoline_reg(RAnal *anal, ut64 addr) {
 	RFlagItem *flag = anal->flag_get (anal->flb.f, addr);
 	if (flag) {
+		RStrpool *pool = anal->flb.f->strings;
 		const char *token = "x86_indirect_thunk_";
-		const char *thunk = strstr (flag->name, token);
+		const char *flag_name = r_strpool_get (pool, flag->name);
+		const char *thunk = strstr (flag_name, token);
 		if (thunk) {
 			return thunk + strlen (token);
 		}
@@ -1123,9 +1129,10 @@ repeat:
 			{
 				RFlagItem *fi = anal->flb.get_at (anal->flb.f, op->jump, false);
 				if (fi) {
-					if (strstr (fi->name, "imp.")) {
+					const char *fi_name = r_strpool_get (anal->flb.f->strings, fi->name);
+					if (strstr (fi_name, "imp.")) {
 						gotoBeach (R_ANAL_RET_END);
-					} else if (strstr (fi->name, "sym.") || r_str_startswith (fi->name, "fcn.")) {
+					} else if (strstr (fi_name, "sym.") || r_str_startswith (fi_name, "fcn.")) {
 						gotoBeach (R_ANAL_RET_END);
 					}
 				}

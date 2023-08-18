@@ -7,17 +7,18 @@
 	(x) == ','||(x) == ';'||(x) == '['||(x) == ']'|| \
 	(x) == '('||(x) == ')'||(x) == '{'||(x) == '}'||(x) == '\x1b')
 
-static bool isvalidflag(RFlagItem *flag) {
+static bool isvalidflag(RFlag *f, RFlagItem *flag) {
 	if (flag) {
 		if (flag->space) {
 			if (!strcmp (flag->space->name, "format")) {
 				return false;
 			}
 		}
-		if (strstr (flag->name, "main") || strstr (flag->name, "entry")) {
+		const char *flag_name = r_strpool_get (f->strings, flag->name);
+		if (strstr (flag_name, "main") || strstr (flag_name, "entry")) {
 			return true;
 		}
-		if (strchr (flag->name, '.')) {
+		if (strchr (flag_name, '.')) {
 			return true;
 		}
 	}
@@ -210,7 +211,7 @@ static bool filter(RParse *p, ut64 addr, RFlag *f, RAnalHint *hint, char *data, 
 				if (f->realnames) {
 					flag = p->flag_get (f, off);
 					if (flag && flag->realname) {
-						name = flag->realname;
+						name = r_strpool_get (f->strings, flag->realname);
 					}
 				}
 				snprintf (str, len, "%s%s%s", data, name,
@@ -230,11 +231,14 @@ static bool filter(RParse *p, ut64 addr, RFlag *f, RAnalHint *hint, char *data, 
 						flag = flag2;
 					}
 				}
-				if (flag && !strncmp (flag->name, "section.", 8)) {
-					flag = r_flag_get_i (f, off);
+				if (flag) {
+					const char *flag_name = r_strpool_get (f->strings, flag->name);
+					if (r_str_startswith (flag_name, flag_name)) {
+						flag = r_flag_get_i (f, off);
+					}
 				}
 				const char *label = fcn? p->label_get (fcn, off): NULL;
-				if (label || isvalidflag (flag)) {
+				if (label || isvalidflag (f, flag)) {
 					if (p->notin_flagspace) {
 						if (p->flagspace == flag->space) {
 							continue;
@@ -265,7 +269,8 @@ static bool filter(RParse *p, ut64 addr, RFlag *f, RAnalHint *hint, char *data, 
 					if (label) {
 						flagname = r_str_newf (".%s", label);
 					} else {
-						flagname = strdup (f->realnames? flag->realname : flag->name);
+						const int ni = f->realnames? flag->realname : flag->name;
+						flagname = strdup (r_strpool_get (f->strings, ni));
 					}
 					int maxflagname = p->maxflagnamelen;
 					if (maxflagname > 0 && strlen (flagname) > maxflagname) {
@@ -306,7 +311,8 @@ static bool filter(RParse *p, ut64 addr, RFlag *f, RAnalHint *hint, char *data, 
 						}
 					}
 					if (p->subrel_addr && !banned && lea) {  // TODO: use remove_brackets
-						int flag_len = strlen (flag->name);
+						const char *flag_name = r_strpool_get (f->strings, flag->name);
+						int flag_len = strlen (flag_name);
 						char *ptr_end = str + strlen (data) + flag_len - 1;
 						char *ptr_right = ptr_end + 1, *ptr_left, *ptr_esc;
 						bool ansi_found = false;

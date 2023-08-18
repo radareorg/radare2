@@ -7140,9 +7140,10 @@ R_IPI int core_type_by_addr(RCore *core, ut64 addr) {
 	bool has_flag = false;
 	int type = R_ANAL_REF_TYPE_DATA;
 	r_list_foreach (list, iter, item) {
-		if (strchr (item->name, '.')) {
+		const char *name = r_strpool_get (core->flags->strings, item->name);
+		if (name && strchr (name, '.')) {
 			has_flag = true;
-			if (r_str_startswith (item->name, "str")) {
+			if (r_str_startswith (name, "str")) {
 				type = R_ANAL_REF_TYPE_STRN;
 				break;
 			}

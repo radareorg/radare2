@@ -1267,7 +1267,7 @@ R_API int r_line_hist_offset_up(RLine *line) {
 	ut64 off = undo->seek[undo->idx + line->offset_hist_index].off;
 	RFlagItem *f = r_flag_get_at (core->flags, off, false);
 	char *command = (f && f->offset == off && f->offset > 0)
-		? r_str_newf ("%s", f->name)
+		? strdup (r_strpool_get (core->flags->strings, f->name))
 		: r_str_newf ("0x%"PFMT64x, off);
 	r_str_ncpy (line->buffer.data, command, R_LINE_BUFSIZE - 1);
 	line->buffer.index = line->buffer.length = strlen (line->buffer.data);
@@ -1289,9 +1289,16 @@ R_API int r_line_hist_offset_down(RLine *line) {
 	}
 	ut64 off = undo->seek[undo->idx + line->offset_hist_index].off;
 	RFlagItem *f = r_flag_get_at (core->flags, off, false);
-	char *command = (f && f->offset == off && f->offset > 0)
-		? r_str_newf ("%s", f->name)
-		: r_str_newf ("0x%"PFMT64x, off);
+	char *command = NULL;
+	if (f && f->offset == off && f->offset > 0) {
+		const char *f_name = r_strpool_get (core->flags->strings, f->name);
+		if (f_name) {
+			command = strdup (f_name);
+		}
+	} 
+	if (!command) {
+		command = r_str_newf ("0x%"PFMT64x, off);
+	}
 	r_str_ncpy (line->buffer.data, command, R_LINE_BUFSIZE - 1);
 	line->buffer.index = line->buffer.length = strlen (line->buffer.data);
 	free (command);
@@ -1496,7 +1503,8 @@ repeat:
 				} else {
 					RFlagItem *f = r_flag_get_at (core->flags, refi->addr, true);
 					if (f) {
-						name = r_str_newf ("%s + %" PFMT64d, f->name, refi->addr - f->offset);
+						const char *f_name = r_strpool_get (core->flags->strings, f->name);
+						name = r_str_newf ("%s + %" PFMT64d, f_name, refi->addr - f->offset);
 					} else {
 						name = strdup ("unk");
 					}
@@ -3978,11 +3986,12 @@ R_API void r_core_visual_title(RCore *core, int color) {
 			f = r_flag_get_at (core->flags, addr, showDelta);
 		}
 		if (f) {
+			const char *f_name = r_strpool_get (core->flags->strings, f->name);
 			if (f->offset == addr || !f->offset) {
-				snprintf (pos, sizeof (pos), "@ %s", f->name);
+				snprintf (pos, sizeof (pos), "@ %s", f_name);
 			} else {
 				snprintf (pos, sizeof (pos), "@ %s+%d # 0x%"PFMT64x,
-					f->name, (int) (addr - f->offset), addr);
+					f_name, (int) (addr - f->offset), addr);
 			}
 		} else {
 			RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, addr, 0);

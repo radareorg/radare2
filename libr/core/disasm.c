@@ -1218,6 +1218,7 @@ static void ds_build_op_str(RDisasmState *ds, bool print_color) {
 					e = strdup (e);
 					ut64 addr = r_num_get (NULL, ox);
 					if (addr > ds->min_ref_addr) {
+						RStrpool *pool = ds->core->flags->strings;
 						const RList *ls = r_flag_get_list (ds->core->flags, addr);
 						RFlagItem *fi;
 						RListIter *iter;
@@ -1225,7 +1226,8 @@ static void ds_build_op_str(RDisasmState *ds, bool print_color) {
 							if (fi->space && fi->space->name && (!strcmp (fi->space->name, "format") || !strcmp (fi->space->name, "segments") || !strcmp (fi->space->name, "sections"))) {
 								// ignore
 							} else {
-								const char *n = (fi->realname) ? fi->realname: fi->name;
+								const int ni = (fi->realname) ? fi->realname: fi->name;
+								const char *n = r_strpool_get (pool, ni);
 								if (strlen (n) > 3) {
 									r_str_cpy (ox, n);
 									r_str_cat (ox, e);
@@ -1539,7 +1541,8 @@ static void ds_show_xrefs(RDisasmState *ds) {
 				if (ds->asm_demangle) {
 					f = r_flag_get_by_spaces (core->flags, fun->addr, R_FLAGS_FS_SYMBOLS, NULL);
 					if (f && f->demangled && f->realname) {
-						realname = strdup (f->realname);
+						const char *rn = r_strpool_get (core->flags->strings, f->realname);
+						realname = strdup (rn);
 					}
 				}
 				name = strdup (fun->name);
@@ -1564,12 +1567,19 @@ static void ds_show_xrefs(RDisasmState *ds) {
 						}
 					}
 					if (ds->asm_demangle) {
+						RStrpool *pool = core->flags->strings;
 						RFlagItem *f_sym = f;
-						if (!r_str_startswith (f_sym->name, "sym.")) {
+						const char *f_name = r_strpool_get (pool, f->name);
+						const char *f_rname = r_strpool_get (pool, f->realname);
+						if (!r_str_startswith (f_name, "sym.")) {
 							f_sym = r_flag_get_by_spaces (core->flags, f->offset,
 									R_FLAGS_FS_SYMBOLS, NULL);
+							if (f_sym) {
+								f_name = r_strpool_get (pool, f_sym->name);
+								f_rname = r_strpool_get (pool, f_sym->realname);
+							}
 						}
-						if (f_sym && f_sym->demangled && f_sym->realname) {
+						if (f_sym && f_sym->demangled && f_rname) {
 							f = f_sym;
 							realname = strdup (f->realname);
 						}
@@ -1703,16 +1713,19 @@ static int handleMidFlags(RCore *core, RDisasmState *ds, bool print) {
 			if (r_anal_get_block_at (core->anal, ds->at)) {
 				ds->midflags = ds->midflags? R_MIDFLAGS_SHOW: R_MIDFLAGS_HIDE;
 			}
-			if (ds->midflags == R_MIDFLAGS_REALIGN && ((fi->name[0] == '$') || (fi->realname && fi->realname[0] == '$'))) {
+			const char *name = r_flag_item_get_name (core->flags, fi);
+			// const char *name = r_strpool_get (core->flags->strings, fi->name);
+			const char *realname = r_strpool_get (core->flags->strings, fi->realname);
+			if (ds->midflags == R_MIDFLAGS_REALIGN && ((name[0] == '$') || (realname && realname[0] == '$'))) {
 				i = 0;
-			} else if (!strncmp (fi->name, "hit.", 4)) { // use search.prefix ?
+			} else if (!strncmp (name, "hit.", 4)) { // use search.prefix ?
 				i = 0;
-			} else if (!strncmp (fi->name, "str.", 4)) {
+			} else if (!strncmp (name, "str.", 4)) {
 				ds->midflags = R_MIDFLAGS_REALIGN;
-			} else if (!strncmp (fi->name, "reloc.", 6)) {
+			} else if (!strncmp (name, "reloc.", 6)) {
 				continue;
 			} else if (ds->midflags == R_MIDFLAGS_SYMALIGN) {
-				if (strncmp (fi->name, "sym.", 4)) {
+				if (strncmp (name, "sym.", 4)) {
 					continue;
 				}
 			}
@@ -2375,8 +2388,16 @@ static void ds_show_comments_right(RDisasmState *ds) {
 }
 
 static ut64 flagVal(const void *a) {
-	const RFlagItem *fa = a;
-	return r_str_hash64 (fa->realname? fa->realname: fa->name);
+	// XXX we dont have RFlag here wtf we want fi->f !
+	const RFlagItem *fi = a;
+	R_LOG_ERROR ("flagVal not implemented");
+#if 0
+	RStrpool *pool = fi->f->strings;
+	const char *name = r_strpool_get (pool, fi->realname);
+	return r_str_hash64 (name);
+#else
+	return fi->realname? fi->realname: fi->name;;
+#endif
 }
 
 #if 0
@@ -2432,7 +2453,7 @@ static bool is_first(const char *fs) {
 	return false;
 }
 
-static RList *custom_sorted_flags(const RList *flaglist) {
+static RList *custom_sorted_flags(RDisasmState *ds, const RList *flaglist) {
 	RListIter *iter;
 	RFlagItem *flag;
 	if (!flaglist) {
@@ -2482,7 +2503,7 @@ static bool ds_show_flags(RDisasmState *ds, bool overlapped) {
 	int case_start = -1, case_prev = 0, case_current = 0;
 	RAnalFunction *f = r_anal_get_function_at (ds->core->anal, ds->at);
 	const RList *flaglist = r_flag_get_list (core->flags, ds->at);
-	RList *uniqlist = custom_sorted_flags (flaglist);
+	RList *uniqlist = custom_sorted_flags (ds, flaglist);
 	int count = 0;
 	bool outline = !ds->flags_inline;
 	const char *comma = "";
@@ -2490,13 +2511,15 @@ static bool ds_show_flags(RDisasmState *ds, bool overlapped) {
 	bool docolon = true;
 	int nth = 0;
 	bool any = false;
+	RStrpool *pool = core->flags->strings;
 #if 0
 	r_list_foreach (uniqlist, iter, flag) {
 		r_cons_printf ("(%s)(at:%s),", flag->name, flag->space->name);
 	}
 #endif
 	r_list_foreach (uniqlist, iter, flag) {
-		if (!overlapped && f && f->addr == flag->offset && !strcmp (flag->name, f->name)) {
+		const char *flag_name = r_strpool_get (pool, flag->name);
+		if (!overlapped && f && f->addr == flag->offset && !strcmp (flag_name, f->name)) {
 			// do not show non-overlapped flags that have the same name as the function
 			// do not show flags that have the same name as the function
 			continue;
@@ -2510,8 +2533,8 @@ static bool ds_show_flags(RDisasmState *ds, bool overlapped) {
 			break;
 		}
 		count++;
-		if (r_str_startswith (flag->name, "case.")) {
-			char *chop = strdup (flag->name + strlen ("case."));
+		if (r_str_startswith (flag_name, "case.")) {
+			char *chop = strdup (flag_name + strlen ("case."));
 			char *dot = strchr (chop, '.');
 			if (dot) {
 				int mul = 1;
@@ -2576,21 +2599,21 @@ static bool ds_show_flags(RDisasmState *ds, bool overlapped) {
 			any = true;
 
 		if (ds->asm_demangle && flag->realname) {
-			if (!strncmp (flag->name, "switch.", 7)) {
+			if (!strncmp (flag_name, "switch.", 7)) {
 				if (ds->flags_prefix) {
 					r_cons_printf (FLAG_PREFIX);
 				}
 				r_cons_printf ("switch:");
-			} else if (r_str_startswith (flag->name, "case.")) {
+			} else if (r_str_startswith (flag_name, "case.")) {
 				if (nth > 0) {
 					__preline_flag (ds, flag);
 				}
 				if (ds->flags_prefix) {
 					r_cons_printf (FLAG_PREFIX);
 				}
-				if (!strncmp (flag->name + 5, "default", 7)) {
+				if (!strncmp (flag_name + 5, "default", 7)) {
 					r_cons_printf ("default:"); // %s:", flag->name);
-					r_str_ncpy (addr, flag->name + 5 + strlen ("default."), sizeof (addr));
+					r_str_ncpy (addr, flag_name + 5 + strlen ("default."), sizeof (addr));
 					nth = 0;
 				} else if (case_prev != case_start) {
 					r_cons_printf ("case %d...%d:", case_start, case_prev);
@@ -2609,9 +2632,11 @@ static bool ds_show_flags(RDisasmState *ds, bool overlapped) {
 				docolon = false;
 			} else {
 				const char *lang = r_config_get (core->config, "bin.lang");
-				char *name = r_bin_demangle (core->bin->cur, lang, flag->realname, flag->offset, keep_lib);
+				const char *realname = r_strpool_get (core->flags->strings, flag->realname);
+				char *name = r_bin_demangle (core->bin->cur, lang, realname, flag->offset, keep_lib);
 				if (!name) {
-					const char *n = flag->realname? flag->realname: flag->name;
+					int ni = flag->realname? flag->realname: flag->name;
+					const char *n = r_strpool_get (core->flags->strings, ni);
 					if (n) {
 						name = strdup (n);
 					}
@@ -2637,10 +2662,11 @@ static bool ds_show_flags(RDisasmState *ds, bool overlapped) {
 				}
 			}
 		} else {
+			const char *flag_name = r_strpool_get (ds->core->flags->strings, flag->name);
 			if (outline) {
-				r_cons_printf ("%s", flag->name);
+				r_cons_printf ("%s", flag_name);
 			} else {
-				r_cons_printf ("%s%s", comma, flag->name);
+				r_cons_printf ("%s%s", comma, flag_name);
 			}
 		}
 		if (ds->show_color) {
@@ -3120,7 +3146,7 @@ static void ds_print_offset(RDisasmState *ds) {
 						delta = at - core->offset;
 					}
 					if (ds->lastflag) {
-						label = ds->lastflag->name;
+						label = r_strpool_get (core->flags->strings, ds->lastflag->name);
 					}
 				}
 			}
@@ -3301,7 +3327,8 @@ static bool ds_print_data_type(RDisasmState *ds, const ut8 *obuf, int ib, int si
 			RListIter *iter;
 			RFlagItem *fi;
 			r_list_foreach (flags, iter, fi) {
-				r_cons_printf (" %s %s", ds->cmtoken, fi->name);
+				const char *fi_name = r_strpool_get (core->flags->strings, fi->name);
+				r_cons_printf (" %s %s", ds->cmtoken, fi_name);
 			}
 		}
 	}
@@ -3925,23 +3952,25 @@ static void ds_print_fcn_name(RDisasmState *ds) {
 		const char *arch;
 		RFlagItem *flag = r_flag_get_by_spaces (ds->core->flags, ds->analop.jump,
 				R_FLAGS_FS_CLASSES, R_FLAGS_FS_SYMBOLS, NULL);
-		if (flag && flag->name
-				&& ds->opstr && !strstr (ds->opstr, flag->name)
-				&& (r_str_startswith (flag->name, "sym.")
-					|| r_str_startswith (flag->name, "method."))
-				&& (arch = r_config_get (ds->core->config, "asm.arch"))
-				&& strcmp (arch, "dalvik")) {
-			RFlagItem *flag_sym = flag;
-			if (ds->core->vmode && ds->asm_demangle
-					&& (r_str_startswith (flag->name, "sym.")
-						|| (flag_sym = r_flag_get_by_spaces (ds->core->flags,
-							ds->analop.jump, R_FLAGS_FS_SYMBOLS, NULL)))
-				&& flag_sym->demangled) {
+		if (flag) {
+			const char *flag_name = r_strpool_get (ds->core->flags->strings, flag->name);
+			if (flag_name && ds->opstr && !strstr (ds->opstr, flag_name)
+					&& (r_str_startswith (flag_name, "sym.")
+						|| r_str_startswith (flag_name, "method."))
+					&& (arch = r_config_get (ds->core->config, "asm.arch"))
+					&& strcmp (arch, "dalvik")) {
+				RFlagItem *flag_sym = flag;
+				if (ds->core->vmode && ds->asm_demangle
+						&& (r_str_startswith (flag_name, "sym.")
+							|| (flag_sym = r_flag_get_by_spaces (ds->core->flags,
+									ds->analop.jump, R_FLAGS_FS_SYMBOLS, NULL)))
+						&& flag_sym->demangled) {
+					return;
+				}
+				ds_begin_comment (ds);
+				ds_comment (ds, true, "%s %s", ds->cmtoken, flag_name);
 				return;
 			}
-			ds_begin_comment (ds);
-			ds_comment (ds, true, "%s %s", ds->cmtoken, flag->name);
-			return;
 		}
 	}
 	if (!f || !f->name) {
@@ -4515,11 +4544,14 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 					f2_in_opstr = f2 && ds->opstr && (strstr (ds->opstr, f2->name) || strstr (ds->opstr, f2->realname)) ;
 				}
 				refaddr = p;
-				if (!flag_printed && !is_filtered_flag (ds, f->name)
-				    && (!ds->opstr || (!strstr (ds->opstr, f->name) && !strstr (ds->opstr, f->realname)))
+				RStrpool *pool = core->flags->strings;
+				const char *f_name = r_strpool_get (pool, f->name);
+				const char *f_rname = r_strpool_get (pool, f->realname);
+				if (!flag_printed && !is_filtered_flag (ds, f_name)
+				    && (!ds->opstr || (!strstr (ds->opstr, f_name) && !strstr (ds->opstr, f_rname)))
 				    && !f2_in_opstr) {
 					ds_begin_comment (ds);
-					ds_comment (ds, true, "%s %s", ds->cmtoken, f->name);
+					ds_comment (ds, true, "%s %s", ds->cmtoken, f_name);
 					ds->printed_flag_addr = p;
 					flag_printed = true;
 				}
@@ -4556,7 +4588,7 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 					char *msg2 = NULL;
 					RFlagItem *f2_ = r_flag_get_i (core->flags, n);
 					if (f2_) {
-						flag = f2_->name;
+						flag = r_strpool_get (core->flags->strings, f2_->name);
 					} else {
 						msg2 = calloc (sizeof (char), len);
 						r_io_read_at (core->io, n, (ut8*)msg2, len - 1);
@@ -4647,15 +4679,18 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 					free (msg2);
 				}
 			}
+			RStrpool *pool = ds->core->flags->strings;
+			const char *name = r_strpool_get (pool, f->name);
+			const char *rname = r_strpool_get (pool, f->realname);
 			if (print_msg) {
 				if (!string_printed) {
 					ds_print_str (ds, msg, len, refaddr);
 					string_printed = true;
 				}
 			} else if (!flag_printed && (!ds->opstr ||
-						(!strstr (ds->opstr, f->name) && !strstr (ds->opstr, f->realname)))) {
+						(!strstr (ds->opstr, name) && !strstr (ds->opstr, rname)))) {
 				ds_begin_nl_comment (ds);
-				ds_comment (ds, true, "%s %s", ds->cmtoken, f->name);
+				ds_comment (ds, true, "%s %s", ds->cmtoken, rname);
 				ds->printed_flag_addr = refaddr;
 				flag_printed = true;
 			}
@@ -4750,9 +4785,10 @@ static void ds_print_demangled(RDisasmState *ds) {
 	case R_ANAL_OP_TYPE_UJMP:
 	case R_ANAL_OP_TYPE_CALL:
 		f = r_flag_get_by_spaces (core->flags, ds->analop.jump, R_FLAGS_FS_SYMBOLS, NULL);
-		if (f && f->demangled && f->realname && ds->opstr && !strstr (ds->opstr, f->realname)) {
+		const char *realname = f? r_strpool_get (core->flags->strings, f->realname): NULL;
+		if (f && f->demangled && realname && ds->opstr && !strstr (ds->opstr, realname)) {
 			ds_begin_nl_comment (ds);
-			ds_comment (ds, true, "%s %s", ds->cmtoken, f->realname);
+			ds_comment (ds, true, "%s %s", ds->cmtoken, realname);
 		}
 	}
 }
@@ -4983,8 +5019,11 @@ static bool myregwrite(REsil *esil, const char *name, ut64 *val) {
 		if ((ds->printed_flag_addr == UT64_MAX || *val != ds->printed_flag_addr)
 		    && (ds->show_emu_strflag || !emu_str_printed)) {
 			RFlagItem *fi = r_flag_get_i (esil->anal->flb.f, *val);
-			if (fi && (!ds->opstr || !strstr (ds->opstr, fi->name))) {
-				msg = r_str_appendf (msg, "%s%s", msg && *msg ? " " : "", fi->name);
+			if (fi) {
+				const char *fi_name = r_strpool_get (ds->core->flags->strings, fi->name);
+				if (!ds->opstr || !strstr (ds->opstr, fi_name)) {
+					msg = r_str_appendf (msg, "%s%s", msg && *msg ? " " : "", fi_name);
+				}
 			}
 		}
 	}
@@ -5304,7 +5343,7 @@ static void ds_print_esil_anal(RDisasmState *ds) {
 			} else {
 				RFlagItem *item = r_flag_get_i (core->flags, pcv);
 				if (item) {
-					fcn_name = item->name;
+					fcn_name = r_strpool_get (core->flags->strings, item->name);
 				}
 			}
 			if (fcn_name) {
@@ -5434,7 +5473,7 @@ static void ds_print_calls_hints(RDisasmState *ds) {
 	} else if (ds->analop.ptr != UT64_MAX) {
 		RFlagItem *flag = r_flag_get_i (ds->core->flags, ds->analop.ptr);
 		if (flag && flag->space && !strcmp (flag->space->name, R_FLAGS_FS_IMPORTS)) {
-			full_name = flag->realname;
+			full_name = r_strpool_get (ds->core->flags->strings, flag->realname);
 		}
 	}
 	if (!full_name) {
@@ -5509,8 +5548,10 @@ static void ds_print_comments_right(RDisasmState *ds) {
 				r_cons_print (ds->color_comment);
 			}
 			r_cons_print (";-- ");
+			RStrpool *pool = core->flags->strings;
 			r_list_foreach (flaglist, iter, fi) {
-				r_cons_printf ("%s%s", fi->name, iter->n? ", ": " ");
+				const char *fi_name = r_strpool_get (pool, fi->name);
+				r_cons_printf ("%s%s", fi_name, iter->n? ", ": " ");
 			}
 		}
 		return;
@@ -5656,20 +5697,21 @@ static bool set_jump_realname(RDisasmState *ds, ut64 addr, const char **kw, cons
 		// nothing to do, neither demangled nor regular realnames should be shown
 		return false;
 	}
-	RFlagItem *flag_sym = r_flag_get_by_spaces (f, addr, R_FLAGS_FS_SYMBOLS, NULL);
-	if (!flag_sym || !flag_sym->realname) {
+	RFlagItem *fi = r_flag_get_by_spaces (f, addr, R_FLAGS_FS_SYMBOLS, NULL);
+	if (!fi || !fi->realname) {
 		// nothing to replace
 		return false;
 	}
-	if (!flag_sym->demangled && !f->realnames) {
+	if (!fi->demangled && !f->realnames) {
 		// realname is not demangled and we don't want to show non-demangled realnames
 		return false;
 	}
-	*name = flag_sym->realname;
-	RFlagItem *flag_mthd = r_flag_get_by_spaces (f, addr, R_FLAGS_FS_CLASSES, NULL);
+	*name = r_strpool_get (f->strings, fi->realname);
+	fi = r_flag_get_by_spaces (f, addr, R_FLAGS_FS_CLASSES, NULL);
 	if (!f->realnames) {
+		const char *fi_name = r_strpool_get (f->strings, fi->name);
 		// for asm.flags.real, we don't want these prefixes
-		if (flag_mthd && flag_mthd->name && r_str_startswith (flag_mthd->name, "method.")) {
+		if (fi && fi_name && r_str_startswith (fi_name, "method.")) {
 			*kw = "method ";
 		} else {
 			*kw = "sym ";
@@ -5720,12 +5762,13 @@ static char *ds_sub_jumps(RDisasmState *ds, char *str) {
 			}
 		} else {
 			if (!set_jump_realname (ds, addr, &kw, &name)) {
-				RFlagItem *flag = r_core_flag_get_by_spaces (f, addr);
-				if (flag) {
-					if (strchr (flag->name, '.')) {
-						name = flag->name;
-						if (f->realnames && flag->realname) {
-							name = flag->realname;
+				RFlagItem *fi = r_core_flag_get_by_spaces (f, addr);
+				if (fi) {
+					const char *fi_name = r_strpool_get (f->strings, fi->name);
+					if (strchr (fi_name, '.')) {
+						name = fi_name;
+						if (f->realnames && fi->realname) {
+							name = r_strpool_get (f->strings, fi->realname);
 						}
 					}
 				}
@@ -6927,8 +6970,10 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 			if (flags && !r_list_empty (flags)) {
 				pj_k (pj, "flags");
 				pj_a (pj);
+				RStrpool *pool = core->flags->strings;
 				r_list_foreach (flags, iter, flag) {
-					pj_s (pj, flag->name);
+					const char *name = r_strpool_get (pool, flag->name);
+					pj_s (pj, name);
 				}
 				pj_end (pj);
 			}
@@ -7215,7 +7260,8 @@ toro:
 					if (show_offset) {
 						r_print_offset (core->print, at, 0, 0, NULL);
 					}
-					r_cons_printf ("  %s:\n", item->name);
+					const char *name = r_strpool_get (core->flags->strings, item->name);
+					r_cons_printf ("  %s:\n", name);
 				}
 			} // do not show flags in pie
 		}

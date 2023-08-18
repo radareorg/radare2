@@ -766,7 +766,7 @@ repeat:
 				} else if (aop.ptr != UT64_MAX) {
 					RFlagItem *flag = r_flag_get_by_spaces (core->flags, aop.ptr, R_FLAGS_FS_IMPORTS, NULL);
 					if (flag && flag->realname) {
-						full_name = flag->realname;
+						full_name = r_strpool_get (core->flags->strings, flag->realname);
 						callee_addr = aop.ptr;
 					}
 				}

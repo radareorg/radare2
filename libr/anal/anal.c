@@ -524,7 +524,11 @@ R_API bool r_anal_noreturn_add(RAnal *anal, const char *name, ut64 addr) {
 			R_LOG_ERROR ("Can't find Function at given address");
 			return false;
 		}
-		tmp_name = fcn ? fcn->name: fi->name;
+		if (fcn) {
+			tmp_name = fcn->name;
+		} else {
+			tmp_name = r_strpool_get (anal->flb.f->strings, fi->name);
+		}
 		if (fcn) {
 			if (!fcn->is_noreturn) {
   				fcn->is_noreturn = true;
@@ -663,7 +667,9 @@ R_API bool r_anal_noreturn_at(RAnal *anal, ut64 addr) {
 	}
 	RFlagItem *fi = anal->flag_get (anal->flb.f, addr);
 	if (fi) {
-		if (r_anal_noreturn_at_name (anal, fi->realname ? fi->realname : fi->name)) {
+		int ni = fi->realname ? fi->realname : fi->name;
+		const char *n = r_strpool_get (anal->flb.f->strings, ni);
+		if (r_anal_noreturn_at_name (anal, n)) {
 			return true;
 		}
 	}
@@ -714,13 +720,14 @@ R_API bool r_anal_is_prelude(RAnal *anal, ut64 addr, const ut8 *data, int len) {
 	ut8 *owned = NULL;
 	RFlagItem *flag = anal->flag_get (anal->flb.f, addr); // XXX should get a list
 	if (flag) {
-		if (r_str_startswith (flag->name, "func.")) {
+		const char *name = r_strpool_get (anal->flb.f->strings, flag->name);
+		if (r_str_startswith (name, "func.")) {
 			return true;
 		}
-		if (r_str_startswith (flag->name, "fcn.")) {
+		if (r_str_startswith (name, "fcn.")) {
 			return true;
 		}
-		if (r_str_startswith (flag->name, "sym.")) {
+		if (r_str_startswith (name, "sym.")) {
 			return true;
 		}
 	}

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2018-2022 - pancake */
+/* radare - LGPL - Copyright 2018-2023 - pancake */
 
 #include <r_flag.h>
 
@@ -38,6 +38,7 @@ R_API void r_flag_tags_reset(RFlag *f, const char *name) {
 }
 
 struct iter_glob_flag_t {
+	RFlag *f;
 	RList *res;
 	RList *words;
 };
@@ -47,8 +48,9 @@ static bool iter_glob_flag(RFlagItem *fi, void *user) {
 	RListIter *iter;
 	const char *word;
 
+	const char *name = r_strpool_get (u->f->strings, fi->name);
 	r_list_foreach (u->words, iter, word) {
-		if (r_str_glob (fi->name, word)) {
+		if (r_str_glob (name, word)) {
 			r_list_append (u->res, fi);
 		}
 	}
@@ -62,7 +64,7 @@ R_API RList *r_flag_tags_get(RFlag *f, const char *name) {
 	char *words = sdb_get (f->tags, k, NULL);
 	if (words) {
 		RList *list = r_str_split_list (words, " ",  0);
-		struct iter_glob_flag_t u = { .res = res, .words = list };
+		struct iter_glob_flag_t u = { .f = f, .res = res, .words = list };
 		r_flag_foreach (f, iter_glob_flag, &u);
 		r_list_free (list);
 		free (words);

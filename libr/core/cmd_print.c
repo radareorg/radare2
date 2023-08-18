@@ -856,12 +856,13 @@ static void cmd_prc_zoom(RCore *core, const char *input) {
 				if (show_flags) {
 					RFlagItem *fi = r_flag_get_i (core->flags, core->offset + j);
 					if (fi) {
-						if (fi->name[1]) {
-							ch = fi->name[0];
-							ch2 = fi->name[1];
+						const char *name = r_flag_item_get_name (core->flags, fi);
+						if (name[0] && name[1]) {
+							ch = name[0];
+							ch2 = name[1];
 						} else {
 							ch = ' ';
-							ch2 = fi->name[0];
+							ch2 = name[0];
 						}
 					} else {
 						ch2 = ch;
@@ -2174,6 +2175,7 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 		if (usecolor) {
 			append (ebytes, Color_RESET);
 		}
+		RStrpool *pool = core->flags->strings;
 		append (ebytes, (col == 1)? " |": "  ");
 		bool hadflag = false;
 		for (j = 0; j < nb_cols; j++) {
@@ -2223,7 +2225,7 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 						flagaddr = fnear->offset;
 						if (fnear->offset == at) {
 							free (flagname);
-							flagname = fnear->name;
+							flagname = strdup (r_strpool_get (pool, fnear->name));
 						}
 						if (fnear->color) {
 							curflag = fnear;
@@ -2235,6 +2237,7 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 					}
 				}
 			} else {
+				RStrpool *pool = core->flags->strings;
 				r_list_foreach (list, iter, fi) {
 					flagsize = R_MAX (flagsize, fi->size);
 					if (fi->color) {
@@ -2244,7 +2247,8 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 						flagaddr = fi->offset;
 						if (fi->offset == at) {
 							free (flagname);
-							flagname = strdup (fi->name);
+							const char *fi_name = r_strpool_get (pool, fi->name);
+							flagname = strdup (fi_name);
 						}
 						if (!fi->color) {
 							curflag = fi;
@@ -7535,16 +7539,17 @@ static int cmd_print(void *data, const char *input) {
 					if (f) {
 						st64 delta = (v - f->offset);
 						if (delta >= 0 && delta < 8192) {
+							const char *f_name = r_strpool_get (core->flags->strings, f->name);
 							if (v == f->offset) {
-								fn = strdup (f->name);
+								fn = strdup (f_name);
 							} else {
 								fn = r_str_newf ("%s+%" PFMT64d,
-									f->name, v - f->offset);
+									f_name, v - f->offset);
 							}
 						}
 					}
 					if (printOffset) {
-						r_print_section (core->print, core->offset +i);
+						r_print_section (core->print, core->offset + i);
 						r_cons_printf ("0x%08"PFMT64x " %s0x%08"PFMT64x "%s%s%s\n",
 								(ut64) core->offset + i, a, (ut64) v,
 								b, fn? " ": "", r_str_get (fn));
@@ -7616,10 +7621,11 @@ static int cmd_print(void *data, const char *input) {
 					if (f) {
 						st64 delta = (v - f->offset);
 						if (delta >= 0 && delta < 8192) {
+							const char *f_name = r_strpool_get (core->flags->strings, f->name);
 							if (v == f->offset) {
-								fn = strdup (f->name);
+								fn = strdup (f_name);
 							} else {
-								fn = r_str_newf ("%s+%"PFMT64d, f->name, v - f->offset);
+								fn = r_str_newf ("%s+%"PFMT64d, f_name, v - f->offset);
 							}
 						}
 					}
@@ -7672,10 +7678,11 @@ static int cmd_print(void *data, const char *input) {
 					if (f) {
 						st64 delta = (v - f->offset);
 						if (delta >= 0 && delta < 8192) {
+							const char *f_name = r_strpool_get (core->flags->strings, f->name);
 							if (v == f->offset) {
-								fn = strdup (f->name);
+								fn = strdup (f_name);
 							} else {
-								fn = r_str_newf ("%s+%" PFMT64d, f->name, v - f->offset);
+								fn = r_str_newf ("%s+%" PFMT64d, f_name, v - f->offset);
 							}
 						}
 					}

@@ -99,7 +99,11 @@ static char *get_function_name(RCore *core, ut64 addr) {
 		}
 	}
 	RFlagItem *flag = r_core_flag_get_by_spaces (core->flags, addr);
-	return (flag && flag->name) ? strdup (flag->name) : NULL;
+	if (flag) {
+		const char *name = r_strpool_get (core->flags->strings, flag->name);
+		return name? strdup (name): NULL;
+	}
+	return NULL;
 }
 
 // XXX: copypaste from anal/data.c
@@ -383,7 +387,8 @@ static char *anal_fcn_autoname(RCore *core, RAnalFunction *fcn, int dump, int mo
 				// If dump is true, print all strings referenced by the function
 				if (dump) {
 					// take only strings flags
-					if (!strncmp (f->name, "str.", 4)) {
+					const char *f_name = r_strpool_get (core->flags->strings, f->name);
+					if (r_str_startswith (f_name, "str.")) {
 						if (mode == 'j') {
 							// add new json item
 							pj_o (pj);
@@ -591,7 +596,9 @@ static bool check_string_at(RCore *core, ut64 addr) {
 	const RList *flags = r_flag_get_list (core->flags, addr);
 	RListIter *iter;
 	RFlagItem *fi;
+	RStrpool *pool = core->flags->strings;
 	r_list_foreach (flags, iter, fi) {
+		const char *name = r_flag_item_get_name (pool, fi->name);
 		if (r_str_startswith (fi->name, "str.")) {
 			return true;
 		}
@@ -771,12 +778,15 @@ static void autoname_imp_trampoline(RCore *core, RAnalFunction *fcn) {
 
 static void set_fcn_name_from_flag(RAnalFunction *fcn, RFlagItem *f, const char *fcnpfx) {
 	bool nameChanged = false;
-	if (f && f->name) {
-		if (!strncmp (fcn->name, "loc.", 4) || !strncmp (fcn->name, "fcn.", 4)) {
-			r_anal_function_rename (fcn, f->name);
+	if (f) {
+		RStrpool *pool = fcn->anal->flb.f->strings;
+		const char *f_name = r_strpool_get (pool, f->name);
+		if (r_str_startswith (fcn->name, "loc.")
+		|| r_str_startswith (fcn->name, "fcn.")) {
+			r_anal_function_rename (fcn, f_name);
 			nameChanged = true;
-		} else if (strncmp (f->name, "sect", 4)) {
-			r_anal_function_rename (fcn, f->name);
+		} else if (!r_str_startswith (f_name, "sect")) {
+			r_anal_function_rename (fcn, f_name);
 			nameChanged = true;
 		}
 	}
@@ -882,7 +892,8 @@ static bool __core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int de
 			goto error;
 		} else if (fcnlen == R_ANAL_RET_END) { /* Function analysis complete */
 			f = r_core_flag_get_by_spaces (core->flags, fcn->addr);
-			if (f && f->name && strncmp (f->name, "sect", 4)) { /* Check if it's already flagged */
+			const char *fname = r_strpool_get (core->flags->strings, fcn->name);
+			if (f && fname && strncmp (fname, "sect", 4)) { /* Check if it's already flagged */
 				char *new_name = strdup (f->name);
 				if (is_entry_flag (f)) {
 					ut64 baddr = r_config_get_i (core->config, "bin.baddr");
@@ -2532,7 +2543,8 @@ repeat:
 		case R_GRAPH_FORMAT_GMLFCN: {
 			RFlagItem *flag = r_flag_get_i (core->flags, fcni->addr);
 			if (iteration == 0) {
-				char *msg = flag? strdup (flag->name): r_str_newf ("0x%08"PFMT64x, fcni->addr);
+				const char *flag_name = flag? r_strpool_get (core->flags->strings, flag->name): NULL;
+				char *msg = flag_name? strdup (flag_name): r_str_newf ("0x%08"PFMT64x, fcni->addr);
 				r_cons_printf ("  node [\n"
 						"  id  %"PFMT64d"\n"
 						"    label  \"%s\"\n"
@@ -5952,7 +5964,8 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 								add_string_ref (core, op.addr, dst);
 							}
 							if ((f = r_core_flag_get_by_spaces (core->flags, dst))) {
-								r_meta_set_string (core->anal, R_META_TYPE_COMMENT, cur, f->name);
+								const char *fname = r_strpool_get (core->flags->strings, f->name);
+								r_meta_set_string (core->anal, R_META_TYPE_COMMENT, cur, fname);
 							} else if ((str = is_string_at (mycore, dst, NULL))) {
 								char *str2 = r_str_newf ("esilref: '%s'", str);
 								// HACK avoid format string inside string used later as format
@@ -6457,7 +6470,8 @@ R_API void r_core_anal_inflags(RCore *core, R_NULLABLE const char *glob) {
 		}
 		if (simple) {
 			RFlagItem *fi = r_flag_get_at (core->flags, a0, 0);
-			r_core_cmdf (core, "af+ %s fcn.%s", addr, fi? fi->name: addr);
+			const char *fi_name = fi? r_strpool_get (core->flags->strings, fi->name): addr;
+			r_core_cmdf (core, "af+ %s fcn.%s", addr, fi_name);
 			r_core_cmdf (core, "afb+ %s %s %d", addr, addr, (int)sz);
 		} else {
 			r_core_cmdf (core, "aab@%s!%s-%s", addr, addr2, addr);

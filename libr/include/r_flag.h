@@ -16,16 +16,10 @@ R_LIB_VERSION_HEADER(r_flag);
 
 /* zones.c */
 
-#define R_FLAG_ZONE_USE_SDB 0
-
 typedef struct r_flag_zone_item_t {
 	ut64 from;
 	ut64 to;
-#if R_FLAG_ZONE_USE_SDB
-	const char *name;
-#else
 	char *name;
-#endif
 } RFlagZoneItem;
 
 /* flag.c */
@@ -36,8 +30,8 @@ typedef struct r_flags_at_offset_t {
 } RFlagsAtOffset;
 
 typedef struct r_flag_item_t {
-	char *name;     /* unique name, escaped to avoid issues with r2 shell */
-	char *realname; /* real name, without any escaping */
+	int name;       /* unique name, escaped to avoid issues with r2 shell */
+	int realname; /* real name, without any escaping */
 	bool demangled; /* real name from demangling? */
 	ut64 offset;    /* offset flagged by this item */ // R2_600 - rename to addr
 	ut64 size;      /* size of the flag item */
@@ -49,6 +43,7 @@ typedef struct r_flag_item_t {
 } RFlagItem;
 
 typedef struct r_flag_t {
+	RStrpool *strings;
 	RSpaces spaces;   /* handle flag spaces */
 	st64 base;         /* base address for all flag items */
 	bool realnames;
@@ -122,8 +117,9 @@ R_API RFlagItem *r_flag_set_inspace(RFlag *f, const char *space, const char *nam
 R_API RFlagItem *r_flag_set_next(RFlag *fo, const char *name, ut64 addr, ut32 size);
 R_API void r_flag_item_set_alias(RFlagItem *item, const char *alias);
 R_API void r_flag_item_free(RFlagItem *item);
-R_API void r_flag_item_set_comment(RFlagItem *item, const char *comment);
-R_API void r_flag_item_set_realname(RFlagItem *item, const char *realname);
+R_API void r_flag_item_set_comment(RFlag *f, RFlagItem *item, const char *comment);
+R_API void r_flag_item_set_realname(RFlag *f, RFlagItem *item, const char *realname);
+R_API const char *r_flag_item_get_name(RFlag *f, RFlagItem *item);
 R_API const char *r_flag_item_set_color(RFlagItem *item, const char *color);
 R_API RFlagItem *r_flag_item_clone(RFlagItem *item);
 R_API int r_flag_unset_glob(RFlag *f, const char *name);

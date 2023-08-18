@@ -241,24 +241,23 @@ static void setab(RCore *core, const char *arch, int bits) {
 }
 
 static const char *getName(RCore *core, ut64 addr) {
-	RFlagItem *item = r_flag_get_i (core->flags, addr);
+	RFlag *f = core->flags;
+	RFlagItem *item = r_flag_get_i (f, addr);
 	if (item) {
-		if (core->flags->realnames) {
-			return item->realname
-				? item->realname: item->name;
-		}
-		return item->name;
+		int idx = (core->flags->realnames)? item->realname: item->name;
+		return r_strpool_get (f->strings, idx);
 	}
 	return NULL;
 }
 
 static char *getNameDelta(RCore *core, ut64 addr) {
-	RFlagItem *item = r_flag_get_at (core->flags, addr, true);
-	if (item) {
-		if (item->offset != addr) {
-			return r_str_newf ("%s + %d", item->name, (int)(addr - item->offset));
+	RFlagItem *fi = r_flag_get_at (core->flags, addr, true);
+	if (fi) {
+		const char *fi_name = r_strpool_get (core->flags->strings, fi->name);
+		if (fi->offset != addr) {
+			return r_str_newf ("%s + %d", fi_name, (int)(addr - fi->offset));
 		}
-		return strdup (item->name);
+		return strdup (fi_name);
 	}
 	return NULL;
 }
@@ -433,7 +432,7 @@ static const char *str_callback(RNum *user, ut64 off, int *ok) {
 			if (ok) {
 				*ok = true;
 			}
-			return item->name;
+			return r_strpool_get (f->strings, item->name);
 		}
 	}
 	return NULL;
@@ -1560,7 +1559,10 @@ static void autocomplete_breakpoints(RCore *core, RLineCompletion *completion, c
 
 static bool add_argv(RFlagItem *fi, void *user) {
 	RLineCompletion *completion = user;
-	r_line_completion_push (completion, fi->name);
+#warning pool cant be null here but we cant find RFlag anywhere
+	RStrpool *pool = NULL; /// XXX
+	const char *fi_name = r_strpool_get (pool, fi->name);
+	r_line_completion_push (completion, fi_name);
 	return true;
 }
 
@@ -2219,7 +2221,7 @@ R_API int r_core_fgets(char *buf, int len) {
 static const char *r_core_print_offname(void *p, ut64 addr) {
 	RCore *c = (RCore*)p;
 	RFlagItem *item = r_flag_get_i (c->flags, addr);
-	return item ? item->name : NULL;
+	return item ? r_strpool_get (c->flags->strings, item->name): NULL;
 }
 
 static int r_core_print_offsize(void *p, ut64 addr) {
@@ -2318,7 +2320,7 @@ R_API char *r_core_anal_hasrefs(RCore *core, ut64 value, int mode) {
 		return res;
 	}
 	RFlagItem *fi = r_flag_get_i (core->flags, value);
-	return fi? strdup (fi->name): NULL;
+	return fi? strdup (r_strpool_get (core->flags->strings, fi->name)): NULL;
 }
 
 static char *getvalue(ut64 value, int bits) {
@@ -2421,8 +2423,10 @@ R_API char *r_core_anal_hasrefs_to_depth(RCore *core, ut64 value, PJ *pj, int de
 			const RList *flags = r_flag_get_list (core->flags, value);
 			if (flags && !r_list_empty (flags)) {
 				pj_ka (pj, "flags");
+				RStrpool *pool = core->flags->strings;
 				r_list_foreach (flags, iter, f) {
-					pj_s (pj, f->name);
+					const char *f_name = r_strpool_get (pool, f->name);
+					pj_s (pj, f_name);
 				}
 				pj_end (pj);
 			}
@@ -3472,12 +3476,13 @@ static int prompt_flag(RCore *r, char *s, size_t maxlen) {
 	if (!f) {
 		return false;
 	}
+	const char *f_name = r_strpool_get (r->flags->strings, f->name);
 	if (f->offset < r->offset) {
 		snprintf (s, maxlen, "0x%08" PFMT64x " | %s+0x%" PFMT64x,
-				r->offset, f->name, r->offset - f->offset);
+				r->offset, f_name, r->offset - f->offset);
 	} else {
 		snprintf (s, maxlen, "0x%08" PFMT64x " | %s",
-				r->offset, f->name);
+				r->offset, f_name);
 	}
 	if (strlen (s) > maxlen - sizeof (DOTS)) {
 		s[maxlen - sizeof (DOTS) - 1] = '\0';

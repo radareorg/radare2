@@ -427,6 +427,7 @@ R_API void r_core_cmd_help_match_spec(const RCore *core, RCoreHelpMessage help, 
 }
 
 struct duplicate_flag_t {
+	RStrpool *pool;
 	RList *ret;
 	const char *word;
 };
@@ -434,9 +435,10 @@ struct duplicate_flag_t {
 static bool duplicate_flag(RFlagItem *flag, void *u) {
 	struct duplicate_flag_t *user = (struct duplicate_flag_t *)u;
 	/* filter per flag spaces */
+	const char *flag_name = r_strpool_get (user->pool, flag->name);
 	bool valid = strchr (user->word, '*')
-		? r_str_glob (flag->name, user->word)
-		: strstr (flag->name, user->word) != NULL;
+		? r_str_glob (flag_name, user->word)
+		: strstr (flag_name, user->word) != NULL;
 	if (valid) {
 		RFlagItem *cloned_item = r_flag_item_clone (flag);
 		if (!cloned_item) {
@@ -5046,14 +5048,13 @@ struct exec_command_t {
 };
 
 typedef struct {
-	char *name;
+	const char *name;
 	ut64 addr;
 	ut64 size;
 } ForeachListItem;
 
 static void foreach3list_free(void* u) {
 	ForeachListItem *fli = (ForeachListItem*)u;
-	free (fli->name);
 	free (fli);
 }
 
@@ -5061,7 +5062,7 @@ static void append_item(RList *list, const char *name, ut64 addr, ut64 size) {
 	ForeachListItem *fli = R_NEW0 (ForeachListItem);
 	if (fli) {
 		if (name) {
-			fli->name = strdup (name);
+			fli->name = name;
 		}
 		fli->addr = addr;
 		fli->size = size;
@@ -5069,9 +5070,16 @@ static void append_item(RList *list, const char *name, ut64 addr, ut64 size) {
 	}
 }
 
+typedef struct {
+	RList *list;
+	RFlag *f;
+} UserPool;
+
 static bool copy_into_flagitem_list(RFlagItem *item, void *u) {
-	RList *list = (RList*)u;
-	append_item (list, item->name, item->offset, item->size);
+	UserPool *up = (UserPool*)u;
+	RList *list = up->list;
+	const char *item_name = r_strpool_get (up->f->strings, item->name);
+	append_item (list, item_name, item->offset, item->size);
 	return true;
 }
 
@@ -5305,7 +5313,13 @@ static RList *foreach3list(RCore *core, char type, const char *glob) {
 		}
 		break;
 	case 'f':
-		r_flag_foreach_glob (core->flags, glob, copy_into_flagitem_list, list);
+		{
+			UserPool up = {
+				.list = list,
+				.f = core->flags,
+			};
+			r_flag_foreach_glob (core->flags, glob, copy_into_flagitem_list, &up);
+		}
 		break;
 	}
 	return list;
@@ -5873,6 +5887,7 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 				   values at the moment the command is called
 				   (without side effects) */
 				struct duplicate_flag_t u = {
+					.pool = core->flags->strings,
 					.ret = match_flag_items,
 					.word = word,
 				};

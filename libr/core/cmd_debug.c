@@ -3379,17 +3379,18 @@ static void get_backtrace_info(RCore* core, RDebugFrame* frame, ut64 addr, char*
 		f = r_flag_get_at (core->flags, frame->addr - 1, true);
 	}
 	if (f) {
+		const char *f_name = r_strpool_get (core->flags->strings, f->name);
 		if (f->offset != addr) {
 			int delta = (int)(frame->addr - 1 - f->offset);
 			if (delta > 0) {
-				*flagdesc2 = r_str_newf ("%s+%d", f->name, delta + 1);
+				*flagdesc2 = r_str_newf ("%s+%d", f_name, delta + 1);
 			} else if (delta < 0) {
-				*flagdesc2 = r_str_newf ("%s%d", f->name, delta + 1);
+				*flagdesc2 = r_str_newf ("%s%d", f_name, delta + 1);
 			} else {
-				*flagdesc2 = r_str_newf ("%s+1", f->name);
+				*flagdesc2 = r_str_newf ("%s+1", f_name);
 			}
 		} else {
-			*flagdesc2 = r_str_newf ("%s", f->name);
+			*flagdesc2 = r_str_newf ("%s", f_name);
 		}
 	}
 	if (!strcmp (*flagdesc, *flagdesc2)) {

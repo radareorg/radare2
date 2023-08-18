@@ -76,6 +76,7 @@ static RList *__xrefs(RCore *core, ut64 addr) {
 		return r;
 	}
 
+	RStrpool *pool = core->flags->strings;
 	RAnalRef *ref;
 	R_VEC_FOREACH (xrefs, ref) {
 		if (ref->type != 'C') {
@@ -85,7 +86,7 @@ static RList *__xrefs(RCore *core, ut64 addr) {
 		RCoreVisualViewGraphItem *item = R_NEW0 (RCoreVisualViewGraphItem);
 		RFlagItem *f = r_flag_get_at (core->flags, ref->addr, 0);
 		item->addr = ref->addr;
-		item->name = f? f->name: NULL;
+		item->name = f? r_strpool_get (pool, f->name): NULL;
 		RAnalFunction *rf = r_anal_get_fcn_in (core->anal, ref->addr, 0);
 		item->fcn = rf;
 		if (rf) {
@@ -105,6 +106,7 @@ static RList *__refs(RCore *core, ut64 addr) {
 		return r;
 	}
 
+	RStrpool *pool = core->flags->strings;
 	RVecAnalRef *refs = r_anal_function_get_refs (fcn);
 	if (!refs) {
 		return r;
@@ -119,7 +121,7 @@ static RList *__refs(RCore *core, ut64 addr) {
 		RCoreVisualViewGraphItem *item = R_NEW0 (RCoreVisualViewGraphItem);
 		RFlagItem *f = r_flag_get_at (core->flags, ref->addr, 0);
 		item->addr = ref->addr;
-		item->name = f? f->name: NULL;
+		item->name = f? r_strpool_get (pool, f->name): NULL;
 		RAnalFunction *rf = r_anal_get_fcn_in (core->anal, ref->addr, 0);
 		if (rf) {
 			item->name = rf->name;

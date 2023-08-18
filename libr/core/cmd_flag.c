@@ -190,10 +190,10 @@ static RList *__childrenFlagsOf(RCore *core, RList *flags, const char *prefix) {
 		if (prefix_len > 0 && strncmp (f->name, prefix, prefix_len)) {
 			continue;
 		}
-		if (prefix_len > strlen (f->name)) {
+		const char *name = r_strpool_get (core->flags->strings, f->name);
+		if (prefix_len > strlen (name)) {
 			continue;
 		}
-		const char *name = f->name;
 		int name_len = strlen (name);
 		r_list_foreach (flags, iter2, f2) {
 			if (r_cons_is_breaked ()) {
@@ -468,17 +468,19 @@ static int flag_to_flag(RCore *core, const char *glob) {
 }
 
 typedef struct {
+	RFlag *f;
 	RTable *t;
 } FlagTableData;
 
 static bool __tableItemCallback(RFlagItem *flag, void *user) {
 	FlagTableData *ftd = user;
-	if (!R_STR_ISEMPTY (flag->name)) {
+	const char *name = r_flag_item_get_name (ftd->f, flag->name);
+	if (R_STR_ISNOTEMPTY (name)) {
 		RTable *t = ftd->t;
 		const char *spaceName = (flag->space && flag->space->name)? flag->space->name: "";
 		r_strf_var (addr, 32, "0x%08"PFMT64x, flag->offset);
 		r_strf_var (size, 32, "%"PFMT64d, flag->size);
-		r_table_add_row (t, addr, size, spaceName, flag->name, NULL);
+		r_table_add_row (t, addr, size, spaceName, name, NULL);
 	}
 	return true;
 }
@@ -488,6 +490,7 @@ static void cmd_flag_table(RCore *core, const char *input) {
 	const char *q = input;
 	FlagTableData ftd = {0};
 	RTable *t = r_core_table (core, "flags");
+	ftd.f = core->flags;
 	ftd.t = t;
 	RTableColumnType *typeString = r_table_type ("string");
 	RTableColumnType *typeNumber = r_table_type ("number");
@@ -1041,7 +1044,7 @@ rep:
 			item = r_flag_set (core->flags, cstr, off, bsze);
 		}
 		if (item && comment) {
-			r_flag_item_set_comment (item, comment);
+			r_flag_item_set_comment (core->flags, item, comment);
 			if (comment_needs_free) {
 				free (comment);
 			}
@@ -1381,13 +1384,13 @@ rep:
 					if (!strncmp (q + 1, "base64:", 7)) {
 						dec = (char *) r_base64_decode_dyn (q + 8, -1);
 						if (dec) {
-							r_flag_item_set_comment (item, dec);
+							r_flag_item_set_comment (core->flags, item, dec);
 							free (dec);
 						} else {
 							R_LOG_ERROR ("Failed to decode base64-encoded string");
 						}
 					} else {
-						r_flag_item_set_comment (item, q + 1);
+						r_flag_item_set_comment (core->flags, item, q + 1);
 					}
 				} else {
 					R_LOG_ERROR ("Cannot find flag with name '%s'", p);
@@ -1462,7 +1465,7 @@ rep:
 				item = r_flag_get_i (core->flags, core->offset);
 			}
 			if (item) {
-				r_flag_item_set_realname (item, realname);
+				r_flag_item_set_realname (core->flags, item, realname);
 			}
 			break;
 		}

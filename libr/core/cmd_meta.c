@@ -1083,7 +1083,8 @@ static int cmd_meta_others(RCore *core, const char *input) {
 						if (type != 's') {
 							RFlagItem *fi = r_flag_get_i (core->flags, addr);
 							if (fi) {
-								r_str_ncpy (name, fi->name, sizeof (name));
+								const char *fi_name = r_strpool_get (core->flags->strings, fi->name);
+								r_str_ncpy (name, fi_name, sizeof (name));
 							}
 						}
 					}

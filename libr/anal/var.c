@@ -1228,7 +1228,8 @@ R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int
 			RCore *core = (RCore *)anal->coreb.core;
 			RFlagItem *flag = r_flag_get_by_spaces (core->flags, offset, R_FLAGS_FS_IMPORTS, NULL);
 			if (flag) {
-				callee = r_type_func_guess (TDB, flag->name);
+				const char *flag_name = r_strpool_get (core->flags->strings, flag->name);
+				callee = r_type_func_guess (TDB, flag_name);
 				if (callee) {
 					const char *cc = r_anal_cc_func (anal, callee);
 					if (cc && !strcmp (fcn->cc, cc)) {
