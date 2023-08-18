@@ -45,6 +45,7 @@ typedef struct r2r_cmd_test_t {
 	R2RCmdTestStringRecord require;
 	R2RCmdTestStringRecord source;
 	R2RCmdTestStringRecord cmds;
+	R2RCmdTestNumRecord repeat;
 	R2RCmdTestStringRecord expect;
 	R2RCmdTestStringRecord expect_err;
 	R2RCmdTestStringRecord regexp_out;
@@ -61,6 +62,7 @@ typedef struct r2r_cmd_test_t {
 	macro_str ("FILE", file) \
 	macro_str ("ARGS", args) \
 	macro_str ("REQUIRE", require) \
+	macro_int ("REPEAT", repeat) \
 	macro_int ("TIMEOUT", timeout) \
 	macro_str ("SOURCE", source) \
 	macro_str ("CMDS", cmds) \
