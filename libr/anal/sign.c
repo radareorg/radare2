@@ -2965,6 +2965,7 @@ enum {
 };
 
 static int signdb_type(const char *file) {
+	char *data = NULL;
 	if (r_str_endswith (file, ".sdb")) {
 		return SIGNDB_TYPE_SDB;
 	}
@@ -2977,11 +2978,12 @@ static int signdb_type(const char *file) {
 	if (r_str_endswith (file, ".r2")) {
 		return SIGNDB_TYPE_R2;
 	}
-	int i, sz;
-	char *data = r_file_slurp_range (file, 0, 0x200, &sz);
-	if (!data) {
+	int i, sz = 0;
+	data = r_file_slurp_range (file, 0, 0x200, &sz);
+	if (!data || sz < 1) {
 		return SIGNDB_TYPE_INVALID;
 	}
+	sz = R_MIN (sz, 0x200);
 	int is_sdb = 16;
 	int is_kv = 4;
 	int is_r2 = 4;
@@ -3023,7 +3025,11 @@ static int signdb_type(const char *file) {
 			t = SIGNDB_TYPE_KV;
 		}
 	}
-	free ((void*)data);
+	// XXX looks like a false positive bug in gcc 9.4 (debian CI)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wfree-nonheap-object"
+	free (data);
+#pragma GCC diagnostic pop
 	return t;
 }
 
@@ -3194,7 +3200,6 @@ R_API bool r_sign_load(RAnal *a, const char *file, bool merge) {
 		R_LOG_ERROR ("Unsupported signature file format");
 		break;
 	}
-	// TODO: check if file is an r2 script, sdb database, keyvalue plaintext or json
 	free (path);
 	return res;
 }
@@ -3293,5 +3298,5 @@ R_API RSignOptions *r_sign_options_new(const char *bytes_thresh, const char *gra
 }
 
 R_API void r_sign_options_free(RSignOptions *options) {
-	R_FREE (options);
+	free (options);
 }
