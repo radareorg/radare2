@@ -1,10 +1,22 @@
-
-
-r2?=$(shell cat tmp/prefix/commit.txt 2> /dev/null || (cd tmp/radare2 && git log|head -n1|awk '{print $$2}'))
-CNT=$(shell cat tmp/prefix/count.txt 2> /dev/null || (cd tmp/radare2 && git log|grep ^commit|wc -l | awk '{print $$1}'))
+r2?=master
+# r2?=$(shell cat tmp/prefix/commit.txt 2> /dev/null || (cd tmp/radare2 2> /dev/null ; git log|head -n1|awk '{print $$2}'))
+CNT=$(shell cat tmp/radare2-$(r2)/count.txt 2> /dev/null || (cd tmp/radare2 2> /dev/null ; git log|grep ^commit|wc -l | awk '{print $$1}'))
 TMP=$(shell pwd)/tmp
 PREFIX=$(TMP)/prefix
 SO_EXT=$(shell r2 -H R2_LIBEXT)
+DB=$(shell pwd)/../db
+
+SOME=master
+SOME+=5.8.8
+SOME+=5.8.6
+SOME+=5.8.4
+SOME+=5.8.2
+SOME+=5.8.0
+SOME+=5.7.8
+SOME+=5.7.6
+SOME+=5.7.4
+SOME+=5.7.2
+SOME+=5.7.0
 
 all: lint mem.$(SO_EXT)
 	@echo "Usage: make [action] [option=value]"
@@ -40,9 +52,12 @@ use: $(TMP)/radare2 lint
 		echo $(r2) > $(TMP)/radare2-$(r2)/commit.txt ; \
 		git log|grep ^commit|wc -l | awk '{print $$1}' > ../radare2-$(r2)/count.txt ; fi
 	export CFLAGS=-Ofast && cd tmp/radare2-$(r2) && \
-		r2pm -r -- ./configure --with-syscapstone --prefix=$(PREFIX) --without-dylink --with-checks-level=0 > $(TMP)/radare2-$(r2)/configure.log 2>&1 && \
-		time r2pm -r $(MAKE) -j > $(TMP)/radare2-$(r2)/build.log 2>&1
-	$(MAKE) -C tmp/radare2-$(r2) symstall > $(TMP)/radare2-$(r2)/install.log 2>&1
+		r2pm -r -- meson b --prefix=$(PREFIX) -Dchecks_level=0 > $(TMP)/radare2-$(r2)/configure.log 2>&1 && \
+		r2pm -r -- ninja -C b
+	#sudo $(MAKE) -C tmp/radare2-$(r2) uninstall > /dev/null
+	rm -rf tmp/prefix/bin tmp/prefix/lib
+	cd tmp/radare2-$(r2) && \
+		r2pm -r -- ninja -C b install > $(TMP)/radare2-$(r2)/install.log 2>&1
 	cp -f tmp/radare2-$(r2)/count.txt tmp/prefix/count.txt
 	cp -f tmp/radare2-$(r2)/commit.txt tmp/prefix/commit.txt
 
@@ -52,6 +67,9 @@ $(TMP)/radare2:
 count=20
 world:
 	for a in `make lsa|head -n $(count)` ; do if [ -d tmp/radare2-$$a ]; then continue ; fi ; echo $$a ; sleep 1 ; make use r2=$$a ; make run r2=$$a ;  done
+
+some:
+	for a in ${SOME} ; do if [ -d tmp/radare2-$$a ]; then continue ; fi ; echo $$a ; sleep 1 ; make use r2=$$a ; make run r2=$$a ;  done
 
 force-world:
 	for a in `make lsa|head -n $(count)` ; do echo $$a ; sleep 1 ; make use r2=$$a ; make run r2=$$a ;  done
@@ -69,9 +87,14 @@ html:
 
 run:
 	mkdir -p logs
-	PATH=$(TMP)/prefix/bin/:${PATH} r2r -o logs/$(CNT)-$(r2)-1.json -i ../db/perf
-	PATH=$(TMP)/prefix/bin/:${PATH} r2r -o logs/$(CNT)-$(r2)-2.json -i ../db/perf
-	PATH=$(TMP)/prefix/bin/:${PATH} r2r -o logs/$(CNT)-$(r2)-3.json -i ../db/perf
+	-DYLD_LIBRARY_PATH=$(PREFIX)/lib PATH=$(PREFIX)/bin/:$${PATH} \
+		r2r -o logs/$(CNT)-$(r2)-1.json $(DB)/perf
+	-DYLD_LIBRARY_PATH=$(PREFIX)/lib PATH=$(PREFIX)/bin/:$${PATH} \
+		r2r -o logs/$(CNT)-$(r2)-2.json $(DB)/perf
+	-DYLD_LIBRARY_PATH=$(PREFIX)/lib PATH=$(PREFIX)/bin/:$${PATH} \
+		r2r -o logs/$(CNT)-$(r2)-3.json $(DB)/perf
+	-DYLD_LIBRARY_PATH=$(PREFIX)/lib PATH=$(PREFIX)/bin/:$${PATH} \
+		r2 -v > logs/$(CNT)-$(r2).version
 	$(MAKE) main
 
 main:
