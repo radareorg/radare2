@@ -89,19 +89,23 @@ html:
 
 run:
 	mkdir -p logs
-	-DYLD_LIBRARY_PATH=$(PREFIX)/lib PATH=$(PREFIX)/bin/:$${PATH} \
+	-LD_LIBRARY_PATH=$(PREFIX)/lib/:$(PREFIX)/x86_64-linux-gnu/ \
+	DYLD_LIBRARY_PATH=$(PREFIX)/lib PATH=$(PREFIX)/bin/:$${PATH} \
 		r2r -o logs/$(CNT)-$(r2)-1.json $(DB)/perf
-	-DYLD_LIBRARY_PATH=$(PREFIX)/lib PATH=$(PREFIX)/bin/:$${PATH} \
+	-LD_LIBRARY_PATH=$(PREFIX)/lib/:$(PREFIX)/x86_64-linux-gnu/ \
+	DYLD_LIBRARY_PATH=$(PREFIX)/lib PATH=$(PREFIX)/bin/:$${PATH} \
 		r2r -o logs/$(CNT)-$(r2)-2.json $(DB)/perf
-	-DYLD_LIBRARY_PATH=$(PREFIX)/lib PATH=$(PREFIX)/bin/:$${PATH} \
+	-LD_LIBRARY_PATH=$(PREFIX)/lib/:$(PREFIX)/x86_64-linux-gnu/ \
+	DYLD_LIBRARY_PATH=$(PREFIX)/lib PATH=$(PREFIX)/bin/:$${PATH} \
 		r2r -o logs/$(CNT)-$(r2)-3.json $(DB)/perf
-	-DYLD_LIBRARY_PATH=$(PREFIX)/lib PATH=$(PREFIX)/bin/:$${PATH} \
+	-LD_LIBRARY_PATH=$(PREFIX)/lib/:$(PREFIX)/x86_64-linux-gnu/ \
+	DYLD_LIBRARY_PATH=$(PREFIX)/lib PATH=$(PREFIX)/bin/:$${PATH} \
 		r2 -v > logs/$(CNT)-$(r2).version
 	$(MAKE) html
 
 R2=$(PWD)/tmp/prefix/bin/radare2
 mem:
-	-R2=$(R2) R2_ARGS="${R2} /bin/ls" \
+	-R2=$(R2) R2_ARGS="r2 /bin/ls" \
 	   frida -l mem.frida.js -f ${R2} 2> a.txt
 	r2 -qi mem.r2.js -- > logs/$(CNT)-$(r2).memory
 	cat logs/$(CNT)-$(r2).memory

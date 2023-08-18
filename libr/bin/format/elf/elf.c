@@ -4373,9 +4373,9 @@ static RVecRBinElfSymbol *parse_gnu_debugdata(ELFOBJ *eo, size_t *ret_size) {
 	if (odata) {
 		RBuffer *newelf = r_buf_new_with_pointers (odata, osize, false);
 		ELFOBJ* newobj = Elf_(new_buf) (newelf, eo->user_baddr, false);
-		newobj->limit = eo->limit;
 		RVecRBinElfSymbol *symbols = NULL;
 		if (newobj) {
+			newobj->limit = eo->limit;
 			if (Elf_(load_symbols) (newobj)) {
 				symbols = newobj->g_symbols_vec;
 				newobj->g_symbols_vec = NULL;
