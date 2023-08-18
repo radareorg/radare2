@@ -3026,8 +3026,10 @@ static int signdb_type(const char *file) {
 		}
 	}
 	// XXX looks like a false positive bug in gcc 9.4 (debian CI)
-#pragma GCC diagnostic ignored "-Wall"
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wfree-nonheap-object"
 	free (data);
+#pragma GCC diagnostic pop
 	return t;
 }
 
