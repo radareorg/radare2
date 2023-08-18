@@ -26,9 +26,11 @@ all: lint mem.$(SO_EXT)
 	@echo "make lsa            # list all/available versions of r2"
 	@echo "make lsa            # list all/available versions of r2"
 	@echo "make run            # run benchmarks testsuite with current r2"
+	@echo "make mem            # run the memory profile/statistics"
 	@echo "make html           # generate index.html"
 	@echo "make world count=10 # build the last 10 commits from r2"
 	@echo "make force-world    # like 'world', but ignores if logs are generated"
+	@echo "make some           # run some tags only (master 5.8.8 5.8.6 ...)"
 
 mem.$(SO_EXT):
 	$(CC) -fPIC -dynamiclib mem.c -o mem.$(SO_EXT)
@@ -95,10 +97,17 @@ run:
 		r2r -o logs/$(CNT)-$(r2)-3.json $(DB)/perf
 	-DYLD_LIBRARY_PATH=$(PREFIX)/lib PATH=$(PREFIX)/bin/:$${PATH} \
 		r2 -v > logs/$(CNT)-$(r2).version
-	$(MAKE) main
+	$(MAKE) html
+
+R2=$(PWD)/tmp/prefix/bin/radare2
+mem:
+	-R2=$(R2) R2_ARGS="${R2} /bin/ls" \
+	   frida -l mem.frida.js -f ${R2} 2> a.txt
+	r2 -qi mem.r2.js -- > logs/$(CNT)-$(r2).memory
+	cat logs/$(CNT)-$(r2).memory
 
 main:
 	@cd logs && r2 -qi ../main.r2.js --
 
-.PHONY: all ls lsa html run use r2
+.PHONY: all ls lsa html run use r2 mem
 
