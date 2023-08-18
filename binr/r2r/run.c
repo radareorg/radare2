@@ -882,7 +882,7 @@ static char *convert_win_cmds(const char *cmds) {
 }
 #endif
 
-static R2RProcessOutput *run_r2_test(R2RRunConfig *config, ut64 timeout_ms, const char *cmds, RList *files, RList *extra_args, bool load_plugins, R2RCmdRunner runner, void *user) {
+static R2RProcessOutput *run_r2_test(R2RRunConfig *config, ut64 timeout_ms, int repeat, const char *cmds, RList *files, RList *extra_args, bool load_plugins, R2RCmdRunner runner, void *user) {
 	RPVector args;
 	r_pvector_init (&args, NULL);
 	r_pvector_push (&args, "-escr.utf8=0");
@@ -925,7 +925,17 @@ static R2RProcessOutput *run_r2_test(R2RRunConfig *config, ut64 timeout_ms, cons
 #else
 	size_t env_size = load_plugins ? 0 : 1;
 #endif
-	R2RProcessOutput *out = runner (config->r2_cmd, args.v.a, r_pvector_length (&args), envvars, envvals, env_size, timeout_ms, user);
+	R2RProcessOutput *out;
+	if (repeat > 1) {
+		int rep = repeat;
+		while (rep-- > 0) {
+			out = runner (config->r2_cmd, args.v.a,
+				r_pvector_length (&args), envvars, envvals, env_size, timeout_ms, user);
+		}
+	} else {
+		out = runner (config->r2_cmd, args.v.a,
+			r_pvector_length (&args), envvars, envvals, env_size, timeout_ms, user);
+	}
 	r_pvector_clear (&args);
 #if R2__WINDOWS__
 	free (wcmds);
@@ -963,8 +973,10 @@ R_API R2RProcessOutput *r2r_run_cmd_test(R2RRunConfig *config, R2RCmdTest *test,
 		}
 		r_list_push (files, "-");
 	}
-	ut64 timeout_ms = test->timeout.set? test->timeout.value * 1000: config->timeout_ms;
-	R2RProcessOutput *out = run_r2_test (config, timeout_ms, test->cmds.value, files, extra_args, test->load_plugins, runner, user);
+	const ut64 timeout_ms = test->timeout.set? test->timeout.value * 1000: config->timeout_ms;
+	int repeat = test->repeat.value;
+	R2RProcessOutput *out = run_r2_test (config, timeout_ms, repeat,
+			test->cmds.value, files, extra_args, test->load_plugins, runner, user);
 	r_list_free (extra_args);
 	r_list_free (files);
 	return out;
@@ -1030,7 +1042,8 @@ R_API bool r2r_check_jq_available(void) {
 R_API R2RProcessOutput *r2r_run_json_test(R2RRunConfig *config, R2RJsonTest *test, R2RCmdRunner runner, void *user) {
 	RList *files = r_list_new ();
 	r_list_push (files, (void *)config->json_test_file);
-	R2RProcessOutput *ret = run_r2_test (config, config->timeout_ms, test->cmd, files, NULL, test->load_plugins, runner, user);
+	// TODO: config->timeout_ms is already inside config, no need to pass it twice! chk other calls
+	R2RProcessOutput *ret = run_r2_test (config, config->timeout_ms, 1, test->cmd, files, NULL, test->load_plugins, runner, user);
 	r_list_free (files);
 	return ret;
 }
@@ -1190,7 +1203,7 @@ R_API R2RProcessOutput *r2r_run_fuzz_test(R2RRunConfig *config, R2RFuzzTest *tes
 	const char *cmd = "aaa";
 	RList *files = r_list_new ();
 	r_list_push (files, test->file);
-	R2RProcessOutput *ret = run_r2_test (config, config->timeout_ms, cmd, files, NULL, false, runner, user);
+	R2RProcessOutput *ret = run_r2_test (config, config->timeout_ms, 1, cmd, files, NULL, false, runner, user);
 	r_list_free (files);
 	return ret;
 }
