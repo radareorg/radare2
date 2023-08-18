@@ -29,7 +29,6 @@ extern "C" {
 
 #define SDB_HASH_FAST 0
 #define SDB_INLINE_HASH 1
-#define SDB_INLINE __attribute__((always_inline))
 
 // ftp://ftp.gnu.org/old-gnu/Manuals/gperf-2.7/html_node/gperf_17.es.html
 #define SDB_MAX_GPERF_KEYS 15000
@@ -41,9 +40,11 @@ extern "C" {
 #if defined(__GNUC__)
 #define SDB_LIKELY(x) __builtin_expect((size_t)(x),1)
 #define SDB_UNLIKELY(x) __builtin_expect((size_t)(x),0)
+#define SDB_INLINE __attribute__((always_inline))
 #else
 #define SDB_LIKELY(x) (x)
 #define SDB_UNLIKELY(x) (x)
+#define SDB_INLINE
 #endif
 
 /* printf format check attributes */
