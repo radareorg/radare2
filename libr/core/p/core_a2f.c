@@ -333,8 +333,9 @@ static bool analyzeFunction(RCore *core, ut64 addr) {
 
 	// receiving a possible flag to label the new function
 	fi = r_flag_get_at (core->flags, addr, false);
-	if (fi && fi->name && strncmp (fi->name, "sect", 4)) {
-		function_label = strdup (fi->name);
+	const char *fi_name = fi? r_strpool_get (core->flags->strings, fi->name): NULL;
+	if (fi && fi_name && !r_str_startswith (fi_name, "sect")) {
+		function_label = strdup (fi_name);
 	} else {
 		function_label = r_str_newf ("fcn.%08"PFMT64x, addr);
 	}

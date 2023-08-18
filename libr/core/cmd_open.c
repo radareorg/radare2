@@ -1265,10 +1265,12 @@ static bool __rebase_flags(RFlagItem *flag, void *user) {
 	ut64 old_base = reb->old_base;
 	RListIter *it;
 	RBinSection *sec;
+	RStrpool *pool = reb->core->flags->strings;
 	// Only rebase flags that were in the rebased sections, otherwise it will take too long
 	r_list_foreach (reb->old_sections, it, sec) {
 		if (__is_inside_section (flag->offset, sec)) {
-			r_flag_set (reb->core->flags, flag->name, flag->offset + reb->diff, flag->size);
+			const char *flag_name = r_strpool_get (pool, flag->name);
+			r_flag_set (reb->core->flags, flag_name, flag->offset + reb->diff, flag->size);
 			break;
 		}
 	}

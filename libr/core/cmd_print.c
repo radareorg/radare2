@@ -734,7 +734,8 @@ static void cmd_prc(RCore *core, const ut8* block, int len) {
 				if (show_flags) {
 					RFlagItem *fi = r_flag_get_i (core->flags, core->offset + j);
 					if (fi) {
-						first_flag_chars (fi->name, &ch, &ch2);
+						const char *fi_name = r_strpool_get (core->flags->strings, fi->name);
+						first_flag_chars (fi_name, &ch, &ch2);
 					} else {
 						ch2 = ch;
 					}

@@ -428,7 +428,8 @@ static bool flagbar_foreach(RFlagItem *fi, void *user) {
 	}
 	r_cons_printf ("0x%08"PFMT64x" ", fi->offset);
 	r_print_rangebar (u->core->print, fi->offset, fi->offset + fi->size, min, max, u->cols);
-	r_cons_printf ("  %s\n", fi->name);
+	const char *fi_name = r_strpool_get (u->core->flags->strings, fi->name);
+	r_cons_printf ("  %s\n", fi_name);
 	return true;
 }
 
@@ -1503,14 +1504,15 @@ rep:
 			RListIter *iter;
 			RFlagItem *item;
 			r_list_foreach (list, iter, item) {
+				const char *item_name = r_strpool_get (core->flags->strings, item->name);
 				switch (mode) {
 				case '*':
-					r_cons_printf ("f %s = 0x%08"PFMT64x"\n", item->name, item->offset);
+					r_cons_printf ("f %s = 0x%08"PFMT64x"\n", item_name, item->offset);
 					break;
 				case 'j':
 					{
 						pj_o (pj);
-						pj_ks (pj, "name", item->name);
+						pj_ks (pj, "name", item_name);
 						pj_ks (pj, "realname", item->realname);
 						pj_kn (pj, "offset", item->offset);
 						pj_kn (pj, "size", item->size);
@@ -1518,7 +1520,7 @@ rep:
 					}
 					break;
 				default:
-					r_cons_printf ("%s\n", item->name);
+					r_cons_printf ("%s\n", item_name);
 					break;
 				}
 			}
@@ -1703,11 +1705,11 @@ rep:
 					} else {
 						// Print realname if exists and asm.flags.real is enabled
 						if (core->flags->realnames && f->realname) {
-							r_cons_printf ("%s + %d\n", f->realname,
-									   (int)(addr - f->offset));
+							const char *n = r_strpool_get (core->flags->strings, f->realname);
+							r_cons_printf ("%s + %d\n", n, (int)(addr - f->offset));
 						} else {
-							r_cons_printf ("%s + %d\n", f->name,
-									   (int)(addr - f->offset));
+							const char *n = r_strpool_get (core->flags->strings, f->name);
+							r_cons_printf ("%s + %d\n", n, (int)(addr - f->offset));
 						}
 					}
 				} else {

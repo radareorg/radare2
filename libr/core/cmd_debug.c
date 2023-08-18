@@ -977,9 +977,9 @@ static int step_until_flag(RCore *core, const char *instr) {
 		pc = r_debug_reg_get (core->dbg, "PC");
 		list = r_flag_get_list (core->flags, pc);
 		r_list_foreach (list, iter, f) {
-			if (!instr|| !*instr || (f->realname && strstr(f->realname, instr))) {
-				r_cons_printf ("[ 0x%08"PFMT64x" ] %s\n",
-						f->offset, f->realname);
+			const char *realname = r_strpool_get (core->flags->strings, f->realname);
+			if (!instr|| !*instr || (f->realname && strstr (realname, instr))) {
+				r_cons_printf ("[ 0x%08"PFMT64x" ] %s\n", f->offset, realname);
 				goto beach;
 			}
 		}

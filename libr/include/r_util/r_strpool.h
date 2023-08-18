@@ -11,6 +11,7 @@ typedef struct {
 	char *str;
 	int len;
 	int size;
+	R_DIRTY_VAR;
 } RStrpool;
 
 R_API RStrpool* r_strpool_new(int sz);

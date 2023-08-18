@@ -1613,9 +1613,11 @@ static int cmd_an(RCore *core, const char *name, int mode) {
 				r_cons_printf ("f %s=0x%" PFMT64x "\n", r_str_get (name), core->offset);
 			} else if (mode == 'j') {
 				pj_o (pj);
-				pj_ks (pj, "name", f->name);
-				if (f->realname) {
-					pj_ks (pj, "realname", f->realname);
+				const char *f_name = r_strpool_get (core->flags->strings, f->name);
+				pj_ks (pj, "name", f_name);
+				const char *f_rame = r_strpool_get (core->flags->strings, f->realname);
+				if (f_rame) {
+					pj_ks (pj, "realname", f_rame);
 				}
 				pj_ks (pj, "type", "flag");
 				pj_kn (pj, "offset", tgt_addr);
@@ -9187,7 +9189,7 @@ static const char *axtm_name(RCore *core, ut64 addr) {
 	} else {
 		RFlagItem *f = r_flag_get_at (core->flags, addr, false);
 		if (f) {
-			name = f->name;
+			name = r_strpool_get (core->flags->strings, f->name);
 		}
 	}
 	return name;
@@ -9442,9 +9444,11 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 					}
 					RFlagItem *fi = r_flag_get_at (core->flags, fcn? fcn->addr: ref->addr, true);
 					if (fi) {
+						const char *fi_name = r_strpool_get (core->flags->strings, fi->name);
+						const char *fi_rame = r_strpool_get (core->flags->strings, fi->realname);
 						if (fcn) {
-							if (strcmp (fcn->name, fi->name)) {
-								pj_ks (pj, "flag", fi->name);
+							if (strcmp (fcn->name, fi_name)) {
+								pj_ks (pj, "flag", fi_name);
 							}
 						} else {
 							pj_k (pj, "name");
@@ -9457,8 +9461,8 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 								pj_s (pj, fi->name);
 							}
 						}
-						if (fi->realname && strcmp (fi->name, fi->realname)) {
-							char *escaped = r_str_escape (fi->realname);
+						if (fi->realname && strcmp (fi_name, fi_rame)) {
+							char *escaped = r_str_escape (fi_rame);
 							if (escaped) {
 								pj_ks (pj, "realname", escaped);
 								free (escaped);
@@ -9668,7 +9672,7 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 						char *desc_to_free = NULL;
 						RFlagItem *flag = r_flag_get_at (core->flags, ref->addr, false);
 						if (flag) {
-							desc = flag->name;
+							desc = r_strpool_get (core->flags->strings, flag->name);
 						} else {
 							r_io_read_at (core->io, ref->addr, buf, sizeof (buf));
 							r_asm_set_pc (core->rasm, ref->addr);

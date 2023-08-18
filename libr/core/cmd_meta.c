@@ -998,7 +998,7 @@ static int cmd_meta_others(RCore *core, const char *input) {
 			t = strdup (r_str_trim_head_ro (input + off));
 			p = NULL;
 			n = 0;
-			strncpy (name, t, sizeof (name) - 1);
+			r_str_ncpy (name, t, sizeof (name));
 			if (type != 'C') {
 				n = r_num_math (core->num, t);
 				if (type == 'f') { // "Cf"
@@ -1078,7 +1078,8 @@ static int cmd_meta_others(RCore *core, const char *input) {
 					if (p) {
 						*p++ = '\0';
 						p = (char *)r_str_trim_head_ro (p);
-						strncpy (name, p, sizeof (name)-1);
+						// strncpy (name, p, sizeof (name)-1);
+						r_str_ncpy (name, p, sizeof (name) - 1);
 					} else {
 						if (type != 's') {
 							RFlagItem *fi = r_flag_get_i (core->flags, addr);
