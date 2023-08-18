@@ -4,7 +4,7 @@
 
 int main(int argc, const char **argv) {
 	char *ea = r_sys_getenv ("RARUN2_ARGS");
-	if (ea) {
+	if (R_STR_ISNOTEMPTY (ea)) {
 		char **argv = r_str_argv (ea, &argc);
 		r_sys_setenv ("RARUN2_ARGS", NULL);
 		int res = r_main_rarun2 (argc, (const char **)argv);
@@ -12,5 +12,6 @@ int main(int argc, const char **argv) {
 		free (argv);
 		return res;
 	}
+	free (ea);
 	return r_main_rarun2 (argc, argv);
 }

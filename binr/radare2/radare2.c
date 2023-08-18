@@ -102,6 +102,16 @@ int main(int argc, const char **argv) {
 	if (argc > 0 && strstr (argv[0], "r2p")) {
 		return r_main_r2pipe (argc, argv);
 	}
+	char *ea = r_sys_getenv ("R2_ARGS");
+	if (R_STR_ISNOTEMPTY (ea)) {
+		char **argv = r_str_argv (ea, &argc);
+		r_sys_setenv ("R2_ARGS", NULL);
+		int res = r_main_radare2 (argc, (const char **)argv);
+		free (ea);
+		free (argv);
+		return res;
+	}
+	free (ea);
 	return r_main_radare2 (argc, argv);
 }
 
