@@ -533,6 +533,7 @@ static ut64 estimate_slide(RBinFile *bf, RDyldCache *cache, ut64 value_mask, ut6
 		bool found_sample = false;
 
 		struct MACH0_(opts_t) opts = {0};
+		MACH0_(opts_set_default) (&opts, bf);
 		opts.verbose = bf->rbin->verbose;
 		opts.header_at = bin->header_at;
 		opts.symbols_off = 0;
@@ -1801,6 +1802,7 @@ static objc_cache_opt_info *get_objc_opt_info(RBinFile *bf, RDyldCache *cache) {
 		}
 
 		struct MACH0_(opts_t) opts = {0};
+		MACH0_(opts_set_default) (&opts, bf);
 		opts.verbose = bf->rbin->verbose;
 		opts.header_at = bin->header_at;
 		opts.symbols_off = 0;
