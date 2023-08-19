@@ -50,6 +50,7 @@ typedef struct r2r_cmd_test_t {
 	R2RCmdTestStringRecord expect_err;
 	R2RCmdTestStringRecord regexp_out;
 	R2RCmdTestStringRecord regexp_err;
+	R2RCmdTestStringRecord env;
 	R2RCmdTestBoolRecord broken;
 	R2RCmdTestNumRecord timeout;
 	ut64 run_line;
@@ -70,6 +71,7 @@ typedef struct r2r_cmd_test_t {
 	macro_str ("EXPECT_ERR", expect_err) \
 	macro_str ("REGEXP_OUT", regexp_out) \
 	macro_str ("REGEXP_ERR", regexp_err) \
+	macro_str ("ENV", env) \
 	macro_bool ("BROKEN", broken)
 
 typedef enum r2r_asm_test_mode_t {
