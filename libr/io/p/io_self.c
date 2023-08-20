@@ -418,7 +418,7 @@ static ut64 __lseek(RIO *io, RIODesc *fd, ut64 offset, int whence) {
 		io->off += offset;
 		return io->off;
 	case SEEK_END:
-		if (sizeof(void*) == 8) {
+		if (sizeof (void*) == 8) {
 			io->off = UT64_MAX;
 		} else {
 			io->off = UT32_MAX;
