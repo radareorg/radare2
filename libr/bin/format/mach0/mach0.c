@@ -3060,7 +3060,7 @@ static void _parse_symbols(RBinFile *bf, struct MACH0_(obj_t) *mo, HtPP *symcach
 				continue;
 			}
 
-			if (hash_find_or_insert (hash, sym_name, vaddr)) {
+			if (strstr (sym_name, "<redacted>") || hash_find_or_insert (hash, sym_name, vaddr)) {
 				free (sym_name);
 				j--;
 			} else {
@@ -3093,6 +3093,10 @@ static void _parse_symbols(RBinFile *bf, struct MACH0_(obj_t) *mo, HtPP *symcach
 			break;
 		}
 		if (parse_import_stub (mo, &symbol, i) && symbol.addr >= 100) {
+			if (symbol.name && strstr (symbol.name, "<redacted>")) {
+				free (symbol.name);
+				continue;
+			}
 			j++;
 			RBinSymbol *sym = RVecRBinSymbol_emplace_back (mo->symbols_vec);
 			memset (sym, 0, sizeof (RBinSymbol));
@@ -3124,8 +3128,11 @@ static void _parse_symbols(RBinFile *bf, struct MACH0_(obj_t) *mo, HtPP *symcach
 			if (vaddr < 100) {
 				continue;
 			}
-
 			char *sym_name = get_name (mo, st->n_strx, false);
+			if (sym_name && strstr (sym_name, "<redacted>")) {
+				free (sym_name);
+				continue;
+			}
 			if (!sym_name) {
 				sym_name = r_str_newf ("entry%u", (ut32)i);
 			}

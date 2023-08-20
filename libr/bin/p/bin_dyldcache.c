@@ -347,7 +347,7 @@ static ut64 rebase_infos_get_slide(RDyldCache *cache) {
 	return 0;
 }
 
-static void symbols_from_locsym(RDyldCache *cache, RDyldBinImage *bin, RList *symbols, SetU *hash) {
+static void symbols_from_locsym(RDyldCache *cache, RDyldBinImage *bin, RBinFile * bf, SetU *hash) {
 	RDyldLocSym *locsym = cache->locsym;
 	if (!locsym) {
 		return;
@@ -381,11 +381,12 @@ static void symbols_from_locsym(RDyldCache *cache, RDyldBinImage *bin, RList *sy
 		if (nlist->n_strx >= locsym->strings_size) {
 			continue;
 		}
-		RBinSymbol *sym = R_NEW0 (RBinSymbol);
+		RBinSymbol *sym = RVecRBinSymbol_emplace_back (&bf->bo->symbols_vec);
 		if (!sym) {
 			break;
 		}
-		sym->type = "LOCAL";
+		memset (sym, 0, sizeof (RBinSymbol));
+		sym->type = R_BIN_TYPE_FUNC_STR;
 		sym->vaddr = nlist->n_value;
 		ut64 slide = rebase_infos_get_slide (cache);
 		sym->paddr = va2pa (nlist->n_value, cache->n_maps, cache->maps, cache->buf, slide, NULL, NULL);
@@ -397,8 +398,6 @@ static void symbols_from_locsym(RDyldCache *cache, RDyldBinImage *bin, RList *sy
 			static R_TH_LOCAL ut32 k = 0;
 			sym->name = r_str_newf ("unk_local%d", k++);
 		}
-
-		r_list_append (symbols, sym);
 	}
 
 	free (nlists);
@@ -2023,45 +2022,13 @@ static ut64 baddr(RBinFile *bf) {
 	return 0x180000000;
 }
 
-void symbols_from_bin(RDyldCache *cache, RList *ret, RBinFile *bf, RDyldBinImage *bin, SetU *hash) {
+void symbols_from_bin(RBinFile *bf, RDyldBinImage *bin) {
 	struct MACH0_(obj_t) *mo = bin_to_mach0 (bf, bin);
 	if (!mo) {
 		return;
 	}
 
-	if (!MACH0_(load_symbols) (mo)) {
-		return;
-	}
-	RVecRBinSymbol *symbols = mo->symbols_vec;
-	if (!symbols) {
-		return;
-	}
-
-	int i = 0;
-	RBinSymbol *sym;
-	R_VEC_FOREACH (symbols, sym) {
-		if (strstr (sym->name, "<redacted>")) {
-			i++;
-			continue;
-		}
-
-		RBinSymbol *ret_sym = R_NEW0 (RBinSymbol);
-		if (!ret_sym) {
-			break;
-		}
-
-		ret_sym->name = strdup (sym->name);
-		ret_sym->vaddr = sym->vaddr;
-		ret_sym->paddr = sym->paddr;
-		ret_sym->forwarder = "NONE";
-		ret_sym->bind = sym->bind;
-		ret_sym->type = R_BIN_TYPE_FUNC_STR;
-		ret_sym->size = sym->size;
-		ret_sym->ordinal = i;
-		set_u_add (hash, ret_sym->vaddr);
-		r_list_append (ret, ret_sym);
-		i++;
-	}
+	MACH0_(load_symbols) (mo);
 	MACH0_(mach0_free) (mo);
 }
 
@@ -2182,15 +2149,13 @@ static RList *sections(RBinFile *bf) {
 	return ret;
 }
 
-static RList *symbols(RBinFile *bf) {
+static bool symbols_vec(RBinFile *bf) {
+	RVecRBinSymbol *symbols = &bf->bo->symbols_vec;
+	RBinSymbol *sym;
+
 	RDyldCache *cache = (RDyldCache*) bf->bo->bin_obj;
 	if (!cache) {
-		return NULL;
-	}
-
-	RList *ret = r_list_newf (r_bin_symbol_free);
-	if (!ret) {
-		return NULL;
+		return false;
 	}
 
 	RListIter *iter;
@@ -2203,25 +2168,39 @@ static RList *symbols(RBinFile *bf) {
 			eprintf ("Parsing symbols stopped %d / %d\n", i, r_list_length (cache->bins));
 			break;
 		}
-		SetU *hash = set_u_new ();
-		if (!hash) {
-			r_list_free (ret);
-			return NULL;
-		}
-		symbols_from_bin (cache, ret, bf, bin, hash);
-		symbols_from_locsym (cache, bin, ret, hash);
-		set_u_free (hash);
+		symbols_from_bin (bf, bin);
 	}
+
+	SetU *hash = set_u_new ();
+	if (!hash) {
+		goto beach;
+	}
+
+	R_VEC_FOREACH (symbols, sym) {
+		set_u_add (hash, sym->vaddr);
+	}
+
+	i = 0;
+	r_list_foreach (cache->bins, iter, bin) {
+		i++;
+		if (is_breaked && is_breaked ()) {
+			eprintf ("Parsing symbols stopped %d / %d\n", i, r_list_length (cache->bins));
+			break;
+		}
+		symbols_from_locsym (cache, bin, bf, hash);
+	}
+
+	set_u_free (hash);
 
 	ut64 slide = rebase_infos_get_slide (cache);
 	if (slide) {
-		RBinSymbol *sym;
-		r_list_foreach (ret, iter, sym) {
+		R_VEC_FOREACH (symbols, sym) {
 			sym->vaddr += slide;
 		}
 	}
 
-	return ret;
+beach:
+	return !RVecRBinSymbol_empty (symbols);
 }
 
 /* static void unswizzle_io_read(RDyldCache *cache, RIO *io) {
@@ -2520,7 +2499,7 @@ RBinPlugin r_bin_plugin_dyldcache = {
 	.load = &load,
 	.entries = &entries,
 	.baddr = &baddr,
-	.symbols = &symbols,
+	.symbols_vec = &symbols_vec,
 	.sections = &sections,
 	.minstrlen = 5,
 	.check = &check,
