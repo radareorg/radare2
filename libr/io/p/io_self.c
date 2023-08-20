@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2014-2022 - pancake */
+/* radare - LGPL - Copyright 2014-2023 - pancake */
 
 #include <r_userconf.h>
 #include <r_io.h>
@@ -390,6 +390,7 @@ static int __read(RIO *io, RIODesc *fd, ut8 *buf, int len) {
 			return newlen;
 		}
 	}
+	memset (buf, 0xff, len);
 	return 0;
 }
 
@@ -410,9 +411,19 @@ static int __write(RIO *io, RIODesc *fd, const ut8 *buf, int len) {
 
 static ut64 __lseek(RIO *io, RIODesc *fd, ut64 offset, int whence) {
 	switch (whence) {
-	case SEEK_SET: return offset;
-	case SEEK_CUR: return io->off + offset;
-	case SEEK_END: return UT64_MAX;
+	case SEEK_SET:
+		io->off = offset;
+		return offset;
+	case SEEK_CUR:
+		io->off += offset;
+		return io->off;
+	case SEEK_END:
+		if (sizeof (void*) == 8) {
+			io->off = UT64_MAX;
+		} else {
+			io->off = UT32_MAX;
+		}
+		return UT64_MAX;
 	}
 	return offset;
 }
