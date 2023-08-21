@@ -371,3 +371,76 @@ R_API int r_anal_function_coverage(RAnalFunction *fcn) {
 	}
 	return (traced * 100) / total;
 }
+
+R_API RGraph *r_anal_function_get_graph(RAnalFunction *fcn, RGraphNode **node_ptr, ut64 addr) {
+	r_return_val_if_fail (fcn && fcn->bbs && r_list_length (fcn->bbs), NULL);
+	HtUP *nodes = ht_up_new0 ();
+	RGraph *g = r_graph_new ();
+	if (node_ptr) {
+		*node_ptr = NULL;
+	}
+	RListIter *iter;
+	RAnalBlock *bb;
+	r_list_foreach (fcn->bbs, iter, bb) {
+		RGraphNode *node = r_graph_add_node (g, bb);
+		if (node_ptr && !node_ptr[0] && bb->addr <= addr && addr < (bb->addr + bb->size)) {
+			*node_ptr = node;
+		}
+		ht_up_insert (nodes, bb->addr, node);
+	}
+	r_list_foreach (fcn->bbs, iter, bb) {
+		if (bb->jump == UT64_MAX  &&
+			(!bb->switch_op || !bb->switch_op->cases || !r_list_length (bb->switch_op->cases))) {
+			continue;
+		}
+		RGraphNode *node = (RGraphNode *)ht_up_find (nodes, bb->addr, NULL);
+		if (bb->jump != UT64_MAX) {
+			RGraphNode *_node = NULL;
+			_node = (RGraphNode *)ht_up_find (nodes, bb->jump, NULL);
+			if (!_node) {
+				R_LOG_ERROR ("Broken fcn");
+				ht_up_free (nodes);
+				r_graph_free (g);
+				if (node_ptr) {
+					*node_ptr = NULL;
+				}
+				return NULL;
+			}
+			r_graph_add_edge (g, node, _node);
+		}
+		if (bb->fail != UT64_MAX) {
+			RGraphNode *_node = NULL;
+			_node = (RGraphNode *)ht_up_find (nodes, bb->fail, NULL);
+			if (!_node) {
+				R_LOG_ERROR ("Broken fcn");
+				ht_up_free (nodes);
+				r_graph_free (g);
+				if (node_ptr) {
+					*node_ptr = NULL;
+				}
+				return NULL;
+			}
+			r_graph_add_edge (g, node, _node);
+		}
+		if (bb->switch_op && bb->switch_op->cases && r_list_length (bb->switch_op->cases)) {
+			RListIter *ator;
+			RAnalCaseOp *co;
+			r_list_foreach (bb->switch_op->cases, ator, co) {
+				RGraphNode *_node = NULL;
+				_node = (RGraphNode *)ht_up_find (nodes, co->addr, NULL);
+				if (!_node) {
+					R_LOG_ERROR ("Broken fcn");
+					ht_up_free (nodes);
+					r_graph_free (g);
+					if (node_ptr) {
+						*node_ptr = NULL;
+					}
+					return NULL;
+				}
+				r_graph_add_edge (g, node, _node);
+			}
+		}
+	}
+	ht_up_free (nodes);
+	return g;
+}

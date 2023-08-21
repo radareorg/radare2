@@ -953,6 +953,8 @@ R_API bool r_anal_function_contains(RAnalFunction *fcn, ut64 addr);
 // returns true if function bytes were modified
 R_API bool r_anal_function_was_modified(RAnalFunction *fcn);
 
+R_API RGraph *r_anal_function_get_graph(RAnalFunction *fcn, RGraphNode **node_ptr, ut64 addr);
+
 /* anal.c */
 R_API RAnal *r_anal_new(void);
 R_API void r_anal_purge(RAnal *anal);
