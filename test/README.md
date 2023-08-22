@@ -20,7 +20,7 @@ Originally based on work by and now in collaboration with pancake.
 # Usage
 
  * To run *all* tests, use `make -k all`.
- * To execute only the unit tests use `make -k unit_tests`.
+ * To execute only the unit tests use `make -k unit-tests`.
 
 ## Failure Levels
 
