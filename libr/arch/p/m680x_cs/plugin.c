@@ -513,7 +513,7 @@ beach:
 		} else {
 			op->mnemonic = r_str_newf ("%s%s%s", insn->mnemonic,
 					insn->op_str[0]?" ": "", insn->op_str);
-			r_str_replace_in (op->mnemonic, strlen (op->mnemonic),
+			r_str_replace_in (op->mnemonic, strlen (op->mnemonic) + 1,
 				"ptr ", "", true);
 		}
 	}
