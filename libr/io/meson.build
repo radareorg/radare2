@@ -22,6 +22,7 @@ r_io_sources = [
   'p/io_debug.c',
   'p/io_default.c',
   'p/io_sysgdb.c',
+  'p/io_dsc.c',
   'p/io_gdb.c',
   'p/io_gprobe.c',
   'p/io_gzip.c',

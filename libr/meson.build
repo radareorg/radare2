@@ -26,6 +26,7 @@ endif
 # meson split is results in 1 empty element when splitting an empty string :facepalm:
 if user_plugins.contains('apple') or user_plugins.contains('macos') or user_plugins.contains('ios')
   io_plugins += [
+    'dsc',
     'mach',
   ]
   bin_plugins += [
