@@ -6,69 +6,7 @@
 #define R_BIN_MACH064 1
 #include "../format/mach0/mach0.h"
 #include "objc/mach0_classes.h"
-
-#define R_IS_PTR_AUTHENTICATED(x) B_IS_SET(x, 63)
-#define MAX_N_HDR 128
-
-typedef struct {
-	ut8 version;
-	ut64 slide;
-	ut8 *one_page_buf;
-	ut32 page_size;
-	ut64 start_of_data;
-} RDyldRebaseInfo;
-
-typedef struct {
-	ut64 start;
-	ut64 end;
-	RDyldRebaseInfo *info;
-} RDyldRebaseInfosEntry;
-
-typedef struct {
-	RDyldRebaseInfosEntry *entries;
-	size_t length;
-} RDyldRebaseInfos;
-
-typedef struct {
-	ut8 version;
-	ut64 slide;
-	ut8 *one_page_buf;
-	ut32 page_size;
-	ut64 start_of_data;
-	ut16 *page_starts;
-	ut32 page_starts_count;
-	ut64 delta_mask;
-	ut32 delta_shift;
-	ut64 auth_value_add;
-} RDyldRebaseInfo3;
-
-typedef struct {
-	ut8 version;
-	ut64 slide;
-	ut8 *one_page_buf;
-	ut32 page_size;
-	ut64 start_of_data;
-	ut16 *page_starts;
-	ut32 page_starts_count;
-	ut16 *page_extras;
-	ut32 page_extras_count;
-	ut64 delta_mask;
-	ut64 value_mask;
-	ut32 delta_shift;
-	ut64 value_add;
-} RDyldRebaseInfo2;
-
-typedef struct {
-	ut8 version;
-	ut64 slide;
-	ut8 *one_page_buf;
-	ut32 page_size;
-	ut64 start_of_data;
-	ut16 *toc;
-	ut32 toc_count;
-	ut8 *entries;
-	ut32 entries_size;
-} RDyldRebaseInfo1;
+#include "../format/mach0/dsc.c"
 
 typedef struct {
 	ut64 local_symbols_offset;
