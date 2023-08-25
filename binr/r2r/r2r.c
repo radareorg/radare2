@@ -1074,6 +1074,10 @@ menu:
 				goto menu;
 			}
 		}
+		if (buf[0] == 'F') {
+			always_fix = true;
+			buf[0] = 'f'
+		}
 		switch (buf[0]) {
 		case 'f':
 			if (result->run_failed || result->proc_out->ret != 0) {
@@ -1081,9 +1085,6 @@ menu:
 				goto menu;
 			}
 			interact_fix (result, &failed_results);
-			break;
-		case 'F':
-			always_fix = true;
 			break;
 		case 'i':
 			// do nothing on purpose
