@@ -255,7 +255,6 @@ struct r_anal_attr_t {
 };
 
 /* Stores useful function metadata */
-/* TODO: Think about moving more stuff to this structure? */
 typedef struct r_anal_function_meta_t {
 	// _min and _max are calculated lazily when queried.
 	// On changes, they will either be updated (if this can be done trivially) or invalidated.
@@ -269,7 +268,7 @@ typedef struct r_anal_function_meta_t {
 
 typedef struct r_anal_function_t {
 	char *name;
-	// R2_590: add realname for the mangled one
+	char *realname; // R2_590: add realname for the mangled one
 	int bits; // ((> bits 0) (set-bits bits))
 	int type;
 	const char *cc; // calling convention, should come from RAnal.constpool
@@ -1203,7 +1202,7 @@ R_API bool r_anal_cc_set(RAnal *anal, const char *expr);
 R_API char *r_anal_cc_get(RAnal *anal, const char *name);
 R_API bool r_anal_cc_once(RAnal *anal);
 R_API void r_anal_cc_get_json(RAnal *anal, PJ *pj, const char *name);
-R_API const char *r_anal_cc_arg(RAnal *anal, const char *convention, int n);
+R_API const char *r_anal_cc_arg(RAnal *anal, const char *convention, int n, int lastn);
 R_API const char *r_anal_cc_self(RAnal *anal, const char *convention);
 R_API void r_anal_cc_set_self(RAnal *anal, const char *convention, const char *self);
 R_API const char *r_anal_cc_error(RAnal *anal, const char *convention);
