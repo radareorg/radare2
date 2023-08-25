@@ -2396,7 +2396,7 @@ static ut64 flagVal(const void *a) {
 	const char *name = r_strpool_get (pool, fi->realname);
 	return r_str_hash64 (name);
 #else
-	return fi->realname? fi->realname: fi->name;;
+	return fi->realname? fi->realname: fi->name;
 #endif
 }
 

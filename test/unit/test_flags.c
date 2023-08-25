@@ -44,15 +44,18 @@ bool test_r_flag_by_spaces(void) {
 
 	fi = r_flag_get_by_spaces (flags, 1024, "sp2", "sp4", NULL);
 	mu_assert_notnull (fi, "should be retrieved");
-	mu_assert_streq (fi->name, "foo3", "first defined in sp2 should be get");
+	const char *fi_name = r_flag_item_get_name (flags, fi);
+	mu_assert_streq (fi_name, "foo3", "first defined in sp2 should be get");
 
 	fi = r_flag_get_by_spaces (flags, 1024, NULL);
 	mu_assert_notnull (fi, "something should be retrieved");
-	mu_assert_streq (fi->name, "foo1", "a random one should be get (the first)");
+	fi_name = r_flag_item_get_name (flags, fi);
+	mu_assert_streq (fi_name, "foo1", "a random one should be get (the first)");
 
 	fi = r_flag_get_by_spaces (flags, 1024, "sp5", "sp8", "sp1", "sp3", "sp10", NULL);
 	mu_assert_notnull (fi, "something should be retrieved");
-	mu_assert_streq (fi->name, "foo1", "first defined in sp1 should be get");
+	fi_name = r_flag_item_get_name (flags, fi);
+	mu_assert_streq (fi_name, "foo1", "first defined in sp1 should be get");
 
 	r_flag_free (flags);
 	mu_end;
