@@ -98,7 +98,7 @@ R_API void r_anal_cc_get_json(RAnal *anal, PJ *pj, const char *name) {
 	}
 	pj_ks (pj, "ret", ret);
 	const char *ret2 = sdb_const_get (DB, r_strf ("cc.%s.ret2", name), 0);
-	if (ret) {
+	if (ret2) {
 		pj_ks (pj, "ret2", ret2);
 	}
 	char *sig = r_anal_cc_get (anal, name);
