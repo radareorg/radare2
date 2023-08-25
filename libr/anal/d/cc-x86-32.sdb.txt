@@ -45,8 +45,7 @@ pascal=cc
 cc.pascal.ret=eax
 cc.pascal.argn=stack_rev
 
-
-# reverse argument calling convention
+# reverse argument calling convention. only for gcc and dmd, ldc2 uses normal cdecl CC
 dlang=cc
 cc.dlang.ret=eax
 cc.dlang.ret2=edx

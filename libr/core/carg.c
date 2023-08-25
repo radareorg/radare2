@@ -25,7 +25,7 @@ static void set_fcn_args_info(RAnalFuncArg *arg, RAnal *anal, const char *fcn_na
 	arg->fmt = sdb_const_get (TDB, query, 0);
 	const char *t_query = r_strf ("type.%s.size", arg->c_type);
 	arg->size = sdb_num_get (TDB, t_query, 0) / 8;
-	arg->cc_source = r_anal_cc_arg (anal, cc, arg_num);
+	arg->cc_source = r_anal_cc_arg (anal, cc, arg_num, -1);
 }
 
 R_API char *resolve_fcn_name(RAnal *anal, const char *func_name) {
@@ -231,7 +231,7 @@ R_API RList *r_core_get_func_args(RCore *core, const char *fcn_name) {
 		return NULL;
 	}
 	char *cc = strdup (r_anal_cc_func (core->anal, key));
-	const char *src = r_anal_cc_arg (core->anal, cc, 0); // src of first argument
+	const char *src = r_anal_cc_arg (core->anal, cc, 0, -1); // src of first argument
 	if (!cc) {
 		// unsupported calling convention
 		free (key);
