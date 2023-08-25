@@ -1076,7 +1076,7 @@ menu:
 		}
 		if (buf[0] == 'F') {
 			always_fix = true;
-			buf[0] = 'f'
+			buf[0] = 'f';
 		}
 		switch (buf[0]) {
 		case 'f':
