@@ -1802,10 +1802,10 @@ static int bin_relocs(RCore *r, PJ *pj, int mode, int va) {
 	va = VA_TRUE; // XXX relocs always vaddr?
 	//this has been created for reloc object files
 	RRBTree *relocs = r_bin_get_relocs (r->bin);
-	bool apply_relocs = r_config_get_b (r->config, "bin.relocs.apply");
+	const bool apply_relocs = r_config_get_b (r->config, "bin.relocs.apply");
+	const bool bc = r_config_get_b (r->config, "bin.cache");
 	if (apply_relocs) {
 		//TODO: remove the bin.cache crap
-		const bool bc = r_config_get_b (r->config, "bin.cache");
 		if (bc) {
 			if (!(r->io->cachemode & R_PERM_W)) {
 				r_config_set_b (r->config, "io.cache", true);
@@ -1817,6 +1817,16 @@ static int bin_relocs(RCore *r, PJ *pj, int mode, int va) {
 			r->bin->iob.overlay_write_at = r_io_vwrite_to_overlay_at;
 		} else {
 			r_io_drain_overlay (r->io);
+		}
+	} else {
+		if (bc) {
+			if (!(r->io->cachemode & R_PERM_W)) {
+				r_config_set_b (r->config, "io.cache", true);
+			}
+			r->bin->iob.overlay_write_at = r_io_write_at;
+			relocs = r_bin_patch_relocs (r->bin->cur); // XXX other way to get RBinFile?
+		} else if (relocs) {
+			R_LOG_WARN ("Relocs has not been applied. Please use `-e bin.relocs.apply=true` or `-e bin.cache=true` next time");
 		}
 	}
 	if (!relocs) {

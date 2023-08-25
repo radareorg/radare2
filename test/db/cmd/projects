@@ -815,9 +815,9 @@ Ps hello
 Ps world
 EOF
 EXPECT_ERR=<<EOF
+WARN: Relocs has not been applied. Please use `-e bin.relocs.apply=true` or `-e bin.cache=true` next time
 EOF
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=delete memory format with Cf-

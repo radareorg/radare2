@@ -39,6 +39,7 @@ DEBUG: (section .init_array) Cd 4[1] @ 0x173c
 DEBUG: (section .fini_array) Cd 4[1] @ 0x1740
 DEBUG: (section .dynamic) Cd 4[58] @ 0x1748
 DEBUG: (section .got) Cd 4[6] @ 0x1830
+WARN: Relocs has not been applied. Please use `-e bin.relocs.apply=true` or `-e bin.cache=true` next time
 DEBUG: Cannot resolve symbol address _ITM_deregisterTMCloneTable
 DEBUG: Cannot resolve symbol address _Jv_RegisterClasses
 DEBUG: Cannot resolve symbol address _ITM_registerTMCloneTable
@@ -60,6 +61,7 @@ EXPECT=<<EOF
 hello
 EOF
 EXPECT_ERR=<<EOF
+WARN: Relocs has not been applied. Please use `-e bin.relocs.apply=true` or `-e bin.cache=true` next time
 ERROR: [cmd_write_fail] Cannot write. Use `omf`, `io.cache` or reopen the file in rw with `oo+`
 EOF
 RUN
