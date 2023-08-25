@@ -573,6 +573,15 @@ R_API char *r_bin_demangle_swift(const char *s, bool syscmd, bool trylib) {
 	} else {
 		//printf ("Unsupported type: %c\n", *p);
 	}
+	// https://www.guardsquare.com/blog/swift-native-method-swizzling
+	if (r_str_endswith (s, "FTX")) {
+		r_strbuf_prepend (out, "dynamic variable");
+	} else if (r_str_endswith (s, "FTx")) {
+		r_strbuf_prepend (out, "dynamic key");
+	} else if (r_str_endswith (s, "FTI"))  {
+		r_strbuf_prepend (out, "dynamic thunk");
+	}
+
 	if (r_strbuf_length (out) > 0) {
 		if (tail) {
 			r_strbuf_append (out, tail);
