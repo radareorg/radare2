@@ -275,7 +275,8 @@ R_API void r_flag_free(RFlag *f) {
 
 static bool print_flag_name(RFlagItem *fi, void *user) {
 	RFlag *flag = (RFlag *)user;
-	flag->cb_printf ("%s\n", fi->name);
+	const char *name = r_strpool_get (flag->strings, fi->name);
+	flag->cb_printf ("%s\n", name);
 	return true;
 }
 
@@ -335,7 +336,8 @@ static bool print_flag_rad(RFlagItem *flag, void *user) {
 		}
 	}
 	if (flag->alias) {
-		u->f->cb_printf ("fa %s %s\n", flag->name, flag->alias);
+		const char *flag_name = r_strpool_get (u->f->strings, flag->name);
+		u->f->cb_printf ("fa %s %s\n", flag_name, flag->alias);
 		if (comment_b64) {
 			u->f->cb_printf ("\"fC %s %s\"\n",
 				r_strpool_get (u->f->strings, flag->name), r_str_get (comment_b64));

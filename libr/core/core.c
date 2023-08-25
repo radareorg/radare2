@@ -1560,7 +1560,8 @@ static void autocomplete_breakpoints(RCore *core, RLineCompletion *completion, c
 static bool add_argv(RFlagItem *fi, void *user) {
 	RLineCompletion *completion = user;
 #warning pool cant be null here but we cant find RFlag anywhere
-	RStrpool *pool = NULL; /// XXX
+	RCore *core = (RCore*)completion->run_user;
+	RStrpool *pool = core->flags->strings;
 	const char *fi_name = r_strpool_get (pool, fi->name);
 	r_line_completion_push (completion, fi_name);
 	return true;
