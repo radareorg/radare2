@@ -1033,6 +1033,7 @@ static void interact(R2RState *state) {
 	} else {
 		printf (" %"PFMT64u" failed test(s)\n", (ut64)r_pvector_length (&failed_results));
 	}
+	bool always_fix = false;
 
 	r_pvector_foreach (&failed_results, it) {
 		R2RTestResultInfo *result = *it;
@@ -1046,22 +1047,32 @@ static void interact(R2RState *state) {
 menu:
 		if (use_fancy_stuff) {
 			printf ("Wat do?    "
-					"(f)ix "R_UTF8_WHITE_HEAVY_CHECK_MARK R_UTF8_VS16 R_UTF8_VS16 R_UTF8_VS16"    "
-					"(i)gnore "R_UTF8_SEE_NO_EVIL_MONKEY"    "
-					"(b)roken "R_UTF8_SKULL_AND_CROSSBONES R_UTF8_VS16 R_UTF8_VS16 R_UTF8_VS16"    "
-					"(c)ommands "R_UTF8_KEYBOARD R_UTF8_VS16"    "
-					"(d)iffchar "R_UTF8_LEFT_POINTING_MAGNIFYING_GLASS"    "
+					"(f)ix "R_UTF8_WHITE_HEAVY_CHECK_MARK R_UTF8_VS16 R_UTF8_VS16 R_UTF8_VS16"  "
+					"(F)ixAll "R_UTF8_WHITE_HEAVY_CHECK_MARK R_UTF8_VS16 R_UTF8_VS16 R_UTF8_VS16"  "
+					"(i)gnore "R_UTF8_SEE_NO_EVIL_MONKEY"  "
+					"(b)roken "R_UTF8_SKULL_AND_CROSSBONES R_UTF8_VS16 R_UTF8_VS16 R_UTF8_VS16"  "
+					"(c)ommands "R_UTF8_KEYBOARD R_UTF8_VS16"  "
+					"(d)iffchar "R_UTF8_LEFT_POINTING_MAGNIFYING_GLASS"  "
 					"(q)uit "R_UTF8_DOOR"\n");
 		} else {
-			printf ("Wat do?    (f)ix     (i)gnore     (b)roken     (c)ommands     (d)iffchar     (q)uit\n");
+			printf ("Wat do?  (f)ix  (F)ixAll  (i)gnore  (b)roken  (c)ommands  (d)iffchar  (q)uit\n");
 		}
-		printf ("> ");
-		char buf[0x30];
-		if (!fgets (buf, sizeof (buf), stdin)) {
-			break;
-		}
-		if (strlen (buf) != 2) {
-			goto menu;
+		char buf[32] = {0};
+		if (always_fix) {
+			printf ("> f\n");
+			fflush (stdout);
+			r_str_ncpy (buf, "f", sizeof (buf));
+		} else {
+			printf ("> ");
+			fflush (stdout);
+			if (!fgets (buf, sizeof (buf) - 1, stdin)) {
+				break;
+			}
+			r_str_trim (buf);
+			if (buf[1]) {
+				// LOL
+				goto menu;
+			}
 		}
 		switch (buf[0]) {
 		case 'f':
@@ -1071,7 +1082,11 @@ menu:
 			}
 			interact_fix (result, &failed_results);
 			break;
+		case 'F':
+			always_fix = true;
+			break;
 		case 'i':
+			// do nothing on purpose
 			break;
 		case 'b':
 			interact_break (result, &failed_results);
