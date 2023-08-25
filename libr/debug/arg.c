@@ -27,7 +27,7 @@ R_API ut64 r_debug_arg_get(RDebug *dbg, const char *cc, int num) {
 					return (ut64)n32;
 				}
 			}
-			const char *rn = r_anal_cc_arg (dbg->anal, cc, num);
+			const char *rn = r_anal_cc_arg (dbg->anal, cc, num, -1);
 			if (rn) {
 				return r_debug_reg_get (dbg, rn);
 			}
@@ -43,7 +43,7 @@ R_API bool r_debug_arg_set(RDebug *dbg, const char *cc, int num, ut64 val) {
 	if (!R_STR_ISEMPTY (cc)) {
 		cc = r_anal_syscc_default (dbg->anal);
 	}
-	const char *rn = r_anal_cc_arg (dbg->anal, cc, num);
+	const char *rn = r_anal_cc_arg (dbg->anal, cc, num, -1);
 	if (rn) {
 		r_debug_reg_set (dbg, rn, val);
 		return true;

@@ -44,3 +44,16 @@ cc.watcom.argn=stack
 pascal=cc
 cc.pascal.ret=eax
 cc.pascal.argn=stack_rev
+
+# reverse argument calling convention. only for gcc and dmd, ldc2 uses normal cdecl CC
+dlang=cc
+cc.dlang.ret=eax
+cc.dlang.ret2=edx
+cc.dlang.revarg=1
+cc.dlang.arg0=edi
+cc.dlang.arg1=esi
+cc.dlang.arg2=edx
+cc.dlang.arg3=ecx
+cc.dlang.arg4=r8d
+cc.dlang.arg5=r9d
+cc.dlang.argn=stack_rev

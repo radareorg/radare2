@@ -589,9 +589,10 @@ R_API int r_anal_var_get_argnum(RAnalVar *var) {
 	r_unref (ri);
 	int i;
 	char *cc = var->fcn->cc ? strdup (var->fcn->cc): NULL;
-	int arg_max = cc ? r_anal_cc_max_arg (anal, cc) : 0;
+	const int arg_max = cc ? r_anal_cc_max_arg (anal, cc) : 0;
+	int total = 0;
 	for (i = 0; i < arg_max; i++) {
-		const char *reg_arg = r_anal_cc_arg (anal, cc, i);
+		const char *reg_arg = r_anal_cc_arg (anal, cc, i, total);
 		if (reg_arg && !strcmp (ri_name, reg_arg)) {
 			free (cc);
 			free (ri_name);
@@ -1001,6 +1002,7 @@ static void extract_arg(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const char
 		R_LOG_WARN ("Analysis didn't fill op->src/dst at 0x%" PFMT64x, op->addr);
 	}
 
+	const int maxarg = 32; // TODO: use maxarg ?
 	int rw = (op->direction == R_ANAL_OP_DIR_WRITE) ? R_ANAL_VAR_ACCESS_TYPE_WRITE : R_ANAL_VAR_ACCESS_TYPE_READ;
 	if (*sign == '+') {
 		const bool isarg = type == R_ANAL_VAR_KIND_SPV ? ptr >= fcn->stack : ptr >= fcn->bp_off;
@@ -1021,7 +1023,7 @@ static void extract_arg(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const char
 		}
 		char *varname = NULL, *vartype = NULL;
 		if (isarg) {
-			const char *place = fcn->cc ? r_anal_cc_arg (anal, fcn->cc, ST32_MAX) : NULL;
+			const char *place = fcn->cc ? r_anal_cc_arg (anal, fcn->cc, maxarg, -1) : NULL;
 			bool stack_rev = place ? !strcmp (place, "stack_rev") : false;
 			char *fname = r_type_func_guess (anal->sdb_types, fcn->name);
 			if (fname) {
@@ -1245,6 +1247,7 @@ R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int
 			callee_rargs_l = r_anal_var_list (anal, f, R_ANAL_VAR_KIND_REG);
 		}
 		int i;
+		const int total = callee_rargs;
 		for (i = 0; i < callee_rargs; i++) {
 			if (reg_set[i]) {
 				continue;
@@ -1253,7 +1256,7 @@ R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int
 			char *type = NULL;
 			char *name = NULL;
 			int delta = 0;
-			const char *regname = r_anal_cc_arg (anal, fcn->cc, i);
+			const char *regname = r_anal_cc_arg (anal, fcn->cc, i, total);
 			if (regname) {
 				RRegItem *ri = r_reg_get (anal->reg, regname, -1);
 				if (ri) {
@@ -1300,8 +1303,9 @@ R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int
 		return;
 	}
 
+	const int total = 0; // TODO: pass argn
 	for (i = 0; i < max_count; i++) {
-		const char *regname = r_anal_cc_arg (anal, fcn->cc, i);
+		const char *regname = r_anal_cc_arg (anal, fcn->cc, i, total);
 		if (!regname) {
 		// WIP	break;
 		} else {
