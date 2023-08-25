@@ -3862,6 +3862,7 @@ DEBUG: (section .fini_array) Cd 8[1] @ 0x21bfb0
 DEBUG: (section .data.rel.ro) Cd 8[329] @ 0x21bfc0
 DEBUG: (section .dynamic) Cd 8[64] @ 0x21ca08
 DEBUG: (section .got) Cd 8[124] @ 0x21cc08
+WARN: Relocs has not been applied. Please use `-e bin.relocs.apply=true` or `-e bin.cache=true` next time
 DEBUG: Cannot resolve symbol address __progname
 DEBUG: Cannot resolve symbol address _ITM_deregisterTMCloneTable
 DEBUG: Cannot resolve symbol address stdout
@@ -4140,6 +4141,7 @@ om
 rm .tmp/it2-modfile
 EOF
 EXPECT_ERR=<<EOF
+WARN: Relocs has not been applied. Please use `-e bin.relocs.apply=true` or `-e bin.cache=true` next time
 INFO: File has been modified
 EOF
 EXPECT=<<EOF

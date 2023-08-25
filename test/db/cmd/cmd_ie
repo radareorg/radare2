@@ -9,7 +9,9 @@ EXPECT=<<EOF
 
 0 entrypoints
 EOF
-EXPECT_ERR=
+EXPECT_ERR=<<EOF
+WARN: Relocs has not been applied. Please use `-e bin.relocs.apply=true` or `-e bin.cache=true` next time
+EOF
 RUN
 
 NAME=iee preinit
@@ -85,7 +87,9 @@ vaddr=0x00000f50 paddr=0x00000f50 haddr=0x00000018 hvaddr=0x00000018 type=progra
 
 1 entrypoints
 EOF
-EXPECT_ERR=
+EXPECT_ERR=<<EOF
+WARN: Relocs has not been applied. Please use `-e bin.relocs.apply=true` or `-e bin.cache=true` next time
+EOF
 RUN
 
 NAME=auto entry (log.level test)
@@ -153,6 +157,7 @@ DEBUG: (cannot find opening [) in (48])
 DEBUG: (section .got) Cd 4[56] @ 0x2fdd8
 DEBUG: RCoreCmd: Cd 4[56] @ 0x2fdd8
 DEBUG: (cannot find opening [) in (56])
+WARN: Relocs has not been applied. Please use `-e bin.relocs.apply=true` or `-e bin.cache=true` next time
 DEBUG: RCoreCmd: =!
 DEBUG: RCoreCmd: ieq
 DEBUG: RCoreCmd: ie
@@ -174,6 +179,7 @@ vaddr=0x00000d28 paddr=0x00000d28 haddr=0x00000018 hvaddr=0x00000018 type=progra
 EOF
 EXPECT_ERR=<<EOF
 ERROR: Cannot determine entrypoint, using 0x00000d28
+WARN: Relocs has not been applied. Please use `-e bin.relocs.apply=true` or `-e bin.cache=true` next time
 EOF
 RUN
 
