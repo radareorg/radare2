@@ -3633,6 +3633,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETBPREF ("emu.lazy", "false", "do not emulate all instructions with aae (optimization)");
 	SETBPREF ("emu.stack", "false", "create a temporary fake stack when emulating in disasm (asm.emu)");
 	SETCB ("emu.str", "false", &cb_emustr, "show only strings if any in the asm.emu output");
+	SETBPREF ("emu.bb", "false", "emulate basic blocks (see: abe, aeb and afbd)");
 	SETBPREF ("emu.str.lea", "true", "disable this in ARM64 code to remove some false positives");
 	SETBPREF ("emu.str.off", "false", "always show offset when printing asm.emu strings");
 	SETBPREF ("emu.str.inv", "true", "color-invert emu.str strings");
