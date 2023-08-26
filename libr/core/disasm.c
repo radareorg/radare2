@@ -139,6 +139,7 @@ typedef struct r_disasm_state_t {
 	bool show_bbline;
 	bool show_emu;
 	bool pre_emu;
+	bool show_emu_bb;
 	bool show_emu_str;
 	bool show_emu_stroff;
 	bool show_emu_strinv;
@@ -754,6 +755,7 @@ static RDisasmState *ds_init(RCore *core) {
 	ds->show_symbols_col = r_config_get_i (core->config, "asm.symbol.col");
 	ds->asm_instr = r_config_get_i (core->config, "asm.instr");
 	ds->show_emu = r_config_get_b (core->config, "asm.emu");
+	ds->show_emu_bb = r_config_get_b (core->config, "emu.bb");
 	ds->show_emu_str = r_config_get_b (core->config, "emu.str");
 	ds->show_emu_stroff = r_config_get_b (core->config, "emu.str.off");
 	ds->show_emu_strinv = r_config_get_b (core->config, "emu.str.inv");
@@ -5907,6 +5909,7 @@ toro:
 	ds_print_esil_anal_init (ds);
 	r_cons_break_push (NULL, NULL);
 
+	ds->fcn = fcnIn (ds, ds->at, R_ANAL_FCN_TYPE_NULL);
 	int inc = 0;
 	int ret = 0;
 	for (ds->index = 0; ds_left (ds) > 0 && ds->lines < ds->count
@@ -5923,6 +5926,21 @@ toro:
 			r_cons_break_pop ();
 			ds_free (ds);
 			return 0; //break;
+		}
+		if (ds->show_emu_bb) {
+			RAnalBlock *bb = r_anal_get_block_at (core->anal, ds->at);
+			if (bb && ds->at == bb->addr) {
+				if (bb->esil) {
+					if (ds->show_bbline) {
+						// r_cons_printf ("ae %s\n", bb->esil); // debug
+					}
+					REsil *esil = core->anal->esil;
+					// disable emulation callbacks
+					esil->cb.hook_reg_write = NULL;
+					r_esil_parse (core->anal->esil, bb->esil);
+					esil->cb.hook_reg_write = myregwrite;
+				}
+			}
 		}
 
 		if (core->print->flags & R_PRINT_FLAGS_UNALLOC) {
