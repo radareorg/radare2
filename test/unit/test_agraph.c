@@ -4,12 +4,12 @@
 #include <r_util.h>
 #include "minunit.h"
 
-static char *_graph_node_info_get_title(void *data) {
+static char *_graph_node_info_get_title(void *data, void *user) {
 	RGraphNodeInfo *info = (RGraphNodeInfo *)data;
 	return (info && info->title)? strdup (info->title): NULL;
 }
 
-static char *_graph_node_info_get_body(void *data) {
+static char *_graph_node_info_get_body(void *data, void *user) {
 	RGraphNodeInfo *info = (RGraphNodeInfo *)data;
 	return (info && info->body)? strdup (info->body): NULL;
 }
@@ -33,7 +33,7 @@ bool test_graph_to_agraph() {
 		.get_title = _graph_node_info_get_title,
 		.get_body = _graph_node_info_get_body
 	};
-	RAGraph *agraph = r_agraph_new_from_graph (graph, &cbs);
+	RAGraph *agraph = r_agraph_new_from_graph (graph, &cbs, NULL);
 	mu_assert_notnull (agraph, "Couldn't create the graph");
 	mu_assert_eq (agraph->graph->nodes->length, 4, "Wrong node count");
 
