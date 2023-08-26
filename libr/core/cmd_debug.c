@@ -363,6 +363,7 @@ static RCoreHelpMessage help_msg_dr = {
 	"drc", " [name]", "related to conditional flag registers",
 	"drC", " [register]", "show register comments",
 	"drd", "", "show only different registers",
+	"dre", "", "show esil expression to set register values (like dr*)",
 	"drf", "", "show fpu registers (80 bit long double)",
 	"dri", "", "show inverse registers dump (sorted by value)",
 	"drl", "[j]", "list all register names",
@@ -2661,6 +2662,9 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 			}
 			free (buf);
 		}
+		break;
+	case 'e': // "dre"
+		r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, 64, NULL, 'e', NULL);
 		break;
 	case 'c': // "drc"
 		// todo: set flag values with drc zf=1
