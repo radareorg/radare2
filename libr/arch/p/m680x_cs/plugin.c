@@ -67,6 +67,21 @@ static inline csh cs_handle_for_session (RArchSession *as) {
 	return pd->cs_handle;
 }
 
+static char *filter_intel_syntax (char *mnemonic) {
+	// we don't really output operands in intel order but we can clean up
+	// XXX: this is not finished
+	mnemonic = r_str_replace (mnemonic, "$", "0x", true);
+	mnemonic = r_str_replace (mnemonic, "lda ", "lda [", true);
+	mnemonic = r_str_replace (mnemonic, "ldx ", "ldx [", true);
+	mnemonic = r_str_replace (mnemonic, "and ", "and [", true);
+	mnemonic = r_str_replace (mnemonic, "ora ", "ora [", true);
+	mnemonic = r_str_replace (mnemonic, " [#", " ", true);
+	if (strstr (mnemonic, "[")) {
+		mnemonic = r_str_append (mnemonic, "]");
+	}
+	return mnemonic;
+}
+
 static bool decode(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
 	const ut64 addr = op->addr;
 	const ut8 *buf = op->bytes;
@@ -515,6 +530,10 @@ beach:
 					insn->op_str[0]?" ": "", insn->op_str);
 			r_str_replace_in (op->mnemonic, strlen (op->mnemonic) + 1,
 				"ptr ", "", true);
+			if (as->config->syntax == R_ARCH_SYNTAX_INTEL) {
+				// XXX: should it be an option?
+				op->mnemonic = filter_intel_syntax (op->mnemonic);
+			}
 		}
 	}
 	cs_free (insn, n);
