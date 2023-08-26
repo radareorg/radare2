@@ -5110,7 +5110,7 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 	return !is_error;
 }
 
-R_API RAGraph *r_agraph_new_from_graph(const RGraph *graph, RAGraphTransitionCBs *cbs) {
+R_API RAGraph *r_agraph_new_from_graph(const RGraph *graph, RAGraphTransitionCBs *cbs, void *user) {
 	r_return_val_if_fail (graph && cbs && cbs->get_title && cbs->get_body, NULL);
 
 	RAGraph *result_agraph = r_agraph_new (r_cons_canvas_new (1, 1));
@@ -5131,8 +5131,8 @@ R_API RAGraph *r_agraph_new_from_graph(const RGraph *graph, RAGraphTransitionCBs
 	RGraphNode *node;
 	// Traverse the list, create new ANode for each Node
 	r_list_foreach (graph->nodes, iter, node) {
-		char *title = cbs->get_title (node->data);
-		char *body = cbs->get_body (node->data);
+		char *title = cbs->get_title (node->data, user);
+		char *body = cbs->get_body (node->data, user);
 		RANode *a_node = r_agraph_add_node (result_agraph, title, body, NULL);
 		R_FREE (title);
 		R_FREE (body);
