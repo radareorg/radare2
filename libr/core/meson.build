@@ -68,6 +68,7 @@ r_core_sources = [
   'vmenus_graph.c',
   'vmenus_zigns.c',
   'yank.c',
+  join_paths('p','core_agD.c'),
   join_paths('p','core_a2f.c'),
   join_paths('p','core_sixref.c'),
   join_paths('p','core_java.c')

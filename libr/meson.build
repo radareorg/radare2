@@ -56,7 +56,7 @@ io_plugins = [ 'malloc', 'xattr', 'fd', 'default', 'null', 'rbuf', 'r2pipe' , 'r
 fs_plugins = [ 'r2', 'posix', 'io', 'zip' ]
 bp_plugins = [ 'bf' ]
 crypto_plugins = [ 'xor', 'punycode' ]
-core_plugins = [ 'a2f' ]
+core_plugins = [ 'a2f', 'agD' ]
 egg_plugins = [ 'xor' ]
 debug_plugins = [ 'null', 'io' ]
 lang_plugins = [ 'lib', 'pipe' ]
@@ -279,6 +279,7 @@ bp_plugins += [
 ]
 
 core_plugins += [
+  'agD',
   'a2f',
   'java'
 ]
