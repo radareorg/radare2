@@ -1005,6 +1005,7 @@ R_API void r_core_anal_propagate_noreturn(RCore *core, ut64 addr);
 extern RCorePlugin r_core_plugin_java;
 extern RCorePlugin r_core_plugin_a2f;
 extern RCorePlugin r_core_plugin_sixref;
+extern RCorePlugin r_core_plugin_agD;
 R_API bool r_core_plugin_init(RCmd *cmd);
 R_API bool r_core_plugin_add(RCmd *cmd, RCorePlugin *plugin);
 R_API bool r_core_plugin_remove(RCmd *cmd, RCorePlugin *plugin);
