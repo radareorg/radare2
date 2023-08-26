@@ -5591,6 +5591,9 @@ void cmd_anal_reg(RCore *core, const char *str) {
 	case ',': // "ar,"
 		__tableRegList (core, core->anal->reg, str + 1);
 		break;
+	case 'e': // "are"
+		r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, 64, NULL, 'e', NULL);
+		break;
 	case '0': // "ar0"
 		r_reg_arena_zero (core->anal->reg);
 		break;

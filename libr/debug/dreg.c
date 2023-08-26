@@ -105,7 +105,6 @@ R_API bool r_debug_reg_list(RDebug *dbg, int type, int size, PJ *pj, int rad, co
 	int colwidth = 20;
 	RListIter *iter;
 	RRegItem *item;
-	RList *head;
 	ut64 diff;
 	char strvalue[256];
 	bool isJson = (rad == 'j' || rad == 'J');
@@ -150,8 +149,8 @@ R_API bool r_debug_reg_list(RDebug *dbg, int type, int size, PJ *pj, int rad, co
 
 	int itmidx = -1;
 	dbg->creg = NULL;
-	head = r_reg_get_list (dbg->reg, type);
-	if (!head) {
+	RList *list = r_reg_get_list (dbg->reg, type);
+	if (!list) {
 		return false;
 	}
 	if (rad == 1 || rad == '*') {
@@ -160,7 +159,8 @@ R_API bool r_debug_reg_list(RDebug *dbg, int type, int size, PJ *pj, int rad, co
 	const char *pcname = r_reg_get_name_by_type (dbg->reg, "PC");
 	const char *spname = r_reg_get_name_by_type (dbg->reg, "SP");
 #define IS_MANDATORY(x) is_mandatory ((x), pcname, spname)
-	r_list_foreach (head, iter, item) {
+	bool isfirst = true;
+	r_list_foreach (list, iter, item) {
 		ut64 value;
 		utX valueBig;
 		if (type != -1 && IS_MANDATORY (item)) {
@@ -256,6 +256,10 @@ R_API bool r_debug_reg_list(RDebug *dbg, int type, int size, PJ *pj, int rad, co
 		case '*':
 			dbg->cb_printf ("f %s %d %s\n", item->name, item->size / 8, strvalue);
 			break;
+		case 'e':
+			dbg->cb_printf ("%s%s,%s,:=", isfirst?"":",", strvalue, item->name);
+			isfirst = false;
+			break;
 		case '.':
 			dbg->cb_printf ("dr %s=%s\n", item->name, strvalue);
 			break;
@@ -311,6 +315,9 @@ R_API bool r_debug_reg_list(RDebug *dbg, int type, int size, PJ *pj, int rad, co
 			break;
 		}
 		n++;
+	}
+	if (rad == 'e') {
+		dbg->cb_printf ("\n");
 	}
 	if (rad == 1 || rad == '*') {
 		dbg->cb_printf ("fs-\n");
