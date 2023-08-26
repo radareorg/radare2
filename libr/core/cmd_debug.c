@@ -2764,9 +2764,9 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 			sl = r_str_word_set0 (s);
 			if (sl == 4) {
 #define arg(x) r_str_word_get0(s,x)
-			        n = (char)r_num_math (core->num, arg(0));
-			        off = r_num_math (core->num, arg(1));
-			        len = (int)r_num_math (core->num, arg(2));
+			        n = (char)r_num_math (core->num, arg (0));
+			        off = r_num_math (core->num, arg (1));
+			        len = (int)r_num_math (core->num, arg (2));
 			        perm = (char)r_str_rwx (arg (3));
 			        if (len == -1) {
 					r_debug_reg_sync (core->dbg, R_REG_TYPE_DRX, false);
@@ -2792,8 +2792,7 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 	case 's': // "drs"
 		switch (str[1]) {
 		case '\0': // "drs"
-			r_cons_printf ("%d\n", r_list_length (
-						core->dbg->reg->regset[0].pool));
+			r_cons_printf ("%d\n", r_list_length (core->dbg->reg->regset[0].pool));
 			break;
 		case '-': // "drs-"
 			r_reg_arena_pop (core->dbg->reg);

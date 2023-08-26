@@ -87,6 +87,7 @@ static void block_free(RAnalBlock *block) {
 	if (!block) {
 		return;
 	}
+	free (block->esil);
 	r_anal_cond_free (block->cond);
 	free (block->fingerprint);
 	r_anal_diff_free (block->diff);
