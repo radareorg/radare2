@@ -525,13 +525,38 @@ beach:
 static char *regs(RArchSession *as) {
 	const char *p = \
 		"=PC    pc\n"
-		"=SP    sp\n"
-		"=A0    a0\n"
-		"=A1    a1\n"
-		"gpr	pc	.16	48	0\n"
-		"gpr	sp	.16	48	0\n"
-		"gpr	a0	.16	48	0\n"
-		"gpr	a1	.16	48	0\n";
+		"=SP    s\n"
+		"gpr	pc	.16	0	0\n" ///< M6800/1/2/3/9, M6301/9
+		"gpr	s	.16	2	0\n" ///< M6809/M6309 system stack (=sp on others)
+		"gpr	cc	.8	4	0\n" ///< M6800/1/2/3/9, M6301/9
+		"flg	C	.1	4.0	0\n"
+		"flg	V	.1	4.1	0\n" // At least 6805 lacks it? Are the others shifted??
+		"flg	Z	.1	4.2	0\n"
+		"flg	N	.1	4.3	0\n"
+		"flg	I	.1	4.4	0\n"
+		"flg	H	.1	4.5	0\n"
+		"flg	F	.1	4.6	0\n"
+		"flg	E	.1	4.7	0\n"
+		"gpr	dp	.8	5	0\n" ///< M6809/M6309
+		"gpr	f	.8	6	0\n" ///< HD6309
+		"gpr	e	.8	7	0\n" ///< HD6309
+		"gpr	w	.16	6	0\n" ///< HD6309
+		"gpr	b	.8	8	0\n" ///< M6800/1/2/3/9, HD6301/9
+		"gpr	a	.8	9	0\n" ///< M6800/1/2/3/5/9, HD6301/9
+		"gpr	d	.16	8	0\n" ///< M6801/3/9, HD6301/9
+		"gpr	q	.32	6	0\n" ///< M6309
+		"gpr	x	.16	10	0\n" ///< M6800/1/2/3/9, M6301/9 Also 6808 but capstone disagrees
+		"gpr	y	.16	12	0\n" ///< M6809/M6309
+		"gpr	u	.16	14	0\n" ///< M6809/M6309
+		"gpr	v	.16	16	0\n" ///< M6309
+		"gpr	zero	.16	18	0\n" ///< HD6309
+		"gpr	tmp2	.16	20	0\n"  ///< CPU12
+		"gpr	tmp3	.16	22	0\n" ///< CPU12
+		"gpr	md	.8	24	0\n" ///< M6309
+		"flg	EM	.1	24.0	0\n"
+		"flg	FM	.1	24.1	0\n"
+		"flg	IE	.1	24.6	0\n"
+		"flg	ZD	.1	24.7	0\n";
 	return strdup (p);
 }
 
