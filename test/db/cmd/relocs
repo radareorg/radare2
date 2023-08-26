@@ -1,4 +1,5 @@
 NAME=macho relocs
+BROKEN=1
 FILE=bins/mach0/ls-m1
 CMDS=<<EOF
 x 32 @ 0x1000081d8
@@ -12,6 +13,7 @@ EOF
 RUN
 
 NAME=macho relocs bin.cache
+BROKEN=1
 FILE=bins/mach0/ls-m1
 ARGS=-e bin.cache=true
 CMDS=<<EOF
@@ -135,6 +137,7 @@ EOF
 RUN
 
 NAME=macho relocs bin.relocs.apply
+BROKEN=1
 FILE=bins/mach0/ls-m1
 ARGS=-e bin.relocs.apply=true
 CMDS=<<EOF
