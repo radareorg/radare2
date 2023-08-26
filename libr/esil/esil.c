@@ -3863,7 +3863,9 @@ R_API void r_esil_setup_ops(REsil *esil) {
 	OP ("!", esil_neg, 1, 1, OT_MATH);
 	OP ("!=", esil_negeq, 0, 1, OT_MATH | OT_REGW);
 	OP ("=", esil_eq, 0, 2, OT_REGW);
+	OP ("= ", esil_eq, 0, 2, OT_REGW);
 	OP (":=", esil_weak_eq, 0, 2, OT_REGW);
+	OP (":= ", esil_weak_eq, 0, 2, OT_REGW);
 	OP ("L*", esil_long_mul, 2, 2, OT_MATH);
 	OP ("*", esil_mul, 1, 2, OT_MATH);
 	OP ("*=", esil_muleq, 0, 2, OT_MATH | OT_REGW);

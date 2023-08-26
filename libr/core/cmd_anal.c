@@ -4116,8 +4116,8 @@ static void save_regstate_in_destinations(RCore *core, RVecBlocks *blocks, Block
 	R_VEC_FOREACH (blocks, b2) {
 		if (!b2->regstate && b0->to == b2->from) {
 			R_LOG_DEBUG ("abe %s @ 0x%08"PFMT64x, regstate, b2->from);
-			r_core_cmdf (core, "abe %s @ 0x%08"PFMT64x"\n", regstate, b2->from);
-			// eprintf ("abe %s @ 0x%llx\n", regstate, b2->from);
+			r_core_cmdf (core, "abe %s @ 0x%08"PFMT64x, regstate, b2->from);
+			// eprintf ("abe %s @ 0x%"PFMT64x"\n", regstate, b2->from);
 			b0->regstate = regstate;
 			emulate_block (core, blocks, b2);
 			unused = false;
@@ -4140,7 +4140,7 @@ static void emulate_block(RCore *core, RVecBlocks *blocks, BlockItem *b0) {
 		}
 	} else {
 		// root node, assume initial regstate
-		eprintf ("# root node 0x%llx\n", b0->from);
+		eprintf ("# root node 0x%"PFMT64x"\n", b0->from);
 		char *regstate = r_core_cmd_str (core, "dre");
 		r_str_trim (regstate);
 		r_core_cmdf (core, "abe %s @0x%"PFMT64x, regstate, b0->from);
@@ -6113,7 +6113,7 @@ R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr,
 			R_LOG_INFO ("[ESIL] Trap, trying to execute on non-executable memory");
 			return_tail (1);
 		}
-		// eprintf ("addr %llx\n", addr);
+		// eprintf ("addr %"PFMT64x"\n", addr);
 		r_asm_set_pc (core->rasm, addr);
 		// run esil pin command here
 		const char *pincmd = r_anal_pin_call (core->anal, addr);
@@ -6272,7 +6272,7 @@ R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr,
 			tail_return_value = 1;
 		}
 		// esil->verbose ?
-		// eprintf ("REPE 0x%llx %s => 0x%llx\n", addr, R_STRBUF_SAFEGET (&op.esil), r_reg_getv (core->anal->reg, "PC"));
+		// eprintf ("REPE 0x%"PFMT64x" %s => 0x%"PFMT64x"\n", addr, R_STRBUF_SAFEGET (&op.esil), r_reg_getv (core->anal->reg, "PC"));
 		ut64 pc = r_reg_getv (core->anal->reg, pcname);
 		if (pc == UT64_MAX || pc == UT32_MAX) {
 			R_LOG_ERROR ("Invalid program counter PC=-1 coming from 0x%08"PFMT64x, addr);
@@ -6512,7 +6512,7 @@ static void initialize_stack(RCore *core, ut64 addr, ut64 size) {
 		ut64 i;
 		for (i = 0; i < size; i += bs) {
 			ut64 left = R_MIN (bs, size - i);
-		//	r_core_cmdf (core, "wx 10203040 @ 0x%llx", addr);
+		//	r_core_cmdf (core, "wx 10203040 @ 0x%"PFMT64x, addr);
 			switch (*mode) {
 			case 'd': // "debrujn"
 				r_core_cmdf (core, "wopD %"PFMT64u" @ 0x%"PFMT64x, left, addr + i);
