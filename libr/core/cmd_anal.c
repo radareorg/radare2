@@ -240,7 +240,7 @@ static RCoreHelpMessage help_msg_ab = {
 	"aba", " [addr]", "analyze esil accesses in basic block (see aea?)",
 	"abb", " [length]", "analyze N bytes and extract basic blocks",
 	"abc", "[-] [color]", "change color of the current basic block (same as afbc, abc- to unset)",
-	"abe", " [addr]", "emulate basic block (alias for aeb)",
+	"abe", " [esil-expr]", "assign esil expression to basic block (see: aeb, dre, afbd)",
 	"abf", " [addr]", "address of incoming (from) basic blocks",
 	"abi", "", "same as ab. or ab",
 	"abj", " [addr]", "display basic block information in JSON",
@@ -13561,8 +13561,28 @@ static int cmd_anal(void *data, const char *input) {
 		case 'o': // "abo"
 			abo (core);
 			break;
-		case 'e': // "aeb"
-			r_core_cmdf (core, "aeb%s", input + 2);
+		case 'e': // "abe"
+			{
+				const char *arg = r_str_trim_head_ro (input + 2);
+				if (*arg == '?') {
+					r_core_cmd_help_match (core, help_msg_ab, "abe", true);
+				} else {
+					RListIter *iter;
+					RAnalBlock *bb;
+					RList *blocks = r_anal_get_blocks_in (core->anal, core->offset);
+					r_list_foreach (blocks, iter, bb) {
+						if (arg && *arg) {
+							free (bb->esil);
+							bb->esil = strdup (arg);
+						} else {
+							if (bb->esil) {
+								r_cons_printf ("%s\n", bb->esil);
+							}
+						}
+					}
+				}
+			}
+			// OLD not confuse with aeb: r_core_cmdf (core, "aeb%s", input + 2);
 			break;
 		case 'f': // "abf"
 			core_anal_abf (core, input + 2);
