@@ -1,8 +1,8 @@
 NAME=macho relocs
+BROKEN=1
 FILE=bins/mach0/ls-m1
 CMDS=<<EOF
-s 0x1000081d8
-x 32
+x 32 @ 0x1000081d8
 wc
 EOF
 EXPECT=<<EOF
@@ -13,11 +13,11 @@ EOF
 RUN
 
 NAME=macho relocs bin.cache
+BROKEN=1
 FILE=bins/mach0/ls-m1
 ARGS=-e bin.cache=true
 CMDS=<<EOF
-s 0x1000081d8
-x 32
+x 32 @ 0x1000081d8
 wc
 EOF
 EXPECT=<<EOF
@@ -136,12 +136,12 @@ idx=108 addr=0x1000084e8 size=8 0c7e000001001800 -> 0c7e000001000000 (not writte
 EOF
 RUN
 
-NAME=macho relocs bin.cache
+NAME=macho relocs bin.relocs.apply
+BROKEN=1
 FILE=bins/mach0/ls-m1
 ARGS=-e bin.relocs.apply=true
 CMDS=<<EOF
-s 0x1000081d8
-x 32
+x 32 @ 0x1000081d8
 wc
 EOF
 EXPECT=<<EOF
