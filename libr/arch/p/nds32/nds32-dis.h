@@ -19,13 +19,13 @@
    Foundation, Inc., 51 Franklin Street - Fifth Floor, Boston, MA
    02110-1301, USA.*/
 
-#include "<sysdep.h>"
-#include "<mybfd.h>"
-#include "<disas-asm.h>"
+#include "sysdep.h"
+#include "mybfd.h"
+#include "disas-asm.h"
 // #include "disassemble.h"
 #include "../arm/gnu/floatformat.h"
-#include "<libiberty.h>"
-#include "<opintl.h>"
+#include "libiberty.h"
+#include "opintl.h"
 
 #define __MF(v, off, bs)	((v & ((1 << (bs)) - 1)) << (off))
 #define __GF(v, off, bs)	((v >> (off)) & ((1 << (bs)) - 1))

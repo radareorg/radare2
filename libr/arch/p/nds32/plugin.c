@@ -8,10 +8,12 @@
 #include "nds32-opc.h"
 #include "nds32-dis.h"
 
+#if 0
 static CpuKv cpus[] = {
 	{ "nds32", nds32 },
 	{ NULL, 0 }
 };
+#endif
 
 static int info(RArchSession *as, ut32 q) {
 	switch (q) {
@@ -36,6 +38,16 @@ static int nds32_buffer_read_memory(bfd_vma memaddr, bfd_byte *myaddr, ut32 leng
 	return 0;
 }
 
+static int symbol_at_address(bfd_vma addr, struct disassemble_info *info) {
+	return 0;
+}
+
+static void memory_error_func(int status, bfd_vma memaddr, struct disassemble_info *info) {
+	//--
+}
+
+DECLARE_GENERIC_PRINT_ADDRESS_FUNC_NOGLOBALS()
+DECLARE_GENERIC_FPRINTF_FUNC_NOGLOBALS()
 
 static bool decode(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
 	const ut64 addr = op->addr;
@@ -58,7 +70,7 @@ static bool decode(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
 	disasm_obj.endian = !R_ARCH_CONFIG_IS_BIG_ENDIAN (as->config);
 	disasm_obj.fprintf_func = &generic_fprintf_func;
 	disasm_obj.stream = sb;
-	disasm_obj.mach = detect_cpu (as->config->cpu);
+	disasm_obj.mach = 0; // TODO: detect_cpu (as->config->cpu);
 	op->size = print_insn_nds32((bfd_vma)addr, &disasm_obj);
 
 	if (mask & R_ARCH_OP_MASK_DISASM) {
@@ -84,7 +96,7 @@ const RArchPlugin r_arch_plugin_nds32 = {
 		.desc = "Binutils based nds32 disassembler",
 	},
 	.arch = "nds32",
-	.cpus = "nds32",
+	.cpus = "",
 	.bits = R_SYS_BITS_PACK1 (32),
 	.endian = R_SYS_ENDIAN_LITTLE,
 	.decode = &decode,
