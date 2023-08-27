@@ -145,7 +145,8 @@ static const field_t operand_fields[] =
 };
 #endif
 
-
+#undef OP6
+#undef RA5
 #define OP6(op6)		(N32_OP6_ ## op6 << 25)
 #define DEF_REG(r)		(__BIT (r))
 #define USE_REG(r)		(__BIT (r))
