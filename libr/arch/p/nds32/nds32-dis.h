@@ -27,13 +27,8 @@
 #include "libiberty.h"
 #include "opintl.h"
 
-#define __MF(v, off, bs)	((v & ((1 << (bs)) - 1)) << (off))
-#define __GF(v, off, bs)	((v >> (off)) & ((1 << (bs)) - 1))
-#define __PF(v, off, bs, val)	do { v = __put_field (v, off, bs, val); } while (0)
-/* #define __SEXT(v, bs)	((v ^ (1 << (bs - 1))) - (1 << (bs - 1))) */
-#define __SEXT(v, bs)		(((v & ((1 << bs) - 1)) ^ (1 << (bs - 1))) - (1 << (bs - 1)))
-#define __BIT(n)		(1 << n)
-
+#undef OP6
+#undef RA5
 /* Get fields */
 #define OP6(insn)	((insn >> 25) & 0x3F)
 #define RT5(insn)	((insn >> 20) & 0x1F)
