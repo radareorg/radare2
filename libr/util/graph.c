@@ -404,14 +404,14 @@ R_API RGraph *r_graph_dom_tree(RGraph *graph, RGraphNode *root) {
 		return NULL;
 	}
 	while (r_list_length (di.mi)) {
-		RGraphNode *n = r_list_pop (di.mi);
+		RGraphNode *n = r_list_pop_head (di.mi);
 		RGraphNode *p = (RGraphNode *)r_list_get_n (n->in_nodes, 0);
 		if (p && ((RGraphDomNode *)(p->data))->idx == 0) {
 			//parent is root node
 			continue;
 		}
 		RGraphDomNode *dn = (RGraphDomNode *)n->data;
-		RGraphNode *max_n = NULL;
+		RGraphNode *max_n = NULL, *min_n = NULL;
 		RListIter *iter;
 		RGraphNode *nn;
 		r_list_foreach (dn->node->in_nodes, iter, nn) {
@@ -424,12 +424,21 @@ R_API RGraph *r_graph_dom_tree(RGraph *graph, RGraphNode *root) {
 			if (!max_n || (((RGraphDomNode *)(max_n->data))->idx < ((RGraphDomNode *)(in->data))->idx)) {
 				max_n = in;
 			}
+			if (!min_n || (((RGraphDomNode *)(min_n->data))->idx > ((RGraphDomNode *)(in->data))->idx)) {
+				min_n = in;
+			}
 		}
-		while (max_n && ((RGraphDomNode *)max_n->data)->idx > dn->idx) {
+		while (((RGraphDomNode *)max_n->data)->idx > dn->idx) {
 			max_n = (RGraphNode *)r_list_get_n (max_n->in_nodes, 0);
 		}
+// at this point max_n refers to the semi dominator (i hope this is correct)
+		RGraphNode *dom = min_n;
+		while (((RGraphDomNode *)max_n->data)->idx < ((RGraphDomNode *)dom->data)->idx) {
+			dom = (RGraphNode *)r_list_get_n (dom->in_nodes, 0);
+		}
+// dom <= sdom
 		r_graph_del_edge (g, p, n);
-		r_graph_add_edge (g, max_n, n);
+		r_graph_add_edge (g, dom, n);
 cont:;
 	}
 	r_list_free (di.mi);
