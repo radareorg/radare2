@@ -3060,6 +3060,9 @@ static void print_bb(PJ *pj, const RAnalBlock *b, const RAnalFunction *fcn, cons
 		pj_o (pj);
 		pj_kn (pj, "addr", b->addr);
 		pj_ki (pj, "size", b->size);
+		if (b->esil != NULL) {
+			pj_ks (pj, "esil", b->esil);
+		}
 		if (b->jump != UT64_MAX) {
 			pj_kn (pj, "jump", b->jump);
 		}
@@ -3125,6 +3128,9 @@ static void print_bb(PJ *pj, const RAnalBlock *b, const RAnalFunction *fcn, cons
 		}
 		if (b->fail != UT64_MAX) {
 			r_cons_printf ("fail: 0x%08"PFMT64x"\n", b->fail);
+		}
+		if (b->esil != NULL) {
+			r_cons_printf ("esil: %s\n", b->esil);
 		}
 		r_cons_printf ("opaddr: 0x%08"PFMT64x"\n", opaddr);
 		r_cons_printf ("addr: 0x%08" PFMT64x "\nsize: %" PFMT64d "\ninputs: %d\noutputs: %d\nninstr: %d\ntraced: 0x%"PFMT64x"\n",
