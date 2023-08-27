@@ -96,16 +96,15 @@ const RArchPlugin r_arch_plugin_nds32 = {
 		.desc = "Binutils based nds32 disassembler",
 	},
 	.arch = "nds32",
-	.cpus = "",
 	.bits = R_SYS_BITS_PACK1 (32),
 	.endian = R_SYS_ENDIAN_LITTLE,
 	.decode = &decode,
 	.info = &info,
 };
 
-#ifndef R2_CORELIB
-struct r_lib_struct_t radare_plugin = {
-	.type = R_LIB_TYPE_ASM,
+#ifndef R2_PLUGIN_INCORE
+R_API RLibStruct radare_plugin = {
+	.type = R_LIB_TYPE_ARCH,
 	.data = &r_arch_plugin_nds32,
 };
 #endif
