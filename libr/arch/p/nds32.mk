@@ -1,7 +1,7 @@
-OBJ_NDS32=p/nds32_gnu/plugin.o
+OBJ_NDS32=p/nds32/plugin.o
 
 STATIC_OBJ+=${OBJ_NDS32}
-TARGET_M68K_GNU=nds32.${EXT_SO}
+TARGET_NDS32=nds32.${EXT_SO}
 
 ifeq ($(WITHPIC),1)
 ALL_TARGETS+=${TARGET_NDS32}
