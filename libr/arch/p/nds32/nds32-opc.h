@@ -1,3 +1,7 @@
+#include "nds32.h"
+#define USRIDX(group, usr)	((group) | ((usr) << 5))
+#define SRIDX(major, minor, ext) (((major) << 7) | ((minor) << 3) | (ext))
+#include "nds32-asm.h"
 enum{
   /* This is a field (operand) of just a separator char.  */
   SYN_FIELD = 0x100,
@@ -49,6 +53,7 @@ enum{
 
    Field table for operands and bit-fields.  */
 
+#if 0
 static const field_t operand_fields[] =
 {
   {"rt",	20, 5, 0, HW_GPR, NULL},
@@ -138,6 +143,7 @@ static const field_t operand_fields[] =
 
   {NULL, 0, 0, 0, 0, NULL}
 };
+#endif
 
 
 #define OP6(op6)		(N32_OP6_ ## op6 << 25)
