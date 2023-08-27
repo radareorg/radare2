@@ -19,7 +19,7 @@ LDFLAGS+=$(LINK)
 .PHONY: all main plugins libs ${EXTRA_CLEAN}
 
 main:
-	$(MAKE) -j 4 -C d
+	$(MAKE) -C d
 	$(MAKE) all
 
 plugins: ${LIBSO} ${LIBAR}
