@@ -1716,7 +1716,7 @@ R_API void r_print_spinbar(RPrint *p, const char *msg) {
 
 /* TODO: handle screen width */
 R_API void r_print_progressbar(RPrint *p, int pc, int _cols, const char *title) {
-	const utf8 = p->cons->use_utf8;
+	const bool utf8 = p->cons->use_utf8;
 	// TODO: add support for colors
 	int i, cols = (_cols == -1)? 78: _cols;
 	if (!p) {
