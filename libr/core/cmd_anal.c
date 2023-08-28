@@ -11901,6 +11901,7 @@ static void cmd_anal_aav(RCore *core, const char *input) {
 #define geti(x) r_config_get_i(core->config, x);
 	r_return_if_fail (*input == 'v');
 	bool relative = input[1] == 'r';
+	bool verbose = input[1] != 'q';
 	ut64 o_align = geti ("search.align");
 	const char *analin = r_config_get (core->config, "anal.in");
 	char *tmp = strdup (analin);
@@ -11909,13 +11910,12 @@ static void cmd_anal_aav(RCore *core, const char *input) {
 	int archAlign = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_ALIGN);
 	seti ("search.align", archAlign);
 	r_config_set (core->config, "anal.in", "io.maps.x");
-	R_LOG_INFO ("Finding xrefs in noncode section (e anal.in=io.maps.x)");
 
 	int vsize = 4; // 32bit dword
 	if (core->rasm->config->bits == 64) {
 		vsize = 8;
 	}
-	R_LOG_INFO ("Analyze value pointers (aav)");
+	// R_LOG_INFO ("Analyze value pointers (aav)");
 	r_cons_break_push (NULL, NULL);
 	if (is_debug) {
 		RList *list = r_core_get_boundaries_prot (core, 0, "dbg.map", "anal");
@@ -11965,7 +11965,9 @@ static void cmd_anal_aav(RCore *core, const char *input) {
 					free (unit);
 					continue;
 				}
-				R_LOG_INFO ("aav: 0x%08"PFMT64x"-0x%08"PFMT64x" in 0x%"PFMT64x"-0x%"PFMT64x, from, to, begin, end);
+				if (verbose) {
+					R_LOG_INFO ("aav: 0x%08"PFMT64x"-0x%08"PFMT64x" in 0x%"PFMT64x"-0x%"PFMT64x, from, to, begin, end);
+				}
 				(void)r_core_search_value_in_range (core, relative, map->itv, from, to, vsize, _CbInRangeAav, (void *)(size_t)asterisk);
 			}
 		}
@@ -12369,6 +12371,20 @@ static void anal_aarr(RCore *core) {
 	set_u_free (visited);
 }
 
+static void logline(RCore *core, int pc, const char *title) {
+	if (r_config_get_b (core->config, "scr.demo")) {
+		int w = 80;
+		r_cons_printf (R_CONS_CLEAR_LINE);
+		r_cons_flush ();
+		R_LOG_INFO ("%s", title);
+		r_print_progressbar (core->print, pc, w, NULL);
+		r_cons_printf ("\r");
+		r_cons_flush ();
+	} else {
+		R_LOG_INFO ("%s", title);
+	}
+}
+
 static int cmd_anal_all(RCore *core, const char *input) {
 	switch (*input) {
 	case '?':
@@ -12523,7 +12539,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 		} else {
 			bool didAap = false;
 			char *dh_orig = NULL;
-			if (!strncmp (input, "aaaaa", 5)) {
+			if (r_str_startswith (input, "aaaaa")) {
 				R_LOG_INFO ("We fired the r2 developer that was heading to your location to help you analyze this binary");
 				R_LOG_INFO ("Contact support for premium service");
 				if (r_cons_is_interactive ()) {
@@ -12532,10 +12548,18 @@ static int cmd_anal_all(RCore *core, const char *input) {
 				goto jacuzzi;
 			}
 			ut64 curseek = core->offset;
-			R_LOG_INFO ("Analyze all flags starting with sym. and entry0 (aa)");
+			logline (core, 10, "Analyze all flags starting with sym. and entry0 (aa)");
 			r_cons_break_push (NULL, NULL);
 			r_cons_break_timeout (r_config_get_i (core->config, "anal.timeout"));
+			bool anal_imports = false;
+			if (r_config_get_b (core->config, "anal.imports")) {
+				logline (core, 12, "Analyze imports (af@@@i)");
+				r_core_cmd0 (core, "af@@@i");
+				anal_imports = true;
+			}
+			r_config_set_b (core->config, "anal.imports", false);
 			r_core_anal_all (core);
+			r_config_set_b (core->config, "anal.imports", anal_imports);
 			r_core_task_yield (&core->tasks);
 			if (r_cons_is_breaked ()) {
 				goto jacuzzi;
@@ -12543,7 +12567,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 
 			// Run afvn in all fcns
 			if (r_config_get_b (core->config, "anal.vars")) {
-				R_LOG_INFO ("Analyze all functions arguments/locals (afva@@@F)");
+				logline (core, 15, "Analyze all functions arguments/locals (afva@@@F)");
 				// r_core_cmd0 (core, "afva@@f");
 				r_core_cmd0 (core, "afva@@@F");
 			}
@@ -12564,9 +12588,9 @@ static int cmd_anal_all(RCore *core, const char *input) {
 			bool cfg_debug = r_config_get_b (core->config, "cfg.debug");
 			if (*input == 'a') { // "aaa" .. which is checked just in the case above
 				if (r_str_startswith (r_config_get (core->config, "bin.lang"), "go")) {
-					R_LOG_INFO ("Find function and symbol names from golang binaries (aang)");
+					logline (core, 20, "Find function and symbol names from golang binaries (aang)");
 					r_core_anal_autoname_all_golang_fcns (core);
-					R_LOG_INFO ("Analyze all flags starting with sym.go. (aF @@f:sym.go.*)");
+					logline (core, 25, "Analyze all flags starting with sym.go. (aF @@f:sym.go.*)");
 					r_core_cmd0 (core, "aF @@@F:sym.go.*");
 				}
 				r_core_task_yield (&core->tasks);
@@ -12584,7 +12608,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 					goto jacuzzi;
 				}
 
-				R_LOG_INFO ("Analyze function calls (aac)");
+				logline (core, 30, "Analyze function calls (aac)");
 				(void)cmd_anal_calls (core, "", false, false); // "aac"
 				r_core_seek (core, curseek, true);
 				// R_LOG_INFO ("Analyze data refs as code (LEA)");
@@ -12595,7 +12619,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 				}
 
 				if (is_unknown_file (core)) {
-					R_LOG_INFO ("find and analyze function preludes (aap)");
+					logline (core, 40, "find and analyze function preludes (aap)");
 					(void)r_core_search_preludes (core, false); // "aap"
 					didAap = true;
 					r_core_task_yield (&core->tasks);
@@ -12604,20 +12628,20 @@ static int cmd_anal_all(RCore *core, const char *input) {
 					}
 				}
 
-				R_LOG_INFO ("Analyze len bytes of instructions for references (aar)");
+				logline (core, 50, "Analyze len bytes of instructions for references (aar)");
 				(void)r_core_anal_refs (core, ""); // "aar"
 				r_core_task_yield (&core->tasks);
 				if (r_cons_is_breaked ()) {
 					goto jacuzzi;
 				}
 				if (is_apple_target (core)) {
-					R_LOG_INFO ("Check for objc references (aao)");
+					logline (core, 55, "Check for objc references (aao)");
 					cmd_anal_objc (core, input + 1, true);
 				}
 				r_core_task_yield (&core->tasks);
-				R_LOG_INFO ("Finding and parsing C++ vtables (avrr)");
+				logline (core, 60, "Finding and parsing C++ vtables (avrr)");
 				r_core_cmd_call (core, "avrr");
-				R_LOG_INFO ("Analyzing methods");
+				logline (core, 65, "Analyzing methods");
 				r_core_cmd0 (core, "af @@ method.*");
 				r_core_task_yield (&core->tasks);
 				// r_config_set_b (core->config, "anal.calls", c);
@@ -12629,20 +12653,21 @@ static int cmd_anal_all(RCore *core, const char *input) {
 
 				if (!didAap && isPreludableArch) {
 					didAap = true;
-					R_LOG_INFO ("Finding function preludes (aap)");
+					logline (core, 67, "Finding function preludes (aap)");
 					(void)r_core_search_preludes (core, false); // "aap"
 					r_core_task_yield (&core->tasks);
 				}
 				if (!r_str_startswith (r_config_get (core->config, "asm.arch"), "x86")) {
-					r_core_cmd_call (core, "aav");
+					logline (core, 68, "Finding xrefs in noncode section (e anal.in=io.maps.x)");
+					r_core_cmd_call (core, "aavq");
 					r_core_task_yield (&core->tasks);
 					if (cfg_debug) {
-						R_LOG_INFO ("Skipping function emulation in debugger mode (aaef)");
+						logline (core, 70, "Skipping function emulation in debugger mode (aaef)");
 						// nothing to do
 					} else {
 						const bool io_cache = r_config_get_i (core->config, "io.pcache");
 						r_config_set_b (core->config, "io.pcache", true);
-						R_LOG_INFO ("Emulate functions to find computed references (aaef)");
+						logline (core, 70, "Emulate functions to find computed references (aaef)");
 						r_core_cmd_call (core, "aaef");
 						r_core_task_yield (&core->tasks);
 						r_config_set_b (core->config, "io.pcache", io_cache);
@@ -12652,12 +12677,12 @@ static int cmd_anal_all(RCore *core, const char *input) {
 					}
 				}
 				if (r_config_get_i (core->config, "anal.autoname")) {
-					R_LOG_INFO ("Speculatively constructing a function name for fcn.* and sym.func.* functions (aan)");
+					logline (core, 75, "Speculatively constructing a function name for fcn.* and sym.func.* functions (aan)");
 					r_core_anal_autoname_all_fcns (core);
 					r_core_task_yield (&core->tasks);
 				}
 				if (core->anal->opt.vars) {
-					R_LOG_INFO ("Recovering local variables (afva)");
+					logline (core, 80, "Recovering local variables (afva)");
 					RAnalFunction *fcni;
 					RListIter *iter;
 					r_list_foreach (core->anal->fcns, iter, fcni) {
@@ -12676,43 +12701,43 @@ static int cmd_anal_all(RCore *core, const char *input) {
 					r_core_task_yield (&core->tasks);
 				}
 				if (!sdb_isempty (core->anal->sdb_zigns)) {
-					R_LOG_INFO ("Check for zignature from zigns folder (z/)");
+					logline (core, 85, "Check for zignature from zigns folder (z/)");
 					r_core_cmd_call (core, "z/");
 					r_core_task_yield (&core->tasks);
 				}
 				if (cfg_debug) {
-					R_LOG_INFO ("Skipping type matching analysis in debugger mode (aaft)");
+					logline (core, 90, "Skipping type matching analysis in debugger mode (aaft)");
 					// nothing to do
 				} else {
-					R_LOG_INFO ("Type matching analysis for all functions (aaft)");
+					logline (core, 90, "Type matching analysis for all functions (aaft)");
 					r_core_cmd_call (core, "aaft");
 				}
 				r_core_task_yield (&core->tasks);
 
-				R_LOG_INFO ("Propagate noreturn information (aanr)");
+				logline (core, 92, "Propagate noreturn information (aanr)");
 				r_core_anal_propagate_noreturn (core, UT64_MAX);
 				r_core_task_yield (&core->tasks);
 
 				// apply dwarf function information
 				Sdb *dwarf_sdb = sdb_ns (core->anal->sdb, "dwarf", 0);
 				if (dwarf_sdb) {
-					R_LOG_INFO ("Integrate dwarf function information");
+					logline (core, 95, "Integrate dwarf function information");
 					r_anal_dwarf_integrate_functions (core->anal, core->flags, dwarf_sdb);
 				}
 
 				if (input[1] == 'a') { // "aaaa"
-					R_LOG_INFO ("Scanning for strings constructed in code (/azs)");
+					logline (core, 96, "Scanning for strings constructed in code (/azs)");
 					r_core_cmd_call (core, "/azs");
 					if (!didAap) {
 						didAap = true;
-						R_LOG_INFO ("Finding function preludes (aap)");
+						logline (core, 90, "Finding function preludes (aap)");
 						(void)r_core_search_preludes (core, false); // "aap"
 						r_core_task_yield (&core->tasks);
 					}
-					R_LOG_INFO ("Enable anal.types.constraint for experimental type propagation");
+					logline (core, 96, "Enable anal.types.constraint for experimental type propagation");
 					r_config_set_b (core->config, "anal.types.constraint", true);
 					if (input[2] == 'a') { // "aaaa"
-						R_LOG_INFO ("Reanalizing graph references to improve function count (aarr)");
+						logline (core, 99, "Reanalizing graph references to improve function count (aarr)");
 						r_core_cmd_call (core, "aarr");
 					}
 				} else {
