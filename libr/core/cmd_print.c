@@ -4269,8 +4269,8 @@ static void cmd_print_bars(RCore *core, const char *input) {
 			ut64 oldword = 0;
 			for (i = 0; i < words; i++) {
 				ut64 word64 = word[i] + ST16_MAX;
-				r_cons_printf ("0x%08"PFMT64x" %8d  ", core->offset + (i *2), word[i]);
-				r_print_progressbar (core->print, word64 * 100 / UT16_MAX, 60);
+				r_cons_printf ("0x%08"PFMT64x" %8d  ", core->offset + (i * 2), word[i]);
+				r_print_progressbar (core->print, word64 * 100 / UT16_MAX, 60, NULL);
 				r_cons_printf (" %" PFMT64d, word64 - oldword);
 				oldword = word64;
 				r_cons_newline ();

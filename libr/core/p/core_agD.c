@@ -48,7 +48,7 @@ static int r_cmd_agD_call(void *user, const char *input) {
 	r_config_set_b (core->config, "asm.lines", o_asm_lines);
 	r_config_set_b (core->config, "asm.offset", o_asm_offset);
 	r_config_set_b (core->config, "asm.bytes", o_asm_bytes);
-	dtagraph->can->color = r_config_get_b (core->config, "scr.color");;
+	dtagraph->can->color = r_config_get_b (core->config, "scr.color");
 	r_agraph_print (dtagraph);
 	r_agraph_free (dtagraph);
 	r_graph_free (fcn_dtgraph);

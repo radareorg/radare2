@@ -45501,7 +45501,7 @@ static int js_proxy_delete_property(JSContext *ctx, JSValueConst obj,
     if (JS_IsUndefined(method)) {
         return JS_DeleteProperty(ctx, s->target, atom, 0);
     }
-    atom_val = JS_AtomToValue(ctx, atom);;
+    atom_val = JS_AtomToValue(ctx, atom);
     if (JS_IsException(atom_val)) {
         JS_FreeValue(ctx, method);
         return -1;

@@ -1715,20 +1715,22 @@ R_API void r_print_spinbar(RPrint *p, const char *msg) {
 }
 
 /* TODO: handle screen width */
-R_API void r_print_progressbar(RPrint *p, int pc, int _cols) {
+R_API void r_print_progressbar(RPrint *p, int pc, int _cols, const char *title) {
+	const bool utf8 = p->cons->use_utf8;
 	// TODO: add support for colors
 	int i, cols = (_cols == -1)? 78: _cols;
 	if (!p) {
 		p = &staticp;
 	}
-	const char *h_line = p->cons->use_utf8 ? RUNE_LONG_LINE_HORIZ : "-";
-	const char *block = p->cons->use_utf8 ? R_UTF8_BLOCK : "#";
+	const char *h_line = utf8 ? RUNE_LONG_LINE_HORIZ : "-";
+	const char *block = utf8 ? R_UTF8_BLOCK : "#";
 
 	pc = R_MAX (0, R_MIN (100, pc));
 	if (p->flags & R_PRINT_FLAGS_HEADER) {
 		p->cb_printf ("%4d%% ", pc);
 	}
 	cols -= 15;
+#if 1
 	p->cb_printf ("[");
 	for (i = cols * pc / 100; i; i--) {
 		p->cb_printf ("%s", block);
@@ -1737,6 +1739,37 @@ R_API void r_print_progressbar(RPrint *p, int pc, int _cols) {
 		p->cb_printf ("%s", h_line);
 	}
 	p->cb_printf ("]");
+#else
+	// TODO .implement more precisse progressbars
+	double ratio = (double)pc / cols;
+	eprintf ("radtio %lf\n", ratio);
+	// const char *portion[] = { "·", "▏", "▍", "▋", "▊", "█","█"};
+	const char *portion[] = { " ", "▏", "▍", "▋", "▊", "█","█"};
+	int a = (cols * pc) / 100;
+	int b = cols - (a % cols);
+	int c = a - b;
+
+	int jeje = ratio * a;
+	int jeje2 = ratio * a;
+	// eprintf ("JEJ %d %d\n", jeje , cols);
+
+	// TODO: honor scr.demo here and make some animation
+	// for (i = (cols * pc) / 100; i; i--) {
+	for (i = 0; i < a - 1; i++) {
+		p->cb_printf ("%s", block);
+	}
+	int r = ((pc * 100) / cols);
+	int d = (c / 100) / 6;
+	int k = r - a;
+	// eprintf ("DD %d\n", jeje - a);
+	//eprintf ("%d: cols=%d a: %d %d %d %d r=%d\n", pc, cols, a, b,c,d, r);
+	p->cb_printf ("%s", portion[k%6]);
+	for (i = cols - a; i; i--) {
+		p->cb_printf (" ");
+		// p->cb_printf ("·");
+	}
+
+#endif
 }
 
 /* TODO: handle screen width */

@@ -1213,7 +1213,7 @@ static int cmd_help(void *data, const char *input) {
 			break;
 		case '=': { // "?e="
 			ut64 pc = r_num_math (core->num, input + 2);
-			r_print_progressbar (core->print, pc, 80);
+			r_print_progressbar (core->print, pc, 80, NULL);
 			r_cons_newline ();
 			break;
 		}

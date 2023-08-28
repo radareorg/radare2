@@ -242,7 +242,7 @@ R_API int r_print_date_unix(RPrint *p, const ut8 *buf, int len);
 R_API int r_print_date_get_now(RPrint *p, char *str);
 R_API void r_print_zoom(RPrint *p, RPrintZoomCallback cb, void *cbarg, ut64 from, ut64 to, int len, int maxlen);
 R_API void r_print_zoom_buf(RPrint *p, RPrintZoomCallback cb, void *cbarg, ut64 from, ut64 to, int len, int maxlen);
-R_API void r_print_progressbar(RPrint *pr, int pc, int _cols);
+R_API void r_print_progressbar(RPrint *pr, int pc, int _cols, const char *title);
 R_API void r_print_progressbar_with_count(RPrint *pr, unsigned int pc, unsigned int total, int _cols, bool reset_line);
 R_API void r_print_spinbar(RPrint *p, const char *msg);
 R_API void r_print_portionbar(RPrint *p, const ut64 *portions, int n_portions);

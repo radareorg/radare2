@@ -4934,7 +4934,7 @@ R_API RBinJavaCPTypeObj *r_bin_java_name_and_type_cp_new(RBinJavaObj *bin, ut8 *
 	if (obj) {
 		obj->metas = R_NEW0 (RBinJavaMetaInfo);
 		obj->metas->type_info = (void *) &R_BIN_JAVA_CP_METAS[tag];
-		obj->name = strdup ((const char *) R_BIN_JAVA_CP_METAS[tag].name);;
+		obj->name = strdup ((const char *) R_BIN_JAVA_CP_METAS[tag].name);
 		obj->tag = tag;
 		obj->info.cp_name_and_type.name_idx = R_BIN_JAVA_USHORT (buffer, 1);
 		obj->info.cp_name_and_type.descriptor_idx = R_BIN_JAVA_USHORT (buffer, 3);
@@ -4964,7 +4964,7 @@ R_API RBinJavaCPTypeObj *r_bin_java_methodtype_cp_new(RBinJavaObj *bin, ut8 *buf
 	if (obj) {
 		obj->metas = R_NEW0 (RBinJavaMetaInfo);
 		obj->metas->type_info = (void *) &R_BIN_JAVA_CP_METAS[tag];
-		obj->name = strdup ((const char *) R_BIN_JAVA_CP_METAS[tag].name);;
+		obj->name = strdup ((const char *) R_BIN_JAVA_CP_METAS[tag].name);
 		obj->tag = tag;
 		obj->info.cp_method_type.descriptor_index = R_BIN_JAVA_USHORT (buffer, 1);
 	}
@@ -4989,7 +4989,7 @@ R_API RBinJavaCPTypeObj *r_bin_java_methodhandle_cp_new(RBinJavaObj *bin, ut8 *b
 	if (obj) {
 		obj->metas = R_NEW0 (RBinJavaMetaInfo);
 		obj->metas->type_info = (void *) &R_BIN_JAVA_CP_METAS[tag];
-		obj->name = strdup ((const char *) R_BIN_JAVA_CP_METAS[tag].name);;
+		obj->name = strdup ((const char *) R_BIN_JAVA_CP_METAS[tag].name);
 		obj->tag = tag;
 		obj->info.cp_method_handle.reference_kind = buffer[1];
 		obj->info.cp_method_handle.reference_index = R_BIN_JAVA_USHORT (buffer, 2);
@@ -5015,7 +5015,7 @@ R_API RBinJavaCPTypeObj *r_bin_java_invokedynamic_cp_new(RBinJavaObj *bin, ut8 *
 	if ((obj = R_NEW0 (RBinJavaCPTypeObj))) {
 		obj->metas = R_NEW0 (RBinJavaMetaInfo);
 		obj->metas->type_info = (void *) &R_BIN_JAVA_CP_METAS[tag];
-		obj->name = strdup ((const char *) R_BIN_JAVA_CP_METAS[tag].name);;
+		obj->name = strdup ((const char *) R_BIN_JAVA_CP_METAS[tag].name);
 		obj->tag = tag;
 		obj->info.cp_invoke_dynamic.bootstrap_method_attr_index = R_BIN_JAVA_USHORT (buffer, 1);
 		obj->info.cp_invoke_dynamic.name_and_type_index = R_BIN_JAVA_USHORT (buffer, 3);
