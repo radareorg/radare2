@@ -103,7 +103,12 @@ static bool decode(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
 	if( is_any("bgezal ", "bltzal ") ){
 
 	}
-	
+	if (is_any ("beqz", "beq", "blez", "bgez", "ble", "bltz", "bgtz", "bnez", "bne ")) {
+		op->type = R_ANAL_OP_TYPE_CJMP;
+		// op->jump = EXTRACT_SBTYPE_IMM (word) + addr;
+		op->jump = arg? r_num_get (NULL, arg): op->addr;
+		op->fail = addr + op->size;
+	}
 	r_strbuf_free (sb);
 	return op->size > 0;
 }
