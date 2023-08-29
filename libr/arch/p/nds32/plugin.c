@@ -84,6 +84,19 @@ static bool decode(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
 		r_strbuf_free (sb);
 		return true;
 	}
+	if( is_any("jal ") || is_any("jral ") ){
+
+	}
+	if( is_any("j ") || is_any("jr ") ){
+
+	}
+	if( is_any("ret ") ){
+
+	}
+	if( is_any("bgezal ") || is_any("bltzal ") ){
+
+	}
+	
 	r_strbuf_free (sb);
 	return op->size > 0;
 }
