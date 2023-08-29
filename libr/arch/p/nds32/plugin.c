@@ -84,6 +84,18 @@ static bool decode(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
 		r_strbuf_free (sb);
 		return true;
 	}
+	const char *arg = strstr (name, "0x");
+	if (!arg) {
+		arg = strstr (name, ", ");
+		if (arg) {
+			arg++;
+		} else {
+			arg = strchr (name, ' ');
+			if (arg) {
+				arg++;
+			}
+		}
+	}
 	if( is_any("jal ", "jral ", "j ") ){
 		// decide whether it's jump or call
 		int rd = (word >> OP_SH_RD) & OP_MASK_RD;
