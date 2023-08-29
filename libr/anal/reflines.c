@@ -137,12 +137,13 @@ R_API RList *r_anal_reflines_get(RAnal *anal, ut64 addr, const ut8 *buf, ut64 le
 					case R_META_TYPE_FORMAT:
 					case R_META_TYPE_MAGIC:
 						skip = r_meta_node_size (node);
+						// goto doskip;
 						break;
 					default:
 						break;
 					}
 				}
-do_skip:
+// doskip:
 				r_pvector_free (metas);
 				if (skip) {
 					ptr += skip;
@@ -151,8 +152,9 @@ do_skip:
 				}
 			}
 		}
-		if (bind_addr != 0) {
-			add_refline (list, sten, addr, bind_addr, &count, 'r');
+		if (bind_addr != 0 && bind_addr != UT64_MAX) {
+			add_refline (list, sten, addr, bind_addr, &count, 'b');
+			bind_addr = UT64_MAX;
 		}
 		if (!anal->iob.is_valid_offset (anal->iob.io, addr, 1)) {
 			const int size = 4;
@@ -286,11 +288,8 @@ R_API int r_anal_reflines_middle(RAnal *a, RList* /*<RAnalRefline>*/ list, ut64 
 	return false;
 }
 
-static const char* colchar(RAnalRefline *ref) {
-	if (ref->type == 'r') {
-		return "!";
-	}
-	return "|";
+static inline const char* colchar(RAnalRefline *ref) {
+	return (ref->type == 'b') ? "!" : "|";
 }
 
 static const char* get_corner_char(RAnalRefline *ref, ut64 addr, bool is_middle_before) {

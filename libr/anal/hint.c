@@ -535,6 +535,7 @@ R_API RAnalHint *r_anal_hint_get(RAnal *a, ut64 addr) {
 	hint->fail = UT64_MAX;
 	hint->ret = UT64_MAX;
 	hint->val = UT64_MAX;
+	// hint->ptr = UT64_MAX; some test fail. ptr 0 should be valid if we do it properly
 	hint->stackframe = UT64_MAX;
 	const RVector *records = r_anal_addr_hints_at (a, addr);
 	if (records) {

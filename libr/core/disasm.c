@@ -3329,8 +3329,17 @@ static bool ds_print_meta_infos(RDisasmState *ds, ut8* buf, int len, int idx, in
 		RIntervalNode *node = *it;
 		RAnalMetaItem *mi = node->data;
 		switch (mi->type) {
+		case R_META_TYPE_BIND:
+			if (ds->at == node->start) {
+				ut64 n = r_num_get (NULL, mi->str);
+				if (n != 0 && n != UT64_MAX) {
+					ds_print_shortcut (ds, n, 0);
+				}
+			}
+			break;
 		case R_META_TYPE_DATA:
 			if (once) {
+				// TODO: check in range if (ds->at == node->start) {
 				if (ds->asm_hint_pos == 0) {
 					if (ds->asm_hint_lea) {
 						ds_print_shortcut (ds, node->start, 0);

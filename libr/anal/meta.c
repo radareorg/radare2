@@ -221,12 +221,12 @@ R_API RPVector *r_meta_get_all_intersect(RAnal *a, ut64 start, ut64 size, RAnalM
 R_API const char *r_meta_type_tostring(int type) {
 	// XXX: use type as '%c'
 	switch (type) {
-	case R_META_TYPE_DATA: return "Cd";
+	case R_META_TYPE_BIND: return "Cb";
 	case R_META_TYPE_CODE: return "Cc";
+	case R_META_TYPE_DATA: return "Cd";
 	case R_META_TYPE_STRING: return "Cs";
 	case R_META_TYPE_FORMAT: return "Cf";
 	case R_META_TYPE_MAGIC: return "Cm";
-	case R_META_TYPE_BIND: return "Cb";
 	case R_META_TYPE_HIDE: return "Ch";
 	case R_META_TYPE_COMMENT: return "CCu";
 	case R_META_TYPE_RUN: return "Cr"; // not in C? help
