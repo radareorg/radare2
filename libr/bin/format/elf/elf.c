@@ -1527,7 +1527,6 @@ static bool init_dynstr(ELFOBJ *eo) {
 			section_name = eo->shstrtab + eo->shdr[i].sh_name;
 		} else {
 			R_LOG_DEBUG ("section name is beyond the sh string tab section size");
-			// return false;
 			ut64 at = eo->shstrtab_section->sh_offset + sh_name;
 			(void)r_buf_read_at (eo->b, at, name, sizeof (name));
 			name[sizeof (name) - 1] = 0;
@@ -1536,8 +1535,8 @@ static bool init_dynstr(ELFOBJ *eo) {
 		if (eo->shdr[i].sh_type == SHT_STRTAB && !strcmp (section_name, ".dynstr")) {
 			size_t shsz = eo->shdr[i].sh_size;
 			if (shsz > 0xffffff || !(eo->dynstr = (char*) calloc (shsz + 1, sizeof (char)))) {
-				R_LOG_ERROR ("Cannot allocate memory for dynamic strings");
-			//	return false;
+				R_LOG_ERROR ("Cannot allocate 0x%x bytes for strings", (int)shsz);
+				return true;
 			}
 			if (eo->shdr[i].sh_offset > eo->size) {
 				R_LOG_DEBUG ("section offset is beyond eof");
