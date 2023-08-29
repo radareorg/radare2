@@ -152,7 +152,7 @@ static bool decode(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
 	}
 	if( is_any("jal ", "jral ", "j ") ){
 		// decide whether it's jump or call
-		#ifndef OP_MASK_RD
+		#ifndef OP_MASK_RD // riscv arch dependent, not nds32 code
 			#define OP_MASK_RD		0x1f
 			#define OP_SH_RD		11
 		#endif
