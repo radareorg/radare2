@@ -131,7 +131,7 @@ static bool decode(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
 		r_strbuf_free (sb);
 		return true;
 	}
-	PluginData *pd = s->data;
+	PluginData *pd = as->data;
 	struct nds32_opcode *o = nds32_get_opcode(pd, word);
 	const char *name = o->instruction;
 	if (op->mnemonic) {
