@@ -2,38 +2,46 @@ static const char *const js_r2papi_qjs = "" \
   "Object.defineProperty(G,\"__esModule\",{value:!0}),G.Base64=G.N"\
   "ativePointer=G.R2Papi=G.Assembler=void 0;const shell_js_1=G;G"\
   ".Assembler=class{constructor(t){this.program=\"\",this.labels={"\
-  "},this.endian=!1,this.pc=0,this.r2=null,this.r2=t,this.progra"\
-  "m=\"\",this.labels={}}setProgramCounter(t){this.pc=t}setEndian("\
-  "t){this.endian=t}toString(){return this.program}append(t){thi"\
-  "s.pc+=t.length/2,this.program+=t}label(t){var s=this.pc;retur"\
-  "n this.labels[t]=this.pc,s}asm(t){let s=this.r2.cmd('\"\"pa '+t"\
-  ").trim();s.length<16||(s=\"____\",console.error(\"Invalid instru"\
-  "ction: \"+t)),this.append(s)}};G.R2Papi=class{constructor(t){t"\
-  "his.r2=t}jsonToTypescript(t,s){let i=`interface ${t} {\n`;s.le"\
-  "ngth&&0<s.length&&(s=s[0]);for(let t of Object.keys(s))i+=`  "\
-  "  ${t}: ${typeof s[t]};\n`;return i+`}\n`}newMap(t,s,i,e,r,n=\"\""\
-  "){this.cmd(`om ${t} ${s} ${i} ${e} ${r} `+n)}at(t){return new"\
-  " NativePointer(t)}getShell(){return new shell_js_1.R2PapiShel"\
-  "l(this)}version(){return this.r2.cmd(\"?Vq\").trim()}platform()"\
-  "{return this.r2.cmd(\"uname\").trim()}arch(){return this.r2.cmd"\
-  "(\"uname -a\").trim()}bits(){return this.r2.cmd(\"uname -b\").tri"\
-  "m()}id(){return+this.r2.cmd(\"?vi:$p\")}printAt(t,s,i){}clearSc"\
-  "reen(){return this.r2.cmd(\"!clear\"),this}getConfig(t){return "\
-  "this.r2.call(\"e \"+t).trim()}setConfig(t,s){return this.r2.cal"\
-  "l(\"e \"+t+\"=\"+s),this}getRegisters(){return this.cmdj(\"drj\")}r"\
-  "esizeFile(t){return this.cmd(\"r \"+t),this}insertNullBytes(t,s"\
-  "){return this.cmd(`r+${t}@`+(s=void 0===s?\"$$\":s)),this}remov"\
-  "eBytes(t,s){return this.cmd(`r-${t}@`+(s=void 0===s?\"$$\":s)),"\
-  "this}seek(t){return this.cmd(\"s \"+t),this}getBlockSize(){retu"\
-  "rn+this.cmd(\"b\")}setBlockSize(t){return this.cmd(\"b \"+t),this"\
-  "}enumerateThreads(){return[{context:this.cmdj(\"drj\"),id:0,sta"\
-  "te:\"waiting\",selected:!0}]}currentThreadId(){return+this.cmd("\
-  "\"e cfg.debug\")?+this.cmd(\"dpt.\"):this.id()}setRegisters(t){fo"\
-  "r(var s of Object.keys(t)){var i=t[s];this.r2.cmd(\"dr \"+s+\"=\""\
-  "+i)}}hex(t){return this.r2.cmd(\"?v \"+t).trim()}step(){return "\
-  "this.r2.cmd(\"ds\"),this}stepOver(){return this.r2.cmd(\"dso\"),t"\
-  "his}math(t){return+this.r2.cmd(\"?v \"+t)}stepUntil(t){this.cmd"\
-  "(\"dsu \"+t)}searchDisasm(t){return this.callj(\"/ad \"+t)}search"\
+  "},this.endian=!1,this.pc=0,this.r2=null,this.r2=void 0===t?G."\
+  "r2:t,this.program=\"\",this.labels={}}setProgramCounter(t){this"\
+  ".pc=t}setEndian(t){this.endian=t}toString(){return this.progr"\
+  "am}append(t){this.pc+=t.length/2,this.program+=t}label(t){var"\
+  " s=this.pc;return this.labels[t]=this.pc,s}asm(t){let s=this."\
+  "r2.cmd('\"\"pa '+t).trim();s.length<16||(s=\"____\",console.error"\
+  "(\"Invalid instruction: \"+t)),this.append(s)}};G.R2Papi=class{"\
+  "constructor(t){this.r2=t}jsonToTypescript(t,s){let e=`interfa"\
+  "ce ${t} {\n`;s.length&&0<s.length&&(s=s[0]);for(let t of Objec"\
+  "t.keys(s))e+=`    ${t}: ${typeof s[t]};\n`;return e+`}\n`}newMa"\
+  "p(t,s,e,i,r,n=\"\"){this.cmd(`om ${t} ${s} ${e} ${i} ${r} `+n)}"\
+  "at(t){return new NativePointer(t)}getShell(){return new shell"\
+  "_js_1.R2PapiShell(this)}version(){return this.r2.cmd(\"?Vq\").t"\
+  "rim()}platform(){return this.r2.cmd(\"uname\").trim()}arch(){re"\
+  "turn this.r2.cmd(\"uname -a\").trim()}bits(){return this.r2.cmd"\
+  "(\"uname -b\").trim()}id(){return+this.r2.cmd(\"?vi:$p\")}printAt"\
+  "(t,s,e){}clearScreen(){return this.r2.cmd(\"!clear\"),this}getC"\
+  "onfig(t){return this.r2.call(\"e \"+t).trim()}setConfig(t,s){re"\
+  "turn this.r2.call(\"e \"+t+\"=\"+s),this}getRegisters(){return th"\
+  "is.cmdj(\"drj\")}resizeFile(t){return this.cmd(\"r \"+t),this}ins"\
+  "ertNullBytes(t,s){return this.cmd(`r+${t}@`+(s=void 0===s?\"$$"\
+  "\":s)),this}removeBytes(t,s){return this.cmd(`r-${t}@`+(s=void"\
+  " 0===s?\"$$\":s)),this}seek(t){return this.cmd(\"s \"+t),this}get"\
+  "BlockSize(){return+this.cmd(\"b\")}setBlockSize(t){return this."\
+  "cmd(\"b \"+t),this}countFlags(){return Number(this.cmd(\"f~?\"))}"\
+  "countFunctions(){return Number(this.cmd(\"aflc\"))}analyzeProgr"\
+  "am(t){switch(t=void 0===t?0:t){case 0:this.cmd(\"aa\");break;ca"\
+  "se 1:this.cmd(\"aaa\");break;case 2:this.cmd(\"aaaa\");break;case"\
+  " 3:this.cmd(\"aaaaa\")}return this}enumerateThreads(){return[{c"\
+  "ontext:this.cmdj(\"drj\"),id:0,state:\"waiting\",selected:!0}]}cu"\
+  "rrentThreadId(){return+this.cmd(\"e cfg.debug\")?+this.cmd(\"dpt"\
+  ".\"):this.id()}setRegisters(t){for(var s of Object.keys(t)){va"\
+  "r e=t[s];this.r2.cmd(\"dr \"+s+\"=\"+e)}}hex(t){return this.r2.cm"\
+  "d(\"?v \"+t).trim()}step(){return this.r2.cmd(\"ds\"),this}stepOv"\
+  "er(){return this.r2.cmd(\"dso\"),this}math(t){return+this.r2.cm"\
+  "d(\"?v \"+t)}stepUntil(t){this.cmd(\"dsu \"+t)}enumerateXrefsTo(t"\
+  "){return this.call(\"axtq \"+t).trim().split(/\\n/)}findXrefsTo("\
+  "t,s){s?this.call(\"/r \"+t):this.call(\"/re \"+t)}findFunctionsFr"\
+  "omCalls(){this.call(\"aac\")}findFunctionsWithPreludes(){this.c"\
+  "all(\"aap\")}searchDisasm(t){return this.callj(\"/ad \"+t)}search"\
   "String(t){return this.cmdj(\"/j \"+t)}searchBytes(t){t=t.map(fu"\
   "nction(t){return(255&t).toString(16)}).join(\"\");return this.c"\
   "mdj(\"/xj \"+t)}binInfo(){try{return this.cmdj(\"ij~{bin}\")}catc"\
@@ -93,10 +101,7 @@ static const char *const js_r2papi_qjs = "" \
   "cmdj(\"aoj@\"+this.addr)[0]}disassemble(t){return this.api.cmd("\
   "`pd ${void 0===t?\"\":\"\"+t}@`+this.addr)}analyzeFunction(){retu"\
   "rn this.api.cmd(\"af@\"+this.addr),this}analyzeFunctionRecursiv"\
-  "ely(){return this.api.cmd(\"afr@\"+this.addr),this}analyzeProgr"\
-  "am(t){switch(t=void 0===t?0:t){case 0:this.api.cmd(\"aa\");brea"\
-  "k;case 1:this.api.cmd(\"aaa\");break;case 2:this.api.cmd(\"aaaa\""\
-  ");break;case 3:this.api.cmd(\"aaaaa\")}return this}name(){retur"\
+  "ely(){return this.api.cmd(\"afr@\"+this.addr),this}name(){retur"\
   "n this.api.cmd(\"fd \"+this.addr).trim()}basicBlock(){return th"\
   "is.api.cmdj(\"abj@\"+this.addr)}functionBasicBlocks(){return th"\
   "is.api.cmdj(\"afbj@\"+this.addr)}xrefs(){return this.api.cmdj(\""\
@@ -149,19 +154,19 @@ static const char *const js_r2papi_qjs = "" \
   "s.root)}toString(){return this.root.children.map(t=>t.toStrin"\
   "g()).join(\";\\n\")}reset(){this.nodes=[],this.stack=[],this.tok"\
   "ens=[],this.cur=0,this.root=new EsilNode(new EsilToken(\"funct"\
-  "ion\",0),\"block\")}parseRange(t,s){let i=t;for(;i<this.tokens.l"\
-  "ength&&i<s;){const t=this.peek(i);if(!t)break;this.cur=i,this"\
-  ".pushToken(t),i=this.cur,i++}}parseFunction(t){var s=this;var"\
-  " e=r2.cmd(\"?v $$\").trim(),r=(void 0===t&&(t=e),r2.cmdj(\"afbj@"\
-  "\"+t));for(let t of r)r2.cmd(\"s \"+t.addr),function(t){const i="\
+  "ion\",0),\"block\")}parseRange(t,s){let e=t;for(;e<this.tokens.l"\
+  "ength&&e<s;){const t=this.peek(e);if(!t)break;this.cur=e,this"\
+  ".pushToken(t),e=this.cur,e++}}parseFunction(t){var s=this;var"\
+  " i=r2.cmd(\"?v $$\").trim(),r=(void 0===t&&(t=i),r2.cmdj(\"afbj@"\
+  "\"+t));for(let t of r)r2.cmd(\"s \"+t.addr),function(t){const e="\
   "r2.cmd(\"pie \"+t+\" @e:scr.color=0\").trim().split(\"\\n\");for(con"\
-  "st t of i)if(0===t.length)console.log(\"Empty\");else{const i=t"\
-  ".split(\" \");1<i.length&&(r2.cmd(\"s \"+i[0]),s.parse(i[1],i[0])"\
-  ",s.optimize(\"flags,labels\"))}}(t.ninstr);r2.cmd(\"s \"+e)}parse"\
-  "(t,s){const i=t.trim().split(\",\").map(t=>t.trim()),e=this.tok"\
-  "ens.length;for(let t of i){const i=new EsilToken(t,this.token"\
-  "s.length);void 0!==s&&(i.addr=s),this.tokens.push(i)}t=this.t"\
-  "okens.length;this.parseRange(e,t)}peek(t){return this.tokens["\
+  "st t of e)if(0===t.length)console.log(\"Empty\");else{const e=t"\
+  ".split(\" \");1<e.length&&(r2.cmd(\"s \"+e[0]),s.parse(e[1],e[0])"\
+  ",s.optimize(\"flags,labels\"))}}(t.ninstr);r2.cmd(\"s \"+i)}parse"\
+  "(t,s){const e=t.trim().split(\",\").map(t=>t.trim()),i=this.tok"\
+  "ens.length;for(let t of e){const e=new EsilToken(t,this.token"\
+  "s.length);void 0!==s&&(e.addr=s),this.tokens.push(e)}t=this.t"\
+  "okens.length;this.parseRange(i,t)}peek(t){return this.tokens["\
   "t]}pushToken(t){if(this.isNumber(t)){var s=new EsilNode(t,\"nu"\
   "mber\");this.stack.push(s),this.nodes.push(s)}else if(this.isI"\
   "nternal(t)){const s=new EsilNode(t,\"flag\");this.stack.push(s)"\
@@ -169,10 +174,10 @@ static const char *const js_r2papi_qjs = "" \
   " EsilNode(t,\"register\");this.stack.push(s),this.nodes.push(s)"\
   "}}isNumber(t){return!!t.toString().startsWith(\"0\")||0<+t}isIn"\
   "ternal(t){t=t.toString();return t.startsWith(\"$\")&&1<t.length"\
-  "}parseUntil(t){t+=1;let i=t;const e=[],r=this.nodes.length;fo"\
-  "r(this.stack.forEach(t=>e.push(t));i<this.tokens.length;){con"\
-  "st t=this.peek(i);if(!t)break;if(\"}\"===t.toString())break;if("\
-  "\"}{\"===t.toString())break;i++}this.stack=e;var n=i;return thi"\
+  "}parseUntil(t){t+=1;let e=t;const i=[],r=this.nodes.length;fo"\
+  "r(this.stack.forEach(t=>i.push(t));e<this.tokens.length;){con"\
+  "st t=this.peek(e);if(!t)break;if(\"}\"===t.toString())break;if("\
+  "\"}{\"===t.toString())break;e++}this.stack=i;var n=e;return thi"\
   "s.parseRange(t,n),this.nodes.length==r?null:this.nodes[this.n"\
   "odes.length-1]}getNodeFor(t){if(void 0!==this.peek(t)){for(va"\
   "r s of this.nodes)if(s.token.position===t)return s;this.nodes"\
@@ -182,41 +187,41 @@ static const char *const js_r2papi_qjs = "" \
   ")){case\"[1]\":case\"[2]\":case\"[4]\":case\"[8]\":if(!(1<=this.stack"\
   ".length))throw new Error(\"Stack needs more items\");{const t=t"\
   "his.stack.pop();new EsilNode(t.token,\"operation\"),this.stack."\
-  "push(t)}return!0;case\"!\":var s,i,e;if(1<=this.stack.length)re"\
-  "turn s=new EsilNode(new EsilToken(\"\",t.position),\"none\"),i=th"\
-  "is.stack.pop(),(e=new EsilNode(t,\"operation\")).setSides(s,i),"\
-  "this.stack.push(e),!0;throw new Error(\"Stack needs more items"\
+  "push(t)}return!0;case\"!\":var s,e,i;if(1<=this.stack.length)re"\
+  "turn s=new EsilNode(new EsilToken(\"\",t.position),\"none\"),e=th"\
+  "is.stack.pop(),(i=new EsilNode(t,\"operation\")).setSides(s,e),"\
+  "this.stack.push(i),!0;throw new Error(\"Stack needs more items"\
   "\");case\"\":case\"}\":case\"}{\":return!0;case\"DUP\":{if(this.stack."\
   "length<1)throw new Error(\"goto cant pop\");const t=this.stack."\
   "pop();this.stack.push(t),this.stack.push(t)}return!0;case\"GOT"\
   "O\":if(null!==this.peek(t.position-1)){if(this.stack.length<1)"\
   "throw new Error(\"goto cant pop\");const s=this.stack.pop();if("\
-  "null!==s){const i=0|+s.toString();if(0<i){const s=this.peek(i"\
-  ");if(void 0!==s){s.label=\"label_\"+i,s.comment=\"hehe\";const e="\
+  "null!==s){const e=0|+s.toString();if(0<e){const s=this.peek(e"\
+  ");if(void 0!==s){s.label=\"label_\"+e,s.comment=\"hehe\";const i="\
   "new EsilNode(t,\"goto\"),r=this.getNodeFor(s.position);null!=r&"\
-  "&e.children.push(r),this.root.children.push(e)}else console.e"\
+  "&i.children.push(r),this.root.children.push(i)}else console.e"\
   "rror(\"Cannot find goto node\")}else console.error(\"Cannot find"\
   " dest node for goto\")}}return!0;case\"?{\":if(!(1<=this.stack.l"\
   "ength))throw new Error(\"Stack needs more items\");{const s=new"\
-  " EsilNode(new EsilToken(\"if\",t.position),\"none\"),i=this.stack"\
-  ".pop(),e=new EsilNode(t,\"operation\");e.setSides(s,i);let r=th"\
-  "is.parseUntil(t.position),n=null;null!==r&&(e.children.push(r"\
+  " EsilNode(new EsilToken(\"if\",t.position),\"none\"),e=this.stack"\
+  ".pop(),i=new EsilNode(t,\"operation\");i.setSides(s,e);let r=th"\
+  "is.parseUntil(t.position),n=null;null!==r&&(i.children.push(r"\
   "),this.nodes.push(r),null!==(n=this.parseUntil(r.token.positi"\
-  "on+1)))&&(e.children.push(n),this.nodes.push(n)),this.nodes.p"\
-  "ush(e),this.root.children.push(e),null!==n&&(this.cur=n.token"\
+  "on+1)))&&(i.children.push(n),this.nodes.push(n)),this.nodes.p"\
+  "ush(i),this.root.children.push(i),null!==n&&(this.cur=n.token"\
   ".position)}return!0;case\"-\":if(!(2<=this.stack.length))throw "\
   "new Error(\"Stack needs more items\");{const s=this.stack.pop()"\
-  ",i=this.stack.pop(),e=new EsilNode(t,\"operation\");e.setSides("\
-  "s,i),this.stack.length,this.stack.push(e),this.nodes.push(e)}"\
+  ",e=this.stack.pop(),i=new EsilNode(t,\"operation\");i.setSides("\
+  "s,e),this.stack.length,this.stack.push(i),this.nodes.push(i)}"\
   "return!0;case\"<\":case\">\":case\"^\":case\"&\":case\"|\":case\"+\":case"\
   "\"*\":case\"/\":case\">>=\":case\"<<=\":case\">>>=\":case\"<<<=\":case\">>"\
   ">>=\":case\"<<<<=\":if(!(2<=this.stack.length))throw new Error(\""\
-  "Stack needs more items\");{const s=this.stack.pop(),i=this.sta"\
-  "ck.pop(),e=new EsilNode(t,\"operation\");e.setSides(s,i),this.s"\
-  "tack.length,this.stack.push(e),this.nodes.push(e)}return!0;ca"\
+  "Stack needs more items\");{const s=this.stack.pop(),e=this.sta"\
+  "ck.pop(),i=new EsilNode(t,\"operation\");i.setSides(s,e),this.s"\
+  "tack.length,this.stack.push(i),this.nodes.push(i)}return!0;ca"\
   "se\"=\":case\":=\":case\"-=\":case\"+=\":case\"==\":case\"=[1]\":case\"=[2"\
   "]\":case\"=[4]\":case\"=[8]\":if(!(2<=this.stack.length))throw new"\
-  " Error(\"Stack needs more items\");{const s=this.stack.pop(),i="\
-  "this.stack.pop(),e=new EsilNode(t,\"operation\");e.setSides(s,i"\
-  "),0===this.stack.length&&this.root.children.push(e),this.node"\
-  "s.push(e)}return!0}return!1}};\n";
+  " Error(\"Stack needs more items\");{const s=this.stack.pop(),e="\
+  "this.stack.pop(),i=new EsilNode(t,\"operation\");i.setSides(s,e"\
+  "),0===this.stack.length&&this.root.children.push(i),this.node"\
+  "s.push(i)}return!0}return!1}};\n";

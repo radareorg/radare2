@@ -11,13 +11,13 @@ const shell_js_1 = G;//"./shell.js");
 ;
 ;
 class Assembler {
-    constructor(r2) {
+    constructor(myr2) {
         this.program = "";
         this.labels = {};
         this.endian = false;
         this.pc = 0;
         this.r2 = null;
-        this.r2 = r2;
+        this.r2 = (typeof myr2 === 'undefined') ? G.r2 : myr2;
         this.program = '';
         this.labels = {};
     }
@@ -147,6 +147,32 @@ class R2Papi {
         this.cmd(`b ${a}`);
         return this;
     }
+    countFlags() {
+        return Number(this.cmd("f~?"));
+    }
+    countFunctions() {
+        return Number(this.cmd("aflc"));
+    }
+    analyzeProgram(depth) {
+        if (depth === undefined) {
+            depth = 0;
+        }
+        switch (depth) {
+            case 0:
+                this.cmd("aa");
+                break;
+            case 1:
+                this.cmd("aaa");
+                break;
+            case 2:
+                this.cmd("aaaa");
+                break;
+            case 3:
+                this.cmd("aaaaa");
+                break;
+        }
+        return this;
+    }
     enumerateThreads() {
         // TODO: use apt/dpt to list threads at iterate over them to get the registers
         const regs0 = this.cmdj("drj");
@@ -186,6 +212,24 @@ class R2Papi {
     }
     stepUntil(dst) {
         this.cmd(`dsu ${dst}`);
+    }
+    enumerateXrefsTo(s) {
+        return this.call("axtq " + s).trim().split(/\n/);
+    }
+    // TODO: rename to searchXrefsTo ?
+    findXrefsTo(s, use_esil) {
+        if (use_esil) {
+            this.call("/r " + s);
+        }
+        else {
+            this.call("/re " + s);
+        }
+    }
+    findFunctionsFromCalls() {
+        this.call("aac");
+    }
+    findFunctionsWithPreludes() {
+        this.call("aap");
     }
     searchDisasm(s) {
         const res = this.callj("/ad " + s);
@@ -444,27 +488,6 @@ class NativePointer {
         this.api.cmd("afr@" + this.addr);
         return this;
     }
-    // define a type
-    analyzeProgram(depth) {
-        if (depth === undefined) {
-            depth = 0;
-        }
-        switch (depth) {
-            case 0:
-                this.api.cmd("aa");
-                break;
-            case 1:
-                this.api.cmd("aaa");
-                break;
-            case 2:
-                this.api.cmd("aaaa");
-                break;
-            case 3:
-                this.api.cmd("aaaaa");
-                break;
-        }
-        return this;
-    }
     name() {
         return this.api.cmd("fd " + this.addr).trim();
     }
@@ -490,6 +513,9 @@ class Base64 {
     }
 }
 G.Base64 = Base64;
+function ptr(x) {
+    return new NativePointer(x);
+}
 // shell utilities on top of r2pipe
 Object.defineProperty(G, "__esModule", { value: true });
 G.R2PapiShell = void 0;
@@ -579,6 +605,17 @@ class R2PapiShell {
 G.R2PapiShell = R2PapiShell;
 Object.defineProperty(G, "__esModule", { value: true });
 G.EsilParser = G.EsilNode = G.EsilToken = void 0;
+// ("this is just a comment"), -- comments are also part of the runtime
+/*
+=("//", {
+    =(obj, {}())
+    =([obj, comment], 32)
+    if(eq([obj,comment], 32),
+        ret()
+    )
+    ret(obj)
+})
+*/
 class EsilToken {
     constructor(text = "", position = 0) {
         this.label = "";
