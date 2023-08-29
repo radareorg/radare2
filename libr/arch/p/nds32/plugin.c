@@ -1,3 +1,4 @@
+#include <r_arch.h>
 #include <r_types.h>
 #include <r_lib.h>
 #include <r_cmd.h>
@@ -14,6 +15,26 @@ static CpuKv cpus[] = {
 	{ NULL, 0 }
 };
 #endif
+
+
+#define is_any(...) _is_any(name, __VA_ARGS__, NULL)
+static bool _is_any(const char *str, ...) {
+	char *cur;
+	va_list va;
+	va_start (va, str);
+	while (true) {
+		cur = va_arg (va, char *);
+		if (!cur) {
+			break;
+		}
+		if (r_str_startswith (str, cur)) {
+			va_end (va);
+			return true;
+		}
+	}
+	va_end (va);
+	return false;
+}
 
 static int info(RArchSession *as, ut32 q) {
 	switch (q) {
@@ -54,6 +75,7 @@ static bool decode(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
 	const int len = op->size;
 	const ut8 *buf = op->bytes;
 	ut8 bytes[8] = {0};
+	insn_t word = {0};
 	struct disassemble_info disasm_obj = {0};
 	RStrBuf *sb = NULL;
 	if (mask & R_ARCH_OP_MASK_DISASM) {
@@ -98,6 +120,10 @@ static bool decode(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
 	}
 	if( is_any("jal ", "jral ", "j ") ){
 		// decide whether it's jump or call
+		#ifnef OP_MASK_RD
+			#define OP_MASK_RD		0x1f
+			#define OP_SH_RD		11
+		#endif
 		int rd = (word >> OP_SH_RD) & OP_MASK_RD;
 		op->type = (rd == 0) ? R_ANAL_OP_TYPE_JMP: R_ANAL_OP_TYPE_CALL;
 		// op->jump = EXTRACT_UJTYPE_IMM (word) + addr;
