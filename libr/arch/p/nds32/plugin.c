@@ -9,6 +9,8 @@
 #include "nds32-opc.h"
 #include "nds32-dis.h"
 
+typedef uint32_t insn_t;
+
 #if 0
 static CpuKv cpus[] = {
 	{ "nds32", nds32 },
@@ -44,6 +46,29 @@ static int info(RArchSession *as, ut32 q) {
 		return 2;
 	}
 	return 0;
+}
+
+static inline unsigned int nds32_insn_length(insn_t insn){
+	return 4;
+}
+
+static struct nds32_opcode *nds32_get_opcode(PluginData *pd, insn_t word) {
+	struct nds32_opcode *op = NULL;
+
+#define OP_HASH_IDX(i) ((i) & (nds32_insn_length (i) == 2 ? 3 : OP_MASK_OP))
+	if (!pd->init0) {
+		size_t i;
+		for (i = 0; i < OP_MASK_OP + 1; i++) {
+			pd->riscv_hash[i] = 0;
+		}
+		for (op = nds32_opcodes; op <= &nds32_opcodes[NUMOPCODES - 1]; op++) {
+			if (!pd->nds32_hash[OP_HASH_IDX (op->match)]) {
+				pd->nds32_hash[OP_HASH_IDX (op->match)] = op;
+			}
+		}
+		pd->init0 = true;
+	}
+	return (struct nds32_opcode *) pd->nds32_hash[OP_HASH_IDX (word)];
 }
 
 static int nds32_buffer_read_memory(bfd_vma memaddr, bfd_byte *myaddr, ut32 length, struct disassemble_info *info) {
@@ -106,6 +131,13 @@ static bool decode(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
 		r_strbuf_free (sb);
 		return true;
 	}
+	PluginData *pd = s->data;
+	struct nds32_opcode *o = nds32_get_opcode(pd, word);
+	const char *name = o->instruction;
+	if (op->mnemonic) {
+		name = op->mnemonic;
+	}
+
 	const char *arg = strstr (name, "0x");
 	if (!arg) {
 		arg = strstr (name, ", ");
@@ -120,7 +152,7 @@ static bool decode(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
 	}
 	if( is_any("jal ", "jral ", "j ") ){
 		// decide whether it's jump or call
-		#ifnef OP_MASK_RD
+		#ifndef OP_MASK_RD
 			#define OP_MASK_RD		0x1f
 			#define OP_SH_RD		11
 		#endif
