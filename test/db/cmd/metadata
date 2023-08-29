@@ -788,3 +788,17 @@ EXPECT=<<EOF
             0x00000004      00000000       .dword 0x00000000
 EOF
 RUN
+
+NAME=Cb
+FILE=bins/mach0/ls-m1
+CMDS=<<EOF
+s main
+Cb 0x100003aa0
+pd 6
+EOF
+EXPECT=<<EOF
+0x0007a23c ascii[13] "match_symbol"
+0x00083fc4 data Cd 4
+0x00083fc4 CCu "[14] -rw- section size 4 named .init_array"
+EOF
+RUN

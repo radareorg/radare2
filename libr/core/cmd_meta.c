@@ -32,6 +32,7 @@ static RCoreHelpMessage help_msg_C = {
 	"Cd", "[-] [size] [repeat] [@addr]", "hexdump data array (Cd 4 10 == dword [10])",
 	"Cd.", " [@addr]", "show size of data at current address",
 	"Cf", "[?][-] [sz] [0|cnt][fmt] [a0 a1...] [@addr]", "format memory (see pf?)",
+	"Cb", "[?][-] [addr] [@addr]", "bind both addresses for reflines purposes",
 	"Cr", "[?][-] [sz] [r2cmd] [@addr]", "run the given command to replace SZ bytes in the disasm",
 	"Ch", "[-] [size] [@addr]", "hide data",
 	"Cm", "[-] [sz] [fmt..] [@addr]", "magic parse (see pm?)",
@@ -955,6 +956,7 @@ static int cmd_meta_others(RCore *core, const char *input) {
 	case 'g':
 	case 'a':
 	case '1':
+	case 'b':
 	case 'r':
 	case '2':
 	case '4':
@@ -1078,9 +1080,9 @@ static int cmd_meta_others(RCore *core, const char *input) {
 					if (p) {
 						*p++ = '\0';
 						p = (char *)r_str_trim_head_ro (p);
-						strncpy (name, p, sizeof (name)-1);
+						r_str_ncpy (name, p, sizeof (name));
 					} else {
-						if (type != 's') {
+						if (type != 'b' && type != 's') {
 							RFlagItem *fi = r_flag_get_i (core->flags, addr);
 							if (fi) {
 								r_str_ncpy (name, fi->name, sizeof (name));
@@ -1282,6 +1284,7 @@ static int cmd_meta(void *data, const char *input) {
 	case 't': // "Ct" type analysis commnets
 		cmd_meta_vartype_comment (core, input);
 		break;
+	case 'b': // "Cb" bind addresses
 	case 'r': // "Cr" run command
 	case 'h': // "Ch" comment
 	case 's': // "Cs" string

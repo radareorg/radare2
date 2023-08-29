@@ -32,7 +32,7 @@ static ReflineEnd *refline_end_new(ut64 val, bool is_from, RAnalRefline *ref) {
 	return re;
 }
 
-static bool add_refline(RList *list, RList *sten, ut64 addr, ut64 to, int *idx) {
+static bool add_refline(RList *list, RList *sten, ut64 addr, ut64 to, int *idx, int type) {
 	ReflineEnd *re1, *re2;
 	RAnalRefline *item = R_NEW0 (RAnalRefline);
 	if (!item) {
@@ -42,6 +42,7 @@ static bool add_refline(RList *list, RList *sten, ut64 addr, ut64 to, int *idx) 
 	item->to = to;
 	item->index = *idx;
 	item->level = -1;
+	item->type = type;
 	item->direction = (to > addr)? 1: -1;
 	*idx += 1;
 	r_list_append (list, item);
@@ -116,23 +117,27 @@ R_API RList *r_anal_reflines_get(RAnal *anal, ut64 addr, const ut8 *buf, ut64 le
 		if (anal->maxreflines && count > anal->maxreflines) {
 			break;
 		}
+		ut64 skip = 0;
+		ut64 bind_addr = 0;
 		addr += sz;
 		{
 			RPVector *metas = r_meta_get_all_at (anal, addr);
 			if (metas) {
 				void **it;
-				ut64 skip = 0;
 				r_pvector_foreach (metas, it) {
 					RIntervalNode *node = *it;
 					RAnalMetaItem *meta = node->data;
 					switch (meta->type) {
+					case R_META_TYPE_BIND:
+						bind_addr = r_num_math (NULL, meta->str);
+						break;
 					case R_META_TYPE_DATA:
 					case R_META_TYPE_STRING:
 					case R_META_TYPE_HIDE:
 					case R_META_TYPE_FORMAT:
 					case R_META_TYPE_MAGIC:
 						skip = r_meta_node_size (node);
-						goto do_skip;
+						break;
 					default:
 						break;
 					}
@@ -145,6 +150,9 @@ do_skip:
 					goto __next;
 				}
 			}
+		}
+		if (bind_addr != 0) {
+			add_refline (list, sten, addr, bind_addr, &count, 'r');
 		}
 		if (!anal->iob.is_valid_offset (anal->iob.io, addr, 1)) {
 			const int size = 4;
@@ -180,13 +188,13 @@ do_skip:
 			if ((!linesout && (op.jump > opc + len || op.jump < opc)) || !op.jump) {
 				break;
 			}
-			if (!add_refline (list, sten, addr, op.jump, &count)) {
+			if (!add_refline (list, sten, addr, op.jump, &count, 'j')) {
 				r_anal_op_fini (&op);
 				goto sten_err;
 			}
 			// add false branch in case its set and its not a call, useful for bf, maybe others
 			if (!op.delay && op.fail != UT64_MAX && op.fail != addr + op.size) {
-				if (!add_refline (list, sten, addr, op.fail, &count)) {
+				if (!add_refline (list, sten, addr, op.fail, &count, 'f')) {
 					r_anal_op_fini (&op);
 					goto sten_err;
 				}
@@ -205,7 +213,7 @@ do_skip:
 				if (!linesout && (op.jump > opc + len || op.jump < opc)) {
 					goto __next;
 				}
-				if (!add_refline (list, sten, op.switch_op->addr, caseop->jump, &count)) {
+				if (!add_refline (list, sten, op.switch_op->addr, caseop->jump, &count, 'j')) {
 					r_anal_op_fini (&op);
 					goto sten_err;
 				}
@@ -278,19 +286,26 @@ R_API int r_anal_reflines_middle(RAnal *a, RList* /*<RAnalRefline>*/ list, ut64 
 	return false;
 }
 
+static const char* colchar(RAnalRefline *ref) {
+	if (ref->type == 'r') {
+		return "!";
+	}
+	return "|";
+}
+
 static const char* get_corner_char(RAnalRefline *ref, ut64 addr, bool is_middle_before) {
 	if (ref->from == ref->to) {
 		return "@";
 	}
 	if (addr == ref->to) {
 		if (is_middle_before) {
-			return (ref->from > ref->to) ? " " : "|";
+			return (ref->from > ref->to) ? " " : colchar (ref);
 		}
 		return (ref->from > ref->to) ? "." : "`";
 	}
 	if (addr == ref->from) {
 		if (is_middle_before) {
-			return (ref->from > ref->to) ? "|" : " ";
+			return (ref->from > ref->to) ? colchar (ref) : " ";
 		}
 		return (ref->from > ref->to) ? "`" : ",";
 	}
@@ -426,7 +441,7 @@ R_API RAnalRefStr *r_anal_reflines_str(void *_core, ut64 addr, int opts) {
 				r_buf_append_string (b, ":");
 				r_buf_append_string (c, "t");
 			} else {
-				r_buf_append_string (b, "|");
+				r_buf_append_string (b, colchar (ref));
 				r_buf_append_string (c, "d");
 			}
 			pos = ref->level;
