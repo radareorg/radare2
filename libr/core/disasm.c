@@ -403,6 +403,7 @@ static const char *get_utf8_char(const char line, RDisasmState *ds) {
 	case '>': return ds->core->cons->vline[ARROW_RIGHT];
 	case ':': return ds->core->cons->vline[LINE_UP];
 	case '|': return ds->core->cons->vline[LINE_VERT];
+	case '!': return "!";
 	case '=':
 	case '-': return ds->core->cons->vline[LINE_HORIZ];
 	case ',': return ds->core->cons->vline[CORNER_TL];

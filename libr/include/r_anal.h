@@ -316,8 +316,9 @@ struct r_anal_type_t {
 
 typedef enum {
 	R_META_TYPE_ANY = -1,
-	R_META_TYPE_DATA = 'd',
+	R_META_TYPE_BIND = 'b',
 	R_META_TYPE_CODE = 'c',
+	R_META_TYPE_DATA = 'd',
 	R_META_TYPE_STRING = 's',
 	R_META_TYPE_FORMAT = 'f',
 	R_META_TYPE_MAGIC = 'm',
