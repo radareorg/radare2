@@ -111,6 +111,7 @@ typedef struct nds32_keyword
   uint64_t attr;
 } keyword_t;
 
+#define NUMOPCODES ((sizeof nds32_opcodes)/(sizeof nds32_opcodes[0]))
 typedef struct nds32_opcode
 {
   /* Opcode for the instruction.  */

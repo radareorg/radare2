@@ -10,6 +10,7 @@
 #include "nds32-dis.h"
 
 typedef uint32_t insn_t;
+#define OP_MASK_OP		0x7f
 
 #if 0
 static CpuKv cpus[] = {
@@ -18,6 +19,10 @@ static CpuKv cpus[] = {
 };
 #endif
 
+typedef struct plugin_data_t {
+	bool init0;
+	const struct nds32_opcode *nds32_hash[OP_MASK_OP + 1];
+} PluginData;
 
 #define is_any(...) _is_any(name, __VA_ARGS__, NULL)
 static bool _is_any(const char *str, ...) {
@@ -59,12 +64,12 @@ static struct nds32_opcode *nds32_get_opcode(PluginData *pd, insn_t word) {
 	if (!pd->init0) {
 		size_t i;
 		for (i = 0; i < OP_MASK_OP + 1; i++) {
-			pd->riscv_hash[i] = 0;
+			pd->nds32_hash[i] = 0;
 		}
 		for (op = nds32_opcodes; op <= &nds32_opcodes[NUMOPCODES - 1]; op++) {
-			if (!pd->nds32_hash[OP_HASH_IDX (op->match)]) {
-				pd->nds32_hash[OP_HASH_IDX (op->match)] = op;
-			}
+			//if (!pd->nds32_hash[OP_HASH_IDX (op->match)]) {
+			//	pd->nds32_hash[OP_HASH_IDX (op->match)] = op;
+			//}
 		}
 		pd->init0 = true;
 	}
@@ -94,6 +99,18 @@ static void memory_error_func(int status, bfd_vma memaddr, struct disassemble_in
 
 DECLARE_GENERIC_PRINT_ADDRESS_FUNC_NOGLOBALS()
 DECLARE_GENERIC_FPRINTF_FUNC_NOGLOBALS()
+
+static bool _init(RArchSession *as) {
+	r_return_val_if_fail (as, false);
+	if (as->data) {
+		R_LOG_WARN ("Already initialized");
+		return false;
+	}
+
+	as->data = R_NEW0 (PluginData);
+	return !!as->data;
+}
+
 
 static bool decode(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
 	const ut64 addr = op->addr;
@@ -152,7 +169,7 @@ static bool decode(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
 	}
 	if( is_any("jal ", "jral ", "j ") ){
 		// decide whether it's jump or call
-		#ifndef OP_MASK_RD // riscv arch dependent, not nds32 code
+		#ifndef OP_MASK_RD
 			#define OP_MASK_RD		0x1f
 			#define OP_SH_RD		11
 		#endif
@@ -194,6 +211,7 @@ const RArchPlugin r_arch_plugin_nds32 = {
 	.bits = R_SYS_BITS_PACK1 (32),
 	.endian = R_SYS_ENDIAN_LITTLE,
 	.decode = &decode,
+	.init = &_init,
 	.info = &info,
 };
 
