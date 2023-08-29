@@ -601,7 +601,6 @@ R_API int r_debug_drx_set(RDebug *dbg, int idx, ut64 addr, int len, int rwx, int
 R_API int r_debug_drx_unset(RDebug *dbg, int idx);
 
 /* esil */
-R_API ut64 r_debug_num_callback(RNum *userptr, const char *str, int *ok);
 R_API bool r_debug_esil_stepi(RDebug *dbg);
 R_API ut64 r_debug_esil_step(RDebug *dbg, ut32 count);
 R_API ut64 r_debug_esil_continue(RDebug *dbg);

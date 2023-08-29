@@ -349,12 +349,6 @@ R_API bool r_debug_reg_set(RDebug *dbg, const char *name, ut64 num) {
 	return (ri);
 }
 
-// XXX R2_590 deprecate
-R_API ut64 r_debug_reg_get(RDebug *dbg, const char *name) {
-	// ignores errors
-	return r_debug_reg_get_err (dbg, name, NULL, NULL);
-}
-
 R_API ut64 r_debug_reg_get_err(RDebug *dbg, const char *name, int *err, utX *value) {
 	RRegItem *ri = NULL;
 	ut64 ret = 0LL;
@@ -397,9 +391,7 @@ R_API ut64 r_debug_reg_get_err(RDebug *dbg, const char *name, int *err, utX *val
 	return ret;
 }
 
-// XXX: R2_590 - dup for get_Err!
-R_API ut64 r_debug_num_callback(RNum *userptr, const char *str, int *ok) {
-	RDebug *dbg = (RDebug *)userptr;
-	// resolve using regnu
-	return r_debug_reg_get_err (dbg, str, ok, NULL);
+R_API ut64 r_debug_reg_get(RDebug *dbg, const char *name) {
+	return r_debug_reg_get_err (dbg, name, NULL, NULL);
 }
+

@@ -347,6 +347,12 @@ static const char *r_debug_str_callback(RNum *userptr, ut64 off, int *ok) {
 	return NULL;
 }
 
+static ut64 r_debug_num_callback(RNum *userptr, const char *str, int *ok) {
+	RDebug *dbg = (RDebug *)userptr;
+	// resolve using regnu
+	return r_debug_reg_get_err (dbg, str, ok, NULL);
+}
+
 R_API RDebug *r_debug_new(int hard) {
 	RDebug *dbg = R_NEW0 (RDebug);
 	if (!dbg) {
