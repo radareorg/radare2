@@ -84,16 +84,23 @@ static bool decode(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
 		r_strbuf_free (sb);
 		return true;
 	}
-	if( is_any("jal ") || is_any("jral ") ){
-
+	if( is_any("jal ", "jral ", "j ") ){
+		// decide whether it's jump or call
+		int rd = (word >> OP_SH_RD) & OP_MASK_RD;
+		op->type = (rd == 0) ? R_ANAL_OP_TYPE_JMP: R_ANAL_OP_TYPE_CALL;
+		// op->jump = EXTRACT_UJTYPE_IMM (word) + addr;
+		op->jump = arg? r_num_get (NULL, arg): op->addr;
+		if (op->type == R_ANAL_OP_TYPE_CALL) {
+			op->fail = addr + op->size;
+		}
 	}
-	if( is_any("j ") || is_any("jr ") ){
-
+	if( is_any("jr ") ){
+		op->type = R_ANAL_OP_TYPE_RJMP;
 	}
 	if( is_any("ret ") ){
-
+		op->type = R_ANAL_OP_TYPE_RET;
 	}
-	if( is_any("bgezal ") || is_any("bltzal ") ){
+	if( is_any("bgezal ", "bltzal ") ){
 
 	}
 	
