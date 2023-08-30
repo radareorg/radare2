@@ -1276,14 +1276,13 @@ R_API RBuffer *r_bin_package(RBin *bin, const char *type, const char *file, RLis
 	return NULL;
 }
 
-R_API RList */*<RBinClass>*/ r_bin_get_classes(RBin *bin) {
+R_API RList* /*<RBinClass>*/ r_bin_get_classes(RBin *bin) {
 	r_return_val_if_fail (bin, NULL);
-	RBinObject *o = r_bin_cur_object (bin);
-	return o ? o->classes : NULL;
+	RBinObject *bo = r_bin_cur_object (bin);
+	return bo ? bo->classes : NULL;
 }
 
-/* returns vaddr, rebased with the baseaddr of bin, if va is enabled for bin,
- * paddr otherwise */
+/* returns vaddr, rebased with the baseaddr of bin, if va is enabled for bin, * paddr otherwise */
 R_API ut64 r_bin_get_vaddr(RBin *bin, ut64 paddr, ut64 vaddr) {
 	r_return_val_if_fail (bin && paddr != UT64_MAX, UT64_MAX);
 

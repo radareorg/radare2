@@ -16,6 +16,8 @@ static RCoreHelpMessage help_msg_i = {
 	"ib", "", "reload the current buffer for setting of the bin (use once only)",
 	"ic", "", "List classes, methods and fields (icj for json)",
 	"ic.", "", "show class and method name in current seek",
+	"ic-", "[klass.method]", "delete given klass or klass.name",
+	"ic+", "[klass.method]", "add new symbol in current seek for a given klass and method name",
 	"icc", "", "List classes, methods and fields in Header Format",
 	"icg", " [str]", "List classes as agn/age commands to create class hierarchy graphs (matches str if provided)",
 	"icq", "", "List classes, in quiet mode (just the classname)",
@@ -486,6 +488,95 @@ static void cmd_ic_comma(RCore *core, const char *input) {
 		free (s);
 	}
 	r_table_free (t);
+}
+
+void cmd_ic_sub(RCore *core, const char *input) {
+	RListIter *iter;
+	RBinClass *k;
+	RBinSymbol *m;
+
+	const char ch0 = *input;
+	if (ch0 == '*') {
+		R_LOG_TODO ("Cannot reset binclass info");
+		// reset!
+		return;
+	}
+	if (ch0 == 0 || ch0 == '?') {
+		// delete klass or method
+		eprintf ("Usage: ic-[klassname][.methodname]\n");
+		return;
+	}
+	char *klass_name = strdup (input);
+	char *method_name = r_str_after (klass_name, '.');
+	RBinClass *klass = NULL;
+	RList *klasses = r_bin_get_classes (core->bin);
+	r_list_foreach (klasses, iter, k) {
+		if (!strcmp (k->name, klass_name)) {
+			if (method_name) {
+				klass = k;
+			} else {
+				// delete class!
+				r_list_delete (klasses, iter);
+				return;
+			}
+			break;
+		}
+	}
+	if (klass && method_name) {
+		r_list_foreach (klass->methods, iter, m) {
+			if (!strcmp (method_name, m->name)) {
+				r_list_delete (klass->methods, iter);
+				return;
+			}
+		}
+	}
+	R_LOG_ERROR ("Cannot find given klass or method");
+}
+
+void cmd_ic_add(RCore *core, const char *input) {
+	const char ch0 = *input;
+	if (ch0 == 0 || ch0 == '?') {
+		eprintf ("Usage: ic+[klassname][.methodname]\n");
+		return;
+	}
+	RList *klasses = r_bin_get_classes (core->bin);
+	RListIter *iter;
+	RBinClass *k;
+	char *klass_name = strdup (input);
+	char *method_name = r_str_after (klass_name, '.');
+	RBinClass *klass = NULL;
+	r_list_foreach (klasses, iter, k) {
+		if (!strcmp (k->name, klass_name)) {
+			klass = k;
+			break;
+		}
+	}
+	if (!klass) {
+		klass = R_NEW0 (RBinClass);
+		klass->name = strdup (klass_name);
+		r_list_append (klasses, klass);
+	}
+	if (method_name == NULL) {
+		klass->addr = core->offset;
+	} else {
+		ut64 pa = core->offset; // XXX
+		ut64 va = core->offset;
+		RBinSymbol *m;
+		bool found = false;
+		r_list_foreach (klass->methods, iter, m) {
+			if (!strcmp (m->name, method_name)) {
+				found = true;
+				break;
+			}
+		}
+		if (!found) {
+			RBinSymbol *sym = r_bin_symbol_new (method_name, pa, va); 
+			if (!klass->methods) {
+				klass->methods = r_list_new ();
+			}
+			r_list_append (klass->methods, sym);
+		}
+	}
 }
 
 static int cmd_info(void *data, const char *input) {
@@ -1245,6 +1336,10 @@ static int cmd_info(void *data, const char *input) {
 				r_core_cmd_help_match (core, help_msg_i, "ic", false);
 			} else if (input[1] == ',') { // "ic,"
 				cmd_ic_comma (core, input);
+			} else if (input[1] == '-') { // "ic-"
+				cmd_ic_sub (core, input + 2);
+			} else if (input[1] == '+') { // "ic+"
+				cmd_ic_add (core, input + 2);
 			} else if (input[1] == 'g') { // "icg"
 				RBinClass *cls;
 				RListIter *iter, *iter2;
@@ -1526,6 +1621,8 @@ static int cmd_info(void *data, const char *input) {
 		case '.': // "i."
 			cmd_info_here (core, pj, input[1]);
 			goto done;
+		case '-':
+		case '+':
 		case ',':
 			// ignore comma
 			goto done;

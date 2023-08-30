@@ -288,6 +288,8 @@ R_API char *r_str_donut(int size);
 R_API char *r_str_version(const char *program);
 R_API char *r_str_ss(const char* msg, const char *nl, int cs);
 
+R_API char *r_str_after(char *s, char c);
+
 // rstr
 
 R_API char *r_string_get(const RString *s, int *len);

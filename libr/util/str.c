@@ -4125,3 +4125,14 @@ R_API char *r_str_tok_next(char *s) {
 	}
 	return NULL;
 }
+
+R_API R_MUSTUSE char *r_str_after(char *s, char c) {
+	if (s) {
+		char *p = strchr (s, c);
+		if (p) {
+			*p++ = 0;
+			return p;
+		}
+	}
+	return NULL;
+}
