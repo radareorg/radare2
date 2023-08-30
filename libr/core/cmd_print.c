@@ -527,7 +527,7 @@ static RCoreHelpMessage help_msg_pt = {
 };
 
 static RCoreHelpMessage help_msg_pv = {
-	"Usage: pv[1248z][j]", "", "Print value(s) given size and endian",
+	"Usage: pv[1248z][dj]", "", "Print value(s) given size and endian (d for decimal, j for json)",
 	"pv", "", "print bytes based on asm.bits",
 	"pv1", "", "print 1 byte in memory",
 	"pv2", "", "print 2 bytes in memory",
@@ -3566,7 +3566,66 @@ static void cmd_print_pv(RCore *core, const char *input, bool useBytes) {
 			}
 		}
 		break;
-	}
+		  }
+	case 'd': // "pvd"
+		do {
+			repeat--;
+			const int p_bits = core->rasm->config->bits / 8;
+			if (block + 8 >= block_end) {
+				int blockdelta = block - core->block;
+				if (heaped_block) {
+					blockdelta = block - heaped_block;
+					free (heaped_block);
+				}
+				blocksize = ((1 + repeat) * 8) + 8;
+				block_end = block + blocksize;
+				heaped_block = calloc (blocksize, 1);
+				if (!heaped_block) {
+					break;
+				}
+				r_io_read_at (core->io, core->offset + blockdelta, heaped_block, blocksize);
+				block = heaped_block;
+			}
+			ut64 v;
+			if (!fixed_size) {
+				n = 0;
+			}
+			switch (n) {
+			case 1:
+				v = r_read_ble8 (block);
+				r_cons_printf ("%" PFMT64d "\n", v);
+				block += 1;
+				break;
+			case 2:
+				v = r_read_ble16 (block, be);
+				r_cons_printf ("%" PFMT64d "\n", v);
+				block += 2;
+				break;
+			case 4:
+				v = r_read_ble32 (block, be);
+				r_cons_printf ("%" PFMT64d "\n", v);
+				block += 4;
+				break;
+			case 8:
+				v = r_read_ble64 (block, be);
+				r_cons_printf ("%" PFMT64d "\n", v);
+				block += 8;
+				break;
+			default:
+				v = r_read_ble64 (block, be);
+				switch (p_bits) { // core->rasm->config->bits / 8) {
+				case 1: r_cons_printf ("%" PFMT64d "\n", v & UT8_MAX); break;
+				case 2: r_cons_printf ("%" PFMT64d "\n", v & UT16_MAX); break;
+				case 4: r_cons_printf ("%" PFMT64d "\n", v & UT32_MAX); break;
+				case 8: r_cons_printf ("%" PFMT64d "\n", v & UT64_MAX); break;
+				default: break;
+				}
+				block += p_bits;
+				break;
+			}
+		} while (repeat > 0);
+		free (heaped_block);
+		break;
 	case 'j': { // "pvj"
 		PJ *pj = r_core_pj_new (core);
 		if (!pj) {
