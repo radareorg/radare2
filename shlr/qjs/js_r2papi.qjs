@@ -57,6 +57,9 @@ class R2Papi {
     constructor(r2) {
         this.r2 = r2;
     }
+    getBaseAddress() {
+        return new NativePointer(this.cmd("e bin.baddr"));
+    }
     jsonToTypescript(name, a) {
         let str = `interface ${name} {\n`;
         if (a.length && a.length > 0) {
@@ -68,6 +71,10 @@ class R2Papi {
             str += `    ${nam}: ${typ};\n`;
         }
         return `${str}}\n`;
+    }
+    setLogLevel(level) {
+        this.cmd('e log.level=' + level);
+        return this;
     }
     /**
      * should return the id for the new map using the given file descriptor
@@ -139,6 +146,13 @@ class R2Papi {
     seek(addr) {
         this.cmd(`s ${addr}`);
         return this;
+    }
+    currentSeek() {
+        return new NativePointer('$$');
+    }
+    seekToRelativeOpcode(nth) {
+        this.cmd(`so ${nth}`);
+        return this.currentSeek();
     }
     getBlockSize() {
         return +this.cmd("b");
@@ -225,11 +239,21 @@ class R2Papi {
             this.call("/re " + s);
         }
     }
-    findFunctionsFromCalls() {
+    analyzeFunctionsFromCalls() {
         this.call("aac");
+        return this;
     }
-    findFunctionsWithPreludes() {
+    analyzeFunctionsWithPreludes() {
         this.call("aap");
+        return this;
+    }
+    analyzeObjCReferences() {
+        this.cmd("aao");
+        return this;
+    }
+    analyzeImports() {
+        this.cmd("af @ sym.imp.*");
+        return this;
     }
     searchDisasm(s) {
         const res = this.callj("/ad " + s);
@@ -262,6 +286,9 @@ class R2Papi {
     openFile(name) {
         this.call(`o ${name}`);
     }
+    currentFile(name) {
+        return this.call('o.').trim();
+    }
     enumeratePlugins(type) {
         switch (type) {
             case "bin":
@@ -270,6 +297,8 @@ class R2Papi {
                 return this.callj("Loj");
             case "core":
                 return this.callj("Lcj");
+            case "arch":
+                return this.callj("LAj");
             case "anal":
                 return this.callj("Laj");
             case "lang":
@@ -377,6 +406,9 @@ class NativePointer {
     }
     readByteArray(len) {
         return JSON.parse(this.api.cmd(`p8j ${len}@${this.addr}`));
+    }
+    readHexString(len) {
+        return this.api.cmd(`p8 ${len}@${this.addr}`).trim();
     }
     and(a) {
         this.addr = this.api.call(`?v ${this.addr} & ${a}`).trim();
@@ -496,8 +528,7 @@ class NativePointer {
         return bb;
     }
     functionBasicBlocks() {
-        const bbs = this.api.cmdj("afbj@" + this.addr);
-        return bbs;
+        return this.api.cmdj("afbj@" + this.addr);
     }
     xrefs() {
         return this.api.cmdj("axtj@" + this.addr);
@@ -513,9 +544,6 @@ class Base64 {
     }
 }
 G.Base64 = Base64;
-function ptr(x) {
-    return new NativePointer(x);
-}
 // shell utilities on top of r2pipe
 Object.defineProperty(G, "__esModule", { value: true });
 G.R2PapiShell = void 0;
