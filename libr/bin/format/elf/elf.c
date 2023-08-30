@@ -1533,8 +1533,19 @@ static bool init_dynstr(ELFOBJ *eo) {
 			section_name = (const char *)name;
 		}
 		if (eo->shdr[i].sh_type == SHT_STRTAB && !strcmp (section_name, ".dynstr")) {
-			size_t shsz = eo->shdr[i].sh_size;
-			if (shsz > 0xffffff || !(eo->dynstr = (char*) calloc (shsz + 1, sizeof (char)))) {
+			const ut64 dyn_addr = eo->shdr[i].sh_offset;
+			const ut64 dyn_size = eo->shdr[i].sh_size;
+			size_t shsz = dyn_size;
+			if (dyn_addr >= eo->size) {
+				R_LOG_ERROR ("Invalid address for the dynamic strings");
+				return false;
+			}
+			ut64 left = eo->size - dyn_addr;
+			if (dyn_size > left) {
+				R_LOG_WARN ("Shrinking the dynstr size to file bounds");
+				shsz = left;
+			}
+			if (!(eo->dynstr = (char*) calloc (shsz + 1, sizeof (char)))) {
 				R_LOG_ERROR ("Cannot allocate 0x%x bytes for strings", (int)shsz);
 				return true;
 			}
