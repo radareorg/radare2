@@ -469,7 +469,7 @@ static int cmd_plugins(void *data, const char *input) {
 					if (item->arch) {
 						pj_ks (pj, "arch", item->arch);
 					}
-					pj_ks (pj, "endian", (item->endian = R_SYS_ENDIAN_BIG)? "big": "little");
+					pj_ks (pj, "endian", (item->endian == R_SYS_ENDIAN_BIG)? "big": "little");
 					if (item->cpus) {
 						pj_ka (pj, "cpus");
 						list = r_str_split_list (strdup (item->cpus), ",", 0);
