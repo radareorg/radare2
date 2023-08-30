@@ -71,7 +71,8 @@ js_r2papi.c:
 	@ls -l js_r2papi.mini.qjs
 	@ls -l js_r2papi.tiny.qjs
 	echo 'static const char *const js_r2papi_qjs = "" \\' > js_r2papi.c
-	r2 -fqcpcc js_r2papi.tiny.qjs | grep -v ^const >> js_r2papi.c
+	r2 -fqcpcc js_r2papi.mini.qjs | grep -v ^const >> js_r2papi.c
+# r2 -fqcpcc js_r2papi.tiny.qjs | grep -v ^const >> js_r2papi.c
 	rm -f js_r2papi.mini.qjs js_r2papi.tiny.qjs
 
 js_require.c:
