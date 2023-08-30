@@ -1,7 +1,7 @@
 // r2papi main file
 Object.defineProperty(G, "__esModule", { value: true });
 G.Base64 = G.NativePointer = G.R2Papi = G.Assembler = void 0;
-const shell_js_1 = G;//"./shell.js");
+var shell_js_1 = G;//"./shell.js");
 ;
 ;
 ;
@@ -10,8 +10,8 @@ const shell_js_1 = G;//"./shell.js");
 ;
 ;
 ;
-class Assembler {
-    constructor(myr2) {
+var Assembler = /** @class */ (function () {
+    function Assembler(myr2) {
         this.program = "";
         this.labels = {};
         this.endian = false;
@@ -21,153 +21,156 @@ class Assembler {
         this.program = '';
         this.labels = {};
     }
-    setProgramCounter(pc) {
+    Assembler.prototype.setProgramCounter = function (pc) {
         this.pc = pc;
-    }
-    setEndian(big) {
+    };
+    Assembler.prototype.setEndian = function (big) {
         this.endian = big;
-    }
-    toString() {
+    };
+    Assembler.prototype.toString = function () {
         return this.program;
-    }
-    append(x) {
+    };
+    Assembler.prototype.append = function (x) {
         this.pc += x.length / 2;
         this.program += x;
-    }
+    };
     // api
-    label(s) {
-        const pos = this.pc; // this.#program.length / 4;
+    Assembler.prototype.label = function (s) {
+        var pos = this.pc; // this.#program.length / 4;
         this.labels[s] = this.pc;
         return pos;
-    }
-    asm(s) {
-        let hex = this.r2.cmd('""pa ' + s).trim();
+    };
+    Assembler.prototype.asm = function (s) {
+        var hex = this.r2.cmd('""pa ' + s).trim();
         if (hex.length < 16) {
             // ok
         }
         else {
             hex = "____";
-            console.error("Invalid instruction: " + s);
+            // console.error("Invalid instruction: " + s);
         }
         this.append(hex);
-    }
-}
+    };
+    return Assembler;
+}());
 G.Assembler = Assembler;
-class R2Papi {
-    constructor(r2) {
+var R2Papi = /** @class */ (function () {
+    function R2Papi(r2) {
         this.r2 = r2;
     }
-    getBaseAddress() {
+    R2Papi.prototype.getBaseAddress = function () {
         return new NativePointer(this.cmd("e bin.baddr"));
-    }
-    jsonToTypescript(name, a) {
-        let str = `interface ${name} {\n`;
+    };
+    R2Papi.prototype.jsonToTypescript = function (name, a) {
+        var str = "interface ".concat(name, " {\n");
         if (a.length && a.length > 0) {
             a = a[0];
         }
-        for (let k of Object.keys(a)) {
-            const typ = typeof (a[k]);
-            const nam = k;
-            str += `    ${nam}: ${typ};\n`;
+        for (var _i = 0, _a = Object.keys(a); _i < _a.length; _i++) {
+            var k = _a[_i];
+            var typ = typeof (a[k]);
+            var nam = k;
+            str += "    ".concat(nam, ": ").concat(typ, ";\n");
         }
-        return `${str}}\n`;
-    }
-    setLogLevel(level) {
+        return "".concat(str, "}\n");
+    };
+    R2Papi.prototype.setLogLevel = function (level) {
         this.cmd('e log.level=' + level);
         return this;
-    }
+    };
     /**
      * should return the id for the new map using the given file descriptor
      */
-    newMap(fd, vaddr, size, paddr, perm, name = "") {
-        this.cmd(`om ${fd} ${vaddr} ${size} ${paddr} ${perm} ${name}`);
-    }
-    at(a) {
+    R2Papi.prototype.newMap = function (fd, vaddr, size, paddr, perm, name) {
+        if (name === void 0) { name = ""; }
+        this.cmd("om ".concat(fd, " ").concat(vaddr, " ").concat(size, " ").concat(paddr, " ").concat(perm, " ").concat(name));
+    };
+    R2Papi.prototype.at = function (a) {
         return new NativePointer(a);
-    }
-    getShell() {
+    };
+    R2Papi.prototype.getShell = function () {
         return new shell_js_1.R2PapiShell(this);
-    }
+    };
     // Radare/Frida
-    version() {
+    R2Papi.prototype.version = function () {
         return this.r2.cmd("?Vq").trim();
-    }
+    };
     // Process
-    platform() {
+    R2Papi.prototype.platform = function () {
         return this.r2.cmd("uname").trim();
-    }
-    arch() {
+    };
+    R2Papi.prototype.arch = function () {
         return this.r2.cmd("uname -a").trim();
-    }
-    bits() {
+    };
+    R2Papi.prototype.bits = function () {
         return this.r2.cmd("uname -b").trim();
-    }
-    id() {
+    };
+    R2Papi.prototype.id = function () {
         // getpid();
         return +this.r2.cmd("?vi:$p");
-    }
+    };
     // Other stuff
-    printAt(msg, x, y) {
+    R2Papi.prototype.printAt = function (msg, x, y) {
         // see pg, but pg is obrken :D
-    }
-    clearScreen() {
+    };
+    R2Papi.prototype.clearScreen = function () {
         this.r2.cmd("!clear");
         return this;
-    }
-    getConfig(key) {
+    };
+    R2Papi.prototype.getConfig = function (key) {
         return this.r2.call("e " + key).trim();
-    }
-    setConfig(key, val) {
+    };
+    R2Papi.prototype.setConfig = function (key, val) {
         this.r2.call("e " + key + "=" + val);
         return this;
-    }
-    getRegisters() {
+    };
+    R2Papi.prototype.getRegisters = function () {
         // this.r2.log("winrar" + JSON.stringify(JSON.parse(this.r2.cmd("drj")),null, 2) );
         return this.cmdj("drj");
-    }
-    resizeFile(newSize) {
-        this.cmd(`r ${newSize}`);
+    };
+    R2Papi.prototype.resizeFile = function (newSize) {
+        this.cmd("r ".concat(newSize));
         return this;
-    }
-    insertNullBytes(newSize, at) {
+    };
+    R2Papi.prototype.insertNullBytes = function (newSize, at) {
         if (at === undefined) {
             at = "$$";
         }
-        this.cmd(`r+${newSize}@${at}`);
+        this.cmd("r+".concat(newSize, "@").concat(at));
         return this;
-    }
-    removeBytes(newSize, at) {
+    };
+    R2Papi.prototype.removeBytes = function (newSize, at) {
         if (at === undefined) {
             at = "$$";
         }
-        this.cmd(`r-${newSize}@${at}`);
+        this.cmd("r-".concat(newSize, "@").concat(at));
         return this;
-    }
-    seek(addr) {
-        this.cmd(`s ${addr}`);
+    };
+    R2Papi.prototype.seek = function (addr) {
+        this.cmd("s ".concat(addr));
         return this;
-    }
-    currentSeek() {
+    };
+    R2Papi.prototype.currentSeek = function () {
         return new NativePointer('$$');
-    }
-    seekToRelativeOpcode(nth) {
-        this.cmd(`so ${nth}`);
+    };
+    R2Papi.prototype.seekToRelativeOpcode = function (nth) {
+        this.cmd("so ".concat(nth));
         return this.currentSeek();
-    }
-    getBlockSize() {
+    };
+    R2Papi.prototype.getBlockSize = function () {
         return +this.cmd("b");
-    }
-    setBlockSize(a) {
-        this.cmd(`b ${a}`);
+    };
+    R2Papi.prototype.setBlockSize = function (a) {
+        this.cmd("b ".concat(a));
         return this;
-    }
-    countFlags() {
+    };
+    R2Papi.prototype.countFlags = function () {
         return Number(this.cmd("f~?"));
-    }
-    countFunctions() {
+    };
+    R2Papi.prototype.countFunctions = function () {
         return Number(this.cmd("aflc"));
-    }
-    analyzeProgram(depth) {
+    };
+    R2Papi.prototype.analyzeProgram = function (depth) {
         if (depth === undefined) {
             depth = 0;
         }
@@ -186,110 +189,111 @@ class R2Papi {
                 break;
         }
         return this;
-    }
-    enumerateThreads() {
+    };
+    R2Papi.prototype.enumerateThreads = function () {
         // TODO: use apt/dpt to list threads at iterate over them to get the registers
-        const regs0 = this.cmdj("drj");
-        const thread0 = {
+        var regs0 = this.cmdj("drj");
+        var thread0 = {
             context: regs0,
             id: 0,
             state: "waiting",
             selected: true,
         };
         return [thread0];
-    }
-    currentThreadId() {
+    };
+    R2Papi.prototype.currentThreadId = function () {
         if (+this.cmd("e cfg.debug")) {
             return +this.cmd("dpt.");
         }
         return this.id();
-    }
-    setRegisters(obj) {
-        for (let r of Object.keys(obj)) {
-            const v = obj[r];
+    };
+    R2Papi.prototype.setRegisters = function (obj) {
+        for (var _i = 0, _a = Object.keys(obj); _i < _a.length; _i++) {
+            var r = _a[_i];
+            var v = obj[r];
             this.r2.cmd("dr " + r + "=" + v);
         }
-    }
-    hex(s) {
+    };
+    R2Papi.prototype.hex = function (s) {
         return this.r2.cmd("?v " + s).trim();
-    }
-    step() {
+    };
+    R2Papi.prototype.step = function () {
         this.r2.cmd("ds");
         return this;
-    }
-    stepOver() {
+    };
+    R2Papi.prototype.stepOver = function () {
         this.r2.cmd("dso");
         return this;
-    }
-    math(expr) {
+    };
+    R2Papi.prototype.math = function (expr) {
         return +this.r2.cmd("?v " + expr);
-    }
-    stepUntil(dst) {
-        this.cmd(`dsu ${dst}`);
-    }
-    enumerateXrefsTo(s) {
+    };
+    R2Papi.prototype.stepUntil = function (dst) {
+        this.cmd("dsu ".concat(dst));
+    };
+    R2Papi.prototype.enumerateXrefsTo = function (s) {
         return this.call("axtq " + s).trim().split(/\n/);
-    }
+    };
     // TODO: rename to searchXrefsTo ?
-    findXrefsTo(s, use_esil) {
+    R2Papi.prototype.findXrefsTo = function (s, use_esil) {
         if (use_esil) {
             this.call("/r " + s);
         }
         else {
             this.call("/re " + s);
         }
-    }
-    analyzeFunctionsFromCalls() {
+    };
+    R2Papi.prototype.analyzeFunctionsFromCalls = function () {
         this.call("aac");
         return this;
-    }
-    analyzeFunctionsWithPreludes() {
+    };
+    R2Papi.prototype.analyzeFunctionsWithPreludes = function () {
         this.call("aap");
         return this;
-    }
-    analyzeObjCReferences() {
+    };
+    R2Papi.prototype.analyzeObjCReferences = function () {
         this.cmd("aao");
         return this;
-    }
-    analyzeImports() {
+    };
+    R2Papi.prototype.analyzeImports = function () {
         this.cmd("af @ sym.imp.*");
         return this;
-    }
-    searchDisasm(s) {
-        const res = this.callj("/ad " + s);
+    };
+    R2Papi.prototype.searchDisasm = function (s) {
+        var res = this.callj("/ad " + s);
         return res;
-    }
-    searchString(s) {
-        const res = this.cmdj("/j " + s);
+    };
+    R2Papi.prototype.searchString = function (s) {
+        var res = this.cmdj("/j " + s);
         return res;
-    }
-    searchBytes(data) {
+    };
+    R2Papi.prototype.searchBytes = function (data) {
         function num2hex(data) {
             return (data & 0xff).toString(16);
         }
-        const s = data.map(num2hex).join('');
-        const res = this.cmdj("/xj " + s);
+        var s = data.map(num2hex).join('');
+        var res = this.cmdj("/xj " + s);
         return res;
-    }
-    binInfo() {
+    };
+    R2Papi.prototype.binInfo = function () {
         try {
             return this.cmdj("ij~{bin}");
         }
         catch (e) {
             return {};
         }
-    }
+    };
     // TODO: take a BinFile as argument instead of number
-    selectBinary(id) {
-        this.call(`ob ${id}`);
-    }
-    openFile(name) {
-        this.call(`o ${name}`);
-    }
-    currentFile(name) {
+    R2Papi.prototype.selectBinary = function (id) {
+        this.call("ob ".concat(id));
+    };
+    R2Papi.prototype.openFile = function (name) {
+        this.call("o ".concat(name));
+    };
+    R2Papi.prototype.currentFile = function (name) {
         return this.call('o.').trim();
-    }
-    enumeratePlugins(type) {
+    };
+    R2Papi.prototype.enumeratePlugins = function (type) {
         switch (type) {
             case "bin":
                 return this.callj("Lij");
@@ -305,80 +309,81 @@ class R2Papi {
                 return this.callj("Llj");
         }
         return [];
-    }
-    enumerateModules() {
+    };
+    R2Papi.prototype.enumerateModules = function () {
         return this.callj("dmmj");
-    }
-    enumerateFiles() {
+    };
+    R2Papi.prototype.enumerateFiles = function () {
         return this.callj("oj");
-    }
-    enumerateBinaries() {
+    };
+    R2Papi.prototype.enumerateBinaries = function () {
         return this.callj("obj");
-    }
-    enumerateMaps() {
+    };
+    R2Papi.prototype.enumerateMaps = function () {
         return this.callj("omj");
-    }
-    enumerateSymbols() {
+    };
+    R2Papi.prototype.enumerateSymbols = function () {
         return this.callj("isj");
-    }
-    enumerateExports() {
+    };
+    R2Papi.prototype.enumerateExports = function () {
         return this.callj("iEj");
-    }
-    enumerateImports() {
+    };
+    R2Papi.prototype.enumerateImports = function () {
         return this.callj("iij");
-    }
-    enumerateLibraries() {
+    };
+    R2Papi.prototype.enumerateLibraries = function () {
         return this.callj("ilj");
-    }
-    enumerateSections() {
+    };
+    R2Papi.prototype.enumerateSections = function () {
         return this.callj("iSj");
-    }
-    enumerateSegments() {
+    };
+    R2Papi.prototype.enumerateSegments = function () {
         return this.callj("iSSj");
-    }
-    enumerateEntrypoints() {
+    };
+    R2Papi.prototype.enumerateEntrypoints = function () {
         return this.callj("iej");
-    }
-    enumerateRelocations() {
+    };
+    R2Papi.prototype.enumerateRelocations = function () {
         return this.callj("irj");
-    }
-    enumerateFunctions() {
+    };
+    R2Papi.prototype.enumerateFunctions = function () {
         return this.cmdj("aflj");
-    }
-    enumerateFlags() {
+    };
+    R2Papi.prototype.enumerateFlags = function () {
         return this.cmdj("fj");
-    }
-    skip() {
+    };
+    R2Papi.prototype.skip = function () {
         this.r2.cmd("dss");
-    }
-    ptr(s) {
+    };
+    R2Papi.prototype.ptr = function (s) {
         return new NativePointer(s, this);
-    }
-    call(s) {
+    };
+    R2Papi.prototype.call = function (s) {
         return this.r2.call(s);
-    }
-    callj(s) {
+    };
+    R2Papi.prototype.callj = function (s) {
         return JSON.parse(this.call(s));
-    }
-    cmd(s) {
+    };
+    R2Papi.prototype.cmd = function (s) {
         return this.r2.cmd(s);
-    }
-    cmdj(s) {
+    };
+    R2Papi.prototype.cmdj = function (s) {
         return JSON.parse(this.cmd(s));
-    }
-    log(s) {
+    };
+    R2Papi.prototype.log = function (s) {
         return this.r2.log(s);
-    }
-    clippy(msg) {
+    };
+    R2Papi.prototype.clippy = function (msg) {
         this.r2.log(this.r2.cmd("?E " + msg));
-    }
-    ascii(msg) {
+    };
+    R2Papi.prototype.ascii = function (msg) {
         this.r2.log(this.r2.cmd("?ea " + msg));
-    }
-}
+    };
+    return R2Papi;
+}());
 G.R2Papi = R2Papi;
-class NativePointer {
-    constructor(s, api) {
+var NativePointer = /** @class */ (function () {
+    function NativePointer(s, api) {
         if (api === undefined) {
             this.api = G.R;
         }
@@ -388,248 +393,253 @@ class NativePointer {
         // this.api.r2.log("NP " + s);
         this.addr = ("" + s).trim();
     }
-    hexdump(length) {
-        let len = (length === undefined) ? "" : "" + length;
-        return this.api.cmd(`x${len}@${this.addr}`);
-    }
-    functionGraph(format) {
+    NativePointer.prototype.hexdump = function (length) {
+        var len = (length === undefined) ? "" : "" + length;
+        return this.api.cmd("x".concat(len, "@").concat(this.addr));
+    };
+    NativePointer.prototype.functionGraph = function (format) {
         if (format === "dot") {
-            return this.api.cmd(`agfd@ ${this.addr}`);
+            return this.api.cmd("agfd@ ".concat(this.addr));
         }
         if (format === "json") {
-            return this.api.cmd(`agfj@${this.addr}`);
+            return this.api.cmd("agfj@".concat(this.addr));
         }
         if (format === "mermaid") {
-            return this.api.cmd(`agfm@${this.addr}`);
+            return this.api.cmd("agfm@".concat(this.addr));
         }
-        return this.api.cmd(`agf@${this.addr}`);
-    }
-    readByteArray(len) {
-        return JSON.parse(this.api.cmd(`p8j ${len}@${this.addr}`));
-    }
-    readHexString(len) {
-        return this.api.cmd(`p8 ${len}@${this.addr}`).trim();
-    }
-    and(a) {
-        this.addr = this.api.call(`?v ${this.addr} & ${a}`).trim();
+        return this.api.cmd("agf@".concat(this.addr));
+    };
+    NativePointer.prototype.readByteArray = function (len) {
+        return JSON.parse(this.api.cmd("p8j ".concat(len, "@").concat(this.addr)));
+    };
+    NativePointer.prototype.readHexString = function (len) {
+        return this.api.cmd("p8 ".concat(len, "@").concat(this.addr)).trim();
+    };
+    NativePointer.prototype.and = function (a) {
+        this.addr = this.api.call("?v ".concat(this.addr, " & ").concat(a)).trim();
         return this;
-    }
-    or(a) {
-        this.addr = this.api.call(`?v ${this.addr} | ${a}`).trim();
+    };
+    NativePointer.prototype.or = function (a) {
+        this.addr = this.api.call("?v ".concat(this.addr, " | ").concat(a)).trim();
         return this;
-    }
-    add(a) {
-        this.addr = this.api.call(`?v ${this.addr}+${a}`).trim();
+    };
+    NativePointer.prototype.add = function (a) {
+        this.addr = this.api.call("?v ".concat(this.addr, "+").concat(a)).trim();
         return this;
-    }
-    sub(a) {
-        this.addr = this.api.call(`?v ${this.addr}-${a}`).trim();
+    };
+    NativePointer.prototype.sub = function (a) {
+        this.addr = this.api.call("?v ".concat(this.addr, "-").concat(a)).trim();
         return this;
-    }
-    writeByteArray(data) {
+    };
+    NativePointer.prototype.writeByteArray = function (data) {
         this.api.cmd("wx " + data.join(""));
         return this;
-    }
-    writeAssembly(instruction) {
-        this.api.cmd(`\"wa ${instruction} @ ${this.addr}`);
+    };
+    NativePointer.prototype.writeAssembly = function (instruction) {
+        this.api.cmd("\"wa ".concat(instruction, " @ ").concat(this.addr));
         return this;
-    }
-    writeCString(s) {
+    };
+    NativePointer.prototype.writeCString = function (s) {
         this.api.call("w " + s);
         return this;
-    }
-    isNull() {
+    };
+    NativePointer.prototype.isNull = function () {
         return +this.addr === 0;
-    }
-    compare(a) {
+    };
+    NativePointer.prototype.compare = function (a) {
         if (typeof a === "string" || typeof a === "number") {
             a = new NativePointer(a);
         }
         return a.addr === this.addr;
-    }
-    pointsToNull() {
+    };
+    NativePointer.prototype.pointsToNull = function () {
         return this.readPointer().compare(0);
-    }
-    toString() {
+    };
+    NativePointer.prototype.toString = function () {
         return this.addr.trim();
-    }
-    writePointer(p) {
-        const cmd = (+this.api.getConfig("asm.bits") === 64) ? "wv8" : "wv4";
-        this.api.cmd(`${cmd} ${p}@${this}`);
+    };
+    NativePointer.prototype.writePointer = function (p) {
+        var cmd = (+this.api.getConfig("asm.bits") === 64) ? "wv8" : "wv4";
+        this.api.cmd("".concat(cmd, " ").concat(p, "@").concat(this));
         // 5.8.2 this.call("wvp " + p.addr);
-    }
-    readPointer() {
+    };
+    NativePointer.prototype.readPointer = function () {
         if (+this.api.getConfig("asm.bits") === 64) {
             return new NativePointer(this.api.call("pv8@" + this.addr));
         }
         else {
             return new NativePointer(this.api.call("pv4@" + this.addr));
         }
-    }
-    readU8() {
-        return +this.api.cmd(`pv1@"${this.addr}`);
-    }
-    readU16() {
-        return +this.api.cmd(`pv2@"${this.addr}`);
-    }
-    readU32() {
-        return +this.api.cmd(`pv4@"${this.addr}`);
-    }
-    readU64() {
+    };
+    NativePointer.prototype.readU8 = function () {
+        return +this.api.cmd("pv1@\"".concat(this.addr));
+    };
+    NativePointer.prototype.readU16 = function () {
+        return +this.api.cmd("pv2@\"".concat(this.addr));
+    };
+    NativePointer.prototype.readU32 = function () {
+        return this.api.cmd("pv4@\"".concat(this.addr));
+    };
+    NativePointer.prototype.readU64 = function () {
         // XXX: use bignum or 
-        return +this.api.cmd(`pv8@"${this.addr}`);
-    }
-    writeInt(n) {
-        return +this.api.cmd(`wv4 ${n}@${this.addr}`);
-    }
-    writeU8(n) {
-        this.api.cmd(`wv1 ${n}@${this.addr}`);
+        return +this.api.cmd("pv8@\"".concat(this.addr));
+    };
+    NativePointer.prototype.writeInt = function (n) {
+        return +this.api.cmd("wv4 ".concat(n, "@").concat(this.addr));
+    };
+    NativePointer.prototype.writeU8 = function (n) {
+        this.api.cmd("wv1 ".concat(n, "@").concat(this.addr));
         return true;
-    }
-    writeU16(n) {
-        this.api.cmd(`wv2 ${n}@${this.addr}`);
+    };
+    NativePointer.prototype.writeU16 = function (n) {
+        this.api.cmd("wv2 ".concat(n, "@").concat(this.addr));
         return true;
-    }
-    writeU32(n) {
-        this.api.cmd(`wv4 ${n}@${this.addr}`);
+    };
+    NativePointer.prototype.writeU32 = function (n) {
+        this.api.cmd("wv4 ".concat(n, "@").concat(this.addr));
         return true;
-    }
-    writeU64(n) {
-        this.api.cmd(`wv8 ${n}@${this.addr}`);
+    };
+    NativePointer.prototype.writeU64 = function (n) {
+        this.api.cmd("wv8 ".concat(n, "@").concat(this.addr));
         return true;
-    }
-    readInt() {
-        return +this.api.cmd(`pv4@"${this.addr}`);
-    }
-    readCString() {
-        return JSON.parse(this.api.cmd(`psj@${this.addr}`)).string;
-    }
-    instruction() {
-        const op = this.api.cmdj(`aoj@${this.addr}`)[0];
+    };
+    NativePointer.prototype.readInt = function () {
+        return +this.api.cmd("pv4@\"".concat(this.addr));
+    };
+    NativePointer.prototype.readCString = function () {
+        return JSON.parse(this.api.cmd("psj@".concat(this.addr))).string;
+    };
+    NativePointer.prototype.instruction = function () {
+        var op = this.api.cmdj("aoj@".concat(this.addr))[0];
         return op;
-    }
-    disassemble(length) {
-        let len = (length === undefined) ? "" : "" + length;
-        return this.api.cmd(`pd ${len}@${this.addr}`);
-    }
-    analyzeFunction() {
+    };
+    NativePointer.prototype.disassemble = function (length) {
+        var len = (length === undefined) ? "" : "" + length;
+        return this.api.cmd("pd ".concat(len, "@").concat(this.addr));
+    };
+    NativePointer.prototype.analyzeFunction = function () {
         this.api.cmd("af@" + this.addr);
         return this;
-    }
-    analyzeFunctionRecursively() {
+    };
+    NativePointer.prototype.analyzeFunctionRecursively = function () {
         this.api.cmd("afr@" + this.addr);
         return this;
-    }
-    name() {
+    };
+    NativePointer.prototype.name = function () {
         return this.api.cmd("fd " + this.addr).trim();
-    }
-    basicBlock() {
-        const bb = this.api.cmdj("abj@" + this.addr);
+    };
+    NativePointer.prototype.basicBlock = function () {
+        var bb = this.api.cmdj("abj@" + this.addr);
         return bb;
-    }
-    functionBasicBlocks() {
+    };
+    NativePointer.prototype.functionBasicBlocks = function () {
         return this.api.cmdj("afbj@" + this.addr);
-    }
-    xrefs() {
+    };
+    NativePointer.prototype.xrefs = function () {
         return this.api.cmdj("axtj@" + this.addr);
-    }
-}
+    };
+    return NativePointer;
+}());
 G.NativePointer = NativePointer;
-class Base64 {
-    static encode(x) {
+var Base64 = /** @class */ (function () {
+    function Base64() {
+    }
+    Base64.encode = function (x) {
         return (0, G.b64)(x);
-    }
-    static decode(x) {
+    };
+    Base64.decode = function (x) {
         return (0, G.b64)(x, true);
-    }
-}
+    };
+    return Base64;
+}());
 G.Base64 = Base64;
 // shell utilities on top of r2pipe
 Object.defineProperty(G, "__esModule", { value: true });
 G.R2PapiShell = void 0;
-class R2PapiShell {
-    constructor(papi) {
+var R2PapiShell = /** @class */ (function () {
+    function R2PapiShell(papi) {
         this.rp = papi;
     }
     /**
     * Create a new directory in the host system, if the opational recursive argument is set to
     * true it will create all the necessary subdirectories instead of just the specified one.
     */
-    mkdir(file, recursive) {
+    R2PapiShell.prototype.mkdir = function (file, recursive) {
         if (recursive === true) {
-            this.rp.call(`mkdir -p ${file}`);
+            this.rp.call("mkdir -p ".concat(file));
         }
         else {
-            this.rp.call(`mkdir ${file}`);
+            this.rp.call("mkdir ".concat(file));
         }
         return true;
-    }
+    };
     /**
     * Deletes a file
     */
-    unlink(file) {
-        this.rp.call(`rm ${file}`);
+    R2PapiShell.prototype.unlink = function (file) {
+        this.rp.call("rm ".concat(file));
         return true;
-    }
+    };
     /**
     * Change current directory
     */
-    chdir(path) {
-        this.rp.call(`cd ${path}`);
+    R2PapiShell.prototype.chdir = function (path) {
+        this.rp.call("cd ".concat(path));
         return true;
-    }
-    ls() {
-        return this.rp.call(`ls -q`).trim().split('\n');
-    }
-    fileExists(path) {
+    };
+    R2PapiShell.prototype.ls = function () {
+        return this.rp.call("ls -q").trim().split('\n');
+    };
+    R2PapiShell.prototype.fileExists = function (path) {
         // TODO
         return false;
-    }
+    };
     /**
     * Opens an URL or application
     * calls `xdg-open` on linux, `start` on windows, `open` on Mac
     */
-    open(arg) {
-        this.rp.call(`open ${arg}`);
-    }
-    system(cmd) {
-        this.rp.call(`!${cmd}`);
+    R2PapiShell.prototype.open = function (arg) {
+        this.rp.call("open ".concat(arg));
+    };
+    R2PapiShell.prototype.system = function (cmd) {
+        this.rp.call("!".concat(cmd));
         return 0;
-    }
-    run(path) {
-        this.rp.call(`rm ${path}`);
+    };
+    R2PapiShell.prototype.run = function (path) {
+        this.rp.call("rm ".concat(path));
         return 0;
-    }
-    mount(fstype, path) {
-        this.rp.call(`m ${fstype} ${path}`);
+    };
+    R2PapiShell.prototype.mount = function (fstype, path) {
+        this.rp.call("m ".concat(fstype, " ").concat(path));
         return true;
-    }
-    umount(path) {
-        this.rp.call(`m-${path}`);
-    }
-    chdir2(path) {
+    };
+    R2PapiShell.prototype.umount = function (path) {
+        this.rp.call("m-".concat(path));
+    };
+    R2PapiShell.prototype.chdir2 = function (path) {
         if (path === undefined) {
             path = "/";
         }
-        this.rp.call(`mdq ${path}`);
+        this.rp.call("mdq ".concat(path));
         return true;
-    }
-    ls2(path) {
+    };
+    R2PapiShell.prototype.ls2 = function (path) {
         if (path === undefined) {
             path = "/";
         }
-        return this.rp.call(`mdq ${path}`).trim().split('\n');
-    }
-    enumerateMountpoints() {
+        return this.rp.call("mdq ".concat(path)).trim().split('\n');
+    };
+    R2PapiShell.prototype.enumerateMountpoints = function () {
         return this.rp.cmdj("mlj");
-    }
-    isSymlink(file) {
+    };
+    R2PapiShell.prototype.isSymlink = function (file) {
         return false;
-    }
-    isDirectory(file) {
+    };
+    R2PapiShell.prototype.isDirectory = function (file) {
         return false;
-    }
-}
+    };
+    return R2PapiShell;
+}());
 G.R2PapiShell = R2PapiShell;
 Object.defineProperty(G, "__esModule", { value: true });
 G.EsilParser = G.EsilNode = G.EsilToken = void 0;
