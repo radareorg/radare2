@@ -566,6 +566,7 @@ static void register_helpers(JSContext *ctx) {
 	} else {
 		eval (ctx, "R=r2;");
 	}
+	eval (ctx, "function ptr(x) { return new NativePointer(x); }");
 }
 
 static JSContext *JS_NewCustomContext(JSRuntime *rt) {
