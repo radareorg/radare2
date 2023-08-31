@@ -42,6 +42,7 @@ r_arch_sources = [
   'p/m68k_gnu/m68k-opc.c',
   'p/m68k_cs/plugin.c',
   'p/m680x_cs/plugin.c',
+  'p/nds32/plugin.c',
   'p/arm/gnu/floatformat.c',
   'p/tms320/plugin.c',
   'p/tms320/tms320_dasm.c',

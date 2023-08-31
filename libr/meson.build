@@ -185,6 +185,7 @@ if no_user_plugins
       'arm_gnu',
       'z80',
       'pdp11',
+      'nds32',
       'ppc_gnu',
       'm68k_gnu',
 # 'hppa_gnu',
