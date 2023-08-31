@@ -570,7 +570,7 @@ void cmd_ic_add(RCore *core, const char *input) {
 			}
 		}
 		if (!found) {
-			RBinSymbol *sym = r_bin_symbol_new (method_name, pa, va); 
+			RBinSymbol *sym = r_bin_symbol_new (method_name, pa, va);
 			if (!klass->methods) {
 				klass->methods = r_list_new ();
 			}
