@@ -1023,8 +1023,13 @@ print_insn32_fpu (bfd_vma pc ATTRIBUTE_UNUSED, disassemble_info *info,
 	      rt, gpr_map[ra], gpr_map[rb], sv);
       return;
     case 0xc:			/* fd2 */
+      if (mask_sub_op >= 0 && mask_sub_op < 8) {
       func (stream, "%s\t$fs%d, $fd%d, $fd%d",
 	    mnemonic_fd2_cmp[mask_sub_op], rt, ra, rb);
+      } else {
+      func (stream, "%s%d\t$fs%d, $fd%d, $fd%d",
+	    "fd2cmp", mask_sub_op, rt, ra, rb);
+      }
       return;
     }
 }
