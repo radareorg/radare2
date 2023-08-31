@@ -142,10 +142,18 @@ static bool decode(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
 		r_str_replace_ch (op->mnemonic, '\t', ' ', true);
 	}
 	int left = R_MIN (len, op->size);
-	if (left < 1 || !*op->mnemonic || (left > 0 && !memcmp (buf, "\xff\xff\xff\xff\xff\xff\xff\xff", left))) {
+	if (left < 1 || (left > 0 && !memcmp (buf, "\xff\xff\xff\xff\xff\xff\xff\xff", left))) {
 		free (op->mnemonic);
 		op->type = R_ANAL_OP_TYPE_ILL;
 		op->mnemonic = strdup ("invalid");
+		r_strbuf_free (sb);
+		return true;
+	}
+	if (*op->mnemonic == 0) {
+		// probably instructions not implemented
+		free (op->mnemonic);
+		op->type = R_ANAL_OP_TYPE_NOP;
+		op->mnemonic = strdup ("invalid?");
 		r_strbuf_free (sb);
 		return true;
 	}
@@ -204,7 +212,7 @@ static bool decode(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
 		op->type = R_ANAL_OP_TYPE_RET;
 	} else if (is_any ("addi", "addri")) {
 		op->type = R_ANAL_OP_TYPE_ADD;
-	} else if (is_any ("subi", "subri")) {
+	} else if (is_any ("subi", "subri", "sub")) {
 		op->type = R_ANAL_OP_TYPE_SUB;
 	} else if (is_any ("xori")) {
 		op->type = R_ANAL_OP_TYPE_XOR;
@@ -220,8 +228,12 @@ static bool decode(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
 		op->type = R_ANAL_OP_TYPE_STORE;
 	} else if (is_any ("ifcall")) {
 		op->type = R_ANAL_OP_TYPE_CCALL;
-	} else if (is_any ("bgezal ", "bltzal ")){
-		op->type = R_ANAL_OP_TYPE_CJMP;
+		op->jump = arg? r_num_get (NULL, arg): op->addr;
+		op->fail = addr + op->size;
+	} else if (is_any ("bl")) { // "bgezal ", "bltzal ")){
+		op->type = R_ANAL_OP_TYPE_CALL;
+		op->jump = arg? r_num_get (NULL, arg): op->addr;
+		op->fail = addr + op->size;
 	} else if (is_any ("beqz", "bnes", "beq", "blez", "bgez", "ble", "bltz", "bgtz", "bnez", "bne ")) {
 		op->type = R_ANAL_OP_TYPE_CJMP;
 		// op->jump = EXTRACT_SBTYPE_IMM (word) + addr;
