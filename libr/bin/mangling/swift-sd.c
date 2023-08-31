@@ -240,10 +240,15 @@ R_API char *r_bin_demangle_swift(const char *s, bool syscmd, bool trylib) {
 			return res;
 		}
 	}
+	RStrBuf *out = r_strbuf_new (NULL);
 
 	const char *tail = NULL;
-	if (p[0]) {
+	if (p[0]) { // p0 == '_'
 		switch (p[1]) {
+		case 'T':
+			r_strbuf_append (out, "Swift.");
+			// type like 'SwiftObject'
+			break;
 		case 'W':
 			switch (p[2]) {
 			case 'a':
@@ -280,6 +285,7 @@ R_API char *r_bin_demangle_swift(const char *s, bool syscmd, bool trylib) {
 			break;
 		case 'I': // interfaces
 			/* TODO */
+			r_strbuf_free (out);
 			return NULL; // Fix __TIFF demangling
 		}
 	}
@@ -294,11 +300,10 @@ R_API char *r_bin_demangle_swift(const char *s, bool syscmd, bool trylib) {
 	// XXX
 	q = getnum (p, NULL);
 
-	RStrBuf *out = r_strbuf_new (NULL);
 	// r_return_val_if_fail (r_strbuf_reserve (out, 1024), NULL);
 
 	// _TF or __TW
-	if (IS_DIGIT (*p) || *p == 'v' || *p == 'I' || *p == 'o' || *p == 'T' || *p == 'V' || *p == 'M' || *p == 'C' || *p == 'F' || *p == 'W') {
+	if (IS_DIGIT (*p) || *p == 'v' || *p == 't' || *p == 'I' || *p == 'o' || *p == 'T' || *p == 'V' || *p == 'M' || *p == 'C' || *p == 'F' || *p == 'W') {
 		if (r_str_startswith (p + 1, "SS")) {
 			r_strbuf_append (out, "Swift.String.init(");
 			p += 3;
