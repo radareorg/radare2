@@ -527,14 +527,14 @@ static RCoreHelpMessage help_msg_pt = {
 };
 
 static RCoreHelpMessage help_msg_pv = {
-	"Usage: pv[1248z][dj]", "", "Print value(s) given size and endian (d for decimal, j for json)",
+	"Usage: pv[1248z][udj]", "", "Print value(s) given size and endian (u for unsigned, d for signed decimal, j for json)",
 	"pv", "", "print bytes based on asm.bits",
-	"pv1", "", "print 1 byte in memory",
-	"pv2", "", "print 2 bytes in memory",
-	"pv4", "", "print 4 bytes in memory",
-	"pv8", "", "print 8 bytes in memory",
-	"pvp", "", "print 4 or 8 bytes depending on asm.bits",
-	"pve", " [1234] ([bsize])", "print value with any endian (1234, ",
+	"pv1", "[udj]", "print 1 byte in memory",
+	"pv2", "[udj]", "print 2 bytes in memory",
+	"pv4", "[udj]", "print 4 bytes in memory",
+	"pv8", "[udj]", "print 8 bytes in memory",
+	"pvp", "[udj]", "print 4 or 8 bytes depending on asm.bits",
+	"pve", " [1234] ([bsize])", "print value with any endian (reorder bytes with the 1234 order)",
 	"pvz", "", "print value as string (alias for ps)",
 	NULL
 };
@@ -3530,8 +3530,6 @@ static void cmd_print_pv(RCore *core, const char *input, bool useBytes) {
 			r_core_cmdf (core, "ps");
 			break;
 		}
-	/* fallthrough */
-	// case ' ': // "pv "
 		for (i = 0; stack[i]; i++) {
 			if (!strcmp (input + 1, stack[i])) {
 				if (type == 'z') {
@@ -3567,7 +3565,8 @@ static void cmd_print_pv(RCore *core, const char *input, bool useBytes) {
 		}
 		break;
 		  }
-	case 'd': // "pvd"
+	case 'u': // "pvu" // unsigned
+	case 'd': // "pvd" // signed
 		do {
 			repeat--;
 			const int p_bits = core->rasm->config->bits / 8;
@@ -3598,17 +3597,29 @@ static void cmd_print_pv(RCore *core, const char *input, bool useBytes) {
 				break;
 			case 2:
 				v = r_read_ble16 (block, be);
-				r_cons_printf ("%" PFMT64d "\n", v);
+				if (*input == 'u') {
+					r_cons_printf ("%u\n", (unsigned short)v);
+				} else {
+					r_cons_printf ("%d\n", (short)v);
+				}
 				block += 2;
 				break;
 			case 4:
 				v = r_read_ble32 (block, be);
-				r_cons_printf ("%" PFMT64d "\n", v);
+				if (*input == 'u') {
+					r_cons_printf ("%u\n", (ut32)v);
+				} else {
+					r_cons_printf ("%d\n", (st32)v);
+				}
 				block += 4;
 				break;
 			case 8:
 				v = r_read_ble64 (block, be);
-				r_cons_printf ("%" PFMT64d "\n", v);
+				if (*input == 'u') {
+					r_cons_printf ("%" PFMT64u "\n", (ut64)v);
+				} else {
+					r_cons_printf ("%" PFMT64d "\n", (st64)v);
+				}
 				block += 8;
 				break;
 			default:
