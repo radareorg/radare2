@@ -3806,7 +3806,14 @@ static int bin_classes(RCore *r, PJ *pj, int mode) {
 				c->addr, at_min, at_max, (at_max - at_min), cl, c->index, c->name);
 			if (c->super) {
 				char *csv = r_str_list_join (c->super, ", ");
-				r_cons_printf (" :: %s\n", csv);
+				if (r_str_startswith (csv, "_T")) {
+					R_LOG_WARN ("undemangled symbol, maybe good to fix in rbin instead of core");
+					char *dsuper = r_bin_demangle (r->bin->cur, csv, csv, 0, false);
+					r_cons_printf (" :: %s\n", dsuper);
+					free (dsuper);
+				} else {
+					r_cons_printf (" :: %s\n", csv);
+				}
 				free (csv);
 			} else {
 				r_cons_newline ();

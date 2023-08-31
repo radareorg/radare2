@@ -1188,7 +1188,17 @@ void MACH0_(get_class_t)(mach0_ut p, RBinFile *bf, RBinClass *klass, bool dupe, 
 			if (r_str_startswith (target_class_name, _objc_class)) {
 				target_class_name += _objc_class_len;
 				klass->super = r_list_newf (free);
-				r_list_append (klass->super, strdup (target_class_name));
+				if (r_str_startswith (target_class_name, "_T")) {
+					char *dsuper = r_bin_demangle (bf, "swift", target_class_name, 0, false);
+					if (!dsuper || !strcmp (dsuper, target_class_name)) {
+						R_LOG_DEBUG ("Failed to demangle");
+						r_list_append (klass->super, strdup (target_class_name));
+					} else {
+						r_list_append (klass->super, dsuper);
+					}
+				} else {
+					r_list_append (klass->super, strdup (target_class_name));
+				}
 			}
 		}
 	}
