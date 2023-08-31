@@ -1172,8 +1172,11 @@ void MACH0_(get_class_t)(mach0_ut p, RBinFile *bf, RBinClass *klass, bool dupe, 
 
 	klass->addr = c.isa;
 	if (c.superclass) {
-		klass->super = r_list_newf (free);
-		r_list_append (klass->super, get_class_name (c.superclass, bf));
+		const char *klass_name = get_class_name (c.superclass, bf);
+		if (klass_name) {
+			klass->super = r_list_newf (free);
+			r_list_append (klass->super, (void *)klass_name);
+		}
 	} else if (relocs) {
 		struct reloc_t reloc_at_class_addr;
 		reloc_at_class_addr.addr = p + sizeof (mach0_ut);
@@ -1304,7 +1307,7 @@ static inline HtUP *_load_symbol_by_vaddr_hashtable(RBinFile *bf) {
 static void parse_type(RList *list, RBinFile *bf, SwiftType st, HtUP *symbols_ht) {
 	char *otypename = readstr (bf, st.name_addr);
 	if (!otypename) {
-		R_LOG_DEBUG("swift-type-parse missing name");
+		R_LOG_DEBUG ("swift-type-parse missing name");
 		return;
 	}
 	char *typename = r_name_filter_dup (otypename);
@@ -1620,6 +1623,7 @@ static RList *MACH0_(parse_categories)(RBinFile *bf, const RSkipList *relocs, ob
 		if (par) {
 			size_t idx = par - klass->name;
 			char *super = strdup (klass->name);
+			// TODO: demangle name!!
 			super[idx++] = 0;
 			char *cpar = strchr (super + idx, ')');
 			if (cpar) {
