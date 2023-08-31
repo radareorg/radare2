@@ -1,8 +1,6 @@
+/* radare - MIT - Copyright 2023 - pancake, decaduto */
 #include <r_arch.h>
-#include <r_types.h>
 #include <r_lib.h>
-#include <r_cmd.h>
-#include <r_core.h>
 
 #define _GNU_SOURCE
 #include <stdio.h>
@@ -54,7 +52,7 @@ static int info(RArchSession *as, ut32 q) {
 }
 
 #if 0
-static inline unsigned int nds32_insn_length(insn_t insn){
+static inline unsigned int nds32_insn_length(insn_t insn) {
 	return 4;
 }
 
@@ -164,7 +162,6 @@ static bool decode(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
 		r_strbuf_free (sb);
 		return true;
 	}
-	
 	char *name = strdup (op->mnemonic);
 #if 0
 	PluginData *pd = as->data;
@@ -230,7 +227,7 @@ static bool decode(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
 		op->type = R_ANAL_OP_TYPE_CCALL;
 		op->jump = arg? r_num_get (NULL, arg): op->addr;
 		op->fail = addr + op->size;
-	} else if (is_any ("bl")) { // "bgezal ", "bltzal ")){
+	} else if (is_any ("bl")) { // "bgezal ", "bltzal ")) {
 		op->type = R_ANAL_OP_TYPE_CALL;
 		op->jump = arg? r_num_get (NULL, arg): op->addr;
 		op->fail = addr + op->size;

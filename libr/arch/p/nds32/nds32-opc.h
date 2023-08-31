@@ -155,6 +155,8 @@ static const field_t operand_fields[] =
 #define RB(r)			(r << 10)
 #define RA5(r)			(r)
 
+#if 0
+// unused
 static struct nds32_opcode nds32_opcodes[] =
 {
   /* ALU1 */
@@ -660,6 +662,7 @@ static struct nds32_opcode nds32_opcodes[] =
      Some instruction need special constrain, e.g., movpi45,
 	  break16, ex9.it.  */
 };
+#endif
 
 static const keyword_t keyword_gpr[] =
 {
