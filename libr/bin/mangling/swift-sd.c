@@ -195,6 +195,7 @@ static bool looks_valid(char p) {
 	case 'I':
 	case 'M':
 	case 'o':
+	case 's':
 	case 't':
 	case 'T':
 	case 'v':
@@ -241,6 +242,9 @@ static char *get_mangled_tail(const char **pp, RStrBuf *out) {
 			return "..extension";
 		}
 		break;
+	case 's':
+		// nothing here
+		break;
 	case 'M':
 		switch (p[2]) {
 		case 'a':
@@ -274,12 +278,25 @@ static char *my_swift_demangler(const char *s) {
 	const char *q_end = p + strlen (p);
 	const char *q_start = p;
 
+	bool trick = r_str_startswith (p, "s");
 	RStrBuf *out = r_strbuf_new (NULL);
 	const char *tail = get_mangled_tail (&p, out);
-	p = str_seek (p, tail? 1: (p[0] && p[1])? 2: 0);
+	// workaround with tests, need proper testing when format is clarified
+	if (trick) {
+		if (!isdigit (p[1])) {
+			return NULL;
+		}
+		if (p[1] && p[2]) {
+			int len = atoi (p + 1);
+			if (len > strlen (p + 2)) {
+				return NULL;
+			}
+		}
+		// do nothing
+	} else {
+		p = str_seek (p, tail? 1: (p[0] && p[1])? 2: 0);
+	}
 	q = getnum (p, NULL);
-
-	// r_return_val_if_fail (r_strbuf_reserve (out, 1024), NULL);
 
 	// _TF or __TW
 	if (looks_valid (*p)) {
@@ -553,6 +570,10 @@ static char *my_swift_demangler(const char *s) {
 		r_strbuf_prepend (out, "dynamic key ");
 	} else if (r_str_endswith (s, "FTI"))  {
 		r_strbuf_prepend (out, "dynamic thunk ");
+	} else if (r_str_endswith (s, "ivs"))  {
+		r_strbuf_prepend (out, "setter ");
+	} else if (r_str_endswith (s, "ivg"))  {
+		r_strbuf_prepend (out, "getter ");
 	}
 
 	if (r_strbuf_length (out) > 0) {
@@ -585,7 +606,8 @@ R_API char *r_bin_demangle_swift(const char *s, bool syscmd, bool trylib) {
 #endif
 	s = str_removeprefix (s, "imp.");
 	s = str_removeprefix (s, "reloc.");
-	s = str_removeprefix (s, "__");
+	// check if string doesnt start with __ then return
+	s = str_removeprefix (s, "__"); // NOOO
 
 	if (trylib) {
 		char *res = swift_demangle_lib (s);
@@ -594,7 +616,7 @@ R_API char *r_bin_demangle_swift(const char *s, bool syscmd, bool trylib) {
 		}
 	}
 
-	if (*s != 'T' && !r_str_startswith (s, "_T") && !r_str_startswith (s, "__T")) {
+	if (*s != 's' && *s != 'T' && !r_str_startswith (s, "_T") && !r_str_startswith (s, "__T")) {
 		// modern swift symbols not yet supported in this parser (only via trylib)
 		if (!r_str_startswith (s, "$s")) {
 			return NULL;
