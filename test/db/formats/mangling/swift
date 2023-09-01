@@ -14,3 +14,43 @@ EXPECT=<<EOF
 0x004009e0 16 Swift.String.init(_builtinStringLiteral: Builtin.RawPointer, byteSize: Builtin.Word, isASCII: Builtin.Int1) -> Swift.String
 EOF
 RUN
+
+NAME=macho swift demangle
+FILE=bins/mach0/swift/klass.orig
+CMDS=ic
+EXPECT=<<EOF
+0x00003cb0 [0x100003cff - 0x100003d90]    145 swift class 0 SomeClass
+0x100003cff swift method 0      0
+0x100003d08 swift method 1      1
+0x100003d0e swift method 2      2
+0x100003d17 swift method 3      3
+0x100003d20 swift method 4      4
+0x100003d24 swift method 5      5
+0x100003d1d swift method 6      6
+0x100003d90 swift method 7      klass.SuperKlass.allocator
+0x100003d2c swift method 8      8
+0x100003d34 swift method 9      9
+0x100003e8d swift field 0      meh
+0x100003e91 swift field 1      cow
+0x00003d44 [0x1000028f0 - 0x100003d9c]   5292 swift class 0 SuperKlass
+0x1000028f0 swift method 0      getter klass.SuperKlass.superfield.allocator__Swift.Int
+0x100002950 swift method 1      setter klass.SuperKlass.superfield.allocator__Swift.Int
+0x1000029b0 swift method 2      klass.SuperKlass.superfield.allocator__Swift.Int
+0x100002a10 swift method 3      klass.SuperKlass.allocator
+0x100003d9c swift method 4      4
+0x100003e95 swift field 0      superfield
+0x100008260 [0x100008260 - 0x100008260]      0 objc class 0 klass.SomeClass :: klass.SuperKlass
+0x00000000 objc field 0      isa
+0x100003c80 objc field 1      klass.SomeClass::(ivar)meh
+0x100003c88 objc field 2      klass.SomeClass::(ivar)cow
+0x100008288 [0x100008288 - 0x100008288]      0 objc class 0 klass.SuperKlass :: Swift._SwiftObject
+0x00000000 objc field 0      isa
+0x100003d30 objc field 1      klass.SuperKlass::(ivar)superfield
+0x00000000 [0x100002b70 - 0x100008568]  23032 c++ class 4 swift
+0x100002b70 c++ method 0      getRootSuperclass()
+0x100002bb0 c++ method 1      swift51override_conformsToSwiftProtocol(swift::TargetMetadata<swift::InProcess> const*, swift::TargetProtocolDescriptor<swift::InProcess> const*, llvm::StringRef, swift::TargetProtocolConformanceDescriptor<swift::InProcess> const* (*)(swift::TargetMetadata<swift::InProcess> const*, swift::TargetProtocolDescriptor<swift::InProcess> const*, llvm::StringRef))
+0x1000031f0 c++ method 2      Lazy<(anonymous namespace)::ConformanceState>::defaultInitCallback(void*)
+0x100003650 c++ method 3      getRootSuperclass()::$_0::operator()() const::{lambda(void*)#1}::__invoke(void*)
+0x100008568 c++ method 4      getRootSuperclass()::$_0::operator()() const::TheLazy
+EOF
+RUN

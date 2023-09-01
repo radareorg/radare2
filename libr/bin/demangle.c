@@ -133,8 +133,11 @@ R_API char *r_bin_demangle(RBinFile *bf, const char *def, const char *str, ut64 
 		if (str[2] == 'T') {
 			type = R_BIN_LANG_SWIFT;
 		} else {
-			type = R_BIN_LANG_CXX;
-		//	str++;
+			if (type == -1 && str[2] == 's') {
+				type = R_BIN_LANG_SWIFT;
+			} else {
+				type = R_BIN_LANG_CXX;
+			}
 		}
 	}
 	// if str is sym. or imp. when str+=4 str points to the end so just return
@@ -144,6 +147,7 @@ R_API char *r_bin_demangle(RBinFile *bf, const char *def, const char *str, ut64 
 	if (type == -1) {
 		type = r_bin_lang_type (bf, def, str);
 	}
+	// type = R_BIN_LANG_SWIFT;
 	char *demangled = NULL;
 	switch (type) {
 	case R_BIN_LANG_JAVA: demangled = r_bin_demangle_java (str); break;

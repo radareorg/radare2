@@ -1325,7 +1325,6 @@ static void parse_type(RList *list, RBinFile *bf, SwiftType st, HtUP *symbols_ht
 	// eprintf ("Type name (%s)\n", typename);
 	klass->addr = st.addr;
 	klass->lang = R_BIN_LANG_SWIFT;
-	// eprintf ("methods:\n");
 	if (st.members != UT64_MAX) {
 		ut8 buf[512];
 		int i = 0;
@@ -1343,6 +1342,11 @@ static void parse_type(RList *list, RBinFile *bf, SwiftType st, HtUP *symbols_ht
 			char *method_name;
 			if (symbols_ht && (sym = ht_up_find (symbols_ht, method_addr, NULL))) {
 				method_name = r_name_filter_dup (sym->name);
+				char *dname = r_bin_demangle (bf, "swift", method_name, 0, false);
+				if (dname) {
+					free (method_name);
+					method_name = dname;
+				}
 			} else {
 				method_name = r_str_newf ("%d", i);
 			}
