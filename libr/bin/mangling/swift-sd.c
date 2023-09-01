@@ -4,7 +4,7 @@
 #include <r_cons.h>
 #include <r_lib.h>
 
-#define USE_THIS_CODE 1
+#define USE_THIS_CODE 0
 
 static R_TH_LOCAL int have_swift_demangle = -1;
 #if R2__UNIX__
@@ -597,6 +597,11 @@ R_API char *r_bin_demangle_swift(const char *s, bool syscmd, bool trylib) {
 	if (*s != 'T' && !r_str_startswith (s, "_T") && !r_str_startswith (s, "__T")) {
 		// modern swift symbols not yet supported in this parser (only via trylib)
 		if (!r_str_startswith (s, "$s")) {
+			return NULL;
+		}
+	} else {
+		// TIFF ones found on COFF binaries, swift-unrelated, return early to avoid FP
+		if (r_str_startswith (s, "TIFF")) {
 			return NULL;
 		}
 	}
