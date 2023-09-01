@@ -18,7 +18,7 @@ EXPECT=<<EOF
    klass.SomeClass::(ivar)cow
 }
 @end
-@interface klass.SuperKlass : _TtCs12_SwiftObject
+@interface klass.SuperKlass : Swift._SwiftObject
 {
    klass.SuperKlass::(ivar)superfield
 }
