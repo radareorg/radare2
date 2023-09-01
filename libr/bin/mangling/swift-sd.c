@@ -4,9 +4,7 @@
 #include <r_cons.h>
 #include <r_lib.h>
 
-#define IFDBG if (0)
-
-// $ echo "..." | xcrun swift-demangle
+#define USE_THIS_CODE 1
 
 static R_TH_LOCAL int have_swift_demangle = -1;
 #if R2__UNIX__
@@ -86,19 +84,19 @@ static const char *numpos(const char* n) {
 
 static const char *getstring(const char *s, int len) {
 	static R_TH_LOCAL char buf[256] = {0};
-	if (len < 0 || len > sizeof (buf) - 2) {
+	if (len < 0 || len > sizeof (buf) - 1) {
 		return "";
 	}
-	r_str_ncpy (buf, s, len);
+	r_str_ncpy (buf, s, len + 1);
 	return buf;
 }
 
 static const char *resolve(const SwiftType *t, const char *foo, const char **bar) {
-	if (!t || !foo || !*foo) {
+	if (R_STR_ISEMPTY (foo)) {
 		return NULL;
 	}
 	for (; t[0].code; t++) {
-		int len = strlen (t[0].code);
+		const int len = strlen (t[0].code);
 		if (!strncmp (foo, t[0].code, len)) {
 			if (bar) {
 				*bar = t[0].name;
@@ -267,6 +265,7 @@ static char *get_mangled_tail(const char **pp, RStrBuf *out) {
 static char *my_swift_demangler(const char *s) {
 	// SwiftState ss = { 0 };
 	SwiftCheck is = {0};
+	is.first = true;
 
 	int i, len;
 	const char *attr = NULL;
@@ -277,7 +276,6 @@ static char *my_swift_demangler(const char *s) {
 
 	RStrBuf *out = r_strbuf_new (NULL);
 	const char *tail = get_mangled_tail (&p, out);
-
 	p = str_seek (p, tail? 1: (p[0] && p[1])? 2: 0);
 	q = getnum (p, NULL);
 
@@ -357,11 +355,8 @@ static char *my_swift_demangler(const char *s) {
 				printf ("Field Name: %s\n", name);
 			}
 #endif
-			if (len < strlen (q)) {
-				resolve (types, q + len, &attr2);
-			} else {
-				resolve (types, q, &attr2);
-			}
+			const char *arg = (len < strlen (q))? q + len: q;
+			resolve (types, arg, &attr2);
 //			printf ("Field Type: %s\n", attr2);
 
 			if (R_STR_ISNOTEMPTY (name)) {
@@ -379,7 +374,6 @@ static char *my_swift_demangler(const char *s) {
 		} else {
 			/* parse function parameters here */
 			// type len value/
-			// r_return_val_if_fail (q_start <= q_end, NULL);
 			for (i = 0; q && q < q_end && q >= q_start; i++) {
 				if (*q == 'f') {
 					q++;
@@ -449,7 +443,7 @@ static char *my_swift_demangler(const char *s) {
 					break;
 				case 'G':
 					q = str_seek (q, 2);
-					//printf ("GENERIC\n");
+					// printf ("GENERIC\n");
 					if (r_str_startswith (q, "_V")) {
 						q += 2;
 					}
@@ -501,9 +495,8 @@ static char *my_swift_demangler(const char *s) {
 						if (R_STR_ISNOTEMPTY (s)) {
 							if (is.first) {
 								r_strbuf_append (out, is.generic? "<": ": ");
-								is.first = 0;
+								is.first = false;
 							}
-							//printf ("ISLAST (%s)\n", q+len);
 							is.last = strlen (q + len) < 5;
 							if (attr) {
 								r_strbuf_append (out, attr);
@@ -533,21 +526,19 @@ static char *my_swift_demangler(const char *s) {
 					q += len;
 					p = q;
 				} else {
-					if (q && *q) {
-						q++;
-					} else {
+					if (R_STR_ISEMPTY (q)) {
 						break;
 					}
+					q++;
 					char *n = strstr (q, "__");
 					if (n) {
 						q = n + 1;
 					} else {
 						n = strchr (q, '_');
-						if (n) {
-							q = n + 1;
-						} else {
+						if (!n) {
 							break;
 						}
+						q = n + 1;
 					}
 				}
 			}
@@ -589,13 +580,15 @@ static char *my_swift_demangler(const char *s) {
 
 
 R_API char *r_bin_demangle_swift(const char *s, bool syscmd, bool trylib) {
+#if USE_THIS_CODE
+	syscmd = trylib = false; // debugging on macos
+#endif
 	s = str_removeprefix (s, "imp.");
 	s = str_removeprefix (s, "reloc.");
 	s = str_removeprefix (s, "__");
 
-	char *res = NULL;
 	if (trylib) {
-		res = swift_demangle_lib (s);
+		char *res = swift_demangle_lib (s);
 		if (res) {
 			return res;
 		}
@@ -612,7 +605,7 @@ R_API char *r_bin_demangle_swift(const char *s, bool syscmd, bool trylib) {
 		return NULL;
 	}
 	if (syscmd) {
-		res = swift_demangle_cmd (s);
+		char *res = swift_demangle_cmd (s);
 		if (res) {
 			return res;
 		}
