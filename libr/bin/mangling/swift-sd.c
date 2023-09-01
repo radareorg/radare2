@@ -305,7 +305,7 @@ R_API char *r_bin_demangle_swift(const char *s, bool syscmd, bool trylib) {
 	// _TF or __TW
 	if (IS_DIGIT (*p) || *p == 'v' || *p == 't' || *p == 'I' || *p == 'o' || *p == 'T' || *p == 'V' || *p == 'M' || *p == 'C' || *p == 'F' || *p == 'W') {
 		if (r_str_startswith (p + 1, "SS")) {
-			r_strbuf_append (out, "Swift.String.init(");
+			r_strbuf_append (out, "String.init(");
 			p += 3;
 		}
 		if (r_str_startswith (p, "vdv")) {
