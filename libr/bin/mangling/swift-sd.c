@@ -283,6 +283,13 @@ static char *my_swift_demangler(const char *s) {
 	const char *tail = get_mangled_tail (&p, out);
 	// workaround with tests, need proper testing when format is clarified
 	if (trick) {
+		if (!isdigit (p[1])) {
+			return NULL;
+		}
+		int len = atoi (p + 1);
+		if (len > strlen (p + 2)) {
+			return NULL;
+		}
 		// do nothing
 	} else {
 		p = str_seek (p, tail? 1: (p[0] && p[1])? 2: 0);
