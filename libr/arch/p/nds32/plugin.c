@@ -188,7 +188,10 @@ static bool decode(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
 			}
 		}
 	}
-	if (is_any ("jal ", "jral ", "j ")) {
+	if (is_any ("jral5")) {
+		op->type = R_ANAL_OP_TYPE_RJMP;
+		// jump to register r1.. if .. 5?
+	} else if (is_any ("jal ", "jral ", "j ")) {
 		// decide whether it's jump or call
 		#ifndef OP_MASK_RD
 			#define OP_MASK_RD		0x1f
@@ -201,6 +204,42 @@ static bool decode(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
 		if (op->type == R_ANAL_OP_TYPE_CALL) {
 			op->fail = addr + op->size;
 		}
+	}
+	if (mask & R_ARCH_OP_MASK_ESIL) {
+		char *name = strdup (op->mnemonic);
+		char *space = strchr (name, ' ');
+		RList *args = r_list_new ();
+		if (space) {
+			*space++ = 0;
+			args = r_str_split_list (space, ",", 0);
+		} else {
+			args = r_list_new ();
+		}
+		if (is_any ("sethi")) {
+			char *dr = r_list_get_n (args, 0);
+			char *si = r_list_get_n (args, 1);
+			r_strbuf_setf (&op->esil, "16,%s,<<,%s,:=", si, dr);
+		} else if (is_any ("j")) {
+			char *di = r_list_get_n (args, 0);
+			r_strbuf_setf (&op->esil, "%s,pc,:=", di);
+		} else if (is_any ("jr")) {
+			char *dr = r_list_get_n (args, 0);
+			r_strbuf_setf (&op->esil, "%s,pc,:=", dr);
+		} else if (is_any ("ret")) {
+			r_strbuf_setf (&op->esil, "lp,pc,:=");
+		} else if (is_any ("beq")) {
+			char *s0 = r_list_get_n (args, 0);
+			char *s1 = r_list_get_n (args, 1);
+			char *di = r_list_get_n (args, 2);
+			r_strbuf_setf (&op->esil, "%s,%s,==,$z,?{,%s,pc,:=,}", s0, s1, di);
+		} else if (is_any ("ori")) {
+			char *dr = r_list_get_n (args, 0);
+			char *sr = r_list_get_n (args, 1);
+			char *si = r_list_get_n (args, 2);
+			r_strbuf_setf (&op->esil, "%s,%s,|,%s,:=", si, sr, dr);
+		}
+		r_list_free (args);
+		free (name);
 	}
 	if (is_any ("jr ")) {
 		op->type = R_ANAL_OP_TYPE_RJMP;
