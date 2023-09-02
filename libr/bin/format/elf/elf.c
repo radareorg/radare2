@@ -2419,6 +2419,8 @@ char* Elf_(get_arch)(ELFOBJ *eo) {
 		return strdup("kvx");
 	case EM_LOONGARCH:
 		return strdup ("loongarch");
+	case EM_NDS32:
+		return strdup ("nds32");
 	case EM_386:
 	case EM_X86_64:
 		return strdup ("x86");
