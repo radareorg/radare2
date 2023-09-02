@@ -162,6 +162,9 @@ static bool decode(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
 		r_strbuf_free (sb);
 		return true;
 	}
+	if (as->config->syntax == R_ARCH_SYNTAX_INTEL) {
+		r_str_replace_in (op->mnemonic, -1, "$", "", true);
+	}
 	char *name = strdup (op->mnemonic);
 #if 0
 	PluginData *pd = as->data;
