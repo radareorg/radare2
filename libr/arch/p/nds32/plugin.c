@@ -164,6 +164,8 @@ static bool decode(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
 	}
 	if (as->config->syntax == R_ARCH_SYNTAX_INTEL) {
 		r_str_replace_in (op->mnemonic, -1, "$", "", true);
+		r_str_replace_in (op->mnemonic, -1, "#", "", true);
+		r_str_replace_in (op->mnemonic, -1, "+ -", "-", true);
 	}
 	char *name = strdup (op->mnemonic);
 #if 0
@@ -283,6 +285,43 @@ static bool decode(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
 	return op->size > 0;
 }
 
+static char *regs(RArchSession *as) {
+	const char *p =
+		"=PC	pc\n"
+		"=SP	sp\n"
+		"=LR	lr\n"
+		"=SN	r0\n"
+		"=R0	r0\n"
+		"=A0	r0\n"
+		"=A1	r1\n"
+		"gpr	r0	4	0	0\n"
+		"gpr	r1	4	4	0\n"
+		"gpr	r2	4	8	0\n"
+		"gpr	r3	4	12	0\n"
+		"gpr	r4	4	16	0\n"
+		"gpr	r5	4	20	0\n"
+		"gpr	r6	4	24	0\n"
+		"gpr	r7	4	28	0\n"
+		"gpr	r8	4	32	0\n"
+		"gpr	r9	4	36	0\n"
+		"gpr	r10	4	40	0\n"
+		"gpr	r11	4	44	0\n"
+		"gpr	r12	4	48	0\n"
+		"gpr	r13	4	52	0\n"
+		"gpr	r14	4	56	0\n"
+		"gpr	r15	4	60	0\n"
+		"gpr	r16	4	64	0\n"
+		"gpr	r17	4	68	0\n"
+		"gpr	r18	4	72	0\n"
+		"gpr	r19	4	76	0\n"
+		"gpr	r20	4	80	0\n"
+		"gpr	pc	4	84	0\n"
+		"gpr	lr	4	88	0\n"
+		"gpr	sp	4	92	0\n"
+		;
+	return strdup (p);
+}
+
 const RArchPlugin r_arch_plugin_nds32 = {
 	.meta = {
 		.name = "nds32",
@@ -294,6 +333,7 @@ const RArchPlugin r_arch_plugin_nds32 = {
 	.bits = R_SYS_BITS_PACK1 (32),
 	.endian = R_SYS_ENDIAN_LITTLE,
 	.decode = &decode,
+	.regs = regs,
 	.init = &_init,
 	.info = &info,
 };
