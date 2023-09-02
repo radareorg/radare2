@@ -3559,7 +3559,6 @@ static void set_prompt(RCore *r) {
 		if (r_config_get_b (r->config, "scr.prompt.sect")) {
 			prompt_sec (r, sec, sizeof (sec));
 		}
-
 		if (!promptset) {
 			if (r->print->wide_offsets && r->dbg->bits & R_SYS_BITS_64) {
 				snprintf (p, sizeof (p), "0x%016" PFMT64x, r->offset);
@@ -3571,8 +3570,13 @@ static void set_prompt(RCore *r) {
 	}
 
 	chop_prompt (filename, tmp, 128);
-	char *prompt = r_str_newf ("%s%s[%s%s]> %s", filename, BEGIN, remote,
-		tmp, END);
+	char *prompt = NULL;
+	if (r_config_get_b (r->config, "scr.prompt.code")) {
+		st64 code = r->num->value;
+		prompt = r_str_newf ("%s%s[%"PFMT64d":%s%s]> %s", filename, BEGIN, code, remote, tmp, END);
+	} else {
+		prompt = r_str_newf ("%s%s[%s%s]> %s", filename, BEGIN, remote, tmp, END);
+	}
 	r_line_set_prompt (r_str_get (prompt));
 
 	R_FREE (filename);

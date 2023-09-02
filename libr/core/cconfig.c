@@ -4269,6 +4269,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETBPREF ("scr.randpal", "false", "random color palete or just get the next one from 'eco'");
 	SETCB ("scr.highlight.grep", "false", &cb_scr_color_grep_highlight, "highlight (INVERT) the grepped words");
 	SETCB ("scr.prompt.popup", "false", &cb_scr_prompt_popup, "show widget dropdown for autocomplete");
+	SETBPREF ("scr.prompt.code", "false", "show last command return code in the prompt");
 	SETCB ("scr.prompt.vi", "false", &cb_scr_vi, "use vi mode for input prompt");
 	SETPREF ("scr.prompt.tabhelp", "true", "show command help when pressing the TAB key");
 	SETCB ("scr.prompt.mode", "false", &cb_scr_prompt_mode,  "set prompt color based on vi mode");
