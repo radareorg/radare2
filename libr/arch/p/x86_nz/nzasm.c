@@ -195,7 +195,7 @@ static int process_group_1(RArchSession *a, ut8 *data, const Opcode *op) {
 		return -1;
 	}
 	if (a->config->bits == 64 && op->operands[0].type & OT_QWORD) {
-		data[l++] = 0x48;
+		data[l++] = (op->operands[0].extended)? 0x49: 0x48;
 	}
 	if (!strcmp (op->mnemonic, "adc")) {
 		modrm = 2;
@@ -323,7 +323,7 @@ static int process_group_2(RArchSession *a, ut8 *data, const Opcode *op) {
 		if (o->regs[0] != -1 && o->regs[1] != -1) {
 			data[l++] = 0xc0;
 			data[l++] = 0x44;
-			data[l++] = o->regs[0]| (o->regs[1]<<3);
+			data[l++] = o->regs[0] | (o->regs[1]<<3);
 			data[l++] = (ut8)((o->offset*o->offset_sign) & 0xff);
 			data[l++] = immediate;
 			return l;
