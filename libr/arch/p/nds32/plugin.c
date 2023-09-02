@@ -191,7 +191,7 @@ static bool decode(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
 		}
 	}
 	if (is_any ("jral5")) {
-		op->type = R_ANAL_OP_TYPE_RJMP;
+		op->type = R_ANAL_OP_TYPE_RJMP; // call?
 		// jump to register r1.. if .. 5?
 	} else if (is_any ("jal ", "jral ", "j ")) {
 		// decide whether it's jump or call
@@ -220,15 +220,15 @@ static bool decode(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
 		if (is_any ("sethi")) {
 			char *dr = r_list_get_n (args, 0);
 			char *si = r_list_get_n (args, 1);
-			r_strbuf_setf (&op->esil, "16,%s,<<,%s,:=", si, dr);
+			r_strbuf_setf (&op->esil, "12,%s,<<,%s,:=", si, dr);
 		} else if (is_any ("j")) {
 			char *di = r_list_get_n (args, 0);
 			r_strbuf_setf (&op->esil, "%s,pc,:=", di);
 		} else if (is_any ("jr")) {
 			char *dr = r_list_get_n (args, 0);
 			r_strbuf_setf (&op->esil, "%s,pc,:=", dr);
-		} else if (is_any ("ret")) {
-			r_strbuf_setf (&op->esil, "lp,pc,:=");
+		} else if (is_any ("ret", "ret5")) {
+			r_strbuf_set (&op->esil, "lp,pc,:=");
 		} else if (is_any ("beq")) {
 			char *s0 = r_list_get_n (args, 0);
 			char *s1 = r_list_get_n (args, 1);
@@ -245,11 +245,13 @@ static bool decode(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
 	}
 	if (is_any ("jr ")) {
 		op->type = R_ANAL_OP_TYPE_RJMP;
+	} else if (is_any ("jral ")) {
+		op->type = R_ANAL_OP_TYPE_RCALL;
 	} else if (is_any ("swi")) {
 		op->type = R_ANAL_OP_TYPE_SWI;
 	} else if (is_any ("ori")) {
 		op->type = R_ANAL_OP_TYPE_OR;
-	} else if (is_any ("ret ", "iret")) {
+	} else if (is_any ("ret", "iret")) {
 		op->type = R_ANAL_OP_TYPE_RET;
 	} else if (is_any ("addi", "addri")) {
 		op->type = R_ANAL_OP_TYPE_ADD;
@@ -289,11 +291,13 @@ static char *regs(RArchSession *as) {
 	const char *p =
 		"=PC	pc\n"
 		"=SP	sp\n"
+		"=BP	sp\n"
 		"=LR	lr\n"
 		"=SN	r0\n"
 		"=R0	r0\n"
 		"=A0	r0\n"
 		"=A1	r1\n"
+		"=A2	r2\n"
 		"gpr	r0	4	0	0\n"
 		"gpr	r1	4	4	0\n"
 		"gpr	r2	4	8	0\n"
