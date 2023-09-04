@@ -162,11 +162,14 @@ typedef enum {
 } RStringType;
 
 typedef enum {
+	// R2_590 rename to R_BIN_VISIBILITY // R_BIN_SCOPE_(PRIVATE|PUBLIC|..) ?
 	R_BIN_CLASS_PRIVATE,
 	R_BIN_CLASS_PUBLIC,
 	R_BIN_CLASS_FRIENDLY,
 	R_BIN_CLASS_PROTECTED,
-} RBinClassVisibility;
+	// ?? R_BIN_CLASS_HIDDEN,
+	// ?? R_BIN_CLASS_INTERNAL,
+} RBinClassVisibility; // R2_590 - RBinScope
 
 typedef enum {
 	R_BIN_RELOC_1 = 1,

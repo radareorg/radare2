@@ -794,7 +794,7 @@ R_API void r_core_anal_cc_init(RCore *core) {
 	free (anal_arch);
 }
 
-static int bin_info(RCore *r, PJ *pj, int mode, ut64 laddr) {
+static bool bin_info(RCore *r, PJ *pj, int mode, ut64 laddr) {
 	int i, j, v;
 	char str[R_FLAG_NAME_SIZE];
 	RBinInfo *info = r_bin_get_info (r->bin);
@@ -1327,7 +1327,7 @@ static ut64 srclineVal(const void *a) {
 	return r_str_hash64 (a);
 }
 
-static int bin_source(RCore *r, PJ *pj, int mode) {
+static bool bin_source(RCore *r, PJ *pj, int mode) {
 	RList *final_list = r_list_new ();
 	RBinFile * binfile = r->bin->cur;
 
@@ -1374,7 +1374,7 @@ static ut64 a2b(RBin *bin, ut64 addr) {
 	return addr;
 }
 
-static int bin_main(RCore *r, PJ *pj, int mode, int va) {
+static bool bin_main(RCore *r, PJ *pj, int mode, int va) {
 	RBinAddr *binmain = r_bin_get_sym (r->bin, R_BIN_SYM_MAIN);
 	if (!binmain) {
 		if (IS_MODE_JSON (mode)) {
@@ -1417,7 +1417,7 @@ static inline bool is_initfini(RBinAddr *entry) {
 	}
 }
 
-static int bin_entry(RCore *r, PJ *pj, int mode, ut64 laddr, int va, bool inifin) {
+static bool bin_entry(RCore *r, PJ *pj, int mode, ut64 laddr, int va, bool inifin) {
 	char str[R_FLAG_NAME_SIZE];
 	const RList *entries = r_bin_get_entries (r->bin);
 	RListIter *iter;
@@ -1787,7 +1787,7 @@ static bool is_file_reloc(RBinReloc *r) {
 	return is_file_symbol (r->symbol);
 }
 
-static int bin_relocs(RCore *r, PJ *pj, int mode, int va) {
+static bool bin_relocs(RCore *r, PJ *pj, int mode, int va) {
 	bool bin_demangle = r_config_get_b (r->config, "bin.demangle");
 	bool keep_lib = r_config_get_i (r->config, "bin.demangle.libs");
 	const char *lang = r_config_get (r->config, "bin.lang");
@@ -2096,7 +2096,7 @@ R_API ut64 r_core_bin_impaddr(RBin *bin, int va, const char *name) {
 	return addr;
 }
 
-static int bin_imports(RCore *r, PJ *pj, int mode, int va, const char *name) {
+static bool bin_imports(RCore *r, PJ *pj, int mode, int va, const char *name) {
 	RBinInfo *info = r_bin_get_info (r->bin);
 	bool bin_demangle = r_config_get_b (r->config, "bin.demangle");
 	bool keep_lib = r_config_get_b (r->config, "bin.demangle.libs");
@@ -2390,7 +2390,7 @@ static void select_flag_space(RCore *core, RBinSymbol *symbol) {
 	}
 }
 
-static int bin_symbols(RCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at, const char *name, bool exponly, const char *args) {
+static bool bin_symbols(RCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at, const char *name, bool exponly, const char *args) {
 	RBinInfo *info = r_bin_get_info (r->bin);
 	const RList *entries = r_bin_get_entries (r->bin);
 	RBinAddr *entry;
@@ -2415,7 +2415,7 @@ static int bin_symbols(RCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at, 
 			pj_end (pj);
 		}
 		r_table_free (table);
-		return 0;
+		return false;
 	}
 
 	bool is_arm = info && info->arch && r_str_startswith (info->arch, "arm");
@@ -2813,14 +2813,13 @@ static void add_section(RCore *core, RBinSection *sec, ut64 addr, int fd) {
 	if (sec->name &&  strstr (sec->name, "text")) {
 		perm |= R_PERM_X;
 	}
-
 	RIOMap *map = r_io_map_add (core->io, fd, perm, sec->paddr, addr, size);
-	if (!map) {
+	if (map) {
+		free (map->name);
+		map->name = map_name;
+	} else {
 		free (map_name);
-		return;
 	}
-	map->name = map_name;
-	return;
 }
 
 struct io_bin_section_info_t {
@@ -2830,7 +2829,7 @@ struct io_bin_section_info_t {
 };
 
 /* Map Sections to Segments https://github.com/radareorg/radare2/issues/14647 */
-static int bin_map_sections_to_segments(RBin *bin, PJ *pj, int mode) {
+static bool bin_map_sections_to_segments(RBin *bin, PJ *pj, int mode) {
 	RListIter *iter, *iter2;
 	RBinSection *section = NULL, *segment = NULL;
 	RList *sections = r_list_new ();
@@ -2884,7 +2883,7 @@ static int bin_map_sections_to_segments(RBin *bin, PJ *pj, int mode) {
 	return true;
 }
 
-static int bin_sections(RCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at, const char *name, const char *chksum, bool print_segments) {
+static bool bin_sections(RCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at, const char *name, const char *chksum, bool print_segments) {
 	char *str = NULL;
 	RBinSection *section;
 	RBinInfo *info = NULL;
@@ -3273,7 +3272,7 @@ out:
 	return ret;
 }
 
-static int bin_fields(RCore *r, PJ *pj, int mode, int va) {
+static bool bin_fields(RCore *r, PJ *pj, int mode, int va) {
 	RList *fields;
 	RListIter *iter;
 	RBinField *field;
@@ -3413,7 +3412,7 @@ static char *get_rp(const char *rtype) {
 	return rp;
 }
 
-static int bin_trycatch(RCore *core, PJ *pj, int mode) {
+static bool bin_trycatch(RCore *core, PJ *pj, int mode) {
 	RBinFile *bf = r_bin_cur (core->bin);
 	RListIter *iter;
 	RBinTrycatch *tc;
@@ -3584,7 +3583,7 @@ static void classdump_java(RCore *r, RBinClass *c) {
 	r_cons_printf ("}\n\n");
 }
 
-static int bin_classes(RCore *r, PJ *pj, int mode) {
+static bool bin_classes(RCore *r, PJ *pj, int mode) {
 	RListIter *iter, *iter2, *iter3;
 	RBinSymbol *sym;
 	RBinClass *c;
@@ -3804,7 +3803,9 @@ static int bin_classes(RCore *r, PJ *pj, int mode) {
 			const char *cl = r_bin_lang_tostring (c->lang);
 			r_cons_printf ("0x%08"PFMT64x" [0x%08"PFMT64x" - 0x%08"PFMT64x"] %6"PFMT64d" %s class %d %s",
 				c->addr, at_min, at_max, (at_max - at_min), cl, c->index, c->name);
-			if (c->super) {
+			if (r_list_empty (c->super)) {
+				r_cons_newline ();
+			} else {
 				char *csv = r_str_list_join (c->super, ", ");
 				if (r_str_startswith (csv, "_T")) {
 					R_LOG_WARN ("undemangled symbol, maybe good to fix in rbin instead of core");
@@ -3815,14 +3816,12 @@ static int bin_classes(RCore *r, PJ *pj, int mode) {
 					r_cons_printf (" :: %s\n", csv);
 				}
 				free (csv);
-			} else {
-				r_cons_newline ();
 			}
 			r_list_foreach (c->methods, iter2, sym) {
 				char *mflags = r_core_bin_method_flags_str (sym->method_flags, mode);
 				const char *ls = r_bin_lang_tostring (sym->lang);
 				r_cons_printf ("0x%08"PFMT64x" %s method %d %s %s\n",
-					sym->vaddr, ls?ls:"?", m, mflags, sym->dname? sym->dname: sym->name);
+					sym->vaddr, ls? ls: "?", m, mflags, sym->dname? sym->dname: sym->name);
 				R_FREE (mflags);
 				m++;
 			}
@@ -3844,7 +3843,7 @@ static int bin_classes(RCore *r, PJ *pj, int mode) {
 	return true;
 }
 
-static int bin_size(RCore *r, PJ *pj, int mode) {
+static bool bin_size(RCore *r, PJ *pj, int mode) {
 	ut64 size = r_bin_get_size (r->bin);
 	if (IS_MODE_SIMPLE (mode)) {
 		r_cons_printf ("%"PFMT64u"\n", size);
@@ -3860,7 +3859,7 @@ static int bin_size(RCore *r, PJ *pj, int mode) {
 	return true;
 }
 
-static int bin_libs(RCore *r, PJ *pj, int mode) {
+static bool bin_libs(RCore *r, PJ *pj, int mode) {
 	RListIter *iter;
 	char* lib;
 	int i = 0;
@@ -3926,7 +3925,7 @@ static void bin_mem_print(PJ *pj, RList *mems, int perms, int depth, int mode) {
 	}
 }
 
-static int bin_mem(RCore *r, PJ *pj, int mode) {
+static bool bin_mem(RCore *r, PJ *pj, int mode) {
 	RList *mem = NULL;
 	if (!r) {
 		return false;

@@ -1053,18 +1053,19 @@ R_API RList *r_bin_file_set_hashes(RBin *bin, RList/*<RBinFileHash*/ *new_hashes
 	return prev_hashes;
 }
 
-R_API RBinClass *r_bin_class_new(const char *name, const char *super, int view) {
+R_API RBinClass *r_bin_class_new(const char *name, const char *super, int visibility) {
 	r_return_val_if_fail (name, NULL);
 	RBinClass *c = R_NEW0 (RBinClass);
 	if (c) {
 		c->name = strdup (name);
-		if (super) {
+		if (R_STR_ISNOTEMPTY (super)) {
 			c->super = r_list_newf (free);
 			r_list_append (c->super, strdup (super));
 		}
+		// TODO: use vectors!
 		c->methods = r_list_newf (r_bin_symbol_free);
 		c->fields = r_list_newf (r_bin_field_free);
-		c->visibility = view;
+		c->visibility = visibility;
 	}
 	return c;
 }
@@ -1084,7 +1085,7 @@ R_API RBinClass *r_bin_file_add_class(RBinFile *bf, const char *name, const char
 	r_return_val_if_fail (name && bf && bf->bo, NULL);
 	RBinClass *c = __getClass (bf, name);
 	if (c) {
-		if (super) {
+		if (R_STR_ISNOTEMPTY (super)) {
 			r_list_free (c->super);
 			c->super = r_list_newf (free);
 			r_list_append (c->super, strdup (super));
