@@ -1053,7 +1053,7 @@ R_API RList *r_bin_file_set_hashes(RBin *bin, RList/*<RBinFileHash*/ *new_hashes
 	return prev_hashes;
 }
 
-R_API RBinClass *r_bin_class_new(const char *name, const char *super, int view) {
+R_API RBinClass *r_bin_class_new(const char *name, const char *super, int visibility) {
 	r_return_val_if_fail (name, NULL);
 	RBinClass *c = R_NEW0 (RBinClass);
 	if (c) {
@@ -1064,7 +1064,7 @@ R_API RBinClass *r_bin_class_new(const char *name, const char *super, int view) 
 		}
 		c->methods = r_list_newf (r_bin_symbol_free);
 		c->fields = r_list_newf (r_bin_field_free);
-		c->visibility = view;
+		c->visibility = visibility;
 	}
 	return c;
 }

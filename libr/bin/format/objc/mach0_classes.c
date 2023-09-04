@@ -1,5 +1,7 @@
 /* radare - LGPL - Copyright 2015-2023 - inisider, pancake */
 
+#define R_LOG_ORIGIN "bin"
+
 #include "../../i/private.h"
 #include "mach0_classes.h"
 
@@ -17,6 +19,65 @@
 #define METHOD_LIST_ENTSIZE_FLAG_MASK 0xffff0003
 
 #define RO_DATA_PTR(x) ((x) & FAST_DATA_MASK)
+
+typedef struct {
+	bool have;
+	ut64 addr;
+	ut64 size;
+	ut8 *data;
+} MetaSection;
+
+typedef struct {
+	// swift
+	MetaSection types;
+	MetaSection fieldmd;
+	// objc
+	MetaSection clslist;
+	MetaSection catlist;
+} MetaSections;
+
+static bool adjust_bounds(RBinFile *bf, MetaSection *ms, const char *sname) {
+	if (ms->addr >= bf->size || ms->size >= bf->size) {
+		R_LOG_DEBUG ("Dropping swift5.%s section because oob", sname);
+		return false;
+	}
+	if (ms->addr + ms->size >= bf->size) {
+		R_LOG_DEBUG ("Truncating swift5.fieldmd section", sname);
+		ms->size = bf->size - ms->addr;
+	}
+	return true;
+}
+
+static bool parse_section(RBinFile *bf, MetaSection *ms, struct section_t *section, const char *sname) {
+	if (ms->have) {
+		return true;
+	}
+	if (strstr (section->name, sname)) {
+		ms->addr = section->paddr;
+		ms->size = section->size;
+		ms->have = adjust_bounds (bf, ms, sname);
+		return true;
+	}
+	return false;
+}
+
+#define PARSECTION(x,y) if (parse_section (bf, x, section, y)) {} else
+static MetaSections load_metadata_sections(RBinFile *bf) {
+	MetaSections ms = {0};
+	const RVector *sections = MACH0_(load_sections) (bf->bo->bin_obj);
+	if (!sections) {
+		return ms;
+	}
+	struct section_t *section;
+	r_vector_foreach (sections, section) {
+		PARSECTION (&ms.clslist, "__objc_classlist")
+		PARSECTION (&ms.catlist, "__objc_catlist")
+		PARSECTION (&ms.types, "swift5_types")
+		PARSECTION (&ms.fieldmd, "swift5_fieldmd")
+		{}
+	}
+	return ms;
+}
 
 struct MACH0_(SMethodList) {
 	ut32 entsize;
@@ -112,17 +173,16 @@ static void get_objc_property_list(mach0_ut p, RBinFile *bf, RBinClass *klass);
 static void get_method_list_t(mach0_ut p, RBinFile *bf, char *class_name, RBinClass *klass, bool is_static, objc_cache_opt_info *oi);
 static void get_protocol_list_t(mach0_ut p, RBinFile *bf, RBinClass *klass, objc_cache_opt_info *oi);
 static void get_class_ro_t(mach0_ut p, RBinFile *bf, ut32 *is_meta_class, RBinClass *klass, objc_cache_opt_info *oi);
-static RList *MACH0_(parse_categories)(RBinFile *bf, const RSkipList *relocs, objc_cache_opt_info *oi);
+static RList *MACH0_(parse_categories)(RBinFile *bf, MetaSections *ms, const RSkipList *relocs, objc_cache_opt_info *oi);
 static bool read_ptr_pa(RBinFile *bf, ut64 paddr, mach0_ut *out);
 static bool read_ptr_va(RBinFile *bf, ut64 vaddr, mach0_ut *out);
 static char *read_str(RBinFile *bf, mach0_ut p, ut32 *offset, ut32 *left);
 static char *get_class_name(mach0_ut p, RBinFile *bf);
+
 static bool is_thumb(RBinFile *bf) {
 	struct MACH0_(obj_t) *bin = (struct MACH0_(obj_t) *)bf->bo->bin_obj;
-	if (bin->hdr.cputype == 12) {
-		if (bin->hdr.cpusubtype == 9) {
-			return true;
-		}
+	if (bin->hdr.cputype == 12 && bin->hdr.cpusubtype == 9) {
+		return true;
 	}
 	return false;
 }
@@ -1237,6 +1297,7 @@ typedef struct {
 	ut64 members;
 	ut64 members_count;
 	// internal //
+	// MetaSection fieldmd;
 	st32 *fieldmd;
 	ut64 fieldmd_addr;
 	size_t fieldmd_size;
@@ -1314,6 +1375,8 @@ static inline HtUP *_load_symbol_by_vaddr_hashtable(RBinFile *bf) {
 	return ht;
 }
 
+#define MAX_SWIFT_MEMBERS 32
+
 static void parse_type(RList *list, RBinFile *bf, SwiftType st, HtUP *symbols_ht) {
 	char *otypename = readstr (bf, st.name_addr);
 	if (!otypename) {
@@ -1326,10 +1389,17 @@ static void parse_type(RList *list, RBinFile *bf, SwiftType st, HtUP *symbols_ht
 	klass->addr = st.addr;
 	klass->lang = R_BIN_LANG_SWIFT;
 	if (st.members != UT64_MAX) {
-		ut8 buf[512];
+		ut8 buf[MAX_SWIFT_MEMBERS * 16];
 		int i = 0;
-		r_buf_read_at (bf->buf, st.members, buf, sizeof (buf));
-		ut32 count = R_MIN (32, r_read_le32 (buf + 3));
+		R_LOG_DEBUG ("parse_type.st.members 0x%08"PFMT64x, st.members);
+		if ((int)st.members < 1 || st.members > bf->size) {
+			R_LOG_DEBUG ("out of bounds");
+		}
+		int res = r_buf_read_at (bf->buf, st.members, buf, sizeof (buf));
+		if (res != sizeof (buf)) {
+			R_LOG_DEBUG ("Partial read on st.members");
+		}
+		ut32 count = R_MIN (MAX_SWIFT_MEMBERS, r_read_le32 (buf + 3));
 		for (i = 0; i < count; i++) {
 			int pos = (i * 8) + 3 + 8 + 8;
 			st32 n = r_read_le32 (buf + pos);
@@ -1397,20 +1467,34 @@ static void parse_type(RList *list, RBinFile *bf, SwiftType st, HtUP *symbols_ht
 	free (otypename);
 }
 
+static void *read_section(RBinFile *bf, MetaSection *ms, ut64 *asize) {
+	void *data = calloc (ms->size, 1);
+	if (data) {
+		// align size and addr
+		if (ms->addr % 4) {
+			R_LOG_WARN ("Unaligned address for section\n");
+		}
+		*asize = ms->size + (ms->size % 4);
+		if (r_buf_read_at (bf->buf, ms->addr, data, *asize) != *asize) {
+			R_FREE (ms->data);
+			return NULL;
+		}
+		free (ms->data);
+		ms->data = data;
+	}
+	return data;
+}
+
 RList *MACH0_(parse_classes)(RBinFile *bf, objc_cache_opt_info *oi) {
 	r_return_val_if_fail (bf && bf->bo, NULL);
 
-	RList /*<RBinClass>*/ *ret = NULL;
 	ut64 num_of_unnamed_class = 0;
 	RBinClass *klass = NULL;
 	ut32 size = 0;
 	RList *sctns = NULL;
-	bool is_found = false;
 	mach0_ut p = 0;
 	ut32 left = 0;
 	int len;
-	ut64 paddr = UT64_MAX;
-	ut64 s_size = 0;
 	ut8 pp[sizeof (mach0_ut)] = {0};
 
 	const int limit = bf->rbin->limit;
@@ -1421,89 +1505,64 @@ RList *MACH0_(parse_classes)(RBinFile *bf, objc_cache_opt_info *oi) {
 	bool bigendian = bf->bo->info->big_endian;
 
 	const RSkipList *relocs = MACH0_(load_relocs) (bf->bo->bin_obj);
-	ret = MACH0_(parse_categories) (bf, relocs, oi);
 
 	/* check if it's Swift */
-	// ret = parse_swift_classes (bf);
 
-	// sebfing of section with name __objc_classlist
+	MetaSections ms = load_metadata_sections (bf);
+	// R_DUMP (&ms);
 
-	const RVector *sections = MACH0_(load_sections) (bf->bo->bin_obj);
-	if (!sections) {
-		return ret;
-	}
-
-	ut64 swift5_types_addr = UT64_MAX;
-	ut64 swift5_types_size = UT64_MAX;
-	ut64 swift5_fieldmd_addr = UT64_MAX;
-	ut64 swift5_fieldmd_size = UT64_MAX;
-	struct section_t *section;
-	r_vector_foreach (sections, section) {
-		const char *sname = section->name;
-		if (strstr (sname, "__objc_classlist")) {
-			is_found = true;
-			paddr = section->paddr;
-			s_size = section->size;
-		} else if (strstr (sname, "swift5_types")) {
-			swift5_types_addr = section->paddr;
-			swift5_types_size = section->size;
-		} else if (strstr (sname, "swift5_fieldmd")) {
-			swift5_fieldmd_addr = section->paddr;
-			swift5_fieldmd_size = section->size;
+	RList /*<RBinClass>*/ *ret = MACH0_(parse_categories) (bf, &ms, relocs, oi);
+	if (!ret) {
+		ret = r_list_newf ((RListFree)r_bin_class_free);
+		if (!ret) {
+			goto get_classes_error;
 		}
-	}
-
-	if (!ret && !(ret = r_list_newf ((RListFree)r_bin_class_free))) {
-		// retain just for debug
-		goto get_classes_error;
 	}
 
 	bool want_swift = !r_sys_getenv_asbool ("RABIN2_MACHO_NOSWIFT");
 	// 2s / 16s
-	if (want_swift && swift5_types_addr != UT64_MAX) {
-		const int aligned_fieldmd_size = swift5_fieldmd_size + (swift5_fieldmd_size % 4);
-		st32 *fieldmd = malloc (aligned_fieldmd_size);
+	if (want_swift && ms.types.have && ms.fieldmd.have) {
+		ut64 asize = ms.fieldmd.size;
+		st32 *fieldmd = read_section (bf, &ms.fieldmd, &asize);
+
+		const int aligned_fieldmd_size = ms.fieldmd.size + (ms.fieldmd.size % 4);
+		const int fieldmd_count = asize / 4;
+		R_LOG_DEBUG ("swift5_fieldmd: pxd %d @ 0x%x", fieldmd_count, ms.fieldmd.addr);
 		if (fieldmd) {
-			const int aligned_size = swift5_types_size + (swift5_types_size % 4);
-			r_buf_read_at (bf->buf, swift5_fieldmd_addr, (ut8*)fieldmd, aligned_fieldmd_size);
-			int amount = aligned_size / 4;
-			st32 *words = calloc (sizeof (st32), aligned_size);
-			if (words) {
-				int i;
-				int res = r_buf_read_at (bf->buf, swift5_types_addr, (ut8*)words, aligned_size);
-				if (res >= aligned_size) {
-					if (limit > 0 && amount > limit) {
-						R_LOG_WARN ("swift class limit reached");
-						amount = limit;
-					}
-					HtUP *symbols_ht = _load_symbol_by_vaddr_hashtable (bf);
-					for (i = 0; i < amount; i++) {
-						st32 word = r_read_le32 (&words[i]);
-						ut64 type_address = swift5_types_addr + (i * 4) + word;
-						SwiftType st = parse_type_entry (bf, type_address);
-						st.addr = type_address;
-						st.fieldmd = fieldmd;
-						st.fieldmd_addr = swift5_fieldmd_addr;
-						st.fieldmd_size = aligned_fieldmd_size;
-						// eprintf ("Name address %llx\n", st.name_addr);
-						if (st.fields != UT64_MAX) {
-							parse_type (ret, bf, st, symbols_ht);
-						}
-					}
-					ht_up_free (symbols_ht);
-				} else {
-					R_LOG_DEBUG ("Invalid read of swift5 type section");
+			ut64 atsize = ms.types.size;
+			int aligned_types_count = atsize / 4;
+			st32 *types = read_section (bf, &ms.types, &atsize);
+			if (types) {
+				if (limit > 0 && aligned_types_count > limit) {
+					R_LOG_WARN ("swift class limit reached");
+					aligned_types_count = limit;
 				}
-				free (words);
+				HtUP *symbols_ht = _load_symbol_by_vaddr_hashtable (bf);
+				int i;
+				for (i = 0; i < aligned_types_count; i++) {
+					st32 word = r_read_le32 (&types[i]);
+					ut64 type_address = ms.types.addr + (i * 4) + word;
+					SwiftType st = parse_type_entry (bf, type_address);
+					st.addr = type_address;
+					st.fieldmd = fieldmd;
+					st.fieldmd_addr = ms.fieldmd.addr;
+					st.fieldmd_size = aligned_fieldmd_size;
+					R_LOG_DEBUG ("Name address 0x%"PFMT64x"\n", st.name_addr);
+					if (st.fields != UT64_MAX) {
+						parse_type (ret, bf, st, symbols_ht);
+					}
+				}
+				ht_up_free (symbols_ht);
+				free (types);
 			}
 			free (fieldmd);
 		}
 	}
-	if (!s_size || paddr == UT64_MAX) {
+	if (!ms.clslist.size || !ms.clslist.have) {
 		goto get_classes_error;
 	}
 
-	if (!is_found) {
+	if (!ms.clslist.have) {
 		// retain just for debug
 		// eprintf ("there is no section __objc_classlist\n");
 		goto get_classes_error;
@@ -1512,8 +1571,8 @@ RList *MACH0_(parse_classes)(RBinFile *bf, objc_cache_opt_info *oi) {
 	// start of getting information about each class in file
 	ut32 i;
 	ut32 ordinal = 0;
-	for (i = 0; i < s_size; i += sizeof (mach0_ut)) {
-		left = s_size - i;
+	for (i = 0; i < ms.clslist.size; i += sizeof (mach0_ut)) {
+		left = ms.clslist.size - i;
 		if (limit > 0 && ordinal++ > limit) {
 			R_LOG_WARN ("classes mo.limit reached");
 			break;
@@ -1536,13 +1595,13 @@ RList *MACH0_(parse_classes)(RBinFile *bf, objc_cache_opt_info *oi) {
 			goto get_classes_error;
 		}
 		size = sizeof (mach0_ut);
-		if (paddr > bf->size || paddr + size > bf->size) {
+		if (ms.clslist.addr > bf->size || ms.clslist.addr + size > bf->size) {
 			goto get_classes_error;
 		}
-		if (paddr + size < paddr) {
+		if (ms.clslist.addr + size < ms.clslist.addr) {
 			goto get_classes_error;
 		}
-		len = r_buf_read_at (bf->buf, paddr + i, pp, sizeof (mach0_ut));
+		len = r_buf_read_at (bf->buf, ms.clslist.addr + i, pp, sizeof (mach0_ut));
 		if (len != sizeof (mach0_ut)) {
 			goto get_classes_error;
 		}
@@ -1566,70 +1625,36 @@ get_classes_error:
 	return NULL;
 }
 
-static RList *MACH0_(parse_categories)(RBinFile *bf, const RSkipList *relocs, objc_cache_opt_info *oi) {
+static RList *MACH0_(parse_categories)(RBinFile *bf, MetaSections *ms, const RSkipList *relocs, objc_cache_opt_info *oi) {
 	r_return_val_if_fail (bf && bf->bo && bf->bo->bin_obj && bf->bo->info, NULL);
-
-	RList /*<RBinClass>*/ *ret = NULL;
-	RBinObject *obj = bf->bo;
-	const ut32 ptr_size = sizeof (mach0_ut);
-	bool is_found = false;
-	ut64 paddr;
-	ut64 s_size;
-
-	const RVector *sections = MACH0_(load_sections) (obj->bin_obj);
-	if (!sections) {
-		return ret;
+	R_LOG_DEBUG ("parse objc categories");
+	const size_t ptr_size = sizeof (mach0_ut);
+	if (!ms->catlist.have) {
+		return NULL;
 	}
 
-	struct section_t *section;
-	r_vector_foreach (sections, section) {
-		if (strstr (section->name, "__objc_catlist")) {
-			is_found = true;
-			paddr = section->paddr;
-			s_size = section->size;
-			break;
-		}
-	}
-
-	if (!is_found) {
-		goto error;
-	}
-
-	if (!ret && !(ret = r_list_newf ((RListFree)r_bin_class_free))) {
-		goto error;
-	}
-
-	if (!relocs) {
+	RList *ret = r_list_newf ((RListFree)r_bin_class_free);
+	if (!ret || !relocs) {
 		goto error;
 	}
 
 	ut32 i;
-	for (i = 0; i < s_size; i += ptr_size) {
-		RBinClass *klass;
+	for (i = 0; i < ms->catlist.size; i += ptr_size) {
 		mach0_ut p;
 
-		if ((s_size - i) < ptr_size) {
-			R_LOG_WARN ("Chopped catlist data");
+		if ((ms->catlist.size - i) < ptr_size) {
+			R_LOG_WARN ("Truncated catlist data");
 			break;
 		}
-		if (!(klass = R_NEW0 (RBinClass))) {
-			goto error;
-		}
-		if (!(klass->methods = r_list_new ())) {
-			R_FREE (klass);
-			goto error;
-		}
-		if (!(klass->fields = r_list_new ())) {
-			R_FREE (klass);
-			goto error;
-		}
-		if (!read_ptr_pa (bf, paddr + i, &p)) {
-			R_FREE (klass);
+		RBinClass *klass = r_bin_class_new ("", NULL, 0);
+		R_FREE (klass->name);
+		if (!read_ptr_pa (bf, ms->catlist.addr + i, &p)) {
+			r_bin_class_free (klass);
 			goto error;
 		}
 		MACH0_(get_category_t) (p, bf, klass, relocs, oi);
 		if (!klass->name) {
-			R_FREE (klass);
+			r_bin_class_free (klass);
 			continue;
 		}
 		klass->lang = R_BIN_LANG_OBJC;

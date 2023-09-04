@@ -128,6 +128,8 @@ R_API char *r_sys_cmd_strf(const char *cmd, ...) R_PRINTF_CHECK(1, 2);
 R_API void r_sys_backtrace(void);
 R_API bool r_sys_tts(const char *txt, bool bg);
 
+#define R_DUMP(x) __builtin_dump_struct(x, &printf)
+
 #if R2__WINDOWS__
 #  define r_sys_breakpoint() { __debugbreak  (); }
 #else
