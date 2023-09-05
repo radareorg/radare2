@@ -12437,7 +12437,7 @@ R_API int r_core_anal_all(RCore *core) {
 	item = r_flag_get (core->flags, "main");
 	if (item) {
 		logline (core, 14, "Analyze entrypoint (af@ main)");
-		r_core_af (core, item->offset, "main", anal_calls);
+		// r_core_af (core, item->offset, "main", anal_calls);
 	}
 
 	r_core_task_yield (&core->tasks);
