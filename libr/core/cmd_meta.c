@@ -66,12 +66,14 @@ static RCoreHelpMessage help_msg_CC = {
 static RCoreHelpMessage help_msg_CL = {
 	"Usage: CL", ".j-", "@addr - manage code-line references (loaded via bin.dbginfo and shown when asm.dwarf)",
 	"CL", "", "list all code line information (virtual address <-> source file:line)",
+	"CLf", " [addr]", "show filename for current or given offset",
 	"CLj", "", "same as above but in JSON format (See dir.source to change the path to find the referenced lines)",
 	"CL*", "", "same as above but in r2 commands format",
 	"CL.", "", "show list all code line information (virtual address <-> source file:line)",
 	"CL-", "*", "remove all the cached codeline information",
 	"CLL", "[f]", "show source code line associated to current offset",
 	"CLLf", "", "show source lines covered by the current function (see CLL@@i or list)",
+	"CL+", "file:line @ addr", "register new file:line source details, r2 will slurp the line",
 	"CL", " addr file:line", "register new file:line source details, r2 will slurp the line",
 	"CL", " addr base64:text", "register new source details for given address using base64",
 	NULL
@@ -313,7 +315,7 @@ static bool print_addrinfo(void *user, const char *k, const char *v) {
 	return true;
 }
 
-static int cmd_meta_add_fileline(Sdb *s, char *fileline, ut64 offset) {
+static int cmd_meta_add_fileline(Sdb *s, const char *fileline, ut64 offset) {
 	char aoffset[SDB_NUM_BUFSZ];
 	char *aoffsetptr = sdb_itoa (offset, 16, aoffset, sizeof (aoffset));
 	if (!aoffsetptr) {
@@ -357,6 +359,35 @@ static int cmd_meta_lineinfo(RCore *core, const char *input) {
 		}
 		return 0;
 	}
+	if (*p == 'f') { // "CLf"
+		int retries = 5;
+		ut64 addr = core->offset;
+		if (p[1] == ' ') {
+			addr = r_num_math (core->num, p + 1);
+		}
+retry:
+		;
+		char *s = r_bin_addr2fileline (core->bin, addr);
+		if (!s) {
+			RAnalOp *op = r_core_anal_op (core, addr, 0);
+			addr += op->size;
+			r_anal_op_free (op);
+			if (retries-- > 0) {
+				goto retry;
+			}
+		}
+		if (s) {
+			r_str_after (s, ':');
+			r_cons_println (s);
+			free (s);
+			return 0;
+			r_core_return_code (core, 0);
+		} else {
+			r_core_return_code (core, 1);
+			return 1;
+		}
+		return 0;
+	}
 	if (*p == '-') { // "CL-"
 		p++;
 		remove = true;
@@ -369,7 +400,13 @@ static int cmd_meta_lineinfo(RCore *core, const char *input) {
 		p++;
 		offset = core->offset;
 	}
-	if (*p == ' ') { // "CL "
+	if (*p == '+') { // "CL+"
+		offset = core->offset;
+		p = strdup (r_str_trim_head_ro (p + 1));
+		RBinFile *bf = r_bin_cur (core->bin);
+		ret = cmd_meta_add_fileline (bf->sdb_addrinfo, p, offset);
+		return 0;
+	} else if (*p == ' ') { // "CL "
 		p = r_str_trim_head_ro (p + 1);
 		char *arg = strchr (p, ' ');
 		if (!arg) {
@@ -404,7 +441,7 @@ static int cmd_meta_lineinfo(RCore *core, const char *input) {
 		}
 
 		char *pheap = NULL;
-		if (!strncmp (sp, "base64:", 7)) {
+		if (r_str_startswith (sp, "base64:")) {
 			int len = 0;
 			ut8 *o = sdb_decode (sp + 7, &len);
 			if (!o) {

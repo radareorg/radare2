@@ -5106,7 +5106,13 @@ static RList *foreach3list(RCore *core, char type, const char *glob) {
 	RListIter *iter;
 	int i;
 	switch (type) {
-	case 'C':
+	default:
+		R_LOG_DEBUG ("Unhandled CL subcommand '%c'", type);
+		break;
+	case '?':
+		// eprintf ("HALP\n");
+		break;
+	case 'C': // "@@@C"
 		{
 			RIntervalTreeIter it;
 			RAnalMetaItem *meta;
@@ -5121,7 +5127,7 @@ static RList *foreach3list(RCore *core, char type, const char *glob) {
 			}
 		}
 		break;
-	case 'm': // @@@m
+	case 'm': // "@@@m"
 		{
 			int fd = r_io_fd_get_current (core->io);
 			// only iterate maps of current fd
@@ -5248,7 +5254,7 @@ static RList *foreach3list(RCore *core, char type, const char *glob) {
 			}
 		}
 		break;
-	case 'b':
+	case 'b': // "@@@b"
 		{
 			RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, 0);
 			if (fcn) {
@@ -5260,7 +5266,7 @@ static RList *foreach3list(RCore *core, char type, const char *glob) {
 			}
 		}
 		break;
-	case 'F':
+	case 'F': // "@@@F"
 		{
 			RAnalFunction *fcn;
 			r_list_foreach (core->anal->fcns, iter, fcn) {
@@ -5271,7 +5277,7 @@ static RList *foreach3list(RCore *core, char type, const char *glob) {
 			}
 		}
 		break;
-	case 'R': // relocs
+	case 'R': // "@@@R" relocs
 		{
 			RRBTree *rels = r_bin_get_relocs (core->bin);
 			if (rels) {
@@ -5285,7 +5291,7 @@ static RList *foreach3list(RCore *core, char type, const char *glob) {
 			}
 		}
 		break;
-	case 'r': // registers
+	case 'r': // "@@@r" registers
 		{
 			const int bits = core->anal->config->bits;
 			for (i = 0; i < R_REG_TYPE_LAST; i++) {
@@ -5304,7 +5310,7 @@ static RList *foreach3list(RCore *core, char type, const char *glob) {
 			}
 		}
 		break;
-	case 'f':
+	case 'f': // "@@@f"
 		r_flag_foreach_glob (core->flags, glob, copy_into_flagitem_list, list);
 		break;
 	}
