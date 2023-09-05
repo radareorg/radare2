@@ -4607,15 +4607,22 @@ R_API int r_core_anal_all(RCore *core) {
 	/* Entries */
 	RFlagItem *item = r_flag_get (core->flags, "entry0");
 	if (item) {
+		R_LOG_INFO ("Analyze entrypoint (af@ entry0)");
 		r_core_af (core, item->offset, "entry0", anal_calls);
 	} else {
 		r_core_af (core, core->offset, NULL, anal_calls);
+	}
+	item = r_flag_get (core->flags, "main");
+	if (item) {
+		R_LOG_INFO ("Analyze entrypoint (af@ main)");
+		r_core_af (core, item->offset, "main", anal_calls);
 	}
 
 	r_core_task_yield (&core->tasks);
 
 	r_cons_break_push (NULL, NULL);
 
+	R_LOG_INFO ("Analyze symbols (af@@@s)");
 	RVecRBinSymbol *v = r_bin_get_symbols_vec (core->bin);
 	if (v) {
 		R_VEC_FOREACH (v, symbol) {
@@ -4656,7 +4663,9 @@ R_API int r_core_anal_all(RCore *core) {
 		}
 	}
 	r_core_task_yield (&core->tasks);
+	// R2_600 - drop this code? we already recover vars later in aaa. should be fine to if 0
 	if (anal_vars) {
+		R_LOG_INFO ("Recovering variables");
 		/* Set fcn type to R_ANAL_FCN_TYPE_SYM for symbols */
 		r_list_foreach_prev (core->anal->fcns, iter, fcni) {
 			if (r_cons_is_breaked ()) {
