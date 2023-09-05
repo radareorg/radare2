@@ -3008,6 +3008,22 @@ static int fcn_print_makestyle(RCore *core, RList *fcns, char mode) {
 	return 0;
 }
 
+static char *filename(RCore *core, ut64 addr) {
+	char *fn = r_core_cmd_strf (core, "CLf 0x%08"PFMT64x, addr);
+	// char *fn = r_core_cmd_strf (core, "CLf @@@b@0x%"PFMT64x, addr);
+	// ignore return code
+	r_core_return_code (core, 0);
+	if (fn) {
+		r_str_trim (fn);
+		r_str_after (fn, '\n');
+		if (*fn) {
+			return fn;
+		}
+		free (fn);
+	}
+	return NULL;
+}
+
 static int fcn_print_json(RCore *core, RAnalFunction *fcn, bool dorefs, PJ *pj) {
 	if (!pj) {
 		return -1;
@@ -3030,6 +3046,11 @@ static int fcn_print_json(RCore *core, RAnalFunction *fcn, bool dorefs, PJ *pj) 
 	pj_ki (pj, "cost", r_anal_function_cost (fcn)); // execution cost
 	pj_ki (pj, "cc", r_anal_function_complexity (fcn)); // cyclic cost
 	pj_ki (pj, "bits", fcn->bits);
+	char *fn = filename (core, fcn->addr);
+	if (fn) {
+		pj_ks (pj, "file", fn);
+		free (fn);
+	}
 	pj_ks (pj, "type", r_anal_functiontype_tostring (fcn->type));
 	pj_ki (pj, "nbbs", r_list_length (fcn->bbs));
 	pj_ki (pj, "tracecov", r_anal_function_coverage(fcn));
@@ -3307,6 +3328,11 @@ static int fcn_print_legacy(RCore *core, RAnalFunction *fcn, bool dorefs) {
 	if (fcn->cc) {
 		r_cons_printf ("\ncall-convention: %s", fcn->cc);
 	}
+	char *fn = filename (core, fcn->addr);
+	if (fn) {
+		r_cons_printf ("\nfile: %s", fn);
+		free (fn);
+	}
 	r_cons_printf ("\ncyclomatic-cost: %d", r_anal_function_cost (fcn));
 	r_cons_printf ("\ncyclomatic-complexity: %d", r_anal_function_complexity (fcn));
 	r_cons_printf ("\nbits: %d", fcn->bits);
@@ -3472,6 +3498,7 @@ static int fcn_list_table(RCore *core, const char *q, int fmt) {
 	r_table_add_column (t, typeNumber, "axref", 0);
 	r_table_add_column (t, typeNumber, "calls", 0);
 	r_table_add_column (t, typeNumber, "cc", 0);
+	r_table_add_column (t, typeNumber, "file", 0);
 	r_list_foreach (core->anal->fcns, iter, fcn) {
 		r_strf_var (fcnAddr, 32, "0x%08"PFMT64x, fcn->addr);
 		r_strf_var (fcnSize, 32, "%"PFMT64u, r_anal_function_linear_size (fcn)); // r_anal_function_size (fcn));
@@ -3501,10 +3528,13 @@ static int fcn_list_table(RCore *core, const char *q, int fmt) {
 		} else {
 			snprintf (castr, sizeof (castr), "%d", 0);
 		}
-
 		snprintf (ccstr, sizeof (ccstr), "%d", r_anal_function_complexity (fcn));
-
-		r_table_add_row (t, fcnAddr, fcnSize, fcn->name, noret, nbbs, nins, refs, xref, axref, castr, ccstr, NULL);
+		char *file = filename (core, fcn->addr);
+		if (!file) {
+			file = strdup ("");
+		}
+		r_table_add_row (t, fcnAddr, fcnSize, fcn->name, noret, nbbs, nins, refs, xref, axref, castr, ccstr, file, NULL);
+		free (file);
 	}
 	if (r_table_query (t, q)) {
 		char *s = (fmt == 'j')

@@ -13,12 +13,11 @@ R_API bool r_bin_addr2line(RBin *bin, ut64 addr, char *file, int len, int *line,
 	if (baddr == UT64_MAX) {
 		baddr = 0;
 	}
-	if (cp && cp->dbginfo) {
-		if (o && addr >= baddr && addr < baddr + bin->cur->bo->size) {
-			if (cp->dbginfo->get_line) {
-				return cp->dbginfo->get_line (bin->cur, addr, file, len, line, column);
-			}
+	if (o && addr >= baddr && addr < baddr + bin->cur->bo->size) {
+		if (cp && cp->dbginfo && cp->dbginfo->get_line) {
+			return cp->dbginfo->get_line (bin->cur, addr, file, len, line, column);
 		}
+		return r_bin_addr2line2 (bin, addr, file, len, line, column);
 	}
 	return false;
 }
