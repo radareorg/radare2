@@ -61,8 +61,15 @@ static bool parse_section(RBinFile *bf, MetaSection *ms, struct section_t *secti
 	return false;
 }
 
+static void metadata_sections_fini(MetaSections *ms) {
+	R_FREE (ms->types.data);
+	R_FREE (ms->fieldmd.data);
+	R_FREE (ms->clslist.data);
+	R_FREE (ms->catlist.data);
+}
+
 #define PARSECTION(x,y) if (parse_section (bf, x, section, y)) {} else
-static MetaSections load_metadata_sections(RBinFile *bf) {
+static MetaSections metadata_sections_init(RBinFile *bf) {
 	MetaSections ms = {0};
 	const RVector *sections = MACH0_(load_sections) (bf->bo->bin_obj);
 	if (!sections) {
@@ -293,6 +300,9 @@ static void get_ivar_list_t(mach0_ut p, RBinFile *bf, RBinClass *klass) {
 			return;
 		}
 		field = R_NEW0 (RBinField);
+		if (!field) {
+			break;
+		}
 		memset (&i, '\0', sizeof (struct MACH0_(SIVar)));
 		if (r + left < r || r + sizeof (struct MACH0_(SIVar)) < r) {
 			goto error;
@@ -371,6 +381,8 @@ static void get_ivar_list_t(mach0_ut p, RBinFile *bf, RBinClass *klass) {
 			// XXX the field name shouldnt contain the class name
 			field->name = r_str_newf ("%s::%s%s", klass->name, "(ivar)", name);
 			R_FREE (name);
+		} else {
+			R_LOG_WARN ("not parsing ivars, wrong va2pa");
 		}
 
 		r = va2pa (i.type, NULL, &left, bf);
@@ -401,16 +413,21 @@ static void get_ivar_list_t(mach0_ut p, RBinFile *bf, RBinClass *klass) {
 			} else {
 				field->type = NULL;
 			}
-			r_list_append (klass->fields, field);
+			if (field->name) {
+				field->name = NULL;
+				 r_list_append (klass->fields, field);
+				 field = NULL;
+			} else {
+				R_LOG_WARN ("field name is empty");
+			}
 		} else {
+			R_LOG_DEBUG ("ERR");
 			goto error;
 		}
 		p += sizeof (struct MACH0_(SIVar));
 		offset += sizeof (struct MACH0_(SIVar));
 	}
-	if (!r_list_empty (klass->fields)) {
-		r_list_sort (klass->fields, sort_by_offset);
-	}
+	r_list_sort (klass->fields, sort_by_offset);
 	RBinField *isa_field = R_NEW0 (RBinField);
 	isa_field->name = strdup ("isa");
 	isa_field->size = sizeof (mach0_ut);
@@ -528,6 +545,7 @@ static void get_objc_property_list(mach0_ut p, RBinFile *bf, RBinClass *klass) {
 					goto error;
 				}
 			}
+			// R2_590 use :: or : syntax?
 			property->name = r_str_newf ("%s::%s%s", klass->name, "(property)", name);
 			property->offset = j;
 			property->paddr = r;
@@ -1297,10 +1315,8 @@ typedef struct {
 	ut64 members;
 	ut64 members_count;
 	// internal //
-	// MetaSection fieldmd;
-	st32 *fieldmd;
-	ut64 fieldmd_addr;
-	size_t fieldmd_size;
+	MetaSection fieldmd;
+	st32 *fieldmd_data;
 } SwiftType;
 
 static SwiftType parse_type_entry(RBinFile *bf, ut64 typeaddr) {
@@ -1434,9 +1450,9 @@ static void parse_type(RList *list, RBinFile *bf, SwiftType st, HtUP *symbols_ht
 
 	if (st.fields != UT64_MAX) {
 		int i;
-		size_t dmax = st.fieldmd_size / 4;
+		size_t dmax = st.fieldmd.size / 4;
 		for (i = 0; i < 128; i += 3) {
-			const int j = (st.fields - st.fieldmd_addr) / 4;
+			const int j = (st.fields - st.fieldmd.addr) / 4;
 			const int d = 6 + j + i;
 			if (d >= dmax) {
 				break;
@@ -1445,7 +1461,7 @@ static void parse_type(RList *list, RBinFile *bf, SwiftType st, HtUP *symbols_ht
 			if (!field) {
 				break;
 			}
-			ut64 field_name_addr = st.fieldmd_addr + (d * 4) + st.fieldmd[d];
+			ut64 field_name_addr = st.fieldmd.addr + (d * 4) + st.fieldmd_data[d];
 			ut64 field_method_addr = field_name_addr;
 			ut64 vaddr = r_bin_file_get_baddr (bf) + field_method_addr;
 			char *field_name = readstr (bf, field_name_addr);
@@ -1508,7 +1524,7 @@ RList *MACH0_(parse_classes)(RBinFile *bf, objc_cache_opt_info *oi) {
 
 	/* check if it's Swift */
 
-	MetaSections ms = load_metadata_sections (bf);
+	MetaSections ms = metadata_sections_init (bf);
 	// R_DUMP (&ms);
 
 	RList /*<RBinClass>*/ *ret = MACH0_(parse_categories) (bf, &ms, relocs, oi);
@@ -1544,9 +1560,9 @@ RList *MACH0_(parse_classes)(RBinFile *bf, objc_cache_opt_info *oi) {
 					ut64 type_address = ms.types.addr + (i * 4) + word;
 					SwiftType st = parse_type_entry (bf, type_address);
 					st.addr = type_address;
-					st.fieldmd = fieldmd;
-					st.fieldmd_addr = ms.fieldmd.addr;
-					st.fieldmd_size = aligned_fieldmd_size;
+					st.fieldmd_data = fieldmd;
+					st.fieldmd.addr = ms.fieldmd.addr;
+					st.fieldmd.size = aligned_fieldmd_size;
 					R_LOG_DEBUG ("Name address 0x%"PFMT64x"\n", st.name_addr);
 					if (st.fields != UT64_MAX) {
 						parse_type (ret, bf, st, symbols_ht);
@@ -1616,9 +1632,11 @@ RList *MACH0_(parse_classes)(RBinFile *bf, objc_cache_opt_info *oi) {
 		}
 		r_list_append (ret, klass);
 	}
+	metadata_sections_fini (&ms);
 	return ret;
 
 get_classes_error:
+	metadata_sections_fini (&ms);
 	r_list_free (sctns);
 	r_list_free (ret);
 	// XXX DOUBLE FREE r_bin_class_free (klass);
