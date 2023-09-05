@@ -204,6 +204,7 @@ static RCoreHelpMessage help_msg_p = {
 	"pr", "[?][glx] [len]", "print N raw bytes (in lines or hexblocks, 'g'unzip)",
 	"ps", "[?][pwz] [len]", "print pascal/wide/zero-terminated strings",
 	"pt", "[?][dn] [len]", "print different timestamps",
+	"pT", "[?][format] [arg]", "print tree of data (pT Ffvc)",
 	"pu", "[w] [len]", "print N url encoded bytes (w=wide)",
 	"pv", "[?][ejh] [mode]", "show value of given size (1, 2, 4, 8)",
 	"pwd", "", "display current working directory",
@@ -8176,6 +8177,9 @@ static int cmd_print(void *data, const char *input) {
 		break;
 	case 'n': // easter
 		R_LOG_ERROR ("easter egg license has expired");
+		break;
+	case 'T': // "pT"
+		r_print_tree (core, r_str_trim_head_ro (input + 1));
 		break;
 	case 't': // "pt"
 		switch (input[1]) {
