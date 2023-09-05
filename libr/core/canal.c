@@ -3492,13 +3492,13 @@ static int fcn_list_table(RCore *core, const char *q, int fmt) {
 	r_table_add_column (t, typeString, "name", 0);
 	r_table_add_column (t, typeNumber, "noret", 0);
 	r_table_add_column (t, typeNumber, "nbbs", 0);
-	r_table_add_column (t, typeNumber, "file", 0);
 	r_table_add_column (t, typeNumber, "nins", 0);
 	r_table_add_column (t, typeNumber, "refs", 0);
 	r_table_add_column (t, typeNumber, "xref", 0);
 	r_table_add_column (t, typeNumber, "axref", 0);
 	r_table_add_column (t, typeNumber, "calls", 0);
 	r_table_add_column (t, typeNumber, "cc", 0);
+	r_table_add_column (t, typeNumber, "file", 0);
 	r_list_foreach (core->anal->fcns, iter, fcn) {
 		r_strf_var (fcnAddr, 32, "0x%08"PFMT64x, fcn->addr);
 		r_strf_var (fcnSize, 32, "%"PFMT64u, r_anal_function_linear_size (fcn)); // r_anal_function_size (fcn));
@@ -3533,7 +3533,7 @@ static int fcn_list_table(RCore *core, const char *q, int fmt) {
 		if (!file) {
 			file = strdup ("");
 		}
-		r_table_add_row (t, fcnAddr, fcnSize, fcn->name, noret, nbbs, file, nins, refs, xref, axref, castr, ccstr, NULL);
+		r_table_add_row (t, fcnAddr, fcnSize, fcn->name, noret, nbbs, nins, refs, xref, axref, castr, ccstr, file, NULL);
 		free (file);
 	}
 	if (r_table_query (t, q)) {

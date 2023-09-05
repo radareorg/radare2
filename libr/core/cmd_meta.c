@@ -370,10 +370,12 @@ retry:
 		char *s = r_bin_addr2fileline (core->bin, addr);
 		if (!s) {
 			RAnalOp *op = r_core_anal_op (core, addr, 0);
-			addr += op->size;
-			r_anal_op_free (op);
-			if (retries-- > 0) {
-				goto retry;
+			if (op) {
+				addr += op->size;
+				r_anal_op_free (op);
+				if (retries-- > 0) {
+					goto retry;
+				}
 			}
 		}
 		if (s) {

@@ -67,8 +67,8 @@ aa
 afl,xref/sort/dec,any/head/10
 EOF
 EXPECT=<<EOF
-addr        size name                     noret nbbs nins refs xref axref calls cc
-----------------------------------------------------------------------------------
+addr        size name                     noret nbbs nins refs xref axref calls cc file
+---------------------------------------------------------------------------------------
 0x100004630 6    sym.imp.putchar          0     1    1    1    24   24    0     1
 0x10000462a 6    sym.imp.printf           0     1    1    1    22   22    0     1
 0x100004678 6    sym.imp.strlen           0     1    1    1    12   12    0     1
