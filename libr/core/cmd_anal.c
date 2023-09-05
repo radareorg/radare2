@@ -12385,6 +12385,124 @@ static void logline(RCore *core, int pc, const char *title) {
 	}
 }
 
+static bool isValidSymbol(RBinSymbol *symbol) {
+	if (symbol && symbol->type) {
+		const char *type = symbol->type;
+		return (symbol->paddr != UT64_MAX) && (!strcmp (type, R_BIN_TYPE_FUNC_STR) || !strcmp (type, R_BIN_TYPE_HIOS_STR) || !strcmp (type, R_BIN_TYPE_LOOS_STR) || !strcmp (type, R_BIN_TYPE_METH_STR) || !strcmp (type , R_BIN_TYPE_STATIC_STR));
+	}
+	return false;
+}
+
+static bool isSkippable(RBinSymbol *s) {
+	if (s && s->name && s->bind) {
+		if (r_str_startswith (s->name, "radr://")) {
+			return true;
+		}
+		if (!strcmp (s->name, "__mh_execute_header")) {
+			return true;
+		}
+		if (!strcmp (s->bind, "NONE")) {
+			if (s->is_imported && s->libname && strstr(s->libname, ".dll")) {
+				return true;
+			}
+		}
+	}
+	return false;
+}
+R_API int r_core_anal_all(RCore *core) {
+	const RList *list;
+	RListIter *iter;
+	RAnalFunction *fcni;
+	RBinAddr *binmain;
+	RBinAddr *entry;
+	RBinSymbol *symbol;
+	const bool anal_vars = r_config_get_b (core->config, "anal.vars");
+	const bool anal_calls = r_config_get_b (core->config, "anal.calls");
+
+	// required for noreturn
+	if (r_config_get_b (core->config, "anal.imports")) {
+		logline (core, 10, "Analyze imports (af@@@i)");
+		r_core_cmd0 (core, "af@@@i");
+	}
+
+	/* Analyze Functions */
+	/* Entries */
+	RFlagItem *item = r_flag_get (core->flags, "entry0");
+	if (item) {
+		logline (core, 12, "Analyze entrypoint (af@ entry0)");
+		r_core_af (core, item->offset, "entry0", anal_calls);
+	} else {
+		r_core_af (core, core->offset, NULL, anal_calls);
+	}
+	item = r_flag_get (core->flags, "main");
+	if (item) {
+		logline (core, 14, "Analyze entrypoint (af@ main)");
+		r_core_af (core, item->offset, "main", anal_calls);
+	}
+
+	r_core_task_yield (&core->tasks);
+
+	r_cons_break_push (NULL, NULL);
+
+	logline (core, 18, "Analyze symbols (af@@@s)");
+	RVecRBinSymbol *v = r_bin_get_symbols_vec (core->bin);
+	if (v) {
+		R_VEC_FOREACH (v, symbol) {
+			if (r_cons_is_breaked ()) {
+				break;
+			}
+			// Stop analyzing PE imports further
+			if (isSkippable (symbol)) {
+				continue;
+			}
+			if (isValidSymbol (symbol)) {
+				ut64 addr = r_bin_get_vaddr (core->bin, symbol->paddr, symbol->vaddr);
+				// TODO: uncomment to: fcn.name = symbol.name, problematic for imports
+				// r_core_af (core, addr, symbol->name, anal_calls);
+				r_core_af (core, addr, NULL, anal_calls);
+			}
+		}
+	}
+	r_core_task_yield (&core->tasks);
+	/* Main */
+	if ((binmain = r_bin_get_sym (core->bin, R_BIN_SYM_MAIN))) {
+		if (binmain->paddr != UT64_MAX) {
+			ut64 addr = r_bin_get_vaddr (core->bin, binmain->paddr, binmain->vaddr);
+			r_core_af (core, addr, "main", anal_calls);
+		}
+	}
+	r_core_task_yield (&core->tasks);
+	if ((list = r_bin_get_entries (core->bin))) {
+		r_list_foreach (list, iter, entry) {
+			if (r_cons_is_breaked ()) {
+				break;
+			}
+			if (entry->paddr == UT64_MAX) {
+				continue;
+			}
+			ut64 addr = r_bin_get_vaddr (core->bin, entry->paddr, entry->vaddr);
+			r_core_af (core, addr, NULL, anal_calls);
+		}
+	}
+	r_core_task_yield (&core->tasks);
+	// R2_600 - drop this code? we already recover vars later in aaa. should be fine to if 0
+	if (anal_vars) {
+		logline (core, 22, "Recovering variables");
+		/* Set fcn type to R_ANAL_FCN_TYPE_SYM for symbols */
+		r_list_foreach_prev (core->anal->fcns, iter, fcni) {
+			if (r_cons_is_breaked ()) {
+				break;
+			}
+			r_core_recover_vars (core, fcni, true);
+			if (!strncmp (fcni->name, "dbg.", 4) || !strncmp (fcni->name, "rsym.", 4) || !strncmp (fcni->name, "sym.", 4) || !strncmp (fcni->name, "main", 4)) {
+				fcni->type = R_ANAL_FCN_TYPE_SYM;
+			}
+		}
+	}
+	r_cons_break_pop ();
+	return true;
+}
+
 static int cmd_anal_all(RCore *core, const char *input) {
 	switch (*input) {
 	case '?':
@@ -12548,12 +12666,12 @@ static int cmd_anal_all(RCore *core, const char *input) {
 				goto jacuzzi;
 			}
 			ut64 curseek = core->offset;
-			logline (core, 10, "Analyze all flags starting with sym. and entry0 (aa)");
+			logline (core, 4, "Analyze all flags starting with sym. and entry0 (aa)");
 			r_cons_break_push (NULL, NULL);
 			r_cons_break_timeout (r_config_get_i (core->config, "anal.timeout"));
 			bool anal_imports = false;
 			if (r_config_get_b (core->config, "anal.imports")) {
-				logline (core, 12, "Analyze imports (af@@@i)");
+				logline (core, 8, "Analyze imports (af@@@i)");
 				r_core_cmd0 (core, "af@@@i");
 				anal_imports = true;
 			}
@@ -12567,7 +12685,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 
 			// Run afvn in all fcns
 			if (r_config_get_b (core->config, "anal.vars")) {
-				logline (core, 15, "Analyze all functions arguments/locals (afva@@@F)");
+				logline (core, 25, "Analyze all functions arguments/locals (afva@@@F)");
 				// r_core_cmd0 (core, "afva@@f");
 				r_core_cmd0 (core, "afva@@@F");
 			}
@@ -12588,9 +12706,9 @@ static int cmd_anal_all(RCore *core, const char *input) {
 			bool cfg_debug = r_config_get_b (core->config, "cfg.debug");
 			if (*input == 'a') { // "aaa" .. which is checked just in the case above
 				if (r_str_startswith (r_config_get (core->config, "bin.lang"), "go")) {
-					logline (core, 20, "Find function and symbol names from golang binaries (aang)");
+					logline (core, 30, "Find function and symbol names from golang binaries (aang)");
 					r_core_anal_autoname_all_golang_fcns (core);
-					logline (core, 25, "Analyze all flags starting with sym.go. (aF @@f:sym.go.*)");
+					logline (core, 35, "Analyze all flags starting with sym.go. (aF @@f:sym.go.*)");
 					r_core_cmd0 (core, "aF @@@F:sym.go.*");
 				}
 				r_core_task_yield (&core->tasks);
@@ -12608,7 +12726,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 					goto jacuzzi;
 				}
 
-				logline (core, 30, "Analyze function calls (aac)");
+				logline (core, 40, "Analyze function calls (aac)");
 				(void)cmd_anal_calls (core, "", false, false); // "aac"
 				r_core_seek (core, curseek, true);
 				// R_LOG_INFO ("Analyze data refs as code (LEA)");
@@ -12619,7 +12737,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 				}
 
 				if (is_unknown_file (core)) {
-					logline (core, 40, "find and analyze function preludes (aap)");
+					logline (core, 45, "find and analyze function preludes (aap)");
 					(void)r_core_search_preludes (core, false); // "aap"
 					didAap = true;
 					r_core_task_yield (&core->tasks);

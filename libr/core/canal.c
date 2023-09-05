@@ -4562,125 +4562,6 @@ beach:
 	return count;
 }
 
-static bool isValidSymbol(RBinSymbol *symbol) {
-	if (symbol && symbol->type) {
-		const char *type = symbol->type;
-		return (symbol->paddr != UT64_MAX) && (!strcmp (type, R_BIN_TYPE_FUNC_STR) || !strcmp (type, R_BIN_TYPE_HIOS_STR) || !strcmp (type, R_BIN_TYPE_LOOS_STR) || !strcmp (type, R_BIN_TYPE_METH_STR) || !strcmp (type , R_BIN_TYPE_STATIC_STR));
-	}
-	return false;
-}
-
-static bool isSkippable(RBinSymbol *s) {
-	if (s && s->name && s->bind) {
-		if (r_str_startswith (s->name, "radr://")) {
-			return true;
-		}
-		if (!strcmp (s->name, "__mh_execute_header")) {
-			return true;
-		}
-		if (!strcmp (s->bind, "NONE")) {
-			if (s->is_imported && s->libname && strstr(s->libname, ".dll")) {
-				return true;
-			}
-		}
-	}
-	return false;
-}
-
-R_API int r_core_anal_all(RCore *core) {
-	const RList *list;
-	RListIter *iter;
-	RAnalFunction *fcni;
-	RBinAddr *binmain;
-	RBinAddr *entry;
-	RBinSymbol *symbol;
-	const bool anal_vars = r_config_get_b (core->config, "anal.vars");
-	const bool anal_calls = r_config_get_b (core->config, "anal.calls");
-
-	// required for noreturn
-	if (r_config_get_b (core->config, "anal.imports")) {
-		R_LOG_INFO ("Analyze imports (af@@@i)");
-		r_core_cmd0 (core, "af@@@i");
-	}
-
-	/* Analyze Functions */
-	/* Entries */
-	RFlagItem *item = r_flag_get (core->flags, "entry0");
-	if (item) {
-		R_LOG_INFO ("Analyze entrypoint (af@ entry0)");
-		r_core_af (core, item->offset, "entry0", anal_calls);
-	} else {
-		r_core_af (core, core->offset, NULL, anal_calls);
-	}
-	item = r_flag_get (core->flags, "main");
-	if (item) {
-		R_LOG_INFO ("Analyze entrypoint (af@ main)");
-		r_core_af (core, item->offset, "main", anal_calls);
-	}
-
-	r_core_task_yield (&core->tasks);
-
-	r_cons_break_push (NULL, NULL);
-
-	R_LOG_INFO ("Analyze symbols (af@@@s)");
-	RVecRBinSymbol *v = r_bin_get_symbols_vec (core->bin);
-	if (v) {
-		R_VEC_FOREACH (v, symbol) {
-			if (r_cons_is_breaked ()) {
-				break;
-			}
-			// Stop analyzing PE imports further
-			if (isSkippable (symbol)) {
-				continue;
-			}
-			if (isValidSymbol (symbol)) {
-				ut64 addr = r_bin_get_vaddr (core->bin, symbol->paddr, symbol->vaddr);
-				// TODO: uncomment to: fcn.name = symbol.name, problematic for imports
-				// r_core_af (core, addr, symbol->name, anal_calls);
-				r_core_af (core, addr, NULL, anal_calls);
-			}
-		}
-	}
-	r_core_task_yield (&core->tasks);
-	/* Main */
-	if ((binmain = r_bin_get_sym (core->bin, R_BIN_SYM_MAIN))) {
-		if (binmain->paddr != UT64_MAX) {
-			ut64 addr = r_bin_get_vaddr (core->bin, binmain->paddr, binmain->vaddr);
-			r_core_af (core, addr, "main", anal_calls);
-		}
-	}
-	r_core_task_yield (&core->tasks);
-	if ((list = r_bin_get_entries (core->bin))) {
-		r_list_foreach (list, iter, entry) {
-			if (r_cons_is_breaked ()) {
-				break;
-			}
-			if (entry->paddr == UT64_MAX) {
-				continue;
-			}
-			ut64 addr = r_bin_get_vaddr (core->bin, entry->paddr, entry->vaddr);
-			r_core_af (core, addr, NULL, anal_calls);
-		}
-	}
-	r_core_task_yield (&core->tasks);
-	// R2_600 - drop this code? we already recover vars later in aaa. should be fine to if 0
-	if (anal_vars) {
-		R_LOG_INFO ("Recovering variables");
-		/* Set fcn type to R_ANAL_FCN_TYPE_SYM for symbols */
-		r_list_foreach_prev (core->anal->fcns, iter, fcni) {
-			if (r_cons_is_breaked ()) {
-				break;
-			}
-			r_core_recover_vars (core, fcni, true);
-			if (!strncmp (fcni->name, "dbg.", 4) || !strncmp (fcni->name, "rsym.", 4) || !strncmp (fcni->name, "sym.", 4) || !strncmp (fcni->name, "main", 4)) {
-				fcni->type = R_ANAL_FCN_TYPE_SYM;
-			}
-		}
-	}
-	r_cons_break_pop ();
-	return true;
-}
-
 R_API int r_core_anal_data(RCore *core, ut64 addr, int count, int depth, int wordsize) {
 	RAnalData *d;
 	ut64 dstaddr = 0LL;
@@ -4726,7 +4607,7 @@ R_API int r_core_anal_data(RCore *core, ut64 addr, int count, int depth, int wor
 				i += word;
 				break;
 			case R_ANAL_DATA_TYPE_STRING:
-				buf[len-1] = 0;
+				buf[len - 1] = 0;
 				i += strlen ((const char*)buf + i) + 1;
 				break;
 			default:
