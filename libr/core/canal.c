@@ -3009,8 +3009,10 @@ static int fcn_print_makestyle(RCore *core, RList *fcns, char mode) {
 }
 
 static char *filename(RCore *core, ut64 addr) {
-	// char *fn = r_core_cmd_strf (core, "CLf 0x%08"PFMT64x, addr);
-	char *fn = r_core_cmd_strf (core, "CLf @@@b@0x%"PFMT64x, addr);
+	char *fn = r_core_cmd_strf (core, "CLf 0x%08"PFMT64x, addr);
+	// char *fn = r_core_cmd_strf (core, "CLf @@@b@0x%"PFMT64x, addr);
+	// ignore return code
+	r_core_return_code (core, 0);
 	if (fn) {
 		r_str_trim (fn);
 		r_str_after (fn, '\n');

@@ -380,11 +380,9 @@ retry:
 			r_str_after (s, ':');
 			r_cons_println (s);
 			free (s);
-			return 0;
 			r_core_return_code (core, 0);
 		} else {
 			r_core_return_code (core, 1);
-			return 1;
 		}
 		return 0;
 	}
