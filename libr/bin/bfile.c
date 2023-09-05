@@ -1062,6 +1062,7 @@ R_API RBinClass *r_bin_class_new(const char *name, const char *super, int visibi
 			c->super = r_list_newf (free);
 			r_list_append (c->super, strdup (super));
 		}
+		// TODO: use vectors!
 		c->methods = r_list_newf (r_bin_symbol_free);
 		c->fields = r_list_newf (r_bin_field_free);
 		c->visibility = visibility;

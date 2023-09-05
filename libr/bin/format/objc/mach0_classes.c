@@ -1260,8 +1260,8 @@ void MACH0_(get_class_t)(mach0_ut p, RBinFile *bf, RBinClass *klass, bool dupe, 
 		reloc_at_class_addr.addr = p + sizeof (mach0_ut);
 		RSkipListNode *found = r_skiplist_find (relocs, &reloc_at_class_addr);
 		if (found) {
-			const char *_objc_class = "_OBJC_CLASS_$_";
-			const int _objc_class_len = strlen (_objc_class);
+			const char * const _objc_class = "_OBJC_CLASS_$_";
+			const size_t _objc_class_len = strlen (_objc_class);
 			char *target_class_name = (char*) ((struct reloc_t*) found->data)->name;
 			if (r_str_startswith (target_class_name, _objc_class)) {
 				target_class_name += _objc_class_len;
@@ -1484,6 +1484,9 @@ static void parse_type(RList *list, RBinFile *bf, SwiftType st, HtUP *symbols_ht
 }
 
 static void *read_section(RBinFile *bf, MetaSection *ms, ut64 *asize) {
+	if (ms->data) {
+		return ms->data;
+	}
 	void *data = calloc (ms->size, 1);
 	if (data) {
 		// align size and addr
@@ -1569,9 +1572,7 @@ RList *MACH0_(parse_classes)(RBinFile *bf, objc_cache_opt_info *oi) {
 					}
 				}
 				ht_up_free (symbols_ht);
-				free (types);
 			}
-			free (fieldmd);
 		}
 	}
 	if (!ms.clslist.size || !ms.clslist.have) {
@@ -1597,19 +1598,9 @@ RList *MACH0_(parse_classes)(RBinFile *bf, objc_cache_opt_info *oi) {
 			R_LOG_ERROR ("Chopped classlist data");
 			break;
 		}
-		if (!(klass = R_NEW0 (RBinClass))) {
-			// retain just for debug
-			goto get_classes_error;
-		}
+		klass = r_bin_class_new ("", "", R_BIN_CLASS_PUBLIC);
+		R_FREE (klass->name); // allow NULL name in rbinclass?
 		klass->lang = R_BIN_LANG_OBJC;
-		if (!(klass->methods = r_list_new ())) {
-			// retain just for debug
-			goto get_classes_error;
-		}
-		if (!(klass->fields = r_list_new ())) {
-			// retain just for debug
-			goto get_classes_error;
-		}
 		size = sizeof (mach0_ut);
 		if (ms.clslist.addr > bf->size || ms.clslist.addr + size > bf->size) {
 			goto get_classes_error;
