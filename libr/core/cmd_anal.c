@@ -8783,7 +8783,7 @@ ctrl_c:
 
 static void _anal_calls(RCore *core, ut64 addr, ut64 addr_end, bool printCommands, bool importsOnly) {
 	RAnalOp op = {0};
-	int depth = r_config_get_i (core->config, "anal.depth");
+	const int depth = r_config_get_i (core->config, "anal.depth");
 	const int addrbytes = core->io->addrbytes;
 	const int bsz = 4096;
 	int bufi = 0;
@@ -8807,6 +8807,7 @@ static void _anal_calls(RCore *core, ut64 addr, ut64 addr_end, bool printCommand
 	}
 	int setBits = r_config_get_i (core->config, "asm.bits");
 	r_cons_break_push (NULL, NULL);
+	bool valid = true;
 	while (addr < addr_end && !r_cons_is_breaked ()) {
 		// TODO: too many ioreads here
 		if (bufi > bufi_max) {
@@ -8831,7 +8832,7 @@ static void _anal_calls(RCore *core, ut64 addr, ut64 addr_end, bool printCommand
 			if (op.size < 1) {
 				op.size = minop;
 			}
-			if (op.type == R_ANAL_OP_TYPE_CALL) {
+			if (valid && op.type == R_ANAL_OP_TYPE_CALL) {
 				bool isValidCall = true;
 				if (importsOnly) {
 					RFlagItem *f = r_flag_get_i (core->flags, op.jump);
@@ -8870,7 +8871,21 @@ static void _anal_calls(RCore *core, ut64 addr, ut64 addr_end, bool printCommand
 #endif
 				}
 			}
+			switch (op.type) {
+			case R_ANAL_OP_TYPE_ILL:
+#if 0
+			case R_ANAL_OP_TYPE_TRAP:
+			case R_ANAL_OP_TYPE_UNK:
+			case R_ANAL_OP_TYPE_NULL:
+#endif
+				valid = false;
+				break;
+			default:
+				valid = true;
+				break;
+			}
 		} else {
+			valid = false;
 			op.size = minop;
 		}
 		if ((int)op.size < 1) {
