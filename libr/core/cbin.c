@@ -1106,7 +1106,7 @@ static bool bin_dwarf(RCore *core, PJ *pj, int mode) {
 		return false;
 	}
 	RBinFile *binfile = r_bin_cur (core->bin);
-	RBinPlugin * plugin = r_bin_file_cur_plugin (binfile);
+	RBinPlugin *plugin = r_bin_file_cur_plugin (binfile);
 	if (!binfile) {
 		if (IS_MODE_JSON (mode)) {
 			pj_end (pj);
@@ -1159,7 +1159,6 @@ static bool bin_dwarf(RCore *core, PJ *pj, int mode) {
 	r_cons_break_push (NULL, NULL);
 	/* cache file:line contents */
 	HtPP* file_lines = ht_pp_new (NULL, file_lines_free_kv, NULL);
-
 
 	SetP *set = set_p_new ();
 	//TODO we should need to store all this in sdb, or do a filecontentscache in libr/util
