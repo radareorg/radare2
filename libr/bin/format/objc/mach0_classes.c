@@ -68,7 +68,7 @@ static void metadata_sections_fini(MetaSections *ms) {
 	R_FREE (ms->catlist.data);
 }
 
-#define PARSECTION(x,y) if (parse_section (bf, x, section, y)) {} else
+#define PARSECTION(x,y) parse_section (bf, x, section, y)
 static MetaSections metadata_sections_init(RBinFile *bf) {
 	MetaSections ms = {0};
 	const RVector *sections = MACH0_(load_sections) (bf->bo->bin_obj);
@@ -77,11 +77,10 @@ static MetaSections metadata_sections_init(RBinFile *bf) {
 	}
 	struct section_t *section;
 	r_vector_foreach (sections, section) {
-		PARSECTION (&ms.clslist, "__objc_classlist")
-		PARSECTION (&ms.catlist, "__objc_catlist")
-		PARSECTION (&ms.types, "swift5_types")
-		PARSECTION (&ms.fieldmd, "swift5_fieldmd")
-		{}
+		PARSECTION (&ms.clslist, "__objc_classlist");
+		PARSECTION (&ms.catlist, "__objc_catlist");
+		PARSECTION (&ms.types, "swift5_types");
+		PARSECTION (&ms.fieldmd, "swift5_fieldmd");
 	}
 	return ms;
 }
@@ -1081,7 +1080,7 @@ static void get_class_ro_t(mach0_ut p, RBinFile *bf, ut32 *is_meta_class, RBinCl
 	ut8 scro[sizeof (struct MACH0_(SClassRoT))] = {0};
 
 	if (!bf || !bf->bo || !bf->bo->bin_obj || !bf->bo->info) {
-		eprintf ("Invalid RBinFile pointer\n");
+		R_LOG_WARN ("Invalid RBinFile pointer");
 		return;
 	}
 	bigendian = bf->bo->info->big_endian;
@@ -1103,7 +1102,7 @@ static void get_class_ro_t(mach0_ut p, RBinFile *bf, ut32 *is_meta_class, RBinCl
 
 	// TODO: use r_buf_fread to avoid endianness issues
 	if (left < sizeof (cro)) {
-		eprintf ("Not enough data for SClassRoT\n");
+		R_LOG_ERROR ("Not enough data for SClassRoT");
 		return;
 	}
 	len = r_buf_read_at (bf->buf, r, scro, sizeof (cro));
@@ -1486,7 +1485,7 @@ static void *read_section(RBinFile *bf, MetaSection *ms, ut64 *asize) {
 	if (data) {
 		// align size and addr
 		if (ms->addr % 4) {
-			R_LOG_WARN ("Unaligned address for section\n");
+			R_LOG_WARN ("Unaligned address for section");
 		}
 		*asize = ms->size + (ms->size % 4);
 		if (r_buf_read_at (bf->buf, ms->addr, data, *asize) != *asize) {
@@ -1561,7 +1560,7 @@ RList *MACH0_(parse_classes)(RBinFile *bf, objc_cache_opt_info *oi) {
 					st.fieldmd_data = fieldmd;
 					st.fieldmd.addr = ms.fieldmd.addr;
 					st.fieldmd.size = aligned_fieldmd_size;
-					R_LOG_DEBUG ("Name address 0x%"PFMT64x"\n", st.name_addr);
+					R_LOG_DEBUG ("Name address 0x%"PFMT64x, st.name_addr);
 					if (st.fields != UT64_MAX) {
 						parse_type (ret, bf, st, symbols_ht);
 					}
