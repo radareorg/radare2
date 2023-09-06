@@ -619,7 +619,8 @@ typedef struct r_anal_bb_t {
 } RAnalBlock;
 
 typedef enum {
-	R_ANAL_REF_TYPE_NULL = 0, // find better name
+	R_ANAL_REF_TYPE_NULL = 0,   // unknown/undefined
+	R_ANAL_REF_TYPE_ERROR = 1,  // unreadable/invalid
 	R_ANAL_REF_TYPE_CODE = 'c', // code ref
 	R_ANAL_REF_TYPE_CALL = 'C', // code ref (call) -- maybe use 'k' for kall?
 	R_ANAL_REF_TYPE_JUMP = 'j', // code ref (call)
@@ -635,7 +636,6 @@ typedef enum {
 } RAnalRefType;
 
 #define R_ANAL_REF_TYPE_PERM(x) (((x)>>8) & 0xff)
-// #define R_ANAL_REF_TYPE_MASK(x) ((x) & 0xff)
 #define R_ANAL_REF_TYPE_MASK(x) r_anal_ref_typemask((x))
 
 typedef struct r_anal_ref_t {

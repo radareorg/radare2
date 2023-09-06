@@ -4,19 +4,17 @@
 
 // TODO: integrate this code in a better way.. maybe reftype as name?
 R_API int r_anal_data_type(RAnal *anal, ut64 da) {
+	RIO *io = anal->iob.io;
+	if (!anal->iob.is_valid_offset (io, da, R_PERM_R)) {
+		return R_ANAL_REF_TYPE_ERROR;
+	}
 	ut8 buf[64] = {0};
-	if (!anal->iob.read_at (anal->iob.io, da, buf, sizeof (buf))) {
-		R_LOG_ERROR ("RAnal.dataType(): Cannot read at 0x%08"PFMT64x, da);
-		return 0;
+	// check if valid address
+	if (!anal->iob.read_at (io, da, buf, sizeof (buf))) {
+		// R_LOG_ERROR ("RAnal.dataType(): Cannot read at 0x%08"PFMT64x, da);
+		return R_ANAL_REF_TYPE_ERROR;
 	}
-#if 0
-	if (buf[0] == 0x10 && buf[1] == 0x48) {
-		return R_ANAL_REF_TYPE_CODE;
-	}
-	return 0;
-#endif
-#if 1
-	int k = 0;
+	int k = R_ANAL_REF_TYPE_NULL;
 	RAnalOp op = {0};
 	int oplen = r_anal_op (anal, &op, da, buf, sizeof (buf), -1);
 	if (oplen > 2) {
@@ -30,7 +28,6 @@ R_API int r_anal_data_type(RAnal *anal, ut64 da) {
 	}
 	r_anal_op_fini (&op);
 	return k;
-#endif
 #if 0
 	const char *kind = r_anal_data_kind (anal, da, buf, sizeof (buf));
 	if (!kind) {
