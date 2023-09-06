@@ -12424,6 +12424,7 @@ static bool isSkippable(RBinSymbol *s) {
 	}
 	return false;
 }
+
 R_API int r_core_anal_all(RCore *core) {
 	const RList *list;
 	RListIter *iter;
@@ -12440,8 +12441,6 @@ R_API int r_core_anal_all(RCore *core) {
 		r_core_cmd0 (core, "af@@@i");
 	}
 
-	/* Analyze Functions */
-	/* Entries */
 	RFlagItem *item = r_flag_get (core->flags, "entry0");
 	if (item) {
 		logline (core, 12, "Analyze entrypoint (af@ entry0)");
@@ -12457,7 +12456,6 @@ R_API int r_core_anal_all(RCore *core) {
 		r_core_af (core, item->offset, "main", anal_calls);
 	}
 #endif
-
 	r_core_task_yield (&core->tasks);
 
 	r_cons_break_push (NULL, NULL);

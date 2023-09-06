@@ -6,7 +6,7 @@
 R_API int r_anal_data_type(RAnal *anal, ut64 da) {
 	ut8 buf[64] = {0};
 	if (!anal->iob.read_at (anal->iob.io, da, buf, sizeof (buf))) {
-		R_LOG_ERROR ("Cannot read at 0x%08"PFMT64x, da);
+		R_LOG_ERROR ("RAnal.dataType(): Cannot read at 0x%08"PFMT64x, da);
 		return 0;
 	}
 #if 0
