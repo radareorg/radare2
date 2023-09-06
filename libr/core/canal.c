@@ -706,8 +706,11 @@ static void r_anal_analyze_fcn_refs(RCore *core, RAnalFunction *fcn, int depth) 
 		case R_ANAL_REF_TYPE_ICOD:
 			// check if its used as data or code.. or at least check what's in the destination
 			{
-				const int t = r_anal_data_type (core->anal, ref->addr);
+				const RAnalRefType t = r_anal_data_type (core->anal, ref->addr);
 				switch (R_ANAL_REF_TYPE_MASK (t)) {
+				case R_ANAL_REF_TYPE_ERROR:
+					R_LOG_DEBUG ("Invalid ICOD reference from 0x%08"PFMT64x" to 0x%08"PFMT64x, ref->at, ref->addr);
+					break;
 				case R_ANAL_REF_TYPE_ICOD:
 				case R_ANAL_REF_TYPE_CODE:
 					r_core_anal_fcn (core, ref->addr, ref->at, ref->type, depth - 1);
