@@ -1,3 +1,5 @@
+#if R_INCLUDE_BEGIN
+
 #if 0
 https://opensource.apple.com/source/xnu/xnu-201/osfmk/vm/vm_debug.c
 #endif
@@ -42,3 +44,5 @@ static int dmh_macos(RCore *core, const char *input) {
 	}
 	return 0;
 }
+
+#endif

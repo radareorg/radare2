@@ -1,6 +1,6 @@
 /* radare - LGPL - Copyright 2009-2023 - pancake */
 
-#include <r_core.h>
+#if R_INCLUDE_BEGIN
 
 static RCoreHelpMessage help_msg_g = {
 	"Usage:", "g[wcilper] [arg]", "Go compile shellcodes using asm.arch/bits/os",
@@ -282,3 +282,4 @@ static int cmd_egg(void *data, const char *input) {
 	}
 	return true;
 }
+#endif

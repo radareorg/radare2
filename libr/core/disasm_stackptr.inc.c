@@ -1,5 +1,6 @@
 /* radare - LGPL - Copyright 2019 - pancake */
 
+#if R_INCLUDE_BEGIN
 #define USE_BB_STACKPTR 0
 #define USE_BB_LINEAR 1
 
@@ -126,3 +127,5 @@ static void ds_print_stackptr(RDisasmState *ds) {
 		ds_update_stackptr (ds, &ds->analop);
 	}
 }
+
+#endif

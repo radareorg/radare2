@@ -1,5 +1,7 @@
 /* radare - LGPL - Copyright 2009-2023 - pancake */
 
+#if R_INCLUDE_BEGIN
+
 static R_TH_LOCAL int fdsz = 0;
 
 static RCoreHelpMessage help_msg_o = {
@@ -2357,3 +2359,4 @@ static int cmd_open(void *data, const char *input) {
 	}
 	return 0;
 }
+#endif

@@ -1,6 +1,6 @@
 /* radare - LGPL - Copyright 2009-2023 - pancake */
 
-#include <r_core.h>
+#if R_INCLUDE_BEGIN
 
 #define NAH 32
 
@@ -214,3 +214,5 @@ static void r_core_magic(RCore *core, const char *file, int v, PJ *pj) {
 		r_core_seek (core, addr, true);
 	}
 }
+
+#endif

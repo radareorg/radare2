@@ -1,6 +1,6 @@
 /* radare - LGPL - Copyright 2009-2023 - pancake */
 
-#include "r_core.h"
+#if R_INCLUDE_BEGIN
 
 static RCoreHelpMessage help_msg_fR = {
 	"Usage: fR"," [from] [to] ([mask])", " # Relocate flags matching a mask asuming old and new base addresses",
@@ -1745,3 +1745,4 @@ rep:
 	free (str);
 	return 0;
 }
+#endif

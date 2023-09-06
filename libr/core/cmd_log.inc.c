@@ -1,6 +1,6 @@
 /* radare - LGPL - Copyright 2009-2023 - pancake */
 
-#include "r_core.h"
+#if R_INCLUDE_BEGIN
 
 bool ranal2_list(RCore *core, const char *arch, int fmt);
 
@@ -634,3 +634,5 @@ static int cmd_plugins(void *data, const char *input) {
 	}
 	return 0;
 }
+
+#endif

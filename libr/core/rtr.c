@@ -232,8 +232,8 @@ static void activateDieTime(RCore *core) {
 	}
 }
 
-#include "rtr_http.c"
-#include "rtr_shell.c"
+#include "rtr_http.inc.c"
+#include "rtr_shell.inc.c"
 
 static int write_reg_val(char *buf, ut64 sz, ut64 reg, int regsize, bool bigendian) {
 	if (!bigendian) {

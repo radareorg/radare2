@@ -1,6 +1,7 @@
 /* radare - LGPL - Copyright 2009-2023 - pancake */
 
-#include <r_core.h>
+#if R_INCLUDE_BEGIN
+
 #include <sdb/sdb.h>
 #define TN_KEY_LEN 32
 #define TN_KEY_FMT "%"PFMT64u
@@ -6122,3 +6123,5 @@ static int cmd_debug(void *data, const char *input) {
 
 	return ret;
 }
+
+#endif

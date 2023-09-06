@@ -1,6 +1,6 @@
 /* radare2 - LGPL - Copyright 2009-2023 - pancake */
 
-#include <r_core.h>
+#if R_INCLUDE_BEGIN
 
 static RCoreHelpMessage help_msg_ecH = {
 	"Usage ecH[iw-?]","","",
@@ -780,3 +780,4 @@ static int cmd_eval(void *data, const char *input) {
 	}
 	return 0;
 }
+#endif

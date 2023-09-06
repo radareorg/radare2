@@ -1,6 +1,6 @@
 /* radare - LGPL - Copyright 2009-2022 - pancake */
 
-#include "r_core.h"
+#if R_INCLUDE_BEGIN
 
 static RCoreHelpMessage help_message_ci = {
 	"Usage: ci", "[sil] ([obid])", "Compare two bin objects",
@@ -1548,3 +1548,5 @@ static int cmd_cmp(void *data, const char *input) {
 	}
 	return 0;
 }
+
+#endif

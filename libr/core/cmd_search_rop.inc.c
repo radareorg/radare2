@@ -1,11 +1,7 @@
 /* radare - LGPL - Copyright 2009-2016 - Alexandru Caciulescu */
 
-#include <stddef.h>
 
-#include "r_core.h"
-#include "r_io.h"
-#include "r_list.h"
-#include "r_types_base.h"
+#if R_INCLUDE_BEGIN
 
 static RList* parse_list(const char *str) {
 	RList *list;
@@ -734,3 +730,5 @@ static void rop_classify(RCore *core, Sdb *db, RList *ropList, const char *key, 
 
 	free (str);
 }
+
+#endif

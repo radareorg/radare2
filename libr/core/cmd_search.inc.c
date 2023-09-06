@@ -1,8 +1,9 @@
 /* radare - LGPL - Copyright 2010-2023 - pancake */
 
-#include <r_core.h>
+#if R_INCLUDE_BEGIN
+
 #include <sdb/ht_uu.h>
-#include "cmd_search_rop.c"
+#include "cmd_search_rop.inc.c"
 
 static int cmd_search(void *data, const char *input);
 
@@ -4966,3 +4967,5 @@ beach:
 	r_search_kw_reset (search);
 	return R_CMD_RC_SUCCESS;
 }
+
+#endif

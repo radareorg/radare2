@@ -1,6 +1,6 @@
 /* radare - LGPL - Copyright 2009-2023 - pancake, oddcoder, Anton Kochkov, Jody Frankowski */
 
-#include <r_core.h>
+#if R_INCLUDE_BEGIN
 
 static RCoreHelpMessage help_msg_t = {
 	"Usage: t", "", "Parse, manage, and print C types",
@@ -1930,3 +1930,5 @@ static int cmd_type(void *data, const char *input) {
 	}
 	return true;
 }
+
+#endif

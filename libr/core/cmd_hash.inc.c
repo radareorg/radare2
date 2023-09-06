@@ -1,6 +1,6 @@
 /* radare - LGPL - Copyright 2009-2023 - pancake, nibble */
 
-#include <r_core.h>
+#if R_INCLUDE_BEGIN
 
 static RCoreHelpMessage help_msg_hash = {
 	"Usage:", "#!<interpreter>", "[<args>] [<file] [<<eof]",
@@ -552,3 +552,5 @@ static RHashHashHandlers hash_handlers[] = {
 	{ "fletcher64", handle_fletcher64},
 	{NULL, NULL},
 };
+
+#endif // R_INCLUDE_BEGIN
