@@ -186,12 +186,9 @@ static bool read_ptr_va(RBinFile *bf, ut64 vaddr, mach0_ut *out);
 static char *read_str(RBinFile *bf, mach0_ut p, ut32 *offset, ut32 *left);
 static char *get_class_name(mach0_ut p, RBinFile *bf);
 
-static bool is_thumb(RBinFile *bf) {
+static inline bool is_thumb(RBinFile * restrict bf) {
 	struct MACH0_(obj_t) *bin = (struct MACH0_(obj_t) *)bf->bo->bin_obj;
-	if (bin->hdr.cputype == 12 && bin->hdr.cpusubtype == 9) {
-		return true;
-	}
-	return false;
+	return (bin->hdr.cputype == 12 && bin->hdr.cpusubtype == 9);
 }
 
 static mach0_ut va2pa(mach0_ut p, ut32 *offset, ut32 *left, RBinFile *bf) {
@@ -229,10 +226,7 @@ static mach0_ut va2pa(mach0_ut p, ut32 *offset, ut32 *left, RBinFile *bf) {
 }
 
 static void copy_sym_name_with_namespace(char *class_name, char *read_name, RBinSymbol *sym) {
-	if (!class_name) {
-		class_name = "";
-	}
-	sym->classname = strdup (class_name);
+	sym->classname = strdup (class_name? class_name: "");
 	sym->name = strdup (read_name);
 }
 
@@ -414,14 +408,13 @@ static void get_ivar_list_t(mach0_ut p, RBinFile *bf, RBinClass *klass) {
 				field->type = NULL;
 			}
 			if (field->name) {
-				field->name = NULL;
-				 r_list_append (klass->fields, field);
-				 field = NULL;
+				r_list_append (klass->fields, field);
+				field = NULL;
 			} else {
 				R_LOG_WARN ("field name is empty");
 			}
 		} else {
-			R_LOG_DEBUG ("ERR");
+			R_LOG_DEBUG ("va2pa error");
 			goto error;
 		}
 		p += sizeof (struct MACH0_(SIVar));
@@ -429,12 +422,14 @@ static void get_ivar_list_t(mach0_ut p, RBinFile *bf, RBinClass *klass) {
 	}
 	r_list_sort (klass->fields, sort_by_offset);
 	RBinField *isa_field = R_NEW0 (RBinField);
-	isa_field->name = strdup ("isa");
-	isa_field->size = sizeof (mach0_ut);
-	isa_field->type = strdup ("struct objc_class *");
-	isa_field->vaddr = 0;
-	isa_field->offset = 0;
-	r_list_prepend (klass->fields, isa_field);
+	if (isa_field) {
+		isa_field->name = strdup ("isa");
+		isa_field->size = sizeof (mach0_ut);
+		isa_field->type = strdup ("struct objc_class *");
+		isa_field->vaddr = 0;
+		isa_field->offset = 0;
+		r_list_prepend (klass->fields, isa_field);
+	}
 	return;
 error:
 	r_bin_field_free (field);
