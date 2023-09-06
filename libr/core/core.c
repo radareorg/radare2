@@ -4059,6 +4059,7 @@ out_of_function:
 	return false;
 }
 
+#if 0
 R_API int r_core_search_cb(RCore *core, ut64 from, ut64 to, RCoreSearchCallback cb) {
 	int ret, len = core->blocksize;
 	ut8 *buf = malloc (len);
@@ -4072,7 +4073,7 @@ R_API int r_core_search_cb(RCore *core, ut64 from, ut64 to, RCoreSearchCallback 
 			len = (int)delta;
 		}
 		if (!r_io_read_at (core->io, from, buf, len)) {
-			R_LOG_ERROR ("Cannot read at 0x%"PFMT64x, from);
+			R_LOG_ERROR ("RCoreSearchCb: Cannot read at 0x%"PFMT64x, from);
 			break;
 		}
 		for (ret = 0; ret < len;) {
@@ -4088,6 +4089,7 @@ R_API int r_core_search_cb(RCore *core, ut64 from, ut64 to, RCoreSearchCallback 
 	free (buf);
 	return true;
 }
+#endif
 
 R_API char *r_core_editor(const RCore *core, const char *file, const char *str) {
 	const bool interactive = r_cons_is_interactive ();
