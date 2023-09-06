@@ -1021,6 +1021,7 @@ static const ut8 *parse_ext_opcode(RBin *bin, const ut8 *obuf, size_t len, const
 		} else {
 			addr = READ32 (buf);
 		}
+		addr += o->baddr;
 		regs->address = addr;
 		if (mode == R_MODE_PRINT) {
 			print ("set Address to 0x%"PFMT64x"\n", addr);
