@@ -780,8 +780,10 @@ static const ut8 *parse_line_header_source_dwarf5(RBin *bin, RBinFile *bf, const
 						if (hdr->file_names[count].name) {
 							char *dir = sdb_array_get (sdb, "includedirs", hdr->file_names[count].id_idx, 0);
 							char *filename = hdr->file_names[count].name;
-							hdr->file_names[count].name = r_str_newf ("%s/%s", r_str_get (dir), filename);
-							free (filename);
+							if (dir && strcmp (filename, dir)) {
+								hdr->file_names[count].name = r_str_newf ("%s/%s", r_str_get (dir), filename);
+								free (filename);
+							}
 						}
 					}
 					break;
@@ -1021,7 +1023,9 @@ static const ut8 *parse_ext_opcode(RBin *bin, const ut8 *obuf, size_t len, const
 		} else {
 			addr = READ32 (buf);
 		}
-		addr += o->baddr;
+		if (o->baddr && o->baddr != UT64_MAX && addr < o->baddr) {
+			addr += o->baddr;
+		}
 		regs->address = addr;
 		if (mode == R_MODE_PRINT) {
 			print ("set Address to 0x%"PFMT64x"\n", addr);
@@ -1029,7 +1033,6 @@ static const ut8 *parse_ext_opcode(RBin *bin, const ut8 *obuf, size_t len, const
 		break;
 	case DW_LNE_define_file:
 		filename = (const char*)buf;
-
 		if (mode == R_MODE_PRINT) {
 			print ("define_file\n");
 			print ("filename %s\n", filename);
