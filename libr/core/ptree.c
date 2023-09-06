@@ -2,7 +2,7 @@
 
 #include <r_core.h>
 
-typedef void (*treefcn)(Rcore *core, int indent, const char *itype, const char *input);
+typedef void (*treefcn)(RCore *core, int indent, const char *itype, const char *input);
 
 static void tree_functions(RCore *core, int indent, const char *itype, const char *input) {
 	RListIter *iter;
@@ -13,7 +13,7 @@ static void tree_functions(RCore *core, int indent, const char *itype, const cha
 	} else {
 		r_list_foreach (core->anal->fcns, iter, fcn) {
 			const char *pad = r_str_pad (' ', indent);
-			r_cons_printf ("%s%c 0x%08"PFMT64x" %s\n", pad, fcn->addr, fcn->name);
+			r_cons_printf ("%s%c 0x%08"PFMT64x" %s\n", pad, '-', fcn->addr, fcn->name);
 		}
 	}
 }
@@ -46,10 +46,11 @@ done:
 	free (oargstr);
 	RListIter *iter;
 	void *entry;
-	RPrintTreeCallback ptcb;
+	// RPrintTreeCallback ptcb;
+	treefcn ptcb;
 	RList *root = NULL;
 	r_list_foreach (root, iter, ptcb) {
-		ptcb ();
+	//	ptcb ();
 		r_cons_printf ("L0 ..\n");
 		r_list_foreach (root, iter, entry) {
 			r_cons_printf ("L0 ..\n");
