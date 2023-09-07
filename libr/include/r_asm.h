@@ -25,7 +25,7 @@ typedef struct r_asm_code_t {
 	// imho this asmcode should contain multiple archops
 	RAnalOp op; // we have those fields already inside RAnalOp
 #endif
-	RList *equs; // TODO: must be a hash
+	HtPP *equs;
 	ut64 code_offset;
 	ut64 data_offset;
 	int code_align;

@@ -43,18 +43,29 @@ R_API void r_asm_code_set_equ(RAsmCode *code, const char *key, const char *value
 			equ->value = strdup (value);
 		}
 	} else {
-		code->equs = r_list_newf ((RListFree)r_asm_equ_item_free);
+		code->equs = ht_pp_new0 ();
 	}
-	r_list_append (code->equs, __asm_equ_new (key, value));
+	ht_pp_insert (code->equs, key, value);
+}
+
+typedef struct {
+	RAsmCode *code;
+	const char *str;
+} UserData;
+
+static bool replace_cb(void *user, const void *key, const void *value) {
+	UserData *data = user;
+	data->str = r_str_replace (data->str, key, value, true);
+	return true;
 }
 
 R_API char *r_asm_code_equ_replace(RAsmCode *code, char *str) {
 	r_return_val_if_fail (code && str, NULL);
-	RAsmEqu *equ;
-	RListIter *iter;
-	r_list_foreach (code->equs, iter, equ) {
-		str = r_str_replace (str, equ->key, equ->value, true);
-	}
+	UserData data = {
+		.code = code,
+		.str = str
+	};
+	ht_pp_foreach (code->equs, replace_cb, &data);
 	return str;
 }
 
@@ -67,15 +78,8 @@ R_API char* r_asm_code_get_hex(RAsmCode *acode) {
 	return str;
 }
 
-R_API RAsmEqu *r_asm_code_equ_get(RAsmCode *code, const char *key) { // R2_590
-	// TODO: use a hashtable or sdb
-	void *equ;
-	RListIter *iter;
-	r_list_foreach (code->equs, iter, equ) {
-		RAsmEqu *e = (RAsmEqu*) equ;
-		if (!strcmp (e->key, key)) {
-			return e;
-		}
-	}
-	return NULL;
+R_API RAsmEqu *r_asm_code_equ_get(RAsmCode *code, const char *key) {
+	r_return_val_if_fail (code && key, NULL);
+	bool found = false;
+	return ht_pp_find (code->equs, key, &found);
 }
