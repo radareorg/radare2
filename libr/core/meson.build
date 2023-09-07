@@ -68,10 +68,10 @@ r_core_sources = [
   'vmenus_graph.c',
   'vmenus_zigns.c',
   'yank.c',
-  join_paths('p','core_agD.c'),
-  join_paths('p','core_a2f.c'),
-  join_paths('p','core_sixref.c'),
-  join_paths('p','core_java.c')
+  'p/core_agD.c',
+  'p/core_a2f.c',
+  'p/core_sixref.c',
+  'p/core_java.c'
 ]
 
 r_core_inc = []

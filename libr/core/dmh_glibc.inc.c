@@ -1,5 +1,6 @@
 /* radare2 - LGPL - Copyright 2016-2023 - n4x0r, soez, pancake */
 
+#if R_INCLUDE_BEGIN
 // https://levelup.gitconnected.com/understand-heap-memory-allocation-a-hands-on-approach-775151caf2ea
 // https://github.com/bminor/glibc/blob/glibc-2.28/malloc/malloc.c#L1658
 #ifndef INCLUDE_HEAP_GLIBC_C
@@ -1727,3 +1728,5 @@ static int GH(dmh_glibc)(RCore *core, const char *input) {
 	free (main_arena);
 	return true;
 }
+
+#endif

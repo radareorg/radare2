@@ -1,5 +1,7 @@
 /* radare - LGPL - Copyright 2017-2021 - javierptd, pancake */
 
+#if R_INCLUDE_BEGIN
+
 #ifndef INCLUDE_HEAP_JEMALLOC_STD_C
 #define INCLUDE_HEAP_JEMALLOC_STD_C
 #define HEAP32 1
@@ -515,3 +517,5 @@ static int GH(dmh_jemalloc)(RCore *core, const char *input) {
 	}
 	return 0;
 }
+
+#endif

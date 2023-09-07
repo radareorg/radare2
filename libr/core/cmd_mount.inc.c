@@ -1,5 +1,7 @@
 /* radare - LGPL - Copyright 2009-2023 // pancake */
 
+#if R_INCLUDE_BEGIN
+
 static RCoreHelpMessage help_msg_m = {
 	"Usage:", "m[-?*dgy] [...] ", "Mountpoints management",
 	"m", " /mnt ext2 0", "mount ext2 fs at /mnt with delta 0 on IO",
@@ -457,7 +459,7 @@ static int cmd_mount(void *data, const char *_input) {
 				r_fs_close (core->fs, file);
 				r_cons_write ("\n", 1);
 			} else if (!r_fs_dir_dump (core->fs, input, ptr)) {
-				eprintf ("Cannot open file\n");
+				R_LOG_ERROR ("Cannot open file");
 			}
 		}
 		break;
@@ -524,11 +526,11 @@ static int cmd_mount(void *data, const char *_input) {
 				total_bytes_read += bytes_read;
 			}
 			r_fs_close (core->fs, file);
-			eprintf ("File '%s' created. ", localFile);
+			R_LOG_INFO ("File '%s' created. ", localFile);
 			if (offset) {
-				eprintf ("(offset: 0x%"PFMT64x" size: %d bytes)\n", (ut64) offset, size);
+				R_LOG_INFO ("(offset: 0x%"PFMT64x" size: %d bytes)", (ut64) offset, size);
 			} else {
-				eprintf ("(size: %d bytes)\n", size);
+				R_LOG_INFO ("(size: %d bytes)", size);
 			}
 			free (localFile);
 		} else if (!r_fs_dir_dump (core->fs, filename, ptr)) {
@@ -623,7 +625,7 @@ static int cmd_mount(void *data, const char *_input) {
 				r_fs_close (core->fs, f);
 				r_fs_file_free (f);
 			} else {
-				eprintf ("Cannot write\n");
+				R_LOG_ERROR ("Cannot write");
 			}
 			free (arg0);
 			free (buf);
@@ -664,7 +666,7 @@ static int cmd_mount(void *data, const char *_input) {
 			r_core_yank_set (core, 0, file->data, file->size);
 			r_fs_close (core->fs, file);
 		} else {
-			eprintf ("Cannot open file\n");
+			R_LOG_ERROR ("Cannot open file");
 		}
 		break;
 	case '?':
@@ -674,3 +676,5 @@ static int cmd_mount(void *data, const char *_input) {
 	free (oinput);
 	return 0;
 }
+
+#endif

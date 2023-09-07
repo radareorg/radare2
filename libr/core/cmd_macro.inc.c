@@ -1,7 +1,6 @@
-/* radare - LGPL - Copyright 2009-2022 - pancake */
+/* radare - LGPL - Copyright 2009-2023 - pancake */
 
-#include "r_cmd.h"
-#include "r_core.h"
+#if R_INCLUDE_BEGIN
 
 static RCoreHelpMessage help_msg_lparen = {
 	"Usage:", "(foo args;cmd1;cmd2;..)", "Aliases",
@@ -87,3 +86,4 @@ static int cmd_macro(void *data, const char *_input) {
 	free (input);
 	return R_CMD_RC_SUCCESS;
 }
+#endif

@@ -1,3 +1,4 @@
+#if R_INCLUDE_BEGIN
 
 static void r_core_visual_tab_free(RCoreVisualTab *tab) {
 	free (tab);
@@ -220,3 +221,5 @@ static void visual_closetab(RCore *core) {
 		}
 	}
 }
+
+#endif

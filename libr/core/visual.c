@@ -2496,7 +2496,9 @@ R_API void r_core_visual_browse(RCore *core, const char *input) {
 	}
 }
 
+#define R_INCLUDE_BEGIN 1
 #include "visual_tabs.inc.c"
+#undef R_INCLUDE_BEGIN
 
 static bool isNumber(RCore *core, int ch) {
 	if (ch > '0' && ch <= '9') {

@@ -1,6 +1,6 @@
 /* radare - LGPL - Copyright 2009-2023 - pancake, maijin */
 
-#include <r_core.h>
+#if R_INCLUDE_BEGIN
 
 #define MAX_SCAN_SIZE 0x7ffffff
 
@@ -14118,3 +14118,5 @@ static int cmd_anal(void *data, const char *input) {
 	}
 	return 0;
 }
+
+#endif

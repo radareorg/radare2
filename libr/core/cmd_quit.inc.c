@@ -1,6 +1,6 @@
-/* radare - LGPL - Copyright 2009-2022 - pancake */
+/* radare - LGPL - Copyright 2009-2023 - pancake */
 
-#include "r_core.h"
+#if R_INCLUDE_BEGIN
 
 static RCoreHelpMessage help_msg_q = {
 	"Usage:",  "q[!][!] [retval]", "",
@@ -69,3 +69,5 @@ static int cmd_quit(void *data, const char *input) {
 	}
 	return R_CMD_RC_SUCCESS;
 }
+
+#endif

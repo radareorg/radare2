@@ -33,29 +33,32 @@ static void cmd_debug_reg(RCore *core, const char *str);
 
 R_VEC_TYPE(RVecAnalRef, RAnalRef);
 
-#include "cmd_quit.c"
-#include "cmd_hash.c"
-#include "cmd_debug.c"
-#include "cmd_log.c"
-#include "cmd_flag.c"
-#include "cmd_zign.c"
-#include "cmd_project.c"
-#include "cmd_write.c"
-#include "cmd_cmp.c"
-#include "cmd_eval.c"
-#include "cmd_type.c"
-#include "cmd_anal.c"
-#include "cmd_open.c"
-#include "cmd_meta.c"
-#include "cmd_egg.c"
-#include "cmd_info.c"
-#include "cmd_macro.c"
-#include "cmd_magic.c"
-#include "cmd_mount.c"
-#include "cmd_seek.c"
-#include "cmd_search.c" // defines incDigitBuffer... used by cmd_print
-#include "cmd_print.c"
-#include "cmd_help.c"
+#define R_INCLUDE_BEGIN 1
+#include "cmd_quit.inc.c"
+#include "cmd_hash.inc.c"
+#include "cmd_debug.inc.c"
+#include "cmd_log.inc.c"
+#include "cmd_flag.inc.c"
+#include "cmd_zign.inc.c"
+#include "cmd_project.inc.c"
+#include "cmd_write.inc.c"
+#include "cmd_cmp.inc.c"
+#include "cmd_eval.inc.c"
+#include "cmd_type.inc.c"
+#include "cmd_anal.inc.c"
+#include "cmd_open.inc.c"
+#include "cmd_meta.inc.c"
+#include "cmd_egg.inc.c"
+#include "cmd_info.inc.c"
+#include "cmd_macro.inc.c"
+#include "cmd_magic.inc.c"
+#include "cmd_mount.inc.c"
+#include "cmd_seek.inc.c"
+#include "cmd_search.inc.c" // defines incDigitBuffer... used by cmd_print
+#include "cmd_print.inc.c"
+#include "cmd_help.inc.c"
+
+#undef R_INCLUDE_BEGIN
 
 static RCoreHelpMessage help_msg_dollar = {
 	"Usage:", "$alias[=cmd] [args...]", "Alias commands and data (See ?$? for help on $variables)",

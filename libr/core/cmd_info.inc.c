@@ -1,6 +1,7 @@
 /* radare - LGPL - Copyright 2009-2023 - pancake */
 
-#include <r_core.h>
+#if R_INCLUDE_BEGIN
+
 #include "../bin/format/pdb/pdb_downloader.h"
 
 static RCoreHelpMessage help_msg_i = {
@@ -1652,3 +1653,5 @@ done:
 redone:
 	return 0;
 }
+
+#endif

@@ -1,7 +1,6 @@
 /* radare2 - LGPL - Copyright 2009-2023 - pancake */
 
-#include <r_core.h>
-#include <sdb/sdb.h>
+#if R_INCLUDE_BEGIN
 
 // R2R db/cmd/cmd_meta
 
@@ -1395,3 +1394,4 @@ static int cmd_meta(void *data, const char *input) {
 	}
 	return true;
 }
+#endif

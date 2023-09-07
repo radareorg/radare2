@@ -1,6 +1,6 @@
 /* radare - LGPL - Copyright 2009-2023 - pancake */
 
-#include <r_core.h>
+#if R_INCLUDE_BEGIN
 
 static RCoreHelpMessage help_msg_question_t = {
 	"Usage: ?t[0,1] [cmd]", "", "",
@@ -1524,3 +1524,4 @@ static int cmd_help(void *data, const char *input) {
 	}
 	return 0;
 }
+#endif

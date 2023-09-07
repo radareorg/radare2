@@ -1,7 +1,6 @@
 /* radare - LGPL - Copyright 2009-2023 - pancake */
 
-#include <r_core.h>
-#include <limits.h>
+#if R_INCLUDE_BEGIN
 
 #define R_CORE_MAX_DISASM (1024 * 1024 * 8)
 #define PF_USAGE_STR "pf[.k[.f[=v]]|[v]]|[n]|[0|cnt][fmt] [a0 a1 ...]"
@@ -8431,3 +8430,5 @@ R_API void r_print_offset(RPrint *p, ut64 off, int invert, int delta, const char
 		}
 	}
 }
+
+#endif

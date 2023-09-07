@@ -3,7 +3,8 @@
 #undef R_LOG_ORIGIN
 #define R_LOG_ORIGIN "windows.heap"
 
-#include <r_core.h>
+#if R_INCLUDE_BEGIN
+
 #include <tlhelp32.h>
 #include "heap/r_windows.h"
 #include "../debug/p/native/maps/windows_maps.h"
@@ -1415,3 +1416,5 @@ static int dmh_windows(RCore *core, const char *input) {
 	}
 	return true;
 }
+
+#endif

@@ -1,6 +1,6 @@
 /* radare - LGPL - Copyright 2009-2023 - pancake */
 
-#include <r_core.h>
+#if R_INCLUDE_BEGIN
 
 static void __core_cmd_search_backward_prelude(RCore *core, bool doseek, bool forward);
 
@@ -903,3 +903,5 @@ static int cmd_seek(void *data, const char *input) {
 	}
 	return 0;
 }
+
+#endif
