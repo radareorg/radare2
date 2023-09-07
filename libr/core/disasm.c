@@ -5922,6 +5922,41 @@ toro:
 	r_cons_break_push (NULL, NULL);
 
 	ds->fcn = fcnIn (ds, ds->at, R_ANAL_FCN_TYPE_NULL);
+
+	if (ds->show_emu_bb) {
+		// check if we are in the middle of a basic block, so we can emulate the previous instructions
+		RList *list = r_anal_get_blocks_in (core->anal, ds->addr);
+		if (!r_list_empty (list)) {
+			RAnalBlock *bb = r_list_first (list);
+			if (bb) {
+				REsil *esil = core->anal->esil;
+				esil->cb.hook_reg_write = NULL;
+				if (bb->esil) {
+					r_esil_parse (core->anal->esil, bb->esil);
+				}
+				// set regstate from here
+				if (ds->addr != bb->addr) {
+					int i;
+					for (i = 0; i < bb->ninstr; i++) {
+						ut64 addr = bb->addr + (i > 0? bb->op_pos[i - 1]: 0);
+						if (ds->addr == addr) {
+							break;
+						}
+						RAnalOp *op = r_core_anal_op (core, addr, R_ARCH_OP_MASK_ESIL);
+						if (op) {
+							const char *esilstr = R_STRBUF_SAFEGET (&op->esil);
+							if (R_STR_ISNOTEMPTY (esilstr)) {
+								r_esil_parse (core->anal->esil, esilstr);
+							}
+						}
+						r_anal_op_free (op);
+					}
+				}
+				esil->cb.hook_reg_write = myregwrite;
+			}
+		}
+		r_list_free (list);
+	}
 	int inc = 0;
 	int ret = 0;
 	for (ds->index = 0; ds_left (ds) > 0 && ds->lines < ds->count
@@ -5943,9 +5978,6 @@ toro:
 			RAnalBlock *bb = r_anal_get_block_at (core->anal, ds->at);
 			if (bb && ds->at == bb->addr) {
 				if (bb->esil) {
-					if (ds->show_bbline) {
-						// r_cons_printf ("ae %s\n", bb->esil); // debug
-					}
 					REsil *esil = core->anal->esil;
 					// disable emulation callbacks
 					esil->cb.hook_reg_write = NULL;
