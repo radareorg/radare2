@@ -528,7 +528,7 @@ static int cmd_mount(void *data, const char *_input) {
 			r_fs_close (core->fs, file);
 			R_LOG_INFO ("File '%s' created. ", localFile);
 			if (offset) {
-				R_LOG_INFO ("(offset: 0x%"PFMT64x" size: %d bytes)\n", (ut64) offset, size);
+				R_LOG_INFO ("(offset: 0x%"PFMT64x" size: %d bytes)", (ut64) offset, size);
 			} else {
 				R_LOG_INFO ("(size: %d bytes)", size);
 			}
