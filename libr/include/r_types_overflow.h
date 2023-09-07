@@ -6,6 +6,7 @@ extern "C" {
 #endif
 
 // TODO: Use CLANG/GCC builtins if available: __builtin_mul_overflow
+// https://gcc.gnu.org/onlinedocs/gcc/Integer-Overflow-Builtins.html
 
 // ADD
 // if ((x > 0) && (a > INT_MAX - x)) /* `a + x` would overflow */;

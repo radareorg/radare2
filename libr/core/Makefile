@@ -48,4 +48,8 @@ cmd.o: cmd_hash.inc.c cmd_debug.inc.c cmd_zign.inc.c cmd_project.inc.c \
 	cmd_cmp.inc.c cmd_write.inc.c cmd_egg.inc.c cmd_info.inc.c cmd_type.inc.c cmd_flag.inc.c \
 	cmd_search_rop.inc.c
 
+visual.o: visual_tabs.inc.c
+
+disasm.o: disasm_stackptr.inc.c
+
 rtr.o: rtr_http.inc.c rtr_shell.inc.c

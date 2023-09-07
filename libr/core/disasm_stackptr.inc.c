@@ -1,6 +1,7 @@
-/* radare - LGPL - Copyright 2019 - pancake */
+/* radare - LGPL - Copyright 2019-2023 - pancake */
 
 #if R_INCLUDE_BEGIN
+
 #define USE_BB_STACKPTR 0
 #define USE_BB_LINEAR 1
 
@@ -10,7 +11,6 @@ static void ds_update_stackptr(RDisasmState *ds, RAnalOp *op) {
 	}
 	ds->ostackptr = ds->stackptr;
 	switch (op->stackop) {
-
 	case R_ANAL_STACK_RESET:
 		ds->stackptr = 0;
 		break;
