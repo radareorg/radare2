@@ -984,7 +984,7 @@ typedef struct r_core_task_t {
 
 typedef void (*RCoreTaskOneShot)(void *);
 
-R_API void r_print_tree(RCore *core, const char *input);
+R_API void r_print_list(RCore *core, const char *input);
 R_API void r_core_echo(RCore *core, const char *msg);
 R_API RTable *r_core_table(RCore *core, const char *name);
 

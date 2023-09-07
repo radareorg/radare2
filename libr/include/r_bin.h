@@ -566,7 +566,7 @@ typedef struct r_bin_plugin_t {
 	RList/*<RBinClass>*/* (*classes)(RBinFile *bf);
 	RList/*<RBinMem>*/* (*mem)(RBinFile *bf);
 	RList/*<RBinReloc>*/* (*patch_relocs)(RBinFile *bf);
-	RList/*<RBinMap>*/* (*maps)(RBinFile *bf);
+	RList/*<RBinMap>*/* (*maps)(RBinFile *bf); // this should be segments!
 	RList/*<RBinFileHash>*/* (*hashes)(RBinFile *bf);
 	void (*header)(RBinFile *bf);
 	char* (*signature)(RBinFile *bf, bool json);
