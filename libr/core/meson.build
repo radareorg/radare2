@@ -8,7 +8,7 @@ r_core_sources = [
   'canal.c',
   'carg.c',
   'cbin.c',
-  'plist.c',
+  'cmd_print_list.c',
   'cconfig.c',
   'cio.c',
   'cmd.c',
