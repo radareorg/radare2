@@ -29,6 +29,7 @@ static RCoreHelpMessage help_msg_visual_graph = {
 	"<",            "show program callgraph (see graph.refs)",
 	"(",            "reverse conditional branch of last instruction in bb",
 	")",            "rotate asm.emu and emu.str",
+	"%",            "find in disassembly (pdr~sentence) and navigate to it in graph",
 	"Home/End",     "go to the top/bottom of the canvas",
 	"Page-UP/DOWN", "scroll canvas up/down",
 	"b",            "visual browse things",
@@ -4078,6 +4079,109 @@ static void visual_offset(RAGraph *g, RCore *core) {
 	core->cons->line->prompt_type = R_LINE_PROMPT_DEFAULT;
 }
 
+
+static void visual_find(RAGraph *g, RCore *core) {
+	int offset = 0;
+	int offset_max = 0;
+	int rows;
+	char buf[256];
+
+	const bool asm_offset = r_config_get_b (core->config, "asm.offset");
+	const bool asm_lines = r_config_get_b (core->config, "asm.lines");
+
+	core->cons->line->prompt_type = R_LINE_PROMPT_OFFSET;
+	r_line_set_prompt ("[find]> ");
+
+	while (1) {
+		r_cons_get_size (&rows);
+		r_cons_gotoxy (0, rows);
+		r_cons_flush ();
+		printf (Color_RESET);
+		fflush (stdout);
+
+		r_cons_fgets (buf, sizeof(buf), 0, NULL);
+
+		if (buf[0] == '\0') {
+			break;
+		}
+
+find_next:
+		if (core->cons->line->contents != NULL && strcmp (buf, core->cons->line->contents) == 0) {
+			offset += 1;
+			if (offset >= offset_max) {
+				offset = 0;
+			}
+		} else {
+			offset = 0;
+		}
+
+		r_config_set_b (core->config, "asm.offset", 1);
+		r_config_set_b (core->config, "asm.lines", 0);
+
+		if (offset == 0) {
+			if (core->cons->line->contents != NULL) {
+				free (core->cons->line->contents);
+			}
+			core->cons->line->contents = strdup (buf);
+
+			char *lines_nbr = r_core_cmd_strf (core, "pdr~%s~^0x~?", buf);
+			offset_max = atoi (lines_nbr);
+			free (lines_nbr);
+		}
+
+
+		char *line = r_core_cmd_strf (core, "pdr~%s~^0x:%d", buf, offset);
+		r_str_trim (line);
+		ut64 addr = strtoll (line, NULL, 0);
+		if (addr > 0) {
+			r_core_cmdf (core, "s 0x%lx", addr);
+			r_core_cmdf (core, "e scr.highlight=%s", buf);
+		} else {
+			r_core_cmdf (core, "e scr.highlight=");
+		}
+
+		r_config_set_b (core->config, "asm.offset", asm_offset);
+		r_config_set_b (core->config, "asm.lines", asm_lines);
+
+		agraph_refresh (r_cons_singleton ()->event_data);
+
+		r_cons_clear_line (0);
+		printf (Color_RESET);
+		if (addr > 0) {
+			printf ("Found (%d/%d) \"%s\". Press 'n' for next, 'N' for prev, 'q' for quit, any key other to conitnue", offset+1, offset_max, line);
+		} else {
+			printf ("Sentence \"%s\", not found. Press 'q' for quit, any key other to conitnue", buf);
+		}
+		fflush (stdout);
+
+		free (line);
+
+		char c = r_cons_readchar ();
+		if (addr > 0) {
+			if (c == 'n') goto find_next;
+			if (c == 'N') {
+				offset -= 2;
+				if (offset < 1) {
+					offset = offset_max-2;
+				}
+				goto find_next;
+			}
+		}
+		if (c == 'q') break;
+		agraph_refresh (r_cons_singleton ()->event_data);
+	}
+
+	if (core->cons->line->contents != NULL) {
+		free (core->cons->line->contents);
+	}
+	core->cons->line->contents = NULL;
+	r_core_cmd0 (core, "e scr.highlight=");
+	core->cons->line->prompt_type = R_LINE_PROMPT_DEFAULT;
+	r_config_set_b (core->config, "asm.offset", asm_offset);
+	r_config_set_b (core->config, "asm.lines", asm_lines);
+}
+
+
 static void goto_asmqjmps(RAGraph *g, RCore *core) {
 	const char *h = "[Fast goto call/jmp]> ";
 	char obuf[R_CORE_ASMQJMPS_LEN_LETTERS + 1];
@@ -4597,6 +4701,11 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 			g->layout = r_config_get_i (core->config, "graph.layout");
 			g->need_reload_nodes = true;
 			agraph_update_seek (g, get_anode (g->curnode), true);
+			break;
+		case '%':
+			showcursor (core, true);
+			visual_find (g, core);
+			showcursor (core, false);
 			break;
 		case 9: // tab
 			agraph_next_node (g);

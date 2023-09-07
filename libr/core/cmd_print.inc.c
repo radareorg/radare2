@@ -6216,6 +6216,7 @@ static int cmd_print(void *data, const char *input) {
 		ut8 bw_disassemble = false;
 		ut32 pd_result = false, processed_cmd = false;
 		bool formatted_json = false;
+	        const bool asm_offset_segment = r_config_get_b (core->config, "asm.offset.segment");
 		if (input[1] && input[2]) {
 			// "pd--" // context disasm
 			if (!strncmp (input + 1, "--", 2)) {
@@ -6736,6 +6737,7 @@ static int cmd_print(void *data, const char *input) {
 				r_cons_newline ();
 			}
 		}
+		r_config_set_b (core->config, "asm.offset.segment", asm_offset_segment);
 		if (processed_cmd) {
 			ret = pd_result;
 			goto beach;
