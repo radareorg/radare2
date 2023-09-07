@@ -530,7 +530,7 @@ static int cmd_mount(void *data, const char *_input) {
 			if (offset) {
 				R_LOG_INFO ("(offset: 0x%"PFMT64x" size: %d bytes)\n", (ut64) offset, size);
 			} else {
-				R_LOG_INFO ("(size: %d bytes)\n", size);
+				R_LOG_INFO ("(size: %d bytes)", size);
 			}
 			free (localFile);
 		} else if (!r_fs_dir_dump (core->fs, filename, ptr)) {
