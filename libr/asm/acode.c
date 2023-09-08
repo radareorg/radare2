@@ -15,26 +15,6 @@ R_API void r_asm_code_free(RAsmCode *acode) {
 	}
 }
 
-R_API void r_asm_equ_item_free(RAsmEqu *equ) {
-	if (equ) {
-		free (equ->key);
-		free (equ->value);
-		free (equ);
-	}
-}
-
-#if 0
-static RAsmEqu *__asm_equ_new(const char *key, const char *value) {
-	r_return_val_if_fail (key && value, NULL);
-	RAsmEqu *equ = R_NEW0 (RAsmEqu);
-	if (equ) {
-		equ->key = strdup (key);
-		equ->value = strdup (value);
-	}
-	return equ;
-}
-#endif
-
 R_API void r_asm_code_set_equ(RAsmCode *code, const char *key, const char *value) {
 	r_return_if_fail (code && key && value);
 	if (!code->equs) {
