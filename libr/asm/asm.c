@@ -694,19 +694,21 @@ static int parse_asm_directive(RAsm *a, RAnalOp *op, RAsmCode *acode, char *ptr_
 		R_LOG_DEBUG (".global directive does nothing for now");
 		ret = 0;
 	} else if (r_str_startswith (ptr, ".equ ")) {
-		ptr2 = strchr (ptr + 5, ',');
+		char *arg = (char *)r_str_trim_head_ro (ptr + 5);
+		ptr2 = strchr (arg, ',');
 		if (!ptr2) {
-			ptr2 = strchr (ptr + 5, '=');
+			ptr2 = strchr (arg, '=');
 		}
 		if (!ptr2) {
-			ptr2 = strchr (ptr + 5, ' ');
+			ptr2 = strchr (arg, ' ');
 		}
 		if (ptr2) {
 			*ptr2 = '\0';
-			r_asm_code_set_equ (acode, ptr + 5, ptr2 + 1);
+			r_asm_code_set_equ (acode, arg, ptr2 + 1);
+			*ptr2 = ' ';
 			ret = 0;
 		} else {
-			R_LOG_ERROR ("Invalid syntax for '.equ': Use '.equ <word> <word>'");
+			R_LOG_ERROR ("Invalid syntax for '.equ': Use '.equ <word>=<word>'");
 		}
 	} else if (r_str_startswith (ptr, ".org ")) {
 		if (r_asm_pseudo_org (a, ptr + 5)) {

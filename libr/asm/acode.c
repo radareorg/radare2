@@ -37,17 +37,9 @@ static RAsmEqu *__asm_equ_new(const char *key, const char *value) {
 
 R_API void r_asm_code_set_equ(RAsmCode *code, const char *key, const char *value) {
 	r_return_if_fail (code && key && value);
-#if 0
-	if (code->equs) {
-		RAsmEqu *equ = r_asm_code_equ_get (code, key);
-		if (equ) {
-			free (equ->value);
-			equ->value = strdup (value);
-		}
-	} else {
+	if (!code->equs) {
 		code->equs = ht_pp_new0 ();
 	}
-#endif
 	ht_pp_insert (code->equs, key, strdup (value));
 }
 

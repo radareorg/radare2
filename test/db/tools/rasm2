@@ -703,3 +703,11 @@ EXPECT=<<EOF
 ff4300d1
 EOF
 RUN
+
+NAME=rasm2 -a x86 -b 64 -f equ.asm
+FILE=-
+CMDS=!rasm2 -a x86 -b 64 -f bins/src/equ.asm
+EXPECT=<<EOF
+48c7c003000000
+EOF
+RUN
