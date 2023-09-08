@@ -5061,7 +5061,7 @@ static int cmd_debug_desc(RCore *core, const char *input) {
 	case '+': // "dd+"
 	case ' ': // "dd"
 		if (r_config_get_b (core->config, "cfg.debug")) {
-			R_LOG_WARN ("Child file descriptores require the debugger. No alternative for static yet");
+			R_LOG_WARN ("Child file descriptors require the debugger. No alternative for static yet");
 		} else {
 			RBuffer *buf;
 			char *filename;
