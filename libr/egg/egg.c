@@ -88,12 +88,12 @@ R_API bool r_egg_plugin_add(REgg *a, REggPlugin *foo) {
 	r_return_val_if_fail (a && foo, false);
 	RListIter *iter;
 	// TODO: cache foo->name length and use memcmp instead of strcmp
-	if (!foo->name) {
+	if (!foo->meta.name) {
 		return false;
 	}
 	REggPlugin *h;
 	r_list_foreach (a->plugins, iter, h) {
-		if (!strcmp (h->name, foo->name)) {
+		if (!strcmp (h->meta.name, foo->meta.name)) {
 			return false;
 		}
 	}
@@ -533,10 +533,11 @@ R_API bool r_egg_shellcode(REgg *egg, const char *name) {
 	RListIter *iter;
 	RBuffer *b;
 	r_list_foreach (egg->plugins, iter, p) {
-		if (p->type == R_EGG_PLUGIN_SHELLCODE && !strcmp (name, p->name)) {
+		const char *p_name = p->meta.name;
+		if (p->type == R_EGG_PLUGIN_SHELLCODE && !strcmp (name, p_name)) {
 			b = p->build (egg);
 			if (!b) {
-				R_LOG_ERROR ("%s Shellcode has failed", p->name);
+				R_LOG_ERROR ("%s Shellcode has failed", p_name);
 				return false;
 			}
 			ut64 tmpsz;
@@ -552,7 +553,7 @@ R_API bool r_egg_encode(REgg *egg, const char *name) {
 	REggPlugin *p;
 	RListIter *iter;
 	r_list_foreach (egg->plugins, iter, p) {
-		if (p->type == R_EGG_PLUGIN_ENCODER && !strcmp (name, p->name)) {
+		if (p->type == R_EGG_PLUGIN_ENCODER && !strcmp (name, p->meta.name)) {
 			RBuffer *b = p->build (egg);
 			if (b) {
 				r_buf_free (egg->bin);
