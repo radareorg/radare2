@@ -4099,7 +4099,7 @@ static void visual_find(RAGraph *g, RCore *core) {
 		printf (Color_RESET);
 		r_cons_flush ();
 
-		r_cons_fgets (buf, sizeof(buf), 0, NULL);
+		r_cons_fgets (buf, sizeof (buf), 0, NULL);
 
 		if (buf[0] == '\0') {
 			break;
