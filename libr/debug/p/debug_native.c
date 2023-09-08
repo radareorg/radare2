@@ -1,13 +1,8 @@
 /* radare - LGPL - Copyright 2009-2023 - pancake */
 
 #include <r_userconf.h>
-#include <r_debug.h>
 #include <r_drx.h>
-#include <r_asm.h>
 #include <r_core.h>
-#include <r_reg.h>
-#include <r_lib.h>
-#include <r_anal.h>
 #include <signal.h>
 #include <sys/types.h>
 
@@ -624,7 +619,6 @@ static RList *r_debug_native_pids(RDebug *dbg, int pid) {
 static RList *r_debug_native_threads(RDebug *dbg, int pid) {
 	RList *list = r_list_new ();
 	if (!list) {
-		eprintf ("No list?\n");
 		return NULL;
 	}
 #if __APPLE__
@@ -1042,7 +1036,7 @@ static RList *r_debug_native_map_get(RDebug *dbg) {
 	char region[100], region2[100], perms[5];
 	FILE *fd;
 	if (dbg->pid == -1) {
-		//eprintf ("r_debug_native_map_get: No selected pid (-1)\n");
+		// R_LOG_ERROR ("r_debug_native_map_get: No selected pid (-1)");
 		return NULL;
 	}
 	/* prepend 0x prefix */
@@ -1100,7 +1094,7 @@ static RList *r_debug_native_map_get(RDebug *dbg) {
 		if (sscanf (line, "%s %s %d %d 0x%s %3s %d %d",
 				&region[2], &region2[2], &ign, &ign,
 				unkstr, perms, &ign, &ign) != 8) {
-			eprintf ("%s: Unable to parse \"%s\"\n", __func__, path);
+			R_LOG_ERROR ("%s: Unable to parse \"%s\"", __func__, path);
 			r_list_free (list);
 			return NULL;
 		}
@@ -1119,8 +1113,7 @@ static RList *r_debug_native_map_get(RDebug *dbg) {
 		if (i == 3) {
 			name[0] = '\0';
 		} else if (i != 4) {
-			eprintf ("%s: Unable to parse \"%s\"\n", __func__, path);
-			eprintf ("%s: problematic line: %s\n", __func__, line);
+			R_LOG_ERROR ("Unable to parse \"%s\"", path);
 			r_list_free (list);
 			return NULL;
 		}
@@ -1149,7 +1142,7 @@ static RList *r_debug_native_map_get(RDebug *dbg) {
 		map_start = r_num_get (NULL, region);
 		map_end = r_num_get (NULL, region2);
 		if (map_start == map_end || map_end == 0) {
-			eprintf ("%s: ignoring invalid map size: %s - %s\n", __func__, region, region2);
+			R_LOG_ERROR ("ignoring invalid map size: %s - %s", region, region2);
 			continue;
 		}
 		map = r_debug_map_new (name, map_start, map_end, perm, 0);
@@ -1270,7 +1263,7 @@ static bool r_debug_native_init(RDebug *dbg) {
 static void sync_drx_regs(RDebug *dbg, drxt *regs, size_t num_regs) {
 	/* sanity check, we rely on this assumption */
 	if (num_regs != NUM_DRX_REGISTERS) {
-		eprintf ("drx: Unsupported number of registers for get_debug_regs\n");
+		R_LOG_ERROR ("drx: Unsupported number of registers for get_debug_regs");
 		return;
 	}
 
@@ -1294,7 +1287,7 @@ static void sync_drx_regs(RDebug *dbg, drxt *regs, size_t num_regs) {
 static void set_drx_regs(RDebug *dbg, drxt *regs, size_t num_regs) {
 	/* sanity check, we rely on this assumption */
 	if (num_regs != NUM_DRX_REGISTERS) {
-		eprintf ("drx: Unsupported number of registers for get_debug_regs\n");
+		R_LOG_ERROR ("drx: Unsupported number of registers for get_debug_regs");
 		return;
 	}
 
@@ -1311,9 +1304,12 @@ static void set_drx_regs(RDebug *dbg, drxt *regs, size_t num_regs) {
 static int r_debug_native_drx(RDebug *dbg, int n, ut64 addr, int sz, int rwx, int g, int api_type) {
 #if __i386__ || __x86_64__
 	int retval = false;
+#if NUM_DRX_REGISTERS > 0
 	drxt regs[NUM_DRX_REGISTERS] = {0};
-	// sync drx regs
 	sync_drx_regs (dbg, regs, NUM_DRX_REGISTERS);
+#else
+	drxt regs[1] = {0};
+#endif
 
 	switch (api_type) {
 	case DRX_API_LIST:
@@ -1336,7 +1332,7 @@ static int r_debug_native_drx(RDebug *dbg, int n, ut64 addr, int sz, int rwx, in
 		break;
 	default:
 		/* this should not happen, someone misused the API */
-		eprintf ("drx: Unsupported api type in r_debug_native_drx\n");
+		R_LOG_ERROR ("drx: Unsupported api type in r_debug_native_drx");
 		retval = false;
 	}
 
@@ -1344,7 +1340,7 @@ static int r_debug_native_drx(RDebug *dbg, int n, ut64 addr, int sz, int rwx, in
 
 	return retval;
 #else
-	eprintf ("drx: registers only available on x86. Use dbH for native hardware breakpoints and watchpoints.\n");
+	R_LOG_ERROR ("drx: registers only available on x86. Use dbH for native hardware breakpoints and watchpoints");
 #endif
 	return false;
 }

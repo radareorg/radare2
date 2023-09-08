@@ -18,20 +18,20 @@ static RCoreHelpMessage help_msg_L = {
 	"L",  "", "show this help",
 	"L", " blah."R_LIB_EXT, "load plugin file",
 	"L-", "duk", "unload core plugin by name",
-	"La", "[qj]", "list analysis plugins",
-	"LA", "[qj]", "list arch plugins",
+	"La", "[qj]", "list arch plugins",
+	"LA", "[qj]", "list analysis plugins",
 	"Lb", "[qj]", "list bin plugins",
-	"Lc", "", "list core plugins",
-	"Ld", "", "list debug plugins (dL)",
+	"Lc", "[j]", "list core plugins",
+	"Ld", "[j]", "list debug plugins (dL)",
 	"LD", "[j]", "list supported decompilers (e cmd.pdc=?)",
-	"Le", "", "list esil plugins",
-	"Lg", "", "list egg plugins",
+	"Le", "[j]", "list esil plugins",
+	"Lg", "[j]", "list egg plugins",
 	"Lh", "", "list hash plugins (ph)",
 	"Li", "[j]", "list bin plugins (iL)",
 	"Ll", "[qj]", "list lang plugins (#!)",
 	"LL", "", "lock screen",
 	"Lm", "[j]", "list fs plugins (mL)",
-	"Lo", "", "list io plugins (oL)",
+	"Lo", "[j]", "list io plugins (oL)",
 	"Lp", "[j]", "list parser plugins (e asm.parser=?)",
 	"Ls", "[qj]", "list assembler plugins",
 	"Lt", "[j]", "list color themes (eco)",
@@ -421,13 +421,14 @@ static int cmd_plugins(void *data, const char *input) {
 		r_core_cmdf (core, "dL%s", input + 1);
 		break;
 	case 'h': // "Lh"
-		if (input[1] == 'j') { // "Lhj"
-			r_core_cmd_call (core, "phj");
-		} else {
-			r_core_cmd_call (core, "ph");
+		switch (input[1]) {
+		case 'j': r_core_cmd_call (core, "phj"); break;
+		case 'q': r_core_cmd_call (core, "phq"); break;
+		case 0: r_core_cmd_call (core, "ph"); break;
+		default: r_core_cmd_help_match (core, help_msg_L, "Lh", true); break;
 		}
 		break;
-	case 'a': // "La"
+	case 'A': // "LA"
 		if (input[1] == '?') { // "La?"
 			r_core_cmd_help (core, help_msg_La);
 		} else { // asm plugins
@@ -441,9 +442,9 @@ static int cmd_plugins(void *data, const char *input) {
 			ranal2_list (core, NULL, input[1]);
 		}
 		break;
-	case 'A': // "LA" // list arch plugins
+	case 'a': // "La" // list arch plugins
 		if (input[1] == '?') {
-			r_core_cmd_help_match (core, help_msg_L, "LA", true);
+			r_core_cmd_help_match (core, help_msg_L, "La", true);
 		} else {
 			int mode = input[1];
 			PJ *pj = (mode == 'j')? r_core_pj_new (core): NULL;
@@ -606,6 +607,10 @@ static int cmd_plugins(void *data, const char *input) {
 				pj_o (pj);
 				pj_ks (pj, "name", cp->meta.name);
 				pj_ks (pj, "desc", cp->meta.desc);
+				pj_ks (pj, "license", cp->meta.license? cp->meta.license: "???");
+				if (cp->meta.author) {
+					pj_ks (pj, "author", cp->meta.author);
+				}
 				pj_end (pj);
 			}
 			pj_end (pj);
