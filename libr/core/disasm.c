@@ -6208,6 +6208,11 @@ toro:
 		ds_print_lines_left (ds);
 		core->print->resetbg = (ds->asm_highlight == UT64_MAX);
 		ds_start_line_highlight (ds);
+		if (ds->show_offseg) {
+			core->print->flags |= R_PRINT_FLAGS_SEGOFF;
+		} else {
+			core->print->flags &= ~(R_PRINT_FLAGS_SEGOFF);
+		}
 		ds_print_offset (ds);
 		////
 		RAnalFunction *fcn = f;
