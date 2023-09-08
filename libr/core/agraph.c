@@ -4097,7 +4097,7 @@ static void visual_find(RAGraph *g, RCore *core) {
 		r_cons_gotoxy (0, rows);
 		r_cons_flush ();
 		printf (Color_RESET);
-		fflush (stdout);
+		r_cons_flush ();
 
 		r_cons_fgets (buf, sizeof(buf), 0, NULL);
 
@@ -4119,9 +4119,7 @@ find_next:
 		r_config_set_b (core->config, "asm.lines", 0);
 
 		if (offset == 0) {
-			if (core->cons->line->contents != NULL) {
-				free (core->cons->line->contents);
-			}
+			free (core->cons->line->contents);
 			core->cons->line->contents = strdup (buf);
 
 			char *lines_nbr = r_core_cmd_strf (core, "pdr~%s~^0x~?", buf);
@@ -4135,9 +4133,9 @@ find_next:
 		ut64 addr = strtoll (line, NULL, 0);
 		if (addr > 0) {
 			r_core_cmdf (core, "s 0x%lx", addr);
-			r_core_cmdf (core, "e scr.highlight=%s", buf);
+			r_config_set (core->config, "scr.highlight", buf);
 		} else {
-			r_core_cmdf (core, "e scr.highlight=");
+			r_config_set (core->config, "scr.highlight", "");
 		}
 
 		r_config_set_b (core->config, "asm.offset", asm_offset);
@@ -4146,36 +4144,38 @@ find_next:
 		agraph_refresh (r_cons_singleton ()->event_data);
 
 		r_cons_clear_line (0);
-		printf (Color_RESET);
+		r_cons_printf (Color_RESET);
 		if (addr > 0) {
-			printf ("Found (%d/%d) \"%s\". Press 'n' for next, 'N' for prev, 'q' for quit, any key other to conitnue", offset+1, offset_max, line);
+			r_cons_printf ("Found (%d/%d) \"%s\". Press 'n' for next, 'N' for prev, 'q' for quit, any other key to conitnue", offset+1, offset_max, line);
 		} else {
-			printf ("Sentence \"%s\", not found. Press 'q' for quit, any key other to conitnue", buf);
+			r_cons_printf ("Sentence \"%s\", not found. Press 'q' for quit, any other key to conitnue", buf);
 		}
-		fflush (stdout);
+		r_cons_flush ();
 
 		free (line);
 
 		char c = r_cons_readchar ();
 		if (addr > 0) {
-			if (c == 'n') goto find_next;
+			if (c == 'n') {
+				goto find_next;
+			}
 			if (c == 'N') {
 				offset -= 2;
-				if (offset < 1) {
-					offset = offset_max-2;
+				if (offset < -1) {
+					offset = offset_max - 2;
 				}
 				goto find_next;
 			}
 		}
-		if (c == 'q') break;
+		if (c == 'q') {
+			break;
+		}
 		agraph_refresh (r_cons_singleton ()->event_data);
 	}
 
-	if (core->cons->line->contents != NULL) {
-		free (core->cons->line->contents);
-	}
+	free (core->cons->line->contents);
 	core->cons->line->contents = NULL;
-	r_core_cmd0 (core, "e scr.highlight=");
+	r_config_set (core->config, "scr.highlight", "");
 	core->cons->line->prompt_type = R_LINE_PROMPT_DEFAULT;
 	r_config_set_b (core->config, "asm.offset", asm_offset);
 	r_config_set_b (core->config, "asm.lines", asm_lines);
