@@ -19,7 +19,17 @@ static char* get_file_in_cur_dir(const char *filepath) {
 	return NULL;
 }
 
-static int r_main_version_verify(bool show, bool json) {
+static void json_plugins(RCore *core, PJ *pj, const char *name, const char *cmd) {
+	char *lcj = r_core_cmd_str (core, "Lcj");
+	r_str_trim (lcj);
+	if (*lcj == '[') {
+		pj_k (pj, "core");
+		pj_raw (pj, lcj);
+	}
+	free (lcj);
+}
+
+static int r_main_version_verify(RCore *core, bool show, bool json) {
 	int i, ret;
 	typedef const char* (*vc)();
 	const char *base = R2_GITTAP;
@@ -51,13 +61,28 @@ static int r_main_version_verify(bool show, bool json) {
 		{ "r_syscall", r_syscall_version },
 		{ "r_util", r_util_version },
 		/* ... */
-		{NULL,NULL}
+		{ NULL, NULL }
 	};
 
 	if (json) {
 		PJ *pj = pj_new ();
 		pj_o (pj);
-		pj_ko (pj, "versions");
+#if 1
+		pj_ko (pj, "radare2");
+			pj_ks (pj, "version", R2_VERSION);
+			pj_ks (pj, "birth", R2_BIRTH);
+			pj_ks (pj, "commit", R2_GITTIP);
+			pj_ki (pj, "commits", R2_VERSION_COMMIT);
+			pj_ks (pj, "license", "LGPLv3");
+			pj_ks (pj, "tap", R2_GITTAP);
+			pj_ko (pj, "semver");
+			pj_ki (pj, "major", R2_VERSION_MAJOR);
+			pj_ki (pj, "minor", R2_VERSION_MINOR);
+			pj_ki (pj, "patch", R2_VERSION_MINOR);
+			pj_end (pj);
+		pj_end (pj);
+#endif
+		pj_ko (pj, "libraries");
 		if (show) {
 			pj_ks (pj, "r2", base);
 		}
@@ -73,8 +98,56 @@ static int r_main_version_verify(bool show, bool json) {
 		}
 		pj_end (pj);
 		if (ret) {
-			pj_ks (pj, "warning", "r2 library versions mismatch! Check r2 -V\n");
+			pj_ks (pj, "warning", "r2 library versions mismatch! Check r2 -V");
 		}
+		{
+			pj_ko (pj, "thirdparty");
+			{
+				pj_ko (pj, "capstone");
+				pj_ks (pj, "destdir", "shlr/capstone");
+				pj_ks (pj, "git", "https://github.com/capstone-engine/capstone");
+				pj_ks (pj, "branch", "v5");
+				pj_ks (pj, "commit", "097c04d9413c59a58b00d4d1c8d5dc0ac158ffaa");
+				pj_end (pj);
+			}
+			{
+				pj_ko (pj, "sdb");
+				pj_ks (pj, "destdir", "shlr/sdb");
+				pj_ks (pj, "git", "https://github.com/radareorg/sdb");
+				pj_ks (pj, "branch", "master");
+				pj_ks (pj, "commit", "c4db2b24dacd25403ecb084c9b8e7840889ca236");
+				pj_end (pj);
+			}
+			{
+				pj_ko (pj, "arm64v35");
+				pj_ks (pj, "destdir", "libr/arch/p/arm/v35/arch-arm64");
+				pj_ks (pj, "git", "https://github.com/radareorg/vector35-arch-arm64");
+				pj_ks (pj, "commit", "55d73c6bbb94448a5c615933179e73ac618cf876");
+				pj_ks (pj, "branch", "master");
+				pj_end (pj);
+			}
+			{
+				pj_ko (pj, "armv7v35");
+				pj_ks (pj, "destdir", "libr/arch/p/arm/v35/arch-armv7");
+				pj_ks (pj, "git", "https://github.com/radareorg/vector35-arch-armv7");
+				pj_ks (pj, "commit", "f270a6cc99644cb8e76055b6fa632b25abd26024");
+				pj_ks (pj, "branch", "master");
+				pj_end (pj);
+			}
+			pj_end (pj);
+		}
+		pj_ko (pj, "plugins");
+		{
+			r_core_loadlibs (core, R_CORE_LOADLIBS_ALL, NULL);
+			json_plugins (core, pj, "core", "Lcj");
+			json_plugins (core, pj, "bin", "Lbj");
+			json_plugins (core, pj, "arch", "Laj");
+			json_plugins (core, pj, "debug", "Ldj");
+			json_plugins (core, pj, "egg", "Lgj");
+			json_plugins (core, pj, "fs", "Lmj");
+			json_plugins (core, pj, "asm", "LAj");
+		}
+		pj_end (pj);
 		pj_end (pj);
 		char *s = pj_drain (pj);
 		printf ("%s\n", s);
@@ -480,7 +553,7 @@ static void binload(RCore *r, const char *filepath, ut64 baddr) {
 }
 
 R_API int r_main_radare2(int argc, const char **argv) {
-	RCore *r;
+	RCore *r = NULL;
 	bool forcequit = false;
 	bool haveRarunProfile = false;
 	RListIter *iter;
@@ -848,11 +921,12 @@ R_API int r_main_radare2(int argc, const char **argv) {
 		}
 	}
 	if (show_versions) {
-		LISTS_FREE();
+		int rc = r_main_version_verify (r, 1, json);
+		LISTS_FREE ();
 		free (debugbackend);
 		free (envprofile);
 		r_core_free (r);
-		return r_main_version_verify (1, json);
+		return rc;
 	}
 	if (show_version) {
 		if (json) {
@@ -880,7 +954,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 			free (debugbackend);
 			free (customRarunProfile);
 		} else {
-			r_main_version_verify (0, json);
+			r_main_version_verify (r, 0, json);
 			LISTS_FREE ();
 			free (customRarunProfile);
 			free (debugbackend);
