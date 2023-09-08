@@ -401,7 +401,11 @@ static int cmd_plugins(void *data, const char *input) {
 		}
 		break;
 	case 'b': // "Lb"
-		r_bin_list (core->bin, NULL, 0);
+		if (input[1] == 'j') {
+			r_bin_list (core->bin, NULL, 'j');
+		} else {
+			r_bin_list (core->bin, NULL, 0);
+		}
 		break;
 	case 'm': // "Lm"
 		if (input[1] == 'j') {

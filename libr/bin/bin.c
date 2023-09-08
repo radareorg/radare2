@@ -582,6 +582,10 @@ R_API void r_bin_list(RBin *bin, PJ *pj, int format) {
 	RBinPlugin *bp;
 	RBinXtrPlugin *bx;
 	RBinLdrPlugin *ld;
+	bool local_pj = (format == 'j' && pj == NULL);
+	if (local_pj) {
+		pj = pj_new ();
+	}
 
 	if (format == 'q') {
 		r_list_foreach (bin->plugins, it, bp) {
@@ -637,6 +641,11 @@ R_API void r_bin_list(RBin *bin, PJ *pj, int format) {
 			bin->cb_printf ("ldr  %-11s %s (%s)\n", name,
 				ld->meta.desc, r_str_get_fail (ld->meta.license, "???"));
 		}
+	}
+	if (local_pj) {
+		char *s = pj_drain (pj);
+		bin->cb_printf ("%s\n", s);
+		free (s);
 	}
 }
 
