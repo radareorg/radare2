@@ -512,7 +512,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 	char *customRarunProfile = NULL;
 	ut64 mapaddr = 0LL;
 	bool quiet = false;
-	bool quietLeak = false;
+	bool quiet_leak = false;
 	bool is_gdb = false;
 	const char * s_seek = NULL;
 	RThread *th_bin = NULL;
@@ -792,7 +792,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 			break;
 		case 'Q':
 			quiet = true;
-			quietLeak = true;
+			quiet_leak = true;
 			break;
 		case 'q':
 			r_config_set_b (r->config, "scr.interactive", false);
@@ -926,17 +926,6 @@ R_API int r_main_radare2(int argc, const char **argv) {
 			}
 		}
 	}
-	if (json) {
-		if (qjs_script) {
-			r_core_cmd_callf (r, "js %s", qjs_script);
-		} else if (opt.ind < argc) {
-			r_core_cmd_callf (r, "js:%s", argv[opt.ind]);
-		} else {
-			r_core_cmd_call (r, "js:");
-		}
-		r_core_free (r);
-		return 0;
-	}
 	{
 		const char *dbg_profile = r_config_get (r->config, "dbg.profile");
 		if (dbg_profile && *dbg_profile) {
@@ -971,8 +960,8 @@ R_API int r_main_radare2(int argc, const char **argv) {
 		goto beach;
 	}
 
-	if (do_list_core_plugins) {
-		r_core_cmd0 (r, "Lc");
+	if (do_list_core_plugins) { // "-LL"
+		r_core_cmd0 (r, json? "Lcj": "Lc");
 		r_cons_flush ();
 		LISTS_FREE ();
 		free (pfile);
@@ -980,13 +969,13 @@ R_API int r_main_radare2(int argc, const char **argv) {
 		free (envprofile);
 		return 0;
 	}
-	if (do_list_io_plugins) {
+	if (do_list_io_plugins) { // "-L"
 		if (r_config_get_b (r->config, "cfg.plugins")) {
 			r_core_loadlibs (r, R_CORE_LOADLIBS_ALL, NULL);
 		}
 		run_commands (r, NULL, prefiles, false, do_analysis);
 		run_commands (r, cmds, files, quiet, do_analysis);
-		if (quietLeak) {
+		if (quiet_leak) {
 			exit (0);
 		}
 		if (json) {
@@ -994,11 +983,23 @@ R_API int r_main_radare2(int argc, const char **argv) {
 		} else {
 			r_io_plugin_list (r->io);
 		}
+		r_cons_newline ();
 		r_cons_flush ();
 		LISTS_FREE ();
 		free (pfile);
 		R_FREE (debugbackend);
 		free (envprofile);
+		return 0;
+	}
+	if (json) {
+		if (qjs_script) {
+			r_core_cmd_callf (r, "js %s", qjs_script);
+		} else if (opt.ind < argc) {
+			r_core_cmd_callf (r, "js:%s", argv[opt.ind]);
+		} else {
+			r_core_cmd_call (r, "js:");
+		}
+		r_core_free (r);
 		return 0;
 	}
 
@@ -1652,7 +1653,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 	r_list_free (evals);
 	r_list_free (files);
 	cmds = evals = files = NULL;
-	if (forcequit || quietLeak) {
+	if (forcequit || quiet_leak) {
 		ret = r->rc;
 		goto beach;
 	}
@@ -1704,7 +1705,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 		r_core_project_undirty (r);
 		for (;;) {
 			if (!r_core_prompt_loop (r)) {
-				quietLeak = true;
+				quiet_leak = true;
 			}
 			ret = r->num->value;
 			debug = r_config_get_b (r->config, "cfg.debug");
@@ -1786,7 +1787,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 
 	ret = r->rc;
 beach:
-	if (quietLeak) {
+	if (quiet_leak) {
 		exit (r->rc);
 		return ret;
 	}

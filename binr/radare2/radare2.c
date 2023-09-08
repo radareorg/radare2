@@ -1,11 +1,10 @@
-/* radare - LGPL - Copyright 2009-2022 - pancake */
+/* radare - LGPL - Copyright 2009-2023 - pancake */
 
 #include <r_main.h>
-#include <r_util.h>
 
 #if EMSCRIPTEN__TODO
 #include <emscripten.h>
-static RCore *core = NULL;
+static R_TH_LOCAL RCore *core = NULL;
 
 void *r2_asmjs_new(const char *cmd) {
 	return r_core_new ();

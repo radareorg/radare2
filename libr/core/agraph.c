@@ -4127,12 +4127,12 @@ find_next:
 			free (lines_nbr);
 		}
 
-
+		// TODO: filter `buf` to avoid command injection here
 		char *line = r_core_cmd_strf (core, "pdr~%s~^0x:%d", buf, offset);
 		r_str_trim (line);
-		ut64 addr = strtoll (line, NULL, 0);
+		ut64 addr = r_num_get (core->num, line);
 		if (addr > 0) {
-			r_core_cmdf (core, "s 0x%lx", addr);
+			r_core_seek (core, addr, true);
 			r_config_set (core->config, "scr.highlight", buf);
 		} else {
 			r_config_set (core->config, "scr.highlight", "");
