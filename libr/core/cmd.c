@@ -3972,7 +3972,7 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon, bool *tmpseek
 	char *arroba = NULL;
 	char *grep = NULL;
 	RIODesc *tmpdesc = NULL;
-	int pamode = !core->io->va;
+	bool pamode = (core->io? !core->io->va: false);
 	int i, ret = 0, pipefd;
 	bool usemyblock = false;
 	int scr_html = -1;
