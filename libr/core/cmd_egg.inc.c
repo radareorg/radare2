@@ -197,9 +197,11 @@ static int cmd_egg(void *data, const char *input) {
 			REggPlugin *p;
 			r_list_foreach (egg->plugins, iter, p) {
 				pj_o (pj);
-				pj_ks (pj, "name", p->name);
+				pj_ks (pj, "name", p->meta.name);
 				pj_ks (pj, "type", (p->type == R_EGG_PLUGIN_SHELLCODE)?  "shc": "enc");
-				pj_ks (pj, "description", p->desc);
+				pj_ks (pj, "description", p->meta.desc);
+				pj_ks (pj, "license", p->meta.license);
+
 				pj_end (pj);
 			}
 			pj_end (pj);
@@ -212,7 +214,7 @@ static int cmd_egg(void *data, const char *input) {
 			r_list_foreach (egg->plugins, iter, p) {
 				r_cons_printf ("%s  %6s : %s\n",
 					(p->type == R_EGG_PLUGIN_SHELLCODE)?
-					"shc": "enc", p->name, p->desc);
+					"shc": "enc", p->meta.name, p->meta.desc);
 			}
 		}
 		break;

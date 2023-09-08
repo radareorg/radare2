@@ -1,10 +1,10 @@
-/* radare - LGPL - Copyright 2011-2022 - pancake */
+/* radare - LGPL - Copyright 2011-2023 - pancake */
 
-/* based on @santitox patch */
 #include <r_egg.h>
 
 #define DEFAULT_XOR_KEY "0xFF"
 
+/* based on @santitox patch */
 static RBuffer *build(REgg *egg) {
 	RBuffer *buf, *sc;
 	ut8 aux[32], nkey;
@@ -89,9 +89,13 @@ static RBuffer *build(REgg *egg) {
 
 //TODO: rename plugin to run
 REggPlugin r_egg_plugin_xor = {
-	.name = "xor",
+	.meta = {
+		.name = "xor",
+		.desc = "xor encoder for shellcode",
+		.author = "pancake,santitox",
+		.license = "MIT",
+	},
 	.type = R_EGG_PLUGIN_ENCODER,
-	.desc = "xor encoder for shellcode",
 	.build = (void *)build
 };
 

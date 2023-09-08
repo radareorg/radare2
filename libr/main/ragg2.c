@@ -126,13 +126,13 @@ static void list(REgg *egg) {
 	printf ("shellcodes:\n");
 	r_list_foreach (egg->plugins, iter, p) {
 		if (p->type == R_EGG_PLUGIN_SHELLCODE) {
-			printf ("%10s : %s\n", p->name, p->desc);
+			printf ("%10s : %s\n", p->meta.name, p->meta.desc);
 		}
 	}
 	printf ("encoders:\n");
 	r_list_foreach (egg->plugins, iter, p) {
 		if (p->type == R_EGG_PLUGIN_ENCODER) {
-			printf ("%10s : %s\n", p->name, p->desc);
+			printf ("%10s : %s\n", p->meta.name, p->meta.desc);
 		}
 	}
 }
