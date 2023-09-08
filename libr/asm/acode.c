@@ -23,6 +23,7 @@ R_API void r_asm_equ_item_free(RAsmEqu *equ) {
 	}
 }
 
+#if 0
 static RAsmEqu *__asm_equ_new(const char *key, const char *value) {
 	r_return_val_if_fail (key && value, NULL);
 	RAsmEqu *equ = R_NEW0 (RAsmEqu);
@@ -32,6 +33,7 @@ static RAsmEqu *__asm_equ_new(const char *key, const char *value) {
 	}
 	return equ;
 }
+#endif
 
 R_API void r_asm_code_set_equ(RAsmCode *code, const char *key, const char *value) {
 	r_return_if_fail (code && key && value);
@@ -46,12 +48,12 @@ R_API void r_asm_code_set_equ(RAsmCode *code, const char *key, const char *value
 		code->equs = ht_pp_new0 ();
 	}
 #endif
-	ht_pp_insert (code->equs, key, value);
+	ht_pp_insert (code->equs, key, strdup (value));
 }
 
 typedef struct {
 	RAsmCode *code;
-	const char *str;
+	char *str;
 } UserData;
 
 static bool replace_cb(void *user, const void *key, const void *value) {
@@ -79,7 +81,7 @@ R_API char* r_asm_code_get_hex(RAsmCode *acode) {
 	return str;
 }
 
-R_API RAsmEqu *r_asm_code_equ_get(RAsmCode *code, const char *key) {
+R_API char *r_asm_code_equ_get(RAsmCode *code, const char *key) {
 	r_return_val_if_fail (code && key, NULL);
 	bool found = false;
 	return ht_pp_find (code->equs, key, &found);
