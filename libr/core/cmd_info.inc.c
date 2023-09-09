@@ -1185,7 +1185,7 @@ static int cmd_info(void *data, const char *input) {
 				  RBinFile *cur = core->bin->cur;
 				  r_list_foreach (objs, iter, bf) {
 					  core->bin->cur = bf;
-					  RBININFO ("memory", R_CORE_BIN_ACC_MEM, NULL, 0);
+					  RBININFO ("memory", R_CORE_BIN_ACC_MEM, input + 1, 0);
 				  }
 				  core->bin->cur = cur;
 				  r_list_free (objs);
