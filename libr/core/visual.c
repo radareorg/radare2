@@ -8,7 +8,7 @@ R_VEC_TYPE(RVecAnalRef, RAnalRef);
 #define NPF 5
 #define PIDX (R_ABS (core->visual.printidx % NPF))
 
-static void visual_refresh(RCore *core);
+R_IPI void visual_refresh(RCore *core);
 
 #define PROMPTSTR "> "
 
@@ -2580,125 +2580,6 @@ static int process_get_click(RCore *core, int ch) {
 	return ch;
 }
 
-static void visual_find(RCore *core) {
-	int offset = 0;
-	int offset_max = 0;
-	int rows;
-	char buf[256];
-
-	const bool asm_offset = r_config_get_b (core->config, "asm.offset");
-	const bool asm_lines = r_config_get_b (core->config, "asm.lines");
-
-	core->cons->line->prompt_type = R_LINE_PROMPT_OFFSET;
-	r_line_set_prompt ("[find]> ");
-
-	while (1) {
-		r_cons_get_size (&rows);
-		r_cons_gotoxy (0, rows - 1);
-		r_cons_flush ();
-		printf (Color_RESET);
-		r_cons_flush ();
-
-		r_cons_fgets (buf, sizeof (buf), 0, NULL);
-
-		if (buf[0] == '\0') {
-			break;
-		}
-
-find_next:
-		if (core->cons->line->contents != NULL && strcmp (buf, core->cons->line->contents) == 0) {
-			offset += 1;
-			if (offset >= offset_max) {
-				offset = 0;
-			}
-		} else {
-			offset = 0;
-		}
-
-		r_config_set_b (core->config, "asm.offset", 1);
-		r_config_set_b (core->config, "asm.lines", 0);
-
-		if (offset == 0) {
-			free (core->cons->line->contents);
-			core->cons->line->contents = strdup (buf);
-
-			char *lines_nbr = r_core_cmd_strf (core, "pdr~%s~^0x~?", buf);
-			offset_max = atoi (lines_nbr);
-			free (lines_nbr);
-		}
-
-		// TODO: filter `buf` to avoid command injection here
-		char *line = r_core_cmd_strf (core, "pdr~%s~^0x:%d", buf, offset);
-		r_str_trim (line);
-		ut64 addr = r_num_get (core->num, line);
-		if (addr > 0) {
-			r_core_seek (core, addr, true);
-			r_config_set (core->config, "scr.highlight", buf);
-		} else {
-			r_config_set (core->config, "scr.highlight", "");
-		}
-
-		r_config_set_b (core->config, "asm.offset", asm_offset);
-		r_config_set_b (core->config, "asm.lines", asm_lines);
-
-		//agraph_refresh (r_cons_singleton ()->event_data);
-		visual_refresh (core);
-
-		r_cons_clear_line (0);
-		r_cons_printf (Color_RESET);
-		if (addr > 0) {
-			r_cons_gotoxy (0, 0);
-			r_cons_printf ("[find]> match '%s'", line);
-			R_LOG_INFO ("Found (%d/%d). Press 'n' for next, 'N' for prev, 'q' for quit, any other key to continue", offset+1, offset_max);
-		} else {
-			R_LOG_ERROR ("Text '%s' not found. Press 'q' for quit, any other key to conitnue", buf);
-		}
-		r_cons_flush ();
-
-		free (line);
-
-		char c = r_cons_readchar ();
-		if (addr > 0) {
-			if (c == ';') {
-				char buf[256];
-				r_line_set_prompt ("[comment]> ");
-				if (r_cons_fgets (buf, sizeof (buf), 0, NULL) > 0) {
-					r_core_cmdf (core, "'CC %s", buf);
-				}
-				r_line_set_prompt ("[find]> ");
-				//g->need_reload_nodes = true;
-			}
-			if (c == ':') {
-		//		core->cons->event_resize = (RConsEvent)agraph_set_need_reload_nodes;
-				r_core_visual_prompt_input (core);
-				r_cons_set_raw (true);
-		//		core->cons->event_resize = (RConsEvent)agraph_refresh_oneshot;
-			}
-			if (c == 'n' || c == 'j') {
-				goto find_next;
-			}
-			if (c == 'N' || c == 'k') {
-				offset -= 2;
-				if (offset < -1) {
-					offset = offset_max - 2;
-				}
-				goto find_next;
-			}
-		}
-		if (c == 'q') {
-			break;
-		}
-		//agraph_refresh (r_cons_singleton ()->event_data);
-	}
-
-	free (core->cons->line->contents);
-	core->cons->line->contents = NULL;
-	r_config_set (core->config, "scr.highlight", "");
-	core->cons->line->prompt_type = R_LINE_PROMPT_DEFAULT;
-	r_config_set_b (core->config, "asm.offset", asm_offset);
-	r_config_set_b (core->config, "asm.lines", asm_lines);
-}
-
 R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 	ut8 och = arg[0];
 	ut64 offset = core->offset;
@@ -2858,7 +2739,17 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			break;
 		case '&':
 			// cache current disasm/hexdump, work in a canvas to freely scroll :?
-			rotateAsmBits (core);
+			if (core->print->cur_enabled) {
+				core->visual.autoblocksize = !core->visual.autoblocksize;
+				if (core->visual.autoblocksize) {
+					core->visual.obs = core->blocksize;
+				} else {
+					r_core_block_size (core, core->visual.obs);
+				}
+				r_cons_clear ();
+			} else {
+				rotateAsmBits (core);
+			}
 			break;
 		case 'a':
 		{
@@ -3582,22 +3473,10 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			}
 			break;
 		case '%':
-			if (r_config_get_b (core->config, "scr.demo")) {
-				// R2_590 - use this mode by default. or maybe only when cursor is not set, the autblock thing is barely used compared to this
-				visual_find (core);
+			if (core->print->cur_enabled) {
+				findPair (core);
 			} else {
-				if (core->print->cur_enabled) {
-					findPair (core);
-				} else {
-					/* do nothing? */
-					core->visual.autoblocksize = !core->visual.autoblocksize;
-					if (core->visual.autoblocksize) {
-						core->visual.obs = core->blocksize;
-					} else {
-						r_core_block_size (core, core->visual.obs);
-					}
-					r_cons_clear ();
-				}
+				r_core_visual_find (core, NULL);
 			}
 			break;
 		case 'w':
@@ -4422,7 +4301,7 @@ static void show_cursor(RCore *core) {
 	}
 }
 
-static void visual_refresh(RCore *core) {
+R_IPI void visual_refresh(RCore *core) {
 	r_return_if_fail (core);
 	char *cmd_str = NULL;
 	r_print_set_cursor (core->print, core->print->cur_enabled, core->print->ocur, core->print->cur);
