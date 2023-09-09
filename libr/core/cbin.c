@@ -3903,6 +3903,9 @@ static void bin_mem_print(PJ *pj, RList *mems, int perms, int depth, int mode) {
 	if (!mems) {
 		return;
 	}
+	if (IS_MODE_RAD (mode)) {
+		r_cons_printf ("f oldfd=`oqq`\n");
+	}
 	r_list_foreach (mems, iter, mem) {
 		if (IS_MODE_JSON (mode)) {
 			pj_o (pj);
@@ -3912,20 +3915,30 @@ static void bin_mem_print(PJ *pj, RList *mems, int perms, int depth, int mode) {
 			pj_ks (pj, "flags", r_str_rwx_i (mem->perms & perms));
 			pj_end (pj);
 		} else if (IS_MODE_SIMPLE (mode)) {
+			// r_cons_printf ("%s\n", mem->name);
 			r_cons_printf ("0x%08"PFMT64x"\n", mem->addr);
-		} else {
-			r_cons_printf ("0x%08"PFMT64x" +0x%04x %s %*s%-*s\n",
+		} else if (IS_MODE_RAD (mode)) {
+			r_cons_printf ("of malloc://%d\n", mem->size);
+			r_cons_printf ("om . 0x%08"PFMT64x" 0x%04x 0 %s %s\n",
 					mem->addr, mem->size, r_str_rwx_i (mem->perms & perms),
-					depth, "", 20-depth, mem->name);
+					mem->name);
+		} else if (IS_MODE_SET (mode)) {
+			bin_mem_print (pj, mem->mirrors, mem->perms & perms, depth + 1, mode);
+		} else {
+			r_cons_printf ("0x%08"PFMT64x" +0x%04x %s %s\n",
+					mem->addr, mem->size, r_str_rwx_i (mem->perms & perms),
+					mem->name);
 		}
 		if (mem->mirrors) {
 			bin_mem_print (pj, mem->mirrors, mem->perms & perms, depth + 1, mode);
 		}
 	}
+	if (IS_MODE_RAD (mode)) {
+		r_cons_printf ("o=oldfd;f-oldfd\n");
+	}
 }
 
 static bool bin_mem(RCore *r, PJ *pj, int mode) {
-	RList *mem = NULL;
 	if (!r) {
 		return false;
 	}
@@ -3934,7 +3947,8 @@ static bool bin_mem(RCore *r, PJ *pj, int mode) {
 			r_cons_println ("[Memory]\n");
 		}
 	}
-	if (!(mem = r_bin_get_mem (r->bin))) {
+	RList *mem = r_bin_get_mem (r->bin);
+	if (!mem) {
 		if (IS_MODE_JSON (mode)) {
 			pj_a (pj);
 			pj_end (pj);
@@ -3946,9 +3960,12 @@ static bool bin_mem(RCore *r, PJ *pj, int mode) {
 		pj_a (pj);
 		bin_mem_print (pj, mem, 7, 0, R_MODE_JSON);
 		pj_end (pj);
-		return true;
-	} else if (!(IS_MODE_RAD (mode) || IS_MODE_SET (mode))) {
+	} else if (IS_MODE_RAD (mode)) {
+		bin_mem_print (pj, mem, 7, 0, R_MODE_RADARE);
+	} else if (IS_MODE_SET (mode)) {
 		bin_mem_print (NULL, mem, 7, 0, mode);
+	} else {
+		bin_mem_print (pj, mem, 7, 0, 0);
 	}
 	return true;
 }
