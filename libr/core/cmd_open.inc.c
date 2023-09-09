@@ -101,6 +101,7 @@ static RCoreHelpMessage help_msg_ob = {
 	"ob", "", "list opened binary files and objid",
 	"ob*", "", "list opened binary files and objid (r2 commands)",
 	"ob", " *", "select all bins (use 'ob bfid' to pick one)",
+	"obi", "?[..]", "alias for 'i'",
 	"obm", "([id])", "merge current selected binfile into previous binfile (id-1)",
 	"obm-", "([id])", "same as obm, but deletes the current binfile",
 	"ob-", "*", "delete all binfiles",
@@ -344,6 +345,9 @@ static void cmd_open_bin(RCore *core, const char *input) {
 			r_core_bin_load (core, NULL, UT64_MAX);
 			value = input[2] ? input + 2 : NULL;
 		}
+		break;
+	case 'i': // "obi"
+		r_core_cmdf (core, "i%s", input + 2);
 		break;
 	case 'm': // "obm"
 		{
