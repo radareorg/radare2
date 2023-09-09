@@ -691,10 +691,9 @@ install_data(
 )
 
 install_data(
-	'libr/arch/d/nes-init.r2'
-	'libr/arch/d/nes-fini.r2'
-	,
-	install_dir: r2_platform
+  'libr/arch/d/nes-init.r2',
+  'libr/arch/d/nes-fini.r2',
+  install_dir: r2_platform
 )
 
 if cli_enabled

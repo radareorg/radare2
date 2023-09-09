@@ -3,6 +3,7 @@
 #include <r_core.h>
 #include <r_vec.h>
 
+R_IPI void visual_refresh(RCore *core);
 static R_TH_LOCAL int mousemode = 0;
 static R_TH_LOCAL int disMode = 0;
 static R_TH_LOCAL int discroll = 0;
@@ -4079,8 +4080,7 @@ static void visual_offset(RAGraph *g, RCore *core) {
 	core->cons->line->prompt_type = R_LINE_PROMPT_DEFAULT;
 }
 
-
-static void visual_find(RAGraph *g, RCore *core) {
+R_API void r_core_visual_find(RCore *core, RAGraph *g) {
 	int offset = 0;
 	int offset_max = 0;
 	int rows;
@@ -4140,8 +4140,11 @@ find_next:
 
 		r_config_set_b (core->config, "asm.offset", asm_offset);
 		r_config_set_b (core->config, "asm.lines", asm_lines);
-
-		agraph_refresh (r_cons_singleton ()->event_data);
+		if (g) {
+			agraph_refresh (r_cons_singleton ()->event_data);
+		} else {
+			visual_refresh (core);
+		}
 
 		r_cons_clear_line (0);
 		r_cons_printf (Color_RESET);
@@ -4165,7 +4168,9 @@ find_next:
 					r_core_cmdf (core, "'CC %s", buf);
 				}
 				r_line_set_prompt ("[find]> ");
-				g->need_reload_nodes = true;
+				if (g) {
+					g->need_reload_nodes = true;
+				}
 			}
 			if (c == ':') {
 				core->cons->event_resize = (RConsEvent)agraph_set_need_reload_nodes;
@@ -4187,7 +4192,11 @@ find_next:
 		if (c == 'q') {
 			break;
 		}
-		agraph_refresh (r_cons_singleton ()->event_data);
+		if (g) {
+			agraph_refresh (r_cons_singleton ()->event_data);
+		} else {
+			visual_refresh (core);
+		}
 	}
 
 	free (core->cons->line->contents);
@@ -4720,7 +4729,7 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 			break;
 		case '%':
 			showcursor (core, true);
-			visual_find (g, core);
+			r_core_visual_find (core, g);
 			showcursor (core, false);
 			break;
 		case 9: // tab

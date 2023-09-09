@@ -297,6 +297,7 @@ deinstall uninstall:
 	cd libr/util/d && ${MAKE} uninstall
 	cd libr/syscall/d && ${MAKE} uninstall
 	cd libr/anal/d && ${MAKE} uninstall
+	cd libr/arch/d && ${MAKE} uninstall
 	@echo
 	@echo "Run 'make purge' to also remove installed files from previous versions of r2"
 	@echo
