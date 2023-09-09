@@ -674,7 +674,14 @@ static bool cmd_om(RCore *core, const char *input, int arg) {
 			vaddr = r_num_math (core->num, r_str_word_get0 (s, 1));
 			// fallthrough
 		case 1:
-			fd = r_num_math (core->num, r_str_word_get0 (s, 0));
+			{
+				const char *w = r_str_word_get0 (s, 0);
+				if (*w == '.') {
+					fd = r_io_fd_get_current (core->io);
+				} else {
+					fd = r_num_math (core->num, w);
+				}
+			}
 			break;
 		}
 		if (fd < 3) {
