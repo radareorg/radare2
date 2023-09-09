@@ -95,7 +95,7 @@ R_API RList *r_asm_cpus(RAsm *a);
 R_API RAsmCode *r_asm_code_new(void);
 R_API void r_asm_code_free(RAsmCode *acode);
 R_API void r_asm_code_set_equ(RAsmCode *code, const char *key, const char *value);
-R_API char *r_asm_code_equ_replace(RAsmCode *code, char *str);
+R_API R_MUSTUSE char *r_asm_code_equ_replace(RAsmCode *code, const char *str);
 R_API char* r_asm_code_get_hex(RAsmCode *acode);
 R_API char *r_asm_code_equ_get(RAsmCode *code, const char *key);
 

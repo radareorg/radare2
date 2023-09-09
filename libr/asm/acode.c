@@ -34,8 +34,9 @@ static bool replace_cb(void *user, const void *key, const void *value) {
 	return true;
 }
 
-R_API char *r_asm_code_equ_replace(RAsmCode *code, char *str) {
-	r_return_val_if_fail (code && str, NULL);
+R_API char *r_asm_code_equ_replace(RAsmCode *code, const char *_str) {
+	r_return_val_if_fail (code && _str, NULL);
+	char *str = strdup (_str);
 	UserData data = {
 		.code = code,
 		.str = str

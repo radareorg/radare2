@@ -680,7 +680,7 @@ static int parse_asm_directive(RAsm *a, RAnalOp *op, RAsmCode *acode, char *ptr_
 	} else if (r_str_startswith (ptr, ".int32 ")) {
 		ret = r_asm_pseudo_int32 (a, op, ptr + 7);
 	} else if (r_str_startswith (ptr, ".int64 ")) {
-		char *str = r_asm_code_equ_replace (acode, strdup (ptr + 7));
+		char *str = r_asm_code_equ_replace (acode, ptr + 7);
 		ret = r_asm_pseudo_int64 (a, op, str); // ptr + 7);
 		free (str);
 	} else if (r_str_startswith (ptr, ".size")) {
