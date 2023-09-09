@@ -13,7 +13,7 @@ BUILDSEC=$(shell date -u -d "@$(SOURCE_DATE_EPOCH)" "+__%H:%M:%S" 2>/dev/null ||
 else
 BUILDSEC=$(shell date "+__%H:%M:%S")
 endif
-DATADIRS=libr/cons/d libr/flag/d libr/bin/d libr/asm/d libr/syscall/d libr/magic/d libr/anal/d libr/util/d
+DATADIRS=libr/cons/d libr/flag/d libr/bin/d libr/asm/d libr/syscall/d libr/magic/d libr/anal/d libr/util/d libr/arch/d
 USE_ZIP=YES
 ZIP=zip
 
@@ -146,6 +146,8 @@ windist:
 	cp -f libr/sysregs/d/*.sdb "${WINDIST}/share/radare2/${VERSION}/sysregs"
 	mkdir -p "${WINDIST}/share/radare2/${VERSION}/fcnsign"
 	cp -f libr/anal/d/*.sdb "${WINDIST}/share/radare2/${VERSION}/fcnsign"
+	mkdir -p "${WINDIST}/share/radare2/${VERSION}/platform"
+	cp -f libr/arch/d/*.r2 "${WINDIST}/share/radare2/${VERSION}/platform"
 	mkdir -p "${WINDIST}/share/radare2/${VERSION}/opcodes"
 	cp -f libr/asm/d/*.sdb "${WINDIST}/share/radare2/${VERSION}/opcodes"
 	mkdir -p "${WINDIST}/share/radare2/${VERSION}/flag"

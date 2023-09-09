@@ -1,7 +1,10 @@
+subdir('d')
+
 r_arch_sources = [
   'arch.c',
   'arch_op.c',
   'arch_config.c',
+  'arch_platform.c',
   'arch_switch.c',
   'arch_session.c',
   'arch_cond.c',

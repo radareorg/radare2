@@ -459,6 +459,29 @@ static bool cb_archdecoder_getter(RCore *core, RConfigNode *node) {
 	return true;
 }
 
+static bool cb_arch_platform(void *user, void *data) {
+	RCore *core = (RCore *)user;
+	RConfigNode *node = (RConfigNode *)data;
+	const char *name = node->value;
+	RArch *arch = core->anal->arch;
+	if (strstr (name, "?")) {
+		r_arch_platform_list (arch);
+	} else {
+		if (arch->platform) {
+			char *f = r_arch_platform_unset (arch, arch->platform);
+			r_core_run_script (core, f);
+			free (f);
+			arch->platform = NULL;
+		}
+		char *f = r_arch_platform_set (arch, name);
+		if (f) {
+			r_core_run_script (core, f);
+			free (f);
+		}
+	}
+	return true;
+}
+
 static bool cb_archbits(void *user, void *data) {
 	r_return_val_if_fail (user && data, false);
 	RCore *core = (RCore *)user;
@@ -3510,6 +3533,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETICB ("arch.bits", 32, &cb_archbits, "word size in bits at arch decoder");
 #endif
 	r_config_set_getter (cfg, "arch.bits", (RConfigCallback)cb_archbits_getter);
+	SETCB ("arch.platform", "", &cb_arch_platform, "define arch platform to use");
 	n = NODECB ("arch.endian", R_SYS_ENDIAN? "big": "little", &cb_archendian);
 	SETDESC (n, "set arch endianess");
 	SETOPTIONS (n, "big", "little", "bigswap", "littleswap", NULL);

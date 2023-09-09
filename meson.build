@@ -176,6 +176,7 @@ if host_machine.system() == 'windows'
   r2_sdb = join_paths(r2_datdir)
   r2_zigns = join_paths(r2_datdir, 'zigns')
   r2_themes = join_paths(r2_datdir, 'cons')
+  r2_platform = join_paths(r2_datdir, 'platform')
   r2_fortunes = join_paths(r2_datdir, 'doc')
   r2_flags = join_paths(r2_datdir, 'flag')
   r2_hud = join_paths(r2_datdir, 'hud')
@@ -183,6 +184,7 @@ if host_machine.system() == 'windows'
   opts2 = [
     'r2_wwwroot',
     'r2_sdb',
+    'r2_platform',
     'r2_zigns',
     'r2_themes',
     'r2_fortunes',
@@ -219,6 +221,7 @@ else
   r2_wwwroot = join_paths(r2_datdir_r2, r2_version, 'www')
   r2_sdb = join_paths(r2_datdir_r2, r2_version)
   r2_zigns = join_paths(r2_datdir_r2, r2_version, 'zigns')
+  r2_platform = join_paths(r2_datdir_r2, r2_version, 'platform')
   r2_themes = join_paths(r2_datdir_r2, r2_version, 'cons')
   r2_fortunes = join_paths(r2_datdir, 'doc', 'radare2')
   r2_flags = join_paths(r2_datdir_r2, r2_version, 'flag')
@@ -369,6 +372,7 @@ userconf.set('WITH_STATIC_THEMES', get_option('static_themes'))
 userconf.set('DATADIR', join_paths(r2_prefix, r2_datdir))
 userconf.set('WWWROOT', join_paths(r2_prefix, r2_wwwroot))
 userconf.set('SDB', r2_sdb)
+userconf.set('PLATFORM', r2_platform)
 userconf.set('ZIGNS', r2_zigns)
 userconf.set('THEMES', r2_themes)
 userconf.set('FORTUNES', r2_fortunes)
@@ -684,6 +688,13 @@ install_data(
   'doc/fortunes.fun',
   'doc/fortunes.tips',
   install_dir: r2_fortunes
+)
+
+install_data(
+	'libr/arch/d/nes-init.r2'
+	'libr/arch/d/nes-fini.r2'
+	,
+	install_dir: r2_platform
 )
 
 if cli_enabled

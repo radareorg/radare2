@@ -123,6 +123,7 @@ typedef struct r_arch_t {
 	RNum *num; // XXX maybe not required
 	struct r_arch_session_t *session;
 	RArchConfig *cfg; // global / default config
+	char *platform;
 } RArch;
 
 typedef struct r_arch_session_t {
@@ -182,6 +183,10 @@ typedef struct r_arch_plugin_t {
 	const RArchPluginPreludesCallback preludes;
 	const RArchPluginEsilCallback esilcb;
 } RArchPlugin;
+
+R_API char *r_arch_platform_unset(RArch *arch, const char *name);
+R_API char *r_arch_platform_set(RArch *arch, const char *name);
+R_API void r_arch_platform_list(RArch *arch);
 
 // decoder.c
 //dname is name of decoder to use, NULL if current
