@@ -1569,6 +1569,7 @@ static int cmd_info(void *data, const char *input) {
 				core->bin->cur = cur;
 				r_list_free (objs);
 			} else { // "ic"
+				// R2_600 - all commands have RCore.binFiles() loop . this is racy and dupe, maybe good to separate this logic into a function that takes another function as argument to generalize and simplify code
 				RList *objs = r_core_bin_files (core);
 				RListIter *iter;
 				RBinFile *bf;

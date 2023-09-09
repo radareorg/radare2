@@ -20,7 +20,7 @@ static ut8 gb_op_calljump(RArchSession *a, RAnalOp *op, const ut8 *data, ut64 ad
 		return false;
 	}
 	if (!GB_IS_VBANK_DST (data[1], data[2])) {
-		op->jump = GB_SOFTCAST(data[1], data[2]);
+		op->jump = GB_SOFTCAST (data[1], data[2]);
 	} else {
 		op->jump = GB_IB_DST (data[1], data[2], addr);
 	}
