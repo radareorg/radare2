@@ -10,13 +10,13 @@ static RCoreHelpMessage help_msg_o = {
 	"o"," [file] 0x4000 rwx", "map file at 0x4000",
 	"o"," [file]","open [file] file in read-only",
 	"o","-1","close file descriptor 1",
-	"o*","","list opened files in r2 commands",
+	"o*","[*]","list opened files in r2 commands, show r2 script to set flag for each fd",
 	"o+"," [file]", "open a file in read-write mode",
 	"o++"," [file]", "create and open file in read-write mode (see ot and omr)",
 	"o-","[?][#!*$.]","close opened files",
 	"o.","","show current filename (or o.q/oq to get the fd)",
 	"o:"," [len]","open a malloc://[len] copying the bytes from current offset", // XXX R2_590 - should be an alias for ':' no need for a malloc:// wrapper imho
-	"o=","","list opened files (ascii-art bars)",
+	"o=","(#fd)","select fd or list opened files in ascii-art",
 	"oL","","list all IO plugins registered",
 	"oa","[-] [A] [B] [filename]","specify arch and bits for given file",
 	"ob","[?] [lbdos] [...]","list opened binary files backed by fd",
@@ -28,8 +28,8 @@ static RCoreHelpMessage help_msg_o = {
 	"on","[?][n] [file] 0x4000","map raw file at 0x4000 (no r_bin involved)",
 	"oo","[?][+bcdnm]","reopen current file (see oo?) (reload in rw or debugger)",
 	"op","[npr] [fd]", "select priorized file by fd (see ob), opn/opp/opr = next/previous/rotate",
-	"ot"," [file]", "same as `touch [file]`",
-	"oq","","list all open files",
+	"ot", " [file]", "same as `touch [file]`",
+	"oq", "[q]", "list all open files or show current fd 'oqq'",
 	"ox", " fd fdx", "exchange the descs of fd and fdx and keep the mapping",
 	"open", " [file]", "use system xdg-open/open on a file",
 	NULL
@@ -507,9 +507,17 @@ static void map_list(RCore *core, int mode, RPrint *print, int fd) {
 			pj_ks (pj, "name", r_str_get (map->name));
 			pj_end (pj);
 			break;
+		case -3:
 		case 1:
 		case '*':
 		case 'r': {
+			if (fd == -3) {
+				char *name = map->name? strdup (map->name): r_str_newf ("fd%d", map->fd);
+				print->cb_printf ("f iomap.%s=0x%"PFMT64x"\n",
+						name, r_io_map_begin (map));
+				free (name);
+				break;
+			}
 			// Need FIFO order here
 			char *om_cmd = r_str_newf ("omu %d 0x%08"PFMT64x" 0x%08"PFMT64x
 					" 0x%08"PFMT64x" %s%s%s\n", map->fd, r_io_map_begin (map),
@@ -1125,9 +1133,14 @@ static void cmd_open_map(RCore *core, const char *input) {
 		break;
 	case '\0': // "om"
 	case 'j': // "omj"
-	case '*': // "om*"
+	case '*': // "om*" "om**"
 	case 'q': // "omq"
-		if (input[1] && input[2] == '.') {
+		if (input[1] && input[2] == '*') { // "om**"
+			map = r_io_map_get_at (core->io, core->offset);
+			if (map) {
+				map_list (core, input[1], core->print, -3);
+			}
+		} else if (input[1] && input[2] == '.') {
 			map = r_io_map_get_at (core->io, core->offset);
 			if (map) {
 				core->print->cb_printf ("%i\n", map->id);
@@ -1504,6 +1517,17 @@ static bool desc_list_quiet_cb(void *user, void *data, ut32 id) {
 	RPrint *p = (RPrint *)user;
 	RIODesc *desc = (RIODesc *)data;
 	p->cb_printf ("%d\n", desc->fd);
+	return true;
+}
+
+static bool desc_list_cmds_cb2(void *user, void *data, ut32 id) {
+	RCore *core = (RCore *)user;
+	RPrint *p = core->print;
+	RIODesc *desc = (RIODesc*)data;
+	char *name = strdup (desc->name);
+	r_name_filter (name, -1);
+	p->cb_printf ("f fd.%s=%d\n", name, desc->fd);
+	free (name);
 	return true;
 }
 
@@ -2000,9 +2024,11 @@ static int cmd_open(void *data, const char *input) {
 	case '*': // "o*"
 		if (input[1] == '?') {
 			r_core_cmd_help_match (core, help_msg_o, "o*", true);
-			break;
+		} else if (input[1] == '*') {
+			r_id_storage_foreach (core->io->files, desc_list_cmds_cb2, core);
+		} else {
+			r_id_storage_foreach (core->io->files, desc_list_cmds_cb, core);
 		}
-		r_id_storage_foreach (core->io->files, desc_list_cmds_cb, core);
 		break;
 	case 'j': // "oj"
 		if (input[1] == '?') {
