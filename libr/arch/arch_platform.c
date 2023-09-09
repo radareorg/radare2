@@ -7,6 +7,10 @@ static char *getroot(void) {
 }
 
 R_API char *r_arch_platform_unset(RArch *arch, const char *name) {
+	r_return_val_if_fail (arch, NULL);
+	if (R_STR_ISEMPTY (name)) {
+		return NULL;
+	}
 	char *root = getroot ();
 	char *fini = r_str_newf ("%s/%s-fini.r2", root, name);
 	free (root);
@@ -18,6 +22,10 @@ R_API char *r_arch_platform_unset(RArch *arch, const char *name) {
 }
 
 R_API char *r_arch_platform_set(RArch *arch, const char *name) {
+	r_return_val_if_fail (arch, NULL);
+	if (R_STR_ISEMPTY (name)) {
+		return NULL;
+	}
 	char *root = getroot ();
 	char *init = r_str_newf ("%s/%s-init.r2", root, name);
 	if (r_file_exists (init)) {
@@ -32,14 +40,17 @@ R_API char *r_arch_platform_set(RArch *arch, const char *name) {
 
 // TODO return list or char *
 R_API void r_arch_platform_list(RArch *arch) {
+	r_return_if_fail (arch);
 	RListIter *iter;
 	char *item;
 	char *root = getroot ();
 	RList *list = r_sys_dir (root);
 	r_list_foreach (list, iter, item) {
-		if (strstr (item, "-init.r2")) {
+		if (*item != '.' && r_str_endswith (item, "-init.r2")) {
 			r_str_after (item, '-');
-			printf ("%s\n", item);
+			if (*item) {
+				printf ("%s\n", item);
+			}
 		}
 	}
 	r_list_free (list);

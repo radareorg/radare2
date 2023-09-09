@@ -1,4 +1,4 @@
-# https://www.nesdev.org/wiki/CPU_memory_map 
+# https://www.nesdev.org/wiki/CPU_memory_map
 # $0000–$07FF	$0800	2 KB internal RAM
 # $0800–$0FFF	$0800	Mirrors of $0000–$07FF
 # $1000–$17FF	$0800   ""
@@ -25,7 +25,7 @@ f fd.ppu=`oqq`
 om . 0x2000 0x2008 0 rwx ppuregs
 
 # repeats every 8 bytes
-om . 0x2000 0x4000 0 rwx ppuregs.mirror0 
+om . 0x2000 0x4000 0 rwx ppuregs.mirror0
 
 of malloc://8
 om . 0x00002000 0x0008 0 rwx PPU_REG

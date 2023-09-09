@@ -3960,6 +3960,8 @@ static bool bin_mem(RCore *r, PJ *pj, int mode) {
 		pj_a (pj);
 		bin_mem_print (pj, mem, 7, 0, R_MODE_JSON);
 		pj_end (pj);
+	} else if (IS_MODE_SIMPLE (mode)) {
+		bin_mem_print (pj, mem, 7, 0, R_MODE_SIMPLE);
 	} else if (IS_MODE_RAD (mode)) {
 		bin_mem_print (pj, mem, 7, 0, R_MODE_RADARE);
 	} else if (IS_MODE_SET (mode)) {
