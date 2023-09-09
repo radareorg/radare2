@@ -289,9 +289,8 @@ static RList *sections(RBinFile *bf) {
 			}
 		}
 	}
-	eprintf ("[INFO] Parsing data sections for large dumps can take time, "
-		"please be patient (but if strings ain't your thing try with "
-		"-z)!\n");
+	R_LOG_INFO ("Parsing data sections for large dumps can take time");
+	R_LOG_INFO ("Please be patient (but if strings ain't your thing try with -z)");
 	return ret;
 }
 
@@ -453,6 +452,7 @@ static bool check(RBinFile *bf, RBuffer *b) {
 RBinPlugin r_bin_plugin_mdmp = {
 	.meta = {
 		.name = "mdmp",
+		.author = "Davis,Alex Kornitzer",
 		.desc = "Minidump format r_bin plugin",
 		.license = "LGPL3",
 	},

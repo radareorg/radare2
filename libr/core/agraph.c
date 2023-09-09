@@ -4181,7 +4181,6 @@ find_next:
 	r_config_set_b (core->config, "asm.lines", asm_lines);
 }
 
-
 static void goto_asmqjmps(RAGraph *g, RCore *core) {
 	const char *h = "[Fast goto call/jmp]> ";
 	char obuf[R_CORE_ASMQJMPS_LEN_LETTERS + 1];

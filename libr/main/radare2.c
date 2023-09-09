@@ -20,10 +20,10 @@ static char* get_file_in_cur_dir(const char *filepath) {
 }
 
 static void json_plugins(RCore *core, PJ *pj, const char *name, const char *cmd) {
-	char *lcj = r_core_cmd_str (core, "Lcj");
+	char *lcj = r_core_cmd_str (core, cmd);
 	r_str_trim (lcj);
 	if (*lcj == '[') {
-		pj_k (pj, "core");
+		pj_k (pj, name);
 		pj_raw (pj, lcj);
 	}
 	free (lcj);
@@ -507,12 +507,12 @@ static void perform_analysis(RCore *r, int do_analysis) {
 static RThreadFunctionRet th_analysis(RThread *th) {
 	ThreadData *td = (ThreadData*)th->user;
 	if (td->th_bin) {
-		R_LOG_INFO ("waiting for rbin parsing");
+		R_LOG_INFO ("Waiting for rbin parsing");
 		r_th_wait (td->th_bin);
 		r_th_free (td->th_bin);
 		td->th_bin = NULL;
 	}
-	R_LOG_INFO ("loading binary information in background");
+	R_LOG_INFO ("Loading binary information in background");
 	r_cons_thready ();
 	r_cons_new ();
 	perform_analysis (td->core, td->do_analysis);
@@ -522,7 +522,7 @@ static RThreadFunctionRet th_analysis(RThread *th) {
 }
 
 static RThreadFunctionRet th_binload(RThread *th) {
-	R_LOG_INFO ("loading binary information in background");
+	R_LOG_INFO ("Loading binary information in background");
 	r_cons_thready ();
 	r_cons_new ();
 	ThreadData *td = (ThreadData*)th->user;
