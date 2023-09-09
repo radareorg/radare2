@@ -4094,7 +4094,7 @@ static void visual_find(RAGraph *g, RCore *core) {
 
 	while (1) {
 		r_cons_get_size (&rows);
-		r_cons_gotoxy (0, rows);
+		r_cons_gotoxy (0, rows - 1);
 		r_cons_flush ();
 		printf (Color_RESET);
 		r_cons_flush ();
@@ -4146,9 +4146,11 @@ find_next:
 		r_cons_clear_line (0);
 		r_cons_printf (Color_RESET);
 		if (addr > 0) {
-			r_cons_printf ("Found (%d/%d) \"%s\". Press 'n' for next, 'N' for prev, 'q' for quit, any other key to conitnue", offset+1, offset_max, line);
+			r_cons_gotoxy (0, 0);
+			r_cons_printf ("[find]> match '%s'", line);
+			R_LOG_INFO ("Found (%d/%d). Press 'n' for next, 'N' for prev, 'q' for quit, any other key to continue", offset+1, offset_max);
 		} else {
-			r_cons_printf ("Sentence \"%s\", not found. Press 'q' for quit, any other key to conitnue", buf);
+			R_LOG_ERROR ("Text '%s' not found. Press 'q' for quit, any other key to conitnue", buf);
 		}
 		r_cons_flush ();
 
@@ -4156,10 +4158,16 @@ find_next:
 
 		char c = r_cons_readchar ();
 		if (addr > 0) {
-			if (c == 'n') {
+			if (c == ':') {
+				core->cons->event_resize = (RConsEvent)agraph_set_need_reload_nodes;
+				r_core_visual_prompt_input (core);
+				r_cons_set_raw (true);
+				core->cons->event_resize = (RConsEvent)agraph_refresh_oneshot;
+			}
+			if (c == 'n' || c == 'j') {
 				goto find_next;
 			}
-			if (c == 'N') {
+			if (c == 'N' || c == 'k') {
 				offset -= 2;
 				if (offset < -1) {
 					offset = offset_max - 2;
