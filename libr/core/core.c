@@ -2748,7 +2748,7 @@ static void __init_autocomplete_default(RCore* core) {
 	};
 	const char *flags[] = {
 		"*", "s", "s+", "b", "f", "fg", "?", "?v", "ad", "bf", "c1", "db", "dbw",
-		"f-", "fr", "tf", "/a", "/v", "/r", "/re", "aav", "aep", "aef", "afb",
+		"f-", "fr", "tf", "/a", "/v", "/r", "/re", "aav", "aep", "aef", "afb", "o=",
 		"afc", "axg", "axt", "axf", "dcu", "ag", "agfl", "aecu", "aesu", "aeim", NULL
 	};
 	const char *evals[] = {
