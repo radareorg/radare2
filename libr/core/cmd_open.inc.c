@@ -2007,12 +2007,28 @@ static int cmd_open(void *data, const char *input) {
 
 	switch (*input) {
 	case '=': // "o="
-		fdsz = 0;
-		r_id_storage_foreach (core->io->files, init_desc_list_visual_cb, core->print);
-		r_id_storage_foreach (core->io->files, desc_list_visual_cb, core->print);
+		if (input[1]) { // "o=#number"
+			// set current fd
+			int n = (int)r_num_math (core->num, input + 1);
+			if (n > 0) {
+				RIODesc *desc = r_io_desc_get (core->io, n);
+				if (desc) {
+					core->io->desc = desc;
+				}
+			}
+		} else { // "o="
+			fdsz = 0;
+			r_id_storage_foreach (core->io->files, init_desc_list_visual_cb, core->print);
+			r_id_storage_foreach (core->io->files, desc_list_visual_cb, core->print);
+		}
 		break;
 	case 'q': // "oq"
-		if (input[1] == '.') {
+		if (input[1] == 'q') { // "oqq"
+			if (core->io->desc) {
+				int fd = core->io->desc->fd;
+				r_cons_printf ("%d\n", fd);
+			}
+		} else if (input[1] == '.') { // "oq."
 			r_id_storage_foreach (core->io->files, desc_list_quiet2_cb, core->print);
 		} else {
 			r_id_storage_foreach (core->io->files, desc_list_quiet_cb, core->print);
