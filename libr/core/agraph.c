@@ -4158,6 +4158,15 @@ find_next:
 
 		char c = r_cons_readchar ();
 		if (addr > 0) {
+			if (c == ';') {
+				char buf[256];
+				r_line_set_prompt ("[comment]> ");
+				if (r_cons_fgets (buf, sizeof (buf), 0, NULL) > 0) {
+					r_core_cmdf (core, "'CC %s", buf);
+				}
+				r_line_set_prompt ("[find]> ");
+				g->need_reload_nodes = true;
+			}
 			if (c == ':') {
 				core->cons->event_resize = (RConsEvent)agraph_set_need_reload_nodes;
 				r_core_visual_prompt_input (core);
