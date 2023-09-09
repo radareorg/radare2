@@ -171,7 +171,7 @@ static const char *menus_settings_screen[] = {
 
 static const char *menus_Help[] = {
 	"Toggle Help",
-	"License", "Version",
+	"License", "Version", "Full Version",
 	"Fortune", "2048",
 	NULL
 };
@@ -5498,7 +5498,18 @@ static int __help_cb(void *user) {
 }
 
 static int __license_cb(void *user) {
-	r_cons_message ("Copyright 2006-2020 - pancake - LGPL");
+	r_cons_message ("Copyright 2006-2023 - pancake - LGPL");
+	return 0;
+}
+
+static int __version2_cb(void *user) {
+	RCore *core = (RCore *)user;
+	r_cons_set_raw (false);
+	r_core_cmd0 (core, "!!r2 -Vj>$a");
+	r_core_cmd0 (core, "$a~{}~..");
+	r_core_cmd0 (core, "rm $a");
+	r_cons_set_raw (true);
+	r_cons_flush ();
 	return 0;
 }
 
@@ -5817,6 +5828,8 @@ static bool __init_panels_menu(RCore *core) {
 			__add_menu (core, parent, menus_Help[i], __license_cb);
 		} else if (!strcmp (menus_Help[i], "Version")) {
 			__add_menu (core, parent, menus_Help[i], __version_cb);
+		} else if (!strcmp (menus_Help[i], "Full Version")) {
+			__add_menu (core, parent, menus_Help[i], __version2_cb);
 		} else if (!strcmp (menus_Help[i], "Fortune")) {
 			__add_menu (core, parent, menus_Help[i], __fortune_cb);
 		} else if (!strcmp (menus_Help[i], "2048")) {
