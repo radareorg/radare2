@@ -43,11 +43,11 @@ static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 static int cyclic_read(RIO *io, RIODesc *desc, ut8 *buf, int count) {
 	RIOMalloc *mal = (RIOMalloc*)desc->data;
 	int i;
-	int bs = R_MIN (mal->cycle, count);
+	const int bs = R_MIN (mal->cycle, count);
 	for (i = 0; i < count; i += bs) {
-		int left = R_MIN (count - i, bs);
-		io_memory_lseek (io, desc, mal->offset % mal->cycle, 0);
-		int res = io_memory_read (io, desc, buf + i, left);
+		const int left = R_MIN (count - i, bs);
+		(void) io_memory_lseek (io, desc, mal->offset % mal->cycle, 0);
+		(void) io_memory_read (io, desc, buf + i, left);
 	}
 	return count;
 }
