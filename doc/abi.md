@@ -47,4 +47,4 @@ What you **MUST** do in X.Y.9:
 
 All this is checked in the CI with the `abidiff` utility.
 
-[.github/workflows/build.yml#L522](.github/workflows/build.yml#L522)
+[.github/workflows/build.yml#L607](../../94a31e97b868ead86d27031280ead2f5c64fecbd/.github/workflows/build.yml#L607)
