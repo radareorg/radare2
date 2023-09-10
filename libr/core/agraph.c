@@ -351,8 +351,7 @@ static void mini_RANode_print(const RAGraph *g, const RANode *n, int cur, bool d
 		if (cur) {
 			W (&MINIGRAPH_NODE_TEXT_CUR[delta_x]);
 			(void) G (-g->can->sx, -g->can->sy + 2);
-			snprintf (title, sizeof (title) - 1,
-				"[ %s ]", n->title);
+			snprintf (title, sizeof (title) - 1, "[ %s ]", n->title);
 			W (title);
 			if (discroll > 0) {
 				char *body = r_str_ansi_crop (n->body, 0, discroll, -1, -1);
@@ -1719,15 +1718,19 @@ static void place_original(RAGraph *g) {
 }
 
 static void aedge_free(AEdge *e) {
-	r_list_free (e->x);
-	r_list_free (e->y);
-	free (e);
+	if (e) {
+		r_list_free (e->x);
+		r_list_free (e->y);
+		free (e);
+	}
 }
 
 static void ranode_free(RANode *n) {
-	free (n->title);
-	free (n->body);
-	free (n);
+	if (n) {
+		free (n->title);
+		free (n->body);
+		free (n);
+	}
 }
 
 static void set_layer_gap(RAGraph *g) {
@@ -3577,18 +3580,28 @@ static int agraph_print(RAGraph *g, bool is_interactive, RCore *core, RAnalFunct
 		r_config_set_b (core->config, "asm.bytes", asm_bytes);
 		r_config_set_b (core->config, "asm.cmt.right", asm_cmt_right);
 	}
-	if (g->title && *g->title) {
-		g->can->sy ++;
+	if (R_STR_ISNOTEMPTY (g->title)) {
+		g->can->sy++;
 	}
 	agraph_print_edges (g);
 	agraph_print_nodes (g);
-	if (g->title && *g->title) {
-		g->can->sy --;
+	if (R_STR_ISNOTEMPTY (g->title)) {
+		g->can->sy--;
 	}
 	/* print the graph title */
 	(void) G (-g->can->sx, -g->can->sy);
 	if (!g->is_tiny) {
-		W (g->title);
+		int color = core? r_config_get_i (core->config, "scr.color"): 0;
+		if (color > 0) {
+			const char *kolor = core->cons->context->pal.prompt;
+			r_cons_gotoxy (0, 0);
+			r_cons_print (kolor?kolor: Color_WHITE);
+			r_cons_print (g->title);
+			r_cons_print (Color_RESET"\r");
+		} else {
+			W (g->title); // canvas write is always black/white
+		// 	r_cons_print (g->title);
+		}
 	}
 	if (is_interactive && g->title) {
 		int title_len = strlen (g->title);
@@ -3632,7 +3645,7 @@ static int agraph_print(RAGraph *g, bool is_interactive, RCore *core, RAnalFunct
 			agraph_print_nodes (g);
 			r_cons_canvas_print_region (g->can);
 			g->can = _can;
-			char *s = strdup (r_cons_singleton()->context->buffer);
+			char *s = strdup (r_cons_singleton ()->context->buffer);
 			r_cons_pop ();
 			cmd_agfb3 (core, s, w - 40, 2);
 			free (s);
