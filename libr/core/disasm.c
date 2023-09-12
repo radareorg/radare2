@@ -3633,6 +3633,10 @@ static void ds_print_bytes(RDisasmState *ds) {
 #if 0
 			str = r_asm_op_get_hex (&ds->asmop);
 #else
+			if (ds->oplen < 1) {
+				int minopsz = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_MIN_OP_SIZE);
+				ds->oplen = minopsz;
+			}
 			if (ds->analop.bytes && ds->analop.size > ds->oplen) {
 				str = r_hex_bin2strdup (ds->analop.bytes, ds->oplen);
 			} else {
@@ -3642,7 +3646,7 @@ static void ds_print_bytes(RDisasmState *ds) {
 					str = r_hex_bin2strdup (bytes, ds->oplen);
 					free (bytes);
 				} else {
-					str = strdup ("");
+					str = strdup ("??");
 				}
 			}
 #endif
