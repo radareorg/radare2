@@ -66,4 +66,4 @@ if [ "$1" = "-u" ]; then
 	shift
 	SCRIPT=user.sh
 fi
-exec sys/${SCRIPT} $* --with-check-level=0
+exec sys/${SCRIPT} $* --with-check-level=0 --without-syscapstone
