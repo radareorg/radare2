@@ -9,7 +9,7 @@ static RCoreHelpMessage help_msg_fR = {
 };
 
 static RCoreHelpMessage help_msg_fV = {
-	"Usage: fV","[*-] [nkey] [offset", " # dump/restore visual marks (mK/'K)",
+	"Usage: fV","[*-] [nkey] [offset]", " # dump/restore visual marks (mK/'K)",
 	"fV", " a 33", "set visual mark 'a' to the offset 33",
 	"fV", "-", "delete all visual marks",
 	"fV", "*", "dump visual marks as r2 commands",
@@ -881,9 +881,12 @@ rep:
 			r_core_cmd_help_match (core, help_msg_f, "fa", true);
 		}
 		break;
-	case 'V': // visual marks
+	case 'V': // "fV" visual marks
 		switch (input[1]) {
-		case '-':
+		case '*':
+			r_core_vmark_dump (core, '*');
+			break;
+		case '-': // "fV-"
 			if (input[2] == '*') {
 				r_core_vmark_reset (core);
 			} else if (input[2]) {
@@ -892,14 +895,20 @@ rep:
 				R_LOG_ERROR ("Give me a name or delete them all with fV-*");
 			}
 			break;
-		case ' ':
+		case ' ': // "fV "
 			if (input[2] && input[3]) {
-				if (isdigit (input[2])) {
-					int n = atoi (input + 1);
-					if (n + ASCII_MAX + 1 < UT8_MAX) {
-						const char *arg = r_str_trim_head_ro (input + 1);
+				const char *arg = r_str_trim_head_ro (input + 1);
+				if (isdigit (*arg)) {
+					int n = atoi (arg);
+					if (n > 0 && n < UT8_MAX) {
+						while (*arg && *arg != ' ') {
+							arg++;
+						}
+						arg = r_str_trim_head_ro (arg);
 						ut64 addr = arg? r_num_math (core->num, arg): core->offset;
-						r_core_vmark_set (core, n + ASCII_MAX + 1, addr, 0, 0);
+						r_core_vmark_set (core, n, addr, 0, 0);
+					} else {
+						R_LOG_ERROR ("invalid argument for fV");
 					}
 				} else {
 					const char *arg = r_str_trim_head_ro (input + 3);
@@ -914,7 +923,7 @@ rep:
 			r_core_cmd_help (core, help_msg_fV);
 			break;
 		default:
-			r_core_vmark_dump (core);
+			r_core_vmark_dump (core, 0);
 			break;
 		}
 		break;

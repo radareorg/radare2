@@ -3498,7 +3498,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 		case 'M':
 			{
 				r_cons_gotoxy (0, 0);
-				if (r_core_vmark_dump (core)) {
+				if (r_core_vmark_dump (core, 'v')) {
 					r_cons_printf (R_CONS_CLEAR_LINE"Remove a shortcut key from the list\n");
 					r_cons_flush ();
 					int ch = r_cons_readchar ();
@@ -3508,8 +3508,8 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			break;
 		case '\'':
 			{
-				r_cons_gotoxy (0, 0);
-				if (r_core_vmark_dump (core)) {
+				r_cons_gotoxy (0, 2);
+				if (r_core_vmark_dump (core, 'v')) {
 					r_cons_flush ();
 					int ch = r_cons_readchar ();
 					r_core_vmark_seek (core, ch, NULL);

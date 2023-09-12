@@ -557,7 +557,7 @@ R_API void r_core_vmark(RCore *core, ut8 ch);
 R_API void r_core_vmark_set(RCore *core, ut8 ch, ut64 addr, int x, int y);
 R_API void r_core_vmark_seek(RCore *core, ut8 ch, RAGraph *g);
 R_API void r_core_vmark_del(RCore *core, ut8 ch);
-R_API bool r_core_vmark_dump(RCore *core);
+R_API bool r_core_vmark_dump(RCore *core, int mode);
 R_API void r_core_vmark_reset(RCore *core);
 
 R_API int r_core_search_cb(RCore *core, ut64 from, ut64 to, RCoreSearchCallback cb);

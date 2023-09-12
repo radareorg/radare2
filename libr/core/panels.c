@@ -4313,7 +4313,7 @@ static void __handle_vmark(RCore *core) {
 		break;
 	case '-':
 		r_cons_gotoxy (0, 0);
-		if (r_core_vmark_dump (core)) {
+		if (r_core_vmark_dump (core, 0)) {
 			r_cons_printf (R_CONS_CLEAR_LINE"Remove a shortcut key from the list\n");
 			r_cons_flush ();
 			r_cons_set_raw (true);
@@ -4323,7 +4323,7 @@ static void __handle_vmark(RCore *core) {
 		break;
 	case '\'':
 		r_cons_gotoxy (0, 0);
-		if (r_core_vmark_dump (core)) {
+		if (r_core_vmark_dump (core, 0)) {
 			r_cons_flush ();
 			r_cons_set_raw (true);
 			int ch = r_cons_readchar ();

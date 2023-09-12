@@ -4915,8 +4915,8 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 		case '\'':
 			// go to given mark
 			{
-				r_cons_gotoxy (0, 0);
-				if (r_core_vmark_dump (core)) {
+				r_cons_gotoxy (0, 2);
+				if (r_core_vmark_dump (core, 'v')) {
 					r_cons_flush ();
 					const int ch = r_cons_readchar ();
 					r_core_vmark_seek (core, ch, g);
