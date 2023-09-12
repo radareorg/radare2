@@ -259,7 +259,7 @@ static void set_opdir(RAnalOp *op) {
 }
 
 #define CSINC RISCV
-#define CSINC_MODE (as->config->bits == 64)? CS_MODE_RISCV64: CS_MODE_RISCV32
+#define CSINC_MODE (CS_MODE_RISCVC | ((as->config->bits == 64)? CS_MODE_RISCV64: CS_MODE_RISCV32))
 #include "../capstone.inc.c"
 
 static bool riscv_decode(RArchSession *a, RAnalOp *op, RArchDecodeMask mask) {
