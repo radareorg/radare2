@@ -4836,14 +4836,6 @@ static void pr_bb(RCore *core, RAnalFunction *fcn, RAnalBlock *b, bool emu, ut64
 	}
 }
 
-#if 0
-dsmap {
-	r_itv_t addr;
-	ut64 size;
-	ut8 *dis;
-}
-#endif
-
 static void disasm_until_optype(RCore *core, ut64 addr, char type_print, int optype, int limit) {
 	int p = 0;
 	const bool show_color = core->print->flags & R_PRINT_FLAGS_COLOR;
@@ -5689,7 +5681,6 @@ static void cmd_psa(RCore *core, const char *_) {
 	RCmdReturnCode rc = found? R_CMD_RC_SUCCESS: R_CMD_RC_FAILURE;
 	r_core_return_value (core, rc);
 }
-
 
 static void print_pascal_string(RCore *core, const char *input, int len) {
 	int disp = 1;

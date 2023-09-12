@@ -884,16 +884,30 @@ rep:
 	case 'V': // visual marks
 		switch (input[1]) {
 		case '-':
-			r_core_vmark_reset (core);
+			if (input[2] == '*') {
+				r_core_vmark_reset (core);
+			} else if (input[2]) {
+				r_core_vmark_del (core, input[2]);
+			} else {
+				R_LOG_ERROR ("Give me a name or delete them all with fV-*");
+			}
 			break;
 		case ' ':
-			{
-				int n = atoi (input + 1);
-				if (n + ASCII_MAX + 1 < UT8_MAX) {
-					const char *arg = strchr (input + 2, ' ');
+			if (input[2] && input[3]) {
+				if (isdigit (input[2])) {
+					int n = atoi (input + 1);
+					if (n + ASCII_MAX + 1 < UT8_MAX) {
+						const char *arg = r_str_trim_head_ro (input + 1);
+						ut64 addr = arg? r_num_math (core->num, arg): core->offset;
+						r_core_vmark_set (core, n + ASCII_MAX + 1, addr, 0, 0);
+					}
+				} else {
+					const char *arg = r_str_trim_head_ro (input + 3);
 					ut64 addr = arg? r_num_math (core->num, arg): core->offset;
-					r_core_vmark_set (core, n + ASCII_MAX + 1, addr, 0, 0);
+					r_core_vmark_set (core, input[2], addr, 0, 0);
 				}
+			} else {
+				// uh
 			}
 			break;
 		case '?':
