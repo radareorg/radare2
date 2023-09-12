@@ -43,3 +43,5 @@ printf -- "R2_580\t"
 git grep 'R2_580' libr/| wc -l
 printf -- "R2_590\t"
 git grep 'R2_590' libr/| wc -l
+printf -- "R2_600\t"
+git grep 'R2_600' libr/| wc -l
