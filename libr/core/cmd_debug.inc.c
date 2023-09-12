@@ -135,9 +135,7 @@ static RCoreHelpMessage help_msg_dc = {
 	"dcb", "", "continue back until breakpoint",
 	"dcc", "", "continue until call (use step into)",
 	"dccu", "", "continue until unknown call (call reg)",
-#if R2__WINDOWS__
 	"dce", "", "continue execution (pass exception to program)",
-#endif
 	"dcf", "", "continue until fork (TODO)",
 	"dck", " <signal> <pid>", "continue sending signal to process",
 	"dcp", "", "continue until program code (mapped io section)",
@@ -4630,16 +4628,14 @@ static int cmd_debug_continue(RCore *core, const char *input) {
 			}
 			break;
 		}
-#if R2__WINDOWS__
 	case 'e': // "dce"
 		if (input[2] == '?') {
 			r_core_cmd_help_match (core, help_msg_dc, "dce", true);
 		} else {
 			r_reg_arena_swap (core->dbg->reg, true);
-			r_debug_continue_pass_exception (core->dbg);
+			r_debug_continue_with_signal (core->dbg);
 		}
 		break;
-#endif
 	case 'f': // "dcf"
 		if (input[2] == '?') {
 			r_core_cmd_help_match (core, help_msg_dc, "dcf", true);

@@ -483,9 +483,7 @@ R_API int r_debug_continue_syscall(RDebug *dbg, int sc);
 R_API int r_debug_continue_syscalls(RDebug *dbg, int *sc, int n_sc);
 R_API int r_debug_continue(RDebug *dbg);
 R_API int r_debug_continue_kill(RDebug *dbg, int signal);
-#if R2__WINDOWS__
-R_API int r_debug_continue_pass_exception(RDebug *dbg);
-#endif
+R_API int r_debug_continue_with_signal(RDebug *dbg);
 
 /* process/thread handling */
 R_API bool r_debug_select(RDebug *dbg, int pid, int tid);
