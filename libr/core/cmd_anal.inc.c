@@ -7986,7 +7986,7 @@ static void cmd_anal_esil(RCore *core, const char *input, bool verbose) {
 			RListIter *iter;
 			if (core->anal->esil) {
 				r_list_foreach (core->anal->esil->plugins, iter, p) {
-					r_cons_printf ("%s\n", p->name);
+					r_cons_printf ("%s\n", p->meta.name);
 				}
 			} else {
 				R_LOG_WARN ("Run 'aei'");

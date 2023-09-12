@@ -185,6 +185,7 @@ typedef struct r_esil_t {
 	ut8 lastsz;	//in bits //used for signature-flag
 	/* native ops and custom ops */
 	HtPP *ops;
+	struct r_esil_plugin_t *curplug; // ???
 	char *current_opstr;
 	SdbMini *interrupts;
 	SdbMini *syscalls;

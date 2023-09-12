@@ -200,22 +200,6 @@ R_API void r_anal_set_user_ptr(RAnal *anal, void *user) {
 	anal->user = user;
 }
 
-R_API bool r_esil_use(RAnal *anal, const char *name) {
-	RListIter *it;
-	REsilPlugin *h;
-
-	if (anal) {
-		r_list_foreach (anal->esil->plugins, it, h) {
-			if (!h->name || strcmp (h->name, name)) {
-				continue;
-			}
-			anal->esil_cur = h;
-			return true;
-		}
-	}
-	return false;
-}
-
 R_API int r_anal_plugin_add(RAnal *anal, RAnalPlugin *foo) {
 	if (foo->init) {
 		foo->init (anal->user);
