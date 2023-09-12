@@ -97,7 +97,9 @@ RFSPlugin FSS(r_fs_plugin) = {
 };
 #else
 RFSPlugin FSS(r_fs_plugin) = {
-	.name = FSNAME,
-	.desc = FSDESC,
+	.meta = {
+		.name = FSNAME,
+		.desc = FSDESC,
+	}
 };
 #endif

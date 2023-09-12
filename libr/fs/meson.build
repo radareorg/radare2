@@ -24,7 +24,6 @@ if not user_plugins.contains('nogrub') and not get_option('nogpl')
     'p/fs_ext2.c',
     'p/fs_fat.c',
     'p/fs_fb.c',
-    #'p/fs_grub_base.c',
     'p/fs_hfs.c',
     'p/fs_hfsplus.c',
     'p/fs_iso9660.c',
