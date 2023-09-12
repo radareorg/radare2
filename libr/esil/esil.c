@@ -4027,3 +4027,18 @@ R_API void r_esil_reset(REsil *esil) {
 	r_return_if_fail (esil);
 	sdb_reset (esil->stats);
 }
+
+R_API bool r_esil_use(REsil *esil, const char *name) {
+	r_return_val_if_fail (esil && name, false);
+	RListIter *it;
+	REsilPlugin *h;
+
+	r_list_foreach (esil->plugins, it, h) {
+		if (!h->meta.name || strcmp (h->meta.name, name)) {
+			continue;
+		}
+		esil->curplug = h;
+		return true;
+	}
+	return false;
+}

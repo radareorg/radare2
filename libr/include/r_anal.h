@@ -430,9 +430,8 @@ typedef struct r_anal_t {
 	RCoreBind coreb;
 	int maxreflines; // asm.lines.maxref
 	int esil_goto_limit; // esil.gotolimit
-	struct r_esil_t *esil; // R2_590 remove
+	REsil *esil;
 	struct r_anal_plugin_t *cur;
-	struct r_esil_plugin_t *esil_cur; // ???
 	RArch *arch;
 	RAnalRange *limit; // anal.from, anal.to
 	RList *plugins; // anal plugins
@@ -967,8 +966,6 @@ R_API bool r_anal_plugin_remove(RAnal *anal, RAnalPlugin *plugin);
 R_API int r_anal_archinfo(RAnal *anal, int query);
 R_API bool r_anal_is_aligned(RAnal *anal, const ut64 addr);
 R_API bool r_anal_use(RAnal *anal, const char *name);
-R_API bool r_esil_use(RAnal *anal, const char *name);
-R_API const char *r_esil_trapstr(int type);
 R_API bool r_anal_set_reg_profile(RAnal *anal, const char *rp);
 R_API char *r_anal_get_reg_profile(RAnal *anal);
 R_API ut64 r_anal_get_bbaddr(RAnal *anal, ut64 addr);
@@ -1387,6 +1384,7 @@ R_API void r_anal_unset_limits(RAnal *anal);
 
 /* ESIL to REIL */
 R_API int r_esil_to_reil_setup(REsil *esil, RAnal *anal, int romem, int stats);
+R_API const char *r_esil_trapstr(int type);
 
 /* no-return stuff */
 R_API void r_anal_noreturn_list(RAnal *anal, int mode);
