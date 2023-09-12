@@ -56,6 +56,7 @@ ARG_WITH USE_CS5 capstone5 build v5 branch of capstone5 (default) ;
 ARG_WITH USE_CS4 capstone4 build v4 branch of capstone ;
 
 ARG_WITH WITH_CAPSTONE syscapstone force to use system-wide capstone ;
+ARG_WITHOUT WITHOUT_SYSCAPSTONE syscapstone avoid the system-wide capstone ;
 IF WITH_CAPSTONE {
 	PKGCFG CAPSTONE_CFLAGS CAPSTONE_LDFLAGS capstone
 }
@@ -63,6 +64,11 @@ IFAND WITH_CAPSTONE HAVE_PKGCFG_CAPSTONE {
 	USE_CAPSTONE = 1 ;
 }{
 	USE_CAPSTONE = 0 ;
+}
+
+IFNOT WITHOUT_SYSCAPSTONE {
+	USE_CAPSTONE = 0 ;
+	HAVE_PKGCFG_CAPSTONE = 0 ;
 }
 
 (( LZ4 ))
