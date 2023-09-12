@@ -60,6 +60,7 @@ struct parse {
 #	define	NPAREN	10	/* we need to remember () 1-9 for back refs */
 	sopno pbegin[NPAREN];	/* -> ( ([0] unused) */
 	sopno pend[NPAREN];	/* -> ) ([0] unused) */
+	char nuls[10];		/* place to point scanner in event of error */
 };
 
 static void p_ere(struct parse *, int);
@@ -100,8 +101,6 @@ static void enlarge(struct parse *, sopno);
 static void stripsnug(struct parse *, struct re_guts *);
 static void findmust(struct parse *, struct re_guts *);
 static sopno pluscount(struct parse *, struct re_guts *);
-
-static R_TH_LOCAL char nuls[10];		/* place to point scanner in event of error */
 
 /*
  * macros for use with parse structure
@@ -1196,14 +1195,12 @@ static void repeat(struct parse *p,
 /*
  - seterr - set an error condition
  */
-static int			/* useless but makes type checking happy */
-seterr(struct parse *p, int e)
-{
+static int seterr(struct parse *p, int e) {
 	if (p->error == 0) { /* keep earliest error condition */
 		p->error = e;
 	}
-	p->next = nuls;		/* try to bring things to a halt */
-	p->end = nuls;
+	p->next = p->nuls;		/* try to bring things to a halt */
+	p->end = p->nuls;
 	return 0;		/* make the return value well-defined */
 }
 
