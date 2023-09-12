@@ -8,6 +8,7 @@ static R_TH_LOCAL int mousemode = 0;
 static R_TH_LOCAL int disMode = 0;
 static R_TH_LOCAL int discroll = 0;
 static R_TH_LOCAL bool graphCursor = false;
+static R_TH_LOCAL bool coming_from_visual_mark = false;
 
 static RCoreHelpMessage help_msg_visual_graph = {
 	":e cmd.gprompt=agft", "show tinygraph in one side",
@@ -19,7 +20,6 @@ static RCoreHelpMessage help_msg_visual_graph = {
 	"^",            "seek to the first bb of the function",
 	"=",            "toggle graph.layout",
 	":cmd",         "run radare command",
-	"'",            "toggle graph.comments",
 	"\"",           "toggle graph.refs",
 	"#",            "toggle graph.hints",
 	"/",            "highlight text",
@@ -44,9 +44,9 @@ static RCoreHelpMessage help_msg_visual_graph = {
 	"g",            "go/seek to given offset",
 	"G",            "debug trace callgraph (generated with dtc)",
 	"hjkl/HJKL",    "scroll canvas or node depending on graph cursor (uppercase for faster)",
-	"i",            "select input nodes by index",
-	"I",            "select output node by index",
-	"m/M",          "toggle horizontal/vertical scroll",
+	"i/I",          "select input / output nodes by index",
+	"mK/'K",        "mark/go to given key (same as in vim or r2 visual)",
+	"M",            "change mouse mode (scroll vertical/horizontal)",
 	"n/N",          "next/previous scr.nkey (function/flag..)",
 	"o([A-Za-z]*)", "follow jmp/call identified by shortcut (like ;[oa])",
 	"O",            "toggle asm.pseudo and asm.esil",
@@ -61,13 +61,16 @@ static RCoreHelpMessage help_msg_visual_graph = {
 	"u/U",          "undo/redo seek",
 	"V",            "toggle basicblock / call graphs",
 	"w",            "toggle between movements speed 1 and graph.scroll",
+	// W            AVAILABLE
 	"x/X",          "jump to xref/ref",
+	"y",            "toggle graph.comments",
 	"Y",            "toggle tiny graph",
 	"z",            "toggle node folding",
 	"Z",            "toggle basic block folding",
 	NULL
 };
 
+#if 0
 static const char * const mousemodes[] = {
 	"canvas-y",
 	"canvas-x",
@@ -75,6 +78,7 @@ static const char * const mousemodes[] = {
 	"node-x",
 	NULL
 };
+#endif
 
 #define BORDER 3
 #define BORDER_WIDTH 4
@@ -2399,7 +2403,6 @@ static void fold_asm_trace(RCore *core, RAGraph *g) {
 		n->is_mini = (tp == NULL);
 	}
 	g->need_update_dim = 1;
-	//agraph_refresh (r_cons_singleton ()->event_data);
 }
 
 static void delete_dup_edges(RAGraph *g) {
@@ -2862,7 +2865,7 @@ static void agraph_set_layout(RAGraph *g) {
 }
 
 /* set the willing to center the screen on a particular node */
-static void agraph_update_seek(RAGraph *g, RANode *n, int force) {
+static void agraph_update_seek(RAGraph *g, RANode *n, bool force) {
 	g->update_seek_on = n;
 	g->force_update_seek = force;
 }
@@ -3467,8 +3470,7 @@ static void agraph_update_title(RCore *core, RAGraph *g, RAnalFunction *fcn) {
 	free (sig);
 }
 
-/* look for any change in the state of the graph
- * and update what's necessary */
+/* look for any change in the state of the graph and update what's necessary */
 static bool check_changes(RAGraph *g, bool is_interactive, RCore *core, RAnalFunction *fcn) {
 	int oldpos[2] = {
 		0, 0
@@ -3711,7 +3713,10 @@ static int agraph_refresh(struct agraph_refresh_data *grd) {
 				*fcn = f;
 				check_function_modified (core, *fcn);
 				g->need_reload_nodes = true;
-				g->force_update_seek = true;
+				if (!coming_from_visual_mark) {
+					g->force_update_seek = true;
+					coming_from_visual_mark = false;
+				}
 			}
 		} else {
 			// TODO: maybe go back to avoid seeking from graph view to an scary place?
@@ -4422,7 +4427,7 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 	int o_asmqjmps_letter = core->is_asmqjmps_letter;
 	int o_vmode = core->vmode;
 	int exit_graph = false, is_error = false;
-	int update_seek = false;
+	bool must_update_seek = false;
 	struct agraph_refresh_data *grd;
 	int okey, key;
 	RAnalFunction *fcn = NULL;
@@ -4665,7 +4670,7 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 			break;
 		case 13:
 			agraph_update_seek (g, get_anode (g->curnode), true);
-			update_seek = true;
+			must_update_seek = true;
 			exit_graph = true;
 			break;
 		case '>':
@@ -4867,12 +4872,17 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 		case '!':
 			r_core_panels_root (core, core->panels_root);
 			break;
-		case '\'':
+		case 'y':
+#if 0
 			fcn = r_anal_get_fcn_in (core->anal, core->offset, 0);
 			if (fcn) {
 				r_config_toggle (core->config, "graph.comments");
 				g->need_reload_nodes = true;
 			}
+#else
+			r_config_toggle (core->config, "graph.comments");
+			g->need_reload_nodes = true;
+#endif
 			break;
 		case ';':
 			fcn = r_anal_get_fcn_in (core->anal, core->offset, 0);
@@ -4891,16 +4901,42 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 			rotateColor (core);
 			break;
 		case 'm':
+			// mark current x/y + offset
+			{
+				r_cons_gotoxy (0, 0);
+				r_cons_printf (R_CONS_CLEAR_LINE"Set shortcut key for 0x%"PFMT64x"\n", core->offset);
+				r_cons_flush ();
+				int ch = r_cons_readchar ();
+				if (ch > 0) {
+					r_core_visual_mark_set2 (core, ch, core->offset, can->sx, can->sy);
+				}
+			}
+			break;
+		case '\'':
+			// go to given mark
+			{
+				r_cons_gotoxy (0, 0);
+				if (r_core_visual_mark_dump (core)) {
+					r_cons_flush ();
+					const int ch = r_cons_readchar ();
+					r_core_visual_mark_seek2 (core, ch, g);
+					coming_from_visual_mark = true;
+				}
+			}
+			break;
+		case 'M':
+#if 0
 			mousemode++;
 			if (!mousemodes[mousemode]) {
 				mousemode = 0;
 			}
 			break;
-		case 'M':
+#else
 			mousemode--;
 			if (mousemode < 0) {
 				mousemode = 3;
 			}
+#endif
 			break;
 		case '(':
 			fcn = r_anal_get_fcn_in (core->anal, core->offset, 0);
@@ -5047,14 +5083,14 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 			}
 			break;
 		case '^':
-			  {
-				  RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, 0);
-				  if (fcn) {
-					  r_core_seek (core, fcn->addr, false);
-				  }
-			  }
-			  agraph_update_seek (g, get_anode (g->curnode), true);
-			  break;
+			{
+				RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, 0);
+				if (fcn) {
+					r_core_seek (core, fcn->addr, false);
+				}
+			}
+			agraph_update_seek (g, get_anode (g->curnode), true);
+			break;
 		case ',':
 			r_config_toggle (core->config, "graph.few");
 			g->need_reload_nodes = true;
@@ -5251,7 +5287,7 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 	}
 	r_config_hold_restore (hc);
 	r_config_hold_free (hc);
-	if (update_seek) {
+	if (must_update_seek) {
 		return -1;
 	}
 	return !is_error;
