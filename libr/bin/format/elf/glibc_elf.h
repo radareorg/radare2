@@ -2753,6 +2753,8 @@ enum
 #define R_AARCH64_P32_TLSDESC		187	/* TLS Descriptor.  */
 #define R_AARCH64_P32_IRELATIVE		188	/* STT_GNU_IFUNC relocation. */
 
+#define R_QDSP6_JUMP_SLOT 34
+
 /* LP64 AArch64 relocs.  */
 #define R_AARCH64_ABS64         257	/* Direct 64 bit. */
 #define R_AARCH64_ABS32         258	/* Direct 32 bit.  */
