@@ -884,7 +884,7 @@ rep:
 	case 'V': // visual marks
 		switch (input[1]) {
 		case '-':
-			r_core_visual_mark_reset (core);
+			r_core_vmark_reset (core);
 			break;
 		case ' ':
 			{
@@ -892,7 +892,7 @@ rep:
 				if (n + ASCII_MAX + 1 < UT8_MAX) {
 					const char *arg = strchr (input + 2, ' ');
 					ut64 addr = arg? r_num_math (core->num, arg): core->offset;
-					r_core_visual_mark_set (core, n + ASCII_MAX + 1, addr);
+					r_core_vmark_set (core, n + ASCII_MAX + 1, addr, 0, 0);
 				}
 			}
 			break;
@@ -900,7 +900,7 @@ rep:
 			r_core_cmd_help (core, help_msg_fV);
 			break;
 		default:
-			r_core_visual_mark_dump (core);
+			r_core_vmark_dump (core);
 			break;
 		}
 		break;

@@ -8,7 +8,7 @@ static R_TH_LOCAL int mousemode = 0;
 static R_TH_LOCAL int disMode = 0;
 static R_TH_LOCAL int discroll = 0;
 static R_TH_LOCAL bool graphCursor = false;
-static R_TH_LOCAL bool coming_from_visual_mark = false;
+static R_TH_LOCAL bool coming_from_vmark = false;
 
 static RCoreHelpMessage help_msg_visual_graph = {
 	":e cmd.gprompt=agft", "show tinygraph in one side",
@@ -3713,9 +3713,9 @@ static int agraph_refresh(struct agraph_refresh_data *grd) {
 				*fcn = f;
 				check_function_modified (core, *fcn);
 				g->need_reload_nodes = true;
-				if (!coming_from_visual_mark) {
+				if (!coming_from_vmark) {
 					g->force_update_seek = true;
-					coming_from_visual_mark = false;
+					coming_from_vmark = false;
 				}
 			}
 		} else {
@@ -4908,7 +4908,7 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 				r_cons_flush ();
 				int ch = r_cons_readchar ();
 				if (ch > 0) {
-					r_core_visual_mark_set2 (core, ch, core->offset, can->sx, can->sy);
+					r_core_vmark_set (core, ch, core->offset, can->sx, can->sy);
 				}
 			}
 			break;
@@ -4916,11 +4916,11 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 			// go to given mark
 			{
 				r_cons_gotoxy (0, 0);
-				if (r_core_visual_mark_dump (core)) {
+				if (r_core_vmark_dump (core)) {
 					r_cons_flush ();
 					const int ch = r_cons_readchar ();
-					r_core_visual_mark_seek2 (core, ch, g);
-					coming_from_visual_mark = true;
+					r_core_vmark_seek (core, ch, g);
+					coming_from_vmark = true;
 				}
 			}
 			break;

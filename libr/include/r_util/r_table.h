@@ -101,6 +101,8 @@ R_API void r_table_visual_list(RTable *table, RList* list, ut64 seek, ut64 len, 
 R_API void r_table_visual_vec(RTable *table, RVecListInfo* vec, ut64 seek, ut64 len, int width, bool va);
 R_API RTable *r_table_push(RTable *t);
 R_API RTable *r_table_pop(RTable *t);
+R_API RListInfo *r_listinfo_new(const char *name, RInterval pitv, RInterval vitv, int perm, const char *extra);
+R_API void r_listinfo_free(RListInfo *info);
 #if 0
 // not implemented
 R_API void r_table_fromjson(RTable *t, const char *csv);
