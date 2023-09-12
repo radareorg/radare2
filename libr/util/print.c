@@ -309,7 +309,6 @@ R_API RPrint* r_print_new(void) {
 	p->pairs = true;
 	p->resetbg = true;
 	p->cb_printf = libc_printf;
-	p->cb_eprintf = libc_eprintf;
 	p->oprintf = nullprinter;
 	p->stride = 0;
 	p->bytespace = 0;
