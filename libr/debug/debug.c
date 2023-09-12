@@ -1367,17 +1367,18 @@ repeat:
 }
 
 R_API int r_debug_continue(RDebug *dbg) {
-	if (dbg->pid < 0) {
-		return -1;
-	}
-	return r_debug_continue_kill (dbg, 0); //dbg->reason.signum);
+	r_return_val_if_fail (dbg, -1);
+	return r_debug_continue_kill (dbg, 0);
 }
 
+R_API int r_debug_continue_with_signal(RDebug *dbg) {
+	r_return_val_if_fail (dbg, -1);
 #if R2__WINDOWS__
-R_API int r_debug_continue_pass_exception(RDebug *dbg) {
 	return r_debug_continue_kill (dbg, DBG_EXCEPTION_NOT_HANDLED);
-}
+#else
+	return r_debug_continue_kill (dbg, dbg->reason.signum);
 #endif
+}
 
 R_API int r_debug_continue_until_nontraced(RDebug *dbg) {
 	R_LOG_TODO ("not implemented");
@@ -1548,12 +1549,12 @@ static int show_syscall(RDebug *dbg, const char *sysreg) {
 	return reg;
 }
 
-// R2_580 R_API bool r_debug_continue_syscalls(RDebug *dbg, int *sc, int n_sc) {
+// continue execution until a syscall is found, then return its syscall number or -1 on error
 R_API int r_debug_continue_syscalls(RDebug *dbg, int *sc, int n_sc) {
 	r_return_val_if_fail (dbg, false);
-	int i, err, reg, ret = false;
+	int i, err, reg;
 	if (!dbg->current || r_debug_is_dead (dbg)) {
-		return false;
+		return -1;
 	}
 	if (!dbg->current->plugin.contsc) {
 		/* user-level syscall tracing */
@@ -1618,7 +1619,7 @@ R_API int r_debug_continue_syscalls(RDebug *dbg, int *sc, int n_sc) {
 		}
 		// TODO: must use r_core_cmd(as)..import code from rcore
 	}
-	return ret;
+	return -1;
 }
 
 R_API int r_debug_continue_syscall(RDebug *dbg, int sc) {
