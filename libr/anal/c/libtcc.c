@@ -326,7 +326,11 @@ static int tcc_compile(TCCState *s1) {
 	s1->nocode_wanted = 1;
 
 #ifndef __wasi__
-	if (setjmp (s1->error_jmp_buf) == 0) {
+	const bool sjres = setjmp (s1->error_jmp_buf) == 0;
+#else
+	const bool sjres = false;
+#endif
+	if (sjres) {
 		s1->nb_errors = 0;
 		s1->error_set_jmp_enabled = true;
 		s1->ch = s1->file->buf_ptr[0];
@@ -345,7 +349,6 @@ static int tcc_compile(TCCState *s1) {
 		}
 #endif
 	}
-#endif
 	s1->error_set_jmp_enabled = false;
 
 	/* reset define stack, but leave -Dsymbols (may be incorrect if
