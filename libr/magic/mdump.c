@@ -34,12 +34,7 @@
 #if !USE_LIB_MAGIC
 
 #include "file.h"
-#include <stdio.h>
-#include <errno.h>
-#include <string.h>
-#include <stdarg.h>
-#include <stdlib.h>
-#include <time.h>
+#include <r_util.h>
 
 #define SZOF(a)	(sizeof (a) / sizeof (a[0]))
 
