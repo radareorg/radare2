@@ -975,7 +975,7 @@ R_API RAsmCode *r_asm_massemble(RAsm *a, const char *assembly) {
 					if (!*ptr_start) {
 						continue;
 					}
-					ret = r_asm_assemble (a, &op, ptr_start);
+					ret = r_asm_assemble (a, &op, strdup (ptr_start));
 				}
 			}
 			if (stage == STAGES - 1) {
@@ -1111,9 +1111,10 @@ R_API RAsmCode* r_asm_rasm_assemble(RAsm *a, const char *buf, bool use_spp) {
 		return NULL;
 	}
 	if (use_spp) {
-		Output out;
-		out.fout = NULL;
-		out.cout = r_strbuf_new ("");
+		Output out = {
+			.fout = NULL,
+			.cout = r_strbuf_new ("")
+		};
 		r_strbuf_init (out.cout);
 		struct Proc proc;
 		spp_proc_set (&proc, "spp", 1);
@@ -1129,6 +1130,7 @@ R_API RAsmCode* r_asm_rasm_assemble(RAsm *a, const char *buf, bool use_spp) {
 }
 
 R_API RList *r_asm_cpus(RAsm *a) {
+	r_return_val_if_fail (a, NULL);
 	// R2_600 move to r_arch api instead?
 	const char *cpus = R_UNWRAP5 (a, arch, session, plugin, cpus);
 	RList *list = cpus
