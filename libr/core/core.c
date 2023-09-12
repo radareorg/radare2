@@ -3084,6 +3084,7 @@ R_API bool r_core_init(RCore *core) {
 		R_LOG_ERROR ("Cannot allocate %d byte(s)", R_CORE_BLOCKSIZE);
 		return false;
 	}
+	r_core_vmark_reset (core);
 	core->chan = NULL;
 	r_core_setenv (core);
 	core->lock = r_th_lock_new (true);

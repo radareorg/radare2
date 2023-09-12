@@ -3492,27 +3492,27 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 				r_cons_printf (R_CONS_CLEAR_LINE"Set shortcut key for 0x%"PFMT64x"\n", core->offset);
 				r_cons_flush ();
 				int ch = r_cons_readchar ();
-				r_core_visual_mark (core, ch);
+				r_core_vmark (core, ch);
 			}
 			break;
 		case 'M':
 			{
 				r_cons_gotoxy (0, 0);
-				if (r_core_visual_mark_dump (core)) {
+				if (r_core_vmark_dump (core)) {
 					r_cons_printf (R_CONS_CLEAR_LINE"Remove a shortcut key from the list\n");
 					r_cons_flush ();
 					int ch = r_cons_readchar ();
-					r_core_visual_mark_del (core, ch);
+					r_core_vmark_del (core, ch);
 				}
 			}
 			break;
 		case '\'':
 			{
 				r_cons_gotoxy (0, 0);
-				if (r_core_visual_mark_dump (core)) {
+				if (r_core_vmark_dump (core)) {
 					r_cons_flush ();
 					int ch = r_cons_readchar ();
-					r_core_visual_mark_seek (core, ch);
+					r_core_vmark_seek (core, ch, NULL);
 				}
 			}
 			break;
@@ -4785,29 +4785,4 @@ dodo:
 	r_cons_show_cursor (true);
 	r_config_set_i (core->config, "scr.vtmode", ovtmode);
 	return 0;
-}
-
-R_API RListInfo *r_listinfo_new(const char *name, RInterval pitv, RInterval vitv, int perm, const char *extra) {
-	RListInfo *info = R_NEW (RListInfo);
-	if (info) {
-		info->name = name ? strdup (name) : NULL;
-		info->pitv = pitv;
-		info->vitv = vitv;
-		info->perm = perm;
-		info->extra = extra ? strdup (extra) : NULL;
-	}
-	return info;
-}
-
-R_API void r_listinfo_fini(RListInfo *info) {
-	if (!info) {
-		return;
-	}
-	free (info->name);
-	free (info->extra);
-}
-
-R_API void r_listinfo_free(RListInfo *info) {
-	r_listinfo_fini (info);
-	free (info);
 }

@@ -4294,14 +4294,14 @@ static bool __handle_mouse(RCore *core, RPanel *panel, int *key) {
 	return false;
 }
 
-static void __add_visual_mark(RCore *core) {
+static void __add_vmark(RCore *core) {
 	char *msg = r_str_newf (R_CONS_CLEAR_LINE"Set shortcut key for 0x%"PFMT64x": ", core->offset);
 	int ch = __show_status (core, msg);
 	free (msg);
-	r_core_visual_mark (core, ch);
+	r_core_vmark (core, ch);
 }
 
-static void __handle_visual_mark(RCore *core) {
+static void __handle_vmark(RCore *core) {
 	RPanel *cur = __get_cur_panel (core->panels);
 	if (!__check_panel_type (cur, PANEL_CMD_DISASSEMBLY)) {
 		return;
@@ -4309,25 +4309,25 @@ static void __handle_visual_mark(RCore *core) {
 	int act = __show_status (core, "Visual Mark  s:set -:remove \':use: ");
 	switch (act) {
 	case 's':
-		__add_visual_mark (core);
+		__add_vmark (core);
 		break;
 	case '-':
 		r_cons_gotoxy (0, 0);
-		if (r_core_visual_mark_dump (core)) {
+		if (r_core_vmark_dump (core)) {
 			r_cons_printf (R_CONS_CLEAR_LINE"Remove a shortcut key from the list\n");
 			r_cons_flush ();
 			r_cons_set_raw (true);
 			int ch = r_cons_readchar ();
-			r_core_visual_mark_del (core, ch);
+			r_core_vmark_del (core, ch);
 		}
 		break;
 	case '\'':
 		r_cons_gotoxy (0, 0);
-		if (r_core_visual_mark_dump (core)) {
+		if (r_core_vmark_dump (core)) {
 			r_cons_flush ();
 			r_cons_set_raw (true);
 			int ch = r_cons_readchar ();
-			r_core_visual_mark_seek (core, ch);
+			r_core_vmark_seek (core, ch, NULL);
 			__set_panel_addr (core, cur, core->offset);
 		}
 	}
@@ -6989,7 +6989,7 @@ virtualmouse:
 		__handle_tab_key (core, true);
 		break;
 	case 'M':
-		__handle_visual_mark (core);
+		__handle_vmark (core);
 		break;
 	case 'E':
 		r_core_visual_colors (core);

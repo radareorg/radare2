@@ -38,6 +38,28 @@
 static R_TH_LOCAL int Gnth = 0;
 static R_TH_LOCAL RListComparator Gcmp = NULL;
 
+
+R_API RListInfo *r_listinfo_new(const char *name, RInterval pitv, RInterval vitv, int perm, const char *extra) {
+	RListInfo *info = R_NEW (RListInfo);
+	if (info) {
+		info->name = name ? strdup (name) : NULL;
+		info->pitv = pitv;
+		info->vitv = vitv;
+		info->perm = perm;
+		info->extra = extra ? strdup (extra) : NULL;
+	}
+	return info;
+}
+
+static void r_listinfo_fini(RListInfo *info) {
+	free (info->name);
+	free (info->extra);
+}
+
+R_API void r_listinfo_free(RListInfo *info) {
+	r_listinfo_fini (info);
+	free (info);
+}
 static int sortString(const void *a, const void *b) {
 	return strcmp (a, b);
 }

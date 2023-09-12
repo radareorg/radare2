@@ -382,7 +382,6 @@ struct r_core_t {
 	char *theme;
 	char *themepath;
 	bool allbins;
-	bool marks_init; // R2_590 - should be removed imho
 	VisualMark marks[UT8_MAX + 1];
 	RThreadChannel *chan; // query
 	RThreadLock *lock;
@@ -551,19 +550,15 @@ R_API void r_core_anal_cc_init(RCore *core);
 R_API void r_core_anal_paths(RCore *core, ut64 from, ut64 to, bool followCalls, int followDepth, bool is_json);
 
 R_API void r_core_list_io(RCore *core);
-R_API RListInfo *r_listinfo_new(const char *name, RInterval pitv, RInterval vitv, int perm, const char *extra);
-R_API void r_listinfo_fini(RListInfo *info);
-R_API void r_listinfo_free(RListInfo *info);
+
 R_API void r_core_visual_slides(RCore *core, const char *file);
 /* visual marks */
-R_API void r_core_visual_mark_seek(RCore *core, ut8 ch);
-R_API void r_core_visual_mark(RCore *core, ut8 ch);
-R_API void r_core_visual_mark_set(RCore *core, ut8 ch, ut64 addr);
-R_API void r_core_visual_mark_set2(RCore *core, ut8 ch, ut64 addr, int x, int y);
-R_API void r_core_visual_mark_seek2(RCore *core, ut8 ch, RAGraph *g);
-R_API void r_core_visual_mark_del(RCore *core, ut8 ch);
-R_API bool r_core_visual_mark_dump(RCore *core);
-R_API void r_core_visual_mark_reset(RCore *core);
+R_API void r_core_vmark(RCore *core, ut8 ch);
+R_API void r_core_vmark_set(RCore *core, ut8 ch, ut64 addr, int x, int y);
+R_API void r_core_vmark_seek(RCore *core, ut8 ch, RAGraph *g);
+R_API void r_core_vmark_del(RCore *core, ut8 ch);
+R_API bool r_core_vmark_dump(RCore *core);
+R_API void r_core_vmark_reset(RCore *core);
 
 R_API int r_core_search_cb(RCore *core, ut64 from, ut64 to, RCoreSearchCallback cb);
 R_API bool r_core_serve(RCore *core, RIODesc *fd);
