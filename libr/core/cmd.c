@@ -3650,7 +3650,6 @@ static int handle_command_call(RCore *core, const char *cmd) {
 		return -1;
 	}
 	if (R_UNLIKELY (*cmd == '\'')) {
-		// R2_590 - deprecate "" -> use ' <---------- discuss!
 		if (cmd[1] == '@') {
 			int res = 1;
 			char *arg = strdup (cmd + 1);
@@ -3671,7 +3670,9 @@ static int handle_command_call(RCore *core, const char *cmd) {
 			return res;
 		}
 		return r_core_cmd_call (core, cmd + 1);
-	} else if (R_UNLIKELY (r_str_startswith (cmd, "\"\""))) {
+	}
+	if (R_UNLIKELY (r_str_startswith (cmd, "\"\""))) {
+		// R2_590 - deprecate "" -> use ' <---------- discuss!
 		if (cmd[2] == '@') {
 			int res = 1;
 			char *arg = strdup (cmd + 2);
@@ -6248,6 +6249,23 @@ R_API char *r_core_cmd_str_pipe(RCore *core, const char *cmd) {
 	return NULL;
 }
 
+R_API char *r_core_cmd_strf_at(RCore *core, ut64 addr, const char *fmt, ...) {
+	va_list ap;
+	ut64 oaddr = core->offset;
+	va_start (ap, fmt);
+	if (addr != core->offset) {
+		r_core_seek (core, addr, 1);
+	}
+	char *cmd = r_str_newvf (fmt, ap);
+	char *ret = r_core_cmd_str (core, cmd);
+	free (cmd);
+	if (addr != core->offset) {
+		r_core_seek (core, oaddr, 1);
+	}
+	va_end (ap);
+	return ret;
+}
+
 R_API char *r_core_cmd_strf(RCore *core, const char *fmt, ...) {
 	va_list ap;
 	va_start (ap, fmt);
@@ -6282,6 +6300,14 @@ R_API int r_core_cmd_callf(RCore *core, const char *fmt, ...) {
 	int res = r_cmd_call (core->rcmd, cmd);
 	free (cmd);
 	va_end (ap);
+	return res;
+}
+
+R_API char *r_core_cmd_str_at(RCore *core, ut64 addr, const char *cmd) {
+	ut64 oseek = core->offset;
+	r_core_seek (core, addr, true);
+	char *res = r_core_cmd_str (core, cmd);
+	r_core_seek (core, oseek, true);
 	return res;
 }
 

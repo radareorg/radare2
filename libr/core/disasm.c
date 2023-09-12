@@ -1422,10 +1422,9 @@ static void ds_show_refs(RDisasmState *ds) {
 			RAnalOp aop;
 			ut8 buf[12];
 			r_io_read_at (ds->core->io, ref->at, buf, sizeof (buf));
-			// R2_590 - check for return value and use it wisely
-			(void)r_anal_op (ds->core->anal, &aop, ref->at, buf, sizeof (buf), R_ARCH_OP_MASK_ALL);
-			if ((aop.type & R_ANAL_OP_TYPE_MASK) == R_ANAL_OP_TYPE_UCALL) {
-				RAnalFunction * fcn = r_anal_get_function_at (ds->core->anal, ref->addr);
+			int opsz = r_anal_op (ds->core->anal, &aop, ref->at, buf, sizeof (buf), R_ARCH_OP_MASK_BASIC);
+			if (opsz > 0 && (aop.type & R_ANAL_OP_TYPE_MASK) == R_ANAL_OP_TYPE_UCALL) {
+				RAnalFunction *fcn = r_anal_get_function_at (ds->core->anal, ref->addr);
 				ds_begin_comment (ds);
 				if (fcn) {
 					ds_comment (ds, true, "%s %s", ds->cmtoken, fcn->name);
