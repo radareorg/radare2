@@ -2073,5 +2073,3 @@ static void bs1(struct r_magic *m) {
 	}
 }
 #endif
-
-#include "mdump.c"
