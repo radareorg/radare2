@@ -282,6 +282,12 @@ R_API void r_project_free(RProject *p);
 R_API bool r_project_is_loaded(RProject *p);
 R_API bool r_core_project_is_dirty(RCore *core);
 
+typedef struct {
+	ut64 addr;
+	int x;
+	int y;
+} VisualMark;
+
 struct r_core_t {
 	RBin *bin;
 	RConfig *config;
@@ -376,8 +382,8 @@ struct r_core_t {
 	char *theme;
 	char *themepath;
 	bool allbins;
-	bool marks_init;
-	ut64 marks[UT8_MAX + 1];
+	bool marks_init; // R2_590 - should be removed imho
+	VisualMark marks[UT8_MAX + 1];
 	RThreadChannel *chan; // query
 	RThreadLock *lock;
 	bool in_log_process; // false;
@@ -553,6 +559,8 @@ R_API void r_core_visual_slides(RCore *core, const char *file);
 R_API void r_core_visual_mark_seek(RCore *core, ut8 ch);
 R_API void r_core_visual_mark(RCore *core, ut8 ch);
 R_API void r_core_visual_mark_set(RCore *core, ut8 ch, ut64 addr);
+R_API void r_core_visual_mark_set2(RCore *core, ut8 ch, ut64 addr, int x, int y);
+R_API void r_core_visual_mark_seek2(RCore *core, ut8 ch, RAGraph *g);
 R_API void r_core_visual_mark_del(RCore *core, ut8 ch);
 R_API bool r_core_visual_mark_dump(RCore *core);
 R_API void r_core_visual_mark_reset(RCore *core);
