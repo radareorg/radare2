@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2011-2020 - pancake */
+/* radare - LGPL - Copyright 2011-2023 - pancake */
 
 #include <r_fs.h>
 #include "grubfs.h"
@@ -82,9 +82,12 @@ static void FSP(_umount)(RFSRoot *root) {
 }
 
 RFSPlugin FSS(r_fs_plugin) = {
-	.name = FSNAME,
-	.desc = FSDESC,
-	.license = "GPL2",
+	.meta = {
+		.name = FSNAME,
+		.author = "pancake",
+		.desc = FSDESC,
+		.license = "GPL2",
+	},
 	.open = FSP(_open),
 	.read = FSP(_read),
 	.close = FSP(_close),

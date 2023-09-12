@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2011-2021 - pancake */
+/* radare - LGPL - Copyright 2011-2023 - pancake */
 
 #include <r_fs.h>
 #include <r_lib.h>
@@ -81,9 +81,11 @@ static void fs_posix_umount(RFSRoot *root) {
 }
 
 RFSPlugin r_fs_plugin_posix = {
-	.name = "posix",
-	.desc = "POSIX filesystem",
-	.license = "MIT",
+	.meta = {
+		.name = "posix",
+		.desc = "POSIX filesystem",
+		.license = "MIT",
+	},
 	.open = fs_posix_open,
 	.read = fs_posix_read,
 	.close = fs_posix_close,
