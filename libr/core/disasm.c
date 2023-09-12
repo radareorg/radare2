@@ -6514,15 +6514,20 @@ toro:
 		ds->hint = r_core_hint_begin (core, ds->hint, ds->at);
 		ds->has_description = false;
 		r_anal_op_fini (&ds->analop);
-		int oret = r_anal_op (core->anal, &ds->analop, ds->at,
-			buf + addrbytes * i, nb_bytes - addrbytes * i,
-			R_ARCH_OP_MASK_ALL);
+		const size_t delta = addrbytes * i;
+		r_anal_op_init (&ds->analop);
+		const int oret = r_anal_op (core->anal, &ds->analop, ds->at,
+			buf + delta, nb_bytes - delta, R_ARCH_OP_MASK_ALL);
 		ret = oret;
 		ds->oplen = ds->analop.size;
-		if (ret > 1) {
+		if (ret > 0) {
 			ret = ds->oplen;
 			free (ds->opstr);
 			ds->opstr = strdup (ds->analop.mnemonic);
+		} else {
+			if (!ds->opstr) {
+				ds->opstr = strdup ("invalid");
+			}
 		}
 		opsize = ds->oplen;
 		skip_bytes_flag = handleMidFlags (core, ds, true);
