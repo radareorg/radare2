@@ -305,12 +305,8 @@ typedef struct r_anal_reil_t {
 #endif
 
 typedef struct r_esil_plugin_t {
-	char *name;
-	char *desc;
-	char *license;
+	RPluginMeta meta;
 	char *arch;
-	char *author;
-	char *version;
 	void *(*init)(REsil *esil);			// can allocate stuff and return that
 	void (*fini)(REsil *esil, void *user);	// deallocates allocated things from init
 } REsilPlugin;
