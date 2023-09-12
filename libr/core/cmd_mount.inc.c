@@ -222,7 +222,7 @@ static void cmd_mount_ls(RCore *core, const char *input) {
 					pj_o (pj);
 					pj_ks (pj, "path", root->path);
 					pj_kn (pj, "delta", root->delta);
-					pj_ks (pj, "type", root->p->name);
+					pj_ks (pj, "type", root->p->meta.name);
 					pj_end (pj);
 				} else {
 					r_cons_printf ("m %s\n", root->path); //  (root->path && root->path[0]) ? root->path + 1: "");
@@ -319,7 +319,7 @@ static int cmd_mount(void *data, const char *_input) {
 			r_list_foreach (core->fs->roots, iter, root) {
 				pj_o (pj);
 				pj_ks (pj, "path", root->path);
-				pj_ks (pj, "plugin", root->p->name);
+				pj_ks (pj, "plugin", root->p->meta.name);
 				pj_kn (pj, "offset", root->delta);
 				pj_end (pj);
 			}
@@ -328,8 +328,8 @@ static int cmd_mount(void *data, const char *_input) {
 			pj_a (pj);
 			r_list_foreach (core->fs->plugins, iter, plug) {
 				pj_o (pj);
-				pj_ks (pj, "name", plug->name);
-				pj_ks (pj, "description", plug->desc);
+				pj_ks (pj, "name", plug->meta.name);
+				pj_ks (pj, "description", plug->meta.desc);
 				pj_end (pj);
 			}
 
@@ -342,13 +342,13 @@ static int cmd_mount(void *data, const char *_input) {
 	case '*': // "m*"
 		r_list_foreach (core->fs->roots, iter, root) {
 			r_cons_printf ("m %s %s 0x%"PFMT64x"\n",
-				root->path, root->p->name, root->delta);
+				root->path, root->p->meta.name, root->delta);
 		}
 		break;
 	case '\0': // "m"
 		r_list_foreach (core->fs->roots, iter, root) {
 			r_cons_printf ("%s\t0x%"PFMT64x"\t%s\n",
-				root->p->name, root->delta, root->path);
+				root->p->meta.name, root->delta, root->path);
 		}
 		break;
 	case 'L': // "mL" list of plugins
@@ -356,15 +356,15 @@ static int cmd_mount(void *data, const char *_input) {
 			r_core_cmd_help_match (core, help_msg_m, "mL", true);
 		} else if (input[1] == 'L') {
 			r_list_foreach (core->fs->plugins, iter, plug) {
-				r_cons_printf ("%s\n", plug->name);
+				r_cons_printf ("%s\n", plug->meta.name);
 			}
 		} else if (input[1] == 'j') {
 			PJ *pj = r_core_pj_new (core);
 			pj_a (pj);
 			r_list_foreach (core->fs->plugins, iter, plug) {
 				pj_o (pj);
-				pj_ks (pj, "name", plug->name);
-				pj_ks (pj, "description", plug->desc);
+				pj_ks (pj, "name", plug->meta.name);
+				pj_ks (pj, "description", plug->meta.desc);
 				pj_end (pj);
 			}
 			pj_end (pj);
@@ -373,7 +373,7 @@ static int cmd_mount(void *data, const char *_input) {
 			free (s);
 		} else {
 			r_list_foreach (core->fs->plugins, iter, plug) {
-				r_cons_printf ("%10s  %s\n", plug->name, plug->desc);
+				r_cons_printf ("%10s  %s\n", plug->meta.name, plug->meta.desc);
 			}
 		}
 		break;

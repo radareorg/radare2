@@ -57,10 +57,7 @@ typedef struct r_fs_root_t {
 } RFSRoot;
 
 typedef struct r_fs_plugin_t {
-	const char *name;
-	const char *desc;
-	const char *author;
-	const char *license;
+	RPluginMeta meta;
 	RFSFile* (*slurp)(RFSRoot *root, const char *path);
 	RFSFile* (*open)(RFSRoot *root, const char *path, bool create);
 	bool (*unlink)(RFSRoot *root, const char *path);

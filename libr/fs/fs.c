@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2011-2022 - pancake */
+/* radare2 - LGPL - Copyright 2011-2023 - pancake */
 
 #define R_LOG_ORIGIN "fs"
 
@@ -77,7 +77,7 @@ R_API RFSPlugin* r_fs_plugin_get(RFS* fs, const char* name) {
 	RListIter* iter;
 	RFSPlugin* p;
 	r_list_foreach (fs->plugins, iter, p) {
-		if (!strcmp (p->name, name)) {
+		if (!strcmp (p->meta.name, name)) {
 			return p;
 		}
 	}

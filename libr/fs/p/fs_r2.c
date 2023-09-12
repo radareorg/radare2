@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2017-2019 - pancake */
+/* radare - LGPL - Copyright 2017-2023 - pancake */
 
 #include <r_fs.h>
 #include <r_lib.h>
@@ -293,9 +293,11 @@ static void fs_r2_umount(RFSRoot *root) {
 }
 
 RFSPlugin r_fs_plugin_r2 = {
-	.name = "r2",
-	.desc = "r2-based filesystem",
-	.license = "MIT",
+	.meta = {
+		.name = "r2",
+		.desc = "r2-based filesystem",
+		.license = "MIT",
+	},
 	.open = fs_r2_open, // open == read
 	.read = fs_r2_read, // read == open
 	.write = fs_r2_write,

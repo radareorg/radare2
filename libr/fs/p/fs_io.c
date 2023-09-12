@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2017-2019 - pancake */
+/* radare - LGPL - Copyright 2017-2023 - pancake */
 
 #include <r_fs.h>
 #include <r_lib.h>
@@ -83,13 +83,12 @@ static void fs_io_close(RFSFile *file) {
 
 static void append_file(RList *list, const char *name, int type, int time, ut64 size) {
 	RFSFile *fsf = r_fs_file_new (NULL, name);
-	if (!fsf) {
-		return;
+	if (fsf) {
+		fsf->type = type;
+		fsf->time = time;
+		fsf->size = size;
+		r_list_append (list, fsf);
 	}
-	fsf->type = type;
-	fsf->time = time;
-	fsf->size = size;
-	r_list_append (list, fsf);
 }
 
 static RList *fs_io_dir(RFSRoot *root, const char *path, int view /*ignored*/) {
@@ -135,9 +134,11 @@ static void fs_io_umount(RFSRoot *root) {
 }
 
 RFSPlugin r_fs_plugin_io = {
-	.name = "io",
-	.desc = "r_io based filesystem",
-	.license = "MIT",
+	.meta = {
+		.name = "io",
+		.desc = "r_io based filesystem",
+		.license = "MIT",
+	},
 	.open = fs_io_open,
 	.read = fs_io_read,
 	.close = fs_io_close,

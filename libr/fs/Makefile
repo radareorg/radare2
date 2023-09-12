@@ -11,6 +11,7 @@ LDFLAGS+=$(SHLR)/grub/libgrubfs.a
 endif
 
 EXTRA_TARGETS=plugins
+
 foo:
 	for TARGET in pre plugins ${LIBSO} ${LIBAR} ; do ${MAKE} $$TARGET ; done
 
@@ -23,12 +24,12 @@ pre:
 
 re:
 	rm -f fs.o libr_fs.so
-	${MAKE}
+	$(MAKE)
 	rm -f t/fastcall.o
-	sudo ${MAKE} install
-	cd t && ${MAKE}
+	sudo $(MAKE) install
+	$(MAKE) -C t
 
 plugins:
-	cd p && ${MAKE} all
+	$(MAKE) -C p all
 
 include ../rules.mk
