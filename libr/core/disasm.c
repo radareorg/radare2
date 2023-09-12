@@ -6519,20 +6519,10 @@ toro:
 			R_ARCH_OP_MASK_ALL);
 		ret = oret;
 		ds->oplen = ds->analop.size;
-		if (ret < 1) {
+		if (ret > 1) {
 			ret = ds->oplen;
-#if 0
-		} else {
-			r_asm_set_pc (core->rasm, ds->at);
-			(void)r_asm_disassemble (core->rasm, &ds->asmop,
-				buf + addrbytes * i, nb_bytes - addrbytes * i);
-			const char *ns = r_asm_op_get_asm (&ds->asmop);
-			if (R_STR_ISNOTEMPTY (ns)) {
-				// eprintf ("NUCK YOUOOO (%s) => (%s)\n", ds->analop.mnemonic, ns);
-				free (ds->analop.mnemonic);
-				ds->analop.mnemonic = strdup (ns);
-			}
-#endif
+			free (ds->opstr);
+			ds->opstr = strdup (ds->analop.mnemonic);
 		}
 		opsize = ds->oplen;
 		skip_bytes_flag = handleMidFlags (core, ds, true);
