@@ -272,14 +272,16 @@ jobs:
     - name: Running tests
       run: |
         export ASAN_OPTIONS=detect_leaks=0
+        export R2R_TIMEOUT=3600
         export R2R_SKIP_ARCHOS=1
         export LD_LIBRARY_PATH=/usr/local/lib
         export LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libasan.so.5
-        r2r test/db/cmd
+        r2r -t 3600 test/db/cmd
     - name: Run fuzz tests
       run: |
         export ASAN_OPTIONS=detect_leaks=0
         export R2R_SKIP_ARCHOS=1
+        export R2R_TIMEOUT=3600
         export LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libasan.so.5
         make -C test fuzz-tests
   linux-asan-fuzz:
@@ -299,12 +301,14 @@ jobs:
       run: |
         export ASAN_OPTIONS=detect_leaks=0
         export R2R_SKIP_ARCHOS=1
+        export R2R_TIMEOUT=3600
         export LD_LIBRARY_PATH=/usr/local/lib
         export LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libasan.so.5
         make tests
     - name: Run fuzz tests
       run: |
         export ASAN_OPTIONS=detect_leaks=0
+        export R2R_TIMEOUT=3600
         export R2R_SKIP_ARCHOS=1
         export LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libasan.so.5
         make -C test fuzz-tests

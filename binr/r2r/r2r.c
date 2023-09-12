@@ -8,8 +8,8 @@
 
 #define WORKERS_DEFAULT        8
 #define JSON_TEST_FILE_DEFAULT "bins/elf/crackme0x00b"
-// 30 seconds is the maximum time a test can run
-#define TIMEOUT_DEFAULT        (30*60)
+// 30 seconds is the maximum time a test can run -- not enough for asan builds
+#define TIMEOUT_DEFAULT        (60*60)
 
 #define STRV(x) #x
 #define STR(x) STRV(x)
@@ -57,7 +57,7 @@ static void parse_skip(const char *arg) {
 	} else if (strstr (arg, "asm")) {
 		r_sys_setenv ("R2R_SKIP_ASM", "1");
 	} else {
-		eprintf ("Invalid -s argument: @arch @unit @cmd @fuzz @json @asm\n");
+		R_LOG_ERROR ("Invalid -s argument: @arch @unit @cmd @fuzz @json @asm");
 	}
 }
 
@@ -88,6 +88,7 @@ static int help(bool verbose) {
 		"R2R_SKIP_UNIT=1    # do not run the unit tests\n"
 		"R2R_SKIP_CMD=1     # do not run the cmds tests\n"
 		"R2R_SKIP_ASM=1     # do not run the rasm2 tests\n"
+		"R2R_TIMEOUT=3600   # timeout after 1 minute (60 * 60)\n"
 		"R2R_OFFLINE=1      # same as passing -u\n"
 		"\n"
 		"Supported test types: @asm @json @unit @fuzz @arch @cmd\n"
@@ -123,10 +124,10 @@ static bool r2r_chdir(const char *argv0) {
 			src_path = r_str_append (src_path, "/test/");
 			if (r_file_is_directory (src_path)) {
 				if (chdir (src_path) != -1) {
-					eprintf ("Running from %s\n", src_path);
+					R_LOG_INFO ("Running from %s", src_path);
 					found = true;
 				} else {
-					eprintf ("Cannot find '%s' directory\n", src_path);
+					R_LOG_ERROR ("Cannot find '%s' directory", src_path);
 				}
 			}
 		}
@@ -144,7 +145,7 @@ static bool r2r_test_run_unit(void) {
 	if (!make) {
 		make = r_file_path ("make");
 		if (!make) {
-			eprintf ("Cannot find `make` in PATH\n");
+			R_LOG_ERROR ("Cannot find `make` in PATH");
 			return false;
 		}
 	}
@@ -181,22 +182,22 @@ static bool r2r_chdir_fromtest(const char *test_path) {
 		}
 		if (r_file_is_directory ("test")) {
 			if (!r_sys_chdir ("test")) {
-				eprintf ("Cannot enter into the 'test' directory");
+				R_LOG_ERROR ("Cannot enter into the 'test' directory");
 				break;
 			}
 			if (r_file_is_directory ("db")) {
 				found = true;
-				eprintf ("Running from %s\n", cwd);
+				R_LOG_INFO ("Running from %s", cwd);
 				break;
 			}
 			if (!r_sys_chdir ("..")) {
-				eprintf ("Cannot come back to test/..");
+				R_LOG_ERROR ("Cannot up one directory");
 				break;
 			}
 		}
 		if (r_file_is_directory ("db")) {
 			found = true;
-			eprintf ("Running from %s\n", cwd);
+			R_LOG_INFO ("Running from %s", cwd);
 			break;
 		}
 		free (old_cwd);
@@ -286,6 +287,11 @@ int main(int argc, char **argv) {
 	char *fuzz_dir = NULL;
 	const char *r2r_dir = NULL;
 	ut64 timeout_sec = TIMEOUT_DEFAULT;
+	char *r2r_timeout = r_sys_getenv ("R2R_TIMEOUT");
+	if (R_STR_ISNOTEMPTY (r2r_timeout)) {
+		timeout_sec = r_num_math (NULL, r2r_timeout);
+	}
+	R_FREE (r2r_timeout);
 	bool get_bins = !r_sys_getenv_asbool ("R2R_OFFLINE");
 	int ret = 0;
 
@@ -348,7 +354,7 @@ int main(int argc, char **argv) {
 		case 'j':
 			workers_count = atoi (opt.arg);
 			if (workers_count <= 0) {
-				eprintf ("Invalid thread count\n");
+				R_LOG_ERROR ("Invalid thread count");
 				ret = help (false);
 				goto beach;
 			}
@@ -367,7 +373,7 @@ int main(int argc, char **argv) {
 			get_bins = false;
 			break;
 		case 't':
-			timeout_sec = strtoull (opt.arg, NULL, 0);
+			timeout_sec = r_num_math (NULL, opt.arg);
 			if (!timeout_sec) {
 				timeout_sec = UT64_MAX;
 			}
@@ -385,7 +391,7 @@ int main(int argc, char **argv) {
 	char *cwd = r_sys_getdir ();
 	if (r2r_dir) {
 		if (chdir (r2r_dir) == -1) {
-			eprintf ("Cannot find %s directory.\n", r2r_dir);
+			R_LOG_ERROR ("Cannot find %s directory", r2r_dir);
 			return -1;
 		}
 	} else {
@@ -403,7 +409,7 @@ int main(int argc, char **argv) {
 			dir_found = r2r_chdir (argv[0]);
 		}
 		if (!dir_found) {
-			eprintf ("Cannot find db/ directory related to the given test.\n");
+			R_LOG_ERROR ("Cannot find db/ directory related to the given test");
 			return -1;
 		}
 	}
@@ -423,7 +429,7 @@ int main(int argc, char **argv) {
 	}
 
 	if (!r2r_subprocess_init ()) {
-		eprintf ("Subprocess init failed\n");
+		R_LOG_ERROR ("Subprocess init failed");
 		return -1;
 	}
 	atexit (r2r_subprocess_fini);
@@ -443,7 +449,7 @@ int main(int argc, char **argv) {
 	state.run_config.r2_cmd = "radare2";
 	state.run_config.rasm2_cmd = "rasm2";
 	state.run_config.json_test_file = json_test_file ? json_test_file : JSON_TEST_FILE_DEFAULT;
-	state.run_config.timeout_ms = timeout_sec > UT64_MAX / 1000 ? UT64_MAX : timeout_sec * 1000;
+	state.run_config.timeout_ms = (timeout_sec > UT64_MAX / 1000) ? UT64_MAX : timeout_sec * 1000;
 	state.verbose = verbose;
 	state.db = r2r_test_database_new ();
 	if (!state.db) {
@@ -480,11 +486,11 @@ int main(int argc, char **argv) {
 					continue;
 				} else if (!strcmp (arg, "fuzz")) {
 					if (!fuzz_dir) {
-						eprintf ("No fuzz dir given. Use -F [dir]\n");
+						R_LOG_ERROR ("No fuzz dir given. Use -F [dir]");
 						return -1;
 					}
 					if (!r2r_test_database_load_fuzz (state.db, fuzz_dir)) {
-						eprintf ("Failed to load fuzz tests from \"%s\"\n", fuzz_dir);
+						R_LOG_ERROR ("Failed to load fuzz tests from \"%s\"", fuzz_dir);
 					}
 					continue;
 				} else if (!strcmp (arg, "json")) {
@@ -511,7 +517,7 @@ int main(int argc, char **argv) {
 				char *test;
 				int grc = 0;
 				r_list_foreach (tests, iter, test) {
-					eprintf ("Running %s\n", test);
+					R_LOG_INFO ("Running %s", test);
 					int rc = r_sys_cmdf ("r2r %s %s", interactive? "-i": "", test);
 					if (rc != 0) {
 						grc = rc;
@@ -523,7 +529,7 @@ int main(int argc, char **argv) {
 			}
 			char *tf = r_file_abspath_rel (cwd, arg);
 			if (!tf || !r2r_test_database_load (state.db, tf)) {
-				eprintf ("Failed to load tests from \"%s\"\n", tf);
+				R_LOG_ERROR ("Failed to load tests from \"%s\"", tf);
 				r2r_test_database_free (state.db);
 				free (tf);
 				return -1;
@@ -533,12 +539,12 @@ int main(int argc, char **argv) {
 	} else {
 		// Default db path
 		if (!r2r_test_database_load (state.db, "db")) {
-			eprintf ("Failed to load tests from ./db\n");
+			R_LOG_ERROR ("Failed to load tests from ./db");
 			r2r_test_database_free (state.db);
 			return -1;
 		}
 		if (fuzz_dir && !r2r_test_database_load_fuzz (state.db, fuzz_dir)) {
-			eprintf ("Failed to load fuzz tests from \"%s\"\n", fuzz_dir);
+			R_LOG_ERROR ("Failed to load fuzz tests from \"%s\"", fuzz_dir);
 		}
 	}
 
@@ -551,7 +557,7 @@ int main(int argc, char **argv) {
 
 	bool jq_available = r2r_check_jq_available ();
 	if (!jq_available) {
-		eprintf ("Skipping json tests because jq is not available.\n");
+		R_LOG_INFO ("Skipping json tests because jq is not available");
 		size_t i;
 		for (i = 0; i < r_pvector_length (&state.db->tests);) {
 			R2RTest *test = r_pvector_at (&state.db->tests, i);
@@ -593,7 +599,7 @@ int main(int argc, char **argv) {
 	for (i = 0; i < workers_count; i++) {
 		RThread *th = r_th_new (worker_th, &state, 0);
 		if (!th) {
-			eprintf ("Failed to start thread.\n");
+			R_LOG_ERROR ("Failed to start thread");
 			r_th_lock_leave (state.lock);
 			exit (-1);
 		}
@@ -641,13 +647,13 @@ int main(int argc, char **argv) {
 	if (output_file) {
 		pj_end (state.test_results);
 		if (r_file_exists (output_file)) {
-			eprintf ("Overwrite output file '%s'\n", output_file);
+			R_LOG_WARN ("Overwrite output file '%s'", output_file);
 		}
 		char *results = pj_drain (state.test_results);
 		char *output = r_str_newf ("%s\n", results);
 		free (results);
 		if (!r_file_dump (output_file, (ut8 *)output, strlen (output), false)) {
-			eprintf ("Cannot write to %s\n", output_file);
+			R_LOG_ERROR ("Cannot write to %s", output_file);
 		}
 		free (output);
 	}
