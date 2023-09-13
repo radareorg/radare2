@@ -858,6 +858,7 @@ R_API RAsmCode *r_asm_massemble(RAsm *a, const char *assembly) {
 		}
 		inComment = false;
 		r_asm_set_pc (a, pc);
+		linenum = 0;
 		for (idx = ret = i = 0, off = a->pc; i <= ctr; i++, idx += ret) {
 			buf_token = tokens[i];
 			if (!buf_token) {
