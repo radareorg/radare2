@@ -2548,6 +2548,9 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 			if (op.refptr != -1 && op.refptr > 0) {
 				pj_ki (pj, "refptr", op.refptr);
 			}
+			if (op.tlocal) {
+				pj_kb (pj, "tlocal", true);
+			}
 			pj_ki (pj, "cycles", op.cycles);
 			pj_ki (pj, "failcycles", op.failcycles);
 			pj_ki (pj, "delay", op.delay);
@@ -2698,6 +2701,9 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 			}
 			if (op.refptr != -1 && op.refptr > 0) {
 				printline ("refptr", "%d\n", op.refptr);
+			}
+			if (op.tlocal) {
+				printline ("tlocal", "%s\n", r_str_pool (op.tlocal));
 			}
 			printline ("size", "%d\n", size);
 			printline ("sign", "%s\n", r_str_bool (op.sign));

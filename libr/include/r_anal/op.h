@@ -235,6 +235,7 @@ typedef struct r_anal_op_t {
 	bool weakbytes;
 	ut8 *bytes;     /* can be null, but is used for encoding and decoding, malloc of `size` */
 	int size;       /* size in bytes of opcode */
+	bool tlocal;    // uses the thread local storage
 	int nopcode;    /* number of bytes representing the opcode (not the arguments) TODO: find better name */
 	int cycles;	/* cpu-cycles taken by instruction */
 	int failcycles;	/* conditional cpu-cycles */
