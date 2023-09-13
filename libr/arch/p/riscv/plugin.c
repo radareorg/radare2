@@ -793,6 +793,7 @@ static char *get_reg_profile(RArchSession *s) {
 				 "=A5	a5\n"
 				 "=A6	a6\n"
 				 "=A7	a7\n"
+				 "=TR	tp\n"
 				 "=R0	a0\n"
 				 "=R1	a1\n"
 				 "=SP	sp\n" // ABI: stack pointer
@@ -900,7 +901,7 @@ static char *get_reg_profile(RArchSession *s) {
 				 "gpr	ra	.64	8	0\n" // =x1
 				 "gpr	sp	.64	16	0\n" // =x2
 				 "gpr	gp	.64	24	0\n" // =x3
-				 "gpr	tp	.64	32	0\n" // =x4
+				 "gpr	tp	.64	32	0\n" // =x4 // thread pointer register
 				 "gpr	t0	.64	40	0\n" // =x5
 				 "gpr	t1	.64	48	0\n" // =x6
 				 "gpr	t2	.64	56	0\n" // =x7

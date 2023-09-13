@@ -72,6 +72,8 @@ typedef enum {
 	R_REG_NAME_SF,
 	R_REG_NAME_CF,
 	R_REG_NAME_OF,
+	/* thread register */
+	R_REG_NAME_TR,
 	/* syscall number (orig_eax,rax,r0,x0) */
 	R_REG_NAME_SN,
 	R_REG_NAME_LAST,

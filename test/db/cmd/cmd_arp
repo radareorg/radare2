@@ -117,7 +117,8 @@ Aliases (Reg->name)
 27 SF ?
 28 CF ?
 29 OF ?
-30 SN rax
+30 TR ?
+31 SN rax
 regset 0 (gpr)
 * arena gpr size 160
    rax gpr @ gpr (offset: 80  size: 8)
