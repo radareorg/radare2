@@ -434,6 +434,9 @@ R_API int r_bin_object_set_items(RBinFile *bf, RBinObject *bo) {
 	if (p->mem)  {
 		bo->mem = p->mem (bf);
 	}
+	r_bin_info_free (bo->info);
+	// call it twice, otherwise the info is not propagated
+	bo->info = p->info? p->info (bf): NULL;
 	if (bo->info && bin->filter_rules & (R_BIN_REQ_INFO | R_BIN_REQ_SYMBOLS | R_BIN_REQ_IMPORTS)) {
 		bo->lang = isSwift? R_BIN_LANG_SWIFT: r_bin_load_languages (bf);
 	}
