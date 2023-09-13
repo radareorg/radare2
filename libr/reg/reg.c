@@ -206,7 +206,7 @@ static const char * const roles[R_REG_NAME_LAST + 1] = {
 	"A0", "A1", "A2", "A3", "A4", "A5", "A6", "A7", "A8", "A9",
 	"R0", "R1", "R2", "R3", "F0", "F1", "F2", "F3",
 	"ZF", "SF", "CF", "OF",
-	"SN",
+	"TR", "SN",
 	NULL
 };
 
