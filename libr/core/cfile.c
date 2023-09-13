@@ -767,15 +767,17 @@ R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 		}
 	}
 	bool is_core = false;
-	RBinInfo *info = plugin->info (binfile);
-	if (info && info->type) {
-		is_core = strstr (info->type, "CORE");
+	if (plugin && plugin->info) {
+		RBinInfo *info = plugin->info (binfile);
+		if (info && info->type) {
+			is_core = strstr (info->type, "CORE");
+		}
+		r_bin_info_free (info);
 	}
-	r_bin_info_free (inf);
 	// the bintypecore is a wrong callback that is used only by ELF and must be deprecated. info should be in RBinInfo instead
 	// if type == R_BIN_TYPE_CORE, we need to create all the maps
 	if (plugin && binfile && is_core) {
-		ut64 sp_addr = (ut64)-1;
+		ut64 sp_addr = UT64_MAX;
 		RIOMap *stack_map = NULL;
 		// Setting the right arch and bits, so regstate will be shown correctly
 		if (plugin->info) {

@@ -1381,7 +1381,7 @@ static int r_cmd_java_handle_set_flags(RCore *core, const char *input) {
 	const char *p = r_cmd_java_consumetok (input, ' ', -1);
 	ut64 addr = p && r_cmd_java_is_valid_input_num_value (core, p)
 		? r_cmd_java_get_input_num_value (core, p)
-		: (ut64)-1;
+		: UT64_MAX;
 	p = r_cmd_java_strtok (p + 1, ' ', -1);
 	if (R_STR_ISEMPTY (p)) {
 		r_cmd_java_print_cmd_help (JAVA_CMDS + SET_ACC_FLAGS_IDX);
@@ -1407,7 +1407,7 @@ static int r_cmd_java_handle_set_flags(RCore *core, const char *input) {
 	if (!input) {
 		eprintf ("[-] r_cmd_java: no address provided .\n");
 		res = true;
-	} else if (addr == (ut64)-1) {
+	} else if (addr == UT64_MAX) {
 		eprintf ("[-] r_cmd_java: no address provided .\n");
 		res = true;
 	} else if (f_type == '?' && flag_value == -1) {
@@ -1649,7 +1649,7 @@ static int r_cmd_java_resolve_cp_idx_b64(RBinJavaObj *obj, ut16 idx) {
 static int r_cmd_java_resolve_cp_address(RBinJavaObj *obj, ut16 idx) {
 	if (obj && idx) {
 		ut64 addr = r_bin_java_resolve_cp_idx_address (obj, idx);
-		if (addr == (ut64)-1) {
+		if (addr == UT64_MAX) {
 			r_cons_printf ("Unable to resolve CP Object @ index: 0x%04x\n", idx);
 		} else {
 			r_cons_printf ("0x%" PFMT64x "\n", addr);
@@ -1819,12 +1819,12 @@ static int r_cmd_java_handle_yara_code_extraction_refs(RCore *core, const char *
 	memcpy (name, p, n - p);
 
 	p = r_cmd_java_strtok (p, ' ', -1);
-	addr = p && *p && r_cmd_java_is_valid_input_num_value (core, p)? r_cmd_java_get_input_num_value (core, p): (ut64)-1;
+	addr = p && *p && r_cmd_java_is_valid_input_num_value (core, p)? r_cmd_java_get_input_num_value (core, p): UT64_MAX;
 
 	p = r_cmd_java_strtok (p, ' ', -1);
-	count = p && *p && r_cmd_java_is_valid_input_num_value (core, p)? r_cmd_java_get_input_num_value (core, p): (ut64)-1;
+	count = p && *p && r_cmd_java_is_valid_input_num_value (core, p)? r_cmd_java_get_input_num_value (core, p): UT64_MAX;
 
-	if (name && count != (ut64)-1 && addr != (ut64)-1) {
+	if (name && count != UT64_MAX && addr != UT64_MAX) {
 		// find function at addr
 		// find the start basic block
 		// read the bytes
@@ -1916,7 +1916,7 @@ static int r_cmd_java_handle_print_exceptions(RCore *core, const char *input) {
 		ut64 end = r_bin_java_get_method_end (bin, method);
 		ut8 do_this_one = start <= func_addr && func_addr <= end;
 		RList *exc_table = NULL;
-		do_this_one = func_addr == (ut64)-1? 1: do_this_one;
+		do_this_one = (func_addr == UT64_MAX)? 1: do_this_one;
 		if (!do_this_one) {
 			continue;
 		}
