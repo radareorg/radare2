@@ -2576,7 +2576,6 @@ static char *print_analstr(RCore *core, ut64 addr, int maxlen) {
 	}
 	r_strbuf_free (sb);
 	return NULL;
-	
 }
 
 static bool do_analstr_search(RCore *core, struct search_parameters *param, bool quiet, const char *input) {
