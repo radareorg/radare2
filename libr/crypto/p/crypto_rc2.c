@@ -242,7 +242,9 @@ static bool fini(RCryptoJob *cj) {
 }
 
 RCryptoPlugin r_crypto_plugin_rc2 = {
-	.name = "rc2",
+	.meta = {
+		.name = "rc2",
+	},
 	.set_key = rc2_set_key,
 	.get_key_size = rc2_get_key_size,
 	.check = rc2_check,

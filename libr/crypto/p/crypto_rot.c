@@ -78,10 +78,12 @@ static bool update(RCryptoJob *cj, const ut8 *buf, int len) {
 }
 
 RCryptoPlugin r_crypto_plugin_rot = {
-	.name = "rot",
+	.meta = {
+		.name = "rot",
+		.author = "pancake",
+		.license = "MIT",
+	},
 	.implements = "rot",
-	.author = "pancake",
-	.license = "MIT",
 	.set_key = rot_set_key,
 	.get_key_size = rot_get_key_size,
 	.update = update,

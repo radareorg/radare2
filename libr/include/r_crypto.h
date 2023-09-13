@@ -5,6 +5,7 @@
 #include <r_list.h>
 #include <r_th.h>
 #include <r_crypto/r_des.h>
+#include <r_lib.h>
 #include <r_crypto/r_sm4.h>
 
 #ifdef __cplusplus
@@ -66,10 +67,7 @@ typedef enum {
 } RCryptoType;
 
 typedef struct r_crypto_plugin_t {
-	const char *name;
-	const char *author;
-	const char *license;
-	const char *desc;
+	RPluginMeta meta;
 	const char *implements;
 	RCryptoType type;
 	bool (*check)(const char *algo); // must be deprecated
@@ -81,7 +79,6 @@ typedef struct r_crypto_plugin_t {
 	RCryptoJob* (*begin)(RCrypto *cry);
 	bool (*update)(RCryptoJob *ci, const ut8 *buf, int len);
 	bool (*end)(RCryptoJob *ci, const ut8 *buf, int len);
-
 #if 0
 	bool (*init)(RCrypto *cry, struct r_crypto_plugin_t *cp);
 #endif
@@ -89,9 +86,7 @@ typedef struct r_crypto_plugin_t {
 } RCryptoPlugin;
 
 typedef struct r_hash_plugin_t {
-	const char *name;
-	const char *author;
-	const char *license;
+	RPluginMeta meta;
 } RHashPlugin;
 
 typedef ut64 RCryptoSelector;

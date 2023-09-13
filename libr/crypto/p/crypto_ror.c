@@ -69,7 +69,9 @@ static bool fini(RCryptoJob *cj) {
 }
 
 RCryptoPlugin r_crypto_plugin_ror = {
-	.name = NAME,
+	.meta = {
+		.name = NAME,
+	},
 	.set_key = ror_set_key,
 	.get_key_size = ror_get_key_size,
 	.check = ror_check,

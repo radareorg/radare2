@@ -110,7 +110,9 @@ static bool end(RCryptoJob *cj, const ut8 *buf, int len) {
 }
 
 RCryptoPlugin r_crypto_plugin_serpent = {
-	.name = "serpent-ecb",
+	.meta = {
+		.name = "serpent-ecb",
+	},
 	.set_key = serpent_set_key,
 	.get_key_size = serpent_get_key_size,
 	.check = serpent_check,

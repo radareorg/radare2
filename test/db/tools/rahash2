@@ -180,7 +180,7 @@ c          ror  LGPL
 c          rot   MIT  pancake
 c  serpent-ecb  LGPL  
 c      sm4-ecb LGPL3  Sylvain Pelissier
-c          xor  LGPL  
+c          xor   MIT  
 h          md5
 h         sha1
 h       sha256

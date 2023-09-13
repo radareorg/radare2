@@ -43,10 +43,12 @@ static bool end(RCryptoJob *cj, const ut8 *buf, int len) {
 }
 
 RCryptoPlugin r_crypto_plugin_sm4 = {
-	.name = "sm4-ecb",
+	.meta = {
+		.name = "sm4-ecb",
+		.author = "Sylvain Pelissier",
+		.license = "LGPL3",
+	},
 	.implements = "sm4-ecb",
-	.author = "Sylvain Pelissier",
-	.license = "LGPL3",
 	.set_key = sm4_set_key,
 	.get_key_size = sm4_get_key_size,
 	.update = update,

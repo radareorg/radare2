@@ -137,9 +137,11 @@ static bool end(RCryptoJob *cj, const ut8 *buf, int len) {
 }
 
 RCryptoPlugin r_crypto_plugin_aes_wrap = {
-	.name = "aes-wrap",
-	.author = "Sylvain Pelissier",
-	.license = "LGPL",
+	.meta = {
+		.name = "aes-wrap",
+		.author = "Sylvain Pelissier",
+		.license = "LGPL",
+	},
 	.set_key = aes_wrap_set_key,
 	.get_key_size = aes_wrap_get_key_size,
 	.set_iv = aes_wrap_set_iv,
