@@ -26,6 +26,16 @@
 static R_TH_LOCAL int old_bits = -1;
 static R_TH_LOCAL char *old_arch = NULL;
 
+// TODO: move into rbin
+static const char *r_bin_field_kindstr(RBinField *f) {
+	switch (f->kind) {
+	case R_BIN_FIELD_KIND_PROPERTY:
+		return "property";
+	default:
+		return "var";
+	}
+}
+
 static void pair(const char *key, const char *val) {
 	if (R_STR_ISNOTEMPTY (val)) {
 		r_cons_printf ("%-"PAIR_WIDTH"s%s\n", key, val);
@@ -3489,19 +3499,35 @@ static char *objc_name_toc(const char *objc_name) {
 }
 
 static void classdump_c(RCore *r, RBinClass *c) {
-	r_cons_printf ("typedef struct class_%s {\n", c->name);
+	r_cons_printf ("typedef struct {\n");
 	RListIter *iter2;
 	RBinField *f;
+	bool is_objc = false;
 	r_list_foreach (c->fields, iter2, f) {
-		if (f->type && f->name) {
+		if (f->name) { //  && f->offset > 32) {
 			char *n = objc_name_toc (f->name);
-			char *t = objc_type_toc (f->type);
-			r_cons_printf ("    %s %s; // %d\n", t, n, f->offset);
+			char *t = f->type? objc_type_toc (f->type): NULL;
+			if (f->offset < 32 && !t) {
+				continue;
+			}
+			if (R_STR_ISEMPTY (t)) {
+				t = strdup ("void*");
+			}
+			if (!is_objc && !strcmp (n, "isa")) {
+				is_objc = true;
+			}
+			r_str_replace_char (n, ':', '_');
+			r_str_replace_char (n, '.', '_');
+			r_cons_printf ("    %s %s; // 0x%x\n", t, n, f->offset);
 			free (t);
 			free (n);
 		}
 	}
-	r_cons_printf ("} %s;\n", c->name);
+	if (is_objc) {
+		r_cons_printf ("} objc_class_%s;\n", c->name);
+	} else {
+		r_cons_printf ("} class_%s;\n", c->name);
+	}
 }
 
 static void classdump_objc(RCore *r, RBinClass *c) {
@@ -3535,8 +3561,13 @@ static void classdump_objc(RCore *r, RBinClass *c) {
 	RBinField *f;
 	RBinSymbol *sym;
 	r_list_foreach (c->fields, iter2, f) {
-		if (f->name && r_regex_match ("ivar","e", f->name)) {
-			r_cons_printf ("  %s %s\n", f->type, f->name);
+		if (f->name) { //  && r_regex_match ("ivar","e", f->name)) {
+			const bool is_prop = (f->kind == R_BIN_FIELD_KIND_PROPERTY);
+			if (is_prop) {
+				r_cons_printf ("  %s %s::%s%s\n", f->type, c->name, "(property)", f->name);
+			} else {
+				r_cons_printf ("  %s %s::%s%s\n", f->type, c->name, "(ivar)", f->name);
+			}
 		}
 	}
 	r_cons_printf ("}\n");
@@ -3554,6 +3585,59 @@ static void classdump_objc(RCore *r, RBinClass *c) {
 		}
 	}
 	r_cons_printf ("@end\n");
+}
+
+static void classdump_swift(RCore *r, RBinClass *c) {
+	RBinField *f;
+	RListIter *iter;
+	RBinSymbol *sym;
+	char *pn = strdup (c->name);
+	char *cn = (char *)r_str_rchr (pn, NULL, '/');
+	if (cn) {
+		*cn = 0;
+		cn++;
+		r_str_replace_char (pn, '/', '.');
+	}
+	char *klassname = cn? cn: pn;
+	if (cn) {
+		r_cons_printf ("// namespace %s\n\n", pn);
+	}
+	if (c->lang == R_BIN_LANG_OBJC) {
+		r_cons_printf ("@objc\n");
+	}
+	r_cons_printf ("class %s ", klassname);
+	if (c->super) {
+		char *sc;
+		r_list_foreach (c->super, iter, sc) {
+			r_cons_printf (": %s", sc);
+		}
+	}
+	r_cons_printf (" {\n");
+	free (klassname);
+	r_list_foreach (c->fields, iter, f) {
+		if (f->name) {
+			const bool is_prop = (f->kind == R_BIN_FIELD_KIND_PROPERTY);
+			const char *var = is_prop? "var": "property";
+			if (R_STR_ISNOTEMPTY (f->type)) {
+				r_cons_printf ("  %s %s : %s;\n", var, f->name, f->type);
+			} else {
+				r_cons_printf ("  %s %s;\n", var, f->name);
+			}
+		}
+	}
+	r_list_foreach (c->methods, iter, sym) {
+		const char *mn = sym->dname? sym->dname: sym->name;
+		const char *ms = strstr (mn, "method.");
+		if (ms) {
+			mn = ms + strlen ("method.");
+		}
+		r_cons_printf ("  func %s", mn);
+		if (!strchr (mn, '(')) {
+			r_cons_printf ("()");
+		}
+		r_cons_printf (" {}  // 0x%08"PFMT64x"\n", sym->vaddr);
+	}
+	r_cons_printf ("}\n");
 }
 
 static void classdump_java(RCore *r, RBinClass *c) {
@@ -3584,6 +3668,23 @@ static void classdump_java(RCore *r, RBinClass *c) {
 		r_cons_printf ("  public %s ();\n", mn);
 	}
 	r_cons_printf ("}\n\n");
+}
+
+static bool is_swift(RBinFile *bf) {
+	if (bf->bo->lang == R_BIN_LANG_SWIFT) {
+		return true;
+	}
+	return false;
+}
+
+static bool is_javaish(RBinFile *bf) {
+	if (bf->bo->lang == R_BIN_LANG_JAVA) {
+		return true;
+	}
+	if (bf->bo->info && bf->bo->info->lang && strstr (bf->bo->info->lang, "dalvik")) {
+		return true;
+	}
+	return false;
 }
 
 static bool bin_classes(RCore *r, PJ *pj, int mode) {
@@ -3648,7 +3749,8 @@ static bool bin_classes(RCore *r, PJ *pj, int mode) {
 				r_flag_set (r->flags, method, sym->vaddr, 1);
 			}
 			r_list_foreach (c->fields, iter2, f) {
-				char *fn = r_str_newf ("field.%s.%s", classname, f->name);
+				const char *kind = r_bin_field_kindstr (f);
+				char *fn = r_str_newf ("field.%s.%s.%s", classname, kind, f->name);
 				ut64 at = f->vaddr;
 				r_flag_set (r->flags, fn, at, 1);
 				free (fn);
@@ -3669,8 +3771,12 @@ static bool bin_classes(RCore *r, PJ *pj, int mode) {
 				if (bf && bf->bo) {
 					if (IS_MODE_RAD (mode)) {
 						classdump_c (r, c);
-					} else if (bf->bo->lang == R_BIN_LANG_JAVA || (bf->bo->info && bf->bo->info->lang && strstr (bf->bo->info->lang, "dalvik"))) {
+					} else if (mode == 'O') {
+						classdump_objc (r, c);
+					} else if (is_javaish (bf) || mode == 'J') {
 						classdump_java (r, c);
+					} else if (is_swift (bf) || mode == 'S') {
+						classdump_swift (r, c);
 					} else {
 						classdump_objc (r, c);
 					}
@@ -3716,7 +3822,8 @@ static bool bin_classes(RCore *r, PJ *pj, int mode) {
 				R_FREE (mflags);
 			}
 			r_list_foreach (c->fields, iter2, f) {
-				char *fn = r_str_newf ("field.%s.%s", c->name, f->name);
+				const char *kind = r_bin_field_kindstr (f);
+				char *fn = r_str_newf ("field.%s.%s.%s", c->name, kind, f->name);
 				r_name_filter (fn, -1);
 				ut64 at = f->vaddr; //  sym->vaddr + (f->vaddr &  0xffff);
 				r_cons_printf ("\"f %s = 0x%08"PFMT64x"\"\n", fn, at);
@@ -3733,6 +3840,9 @@ static bool bin_classes(RCore *r, PJ *pj, int mode) {
 				r_list_foreach (c->fields, iter2, f) {
 					char *n = objc_name_toc (f->name);
 					char *t = objc_type_toc (f->type);
+					if (R_STR_ISEMPTY (t)) {
+						t = strdup ("void* ");
+					}
 					r_cons_printf (" %s %s;", t, n);
 					free (t);
 					free (n);
@@ -3793,7 +3903,8 @@ static bool bin_classes(RCore *r, PJ *pj, int mode) {
 				r_list_foreach (c->fields, iter3, f) {
 					pj_o (pj);
 					pj_ks (pj, "name", f->name);
-					if (f->type) {
+					pj_ks (pj, "kind", r_bin_field_kindstr (f));
+					if (R_STR_ISNOTEMPTY (f->type)) {
 						pj_ks (pj, "type", f->type);
 					}
 					if (f->flags) {
@@ -4314,7 +4425,9 @@ static void bin_pe_resources(RCore *r, PJ *pj, int mode) {
 			pj_o (pj);
 			pj_ks (pj, "name", name);
 			pj_ki (pj, "index", index);
-			pj_ks (pj, "type", type);
+			if (R_STR_ISNOTEMPTY (type)) {
+				pj_ks (pj, "type", type);
+			}
 			pj_kn (pj, "vaddr", vaddr);
 			pj_ki (pj, "size", size);
 			if (lang && *lang != '?') {

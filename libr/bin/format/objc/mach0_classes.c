@@ -372,7 +372,9 @@ static void get_ivar_list_t(mach0_ut p, RBinFile *bf, RBinClass *klass) {
 				name[name_len] = 0;
 			}
 			// XXX the field name shouldnt contain the class name
-			field->name = r_str_newf ("%s::%s%s", klass->name, "(ivar)", name);
+			// field->realname = r_str_newf ("%s::%s%s", klass->name, "(ivar)", name);
+			// field->name = r_str_newf ("%s::%s%s", klass->name, "(ivar)", name);
+			field->name = r_str_newf ("%s", name);
 			R_FREE (name);
 		} else {
 			R_LOG_WARN ("not parsing ivars, wrong va2pa");
@@ -539,8 +541,9 @@ static void get_objc_property_list(mach0_ut p, RBinFile *bf, RBinClass *klass) {
 					goto error;
 				}
 			}
-			// R2_590 use :: or : syntax?
-			property->name = r_str_newf ("%s::%s%s", klass->name, "(property)", name);
+			// property->realname = r_str_newf ("%s::%s%s", klass->name, "(property)", name);
+			property->name = strdup (name);
+			property->kind = R_BIN_FIELD_KIND_PROPERTY;
 			property->offset = j;
 			property->paddr = r;
 			R_FREE (name);
@@ -1429,6 +1432,17 @@ static void parse_type(RList *list, RBinFile *bf, SwiftType st, HtUP *symbols_ht
 				}
 			} else {
 				method_name = r_str_newf ("%d", i);
+			}
+			// skip namespace
+			char *dot = strchr (method_name, '.');
+			if (dot) {
+				// skip classname
+				dot = strchr (dot + 1, '.');
+				if (dot) {
+					char *p = method_name;
+					method_name = strdup (dot + 1);
+					free (p);
+				}
 			}
 			sym = r_bin_symbol_new (method_name, method_addr, method_addr);
 			sym->lang = R_BIN_LANG_SWIFT;

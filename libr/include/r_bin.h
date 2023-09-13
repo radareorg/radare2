@@ -622,6 +622,11 @@ typedef struct r_bin_string_t {
 	char type; // Ascii Wide cp850 utf8 base64 ...
 } RBinString;
 
+typedef enum {
+	R_BIN_FIELD_KIND_VARIABLE,
+	R_BIN_FIELD_KIND_PROPERTY,
+} RBinFieldKind;
+
 typedef struct r_bin_field_t {
 	ut64 vaddr;
 	ut64 paddr;
@@ -629,6 +634,8 @@ typedef struct r_bin_field_t {
 	int offset;
 	ut32 visibility;
 	char *name;
+//	char *realname;
+	RBinFieldKind kind;
 	char *type;
 	char *comment;
 	char *format;
