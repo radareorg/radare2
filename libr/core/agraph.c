@@ -3510,7 +3510,7 @@ static bool check_changes(RAGraph *g, bool is_interactive, RCore *core, RAnalFun
 			fold_asm_trace (core, g);
 		}
 	}
-	g->bb_maxwidth = r_config_get_i (core->config, "graph.bb.maxwidth");
+	g->bb_maxwidth = core? r_config_get_i (core->config, "graph.bb.maxwidth"): 0;
 	if (g->need_update_dim || g->need_reload_nodes || !is_interactive) {
 		update_node_dimension (g->graph, is_mini (g), g->zoom, g->edgemode, g->is_callgraph, g->layout);
 	}
