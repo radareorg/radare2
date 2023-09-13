@@ -83,6 +83,7 @@ typedef struct r_ascii_graph_t {
 	bool show_node_titles;
 	bool show_node_body;
 	bool show_node_bubble;
+	int bb_maxwidth;
 
 	int x, y;
 	int w, h;

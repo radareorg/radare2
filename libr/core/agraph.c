@@ -13,6 +13,7 @@ static R_TH_LOCAL bool coming_from_vmark = false;
 static RCoreHelpMessage help_msg_visual_graph = {
 	":e cmd.gprompt=agft", "show tinygraph in one side",
 	"@",            "toggle graph.layout between 0 and 1",
+	"[]",           "adjust graph.bb.maxwidth",
 	"+/-/0",        "zoom in/out/default",
 	";",            "add comment in current basic block",
 	". (dot)",      "center graph to the current node",
@@ -219,7 +220,6 @@ static RGraphNode *agraph_get_title(const RAGraph *g, RANode *n, bool in) {
 	const RList *outnodes = in? n->gnode->in_nodes : n->gnode->out_nodes;
 	RGraphNode *gn;
 	RListIter *iter;
-
 	r_list_foreach (outnodes, iter, gn) {
 		RANode *an = gn->data;
 		return agraph_get_title (g, an, in);
@@ -477,6 +477,12 @@ static void normal_RANode_print(const RAGraph *g, const RANode *n, int cur) {
 			char *color = g->can->color ? Color_RESET : "";
 			snprintf (title, sizeof (title) - 1, " %s%s ", color, n->title);
 			append_shortcut (g, title, n->title, sizeof (title) - strlen (title));
+		}
+		if (g->bb_maxwidth > 0 && r_str_len_utf8_ansi (title) > g->bb_maxwidth) {
+			char *pos = (char *)r_str_ansi_chrn (title, g->bb_maxwidth);
+			if (pos) {
+				*pos = 0;
+			}
 		}
 		if ((delta_x < strlen (title)) && G (n->x + MARGIN_TEXT_X + delta_x, n->y + 1)) {
 			char *res = r_str_ansi_crop (title, delta_x, 0, n->w - BORDER_WIDTH, 1);
@@ -2209,6 +2215,7 @@ static char *get_body(RCore *core, ut64 addr, int size, int opts) {
 	bool o_flags_in_bytes = r_config_get_b (core->config, "asm.flags.inbytes");
 	const bool o_graph_offset = r_config_get_b (core->config, "graph.offset");
 	int o_cursor = core->print->cur_enabled;
+	int mw = r_config_get_i (core->config, "graph.bb.maxwidth");
 	if (opts & BODY_COMMENTS) {
 		r_core_visual_toggle_decompiler_disasm (core, true, false);
 		char * res = r_core_cmd_strf (core, "pD %d @ 0x%08"PFMT64x, size, addr);
@@ -2216,6 +2223,9 @@ static char *get_body(RCore *core, ut64 addr, int size, int opts) {
 		// res = r_str_replace (res, "\n", "(\n)", true);
 		r_str_trim (res);
 		res = r_str_trim_lines (res);
+		if (mw > 0) {
+			res = r_str_ansi_crop (res, 0, 0, mw, -1);
+		}
 		r_core_visual_toggle_decompiler_disasm (core, true, false);
 		r_config_hold_restore (hc);
 		r_config_hold_free (hc);
@@ -2253,6 +2263,9 @@ static char *get_body(RCore *core, ut64 addr, int size, int opts) {
 		body = r_core_cmd_strf (core, "%s 0x%08"PFMT64x, "aeab", addr);
 	} else {
 		body = r_core_cmd_strf (core, "%s %d @ 0x%08"PFMT64x, cmd, size, addr);
+	}
+	if (mw > 0) {
+		body = r_str_ansi_crop (body, 0, 0, mw, -1);
 	}
 	r_config_set_i (core->config, "scr.html", html);
 	// r_cons_canvas_bgfill (g->can, n->x, n->y, n->w, n->h, get_node_bgcolor (color, cur));
@@ -3497,6 +3510,7 @@ static bool check_changes(RAGraph *g, bool is_interactive, RCore *core, RAnalFun
 			fold_asm_trace (core, g);
 		}
 	}
+	g->bb_maxwidth = core? r_config_get_i (core->config, "graph.bb.maxwidth"): 0;
 	if (g->need_update_dim || g->need_reload_nodes || !is_interactive) {
 		update_node_dimension (g->graph, is_mini (g), g->zoom, g->edgemode, g->is_callgraph, g->layout);
 	}
@@ -4884,6 +4898,39 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 			g->need_reload_nodes = true;
 #endif
 			break;
+		case '[':
+			if (core->print->cur_enabled) {
+				int scrcols = r_config_get_i (core->config, "hex.cols");
+				if (scrcols > 1) {
+					r_config_set_i (core->config, "hex.cols", scrcols - 1);
+				}
+			} else {
+				int n = r_config_get_i (core->config, "graph.bb.maxwidth");
+				n -= 5;
+				if (n < 20) {
+					n = 0;
+				}
+				r_config_set_i (core->config, "graph.bb.maxwidth", n);
+				g->need_reload_nodes = true;
+				g->bb_maxwidth = n;
+			}
+			break;
+		case ']':
+			if (core->print->cur_enabled) {
+				int scrcols = r_config_get_i (core->config, "hex.cols");
+				r_config_set_i (core->config, "hex.cols", scrcols + 1);
+			} else {
+				int n = r_config_get_i (core->config, "graph.bb.maxwidth");
+				if (n < 1) {
+					n = 20;
+				} else {
+					n += 5;
+				}
+				r_config_set_i (core->config, "graph.bb.maxwidth", n);
+				g->need_reload_nodes = true;
+				g->bb_maxwidth = n;
+			}
+			break;
 		case ';':
 			fcn = r_anal_get_fcn_in (core->anal, core->offset, 0);
 			if (fcn) {
@@ -4983,20 +5030,6 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 			break;
 		case 'v':
 			r_core_visual_anal (core, NULL);
-			break;
-		case ']':
-			{
-				int scrcols = r_config_get_i (core->config, "hex.cols");
-				r_config_set_i (core->config, "hex.cols", scrcols + 1);
-			}
-			break;
-		case '[':
-			{
-				int scrcols = r_config_get_i (core->config, "hex.cols");
-				if (scrcols > 1) {
-					r_config_set_i (core->config, "hex.cols", scrcols - 1);
-				}
-			}
 			break;
 		case 'J':
 			// copypaste from 'j'
