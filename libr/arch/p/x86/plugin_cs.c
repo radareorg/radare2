@@ -4003,13 +4003,13 @@ The FS segment points to the Thread information block.
 
 In x64 mode the FS and GS segment registers have been swapped around.
 
-In x86 mode FS:[0] points to the start of the TIB, in X64 it's GS:[0].
+In x86 mode FS:[0] points to the start of the TIB, in X64 its GS:[0].
 The reason Win64 uses GS is that there the FS register is used in the 32 bit compatibility layer (confusingly called Wow64).
 Because 32-bit apps use FS the bookkeeping for Win64 is simplified.
 32 bit applications never cause GS to be altered and 64 bit applications never cause FS to be altered.
 
 Note that the fact that GS is non-zero in Win64 and Wow64 can be used to detect if a 32-bit application is running in 64-bit Windows.
-In a 'true' 32 bit Windows GS is always zero.
+In a true 32 bit Windows GS is always zero.
 #endif
 
 static char *get_reg_profile(RArchSession *as) {
