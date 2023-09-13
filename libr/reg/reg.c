@@ -144,12 +144,12 @@ R_API int r_reg_get_name_idx(const char *type) {
 	}
 	if (!type[2])
 	switch (type0 | (type[1] << 8)) {
-	/* flags */
+	// flags
 	case 'Z' + ('F' << 8): return R_REG_NAME_ZF;
 	case 'S' + ('F' << 8): return R_REG_NAME_SF;
 	case 'C' + ('F' << 8): return R_REG_NAME_CF;
 	case 'O' + ('F' << 8): return R_REG_NAME_OF;
-	/* gpr */
+	// gpr
 	case 'P' + ('C' << 8): return R_REG_NAME_PC;
 	case 'S' + ('R' << 8): return R_REG_NAME_SR;
 	case 'L' + ('R' << 8): return R_REG_NAME_LR;
@@ -158,7 +158,7 @@ R_API int r_reg_get_name_idx(const char *type) {
 	case 'R' + ('A' << 8): return R_REG_NAME_RA;
 	case 'B' + ('P' << 8): return R_REG_NAME_BP;
 	case 'S' + ('N' << 8): return R_REG_NAME_SN;
-	/* args */
+	// args
 	case 'A' + ('0' << 8): return R_REG_NAME_A0;
 	case 'A' + ('1' << 8): return R_REG_NAME_A1;
 	case 'A' + ('2' << 8): return R_REG_NAME_A2;
@@ -169,7 +169,7 @@ R_API int r_reg_get_name_idx(const char *type) {
 	case 'A' + ('7' << 8): return R_REG_NAME_A7;
 	case 'A' + ('8' << 8): return R_REG_NAME_A8;
 	case 'A' + ('9' << 8): return R_REG_NAME_A9;
-	/* return values */
+	// return values
 	case 'R' + ('0' << 8): return R_REG_NAME_R0;
 	case 'R' + ('1' << 8): return R_REG_NAME_R1;
 	case 'R' + ('2' << 8): return R_REG_NAME_R2;
@@ -178,6 +178,8 @@ R_API int r_reg_get_name_idx(const char *type) {
 	case 'F' + ('1' << 8): return R_REG_NAME_F1;
 	case 'F' + ('2' << 8): return R_REG_NAME_F2;
 	case 'F' + ('3' << 8): return R_REG_NAME_F3;
+	// thread register
+	case 'T' + ('R' << 8): return R_REG_NAME_TR;
 	}
 	return -1;
 }

@@ -422,6 +422,7 @@ static char *regs(RArchSession *as) {
 		"=BP	s0\n" // ABI: frame pointer
 		"=A0	a0\n"
 		"=A1	a1\n"
+		"=TR	tp\n" // ABI: thread pointer
 
 		"gpr	pc	.32	0	0\n"
 		// RV32I regs (ABI names)
@@ -430,7 +431,7 @@ static char *regs(RArchSession *as) {
 		"gpr	ra	.32	4	0\n" // =x1
 		"gpr	sp	.32	8	0\n" // =x2
 		"gpr	gp	.32	12	0\n" // =x3
-		"gpr	tp	.32	16	0\n" // =x4
+		"gpr	tp	.32	16	0\n" // =x4 // thread pointer
 		"gpr	t0	.32	20	0\n" // =x5
 		"gpr	t1	.32	24	0\n" // =x6
 		"gpr	t2	.32	28	0\n" // =x7
