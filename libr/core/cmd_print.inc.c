@@ -506,6 +506,7 @@ static RCoreHelpMessage help_msg_ps = {
 	"psp", "[?][j]", "print pascal string",
 	"psq", "", "alias for pqs",
 	"pss", "", "print string in screen (wrap width)",
+	"pso", "[j]", "print string constructed with immediates (Swift)",
 	"psu", "[zj]", "print utf16 unicode (json)",
 	"psw", "[j]", "print 16bit wide string",
 	"psW", "[j]", "print 32bit wide string",
@@ -6742,6 +6743,28 @@ static int cmd_print(void *data, const char *input) {
 		switch (input[1]) {
 		case '?': // "ps?"
 			r_core_cmd_help (core, help_msg_ps);
+			break;
+		case 'o':
+			{
+				char *s = print_analstr (core, core->offset, 128);
+				if (s) {
+					if (input[2] == 'j') {
+						PJ *pj = pj_new ();
+						pj_o (pj);
+						pj_kn (pj, "addr", core->offset);
+						pj_ks (pj, "text", s);
+						pj_end (pj);
+						free (s);
+						s = pj_drain (pj);
+					}
+					r_cons_printf ("%s\n", s);
+					free (s);
+					r_core_return_code (core, 0);
+				} else {
+					// do nothing, just return error code
+					r_core_return_code (core, 1);
+				}
+			}
 			break;
 		case 'i': // "psi"
 			if (l > 0) {
