@@ -52,7 +52,10 @@ static bool update(RCryptoJob *cj, const ut8 *buf, int len) {
 }
 
 RCryptoPlugin r_crypto_plugin_xor = {
-	.name = "xor",
+	.meta = {
+		.name = "xor",
+		.license = "MIT",
+	},
 	.implements = "xor",
 	.set_key = xor_set_key,
 	.get_key_size = xor_get_key_size,

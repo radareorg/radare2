@@ -38,9 +38,11 @@ static bool update(RCryptoJob *cj, const ut8 *buf, int len) {
 }
 
 RCryptoPlugin r_crypto_plugin_base91 = {
-	.name = "base91",
+	.meta = {
+		.name = "base91",
+		.author = "pancake",
+	},
 	.implements = "base91",
-	.author = "pancake",
 	.type = R_CRYPTO_TYPE_ENCODER,
 	.set_key = base91_set_key,
 	.get_key_size = base91_get_key_size,

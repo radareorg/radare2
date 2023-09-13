@@ -760,9 +760,11 @@ static bool update(RCryptoJob *cj, const ut8 *buf, int len) {
 }
 
 RCryptoPlugin r_crypto_plugin_cps2 = {
-	.name = "cps2",
-	.author = "pof,esanfelix",
-	.license = "LGPL",
+	.meta = {
+		.name = "cps2",
+		.author = "pof,esanfelix",
+		.license = "LGPL",
+	},
 	.set_key = set_key,
 	.get_key_size = get_key_size,
 	.check = cps2_check,

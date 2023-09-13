@@ -107,7 +107,9 @@ static bool fini(RCryptoJob *cj) {
 }
 
 RCryptoPlugin r_crypto_plugin_rc4 = {
-	.name = "rc4",
+	.meta = {
+		.name = "rc4",
+	},
 	.implements = "rc4",
 	.set_key = rc4_set_key,
 	.get_key_size = rc4_get_key_size,

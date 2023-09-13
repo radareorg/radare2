@@ -340,8 +340,10 @@ static bool end(RCryptoJob *cj, const ut8 *buf, int len) {
 }
 
 RCryptoPlugin r_crypto_plugin_blowfish = {
-	.name = "blowfish",
-	.license = "LGPL3",
+	.meta = {
+		.name = "blowfish",
+		.license = "LGPL3",
+	},
 	.implements = "blowfish",
 	.set_key = blowfish_set_key,
 	.get_key_size = blowfish_get_key_size,

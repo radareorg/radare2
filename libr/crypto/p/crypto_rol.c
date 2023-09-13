@@ -68,10 +68,12 @@ static bool update(RCryptoJob *cj, const ut8 *buf, int len) {
 }
 
 RCryptoPlugin r_crypto_plugin_rol = {
-	.name = NAME,
+	.meta = {
+		.name = NAME,
+		.author = "pancake",
+		.license = "LGPL",
+	},
 	.implements = NAME,
-	.author = "pancake",
-	.license = "LGPL",
 	.set_key = rol_set_key,
 	.get_key_size = rol_get_key_size,
 	.update = update,

@@ -194,15 +194,15 @@ R_API void r_crypto_list(RCrypto *cry, PrintfCallback cb_printf, int mode) {
 	r_list_foreach (cry->plugins, iter, cp) {
 		switch (mode) {
 		case 'q':
-			cb_printf ("%s\n", cp->name);
+			cb_printf ("%s\n", cp->meta.name);
 			break;
 		default:
 			{
 				char mode = cp->type? cp->type: 'c';
-				const char *license = cp->license? cp->license: "LGPL";
-				const char *desc = r_str_get (cp->desc);
-				const char *author = r_str_get (cp->author);
-				cb_printf ("%c %12s %5s %s %s\n", mode, cp->name, license, desc, author);
+				const char *license = cp->meta.license? cp->meta.license: "LGPL";
+				const char *desc = r_str_get (cp->meta.desc);
+				const char *author = r_str_get (cp->meta.author);
+				cb_printf ("%c %12s %5s %s %s\n", mode, cp->meta.name, license, desc, author);
 			}
 			break;
 		}

@@ -166,9 +166,11 @@ static bool end(RCryptoJob *cj, const ut8 *buf, int len) {
 }
 
 RCryptoPlugin r_crypto_plugin_des = {
-	.name = "des-ecb",
-	.author = "deroad",
-	.license = "LGPL",
+	.meta = {
+		.name = "des-ecb",
+		.author = "deroad",
+		.license = "LGPL",
+	},
 	.set_key = des_set_key,
 	.get_key_size = des_get_key_size,
 	.check = des_check,
