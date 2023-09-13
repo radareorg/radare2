@@ -556,7 +556,6 @@ typedef struct r_bin_plugin_t {
 	// TODO: R2_600 RBuffer* (*create)(RBin *bin, RBinCreateOptions *opt);
 	char* (*demangle)(const char *str);
 	char* (*regstate)(RBinFile *bf);
-	int (*file_type)(RBinFile *bf);
 	/* default value if not specified by user */
 	int minstrlen;
 	char strfilter;

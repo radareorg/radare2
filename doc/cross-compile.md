@@ -4,7 +4,7 @@ https://github.com/dockcross/dockcross
 
 Here's and example on how changes required for i.e ARMv5 (no hard float) borrowed from `mk/armel.mk`:
 
-```
+```bash
 ARCH=arm
 CROSS_ROOT=/usr/bin
 CROSS_TRIPLET=${ARCH}-linux-gnueabi
@@ -34,5 +34,5 @@ $ dockcross make
 
 Here is some more context and references:
 
-https://github.com/radareorg/radare2/pull/5060
-https://blogs.nopcode.org/brainstorm/2016/07/26/cross-compiling-with-docker
+* https://github.com/radareorg/radare2/pull/5060
+* https://blogs.nopcode.org/brainstorm/2016/07/26/cross-compiling-with-docker
