@@ -272,32 +272,32 @@ ARGS=-a arm
 CMDS=ic
 EXPECT=<<EOF
 0x100009298 [0x100001e90 - 0x100001e90]      0 objc class 0 ViewController :: UIViewController
-0x100001e90 objc method 0      viewDidLoad
+0x100001e90 objc   method   0      viewDidLoad
 0x1000092c0 [0x100001ee4 - 0x1000020a4]    448 objc class 0 AppDelegate :: UIResponder
-0x100001ee4 objc method 0      application:didFinishLaunchingWithOptions:
-0x100001f74 objc method 1      application:configurationForConnectingSceneSession:options:
-0x1000020a4 objc method 2      application:didDiscardSceneSessions:
-0x00000000 objc field 0      AppDelegate::(property)window
-0x00000000 objc field 1      AppDelegate::(property)hash
-0x00000000 objc field 2      AppDelegate::(property)superclass
-0x00000000 objc field 3      AppDelegate::(property)description
-0x00000000 objc field 4      AppDelegate::(property)debugDescription
+0x100001ee4 objc   method   0      application:didFinishLaunchingWithOptions:
+0x100001f74 objc   method   1      application:configurationForConnectingSceneSession:options:
+0x1000020a4 objc   method   2      application:didDiscardSceneSessions:
+0x00000000 objc property   0      window
+0x00000000 objc property   1      hash
+0x00000000 objc property   2      superclass
+0x00000000 objc property   3      description
+0x00000000 objc property   4      debugDescription
 0x100009310 [0x1000021d0 - 0x100002494]    708 objc class 0 SceneDelegate :: UIResponder
-0x1000021d0 objc method 0      scene:willConnectToSession:options:
-0x100002280 objc method 1      sceneDidDisconnect:
-0x1000022d4 objc method 2      sceneDidBecomeActive:
-0x100002328 objc method 3      sceneWillResignActive:
-0x10000237c objc method 4      sceneWillEnterForeground:
-0x1000023d0 objc method 5      sceneDidEnterBackground:
-0x100002424 objc method 6      window
-0x100002450 objc method 7      setWindow:
-0x100002494 objc method 8      .cxx_destruct
-0x00000000 objc field 0      isa
-0x100009268 objc field 1      SceneDelegate::(ivar)_window
-0x00000000 objc field 2      SceneDelegate::(property)window
-0x00000000 objc field 3      SceneDelegate::(property)hash
-0x00000000 objc field 4      SceneDelegate::(property)superclass
-0x00000000 objc field 5      SceneDelegate::(property)description
-0x00000000 objc field 6      SceneDelegate::(property)debugDescription
+0x1000021d0 objc   method   0      scene:willConnectToSession:options:
+0x100002280 objc   method   1      sceneDidDisconnect:
+0x1000022d4 objc   method   2      sceneDidBecomeActive:
+0x100002328 objc   method   3      sceneWillResignActive:
+0x10000237c objc   method   4      sceneWillEnterForeground:
+0x1000023d0 objc   method   5      sceneDidEnterBackground:
+0x100002424 objc   method   6      window
+0x100002450 objc   method   7      setWindow:
+0x100002494 objc   method   8      .cxx_destruct
+0x00000000 objc      var   0      isa
+0x100009268 objc      var   1      _window
+0x00000000 objc property   2      window
+0x00000000 objc property   3      hash
+0x00000000 objc property   4      superclass
+0x00000000 objc property   5      description
+0x00000000 objc property   6      debugDescription
 EOF
 RUN

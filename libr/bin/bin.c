@@ -9,6 +9,7 @@
 R_LIB_VERSION (r_bin);
 
 #define DB a->sdb;
+// R2_590 -> rename to R_LIST_FREE()
 #define RBINLISTFREE(x)\
 	if (x) { \
 		r_list_free (x);\
@@ -1498,3 +1499,15 @@ R_API RBinTrycatch *r_bin_trycatch_new(ut64 source, ut64 from, ut64 to, ut64 han
 R_API void r_bin_trycatch_free(RBinTrycatch *tc) {
 	free (tc);
 }
+
+R_API const char *r_bin_field_kindstr(RBinField *f) {
+	switch (f->kind) {
+	case R_BIN_FIELD_KIND_PROPERTY:
+		return "property";
+	case R_BIN_FIELD_KIND_FIELD:
+		return "field";
+	default:
+		return "var"; // maybe ivar for objc?
+	}
+}
+

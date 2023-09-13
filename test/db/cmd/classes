@@ -28,30 +28,26 @@ icj~{}
 EOF
 EXPECT=<<EOF
 0x00003e44 [0x00003e44 - 0x00003e44]      0 swift class 0 Employee
-0x100003f60 swift field 0      name
+0x100003f60 swift property   0      name
 0x00003eac [0x00003eac - 0x00003eac]      0 swift class 0 Employer
 0x100008148 [0x100008148 - 0x100008148]      0 objc class 0 main.Employee :: Swift._SwiftObject
-0x00000000 objc field 0      isa
-0x100003e30 objc field 1      main.Employee::(ivar)name
+0x00000000 objc      var   0      isa
+0x100003e30 objc      var   1      name
 0x100008200 [0x100008200 - 0x100008200]      0 objc class 0 main.Employer :: main.Employee
 ---
-@interface Employee
-{
+class Employee  {
+  property name;
 }
-@end
-@interface Employer
-{
+class Employer  {
 }
-@end
-@interface main.Employee : Swift._SwiftObject
-{
-   main.Employee::(ivar)name
+@objc
+class main.Employee : Swift._SwiftObject {
+  var isa : struct objc_class *;
+  var name;
 }
-@end
-@interface main.Employer : main.Employee
-{
+@objc
+class main.Employer : main.Employee {
 }
-@end
 ---
 [
   {
@@ -62,6 +58,7 @@ EXPECT=<<EOF
     "fields": [
       {
         "name": "name",
+        "kind": "property",
         "addr": 4294983520
       }
     ]
@@ -84,12 +81,13 @@ EXPECT=<<EOF
     "fields": [
       {
         "name": "isa",
+        "kind": "var",
         "type": "struct objc_class *",
         "addr": 0
       },
       {
-        "name": "main.Employee::(ivar)name",
-        "type": "",
+        "name": "name",
+        "kind": "var",
         "addr": 4294983216
       }
     ]
