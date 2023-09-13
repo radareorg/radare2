@@ -418,6 +418,7 @@ R_API void r_esil_trace_loopcount_increment(REsilTrace *etrace, ut64 addr);
 extern REsilPlugin r_esil_plugin_null;
 extern REsilPlugin r_esil_plugin_dummy;
 extern REsilPlugin r_esil_plugin_forth;
+extern REsilPlugin r_esil_plugin_banksy;
 
 #ifdef __cplusplus
 }
