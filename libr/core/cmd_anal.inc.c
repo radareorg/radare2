@@ -8042,6 +8042,9 @@ static void cmd_anal_esil(RCore *core, const char *input, bool verbose) {
 		} break;
 	case 't': // "aet"
 		switch (input[1]) {
+		case '?':
+			r_core_cmd_help_match (core, help_msg_ae, "aet", false);
+			break;
 		case 's': // "aets"
 			switch (input[2]) {
 			case '+': // "aets+"
