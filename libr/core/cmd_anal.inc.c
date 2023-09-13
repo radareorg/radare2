@@ -2703,7 +2703,7 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 				printline ("refptr", "%d\n", op.refptr);
 			}
 			if (op.tlocal) {
-				printline ("tlocal", "%s\n", r_str_pool (op.tlocal));
+				printline ("tlocal", "%s\n", r_str_bool (op.tlocal));
 			}
 			printline ("size", "%d\n", size);
 			printline ("sign", "%s\n", r_str_bool (op.sign));
