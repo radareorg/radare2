@@ -82,6 +82,40 @@ R_API ut32 r_io_bank_first(RIO *io) {
 	return bankid;
 }
 
+typedef struct {
+	bool found;
+	RIO *io;
+	const char *name;
+	RIOBank *bank;
+	ut32 bank_id;
+} BankByName;
+
+static bool bank_byname(void *user, void *data, ut32 id) {
+	BankByName *bbn = (BankByName *)data;
+	RIOBank *b = r_io_bank_get (bbn->io, id);
+	if (b && !strcmp (b->name, bbn->name)) {
+		bbn->bank = b;
+		bbn->bank_id = id;
+		bbn->found = true;
+		return false;
+	}
+	return true;
+}
+
+R_API RIOBank *r_io_bank_use_byname(RIO *io, const char *name) {
+	BankByName bbn = {
+		.io = io,
+		.name = name,
+		.found = false,
+	};
+	r_id_storage_foreach (io->banks, bank_byname, &bbn);
+	if (bbn.found) {
+		r_io_bank_use (io, bbn.bank_id);
+		return bbn.bank;
+	}
+	return NULL;
+}
+
 R_API bool r_io_bank_use(RIO *io, ut32 bankid) {
 	r_return_val_if_fail (io, false);
 	RIOBank *bank = r_io_bank_get (io, bankid);
