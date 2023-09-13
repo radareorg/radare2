@@ -1436,8 +1436,7 @@ static int cmd_info(void *data, const char *input) {
 								}
 								continue;
 							}
-							if ((idx >= 0 && idx != count++) ||
-									(cls_name && *cls_name && strcmp (cls_name, cls->name) != 0)) {
+							if ((idx >= 0 && idx != count++) || (R_STR_ISNOTEMPTY (cls_name) && strcmp (cls_name, cls->name))) {
 								continue;
 							}
 							switch (mode) {
