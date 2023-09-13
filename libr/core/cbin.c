@@ -3755,47 +3755,54 @@ static bool bin_classes(RCore *r, PJ *pj, int mode) {
 				}
 				pj_end (pj);
 			}
-			pj_ka (pj, "methods");
-			r_list_foreach (c->methods, iter2, sym) {
-				pj_o (pj);
-				pj_ks (pj, "name", sym->name);
-				RFlagItem *fi = r_flag_get_at (r->flags, sym->vaddr, false);
-				if (fi) {
-					pj_ks (pj, "flag", fi->realname? fi->realname: fi->name);
-				}
-				if (bin_filter) {
-					// XXX SUPER SLOW and probably unnecessary
-					char *s = r_core_cmd_strf (r, "isqq.@0x%08"PFMT64x"@e:bin.demangle=false", sym->vaddr);
-					r_str_trim (s);
-					if (R_STR_ISNOTEMPTY (s)) {
-						pj_ks (pj, "realname", s);
+			if (!r_list_empty (c->methods)) {
+				pj_ka (pj, "methods");
+				r_list_foreach (c->methods, iter2, sym) {
+					pj_o (pj);
+					pj_ks (pj, "name", sym->name);
+					RFlagItem *fi = r_flag_get_at (r->flags, sym->vaddr, false);
+					if (fi) {
+						pj_ks (pj, "flag", fi->realname? fi->realname: fi->name);
 					}
-					free (s);
+					if (bin_filter) {
+						// XXX SUPER SLOW and probably unnecessary
+						char *s = r_core_cmd_strf (r, "isqq.@0x%08"PFMT64x"@e:bin.demangle=false", sym->vaddr);
+						r_str_trim (s);
+						if (R_STR_ISNOTEMPTY (s)) {
+							pj_ks (pj, "realname", s);
+						}
+						free (s);
+					}
+					if (sym->method_flags) {
+						char *mflags = r_core_bin_method_flags_str (sym->method_flags, mode);
+						pj_k (pj, "flags");
+						pj_j (pj, mflags);
+						free (mflags);
+					}
+					pj_kN (pj, "addr", sym->vaddr);
+					pj_end (pj);
 				}
-				if (sym->method_flags) {
-					char *mflags = r_core_bin_method_flags_str (sym->method_flags, mode);
-					pj_k (pj, "flags");
-					pj_j (pj, mflags);
-					free (mflags);
-				}
-				pj_kN (pj, "addr", sym->vaddr);
 				pj_end (pj);
 			}
-			pj_end (pj);
-			pj_ka (pj, "fields");
-			r_list_foreach (c->fields, iter3, f) {
-				pj_o (pj);
-				pj_ks (pj, "name", f->name);
-				if (f->flags) {
-					char *mflags = r_core_bin_method_flags_str (f->flags, mode);
-					pj_k (pj, "flags");
-					pj_j (pj, mflags);
-					free (mflags);
+			if (!r_list_empty (c->fields)) {
+				pj_ka (pj, "fields");
+				r_list_foreach (c->fields, iter3, f) {
+					pj_o (pj);
+					pj_ks (pj, "name", f->name);
+					if (f->type) {
+						pj_ks (pj, "type", f->type);
+					}
+					if (f->flags) {
+						char *mflags = r_core_bin_method_flags_str (f->flags, mode);
+						pj_k (pj, "flags");
+						pj_j (pj, mflags);
+						free (mflags);
+					}
+					pj_kN (pj, "addr", f->vaddr);
+					pj_end (pj);
 				}
-				pj_kN (pj, "addr", f->vaddr);
 				pj_end (pj);
 			}
-			pj_end (pj);
 			pj_end (pj);
 		} else {
 			int m = 0;

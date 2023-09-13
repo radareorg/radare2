@@ -59,9 +59,6 @@ EXPECT=<<EOF
     "addr": 15940,
     "lang": "swift",
     "index": 0,
-    "methods": [
-      
-    ],
     "fields": [
       {
         "name": "name",
@@ -73,13 +70,7 @@ EXPECT=<<EOF
     "classname": "Employer",
     "addr": 16044,
     "lang": "swift",
-    "index": 0,
-    "methods": [
-      
-    ],
-    "fields": [
-      
-    ]
+    "index": 0
   },
   {
     "classname": "main.Employee",
@@ -90,16 +81,15 @@ EXPECT=<<EOF
     "super": [
       "Swift._SwiftObject"
     ],
-    "methods": [
-      
-    ],
     "fields": [
       {
         "name": "isa",
+        "type": "struct objc_class *",
         "addr": 0
       },
       {
         "name": "main.Employee::(ivar)name",
+        "type": "",
         "addr": 4294983216
       }
     ]
@@ -112,12 +102,6 @@ EXPECT=<<EOF
     "visibility": "",
     "super": [
       "main.Employee"
-    ],
-    "methods": [
-      
-    ],
-    "fields": [
-      
     ]
   }
 ]
