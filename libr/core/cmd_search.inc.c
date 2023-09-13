@@ -2464,6 +2464,121 @@ static void do_unkjmp_search(RCore *core, struct search_parameters *param, bool 
 	}
 }
 
+// TODO: reuse with `do_analstr_search`
+static char *print_analstr(RCore *core, ut64 addr, int maxlen) {
+	const bool badpages = r_config_get_b (core->config, "search.badpages");
+	ut8 buf[128];
+	ut64 at;
+	RAnalOp aop;
+	int hasch = 0;
+	int i, ret;
+	r_cons_break_push (NULL, NULL);
+	RStrBuf *sb = r_strbuf_new ("");
+	ut64 lastch = UT64_MAX;
+	int minstr = r_config_get_i (core->config, "bin.str.min");
+	if (minstr < 1) {
+		minstr = 1;
+	}
+
+	ut64 from = addr;
+	ut64 to = addr + sizeof (buf);
+#if 0
+	if (!(map->perm & R_PERM_X)) {
+		continue;
+	}
+#endif
+	if (!r_io_read_at (core->io, addr, buf, sizeof (buf))) {
+		return NULL;
+	}
+	for (i = 0, at = from; at < to; i++, at++) {
+		if (r_cons_is_breaked ()) {
+			break;
+		}
+		at = from + i;
+		ut8 bufop[32] = {0};
+		memcpy (bufop, buf + i, R_MIN (sizeof (bufop), sizeof (buf) - i));
+		if (badpages && invalid_page (core, bufop, sizeof (bufop))) {
+			R_LOG_DEBUG ("Invalid read at 0x%08"PFMT64x, at);
+			break;
+		}
+
+		ret = r_anal_op (core->anal, &aop, at, bufop, sizeof (bufop), R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_DISASM);
+		if (ret) {
+			if (hasch > 0) {
+				hasch--;
+			}
+			if (aop.type & R_ANAL_OP_TYPE_MOV) {
+				if (aop.val > 0 && aop.val < UT32_MAX) {
+					if (aop.val < 255) {
+						if (IS_PRINTABLE (aop.val)) {
+							char chstr[2] = {aop.val, 0};
+							r_strbuf_append (sb, chstr);
+							hasch = 1;
+							// eprintf ("MOVE %llx = %d '%c'\n", at, (int)aop.val, (char)aop.val);
+						}
+					} else if (aop.val < UT16_MAX) {
+						char ch0 = aop.val & 0xff;
+						char ch1 = (aop.val >> 8) & 0xff;
+						if ((ut8)ch1 == 0xef) {
+							ch1 = 0;
+						}
+						if (IS_PRINTABLE (ch0) && (!ch1 || IS_PRINTABLE (ch1))) {
+							char chstr[2] = {ch0, 0};
+							r_strbuf_append (sb, chstr);
+							chstr[0] = ch1;
+							r_strbuf_append (sb, chstr);
+							hasch = 1;
+							// eprintf ("MOVE %llx = %d '%c%c'\n", at, (int)aop.val, ch0, ch1);
+						}
+					} else if (aop.val < UT32_MAX) {
+						char ch0 = aop.val & 0xff;
+						char ch1 = (aop.val >> 8) & 0xff;
+						char ch2 = (aop.val >> 16) & 0xff;
+						char ch3 = (aop.val >> 24) & 0xff;
+						if (IS_PRINTABLE (ch0) && IS_PRINTABLE (ch1) && IS_PRINTABLE (ch2)) {
+							char chstr[2] = {ch0, 0};
+							r_strbuf_append (sb, chstr);
+							chstr[0] = ch1;
+							r_strbuf_append (sb, chstr);
+							chstr[0] = ch2;
+							r_strbuf_append (sb, chstr);
+							chstr[0] = ch3;
+							r_strbuf_append (sb, chstr);
+							hasch = 2;
+							// eprintf ("MOVE %llx = %d '%c%c'\n", at, (int)aop.val, ch0, ch1);
+						}
+					}
+				}
+			}
+			if (hasch) {
+				lastch = at;
+			} else if (lastch != UT64_MAX) {
+				if (r_strbuf_length (sb) > minstr) { // maybe 2
+					const char *s = r_strbuf_get (sb);
+					if (!check_false_positive (s)) {
+						s = "";
+					}
+					if (R_STR_ISNOTEMPTY (s)) {
+						char *ss = r_str_trim_dup (s);
+						return ss;
+					}
+				}
+				r_strbuf_set (sb, "");
+				lastch = UT64_MAX;
+			}
+			int inc = (core->search->align > 0)? core->search->align - 1: ret - 1;
+			if (inc > 0) {
+				i += inc;
+				at += inc;
+			}
+		}
+		r_anal_op_fini (&aop);
+	}
+	r_strbuf_free (sb);
+	return NULL;
+	
+}
+
 static bool do_analstr_search(RCore *core, struct search_parameters *param, bool quiet, const char *input) {
 	const bool badpages = r_config_get_b (core->config, "search.badpages");
 	bool silent = false;
@@ -2471,7 +2586,6 @@ static bool do_analstr_search(RCore *core, struct search_parameters *param, bool
 		input = "5";
 		silent = true;
 	}
-	// const char *where = r_config_get (core->config, "anal.in");
 	const char *where = "bin.sections.x";
 
 	r_list_free (param->boundaries);
