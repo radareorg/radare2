@@ -285,9 +285,9 @@ R_API int r_bin_object_set_items(RBinFile *bf, RBinObject *bo) {
 	int minlen = (bf->rbin->minstrlen > 0) ? bf->rbin->minstrlen : p->minstrlen;
 	bf->bo = bo;
 
-	if (p->file_type) {
-		int type = p->file_type (bf);
-		if (type == R_BIN_TYPE_CORE) {
+	bo->info = p->info? p->info (bf): NULL;
+	if (bo->info->type) {
+		if (strstr (bo->info->type, "CORE")) {
 			if (p->regstate) {
 				bo->regstate = p->regstate (bf);
 			}
@@ -296,7 +296,6 @@ R_API int r_bin_object_set_items(RBinFile *bf, RBinObject *bo) {
 			}
 		}
 	}
-
 	// XXX: no way to get info from xtr pluginz?
 	// Note, object size can not be set from here due to potential
 	// inconsistencies
@@ -350,7 +349,6 @@ R_API int r_bin_object_set_items(RBinFile *bf, RBinObject *bo) {
 			}
 		}
 	}
-	bo->info = p->info? p->info (bf): NULL;
 	if (p->libs) {
 		bo->libs = p->libs (bf);
 	}

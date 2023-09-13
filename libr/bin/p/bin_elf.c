@@ -152,7 +152,6 @@ RBinPlugin r_bin_plugin_elf = {
 	.dbginfo = &r_bin_dbginfo_elf,
 	.create = &create,
 	.write = &r_bin_write_elf,
-	.file_type = &get_file_type,
 	.regstate = &regstate,
 	.maps = &maps,
 };

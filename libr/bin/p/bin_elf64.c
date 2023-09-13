@@ -155,7 +155,6 @@ RBinPlugin r_bin_plugin_elf64 = {
 	.create = &create,
 	.write = &r_bin_write_elf64,
 	.get_vaddr = &get_elf_vaddr64,
-	.file_type = &get_file_type,
 	.regstate = &regstate,
 	.maps = &maps,
 };

@@ -10,14 +10,6 @@
 
 static RBinInfo* info(RBinFile *bf);
 
-static int get_file_type(RBinFile *bf) {
-	ELFOBJ *eo = bf->bo->bin_obj;
-	char *type = Elf_(get_file_type (eo));
-	int res = type? (r_str_startswith (type, "CORE") ? R_BIN_TYPE_CORE : R_BIN_TYPE_DEFAULT) : -1;
-	free (type);
-	return res;
-}
-
 static RList *maps(RBinFile *bf) {
 	r_return_val_if_fail (bf && bf->bo, NULL);
 	return Elf_(get_maps)(bf->bo->bin_obj);
