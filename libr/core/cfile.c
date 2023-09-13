@@ -1,9 +1,8 @@
 /* radare - LGPL - Copyright 2009-2023 - pancake */
 
 #define R_LOG_ORIGIN "cfile"
+
 #include <r_core.h>
-#include <stdlib.h>
-#include <string.h>
 
 #define UPDATE_TIME(a) (r->times->file_open_time = r_time_now_mono () - (a))
 
@@ -101,10 +100,10 @@ R_API bool r_core_file_reopen(RCore *core, const char *args, int perm, int loadb
 			r_debug_continue (core->dbg);
 		} while (!r_debug_is_dead (core->dbg));
 		r_debug_detach (core->dbg, core->dbg->pid);
-		perm = 7;
+		perm = R_PERM_RWX;
 	} else {
 		if (!perm) {
-			perm = 4; //R_PERM_R;
+			perm = R_PERM_R; // 4
 		}
 	}
 	if (!ofilepath) {
@@ -259,7 +258,7 @@ R_API char *r_core_sysenv_begin(RCore *core, const char *cmd) {
 	r_sys_setenv ("R2PM_LEGACY", "0");
 	r_sys_setenv ("R2_OFFSET", r_strf ("%"PFMT64d, core->offset));
 	r_sys_setenv ("R2_XOFFSET", r_strf ("0x%08"PFMT64x, core->offset));
-	r_sys_setenv ("R2_ENDIAN", R_ARCH_CONFIG_IS_BIG_ENDIAN (core->rasm->config)? "big": "little");	//XXX
+	r_sys_setenv ("R2_ENDIAN", R_ARCH_CONFIG_IS_BIG_ENDIAN (core->rasm->config)? "big": "little");	// XXX
 	r_sys_setenv ("R2_BSIZE", r_strf ("%d", core->blocksize));
 #if 0
 	// dump current config file so other r2 tools can use the same options
@@ -752,7 +751,7 @@ R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 			RFlagItem *impsym = r_flag_get (r->flags, flagname);
 			free (flagname);
 			if (!impsym) {
-				//R_LOG_ERROR ("Cannot find '%s' import in the PLT", imp->name);
+				// R_LOG_ERROR ("Cannot find '%s' import in the PLT", imp->name);
 				continue;
 			}
 			ut64 imp_addr = impsym->offset;
@@ -767,9 +766,15 @@ R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 			}
 		}
 	}
-
-	//If type == R_BIN_TYPE_CORE, we need to create all the maps
-	if (plugin && binfile && plugin->file_type && plugin->file_type (binfile) == R_BIN_TYPE_CORE) {
+	bool is_core = false;
+	RBinInfo *info = plugin->info (binfile);
+	if (info && info->type) {
+		is_core = strstr (info->type, "CORE");
+	}
+	r_bin_info_free (inf);
+	// the bintypecore is a wrong callback that is used only by ELF and must be deprecated. info should be in RBinInfo instead
+	// if type == R_BIN_TYPE_CORE, we need to create all the maps
+	if (plugin && binfile && is_core) {
 		ut64 sp_addr = (ut64)-1;
 		RIOMap *stack_map = NULL;
 		// Setting the right arch and bits, so regstate will be shown correctly

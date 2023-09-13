@@ -183,11 +183,6 @@ typedef enum {
 	R_BIN_RELOC_64 = 64
 } RBinRelocType;
 
-typedef enum {
-	R_BIN_TYPE_DEFAULT = 0,
-	R_BIN_TYPE_CORE = 1
-} RBinType;
-
 typedef struct r_bin_addr_t {
 	ut64 vaddr;
 	ut64 paddr;

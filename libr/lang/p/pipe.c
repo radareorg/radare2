@@ -1,20 +1,17 @@
-/* radare2 - LGPL - Copyright 2015-2022 pancake */
+/* radare2 - LGPL - Copyright 2015-2023 pancake */
 
-#include "r_lib.h"
-#include "r_core.h"
-#include "r_lang.h"
+#include <r_core.h>
 #if R2__WINDOWS__
 #include <windows.h>
-#endif
 #ifdef _MSC_VER
 #include <process.h>
+#endif
 #endif
 
 #if R2__WINDOWS__
 static HANDLE myCreateChildProcess(const char *szCmdline) {
 	PROCESS_INFORMATION piProcInfo = {0};
 	STARTUPINFO siStartInfo = {0};
-	BOOL bSuccess = FALSE;
 	siStartInfo.cb = sizeof (STARTUPINFO);
 	siStartInfo.dwFlags |= STARTF_USESTDHANDLES;
 	siStartInfo.hStdInput = GetStdHandle (STD_INPUT_HANDLE);
@@ -22,7 +19,7 @@ static HANDLE myCreateChildProcess(const char *szCmdline) {
 	siStartInfo.hStdError = GetStdHandle (STD_ERROR_HANDLE);
 
 	LPTSTR cmdline_ = r_sys_conv_utf8_to_win (szCmdline);
-	bSuccess = CreateProcess (NULL, cmdline_, NULL, NULL,
+	BOOL bSuccess = CreateProcess (NULL, cmdline_, NULL, NULL,
 		TRUE, 0, NULL, NULL, &siStartInfo, &piProcInfo);
 	free (cmdline_);
 	return bSuccess ? piProcInfo.hProcess : NULL;
@@ -34,7 +31,6 @@ static HANDLE hproc = NULL;
 
 static void lang_pipe_run_win(RLangSession *s) {
 	CHAR buf[PIPE_BUF_SIZE];
-	BOOL bSuccess = TRUE;
 	int i, res = 0;
 	DWORD dwRead = 0, dwWritten = 0, dwEvent;
 	HANDLE hRead = CreateEvent (NULL, TRUE, FALSE, NULL);
@@ -68,11 +64,11 @@ static void lang_pipe_run_win(RLangSession *s) {
 			r_sys_perror ("lang_pipe_run_win/WaitForMultipleObjects read");
 			break;
 		}
-		bSuccess = GetOverlappedResult (hPipeInOut, &oRead, &dwRead, TRUE);
+		BOOL bSuccess = GetOverlappedResult (hPipeInOut, &oRead, &dwRead, TRUE);
 		if (!bSuccess) {
 			break;
 		}
-		if (bSuccess && dwRead > 0) {
+		if (dwRead > 0) {
 			buf[sizeof (buf) - 1] = 0;
 			OVERLAPPED oWrite = {0};
 			oWrite.hEvent = hWritten;
@@ -273,9 +269,10 @@ static bool lang_pipe_run(RLangSession *s, const char *code, int len) {
 				HANDLE hEvents[] = { hConnected, hproc };
 				DWORD dwEvent = WaitForMultipleObjects (R_ARRAY_SIZE (hEvents), hEvents,
 						FALSE, INFINITE);
-				if (dwEvent == WAIT_OBJECT_0 + 1) { // hproc
+				switch (dwEvent) {
+				case WAIT_OBJECT_0 + 1: // hproc
 					goto cleanup;
-				} else if (dwEvent == WAIT_FAILED) {
+				case WAIT_FAILED:
 					r_sys_perror ("lang_pipe_run/WaitForMultipleObjects connect");
 					goto cleanup;
 				}
