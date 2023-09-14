@@ -18,6 +18,7 @@ EXPECT=<<EOF
 Usage: omb[+-adgq] [fd]  Operate on memory banks
 | omb           list all memory banks
 | omb [id]      switch to use a different bank
+| omb=[name]    same as 'omb id' but using its name
 | omb+ [name]   create a new bank with given name
 | omba [id]     adds a map to the bank
 | ombd [id]     delete a map from the bank
