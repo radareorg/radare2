@@ -7,7 +7,6 @@
 #include <capstone/x86.h>
 
 #define r_anal_value_new() R_NEW0 (RAnalValue)
-#define ARCH_HAVE_ESILCB 0
 #define ARCH_HAVE_READ 1
 
 #if 0
@@ -4433,21 +4432,47 @@ static char *mnemonics(RArchSession *as, int id, bool json) {
 	CapstonePluginData *cpd = as->data;
 	return r_arch_cs_mnemonics (as, cpd->cs_handle, id, json);
 }
+#include <r_core.h>
 
-// esilcb
-#if ARCH_HAVE_ESILCB
-static int esil_x86_cs_init(REsil *esil) {
-	// not implemented
-	if (!esil) {
+static bool tls_begin(REsil *esil) {
+	// R_LOG_DEBUG ("tls:begin");
+	RCoreBind *coreb = &esil->anal->coreb;
+	coreb->cmdf (coreb->core, "omb fs");
+	return true;
+}
+
+static bool tls_end(REsil *esil) {
+	// R_LOG_DEBUG ("tls:end");
+	RCoreBind *coreb = &esil->anal->coreb;
+	coreb->cmdf (coreb->core, "omb default");
+	return true;
+}
+
+static bool esilcb(RArchSession *as, RArchEsilAction action) {
+	// R_LOG_DEBUG ("x86.cs.esil.action %d", action);
+	RBin *bin = as->arch->binb.bin;
+	if (!bin) {
 		return false;
 	}
+	RIO *io = bin->iob.io;
+	RCore *core = io->coreb.core;
+	RAnal *anal = core->anal;
+	REsil *esil = anal->esil;
+	// not implemented
+	if (!esil) {
+		R_LOG_ERROR ("Failed to find an esil instance");
+		return false;
+	}
+	r_esil_set_op (esil, "TLS_BEGIN", tls_begin,
+		0, 0, R_ESIL_OP_TYPE_CUSTOM);
+	r_esil_set_op (esil, "TLS_END", tls_end,
+		0, 0, R_ESIL_OP_TYPE_CUSTOM);
 	// XXX. this depends on kernel
 	// r_esil_set_interrupt (esil, 0x80, x86_int_0x80);
 	/* disable by default */
 //	r_esil_set_interrupt (esil, 0x80, NULL);	// this is stupid, don't do this
 	return true;
 }
-#endif
 
 const RArchPlugin r_arch_plugin_x86_cs = {
 	.meta = {
@@ -4463,12 +4488,7 @@ const RArchPlugin r_arch_plugin_x86_cs = {
 	.fini = fini,
 	.info = archinfo,
 	.regs = &get_reg_profile,
-	// .esilcb = esilcb,
-#if 0
-	.esil_init = esil_x86_cs_init,
-	.esil_fini = esil_x86_cs_fini,
-//	.esil_intr = esil_x86_cs_intr,
-#endif
+	.esilcb = esilcb,
 	.mnemonics = mnemonics,
 };
 

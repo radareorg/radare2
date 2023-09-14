@@ -1102,10 +1102,10 @@ static bool esil_cb(RArchSession *as, RArchEsilAction action) {
 	}
 
 	switch (action) {
-	case R_ARCH_ESIL_INIT:
+	case R_ARCH_ESIL_ACTION_INIT:
 		esil_i8051_init (as, esil);
 		break;
-	case R_ARCH_ESIL_FINI:
+	case R_ARCH_ESIL_ACTION_FINI:
 		esil_i8051_fini (as, esil);
 		break;
 	default:

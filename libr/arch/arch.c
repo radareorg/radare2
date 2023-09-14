@@ -296,6 +296,12 @@ R_API int r_arch_info(RArch *a, int query) {
 	return info? info (session, query): -1;
 }
 
+R_API bool r_arch_esilcb(RArch *a, RArchEsilAction action) {
+	RArchSession *session = a->session;
+	RArchPluginEsilCallback esilcb = R_UNWRAP3 (session, plugin, esilcb);
+	return esilcb? esilcb (session, action): false;
+}
+
 R_API bool r_arch_encode(RArch *a, RAnalOp *op, RArchEncodeMask mask) {
 	RArchSession *session = a->session;
 	RArchPluginEncodeCallback encode = R_UNWRAP3 (session, plugin, encode);
