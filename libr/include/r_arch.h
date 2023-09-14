@@ -139,11 +139,11 @@ typedef struct r_arch_session_t {
 } RArchSession;
 
 typedef enum {
-	R_ARCH_ESIL_INIT,
-	R_ARCH_ESIL_MAPS,
+	R_ARCH_ESIL_ACTION_INIT,
+	R_ARCH_ESIL_ACTION_MAPS,
 	// R_ARCH_ESIL_EVAL,
-	R_ARCH_ESIL_RESET,
-	R_ARCH_ESIL_FINI,
+	R_ARCH_ESIL_ACTION_RESET,
+	R_ARCH_ESIL_ACTION_FINI,
 } RArchEsilAction;
 
 typedef ut32 RArchDecodeMask;
@@ -198,6 +198,7 @@ R_API bool r_arch_unload_decoder(RArch *arch, const char *dname);
 R_API int r_arch_info(RArch *arch, int query);
 R_API bool r_arch_decode(RArch *a, RAnalOp *op, RArchDecodeMask mask);
 R_API bool r_arch_encode(RArch *a, RAnalOp *op, RArchEncodeMask mask);
+R_API bool r_arch_esilcb(RArch *a, RArchEsilAction action);
 //R_API bool r_arch_esil_init(RArch *arch, const char *dname, REsil *esil);
 //R_API void r_arch_esil_fini(RArch *arch, const char *dname, REsil *esil);
 

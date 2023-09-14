@@ -2371,9 +2371,9 @@ static bool esil_cb(RArchSession *as, RArchEsilAction action) {
 	}
 
 	switch (action) {
-	case R_ARCH_ESIL_INIT:
+	case R_ARCH_ESIL_ACTION_INIT:
 		return esil_avr_init (as, esil);
-	case R_ARCH_ESIL_FINI:
+	case R_ARCH_ESIL_ACTION_FINI:
 		return esil_avr_fini (as, esil);
 	default:
 		return false;

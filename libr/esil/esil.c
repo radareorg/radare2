@@ -181,7 +181,7 @@ R_API void r_esil_free(REsil *esil) {
 	if (as) {
 		RArchPluginEsilCallback esil_cb = R_UNWRAP3 (as, plugin, esilcb);
 		if (esil_cb) {
-			if (!esil_cb (as, R_ARCH_ESIL_FINI)) {
+			if (!esil_cb (as, R_ARCH_ESIL_ACTION_FINI)) {
 				R_LOG_DEBUG ("Failed to properly cleanup esil for arch plugin");
 			}
 		}
@@ -4016,7 +4016,7 @@ R_API bool r_esil_setup(REsil *esil, RAnal *anal, bool romem, bool stats, bool n
 		anal->arch->esil = esil;
 		RArchPluginEsilCallback esil_cb = R_UNWRAP3 (as, plugin, esilcb);
 		if (esil_cb) {
-			return esil_cb (as, R_ARCH_ESIL_INIT);
+			return esil_cb (as, R_ARCH_ESIL_ACTION_INIT);
 		}
 	}
 	return true;

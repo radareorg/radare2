@@ -1198,10 +1198,10 @@ static bool esilcb(RArchSession *as, RArchEsilAction action) {
 	}
 	const int syscall_number = 0;
 	switch (action) {
-	case R_ARCH_ESIL_INIT:
+	case R_ARCH_ESIL_ACTION_INIT:
 		r_esil_set_interrupt (esil, syscall_number, &bpf_int_exit, as);
 		break;
-	case R_ARCH_ESIL_FINI:
+	case R_ARCH_ESIL_ACTION_FINI:
 		r_esil_del_interrupt (esil, 0);
 		break;
 	default:
