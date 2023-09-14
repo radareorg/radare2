@@ -77,6 +77,7 @@ static RCoreHelpMessage help_msg_omb = {
 	"Usage: omb[+-adgq]", "[fd]", "Operate on memory banks",
 	"omb", "", "list all memory banks",
 	"omb", " [id]", "switch to use a different bank",
+	"omb=", "[name]", "same as 'omb id' but using its name",
 	"omb+", " [name]", "create a new bank with given name",
 	"omba", " [id]", "adds a map to the bank",
 	"ombd", " [id]", "delete a map from the bank",
@@ -133,7 +134,7 @@ static RCoreHelpMessage help_msg_om = {
 	"om,", " [query]", "list maps using table api",
 	"om=", "", "list all maps in ascii art",
 	"oma"," [fd]", "create a map covering all VA for given fd",
-	"omb", " ", "list/select memory map banks",
+	"omb", "[?]", "list/select memory map banks",
 	"omB", " mapid addr", "relocate map with corresponding id",
 	"omB.", " addr", "relocate current map",
 	"omd", " from to @ paddr", "simplified om; takes current seek, fd and perms",
@@ -763,6 +764,16 @@ static void cmd_omd(RCore *core, const char* input) {
 static void cmd_open_banks(RCore *core, int argc, char *argv[]) {
 	if (argc == 1) {
 		switch (argv[0][1]) {
+		case '=': // "omb=[name]"
+			{
+				RIOBank *bank = r_io_bank_get_byname (core->io, argv[0] + 2);
+				if (bank) {
+					r_io_bank_use (core->io, bank->id);
+				} else {
+					R_LOG_ERROR ("unknown bank name (%s)", argv[0] + 2);
+				}
+			}
+			break;
 		case 'g': // "ombg"
 			{
 				ut32 mapid;
@@ -860,7 +871,8 @@ static void cmd_open_banks(RCore *core, int argc, char *argv[]) {
 		break;
 	case 0: // "omb [id]"
 		{
-			if (!r_io_bank_use (core->io, r_num_get (NULL, argv[1]))) {
+			int id = r_num_get (NULL, argv[1]);
+			if (!r_io_bank_use (core->io, id)) {
 				R_LOG_ERROR ("Cannot find bank by id %s", argv[1]);
 			}
 		}
