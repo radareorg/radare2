@@ -106,7 +106,6 @@ static inline void fini_access(REsilTraceAccess *access) {
 	if (access->is_reg) {
 		return;
 	}
-
 	free (access->mem.data);
 }
 
