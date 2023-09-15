@@ -1590,7 +1590,12 @@ static char *resolveModuleOrdinal(Sdb *sdb, const char *module, int ordinal) {
 	r_strf_buffer(64);
 	Sdb *db = sdb;
 	char *foo = sdb_get (db, r_strf ("%d", ordinal), 0);
-	return (foo && *foo) ? foo : NULL;
+	if (foo) {
+		if (!*foo) {
+			R_FREE (foo);
+		}
+	}
+	return foo;
 }
 
 // name can be optionally used to explicitly set the used base name (for example for demangling), otherwise the import name will be used.
@@ -1618,7 +1623,6 @@ static char *construct_reloc_name(R_NONNULL RBinReloc *reloc, R_NULLABLE const c
 		// TODO(eddyb) implement constant relocs.
 		r_strbuf_set (buf, "");
 	}
-
 	return r_strbuf_drain (buf);
 }
 
@@ -4564,12 +4568,13 @@ R_API bool r_core_bin_set_arch_bits(RCore *r, const char *name, const char *_arc
 		}
 	}
 	/* Check if the arch name is a valid name */
+	// R2_590 . RArch.getPluginByArch();
 	bool found_anal_plugin = false;
 	if (arch) {
 		if (r->anal->arch && !found_anal_plugin) {
 			RArchPlugin *arch_plugin;
 			RListIter *iter;
-			r_list_foreach (r->anal->arch->plugins, iter, arch_plugin) {	//XXX: fix this properly after 5.8
+			r_list_foreach (r->anal->arch->plugins, iter, arch_plugin) { // XXX: fix this properly after 5.8
 				if (!arch_plugin->arch) {
 					continue;
 				}
