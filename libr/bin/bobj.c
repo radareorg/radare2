@@ -285,8 +285,9 @@ R_API int r_bin_object_set_items(RBinFile *bf, RBinObject *bo) {
 	int minlen = (bf->rbin->minstrlen > 0) ? bf->rbin->minstrlen : p->minstrlen;
 	bf->bo = bo;
 
+#if 0
 	bo->info = p->info? p->info (bf): NULL;
-	if (bo->info->type) {
+	if (bo->info && bo->info->type) {
 		if (strstr (bo->info->type, "CORE")) {
 			if (p->regstate) {
 				bo->regstate = p->regstate (bf);
@@ -296,6 +297,7 @@ R_API int r_bin_object_set_items(RBinFile *bf, RBinObject *bo) {
 			}
 		}
 	}
+#endif
 	// XXX: no way to get info from xtr pluginz?
 	// Note, object size can not be set from here due to potential
 	// inconsistencies
@@ -349,6 +351,9 @@ R_API int r_bin_object_set_items(RBinFile *bf, RBinObject *bo) {
 			}
 		}
 	}
+#if 1
+	bo->info = p->info? p->info (bf): NULL;
+#endif
 	if (p->libs) {
 		bo->libs = p->libs (bf);
 	}
@@ -364,12 +369,12 @@ R_API int r_bin_object_set_items(RBinFile *bf, RBinObject *bo) {
 	}
 	if (bin->filter_rules & (R_BIN_REQ_RELOCS | R_BIN_REQ_IMPORTS)) {
 		if (p->relocs) {
-			RList *l = p->relocs (bf);
+			const RList *l = p->relocs (bf); // XXX this is an internal list (should be a vector), and shouldnt be freed by the caller
 			if (l) {
 				REBASE_PADDR (bo, l, RBinReloc);
-				bo->relocs = list2rbtree (l);
-				l->free = NULL;
-				r_list_free (l);
+				bo->relocs = list2rbtree ((RList*)l);
+				// l->free = NULL;
+				// r_list_free (l);
 			}
 		}
 	}
@@ -434,9 +439,22 @@ R_API int r_bin_object_set_items(RBinFile *bf, RBinObject *bo) {
 	if (p->mem)  {
 		bo->mem = p->mem (bf);
 	}
+#if 0
 	r_bin_info_free (bo->info);
 	// call it twice, otherwise the info is not propagated
 	bo->info = p->info? p->info (bf): NULL;
+#endif
+	// bo->info = p->info? p->info (bf): NULL;
+	if (bo->info && bo->info->type) {
+		if (strstr (bo->info->type, "CORE")) {
+			if (p->regstate) {
+				bo->regstate = p->regstate (bf);
+			}
+			if (p->maps) {
+				bo->maps = p->maps (bf);
+			}
+		}
+	}
 	if (bo->info && bin->filter_rules & (R_BIN_REQ_INFO | R_BIN_REQ_SYMBOLS | R_BIN_REQ_IMPORTS)) {
 		bo->lang = isSwift? R_BIN_LANG_SWIFT: r_bin_load_languages (bf);
 	}
