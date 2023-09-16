@@ -90,7 +90,7 @@ Updating radare2
 ----------------
 
 The snap packages are updated automatically when the installed version is not in _devmode_.
-If you installed radare2 snap in the past when it was only avaiable as _devmode_ and you wish to update, you can switch to the new stable channel and get the updates by running this command:
+If you installed radare2 snap in the past when it was only available as _devmode_ and you wish to update, you can switch to the new stable channel and get the updates by running this command:
 
     $ sudo snap refresh radare2 --stable --classic
 
