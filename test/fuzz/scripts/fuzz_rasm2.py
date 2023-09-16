@@ -8,7 +8,7 @@
 # Takes a binary executable as argument and uses its contents to feed
 # the specified disassembler/assembler engines. Together with a reference
 # engine(s), the input and outputs are chained through and any
-# incompatabilities are turned into test cases which are written to stdout
+# incompatibilities are turned into test cases which are written to stdout
 # as streaming json.
 #
 # This program processes the disassembled instructions and groups them into
