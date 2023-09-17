@@ -29,13 +29,13 @@ R_API RArch *r_arch_new(void) {
 }
 
 static ut32 _rate_compat(RArchPlugin *p, RArchConfig *cfg, const char *name) {
-	ut32 bits = cfg->bits;
+	ut32 bits = cfg? cfg->bits: R_SYS_BITS;
 	ut32 score = 0;
 	if (name && !strcmp (p->meta.name, name)) {
 		score += 100;
 	}
 	//eprintf ("compare %s %s\n", p->arch, cfg->arch);
-	if (cfg->arch && !strcmp (p->arch, cfg->arch)) {
+	if (cfg && cfg->arch && !strcmp (p->arch, cfg->arch)) {
 		score += 50;
 	}
 	if (score > 0) {
@@ -45,7 +45,7 @@ static ut32 _rate_compat(RArchPlugin *p, RArchConfig *cfg, const char *name) {
 		if (R_SYS_BITS_CHECK (p->bits, bits)) {
 			score += (!!score) * 30;
 		}
-		if (p->endian & cfg->endian) {
+		if (cfg && p->endian & cfg->endian) {
 			score += (!!score) * 20;
 		}
 	}
