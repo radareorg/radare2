@@ -233,6 +233,23 @@ R_API bool r_arch_set_arch(RArch *arch, char *archname) {
 	return true;
 }
 
+R_API RArchPlugin *r_arch_find(RArch *arch, const char *name) {
+#if 0
+	RArchPlugin *arch_plugin;
+	RListIter *iter;
+	r_list_foreach (r->anal->arch->plugins, iter, arch_plugin) { // XXX: fix this properly after 5.8
+		if (!arch_plugin->arch) {
+			continue;
+		}
+		if (!strcmp (arch_plugin->arch, arch)) {
+			found_anal_plugin = true;
+			break;
+		}
+	}
+#endif
+	return find_bestmatch (arch, NULL, name, false);
+}
+
 R_API bool r_arch_plugin_add(RArch *a, RArchPlugin *ap) {
 	r_return_val_if_fail (a && ap, false);
 	if (!ap->meta.name || !ap->arch) {
@@ -248,7 +265,8 @@ R_API bool r_arch_plugin_remove(RArch *arch, RArchPlugin *ap) {
 
 R_API bool r_arch_del(RArch *arch, const char *name) {
 	r_return_val_if_fail (arch && arch->plugins && name, false);
-	RArchPlugin *ap = find_bestmatch (arch, NULL, name, false);
+	RArchPlugin *ap = r_arch_find (arch, name);
+	find_bestmatch (arch, NULL, name, false);
 #if 0
 	if (arch->current && !strcmp (arch->current->p->name, name)) {
 		arch->current = NULL;
