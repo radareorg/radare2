@@ -4568,24 +4568,7 @@ R_API bool r_core_bin_set_arch_bits(RCore *r, const char *name, const char *_arc
 		}
 	}
 	/* Check if the arch name is a valid name */
-	// R2_590 . RArch.getPluginByArch();
-	bool found_anal_plugin = false;
-	if (arch) {
-		if (r->anal->arch && !found_anal_plugin) {
-			RArchPlugin *arch_plugin;
-			RListIter *iter;
-			r_list_foreach (r->anal->arch->plugins, iter, arch_plugin) { // XXX: fix this properly after 5.8
-				if (!arch_plugin->arch) {
-					continue;
-				}
-				if (!strcmp (arch_plugin->arch, arch)) {
-					found_anal_plugin = true;
-					break;
-				}
-			}
-		}
-	}
-	if (!found_anal_plugin) {
+	if (!(arch && r_arch_find (r->anal->arch, arch))) {
 		free (arch);
 		return false;
 	}

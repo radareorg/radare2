@@ -210,6 +210,7 @@ R_API RList *r_arch_session_preludes(RArchSession *as);
 
 // arch.c
 R_API RArch *r_arch_new(void);
+R_API RArchPlugin *r_arch_find(RArch *arch, const char *name);
 R_API bool r_arch_use(RArch *arch, RArchConfig *config, const char *name);
 
 // arch plugins management apis
