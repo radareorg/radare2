@@ -3994,6 +3994,10 @@ static bool _load_relocations(struct MACH0_(obj_t) *mo) {
 		if (amount < 0) {
 			amount = 0;
 		}
+		const int bin_limit = mo->limit;
+		if (bin_limit > 0 && amount > bin_limit) {
+			amount = bin_limit;
+		}
 		for (j = 0; j < amount; j++) {
 			struct reloc_t *reloc = R_NEW0 (struct reloc_t);
 			if (!reloc) {
