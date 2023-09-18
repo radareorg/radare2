@@ -34,7 +34,7 @@ Mapping information in the map:
 
 Section Transformation
 ----------------------
-atm there are 3 diffent transformation-targets:
+atm there are 3 different transformation-targets:
 
 - Hexeditor
 - Analysis
