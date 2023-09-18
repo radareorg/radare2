@@ -32,11 +32,11 @@ enum {
 };
 
 static const char *origColors[] = {
-	"\x1b[31m",
-	"\x1b[32m",
-	"\x1b[33m",
-	"\x1b[34m",
-	"\x1b[0m",
+	Color_RED,    // false
+	Color_GREEN,  // true
+	Color_CYAN,   // key
+	Color_YELLOW, // value
+	Color_RESET,
 };
 // static const char colors
 

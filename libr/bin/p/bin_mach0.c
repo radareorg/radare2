@@ -473,7 +473,7 @@ static RList* patch_relocs(RBinFile *bf) {
 		RListIter *iter2;
 
 		int count = mo->limit;
-		if (count == 0) {
+		if (count > 0) {
 			if (relocs_count > count) {
 				R_LOG_WARN ("mo.limit for relocs");
 			}
