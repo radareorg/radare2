@@ -466,13 +466,24 @@ static RList* patch_relocs(RBinFile *bf) {
 		}
 		r_pvector_push (&ext_relocs, reloc);
 	}
-	if (mo->reloc_fixups && r_list_length (mo->reloc_fixups) > 0) {
+	int relocs_count = r_list_length (mo->reloc_fixups);
+	if (mo->reloc_fixups && relocs_count > 0) {
+		ut8 buf[8], obuf[8];
 		RBinReloc *r;
 		RListIter *iter2;
 
+		int count = mo->limit;
+		if (count == 0) {
+			if (relocs_count > count) {
+				R_LOG_WARN ("mo.limit for relocs");
+			}
+			count = relocs_count;
+		}
 		r_list_foreach (mo->reloc_fixups, iter2, r) {
+			if (count-- < 0) {
+				break;
+			}
 			ut64 paddr = r->paddr + mo->baddr;
-			ut8 buf[8], obuf[8];
 			r_write_ble64 (buf, r->vaddr, false);
 			b->iob.read_at (b->iob.io, paddr, obuf, 8);
 			if (memcmp (buf, obuf, 8)) {
