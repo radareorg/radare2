@@ -472,12 +472,12 @@ static RList* patch_relocs(RBinFile *bf) {
 		RBinReloc *r;
 		RListIter *iter2;
 
-		int count = mo->limit;
-		if (count > 0) {
-			if (relocs_count > count) {
+		int count = relocs_count;
+		if (mo->limit > 0) {
+			if (relocs_count > mo->limit) {
 				R_LOG_WARN ("mo.limit for relocs");
 			}
-			count = relocs_count;
+			count = mo->limit;
 		}
 		r_list_foreach (mo->reloc_fixups, iter2, r) {
 			if (count-- < 0) {
