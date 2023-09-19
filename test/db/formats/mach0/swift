@@ -4,29 +4,46 @@ CMDS=<<EOF
 icc
 EOF
 EXPECT=<<EOF
-@interface SomeClass
-{
+class SomeClass  {
+  ivar meh;
+  ivar cow;
+  func 0() {}  // 0x100003cff
+  func 1() {}  // 0x100003d08
+  func 2() {}  // 0x100003d0e
+  func 3() {}  // 0x100003d17
+  func 4() {}  // 0x100003d20
+  func 5() {}  // 0x100003d24
+  func 6() {}  // 0x100003d1d
+  func allocator() {}  // 0x100003d90
+  func 8() {}  // 0x100003d2c
+  func 9() {}  // 0x100003d34
 }
-@end
-@interface SuperKlass
-{
+class SuperKlass  {
+  ivar superfield;
+  func superfield.allocator__Swift.Int() {}  // 0x1000028f0
+  func superfield.allocator__Swift.Int() {}  // 0x100002950
+  func superfield.allocator__Swift.Int() {}  // 0x1000029b0
+  func allocator() {}  // 0x100002a10
+  func 4() {}  // 0x100003d9c
 }
-@end
-@interface klass.SomeClass : klass.SuperKlass
-{
-   klass.SomeClass::(ivar)meh
-   klass.SomeClass::(ivar)cow
+@objc
+class klass.SomeClass : klass.SuperKlass {
+  ivar isa : struct objc_class *;
+  ivar meh;
+  ivar cow;
 }
-@end
-@interface klass.SuperKlass : Swift._SwiftObject
-{
-   klass.SuperKlass::(ivar)superfield
+@objc
+class klass.SuperKlass : Swift._SwiftObject {
+  ivar isa : struct objc_class *;
+  ivar superfield;
 }
-@end
-@interface swift
-{
+class swift  {
+  func getRootSuperclass() {}  // 0x100002b70
+  func swift51override_conformsToSwiftProtocol(swift::TargetMetadata<swift::InProcess> const*, swift::TargetProtocolDescriptor<swift::InProcess> const*, llvm::StringRef, swift::TargetProtocolConformanceDescriptor<swift::InProcess> const* (*)(swift::TargetMetadata<swift::InProcess> const*, swift::TargetProtocolDescriptor<swift::InProcess> const*, llvm::StringRef)) {}  // 0x100002bb0
+  func Lazy<(anonymous namespace)::ConformanceState>::defaultInitCallback(void*) {}  // 0x1000031f0
+  func getRootSuperclass()::$_0::operator()() const::{lambda(void*)#1}::__invoke(void*) {}  // 0x100003650
+  func getRootSuperclass()::$_0::operator()() const::TheLazy {}  // 0x100008568
 }
-@end
 EOF
 RUN
 

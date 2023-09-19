@@ -155,13 +155,13 @@ EXPECT=<<EOF
 0x00000000 1460 segment.file
 0x00000070 440 section.constpool
 0x00000160 0 sym.LHello.ifield_localVar:I
-0x00000160 1 field.class.LHello.LHello.ifield_localVar:I
+0x00000160 1 field.class.LHello.var.LHello.ifield_localVar:I
 0x00000168 0 sym.LHello.sfield_localVar2:I
-0x00000168 1 field.class.LHello.LHello.sfield_localVar2:I
+0x00000168 1 field.class.LHello.var.LHello.sfield_localVar2:I
 0x00000170 0 sym.LWorld.ifield_worldVar:I
-0x00000170 1 field.class.LWorld.LWorld.ifield_worldVar:I
+0x00000170 1 field.class.LWorld.var.LWorld.ifield_worldVar:I
 0x00000178 0 sym.LWorld.ifield_worldVar2:I
-0x00000178 1 field.class.LWorld.LWorld.ifield_worldVar2:I
+0x00000178 1 field.class.LWorld.var.LWorld.ifield_worldVar2:I
 0x000001b0 0 sym.imp.Ljava_io_PrintStream.method.println_Ljava_lang_String__V
 0x000001b8 0 sym.imp.Ljava_lang_Integer.method._init__I_V
 0x000001c0 0 sym.imp.Ljava_lang_Integer.method.toString__Ljava_lang_String_

@@ -541,7 +541,7 @@ static void get_objc_property_list(mach0_ut p, RBinFile *bf, RBinClass *klass) {
 					goto error;
 				}
 			}
-			// property->realname = r_str_newf ("%s::%s%s", klass->name, "(property)", name);
+			// property->name = r_str_newf ("%s::%s%s", klass->name, "(property)", name);
 			property->name = strdup (name);
 			property->kind = R_BIN_FIELD_KIND_PROPERTY;
 			property->offset = j;
@@ -570,6 +570,7 @@ static void get_objc_property_list(mach0_ut p, RBinFile *bf, RBinClass *klass) {
 		}
 #endif
 		if (property->name) {
+			property->kind = R_BIN_FIELD_KIND_PROPERTY;
 			r_list_append (klass->fields, property);
 		} else {
 			free (property);

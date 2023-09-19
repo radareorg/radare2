@@ -26,16 +26,6 @@
 static R_TH_LOCAL int old_bits = -1;
 static R_TH_LOCAL char *old_arch = NULL;
 
-// TODO: move into rbin
-static const char *r_bin_field_kindstr(RBinField *f) {
-	switch (f->kind) {
-	case R_BIN_FIELD_KIND_PROPERTY:
-		return "property";
-	default:
-		return "var";
-	}
-}
-
 static void pair(const char *key, const char *val) {
 	if (R_STR_ISNOTEMPTY (val)) {
 		r_cons_printf ("%-"PAIR_WIDTH"s%s\n", key, val);
@@ -3562,12 +3552,8 @@ static void classdump_objc(RCore *r, RBinClass *c) {
 	RBinSymbol *sym;
 	r_list_foreach (c->fields, iter2, f) {
 		if (f->name) { //  && r_regex_match ("ivar","e", f->name)) {
-			const bool is_prop = (f->kind == R_BIN_FIELD_KIND_PROPERTY);
-			if (is_prop) {
-				r_cons_printf ("  %s %s::%s%s\n", f->type, c->name, "(property)", f->name);
-			} else {
-				r_cons_printf ("  %s %s::%s%s\n", f->type, c->name, "(ivar)", f->name);
-			}
+			const char *ks = r_bin_field_kindstr (f);
+			r_cons_printf ("  %s %s::(%s)%s\n", f->type, c->name, ks, f->name);
 		}
 	}
 	r_cons_printf ("}\n");
@@ -3575,12 +3561,12 @@ static void classdump_objc(RCore *r, RBinClass *c) {
 		if (sym->rtype && sym->rtype[0] != '@') {
 			char *rp = get_rp (sym->rtype);
 			r_cons_printf ("%s (%s) %s\n",
-					strncmp (sym->type, R_BIN_TYPE_METH_STR, 4)? "+": "-",
+					r_str_startswith (sym->type, R_BIN_TYPE_METH_STR)? "+": "-",
 					rp, sym->dname? sym->dname: sym->name);
 			free (rp);
 		} else if (sym->type) {
 			r_cons_printf ("%s (id) %s\n",
-					strncmp (sym->type, R_BIN_TYPE_METH_STR, 4)? "+": "-",
+					r_str_startswith (sym->type, R_BIN_TYPE_METH_STR)? "+": "-",
 					sym->dname? sym->dname: sym->name);
 		}
 	}
@@ -3615,14 +3601,14 @@ static void classdump_swift(RCore *r, RBinClass *c) {
 	r_cons_printf (" {\n");
 	free (klassname);
 	r_list_foreach (c->fields, iter, f) {
-		if (f->name) {
-			const bool is_prop = (f->kind == R_BIN_FIELD_KIND_PROPERTY);
-			const char *var = is_prop? "var": "property";
-			if (R_STR_ISNOTEMPTY (f->type)) {
-				r_cons_printf ("  %s %s : %s;\n", var, f->name, f->type);
-			} else {
-				r_cons_printf ("  %s %s;\n", var, f->name);
-			}
+		if (!f->name) {
+			continue;
+		}
+		const char *var = r_bin_field_kindstr (f);
+		if (R_STR_ISNOTEMPTY (f->type)) {
+			r_cons_printf ("  %s %s : %s;\n", var, f->name, f->type);
+		} else {
+			r_cons_printf ("  %s %s;\n", var, f->name);
 		}
 	}
 	r_list_foreach (c->methods, iter, sym) {
@@ -3950,8 +3936,9 @@ static bool bin_classes(RCore *r, PJ *pj, int mode) {
 			const char *ls = r_bin_lang_tostring (c->lang);
 			r_list_foreach (c->fields, iter3, f) {
 				char *mflags = r_core_bin_method_flags_str (f->flags, mode);
-				r_cons_printf ("0x%08"PFMT64x" %s field %d %s %s\n",
-					f->vaddr, ls, m, mflags, f->name);
+				const char *ks = r_bin_field_kindstr (f);
+				r_cons_printf ("0x%08"PFMT64x" %s %s %d %s %s\n",
+					f->vaddr, ls, ks, m, mflags, f->name);
 				m++;
 			}
 		}
