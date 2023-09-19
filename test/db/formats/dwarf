@@ -764,7 +764,7 @@ EOF
 RUN
 
 NAME=test baddr
-FILE=bins/elf/bfile.o
+FILE=bins/elf/bfile_o
 CMDS=<<EOF
 ?e --
 CLf
@@ -778,7 +778,7 @@ EOF
 RUN
 
 NAME=test baddr cfile
-FILE=bins/elf/cfile.o
+FILE=bins/elf/cfile_o
 CMDS=<<EOF
 ?e --
 CL
