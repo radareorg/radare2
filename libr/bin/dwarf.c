@@ -1721,7 +1721,7 @@ static void print_attr_value(const RBinDwarfAttrValue *val, PrintfCallback print
 		print ("0x%"PFMT64x, val->address);
 		break;
 	case DW_FORM_implicit_const:
-		print ("0x%"PFMT64d, val->uconstant);
+		print ("0x%"PFMT64x, val->uconstant);
 		break;
 	default:
 		print ("Unknown attr value form %"PFMT64d"\n", val->attr_form);
