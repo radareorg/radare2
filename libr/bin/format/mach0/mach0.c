@@ -2143,7 +2143,7 @@ static int init_items(struct MACH0_(obj_t) *mo) {
 						// int kind = r_read_ble16 (db + i + 4 + 2, mo->big_endian);
 						int len = r_read_ble16 (db + j + 4, mo->big_endian);
 						ut64 va = offset_to_vaddr(mo, dw);
-					//	eprintf ("# 0x%d -> 0x%x\n", dw, va);
+					//	eprintf ("# 0x%x -> 0x%x\n", dw, va);
 					//	eprintf ("0x%x kind %d len %d\n", dw, kind, len);
 						eprintf ("Cd 8 %d @ 0x%"PFMT64x"\n", len / 8, va);
 					}
