@@ -12,7 +12,7 @@
 extern struct r_bin_dbginfo_t r_bin_dbginfo_p9;
 
 static bool check(RBinFile *bf, RBuffer *buf) {
-	RSysArch arch;
+	const char *arch;
 	int bits, big_endian;
 	return r_bin_p9_get_arch (buf, &arch, &bits, &big_endian);
 }
@@ -176,6 +176,10 @@ static RList *sections(RBinFile *bf) {
 	}
 	ptr->name = strdup ("text");
 	ptr->size = o->header.text;
+	// for regular applications: header is included in the text segment
+	if (!o->is_kernel) {
+		ptr->size += o->header_size;
+	}
 	ptr->vsize = P9_ALIGN (o->header.text, align);
 	ptr->paddr = phys;
 	ptr->vaddr = baddr (bf);
@@ -184,11 +188,6 @@ static RList *sections(RBinFile *bf) {
 	r_list_append (ret, ptr);
 	phys += ptr->size;
 	vsize += ptr->vsize;
-
-	// for regular applications: header is included in the text segment
-	if (!o->is_kernel) {
-		phys += o->header_size;
-	}
 
 	// switch back to 4k page size
 	align = 0x1000;
@@ -584,7 +583,7 @@ static RList *libs(RBinFile *bf) {
 
 static RBinInfo *info(RBinFile *bf) {
 	RBinInfo *ret = NULL;
-	RSysArch arch;
+	const char *arch;
 	int bits, big_endian;
 	struct plan9_exec header;
 
@@ -605,7 +604,7 @@ static RBinInfo *info(RBinFile *bf) {
 	ret->rclass = strdup ("p9");
 	ret->os = strdup ("Plan9");
 	ret->default_cc = strdup ("p9");
-	ret->arch = strdup (r_sys_arch_str (arch));
+	ret->arch = strdup (arch);
 	ret->machine = strdup (ret->arch);
 	ret->subsystem = strdup ("plan9");
 	ret->type = strdup ("EXEC (executable file)");
