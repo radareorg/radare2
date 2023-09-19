@@ -1517,13 +1517,17 @@ static void cmd_print_gadget(RCore *core, const char *_input) {
 			char *cmd = r_str_list_join (args, " ");
 			if (cmd) {
 		//		eprintf ("%d %d %d %d (%s)\n", X, Y, W, H, cmd);
-				RCoreGadget *g = R_NEW0 (RCoreGadget);
-				g->x = X;
-				g->y = Y;
-				g->w = W;
-				g->h = H;
-				g->cmd = cmd;
-				r_list_append (core->gadgets, g);
+				if (*cmd) {
+					RCoreGadget *g = R_NEW0 (RCoreGadget);
+					g->x = X;
+					g->y = Y;
+					g->w = W;
+					g->h = H;
+					g->cmd = cmd;
+					r_list_append (core->gadgets, g);
+				} else {
+					free (cmd);
+				}
 			}
 		}
 		r_list_free (args);
@@ -5928,11 +5932,6 @@ static int cmd_print(void *data, const char *input) {
 					if (res) {
 						r_cons_println (res);
 					}
-/*
-					char *res = r_print_json_indent ((char*)data, false, "  ", NULL);
-					print_json_path (core, res);
-					free (res);
-*/
 				} else {
 					R_LOG_ERROR ("Cannot allocate %d", (int)(core->offset));
 				}

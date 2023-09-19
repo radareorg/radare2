@@ -137,17 +137,14 @@ static bool esil2c_sub(REsil *esil) {
 	EsilC *user = esil->user;
 	char *dst = r_esil_pop (esil);
 	char *src = r_esil_pop (esil);
-
-	if (!src || !dst) {
-		free (dst);
-		free (src);
-		return false;
+	const bool lgtm = (src && dst);
+	if (lgtm) {
+		r_strbuf_appendf (user->sb, "  tmp = %s - %s;\n", dst, src);
+		r_esil_push (esil, "tmp");
 	}
-	r_strbuf_appendf (user->sb, "  tmp = %s - %s;\n", dst, src);
-	r_esil_push (esil, "tmp");
 	free (dst);
 	free (src);
-	return true;
+	return lgtm;
 }
 
 static bool esil2c_dec(REsil *esil) {

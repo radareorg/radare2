@@ -16,7 +16,7 @@ static inline bool check_rust(RBinSymbol *sym) {
 }
 
 static inline bool check_objc(RBinSymbol *sym) {
-	if (sym->name && !strncmp (sym->name, "_OBJC_", 6)) {
+	if (sym->name && r_str_startswith (sym->name, "_OBJC_")) {
 		// free (r_bin_demangle_objc (binfile, sym->name));
 		return true;
 	}
@@ -24,11 +24,9 @@ static inline bool check_objc(RBinSymbol *sym) {
 }
 
 static bool check_dlang(RBinSymbol *sym) {
-	if (r_str_startswith (sym->name, "_D2")) {
-		return true;
-	}
-	if (r_str_startswith (sym->name, "_D4")) {
-		return true;
+	const char *name = sym->name;
+	if (r_str_startswith (name, "_D")) {
+		return isdigit (name[2]);
 	}
 	return false;
 }
@@ -38,7 +36,7 @@ static bool check_swift(RBinSymbol *sym) {
 }
 
 static bool check_golang(RBinSymbol *sym) {
-	return !strncmp (sym->name, "go.", 3);
+	return r_str_startswith (sym->name, "go.");
 }
 
 static inline bool is_cxx_symbol(const char *name) {
