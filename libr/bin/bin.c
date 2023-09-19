@@ -1507,7 +1507,7 @@ R_API const char *r_bin_field_kindstr(RBinField *f) {
 	case R_BIN_FIELD_KIND_FIELD:
 		return "field";
 	default:
-		return "ivar";
+		return "var"; // maybe ivar for objc?
 	}
 }
 

@@ -28,11 +28,11 @@ icj~{}
 EOF
 EXPECT=<<EOF
 0x00003e44 [0x00003e44 - 0x00003e44]      0 swift class 0 Employee
-0x100003f60 swift field 0      name
+0x100003f60 swift property   0      name
 0x00003eac [0x00003eac - 0x00003eac]      0 swift class 0 Employer
 0x100008148 [0x100008148 - 0x100008148]      0 objc class 0 main.Employee :: Swift._SwiftObject
-0x00000000 objc field 0      isa
-0x100003e30 objc field 1      name
+0x00000000 objc      var   0      isa
+0x100003e30 objc      var   1      name
 0x100008200 [0x100008200 - 0x100008200]      0 objc class 0 main.Employer :: main.Employee
 ---
 class Employee  {
@@ -42,8 +42,8 @@ class Employer  {
 }
 @objc
 class main.Employee : Swift._SwiftObject {
-  property isa : struct objc_class *;
-  property name;
+  var isa : struct objc_class *;
+  var name;
 }
 @objc
 class main.Employer : main.Employee {
@@ -58,7 +58,7 @@ class main.Employer : main.Employee {
     "fields": [
       {
         "name": "name",
-        "kind": "var",
+        "kind": "property",
         "addr": 4294983520
       }
     ]

@@ -409,6 +409,7 @@ static void get_ivar_list_t(mach0_ut p, RBinFile *bf, RBinClass *klass) {
 				field->type = NULL;
 			}
 			if (field->name) {
+				field->kind = R_BIN_FIELD_KIND_VARIABLE;
 				r_list_append (klass->fields, field);
 				field = NULL;
 			} else {
@@ -427,6 +428,7 @@ static void get_ivar_list_t(mach0_ut p, RBinFile *bf, RBinClass *klass) {
 		isa_field->name = strdup ("isa");
 		isa_field->size = sizeof (mach0_ut);
 		isa_field->type = strdup ("struct objc_class *");
+		isa_field->kind = R_BIN_FIELD_KIND_VARIABLE;
 		isa_field->vaddr = 0;
 		isa_field->offset = 0;
 		r_list_prepend (klass->fields, isa_field);
@@ -542,11 +544,11 @@ static void get_objc_property_list(mach0_ut p, RBinFile *bf, RBinClass *klass) {
 				}
 			}
 			// property->name = r_str_newf ("%s::%s%s", klass->name, "(property)", name);
-			property->name = strdup (name);
+			property->name = name;
+			name = NULL;
 			property->kind = R_BIN_FIELD_KIND_PROPERTY;
 			property->offset = j;
 			property->paddr = r;
-			R_FREE (name);
 		}
 #if 0
 		r = va2pa (op.attributes, NULL, &left, bf);
@@ -570,7 +572,6 @@ static void get_objc_property_list(mach0_ut p, RBinFile *bf, RBinClass *klass) {
 		}
 #endif
 		if (property->name) {
-			property->kind = R_BIN_FIELD_KIND_PROPERTY;
 			r_list_append (klass->fields, property);
 		} else {
 			free (property);
@@ -1485,6 +1486,7 @@ static void parse_type(RList *list, RBinFile *bf, SwiftType st, HtUP *symbols_ht
 				typename, field->name, bf->bo->baddr + field_method_addr);
 #endif
 			free (field_name);
+			field->kind = R_BIN_FIELD_KIND_PROPERTY;
 			r_list_append (klass->fields, field);
 		}
 	}

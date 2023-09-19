@@ -3628,7 +3628,7 @@ static void classdump_swift(RCore *r, RBinClass *c) {
 
 static void classdump_java(RCore *r, RBinClass *c) {
 	RBinField *f;
-	RListIter *iter2, *iter3;
+	RListIter *iter;
 	RBinSymbol *sym;
 	char *pn = strdup (c->name);
 	char *cn = (char *)r_str_rchr (pn, NULL, '/');
@@ -3640,12 +3640,12 @@ static void classdump_java(RCore *r, RBinClass *c) {
 	r_cons_printf ("package %s;\n\n", pn);
 	r_cons_printf ("public class %s {\n", cn);
 	free (pn);
-	r_list_foreach (c->fields, iter2, f) {
-		if (f->name && r_regex_match ("ivar", "e", f->name)) {
+	r_list_foreach (c->fields, iter, f) {
+		if (f->name && f->type == R_BIN_FIELD_KIND_VARIABLE) {
 			r_cons_printf ("  public %s %s\n", f->type, f->name);
 		}
 	}
-	r_list_foreach (c->methods, iter3, sym) {
+	r_list_foreach (c->methods, iter, sym) {
 		const char *mn = sym->dname? sym->dname: sym->name;
 		const char *ms = strstr (mn, "method.");
 		if (ms) {
@@ -3657,10 +3657,7 @@ static void classdump_java(RCore *r, RBinClass *c) {
 }
 
 static bool is_swift(RBinFile *bf) {
-	if (bf->bo->lang == R_BIN_LANG_SWIFT) {
-		return true;
-	}
-	return false;
+	return (bf->bo->lang == R_BIN_LANG_SWIFT);
 }
 
 static bool is_javaish(RBinFile *bf) {
@@ -3736,6 +3733,7 @@ static bool bin_classes(RCore *r, PJ *pj, int mode) {
 			}
 			r_list_foreach (c->fields, iter2, f) {
 				const char *kind = r_bin_field_kindstr (f);
+				// XXX remove 'field' and just use kind?
 				char *fn = r_str_newf ("field.%s.%s.%s", classname, kind, f->name);
 				ut64 at = f->vaddr;
 				r_flag_set (r->flags, fn, at, 1);
@@ -3812,7 +3810,7 @@ static bool bin_classes(RCore *r, PJ *pj, int mode) {
 				char *fn = r_str_newf ("field.%s.%s.%s", c->name, kind, f->name);
 				r_name_filter (fn, -1);
 				ut64 at = f->vaddr; //  sym->vaddr + (f->vaddr &  0xffff);
-				r_cons_printf ("\"f %s = 0x%08"PFMT64x"\"\n", fn, at);
+				r_cons_printf ("'f %s = 0x%08"PFMT64x"\n", fn, at);
 				free (fn);
 			}
 
@@ -3927,8 +3925,8 @@ static bool bin_classes(RCore *r, PJ *pj, int mode) {
 			r_list_foreach (c->methods, iter2, sym) {
 				char *mflags = r_core_bin_method_flags_str (sym->method_flags, mode);
 				const char *ls = r_bin_lang_tostring (sym->lang);
-				r_cons_printf ("0x%08"PFMT64x" %s method %d %s %s\n",
-					sym->vaddr, ls? ls: "?", m, mflags, sym->dname? sym->dname: sym->name);
+				r_cons_printf ("0x%08"PFMT64x" %s %8s %3d %s %s\n",
+					sym->vaddr, ls? ls: "?", "method", m, mflags, sym->dname? sym->dname: sym->name);
 				R_FREE (mflags);
 				m++;
 			}
@@ -3937,7 +3935,7 @@ static bool bin_classes(RCore *r, PJ *pj, int mode) {
 			r_list_foreach (c->fields, iter3, f) {
 				char *mflags = r_core_bin_method_flags_str (f->flags, mode);
 				const char *ks = r_bin_field_kindstr (f);
-				r_cons_printf ("0x%08"PFMT64x" %s %s %d %s %s\n",
+				r_cons_printf ("0x%08"PFMT64x" %s %8s %3d %s %s\n",
 					f->vaddr, ls, ks, m, mflags, f->name);
 				m++;
 			}
