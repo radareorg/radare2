@@ -5,8 +5,8 @@ icc
 EOF
 EXPECT=<<EOF
 class SomeClass  {
-  ivar meh;
-  ivar cow;
+  property meh;
+  property cow;
   func 0() {}  // 0x100003cff
   func 1() {}  // 0x100003d08
   func 2() {}  // 0x100003d0e
@@ -19,7 +19,7 @@ class SomeClass  {
   func 9() {}  // 0x100003d34
 }
 class SuperKlass  {
-  ivar superfield;
+  property superfield;
   func superfield.allocator__Swift.Int() {}  // 0x1000028f0
   func superfield.allocator__Swift.Int() {}  // 0x100002950
   func superfield.allocator__Swift.Int() {}  // 0x1000029b0
@@ -28,14 +28,14 @@ class SuperKlass  {
 }
 @objc
 class klass.SomeClass : klass.SuperKlass {
-  ivar isa : struct objc_class *;
-  ivar meh;
-  ivar cow;
+  var isa : struct objc_class *;
+  var meh;
+  var cow;
 }
 @objc
 class klass.SuperKlass : Swift._SwiftObject {
-  ivar isa : struct objc_class *;
-  ivar superfield;
+  var isa : struct objc_class *;
+  var superfield;
 }
 class swift  {
   func getRootSuperclass() {}  // 0x100002b70
