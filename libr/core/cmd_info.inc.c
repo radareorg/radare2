@@ -1472,7 +1472,7 @@ static int cmd_info(void *data, const char *input) {
 							case 'l':
 								r_list_foreach (cls->methods, iter2, sym) {
 									const char *comma = iter2->p? " ": "";
-									r_cons_printf ("%s0x%"PFMT64d, comma,
+									r_cons_printf ("%s0x%"PFMT64x, comma,
 										iova? sym->vaddr: sym->paddr);
 								}
 								r_cons_newline ();
@@ -1527,7 +1527,7 @@ static int cmd_info(void *data, const char *input) {
 									if (addr == 0 || addr == UT64_MAX) {
 										continue;
 									}
-									r_cons_printf ("0x%"PFMT64d" [%s] %s\n",
+									r_cons_printf ("0x%"PFMT64x" [%s] %s\n",
 										addr, cls->name, sym->name);
 								}
 							}
@@ -1538,7 +1538,7 @@ static int cmd_info(void *data, const char *input) {
 							r_list_foreach (obj->classes, iter, cls) {
 								r_list_foreach (cls->methods, iter2, sym) {
 									const char *comma = iter2->p? " ": "";
-									r_cons_printf ("%s0x%"PFMT64d, comma,
+									r_cons_printf ("%s0x%"PFMT64x, comma,
 										iova? sym->vaddr: sym->paddr);
 								}
 								if (!r_list_empty (cls->methods)) {
