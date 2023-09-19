@@ -783,7 +783,8 @@ R_API RFlagItem *r_flag_set(RFlag *f, const char *name, ut64 off, ut32 size) {
 	if (!item) {
 		item = R_NEW0 (RFlagItem);
 		if (!item) {
-			goto err;
+			r_flag_item_free (item);
+			return NULL;
 		}
 		is_new = true;
 	}
@@ -794,9 +795,6 @@ R_API RFlagItem *r_flag_set(RFlag *f, const char *name, ut64 off, ut32 size) {
 	update_flag_item_offset (f, item, off + f->base, is_new, true);
 	update_flag_item_name (f, item, name, true);
 	return item;
-err:
-	r_flag_item_free (item);
-	return NULL;
 }
 
 /* add/replace/remove the alias of a flag item */

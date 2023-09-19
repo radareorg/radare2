@@ -1761,7 +1761,7 @@ static int init_items(struct MACH0_(obj_t) *mo) {
 		mo->hdr.sizeofcmds = mo->size - 128;
 		//return false;
 	}
-	bool noFuncStarts = r_sys_getenv_asbool ("RABIN2_MACHO_NOFUNCSTARTS");
+	bool noFuncStarts = mo->nofuncstarts;
 	//bprintf ("Commands: %d\n", mo->hdr.ncmds);
 	for (i = 0, off = sizeof (struct MACH0_(mach_header)) + mo->header_at; \
 			i < mo->hdr.ncmds; i++, off += lc.cmdsize) {
@@ -2320,7 +2320,7 @@ struct MACH0_(obj_t) *MACH0_(new_buf)(RBuffer *buf, struct MACH0_(opts_t) *optio
 		mo->options = *options;
 		mo->limit = options->bf->rbin->limit;
 		mo->nofuncstarts = r_sys_getenv_asbool ("RABIN2_MACHO_NOFUNCSTARTS");
-		ut64 sz = r_buf_size (buf); // bin->b);
+		ut64 sz = r_buf_size (buf);
 		if (options) {
 #if 0
 			if (options->bf->loadaddr == UT64_MAX - sz) {
