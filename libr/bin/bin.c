@@ -690,17 +690,11 @@ R_API RBinAddr *r_bin_get_sym(RBin *bin, int sym) {
 	return o? o->binsym[sym]: NULL;
 }
 
-// XXX: those accessors are redundant
+// XXX: R2_600 - those accessors are redundant
 R_API const RList *r_bin_get_entries(RBin *bin) {
 	r_return_val_if_fail (bin, NULL);
 	RBinObject *o = r_bin_cur_object (bin);
 	return o ? o->entries : NULL;
-}
-
-R_API RList *r_bin_get_fields(RBin *bin) {
-	r_return_val_if_fail (bin, NULL);
-	RBinObject *o = r_bin_cur_object (bin);
-	return o ? o->fields : NULL;
 }
 
 R_API const RList *r_bin_get_imports(RBin *bin) {

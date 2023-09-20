@@ -750,7 +750,6 @@ R_API RList *r_bin_dump_strings(RBinFile *a, int min, int raw);
 
 // use RBinFile instead
 R_API const RList *r_bin_get_entries(RBin *bin);
-R_API RList *r_bin_get_fields(RBin *bin);
 R_API const RList *r_bin_get_imports(RBin *bin);
 R_API RList *r_bin_get_libs(RBin *bin);
 R_API RRBTree *r_bin_patch_relocs(RBinFile *bin);
