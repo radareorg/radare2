@@ -20,9 +20,9 @@ R_LIB_VERSION (r_bin);
 #define R_BIN_LDR_STATIC_PLUGINS 0
 #endif
 
-static const RBinPlugin *bin_static_plugins[] = { R_BIN_STATIC_PLUGINS, NULL };
-static const RBinXtrPlugin *bin_xtr_static_plugins[] = { R_BIN_XTR_STATIC_PLUGINS, NULL };
-static const RBinLdrPlugin *bin_ldr_static_plugins[] = { R_BIN_LDR_STATIC_PLUGINS, NULL };
+static RBinPlugin *bin_static_plugins[] = { R_BIN_STATIC_PLUGINS, NULL };
+static RBinXtrPlugin *bin_xtr_static_plugins[] = { R_BIN_XTR_STATIC_PLUGINS, NULL };
+static RBinLdrPlugin *bin_ldr_static_plugins[] = { R_BIN_LDR_STATIC_PLUGINS, NULL };
 
 static int __getoffset(RBin *bin, int type, int idx) {
 	RBinFile *a = r_bin_cur (bin);
