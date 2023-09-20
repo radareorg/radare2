@@ -1091,8 +1091,7 @@ static void parse_dex_class_fields(RBinFile *bf, RBinDexClass *c, RBinClass *cls
 		sym->ordinal = (*sym_count)++;
 
 		if (dex->dexdump) {
-			char *accessStr = createAccessFlagStr (
-				accessFlags, kAccessForField);
+			char *accessStr = createAccessFlagStr (accessFlags, kAccessForField);
 			bin->cb_printf ("    #%u              : (in %s;)\n", (unsigned int)i, cls->name);
 			bin->cb_printf ("      name          : '%s'\n", fieldName);
 			bin->cb_printf ("      type          : '%s'\n", type_str);

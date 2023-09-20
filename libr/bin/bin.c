@@ -9,14 +9,6 @@
 R_LIB_VERSION (r_bin);
 
 #define DB a->sdb;
-// R2_590 -> rename to R_LIST_FREE()
-#define RBINLISTFREE(x)\
-	if (x) { \
-		r_list_free (x);\
-		(x) = NULL;\
-	}
-
-#define ARCHS_KEY "archs"
 
 #if !defined(R_BIN_STATIC_PLUGINS)
 #define R_BIN_STATIC_PLUGINS 0
@@ -1047,7 +1039,6 @@ R_API void r_bin_list_archs(RBin *bin, PJ *pj, int mode) {
 	//	R_LOG_ERROR ("Binary format not currently loaded!");
 		return;
 	}
-	sdb_unset (binfile_sdb, ARCHS_KEY, 0);
 	RBinFile *nbinfile = r_bin_file_find_by_name (bin, name);
 	if (!nbinfile) {
 		return;
@@ -1106,8 +1097,6 @@ R_API void r_bin_list_archs(RBin *bin, PJ *pj, int mode) {
 		snprintf (archline, sizeof (archline) - 1,
 			"0x%08" PFMT64x ":%" PFMT64u ":%s:%d:%s",
 			boffset, obj_size, arch, bits, machine);
-		/// xxx machine not exported?
-		//sdb_array_push (binfile_sdb, ARCHS_KEY, archline, 0);
 	} else {
 		if (info) {
 			switch (mode) {
@@ -1171,7 +1160,6 @@ R_API void r_bin_list_archs(RBin *bin, PJ *pj, int mode) {
 		} else {
 			R_LOG_ERROR ("Invalid RBinFile");
 		}
-		//sdb_array_push (binfile_sdb, ARCHS_KEY, archline, 0);
 	}
 	if (mode == 'j') {
 		pj_end (pj);
