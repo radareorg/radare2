@@ -567,7 +567,7 @@ typedef void (*RBinSymbollCallback)(RBinObject *obj, void *symbol);
 
 typedef struct r_bin_class_t {
 	char *name;
-	// TODO: char *module;
+	// TODO: char *module; // namespace
 	RList *super; // list of char*
 	char *visibility_str; // XXX only used by java
 	int index;

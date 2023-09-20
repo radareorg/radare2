@@ -35,6 +35,8 @@ typedef ut64 (*RListComparatorItem)(const void *a);
 
 #endif
 
+#define R_LIST_FREE if (x) { r_list_free (x); (x) = NULL; }
+
 #ifdef R_API
 #define r_list_foreach(list, it, pos)\
 	if (list)\
