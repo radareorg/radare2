@@ -1358,26 +1358,26 @@ static bool print_addr_hint_cb(ut64 addr, const RVector/*<const RAnalAddrHintRec
 
 static bool print_arch_hint_cb(ut64 addr, R_NULLABLE const char *arch, void *user) {
 	HintNode *node = R_NEW0 (HintNode);
-	if (!node) {
-		return false;
+	if (node) {
+		node->addr = addr;
+		node->type = HINT_NODE_ARCH;
+		node->arch = arch;
+		r_rbtree_insert (user, &addr, &node->rb, hint_node_cmp, NULL);
+		return true;
 	}
-	node->addr = addr;
-	node->type = HINT_NODE_ARCH;
-	node->arch = arch;
-	r_rbtree_insert (user, &addr, &node->rb, hint_node_cmp, NULL);
-	return true;
+	return false;
 }
 
 static bool print_bits_hint_cb(ut64 addr, int bits, void *user) {
 	HintNode *node = R_NEW0 (HintNode);
-	if (!node) {
-		return false;
+	if (node) {
+		node->addr = addr;
+		node->type = HINT_NODE_BITS;
+		node->bits = bits;
+		r_rbtree_insert (user, &addr, &node->rb, hint_node_cmp, NULL);
+		return true;
 	}
-	node->addr = addr;
-	node->type = HINT_NODE_BITS;
-	node->bits = bits;
-	r_rbtree_insert (user, &addr, &node->rb, hint_node_cmp, NULL);
-	return true;
+	return false;
 }
 
 static void print_hint_tree(RBTree tree, int mode) {
@@ -1448,53 +1448,45 @@ R_API void r_core_anal_hint_print(RAnal* a, ut64 addr, int mode) {
 }
 
 static char *core_anal_graph_label(RCore *core, RAnalBlock *bb, int opts) {
-	int is_html = r_cons_context ()->is_html;
-	int is_json = opts & R_CORE_ANAL_JSON;
+	const bool is_html = r_cons_context ()->is_html;
+	const bool is_json = opts & R_CORE_ANAL_JSON;
 	char cmd[1024], file[1024], *cmdstr = NULL, *filestr = NULL, *str = NULL;
-	int line = 0, oline = 0, colu = 0, idx = 0;
+	int line = 0, oline = 0, colu = 0;
 	ut64 at;
 
 	if (opts & R_CORE_ANAL_GRAPHLINES) {
-		for (at = bb->addr; at < bb->addr + bb->size; at += 2) {
+		RStrBuf *sb = r_strbuf_new ("");
+		const ut64 bb_end = bb->addr + bb->size;
+		for (at = bb->addr; at < bb_end; at += 2) {
 			r_bin_addr2line (core->bin, at, file, sizeof (file) - 1, &line, &colu);
 			if (line != 0 && line != oline && strcmp (file, "??")) {
 				filestr = r_file_slurp_line (file, line, 0);
 				if (filestr) {
-					int flen = strlen (filestr);
-					if (idx < 0 || ST32_ADD_OVFCHK (idx, flen + 8)) {
-						R_LOG_WARN ("integer overflow detected");
-						break;
-					}
-					cmdstr = realloc (cmdstr, idx + flen + 8);
-					memcpy (cmdstr + idx, filestr, flen);
-					idx += flen;
+					r_strbuf_append (sb, filestr);
 					if (is_json) {
-						strcpy (cmdstr + idx, "\\n");
-						idx += 2;
+						r_strbuf_append (sb, "\\n");
 					} else if (is_html) {
-						strcpy (cmdstr + idx, "<br />");
-						idx += 6;
+						r_strbuf_append (sb, "<br />");
 					} else {
-						strcpy (cmdstr + idx, "\\l");
-						idx += 2;
+						r_strbuf_append (sb, "\\l");
 					}
 					free (filestr);
 				}
 			}
 			oline = line;
 		}
+		cmdstr = r_strbuf_drain (sb);
 	} else if (opts & R_CORE_ANAL_STAR) {
-		snprintf (cmd, sizeof (cmd), "pdb %"PFMT64u" @ 0x%08" PFMT64x, bb->size, bb->addr);
-		str = r_core_cmd_str (core, cmd);
+		str = r_core_cmd_strf (core, "pdb %"PFMT64u" @ 0x%08" PFMT64x, bb->size, bb->addr);
 	} else if (opts & R_CORE_ANAL_GRAPHBODY) {
 		const bool scrColor = r_config_get (core->config, "scr.color");
-		const bool scrUtf8 = r_config_get (core->config, "scr.utf8");
+		const bool scrUtf8 = r_config_get_b (core->config, "scr.utf8");
 		r_config_set_i (core->config, "scr.color", COLOR_MODE_DISABLED);
 		r_config_set_b (core->config, "scr.utf8", false);
 		snprintf (cmd, sizeof (cmd), "pD %"PFMT64u" @ 0x%08" PFMT64x, bb->size, bb->addr);
 		cmdstr = r_core_cmd_str (core, cmd);
 		r_config_set_i (core->config, "scr.color", scrColor);
-		r_config_set_i (core->config, "scr.utf8", scrUtf8);
+		r_config_set_b (core->config, "scr.utf8", scrUtf8);
 	}
 	if (cmdstr) {
 		str = r_str_escape_dot (cmdstr);
@@ -2715,9 +2707,9 @@ static int fcnlist_gather_metadata(RAnal *anal, RList *fcns) {
 }
 
 R_API char *r_core_anal_fcn_name(RCore *core, RAnalFunction *fcn) {
-	bool demangle = r_config_get_i (core->config, "bin.demangle");
+	bool demangle = r_config_get_b (core->config, "bin.demangle");
 	const char *lang = demangle ? r_config_get (core->config, "bin.lang") : NULL;
-	bool keep_lib = r_config_get_i (core->config, "bin.demangle.libs");
+	bool keep_lib = r_config_get_b (core->config, "bin.demangle.libs");
 	char *name = strdup (r_str_get (fcn->name));
 	if (demangle) {
 		char *tmp = r_bin_demangle (core->bin->cur, lang, name, fcn->addr, keep_lib);
