@@ -1834,15 +1834,15 @@ static int core_anal_graph_construct_nodes(RCore *core, RAnalFunction *fcn, int 
 				}
 			} else {
 				if (is_html) {
-						nodes++;
-						r_cons_printf ("<p class=\"block draggable\" style=\""
-												"top: %dpx; left: %dpx; width: 400px;\" id=\""
-												"_0x%08"PFMT64x"\">\n%s</p>\n",
-												top, left, bbi->addr, str);
-						left = left? 0: 600;
-						if (!left) {
-							top += 250;
-						}
+					nodes++;
+					r_cons_printf ("<p class=\"block draggable\" style=\""
+							"top: %dpx; left: %dpx; width: 400px;\" id=\""
+							"_0x%08"PFMT64x"\">\n%s</p>\n",
+							top, left, bbi->addr, str);
+					left = left? 0: 600;
+					if (!left) {
+						top += 250;
+					}
 				} else if (!is_json && !is_keva) {
 					bool current = r_anal_block_contains (bbi, core->offset);
 					const char *label_color = bbi->traced
@@ -1854,14 +1854,14 @@ static int core_anal_graph_construct_nodes(RCore *core, RAnalFunction *fcn, int 
 					if ((current && color_current) || label_color == pal_traced) {
 						fill_color = r_str_newf ("fillcolor=\"%s\", ", pal_traced);
 					} else {
-						fill_color = r_str_newf ("fontcolor=\"%s\"", label_color);
+						fill_color = r_str_newf ("fontcolor=\"%s\", ", label_color);
 					}
 					nodes++;
 					if (is_star) {
 						char *title = get_title (bbi->addr);
 						char *body_b64 = r_base64_encode_dyn (str, -1);
 						int color = (bbi && bbi->diff) ? bbi->diff->type : 0;
-						if (!title  || !body_b64) {
+						if (!title || !body_b64) {
 								free (body_b64);
 								free (title);
 								return false;
@@ -1871,12 +1871,20 @@ static int core_anal_graph_construct_nodes(RCore *core, RAnalFunction *fcn, int 
 						free (body_b64);
 						free (title);
 					} else {
+						if (R_STR_ISEMPTY (str)) {
 						r_cons_printf ("\t\"0x%08"PFMT64x"\" ["
 								"URL=\"%s/0x%08"PFMT64x"\", "
-								"%sfontname=\"%s\","
+								"%sfontname=\"%s\"]\n",
+								bbi->addr, fcn->name, bbi->addr,
+								fill_color, font);
+						} else {
+						r_cons_printf ("\t\"0x%08"PFMT64x"\" ["
+								"URL=\"%s/0x%08"PFMT64x"\", "
+								"%sfontname=\"%s\", "
 								"label=\"%s\"]\n",
 								bbi->addr, fcn->name, bbi->addr,
 								fill_color, font, str);
+						}
 					}
 					free (fill_color);
 				}
@@ -1888,8 +1896,8 @@ static int core_anal_graph_construct_nodes(RCore *core, RAnalFunction *fcn, int 
 }
 
 static int core_anal_graph_nodes(RCore *core, RAnalFunction *fcn, int opts, PJ *pj) {
-	int is_json = opts & R_CORE_ANAL_JSON;
-	int is_keva = opts & R_CORE_ANAL_KEYVALUE;
+	const bool is_json = opts & R_CORE_ANAL_JSON;
+	const bool is_keva = opts & R_CORE_ANAL_KEYVALUE;
 	int nodes = 0;
 	Sdb *DB = NULL;
 	char *pal_jump = palColorFor ("graph.true");
@@ -1899,13 +1907,8 @@ static int core_anal_graph_nodes(RCore *core, RAnalFunction *fcn, int opts, PJ *
 	char *pal_traced = palColorFor ("graph.traced");
 	char *pal_box4 = palColorFor ("graph.box4");
 	if (!fcn || !fcn->bbs) {
-		free (pal_jump);
-		free (pal_fail);
-		free (pal_trfa);
-		free (pal_curr);
-		free (pal_traced);
-		free (pal_box4);
-		return -1;
+		nodes = -1;
+		goto fin;
 	}
 
 	if (is_keva) {
@@ -1948,6 +1951,7 @@ static int core_anal_graph_nodes(RCore *core, RAnalFunction *fcn, int opts, PJ *
 		pj_end (pj);
 		pj_end (pj);
 	}
+fin:
 	free (pal_jump);
 	free (pal_fail);
 	free (pal_trfa);
