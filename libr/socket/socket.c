@@ -32,14 +32,13 @@ R_API bool r_socket_connect(RSocket *s, const char *host, const char *port, int 
 R_API bool r_socket_spawn(RSocket *s, const char *cmd, unsigned int timeout) {
 	return -1;
 }
-R_API int r_socket_close_fd(RSocket *s) {
-	return -1;
+R_API bool r_socket_close_fd(RSocket *s) {
+	return false;
 }
-R_API int r_socket_close(RSocket *s) {
-	return -1;
+R_API bool r_socket_close(RSocket *s) {
+	return false;
 }
-R_API int r_socket_free(RSocket *s) {
-	return -1;
+R_API void r_socket_free(RSocket *s) {
 }
 R_API int r_socket_port_by_name(const char *name) {
 	return -1;
@@ -470,7 +469,7 @@ success:
 }
 
 /* close the file descriptor associated with the RSocket s */
-R_API int r_socket_close_fd(RSocket *s) {
+R_API bool r_socket_close_fd(RSocket *s) {
 #ifdef _MSC_VER
 	return s->fd != INVALID_SOCKET ? closesocket (s->fd) : false;
 #else
@@ -479,7 +478,7 @@ R_API int r_socket_close_fd(RSocket *s) {
 }
 
 /* shutdown the socket and close the file descriptor */
-R_API int r_socket_close(RSocket *s) {
+R_API bool r_socket_close(RSocket *s) {
 	int ret = false;
 	if (!s) {
 		return false;
@@ -513,8 +512,8 @@ R_API int r_socket_close(RSocket *s) {
 }
 
 /* shutdown the socket, close the file descriptor and free the RSocket */
-R_API int r_socket_free(RSocket *s) {
-	int res = r_socket_close (s);
+R_API void r_socket_free(RSocket *s) {
+	(void)r_socket_close (s);
 #if HAVE_LIB_SSL
 	if (s && s->is_ssl) {
 		if (s->sfd) {
@@ -526,7 +525,6 @@ R_API int r_socket_free(RSocket *s) {
 	}
 #endif
 	free (s);
-	return res;
 }
 
 R_API int r_socket_port_by_name(const char *name) {
