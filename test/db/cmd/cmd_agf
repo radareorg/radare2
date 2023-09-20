@@ -43,6 +43,16 @@ digraph code {
 	graph [fontsize=8 fontname="Courier" bgcolor=azure splines="ortho"];
 	node [fillcolor=white style=filled shape=box];
 	edge [arrowhead="normal"];
+	"0x00000010" [URL="fcn.00000010/0x00000010", fontcolor="#767676", fontname="Courier"]
+	"0x0000008a" [URL="fcn.00000010/0x0000008a", fontcolor="#767676", fontname="Courier"]
+	"0x00000034" [URL="fcn.00000010/0x00000034", fontcolor="#767676", fontname="Courier"]
+	"0x00000042" [URL="fcn.00000010/0x00000042", fontcolor="#767676", fontname="Courier"]
+	"0x00000091" [URL="fcn.00000010/0x00000091", fontcolor="#767676", fontname="Courier"]
+	"0x0000004e" [URL="fcn.00000010/0x0000004e", fontcolor="#767676", fontname="Courier"]
+	"0x0000005a" [URL="fcn.00000010/0x0000005a", fontcolor="#767676", fontname="Courier"]
+	"0x00000066" [URL="fcn.00000010/0x00000066", fontcolor="#767676", fontname="Courier"]
+	"0x00000072" [URL="fcn.00000010/0x00000072", fontcolor="#767676", fontname="Courier"]
+	"0x0000007e" [URL="fcn.00000010/0x0000007e", fontcolor="#767676", fontname="Courier"]
         "0x00000010" -> "0x0000008a" [color="#13a10e"];
         "0x00000010" -> "0x00000034" [color="#c50f1f"];
         "0x0000008a" -> "0x00000091" [color="#3a96dd"];
