@@ -2820,28 +2820,21 @@ static void __fcn_print_default(RCore *core, RAnalFunction *fcn, bool quiet) {
 	if (quiet) {
 		r_cons_printf ("0x%08"PFMT64x" ", fcn->addr);
 	} else {
-#if 1
+		const bool use_colors = core->print->flags & R_PRINT_FLAGS_COLOR;
 		char *name = r_core_anal_fcn_name (core, fcn);
 		ut64 realsize = r_anal_function_realsize (fcn);
-		r_cons_printf ("0x%08"PFMT64x" %4d %6"PFMT64d" %s\n",
-				fcn->addr, r_list_length (fcn->bbs), realsize, name);
-		free (name);
-#else
-		// R2_590 -- trace color functionlisting
-		char *name = r_core_anal_fcn_name (core, fcn);
-		ut64 realsize = r_anal_function_realsize (fcn);
-		RAnalBlock *firstBlock = r_list_first (fcn->bbs);
-		char *color = firstBlock? r_cons_rgb_str (NULL, 0, &firstBlock->color): "";
-		int coverage = r_anal_function_coverage (fcn);
-		if (firstBlock->traced) {
-			color = strdup (Color_RED);
+		if (use_colors) {
+			RAnalBlock *firstBlock = r_list_first (fcn->bbs);
+			char *color = firstBlock? r_cons_rgb_str (NULL, 0, &firstBlock->color): "";
+			r_cons_printf ("%s0x%08"PFMT64x" %4d %6"PFMT64d" %s%s\n",
+					color, fcn->addr, r_list_length (fcn->bbs),
+					realsize, name, Color_RESET);
+			free (color);
+		} else {
+			r_cons_printf ("0x%08"PFMT64x" %4d %6"PFMT64d" %s\n",
+					fcn->addr, r_list_length (fcn->bbs), realsize, name);
 		}
-		r_cons_printf ("%s0x%08"PFMT64x" %4d cov=%d%% %6"PFMT64d" %s%s\n",
-				color, fcn->addr, r_list_length (fcn->bbs),
-				coverage, realsize, name, Color_RESET);
-		free (color);
 		free (name);
-#endif
 	}
 }
 
