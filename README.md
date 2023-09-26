@@ -20,16 +20,33 @@ each plugin can have different licenses (see r2 -L, rasm2 -L, ...).
 
 The radare project started as a simple command-line hexadecimal editor focused
 on forensics. Today, r2 is a featureful low-level command-line tool with
-support for scripting. r2 can edit files on local hard drives, view kernel
-memory, and debug programs locally or via a remote gdb server. r2's wide
-architecture support allows you to analyze, emulate, debug, modify, and
-disassemble any binary.
+support for scripting with the embedded Javascript interpreter or via r2pipe.
+
+r2 can edit files on local hard drives, view kernel memory, and debug programs
+locally or via a remote gdb server. r2's wide architecture support allows you
+to analyze, emulate, debug, modify, and disassemble any binary.
 
 <p align="center">
 <a href="https://www.radare.org/"><img src="doc/images/shot.png" alt="screenshot" align="center" border=0 width="600px"></a>
 </p>
 
 ## Installation
+
+The recommended way to install radare2 is via Git using acr/make or meson:
+
+```sh
+git clone https://github.com/radareorg/radare2
+radare2/sys/install.sh
+```
+
+On Windows you may want to use the precompiled builds or the .bat files to compile if you have msvc:
+
+```bat
+preconfigure.bat       REM setup python, meson, ninja
+configure.bat          REM run meson b + vs project
+make.bat               REM run ninja -C b
+prefix\bin\radare2.exe
+```
 
 * r2 can be installed from `git` or via `pip` using `r2env`.
 * Run `sys/install.sh` for the default acr+make+symlink installation
@@ -38,27 +55,23 @@ disassemble any binary.
 * To uninstall the current build of r2 run `make uninstall`
 * To uninstall ALL the system installations of r2 do: `sudo make purge`
 
-```sh
-git clone https://github.com/radareorg/radare2
-radare2/sys/install.sh
-```
+## Popular Plugins:
 
-Default Windows builds use MSVC, so run those `.bat`:
+Using the `r2pm` tool you can browse and install many plugins and tools that use radare2.
 
-```sh
-preconfigure.bat       REM setup python, meson, ninja
-configure.bat          REM run meson b + vs project
-make.bat               REM run ninja -C b
-prefix\bin\radare2.exe
-```
-
-Alternatively you can use r2env to switch between different versions.
-
-```sh
-pip install -U r2env
-r2env init
-r2env add radare2@git
-```
+* [esilsolve](https://github.com/radareorg/esilsolve): The symbolic execution plugin, based on esil and z3
+* [iaito](https://github.com/radareorg/iaito): The official Qt graphical interface
+* [keystone](https://github.com/radareorg/radare2-extras/tree/master/keystone) Assembler instructions using the Keystone library
+* [r2ai](https://github.com/radareorg/radare2-extras/tree/master/r2ai/local) Run a Language Model in localhost with Llama inside r2!
+* [r2dec](https://github.com/wargio/r2dec-js): A decompiler based on r2 written in JS, accessed with the `pdd` command
+* [r2diaphora](https://github.com/FernandoDoming/r2diaphora): [Diaphora](https://github.com/joxeankoret/diaphora)'s diffing engine working on top of radare2
+* [r2frida](https://github.com/nowsecure/r2frida): The frida io plugin. Start r2 with `r2 frida://0` to use it
+* [r2ghidra](https://github.com/radareorg/r2ghidra): The native ghidra decompiler plugin, accessed with the `pdg` command
+* [r2papi](https://github.com/radareorg/radare2-r2papi) High level api on top of r2pipe
+* [r2pipe](https://github.com/radareorg/radare2-r2pipe) Script radare2 from any programming language
+* [r2poke](https://github.com/radareorg/radare2-extras/tree/master/r2poke) Integration with GNU/Poke for extended binary parsing capabilities
+* [r2yara](https://github.com/radareorg/radare2-extras/tree/master/r2yara) Run Yara from r2 or use r2 primitives from Yara
+* [radius2](https://github.com/nowsecure/radius2): A fast symbolic execution engine based on boolector and esil
 
 ## Usage
 
@@ -78,6 +91,24 @@ $ r2 /bin/ls   # open file in read-only
 > q            # quit
 ```
 
+Many plugins are included in r2 by default. But you can extend its capabilities
+by using the [r2pm](https://github.com/radareorg/radare2-pm) package manager.
+
+```sh
+r2pm -s <word>  # search packages matching a word
+r2pm -Uci <pkg> # update database and clean install a package
+r2pm -u <pkg>   # uninstall the given package
+r2pm -l <pkg>   # list installed packages
+```
+
+Alternatively you can use r2env to switch between different versions.
+
+```sh
+pip install -U r2env
+r2env init
+r2env add radare2@git
+```
+
 ## Resources
 
 * [Official Book](https://book.rada.re): Read about r2 usage
@@ -88,31 +119,6 @@ $ r2 /bin/ls   # open file in read-only
 * [SECURITY.md](SECURITY.md): Instructions for reporting vulnerabilities
 * [USAGE.md](USAGE.md): Some example commands
 * [INSTALL.md](INSTALL.md): Installation instructions using make or meson
-
-## Plugins
-
-Many plugins are included in r2 by default. But you can extend its capabilities
-by using the [r2pm](https://github.com/radareorg/radare2-pm) package manager.
-
-```sh
-r2pm -s <word> # search package by word
-r2pm -ci <pkg> # install a package
-r2pm -u <pkg>  # uninstall
-r2pm -l <pkg>  # list installed packages
-```
-
-Most popular packages are:
-
-* [esilsolve](https://github.com/radareorg/esilsolve): The symbolic execution plugin, based on esil and z3
-* [r2diaphora](https://github.com/FernandoDoming/r2diaphora): [Diaphora](https://github.com/joxeankoret/diaphora)'s diffing engine working on top of radare2
-* [iaito](https://github.com/radareorg/iaito): The official Qt graphical interface
-* [radius2](https://github.com/nowsecure/radius2): A fast symbolic execution engine based on boolector and esil
-* [r2dec](https://github.com/wargio/r2dec-js): A decompiler based on r2 written in JS, accessed with the `pdd` command
-* [r2ghidra](https://github.com/radareorg/r2ghidra): The native ghidra decompiler plugin, accessed with the `pdg` command
-* [r2frida](https://github.com/nowsecure/r2frida): The frida io plugin. Start r2 with `r2 frida://0` to use it
-* [r2poke](https://github.com/radareorg/radare2-extras/tree/master/r2poke) Integration with GNU/Poke for extended binary parsing capabilities
-* [r2pipe](https://github.com/radareorg/radare2-r2pipe) Script radare2 from any programming language
-* [r2papi](https://github.com/radareorg/radare2-r2papi) High level api on top of r2pipe
 
 # Contributing
 
