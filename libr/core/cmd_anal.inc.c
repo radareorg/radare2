@@ -918,11 +918,20 @@ static RCoreHelpMessage help_msg_aom = {
 	NULL
 };
 
+static RCoreHelpMessage help_msg_aob = {
+	"Usage:", "aob[mvj] [hex]", "decode every bit of the analyzed opcode",
+	"aob", "", "show the meaning of each bit in of the instruction",
+	"aob", " cd80", "decode 'int 0x80' and analize its bits",
+	"aobj", "", "opcode decoding information in json",
+	"aobv", "", "visually attractive representation",
+	NULL
+};
+
 static RCoreHelpMessage help_msg_ao = {
 	"Usage:", "ao[e?] [len]", "analyze Opcodes",
 	"ao", " 5", "display opcode analysis of 5 opcodes",
 	"ao*", "", "display opcode in r commands",
-	"aob", " ([hex])", "analyze meaning of every single bit in the current opcode",
+	"aob", "[?mvj] ([hex])", "analyze meaning of every single bit in the current opcode",
 	"aoc", " [cycles]", "analyze which op could be executed in [cycles]",
 	"aod", " [mnemonic]", "instruction mnemonic description for asm.arch",
 	"aoda", "", "show all mnemonic descriptions",
@@ -8270,16 +8279,24 @@ static void cmd_anal_bytes(RCore *core, const char *input) {
 	}
 }
 
-static int compare_mnemonics(const char *a , const char *b) {
+static RList *mnemonic_tolist(const char *a) {
+	if (!a) {
+		return NULL;
+	}
+	char *sa = strdup (a);
+	r_str_replace_ch (sa, ',', 1, 1);
+	r_str_replace_ch (sa, ' ', ',', 1);
+	RList *list = r_str_split_list (sa, ",", 0);
+	// free (sa);
+	return list;
+}
+
+static int compare_mnemonics(const char *a, const char *b) {
 	if (!a || !b) {
 		return 0;
 	}
-	char *sa = strdup (a);
-	char *sb = strdup (b);
-	r_str_replace_ch (sa, ' ', ',', 0);
-	r_str_replace_ch (sb, ' ', ',', 0);
-	RList *la = r_str_split_list (sa, ",", 0);
-	RList *lb = r_str_split_list (sb, ",", 0);
+	RList *la = mnemonic_tolist (a);
+	RList *lb = mnemonic_tolist (b);
 	int i = 0;
 	for (i = 0; i < 10; i++) {
 		char *wa = r_list_get_n (la, i);
@@ -8294,8 +8311,6 @@ static int compare_mnemonics(const char *a , const char *b) {
 	}
 	r_list_free (la);
 	r_list_free (lb);
-	free (sa);
-	free (sb);
 	return i;
 }
 
@@ -8307,6 +8322,38 @@ static int intsort(const void *a, const void *b) {
 		return 0;
 	}
 	return -1;
+}
+
+static const char *colors[6] = {
+	Color_YELLOW,
+	Color_CYAN,
+	Color_GREEN,
+	Color_MAGENTA,
+	Color_RED,
+	Color_BLUE,
+};
+
+static const char *findcolorfor(char *s, int i) {
+	if (i < 0 || i > 5) {
+		eprintf ("fuck %d\n", i);
+		return NULL;
+	}
+	return colors[i];
+#if 0
+	char *p;
+	const char *color = NULL;
+	for (p = s; *p; p++) {
+		int idx = *p - '0';
+		if (idx < 0 || idx > 5) {
+			continue;
+		}
+		if (idx == i) {
+			color = colors[idx];
+			break;
+		}
+	}
+	return color;
+#endif
 }
 
 static void cmd_anal_opcode_bits(RCore *core, const char *arg, int mode) {
@@ -8430,6 +8477,113 @@ static void cmd_anal_opcode_bits(RCore *core, const char *arg, int mode) {
 				r_cons_printf ("%02x", finalmask[i]);
 			}
 			r_cons_newline ();
+		} else if (mode == 'v') {
+			char *p;
+			char *s = r_strbuf_drain (sb);
+			r_cons_printf (" ");
+			for (p = s; *p; p++) {
+				int idx = *p - '0';
+				if (idx < 0 || idx > 5) {
+					r_cons_printf ("%c", *p);
+					continue;
+				}
+				const char *color = findcolorfor (s, idx); // colors[idx];
+				// const char *color = colors[idx];
+				r_cons_printf ("%s%c%s", color, *p, Color_RESET);
+			}
+			RList *args = mnemonic_tolist (analop.mnemonic);
+			r_cons_printf ("  %s\n ", analop.mnemonic);
+			int last = 5; // compute instead of hardcode
+			int i;
+			for (i = 0; i < last; i++) {
+				int ref = i + '0';
+				int count = i + 1;
+				char op = s[i];
+				int iref = ref - '0';
+				if (op == ' ') {
+					continue;
+				}
+				if (op == ' ') {
+					continue;
+				}
+				const char *word = r_list_get_n (args, op - '0');
+				if (!word) {
+					continue;
+				//	break;
+				}
+#if 0
+				if (iref >= 0 && iref < 5) {
+					ref = iref;
+				} else {
+					ref = i;
+				}
+#endif
+				int fount = 0;
+				for (p = s; *p && count > 0; p++) {
+					if (op == *p || *p == ' ') {
+						continue;
+					}
+					if (count < 1) {
+						break;
+					}
+					op = *p;
+						fount = 1;
+					count--;
+					if (count > 0) {
+						ref = op;
+						iref = ref - '0';
+					}
+				}
+				if (!fount) {
+break;
+				}
+#if 0
+				char *color = findcolorfor (s, iref);
+				if (color == NULL) {
+					break;
+				}
+#endif
+				iref = ref - '0';
+				const char *color = (iref >= 0)? colors[iref]: NULL;
+				if (!color) {
+					continue;
+				}
+#if 0
+				for (p = s; *p; p++) {
+					if (ref == *p) {
+						eprintf ("%c", '|');
+					} else {
+						eprintf ("%c", ' ');
+					}
+				}
+				eprintf ("\n ");
+#endif
+				bool bar = false;
+				for (p = s; *p; p++) {
+					if (ref == *p) {
+						bar = true;
+						r_cons_printf ("%s%c%s", color, '|', Color_RESET);
+						// eprintf ("%c", '|');
+					} else {
+						if (bar) {
+							r_cons_printf ("%s%c%s", color, '_', Color_RESET);
+						} else {
+							r_cons_printf ("%c", bar? '_': ' ');
+						}
+					}
+				}
+#if 0
+				r_list_sort (args[j], intsort);
+				r_list_foreach (args[j], iter, n) {
+					int nn = (int)((size_t)n & ST32_MAX);
+					pj_n (pj, nn);
+				}
+#endif
+				// const char *word = "pene"; // r_list_get_n (args, 0);
+				r_cons_printf ("%s____%s %d %s%s%s\n ", color, Color_RESET, iref, color, word, Color_RESET);
+			}
+			r_list_free (args);
+			free (s);
 		} else {
 			r_strbuf_appendf (sb, " : %s", analop.mnemonic);
 			char *s = r_strbuf_drain (sb);
@@ -8541,8 +8695,12 @@ static void cmd_anal_opcode(RCore *core, const char *input) {
 		}
 		break;
 	case 'b': // "aob"
-		if (input[1] == 'j') {
+		if (input[1] == '?') {
+			r_core_cmd_help (core, help_msg_aob);
+		} else if (input[1] == 'j') {
 			cmd_anal_opcode_bits (core, r_str_trim_head_ro (input + 2), 'j');
+		} else if (input[1] == 'v') {
+			cmd_anal_opcode_bits (core, NULL, 'v');
 		} else if (input[1] == 'm') {
 			cmd_anal_opcode_bits (core, NULL, 'm');
 		} else {

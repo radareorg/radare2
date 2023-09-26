@@ -563,8 +563,12 @@ R_API bool r_core_visual_bit_editor(RCore *core) {
 		}
 		// same output as "aob".. must reuse
 		{
-			r_cons_printf ("pos: ");
-			r_core_cmd0 (core, "aob");
+			// r_cons_printf ("pos: ");
+			// r_core_cmd0 (core, "aob");
+			char *op_hex = r_hex_bin2strdup (analop.bytes, analop.size);
+			char *res = r_print_hexpair (core->print, op_hex, -1);
+			r_core_cmdf (core, "aobv %s", res);
+			free (res);
 		}
 		const char *vi = r_config_get (core->config, "cmd.vprompt");
 		if (R_STR_ISNOTEMPTY (vi)) {
