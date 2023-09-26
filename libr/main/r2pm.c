@@ -363,7 +363,7 @@ static void r2pm_setenv(void) {
 	char *pkgcfg = r_sys_getenv ("PKG_CONFIG_PATH");
 	char *r2pm_pkgcfg = r_xdg_datadir ("prefix/lib/pkgconfig");
 	if (R_STR_ISNOTEMPTY (pkgcfg)) {
-		char *pcp = r_str_newf ("%s:%s:%s", R2_PREFIX "/lib/pkgconfig", r2pm_pkgcfg, pkgcfg);
+		char *pcp = r_str_newf ("%s:%s:%s", r2pm_pkgcfg, R2_PREFIX "/lib/pkgconfig", pkgcfg);
 		r_sys_setenv ("PKG_CONFIG_PATH", pcp);
 		free (pcp);
 	} else {
