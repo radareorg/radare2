@@ -3519,8 +3519,8 @@ R_API bool r_str_isnumber(const char *str) {
 	if (!str || (!IS_DIGIT (*str) && *str != '-')) {
 		return false;
 	}
-
 	for (str++; *str; str++) {
+		// consider '.' part of the number?
 		if (!IS_DIGIT (*str)) {
 			return false;
 		}
@@ -3800,17 +3800,15 @@ R_API int r_snprintf(char *string, int len, const char *fmt, ...) {
 
 // Strips all the lines in str that contain key
 R_API void r_str_stripLine(char *str, const char *key) {
-	size_t i, j, klen, slen, off;
-	const char *ptr;
-
 	if (!str || !key) {
 		return;
 	}
-	klen = strlen (key);
-	slen = strlen (str);
+	size_t i, j;
+	size_t klen = strlen (key);
+	size_t slen = strlen (str);
 
 	for (i = 0; i < slen; ) {
-		ptr = (char*) r_mem_mem ((ut8*) str + i, slen - i, (ut8*) "\n", 1);
+		const char *ptr = (char*) r_mem_mem ((ut8*) str + i, slen - i, (ut8*) "\n", 1);
 		if (!ptr) {
 			ptr = (char*) r_mem_mem ((ut8*) str + i, slen - i, (ut8*) key, klen);
 			if (ptr) {
@@ -3820,7 +3818,7 @@ R_API void r_str_stripLine(char *str, const char *key) {
 			break;
 		}
 
-		off = (size_t) (ptr - (str + i)) + 1;
+		size_t off = (size_t) (ptr - (str + i)) + 1;
 
 		ptr = (char*) r_mem_mem ((ut8*) str + i, off, (ut8*) key, klen);
 		if (ptr) {
@@ -3850,11 +3848,9 @@ R_API char *r_str_list_join(RList *str, const char *sep) {
 R_API char *r_str_array_join(const char **a, size_t n, const char *sep) {
 	RStrBuf *sb = r_strbuf_new ("");
 	size_t i;
-
 	if (n > 0) {
 		r_strbuf_append (sb, a[0]);
 	}
-
 	for (i = 1; i < n; i++) {
 		r_strbuf_append (sb, sep);
 		r_strbuf_append (sb, a[i]);

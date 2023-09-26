@@ -70,7 +70,7 @@ static void config_print_value_json(RConfig *cfg, PJ *pj, RConfigNode *node) {
 	}
 	char *sval = r_str_escape (val);
 	if (r_config_node_is_bool (node) || r_config_node_is_int (node)) {
-		if (!strncmp (val, "0x", 2)) {
+		if (r_str_startswith (val, "0x")) {
 			ut64 n = r_num_get (NULL, val);
 			if (pj) {
 				pj_n (pj, n);
@@ -79,7 +79,14 @@ static void config_print_value_json(RConfig *cfg, PJ *pj, RConfigNode *node) {
 			}
 		} else if (r_str_isnumber (val) || (*val /* HACK */ && r_str_is_bool (val))) {
 			if (pj) {
-				pj_s (pj, val);
+				if (r_str_is_bool (val)) {
+					pj_b (pj, val);
+				} else if (r_str_isnumber (val)) {
+					ut64 n = r_num_get (NULL, val);
+					pj_n (pj, n);
+				} else {
+					pj_s (pj, val);
+				}
 			} else {
 				cfg->cb_printf ("%s", val);  // TODO: always use true/false for bool json str
 			}
