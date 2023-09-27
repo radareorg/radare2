@@ -563,8 +563,11 @@ R_API bool r_core_visual_bit_editor(RCore *core) {
 		}
 		// same output as "aob".. must reuse
 		{
-			r_cons_printf ("pos: ");
-			r_core_cmd0 (core, "aob");
+			// r_cons_printf ("pos: ");
+			// r_core_cmd0 (core, "aob");
+			char *op_hex = r_hex_bin2strdup (buf, 8);
+			r_core_cmdf (core, "'aobv %s", op_hex);
+			free (op_hex);
 		}
 		const char *vi = r_config_get (core->config, "cmd.vprompt");
 		if (R_STR_ISNOTEMPTY (vi)) {
@@ -608,24 +611,22 @@ R_API bool r_core_visual_bit_editor(RCore *core) {
 			return false;
 		case 'H':
 			{
-				int y = R_MAX (x - 8, 0);
+				const int y = R_MAX (x - 8, 0);
 				x = y - y % 8;
 			}
 			break;
 		case 'L':
 		case 9:
 			{
-				int y = R_MIN (x + 8, nbits - 8);
+				const int y = R_MIN (x + 8, nbits - 8);
 				x = y - y % 8;
 			}
 			break;
 		case 'J':
-			// r_core_cmd_call (core, "s+8");
 			r_core_cmd_call (core, "so+1");
 			memcpy (buf, core->block + cur, sizeof (ut64));
 			break;
 		case 'K':
-			// r_core_cmd_call (core, "s-8");
 			r_core_cmd_call (core, "so-1");
 			memcpy (buf, core->block + cur, sizeof (ut64));
 			break;
@@ -706,6 +707,7 @@ R_API bool r_core_visual_bit_editor(RCore *core) {
 			" R     - randomize color palette\n"
 			" b     - toggle bitsInLine\n"
 			" j/k   - toggle bit value (same as space key)\n"
+			" J/K   - next/prev instruction (so+1,so-1)\n"
 			" h/l   - select next/previous bit\n"
 			" +/-   - increment or decrement byte value\n"
 			" </>   - rotate left/right byte value\n"

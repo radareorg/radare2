@@ -918,11 +918,20 @@ static RCoreHelpMessage help_msg_aom = {
 	NULL
 };
 
+static RCoreHelpMessage help_msg_aob = {
+	"Usage:", "aob[mvj] [hex]", "decode every bit of the analyzed opcode",
+	"aob", "", "show the meaning of each bit in of the instruction",
+	"aob", " cd80", "decode 'int 0x80' and analize its bits",
+	"aobj", "", "opcode decoding information in json",
+	"aobv", "", "visually attractive representation",
+	NULL
+};
+
 static RCoreHelpMessage help_msg_ao = {
 	"Usage:", "ao[e?] [len]", "analyze Opcodes",
 	"ao", " 5", "display opcode analysis of 5 opcodes",
 	"ao*", "", "display opcode in r commands",
-	"aob", " ([hex])", "analyze meaning of every single bit in the current opcode",
+	"aob", "[?mvj] ([hex])", "analyze meaning of every single bit in the current opcode",
 	"aoc", " [cycles]", "analyze which op could be executed in [cycles]",
 	"aod", " [mnemonic]", "instruction mnemonic description for asm.arch",
 	"aoda", "", "show all mnemonic descriptions",
@@ -8270,16 +8279,24 @@ static void cmd_anal_bytes(RCore *core, const char *input) {
 	}
 }
 
-static int compare_mnemonics(const char *a , const char *b) {
+static RList *mnemonic_tolist(const char *a) {
+	if (!a) {
+		return NULL;
+	}
+	char *sa = strdup (a);
+	r_str_replace_ch (sa, ',', 1, 1);
+	r_str_replace_ch (sa, ' ', ',', 1);
+	RList *list = r_str_split_list (sa, ",", 0);
+	// free (sa);
+	return list;
+}
+
+static int compare_mnemonics(const char *a, const char *b) {
 	if (!a || !b) {
 		return 0;
 	}
-	char *sa = strdup (a);
-	char *sb = strdup (b);
-	r_str_replace_ch (sa, ' ', ',', 0);
-	r_str_replace_ch (sb, ' ', ',', 0);
-	RList *la = r_str_split_list (sa, ",", 0);
-	RList *lb = r_str_split_list (sb, ",", 0);
+	RList *la = mnemonic_tolist (a);
+	RList *lb = mnemonic_tolist (b);
 	int i = 0;
 	for (i = 0; i < 10; i++) {
 		char *wa = r_list_get_n (la, i);
@@ -8294,8 +8311,6 @@ static int compare_mnemonics(const char *a , const char *b) {
 	}
 	r_list_free (la);
 	r_list_free (lb);
-	free (sa);
-	free (sb);
 	return i;
 }
 
@@ -8308,6 +8323,16 @@ static int intsort(const void *a, const void *b) {
 	}
 	return -1;
 }
+
+#define colors_last 6
+static const char *colors[colors_last] = {
+	Color_YELLOW,
+	Color_CYAN,
+	Color_GREEN,
+	Color_MAGENTA,
+	Color_RED,
+	Color_BLUE,
+};
 
 static void cmd_anal_opcode_bits(RCore *core, const char *arg, int mode) {
 	ut8 buf[32] = {0};
@@ -8430,6 +8455,87 @@ static void cmd_anal_opcode_bits(RCore *core, const char *arg, int mode) {
 				r_cons_printf ("%02x", finalmask[i]);
 			}
 			r_cons_newline ();
+		} else if (mode == 'v') { // "aobv"
+			typedef struct {
+				const char *color;
+				int idx;
+			} AobRow;
+			AobRow row[16] = {0};
+			int rows = 0;
+			char *p;
+			char *s = r_strbuf_drain (sb);
+			for (p = s; *p; p++) {
+				int idx = *p - '0' + 1;
+				if (idx >= 0 && idx < 7) {
+					bool found = false;
+					for (i = 0; i < rows; i++) {
+						if (row[i].idx == idx) {
+							found = true;
+							break;
+						}
+					}
+					if (found) {
+						continue;
+					}
+					row[rows].color = colors[idx - 1];
+					row[rows].idx = idx;
+					rows++;
+				}
+			}
+#if 0
+			for (i = 0; i < rows; i++) {
+				r_cons_printf ("--> %d %s%d%s\n", i, colors[i], row[i].idx - 1, Color_RESET);
+			}
+#endif
+			r_cons_printf (" ");
+			for (p = s; *p; p++) {
+				int idx = *p - '0';
+				if (idx < 0 || idx > 7) {
+					r_cons_printf ("%c", *p);
+					continue;
+				}
+				const char *color = colors[idx % colors_last];
+				r_cons_printf ("%s%c%s", color, *p, Color_RESET);
+			}
+			RList *args = mnemonic_tolist (analop.mnemonic);
+#if 0
+			r_cons_printf ("  %s\n ", analop.mnemonic);
+#else
+			r_cons_printf (" ");
+			RListIter *iter;
+			const char *arg;
+			int idx = 0;
+			r_list_foreach (args, iter, arg) {
+				const char *color = colors[idx % colors_last];
+				const char *sep = (idx > 0)? ", ": " ";
+				r_cons_printf ("%s%s%s%s", sep, color, arg, Color_RESET);
+				idx++;
+			}
+			r_cons_printf ("\n ");
+#endif
+			int i;
+			for (i = 0; i < rows; i++) {
+				int iref = row[i].idx - 1;
+				int ref = '0' + iref;
+				const char *word = r_list_get_n (args, iref);
+				const char *color = row[i].color;
+				bool bar = false;
+				for (p = s; *p; p++) {
+					if (ref == *p) {
+						bar = true;
+						r_cons_printf ("%s%c%s", color, '\\', Color_RESET);
+					} else {
+						if (bar) {
+							r_cons_printf ("%s%c%s", color, '_', Color_RESET);
+						} else {
+							r_cons_printf ("%c", bar? '_': ' ');
+						}
+					}
+				}
+				r_cons_printf ("%s____%s %d %s%s%s\n ", color, Color_RESET, iref, color, word, Color_RESET);
+			}
+			r_list_free (args);
+			free (s);
 		} else {
 			r_strbuf_appendf (sb, " : %s", analop.mnemonic);
 			char *s = r_strbuf_drain (sb);
@@ -8541,12 +8647,19 @@ static void cmd_anal_opcode(RCore *core, const char *input) {
 		}
 		break;
 	case 'b': // "aob"
-		if (input[1] == 'j') {
-			cmd_anal_opcode_bits (core, r_str_trim_head_ro (input + 2), 'j');
-		} else if (input[1] == 'm') {
+		if (input[1] == '?') {
+			r_core_cmd_help (core, help_msg_aob);
+		} else if (input[1] == 'j') { // "aobj"
+			const char *arg = r_str_trim_head_ro (input + 2);
+			cmd_anal_opcode_bits (core, arg, 'j');
+		} else if (input[1] == 'v') { // "aobv"
+			const char *arg = r_str_trim_head_ro (input + 2);
+			cmd_anal_opcode_bits (core, arg, 'v');
+		} else if (input[1] == 'm') { // "aobm"
 			cmd_anal_opcode_bits (core, NULL, 'm');
 		} else {
-			cmd_anal_opcode_bits (core, r_str_trim_head_ro (input + 1), 0);
+			const char *arg = r_str_trim_head_ro (input + 1);
+			cmd_anal_opcode_bits (core, arg, 0);
 		}
 		break;
 	case 'c': // "aoc"
