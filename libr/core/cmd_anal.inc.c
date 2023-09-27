@@ -8324,7 +8324,7 @@ static int intsort(const void *a, const void *b) {
 	return -1;
 }
 
-static const int colors_last = 6;
+#define colors_last 6
 static const char *colors[colors_last] = {
 	Color_YELLOW,
 	Color_CYAN,
