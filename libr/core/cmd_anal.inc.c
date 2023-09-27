@@ -8324,7 +8324,8 @@ static int intsort(const void *a, const void *b) {
 	return -1;
 }
 
-static const char *colors[6] = {
+static const int colors_last = 6;
+static const char *colors[colors_last] = {
 	Color_YELLOW,
 	Color_CYAN,
 	Color_GREEN,
@@ -8332,29 +8333,6 @@ static const char *colors[6] = {
 	Color_RED,
 	Color_BLUE,
 };
-
-static const char *findcolorfor(char *s, int i) {
-	if (i < 0 || i > 5) {
-		eprintf ("fuck %d\n", i);
-		return NULL;
-	}
-	return colors[i];
-#if 0
-	char *p;
-	const char *color = NULL;
-	for (p = s; *p; p++) {
-		int idx = *p - '0';
-		if (idx < 0 || idx > 5) {
-			continue;
-		}
-		if (idx == i) {
-			color = colors[idx];
-			break;
-		}
-	}
-	return color;
-#endif
-}
 
 static void cmd_anal_opcode_bits(RCore *core, const char *arg, int mode) {
 	ut8 buf[32] = {0};
@@ -8477,93 +8455,75 @@ static void cmd_anal_opcode_bits(RCore *core, const char *arg, int mode) {
 				r_cons_printf ("%02x", finalmask[i]);
 			}
 			r_cons_newline ();
-		} else if (mode == 'v') {
+		} else if (mode == 'v') { // "aobv"
+			typedef struct {
+				const char *color;
+				int idx;
+			} AobRow;
+			AobRow row[16] = {0};
+			int rows = 0;
 			char *p;
 			char *s = r_strbuf_drain (sb);
+			for (p = s; *p; p++) {
+				int idx = *p - '0' + 1;
+				if (idx >= 0 && idx < 7) {
+					bool found = false;
+					for (i = 0; i < rows; i++) {
+						if (row[i].idx == idx) {
+							found = true;
+							break;
+						}
+					}
+					if (found) {
+						continue;
+					}
+					row[rows].color = colors[idx - 1];
+					row[rows].idx = idx;
+					rows++;
+				}
+			}
+#if 0
+			for (i = 0; i < rows; i++) {
+				r_cons_printf ("--> %d %s%d%s\n", i, colors[i], row[i].idx - 1, Color_RESET);
+			}
+#endif
 			r_cons_printf (" ");
 			for (p = s; *p; p++) {
 				int idx = *p - '0';
-				if (idx < 0 || idx > 5) {
+				if (idx < 0 || idx > 7) {
 					r_cons_printf ("%c", *p);
 					continue;
 				}
-				const char *color = findcolorfor (s, idx); // colors[idx];
-				// const char *color = colors[idx];
+				const char *color = colors[idx % colors_last];
 				r_cons_printf ("%s%c%s", color, *p, Color_RESET);
 			}
 			RList *args = mnemonic_tolist (analop.mnemonic);
+#if 0
 			r_cons_printf ("  %s\n ", analop.mnemonic);
-			int last = 5; // compute instead of hardcode
+#else
+			r_cons_printf (" ");
+			RListIter *iter;
+			const char *arg;
+			int idx = 0;
+			r_list_foreach (args, iter, arg) {
+				const char *color = colors[idx % colors_last];
+				const char *sep = (idx > 0)? ", ": " ";
+				r_cons_printf ("%s%s%s%s", sep, color, arg, Color_RESET);
+				idx++;
+			}
+			r_cons_printf ("\n ");
+#endif
 			int i;
-			for (i = 0; i < last; i++) {
-				int ref = i + '0';
-				int count = i + 1;
-				char op = s[i];
-				int iref = ref - '0';
-				if (op == ' ') {
-					continue;
-				}
-				if (op == ' ') {
-					continue;
-				}
-				const char *word = r_list_get_n (args, op - '0');
-				if (!word) {
-					continue;
-				//	break;
-				}
-#if 0
-				if (iref >= 0 && iref < 5) {
-					ref = iref;
-				} else {
-					ref = i;
-				}
-#endif
-				int fount = 0;
-				for (p = s; *p && count > 0; p++) {
-					if (op == *p || *p == ' ') {
-						continue;
-					}
-					if (count < 1) {
-						break;
-					}
-					op = *p;
-						fount = 1;
-					count--;
-					if (count > 0) {
-						ref = op;
-						iref = ref - '0';
-					}
-				}
-				if (!fount) {
-break;
-				}
-#if 0
-				char *color = findcolorfor (s, iref);
-				if (color == NULL) {
-					break;
-				}
-#endif
-				iref = ref - '0';
-				const char *color = (iref >= 0)? colors[iref]: NULL;
-				if (!color) {
-					continue;
-				}
-#if 0
-				for (p = s; *p; p++) {
-					if (ref == *p) {
-						eprintf ("%c", '|');
-					} else {
-						eprintf ("%c", ' ');
-					}
-				}
-				eprintf ("\n ");
-#endif
+			for (i = 0; i < rows; i++) {
+				int iref = row[i].idx - 1;
+				int ref = '0' + iref;
+				const char *word = r_list_get_n (args, iref);
+				const char *color = row[i].color;
 				bool bar = false;
 				for (p = s; *p; p++) {
 					if (ref == *p) {
 						bar = true;
-						r_cons_printf ("%s%c%s", color, '|', Color_RESET);
-						// eprintf ("%c", '|');
+						r_cons_printf ("%s%c%s", color, '\\', Color_RESET);
 					} else {
 						if (bar) {
 							r_cons_printf ("%s%c%s", color, '_', Color_RESET);
@@ -8572,14 +8532,6 @@ break;
 						}
 					}
 				}
-#if 0
-				r_list_sort (args[j], intsort);
-				r_list_foreach (args[j], iter, n) {
-					int nn = (int)((size_t)n & ST32_MAX);
-					pj_n (pj, nn);
-				}
-#endif
-				// const char *word = "pene"; // r_list_get_n (args, 0);
 				r_cons_printf ("%s____%s %d %s%s%s\n ", color, Color_RESET, iref, color, word, Color_RESET);
 			}
 			r_list_free (args);
@@ -8697,14 +8649,17 @@ static void cmd_anal_opcode(RCore *core, const char *input) {
 	case 'b': // "aob"
 		if (input[1] == '?') {
 			r_core_cmd_help (core, help_msg_aob);
-		} else if (input[1] == 'j') {
-			cmd_anal_opcode_bits (core, r_str_trim_head_ro (input + 2), 'j');
-		} else if (input[1] == 'v') {
-			cmd_anal_opcode_bits (core, NULL, 'v');
-		} else if (input[1] == 'm') {
+		} else if (input[1] == 'j') { // "aobj"
+			const char *arg = r_str_trim_head_ro (input + 2);
+			cmd_anal_opcode_bits (core, arg, 'j');
+		} else if (input[1] == 'v') { // "aobv"
+			const char *arg = r_str_trim_head_ro (input + 2);
+			cmd_anal_opcode_bits (core, arg, 'v');
+		} else if (input[1] == 'm') { // "aobm"
 			cmd_anal_opcode_bits (core, NULL, 'm');
 		} else {
-			cmd_anal_opcode_bits (core, r_str_trim_head_ro (input + 1), 0);
+			const char *arg = r_str_trim_head_ro (input + 1);
+			cmd_anal_opcode_bits (core, arg, 0);
 		}
 		break;
 	case 'c': // "aoc"
