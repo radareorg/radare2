@@ -416,15 +416,14 @@ R_IPI RBinXtrPlugin *r_bin_get_xtrplugin_by_name(RBin *bin, const char *name) {
 	return NULL;
 }
 
-static void r_bin_plugin_free(RBinPlugin *p) {
-	R_FREE (p);
-}
-
 R_API bool r_bin_plugin_add(RBin *bin, RBinPlugin *foo) {
 	RListIter *it;
 	RBinPlugin *plugin;
 
 	r_return_val_if_fail (bin && foo, false);
+	if (foo->init) {
+		foo->init (bin);
+	}
 
 	r_list_foreach (bin->plugins, it, plugin) {
 		if (!strcmp (plugin->meta.name, foo->meta.name)) {
@@ -438,8 +437,22 @@ R_API bool r_bin_plugin_add(RBin *bin, RBinPlugin *foo) {
 }
 
 R_API bool r_bin_plugin_remove(RBin *bin, RBinPlugin *plugin) {
-	// XXX TODO
-	return true;
+	r_return_val_if_fail (bin && bin->plugins && plugin, false);
+	RListIter *iter;
+	RBinPlugin *plug;
+	// this loop is necessary because r_bin_plugin_add dups the passed RBinPlugin
+	// comparing pointers does not work here :((
+	r_list_foreach (bin->plugins, iter, plug) {
+		if (!memcmp (plugin, plug, sizeof (RBinPlugin))) {
+			if (plug->fini) {
+				plug->fini (bin);
+			}
+			r_list_delete (bin->plugins, iter);
+			return true;
+		}
+	}
+	R_LOG_WARN ("Plugin not found in this instance of RBin")
+	return false;
 }
 
 R_API bool r_bin_ldr_add(RBin *bin, RBinLdrPlugin *foo) {
@@ -483,6 +496,13 @@ R_API void r_bin_free(RBin *bin) {
 		//r_bin_free_bin_files (bin);
 		r_list_free (bin->binfiles);
 		r_list_free (bin->binxtrs);
+		RListIter *iter;
+		RBinPlugin *plug;
+		r_list_foreach (bin->plugins, iter, plug) {
+			if (plug->fini) {
+				plug->fini (bin);
+			}
+		}
 		r_list_free (bin->plugins);
 		r_list_free (bin->binldrs);
 		sdb_free (bin->sdb);
@@ -835,7 +855,7 @@ R_API RBin *r_bin_new(void) {
 	bin->filter_rules = UT64_MAX;
 	bin->sdb = sdb_new0 ();
 	bin->cb_printf = (PrintfCallback)printf;
-	bin->plugins = r_list_newf ((RListFree)r_bin_plugin_free);
+	bin->plugins = r_list_newf ((RListFree)free);
 	bin->minstrlen = 0;
 	bin->strpurge = NULL;
 	bin->strenc = NULL;

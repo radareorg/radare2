@@ -518,6 +518,8 @@ R_API void r_bin_trycatch_free(RBinTrycatch *tc);
 
 typedef struct r_bin_plugin_t {
 	RPluginMeta meta;
+	void (*init)(RBin *bin);
+	void (*fini)(RBin *bin);
 	Sdb * (*get_sdb)(RBinFile *obj);
 	bool (*load)(RBinFile *bf, RBuffer *buf, ut64 laddr);
 	ut64 (*size)(RBinFile *bin); // return ut64 maybe? meh
