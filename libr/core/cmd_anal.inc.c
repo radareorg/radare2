@@ -8547,6 +8547,7 @@ static void cmd_anal_opcode_bits(RCore *core, const char *arg, int mode) {
 				char *word = r_list_get_n (args, iref);
 				int lc = strlen (word);
 				if (lc > 0 && word[lc - 1] == 1) {
+					// XXX for some reason some words end with 1 instead of 0
 					word[lc - 1] = 0;
 				}
 				const char *color = row[i].color;
@@ -8565,7 +8566,7 @@ static void cmd_anal_opcode_bits(RCore *core, const char *arg, int mode) {
 				}
 				const char guess = guess_arg (iref, word);
 				const char *indent = r_str_pad (' ', 12 - strlen (word));
-				r_cons_printf ("%s__%s %d%c %s(%s)%s %s= 0%o\n ",
+				r_cons_printf ("%s__%s %d%c %s%s%s %s= 0%o\n ",
 					color, Color_RESET, iref, guess, color, word, Color_RESET, indent, numbers[i]);
 			}
 			r_list_free (args);
