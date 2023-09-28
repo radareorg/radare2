@@ -131,7 +131,8 @@ static bool check_symbol_lang(RBinFile *bf, LangCheck *lc, RBinSymbol *sym, int 
 				}
 				if (strstr (lib, "msvcp")) {
 					info->lang = "msvc";
-					return R_BIN_LANG_MSVC;
+					*type = R_BIN_LANG_MSVC;
+					return false;
 				}
 			}
 			lc->cxxIsChecked = true;
