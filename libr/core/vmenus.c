@@ -566,8 +566,12 @@ R_API bool r_core_visual_bit_editor(RCore *core) {
 			// r_cons_printf ("pos: ");
 			// r_core_cmd0 (core, "aob");
 			char *op_hex = r_hex_bin2strdup (buf, 8);
-			r_core_cmdf (core, "'aobv %s", op_hex);
+			char *r = r_core_cmd_strf (core, "'aobv %s", op_hex);
 			free (op_hex);
+			char *s = r_str_prefix_all (r, "    ");
+			r_cons_printf ("%s\n", s);
+			free (r);
+			free (s);
 		}
 		const char *vi = r_config_get (core->config, "cmd.vprompt");
 		if (R_STR_ISNOTEMPTY (vi)) {
