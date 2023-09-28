@@ -8384,6 +8384,7 @@ static void cmd_anal_opcode_bits(RCore *core, const char *arg, int mode) {
 		pj_kn (pj, "size", analop.size);
 		pj_ko (pj, "bytes");
 	}
+	int numbers[8] = {0};
 	RStrBuf *sb = r_strbuf_new ("");
 	for (i = 0; i < last; i++) {
 		ut8 *byte = buf + i;
@@ -8416,6 +8417,8 @@ static void cmd_anal_opcode_bits(RCore *core, const char *arg, int mode) {
 					// r_list_append (args[word_change], (void *)(size_t)((i * 8) + 7 - j));
 				}
 			} else {
+				numbers[word_change] <<= 1;
+				numbers[word_change] |= bit;
 				r_strbuf_appendf (sb, "%d", word_change);
 				if (pj) {
 					pj_n (pj, word_change);
@@ -8541,7 +8544,11 @@ static void cmd_anal_opcode_bits(RCore *core, const char *arg, int mode) {
 			for (i = 0; i < rows; i++) {
 				int iref = row[i].idx - 1;
 				int ref = '0' + iref;
-				const char *word = r_list_get_n (args, iref);
+				char *word = r_list_get_n (args, iref);
+				int lc = strlen (word);
+				if (lc > 0 && word[lc - 1] == 1) {
+					word[lc - 1] = 0;
+				}
 				const char *color = row[i].color;
 				bool bar = false;
 				for (p = s; *p; p++) {
@@ -8557,8 +8564,9 @@ static void cmd_anal_opcode_bits(RCore *core, const char *arg, int mode) {
 					}
 				}
 				const char guess = guess_arg (iref, word);
-				r_cons_printf ("%s__%s %d%c %s%s%s\n ",
-					color, Color_RESET, iref, guess, color, word, Color_RESET);
+				const char *indent = r_str_pad (' ', 12 - strlen (word));
+				r_cons_printf ("%s__%s %d%c %s(%s)%s %s= 0%o\n ",
+					color, Color_RESET, iref, guess, color, word, Color_RESET, indent, numbers[i]);
 			}
 			r_list_free (args);
 			free (s);
