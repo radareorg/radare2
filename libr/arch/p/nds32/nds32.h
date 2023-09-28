@@ -21,18 +21,18 @@
 #define OPCODE_NDS32_H
 
 /* Registers.  */
-#define REG_R5		5
-#define REG_R8		8
-#define REG_R10		10
-#define REG_R12		12
-#define REG_R15		15
-#define REG_R16		16
-#define REG_R20		20
-#define REG_TA		15
-#define REG_FP		28
-#define REG_GP		29
-#define REG_LP		30
-#define REG_SP		31
+#define NDS32_REG_R5		5
+#define NDS32_REG_R8		8
+#define NDS32_REG_R10		10
+#define NDS32_REG_R12		12
+#define NDS32_REG_R15		15
+#define NDS32_REG_R16		16
+#define NDS32_REG_R20		20
+#define NDS32_REG_TA		15
+#define NDS32_REG_FP		28
+#define NDS32_REG_GP		29
+#define NDS32_REG_LP		30
+#define NDS32_REG_SP		31
 
 /* Macros for extracting fields or making an instruction.  */
 static const int nds32_r45map[] =
