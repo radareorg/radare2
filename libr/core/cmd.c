@@ -4059,7 +4059,7 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon, bool *tmpseek
 						p = strchr (p + 1, ';');
 					}
 				}
-				if (p && *p && p[1] == '>') {
+				if (R_STR_ISNOTEMPTY (p) && p[0] != '<' && p[1] == '>') {
 					str = p + 2;
 					while (*str == '>') {
 						str++;
@@ -4278,6 +4278,13 @@ escape_pipe:
 	/* pipe console to file */
 	ptr = (char *)r_str_firstbut (cmd, '>', "\"");
 	// TODO honor `
+	if (ptr + 2 > cmd) {
+		// Handle ~<>
+		char *prev = ptr - 2;
+		if (r_str_startswith (prev, "~<>")) {
+			ptr = NULL;
+		}
+	}
 	if (ptr) {
 		if (ptr > cmd) {
 			char *ch = ptr - 1;

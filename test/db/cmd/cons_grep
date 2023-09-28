@@ -623,3 +623,26 @@ EXPECT=<<EOF
     "format": "any"
 EOF
 RUN
+
+NAME=xml indent
+FILE=malloc://128
+CMDS=<<EOF
+'w <html><body>heh</body><a>bold</a></html>
+psz~<>
+EOF
+EXPECT=<<EOF
+
+<html>
+
+  <body>
+  heh
+  </body>
+
+  <a>
+  bold
+  </a>
+
+</html>
+
+EOF
+RUN
