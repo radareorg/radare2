@@ -1122,7 +1122,7 @@ static const char *radare_argv[] = {
 	"x?", "x", "x/", "x0", "xa", "xA?", "xA", "xb", "xc", "xd?", "xd", "xd2", "xd4", "xd8",
 	"xe", "xf", "xh", "xH", "xi", "xl", "xo", "xq", "xq", "xQ", "xQq", "xr", "xrj",
 	"xs", "xt", "xt*", "xt.", "xw", "xW", "xWq", "xx", "xX",
-	"y?", "y", "yz", "yp", "yx", "ys", "yt", "ytf", "yf", "yfa", "yfx", "yw", "ywx", "yy",
+	"y?", "y", "yz", "yp", "yx", "ys", "yt", "ytf", "yf", "yfa", "yfx", "yw", "ywx", "yy", "yr",
 	"z?", "z", "z*", "zj", "z-", "z-*",
 	"za?", "za??", "za", "zaf", "zaF", "zg",
 	"zo?", "zo", "zoz", "zos",
@@ -2763,7 +2763,7 @@ static void __init_autocomplete_default(RCore* core) {
 		"idp", "idpi", "L", "obf", "o+", "oc", "of", "r2", "rabin2", "rasm2", "rahash2", "rax2", "wff",
 		"rafind2", "cd", "ls", "lua", "on", "wf", "rm", "wF", "wp", "Sd", "Sl", "to", "pm",
 		"/m", "zos", "zfd", "zfs", "zfz", "cat", "wta", "wtf", "wxf", "dml", "dd", "dd+",
-		"vi", "vim", "nvi", "neovim", "nvim", "nano", "-i",
+		"vi", "vim", "nvi", "neovim", "nvim", "nano", "-i", "yr",
 #if R2__WINDOWS__
 		"notepad",
 #endif

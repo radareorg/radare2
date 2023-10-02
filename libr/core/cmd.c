@@ -1172,6 +1172,9 @@ static int cmd_yank(void *data, const char *input) {
 	case 'l': // "yl"
 		r_core_return_value (core, r_buf_size (core->yank_buf));
 		break;
+	case 'r':
+		R_LOG_ERROR ("Missing plugin. Run r2pm -ci r2yara");
+		break;
 	case 'y': // "yy"
 		while (input[1] == ' ') {
 			input++;
