@@ -174,10 +174,10 @@ struct MACH0_(SCategory) {
 static char *readstr(RBinFile *bf, ut64 addr);
 static mach0_ut va2pa(mach0_ut p, ut32 *offset, ut32 *left, RBinFile *bf);
 static void copy_sym_name_with_namespace(char *class_name, char *read_name, RBinSymbol *sym);
-static void get_ivar_list_t(mach0_ut p, RBinFile *bf, RBinClass *klass);
+static void get_ivar_list(mach0_ut p, RBinFile *bf, RBinClass *klass);
 static void get_objc_property_list(mach0_ut p, RBinFile *bf, RBinClass *klass);
-static void get_method_list_t(mach0_ut p, RBinFile *bf, char *class_name, RBinClass *klass, bool is_static, objc_cache_opt_info *oi);
-static void get_protocol_list_t(mach0_ut p, RBinFile *bf, RBinClass *klass, objc_cache_opt_info *oi);
+static void get_method_list(mach0_ut p, RBinFile *bf, char *class_name, RBinClass *klass, bool is_static, objc_cache_opt_info *oi);
+static void get_protocol_list(mach0_ut p, RBinFile *bf, RBinClass *klass, objc_cache_opt_info *oi);
 static void get_class_ro_t(mach0_ut p, RBinFile *bf, ut32 *is_meta_class, RBinClass *klass, objc_cache_opt_info *oi);
 static RList *MACH0_(parse_categories)(RBinFile *bf, MetaSections *ms, const RSkipList *relocs, objc_cache_opt_info *oi);
 static bool read_ptr_pa(RBinFile *bf, ut64 paddr, mach0_ut *out);
@@ -241,7 +241,7 @@ static int sort_by_offset(const void *_a , const void *_b) {
 	return 0;
 }
 
-static void get_ivar_list_t(mach0_ut p, RBinFile *bf, RBinClass *klass) {
+static void get_ivar_list(mach0_ut p, RBinFile *bf, RBinClass *klass) {
 	struct MACH0_(SIVarList) il = {0};
 	struct MACH0_(SIVar) i;
 	mach0_ut r;
@@ -256,7 +256,7 @@ static void get_ivar_list_t(mach0_ut p, RBinFile *bf, RBinClass *klass) {
 	ut8 offs[sizeof (mach0_ut)] = {0};
 
 	if (!bf || !bf->bo || !bf->bo->bin_obj || !bf->bo->info) {
-		R_LOG_WARN ("incorrect RBinFile pointer");
+		R_LOG_WARN ("Incorrect RBinFile pointer");
 		return;
 	}
 	bigendian = bf->bo->info->big_endian;
@@ -588,7 +588,7 @@ error:
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-static void get_method_list_t(mach0_ut p, RBinFile *bf, char *class_name, RBinClass *klass, bool is_static, objc_cache_opt_info *oi) {
+static void get_method_list(mach0_ut p, RBinFile *bf, char *class_name, RBinClass *klass, bool is_static, objc_cache_opt_info *oi) {
 	struct MACH0_(SMethodList) ml;
 	mach0_ut r;
 	ut32 offset, left, i;
@@ -792,7 +792,7 @@ error:
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-static void get_protocol_list_t(mach0_ut p, RBinFile *bf, RBinClass *klass, objc_cache_opt_info *oi) {
+static void get_protocol_list(mach0_ut p, RBinFile *bf, RBinClass *klass, objc_cache_opt_info *oi) {
 	struct MACH0_(SProtocolList) pl = {0};
 	struct MACH0_(SProtocol) pc;
 	char *class_name = NULL;
@@ -805,7 +805,7 @@ static void get_protocol_list_t(mach0_ut p, RBinFile *bf, RBinClass *klass, objc
 	ut8 sptr[sizeof (mach0_ut)] = {0};
 
 	if (!bf || !bf->bo || !bf->bo->bin_obj || !bf->bo->info) {
-		R_LOG_WARN ("get_protocol_list_t: Invalid RBinFile pointer");
+		R_LOG_WARN ("Invalid RBinFile pointer");
 		return;
 	}
 	bigendian = bf->bo->info->big_endian;
@@ -929,10 +929,10 @@ static void get_protocol_list_t(mach0_ut p, RBinFile *bf, RBinClass *klass, objc
 		}
 
 		if (pc.instanceMethods > 0) {
-			get_method_list_t (pc.instanceMethods, bf, class_name, klass, false, oi);
+			get_method_list (pc.instanceMethods, bf, class_name, klass, false, oi);
 		}
 		if (pc.classMethods > 0) {
-			get_method_list_t (pc.classMethods, bf, class_name, klass, true, oi);
+			get_method_list (pc.classMethods, bf, class_name, klass, true, oi);
 		}
 		R_FREE (class_name);
 		p += sizeof (ut32);
@@ -1175,21 +1175,17 @@ static void get_class_ro_t(mach0_ut p, RBinFile *bf, ut32 *is_meta_class, RBinCl
 #endif
 
 	if (cro.baseMethods > 0) {
-		get_method_list_t (cro.baseMethods, bf, klass->name, klass, (cro.flags & RO_META) ? true : false, oi);
+		get_method_list (cro.baseMethods, bf, klass->name, klass, (cro.flags & RO_META) ? true : false, oi);
 	}
-
 	if (cro.baseProtocols > 0) {
-		get_protocol_list_t (cro.baseProtocols, bf, klass, oi);
+		get_protocol_list (cro.baseProtocols, bf, klass, oi);
 	}
-
 	if (cro.ivars > 0) {
-		get_ivar_list_t (cro.ivars, bf, klass);
+		get_ivar_list (cro.ivars, bf, klass);
 	}
-
 	if (cro.baseProperties > 0) {
 		get_objc_property_list (cro.baseProperties, bf, klass);
 	}
-
 	if (is_meta_class) {
 		*is_meta_class = (cro.flags & RO_META)? 1: 0;
 	}
@@ -1340,7 +1336,7 @@ ut32 members_count;
 ut32 fields_count;
 ut32 fields_offset;
 #endif
-#define NCD(x) (typeaddr + (x*4) + swords[x])
+#define NCD(x) (typeaddr + (x * 4) + swords[x])
 #if 0
 	eprintf ("0x%08"PFMT64x " swift_type_entry:\n", typeaddr);
 	eprintf ("  flags:   0x%08x\n", words[0]);
@@ -1375,18 +1371,14 @@ static inline HtUP *_load_symbol_by_vaddr_hashtable(RBinFile *bf) {
 	if (!MACH0_(load_symbols) (bf->bo->bin_obj)) {
 		return NULL;
 	}
-
 	HtUP *ht = ht_up_new0 ();
-	if (!ht) {
-		return NULL;
+	if (R_LIKELY (ht)) {
+		RVecRBinSymbol *symbols = &bf->bo->symbols_vec;
+		RBinSymbol *sym;
+		R_VEC_FOREACH (symbols, sym) {
+			ht_up_insert (ht, sym->vaddr, sym);
+		}
 	}
-
-	RVecRBinSymbol *symbols = &bf->bo->symbols_vec;
-	RBinSymbol *sym;
-	R_VEC_FOREACH (symbols, sym) {
-		ht_up_insert (ht, sym->vaddr, sym);
-	}
-
 	return ht;
 }
 
@@ -1394,7 +1386,7 @@ static inline HtUP *_load_symbol_by_vaddr_hashtable(RBinFile *bf) {
 
 static void parse_type(RList *list, RBinFile *bf, SwiftType st, HtUP *symbols_ht) {
 	char *otypename = readstr (bf, st.name_addr);
-	if (!otypename) {
+	if (R_STR_ISEMPTY (otypename)) {
 		R_LOG_DEBUG ("swift-type-parse missing name");
 		return;
 	}
@@ -1577,7 +1569,7 @@ RList *MACH0_(parse_classes)(RBinFile *bf, objc_cache_opt_info *oi) {
 					st.fieldmd_data = fieldmd;
 					st.fieldmd.addr = ms.fieldmd.addr;
 					st.fieldmd.size = aligned_fieldmd_size;
-					R_LOG_DEBUG ("Name address 0x%"PFMT64x, st.name_addr);
+					R_LOG_DEBUG ("Name address 0x%"PFMT64x" for 0x%"PFMT64x, st.name_addr, ms.fieldmd.addr);
 					if (st.fields != UT64_MAX) {
 						parse_type (ret, bf, st, symbols_ht);
 					}
@@ -1813,17 +1805,14 @@ void MACH0_(get_category_t)(mach0_ut p, RBinFile *bf, RBinClass *klass, const RS
 	R_FREE (category_name);
 
 	if (c.instanceMethods > 0) {
-		get_method_list_t (c.instanceMethods, bf, klass->name, klass, false, oi);
+		get_method_list (c.instanceMethods, bf, klass->name, klass, false, oi);
 	}
-
 	if (c.classMethods > 0) {
-		get_method_list_t (c.classMethods, bf, klass->name, klass, true, oi);
+		get_method_list (c.classMethods, bf, klass->name, klass, true, oi);
 	}
-
 	if (c.protocols > 0) {
-		get_protocol_list_t (c.protocols, bf, klass, oi);
+		get_protocol_list (c.protocols, bf, klass, oi);
 	}
-
 	if (c.properties > 0) {
 		get_objc_property_list (c.properties, bf, klass);
 	}
