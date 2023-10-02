@@ -1,5 +1,9 @@
 #!/bin/sh
 
+# find
+cd "$(dirname $0)"/..
+pwd
+
 if [ "$(uname)" = "Haiku" ]; then
 	gcc-x86 --version > /dev/null 2>&1
 	if [ $? = 0 ]; then
@@ -9,7 +13,8 @@ if [ "$(uname)" = "Haiku" ]; then
 	else
 		echo "If compilation fails, install gcc-x86 from depot"
 	fi
-	export PREFIX=/system
+	export PREFIX="${PWD}/prefix"
+
 else
 	if [ "$(id -u)" = 0 ]; then
 		echo "[WW] Do not run this script as root!"
@@ -75,10 +80,6 @@ fi
 export MAKE="$MAKE"
 
 [ -z "${INSTALL_TARGET}" ] && INSTALL_TARGET=symstall
-
-# find
-cd "$(dirname $0)"/..
-pwd
 
 # update
 if [ -z "$WITHOUT_PULL" ]; then

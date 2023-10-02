@@ -40,6 +40,7 @@
 
 // #if __STDC_VERSION__ < 201112L
 // This requires C11
+#undef static_assert
 #define static_assert(x,y)
 // #endif
 
