@@ -1,10 +1,7 @@
-/* radare - LGPL - Copyright 2010-2020 pancake */
+/* radare - LGPL - Copyright 2010-2023 pancake */
 
 #include <r_io.h>
 #include <r_lib.h>
-#include <r_socket.h>
-#include <r_util.h>
-#include <ctype.h>
 #define IRAPI static inline
 #include <libgdbr.h>
 #include <gdbclient/commands.h>
@@ -16,9 +13,17 @@ typedef struct {
 
 #define R_GDB_MAGIC r_str_hash ("gdb")
 
-// XXX kill those globals cmon
-static bool __close(RIODesc *fd);
-static libgdbr_t *desc = NULL;
+static R_TH_LOCAL libgdbr_t *desc = NULL;
+
+static bool __close(RIODesc *fd) {
+	if (fd) {
+		R_FREE (fd->name);
+	}
+	gdbr_disconnect (desc);
+	gdbr_cleanup (desc);
+	R_FREE (desc);
+	return true;
+}
 
 static bool __plugin_open(RIO *io, const char *file, bool many) {
 	return r_str_startswith (file, "gdb://");
@@ -61,8 +66,7 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 	if (!__plugin_open (io, file, 0)) {
 		return NULL;
 	}
-	strncpy (host, file + 6, sizeof (host) - 1);
-	host [sizeof (host) - 1] = '\0';
+	r_str_ncpy (host, file + 6, sizeof (host));
 	if (host[0] == '/') {
 		isdev = true;
 	}
@@ -167,16 +171,6 @@ static int __read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 		return -1;
 	}
 	return debug_gdb_read_at (buf, count, addr);
-}
-
-static bool __close(RIODesc *fd) {
-	if (fd) {
-		R_FREE (fd->name);
-	}
-	gdbr_disconnect (desc);
-	gdbr_cleanup (desc);
-	R_FREE (desc);
-	return true;
 }
 
 static int __getpid(RIODesc *fd) {

@@ -245,11 +245,11 @@ static int update_self_regions(RIO *io, int pid) {
 	return bsd_proc_vmmaps(io, pid);
 #elif __HAIKU__
 	image_info ii;
-	int32_t cookie = 0;
+	int32 cookie = 0;
 
 	while (get_next_image_info (0, &cookie, &ii) == B_OK) {
-		self_sections[self_sections_count].from = (ut64)ii.text;
-		self_sections[self_sections_count].to = (ut64)((char*)ii.text + ii.text_size);
+		self_sections[self_sections_count].from = (ut64)(size_t)ii.text;
+		self_sections[self_sections_count].to = (ut64)(size_t)((char*)ii.text + ii.text_size);
 		self_sections[self_sections_count].name = strdup (ii.name);
 		self_sections[self_sections_count].perm = 0;
 		self_sections_count++;

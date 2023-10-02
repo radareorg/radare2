@@ -1278,7 +1278,7 @@ R_API bool r_run_start(RRunProfile *p) {
 				}
 				if (p->_pidfile) {
 					char pidstr[32];
-					snprintf (pidstr, sizeof (pidstr), "%d\n", child);
+					snprintf (pidstr, sizeof (pidstr), "%d\n", (int)child);
 					r_file_dump (p->_pidfile,
 							(const ut8*)pidstr,
 							strlen (pidstr), 0);
@@ -1397,7 +1397,7 @@ R_API bool r_run_start(RRunProfile *p) {
 			if (child) {
 				if (p->_pidfile) {
 					char pidstr[32];
-					snprintf (pidstr, sizeof (pidstr), "%d\n", child);
+					snprintf (pidstr, sizeof (pidstr), "%d\n", (int)child);
 					r_file_dump (p->_pidfile,
 							(const ut8*)pidstr,
 							strlen (pidstr), 0);
