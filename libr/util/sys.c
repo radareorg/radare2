@@ -24,6 +24,8 @@
 #if defined(__HAIKU__)
 # include <kernel/image.h>
 # include <sys/param.h>
+extern int backtrace(void**, size_t);
+extern int backtrace_symbols_fd(void**, size_t, int);
 #endif
 #include <sys/types.h>
 #include <r_types.h>
@@ -1203,18 +1205,17 @@ R_API char *r_sys_pid_to_path(int pid) {
 	return strdup (pathbuf);
 #endif
 #else
-	int ret;
 #if __FreeBSD__ || __DragonFly__
 	char pathbuf[PATH_MAX];
 	size_t pathbufl = sizeof (pathbuf);
 	int mib[4] = {CTL_KERN, KERN_PROC, KERN_PROC_PATHNAME, pid};
-	ret = sysctl (mib, 4, pathbuf, &pathbufl, NULL, 0);
+	int ret = sysctl (mib, 4, pathbuf, &pathbufl, NULL, 0);
 	if (ret != 0) {
 		return NULL;
 	}
 #elif __HAIKU__
 	char pathbuf[MAXPATHLEN];
-	int32_t group = 0;
+	int32 group = 0;
 	image_info ii;
 
 	while (get_next_image_info ((team_id)pid, &group, &ii) == B_OK) {
@@ -1231,7 +1232,7 @@ R_API char *r_sys_pid_to_path(int pid) {
 #else
 	char buf[128], pathbuf[1024];
 	snprintf (buf, sizeof (buf), "/proc/%d/exe", pid);
-	ret = readlink (buf, pathbuf, sizeof (pathbuf)-1);
+	int ret = readlink (buf, pathbuf, sizeof (pathbuf)-1);
 	if (ret < 1) {
 		return NULL;
 	}
