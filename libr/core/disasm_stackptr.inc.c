@@ -99,11 +99,10 @@ static int ds_ostackptr_at(RDisasmState *ds, int *ostackptr) {
 	RAnalFunction *fcn = r_anal_get_fcn_in (ds->core->anal, ds->at, R_ANAL_FCN_TYPE_NULL);
 	if (fcn) {
 		RAnalBlock *bb = r_anal_function_bbget_in (ds->core->anal, fcn, ds->at);
-		if (bb) {
-			return bb->stackptr;
-		} else {
+		if (!bb) {
 			r_warn_if_reached ();
 		}
+		return bb->stackptr;
 	}
 	return 0;
 #else

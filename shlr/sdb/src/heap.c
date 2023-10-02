@@ -71,9 +71,9 @@ typedef struct Footer {
 
 #define ALIGNMENT 8
 #define ALIGN(size) (((size) + (ALIGNMENT - 1)) & ~(ALIGNMENT - 1))
-#define PAGE_SIZE sysconf(_SC_PAGESIZE)
+#define SDB_PAGE_SIZE sysconf(_SC_PAGESIZE)
 #define CEIL(X) ((X - (int)(X)) > 0 ? (int)(X + 1) : (int)(X))
-#define PAGES(size) (CEIL(size / (double)PAGE_SIZE))
+#define PAGES(size) (CEIL(size / (double)SDB_PAGE_SIZE))
 #define MIN_SIZE (ALIGN(sizeof(free_list) + META_SIZE))
 #define MAX(X, Y) (((X) > (Y)) ? (X) : (Y))
 
@@ -233,8 +233,8 @@ static void *sdb_heap_malloc(SdbHeap *heap, int size) {
 	// No free block was found. Allocate size requested + header (in full pages).
 	// Each next allocation will be doubled in size from the previous one
 	// (to decrease the number of mmap sys calls we make).
-	// int bytes = MAX (PAGES (required_size), heap->last_mapped_size) * PAGE_SIZE;
-	size_t bytes = PAGES(MAX (PAGES (required_size), heap->last_mapped_size)) * PAGE_SIZE;
+	// int bytes = MAX (PAGES (required_size), heap->last_mapped_size) * SDB_PAGE_SIZE;
+	size_t bytes = PAGES(MAX (PAGES (required_size), heap->last_mapped_size)) * SDB_PAGE_SIZE;
 	heap->last_mapped_size *= 2;
 
 	// last_address my not be returned by mmap, but makes it more efficient if it happens.
@@ -334,7 +334,7 @@ static void sdb_heap_free(SdbHeap *heap, void *ptr) {
 	Header *header = (Header *)start_address;
 	int size = header->size;
 	uintptr_t addr = (uintptr_t)header;
-	if (size % PAGE_SIZE == 0 && addr % PAGE_SIZE == 0) {
+	if (size % SDB_PAGE_SIZE == 0 && (addr % SDB_PAGE_SIZE) == 0) {
 		// if: full page is free (or multiple consecutive pages), page-aligned -> can munmap it.
 		unmap (heap, start_address, size);
 	} else {
@@ -342,9 +342,9 @@ static void sdb_heap_free(SdbHeap *heap, void *ptr) {
 		coalesce (heap, start_address);
 		// if we are left with a free block of size bigger than PAGE_SIZE that is
 		// page-aligned, munmap that part.
-		if (size >= PAGE_SIZE && addr % PAGE_SIZE == 0) {
-			split (heap, start_address, size, (size / PAGE_SIZE) * PAGE_SIZE);
-			unmap (heap, start_address, (size / PAGE_SIZE) * PAGE_SIZE);
+		if (size >= SDB_PAGE_SIZE && (addr % SDB_PAGE_SIZE) == 0) {
+			split (heap, start_address, size, (size / SDB_PAGE_SIZE) * SDB_PAGE_SIZE);
+			unmap (heap, start_address, (size / SDB_PAGE_SIZE) * SDB_PAGE_SIZE);
 		}
 	}
 }

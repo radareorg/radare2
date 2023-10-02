@@ -165,7 +165,7 @@ static char *slurp(FILE *f, size_t *sz) {
 					}
 				} else {
 					next = NULL;
-					nextlen = 0; //strlen (next);
+					nextlen = 0; //strlen (next);;
 				}
 				break;
 			}
