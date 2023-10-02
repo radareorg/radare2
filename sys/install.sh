@@ -5,6 +5,7 @@ if [ "$(uname)" = "Haiku" ]; then
 	if [ $? = 0 ]; then
 		export CC=gcc-x86
 		export HOST_CC=gcc-x86
+		export USERCC=gcc-x86
 	else
 		echo "If compilation fails, install gcc-x86 from depot"
 	fi

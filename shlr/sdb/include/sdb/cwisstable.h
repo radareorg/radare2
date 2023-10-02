@@ -38,6 +38,11 @@
 #include <stdlib.h>
 #include <string.h>
 
+#if __STDC_VERSION__ < 201112L
+// This requires C11
+#define static_assert(x,y)
+#endif
+
 /// cwisstable/internal/base.h /////////////////////////////////////////////////
 /// Feature detection and basic helper macros.
 
