@@ -93,6 +93,11 @@ typedef struct r_socket_http_options {
 #define R_SOCKET_PROTO_NONE 0
 #define R_SOCKET_PROTO_DEFAULT R_SOCKET_PROTO_TCP
 
+// backward compat for yara-r2
+#define r2p_cmd r2pipe_cmd
+#define r2p_open r2pipe_open
+#define r2p_close r2pipe_close
+
 #ifdef R_API
 R_API RSocket *r_socket_new_from_fd(int fd);
 R_API RSocket *r_socket_new(bool is_ssl);

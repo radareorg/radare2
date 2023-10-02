@@ -72,7 +72,9 @@ typedef int (*RConsGetCursor)(int *rows);
 typedef bool (*RConsIsBreaked)(void);
 typedef void (*RConsFlush)(void);
 typedef void (*RConsGrepCallback)(const char *grep);
+#ifndef R2_BIND_H
 typedef const char * const RCoreHelpMessage[];
+#endif
 
 typedef struct r_cons_bind_t {
 	RConsGetSize get_size;

@@ -466,7 +466,10 @@ static RList* patch_relocs(RBinFile *bf) {
 		}
 		r_pvector_push (&ext_relocs, reloc);
 	}
-	int relocs_count = r_list_length (mo->reloc_fixups);
+	int relocs_count = 0;
+	if (mo->reloc_fixups != NULL) {
+		relocs_count = r_list_length (mo->reloc_fixups);
+	}
 	if (mo->reloc_fixups && relocs_count > 0) {
 		ut8 buf[8], obuf[8];
 		RBinReloc *r;
