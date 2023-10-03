@@ -7,7 +7,7 @@
 #include <stdlib.h>
 #include <sys/types.h>
 
-static RSocket *gs = NULL;
+static R_TH_LOCAL RSocket *gs = NULL;
 
 R_PACKED (struct winedbg_x86_32 {
 	ut16 cs;
@@ -230,7 +230,7 @@ static struct winedbg_x86_32 regState(void) {
 }
 
 static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
-	if (!strcmp (cmd, "")) {
+	if (R_STR_ISEMPTY (cmd)) {
 		return NULL;
 	}
 	if (*cmd == '?') {
