@@ -1260,7 +1260,6 @@ R_API bool r_run_start(RRunProfile *p) {
 	}
 #endif
 	if (p->_system) {
-		eprintf ("system\n");
 		int rc = 0;
 		if (p->_pid) {
 			R_LOG_ERROR ("PID: Cannot determine pid with 'system' directive. Use 'program'");

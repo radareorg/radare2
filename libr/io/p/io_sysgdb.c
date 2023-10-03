@@ -6,8 +6,10 @@
 static R_TH_LOCAL RSocket *gs = NULL;
 #if __APPLE__
 static R_TH_LOCAL bool use_lldb = true;
+static bool usefirst = true;
 #else
 static R_TH_LOCAL bool use_lldb = false;
+static bool usefirst = false;
 #endif
 
 // TODO: make it vargarg...
@@ -16,15 +18,25 @@ static char *runcmd(const char *cmd) {
 	if (cmd) {
 		r_socket_printf (gs, "%s\n", cmd);
 	}
-	int timeout = 1000;
+	if (!cmd && use_lldb) {
+		cmd = "process launch --stop-at-entry\n";
+	}
+	int timeout = 10000;
 	char *str = NULL;
 	r_socket_block_time (gs, 1, timeout, 0);
 	while (true) {
 		eprintf ("LOOP\n");
 		memset (buf, 0, sizeof (buf));
-		int rc = r_socket_read (gs, (ut8*)buf, sizeof (buf) - 1); // NULL-terminate the string always
-		if (rc == -1) {
+		if (!r_socket_ready (gs, 0, 250)) {
+					return str;
+			break;
+		}
+		int rc = r_socket_read (gs, (ut8*)buf, sizeof (buf) - 1); // always NULL-terminate the string
+		if (rc < 0) {
 			eprintf ("socket-read-break\n");
+			break;
+		}
+		if (rc == 0) {
 			break;
 		}
 		buf[sizeof (buf) - 1] = 0;
@@ -32,16 +44,27 @@ static char *runcmd(const char *cmd) {
 		write (1, "READ: (", 7);
 		write (1, buf, strlen (buf));
 		write (1, ")\n", 2);
-		char *promptFound = use_lldb
-			? strstr (buf, "(lldb) ")
-			: strstr (buf, "(gdb) ");
-		if (promptFound) {
-			// check if there's anything after the prompt, then skip and continue
-			if (use_lldb) {
-				if (buf[7]) {
-					promptFound = NULL;
+		if (use_lldb) {
+			if (!cmd) {
+				usefirst = true;
+				return r_str_append (str, buf);
+			}
+			if (0&& usefirst) {
+				str = r_str_append (str, buf);
+				int rc = r_socket_read (gs, (ut8*)buf, sizeof (buf) - 1); // always NULL-terminate the string
+				usefirst = false;
+				if (rc < 1) {
+					return str;
 				}
-			} else {
+			}
+			// (lldb ) goes first, so we skip it
+			str = r_str_append (str, buf);
+			if (strstr (buf, "(lldb")) {
+				//return str;
+			}
+		} else {
+			char *promptFound = strstr (buf, "(gdb) ");
+			if (promptFound) {
 				if (buf[6]) {
 					promptFound = NULL;
 				}
@@ -164,7 +187,7 @@ static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 		}
 		gs = r_socket_new (0);
 		char *cmd = use_lldb
-			? r_str_newf ("lldb -- %s", pathname + 9)
+			? r_str_newf ("lldb --no-use-colors -- %s", pathname + 9)
 			: r_str_newf ("gdb --args %s", pathname + 10);
 		int res = r_socket_spawn (gs, cmd, 1000);
 		free (cmd);
