@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2012-2022 - pancake */
+/* radare - LGPL - Copyright 2012-2023 - pancake */
 
 #include <r_util.h>
 #include <signal.h>
@@ -255,6 +255,7 @@ R_API int r_sandbox_system(const char *x, int n) {
 			return waitpid (child, NULL, 0);
 		}
 #else
+		// the most common execution path
 		return system (x);
 #endif
 	}
@@ -268,6 +269,7 @@ R_API int r_sandbox_system(const char *x, int n) {
 		if (isbg) {
 			*isbg = 0;
 		}
+			eprintf ("je\n");
 		argv = r_str_argv (cmd, &argc);
 		if (argv) {
 			char *argv0 = r_file_path (argv[0]);

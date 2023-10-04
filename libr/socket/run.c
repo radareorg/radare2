@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2014-2022 - pancake */
+/* radare - LGPL - Copyright 2014-2023 - pancake */
 
 /* this helper api is here because it depends on r_util and r_socket */
 /* we should find a better place for it. r_io? */
@@ -985,7 +985,7 @@ R_API bool r_run_config_env(RRunProfile *p) {
 				if (p->_dofork) {
 					pid_t child_pid = r_sys_fork ();
 					if (child_pid == -1) {
-						R_LOG_ERROR ("cannot fork");
+						R_LOG_ERROR ("Cannot fork");
 						r_socket_free (child);
 						r_socket_free (fd);
 						return false;
@@ -1001,7 +1001,7 @@ R_API bool r_run_config_env(RRunProfile *p) {
 
 				if (is_child) {
 					r_socket_close_fd (fd);
-					R_LOG_ERROR ("connected");
+					R_LOG_INFO ("connected");
 					if (p->_pty) {
 						if (!redirect_socket_to_pty (child)) {
 							R_LOG_ERROR ("socket redirection failed");
@@ -1261,7 +1261,7 @@ R_API bool r_run_start(RRunProfile *p) {
 	if (p->_system) {
 		int rc = 0;
 		if (p->_pid) {
-			eprintf ("PID: Cannot determine pid with 'system' directive. Use 'program'.\n");
+			R_LOG_ERROR ("PID: Cannot determine pid with 'system' directive. Use 'program'");
 		}
 		if (p->_daemon) {
 #if R2__WINDOWS__
@@ -1277,17 +1277,16 @@ R_API bool r_run_start(RRunProfile *p) {
 					R_LOG_INFO ("pid = %d", child);
 				}
 				if (p->_pidfile) {
-					char pidstr[32];
-					snprintf (pidstr, sizeof (pidstr), "%d\n", (int)child);
-					r_file_dump (p->_pidfile,
-							(const ut8*)pidstr,
-							strlen (pidstr), 0);
+					r_strf_var (pidstr, 32, "%d\n", (int)child);
+					r_file_dump (p->_pidfile, (const ut8*)pidstr,
+						strlen (pidstr), 0);
 				}
 				exit (0);
 			}
 #if !__wasi__
 			setsid ();
 #endif
+			// setvbuf (stdout, NULL, _IONBF, 0);
 			if (p->_timeout) {
 #if R2__UNIX__
 				int mypid = r_sys_getpid ();

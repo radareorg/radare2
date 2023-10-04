@@ -356,8 +356,12 @@ static int r_core_file_do_load_for_debug(RCore *r, ut64 baseaddr, R_NULLABLE con
 	int xtr_idx = 0; // if 0, load all if xtr is used
 
 	// TODO : Honor file.path eval var too?
-	if (filenameuri && r_str_startswith (filenameuri, "dbg://")) {
-		filenameuri += 6;
+	if (filenameuri) {
+		if (r_str_startswith (filenameuri, "dbg://")) {
+			filenameuri += 6;
+		} else if (r_str_startswith (filenameuri, "sysgdb://")) {
+			filenameuri += 9;
+		}
 	}
 	if (!desc) {
 		return false;

@@ -228,19 +228,19 @@ R_API bool r_socket_spawn(RSocket *s, const char *cmd, unsigned int timeout) {
 		R_LOG_ERROR ("r_socket_spawn: %s is dead", cmd);
 		exit (0);
 	}
-	r_sys_sleep (1);
+	r_sys_sleep (1); // wait for the process to start listening.. <- thats a bottleneck
 	r_sys_usleep (timeout);
 
-	char aport[32];
-	snprintf (aport, sizeof (aport), "%d", port);
+	r_strf_var (aport, 32, "%d", port);
 	// redirect stdin/stdout/stderr
 	bool sock = r_socket_connect (s, "127.0.0.1", aport, R_SOCKET_PROTO_TCP, 2000);
 	if (!sock) {
 		return false;
 	}
 #if R2__UNIX__
-	r_sys_sleep (4);
-	r_sys_usleep (timeout);
+	// unnecessary naps
+	// r_sys_sleep (2);
+	// r_sys_usleep (timeout);
 
 	int status = 0;
 	int ret = waitpid (childPid, &status, WNOHANG | WUNTRACED);
