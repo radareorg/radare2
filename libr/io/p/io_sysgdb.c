@@ -386,6 +386,14 @@ static char *printprofile(RIO *io, RIODesc *fd) {
 	return strdup (x86r);
 }
 
+static int sysgdb_getpid(void) {
+	char *res = runcmd ("info proc");
+	char *sp = strchr (res, ' ');
+	int pid = sp? atoi (sp + 1): 0;
+	free (res);
+	return pid;
+}
+
 static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 	if (R_STR_ISEMPTY (cmd)) {
 		return NULL;
@@ -434,6 +442,8 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 		return r_hex_bin2strdup ((const ut8*)arena, arenasize);
 	} else if (!strcmp (cmd, "di")) {
 		printcmd (io, "info proc all");
+	} else if (r_str_startswith (cmd, "dk")) {
+		// do nothing. but we should send a signal here
 	} else if (!strcmp (cmd, "ds")) {
 		printcmd (io, "stepi");
 	} else if (!strcmp (cmd, "dr")) {
@@ -441,7 +451,7 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 	} else if (!strcmp (cmd, "dm")) {
 		RStrBuf *sb = r_strbuf_new ("");
 		// TODO: construct new string with standard pat
-		char *res = runcmd( "info proc mappings");
+		char *res = runcmd ("info proc mappings");
 		RList *list = r_str_split_list (res, "\n", 0);
 		RListIter *iter;
 		char *line;
@@ -464,17 +474,18 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 		r_list_free (list);
 		return r_strbuf_drain (sb);
 		// printcmd (io, "info proc mappings");
-	} else if (!strcmp (cmd, "pid")) {
-		char *res = runcmd ("info proc");
-		char *sp = strchr (res, ' ');
-		int pid = sp? atoi (sp + 1): 0;
-		free (res);
-		io->cb_printf ("%d\n", pid);
+	} else if (r_str_startswith (cmd, "pid")) { // should be using `dp` imho
+		int pid = sysgdb_getpid ();
+		// io->cb_printf ("%d\n", pid);
 		return r_str_newf ("%d\n", pid);
 	} else {
 		printcmd (io, cmd);
 	}
 	return NULL;
+}
+
+static int __getpid(RIODesc *fd) {
+	return sysgdb_getpid ();
 }
 
 RIOPlugin r_io_plugin_sysgdb = {
@@ -491,6 +502,7 @@ RIOPlugin r_io_plugin_sysgdb = {
 	.seek = __lseek,
 	.write = __write,
 	.system = __system,
+	.getpid = __getpid,
 	.isdbg = true
 };
 

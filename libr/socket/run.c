@@ -1212,7 +1212,6 @@ R_API bool r_run_start(RRunProfile *p) {
 	int ret;
 	posix_spawnattr_init (&attr);
 	if (p->_args[0]) {
-		eprintf ("args0\n");
 		char **envp = r_sys_get_environ ();
 		ut32 spflags = 0; //POSIX_SPAWN_START_SUSPENDED;
 		spflags |= POSIX_SPAWN_SETEXEC;
@@ -1274,7 +1273,6 @@ R_API bool r_run_start(RRunProfile *p) {
 				exit (1);
 			}
 			if (child) {
-				eprintf ("CHILD\n");
 				if (p->_pid) {
 					R_LOG_INFO ("pid = %d", child);
 				}
@@ -1288,7 +1286,7 @@ R_API bool r_run_start(RRunProfile *p) {
 #if !__wasi__
 			setsid ();
 #endif
-			setvbuf (stdout, NULL, _IONBF, 0);
+			// setvbuf (stdout, NULL, _IONBF, 0);
 			if (p->_timeout) {
 #if R2__UNIX__
 				int mypid = r_sys_getpid ();
@@ -1332,15 +1330,12 @@ R_API bool r_run_start(RRunProfile *p) {
 			if (p->_pid) {
 				R_LOG_WARN ("Use 'program' instead of 'system' to show the pid");
 			}
-			eprintf ("REPCMD\n");
 			rc = r_sys_cmd (p->_system);
-			eprintf ("POSCMD\n");
 		}
 		time_end (p->_time, time_begin);
 		exit (rc);
 	}
 	if (p->_program) {
-		eprintf ("program\n");
 		if (!r_file_exists (p->_program)) {
 			char *progpath = r_file_path (p->_program);
 			if (!progpath) {
@@ -1423,7 +1418,6 @@ R_API bool r_run_start(RRunProfile *p) {
 #endif
 	}
 	if (p->_runlib) {
-		eprintf ("runlib\n");
 		if (!p->_runlib_fcn) {
 			R_LOG_ERROR ("No function specified. Please set runlib.fcn");
 			return false;
@@ -1485,7 +1479,6 @@ R_API bool r_run_start(RRunProfile *p) {
 		r_lib_dl_close (addr);
 	}
 	time_end (p->_time, time_begin);
-		eprintf ("end\n");
 	return true;
 }
 
