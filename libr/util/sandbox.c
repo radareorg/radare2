@@ -255,7 +255,7 @@ R_API int r_sandbox_system(const char *x, int n) {
 			return waitpid (child, NULL, 0);
 		}
 #else
-			eprintf ("je (%s)\n", x);
+		// the most common execution path
 		return system (x);
 #endif
 	}

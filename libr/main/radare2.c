@@ -1286,6 +1286,10 @@ R_API int r_main_radare2(int argc, const char **argv) {
 				return 1;
 			}
 			if (debug == 2) {
+				if (strstr (pfile, "sysgdb://")) {
+					free (debugbackend);
+					debugbackend = strdup ("io");
+				}
 				// autodetect backend with -D when it's not native or esil
 				r_config_set (r->config, "dbg.backend", debugbackend);
 				if (strcmp (debugbackend, "native") && strcmp (debugbackend, "esil")) {
