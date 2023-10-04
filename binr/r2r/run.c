@@ -894,7 +894,10 @@ static R2RProcessOutput *run_r2_test(R2RRunConfig *config, ut64 timeout_ms, int 
 	// r_pvector_push (&args, "-ebin.types=false");
 	r_pvector_push (&args, "-escr.color=0");
 	r_pvector_push (&args, "-escr.interactive=0");
-	r_pvector_push (&args, "-NN");
+
+	if (!load_plugins) {
+		r_pvector_push (&args, "-NN");
+	}
 	RListIter *it;
 	void *extra_arg, *file_arg;
 	if (extra_args) {
@@ -917,9 +920,11 @@ static R2RProcessOutput *run_r2_test(R2RRunConfig *config, ut64 timeout_ms, int 
 	r_pvector_push (&envvars, "ANSICON");
 	r_pvector_push (&envvals, "1");
 #endif
-	r_pvector_push (&envvars, "R2_NOPLUGINS");
-	r_pvector_push (&envvals, "1");
-
+	if (!load_plugins) {
+		r_pvector_push (&envvars, "R2_NOPLUGINS");
+		r_pvector_push (&envvals, "1");
+	}
+	
 	if (extra_env)
 	{
 		RListIter * eit;
