@@ -12831,6 +12831,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 		if (strchr (input, '?')) {
 			r_core_cmd_help (core, help_msg_aaa);
 		} else {
+			char *asm_arch = strdup (r_config_get (core->config, "asm.arch"));
 			bool didAap = false;
 			char *dh_orig = NULL;
 			if (r_str_startswith (input, "aaaaa")) {
@@ -12858,7 +12859,6 @@ static int cmd_anal_all(RCore *core, const char *input) {
 			if (r_cons_is_breaked ()) {
 				goto jacuzzi;
 			}
-
 			// Run afvn in all fcns
 			if (r_config_get_b (core->config, "anal.vars")) {
 				logline (core, 25, "Analyze all functions arguments/locals (afva@@@F)");
@@ -12879,7 +12879,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 				goto jacuzzi;
 			}
 			r_cons_clear_line (1);
-			bool cfg_debug = r_config_get_b (core->config, "cfg.debug");
+			const bool cfg_debug = r_config_get_b (core->config, "cfg.debug");
 			if (*input == 'a') { // "aaa" .. which is checked just in the case above
 				if (r_str_startswith (r_config_get (core->config, "bin.lang"), "go")) {
 					logline (core, 30, "Find function and symbol names from golang binaries (aang)");
@@ -12911,7 +12911,6 @@ static int cmd_anal_all(RCore *core, const char *input) {
 				if (r_cons_is_breaked ()) {
 					goto jacuzzi;
 				}
-
 				if (is_unknown_file (core)) {
 					logline (core, 45, "find and analyze function preludes (aap)");
 					(void)r_core_search_preludes (core, false); // "aap"
@@ -12943,7 +12942,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 				if (r_cons_is_breaked ()) {
 					goto jacuzzi;
 				}
-				const bool isPreludableArch = core->rasm->config->bits == 64 && r_str_startswith (r_config_get (core->config, "asm.arch"), "arm");
+				const bool isPreludableArch = core->rasm->config->bits == 64 && r_str_startswith (asm_arch, "arm");
 
 				if (!didAap && isPreludableArch) {
 					didAap = true;
@@ -12951,10 +12950,12 @@ static int cmd_anal_all(RCore *core, const char *input) {
 					(void)r_core_search_preludes (core, false); // "aap"
 					r_core_task_yield (&core->tasks);
 				}
-				if (!r_str_startswith (r_config_get (core->config, "asm.arch"), "x86")) {
+
+				if (!r_str_startswith (asm_arch, "x86") && !r_str_startswith (asm_arch, "hex")) {
 					logline (core, 68, "Finding xrefs in noncode section (e anal.in=io.maps.x)");
 					r_core_cmd_call (core, "aavq");
 					r_core_task_yield (&core->tasks);
+					// XXX moving this oustide the x86 guard breaks some tests, missing types
 					if (cfg_debug) {
 						logline (core, 70, "Skipping function emulation in debugger mode (aaef)");
 						// nothing to do
@@ -12966,9 +12967,9 @@ static int cmd_anal_all(RCore *core, const char *input) {
 						r_core_task_yield (&core->tasks);
 						r_config_set_b (core->config, "io.pcache", io_cache);
 					}
-					if (r_cons_is_breaked ()) {
-						goto jacuzzi;
-					}
+				}
+				if (r_cons_is_breaked ()) {
+					goto jacuzzi;
 				}
 				if (r_config_get_i (core->config, "anal.autoname")) {
 					logline (core, 75, "Speculatively constructing a function name for fcn.* and sym.func.* functions (aan)");
@@ -13050,6 +13051,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 			r_core_anal_propagate_noreturn (core, UT64_MAX);
 			r_cons_break_pop ();
 			R_FREE (dh_orig);
+			free (asm_arch);
 		}
 		break;
 	case 't': // "aat"
