@@ -30,12 +30,22 @@ typedef struct {
 	bool weak;
 } RString;
 
+// string split using rvec
+typedef struct {
+	ut16 from;
+	ut16 to;
+} RStringSlice;
+
+R_VEC_TYPE (RVecStringSlice, RStringSlice);
+
+
 typedef int (*RStrRangeCallback) (void *, int);
 
 // can be replaced with RString
 #define r_strf_buffer(s) char strbuf[s]
 #define r_strf_var(n,s, f, ...) char n[s]; snprintf (n, s, f, __VA_ARGS__);
-#define r_strf(s,...) (snprintf (strbuf, sizeof (strbuf), s, __VA_ARGS__)?strbuf: strbuf)
+#define r_strf(s,...) (snprintf (strbuf, sizeof (strbuf), s, __VA_ARGS__)? strbuf: strbuf)
+#define r_str_var(n, s) const size_t n##_len = strlen (s) + 1; char n[n##_len]; strncpy (n, s, n##_len);
 
 typedef struct r_charset_rune_t {
 	ut8 *ch;
@@ -71,14 +81,6 @@ R_API void r_charset_close(RCharset *c);
 R_API RCharsetRune *add_rune(RCharsetRune *rcsr, const ut8 *ch, const ut8 *hx);
 R_API RCharsetRune *search_from_hex(RCharsetRune *rcsr, const ut8 *hx);
 R_API RCharsetRune *search_from_char(RCharsetRune *rcsr, const ut8 *ch);
-
-// string split using rvec
-typedef struct {
-	ut16 from;
-	ut16 to;
-} RStringSlice;
-
-R_VEC_TYPE (RVecStringSlice, RStringSlice);
 
 // str
 R_API char *r_str_repeat(const char *ch, int sz);
