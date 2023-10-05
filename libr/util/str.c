@@ -3435,6 +3435,37 @@ R_API bool r_str_endswith(const char *str, const char *needle) {
 	return !strcmp (str + (slen - nlen), needle);
 }
 
+R_API char *r_str_slice(const char *str, RStringSlice s) {
+	size_t len = s.to - s.from;
+	return r_str_ndup (str + s.from, len);
+}
+
+R_API RVecStringSlice *r_str_split_vec(const char *str, const char *c, int n) {
+	r_return_val_if_fail (str && c, NULL);
+	size_t b = 0;
+	// TODO honor 'c' and 'n'. not just split by ' '
+	RVecStringSlice *vs = RVecStringSlice_new ();
+	while (str[b]) {
+		const char ch = str[b];
+		if (isspace (ch)) {
+			b++;
+			continue;
+		}
+		RStringSlice slice = { b, 0 };
+		b++;
+		while (str[b]) {
+			const char ch = str[b];
+			if (isspace (ch)) {
+				break;
+			}
+			b++;
+		}
+		slice.to = b;
+		RVecStringSlice_push_back (vs, &slice);
+	}
+	return vs;
+}
+
 // Splits the string <str> by string <c> and returns the result in a list.
 // XXX should take const char * as argument!!
 R_API RList *r_str_split_list(char *str, const char *c, int n)  {
@@ -3442,7 +3473,7 @@ R_API RList *r_str_split_list(char *str, const char *c, int n)  {
 	RList *lst = r_list_newf (NULL);
 	char *aux = str; // XXX should be an strdup
 	int i = 0;
-	char  *e = aux;
+	char *e = aux;
 	for (;e;) {
 		e = strstr (aux, c);
 		if (n > 0) {

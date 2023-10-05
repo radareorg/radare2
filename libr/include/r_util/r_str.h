@@ -3,6 +3,7 @@
 
 #include "r_str_util.h"
 #include <r_list.h>
+#include <r_vec.h>
 #include <r_types_base.h>
 #include <stdarg.h>
 #include <wchar.h>
@@ -71,6 +72,14 @@ R_API RCharsetRune *add_rune(RCharsetRune *rcsr, const ut8 *ch, const ut8 *hx);
 R_API RCharsetRune *search_from_hex(RCharsetRune *rcsr, const ut8 *hx);
 R_API RCharsetRune *search_from_char(RCharsetRune *rcsr, const ut8 *ch);
 
+// string split using rvec
+typedef struct {
+	ut16 from;
+	ut16 to;
+} RStringSlice;
+
+R_VEC_TYPE (RVecStringSlice, RStringSlice);
+
 // str
 R_API char *r_str_repeat(const char *ch, int sz);
 R_API const char *r_str_pad(const char ch, int len);
@@ -104,6 +113,8 @@ R_API const char *r_str_firstbut(const char *s, char ch, const char *but);
 R_API const char *r_str_firstbut_escape(const char *s, char ch, const char *but);
 R_API const char *r_str_lastbut(const char *s, char ch, const char *but);
 R_API int r_str_split(char *str, char ch);
+
+R_API RVecStringSlice *r_str_split_vec(const char *str, const char *c, int n);
 R_API RList *r_str_split_list(char *str, const char *c, int n);
 R_API RList *r_str_split_duplist(const char *str, const char *c, bool trim);
 R_API size_t *r_str_split_lines(char *str, size_t *count);
