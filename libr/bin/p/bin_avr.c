@@ -86,8 +86,8 @@ static bool load(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
 
 static void destroy(RBinFile *bf) {
 	AvrPriv *ap = (AvrPriv*)(bf->bo->bin_obj);
-	r_buf_free (ap->b);
-	R_FREE (bf->bo->bin_obj);
+	// r_buf_free (ap->b); // this is freed by RBinFile.free()
+	free (ap);
 }
 
 static RBinInfo* info(RBinFile *bf) {
