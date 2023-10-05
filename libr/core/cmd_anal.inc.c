@@ -12831,7 +12831,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 		if (strchr (input, '?')) {
 			r_core_cmd_help (core, help_msg_aaa);
 		} else {
-			char *asm_arch = strdup (r_config_get (core->config, "asm.arch"));
+			r_str_var (asm_arch, r_config_get (core->config, "asm.arch"));
 			bool didAap = false;
 			char *dh_orig = NULL;
 			if (r_str_startswith (input, "aaaaa")) {
@@ -13051,7 +13051,6 @@ static int cmd_anal_all(RCore *core, const char *input) {
 			r_core_anal_propagate_noreturn (core, UT64_MAX);
 			r_cons_break_pop ();
 			R_FREE (dh_orig);
-			free (asm_arch);
 		}
 		break;
 	case 't': // "aat"

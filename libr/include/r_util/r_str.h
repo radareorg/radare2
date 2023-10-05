@@ -35,7 +35,8 @@ typedef int (*RStrRangeCallback) (void *, int);
 // can be replaced with RString
 #define r_strf_buffer(s) char strbuf[s]
 #define r_strf_var(n,s, f, ...) char n[s]; snprintf (n, s, f, __VA_ARGS__);
-#define r_strf(s,...) (snprintf (strbuf, sizeof (strbuf), s, __VA_ARGS__)?strbuf: strbuf)
+#define r_strf(s,...) (snprintf (strbuf, sizeof (strbuf), s, __VA_ARGS__)? strbuf: strbuf)
+#define r_str_var(n, s) char n[strlen(s) + 1]; strcpy (n, s);
 
 typedef struct r_charset_rune_t {
 	ut8 *ch;
