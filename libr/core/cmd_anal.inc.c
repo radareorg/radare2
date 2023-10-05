@@ -12955,20 +12955,19 @@ static int cmd_anal_all(RCore *core, const char *input) {
 					logline (core, 68, "Finding xrefs in noncode section (e anal.in=io.maps.x)");
 					r_core_cmd_call (core, "aavq");
 					r_core_task_yield (&core->tasks);
+					// XXX moving this oustide the x86 guard breaks some tests, missing types
+					if (cfg_debug) {
+						logline (core, 70, "Skipping function emulation in debugger mode (aaef)");
+						// nothing to do
+					} else {
+						const bool io_cache = r_config_get_i (core->config, "io.pcache");
+						r_config_set_b (core->config, "io.pcache", true);
+						logline (core, 70, "Emulate functions to find computed references (aaef)");
+						r_core_cmd_call (core, "aaef");
+						r_core_task_yield (&core->tasks);
+						r_config_set_b (core->config, "io.pcache", io_cache);
+					}
 				}
-#if 0
-				if (cfg_debug) {
-					logline (core, 70, "Skipping function emulation in debugger mode (aaef)");
-					// nothing to do
-				} else {
-					const bool io_cache = r_config_get_i (core->config, "io.pcache");
-					r_config_set_b (core->config, "io.pcache", true);
-					logline (core, 70, "Emulate functions to find computed references (aaef)");
-					r_core_cmd_call (core, "aaef");
-					r_core_task_yield (&core->tasks);
-					r_config_set_b (core->config, "io.pcache", io_cache);
-				}
-#endif
 				if (r_cons_is_breaked ()) {
 					goto jacuzzi;
 				}
