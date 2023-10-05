@@ -4716,9 +4716,12 @@ static bool _process_symbols_and_imports_in_section(ELFOBJ *eo, int type, Proces
 		if (is_section_local_sym (eo, &memory->sym[k])) {
 			const size_t sym_section = memory->sym[k].st_shndx;
 			if (eo->shstrtab) {
-				const char *shname = &eo->shstrtab[eo->shdr[sym_section].sh_name];
-				if (shname) {
-					r_str_ncpy (es->name, shname, ELF_STRING_LENGTH - 1);
+				size_t ss = eo->shstrtab_size;
+				size_t name_off = eo->shdr[sym_section].sh_name;
+				if (name_off > 0 && name_off < ss) {
+					const char *shname = eo->shstrtab + name_off;
+					size_t left = R_MIN (ELF_STRING_LENGTH - 1, ss - name_off);
+					r_str_ncpy (es->name, shname, left);
 				} else {
 					es->name[0] = 0;
 				}
