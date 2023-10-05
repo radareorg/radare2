@@ -4281,14 +4281,14 @@ escape_pipe:
 	/* pipe console to file */
 	ptr = (char *)r_str_firstbut (cmd, '>', "\"");
 	// TODO honor `
-	if (ptr) {
-		if (ptr + 2 > cmd) {
-			// Handle ~<>
-			char *prev = ptr - 2;
-			if (r_str_startswith (prev, "~<>")) {
-				ptr = NULL;
-			}
+	if (ptr != NULL && ptr + 2 > cmd) {
+		// Handle ~<>
+		char *prev = ptr - 2;
+		if (r_str_startswith (prev, "~<>")) {
+			ptr = NULL;
 		}
+	}
+	if (ptr) {
 		if (ptr > cmd) {
 			char *ch = ptr - 1;
 			if (*ch == '\\') {
