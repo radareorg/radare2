@@ -4307,7 +4307,7 @@ R_API RCoreAutocomplete *r_core_autocomplete_find(RCoreAutocomplete *parent, con
 }
 
 R_API bool r_core_autocomplete_remove(RCoreAutocomplete *parent, const char* cmd) {
-	r_return_val_if_fail (parent && cmd, NULL);
+	r_return_val_if_fail (parent && cmd, false);
 	int i, j;
 	for (i = 0; i < parent->n_subcmds; i++) {
 		RCoreAutocomplete *ac = parent->subcmds[i];
