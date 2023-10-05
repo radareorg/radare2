@@ -46,7 +46,7 @@ typedef int (*RStrRangeCallback) (void *, int);
 #define r_strf_var(n,s, f, ...) char n[s]; snprintf (n, s, f, __VA_ARGS__);
 #define r_strf(s,...) (snprintf (strbuf, sizeof (strbuf), s, __VA_ARGS__)? strbuf: strbuf)
 #ifdef _MSC_VER
-#define r_str_var(n, s) char n[64]; r_str_ncpy (n, s, 63);
+#define r_str_var(n, s) char n[64]; r_str_ncpy (n, s, 64);
 #else
 #define r_str_var(n, s) const size_t n##_len = strlen (s) + 1; char n[n##_len]; strncpy (n, s, n##_len);
 #endif
