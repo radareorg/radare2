@@ -12879,7 +12879,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 				goto jacuzzi;
 			}
 			r_cons_clear_line (1);
-			bool cfg_debug = r_config_get_b (core->config, "cfg.debug");
+			const bool cfg_debug = r_config_get_b (core->config, "cfg.debug");
 			if (*input == 'a') { // "aaa" .. which is checked just in the case above
 				if (r_str_startswith (r_config_get (core->config, "bin.lang"), "go")) {
 					logline (core, 30, "Find function and symbol names from golang binaries (aang)");
@@ -12956,6 +12956,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 					r_core_cmd_call (core, "aavq");
 					r_core_task_yield (&core->tasks);
 				}
+#if 0
 				if (cfg_debug) {
 					logline (core, 70, "Skipping function emulation in debugger mode (aaef)");
 					// nothing to do
@@ -12967,6 +12968,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 					r_core_task_yield (&core->tasks);
 					r_config_set_b (core->config, "io.pcache", io_cache);
 				}
+#endif
 				if (r_cons_is_breaked ()) {
 					goto jacuzzi;
 				}
