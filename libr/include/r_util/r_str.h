@@ -172,7 +172,7 @@ R_API char *r_str_ansi_crop(const char *str, unsigned int x, unsigned int y, uns
 R_API int r_str_word_count(const char *string);
 R_API size_t r_str_char_count(const char *string, char ch);
 R_API char *r_str_word_get0set(char *stra, int stralen, int idx, const char *newstr, int *newlen);
-R_API char *r_str_insert(char *src, int pos, const char *str);
+// R_UNUSED R_API char *r_str_insert(char *src, int pos, const char *str);
 R_API int r_str_word_set0(char *str);
 R_API int r_str_word_set0_stack(char *str);
 R_API const char *r_str_word_get0(const char *str, int idx);

@@ -1934,16 +1934,18 @@ R_API size_t r_str_ansi_strip(char *str) {
 	return i;
 }
 
+#if 0
+// unused
 // insert a string into another string, supports ansi control chars
 R_API char *r_str_insert(R_OWN char *src, int pos, const char *str) {
-	char *a = r_str_ndup (src, pos);
+	r_str_var (a, pos, src);
 	char *b = strdup (src + pos + r_str_ansi_len (str));
 	char *r = r_str_newf ("%s%s%s", a, str, b);
-	free (a);
 	free (b);
 	free (src);
 	return r;
 }
+#endif
 
 R_API size_t r_str_ansi_len(const char *str) {
 	r_return_val_if_fail (str, 0);
