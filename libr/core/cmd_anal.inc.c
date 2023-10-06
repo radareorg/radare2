@@ -5606,7 +5606,7 @@ static void __anal_reg_list(RCore *core, int type, int bits, char mode) {
 	core->dbg->reg = core->anal->reg;
 	const char *use_color;
 	int use_colors = r_config_get_i (core->config, "scr.color");
-	if (use_colors) {
+	if (use_colors != 0) {
 #undef ConsP
 #define ConsP(x) (core->cons && core->cons->context->pal.x)? core->cons->context->pal.x
 		use_color = ConsP (creg) : Color_BWHITE;
@@ -5632,8 +5632,7 @@ static void __anal_reg_list(RCore *core, int type, int bits, char mode) {
 		}
 	}
 	/* workaround for 6502 and avr*/
-	if ((!strcmp (arch_name, "6502") && bits == 8)
-		|| (!strcmp (arch_name, "avr") && bits == 8)) {
+	if (bits == 8 && (!strcmp (arch_name, "6502") || !strcmp (arch_name, "avr"))) {
 		if (mode == 'j') {
 			mode2 = 'J';
 			pj_o (pj);
