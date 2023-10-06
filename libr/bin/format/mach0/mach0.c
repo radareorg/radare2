@@ -426,7 +426,7 @@ static bool parse_segments(struct MACH0_(obj_t) *mo, ut64 off) {
 			ut64 offset = off + sizeof (struct MACH0_(segment_command)) + j * sizeof (struct MACH0_(section));
 			len = r_buf_read_at (mo->b, offset, sec, sizeof (struct MACH0_(section)));
 			if (len != sizeof (struct MACH0_(section))) {
-				bprintf ("Error: read (sects)\n");
+				R_LOG_ERROR ("read (sects)");
 				mo->nsects = sect;
 				return false;
 			}
