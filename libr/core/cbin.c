@@ -3523,6 +3523,34 @@ static void classdump_c(RCore *r, RBinClass *c) {
 	}
 }
 
+static void classdump_cxx(RCore *r, RBinClass *c) {
+	r_cons_printf ("class %s {\n", c->name);
+	RListIter *iter2;
+	RBinField *f;
+	bool is_objc = false;
+	r_list_foreach (c->fields, iter2, f) {
+		if (f->name) { //  && f->offset > 32) {
+			char *n = objc_name_toc (f->name);
+			char *t = f->type? objc_type_toc (f->type): NULL;
+			if (f->offset < 32 && !t) {
+				continue;
+			}
+			if (R_STR_ISEMPTY (t)) {
+				t = strdup ("void*");
+			}
+			if (!is_objc && !strcmp (n, "isa")) {
+				is_objc = true;
+			}
+			r_str_replace_char (n, ':', '_');
+			r_str_replace_char (n, '.', '_');
+			r_cons_printf ("    %s %s; // 0x%x\n", t, n, f->offset);
+			free (t);
+			free (n);
+		}
+	}
+	r_cons_println ("};\n");
+}
+
 static void classdump_objc(RCore *r, RBinClass *c) {
 	if (c->super) {
 		int n = 0;
@@ -3757,11 +3785,13 @@ static bool bin_classes(RCore *r, PJ *pj, int mode) {
 			if (c) {
 				const char *vlang = r_config_get (r->config, "bin.lang");
 				r_str_var (lang, 16, vlang);
-				if (R_STR_ISNOTEMPTY (lang)) {
+				if (*lang) {
 					if (!strcmp (lang, "java")) {
 						classdump_java (r, c);
 					} else if (!strcmp (lang, "swift")) {
 						classdump_swift (r, c);
+					} else if (!strcmp (lang, "cxx") || !strcmp (lang, "c++")) {
+						classdump_cxx (r, c);
 					} else if (!strcmp (lang, "c")) {
 						classdump_c (r, c);
 					} else if (r_str_startswith (lang, "objc")) {

@@ -11,13 +11,33 @@ NAME=tc2
 FILE=bins/mach0/objc-employee
 CMDS=icc*
 EXPECT=<<EOF
-typedef struct {
-    struct objc_class * isa; // 0x0
-    short _shortWord; // 0x8
-    struct NSString* _username; // 0x10
-    struct NSString* _firstName; // 0x18
-    uint64_t _wideWord; // 0x20
-} objc_class_Employee;
+@interface Employee : NSObject
+{
+  struct objc_class * Employee::(var)isa
+  s Employee::(var)_shortWord
+  @"NSString" Employee::(var)_username
+  @"NSString" Employee::(var)_firstName
+  Q Employee::(var)_wideWord
+  (null) Employee::(property)username
+  (null) Employee::(property)firstName
+  (null) Employee::(property)shortWord
+  (null) Employee::(property)wideWord
+}
++ (void) helloWorld
++ (id) sayHello
++ (unknown) p0
++ (unknown) p1
++ (unknown) p2
++ (unknown) p3
++ (unknown) base
++ (id) username
++ (void) setUsername:
++ (id) firstName
++ (void) setFirstName:
++ (short) shortWord
++ (unsigned long long) wideWord
+- (id) sayHello
+@end
 EOF
 RUN
 
@@ -240,13 +260,34 @@ NAME=tc2 iOS14 arm64
 FILE=bins/mach0/objc-employee-ios14-arm64
 CMDS=icc*
 EXPECT=<<EOF
-typedef struct {
-    struct objc_class * isa; // 0x0
-    short _shortWord; // 0x8
-    struct NSString* _username; // 0x10
-    struct NSString* _firstName; // 0x18
-    uint64_t _wideWord; // 0x20
-} objc_class_Employee;
+@interface Employee : NSObject
+{
+  struct objc_class * Employee::(var)isa
+  s Employee::(var)_shortWord
+  @"NSString" Employee::(var)_username
+  @"NSString" Employee::(var)_firstName
+  Q Employee::(var)_wideWord
+  (null) Employee::(property)username
+  (null) Employee::(property)firstName
+  (null) Employee::(property)shortWord
+  (null) Employee::(property)wideWord
+}
++ (void) sayHello
++ (void) helloWorld
++ (unknown) p0
++ (unknown) p1
++ (unknown) p2
++ (unknown) p3
++ (unknown) base
++ (id) username
++ (void) setUsername:
++ (id) firstName
++ (void) setFirstName:
++ (short) shortWord
++ (unsigned long long) wideWord
++ (void) .cxx_destruct
+- (void) sayHello
+@end
 EOF
 RUN
 
@@ -471,13 +512,34 @@ NAME=tc2 iOS14 arm64e
 FILE=bins/mach0/objc-employee-ios14-arm64e
 CMDS=icc*
 EXPECT=<<EOF
-typedef struct {
-    struct objc_class * isa; // 0x0
-    short _shortWord; // 0x8
-    struct NSString* _username; // 0x10
-    struct NSString* _firstName; // 0x18
-    uint64_t _wideWord; // 0x20
-} objc_class_Employee;
+@interface Employee : NSObject
+{
+  struct objc_class * Employee::(var)isa
+  s Employee::(var)_shortWord
+  @"NSString" Employee::(var)_username
+  @"NSString" Employee::(var)_firstName
+  Q Employee::(var)_wideWord
+  (null) Employee::(property)username
+  (null) Employee::(property)firstName
+  (null) Employee::(property)shortWord
+  (null) Employee::(property)wideWord
+}
++ (void) sayHello
++ (void) helloWorld
++ (unknown) p0
++ (unknown) p1
++ (unknown) p2
++ (unknown) p3
++ (unknown) base
++ (id) username
++ (void) setUsername:
++ (id) firstName
++ (void) setFirstName:
++ (short) shortWord
++ (unsigned long long) wideWord
++ (void) .cxx_destruct
+- (void) sayHello
+@end
 EOF
 RUN
 
