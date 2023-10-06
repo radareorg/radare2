@@ -1221,6 +1221,13 @@ R_API int r_main_r2pm(int argc, const char **argv) {
 		}
 		return r2pm.rc;
 	}
+	{
+		char *dbdir = r2pm_dbdir ();
+		if (!r_file_exists (dbdir)) {
+			r2pm.init = true;
+		}
+		free (dbdir);
+	}
 	if (r2pm.init) {
 		r2pm_update (r2pm.force);
 	}
