@@ -393,21 +393,32 @@ static bool GH(r_resolve_main_arena)(RCore *core, GHT *m_arena) {
 	GHT libc_addr_sta = GHT_MAX, libc_addr_end = 0;
 	GHT main_arena_sym = GHT_MAX;
 	const bool in_debugger = r_config_get_b (core->config, "cfg.debug");
-	bool first_libc = true;
 
 	if (in_debugger) {
+		const char *dbg_glibc_path = r_config_get (core->config, "dbg.glibc.path");
+		if (R_STR_ISEMPTY (dbg_glibc_path)) {
+			dbg_glibc_path = NULL;
+		}
+		bool first_libc = true;
 		RListIter *iter;
 		RDebugMap *map;
 		r_debug_map_sync (core->dbg);
 		r_list_foreach (core->dbg->maps, iter, map) {
+			if (dbg_glibc_path) {
+				if (map->perm == R_PERM_RW && strstr (map->name, dbg_glibc_path)) {
+					libc_addr_sta = map->addr;
+					libc_addr_end = map->addr_end;
+					main_arena_sym = GH (get_main_arena_with_symbol) (core, map);
+					break;
+				}
+				continue;
+			}
 			/* Try to find the main arena address using the glibc's symbols. */
-			if ((strstr (map->name, "/libc-") || strstr (map->name, "/libc."))
-					&& first_libc && main_arena_sym == GHT_MAX) {
+			if ((first_libc && main_arena_sym == GHT_MAX) && (strstr (map->name, "/libc-") || strstr (map->name, "/libc."))) {
 				first_libc = false;
 				main_arena_sym = GH (get_main_arena_with_symbol) (core, map);
 			}
-			if ((strstr (map->name, "/libc-") || strstr (map->name, "/libc."))
-					&& map->perm == R_PERM_RW) {
+			if (map->perm == R_PERM_RW && (strstr (map->name, "/libc-") || strstr (map->name, "/libc."))) {
 				libc_addr_sta = map->addr;
 				libc_addr_end = map->addr_end;
 				break;
