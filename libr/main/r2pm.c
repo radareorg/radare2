@@ -668,7 +668,7 @@ static bool r2pm_check(const char *program) {
 	return found;
 }
 
-static int r2pm_install_pkg(const char *pkg, bool global) {
+static int r2pm_install_pkg(const char *pkg, bool clean, bool global) {
 	bool have_builddir = r2pm_have_builddir (pkg);
 	R_LOG_INFO ("Starting install for %s", pkg);
 	char *needs = r2pm_get (pkg, "\nR2PM_NEEDS ", TT_TEXTLINE);
@@ -692,7 +692,7 @@ static int r2pm_install_pkg(const char *pkg, bool global) {
 					const char *const cmd = "apt install build-essential git make patch python wget binutils";
 					R_LOG_INFO ("Running %s");
 					r_sys_cmd (cmd);
-					return r2pm_install_pkg (pkg, global);
+					return r2pm_install_pkg (pkg, clean, global);
 				}
 			}
 			return -1;
@@ -703,14 +703,25 @@ static int r2pm_install_pkg(const char *pkg, bool global) {
 		char *dep;
 		RListIter *iter;
 		RList *l = r_str_split_list (deps, " ", 0);
+		char *pkgdir = r2pm_gitdir ();
 		r_list_foreach (l, iter, dep) {
+			if (!clean) {
+				// skip dep if already installed
+				char *srcdir = r_file_new (pkgdir, pkg, NULL);
+				bool is_installed = r_file_is_directory (srcdir);
+				free (srcdir);
+				if (is_installed) {
+					continue;
+				}
+			}
 			if (r2pm_clone (dep) == 0) {
-				r2pm_install_pkg (dep, false); // XXX get current pkg global value
+				r2pm_install_pkg (dep, clean, false); // XXX get current pkg global value
 			} else {
 				R_LOG_ERROR ("Cannot clone %s", dep);
 				// ignore return -1;
 			}
 		}
+		free (pkgdir);
 	}
 	char *srcdir = r2pm_gitdir ();
 	r2pm_setenv ();
@@ -845,7 +856,7 @@ static int r2pm_install(RList *targets, bool uninstall, bool clean, bool force, 
 			r2pm_clean_pkg (t);
 		}
 		if (r2pm_clone (t) == 0) {
-			rc |= r2pm_install_pkg (t, global);
+			rc |= r2pm_install_pkg (t, clean, global);
 		} else {
 			R_LOG_ERROR ("Cannot clone %s", t);
 			rc = 1;
