@@ -5,6 +5,7 @@
 #include <r_hash.h>
 #include "mach0.h"
 
+// R2_590 - deprecate bprintf
 #define bprintf if (mo->verbose) eprintf
 
 #define MACHO_MAX_SECTIONS 4096
@@ -333,7 +334,7 @@ static bool parse_segments(struct MACH0_(obj_t) *mo, ut64 off) {
 	j = mo->nsegs - 1;
 	len = r_buf_read_at (mo->b, off, segcom, sizeof (struct MACH0_(segment_command)));
 	if (len != sizeof (struct MACH0_(segment_command))) {
-		bprintf ("Error: read (seg)\n");
+		R_LOG_ERROR ("read (seg)");
 		return false;
 	}
 	i = 0;
@@ -385,12 +386,12 @@ static bool parse_segments(struct MACH0_(obj_t) *mo, ut64 off) {
 		mo->nsects += mo->segs[j].nsects;
 		if (mo->nsects > MACHO_MAX_SECTIONS) {
 			int new_nsects = mo->nsects & 0xf;
-			bprintf ("WARNING: mach0 header contains too many sections (%d). Wrapping to %d\n",
+			R_LOG_WARN ("mach0 header contains too many sections (%d). Wrapping to %d",
 				 mo->nsects, new_nsects);
 			mo->nsects = new_nsects;
 		}
 		if ((int)mo->nsects < 1) {
-			bprintf ("Warning: Invalid number of sections\n");
+			R_LOG_WARN ("Invalid number of sections");
 			mo->nsects = sect;
 			return false;
 		}
@@ -586,7 +587,7 @@ static bool parse_dysymtab(struct MACH0_(obj_t) *mo, ut64 off) {
 
 	len = r_buf_read_at (mo->b, off, dysym, sizeof (struct dysymtab_command));
 	if (len != sizeof (struct dysymtab_command)) {
-		bprintf ("Error: read (dysymtab)\n");
+		R_LOG_ERROR ("read (dysymtab)");
 		return false;
 	}
 	// use r_buf_fread instead of all this duck typing
@@ -634,7 +635,7 @@ static bool parse_dysymtab(struct MACH0_(obj_t) *mo, ut64 off) {
 				i * sizeof (struct dylib_table_of_contents),
 				dytoc, sizeof (struct dylib_table_of_contents));
 			if (len != sizeof (struct dylib_table_of_contents)) {
-				bprintf ("Error: read (toc)\n");
+				R_LOG_ERROR ("read (toc)");
 				R_FREE (mo->toc);
 				return false;
 			}
@@ -667,7 +668,7 @@ static bool parse_dysymtab(struct MACH0_(obj_t) *mo, ut64 off) {
 				i * sizeof (struct MACH0_(dylib_module)),
 				dymod, sizeof (struct MACH0_(dylib_module)));
 			if (len == -1) {
-				bprintf ("Error: read (modtab)\n");
+				R_LOG_ERROR ("read (modtab)");
 				R_FREE (mo->modtab);
 				return false;
 			}
@@ -714,7 +715,7 @@ static bool parse_dysymtab(struct MACH0_(obj_t) *mo, ut64 off) {
 		for (i = 0; i < mo->nindirectsyms; i++) {
 			len = r_buf_read_at (mo->b, mo->dysymtab.indirectsymoff + i * sizeof (ut32), idsyms, 4);
 			if (len == -1) {
-				bprintf ("Error: read (indirect syms)\n");
+				R_LOG_ERROR ("read (indirect syms)");
 				R_FREE (mo->indirectsyms);
 				return false;
 			}
@@ -890,7 +891,7 @@ static bool parse_signature(struct MACH0_(obj_t) *mo, ut64 off) {
 	}
 	len = r_buf_read_at (mo->b, off, lit, sizeof (struct linkedit_data_command));
 	if (len != sizeof (struct linkedit_data_command)) {
-		bprintf ("Failed to get data while parsing LC_CODE_SIGNATURE command\n");
+		R_LOG_ERROR ("Failed to get data while parsing LC_CODE_SIGNATURE command");
 		return false;
 	}
 	link.cmd = r_read_ble32 (&lit[0], mo->big_endian);
@@ -1081,7 +1082,7 @@ static int parse_thread(struct MACH0_(obj_t) *mo, struct load_command *lc, ut64 
 			}
 			if (r_buf_fread_at (mo->b, ptr_thread,
 				(ut8*)&mo->thread_state.x86_32, "16i", 1) == -1) {
-				bprintf ("Error: read (thread state x86_32)\n");
+				R_LOG_ERROR ("read (thread state x86_32)");
 				return false;
 			}
 			pc = mo->thread_state.x86_32.eip;
@@ -1095,7 +1096,7 @@ static int parse_thread(struct MACH0_(obj_t) *mo, struct load_command *lc, ut64 
 			}
 			if (r_buf_fread_at (mo->b, ptr_thread,
 				(ut8*)&mo->thread_state.x86_64, "32l", 1) == -1) {
-				bprintf ("Error: read (thread state x86_64)\n");
+				R_LOG_ERROR ("read (thread state x86_64)");
 				return false;
 			}
 			pc = mo->thread_state.x86_64.rip;
@@ -1114,7 +1115,7 @@ static int parse_thread(struct MACH0_(obj_t) *mo, struct load_command *lc, ut64 
 			}
 			if (r_buf_fread_at (mo->b, ptr_thread,
 				(ut8*)&mo->thread_state.ppc_32, mo->big_endian ? "40I" : "40i", 1) == -1) {
-				bprintf ("Error: read (thread state ppc_32)\n");
+				R_LOG_ERROR ("read (thread state ppc_32)");
 				return false;
 			}
 			pc = mo->thread_state.ppc_32.srr0;
@@ -1127,7 +1128,7 @@ static int parse_thread(struct MACH0_(obj_t) *mo, struct load_command *lc, ut64 
 			}
 			if (r_buf_fread_at (mo->b, ptr_thread,
 				(ut8*)&mo->thread_state.ppc_64, mo->big_endian ? "34LI3LI" : "34li3li", 1) == -1) {
-				bprintf ("Error: read (thread state ppc_64)\n");
+				R_LOG_ERROR ("read (thread state ppc_64)");
 				return false;
 			}
 			pc = mo->thread_state.ppc_64.srr0;
@@ -1142,7 +1143,7 @@ static int parse_thread(struct MACH0_(obj_t) *mo, struct load_command *lc, ut64 
 		}
 		if (r_buf_fread_at (mo->b, ptr_thread,
 			(ut8*)&mo->thread_state.arm_32, mo->big_endian ? "17I" : "17i", 1) == -1) {
-			bprintf ("Error: read (thread state arm)\n");
+			R_LOG_ERROR ("read (thread state arm)");
 			return false;
 		}
 		pc = mo->thread_state.arm_32.r15;
@@ -1156,7 +1157,7 @@ static int parse_thread(struct MACH0_(obj_t) *mo, struct load_command *lc, ut64 
 		}
 		if (r_buf_fread_at (mo->b, ptr_thread,
 			(ut8*)&mo->thread_state.arm_64, mo->big_endian ? "34LI1I" : "34Li1i", 1) == -1) {
-			bprintf ("Error: read (thread state arm)\n");
+			R_LOG_ERROR ("read (thread state arm)");
 			return false;
 		}
 		pc = r_read_be64 (&mo->thread_state.arm_64.pc);
@@ -1165,7 +1166,7 @@ static int parse_thread(struct MACH0_(obj_t) *mo, struct load_command *lc, ut64 
 		arw_sz = sizeof (struct arm_thread_state64);
 		break;
 	default:
-		bprintf ("Error: read (unknown thread state structure)\n");
+		R_LOG_ERROR ("read (unknown thread state structure)");
 		return false;
 	}
 
@@ -1253,7 +1254,7 @@ static int parse_dylib(struct MACH0_(obj_t) *mo, ut64 off) {
 	char lib[R_BIN_MACH0_STRING_LENGTH] = {0};
 	len = r_buf_read_at (mo->b, off, sdl, sizeof (struct dylib_command));
 	if (len < 1) {
-		bprintf ("Error: read (dylib)\n");
+		R_LOG_ERROR ("read (dylib)");
 		return false;
 	}
 	dl.cmd = r_read_ble32 (&sdl[0], mo->big_endian);
@@ -1271,7 +1272,7 @@ static int parse_dylib(struct MACH0_(obj_t) *mo, ut64 off) {
 	len = r_buf_read_at (mo->b, off + dl.dylib.name,
 		(ut8*) lib, R_BIN_MACH0_STRING_LENGTH - 1);
 	if (len < 1) {
-		bprintf ("Error: read (dylib str)");
+		R_LOG_ERROR ("read (dylib str)");
 		return false;
 	}
 
@@ -1628,7 +1629,7 @@ static bool reconstruct_chained_fixup(struct MACH0_(obj_t) *mo) {
 		return false;
 	}
 	if (r_buf_read_at (mo->b, mo->dyld_info->bind_off, opcodes, bind_size) != bind_size) {
-		bprintf ("Error: read (dyld_info bind) at 0x%08"PFMT64x"\n", (ut64)(size_t)mo->dyld_info->bind_off);
+		R_LOG_ERROR ("read (dyld_info bind) at 0x%08"PFMT64x, (ut64)(size_t)mo->dyld_info->bind_off);
 		R_FREE (opcodes);
 		return false;
 	}
@@ -1681,7 +1682,7 @@ static bool reconstruct_chained_fixup(struct MACH0_(obj_t) *mo) {
 				break;
 			}
 			default:
-				bprintf ("Error: Unexpected BIND_OPCODE_THREADED sub-opcode: 0x%x\n", imm);
+				R_LOG_ERROR ("Unexpected BIND_OPCODE_THREADED sub-opcode: 0x%x", imm);
 			}
 			break;
 		}
@@ -1703,8 +1704,7 @@ static bool reconstruct_chained_fixup(struct MACH0_(obj_t) *mo) {
 		case BIND_OPCODE_SET_SEGMENT_AND_OFFSET_ULEB:
 			seg_idx = imm;
 			if (seg_idx >= mo->nsegs) {
-				bprintf ("Error: BIND_OPCODE_SET_SEGMENT_AND_OFFSET_ULEB"
-					" has unexistent segment %d\n", seg_idx);
+				R_LOG_ERROR ("BIND_OPCODE_SET_SEGMENT_AND_OFFSET_ULEB has unexistent segment %d", seg_idx);
 				R_FREE (opcodes);
 				return false;
 			} else {
@@ -1730,7 +1730,7 @@ static bool reconstruct_chained_fixup(struct MACH0_(obj_t) *mo) {
 			}
 			break;
 		default:
-			bprintf ("Error: unknown bind opcode 0x%02x in dyld_info\n", *p);
+			R_LOG_ERROR ("unknown bind opcode 0x%02x in dyld_info", *p);
 			R_FREE (opcodes);
 			return false;
 		}
@@ -1778,7 +1778,7 @@ static int init_items(struct MACH0_(obj_t) *mo) {
 		lc.cmdsize = r_read_ble32 (&loadc[4], mo->big_endian);
 
 		if (lc.cmdsize < 1 || off + lc.cmdsize > mo->size) {
-			bprintf ("Warning: mach0_header %d = cmdsize<1. (0x%"PFMT64x" vs 0x%"PFMT64x")\n", i,
+			R_LOG_WARN ("mach0_header %d = cmdsize<1. (0x%"PFMT64x" vs 0x%"PFMT64x")", i,
 				(ut64)(off + lc.cmdsize), (ut64)(mo->size));
 			break;
 		}
@@ -1799,14 +1799,13 @@ static int init_items(struct MACH0_(obj_t) *mo) {
 			break;
 		case LC_RPATH:
 			sdb_set (mo->kv, cmd_flagname, "rpath", 0);
-			//bprintf ("--->\n");
 			break;
 		case LC_SEGMENT_64:
 		case LC_SEGMENT:
 			sdb_set (mo->kv, cmd_flagname, "segment", 0);
 			mo->nsegs++;
 			if (!parse_segments (mo, off)) {
-				bprintf ("error parsing segment\n");
+				R_LOG_ERROR ("parsing segment");
 				mo->nsegs--;
 				return false;
 			}
@@ -1814,14 +1813,14 @@ static int init_items(struct MACH0_(obj_t) *mo) {
 		case LC_SYMTAB:
 			sdb_set (mo->kv, cmd_flagname, "symtab", 0);
 			if (!parse_symtab (mo, off)) {
-				bprintf ("error parsing symtab\n");
+				R_LOG_ERROR ("parsing symtab");
 				return false;
 			}
 			break;
 		case LC_DYSYMTAB:
 			sdb_set (mo->kv, cmd_flagname, "dysymtab", 0);
 			if (!parse_dysymtab (mo, off)) {
-				bprintf ("error parsing dysymtab\n");
+				R_LOG_ERROR ("parsing dysymtab");
 				return false;
 			}
 			break;
@@ -1833,7 +1832,7 @@ static int init_items(struct MACH0_(obj_t) *mo) {
 			break;
 		case LC_DYLIB_CODE_SIGN_DRS:
 			sdb_set (mo->kv, cmd_flagname, "dylib_code_sign_drs", 0);
-			//bprintf ("[mach0] code is signed\n");
+			// bprintf ("[mach0] code is signed\n");
 			break;
 		case LC_VERSION_MIN_MACOSX:
 			sdb_set (mo->kv, cmd_flagname, "version_min_macosx", 0);
@@ -2567,7 +2566,8 @@ const RVector *MACH0_(load_sections)(struct MACH0_(obj_t) *mo) {
 	mo->sections_loaded = true;
 	r_vector_init (&mo->sections_cache, sizeof (struct section_t), NULL, NULL);
 
-	char sectname[64], raw_segname[17];
+	char sectname[64];
+	char raw_segname[17];
 	size_t i, j, to;
 	struct MACH0_(segment_command) *seg;
 
