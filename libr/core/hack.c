@@ -8,9 +8,21 @@
  */
 
 static bool r_core_hack_riscv(RCore *core, const char *op, const RAnalOp *analop) {
+	// TODO honor analop->size
 	if (!strcmp (op, "nop")) {
-		// TODO honor analop->size
+		if (analop->size < 4) {
+			R_LOG_ERROR ("Can't nop <4 byte instructions");
+			return false;
+		}
 		r_core_cmdf (core, "wx 13000000");
+		return true;
+	}
+	if (!strcmp (op, "jinf")) {
+		if (analop->size < 2) {
+			R_LOG_ERROR ("Minimum jinf is 2 byte");
+			return false;
+		}
+		r_core_cmdf (core, "wx 01a0");
 		return true;
 	}
 	R_LOG_ERROR ("Unsupported operation '%s'", op);
