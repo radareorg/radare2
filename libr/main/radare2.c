@@ -743,7 +743,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 #if DEBUGGER
 			debug = 1;
 #else
-			R_LOG_ERROR ("Sorry. No debugger backend available");
+			R_LOG_ERROR ("Sorry. I'm built without debugger support");
 			return 1;
 #endif
 			break;
@@ -1362,8 +1362,10 @@ R_API int r_main_radare2(int argc, const char **argv) {
 						// f is a path
 						path = strdup (f);
 					} else {
-						// f is a filename
-						if (r_file_exists (f)) {
+						if (isdigit (*f)) {
+							path = strdup (f);
+						} else if (r_file_exists (f)) {
+							// f is a filename
 							path = r_str_prepend (strdup (f), "./");
 						} else {
 							path = r_file_path (f);

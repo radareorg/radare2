@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2007-2022 - pancake */
+/* radare - LGPL - Copyright 2007-2023 - pancake */
 
 #include <errno.h>
 #include <r_lib.h>
@@ -418,12 +418,10 @@ static int fork_and_ptraceme_for_unix(RIO *io, int bits, const char *cmd) {
 static int fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
 	// Before calling the platform implementation, append arguments to the command if they have been provided
 	char *_eff_cmd = io->args ? r_str_appendf (strdup (cmd), " %s", io->args) : strdup(cmd);
-	int r = 0;
-
 #if __APPLE__ && !__POWERPC__
-	r = fork_and_ptraceme_for_mac (io, bits, _eff_cmd);
+	int r = fork_and_ptraceme_for_mac (io, bits, _eff_cmd);
 #else
-	r = fork_and_ptraceme_for_unix (io, bits, _eff_cmd);
+	int r = fork_and_ptraceme_for_unix (io, bits, _eff_cmd);
 #endif
 	free (_eff_cmd);
 	return r;
