@@ -318,18 +318,14 @@ R_API char *r_cons_pal_parse(const char *str, R_NULLABLE RColor *outcol) {
 	// Handle first color (fgcolor)
 	if (!strcmp (fgcolor, "random")) {
 		rcolor = r_cons_color_random (ALPHA_FG);
-		if (!outcol) {
-			r_cons_rgb_str (out, sizeof (out), &rcolor);
-		}
+		r_cons_rgb_str (out, sizeof (out), &rcolor);
 	} else if (fgcolor[0] == '#') { // "#00ff00" HTML format
 		if (strlen (fgcolor + 1) == 6) {
 			const char *kule = fgcolor + 1;
 			rcolor.r = rgbnum (kule[0], kule[1]);
 			rcolor.g = rgbnum (kule[2], kule[3]);
 			rcolor.b = rgbnum (kule[4], kule[5]);
-			if (!outcol) {
-				r_cons_rgb_str (out, sizeof (out), &rcolor);
-			}
+			r_cons_rgb_str (out, sizeof (out), &rcolor);
 		} else {
 			R_LOG_WARN ("Invalid html color code");
 		}
@@ -338,16 +334,12 @@ R_API char *r_cons_pal_parse(const char *str, R_NULLABLE RColor *outcol) {
 			rcolor.r = rgbnum (fgcolor[4], '0');
 			rcolor.g = rgbnum (fgcolor[5], '0');
 			rcolor.b = rgbnum (fgcolor[6], '0');
-			if (!outcol) {
-				r_cons_rgb_str (out, sizeof (out), &rcolor);
-			}
+			r_cons_rgb_str (out, sizeof (out), &rcolor);
 		} else if (strlen (fgcolor + 4) == 6) { // rgb:RRGGBB
 			rcolor.r = rgbnum (fgcolor[4], fgcolor[5]);
 			rcolor.g = rgbnum (fgcolor[6], fgcolor[7]);
 			rcolor.b = rgbnum (fgcolor[8], fgcolor[9]);
-			if (!outcol) {
-				r_cons_rgb_str (out, sizeof (out), &rcolor);
-			}
+			r_cons_rgb_str (out, sizeof (out), &rcolor);
 		}
 	}
 	// Handle second color (bgcolor)
@@ -423,7 +415,7 @@ R_API char *r_cons_pal_parse(const char *str, R_NULLABLE RColor *outcol) {
 		*outcol = rcolor;
 	}
 	free (fgcolor);
-	return (*out && !outcol) ? strdup (out) : NULL;
+	return *out ? strdup (out) : NULL;
 }
 
 static void r_cons_pal_show_gs(void) {

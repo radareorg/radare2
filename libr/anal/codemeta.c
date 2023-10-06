@@ -8,6 +8,9 @@
 R_API RCodeMetaItem *r_codemeta_item_clone(RCodeMetaItem *code) {
 	r_return_val_if_fail (code, NULL);
 	RCodeMetaItem *mi = r_codemeta_item_new ();
+	if (!mi) {
+		return NULL;
+	}
 	memcpy (mi, code, sizeof (RCodeMetaItem));
 	switch (mi->type) {
 	case R_CODEMETA_TYPE_FUNCTION_NAME:
@@ -28,21 +31,23 @@ R_API RCodeMetaItem *r_codemeta_item_clone(RCodeMetaItem *code) {
 
 R_API RCodeMeta *r_codemeta_clone(RCodeMeta *code) {
 	RCodeMeta *r = r_codemeta_new (code->code);
-	RCodeMetaItem *mi;
-	r_vector_foreach (&code->annotations, mi) {
-		r_codemeta_add_item (r, r_codemeta_item_clone (mi));
+	if (r) {
+		RCodeMetaItem *mi;
+		r_vector_foreach (&code->annotations, mi) {
+			r_codemeta_add_item (r, r_codemeta_item_clone (mi));
+		}
 	}
 	return r;
 }
 
 R_API RCodeMeta *r_codemeta_new(const char *code) {
 	RCodeMeta *r = R_NEW0 (RCodeMeta);
-	if (!r) {
-		return NULL;
+	if (r) {
+		r->tree = r_crbtree_new (NULL);
+		r->code = code? strdup (code): NULL;
+		r_vector_init (&r->annotations, sizeof (RCodeMetaItem),
+				(RVectorFree)r_codemeta_item_fini, NULL);
 	}
-	r->tree = r_crbtree_new (NULL);
-	r->code = code? strdup (code): NULL;
-	r_vector_init (&r->annotations, sizeof (RCodeMetaItem), (RVectorFree)r_codemeta_item_fini, NULL);
 	return r;
 }
 
