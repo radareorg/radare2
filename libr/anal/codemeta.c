@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2020-2021 - nimmumanoj, pancake */
+/* radare2 - LGPL - Copyright 2020-2023 - nimmumanoj, pancake */
 
 #include <r_core.h>
 #include <r_codemeta.h>

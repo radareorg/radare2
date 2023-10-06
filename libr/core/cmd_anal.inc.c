@@ -247,8 +247,18 @@ static RCoreHelpMessage help_msg_ab = {
 	"abl", "[?] [.-cqj]", "list all basic blocks",
 	"abo", "", "list opcode offsets of current basic block",
 	"abp", "[?] [addr] [num]", "follow basic blocks paths from current offset to addr",
-	"abt", "[tag] ([color])", "trace tags are bitfields, 0 means nontraced, withuot arguments show current value",
+	"abt", "[tag] ([color])", "no args = show current trace tag, otherwise set the color",
 	"abx", " [hexpair-bytes]", "analyze N bytes",
+	NULL
+};
+
+static RCoreHelpMessage help_msg_abt = {
+	"Usage:", "abt", "# list and manage stored backtraces",
+	"abt", "", "list backtraces for this function",
+	"abt*", "", "dump as r2 commands",
+	"abt+", "[addr] [bt0,bt1,bt2,..]", "add a new backtrace",
+	"abt-", "[addr]", "delete all backtraces from given bt",
+	"abtn", "[tag] ([color])", "bb trace tag number: set color and tagname",
 	NULL
 };
 
@@ -12155,7 +12165,7 @@ beach:
 	seti ("search.align", o_align);
 }
 
-static void cmd_anal_abt(RCore *core, const char *input) {
+static void cmd_anal_abtn(RCore *core, const char *input) {
 	RAnalBlock *bb = r_anal_get_block_at (core->anal, core->offset);
 	if (bb) {
 		if (R_STR_ISEMPTY (input)) {
@@ -12175,7 +12185,7 @@ static void cmd_anal_abt(RCore *core, const char *input) {
 					core->anal->tracetagcolors[tag] = k;
 					free (s);
 				} else {
-					R_LOG_ERROR ("Invalid error");
+					R_LOG_ERROR ("Invalid color '%s'", arg + 1);
 				}
 			} else {
 				bb->traced = tag;
@@ -12183,6 +12193,53 @@ static void cmd_anal_abt(RCore *core, const char *input) {
 		}
 	} else {
 		R_LOG_ERROR ("Cannot find any basic block here");
+	}
+}
+
+static void cmd_anal_abt(RCore *core, const char *input) {
+	switch (*input) {
+	case '?':
+		r_core_cmd_help (core, help_msg_abt);
+		break;
+	case 'n':
+		cmd_anal_abtn (core, input);
+		break;
+	case '*':
+	case 'j':
+	case 0:
+		r_anal_backtrace_list (core->anal, core->offset, *input);
+		break;
+	case '+':
+		{
+			char *arg_addr = strdup (input);
+			char *arg_bt = r_str_after (arg_addr, ' ');
+			ut64 addr = r_num_math (core->num, arg_addr);
+			RVecStringSlice *ss = r_str_split_vec (arg_bt, ",", 0);
+			RVecBacktrace *bt = RVecBacktrace_new ();
+			RStringSlice *slice;
+			R_VEC_FOREACH (ss, slice) {
+				char *s = r_str_slice (arg_bt, *slice);
+				ut64 n = r_num_math (core->num, s);
+				free (s);
+				RVecBacktrace_push_back (bt, &n);
+			}
+			r_anal_backtrace_add (core->anal, addr, bt);
+			RVecStringSlice_free (ss);
+			free (arg_addr);
+		}
+		break;
+	case '-':
+		{
+			ut64 n = r_num_math (core->num, input + 1);
+			if (!n) {
+				n = core->offset;
+			}
+			r_anal_backtrace_del (core->anal, n);
+		}
+		break;
+	default:
+		r_core_cmd_help (core, help_msg_abt);
+		break;
 	}
 }
 
