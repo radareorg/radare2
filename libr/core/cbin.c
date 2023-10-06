@@ -3755,21 +3755,37 @@ static bool bin_classes(RCore *r, PJ *pj, int mode) {
 			free (supers);
 		} else if (IS_MODE_CLASSDUMP (mode)) {
 			if (c) {
-				RBinFile *bf = r_bin_cur (r->bin);
-				if (bf && bf->bo) {
-					if (IS_MODE_RAD (mode)) {
-						classdump_c (r, c);
-					} else if (mode == 'O') {
-						classdump_objc (r, c);
-					} else if (is_javaish (bf) || mode == 'J') {
+				const char *vlang = r_config_get (r->config, "bin.lang");
+				r_str_var (lang, 16, vlang);
+				if (R_STR_ISNOTEMPTY (lang)) {
+					if (!strcmp (lang, "java")) {
 						classdump_java (r, c);
-					} else if (is_swift (bf) || mode == 'S') {
+					} else if (!strcmp (lang, "swift")) {
 						classdump_swift (r, c);
-					} else {
+					} else if (!strcmp (lang, "c")) {
+						classdump_c (r, c);
+					} else if (r_str_startswith (lang, "objc")) {
 						classdump_objc (r, c);
+					} else {
+						classdump_c (r, c);
 					}
 				} else {
-					classdump_objc (r, c);
+					RBinFile *bf = r_bin_cur (r->bin);
+					if (bf && bf->bo) {
+						if (IS_MODE_RAD (mode)) {
+							classdump_c (r, c);
+						} else if (mode == 'O') {
+							classdump_objc (r, c);
+						} else if (is_javaish (bf) || mode == 'J') {
+							classdump_java (r, c);
+						} else if (is_swift (bf) || mode == 'S') {
+							classdump_swift (r, c);
+						} else {
+							classdump_objc (r, c);
+						}
+					} else {
+						classdump_c (r, c);
+					}
 				}
 			}
 		} else if (IS_MODE_RAD (mode)) {
