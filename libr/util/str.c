@@ -764,6 +764,7 @@ R_API char *r_str_newf(const char *fmt, ...) {
 	return p;
 }
 
+#if 0
 // Secure string copy with null terminator (like strlcpy or strscpy but ours
 R_API size_t r_str_ncpy(char *dst, const char *src, size_t n) {
 	size_t i;
@@ -780,6 +781,7 @@ R_API size_t r_str_ncpy(char *dst, const char *src, size_t n) {
 	dst[i] = 0;
 	return i;
 }
+#endif
 
 /* memccmp ("foo.bar", "foo.cow, '.') == 0 */
 // Returns 1 if src and dst are equal up until the first instance of ch in src.

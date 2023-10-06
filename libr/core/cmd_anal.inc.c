@@ -12896,7 +12896,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 		if (strchr (input, '?')) {
 			r_core_cmd_help (core, help_msg_aaa);
 		} else {
-			r_str_var (asm_arch, r_config_get (core->config, "asm.arch"));
+			r_str_var (asm_arch, 32, r_config_get (core->config, "asm.arch"));
 			bool didAap = false;
 			char *dh_orig = NULL;
 			if (r_str_startswith (input, "aaaaa")) {

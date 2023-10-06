@@ -212,10 +212,10 @@ R_API size_t r_charset_encode_str(RCharset *rc, ut8 *out, size_t out_len, const 
 	}
 	char k[32];
 	char *o = (char*)out;
-	size_t i;
+	size_t i, oi;
 	char *o_end = o + out_len;
 	bool fine = false;
-	for (i = 0; i < in_len && o < o_end; i++) {
+	for (i = oi = 0; i < in_len && o < o_end; i++) {
 		ut8 ch_in = in[i];
 		snprintf (k, sizeof (k), "0x%02x", ch_in);
 		const char *v = sdb_const_get (rc->db, k, 0);
@@ -229,10 +229,12 @@ R_API size_t r_charset_encode_str(RCharset *rc, ut8 *out, size_t out_len, const 
 			fine = true;
 			r_str_unescape (res);
 		//	memcpy (o, res, out_len - i);
-			r_str_ncpy (o, res, out_len - i);
+			r_str_ncpy (o, res, out_len - oi);
 			free (res);
 		}
-		o += strlen (o);
+		size_t di = strlen (o);
+		oi += di;
+		o += di;
 	}
 	if (!fine) {
 		return 0;
