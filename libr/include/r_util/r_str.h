@@ -43,13 +43,9 @@ typedef int (*RStrRangeCallback) (void *, int);
 
 // can be replaced with RString
 #define r_strf_buffer(s) char strbuf[s]
-#define r_strf_var(n,s, f, ...) char n[s]; snprintf (n, s, f, __VA_ARGS__);
+#define r_strf_var(n,s,f, ...) char n[s]; snprintf (n, s, f, __VA_ARGS__);
 #define r_strf(s,...) (snprintf (strbuf, sizeof (strbuf), s, __VA_ARGS__)? strbuf: strbuf)
-#ifdef _MSC_VER
-#define r_str_var(n, s) char n[64]; r_str_ncpy (n, s, 64);
-#else
-#define r_str_var(n, s) const size_t n##_len = strlen (s) + 1; char n[n##_len]; strncpy (n, s, n##_len);
-#endif
+#define r_str_var(n,s,f) char n[s]; r_str_ncpy (n, f, s);
 
 typedef struct r_charset_rune_t {
 	ut8 *ch;
@@ -111,7 +107,16 @@ R_API void r_str_filter_zeroline(char *str, int len);
 R_API size_t r_str_utf8_codepoint(const char *s, size_t left);
 R_API bool r_str_char_fullwidth(const char *s, size_t left);
 R_API int r_str_write(int fd, const char *b);
-R_API size_t r_str_ncpy(char *dst, const char *src, size_t n);
+static inline size_t r_str_ncpy(char *x, const char *y, int z) {
+	if (z > 0) {
+		size_t ylen = strlen (y) + 1;
+		size_t flen = R_MIN (ylen, z);
+		memcpy (x, y, flen);
+		x[flen - 1] = 0;
+		return ylen;
+	}
+	return 0;
+}
 R_API void r_str_sanitize(char *c);
 R_API char *r_str_sanitize_sdb_key(const char *s);
 R_API const char *r_str_casestr(const char *a, const char *b);

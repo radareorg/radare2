@@ -26,17 +26,16 @@ typedef struct {
 static bool cblist(void *user, const ut64 offset, const void *val) {
 	RVecBacktrace *bt = (RVecBacktrace*)val;
 	Args *args = (Args *)user;
+	ut64 *addr;
 	if (args->opt == 'x') {
-		ut64 *addr;
 		R_VEC_FOREACH (bt, addr) {
 			r_cons_printf ("ax 0x%08"PFMT64x" 0x%08"PFMT64x"\n", offset, *addr);
 		}
-		return true;
-	}
-	r_cons_printf ("-> 0x%08"PFMT64x"\n", offset);
-	ut64 addr;
-	R_VEC_FOREACH (bt, addr) {
-		r_cons_printf (" `-> 0x%08"PFMT64x"\n", addr);
+	} else {
+		r_cons_printf ("-> 0x%08"PFMT64x"\n", offset);
+		R_VEC_FOREACH (bt, addr) {
+			r_cons_printf (" `-> 0x%08"PFMT64x"\n", *addr);
+		}
 	}
 	return true;
 }

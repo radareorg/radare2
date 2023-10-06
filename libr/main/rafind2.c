@@ -333,7 +333,6 @@ err:
 	free (efile);
 	r_io_free (io);
 	r_search_free (rs);
-	rafind_options_fini (ro);
 	return result;
 }
 
