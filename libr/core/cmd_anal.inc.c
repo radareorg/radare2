@@ -4261,14 +4261,19 @@ static void cmd_afbc(RCore *core, const char *input) {
 			addr = r_num_math (core->num, space);
 		}
 		RColor color = {0};
+		bool valid_color = false;
 		if (del) {
 			ptr--;
 		} else {
-			(void)r_cons_pal_parse (ptr, &color);
+			char *ansi = r_cons_pal_parse (ptr, &color);
+			valid_color = ansi != NULL;
+			free (ansi);
 		}
-		RAnalBlock *bb = r_anal_get_block_at (core->anal, addr);
-		if (bb) {
-			bb->color = color;
+		if (valid_color) {
+			RAnalBlock *bb = r_anal_get_block_at (core->anal, addr);
+			if (bb) {
+				bb->color = color;
+			}
 		}
 	}
 	free (ptr);
@@ -10629,8 +10634,11 @@ static void cmd_agraph_node(RCore *core, const char *input) {
 			body = r_str_append (body, "\n");
 			if (n_args > 2) {
 				RColor kolor = {0};
-				(void)r_cons_pal_parse (args[2], &kolor);
-				color = r_cons_rgb_str (NULL, -1, &kolor);
+				char *akolor = r_cons_pal_parse (args[2], &kolor);
+				free (akolor);
+				if (akolor != NULL) {
+					color = r_cons_rgb_str (NULL, -1, &kolor);
+				}
 			}
 		} else {
 			body = strdup ("");

@@ -82,6 +82,7 @@ cd "$(dirname $0)"/..
     | grep -v -e ^libr/core/cmd -e ^libr/main/ -e ^libr/util/syscmd \
     | grep -v -e r_cons_eprintf -e alloc) && exit 1
 (git grep R_LIB_TYPE_ANAL libr/arch/p) && exit 1
+# (git grep r_cons_pal_parse |grep -v =) && exit 1
 
 (
  # ensure c++ compat
