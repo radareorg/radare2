@@ -1255,86 +1255,66 @@ NAME=icc
 FILE=bins/elf/libmagic.so
 CMDS=icc
 EXPECT=<<EOF
-@interface _JNIEnv
-{
-}
-@end
-@interface SystemClassLoaderInjector
-{
-}
-@end
-@interface std
-{
-}
-@end
-@interface std::exception
-{
-}
-@end
-@interface std::bad_exception
-{
-}
-@end
-@interface __cxxabiv1::__forced_unwind
-{
-}
-@end
-@interface __cxxabiv1::__foreign_exception
-{
-}
-@end
-@interface __eh_globals_init
-{
-}
-@end
-@interface __cxxabiv1
-{
-}
-@end
-@interface __cxxabiv1::__fundamental_type_info
-{
-}
-@end
-@interface std::type_info
-{
-}
-@end
-@interface __cxxabiv1::__pointer_type_info
-{
-}
-@end
-@interface __cxxabiv1::__pbase_type_info
-{
-}
-@end
-@interface __cxxabiv1::__si_class_type_info
-{
-}
-@end
-@interface __cxxabiv1::__class_type_info
-{
-}
-@end
-@interface __gnu_cxx
-{
-}
-@end
-@interface __gnu_cxx::__concurrence_lock_error
-{
-}
-@end
-@interface __gnu_cxx::__concurrence_unlock_error
-{
-}
-@end
-@interface std::bad_cast
-{
-}
-@end
-@interface std::bad_typeid
-{
-}
-@end
+class _JNIEnv {
+};
+
+class SystemClassLoaderInjector {
+};
+
+class std {
+};
+
+class std::exception {
+};
+
+class std::bad_exception {
+};
+
+class __cxxabiv1::__forced_unwind {
+};
+
+class __cxxabiv1::__foreign_exception {
+};
+
+class __eh_globals_init {
+};
+
+class __cxxabiv1 {
+};
+
+class __cxxabiv1::__fundamental_type_info {
+};
+
+class std::type_info {
+};
+
+class __cxxabiv1::__pointer_type_info {
+};
+
+class __cxxabiv1::__pbase_type_info {
+};
+
+class __cxxabiv1::__si_class_type_info {
+};
+
+class __cxxabiv1::__class_type_info {
+};
+
+class __gnu_cxx {
+};
+
+class __gnu_cxx::__concurrence_lock_error {
+};
+
+class __gnu_cxx::__concurrence_unlock_error {
+};
+
+class std::bad_cast {
+};
+
+class std::bad_typeid {
+};
+
 EOF
 RUN
 
