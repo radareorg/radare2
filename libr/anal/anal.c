@@ -1,9 +1,6 @@
 /* radare - LGPL - Copyright 2009-2023 - pancake, nibble */
 
 #include <r_anal.h>
-#include <r_util.h>
-#include <r_list.h>
-#include <r_io.h>
 #include <config.h>
 #include "../config.h"
 
@@ -101,6 +98,7 @@ R_API RAnal *r_anal_new(void) {
 	anal->opt.depth = 32;
 	anal->opt.noncode = false; // do not analyze data by default
 	anal->lock = r_th_lock_new (true);
+	r_anal_backtrace_init (anal);
 	r_spaces_init (&anal->meta_spaces, "CS");
 	r_event_hook (anal->meta_spaces.event, R_SPACE_EVENT_UNSET, meta_unset_for, NULL);
 	r_event_hook (anal->meta_spaces.event, R_SPACE_EVENT_COUNT, meta_count_for, NULL);
@@ -193,6 +191,7 @@ R_API void r_anal_free(RAnal *a) {
 	free (a->last_disasm_reg);
 	r_list_free (a->imports);
 	r_str_constpool_fini (&a->constpool);
+	r_anal_backtrace_fini (a);
 	free (a);
 }
 

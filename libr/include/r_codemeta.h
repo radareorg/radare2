@@ -61,6 +61,7 @@ typedef struct r_codemeta_item_t {
 
 typedef struct r_codemeta_t {
 	char *code; /**< Decompiled code. RCodeMeta owns this string and it must free it. */
+	// TODO: R2_590 Use RVec!
 	RVector annotations; /**< @ref RVector <RCodeMetaItem> contains the list of annotations for the decompiled code. */
 	RRBTree *tree;
 } RCodeMeta;
@@ -75,8 +76,8 @@ R_API bool r_codemeta_item_is_variable(RCodeMetaItem *annotation);
 R_API void r_codemeta_add_item(RCodeMeta *code, RCodeMetaItem *annotation);
 
 /* DECOMPILER PRINTING FUNCTIONS */
-R_API void r_codemeta_print_json(RCodeMeta *code);
 R_API void r_codemeta_print(RCodeMeta *code, RVector *line_offsets);
+R_API void r_codemeta_print_json(RCodeMeta *code);
 R_API void r_codemeta_print_disasm(RCodeMeta *code, RVector *line_offsets, void *anal);
 R_API void r_codemeta_print_comment_cmds(RCodeMeta *code);
 

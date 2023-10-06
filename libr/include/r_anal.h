@@ -401,6 +401,10 @@ typedef struct r_anal_thread_t {
 	RReg *reg;
 } RAnalThread;
 
+typedef struct {
+	void *priv;
+} RAnalBacktraces;
+
 typedef struct r_ref_manager_t RefManager;
 
 typedef struct r_anal_t {
@@ -470,6 +474,7 @@ typedef struct r_anal_t {
 	RStrConstPool constpool;
 	RList *leaddrs;
 	char *pincmd;
+	RAnalBacktraces btstore;
 	/* private */
 	RThreadLock *lock;
 	ut64 cmpval;
@@ -1552,6 +1557,15 @@ R_API bool r_anal_tid_kill(RAnal *anal, int tid);
 R_API RAnalThread *r_anal_tid_get(RAnal *anal, int tid);
 R_API int r_anal_tid_add(RAnal *anal, int map);
 R_API bool r_anal_tid_select(RAnal *anal, int tid);
+
+// bt
+
+R_VEC_TYPE (RVecBacktrace, ut64);
+R_API void r_anal_backtrace_add(RAnal *a, ut64 addr, RVecBacktrace *bt);
+R_API void r_anal_backtrace_del(RAnal *a, ut64 addr);
+R_API void r_anal_backtrace_init(RAnal *a);
+R_API void r_anal_backtrace_fini(RAnal *a);
+R_API void r_anal_backtrace_list(RAnal *a, ut64 addr, int opt);
 
 /* plugin pointers */
 extern RAnalPlugin r_anal_plugin_null;
