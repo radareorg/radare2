@@ -426,15 +426,15 @@ static bool parse_segments(struct MACH0_(obj_t) *mo, ut64 off) {
 			ut64 offset = off + sizeof (struct MACH0_(segment_command)) + j * sizeof (struct MACH0_(section));
 			len = r_buf_read_at (mo->b, offset, sec, sizeof (struct MACH0_(section)));
 			if (len != sizeof (struct MACH0_(section))) {
-				R_LOG_ERROR ("read (sects)");
+				R_LOG_ERROR ("read sects");
 				mo->nsects = sect;
 				return false;
 			}
 
 			i = 0;
-			memcpy (&mo->sects[k].sectname, &sec[i], 16);
+			memcpy (&mo->sects[k].sectname, &sec[i], 16); // INFO: this string is not null terminated!
 			i += 16;
-			memcpy (&mo->sects[k].segname, &sec[i], 16);
+			memcpy (&mo->sects[k].segname, &sec[i], 16); // INFO: Remember: it's not null terminated!
 			i += 16;
 			snprintf (section_flagname, sizeof (section_flagname), "mach0_section_%.16s_%.16s.offset",
 						mo->sects[k].segname, mo->sects[k].sectname);
@@ -2614,7 +2614,8 @@ const RVector *MACH0_(load_sections)(struct MACH0_(obj_t) *mo) {
 		section->flags = mo->sects[i].flags;
 		r_str_ncpy (sectname, mo->sects[i].sectname, 17);
 		r_str_filter (sectname, -1);
-		r_str_ncpy (raw_segname, mo->sects[i].segname, 16);
+		r_str_ncpy (raw_segname, mo->sects[i].segname, 17);
+		r_str_filter (raw_segname, -1);
 		for (j = 0; j < mo->nsegs; j++) {
 			if (section->vaddr >= mo->segs[j].vmaddr &&
 				section->vaddr < (mo->segs[j].vmaddr + mo->segs[j].vmsize)) {

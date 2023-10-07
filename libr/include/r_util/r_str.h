@@ -107,16 +107,6 @@ R_API void r_str_filter_zeroline(char *str, int len);
 R_API size_t r_str_utf8_codepoint(const char *s, size_t left);
 R_API bool r_str_char_fullwidth(const char *s, size_t left);
 R_API int r_str_write(int fd, const char *b);
-static inline size_t r_str_ncpy(char *x, const char *y, int z) {
-	if (z > 0) {
-		size_t ylen = strlen (y) + 1;
-		size_t flen = R_MIN (ylen, z);
-		memcpy (x, y, flen);
-		x[flen - 1] = 0;
-		return ylen;
-	}
-	return 0;
-}
 R_API void r_str_sanitize(char *c);
 R_API char *r_str_sanitize_sdb_key(const char *s);
 R_API const char *r_str_casestr(const char *a, const char *b);
@@ -278,6 +268,36 @@ R_API bool r_str_glob(const char *str, const char *glob);
 R_API int r_str_binstr2bin(const char *str, ut8 *out, int outlen);
 R_API char *r_str_between(const char *str, const char *prefix, const char *suffix);
 #undef r_str_startswith
+#if 1
+static inline size_t r_str_ncpy(char *dst, const char *src, size_t n) {
+	size_t i;
+
+	// do not do anything if n is 0
+	if (n == 0) {
+		return 0;
+	}
+
+	n--;
+	for (i = 0; src[i] && n > 0; i++, n--) {
+		dst[i] = src[i];
+	}
+	dst[i] = 0;
+	return i;
+}
+#else
+static inline size_t r_str_ncpy(char *x, const char *y, int z) {
+	if (z > 0) {
+		// size_t ylen = strnlen (y, z) + 1;
+		size_t ylen = r_str_nlen (y, z) + 1;
+		// size_t ylen = strlen (y) + 1;
+		// size_t flen = R_MIN (ylen, z);
+		memcpy (x, y, ylen);
+		x[ylen - 1] = 0;
+		return ylen;
+	}
+	return 0;
+}
+#endif
 R_API bool r_str_startswith(const char *str, const char *needle);
 R_UNUSED static bool r_str_startswith_inline(const char *str, const char *needle) {
 	if (!str || !needle) {
