@@ -2125,6 +2125,9 @@ static bool fix_cursor(RCore *core) {
 	if (!core->print->cur_enabled) {
 		return false;
 	}
+	if (PIDX != 2) {
+		return false;
+	}
 	if (core->print->screen_bounds > 1) {
 		bool off_is_visible = core->offset < core->print->screen_bounds;
 		bool cur_is_visible = core->offset + p->cur < core->print->screen_bounds;
@@ -2451,7 +2454,7 @@ R_API void r_core_visual_browse(RCore *core, const char *input) {
 			break;
 		case 'l': // previously VT
 			if (r_sandbox_enable (0)) {
-				eprintf ("sandbox not enabled\n");
+				R_LOG_WARN ("sandbox not enabled");
 			} else {
 				if (r_cons_is_interactive ()) {
 					r_core_cmd_call (core, "TT");
@@ -3204,7 +3207,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 		case 'L':
 		case 'H':
 			if (r_config_get_b (core->config, "scr.cursor")) {
-				int distance = 8; // numbuf_pull (core);
+				int distance = numbuf_pull (core);
 				core->cons->cpos.x += (ch == 'h' || ch == 'H')? -distance: distance;
 				if (core->cons->cpos.x < 1) {
 					core->cons->cpos.x = 0;
