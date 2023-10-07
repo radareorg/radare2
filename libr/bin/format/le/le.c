@@ -262,7 +262,7 @@ static void __create_iter_sections(RList *l, RBinLEObj *bin, RBinSection *sec, L
 	LE_image_header *h = bin->header;
 	if (h->pageshift > ST16_MAX || h->pageshift < 0) {
 		// early quit before using an invalid offset
-		// return;
+		return;
 	}
 	ut32 pageshift = R_MIN ((ut64)h->pageshift, 63);
 	ut32 offset = (h->itermap + ((ut64)page->offset << (bin->is_le ? 0 : pageshift)));
@@ -285,6 +285,7 @@ static void __create_iter_sections(RList *l, RBinLEObj *bin, RBinSection *sec, L
 	ut64 bytes_left = page->size;
 	while (iter_n > 0 && bytes_left > 0) {
 		int i;
+		tot_size = 0;
 		for (i = 0; i < iter_n; i++) {
 			RBinSection *s = R_NEW0 (RBinSection);
 			if (!s) {
@@ -302,7 +303,7 @@ static void __create_iter_sections(RList *l, RBinLEObj *bin, RBinSection *sec, L
 			tot_size += data_size;
 			if (tot_size > total_size) {
 				R_LOG_DEBUG ("section exceeds file size");
-				break;
+		//		break;
 			}
 			r_list_append (l, s);
 			iter_cnt++;
@@ -407,9 +408,6 @@ R_IPI RList *r_bin_le_get_sections(RBinLEObj *bin) {
 			if (cur_idx < next_idx) { // If not true rest of pages will be zeroes
 				if (bin->is_le) {
 					// Why is it big endian???
-					if (h->pageshift > 63) {
-						continue;
-					}
 					ut64 offset = r_buf_read_be32_at (bin->buf, page_entry_off) >> 8;
 					s->paddr = (offset - 1) * h->pagesize + pages_start_off;
 					if (entry->page_tbl_idx + j == h->mpages) {
