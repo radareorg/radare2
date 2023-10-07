@@ -260,7 +260,12 @@ R_IPI RList *r_bin_le_get_libs(RBinLEObj *bin) {
 static void __create_iter_sections(RList *l, RBinLEObj *bin, RBinSection *sec, LE_object_page_entry *page, ut64 vaddr, int cur_page) {
 	r_return_if_fail (l && bin && sec && page);
 	LE_image_header *h = bin->header;
-	ut32 offset = (h->itermap + (page->offset << (bin->is_le ? 0 : h->pageshift)));
+	if (h->pageshift > ST16_MAX || h->pageshift < 0) {
+		// early quit before using an invalid offset
+		return;
+	}
+	ut32 pageshift = R_MIN ((ut64)h->pageshift, 63);
+	ut32 offset = (h->itermap + ((ut64)page->offset << (bin->is_le ? 0 : pageshift)));
 
 	// Gets the first iter record
 	ut16 iter_n = r_buf_read_ble16_at (bin->buf, offset, h->worder);
@@ -274,11 +279,13 @@ static void __create_iter_sections(RList *l, RBinLEObj *bin, RBinSection *sec, L
 	}
 	offset += sizeof (ut16);
 
+	ut64 total_size = r_buf_size (bin->buf);
 	ut64 tot_size = 0;
 	int iter_cnt = 0;
 	ut64 bytes_left = page->size;
-	while (iter_n && bytes_left > 0) {
+	while (iter_n > 0 && bytes_left > 0) {
 		int i;
+		tot_size = 0;
 		for (i = 0; i < iter_n; i++) {
 			RBinSection *s = R_NEW0 (RBinSection);
 			if (!s) {
@@ -294,6 +301,10 @@ static void __create_iter_sections(RList *l, RBinLEObj *bin, RBinSection *sec, L
 			s->add = true;
 			vaddr += data_size;
 			tot_size += data_size;
+			if (tot_size > total_size) {
+				R_LOG_DEBUG ("section exceeds file size");
+		//		break;
+			}
 			r_list_append (l, s);
 			iter_cnt++;
 		}
@@ -414,7 +425,11 @@ R_IPI RList *r_bin_le_get_sections(RBinLEObj *bin) {
 					// TODO
 					R_LOG_WARN ("Compressed page not handled: %s", s->name);
 				} else if (page.flags != P_ZEROED) {
-					s->paddr = ((ut64)page.offset << h->pageshift) + pages_start_off;
+					if (h->pageshift > 63) {
+						continue;
+					}
+					ut32 pageshift = R_MIN (h->pageshift, 63);
+					s->paddr = ((ut64)page.offset << pageshift) + pages_start_off;
 				}
 			}
 			s->vsize = h->pagesize;

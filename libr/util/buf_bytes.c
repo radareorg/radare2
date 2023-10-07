@@ -103,8 +103,14 @@ static ut64 buf_bytes_get_size(RBuffer *b) {
 
 static st64 buf_bytes_seek(RBuffer *b, st64 addr, int whence) {
 	struct buf_bytes_priv *priv = get_priv_bytes (b);
-	if (addr < 0 && (-addr) > (st64)priv->offset) {
-		return -1;
+	if (addr < 0) {
+		if (addr > -UT48_MAX) {
+	       		if (-addr > (st64)priv->offset) {
+				return -1;
+			}
+		} else {
+			return -1;
+		}
 	}
 	if (R_LIKELY (whence == R_BUF_SET)) {
 		// 50%
