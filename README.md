@@ -70,7 +70,7 @@ Using the `r2pm` tool you can browse and install many plugins and tools that use
 * [r2papi](https://github.com/radareorg/radare2-r2papi) High level api on top of r2pipe
 * [r2pipe](https://github.com/radareorg/radare2-r2pipe) Script radare2 from any programming language
 * [r2poke](https://github.com/radareorg/radare2-extras/tree/master/r2poke) Integration with GNU/Poke for extended binary parsing capabilities
-* [r2yara](https://github.com/radareorg/radare2-extras/tree/master/r2yara) Run Yara from r2 or use r2 primitives from Yara
+* [r2yara](https://github.com/radareorg/r2yara) Run Yara from r2 or use r2 primitives from Yara
 * [radius2](https://github.com/nowsecure/radius2): A fast symbolic execution engine based on boolector and esil
 
 ## Usage
