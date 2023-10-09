@@ -8,4 +8,5 @@ Description: radare foundation libraries
 Version: @VERSION@
 Requires: r_config r_cons r_io r_util r_flag r_asm r_debug r_bin r_lang r_io r_anal r_bp r_egg r_reg r_search r_syscall r_socket r_fs r_magic r_crypto r_arch r_esil
 Libs: -L${libdir} -lr_core  @SSL_LDFLAGS@ @CAPSTONE_LDFLAGS@
+Libs.private: -L${libdir} ${libdir}/libr.a
 Cflags: -I${includedir}/libr @SSL_CFLAGS@ @CAPSTONE_CFLAGS@
