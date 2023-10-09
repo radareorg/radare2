@@ -795,7 +795,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 				ret = 1;
 				goto beach;
 			}
-			r_list_append (files, (void*)opt.arg);
+			r_list_append (files, strdup (opt.arg));
 			break;
 		case 'I':
 			if (R_STR_ISEMPTY (opt.arg)) {
