@@ -556,6 +556,14 @@ R_API bool r_sys_getenv_asbool(const char *key) {
 	return res;
 }
 
+R_API ut64 r_sys_getenv_asut64(const char *key) {
+	r_return_val_if_fail (key, false);
+	char *env = r_sys_getenv (key);
+	const ut64 res = env? r_num_math (NULL, env): 0;
+	free (env);
+	return res;
+}
+
 R_API int r_sys_getenv_asint(const char *key) {
 	r_return_val_if_fail (key, false);
 	char *env = r_sys_getenv (key);
