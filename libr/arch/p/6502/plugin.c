@@ -1,14 +1,14 @@
 /* radare - LGPL - Copyright 2019-2022 - condret, riq, pancake */
 
-/* 6502 info taken from http://unusedino.de/ec64/technical/aay/c64/bchrt651.htm
+/* 6502 info taken from https://unusedino.de/ec64/technical/aay/c64/bchrt651.htm
  *
  * Mnemonics logic based on:
- *	http://homepage.ntlworld.com/cyborgsystems/CS_Main/6502/6502.htm
+ *	https://homepage.ntlworld.com/cyborgsystems/CS_Main/6502/6502.htm
  *	(archive)
- *	1 https://web.archive.org/web/20160406122905/http://homepage.ntlworld.com/cyborgsystems/CS_Main/6502/6502.htm
+ *	1 https://web.archive.org/web/20160406122905/https://homepage.ntlworld.com/cyborgsystems/CS_Main/6502/6502.htm
  *	2 https://github.com/csBlueChip/6502_Programming_Guide
  * and:
- *	http://vice-emu.sourceforge.net/
+ *	https://vice-emu.sourceforge.net/
  */
 
 #include <string.h>

@@ -30,7 +30,7 @@
  * noted when applicable.                                                *
  *                                                                       *
  * Myricom, Inc.                    Email: info@myri.com                 *
- * 325 N. Santa Anita Ave.          World Wide Web: http://www.myri.com/ *
+ * 325 N. Santa Anita Ave.          World Wide Web: https://www.myri.com/ *
  * Arcadia, CA 91024                                                     *
  *************************************************************************/
  /* initial version released 5/95 */

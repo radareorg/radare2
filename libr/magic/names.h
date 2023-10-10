@@ -98,7 +98,7 @@ static const struct {
  * Unfortunately, Ada95 uses "package", and Modula-3 uses "import",
  * although I infer from the language spec at
  *
- *	http://www.research.digital.com/SRC/m3defn/html/m3.html
+ *	https://www.research.digital.com/SRC/m3defn/html/m3.html
  *
  * that Modula-3 uses "IMPORT" rather than "import", i.e. it must be
  * in all caps.

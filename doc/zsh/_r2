@@ -16,7 +16,7 @@ _r2() {
   '-b+[set asm.bits]:bits:(8 16 32 64)'
   '-B+[set base address for PIE binaries]:baddr'
   '-c+[execute radare command]:cmd'
-  '-C[file is host:port (alias for -c+=http://%s/cmd/)]'
+  '-C[file is host:port (alias for -c+=https://%s/cmd/)]'
   "-d[debug the executable 'file' or running process 'pid']"
   '-D+[enable debug mode (e cfg.debug=true)]: :->dbg.backend'
   '-e+[evaluate config var]: :->config'

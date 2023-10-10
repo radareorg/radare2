@@ -1,6 +1,6 @@
 /*
  * This code is originally taken from OpenSSH:
- * http://cvsweb.openbsd.org/cgi-bin/cvsweb/src/usr.bin/ssh/key.c?rev=1.75&content-type=text/x-cvsweb-markup
+ * https://cvsweb.openbsd.org/cgi-bin/cvsweb/src/usr.bin/ssh/key.c?rev=1.75&content-type=text/x-cvsweb-markup
  */
 
 /*

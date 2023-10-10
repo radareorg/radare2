@@ -17,7 +17,7 @@
 0	string		\211LZO\000\015\012\032\012	LZO compressed data
 
 # 7-zip archiver, from Thomas Klausner (wiz@danbala.tuwien.ac.at)
-# http://www.7-zip.org or DOC/7zFormat.txt
+# https://www.7-zip.org or DOC/7zFormat.txt
 #
 0       string          7z\274\257\047\034      7-zip archive data,
 >6	byte		<0			invalid
@@ -31,7 +31,7 @@
 # Implemented in the compress binwalk plugin.
 #0       string		\x1f\x9d\x90          compress'd data, 16 bits
 
-# http://tukaani.org/xz/xz-file-format.txt
+# https://tukaani.org/xz/xz-file-format.txt
 0	string		\xFD\x37\x7a\x58\x5a\x00	xz compressed data
 
 # gzip (GNU zip, not to be confused with Info-ZIP or PKWARE zip archiver)

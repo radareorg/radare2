@@ -26,8 +26,8 @@ Setup SDK for ARMv6
 
 2) Download missing packages from lolcathost:
 
-      wget http://lolcathost.org/b/libgcc_4.2-20080410-1-6_iphoneos-arm.deb
-      wget http://lolcathost.org/b/libSystem.dylib
+      wget https://lolcathost.org/b/libgcc_4.2-20080410-1-6_iphoneos-arm.deb
+      wget https://lolcathost.org/b/libSystem.dylib
 
 3) Install them
 

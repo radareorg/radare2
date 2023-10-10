@@ -306,7 +306,7 @@
 ### #0	byte		0xb8		COM executable
 ### # modified by Joerg Jenderek
 ### >1	lelong          !0x21cd4cff	for DOS
-### # http://syslinux.zytor.com/comboot.php
+### # https://syslinux.zytor.com/comboot.php
 ### # (32-bit COMBOOT) programs *.C32 contain 32-bit code and run in flat-memory 32-bit protected mode
 ### # start with assembler instructions mov eax,21cd4cffh
 ### >1	lelong          0x21cd4cff	(32-bit COMBOOT)
@@ -593,7 +593,7 @@
 
 0	lelong	0x02468ace			Bochs Sparse disk image
 
-# from http://filext.com by Derek M Jones <derek@knosof.co.uk>
+# from https://filext.com by Derek M Jones <derek@knosof.co.uk>
 # False positive with PPT (also currently this string is too long)
 #0	string	\xD0\xCF\x11\xE0\xA1\xB1\x1A\xE1\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x3E\x00\x03\x00\xFE\xFF\x09\x00\x06	Microsoft Installer
 0	string	\320\317\021\340\241\261\032\341	Microsoft Office Document
