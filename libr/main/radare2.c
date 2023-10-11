@@ -1093,7 +1093,11 @@ R_API int r_main_radare2(int argc, const char **argv) {
 		return ret;
 	}
 #if R2__WINDOWS__
-	pfile = r_acp_to_utf8 (pfile);
+	{
+		char *pfile = r_acp_to_utf8 (mr.pfile);
+		free (mr.pfile);
+		mr.pfile = pfile;
+	}
 #endif // R2__WINDOWS__
 	if (mr.customRarunProfile) {
 		char *tfn = r_file_temp (".rarun2");
@@ -1374,7 +1378,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 				if (r) {
 					acpfile = r;
 				}
-				file = r_str_newf ("dbg://%s", acpfile);
+				mr.file = r_str_newf ("dbg://%s", acpfile);
 #else
 				if (f) {
 					char *escaped_path = r_str_arg_escape (f);
