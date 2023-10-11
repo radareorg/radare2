@@ -1044,7 +1044,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 		}
 	}
 
-	if (R_STR_ISEMPTY (mr.pfile)) {
+	if (mr.pfile && !*mr.pfile) {
 		R_LOG_ERROR ("Cannot open empty path");
 		ret = 1;
 		goto beach;
@@ -1296,7 +1296,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 					mr.iod = (r->io && mr.fh) ? r_io_desc_get (r->io, mr.fh->fd) : NULL;
 					if (!strcmp (mr.debugbackend, "gdb")) {
 						const char *filepath = r_config_get (r->config, "dbg.exe.path");
-						if (!R_STR_ISEMPTY (filepath)) {
+						if (R_STR_ISNOTEMPTY (filepath)) {
 							ut64 addr = mr.baddr;
 							if (addr == UT64_MAX) {
 								addr = r_config_get_i (r->config, "bin.baddr");
