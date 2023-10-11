@@ -30,6 +30,7 @@ typedef struct {
 typedef struct {
 	// swift
 	MetaSection types;
+	MetaSection typeref;
 	MetaSection fieldmd;
 	// objc
 	MetaSection clslist;
@@ -63,6 +64,7 @@ static bool parse_section(RBinFile *bf, MetaSection *ms, struct section_t *secti
 
 static void metadata_sections_fini(MetaSections *ms) {
 	R_FREE (ms->types.data);
+	R_FREE (ms->typeref.data);
 	R_FREE (ms->fieldmd.data);
 	R_FREE (ms->clslist.data);
 	R_FREE (ms->catlist.data);
@@ -80,6 +82,7 @@ static MetaSections metadata_sections_init(RBinFile *bf) {
 		PARSECTION (&ms.clslist, "__objc_classlist");
 		PARSECTION (&ms.catlist, "__objc_catlist");
 		PARSECTION (&ms.types, "swift5_types");
+		PARSECTION (&ms.typeref, "swift5_typeref");
 		PARSECTION (&ms.fieldmd, "swift5_fieldmd");
 	}
 	return ms;
@@ -1542,6 +1545,9 @@ RList *MACH0_(parse_classes)(RBinFile *bf, objc_cache_opt_info *oi) {
 	}
 
 	bool want_swift = !r_sys_getenv_asbool ("RABIN2_MACHO_NOSWIFT");
+	if (want_swift && ms.typeref.have) {
+		eprintf ("HAVE TYPEREF\n");
+	}
 	// 2s / 16s
 	if (want_swift && ms.types.have && ms.fieldmd.have) {
 		ut64 asize = ms.fieldmd.size;
