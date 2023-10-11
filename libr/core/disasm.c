@@ -6488,6 +6488,9 @@ R_API int r_core_print_disasm_instructions_with_buf(RCore *core, ut64 address, u
 	r_reg_arena_push (core->anal->reg);
 
 	ds = ds_init (core);
+	if (!ds) {
+		return 0;
+	}
 	ds->count = nb_opcodes;
 	ds->len = nb_opcodes * 8;
 
