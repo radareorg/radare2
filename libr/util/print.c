@@ -1751,7 +1751,6 @@ R_API void r_print_progressbar(RPrint *p, int pc, int _cols, const char *title) 
 
 	int jeje = ratio * a;
 	int jeje2 = ratio * a;
-	// eprintf ("JEJ %d %d\n", jeje , cols);
 
 	// TODO: honor scr.demo here and make some animation
 	// for (i = (cols * pc) / 100; i; i--) {
