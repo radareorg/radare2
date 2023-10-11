@@ -46,21 +46,23 @@ src:
 	sed -i -e 's/CONFIG_VERSION/"$(QJS_VERSION)"/' src/quickjs.c
 	git add src
 
+NM=node_modules
+
 js_r2papi.c:
 #	npm i js_r2papi
 	printf "Using r2papi version: "
 	-jq .version node_modules/r2papi/package.json
-	mkdir -p $(shell npm bin)
+	mkdir -p $(NM)
 
 	cat	\
-		$(shell npm bin)/../r2papi/index.js \
-		$(shell npm bin)/../r2papi/shell.js \
-		$(shell npm bin)/../r2papi/esil.js \
-		> $(shell npm bin)/../r2papi/entrypoint.js
+		$(NM)/r2papi/index.js \
+		$(NM)/r2papi/shell.js \
+		$(NM)/r2papi/esil.js \
+		> $(NM)/r2papi/entrypoint.js
 	sed \
 		-e 's,exports,G,g' \
 		-e 's,require(,G;//,g' \
-		< $(shell npm bin)/../r2papi/entrypoint.js \
+		< $(NM)/r2papi/entrypoint.js \
 		| grep -v 'use strict' \
 		> js_r2papi.qjs
 	npx minify --help > /dev/null npm i minify
