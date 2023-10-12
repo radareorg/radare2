@@ -323,6 +323,7 @@ static RCoreHelpMessage help_msg_do = {
 static RCoreHelpMessage help_msg_dp = {
 	"Usage:", "dp", " # Process commands",
 	"dp", "", "list current pid and children",
+	"dp", "q", "same as dp. just show the current process id",
 	"dp", " <pid>", "list children of pid",
 	"dpj", " <pid>", "list children of pid in JSON format",
 	"dpl", "", "list all attachable pids",
@@ -1160,6 +1161,10 @@ static void cmd_debug_pid(RCore *core, const char *input) {
 			r_debug_pid_list (core->dbg, 0, 'j');
 			break;
 		}
+		break;
+	case '.':
+	case 'q':
+		r_cons_printf ("%d\n", core->dbg->pid);
 		break;
 	case 'j': // "dpj"
 		switch (input[2]) {
