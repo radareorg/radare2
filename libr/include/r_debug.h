@@ -577,7 +577,7 @@ R_API void r_debug_bp_rebase(RDebug *dbg, ut64 old_base, ut64 new_base);
 R_API void r_debug_bp_update(RDebug *dbg);
 
 /* pid */
-R_API int r_debug_thread_list(RDebug *dbg, int pid, char fmt);
+R_API bool r_debug_thread_list(RDebug *dbg, int pid, char fmt);
 
 R_API void r_debug_tracenodes_reset(RDebug *dbg);
 

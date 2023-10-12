@@ -4827,6 +4827,7 @@ static bool r_core_bin_file_print(RCore *core, RBinFile *bf, PJ *pj, int mode) {
 		pj_ki (pj, "iofd", bf->fd);
 		pj_ki (pj, "bfid", bf->id);
 		pj_ki (pj, "size", bin_sz);
+		pj_kN (pj, "addr", bf->bo->baddr);
 		pj_ko (pj, "obj");
 		RBinObject *obj = bf->bo;
 		RBinInfo *info = obj->info;
