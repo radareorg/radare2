@@ -1037,7 +1037,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 				free (msg);
 			} else {
 				R_LOG_ERROR ("Cannot read dbg.profile '%s'", dbg_profile);
-				mr.pfile = NULL; //strdup ("");
+				R_FREE (mr.pfile);
 			}
 		} else {
 			mr.pfile = argv[opt.ind] ? strdup (argv[opt.ind]) : NULL;
@@ -1286,6 +1286,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 				r_config_set (r->config, "dbg.backend", mr.debugbackend);
 				if (strcmp (mr.debugbackend, "native") && strcmp (mr.debugbackend, "esil")) {
 					if (!mr.haveRarunProfile) {
+						free (mr.pfile);
 						mr.pfile = strdup (argv[opt.ind++]);
 					}
 					mr.perms = R_PERM_RX; // XXX. should work with rw too
@@ -1294,7 +1295,11 @@ R_API int r_main_radare2(int argc, const char **argv) {
 						opt.ind--; // take filename
 					}
 #if R2__WINDOWS__
-					mr.pfile = r_acp_to_utf8 (mr.pfile);
+					{
+						char *pfile = r_acp_to_utf8 (mr.pfile);
+						free (mr.pfile);
+						mr.pfile = pfile;
+					}
 #endif
 					mr.fh = r_core_file_open (r, mr.pfile, mr.perms, mr.mapaddr);
 					mr.iod = (r->io && mr.fh) ? r_io_desc_get (r->io, mr.fh->fd) : NULL;
@@ -1395,7 +1400,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 					free (escaped_arg);
 					opt.ind++;
 				}
-				mr.pfile = mr.file;
+				mr.pfile = strdup (mr.file);
 			}
 		}
 		if (!mr.debug || mr.debug == 2) {
@@ -1480,6 +1485,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 				}
 			} else {
 				if (mr.project_name) {
+					free (mr.pfile);
 					mr.pfile = r_core_project_name (r, mr.project_name);
 					if (mr.pfile) {
 						if (!mr.fh) {
