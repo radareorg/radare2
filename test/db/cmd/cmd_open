@@ -439,6 +439,7 @@ EXPECT=<<EOF
     "iofd": 3,
     "bfid": 0,
     "size": 512,
+    "addr": -1,
     "obj": {
       "arch": "x86",
       "bits": 64,

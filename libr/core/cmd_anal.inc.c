@@ -12895,6 +12895,18 @@ static int cmd_anal_all(RCore *core, const char *input) {
 		if (strchr (input, '?')) {
 			r_core_cmd_help (core, help_msg_aaa);
 		} else {
+			char *s = r_core_cmd_str (core, "dpe");
+			if (r_str_startswith (s, "frida://")) {
+				const char *io_backend = r_config_get (core->config, "dbg.backend");
+				if (strcmp (io_backend, "io")) {
+					r_core_cmd0 (core, ".:init");
+				}
+				r_core_cmd0 (core, "af @@ sym.*");
+				free (s);
+				break;
+			}
+			free (s);
+
 			r_str_var (asm_arch, 32, r_config_get (core->config, "asm.arch"));
 			bool didAap = false;
 			char *dh_orig = NULL;
