@@ -3596,7 +3596,11 @@ static void cmd_print_pv(RCore *core, const char *input, bool useBytes) {
 			switch (n) {
 			case 1:
 				v = r_read_ble8 (block);
-				r_cons_printf ("%" PFMT64d "\n", v);
+				if (*input == 'u') {
+					r_cons_printf ("%u\n", (unsigned char)v);
+				} else {
+					r_cons_printf ("%d\n", (signed char)v);
+				}
 				block += 1;
 				break;
 			case 2:
