@@ -567,6 +567,11 @@ static void register_helpers(JSContext *ctx) {
 		eval (ctx, "R=r2;");
 	}
 	eval (ctx, "function ptr(x) { return new NativePointer(x); }");
+	eval (ctx, "G.Process = new ProcessClass(r2);");
+	eval (ctx, "G.Module = new ModuleClass(r2);");
+	eval (ctx, "G.Thread = new ThreadClass(r2);");
+	eval (ctx, "G.Radare2 = { version: r2.cmd('?Vq').trim() };");
+	eval (ctx, "G.NULL = ptr(0);");
 }
 
 static JSContext *JS_NewCustomContext(JSRuntime *rt) {

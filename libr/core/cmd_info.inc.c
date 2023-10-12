@@ -31,6 +31,7 @@ static RCoreHelpMessage help_msg_i = {
 	"ie", "", "entrypoint",
 	"iee", "", "show Entry and Exit (preinit, init and fini)",
 	"iE", "", "exports (global symbols)",
+	"iE,", "[table-query]", "exported symbols using the table query",
 	"iE.", "", "current export",
 	"ih", "", "headers (alias for iH)",
 	"iHH", "", "verbose Headers in raw text",
@@ -778,6 +779,12 @@ static int cmd_info(void *data, const char *input) {
 				mode = R_MODE_JSON;
 				INIT_PJ ();
 				RBININFO ("exports", R_CORE_BIN_ACC_EXPORTS, input + 2, 0);
+			} else if (input[1] == ',') {
+				R_FREE (core->table_query);
+				core->table_query = strdup (input + 2);
+				RBinObject *obj = r_bin_cur_object (core->bin);
+				RBININFO ("exports", R_CORE_BIN_ACC_EXPORTS, input + 1, (obj && obj->symbols)? r_list_length (obj->symbols): 0);
+				// table query here
 			} else {
 				RBININFO ("exports", R_CORE_BIN_ACC_EXPORTS, input + 1, 0);
 			}
