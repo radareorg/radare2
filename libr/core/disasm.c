@@ -5533,17 +5533,14 @@ static void ds_print_comments_right(RDisasmState *ds) {
 		return;
 	}
 	if (is_code && ds->asm_describe && !ds->has_description) {
-		char *op, *locase = strdup (r_asm_op_get_asm (&ds->asmop));
-		if (!locase) {
-			return;
+		const char *asmstr = r_asm_op_get_asm (&ds->asmop);
+		if (R_STR_ISNOTEMPTY (asmstr)) {
+			char *locase = strdup (asmstr);
+			r_str_after (locase, ' ');
+			r_str_case (locase, 0);
+			desc = r_asm_describe (core->rasm, locase);
+			free (locase);
 		}
-		op = strchr (locase, ' ');
-		if (op) {
-			*op = 0;
-		}
-		r_str_case (locase, 0);
-		desc = r_asm_describe (core->rasm, locase);
-		free (locase);
 	}
 	if (ds->show_usercomments || ds->show_comments) {
 		if (desc && *desc) {
