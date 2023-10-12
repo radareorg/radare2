@@ -20,7 +20,12 @@ typedef struct {
 /* basic types */
 static const SwiftType types[] = {
 	{ "Bi1", "Builtin.Int1" },
+	{ "Bb", "Builtin.BridgeObject" },
+	{ "BB", "Builtin.UnsafeValueBuffer" },
+	{ "Bo", "Builtin.NativeObject" },
+	{ "BO", "Builtin.UnknownObject" },
 	{ "Bp", "Builtin.RawPointer" },
+	{ "Bt", "Builtin.SILToken" },
 	{ "Bw", "Builtin.Word" },
 	{ "FS", "String" },
 	{ "GV", "mutableAddressor" },
@@ -37,6 +42,7 @@ static const SwiftType types[] = {
 	{ "Sq", "Optional" },
 	{ "SR", "UnsafeBufferPointer" },
 	{ "Sr", "UnsafeMutableBufferPointer" },
+	{ "So", "ObjC.Symbol" },
 	{ "Ss", "generic" },
 	{ "SS", "Swift.String" },
 	{ "Su", "UInt" },
@@ -611,6 +617,12 @@ R_API char *r_bin_demangle_swift(const char *s, bool syscmd, bool trylib) {
 #if USE_THIS_CODE
 	syscmd = trylib = false; // debugging on macos
 #endif
+	if (r_str_startswith (s, "So") && isdigit (s[2])) {
+		char *ss = r_str_newf ("$s%s", s);
+		char *res = r_bin_demangle_swift (ss, syscmd, trylib);
+		free (ss);
+		return res;
+	}
 	s = str_removeprefix (s, "imp.");
 	s = str_removeprefix (s, "reloc.");
 	// check if string doesnt start with __ then return
