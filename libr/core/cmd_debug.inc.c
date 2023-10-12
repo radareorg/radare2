@@ -1184,6 +1184,8 @@ static void cmd_debug_pid(RCore *core, const char *input) {
 			if (exe) {
 				r_cons_println (exe);
 				free (exe);
+			} else {
+				r_core_cmd0 (core, "o.");
 			}
 		}
 		break;
