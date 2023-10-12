@@ -17,32 +17,39 @@ typedef struct {
 	const char *name;
 } SwiftType;
 
+/* basic types */
 static const SwiftType types[] = {
-	/* basic types */
-	{ "Sb", "Bool" },
-	{ "SS", "Swift.String" },
-	{ "FS", "String" },
-	{ "GV", "mutableAddressor" },
-	{ "Ss", "generic" },
-	{ "S_", "Generic" },
-	{ "TF", "GenericSpec" },
-	{ "Ts", "String" },
-	{ "Sa", "Array" },
-	{ "Si", "Swift.Int" },
-	{ "Sf", "Float" },
-	{ "Sb", "Bool" },
-	{ "Su", "UInt" },
-	{ "SQ", "ImplicitlyUnwrappedOptional" },
-	{ "Sc", "UnicodeScalar" },
-	{ "Sd", "Double" },
 	{ "Bi1", "Builtin.Int1" },
 	{ "Bp", "Builtin.RawPointer" },
 	{ "Bw", "Builtin.Word" },
+	{ "FS", "String" },
+	{ "GV", "mutableAddressor" },
+	{ "Sa", "Array" },
+	{ "Sb", "Bool" },
+	{ "SC", "Syntesized" },
+	{ "Sc", "UnicodeScalar" },
+	{ "Sd", "Double" },
+	{ "Sf", "Float" },
+	{ "Si", "Swift.Int" },
+	{ "Sp", "UnsafeMutablePointer" },
+	{ "SP", "UnsafePointer" },
+	{ "SQ", "ImplicitlyUnwrappedOptional" },
+	{ "Sq", "Optional" },
+	{ "SR", "UnsafeBufferPointer" },
+	{ "Sr", "UnsafeMutableBufferPointer" },
+	{ "Ss", "generic" },
+	{ "SS", "Swift.String" },
+	{ "Su", "UInt" },
+	{ "Sv", "UnsafeMutableRawPointer" },
+	{ "SV", "UnsafeRawPointer" },
+	{ "S_", "Generic" },
+	{ "TF", "GenericSpec" },
+	{ "Ts", "String" },
 	{ NULL, NULL }
 };
 
+/* attributes */
 static const SwiftType metas [] = {
-	/* attributes */
 	{ "FC", "ClassFunc" },
 	{ "S0_FT", "?" },
 	{ "RxC", ".." },
