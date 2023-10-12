@@ -337,7 +337,7 @@ static RCoreHelpMessage help_msg_dp = {
 	"dpf", "", "attach to pid like file fd // HACK",
 	"dpk", " <pid> [<signal>]", "send signal to process (default 0)",
 	"dpn", "", "create new process (fork)",
-	"dpt", "", "list threads of current pid",
+	"dpt", "[?][j]", "list threads of current pid",
 	"dpt", " <pid>", "list threads of process",
 	"dpt.", "", "show current thread id",
 	"dptj", "", "list threads of current pid in JSON format",
@@ -1122,7 +1122,7 @@ static void cmd_debug_pid(RCore *core, const char *input) {
 			break;
 		case '?': // "dpt?"
 		default:
-			r_core_cmd_help (core, help_msg_dp);
+			r_core_cmd_help_match (core, help_msg_dp, "dpt", false);
 			break;
 		}
 		break;

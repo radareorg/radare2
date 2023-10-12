@@ -72,7 +72,7 @@ R_API int r_debug_pid_list(RDebug *dbg, int pid, char fmt) {
 	return false;
 }
 
-R_API int r_debug_thread_list(RDebug *dbg, int pid, char fmt) {
+R_API bool r_debug_thread_list(RDebug *dbg, int pid, char fmt) {
 	RList *list;
 	RListIter *iter;
 	RDebugPid *p;
@@ -123,12 +123,12 @@ R_API int r_debug_thread_list(RDebug *dbg, int pid, char fmt) {
 		}
 		pj_end (j);
 		if (fmt == 'j') {
-			dbg->cb_printf ("%s", pj_string (j));
+			dbg->cb_printf ("%s\n", pj_string (j));
 		}
 		pj_free (j);
 		r_list_free (list);
 	}
-	return false;
+	return true;
 }
 
 /* processes */
