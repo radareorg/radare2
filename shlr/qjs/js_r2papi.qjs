@@ -1,6 +1,6 @@
 // r2papi main file
 Object.defineProperty(G, "__esModule", { value: true });
-G.Base64 = G.NativePointer = G.R2Papi = G.Assembler = void 0;
+G.Base64 = G.NativePointer = G.NativeCallback = G.NativeFunction = G.R2Papi = G.Assembler = G.ProcessClass = G.ModuleClass = G.ThreadClass = void 0;
 const shell_js_1 = G;//"./shell.js");
 ;
 ;
@@ -10,6 +10,163 @@ const shell_js_1 = G;//"./shell.js");
 ;
 ;
 ;
+class ThreadClass {
+    constructor(r2) {
+        this.api = null;
+        this.api = r2;
+    }
+    backtrace() {
+        return G.r2.call("dbtj");
+    }
+    sleep(seconds) {
+        return G.r2.call("sleep " + seconds);
+    }
+}
+G.ThreadClass = ThreadClass;
+class ModuleClass {
+    constructor(r2) {
+        this.api = null;
+        this.api = r2;
+    }
+    fileName() {
+        return this.api.call("dpe").trim();
+    }
+    name() {
+        return "Module";
+    }
+    findBaseAddress() {
+        return "TODO";
+    }
+    findExportByName(name) {
+        // TODO
+        return "TODO";
+    }
+    getBaseAddress(name) {
+        return "TODO";
+    }
+    getExportByName(name) {
+        return G.r2.call("iE,name/eq/" + name + ",vaddr/cols,:quiet");
+    }
+    enumerateExports() {
+        // TODO: use frida json
+        return G.r2.callj("iEj");
+    }
+    enumerateImports() {
+        // TODO: use frida json
+        return G.r2.callj("iij");
+    }
+    enumerateRanges() {
+        // TODO: use frida json
+        return G.r2.callj("isj");
+    }
+    enumerateSymbols() {
+        // TODO: use frida json
+        return G.r2.callj("isj");
+    }
+}
+G.ModuleClass = ModuleClass;
+class ProcessClass {
+    constructor(r2) {
+        this.r2 = null;
+        this.r2 = r2;
+    }
+    enumerateMallocRanges() {
+    }
+    enumerateSystemRanges() {
+    }
+    enumerateRanges() {
+    }
+    enumerateThreads() {
+        return G.r2.call("dptj");
+    }
+    enumerateModules() {
+        G.r2.call("cfg.json.num=string"); // to handle 64bit values properly
+        if (G.r2.callj("e cfg.debug")) {
+            const modules = G.r2.callj("dmmj");
+            const res = [];
+            for (const mod of modules) {
+                const entry = {
+                    base: new NativePointer(mod.addr),
+                    size: new NativePointer(mod.addr_end).sub(mod.addr),
+                    path: mod.file,
+                    name: mod.name,
+                };
+                res.push(entry);
+            }
+            return res;
+        }
+        else {
+            const fname = (x) => {
+                const y = x.split("/");
+                return y[y.length - 1];
+            };
+            const bobjs = G.r2.callj("obj");
+            const res = [];
+            for (const obj of bobjs) {
+                const entry = {
+                    base: new NativePointer(obj.addr),
+                    size: obj.size,
+                    path: obj.file,
+                    name: fname(obj.file)
+                };
+                res.push(entry);
+            }
+            const libs = G.r2.callj("ilj");
+            for (const lib of libs) {
+                const entry = {
+                    base: 0,
+                    size: 0,
+                    path: lib,
+                    name: fname(lib)
+                };
+                res.push(entry);
+            }
+            return res;
+        }
+    }
+    getModuleByAddress(addr) {
+    }
+    getModuleByName(moduleName) {
+    }
+    codeSigningPolicy() {
+        return "optional";
+    }
+    getTmpDir() {
+        return this.r2.call("e dir.tmp").trim();
+    }
+    getHomeDir() {
+        return this.r2.call("e dir.home").trim();
+    }
+    platform() {
+        return this.r2.call("e asm.os").trim();
+    }
+    getCurrentDir() {
+        return this.r2.call("pwd").trim();
+    }
+    getCurrentThreadId() {
+        return +this.r2.call("dpq");
+    }
+    pageSize() {
+        if (this.r2.callj("e asm.bits") === 64 && this.r2.call("e asm.arch").startsWith("arm")) {
+            return 16384;
+        }
+        return 4096;
+    }
+    isDebuggerAttached() {
+        return this.r2.callj("e cfg.debug");
+    }
+    setExceptionHandler() {
+        // do nothing
+    }
+    id() {
+        // 
+        return this.r2.callj("dpq");
+    }
+    pointerSize() {
+        return G.r2.callj("e asm.bits") / 8;
+    }
+}
+G.ProcessClass = ProcessClass;
 class Assembler {
     constructor(myr2) {
         this.program = "";
@@ -98,6 +255,7 @@ class R2Papi {
     /**
      * should return the id for the new map using the given file descriptor
      */
+    // rename to createMap or mapFile?
     newMap(fd, vaddr, size, paddr, perm, name = "") {
         this.cmd(`om ${fd} ${vaddr} ${size} ${paddr} ${perm} ${name}`);
     }
@@ -135,7 +293,11 @@ class R2Papi {
     }
     getConfig(key) {
         if (key === '') {
-            throw new Error('Invalid key');
+            return new Error('Empty key');
+        }
+        const exist = this.r2.cmd(`e~^${key} =`).trim();
+        if (exist === '') {
+            return new Error('Config key does not exist');
         }
         return this.r2.call("e " + key).trim();
     }
@@ -323,6 +485,15 @@ class R2Papi {
         }
         return parseInt(nfd);
     }
+    openFileNomap(name) {
+        const ofd = this.call('oqq').trim();
+        this.call(`of ${name}`);
+        const nfd = this.call('oqq').trim();
+        if (ofd === nfd) {
+            return new Error('Cannot open file');
+        }
+        return parseInt(nfd);
+    }
     currentFile(name) {
         return this.call('o.').trim();
     }
@@ -417,6 +588,19 @@ class R2Papi {
     }
 }
 G.R2Papi = R2Papi;
+// useful to call functions via dxc
+class NativeFunction {
+    constructor() {
+    }
+}
+G.NativeFunction = NativeFunction;
+// uhm not sure how to map this into r2 yet
+class NativeCallback {
+    constructor() {
+    }
+}
+G.NativeCallback = NativeCallback;
+// export const NULL = ptr("0");yet
 class NativePointer {
     constructor(s, api) {
         if (api === undefined) {
@@ -513,8 +697,11 @@ class NativePointer {
     readPointer() {
         return new NativePointer(this.api.call("pvp@" + this.addr));
     }
-    readU8() {
+    readS8() {
         return parseInt(this.api.cmd(`pv1d@${this.addr}`));
+    }
+    readU8() {
+        return parseInt(this.api.cmd(`pv1u@${this.addr}`));
     }
     readU16() {
         return parseInt(this.api.cmd(`pv2d@${this.addr}`));
@@ -599,7 +786,7 @@ class NativePointer {
         this.api.cmd(`wv8 ${n}@${this.addr}@e:cfg.bigendian=false`);
         return true;
     }
-    readInt() {
+    readInt32() {
         return this.readU32();
     }
     readCString() {

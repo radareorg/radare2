@@ -570,7 +570,7 @@ static void register_helpers(JSContext *ctx) {
 	eval (ctx, "G.Process = new ProcessClass(r2);");
 	eval (ctx, "G.Module = new ModuleClass(r2);");
 	eval (ctx, "G.Thread = new ThreadClass(r2);");
-	eval (ctx, "G.Radare2 = { version: r2.cmd('?Vq').trim() };");
+	eval (ctx, "G.Radare2 = { version: r2.cmd('?Vq').trim() };"); // calling r2.cmd requires a delayed initialization
 	eval (ctx, "G.NULL = ptr(0);");
 }
 
@@ -586,7 +586,6 @@ static JSContext *JS_NewCustomContext(JSRuntime *rt) {
 	JS_AddIntrinsicOperators (ctx);
 	JS_EnableBignumExt (ctx, true);
 #endif
-	register_helpers (ctx);
 	return ctx;
 }
 
@@ -686,8 +685,10 @@ static bool init(RLangSession *ls) {
 	qc->call_func = func;
 	r2qjs_modules (ctx);
 	JS_SetRuntimeOpaque (rt, pm);  // expose pm to all qjs native functions in R2
-
 	ls->plugin_data = pm;
+
+	// requires pm to be set in the plugin_data
+	register_helpers (ctx);
 	return true;
 }
 
