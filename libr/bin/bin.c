@@ -178,25 +178,39 @@ R_API RBinSymbol *r_bin_symbol_new(const char *name, ut64 paddr, ut64 vaddr) {
 
 R_API RBinSymbol *r_bin_symbol_clone(RBinSymbol *bs) {
 	r_return_val_if_fail (bs, NULL);
-	RBinSymbol *nbs = R_NEW (RBinSymbol);
-	memcpy (nbs, bs, sizeof (RBinSymbol));
-	nbs->name = strdup (nbs->name);
-	if (nbs->dname) {
-		nbs->dname = strdup (nbs->dname);
-	}
-	if (nbs->libname) {
-		nbs->libname = strdup (nbs->libname);
-	}
-	if (nbs->classname) {
-		nbs->classname = strdup (nbs->classname);
+	RBinSymbol *nbs = r_mem_dup (bs, sizeof (RBinSymbol));
+	if (nbs) {
+		nbs->name = strdup (nbs->name);
+		if (nbs->dname) {
+			nbs->dname = strdup (nbs->dname);
+		}
+		if (nbs->libname) {
+			nbs->libname = strdup (nbs->libname);
+		}
+		if (nbs->classname) {
+			nbs->classname = strdup (nbs->classname);
+		}
 	}
 	return nbs;
 }
 
+// query the symbol name into the symtypes database
+R_API const char *r_bin_symbol_unsafe(RBin *bin, const char *name) {
+	Sdb *db = sdb_ns (bin->sdb, "symclass", true);
+	if (db) {
+		const char *s = sdb_const_get (db, name, 0);
+		eprintf ("UNSAF %s DB %p = %s\n", name, db, s);
+		return s;
+	}
+	return NULL;
+}
+
 R_API void r_bin_symbol_fini(RBinSymbol *sym) {
-	free (sym->name);
-	free (sym->libname);
-	free (sym->classname);
+	if (sym) {
+		free (sym->name);
+		free (sym->libname);
+		free (sym->classname);
+	}
 }
 
 R_API void r_bin_import_fini(RBinImport *imp) {
@@ -224,11 +238,6 @@ R_API void r_bin_string_free(void *_str) {
 	}
 }
 
-// XXX - change this to RBinObject instead of RBinFile
-// makes no sense to pass in a binfile and set the RBinObject
-// kinda a clunky functions
-// XXX - this is a rather hacky way to do things, there may need to be a better
-// way.
 R_API bool r_bin_open(RBin *bin, const char *file, RBinFileOptions *opt) {
 	r_return_val_if_fail (bin && bin->iob.io && opt, false);
 
@@ -372,11 +381,10 @@ R_API bool r_bin_open_io(RBin *bin, RBinFileOptions *opt) {
 }
 
 R_IPI RBinPlugin *r_bin_get_binplugin_by_name(RBin *bin, const char *name) {
-	RBinPlugin *plugin;
-	RListIter *it;
-
 	r_return_val_if_fail (bin && name, NULL);
 
+	RBinPlugin *plugin;
+	RListIter *it;
 	r_list_foreach (bin->plugins, it, plugin) {
 		if (!strcmp (plugin->meta.name, name)) {
 			return plugin;
@@ -804,7 +812,7 @@ R_API RList *r_bin_get_mem(RBin *bin) {
 	return o ? o->mem : NULL;
 }
 
-// XXX badly designed api, should not exist, aka DEPRECATE
+// XXX R2_590 badly designed api, should not exist, aka DEPRECATE
 R_API int r_bin_is_big_endian(RBin *bin) {
 	r_return_val_if_fail (bin, -1);
 	RBinObject *o = r_bin_cur_object (bin);
@@ -834,6 +842,13 @@ R_API RBin *r_bin_new(void) {
 	bin->force = NULL;
 	bin->filter_rules = UT64_MAX;
 	bin->sdb = sdb_new0 ();
+	{
+		Sdb *db = sdb_new0 ();
+		const char *cs = R2_PREFIX R_SYS_DIR R2_SDB R_SYS_DIR "format" R_SYS_DIR "symclass.sdb";
+		bool res = sdb_open (db, cs);
+		const char *s = sdb_const_get (db, "system", 0);
+		sdb_ns_set (bin->sdb, "symclass", db);
+	}
 	bin->cb_printf = (PrintfCallback)printf;
 	bin->plugins = r_list_newf ((RListFree)r_bin_plugin_free);
 	bin->minstrlen = 0;

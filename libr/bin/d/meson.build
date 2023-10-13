@@ -151,6 +151,8 @@ sdb_files = [
   'wsasrv'
 ]
 
+sdb_files += '../symclass'
+
 r_bin_d_sources = []
 
 foreach file : sdb_files
@@ -186,7 +188,8 @@ format_files = [
   'pe32',
   'trx',
   'mz',
-  'zip'
+  'zip',
+  'symclass.sdb',
 ]
 
 install_data(format_files,

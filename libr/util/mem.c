@@ -302,8 +302,9 @@ R_API bool r_mem_protect(void *ptr, int size, const char *prot) {
 }
 
 R_API void *r_mem_dup(const void *s, int l) {
+	r_return_val_if_fail (s, NULL);
 	void *d = malloc (l);
-	if (d) {
+	if (d != NULL) {
 		memcpy (d, s, l);
 	}
 	return d;
@@ -319,6 +320,7 @@ R_API void *r_mem_set(ut8 ch, int l) {
 
 
 R_API void r_mem_reverse(ut8 *b, int l) {
+	r_return_if_fail (b);
 	ut8 tmp;
 	int i, end = l / 2;
 	for (i = 0; i < end; i++) {
