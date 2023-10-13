@@ -8396,7 +8396,7 @@ static void cmd_anal_opcode_bits(RCore *core, const char *arg, int mode) {
 		pj_o (pj);
 		pj_ks (pj, "opstr", analop.mnemonic);
 		pj_kn (pj, "size", analop.size);
-		pj_ko (pj, "bytes");
+		pj_ka (pj, "bytes");
 	}
 	int numbers[8] = {0};
 	RStrBuf *sb = r_strbuf_new ("");
