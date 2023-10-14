@@ -332,3 +332,4 @@ Caps lock is on.
 $10 or mistery box?
 INSERT COIN
 This program is not compatible with your device.
+Hey hey hey everyone! welcome to infoflash

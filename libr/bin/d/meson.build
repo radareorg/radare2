@@ -1,4 +1,4 @@
-sdb_files = [
+sdb_dll_files = [
   'aclui',
   'activeds',
   'atl',
@@ -153,12 +153,10 @@ sdb_files = [
 
 r_bin_d_sources = []
 
-foreach file : sdb_files
+foreach file : sdb_dll_files
   if get_option('sdb_cgen')
     outfile = '@0@.c'.format(file)
     gen_cmd = sdb_gen_cmd_cgen
-    # outfile = join_paths(meson.current_source_dir(), 'dll', '@0@.sdb.txt'.format(file))
-    # XXX cgen builds not working well yet
   else
     outfile = '@0@.sdb'.format(file)
     gen_cmd = sdb_gen_cmd
@@ -171,6 +169,31 @@ foreach file : sdb_files
     build_by_default: true,
     install: true,
     install_dir: join_paths(r2_sdb, join_paths('format', 'dll'))
+  )
+  if get_option('sdb_cgen')
+    r_bin_d_sources += target
+  endif
+endforeach
+
+# TODO: simplify this logic
+sdb_files = [ 'symclass' ]
+
+foreach file : sdb_files
+  if get_option('sdb_cgen')
+    outfile = '@0@.c'.format(file)
+    gen_cmd = sdb_gen_cmd_cgen
+  else
+    outfile = '@0@.sdb'.format(file)
+    gen_cmd = sdb_gen_cmd
+  endif
+  target = custom_target(outfile,
+    input: join_paths(meson.current_source_dir(), '@0@.sdb.txt'.format(file)),
+    output: outfile,
+    command: gen_cmd,
+    depends: sdb_exe,
+    build_by_default: true,
+    install: true,
+    install_dir: join_paths(r2_sdb, join_paths('format'))
   )
   if get_option('sdb_cgen')
     r_bin_d_sources += target

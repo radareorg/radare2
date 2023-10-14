@@ -2546,6 +2546,10 @@ static bool bin_symbols(RCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at,
 			pj_ki (pj, "ordinal", symbol->ordinal);
 			pj_ks (pj, "bind", symbol->bind);
 			pj_kn (pj, "size", (ut64)symbol->size);
+			const char *safetyName = r_bin_symbol_unsafe (r->bin, symbol->name);
+			if (safetyName) {
+				pj_ks (pj, "unsafe", safetyName);
+			}
 			pj_ks (pj, "type", symbol->type);
 			pj_kn (pj, "vaddr", addr);
 			pj_kn (pj, "paddr", symbol->paddr);
