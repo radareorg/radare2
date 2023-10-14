@@ -18,6 +18,13 @@ static const char *__lib_types_get(int idx) {
 	return r_lib_types[idx];
 }
 
+static inline void rlibplugin_free(RLibPlugin *plug) {
+	if (plug) {
+		free (plug->file);
+		free (plug);
+	}
+}
+
 R_API int r_lib_types_get_i(const char *str) {
 	int i;
 	// eprintf ("slow types.geti\n");
@@ -168,7 +175,7 @@ R_API RLib *r_lib_new(const char *symname, const char *symnamefunc) {
 		for (i = 0; i < R_LIB_TYPE_LAST; i++) {
 			lib->handlers_bytype[i] = NULL;
 		}
-		lib->plugins = r_list_newf (free);
+		lib->plugins = r_list_newf (rlibplugin_free);
 		lib->plugins_ht = ht_pp_new0 ();
 		lib->symname = strdup (symname? symname: R_LIB_SYMNAME);
 		lib->symnamefunc = strdup (symnamefunc? symnamefunc: R_LIB_SYMFUNC);
@@ -363,11 +370,15 @@ R_API int r_lib_open_ptr(RLib *lib, const char *file, void *handler, RLibStruct 
 	p->handler = r_lib_get_handler (lib, p->type);
 	p->free = stru->free;
 
+	if (!p->handler) {
+		rlibplugin_free (p);
+		return NULL;
+	}
+
 	int ret = r_lib_run_handler (lib, p, stru);
 	if (ret == -1) {
 		R_LOG_ERROR ("Library handler has failed for '%s'", file);
-		free (p->file);
-		free (p);
+		rlibplugin_free (p);
 		r_lib_dl_close (handler);
 	} else {
 		r_list_append (lib->plugins, p);
