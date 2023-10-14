@@ -846,8 +846,12 @@ R_API RBin *r_bin_new(void) {
 		Sdb *db = sdb_new0 ();
 		const char *cs = R2_PREFIX R_SYS_DIR R2_SDB R_SYS_DIR "format" R_SYS_DIR "symclass.sdb";
 		bool res = sdb_open (db, cs);
-		const char *s = sdb_const_get (db, "system", 0);
-		sdb_ns_set (bin->sdb, "symclass", db);
+		if (res) {
+			sdb_ns_set (bin->sdb, "symclass", db);
+		} else {
+			R_LOG_DEBUG ("Cannot find symclass.sdb");
+			sdb_free (db);
+		}
 	}
 	bin->cb_printf = (PrintfCallback)printf;
 	bin->plugins = r_list_newf ((RListFree)r_bin_plugin_free);
