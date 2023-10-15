@@ -149,6 +149,16 @@ typedef struct r_core_times_t {
 #define R_CORE_ASMQJMPS_MAX_LETTERS (26 * 26 * 26 * 26 * 26)
 #define R_CORE_ASMQJMPS_LEN_LETTERS 5
 
+#define RELOFF_TO_FLAG 1
+#define RELOFF_TO_MAPS 2
+#define RELOFF_TO_DMAP 4
+#define RELOFF_TO_FILE 8
+#define RELOFF_TO_FUNC 16
+#define RELOFF_TO_FMAP 32
+#define RELOFF_TO_SECT 64
+#define RELOFF_TO_SYMB 128
+#define RELOFF_TO_LIBS 256
+
 typedef enum r_core_autocomplete_types_t {
 	R_CORE_AUTOCMPLT_DFLT = 0,
 	R_CORE_AUTOCMPLT_FLAG,
