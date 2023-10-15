@@ -168,7 +168,7 @@ typedef struct r_disasm_state_t {
 	bool show_bytes_right;
 	bool show_bytes_opcolor;
 	bool show_reloff;
-	bool show_reloff_flags;
+	ut32 show_reloff_to;
 	bool show_comments;
 	bool show_usercomments;
 	bool asm_hints;
@@ -794,8 +794,20 @@ static RDisasmState *ds_init(RCore *core) {
 	ds->show_optype = r_config_get_i (core->config, "asm.optype");
 	ds->asm_meta = r_config_get_i (core->config, "asm.meta");
 	ds->asm_xrefs_code = r_config_get_i (core->config, "asm.xrefs.code");
-	ds->show_reloff = r_config_get_i (core->config, "asm.offset.relative");
-	ds->show_reloff_flags = r_config_get_i (core->config, "asm.offset.flags");
+	{
+		const char *relto = r_config_get (core->config, "asm.offset.relto");
+		ds->show_reloff_to = 0;
+		ds->show_reloff_to |= strstr (relto, "fu")? RELOFF_TO_FUNC: 0;
+		ds->show_reloff_to |= strstr (relto, "fl")? RELOFF_TO_FLAG: 0;
+		ds->show_reloff_to |= strstr (relto, "ma")? RELOFF_TO_MAPS: 0;
+		ds->show_reloff_to |= strstr (relto, "dm")? RELOFF_TO_DMAP: 0;
+		ds->show_reloff_to |= strstr (relto, "se")? RELOFF_TO_SECT: 0;
+		ds->show_reloff_to |= strstr (relto, "sy")? RELOFF_TO_SYMB: 0;
+		ds->show_reloff_to |= strstr (relto, "fi")? RELOFF_TO_FILE: 0;
+		ds->show_reloff_to |= strstr (relto, "fm")? RELOFF_TO_FMAP: 0;
+		ds->show_reloff_to |= strstr (relto, "li")? RELOFF_TO_LIBS: 0;
+	}
+	ds->show_reloff = ds->show_reloff_to != 0; // r_config_get_i (core->config, "asm.offset.rel");
 	ds->show_lines_fcn = ds->show_lines ? r_config_get_i (core->config, "asm.lines.fcn") : false;
 	ds->show_comments = r_config_get_b (core->config, "asm.comments");
 	ds->show_usercomments = r_config_get_b (core->config, "asm.usercomments");
@@ -3066,6 +3078,104 @@ static void ds_print_cycles(RDisasmState *ds) {
 #include "disasm_stackptr.inc.c"
 #undef R_INCLUDE_BEGIN
 
+static char *get_reloff(RDisasmState *ds, ut64 at, st64 *delta) {
+	char *label = NULL;
+	if (!label && ds->show_reloff_to & RELOFF_TO_FUNC) {
+		RAnalFunction *f = r_anal_get_function_at (ds->core->anal, at);
+		if (!f) {
+			f = fcnIn (ds, at, R_ANAL_FCN_TYPE_NULL); // r_anal_get_fcn_in (core->anal, at, R_ANAL_FCN_TYPE_NULL);
+		}
+		if (f) {
+			*delta = at - f->addr;
+			sfi.name = f->name;
+			sfi.offset = f->addr;
+			ds->lastflag = &sfi;
+			label = strdup (f->name);
+		}
+		if (!ds->lastflag) {
+			*delta = 0;
+		}
+	}
+	if (!label && ds->show_reloff_to & RELOFF_TO_FLAG) {
+		RFlagItem *fi = r_flag_get_i (ds->core->flags, at);
+		if (fi) {
+			ds->lastflag = fi;
+		}
+		if (ds->lastflag) {
+			if (ds->lastflag->offset == at) {
+				*delta = 0;
+			} else {
+				*delta = at - ds->lastflag->offset;
+			}
+		} else {
+			*delta = at - ds->core->offset;
+		}
+		if (ds->lastflag) {
+			label = strdup (ds->lastflag->name);
+		}
+	}
+	if (!label && ds->show_reloff_to & RELOFF_TO_MAPS) {
+		RIOMap *map = r_io_map_get_at (ds->core->io, at);
+		if (map) {
+			*delta = at - r_io_map_begin (map);
+			if (map->name) {
+				label = strdup (map->name);
+			} else {
+				label = r_str_newf ("map(%d)", map->id);
+			}
+		}
+	}
+	if (!label && ds->show_reloff_to & RELOFF_TO_FILE) {
+		RIOMap *map = r_io_map_get_at (ds->core->io, at);
+		if (map) {
+			*delta = at - r_io_map_begin (map) + map->delta;
+			label = r_str_newf ("fd(%d)", map->fd);
+		}
+	}
+	if (!label && ds->show_reloff_to & RELOFF_TO_FMAP) {
+		RFlag *f = ds->core->flags;
+		r_flag_space_push (f, "maps");
+		RFlagItem *fi = r_flag_get_at (f, at, true);
+		if (fi) {
+			*delta = at - fi->offset;
+			label = r_str_trim_dup (fi->name);
+		}
+		r_flag_space_pop (f);
+	}
+	if (!label && ds->show_reloff_to & RELOFF_TO_LIBS) {
+		RFlag *f = ds->core->flags;
+		r_flag_space_push (f, "libs");
+		RFlagItem *fi = r_flag_get_at (f, at, true);
+		if (fi) {
+			*delta = at - fi->offset;
+			label = strdup (fi->name);
+			r_str_trim (label);
+		}
+		r_flag_space_pop (f);
+	}
+	if (!label && ds->show_reloff_to & RELOFF_TO_SYMB) {
+#if 0
+		// TODO
+#endif
+	}
+	if (!label && ds->show_reloff_to & RELOFF_TO_SECT) {
+		RBinObject *bo = r_bin_cur_object (ds->core->bin);
+		RBinSection *s = bo? r_bin_get_section_at (bo, at, ds->core->io->va): NULL;
+		if (s) {
+			*delta = at - s->vaddr;
+			label = strdup (s->name);
+		}
+	}
+	if (!label && ds->show_reloff_to & RELOFF_TO_DMAP) {
+		RDebugMap *dmap = r_debug_map_get (ds->core->dbg, at);
+		if (dmap) {
+			*delta = at - dmap->addr;
+			label = strdup (dmap->name);
+		}
+	}
+	return label;
+}
+
 static void ds_print_offset(RDisasmState *ds) {
 	RCore *core = ds->core;
 	ut64 at = ds->vat;
@@ -3092,45 +3202,12 @@ static void ds_print_offset(RDisasmState *ds) {
 	}
 	// r_print_set_screenbounds (core->print, at);
 	if (ds->show_offset) {
-		const char *label = NULL;
-		int delta = -1;
+		char *label = NULL;
+		st64 delta = -1;
 		bool show_trace = false;
 
 		if (ds->show_reloff) {
-			RAnalFunction *f = r_anal_get_function_at (core->anal, at);
-			if (!f) {
-				f = fcnIn (ds, at, R_ANAL_FCN_TYPE_NULL); // r_anal_get_fcn_in (core->anal, at, R_ANAL_FCN_TYPE_NULL);
-			}
-			if (f) {
-				delta = at - f->addr;
-				sfi.name = f->name;
-				sfi.offset = f->addr;
-				ds->lastflag = &sfi;
-				label = f->name;
-			} else {
-				if (ds->show_reloff_flags) {
-					/* XXX: this is wrong if starting to disasm after a flag */
-					RFlagItem *fi = r_flag_get_i (core->flags, at);
-					if (fi) {
-						ds->lastflag = fi;
-					}
-					if (ds->lastflag) {
-						if (ds->lastflag->offset == at) {
-							delta = 0;
-						} else {
-							delta = at - ds->lastflag->offset;
-						}
-					} else {
-						delta = at - core->offset;
-					}
-					if (ds->lastflag) {
-						label = ds->lastflag->name;
-					}
-				}
-			}
-			if (!ds->lastflag) {
-				delta = 0;
-			}
+			label = get_reloff (ds, at, &delta);
 		}
 		if (ds->show_trace) {
 			RDebugTracepoint *tp = r_debug_trace_get (ds->core->dbg, ds->at);
@@ -3161,6 +3238,7 @@ static void ds_print_offset(RDisasmState *ds) {
 				r_print_offset (core->print, at, (at == ds->dest) || show_trace, delta, label);
 			}
 		}
+		free (label);
 	}
 	if (ds->atabsoff > 0 && ds->show_offset) {
 		if (ds->_tabsoff != ds->atabsoff) {

@@ -1680,6 +1680,16 @@ static bool cb_color_getter(void *user, RConfigNode *node) {
 	return true;
 }
 
+static bool cb_reloff(void *user, void *data) {
+	// RCore *core = (RCore *) user;
+	RConfigNode *node = (RConfigNode *) data;
+	if (strchr (node->value, '?')) {
+		r_cons_printf ("func\nflag\nmaps\ndmap\nfmap\nsect\nsymb\nlibs\nfile\n");
+		return false;
+	}
+	return true;
+}
+
 static bool cb_decoff(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
@@ -3714,8 +3724,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB ("asm.offset.segment", "false", &cb_segoff, "show segmented address in prompt (x86-16)");
 	SETICB ("asm.offset.segment.bits", 4, &cb_asm_offset_segment_bits, "segment granularity in bits (x86-16)");
 	SETCB ("asm.offset.base10", "false", &cb_decoff, "show address in base 10 instead of hexadecimal");
-	SETBPREF ("asm.offset.relative", "false", "show relative offsets instead of absolute address in disasm");
-	SETBPREF ("asm.offset.flags", "false", "show relative offsets to flags (not only functions)");
+	SETCB ("asm.offset.relto", "", &cb_reloff, "show offset relative to fun,map,sec,flg");
 	SETBPREF ("asm.offset.focus", "false", "show only the addresses that branch or located at the beginning of a basic block");
 	SETBPREF ("asm.section", "false", "show section name before offset");
 	SETBPREF ("asm.section.perm", "false", "show section permissions in the disasm");
