@@ -372,7 +372,7 @@ R_API int r_lib_open_ptr(RLib *lib, const char *file, void *handler, RLibStruct 
 
 	if (!p->handler) {
 		rlibplugin_free (p);
-		return NULL;
+		return -1;
 	}
 
 	int ret = r_lib_run_handler (lib, p, stru);
