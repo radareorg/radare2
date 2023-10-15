@@ -175,7 +175,7 @@ R_API RLib *r_lib_new(const char *symname, const char *symnamefunc) {
 		for (i = 0; i < R_LIB_TYPE_LAST; i++) {
 			lib->handlers_bytype[i] = NULL;
 		}
-		lib->plugins = r_list_newf (rlibplugin_free);
+		lib->plugins = r_list_newf ((RListFree)rlibplugin_free);
 		lib->plugins_ht = ht_pp_new0 ();
 		lib->symname = strdup (symname? symname: R_LIB_SYMNAME);
 		lib->symnamefunc = strdup (symnamefunc? symnamefunc: R_LIB_SYMFUNC);
