@@ -1035,7 +1035,7 @@ static int cmd_info(void *data, const char *input) {
 			}
 			goto done;
 		}
-		case 's': 
+		case 's':
 			{ // "is"
 			RList *objs = r_core_bin_files (core);
 			RListIter *iter;
