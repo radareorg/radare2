@@ -30,7 +30,7 @@ DLLS+=win87em winaspi winnet16 winoldap winsock winspl16 wpsapd wpsuni
 DLLS+=wpsunire wsasrv
 DLL_SDB=$(addsuffix .sdb,$(addprefix dll/,$(DLLS)))
 
-all: $(DLL_SDB)
+all: $(DLL_SDB) symclass.sdb
 
 clean:
 	rm -f dll/*.sdb

@@ -35,7 +35,7 @@ static RCoreHelpMessage help_msg_i = {
 	"iE.", "", "current export",
 	"ih", "", "headers (alias for iH)",
 	"iHH", "", "verbose Headers in raw text",
-	"ii", "", "imports",
+	"ii", "[?][cj*,]", "imports",
 	"iI", "", "binary info",
 	"ik", " [query]", "key-value database from RBinObject",
 	"il", "", "libraries",
@@ -221,6 +221,71 @@ static void cmd_info_here(RCore *core, PJ *pj, int mode) {
 		}
 		pj_end (pj);
 		r_core_item_free (item);
+	}
+}
+
+static void cmd_iic(RCore *r, int mode) {
+	int i;
+	const char *type[] = {
+		"heap",
+		"string",
+		"format",
+		"buffer",
+		"network",
+		"privilege",
+		"thread",
+		"file",
+		NULL
+	};
+	const RList *imports = r_bin_get_imports (r->bin);
+	RListIter *iter;
+	RBinSymbol *imp;
+	bool first;
+	for (i = 0; type[i]; i++) {
+		first = true;
+		const char *typ = type[i];
+		r_list_foreach (imports, iter, imp) {
+			const char *un = r_bin_symbol_unsafe (r->bin, imp->name);
+			if (un && !strcmp (un, typ)) {
+				if (first) {
+					r_cons_printf ("|- %s:\n", typ);
+					first = false;
+				}
+				r_cons_printf ("|  |- %s\n", imp->name);
+				char *fname = r_str_newf ("sym.imp.%s", imp->name);
+				RFlagItem *item = r_flag_get (r->flags, fname);
+				free (fname);
+				RVecAnalRef *xrefs = r_anal_xrefs_get (r->anal, item->offset);
+				if (xrefs) {
+					RAnalRef *xref;
+					R_VEC_FOREACH (xrefs, xref) {
+						RList *funcs = r_anal_get_functions_in (r->anal, xref->addr);
+						RAnalFunction *f = r_list_pop (funcs);
+						if (f) {
+							r_cons_printf ("|  |  |- %s\n", f->name);
+						} else {
+							r_cons_printf ("|  |  |- 0x%08"PFMT64x"\n", xref->addr);
+						}
+						r_list_free (funcs);
+					}
+				}
+				RVecAnalRef_free (xrefs);
+				// list xrefs now
+			}
+		}
+	}
+
+	return;
+	first = true;
+	r_list_foreach (imports, iter, imp) {
+		const char *un = r_bin_symbol_unsafe (r->bin, imp->name);
+		if (!un) {
+			if (first) {
+				r_cons_printf ("unclassified:\n");
+				first = false;
+			}
+			r_cons_printf (" + %s\n", imp->name);
+		}
 	}
 }
 
@@ -970,7 +1035,8 @@ static int cmd_info(void *data, const char *input) {
 			}
 			goto done;
 		}
-		case 's': { // "is"
+		case 's':
+			{ // "is"
 			RList *objs = r_core_bin_files (core);
 			RListIter *iter;
 			RBinFile *bf;
@@ -1144,21 +1210,25 @@ static int cmd_info(void *data, const char *input) {
 				RBININFO ("dwarf", R_CORE_BIN_ACC_DWARF, NULL, -1);
 			}
 			break;
-		case 'i': { // "ii"
-			RList *objs = r_core_bin_files (core);
-			RListIter *iter;
-			RBinFile *bf;
-			RBinFile *cur = core->bin->cur;
-			r_list_foreach (objs, iter, bf) {
-				RBinObject *obj = bf->bo;
-				core->bin->cur = bf;
-				RBININFO ("imports", R_CORE_BIN_ACC_IMPORTS, NULL,
-					(obj && obj->imports)? r_list_length (obj->imports): 0);
+		case 'i': // "ii"
+			if (input[1] == 'c') { // "iic"
+				cmd_iic (core, 0); // TODO: support json, etc
+				return true;
+			} else {
+				RList *objs = r_core_bin_files (core);
+				RListIter *iter;
+				RBinFile *bf;
+				RBinFile *cur = core->bin->cur;
+				r_list_foreach (objs, iter, bf) {
+					RBinObject *obj = bf->bo;
+					core->bin->cur = bf;
+					int amount = (obj && obj->imports)? r_list_length (obj->imports): 0;
+					RBININFO ("imports", R_CORE_BIN_ACC_IMPORTS, NULL, amount);
+				}
+				core->bin->cur = cur;
+				r_list_free (objs);
 			}
-			core->bin->cur = cur;
-			r_list_free (objs);
 			break;
-		}
 		case 'I': // "iI"
 			  {
 				  RList *objs = r_core_bin_files (core);
