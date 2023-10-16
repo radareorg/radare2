@@ -198,9 +198,7 @@ R_API RBinSymbol *r_bin_symbol_clone(RBinSymbol *bs) {
 R_API const char *r_bin_symbol_unsafe(RBin *bin, const char *name) {
 	Sdb *db = sdb_ns (bin->sdb, "symclass", true);
 	if (db) {
-		const char *s = sdb_const_get (db, name, 0);
-		eprintf ("UNSAF %s DB %p = %s\n", name, db, s);
-		return s;
+		return sdb_const_get (db, name, 0);
 	}
 	return NULL;
 }
@@ -1512,4 +1510,3 @@ R_API const char *r_bin_field_kindstr(RBinField *f) {
 		return "var"; // maybe ivar for objc?
 	}
 }
-

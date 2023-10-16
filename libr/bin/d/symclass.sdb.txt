@@ -238,3 +238,45 @@ listen=network
 accept=network
 select=network
 setsockopt=network
+# threads
+pthread_create=thread
+fork=thread
+pthread_attr=thread
+pthread_cancel=thread
+pthread_cleanup_pop=thread
+pthread_cleanup_push=thread
+pthread_exit=thread
+pthread_join=thread
+# file
+open=file
+fseek=file
+fread=file
+unlink=file
+fstat=file
+stat=file
+write=file
+readdir_r=file
+opendir=file
+telldir=file
+closedir=file
+readlink=file
+fts_read=file
+fts_open=file
+fts_open_b=file
+fts_close=file
+# format
+printf=format
+sscanf=format
+sprintf=format
+# priv
+setuid=privilege
+setgid=privilege
+seteuid=privilege
+setegid=privilege
+# heap
+malloc=heap
+free=heap
+realloc=heap
+# string
+strstr=string
+strchr=string
