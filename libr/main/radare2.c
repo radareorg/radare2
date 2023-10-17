@@ -1455,6 +1455,9 @@ R_API int r_main_radare2(int argc, const char **argv) {
 								filepath = mr.file? strstr (mr.file, "://"): NULL;
 								filepath = filepath ? filepath + 3 : mr.pfile;
 							}
+							if (r_str_startswith (mr.pfile, "frida://")) {
+								r_core_cmd0 (r, ".:init");
+							}
 							if (r->io->desc && mr.iod && (mr.iod->fd == r->io->desc->fd) && mr.iod->name) {
 								filepath = mr.iod->name;
 							}
