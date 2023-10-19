@@ -2965,7 +2965,6 @@ enum {
 };
 
 static int signdb_type(const char *file) {
-	char *data = NULL;
 	if (r_str_endswith (file, ".sdb")) {
 		return SIGNDB_TYPE_SDB;
 	}
@@ -2979,10 +2978,15 @@ static int signdb_type(const char *file) {
 		return SIGNDB_TYPE_R2;
 	}
 	int i, sz = 0;
-	data = r_file_slurp_range (file, 0, 0x200, &sz);
-	if (!data || sz < 1) {
+	char *data = r_file_slurp_range (file, 0, 0x200, &sz);
+	if (!data) {
 		return SIGNDB_TYPE_INVALID;
 	}
+	if (sz < 1) {
+		free (data);
+		return SIGNDB_TYPE_INVALID;
+	}
+	data[sz - 1] = 0;
 	sz = R_MIN (sz, 0x200);
 	int is_sdb = 16;
 	int is_kv = 4;

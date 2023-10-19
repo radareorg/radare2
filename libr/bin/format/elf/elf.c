@@ -4855,15 +4855,15 @@ const RVector* Elf_(load_fields)(ELFOBJ *eo) {
 	}
 
 	RBinElfField *new_field = r_vector_end (&eo->g_fields);
-	strncpy (new_field->name, "ehdr", ELF_STRING_LENGTH);
+	r_str_ncpy (new_field->name, "ehdr", ELF_STRING_LENGTH);
 	new_field->offset = 0;
 
 	new_field = r_vector_end (&eo->g_fields);
-	strncpy (new_field->name, "shoff", ELF_STRING_LENGTH);
+	r_str_ncpy (new_field->name, "shoff", ELF_STRING_LENGTH);
 	new_field->offset = eo->ehdr.e_shoff;
 
 	new_field = r_vector_end (&eo->g_fields);
-	strncpy (new_field->name, "phoff", ELF_STRING_LENGTH);
+	r_str_ncpy (new_field->name, "phoff", ELF_STRING_LENGTH);
 	new_field->offset = eo->ehdr.e_phoff;
 
 	int i;
