@@ -110,6 +110,7 @@ loongarch_decode_imm (const char *bit_field, insn_t insn, int si)
 
   if (si)
     {
+      assert(sizeof (ret) > len);
       ret <<= sizeof (ret) * 8 - len;
       ret >>= sizeof (ret) * 8 - len;
     }
