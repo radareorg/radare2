@@ -23,13 +23,13 @@ static int java_switch_op(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *d
 		if (pos + 8 + 8 > len) {
 			return op->size;
 		}
-		const int min_val = (ut32)(UINT (data, pos + 4));
-		const int max_val = (ut32)(UINT (data, pos + 8));
+		const ut32 min_val = (ut32)(UINT (data, pos + 4));
+		const ut32 max_val = (ut32)(UINT (data, pos + 8));
 
 		ut32 default_loc = (ut32) (UINT (data, pos)), cur_case = 0;
 		op->switch_op = r_anal_switch_op_new (addr, min_val, max_val, default_loc);
 		pos += 12;
-		if (max_val > min_val && ((max_val - min_val)<(UT16_MAX/4))) {
+		if (max_val > min_val && ((max_val - min_val) < (UT16_MAX / 4))) {
 			//caseop = r_anal_switch_op_add_case(op->switch_op, addr+default_loc, -1, addr+offset);
 			for (cur_case = 0; cur_case <= max_val - min_val; pos += 4, cur_case++) {
 				//ut32 value = (ut32)(UINT (data, pos));
