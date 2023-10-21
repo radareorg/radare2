@@ -149,7 +149,8 @@ static const char *mnemonic_fpu_2op[] =
 static const char *mnemonic_fs2_cmp[] =
 {
   "fcmpeqs", "fcmpeqs.e", "fcmplts", "fcmplts.e",
-  "fcmples", "fcmples.e", "fcmpuns", "fcmpuns.e"
+  "fcmples", "fcmples.e", "fcmpuns", "fcmpuns.e",
+  "fcmp.unk0", "fcmp.unk1",
 };
 
 static const char *mnemonic_fd2_cmp[] =
