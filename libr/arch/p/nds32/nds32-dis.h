@@ -103,7 +103,7 @@ static const char *mnemonic_alu21[] =
 static const char *mnemonic_br2[] =
 {
   "ifcall", "01", "beqz", "bnez", "bgez",   "bltz",   "bgtz", "blez",
-  "10",     "11", "12",   "13",   "bgezal", "bltzal"
+  "10",     "11", "12",   "13",   "bgezal", "bltzal", "b16"
 };
 
 static const char *mnemonic_misc[] =
@@ -1040,8 +1040,8 @@ print_insn32 (bfd_vma pc, disassemble_info *info, uint32_t insn)
   const int rt = RT5 (insn);
   const int ra = RA5 (insn);
   const int rb = RB5 (insn);
-  const int imm15s = IMMS (insn, 15);
-  const int imm15u = IMMU (insn, 15);
+  const unsigned int imm15s = IMMS (insn, 15);
+  const unsigned int imm15u = IMMU (insn, 15);
   uint32_t shift;
   fprintf_ftype func = info->fprintf_func;
   void *stream = info->stream;
