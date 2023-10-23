@@ -94,7 +94,7 @@ static int fwblock(FILE *fd, ut8 *b, ut32 start_addr, ut16 size) {
 		start_addr += 0x10;
 		b += 0x10;
 		if ((start_addr & 0xffff) < 0x10) {
-			//addr rollover: write ext address record
+			// addr rollover: write ext address record
 			if (fw04b (fd, start_addr >> 16) < 0) {
 				return -1;
 			}
@@ -106,7 +106,7 @@ static int fwblock(FILE *fd, ut8 *b, ut32 start_addr, ut16 size) {
 	//  write crumbs
 	last_addr = i+start_addr;
 	cks = -last_addr;
-	cks -= last_addr>>8;
+	cks -= last_addr >> 8;
 	for (j = 0; i < size; i++, j++) {
 		const size_t delta = 2 * j;
 		cks -= b[j];
@@ -257,6 +257,7 @@ static bool ihex_parse(Rihex *rih, char *str) {
 		goto fail;
 	}
 	const char *ostr = str;
+	const bool ignore_cksum = r_sys_getenv_asbool ("R2_IHEX_IGNORE_CKSUM");
 	do {
 		l = sscanf (str, ":%02x%04x%02x", &bc, &addr_tmp, &type);
 		if (l != 3) {
@@ -314,9 +315,14 @@ static bool ihex_parse(Rihex *rih, char *str) {
 				cksum += byte;
 				if (cksum != 0) {
 					ut8 fixedcksum = 0 - cksum - byte;
-					R_LOG_ERROR ("Checksum failed %02x (got %02x expected %02x)",
-						cksum, byte, fixedcksum);
-					goto fail;
+					if (ignore_cksum) {
+						R_LOG_ERROR ("Ignored checksum failed %02x (got %02x expected %02x)",
+							cksum, byte, fixedcksum);
+					} else {
+						R_LOG_ERROR ("Checksum failed %02x (got %02x expected %02x)",
+							cksum, byte, fixedcksum);
+						goto fail;
+					}
 				}
 				*eol = ':';
 			}
@@ -451,9 +457,40 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 	RStrBuf *sb = r_strbuf_new ("");
 	switch (*cmd) {
 	case '?':
-		r_strbuf_appendf (sb, "Usage: [:][arg]\n");
-		r_strbuf_appendf (sb, ":b     show minimum and maximum addresses written\n");
-		r_strbuf_appendf (sb, ":r     show written ranges\n");
+		r_strbuf_append (sb, "Usage: [:][arg]\n");
+		r_strbuf_append (sb, ":b     show minimum and maximum addresses written\n");
+		r_strbuf_append (sb, ":r     show written ranges\n");
+		r_strbuf_append (sb, ":i     create new ihex with current contents\n");
+		break;
+	case 'i':
+		{
+			RRangeItem *r;
+			RListIter *iter;
+			r_list_foreach_prev (rih->range->ranges, iter, r) {
+				ut8 buf[0x20];
+				// use r_io instead?
+				int i, j;
+				ut32 len = r->to - r->fr;
+				for (i = 0; i < len; i++) {
+					int type = 0x20;
+					ut32 at = r->fr + i;
+					r_strbuf_appendf (sb, ":%02x%04x00", type, at);
+					int max = R_MIN (0x20, len);
+					// r_buf_read_at (rih->rbuf, r->fr + i, buf, sizeof (buf));
+					r_io_read_at (io, r->fr + i, buf, sizeof (buf));
+					ut8 cksum = 0;
+					cksum += at >> 8;
+					cksum += at;
+					cksum += max;
+					for (j = 0; j < max; j++) {
+						cksum += buf[j];
+						r_strbuf_appendf (sb, "%02x", buf[j]);
+					}
+					r_strbuf_appendf (sb, "%02x\n", (ut8)(0-cksum));
+					i += max - 1;
+				}
+			}
+		}
 		break;
 	case 'r':
 		{
@@ -476,7 +513,7 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 RIOPlugin r_io_plugin_ihex = {
 	.meta = {
 		.name = "ihex",
-		.desc = "Open intel HEX file",
+		.desc = "Open intel HEX file (R2_IHEX_IGNORE_CKSUM=1)",
 		.author = "pancake,fenugrec",
 		.license = "LGPL",
 	},
