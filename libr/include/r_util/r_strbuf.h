@@ -19,6 +19,7 @@ R_API RStrBuf *r_strbuf_newf(const char *fmt, ...);
 R_API const char *r_strbuf_set(RStrBuf *sb, const char *s); // return = the string or NULL on fail
 R_API bool r_strbuf_slice(RStrBuf *sb, int from, int len);
 R_API bool r_strbuf_setbin(RStrBuf *sb, const ut8 *s, size_t len);
+R_API void r_strbuf_trim(RStrBuf *sb);
 R_API ut8* r_strbuf_getbin(RStrBuf *sb, int *len);
 R_API const char *r_strbuf_setf(RStrBuf *sb, const char *fmt, ...) R_PRINTF_CHECK(2, 3); // return = the string or NULL on fail
 R_API const char *r_strbuf_vsetf(RStrBuf *sb, const char *fmt, va_list ap); // return = the string or NULL on fail
