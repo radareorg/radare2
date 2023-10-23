@@ -71,7 +71,7 @@ EXPECT=<<EOF
             0x100003c14      4155           push r13
             0x100003c16      4154           push r12
             0x100003c18      53             push rbx
-            0x100003c19      4881ec380600.  sub rsp, 0x638
+            0x100003c19      4881ec3806..   sub rsp, 0x638
             0x100003c20      4989f7         mov r15, rsi
             0x100003c23      4189fe         mov r14d, edi
 0x100003c0c
@@ -87,7 +87,7 @@ EXPECT=<<EOF
             0x100003c14      4155           push r13
             0x100003c16      4154           push r12
             0x100003c18      53             push rbx
-            0x100003c19      4881ec380600.  sub rsp, 0x638
+            0x100003c19      4881ec3806..   sub rsp, 0x638
             0x100003c20      4989f7         mov r15, rsi
             0x100003c23      4189fe         mov r14d, edi
  3 fd: 3 +0x00004000 0x100000000 - 0x100007fff r-x fmap.__TEXT

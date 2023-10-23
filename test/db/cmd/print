@@ -113,9 +113,9 @@ pd 20~7f
 EOF
 EXPECT=<<EOF
         ,=< 0x100001083      7f05           jg 0x10000108a
-        `-> 0x10000108a      488d357f3a00.  lea rsi, [0x100004b10]     ; section.4.__TEXT.__cstring
+        `-> 0x10000108a      488d357f3a..   lea rsi, [0x100004b10]     ; section.4.__TEXT.__cstring
         ,=< 0x100001083      7f05           jg jeje.lolo
-        `-> 0x10000108a      488d357f3a00.  lea rsi, section.4.__TEXT.__cstring ; 0x100004b10
+        `-> 0x10000108a      488d357f3a..   lea rsi, section.4.__TEXT.__cstring ; 0x100004b10
 EOF
 RUN
 
