@@ -54,14 +54,25 @@ e asm.bytes.space=false
 pd 10
 EOF
 EXPECT=<<EOF
-            0x08048370      31ed           xor ebp, ebp
-            0x08048372      5e             pop esi
-            0x08048373      89e1           mov ecx, esp
-            0x08048375      83e4f0         and esp, 0xfffffff0
---
-            0x08048370               31ed  xor ebp, ebp
-            0x08048372                 5e  pop esi
-            0x08048373               89e1  mov ecx, esp
-            0x08048375             83e4f0  and esp, 0xfffffff0
+            0x0804838c                    50  push eax
+            0x0804838d           8d 83 00 ..  lea eax, [ebx - 0x1a00]
+            0x08048393                    50  push eax
+            0x08048394                    51  push ecx
+            0x08048395                    56  push esi
+            0x08048396           c7 c0 4e ..  mov eax, main            ; 0x804854e
+            0x0804839c                    50  push eax
+            0x0804839d           e8 be ff ..  call sym.imp.__libc_start_main
+            0x080483a2                    f4  hlt
+            0x080483a3              8b 1c 24  mov ebx, dword [esp]
+            0x0804838c               50  push eax
+            0x0804838d       8d8300e6f.  lea eax, [ebx - 0x1a00]
+            0x08048393               50  push eax
+            0x08048394               51  push ecx
+            0x08048395               56  push esi
+            0x08048396       c7c04e850.  mov eax, main                 ; 0x804854e
+            0x0804839c               50  push eax
+            0x0804839d       e8beffffff  call sym.imp.__libc_start_main
+            0x080483a2               f4  hlt
+            0x080483a3           8b1c24  mov ebx, dword [esp]
 EOF
 RUN

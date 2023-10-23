@@ -3736,10 +3736,12 @@ static void ds_print_bytes(RDisasmState *ds) {
 			// R2R db/cmd/cmd_disassembly
 			nstr = r_print_hexpair (ds->print, str, n);
 			if (r_str_ansi_len (nstr) > nb) {
+				if (core->print->bytespace) {
 					if (nb % 2) {
 						nb--;
 						r_cons_printf (" ");
 					}
+				}
 				char *p = (char *)r_str_ansi_chrn (nstr, nb);
 				if (p) {
 					off = true;
