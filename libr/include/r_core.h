@@ -601,20 +601,20 @@ R_API void r_core_fortune_list(RCore *core);
 R_API void r_core_fortune_print_random(RCore *core);
 
 #define R_CORE_FOREIGN_ADDR -1
-R_API int r_core_yank(RCore *core, ut64 addr, int len);
+R_API bool r_core_yank(RCore *core, ut64 addr, int len);
 R_API void r_core_yank_unset(RCore *core);
-R_API int r_core_yank_string(RCore *core, ut64 addr, int maxlen);
+R_API bool r_core_yank_string(RCore *core, ut64 addr, int maxlen);
 R_API bool r_core_yank_hexpair(RCore *core, const char *input);
-R_API int r_core_yank_paste(RCore *core, ut64 addr, int len);
-R_API int r_core_yank_set(RCore *core, ut64 addr, const ut8 *buf, ut32 len);  // set yank buffer bytes
-R_API int r_core_yank_set_str(RCore *core, ut64 addr, const char *buf, ut32 len); // Null terminate the bytes
-R_API int r_core_yank_to(RCore *core, const char *arg);
+R_API bool r_core_yank_paste(RCore *core, ut64 addr, int len);
+R_API bool r_core_yank_set(RCore *core, ut64 addr, const ut8 *buf, ut32 len);  // set yank buffer bytes
+R_API bool r_core_yank_set_str(RCore *core, ut64 addr, const char *buf, ut32 len); // Null terminate the bytes
+R_API bool r_core_yank_to(RCore *core, const char *arg);
 R_API bool r_core_yank_dump(RCore *core, ut64 pos, int format);
-R_API int r_core_yank_hexdump(RCore *core, ut64 pos);
-R_API int r_core_yank_cat(RCore *core, ut64 pos);
-R_API int r_core_yank_cat_string(RCore *core, ut64 pos);
-R_API int r_core_yank_hud_file(RCore *core, const char *input);
-R_API int r_core_yank_hud_path(RCore *core, const char *input, int dir);
+R_API bool r_core_yank_hexdump(RCore *core, ut64 pos);
+R_API bool r_core_yank_cat(RCore *core, ut64 pos);
+R_API bool r_core_yank_cat_string(RCore *core, ut64 pos);
+R_API bool r_core_yank_hud_file(RCore *core, const char *input);
+R_API bool r_core_yank_hud_path(RCore *core, const char *input, int dir);
 R_API bool r_core_yank_file_ex(RCore *core, const char *input);
 R_API bool r_core_yank_file_all(RCore *core, const char *input);
 
