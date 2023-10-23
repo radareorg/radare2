@@ -3308,7 +3308,7 @@ static R_TH_LOCAL int printMode = 0;
 static R_TH_LOCAL bool selectPanel = false;
 #define lastPrintMode 6
 static const char *printCmds[lastPrintMode] = {
-	"pdf", "pd $r", "afi", "pdsf", "pdc", "pdr"
+	"pdr", "pd $r", "afi", "pdsf", "pdc", "pdr"
 };
 
 static void r_core_visual_anal_refresh_column(RCore *core, int colpos) {
