@@ -31,7 +31,31 @@ KK = 0 - (sum of all bytes)
 typedef struct {
 	int fd;
 	RBuffer *rbuf;
+	ut64 min;
+	ut64 max;
+	RRange *range;
 } Rihex;
+
+static void update_bounds(Rihex *rih, ut64 min, ut64 max, const ut8 *buf) {
+	size_t i, len = max - min;
+	bool isff = true;
+	for (i = 0; i < len; i++) {
+		if (buf[i] != 0xff) {
+			isff = false;
+			break;
+		}
+	}
+	if (isff) {
+		return;
+	}
+	r_range_add (rih->range, min, max, 1);
+	if (min < rih->min) {
+		rih->min = min;
+	}
+	if (max > rih->max) {
+		rih->max = max;
+	}
+}
 
 // fw04b : write 04 record (extended address); ret <0 if error
 static int fw04b(FILE *fd, ut16 eaddr) {
@@ -97,23 +121,21 @@ static int fwblock(FILE *fd, ut8 *b, ut32 start_addr, ut16 size) {
 }
 
 static int __write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
-	const char *pathname;
-	FILE *out;
-	Rihex *rih;
 	RBufferSparse *rbs;
 	RListIter *iter;
 
 	if (!fd || !fd->data || (fd->perm & R_PERM_W) == 0 || count <= 0) {
 		return -1;
 	}
-	rih = fd->data;
-	pathname = fd->name + 7;
-	out = r_sandbox_fopen (pathname, "w");
+	Rihex *rih = fd->data;
+	const char *pathname = fd->name + 7;
+	FILE *out = r_sandbox_fopen (pathname, "w");
 	if (!out) {
 		R_LOG_ERROR ("Cannot open '%s' for writing", pathname);
 		return -1;
 	}
 	/* mem write */
+	update_bounds (rih, io->off, io->off + count, buf);
 	if (r_buf_write_at (rih->rbuf, io->off, buf, count) != count) {
 		R_LOG_ERROR ("ihex:write(): sparse write failed");
 		fclose (out);
@@ -194,6 +216,7 @@ static bool __close(RIODesc *fd) {
 	}
 	Rihex *rih = fd->data;
 	r_buf_free (rih->rbuf);
+	r_range_free (rih->range);
 	free (rih);
 	fd->data = NULL;
 	return true;
@@ -215,21 +238,21 @@ static bool __plugin_open(RIO *io, const char *pathname, bool many) {
 // ihex_parse : parse ihex file loaded at *str, fill sparse buffer "rbuf"
 // supported rec types : 00, 01, 02, 04
 // ret 0 if ok
-static bool ihex_parse(RBuffer *rbuf, char *str) {
-	ut8 *sec_tmp;
-	ut32 sec_start = 0;	//addr for next section write
-	ut32 segreg = 0;	//basis for addr fields
-	ut32 addr_tmp = 0;	//addr for record
-	// ut16 next_addr = 0;	//for checking if records are sequential
+static bool ihex_parse(Rihex *rih, char *str) {
+	RBuffer *rbuf = rih->rbuf;
+	ut32 sec_start = 0;	// addr for next section write
+	ut32 segreg = 0;	// basis for addr fields
+	ut32 addr_tmp = 0;	// addr for record
+	// ut16 next_addr = 0;	// for checking if records are sequential
 	char *eol;
 	ut8 cksum;
 	int extH, extL;
 	int bc = 0, type, byte, i, l;
-	//fugly macro to prevent an overflow of r_buf_write_at() len
+	// fugly macro to prevent an overflow of r_buf_write_at() len
 #define SEC_MAX (sec_size < INT_MAX)? sec_size: INT_MAX
 	ut32 sec_size = 0;
 	const int sec_count = UT16_MAX;
-	sec_tmp = calloc (1, sec_count);
+	ut8 *sec_tmp = calloc (1, sec_count);
 	if (!sec_tmp) {
 		goto fail;
 	}
@@ -273,6 +296,7 @@ static bool ihex_parse(RBuffer *rbuf, char *str) {
 				R_LOG_ERROR ("Cannot write");
 				return true;
 			}
+			update_bounds (rih, at, at + sec_size, sec_tmp);
 			if (r_buf_write_at (rbuf, at, sec_tmp, sec_size) != sec_size) {
 				R_LOG_ERROR ("sparse buffer problem, giving up");
 				goto fail;
@@ -300,6 +324,7 @@ static bool ihex_parse(RBuffer *rbuf, char *str) {
 			break;
 		case 1: // EOF. we don't validate checksum here
 			if (at && sec_size) {
+				update_bounds (rih, at, at + sec_size, sec_tmp);
 				if (r_buf_write_at (rbuf, at, sec_tmp, sec_size) != sec_size) {
 					R_LOG_ERROR ("sparse buffer problem, giving up. ssiz=%X, sstart=%X", sec_size, sec_start);
 					goto fail;
@@ -307,10 +332,10 @@ static bool ihex_parse(RBuffer *rbuf, char *str) {
 			}
 			str = NULL;
 			break;
-		case 2:	//extended segment record
-		case 4:	//extended linear address rec
-			//both rec types are handled the same except :
-			//	new address = seg_reg <<4 for type 02; new address = lin_addr <<16 for type 04.
+		case 2:	// extended segment record
+		case 4:	// extended linear address rec
+			// both rec types are handled the same except:
+			// new address = seg_reg <<4 for type 02; new address = lin_addr <<16 for type 04.
 			sec_size = 0;
 
 			eol = strchr (str + 1, ':');
@@ -357,8 +382,8 @@ static bool ihex_parse(RBuffer *rbuf, char *str) {
 			}
 			str = eol;
 			break;
-		case 3:	//undefined rec. Just skip.
-		case 5:	//non-standard, sometimes "start linear address"
+		case 3:	// undefined rec. Just skip.
+		case 5:	// non-standard, sometimes "start linear address"
 			str = strchr (str + 1, ':');
 			break;
 		}
@@ -376,37 +401,35 @@ fail:
 }
 
 static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
-	Rihex *mal = NULL;
-	char *str = NULL;
-	if (__plugin_open (io, pathname, 0)) {
-		str = r_file_slurp (pathname + 7, NULL);
-		if (!str) {
-			return NULL;
-		}
-		mal = R_NEW0 (Rihex);
-		if (!mal) {
-			free (str);
-			return NULL;
-		}
-		mal->rbuf = r_buf_new_sparse (io->Oxff);
-		// mal->rbuf = r_buf_new_empty (1024 * 1024 * 8);
-		if (!mal->rbuf) {
-			free (str);
-			free (mal);
-			return NULL;
-		}
-		if (!ihex_parse (mal->rbuf, str)) {
-			R_LOG_ERROR ("ihex: failed to parse file");
-			free (str);
-			r_buf_free (mal->rbuf);
-			free (mal);
-			return NULL;
-		}
-		free (str);
-		return r_io_desc_new (io, &r_io_plugin_ihex,
-			pathname, rw, mode, mal);
+	if (!__plugin_open (io, pathname, 0)) {
+		return NULL;
 	}
-	return NULL;
+	char *str = r_file_slurp (pathname + 7, NULL);
+	if (!str) {
+		return NULL;
+	}
+	Rihex *rih = R_NEW0 (Rihex);
+	if (!rih) {
+		free (str);
+		return NULL;
+	}
+	rih->range = r_range_new ();
+	rih->min = UT64_MAX;
+	rih->rbuf = r_buf_new_sparse (io->Oxff);
+	if (!rih->rbuf) {
+		free (str);
+		free (rih);
+		return NULL;
+	}
+	if (!ihex_parse (rih, str)) {
+		R_LOG_ERROR ("ihex: failed to parse file");
+		free (str);
+		r_buf_free (rih->rbuf);
+		free (rih);
+		return NULL;
+	}
+	free (str);
+	return r_io_desc_new (io, &r_io_plugin_ihex, pathname, rw, mode, rih);
 }
 
 static bool __resize(RIO *io, RIODesc *fd, ut64 size) {
@@ -418,6 +441,36 @@ static bool __resize(RIO *io, RIODesc *fd, ut64 size) {
 		return r_buf_resize (rih->rbuf, size);
 	}
 	return false;
+}
+
+static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
+	if (R_STR_ISEMPTY (cmd)) {
+		return NULL;
+	}
+	Rihex *rih = fd->data;
+	RStrBuf *sb = r_strbuf_new ("");
+	switch (*cmd) {
+	case '?':
+		r_strbuf_appendf (sb, "Usage: [:][arg]\n");
+		r_strbuf_appendf (sb, ":b     show minimum and maximum addresses written\n");
+		r_strbuf_appendf (sb, ":r     show written ranges\n");
+		break;
+	case 'r':
+		{
+			char *s = r_range_tostring (rih->range);
+			r_str_replace_char (s, ',', '\n');
+			r_strbuf_append (sb, s);
+			free (s);
+		}
+		break;
+	default:
+		r_strbuf_appendf (sb, "min 0x%08"PFMT64x"\n", rih->min);
+		r_strbuf_appendf (sb, "max 0x%08"PFMT64x"\n", rih->max);
+		r_strbuf_appendf (sb, "siz 0x%08"PFMT64x"\n", rih->max - rih->min);
+		break;
+	}
+	r_strbuf_trim (sb);
+	return r_strbuf_drain (sb);
 }
 
 RIOPlugin r_io_plugin_ihex = {
@@ -434,7 +487,8 @@ RIOPlugin r_io_plugin_ihex = {
 	.check = __plugin_open,
 	.seek = __lseek,
 	.write = __write,
-	.resize = __resize
+	.resize = __resize,
+	.system = __system,
 };
 
 #ifndef R2_PLUGIN_INCORE
