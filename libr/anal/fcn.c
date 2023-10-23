@@ -156,6 +156,9 @@ static bool is_invalid_memory(RAnal *anal, const ut8 *buf, int len) {
 			return true;
 		}
 	}
+	if (!memcmp (buf, "\x00\x00\x00\x00", R_MIN (len, 4))) {
+		return true;
+	}
 	return !memcmp (buf, "\xff\xff\xff\xff", R_MIN (len, 4));
 }
 
