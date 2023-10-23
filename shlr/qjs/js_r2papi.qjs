@@ -214,6 +214,12 @@ class R2Papi {
     constructor(r2) {
         this.r2 = r2;
     }
+    toString() {
+        return "[object R2Papi]";
+    }
+    toJSON() {
+        return this.toString();
+    }
     getBaseAddress() {
         return new NativePointer(this.cmd("e bin.baddr"));
     }
@@ -688,6 +694,9 @@ class NativePointer {
     pointsToNull() {
         return this.readPointer().compare(0);
     }
+    toJSON() {
+        return this.toString();
+    }
     toString() {
         return this.addr.trim();
     }
@@ -849,6 +858,39 @@ class Base64 {
     }
 }
 G.Base64 = Base64;
+class R2AI {
+    constructor(num, model) {
+        this.available = false;
+        this.model = "";
+        this.available = G.r2.call(`r2ai -h`).trim() !== "";
+        if (this.available) {
+            G.r2.call(`r2ai -n ${num}`);
+            // r2.call('r2ai -e DEBUG=1')
+            this.model = model;
+        }
+        else {
+            console.error("ERROR: r2ai is not installed");
+        }
+    }
+    reset() {
+        if (this.available) {
+            G.r2.call('r2ai -R');
+        }
+    }
+    setRole(msg) {
+        if (this.available) {
+            G.r2.call(`r2ai -r ${msg}`);
+        }
+    }
+    query(msg) {
+        if (!this.available || msg == '') {
+            return '';
+        }
+        G.r2.call(`r2ai -m ${this.model}`);
+        const fmsg = msg.trim().replace(/\n/g, '.');
+        return G.r2.call(`r2ai ${fmsg}`);
+    }
+}
 // shell utilities on top of r2pipe
 Object.defineProperty(G, "__esModule", { value: true });
 G.R2PapiShell = void 0;
