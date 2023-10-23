@@ -3736,8 +3736,12 @@ static void ds_print_bytes(RDisasmState *ds) {
 			// R2R db/cmd/cmd_disassembly
 			nstr = r_print_hexpair (ds->print, str, n);
 			if (r_str_ansi_len (nstr) > nb) {
+					if (nb % 2) {
+						nb--;
+						r_cons_printf (" ");
+					}
 				char *p = (char *)r_str_ansi_chrn (nstr, nb);
-				if (p)  {
+				if (p) {
 					off = true;
 					p[0] = '.';
 					if (core->print->bytespace) {
@@ -3779,7 +3783,7 @@ static void ds_print_bytes(RDisasmState *ds) {
 		if (core->print->bytespace) {
 			const int d = off? 2: 1;
 			const char *air = off? " ":"";
-			r_cons_printf ("%s%s%s  %s", (extra[0] && extra[1])? extra + d: extra, str, pad, air);
+			r_cons_printf ("%s%s%s %s", (extra[0] && extra[1])? extra + d: extra, str, pad, air);
 		} else {
 			r_cons_printf ("%s%s%s  ", (extra[0])? extra + 1: extra, str, pad);
 		}
