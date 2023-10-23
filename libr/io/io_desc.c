@@ -351,7 +351,7 @@ R_API int r_io_desc_write_at(RIODesc *desc, ut64 addr, const ut8 *buf, int len) 
 	return 0;
 }
 
-R_API int r_io_desc_extend(RIODesc *desc, ut64 size) {
+R_API bool r_io_desc_extend(RIODesc *desc, ut64 size) {
 	if (desc && desc->plugin && desc->plugin->extend) {
 		return desc->plugin->extend (desc->io, desc, size);
 	}
