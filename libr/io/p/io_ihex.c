@@ -144,7 +144,7 @@ static int __write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
 	r_buf_seek (rih->rbuf, count, R_BUF_CUR);
 
 	/* disk write : process each sparse chunk */
-	//TODO : sort addresses + check overlap?
+	// TODO: sort addresses + check overlap?
 	RList *nonempty = r_buf_nonempty_list (rih->rbuf);
 	r_list_foreach (nonempty, iter, rbs) {
 		ut16 addl0 = rbs->from & 0xffff;
@@ -156,15 +156,15 @@ static int __write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
 		}
 
 		if (addh0 != addh1) {
-			//we cross a 64k boundary, so write in two steps
-			//04 record (ext address)
+			// we cross a 64k boundary, so write in two steps
+			// 04 record (ext address)
 			if (fw04b (out, addh0) < 0) {
 				R_LOG_ERROR ("ihex:write:file error");
 				r_list_free (nonempty);
 				fclose (out);
 				return -1;
 			}
-			//00 records (data)
+			// 00 records (data)
 			tsiz = -addl0;
 			addl0 = 0;
 			if (fwblock (out, rbs->data, rbs->from, tsiz)) {
@@ -174,21 +174,21 @@ static int __write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
 				return -1;
 			}
 		}
-		//04 record (ext address)
+		// 04 record (ext address)
 		if (fw04b (out, addh1) < 0) {
 			R_LOG_ERROR ("ihex:write: file error");
 			r_list_free (nonempty);
 			fclose (out);
 			return -1;
 		}
-		//00 records (remaining data)
+		// 00 records (remaining data)
 		if (fwblock (out, rbs->data + tsiz, (addh1 << 16) | addl0, rbs->size - tsiz)) {
 			R_LOG_ERROR ("ihex:fwblock error");
 			r_list_free (nonempty);
 			fclose (out);
 			return -1;
 		}
-	}	//list_foreach
+	}
 
 	r_list_free (nonempty);
 	fprintf (out, ":00000001FF\n");
@@ -222,7 +222,7 @@ static bool __close(RIODesc *fd) {
 	return true;
 }
 
-static ut64 __lseek(struct r_io_t *io, RIODesc *fd, ut64 offset, int whence) {
+static ut64 __lseek(RIO *io, RIODesc *fd, ut64 offset, int whence) {
 	if (!fd || !fd->data) {
 		return UT64_MAX;
 	}
@@ -499,6 +499,32 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 			r_strbuf_append (sb, s);
 			free (s);
 		}
+		break;
+	case 'j':
+		{
+			PJ *pj = pj_new ();
+			pj_o (pj);
+			pj_kn (pj, "min", rih->min);
+			pj_kn (pj, "max", rih->max);
+			pj_kn (pj, "size", rih->max - rih->min);
+			pj_ka (pj, "ranges");
+			RRangeItem *r;
+			RListIter *iter;
+			r_list_foreach_prev (rih->range->ranges, iter, r) {
+				pj_o (pj);
+				pj_kn (pj, "from", r->fr);
+				pj_kn (pj, "to", r->to);
+				pj_end (pj);
+			}
+			pj_end (pj);
+			pj_end (pj);
+			char *s = pj_drain (pj);
+			r_strbuf_append (sb, s);
+			free (s);
+		}
+		r_strbuf_appendf (sb, "min 0x%08"PFMT64x"\n", rih->min);
+		r_strbuf_appendf (sb, "max 0x%08"PFMT64x"\n", rih->max);
+		r_strbuf_appendf (sb, "siz 0x%08"PFMT64x"\n", rih->max - rih->min);
 		break;
 	default:
 		r_strbuf_appendf (sb, "min 0x%08"PFMT64x"\n", rih->min);
