@@ -60,7 +60,7 @@ R_VEC_TYPE(RVecAnalRef, RAnalRef);
 
 #undef R_INCLUDE_BEGIN
 
-static RCoreHelpMessage help_msg_dollar = {
+static const RCoreHelpMessage help_msg_dollar = {
 	"Usage:", "$alias[=cmd] [args...]", "Alias commands and data (See ?$? for help on $variables)",
 	"$", "", "list all defined aliases",
 	"$*", "", "list all defined aliases and their values, with unprintable characters escaped",
@@ -82,7 +82,7 @@ static RCoreHelpMessage help_msg_dollar = {
 	NULL
 };
 
-static RCoreHelpMessage help_msg_l = {
+static const RCoreHelpMessage help_msg_l = {
 	"Usage:", "l[erls] [arg]", "Internal less (~..) and file listing (!ls)",
 	"lu", " [path]", "same as #!lua",
 	"ll", " [path]", "same as ls -l",
@@ -97,9 +97,9 @@ static RCoreHelpMessage help_msg_l = {
 	NULL
 };
 
-static RCoreHelpMessage help_msg_quote = {
+static const RCoreHelpMessage help_msg_quote = {
 	"Usage:", "\"[\"..|..\"]", "quote the command to avoid evaluating special characters",
-	"\"?", "", "show this help",
+	"\"?", "", "show this help, NOTE that a single quote is simpler and works the same",
 	"\"", "?e hello \\\"world\\\"\"", "print (hello \"world\")",
 	"\"", "?e x;y\";\"?e y;x\"", "run two commands (prints x;y\ny;x)",
 	"\"\"", "[cmd]", "directly call a command ignoring all special chars (fast)",
@@ -108,14 +108,14 @@ static RCoreHelpMessage help_msg_quote = {
 	NULL
 };
 
-static RCoreHelpMessage help_msg_plus = {
+static const RCoreHelpMessage help_msg_plus = {
 	"Usage:", "+", "seek forward, same as s+X (see s? and -? for more help)",
 	"+", "8", "seek 8 bytes forward, same as s+8",
 	"++", "", "seek one block forward. Same as s++ (see `b` command)",
 	NULL
 };
 
-static RCoreHelpMessage help_msg_j = {
+static const RCoreHelpMessage help_msg_j = {
 	"Usage:", "j[:o]in", "run command with json facilities or join two files",
 	"j:", "?e", "run '?e' command and show the result stats in json",
 	"ji:", "[cmd]", "run command and indent it as json like (cmd~{})",
@@ -129,7 +129,7 @@ static RCoreHelpMessage help_msg_j = {
 	NULL
 };
 
-static RCoreHelpMessage help_msg_dash = {
+static const RCoreHelpMessage help_msg_dash = {
 	"Usage:", "-", "open editor and run the r2 commands in the saved document",
 	"", "'-' '.-' '. -'", " those three commands do the same",
 	"-", "8", "same as s-8, but shorter to type (see +? command)",
@@ -148,7 +148,7 @@ static RCoreHelpMessage help_msg_dash = {
 	NULL
 };
 
-static RCoreHelpMessage help_msg_star = {
+static const RCoreHelpMessage help_msg_star = {
 	"Usage:", "*<addr>[=[0x]value]", "Pointer read/write data/values",
 	"*", "entry0=cc", "write trap in entrypoint",
 	"*", "entry0+10=0x804800", "write value in delta address",
@@ -157,7 +157,7 @@ static RCoreHelpMessage help_msg_star = {
 	NULL
 };
 
-static RCoreHelpMessage help_msg_comma = {
+static const RCoreHelpMessage help_msg_comma = {
 	"Usage:", ",[,.-/*jhr] [file]", "# load table data",
 	",", "", "display table",
 	", ", "[table-query]", "filter and print table. See ,? for more details",
@@ -172,7 +172,7 @@ static RCoreHelpMessage help_msg_comma = {
 	NULL
 };
 
-static RCoreHelpMessage help_msg_dot = {
+static const RCoreHelpMessage help_msg_dot = {
 	"Usage:", ".[r2cmd] | [file] | [!command] | [(macro)]", "# define macro or interpret r2, r_lang,\n"
 	"    cparse, d, es6, exe, go, js, lsp, pl, py, rb, sh, vala or zig file",
 	".", "", "repeat last command backward",
@@ -192,7 +192,7 @@ static RCoreHelpMessage help_msg_dot = {
 	NULL
 };
 
-static RCoreHelpMessage help_msg_equal = {
+static const RCoreHelpMessage help_msg_equal = {
 	"Usage:", " =[:!+-=ghH] [...]", " # connect with other instances of r2",
 	"\nremote commands:", "", "",
 	"=", "", "list all open connections",
@@ -223,7 +223,7 @@ static RCoreHelpMessage help_msg_equal = {
 	NULL
 };
 
-static RCoreHelpMessage help_msg_equalh = {
+static const RCoreHelpMessage help_msg_equalh = {
 	"Usage:", " =[hH] [...]", " # http server",
 	"http server:", "", "",
 	"=h", " port", "listen for http connections (r2 -qc=H /bin/ls)",
@@ -236,14 +236,14 @@ static RCoreHelpMessage help_msg_equalh = {
 	NULL
 };
 
-static RCoreHelpMessage help_msg_equal_equal = {
+static const RCoreHelpMessage help_msg_equal_equal = {
 	"Usage:", " ==[=] ", "# add connection to remote r2",
 	"==", "[fd]", "shell to send to the nth remote (see '=1 x' / '==1'",
 	"===", "event", "returns socket file or udp port to read events from",
 	NULL
 };
 
-static RCoreHelpMessage help_msg_equal_more = {
+static const RCoreHelpMessage help_msg_equal_more = {
 	"Usage:", " =+ [proto://][host]:[port](/[path])", " # add connection to remote r2",
 	"=+", "tcp://localhost:9090", "communicates with another instance running '& .:9090'",
 	"=+", "http://localhost:9090/cmd", "talks to remote r2 webserver '& =h'",
@@ -251,14 +251,14 @@ static RCoreHelpMessage help_msg_equal_more = {
 	NULL
 };
 
-static RCoreHelpMessage help_msg_equalg = {
+static const RCoreHelpMessage help_msg_equalg = {
 	"Usage:", " =[g] [...]", " # gdb server",
 	"gdbserver:", "", "",
 	"=g", " port file [args]", "listen on 'port' debugging 'file' using gdbserver",
 	NULL
 };
 
-static RCoreHelpMessage help_msg_b = {
+static const RCoreHelpMessage help_msg_b = {
 	"Usage:",  "b[f] [arg]\n", "Get/Set block size",
 	"b", " 33", "set block size to 33",
 	"b", " eip+4", "numeric argument can be an expression",
@@ -273,7 +273,7 @@ static RCoreHelpMessage help_msg_b = {
 	NULL
 };
 
-static RCoreHelpMessage help_msg_k = {
+static const RCoreHelpMessage help_msg_k = {
 	"Usage:", "k[s] [key[=value]]", "Sdb Query",
 	"k", " anal/**", "list namespaces under anal",
 	"k", " anal/meta/*", "list kv from anal > meta namespaces",
@@ -290,7 +290,7 @@ static RCoreHelpMessage help_msg_k = {
 	NULL,
 };
 
-static RCoreHelpMessage help_msg_r = {
+static const RCoreHelpMessage help_msg_r = {
 	"Usage:", "r[+-][ size]", "Resize file",
 	"r", "", "display file size",
 	"rj", "", "display the file size in JSON format",
@@ -315,7 +315,7 @@ static RCoreHelpMessage help_msg_r = {
 	NULL
 };
 
-static RCoreHelpMessage help_msg_u = {
+static const RCoreHelpMessage help_msg_u = {
 	"Usage:", "u", "uname or undo write/seek",
 	"u", "", "show system uname (alias for uname)",
 	"uw", "", "alias for wc (requires: e io.cache=true)",
@@ -327,7 +327,7 @@ static RCoreHelpMessage help_msg_u = {
 	NULL
 };
 
-static RCoreHelpMessage help_msg_uname = {
+static const RCoreHelpMessage help_msg_uname = {
 	"Usage:", "uname", "show information about the current system",
 	"uname", "", "show host operating system",
 	"uname", " -a", "show more system details",
@@ -338,7 +338,7 @@ static RCoreHelpMessage help_msg_uname = {
 	NULL
 };
 
-static RCoreHelpMessage help_msg_uc = {
+static const RCoreHelpMessage help_msg_uc = {
 	"Usage:", "uc [cmd],[revert-cmd]", "undo core commands (see `e cmd.undo`)",
 	"uc", " w hello,w world", "add a new undo command manually",
 	"uc", "", "list all core undos commands",
@@ -350,7 +350,7 @@ static RCoreHelpMessage help_msg_uc = {
 	NULL
 };
 
-static RCoreHelpMessage help_msg_y = {
+static const RCoreHelpMessage help_msg_y = {
 	"Usage:", "y[fptxy] [len] [[@]addr]", " # See wd? for memcpy, same as 'yf'.",
 	"y!", "", "open cfg.editor to edit the clipboard",
 	"y", " 16 0x200", "copy 16 bytes into clipboard from 0x200",
@@ -378,7 +378,7 @@ static RCoreHelpMessage help_msg_y = {
 	NULL
 };
 
-static RCoreHelpMessage help_msg_triple_exclamation = {
+static const RCoreHelpMessage help_msg_triple_exclamation = {
 	"Usage:", "!!![-*][cmd] [arg|$type...]", " # user-defined autocompletion for commands",
 	"!!!", "", "list all autocompletions",
 	"!!!?", "", "show this help",
@@ -391,7 +391,7 @@ static RCoreHelpMessage help_msg_triple_exclamation = {
 	NULL
 };
 
-static RCoreHelpMessage help_msg_vertical_bar = {
+static const RCoreHelpMessage help_msg_vertical_bar = {
 	"Usage:", "[cmd] | [program|H|T|.|]", "",
 	"|", " [program]", "pipe output of command to program",
 	"|", "", "disable scr.html and scr.color",
@@ -405,7 +405,7 @@ static RCoreHelpMessage help_msg_vertical_bar = {
 	NULL
 };
 
-static RCoreHelpMessage help_msg_v = {
+static const RCoreHelpMessage help_msg_v = {
 	"Usage:", "v[*i]", "",
 	"v", "", "open visual panels",
 	"v", " test", "load saved layout with name test",
@@ -417,7 +417,6 @@ static RCoreHelpMessage help_msg_v = {
 };
 
 R_API void r_core_cmd_help(const RCore *core, RCoreHelpMessage help) {
-	// r_cons_cmd_help_json (help);
 	r_cons_cmd_help (help, core->print->flags & R_PRINT_FLAGS_COLOR);
 }
 
@@ -1136,20 +1135,23 @@ static int cmd_rap(void *data, const char *input) {
 	return 0;
 }
 
-static int cmd_rap_run(void *data, const char *input) {
+static int cmd_iosys(void *data, const char *input) {
 	RCore *core = (RCore *)data;
 	if (input[0] == ':') {
 		char *s = r_core_cmd_str_r (core, r_str_trim_head_ro (input + 1));
 		if (s) {
-			r_cons_printf ("%s", s);
+			r_str_trim_tail (s);
+			r_cons_printf ("%s\n", s);
 			free (s);
 		}
 		return 0;
 	}
 	char *res = r_io_system (core->io, input);
 	if (res) {
-		int ret = atoi (res);
-		if (ret == 0 && *res) {
+		r_str_trim (res);
+		int ret = 0;
+		if (*res) {
+			ret = atoi (res);
 			r_cons_printf ("%s\n", res);
 		}
 		free (res);
@@ -1176,9 +1178,7 @@ static int cmd_yank(void *data, const char *input) {
 		R_LOG_ERROR ("Missing plugin. Run r2pm -ci r2yara");
 		break;
 	case 'y': // "yy"
-		while (input[1] == ' ') {
-			input++;
-		}
+		input = r_str_trim_head_ro (input);
 		n = input[1]? r_num_math (core->num, input + 1): core->offset;
 		r_core_yank_paste (core, n, 0);
 		break;
@@ -6431,7 +6431,7 @@ R_API void r_core_cmd_init(RCore *core) {
 		{ "/", "search kw, pattern aes", cmd_search },
 		{ "=", "io pipe", cmd_rap },
 		{ "?", "help message", cmd_help },
-		{ ":", "alias for =!", cmd_rap_run },
+		{ ":", "alias for =!", cmd_iosys },
 		{ "0", "alias for s 0x", cmd_ox },
 		{ "a", "analysis", cmd_anal },
 		{ "b", "change block size", cmd_bsize },
