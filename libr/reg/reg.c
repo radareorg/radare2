@@ -11,20 +11,6 @@ static const char * const types[R_REG_TYPE_LAST + 1] = {
 
 R_API bool r_reg_hasbits_check(RReg *reg, int size) {
 	return reg->hasbits & size;
-#if 0
-#define HB(x) if (size&x && reg->hasbits &x) return true
-	HB(1);
-	HB(2);
-	HB(4);
-	HB(8);
-	HB(16);
-	HB(32);
-	HB(64);
-	HB(128);
-	HB(256);
-#undef HB
-	return false;
-#endif
 }
 
 R_API void r_reg_hasbits_clear(RReg *reg) {
@@ -195,7 +181,8 @@ R_API bool r_reg_set_name(RReg *reg, int role, const char *name) {
 }
 
 R_API const char *r_reg_get_name(RReg *reg, int role) {
-	if (reg && role >= 0 && role < R_REG_NAME_LAST) {
+	r_return_val_if_fail (reg, NULL);
+	if (role >= 0 && role < R_REG_NAME_LAST) {
 		return reg->name[role];
 	}
 	return NULL;
@@ -264,6 +251,7 @@ static int regcmp(RRegItem *a, RRegItem *b) {
 }
 
 R_API void r_reg_reindex(RReg *reg) {
+	r_return_if_fail (reg);
 	int i, index;
 	RListIter *iter;
 	RRegItem *r;
@@ -283,6 +271,7 @@ R_API void r_reg_reindex(RReg *reg) {
 }
 
 R_API RRegItem *r_reg_index_get(RReg *reg, int idx) {
+	r_return_val_if_fail (reg, NULL);
 	RRegItem *r;
 	RListIter *iter;
 	if (idx < 0) {
@@ -381,7 +370,6 @@ R_API void r_reg_set_copy(RRegSet *d, RRegSet *s) {
 	d->ht_regs = pp;
 }
 
-
 static inline char *dups(const char *x) {
 	return x? strdup (x): NULL;
 }
@@ -403,7 +391,6 @@ R_API RReg *r_reg_clone(RReg *r) {
 	rr->reg_profile_str = dups (r->reg_profile_str);
 	for (i = 0; i < R_REG_NAME_LAST; i++) {
 		rr->name[i] = dups (r->name[i]);
-		// r_reg_set_copy (&rr->regset[i], &r->regset[i]);
 	}
 	for (i = 0; i < R_REG_TYPE_LAST; i++) {
 		rr->name[i] = dups (r->name[i]);

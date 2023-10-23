@@ -933,6 +933,7 @@ R_API char *r_str_appendch(char *x, char y) {
 }
 
 R_API R_MUSTUSE char* r_str_replace_all(char *str, const char *key, const char *val) {
+	r_return_val_if_fail (str && key, NULL);
 	if (strstr (val, key)) {
 		// XXX value cant contain the key otherwise we go into infinite loop
 		R_LOG_ERROR ("RStr.replaceAll() value can't contain key");
