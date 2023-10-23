@@ -216,7 +216,7 @@ typedef struct r_io_plugin_t {
 	bool (*getbase)(RIODesc *desc, ut64 *base);
 	///
 	bool (*resize)(RIO *io, RIODesc *fd, ut64 size);
-	int (*extend)(RIO *io, RIODesc *fd, ut64 size);
+	bool (*extend)(RIO *io, RIODesc *fd, ut64 size);
 	bool (*accept)(RIO *io, RIODesc *desc, int fd);
 	int (*create)(RIO *io, const char *file, int mode, int type);
 	bool (*check)(RIO *io, const char *, bool many);
@@ -441,7 +441,7 @@ R_API ut64 r_io_size(RIO *io);
 R_API bool r_io_is_listener(RIO *io);
 R_API char *r_io_system(RIO *io, const char* cmd);
 R_API bool r_io_resize(RIO *io, ut64 newsize);
-R_API int r_io_extend_at(RIO *io, ut64 addr, ut64 size);
+R_API bool r_io_extend_at(RIO *io, ut64 addr, ut64 size);
 R_API bool r_io_set_write_mask(RIO *io, const ut8 *mask, int len);
 R_API void r_io_bind(RIO *io, RIOBind *bnd);
 R_API bool r_io_shift(RIO *io, ut64 start, ut64 end, st64 move);
@@ -549,7 +549,7 @@ R_API void r_io_desc_cache_cleanup(RIODesc *desc);
 R_API void r_io_desc_cache_fini(RIODesc *desc);
 R_API void r_io_desc_cache_fini_all(RIO *io);
 R_API RList *r_io_desc_cache_list(RIODesc *desc);
-R_API int r_io_desc_extend(RIODesc *desc, ut64 size);
+R_API bool r_io_desc_extend(RIODesc *desc, ut64 size);
 
 /* io/fd.c */
 R_API int r_io_fd_open(RIO *io, const char *uri, int flags, int mode);
