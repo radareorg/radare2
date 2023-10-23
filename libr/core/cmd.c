@@ -1166,7 +1166,13 @@ static int cmd_yank(void *data, const char *input) {
 	RCore *core = (RCore *)data;
 	switch (input[0]) {
 	case ' ': // "y "
-		r_core_yank (core, core->offset, r_num_math (core->num, input + 1));
+		{
+			char *args = r_str_trim_dup (input + 1);
+			char *arg = r_str_after (args, ' ');
+			ut64 addr = arg? r_num_math (core->num, arg): core->offset;
+			r_core_yank (core, addr, r_num_math (core->num, args));
+			free (args);
+		}
 		break;
 	case '-': // "y-"
 		r_core_yank_unset (core);
