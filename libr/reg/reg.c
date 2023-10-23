@@ -271,7 +271,7 @@ R_API void r_reg_reindex(RReg *reg) {
 }
 
 R_API RRegItem *r_reg_index_get(RReg *reg, int idx) {
-	r_return_if_fail (reg);
+	r_return_val_if_fail (reg, NULL);
 	RRegItem *r;
 	RListIter *iter;
 	if (idx < 0) {
