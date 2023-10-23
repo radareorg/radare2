@@ -522,9 +522,6 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 			r_strbuf_append (sb, s);
 			free (s);
 		}
-		r_strbuf_appendf (sb, "min 0x%08"PFMT64x"\n", rih->min);
-		r_strbuf_appendf (sb, "max 0x%08"PFMT64x"\n", rih->max);
-		r_strbuf_appendf (sb, "siz 0x%08"PFMT64x"\n", rih->max - rih->min);
 		break;
 	default:
 		r_strbuf_appendf (sb, "min 0x%08"PFMT64x"\n", rih->min);
