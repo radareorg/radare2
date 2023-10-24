@@ -167,31 +167,47 @@ static bool decode(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
 	case M680X_INS_AIM:
 	case M680X_INS_AIS:
 	case M680X_INS_AIX:
+		break;
 	case M680X_INS_AND:
 	case M680X_INS_ANDA:
 	case M680X_INS_ANDB:
 	case M680X_INS_ANDCC:
 	case M680X_INS_ANDD:
 	case M680X_INS_ANDR:
+		op->type = R_ANAL_OP_TYPE_AND;
+		break;
 	case M680X_INS_ASL:
 	case M680X_INS_ASLA:
 	case M680X_INS_ASLB:
 	case M680X_INS_ASLD: ///< or LSLD
+		op->type = R_ANAL_OP_TYPE_SAL;
+		break;
 	case M680X_INS_ASR:
 	case M680X_INS_ASRA:
 	case M680X_INS_ASRB:
 	case M680X_INS_ASRD:
 	case M680X_INS_ASRX:
+		op->type = R_ANAL_OP_TYPE_SAR;
+		break;
 	case M680X_INS_BAND:
+		break;
 	case M680X_INS_BCC: ///< or BHS
+		op->type = R_ANAL_OP_TYPE_CJMP;
+		break;
 	case M680X_INS_BCLR:
+		break;
 	case M680X_INS_BCS: ///< or BLO
+		op->type = R_ANAL_OP_TYPE_CJMP;
+		break;
 	case M680X_INS_BEOR:
 		break;
 	case M680X_INS_BIAND:
 	case M680X_INS_BIEOR:
+		break;
 	case M680X_INS_BIH:
 	case M680X_INS_BIL:
+		op->type = R_ANAL_OP_TYPE_CJMP;
+		break;
 	case M680X_INS_BIOR:
 	case M680X_INS_BIT:
 	case M680X_INS_BITA:
@@ -222,9 +238,18 @@ static bool decode(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
 	case M680X_INS_BPL:
 	case M680X_INS_BRCLR:
 	case M680X_INS_BRSET:
+		op->type = R_ANAL_OP_TYPE_CJMP;
+		op->jump = addr + op->size + REL(0).offset;
+		op->fail = addr + op->size;
+		break;
 	case M680X_INS_BRN:
+		op->type = R_ANAL_OP_TYPE_NOP;
+		break;
 	case M680X_INS_BSET:
+		break;
 	case M680X_INS_BSR:
+		op->type = R_ANAL_OP_TYPE_RCALL;
+		break;
 	case M680X_INS_BVC:
 	case M680X_INS_BVS:
 		op->type = R_ANAL_OP_TYPE_CJMP;
@@ -232,6 +257,8 @@ static bool decode(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
 		op->fail = addr + op->size;
 		break;
 	case M680X_INS_CALL:
+		op->type = R_ANAL_OP_TYPE_CALL;
+		break;
 	case M680X_INS_CBA: ///< M6800/1/2/3
 	case M680X_INS_CBEQ:
 	case M680X_INS_CBEQA:
@@ -347,7 +374,7 @@ static bool decode(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
 		op->type = R_ANAL_OP_TYPE_JMP;
 		break;
 	case M680X_INS_JSR:
-		op->type = R_ANAL_OP_TYPE_RJMP;
+		op->type = R_ANAL_OP_TYPE_CALL;
 		break;
 	case M680X_INS_LBCC: ///< or LBHS
 	case M680X_INS_LBCS: ///< or LBLO
@@ -386,17 +413,22 @@ static bool decode(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
 	case M680X_INS_LEAU:
 	case M680X_INS_LEAX:
 	case M680X_INS_LEAY:
+		break;
 	case M680X_INS_LSL:
 	case M680X_INS_LSLA:
 	case M680X_INS_LSLB:
 	case M680X_INS_LSLD:
 	case M680X_INS_LSLX:
+		op->type = R_ANAL_OP_TYPE_SHL;
+		break;
 	case M680X_INS_LSR:
 	case M680X_INS_LSRA:
 	case M680X_INS_LSRB:
 	case M680X_INS_LSRD: ///< or ASRD
 	case M680X_INS_LSRW:
 	case M680X_INS_LSRX:
+		op->type = R_ANAL_OP_TYPE_SHR;
+		break;
 	case M680X_INS_MAXA:
 	case M680X_INS_MAXM:
 	case M680X_INS_MEM:
@@ -469,8 +501,11 @@ static bool decode(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
 	case M680X_INS_RORX:
 	case M680X_INS_RSP:
 	case M680X_INS_RTC:
+		break;
 	case M680X_INS_RTI:
 	case M680X_INS_RTS:
+		op->type = R_ANAL_OP_TYPE_RET;
+		break;
 	case M680X_INS_SBA: ///< M6800/1/2/3
 	case M680X_INS_SBC:
 	case M680X_INS_SBCA:
@@ -499,6 +534,7 @@ static bool decode(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
 	case M680X_INS_STW:
 	case M680X_INS_STX:
 	case M680X_INS_STY:
+		break;
 	case M680X_INS_SUB:
 	case M680X_INS_SUBA:
 	case M680X_INS_SUBB:
@@ -517,7 +553,9 @@ static bool decode(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
 	case M680X_INS_SYNC:
 	case M680X_INS_TAB: ///< M6800/1/2/3
 	case M680X_INS_TAP: ///< M6800/1/2/3
+		break;
 	case M680X_INS_TAX:
+		op->type = R_ANAL_OP_TYPE_MOV;
 		break;
 	case M680X_INS_TBA: ///< M6800/1/2/3
 	case M680X_INS_TBEQ:
