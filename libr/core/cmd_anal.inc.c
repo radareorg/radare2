@@ -6210,11 +6210,10 @@ R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr,
 			case R_ANAL_OP_TYPE_UJMP:
 				if (addr == until_addr) {
 					return_tail (0);
-				} else {
-					r_reg_setv (core->anal->reg, pcname, op.addr + op.size);
-					r_reg_setv (core->dbg->reg, pcname, op.addr + op.size);
 				}
-				return_tail (1);
+				r_reg_setv (core->anal->reg, pcname, op.addr + op.size);
+				r_reg_setv (core->dbg->reg, pcname, op.addr + op.size);
+				ret = 0;
 			}
 		}
 		if (r2wars) {
@@ -7766,17 +7765,14 @@ static void cmd_anal_esil(RCore *core, const char *input, bool verbose) {
 			break;
 		case 'o': // "aeso"
 			if (input[2] == 'u') { // "aesou"
-				if (input[3] == 'e') {
-					until_expr = input + 3;
-				} else {
-					until_addr = r_num_math (core->num, input + 2);
-				}
+				until_addr = r_num_math (core->num, input + 3);
 				r_core_esil_step (core, until_addr, until_expr, NULL, true);
 				r_core_cmd0 (core, ".ar*");
 			} else if (!input[2] || input[2] == ' ') { // "aeso [addr]"
 				// step over
 				op = r_core_anal_op (core, r_reg_getv (core->anal->reg,
-					r_reg_get_name (core->anal->reg, R_REG_NAME_PC)), R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_HINT);
+					r_reg_get_name (core->anal->reg, R_REG_NAME_PC)),
+					R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_HINT);
 				if (op && op->type == R_ANAL_OP_TYPE_CALL) {
 					until_addr = op->addr + op->size;
 				}
