@@ -1479,6 +1479,7 @@ static void parse_type(RList *list, RBinFile *bf, SwiftType st, HtUP *symbols_ht
 #endif
 			free (field_name);
 			field->kind = R_BIN_FIELD_KIND_PROPERTY;
+		//	field->type = strdup ("swiftType");
 			r_list_append (klass->fields, field);
 		}
 	}
