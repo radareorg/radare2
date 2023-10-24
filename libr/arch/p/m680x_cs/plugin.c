@@ -108,9 +108,13 @@ static bool decode(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
 		opsize = -1;
 		goto beach;
 	}
+	op->nopcode = 1;
 	op->id = insn->id;
 	opsize = op->size = insn->size;
+	op->family = R_ANAL_OP_FAMILY_CPU; // almost everything is CPU
 	op->type = R_ANAL_OP_TYPE_UNK;
+	op->prefix = 0;
+	op->cond = 0;
 	switch (insn->id) {
 	case M680X_INS_INVLD:
 		op->type = R_ANAL_OP_TYPE_ILL;
