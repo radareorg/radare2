@@ -333,3 +333,5 @@ $10 or mistery box?
 INSERT COIN
 This program is not compatible with your device.
 Hey hey hey everyone! welcome to infoflash
+Rise and shine beyond the Black wall
+Relic malfunction detected

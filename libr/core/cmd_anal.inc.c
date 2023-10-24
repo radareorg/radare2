@@ -129,8 +129,8 @@ static RCoreHelpMessage help_msg_ap = {
 
 static RCoreHelpMessage help_msg_avg = {
 	"Usage:", "avg", " # analyze variable global",
-	"avg", "", "use ESIL emulation to find out arguments of a call (uses 'abte')",
-	"avg", " [type] [name]", "add global",
+	"avg", "", "list global variables",
+	"avg", " [type] [name]", "add global variable with given type and name",
 	"avg-", "", "delete global",
 	NULL
 };
@@ -275,7 +275,8 @@ static RCoreHelpMessage help_msg_abl = {
 static RCoreHelpMessage help_msg_abp = {
 	"Usage:", "abp", "[addr] [num] # find num paths from current offset to addr",
 	"abp", " [addr] [num]", "find num paths from current offset to addr",
-	"abpe", " [addr]", "emulate from beginning of function to the given address",
+	"abpe", " [addr]", "emulate from function start to the given address",
+	"abpe*", " [addr]", "show commands to emulate from function start to the given address",
 	"abpj", " [addr] [num]", "display paths in JSON",
 	NULL
 };
@@ -12254,6 +12255,7 @@ static void cmd_anal_abp(RCore *core, const char *input) {
 	switch (*input) {
 	case 'e': // "abpe"
 		{
+		bool showcmds = input[1] == '*';
 		int n = 1;
 		char *p = strchr (input + 1, ' ');
 		if (!p) {
@@ -12268,24 +12270,34 @@ static void cmd_anal_abp(RCore *core, const char *input) {
 			RList *path;
 			RListIter *pathi;
 			RListIter *bbi;
-			r_cons_printf ("f orip=`dr?PC`\n");
+			if (showcmds) {
+				r_cons_printf ("f orip=`dr?PC`\n");
+			} else {
+				r_core_cmd0 (core, "f orip=`dr?PC`");
+			}
 			r_list_foreach (paths, pathi, path) {
 				r_list_foreach (path, bbi, bb) {
-					r_cons_printf ("# 0x%08" PFMT64x "\n", bb->addr);
-					if (addr >= bb->addr && addr < bb->addr + bb->size) {
+					ut64 endaddr = (addr >= bb->addr && addr < bb->addr + bb->size)
+						? addr: bb->addr + bb->size;
+					if (showcmds) {
+						r_cons_printf ("# 0x%08" PFMT64x "\n", bb->addr);
 						r_cons_printf ("aepc 0x%08"PFMT64x"\n", bb->addr);
-						r_cons_printf ("aesou 0x%08"PFMT64x"\n", addr);
+						r_cons_printf ("aesou 0x%08"PFMT64x"\n", endaddr);
 					} else {
-						r_cons_printf ("aepc 0x%08"PFMT64x"\n", bb->addr);
-						r_cons_printf ("aesou 0x%08"PFMT64x"\n", bb->addr + bb->size);
+						r_core_cmdf (core, "aepc 0x%08"PFMT64x, bb->addr);
+						r_core_cmdf (core, "aesou 0x%08"PFMT64x, endaddr);
 					}
 				}
-				r_cons_newline ();
 				r_list_purge (path);
 				free (path);
 			}
 			r_list_purge (paths);
-			r_cons_printf ("aepc orip\n");
+			if (showcmds) {
+				r_cons_printf ("aepc orip\n");
+			} else {
+				r_core_cmd0 (core, "dr=");
+				r_core_cmd_call (core, "aepc orip");
+			}
 			free (paths);
 		}
 		}
@@ -13352,7 +13364,7 @@ static void cmd_anal_rtti(RCore *core, const char *input) {
 
 static void cmd_avg(RCore *core, const char* input) {
 	switch (input[0]) {
-	case ' ':
+	case ' ': // "avg "
 		if (strchr (input + 1, ' ')) {
 			char *a = r_str_trim_dup (input + 1);
 			char *b = strchr (a, ' ');
@@ -13368,10 +13380,10 @@ static void cmd_avg(RCore *core, const char* input) {
 			free (a);
 		}
 		break;
-	case '-':
+	case '-': // "avg-"
 		r_anal_global_del (core->anal, core->offset);
 		break;
-	case '\0': // "av"
+	case '\0': // "avg"
 		r_core_cmd0 (core, "fs+globals;f;fs-");
 		break;
 	default :
@@ -14111,7 +14123,7 @@ static int cmd_anal(void *data, const char *input) {
 		case 'r': // "abr"
 			core_anal_bbs_range (core, input + 2);
 			break;
-		case 't':
+		case 't': // "abt"
 			cmd_anal_abt (core, input + 2);
 			break;
 		case ',': // "ab,"
