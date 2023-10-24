@@ -2074,8 +2074,8 @@ R_API void r_core_debug_ri(RCore *core, RReg *reg, int mode) {
 R_API void r_core_debug_rr(RCore *core, RReg *reg, int mode) {
 	char *color = "";
 	char *colorend = "";
-	int had_colors = r_config_get_i (core->config, "scr.color");
-	bool use_colors = had_colors != 0;
+	int scr_color = r_config_get_i (core->config, "scr.color");
+	bool use_colors = scr_color != 0;
 	int delta = 0;
 	ut64 diff, value;
 	int bits = core->rasm->config->bits;
@@ -2127,11 +2127,11 @@ R_API void r_core_debug_rr(RCore *core, RReg *reg, int mode) {
 		char *valuestr = NULL;
 		if (delta && use_colors) {
 			namestr = r_str_newf ("%s%s%s", color, r->name, colorend);
-			valuestr = r_str_newf ("%s%"PFMT64x"%s", color, value, colorend);
+			valuestr = r_str_newf ("%s0x%"PFMT64x"%s", color, value, colorend);
 			r_cons_print (Color_RESET);
 		} else {
 			namestr = r_str_new (r->name);
-			valuestr = r_str_newf ("%"PFMT64x, value);
+			valuestr = r_str_newf ("0x%"PFMT64x, value);
 		}
 		ut64 o_offset = core->offset;
 		char *rrstr = r_core_anal_hasrefs (core, value, true);
@@ -2150,9 +2150,8 @@ R_API void r_core_debug_rr(RCore *core, RReg *reg, int mode) {
 	r_cons_print (s);
 	free (s);
 	r_table_free (t);
-
-	if (had_colors) {
-		r_config_set_i (core->config, "scr.color", had_colors);
+	if (scr_color) {
+		r_config_set_i (core->config, "scr.color", scr_color);
 	}
 }
 

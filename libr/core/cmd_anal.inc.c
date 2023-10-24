@@ -137,7 +137,7 @@ static RCoreHelpMessage help_msg_avg = {
 
 static RCoreHelpMessage help_msg_aC = {
 	"Usage:", "aC[fej] [addr-of-call]", " # analyze call args",
-	"aCe", "", "use ESIL emulation to find out arguments of a call (uses 'abte')",
+	"aCe", "", "use ESIL emulation to find out arguments of a call (uses 'abpe')",
 	"aCf", "", "same as .aCe* $$ @@=`pdr~call`",
 	NULL
 };
@@ -5894,7 +5894,7 @@ void cmd_anal_reg(RCore *core, const char *str) {
 		r_cons_printf ("%d\n", sz);
 		free (buf);
 		} break;
-	case 'b': 
+	case 'b':
 		if (str[1] == '?') { // "arb" WORK IN PROGRESS // DEBUG COMMAND
 			r_core_cmd_help_match (core, help_msg_ar, "arb", false);
 		} else {
@@ -12337,7 +12337,7 @@ static void cmd_anal_abp(RCore *core, const char *input) {
 			if (showcmds) {
 				r_cons_printf ("aepc orip\n");
 			} else {
-				r_core_cmd0 (core, "dr=");
+			//	r_core_cmd0 (core, "dr=");
 				r_core_cmd_call (core, "aepc orip");
 			}
 			free (paths);
@@ -13847,7 +13847,7 @@ static void cmd_anal_aC(RCore *core, const char *input) {
 	ut64 pcv = r_num_math (core->num, iarg);
 	if (input[0] == 'e') { // "aCe"
 		is_aCer = (input[1] == '*');
-		r_core_cmdf (core, ".abpe 0x%08"PFMT64x, pcv);
+		r_core_cmdf (core, "abpe 0x%08"PFMT64x, pcv);
 	}
 	RAnalOp* op = r_core_anal_op (core, pcv, -1);
 	if (!op) {
