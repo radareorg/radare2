@@ -33,8 +33,8 @@ static const SwiftType types[] = {
 	{ "Sb", "Bool" },
 	{ "SC", "Syntesized" },
 	{ "Sc", "UnicodeScalar" },
-	{ "Sd", "Double" },
-	{ "Sf", "Float" },
+	{ "Sd", "Swift.Double" },
+	{ "Sf", "Swift.Float" },
 	{ "Si", "Swift.Int" },
 	{ "Sp", "UnsafeMutablePointer" },
 	{ "SP", "UnsafePointer" },
@@ -617,6 +617,26 @@ R_API char *r_bin_demangle_swift(const char *s, bool syscmd, bool trylib) {
 #if USE_THIS_CODE
 	syscmd = trylib = false; // debugging on macos
 #endif
+	const char *space = strchr (s, ' ');
+	if (space) {
+		if (isdigit (space[1])) {
+			char *ss = r_str_newf ("$s%s", space + 1);
+			char *res = r_bin_demangle_swift (ss, syscmd, trylib);
+			free (ss);
+			return res;
+		}
+		if (space) {
+			char *res = r_bin_demangle_swift (space + 1, syscmd, trylib);
+			if (res) {
+				if (strstr (s, "symbolic")) {
+					char *ss = r_str_newf ("symbolic %s", res);
+					free (res);
+					return ss;
+				}
+				return res;
+			}
+		}
+	}
 	if (r_str_startswith (s, "So") && isdigit (s[2])) {
 		char *ss = r_str_newf ("$s%s", s);
 		char *res = r_bin_demangle_swift (ss, syscmd, trylib);
@@ -638,6 +658,18 @@ R_API char *r_bin_demangle_swift(const char *s, bool syscmd, bool trylib) {
 	if (*s != 's' && *s != 'T' && !r_str_startswith (s, "_T") && !r_str_startswith (s, "__T")) {
 		// modern swift symbols not yet supported in this parser (only via trylib)
 		if (!r_str_startswith (s, "$s")) {
+			switch (*s) {
+			case 'S':
+			case 'B':
+				{
+					const char *attr = NULL;
+					resolve (types, s, &attr); // type
+					if (attr) {
+						return strdup (attr);
+					}
+				}
+				break;
+			}
 			return NULL;
 		}
 	} else {

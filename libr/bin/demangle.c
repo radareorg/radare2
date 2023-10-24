@@ -135,6 +135,9 @@ R_API char *r_bin_demangle(RBinFile *bf, const char *def, const char *str, ut64 
 		free (ss);
 		return res;
 	}
+	if (r_str_startswith (str, "_symbolic")) {
+		type = R_BIN_LANG_SWIFT;
+	}
 	if (r_str_startswith (str, "__")) {
 		if (str[2] == 'T') {
 			type = R_BIN_LANG_SWIFT;
