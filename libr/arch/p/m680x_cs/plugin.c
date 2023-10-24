@@ -113,6 +113,32 @@ static bool decode(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
 	opsize = op->size = insn->size;
 	op->family = R_ANAL_OP_FAMILY_CPU; // almost everything is CPU
 	op->type = R_ANAL_OP_TYPE_UNK;
+	if (insn->detail->groups_count > 0) {
+		// do we really need this anyway?
+		switch (insn->detail->groups[0]) {
+		case M680X_GRP_JUMP:
+			op->type = R_ANAL_OP_TYPE_JMP;
+			break;
+		case M680X_GRP_CALL:
+			op->type = R_ANAL_OP_TYPE_CALL;
+			break;
+		case M680X_GRP_RET:
+			op->type = R_ANAL_OP_TYPE_RET;
+			break;
+		case M680X_GRP_INT:
+			op->type = R_ANAL_OP_TYPE_SWI;
+			break;
+		case M680X_GRP_IRET:
+			op->type = R_ANAL_OP_TYPE_RET;
+			break;
+		case M680X_GRP_BRAREL: // all relative branching instructions
+			op->type = R_ANAL_OP_TYPE_RJMP;
+			break;
+		case M680X_GRP_PRIV: // not used
+		default:
+			break;
+		}
+	}
 	op->prefix = 0;
 	op->cond = 0;
 	switch (insn->id) {
