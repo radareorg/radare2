@@ -5894,25 +5894,29 @@ void cmd_anal_reg(RCore *core, const char *str) {
 		r_cons_printf ("%d\n", sz);
 		free (buf);
 		} break;
-	case 'b': { // "arb" WORK IN PROGRESS // DEBUG COMMAND
-		int len, type = R_REG_TYPE_GPR;
-		arg = strchr (str, ' ');
-		if (arg) {
-			char *string = r_str_trim_dup (arg + 1);
-			if (string) {
-				type = r_reg_type_by_name (string);
-				if (type == -1 && string[0] != 'a') {
-					type = R_REG_TYPE_GPR;
+	case 'b': 
+		if (str[1] == '?') { // "arb" WORK IN PROGRESS // DEBUG COMMAND
+			r_core_cmd_help_match (core, help_msg_ar, "arb", false);
+		} else {
+			int len, type = R_REG_TYPE_GPR;
+			arg = strchr (str, ' ');
+			if (arg) {
+				char *string = r_str_trim_dup (arg + 1);
+				if (string) {
+					type = r_reg_type_by_name (string);
+					if (type == -1 && string[0] != 'a') {
+						type = R_REG_TYPE_GPR;
+					}
+					free (string);
 				}
-				free (string);
+			}
+			ut8 *buf = r_reg_get_bytes (core->dbg->reg, type, &len);
+			if (buf) {
+				r_print_hexdump (core->print, 0LL, buf, len, 32, 4, 1);
+				free (buf);
 			}
 		}
-		ut8 *buf = r_reg_get_bytes (core->dbg->reg, type, &len);
-		if (buf) {
-			r_print_hexdump (core->print, 0LL, buf, len, 32, 4, 1);
-			free (buf);
-		}
-		} break;
+		break;
 	case 'c': // "arc"
 		// TODO: set flag values with drc zf=1
 		if (str[1] == 'q') { // "arcq"
