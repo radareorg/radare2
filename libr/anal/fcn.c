@@ -139,7 +139,7 @@ static bool is_invalid_memory(RAnal *anal, const ut8 *buf, int len) {
 	if (len > 8) {
 		if (!memcmp (buf, "\x00\x00\x00\x00\x00\x00\x00\x00", R_MIN (len, 8))) {
 			const char *arch = R_UNWRAP3 (anal, config, arch);
-			if (arch && !strcmp (arch, "java")) {
+			if (arch && (!strcmp (arch, "java") || !strcmp (arch, "x86") || !strcmp (arch, "riscv"))) {
 				return true;
 			}
 		}
@@ -155,9 +155,6 @@ static bool is_invalid_memory(RAnal *anal, const ut8 *buf, int len) {
 		if (i == count) {
 			return true;
 		}
-	}
-	if (!memcmp (buf, "\x00\x00\x00\x00", R_MIN (len, 4))) {
-		return true;
 	}
 	return !memcmp (buf, "\xff\xff\xff\xff", R_MIN (len, 4));
 }
