@@ -2,13 +2,93 @@
 
 #include <r_io.h>
 #include <r_lib.h>
+#include "../../bin/format/mach0/mach0_specs.h"
 #include "../../bin/format/mach0/dsc.c"
+
+typedef struct {
+	ut8 version;
+	ut64 slide;
+	ut8 *one_page_buf;
+	ut32 page_size;
+	ut64 start_of_data;
+} RDyldRebaseInfo;
+
+typedef struct {
+	ut64 start;
+	ut64 end;
+	RDyldRebaseInfo *info;
+} RDyldRebaseInfosEntry;
+
+typedef struct {
+	RDyldRebaseInfosEntry *entries;
+	size_t length;
+} RDyldRebaseInfos;
+
+typedef struct {
+	ut8 version;
+	ut64 slide;
+	ut8 *one_page_buf;
+	ut32 page_size;
+	ut64 start_of_data;
+	ut16 *page_starts;
+	ut32 page_starts_count;
+	ut64 delta_mask;
+	ut32 delta_shift;
+	ut64 auth_value_add;
+} RDyldRebaseInfo3;
+
+typedef struct {
+	ut8 version;
+	ut64 slide;
+	ut8 *one_page_buf;
+	ut32 page_size;
+	ut64 start_of_data;
+	ut16 *page_starts;
+	ut32 page_starts_count;
+	ut16 *page_extras;
+	ut32 page_extras_count;
+	ut64 delta_mask;
+	ut64 value_mask;
+	ut32 delta_shift;
+	ut64 value_add;
+} RDyldRebaseInfo2;
+
+typedef struct {
+	ut8 version;
+	ut64 slide;
+	ut8 *one_page_buf;
+	ut32 page_size;
+	ut64 start_of_data;
+	ut16 *toc;
+	ut32 toc_count;
+	ut8 *entries;
+	ut32 entries_size;
+} RDyldRebaseInfo1;
+
+static void r_io_dsc_rebase_infos_free(RDyldRebaseInfosEntry * entry);
+
+R_VEC_TYPE_WITH_FINI (RIODscRebaseInfos, RDyldRebaseInfosEntry, r_io_dsc_rebase_infos_free);
 
 typedef struct {
 	int fd;
 	ut64 start;
 	ut64 end;
+	RIODscRebaseInfos rebase_infos;
 } RIODscSlice;
+
+typedef struct {
+	RIODscSlice * slice;
+	ut64 seek;
+	ut64 count;
+	ut64 buf_off;
+} RIODscTrimmedSlice;
+
+typedef struct {
+	RDyldRebaseInfosEntry * info;
+	ut64 off_local;
+	ut64 count;
+	ut64 buf_off;
+} RIODscTrimmedRebaseInfo;
 
 static void r_io_dsc_slice_free(RIODscSlice * slice);
 
@@ -41,13 +121,65 @@ typedef struct {
 	char suffix[32];
 } RDscSubcacheEntryV2;
 
+#define R_IS_PTR_AUTHENTICATED(x) B_IS_SET(x, 63)
 #define URL_SCHEME "dsc://"
+
+#define RIO_FREAD_AT(fd, offset, store, fmt, check) {\
+	ut8 tmp[sizeof (store)]; \
+	if (lseek (fd, offset, SEEK_SET) < 0) { \
+		check = false; \
+	} else { \
+		if (read (fd, tmp, sizeof (store)) != sizeof (store)) { \
+			check = false; \
+		} else { \
+			RBuffer * buf = r_buf_new_with_bytes (tmp, sizeof (store)); \
+			if (!buf) { \
+				check = false; \
+			} else { \
+				check = r_buf_fread_at (buf, 0, (ut8*)&store, fmt, 1) == sizeof (store); \
+				r_buf_free (buf); \
+			} \
+		} \
+	} \
+}
+
+#define RIO_FREAD_AT_INTO(fd, offset, store, fmt, size, n, check) {\
+	if (lseek (fd, offset, SEEK_SET) < 0) { \
+		check = false; \
+	} else { \
+		if (read (fd, store, size) != size) { \
+			check = false; \
+		} else { \
+			RBuffer * buf = r_buf_new_with_bytes (store, size); \
+			if (!buf) { \
+				check = false; \
+			} else { \
+				check = r_buf_fread_at (buf, 0, (ut8*)store, fmt, n) == size; \
+				r_buf_free (buf); \
+			} \
+		} \
+	} \
+}
+
+#define RIO_FREAD_AT_INTO_DIRECT(fd, offset, store, size, check) {\
+	if (lseek (fd, offset, SEEK_SET) < 0) { \
+		check = false; \
+	} else { \
+		check = read (fd, store, size) == size; \
+	} \
+}
 
 static RIODscObject *r_io_dsc_object_new(RIO  *io, const char *filename, int perm, int mode);
 static void r_io_dsc_object_free(RIODscObject *dsc);
 static RDSCHeader * r_io_dsc_read_header(int fd, ut64 offset);
 
 static int r_io_internal_read(RIODscObject * dsc, ut64 off,  ut8 *buf, int count);
+static int r_io_dsc_slice_read(RIODscSlice * slice, ut64 off_local, ut8 * buf, int size);
+static void r_io_dsc_slice_rebase_bytes(RIODscSlice * slice, ut64 off_local, ut8 * buf, int size);
+static RList * r_io_dsc_slice_get_rebase_infos_by_range(RIODscSlice * slice, ut64 off_local, int size);
+static void rebase_bytes_v1(RIODscSlice * slice, RDyldRebaseInfo1 *rebase_info, ut8 *buf, ut64 offset, int count, ut64 buf_off);
+static void rebase_bytes_v2(RIODscSlice * slice, RDyldRebaseInfo2 *rebase_info, ut8 *buf, ut64 offset, int count, ut64 buf_off);
+static void rebase_bytes_v3(RIODscSlice * slice, RDyldRebaseInfo3 *rebase_info, ut8 *buf, ut64 offset, int count, ut64 buf_off);
 
 static int r_io_posix_open(const char *file, int perm, int mode, bool nocache);
 static int r_io_dsc_object_read(RIO *io, RIODesc *fd, ut8 *buf, int count);
@@ -58,9 +190,15 @@ static bool r_io_dsc_detect_subcache_format(int fd, ut32 sc_offset, ut32 sc_coun
 static bool r_io_dsc_dig_subcache(RIODscObject * dsc, const char * filename, ut64 start, ut8 * check_uuid, ut64 * out_size);
 static bool r_io_dsc_object_dig_one_slice(RIODscObject * dsc, int fd, ut64 start, ut64 end, ut8 * check_uuid, RDSCHeader * header, bool walk_monocache);
 static RIODscSlice * r_io_dsc_object_get_slice(RIODscObject * dsc, ut64 off_global);
+static RList * r_io_dsc_object_get_slices_by_range(RIODscObject * dsc, ut64 off_global, int size);
 
 static bool is_valid_magic(ut8 magic[16]);
 static bool is_null_uuid(ut8 uuid[16]);
+
+static bool get_rebase_infos(RIODscSlice * slice, int fd, ut64 start, RDSCHeader * header, bool monocache);
+static RDyldRebaseInfo *get_rebase_info(int fd, ut64 slideInfoOffset, ut64 slideInfoSize, ut64 start_of_data, ut64 slide);
+static void rebase_info_free(RDyldRebaseInfo *rebase_info);
+static ut32 dumb_ctzll(ut64 x);
 
 static bool __check(RIO *io, const char *file, bool many) {
 	return r_str_startswith (file, URL_SCHEME);
@@ -164,7 +302,9 @@ static bool r_io_dsc_object_dig_slices(RIODscObject * dsc) {
 			R_LOG_ERROR ("Malformed multi file cache");
 			goto error;
 		}
-		if (subCacheArrayCount == 0) {
+		ut8 sym_uuid[16];
+		bool has_symbols_file = dsc_header_get_field (header, "symbolFileUUID", sym_uuid, 16) && !is_null_uuid (sym_uuid);
+		if (subCacheArrayCount == 0 && !has_symbols_file) {
 			R_LOG_ERROR ("Please open the first file of the cache");
 			goto error;
 		}
@@ -259,8 +399,7 @@ static bool r_io_dsc_object_dig_slices(RIODscObject * dsc) {
 			sc_entry_cursor += sc_entry_size;
 		}
 
-		ut8 sym_uuid[16];
-		if (dsc_header_get_field (header, "symbolFileUUID", sym_uuid, 16) && !is_null_uuid (sym_uuid)) {
+		if (has_symbols_file) {
 			ut64 size;
 			char * subcache_filename = r_str_newf ("%s.symbols", dsc->filename);
 			if (!subcache_filename) {
@@ -375,12 +514,13 @@ static bool r_io_dsc_object_dig_one_slice(RIODscObject * dsc, int fd, ut64 start
 	if (!slice) {
 		return false;
 	}
+	memset (slice, 0, sizeof (RIODscSlice));
 
 	slice->fd = fd;
 	slice->start = start;
 
 	if (walk_monocache) {
-		ut64 cursor = end;
+		ut64 cursor = start;
 
 		while (true) {
 			RDSCHeader * sc_header = r_io_dsc_read_header (fd, cursor);
@@ -388,7 +528,7 @@ static bool r_io_dsc_object_dig_one_slice(RIODscObject * dsc, int fd, ut64 start
 				break;
 			}
 
-			// TODO: parse rebase info
+			get_rebase_infos (slice, fd, cursor, sc_header, walk_monocache);
 
 			ut64 codeSignatureOffset, codeSignatureSize;
 			dsc_header_get_u64 (sc_header, "codeSignatureOffset", &codeSignatureOffset);
@@ -397,6 +537,11 @@ static bool r_io_dsc_object_dig_one_slice(RIODscObject * dsc, int fd, ut64 start
 
 			dsc_header_free (sc_header);
 
+			if ((st64)size <= 0) {
+				R_LOG_ERROR ("Failed to walk sub-caches, file is corrupted");
+				break;
+			}
+
 			cursor += size;
 		}
 
@@ -404,6 +549,7 @@ static bool r_io_dsc_object_dig_one_slice(RIODscObject * dsc, int fd, ut64 start
 		dsc->total_size = cursor;
 	} else {
 		slice->end = end;
+		get_rebase_infos (slice, fd, slice->start, header, walk_monocache);
 	}
 
 	return true;
@@ -414,6 +560,15 @@ static void r_io_dsc_slice_free(RIODscSlice * slice) {
 		return;
 	}
 	close (slice->fd);
+	RIODscRebaseInfos_fini (&slice->rebase_infos);
+}
+
+static void r_io_dsc_rebase_infos_free(RDyldRebaseInfosEntry * entry) {
+	if (!entry) {
+		return;
+	}
+	rebase_info_free (entry->info);
+	entry->info = NULL;
 }
 
 static int r_io_posix_open(const char *file, int perm, int mode, bool nocache) {
@@ -452,17 +607,38 @@ static int r_io_dsc_object_read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 }
 
 static int r_io_internal_read(RIODscObject * dsc, ut64 off_global, ut8 *buf, int count) {
-	RIODscSlice * slice = r_io_dsc_object_get_slice(dsc, off_global);
-	if (!slice) {
+	RList * slices = r_io_dsc_object_get_slices_by_range (dsc, off_global, count);
+	if (!slices) {
 		return -1;
 	}
 
-	ut64 off_local = off_global - slice->start;
+	RListIter * iter;
+	RIODscTrimmedSlice * trimmed;
+	int total = 0;
+	int failures = 0;
+	int index = 0;
+	int n_slices = r_list_length (slices);
 
-	if (lseek (slice->fd, off_local, SEEK_SET) < 0) {
+	r_list_foreach (slices, iter, trimmed) {
+		int one_result = r_io_dsc_slice_read (trimmed->slice, trimmed->seek, buf + trimmed->buf_off, trimmed->count);
+		if (one_result == -1) {
+			failures++;
+			if (index < n_slices - 1) {
+				total += trimmed->count;
+			}
+		} else {
+			total += one_result;
+		}
+		index++;
+	}
+
+	r_list_free (slices);
+
+	if (failures == n_slices) {
 		return -1;
 	}
-	return read (slice->fd, buf, count);
+
+	return total;
 }
 
 static ut64 r_io_dsc_object_seek(RIO *io, RIODscObject *dsc, ut64 offset, int whence) {
@@ -482,6 +658,8 @@ static ut64 r_io_dsc_object_seek(RIO *io, RIODscObject *dsc, ut64 offset, int wh
 		case SEEK_END:
 			off_global = dsc->total_size + offset;
 			break;
+		default:
+			return UT64_MAX;
 	}
 
 	RIODscSlice * slice = r_io_dsc_object_get_slice(dsc, off_global);
@@ -516,6 +694,317 @@ static RIODscSlice * r_io_dsc_object_get_slice(RIODscObject * dsc, ut64 off_glob
 	return NULL;
 }
 
+static RList * r_io_dsc_object_get_slices_by_range(RIODscObject * dsc, ut64 off_global, int size) {
+	if (off_global == UT64_MAX || size == UT64_MAX || size == 0) {
+		return NULL;
+	}
+
+	RList * result = r_list_new ();
+	if (!result) {
+		return NULL;
+	}
+
+	ut64 ffo = off_global + size;
+
+	RIODscSlice * slice;
+	R_VEC_FOREACH (&dsc->slices, slice) {
+		ut64 start = slice->start;
+		ut64 end = slice->end;
+
+		if (end > off_global && start < ffo) {
+			RIODscTrimmedSlice * trimmed_slice = R_NEW0 (RIODscTrimmedSlice);
+			if (!trimmed_slice) {
+				break;
+			}
+
+			trimmed_slice->slice = slice;
+
+			ut64 trimmed_end = (ffo >= end) ? slice->end : ffo;
+			ut64 trimmed_start = (off_global <= start) ? slice->start : off_global;
+
+			trimmed_slice->seek = trimmed_start - slice->start;
+			trimmed_slice->count = trimmed_end - trimmed_start;
+			trimmed_slice->buf_off = trimmed_start - off_global;
+
+			r_list_append (result, trimmed_slice);
+		}
+	}
+
+	return result;
+}
+
+static int r_io_dsc_slice_read(RIODscSlice * slice, ut64 off_local, ut8 * buf, int size) {
+	if (lseek (slice->fd, off_local, SEEK_SET) < 0) {
+		return -1;
+	}
+	int count = read (slice->fd, buf, size);
+	r_io_dsc_slice_rebase_bytes (slice, off_local, buf, count);
+	return count;
+}
+
+static void r_io_dsc_slice_rebase_bytes(RIODscSlice * slice, ut64 off_local, ut8 * buf, int size) {
+	RList * infos = r_io_dsc_slice_get_rebase_infos_by_range (slice, off_local, size);
+	if (!infos) {
+		return;
+	}
+
+	RListIter * iter;
+	RIODscTrimmedRebaseInfo * trimmed;
+
+	r_list_foreach (infos, iter, trimmed) {
+		switch (trimmed->info->info->version) {
+			case 1:
+				rebase_bytes_v1 (slice, (RDyldRebaseInfo1 *) trimmed->info->info,
+						buf, trimmed->off_local, trimmed->count, trimmed->buf_off);
+				break;
+			case 2:
+			case 4:
+				rebase_bytes_v2 (slice, (RDyldRebaseInfo2 *) trimmed->info->info,
+						buf, trimmed->off_local, trimmed->count, trimmed->buf_off);
+				break;
+			case 3:
+				rebase_bytes_v3 (slice, (RDyldRebaseInfo3 *) trimmed->info->info,
+						buf, trimmed->off_local, trimmed->count, trimmed->buf_off);
+				break;
+			default:
+				R_LOG_ERROR ("Unsupported rebase info version %d", trimmed->info->info->version);
+		}
+	}
+
+	r_list_free (infos);
+}
+
+static RList * r_io_dsc_slice_get_rebase_infos_by_range(RIODscSlice * slice, ut64 off_local, int size) {
+	ut64 slice_size = slice->end - slice->start;
+	if (off_local + size > slice_size  || size == 0) {
+		return NULL;
+	}
+
+	RList * result = r_list_new ();
+	if (!result) {
+		return NULL;
+	}
+
+	ut64 ffo = off_local + size;
+
+	RDyldRebaseInfosEntry * info;
+	R_VEC_FOREACH (&slice->rebase_infos, info) {
+		if (!info->info) {
+			continue;
+		}
+		ut64 start = info->start;
+		ut64 end = info->end;
+
+		if (end > off_local && start < ffo) {
+			RIODscTrimmedRebaseInfo * trimmed_info = R_NEW0 (RIODscTrimmedRebaseInfo);
+			if (!trimmed_info) {
+				break;
+			}
+
+			trimmed_info->info = info;
+
+			ut64 trimmed_end = (ffo >= end) ? slice->end : ffo;
+			ut64 trimmed_start = (off_local <= start) ? slice->start : off_local;
+
+			trimmed_info->off_local = trimmed_start;
+			trimmed_info->count = trimmed_end - trimmed_start;
+			trimmed_info->buf_off = trimmed_start - off_local;
+
+			r_list_append (result, trimmed_info);
+		}
+	}
+
+	return result;
+}
+
+static void rebase_bytes_v1(RIODscSlice * slice, RDyldRebaseInfo1 *rebase_info, ut8 *buf, ut64 offset, int count, ut64 buf_off) {
+	int in_buf = buf_off;
+	while (in_buf < count) {
+		ut64 offset_in_data = offset - rebase_info->start_of_data;
+		ut64 page_index = offset_in_data / rebase_info->page_size;
+		ut64 page_offset = offset_in_data % rebase_info->page_size;
+		ut64 to_next_page = rebase_info->page_size - page_offset;
+		ut64 entry_index = page_offset / 32;
+		ut64 offset_in_entry = (page_offset % 32) / 4;
+
+		if (entry_index >= rebase_info->entries_size) {
+			in_buf += to_next_page;
+			offset += to_next_page;
+			continue;
+		}
+
+		if (page_index >= rebase_info->toc_count) {
+			break;
+		}
+
+		ut8 *entry = &rebase_info->entries[rebase_info->toc[page_index] * rebase_info->entries_size];
+		ut8 b = entry[entry_index];
+
+		if (b & (1 << offset_in_entry)) {
+			ut64 value = r_read_le64 (buf + in_buf);
+			value += rebase_info->slide;
+			r_write_le64 (buf + in_buf, value);
+			in_buf += 8;
+			offset += 8;
+		} else {
+			in_buf += 4;
+			offset += 4;
+		}
+	}
+}
+
+static void rebase_bytes_v2(RIODscSlice * slice, RDyldRebaseInfo2 *rebase_info, ut8 *buf, ut64 offset, int count, ut64 buf_off) {
+	int in_buf = buf_off;
+	while (in_buf < count + buf_off) {
+		ut64 offset_in_data = offset - rebase_info->start_of_data;
+		ut64 page_index = offset_in_data / rebase_info->page_size;
+		ut64 page_offset = offset_in_data % rebase_info->page_size;
+		ut64 to_next_page = rebase_info->page_size - page_offset;
+
+		if (page_index >= rebase_info->page_starts_count) {
+			goto next_page;
+		}
+		ut16 page_flag = rebase_info->page_starts[page_index];
+
+		if (page_flag == DYLD_CACHE_SLIDE_PAGE_ATTR_NO_REBASE) {
+			goto next_page;
+		}
+
+		if (!(page_flag & DYLD_CACHE_SLIDE_PAGE_ATTR_EXTRA)) {
+			ut64 first_rebase_off = rebase_info->page_starts[page_index] * 4;
+			if (first_rebase_off < page_offset + count) {
+				ut32 delta = 1;
+				if (first_rebase_off < page_offset) {
+					ut64 back_size = page_offset - first_rebase_off;
+					ut8 * back_bytes = malloc (back_size);
+					if (!back_bytes) {
+						return;
+					}
+					bool got_back_bytes = false;
+					RIO_FREAD_AT_INTO_DIRECT (slice->fd, offset - back_size, back_bytes, back_size, got_back_bytes);
+					if (!got_back_bytes) {
+						free (back_bytes);
+						return;
+					}
+
+					int cursor = 0;
+					while (delta && cursor <= back_size - 8) {
+						ut64 raw_value = r_read_le64 (back_bytes + cursor);
+						delta = ((raw_value & rebase_info->delta_mask) >> rebase_info->delta_shift);
+						cursor += delta;
+					}
+
+					first_rebase_off += cursor;
+
+					free (back_bytes);
+				}
+				while (delta) {
+					ut64 position = in_buf + first_rebase_off - page_offset;
+					if (position + 8 > count) {
+						break;
+					}
+					ut64 raw_value = r_read_le64 (buf + position);
+					delta = ((raw_value & rebase_info->delta_mask) >> rebase_info->delta_shift);
+					if (position >= buf_off) {
+						ut64 new_value = raw_value & rebase_info->value_mask;
+						if (new_value != 0) {
+							new_value += rebase_info->value_add;
+							new_value += rebase_info->slide;
+						}
+						r_write_le64 (buf + position, new_value);
+					}
+					first_rebase_off += delta;
+				}
+			}
+		} else {
+			R_LOG_ERROR ("DYLD_CACHE_SLIDE_PAGE_ATTR_EXTRA not handled, please file a bug");
+		}
+next_page:
+		in_buf += to_next_page;
+		offset += to_next_page;
+	}
+}
+
+static void rebase_bytes_v3(RIODscSlice * slice, RDyldRebaseInfo3 *rebase_info, ut8 *buf, ut64 offset, int count, ut64 buf_off) {
+	int in_buf = buf_off;
+	while (in_buf < count + buf_off) {
+		ut64 offset_in_data = offset - rebase_info->start_of_data;
+		ut64 page_index = offset_in_data / rebase_info->page_size;
+		ut64 page_offset = offset_in_data % rebase_info->page_size;
+		ut64 to_next_page = rebase_info->page_size - page_offset;
+
+		if (page_index >= rebase_info->page_starts_count) {
+			goto next_page;
+		}
+		ut64 delta = rebase_info->page_starts[page_index];
+
+		if (delta == DYLD_CACHE_SLIDE_V3_PAGE_ATTR_NO_REBASE) {
+			goto next_page;
+		}
+
+		ut64 first_rebase_off = delta;
+		if (first_rebase_off < page_offset + count) {
+			if (first_rebase_off < page_offset) {
+				ut64 back_size = page_offset - first_rebase_off;
+				ut8 * back_bytes = malloc (back_size);
+				if (!back_bytes) {
+					return;
+				}
+				bool got_back_bytes = false;
+				RIO_FREAD_AT_INTO_DIRECT (slice->fd, offset - back_size, back_bytes, back_size, got_back_bytes);
+				if (!got_back_bytes) {
+					free (back_bytes);
+					return;
+				}
+
+				int cursor = 0;
+				while (cursor <= back_size - 8) {
+					ut64 raw_value = r_read_le64 (back_bytes + cursor);
+					delta = ((raw_value & rebase_info->delta_mask) >> rebase_info->delta_shift) * 8;
+					cursor += delta;
+					if (!delta) {
+						break;
+					}
+				}
+
+				first_rebase_off += cursor;
+
+				free (back_bytes);
+
+				if (!delta) {
+					goto next_page;
+				}
+			}
+			do {
+				ut64 position = in_buf + first_rebase_off - page_offset;
+				if (position + 8 > count) {
+					break;
+				}
+				ut64 raw_value = r_read_le64 (buf + position);
+				delta = ((raw_value & rebase_info->delta_mask) >> rebase_info->delta_shift) * 8;
+				if (position >= buf_off) {
+					ut64 new_value = 0;
+					if (R_IS_PTR_AUTHENTICATED (raw_value)) {
+						new_value = (raw_value & 0xFFFFFFFFULL) + rebase_info->auth_value_add;
+						// TODO: don't throw auth info away
+					} else {
+						new_value = ((raw_value << 13) & 0xFF00000000000000ULL) | (raw_value & 0x7ffffffffffULL);
+						new_value &= 0x00FFFFFFFFFFFFFFULL;
+					}
+					if (new_value != 0) {
+						new_value += rebase_info->slide;
+					}
+					r_write_le64 (buf + position, new_value);
+				}
+				first_rebase_off += delta;
+			} while (delta);
+		}
+next_page:
+		in_buf += to_next_page;
+		offset += to_next_page;
+	}
+}
+
 #if R2__UNIX__
 static bool __is_blockdevice(RIODesc *desc) {
 	return false;
@@ -526,6 +1015,7 @@ static RDSCHeader * r_io_dsc_read_header(int fd, ut64 offset) {
 	ut8 tmp[16];
 
 	if (lseek (fd, offset, SEEK_SET) < 0) {
+		R_LOG_ERROR ("Cannot seek at header offset 0x%llx", offset);
 		return NULL;
 	}
 	if (read (fd, tmp, 16) != 16) {
@@ -535,20 +1025,24 @@ static RDSCHeader * r_io_dsc_read_header(int fd, ut64 offset) {
 		return NULL;
 	}
 	if (read (fd, tmp, 4) != 4) {
+		R_LOG_ERROR ("Cannot read header size at offset 0x%llx", offset + 4);
 		return NULL;
 	}
 	if (lseek (fd, offset, SEEK_SET) < 0) {
+		R_LOG_ERROR ("Cannot seek at header offset 0x%llx", offset);
 		return NULL;
 	}
 
 	ut32 header_size = r_read_le32 (tmp);
 	if (header_size > 4096 || header_size == 0) {
+		R_LOG_ERROR ("Invalid header size at offset 0x%llx", offset + 4);
 		return NULL;
 	}
 
 	ut8 * header_data = malloc (header_size);
 
 	if (read (fd, header_data, header_size) != header_size) {
+		R_LOG_ERROR ("Cannot read header data at offset 0x%llx", offset);
 		free (header_data);
 		return NULL;
 	}
@@ -570,6 +1064,367 @@ static bool is_null_uuid(ut8 uuid[16]) {
 		sum |= *(ut64*)&uuid[i];
 	}
 	return sum == 0;
+}
+
+static bool get_rebase_infos(RIODscSlice * slice, int fd, ut64 start, RDSCHeader * header, bool monocache) {
+	ut64 slideInfoOffset, slideInfoSize;
+	dsc_header_get_u64 (header, "slideInfoOffsetUnused", &slideInfoOffset);
+	dsc_header_get_u64 (header, "slideInfoSizeUnused", &slideInfoSize);
+
+	if (slideInfoOffset == 0 && slideInfoSize == 0) {
+		ut32 mappingWithSlideOffset, mappingWithSlideCount;
+		dsc_header_get_u32 (header, "mappingWithSlideCount", &mappingWithSlideCount);
+		if (mappingWithSlideCount == 0) {
+			R_LOG_ERROR ("Missing slide count");
+			return false;
+		}
+		dsc_header_get_u32 (header, "mappingWithSlideOffset", &mappingWithSlideOffset);
+		if (mappingWithSlideOffset == 0) {
+			R_LOG_ERROR ("Missing slide offset");
+			return false;
+		}
+		if (monocache) {
+			mappingWithSlideOffset += start;
+		}
+
+		ut32 j;
+		for (j = 0; j < mappingWithSlideCount; j++) {
+			ut64 offset = mappingWithSlideOffset + j * sizeof (cache_mapping_slide);
+			cache_mapping_slide entry;
+			bool got_entry = false;
+			RIO_FREAD_AT (fd, offset, entry, "6lii", got_entry);
+			if (!got_entry) {
+				break;
+			}
+
+			if (entry.slideInfoOffset && entry.slideInfoSize) {
+				RDyldRebaseInfosEntry * info = RIODscRebaseInfos_emplace_back (&slice->rebase_infos);
+				if (!info) {
+					break;
+				}
+				memset (info, 0, sizeof (RDyldRebaseInfosEntry));
+				info->start = entry.fileOffset;
+				info->end = info->start + entry.size;
+				slideInfoOffset = entry.slideInfoOffset;
+				if (monocache) {
+					slideInfoOffset += start;
+					info->start += start;
+					info->end += start;
+				}
+				slideInfoSize = entry.slideInfoSize;
+				info->info = get_rebase_info (fd, slideInfoOffset, slideInfoSize, info->start, 0);
+				if (!info->info) {
+					R_LOG_ERROR ("Failed to get rebase info");
+				}
+			}
+		}
+	} else {
+		ut32 mappingCount;
+		dsc_header_get_u32 (header, "mappingCount", &mappingCount);
+		if (mappingCount > 1) {
+			ut32 mappingOffset;
+			dsc_header_get_u32 (header, "mappingOffset", &mappingOffset);
+			cache_map_t w_map;
+			bool got_map = false;
+			mappingOffset += sizeof (w_map);
+			RIO_FREAD_AT (fd, mappingOffset, w_map, "3l2i", got_map);
+			if (!got_map) {
+				return false;
+			}
+
+			RDyldRebaseInfosEntry * info = RIODscRebaseInfos_emplace_back (&slice->rebase_infos);
+			if (!info) {
+				return false;
+			}
+			memset (info, 0, sizeof (RDyldRebaseInfosEntry));
+
+			info->start = w_map.fileOffset;
+			info->end = info->start + w_map.size;
+			info->info = get_rebase_info (fd, slideInfoOffset, slideInfoSize, info->start, 0);
+			if (!info->info) {
+				R_LOG_ERROR ("Failed to get rebase info");
+			}
+		}
+	}
+
+	return true;
+}
+
+static RDyldRebaseInfo *get_rebase_info(int fd, ut64 slideInfoOffset, ut64 slideInfoSize, ut64 start_of_data, ut64 slide) {
+	ut8 *tmp_buf_1 = NULL;
+	ut8 *tmp_buf_2 = NULL;
+	ut8 *one_page_buf = NULL;
+
+	ut64 offset = slideInfoOffset;
+	ut32 slide_info_version = 0;
+	bool got_version = false;
+
+	RIO_FREAD_AT (fd, offset, slide_info_version, "i", got_version);
+	if (!got_version) {
+		R_LOG_ERROR("Could not get slide info version");
+		return NULL;
+	}
+
+	if (slide_info_version == 3) {
+		ut64 size = sizeof (cache_slide3_t);
+		cache_slide3_t slide_info;
+		bool got_info = false;
+		RIO_FREAD_AT (fd, offset, slide_info, "4i1l", got_info);
+		if (!got_info) {
+			R_LOG_ERROR ("Could not read slide info v3");
+			return NULL;
+		}
+
+		ut64 page_starts_offset = offset + size;
+		ut64 page_starts_size = slide_info.page_starts_count * 2;
+
+		if (page_starts_size + size > slideInfoSize) {
+			R_LOG_ERROR ("Size mismatch in slide info v3");
+			return NULL;
+		}
+
+		if (page_starts_size > 0) {
+			tmp_buf_1 = malloc (page_starts_size);
+			if (!tmp_buf_1) {
+				goto beach;
+			}
+			bool got_starts = false;
+			RIO_FREAD_AT_INTO (fd, page_starts_offset, tmp_buf_1, "s", page_starts_size, slide_info.page_starts_count, got_starts);
+			if (!got_starts) {
+				R_LOG_ERROR ("Could not read slide info v3 page starts");
+				goto beach;
+			}
+		}
+
+		RDyldRebaseInfo3 *rebase_info = R_NEW0 (RDyldRebaseInfo3);
+		if (!rebase_info) {
+			goto beach;
+		}
+
+		rebase_info->version = 3;
+		rebase_info->delta_mask = 0x3ff8000000000000ULL;
+		rebase_info->delta_shift = 51;
+		rebase_info->start_of_data = start_of_data;
+		rebase_info->page_starts = (ut16*) tmp_buf_1;
+		rebase_info->page_starts_count = slide_info.page_starts_count;
+		rebase_info->auth_value_add = slide_info.auth_value_add;
+		rebase_info->page_size = slide_info.page_size;
+		rebase_info->one_page_buf = one_page_buf;
+		rebase_info->slide = slide;
+
+		return (RDyldRebaseInfo*) rebase_info;
+	} else if (slide_info_version == 2 || slide_info_version == 4) {
+		cache_slide2_t slide_info;
+		bool got_info = false;
+		RIO_FREAD_AT (fd, offset, slide_info, "6i2l", got_info);
+		if (!got_info) {
+			R_LOG_ERROR ("Could not read slide info v%d", slide_info_version);
+			return NULL;
+		}
+
+		if (slide_info.page_starts_offset == 0 ||
+				slide_info.page_starts_offset > slideInfoSize ||
+				slide_info.page_starts_offset + slide_info.page_starts_count * 2 > slideInfoSize) {
+			R_LOG_ERROR ("Size mismatch in slide info v%d page starts", slide_info_version);
+			return NULL;
+		}
+
+		if (slide_info.page_extras_offset > slideInfoSize ||
+				slide_info.page_extras_offset + slide_info.page_extras_count * 2 > slideInfoSize) {
+			R_LOG_ERROR ("Size mismatch in slide info v%d page extras", slide_info_version);
+			return NULL;
+		}
+
+		if (slide_info.page_starts_count > 0) {
+			ut64 size = slide_info.page_starts_count * 2;
+			ut64 at = slideInfoOffset + slide_info.page_starts_offset;
+			tmp_buf_1 = malloc (size);
+			if (!tmp_buf_1) {
+				goto beach;
+			}
+			bool got_starts = false;
+			RIO_FREAD_AT_INTO (fd, at, tmp_buf_1, "s", size, slide_info.page_starts_count, got_starts);
+			if (!got_starts) {
+				R_LOG_ERROR ("Could not read slide info v%d page starts", slide_info_version);
+				goto beach;
+			}
+		}
+
+		if (slide_info.page_extras_count > 0) {
+			ut64 size = slide_info.page_extras_count * 2;
+			ut64 at = slideInfoOffset + slide_info.page_extras_offset;
+			tmp_buf_2 = malloc (size);
+			if (!tmp_buf_2) {
+				goto beach;
+			}
+			bool got_extras = false;
+			RIO_FREAD_AT_INTO (fd, at, tmp_buf_2, "s", size, slide_info.page_extras_count, got_extras);
+			if (!got_extras) {
+				R_LOG_ERROR ("Could not read slide info v%d page extras", slide_info_version);
+				goto beach;
+			}
+		}
+
+		RDyldRebaseInfo2 *rebase_info = R_NEW0 (RDyldRebaseInfo2);
+		if (!rebase_info) {
+			goto beach;
+		}
+
+		rebase_info->version = slide_info_version;
+		rebase_info->start_of_data = start_of_data;
+		rebase_info->page_starts = (ut16*) tmp_buf_1;
+		rebase_info->page_starts_count = slide_info.page_starts_count;
+		rebase_info->page_extras = (ut16*) tmp_buf_2;
+		rebase_info->page_extras_count = slide_info.page_extras_count;
+		rebase_info->value_add = slide_info.value_add;
+		rebase_info->delta_mask = slide_info.delta_mask;
+		rebase_info->value_mask = ~rebase_info->delta_mask;
+		rebase_info->delta_shift = dumb_ctzll (rebase_info->delta_mask) - 2;
+		rebase_info->page_size = slide_info.page_size;
+		rebase_info->one_page_buf = one_page_buf;
+		rebase_info->slide = slide;
+
+		return (RDyldRebaseInfo*) rebase_info;
+	} else if (slide_info_version == 1) {
+		cache_slide1_t slide_info;
+		bool got_info = false;
+		RIO_FREAD_AT (fd, offset, slide_info, "6i", got_info);
+		if (!got_info) {
+			R_LOG_ERROR ("Could not read slide info v1");
+			return NULL;
+		}
+
+		if (slide_info.toc_offset == 0 ||
+			slide_info.toc_offset > slideInfoSize ||
+			slide_info.toc_offset + slide_info.toc_count * 2 > slideInfoSize) {
+			R_LOG_ERROR ("Size mismatch in slide info v1 toc offset");
+			return NULL;
+		}
+
+		if (slide_info.entries_offset == 0 ||
+			slide_info.entries_offset > slideInfoSize ||
+			slide_info.entries_offset + slide_info.entries_count * slide_info.entries_size > slideInfoSize) {
+			R_LOG_ERROR ("Size mismatch in slide info v1 entries offset");
+			return NULL;
+		}
+
+		if (slide_info.toc_count > 0) {
+			ut64 size = slide_info.toc_count * 2;
+			ut64 at = slideInfoOffset + slide_info.toc_offset;
+			tmp_buf_1 = malloc (size);
+			if (!tmp_buf_1) {
+				goto beach;
+			}
+			bool got_toc = false;
+			RIO_FREAD_AT_INTO (fd, at, tmp_buf_1, "s", size, slide_info.toc_count, got_toc);
+			if (!got_toc) {
+				R_LOG_ERROR ("Could not read slide info v1 toc");
+				goto beach;
+			}
+		}
+
+		if (slide_info.entries_count > 0) {
+			ut64 size = (ut64) slide_info.entries_count * (ut64) slide_info.entries_size;
+			ut64 at = slideInfoOffset + slide_info.entries_offset;
+			tmp_buf_2 = malloc (size);
+			if (!tmp_buf_2) {
+				goto beach;
+			}
+			bool got_entries = false;
+			RIO_FREAD_AT_INTO_DIRECT (fd, at, tmp_buf_2, size, got_entries);
+			if (!got_entries) {
+				R_LOG_ERROR ("Could not read slide info v1 entries");
+				goto beach;
+			}
+		}
+
+		RDyldRebaseInfo1 *rebase_info = R_NEW0 (RDyldRebaseInfo1);
+		if (!rebase_info) {
+			goto beach;
+		}
+
+		rebase_info->version = 1;
+		rebase_info->start_of_data = start_of_data;
+		rebase_info->one_page_buf = one_page_buf;
+		rebase_info->page_size = 4096;
+		rebase_info->toc = (ut16*) tmp_buf_1;
+		rebase_info->toc_count = slide_info.toc_count;
+		rebase_info->entries = tmp_buf_2;
+		rebase_info->entries_size = slide_info.entries_size;
+		rebase_info->slide = slide;
+
+		return (RDyldRebaseInfo*) rebase_info;
+	} else {
+		R_LOG_ERROR ("Unsupported slide info version %d", slide_info_version);
+		return NULL;
+	}
+
+beach:
+	R_FREE (tmp_buf_1);
+	R_FREE (tmp_buf_2);
+	R_FREE (one_page_buf);
+	return NULL;
+}
+
+static void rebase_info3_free(RDyldRebaseInfo3 *rebase_info) {
+	if (rebase_info) {
+		R_FREE (rebase_info->page_starts);
+		R_FREE (rebase_info);
+	}
+}
+
+static void rebase_info2_free(RDyldRebaseInfo2 *rebase_info) {
+	if (rebase_info) {
+		R_FREE (rebase_info->page_starts);
+		R_FREE (rebase_info->page_extras);
+		R_FREE (rebase_info);
+	}
+}
+
+static void rebase_info1_free(RDyldRebaseInfo1 *rebase_info) {
+	if (rebase_info) {
+		R_FREE (rebase_info->toc);
+		R_FREE (rebase_info->entries);
+		R_FREE (rebase_info);
+	}
+}
+
+static void rebase_info_free(RDyldRebaseInfo *rebase_info) {
+	if (!rebase_info) {
+		return;
+	}
+	R_FREE (rebase_info->one_page_buf);
+	ut8 version = rebase_info->version;
+	if (version == 1) {
+		rebase_info1_free ((RDyldRebaseInfo1*) rebase_info);
+	} else if (version == 2 || version == 4) {
+		rebase_info2_free ((RDyldRebaseInfo2*) rebase_info);
+	} else if (version == 3) {
+		rebase_info3_free ((RDyldRebaseInfo3*) rebase_info);
+	} else {
+		R_FREE (rebase_info);
+	}
+}
+
+static ut32 dumb_ctzll(ut64 x) {
+	ut64 result = 0;
+	int i, j;
+	for (i = 0; i < 64; i += 8) {
+		ut8 byte = (x >> i) & 0xff;
+		if (!byte) {
+			result += 8;
+		} else {
+			for (j = 0; j < 8; j++) {
+				if (!((byte >> j) & 1)) {
+					result++;
+				} else {
+					break;
+				}
+			}
+			break;
+		}
+	}
+	return result;
 }
 
 RIOPlugin r_io_plugin_dsc = {
