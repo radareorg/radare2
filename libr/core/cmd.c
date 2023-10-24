@@ -1844,10 +1844,11 @@ static int cmd_stdin(void *data, const char *input) {
 			break;
 		case 'a': // "-a"
 			if (R_STR_ISEMPTY (arg)) {
-				r_core_cmd0 (core, "e asm.arch");
+				const char *arch = r_config_get (core->config, "asm.arch");
+				r_cons_printf ("%s\n", arch);
 			} else {
-				r_core_cmdf (core, "'e asm.arch=%s", arg);
-				r_core_cmdf (core, "'e anal.arch=%s", arg);
+				r_config_set (core->config, "asm.arch", arg);
+				r_config_set (core->config, "anal.arch", arg);
 			}
 			break;
 		case 'i': // "-i"
@@ -1861,9 +1862,10 @@ static int cmd_stdin(void *data, const char *input) {
 			break;
 		case 'b': // "-b"
 			if (R_STR_ISEMPTY (arg)) {
-				r_core_cmdf (core, "e asm.bits");
+				const int bits = r_config_get_i (core->config, "asm.bits");
+				r_cons_printf ("%d\n", bits);
 			} else {
-				r_core_cmdf (core, "e asm.bits=%s", arg);
+				r_config_set_i (core->config, "asm.bits", r_num_math (core->num, arg));
 			}
 			break;
 		case 'j': // "-j"
@@ -1874,7 +1876,7 @@ static int cmd_stdin(void *data, const char *input) {
 			break;
 		case 'e': // "-e"
 			if (*arg == '?') {
-				r_core_cmd0 (core, "e");
+				r_core_cmd_call (core, "e");
 			} else {
 				r_core_cmdf (core, "e %s", arg);
 			}
