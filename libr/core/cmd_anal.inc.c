@@ -968,7 +968,7 @@ static RCoreHelpMessage help_msg_ar = {
 	"ar0", "", "reset register arenas to 0",
 	"ara", "[?]", "manage register arenas",
 	"arj", "", "show 'gpr' registers in JSON format",
-	"arA", "", "show values of function argument calls (A0, A1, A2, ..)",
+	"arA", "[?]", "show values of function argument calls (A0, A1, A2, ..)",
 	"ar", " 16", "show 16 bit registers",
 	"ar", " 32", "show 32 bit registers",
 	"ar", " all", "show all bit registers",
@@ -5753,7 +5753,47 @@ void cmd_anal_reg(RCore *core, const char *str) {
 		r_reg_arena_zero (core->anal->reg);
 		break;
 	case 'A': // "arA"
-		{
+		if (str[1] == 'j') { // "arAj"
+			PJ *pj = pj_new ();
+			pj_o (pj);
+			int nargs = 4;
+			RReg *reg = core->anal->reg;
+			for (i = 0; i < nargs; i++) {
+				r_strf_var (regname, 32, "A%d", i);
+				const char *name = r_reg_get_name (reg, r_reg_get_name_idx (regname));
+				ut64 off = r_reg_getv (core->anal->reg, name);
+				pj_k (pj, regname);
+				pj_o (pj);
+				pj_kn (pj, "val", off);
+				// XXX very ugly hack
+				char *s = r_core_cmd_strf (core, "pxr 32 @ 0x%08"PFMT64x"@e:scr.color=0", off);
+				if (s) {
+					char *nl = strchr (s, '\n');
+					if (nl) {
+						*nl = 0;
+						pj_ks (pj, "pxr", s);
+					}
+					free (s);
+				}
+				s = r_core_cmd_strf (core, "ps0 @ 0x%08"PFMT64x"@e:scr.color=0", off);
+				if (s) {
+					char *cut = strstr (s, "\\x");
+					if (cut) {
+						*cut = 0;
+					}
+					r_str_trim (s);
+					if (*s) {
+						pj_ks (pj, "str", s);
+					}
+					free (s);
+				}
+				pj_end (pj);
+			}
+			pj_end (pj);
+			char *s = pj_drain (pj);
+			r_cons_printf ("%s\n", s);
+			free (s);
+		} else if (str[1] == 0) {
 			int nargs = 4;
 			RReg *reg = core->anal->reg;
 			for (i = 0; i < nargs; i++) {
@@ -5773,6 +5813,8 @@ void cmd_anal_reg(RCore *core, const char *str) {
 				}
 //				r_core_cmd0 (core, "ar A0,A1,A2,A3");
 			}
+		} else {
+			r_core_cmd_help_match (core, help_msg_af, "afA", true);
 		}
 		break;
 	case 'C': // "arC"
