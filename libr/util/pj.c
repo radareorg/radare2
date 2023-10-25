@@ -16,11 +16,9 @@ R_API void pj_kraw(PJ *j) {
 
 static void pj_comma(PJ *j) {
 	r_return_if_fail (j);
-	if (!j->is_key) {
-		if (!j->is_first) {
-			pj_raw (j, j->comma);
-			j->comma = ",";
-		}
+	if (!j->is_key && !j->is_first) {
+		pj_raw (j, j->comma);
+		j->comma = ",";
 	}
 	j->is_first = false;
 	j->is_key = false;
@@ -299,7 +297,6 @@ R_API PJ *pj_n(PJ *j, ut64 n) {
 
 R_API PJ *pj_ne(PJ *j, ut64 n) {
 	r_return_val_if_fail (j, j);
-	pj_comma (j);
 	pj_n (j, n);
 	return j;
 }
