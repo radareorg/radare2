@@ -3477,6 +3477,7 @@ R_API RList *r_str_split_list(char *str, const char *c, int n)  {
 	char *aux = str; // XXX should be an strdup
 	int i = 0;
 	char *e = aux;
+	const size_t clen = strlen (c);
 	for (;e;) {
 		e = strstr (aux, c);
 		if (n > 0) {
@@ -3486,7 +3487,8 @@ R_API RList *r_str_split_list(char *str, const char *c, int n)  {
 			}
 		}
 		if (e) {
-			*e++ =  0;
+			*e = 0;
+			e += clen;
 		}
 		r_str_trim (aux);
 		r_list_append (lst, aux);
