@@ -25,7 +25,6 @@ R_VEC_TYPE(RVecAnalRef, RAnalRef);
 static R_TH_LOCAL ut64 emustack_min = 0LL;
 static R_TH_LOCAL ut64 emustack_max = 0LL;
 static R_TH_LOCAL char *hint_syntax = NULL;
-static R_TH_LOCAL RFlagItem sfi = {0};
 
 // global cache
 static R_TH_LOCAL ut64 Goaddr = UT64_MAX;
@@ -323,6 +322,7 @@ typedef struct r_disasm_state_t {
 	const char *strip;
 	int maxflags;
 	int asm_types;
+	RFlagItem sfi;
 } RDisasmState;
 
 static void ds_setup_print_pre(RDisasmState *ds, bool tail, bool middle);
@@ -3024,15 +3024,15 @@ static void ds_print_lines_left(RDisasmState *ds) {
 		const char *name = "";
 		int delta = 0;
 		if (ds->fcn) {
-			sfi.offset = ds->fcn->addr;
-			sfi.name = ds->fcn->name;
-			ds->lastflag = &sfi;
+			ds->sfi.offset = ds->fcn->addr;
+			ds->sfi.name = ds->fcn->name;
+			ds->lastflag = &ds->sfi;
 		} else {
 			RFlagItem *fi = r_flag_get_at (core->flags, ds->at, !ds->lastflag);
 			if (fi) { // && (!ds->lastflag || fi->offset != ds->at))
-				sfi.offset = fi->offset;
-				sfi.name = fi->name;
-				ds->lastflag = &sfi;
+				ds->sfi.offset = fi->offset;
+				ds->sfi.name = fi->name;
+				ds->lastflag = &ds->sfi;
 			}
 		}
 		if (ds->lastflag && ds->lastflag->name) {
@@ -3087,9 +3087,9 @@ static char *get_reloff(RDisasmState *ds, ut64 at, st64 *delta) {
 		}
 		if (f) {
 			*delta = at - f->addr;
-			sfi.name = f->name;
-			sfi.offset = f->addr;
-			ds->lastflag = &sfi;
+			ds->sfi.name = f->name;
+			ds->sfi.offset = f->addr;
+			ds->lastflag = &ds->sfi;
 			label = strdup (f->name);
 		}
 		if (!ds->lastflag) {
