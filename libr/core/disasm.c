@@ -24,7 +24,6 @@ R_VEC_TYPE(RVecAnalRef, RAnalRef);
 // ugly globals but meh
 static R_TH_LOCAL ut64 emustack_min = 0LL;
 static R_TH_LOCAL ut64 emustack_max = 0LL;
-static R_TH_LOCAL char *hint_syntax = NULL;
 
 // global cache
 static R_TH_LOCAL ut64 Goaddr = UT64_MAX;
@@ -323,6 +322,7 @@ typedef struct r_disasm_state_t {
 	int maxflags;
 	int asm_types;
 	RFlagItem sfi;
+	char *hint_syntax;
 } RDisasmState;
 
 static void ds_setup_print_pre(RDisasmState *ds, bool tail, bool middle);
@@ -467,7 +467,7 @@ static void get_bits_comment(RCore *core, RAnalFunction *f, char *cmt, int cmt_s
 	}
 }
 
-R_API const char *r_core_get_section_name(struct r_core_t *core, ut64 addr) {
+R_API const char *r_core_get_section_name(RCore *core, ut64 addr) {
 	if (addr == UT64_MAX) {
 		return NULL;
 	}
@@ -1287,36 +1287,36 @@ static void ds_build_op_str(RDisasmState *ds, bool print_color) {
 	}
 }
 
-R_API RAnalHint *r_core_hint_begin(RCore *core, RAnalHint* hint, ut64 at) {
-	r_anal_hint_free (hint);
-	hint = r_anal_hint_get (core->anal, at);
-	if (hint_syntax) {
-		r_config_set (core->config, "asm.syntax", hint_syntax);
-		hint_syntax = NULL;
+static void ds_hint_begin(RDisasmState *ds, ut64 at) {
+	RCore *core = ds->core;
+	r_anal_hint_free (ds->hint);
+	ds->hint = r_anal_hint_get (core->anal, at);
+	if (ds->hint_syntax) {
+		r_config_set (core->config, "asm.syntax", ds->hint_syntax);
+		ds->hint_syntax = NULL;
 	}
-	if (hint) {
+	if (ds->hint) {
 		/* syntax */
-		if (hint->syntax) {
-			if (!hint_syntax) {
-				hint_syntax = strdup (r_config_get (core->config, "asm.syntax"));
+		if (ds->hint->syntax) {
+			if (!ds->hint_syntax) {
+				ds->hint_syntax = strdup (r_config_get (core->config, "asm.syntax"));
 			}
-			r_config_set (core->config, "asm.syntax", hint->syntax);
+			r_config_set (core->config, "asm.syntax", ds->hint->syntax);
 		}
-		if (hint->high) {
+		if (ds->hint->high) {
 			/* TODO: do something here */
 		}
 	}
 	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, at, 0);
 	if (fcn) {
 		if (fcn->bits == 16 || fcn->bits == 32) {
-			if (!hint) {
-				hint = R_NEW0 (RAnalHint);
+			if (!ds->hint) {
+				ds->hint = R_NEW0 (RAnalHint);
 			}
-			hint->bits = fcn->bits;
-			hint->new_bits = fcn->bits;
+			ds->hint->bits = fcn->bits;
+			ds->hint->new_bits = fcn->bits;
 		}
 	}
-	return hint;
 }
 
 static void ds_pre_line(RDisasmState *ds) {
@@ -6093,7 +6093,7 @@ toro:
 		}
 		r_core_seek_arch_bits (core, ds->at); // slow but safe
 		ds->has_description = false;
-		ds->hint = r_core_hint_begin (core, ds->hint, ds->at);
+		ds_hint_begin (ds, ds->at);
 		ds->printed_str_addr = UT64_MAX;
 		ds->printed_flag_addr = UT64_MAX;
 		// XXX. this must be done in ds_update_pc()
@@ -6600,7 +6600,7 @@ toro:
 		if (r_cons_is_breaked ()) {
 			break;
 		}
-		ds->hint = r_core_hint_begin (core, ds->hint, ds->at);
+		ds_hint_begin (ds, ds->at);
 		ds->has_description = false;
 		r_anal_op_fini (&ds->analop);
 		const size_t delta = addrbytes * i;
@@ -6912,7 +6912,7 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 		int skip_bytes_flag = 0, skip_bytes_bb = 0;
 
 		at = addr + k;
-		ds->hint = r_core_hint_begin (core, ds->hint, ds->at);
+		ds_hint_begin (ds, ds->at);
 		r_asm_set_pc (core->rasm, at);
 		// 32 is the biggest opcode length in intel
 		// Make sure we have room for it
