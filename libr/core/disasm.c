@@ -5303,13 +5303,139 @@ static void mipsTweak(RDisasmState *ds) {
 	}
 }
 
+static void ds_comment_call(RDisasmState *ds) {
+	RCore *core = ds->core;
+	REsil *esil = core->anal->esil;
+	RAnalFunction *fcn;
+	RAnalFuncArg *arg;
+	RListIter *iter;
+	RListIter *nextele;
+	const char *fcn_name = NULL;
+	char *key = NULL;
+	ut64 pcv = ds->analop.jump;
+	if (ds->analop.type == R_ANAL_OP_TYPE_RCALL) {
+		pcv = UT64_MAX;
+	}
+	const char *pc = r_reg_get_name (core->anal->reg, R_REG_NAME_PC);
+	if (pcv == UT64_MAX) {
+		pcv = ds->analop.ptr; // call [reloc-addr] // windows style
+		if (pcv == UT64_MAX || !pcv) {
+			r_esil_reg_read (esil, "$jt", &pcv, NULL);
+			if (pcv == UT64_MAX || !pcv) {
+				pcv = r_reg_getv (core->anal->reg, pc);
+			}
+		}
+	}
+	fcn = r_anal_get_function_at (core->anal, pcv);
+	if (fcn) {
+		fcn_name = fcn->name;
+	} else {
+		RFlagItem *item = r_flag_get_i (core->flags, pcv);
+		if (item) {
+			fcn_name = item->name;
+		}
+	}
+	if (fcn_name) {
+		key = resolve_fcn_name (core->anal, fcn_name);
+	}
+	int i, nargs = DEFAULT_NARGS;
+	if (key) {
+		if (ds->asm_types < 1) {
+			free (key);
+			return;
+		}
+		const char *fcn_type = r_type_func_ret (core->anal->sdb_types, key);
+		nargs = r_type_func_args_count (core->anal->sdb_types, key);
+		// remove other comments
+		delete_last_comment (ds);
+		// ds_comment_start (ds, "");
+		ds_comment_esil (ds, true, false, "%s", ds->show_color ? ds->pal_comment : "");
+		if (fcn_type) {
+			ds_comment_middle (ds, "%s %s%s%s(", ds->cmtoken, r_str_getf (fcn_type),
+					(*fcn_type && fcn_type[strlen (fcn_type) - 1] == '*') ? "" : " ",
+					r_str_getf (key));
+			if (!nargs) {
+				ds_comment_end (ds, "void)");
+				free (key);
+				return;
+			}
+		}
+	}
+	ut64 s_width = (core->anal->config->bits == 64)? 8: 4;
+	const char *sp = r_reg_get_name (core->anal->reg, R_REG_NAME_SP);
+	ut64 spv = r_reg_getv (core->anal->reg, sp);
+	r_reg_setv (core->anal->reg, sp, spv + s_width); // temporarily set stack ptr to sync with carg.c
+	RList *list = r_core_get_func_args (core, fcn_name);
+	if (!r_list_empty (list)) {
+		bool warning = false;
+		bool on_stack = false;
+		r_list_foreach (list, iter, arg) {
+			if (arg->cc_source && r_str_startswith (arg->cc_source, "stack")) {
+				on_stack = true;
+			}
+			if (!arg->size) {
+				if (ds->asm_types == 2) {
+					ds_comment_middle (ds, "%s: unk_size", arg->c_type);
+				}
+				warning = true;
+			}
+			nextele = r_list_iter_get_next (iter);
+			if (!arg->fmt) {
+				if (ds->asm_types > 1) {
+					if (warning) {
+						ds_comment_middle (ds, "_format");
+					} else {
+						ds_comment_middle (ds, "%s : unk_format", arg->c_type);
+					}
+				} else {
+					ds_comment_middle (ds, "?");
+				}
+				ds_comment_middle (ds, nextele?", ":")");
+			} else {
+				// TODO: may need ds_comment_esil
+				print_fcn_arg (core, arg->orig_c_type, arg->name, arg->fmt, arg->src, on_stack, ds->asm_types);
+				ds_comment_middle (ds, nextele?", ":")");
+			}
+		}
+		ds_comment_end (ds, "");
+		r_list_free (list);
+		free (key);
+		return;
+	}
+	r_list_free (list);
+	// function name not resolved
+	r_warn_if_fail (!key);
+	free (key);
+	if (fcn) {
+		// @TODO: fcn->nargs should be updated somewhere and used here instead
+		nargs = r_anal_var_count_args (fcn);
+	}
+	if (nargs > 0) {
+		ds_comment_esil (ds, true, false, "%s", ds->show_color? ds->pal_comment : "");
+		if (fcn_name) {
+			ds_comment_middle (ds, "%s %s(", ds->cmtoken, fcn_name);
+		} else {
+			ds_comment_middle (ds, "%s 0x%"PFMT64x"(", ds->cmtoken, pcv);
+		}
+		const char *cc = r_anal_syscc_default (core->anal);
+		for (i = 0; i < nargs; i++) {
+			ut64 v = r_debug_arg_get (core->dbg, cc, i);
+			if (v == UT64_MAX || v == UT32_MAX) {
+				ds_comment_middle (ds, "%s-1", i?", ":"");
+			} else {
+				ds_comment_middle (ds, "%s0x%"PFMT64x, i?", ":"", v);
+			}
+		}
+		ds_comment_end (ds, ")");
+	}
+	r_reg_setv (core->anal->reg, sp, spv); // reset stack ptr
+}
+
 // modifies anal register state
 static void ds_print_esil_anal(RDisasmState *ds) {
 	RCore *core = ds->core;
 	REsil *esil = core->anal->esil;
-	const char *pc;
 	bool (*hook_mem_write)(REsil *esil, ut64 addr, const ut8 *buf, int len) = NULL;
-	int i, nargs;
 	ut64 at = r_core_pava (core, ds->at);
 	RConfigHold *hc = r_config_hold_new (core->config);
 	if (!hc) {
@@ -5329,7 +5455,7 @@ static void ds_print_esil_anal(RDisasmState *ds) {
 		r_cons_print (ds->pal_comment);
 	}
 	esil = core->anal->esil;
-	pc = r_reg_get_name (core->anal->reg, R_REG_NAME_PC);
+	const char *pc = r_reg_get_name (core->anal->reg, R_REG_NAME_PC);
 	if (pc) {
 		r_reg_setv (core->anal->reg, pc, at + ds->analop.size);
 		esil->cb.user = ds;
@@ -5373,141 +5499,17 @@ static void ds_print_esil_anal(RDisasmState *ds) {
 	case R_ANAL_OP_TYPE_JMP:
 		{
 			ut64 addr = ds->analop.jump;
-			if (!r_anal_get_function_at (ds->core->anal, addr)
-					&& !r_flag_get_at (core->flags, addr, false)) {
+			if (!r_anal_get_function_at (ds->core->anal, addr) && !r_flag_get_at (core->flags, addr, false)) {
 				break;
 			}
 		}
+		// fallthrough for failcalls
 	case R_ANAL_OP_TYPE_UCALL:
 	case R_ANAL_OP_TYPE_ICALL:
 	case R_ANAL_OP_TYPE_RCALL:
 	case R_ANAL_OP_TYPE_IRCALL:
 	case R_ANAL_OP_TYPE_CALL:
-		{
-			RAnalFunction *fcn;
-			RAnalFuncArg *arg;
-			RListIter *iter;
-			RListIter *nextele;
-			const char *fcn_name = NULL;
-			char *key = NULL;
-			ut64 pcv = ds->analop.jump;
-			if (ds->analop.type == R_ANAL_OP_TYPE_RCALL) {
-				pcv = UT64_MAX;
-			}
-			if (pcv == UT64_MAX) {
-				pcv = ds->analop.ptr; // call [reloc-addr] // windows style
-				if (pcv == UT64_MAX || !pcv) {
-					r_esil_reg_read (esil, "$jt", &pcv, NULL);
-					if (pcv == UT64_MAX || !pcv) {
-						pcv = r_reg_getv (core->anal->reg, pc);
-					}
-				}
-			}
-			fcn = r_anal_get_function_at (core->anal, pcv);
-			if (fcn) {
-				fcn_name = fcn->name;
-			} else {
-				RFlagItem *item = r_flag_get_i (core->flags, pcv);
-				if (item) {
-					fcn_name = item->name;
-				}
-			}
-			if (fcn_name) {
-				key = resolve_fcn_name (core->anal, fcn_name);
-			}
-			if (key) {
-				if (ds->asm_types < 1) {
-					free (key);
-					break;
-				}
-				const char *fcn_type = r_type_func_ret (core->anal->sdb_types, key);
-				int nargs = r_type_func_args_count (core->anal->sdb_types, key);
-				// remove other comments
-				delete_last_comment (ds);
-				// ds_comment_start (ds, "");
-				ds_comment_esil (ds, true, false, "%s", ds->show_color ? ds->pal_comment : "");
-				if (fcn_type) {
-					ds_comment_middle (ds, "%s %s%s%s(", ds->cmtoken, r_str_getf (fcn_type),
-							(*fcn_type && fcn_type[strlen (fcn_type) - 1] == '*') ? "" : " ",
-							r_str_getf (key));
-					if (!nargs) {
-						ds_comment_end (ds, "void)");
-						free (key);
-						break;
-					}
-				}
-			}
-			ut64 s_width = (core->anal->config->bits == 64)? 8: 4;
-			const char *sp = r_reg_get_name (core->anal->reg, R_REG_NAME_SP);
-			ut64 spv = r_reg_getv (core->anal->reg, sp);
-			r_reg_setv (core->anal->reg, sp, spv + s_width); // temporarily set stack ptr to sync with carg.c
-			RList *list = r_core_get_func_args (core, fcn_name);
-			if (!r_list_empty (list)) {
-				bool warning = false;
-				bool on_stack = false;
-				r_list_foreach (list, iter, arg) {
-					if (arg->cc_source && r_str_startswith (arg->cc_source, "stack")) {
-						on_stack = true;
-					}
-					if (!arg->size) {
-						if (ds->asm_types == 2) {
-							ds_comment_middle (ds, "%s: unk_size", arg->c_type);
-						}
-						warning = true;
-					}
-					nextele = r_list_iter_get_next (iter);
-					if (!arg->fmt) {
-						if (ds->asm_types > 1) {
-							if (warning) {
-								ds_comment_middle (ds, "_format");
-							} else {
-								ds_comment_middle (ds, "%s : unk_format", arg->c_type);
-							}
-						} else {
-							ds_comment_middle (ds, "?");
-						}
-						ds_comment_middle (ds, nextele?", ":")");
-					} else {
-						// TODO: may need ds_comment_esil
-						print_fcn_arg (core, arg->orig_c_type, arg->name, arg->fmt, arg->src, on_stack, ds->asm_types);
-						ds_comment_middle (ds, nextele?", ":")");
-					}
-				}
-				ds_comment_end (ds, "");
-				r_list_free (list);
-				free (key);
-				break;
-			} else {
-				r_list_free (list);
-				// function name not resolved
-				r_warn_if_fail (!key);
-				free (key);
-				nargs = DEFAULT_NARGS;
-				if (fcn) {
-					// @TODO: fcn->nargs should be updated somewhere and used here instead
-					nargs = r_anal_var_count_args (fcn);
-				}
-				if (nargs > 0) {
-					ds_comment_esil (ds, true, false, "%s", ds->show_color? ds->pal_comment : "");
-					if (fcn_name) {
-						ds_comment_middle (ds, "%s %s(", ds->cmtoken, fcn_name);
-					} else {
-						ds_comment_middle (ds, "%s 0x%"PFMT64x"(", ds->cmtoken, pcv);
-					}
-					const char *cc = r_anal_syscc_default (core->anal);
-					for (i = 0; i < nargs; i++) {
-						ut64 v = r_debug_arg_get (core->dbg, cc, i);
-						if (v == UT64_MAX || v == UT32_MAX) {
-							ds_comment_middle (ds, "%s-1", i?", ":"");
-						} else {
-							ds_comment_middle (ds, "%s0x%"PFMT64x, i?", ":"", v);
-						}
-					}
-					ds_comment_end (ds, ")");
-				}
-			}
-			r_reg_setv (core->anal->reg, sp, spv); // reset stack ptr
-		}
+		ds_comment_call (ds);
 		break;
 	}
 	ds_print_color_reset (ds);

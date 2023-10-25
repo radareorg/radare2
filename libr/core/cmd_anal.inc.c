@@ -576,6 +576,7 @@ static RCoreHelpMessage help_msg_afb = {
 	".afbr-*", "", "remove breakpoint on every return address of the function",
 	"afb", " [addr]", "list basic blocks of function",
 	"afb.", " [addr]", "show info of current basic block",
+	"afb,", "", "show basic blocks of current function in a table (previously known as afbt)",
 	"afb=", "", "display ascii-art bars for basic block regions",
 	"afb+", " fcn_at bbat bbsz [jump] [fail] ([diff])", "add basic block by hand",
 	"afbc", "[-] [color] ([addr])", "colorize basic block (same as 'abc', afbc- to unset)",
@@ -584,7 +585,6 @@ static RCoreHelpMessage help_msg_afb = {
 	"afbi", "[j]", "print current basic block information",
 	"afbj", " [addr]", "show basic blocks information in json",
 	"afbr", "", "show addresses of instructions which leave the function",
-	"afbt", "", "show basic blocks of current function in a table",
 	"afbo", "", "list addresses of each instruction for every basic block in function (see abo)",
 	"afB", " [bits]", "define asm.bits for the given function",
 	NULL
@@ -3266,12 +3266,12 @@ static bool anal_fcn_list_bb(RCore *core, const char *input, bool one) {
 			}
 		}
 		switch (mode) {
-		case 't': // "afbt"
+		case ',': // "afb," "afbt"
 			r_table_add_rowf (t, "xdxx", b->addr, b->size, b->jump, b->fail);
 			break;
 		case 'r': // "afbr"
 			if (b->jump == UT64_MAX || r_anal_noreturn_at_addr (core->anal, b->jump)) {
-				ut64 retaddr = r_anal_bb_opaddr_i (b, b->ninstr - 1);
+				const ut64 retaddr = r_anal_bb_opaddr_i (b, b->ninstr - 1);
 				if (retaddr == UT64_MAX) {
 					break;
 				}
@@ -3285,8 +3285,7 @@ static bool anal_fcn_list_bb(RCore *core, const char *input, bool one) {
 			}
 			break;
 		case '*':
-			r_cons_printf ("f bb.%05" PFMT64x " = 0x%08" PFMT64x "\n",
-				b->addr & 0xFFFFF, b->addr);
+			r_cons_printf ("f bb.%05" PFMT64x " = 0x%08" PFMT64x "\n", b->addr & 0xFFFFF, b->addr);
 			break;
 		case 'q': // "afbq"
 			r_cons_printf ("0x%08" PFMT64x "\n", b->addr);
@@ -3296,13 +3295,12 @@ static bool anal_fcn_list_bb(RCore *core, const char *input, bool one) {
 			break;
 		case 'i': // "afbi"
 			if (*input == 'j') { // "afbij"
-				pj = r_core_pj_new (core);
-				if (!pj) {
-					return false;
+				PJ *pj = r_core_pj_new (core);
+				if (pj) {
+					print_bb (pj, b, fcn, addr);
+					r_cons_println (pj_string (pj));
+					pj_free (pj);
 				}
-				print_bb (pj, b, fcn, addr);
-				r_cons_println (pj_string (pj));
-				pj_free (pj);
 			} else {
 				print_bb (NULL, b, fcn, addr);
 			}
@@ -3451,7 +3449,6 @@ static void r_core_anal_nofunclist(RCore *core, const char *input) {
 	RListIter *iter, *iter2;
 	RAnalFunction *fcn;
 	RAnalBlock *b;
-	char* bitmap;
 	int counter;
 
 	if (minlen < 1) {
@@ -3460,7 +3457,7 @@ static void r_core_anal_nofunclist(RCore *core, const char *input) {
 	if (code_size < 1) {
 		return;
 	}
-	bitmap = calloc (1, code_size + 64);
+	char *bitmap = calloc (1, code_size + 64);
 	if (!bitmap) {
 		return;
 	}
@@ -3907,13 +3904,12 @@ static Sdb *__core_cmd_anal_fcn_stats(RCore *core, const char *input) {
 		SdbListIter *it;
 		SdbKv *kv;
 		ls_foreach (ls, it, kv) {
-			const char *key = sdbkv_key(kv);
-			const char *value = sdbkv_value(kv);
+			const char *key = sdbkv_key (kv);
+			const char *value = sdbkv_value (kv);
 			r_cons_printf ("%4d %s\n", (int)r_num_get (NULL, value), key);
 		}
 	}
 	return db;
-	//sdb_free (db);
 }
 
 static void __core_cmd_anal_fcn_allstats(RCore *core, const char *input) {
