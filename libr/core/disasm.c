@@ -21,10 +21,6 @@ R_VEC_TYPE(RVecAnalRef, RAnalRef);
 #define ds_bufat(ds)  ((ds)->buf + ds_offset (ds))
 #define ds_left(ds)   ((ds)->len - ds_offset (ds))
 
-// ugly globals but meh
-static R_TH_LOCAL ut64 emustack_min = 0LL;
-static R_TH_LOCAL ut64 emustack_max = 0LL;
-
 // global cache
 static R_TH_LOCAL ut64 Goaddr = UT64_MAX;
 static R_TH_LOCAL char *Gsection = NULL; // maybe as a fixed array size is less racy, but still incorrect as its not guarded and its global
@@ -323,6 +319,9 @@ typedef struct r_disasm_state_t {
 	int asm_types;
 	RFlagItem sfi;
 	char *hint_syntax;
+	// ugly ones but at least not globals
+	ut64 emustack_min = 0LL;
+	ut64 emustack_max = 0LL;
 } RDisasmState;
 
 static void ds_setup_print_pre(RDisasmState *ds, bool tail, bool middle);
@@ -771,8 +770,8 @@ static RDisasmState *ds_init(RCore *core) {
 		const char *uri = "malloc://32K";
 		ut64 size = r_num_get (core->num, "32K");
 		ut64 addr = r_reg_getv (core->anal->reg, "SP") - (size / 2);
-		emustack_min = addr;
-		emustack_max = addr + size;
+		ds->emustack_min = addr;
+		ds->emustack_max = addr + size;
 		ds->stackFd = r_io_fd_open (core->io, uri, R_PERM_RW, 0);
 		RIOMap *map = r_io_map_add (core->io, ds->stackFd, R_PERM_RW, 0LL, addr, size);
 		if (!map) {
@@ -4927,7 +4926,10 @@ static bool mymemwrite1(REsil *esil, ut64 addr, const ut8 *buf, int len) {
 }
 
 static bool mymemwrite2(REsil *esil, ut64 addr, const ut8 *buf, int len) {
-	return (addr >= emustack_min && addr < emustack_max);
+	RDisasmState *ds = esil->cb.user;
+	const ut64 min = ds->emustack_min;
+	const ut64 max = ds->emustack_max;
+	return (addr >= min && addr < max);
 }
 
 static char *ssa_get(REsil *esil, const char *reg) {
