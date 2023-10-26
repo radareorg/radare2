@@ -4601,42 +4601,60 @@ static void cmd_afsv(RCore *core, ut64 pcv, int mode) {
 	RList *list = r_core_get_func_args (core, fcn_name);
 	if (!r_list_empty (list)) {
 		bool on_stack = false;
+		if (pj) {
+			pj_kn (pj, "argc", nargs);
+			pj_ka (pj, "argv");
+		}
 		r_list_foreach (list, iter, arg) {
 			if (arg->cc_source && r_str_startswith (arg->cc_source, "stack")) {
 				on_stack = true;
 			}
-#if 0
-			if (arg->size) {
-				r_strbuf_appendf (sb, "int: ");
-			} else {
-				r_strbuf_appendf (sb, "%s: ", arg->c_type);
-			}
-#endif
 			nextele = r_list_iter_get_next (iter);
-			if (!arg->fmt) {
-				if (asmtypes > 1) {
-#if 0
-					if (warning) {
-						r_strbuf_append (sb, "_format");
-					} else {
-						r_strbuf_appendf (sb, "%s : unk_format", arg->c_type);
-					}
-#endif
-					r_strbuf_append (sb, "NULL"); // arg->c_type);
-				} else {
-					r_strbuf_append (sb, "?");
+			if (pj) {
+				pj_o (pj);
+				ut64 v = arg->src;
+				pj_kn (pj, "num", v);
+				const RList *list = r_flag_get_list (core->flags, v);
+				RFlagItem *item = r_list_last (list);
+				if (item) {
+					pj_ks (pj, "name", item->name);
 				}
+				char *s = print_fcn_arg (core, arg->orig_c_type, arg->name, arg->fmt, arg->src, on_stack, asmtypes);
+				// char *s = r_core_cmd_strf (core, "ps0 @ 0x%08"PFMT64x, v); r_str_trim (s);
+				if (R_STR_ISNOTEMPTY (s)) {
+					pj_ks (pj, "str", s);
+				}
+				free (s);
+				pj_end (pj);
 			} else {
-				// TODO: may need ds_comment_esil
-				char *argstr = print_fcn_arg (core, arg->orig_c_type, arg->name, arg->fmt, arg->src, on_stack, asmtypes);
-				if (R_STR_ISNOTEMPTY (argstr)) {
-					r_strbuf_append (sb, argstr);
+				if (!arg->fmt) {
+					if (asmtypes > 1) {
+#if 0
+						if (warning) {
+							r_strbuf_append (sb, "_format");
+						} else {
+							r_strbuf_appendf (sb, "%s : unk_format", arg->c_type);
+						}
+#endif
+						r_strbuf_append (sb, "NULL"); // arg->c_type);
+					} else {
+						r_strbuf_append (sb, "?");
+					}
 				} else {
-					r_strbuf_appendf (sb, "(%s)", arg->fmt);
+					// TODO: may need ds_comment_esil
+					char *argstr = print_fcn_arg (core, arg->orig_c_type, arg->name, arg->fmt, arg->src, on_stack, asmtypes);
+					if (R_STR_ISNOTEMPTY (argstr)) {
+						r_strbuf_append (sb, argstr);
+					} else {
+						r_strbuf_appendf (sb, "(%s)", arg->fmt);
+					}
+					free (argstr);
 				}
-				free (argstr);
+				r_strbuf_append (sb, nextele?", ":")");
 			}
-			r_strbuf_append (sb, nextele?", ":")");
+		}
+		if (pj) {
+			pj_end (pj);
 		}
 		r_list_free (list);
 		free (key);
@@ -4662,15 +4680,31 @@ static void cmd_afsv(RCore *core, ut64 pcv, int mode) {
 		for (i = 0; i < nargs; i++) {
 			ut64 v = r_debug_arg_get (core->dbg, cc, i);
 			if (pj) {
-				pj_n (pj, v);
+				// TODO: show value (string, flag if any in that address)
+				pj_o (pj);
+				pj_kn (pj, "num", v);
+				const RList *list = r_flag_get_list (core->flags, v);
+				if (list) {
+					RFlagItem *item = r_list_last (list);
+					if (item) {
+						pj_ks (pj, "name", item->name);
+					}
+				}
+				char *s = r_core_cmd_strf (core, "ps0 @ 0x%08"PFMT64x, v);
+				r_str_trim (s);
+				if (R_STR_ISNOTEMPTY (s) && !strstr (s, "\\xff")) {
+					pj_ks (pj, "str", s);
+				}
+				free (s);
+				pj_end (pj);
 			} else {
 				if (i > 0) {
 					r_strbuf_append (sb, ", ");
 				}
 				if (v == UT64_MAX || v == UT32_MAX) {
-					r_strbuf_appendf (sb, "-1");
+					r_strbuf_append (sb, "-1");
 				} else if (v == 0) {
-					r_strbuf_appendf (sb, "NULL");
+					r_strbuf_append (sb, "NULL");
 				} else {
 					r_strbuf_appendf (sb, "0x%"PFMT64x, v);
 				}
