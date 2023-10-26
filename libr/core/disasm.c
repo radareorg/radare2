@@ -5338,7 +5338,7 @@ static void ds_comment_call(RDisasmState *ds) {
 		}
 	}
 	if (fcn_name) {
-		key = resolve_fcn_name (core->anal, fcn_name);
+		key = r_type_func_name (core->anal->sdb_types, fcn_name);
 	}
 	int nargs = DEFAULT_NARGS;
 	if (key) {

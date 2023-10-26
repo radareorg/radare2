@@ -3729,7 +3729,7 @@ static void cmd_anal_fcn_sig(RCore *core, const char *input) {
 			return;
 		}
 		pj_a (j);
-		char *key = (fcn_name)? resolve_fcn_name (core->anal, fcn_name): NULL;
+		char *key = fcn_name? r_type_func_name (core->anal->sdb_types, fcn_name): NULL;
 		if (key) {
 			const char *fcn_type = r_type_func_ret (core->anal->sdb_types, key);
 			int nargs = r_type_func_args_count (core->anal->sdb_types, key);
@@ -4571,7 +4571,7 @@ static void cmd_afsv(RCore *core, ut64 pcv, int mode) {
 			fcn_name = item->name;
 		}
 	}
-	char *key = fcn_name? resolve_fcn_name (core->anal, fcn_name): NULL;
+	char *key = fcn_name? r_type_func_name (core->anal->sdb_types, fcn_name): NULL;
 	RStrBuf *sb = r_strbuf_new ("");
 	int nargs = DEFAULT_NARGS;
 	if (pj) {
@@ -5278,7 +5278,7 @@ static int cmd_af(RCore *core, const char *input) {
 			ut64 addr = core->offset;
 			const char *arg = r_str_trim_head_ro (input + 2);
 			RAnalFunction *f = r_anal_get_fcn_in (core->anal, addr, R_ANAL_FCN_TYPE_NULL);
-			if (!f) { 
+			if (!f) {
 				R_LOG_ERROR ("No function defined at 0x%08" PFMT64x, addr);
 				break;
 			}
@@ -7508,7 +7508,7 @@ static void r_anal_aefa(RCore *core, const char *arg) {
 #if 0
 	// get results
 	const char *fcn_type = r_type_func_ret (core->anal->sdb_types, fcn->name);
-	const char *key = resolve_fcn_name (core->anal, fcn->name);
+	const char *key = r_type_func_name (core->anal->sdb_types, fcn->name);
 	RList *list = r_core_get_func_args (core, key);
 	if (!r_list_empty (list)) {
 		eprintf ("HAS signature\n");
@@ -14130,7 +14130,7 @@ static void cmd_anal_aC(RCore *core, const char *input) {
 				fcn_name = item->name;
 			}
 		}
-		char *key = (fcn_name)? resolve_fcn_name (core->anal, fcn_name): NULL;
+		char *key = fcn_name? r_type_func_name (core->anal->sdb_types, fcn_name): NULL;
 		if (key) {
 			const char *fcn_type = r_type_func_ret (core->anal->sdb_types, key);
 			int nargs = r_type_func_args_count (core->anal->sdb_types, key);
