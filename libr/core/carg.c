@@ -27,11 +27,6 @@ static void set_fcn_args_info(RAnalFuncArg *arg, RAnal *anal, const char *fcn_na
 	arg->cc_source = r_anal_cc_arg (anal, cc, arg_num, -1);
 }
 
-// R2_590 - deprecate
-R_API char *resolve_fcn_name(RAnal *anal, const char *fname) {
-	return r_type_func_name (anal->sdb_types, fname);
-}
-
 static ut64 get_buf_val(ut8 *buf, int endian, int width) {
 	return (width == 8)? r_read_ble64 (buf, endian) : (ut64) r_read_ble32 (buf,endian);
 }
@@ -208,7 +203,7 @@ R_API RList *r_core_get_func_args(RCore *core, const char *fcn_name) {
 		return NULL;
 	}
 	Sdb *TDB = core->anal->sdb_types;
-	char *key = resolve_fcn_name (core->anal, fcn_name);
+	char *key = r_type_func_name (core->anal->sdb_types, fcn_name);
 	if (!key) {
 		return NULL;
 	}
