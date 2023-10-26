@@ -5171,6 +5171,27 @@ static int cmd_af(RCore *core, const char *input) {
 		break;
 	case 's': // "afs"
 		switch (input[2]) {
+		case '-': // "afs-"
+			if (input[3]) {
+				if (input[3] == '?') {
+					R_LOG_ERROR ("Usage: afs-[fcn_name]");
+				} else {
+					if (!r_anal_function_del_signature (core->anal, input + 3)) {
+						R_LOG_ERROR ("Cannot find signature for '%s'", input + 3);
+					}
+				}
+			} else {
+				RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, -1);
+				if (fcn) {
+					if (!r_anal_function_del_signature (core->anal, input + 3)) {
+						R_LOG_ERROR ("Cannot find signature for '%s'", input + 3);
+					}
+				} else {
+					// TODO: use flag or symbol/import name in curseek
+					R_LOG_ERROR ("Usage: afs-[fcn_name]");
+				}
+			}
+			break;
 		case '!': { // "afs!"
 			char *sig = r_core_cmd_str (core, "afs");
 			char *data = r_core_editor (core, NULL, sig);
