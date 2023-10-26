@@ -725,7 +725,8 @@ R_API char *r_type_func_name(Sdb *types, const char *fname) {
 		return strdup (fname);
 	}
 	while ((str = strchr (str, '.'))) {
-		name = ++str;
+		str++;
+		name = str;
 	}
 	if (r_type_func_exist (types, name)) {
 		return strdup (name);
