@@ -14146,15 +14146,18 @@ static void cmd_anal_aC(RCore *core, const char *input) {
 					r_strbuf_appendf (sb, "?%s", nextele? ", ": "");
 				} else {
 					char *argstr = print_fcn_arg (core, arg->orig_c_type, arg->name, arg->fmt, arg->src, on_stack, 0);
-					r_strbuf_appendf (sb, "%s", argstr);
+					if (R_STR_ISNOTEMPTY (argstr)) {
+						r_strbuf_appendf (sb, "%s", argstr);
+					} else {
+						// const char *fmt = arg->orig_c_type;
+						ut64 addr = arg->src;
+						char *res = r_core_cmd_strf (core, "pfq %s @ 0x%08" PFMT64x, arg->fmt, addr);
+						// r_cons_printf ("pfq *%s @ 0x%08" PFMT64x"\n", arg->fmt, addr);
+						r_str_trim (res);
+						r_strbuf_appendf (sb, "%s", res);
+						free (res);
+					}
 					free (argstr);
-					// const char *fmt = arg->orig_c_type;
-					ut64 addr = arg->src;
-					char *res = r_core_cmd_strf (core, "pfq %s @ 0x%08" PFMT64x, arg->fmt, addr);
-					// r_cons_printf ("pfq *%s @ 0x%08" PFMT64x"\n", arg->fmt, addr);
-					r_str_trim (res);
-					r_strbuf_appendf (sb, "%s", res);
-					free (res);
 				}
 			}
 			r_strbuf_append (sb, ")");
