@@ -1705,7 +1705,8 @@ R_API int r_anal_function(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, 
 	return ret;
 }
 
-// XXX deprecate
+#if 0
+// XXX R2_590 - deprecate
 R_API int r_anal_function_del_locs(RAnal *anal, ut64 addr) {
 	RListIter *iter, *iter2;
 	RAnalFunction *fcn, *f = r_anal_get_fcn_in (anal, addr, R_ANAL_FCN_TYPE_ROOT);
@@ -1724,6 +1725,7 @@ R_API int r_anal_function_del_locs(RAnal *anal, ut64 addr) {
 	r_anal_function_del (anal, addr);
 	return true;
 }
+#endif
 
 R_API int r_anal_function_del(RAnal *a, ut64 addr) {
 	RAnalFunction *fcn = r_anal_get_function_at (a, addr);
@@ -1966,6 +1968,31 @@ R_API char *r_anal_function_get_json(RAnalFunction *function) {
 	return pj_drain (pj);
 }
 
+R_API bool r_anal_function_del_signature(RAnal *a, const char *name) {
+	Sdb *db = a->sdb_types;
+	const char *s = sdb_const_get (db, name, 0);
+	if (!s || strcmp (s, "func")) {
+		return false;
+	}
+	char *sdb_ret = r_str_newf ("func.%s.ret", name);
+	char *sdb_args = r_str_newf ("func.%s.args", name);
+	int argc = sdb_num_get (db, sdb_args, 0);
+
+	sdb_unset (db, sdb_ret, 0);
+	sdb_unset (db, sdb_args, 0);
+	int i;
+	for (i = 0; i < argc; i++) {
+		char *s = r_str_newf ("func.%s.arg.%d", name, i);
+		sdb_unset (db, s, 0);
+		free (s);
+	}
+	sdb_unset (db, name, 0);
+	free (sdb_ret);
+	free (sdb_args);
+	return true;
+}
+
+// MOVE To function.c
 R_API char *r_anal_function_get_signature(RAnalFunction *function) {
 	RAnal *a = function->anal;
 	const char *realname = NULL, *import_substring = NULL;

@@ -560,9 +560,9 @@ static RCoreHelpMessage help_msg_af = {
 	"afna", "", "suggest automatic name for current offset",
 	"afo", "[?j] [fcn.name]", "show address for the function name or current offset",
 	"afr", " ([name]) ([addr])", "analyze functions recursively",
-	"afs", "[!] ([fcnsign])", "get/set function signature at current address (afs! uses cfg.editor)",
+	"afs", "[?] ([fcnsign])", "get/set function signature at current address (afs! uses cfg.editor)",
 	"afS", "[stack_size]", "set stack frame size for function at current address",
-	"afsr", " [function_name] [new_type]", "change type for given function",
+//	"afsr", " [function_name] [new_type]", "change type for given function",
 	"aft", "[?]", "type matching, type propagation",
 	"afu", " addr", "resize and analyze function from current address until addr",
 	"afv[absrx]", "?", "manipulate args, registers and variables in function",
@@ -13443,6 +13443,7 @@ static void cmd_avg(RCore *core, const char* input) {
 		break;
 	}
 }
+
 static void cmd_anal_virtual_functions(RCore *core, const char* input) {
 	switch (input[0]) {
 	case 'g':
@@ -13619,7 +13620,7 @@ static void cmd_anal_class_vtable(RCore *core, const char *input) {
 	RAnalClassErr err = R_ANAL_CLASS_ERR_SUCCESS;
 	char c = input[0];
 	switch (c) {
-	case 'f': {// "acvf" [offset] ([class_name])
+	case 'f': { // "acvf" [offset] ([class_name])
 		const char *str = r_str_trim_head_ro (input + 1);
 		if (!*str) {
 			R_LOG_ERROR ("No offset given");

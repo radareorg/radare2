@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2022 - pancake */
+/* radare - LGPL - Copyright 2009-2023 - pancake */
 
 #include <r_core.h>
 
@@ -67,7 +67,7 @@ static void print_format_values(RCore *core, const char *fmt, bool onstack, ut64
 
 	ut8 *buf = malloc (bsize);
 	if (!buf) {
-		eprintf ("Cannot allocate %d byte(s)\n", bsize);
+		R_LOG_ERROR ("Cannot allocate %d byte(s)", bsize);
 		free (buf);
 		return;
 	}
