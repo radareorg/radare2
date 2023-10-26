@@ -320,8 +320,8 @@ typedef struct r_disasm_state_t {
 	RFlagItem sfi;
 	char *hint_syntax;
 	// ugly ones but at least not globals
-	ut64 emustack_min = 0LL;
-	ut64 emustack_max = 0LL;
+	ut64 emustack_min;
+	ut64 emustack_max;
 } RDisasmState;
 
 static void ds_setup_print_pre(RDisasmState *ds, bool tail, bool middle);
@@ -5305,10 +5305,10 @@ static void mipsTweak(RDisasmState *ds) {
 	}
 }
 
+// dupe from `afsv` - avoid code duplication
 static void ds_comment_call(RDisasmState *ds) {
 	RCore *core = ds->core;
 	REsil *esil = core->anal->esil;
-	RAnalFunction *fcn;
 	RAnalFuncArg *arg;
 	RListIter *iter;
 	RListIter *nextele;
@@ -5328,7 +5328,7 @@ static void ds_comment_call(RDisasmState *ds) {
 			}
 		}
 	}
-	fcn = r_anal_get_function_at (core->anal, pcv);
+	RAnalFunction *fcn = r_anal_get_function_at (core->anal, pcv);
 	if (fcn) {
 		fcn_name = fcn->name;
 	} else {
@@ -5340,7 +5340,7 @@ static void ds_comment_call(RDisasmState *ds) {
 	if (fcn_name) {
 		key = resolve_fcn_name (core->anal, fcn_name);
 	}
-	int i, nargs = DEFAULT_NARGS;
+	int nargs = DEFAULT_NARGS;
 	if (key) {
 		if (ds->asm_types < 1) {
 			free (key);
@@ -5420,6 +5420,7 @@ static void ds_comment_call(RDisasmState *ds) {
 			ds_comment_middle (ds, "%s 0x%"PFMT64x"(", ds->cmtoken, pcv);
 		}
 		const char *cc = r_anal_syscc_default (core->anal);
+		int i;
 		for (i = 0; i < nargs; i++) {
 			ut64 v = r_debug_arg_get (core->dbg, cc, i);
 			if (v == UT64_MAX || v == UT32_MAX) {

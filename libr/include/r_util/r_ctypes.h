@@ -1,6 +1,8 @@
 #ifndef R_CTYPES_H
 #define R_CTYPES_H
 
+// TODO R2_590 - rename to r_util/r_type.h
+
 #ifdef __cplusplus
 extern "C" {
 #endif

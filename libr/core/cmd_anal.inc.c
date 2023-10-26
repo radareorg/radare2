@@ -692,10 +692,12 @@ static RCoreHelpMessage help_msg_afn = {
 
 static RCoreHelpMessage help_msg_afs = {
 	"Usage:", "afs[r]", " Analyze function signatures",
-	"afs", "[!] ([fcnsign])", "get/set function signature at current address (afs! uses cfg.editor)",
+	"afs", " ([fcnsign])", "get/set function signature at current address (afs! uses cfg.editor)",
+	"afs!", "", "edit current function signature with cfg.editor",
 	"afs*", " ([signame])", "get function signature in flags",
 	"afsj", " ([signame])", "get function signature in JSON",
 	"afsr", " [function_name] [new_type]", "change type for given function",
+	"afsv", "", "print function signature filling the values from current reg and stack state",
 	NULL
 };
 
@@ -4514,6 +4516,167 @@ static void cmd_afix(RCore *core, const char *input) {
 	}
 }
 
+#define DEFAULT_NARGS 4
+static char *print_fcn_arg(RCore *core, const char *type, const char *name, const char *fmt, const ut64 addr, const int on_stack, int asm_types) {
+	if (*type && on_stack == 1 && asm_types > 1) {
+		return strdup (type);
+	}
+	char *argstr = NULL;
+	if (addr != UT32_MAX && addr != UT64_MAX  && addr != 0) {
+		char *res = r_core_cmd_strf (core, "pfq %s%s %s @ 0x%08" PFMT64x,
+			(on_stack == 1) ? "*" : "", fmt, name, addr);
+		r_str_trim (res);
+		if (r_str_startswith (res, "\"\\xff\\xff")) {
+			argstr = strdup ("\"\"");
+			free (res);
+		} else {
+			argstr = res;
+		}
+	} else {
+		if (strchr (type, '*')) {
+			argstr = strdup ("(void*)-1");
+		} else {
+			argstr = strdup ("-1");
+		}
+	}
+	return argstr;
+}
+
+static void cmd_afsv(RCore *core, ut64 pcv) {
+	int asmtypes = 2;
+	RAnalFuncArg *arg;
+	RListIter *iter;
+	RListIter *nextele;
+	const char *fcn_name = NULL;
+	RAnalOp *aop = r_core_anal_op (core, pcv, 0);
+	switch (aop->type) {
+	case R_ANAL_OP_TYPE_JMP:
+	case R_ANAL_OP_TYPE_CALL:
+		pcv = aop->jump;
+		break;
+	// TODO: support UCALL [read dword] // ds->analop.ptr; // windows style
+	}
+	r_anal_op_free (aop);
+	RAnalFunction *fcn = r_anal_get_function_at (core->anal, pcv);
+	if (fcn) {
+		fcn_name = fcn->name;
+	} else {
+		RFlagItem *item = r_flag_get_i (core->flags, pcv);
+		if (item) {
+			fcn_name = item->name;
+		}
+	}
+	char *key = NULL;
+	if (fcn_name) {
+		key = resolve_fcn_name (core->anal, fcn_name);
+	}
+	RStrBuf *sb = r_strbuf_new ("");
+	int nargs = DEFAULT_NARGS;
+	if (key) {
+		const char *fcn_type = r_type_func_ret (core->anal->sdb_types, key);
+		nargs = r_type_func_args_count (core->anal->sdb_types, key);
+		if (fcn_type) {
+#if 0
+			r_strbuf_appendf (sb, "%s%s%s(", r_str_getf (fcn_type),
+					(*fcn_type && fcn_type[strlen (fcn_type) - 1] == '*') ? "" : " ",
+					r_str_getf (key));
+#endif
+			r_strbuf_appendf (sb, "%s(", r_str_getf (key));
+			if (!nargs) {
+				r_strbuf_append (sb, "void)");
+				free (key);
+				char *s = r_strbuf_drain (sb);
+				r_cons_printf ("%s\n", s);
+				free (s);
+				return;
+			}
+		}
+	}
+	int s_width = (core->anal->config->bits == 64)? 8: 4;
+	const char *sp = r_reg_get_name (core->anal->reg, R_REG_NAME_SP);
+	ut64 spv = r_reg_getv (core->anal->reg, sp);
+	r_reg_setv (core->anal->reg, sp, spv + s_width); // temporarily set stack ptr to sync with carg.c
+	RList *list = r_core_get_func_args (core, fcn_name);
+	if (!r_list_empty (list)) {
+		bool on_stack = false;
+		r_list_foreach (list, iter, arg) {
+			if (arg->cc_source && r_str_startswith (arg->cc_source, "stack")) {
+				on_stack = true;
+			}
+#if 0
+			if (arg->size) {
+				r_strbuf_appendf (sb, "int: ");
+			} else {
+				r_strbuf_appendf (sb, "%s: ", arg->c_type);
+			}
+#endif
+			nextele = r_list_iter_get_next (iter);
+			if (!arg->fmt) {
+				if (asmtypes > 1) {
+#if 0
+					if (warning) {
+						r_strbuf_append (sb, "_format");
+					} else {
+						r_strbuf_appendf (sb, "%s : unk_format", arg->c_type);
+					}
+#endif
+					r_strbuf_append (sb, "NULL"); // arg->c_type);
+				} else {
+					r_strbuf_append (sb, "?");
+				}
+			} else {
+				// TODO: may need ds_comment_esil
+				char *argstr = print_fcn_arg (core, arg->orig_c_type, arg->name, arg->fmt, arg->src, on_stack, asmtypes);
+				if (R_STR_ISNOTEMPTY (argstr)) {
+					r_strbuf_append (sb, argstr);
+				} else {
+					r_strbuf_appendf (sb, "(%s)", arg->fmt);
+				}
+				free (argstr);
+			}
+			r_strbuf_append (sb, nextele?", ":")");
+		}
+		r_list_free (list);
+		free (key);
+		char *s = r_strbuf_drain (sb);
+		r_cons_printf ("%s\n", s);
+		free (s);
+		return;
+	}
+	r_list_free (list);
+	if (fcn) {
+		// @TODO: fcn->nargs should be updated somewhere and used here instead
+		nargs = r_anal_var_count_args (fcn);
+	}
+	if (nargs > 0) {
+		if (fcn_name) {
+			r_strbuf_appendf (sb, "%s(", fcn_name);
+		} else {
+			r_strbuf_appendf (sb, "0x%"PFMT64x"(", pcv);
+		}
+		const char *cc = r_anal_syscc_default (core->anal);
+		int i;
+		for (i = 0; i < nargs; i++) {
+			ut64 v = r_debug_arg_get (core->dbg, cc, i);
+			if (i > 0) {
+				r_strbuf_append (sb, ", ");
+			}
+			if (v == UT64_MAX || v == UT32_MAX) {
+				r_strbuf_appendf (sb, "-1");
+			} else if (v == 0) {
+				r_strbuf_appendf (sb, "NULL");
+			} else {
+				r_strbuf_appendf (sb, "0x%"PFMT64x, v);
+			}
+		}
+		r_strbuf_append (sb, ")");
+	}
+	r_reg_setv (core->anal->reg, sp, spv); // reset stack ptr
+	char *s = r_strbuf_drain (sb);
+	r_cons_printf ("%s\n", s);
+	free (s);
+}
+
 static int cmd_af(RCore *core, const char *input) {
 	r_cons_break_timeout (r_config_get_i (core->config, "anal.timeout"));
 	switch (input[1]) {
@@ -5042,42 +5205,52 @@ static int cmd_af(RCore *core, const char *input) {
 		case 0:
 		case ' ': { // "afs"
 			ut64 addr = core->offset;
-			RAnalFunction *f;
 			const char *arg = r_str_trim_head_ro (input + 2);
-			if ((f = r_anal_get_fcn_in (core->anal, addr, R_ANAL_FCN_TYPE_NULL))) {
-				if (R_STR_ISNOTEMPTY (arg)) {
-					// parse function signature here
-					char *fcnstr = r_str_newf ("%s;", arg), *fcnstr_copy = strdup (fcnstr);
-					char *save_ptr = NULL;
-					char *fcnname_aux = r_str_tok_r (fcnstr_copy, "(", &save_ptr);
-					r_str_trim_tail (fcnname_aux);
-					const char *ls = r_str_lchr (fcnname_aux, ' ');
-					char *fcnname = strdup (ls? ls: fcnname_aux);
-					if (fcnname) {
-						// TODO: move this into r_anal_str_to_fcn()
-						if (strcmp (f->name, fcnname)) {
-							(void)__setFunctionName (core, addr, fcnname, false);
-							f = r_anal_get_fcn_in (core->anal, addr, -1);
-						}
-						r_anal_str_to_fcn (core->anal, f, fcnstr);
-					}
-					free (fcnname);
-					free (fcnstr_copy);
-					free (fcnstr);
-				} else {
-					char *str = r_anal_function_get_signature (f);
-					if (str) {
-						r_cons_println (str);
-						free (str);
-					}
-				}
-			} else {
+			RAnalFunction *f = r_anal_get_fcn_in (core->anal, addr, R_ANAL_FCN_TYPE_NULL);
+			if (!f) { 
 				R_LOG_ERROR ("No function defined at 0x%08" PFMT64x, addr);
+				break;
+			}
+			if (R_STR_ISNOTEMPTY (arg)) {
+				// parse function signature here
+				char *fcnstr = r_str_newf ("%s;", arg), *fcnstr_copy = strdup (fcnstr);
+				char *save_ptr = NULL;
+				char *fcnname_aux = r_str_tok_r (fcnstr_copy, "(", &save_ptr);
+				r_str_trim_tail (fcnname_aux);
+				const char *ls = r_str_lchr (fcnname_aux, ' ');
+				char *fcnname = strdup (ls? ls: fcnname_aux);
+				if (fcnname) {
+					// TODO: move this into r_anal_str_to_fcn()
+					if (strcmp (f->name, fcnname)) {
+						(void)__setFunctionName (core, addr, fcnname, false);
+						f = r_anal_get_fcn_in (core->anal, addr, -1);
+					}
+					r_anal_str_to_fcn (core->anal, f, fcnstr);
+				}
+				free (fcnname);
+				free (fcnstr_copy);
+				free (fcnstr);
+			} else {
+				char *str = r_anal_function_get_signature (f);
+				if (str) {
+					r_cons_println (str);
+					free (str);
+				}
 			}
 			break;
 		}
+		case 'v': // "afsv"
+			if (strchr (input, '?')) {
+				r_core_cmd_help_match (core, help_msg_af, "afsv", true);
+			} else {
+				ut64 pc = core->offset;
+				if (input[3] == ' ') {
+					pc = r_num_math (core->num, input + 3);
+				}
+				cmd_afsv (core, pc);
+			}
+			break;
 		default:
-		// case '?': // "afs?"
 			r_core_cmd_help (core, help_msg_afs);
 			break;
 		}
@@ -6915,7 +7088,6 @@ static void showregs_json(RList *list, PJ *pj) {
 	if (!r_list_empty (list)) {
 		char *reg;
 		RListIter *iter;
-
 		r_list_foreach (list, iter, reg) {
 			pj_s (pj, reg);
 		}
@@ -12798,7 +12970,11 @@ R_API int r_core_anal_all(RCore *core) {
 				break;
 			}
 			r_core_recover_vars (core, fcni, true);
-			if (!strncmp (fcni->name, "dbg.", 4) || !strncmp (fcni->name, "rsym.", 4) || !strncmp (fcni->name, "sym.", 4) || !strncmp (fcni->name, "main", 4)) {
+			const char *fname = fcni->name;
+			if (r_str_startswith (fname, "dbg.")
+			||  r_str_startswith (fname, "rsym.")
+			||  r_str_startswith (fname, "sym.")
+			||  r_str_startswith (fname, "main")) {
 				fcni->type = R_ANAL_FCN_TYPE_SYM;
 			}
 		}
@@ -13690,23 +13866,18 @@ static void cmd_anal_class_vtable(RCore *core, const char *input) {
 			*end = '\0';
 		}
 
-		RAnalVTable vtable;
-		vtable.id = NULL;
+		RAnalVTable vtable = {0};
 		vtable.addr = r_num_get (core->num, arg1_str);
-		vtable.offset = 0;
-		vtable.size = 0;
 
 		char *arg3_str = NULL;
 		if (end) {
 			vtable.offset = r_num_get (core->num, end + 1);
 			// end + 1 won't work on extra whitespace between arguments, TODO
 			arg3_str = strchr (end + 1, ' ');
+			if (arg3_str) {
+				vtable.size = r_num_get (core->num, arg3_str + 1);
+			}
 		}
-
-		if (arg3_str) {
-			vtable.size = r_num_get (core->num, arg3_str + 1);
-		}
-
 		err = r_anal_class_vtable_set (core->anal, cstr, &vtable);
 		free (vtable.id);
 		free (cstr);
@@ -13909,30 +14080,31 @@ static void cmd_anal_aC(RCore *core, const char *input) {
 		}
 	}
 	if (go_on) {
-		ut64 s_width = (core->anal->config->bits == 64)? 8: 4;
+		int s_width = (core->anal->config->bits == 64)? 8: 4;
 		const char *sp = r_reg_get_name (core->anal->reg, R_REG_NAME_SP);
 		ut64 spv = r_reg_getv (core->anal->reg, sp);
 		r_reg_setv (core->anal->reg, sp, spv + s_width); // temporarily set stack ptr to sync with carg.c
 		RList *list = r_core_get_func_args (core, fcn_name);
 		if (!r_list_empty (list)) {
-	#if 0
-			bool warning = false;
+	#if 1
 			bool on_stack = false;
 			r_list_foreach (list, iter, arg) {
 				if (r_str_startswith (arg->cc_source, "stack")) {
 					on_stack = true;
 				}
 				if (!arg->size) {
-					r_cons_printf ("%s: unk_size", arg->c_type);
-					warning = true;
+					r_strbuf_appendf (sb, "%s: unk_size", arg->c_type);
 				}
+			}
 	#endif
 			r_list_foreach (list, iter, arg) {
 				nextele = r_list_iter_get_next (iter);
 				if (!arg->fmt) {
 					r_strbuf_appendf (sb, "?%s", nextele? ", ": "");
 				} else {
-					// print_fcn_arg (core, arg->orig_c_type, arg->name, arg->fmt, arg->src, on_stack, 0);
+					char *argstr = print_fcn_arg (core, arg->orig_c_type, arg->name, arg->fmt, arg->src, on_stack, 0);
+					r_strbuf_appendf (sb, "%s", argstr);
+					free (argstr);
 					// const char *fmt = arg->orig_c_type;
 					ut64 addr = arg->src;
 					char *res = r_core_cmd_strf (core, "pfq %s @ 0x%08" PFMT64x, arg->fmt, addr);
@@ -13945,7 +14117,7 @@ static void cmd_anal_aC(RCore *core, const char *input) {
 			r_strbuf_append (sb, ")");
 		} else {
 			// function name not resolved
-			int i, nargs = 4; // DEFAULT_NARGS;
+			int i, nargs = DEFAULT_NARGS;
 			if (fcn) {
 				// @TODO: fcn->nargs should be updated somewhere and used here instead
 				nargs = r_anal_var_count_args (fcn);
@@ -14001,14 +14173,13 @@ static bool core_anal_abf(RCore *core, const char* input) {
 		}
 		r_list_foreach (bb->fcns, iter, fcn) {
 			r_list_foreach (fcn->bbs, iter2, bb2) {
-				if (bb == bb2) {
-					continue;
-				}
-				if (bb2->jump != UT64_MAX && bb2->jump == bb->addr) {
-					r_cons_printf ("0x%"PFMT64x"\n", bb2->addr);
-				}
-				if (bb2->fail != UT64_MAX && bb2->fail == bb->addr) {
-					r_cons_printf ("0x%"PFMT64x"\n", bb2->addr);
+				if (bb != bb2) {
+					if (bb2->jump != UT64_MAX && bb2->jump == bb->addr) {
+						r_cons_printf ("0x%"PFMT64x"\n", bb2->addr);
+					}
+					if (bb2->fail != UT64_MAX && bb2->fail == bb->addr) {
+						r_cons_printf ("0x%"PFMT64x"\n", bb2->addr);
+					}
 				}
 			}
 			break;
