@@ -37,6 +37,32 @@ typedef struct {
 	MetaSection catlist;
 } MetaSections;
 
+typedef struct {
+	RBinFile *bf;
+	RBinClass *klass;
+} PropertyListOfListsCtx;
+
+typedef struct {
+	RBinFile *bf;
+	const char *class_name;
+	RBinClass *klass;
+	bool is_static;
+	objc_cache_opt_info *oi;
+} MethodListOfListsCtx;
+
+typedef struct {
+	RBinFile *bf;
+	RBinClass *klass;
+	objc_cache_opt_info *oi;
+} ProtocolListOfListsCtx;
+
+typedef struct {
+	ut64 image_index: 16;
+	st64 list_offset: 48;
+} ListOfListsEntry;
+
+typedef void (* OnList)(mach0_ut p, void * ctx);
+
 static bool adjust_bounds(RBinFile *bf, MetaSection *ms, const char *sname) {
 	if (ms->addr >= bf->size || ms->size >= bf->size) {
 		R_LOG_DEBUG ("Dropping swift5.%s section because oob", sname);
@@ -179,6 +205,9 @@ static void get_ivar_list(RBinFile *bf, RBinClass *klass, mach0_ut p);
 static void get_objc_property_list(RBinFile *bf, RBinClass *klass, mach0_ut p);
 static void get_method_list(RBinFile *bf, const char *class_name, RBinClass *klass, bool is_static, objc_cache_opt_info *oi, mach0_ut p);
 static void get_protocol_list(RBinFile *bf, RBinClass *klass, objc_cache_opt_info *oi, mach0_ut p);
+static void get_objc_property_list_of_lists(RBinFile *bf, RBinClass *klass, mach0_ut p);
+static void get_method_list_of_lists(RBinFile *bf, const char *class_name, RBinClass *klass, bool is_static, objc_cache_opt_info *oi, mach0_ut p);
+static void get_protocol_list_of_lists(RBinFile *bf, RBinClass *klass, objc_cache_opt_info *oi, mach0_ut p);
 static void get_class_ro_t(RBinFile *bf, bool *is_meta_class, RBinClass *klass, objc_cache_opt_info *oi, mach0_ut p);
 static RList *MACH0_(parse_categories)(RBinFile *bf, MetaSections *ms, const RSkipList *relocs, objc_cache_opt_info *oi);
 static bool read_ptr_pa(RBinFile *bf, ut64 paddr, mach0_ut *out);
@@ -590,6 +619,83 @@ error:
 	return;
 }
 
+///////////////////////////////////////////////////////////////////////////////
+static void iterate_list_of_lists(RBinFile *bf, OnList cb, void * ctx, mach0_ut p) {
+	if (!bf || !bf->bo || !bf->bo->bin_obj || !bf->bo->info) {
+		R_LOG_WARN ("incorrect RBinFile pointer");
+		return;
+	}
+
+	bool bigendian = bf->bo->info->big_endian;
+	ut32 offset, left;
+	mach0_ut r = va2pa (p, &offset, &left, bf);
+	if (!r) {
+		return;
+	}
+
+	ut32 entsize, count;
+	ut8 tmp[sizeof (ut32) * 2];
+
+	if (r + left < r || r + sizeof (tmp) < r) {
+		return;
+	}
+	if (r > bf->size) {
+		return;
+	}
+	if (r + sizeof (tmp) > bf->size) {
+		return;
+	}
+	if (left < sizeof (tmp)) {
+		return;
+	}
+
+	if (r_buf_read_at (bf->buf, r, tmp, sizeof (tmp)) != sizeof (tmp)) {
+		return;
+	}
+
+	entsize = r_read_ble (&tmp[0], bigendian, 32);
+	count = r_read_ble (&tmp[4], bigendian, 32);
+	if (count < 1 || count > ST32_MAX) {
+		return;
+	}
+	if (r + count * entsize > bf->size) {
+		return;
+	}
+
+	p += sizeof (tmp);
+
+	int i;
+	for (i = 0; i < count; i++) {
+		r = va2pa (p, &offset, &left, bf);
+		if (!r || r == -1) {
+			return;
+		}
+
+		ListOfListsEntry entry;
+		memset (&entry, '\0', sizeof (entry));
+		if (r + left < r || r + entsize < r) {
+			break;
+		}
+		if (r > bf->size) {
+			break;
+		}
+		if (r + entsize > bf->size) {
+			break;
+		}
+		if (left < entsize) {
+			break;
+		}
+		if (r_buf_read_at (bf->buf, r, (ut8*)&entry, entsize) != entsize) {
+			break;
+		}
+
+		mach0_ut list_address = p + entry.list_offset;
+		cb (list_address, ctx);
+
+		p += entsize;
+	}
+}
+
 // TODO: remove class_name, because it's already in klass->name
 static void get_method_list(RBinFile *bf, const char *class_name, RBinClass *klass, bool is_static, objc_cache_opt_info *oi, mach0_ut p) {
 	struct MACH0_(SMethodList) ml;
@@ -944,6 +1050,55 @@ static void get_protocol_list(RBinFile *bf, RBinClass *klass, objc_cache_opt_inf
 	}
 }
 
+static void on_property_list(mach0_ut p, void * _ctx) {
+	PropertyListOfListsCtx * ctx = _ctx;
+
+	get_objc_property_list (ctx->bf, ctx->klass, p);
+}
+
+static void get_objc_property_list_of_lists(RBinFile *bf, RBinClass *klass, mach0_ut p) {
+	PropertyListOfListsCtx ctx;
+
+	ctx.bf = bf;
+	ctx.klass = klass;
+
+	iterate_list_of_lists (bf, on_property_list, &ctx, p);
+}
+
+static void on_method_list(mach0_ut p, void * _ctx) {
+	MethodListOfListsCtx * ctx = _ctx;
+
+	get_method_list (ctx->bf, ctx->class_name, ctx->klass, ctx->is_static, ctx->oi, p);
+}
+
+static void get_method_list_of_lists(RBinFile *bf, const char *class_name, RBinClass *klass, bool is_static, objc_cache_opt_info *oi, mach0_ut p) {
+	MethodListOfListsCtx ctx;
+
+	ctx.bf = bf;
+	ctx.class_name = class_name;
+	ctx.klass = klass;
+	ctx.is_static = is_static;
+	ctx.oi = oi;
+
+	iterate_list_of_lists (bf, on_method_list, &ctx, p);
+}
+
+static void on_protocol_list(mach0_ut p, void * _ctx) {
+	ProtocolListOfListsCtx * ctx = _ctx;
+
+	get_protocol_list (ctx->bf, ctx->klass, ctx->oi, p);
+}
+
+static void get_protocol_list_of_lists(RBinFile *bf, RBinClass *klass, objc_cache_opt_info *oi, mach0_ut p) {
+	ProtocolListOfListsCtx ctx;
+
+	ctx.bf = bf;
+	ctx.klass = klass;
+	ctx.oi = oi;
+
+	iterate_list_of_lists (bf, on_protocol_list, &ctx, p);
+}
+
 static const char *skipnum(const char *s) {
 	while (IS_DIGIT (*s)) {
 		s++;
@@ -1179,16 +1334,28 @@ static void get_class_ro_t(RBinFile *bf, bool *is_meta_class, RBinClass *klass, 
 #endif
 
 	if (cro.baseMethods > 0) {
-		get_method_list (bf, klass->name, klass, (cro.flags & RO_META) ? true : false, oi, cro.baseMethods);
+		if (cro.baseMethods & 1) {
+			get_method_list_of_lists (bf, klass->name, klass, (cro.flags & RO_META) ? true : false, oi, cro.baseMethods & ~1);
+		} else {
+			get_method_list (bf, klass->name, klass, (cro.flags & RO_META) ? true : false, oi, cro.baseMethods);
+		}
 	}
 	if (cro.baseProtocols > 0) {
-		get_protocol_list (bf, klass, oi, cro.baseProtocols);
+		if (cro.baseProtocols & 1) {
+			get_protocol_list_of_lists (bf, klass, oi, cro.baseProtocols & ~1);
+		} else {
+			get_protocol_list (bf, klass, oi, cro.baseProtocols);
+		}
 	}
 	if (cro.ivars > 0) {
 		get_ivar_list (bf, klass, cro.ivars);
 	}
 	if (cro.baseProperties > 0) {
-		get_objc_property_list (bf, klass, cro.baseProperties);
+		if (cro.baseProperties & 1) {
+			get_objc_property_list_of_lists (bf, klass, cro.baseProperties & ~1);
+		} else {
+			get_objc_property_list (bf, klass, cro.baseProperties);
+		}
 	}
 	if (is_meta_class) {
 		*is_meta_class = (cro.flags & RO_META) != 0;
