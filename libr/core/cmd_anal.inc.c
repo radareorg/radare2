@@ -697,7 +697,7 @@ static RCoreHelpMessage help_msg_afs = {
 	"afs*", " ([signame])", "get function signature in flags",
 	"afsj", " ([signame])", "get function signature in JSON",
 	"afsr", " [function_name] [new_type]", "change type for given function",
-	"afsv", "", "print function signature filling the values from current reg and stack state",
+	"afsv", "[j]", "print function signature filling the values from current reg and stack state",
 	NULL
 };
 
@@ -4542,7 +4542,12 @@ static char *print_fcn_arg(RCore *core, const char *type, const char *name, cons
 	return argstr;
 }
 
-static void cmd_afsv(RCore *core, ut64 pcv) {
+static void cmd_afsv(RCore *core, ut64 pcv, int mode) {
+	PJ *pj = NULL;
+	if (mode == 'j') {
+		pj = r_core_pj_new (core);
+		pj_o (pj);
+	}
 	int asmtypes = 2;
 	RAnalFuncArg *arg;
 	RListIter *iter;
@@ -4566,22 +4571,18 @@ static void cmd_afsv(RCore *core, ut64 pcv) {
 			fcn_name = item->name;
 		}
 	}
-	char *key = NULL;
-	if (fcn_name) {
-		key = resolve_fcn_name (core->anal, fcn_name);
-	}
+	char *key = fcn_name? resolve_fcn_name (core->anal, fcn_name): NULL;
 	RStrBuf *sb = r_strbuf_new ("");
 	int nargs = DEFAULT_NARGS;
+	if (pj) {
+		pj_ks (pj, "fname", key? key: fcn_name);
+	}
 	if (key) {
 		const char *fcn_type = r_type_func_ret (core->anal->sdb_types, key);
 		nargs = r_type_func_args_count (core->anal->sdb_types, key);
 		if (fcn_type) {
-#if 0
-			r_strbuf_appendf (sb, "%s%s%s(", r_str_getf (fcn_type),
-					(*fcn_type && fcn_type[strlen (fcn_type) - 1] == '*') ? "" : " ",
-					r_str_getf (key));
-#endif
 			r_strbuf_appendf (sb, "%s(", r_str_getf (key));
+#if 0
 			if (!nargs) {
 				r_strbuf_append (sb, "void)");
 				free (key);
@@ -4590,6 +4591,7 @@ static void cmd_afsv(RCore *core, ut64 pcv) {
 				free (s);
 				return;
 			}
+#endif
 		}
 	}
 	int s_width = (core->anal->config->bits == 64)? 8: 4;
@@ -4638,10 +4640,7 @@ static void cmd_afsv(RCore *core, ut64 pcv) {
 		}
 		r_list_free (list);
 		free (key);
-		char *s = r_strbuf_drain (sb);
-		r_cons_printf ("%s\n", s);
-		free (s);
-		return;
+		goto fin;
 	}
 	r_list_free (list);
 	if (fcn) {
@@ -4656,23 +4655,40 @@ static void cmd_afsv(RCore *core, ut64 pcv) {
 		}
 		const char *cc = r_anal_syscc_default (core->anal);
 		int i;
+		if (pj) {
+			pj_kn (pj, "argc", nargs);
+			pj_ka (pj, "argv");
+		}
 		for (i = 0; i < nargs; i++) {
 			ut64 v = r_debug_arg_get (core->dbg, cc, i);
-			if (i > 0) {
-				r_strbuf_append (sb, ", ");
-			}
-			if (v == UT64_MAX || v == UT32_MAX) {
-				r_strbuf_appendf (sb, "-1");
-			} else if (v == 0) {
-				r_strbuf_appendf (sb, "NULL");
+			if (pj) {
+				pj_n (pj, v);
 			} else {
-				r_strbuf_appendf (sb, "0x%"PFMT64x, v);
+				if (i > 0) {
+					r_strbuf_append (sb, ", ");
+				}
+				if (v == UT64_MAX || v == UT32_MAX) {
+					r_strbuf_appendf (sb, "-1");
+				} else if (v == 0) {
+					r_strbuf_appendf (sb, "NULL");
+				} else {
+					r_strbuf_appendf (sb, "0x%"PFMT64x, v);
+				}
 			}
 		}
 		r_strbuf_append (sb, ")");
+		if (pj) {
+			pj_end (pj);
+		}
 	}
+fin:
 	r_reg_setv (core->anal->reg, sp, spv); // reset stack ptr
 	char *s = r_strbuf_drain (sb);
+	if (pj) {
+		free (s);
+		pj_end (pj);
+		s = pj_drain (pj);
+	}
 	r_cons_printf ("%s\n", s);
 	free (s);
 }
@@ -5263,12 +5279,18 @@ static int cmd_af(RCore *core, const char *input) {
 		case 'v': // "afsv"
 			if (strchr (input, '?')) {
 				r_core_cmd_help_match (core, help_msg_af, "afsv", true);
+			} else if (input[3] == 'j') { // "afsvj"
+				ut64 pc = core->offset;
+				if (input[4] == ' ') {
+					pc = r_num_math (core->num, input + 4);
+				}
+				cmd_afsv (core, pc, 'j');
 			} else {
 				ut64 pc = core->offset;
 				if (input[3] == ' ') {
 					pc = r_num_math (core->num, input + 3);
 				}
-				cmd_afsv (core, pc);
+				cmd_afsv (core, pc, 0);
 			}
 			break;
 		default:
