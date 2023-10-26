@@ -15,10 +15,9 @@ static void set_fcn_args_info(RAnalFuncArg *arg, RAnal *anal, const char *fcn_na
 		R_LOG_WARN ("Missing type for function argument to set (%s)", fcn_name);
 		return;
 	}
-	if (r_str_startswith (arg->orig_c_type, "const ")) {
-		arg->c_type = arg->orig_c_type + 6;
-	} else {
-		arg->c_type = arg->orig_c_type;
+	arg->c_type = arg->orig_c_type;
+	if (r_str_startswith (arg->c_type, "const ")) {
+		arg->c_type += 6;
 	}
 	r_strf_buffer (256);
 	const char *query = r_strf ("type.%s", arg->c_type);
@@ -28,20 +27,9 @@ static void set_fcn_args_info(RAnalFuncArg *arg, RAnal *anal, const char *fcn_na
 	arg->cc_source = r_anal_cc_arg (anal, cc, arg_num, -1);
 }
 
-R_API char *resolve_fcn_name(RAnal *anal, const char *func_name) {
-	const char *str = func_name;
-	const char *name = func_name;
-	if (r_type_func_exist (anal->sdb_types, func_name)) {
-		return strdup (func_name);
-	}
-	while ((str = strchr (str, '.'))) {
-		name = str + 1;
-		str++;
-	}
-	if (r_type_func_exist (anal->sdb_types, name)) {
-		return strdup (name);
-	}
-	return r_type_func_guess (anal->sdb_types, (char*)func_name);
+// R2_590 - deprecate
+R_API char *resolve_fcn_name(RAnal *anal, const char *fname) {
+	return r_type_func_name (anal->sdb_types, fname);
 }
 
 static ut64 get_buf_val(ut8 *buf, int endian, int width) {
@@ -50,8 +38,7 @@ static ut64 get_buf_val(ut8 *buf, int endian, int width) {
 
 static void print_arg_str(int argcnt, const char *name, bool color) {
 	if (color) {
-		r_cons_printf (Color_BYELLOW" arg [%d]"Color_RESET" -"Color_BCYAN" %s"Color_RESET" : ",
-				argcnt, name);
+		r_cons_printf (Color_BYELLOW" arg [%d]"Color_RESET" -"Color_BCYAN" %s"Color_RESET" : ", argcnt, name);
 	} else {
 		r_cons_printf (" arg [%d] -  %s : ", argcnt, name);
 	}
