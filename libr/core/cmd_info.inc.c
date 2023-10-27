@@ -1040,10 +1040,10 @@ static int cmd_info(void *data, const char *input) {
 			RList *objs = r_core_bin_files (core);
 			RListIter *iter;
 			RBinFile *bf;
-			if (input[1] == 'j' && input[2] == '.') {
+			if (input[1] == 'j' && input[2] == '.') { // "isj" "is."
 				mode = R_MODE_JSON;
 				INIT_PJ ();
-			} else if (input[1] == 'q' && input[2] == 'q') {
+			} else if (input[1] == 'q' && input[2] == 'q') { // "isq"
 				mode = R_MODE_SIMPLEST;
 			}
 			r_list_foreach (objs, iter, bf) {
@@ -1056,20 +1056,21 @@ static int cmd_info(void *data, const char *input) {
 #if R2_590
 				// TODO: use obj->symbols_vec if obj->symbols is null
 #else
+				size_t symcount = (obj && obj->symbols)? r_list_length (obj->symbols): 0;
 				if (input[1] == 'j' && input[2] == '.') {
-					RBININFO ("symbols", R_CORE_BIN_ACC_SYMBOLS, input + 2, (obj && obj->symbols)? r_list_length (obj->symbols): 0);
+					RBININFO ("symbols", R_CORE_BIN_ACC_SYMBOLS, input + 2, symcount);
 				} else if (input[1] == ',') {
 					R_FREE (core->table_query);
 					core->table_query = strdup (input + 2);
-					RBININFO ("symbols", R_CORE_BIN_ACC_SYMBOLS, input + 1, (obj && obj->symbols)? r_list_length (obj->symbols): 0);
+					RBININFO ("symbols", R_CORE_BIN_ACC_SYMBOLS, input + 1, symcount);
 				} else if (input[1] == 'q' && input[2] == 'q') {
 					mode = R_MODE_SIMPLEST;
-					RBININFO ("symbols", R_CORE_BIN_ACC_SYMBOLS, input + 3, (obj && obj->symbols)? r_list_length (obj->symbols): 0);
+					RBININFO ("symbols", R_CORE_BIN_ACC_SYMBOLS, input + 3, symcount);
 				} else if (input[1] == 'q' && input[2] == '.') {
 					mode = R_MODE_SIMPLE;
 					RBININFO ("symbols", R_CORE_BIN_ACC_SYMBOLS, input + 2, 0);
 				} else {
-					RBININFO ("symbols", R_CORE_BIN_ACC_SYMBOLS, input + 1, (obj && obj->symbols)? r_list_length (obj->symbols): 0);
+					RBININFO ("symbols", R_CORE_BIN_ACC_SYMBOLS, input + 1, symcount);
 				}
 #endif
 			}
