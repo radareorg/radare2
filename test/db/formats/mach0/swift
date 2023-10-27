@@ -337,7 +337,6 @@ EXPECT=<<EOF
       {
         "name": "wkWebViewPreferencesManager",
         "kind": "property",
-        "type": "g",
         "addr": 4295134432
       },
       {
@@ -491,13 +490,11 @@ EXPECT=<<EOF
       {
         "name": "latest_version",
         "kind": "property",
-        "type": "\u00ff\u00ff",
         "addr": 4295134653
       },
       {
         "name": "download_url",
         "kind": "property",
-        "type": "\u00ff\u00ff\u0012\u00f9\u00ff\u00ff",
         "addr": 4295134668
       }
     ]
@@ -747,7 +744,6 @@ EXPECT=<<EOF
       {
         "name": "preferencesManager",
         "kind": "property",
-        "type": "g",
         "addr": 4295134848
       },
       {

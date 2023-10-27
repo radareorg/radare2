@@ -1267,7 +1267,7 @@ void MACH0_(get_class_t)(mach0_ut p, RBinFile *bf, RBinClass *klass, bool dupe, 
 					klass->super = r_list_newf (free);
 				}
 				if (r_str_startswith (target_class_name, "_T")) {
-					char *dsuper = r_bin_demangle (bf, "swift", target_class_name, 0, false);
+					char *dsuper = r_bin_demangle_swift (target_class_name, true, true);
 					if (!dsuper || !strcmp (dsuper, target_class_name)) {
 						R_LOG_DEBUG ("Failed to demangle");
 						r_list_append (klass->super, strdup (target_class_name));
@@ -1400,13 +1400,17 @@ static void parse_type(RList *list, RBinFile *bf, SwiftType st, HtUP *symbols_ht
 	if (super_name) {
 		if (*super_name > 5) {
 			klass->super = r_list_newf (free);
-			char *sname = r_bin_demangle (bf, "swift", super_name, 0, false);
+#if 1
+			char *sname = r_bin_demangle_swift (super_name, 0, false);
 			if (R_STR_ISNOTEMPTY (sname)) {
 				r_list_append (klass->super, sname);
 				free (super_name);
 			} else {
 				r_list_append (klass->super, super_name);
 			}
+#else
+			r_list_append (klass->super, super_name);
+#endif
 		} else {
 			free (super_name);
 		}
@@ -1437,7 +1441,7 @@ static void parse_type(RList *list, RBinFile *bf, SwiftType st, HtUP *symbols_ht
 			char *method_name;
 			if (symbols_ht && (sym = ht_up_find (symbols_ht, method_addr, NULL))) {
 				method_name = r_name_filter_dup (sym->name);
-				char *dname = r_bin_demangle (bf, "swift", method_name, 0, false);
+				char *dname = r_bin_demangle_swift (method_name, 0, false);
 				if (dname) {
 					free (method_name);
 					method_name = dname;
@@ -1495,9 +1499,9 @@ static void parse_type(RList *list, RBinFile *bf, SwiftType st, HtUP *symbols_ht
 				const char *ftype = field_type;
 				if (*ftype < 6) {
 					// basic type
-					ftype += 6;
+					ftype += r_str_nlen (ftype, 6);
 				}
-				field->type = r_bin_demangle (bf, "swift", ftype, 0, false);
+				field->type = r_bin_demangle_swift (ftype, 0, false);
 				if (!field->type) {
 					field->type = strdup (ftype);
 				}
