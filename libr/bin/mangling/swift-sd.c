@@ -43,7 +43,7 @@ static const SwiftType types[] = {
 	{ "Sq", "Optional" },
 	{ "SR", "UnsafeBufferPointer" },
 	{ "Sr", "UnsafeMutableBufferPointer" },
-	// { "So", "ObjC.Symbol" }, // Swift.Object == __C.
+	// { "So", "Swift.Optional" },
 	{ "Ss", "generic" },
 	{ "SS", "Swift.String" },
 	{ "Su", "UInt" },
@@ -87,6 +87,7 @@ static const char *getnum(const char* n, int *num) {
 		n++;
 	}
 	return n;
+	//return numpos (n);
 }
 
 static const char *numpos(const char* n) {
@@ -622,8 +623,12 @@ static char *my_swift_demangler(const char *s) {
 	return NULL;
 }
 
-
 R_API char *r_bin_demangle_swift(const char *s, bool syscmd, bool trylib) {
+#if 0
+	if (strstr (s, "UITableViewHeaderFoote")) {
+		eprintf ("==> (%s)\n", s);
+	}
+#endif
 #if USE_THIS_CODE
 	syscmd = trylib = false; // useful for debugging the embedded demangler on macos
 #endif
@@ -647,6 +652,23 @@ R_API char *r_bin_demangle_swift(const char *s, bool syscmd, bool trylib) {
 			}
 		}
 	}
+	if (!syscmd && !trylib) {
+		if (r_str_startswith (s, "$s")) {
+			s += 2;
+		}
+		if (r_str_startswith (s, "So") && r_str_endswith (s, "C")) {
+			int len = atoi (s + 2);
+			s += 2;
+			while (isdigit (*s)) {
+				s++;
+			}
+			char *ns = r_str_ndup (s, len);
+			char *fs = r_str_newf ("__C.%s", ns);
+			free (ns);
+			return fs;
+		}
+	}
+#if 0
 	if (syscmd || trylib) {
 		if (r_str_startswith (s, "So") && isdigit (s[2])) {
 			char *ss = r_str_newf ("$s%s", s);
@@ -654,7 +676,9 @@ R_API char *r_bin_demangle_swift(const char *s, bool syscmd, bool trylib) {
 			free (ss);
 			return res;
 		}
-	}
+	} else {
+#endif
+//	}
 	s = str_removeprefix (s, "imp.");
 	s = str_removeprefix (s, "reloc.");
 	// check if string doesnt start with __ then return

@@ -296,7 +296,7 @@ EXPECT=<<EOF
 0x002ec230 [0x1002ec00f - 0x1002f0117]  16648 swift class 0 Source
 0x002ec2d4 [0x002ec2d4 - 0x002ec2d4]      0 swift class 0 TimelineHeaderView :: __C.UIView
 0x002ec3e4 [0x002ec3e4 - 0x002ec3e4]      0 swift class 0 TableViewNavigation
-0x002ec5c4 [0x1002ec63e - 0x10042c606] 1310664 swift class 0 SuggestionAccountTableViewFooter :: __C.UITableViewHeaderFooterView
+0x002ec5c4 [0x1002ec63e - 0x10042c606] 1310664 swift class 0 SuggestionAccountTableViewFooter :: __C.UITableViewHeaderFooter
 0x002ec678 [0x002ec678 - 0x002ec678]      0 swift class 0 WelcomeViewController :: __C.UIViewController
 0x002ec6ec [0x1002fc76a - 0x10042c752] 1245160 swift class 0 CommentContext
 0x002ec780 [0x1002ecb93 - 0x1002ecb93]      0 swift class 0 ReportItem
