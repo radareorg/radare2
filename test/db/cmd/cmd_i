@@ -4241,3 +4241,15 @@ Cs 13 @ 0x080484b0
 163
 EOF
 RUN
+
+NAME=isqq bug
+FILE=bins/mach0/WheresMyBrowser
+CMDS=<<EOF
+is.@0x100023b68
+EOF
+EXPECT=<<EOF
+nth  paddr      vaddr       bind  type size lib name       demangled
+--------------------------------------------------------------------
+1503 0x00023b68 0x100023b68 LOCAL FUNC 0        imp.memcpy
+EOF
+RUN

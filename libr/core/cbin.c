@@ -2458,13 +2458,15 @@ static bool bin_symbols(RCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at,
 			continue;
 		}
 		ut64 addr = compute_addr (r->bin, symbol->paddr, symbol->vaddr, va);
-		ut32 len = symbol->size ? symbol->size : 32;
+		ut32 len = symbol->size ? symbol->size : 1;
 		if (at != UT64_MAX && (!symbol->size || !is_in_range (at, addr, symbol->size))) {
 			continue;
 		}
-		if ((printHere && !is_in_range (r->offset, symbol->paddr, len))
-			&& (printHere && !is_in_range (r->offset, addr, len))) {
-			continue;
+		if (printHere) {
+			// const ut64 addr = va? symbol->vaddr: symbol->paddr;
+			if (!is_in_range (r->offset, addr, len)) {
+				continue;
+			}
 		}
 		SymName sn = {0};
 		snInit (r, &sn, symbol, lang);
