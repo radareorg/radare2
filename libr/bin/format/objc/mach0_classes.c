@@ -1888,9 +1888,13 @@ static char *readstr(RBinFile *bf, ut64 addr) {
 		R_FREE (name);
 		return NULL;
 	}
+#if 0
 	char *s = strdup (name);
 	free (name);
 	return s;
+#else
+	return name;
+#endif
 }
 
 static char *read_str(RBinFile *bf, mach0_ut p, ut32 *offset, ut32 *left) {

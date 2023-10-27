@@ -77,7 +77,7 @@ EXPECT=<<EOF
     "lang": "swift",
     "index": 0,
     "super": [
-      "So16UIViewControllerC"
+      "__C.UIViewController"
     ],
     "methods": [
       {
@@ -337,12 +337,13 @@ EXPECT=<<EOF
       {
         "name": "wkWebViewPreferencesManager",
         "kind": "property",
+        "type": "g",
         "addr": 4295134432
       },
       {
         "name": "progressBarTimer",
         "kind": "property",
-        "type": "So7NSTimerC",
+        "type": "__C.NSTimer",
         "addr": 4295134464
       },
       {
@@ -371,7 +372,7 @@ EXPECT=<<EOF
     "lang": "swift",
     "index": 0,
     "super": [
-      "So11UIResponderC"
+      "__C.UIResponder"
     ],
     "fields": [
       {
@@ -391,7 +392,7 @@ EXPECT=<<EOF
       {
         "name": "_rawValue",
         "kind": "property",
-        "type": "So8NSStringC",
+        "type": "__C.NSString",
         "addr": 4295134571
       }
     ]
@@ -402,7 +403,7 @@ EXPECT=<<EOF
     "lang": "swift",
     "index": 0,
     "super": [
-      "So8NSObjectC"
+      "__C.NSObject"
     ]
   },
   {
@@ -411,7 +412,7 @@ EXPECT=<<EOF
     "lang": "swift",
     "index": 0,
     "super": [
-      "So16UIViewControllerC"
+      "__C.UIViewController"
     ],
     "fields": [
       {
@@ -428,7 +429,7 @@ EXPECT=<<EOF
     "lang": "swift",
     "index": 0,
     "super": [
-      "So16UIViewControllerC"
+      "__C.UIViewController"
     ]
   },
   {
@@ -437,7 +438,7 @@ EXPECT=<<EOF
     "lang": "swift",
     "index": 0,
     "super": [
-      "So18UITabBarControllerC"
+      "__C.UITabBarController"
     ],
     "fields": [
       {
@@ -490,11 +491,13 @@ EXPECT=<<EOF
       {
         "name": "latest_version",
         "kind": "property",
+        "type": "\u00ff\u00ff",
         "addr": 4295134653
       },
       {
         "name": "download_url",
         "kind": "property",
+        "type": "\u00ff\u00ff\u0012\u00f9\u00ff\u00ff",
         "addr": 4295134668
       }
     ]
@@ -511,7 +514,7 @@ EXPECT=<<EOF
     "lang": "swift",
     "index": 0,
     "super": [
-      "So15UITableViewCellC"
+      "__C.UITableViewCell"
     ],
     "methods": [
       {
@@ -672,7 +675,7 @@ EXPECT=<<EOF
     "lang": "swift",
     "index": 0,
     "super": [
-      "So21UITableViewControllerC"
+      "__C.UITableViewController"
     ],
     "methods": [
       {
@@ -744,6 +747,7 @@ EXPECT=<<EOF
       {
         "name": "preferencesManager",
         "kind": "property",
+        "type": "g",
         "addr": 4295134848
       },
       {
@@ -863,19 +867,19 @@ EXPECT=<<EOF
       {
         "name": "wkWebView",
         "kind": "property",
-        "type": "So9WKWebViewC",
+        "type": "__C.WKWebView",
         "addr": 4295134912
       },
       {
         "name": "wkWebViewPreferences",
         "kind": "property",
-        "type": "So13WKPreferencesC",
+        "type": "__C.WKPreferences",
         "addr": 4295134928
       },
       {
         "name": "wkWebViewConfiguration",
         "kind": "property",
-        "type": "So22WKWebViewConfigurationC",
+        "type": "__C.WKWebViewConfiguration",
         "addr": 4295134960
       },
       {
@@ -958,7 +962,7 @@ EXPECT=<<EOF
     "lang": "swift",
     "index": 0,
     "super": [
-      "So16UIViewControllerC"
+      "__C.UIViewController"
     ],
     "fields": [
       {
@@ -999,7 +1003,7 @@ EXPECT=<<EOF
     "lang": "swift",
     "index": 0,
     "super": [
-      "So16UIViewControllerC"
+      "__C.UIViewController"
     ],
     "fields": [
       {
@@ -1035,7 +1039,7 @@ EXPECT=<<EOF
       {
         "name": "progressBarTimer",
         "kind": "property",
-        "type": "So7NSTimerC",
+        "type": "__C.NSTimer",
         "addr": 4295135200
       },
       {
