@@ -580,6 +580,7 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int
 	char *op_src = NULL;
 	if (depth < -1) {
 		// only happens when we want to analyze 1 basic block
+		R_LOG_DEBUG ("fcn recurse limit reached at 0x%08"PFMT64x, addr);
 		return R_ANAL_RET_ERROR; // MUST BE TOO DEEP
 	}
 	if (R_UNLIKELY ((depth < 0) && (depth != -1))) {
@@ -678,6 +679,7 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int
 	bool last_is_add_lr_pc = false;
 	ut64 last_push_addr = UT64_MAX;
 	if (anal->limit && addr + idx < anal->limit->from) {
+		R_LOG_DEBUG ("anal.limit");
 		gotoBeach (R_ANAL_RET_END);
 	}
 
@@ -750,13 +752,12 @@ repeat:
 		r_anal_op_fini (op);
 		oplen = r_anal_op (anal, op, at, buf, bytes_read, R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_ESIL | R_ARCH_OP_MASK_VAL | R_ARCH_OP_MASK_HINT);
 		if (oplen < 1) {
-			if (anal->verbose) {
-				R_LOG_WARN ("Invalid instruction at 0x%"PFMT64x" with %d bits", at, anal->config->bits);
-			}
+			R_LOG_DEBUG ("Invalid instruction at 0x%"PFMT64x" with %d bits", at, anal->config->bits);
 			// gotoBeach (R_ANAL_RET_ERROR);
 			// RET_END causes infinite loops somehow
 			gotoBeach (R_ANAL_RET_END);
 		}
+		R_LOG_DEBUG ("op 0x%08"PFMT64x" %d %s", at, op->size, r_anal_optype_tostring (op->type));
 		dst = r_vector_at (&op->dsts, 0);
 		free (op_dst);
 		op_dst = (dst && dst->reg)? strdup (dst->reg): NULL;
