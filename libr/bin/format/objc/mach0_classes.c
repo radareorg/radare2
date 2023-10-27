@@ -1464,11 +1464,23 @@ static void parse_type(RList *list, RBinFile *bf, SwiftType st, HtUP *symbols_ht
 				break;
 			}
 			ut64 field_name_addr = st.fieldmd.addr + (d * 4) + st.fieldmd_data[d];
+			ut64 field_type_addr = st.fieldmd.addr + (d * 4) + st.fieldmd_data[d - 1] - 4;
 			ut64 field_method_addr = field_name_addr;
 			ut64 vaddr = r_bin_file_get_baddr (bf) + field_method_addr;
 			char *field_name = readstr (bf, field_name_addr);
 			if (!field_name) {
 				break;
+			}
+
+			char *field_type = readstr (bf, field_type_addr);
+			if (field_type) {
+				const char *ftype = field_type;
+				if (*ftype < 6) {
+					// basic type
+					ftype += 6;
+				}
+				field->type = r_bin_demangle (bf, "swift", ftype, 0, false);
+				free (field_type);
 			}
 			field->name = r_name_filter_dup (field_name);
 			field->paddr = field_method_addr;
@@ -1479,7 +1491,6 @@ static void parse_type(RList *list, RBinFile *bf, SwiftType st, HtUP *symbols_ht
 #endif
 			free (field_name);
 			field->kind = R_BIN_FIELD_KIND_PROPERTY;
-		//	field->type = strdup ("swiftType");
 			r_list_append (klass->fields, field);
 		}
 	}
