@@ -91,7 +91,7 @@ static int rabin_show_help(int v) {
 		" RABIN2_CODESIGN_VERBOSE\n"
 		" RABIN2_STRPURGE:  e bin.str.purge    # try to purge false positives\n"
 		" RABIN2_SYMSTORE:  e pdb.symstore     # path to downstream symbol store\n"
-		" RABIN2_SWIFTLIB:  1|0|               # load Swift libsto demangle (default: true)\n"
+		" RABIN2_SWIFTLIB:  1|0|               # load Swift libs to demangle (default: true)\n"
 		" RABIN2_VERBOSE:   e bin.verbose      # show debugging messages from the parser\n"
 		);
 	}

@@ -76,22 +76,25 @@ EXPECT=<<EOF
     "addr": 149892,
     "lang": "swift",
     "index": 0,
+    "super": [
+      "So16UIViewControllerC"
+    ],
     "methods": [
       {
-        "name": "backButton.allocator__ObjC.Symbol",
+        "name": "backButton.allocator",
         "flag": "func.1000020ec",
         "realname": "_$s15WheresMyBrowser19WKWebViewControllerC10backButtonSo8UIButtonCSgvg",
         "addr": 4294975724
       },
       {
-        "name": "backButton.allocator__ObjC.Symbol",
+        "name": "backButton.allocator",
         "flag": "func.10000219c",
         "realname": "_$s15WheresMyBrowser19WKWebViewControllerC10backButtonSo8UIButtonCSgvs",
         "addr": 4294975900
       },
       {
-        "name": "backButton.allocator__ObjC.Symbol",
-        "flag": "method.WKWebViewController.backButton.allocator__ObjC.Symbol",
+        "name": "backButton.allocator",
+        "flag": "method.WKWebViewController.backButton.allocator",
         "realname": "_$s15WheresMyBrowser19WKWebViewControllerC10backButtonSo8UIButtonCSgvM",
         "addr": 4294976260
       },
@@ -132,20 +135,20 @@ EXPECT=<<EOF
         "addr": 4294977696
       },
       {
-        "name": "progressBarTimer.allocator__ObjC.Symbol",
+        "name": "progressBarTimer.allocator",
         "flag": "func.100002ad8",
         "realname": "_$s15WheresMyBrowser19WKWebViewControllerC16progressBarTimerSo7NSTimerCvg",
         "addr": 4294978264
       },
       {
-        "name": "progressBarTimer.allocator__ObjC.Symbol",
+        "name": "progressBarTimer.allocator",
         "flag": "func.100002b3c",
         "realname": "_$s15WheresMyBrowser19WKWebViewControllerC16progressBarTimerSo7NSTimerCvs",
         "addr": 4294978364
       },
       {
-        "name": "progressBarTimer.allocator__ObjC.Symbol",
-        "flag": "method.WKWebViewController.progressBarTimer.allocator__ObjC.Symbol",
+        "name": "progressBarTimer.allocator",
+        "flag": "method.WKWebViewController.progressBarTimer.allocator",
         "realname": "_$s15WheresMyBrowser19WKWebViewControllerC16progressBarTimerSo7NSTimerCvM",
         "addr": 4294978492
       },
@@ -186,20 +189,20 @@ EXPECT=<<EOF
         "addr": 4294979856
       },
       {
-        "name": "scenarioButton.allocator__ObjC.Symbol",
+        "name": "scenarioButton.allocator",
         "flag": "func.1000032c8",
         "realname": "_$s15WheresMyBrowser19WKWebViewControllerC14scenarioButtonSo05UIBarH4ItemCSgvg",
         "addr": 4294980296
       },
       {
-        "name": "scenarioButton.allocator__ObjC.Symbol",
+        "name": "scenarioButton.allocator",
         "flag": "func.100003378",
         "realname": "_$s15WheresMyBrowser19WKWebViewControllerC14scenarioButtonSo05UIBarH4ItemCSgvs",
         "addr": 4294980472
       },
       {
-        "name": "scenarioButton.allocator__ObjC.Symbol",
-        "flag": "method.WKWebViewController.scenarioButton.allocator__ObjC.Symbol",
+        "name": "scenarioButton.allocator",
+        "flag": "method.WKWebViewController.scenarioButton.allocator",
         "realname": "_$s15WheresMyBrowser19WKWebViewControllerC14scenarioButtonSo05UIBarH4ItemCSgvM",
         "addr": 4294980832
       },
@@ -268,31 +271,67 @@ EXPECT=<<EOF
         "flag": "method.WKWebViewController.loadScenario2.allocator",
         "realname": "_$s15WheresMyBrowser19WKWebViewControllerC13loadScenario2yyF",
         "addr": 4295000952
+      },
+      {
+        "name": "loadScenario3.allocator",
+        "flag": "method.WKWebViewController.loadScenario3.allocator",
+        "realname": "_$s15WheresMyBrowser19WKWebViewControllerC13loadScenario3yyF",
+        "addr": 4295003248
+      },
+      {
+        "name": "goToUrl.allocator",
+        "flag": "method.WKWebViewController.goToUrl.allocator",
+        "realname": "_$s15WheresMyBrowser19WKWebViewControllerC7goToUrlyyypF",
+        "addr": 4295005020
+      },
+      {
+        "name": "backButtonPressed.allocator",
+        "flag": "method.WKWebViewController.backButtonPressed.allocator",
+        "realname": "_$s15WheresMyBrowser19WKWebViewControllerC17backButtonPressedyyypF",
+        "addr": 4295005200
+      },
+      {
+        "name": "urlBarEditingGo.allocator",
+        "flag": "method.WKWebViewController.urlBarEditingGo.allocator",
+        "realname": "_$s15WheresMyBrowser19WKWebViewControllerC15urlBarEditingGoyySo11UITextFieldCF",
+        "addr": 4295005816
+      },
+      {
+        "name": "selectScenarioButtonPressed.allocator",
+        "flag": "method.WKWebViewController.selectScenarioButtonPressed.allocator",
+        "realname": "_$s15WheresMyBrowser19WKWebViewControllerC27selectScenarioButtonPressedyySo05UIBarI4ItemCF",
+        "addr": 4295005972
+      },
+      {
+        "name": "loadContentButtonPressed.allocator",
+        "flag": "method.WKWebViewController.loadContentButtonPressed.allocator",
+        "realname": "_$s15WheresMyBrowser19WKWebViewControllerC24loadContentButtonPressedyySo05UIBarI4ItemCF",
+        "addr": 4295006128
       }
     ],
     "fields": [
       {
         "name": "urlBar",
         "kind": "property",
-        "type": "weak Swift.Optional<__C.UITextField>",
+        "type": "So11UITextFieldCSgXw",
         "addr": 4295134384
       },
       {
         "name": "progressBar",
         "kind": "property",
-        "type": "weak Swift.Optional<__C.UIProgressView>",
+        "type": "So14UIProgressViewCSgXw",
         "addr": 4295134391
       },
       {
         "name": "backButton",
         "kind": "property",
-        "type": "weak Swift.Optional<__C.UIButton>",
+        "type": "So8UIButtonCSgXw",
         "addr": 4295134403
       },
       {
         "name": "wkWebView",
         "kind": "property",
-        "type": "Swift.Optional<__C.WKWebView>",
+        "type": "So9WKWebViewCSg",
         "addr": 4295134414
       },
       {
@@ -303,7 +342,7 @@ EXPECT=<<EOF
       {
         "name": "progressBarTimer",
         "kind": "property",
-        "type": "__C.NSTimer",
+        "type": "So7NSTimerC",
         "addr": 4295134464
       },
       {
@@ -315,13 +354,13 @@ EXPECT=<<EOF
       {
         "name": "wkWebViewPlaceholder",
         "kind": "property",
-        "type": "weak Swift.Optional<__C.UIView>",
+        "type": "So6UIViewCSgXw",
         "addr": 4295134528
       },
       {
         "name": "scenarioButton",
         "kind": "property",
-        "type": "weak Swift.Optional<__C.UIBarButtonItem>",
+        "type": "So15UIBarButtonItemCSgXw",
         "addr": 4295134549
       }
     ]
@@ -331,11 +370,14 @@ EXPECT=<<EOF
     "addr": 150312,
     "lang": "swift",
     "index": 0,
+    "super": [
+      "So11UIResponderC"
+    ],
     "fields": [
       {
         "name": "window",
         "kind": "property",
-        "type": "Swift.Optional<__C.UIWindow>",
+        "type": "So8UIWindowCSg",
         "addr": 4295134564
       }
     ]
@@ -349,7 +391,7 @@ EXPECT=<<EOF
       {
         "name": "_rawValue",
         "kind": "property",
-        "type": "__C.NSString",
+        "type": "So8NSStringC",
         "addr": 4295134571
       }
     ]
@@ -358,18 +400,24 @@ EXPECT=<<EOF
     "classname": "JavaScriptBridgeMessageHandler",
     "addr": 150944,
     "lang": "swift",
-    "index": 0
+    "index": 0,
+    "super": [
+      "So8NSObjectC"
+    ]
   },
   {
     "classname": "AboutViewController",
     "addr": 151028,
     "lang": "swift",
     "index": 0,
+    "super": [
+      "So16UIViewControllerC"
+    ],
     "fields": [
       {
         "name": "versionLabel",
         "kind": "property",
-        "type": "weak Swift.Optional<__C.UILabel>",
+        "type": "So7UILabelCSgXw",
         "addr": 4295134606
       }
     ]
@@ -378,13 +426,19 @@ EXPECT=<<EOF
     "classname": "DocumentationViewController",
     "addr": 151132,
     "lang": "swift",
-    "index": 0
+    "index": 0,
+    "super": [
+      "So16UIViewControllerC"
+    ]
   },
   {
     "classname": "MainTabBarViewController",
     "addr": 151308,
     "lang": "swift",
     "index": 0,
+    "super": [
+      "So18UITabBarControllerC"
+    ],
     "fields": [
       {
         "name": "checkedForUpdates",
@@ -456,6 +510,9 @@ EXPECT=<<EOF
     "addr": 152148,
     "lang": "swift",
     "index": 0,
+    "super": [
+      "So15UITableViewCellC"
+    ],
     "methods": [
       {
         "name": "0",
@@ -562,24 +619,25 @@ EXPECT=<<EOF
       {
         "name": "optionsSwitch",
         "kind": "property",
-        "type": "weak Swift.Optional<__C.UISwitch>",
+        "type": "So8UISwitchCSgXw",
         "addr": 4295134704
       },
       {
         "name": "optionsNameLabel",
         "kind": "property",
-        "type": "weak Swift.Optional<__C.UILabel>",
+        "type": "So7UILabelCSgXw",
         "addr": 4295134720
       },
       {
         "name": "optionsDescriptionLabel",
         "kind": "property",
-        "type": "weak Swift.Optional<__C.UILabel>",
+        "type": "So7UILabelCSgXw",
         "addr": 4295134752
       },
       {
         "name": "delegate",
         "kind": "property",
+        "type": "pSg",
         "addr": 4295134776
       },
       {
@@ -613,6 +671,9 @@ EXPECT=<<EOF
     "addr": 152428,
     "lang": "swift",
     "index": 0,
+    "super": [
+      "So21UITableViewControllerC"
+    ],
     "methods": [
       {
         "name": "0",
@@ -688,7 +749,7 @@ EXPECT=<<EOF
       {
         "name": "preferencesTableView",
         "kind": "property",
-        "type": "Swift.Optional<__C.UITableView>",
+        "type": "So11UITableViewCSg",
         "addr": 4295134880
       }
     ]
@@ -802,19 +863,19 @@ EXPECT=<<EOF
       {
         "name": "wkWebView",
         "kind": "property",
-        "type": "__C.WKWebView",
+        "type": "So9WKWebViewC",
         "addr": 4295134912
       },
       {
         "name": "wkWebViewPreferences",
         "kind": "property",
-        "type": "__C.WKPreferences",
+        "type": "So13WKPreferencesC",
         "addr": 4295134928
       },
       {
         "name": "wkWebViewConfiguration",
         "kind": "property",
-        "type": "__C.WKWebViewConfiguration",
+        "type": "So22WKWebViewConfigurationC",
         "addr": 4295134960
       },
       {
@@ -832,6 +893,7 @@ EXPECT=<<EOF
       {
         "name": "options_dict",
         "kind": "property",
+        "type": "SDySS\u0001\u0096\u00c9\u00ff\u00ffG",
         "addr": 4295135002
       }
     ]
@@ -895,23 +957,26 @@ EXPECT=<<EOF
     "addr": 152972,
     "lang": "swift",
     "index": 0,
+    "super": [
+      "So16UIViewControllerC"
+    ],
     "fields": [
       {
         "name": "baseUrlTextField",
         "kind": "property",
-        "type": "weak Swift.Optional<__C.UITextField>",
+        "type": "So11UITextFieldCSgXw",
         "addr": 4295135056
       },
       {
         "name": "contentTextView",
         "kind": "property",
-        "type": "weak Swift.Optional<__C.UITextView>",
+        "type": "So10UITextViewCSgXw",
         "addr": 4295135073
       },
       {
         "name": "parentWebView",
         "kind": "property",
-        "type": "Swift.Optional<__C.UIViewController>",
+        "type": "So16UIViewControllerCSg",
         "addr": 4295135089
       },
       {
@@ -933,41 +998,44 @@ EXPECT=<<EOF
     "addr": 153188,
     "lang": "swift",
     "index": 0,
+    "super": [
+      "So16UIViewControllerC"
+    ],
     "fields": [
       {
         "name": "urlBar",
         "kind": "property",
-        "type": "weak Swift.Optional<__C.UITextField>",
+        "type": "So11UITextFieldCSgXw",
         "addr": 4295135136
       },
       {
         "name": "uiWebView",
         "kind": "property",
-        "type": "weak Swift.Optional<__C.UIWebView>",
+        "type": "So9UIWebViewCSgXw",
         "addr": 4295135143
       },
       {
         "name": "progressBar",
         "kind": "property",
-        "type": "weak Swift.Optional<__C.UIProgressView>",
+        "type": "So14UIProgressViewCSgXw",
         "addr": 4295135153
       },
       {
         "name": "backButton",
         "kind": "property",
-        "type": "weak Swift.Optional<__C.UIButton>",
+        "type": "So8UIButtonCSgXw",
         "addr": 4295135165
       },
       {
         "name": "scenarioButton",
         "kind": "property",
-        "type": "weak Swift.Optional<__C.UIBarButtonItem>",
+        "type": "So15UIBarButtonItemCSgXw",
         "addr": 4295135176
       },
       {
         "name": "progressBarTimer",
         "kind": "property",
-        "type": "__C.NSTimer",
+        "type": "So7NSTimerC",
         "addr": 4295135200
       },
       {
@@ -985,7 +1053,7 @@ EXPECT=<<EOF
       {
         "name": "loadContentButtonPressed",
         "kind": "property",
-        "type": "weak Swift.Optional<__C.UIBarButtonItem>",
+        "type": "So15UIBarButtonItemCSgXw",
         "addr": 4295135264
       }
     ]
@@ -995,7 +1063,6 @@ EXPECT=<<EOF
     "addr": 4295176568,
     "lang": "objc",
     "index": 0,
-    "visibility": "",
     "super": [
       "UIViewController"
     ],
@@ -1253,7 +1320,6 @@ EXPECT=<<EOF
     "addr": 4295177008,
     "lang": "objc",
     "index": 0,
-    "visibility": "",
     "super": [
       "UIResponder"
     ],
@@ -1343,7 +1409,6 @@ EXPECT=<<EOF
     "addr": 4295177216,
     "lang": "objc",
     "index": 0,
-    "visibility": "",
     "super": [
       "NSObject"
     ],
@@ -1367,7 +1432,6 @@ EXPECT=<<EOF
     "addr": 4295177368,
     "lang": "objc",
     "index": 0,
-    "visibility": "",
     "super": [
       "UIViewController"
     ],
@@ -1433,7 +1497,6 @@ EXPECT=<<EOF
     "addr": 4295177408,
     "lang": "objc",
     "index": 0,
-    "visibility": "",
     "super": [
       "UIViewController"
     ],
@@ -1457,7 +1520,6 @@ EXPECT=<<EOF
     "addr": 4295177496,
     "lang": "objc",
     "index": 0,
-    "visibility": "",
     "super": [
       "UITabBarController"
     ],
@@ -1511,7 +1573,6 @@ EXPECT=<<EOF
     "addr": 4295177656,
     "lang": "objc",
     "index": 0,
-    "visibility": "",
     "super": [
       "UITableViewCell"
     ],
@@ -1646,7 +1707,6 @@ EXPECT=<<EOF
     "addr": 4295177696,
     "lang": "objc",
     "index": 0,
-    "visibility": "",
     "super": [
       "UITableViewController"
     ],
@@ -1735,7 +1795,6 @@ EXPECT=<<EOF
     "addr": 4295177784,
     "lang": "objc",
     "index": 0,
-    "visibility": "",
     "super": [
       "Swift._SwiftObject"
     ],
@@ -1783,7 +1842,6 @@ EXPECT=<<EOF
     "addr": 4295178088,
     "lang": "objc",
     "index": 0,
-    "visibility": "",
     "super": [
       "Swift._SwiftObject"
     ],
@@ -1821,7 +1879,6 @@ EXPECT=<<EOF
     "addr": 4295178328,
     "lang": "objc",
     "index": 0,
-    "visibility": "",
     "super": [
       "UIViewController"
     ],
@@ -1936,7 +1993,6 @@ EXPECT=<<EOF
     "addr": 4295178472,
     "lang": "objc",
     "index": 0,
-    "visibility": "",
     "super": [
       "UIViewController"
     ],

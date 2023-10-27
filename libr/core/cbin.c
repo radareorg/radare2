@@ -3900,7 +3900,9 @@ static bool bin_classes(RCore *r, PJ *pj, int mode) {
 			}
 			pj_ki (pj, "index", c->index);
 			if (c->super) {
-				pj_ks (pj, "visibility", r_str_get (c->visibility_str));
+				if (c->visibility_str) {
+					pj_ks (pj, "visibility", c->visibility_str);
+				}
 				RListIter *iter;
 				const char *sk;
 				pj_ka (pj, "super");
