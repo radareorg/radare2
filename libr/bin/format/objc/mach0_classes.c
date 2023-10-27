@@ -1248,7 +1248,9 @@ void MACH0_(get_class_t)(mach0_ut p, RBinFile *bf, RBinClass *klass, bool dupe, 
 	if (c.superclass) {
 		const char *klass_name = get_class_name (c.superclass, bf);
 		if (klass_name) {
-			klass->super = r_list_newf (free);
+			if (klass->super == NULL) {
+				klass->super = r_list_newf (free);
+			}
 			r_list_append (klass->super, (void *)klass_name);
 		}
 	} else if (relocs) {
@@ -1261,7 +1263,9 @@ void MACH0_(get_class_t)(mach0_ut p, RBinFile *bf, RBinClass *klass, bool dupe, 
 			char *target_class_name = (char*) ((struct reloc_t*) found->data)->name;
 			if (r_str_startswith (target_class_name, _objc_class)) {
 				target_class_name += _objc_class_len;
-				klass->super = r_list_newf (free);
+				if (klass->super == NULL) {
+					klass->super = r_list_newf (free);
+				}
 				if (r_str_startswith (target_class_name, "_T")) {
 					char *dsuper = r_bin_demangle (bf, "swift", target_class_name, 0, false);
 					if (!dsuper || !strcmp (dsuper, target_class_name)) {
@@ -1394,10 +1398,10 @@ static void parse_type(RList *list, RBinFile *bf, SwiftType st, HtUP *symbols_ht
 	RBinClass *klass = r_bin_class_new (typename, NULL, false);
 	char *super_name = readstr (bf, st.super_addr);
 	if (super_name) {
-		if (*super_name) {
+		if (*super_name > 5) {
 			klass->super = r_list_newf (free);
 			char *sname = r_bin_demangle (bf, "swift", super_name, 0, false);
-			if (sname) {
+			if (R_STR_ISNOTEMPTY (sname)) {
 				r_list_append (klass->super, sname);
 				free (super_name);
 			} else {
@@ -1494,6 +1498,9 @@ static void parse_type(RList *list, RBinFile *bf, SwiftType st, HtUP *symbols_ht
 					ftype += 6;
 				}
 				field->type = r_bin_demangle (bf, "swift", ftype, 0, false);
+				if (!field->type) {
+					field->type = strdup (ftype);
+				}
 				free (field_type);
 			}
 			field->name = r_name_filter_dup (field_name);

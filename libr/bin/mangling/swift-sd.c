@@ -4,6 +4,7 @@
 #include <r_cons.h>
 #include <r_lib.h>
 
+// set this to true for debugging purposes
 #define USE_THIS_CODE 0
 
 static R_TH_LOCAL int have_swift_demangle = -1;
@@ -42,7 +43,7 @@ static const SwiftType types[] = {
 	{ "Sq", "Optional" },
 	{ "SR", "UnsafeBufferPointer" },
 	{ "Sr", "UnsafeMutableBufferPointer" },
-	{ "So", "ObjC.Symbol" },
+	// { "So", "ObjC.Symbol" }, // Swift.Object == __C.
 	{ "Ss", "generic" },
 	{ "SS", "Swift.String" },
 	{ "Su", "UInt" },
@@ -361,6 +362,14 @@ static char *my_swift_demangler(const char *s) {
 			return NULL;
 		}
 		p = resolve (flags, q, &attr);
+#if 0
+		if (attr && !strcmp (attr, "allocator")) {
+			char *o = r_strbuf_drain (out);
+			char *r = r_str_newf ("__C.%s", o);
+			free (o);
+			return r;
+		}
+#endif
 		if (!p && ((*q == 'U') || (*q == 'R'))) {
 			p = resolve (metas, q, &attr);
 			if (attr && *q == 'R') {
@@ -489,6 +498,7 @@ static char *my_swift_demangler(const char *s) {
 					break;
 				default:
 					p = resolve (types, q, &attr); // type
+					break;
 				}
 				if (p) {
 					q = getnum (p, &len);
@@ -615,7 +625,7 @@ static char *my_swift_demangler(const char *s) {
 
 R_API char *r_bin_demangle_swift(const char *s, bool syscmd, bool trylib) {
 #if USE_THIS_CODE
-	syscmd = trylib = false; // debugging on macos
+	syscmd = trylib = false; // useful for debugging the embedded demangler on macos
 #endif
 	const char *space = strchr (s, ' ');
 	if (space) {
@@ -637,11 +647,13 @@ R_API char *r_bin_demangle_swift(const char *s, bool syscmd, bool trylib) {
 			}
 		}
 	}
-	if (r_str_startswith (s, "So") && isdigit (s[2])) {
-		char *ss = r_str_newf ("$s%s", s);
-		char *res = r_bin_demangle_swift (ss, syscmd, trylib);
-		free (ss);
-		return res;
+	if (syscmd || trylib) {
+		if (r_str_startswith (s, "So") && isdigit (s[2])) {
+			char *ss = r_str_newf ("$s%s", s);
+			char *res = r_bin_demangle_swift (ss, syscmd, trylib);
+			free (ss);
+			return res;
+		}
 	}
 	s = str_removeprefix (s, "imp.");
 	s = str_removeprefix (s, "reloc.");
