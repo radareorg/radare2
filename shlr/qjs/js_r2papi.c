@@ -150,181 +150,182 @@ static const char *const js_r2papi_qjs = "" \
   "umber()===this.asNumber()}pointsToNull(){return this.readPoin"\
   "ter().compare(0)}toJSON(){return this.toString()}toString(){r"\
   "eturn this.addr.trim()}writePointer(t){this.api.cmd(`wvp ${t}"\
-  "@${this}`)}readPointer(){return new NativePointer(this.api.ca"\
-  "ll(\"pvp@\"+this.addr))}readS8(){return parseInt(this.api.cmd(`"\
-  "pv1d@${this.addr}`))}readU8(){return parseInt(this.api.cmd(`p"\
-  "v1u@${this.addr}`))}readU16(){return parseInt(this.api.cmd(`p"\
-  "v2d@${this.addr}`))}readU16le(){return parseInt(this.api.cmd("\
-  "`pv2d@${this.addr}@e:cfg.bigendian=false`))}readU16be(){retur"\
-  "n parseInt(this.api.cmd(`pv2d@${this.addr}@e:cfg.bigendian=tr"\
-  "ue`))}readS16(){return parseInt(this.api.cmd(`pv2d@${this.add"\
-  "r}`))}readS16le(){return parseInt(this.api.cmd(`pv2d@${this.a"\
-  "ddr}@e:cfg.bigendian=false`))}readS16be(){return parseInt(thi"\
-  "s.api.cmd(`pv2d@${this.addr}@e:cfg.bigendian=true`))}readS32("\
-  "){return parseInt(this.api.cmd(`pv4d@${this.addr}`))}readU32("\
-  "){return parseInt(this.api.cmd(`pv4u@${this.addr}`))}readU32l"\
-  "e(){return parseInt(this.api.cmd(`pv4u@${this.addr}@e:cfg.big"\
-  "endian=false`))}readU32be(){return parseInt(this.api.cmd(`pv4"\
-  "u@${this.addr}@e:cfg.bigendian=true`))}readU64(){return parse"\
-  "Int(this.api.cmd(`pv8u@${this.addr}`))}readU64le(){return par"\
-  "seInt(this.api.cmd(`pv8u@${this.addr}@e:cfg.bigendian=false`)"\
-  ")}readU64be(){return parseInt(this.api.cmd(`pv8u@${this.addr}"\
-  "@e:cfg.bigendian=true`))}writeInt(t){return this.writeU32(t)}"\
-  "writeU8(t){return this.api.cmd(`wv1 ${t}@${this.addr}`),!0}wr"\
-  "iteU16(t){return this.api.cmd(`wv2 ${t}@${this.addr}`),!0}wri"\
-  "teU16be(t){return this.api.cmd(`wv2 ${t}@${this.addr}@e:cfg.b"\
-  "igendian=true`),!0}writeU16le(t){return this.api.cmd(`wv2 ${t"\
-  "}@${this.addr}@e:cfg.bigendian=false`),!0}writeU32(t){return "\
-  "this.api.cmd(`wv4 ${t}@${this.addr}`),!0}writeU32be(t){return"\
-  " this.api.cmd(`wv4 ${t}@${this.addr}@e:cfg.bigendian=true`),!"\
-  "0}writeU32le(t){return this.api.cmd(`wv4 ${t}@${this.addr}@e:"\
-  "cfg.bigendian=false`),!0}writeU64(t){return this.api.cmd(`wv8"\
-  " ${t}@${this.addr}`),!0}writeU64be(t){return this.api.cmd(`wv"\
-  "8 ${t}@${this.addr}@e:cfg.bigendian=true`),!0}writeU64le(t){r"\
-  "eturn this.api.cmd(`wv8 ${t}@${this.addr}@e:cfg.bigendian=fal"\
-  "se`),!0}readInt32(){return this.readU32()}readCString(){retur"\
-  "n JSON.parse(this.api.cmd(`pszj@${this.addr}`)).string}readWi"\
-  "deString(){return JSON.parse(this.api.cmd(`pswj@${this.addr}`"\
-  ")).string}readPascalString(){return JSON.parse(this.api.cmd(`"\
-  "pspj@${this.addr}`)).string}instruction(){return this.api.cmd"\
-  "j(`aoj@${this.addr}`)[0]}disassemble(t){let e=void 0===t?\"\":\""\
-  "\"+t;return this.api.cmd(`pd ${e}@${this.addr}`)}analyzeFuncti"\
-  "on(){return this.api.cmd(\"af@\"+this.addr),this}analyzeFunctio"\
-  "nRecursively(){return this.api.cmd(\"afr@\"+this.addr),this}nam"\
-  "e(){return this.api.cmd(\"fd \"+this.addr).trim()}methodName(){"\
-  "return this.api.cmd(\"ic.@\"+this.addr).trim()}symbolName(){ret"\
-  "urn this.api.cmd(\"isj.@\"+this.addr).trim()}getFunction(){retu"\
-  "rn this.api.cmdj(\"afij@\"+this.addr)}basicBlock(){return this."\
-  "api.cmdj(\"abj@\"+this.addr)}functionBasicBlocks(){return this."\
-  "api.cmdj(\"afbj@\"+this.addr)}xrefs(){return this.api.cmdj(\"axt"\
-  "j@\"+this.addr)}}G.NativePointer=NativePointer;class Base64{st"\
-  "atic encode(t){return(0,G.b64)(t)}static decode(t){return(0,G"\
-  ".b64)(t,!0)}}G.Base64=Base64;class R2AI{constructor(t,e){this"\
-  ".available=!1,this.model=\"\",this.available=\"\"!==G.r2.call(\"r2"\
-  "ai -h\").trim(),this.available?(G.r2.call(`r2ai -n ${t}`),this"\
-  ".model=e):console.error(\"ERROR: r2ai is not installed\")}reset"\
-  "(){this.available&&G.r2.call(\"r2ai -R\")}setRole(t){this.avail"\
-  "able&&G.r2.call(`r2ai -r ${t}`)}query(t){if(!this.available||"\
-  "\"\"==t)return\"\";G.r2.call(`r2ai -m ${this.model}`);const e=t.t"\
-  "rim().replace(/\\n/g,\".\");return G.r2.call(`r2ai ${e}`)}}Objec"\
-  "t.defineProperty(G,\"__esModule\",{value:!0}),G.R2PapiShell=voi"\
-  "d 0;class R2PapiShell{constructor(t){this.rp=t}mkdir(t,e){ret"\
-  "urn!0===e?this.rp.call(`mkdir -p ${t}`):this.rp.call(`mkdir $"\
-  "{t}`),!0}unlink(t){return this.rp.call(`rm ${t}`),!0}chdir(t)"\
-  "{return this.rp.call(`cd ${t}`),!0}ls(){return this.rp.call(\""\
-  "ls -q\").trim().split(\"\\n\")}fileExists(t){return!1}open(t){thi"\
-  "s.rp.call(`open ${t}`)}system(t){return this.rp.call(`!${t}`)"\
-  ",0}run(t){return this.rp.call(`rm ${t}`),0}mount(t,e){return "\
-  "this.rp.call(`m ${t} ${e}`),!0}umount(t){this.rp.call(`m-${t}"\
-  "`)}chdir2(t){return void 0===t&&(t=\"/\"),this.rp.call(`mdq ${t"\
-  "}`),!0}ls2(t){return void 0===t&&(t=\"/\"),this.rp.call(`mdq ${"\
-  "t}`).trim().split(\"\\n\")}enumerateMountpoints(){return this.rp"\
-  ".cmdj(\"mlj\")}isSymlink(t){return!1}isDirectory(t){return!1}}G"\
-  ".R2PapiShell=R2PapiShell,Object.defineProperty(G,\"__esModule\""\
-  ",{value:!0}),G.EsilParser=G.EsilNode=G.EsilToken=void 0;class"\
-  " EsilToken{constructor(t=\"\",e=0){this.label=\"\",this.comment=\""\
-  "\",this.text=\"\",this.addr=\"0\",this.position=0,this.text=t,this"\
-  ".position=e}toString(){return this.text}}G.EsilToken=EsilToke"\
-  "n;class EsilNode{constructor(t=new EsilToken,e=\"none\"){this.t"\
-  "ype=\"none\",this.token=t,this.children=[]}setSides(t,e){this.l"\
-  "hs=t,this.rhs=e}addChildren(t,e){void 0!==t&&this.children.pu"\
-  "sh(t),void 0!==e&&this.children.push(e)}toEsil(){if(void 0!=="\
-  "this.lhs&&void 0!==this.rhs){let t=this.lhs.toEsil();return\"\""\
-  "!==t&&(t+=\",\"),`${this.rhs.toEsil()},${t}${this.token}`}retur"\
-  "n\"\"}toString(){let t=\"\";if(\"\"!==this.token.label&&(t+=this.to"\
-  "ken.label+\":\\n\"),this.token.addr,\"\"!==this.token.comment&&(t+"\
-  "=\"/*\"+this.token.comment+\"*/\\n\"),\"GOTO\"===this.token.toString"\
-  "())if(this.children.length>0){t+=\"goto label_\"+this.children["\
-  "0].token.position+\";\\n\"}else{t+=`goto label_${0};\\n`}if(this."\
-  "children.length>0){t+=`  (if (${this.rhs})\\n`;for(let e of th"\
-  "is.children)if(null!==e){const r=e.toString();\"\"!=r&&(t+=`  $"\
-  "{r}\\n`)}t+=\"  )\\n\"}return void 0!==this.lhs&&void 0!==this.rh"\
-  "s?t+`    ( ${this.lhs} ${this.token} ${this.rhs} )`:t+this.to"\
-  "ken.toString()}}G.EsilNode=EsilNode;class EsilParser{construc"\
-  "tor(t){this.cur=0,this.r2=t,this.cur=0,this.stack=[],this.nod"\
-  "es=[],this.tokens=[],this.root=new EsilNode(new EsilToken(\"fu"\
-  "nction\",0),\"block\")}toJSON(){if(this.stack.length>0)throw new"\
-  " Error(\"The ESIL stack is not empty\");return JSON.stringify(t"\
-  "his.root,null,2)}toEsil(){return this.nodes.map((t=>t.toEsil("\
-  "))).join(\",\")}optimizeFlags(t){void 0!==t.rhs&&this.optimizeF"\
-  "lags(t.rhs),void 0!==t.lhs&&this.optimizeFlags(t.lhs);for(let"\
-  " e=0;e<t.children.length;e++)this.optimizeFlags(t.children[e]"\
-  ");const e=t.toString();if(+e>4096){const r=r2.cmd(`fd.@ ${e}`"\
-  ").trim().split(\"\\n\")[0].trim();\"\"!=r&&-1===r.indexOf(\"+\")&&(t"\
-  ".token.text=r)}}optimize(t){-1!=t.indexOf(\"flag\")&&this.optim"\
-  "izeFlags(this.root)}toString(){return this.root.children.map("\
-  "(t=>t.toString())).join(\";\\n\")}reset(){this.nodes=[],this.sta"\
-  "ck=[],this.tokens=[],this.cur=0,this.root=new EsilNode(new Es"\
-  "ilToken(\"function\",0),\"block\")}parseRange(t,e){let r=t;for(;r"\
-  "<this.tokens.length&&r<e;){const t=this.peek(r);if(!t)break;t"\
-  "his.cur=r,this.pushToken(t),r=this.cur,r++}}parseFunction(t){"\
-  "var e=this;function r(t){const r=r2.cmd(\"pie \"+t+\" @e:scr.col"\
-  "or=0\").trim().split(\"\\n\");for(const t of r){if(0===t.length){"\
-  "console.log(\"Empty\");continue}const r=t.split(\" \");r.length>1"\
-  "&&(r2.cmd(`s ${r[0]}`),e.parse(r[1],r[0]),e.optimize(\"flags,l"\
-  "abels\"))}}const s=r2.cmd(\"?v $$\").trim();void 0===t&&(t=s);co"\
-  "nst i=r2.cmdj(`afbj@${t}`);for(let t of i)r2.cmd(`s ${t.addr}"\
-  "`),r(t.ninstr);r2.cmd(`s ${s}`)}parse(t,e){const r=t.trim().s"\
-  "plit(\",\").map((t=>t.trim())),s=this.tokens.length;for(let t o"\
-  "f r){const r=new EsilToken(t,this.tokens.length);void 0!==e&&"\
-  "(r.addr=e),this.tokens.push(r)}const i=this.tokens.length;thi"\
-  "s.parseRange(s,i)}peek(t){return this.tokens[t]}pushToken(t){"\
-  "if(this.isNumber(t)){const e=new EsilNode(t,\"number\");this.st"\
-  "ack.push(e),this.nodes.push(e)}else if(this.isInternal(t)){co"\
-  "nst e=new EsilNode(t,\"flag\");this.stack.push(e),this.nodes.pu"\
-  "sh(e)}else if(this.isOperation(t));else{const e=new EsilNode("\
-  "t,\"register\");this.stack.push(e),this.nodes.push(e)}}isNumber"\
-  "(t){return!!t.toString().startsWith(\"0\")||+t>0}isInternal(t){"\
-  "const e=t.toString();return e.startsWith(\"$\")&&e.length>1}par"\
-  "seUntil(t){const e=t+1;let r=e;const s=[],i=this.nodes.length"\
-  ";for(this.stack.forEach((t=>s.push(t)));r<this.tokens.length;"\
-  "){const t=this.peek(r);if(!t)break;if(\"}\"===t.toString())brea"\
-  "k;if(\"}{\"===t.toString())break;r++}this.stack=s;const n=r;thi"\
-  "s.parseRange(e,n);return this.nodes.length==i?null:this.nodes"\
-  "[this.nodes.length-1]}getNodeFor(t){if(void 0===this.peek(t))"\
-  "return null;for(let e of this.nodes)if(e.token.position===t)r"\
-  "eturn e;return this.nodes.push(new EsilNode(new EsilToken(\"la"\
-  "bel\",t),\"label\")),null}findNodeFor(t){for(let e of this.nodes"\
-  ")if(e.token.position===t)return e;return null}isOperation(t){"\
-  "switch(t.toString()){case\"[1]\":case\"[2]\":case\"[4]\":case\"[8]\":"\
-  "if(!(this.stack.length>=1))throw new Error(\"Stack needs more "\
-  "items\");{const t=this.stack.pop();new EsilNode(t.token,\"opera"\
-  "tion\");this.stack.push(t)}return!0;case\"!\":if(!(this.stack.le"\
-  "ngth>=1))throw new Error(\"Stack needs more items\");{const e=n"\
-  "ew EsilNode(new EsilToken(\"\",t.position),\"none\"),r=this.stack"\
-  ".pop(),s=new EsilNode(t,\"operation\");s.setSides(e,r),this.sta"\
-  "ck.push(s)}return!0;case\"\":case\"}\":case\"}{\":return!0;case\"DUP"\
-  "\":{if(this.stack.length<1)throw new Error(\"goto cant pop\");co"\
-  "nst t=this.stack.pop();this.stack.push(t),this.stack.push(t)}"\
-  "return!0;case\"GOTO\":if(null!==this.peek(t.position-1)){if(thi"\
-  "s.stack.length<1)throw new Error(\"goto cant pop\");const e=thi"\
-  "s.stack.pop();if(null!==e){const r=0|+e.toString();if(r>0){co"\
-  "nst e=this.peek(r);if(void 0!==e){e.label=\"label_\"+r,e.commen"\
-  "t=\"hehe\";const s=new EsilNode(t,\"goto\"),i=this.getNodeFor(e.p"\
-  "osition);null!=i&&s.children.push(i),this.root.children.push("\
-  "s)}else console.error(\"Cannot find goto node\")}else console.e"\
-  "rror(\"Cannot find dest node for goto\")}}return!0;case\"?{\":if("\
-  "!(this.stack.length>=1))throw new Error(\"Stack needs more ite"\
-  "ms\");{const e=new EsilNode(new EsilToken(\"if\",t.position),\"no"\
-  "ne\"),r=this.stack.pop(),s=new EsilNode(t,\"operation\");s.setSi"\
-  "des(e,r);let i=this.parseUntil(t.position),n=null;null!==i&&("\
-  "s.children.push(i),this.nodes.push(i),n=this.parseUntil(i.tok"\
-  "en.position+1),null!==n&&(s.children.push(n),this.nodes.push("\
-  "n))),this.nodes.push(s),this.root.children.push(s),null!==n&&"\
-  "(this.cur=n.token.position)}return!0;case\"-\":if(!(this.stack."\
-  "length>=2))throw new Error(\"Stack needs more items\");{const e"\
-  "=this.stack.pop(),r=this.stack.pop(),s=new EsilNode(t,\"operat"\
-  "ion\");s.setSides(e,r),this.stack.length,this.stack.push(s),th"\
-  "is.nodes.push(s)}return!0;case\"<\":case\">\":case\"^\":case\"&\":cas"\
-  "e\"|\":case\"+\":case\"*\":case\"/\":case\">>=\":case\"<<=\":case\">>>=\":c"\
-  "ase\"<<<=\":case\">>>>=\":case\"<<<<=\":if(!(this.stack.length>=2))"\
-  "throw new Error(\"Stack needs more items\");{const e=this.stack"\
-  ".pop(),r=this.stack.pop(),s=new EsilNode(t,\"operation\");s.set"\
-  "Sides(e,r),this.stack.length,this.stack.push(s),this.nodes.pu"\
-  "sh(s)}return!0;case\"=\":case\":=\":case\"-=\":case\"+=\":case\"==\":ca"\
-  "se\"=[1]\":case\"=[2]\":case\"=[4]\":case\"=[8]\":if(!(this.stack.len"\
-  "gth>=2))throw new Error(\"Stack needs more items\");{const e=th"\
-  "is.stack.pop(),r=this.stack.pop(),s=new EsilNode(t,\"operation"\
-  "\");s.setSides(e,r),0===this.stack.length&&this.root.children."\
-  "push(s),this.nodes.push(s)}return!0}return!1}}G.EsilParser=Es"\
-  "ilParser;\n";
+  "@${this}`)}readRelativePointer(){return this.add(this.readS32"\
+  "())}readPointer(){return new NativePointer(this.api.call(\"pvp"\
+  "@\"+this.addr))}readS8(){return parseInt(this.api.cmd(`pv1d@${"\
+  "this.addr}`))}readU8(){return parseInt(this.api.cmd(`pv1u@${t"\
+  "his.addr}`))}readU16(){return parseInt(this.api.cmd(`pv2d@${t"\
+  "his.addr}`))}readU16le(){return parseInt(this.api.cmd(`pv2d@$"\
+  "{this.addr}@e:cfg.bigendian=false`))}readU16be(){return parse"\
+  "Int(this.api.cmd(`pv2d@${this.addr}@e:cfg.bigendian=true`))}r"\
+  "eadS16(){return parseInt(this.api.cmd(`pv2d@${this.addr}`))}r"\
+  "eadS16le(){return parseInt(this.api.cmd(`pv2d@${this.addr}@e:"\
+  "cfg.bigendian=false`))}readS16be(){return parseInt(this.api.c"\
+  "md(`pv2d@${this.addr}@e:cfg.bigendian=true`))}readS32(){retur"\
+  "n parseInt(this.api.cmd(`pv4d@${this.addr}`))}readU32(){retur"\
+  "n parseInt(this.api.cmd(`pv4u@${this.addr}`))}readU32le(){ret"\
+  "urn parseInt(this.api.cmd(`pv4u@${this.addr}@e:cfg.bigendian="\
+  "false`))}readU32be(){return parseInt(this.api.cmd(`pv4u@${thi"\
+  "s.addr}@e:cfg.bigendian=true`))}readU64(){return parseInt(thi"\
+  "s.api.cmd(`pv8u@${this.addr}`))}readU64le(){return parseInt(t"\
+  "his.api.cmd(`pv8u@${this.addr}@e:cfg.bigendian=false`))}readU"\
+  "64be(){return parseInt(this.api.cmd(`pv8u@${this.addr}@e:cfg."\
+  "bigendian=true`))}writeInt(t){return this.writeU32(t)}writeU8"\
+  "(t){return this.api.cmd(`wv1 ${t}@${this.addr}`),!0}writeU16("\
+  "t){return this.api.cmd(`wv2 ${t}@${this.addr}`),!0}writeU16be"\
+  "(t){return this.api.cmd(`wv2 ${t}@${this.addr}@e:cfg.bigendia"\
+  "n=true`),!0}writeU16le(t){return this.api.cmd(`wv2 ${t}@${thi"\
+  "s.addr}@e:cfg.bigendian=false`),!0}writeU32(t){return this.ap"\
+  "i.cmd(`wv4 ${t}@${this.addr}`),!0}writeU32be(t){return this.a"\
+  "pi.cmd(`wv4 ${t}@${this.addr}@e:cfg.bigendian=true`),!0}write"\
+  "U32le(t){return this.api.cmd(`wv4 ${t}@${this.addr}@e:cfg.big"\
+  "endian=false`),!0}writeU64(t){return this.api.cmd(`wv8 ${t}@$"\
+  "{this.addr}`),!0}writeU64be(t){return this.api.cmd(`wv8 ${t}@"\
+  "${this.addr}@e:cfg.bigendian=true`),!0}writeU64le(t){return t"\
+  "his.api.cmd(`wv8 ${t}@${this.addr}@e:cfg.bigendian=false`),!0"\
+  "}readInt32(){return this.readU32()}readCString(){return JSON."\
+  "parse(this.api.cmd(`pszj@${this.addr}`)).string}readWideStrin"\
+  "g(){return JSON.parse(this.api.cmd(`pswj@${this.addr}`)).stri"\
+  "ng}readPascalString(){return JSON.parse(this.api.cmd(`pspj@${"\
+  "this.addr}`)).string}instruction(){return this.api.cmdj(`aoj@"\
+  "${this.addr}`)[0]}disassemble(t){let e=void 0===t?\"\":\"\"+t;ret"\
+  "urn this.api.cmd(`pd ${e}@${this.addr}`)}analyzeFunction(){re"\
+  "turn this.api.cmd(\"af@\"+this.addr),this}analyzeFunctionRecurs"\
+  "ively(){return this.api.cmd(\"afr@\"+this.addr),this}name(){ret"\
+  "urn this.api.cmd(\"fd \"+this.addr).trim()}methodName(){return "\
+  "this.api.cmd(\"ic.@\"+this.addr).trim()}symbolName(){return thi"\
+  "s.api.cmd(\"isj.@\"+this.addr).trim()}getFunction(){return this"\
+  ".api.cmdj(\"afij@\"+this.addr)}basicBlock(){return this.api.cmd"\
+  "j(\"abj@\"+this.addr)}functionBasicBlocks(){return this.api.cmd"\
+  "j(\"afbj@\"+this.addr)}xrefs(){return this.api.cmdj(\"axtj@\"+thi"\
+  "s.addr)}}G.NativePointer=NativePointer;class Base64{static en"\
+  "code(t){return(0,G.b64)(t)}static decode(t){return(0,G.b64)(t"\
+  ",!0)}}G.Base64=Base64;class R2AI{constructor(t,e){this.availa"\
+  "ble=!1,this.model=\"\",this.available=\"\"!==G.r2.call(\"r2ai -h\")"\
+  ".trim(),this.available?(G.r2.call(`r2ai -n ${t}`),this.model="\
+  "e):console.error(\"ERROR: r2ai is not installed\")}reset(){this"\
+  ".available&&G.r2.call(\"r2ai -R\")}setRole(t){this.available&&G"\
+  ".r2.call(`r2ai -r ${t}`)}query(t){if(!this.available||\"\"==t)r"\
+  "eturn\"\";G.r2.call(`r2ai -m ${this.model}`);const e=t.trim().r"\
+  "eplace(/\\n/g,\".\");return G.r2.call(`r2ai ${e}`)}}Object.defin"\
+  "eProperty(G,\"__esModule\",{value:!0}),G.R2PapiShell=void 0;cla"\
+  "ss R2PapiShell{constructor(t){this.rp=t}mkdir(t,e){return!0=="\
+  "=e?this.rp.call(`mkdir -p ${t}`):this.rp.call(`mkdir ${t}`),!"\
+  "0}unlink(t){return this.rp.call(`rm ${t}`),!0}chdir(t){return"\
+  " this.rp.call(`cd ${t}`),!0}ls(){return this.rp.call(\"ls -q\")"\
+  ".trim().split(\"\\n\")}fileExists(t){return!1}open(t){this.rp.ca"\
+  "ll(`open ${t}`)}system(t){return this.rp.call(`!${t}`),0}run("\
+  "t){return this.rp.call(`rm ${t}`),0}mount(t,e){return this.rp"\
+  ".call(`m ${t} ${e}`),!0}umount(t){this.rp.call(`m-${t}`)}chdi"\
+  "r2(t){return void 0===t&&(t=\"/\"),this.rp.call(`mdq ${t}`),!0}"\
+  "ls2(t){return void 0===t&&(t=\"/\"),this.rp.call(`mdq ${t}`).tr"\
+  "im().split(\"\\n\")}enumerateMountpoints(){return this.rp.cmdj(\""\
+  "mlj\")}isSymlink(t){return!1}isDirectory(t){return!1}}G.R2Papi"\
+  "Shell=R2PapiShell,Object.defineProperty(G,\"__esModule\",{value"\
+  ":!0}),G.EsilParser=G.EsilNode=G.EsilToken=void 0;class EsilTo"\
+  "ken{constructor(t=\"\",e=0){this.label=\"\",this.comment=\"\",this."\
+  "text=\"\",this.addr=\"0\",this.position=0,this.text=t,this.positi"\
+  "on=e}toString(){return this.text}}G.EsilToken=EsilToken;class"\
+  " EsilNode{constructor(t=new EsilToken,e=\"none\"){this.type=\"no"\
+  "ne\",this.token=t,this.children=[]}setSides(t,e){this.lhs=t,th"\
+  "is.rhs=e}addChildren(t,e){void 0!==t&&this.children.push(t),v"\
+  "oid 0!==e&&this.children.push(e)}toEsil(){if(void 0!==this.lh"\
+  "s&&void 0!==this.rhs){let t=this.lhs.toEsil();return\"\"!==t&&("\
+  "t+=\",\"),`${this.rhs.toEsil()},${t}${this.token}`}return\"\"}toS"\
+  "tring(){let t=\"\";if(\"\"!==this.token.label&&(t+=this.token.lab"\
+  "el+\":\\n\"),this.token.addr,\"\"!==this.token.comment&&(t+=\"/*\"+t"\
+  "his.token.comment+\"*/\\n\"),\"GOTO\"===this.token.toString())if(t"\
+  "his.children.length>0){t+=\"goto label_\"+this.children[0].toke"\
+  "n.position+\";\\n\"}else{t+=`goto label_${0};\\n`}if(this.childre"\
+  "n.length>0){t+=`  (if (${this.rhs})\\n`;for(let e of this.chil"\
+  "dren)if(null!==e){const r=e.toString();\"\"!=r&&(t+=`  ${r}\\n`)"\
+  "}t+=\"  )\\n\"}return void 0!==this.lhs&&void 0!==this.rhs?t+`  "\
+  "  ( ${this.lhs} ${this.token} ${this.rhs} )`:t+this.token.toS"\
+  "tring()}}G.EsilNode=EsilNode;class EsilParser{constructor(t){"\
+  "this.cur=0,this.r2=t,this.cur=0,this.stack=[],this.nodes=[],t"\
+  "his.tokens=[],this.root=new EsilNode(new EsilToken(\"function\""\
+  ",0),\"block\")}toJSON(){if(this.stack.length>0)throw new Error("\
+  "\"The ESIL stack is not empty\");return JSON.stringify(this.roo"\
+  "t,null,2)}toEsil(){return this.nodes.map((t=>t.toEsil())).joi"\
+  "n(\",\")}optimizeFlags(t){void 0!==t.rhs&&this.optimizeFlags(t."\
+  "rhs),void 0!==t.lhs&&this.optimizeFlags(t.lhs);for(let e=0;e<"\
+  "t.children.length;e++)this.optimizeFlags(t.children[e]);const"\
+  " e=t.toString();if(+e>4096){const r=r2.cmd(`fd.@ ${e}`).trim("\
+  ").split(\"\\n\")[0].trim();\"\"!=r&&-1===r.indexOf(\"+\")&&(t.token."\
+  "text=r)}}optimize(t){-1!=t.indexOf(\"flag\")&&this.optimizeFlag"\
+  "s(this.root)}toString(){return this.root.children.map((t=>t.t"\
+  "oString())).join(\";\\n\")}reset(){this.nodes=[],this.stack=[],t"\
+  "his.tokens=[],this.cur=0,this.root=new EsilNode(new EsilToken"\
+  "(\"function\",0),\"block\")}parseRange(t,e){let r=t;for(;r<this.t"\
+  "okens.length&&r<e;){const t=this.peek(r);if(!t)break;this.cur"\
+  "=r,this.pushToken(t),r=this.cur,r++}}parseFunction(t){var e=t"\
+  "his;function r(t){const r=r2.cmd(\"pie \"+t+\" @e:scr.color=0\")."\
+  "trim().split(\"\\n\");for(const t of r){if(0===t.length){console"\
+  ".log(\"Empty\");continue}const r=t.split(\" \");r.length>1&&(r2.c"\
+  "md(`s ${r[0]}`),e.parse(r[1],r[0]),e.optimize(\"flags,labels\")"\
+  ")}}const s=r2.cmd(\"?v $$\").trim();void 0===t&&(t=s);const i=r"\
+  "2.cmdj(`afbj@${t}`);for(let t of i)r2.cmd(`s ${t.addr}`),r(t."\
+  "ninstr);r2.cmd(`s ${s}`)}parse(t,e){const r=t.trim().split(\","\
+  "\").map((t=>t.trim())),s=this.tokens.length;for(let t of r){co"\
+  "nst r=new EsilToken(t,this.tokens.length);void 0!==e&&(r.addr"\
+  "=e),this.tokens.push(r)}const i=this.tokens.length;this.parse"\
+  "Range(s,i)}peek(t){return this.tokens[t]}pushToken(t){if(this"\
+  ".isNumber(t)){const e=new EsilNode(t,\"number\");this.stack.pus"\
+  "h(e),this.nodes.push(e)}else if(this.isInternal(t)){const e=n"\
+  "ew EsilNode(t,\"flag\");this.stack.push(e),this.nodes.push(e)}e"\
+  "lse if(this.isOperation(t));else{const e=new EsilNode(t,\"regi"\
+  "ster\");this.stack.push(e),this.nodes.push(e)}}isNumber(t){ret"\
+  "urn!!t.toString().startsWith(\"0\")||+t>0}isInternal(t){const e"\
+  "=t.toString();return e.startsWith(\"$\")&&e.length>1}parseUntil"\
+  "(t){const e=t+1;let r=e;const s=[],i=this.nodes.length;for(th"\
+  "is.stack.forEach((t=>s.push(t)));r<this.tokens.length;){const"\
+  " t=this.peek(r);if(!t)break;if(\"}\"===t.toString())break;if(\"}"\
+  "{\"===t.toString())break;r++}this.stack=s;const n=r;this.parse"\
+  "Range(e,n);return this.nodes.length==i?null:this.nodes[this.n"\
+  "odes.length-1]}getNodeFor(t){if(void 0===this.peek(t))return "\
+  "null;for(let e of this.nodes)if(e.token.position===t)return e"\
+  ";return this.nodes.push(new EsilNode(new EsilToken(\"label\",t)"\
+  ",\"label\")),null}findNodeFor(t){for(let e of this.nodes)if(e.t"\
+  "oken.position===t)return e;return null}isOperation(t){switch("\
+  "t.toString()){case\"[1]\":case\"[2]\":case\"[4]\":case\"[8]\":if(!(th"\
+  "is.stack.length>=1))throw new Error(\"Stack needs more items\")"\
+  ";{const t=this.stack.pop();new EsilNode(t.token,\"operation\");"\
+  "this.stack.push(t)}return!0;case\"!\":if(!(this.stack.length>=1"\
+  "))throw new Error(\"Stack needs more items\");{const e=new Esil"\
+  "Node(new EsilToken(\"\",t.position),\"none\"),r=this.stack.pop(),"\
+  "s=new EsilNode(t,\"operation\");s.setSides(e,r),this.stack.push"\
+  "(s)}return!0;case\"\":case\"}\":case\"}{\":return!0;case\"DUP\":{if(t"\
+  "his.stack.length<1)throw new Error(\"goto cant pop\");const t=t"\
+  "his.stack.pop();this.stack.push(t),this.stack.push(t)}return!"\
+  "0;case\"GOTO\":if(null!==this.peek(t.position-1)){if(this.stack"\
+  ".length<1)throw new Error(\"goto cant pop\");const e=this.stack"\
+  ".pop();if(null!==e){const r=0|+e.toString();if(r>0){const e=t"\
+  "his.peek(r);if(void 0!==e){e.label=\"label_\"+r,e.comment=\"hehe"\
+  "\";const s=new EsilNode(t,\"goto\"),i=this.getNodeFor(e.position"\
+  ");null!=i&&s.children.push(i),this.root.children.push(s)}else"\
+  " console.error(\"Cannot find goto node\")}else console.error(\"C"\
+  "annot find dest node for goto\")}}return!0;case\"?{\":if(!(this."\
+  "stack.length>=1))throw new Error(\"Stack needs more items\");{c"\
+  "onst e=new EsilNode(new EsilToken(\"if\",t.position),\"none\"),r="\
+  "this.stack.pop(),s=new EsilNode(t,\"operation\");s.setSides(e,r"\
+  ");let i=this.parseUntil(t.position),n=null;null!==i&&(s.child"\
+  "ren.push(i),this.nodes.push(i),n=this.parseUntil(i.token.posi"\
+  "tion+1),null!==n&&(s.children.push(n),this.nodes.push(n))),th"\
+  "is.nodes.push(s),this.root.children.push(s),null!==n&&(this.c"\
+  "ur=n.token.position)}return!0;case\"-\":if(!(this.stack.length>"\
+  "=2))throw new Error(\"Stack needs more items\");{const e=this.s"\
+  "tack.pop(),r=this.stack.pop(),s=new EsilNode(t,\"operation\");s"\
+  ".setSides(e,r),this.stack.length,this.stack.push(s),this.node"\
+  "s.push(s)}return!0;case\"<\":case\">\":case\"^\":case\"&\":case\"|\":ca"\
+  "se\"+\":case\"*\":case\"/\":case\">>=\":case\"<<=\":case\">>>=\":case\"<<<"\
+  "=\":case\">>>>=\":case\"<<<<=\":if(!(this.stack.length>=2))throw n"\
+  "ew Error(\"Stack needs more items\");{const e=this.stack.pop(),"\
+  "r=this.stack.pop(),s=new EsilNode(t,\"operation\");s.setSides(e"\
+  ",r),this.stack.length,this.stack.push(s),this.nodes.push(s)}r"\
+  "eturn!0;case\"=\":case\":=\":case\"-=\":case\"+=\":case\"==\":case\"=[1]"\
+  "\":case\"=[2]\":case\"=[4]\":case\"=[8]\":if(!(this.stack.length>=2)"\
+  ")throw new Error(\"Stack needs more items\");{const e=this.stac"\
+  "k.pop(),r=this.stack.pop(),s=new EsilNode(t,\"operation\");s.se"\
+  "tSides(e,r),0===this.stack.length&&this.root.children.push(s)"\
+  ",this.nodes.push(s)}return!0}return!1}}G.EsilParser=EsilParse"\
+  "r;\n";
