@@ -425,7 +425,7 @@ static int cmd_plugins(void *data, const char *input) {
 		case 'j': r_core_cmd_call (core, "phj"); break;
 		case 'q': r_core_cmd_call (core, "phq"); break;
 		case 0: r_core_cmd_call (core, "ph"); break;
-		default: r_core_cmd_help_match (core, help_msg_L, "Lh", true); break;
+		default: r_core_cmd_help_match (core, help_msg_L, "Lh"); break;
 		}
 		break;
 	case 'A': // "LA"
@@ -437,14 +437,14 @@ static int cmd_plugins(void *data, const char *input) {
 		break;
 	case 's': // "Ls"
 		if (input[1] == '?') { // "Ls?"
-			r_core_cmd_help_match (core, help_msg_L, "Ls", true);
+			r_core_cmd_help_match (core, help_msg_L, "Ls");
 		} else { // asm plugins
 			ranal2_list (core, NULL, input[1]);
 		}
 		break;
 	case 'a': // "La" // list arch plugins
 		if (input[1] == '?') {
-			r_core_cmd_help_match (core, help_msg_L, "La", true);
+			r_core_cmd_help_match (core, help_msg_L, "La");
 		} else {
 			int mode = input[1];
 			PJ *pj = (mode == 'j')? r_core_pj_new (core): NULL;

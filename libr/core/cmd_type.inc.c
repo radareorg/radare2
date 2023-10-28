@@ -237,12 +237,12 @@ static void cmd_tcc(RCore *core, const char *input) {
 	case '-':
 		if (input[1] == '*') {
 			if (input[2] == '?') {
-				r_core_cmd_help_match (core, help_msg_tcc, "tcc-*", true);
+				r_core_cmd_help_match (core, help_msg_tcc, "tcc-*");
 			} else {
 				sdb_reset (core->anal->sdb_cc);
 			}
 		} else if (input[1] == '?') {
-			r_core_cmd_help_match (core, help_msg_tcc, "tcc-", false);
+			r_core_cmd_help_contains (core, help_msg_tcc, "tcc-");
 		} else {
 			r_anal_cc_del (core->anal, r_str_trim_head_ro (input + 1));
 		}
@@ -252,14 +252,14 @@ static void cmd_tcc(RCore *core, const char *input) {
 	case 'j':
 	case '*':
 		if (*input && input[1] == '?') {
-			r_core_cmd_help_match_spec (core, help_msg_tcc, "tcc", *input, true);
+			r_core_cmd_help_match_spec (core, help_msg_tcc, "tcc", *input);
 		} else {
 			cmd_afcl (core, input);
 		}
 		break;
 	case 'k':
 		if (input[1] == '?') {
-			r_core_cmd_help_match (core, help_msg_tcc, "tcck", true);
+			r_core_cmd_help_match (core, help_msg_tcc, "tcck");
 		} else {
 			cmd_afck (core, NULL);
 		}
@@ -328,7 +328,7 @@ static int cmd_tac(void *data, const char *_input) { // "tac"
 	}
 	switch (*input) {
 	case '?': // "tac?"
-		r_core_cmd_help_match (core, help_msg_t, "tac", true);
+		r_core_cmd_help_match (core, help_msg_t, "tac");
 		break;
 	default: // "tac"
 		if (R_STR_ISNOTEMPTY (arg)) {
@@ -342,7 +342,7 @@ static int cmd_tac(void *data, const char *_input) { // "tac"
 			r_list_free (lines);
 			free (filedata);
 		} else {
-			r_core_cmd_help_match (core, help_msg_t, "tac", true);
+			r_core_cmd_help_match (core, help_msg_t, "tac");
 		}
 		break;
 	}
@@ -367,7 +367,7 @@ static int cmd_tail(void *data, const char *_input) { // "tail"
 	}
 	switch (*input) {
 	case '?': // "tail?"
-		r_core_cmd_help_match (core, help_msg_t, "tail", true);
+		r_core_cmd_help_match (core, help_msg_t, "tail");
 		break;
 	default: // "tail"
 		if (!arg) {
@@ -1117,7 +1117,7 @@ static int cmd_type(void *data, const char *input) {
 	}
 	case 'k': // "tk"
 		if (input[1] == '?') {
-			r_core_cmd_help_match (core, help_msg_t, "tk", true);
+			r_core_cmd_help_match (core, help_msg_t, "tk");
 		} else {
 			res = (input[1] == ' ')
 				? sdb_querys (TDB, NULL, -1, input + 2)
@@ -1165,7 +1165,7 @@ static int cmd_type(void *data, const char *input) {
 			break;
 		case 'd': // "tcd"
 			if (input[2] == '?') {
-				r_core_cmd_help_match (core, help_msg_tc, "tcd", true);
+				r_core_cmd_help_match (core, help_msg_tc, "tcd");
 			} else {
 				r_core_cmd0 (core, "tud;tsd;ttc;ted");
 			}
@@ -1280,7 +1280,7 @@ static int cmd_type(void *data, const char *input) {
 				free (name);
 				ls_free (l);
 			} else if (input[2] == '?') {
-				r_core_cmd_help_match (core, help_msg_te, "tej", false);
+				r_core_cmd_help_contains (core, help_msg_te, "tej");
 			} else { // "tej ENUM"
 				RListIter *iter;
 				PJ *pj = pj_new ();
@@ -1309,21 +1309,21 @@ static int cmd_type(void *data, const char *input) {
 			break;
 		case 'b': // "teb"
 			if (R_STR_ISEMPTY (name) || input[2] == '?') {
-				r_core_cmd_help_match (core, help_msg_te, "teb", true);
+				r_core_cmd_help_match (core, help_msg_te, "teb");
 			} else {
 				res = r_type_enum_member (TDB, name, member_name, 0);
 			}
 			break;
 		case 'c': // "tec"
 			if (input[2] == '?') {
-				r_core_cmd_help_match (core, help_msg_te, "tec", true);
+				r_core_cmd_help_match (core, help_msg_te, "tec");
 			} else {
 				print_enum_in_c_format (TDB, r_str_trim_head_ro (input + 2), true);
 			}
 			break;
 		case 'd': // "ted"
 			if (input[2] == '?') {
-				r_core_cmd_help_match (core, help_msg_te, "ted", true);
+				r_core_cmd_help_match (core, help_msg_te, "ted");
 			} else {
 				print_enum_in_c_format (TDB, r_str_trim_head_ro (input + 2), false);
 			}
@@ -1392,7 +1392,7 @@ static int cmd_type(void *data, const char *input) {
 	case '*': // "t*"
 	case '\0': // "t"
 		if (input[0] && input[1] == '?') {
-			r_core_cmd_help_match_spec (core, help_msg_t, "t", input[0], true);
+			r_core_cmd_help_match_spec (core, help_msg_t, "t", input[0]);
 		} else {
 			typesList (core, input[0]);
 		}
@@ -1447,7 +1447,7 @@ static int cmd_type(void *data, const char *input) {
 				if (arg) {
 					r_file_touch (arg + 1);
 				} else {
-					r_core_cmd_help_match (core, help_msg_to, "touch", true);
+					r_core_cmd_help_match (core, help_msg_to, "touch");
 				}
 			} else if (input[1] == 's') {
 				const char *dbpath = input + 3;
@@ -1485,7 +1485,7 @@ static int cmd_type(void *data, const char *input) {
 	case 'd': // "td"
 		if (input[1] == '?') {
 			// TODO #7967 help refactor: move to detail
-			r_core_cmd_help_match (core, help_msg_t, "td", true);
+			r_core_cmd_help_match (core, help_msg_t, "td");
 		} else if (input[1] == ' ') {
 			char *tmp = r_str_newf ("%s;", input + 2);
 			if (!tmp) {
@@ -1605,11 +1605,11 @@ static int cmd_type(void *data, const char *input) {
 			if (input[2] == 'l') {
 				cmd_tail (core, input);
 			} else {
-				r_core_cmd_help_match (core, help_msg_t, "tail", true);
+				r_core_cmd_help_match (core, help_msg_t, "tail");
 			}
 			break;
 		default:
-			r_core_cmd_help_match (core, help_msg_t, "ta", false);
+			r_core_cmd_help_contains (core, help_msg_t, "ta");
 			break;
 		}
 		break;
@@ -1712,7 +1712,7 @@ static int cmd_type(void *data, const char *input) {
 				ut64 val = core->offset;
 				r_core_cmdf (core, "pf %s @v:0x%08" PFMT64x, fmt, val);
 			} else {
-				r_core_cmd_help_match (core, help_msg_tp, "tpv", true);
+				r_core_cmd_help_match (core, help_msg_tp, "tpv");
 			}
 		} else if (input[1] == ' ' || input[1] == 'x' || !input[1]) {
 			char *tmp = strdup (input);
@@ -1777,10 +1777,10 @@ static int cmd_type(void *data, const char *input) {
 		break;
 	case '-': // "t-"
 		if (input[1] == '?') {
-			r_core_cmd_help_match (core, help_msg_t, "t-", false);
+			r_core_cmd_help_contains (core, help_msg_t, "t-");
 		} else if (input[1] == '*') {
 			if (input[2] == '?') {
-				r_core_cmd_help_match (core, help_msg_t, "t-*", true);
+				r_core_cmd_help_match (core, help_msg_t, "t-*");
 			} else {
 				sdb_reset (TDB);
 			}

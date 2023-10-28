@@ -435,12 +435,12 @@ static int cmd_eval(void *data, const char *input) {
 				}
 			}
 		} else {
-			r_core_cmd_help_match (core, help_msg_e, "et", false);
+			r_core_cmd_help_contains (core, help_msg_e, "et");
 		}
 		break;
 	case 'n': // "en" "env"
 		if (strchr (input, '?')) {
-			r_core_cmd_help_match (core, help_msg_e, "en", false);
+			r_core_cmd_help_contains (core, help_msg_e, "en");
 			break;
 		} else if (!strchr (input, '=')) {
 			const char *var = strchr (input, ' ');
@@ -634,7 +634,7 @@ static int cmd_eval(void *data, const char *input) {
 				break;
 			case 'w': // "ecHw"
 				if (!argc) {
-					r_core_cmd_help_match (core, help_msg_ecH, "ecHw", true);
+					r_core_cmd_help_match (core, help_msg_ecH, "ecHw");
 					r_str_argv_free (argv);
 					return true;
 				}
@@ -690,7 +690,7 @@ static int cmd_eval(void *data, const char *input) {
 		break;
 	case 'd': // "ed"
 		if (input[1] == '?') {
-			r_core_cmd_help_match (core, help_msg_e, "ed", false);
+			r_core_cmd_help_contains (core, help_msg_e, "ed");
 		} else if (input[1] == '-') { // "ed-"
 			char *file = r_file_home (".radare2rc");
 			if (file) {
@@ -725,7 +725,7 @@ static int cmd_eval(void *data, const char *input) {
 				r_config_set (core->config, input2, p);
 			}
 		} else {
-			r_core_cmd_help_match (core, help_msg_e, "ee", false);
+			r_core_cmd_help_contains (core, help_msg_e, "ee");
 		}
 		break;
 	case '!': // "e!"
@@ -735,7 +735,7 @@ static int cmd_eval(void *data, const char *input) {
 				R_LOG_ERROR ("'%s' is not a boolean variable", input);
 			}
 		} else {
-			r_core_cmd_help_match (core, help_msg_e, "e!", true);
+			r_core_cmd_help_match (core, help_msg_e, "e!");
 		}
 		break;
 	case 's': // "es"
@@ -755,7 +755,7 @@ static int cmd_eval(void *data, const char *input) {
 				R_LOG_ERROR ("cannot find key '%s'", key);
 			}
 		} else {
-			r_core_cmd_help_match (core, help_msg_e, "er", false);
+			r_core_cmd_help_contains (core, help_msg_e, "er");
 		}
 		break;
 	case ':': // "e:"

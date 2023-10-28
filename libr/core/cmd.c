@@ -420,12 +420,20 @@ R_API void r_core_cmd_help(const RCore *core, RCoreHelpMessage help) {
 	r_cons_cmd_help (help, core->print->flags & R_PRINT_FLAGS_COLOR);
 }
 
-R_API void r_core_cmd_help_match(const RCore *core, RCoreHelpMessage help, R_BORROW R_NONNULL char *cmd, bool exact) {
-	r_cons_cmd_help_match (help, core->print->flags & R_PRINT_FLAGS_COLOR, cmd, 0, exact);
+R_API void r_core_cmd_help_match(const RCore *core, RCoreHelpMessage help, R_BORROW R_NONNULL char *cmd) {
+	r_cons_cmd_help_match (help, core->print->flags & R_PRINT_FLAGS_COLOR, cmd, 0, true);
 }
 
-R_API void r_core_cmd_help_match_spec(const RCore *core, RCoreHelpMessage help, R_BORROW R_NONNULL char *cmd, char spec, bool exact) {
-	r_cons_cmd_help_match (help, core->print->flags & R_PRINT_FLAGS_COLOR, cmd, spec, exact);
+R_API void r_core_cmd_help_contains(const RCore *core, RCoreHelpMessage help, R_BORROW R_NONNULL char *cmd) {
+	r_cons_cmd_help_match (help, core->print->flags & R_PRINT_FLAGS_COLOR, cmd, 0, false);
+}
+
+R_API void r_core_cmd_help_match_spec(const RCore *core, RCoreHelpMessage help, R_BORROW R_NONNULL char *cmd, char spec) {
+	r_cons_cmd_help_match (help, core->print->flags & R_PRINT_FLAGS_COLOR, cmd, spec, true);
+}
+
+R_API void r_core_cmd_help_contains_spec(const RCore *core, RCoreHelpMessage help, R_BORROW R_NONNULL char *cmd, char spec) {
+	r_cons_cmd_help_match (help, core->print->flags & R_PRINT_FLAGS_COLOR, cmd, spec, false);
 }
 
 struct duplicate_flag_t {
@@ -637,7 +645,7 @@ static int cmd_uniq(void *data, const char *input) { // "uniq"
 	}
 	switch (*input) {
 	case '?': // "uniq?"
-		r_core_cmd_help_match (core, help_msg_u, "uniq", true);
+		r_core_cmd_help_match (core, help_msg_u, "uniq");
 		break;
 	default: // "uniq"
 		if (!arg) {
@@ -713,7 +721,7 @@ static int cmd_undo(void *data, const char *input) {
 				RCoreUndo *undo = r_core_undo_new (core->offset, cmd, rcmd);
 				r_core_undo_push (core, undo);
 			} else {
-				r_core_cmd_help_match (core, help_msg_uc, "uc", true);
+				r_core_cmd_help_match (core, help_msg_uc, "uc");
 			}
 			free (cmd);
 			}
@@ -967,7 +975,7 @@ static void cmd_remote(RCore *core, const char *input, bool retry) {
 		return;
 	}
 	if (*input == '?') {
-		r_core_cmd_help_match (core, help_msg_equal, "=r", true);
+		r_core_cmd_help_match (core, help_msg_equal, "=r");
 		return;
 	}
 	char *host = strdup (input);
@@ -1210,12 +1218,12 @@ static int cmd_yank(void *data, const char *input) {
 				}
 				free (out);
 			} else {
-				r_core_cmd_help_match (core, help_msg_y, "ywx", true);
+				r_core_cmd_help_match (core, help_msg_y, "ywx");
 			}
 			// r_core_yank_write_hex (core, input + 2);
 			break;
 		default:
-			r_core_cmd_help_match (core, help_msg_y, "ywx", true);
+			r_core_cmd_help_match (core, help_msg_y, "ywx");
 			break;
 		}
 		break;
@@ -1238,7 +1246,7 @@ static int cmd_yank(void *data, const char *input) {
 			if (*file == '$') {
 				r_cmd_alias_set_raw (core->rcmd, file+1, tmp, tmpsz);
 			} else if (*file == '?' || !*file) {
-				r_core_cmd_help_match (core, help_msg_y, "ytf", true);
+				r_core_cmd_help_match (core, help_msg_y, "ytf");
 			} else {
 				if (!r_file_dump (file, tmp, tmpsz, false)) {
 					R_LOG_ERROR ("Cannot dump to '%s'", file);
@@ -1247,7 +1255,7 @@ static int cmd_yank(void *data, const char *input) {
 		} else if (input[1] == ' ') {
 			r_core_yank_to (core, input + 1);
 		} else {
-			r_core_cmd_help_match (core, help_msg_y, "yt", false);
+			r_core_cmd_help_contains (core, help_msg_y, "yt");
 		}
 		break;
 	case 'f': // "yf"
@@ -1262,7 +1270,7 @@ static int cmd_yank(void *data, const char *input) {
 			r_core_yank_file_all (core, input + 2);
 			break;
 		default:
-			r_core_cmd_help_match (core, help_msg_y, "yf", false);
+			r_core_cmd_help_contains (core, help_msg_y, "yf");
 			break;
 		}
 		break;
@@ -1600,7 +1608,7 @@ static int cmd_l(void *data, const char *input) { // "l"
 	switch (*input) {
 	case 'l': // "ll"
 		if (input[1] == '?') {
-			r_core_cmd_help_match (core, help_msg_l, "ll", true);
+			r_core_cmd_help_match (core, help_msg_l, "ll");
 			break;
 		}
 		{
@@ -1616,14 +1624,14 @@ static int cmd_l(void *data, const char *input) { // "l"
 		break;
 	case 'e': // "le"
 		if (input[1] == '?') {
-			r_core_cmd_help_match (core, help_msg_l, "le", true);
+			r_core_cmd_help_match (core, help_msg_l, "le");
 			break;
 		}
 
 		if (*arg) {
 			r_core_cmdf (core, "cat %s~..", arg);
 		} else {
-			r_core_cmd_help_match (core, help_msg_l, "le", true);
+			r_core_cmd_help_match (core, help_msg_l, "le");
 		}
 		break;
 	case 'i': // "li"
@@ -1631,7 +1639,7 @@ static int cmd_l(void *data, const char *input) { // "l"
 		break;
 	case 'r': // "lr"
 		if (input[1] == '?') {
-			r_core_cmd_help_match (core, help_msg_l, "lr", true);
+			r_core_cmd_help_match (core, help_msg_l, "lr");
 			break;
 		}
 		cmd_lr (core, arg);
@@ -1650,7 +1658,7 @@ static int cmd_l(void *data, const char *input) { // "l"
 		break;
 	case 's': // "ls"
 		if (input[1] == '?') {
-			r_core_cmd_help_match (core, help_msg_l, "ls", true);
+			r_core_cmd_help_match (core, help_msg_l, "ls");
 			break;
 		}
 		if (r_fs_check (core->fs, arg)) {
@@ -1739,7 +1747,7 @@ static int cmd_join(void *data, const char *input) { // "join"
 				r_core_cmdf (core, "#!pipe node -e '%s'", input + 1);
 			}
 		} else {
-			r_core_cmd_help_match (core, help_msg_j, "js", false);
+			r_core_cmd_help_contains (core, help_msg_j, "js");
 		}
 		return R_CMD_RC_SUCCESS;
 	}
@@ -2144,7 +2152,7 @@ static int cmd_table(void *data, const char *input) {
 		break;
 	case '.': // ",."
 		if (R_STR_ISEMPTY (input + 1)) {
-			r_core_cmd_help_match (core, help_msg_comma, ",.", true);
+			r_core_cmd_help_match (core, help_msg_comma, ",.");
 		} else {
 			const char *file = r_str_trim_head_ro (input + 1);
 			if (*file == '$' && !file[1]) {
@@ -2274,7 +2282,7 @@ static int cmd_interpret(void *data, const char *input) {
 		break;
 	case '-': // ".-"
 		if (input[1] == '?') {
-			r_core_cmd_help_match (core, help_msg_dot, ".-", true);
+			r_core_cmd_help_match (core, help_msg_dot, ".-");
 		} else {
 			r_core_run_script (core, "-");
 		}
@@ -2551,7 +2559,7 @@ static int cmd_kuery(void *data, const char *input) {
 			}
 			free (fn);
 		} else {
-			r_core_cmd_help_match (core, help_msg_k, "ko", true);
+			r_core_cmd_help_match (core, help_msg_k, "ko");
 		}
 		break;
 	case 'd': // "kd"
@@ -2576,7 +2584,7 @@ static int cmd_kuery(void *data, const char *input) {
 			}
 			free (fn);
 		} else {
-			r_core_cmd_help_match (core, help_msg_k, "kd", true);
+			r_core_cmd_help_match (core, help_msg_k, "kd");
 		}
 		break;
 	case '?':
@@ -2618,7 +2626,7 @@ static int cmd_bsize(void *data, const char *input) {
 			r_core_cmd_call (core, cmd);
 			free (cmd);
 		} else {
-			r_core_cmd_help_match (core, help_msg_b, "b64:", false);
+			r_core_cmd_help_contains (core, help_msg_b, "b64:");
 		}
 		break;
 	case 'm': // "bm"
@@ -2646,7 +2654,7 @@ static int cmd_bsize(void *data, const char *input) {
 				R_LOG_ERROR ("bf: cannot find flag named '%s'", input + 2);
 			}
 		} else {
-			r_core_cmd_help_match (core, help_msg_b, "bf", true);
+			r_core_cmd_help_match (core, help_msg_b, "bf");
 		}
 		break;
 	case 'j': { // "bj"
@@ -2740,7 +2748,7 @@ static bool cmd_r2cmd(RCore *core, const char *_input) {
 static int cmd_rebase(RCore *core, const char *input) {
 	ut64 addr = r_num_math (core->num, input);
 	if (!addr) {
-		r_core_cmd_help_match (core, help_msg_r, "rb", true);
+		r_core_cmd_help_match (core, help_msg_r, "rb");
 		return 0;
 	}
 	// old base = addr
@@ -2782,7 +2790,7 @@ static int cmd_resize(void *data, const char *input) {
 				const char *file = r_str_trim_head_ro (input + 3);
 				return r_file_rm_rf (file);
 			}
-			r_core_cmd_help_match (core, help_msg_r, "rmrf", true);
+			r_core_cmd_help_match (core, help_msg_r, "rmrf");
 			return false;
 		}
 		if (input[1] == ' ') {
@@ -2793,7 +2801,7 @@ static int cmd_resize(void *data, const char *input) {
 				r_file_rm (file);
 			}
 		} else {
-			r_core_cmd_help_match (core, help_msg_r, "rm", false);
+			r_core_cmd_help_contains (core, help_msg_r, "rm");
 		}
 		return true;
 	case '\0':
@@ -2956,7 +2964,7 @@ static int cmd_panels(void *data, const char *input) {
 static int cmd_visual(void *data, const char *input) {
 	RCore *core = (RCore*) data;
 	if (*input == '?') { // "mL?"
-		r_core_cmd_help_match_spec (core, help_msg_root, "V", 0, true);
+		r_core_cmd_help_match_spec (core, help_msg_root, "V", 0);
 		return true;
 	}
 	if (core->http_up) {
@@ -3276,8 +3284,8 @@ static int cmd_system(void *data, const char *input) {
 		break;
 	case '=': //!=
 		if (input[1] == '?') {
-			r_core_cmd_help_match (core, help_msg_exclamation, "!=!", true);
-			r_core_cmd_help_match (core, help_msg_exclamation, "=!=", true);
+			r_core_cmd_help_match (core, help_msg_exclamation, "!=!");
+			r_core_cmd_help_match (core, help_msg_exclamation, "=!=");
 		} else {
 			if (!r_sandbox_enable (0)) {
 				R_FREE (core->cmdremote);
@@ -4806,7 +4814,7 @@ repeat_arroba:
 					}
 					is_arch_set = set_tmp_arch (core, ptr + 2, &tmpasm);
 				} else {
-					r_core_cmd_help_match (core, help_msg_at, "@a:", true);
+					r_core_cmd_help_match (core, help_msg_at, "@a:");
 				}
 				break;
 			case 's': // "@s:" // wtf syntax
@@ -4927,7 +4935,7 @@ next_arroba:
 				char *range = ptr + 2;
 				char *p = strchr (range, ' ');
 				if (!p) {
-					r_core_cmd_help_match (core, help_msg_at, "@{", true);
+					r_core_cmd_help_match (core, help_msg_at, "@{");
 					free (tmpeval);
 					free (tmpasm);
 					free (tmpbits);

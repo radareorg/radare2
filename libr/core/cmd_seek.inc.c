@@ -249,7 +249,7 @@ static int cmd_sort(void *data, const char *input) { // "sort"
 	}
 	switch (*input) {
 	case '?': // "sort?"
-		r_core_cmd_help_match (core, help_msg_s, "sort", true);
+		r_core_cmd_help_match (core, help_msg_s, "sort");
 		break;
 	default: // "ls"
 		if (!arg) {
@@ -392,7 +392,7 @@ static int cmd_seek(void *data, const char *input) {
 		if (input[1] && input[2]) {
 			seek_to_register (core, input + 2, silent);
 		} else {
-			r_core_cmd_help_match (core, help_msg_s, "sr", false);
+			r_core_cmd_help_contains (core, help_msg_s, "sr");
 		}
 		break;
 	case 'C': // "sC"
@@ -482,7 +482,7 @@ static int cmd_seek(void *data, const char *input) {
 			r_config_set_i (core->config, "search.maxhits", saved_maxhits);
 			break;
 		case '?':
-			r_core_cmd_help_match (core, help_msg_s, "s/", false);
+			r_core_cmd_help_contains (core, help_msg_s, "s/");
 			break;
 		default:
 			R_LOG_ERROR ("unknown search subcommand");
@@ -757,13 +757,13 @@ static int cmd_seek(void *data, const char *input) {
 			if (input[2] == 't') {
 				cmd_sort (core, input);
 			} else if (input[2] == '?') {
-				r_core_cmd_help_match (core, help_msg_s, "sort", true);
+				r_core_cmd_help_match (core, help_msg_s, "sort");
 			} else {
 				return -1;
 			}
 			break;
 		case '?':
-			r_core_cmd_help_match (core, help_msg_s, "so", false);
+			r_core_cmd_help_contains (core, help_msg_s, "so");
 		case ' ':
 		case '\0':
 		case '+':
@@ -844,7 +844,7 @@ static int cmd_seek(void *data, const char *input) {
 					}
 					r_cons_sleep_end (bed);
 				} else {
-					r_core_cmd_help_match (core, help_msg_sl, "sleep", true);
+					r_core_cmd_help_match (core, help_msg_sl, "sleep");
 				}
 			}
 			break;

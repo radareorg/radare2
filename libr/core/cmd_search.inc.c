@@ -2247,7 +2247,7 @@ static void do_ref_search(RCore *core, ut64 addr,ut64 from, ut64 to, struct sear
 static void cmd_search_aF(RCore *core, const char *input) {
 	bool quiet = *input == 'd';
 	if (*input && *input != ' ' && *input != 'd') {
-		r_core_cmd_help_match (core, help_msg_slash_a, "aF", false);
+		r_core_cmd_help_contains (core, help_msg_slash_a, "aF");
 		return;
 	}
 	RAnalFunction *fcn;
@@ -3969,7 +3969,7 @@ reread:
 		goto reread;
 	case 'o': { // "/o" print the offset of the Previous opcode
 			  if (input[1] == '?') {
-				  r_core_cmd_help_match (core, help_msg_slash, "/o", true);
+				  r_core_cmd_help_match (core, help_msg_slash, "/o");
 				  break;
 			  }
 			  ut64 addr, n = input[param_offset - 1] ? r_num_math (core->num, input + param_offset) : 1;
@@ -3990,7 +3990,7 @@ reread:
 		break;
 	case 'O': { // "/O" alternative to "/o"
 		if (input[1] == '?') {
-			r_core_cmd_help_match (core, help_msg_slash, "/O", true);
+			r_core_cmd_help_match (core, help_msg_slash, "/O");
 			break;
 		}
 		ut64 addr, n = input[param_offset - 1] ? r_num_math (core->num, input + param_offset) : 1;
@@ -4106,7 +4106,7 @@ reread:
 					r_core_seek (core, curseek, true);
 				}
 			} else {
-				r_core_cmd_help_match (core, help_msg_slash_r, "/re", true);
+				r_core_cmd_help_match (core, help_msg_slash_r, "/re");
 				dosearch = false;
 			}
 			break;
@@ -4229,7 +4229,7 @@ reread:
 		case 'z': // "/az"
 			switch (input[2]) {
 			case '?': // "/az"
-				r_core_cmd_help_match (core, help_msg_slash_a, "/az", true);
+				r_core_cmd_help_match (core, help_msg_slash_a, "/az");
 				break;
 			case 'q': // "/azq"
 				do_analstr_search (core, &param, true, r_str_trim_head_ro (input + 3));
@@ -4244,7 +4244,7 @@ reread:
 				do_analstr_search (core, &param, false, "");
 				break;
 			default:
-				r_core_cmd_help_match (core, help_msg_slash_a, "/az", true);
+				r_core_cmd_help_match (core, help_msg_slash_a, "/az");
 				break;
 			}
 			dosearch = false;
@@ -4415,7 +4415,7 @@ reread:
 				char *space = strchr (input, ' ');
 				const char *arg = space? r_str_trim_head_ro (space + 1): NULL;
 				if (!arg || *(space - 1) == '?') {
-					r_core_cmd_help_match (core, help_msg_slash_c, "/ca", true);
+					r_core_cmd_help_match (core, help_msg_slash_c, "/ca");
 					goto beach;
 				} else {
 					if (input[2] == 'j') {
@@ -4560,7 +4560,7 @@ reread:
 			r_core_cmd_help (core, help_msg_slash_pattern);
 		} else if (input[1] == 'p') { // "/pp" -- find next prelude
 			if (input[2] == '?') {
-				r_core_cmd_help_match (core, help_msg_slash_pattern, "/pp", true);
+				r_core_cmd_help_match (core, help_msg_slash_pattern, "/pp");
 			} else {
 				__core_cmd_search_backward_prelude (core, false, true);
 			}
@@ -4613,14 +4613,14 @@ reread:
 				}
 			}
 			if (err) {
-				r_core_cmd_help_match (core, help_msg_slash, "/V", true);
+				r_core_cmd_help_match (core, help_msg_slash, "/V");
 			}
 		}
 		dosearch = false;
 		break;
 	case 'v': // "/v"
 		if (input[1] == '?') {
-			r_core_cmd_help_match (core, help_msg_slash, "/v", true);
+			r_core_cmd_help_match (core, help_msg_slash, "/v");
 			break;
 		}
 		r_search_reset (core->search, R_SEARCH_KEYWORD);
@@ -4637,7 +4637,7 @@ reread:
 				bsize = sizeof (ut64) * len;
 				v_buf = v_writebuf (core, nums, len, '8', bsize);
 			} else {
-				r_core_cmd_help_match (core, help_msg_slash, "/v", true);
+				r_core_cmd_help_match (core, help_msg_slash, "/v");
 			}
 			break;
 		case '1':
@@ -4645,7 +4645,7 @@ reread:
 				bsize = sizeof (ut8) * len;
 				v_buf = v_writebuf (core, nums, len, '1', bsize);
 			} else {
-				r_core_cmd_help_match (core, help_msg_slash, "/v", true);
+				r_core_cmd_help_match (core, help_msg_slash, "/v");
 			}
 			break;
 		case '2':
@@ -4653,7 +4653,7 @@ reread:
 				bsize = sizeof (ut16) * len;
 				v_buf = v_writebuf (core, nums, len, '2', bsize);
 			} else {
-				r_core_cmd_help_match (core, help_msg_slash, "/v", true);
+				r_core_cmd_help_match (core, help_msg_slash, "/v");
 			}
 			break;
 		default: // default size
@@ -4664,7 +4664,7 @@ reread:
 					v_buf = v_writebuf (core, nums, len, '4', bsize);
 				}
 			} else {
-				r_core_cmd_help_match (core, help_msg_slash, "/v", true);
+				r_core_cmd_help_match (core, help_msg_slash, "/v");
 			}
 			break;
 		}
@@ -4715,7 +4715,7 @@ reread:
 		break;
 	case 'i': // "/i"
 		if (input[1] == '?') {
-			r_core_cmd_help_match (core, help_msg_slash, "/i", true);
+			r_core_cmd_help_match (core, help_msg_slash, "/i");
 			break;
 		}
 		if (input[param_offset - 1] != ' ') {
@@ -4778,7 +4778,7 @@ reread:
 		break;
 	case 'e': // "/e" match regexp
 		if (input[1] == '?') {
-			r_core_cmd_help_match (core, help_msg_slash, "/e", true);
+			r_core_cmd_help_match (core, help_msg_slash, "/e");
 		} else if (input[1]) {
 			RSearchKeyword *kw;
 			kw = r_search_keyword_new_regexp (input + 1, NULL);
@@ -4825,7 +4825,7 @@ reread:
 		if (p) {
 			*p++ = 0;
 			if (*arg == '?') {
-				r_core_cmd_help_match (core, help_msg_slash, "/h", true);
+				r_core_cmd_help_match (core, help_msg_slash, "/h");
 			} else {
 				ut32 min = UT32_MAX;
 				ut32 max = UT32_MAX;
@@ -4865,7 +4865,7 @@ reread:
 		break;
 	case 'g': // "/g" graph search
 		if (input[1] == '?') {
-			r_core_cmd_help_match (core, help_msg_slash, "/g", true);
+			r_core_cmd_help_match (core, help_msg_slash, "/g");
 		} else {
 			ut64 addr = UT64_MAX;
 			if (input[1]) {
@@ -4934,7 +4934,7 @@ reread:
 			r_str_argv_free (args);
 			free (buf);
 		} else {
-			r_core_cmd_help_match (core, help_msg_slash, "/F", true);
+			r_core_cmd_help_match (core, help_msg_slash, "/F");
 		}
 		break;
 	case 'x': // "/x" search hex
@@ -5005,7 +5005,7 @@ again:
 			free (str);
 			free (buf);
 		} else {
-			r_core_cmd_help_match (core, help_msg_slash, "/+", true);
+			r_core_cmd_help_match (core, help_msg_slash, "/+");
 		}
 		break;
 	case 'z': // "/z" search strings of min-max range
@@ -5013,7 +5013,7 @@ again:
 		char *p;
 		ut32 min, max;
 		if (!input[1]) {
-			r_core_cmd_help_match (core, help_msg_slash, "/z", true);
+			r_core_cmd_help_match (core, help_msg_slash, "/z");
 			break;
 		}
 		const char *maxstr = NULL;
@@ -5022,7 +5022,7 @@ again:
 			maxstr = r_str_trim_head_ro (p + 1);
 			max = r_num_math (core->num, maxstr);
 		} else {
-			r_core_cmd_help_match (core, help_msg_slash, "/z", true);
+			r_core_cmd_help_match (core, help_msg_slash, "/z");
 			break;
 		}
 		const char *minstr = r_str_trim_head_ro (input + 2);
