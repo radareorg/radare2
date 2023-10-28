@@ -988,7 +988,7 @@ static void process_constructors(RKernelCacheObj *obj, struct MACH0_(obj_t) *mac
 		}
 		int j;
 		int count = 0;
-		for (j = 0; j < section->size; j += 8) {
+		for (j = 0; j + 7 < section->size; j += 8) {
 			ut64 addr64 = K_RPTR (buf + j);
 			ut64 paddr64 = section->paddr + paddr + j;
 			if (mode == R_K_CONSTRUCTOR_TO_ENTRY) {
