@@ -1249,9 +1249,9 @@ void MACH0_(get_class_t)(mach0_ut p, RBinFile *bf, RBinClass *klass, bool dupe, 
 		const char *klass_name = get_class_name (c.superclass, bf);
 		if (klass_name) {
 			if (klass->super == NULL) {
-				klass->super = r_list_newf (free);
+				klass->super = r_list_newf ((void *)r_bin_name_free);
 			}
-			r_list_append (klass->super, (void *)klass_name);
+			r_list_append (klass->super, (void *)r_bin_name_new (klass_name));
 		}
 	} else if (relocs) {
 		struct reloc_t reloc_at_class_addr;
@@ -1263,20 +1263,18 @@ void MACH0_(get_class_t)(mach0_ut p, RBinFile *bf, RBinClass *klass, bool dupe, 
 			char *target_class_name = (char*) ((struct reloc_t*) found->data)->name;
 			if (r_str_startswith (target_class_name, _objc_class)) {
 				target_class_name += _objc_class_len;
-				if (klass->super == NULL) {
-					klass->super = r_list_newf (free);
-				}
+				RBinName *sup = r_bin_name_new (target_class_name);
 				if (r_str_startswith (target_class_name, "_T")) {
 					char *dsuper = r_bin_demangle_swift (target_class_name, true, true);
-					if (!dsuper || !strcmp (dsuper, target_class_name)) {
-						R_LOG_DEBUG ("Failed to demangle");
-						r_list_append (klass->super, strdup (target_class_name));
-					} else {
-						r_list_append (klass->super, dsuper);
+					if (dsuper && strcmp (dsuper, target_class_name)) {
+						r_bin_name_demangled (sup, dsuper);
 					}
-				} else {
-					r_list_append (klass->super, strdup (target_class_name));
+					free (dsuper);
 				}
+				if (klass->super == NULL) {
+					klass->super = r_list_newf ((void *)r_bin_name_free);
+				}
+				r_list_append (klass->super, sup);
 			}
 		}
 	}
@@ -1399,21 +1397,15 @@ static void parse_type(RList *list, RBinFile *bf, SwiftType st, HtUP *symbols_ht
 	char *super_name = readstr (bf, st.super_addr);
 	if (super_name) {
 		if (*super_name > 5) {
-			klass->super = r_list_newf (free);
-#if 1
+			klass->super = r_list_newf ((void *)r_bin_name_free);
+			RBinName *bn = r_bin_name_new (super_name);
 			char *sname = r_bin_demangle_swift (super_name, 0, false);
 			if (R_STR_ISNOTEMPTY (sname)) {
-				r_list_append (klass->super, sname);
-				free (super_name);
-			} else {
-				r_list_append (klass->super, super_name);
+				r_bin_name_demangled (bn, sname);
 			}
-#else
-			r_list_append (klass->super, super_name);
-#endif
-		} else {
-			free (super_name);
+			r_list_append (klass->super, bn);
 		}
+		free (super_name);
 	}
 	klass->addr = st.addr;
 	klass->lang = R_BIN_LANG_SWIFT;
@@ -1637,7 +1629,7 @@ RList *MACH0_(parse_classes)(RBinFile *bf, objc_cache_opt_info *oi) {
 			R_LOG_ERROR ("Chopped classlist data");
 			break;
 		}
-		klass = r_bin_class_new ("", "", R_BIN_CLASS_PUBLIC);
+		klass = r_bin_class_new ("", "", R_BIN_ATTR_PUBLIC);
 		R_FREE (klass->name); // allow NULL name in rbinclass?
 		klass->lang = R_BIN_LANG_OBJC;
 		size = sizeof (mach0_ut);
@@ -1710,15 +1702,17 @@ static RList *MACH0_(parse_categories)(RBinFile *bf, MetaSections *ms, const RSk
 		if (par) {
 			size_t idx = par - klass->name;
 			char *super = strdup (klass->name);
-			// TODO: demangle name!!
 			super[idx++] = 0;
 			char *cpar = strchr (super + idx, ')');
 			if (cpar) {
 				*cpar = 0;
 			}
-			r_list_free (klass->super);
-			klass->super = r_list_newf (free);
-			r_list_append (klass->super, super);
+			if (klass->super == NULL) {
+				klass->super = r_list_newf ((void *)r_bin_name_free);
+			}
+			RBinName *bn = r_bin_name_new (super);
+			// TODO: demangle name!!
+			r_list_append (klass->super, bn);
 		//	char *name = strdup (super + idx);
 		//	free (klass->name);
 		//	klass->name = name;

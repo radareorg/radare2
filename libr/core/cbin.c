@@ -40,6 +40,19 @@ static void pair_bool(PJ *pj, const char *key, bool val) {
 	}
 }
 
+static char *csv_supers(RList *supers) {
+	RBinName *bn;
+	RListIter *iter;
+	RStrBuf *sb = r_strbuf_new ("");
+	r_list_foreach (supers, iter, bn) {
+		if (!r_strbuf_is_empty (sb)) {
+			r_strbuf_append (sb, ", ");
+		}
+		r_strbuf_append (sb, r_bin_name_tostring (bn));
+	}
+	return r_strbuf_drain (sb);
+}
+
 static void pair_int(PJ *pj, const char *key, int val) {
 	if (pj) {
 		pj_ki (pj, key, val);
@@ -3558,22 +3571,19 @@ static void classdump_cxx(RCore *r, RBinClass *c) {
 }
 
 static void classdump_objc(RCore *r, RBinClass *c) {
+	const bool asm_demangle = r_config_get_b (r->config, "asm.demangle");
+	const int pref = asm_demangle? 0: 'o';
 	if (c->super) {
 		int n = 0;
 		r_cons_printf ("@interface %s :", c->name);
-		const char *sk;
+		RBinName *bn;
 		RListIter *iter;
-		r_list_foreach (c->super, iter, sk) {
+		r_list_foreach (c->super, iter, bn) {
+			const char *sk = r_bin_name_tostring2 (bn, pref);
 			switch (n) {
-			case 0:
-				r_cons_printf (" %s", sk);
-				break;
-			case 1:
-				r_cons_printf ("< %s", sk);
-				break;
-			default:
-				r_cons_printf (", %s", sk);
-				break;
+			case 0: r_cons_printf (" %s", sk); break;
+			case 1: r_cons_printf ("< %s", sk); break;
+			default: r_cons_printf (", %s", sk); break;
 			}
 		}
 		if (r_list_length (c->super) > 1) {
@@ -3611,6 +3621,8 @@ static void classdump_objc(RCore *r, RBinClass *c) {
 }
 
 static void classdump_swift(RCore *r, RBinClass *c) {
+	const bool asm_demangle = r_config_get_b (r->config, "asm.demangle");
+	const int pref = asm_demangle? 0: 'o';
 	RBinField *f;
 	RListIter *iter;
 	RBinSymbol *sym;
@@ -3629,13 +3641,14 @@ static void classdump_swift(RCore *r, RBinClass *c) {
 		r_cons_printf ("@objc\n");
 	}
 	r_cons_printf ("class %s ", klassname);
-	if (c->super) {
-		char *sc;
-		r_list_foreach (c->super, iter, sc) {
-			r_cons_printf (": %s", sc);
+	if (!r_list_empty (c->super)) {
+		RBinName *bn;
+		r_list_foreach (c->super, iter, bn) {
+			r_cons_printf (": %s", r_bin_name_tostring2 (bn, pref));
 		}
+		r_cons_printf (" ");
 	}
-	r_cons_printf (" {\n");
+	r_cons_printf ("{\n");
 	free (klassname);
 	r_list_foreach (c->fields, iter, f) {
 		if (!f->name) {
@@ -3709,6 +3722,8 @@ static bool is_javaish(RBinFile *bf) {
 }
 
 static bool bin_classes(RCore *r, PJ *pj, int mode) {
+	const bool asm_demangle = r_config_get_b (r->config, "asm.demangle");
+	const int pref = asm_demangle? 0: 'o';
 	RListIter *iter, *iter2, *iter3;
 	RBinSymbol *sym;
 	RBinClass *c;
@@ -3780,12 +3795,9 @@ static bool bin_classes(RCore *r, PJ *pj, int mode) {
 		} else if (IS_MODE_SIMPLEST (mode)) {
 			r_cons_printf ("%s\n", c->name);
 		} else if (IS_MODE_SIMPLE (mode)) {
-			char *supers = c->super
-				? r_str_list_join (c->super, ", ")
-				: strdup ("");
+			char *supers = csv_supers (c->super);
 			r_cons_printf ("0x%08"PFMT64x" [0x%08"PFMT64x" - 0x%08"PFMT64x"] %s %s%s%s\n",
-				c->addr, at_min, at_max, r_bin_lang_tostring (c->lang), c->name, c->super ? " " : "",
-				r_str_get (supers));
+				c->addr, at_min, at_max, r_bin_lang_tostring (c->lang), c->name, *supers ? " " : "", supers);
 			free (supers);
 		} else if (IS_MODE_CLASSDUMP (mode)) {
 			if (c) {
@@ -3830,12 +3842,11 @@ static bool bin_classes(RCore *r, PJ *pj, int mode) {
 			if (c->super) {
 				char *cn = c->name;
 				RListIter *iter;
-				const char *sk;
-				r_list_foreach (c->super, iter, sk) {
-					char *fsk = strdup (sk);
+				RBinName *bn;
+				r_list_foreach (c->super, iter, bn) {
+					char *fsk = strdup (r_bin_name_tostring2 (bn, pref));
 					r_name_filter (fsk, -1);
-					r_cons_printf ("\"f super.%s.%s = %d\"\n",
-							cn, fsk, c->index);
+					r_cons_printf ("\"f super.%s.%s = %d\"\n", cn, fsk, c->index);
 					free (fsk);
 				}
 			}
@@ -3866,7 +3877,7 @@ static bool bin_classes(RCore *r, PJ *pj, int mode) {
 				char *fn = r_str_newf ("field.%s.%s.%s", c->name, kind, f->name);
 				r_name_filter (fn, -1);
 				ut64 at = f->vaddr; //  sym->vaddr + (f->vaddr &  0xffff);
-				r_cons_printf ("'f %s = 0x%08"PFMT64x"\n", fn, at);
+				r_cons_printf ("\"f %s = 0x%08"PFMT64x"\"\n", fn, at);
 				free (fn);
 			}
 
@@ -3904,10 +3915,10 @@ static bool bin_classes(RCore *r, PJ *pj, int mode) {
 					pj_ks (pj, "visibility", c->visibility_str);
 				}
 				RListIter *iter;
-				const char *sk;
 				pj_ka (pj, "super");
-				r_list_foreach (c->super, iter, sk) {
-					pj_s (pj, sk);
+				RBinName *bn;
+				r_list_foreach (c->super, iter, bn) {
+					pj_s (pj, r_bin_name_tostring (bn));
 				}
 				pj_end (pj);
 			}
@@ -3969,7 +3980,7 @@ static bool bin_classes(RCore *r, PJ *pj, int mode) {
 			if (r_list_empty (c->super)) {
 				r_cons_newline ();
 			} else {
-				char *csv = r_str_list_join (c->super, ", ");
+				char *csv = csv_supers (c->super);
 				if (r_str_startswith (csv, "_T")) {
 					R_LOG_WARN ("undemangled symbol, maybe good to fix in rbin instead of core");
 					char *dsuper = r_bin_demangle (r->bin->cur, csv, csv, 0, false);

@@ -7,6 +7,22 @@
 #include <math.h>
 #include "class.h"
 
+static inline RBinName *__bin_name_new(const char *name) {
+	r_return_val_if_fail (name, NULL);
+	RBinName *bn = R_NEW0 (RBinName);
+	bn->oname = strdup (name);
+	// oname and dname
+	return bn;
+}
+static inline void __bin_name_free(RBinName *bn) {
+	if (bn) {
+		free (bn->name);
+		free (bn->oname);
+		free (bn->fname);
+		free (bn);
+	}
+}
+
 #ifdef IFDBG
 #undef IFDBG
 #endif
@@ -713,10 +729,10 @@ R_API void r_bin_java_get_class_info_json(RBinJavaObj *bin, PJ *pj) {
 		pj_ki (pj, "is_enum", is_enum);
 		pj_ks (pj, "name", klass->name);
 		if (klass->super) {
-			const char *sk;
+			RBinName *bn;
 			pj_ka (pj, "super");
-			r_list_foreach (klass->super, iter, sk) {
-				pj_ks (pj, "super", sk);
+			r_list_foreach (klass->super, iter, bn) {
+				pj_ks (pj, "super", bn->name? bn->name: bn->oname);
 			}
 			pj_end (pj);
 		}
@@ -2837,21 +2853,17 @@ R_API RList *r_bin_java_get_classes(RBinJavaObj *bin) {
 	k->name = r_bin_java_get_this_class_name (bin);
 	char *n = r_bin_java_get_name_from_bin_cp_list (bin, bin->cf2.super_class);
 	if (R_STR_ISNOTEMPTY (n)) {
-		k->super = r_list_newf (free);
-		r_list_append (k->super, n);
-	} else {
-		free (n);
+		k->super = r_list_newf ((void*)__bin_name_free);
+		r_list_append (k->super, __bin_name_new (n));
 	}
+	free (n);
 	k->index = (idx++);
 	k->lang = R_BIN_LANG_JAVA;
 	r_list_append (classes, k);
 	r_list_foreach (bin->cp_list, iter, cp_obj) {
 		if (cp_obj && cp_obj->tag == R_BIN_JAVA_CP_CLASS
 		&& (this_class_cp_obj != cp_obj && is_class_interface (bin, cp_obj))) {
-			k = R_NEW0 (RBinClass);
-			if (!k) {
-				break;
-			}
+			RBinClass *k = R_NEW0 (RBinClass);
 			k->methods = r_bin_java_enum_class_methods (bin, cp_obj->info.cp_class.name_idx);
 			k->fields = r_bin_java_enum_class_fields (bin, cp_obj->info.cp_class.name_idx);
 			k->index = idx;
@@ -2872,8 +2884,7 @@ R_API RBinSymbol *r_bin_java_create_new_symbol_from_invoke_dynamic(RBinJavaCPTyp
 
 R_API RBinSymbol *r_bin_java_create_new_symbol_from_cp_idx(ut32 cp_idx, ut64 baddr) {
 	RBinSymbol *sym = NULL;
-	RBinJavaCPTypeObj *obj = r_bin_java_get_item_from_bin_cp_list (
-		R_BIN_JAVA_GLOBAL_BIN, cp_idx);
+	RBinJavaCPTypeObj *obj = r_bin_java_get_item_from_bin_cp_list (R_BIN_JAVA_GLOBAL_BIN, cp_idx);
 	if (obj) {
 		switch (obj->tag) {
 		case R_BIN_JAVA_CP_METHODREF:
@@ -2895,9 +2906,8 @@ R_API RList *U(r_bin_java_get_fields)(RBinJavaObj * bin) {
 	RListIter *iter = NULL, *iter_tmp = NULL;
 	RList *fields = r_list_new ();
 	RBinJavaField *fm_type;
-	RBinField *field;
 	r_list_foreach_safe (bin->fields_list, iter, iter_tmp, fm_type) {
-		field = r_bin_java_create_new_rbinfield_from_field (fm_type, bin->loadaddr);
+		RBinField *field = r_bin_java_create_new_rbinfield_from_field (fm_type, bin->loadaddr);
 		if (field) {
 			r_list_append (fields, field);
 		}
@@ -2985,20 +2995,21 @@ R_API RList *r_bin_java_get_symbols(RBinJavaObj *bin) {
 	}
 	bin->lang = "java";
 	if (bin->cf.major[1] >= 46) {
+		static R_TH_LOCAL char lang[32];
+		int langid;
 		switch (bin->cf.major[1]) {
-			static R_TH_LOCAL char lang[32];
-			int langid;
-			case 46:
-			case 47:
-			case 48:
-				langid = 2 + (bin->cf.major[1] - 46);
-				snprintf (lang, sizeof (lang) - 1, "java 1.%d", langid);
-				bin->lang = lang;
-				break;
-			default:
-				langid = 5 + (bin->cf.major[1] - 49);
-				snprintf (lang, sizeof (lang) - 1, "java %d", langid);
-				bin->lang = lang;
+		case 46:
+		case 47:
+		case 48:
+			langid = 2 + (bin->cf.major[1] - 46);
+			snprintf (lang, sizeof (lang) - 1, "java 1.%d", langid);
+			bin->lang = lang;
+			break;
+		default:
+			langid = 5 + (bin->cf.major[1] - 49);
+			snprintf (lang, sizeof (lang) - 1, "java %d", langid);
+			bin->lang = lang;
+			break;
 		}
 	}
 	imports = r_bin_java_get_imports (bin);
@@ -3055,12 +3066,11 @@ R_API RList *r_bin_java_get_strings(RBinJavaObj *bin) {
 }
 
 R_API void *r_bin_java_free(RBinJavaObj *bin) {
-	char *bin_obj_key = NULL;
 	if (!bin) {
 		return NULL;
 	}
 	// Delete the bin object from the data base.
-	bin_obj_key = r_bin_java_build_obj_key (bin);
+	char *bin_obj_key = r_bin_java_build_obj_key (bin);
 	// if (bin->AllJavaBinObjs && sdb_exists (bin->AllJavaBinObjs, bin_obj_key)) {
 	// sdb_unset (bin->AllJavaBinObjs, bin_obj_key, 0);
 	// }
@@ -3093,6 +3103,7 @@ R_API void *r_bin_java_free(RBinJavaObj *bin) {
 }
 
 R_API RBinJavaObj *r_bin_java_new_buf(RBuffer *buf, ut64 loadaddr, Sdb *kv) {
+	r_return_val_if_fail (buf, NULL);
 	RBinJavaObj *bin = R_NEW0 (RBinJavaObj);
 	if (!bin) {
 		return NULL;
@@ -3128,17 +3139,16 @@ R_API void r_bin_java_constant_pool(void /*RBinJavaCPTypeObj*/ *o) {
 }
 
 R_API void r_bin_java_fmtype_free(void /*RBinJavaField*/ *f) {
-	RBinJavaField *fm_type = f;
-	if (!fm_type) {
-		return;
+	if (R_LIKELY (f)) {
+		RBinJavaField *fm_type = f;
+		free (fm_type->descriptor);
+		free (fm_type->name);
+		free (fm_type->flags_str);
+		free (fm_type->class_name);
+		free (fm_type->metas);
+		r_list_free (fm_type->attributes);
+		free (fm_type);
 	}
-	free (fm_type->descriptor);
-	free (fm_type->name);
-	free (fm_type->flags_str);
-	free (fm_type->class_name);
-	free (fm_type->metas);
-	r_list_free (fm_type->attributes);
-	free (fm_type);
 }
 // Start Free the various attribute types
 R_API void r_bin_java_unknown_attr_free(void /*RBinJavaAttrInfo*/ *a) {

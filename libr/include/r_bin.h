@@ -71,7 +71,11 @@ R_LIB_VERSION_HEADER (r_bin);
 #define R_BIN_REQ_TRYCATCH 0x100000000
 #define R_BIN_REQ_SECTIONS_MAPPING 0x200000000
 
+// R2_590 - deprecate
+#define R_BIN_CLASS_PUBLIC 0x0000000000000004L
+
 /* RBinSymbol->method_flags : */
+// XXX unify with RBinAttribute instead! R2_590
 #define R_BIN_METH_CLASS 0x0000000000000001L
 #define R_BIN_METH_STATIC 0x0000000000000002L
 #define R_BIN_METH_PUBLIC 0x0000000000000004L
@@ -161,15 +165,47 @@ typedef enum {
 	R_STRING_TYPE_BASE64 = 'b',
 } RStringType;
 
+// used for symbols, classes, methods... generic for elf, dex, pe, swift, ...
 typedef enum {
 	// R2_590 rename to R_BIN_VISIBILITY // R_BIN_SCOPE_(PRIVATE|PUBLIC|..) ?
-	R_BIN_CLASS_PRIVATE,
-	R_BIN_CLASS_PUBLIC,
-	R_BIN_CLASS_FRIENDLY,
-	R_BIN_CLASS_PROTECTED,
-	// ?? R_BIN_CLASS_HIDDEN,
-	// ?? R_BIN_CLASS_INTERNAL,
-} RBinClassVisibility; // R2_590 - RBinScope
+	// see binclass.visibility_str
+	R_BIN_ATTR_PRIVATE,
+	R_BIN_ATTR_FILEPRIVATE,
+	R_BIN_ATTR_PUBLIC,
+	R_BIN_ATTR_HIDDEN,
+	R_BIN_ATTR_INTERNAL, // same as fileprivate?
+	R_BIN_ATTR_FRIENDLY,
+	R_BIN_ATTR_PROTECTED,
+	R_BIN_ATTR_SEALED,
+	R_BIN_ATTR_UNSAFE,
+	R_BIN_ATTR_ASYNC,
+	R_BIN_ATTR_EXTERN,
+	R_BIN_ATTR_READONLY,
+	R_BIN_ATTR_STATIC,
+	R_BIN_ATTR_CONST,
+	R_BIN_ATTR_VIRTUAL,
+	R_BIN_ATTR_MUTATING,
+	R_BIN_ATTR_FINAL,
+	R_BIN_ATTR_ABSTRACT,
+	R_BIN_ATTR_INTERFACE,
+	R_BIN_ATTR_SYNTHETIC, // synthesized methods
+	R_BIN_ATTR_SYMBOLIC,
+	R_BIN_ATTR_VERIFIED,
+	R_BIN_ATTR_MIRANDA,
+	R_BIN_ATTR_CONSTRUCTOR,
+	R_BIN_ATTR_ACCESSOR, // getter / setter
+	// R_BIN_ATTR_GETTER, // getter / setter
+	// R_BIN_ATTR_SETTER, // getter / setter
+	R_BIN_ATTR_OPTIMIZED,
+	R_BIN_ATTR_ANNOTATED,
+	R_BIN_ATTR_BRIDGE,
+	R_BIN_ATTR_STRICT,
+	R_BIN_ATTR_SYNCHRONIZED,
+	R_BIN_ATTR_VOLATILE,
+	R_BIN_ATTR_TRANSIENT,
+	R_BIN_ATTR_ENUM,
+	R_BIN_ATTR_NATIVE,
+} RBinAttribute;
 
 typedef enum {
 	R_BIN_RELOC_1 = 1,
@@ -191,6 +227,13 @@ typedef struct r_bin_addr_t {
 	int type;
 	int bits;
 } RBinAddr;
+
+typedef struct r_bin_name_t {
+	// char *name; // user-defined custom name TODO
+	char *name; // demangled name
+	char *oname; // original (mangled) name
+	char *fname; // flag name
+} RBinName;
 
 typedef struct r_bin_hash_t {
 	const char *type;
@@ -251,10 +294,12 @@ typedef struct r_bin_info_t {
 
 typedef struct r_bin_symbol_t {
 	/* heap-allocated */
-	char *name;
-	char *dname;
+	char *name; // deprecate and use bname
+	char *dname; // deprecate and use bname
 	char *libname;
 	char *classname;
+	RBinName *bname; // R2_590
+	RBinName *cname; // R2_590
 	/* const-unique-strings */
 	const char *forwarder;
 	const char *bind;
@@ -568,15 +613,14 @@ typedef struct r_bin_plugin_t {
 
 typedef void (*RBinSymbollCallback)(RBinObject *obj, void *symbol);
 
-
 typedef struct r_bin_class_t {
-	char *name;
-	// TODO: char *module; // namespace
-	RList *super; // list of char*
-	char *visibility_str; // XXX only used by java
-	int index;
+	char *name; // must be deprecated and use bname only
+	RBinName *bname; // R2_590
+	RList *super; // list of RBinName
+	char *visibility_str; // XXX only used by dex+java should be ut32 or bitfield.. should be usable for swift too
+	int index; // should be unsigned?
 	ut64 addr;
-	char *ns; // namespace
+	char *ns; // namespace // maybe RBinName?
 	RList *methods; // <RBinSymbol>
 	RList *fields; // <RBinField>
 	// RList *interfaces; // <char *>
@@ -616,8 +660,7 @@ typedef struct r_bin_reloc_t {
 } RBinReloc;
 
 typedef struct r_bin_string_t {
-	// TODO: rename string->name (avoid colisions)
-	char *string;
+	char *string; // TODO: rename to text or so
 	ut64 vaddr;
 	ut64 paddr;
 	ut32 ordinal;
@@ -638,14 +681,19 @@ typedef struct r_bin_field_t {
 	int size;
 	int offset;
 	ut32 visibility;
+#if 0
+	RBinName *type;
+	RBinName *name;
+#else
 	char *name;
+	char *type;
+#endif
 //	char *realname;
 	RBinFieldKind kind;
-	char *type;
 	char *comment;
 	char *format;
 	bool format_named; // whether format is the name of a format or a raw pf format string
-	ut64 flags;
+	ut64 flags; // rename to attr and use R_BIN_ATTR_
 } RBinField;
 
 R_API const char *r_bin_field_kindstr(RBinField *f);
@@ -861,6 +909,15 @@ R_API bool r_bin_wr_output(RBin *bin, const char *filename);
 R_API const char *r_bin_lang_tostring(int type);
 
 R_API RList *r_bin_get_mem(RBin *bin);
+
+R_API RBinName *r_bin_name_new(const char *name);
+R_API char *r_bin_name_tostring(RBinName *bn);
+R_API char *r_bin_name_tostring2(RBinName *bn, int type);
+R_API void r_bin_name_demangled(RBinName *bn, const char *dname);
+R_API void r_bin_name_free(RBinName *bn);
+
+R_API char *r_bin_attr_tostring(ut64 attr);
+R_API ut64 r_bin_attr_fromstring(const char *s);
 
 /* filter.c */
 typedef struct HtSU_t HtSU;
