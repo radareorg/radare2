@@ -813,7 +813,7 @@ rep:
 	switch (*input) {
 	case 'f': // "ff"
 		if (input[1] == '?') { // "ff?"
-			r_core_cmd_help_match (core, help_msg_f, "ff", false);
+			r_core_cmd_help_contains (core, help_msg_f, "ff");
 		} else if (input[1] == 's') { // "ffs"
 			int delta = flag_to_flag (core, input + 2);
 			if (delta > 0) {
@@ -835,7 +835,7 @@ rep:
 			flagenum = 0;
 			break;
 		default:
-			r_core_cmd_help_match (core, help_msg_f, "fe", false);
+			r_core_cmd_help_contains (core, help_msg_f, "fe");
 			break;
 		}
 		break;
@@ -878,7 +878,7 @@ rep:
 				R_LOG_ERROR ("Cannot find flag '%s'", name);
 			}
 		} else {
-			r_core_cmd_help_match (core, help_msg_f, "fa", true);
+			r_core_cmd_help_match (core, help_msg_f, "fa");
 		}
 		break;
 	case 'V': // "fV" visual marks
@@ -933,7 +933,7 @@ rep:
 	case 'R': // "fR"
 		switch (*str) {
 		case '\0':
-			r_core_cmd_help_match (core, help_msg_f, "fR", true);
+			r_core_cmd_help_match (core, help_msg_f, "fR");
 			R_LOG_INFO ("Relocate PIE flags in debugger with f.ex: fR entry0 `dm~:1[1]`");
 			break;
 		case '?':
@@ -956,7 +956,7 @@ rep:
 					ret = r_flag_relocate (core->flags, from, mask, to);
 					R_LOG_INFO ("Relocated %d flags", ret);
 				} else {
-					r_core_cmd_help_match (core, help_msg_f, "fR", true);
+					r_core_cmd_help_match (core, help_msg_f, "fR");
 					R_LOG_INFO ("Relocate PIE flags in debugger with f.ex: fR entry0 `dm~:1[1]`");
 				}
 			}
@@ -984,7 +984,7 @@ rep:
 				core->flags->base);
 			break;
 		default:
-			r_core_cmd_help_match (core, help_msg_f, "fb", true);
+			r_core_cmd_help_match (core, help_msg_f, "fb");
 			break;
 		}
 		break;
@@ -1101,7 +1101,7 @@ rep:
 		input = r_str_trim_head_ro (input + 1) - 1;
 		if (input[1]) {
 			if (input[1] == '?') {
-				r_core_cmd_help_match (core, help_msg_f, "f.", false);
+				r_core_cmd_help_contains (core, help_msg_f, "f.");
 			} else if (input[1] == '*' || input[1] == 'j') {
 				if (input[2] == '*') {
 					print_function_labels (core->anal, NULL, input[1]);
@@ -1146,12 +1146,12 @@ rep:
 		break;
 	case 'l': // "fl"
 		if (input[1] == '?') { // "fl?"
-			r_core_cmd_help_match (core, help_msg_f, "fl", false);
+			r_core_cmd_help_contains (core, help_msg_f, "fl");
 		} else if (input[1] == 'a') { // "fla"
 			// TODO: we can optimize this if core->flags->flags is sorted by flagitem->offset
 			char *glob;
 			if (input[2] == '?') { // "fla?"
-				r_core_cmd_help_match (core, help_msg_f, "fla", true);
+				r_core_cmd_help_match (core, help_msg_f, "fla");
 			}
 			glob = strchr (input, ' ');
 			if (glob) {
@@ -1242,7 +1242,7 @@ rep:
 				r_flag_space_rename (core->flags, NULL, newname);
 				free (newname);
 			} else {
-				r_core_cmd_help_match (core, help_msg_fs, "fsr", true);
+				r_core_cmd_help_match (core, help_msg_fs, "fsr");
 			}
 			break;
 		case 's': // "fss"
@@ -1313,7 +1313,7 @@ rep:
 			__flag_graph (core, r_str_trim_head_ro (input + 1), 0);
 			break;
 		default:
-			r_core_cmd_help_match (core, help_msg_f, "fg", false);
+			r_core_cmd_help_contains (core, help_msg_f, "fg");
 			break;
 		}
 		break;
@@ -1425,7 +1425,7 @@ rep:
 			}
 			free (p);
 		} else {
-			r_core_cmd_help_match (core, help_msg_f, "fC", true);
+			r_core_cmd_help_match (core, help_msg_f, "fC");
 		}
 		break;
 	case 'o': // "fo"
@@ -1436,7 +1436,7 @@ rep:
 		break;
 	case 'r': // "fr"
 		if (input[1] == '?') {
-			r_core_cmd_help_match (core, help_msg_f, "fr", false);
+			r_core_cmd_help_contains (core, help_msg_f, "fr");
 		} else if (input[1] == ' ' && input[2]) {
 			RFlagItem *item = NULL;
 			char *old = str + 1;
@@ -1458,7 +1458,7 @@ rep:
 				}
 			} else {
 				R_LOG_ERROR ("Cannot find flag with given name");
-				// r_core_cmd_help_match (core, help_msg_f, "fr", false);
+				// r_core_cmd_help_contains (core, help_msg_f, "fr");
 			}
 		}
 		break;
@@ -1489,7 +1489,7 @@ rep:
 			}
 			break;
 		}
-		r_core_cmd_help_match (core, help_msg_f, "fN", false);
+		r_core_cmd_help_contains (core, help_msg_f, "fN");
 		break;
 	case '\0':
 	case 'n': // "fn" "fnj"
@@ -1509,7 +1509,7 @@ rep:
 		if (input[0] && input[1] == '?') {
 			char cmd[3] = "fn";
 			cmd[1] = input[0];
-			r_core_cmd_help_match (core, help_msg_f, cmd, false);
+			r_core_cmd_help_contains (core, help_msg_f, cmd);
 			break;
 		}
 		if (input[0] && input[1] == '.') {

@@ -807,7 +807,7 @@ static int cmd_info(void *data, const char *input) {
 				break;
 			case '?':
 			default:
-				r_core_cmd_help_match (core, help_msg_i, "ik", false);
+				r_core_cmd_help_contains (core, help_msg_i, "ik");
 			}
 			goto done;
 		}
@@ -1434,7 +1434,7 @@ static int cmd_info(void *data, const char *input) {
 		case 'c': // "ic"
 			// XXX this is dupe of cbin.c:bin_classes()
 			if (input[1] == '?') {
-				r_core_cmd_help_match (core, help_msg_i, "ic", false);
+				r_core_cmd_help_contains (core, help_msg_i, "ic");
 			} else if (input[1] == ',') { // "ic,"
 				cmd_ic_comma (core, input);
 			} else if (input[1] == '-') { // "ic-"
@@ -1693,7 +1693,7 @@ static int cmd_info(void *data, const char *input) {
 			break;
 		case 'D': // "iD"
 			if (input[1] != ' ' || !demangle (core, input + 2)) {
-				r_core_cmd_help_match (core, help_msg_i, "iD", true);
+				r_core_cmd_help_match (core, help_msg_i, "iD");
 			}
 			return 0;
 		case 'a': // "ia"

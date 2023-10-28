@@ -1353,7 +1353,7 @@ static void find_refs(RCore *core, const char *glob) {
 		glob = "str.";
 	}
 	if (*glob == '?') {
-		r_core_cmd_help_match (core, help_msg_ax, "axF", true);
+		r_core_cmd_help_match (core, help_msg_ax, "axF");
 		return;
 	}
 	R_LOG_WARN ("Finding references of flags matching '%s'", glob);
@@ -4236,7 +4236,7 @@ static void cmd_afbc(RCore *core, const char *input) {
 		return;
 	}
 	if (*ptr == '?') {
-		r_core_cmd_help_match (core, help_msg_afb, "afbc", true);
+		r_core_cmd_help_match (core, help_msg_afb, "afbc");
 	} else if (!*ptr) {
 		RAnalBlock *bb = r_anal_get_block_at (core->anal, core->offset);
 		if (bb && (bb->color.r || bb->color.g || bb->color.b)) {
@@ -4501,7 +4501,7 @@ static void cmd_afci(RCore *core, RAnalFunction *fcn) {
 static void cmd_afix(RCore *core, const char *input) {
 	switch (input[3]) {
 	case '?': // "afix?"
-		r_core_cmd_help_match (core, help_msg_afi, "afix", false);
+		r_core_cmd_help_contains (core, help_msg_afi, "afix");
 		break;
 	case 'q': // "afixq"
 	case 'j': // "afixj"
@@ -4788,7 +4788,7 @@ static int cmd_af(RCore *core, const char *input) {
 		{
 		ut64 addr = 0;
 		if (input[2] == '?') {
-			r_core_cmd_help_match (core, help_msg_af, "afd", true);
+			r_core_cmd_help_match (core, help_msg_af, "afd");
 		} else if (input[2] == ' ') {
 			addr = r_num_math (core->num, input + 2);
 		} else {
@@ -4927,7 +4927,7 @@ static int cmd_af(RCore *core, const char *input) {
 	case 'o': // "afo"
 		switch (input[2]) {
 		case '?':
-			r_core_cmd_help_match (core, help_msg_af, "afo", true);
+			r_core_cmd_help_match (core, help_msg_af, "afo");
 			break;
 		case 'j':
 			{
@@ -5312,7 +5312,7 @@ static int cmd_af(RCore *core, const char *input) {
 		}
 		case 'v': // "afsv"
 			if (strchr (input, '?')) {
-				r_core_cmd_help_match (core, help_msg_af, "afsv", true);
+				r_core_cmd_help_match (core, help_msg_af, "afsv");
 			} else if (input[3] == 'j') { // "afsvj"
 				ut64 pc = core->offset;
 				if (input[4] == ' ') {
@@ -5397,7 +5397,7 @@ static int cmd_af(RCore *core, const char *input) {
 			if (input[3] == 'j') {
 				r_core_cmd_call (core, "afcfj");
 			} else if (input[3] == '?') {
-				r_core_cmd_help_match (core, help_msg_afc, "afci", true);
+				r_core_cmd_help_match (core, help_msg_afc, "afci");
 			} else {
 				cmd_afci (core, fcn);
 			}
@@ -5407,7 +5407,7 @@ static int cmd_af(RCore *core, const char *input) {
 			break;
 		case 'k': // "afck"
 			if (input[3] == '?') {
-				r_core_cmd_help_match (core, help_msg_afc, "afck", true);
+				r_core_cmd_help_match (core, help_msg_afc, "afck");
 			} else {
 				cmd_afck (core, NULL);
 			}
@@ -5429,7 +5429,7 @@ static int cmd_af(RCore *core, const char *input) {
 						  sdb_free (db);
 					  }
 				  } else {
-					  r_core_cmd_help_match (core, help_msg_afc, "afco", true);
+					  r_core_cmd_help_match (core, help_msg_afc, "afco");
 				  }
 				  free (dbpath);
 			  }
@@ -5546,7 +5546,7 @@ static int cmd_af(RCore *core, const char *input) {
 				R_LOG_ERROR ("afB: Cannot find function to set bits at 0x%08"PFMT64x, core->offset);
 			}
 		} else {
-			r_core_cmd_help_match (core, help_msg_af, "afB", true);
+			r_core_cmd_help_match (core, help_msg_af, "afB");
 		}
 		break;
 	case 'b': // "afb"
@@ -5643,7 +5643,7 @@ static int cmd_af(RCore *core, const char *input) {
 				off = r_num_math (core->num, p);
 			}
 			if (*name == '?') {
-				r_core_cmd_help_match (core, help_msg_afn, "afn", true);
+				r_core_cmd_help_match (core, help_msg_afn, "afn");
 			} else {
 				if (r_str_startswith (name, "base64:")) {
 					char *res = (char *)r_base64_decode_dyn (name + 7, -1);
@@ -6074,7 +6074,7 @@ void cmd_anal_reg(RCore *core, const char *str) {
 //				r_core_cmd0 (core, "ar A0,A1,A2,A3");
 			}
 		} else {
-			r_core_cmd_help_match (core, help_msg_af, "afA", true);
+			r_core_cmd_help_match (core, help_msg_af, "afA");
 		}
 		break;
 	case 'C': // "arC"
@@ -6138,7 +6138,7 @@ void cmd_anal_reg(RCore *core, const char *str) {
 	case 'r': // "arr"
 		switch (str[1]) {
 		case '?':
-			r_core_cmd_help_match (core, help_msg_dr, "drr", false);
+			r_core_cmd_help_contains (core, help_msg_dr, "drr");
 			break;
 		case 'j': // "arrj"
 			r_core_debug_rr (core, core->anal->reg, 'j');
@@ -6156,7 +6156,7 @@ void cmd_anal_reg(RCore *core, const char *str) {
 		} break;
 	case 'b':
 		if (str[1] == '?') { // "arb" WORK IN PROGRESS // DEBUG COMMAND
-			r_core_cmd_help_match (core, help_msg_ar, "arb", false);
+			r_core_cmd_help_contains (core, help_msg_ar, "arb");
 		} else {
 			int len, type = R_REG_TYPE_GPR;
 			arg = strchr (str, ' ');
@@ -6273,7 +6273,7 @@ void cmd_anal_reg(RCore *core, const char *str) {
 		break;
 	case 't': // "art"
 		if (str[1] == '?') {
-			r_core_cmd_help_match (core, help_msg_dr, "drt", false);
+			r_core_cmd_help_contains (core, help_msg_dr, "drt");
 		} else {
 			for (i = 0; (name = r_reg_get_type (i)); i++) {
 				r_cons_println (name);
@@ -6828,7 +6828,7 @@ static void cmd_anal_info(RCore *core, const char *input) {
 			} else if (input[1] == '-') {
 				r_anal_purge_imports (core->anal);
 			} else {
-				r_core_cmd_help_match (core, help_msg_ai, "aii", true);
+				r_core_cmd_help_match (core, help_msg_ai, "aii");
 			}
 		} else {
 			if (core->anal->imports) {
@@ -7928,7 +7928,7 @@ static void cmd_anal_esil(RCore *core, const char *input, bool verbose) {
 				reg_name_roll_set (core, "PC", r_num_math (core->num, input + 3));
 				r_core_cmd0 (core, ".ar*");
 			} else {
-				r_core_cmd_help_match (core, help_msg_aep, "aepc", true);
+				r_core_cmd_help_match (core, help_msg_aep, "aepc");
 			}
 			break;
 		case 'k':
@@ -8028,14 +8028,14 @@ static void cmd_anal_esil(RCore *core, const char *input, bool verbose) {
 				ut64 nth = n2? r_num_math (core->num, n2): 1;
 				cmd_aespc (core, core->offset, off, (int)nth);
 			} else {
-				r_core_cmd_help_match (core, help_msg_aes, "aesB", true);
+				r_core_cmd_help_match (core, help_msg_aes, "aesB");
 			}
 			break;
 		case 'u': // "aesu"
 			until_expr = NULL;
 			until_addr = UT64_MAX;
 			if (r_str_endswith (input, "?")) {
-				r_core_cmd_help_match (core, help_msg_aes, "aesu", true);
+				r_core_cmd_help_match (core, help_msg_aes, "aesu");
 			} else switch (input[2]) {
 			case 'e': // "aesue"
 				until_expr = r_str_trim_head_ro (input + 3);
@@ -8085,14 +8085,14 @@ static void cmd_anal_esil(RCore *core, const char *input, bool verbose) {
 				r_anal_op_free (op);
 				r_core_cmd0 (core, ".ar*");
 			} else {
-				r_core_cmd_help_match (core, help_msg_aes, "aesou", true);
+				r_core_cmd_help_match (core, help_msg_aes, "aesou");
 			}
 			break;
 		case 'p': //"aesp"
 			n = strchr (input, ' ');
 			n1 = R_STR_ISNOTEMPTY (n) ? strchr (n + 1, ' ') : NULL;
 			if ((!n || !n1) || (!*n || !*n1)) {
-				r_core_cmd_help_match (core, help_msg_aes, "aesp", true);
+				r_core_cmd_help_match (core, help_msg_aes, "aesp");
 				break;
 			}
 			adr = R_STR_ISNOTEMPTY (n)? r_num_math (core->num, n + 1): 0;
@@ -8371,7 +8371,7 @@ static void cmd_anal_esil(RCore *core, const char *input, bool verbose) {
 	case 't': // "aet"
 		switch (input[1]) {
 		case '?':
-			r_core_cmd_help_match (core, help_msg_ae, "aet", false);
+			r_core_cmd_help_contains (core, help_msg_ae, "aet");
 			break;
 		case 's': // "aets"
 			switch (input[2]) {
@@ -8923,7 +8923,7 @@ static void cmd_anal_opcode(RCore *core, const char *input) {
 				input++;
 				break;
 			case '?': // "aoe?"
-				r_core_cmd_help_match (core, help_msg_ao, "aoe", false);
+				r_core_cmd_help_contains (core, help_msg_ao, "aoe");
 				return;
 			}
 		}
@@ -9063,7 +9063,7 @@ static void cmd_anal_opcode(RCore *core, const char *input) {
 				R_LOG_ERROR ("Unknown mnemonic");
 			}
 		} else {
-			r_core_cmd_help_match (core, help_msg_ao, "aod", false);
+			r_core_cmd_help_contains (core, help_msg_ao, "aod");
 		}
 		break;
 	case '*':
@@ -10336,7 +10336,7 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 	case ' ': // "ax "
 		if (input[1] == '?') {
 			char *s = r_str_newf ("ax%c", input[0]);
-			r_core_cmd_help_match (core, help_msg_ax, s, true);
+			r_core_cmd_help_match (core, help_msg_ax, s);
 			free (s);
 		} else {
 			char *ptr = strdup (r_str_trim_head_ro ((char *)input + 1));
@@ -10559,7 +10559,7 @@ static void cmd_anal_hint(RCore *core, const char *input) {
 		} else if (input[1] == '-') {
 			r_anal_hint_unset_syntax (core->anal, core->offset);
 		} else {
-			r_core_cmd_help_match (core, help_msg_ah, "ahS", true);
+			r_core_cmd_help_match (core, help_msg_ah, "ahS");
 		}
 		break;
 	case 'd': // "ahd" set opcode string
@@ -10568,7 +10568,7 @@ static void cmd_anal_hint(RCore *core, const char *input) {
 		} else if (input[1] == '-') {
 			r_anal_hint_unset_opcode (core->anal, core->offset);
 		} else {
-			r_core_cmd_help_match (core, help_msg_ah, "ahd", true);
+			r_core_cmd_help_match (core, help_msg_ah, "ahd");
 		}
 		break;
 	case 'e': // "ahe" set ESIL string
@@ -10577,7 +10577,7 @@ static void cmd_anal_hint(RCore *core, const char *input) {
 		} else if (input[1] == '-') {
 			r_anal_hint_unset_esil (core->anal, core->offset);
 		} else {
-			r_core_cmd_help_match (core, help_msg_ah, "ahe", true);
+			r_core_cmd_help_match (core, help_msg_ah, "ahe");
 		}
 		break;
 #if 0
@@ -13112,7 +13112,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 			cmd_anal_calls (core, input + 1, input[2] == '*', true);
 			break;
 		case '?': // "aac?"
-			r_core_cmd_help_match (core, help_msg_aa, "aac", false);
+			r_core_cmd_help_contains (core, help_msg_aa, "aac");
 			break;
 		default: // "aac"
 			cmd_anal_calls (core, input + 1, false, false);
@@ -13121,14 +13121,14 @@ static int cmd_anal_all(RCore *core, const char *input) {
 		break;
 	case 'j': // "aaj"
 		if (input[1] == '?') {
-			r_core_cmd_help_match (core, help_msg_aa, "aaj", true);
+			r_core_cmd_help_match (core, help_msg_aa, "aaj");
 		} else {
 			cmd_anal_jumps (core, input + 1);
 		}
 		break;
 	case 'd': // "aad"
 		if (input[1] == '?') {
-			r_core_cmd_help_match (core, help_msg_aa, "aad", true);
+			r_core_cmd_help_match (core, help_msg_aa, "aad");
 		} else {
 			cmd_anal_aad (core, input);
 		}
@@ -13142,28 +13142,28 @@ static int cmd_anal_all(RCore *core, const char *input) {
 		break;
 	case 'w': // "aaw"
 		if (input[1] == '?') {
-			r_core_cmd_help_match (core, help_msg_aa, "aaw", true);
+			r_core_cmd_help_match (core, help_msg_aa, "aaw");
 		} else {
 			cmd_anal_aaw (core, input);
 		}
 		break;
 	case 'u': // "aau" - print areas not covered by functions
 		if (input[1] == '?') {
-			r_core_cmd_help_match (core, help_msg_aa, "aau", true);
+			r_core_cmd_help_match (core, help_msg_aa, "aau");
 		} else {
 			r_core_anal_nofunclist (core, input + 1);
 		}
 		break;
 	case 'i': // "aai"
 		if (input[1] == '?') {
-			r_core_cmd_help_match (core, help_msg_aa, "aai", true);
+			r_core_cmd_help_match (core, help_msg_aa, "aai");
 		} else {
 			r_core_anal_info (core, input + 1);
 		}
 		break;
 	case 's': // "aas"
 		if (input[1] == '?') {
-			r_core_cmd_help_match (core, help_msg_aa, "aas", true);
+			r_core_cmd_help_match (core, help_msg_aa, "aas");
 		} else {
 			r_core_cmd0 (core, "af @@= `isq~[0]`");
 			r_core_cmd0 (core, "af @@f:entry*");
@@ -13171,7 +13171,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 		break;
 	case 'S': // "aaS"
 		if (input[1] == '?') {
-			r_core_cmd_help_match (core, help_msg_aa, "aaS", true);
+			r_core_cmd_help_match (core, help_msg_aa, "aaS");
 		} else {
 			r_core_cmd0 (core, "af @@f:sym.*");
 			r_core_cmd0 (core, "af @@f:entry*");
@@ -13181,7 +13181,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 		if (!input[1] || input[1] == ' ' || input[1] == 'a') {
 			r_core_anal_inflags (core, input + 1);
 		} else {
-			r_core_cmd_help_match (core, help_msg_aa, "aaF", false);
+			r_core_cmd_help_contains (core, help_msg_aa, "aaF");
 		}
 		break;
 	case 'n': // "aan"
@@ -13202,7 +13202,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 		break;
 	case 'p': // "aap"
 		if (input[1] == '?') {
-			r_core_cmd_help_match (core, help_msg_aa, "aap", true);
+			r_core_cmd_help_match (core, help_msg_aa, "aap");
 		} else {
 			r_core_search_preludes (core, true);
 		}
@@ -13448,7 +13448,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 		break;
 	case 't': // "aat"
 		if (input[1] == '?') {
-			r_core_cmd_help_match (core, help_msg_aa, "aat", true);
+			r_core_cmd_help_match (core, help_msg_aa, "aat");
 		} else {
 			char *off = input[1]? r_str_trim_dup (input + 2): NULL;
 			RAnalFunction *fcn;
@@ -13481,7 +13481,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 		break;
 	case 'o': // "aao"
 		if (input[1] == '?') { // "aao?"
-			r_core_cmd_help_match (core, help_msg_aa, "aao", true);
+			r_core_cmd_help_match (core, help_msg_aa, "aao");
 		} else {
 			cmd_anal_objc (core, input + 1, false);
 		}
@@ -13489,7 +13489,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 	case 'e': // "aae"
 		if (input[1] == 'f') { // "aaef"
 			if (input[2] == '?') {
-				r_core_cmd_help_match (core, help_msg_aae, "aaef", true);
+				r_core_cmd_help_match (core, help_msg_aae, "aaef");
 			} else {
 				r_core_cmd0 (core, "aeim");
 				RListIter *it;
@@ -13506,7 +13506,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 			r_core_cmd_help (core, help_msg_aae);
 		} else if (input[1] == 'p') { // "aaep" // auto define all esil pins
 			if (input[2] == '?') {
-				r_core_cmd_help_match (core, help_msg_aae, "aaef", true);
+				r_core_cmd_help_match (core, help_msg_aae, "aaef");
 			} else {
 				r_core_cmd0 (core, "aep ret0@@@i");
 				r_core_cmd0 (core, "aepa@@@i");
@@ -14234,7 +14234,7 @@ static void cmd_anal_aC(RCore *core, const char *input) {
 
 static bool core_anal_abf(RCore *core, const char* input) {
 	if (strchr (input, '?')) {
-		r_core_cmd_help_match (core, help_msg_ab, "abf", true);
+		r_core_cmd_help_match (core, help_msg_ab, "abf");
 		return false;
 	}
 	ut64 addr = r_num_math (core->num, input);
@@ -14296,7 +14296,7 @@ static void match_prelude(RCore *core, const char *input) {
 static int cmd_apt(RCore *core, const char *input) {
 	switch (*input) {
 	case '?':
-		r_core_cmd_help_match (core, help_msg_ap, "apt", false);
+		r_core_cmd_help_contains (core, help_msg_ap, "apt");
 		break;
 	case '=':
 	case ' ':
@@ -14402,7 +14402,7 @@ static int cmd_anal(void *data, const char *input) {
 			{
 				const char *arg = r_str_trim_head_ro (input + 2);
 				if (*arg == '?') {
-					r_core_cmd_help_match (core, help_msg_ab, "abe", true);
+					r_core_cmd_help_match (core, help_msg_ab, "abe");
 				} else {
 					RListIter *iter;
 					RAnalBlock *bb;

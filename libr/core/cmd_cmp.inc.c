@@ -518,7 +518,7 @@ static int cmd_cmp_watcher(RCore *core, const char *input) {
 				R_LOG_ERROR ("Failed to add watcher");
 			}
 		} else {
-			r_core_cmd_help_match (core, help_msg_cw, "cw ", true);
+			r_core_cmd_help_match (core, help_msg_cw, "cw ");
 		}
 out_free_argv:
 		r_str_argv_free (argv);
@@ -526,7 +526,7 @@ out_free_argv:
 	}
 	case 'd': // "cwd"
 		if (input[1] == '?') {
-			r_core_cmd_help_match (core, help_msg_cw, "cwd", true);
+			r_core_cmd_help_match (core, help_msg_cw, "cwd");
 			return 0;
 		}
 		if (input[1]) {
@@ -542,7 +542,7 @@ out_free_argv:
 		break;
 	case 'r': // "cwr"
 		if (input[1] == '?') {
-			r_core_cmd_help_match (core, help_msg_cw, "cwr", true);
+			r_core_cmd_help_match (core, help_msg_cw, "cwr");
 			return 0;
 		}
 
@@ -562,7 +562,7 @@ out_free_argv:
 		break;
 	case 'u': // "cwu"
 		if (input[1] == '?') {
-			r_core_cmd_help_match (core, help_msg_cw, "cwu", true);
+			r_core_cmd_help_match (core, help_msg_cw, "cwu");
 			return 0;
 		}
 		if (input[1]) {
@@ -1009,7 +1009,7 @@ static void cmd_curl(RCore *core, const char *arg) {
 				free (s);
 			}
 		} else {
-			r_core_cmd_help_match (core, help_msg_cu, "curl", true);
+			r_core_cmd_help_match (core, help_msg_cu, "curl");
 		}
 	}
 }
@@ -1093,10 +1093,10 @@ static int cmd_cmp(void *data, const char *input) {
 					}
 				}
 			} else {
-				r_core_cmd_help_match (core, help_msg_c, "cat", true);
+				r_core_cmd_help_match (core, help_msg_c, "cat");
 			}
 		} else { // "ca"
-			r_core_cmd_help_match (core, help_msg_c, "cat", true);
+			r_core_cmd_help_match (core, help_msg_c, "cat");
 		}
 		break;
 	case 'w':
@@ -1104,7 +1104,7 @@ static int cmd_cmp(void *data, const char *input) {
 		break;
 	case '*': // "c*"
 		if (!input[2]) {
-			r_core_cmd_help_match (core, help_msg_c, "c*", true);
+			r_core_cmd_help_match (core, help_msg_c, "c*");
 			return 0;
 		}
 
@@ -1120,7 +1120,7 @@ static int cmd_cmp(void *data, const char *input) {
 	}
 	case 'j': // "cj"
 		if (input[1] != ' ') {
-			r_core_cmd_help_match (core, help_msg_c, "cj", true);
+			r_core_cmd_help_match (core, help_msg_c, "cj");
 		} else {
 			char *str = strdup (input + 2);
 			int len = r_str_unescape (str);
@@ -1136,14 +1136,14 @@ static int cmd_cmp(void *data, const char *input) {
 			break;
 		case '*':
 			if (input[2] != ' ') {
-				r_core_cmd_help_match (core, help_msg_c, "cx*", true);
+				r_core_cmd_help_match (core, help_msg_c, "cx*");
 				return 0;
 			}
 			mode = '*';
 			input += 3;
 			break;
 		default:
-			r_core_cmd_help_match (core, help_msg_c, "cx", true);
+			r_core_cmd_help_match (core, help_msg_c, "cx");
 			return 0;
 		}
 		if (!(filled = (char *) malloc (strlen (input) + 1))) {
@@ -1264,14 +1264,14 @@ static int cmd_cmp(void *data, const char *input) {
 		arg = *input? r_str_trim_head_ro (input + 1): NULL;
 
 		if (input[0] == '?' || R_STR_ISEMPTY (arg)) {
-			r_core_cmd_help_match_spec (core, help_msg_c, "c", width, true);
+			r_core_cmd_help_match_spec (core, help_msg_c, "c", width);
 			break;
 		}
 
 		if (width == '1') {
 			if (mode == '*') {
 				R_LOG_ERROR ("c1 does not support * mode");
-				r_core_cmd_help_match (core, help_msg_c, "c1", true);
+				r_core_cmd_help_match (core, help_msg_c, "c1");
 			} else {
 				val = cmp_bits (core, r_num_math (core->num, arg));
 			}
@@ -1289,7 +1289,7 @@ static int cmd_cmp(void *data, const char *input) {
 	}
 	case 'c': // "cc"
 		if (input[1] == '?') { // "cc?"
-			r_core_cmd_help_match (core, help_msg_c, "cc", false);
+			r_core_cmd_help_contains (core, help_msg_c, "cc");
 		} else if (input[1] == 'd') { // "ccd"
 			if (input[2] == 'd') { // "ccdd"
 				cmd_cmp_disasm (core, input + 3, 'd');
@@ -1333,7 +1333,7 @@ static int cmd_cmp(void *data, const char *input) {
 			if (*file2) {
 				r_anal_diff_setup (core->anal, true, -1, -1);
 			} else {
-				r_core_cmd_help_match (core, help_msg_cg, "cgo", true);
+				r_core_cmd_help_match (core, help_msg_cg, "cgo");
 				return false;
 			}
 			break;
@@ -1483,7 +1483,7 @@ static int cmd_cmp(void *data, const char *input) {
 			r_core_return_value (core, 1);
 			// fallthrough
 		case '?':
-			r_core_cmd_help_match (core, help_msg_c, "cv", true);
+			r_core_cmd_help_match (core, help_msg_c, "cv");
 			break;
 		}
 	}
@@ -1499,7 +1499,7 @@ static int cmd_cmp(void *data, const char *input) {
 			default: sz = '4'; break; // default
 			}
 		} else if (sz == '?') {
-			r_core_cmd_help_match (core, help_msg_c, "cV", true);
+			r_core_cmd_help_match (core, help_msg_c, "cV");
 		}
 		sz -= '0';
 		if (sz > 0) {

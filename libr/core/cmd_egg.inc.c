@@ -122,7 +122,7 @@ static int cmd_egg(void *data, const char *input) {
 			}
 			egg->lang.nsyscalls = 0;
 		} else {
-			r_core_cmd_help_match (core, help_msg_g, "gs", false);
+			r_core_cmd_help_contains (core, help_msg_g, "gs");
 		}
 		break;
 	case ' ': // "g "
@@ -132,7 +132,7 @@ static int cmd_egg(void *data, const char *input) {
 				R_LOG_ERROR ("Cannot compile '%s'", input + 2);
 			}
 		} else {
-			r_core_cmd_help_match (core, help_msg_g, "g ", true);
+			r_core_cmd_help_match (core, help_msg_g, "g ");
 		}
 		break;
 	case '\0': // "g"
@@ -146,7 +146,7 @@ static int cmd_egg(void *data, const char *input) {
 				r_egg_option_set (egg, "egg.padding", input + 2);
 			}
 		} else {
-			r_core_cmd_help_match (core, help_msg_g, "gp", true);
+			r_core_cmd_help_match (core, help_msg_g, "gp");
 		}
 		break;
 	case 'e': // "ge"
@@ -164,11 +164,11 @@ static int cmd_egg(void *data, const char *input) {
 				r_egg_option_set (egg, "key", p + 1);
 				r_egg_option_set (egg, "egg.encoder", oa);
 			} else {
-				r_core_cmd_help_match (core, help_msg_g, "ge", true);
+				r_core_cmd_help_match (core, help_msg_g, "ge");
 			}
 			free (oa);
 		} else {
-			r_core_cmd_help_match (core, help_msg_g, "ge", true);
+			r_core_cmd_help_match (core, help_msg_g, "ge");
 		}
 		break;
 	case 'i': // "gi"
@@ -182,10 +182,10 @@ static int cmd_egg(void *data, const char *input) {
 			if (input[0] && input[2]) {
 				r_egg_option_set (egg, "egg.shellcode", input + 2);
 			} else {
-				r_core_cmd_help_match (core, help_msg_g, "gi", false);
+				r_core_cmd_help_contains (core, help_msg_g, "gi");
 			}
 		} else {
-			r_core_cmd_help_match (core, help_msg_g, "gi", false);
+			r_core_cmd_help_contains (core, help_msg_g, "gi");
 		}
 		break;
 	case 'L': // "gL"
@@ -274,7 +274,7 @@ static int cmd_egg(void *data, const char *input) {
 			R_LOG_TODO ("list options");
 			break;
 		default:
-			r_core_cmd_help_match (core, help_msg_g, "gc", false);
+			r_core_cmd_help_contains (core, help_msg_g, "gc");
 			break;
 		}
 		break;

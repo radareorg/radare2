@@ -888,7 +888,7 @@ static bool step_until_optype(RCore *core, const char *_optypes) {
 	st64 maxsteps = r_config_get_i (core->config, "esil.maxsteps");
 	ut64 countsteps = 0;
 	if (R_STR_ISEMPTY (optypes)) {
-		r_core_cmd_help_match (core, help_msg_dsu, "dsuo", true);
+		r_core_cmd_help_match (core, help_msg_dsu, "dsuo");
 		res = false;
 		goto end;
 	}
@@ -1122,7 +1122,7 @@ static void cmd_debug_pid(RCore *core, const char *input) {
 			break;
 		case '?': // "dpt?"
 		default:
-			r_core_cmd_help_match (core, help_msg_dp, "dpt", false);
+			r_core_cmd_help_contains (core, help_msg_dp, "dpt");
 			break;
 		}
 		break;
@@ -1602,7 +1602,7 @@ static int cmd_debug_map(RCore *core, const char *input) {
 	switch (input[0]) {
 	case 's': // "dms"
 		if (strchr (input, '?')) {
-			r_core_cmd_help_match (core, help_msg_dm, "dms", false);
+			r_core_cmd_help_contains (core, help_msg_dm, "dms");
 		}
 		cmd_debug_map_snapshot (core, input+1);
 		break;
@@ -1670,13 +1670,13 @@ static int cmd_debug_map(RCore *core, const char *input) {
 		case 0: return dump_maps (core, -1, NULL);
 		case '?':
 		default:
-			r_core_cmd_help_match (core, help_msg_dm, "dmd", true);
+			r_core_cmd_help_match (core, help_msg_dm, "dmd");
 			break;
 		}
 		break;
 	case 'l': // "dml"
 		if (input[1] != ' ') {
-			r_core_cmd_help_match (core, help_msg_dm, "dml", true);
+			r_core_cmd_help_match (core, help_msg_dm, "dml");
 			return false;
 		}
 		r_debug_map_sync (core->dbg); // update process memory maps
@@ -1936,14 +1936,14 @@ static int cmd_debug_map(RCore *core, const char *input) {
 				size = r_num_math (core->num, p);
 				r_debug_map_alloc (core->dbg, addr, size, false);
 			} else {
-				r_core_cmd_help_match (core, help_msg_dm, "dm", true);
+				r_core_cmd_help_match (core, help_msg_dm, "dm");
 				return false;
 			}
 		}
 		break;
 	case '-': // "dm-"
 		if (input[1] != ' ') {
-			r_core_cmd_help_match (core, help_msg_dm, "dm-", true);
+			r_core_cmd_help_match (core, help_msg_dm, "dm-");
 			break;
 		}
 		addr = r_num_math (core->num, input + 2);
@@ -1966,7 +1966,7 @@ static int cmd_debug_map(RCore *core, const char *input) {
 				size = r_num_math (core->num, p);
 				r_debug_map_alloc (core->dbg, addr, size, true);
 			} else {
-				r_core_cmd_help_match (core, help_msg_dm, "dmL", true);
+				r_core_cmd_help_match (core, help_msg_dm, "dmL");
 				return false;
 			}
 		}
@@ -2241,7 +2241,7 @@ static void cmd_reg_profile(RCore *core, char from, const char *str) { // "arp" 
 				R_LOG_WARN ("Cannot parse gdb profile");
 			}
 		} else {
-			r_core_cmd_help_match (core, help_msg_drp, "drpg", true);
+			r_core_cmd_help_match (core, help_msg_drp, "drpg");
 		}
 		break;
 	case ' ': // "drp " "arp "
@@ -2787,7 +2787,7 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 					r_debug_reg_sync (core->dbg, R_REG_TYPE_DRX, true);
 			        }
 			} else {
-				r_core_cmd_help_match (core, help_msg_dr, "drx", true);
+				r_core_cmd_help_match (core, help_msg_dr, "drx");
 			}
 			free (s);
 			}
@@ -2962,7 +2962,7 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 	case 'f': // "drf"
 		//r_debug_drx_list (core->dbg);
 		if (str[1] == '?') {
-			r_core_cmd_help_match (core, help_msg_dr, "drf", true);
+			r_core_cmd_help_match (core, help_msg_dr, "drf");
 		} else if (str[1] == ' ') {
 			char *p, *name = strdup (str + 2);
 			char *eq = strchr (name, '=');
@@ -3492,10 +3492,10 @@ static void core_cmd_dbi(RCore *core, const char *input, const ut64 idx) {
 					R_LOG_ERROR ("Cannot set command");
 				}
 			} else {
-				r_core_cmd_help_match (core, help_msg_db, "dbic", true);
+				r_core_cmd_help_match (core, help_msg_db, "dbic");
 			}
 		} else {
-			r_core_cmd_help_match (core, help_msg_db, "dbic", true);
+			r_core_cmd_help_match (core, help_msg_db, "dbic");
 		}
 		break;
 	case 'e': // "dbie"
@@ -3849,7 +3849,7 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 			st64 delta = 0;
 			char *sdelta = (char *)r_str_lchr (module, ' ');
 			if (!sdelta) {
-				r_core_cmd_help_match (core, help_msg_db, "dbm", true);
+				r_core_cmd_help_match (core, help_msg_db, "dbm");
 				free (module);
 				break;
 			}
@@ -3996,7 +3996,7 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 			break;
 		case '?':
 		default:
-			r_core_cmd_help_match (core, help_msg_d, "dh", true);
+			r_core_cmd_help_match (core, help_msg_d, "dh");
 			break;
 		}
 		break;
@@ -4263,10 +4263,10 @@ static void r_core_debug_esil(RCore *core, const char *input) {
 					dev = p[0];
 					r_debug_esil_watch (core->dbg, perm, dev, q);
 				} else {
-					r_core_cmd_help_match (core, help_msg_de, "de ", true);
+					r_core_cmd_help_match (core, help_msg_de, "de ");
 				}
 			} else {
-				r_core_cmd_help_match (core, help_msg_de, "de ", true);
+				r_core_cmd_help_match (core, help_msg_de, "de ");
 			}
 			free (line);
 		}
@@ -4625,7 +4625,7 @@ static int cmd_debug_continue(RCore *core, const char *input) {
 		break;
 	case 'b': // "dcb"
 		if (input[2] == '?') {
-			r_core_cmd_help_match (core, help_msg_dc, "dcb", true);
+			r_core_cmd_help_match (core, help_msg_dc, "dcb");
 		} else {
 			if (!core->dbg->session) {
 				R_LOG_ERROR ("Session has not started");
@@ -4636,7 +4636,7 @@ static int cmd_debug_continue(RCore *core, const char *input) {
 		}
 	case 'e': // "dce"
 		if (input[2] == '?') {
-			r_core_cmd_help_match (core, help_msg_dc, "dce", true);
+			r_core_cmd_help_match (core, help_msg_dc, "dce");
 		} else {
 			r_reg_arena_swap (core->dbg->reg, true);
 			r_debug_continue_with_signal (core->dbg);
@@ -4644,7 +4644,7 @@ static int cmd_debug_continue(RCore *core, const char *input) {
 		break;
 	case 'f': // "dcf"
 		if (input[2] == '?') {
-			r_core_cmd_help_match (core, help_msg_dc, "dcf", true);
+			r_core_cmd_help_match (core, help_msg_dc, "dcf");
 		} else {
 			// we should stop in fork and vfork syscalls
 			//TODO: multiple syscalls not handled yet
@@ -4653,7 +4653,7 @@ static int cmd_debug_continue(RCore *core, const char *input) {
 		break;
 	case 'c': // "dcc"
 		if (input[2] == '?') {
-			r_core_cmd_help_match (core, help_msg_dc, "dcc", true);
+			r_core_cmd_help_match (core, help_msg_dc, "dcc");
 		} else {
 			r_reg_arena_swap (core->dbg->reg, true);
 			if (input[2] == 'u') {
@@ -4665,7 +4665,7 @@ static int cmd_debug_continue(RCore *core, const char *input) {
 		break;
 	case 'r': // "dcr"
 		if (input[2] == '?') {
-			r_core_cmd_help_match (core, help_msg_dc, "dcr", true);
+			r_core_cmd_help_match (core, help_msg_dc, "dcr");
 		} else {
 			r_reg_arena_swap (core->dbg->reg, true);
 			r_debug_continue_until_optype (core->dbg, R_ANAL_OP_TYPE_RET, 1);
@@ -4673,7 +4673,7 @@ static int cmd_debug_continue(RCore *core, const char *input) {
 		break;
 	case 'k':
 		if (input[2] == '?') {
-			r_core_cmd_help_match (core, help_msg_dc, "dck", true);
+			r_core_cmd_help_match (core, help_msg_dc, "dck");
 		} else {
 			// select pid and r_debug_continue_kill (core->dbg,
 			r_reg_arena_swap (core->dbg->reg, true);
@@ -4712,7 +4712,7 @@ static int cmd_debug_continue(RCore *core, const char *input) {
 		break;
 	case 'p': // "dcp"
 		if (input[2] == '?') {
-			r_core_cmd_help_match (core, help_msg_dc, "dcp", true);
+			r_core_cmd_help_match (core, help_msg_dc, "dcp");
 		} else {
 			// XXX: this is very slow
 			RIOMap *s;
@@ -4756,7 +4756,7 @@ static int cmd_debug_continue(RCore *core, const char *input) {
 		break;
 	case 't':
 		if (input[2] == '?') {
-			r_core_cmd_help_match (core, help_msg_dc, "dct", true);
+			r_core_cmd_help_match (core, help_msg_dc, "dct");
 		} else {
 			cmd_debug_backtrace (core, input + 2);
 		}
@@ -4832,7 +4832,7 @@ static int cmd_debug_step(RCore *core, const char *input) {
 		break;
 	case 'u': // "dsu"
 		if (input[3] == '?') {
-			r_core_cmd_help_match_spec (core, help_msg_dsu, "dsu", input[2], true);
+			r_core_cmd_help_match_spec (core, help_msg_dsu, "dsu", input[2]);
 			return 0;
 		}
 		switch (input[2]) {
@@ -4842,7 +4842,7 @@ static int cmd_debug_step(RCore *core, const char *input) {
 		case 'i': // dsui
 			if (input[3] == 'r') {
 				if (input[4] == '?') {
-					r_core_cmd_help_match (core, help_msg_dsu, "dsuir", true);
+					r_core_cmd_help_match (core, help_msg_dsu, "dsuir");
 				}
 				step_until_inst (core, input + 4, true);
 			} else {
@@ -5006,7 +5006,7 @@ static int cmd_debug_desc(RCore *core, const char *input) {
 	}
 
 	if (!strncmp (input, "d*?", 3)) { // "dd*?"
-		r_core_cmd_help_match (core, help_msg_dd, "dd", true);
+		r_core_cmd_help_match (core, help_msg_dd, "dd");
 		return 0;
 	}
 
@@ -5032,7 +5032,7 @@ static int cmd_debug_desc(RCore *core, const char *input) {
 				/* "ddt*?" -> "ddt?" */
 				input--;
 			}
-			r_core_cmd_help_match_spec (core, help_msg_dd, "dd", input[0], true);
+			r_core_cmd_help_match_spec (core, help_msg_dd, "dd", input[0]);
 			goto out_free_argv;
 		}
 
@@ -5075,7 +5075,7 @@ static int cmd_debug_desc(RCore *core, const char *input) {
 				if (!input[0] || input[0] == '*') {
 					ret = r_debug_desc_list (core->dbg, print);
 				} else {
-					r_core_cmd_help_match_spec (core, help_msg_dd, "dd", input[0], true);
+					r_core_cmd_help_match_spec (core, help_msg_dd, "dd", input[0]);
 				}
 				break;
 			}
@@ -5117,7 +5117,7 @@ static int cmd_debug_desc(RCore *core, const char *input) {
 		ut64 offset;
 
 		if (argc < 2) {
-			r_core_cmd_help_match (core, help_msg_dd, "dds", true);
+			r_core_cmd_help_match (core, help_msg_dd, "dds");
 			break;
 		}
 
@@ -5146,7 +5146,7 @@ static int cmd_debug_desc(RCore *core, const char *input) {
 		int newfd;
 
 		if (argc < 3) {
-			r_core_cmd_help_match (core, help_msg_dd, "ddd", true);
+			r_core_cmd_help_match (core, help_msg_dd, "ddd");
 			break;
 		}
 
@@ -5172,7 +5172,7 @@ static int cmd_debug_desc(RCore *core, const char *input) {
 		char *perms;
 
 		if (argc < 4) {
-			r_core_cmd_help_match (core, help_msg_dd, "ddr", true);
+			r_core_cmd_help_match (core, help_msg_dd, "ddr");
 			break;
 		}
 
@@ -5209,7 +5209,7 @@ static int cmd_debug_desc(RCore *core, const char *input) {
 		char *perms;
 
 		if (argc < 4) {
-			r_core_cmd_help_match (core, help_msg_dd, "ddw", true);
+			r_core_cmd_help_match (core, help_msg_dd, "ddw");
 			break;
 		}
 
@@ -5247,7 +5247,7 @@ static int cmd_debug_desc(RCore *core, const char *input) {
 			fd = 0;
 		} else {
 			if (argc < 2) {
-				r_core_cmd_help_match (core, help_msg_dd, "dd-", true);
+				r_core_cmd_help_match (core, help_msg_dd, "dd-");
 				break;
 			}
 			fd = (int) r_num_math (core->num, argv[1]);
@@ -5268,7 +5268,7 @@ static int cmd_debug_desc(RCore *core, const char *input) {
 		ut64 addr;
 
 		if (argc < 2) {
-			r_core_cmd_help_match (core, help_msg_dd, "ddf", true);
+			r_core_cmd_help_match (core, help_msg_dd, "ddf");
 			break;
 		}
 
@@ -5348,7 +5348,7 @@ static int cmd_debug(void *data, const char *input) {
 	}
 	if (!strncmp (input, "ate", 3)) { // "date" -- same as pt.
 		if (strstr (input, "-h") || strstr (input, "?")) {
-			r_core_cmd_help_match (core, help_msg_d, "date", true);
+			r_core_cmd_help_match (core, help_msg_d, "date");
 			return 0;
 		}
 		bool use_beat = strstr (input, "-b");
@@ -5408,7 +5408,7 @@ static int cmd_debug(void *data, const char *input) {
 			break;
 		case 'c': // "dtc"
 			if (input[2] == '?') {
-				r_core_cmd_help_match (core, help_msg_dt, "dtc", true);
+				r_core_cmd_help_match (core, help_msg_dt, "dtc");
 			} else {
 				debug_trace_calls (core, input + 2);
 			}
@@ -5576,7 +5576,7 @@ static int cmd_debug(void *data, const char *input) {
 						R_LOG_ERROR ("esil->trace is null. run 'e dbg.trace=true;dtei' to fix that. ");
 					}
 				} else {
-					r_core_cmd_help_match (core, help_msg_dte, "dtek", true);
+					r_core_cmd_help_match (core, help_msg_dte, "dtek");
 				}
 				break;
 #endif
@@ -5756,7 +5756,7 @@ static int cmd_debug(void *data, const char *input) {
 				break;
 			case 'f': // "dif" "diff"
 				if (input[1] == '?') {
-					r_core_cmd_help_match (core, help_msg_di, "dif", true);
+					r_core_cmd_help_match (core, help_msg_di, "dif");
 				} else {
 					char *arg = strchr (input, ' ');
 					if (arg) {
@@ -5782,7 +5782,7 @@ static int cmd_debug(void *data, const char *input) {
 						}
 						free (arg);
 					} else {
-						r_core_cmd_help_match (core, help_msg_di, "dif", true);
+						r_core_cmd_help_match (core, help_msg_di, "dif");
 					}
 				}
 				break;
@@ -5992,11 +5992,11 @@ static int cmd_debug(void *data, const char *input) {
 		case 'r':   // "dxr"
 			if (input[2] == 's') { // "dxrs"
 				if (input[3] != ' ') {
-					r_core_cmd_help_match (core, help_msg_dx, "dxrs", true);
+					r_core_cmd_help_match (core, help_msg_dx, "dxrs");
 					break;
 				}
 			} else if (input[2] != ' ') {
-				r_core_cmd_help_match (core, help_msg_dx, "dxr", true);
+				r_core_cmd_help_match (core, help_msg_dx, "dxr");
 				break;
 			}
 			/* fall through */
@@ -6029,7 +6029,7 @@ static int cmd_debug(void *data, const char *input) {
 		case 'a': { // "dxa"
 			RAsmCode *acode;
 			if (input[2] == '?' || input[2] != ' ') {
-				r_core_cmd_help_match (core, help_msg_dx, "dxa", true);
+				r_core_cmd_help_match (core, help_msg_dx, "dxa");
 				break;
 			}
 			r_asm_set_pc (core->rasm, core->offset);

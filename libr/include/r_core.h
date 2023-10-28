@@ -906,8 +906,10 @@ R_API PJ *r_core_pj_new(RCore *core);
 /* help */
 R_API void r_core_cmd_help(const RCore *core, RCoreHelpMessage help);
 R_API void r_core_cmd_help_json(const RCore *core, RCoreHelpMessage help);
-R_API void r_core_cmd_help_match(const RCore *core, RCoreHelpMessage help, R_BORROW R_NONNULL char *cmd, bool exact);
-R_API void r_core_cmd_help_match_spec(const RCore *core, const char * const help[], R_BORROW R_NONNULL char *cmd, char spec, bool exact);
+R_API void r_core_cmd_help_match(const RCore *core, RCoreHelpMessage help, R_BORROW R_NONNULL char *cmd);
+R_API void r_core_cmd_help_contains(const RCore *core, RCoreHelpMessage help, R_BORROW R_NONNULL char *cmd);
+R_API void r_core_cmd_help_match_spec(const RCore *core, const char * const help[], R_BORROW R_NONNULL char *cmd, char spec);
+R_API void r_core_cmd_help_contains_spec(const RCore *core, const char * const help[], R_BORROW R_NONNULL char *cmd, char spec);
 
 /* anal stats */
 

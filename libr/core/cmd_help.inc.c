@@ -638,7 +638,7 @@ static int cmd_help(void *data, const char *input) {
 	switch (input[0]) {
 	case ':':
 		// show help for ':' command
-		r_core_cmd_help_match (core, help_msg_at, ":", true);
+		r_core_cmd_help_match (core, help_msg_at, ":");
 		break;
 	case 't': { // "?t"
 		switch (input[1]) {
@@ -726,7 +726,7 @@ static int cmd_help(void *data, const char *input) {
 			free (buf);
 		} else if (input[1] == 't' && input[2] == 'w') { // "?btw"
 			if (r_num_between (core->num, input + 3) == -1) {
-				r_core_cmd_help_match (core, help_msg_question, "?btw", true);
+				r_core_cmd_help_match (core, help_msg_question, "?btw");
 			}
 		} else {
 			n = r_num_math (core->num, input + 1);
@@ -749,7 +749,7 @@ static int cmd_help(void *data, const char *input) {
 		if (input[1] == ' ') {
 			r_cons_printf ("0x%08x\n", (ut32)r_str_hash (input + 2));
 		} else {
-			r_core_cmd_help_match (core, help_msg_question, "?h", false);
+			r_core_cmd_help_contains (core, help_msg_question, "?h");
 		}
 		break;
 	case 'F': // "?F"
@@ -769,11 +769,11 @@ static int cmd_help(void *data, const char *input) {
 				r_str_bits (out, (const ut8*)&n, sizeof (n) * 8, q + 1);
 				r_cons_println (out);
 			} else {
-				r_core_cmd_help_match (core, help_msg_question, "?f", true);
+				r_core_cmd_help_match (core, help_msg_question, "?f");
 			}
 			free (p);
 		} else {
-			r_core_cmd_help_match (core, help_msg_question, "?f", true);
+			r_core_cmd_help_match (core, help_msg_question, "?f");
 		}
 		break;
 	case 'o': // "?o"
@@ -923,7 +923,7 @@ static int cmd_help(void *data, const char *input) {
 			R_LOG_ERROR ("Division by Zero");
 		}
 		if (input[1] == '?') {
-			r_core_cmd_help_match (core, help_msg_question, "?q", true);
+			r_core_cmd_help_match (core, help_msg_question, "?q");
 		} else {
 			const char *space = strchr (input, ' ');
 			if (space) {
@@ -955,7 +955,7 @@ static int cmd_help(void *data, const char *input) {
 		}
 		switch (input[1]) {
 		case '?':
-			r_core_cmd_help_match (core, help_msg_question, "?v", false);
+			r_core_cmd_help_contains (core, help_msg_question, "?v");
 			break;
 		case '\0':
 			r_cons_printf ("%d\n", (st32)n);
@@ -1006,7 +1006,7 @@ static int cmd_help(void *data, const char *input) {
 				}
 				free (s);
 			} else {
-				r_core_cmd_help_match (core, help_msg_question, "?==", true);
+				r_core_cmd_help_match (core, help_msg_question, "?==");
 			}
 		} else {
 			if (input[1]) { // ?=

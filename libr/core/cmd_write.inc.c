@@ -336,7 +336,7 @@ static int cmd_wo(void *data, const char *input) {
 	switch (input[0]) {
 	case 'e': // "woe"
 		if (input[1]!=' ') {
-			r_core_cmd_help_match (core, help_msg_wo, "woe", true);
+			r_core_cmd_help_match (core, help_msg_wo, "woe");
 			return -1;
 		}
 		/* fallthrough */
@@ -355,7 +355,7 @@ static int cmd_wo(void *data, const char *input) {
 	case '4': // "wo4"
 	case '8': // "wo8"
 		if (input[1] == '?') {  // parse val from arg
-			r_core_cmd_help_match_spec (core, help_msg_wo, "wo", input[0], true);
+			r_core_cmd_help_match_spec (core, help_msg_wo, "wo", input[0]);
 		} else if (input[1]) {  // parse val from arg
 			r_core_write_op (core, r_str_trim_head_ro (input + 1), input[0]);
 		} else {  // use clipboard instead of val
@@ -393,7 +393,7 @@ static int cmd_wo(void *data, const char *input) {
 				encrypt_or_decrypt_block (core, algo, key, direction, iv);
 			} else {
 				r_crypto_list (core->crypto, r_cons_printf, 0);
-				r_core_cmd_help_match_spec (core, help_msg_wo, "wo", input[0], true);
+				r_core_cmd_help_match_spec (core, help_msg_wo, "wo", input[0]);
 			}
 			free (args);
 		}
@@ -576,7 +576,7 @@ static bool cmd_wff(RCore *core, const char *input) {
 	}
 
 	if (*arg == '?' || !*arg) {
-		r_core_cmd_help_match (core, help_msg_w, "wf", false);
+		r_core_cmd_help_contains (core, help_msg_w, "wf");
 	} else if (!strcmp (arg, "-")) {
 		char *out = r_core_editor (core, NULL, NULL);
 		if (out) {
@@ -691,7 +691,7 @@ static bool cmd_wfx(RCore *core, const char *input) {
 static bool cmd_wfs(RCore *core, const char *input) {
 	char *str = strdup (input);
 	if (str[0] != ' ') {
-		r_core_cmd_help_match (core, help_msg_wf, "wfs", false);
+		r_core_cmd_help_contains (core, help_msg_wf, "wfs");
 		free (str);
 		return false;
 	}
@@ -699,7 +699,7 @@ static bool cmd_wfs(RCore *core, const char *input) {
 	char *host = str + 1;
 	char *port = strchr (host, ':');
 	if (!port) {
-		r_core_cmd_help_match (core, help_msg_wf, "wfs", true);
+		r_core_cmd_help_match (core, help_msg_wf, "wfs");
 		free (str);
 		return false;
 	}
@@ -889,7 +889,7 @@ static int cmd_wB(void *data, const char *input) {
 		cmd_write_bits (core, 0, r_num_math (core->num, input + 1));
 		break;
 	default:
-		r_core_cmd_help_match (core, help_msg_w, "wB", true);
+		r_core_cmd_help_match (core, help_msg_w, "wB");
 		break;
 	}
 	return 0;
@@ -931,7 +931,7 @@ static int w_incdec_handler(void *data, const char *input, int inc) {
 		cmd_write_inc (core, inc, -num);
 		break;
 	default:
-		r_core_cmd_help_match (core, help_msg_w, "w", true);
+		r_core_cmd_help_match (core, help_msg_w, "w");
 	}
 	return 0;
 }
@@ -1012,7 +1012,7 @@ static int cmd_w6(void *data, const char *input) {
 		r_core_block_read (core);
 		free (buf);
 	} else {
-		r_core_cmd_help_match (core, help_msg_w, "w6", true);
+		r_core_cmd_help_match (core, help_msg_w, "w6");
 	}
 	return 0;
 }
@@ -1057,7 +1057,7 @@ static int cmd_we(void *data, const char *input) {
 				}
 			}
 		} else {
-			r_core_cmd_help_match (core, help_msg_we, "wen", true);
+			r_core_cmd_help_match (core, help_msg_we, "wen");
 			cmd_suc = true;
 		}
 		break;
@@ -1254,7 +1254,7 @@ static int cmd_wu(RCore *core, const char *input) {
 			free (data);
 		}
 	} else {
-		r_core_cmd_help_match (core, help_msg_we, "wu", true);
+		r_core_cmd_help_match (core, help_msg_we, "wu");
 	}
 	return 0;
 }
@@ -1316,7 +1316,7 @@ static int cmd_wA(void *data, const char *input) {
 				eprintf ("r_asm_modify = %d\n", len);
 			}
 		} else {
-			r_core_cmd_help_match (core, help_msg_w, "wA", true);
+			r_core_cmd_help_match (core, help_msg_w, "wA");
 		}
 		break;
 	case '?':
@@ -1423,7 +1423,7 @@ static int cmd_wc(void *data, const char *input) {
 		if (input[1] == ' ') {
 			cmd_wcf (core, r_str_trim_head_ro (input + 1));
 		} else {
-			r_core_cmd_help_match (core, help_msg_wc, "wcf", true);
+			r_core_cmd_help_match (core, help_msg_wc, "wcf");
 		}
 		break;
 	case '*': // "wc*"
@@ -1433,7 +1433,7 @@ static int cmd_wc(void *data, const char *input) {
 		if (input[1] == '+') { // "wc++"
 			r_io_cache_push (core->io);
 		} else if (input[1] == '?') {
-			r_core_cmd_help_match (core, help_msg_wc, "wc+", false);
+			r_core_cmd_help_contains (core, help_msg_wc, "wc+");
 		} else if (input[1] == ' ') { // "wc+ "
 			ut64 to;
 			ut64 from = r_num_math (core->num, input + 2);
@@ -1464,7 +1464,7 @@ static int cmd_wc(void *data, const char *input) {
 				r_io_cache_pop (core->io);
 			}
 		} else if (input[1] == '?') {
-			r_core_cmd_help_match (core, help_msg_wc, "wc-", false);
+			r_core_cmd_help_contains (core, help_msg_wc, "wc-");
 		} else {
 			ut64 from, to;
 			if (input[1] == ' ') { // "wc- "
@@ -1583,7 +1583,7 @@ static int cmd_wz(RCore *core, const char *input) {
 	/* write zero-terminated string */
 	if (*input == '?' || *input != ' ' || len < 1) {
 		free (str);
-		r_core_cmd_help_match (core, help_msg_w, "wz", true);
+		r_core_cmd_help_match (core, help_msg_w, "wz");
 		r_core_return_value (core, 0);
 		return 0;
 	}
@@ -1627,7 +1627,7 @@ static int cmd_wt(RCore *core, const char *input) {
 			RSocket *sock;
 
 			if (argc < 2) {
-				r_core_cmd_help_match (core, help_msg_wt, "wts", true);
+				r_core_cmd_help_match (core, help_msg_wt, "wts");
 				ret = 1;
 				goto leave;
 			}
@@ -1644,7 +1644,7 @@ static int cmd_wt(RCore *core, const char *input) {
 			host = host_port;
 			port = strchr (host_port, ':');
 			if (!port) {
-				r_core_cmd_help_match (core, help_msg_wt, "wts", true);
+				r_core_cmd_help_match (core, help_msg_wt, "wts");
 				free (host_port);
 				ret = 1;
 				goto leave;
@@ -1692,13 +1692,13 @@ static int cmd_wt(RCore *core, const char *input) {
 			switch (input[1]) {
 			case '\0':
 			case '?': // "wtf?"
-				r_core_cmd_help_match (core, help_msg_wt, "wtf", true);
+				r_core_cmd_help_match (core, help_msg_wt, "wtf");
 				ret = 1;
 				goto leave;
 			case '!': { // "wtf!"
 				RIOMap *map;
 				if (input[2] == '?') {
-					r_core_cmd_help_match (core, help_msg_wt, "wtf!", true);
+					r_core_cmd_help_match (core, help_msg_wt, "wtf!");
 					ret = 1;
 					goto leave;
 				}
@@ -1719,7 +1719,7 @@ static int cmd_wt(RCore *core, const char *input) {
 			}
 			case 'f': // "wtff"
 				if (input[2] == '?') {
-					r_core_cmd_help_match (core, help_msg_wt, "wtff", true);
+					r_core_cmd_help_match (core, help_msg_wt, "wtff");
 					ret = 1;
 					goto leave;
 				}
@@ -1732,7 +1732,7 @@ static int cmd_wt(RCore *core, const char *input) {
 				break;
 			default: // "wtf"
 				if (input[2] == '?') {
-					r_core_cmd_help_match (core, help_msg_wt, "wtf", true);
+					r_core_cmd_help_match (core, help_msg_wt, "wtf");
 					ret = 1;
 					goto leave;
 				}
@@ -2136,7 +2136,7 @@ static int cmd_wb(void *data, const char *input) {
 		b |= (n << shift);
 		r_io_write_at (core->io, core->offset, &b, 1);
 	} else {
-		r_core_cmd_help_match (core, help_msg_w, "wb", true);
+		r_core_cmd_help_match (core, help_msg_w, "wb");
 	}
 
 	return 0;
@@ -2229,11 +2229,11 @@ static int cmd_wd(void *data, const char *input) {
 				free (data);
 			}
 		} else {
-			r_core_cmd_help_match (core, help_msg_w, "wd", true);
+			r_core_cmd_help_match (core, help_msg_w, "wd");
 		}
 		free (inp);
 	} else {
-		r_core_cmd_help_match (core, help_msg_w, "wd", true);
+		r_core_cmd_help_match (core, help_msg_w, "wd");
 	}
 	return 0;
 }
