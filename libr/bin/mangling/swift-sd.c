@@ -5,7 +5,7 @@
 #include <r_lib.h>
 
 // set this to true for debugging purposes
-#define USE_THIS_CODE 0
+#define USE_THIS_CODE 1
 
 static R_TH_LOCAL int have_swift_demangle = -1;
 #if R2__UNIX__

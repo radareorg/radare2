@@ -27,12 +27,12 @@ static const char *r_cmd_java_strtok(const char *str1, const char b, size_t len)
 static const char *r_cmd_java_consumetok(const char *str1, const char b, size_t len);
 static int r_cmd_java_reload_bin_from_buf(RCore *core, RBinJavaObj *obj, ut8* buffer, ut64 len);
 
-static int r_cmd_java_print_json_definitions( RBinJavaObj *obj  );
-static int r_cmd_java_print_all_definitions( RAnal *anal );
-static int r_cmd_java_print_class_definitions( RBinJavaObj *obj );
-static int r_cmd_java_print_field_definitions( RBinJavaObj *obj );
-static int r_cmd_java_print_method_definitions( RBinJavaObj *obj );
-static int r_cmd_java_print_import_definitions( RBinJavaObj *obj );
+static int r_cmd_java_print_json_definitions(RBinJavaObj *obj);
+static int r_cmd_java_print_all_definitions(RAnal *anal);
+static int r_cmd_java_print_class_definitions(RBinJavaObj *obj);
+static int r_cmd_java_print_field_definitions(RBinJavaObj *obj);
+static int r_cmd_java_print_method_definitions(RBinJavaObj *obj);
+static int r_cmd_java_print_import_definitions(RBinJavaObj *obj);
 
 static int r_cmd_java_resolve_cp_idx(RBinJavaObj *obj, ut16 idx);
 static int r_cmd_java_resolve_cp_type(RBinJavaObj *obj, ut16 idx);

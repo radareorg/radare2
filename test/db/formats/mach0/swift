@@ -4,7 +4,7 @@ CMDS=<<EOF
 icc
 EOF
 EXPECT=<<EOF
-class SomeClass  {
+class SomeClass {
   property meh : Swift.Int;
   property cow : Swift.Int;
   func 0() {}  // 0x100003cff
@@ -18,7 +18,7 @@ class SomeClass  {
   func 8() {}  // 0x100003d2c
   func 9() {}  // 0x100003d34
 }
-class SuperKlass  {
+class SuperKlass {
   property superfield : Swift.Int;
   func superfield.allocator__Swift.Int() {}  // 0x1000028f0
   func superfield.allocator__Swift.Int() {}  // 0x100002950
@@ -37,7 +37,7 @@ class klass.SuperKlass : Swift._SwiftObject {
   var isa : struct objc_class *;
   var superfield;
 }
-class swift  {
+class swift {
   func getRootSuperclass() {}  // 0x100002b70
   func swift51override_conformsToSwiftProtocol(swift::TargetMetadata<swift::InProcess> const*, swift::TargetProtocolDescriptor<swift::InProcess> const*, llvm::StringRef, swift::TargetProtocolConformanceDescriptor<swift::InProcess> const* (*)(swift::TargetMetadata<swift::InProcess> const*, swift::TargetProtocolDescriptor<swift::InProcess> const*, llvm::StringRef)) {}  // 0x100002bb0
   func Lazy<(anonymous namespace)::ConformanceState>::defaultInitCallback(void*) {}  // 0x1000031f0

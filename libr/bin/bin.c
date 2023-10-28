@@ -1521,6 +1521,7 @@ R_API void r_bin_trycatch_free(RBinTrycatch *tc) {
 }
 
 R_API const char *r_bin_field_kindstr(RBinField *f) {
+	r_return_val_if_fail (f, NULL);
 	switch (f->kind) {
 	case R_BIN_FIELD_KIND_PROPERTY:
 		return "property";
@@ -1529,4 +1530,67 @@ R_API const char *r_bin_field_kindstr(RBinField *f) {
 	default:
 		return "var"; // maybe ivar for objc?
 	}
+}
+
+R_API RBinName *r_bin_name_new(const char *name) {
+	r_return_val_if_fail (name, NULL);
+	RBinName *bn = R_NEW0 (RBinName);
+	bn->oname = strdup (name);
+	// oname and dname
+	return bn;
+}
+
+R_API void r_bin_name_demangled(RBinName *bn, const char *dname) {
+	r_return_if_fail (bn && dname);
+	if (bn->name && !bn->oname) {
+		bn->oname = bn->name;
+	} else {
+		free (bn->name);
+	}
+	bn->name = strdup (dname);
+}
+
+R_API char *r_bin_name_tostring(RBinName *bn) {
+	r_return_val_if_fail (bn, NULL);
+	if (bn->name) {
+		return bn->name;
+	}
+	if (bn->oname) {
+		return bn->oname;
+	}
+	return bn->fname;
+}
+
+// prefered type
+R_API char *r_bin_name_tostring2(RBinName *bn, int type) {
+	r_return_val_if_fail (bn, NULL);
+	if (type == 'd' && bn->name) {
+		return bn->name;
+	}
+	if (type == 'f' && bn->fname) {
+		return bn->fname;
+	}
+	if (type == 'o' && bn->oname) {
+		return bn->oname;
+	}
+	return r_bin_name_tostring (bn);
+}
+
+R_API void r_bin_name_free(RBinName *bn) {
+	if (bn) {
+		free (bn->name);
+		free (bn->oname);
+		free (bn->fname);
+		free (bn);
+	}
+}
+
+// TODO : not implemented yet
+R_API char *r_bin_attr_tostring(ut64 attr) {
+	return NULL;
+}
+
+// TODO : not implemented yet
+R_API ut64 r_bin_attr_fromstring(const char *s) {
+	return 0ULL;
 }

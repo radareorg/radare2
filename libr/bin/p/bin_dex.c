@@ -183,35 +183,22 @@ static char *createAccessFlagStr(ut32 flags, AccessFor forWhat) {
 		},
 	};
 	size_t i, count = r_num_bit_count (flags);
-	const int kLongest = 21;
-	const int maxSize = (count + 1) * (kLongest + 1);
-	char* str, *cp;
 	// produces a huge number????
-	if (count < 1 || (count * (kLongest+1)) < 1) {
+	if (count < 1) {
 		return NULL;
 	}
-	cp = str = (char*) calloc (count + 1, (kLongest + 1));
-	if (!str) {
-		return NULL;
-	}
+	RStrBuf *sb = r_strbuf_new ("");
 	for (i = 0; i < NUM_FLAGS; i++) {
-		if (flags & 0x01) {
+		if (flags & 1) {
 			const char *accessStr = kAccessStrings[forWhat][i];
-			int len = strlen (accessStr);
-			if (cp != str) {
-				*cp++ = ' ';
+			if (!r_strbuf_is_empty (sb)) {
+				r_strbuf_append (sb, " ");
 			}
-			if (((cp - str) + len) >= maxSize) {
-				free (str);
-				return NULL;
-			}
-			memcpy (cp, accessStr, len);
-			cp += len;
+			r_strbuf_append (sb, accessStr);
 		}
 		flags >>= 1;
 	}
-	*cp = '\0';
-	return str;
+	return r_strbuf_drain (sb);
 }
 
 static const char *dex_type_descriptor(RBinDexObj *dex, int type_idx) {
@@ -1017,7 +1004,6 @@ static ut64 dex_get_type_offset(RBinFile *bf, int type_idx) {
 
 static const char *dex_class_super_name(RBinDexObj *bin, RBinDexClass *c) {
 	r_return_val_if_fail (bin && bin->types && c, NULL);
-
 	int cid = c->super_class;
 	if (cid < 0 || cid >= bin->header.types_size) {
 		return NULL;
@@ -1470,8 +1456,8 @@ static void parse_class(RBinFile *bf, RBinDexClass *c, int class_index, int *met
 	cls->methods = r_list_newf ((RListFree)r_bin_symbol_free);
 	const char *super = dex_class_super_name (dex, c);
 	if (super) {
-		cls->super = r_list_newf (free);
-		r_list_append (cls->super, strdup (super));
+		cls->super = r_list_newf ((void*)r_bin_name_free);
+		r_list_append (cls->super, r_bin_name_new (super));
 	}
 	if (!cls->methods) {
 		free (cls);
@@ -1490,11 +1476,11 @@ static void parse_class(RBinFile *bf, RBinDexClass *c, int class_index, int *met
 		rbin->cb_printf ("  Access flags      : 0x%04x (%s)\n", c->access_flags,
 				r_str_get (cls->visibility_str));
 		if (cls->super) {
-			char *sk;
+			RBinName *bn;
 			RListIter *iter;
 			rbin->cb_printf ("  Superclass        : '");
-			r_list_foreach (cls->super, iter, sk) {
-				rbin->cb_printf ("%s%s", iter->n? ",": "", sk);
+			r_list_foreach (cls->super, iter, bn) {
+				rbin->cb_printf ("%s%s", iter->n? ",": "", r_bin_name_tostring (bn));
 			}
 			rbin->cb_printf ("'\n");
 		}

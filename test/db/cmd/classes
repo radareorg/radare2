@@ -35,10 +35,10 @@ EXPECT=<<EOF
 0x100003e30 objc      var   1      name
 0x100008200 [0x100008200 - 0x100008200]      0 objc class 0 main.Employer :: main.Employee
 ---
-class Employee  {
+class Employee {
   property name : Swift.String;
 }
-class Employer  {
+class Employer {
 }
 @objc
 class main.Employee : Swift._SwiftObject {
