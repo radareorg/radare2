@@ -193,12 +193,15 @@ static bool __lib_dl_check_filename(const char *file) {
 
 R_API int r_lib_run_handler(RLib *lib, RLibPlugin *plugin, RLibStruct *symbol) {
 	RLibHandler *h = plugin->handler;
-	if (h && h->constructor) {
-		R_LOG_DEBUG ("PLUGIN LOADED %p fcn %p", h, h->constructor);
-		return h->constructor (plugin, h->user, symbol->data);
+	if (h) {
+		if (h->constructor) {
+			R_LOG_DEBUG ("PLUGIN LOADED %p fcn %p", h, h->constructor);
+			return h->constructor (plugin, h->user, symbol->data);
+		}
+		R_LOG_DEBUG ("Cannot find plugin constructor");
+		return -1;
 	}
-	R_LOG_DEBUG ("Cannot find plugin constructor");
-	return -1;
+	return 0;
 }
 
 R_API RLibHandler *r_lib_get_handler(RLib *lib, int type) {
@@ -363,9 +366,10 @@ R_API int r_lib_open_ptr(RLib *lib, const char *file, void *handler, RLibStruct 
 	p->handler = r_lib_get_handler (lib, p->type);
 	p->free = stru->free;
 
+	// TODO: this should be bool
 	int ret = r_lib_run_handler (lib, p, stru);
 	if (ret == -1) {
-		R_LOG_ERROR ("Library handler has failed for '%s'", file);
+		R_LOG_DEBUG ("Library handler has failed for '%s'", file);
 		free (p->file);
 		free (p);
 		r_lib_dl_close (handler);
