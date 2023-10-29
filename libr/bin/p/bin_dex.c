@@ -9,52 +9,52 @@
 
 extern struct r_bin_dbginfo_t r_bin_dbginfo_dex;
 
-static ut64 get_method_flags(ut64 MA) {
+static ut64 get_method_attr(ut64 MA) {
 	ut64 flags = 0;
 	if (MA & R_DEX_METH_PUBLIC) {
-		flags |= R_BIN_METH_PUBLIC;
+		flags |= R_BIN_ATTR_PUBLIC;
 	}
 	if (MA & R_DEX_METH_PRIVATE) {
-		flags |= R_BIN_METH_PRIVATE;
+		flags |= R_BIN_ATTR_PRIVATE;
 	}
 	if (MA & R_DEX_METH_PROTECTED) {
-		flags |= R_BIN_METH_PROTECTED;
+		flags |= R_BIN_ATTR_PROTECTED;
 	}
 	if (MA & R_DEX_METH_STATIC) {
-		flags |= R_BIN_METH_STATIC;
+		flags |= R_BIN_ATTR_STATIC;
 	}
 	if (MA & R_DEX_METH_FINAL) {
-		flags |= R_BIN_METH_FINAL;
+		flags |= R_BIN_ATTR_FINAL;
 	}
 	if (MA & R_DEX_METH_SYNCHRONIZED) {
-		flags |= R_BIN_METH_SYNCHRONIZED;
+		flags |= R_BIN_ATTR_SYNCHRONIZED;
 	}
 	if (MA & R_DEX_METH_BRIDGE) {
-		flags |= R_BIN_METH_BRIDGE;
+		flags |= R_BIN_ATTR_BRIDGE;
 	}
 	if (MA & R_DEX_METH_VARARGS) {
-		flags |= R_BIN_METH_VARARGS;
+		flags |= R_BIN_ATTR_VARARGS;
 	}
 	if (MA & R_DEX_METH_NATIVE) {
-		flags |= R_BIN_METH_NATIVE;
+		flags |= R_BIN_ATTR_NATIVE;
 	}
 	if (MA & R_DEX_METH_ABSTRACT) {
-		flags |= R_BIN_METH_ABSTRACT;
+		flags |= R_BIN_ATTR_ABSTRACT;
 	}
 	if (MA & R_DEX_METH_STRICT) {
-		flags |= R_BIN_METH_STRICT;
+		flags |= R_BIN_ATTR_STRICT;
 	}
 	if (MA & R_DEX_METH_SYNTHETIC) {
-		flags |= R_BIN_METH_SYNTHETIC;
+		flags |= R_BIN_ATTR_SYNTHETIC;
 	}
 	if (MA & R_DEX_METH_MIRANDA) {
-		flags |= R_BIN_METH_MIRANDA;
+		flags |= R_BIN_ATTR_MIRANDA;
 	}
 	if (MA & R_DEX_METH_CONSTRUCTOR) {
-		flags |= R_BIN_METH_CONSTRUCTOR;
+		flags |= R_BIN_ATTR_CONSTRUCTOR;
 	}
 	if (MA & R_DEX_METH_DECLARED_SYNCHRONIZED) {
-		flags |= R_BIN_METH_DECLARED_SYNCHRONIZED;
+		flags |= R_BIN_ATTR_SYNCHRONIZED;
 	}
 	return flags;
 }
@@ -1091,7 +1091,7 @@ static void parse_dex_class_fields(RBinFile *bf, RBinDexClass *c, RBinClass *cls
 		if (field) {
 			field->vaddr = field->paddr = sym->paddr;
 			field->name = strdup (sym->name);
-			field->flags = get_method_flags (accessFlags);
+			field->attr = get_method_attr (accessFlags);
 			r_list_append (cls->fields, field);
 		}
 		lastIndex = fieldIndex;
@@ -1354,7 +1354,7 @@ static void parse_dex_class_method(RBinFile *bf, RBinDexClass *c, RBinClass *cls
 			dex->code_from = R_MIN (dex->code_from, sym->paddr);
 			sym->lang = R_BIN_LANG_JAVA;
 			sym->bind = ((MA & 1) == 1) ? R_BIN_BIND_GLOBAL_STR : R_BIN_BIND_LOCAL_STR;
-			sym->method_flags = get_method_flags (MA);
+			sym->attr = get_method_attr (MA);
 			sym->ordinal = (*sym_count)++;
 			if (MC > 0) {
 				if (bufsz < MC || bufsz < MC + 16) {

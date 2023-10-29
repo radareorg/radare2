@@ -3776,7 +3776,7 @@ static bool bin_classes(RCore *r, PJ *pj, int mode) {
 			r_strf_var (classname, 256, "class.%s", name);
 			r_flag_set (r->flags, classname, c->addr, 1);
 			r_list_foreach (c->methods, iter2, sym) {
-				char *mflags = r_core_bin_method_flags_str (sym->method_flags, mode);
+				char *mflags = r_core_bin_attr_tostring (sym->attr, mode);
 				r_strf_var (method, 256, "method%s.%s.%s", mflags, c->name, sym->name);
 				R_FREE (mflags);
 				r_name_filter (method, -1);
@@ -3849,7 +3849,7 @@ static bool bin_classes(RCore *r, PJ *pj, int mode) {
 				}
 			}
 			r_list_foreach (c->methods, iter2, sym) {
-				char *mflags = r_core_bin_method_flags_str (sym->method_flags, mode);
+				char *mflags = r_core_bin_attr_tostring (sym->attr, mode);
 				char *n = c->name; //  r_name_filter_shell (c->name);
 				char *sn = sym->name; //r_name_filter_shell (sym->name);
 				char *cmd = r_str_newf ("\"f method%s.%s.%s = 0x%"PFMT64x"\"\n", mflags, n, sn, sym->vaddr);
@@ -3945,8 +3945,8 @@ static bool bin_classes(RCore *r, PJ *pj, int mode) {
 						}
 						free (s);
 					}
-					if (sym->method_flags) {
-						char *mflags = r_core_bin_method_flags_str (sym->method_flags, mode);
+					if (sym->attr) {
+						char *mflags = r_core_bin_attr_tostring (sym->attr, mode);
 						pj_k (pj, "flags");
 						pj_j (pj, mflags);
 						free (mflags);
@@ -3965,9 +3965,9 @@ static bool bin_classes(RCore *r, PJ *pj, int mode) {
 					if (R_STR_ISNOTEMPTY (f->type)) {
 						pj_ks (pj, "type", f->type);
 					}
-					if (f->flags) {
-						char *mflags = r_core_bin_method_flags_str (f->flags, mode);
-						pj_k (pj, "flags");
+					if (f->attr) {
+						char *mflags = r_core_bin_attr_tostring (f->attr, mode);
+						pj_k (pj, "attr");
 						pj_j (pj, mflags);
 						free (mflags);
 					}
@@ -3997,7 +3997,7 @@ static bool bin_classes(RCore *r, PJ *pj, int mode) {
 				free (csv);
 			}
 			r_list_foreach (c->methods, iter2, sym) {
-				char *mflags = r_core_bin_method_flags_str (sym->method_flags, mode);
+				char *mflags = r_core_bin_attr_tostring (sym->attr, mode);
 				const char *ls = r_bin_lang_tostring (sym->lang);
 				r_cons_printf ("0x%08"PFMT64x" %s %8s %3d %s %s\n",
 					sym->vaddr, ls? ls: "?", "method", m, mflags, sym->dname? sym->dname: sym->name);
@@ -4007,7 +4007,7 @@ static bool bin_classes(RCore *r, PJ *pj, int mode) {
 			m = 0;
 			const char *ls = r_bin_lang_tostring (c->lang);
 			r_list_foreach (c->fields, iter3, f) {
-				char *mflags = r_core_bin_method_flags_str (f->flags, mode);
+				char *mflags = r_core_bin_attr_tostring (f->attr, mode);
 				const char *ks = r_bin_field_kindstr (f);
 				r_cons_printf ("0x%08"PFMT64x" %s %8s %3d %s %s\n",
 					f->vaddr, ls, ks, m, mflags, f->name);
@@ -4916,7 +4916,7 @@ R_API bool r_core_bin_list(RCore *core, int mode) {
 	return true;
 }
 
-R_API char *r_core_bin_method_flags_str(ut64 flags, int mode) {
+R_API char *r_core_bin_attr_tostring(ut64 flags, int mode) {
 	int i;
 
 	RStrBuf *buf = r_strbuf_new ("");
@@ -4927,7 +4927,8 @@ R_API char *r_core_bin_method_flags_str(ut64 flags, int mode) {
 		for (i = 0; i < 64; i++) {
 			ut64 flag = flags & (1ULL << i);
 			if (flag) {
-				const char *flag_string = r_bin_get_meth_flag_string (flag, false);
+				// const char *flag_string = r_bin_get_meth_flag_string (flag, false);
+				const char *flag_string = r_bin_attr_tostring (flag);
 				if (flag_string) {
 					r_strbuf_appendf (buf, ".%s", flag_string);
 				}
@@ -4943,12 +4944,13 @@ R_API char *r_core_bin_method_flags_str(ut64 flags, int mode) {
 		for (i = 0; i < 64; i++) {
 			ut64 flag = flags & (1ULL << i);
 			if (flag) {
-				const char *flag_string = r_bin_get_meth_flag_string (flag, false);
+				// const char *flag_string = r_bin_get_meth_flag_string (flag, false);
+				const char *flag_string = r_bin_attr_tostring (flag);
 				if (flag_string) {
 					pj_s (pj, flag_string);
 				} else {
-					r_strf_var (numstr, 32, "0x%08"PFMT64x, flag);
-					pj_s (pj, numstr);
+					// r_strf_var (numstr, 32, "0x%08"PFMT64x, flag);
+					pj_n (pj, flag);
 				}
 			}
 		}
@@ -4964,7 +4966,8 @@ R_API char *r_core_bin_method_flags_str(ut64 flags, int mode) {
 		for (i = 0; i < 64; i++) {
 			ut64 flag = flags & (1ULL << i);
 			if (flag) {
-				const char *flag_string = r_bin_get_meth_flag_string (flag, true);
+				// const char *flag_string = r_bin_get_meth_flag_string (flag, true);
+				const char *flag_string = r_bin_attr_tostring (flag);
 				if (flag_string) {
 					r_strbuf_append (buf, flag_string);
 				} else {

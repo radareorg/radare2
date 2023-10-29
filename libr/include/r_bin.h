@@ -71,10 +71,12 @@ R_LIB_VERSION_HEADER (r_bin);
 #define R_BIN_REQ_TRYCATCH 0x100000000
 #define R_BIN_REQ_SECTIONS_MAPPING 0x200000000
 
+#if 0
 // R2_590 - deprecate
 #define R_BIN_CLASS_PUBLIC 0x0000000000000004L
 
 /* RBinSymbol->method_flags : */
+// R2_590 - deprecate all this we have attr and RBIN_ATTR now
 // XXX unify with RBinAttribute instead! R2_590
 #define R_BIN_METH_CLASS 0x0000000000000001L
 #define R_BIN_METH_STATIC 0x0000000000000002L
@@ -98,7 +100,9 @@ R_LIB_VERSION_HEADER (r_bin);
 #define R_BIN_METH_MIRANDA 0x0000000000080000L
 #define R_BIN_METH_CONSTRUCTOR 0x0000000000100000L
 #define R_BIN_METH_DECLARED_SYNCHRONIZED 0x0000000000200000L
+#endif
 
+// TODO . integrate with R_BIN_ATTR
 #define R_BIN_BIND_LOCAL_STR "LOCAL"
 #define R_BIN_BIND_GLOBAL_STR "GLOBAL"
 #define R_BIN_BIND_WEAK_STR "WEAK"
@@ -134,8 +138,6 @@ typedef enum {
 	R_BIN_SYM_LAST
 } RBinSym;
 
-// name mangling types
-// TODO: Rename to R_BIN_LANG_
 typedef enum {
 	R_BIN_LANG_NONE = 0,
 	R_BIN_LANG_JAVA = 1,
@@ -154,7 +156,7 @@ typedef enum {
 	R_BIN_LANG_JNI = 1U<<13,
 	R_BIN_LANG_BLOCKS = 1U<<31,
 	R_BIN_LANG_ANY = -1,
-} RBinNameMangling;
+} RBinLanguage;
 
 typedef enum {
 	R_STRING_TYPE_DETECT = '?',
@@ -170,6 +172,7 @@ typedef enum {
 	// R2_590 rename to R_BIN_VISIBILITY // R_BIN_SCOPE_(PRIVATE|PUBLIC|..) ?
 	// see binclass.visibility_str
 	R_BIN_ATTR_PRIVATE,
+	R_BIN_ATTR_OPEN,
 	R_BIN_ATTR_FILEPRIVATE,
 	R_BIN_ATTR_PUBLIC,
 	R_BIN_ATTR_HIDDEN,
@@ -177,8 +180,10 @@ typedef enum {
 	R_BIN_ATTR_FRIENDLY,
 	R_BIN_ATTR_PROTECTED,
 	R_BIN_ATTR_SEALED,
+	R_BIN_ATTR_GLOBAL,
+	R_BIN_ATTR_WEAK,
 	R_BIN_ATTR_UNSAFE,
-	R_BIN_ATTR_ASYNC,
+	R_BIN_ATTR_CLASS, // class method (not instance method)
 	R_BIN_ATTR_EXTERN,
 	R_BIN_ATTR_READONLY,
 	R_BIN_ATTR_STATIC,
@@ -200,11 +205,15 @@ typedef enum {
 	R_BIN_ATTR_ANNOTATED,
 	R_BIN_ATTR_BRIDGE,
 	R_BIN_ATTR_STRICT,
+	R_BIN_ATTR_ASYNC,
 	R_BIN_ATTR_SYNCHRONIZED,
+	R_BIN_ATTR_DECLARED_SYNCHRONIZED,
 	R_BIN_ATTR_VOLATILE,
 	R_BIN_ATTR_TRANSIENT,
 	R_BIN_ATTR_ENUM,
 	R_BIN_ATTR_NATIVE,
+	R_BIN_ATTR_RACIST,
+	R_BIN_ATTR_VARARGS,
 } RBinAttribute;
 
 typedef enum {
@@ -302,21 +311,18 @@ typedef struct r_bin_symbol_t {
 	RBinName *cname; // R2_590
 	/* const-unique-strings */
 	const char *forwarder;
-	const char *bind;
-	const char *type;
+	const char *bind; // tied to attr already
+	const char *type; // typed to attr already
   	const char *rtype;
 	bool is_imported;
 	/* only used by java */
-	const char *visibility_str;
 	ut64 vaddr;
 	ut64 paddr;
 	ut32 size;
 	ut32 ordinal;
-	ut32 visibility;
 	int lang;
 	int bits;
-	/* see R_BIN_METH_* constants */
-	ut64 method_flags;
+	ut64 attr; // previously known as method_flags + visibility
 	int dup_count;
 } RBinSymbol;
 
@@ -345,7 +351,6 @@ typedef struct r_bin_import_t {
 	char *classname;
 	char *descriptor;
 	ut32 ordinal;
-	ut32 visibility;
 	// used by elf, so we just expose them here, so we can remove the internal representation dupe
 	bool in_shdr;
 	bool is_sht_null;
@@ -617,15 +622,15 @@ typedef struct r_bin_class_t {
 	char *name; // must be deprecated and use bname only
 	RBinName *bname; // R2_590
 	RList *super; // list of RBinName
-	char *visibility_str; // XXX only used by dex+java should be ut32 or bitfield.. should be usable for swift too
+	char *visibility_str; // XXX R2_590 - only used by dex+java should be ut32 or bitfield.. should be usable for swift too
 	int index; // should be unsigned?
 	ut64 addr;
 	char *ns; // namespace // maybe RBinName?
 	RList *methods; // <RBinSymbol>
 	RList *fields; // <RBinField>
 	// RList *interfaces; // <char *>
-	int visibility;
-	int lang;
+	ut64 attr;
+	ut64 lang;
 } RBinClass;
 
 #define RBinSectionName r_offsetof(RBinSection, name)
@@ -680,7 +685,7 @@ typedef struct r_bin_field_t {
 	ut64 paddr;
 	int size;
 	int offset;
-	ut32 visibility;
+	// ut32 visibility; // R2_590 - deprecate we have attr!
 #if 0
 	RBinName *type;
 	RBinName *name;
@@ -693,7 +698,8 @@ typedef struct r_bin_field_t {
 	char *comment;
 	char *format;
 	bool format_named; // whether format is the name of a format or a raw pf format string
-	ut64 flags; // rename to attr and use R_BIN_ATTR_
+	// ut64 flags; // rename to attr and use R_BIN_ATTR_
+	ut64 attr;
 } RBinField;
 
 R_API const char *r_bin_field_kindstr(RBinField *f);
@@ -773,7 +779,7 @@ R_API bool r_bin_open_io(RBin *bin, RBinFileOptions *opt);
 R_API bool r_bin_open_buf(RBin *bin, RBuffer *buf, RBinFileOptions *opt);
 R_API bool r_bin_reload(RBin *bin, ut32 bf_id, ut64 baseaddr);
 
-R_API RBinClass *r_bin_class_new(const char *name, const char *super, int view);
+R_API RBinClass *r_bin_class_new(const char *name, const char *super, ut64 attr);
 R_API void r_bin_class_free(RBinClass *);
 // uhm should be tied used because we dont want bincur to change because of open
 R_API RBinFile *r_bin_file_open(RBin *bin, const char *file, RBinFileOptions *opt);
@@ -849,7 +855,7 @@ R_API RVecRBinSymbol *r_bin_file_get_symbols_vec(RBinFile *bf);
 //
 R_API ut64 r_bin_file_get_vaddr(RBinFile *bf, ut64 paddr, ut64 vaddr);
 // RBinFile.add
-R_API RBinClass *r_bin_file_add_class(RBinFile *binfile, const char *name, const char *super, int view);
+R_API RBinClass *r_bin_file_add_class(RBinFile *binfile, const char *name, const char *super, ut64 attr);
 R_API RBinSymbol *r_bin_file_add_method(RBinFile *bf, const char *classname, const char *name, int nargs);
 R_API RBinField *r_bin_file_add_field(RBinFile *binfile, const char *classname, const char *name);
 // RBinFile.find

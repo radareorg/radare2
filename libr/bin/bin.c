@@ -1384,12 +1384,12 @@ R_API RBinField *r_bin_field_new(ut64 paddr, ut64 vaddr, int size, const char *n
 	RBinField *ptr = R_NEW0 (RBinField);
 	if (ptr) {
 		ptr->name = strdup (name);
-		ptr->comment = (comment && *comment)? strdup (comment): NULL;
-		ptr->format = (format && *format)? strdup (format): NULL;
+		ptr->comment = R_STR_ISNOTEMPTY (comment)? strdup (comment): NULL;
+		ptr->format = R_STR_ISNOTEMPTY (format)? strdup (format): NULL;
 		ptr->format_named = format_named;
 		ptr->paddr = paddr;
 		ptr->size = size;
-	//	ptr->visibility = any default visibility?
+	//	ptr->attr = default attributes for fields?
 		ptr->vaddr = vaddr;
 	}
 	return ptr;
@@ -1403,59 +1403,6 @@ R_API void r_bin_field_free(void *_field) {
 		free (field->comment);
 		free (field->format);
 		free (field);
-	}
-}
-
-// method name too long
-// RBin.methFlagToString(RBin.Method.CLASS)
-R_API const char *r_bin_get_meth_flag_string(ut64 flag, bool compact) {
-	switch (flag) {
-	case R_BIN_METH_CLASS:
-		return compact ? "c" : "class";
-	case R_BIN_METH_STATIC:
-		return compact ? "s" : "static";
-	case R_BIN_METH_PUBLIC:
-		return compact ? "p" : "public";
-	case R_BIN_METH_PRIVATE:
-		return compact ? "P" : "private";
-	case R_BIN_METH_PROTECTED:
-		return compact ? "r" : "protected";
-	case R_BIN_METH_INTERNAL:
-		return compact ? "i" : "internal";
-	case R_BIN_METH_OPEN:
-		return compact ? "o" : "open";
-	case R_BIN_METH_FILEPRIVATE:
-		return compact ? "e" : "fileprivate";
-	case R_BIN_METH_FINAL:
-		return compact ? "f" : "final";
-	case R_BIN_METH_VIRTUAL:
-		return compact ? "v" : "virtual";
-	case R_BIN_METH_CONST:
-		return compact ? "k" : "const";
-	case R_BIN_METH_MUTATING:
-		return compact ? "m" : "mutating";
-	case R_BIN_METH_ABSTRACT:
-		return compact ? "a" : "abstract";
-	case R_BIN_METH_SYNCHRONIZED:
-		return compact ? "y" : "synchronized";
-	case R_BIN_METH_NATIVE:
-		return compact ? "n" : "native";
-	case R_BIN_METH_BRIDGE:
-		return compact ? "b" : "bridge";
-	case R_BIN_METH_VARARGS:
-		return compact ? "g" : "varargs";
-	case R_BIN_METH_SYNTHETIC:
-		return compact ? "h" : "synthetic";
-	case R_BIN_METH_STRICT:
-		return compact ? "t" : "strict";
-	case R_BIN_METH_MIRANDA:
-		return compact ? "A" : "miranda";
-	case R_BIN_METH_CONSTRUCTOR:
-		return compact ? "C" : "constructor";
-	case R_BIN_METH_DECLARED_SYNCHRONIZED:
-		return compact ? "Y" : "declared_synchronized";
-	default:
-		return NULL;
 	}
 }
 
@@ -1585,9 +1532,72 @@ R_API void r_bin_name_free(RBinName *bn) {
 	}
 }
 
-// TODO : not implemented yet
+static const char *attr_bit_name(ut64 n, bool compact) {
+	switch (n) {
+	case R_BIN_ATTR_WEAK:
+		return compact ? "w": "weak";
+	case R_BIN_ATTR_CLASS:
+		return compact ? "c" : "class";
+	case R_BIN_ATTR_STATIC:
+		return compact ? "s" : "static";
+	case R_BIN_ATTR_PUBLIC:
+		return compact ? "p" : "public";
+	case R_BIN_ATTR_PRIVATE:
+		return compact ? "P" : "private";
+	case R_BIN_ATTR_PROTECTED:
+		return compact ? "r" : "protected";
+	case R_BIN_ATTR_INTERNAL:
+		return compact ? "i" : "internal";
+	case R_BIN_ATTR_OPEN:
+		return compact ? "o" : "open";
+	case R_BIN_ATTR_FILEPRIVATE:
+		return compact ? "e" : "fileprivate";
+	case R_BIN_ATTR_FINAL:
+		return compact ? "f" : "final";
+	case R_BIN_ATTR_VIRTUAL:
+		return compact ? "v" : "virtual";
+	case R_BIN_ATTR_CONST:
+		return compact ? "k" : "const";
+	case R_BIN_ATTR_MUTATING:
+		return compact ? "m" : "mutating";
+	case R_BIN_ATTR_ABSTRACT:
+		return compact ? "a" : "abstract";
+	case R_BIN_ATTR_SYNCHRONIZED:
+		return compact ? "y" : "synchronized";
+	case R_BIN_ATTR_NATIVE:
+		return compact ? "n" : "native";
+	case R_BIN_ATTR_BRIDGE:
+		return compact ? "b" : "bridge";
+	case R_BIN_ATTR_VARARGS:
+		return compact ? "g" : "varargs";
+	case R_BIN_ATTR_SYNTHETIC:
+		return compact ? "h" : "synthetic";
+	case R_BIN_ATTR_STRICT:
+		return compact ? "t" : "strict";
+	case R_BIN_ATTR_MIRANDA:
+		return compact ? "A" : "miranda";
+	case R_BIN_ATTR_CONSTRUCTOR:
+		return compact ? "C" : "constructor";
+	case R_BIN_ATTR_DECLARED_SYNCHRONIZED:
+		return compact ? "Y" : "declared_synchronized";
+	default:
+		return NULL;
+	}
+}
+
 R_API char *r_bin_attr_tostring(ut64 attr) {
-	return NULL;
+	int i;
+	RStrBuf *sb = r_strbuf_new ("");
+	for (i = 0; i < 64; i++) {
+		const ut64 bit = (1ULL << i);
+		if (attr & bit) {
+			if (!r_strbuf_is_empty (sb)) {
+				r_strbuf_append (sb, " ");
+			}
+			r_strbuf_append (sb, attr_bit_name (bit, false));
+		}
+	}
+	return r_strbuf_drain (sb);
 }
 
 // TODO : not implemented yet
