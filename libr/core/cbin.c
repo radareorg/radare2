@@ -5,8 +5,8 @@
 
 #define is_in_range(at, from, sz) ((at) >= (from) && (at) < ((from) + (sz)))
 
-#define VA_FALSE    0
-#define VA_TRUE     1
+#define VA_FALSE 0
+#define VA_TRUE 1
 #define VA_NOREBASE 2
 
 #define LOAD_BSS_MALLOC 0
@@ -717,15 +717,13 @@ R_API void r_core_anal_type_init(RCore *core) {
 }
 
 R_API void r_core_anal_cc_init(RCore *core) {
+	r_return_if_fail (core);
 	char *anal_arch = strdup (r_config_get (core->config, "anal.arch"));
 	const int bits = core->anal->config->bits;
 	if (!anal_arch) {
 		return;
 	}
-	char *dot = strchr (anal_arch, '.');
-	if (dot) {
-		*dot = 0;
-	}
+	r_str_after (anal_arch, '.');
 	if (old_bits != -1) {
 		if (old_bits == bits) {
 			if (!strcmp (old_arch, anal_arch)) {
@@ -3918,7 +3916,14 @@ static bool bin_classes(RCore *r, PJ *pj, int mode) {
 				pj_ka (pj, "super");
 				RBinName *bn;
 				r_list_foreach (c->super, iter, bn) {
-					pj_s (pj, r_bin_name_tostring (bn));
+					pj_o (pj);
+					if (bn->name) {
+						pj_ks (pj, "name", bn->name);
+					}
+					if (bn->oname) {
+						pj_ks (pj, "oname", bn->oname);
+					}
+					pj_end (pj);
 				}
 				pj_end (pj);
 			}
@@ -4610,6 +4615,7 @@ static bool bin_header(RCore *r, int mode) {
 }
 
 R_API bool r_core_bin_info(RCore *core, int action, PJ *pj, int mode, int va, RCoreBinFilter *filter, const char *chksum) {
+	r_return_val_if_fail (core, false);
 	const char *name = (filter && filter->name)? filter->name : NULL;
 	bool ret = true;
 	ut64 at = UT64_MAX, loadaddr = r_bin_get_laddr (core->bin);
@@ -4882,6 +4888,7 @@ static bool r_core_bin_file_print(RCore *core, RBinFile *bf, PJ *pj, int mode) {
 }
 
 R_API bool r_core_bin_list(RCore *core, int mode) {
+	r_return_val_if_fail (core, false);
 	// list all binfiles and there objects and there archs
 	RListIter *iter;
 	RBinFile *binfile = NULL;
