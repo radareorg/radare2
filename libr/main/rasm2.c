@@ -561,6 +561,7 @@ static int __lib_anal_cb(RLibPlugin *pl, void *user, void *data) {
 }
 
 /* arch callback */
+// TODO: this should be bool
 static int __lib_arch_cb(RLibPlugin *pl, void *user, void *data) {
 	RArchPlugin *hand = (RArchPlugin *)data;
 	RAsmState *as = (RAsmState *)user;
