@@ -71,38 +71,7 @@ R_LIB_VERSION_HEADER (r_bin);
 #define R_BIN_REQ_TRYCATCH 0x100000000
 #define R_BIN_REQ_SECTIONS_MAPPING 0x200000000
 
-#if 0
-// R2_590 - deprecate
-#define R_BIN_CLASS_PUBLIC 0x0000000000000004L
-
-/* RBinSymbol->method_flags : */
-// R2_590 - deprecate all this we have attr and RBIN_ATTR now
-// XXX unify with RBinAttribute instead! R2_590
-#define R_BIN_METH_CLASS 0x0000000000000001L
-#define R_BIN_METH_STATIC 0x0000000000000002L
-#define R_BIN_METH_PUBLIC 0x0000000000000004L
-#define R_BIN_METH_PRIVATE 0x0000000000000008L
-#define R_BIN_METH_PROTECTED 0x0000000000000010L
-#define R_BIN_METH_INTERNAL 0x0000000000000020L
-#define R_BIN_METH_OPEN 0x0000000000000040L
-#define R_BIN_METH_FILEPRIVATE 0x0000000000000080L
-#define R_BIN_METH_FINAL 0x0000000000000100L
-#define R_BIN_METH_VIRTUAL 0x0000000000000200L
-#define R_BIN_METH_CONST 0x0000000000000400L
-#define R_BIN_METH_MUTATING 0x0000000000000800L
-#define R_BIN_METH_ABSTRACT 0x0000000000001000L
-#define R_BIN_METH_SYNCHRONIZED 0x0000000000002000L
-#define R_BIN_METH_NATIVE 0x0000000000004000L
-#define R_BIN_METH_BRIDGE 0x0000000000008000L
-#define R_BIN_METH_VARARGS 0x0000000000010000L
-#define R_BIN_METH_SYNTHETIC 0x0000000000020000L
-#define R_BIN_METH_STRICT 0x0000000000040000L
-#define R_BIN_METH_MIRANDA 0x0000000000080000L
-#define R_BIN_METH_CONSTRUCTOR 0x0000000000100000L
-#define R_BIN_METH_DECLARED_SYNCHRONIZED 0x0000000000200000L
-#endif
-
-// TODO . integrate with R_BIN_ATTR
+// TODO integrate with R_BIN_ATTR
 #define R_BIN_BIND_LOCAL_STR "LOCAL"
 #define R_BIN_BIND_GLOBAL_STR "GLOBAL"
 #define R_BIN_BIND_WEAK_STR "WEAK"
@@ -168,53 +137,53 @@ typedef enum {
 } RStringType;
 
 // used for symbols, classes, methods... generic for elf, dex, pe, swift, ...
-typedef enum {
-	// R2_590 rename to R_BIN_VISIBILITY // R_BIN_SCOPE_(PRIVATE|PUBLIC|..) ?
-	// see binclass.visibility_str
-	R_BIN_ATTR_PRIVATE,
-	R_BIN_ATTR_OPEN,
-	R_BIN_ATTR_FILEPRIVATE,
-	R_BIN_ATTR_PUBLIC,
-	R_BIN_ATTR_HIDDEN,
-	R_BIN_ATTR_INTERNAL, // same as fileprivate?
-	R_BIN_ATTR_FRIENDLY,
-	R_BIN_ATTR_PROTECTED,
-	R_BIN_ATTR_SEALED,
-	R_BIN_ATTR_GLOBAL,
-	R_BIN_ATTR_WEAK,
-	R_BIN_ATTR_UNSAFE,
-	R_BIN_ATTR_CLASS, // class method (not instance method)
-	R_BIN_ATTR_EXTERN,
-	R_BIN_ATTR_READONLY,
-	R_BIN_ATTR_STATIC,
-	R_BIN_ATTR_CONST,
-	R_BIN_ATTR_VIRTUAL,
-	R_BIN_ATTR_MUTATING,
-	R_BIN_ATTR_FINAL,
-	R_BIN_ATTR_ABSTRACT,
-	R_BIN_ATTR_INTERFACE,
-	R_BIN_ATTR_SYNTHETIC, // synthesized methods
-	R_BIN_ATTR_SYMBOLIC,
-	R_BIN_ATTR_VERIFIED,
-	R_BIN_ATTR_MIRANDA,
-	R_BIN_ATTR_CONSTRUCTOR,
-	R_BIN_ATTR_ACCESSOR, // getter / setter
-	// R_BIN_ATTR_GETTER, // getter / setter
-	// R_BIN_ATTR_SETTER, // getter / setter
-	R_BIN_ATTR_OPTIMIZED,
-	R_BIN_ATTR_ANNOTATED,
-	R_BIN_ATTR_BRIDGE,
-	R_BIN_ATTR_STRICT,
-	R_BIN_ATTR_ASYNC,
-	R_BIN_ATTR_SYNCHRONIZED,
-	R_BIN_ATTR_DECLARED_SYNCHRONIZED,
-	R_BIN_ATTR_VOLATILE,
-	R_BIN_ATTR_TRANSIENT,
-	R_BIN_ATTR_ENUM,
-	R_BIN_ATTR_NATIVE,
-	R_BIN_ATTR_RACIST,
-	R_BIN_ATTR_VARARGS,
-} RBinAttribute;
+// unifies symbol flags, visibility, bind, type into a single generic field
+// 64bit enums are problematic for old msvc and tcc, maybe just use defines here
+// typedef enum { } RBinAttribute;
+typedef uint64_t RBinAttribute;
+#define R_BIN_ATTR_NONE (0)
+#define R_BIN_ATTR_PRIVATE (1ULL << 0)
+#define R_BIN_ATTR_OPEN (1ULL << 1)
+#define R_BIN_ATTR_FILEPRIVATE (1ULL << 2)
+#define R_BIN_ATTR_PUBLIC (1ULL << 3)
+#define R_BIN_ATTR_HIDDEN (1ULL << 4)
+#define R_BIN_ATTR_INTERNAL (1ULL << 5) // same as fileprivate?
+#define R_BIN_ATTR_FRIENDLY (1ULL << 6)
+#define R_BIN_ATTR_PROTECTED (1ULL << 7)
+#define R_BIN_ATTR_SEALED (1ULL << 8)
+#define R_BIN_ATTR_GLOBAL (1ULL << 9)
+#define R_BIN_ATTR_WEAK (1ULL << 10)
+#define R_BIN_ATTR_UNSAFE (1ULL << 11)
+#define R_BIN_ATTR_CLASS (1ULL << 12) // class method (not instance method)
+#define R_BIN_ATTR_EXTERN (1ULL << 13)
+#define R_BIN_ATTR_READONLY (1ULL << 14)
+#define R_BIN_ATTR_STATIC (1ULL << 15)
+#define R_BIN_ATTR_CONST (1ULL << 16)
+#define R_BIN_ATTR_VIRTUAL (1ULL << 17)
+#define R_BIN_ATTR_MUTATING (1ULL << 18)
+#define R_BIN_ATTR_FINAL (1ULL << 19)
+#define R_BIN_ATTR_ABSTRACT (1ULL << 20)
+#define R_BIN_ATTR_INTERFACE (1ULL << 21)
+#define R_BIN_ATTR_SYNTHETIC (1ULL << 22) // synthesized methods
+#define R_BIN_ATTR_SYMBOLIC (1ULL << 23)
+#define R_BIN_ATTR_VERIFIED (1ULL << 24)
+#define R_BIN_ATTR_MIRANDA (1ULL << 25)
+#define R_BIN_ATTR_CONSTRUCTOR (1ULL << 26)
+#define R_BIN_ATTR_GETTER (1ULL << 27) // accessor
+#define R_BIN_ATTR_SETTER (1ULL << 28) // accessor
+#define R_BIN_ATTR_OPTIMIZED (1ULL << 29)
+#define R_BIN_ATTR_ANNOTATED (1ULL << 30)
+#define R_BIN_ATTR_BRIDGE (1ULL << 31)
+#define R_BIN_ATTR_STRICT (1ULL << 32)
+#define R_BIN_ATTR_ASYNC (1ULL << 33)
+#define R_BIN_ATTR_SYNCHRONIZED (1ULL << 34)
+#define R_BIN_ATTR_DECLARED_SYNCHRONIZED (1ULL << 35)
+#define R_BIN_ATTR_VOLATILE (1ULL << 36)
+#define R_BIN_ATTR_TRANSIENT (1ULL << 37)
+#define R_BIN_ATTR_ENUM (1ULL << 38)
+#define R_BIN_ATTR_NATIVE (1ULL << 39)
+#define R_BIN_ATTR_RACIST (1ULL << 40)
+#define R_BIN_ATTR_VARARGS (1ULL << 41)
 
 typedef enum {
 	R_BIN_RELOC_1 = 1,
@@ -322,7 +291,7 @@ typedef struct r_bin_symbol_t {
 	ut32 ordinal;
 	int lang;
 	int bits;
-	ut64 attr; // previously known as method_flags + visibility
+	RBinAttribute attr; // previously known as method_flags + visibility
 	int dup_count;
 } RBinSymbol;
 
@@ -629,7 +598,7 @@ typedef struct r_bin_class_t {
 	RList *methods; // <RBinSymbol>
 	RList *fields; // <RBinField>
 	// RList *interfaces; // <char *>
-	ut64 attr;
+	RBinAttribute attr;
 	ut64 lang;
 } RBinClass;
 
@@ -699,7 +668,7 @@ typedef struct r_bin_field_t {
 	char *format;
 	bool format_named; // whether format is the name of a format or a raw pf format string
 	// ut64 flags; // rename to attr and use R_BIN_ATTR_
-	ut64 attr;
+	RBinAttribute attr;
 } RBinField;
 
 R_API const char *r_bin_field_kindstr(RBinField *f);
