@@ -184,6 +184,8 @@ typedef uint64_t RBinAttribute;
 #define R_BIN_ATTR_NATIVE (1ULL << 39)
 #define R_BIN_ATTR_RACIST (1ULL << 40)
 #define R_BIN_ATTR_VARARGS (1ULL << 41)
+#define R_BIN_ATTR_SUPER (1ULL << 42)
+#define R_BIN_ATTR_ANNOTATION (1ULL << 43)
 
 typedef enum {
 	R_BIN_RELOC_1 = 1,

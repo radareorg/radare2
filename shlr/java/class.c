@@ -709,16 +709,16 @@ R_API void r_bin_java_get_class_info_json(RBinJavaObj *bin, PJ *pj) {
 		RListIter *iter;
 		RBinClass *klassv = NULL;
 		// add access flags like in methods
-		bool is_public = ((klass->visibility & R_BIN_JAVA_CLASS_ACC_PUBLIC) != 0);
-		bool is_final = ((klass->visibility & R_BIN_JAVA_CLASS_ACC_FINAL) != 0);
-		bool is_super = ((klass->visibility & R_BIN_JAVA_CLASS_ACC_SUPER) != 0);
-		bool is_interface = ((klass->visibility & R_BIN_JAVA_CLASS_ACC_INTERFACE) != 0);
-		bool is_abstract = ((klass->visibility & R_BIN_JAVA_CLASS_ACC_ABSTRACT) != 0);
-		bool is_synthetic = ((klass->visibility & R_BIN_JAVA_CLASS_ACC_SYNTHETIC) != 0);
-		bool is_annotation = ((klass->visibility & R_BIN_JAVA_CLASS_ACC_ANNOTATION) != 0);
-		bool is_enum = ((klass->visibility & R_BIN_JAVA_CLASS_ACC_ENUM) != 0);
+		bool is_public = ((klass->attr & R_BIN_ATTR_PUBLIC) != 0);
+		bool is_final = ((klass->attr & R_BIN_ATTR_FINAL) != 0);
+		bool is_super = ((klass->attr & R_BIN_ATTR_SUPER) != 0);
+		bool is_interface = ((klass->attr & R_BIN_ATTR_INTERFACE) != 0);
+		bool is_abstract = ((klass->attr & R_BIN_ATTR_ABSTRACT) != 0);
+		bool is_synthetic = ((klass->attr & R_BIN_ATTR_SYNTHETIC) != 0);
+		bool is_annotation = ((klass->attr & R_BIN_ATTR_ANNOTATION) != 0);
+		bool is_enum = ((klass->attr & R_BIN_ATTR_ENUM) != 0);
 
-		pj_ki (pj, "access_flags", klass->visibility);
+		pj_ki (pj, "access_flags", klass->attr);
 		pj_ki (pj, "is_public", is_public);
 		pj_ki (pj, "is_final", is_final);
 		pj_ki (pj, "is_super", is_super);
@@ -745,7 +745,7 @@ R_API void r_bin_java_get_class_info_json(RBinJavaObj *bin, PJ *pj) {
 				continue;
 			}
 			// enumerate all interface classes and append them to the interfaces
-			if ((klassv->visibility & R_BIN_JAVA_CLASS_ACC_INTERFACE) != 0) {
+			if ((klassv->attr & R_BIN_ATTR_INTERFACE) != 0) {
 				pj_s (pj, klassv->name);
 			}
 		}
@@ -2477,7 +2477,7 @@ R_API RBinField *r_bin_java_create_new_rbinfield_from_field(RBinJavaField *fm_ty
 	if (field) {
 		field->name = strdup (fm_type->name);
 		field->paddr = fm_type->file_offset + baddr;
-		field->visibility = fm_type->flags;
+		field->attr = fm_type->flags;
 	}
 	return field;
 }
@@ -2515,10 +2515,12 @@ R_API RBinSymbol *r_bin_java_create_new_symbol_from_field(RBinJavaField *fm_type
 			sym->classname = strdup ("UNKNOWN"); // dupped names?
 		}
 		sym->ordinal = fm_type->metas->ord;
-		sym->visibility = fm_type->flags;
+		sym->attr = fm_type->flags;
+#if 0
 		if (fm_type->flags_str) {
 			sym->visibility_str = strdup (fm_type->flags_str);
 		}
+#endif
 	}
 	return sym;
 }
@@ -2554,10 +2556,12 @@ R_API RBinSymbol *r_bin_java_create_new_symbol_from_fm_type_meta(RBinJavaField *
 	sym->vaddr = fm_type->file_offset + baddr;
 	sym->ordinal = fm_type->metas->ord;
 	sym->size = fm_type->size;
-	sym->visibility = fm_type->flags;
+	sym->attr = fm_type->flags;
+#if 0
 	if (fm_type->flags_str) {
 		sym->visibility_str = strdup (fm_type->flags_str);
 	}
+#endif
 	return sym;
 }
 
@@ -2821,20 +2825,21 @@ R_API RList *r_bin_java_get_lib_names(RBinJavaObj *bin) {
 	return lib_names;
 }
 
-R_API void r_bin_java_classes_free(void /*RBinClass*/ *k) {
+// XXX dupe because we cant link to rbin
+static inline void __bin_class_free(void /*RBinClass*/ *k) {
 	RBinClass *klass = k;
 	if (klass) {
 		r_list_free (klass->methods);
 		r_list_free (klass->fields);
 		free (klass->name);
 		free (klass->super);
-		free (klass->visibility_str);
+		// free (klass->visibility_str);
 		free (klass);
 	}
 }
 
 R_API RList *r_bin_java_get_classes(RBinJavaObj *bin) {
-	RList *classes = r_list_newf (r_bin_java_classes_free);
+	RList *classes = r_list_newf ((void *)__bin_class_free);
 	RListIter *iter;
 	RBinJavaCPTypeObj *cp_obj = NULL;
 	RBinJavaCPTypeObj *this_class_cp_obj = r_bin_java_get_item_from_bin_cp_list (bin, bin->cf2.this_class);
@@ -2844,10 +2849,12 @@ R_API RList *r_bin_java_get_classes(RBinJavaObj *bin) {
 		r_list_free (classes);
 		return NULL;
 	}
-	k->visibility = bin->cf2.access_flags;
+	k->attr = bin->cf2.access_flags;
+#if 0
 	if (bin->cf2.flags_str) {
 		k->visibility_str = strdup (bin->cf2.flags_str);
 	}
+#endif
 	k->methods = r_bin_java_enum_class_methods (bin, bin->cf2.this_class);
 	k->fields = r_bin_java_enum_class_fields (bin, bin->cf2.this_class);
 	k->name = r_bin_java_get_this_class_name (bin);
