@@ -1534,6 +1534,50 @@ R_API void r_bin_name_free(RBinName *bn) {
 
 static const char *attr_bit_name(ut64 n, bool compact) {
 	switch (n) {
+	case R_BIN_ATTR_HIDDEN:
+		return compact? "": "hidden";
+	case R_BIN_ATTR_FRIENDLY:
+		return compact? "": "friendly";
+	case R_BIN_ATTR_SEALED:
+		return compact? "": "sealed";
+	case R_BIN_ATTR_GLOBAL:
+		return compact? "": "global";
+	case R_BIN_ATTR_UNSAFE:
+		return compact? "": "unsafe";
+	case R_BIN_ATTR_EXTERN:
+		return compact? "": "extern";
+	case R_BIN_ATTR_READONLY:
+		return compact? "": "readonly";
+	case R_BIN_ATTR_INTERFACE:
+		return compact? "": "interface";
+	case R_BIN_ATTR_SYMBOLIC:
+		return compact? "": "symbolic";
+	case R_BIN_ATTR_VERIFIED:
+		return compact? "": "verified";
+	case R_BIN_ATTR_GETTER:
+		return compact? "": "getter";
+	case R_BIN_ATTR_SETTER:
+		return compact? "": "setter";
+	case R_BIN_ATTR_OPTIMIZED:
+		return compact? "": "optimized";
+#if 0
+	case R_BIN_ATTR_ANNOTATED:
+		return compact? "": "anno";
+#endif
+	case R_BIN_ATTR_ASYNC:
+		return compact? "": "async";
+	case R_BIN_ATTR_VOLATILE:
+		return compact? "": "volatile";
+	case R_BIN_ATTR_TRANSIENT:
+		return compact? "": "transient";
+	case R_BIN_ATTR_ENUM:
+		return compact? "": "enum";
+	case R_BIN_ATTR_RACIST:
+		return compact? "": "racist";
+	case R_BIN_ATTR_SUPER:
+		return compact ? "S": "super";
+	case R_BIN_ATTR_ANNOTATION:
+		return compact ? "A": "annotation";
 	case R_BIN_ATTR_WEAK:
 		return compact ? "w": "weak";
 	case R_BIN_ATTR_CLASS:

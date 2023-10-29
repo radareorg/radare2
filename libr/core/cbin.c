@@ -3726,7 +3726,6 @@ static bool bin_classes(RCore *r, PJ *pj, int mode) {
 	RBinSymbol *sym;
 	RBinClass *c;
 	RBinField *f;
-	char *name;
 	RList *cs = r_bin_get_classes (r->bin);
 	if (!cs) {
 		if (IS_MODE_JSON (mode)) {
@@ -3749,10 +3748,10 @@ static bool bin_classes(RCore *r, PJ *pj, int mode) {
 	}
 	const bool bin_filter = r_config_get_b (r->config, "bin.filter");
 	r_list_foreach (cs, iter, c) {
-		if (!c || !c->name || !c->name[0]) {
+		if (!c || R_STR_ISEMPTY (c->name)) {
 			continue;
 		}
-		name = strdup (c->name);
+		char *name = strdup (c->name);
 		r_name_filter (name, -1);
 		ut64 at_min = UT64_MAX;
 		ut64 at_max = 0LL;
@@ -3777,6 +3776,7 @@ static bool bin_classes(RCore *r, PJ *pj, int mode) {
 			r_flag_set (r->flags, classname, c->addr, 1);
 			r_list_foreach (c->methods, iter2, sym) {
 				char *mflags = r_core_bin_attr_tostring (sym->attr, mode);
+				// XXX probably access flags should not be part of the flag name
 				r_strf_var (method, 256, "method%s.%s.%s", mflags, c->name, sym->name);
 				R_FREE (mflags);
 				r_name_filter (method, -1);
@@ -4919,7 +4919,7 @@ R_API bool r_core_bin_list(RCore *core, int mode) {
 R_API char *r_core_bin_attr_tostring(ut64 flags, int mode) {
 	int i;
 
-	RStrBuf *buf = r_strbuf_new ("");
+	RStrBuf *buf = r_strbuf_new (""); // rename to 'sb'
 	if (IS_MODE_SET (mode) || IS_MODE_RAD (mode)) {
 		if (!flags) {
 			goto out;
@@ -4930,6 +4930,9 @@ R_API char *r_core_bin_attr_tostring(ut64 flags, int mode) {
 				// const char *flag_string = r_bin_get_meth_flag_string (flag, false);
 				const char *flag_string = r_bin_attr_tostring (flag);
 				if (flag_string) {
+					if (r_strbuf_is_empty (buf)) {
+						r_strbuf_append (buf, " ");
+					}
 					r_strbuf_appendf (buf, ".%s", flag_string);
 				}
 			}

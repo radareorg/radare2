@@ -355,7 +355,7 @@ static RBinJavaAccessFlags METHOD_ACCESS_FLAGS[] = {
 	{ NULL, 0, 0 }
 };
 
-// XXX - Fix these there are some incorrect ongs
+// XXX - Fix these there are some incorrect ones
 static RBinJavaAccessFlags CLASS_ACCESS_FLAGS[] = {
 	{ "public", R_BIN_JAVA_CLASS_ACC_PUBLIC, 6 },
 	{ "undefined.0x0002", 0x0002, 16 },

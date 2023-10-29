@@ -172,7 +172,7 @@ typedef uint64_t RBinAttribute;
 #define R_BIN_ATTR_GETTER (1ULL << 27) // accessor
 #define R_BIN_ATTR_SETTER (1ULL << 28) // accessor
 #define R_BIN_ATTR_OPTIMIZED (1ULL << 29)
-#define R_BIN_ATTR_ANNOTATED (1ULL << 30)
+//#define R_BIN_ATTR_ANNOTATED (1ULL << 30)
 #define R_BIN_ATTR_BRIDGE (1ULL << 31)
 #define R_BIN_ATTR_STRICT (1ULL << 32)
 #define R_BIN_ATTR_ASYNC (1ULL << 33)
