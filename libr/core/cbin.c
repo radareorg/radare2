@@ -3804,7 +3804,7 @@ static bool bin_classes(RCore *r, PJ *pj, int mode) {
 				const char *vlang = r_config_get (r->config, "bin.lang");
 				r_str_var (lang, 16, vlang);
 				if (*lang) {
-					if (!strcmp (lang, "java")) {
+					if (!strcmp (lang, "java") || !strcmp (lang, "kotlin")) {
 						classdump_java (r, c);
 					} else if (!strcmp (lang, "swift")) {
 						classdump_swift (r, c);
