@@ -1981,7 +1981,7 @@ R_API RBinJavaAttrInfo *r_bin_java_read_next_attr_from_buffer(RBinJavaObj *bin, 
 	RBinJavaAttrInfo *attr = NULL;
 
 	if (!buffer || ((int) sz) < 4 || buf_offset < 0) {
-		R_LOG_ERROR ("r_bin_Java_read_next_attr_from_buffer: invalid buffer size %d\n", (int) sz);
+		R_LOG_ERROR ("r_bin_Java_read_next_attr_from_buffer: invalid buffer size %d", (int) sz);
 		return NULL;
 	}
 	ut16 name_idx = R_BIN_JAVA_USHORT (buffer, 0);
@@ -2006,7 +2006,7 @@ R_API RBinJavaAttrInfo *r_bin_java_read_next_attr_from_buffer(RBinJavaObj *bin, 
 			attr->metas->ord = (R_BIN_JAVA_GLOBAL_BIN->attr_idx++);
 		}
 	} else {
-		eprintf ("r_bin_java_read_next_attr_from_buffer: Cannot find type_info for %s\n", name);
+		R_LOG_ERROR ("r_bin_java_read_next_attr_from_buffer: Cannot find type_info for %s", name);
 	}
 	free (name);
 	return attr;

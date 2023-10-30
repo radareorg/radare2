@@ -157,7 +157,7 @@ typedef uint64_t RBinAttribute;
 #define R_BIN_ATTR_CLASS (1ULL << 12) // class method (not instance method)
 #define R_BIN_ATTR_EXTERN (1ULL << 13)
 #define R_BIN_ATTR_READONLY (1ULL << 14)
-#define R_BIN_ATTR_STATIC (1ULL << 15)
+#define R_BIN_ATTR_STATIC (1ULL << 15) // same as class attribute?
 #define R_BIN_ATTR_CONST (1ULL << 16)
 #define R_BIN_ATTR_VIRTUAL (1ULL << 17)
 #define R_BIN_ATTR_MUTATING (1ULL << 18)

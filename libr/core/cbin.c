@@ -3846,10 +3846,11 @@ static bool bin_classes(RCore *r, PJ *pj, int mode) {
 				}
 			}
 			r_list_foreach (c->methods, iter2, sym) {
-				char *mflags = r_core_bin_attr_tostring (sym->attr, mode);
+				// char *mflags = r_core_bin_attr_tostring (sym->attr, mode);
 				char *n = c->name; //  r_name_filter_shell (c->name);
 				char *sn = sym->name; //r_name_filter_shell (sym->name);
-				char *cmd = r_str_newf ("\"f method%s.%s.%s = 0x%"PFMT64x"\"\n", mflags, n, sn, sym->vaddr);
+				// char *cmd = r_str_newf ("\"f method%s.%s.%s = 0x%"PFMT64x"\"\n", mflags, n, sn, sym->vaddr);
+				char *cmd = r_str_newf ("\"f method.%s.%s = 0x%"PFMT64x"\"\n", n, sn, sym->vaddr);
 				// free (n);
 				// free (sn);
 				if (cmd) {
@@ -3865,7 +3866,7 @@ static bool bin_classes(RCore *r, PJ *pj, int mode) {
 					r_cons_printf ("%s\n", cmd);
 					free (cmd);
 				}
-				R_FREE (mflags);
+				// R_FREE (mflags);
 			}
 			r_list_foreach (c->fields, iter2, f) {
 				const char *kind = r_bin_field_kindstr (f);
@@ -4918,49 +4919,34 @@ R_API bool r_core_bin_list(RCore *core, int mode) {
 }
 
 R_API char *r_core_bin_attr_tostring(ut64 flags, int mode) {
-	int i;
-
 	RStrBuf *buf = r_strbuf_new (""); // rename to 'sb'
 	if (IS_MODE_SET (mode) || IS_MODE_RAD (mode)) {
-		if (!flags) {
-			goto out;
-		}
-		for (i = 0; i < 64; i++) {
-			ut64 flag = flags & (1ULL << i);
-			if (flag) {
-				// const char *flag_string = r_bin_get_meth_flag_string (flag, false);
-				const char *flag_string = r_bin_attr_tostring (flag);
-				if (flag_string) {
-					if (r_strbuf_is_empty (buf)) {
-						r_strbuf_append (buf, " ");
-					}
-					r_strbuf_appendf (buf, ".%s", flag_string);
+		if (flags) {
+			const char *flag_string = r_bin_attr_tostring (flags);
+			if (flag_string) {
+				if (r_strbuf_is_empty (buf)) {
+					r_strbuf_append (buf, " ");
 				}
+				r_strbuf_appendf (buf, ".%s", flag_string);
 			}
 		}
 	} else if (IS_MODE_JSON (mode)) {
-		if (!flags) {
-			r_strbuf_append (buf, "[]");
-			goto out;
-		}
-		PJ *pj = pj_new ();
-		pj_a (pj);
-		for (i = 0; i < 64; i++) {
-			ut64 flag = flags & (1ULL << i);
-			if (flag) {
-				// const char *flag_string = r_bin_get_meth_flag_string (flag, false);
-				const char *flag_string = r_bin_attr_tostring (flag);
-				if (flag_string) {
-					pj_s (pj, flag_string);
-				} else {
-					// r_strf_var (numstr, 32, "0x%08"PFMT64x, flag);
-					pj_n (pj, flag);
-				}
+		if (flags) {
+			PJ *pj = pj_new ();
+			pj_a (pj);
+			const char *flag_string = r_bin_attr_tostring (flags);
+			if (flag_string) {
+				pj_s (pj, flag_string);
+			} else {
+				// r_strf_var (numstr, 32, "0x%08"PFMT64x, flag);
+				pj_n (pj, flags);
 			}
+			pj_end (pj);
+			r_strbuf_append (buf, pj_string (pj));
+			pj_free (pj);
+		} else {
+			r_strbuf_append (buf, "[]");
 		}
-		pj_end (pj);
-		r_strbuf_append (buf, pj_string (pj));
-		pj_free (pj);
 	} else {
 		int pad_len = 4; //TODO: move to a config variable
 		int len = 0;
@@ -4977,7 +4963,6 @@ padding:
 			r_strbuf_append (buf, " ");
 		}
 	}
-out:
 	return r_strbuf_drain (buf);
 }
 
