@@ -1065,4 +1065,9 @@ R_API void r_bin_java_get_class_info_json(RBinJavaObj *bin, PJ *pj);
 R_API char *r_bin_java_get_bin_obj_json(RBinJavaObj *bin);
 R_API ut64 r_bin_java_calc_class_size(ut8* bytes, ut64 size);
 R_API int r_bin_java_valid_class(const ut8 * buf, ut64 buf_sz);
+
+R_API char *retrieve_class_method_access_string(ut16 flags);
+R_API char *retrieve_method_access_string(ut16 flags);
+R_API char *retrieve_field_access_string(ut16 flags);
+R_API char *retrieve_class_method_access_string(ut16 flags);
 #endif

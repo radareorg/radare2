@@ -20,15 +20,12 @@
 #define IS_MODE_NORMAL(mode) (!(mode))
 #define IS_MODE_CLASSDUMP(mode) ((mode) & R_MODE_CLASSDUMP)
 
-// dup from cmd_info
-#define PAIR_WIDTH "9"
-
 static R_TH_LOCAL int old_bits = -1;
 static R_TH_LOCAL char *old_arch = NULL;
 
 static void pair(const char *key, const char *val) {
 	if (R_STR_ISNOTEMPTY (val)) {
-		r_cons_printf ("%-"PAIR_WIDTH"s%s\n", key, val);
+		r_cons_printf ("%-9s%s\n", key, val);
 	}
 }
 
@@ -4970,18 +4967,10 @@ R_API char *r_core_bin_attr_tostring(ut64 flags, int mode) {
 		if (!flags) {
 			goto padding;
 		}
-		for (i = 0; i < 64; i++) {
-			ut64 flag = flags & (1ULL << i);
-			if (flag) {
-				// const char *flag_string = r_bin_get_meth_flag_string (flag, true);
-				const char *flag_string = r_bin_attr_tostring (flag);
-				if (flag_string) {
-					r_strbuf_append (buf, flag_string);
-				} else {
-					r_strbuf_append (buf, "?");
-				}
-				len++;
-			}
+		// const char *flag_string = r_bin_get_meth_flag_string (flag, true);
+		const char *flag_string = r_bin_attr_tostring (flags);
+		if (flag_string) {
+			r_strbuf_append (buf, flag_string);
 		}
 padding:
 		for ( ; len < pad_len; len++) {

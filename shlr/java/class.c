@@ -1183,15 +1183,15 @@ R_API char *retrieve_access_string(ut16 flags, RBinJavaAccessFlags *access_flags
 	return outbuffer;
 }
 
-static inline char *retrieve_method_access_string(ut16 flags) {
+R_API char *retrieve_method_access_string(ut16 flags) {
 	return retrieve_access_string (flags, METHOD_ACCESS_FLAGS);
 }
 
-static inline char *retrieve_field_access_string(ut16 flags) {
+R_API char *retrieve_field_access_string(ut16 flags) {
 	return retrieve_access_string (flags, FIELD_ACCESS_FLAGS);
 }
 
-static inline char *retrieve_class_method_access_string(ut16 flags) {
+R_API char *retrieve_class_method_access_string(ut16 flags) {
 	return retrieve_access_string (flags, CLASS_ACCESS_FLAGS);
 }
 
