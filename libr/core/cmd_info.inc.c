@@ -112,7 +112,7 @@ static void classdump_keys(RCore *core, RBinObject *bo) {
 					iova? f->vaddr: f->paddr);
 		}
 		r_list_foreach (k->methods, iter2, m) {
-			char *attr = r_bin_attr_tostring (m->attr);
+			char *attr = r_bin_attr_tostring (m->attr, true);
 			r_cons_printf ("klass.%s.method.%s.%s=0x%"PFMT64x"\n",
 					k->name, r_str_get (attr), m->name,
 					iova? m->vaddr: m->paddr);

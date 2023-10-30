@@ -1629,7 +1629,7 @@ static const char *attr_bit_name(ut64 n, bool compact) {
 	}
 }
 
-R_API char *r_bin_attr_tostring(ut64 attr) {
+R_API char *r_bin_attr_tostring(ut64 attr, bool singlechar) {
 	int i;
 	RStrBuf *sb = r_strbuf_new ("");
 	for (i = 0; i < 64; i++) {
@@ -1638,7 +1638,7 @@ R_API char *r_bin_attr_tostring(ut64 attr) {
 			if (!r_strbuf_is_empty (sb)) {
 				r_strbuf_append (sb, " ");
 			}
-			r_strbuf_append (sb, attr_bit_name (bit, false));
+			r_strbuf_append (sb, attr_bit_name (bit, singlechar));
 		}
 	}
 	return r_strbuf_drain (sb);

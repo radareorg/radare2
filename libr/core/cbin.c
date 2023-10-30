@@ -3846,14 +3846,16 @@ static bool bin_classes(RCore *r, PJ *pj, int mode) {
 				}
 			}
 			r_list_foreach (c->methods, iter2, sym) {
-				// char *mflags = r_core_bin_attr_tostring (sym->attr, mode);
+				char *mflags = r_core_bin_attr_tostring (sym->attr, mode);
 				char *n = c->name; //  r_name_filter_shell (c->name);
 				char *sn = sym->name; //r_name_filter_shell (sym->name);
+				const char *predot = R_STR_ISNOTEMPTY (mflags)? ".": "";
 				// char *cmd = r_str_newf ("\"f method%s.%s.%s = 0x%"PFMT64x"\"\n", mflags, n, sn, sym->vaddr);
-				char *cmd = r_str_newf ("\"f method.%s.%s = 0x%"PFMT64x"\"\n", n, sn, sym->vaddr);
+				char *cmd = r_str_newf ("\"f method.%s%s%s.%s = 0x%"PFMT64x"\"\n", n, predot, mflags, sn, sym->vaddr);
 				// free (n);
 				// free (sn);
 				if (cmd) {
+					// use namefilter thing to create the right flag
 					r_str_replace_char (cmd, ' ', '_');
 					if (strlen (cmd) > 2) {
 						cmd[2] = ' ';
@@ -3866,7 +3868,7 @@ static bool bin_classes(RCore *r, PJ *pj, int mode) {
 					r_cons_printf ("%s\n", cmd);
 					free (cmd);
 				}
-				// R_FREE (mflags);
+				R_FREE (mflags);
 			}
 			r_list_foreach (c->fields, iter2, f) {
 				const char *kind = r_bin_field_kindstr (f);
@@ -4922,19 +4924,16 @@ R_API char *r_core_bin_attr_tostring(ut64 flags, int mode) {
 	RStrBuf *buf = r_strbuf_new (""); // rename to 'sb'
 	if (IS_MODE_SET (mode) || IS_MODE_RAD (mode)) {
 		if (flags) {
-			const char *flag_string = r_bin_attr_tostring (flags);
+			const char *flag_string = r_bin_attr_tostring (flags, false);
 			if (flag_string) {
-				if (r_strbuf_is_empty (buf)) {
-					r_strbuf_append (buf, " ");
-				}
-				r_strbuf_appendf (buf, ".%s", flag_string);
+				r_strbuf_appendf (buf, "%s", flag_string);
 			}
 		}
 	} else if (IS_MODE_JSON (mode)) {
 		if (flags) {
 			PJ *pj = pj_new ();
 			pj_a (pj);
-			const char *flag_string = r_bin_attr_tostring (flags);
+			const char *flag_string = r_bin_attr_tostring (flags, false);
 			if (flag_string) {
 				pj_s (pj, flag_string);
 			} else {
@@ -4948,18 +4947,15 @@ R_API char *r_core_bin_attr_tostring(ut64 flags, int mode) {
 			r_strbuf_append (buf, "[]");
 		}
 	} else {
-		int pad_len = 4; //TODO: move to a config variable
 		int len = 0;
-		if (!flags) {
-			goto padding;
+		if (flags) {
+			// const char *flag_string = r_bin_get_meth_flag_string (flag, true);
+			const char *flag_string = r_bin_attr_tostring (flags, false);
+			if (flag_string) {
+				r_strbuf_append (buf, flag_string);
+			}
 		}
-		// const char *flag_string = r_bin_get_meth_flag_string (flag, true);
-		const char *flag_string = r_bin_attr_tostring (flags);
-		if (flag_string) {
-			r_strbuf_append (buf, flag_string);
-		}
-padding:
-		for ( ; len < pad_len; len++) {
+		for ( ; len < 4; len++) {
 			r_strbuf_append (buf, " ");
 		}
 	}

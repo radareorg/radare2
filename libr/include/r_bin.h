@@ -893,7 +893,7 @@ R_API char *r_bin_name_tostring2(RBinName *bn, int type);
 R_API void r_bin_name_demangled(RBinName *bn, const char *dname);
 R_API void r_bin_name_free(RBinName *bn);
 
-R_API char *r_bin_attr_tostring(ut64 attr);
+R_API char *r_bin_attr_tostring(ut64 attr, bool singlechar);
 R_API ut64 r_bin_attr_fromstring(const char *s);
 
 /* filter.c */

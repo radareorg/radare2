@@ -2106,7 +2106,7 @@ R_API ut64 r_bin_java_parse_interfaces(RBinJavaObj *bin, const ut64 offset, cons
 			r_list_append (bin->interfaces_list, interfaces_obj);
 			adv += interfaces_obj->size;
 			if (offset + adv > len) {
-				R_LOG_ERROR ("Error unable to parse remainder of classfile after Interface: %d", i);
+				R_LOG_ERROR ("Unable to parse remainder of classfile after Interface: %d", i);
 				break;
 			}
 		}
