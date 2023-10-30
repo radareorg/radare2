@@ -30,7 +30,7 @@ R_API void r_assert_log(RLogLevel level, const char *origin, const char *fmt, ..
 
 #define r_warn_if_fail(expr) \
 	do { \
-		if (!(expr)) { \
+		if (R_UNLIKELY (!(expr))) { \
 			r_assert_log (R_LOGLVL_WARN, R_LOG_ORIGIN, "WARNING (%s:%d):%s%s runtime check failed: (%s)", \
 				__FILE__, __LINE__, R_FUNCTION, R_FUNCTION[0] ? ":" : "", #expr); \
 		} \
@@ -83,7 +83,7 @@ R_API void r_assert_log(RLogLevel level, const char *origin, const char *fmt, ..
  */
 #define r_return_if_fail(expr) \
 	do { \
-		if (!(expr)) { \
+		if (R_UNLIKELY (!(expr))) { \
 			H_LOG_ (R_LOGLVL_WARN, "%s: assertion '%s' failed (line %d)", R_FUNCTION, #expr, __LINE__); \
 			return; \
 		} \
@@ -91,7 +91,7 @@ R_API void r_assert_log(RLogLevel level, const char *origin, const char *fmt, ..
 
 #define r_return_val_if_fail(expr, val) \
 	do { \
-		if (!(expr)) { \
+		if (R_UNLIKELY (!(expr))) { \
 			H_LOG_ (R_LOGLVL_WARN, "%s: assertion '%s' failed (line %d)", R_FUNCTION, #expr, __LINE__); \
 			return (val); \
 		} \
