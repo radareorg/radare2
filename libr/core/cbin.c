@@ -3916,6 +3916,7 @@ static bool bin_classes(RCore *r, PJ *pj, int mode) {
 				pj_ka (pj, "super");
 				RBinName *bn;
 				r_list_foreach (c->super, iter, bn) {
+#if 0
 					pj_o (pj);
 					if (bn->name) {
 						pj_ks (pj, "name", bn->name);
@@ -3924,6 +3925,9 @@ static bool bin_classes(RCore *r, PJ *pj, int mode) {
 						pj_ks (pj, "oname", bn->oname);
 					}
 					pj_end (pj);
+#else
+					pj_s (pj, r_bin_name_tostring (bn));
+#endif
 				}
 				pj_end (pj);
 			}

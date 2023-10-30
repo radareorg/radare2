@@ -978,9 +978,11 @@ R_API ut16 U(r_bin_java_calculate_class_access_value)(const char * access_flags_
 R_API RList * U(retrieve_all_method_access_string_and_value)(void);
 R_API RList * U(retrieve_all_field_access_string_and_value)(void);
 R_API RList * U(retrieve_all_class_access_string_and_value)(void);
+#if 0
 R_API char * retrieve_method_access_string(ut16 flags);
 R_API char * retrieve_field_access_string(ut16 flags);
 R_API char * retrieve_class_method_access_string(ut16 flags);
+#endif
 
 R_API char * U(r_bin_java_resolve)(RBinJavaObj *obj, int idx, ut8 space_bn_name_type);
 R_API char * r_bin_java_resolve_with_space(RBinJavaObj *obj, int idx);
@@ -1055,7 +1057,7 @@ R_API void r_bin_java_get_method_json_definitions(RBinJavaObj *bin, PJ *pj);
 R_API void r_bin_java_get_import_json_definitions(RBinJavaObj *bin, PJ *pj);
 R_API void r_bin_java_get_interface_json_definitions(RBinJavaObj *bin, PJ *pj);
 
-R_API void r_bin_java_get_fm_type_definition_json(RBinJavaObj *bin, RBinJavaField *fm_type, PJ *pj, int is_method);
+R_API void r_bin_java_get_fm_type_definition_json(RBinJavaObj *bin, RBinJavaField *fm_type, PJ *pj, bool is_method);
 R_API void r_bin_java_get_field_json_definition(RBinJavaObj *bin, RBinJavaField *fm_type, PJ *pj);
 R_API void r_bin_java_get_method_json_definition(RBinJavaObj *bin, RBinJavaField *fm_type, PJ *pj);
 R_API void r_bin_java_get_class_info_json(RBinJavaObj *bin, PJ *pj);
