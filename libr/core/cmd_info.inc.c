@@ -112,9 +112,11 @@ static void classdump_keys(RCore *core, RBinObject *bo) {
 					iova? f->vaddr: f->paddr);
 		}
 		r_list_foreach (k->methods, iter2, m) {
+			char *attr = r_bin_attr_tostring (m->attr, true);
 			r_cons_printf ("klass.%s.method.%s.%s=0x%"PFMT64x"\n",
-					k->name, r_str_get (m->visibility_str), m->name,
+					k->name, r_str_get (attr), m->name,
 					iova? m->vaddr: m->paddr);
+			free (attr);
 		}
 	}
 }
@@ -1567,8 +1569,9 @@ static int cmd_info(void *data, const char *input) {
 								r_list_foreach (cls->methods, iter2, sym) {
 									pj_o (pj);
 									pj_ks (pj, "name", sym->name);
-									if (sym->method_flags) {
-										char *flags = r_core_bin_method_flags_str (sym->method_flags, R_MODE_JSON);
+									if (sym->attr) {
+										// TODO: must be an array of strings
+										char *flags = r_core_bin_attr_tostring (sym->attr, false);
 										pj_k (pj, "flags");
 										pj_j (pj, flags);
 										free (flags);
@@ -1582,11 +1585,11 @@ static int cmd_info(void *data, const char *input) {
 							default:
 								r_cons_printf ("class %s\n", cls->name);
 								r_list_foreach (cls->methods, iter2, sym) {
-									char *flags = r_core_bin_method_flags_str (sym->method_flags, 0);
-									r_cons_printf ("0x%08"PFMT64x " method %s %s %s\n",
+									char *flags = r_core_bin_attr_tostring (sym->attr, true);
+									r_cons_printf ("0x%08"PFMT64x " method %s %-4s %s\n",
 											iova? sym->vaddr: sym->paddr,
 											cls->name, flags, sym->name);
-									R_FREE (flags);
+									free (flags);
 								}
 								break;
 							}

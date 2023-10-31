@@ -78,7 +78,7 @@ CMDS=ic
 EXPECT=<<EOF
 0x00000174 [0x000001a4 - 0x0000021e]    122 java class 0 LHello :: Ljava/lang/Object;
 0x000001a4 java   method   0 pC   LHello.method.<init>(Ljava/lang/String;)V
-0x000001c0 java   method   1 sp   LHello.method.main([Ljava/lang/String;)V
+0x000001c0 java   method   1 ps   LHello.method.main([Ljava/lang/String;)V
 0x000001e8 java   method   2 p    LHello.method.say()V
 0x00000124 java      var   0 P    LHello.ifield_who:Ljava/lang/String
 EOF
@@ -90,7 +90,7 @@ CMDS=ic LHello
 EXPECT=<<EOF
 class LHello
 0x000001a4 method LHello pC   LHello.method.<init>(Ljava/lang/String;)V
-0x000001c0 method LHello sp   LHello.method.main([Ljava/lang/String;)V
+0x000001c0 method LHello ps   LHello.method.main([Ljava/lang/String;)V
 0x000001e8 method LHello p    LHello.method.say()V
 EOF
 RUN
@@ -110,7 +110,7 @@ icj~{[0].methods[1].flags[0]}
 icj~{[0].methods[1].flags[1]}
 EOF
 EXPECT=<<EOF
-static
+public static
 public
 EOF
 RUN
@@ -119,7 +119,7 @@ NAME=DEX Hello.dex method flags (r2 commands) (ic*)
 FILE=bins/dex/Hello.dex
 CMDS=ic*~main
 EXPECT=<<EOF
-"f method.static.public.LHello.LHello.method.main([Ljava/lang/String;)V = 0x1c0"
+"f method.LHello.public.static.LHello.method.main([Ljava/lang/String;)V = 0x1c0"
 EOF
 RUN
 
@@ -177,7 +177,7 @@ EXPECT=<<EOF
 0x00000238 1 method.public.constructor.LHello.LHello.method._init___V
 0x0000025c 1 entry0
 0x0000025c 34 sym.LHello.method.main__Ljava_lang_String__V
-0x0000025c 1 method.static.public.LHello.LHello.method.main__Ljava_lang_String__V
+0x0000025c 1 method.public.static.LHello.LHello.method.main__Ljava_lang_String__V
 0x00000290 84 sym.LHello.method.foo_I_V
 0x00000290 1 method.public.LHello.LHello.method.foo_I_V
 0x000002f4 20 sym.LWorld.method._init___V
@@ -520,7 +520,7 @@ EXPECT=<<EOF
 0x00007890 [0x0000c6c0 - 0x0000cd2e]   1646 java class 0 Lcom/ice/tar/FastTarStream :: Ljava/lang/Object;
 0x0000c6c0 java   method   0 pC   Lcom/ice/tar/FastTarStream.method.<init>(Ljava/io/InputStream;)V
 0x0000c6dc java   method   1 pC   Lcom/ice/tar/FastTarStream.method.<init>(Ljava/io/InputStream;I)V
-0x0000c720 java   method   2 sp   Lcom/ice/tar/FastTarStream.method.main([Ljava/lang/String;)V
+0x0000c720 java   method   2 ps   Lcom/ice/tar/FastTarStream.method.main([Ljava/lang/String;)V
 0x0000ca5c java   method   3 p    Lcom/ice/tar/FastTarStream.method.getNextEntry()Lcom/ice/tar/TarEntry;
 0x0000cd28 java   method   4 p    Lcom/ice/tar/FastTarStream.method.setDebug(Z)V
 0x00003f20 java      var   0 P    Lcom/ice/tar/FastTarStream.ifield_currEntry:Lcom/ice/tar/TarEntry
@@ -599,8 +599,8 @@ EXPECT=<<EOF
 0x0000e0e4 java   method  18 p    Lcom/ice/tar/TarBuffer.method.skipRecord()V
 0x0000e188 java   method  19 p    Lcom/ice/tar/TarBuffer.method.writeRecord([B)V
 0x0000e2a0 java   method  20 p    Lcom/ice/tar/TarBuffer.method.writeRecord([BI)V
-0x00003fd0 java      var   0 spf  Lcom/ice/tar/TarBuffer.sfield_DEFAULT_BLKSIZE:I
-0x00003fd8 java      var   1 spf  Lcom/ice/tar/TarBuffer.sfield_DEFAULT_RCDSIZE:I
+0x00003fd0 java      var   0 psf  Lcom/ice/tar/TarBuffer.sfield_DEFAULT_BLKSIZE:I
+0x00003fd8 java      var   1 psf  Lcom/ice/tar/TarBuffer.sfield_DEFAULT_RCDSIZE:I
 0x00003fe0 java      var   2 P    Lcom/ice/tar/TarBuffer.ifield_blockBuffer:[B
 0x00003fe8 java      var   3 P    Lcom/ice/tar/TarBuffer.ifield_blockSize:I
 0x00003ff0 java      var   4 P    Lcom/ice/tar/TarBuffer.ifield_currBlkIdx:I
@@ -668,41 +668,41 @@ EXPECT=<<EOF
 0x00004060 java      var   2 P    Lcom/ice/tar/TarEntryEnumerator.ifield_tis:Lcom/ice/tar/TarInputStream
 0x00007950 [0x0000f3a4 - 0x0000f90e]   1386 java class 6 Lcom/ice/tar/TarHeader :: Ljava/lang/Object;
 0x0000f3a4 java   method   0 pC   Lcom/ice/tar/TarHeader.method.<init>()V
-0x0000f43c java   method   1 sp   Lcom/ice/tar/TarHeader.method.getCheckSumOctalBytes(J[BII)I
-0x0000f478 java   method   2 sp   Lcom/ice/tar/TarHeader.method.getFileNameBytes(Ljava/lang/String;[B)I
-0x0000f558 java   method   3 sp   Lcom/ice/tar/TarHeader.method.getLongOctalBytes(J[BII)I
-0x0000f588 java   method   4 sp   Lcom/ice/tar/TarHeader.method.getNameBytes(Ljava/lang/StringBuffer;[BII)I
-0x0000f5dc java   method   5 sp   Lcom/ice/tar/TarHeader.method.getOctalBytes(J[BII)I
-0x0000f680 java   method   6 sp   Lcom/ice/tar/TarHeader.method.parseFileName([B)Ljava/lang/StringBuffer;
-0x0000f700 java   method   7 sp   Lcom/ice/tar/TarHeader.method.parseName([BII)Ljava/lang/StringBuffer;
-0x0000f740 java   method   8 sp   Lcom/ice/tar/TarHeader.method.parseOctal([BII)J
+0x0000f43c java   method   1 ps   Lcom/ice/tar/TarHeader.method.getCheckSumOctalBytes(J[BII)I
+0x0000f478 java   method   2 ps   Lcom/ice/tar/TarHeader.method.getFileNameBytes(Ljava/lang/String;[B)I
+0x0000f558 java   method   3 ps   Lcom/ice/tar/TarHeader.method.getLongOctalBytes(J[BII)I
+0x0000f588 java   method   4 ps   Lcom/ice/tar/TarHeader.method.getNameBytes(Ljava/lang/StringBuffer;[BII)I
+0x0000f5dc java   method   5 ps   Lcom/ice/tar/TarHeader.method.getOctalBytes(J[BII)I
+0x0000f680 java   method   6 ps   Lcom/ice/tar/TarHeader.method.parseFileName([B)Ljava/lang/StringBuffer;
+0x0000f700 java   method   7 ps   Lcom/ice/tar/TarHeader.method.parseName([BII)Ljava/lang/StringBuffer;
+0x0000f740 java   method   8 ps   Lcom/ice/tar/TarHeader.method.parseOctal([BII)J
 0x0000f7ac java   method   9 p    Lcom/ice/tar/TarHeader.method.clone()Ljava/lang/Object;
 0x0000f900 java   method  10 p    Lcom/ice/tar/TarHeader.method.getName()Ljava/lang/String;
-0x00004088 java      var   0 spf  Lcom/ice/tar/TarHeader.sfield_CHKSUMLEN:I
-0x00004090 java      var   1 spf  Lcom/ice/tar/TarHeader.sfield_DEVLEN:I
-0x00004098 java      var   2 spf  Lcom/ice/tar/TarHeader.sfield_GIDLEN:I
-0x000040a0 java      var   3 spf  Lcom/ice/tar/TarHeader.sfield_GNAMELEN:I
-0x000040a8 java      var   4 spf  Lcom/ice/tar/TarHeader.sfield_GNU_TMAGIC:Ljava/lang/String
-0x000040b0 java      var   5 spf  Lcom/ice/tar/TarHeader.sfield_LF_BLK:B
-0x000040b8 java      var   6 spf  Lcom/ice/tar/TarHeader.sfield_LF_CHR:B
-0x000040c0 java      var   7 spf  Lcom/ice/tar/TarHeader.sfield_LF_CONTIG:B
-0x000040c8 java      var   8 spf  Lcom/ice/tar/TarHeader.sfield_LF_DIR:B
-0x000040d0 java      var   9 spf  Lcom/ice/tar/TarHeader.sfield_LF_FIFO:B
-0x000040d8 java      var  10 spf  Lcom/ice/tar/TarHeader.sfield_LF_LINK:B
-0x000040e0 java      var  11 spf  Lcom/ice/tar/TarHeader.sfield_LF_NORMAL:B
-0x000040e8 java      var  12 spf  Lcom/ice/tar/TarHeader.sfield_LF_OLDNORM:B
-0x000040f0 java      var  13 spf  Lcom/ice/tar/TarHeader.sfield_LF_SYMLINK:B
-0x000040f8 java      var  14 spf  Lcom/ice/tar/TarHeader.sfield_MAGICLEN:I
-0x00004100 java      var  15 spf  Lcom/ice/tar/TarHeader.sfield_MODELEN:I
-0x00004108 java      var  16 spf  Lcom/ice/tar/TarHeader.sfield_MODTIMELEN:I
-0x00004110 java      var  17 spf  Lcom/ice/tar/TarHeader.sfield_NAMELEN:I
-0x00004118 java      var  18 spf  Lcom/ice/tar/TarHeader.sfield_NAMEOFFSET:I
-0x00004120 java      var  19 spf  Lcom/ice/tar/TarHeader.sfield_PREFIXLEN:I
-0x00004128 java      var  20 spf  Lcom/ice/tar/TarHeader.sfield_PREFIXOFFSET:I
-0x00004130 java      var  21 spf  Lcom/ice/tar/TarHeader.sfield_SIZELEN:I
-0x00004138 java      var  22 spf  Lcom/ice/tar/TarHeader.sfield_TMAGIC:Ljava/lang/String
-0x00004140 java      var  23 spf  Lcom/ice/tar/TarHeader.sfield_UIDLEN:I
-0x00004148 java      var  24 spf  Lcom/ice/tar/TarHeader.sfield_UNAMELEN:I
+0x00004088 java      var   0 psf  Lcom/ice/tar/TarHeader.sfield_CHKSUMLEN:I
+0x00004090 java      var   1 psf  Lcom/ice/tar/TarHeader.sfield_DEVLEN:I
+0x00004098 java      var   2 psf  Lcom/ice/tar/TarHeader.sfield_GIDLEN:I
+0x000040a0 java      var   3 psf  Lcom/ice/tar/TarHeader.sfield_GNAMELEN:I
+0x000040a8 java      var   4 psf  Lcom/ice/tar/TarHeader.sfield_GNU_TMAGIC:Ljava/lang/String
+0x000040b0 java      var   5 psf  Lcom/ice/tar/TarHeader.sfield_LF_BLK:B
+0x000040b8 java      var   6 psf  Lcom/ice/tar/TarHeader.sfield_LF_CHR:B
+0x000040c0 java      var   7 psf  Lcom/ice/tar/TarHeader.sfield_LF_CONTIG:B
+0x000040c8 java      var   8 psf  Lcom/ice/tar/TarHeader.sfield_LF_DIR:B
+0x000040d0 java      var   9 psf  Lcom/ice/tar/TarHeader.sfield_LF_FIFO:B
+0x000040d8 java      var  10 psf  Lcom/ice/tar/TarHeader.sfield_LF_LINK:B
+0x000040e0 java      var  11 psf  Lcom/ice/tar/TarHeader.sfield_LF_NORMAL:B
+0x000040e8 java      var  12 psf  Lcom/ice/tar/TarHeader.sfield_LF_OLDNORM:B
+0x000040f0 java      var  13 psf  Lcom/ice/tar/TarHeader.sfield_LF_SYMLINK:B
+0x000040f8 java      var  14 psf  Lcom/ice/tar/TarHeader.sfield_MAGICLEN:I
+0x00004100 java      var  15 psf  Lcom/ice/tar/TarHeader.sfield_MODELEN:I
+0x00004108 java      var  16 psf  Lcom/ice/tar/TarHeader.sfield_MODTIMELEN:I
+0x00004110 java      var  17 psf  Lcom/ice/tar/TarHeader.sfield_NAMELEN:I
+0x00004118 java      var  18 psf  Lcom/ice/tar/TarHeader.sfield_NAMEOFFSET:I
+0x00004120 java      var  19 psf  Lcom/ice/tar/TarHeader.sfield_PREFIXLEN:I
+0x00004128 java      var  20 psf  Lcom/ice/tar/TarHeader.sfield_PREFIXOFFSET:I
+0x00004130 java      var  21 psf  Lcom/ice/tar/TarHeader.sfield_SIZELEN:I
+0x00004138 java      var  22 psf  Lcom/ice/tar/TarHeader.sfield_TMAGIC:Ljava/lang/String
+0x00004140 java      var  23 psf  Lcom/ice/tar/TarHeader.sfield_UIDLEN:I
+0x00004148 java      var  24 psf  Lcom/ice/tar/TarHeader.sfield_UNAMELEN:I
 0x00004150 java      var  25 p    Lcom/ice/tar/TarHeader.ifield_checkSum:I
 0x00004158 java      var  26 p    Lcom/ice/tar/TarHeader.ifield_devMajor:I
 0x00004160 java      var  27 p    Lcom/ice/tar/TarHeader.ifield_devMinor:I
@@ -782,10 +782,10 @@ EXPECT=<<EOF
 0x00010480 java   method   2 p    Lcom/ice/tar/TarTransFileTyper.method.isAsciiFile(Ljava/lang/String;)Z
 0x00007a10 [0x00010494 - 0x0001049c]      8 java class 12 Lcom/stericson/RootTools/BuildConfig :: Ljava/lang/Object;
 0x00010494 java   method   0 pC   Lcom/stericson/RootTools/BuildConfig.method.<init>()V
-0x000042c8 java      var   0 spf  Lcom/stericson/RootTools/BuildConfig.sfield_DEBUG:Z
+0x000042c8 java      var   0 psf  Lcom/stericson/RootTools/BuildConfig.sfield_DEBUG:Z
 0x00007a30 [0x0000a41b - 0x000107c0]  25509 java class 13 Lcom/stericson/RootTools/Command :: Ljava/lang/Object;
-0x000104ac java   method   0 pgC  Lcom/stericson/RootTools/Command.method.<init>(II[Ljava/lang/String;)V
-0x000104e4 java   method   1 pgC  Lcom/stericson/RootTools/Command.method.<init>(I[Ljava/lang/String;)V
+0x000104ac java   method   0 pCg  Lcom/stericson/RootTools/Command.method.<init>(II[Ljava/lang/String;)V
+0x000104e4 java   method   1 pCg  Lcom/stericson/RootTools/Command.method.<init>(I[Ljava/lang/String;)V
 0x00010518 java   method   2 p    Lcom/stericson/RootTools/Command.method.commandFinished(I)V
 0x0001055c java   method   3 p    Lcom/stericson/RootTools/Command.method.exitCode()I
 0x00010590 java   method   4 p    Lcom/stericson/RootTools/Command.method.exitCode(I)I
@@ -833,34 +833,34 @@ EXPECT=<<EOF
 0x00011410 java   method   0 pC   Lcom/stericson/RootTools/Installer.method.<init>(Landroid/content/Context;)V
 0x00011440 java   method   1 r    Lcom/stericson/RootTools/Installer.method.installBinary(ILjava/lang/String;Ljava/lang/String;)Z
 0x00011814 java   method   2 r    Lcom/stericson/RootTools/Installer.method.isBinaryInstalled(Ljava/lang/String;)Z
-0x00004340 java      var   0 sPf  Lcom/stericson/RootTools/Installer.sfield_BOGUS_FILE_NAME:Ljava/lang/String
-0x00004348 java      var   1 sPf  Lcom/stericson/RootTools/Installer.sfield_LOG_TAG:Ljava/lang/String
+0x00004340 java      var   0 Psf  Lcom/stericson/RootTools/Installer.sfield_BOGUS_FILE_NAME:Ljava/lang/String
+0x00004348 java      var   1 Psf  Lcom/stericson/RootTools/Installer.sfield_LOG_TAG:Ljava/lang/String
 0x00004350 java      var   2 P    Lcom/stericson/RootTools/Installer.ifield_context:Landroid/content/Context
 0x00004358 java      var   3 P    Lcom/stericson/RootTools/Installer.ifield_filesPath:Ljava/lang/String
 0x00007ad0 [0x00011874 - 0x0001399c]   8488 java class 18 Lcom/stericson/RootTools/InternalMethods :: Ljava/lang/Object;
 0x00011874 java   method   0 C    Lcom/stericson/RootTools/InternalMethods.method.<init>()V
 0x0001188c java   method   1 s    Lcom/stericson/RootTools/InternalMethods.method.checkUtil(Ljava/lang/String;)Z
-0x000119c8 java   method   2 sp   Lcom/stericson/RootTools/InternalMethods.method.copyFile(Ljava/lang/String;Ljava/lang/String;ZZ)Z
-0x00011cf0 java   method   3 sp   Lcom/stericson/RootTools/InternalMethods.method.exists(Ljava/lang/String;)Z
+0x000119c8 java   method   2 ps   Lcom/stericson/RootTools/InternalMethods.method.copyFile(Ljava/lang/String;Ljava/lang/String;ZZ)Z
+0x00011cf0 java   method   3 ps   Lcom/stericson/RootTools/InternalMethods.method.exists(Ljava/lang/String;)Z
 0x00011e5c java   method   4 s    Lcom/stericson/RootTools/InternalMethods.method.findBinary(Ljava/lang/String;)Z
-0x00012188 java   method   5 sp   Lcom/stericson/RootTools/InternalMethods.method.fixUtil(Ljava/lang/String;Ljava/lang/String;)V
+0x00012188 java   method   5 ps   Lcom/stericson/RootTools/InternalMethods.method.fixUtil(Ljava/lang/String;Ljava/lang/String;)V
 0x00012324 java   method   6 s    Lcom/stericson/RootTools/InternalMethods.method.fixUtils([Ljava/lang/String;)Z
 0x000123b0 java   method   7 s    Lcom/stericson/RootTools/InternalMethods.method.getBusyBoxApplets(Ljava/lang/String;)Ljava/util/List;
 0x0001245c java   method   8 s    Lcom/stericson/RootTools/InternalMethods.method.getBusyBoxVersion(Ljava/lang/String;)Ljava/lang/String;
 0x00012540 java   method   9 s    Lcom/stericson/RootTools/InternalMethods.method.getFilePermissionsSymlinks(Ljava/lang/String;)Lcom/stericson/RootTools/Permissions;
 0x00012690 java   method  10 s    Lcom/stericson/RootTools/InternalMethods.method.getInode(Ljava/lang/String;)Ljava/lang/String;
 0x0001270c java   method  11 s    Lcom/stericson/RootTools/InternalMethods.method.getMountedAs(Ljava/lang/String;)Ljava/lang/String;
-0x000127c4 java   method  12 sr   Lcom/stericson/RootTools/InternalMethods.method.getMounts()Ljava/util/ArrayList;
+0x000127c4 java   method  12 rs   Lcom/stericson/RootTools/InternalMethods.method.getMounts()Ljava/util/ArrayList;
 0x00012874 java   method  13 s    Lcom/stericson/RootTools/InternalMethods.method.getPath()Ljava/util/Set;
 0x000128bc java   method  14 s    Lcom/stericson/RootTools/InternalMethods.method.getSpace(Ljava/lang/String;)J
 0x00012a3c java   method  15 s    Lcom/stericson/RootTools/InternalMethods.method.getSymlink(Ljava/lang/String;)Ljava/lang/String;
 0x00012bf0 java   method  16 s    Lcom/stericson/RootTools/InternalMethods.method.getSymlinks(Ljava/lang/String;)Ljava/util/ArrayList;
 0x00012ca0 java   method  17 s    Lcom/stericson/RootTools/InternalMethods.method.getWorkingToolbox()Ljava/lang/String;
-0x00012ce4 java   method  18 sp   Lcom/stericson/RootTools/InternalMethods.method.hasEnoughSpaceOnSdCard(J)Z
-0x00012d58 java   method  19 sp   Lcom/stericson/RootTools/InternalMethods.method.hasUtil(Ljava/lang/String;Ljava/lang/String;)Z
+0x00012ce4 java   method  18 ps   Lcom/stericson/RootTools/InternalMethods.method.hasEnoughSpaceOnSdCard(J)Z
+0x00012d58 java   method  19 ps   Lcom/stericson/RootTools/InternalMethods.method.hasUtil(Ljava/lang/String;Ljava/lang/String;)Z
 0x00012ec0 java   method  20 s    Lcom/stericson/RootTools/InternalMethods.method.installBinary(Landroid/content/Context;ILjava/lang/String;Ljava/lang/String;)Z
 0x00012f08 java   method  21 s    Lcom/stericson/RootTools/InternalMethods.method.isAccessGiven()Z
-0x00012fa4 java   method  22 sp   Lcom/stericson/RootTools/InternalMethods.method.isAppletAvailable(Ljava/lang/String;Ljava/lang/String;)Z
+0x00012fa4 java   method  22 ps   Lcom/stericson/RootTools/InternalMethods.method.isAppletAvailable(Ljava/lang/String;Ljava/lang/String;)Z
 0x00013014 java   method  23 s    Lcom/stericson/RootTools/InternalMethods.method.isNativeToolsReady(ILandroid/content/Context;)Z
 0x00013094 java   method  24 s    Lcom/stericson/RootTools/InternalMethods.method.isProcessRunning(Ljava/lang/String;)Z
 0x0001312c java   method  25 s    Lcom/stericson/RootTools/InternalMethods.method.killProcess(Ljava/lang/String;)Z
@@ -877,29 +877,29 @@ EXPECT=<<EOF
 0x00007af0 [0x000139e0 - 0x00013a5c]    124 java class 19 Lcom/stericson/RootTools/InternalVariables :: Ljava/lang/Object;
 0x000139e0 java   method   0 sC   Lcom/stericson/RootTools/InternalVariables.method.<clinit>()V
 0x00013a54 java   method   1 C    Lcom/stericson/RootTools/InternalVariables.method.<init>()V
-0x000043a0 java      var   0 sr   Lcom/stericson/RootTools/InternalVariables.sfield_BBA:I
-0x000043a8 java      var   1 sr   Lcom/stericson/RootTools/InternalVariables.sfield_BBV:I
-0x000043b0 java      var   2 sr   Lcom/stericson/RootTools/InternalVariables.sfield_FPS:I
-0x000043b8 java      var   3 sr   Lcom/stericson/RootTools/InternalVariables.sfield_GI:I
-0x000043c0 java      var   4 sr   Lcom/stericson/RootTools/InternalVariables.sfield_GS:I
-0x000043c8 java      var   5 sr   Lcom/stericson/RootTools/InternalVariables.sfield_GSYM:I
-0x000043d0 java      var   6 sr   Lcom/stericson/RootTools/InternalVariables.sfield_IAG:I
-0x000043d8 java      var   7 srf  Lcom/stericson/RootTools/InternalVariables.sfield_PS_REGEX:Ljava/lang/String
-0x000043e0 java      var   8 sr   Lcom/stericson/RootTools/InternalVariables.sfield_TAG:Ljava/lang/String
-0x000043e8 java      var   9 sr   Lcom/stericson/RootTools/InternalVariables.sfield_accessGiven:Z
-0x000043f0 java      var  10 sr   Lcom/stericson/RootTools/InternalVariables.sfield_busyboxVersion:Ljava/lang/String
-0x000043f8 java      var  11 sr   Lcom/stericson/RootTools/InternalVariables.sfield_found:Z
-0x00004400 java      var  12 sr   Lcom/stericson/RootTools/InternalVariables.sfield_getSpaceFor:Ljava/lang/String
-0x00004408 java      var  13 sr   Lcom/stericson/RootTools/InternalVariables.sfield_inode:Ljava/lang/String
-0x00004410 java      var  14 sr   Lcom/stericson/RootTools/InternalVariables.sfield_mounts:Ljava/util/ArrayList
-0x00004418 java      var  15 sr   Lcom/stericson/RootTools/InternalVariables.sfield_nativeToolsReady:Z
-0x00004420 java      var  16 sr   Lcom/stericson/RootTools/InternalVariables.sfield_path:Ljava/util/Set
-0x00004428 java      var  17 sr   Lcom/stericson/RootTools/InternalVariables.sfield_permissions:Lcom/stericson/RootTools/Permissions
-0x00004430 java      var  18 sr   Lcom/stericson/RootTools/InternalVariables.sfield_psPattern:Ljava/util/regex/Pattern
-0x00004438 java      var  19 sr   Lcom/stericson/RootTools/InternalVariables.sfield_results:Ljava/util/List
-0x00004440 java      var  20 sr   Lcom/stericson/RootTools/InternalVariables.sfield_space:[Ljava/lang/String
-0x00004448 java      var  21 sr   Lcom/stericson/RootTools/InternalVariables.sfield_symlinks:Ljava/util/ArrayList
-0x00004450 java      var  22 sr   Lcom/stericson/RootTools/InternalVariables.sfield_timeout:I
+0x000043a0 java      var   0 rs   Lcom/stericson/RootTools/InternalVariables.sfield_BBA:I
+0x000043a8 java      var   1 rs   Lcom/stericson/RootTools/InternalVariables.sfield_BBV:I
+0x000043b0 java      var   2 rs   Lcom/stericson/RootTools/InternalVariables.sfield_FPS:I
+0x000043b8 java      var   3 rs   Lcom/stericson/RootTools/InternalVariables.sfield_GI:I
+0x000043c0 java      var   4 rs   Lcom/stericson/RootTools/InternalVariables.sfield_GS:I
+0x000043c8 java      var   5 rs   Lcom/stericson/RootTools/InternalVariables.sfield_GSYM:I
+0x000043d0 java      var   6 rs   Lcom/stericson/RootTools/InternalVariables.sfield_IAG:I
+0x000043d8 java      var   7 rsf  Lcom/stericson/RootTools/InternalVariables.sfield_PS_REGEX:Ljava/lang/String
+0x000043e0 java      var   8 rs   Lcom/stericson/RootTools/InternalVariables.sfield_TAG:Ljava/lang/String
+0x000043e8 java      var   9 rs   Lcom/stericson/RootTools/InternalVariables.sfield_accessGiven:Z
+0x000043f0 java      var  10 rs   Lcom/stericson/RootTools/InternalVariables.sfield_busyboxVersion:Ljava/lang/String
+0x000043f8 java      var  11 rs   Lcom/stericson/RootTools/InternalVariables.sfield_found:Z
+0x00004400 java      var  12 rs   Lcom/stericson/RootTools/InternalVariables.sfield_getSpaceFor:Ljava/lang/String
+0x00004408 java      var  13 rs   Lcom/stericson/RootTools/InternalVariables.sfield_inode:Ljava/lang/String
+0x00004410 java      var  14 rs   Lcom/stericson/RootTools/InternalVariables.sfield_mounts:Ljava/util/ArrayList
+0x00004418 java      var  15 rs   Lcom/stericson/RootTools/InternalVariables.sfield_nativeToolsReady:Z
+0x00004420 java      var  16 rs   Lcom/stericson/RootTools/InternalVariables.sfield_path:Ljava/util/Set
+0x00004428 java      var  17 rs   Lcom/stericson/RootTools/InternalVariables.sfield_permissions:Lcom/stericson/RootTools/Permissions
+0x00004430 java      var  18 rs   Lcom/stericson/RootTools/InternalVariables.sfield_psPattern:Ljava/util/regex/Pattern
+0x00004438 java      var  19 rs   Lcom/stericson/RootTools/InternalVariables.sfield_results:Ljava/util/List
+0x00004440 java      var  20 rs   Lcom/stericson/RootTools/InternalVariables.sfield_space:[Ljava/lang/String
+0x00004448 java      var  21 rs   Lcom/stericson/RootTools/InternalVariables.sfield_symlinks:Ljava/util/ArrayList
+0x00004450 java      var  22 rs   Lcom/stericson/RootTools/InternalVariables.sfield_timeout:I
 0x00007b10 [0x00013a6c - 0x00013b50]    228 java class 20 Lcom/stericson/RootTools/Mount :: Ljava/lang/Object;
 0x00013a6c java   method   0 C    Lcom/stericson/RootTools/Mount.method.<init>(Ljava/io/File;Ljava/io/File;Ljava/lang/String;Ljava/lang/String;)V
 0x00013ab4 java   method   1 p    Lcom/stericson/RootTools/Mount.method.getDevice()Ljava/io/File;
@@ -938,73 +938,73 @@ EXPECT=<<EOF
 0x00007b70 [0x00014170 - 0x0001481a]   1706 java class 23 Lcom/stericson/RootTools/RootTools :: Ljava/lang/Object;
 0x00014170 java   method   0 sC   Lcom/stericson/RootTools/RootTools.method.<clinit>()V
 0x000141a8 java   method   1 pC   Lcom/stericson/RootTools/RootTools.method.<init>()V
-0x000141c0 java   method   2 sp   Lcom/stericson/RootTools/RootTools.method.checkUtil(Ljava/lang/String;)Z
-0x000141dc java   method   3 sp   Lcom/stericson/RootTools/RootTools.method.closeAllShells()V
-0x000141f4 java   method   4 sp   Lcom/stericson/RootTools/RootTools.method.closeCustomShell()V
-0x0001420c java   method   5 sp   Lcom/stericson/RootTools/RootTools.method.closeShell(Z)V
-0x00014230 java   method   6 sp   Lcom/stericson/RootTools/RootTools.method.copyFile(Ljava/lang/String;Ljava/lang/String;ZZ)Z
-0x0001424c java   method   7 sp   Lcom/stericson/RootTools/RootTools.method.exists(Ljava/lang/String;)Z
-0x00014268 java   method   8 sp   Lcom/stericson/RootTools/RootTools.method.findBinary(Ljava/lang/String;)Z
-0x00014284 java   method   9 sp   Lcom/stericson/RootTools/RootTools.method.fixUtil(Ljava/lang/String;Ljava/lang/String;)V
-0x0001429c java   method  10 sp   Lcom/stericson/RootTools/RootTools.method.fixUtils([Ljava/lang/String;)Z
-0x000142b8 java   method  11 sp   Lcom/stericson/RootTools/RootTools.method.getBusyBoxApplets()Ljava/util/List;
-0x000142d8 java   method  12 sp   Lcom/stericson/RootTools/RootTools.method.getBusyBoxApplets(Ljava/lang/String;)Ljava/util/List;
-0x000142f4 java   method  13 sp   Lcom/stericson/RootTools/RootTools.method.getBusyBoxVersion()Ljava/lang/String;
-0x00014314 java   method  14 sp   Lcom/stericson/RootTools/RootTools.method.getBusyBoxVersion(Ljava/lang/String;)Ljava/lang/String;
-0x00014330 java   method  15 sp   Lcom/stericson/RootTools/RootTools.method.getCustomShell(Ljava/lang/String;)Lcom/stericson/RootTools/Shell;
-0x0001434c java   method  16 sp   Lcom/stericson/RootTools/RootTools.method.getFilePermissionsSymlinks(Ljava/lang/String;)Lcom/stericson/RootTools/Permissions;
-0x00014368 java   method  17 sp   Lcom/stericson/RootTools/RootTools.method.getInode(Ljava/lang/String;)Ljava/lang/String;
-0x00014384 java   method  18 sp   Lcom/stericson/RootTools/RootTools.method.getMountedAs(Ljava/lang/String;)Ljava/lang/String;
-0x000143a0 java   method  19 sp   Lcom/stericson/RootTools/RootTools.method.getMounts()Ljava/util/ArrayList;
-0x000143bc java   method  20 sp   Lcom/stericson/RootTools/RootTools.method.getPath()Ljava/util/Set;
-0x000143d8 java   method  21 sp   Lcom/stericson/RootTools/RootTools.method.getShell(Z)Lcom/stericson/RootTools/Shell;
-0x00014400 java   method  22 sp   Lcom/stericson/RootTools/RootTools.method.getSpace(Ljava/lang/String;)J
-0x0001441c java   method  23 sp   Lcom/stericson/RootTools/RootTools.method.getSymlink(Ljava/lang/String;)Ljava/lang/String;
-0x00014438 java   method  24 sp   Lcom/stericson/RootTools/RootTools.method.getSymlinks(Ljava/lang/String;)Ljava/util/ArrayList;
-0x00014454 java   method  25 sp   Lcom/stericson/RootTools/RootTools.method.getWorkingToolbox()Ljava/lang/String;
-0x00014470 java   method  26 sp   Lcom/stericson/RootTools/RootTools.method.hasEnoughSpaceOnSdCard(J)Z
-0x0001448c java   method  27 sp   Lcom/stericson/RootTools/RootTools.method.hasUtil(Ljava/lang/String;Ljava/lang/String;)Z
-0x000144a8 java   method  28 sp   Lcom/stericson/RootTools/RootTools.method.installBinary(Landroid/content/Context;ILjava/lang/String;)Z
-0x000144c8 java   method  29 sp   Lcom/stericson/RootTools/RootTools.method.installBinary(Landroid/content/Context;ILjava/lang/String;Ljava/lang/String;)Z
-0x000144e4 java   method  30 sp   Lcom/stericson/RootTools/RootTools.method.isAccessGiven()Z
-0x00014500 java   method  31 sp   Lcom/stericson/RootTools/RootTools.method.isAppletAvailable(Ljava/lang/String;)Z
-0x00014520 java   method  32 sp   Lcom/stericson/RootTools/RootTools.method.isAppletAvailable(Ljava/lang/String;Ljava/lang/String;)Z
-0x0001453c java   method  33 sp   Lcom/stericson/RootTools/RootTools.method.isBusyboxAvailable()Z
-0x0001455c java   method  34 sp   Lcom/stericson/RootTools/RootTools.method.isNativeToolsReady(ILandroid/content/Context;)Z
-0x00014578 java   method  35 sp   Lcom/stericson/RootTools/RootTools.method.isProcessRunning(Ljava/lang/String;)Z
-0x00014594 java   method  36 sp   Lcom/stericson/RootTools/RootTools.method.isRootAvailable()Z
-0x000145b4 java   method  37 sp   Lcom/stericson/RootTools/RootTools.method.killProcess(Ljava/lang/String;)Z
-0x000145d0 java   method  38 sp   Lcom/stericson/RootTools/RootTools.method.log(Ljava/lang/String;)V
-0x000145ec java   method  39 sp   Lcom/stericson/RootTools/RootTools.method.log(Ljava/lang/String;ILjava/lang/Exception;)V
-0x00014608 java   method  40 sp   Lcom/stericson/RootTools/RootTools.method.log(Ljava/lang/String;Ljava/lang/String;)V
-0x00014624 java   method  41 sp   Lcom/stericson/RootTools/RootTools.method.log(Ljava/lang/String;Ljava/lang/String;ILjava/lang/Exception;)V
-0x0001468c java   method  42 sp   Lcom/stericson/RootTools/RootTools.method.offerBusyBox(Landroid/app/Activity;I)Landroid/content/Intent;
-0x000146a8 java   method  43 sp   Lcom/stericson/RootTools/RootTools.method.offerBusyBox(Landroid/app/Activity;)V
-0x000146c0 java   method  44 sp   Lcom/stericson/RootTools/RootTools.method.offerSuperUser(Landroid/app/Activity;I)Landroid/content/Intent;
-0x000146dc java   method  45 sp   Lcom/stericson/RootTools/RootTools.method.offerSuperUser(Landroid/app/Activity;)V
-0x000146f4 java   method  46 sp   Lcom/stericson/RootTools/RootTools.method.remount(Ljava/lang/String;Ljava/lang/String;)Z
-0x00014718 java   method  47 sp   Lcom/stericson/RootTools/RootTools.method.restartAndroid()V
-0x00014740 java   method  48 sp   Lcom/stericson/RootTools/RootTools.method.runBinary(Landroid/content/Context;Ljava/lang/String;Ljava/lang/String;)V
-0x00014764 java   method  49 sp   Lcom/stericson/RootTools/RootTools.method.runShellCommand(Lcom/stericson/RootTools/Shell;Lcom/stericson/RootTools/Command;)V
-0x0001477c java   method  50 sp   Lcom/stericson/RootTools/RootTools.method.sendShell(Ljava/lang/String;I)Ljava/util/List;
-0x00014798 java   method  51 sp   Lcom/stericson/RootTools/RootTools.method.sendShell(Ljava/lang/String;Lcom/stericson/RootTools/RootTools$Result;I)Ljava/util/List;
-0x000147c0 java   method  52 sp   Lcom/stericson/RootTools/RootTools.method.sendShell([Ljava/lang/String;II)Ljava/util/List;
-0x000147dc java   method  53 sp   Lcom/stericson/RootTools/RootTools.method.sendShell([Ljava/lang/String;ILcom/stericson/RootTools/RootTools$Result;I)Ljava/util/List;
-0x000147fc java   method  54 sp   Lcom/stericson/RootTools/RootTools.method.sendShell([Ljava/lang/String;ILcom/stericson/RootTools/RootTools$Result;ZI)Ljava/util/List;
-0x000044c0 java      var   0 sp   Lcom/stericson/RootTools/RootTools.sfield_customShell:Ljava/lang/String
-0x000044c8 java      var   1 sp   Lcom/stericson/RootTools/RootTools.sfield_debugMode:Z
-0x000044d0 java      var   2 sp   Lcom/stericson/RootTools/RootTools.sfield_lastExitCode:I
-0x000044d8 java      var   3 sp   Lcom/stericson/RootTools/RootTools.sfield_lastFoundBinaryPaths:Ljava/util/List
-0x000044e0 java      var   4 sp   Lcom/stericson/RootTools/RootTools.sfield_shellDelay:I
-0x000044e8 java      var   5 sp   Lcom/stericson/RootTools/RootTools.sfield_useRoot:Z
-0x000044f0 java      var   6 sp   Lcom/stericson/RootTools/RootTools.sfield_utilPath:Ljava/lang/String
+0x000141c0 java   method   2 ps   Lcom/stericson/RootTools/RootTools.method.checkUtil(Ljava/lang/String;)Z
+0x000141dc java   method   3 ps   Lcom/stericson/RootTools/RootTools.method.closeAllShells()V
+0x000141f4 java   method   4 ps   Lcom/stericson/RootTools/RootTools.method.closeCustomShell()V
+0x0001420c java   method   5 ps   Lcom/stericson/RootTools/RootTools.method.closeShell(Z)V
+0x00014230 java   method   6 ps   Lcom/stericson/RootTools/RootTools.method.copyFile(Ljava/lang/String;Ljava/lang/String;ZZ)Z
+0x0001424c java   method   7 ps   Lcom/stericson/RootTools/RootTools.method.exists(Ljava/lang/String;)Z
+0x00014268 java   method   8 ps   Lcom/stericson/RootTools/RootTools.method.findBinary(Ljava/lang/String;)Z
+0x00014284 java   method   9 ps   Lcom/stericson/RootTools/RootTools.method.fixUtil(Ljava/lang/String;Ljava/lang/String;)V
+0x0001429c java   method  10 ps   Lcom/stericson/RootTools/RootTools.method.fixUtils([Ljava/lang/String;)Z
+0x000142b8 java   method  11 ps   Lcom/stericson/RootTools/RootTools.method.getBusyBoxApplets()Ljava/util/List;
+0x000142d8 java   method  12 ps   Lcom/stericson/RootTools/RootTools.method.getBusyBoxApplets(Ljava/lang/String;)Ljava/util/List;
+0x000142f4 java   method  13 ps   Lcom/stericson/RootTools/RootTools.method.getBusyBoxVersion()Ljava/lang/String;
+0x00014314 java   method  14 ps   Lcom/stericson/RootTools/RootTools.method.getBusyBoxVersion(Ljava/lang/String;)Ljava/lang/String;
+0x00014330 java   method  15 ps   Lcom/stericson/RootTools/RootTools.method.getCustomShell(Ljava/lang/String;)Lcom/stericson/RootTools/Shell;
+0x0001434c java   method  16 ps   Lcom/stericson/RootTools/RootTools.method.getFilePermissionsSymlinks(Ljava/lang/String;)Lcom/stericson/RootTools/Permissions;
+0x00014368 java   method  17 ps   Lcom/stericson/RootTools/RootTools.method.getInode(Ljava/lang/String;)Ljava/lang/String;
+0x00014384 java   method  18 ps   Lcom/stericson/RootTools/RootTools.method.getMountedAs(Ljava/lang/String;)Ljava/lang/String;
+0x000143a0 java   method  19 ps   Lcom/stericson/RootTools/RootTools.method.getMounts()Ljava/util/ArrayList;
+0x000143bc java   method  20 ps   Lcom/stericson/RootTools/RootTools.method.getPath()Ljava/util/Set;
+0x000143d8 java   method  21 ps   Lcom/stericson/RootTools/RootTools.method.getShell(Z)Lcom/stericson/RootTools/Shell;
+0x00014400 java   method  22 ps   Lcom/stericson/RootTools/RootTools.method.getSpace(Ljava/lang/String;)J
+0x0001441c java   method  23 ps   Lcom/stericson/RootTools/RootTools.method.getSymlink(Ljava/lang/String;)Ljava/lang/String;
+0x00014438 java   method  24 ps   Lcom/stericson/RootTools/RootTools.method.getSymlinks(Ljava/lang/String;)Ljava/util/ArrayList;
+0x00014454 java   method  25 ps   Lcom/stericson/RootTools/RootTools.method.getWorkingToolbox()Ljava/lang/String;
+0x00014470 java   method  26 ps   Lcom/stericson/RootTools/RootTools.method.hasEnoughSpaceOnSdCard(J)Z
+0x0001448c java   method  27 ps   Lcom/stericson/RootTools/RootTools.method.hasUtil(Ljava/lang/String;Ljava/lang/String;)Z
+0x000144a8 java   method  28 ps   Lcom/stericson/RootTools/RootTools.method.installBinary(Landroid/content/Context;ILjava/lang/String;)Z
+0x000144c8 java   method  29 ps   Lcom/stericson/RootTools/RootTools.method.installBinary(Landroid/content/Context;ILjava/lang/String;Ljava/lang/String;)Z
+0x000144e4 java   method  30 ps   Lcom/stericson/RootTools/RootTools.method.isAccessGiven()Z
+0x00014500 java   method  31 ps   Lcom/stericson/RootTools/RootTools.method.isAppletAvailable(Ljava/lang/String;)Z
+0x00014520 java   method  32 ps   Lcom/stericson/RootTools/RootTools.method.isAppletAvailable(Ljava/lang/String;Ljava/lang/String;)Z
+0x0001453c java   method  33 ps   Lcom/stericson/RootTools/RootTools.method.isBusyboxAvailable()Z
+0x0001455c java   method  34 ps   Lcom/stericson/RootTools/RootTools.method.isNativeToolsReady(ILandroid/content/Context;)Z
+0x00014578 java   method  35 ps   Lcom/stericson/RootTools/RootTools.method.isProcessRunning(Ljava/lang/String;)Z
+0x00014594 java   method  36 ps   Lcom/stericson/RootTools/RootTools.method.isRootAvailable()Z
+0x000145b4 java   method  37 ps   Lcom/stericson/RootTools/RootTools.method.killProcess(Ljava/lang/String;)Z
+0x000145d0 java   method  38 ps   Lcom/stericson/RootTools/RootTools.method.log(Ljava/lang/String;)V
+0x000145ec java   method  39 ps   Lcom/stericson/RootTools/RootTools.method.log(Ljava/lang/String;ILjava/lang/Exception;)V
+0x00014608 java   method  40 ps   Lcom/stericson/RootTools/RootTools.method.log(Ljava/lang/String;Ljava/lang/String;)V
+0x00014624 java   method  41 ps   Lcom/stericson/RootTools/RootTools.method.log(Ljava/lang/String;Ljava/lang/String;ILjava/lang/Exception;)V
+0x0001468c java   method  42 ps   Lcom/stericson/RootTools/RootTools.method.offerBusyBox(Landroid/app/Activity;I)Landroid/content/Intent;
+0x000146a8 java   method  43 ps   Lcom/stericson/RootTools/RootTools.method.offerBusyBox(Landroid/app/Activity;)V
+0x000146c0 java   method  44 ps   Lcom/stericson/RootTools/RootTools.method.offerSuperUser(Landroid/app/Activity;I)Landroid/content/Intent;
+0x000146dc java   method  45 ps   Lcom/stericson/RootTools/RootTools.method.offerSuperUser(Landroid/app/Activity;)V
+0x000146f4 java   method  46 ps   Lcom/stericson/RootTools/RootTools.method.remount(Ljava/lang/String;Ljava/lang/String;)Z
+0x00014718 java   method  47 ps   Lcom/stericson/RootTools/RootTools.method.restartAndroid()V
+0x00014740 java   method  48 ps   Lcom/stericson/RootTools/RootTools.method.runBinary(Landroid/content/Context;Ljava/lang/String;Ljava/lang/String;)V
+0x00014764 java   method  49 ps   Lcom/stericson/RootTools/RootTools.method.runShellCommand(Lcom/stericson/RootTools/Shell;Lcom/stericson/RootTools/Command;)V
+0x0001477c java   method  50 ps   Lcom/stericson/RootTools/RootTools.method.sendShell(Ljava/lang/String;I)Ljava/util/List;
+0x00014798 java   method  51 ps   Lcom/stericson/RootTools/RootTools.method.sendShell(Ljava/lang/String;Lcom/stericson/RootTools/RootTools$Result;I)Ljava/util/List;
+0x000147c0 java   method  52 ps   Lcom/stericson/RootTools/RootTools.method.sendShell([Ljava/lang/String;II)Ljava/util/List;
+0x000147dc java   method  53 ps   Lcom/stericson/RootTools/RootTools.method.sendShell([Ljava/lang/String;ILcom/stericson/RootTools/RootTools$Result;I)Ljava/util/List;
+0x000147fc java   method  54 ps   Lcom/stericson/RootTools/RootTools.method.sendShell([Ljava/lang/String;ILcom/stericson/RootTools/RootTools$Result;ZI)Ljava/util/List;
+0x000044c0 java      var   0 ps   Lcom/stericson/RootTools/RootTools.sfield_customShell:Ljava/lang/String
+0x000044c8 java      var   1 ps   Lcom/stericson/RootTools/RootTools.sfield_debugMode:Z
+0x000044d0 java      var   2 ps   Lcom/stericson/RootTools/RootTools.sfield_lastExitCode:I
+0x000044d8 java      var   3 ps   Lcom/stericson/RootTools/RootTools.sfield_lastFoundBinaryPaths:Ljava/util/List
+0x000044e0 java      var   4 ps   Lcom/stericson/RootTools/RootTools.sfield_shellDelay:I
+0x000044e8 java      var   5 ps   Lcom/stericson/RootTools/RootTools.sfield_useRoot:Z
+0x000044f0 java      var   6 ps   Lcom/stericson/RootTools/RootTools.sfield_utilPath:Ljava/lang/String
 0x00007b90 [0x0001482c - 0x00014834]      8 java class 24 Lcom/stericson/RootTools/RootToolsException :: Ljava/lang/Exception;
 0x0001482c java   method   0 pC   Lcom/stericson/RootTools/RootToolsException.method.<init>(Ljava/lang/Throwable;)V
-0x000044f8 java      var   0 sPf  Lcom/stericson/RootTools/RootToolsException.sfield_serialVersionUID:J
+0x000044f8 java      var   0 Psf  Lcom/stericson/RootTools/RootToolsException.sfield_serialVersionUID:J
 0x00007bb0 [0x00014844 - 0x0001491e]    218 java class 25 Lcom/stericson/RootTools/Runner :: Ljava/lang/Thread;
 0x00014844 java   method   0 pC   Lcom/stericson/RootTools/Runner.method.<init>(Landroid/content/Context;Ljava/lang/String;Ljava/lang/String;)V
 0x00014868 java   method   1 p    Lcom/stericson/RootTools/Runner.method.run()V
-0x00004500 java      var   0 sPf  Lcom/stericson/RootTools/Runner.sfield_LOG_TAG:Ljava/lang/String
+0x00004500 java      var   0 Psf  Lcom/stericson/RootTools/Runner.sfield_LOG_TAG:Ljava/lang/String
 0x00004508 java      var   1      Lcom/stericson/RootTools/Runner.ifield_binaryName:Ljava/lang/String
 0x00004510 java      var   2      Lcom/stericson/RootTools/Runner.ifield_context:Landroid/content/Context
 0x00004518 java      var   3      Lcom/stericson/RootTools/Runner.ifield_parameter:Ljava/lang/String
@@ -1023,12 +1023,12 @@ EXPECT=<<EOF
 0x00015478 java   method   0 PC   Lcom/stericson/RootTools/SanityCheckRootTools$TestHandler.method.<init>(Lcom/stericson/RootTools/SanityCheckRootTools;)V
 0x00015494 java   method   1 hC   Lcom/stericson/RootTools/SanityCheckRootTools$TestHandler.method.<init>(Lcom/stericson/RootTools/SanityCheckRootTools;Lcom/stericson/RootTools/SanityCheckRootTools$TestHandler;)V
 0x000154ac java   method   2 p    Lcom/stericson/RootTools/SanityCheckRootTools$TestHandler.method.handleMessage(Landroid/os/Message;)V
-0x00004548 java      var   0 spf  Lcom/stericson/RootTools/SanityCheckRootTools$TestHandler.sfield_ACTION:Ljava/lang/String
-0x00004550 java      var   1 spf  Lcom/stericson/RootTools/SanityCheckRootTools$TestHandler.sfield_ACTION_DISPLAY:I
-0x00004558 java      var   2 spf  Lcom/stericson/RootTools/SanityCheckRootTools$TestHandler.sfield_ACTION_HIDE:I
-0x00004560 java      var   3 spf  Lcom/stericson/RootTools/SanityCheckRootTools$TestHandler.sfield_ACTION_PDISPLAY:I
-0x00004568 java      var   4 spf  Lcom/stericson/RootTools/SanityCheckRootTools$TestHandler.sfield_ACTION_SHOW:I
-0x00004570 java      var   5 spf  Lcom/stericson/RootTools/SanityCheckRootTools$TestHandler.sfield_TEXT:Ljava/lang/String
+0x00004548 java      var   0 psf  Lcom/stericson/RootTools/SanityCheckRootTools$TestHandler.sfield_ACTION:Ljava/lang/String
+0x00004550 java      var   1 psf  Lcom/stericson/RootTools/SanityCheckRootTools$TestHandler.sfield_ACTION_DISPLAY:I
+0x00004558 java      var   2 psf  Lcom/stericson/RootTools/SanityCheckRootTools$TestHandler.sfield_ACTION_HIDE:I
+0x00004560 java      var   3 psf  Lcom/stericson/RootTools/SanityCheckRootTools$TestHandler.sfield_ACTION_PDISPLAY:I
+0x00004568 java      var   4 psf  Lcom/stericson/RootTools/SanityCheckRootTools$TestHandler.sfield_ACTION_SHOW:I
+0x00004570 java      var   5 psf  Lcom/stericson/RootTools/SanityCheckRootTools$TestHandler.sfield_TEXT:Ljava/lang/String
 0x00004578 java      var   6 fh   Lcom/stericson/RootTools/SanityCheckRootTools$TestHandler.ifield_this$0:Lcom/stericson/RootTools/SanityCheckRootTools
 0x00007c30 [0x00015570 - 0x00015740]    464 java class 29 Lcom/stericson/RootTools/SanityCheckRootTools :: Landroid/app/Activity;
 0x00015570 java   method   0 pC   Lcom/stericson/RootTools/SanityCheckRootTools.method.<init>()V
@@ -1062,31 +1062,31 @@ EXPECT=<<EOF
 0x00015ae4 java   method   3 sh   Lcom/stericson/RootTools/Shell.method.access$1(Lcom/stericson/RootTools/Shell;)V
 0x00015afc java   method   4 sh   Lcom/stericson/RootTools/Shell.method.access$2()Ljava/lang/String;
 0x00015b14 java   method   5 sh   Lcom/stericson/RootTools/Shell.method.access$3(Ljava/lang/String;)V
-0x00015b2c java   method   6 sp   Lcom/stericson/RootTools/Shell.method.closeAll()V
-0x00015b50 java   method   7 sp   Lcom/stericson/RootTools/Shell.method.closeCustomShell()V
-0x00015b78 java   method   8 sp   Lcom/stericson/RootTools/Shell.method.closeRootShell()V
-0x00015ba0 java   method   9 sp   Lcom/stericson/RootTools/Shell.method.closeShell()V
-0x00015bc8 java   method  10 sp   Lcom/stericson/RootTools/Shell.method.getOpenShell()Lcom/stericson/RootTools/Shell;
-0x00015bfc java   method  11 sp   Lcom/stericson/RootTools/Shell.method.isAnyShellOpen()Z
-0x00015c2c java   method  12 sp   Lcom/stericson/RootTools/Shell.method.isCustomShellOpen()Z
-0x00015c4c java   method  13 sp   Lcom/stericson/RootTools/Shell.method.isRootShellOpen()Z
-0x00015c6c java   method  14 sp   Lcom/stericson/RootTools/Shell.method.isShellOpen()Z
+0x00015b2c java   method   6 ps   Lcom/stericson/RootTools/Shell.method.closeAll()V
+0x00015b50 java   method   7 ps   Lcom/stericson/RootTools/Shell.method.closeCustomShell()V
+0x00015b78 java   method   8 ps   Lcom/stericson/RootTools/Shell.method.closeRootShell()V
+0x00015ba0 java   method   9 ps   Lcom/stericson/RootTools/Shell.method.closeShell()V
+0x00015bc8 java   method  10 ps   Lcom/stericson/RootTools/Shell.method.getOpenShell()Lcom/stericson/RootTools/Shell;
+0x00015bfc java   method  11 ps   Lcom/stericson/RootTools/Shell.method.isAnyShellOpen()Z
+0x00015c2c java   method  12 ps   Lcom/stericson/RootTools/Shell.method.isCustomShellOpen()Z
+0x00015c4c java   method  13 ps   Lcom/stericson/RootTools/Shell.method.isRootShellOpen()Z
+0x00015c6c java   method  14 ps   Lcom/stericson/RootTools/Shell.method.isShellOpen()Z
 0x00015c8c java   method  15 P    Lcom/stericson/RootTools/Shell.method.readOutput()V
-0x00015dc4 java   method  16 sp   Lcom/stericson/RootTools/Shell.method.runCommand(Lcom/stericson/RootTools/Command;)V
-0x00015de4 java   method  17 sp   Lcom/stericson/RootTools/Shell.method.runRootCommand(Lcom/stericson/RootTools/Command;)V
-0x00015e04 java   method  18 sp   Lcom/stericson/RootTools/Shell.method.startCustomShell(Ljava/lang/String;)Lcom/stericson/RootTools/Shell;
-0x00015e48 java   method  19 sp   Lcom/stericson/RootTools/Shell.method.startRootShell()Lcom/stericson/RootTools/Shell;
-0x00015ec8 java   method  20 sp   Lcom/stericson/RootTools/Shell.method.startShell()Lcom/stericson/RootTools/Shell;
+0x00015dc4 java   method  16 ps   Lcom/stericson/RootTools/Shell.method.runCommand(Lcom/stericson/RootTools/Command;)V
+0x00015de4 java   method  17 ps   Lcom/stericson/RootTools/Shell.method.runRootCommand(Lcom/stericson/RootTools/Command;)V
+0x00015e04 java   method  18 ps   Lcom/stericson/RootTools/Shell.method.startCustomShell(Ljava/lang/String;)Lcom/stericson/RootTools/Shell;
+0x00015e48 java   method  19 ps   Lcom/stericson/RootTools/Shell.method.startRootShell()Lcom/stericson/RootTools/Shell;
+0x00015ec8 java   method  20 ps   Lcom/stericson/RootTools/Shell.method.startShell()Lcom/stericson/RootTools/Shell;
 0x00015f10 java   method  21 P    Lcom/stericson/RootTools/Shell.method.writeCommands()V
 0x00016040 java   method  22 p    Lcom/stericson/RootTools/Shell.method.add(Lcom/stericson/RootTools/Command;)Lcom/stericson/RootTools/Command;
 0x00016098 java   method  23 p    Lcom/stericson/RootTools/Shell.method.close()V
 0x000160fc java   method  24 p    Lcom/stericson/RootTools/Shell.method.countCommands()I
 0x0001611c java   method  25 p    Lcom/stericson/RootTools/Shell.method.waitFor()V
-0x000045d8 java      var   0 sP   Lcom/stericson/RootTools/Shell.sfield_customShell:Lcom/stericson/RootTools/Shell
-0x000045e0 java      var   1 sP   Lcom/stericson/RootTools/Shell.sfield_error:Ljava/lang/String
-0x00004610 java      var   2 sP   Lcom/stericson/RootTools/Shell.sfield_rootShell:Lcom/stericson/RootTools/Shell
-0x00004618 java      var   3 sP   Lcom/stericson/RootTools/Shell.sfield_shell:Lcom/stericson/RootTools/Shell
-0x00004620 java      var   4 sPf  Lcom/stericson/RootTools/Shell.sfield_token:Ljava/lang/String
+0x000045d8 java      var   0 Ps   Lcom/stericson/RootTools/Shell.sfield_customShell:Lcom/stericson/RootTools/Shell
+0x000045e0 java      var   1 Ps   Lcom/stericson/RootTools/Shell.sfield_error:Ljava/lang/String
+0x00004610 java      var   2 Ps   Lcom/stericson/RootTools/Shell.sfield_rootShell:Lcom/stericson/RootTools/Shell
+0x00004618 java      var   3 Ps   Lcom/stericson/RootTools/Shell.sfield_shell:Lcom/stericson/RootTools/Shell
+0x00004620 java      var   4 Psf  Lcom/stericson/RootTools/Shell.sfield_token:Ljava/lang/String
 0x000045c8 java      var   5 P    Lcom/stericson/RootTools/Shell.ifield_close:Z
 0x000045d0 java      var   6 Pf   Lcom/stericson/RootTools/Shell.ifield_commands:Ljava/util/List
 0x000045e8 java      var   7 Pf   Lcom/stericson/RootTools/Shell.ifield_in:Ljava/io/DataInputStream
@@ -1106,7 +1106,7 @@ EXPECT=<<EOF
 0x00016240 java   method   2 p    Lcom/sun/activation/registries/LineTokenizer.method.hasMoreTokens()Z
 0x0001627c java   method   3 p    Lcom/sun/activation/registries/LineTokenizer.method.nextToken()Ljava/lang/String;
 0x0001642c java   method   4 p    Lcom/sun/activation/registries/LineTokenizer.method.pushToken(Ljava/lang/String;)V
-0x00004648 java      var   0 sPf  Lcom/sun/activation/registries/LineTokenizer.sfield_singles:Ljava/lang/String
+0x00004648 java      var   0 Psf  Lcom/sun/activation/registries/LineTokenizer.sfield_singles:Ljava/lang/String
 0x00004638 java      var   1 P    Lcom/sun/activation/registries/LineTokenizer.ifield_currentPosition:I
 0x00004640 java      var   2 P    Lcom/sun/activation/registries/LineTokenizer.ifield_maxPosition:I
 0x00004650 java      var   3 P    Lcom/sun/activation/registries/LineTokenizer.ifield_stack:Ljava/util/Vector
@@ -1126,28 +1126,28 @@ EXPECT=<<EOF
 0x00016620 java   method   4 P    Lcom/sun/activation/registries/MailcapFile.method.createMailcapHash(Ljava/io/Reader;)Ljava/util/Hashtable;
 0x00016644 java   method   5 P    Lcom/sun/activation/registries/MailcapFile.method.mergeResults(Ljava/util/Hashtable;Ljava/util/Hashtable;)Ljava/util/Hashtable;
 0x000166e4 java   method   6 P    Lcom/sun/activation/registries/MailcapFile.method.parse(Ljava/io/Reader;Ljava/util/Hashtable;)V
-0x0001680c java   method   7 sr   Lcom/sun/activation/registries/MailcapFile.method.parseLine(Ljava/lang/String;Ljava/util/Hashtable;)V
-0x00016b9c java   method   8 sr   Lcom/sun/activation/registries/MailcapFile.method.reportParseError(IIIILjava/lang/String;)V
-0x00016d00 java   method   9 sr   Lcom/sun/activation/registries/MailcapFile.method.reportParseError(IIILjava/lang/String;)V
-0x00016d9c java   method  10 sr   Lcom/sun/activation/registries/MailcapFile.method.reportParseError(IILjava/lang/String;)V
+0x0001680c java   method   7 rs   Lcom/sun/activation/registries/MailcapFile.method.parseLine(Ljava/lang/String;Ljava/util/Hashtable;)V
+0x00016b9c java   method   8 rs   Lcom/sun/activation/registries/MailcapFile.method.reportParseError(IIIILjava/lang/String;)V
+0x00016d00 java   method   9 rs   Lcom/sun/activation/registries/MailcapFile.method.reportParseError(IIILjava/lang/String;)V
+0x00016d9c java   method  10 rs   Lcom/sun/activation/registries/MailcapFile.method.reportParseError(IILjava/lang/String;)V
 0x00016e1c java   method  11 p    Lcom/sun/activation/registries/MailcapFile.method.appendToMailcap(Ljava/lang/String;)V
 0x00016e88 java   method  12 p    Lcom/sun/activation/registries/MailcapFile.method.getMailcapEntry(Ljava/lang/String;)Lcom/sun/activation/registries/MailcapEntry;
 0x00016e9c java   method  13 p    Lcom/sun/activation/registries/MailcapFile.method.getMailcapList(Ljava/lang/String;)Ljava/util/Hashtable;
-0x00004670 java      var   0 sP   Lcom/sun/activation/registries/MailcapFile.sfield_debug:Z
+0x00004670 java      var   0 Ps   Lcom/sun/activation/registries/MailcapFile.sfield_debug:Z
 0x00004678 java      var   1 P    Lcom/sun/activation/registries/MailcapFile.ifield_type_hash:Ljava/util/Hashtable
 0x00007d50 [0x00016f24 - 0x00016f44]     32 java class 38 Lcom/sun/activation/registries/MailcapParseException :: Ljava/lang/Exception;
 0x00016f24 java   method   0 pC   Lcom/sun/activation/registries/MailcapParseException.method.<init>()V
 0x00016f3c java   method   1 pC   Lcom/sun/activation/registries/MailcapParseException.method.<init>(Ljava/lang/String;)V
 0x00007d70 [0x00016f54 - 0x0001774a]   2038 java class 39 Lcom/sun/activation/registries/MailcapTokenizer :: Ljava/lang/Object;
 0x00016f54 java   method   0 pC   Lcom/sun/activation/registries/MailcapTokenizer.method.<init>(Ljava/lang/String;)V
-0x00016f9c java   method   1 sP   Lcom/sun/activation/registries/MailcapTokenizer.method.fixEscapeSequences(Ljava/lang/String;)Ljava/lang/String;
-0x00017018 java   method   2 sp   Lcom/sun/activation/registries/MailcapTokenizer.method.isAutoquoteSpecialChar(C)Z
-0x0001704c java   method   3 sp   Lcom/sun/activation/registries/MailcapTokenizer.method.isControlChar(C)Z
-0x00017068 java   method   4 sp   Lcom/sun/activation/registries/MailcapTokenizer.method.isSpecialChar(C)Z
-0x00017104 java   method   5 sp   Lcom/sun/activation/registries/MailcapTokenizer.method.isStringTokenChar(C)Z
-0x00017140 java   method   6 sp   Lcom/sun/activation/registries/MailcapTokenizer.method.isWhiteSpaceChar(C)Z
-0x0001715c java   method   7 sp   Lcom/sun/activation/registries/MailcapTokenizer.method.main([Ljava/lang/String;)V
-0x00017420 java   method   8 sp   Lcom/sun/activation/registries/MailcapTokenizer.method.nameForToken(I)Ljava/lang/String;
+0x00016f9c java   method   1 Ps   Lcom/sun/activation/registries/MailcapTokenizer.method.fixEscapeSequences(Ljava/lang/String;)Ljava/lang/String;
+0x00017018 java   method   2 ps   Lcom/sun/activation/registries/MailcapTokenizer.method.isAutoquoteSpecialChar(C)Z
+0x0001704c java   method   3 ps   Lcom/sun/activation/registries/MailcapTokenizer.method.isControlChar(C)Z
+0x00017068 java   method   4 ps   Lcom/sun/activation/registries/MailcapTokenizer.method.isSpecialChar(C)Z
+0x00017104 java   method   5 ps   Lcom/sun/activation/registries/MailcapTokenizer.method.isStringTokenChar(C)Z
+0x00017140 java   method   6 ps   Lcom/sun/activation/registries/MailcapTokenizer.method.isWhiteSpaceChar(C)Z
+0x0001715c java   method   7 ps   Lcom/sun/activation/registries/MailcapTokenizer.method.main([Ljava/lang/String;)V
+0x00017420 java   method   8 ps   Lcom/sun/activation/registries/MailcapTokenizer.method.nameForToken(I)Ljava/lang/String;
 0x000174a4 java   method   9 P    Lcom/sun/activation/registries/MailcapTokenizer.method.processAutoquoteToken()V
 0x00017518 java   method  10 P    Lcom/sun/activation/registries/MailcapTokenizer.method.processStringToken()V
 0x00017580 java   method  11 p    Lcom/sun/activation/registries/MailcapTokenizer.method.getCurrentToken()I
@@ -1155,13 +1155,13 @@ EXPECT=<<EOF
 0x000175b0 java   method  13 p    Lcom/sun/activation/registries/MailcapTokenizer.method.nextToken()I
 0x0001772c java   method  14 p    Lcom/sun/activation/registries/MailcapTokenizer.method.setAutoquoteChar(C)V
 0x00017744 java   method  15 p    Lcom/sun/activation/registries/MailcapTokenizer.method.setIsAutoquoting(Z)V
-0x00004680 java      var   0 spf  Lcom/sun/activation/registries/MailcapTokenizer.sfield_EOI_TOKEN:I
-0x00004688 java      var   1 spf  Lcom/sun/activation/registries/MailcapTokenizer.sfield_EQUALS_TOKEN:I
-0x00004690 java      var   2 spf  Lcom/sun/activation/registries/MailcapTokenizer.sfield_SEMICOLON_TOKEN:I
-0x00004698 java      var   3 spf  Lcom/sun/activation/registries/MailcapTokenizer.sfield_SLASH_TOKEN:I
-0x000046a0 java      var   4 spf  Lcom/sun/activation/registries/MailcapTokenizer.sfield_START_TOKEN:I
-0x000046a8 java      var   5 spf  Lcom/sun/activation/registries/MailcapTokenizer.sfield_STRING_TOKEN:I
-0x000046b0 java      var   6 spf  Lcom/sun/activation/registries/MailcapTokenizer.sfield_UNKNOWN_TOKEN:I
+0x00004680 java      var   0 psf  Lcom/sun/activation/registries/MailcapTokenizer.sfield_EOI_TOKEN:I
+0x00004688 java      var   1 psf  Lcom/sun/activation/registries/MailcapTokenizer.sfield_EQUALS_TOKEN:I
+0x00004690 java      var   2 psf  Lcom/sun/activation/registries/MailcapTokenizer.sfield_SEMICOLON_TOKEN:I
+0x00004698 java      var   3 psf  Lcom/sun/activation/registries/MailcapTokenizer.sfield_SLASH_TOKEN:I
+0x000046a0 java      var   4 psf  Lcom/sun/activation/registries/MailcapTokenizer.sfield_START_TOKEN:I
+0x000046a8 java      var   5 psf  Lcom/sun/activation/registries/MailcapTokenizer.sfield_STRING_TOKEN:I
+0x000046b0 java      var   6 psf  Lcom/sun/activation/registries/MailcapTokenizer.sfield_UNKNOWN_TOKEN:I
 0x000046b8 java      var   7 P    Lcom/sun/activation/registries/MailcapTokenizer.ifield_autoquoteChar:C
 0x000046c0 java      var   8 P    Lcom/sun/activation/registries/MailcapTokenizer.ifield_currentToken:I
 0x000046c8 java      var   9 P    Lcom/sun/activation/registries/MailcapTokenizer.ifield_currentTokenValue:Ljava/lang/String
@@ -1180,13 +1180,13 @@ EXPECT=<<EOF
 0x000177f8 java   method   0 pC   Lcom/sun/activation/registries/MimeTypeFile.method.<init>()V
 0x00017820 java   method   1 pC   Lcom/sun/activation/registries/MimeTypeFile.method.<init>(Ljava/io/InputStream;)V
 0x00017864 java   method   2 pC   Lcom/sun/activation/registries/MimeTypeFile.method.<init>(Ljava/lang/String;)V
-0x000178f4 java   method   3 sp   Lcom/sun/activation/registries/MimeTypeFile.method.main([Ljava/lang/String;)V
+0x000178f4 java   method   3 ps   Lcom/sun/activation/registries/MimeTypeFile.method.main([Ljava/lang/String;)V
 0x00017970 java   method   4 P    Lcom/sun/activation/registries/MimeTypeFile.method.parse(Ljava/io/BufferedReader;)V
 0x00017a08 java   method   5 P    Lcom/sun/activation/registries/MimeTypeFile.method.parseEntry(Ljava/lang/String;)V
 0x00017bf4 java   method   6 p    Lcom/sun/activation/registries/MimeTypeFile.method.appendToRegistry(Ljava/lang/String;)V
 0x00017c34 java   method   7 p    Lcom/sun/activation/registries/MimeTypeFile.method.getMIMETypeString(Ljava/lang/String;)Ljava/lang/String;
 0x00017c60 java   method   8 p    Lcom/sun/activation/registries/MimeTypeFile.method.getMimeTypeEntry(Ljava/lang/String;)Lcom/sun/activation/registries/MimeTypeEntry;
-0x00004700 java      var   0 sP   Lcom/sun/activation/registries/MimeTypeFile.sfield_DEBUG:Z
+0x00004700 java      var   0 Ps   Lcom/sun/activation/registries/MimeTypeFile.sfield_DEBUG:Z
 0x00004708 java      var   1 P    Lcom/sun/activation/registries/MimeTypeFile.ifield_fname:Ljava/lang/String
 0x00004710 java      var   2 P    Lcom/sun/activation/registries/MimeTypeFile.ifield_type_hash:Ljava/util/Hashtable
 0x00007dd0 [0x00017c84 - 0x00017d22]    158 java class 42 Lcom/sun/activation/viewers/ImageViewerCanvas :: Ljava/awt/Canvas;
@@ -1223,14 +1223,14 @@ EXPECT=<<EOF
 0x00018008 java   method   0 sC   Ljavax/activation/CommandMap.method.<clinit>()V
 0x00018020 java   method   1 pC   Ljavax/activation/CommandMap.method.<init>()V
 0x00018038 java   method   2 s    Ljavax/activation/CommandMap.method.class$(Ljava/lang/String;)Ljava/lang/Class;
-0x00018078 java   method   3 sp   Ljavax/activation/CommandMap.method.getDefaultCommandMap()Ljavax/activation/CommandMap;
-0x000180a4 java   method   4 sp   Ljavax/activation/CommandMap.method.setDefaultCommandMap(Ljavax/activation/CommandMap;)V
+0x00018078 java   method   3 ps   Ljavax/activation/CommandMap.method.getDefaultCommandMap()Ljavax/activation/CommandMap;
+0x000180a4 java   method   4 ps   Ljavax/activation/CommandMap.method.setDefaultCommandMap(Ljavax/activation/CommandMap;)V
 0x0000abab java   method   5 pa   Ljavax/activation/CommandMap.method.createDataContentHandler(Ljava/lang/String;)Ljavax/activation/DataContentHandler;
 0x0000abb0 java   method   6 pa   Ljavax/activation/CommandMap.method.getAllCommands(Ljava/lang/String;)[Ljavax/activation/CommandInfo;
 0x0000abb4 java   method   7 pa   Ljavax/activation/CommandMap.method.getCommand(Ljava/lang/String;Ljava/lang/String;)Ljavax/activation/CommandInfo;
 0x0000abb8 java   method   8 pa   Ljavax/activation/CommandMap.method.getPreferredCommands(Ljava/lang/String;)[Ljavax/activation/CommandInfo;
 0x00004858 java      var   0 s    Ljavax/activation/CommandMap.sfield_class$javax$activation$CommandMap:Ljava/lang/Class
-0x00004860 java      var   1 sP   Ljavax/activation/CommandMap.sfield_defaultCommandMap:Ljavax/activation/CommandMap
+0x00004860 java      var   1 Ps   Ljavax/activation/CommandMap.sfield_defaultCommandMap:Ljavax/activation/CommandMap
 0x00007e50 [0x0000abc0 - 0x0000abc0]      0 java class 46 Ljavax/activation/CommandObject :: Ljava/lang/Object;
 0x0000abc0 java   method   0 pa   Ljavax/activation/CommandObject.method.setCommandContext(Ljava/lang/String;Ljavax/activation/DataHandler;)V
 0x00007e70 [0x0000abc9 - 0x0000abd6]     13 java class 47 Ljavax/activation/DataContentHandler :: Ljava/lang/Object;
@@ -1257,7 +1257,7 @@ EXPECT=<<EOF
 0x000182ec java   method   7 PY   Ljavax/activation/DataHandler.method.getBaseType()Ljava/lang/String;
 0x00018364 java   method   8 PY   Ljavax/activation/DataHandler.method.getCommandMap()Ljavax/activation/CommandMap;
 0x000183ac java   method   9 PY   Ljavax/activation/DataHandler.method.getDataContentHandler()Ljavax/activation/DataContentHandler;
-0x000184a4 java   method  10 spY  Ljavax/activation/DataHandler.method.setDataContentHandlerFactory(Ljavax/activation/DataContentHandlerFactory;)V
+0x000184a4 java   method  10 psY  Ljavax/activation/DataHandler.method.setDataContentHandlerFactory(Ljavax/activation/DataContentHandlerFactory;)V
 0x00018560 java   method  11 p    Ljavax/activation/DataHandler.method.getAllCommands()[Ljavax/activation/CommandInfo;
 0x0001858c java   method  12 p    Ljavax/activation/DataHandler.method.getBean(Ljavax/activation/CommandInfo;)Ljava/lang/Object;
 0x000185d0 java   method  13 p    Ljavax/activation/DataHandler.method.getCommand(Ljava/lang/String;)Ljavax/activation/CommandInfo;
@@ -1274,8 +1274,8 @@ EXPECT=<<EOF
 0x000188c0 java   method  24 pY   Ljavax/activation/DataHandler.method.setCommandMap(Ljavax/activation/CommandMap;)V
 0x00018908 java   method  25 p    Ljavax/activation/DataHandler.method.writeTo(Ljava/io/OutputStream;)V
 0x00004880 java      var   0 s    Ljavax/activation/DataHandler.sfield_class$javax$activation$DataHandler:Ljava/lang/Class
-0x000048a0 java      var   1 sPf  Ljavax/activation/DataHandler.sfield_emptyFlavors:[Ljava/awt/datatransfer/DataFlavor
-0x000048a8 java      var   2 sP   Ljavax/activation/DataHandler.sfield_factory:Ljavax/activation/DataContentHandlerFactory
+0x000048a0 java      var   1 Psf  Ljavax/activation/DataHandler.sfield_emptyFlavors:[Ljava/awt/datatransfer/DataFlavor
+0x000048a8 java      var   2 Ps   Ljavax/activation/DataHandler.sfield_factory:Ljavax/activation/DataContentHandlerFactory
 0x00004888 java      var   3 P    Ljavax/activation/DataHandler.ifield_currentCommandMap:Ljavax/activation/CommandMap
 0x00004890 java      var   4 P    Ljavax/activation/DataHandler.ifield_dataContentHandler:Ljavax/activation/DataContentHandler
 0x00004898 java      var   5 P    Ljavax/activation/DataHandler.ifield_dataSource:Ljavax/activation/DataSource
@@ -1295,17 +1295,17 @@ EXPECT=<<EOF
 0x0001896c java   method   0 sC   Ljavax/activation/FileTypeMap.method.<clinit>()V
 0x00018984 java   method   1 pC   Ljavax/activation/FileTypeMap.method.<init>()V
 0x0001899c java   method   2 s    Ljavax/activation/FileTypeMap.method.class$(Ljava/lang/String;)Ljava/lang/Class;
-0x000189dc java   method   3 sp   Ljavax/activation/FileTypeMap.method.getDefaultFileTypeMap()Ljavax/activation/FileTypeMap;
-0x00018a08 java   method   4 sp   Ljavax/activation/FileTypeMap.method.setDefaultFileTypeMap(Ljavax/activation/FileTypeMap;)V
+0x000189dc java   method   3 ps   Ljavax/activation/FileTypeMap.method.getDefaultFileTypeMap()Ljavax/activation/FileTypeMap;
+0x00018a08 java   method   4 ps   Ljavax/activation/FileTypeMap.method.setDefaultFileTypeMap(Ljavax/activation/FileTypeMap;)V
 0x0000acf0 java   method   5 pa   Ljavax/activation/FileTypeMap.method.getContentType(Ljava/io/File;)Ljava/lang/String;
 0x0000acf5 java   method   6 pa   Ljavax/activation/FileTypeMap.method.getContentType(Ljava/lang/String;)Ljava/lang/String;
 0x00004918 java      var   0 s    Ljavax/activation/FileTypeMap.sfield_class$javax$activation$FileTypeMap:Ljava/lang/Class
-0x00004920 java      var   1 sP   Ljavax/activation/FileTypeMap.sfield_defaultMap:Ljavax/activation/FileTypeMap
+0x00004920 java      var   1 Ps   Ljavax/activation/FileTypeMap.sfield_defaultMap:Ljavax/activation/FileTypeMap
 0x00007f30 [0x00018a80 - 0x00018fca]   1354 java class 53 Ljavax/activation/MimeType :: Ljava/lang/Object;
 0x00018a80 java   method   0 pC   Ljavax/activation/MimeType.method.<init>()V
 0x00018ab8 java   method   1 pC   Ljavax/activation/MimeType.method.<init>(Ljava/lang/String;)V
 0x00018ad8 java   method   2 pC   Ljavax/activation/MimeType.method.<init>(Ljava/lang/String;Ljava/lang/String;)V
-0x00018b50 java   method   3 sP   Ljavax/activation/MimeType.method.isTokenChar(C)Z
+0x00018b50 java   method   3 Ps   Ljavax/activation/MimeType.method.isTokenChar(C)Z
 0x00018b88 java   method   4 P    Ljavax/activation/MimeType.method.isValidToken(Ljava/lang/String;)Z
 0x00018bcc java   method   5 P    Ljavax/activation/MimeType.method.parse(Ljava/lang/String;)V
 0x00018d24 java   method   6 p    Ljavax/activation/MimeType.method.getBaseType()Ljava/lang/String;
@@ -1322,17 +1322,17 @@ EXPECT=<<EOF
 0x00018f2c java   method  17 p    Ljavax/activation/MimeType.method.setSubType(Ljava/lang/String;)V
 0x00018f6c java   method  18 p    Ljavax/activation/MimeType.method.toString()Ljava/lang/String;
 0x00018fb4 java   method  19 p    Ljavax/activation/MimeType.method.writeExternal(Ljava/io/ObjectOutput;)V
-0x00004970 java      var   0 sPf  Ljavax/activation/MimeType.sfield_TSPECIALS:Ljava/lang/String
+0x00004970 java      var   0 Psf  Ljavax/activation/MimeType.sfield_TSPECIALS:Ljava/lang/String
 0x00004978 java      var   1 P    Ljavax/activation/MimeType.ifield_parameters:Ljavax/activation/MimeTypeParameterList
 0x00004980 java      var   2 P    Ljavax/activation/MimeType.ifield_primaryType:Ljava/lang/String
 0x00004988 java      var   3 P    Ljavax/activation/MimeType.ifield_subType:Ljava/lang/String
 0x00007f50 [0x00018fdc - 0x00019528]   1356 java class 54 Ljavax/activation/MimeTypeParameterList :: Ljava/lang/Object;
 0x00018fdc java   method   0 pC   Ljavax/activation/MimeTypeParameterList.method.<init>()V
 0x00019004 java   method   1 pC   Ljavax/activation/MimeTypeParameterList.method.<init>(Ljava/lang/String;)V
-0x00019030 java   method   2 sP   Ljavax/activation/MimeTypeParameterList.method.isTokenChar(C)Z
-0x00019068 java   method   3 sP   Ljavax/activation/MimeTypeParameterList.method.quote(Ljava/lang/String;)Ljava/lang/String;
-0x00019110 java   method   4 sP   Ljavax/activation/MimeTypeParameterList.method.skipWhiteSpace(Ljava/lang/String;I)I
-0x00019148 java   method   5 sP   Ljavax/activation/MimeTypeParameterList.method.unquote(Ljava/lang/String;)Ljava/lang/String;
+0x00019030 java   method   2 Ps   Ljavax/activation/MimeTypeParameterList.method.isTokenChar(C)Z
+0x00019068 java   method   3 Ps   Ljavax/activation/MimeTypeParameterList.method.quote(Ljava/lang/String;)Ljava/lang/String;
+0x00019110 java   method   4 Ps   Ljavax/activation/MimeTypeParameterList.method.skipWhiteSpace(Ljava/lang/String;I)I
+0x00019148 java   method   5 Ps   Ljavax/activation/MimeTypeParameterList.method.unquote(Ljava/lang/String;)Ljava/lang/String;
 0x000191b8 java   method   6 p    Ljavax/activation/MimeTypeParameterList.method.get(Ljava/lang/String;)Ljava/lang/String;
 0x000191ec java   method   7 p    Ljavax/activation/MimeTypeParameterList.method.getNames()Ljava/util/Enumeration;
 0x0001920c java   method   8 p    Ljavax/activation/MimeTypeParameterList.method.isEmpty()Z
@@ -1341,7 +1341,7 @@ EXPECT=<<EOF
 0x00019454 java   method  11 p    Ljavax/activation/MimeTypeParameterList.method.set(Ljava/lang/String;Ljava/lang/String;)V
 0x00019480 java   method  12 p    Ljavax/activation/MimeTypeParameterList.method.size()I
 0x000194a0 java   method  13 p    Ljavax/activation/MimeTypeParameterList.method.toString()Ljava/lang/String;
-0x00004990 java      var   0 sPf  Ljavax/activation/MimeTypeParameterList.sfield_TSPECIALS:Ljava/lang/String
+0x00004990 java      var   0 Psf  Ljavax/activation/MimeTypeParameterList.sfield_TSPECIALS:Ljava/lang/String
 0x00004998 java      var   1 P    Ljavax/activation/MimeTypeParameterList.ifield_parameters:Ljava/util/Hashtable
 0x00007f70 [0x00019538 - 0x00019558]     32 java class 55 Ljavax/activation/MimeTypeParseException :: Ljava/lang/Exception;
 0x00019538 java   method   0 pC   Ljavax/activation/MimeTypeParseException.method.<init>()V
@@ -1369,7 +1369,7 @@ EXPECT=<<EOF
 0x000198a4 java   method   1 p    Lorg/radare/radare2installer/BootReceiver.method.onReceive(Landroid/content/Context;Landroid/content/Intent;)V
 0x00007ff0 [0x00019944 - 0x0001994c]      8 java class 59 Lorg/radare/radare2installer/BuildConfig :: Ljava/lang/Object;
 0x00019944 java   method   0 pC   Lorg/radare/radare2installer/BuildConfig.method.<init>()V
-0x00004a48 java      var   0 spf  Lorg/radare/radare2installer/BuildConfig.sfield_DEBUG:Z
+0x00004a48 java      var   0 psf  Lorg/radare/radare2installer/BuildConfig.sfield_DEBUG:Z
 0x00008010 [0x0001995c - 0x00019a56]    250 java class 60 Lorg/radare/radare2installer/ConsoleActivity$1 :: Ljava/lang/Object;
 0x0001995c java   method   0 C    Lorg/radare/radare2installer/ConsoleActivity$1.method.<init>(Lorg/radare/radare2installer/ConsoleActivity;)V
 0x00019978 java   method   1 p    Lorg/radare/radare2installer/ConsoleActivity$1.method.onClick(Landroid/view/View;)V
@@ -1394,7 +1394,7 @@ EXPECT=<<EOF
 0x00019c3c java   method   7 p    Lorg/radare/radare2installer/ConsoleActivity.method.onCreate(Landroid/os/Bundle;)V
 0x00019e50 java   method   8 p    Lorg/radare/radare2installer/ConsoleActivity.method.onDestroy()V
 0x00019e74 java   method   9 p    Lorg/radare/radare2installer/ConsoleActivity.method.onKeyDown(ILandroid/view/KeyEvent;)Z
-0x00004a98 java      var   0 sPf  Lorg/radare/radare2installer/ConsoleActivity.sfield_TAG:Ljava/lang/String
+0x00004a98 java      var   0 Psf  Lorg/radare/radare2installer/ConsoleActivity.sfield_TAG:Ljava/lang/String
 0x00004a70 java      var   1 P    Lorg/radare/radare2installer/ConsoleActivity.ifield_INPUT:Landroid/widget/EditText
 0x00004a78 java      var   2 P    Lorg/radare/radare2installer/ConsoleActivity.ifield_OUTPUT:Landroid/widget/TextView
 0x00004a80 java      var   3 P    Lorg/radare/radare2installer/ConsoleActivity.ifield_QUIT:Landroid/widget/Button
@@ -1431,7 +1431,7 @@ EXPECT=<<EOF
 0x00004b00 java      var   5 P    Lorg/radare/radare2installer/LaunchActivity.ifield_radiogroup:Landroid/widget/RadioGroup
 0x000080f0 [0x0001a520 - 0x0001a7b6]    662 java class 67 Lorg/radare/radare2installer/LauncherActivity :: Landroid/app/Activity;
 0x0001a520 java   method   0 pC   Lorg/radare/radare2installer/LauncherActivity.method.<init>()V
-0x0001a538 java   method   1 sP   Lorg/radare/radare2installer/LauncherActivity.method.filterSingleQuote(Ljava/lang/String;)Ljava/lang/String;
+0x0001a538 java   method   1 Ps   Lorg/radare/radare2installer/LauncherActivity.method.filterSingleQuote(Ljava/lang/String;)Ljava/lang/String;
 0x0001a574 java   method   2 P    Lorg/radare/radare2installer/LauncherActivity.method.findTerminalApp()Ljava/lang/String;
 0x0001a5cc java   method   3 p    Lorg/radare/radare2installer/LauncherActivity.method.onCreate(Landroid/os/Bundle;)V
 0x0001a7a8 java   method   4 r    Lorg/radare/radare2installer/LauncherActivity.method.onPause()V
@@ -1494,7 +1494,7 @@ EXPECT=<<EOF
 0x0001c858 java   method  13 P    Lorg/radare/radare2installer/MainActivity.method.download(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Z
 0x0001cb4c java   method  14 P    Lorg/radare/radare2installer/MainActivity.method.output(Ljava/lang/String;)V
 0x0001cb74 java   method  15 P    Lorg/radare/radare2installer/MainActivity.method.resetButtons()V
-0x0001cb9c java   method  16 sp   Lorg/radare/radare2installer/MainActivity.method.unTarGz(Ljava/lang/String;Ljava/lang/String;)V
+0x0001cb9c java   method  16 ps   Lorg/radare/radare2installer/MainActivity.method.unTarGz(Ljava/lang/String;Ljava/lang/String;)V
 0x0001cc7c java   method  17 p    Lorg/radare/radare2installer/MainActivity.method.onCreate(Landroid/os/Bundle;)V
 0x0001ce38 java   method  18 p    Lorg/radare/radare2installer/MainActivity.method.onCreateOptionsMenu(Landroid/view/Menu;)Z
 0x0001ce6c java   method  19 p    Lorg/radare/radare2installer/MainActivity.method.onOptionsItemSelected(Landroid/view/MenuItem;)Z
@@ -1519,65 +1519,65 @@ EXPECT=<<EOF
 0x0001d078 java   method   3 p    Lorg/radare/radare2installer/PubKeyManager.method.checkServerTrusted([Ljava/security/cert/X509Certificate;Ljava/lang/String;)V
 0x0001d260 java   method   4 p    Lorg/radare/radare2installer/PubKeyManager.method.getAcceptedIssuers()[Ljava/security/cert/X509Certificate;
 0x00004be0 java      var   0 sfh  Lorg/radare/radare2installer/PubKeyManager.sfield_$assertionsDisabled:Z
-0x00004be8 java      var   1 sP   Lorg/radare/radare2installer/PubKeyManager.sfield_PUB_KEY:Ljava/lang/String
+0x00004be8 java      var   1 Ps   Lorg/radare/radare2installer/PubKeyManager.sfield_PUB_KEY:Ljava/lang/String
 0x00008270 [0x0001d274 - 0x0001d27c]      8 java class 79 Lorg/radare/radare2installer/R$array :: Ljava/lang/Object;
 0x0001d274 java   method   0 pC   Lorg/radare/radare2installer/R$array.method.<init>()V
-0x00004bf0 java      var   0 spf  Lorg/radare/radare2installer/R$array.sfield_updateInterval:I
-0x00004bf8 java      var   1 spf  Lorg/radare/radare2installer/R$array.sfield_updateIntervalValues:I
+0x00004bf0 java      var   0 psf  Lorg/radare/radare2installer/R$array.sfield_updateInterval:I
+0x00004bf8 java      var   1 psf  Lorg/radare/radare2installer/R$array.sfield_updateIntervalValues:I
 0x00008290 [0x0001d28c - 0x0001d294]      8 java class 80 Lorg/radare/radare2installer/R$attr :: Ljava/lang/Object;
 0x0001d28c java   method   0 pC   Lorg/radare/radare2installer/R$attr.method.<init>()V
 0x000082b0 [0x0001d2a4 - 0x0001d2ac]      8 java class 81 Lorg/radare/radare2installer/R$drawable :: Ljava/lang/Object;
 0x0001d2a4 java   method   0 pC   Lorg/radare/radare2installer/R$drawable.method.<init>()V
-0x00004c00 java      var   0 spf  Lorg/radare/radare2installer/R$drawable.sfield_icon:I
-0x00004c08 java      var   1 spf  Lorg/radare/radare2installer/R$drawable.sfield_icon2:I
+0x00004c00 java      var   0 psf  Lorg/radare/radare2installer/R$drawable.sfield_icon:I
+0x00004c08 java      var   1 psf  Lorg/radare/radare2installer/R$drawable.sfield_icon2:I
 0x000082d0 [0x0001d2bc - 0x0001d2c4]      8 java class 82 Lorg/radare/radare2installer/R$id :: Ljava/lang/Object;
 0x0001d2bc java   method   0 pC   Lorg/radare/radare2installer/R$id.method.<init>()V
-0x00004c10 java      var   0 spf  Lorg/radare/radare2installer/R$id.sfield_button_debug:I
-0x00004c18 java      var   1 spf  Lorg/radare/radare2installer/R$id.sfield_button_open:I
-0x00004c20 java      var   2 spf  Lorg/radare/radare2installer/R$id.sfield_checkGithub:I
-0x00004c28 java      var   3 spf  Lorg/radare/radare2installer/R$id.sfield_checkbox:I
-0x00004c30 java      var   4 spf  Lorg/radare/radare2installer/R$id.sfield_checkhg:I
-0x00004c38 java      var   5 spf  Lorg/radare/radare2installer/R$id.sfield_checklocal:I
-0x00004c40 java      var   6 spf  Lorg/radare/radare2installer/R$id.sfield_consoleInput:I
-0x00004c48 java      var   7 spf  Lorg/radare/radare2installer/R$id.sfield_consoleOutput:I
-0x00004c50 java      var   8 spf  Lorg/radare/radare2installer/R$id.sfield_dialog_ret:I
-0x00004c58 java      var   9 spf  Lorg/radare/radare2installer/R$id.sfield_file_to_open:I
-0x00004c60 java      var  10 spf  Lorg/radare/radare2installer/R$id.sfield_help_text:I
-0x00004c68 java      var  11 spf  Lorg/radare/radare2installer/R$id.sfield_image:I
-0x00004c70 java      var  12 spf  Lorg/radare/radare2installer/R$id.sfield_intro_text:I
-0x00004c78 java      var  13 spf  Lorg/radare/radare2installer/R$id.sfield_localRunButton:I
-0x00004c80 java      var  14 spf  Lorg/radare/radare2installer/R$id.sfield_outputView:I
-0x00004c88 java      var  15 spf  Lorg/radare/radare2installer/R$id.sfield_quitButton:I
-0x00004c90 java      var  16 spf  Lorg/radare/radare2installer/R$id.sfield_radiobutton_browser:I
-0x00004c98 java      var  17 spf  Lorg/radare/radare2installer/R$id.sfield_radiobutton_console:I
-0x00004ca0 java      var  18 spf  Lorg/radare/radare2installer/R$id.sfield_radiobutton_terminal:I
-0x00004ca8 java      var  19 spf  Lorg/radare/radare2installer/R$id.sfield_radiobutton_web:I
-0x00004cb0 java      var  20 spf  Lorg/radare/radare2installer/R$id.sfield_radiogroup1:I
-0x00004cb8 java      var  21 spf  Lorg/radare/radare2installer/R$id.sfield_remoteRunButton:I
-0x00004cc0 java      var  22 spf  Lorg/radare/radare2installer/R$id.sfield_runButton:I
-0x00004cc8 java      var  23 spf  Lorg/radare/radare2installer/R$id.sfield_scrollOutput:I
-0x00004cd0 java      var  24 spf  Lorg/radare/radare2installer/R$id.sfield_text:I
-0x00004cd8 java      var  25 spf  Lorg/radare/radare2installer/R$id.sfield_toast_layout_root:I
-0x00004ce0 java      var  26 spf  Lorg/radare/radare2installer/R$id.sfield_webview:I
-0x00004ce8 java      var  27 spf  Lorg/radare/radare2installer/R$id.sfield_widget48:I
+0x00004c10 java      var   0 psf  Lorg/radare/radare2installer/R$id.sfield_button_debug:I
+0x00004c18 java      var   1 psf  Lorg/radare/radare2installer/R$id.sfield_button_open:I
+0x00004c20 java      var   2 psf  Lorg/radare/radare2installer/R$id.sfield_checkGithub:I
+0x00004c28 java      var   3 psf  Lorg/radare/radare2installer/R$id.sfield_checkbox:I
+0x00004c30 java      var   4 psf  Lorg/radare/radare2installer/R$id.sfield_checkhg:I
+0x00004c38 java      var   5 psf  Lorg/radare/radare2installer/R$id.sfield_checklocal:I
+0x00004c40 java      var   6 psf  Lorg/radare/radare2installer/R$id.sfield_consoleInput:I
+0x00004c48 java      var   7 psf  Lorg/radare/radare2installer/R$id.sfield_consoleOutput:I
+0x00004c50 java      var   8 psf  Lorg/radare/radare2installer/R$id.sfield_dialog_ret:I
+0x00004c58 java      var   9 psf  Lorg/radare/radare2installer/R$id.sfield_file_to_open:I
+0x00004c60 java      var  10 psf  Lorg/radare/radare2installer/R$id.sfield_help_text:I
+0x00004c68 java      var  11 psf  Lorg/radare/radare2installer/R$id.sfield_image:I
+0x00004c70 java      var  12 psf  Lorg/radare/radare2installer/R$id.sfield_intro_text:I
+0x00004c78 java      var  13 psf  Lorg/radare/radare2installer/R$id.sfield_localRunButton:I
+0x00004c80 java      var  14 psf  Lorg/radare/radare2installer/R$id.sfield_outputView:I
+0x00004c88 java      var  15 psf  Lorg/radare/radare2installer/R$id.sfield_quitButton:I
+0x00004c90 java      var  16 psf  Lorg/radare/radare2installer/R$id.sfield_radiobutton_browser:I
+0x00004c98 java      var  17 psf  Lorg/radare/radare2installer/R$id.sfield_radiobutton_console:I
+0x00004ca0 java      var  18 psf  Lorg/radare/radare2installer/R$id.sfield_radiobutton_terminal:I
+0x00004ca8 java      var  19 psf  Lorg/radare/radare2installer/R$id.sfield_radiobutton_web:I
+0x00004cb0 java      var  20 psf  Lorg/radare/radare2installer/R$id.sfield_radiogroup1:I
+0x00004cb8 java      var  21 psf  Lorg/radare/radare2installer/R$id.sfield_remoteRunButton:I
+0x00004cc0 java      var  22 psf  Lorg/radare/radare2installer/R$id.sfield_runButton:I
+0x00004cc8 java      var  23 psf  Lorg/radare/radare2installer/R$id.sfield_scrollOutput:I
+0x00004cd0 java      var  24 psf  Lorg/radare/radare2installer/R$id.sfield_text:I
+0x00004cd8 java      var  25 psf  Lorg/radare/radare2installer/R$id.sfield_toast_layout_root:I
+0x00004ce0 java      var  26 psf  Lorg/radare/radare2installer/R$id.sfield_webview:I
+0x00004ce8 java      var  27 psf  Lorg/radare/radare2installer/R$id.sfield_widget48:I
 0x000082f0 [0x0001d2d4 - 0x0001d2dc]      8 java class 83 Lorg/radare/radare2installer/R$layout :: Ljava/lang/Object;
 0x0001d2d4 java   method   0 pC   Lorg/radare/radare2installer/R$layout.method.<init>()V
-0x00004cf0 java      var   0 spf  Lorg/radare/radare2installer/R$layout.sfield_console:I
-0x00004cf8 java      var   1 spf  Lorg/radare/radare2installer/R$layout.sfield_dialog:I
-0x00004d00 java      var   2 spf  Lorg/radare/radare2installer/R$layout.sfield_launch:I
-0x00004d08 java      var   3 spf  Lorg/radare/radare2installer/R$layout.sfield_main:I
-0x00004d10 java      var   4 spf  Lorg/radare/radare2installer/R$layout.sfield_toast_layout:I
-0x00004d18 java      var   5 spf  Lorg/radare/radare2installer/R$layout.sfield_webactivity:I
+0x00004cf0 java      var   0 psf  Lorg/radare/radare2installer/R$layout.sfield_console:I
+0x00004cf8 java      var   1 psf  Lorg/radare/radare2installer/R$layout.sfield_dialog:I
+0x00004d00 java      var   2 psf  Lorg/radare/radare2installer/R$layout.sfield_launch:I
+0x00004d08 java      var   3 psf  Lorg/radare/radare2installer/R$layout.sfield_main:I
+0x00004d10 java      var   4 psf  Lorg/radare/radare2installer/R$layout.sfield_toast_layout:I
+0x00004d18 java      var   5 psf  Lorg/radare/radare2installer/R$layout.sfield_webactivity:I
 0x00008310 [0x0001d2ec - 0x0001d2f4]      8 java class 84 Lorg/radare/radare2installer/R$string :: Ljava/lang/Object;
 0x0001d2ec java   method   0 pC   Lorg/radare/radare2installer/R$string.method.<init>()V
-0x00004d20 java      var   0 spf  Lorg/radare/radare2installer/R$string.sfield_app_name:I
-0x00004d28 java      var   1 spf  Lorg/radare/radare2installer/R$string.sfield_service_name:I
+0x00004d20 java      var   0 psf  Lorg/radare/radare2installer/R$string.sfield_app_name:I
+0x00004d28 java      var   1 psf  Lorg/radare/radare2installer/R$string.sfield_service_name:I
 0x00008330 [0x0001d304 - 0x0001d30c]      8 java class 85 Lorg/radare/radare2installer/R$style :: Ljava/lang/Object;
 0x0001d304 java   method   0 pC   Lorg/radare/radare2installer/R$style.method.<init>()V
-0x00004d30 java      var   0 spf  Lorg/radare/radare2installer/R$style.sfield_AppTheme:I
+0x00004d30 java      var   0 psf  Lorg/radare/radare2installer/R$style.sfield_AppTheme:I
 0x00008350 [0x0001d31c - 0x0001d324]      8 java class 86 Lorg/radare/radare2installer/R$xml :: Ljava/lang/Object;
 0x0001d31c java   method   0 pC   Lorg/radare/radare2installer/R$xml.method.<init>()V
-0x00004d38 java      var   0 spf  Lorg/radare/radare2installer/R$xml.sfield_preferences:I
+0x00004d38 java      var   0 psf  Lorg/radare/radare2installer/R$xml.sfield_preferences:I
 0x00008370 [0x0001d334 - 0x0001d33c]      8 java class 87 Lorg/radare/radare2installer/R :: Ljava/lang/Object;
 0x0001d334 java   method   0 pC   Lorg/radare/radare2installer/R.method.<init>()V
 0x00008390 [0x0001d34c - 0x0001d376]     42 java class 88 Lorg/radare/radare2installer/SettingsActivity :: Landroid/preference/PreferenceActivity;
@@ -1587,9 +1587,9 @@ EXPECT=<<EOF
 0x000083d0 [0x0001d388 - 0x0001d588]    512 java class 90 Lorg/radare/radare2installer/UpdateCheckerService$PollTask :: Landroid/os/AsyncTask;
 0x0001d388 java   method   0 PC   Lorg/radare/radare2installer/UpdateCheckerService$PollTask.method.<init>(Lorg/radare/radare2installer/UpdateCheckerService;)V
 0x0001d3a4 java   method   1 hC   Lorg/radare/radare2installer/UpdateCheckerService$PollTask.method.<init>(Lorg/radare/radare2installer/UpdateCheckerService;Lorg/radare/radare2installer/UpdateCheckerService$1;)V
-0x0001d3bc java   method   2 rbh  Lorg/radare/radare2installer/UpdateCheckerService$PollTask.method.doInBackground([Ljava/lang/Object;)Ljava/lang/Object;
+0x0001d3bc java   method   2 rhb  Lorg/radare/radare2installer/UpdateCheckerService$PollTask.method.doInBackground([Ljava/lang/Object;)Ljava/lang/Object;
 0x0001d3dc java   method   3 rg   Lorg/radare/radare2installer/UpdateCheckerService$PollTask.method.doInBackground([Ljava/lang/Void;)Ljava/lang/Void;
-0x0001d4d0 java   method   4 rbh  Lorg/radare/radare2installer/UpdateCheckerService$PollTask.method.onPostExecute(Ljava/lang/Object;)V
+0x0001d4d0 java   method   4 rhb  Lorg/radare/radare2installer/UpdateCheckerService$PollTask.method.onPostExecute(Ljava/lang/Object;)V
 0x0001d4ec java   method   5 r    Lorg/radare/radare2installer/UpdateCheckerService$PollTask.method.onPostExecute(Ljava/lang/Void;)V
 0x00004d40 java      var   0 fh   Lorg/radare/radare2installer/UpdateCheckerService$PollTask.ifield_this$0:Lorg/radare/radare2installer/UpdateCheckerService
 0x000083f0 [0x0001d598 - 0x0001d6ee]    342 java class 91 Lorg/radare/radare2installer/UpdateCheckerService :: Landroid/app/Service;
@@ -1626,7 +1626,7 @@ EXPECT=<<EOF
 0x0001ddbc java   method  16 p    Lorg/radare/radare2installer/Utils.method.killradare()V
 0x0001ddf0 java   method  17 p    Lorg/radare/radare2installer/Utils.method.myToast(Ljava/lang/String;I)V
 0x0001de88 java   method  18 p    Lorg/radare/radare2installer/Utils.method.sleep(I)V
-0x00004d70 java      var   0 sp   Lorg/radare/radare2installer/Utils.sfield_PKGNAME:Ljava/lang/String
+0x00004d70 java      var   0 ps   Lorg/radare/radare2installer/Utils.sfield_PKGNAME:Ljava/lang/String
 0x00004d78 java      var   1 P    Lorg/radare/radare2installer/Utils.ifield_mContext:Landroid/content/Context
 0x00008430 [0x00008430 - 0x00008430]      0 java class 93 Lorg/radare/radare2installer/WebActivity$1 :: Ljava/lang/Object;
 0x00008450 [0x0001dec0 - 0x0001df9a]    218 java class 94 Lorg/radare/radare2installer/WebActivity$RadareWebViewClient :: Landroid/webkit/WebViewClient;
@@ -1642,7 +1642,7 @@ EXPECT=<<EOF
 0x0001e06c java   method   3 p    Lorg/radare/radare2installer/WebActivity.method.onCreate(Landroid/os/Bundle;)V
 0x0001e574 java   method   4 p    Lorg/radare/radare2installer/WebActivity.method.onDestroy()V
 0x0001e5a4 java   method   5 p    Lorg/radare/radare2installer/WebActivity.method.onKeyDown(ILandroid/view/KeyEvent;)Z
-0x00004d88 java      var   0 sPf  Lorg/radare/radare2installer/WebActivity.sfield_TAG:Ljava/lang/String
+0x00004d88 java      var   0 Psf  Lorg/radare/radare2installer/WebActivity.sfield_TAG:Ljava/lang/String
 0x00004d90 java      var   1 P    Lorg/radare/radare2installer/WebActivity.ifield_mUtils:Lorg/radare/radare2installer/Utils
 0x00004d98 java      var   2      Lorg/radare/radare2installer/WebActivity.ifield_webview:Landroid/webkit/WebView
 0x00008490 [0x0001e608 - 0x0001e83c]    564 java class 96 Lcom/ice/tar/TarGzOutputStream :: Lcom/ice/tar/TarOutputStream;
@@ -1669,7 +1669,7 @@ EXPECT=<<EOF
 0x000041c0 java      var   0 fh   Lcom/ice/tar/TarInputStream$EntryAdapter.ifield_this$0:Lcom/ice/tar/TarInputStream
 0x000084d0 [0x0001e8bc - 0x0001f498]   3036 java class 98 Lcom/ice/tar/tar :: Ljava/lang/Object;
 0x0001e8bc java   method   0 pC   Lcom/ice/tar/tar.method.<init>()V
-0x0001e930 java   method   1 sp   Lcom/ice/tar/tar.method.main([Ljava/lang/String;)V
+0x0001e930 java   method   1 ps   Lcom/ice/tar/tar.method.main([Ljava/lang/String;)V
 0x0001e954 java   method   2 P    Lcom/ice/tar/tar.method.processArguments([Ljava/lang/String;)I
 0x0001eecc java   method   3 P    Lcom/ice/tar/tar.method.usage()V
 0x0001f0c8 java   method   4 P    Lcom/ice/tar/tar.method.version()V
@@ -1691,39 +1691,39 @@ EXPECT=<<EOF
 0x000042b8 java      var  13 P    Lcom/ice/tar/tar.ifield_verbose:Z
 0x000042c0 java      var  14 P    Lcom/ice/tar/tar.ifield_writingArchive:Z
 0x000084f0 [0x0001f4a8 - 0x0001f542]    154 java class 99 Lcom/stericson/RootTools/CommandCapture :: Lcom/stericson/RootTools/Command;
-0x0001f4a8 java   method   0 pgC  Lcom/stericson/RootTools/CommandCapture.method.<init>(I[Ljava/lang/String;)V
+0x0001f4a8 java   method   0 pCg  Lcom/stericson/RootTools/CommandCapture.method.<init>(I[Ljava/lang/String;)V
 0x0001f4d0 java   method   1 p    Lcom/stericson/RootTools/CommandCapture.method.output(ILjava/lang/String;)V
 0x0001f534 java   method   2 p    Lcom/stericson/RootTools/CommandCapture.method.toString()Ljava/lang/String;
 0x000042f8 java      var   0 P    Lcom/stericson/RootTools/CommandCapture.ifield_sb:Ljava/lang/StringBuilder
 0x00008510 [0x0001f554 - 0x0001f582]     46 java class 100 Lcom/stericson/RootTools/InternalMethods$1 :: Lcom/stericson/RootTools/Command;
-0x0001f554 java   method   0 gC   Lcom/stericson/RootTools/InternalMethods$1.method.<init>(I[Ljava/lang/String;Ljava/util/List;)V
+0x0001f554 java   method   0 Cg   Lcom/stericson/RootTools/InternalMethods$1.method.<init>(I[Ljava/lang/String;Ljava/util/List;)V
 0x0001f570 java   method   1 p    Lcom/stericson/RootTools/InternalMethods$1.method.output(ILjava/lang/String;)V
 0x00004370 java      var   0 Pfh  Lcom/stericson/RootTools/InternalMethods$1.ifield_val$result:Ljava/util/List
 0x00008530 [0x0001f594 - 0x0001f5f4]     96 java class 101 Lcom/stericson/RootTools/InternalMethods$2 :: Lcom/stericson/RootTools/Command;
-0x0001f594 java   method   0 gC   Lcom/stericson/RootTools/InternalMethods$2.method.<init>(I[Ljava/lang/String;Ljava/util/List;)V
+0x0001f594 java   method   0 Cg   Lcom/stericson/RootTools/InternalMethods$2.method.<init>(I[Ljava/lang/String;Ljava/util/List;)V
 0x0001f5b0 java   method   1 p    Lcom/stericson/RootTools/InternalMethods$2.method.output(ILjava/lang/String;)V
 0x00004378 java      var   0 Pfh  Lcom/stericson/RootTools/InternalMethods$2.ifield_val$results:Ljava/util/List
 0x00008550 [0x0001f604 - 0x0001f64c]     72 java class 102 Lcom/stericson/RootTools/InternalMethods$3 :: Lcom/stericson/RootTools/Command;
-0x0001f604 java   method   0 gC   Lcom/stericson/RootTools/InternalMethods$3.method.<init>(I[Ljava/lang/String;)V
+0x0001f604 java   method   0 Cg   Lcom/stericson/RootTools/InternalMethods$3.method.<init>(I[Ljava/lang/String;)V
 0x0001f61c java   method   1 p    Lcom/stericson/RootTools/InternalMethods$3.method.output(ILjava/lang/String;)V
 0x00008570 [0x0001f65c - 0x0001f6e6]    138 java class 103 Lcom/stericson/RootTools/InternalMethods$4 :: Lcom/stericson/RootTools/Command;
-0x0001f65c java   method   0 gC   Lcom/stericson/RootTools/InternalMethods$4.method.<init>(I[Ljava/lang/String;)V
+0x0001f65c java   method   0 Cg   Lcom/stericson/RootTools/InternalMethods$4.method.<init>(I[Ljava/lang/String;)V
 0x0001f674 java   method   1 p    Lcom/stericson/RootTools/InternalMethods$4.method.output(ILjava/lang/String;)V
 0x00008590 [0x0001f6f8 - 0x0001f79a]    162 java class 104 Lcom/stericson/RootTools/InternalMethods$5 :: Lcom/stericson/RootTools/Command;
-0x0001f6f8 java   method   0 gC   Lcom/stericson/RootTools/InternalMethods$5.method.<init>(I[Ljava/lang/String;)V
+0x0001f6f8 java   method   0 Cg   Lcom/stericson/RootTools/InternalMethods$5.method.<init>(I[Ljava/lang/String;)V
 0x0001f710 java   method   1 p    Lcom/stericson/RootTools/InternalMethods$5.method.output(ILjava/lang/String;)V
 0x000085b0 [0x0001f7ac - 0x0001f892]    230 java class 105 Lcom/stericson/RootTools/InternalMethods$6 :: Lcom/stericson/RootTools/Command;
-0x0001f7ac java   method   0 gC   Lcom/stericson/RootTools/InternalMethods$6.method.<init>(I[Ljava/lang/String;)V
+0x0001f7ac java   method   0 Cg   Lcom/stericson/RootTools/InternalMethods$6.method.<init>(I[Ljava/lang/String;)V
 0x0001f7c4 java   method   1 p    Lcom/stericson/RootTools/InternalMethods$6.method.output(ILjava/lang/String;)V
 0x000085d0 [0x0001f8c0 - 0x0001f92a]    106 java class 106 Lcom/stericson/RootTools/InternalMethods$7 :: Lcom/stericson/RootTools/Command;
-0x0001f8c0 java   method   0 gC   Lcom/stericson/RootTools/InternalMethods$7.method.<init>(I[Ljava/lang/String;)V
+0x0001f8c0 java   method   0 Cg   Lcom/stericson/RootTools/InternalMethods$7.method.<init>(I[Ljava/lang/String;)V
 0x0001f8d8 java   method   1 p    Lcom/stericson/RootTools/InternalMethods$7.method.output(ILjava/lang/String;)V
 0x000085f0 [0x0001f93c - 0x0001f984]     72 java class 107 Lcom/stericson/RootTools/InternalMethods$8 :: Lcom/stericson/RootTools/Command;
-0x0001f93c java   method   0 gC   Lcom/stericson/RootTools/InternalMethods$8.method.<init>(I[Ljava/lang/String;Ljava/util/List;)V
+0x0001f93c java   method   0 Cg   Lcom/stericson/RootTools/InternalMethods$8.method.<init>(I[Ljava/lang/String;Ljava/util/List;)V
 0x0001f958 java   method   1 p    Lcom/stericson/RootTools/InternalMethods$8.method.output(ILjava/lang/String;)V
 0x00004388 java      var   0 Pfh  Lcom/stericson/RootTools/InternalMethods$8.ifield_val$results:Ljava/util/List
 0x00008610 [0x0001f994 - 0x0001fa14]    128 java class 108 Lcom/stericson/RootTools/InternalMethods$9 :: Lcom/stericson/RootTools/Command;
-0x0001f994 java   method   0 gC   Lcom/stericson/RootTools/InternalMethods$9.method.<init>(I[Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
+0x0001f994 java   method   0 Cg   Lcom/stericson/RootTools/InternalMethods$9.method.<init>(I[Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
 0x0001f9b4 java   method   1 p    Lcom/stericson/RootTools/InternalMethods$9.method.output(ILjava/lang/String;)V
 0x00004390 java      var   0 Pfh  Lcom/stericson/RootTools/InternalMethods$9.ifield_val$box:Ljava/lang/String
 0x00004398 java      var   1 Pfh  Lcom/stericson/RootTools/InternalMethods$9.ifield_val$util:Ljava/lang/String
@@ -1736,11 +1736,11 @@ EXPECT=<<EOF
 0x0000b4c8 java   method   5 pa   Lcom/stericson/RootTools/RootTools$Result.method.onFailure(Ljava/lang/Exception;)V
 0x0000b4cc java   method   6 pa   Lcom/stericson/RootTools/RootTools$Result.method.process(Ljava/lang/String;)V
 0x0000b4d0 java   method   7 pa   Lcom/stericson/RootTools/RootTools$Result.method.processError(Ljava/lang/String;)V
-0x0001fa94 java   method   8 pbh  Lcom/stericson/RootTools/RootTools$Result.method.setData(Ljava/io/Serializable;)Lcom/stericson/RootTools/IResult;
+0x0001fa94 java   method   8 phb  Lcom/stericson/RootTools/RootTools$Result.method.setData(Ljava/io/Serializable;)Lcom/stericson/RootTools/IResult;
 0x0001fab0 java   method   9 p    Lcom/stericson/RootTools/RootTools$Result.method.setData(Ljava/io/Serializable;)Lcom/stericson/RootTools/RootTools$Result;
-0x0001fac8 java   method  10 pbh  Lcom/stericson/RootTools/RootTools$Result.method.setError(I)Lcom/stericson/RootTools/IResult;
+0x0001fac8 java   method  10 phb  Lcom/stericson/RootTools/RootTools$Result.method.setError(I)Lcom/stericson/RootTools/IResult;
 0x0001fae4 java   method  11 p    Lcom/stericson/RootTools/RootTools$Result.method.setError(I)Lcom/stericson/RootTools/RootTools$Result;
-0x0001fafc java   method  12 pbh  Lcom/stericson/RootTools/RootTools$Result.method.setProcess(Ljava/lang/Process;)Lcom/stericson/RootTools/IResult;
+0x0001fafc java   method  12 phb  Lcom/stericson/RootTools/RootTools$Result.method.setProcess(Ljava/lang/Process;)Lcom/stericson/RootTools/IResult;
 0x0001fb18 java   method  13 p    Lcom/stericson/RootTools/RootTools$Result.method.setProcess(Ljava/lang/Process;)Lcom/stericson/RootTools/RootTools$Result;
 0x000044a8 java      var   0 P    Lcom/stericson/RootTools/RootTools$Result.ifield_data:Ljava/io/Serializable
 0x000044b0 java      var   1 P    Lcom/stericson/RootTools/RootTools$Result.ifield_error:I
@@ -1827,14 +1827,14 @@ EXPECT=<<EOF
 0x00020a64 java   method  11 pY   Ljavax/activation/MailcapCommandMap.method.getAllCommands(Ljava/lang/String;)[Ljavax/activation/CommandInfo;
 0x00020ae8 java   method  12 pY   Ljavax/activation/MailcapCommandMap.method.getCommand(Ljava/lang/String;Ljava/lang/String;)Ljavax/activation/CommandInfo;
 0x00020b80 java   method  13 pY   Ljavax/activation/MailcapCommandMap.method.getPreferredCommands(Ljava/lang/String;)[Ljavax/activation/CommandInfo;
-0x00004930 java      var   0 sPf  Ljavax/activation/MailcapCommandMap.sfield_DEF:I
-0x00004938 java      var   1 sPf  Ljavax/activation/MailcapCommandMap.sfield_HOME:I
-0x00004940 java      var   2 sPf  Ljavax/activation/MailcapCommandMap.sfield_JAR:I
-0x00004948 java      var   3 sPf  Ljavax/activation/MailcapCommandMap.sfield_PROG:I
-0x00004950 java      var   4 sPf  Ljavax/activation/MailcapCommandMap.sfield_SYS:I
+0x00004930 java      var   0 Psf  Ljavax/activation/MailcapCommandMap.sfield_DEF:I
+0x00004938 java      var   1 Psf  Ljavax/activation/MailcapCommandMap.sfield_HOME:I
+0x00004940 java      var   2 Psf  Ljavax/activation/MailcapCommandMap.sfield_JAR:I
+0x00004948 java      var   3 Psf  Ljavax/activation/MailcapCommandMap.sfield_PROG:I
+0x00004950 java      var   4 Psf  Ljavax/activation/MailcapCommandMap.sfield_SYS:I
 0x00004958 java      var   5 s    Ljavax/activation/MailcapCommandMap.sfield_class$javax$activation$MailcapCommandMap:Ljava/lang/Class
-0x00004960 java      var   6 sP   Ljavax/activation/MailcapCommandMap.sfield_debug:Z
-0x00004968 java      var   7 sP   Ljavax/activation/MailcapCommandMap.sfield_defDB:Lcom/sun/activation/registries/MailcapFile
+0x00004960 java      var   6 Ps   Ljavax/activation/MailcapCommandMap.sfield_debug:Z
+0x00004968 java      var   7 Ps   Ljavax/activation/MailcapCommandMap.sfield_defDB:Lcom/sun/activation/registries/MailcapFile
 0x00004928 java      var   8 P    Ljavax/activation/MailcapCommandMap.ifield_DB:[Lcom/sun/activation/registries/MailcapFile
 0x00008730 [0x00020c04 - 0x00020f7a]    886 java class 117 Ljavax/activation/MimetypesFileTypeMap :: Ljavax/activation/FileTypeMap;
 0x00020c04 java   method   0 sC   Ljavax/activation/MimetypesFileTypeMap.method.<clinit>()V
@@ -1846,14 +1846,14 @@ EXPECT=<<EOF
 0x00020e80 java   method   6 pY   Ljavax/activation/MimetypesFileTypeMap.method.addMimeTypes(Ljava/lang/String;)V
 0x00020edc java   method   7 p    Ljavax/activation/MimetypesFileTypeMap.method.getContentType(Ljava/io/File;)Ljava/lang/String;
 0x00020f00 java   method   8 pY   Ljavax/activation/MimetypesFileTypeMap.method.getContentType(Ljava/lang/String;)Ljava/lang/String;
-0x000049a8 java      var   0 sPf  Ljavax/activation/MimetypesFileTypeMap.sfield_DEF:I
-0x000049b0 java      var   1 sPf  Ljavax/activation/MimetypesFileTypeMap.sfield_HOME:I
-0x000049b8 java      var   2 sPf  Ljavax/activation/MimetypesFileTypeMap.sfield_JAR:I
-0x000049c0 java      var   3 sPf  Ljavax/activation/MimetypesFileTypeMap.sfield_PROG:I
-0x000049c8 java      var   4 sPf  Ljavax/activation/MimetypesFileTypeMap.sfield_SYS:I
+0x000049a8 java      var   0 Psf  Ljavax/activation/MimetypesFileTypeMap.sfield_DEF:I
+0x000049b0 java      var   1 Psf  Ljavax/activation/MimetypesFileTypeMap.sfield_HOME:I
+0x000049b8 java      var   2 Psf  Ljavax/activation/MimetypesFileTypeMap.sfield_JAR:I
+0x000049c0 java      var   3 Psf  Ljavax/activation/MimetypesFileTypeMap.sfield_PROG:I
+0x000049c8 java      var   4 Psf  Ljavax/activation/MimetypesFileTypeMap.sfield_SYS:I
 0x000049d0 java      var   5 s    Ljavax/activation/MimetypesFileTypeMap.sfield_class$javax$activation$MimetypesFileTypeMap:Ljava/lang/Class
-0x000049d8 java      var   6 sP   Ljavax/activation/MimetypesFileTypeMap.sfield_defDB:Lcom/sun/activation/registries/MimeTypeFile
-0x000049e0 java      var   7 sP   Ljavax/activation/MimetypesFileTypeMap.sfield_defaultType:Ljava/lang/String
+0x000049d8 java      var   6 Ps   Ljavax/activation/MimetypesFileTypeMap.sfield_defDB:Lcom/sun/activation/registries/MimeTypeFile
+0x000049e0 java      var   7 Ps   Ljavax/activation/MimetypesFileTypeMap.sfield_defaultType:Ljava/lang/String
 0x000049a0 java      var   8 P    Ljavax/activation/MimetypesFileTypeMap.ifield_DB:[Lcom/sun/activation/registries/MimeTypeFile
 0x00008750 [0x00020fa0 - 0x000210f2]    338 java class 118 Ljavax/activation/ObjectDataContentHandler :: Ljava/lang/Object;
 0x00020fa0 java   method   0 pC   Ljavax/activation/ObjectDataContentHandler.method.<init>(Ljavax/activation/DataContentHandler;Ljava/lang/Object;Ljava/lang/String;)V
@@ -1876,7 +1876,7 @@ EXPECT=<<EOF
 0x00004a08 java      var   0 P    Ljavax/activation/URLDataSource.ifield_url:Ljava/net/URL
 0x00004a10 java      var   1 P    Ljavax/activation/URLDataSource.ifield_url_conn:Ljava/net/URLConnection
 0x00008790 [0x00021210 - 0x00021262]     82 java class 120 Lorg/radare/radare2installer/Utils$1 :: Lcom/stericson/RootTools/Command;
-0x00021210 java   method   0 gC   Lorg/radare/radare2installer/Utils$1.method.<init>(Lorg/radare/radare2installer/Utils;I[Ljava/lang/String;Ljava/lang/StringBuffer;)V
+0x00021210 java   method   0 Cg   Lorg/radare/radare2installer/Utils$1.method.<init>(Lorg/radare/radare2installer/Utils;I[Ljava/lang/String;Ljava/lang/StringBuffer;)V
 0x00021230 java   method   1 p    Lorg/radare/radare2installer/Utils$1.method.output(ILjava/lang/String;)V
 0x00004d60 java      var   0 fh   Lorg/radare/radare2installer/Utils$1.ifield_this$0:Lorg/radare/radare2installer/Utils
 0x00004d68 java      var   1 fh   Lorg/radare/radare2installer/Utils$1.ifield_val$radare_output:Ljava/lang/StringBuffer
