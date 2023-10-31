@@ -68,16 +68,17 @@ while : ; do
 	shift
 done
 
-MAKE=make
-gmake --help >/dev/null 2>&1
-[ $? = 0 ] && MAKE=gmake
-${MAKE} --help 2>&1 | grep -q gnu
-if [ $? != 0 ]; then
-	echo "You need GNU Make to build me"
-	exit 1
+if [ -z "${MAKE}" ]; then
+	MAKE=make
+	gmake --help >/dev/null 2>&1
+	[ $? = 0 ] && MAKE=gmake
+	${MAKE} --help 2>&1 | grep -q gnu
+	if [ $? != 0 ]; then
+		echo "You need GNU Make to build me"
+		exit 1
+	fi
+	export MAKE="$MAKE"
 fi
-
-export MAKE="$MAKE"
 
 [ -z "${INSTALL_TARGET}" ] && INSTALL_TARGET=symstall
 
