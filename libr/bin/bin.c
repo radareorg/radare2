@@ -1607,7 +1607,7 @@ static const char *attr_bit_name(ut64 n, bool compact) {
 	case R_BIN_ATTR_ABSTRACT:
 		return compact ? "a" : "abstract";
 	case R_BIN_ATTR_SYNCHRONIZED:
-		return compact ? "y" : "synchronized";
+		return compact ? "Y" : "synchronized";
 	case R_BIN_ATTR_NATIVE:
 		return compact ? "n" : "native";
 	case R_BIN_ATTR_BRIDGE:
@@ -1623,7 +1623,7 @@ static const char *attr_bit_name(ut64 n, bool compact) {
 	case R_BIN_ATTR_CONSTRUCTOR:
 		return compact ? "C" : "constructor";
 	case R_BIN_ATTR_DECLARED_SYNCHRONIZED:
-		return compact ? "Y" : "declared_synchronized";
+		return compact ? "y" : "declared_synchronized";
 	default:
 		return NULL;
 	}
@@ -1635,7 +1635,7 @@ R_API char *r_bin_attr_tostring(ut64 attr, bool singlechar) {
 	for (i = 0; i < 64; i++) {
 		const ut64 bit = (1ULL << i);
 		if (attr & bit) {
-			if (!r_strbuf_is_empty (sb)) {
+			if (!singlechar && !r_strbuf_is_empty (sb)) {
 				r_strbuf_append (sb, " ");
 			}
 			r_strbuf_append (sb, attr_bit_name (bit, singlechar));

@@ -1570,7 +1570,8 @@ static int cmd_info(void *data, const char *input) {
 									pj_o (pj);
 									pj_ks (pj, "name", sym->name);
 									if (sym->attr) {
-										char *flags = r_core_bin_attr_tostring (sym->attr, R_MODE_JSON);
+										// TODO: must be an array of strings
+										char *flags = r_core_bin_attr_tostring (sym->attr, false);
 										pj_k (pj, "flags");
 										pj_j (pj, flags);
 										free (flags);
@@ -1584,8 +1585,8 @@ static int cmd_info(void *data, const char *input) {
 							default:
 								r_cons_printf ("class %s\n", cls->name);
 								r_list_foreach (cls->methods, iter2, sym) {
-									char *flags = r_core_bin_attr_tostring (sym->attr, 0);
-									r_cons_printf ("0x%08"PFMT64x " method %s %s %s\n",
+									char *flags = r_core_bin_attr_tostring (sym->attr, true);
+									r_cons_printf ("0x%08"PFMT64x " method %s %-4s %s\n",
 											iova? sym->vaddr: sym->paddr,
 											cls->name, flags, sym->name);
 									free (flags);

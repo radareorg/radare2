@@ -3772,9 +3772,11 @@ static bool bin_classes(RCore *r, PJ *pj, int mode) {
 			r_strf_var (classname, 256, "class.%s", name);
 			r_flag_set (r->flags, classname, c->addr, 1);
 			r_list_foreach (c->methods, iter2, sym) {
-				char *mflags = r_core_bin_attr_tostring (sym->attr, mode);
+				// char *mflags = r_core_bin_attr_tostring (sym->attr, mode);
+				char *mflags = r_bin_attr_tostring (sym->attr, false);
+				r_str_replace_char (mflags, ' ', '.');
 				// XXX probably access flags should not be part of the flag name
-				r_strf_var (method, 256, "method%s.%s.%s", mflags, c->name, sym->name);
+				r_strf_var (method, 256, "method%s%s.%s.%s", R_STR_ISEMPTY (mflags)? "":".", mflags, c->name, sym->name);
 				R_FREE (mflags);
 				r_name_filter (method, -1);
 				r_flag_set (r->flags, method, sym->vaddr, 1);
@@ -3846,9 +3848,10 @@ static bool bin_classes(RCore *r, PJ *pj, int mode) {
 				}
 			}
 			r_list_foreach (c->methods, iter2, sym) {
-				char *mflags = r_core_bin_attr_tostring (sym->attr, mode);
+				char *mflags = r_bin_attr_tostring (sym->attr, false);
+				r_str_replace_char (mflags, ' ', '.');
 				char *n = c->name; //  r_name_filter_shell (c->name);
-				char *sn = sym->name; //r_name_filter_shell (sym->name);
+				char *sn = sym->name; //r_name_filter_shell (sym->name); // symbol contains classname
 				const char *predot = R_STR_ISNOTEMPTY (mflags)? ".": "";
 				// char *cmd = r_str_newf ("\"f method%s.%s.%s = 0x%"PFMT64x"\"\n", mflags, n, sn, sym->vaddr);
 				char *cmd = r_str_newf ("\"f method.%s%s%s.%s = 0x%"PFMT64x"\"\n", n, predot, mflags, sn, sym->vaddr);
@@ -4016,6 +4019,7 @@ static bool bin_classes(RCore *r, PJ *pj, int mode) {
 				r_cons_printf ("0x%08"PFMT64x" %s %8s %3d %s %s\n",
 					f->vaddr, ls, ks, m, mflags, f->name);
 				m++;
+				free (mflags);
 			}
 		}
 		free (name);
@@ -4924,16 +4928,17 @@ R_API char *r_core_bin_attr_tostring(ut64 flags, int mode) {
 	RStrBuf *buf = r_strbuf_new (""); // rename to 'sb'
 	if (IS_MODE_SET (mode) || IS_MODE_RAD (mode)) {
 		if (flags) {
-			const char *flag_string = r_bin_attr_tostring (flags, false);
+			char *flag_string = r_bin_attr_tostring (flags, true);
 			if (flag_string) {
-				r_strbuf_appendf (buf, "%s", flag_string);
+				r_strbuf_append (buf, flag_string);
 			}
+			free (flag_string);
 		}
 	} else if (IS_MODE_JSON (mode)) {
 		if (flags) {
 			PJ *pj = pj_new ();
 			pj_a (pj);
-			const char *flag_string = r_bin_attr_tostring (flags, false);
+			char *flag_string = r_bin_attr_tostring (flags, false);
 			if (flag_string) {
 				pj_s (pj, flag_string);
 			} else {
@@ -4943,19 +4948,25 @@ R_API char *r_core_bin_attr_tostring(ut64 flags, int mode) {
 			pj_end (pj);
 			r_strbuf_append (buf, pj_string (pj));
 			pj_free (pj);
+			free (flag_string);
 		} else {
 			r_strbuf_append (buf, "[]");
 		}
 	} else {
-		int len = 0;
+		int len = 4;
 		if (flags) {
 			// const char *flag_string = r_bin_get_meth_flag_string (flag, true);
-			const char *flag_string = r_bin_attr_tostring (flags, false);
+			char *flag_string = r_bin_attr_tostring (flags, true);
 			if (flag_string) {
 				r_strbuf_append (buf, flag_string);
 			}
+			len -= strlen (flag_string);
+			if (len < 1) {
+				len = 1;
+			}
+			free (flag_string);
 		}
-		for ( ; len < 4; len++) {
+		for ( ; len > 0; len--) {
 			r_strbuf_append (buf, " ");
 		}
 	}

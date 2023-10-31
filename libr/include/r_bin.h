@@ -142,10 +142,10 @@ typedef enum {
 // typedef enum { } RBinAttribute;
 typedef uint64_t RBinAttribute;
 #define R_BIN_ATTR_NONE (0)
-#define R_BIN_ATTR_PRIVATE (1ULL << 0)
+#define R_BIN_ATTR_PUBLIC (1ULL << 0)
 #define R_BIN_ATTR_OPEN (1ULL << 1)
 #define R_BIN_ATTR_FILEPRIVATE (1ULL << 2)
-#define R_BIN_ATTR_PUBLIC (1ULL << 3)
+#define R_BIN_ATTR_PRIVATE (1ULL << 3)
 #define R_BIN_ATTR_HIDDEN (1ULL << 4)
 #define R_BIN_ATTR_INTERNAL (1ULL << 5) // same as fileprivate?
 #define R_BIN_ATTR_FRIENDLY (1ULL << 6)
@@ -209,10 +209,10 @@ typedef struct r_bin_addr_t {
 } RBinAddr;
 
 typedef struct r_bin_name_t {
-	// char *name; // user-defined custom name TODO
 	char *name; // demangled name
 	char *oname; // original (mangled) name
 	char *fname; // flag name
+	// char *uname; // user-defined custom name TODO
 } RBinName;
 
 typedef struct r_bin_hash_t {
