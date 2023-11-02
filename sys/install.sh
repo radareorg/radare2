@@ -4,6 +4,12 @@
 cd "$(dirname $0)"/..
 pwd
 
+if [ "${SHELL}" = "/data/data/com.termux/files/usr/bin/bash" ]; then
+    echo "Termux environment detected. Installing necessary packages"  
+    pkg install build-essential binutils -y
+    ${PWD}/sys/termux.sh
+fi
+
 if [ "$(uname)" = "Haiku" ]; then
 	gcc-x86 --version > /dev/null 2>&1
 	if [ $? = 0 ]; then
