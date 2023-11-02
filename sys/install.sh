@@ -9,6 +9,7 @@ if [ "${SHELL}" = "/data/data/com.termux/files/usr/bin/bash" ]; then
     pkg update -y && pkg install git build-essential binutils pkg-config -y
     ${PWD}/sys/termux.sh
     exit $?
+    exit $?
 fi
 
 if [ "$(uname)" = "Haiku" ]; then
