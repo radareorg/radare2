@@ -3394,7 +3394,7 @@ const RPVector *MACH0_(load_imports)(RBinFile *bf, struct MACH0_(obj_t) *bin) {
 			R_LOG_WARN ("Imports index out of bounds. Ignoring relocs");
 			return NULL;
 		}
-		if (limit > 0 && idx > limit) {
+		if (limit > 0 && i > limit) {
 			R_LOG_WARN ("imports mo.limit reached");
 			break;
 		}
