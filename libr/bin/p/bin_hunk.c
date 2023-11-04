@@ -76,12 +76,12 @@ static RList* entries(RBinFile *bf) {
 	buf = bf->buf;
 	for (addr = 0x18; addr <= (r_buf_size (buf) - 4); addr += 0x4) {
 		r_buf_read_at (buf, addr, b, sizeof (b));
-			if (!memcmp (b, HUNK_CODE, sizeof (b))) {
-				ptr->paddr = addr + 8;
-				ptr->vaddr = addr + 8;
-				r_list_append (ret, ptr);
-				return ret;
-			}
+		if (!memcmp (b, HUNK_CODE, sizeof (b))) {
+			ptr->paddr = addr + 8;
+			ptr->vaddr = addr + 8;
+			r_list_append (ret, ptr);
+			return ret;
+		}
 	}
 	R_LOG_ERROR ("Cannot determine entrypoint, cannot find HUNK_CODE");
 	ptr->paddr = 0;
