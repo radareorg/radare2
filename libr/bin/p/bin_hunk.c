@@ -64,8 +64,9 @@ static RList* sections(RBinFile *bf) {
 static RList* entries(RBinFile *bf) {
 	RList *ret;
 	RBinAddr *ptr = NULL;
-	RBuffer *buf;
+	RBuffer *buf = bf->buf;
 	int addr;
+	ut64 last = r_buf_size (buf) - 4;
 	ut8 b[4];
 	if (!(ret = r_list_new ())) {
 		return NULL;
@@ -73,8 +74,7 @@ static RList* entries(RBinFile *bf) {
 	if (!(ptr = R_NEW0 (RBinAddr))) {
 		return ret;
 	}
-	buf = bf->buf;
-	for (addr = 0x18; addr <= (r_buf_size (buf) - 4); addr += 0x4) {
+	for (addr = 0x18; addr <= last; addr += 4) {
 		r_buf_read_at (buf, addr, b, sizeof (b));
 		if (!memcmp (b, HUNK_CODE, sizeof (b))) {
 			ptr->paddr = addr + 8;
