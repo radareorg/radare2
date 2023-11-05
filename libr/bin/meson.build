@@ -20,6 +20,7 @@ r_bin_sources = [
   'p/bin_bootimg.c',
   'p/bin_cgc.c',
   'p/bin_coff.c',
+  'p/bin_coff_bigobj.c',
   'p/bin_off.c', # goff ibm
   'p/bin_dbginfo_dex.c',
   'p/bin_dbginfo_elf.c',
@@ -90,6 +91,7 @@ r_bin_sources = [
 # implementation
   'format/bflt/bflt.c',
   'format/coff/coff.c',
+  'format/coff/coff_bigobj.c',
   'format/coff/xcoff64.c',
   'format/dex/dex.c',
   'format/dmp/dmp64.c',

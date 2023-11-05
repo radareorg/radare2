@@ -106,7 +106,7 @@ if user_plugins.contains('elf')
   bin_plugins += [ 'elf', 'elf64' ]
 endif
 if user_plugins.contains('pe')
-  bin_plugins += [ 'pe', 'pe64', 'coff', 'xcoff64', 'mz', 'ne' ]
+  bin_plugins += [ 'pe', 'pe64', 'coff', 'coff_bigobj', 'xcoff64', 'mz', 'ne' ]
   bin_xtr_plugins += [ 'xtr_pemixed' ]
 endif
 
@@ -209,6 +209,7 @@ if get_option('plugins') == ''
     'bootimg',
     'cgc',
     'coff',
+    'coff_bigobj',
     'dex',
     'dis',
     'dmp64',

@@ -16,12 +16,12 @@ static bool r_coff_is_stripped(struct r_bin_coff_obj *obj) {
 }
 
 static bool load(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
-	bf->bo->bin_obj = r_bin_coff_new_buf (buf, bf->rbin->verbose);
+	bf->bo->bin_obj = r_bin_coff_ (new_buf) (buf, bf->rbin->verbose);
 	return bf->bo->bin_obj != NULL;
 }
 
 static void destroy(RBinFile *bf) {
-	r_bin_coff_free ((struct r_bin_coff_obj*)bf->bo->bin_obj);
+	r_bin_coff_ (free) ((struct r_bin_coff_obj *)bf->bo->bin_obj);
 }
 
 static RBinAddr *binsym(RBinFile *bf, int sym) {
@@ -41,7 +41,7 @@ static bool _fill_bin_symbol(RBin *rbin, struct r_bin_coff_obj *bin, int idx, RB
 		return false;
 	}
 	s = &bin->symbols[idx];
-	char *coffname = r_coff_symbol_name (bin, s);
+	char *coffname = r_coff_ (symbol_name) (bin, s);
 	if (!coffname) {
 		return false;
 	}
@@ -125,7 +125,7 @@ static RBinImport *_fill_bin_import(struct r_bin_coff_obj *bin, int idx) {
 		free (ptr);
 		return NULL;
 	}
-	char *coffname = r_coff_symbol_name (bin, s);
+	char *coffname = r_coff_ (symbol_name) (bin, s);
 	if (!coffname) {
 		free (ptr);
 		return NULL;
@@ -177,7 +177,7 @@ static RList *entries(RBinFile *bf) {
 	if (!(ret = r_list_newf (free))) {
 		return NULL;
 	}
-	RBinAddr *ptr = r_coff_get_entry (obj);
+	RBinAddr *ptr = r_coff_ (get_entry) (obj);
 	if (ptr) {
 		r_list_append (ret, ptr);
 	}
@@ -311,7 +311,7 @@ static RList *sections(RBinFile *bf) {
 	}
 	if (obj && obj->scn_hdrs) {
 		for (i = 0; i < obj->hdr.f_nscns; i++) {
-			tmp = r_coff_symbol_name (obj, &obj->scn_hdrs[i]);
+			tmp = r_coff_ (symbol_name) (obj, &obj->scn_hdrs[i]);
 			if (!tmp) {
 				r_list_free (ret);
 				return NULL;
@@ -806,6 +806,45 @@ static RBinInfo *info(RBinFile *bf) {
 	return ret;
 }
 
+#if R_BIN_COFF_BIGOBJ
+
+static bool check(RBinFile *bf, RBuffer *buf) {
+	ut8 tmp[56];
+	int r = r_buf_read_at (buf, 0, tmp, sizeof (tmp));
+
+	if (r >= 56) {
+		ut16 sig1 = r_read_le16 (tmp);
+
+		if (sig1 != COFF_FILE_MACHINE_UNKNOWN) {
+			return false;
+		}
+
+		ut16 sig2 = r_read_le16 (&tmp[2]);
+		if (sig2 != 0xffff) {
+			return false;
+		}
+
+		ut16 version = r_read_le16 (&tmp[4]);
+		if (version != 2) {
+			return false;
+		}
+
+		if (!r_coff_supported_arch (&tmp[6])) {
+			return false;
+		}
+
+		// Finally, check the magic number
+		if (memcmp (coff_bigobj_magic, &tmp[12], 16) != 0) {
+			return false;
+		}
+
+		return true;
+	}
+
+	return false;
+}
+
+#else
 static bool check(RBinFile *bf, RBuffer *buf) {
 #if 0
 TODO: do more checks here to avoid false positives
@@ -823,10 +862,19 @@ ut16 CHARACTERISTICS
 	int r = r_buf_read_at (buf, 0, tmp, sizeof (tmp));
 	return r >= 20 && r_coff_supported_arch (tmp);
 }
+#endif
 
+#if R_BIN_COFF_BIGOBJ
+RBinPlugin r_bin_plugin_coff_bigobj = {
+#else
 RBinPlugin r_bin_plugin_coff = {
+#endif
 	.meta = {
+#if R_BIN_COFF_BIGOBJ
+		.name = "coff (bigobj)",
+#else
 		.name = "coff",
+#endif
 		.desc = "COFF format r_bin plugin",
 		.license = "LGPL3",
 	},
@@ -848,7 +896,11 @@ RBinPlugin r_bin_plugin_coff = {
 #ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_BIN,
+#if R_BIN_COFF_BIGOBJ
+	.data = &r_bin_plugin_coff_bigobj,
+#else
 	.data = &r_bin_plugin_coff,
+#endif
 	.version = R2_VERSION
 };
 #endif

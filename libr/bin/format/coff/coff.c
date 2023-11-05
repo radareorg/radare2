@@ -3,6 +3,7 @@
 #include <r_util.h>
 #include "coff.h"
 
+#ifndef R_BIN_COFF_BIGOBJ
 static bool r_coff_supported_arch_be(const ut8 *buf) {
 	ut16 arch = r_read_be16 (buf);
 	switch (arch) {
@@ -19,7 +20,9 @@ static bool r_coff_supported_arch_be(const ut8 *buf) {
 		return false;
 	}
 }
+#endif
 
+#ifndef R_BIN_COFF_BIGOBJ
 static bool r_coff_supported_arch_le(const ut8 *buf) {
 	ut16 arch = r_read_le16 (buf);
 	switch (arch) {
@@ -47,14 +50,54 @@ static bool r_coff_supported_arch_le(const ut8 *buf) {
 		return false;
 	}
 }
+#endif
 
+#ifndef R_BIN_COFF_BIGOBJ
 R_IPI bool r_coff_supported_arch(const ut8 *buf) {
 	return r_coff_supported_arch_le (buf) || r_coff_supported_arch_be (buf);
 }
+#endif
 
-R_IPI char *r_coff_symbol_name(RBinCoffObj *obj, void *ptr) {
+// copied from bfd
+static bool r_coff_decode_base64(const char *str, ut32 len, ut32 *res) {
+	ut32 i;
+	ut32 val;
+
+	val = 0;
+	for (i = 0; i < len; i++) {
+		char c = str[i];
+		ut32 d;
+		if (c >= 'A' && c <= 'Z') {
+			d = c - 'A';
+		} else if (c >= 'a' && c <= 'z') {
+			d = c - 'a' + 26;
+		} else if (c >= '0' && c <= '9') {
+			d = c - '0' + 52;
+		} else if (c == '+') {
+			d = 62;
+		} else if (c == '/') {
+			d = 63;
+		} else {
+			return false;
+		}
+
+		/* Check for overflow */
+		if ((val >> 26) != 0) {
+			return false;
+		}
+
+		val = (val << 6) + d;
+	}
+
+	*res = val;
+	return true;
+}
+
+R_IPI char *r_coff_(symbol_name)(RBinCoffObj *obj, void *ptr) {
 	char n[256] = {0};
 	int len = 0;
+	ut32 offset = 0; // offset into the string table.
+
 	union {
 		char name[8];
 		struct {
@@ -65,14 +108,26 @@ R_IPI char *r_coff_symbol_name(RBinCoffObj *obj, void *ptr) {
 	if (!ptr) {
 		return NULL;
 	}
-	if (p->zero) {
+
+	if (p->zero && *p->name != '/') {
 		return r_str_ndup (p->name, 8);
+	} else if (*p->name == '/') {
+		char *offset_str = (p->name + 1);
+		if (*offset_str == '/') {
+			r_coff_decode_base64 (p->name + 2, 6, &offset);
+		} else {
+			offset = atoi (offset_str);
+		}
+	} else {
+		offset = p->offset;
 	}
-	ut64 offset = obj->hdr.f_symptr + (obj->hdr.f_nsyms * sizeof (struct coff_symbol) + p->offset);
-	if (offset > obj->size) {
+
+	// Calculate the actual pointer to the symbol/section name we're interested in.
+	ut64 name_ptr = obj->hdr.f_symptr + (obj->hdr.f_nsyms * sizeof (struct coff_symbol) + offset);
+	if (name_ptr > obj->size) {
 		return NULL;
 	}
-	len = r_buf_read_at (obj->b, offset, (ut8*)n, sizeof (n));
+	len = r_buf_read_at (obj->b, name_ptr, (ut8 *)n, sizeof (n));
 	if (len < 1) {
 		return NULL;
 	}
@@ -147,7 +202,7 @@ static RBinAddr *r_xcoff_get_entry(RBinCoffObj *obj) {
 
 /* Try to get a valid entrypoint using the methods outlined in
  * http://ftp.gnu.org/old-gnu/Manuals/ld-2.9.1/html_mono/ld.html#SEC24 */
-R_IPI RBinAddr *r_coff_get_entry(RBinCoffObj *obj) {
+R_IPI RBinAddr *r_coff_(get_entry)(RBinCoffObj *obj) {
 	RBinAddr *addr = R_NEW0 (RBinAddr);
 	if (!addr) {
 		return NULL;
@@ -156,11 +211,13 @@ R_IPI RBinAddr *r_coff_get_entry(RBinCoffObj *obj) {
 	if (obj->xcoff) {
 		return r_xcoff_get_entry (obj);
 	}
+#ifndef R_BIN_COFF_BIGOBJ
 	/* Simplest case, the header provides the entrypoint address */
 	if (obj->hdr.f_opthdr) {
 		addr->paddr = obj->opt_hdr.entry;
 		return addr;
 	}
+#endif
 	/* No help from the header eh? Use the address of the symbols '_start'
 	 * or 'main' if present */
 	if (obj->symbols) {
@@ -199,7 +256,11 @@ R_IPI RBinAddr *r_coff_get_entry(RBinCoffObj *obj) {
 }
 
 static bool r_bin_coff_init_hdr(RBinCoffObj *obj) {
+#if R_BIN_COFF_BIGOBJ
+	ut16 magic = r_buf_read_le16_at (obj->b, 6);
+#else
 	ut16 magic = r_buf_read_le16_at (obj->b, 0);
+#endif
 	switch (r_swap_ut16 (magic)) {
 	case COFF_FILE_MACHINE_H8300:
 	case COFF_FILE_MACHINE_AMD29K:
@@ -215,7 +276,11 @@ static bool r_bin_coff_init_hdr(RBinCoffObj *obj) {
 		obj->endian = COFF_IS_LITTLE_ENDIAN;
 	}
 	int ret = 0;
+#if R_BIN_COFF_BIGOBJ
+	ret = r_buf_fread_at (obj->b, 0, (ut8 *)&obj->hdr, obj->endian? "4S12I": "4s12i", 1);
+#else
 	ret = r_buf_fread_at (obj->b, 0, (ut8 *)&obj->hdr, obj->endian? "2S3I2S": "2s3i2s", 1);
+#endif
 	if (ret != sizeof (struct coff_hdr)) {
 		return false;
 	}
@@ -225,10 +290,13 @@ static bool r_bin_coff_init_hdr(RBinCoffObj *obj) {
 			return false;
 		}
 	}
+#ifndef R_BIN_COFF_BIGOBJ
 	obj->xcoff = obj->hdr.f_opthdr == sizeof (struct coff_opt_hdr) + sizeof (struct xcoff32_opt_hdr);
+#endif
 	return true;
 }
 
+#ifndef R_BIN_COFF_BIGOBJ
 static bool r_bin_coff_init_opt_hdr(RBinCoffObj *obj) {
 	int ret;
 	if (!obj->hdr.f_opthdr) {
@@ -241,7 +309,9 @@ static bool r_bin_coff_init_opt_hdr(RBinCoffObj *obj) {
 	}
 	return true;
 }
+#endif
 
+#ifndef R_BIN_COFF_BIGOBJ
 static bool r_bin_xcoff_init_opt_hdr(RBinCoffObj *obj) {
 	int ret;
 	ret = r_buf_fread_at (obj->b, sizeof (struct coff_hdr) + sizeof (struct coff_opt_hdr),
@@ -251,10 +321,17 @@ static bool r_bin_xcoff_init_opt_hdr(RBinCoffObj *obj) {
 	}
 	return true;
 }
+#endif
 
 static bool r_bin_coff_init_scn_hdr(RBinCoffObj *obj) {
 	int ret, size;
+
+#if R_BIN_COFF_BIGOBJ
+	ut64 offset = sizeof (struct coff_hdr);
+#else
 	ut64 offset = sizeof (struct coff_hdr) + obj->hdr.f_opthdr;
+#endif
+
 	if (obj->hdr.f_magic == COFF_FILE_TI_COFF) {
 		offset += 2;
 	}
@@ -329,10 +406,14 @@ static bool r_bin_xcoff_init_ldsyms(RBinCoffObj *obj) {
 static bool r_bin_coff_init_symtable(RBinCoffObj *obj) {
 	int ret, size;
 	ut64 offset = obj->hdr.f_symptr;
+#if R_BIN_COFF_BIGOBJ
+	if (!obj->hdr.f_nsyms) {
+#else
 	if (!obj->hdr.f_nsyms) {
 		return true;
 	}
 	if (obj->hdr.f_nsyms >= 0xffff) { // too much symbols, probably not allocatable
+#endif
 		return false;
 	}
 	size = obj->hdr.f_nsyms * sizeof (struct coff_symbol);
@@ -346,7 +427,11 @@ static bool r_bin_coff_init_symtable(RBinCoffObj *obj) {
 	if (!obj->symbols) {
 		return false;
 	}
+#if R_BIN_COFF_BIGOBJ
+	ret = r_buf_fread_at (obj->b, offset, (ut8 *)obj->symbols, obj->endian? "8c2I1S2c": "8c2i1s2c", obj->hdr.f_nsyms);
+#else
 	ret = r_buf_fread_at (obj->b, offset, (ut8 *)obj->symbols, obj->endian? "8c1I2S2c": "8c1i2s2c", obj->hdr.f_nsyms);
+#endif
 	if (ret != size) {
 		R_FREE (obj->symbols);
 		return false;
@@ -386,10 +471,14 @@ static bool r_bin_coff_init(RBinCoffObj *obj, RBuffer *buf, bool verbose) {
 		R_LOG_ERROR ("failed to init coff header");
 		return false;
 	}
+
+#ifndef R_BIN_COFF_BIGOBJ
 	r_bin_coff_init_opt_hdr (obj);
 	if (obj->xcoff) {
 		r_bin_xcoff_init_opt_hdr (obj);
 	}
+#endif
+
 	if (!r_bin_coff_init_scn_hdr (obj)) {
 		R_LOG_WARN ("failed to init section header");
 		return false;
@@ -416,7 +505,7 @@ static bool r_bin_coff_init(RBinCoffObj *obj, RBuffer *buf, bool verbose) {
 	return true;
 }
 
-R_IPI void r_bin_coff_free(RBinCoffObj *obj) {
+R_IPI void r_bin_coff_(free)(RBinCoffObj *obj) {
 	if (obj) {
 		ht_up_free (obj->sym_ht);
 		ht_up_free (obj->imp_ht);
@@ -429,7 +518,7 @@ R_IPI void r_bin_coff_free(RBinCoffObj *obj) {
 	}
 }
 
-R_IPI RBinCoffObj *r_bin_coff_new_buf(RBuffer *buf, bool verbose) {
+R_IPI RBinCoffObj *r_bin_coff_(new_buf)(RBuffer *buf, bool verbose) {
 	RBinCoffObj* bin = R_NEW0 (RBinCoffObj);
 	r_bin_coff_init (bin, buf, verbose);
 	return bin;
