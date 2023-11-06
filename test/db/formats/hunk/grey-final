@@ -1,0 +1,12 @@
+NAME=HUNK: grey-final
+FILE=bins/hunk/grey-final
+CMDS=<<EOF
+pd 3
+EOF
+EXPECT=<<EOF
+            ;-- entry0:
+            0x00000020      4df900dff000   lea.l 0xdff000.l, a6
+            0x00000026      3e3c7fff       move.w 0x7fff, d7
+            0x0000002a      3d470096       move.w d7, 0x96(a6)
+EOF
+RUN
