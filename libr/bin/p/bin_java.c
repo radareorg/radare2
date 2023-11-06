@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2023 - pancake, nibble, Adam Pridgen <dso@rice.edu || adam.pridgen@thecoverofnight.com> */
+/* radare - LGPL - Copyright 2009-2023 - pancake, nibble, dso */
 
 #define R_LOG_ORIGIN "bin.java"
 

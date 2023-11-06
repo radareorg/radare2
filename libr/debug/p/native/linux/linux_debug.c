@@ -1,13 +1,16 @@
-/* radare - LGPL - Copyright 2009-2023 - pancake */
+/* radare - LGPL - Copyright 2009-2022 - pancake */
 
 #include <r_userconf.h>
 
 #if DEBUGGER
 #include <r_debug.h>
 #include <r_asm.h>
+#include <r_reg.h>
 #include <r_lib.h>
 #include <r_anal.h>
+#include <signal.h>
 #include <sys/uio.h>
+#include <errno.h>
 #include "linux_debug.h"
 #include "../procfs.h"
 

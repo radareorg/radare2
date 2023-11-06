@@ -771,7 +771,8 @@ static void get_method_list(mach0_ut p, RBinFile *bf, char *class_name, RBinClas
 		}
 		method->type = is_static? R_BIN_TYPE_FUNC_STR: R_BIN_TYPE_METH_STR;
 		if (is_static) {
-			method->method_flags |= R_BIN_METH_CLASS;
+			// it's a clas method, aka does not require an instance
+			method->attr |= R_BIN_ATTR_CLASS;
 		}
 		if (is_thumb (bf)) {
 			if (method->vaddr & 1) {

@@ -1154,14 +1154,6 @@ static RList *r_debug_native_map_get(RDebug *dbg) {
 		map->shared = map_is_shared;
 #endif
 		map->file = strdup (name);
-		if (!strcmp (map->file, map->name)) {
-			const char *last_slash = r_str_lchr (map->file, '/');
-			if (last_slash) {
-				char *new_name = strdup (last_slash + 1);
-				free (map->name);
-				map->name = new_name;
-			}
-		}
 		r_list_append (list, map);
 	}
 	fclose (fd);

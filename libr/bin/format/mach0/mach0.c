@@ -2940,7 +2940,7 @@ static void _enrich_symbol(RBinFile *bf, struct MACH0_(obj_t) *bin, HtPP *symcac
 	}
 
 	sym->forwarder = "NONE";
-	sym->bind = sym->type && !strncmp (sym->type, "LOCAL", 5)? R_BIN_BIND_LOCAL_STR: R_BIN_BIND_GLOBAL_STR;
+	sym->bind = sym->type && r_str_startswith (sym->type, "LOCAL")? R_BIN_BIND_LOCAL_STR: R_BIN_BIND_GLOBAL_STR;
 	sym->type = R_BIN_TYPE_FUNC_STR;
 
 	if (bin->hdr.cputype == CPU_TYPE_ARM && wordsize < 64) {

@@ -1,6 +1,4 @@
-/* radare - Apache 2.0 - Copyright 2007-2017 - pancake
-   class.h rewrite: Adam Pridgen <dso@rice.edu || adam.pridgen@thecoverofnight.com>
- */
+/* radare - Apache 2.0 - Copyright 2007-2023 - pancake, dso */
 
 #ifndef _INCLUDE_JAVA_CLASS_H_
 #define _INCLUDE_JAVA_CLASS_H_
@@ -38,6 +36,7 @@ static inline ut32 UINT(const ut8 *x, const int y) {
 
 #define R_BIN_JAVA_USHORT(x,y) ((ut16)(((0xff&x[y+1])|((x[y]&0xff)<<8)) & 0xffff))
 
+// TODO: use r_read APIs instead!
 #define R_BIN_JAVA_UINT(x,y) ((ut32)((((ut32)(x[y]&0xff))<<24)|(((ut32)(x[y+1]&0xff))<<16)|((ut32)((x[y+2]&0xff))<<8)|(x[y+3]&0xff)))
 #define R_BIN_JAVA_FLOAT(x,y) ((float)R_BIN_JAVA_UINT(x,y))
 
@@ -45,12 +44,10 @@ static inline ut32 UINT(const ut8 *x, const int y) {
 //#define R_BIN_JAVA_DOUBLE(x,y) ((double)RBIN_JAVA_LONG(x,y))
 //#define R_BIN_JAVA_SWAPUSHORT(x) ((ut16)((x<<8)|((x>>8)&0x00FF)))
 
-
-
 #define R_BIN_JAVA_DOUBLE(x,y) rbin_java_raw_to_double(x, y)
 
 typedef enum {
-	R_BIN_JAVA_METHOD_ACC_PUBLIC= 0x0001,
+	R_BIN_JAVA_METHOD_ACC_PUBLIC = 0x0001,
 	R_BIN_JAVA_METHOD_ACC_PRIVATE = 0x0002,
 	R_BIN_JAVA_METHOD_ACC_PROTECTED = 0x0004,
 	R_BIN_JAVA_METHOD_ACC_STATIC = 0x0008,
@@ -71,7 +68,7 @@ typedef enum {
 } R_BIN_JAVA_METHOD_ACCESS;
 
 typedef enum {
-	R_BIN_JAVA_FIELD_ACC_PUBLIC= 0x0001,
+	R_BIN_JAVA_FIELD_ACC_PUBLIC = 0x0001,
 	R_BIN_JAVA_FIELD_ACC_PRIVATE = 0x0002,
 	R_BIN_JAVA_FIELD_ACC_PROTECTED = 0x0004,
 	R_BIN_JAVA_FIELD_ACC_STATIC = 0x0008,
@@ -85,7 +82,7 @@ typedef enum {
 } R_BIN_JAVA_FIELD_ACCESS;
 
 typedef enum {
-	R_BIN_JAVA_CLASS_ACC_PUBLIC= 0x0001,
+	R_BIN_JAVA_CLASS_ACC_PUBLIC = 0x0001,
 	R_BIN_JAVA_CLASS_ACC_PRIVATE = 0x0002,
 	R_BIN_JAVA_CLASS_ACC_PROTECTED = 0x0004,
 	R_BIN_JAVA_CLASS_ACC_STATIC = 0x0008,
@@ -98,7 +95,7 @@ typedef enum {
 	R_BIN_JAVA_CLASS_ACC_NATIVE = 0x0100,
 	R_BIN_JAVA_CLASS_ACC_INTERFACE = 0x0200,
 	R_BIN_JAVA_CLASS_ACC_ABSTRACT = 0x0400,
-	R_BIN_JAVA_CLASS_ACC_STRICT= 0x0800,
+	R_BIN_JAVA_CLASS_ACC_STRICT = 0x0800,
 
 	R_BIN_JAVA_CLASS_ACC_SYNTHETIC = 0x1000,
 	R_BIN_JAVA_CLASS_ACC_ANNOTATION = 0x2000,
@@ -225,7 +222,6 @@ typedef struct  r_bin_java_methodref_info_t {
 	ut16 name_and_type_idx;
 } RBinJavaCPTypeMethodRef;
 
-
 typedef struct  r_bin_java_interfacemethodref_info_t {
 	ut16 class_idx;
 	ut16 name_and_type_idx;
@@ -266,7 +262,6 @@ typedef struct  r_bin_java_float_info_t {
 	} bytes;
 } RBinJavaCPTypeFloat;
 
-
 typedef struct  r_bin_java_long_info_t {
 	union {
 		ut8 raw[8];
@@ -287,7 +282,6 @@ typedef struct  r_bin_java_double_info_t {
 		} dwords;
 	} bytes;
 } RBinJavaCPTypeDouble;
-
 
 /* Meta-data Info */
 
@@ -408,8 +402,6 @@ typedef struct r_bin_java_element_value_ary_t{
 	RList *values;
 } RBinJavaElementValueArray;
 
-
-
 typedef struct r_bin_java_annotation_t{
 	ut64 size;
 	ut16 type_idx;
@@ -459,8 +451,6 @@ typedef struct r_bin_java_element_value_pair_t{
 	RBinJavaElementValue *value;
 } RBinJavaElementValuePair;
 
-
-
 typedef struct r_bin_java_annotations_attr_t {
 	ut64 size;
 	ut16 num_annotations;
@@ -488,7 +478,6 @@ typedef struct r_bin_java_stack_map_table_attr_t { // attribute StackMap
 	ut32 number_of_entries;
 	RList* stack_map_frame_entries;
 } RBinJavaStackMapTableAttr;
-
 
 typedef struct r_bin_java_signature_attr_t {
 	ut16 signature_idx;
@@ -621,7 +610,6 @@ typedef struct r_bin_java_attr_localvariable_t{
 	ut16 index;
 	ut64 size;
 } RBinJavaLocalVariableAttribute;
-
 
 typedef struct r_bin_java_attr_localvariable_table_t {
 	ut16 table_length;
@@ -897,8 +885,6 @@ R_API char* r_bin_java_get_desc_from_cp_item_list(RList *cp_list, ut64 idx);
 R_API char* r_bin_java_get_item_name_from_cp_item_list(RList *cp_list, RBinJavaCPTypeObj *obj, int depth);
 R_API char* r_bin_java_get_item_desc_from_cp_item_list(RList *cp_list, RBinJavaCPTypeObj *obj, int depth);
 
-
-
 R_API char* r_bin_java_get_name_from_bin_cp_list(RBinJavaObj *bin, ut64 idx);
 R_API char* r_bin_java_get_utf8_from_bin_cp_list(RBinJavaObj *bin, ut64 idx);
 R_API ut32 r_bin_java_get_utf8_len_from_bin_cp_list(RBinJavaObj *bin, ut64 idx);
@@ -978,9 +964,11 @@ R_API ut16 U(r_bin_java_calculate_class_access_value)(const char * access_flags_
 R_API RList * U(retrieve_all_method_access_string_and_value)(void);
 R_API RList * U(retrieve_all_field_access_string_and_value)(void);
 R_API RList * U(retrieve_all_class_access_string_and_value)(void);
+#if 0
 R_API char * retrieve_method_access_string(ut16 flags);
 R_API char * retrieve_field_access_string(ut16 flags);
 R_API char * retrieve_class_method_access_string(ut16 flags);
+#endif
 
 R_API char * U(r_bin_java_resolve)(RBinJavaObj *obj, int idx, ut8 space_bn_name_type);
 R_API char * r_bin_java_resolve_with_space(RBinJavaObj *obj, int idx);
@@ -1055,7 +1043,7 @@ R_API void r_bin_java_get_method_json_definitions(RBinJavaObj *bin, PJ *pj);
 R_API void r_bin_java_get_import_json_definitions(RBinJavaObj *bin, PJ *pj);
 R_API void r_bin_java_get_interface_json_definitions(RBinJavaObj *bin, PJ *pj);
 
-R_API void r_bin_java_get_fm_type_definition_json(RBinJavaObj *bin, RBinJavaField *fm_type, PJ *pj, int is_method);
+R_API void r_bin_java_get_fm_type_definition_json(RBinJavaObj *bin, RBinJavaField *fm_type, PJ *pj, bool is_method);
 R_API void r_bin_java_get_field_json_definition(RBinJavaObj *bin, RBinJavaField *fm_type, PJ *pj);
 R_API void r_bin_java_get_method_json_definition(RBinJavaObj *bin, RBinJavaField *fm_type, PJ *pj);
 R_API void r_bin_java_get_class_info_json(RBinJavaObj *bin, PJ *pj);
@@ -1063,4 +1051,9 @@ R_API void r_bin_java_get_class_info_json(RBinJavaObj *bin, PJ *pj);
 R_API char *r_bin_java_get_bin_obj_json(RBinJavaObj *bin);
 R_API ut64 r_bin_java_calc_class_size(ut8* bytes, ut64 size);
 R_API int r_bin_java_valid_class(const ut8 * buf, ut64 buf_sz);
+
+R_API char *retrieve_class_method_access_string(ut16 flags);
+R_API char *retrieve_method_access_string(ut16 flags);
+R_API char *retrieve_field_access_string(ut16 flags);
+R_API char *retrieve_class_method_access_string(ut16 flags);
 #endif

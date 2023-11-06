@@ -1020,7 +1020,7 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, R_UNUSED int perm, const ch
 			R_LOG_WARN ("search.in = ( anal.bb | anal.fcn ) requires to seek into a valid function");
 			append_bound (list, core->io, search_itv, core->offset, 1, 5);
 		}
-	} else if (!strncmp (mode, "dbg.", 4)) {
+	} else if (r_str_startswith (mode, "dbg.")) {
 		if (r_config_get_b (core->config, "cfg.debug")) {
 			int mask = 0;
 			int add = 0;

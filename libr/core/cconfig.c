@@ -3003,7 +3003,7 @@ static bool cb_searchin(void *user, void *data) {
 	if (*node->value == '?') {
 		if (strlen (node->value) > 1 && node->value[1] == '?') {
 			r_cons_printf ("Valid values for search.in (depends on .from/.to and io.va):\n"
-			"raw                search in raw io (ignoring bounds)\n"
+			"range              search between .from/.to boundaries\n"
 			"flag               find boundaries on flag in current offset bigger than 1 byte\n"
 			"block              search in the current block\n"
 			"io.map             search in current map\n"
@@ -3485,7 +3485,7 @@ R_API int r_core_config_init(RCore *core) {
 	n = NODECB ("anal.in", "io.maps.x", &cb_searchin);
 	// R2_590 - n = NODECB ("anal.in", "io.sections.x", &cb_searchin); // R2R db/anal/calls i think anal.in should change on RCore.fileOpen()
 	SETDESC (n, "specify search boundaries for analysis");
-	SETOPTIONS (n, "range", "block",
+	SETOPTIONS (n, "raw", "block",
 		"bin.segment", "bin.segments", "bin.segments.x", "bin.segments.r", "bin.section", "bin.sections", "bin.sections.rwx", "bin.sections.r", "bin.sections.rw", "bin.sections.rx", "bin.sections.wx", "bin.sections.x",
 		"io.map", "io.maps", "io.maps.rwx", "io.maps.r", "io.maps.rw", "io.maps.rx", "io.maps.wx", "io.maps.x",
 		"dbg.stack", "dbg.heap",
