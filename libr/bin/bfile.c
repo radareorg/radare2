@@ -1053,7 +1053,7 @@ R_API RList *r_bin_file_set_hashes(RBin *bin, RList/*<RBinFileHash*/ *new_hashes
 	return prev_hashes;
 }
 
-R_API RBinClass *r_bin_class_new(const char *name, const char *super, ut64 attr) {
+R_API RBinClass *r_bin_class_new(const char *name, const char *super, int visibility) {
 	r_return_val_if_fail (name, NULL);
 	RBinClass *c = R_NEW0 (RBinClass);
 	if (c) {
@@ -1065,7 +1065,7 @@ R_API RBinClass *r_bin_class_new(const char *name, const char *super, ut64 attr)
 		// TODO: use vectors!
 		c->methods = r_list_newf (r_bin_symbol_free);
 		c->fields = r_list_newf (r_bin_field_free);
-		c->attr = attr;
+		c->visibility = visibility;
 	}
 	return c;
 }
@@ -1081,7 +1081,7 @@ R_API void r_bin_class_free(RBinClass *k) {
 	}
 }
 
-R_API RBinClass *r_bin_file_add_class(RBinFile *bf, const char *name, const char *super, ut64 attr) {
+R_API RBinClass *r_bin_file_add_class(RBinFile *bf, const char *name, const char *super, int view) {
 	r_return_val_if_fail (name && bf && bf->bo, NULL);
 	RBinClass *c = __getClass (bf, name);
 	if (c) {
@@ -1092,7 +1092,7 @@ R_API RBinClass *r_bin_file_add_class(RBinFile *bf, const char *name, const char
 		}
 		return c;
 	}
-	c = r_bin_class_new (name, super, attr);
+	c = r_bin_class_new (name, super, view);
 	if (c) {
 		// XXX. no need for a list, the ht is iterable too
 		c->index = r_list_length (bf->bo->classes);

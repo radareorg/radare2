@@ -1291,6 +1291,7 @@ static void *show_class(RCore *core, int mode, int *idx, RBinClass *_c, const ch
 		r_cons_printf ("[hjkl_/cfM]> methods of %s\n\n", _c->name);
 		r_list_foreach (_c->methods, iter, m) {
 			const char *name = m->dname? m->dname: m->name;
+			char *mflags;
 			if (grep) {
 				if (!r_str_casestr (name, grep)) {
 					i++;
@@ -1306,7 +1307,8 @@ static void *show_class(RCore *core, int mode, int *idx, RBinClass *_c, const ch
 				}
 			}
 
-			char *mflags = r_core_bin_attr_tostring (m->attr, false);
+			mflags = r_core_bin_method_flags_str (m->method_flags, 0);
+
 			if (show_color) {
 				if (r_str_startswith (name, _c->name)) {
 					name += strlen (_c->name);

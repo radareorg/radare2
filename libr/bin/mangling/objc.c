@@ -5,6 +5,7 @@
 
 R_API char *r_bin_demangle_objc(RBinFile *bf, const char *sym) {
 	r_return_val_if_fail ((!bf || (bf && bf->bo && bf->bo->classes)) && sym, NULL);
+	char *ret = NULL;
 	char *clas = NULL;
 	char *name = NULL;
 	char *args = NULL;
@@ -15,19 +16,19 @@ R_API char *r_bin_demangle_objc(RBinFile *bf, const char *sym) {
 		bf = NULL;
 	}
 	/* classes */
-	if (r_str_startswith (sym, "_OBJC_Class_")) {
+	if (!strncmp (sym, "_OBJC_Class_", 12)) {
 		const char *className = sym + 12;
-		char *ret = r_str_newf ("class %s", className);
+		ret = r_str_newf ("class %s", className);
 		if (bf) {
-			r_bin_file_add_class (bf, className, NULL, R_BIN_ATTR_PUBLIC);
+			r_bin_file_add_class (bf, className, NULL, R_BIN_CLASS_PUBLIC);
 		}
 		return ret;
 	}
-	if (r_str_startswith (sym, "_OBJC_CLASS_$_")) {
+	if (!strncmp (sym, "_OBJC_CLASS_$_", 14)) {
 		const char *className = sym + 14;
-		char *ret = r_str_newf ("class %s", className);
+		ret = r_str_newf ("class %s", className);
 		if (bf) {
-			r_bin_file_add_class (bf, className, NULL, R_BIN_ATTR_PUBLIC);
+			r_bin_file_add_class (bf, className, NULL, R_BIN_CLASS_PUBLIC);
 		}
 		return ret;
 	}
@@ -107,7 +108,6 @@ R_API char *r_bin_demangle_objc(RBinFile *bf, const char *sym) {
 			type = "static";
 		}
 	}
-	char *ret = NULL;
 	if (type) {
 		if (!strcmp (type, "field")) {
 			ret = r_str_newf ("field int %s::%s", clas, name);
