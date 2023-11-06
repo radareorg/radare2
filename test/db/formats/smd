@@ -13,7 +13,7 @@ type     ROM
 arch     m68k
 baddr    0x0
 binsz    160504
-bits     16
+bits     32
 canary   false
 injprot  false
 retguard false
