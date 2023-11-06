@@ -553,25 +553,26 @@ static void register_helpers(JSContext *ctx) {
 		"}");
 	eval (ctx, "var console = { log:print, error:print, debug:print };");
 	eval (ctx, "r2.cmdj = (x) => JSON.parse(r2.cmd(x));");
+	eval (ctx, "r2.cmdAt = (x, a) => r2.cmd(`$x @ $a`);");
 	eval (ctx, "r2.call = (x) => r2.cmd('\"\"' + x);");
-	eval (ctx, "r2.callj = (x)=> JSON.parse(r2.call(x));");
+	eval (ctx, "r2.callj = (x) => JSON.parse(r2.call(x));");
 	eval (ctx, "var global = globalThis; var G = globalThis;");
 	eval (ctx, js_require_qjs);
 	eval (ctx, "var exports = {};");
 	eval (ctx, "G.r2pipe = {open: function(){ return R.r2;}};");
 	eval (ctx, "G.R2Pipe=() => R.r2;");
-	if (!r_sys_getenv_asbool ("R2_DEBUG_NOPAPI")) {
+	if (r_sys_getenv_asbool ("R2_DEBUG_NOPAPI")) {
+		eval (ctx, "R=r2;");
+	} else {
 		eval (ctx, js_r2papi_qjs);
 		eval (ctx, "R=G.R=new R2Papi(r2);");
-	} else {
-		eval (ctx, "R=r2;");
+		eval (ctx, "G.Process = new ProcessClass(r2);");
+		eval (ctx, "G.Module = new ModuleClass(r2);");
+		eval (ctx, "G.Thread = new ThreadClass(r2);");
+		eval (ctx, "function ptr(x) { return new NativePointer(x); }");
+		eval (ctx, "G.NULL = ptr(0);");
 	}
-	eval (ctx, "function ptr(x) { return new NativePointer(x); }");
-	eval (ctx, "G.Process = new ProcessClass(r2);");
-	eval (ctx, "G.Module = new ModuleClass(r2);");
-	eval (ctx, "G.Thread = new ThreadClass(r2);");
 	eval (ctx, "G.Radare2 = { version: r2.cmd('?Vq').trim() };"); // calling r2.cmd requires a delayed initialization
-	eval (ctx, "G.NULL = ptr(0);");
 }
 
 static JSContext *JS_NewCustomContext(JSRuntime *rt) {
