@@ -82,9 +82,6 @@ static RList* entries(RBinFile *bf) {
 		}
 	}
 	R_LOG_ERROR ("Cannot determine entrypoint, cannot find HUNK_CODE");
-	ptr->paddr = 0;
-	ptr->vaddr = 0;
-	r_list_append (ret, ptr);
 	return ret;
 }
 
