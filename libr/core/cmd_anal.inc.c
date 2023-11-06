@@ -9937,18 +9937,26 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 	case ',': // "ax,"
 		r_anal_xrefs_list (core->anal, input[0], *input? r_str_trim_head_ro (input + 1): "");
 		break;
-	case '.': { // "ax."
-		char *tInput = strdup (input);
-		if (r_str_replace_ch (tInput, '.', 't', false)) {
-			cmd_anal_refs (core, tInput);
+	case '.':
+		if (input[1] == 'j') { // "ax.j"
+			r_cons_printf ("{\"to\":");
+			cmd_anal_refs (core, "tj");
+			r_cons_printf (",\"from\":");
+			cmd_anal_refs (core, "fj");
+			r_cons_printf ("}\n");
+		} else { // "ax."
+			char *tInput = strdup (input);
+			if (r_str_replace_ch (tInput, '.', 't', false)) {
+				cmd_anal_refs (core, tInput);
+			}
+			char *fInput = strdup (input);
+			if (r_str_replace_ch (fInput, '.', 'f', false)) {
+				cmd_anal_refs (core, fInput);
+			}
+			free (tInput);
+			free (fInput);
 		}
-		char *fInput = strdup (input);
-		if (r_str_replace_ch (fInput, '.', 'f', false)) {
-			cmd_anal_refs (core, fInput);
-		}
-		free (tInput);
-		free (fInput);
-	} break;
+		break;
 	case 'm': { // "axm"
 		char *ptr = strdup (r_str_trim_head_ro (input + 1));
 		int n = r_str_word_set0 (ptr);
