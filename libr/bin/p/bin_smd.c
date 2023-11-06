@@ -8,7 +8,7 @@ typedef struct gen_hdr {
 	ut8 OverseasName[48];
 	ut8 ProductCode[14];
 	ut16 CheckSum;
-	ut8 Peripherials[16];
+	ut8 Peripherals[16];
 	ut32 RomStart;
 	ut32 RomEnd;
 	ut32 RamStart;
@@ -168,7 +168,7 @@ static RList *symbols(RBinFile *bf) {
 	showstr ("OverseasName", hdr.OverseasName, sizeof (hdr.OverseasName));
 	showstr ("ProductCode", hdr.ProductCode, sizeof (hdr.ProductCode));
 	eprintf ("Checksum: 0x%04x\n", (ut32) hdr.CheckSum);
-	showstr ("Peripherials", hdr.Peripherials, sizeof (hdr.Peripherials));
+	showstr ("Peripherals", hdr.Peripherals, sizeof (hdr.Peripherals));
 	showstr ("SramCode", hdr.SramCode, sizeof (hdr.SramCode));
 	showstr ("ModemCode", hdr.ModemCode, sizeof (hdr.ModemCode));
 	showstr ("CountryCode", hdr.CountryCode, sizeof (hdr.CountryCode));
