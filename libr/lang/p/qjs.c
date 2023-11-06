@@ -393,6 +393,25 @@ static JSValue r2cmd(JSContext *ctx, JSValueConst this_val, int argc, JSValueCon
 	return JS_NewString (ctx, r_str_get (ret));
 }
 
+static JSValue r2callAt(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
+	if (argc != 2 || !JS_IsString (argv[0]) || (!JS_IsString (argv[1]) && !JS_IsNumber (argv[1]))) {
+		return JS_ThrowRangeError (ctx, "r2.callAt takes two strings");
+	}
+	JSRuntime *rt = JS_GetRuntime (ctx);
+	QjsPluginManager *pm = JS_GetRuntimeOpaque (rt);
+	size_t plen;
+	const char *c = JS_ToCStringLen2 (ctx, &plen, argv[0], false);
+	const char *n = JS_ToCStringLen2 (ctx, &plen, argv[1], false);
+	char *ret = NULL;
+	if (R_STR_ISNOTEMPTY (n)) {
+		ut64 at = r_num_math (pm->core->num, n);
+		ret = pm->core->lang->call_at (pm->core, at, c);
+	}
+	// JS_FreeValue (ctx, argv[0]);
+	return JS_NewString (ctx, r_str_get (ret));
+}
+
+
 static JSValue js_write(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
 	int i;
 	const char *str;
@@ -496,6 +515,7 @@ static const JSCFunctionListEntry js_r2_funcs[] = {
 	JS_CFUNC_DEF ("cmd0", 1, r2cmd0),
 	// implemented in js JS_CFUNC_DEF ("call", 1, r2call);
 	JS_CFUNC_DEF ("call0", 1, r2call0),
+	JS_CFUNC_DEF ("callAt", 2, r2callAt),
 	JS_CFUNC_DEF ("syscmd", 1, r2syscmd),
 	JS_CFUNC_DEF ("syscmds", 1, r2syscmds),
 };
@@ -541,6 +561,7 @@ static void register_helpers(JSContext *ctx) {
 	JS_SetPropertyStr (ctx, global_obj, "b64", JS_NewCFunction (ctx, b64, "b64", 1));
 	// r2cmd deprecate . we have r2.cmd already same for r2log
 	JS_SetPropertyStr (ctx, global_obj, "r2cmd", JS_NewCFunction (ctx, r2cmd, "r2cmd", 1));
+	JS_SetPropertyStr (ctx, global_obj, "r2call", JS_NewCFunction (ctx, r2callAt, "r2call", 1));
 	JS_SetPropertyStr (ctx, global_obj, "r2log", JS_NewCFunction (ctx, r2log, "r2log", 1));
 	JS_SetPropertyStr (ctx, global_obj, "write", JS_NewCFunction (ctx, js_write, "write", 1));
 	JS_SetPropertyStr (ctx, global_obj, "flush", JS_NewCFunction (ctx, js_flush, "flush", 1));

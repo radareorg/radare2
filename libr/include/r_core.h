@@ -486,6 +486,7 @@ R_API void r_core_cmd_queue_wait(RCore *core);
 R_API void r_core_cmd_init(RCore *core);
 R_API char *r_core_cmd_str_at(RCore *core, ut64 addr, const char *cmd);
 R_API int r_core_cmd_call_at(RCore *core, ut64 addr, const char *cmd);
+R_API char *r_core_cmd_call_str_at(RCore *core, ut64 addr, const char *cmd);
 R_API int r_core_cmd_call(RCore *core, const char *cmd);
 R_API int r_core_cmd_callf(RCore *core, const char *cmd, ...);
 R_API int r_core_cmd_pipe(RCore *core, char *radare_cmd, char *shell_cmd);
