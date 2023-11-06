@@ -121,7 +121,7 @@ static RBinInfo *info(RBinFile *bf) {
 	ret->bclass = r_str_ndup ((char *)tmp, 32);
 	ret->os = strdup ("smd");
 	ret->arch = strdup ("m68k");
-	ret->bits = 16;
+	ret->bits = 32;
 	ret->has_va = 1;
 	ret->big_endian = 1;
 	return ret;
