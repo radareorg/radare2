@@ -188,6 +188,7 @@ R_API bool try_walkthrough_jmptbl(RAnal *anal, RAnalFunction *fcn, RAnalBlock *b
 	const char *sarch = R_UNWRAP3 (anal, config, arch);
 	if (!sarch) {
 		R_LOG_DEBUG ("Cannot find any valid arch");
+		free (jmptbl);
 		return false;
 	}
 	bool is_arm = sarch ? r_str_startswith (sarch, "arm"): false;
