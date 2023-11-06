@@ -309,12 +309,38 @@ static bool __syncDebugMaps(RCore *core) {
 	return false;
 }
 
+static char *callat(RCore *core, ut64 addr, const char *cmd) {
+	r_return_val_if_fail (core && core->cons, NULL);
+	r_cons_push ();
+	core->cons->context->noflush = true;
+	core->cons->context->cmd_str_depth++;
+	if (cmd && r_core_cmd_call_at (core, addr, cmd) == -1) {
+		//eprintf ("Invalid command: %s\n", cmd);
+		if (--core->cons->context->cmd_str_depth == 0) {
+			core->cons->context->noflush = false;
+			r_cons_flush ();
+		}
+		r_cons_pop ();
+		return NULL;
+	}
+	if (--core->cons->context->cmd_str_depth == 0) {
+		core->cons->context->noflush = false;
+	}
+	r_cons_filter ();
+	const char *static_str = r_cons_get_buffer ();
+	char *retstr = strdup (r_str_get (static_str));
+	r_cons_pop ();
+	r_cons_echo (NULL);
+	return retstr;
+}
+
 R_API int r_core_bind(RCore *core, RCoreBind *bnd) {
 	bnd->core = core;
 	bnd->bphit = (RCoreDebugBpHit)r_core_debug_breakpoint_hit;
 	bnd->syshit = (RCoreDebugSyscallHit)r_core_debug_syscall_hit;
 	bnd->cmd = (RCoreCmd)r_core_cmd0;
 	bnd->cmdf = (RCoreCmdF)r_core_cmdf;
+	bnd->callat = (RCoreCallAt)callat;
 	bnd->cmdstr = (RCoreCmdStr)r_core_cmd_str;
 	bnd->cmdstrf = (RCoreCmdStrF)r_core_cmd_strf;
 	bnd->help = (RCoreBindHelp)core_help;
@@ -3184,7 +3210,8 @@ R_API bool r_core_init(RCore *core) {
 	// We save the old num ad user, in order to restore it after free
 	core->lang = r_lang_new ();
 	core->lang->cmd_str = (char *(*)(void *, const char *))r_core_cmd_str;
-	core->lang->cmdf = (int (*)(void *, const char *, ...))r_core_cmdf;
+	core->lang->cmdf = (RCoreCmdF)r_core_cmdf;
+	core->lang->call_at = (RCoreCallAtCallback) callat;
 	r_core_bind_cons (core);
 	core->table = NULL;
 	core->lang->cb_printf = r_cons_printf;

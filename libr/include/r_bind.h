@@ -13,6 +13,7 @@ typedef const char * const RCoreHelpMessage[];
 
 typedef int (*RCoreCmd)(void *core, const char *cmd);
 typedef int (*RCoreCmdF)(void *user, const char *fmt, ...);
+typedef char *(*RCoreCallAt)(void *user, ut64 addr, const char *cmd);
 typedef int (*RCoreDebugBpHit)(void *core, void *bp);
 typedef void (*RCoreDebugSyscallHit)(void *core);
 typedef char* (*RCoreCmdStr)(void *core, const char *cmd);
@@ -34,6 +35,7 @@ typedef struct r_core_bind_t {
 	void *core;
 	RCoreCmd cmd;
 	RCoreCmdF cmdf;
+	RCoreCallAt callat;
 	RCoreCmdStr cmdstr; // should be cmdStr if we care about snake
 	RCoreCmdStrF cmdstrf;
 	RCoreBindHelp help;
