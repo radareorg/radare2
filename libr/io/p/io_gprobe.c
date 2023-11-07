@@ -682,16 +682,13 @@ static int gprobe_get_reply_sp(struct gport *port, ut8 cmd, RBuffer *reply) {
 		return -1;
 	}
 
-/* checksumming answers does not work reliably */
-#if 0
 	if (gprobe_checksum(buf, count - 1) != buf[count - 1]) {
 		printf("### CHECKSUM FAILED\n");
 	}
-#endif
 
 	r_buf_append_bytes (reply, buf + 2, count - 3);
 
-	return 0;
+	return buf[1]; // cmd
 }
 
 static int gprobe_send_request_sp(struct gport *port, RBuffer *request) {
