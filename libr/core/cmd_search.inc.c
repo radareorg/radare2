@@ -391,13 +391,19 @@ R_API int r_core_search_prelude(RCore *core, ut64 from, ut64 to, const ut8 *buf,
 	if (!b) {
 		return 0;
 	}
-	char *zeropage = calloc (core->blocksize, 1);
+	
 	// TODO: handle sections ?
 	if (from >= to) {
 		R_LOG_ERROR ("aap: Invalid search range 0x%08"PFMT64x " - 0x%08"PFMT64x, from, to);
 		free (b);
 		return 0;
 	}
+	char *zeropage = calloc (core->blocksize, 1);
+	if (!zeropage) {
+		free (b);
+		return 0;
+	}
+	
 	r_search_reset (core->search, R_SEARCH_KEYWORD);
 	r_search_kw_add (core->search, r_search_keyword_new (buf, blen, mask, mlen, NULL));
 	r_search_begin (core->search);
