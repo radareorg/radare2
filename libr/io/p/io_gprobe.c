@@ -629,6 +629,8 @@ static int sp_blocking_write(struct gport *port, const void *buf,
 		ptr += result;
 	}
 
+	tcdrain (port->fd);
+
 	return bytes_written;
 #endif
 }
