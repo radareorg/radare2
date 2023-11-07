@@ -12644,7 +12644,7 @@ static void cmd_anal_abp(RCore *core, const char *input) {
 		} else {
 			RAnalBlock *block = r_anal_get_block_at (core->anal, core->offset);
 			if (!block) {
-				R_LOG_ERROR ("No basic block at");
+				R_LOG_ERROR ("No basic block at 0x%08"PFMT64x, core->offset);
 				break;
 			}
 			RList *path = r_anal_block_shortest_path (block, addr);
