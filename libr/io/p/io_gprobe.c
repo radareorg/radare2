@@ -342,7 +342,7 @@ static int sp_open(struct gport *port) {
 	cfsetispeed (&tty, B115200);
 
 	tty.c_cflag = (tty.c_cflag & ~CSIZE) | CS8;
-	tty.c_iflag &= ~IGNBRK;
+	tty.c_iflag &= ~(IGNBRK | INLCR | IGNCR | ICRNL);
 	tty.c_lflag = 0;
 	tty.c_oflag = 0;
 	tty.c_cc[VMIN] = 0;
