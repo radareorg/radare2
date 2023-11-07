@@ -820,6 +820,16 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, R_UNUSED int perm, const ch
 				append_bound (list, core->io, search_itv, fi->offset, fi->size, 7);
 			}
 		}
+	} else if (r_str_startswith (mode, "flag:")) {
+		const char *match = mode + 5;
+		const RList *ls = r_flag_get_list (core->flags, core->offset);
+		RFlagItem *fi;
+		RListIter *iter;
+		r_list_foreach (ls, iter, fi) {
+			if (fi->size > 1 && r_str_glob (fi->name, match)) {
+				append_bound (list, core->io, search_itv, fi->offset, fi->size, 7);
+			}
+		}
 	} else if (!r_config_get_b (core->config, "cfg.debug") && !core->io->va) {
 		append_bound (list, core->io, search_itv, 0, r_io_size (core->io), 7);
 	} else if (!strcmp (mode, "file")) {
