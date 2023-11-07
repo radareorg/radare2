@@ -77,6 +77,9 @@ enum {
 	GPROBE_NACK = 0x0b,
 	GPROBE_ACK = 0x0c,
 	GPROBE_PRINT = 0x0D,
+	GPROBE_FAST_FLASH_WRITE = 0x10,
+	GPROBE_FLASH_ERASE = 0x19,
+	GPROBE_FLASH_ID_CRC = 0x1c,
 	GPROBE_RESET = 0x20,
 	GPROBE_GET_DEVICE_ID = 0x30,
 	GPROBE_GET_INFORMATION = 0x40,
@@ -968,6 +971,264 @@ fail:
 	return -1;
 }
 
+static int gprobe_flasherase(struct gport *port, ut16 sector) {
+	if (!port) {
+		return -1;
+	}
+	RBuffer *request = r_buf_new ();
+	RBuffer *reply = NULL;
+	const ut8 cmd = GPROBE_FLASH_ERASE;
+
+	if (!request) {
+		goto fail;
+	}
+
+	r_buf_append_bytes (request, &cmd, 1);
+	r_buf_append_bytes (request, (const ut8 *)&sector, 2);
+
+	port->frame (request);
+
+	if (port->send_request (port, request)) {
+		goto fail;
+	}
+
+	while (1) {
+		RBuffer *reply = NULL;
+
+		int res = get_reply (port, GPROBE_ACK, &reply);
+
+		if (reply)
+			r_buf_free (reply);
+
+		if (!res)
+			break;
+
+		if (r_cons_is_breaked ())
+			break;
+	}
+
+	r_buf_free (request);
+	r_buf_free (reply);
+
+	return 0;
+
+fail:
+	r_buf_free (request);
+	r_buf_free (reply);
+	return -1;
+}
+
+static int gprobe_flashid(struct gport *port) {
+	if (!port) {
+		return -1;
+	}
+	RBuffer *request = r_buf_new ();
+	RBuffer *reply = NULL;
+	const ut8 cmd = GPROBE_FLASH_ID_CRC;
+	const ut8 rsvd0[] = { 0xff, 0x00, 0x00 };
+	const ut8 rsvd1[] = { 0x20, 0x00, 0x00 };
+
+	if (!request) {
+		goto fail;
+	}
+
+	r_buf_append_bytes (request, &cmd, 1);
+	r_buf_append_bytes (request, rsvd0, 3);
+	r_buf_append_bytes (request, rsvd1, 3);
+
+	port->frame (request);
+
+	if (port->send_request (port, request)) {
+		goto fail;
+	}
+
+	int res = get_reply (port, cmd, &reply);
+	if (res)
+		goto fail;
+
+	ut16 id = r_buf_read_be16_at (reply, 0);
+	printf ("%04x\n", id);
+
+	r_buf_free (request);
+	r_buf_free (reply);
+
+	return 0;
+
+fail:
+	r_buf_free (request);
+	r_buf_free (reply);
+	return -1;
+}
+
+static int gprobe_flashcrc(struct gport *port, ut32 address, ut32 count) {
+	if (!port) {
+		return -1;
+	}
+	RBuffer *request = r_buf_new ();
+	RBuffer *reply = NULL;
+	const ut8 cmd = GPROBE_FLASH_ID_CRC;
+
+	if (!request) {
+		goto fail;
+	}
+
+	r_buf_append_bytes (request, &cmd, 1);
+	r_buf_append_ut8 (request, (address >> 16) & 0xff);
+	r_buf_append_ut8 (request, (address >> 8) & 0xff);
+	r_buf_append_ut8 (request, (address >> 0) & 0xff);
+	r_buf_append_ut8 (request, (count >> 16) & 0xff);
+	r_buf_append_ut8 (request, (count >> 8) & 0xff);
+	r_buf_append_ut8 (request, (count >> 0) & 0xff);
+
+	port->frame (request);
+
+	if (port->send_request (port, request)) {
+		goto fail;
+	}
+
+	if (get_reply (port, cmd, &reply)) {
+		goto fail;
+	}
+
+	ut16 id = r_buf_read_be16_at (reply, 0);
+	printf ("0x%04x\n", id);
+
+	r_buf_free (request);
+	r_buf_free (reply);
+
+	return 0;
+
+fail:
+	r_buf_free (request);
+	r_buf_free (reply);
+	return -1;
+}
+
+static ut16 calculate_crc_16(const void *buf, size_t buf_size) {
+	const ut8 *byte_buf;
+	ut16 crc;
+	ut8 data;
+	unsigned int i;
+	ut8 flag;
+
+	byte_buf = (const unsigned char *)buf;
+	crc = 0x1021;
+	for (; buf_size > 0; --buf_size) {
+		data = *byte_buf++;
+		for (i = 8; i > 0; --i) {
+			flag = data ^ (crc >> 8);
+			crc <<= 1;
+			if (flag & 0x80)
+				crc ^= 0x1021;
+			data <<= 1;
+		}
+	}
+	return crc;
+}
+
+static int fast_flash_write(struct gport *port, ut32 address, ut8 *buf, size_t size) {
+	RBuffer *request = r_buf_new ();
+	RBuffer *reply = NULL;
+	const ut8 cmd = GPROBE_FAST_FLASH_WRITE;
+
+	if (!request) {
+		goto fail;
+	}
+
+	/* send primer */
+	r_buf_append_bytes (request, &cmd, 1);
+
+	port->frame (request);
+
+	if (port->send_request (port, request)) {
+		goto fail;
+	}
+
+	r_buf_free (request);
+
+	r_sys_usleep (5000);
+
+	/* send data packet */
+	request = r_buf_new ();
+
+	if (!request) {
+		goto fail;
+	}
+
+	r_buf_append_ut8 (request, (address >> 24) & 0xff);
+	r_buf_append_ut8 (request, (address >> 16) & 0xff);
+	r_buf_append_ut8 (request, (address >> 8) & 0xff);
+	r_buf_append_ut8 (request, (address >> 0) & 0xff);
+
+	r_buf_append_ut8 (request, (size >> 24) & 0xff);
+	r_buf_append_ut8 (request, (size >> 16) & 0xff);
+	r_buf_append_ut8 (request, (size >> 8) & 0xff);
+	r_buf_append_ut8 (request, (size >> 0) & 0xff);
+
+	r_buf_append_bytes (request, buf, size);
+
+	ut16 crc = calculate_crc_16 (buf, size);
+
+	r_buf_append_ut8 (request, (crc >> 24) & 0xff);
+	r_buf_append_ut8 (request, (crc >> 16) & 0xff);
+	r_buf_append_ut8 (request, (crc >> 8) & 0xff);
+	r_buf_append_ut8 (request, (crc >> 0) & 0xff);
+
+	if (port->send_request (port, request)) {
+		goto fail;
+	}
+
+	r_buf_free (request);
+
+	if (get_reply (port, GPROBE_ACK, &reply)) {
+		goto fail;
+	}
+
+	r_buf_free (reply);
+
+	return 0;
+
+fail:
+	r_buf_free (request);
+	r_buf_free (reply);
+	return -1;
+}
+
+static int gprobe_flashwrite(struct gport *port, ut32 max_chunksize, ut32 address, const char *filename) {
+	const char *arg = filename + ((filename[0] == ' ')? 1: 0);
+	char *pa, *a = r_str_trim_dup (arg);
+	pa = strchr (a, ' ');
+	if (pa) {
+		*pa++ = 0;
+	}
+
+	if (!port) {
+		return -1;
+	}
+
+	size_t size;
+	ut8 *buf = (ut8 *)r_file_slurp (arg, &size);
+	if (!buf)
+		return -1;
+
+	ut8 *p = buf;
+	while (size > 0) {
+		int chunk_size = size > max_chunksize? max_chunksize: size;
+		if (fast_flash_write (port, address, p, chunk_size)) {
+			free (buf);
+			return -1;
+		}
+		size -= chunk_size;
+		address += chunk_size;
+		p += chunk_size;
+		r_sys_usleep (5000);
+	}
+
+	free (buf);
+
+	return 0;
+}
+
 static int gprobe_getdeviceid(struct gport *port, ut8 index) {
 	if (!port) {
 		return -1;
@@ -1049,6 +1310,30 @@ fail:
 	r_buf_free (request);
 	r_buf_free (reply);
 	return -1;
+}
+
+static int gprobe_listen(struct gport *port) {
+	if (!port) {
+		return -1;
+	}
+
+	r_cons_break_push (NULL, NULL);
+
+	while (1) {
+		RBuffer *reply = NULL;
+
+		get_reply (port, GPROBE_RESET, &reply);
+
+		if (reply)
+			r_buf_free (reply);
+
+		if (r_cons_is_breaked ())
+			break;
+	}
+
+	r_cons_break_pop ();
+
+	return 0;
 }
 
 static int __write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
@@ -1196,8 +1481,13 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 			" :debugon\n"
 			" :debugoff\n"
 			" :runcode address\n"
+			" :flasherase sector(0xffff for complete flash)\n"
+			" :flashid\n"
+			" :flashcrc address count\n"
+			" :flashwrite max_chunksize address filename\n"
 			" :getdeviceid\n"
-			" :getinformation\n");
+			" :getinformation\n"
+			" :listen\n");
 		return NULL;
 	}
 
@@ -1229,6 +1519,50 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 		return NULL;
 	}
 
+	if (r_str_startswith (cmd, "flasherase") && (strlen (cmd) > 10)) {
+		ut32 sector = (ut32)strtoul (cmd + 10, NULL, 0);
+
+		gprobe_flasherase (&gprobe->gport, sector);
+
+		return NULL;
+	}
+
+	if (r_str_startswith (cmd, "flashid")) {
+		gprobe_flashid (&gprobe->gport);
+
+		return NULL;
+	}
+
+	if (r_str_startswith (cmd, "flashcrc") && (strlen (cmd) > 8)) {
+		char *endptr;
+		ut32 address = (ut32)strtoul (cmd + 8, &endptr, 0);
+		ut32 count;
+
+		if (endptr)
+			count = (ut32)strtoul (endptr, NULL, 0);
+		else
+			return NULL;
+
+		gprobe_flashcrc (&gprobe->gport, address, count);
+
+		return NULL;
+	}
+
+	if (r_str_startswith (cmd, "flashwrite") && (strlen (cmd) > 10)) {
+		char *endptr;
+		ut32 max_chunksize = (ut32)strtoul (cmd + 10, &endptr, 0);
+		ut32 address;
+
+		if (endptr)
+			address = (ut32)strtoul (endptr, &endptr, 0);
+		else
+			return NULL;
+
+		gprobe_flashwrite (&gprobe->gport, max_chunksize, address, endptr);
+
+		return NULL;
+	}
+
 	if (r_str_startswith (cmd, "getdeviceid")) {
 		ut8 index = 0;
 		while (!gprobe_getdeviceid (&gprobe->gport, index++)) {
@@ -1239,6 +1573,12 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 
 	if (r_str_startswith (cmd, "getinformation")) {
 		gprobe_getinformation (&gprobe->gport);
+
+		return NULL;
+	}
+
+	if (r_str_startswith (cmd, "listen")) {
+		gprobe_listen (&gprobe->gport);
 
 		return NULL;
 	}
