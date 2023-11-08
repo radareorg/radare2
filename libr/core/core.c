@@ -4371,23 +4371,23 @@ R_API RTable *r_core_table(RCore *core, const char *name) {
 
 /* Config helper function for PJ json encodings */
 R_API PJ *r_core_pj_new(RCore *core) {
-	const char *config_string_encoding = r_config_get (core->config, "cfg.json.str");
-	const char *config_num_encoding = r_config_get (core->config, "cfg.json.num");
+	const char *se = r_config_get (core->config, "cfg.json.str");
+	const char *ne = r_config_get (core->config, "cfg.json.num");
 	PJEncodingNum number_encoding = PJ_ENCODING_NUM_DEFAULT;
 	PJEncodingStr string_encoding = PJ_ENCODING_STR_DEFAULT;
 
-	if (!strcmp ("string", config_num_encoding)) {
+	if (r_str_startswith (ne, "str")) {
 		number_encoding = PJ_ENCODING_NUM_STR;
-	} else if (!strcmp ("hex", config_num_encoding)) {
+	} else if (strstr (ne, "hex")) {
 		number_encoding = PJ_ENCODING_NUM_HEX;
 	}
-	if (!strcmp ("base64", config_string_encoding)) {
+	if (!strcmp (se, "base64")) {
 		string_encoding = PJ_ENCODING_STR_BASE64;
-	} else if (!strcmp ("hex", config_string_encoding)) {
+	} else if (!strcmp (se, "hex")) {
 		string_encoding = PJ_ENCODING_STR_HEX;
-	} else if (!strcmp ("array", config_string_encoding)) {
+	} else if (!strcmp (se, "array")) {
 		string_encoding = PJ_ENCODING_STR_ARRAY;
-	} else if (!strcmp ("strip", config_string_encoding)) {
+	} else if (!strcmp (se, "strip")) {
 		string_encoding = PJ_ENCODING_STR_STRIP;
 	}
 	return pj_new_with_encoding (string_encoding, number_encoding);

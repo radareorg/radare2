@@ -1083,11 +1083,11 @@ static RCoreHelpMessage help_msg_axv= {
 
 static RCoreHelpMessage help_msg_axt= {
 	"Usage:", "axt[?gq*]", "find data/code references to this address",
-	"axtj", " [addr]", "find data/code references to this address and print in json format",
-	"axtg", " [addr]", "display commands to generate graphs according to the xrefs",
-	"axtq", " [addr]", "find and list the data/code references in quiet mode",
-	"axtm", " [addr]", "show xrefs to in 'make' syntax (see aflm and axfm)",
-	"axt*", " [addr]", "same as axt, but prints as r2 commands",
+	"axtj", " ([addr])", "find data/code references to this address and print in json format",
+	"axtg", " ([addr])", "display commands to generate graphs according to the xrefs",
+	"axtq", " ([addr])", "find and list the data/code references in quiet mode",
+	"axtm", " ([addr])", "show xrefs to in 'make' syntax (see aflm and axfm)",
+	"axt*", " ([addr])", "same as axt, but prints as r2 commands",
 	NULL
 };
 
@@ -1556,17 +1556,17 @@ static void cmd_afvx(RCore *core, RAnalFunction *fcn, bool json) {
 	if (fcn) {
 		PJ *pj = NULL;
 		if (json) {
-			pj = pj_new ();
+			pj = r_core_pj_new (core);
 			pj_o (pj);
 			pj_k (pj, "reads");
 		} else {
-			r_cons_printf ("afvR\n");
+			r_cons_println ("afvR");
 		}
 		list_vars (core, fcn, pj, 'R', NULL);
 		if (json) {
 			pj_k (pj, "writes");
 		} else {
-			r_cons_printf ("afvW\n");
+			r_cons_println ("afvW");
 		}
 		list_vars (core, fcn, pj, 'W', NULL);
 		if (json) {
@@ -1584,7 +1584,7 @@ static int cmd_an(RCore *core, const char *name, int mode) {
 	PJ *pj = NULL;
 
 	if (mode == 'j') {
-		pj = pj_new ();
+		pj = r_core_pj_new (core);
 		pj_a (pj);
 	}
 	if (r_anal_op (core->anal, &op, core->offset, core->block, core->blocksize, R_ARCH_OP_MASK_BASIC) < 1) {
@@ -10043,7 +10043,7 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 					r_cons_printf ("0x%" PFMT64x "\n", ref->addr);
 				}
 			} else if (input[1] == 'j') { // "axtj"
-				PJ *pj = pj_new ();
+				PJ *pj = r_core_pj_new (core);
 				if (!pj) {
 					return false;
 				}
@@ -10164,14 +10164,7 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 			}
 		} else {
 			if (input[1] == 'j') { // "axtj"
-				PJ *pj = pj_new ();
-				if (!pj) {
-					return false;
-				}
-				pj_a (pj);
-				pj_end (pj);
-				r_cons_println (pj_string (pj));
-				pj_free (pj);
+				r_cons_println ("[]");
 			}
 		}
 		RVecAnalRef_free (list);
@@ -10182,7 +10175,7 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 			PJ *pj = NULL;
 			if (input[2] == 'j') { // "axffj"
 				// start a new JSON object
-				pj = pj_new ();
+				pj = r_core_pj_new (core);
 				pj_a (pj);
 			}
 			if (fcn) {
@@ -10251,7 +10244,7 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 						r_cons_printf ("0x%" PFMT64x "\n", ref->at);
 					}
 				} else if (input[1] == 'j') { // "axfj"
-					PJ *pj = pj_new ();
+					PJ *pj = r_core_pj_new (core);
 					if (!pj) {
 						return false;
 					}
@@ -11599,7 +11592,7 @@ static void r_core_graph_print(RCore *core, RGraph /*<RGraphNodeInfo>*/ *graph, 
 		break;
 	case 'J':
 	case 'j': {
-		PJ *pj = pj_new ();
+		PJ *pj = r_core_pj_new (core);
 		if (pj) {
 			r_graph_drawable_to_json (graph, pj, use_offset);
 			r_cons_println (pj_string (pj));
@@ -12278,23 +12271,22 @@ static void r_core_anal_info(RCore *core, const char *input) {
 	int xrfs = r_anal_xrefs_count (core->anal);
 	int cvpc = (code > 0)? (int)((covr * 100.0) / code): 0;
 	if (*input == 'j') {
-		PJ *pj = pj_new ();
-		if (!pj) {
-			return;
+		PJ *pj = r_core_pj_new (core);
+		if (R_LIKELY (pj)) {
+			pj_o (pj);
+			pj_ki (pj, "fcns", fcns);
+			pj_ki (pj, "xrefs", xrfs);
+			pj_ki (pj, "calls", call);
+			pj_ki (pj, "strings", strs);
+			pj_ki (pj, "symbols", syms);
+			pj_ki (pj, "imports", imps);
+			pj_ki (pj, "covrage", covr);
+			pj_ki (pj, "codesz", code);
+			pj_ki (pj, "percent", cvpc);
+			pj_end (pj);
+			r_cons_println (pj_string (pj));
+			pj_free (pj);
 		}
-		pj_o (pj);
-		pj_ki (pj, "fcns", fcns);
-		pj_ki (pj, "xrefs", xrfs);
-		pj_ki (pj, "calls", call);
-		pj_ki (pj, "strings", strs);
-		pj_ki (pj, "symbols", syms);
-		pj_ki (pj, "imports", imps);
-		pj_ki (pj, "covrage", covr);
-		pj_ki (pj, "codesz", code);
-		pj_ki (pj, "percent", cvpc);
-		pj_end (pj);
-		r_cons_println (pj_string (pj));
-		pj_free (pj);
 	} else {
 		r_cons_printf ("fcns    %d\n", fcns);
 		r_cons_printf ("xrefs   %d\n", xrfs);
@@ -13996,7 +13988,7 @@ static void cmd_anal_classes(RCore *core, const char *input) {
 				char *name_end = (char *)r_str_trim_head_wp (class_name);
 				*name_end = 0; // trim the whitespace around the name
 				if (mode == 'j') {
-					PJ *pj = pj_new ();
+					PJ *pj = r_core_pj_new (core);
 					r_anal_class_json (core->anal, pj, class_name);
 					r_cons_printf ("%s\n", pj_string (pj));
 					pj_free (pj);
