@@ -188,7 +188,7 @@ static RCoreHelpMessage help_msg_slash_r = {
 	"Usage:", "/r[acerwx] [address]", " search references to this specific address",
 	"/r", " [addr]", "search references to this specific address",
 	"/ra", "", "search all references",
-	"/rc", "", "search for call references",
+	"/rc", " ([addr])", "search for call references",
 	"/re", " [addr]", "search references using esil",
 	"/rr", "", "find read references",
 	"/ru", "[*qj]", "search for UDS CAN database tables (binbloom)",
@@ -4084,16 +4084,6 @@ reread:
 			break;
 		}
 		switch (input[1]) {
-		case 'c': // "/rc"
-			{
-				RListIter *iter;
-				RIOMap *map;
-				r_list_foreach (param.boundaries, iter, map) {
-					eprintf ("-- 0x%"PFMT64x" 0x%"PFMT64x"\n", r_io_map_begin (map), r_io_map_end (map));
-					r_core_anal_search (core, r_io_map_begin (map), r_io_map_end (map), n, 'c');
-				}
-			}
-			break;
 		case 'a': // "/ra"
 			{
 				RListIter *iter;
@@ -4101,6 +4091,16 @@ reread:
 				r_list_foreach (param.boundaries, iter, map) {
 					eprintf ("-- 0x%"PFMT64x" 0x%"PFMT64x"\n", r_io_map_begin (map), r_io_map_end (map));
 					r_core_anal_search (core, r_io_map_begin (map), r_io_map_end (map), n, 0);
+				}
+			}
+			break;
+		case 'c': // "/rc"
+			{
+				RListIter *iter;
+				RIOMap *map;
+				r_list_foreach (param.boundaries, iter, map) {
+					eprintf ("-- 0x%"PFMT64x" 0x%"PFMT64x"\n", r_io_map_begin (map), r_io_map_end (map));
+					r_core_anal_search (core, r_io_map_begin (map), r_io_map_end (map), n, 'c');
 				}
 			}
 			break;

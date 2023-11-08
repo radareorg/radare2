@@ -4121,19 +4121,24 @@ static bool opiscall(RCore *core, RAnalOp *aop, ut64 addr, const ut8* buf, int l
 	switch (arch) {
 	case R2_ARCH_ARM64:
 		aop->size = 4;
-		//addr should be aligned by 4 in aarch64
+		// addr should be aligned by 4 in aarch64
 		if (addr % 4) {
 			char diff = addr % 4;
 			addr = addr - diff;
 			buf = buf - diff;
 		}
-		//if is not bl do not analyze
-		if (buf[3] == 0x94) {
-			if (r_anal_op (core->anal, aop, addr, buf, len, R_ARCH_OP_MASK_BASIC)) {
-				r_anal_op_fini (aop);
+		// if is not bl do not analyze
+		if (buf[3] == 0x94 && r_anal_op (core->anal, aop, addr, buf, len, R_ARCH_OP_MASK_BASIC)) {
+			ut32 ot = aop->type;
+			int os = aop->size;
+			r_anal_op_fini (aop);
+			aop->type = ot;
+			aop->size = os;
+			switch (ot & R_ANAL_OP_TYPE_MASK) {
+			case R_ANAL_OP_TYPE_CALL:
+			case R_ANAL_OP_TYPE_CCALL:
 				return true;
 			}
-			r_anal_op_fini (aop);
 		}
 		break;
 	default:
@@ -4214,9 +4219,8 @@ R_API int r_core_anal_search(RCore *core, ut64 from, ut64 to, ut64 ref, int mode
 				}
 				switch (mode) {
 				case 'c':
-					(void)opiscall (core, &op, at + i, buf + i, core->blocksize - i, arch);
-					if (op.size < 1) {
-						op.size = 1;
+					if (!opiscall (core, &op, at + i, buf + i, core->blocksize - i, arch)) {
+						continue;
 					}
 					break;
 				case 'r':

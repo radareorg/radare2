@@ -1,0 +1,11 @@
+NAME=noreturn errno
+FILE=bins/mach0/BatteryLife.arm_64.1
+CMDS=<<EOF
+s sym.imp.SCNetworkReachabilityGetFlags
+/rc $$
+axt
+EOF
+EXPECT=<<EOF
+(nofunc) 0x100011204 [CALL:--x] bl sym.imp.SCNetworkReachabilityGetFlags
+EOF
+RUN
