@@ -4795,6 +4795,10 @@ reread:
 		if (input[1] == '?') {
 			r_core_cmd_help_match (core, help_msg_slash, "/e");
 		} else if (input[1]) {
+			if (input[1] == 'j') {
+				param.outmode = R_MODE_JSON;
+				input++;
+			}
 			RSearchKeyword *kw;
 			kw = r_search_keyword_new_regexp (input + 1, NULL);
 			if (!kw) {
