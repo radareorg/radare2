@@ -190,6 +190,7 @@ static RCoreHelpMessage help_msg_aa = {
 	"aau", " [len]", "list mem areas (larger than len bytes) not covered by functions",
 	"aav", "[?] [sat]", "find values referencing a specific section or map",
 	"aaw", "", "analyze all meta words (Cd) and add r. named flags for referenced pointers",
+	"aax", "[?]", "analyze all xrefs as functions",
 	NULL
 };
 

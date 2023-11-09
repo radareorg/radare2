@@ -3077,10 +3077,114 @@ static void ds_print_cycles(RDisasmState *ds) {
 #include "disasm_stackptr.inc.c"
 #undef R_INCLUDE_BEGIN
 
+R_API char *r_core_get_reloff(RCore *core, int type, ut64 at, st64 *delta) {
+	char *label = NULL;
+	if (!label && type & RELOFF_TO_FUNC) {
+		RAnalFunction *f = r_anal_get_function_at (core->anal, at);
+		if (f) {
+			*delta = at - f->addr;
+			label = strdup (f->name);
+		}
+#if 0
+		if (!ds->lastflag) {
+			*delta = 0;
+		}
+#endif
+	}
+	if (!label && type & RELOFF_TO_FLAG) {
+		// RFlagItem *fi = r_flag_get_i (core->flags, at);
+		RFlagItem *fi = r_flag_get_at (core->flags, at, true);
+#if 0
+		if (fi) {
+			ds->lastflag = fi;
+		}
+		if (ds->lastflag) {
+			if (ds->lastflag->offset == at) {
+				*delta = 0;
+			} else {
+				*delta = at - ds->lastflag->offset;
+			}
+		} else {
+			*delta = at - core->offset;
+		}
+		if (ds->lastflag) {
+			label = strdup (ds->lastflag->name);
+		}
+#endif
+		if (fi) {
+			*delta = at - fi->offset;
+			label = strdup (fi->name);
+		}
+	}
+	if (!label && type & RELOFF_TO_MAPS) {
+		RIOMap *map = r_io_map_get_at (core->io, at);
+		if (map) {
+			*delta = at - r_io_map_begin (map);
+			if (map->name) {
+				label = strdup (map->name);
+			} else {
+				label = r_str_newf ("map(%d)", map->id);
+			}
+		}
+	}
+	if (!label && type & RELOFF_TO_FILE) {
+		RIOMap *map = r_io_map_get_at (core->io, at);
+		if (map) {
+			*delta = at - r_io_map_begin (map) + map->delta;
+			label = r_str_newf ("fd(%d)", map->fd);
+		}
+	}
+	if (!label && type & RELOFF_TO_FMAP) {
+		RFlag *f = core->flags;
+		r_flag_space_push (f, "maps");
+		RFlagItem *fi = r_flag_get_at (f, at, true);
+		if (fi) {
+			*delta = at - fi->offset;
+			label = r_str_trim_dup (fi->name);
+		}
+		r_flag_space_pop (f);
+	}
+	if (!label && type & RELOFF_TO_LIBS) {
+		RFlag *f = core->flags;
+		r_flag_space_push (f, "libs");
+		RFlagItem *fi = r_flag_get_at (f, at, true);
+		if (fi) {
+			*delta = at - fi->offset;
+			label = strdup (fi->name);
+			r_str_trim (label);
+		}
+		r_flag_space_pop (f);
+	}
+	if (!label && type & RELOFF_TO_SYMB) {
+#if 0
+		// TODO
+#endif
+	}
+	if (!label && type & RELOFF_TO_SECT) {
+		RBinObject *bo = r_bin_cur_object (core->bin);
+		RBinSection *s = bo? r_bin_get_section_at (bo, at, core->io->va): NULL;
+		if (s) {
+			*delta = at - s->vaddr;
+			label = strdup (s->name);
+		}
+	}
+	if (!label && type & RELOFF_TO_DMAP) {
+		RDebugMap *dmap = r_debug_map_get (core->dbg, at);
+		if (dmap) {
+			*delta = at - dmap->addr;
+			label = strdup (dmap->name);
+		}
+	}
+	return label;
+}
+
 static char *get_reloff(RDisasmState *ds, ut64 at, st64 *delta) {
 	char *label = NULL;
-	if (!label && ds->show_reloff_to & RELOFF_TO_FUNC) {
-		RAnalFunction *f = r_anal_get_function_at (ds->core->anal, at);
+	RCore *core = ds->core;
+	int type = ds->show_reloff_to;
+	// this is dupped from the public api because we do some caching here
+	if (!label && type & RELOFF_TO_FUNC) {
+		RAnalFunction *f = r_anal_get_function_at (core->anal, at);
 		if (!f) {
 			f = fcnIn (ds, at, R_ANAL_FCN_TYPE_NULL); // r_anal_get_fcn_in (core->anal, at, R_ANAL_FCN_TYPE_NULL);
 		}
@@ -3095,8 +3199,8 @@ static char *get_reloff(RDisasmState *ds, ut64 at, st64 *delta) {
 			*delta = 0;
 		}
 	}
-	if (!label && ds->show_reloff_to & RELOFF_TO_FLAG) {
-		RFlagItem *fi = r_flag_get_i (ds->core->flags, at);
+	if (!label && type & RELOFF_TO_FLAG) {
+		RFlagItem *fi = r_flag_get_i (core->flags, at);
 		if (fi) {
 			ds->lastflag = fi;
 		}
@@ -3107,72 +3211,16 @@ static char *get_reloff(RDisasmState *ds, ut64 at, st64 *delta) {
 				*delta = at - ds->lastflag->offset;
 			}
 		} else {
-			*delta = at - ds->core->offset;
+			*delta = at - core->offset;
 		}
 		if (ds->lastflag) {
 			label = strdup (ds->lastflag->name);
 		}
 	}
-	if (!label && ds->show_reloff_to & RELOFF_TO_MAPS) {
-		RIOMap *map = r_io_map_get_at (ds->core->io, at);
-		if (map) {
-			*delta = at - r_io_map_begin (map);
-			if (map->name) {
-				label = strdup (map->name);
-			} else {
-				label = r_str_newf ("map(%d)", map->id);
-			}
-		}
+	if (label) {
+		return label;
 	}
-	if (!label && ds->show_reloff_to & RELOFF_TO_FILE) {
-		RIOMap *map = r_io_map_get_at (ds->core->io, at);
-		if (map) {
-			*delta = at - r_io_map_begin (map) + map->delta;
-			label = r_str_newf ("fd(%d)", map->fd);
-		}
-	}
-	if (!label && ds->show_reloff_to & RELOFF_TO_FMAP) {
-		RFlag *f = ds->core->flags;
-		r_flag_space_push (f, "maps");
-		RFlagItem *fi = r_flag_get_at (f, at, true);
-		if (fi) {
-			*delta = at - fi->offset;
-			label = r_str_trim_dup (fi->name);
-		}
-		r_flag_space_pop (f);
-	}
-	if (!label && ds->show_reloff_to & RELOFF_TO_LIBS) {
-		RFlag *f = ds->core->flags;
-		r_flag_space_push (f, "libs");
-		RFlagItem *fi = r_flag_get_at (f, at, true);
-		if (fi) {
-			*delta = at - fi->offset;
-			label = strdup (fi->name);
-			r_str_trim (label);
-		}
-		r_flag_space_pop (f);
-	}
-	if (!label && ds->show_reloff_to & RELOFF_TO_SYMB) {
-#if 0
-		// TODO
-#endif
-	}
-	if (!label && ds->show_reloff_to & RELOFF_TO_SECT) {
-		RBinObject *bo = r_bin_cur_object (ds->core->bin);
-		RBinSection *s = bo? r_bin_get_section_at (bo, at, ds->core->io->va): NULL;
-		if (s) {
-			*delta = at - s->vaddr;
-			label = strdup (s->name);
-		}
-	}
-	if (!label && ds->show_reloff_to & RELOFF_TO_DMAP) {
-		RDebugMap *dmap = r_debug_map_get (ds->core->dbg, at);
-		if (dmap) {
-			*delta = at - dmap->addr;
-			label = strdup (dmap->name);
-		}
-	}
-	return label;
+	return r_core_get_reloff (ds->core, ds->show_reloff_to, at, delta);
 }
 
 static void ds_print_offset(RDisasmState *ds) {
@@ -3207,6 +3255,7 @@ static void ds_print_offset(RDisasmState *ds) {
 
 		if (ds->show_reloff) {
 			label = get_reloff (ds, at, &delta);
+			// label = r_core_get_reloff (ds->core, ds->show_reloff_to, at, &delta);
 		}
 		if (ds->show_trace) {
 			RDebugTracepoint *tp = r_debug_trace_get (ds->core->dbg, ds->at);
