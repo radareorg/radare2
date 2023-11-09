@@ -23,6 +23,7 @@ static RCoreHelpMessage help_msg_s = {
 	"sa", " [[+-]a] [asz]", "seek asz (or bsize) aligned to addr",
 	"sb", "", "seek aligned to bb start",
 	"sC", "[?] string", "seek to comment matching given string",
+	"sd", " ([addr])", "show delta seek compared to all possible reference bases",
 	"sf", "", "seek to next function (f->addr+f->size)",
 	"sf", " function", "seek to address of specified function",
 	"sf.", "", "seek to the beginning of current function",
@@ -393,6 +394,57 @@ static int cmd_seek(void *data, const char *input) {
 			seek_to_register (core, input + 2, silent);
 		} else {
 			r_core_cmd_help_contains (core, help_msg_s, "sr");
+		}
+		break;
+	case 'd': // "sd"
+		{
+			st64 delta;
+			ut64 at = core->offset;
+			char *ro = r_core_get_reloff (core, RELOFF_TO_FLAG, at, &delta);
+			if (ro) {
+				r_cons_printf ("flag %s+0x%"PFMT64x"\n", ro, delta);
+				free (ro);
+			}
+			ro = r_core_get_reloff (core, RELOFF_TO_FUNC, at, &delta);
+			if (ro) {
+				r_cons_printf ("func %s+0x%"PFMT64x"\n", ro, delta);
+				free (ro);
+			}
+			ro = r_core_get_reloff (core, RELOFF_TO_MAPS, at, &delta);
+			if (ro) {
+				r_cons_printf ("maps %s+0x%"PFMT64x"\n", ro, delta);
+				free (ro);
+			}
+			ro = r_core_get_reloff (core, RELOFF_TO_FILE, at, &delta);
+			if (ro) {
+				r_cons_printf ("file %s+0x%"PFMT64x"\n", ro, delta);
+				free (ro);
+			}
+			ro = r_core_get_reloff (core, RELOFF_TO_FMAP, at, &delta);
+			if (ro) {
+				r_cons_printf ("fmap %s+0x%"PFMT64x"\n", ro, delta);
+				free (ro);
+			}
+			ro = r_core_get_reloff (core, RELOFF_TO_LIBS, at, &delta);
+			if (ro) {
+				r_cons_printf ("libs %s+0x%"PFMT64x"\n", ro, delta);
+				free (ro);
+			}
+			ro = r_core_get_reloff (core, RELOFF_TO_SYMB, at, &delta);
+			if (ro) {
+				r_cons_printf ("symb %s+0x%"PFMT64x"\n", ro, delta);
+				free (ro);
+			}
+			ro = r_core_get_reloff (core, RELOFF_TO_SECT, at, &delta);
+			if (ro) {
+				r_cons_printf ("sect %s+0x%"PFMT64x"\n", ro, delta);
+				free (ro);
+			}
+			ro = r_core_get_reloff (core, RELOFF_TO_DMAP, at, &delta);
+			if (ro) {
+				r_cons_printf ("dmap %s+0x%"PFMT64x"\n", ro, delta);
+				free (ro);
+			}
 		}
 		break;
 	case 'C': // "sC"

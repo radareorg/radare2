@@ -450,6 +450,7 @@ typedef int RCmdReturnCode;
 
 R_API RList *r_core_list_themes(RCore *core);
 R_API char *r_core_get_theme(RCore *core);
+R_API char *r_core_get_reloff(RCore *core, int type, ut64 at, st64 *delta);
 R_API const char *r_core_get_section_name(RCore *core, ut64 addr);
 R_API RCons *r_core_get_cons(RCore *core);
 R_API RBin *r_core_get_bin(RCore *core);
