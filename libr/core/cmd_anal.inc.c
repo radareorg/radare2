@@ -14276,30 +14276,56 @@ static bool core_anal_abf(RCore *core, const char* input) {
 	return true;
 }
 
-static void match_prelude(RCore *core, const char *input) {
-	const ut8 *prelude = (const ut8*)"\xe9\x2d"; //:fffff000";
-	const int prelude_sz = 2;
-	const int bufsz = 4096;
+static bool match_prelude_internal(RCore *core, const char *input, ut64 *fcnaddr) {
+	ut8 *prelude = (ut8 *)strdup (input);
+	int prelude_sz = r_hex_str2bin (input, prelude);
+	const int bufsz = core->blocksize;
 	ut8 *buf = calloc (1, bufsz);
 	ut64 off = core->offset;
+#if 0
 	if (input[1] == ' ') {
 		off = r_num_math (core->num, input + 1);
 	}
+#endif
+	ut8 *p = prelude;
+	r_mem_swap (p, prelude_sz);
 	r_io_read_at (core->io, off - bufsz + prelude_sz, buf, bufsz);
-	//const char *prelude = "\x2d\xe9\xf0\x47"; //:fffff000";
 	r_mem_reverse (buf, bufsz);
 	//r_print_hexdump (NULL, off, buf, bufsz, 16, -16);
 	const ut8 *pos = r_mem_mem (buf, bufsz, prelude, prelude_sz);
-	if (pos) {
-		int delta = (size_t)(pos - buf);
-		// R_LOG_DEBUG ("POS = %d", delta);
-		// R_LOG_DEBUG ("HIT = 0x%"PFMT64x, off - delta);
-		r_cons_printf ("0x%08"PFMT64x"\n", off - delta);
-	} else {
-		R_LOG_ERROR ("Cannot find prelude");
-	}
 	free (buf);
+	if (pos) {
+		const int delta = (size_t)(pos - buf);
+		*fcnaddr = off - delta;
+		if (*fcnaddr % 4) {
+			// ignore unaligned hits
+			return false;
+		}
+		return true;
+	}
+	return false;
 }
+
+static void match_prelude(RCore *core, const char *input) {
+	RSearchKeyword *k;
+	RListIter *iter;
+	RList *list = r_anal_preludes (core->anal);
+	r_list_foreach (list, iter, k) {
+		char *hex0 = r_hex_bin2strdup (k->bin_keyword, k->keyword_length);
+		char *hex1 = r_hex_bin2strdup (k->bin_binmask, k->binmask_length);
+		ut64 addr = 0;
+		// TODO: mask is ignored!
+		bool found = match_prelude_internal (core, hex0, &addr);
+		// r_cons_printf ("ap+ %s %s\n", hex0, hex1);
+		free (hex0);
+		free (hex1);
+		if (found) {
+			r_cons_printf ("0x%08"PFMT64x"\n", addr);
+			return;
+		}
+	}
+}
+
 
 static int cmd_apt(RCore *core, const char *input) {
 	switch (*input) {
