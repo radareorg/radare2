@@ -27,6 +27,8 @@ static RCoreHelpMessage help_msg_s = {
 	"sf", "", "seek to next function (f->addr+f->size)",
 	"sf", " function", "seek to address of specified function",
 	"sf.", "", "seek to the beginning of current function",
+	"sfp", "", "seek to the function prelude checking back blocksize bytes",
+	"sff", "", "seek to the nearest flag backwards (uses fd and ignored the delta)",
 	"sg/sG", "", "seek begin (sg) or end (sG) of section or file",
 	"sh", "", "open a basic shell (aims to support basic posix syntax)",
 	"sl", "[?] [+-]line", "seek to line",
@@ -799,6 +801,17 @@ static int cmd_seek(void *data, const char *input) {
 			if (fcn) {
 				r_core_seek (core, fcn->addr, true);
 			}
+			break;
+		case 'p': // "sfp"
+			// find function prelude backwards
+			r_core_cmd0 (core, "s `ap`");
+			break;
+		case 'f': // "sff"
+			// find function prelude backwards
+			r_core_cmd0 (core, "s `fd~[0]`");
+			break;
+		default:
+			r_core_cmd_help_contains (core, help_msg_s, "sf");
 			break;
 		}
 		break;
