@@ -374,7 +374,6 @@ static RCoreHelpMessage help_msg_dr = {
 	"drrj", "", "show registers references (telescoping) in JSON format",
 	// TODO: 'drs' to swap register arenas and display old register valuez
 	"drs", "[?]", "stack register states",
-	"drS", "", "show the size of the register profile",
 	"drt", "[?]", "show all register types",
 	"drw"," <hexnum>", "set contents of the register arena",
 	"drx", "[?]", "show debug registers",
@@ -393,7 +392,7 @@ static RCoreHelpMessage help_msg_drp = {
 	"drpi", "", "show internal representation of the register profile",
 	"drp.", "", "show the current fake size",
 	"drpj", "", "show the current register profile (JSON)",
-	"drps", " [new fake size]", "set the fake size",
+	"drps", " [new fake size]", "get or set the register profile size",
 	"drpg", "", "show register profile comments",
 	"NOTE:", "", "this help will show arp if you run drp? when cfg.debug=0",
 	NULL
