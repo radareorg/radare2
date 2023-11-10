@@ -5517,7 +5517,12 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 		return;
 	}
 #define CHECKREF(x) ((refptr && (x) == refptr) || !refptr)
-	if (target) {
+	bool xrefs_only = false;
+	if (target && !strcmp (target, "+x")) {
+		xrefs_only = true;
+		ntarget = core->offset;
+		refptr = 0LL;
+	} else if (target) {
 		const char *expr = r_str_trim_head_ro (target);
 		if (*expr) {
 			ntarget = r_num_math (core->num, expr);
@@ -5582,7 +5587,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 		R_LOG_WARN ("Not going to analyze 0x%08"PFMT64x" bytes", (ut64)iend);
 		return;
 	}
-	buf = malloc ((size_t)iend + 2);
+	buf = calloc ((size_t)iend + 2, 1);
 	if (!buf) {
 		r_sys_perror ("malloc");
 		return;
@@ -5954,7 +5959,9 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 							? R_ANAL_REF_TYPE_CALL
 							: R_ANAL_REF_TYPE_CODE;
 						r_anal_xrefs_set (core->anal, cur, dst, ref | R_ANAL_REF_TYPE_EXEC);
-						r_core_anal_fcn (core, dst, UT64_MAX, R_ANAL_REF_TYPE_NULL, 1);
+						if (!xrefs_only) {
+							r_core_anal_fcn (core, dst, UT64_MAX, R_ANAL_REF_TYPE_NULL, 1);
+						}
 // analyze function here
 #if 0
 						if (op.type == R_ANAL_OP_TYPE_UCALL || op.type == R_ANAL_OP_TYPE_RCALL) {
