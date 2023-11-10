@@ -961,6 +961,8 @@ static int cmd_info(void *data, const char *input) {
 					mode = R_MODE_EQUAL;
 				} else if (input[1] == '*') {
 					mode = R_MODE_RADARE;
+				} else if (input[1] == 'q' && input[2] == 'q') {
+					mode = R_MODE_SIMPLEST;
 				} else if (input[1] == 'q' && input[2] == '.') {
 					mode = R_MODE_SIMPLE;
 				} else if (input[1] == 'j' && input[2] == '.') {
