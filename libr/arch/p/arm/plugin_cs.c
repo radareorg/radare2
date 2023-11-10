@@ -4820,7 +4820,7 @@ static RList *anal_preludes(RArchSession *as) {
 			r_list_append (l, r_str_newf ("f00f00f8 f00f00ff"));
 			r_list_append (l, r_str_newf ("f00000d1 f00000ff"));
 			r_list_append (l, r_str_newf ("f00000a9 f00000ff"));
-			r_list_append (l, r_str_newf ("7f2303d5ff"));
+			r_list_append (l, r_str_newf ("7f2303d5 ffffffff"));
 			break;
 		default:
 			r_list_free (l);
