@@ -119,6 +119,18 @@ R_API ut64 r_reg_get_value(RReg *reg, RRegItem *item) {
 		}
 		R_LOG_WARN ("32bit oob read %d", off);
 		break;
+	case 40:
+		if (off + 8 <= regset->arena->size) {
+			return r_read_ble64 (regset->arena->bytes + off, be) & 0xFFFFFFFFFF;
+		}
+		R_LOG_WARN ("48bit oob read %d", off);
+		break;
+	case 48:
+		if (off + 8 <= regset->arena->size) {
+			return r_read_ble64 (regset->arena->bytes + off, be) & 0xFFFFFFFFFFFF;
+		}
+		R_LOG_WARN ("48bit oob read %d", off);
+		break;
 	case 64:
 		if (regset->arena && regset->arena->bytes && (off + 8 <= regset->arena->size)) {
 			return r_read_ble64 (regset->arena->bytes + off, be);
