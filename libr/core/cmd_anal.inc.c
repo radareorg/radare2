@@ -66,11 +66,12 @@ static RCoreHelpMessage help_msg_afu = {
 
 static RCoreHelpMessage help_msg_aae = {
 	"Usage:", "aae", "[pf] ([addr]) # analyze all kind of stuff using esil",
-	"aaep", "", "same as aepa@@@i - define anal pins by import flag names",
-	"aaep", "a", "run 'aep ret0@@@i' and then 'aaep' - all unknown imports are faked to return 0",
-	"aaef", "", "emulate all functions using esil to find out computed references (same as aef@@@F)",
 	"aae", " [size] ([addr])", "same as aepa@@@i - define anal pins by import flag names",
 	"aae", "", "honor anal.{in,from,to} and emulate all executable regions",
+	"aaef", "", "emulate all functions using esil to find out computed references (same as aef@@@F)",
+	"aaep", "", "same as aepa@@@i - define anal pins by import flag names",
+	"aaep", "a", "run 'aep ret0@@@i' and then 'aaep' - all unknown imports are faked to return 0",
+	"aaex", "", "emulate all code linearly and register only the computed xrefs",
 	NULL
 };
 
@@ -13524,6 +13525,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 			r_core_anal_esil (core, len, addr);
 			free (arg);
 		} else {
+			const bool only_xrefs = input[1] == 'x';
 			ut64 at = core->offset;
 			RIOMap *map;
 			RListIter *iter;
@@ -13531,23 +13533,25 @@ static int cmd_anal_all(RCore *core, const char *input) {
 			if (!list) {
 				break;
 			}
-			if (!strcmp ("range", r_config_get (core->config, "anal.in"))) {
+			const char *target = only_xrefs? "+x": NULL;
+			const char *anal_in = r_config_get (core->config, "anal.in");
+			if (!strcmp ("range", anal_in) || !strcmp ("raw", anal_in)) {
 				ut64 from = r_config_get_i (core->config, "anal.from");
 				ut64 to = r_config_get_i (core->config, "anal.to");
 				if (to > from) {
 					char *len = r_str_newf (" 0x%"PFMT64x, to - from);
 					r_core_seek (core, from, true);
-					r_core_anal_esil (core, len, NULL);
+					r_core_anal_esil (core, len, target);
 					free (len);
 				} else {
-					R_LOG_ERROR ("Assert: anal.from > anal.to");
+					R_LOG_ERROR ("anal.from can't be past anal.to");
 				}
 			} else {
 				r_list_foreach (list, iter, map) {
 					if (map->perm & R_PERM_X) {
 						char *ss = r_str_newf (" 0x%"PFMT64x, r_io_map_size (map));
 						r_core_seek (core, r_io_map_begin (map), true);
-						r_core_anal_esil (core, ss, NULL);
+						r_core_anal_esil (core, ss, target);
 						free (ss);
 					}
 				}
