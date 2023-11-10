@@ -625,7 +625,6 @@ R_API bool r_syscmd_popd(void) {
 	if (r_list_empty (dirstack)) {
 		r_list_free (dirstack);
 		dirstack = NULL;
-		return false;
 	}
 	return true;
 }
