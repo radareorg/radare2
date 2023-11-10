@@ -13142,6 +13142,9 @@ static int cmd_anal_all(RCore *core, const char *input) {
 			cmd_anal_aav (core, input);
 		}
 		break;
+	case 'x': // "aax"
+		r_core_cmd0 (core, "af@@=`axlq~CALL[2]`");
+		break;
 	case 'w': // "aaw"
 		if (input[1] == '?') {
 			r_core_cmd_help_match (core, help_msg_aa, "aaw");
