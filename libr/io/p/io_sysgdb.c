@@ -460,7 +460,6 @@ static char *printprofile(RIO *io, RIODesc *fd) {
 	char *arch = io->coreb.cmdstrf (io->coreb.core, "-a");
 	bool is_arm = r_str_startswith (arch, "arm");
 	free (arch);
-	
 	if (is_arm && io->bits == 64) {
 		return strdup (arm_64);
 	}
