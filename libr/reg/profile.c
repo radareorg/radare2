@@ -164,13 +164,20 @@ R_API bool r_reg_set_profile_string(RReg *reg, const char *str) {
 		return true;
 	}
 	// eprintf ("OLD (%s) NEW (%s)\n", reg->reg_profile_str, str);
-
+// remove all arenas
 	// we should reset all the arenas before setting the new reg profile
 	r_reg_arena_pop (reg);
 	// Purge the old registers
 	r_reg_free_internal (reg, true);
 	r_reg_arena_shrink (reg);
-
+#if 0
+	for (i = 0; i < R_REG_TYPE_LAST; i++) {
+		RRegSet *rs = &reg->regset[i];
+		if (rs && rs->arena) {
+			rs->arena->size = 64;
+		}
+	}
+#endif
 	// Cache the profile string
 	reg->reg_profile_str = strdup (str);
 
