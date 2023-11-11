@@ -74,9 +74,9 @@ static int git_pull(const char *dir, bool reset) {
 		free (s);
 	}
 #if R2__WINDOWS__
-	char *s = r_str_newf ("cd %s && git pull && git diff", dir);
+	char *s = r_str_newf ("cd %s && git pull --quiet && git diff", dir);
 #else
-	char *s = r_str_newf ("cd '%s' && git pull && git diff | cat", dir);
+	char *s = r_str_newf ("cd '%s' && git pull --quiet", dir);
 #endif
 	int rc = r_sandbox_system (s, 1);
 	free (s);
