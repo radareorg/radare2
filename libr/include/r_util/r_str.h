@@ -288,9 +288,6 @@ R_UNUSED static inline bool r_str_startswith_inline(const char *str, const char 
 	if (!str || !needle) {
 		return false;
 	}
-	if (str == needle) {
-		return true;
-	}
 	return !strncmp (str, needle, strlen (needle));
 }
 #define r_str_startswith r_str_startswith_inline
