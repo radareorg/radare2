@@ -456,10 +456,15 @@ static const char x86r_32[] = "\n"
 "drx	dr6	.32	24	0\n"
 "drx	dr7	.32	28	0\n";
 
-static char *printprofile(RIO *io, RIODesc *fd) {
+static bool is_arch_arm(RIO *io) {
 	char *arch = io->coreb.cmdstrf (io->coreb.core, "-a");
 	bool is_arm = r_str_startswith (arch, "arm");
 	free (arch);
+	return is_arm;
+}
+
+static char *printprofile(RIO *io, RIODesc *fd) {
+	bool is_arm = is_arch_arm (io);
 	if (is_arm && io->bits == 64) {
 		return strdup (arm_64);
 	}
