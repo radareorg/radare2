@@ -3,6 +3,12 @@
 #include <r_io.h>
 #include <r_lib.h>
 
+#if 0
+on macOS:
+$ sudo ln -fs /Library/Developer/CommandLineTools/Library/PrivateFrameworks/LLDB.framework/Versions/A/Resources/debugserver /usr/local/bin/debugserver
+$ while : ; do debugserver 0.0.0.0:9999 /bin/ls ; done
+#endif
+
 #define DEBUG 0
 
 static R_TH_LOCAL RSocket *gs = NULL;
@@ -15,6 +21,7 @@ static bool usefirst = false;
 #endif
 static bool lastbroken = false;
 static bool use_pwndbg = false;
+static bool use_connect = false;
 
 // TODO: make it vargarg...
 static char *runcmd(const char *cmd) {
@@ -27,7 +34,12 @@ static char *runcmd(const char *cmd) {
 		r_socket_printf (gs, "%s\n", cmd);
 	} else {
 		if (use_lldb) {
-			cmd = "process launch --stop-at-entry\n";
+			if (use_connect) {
+				cmd = "gdb-remote %s\n";// localhost:9999\n";
+			} else {
+				cmd = "process launch --stop-at-entry\n";
+			}
+			r_socket_write (gs, cmd, strlen (cmd));
 		} else {
 			usefirst = true;
 		}
@@ -44,8 +56,15 @@ static char *runcmd(const char *cmd) {
 		eprintf ("LOOP\n");
 #endif
 		memset (buf, 0, sizeof (buf));
-		if (use_lldb && !r_socket_ready (gs, 0, 250)) {
+#
+		if (use_lldb && !r_socket_ready (gs, 0, 2500)) {
+			// cmd = "process launch --stop-at-entry\n";
+		//	cmd = "gdb-remote localhost:9999\n";
+		//	r_socket_write (gs, cmd, strlen (cmd));
+			cmd = NULL;
+			str = r_str_append (str, buf);
 			return str;
+			// break;
 		}
 		int rc = r_socket_read (gs, (ut8*)buf, sizeof (buf) - 1); // always NULL-terminate the string
 		if (rc < 0) {
@@ -154,22 +173,50 @@ repeat:
 		char *ores = runcmd (cmd);
 		char *nextline = NULL;
 		char *res = ores;
-		do {
-			nextline = r_str_after (res, '\n');
-			char *colon = r_str_after (res, ':');
-			while (colon && bufi < count) {
-				colon = (char *)r_str_trim_head_ro (colon);
-				if (!*colon) {
-					break;
-				}
-				ut64 b = atoi (colon);
-				buf[bufi++] = b;
-				while (colon && (isdigit (*colon) || *colon == '-')) {
+		if (use_lldb) {
+			do {
+				nextline = r_str_after (res, '\n');
+				char *colon = r_str_after (res, ':');
+				if (colon) {
 					colon++;
 				}
-			}
-			res = nextline + 1;
-		} while (nextline);
+				if (nextline) {
+					*nextline = 0;
+				}
+				while (colon && bufi < count) {
+					char *sp = strchr (colon, ' ');
+					if (sp) {
+						*sp = 0;
+					}
+					int n;
+					sscanf (colon, "0x%02x", &n);
+					buf[bufi++] = n;
+					if (sp) {
+						colon = sp + 1;
+					} else {
+						break;
+					}
+				}
+				res = nextline + 1;
+			} while (nextline && bufi < count);
+		} else {
+			do {
+				nextline = r_str_after (res, '\n');
+				char *colon = r_str_after (res, ':');
+				while (colon && bufi < count) {
+					colon = (char *)r_str_trim_head_ro (colon);
+					if (!*colon) {
+						break;
+					}
+					ut64 b = atoi (colon);
+					buf[bufi++] = b;
+					while (colon && (isdigit (*colon) || *colon == '-')) {
+						colon++;
+					}
+				}
+				res = nextline + 1;
+			} while (nextline);
+		}
 		free (ores);
 		free (cmd);
 	}
@@ -213,29 +260,41 @@ static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 		if (gs) {
 			return NULL;
 		}
+		// runcmd ("gdb-remote localhost:9999");
 		gs = r_socket_new (0);
 		char *cmd = use_lldb
-			? r_str_newf ("lldb --no-use-colors -- %s", pathname + 9)
+			// ? r_str_newf ("lldb --no-use-colors -- %s", pathname + 9)
+			? r_str_newf ("lldb --no-use-colors")
 			: r_str_newf ("gdb --args %s", pathname + 9);
 		int res = r_socket_spawn (gs, cmd, 1000);
 		free (cmd);
 		if (!res) {
 			return NULL;
 		}
-		if (use_lldb) {
-			R_LOG_WARN ("lldb support is broken and experimental");
-		}
 		char *reply = runcmd (NULL);
+		use_connect = strchr (pathname + 9, ':');
 #if DEBUG
 		eprintf ("REPLY (%s)\n", reply);
 #endif
 		if (reply) {
 			int rw = 7;
 			free (reply);
-			R_LOG_INFO ("sysgdb is ready to go");
+			if (use_lldb) {
+				if (use_connect) {
+					// nothing here
+					char *cmd = r_str_newf ("gdb-remote %s\n", pathname + 9);
+					runcmd (cmd);
+					free (cmd);
+				} else {
+					char *cmd = r_str_newf ("target create %s\n", pathname + 9);
+					runcmd (cmd);
+					free (cmd);
+					runcmd ("process launch --stop-at-entry\n");
+				}
+			}
 			return r_io_desc_new (io, &r_io_plugin_sysgdb, pathname, rw, mode, gs);
 		}
-		R_LOG_ERROR ("Can't find the gdb prompt");
+		R_LOG_ERROR ("Can't find the gdb/lldb prompt");
 	}
 	return NULL;
 }
@@ -245,6 +304,91 @@ static void printcmd(RIO *io, const char *cmd) {
 	io->cb_printf ("%s\n", res);
 	free (res);
 }
+
+static const char arm_64[] = "\n"
+"=PC     pc\n"
+"=SN     x16\n"
+"=SP     sp\n"
+"=BP     x30\n"
+"=A0     x0\n"
+"=A1     x1\n"
+"=A2     x2\n"
+"=A3     x3\n"
+"=ZF     zf\n"
+"=SF     nf\n"
+"=OF     vf\n"
+"=CF     cf\n"
+"gpr     x0      .64     0       0\n"
+"gpr     x1      .64     8       0\n"
+"gpr     x2      .64     16      0\n"
+"gpr     x3      .64     24      0\n"
+"gpr     x4      .64     32      0\n"
+"gpr     x5      .64     40      0\n"
+"gpr     x6      .64     48      0\n"
+"gpr     x7      .64     56      0\n"
+"gpr     x8      .64     64      0\n"
+"gpr     x9      .64     72      0\n"
+"gpr     x10     .64     80      0\n"
+"gpr     x11     .64     88      0\n"
+"gpr     x12     .64     96      0\n"
+"gpr     x13     .64     104     0\n"
+"gpr     x14     .64     112     0\n"
+"gpr     x15     .64     120     0\n"
+"gpr     x16     .64     128     0\n"
+"gpr     x17     .64     136     0\n"
+"gpr     x18     .64     144     0\n"
+"gpr     x19     .64     152     0\n"
+"gpr     x20     .64     160     0\n"
+"gpr     x21     .64     168     0\n"
+"gpr     x22     .64     176     0\n"
+"gpr     x23     .64     184     0\n"
+"gpr     x24     .64     192     0\n"
+"gpr     x25     .64     200     0\n"
+"gpr     x26     .64     208     0\n"
+"gpr     x27     .64     216     0\n"
+"gpr     x28     .64     224     0\n"
+"gpr     x29     .64     232     0\n"
+"gpr     w0      .32     0       0\n"
+"gpr     w1      .32     8       0\n"
+"gpr     w2      .32     16      0\n"
+"gpr     w3      .32     24      0\n"
+"gpr     w4      .32     32      0\n"
+"gpr     w5      .32     40      0\n"
+"gpr     w6      .32     48      0\n"
+"gpr     w7      .32     56      0\n"
+"gpr     w8      .32     64      0\n"
+"gpr     w9      .32     72      0\n"
+"gpr     w10     .32     80      0\n"
+"gpr     w11     .32     88      0\n"
+"gpr     w12     .32     96      0\n"
+"gpr     w13     .32     104     0\n"
+"gpr     w14     .32     112     0\n"
+"gpr     w15     .32     120     0\n"
+"gpr     w16     .32     128     0\n"
+"gpr     w17     .32     136     0\n"
+"gpr     w18     .32     144     0\n"
+"gpr     w19     .32     152     0\n"
+"gpr     w20     .32     160     0\n"
+"gpr     w21     .32     168     0\n"
+"gpr     w22     .32     176     0\n"
+"gpr     w23     .32     184     0\n"
+"gpr     w24     .32     192     0\n"
+"gpr     w25     .32     200     0\n"
+"gpr     w26     .32     208     0\n"
+"gpr     w27     .32     216     0\n"
+"gpr     w28     .32     224     0\n"
+"gpr     w29     .32     232     0\n"
+"gpr     wzr     .32     ?       0\n"
+"gpr     zr      .64     ?       0\n"
+"gpr     fp      .64     232     0\n"
+"gpr     lr      .64     240     0\n"
+"gpr     sp      .64     248     0\n"
+"gpr     pc      .64     256     0\n"
+"gpr     pstate  .64     264     0   _____tfiae_____________j__qvczn\n"
+"gpr     vf      .1      264.28  0       overflow\n"
+"gpr     cf      .1      264.29  0       carry\n"
+"gpr     zf      .1      264.30  0       zero\n"
+"gpr     nf      .1      264.31  0       sign\n";
 
 static const char x86r_32[] = "\n"
 "=PC	eip\n"
@@ -312,7 +456,18 @@ static const char x86r_32[] = "\n"
 "drx	dr6	.32	24	0\n"
 "drx	dr7	.32	28	0\n";
 
+static bool is_arch_arm(RIO *io) {
+	char *arch = io->coreb.cmdstrf (io->coreb.core, "-a");
+	bool is_arm = !strcmp (arch, "arm");
+	free (arch);
+	return is_arm;
+}
+
 static char *printprofile(RIO *io, RIODesc *fd) {
+	bool is_arm = is_arch_arm (io);
+	if (is_arm && io->bits == 64) {
+		return strdup (arm_64);
+	}
 	if (io->bits == 32) {
 		return strdup (x86r_32);
 	}
@@ -430,7 +585,7 @@ static char *printprofile(RIO *io, RIODesc *fd) {
 }
 
 static int sysgdb_getpid(void) {
-	char *res = runcmd ("info proc");
+	char *res = runcmd (use_lldb? "process status": "info proc");
 	char *sp = strchr (res, ' ');
 	int pid = sp? atoi (sp + 1): 0;
 	free (res);
@@ -458,8 +613,59 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 	} else if (!strcmp (cmd, "dc")) {
 		printcmd (io, "cont");
 	} else if (!strcmp (cmd, "dr8")) {
+		if (use_lldb) {
+			char *regs = runcmd ("re read");
+			int arenacount = 64;
+			int arenasize = 64 * arenacount;
+			ut64 *arena = (ut64*)calloc (arenacount, sizeof (ut64));
+			RList *list = r_str_split_list (regs, "\n", 0);
+			RListIter *iter;
+			char *line;
+#define IFREG(rn, pos) if (r_str_startswith (line, rn)) { arena[pos/8] = r_num_get (NULL, line + strlen (rn) + 3); } else
+			r_list_foreach (list, iter, line) {
+				// arm64
+				IFREG ("x0", 0)
+				IFREG ("x1", 8)
+				IFREG ("x2", 16)
+				IFREG ("x3", 24)
+				IFREG ("x4", 30)
+				IFREG ("x5", 36)
+				IFREG ("x6", 44)
+				IFREG ("x7", 52)
+				IFREG ("x8", 60)
+				IFREG ("x9", 68)
+				IFREG ("x10", 76)
+				IFREG ("x11", 84)
+				IFREG ("x12", 92)
+				IFREG ("x13", 100)
+				IFREG ("x14", 108)
+				IFREG ("x15", 116)
+				IFREG ("x16", 116)
+				IFREG ("x17", 116)
+				IFREG ("x18", 144)
+				IFREG ("x19", 152)
+				IFREG ("x20", 160)
+				IFREG ("x21", 168)
+				IFREG ("x22", 176)
+				IFREG ("x23", 184)
+				IFREG ("x24", 192)
+				IFREG ("x25", 200)
+				IFREG ("x26", 208)
+				IFREG ("x27", 216)
+				IFREG ("x28", 224)
+				IFREG ("cpsr", 264) // pstate
+				IFREG ("fp", 232)
+				IFREG ("sp", 248)
+				IFREG ("pc", 256)
+				{}
+			}
+#undef IFREG
+			r_list_free (list);
+			free (regs);
+			return r_hex_bin2strdup ((const ut8*)arena, arenasize);
+		}
 		char *regs = runcmd ("i r");
-		int arenacount = 23;
+		int arenacount = 64;
 		int arenasize = 64 * arenacount;
 		ut64 *arena = (ut64*)calloc (arenacount, sizeof (ut64));
 		RList *list = r_str_split_list (regs, "\n", 0);
@@ -467,6 +673,12 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 		char *line;
 #define IFREG(rn, pos) if (r_str_startswith (line, rn)) { arena[pos/8] = r_num_get (NULL, line + strlen (rn)); } else
 		r_list_foreach (list, iter, line) {
+			// arm64
+			IFREG ("x0", 0)
+			IFREG ("x1", 8)
+			IFREG ("sp", 248)
+			IFREG ("pc", 256)
+			// x86-64
 			IFREG ("rax", 80)
 			IFREG ("rbx", 40)
 			IFREG ("rcx", 88)
@@ -480,6 +692,7 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 			IFREG ("rip", 128)
 			{}
 		}
+#undef IFREG
 		r_list_free (list);
 		free (regs);
 		return r_hex_bin2strdup ((const ut8*)arena, arenasize);
@@ -490,7 +703,11 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 	} else if (!strcmp (cmd, "ds")) {
 		printcmd (io, "stepi");
 	} else if (!strcmp (cmd, "dr")) {
-		printcmd (io, "i r");
+		if (use_lldb) {
+			printcmd (io, "re read");
+		} else {
+			printcmd (io, "i r");
+		}
 	} else if (!strcmp (cmd, "dm")) {
 		RStrBuf *sb = r_strbuf_new ("");
 		// TODO: construct new string with standard pat
