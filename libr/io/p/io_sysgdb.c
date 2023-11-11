@@ -458,7 +458,7 @@ static const char x86r_32[] = "\n"
 
 static bool is_arch_arm(RIO *io) {
 	char *arch = io->coreb.cmdstrf (io->coreb.core, "-a");
-	bool is_arm = r_str_startswith (arch, "arm");
+	bool is_arm = !strcmp (arch, "arm");
 	free (arch);
 	return is_arm;
 }
@@ -615,7 +615,7 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 	} else if (!strcmp (cmd, "dr8")) {
 		if (use_lldb) {
 			char *regs = runcmd ("re read");
-			int arenacount = 23;
+			int arenacount = 64;
 			int arenasize = 64 * arenacount;
 			ut64 *arena = (ut64*)calloc (arenacount, sizeof (ut64));
 			RList *list = r_str_split_list (regs, "\n", 0);
