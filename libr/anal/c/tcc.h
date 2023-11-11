@@ -99,6 +99,24 @@ typedef UINT_PTR uintptr_t;
 #define TOK_ALLOC_INCR      512  /* must be a power of two */
 #define TOK_MAX_SIZE        4 /* token max size in int unit when stored in string */
 
+/* GNUC attribute definition */
+typedef ut32 AttributeDefValue;
+typedef union AttributeDef {
+	AttributeDefValue
+		func_call     : 3, /* calling convention (0..5), see below */
+		aligned       : 5, /* alignement (0..16) */
+		packed        : 1,
+		func_export   : 1,
+		func_import   : 1,
+		func_args     : 5,
+		mode          : 4,
+		weak          : 1,
+		fill          : 11;
+	AttributeDefValue value;
+	// ut32 alias_target;    /* token */
+} AttributeDef;
+
+
 /* token symbol management */
 typedef struct TokenSym {
 	struct TokenSym *hash_next;
@@ -153,7 +171,7 @@ typedef struct SValue {
 
 /* symbol management */
 typedef struct Sym {
-	int v;    /* symbol token */
+	AttributeDef v;    /* symbol token */
 	char *asm_label;    /* associated asm label */
 	unsigned int r;    /* associated register */
 	union {
@@ -168,21 +186,6 @@ typedef struct Sym {
 	struct Sym *prev; /* prev symbol in stack */
 	struct Sym *prev_tok; /* previous symbol for this token */
 } Sym;
-
-/* GNUC attribute definition */
-typedef struct AttributeDef {
-	unsigned int
-		func_call     : 3, /* calling convention (0..5), see below */
-			      aligned       : 5, /* alignement (0..16) */
-			      packed        : 1,
-			      func_export   : 1,
-			      func_import   : 1,
-			      func_args     : 5,
-			      mode          : 4,
-			      weak          : 1,
-			      fill          : 11;
-	int alias_target;    /* token */
-} AttributeDef;
 
 /* gr: wrappers for casting sym->r for other purposes */
 #define FUNC_CALL(r) (((AttributeDef*)&(r))->func_call)
@@ -759,11 +762,11 @@ ST_FUNC void cstr_free(CString *cstr);
 ST_FUNC void cstr_reset(CString *cstr);
 
 ST_INLN void sym_free(TCCState *s1, Sym *sym);
-ST_FUNC Sym *sym_push2(TCCState *s1, Sym **ps, int v, int t, long long c);
-ST_FUNC Sym *sym_push(TCCState *s1, int v, CType *type, int r, long long c);
+ST_FUNC Sym *sym_push2(TCCState *s1, Sym **ps, AttributeDef v, int t, long long c);
+ST_FUNC Sym *sym_push(TCCState *s1, AttributeDef v, CType *type, int r, long long c);
 ST_FUNC void sym_pop(TCCState *s1, Sym **ptop, Sym *b);
-ST_INLN Sym *sym_find(TCCState *s1, int v);
-ST_FUNC Sym *global_identifier_push(TCCState *s1, int v, int t, long long c);
+ST_INLN Sym *sym_find(TCCState *s1, AttributeDef v);
+ST_FUNC Sym *global_identifier_push(TCCState *s1, AttributeDef v, int t, long long c);
 
 ST_FUNC bool tcc_open_bf(TCCState *s1, const char *filename, int initlen);
 ST_FUNC int tcc_open(TCCState *s1, const char *filename);

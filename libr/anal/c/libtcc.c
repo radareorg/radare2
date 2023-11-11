@@ -297,8 +297,9 @@ static int tcc_compile(TCCState *s1) {
 		s1->size_type.t = VT_INT64;
 	}
 
+	AttributeDef vv = { .value = SYM_FIELD };
 	s1->func_old_type.t = VT_FUNC;
-	s1->func_old_type.ref = sym_push (s1, SYM_FIELD, &s1->int32_type, FUNC_CDECL, FUNC_OLD);
+	s1->func_old_type.ref = sym_push (s1, vv, &s1->int32_type, FUNC_CDECL, FUNC_OLD);
 
 // FIXME: Should depend on the target options too
 #ifdef TCC_TARGET_ARM

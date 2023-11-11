@@ -1000,7 +1000,8 @@ ST_INLN void define_push(TCCState *s1, int v, int macro_type, int *str, Sym *fir
 		tcc_warning (s1, "%s redefined", get_tok_str (s1, v, NULL));
 	}
 
-	s = sym_push2 (s1, &s1->define_stack, v, macro_type, 0);
+	AttributeDef vv = { .value = v };
+	s = sym_push2 (s1, &s1->define_stack, vv, macro_type, 0);
 	if (!s) {
 		return;
 	}
@@ -1013,11 +1014,11 @@ ST_INLN void define_push(TCCState *s1, int v, int macro_type, int *str, Sym *fir
 
 /* undefined a define symbol. Its name is just set to zero */
 ST_FUNC void define_undef(TCCState *s1, Sym *s) {
-	int v = s->v;
+	int v = s->v.value;
 	if (v >= TOK_IDENT && v < s1->tok_ident) {
 		s1->table_ident[v - TOK_IDENT]->sym_define = NULL;
 	}
-	s->v = 0;
+	s->v.value = 0;
 }
 
 ST_INLN Sym *define_find(TCCState *s1, int v) {
@@ -1031,7 +1032,7 @@ ST_INLN Sym *define_find(TCCState *s1, int v) {
 /* free define stack until top reaches 'b' */
 ST_FUNC void free_defines(TCCState *s1, Sym *b) {
 	Sym *top, *top1;
-	int v;
+	ut32 v;
 
 	top = s1->define_stack;
 	while (top != b) {
@@ -1040,7 +1041,7 @@ ST_FUNC void free_defines(TCCState *s1, Sym *b) {
 		if (top->d) {
 			tok_str_free (top->d);
 		}
-		v = top->v;
+		v = top->v.value;
 		if (v >= TOK_IDENT && v < s1->tok_ident) {
 			s1->table_ident[v - TOK_IDENT]->sym_define = NULL;
 		}
@@ -1138,7 +1139,8 @@ static void parse_define(TCCState *s1) {
 			if (varg < TOK_IDENT) {
 				tcc_error (s1, "badly punctuated parameter list");
 			}
-			s = sym_push2 (s1, &s1->define_stack, varg | SYM_FIELD, is_vaargs, 0);
+			AttributeDef vv = { .value = varg | SYM_FIELD };
+			s = sym_push2 (s1, &s1->define_stack, vv, is_vaargs, 0);
 			if (!s) {
 				return;
 			}
@@ -2525,7 +2527,7 @@ keep_tok_flags:
 /* find a symbol and return its associated structure. 's' is the top of the symbol stack */
 static Sym *sym_find2(Sym *s, int v) {
 	while (s) {
-		if (s->v == v) {
+		if (s->v.value == v) {
 			return s;
 		}
 		s = s->prev;
@@ -2726,7 +2728,7 @@ redo:
 						*can_read_stream = ml->prev;
 					}
 					/* also, end of scope for nested defined symbol */
-					(*nested_list)->v = -1;
+					(*nested_list)->v.value = -1;
 					goto redo;
 				}
 			} else {
@@ -2766,7 +2768,7 @@ redo:
 					break;
 				}
 				if (!sa) {
-					tcc_error (s1, "macro '%s' used with too many args", get_tok_str (s1, s->v, 0));
+					tcc_error (s1, "macro '%s' used with too many args", get_tok_str (s1, s->v.value, 0));
 				}
 				tok_str_new (&str);
 				parlevel = spc = 0;
@@ -2790,7 +2792,8 @@ redo:
 				}
 				str.len -= spc;
 				tok_str_add (s1, &str, 0);
-				sa1 = sa ? sym_push2 (s1, &args, sa->v & ~SYM_FIELD, sa->type.t, 0) : NULL;
+				AttributeDef vv = { sa->v.value & ~SYM_FIELD };
+				sa1 = sa ? sym_push2 (s1, &args, vv, sa->type.t, 0) : NULL;
 				if (!sa1) {
 					return -1;
 				}
@@ -2812,7 +2815,7 @@ redo:
 				next_nomacro (s1);
 			}
 			if (sa) {
-				tcc_error (s1, "macro '%s' used with too few args", get_tok_str (s1, s->v, 0));
+				tcc_error (s1, "macro '%s' used with too few args", get_tok_str (s1, s->v.value, 0));
 			}
 
 			/* now subst each arg */
