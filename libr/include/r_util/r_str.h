@@ -284,7 +284,7 @@ static inline size_t r_str_ncpy(char *dst, const char *src, size_t n) {
 	return i;
 }
 R_API bool r_str_startswith(const char *str, const char *needle);
-R_UNUSED static bool r_str_startswith_inline(const char *str, const char *needle) {
+R_UNUSED static inline bool r_str_startswith_inline(const char *str, const char *needle) {
 	if (!str || !needle) {
 		return false;
 	}
