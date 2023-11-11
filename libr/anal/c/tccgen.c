@@ -3049,7 +3049,10 @@ static int decl0(TCCState *s1, int l, int is_for_loop_init) {
 					/* use func_call from prototype if not defined */
 					if (FUNC_CALL (r) != FUNC_CDECL
 					    && FUNC_CALL (type.ref->r) == FUNC_CDECL) {
-						FUNC_CALL (type.ref->r) = FUNC_CALL (r);
+						/// XXX workaround for the buggy tcc type punning crap
+						AttributeDef rd = {0};
+						memcpy (&rd, &r, sizeof (r));
+						FUNC_CALL (type.ref->r) = FUNC_CALL (rd);
 					}
 
 					/* use export from prototype */
