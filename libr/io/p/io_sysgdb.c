@@ -665,7 +665,7 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 			return r_hex_bin2strdup ((const ut8*)arena, arenasize);
 		}
 		char *regs = runcmd ("i r");
-		int arenacount = 23;
+		int arenacount = 64;
 		int arenasize = 64 * arenacount;
 		ut64 *arena = (ut64*)calloc (arenacount, sizeof (ut64));
 		RList *list = r_str_split_list (regs, "\n", 0);
