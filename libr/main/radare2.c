@@ -1265,6 +1265,9 @@ R_API int r_main_radare2(int argc, const char **argv) {
 		if (mr.asmos) {
 			r_config_set (r->config, "asm.os", mr.asmos);
 		}
+		if (strstr (mr.pfile, "sysgdb://")) {
+			mr.debug = 2;
+		}
 		if (mr.debug) {
 			if (mr.asmbits) {
 				r_config_set (r->config, "asm.bits", mr.asmbits);
