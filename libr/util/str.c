@@ -1919,9 +1919,8 @@ R_API char *r_str_format_msvc_argv(size_t argc, const char **argv) {
 }
 
 static size_t __str_ansi_length(char const *str) {
-	size_t i = 0;
+	size_t i = 1;
 	if (str[0] == 0x1b) {
-        i++;
 		if (str[1] == '[') {
 			i++;
 			while (str[i] && str[i] != 'J' && str[i] != 'm' && str[i] != 'H' && str[i] != 'K') {
@@ -1935,11 +1934,7 @@ static size_t __str_ansi_length(char const *str) {
 		if (str[i]) {
 			i++;
 		}
-	} else if (str[0] == 0xc2 && str[1] >= 0x80 && str[1] <= 0x9f) { // C1 control codes U+0080 - U+009F
-        i += 2;
-    } else if (str[0] == 0x07 || str[0] == 0x05 || str[0] == 0x7f) { // BEL, ENQ, DEL
-        i++;
-    }
+	}
 	return i;
 }
 
@@ -1966,14 +1961,27 @@ R_API size_t r_str_ansi_nlen(const char *str, size_t slen) {
 	return len; // len > 0 ? len: 1;
 }
 
+static size_t __str_ansi_sanitize_length(char const *str) {
+	size_t i = 0;
+	if (str[0] == 0x1b || str[0] == 0x07 || str[0] == 0x05 || str[0] == 0x7f) { // ESC, BEL, ENQ, DEL
+        i++;
+	} else if (str[0] == -0x3e && str[1] >= -0x80 && str[1] <= -0x61) { // C1 control codes U+0080 - U+009F
+        i += 2;
+    }
+	return i;
+}
+
 // remove ansi escape codes from string, decolorizing it
 // TODO : optimize by just using two counter variables instead of strcpy()
 R_API size_t r_str_ansi_strip(char *str) {
 	size_t i = 0;
 	while (str[i]) {
 		size_t chlen = __str_ansi_length (str + i);
-		if (chlen > 0) {
+        size_t sanitize_len = __str_ansi_sanitize_length(str + i);
+		if (chlen > 1) {
 			r_str_cpy (str + i, str + i + chlen);
+        } else if (sanitize_len > 0) {
+			r_str_cpy (str + i, str + i + sanitize_len);
 		} else {
 			i++;
 		}
