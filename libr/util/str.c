@@ -1935,7 +1935,7 @@ static size_t __str_ansi_length(char const *str) {
 		if (str[i]) {
 			i++;
 		}
-	} else if (str[0] == 0xc2 && str[1] >= 0x80 && str[1] <= 0x90) { // C1 control codes U+0080 - U+009F
+	} else if (str[0] == 0xc2 && str[1] >= 0x80 && str[1] <= 0x9f) { // C1 control codes U+0080 - U+009F
         i += 2;
     } else if (str[0] == 0x07 || str[0] == 0x05 || str[0] == 0x7f) { // BEL, ENQ, DEL
         i++;
