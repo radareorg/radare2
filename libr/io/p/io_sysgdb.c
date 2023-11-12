@@ -623,6 +623,18 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 			char *line;
 #define IFREG(rn, pos) if (r_str_startswith (line, rn)) { arena[pos/8] = r_num_get (NULL, line + strlen (rn) + 3); } else
 			r_list_foreach (list, iter, line) {
+				// x86-64
+				IFREG ("rax", 80)
+				IFREG ("rbx", 40)
+				IFREG ("rcx", 88)
+				IFREG ("rdx", 96)
+				IFREG ("r8", 72)
+				IFREG ("r10", 56)
+				IFREG ("rsi", 104)
+				IFREG ("rdi", 112)
+				IFREG ("rbp", 32)
+				IFREG ("rsp", 152)
+				IFREG ("rip", 128)
 				// arm64
 				IFREG ("x0", 0)
 				IFREG ("x1", 8)
@@ -701,7 +713,7 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 	} else if (r_str_startswith (cmd, "dk")) {
 		// do nothing. but we should send a signal here
 	} else if (!strcmp (cmd, "ds")) {
-		printcmd (io, "stepi");
+		runcmd ("stepi");
 	} else if (!strcmp (cmd, "dr")) {
 		if (use_lldb) {
 			printcmd (io, "re read");
