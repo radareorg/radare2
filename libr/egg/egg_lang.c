@@ -266,8 +266,7 @@ static void rcc_mathop(REgg *egg, char **pos, int level) {
 		rcc_internal_mathop (egg, p, strdup (e->regs (egg, op_ret-1)), op);
 		rcc_internal_mathop (egg, (char *)e->regs (egg, op_ret-1),
 				strdup (e->regs (egg, level-1)), '=');
-	}
-	else rcc_internal_mathop(egg, p, strdup (e->regs (egg, level-1)), op);
+	} else { rcc_internal_mathop(egg, p, strdup (e->regs (egg, level-1)), op); }
 */
 }
 

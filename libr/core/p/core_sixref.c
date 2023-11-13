@@ -29,10 +29,8 @@ static void siguza_xrefs_chunked(RCore *core, ut64 search, int lenbytes) {
 				addref (core, addr, target, R_ANAL_REF_TYPE_DATA); // is_adrp matters?
 			} else if (target == search) {
 				r_cons_printf ("%#"PFMT64x": %s x%u, %#"PFMT64x"\n", addr, is_adrp ? "adrp" : "adr", reg, target);
-			}
-			// More complicated cases - up to 3 instr
-			else
-			{
+			} else {
+				// More complicated cases - up to 3 instr
 				ut32 *q = p + 1;
 				while (q < e && *q == 0xd503201f) // nop
 				{
@@ -97,12 +95,9 @@ static void siguza_xrefs_chunked(RCore *core, ut64 search, int lenbytes) {
 								{
 									ut64 uoff = ((v >> 10) & 0xfff) << size;
 									if (target + aoff + uoff == search) {
-										if (aoff) // Have add
-										{
+										if (aoff) { // Have add
 											r_cons_printf("%#"PFMT64x": %s x%u, %#"PFMT64x"; add x%u, x%u, %#x; %s %s%u, [x%u, %#"PFMT64x"]\n", addr, is_adrp ? "adrp" : "adr", reg, target, reg2, reg, aoff, inst, rs, v & 0x1f, reg2, uoff);
-										}
-										else // Have no add
-										{
+										} else { // Have no add
 											r_cons_printf("%#"PFMT64x": %s x%u, %#"PFMT64x"; %s %s%u, [x%u, %#"PFMT64x"]\n", addr, is_adrp ? "adrp" : "adr", reg, target, inst, rs, v & 0x1f, reg2, uoff);
 										}
 									}
@@ -113,40 +108,35 @@ static void siguza_xrefs_chunked(RCore *core, ut64 search, int lenbytes) {
 										if ((v & 0x400) == 0) {
 											if ((v & 0x800) == 0) // unscaled
 											{
-												switch((opc << 4) | size)
-												{
-													case 0x00:            inst = "sturb";  break;
-													case 0x01:            inst = "sturh";  break;
-													case 0x02: case 0x03: inst = "stur";   break;
-													case 0x10:            inst = "ldurb";  break;
-													case 0x11:            inst = "ldurh";  break;
-													case 0x12: case 0x13: inst = "ldur";   break;
-													case 0x20: case 0x30: inst = "ldursb"; break;
-													case 0x21: case 0x31: inst = "ldursh"; break;
-													case 0x22:            inst = "ldursw"; break;
+												switch((opc << 4) | size) {
+												case 0x00:            inst = "sturb";  break;
+												case 0x01:            inst = "sturh";  break;
+												case 0x02: case 0x03: inst = "stur";   break;
+												case 0x10:            inst = "ldurb";  break;
+												case 0x11:            inst = "ldurh";  break;
+												case 0x12: case 0x13: inst = "ldur";   break;
+												case 0x20: case 0x30: inst = "ldursb"; break;
+												case 0x21: case 0x31: inst = "ldursh"; break;
+												case 0x22:            inst = "ldursw"; break;
 												}
-											}
-											else // unprivileged
-											{
-												switch((opc << 4) | size)
-												{
-													case 0x00:            inst = "sttrb";  break;
-													case 0x01:            inst = "sttrh";  break;
-													case 0x02: case 0x03: inst = "sttr";   break;
-													case 0x10:            inst = "ldtrb";  break;
-													case 0x11:            inst = "ldtrh";  break;
-													case 0x12: case 0x13: inst = "ldtr";   break;
-													case 0x20: case 0x30: inst = "ldtrsb"; break;
-													case 0x21: case 0x31: inst = "ldtrsh"; break;
-													case 0x22:            inst = "ldtrsw"; break;
+											} else { // unprivileged
+												switch((opc << 4) | size) {
+												case 0x00:            inst = "sttrb";  break;
+												case 0x01:            inst = "sttrh";  break;
+												case 0x02: case 0x03: inst = "sttr";   break;
+												case 0x10:            inst = "ldtrb";  break;
+												case 0x11:            inst = "ldtrh";  break;
+												case 0x12: case 0x13: inst = "ldtr";   break;
+												case 0x20: case 0x30: inst = "ldtrsb"; break;
+												case 0x21: case 0x31: inst = "ldtrsh"; break;
+												case 0x22:            inst = "ldtrsw"; break;
 												}
 											}
 											if (aoff) // Have add
 											{
 												r_cons_printf("%#"PFMT64x": %s x%u, %#"PFMT64x"; add x%u, x%u, %#x; %s %s%u, [x%u, %s%"PFMT64d"]\n",
 													addr, is_adrp ? "adrp" : "adr", reg, target, reg2, reg, aoff, inst, rs, v & 0x1f, reg2, sign, (st64)soff);
-											}
-											else // Have no add
+											} else // Have no add
 											{
 												r_cons_printf("%#"PFMT64x": %s x%u, %#"PFMT64x"; %s %s%u, [x%u, %s%"PFMT64d"]\n", addr, is_adrp ? "adrp" : "adr", reg, target, inst, rs, v & 0x1f, reg2, sign, (st64)soff);
 											}

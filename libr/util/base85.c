@@ -51,12 +51,10 @@ static void encode_tuple(unsigned long tuple, int count, int wrap, int *plen, in
 	int i, lim;
 	char out[5];
 	if (tuple == 0 && count == 4) {
-		putc_wrap('z', wrap, plen);
-	}
-	else if (tuple == 0x20202020 && count == 4 && y_abbr) {
-		putc_wrap('y', wrap, plen);
-	}
-	else {
+		putc_wrap ('z', wrap, plen);
+	} else if (tuple == 0x20202020 && count == 4 && y_abbr) {
+		putc_wrap ('y', wrap, plen);
+	} else {
 		for (i = 0; i < 5; i++) {
 			out[i] = tuple % 85 + '!';
 			tuple /= 85;

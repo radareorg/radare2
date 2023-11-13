@@ -286,8 +286,7 @@ static bool pattern_match(char const*str, char const*pattern) {
 		if (tolower ((unsigned char)pattern[ti]) == tolower ((unsigned char)str[si])) {
 			si += 1;
 			ti += 1;
-		}
-		else {
+		} else {
 			return false;
 		}
 	}
@@ -300,8 +299,7 @@ static parse_mnem_args match_prefix_f(int*args, char const*str, ftable const tbl
 		if (pattern_match (str, tbl[row].pattern)) {
 			*args = tbl[row].args;
 			return tbl[row].res;
-		}
-		else {
+		} else {
 			row += 1;
 		}
 	}
@@ -361,8 +359,7 @@ static bool relative_address(ut16 pc, ut16 address, ut8 *out)
 	st16 diff = address - (pc + 2);
 	if (diff < INT8_MIN || INT8_MAX < diff) {
 		return false;
-	}
-	else {
+	} else {
 		*out = diff;
 		return true;
 	}
@@ -1193,18 +1190,15 @@ static bool mnem_jmp(char const*const*arg, ut16 pc, ut8**out) {
 	ut16 reladdr;
 	if (pc < address ) {
 		reladdr = address - pc;
-	}
-	else {
+	} else {
 		reladdr = pc - address;
 	}
 
 	if (reladdr < 0x100 ) {
 		return mnem_sjmp (arg, pc, out);
-	}
-	else if (reladdr < 0x08FF ) {
+	} else if (reladdr < 0x08FF ) {
 		return mnem_ajmp (arg, pc, out);
-	}
-	else {
+	} else {
 		return mnem_ljmp (arg, pc, out);
 	}
 }
