@@ -574,7 +574,7 @@ static void register_helpers(JSContext *ctx) {
 		"}");
 	eval (ctx, "var console = { log:print, error:print, debug:print };");
 	eval (ctx, "r2.cmdj = (x) => JSON.parse(r2.cmd(x));");
-	eval (ctx, "r2.cmdAt = (x, a) => r2.cmd(`$x @ $a`);");
+	eval (ctx, "r2.cmdAt = (x, a) => r2.cmd(x + ' @ ' + a);");
 	eval (ctx, "r2.call = (x) => r2.cmd('\"\"' + x);");
 	eval (ctx, "r2.callj = (x) => JSON.parse(r2.call(x));");
 	eval (ctx, "var global = globalThis; var G = globalThis;");
