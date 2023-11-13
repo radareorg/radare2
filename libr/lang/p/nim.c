@@ -61,7 +61,7 @@ static RLangPlugin r_lang_plugin_nim = {
 		.license = "LGPL",
 		.desc = "Use #!nim script.nim",
 	},
-	.ext = "ts",
+	.ext = "nim",
 	.init = lang_nim_init,
 	.run = lang_nim_run,
 	.run_file = (void*)lang_nim_file,
