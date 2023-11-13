@@ -63,7 +63,7 @@ static bool lang_tsc_file(RLangSession *s, const char *file) {
 		return false;
 	}
 	char *js_ofile = r_str_replace (strdup (file), ".ts", ".js", 0);
-	char *qjs_ofile = r_str_replace (strdup (file), ".ts", ".qjs", 0);
+	char *qjs_ofile = r_str_replace (strdup (file), ".ts", ".r2.js", 0);
 	int rc = 0;
 	/// check of ofile exists and its newer than file
 	if (!r_file_is_newer (qjs_ofile, file)) {
