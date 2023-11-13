@@ -678,27 +678,31 @@ class NativePointer {
         this.api.call("ww " + s);
         return this;
     }
-    asNumber() {
-        const v = this.api.call("?vi " + this.addr);
-        return parseInt(v);
-    }
+    /**
+         * Check if it's a pointer to the address zero. Also known as null pointer.
+         *
+         * @returns {boolean} true if null
+         */
     isNull() {
-        return this.asNumber() == 0;
+        return this.toNumber() == 0;
     }
     compare(a) {
         if (typeof a === "string" || typeof a === "number") {
             a = new NativePointer(a);
         }
-        return a.addr === this.addr || (new NativePointer(a.addr)).asNumber() === this.asNumber();
+        return a.addr === this.addr || (new NativePointer(a.addr)).toNumber() === this.toNumber();
     }
     pointsToNull() {
         return this.readPointer().compare(0);
     }
     toJSON() {
-        return this.toString();
+        return this.api.cmd('?vi ' + this.addr.trim());
     }
     toString() {
-        return this.addr.trim();
+        return this.api.cmd('?v ' + this.addr.trim());
+    }
+    toNumber() {
+        return parseInt(this.toString());
     }
     writePointer(p) {
         this.api.cmd(`wvp ${p}@${this}`); // requires 5.8.2
