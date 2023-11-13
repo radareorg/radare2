@@ -579,6 +579,7 @@ static void register_helpers(JSContext *ctx) {
 	eval (ctx, "r2.callj = (x) => JSON.parse(r2.call(x));");
 	eval (ctx, "var global = globalThis; var G = globalThis;");
 	eval (ctx, js_require_qjs);
+	eval (ctx, "require = function(x) { if (x=='r2papi') {return new R2Papi(r2);} ; return requirejs(x); }");
 	eval (ctx, "var exports = {};");
 	eval (ctx, "G.r2pipe = {open: function(){ return R.r2;}};");
 	eval (ctx, "G.R2Pipe=() => R.r2;");
