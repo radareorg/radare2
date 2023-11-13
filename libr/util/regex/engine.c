@@ -525,17 +525,13 @@ static char *backref(struct match *m, char *start, char *stop, sopno startst, so
 			if ((sp == m->beginp && !(m->eflags&R_REGEX_NOTBOL)) ||
 					(sp < m->endp && *(sp-1) == '\n' &&
 						(m->g->cflags&R_REGEX_NEWLINE)) )
-				{ /* yes */ }
-			else
-				return NULL;
+			{ /* yes */ } else { return NULL; }
 			break;
 		case OEOL:
 			if ((sp == m->endp && !(m->eflags&R_REGEX_NOTEOL)) ||
 					(sp < m->endp && *sp == '\n' &&
 						(m->g->cflags&R_REGEX_NEWLINE)) )
-				{ /* yes */ }
-			else
-				return NULL;
+				{ /* yes */ } else { return NULL; }
 			break;
 		case OBOW:
 			if (( (sp == m->beginp && !(m->eflags&R_REGEX_NOTBOL)) ||
@@ -543,20 +539,14 @@ static char *backref(struct match *m, char *start, char *stop, sopno startst, so
 						(m->g->cflags&R_REGEX_NEWLINE)) ||
 					(sp > m->beginp && !ISWORD ((unsigned char)*(sp-1))) ) &&
 					(sp < m->endp && ISWORD ((unsigned char)*sp)) )
-				{ /* yes */ }
-			else
-				return NULL;
+				{ /* yes */ } else { return NULL; }
 			break;
 		case OEOW:
-			if (( (sp == m->endp && !(m->eflags&R_REGEX_NOTEOL)) ||
-					(sp < m->endp && *sp == '\n' &&
-						(m->g->cflags&R_REGEX_NEWLINE)) ||
-					(sp < m->endp && !ISWORD ((unsigned char)*sp)) ) &&
-					(sp > m->beginp && ISWORD ((unsigned char)*(sp-1))) )
-				{ /* yes */ }
-			else
-				return NULL;
-			break;
+			if (( (sp == m->endp && !(m->eflags&R_REGEX_NOTEOL))
+				|| (sp < m->endp && *sp == '\n' && (m->g->cflags&R_REGEX_NEWLINE))
+				|| (sp < m->endp && !ISWORD ((unsigned char)*sp)) ) && (sp > m->beginp && ISWORD ((unsigned char)*(sp-1))) )
+				{ /* yes */ } else { return NULL; }
+		       	break;
 		case O_QUEST:
 			break;
 		case OOR1:	/* matches null but needs to skip */
@@ -645,12 +635,13 @@ static char *backref(struct match *m, char *start, char *stop, sopno startst, so
 			}
 			ssub = esub + 1;
 			esub += OPND (m->g->strip[esub]);
-			if (OP (m->g->strip[esub]) == OOR2)
+			if (OP (m->g->strip[esub]) == OOR2) {
 				esub--;
-			else
+			} else {
 				if (OP (m->g->strip[esub]) != O_CH) {
 					break;
 				}
+			}
 		}
 		break;
 	case OLPAREN:		/* must undo assignment if rest fails */

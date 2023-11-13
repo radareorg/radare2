@@ -1173,8 +1173,7 @@ static int parse(RMagic *ms, struct r_magic_entry **mentryp, ut32 *nmentryp, con
 			l = t;
 			m->num_mask = file_signextend (ms, m, val);
 			eatsize (&l);
-		}
-		else if (op == FILE_OPDIVIDE) {
+		} else if (op == FILE_OPDIVIDE) {
 			int have_range = 0;
 			for (l++; !isspace (*l); l++) {
 				switch (*l) {

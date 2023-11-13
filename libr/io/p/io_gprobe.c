@@ -558,10 +558,7 @@ static int sp_blocking_write(struct gport *port, const void *buf,
 		return count;
 	} else if (GetLastError () == ERROR_IO_PENDING) {
 		if (GetOverlappedResult (port->hdl, &port->write_ovl, &bytes_written, TRUE) == 0) {
-			if (GetLastError () == ERROR_SEM_TIMEOUT)
-				return 0;
-			else
-				return -1;
+			return (GetLastError () == ERROR_SEM_TIMEOUT)? 0: -1;
 		}
 		return bytes_written;
 	} else {
@@ -1538,10 +1535,11 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 		ut32 address = (ut32)strtoul (cmd + 8, &endptr, 0);
 		ut32 count;
 
-		if (endptr)
+		if (endptr) {
 			count = (ut32)strtoul (endptr, NULL, 0);
-		else
+		} else {
 			return NULL;
+		}
 
 		gprobe_flashcrc (&gprobe->gport, address, count);
 
@@ -1552,14 +1550,12 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 		char *endptr;
 		ut32 max_chunksize = (ut32)strtoul (cmd + 10, &endptr, 0);
 		ut32 address;
-
-		if (endptr)
+		if (endptr) {
 			address = (ut32)strtoul (endptr, &endptr, 0);
-		else
+		} else {
 			return NULL;
-
+		}
 		gprobe_flashwrite (&gprobe->gport, max_chunksize, address, endptr);
-
 		return NULL;
 	}
 
