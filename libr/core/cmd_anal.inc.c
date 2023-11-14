@@ -13210,7 +13210,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 		if (input[1] == '?') {
 			r_core_cmd_help_match (core, help_msg_aa, "aap");
 		} else {
-			r_core_search_preludes (core, true);
+			r_core_search_preludes (core, false);
 		}
 		break;
 	case '\0': // "aa"

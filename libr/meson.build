@@ -176,7 +176,7 @@ if no_user_plugins
     'gb',
     'x86_cs',
   ]
-  
+
   if use_gpl
     arch_plugins += [
       'xtensa',
@@ -194,11 +194,11 @@ if no_user_plugins
       'mips_gnu',
     ]
   endif
-  
+
   if get_option('use_v35')
     arch_plugins += ['arm_v35']
   endif
-  
+
   bin_plugins += [
     'art',
     'avr',
@@ -256,18 +256,18 @@ if no_user_plugins
     'zimg',
     'xtac'
   ]
-  
+
   bin_ldr_plugins += [
     'ldr_linux'
   ]
-  
+
   bin_xtr_plugins += [
     'xtr_dyldcache',
     'xtr_fatmach0',
     'xtr_xalz',
     'xtr_sep64',
   ]
-  
+
   bp_plugins += [
     'arm',
     'bf',
@@ -276,13 +276,13 @@ if no_user_plugins
     'sh',
     'x86'
   ]
-  
+
   core_plugins += [
     'agD',
     'a2f',
     'java'
   ]
-  
+
   crypto_plugins += [
     'aes',
     'aes_cbc',
@@ -300,7 +300,7 @@ if no_user_plugins
     'rot',
     'serpent',
   ]
-  
+
   debug_plugins += [
     'bf',
     'bochs',
@@ -311,18 +311,18 @@ if no_user_plugins
     'rap',
     'winkd'
   ]
-  
+
   egg_plugins += [
     'exec',
     #'shya',
   ]
-  
+
   fs_plugins += [
     'io',
     'posix',
     'r2',
   ]
-  
+
   if not get_option('nogpl')
     fs_plugins += [
       'cpio', 'ext2', 'fat', 'fb', 'hfs',
@@ -331,7 +331,7 @@ if no_user_plugins
       'udf', 'ufs', 'ufs2', 'xfs'
     ]
   endif
-  
+
   io_plugins += [
     'ar',
     'fd',
@@ -361,7 +361,7 @@ if no_user_plugins
     'winedbg',
     'zip'
   ]
-  
+
   if host_machine.system() == 'windows'
     io_plugins += [
       'windbg',
@@ -370,7 +370,7 @@ if no_user_plugins
     ]
     debug_plugins += 'windbg'
   endif
-  
+
   lang_plugins += [
     'v',
     'lib',
@@ -383,14 +383,14 @@ if no_user_plugins
     'c',
     'vala'
   ]
-  
+
   if host_machine.system() != 'windows'
     lang_plugins += [
       'pipe',
       'cpipe'
     ]
   endif
-  
+
   parse_plugins += [
     '6502_pseudo',
     'bpf_pseudo',
