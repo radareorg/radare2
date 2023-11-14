@@ -1,20 +1,26 @@
 /* radare - LGPL - Copyright 2009-2023 - pancake */
 
-#include <r_core.h> // just to get the RPrint instance
 #include <r_debug.h>
+#include <r_core.h> // just to get the RPrint instance
 
 R_API bool r_debug_reg_sync(RDebug *dbg, int type, int must_write) {
-	r_return_val_if_fail (dbg && dbg->reg && dbg->current, false);
+	r_return_val_if_fail (dbg && dbg->reg, false);
+	// if dbg->current is null means that we didnt selected any debug plugin
+	// this function is only needed to sync the local regstate into the target process
+	if (dbg->current == NULL) {
+		return true;
+	}
+	RDebugPlugin *plugin = &(dbg->current->plugin);
 	int n, size;
 	if (r_debug_is_dead (dbg)) {
 		return false;
 	}
 	if (must_write) {
-		if (!dbg->current->plugin.reg_write) {
+		if (!plugin->reg_write) {
 			return false;
 		}
 	} else {
-		if (!dbg->current->plugin.reg_read) {
+		if (!plugin->reg_read) {
 			return false;
 		}
 	}
@@ -42,7 +48,7 @@ R_API bool r_debug_reg_sync(RDebug *dbg, int type, int must_write) {
 	do {
 		if (must_write) {
 			ut8 *buf = r_reg_get_bytes (dbg->reg, i, &size);
-			if (!buf || !dbg->current->plugin.reg_write (dbg, i, buf, size)) {
+			if (!buf || !plugin->reg_write (dbg, i, buf, size)) {
 				if (i == R_REG_TYPE_GPR) {
 					R_LOG_ERROR ("cannot write registers %d to %d", i, dbg->tid);
 				}
@@ -56,24 +62,12 @@ R_API bool r_debug_reg_sync(RDebug *dbg, int type, int must_write) {
 			int bufsize = dbg->reg->size;
 			if (bufsize > 0) {
 				ut8 *buf = calloc (2, bufsize);
-				if (!buf) {
-					return false;
+				if (buf) {
+					if (plugin->reg_read (dbg, i, buf, bufsize)) {
+						r_reg_set_bytes (dbg->reg, i, buf, bufsize);
+					}
+					free (buf);
 				}
-#if 0
-				//we have already checked dbg->current.plugin and dbg->current->plugin.reg_read above
-				size = dbg->current->plugin.reg_read (dbg, i, buf, bufsize);
-				// we need to check against zero because reg_read can return false
-				if (size > 0) {
-					r_reg_set_bytes (dbg->reg, i, buf, size); //R_MIN (size, bufsize));
-			//		free (buf);
-			//		return true;
-				}
-#else
-				if (dbg->current->plugin.reg_read (dbg, i, buf, bufsize)) {
-					r_reg_set_bytes (dbg->reg, i, buf, bufsize);
-				}
-#endif
-				free (buf);
 			}
 		}
 		// DO NOT BREAK R_REG_TYPE_ALL PLEASE
@@ -83,6 +77,7 @@ R_API bool r_debug_reg_sync(RDebug *dbg, int type, int must_write) {
 	} while ((type == R_REG_TYPE_ALL) && (i < R_REG_TYPE_LAST));
 	return true;
 }
+
 static bool is_mandatory(RRegItem *item, const char *pcname, const char *spname) {
 	if (!item || !pcname || !spname) {
 		return true;
