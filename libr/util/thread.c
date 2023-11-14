@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2022 - pancake */
+/* radare - LGPL - Copyright 2009-2023 - pancake */
 
 #include <r_th.h>
 #include <r_util.h>
@@ -15,6 +15,13 @@
 
 #if __HAIKU__
 #include <kernel/scheduler.h>
+#endif
+
+#if HAVE_PTHREAD
+// 1MB per thread. otherwise running analysis can segfault
+// this is pthread-specific for now, and will be good if we can have control
+// on this at some point, via api or dynamically depending on the task.
+#define THREAD_STACK_SIZE (1024 * 1024)
 #endif
 
 #if R2__WINDOWS__
@@ -220,7 +227,16 @@ R_API RThread *r_th_new(RThreadFunction fun, void *user, int delay) {
 		th->breaked = false;
 		th->ready = false;
 #if HAVE_PTHREAD
-		pthread_create (&th->tid, NULL, _r_th_launcher, th);
+		pthread_attr_t *pattr = NULL;
+		pthread_attr_t attr;
+		int rc = pthread_attr_init(&attr);
+		if (rc != -1) {
+			rc = pthread_attr_setstacksize (&attr, THREAD_STACK_SIZE);
+			if (rc != -1) {
+				pattr = &attr;
+			}
+		}
+		pthread_create (&th->tid, pattr, _r_th_launcher, th);
 #elif R2__WINDOWS__
 		th->tid = CreateThread (NULL, 0, _r_th_launcher, th, 0, 0);
 #endif
