@@ -422,8 +422,8 @@ typedef struct r_cons_context_t {
 	RStack *break_stack;
 	RConsEvent event_interrupt;
 	void *event_interrupt_data;
-	int cmd_depth;
-	int cmd_str_depth;
+	// int cmd_depth;
+	int cmd_str_depth; // wtf ?
 	bool noflush;
 
 	// Used for per-task logging redirection

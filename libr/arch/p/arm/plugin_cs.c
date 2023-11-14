@@ -2203,8 +2203,7 @@ static int analop64_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *bu
 		break;
 	}
 	case ARM64_INS_ADRP:
-		r_strbuf_setf (&op->esil, "%"PFMT64d",%s,=",
-				IMM64 (1), REG64 (0));
+		r_strbuf_setf (&op->esil, "%"PFMT64d",%s,=", IMM64 (1), REG64 (0));
 		break;
 	case ARM64_INS_EXTR:
 		// from VEX

@@ -131,7 +131,7 @@ static void cons_stack_load(RConsStack *data, bool free_current) {
 static void cons_context_init(RConsContext *context, R_NULLABLE RConsContext *parent) {
 	context->marks = r_list_newf ((RListFree)r_cons_mark_free);
 	context->breaked = false;
-	context->cmd_depth = R_CONS_CMD_DEPTH + 1;
+	// context->cmd_depth = R_CONS_CMD_DEPTH + 1;
 	context->buffer_sz = 0;
 	context->lastEnabled = true;
 	context->buffer_len = 0;
