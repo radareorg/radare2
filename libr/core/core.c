@@ -2708,6 +2708,11 @@ static void r_core_setenv(RCore *core) {
 	char *h = r_xdg_datadir ("prefix/bin"); // support \\ on windows :?
 	char *n = r_str_newf ("%s%s%s", h, R_SYS_ENVSEP, e);
 	r_sys_setenv ("PATH", n);
+	{
+		char *cpstr = r_str_newf ("%p", core);
+		r_sys_setenv ("R2CORE", cpstr);
+		free (cpstr);
+	}
 	free (n);
 	free (h);
 	free (e);

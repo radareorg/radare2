@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2010-2022 - nibble, pancake */
+/* radare - LGPL - Copyright 2010-2023 - nibble, pancake */
 
 #define R_LOG_ORIGIN "anal.diff"
 
