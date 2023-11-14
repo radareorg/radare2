@@ -836,7 +836,7 @@ static int cmd_seek(void *data, const char *input) {
 			cmd_seek_opcode (core, input + 1);
 			break;
 		default:
-			return -1;	// invalid command
+			return -1; // invalid command
 		}
 		break;
 	case 'g': // "sg"

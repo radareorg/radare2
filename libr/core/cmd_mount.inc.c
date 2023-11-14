@@ -305,7 +305,11 @@ static int cmd_mount(void *data, const char *_input) {
 		if (input[1] == '?') { // "m-?"
 			r_core_cmd_help_match (core, help_msg_m, "m-");
 		} else {
-			r_fs_umount (core->fs, input + 1);
+			if (!r_fs_umount (core->fs, input + 1)) {
+				R_LOG_ERROR ("Nothing to unmount");
+				r_core_return_value (core, R_CMD_RC_FAILURE);
+				return 1;
+			}
 		}
 		break;
 	case 'j':
