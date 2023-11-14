@@ -5960,12 +5960,15 @@ out_finish:
 static int run_cmd_depth(RCore *core, char *cmd) {
 	char *rcmd;
 	int ret = false;
+	int *depth = R_UNWRAP4 (&core, cons, context, cmd_depth);
 
-	if (R_UNLIKELY (core->cons->context->cmd_depth < 1)) {
-		R_LOG_ERROR ("That '%s' was too deep", cmd);
-		return false;
+	if (depth) {
+		if (*depth < 1) {
+			R_LOG_ERROR ("That '%s' was too deep", cmd);
+			return false;
+		}
+		(*depth)--;
 	}
-	core->cons->context->cmd_depth--;
 	for (rcmd = cmd;;) {
 		char *ptr = strchr (rcmd, '\n');
 		if (R_UNLIKELY (ptr)) {
@@ -5981,7 +5984,9 @@ static int run_cmd_depth(RCore *core, char *cmd) {
 		}
 		rcmd = ptr + 1;
 	}
-	core->cons->context->cmd_depth++;
+	if (depth) {
+		(*depth)++;
+	}
 	return ret;
 }
 
