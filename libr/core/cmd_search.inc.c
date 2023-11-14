@@ -545,13 +545,15 @@ R_API int r_core_search_preludes(RCore *core, bool log) {
 		to = r_itv_end (p->itv);
 		if (R_STR_ISNOTEMPTY (prelude)) {
 			ut8 *kw = malloc (strlen (prelude) + 1);
-			int kwlen = r_hex_str2bin (prelude, kw);
-			if (kwlen < 1) {
-				R_LOG_ERROR ("Invalid prelude hex string (%s)", prelude);
-				break;
+			if (kw) {
+				int kwlen = r_hex_str2bin (prelude, kw);
+				if (kwlen < 1) {
+					R_LOG_ERROR ("Invalid prelude hex string (%s)", prelude);
+					break;
+				}
+				ret = r_core_search_prelude (core, from, to, kw, kwlen, NULL, 0);
+				free (kw);
 			}
-			ret = r_core_search_prelude (core, from, to, kw, kwlen, NULL, 0);
-			free (kw);
 		} else {
 			RList *preds = r_anal_preludes (core->anal);
 			if (preds) {
