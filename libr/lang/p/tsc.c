@@ -62,8 +62,9 @@ static bool lang_tsc_file(RLangSession *s, const char *file) {
 		R_LOG_WARN ("file does not exist");
 		return false;
 	}
-	char *js_ofile = r_str_replace (strdup (file), ".ts", ".js", 0);
-	char *qjs_ofile = r_str_replace (strdup (file), ".ts", ".r2.js", 0);
+	const char *newext = r_str_endswith (file, ".r2.ts")? ".js": ".r2.js";
+	char *js_ofile = r_str_replace (strdup (file), ".ts", newext, 0);
+	char *qjs_ofile = r_str_replace (strdup (file), ".ts", newext, 0);
 	int rc = 0;
 	/// check of ofile exists and its newer than file
 	if (!r_file_is_newer (qjs_ofile, file)) {
@@ -93,6 +94,8 @@ static bool lang_tsc_file(RLangSession *s, const char *file) {
 			r_file_dump (qjs_ofile, (const ut8*)s, -1, 0);
 			free (s);
 			r_file_rm (js_ofile);
+		} else {
+			R_LOG_ERROR ("tsc fails with rc %d\n", rc);
 		}
 	} else {
 		R_LOG_DEBUG ("no need to compile");
