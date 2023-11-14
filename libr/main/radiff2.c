@@ -62,6 +62,7 @@ typedef struct {
 	RList *evals;
 	PJ *pj;
 	ut64 baddr;
+	bool thready;
 } RadiffOptions;
 
 static RCore *opencore(RadiffOptions *ro, const char *f) {
@@ -131,7 +132,7 @@ static void readstr(char *s, int sz, const ut8 *buf, int len) {
 	while (*s == '\n') {
 		s++;
 	}
-	strncpy (s, (char *) buf, last);
+	r_str_ncpy (s, (char *) buf, last);
 }
 
 static int cb(RDiff *d, void *user, RDiffOp *op) {
@@ -459,6 +460,7 @@ static int show_help(int v) {
 			"  -ss        compute Levenshtein edit distance (substitution is allowed, O(N^2))\n"
 			"  -S [name]  sort code diff (name, namelen, addr, size, type, dist) (only for -C or -g)\n"
 			"  -t [0-100] set threshold for code diff (default is 70%%)\n"
+			"  -T         analyze files in threads (EXPERIMENTAL, 30%% faster and crashy)\n"
 			"  -x         show two column hexdump diffing\n"
 			"  -X         show two column hexII diffing\n"
 			"  -u         unified output (---+++)\n"
@@ -1044,6 +1046,19 @@ static void fileobj(RadiffOptions *ro, const char *ro_file, const ut8 *buf, size
 	pj_end (pj);
 }
 
+typedef struct {
+	RCore **core;
+	const char *file;
+	RadiffOptions *ro;
+} ThreadData;
+
+static RThreadFunctionRet thready_core(RThread *th) {
+	ThreadData *td = (ThreadData*)th->user;
+	*td->core = NULL;
+	*td->core = opencore (td->ro, td->file);
+	return false;
+}
+
 R_API int r_main_radiff2(int argc, const char **argv) {
 	RadiffOptions ro;
 	const char *columnSort = NULL;
@@ -1058,7 +1073,7 @@ R_API int r_main_radiff2(int argc, const char **argv) {
 
 	radiff_options_init (&ro);
 
-	r_getopt_init (&opt, argc, argv, "1Aa:b:B:CDe:npg:m:G:Oi:jrhcdsS:uUvVxXt:zqZ");
+	r_getopt_init (&opt, argc, argv, "1Aa:b:B:CDe:npg:m:G:Oi:jrhcdsS:uUvVxXt:TzqZ");
 	while ((o = r_getopt_next (&opt)) != -1) {
 		switch (o) {
 		case 'a':
@@ -1144,6 +1159,10 @@ R_API int r_main_radiff2(int argc, const char **argv) {
 		case 'O':
 			ro.diffops = 1;
 			break;
+		case 'T': // imho `t <=> T`
+			ro.thready = true;
+			// printf ("%s\n", opt.arg);
+			break;
 		case 't':
 			ro.threshold = atoi (opt.arg);
 			// printf ("%s\n", opt.arg);
@@ -1227,13 +1246,29 @@ R_API int r_main_radiff2(int argc, const char **argv) {
 	case MODE_DIFF_FIELDS:
 	case MODE_DIFF_SYMBOLS:
 	case MODE_DIFF_IMPORTS:
-		c = opencore (&ro, ro.file);
-		if (!c) {
-			R_LOG_ERROR ("Cannot open '%s'", r_str_getf (ro.file));
-		}
-		c2 = opencore (&ro, ro.file2);
-		if (!c2) {
-			R_LOG_ERROR ("Cannot open '%s'", r_str_getf (ro.file2));
+		if (ro.thready) {
+			// spawn 1st thread
+			ThreadData t0d = { .core = &c, .file = ro.file, .ro = &ro };
+			RThread *t0 = r_th_new (thready_core, &t0d, false);
+			r_th_start (t0, false);
+			// spawn 2nd thread
+			ThreadData t1d = { .core = &c2, .file = ro.file2, .ro = &ro };
+			RThread *t1 = r_th_new (thready_core, &t1d, false);
+			r_th_start (t1, false);
+			// sync
+			r_th_wait (t0);
+			r_th_wait (t1);
+		} else {
+			c = opencore (&ro, ro.file);
+			if (!c) {
+				R_LOG_ERROR ("Cannot open '%s'", r_str_getf (ro.file));
+				return 1;
+			}
+			c2 = opencore (&ro, ro.file2);
+			if (!c2) {
+				R_LOG_ERROR ("Cannot open '%s'", r_str_getf (ro.file2));
+				return 1;
+			}
 		}
 		if (!c || !c2) {
 			return 1;
