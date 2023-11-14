@@ -151,33 +151,32 @@ endif
 # else
 if no_user_plugins
 
-anal_plugins += [
-]
+  anal_plugins += [
+  ]
 
-arch_plugins += [
-  '8051',
-  'avr',
-  'dalvik',
-  'arm_cs',
-  'java',
-  'chip8',
-  'wasm',
-  'i8080',
-  'mips_cs',
-  '6502_cs',
-  'loongarch_gnu',
-  's390_cs',
-  'm68k_cs',
-  'm680x_cs',
-  'xcore_cs',
-  'tms320',
-  'sparc_cs',
-  'ppc_cs',
-  'gb',
-  'x86_cs',
-]
-
-if no_user_plugins
+  arch_plugins += [
+    '8051',
+    'avr',
+    'dalvik',
+    'arm_cs',
+    'java',
+    'chip8',
+    'wasm',
+    'i8080',
+    'mips_cs',
+    '6502_cs',
+    'loongarch_gnu',
+    's390_cs',
+    'm68k_cs',
+    'm680x_cs',
+    'xcore_cs',
+    'tms320',
+    'sparc_cs',
+    'ppc_cs',
+    'gb',
+    'x86_cs',
+  ]
+  
   if use_gpl
     arch_plugins += [
       'xtensa',
@@ -188,233 +187,229 @@ if no_user_plugins
       'nds32',
       'ppc_gnu',
       'm68k_gnu',
-# 'hppa_gnu',
+    # 'hppa_gnu',
       'sparc_gnu',
       'lanai',
       's390_gnu',
       'mips_gnu',
     ]
   endif
-endif
-
-if get_option('use_v35')
-  arch_plugins += ['arm_v35']
-endif
-
-bin_plugins += [
-  'art',
-  'avr',
-  'bf',
-  's390',
-  'bflt',
-  'bios',
-  'bootimg',
-  'cgc',
-  'coff',
-  'dex',
-  'dis',
-  'wasm',
-  'dmp64',
-  'dol',
-  'dyldcache',
-  'elf',
-  'elf64',
-  'fs',
-  'java',
-  'le',
-  'mach0',
-  'mach064',
-  'mbn',
-  'mdmp',
-  'menuet',
-  'mz',
-  'ne',
-  'nes',
-  'nin3ds',
-  'ninds',
-  'ningb',
-  'ningba',
-  'nro',
-  'nso',
-  'omf',
-  'qnx',
-  'p9',
-  'pe',
-  'pe64',
-  'pebble',
-  'prg',
-  'psxexe',
-  'rel',
-  'sfc',
-  'smd',
-  'sms',
-  'symbols',
-  'te',
-  'vsf',
-  'xbe',
-  'xcoff64',
-  'xnu_kernelcache',
-  'z64',
-  'zimg',
-  'xtac'
-]
-
-bin_ldr_plugins += [
-  'ldr_linux'
-]
-
-bin_xtr_plugins += [
-  'xtr_dyldcache',
-  'xtr_fatmach0',
-  'xtr_xalz',
-  'xtr_sep64',
-]
-
-bp_plugins += [
-  'arm',
-  'bf',
-  'mips',
-  'ppc',
-  'sh',
-  'x86'
-]
-
-core_plugins += [
-  'agD',
-  'a2f',
-  'java'
-]
-
-crypto_plugins += [
-  'aes',
-  'aes_cbc',
-  'aes_wrap',
-  'base64',
-  'base91',
-  'blowfish',
-  'cps2',
-  'des',
-  'rc2',
-  'rc4',
-  'rc6',
-  'rol',
-  'ror',
-  'rot',
-  'serpent',
-]
-
-debug_plugins += [
-  'bf',
-  'bochs',
-  'esil',
-  'gdb',
-  'io',
-  'native',
-  'null',
-  'qnx',
-  'rap',
-  'winkd'
-]
-
-egg_plugins += [
-  'exec',
-  #'shya',
-]
-
-fs_plugins += [
-  'io',
-  'posix',
-  'r2',
-]
-
-if not get_option('nogpl')
+  
+  if get_option('use_v35')
+    arch_plugins += ['arm_v35']
+  endif
+  
+  bin_plugins += [
+    'art',
+    'avr',
+    'bf',
+    's390',
+    'bflt',
+    'bios',
+    'bootimg',
+    'cgc',
+    'coff',
+    'dex',
+    'dis',
+    'wasm',
+    'dmp64',
+    'dol',
+    'dyldcache',
+    'elf',
+    'elf64',
+    'fs',
+    'java',
+    'le',
+    'mach0',
+    'mach064',
+    'mbn',
+    'mdmp',
+    'menuet',
+    'mz',
+    'ne',
+    'nes',
+    'nin3ds',
+    'ninds',
+    'ningb',
+    'ningba',
+    'nro',
+    'nso',
+    'omf',
+    'qnx',
+    'p9',
+    'pe',
+    'pe64',
+    'pebble',
+    'prg',
+    'psxexe',
+    'rel',
+    'sfc',
+    'smd',
+    'sms',
+    'symbols',
+    'te',
+    'vsf',
+    'xbe',
+    'xcoff64',
+    'xnu_kernelcache',
+    'z64',
+    'zimg',
+    'xtac'
+  ]
+  
+  bin_ldr_plugins += [
+    'ldr_linux'
+  ]
+  
+  bin_xtr_plugins += [
+    'xtr_dyldcache',
+    'xtr_fatmach0',
+    'xtr_xalz',
+    'xtr_sep64',
+  ]
+  
+  bp_plugins += [
+    'arm',
+    'bf',
+    'mips',
+    'ppc',
+    'sh',
+    'x86'
+  ]
+  
+  core_plugins += [
+    'agD',
+    'a2f',
+    'java'
+  ]
+  
+  crypto_plugins += [
+    'aes',
+    'aes_cbc',
+    'aes_wrap',
+    'base64',
+    'base91',
+    'blowfish',
+    'cps2',
+    'des',
+    'rc2',
+    'rc4',
+    'rc6',
+    'rol',
+    'ror',
+    'rot',
+    'serpent',
+  ]
+  
+  debug_plugins += [
+    'bf',
+    'bochs',
+    'esil',
+    'gdb',
+    'native',
+    'qnx',
+    'rap',
+    'winkd'
+  ]
+  
+  egg_plugins += [
+    'exec',
+    #'shya',
+  ]
+  
   fs_plugins += [
-    'cpio', 'ext2', 'fat', 'fb', 'hfs',
-    'hfsplus', 'iso9660', 'jfs', 'minix',
-    'ntfs', 'reiserfs', 'sfs', 'tar',
-    'udf', 'ufs', 'ufs2', 'xfs'
+    'io',
+    'posix',
+    'r2',
   ]
-endif
-
-io_plugins += [
-  'ar',
-  'fd',
-  'reg',
-  'bfdbg',
-  'bochs',
-  'debug',
-  'gdb',
-  'gprobe',
-  'gzip',
-  'http',
-  'ihex',
-  'mach',
-  'mmap',
-  'procpid',
-  'ptrace',
-  'qnx',
-  'r2k',
-  'rap',
-  'rbuf',
-  'self',
-  'shm',
-  'sparse',
-  'socket',
-  'tcpslurp',
-  'winkd',
-  'winedbg',
-  'zip'
-]
-
-if host_machine.system() == 'windows'
+  
+  if not get_option('nogpl')
+    fs_plugins += [
+      'cpio', 'ext2', 'fat', 'fb', 'hfs',
+      'hfsplus', 'iso9660', 'jfs', 'minix',
+      'ntfs', 'reiserfs', 'sfs', 'tar',
+      'udf', 'ufs', 'ufs2', 'xfs'
+    ]
+  endif
+  
   io_plugins += [
-    'windbg',
-    'w32dbg',
-    'w32',
+    'ar',
+    'fd',
+    'reg',
+    'bfdbg',
+    'bochs',
+    'debug',
+    'gdb',
+    'gprobe',
+    'gzip',
+    'http',
+    'ihex',
+    'mach',
+    'mmap',
+    'procpid',
+    'ptrace',
+    'qnx',
+    'r2k',
+    'rap',
+    'rbuf',
+    'self',
+    'shm',
+    'sparse',
+    'socket',
+    'tcpslurp',
+    'winkd',
+    'winedbg',
+    'zip'
   ]
-  debug_plugins += 'windbg'
-endif
-
-lang_plugins += [
-  'v',
-  'lib',
-  'spp',
-  'rust',
-  'go',
-  'zig',
-  's',
-  'asm',
-  'c',
-  'vala'
-]
-
-if host_machine.system() != 'windows'
+  
+  if host_machine.system() == 'windows'
+    io_plugins += [
+      'windbg',
+      'w32dbg',
+      'w32',
+    ]
+    debug_plugins += 'windbg'
+  endif
+  
   lang_plugins += [
-    'pipe',
-    'cpipe'
+    'v',
+    'lib',
+    'spp',
+    'rust',
+    'go',
+    'zig',
+    's',
+    'asm',
+    'c',
+    'vala'
   ]
-endif
-
-parse_plugins += [
-  '6502_pseudo',
-  'bpf_pseudo',
-  'evm_pseudo',
-  'arm_pseudo',
-  'avr_pseudo',
-  'chip8_pseudo',
-  'dalvik_pseudo',
-  'm68k_pseudo',
-  'mips_pseudo',
-  'ppc_pseudo',
-  'riscv_pseudo',
-  'sh_pseudo',
-  'tms320_pseudo',
-  'v850_pseudo',
-  'x86_pseudo',
-  'z80_pseudo',
-  'wasm_pseudo'
-]
-
+  
+  if host_machine.system() != 'windows'
+    lang_plugins += [
+      'pipe',
+      'cpipe'
+    ]
+  endif
+  
+  parse_plugins += [
+    '6502_pseudo',
+    'bpf_pseudo',
+    'evm_pseudo',
+    'arm_pseudo',
+    'avr_pseudo',
+    'chip8_pseudo',
+    'dalvik_pseudo',
+    'm68k_pseudo',
+    'mips_pseudo',
+    'ppc_pseudo',
+    'riscv_pseudo',
+    'sh_pseudo',
+    'tms320_pseudo',
+    'v850_pseudo',
+    'x86_pseudo',
+    'z80_pseudo',
+    'wasm_pseudo'
+  ]
 endif
 
 include_files = [
