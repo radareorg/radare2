@@ -12927,11 +12927,11 @@ static void anal_aarr(RCore *core) {
 }
 
 static void logline(RCore *core, int pc, const char *title) {
-	if (r_config_get_b (core->config, "scr.demo")) {
+	if (r_config_get_b (core->config, "scr.analbar") || r_config_get_b (core->config, "scr.demo")) {
 		int w = 80;
 		r_cons_printf (R_CONS_CLEAR_LINE);
 		r_cons_flush ();
-		R_LOG_INFO ("%s", title);
+		// R_LOG_INFO ("%s", title);
 		r_print_progressbar (core->print, pc, w, NULL);
 		r_cons_printf ("\r");
 		r_cons_flush ();
