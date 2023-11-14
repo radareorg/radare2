@@ -1,6 +1,7 @@
 // r2papi main file
 Object.defineProperty(G, "__esModule", { value: true });
-G.Base64 = G.NativePointer = G.NativeCallback = G.NativeFunction = G.R2Papi = G.Assembler = G.ProcessClass = G.ModuleClass = G.ThreadClass = void 0;
+G.NativePointer = G.NativeCallback = G.NativeFunction = G.R2Papi = G.Assembler = G.ProcessClass = G.ModuleClass = G.ThreadClass = void 0;
+// import { R, Module, Process, Thread } from "./global.js"
 const shell_js_1 = G;//"./shell.js");
 ;
 ;
@@ -16,10 +17,10 @@ class ThreadClass {
         this.api = r2;
     }
     backtrace() {
-        return G.r2.call("dbtj");
+        return r2pipe_js_1.r2.call("dbtj");
     }
     sleep(seconds) {
-        return G.r2.call("sleep " + seconds);
+        return r2pipe_js_1.r2.call("sleep " + seconds);
     }
 }
 G.ThreadClass = ThreadClass;
@@ -45,23 +46,23 @@ class ModuleClass {
         return "TODO";
     }
     getExportByName(name) {
-        return G.r2.call("iE,name/eq/" + name + ",vaddr/cols,:quiet");
+        return r2pipe_js_1.r2.call("iE,name/eq/" + name + ",vaddr/cols,:quiet");
     }
     enumerateExports() {
         // TODO: use frida json
-        return G.r2.callj("iEj");
+        return r2pipe_js_1.r2.callj("iEj");
     }
     enumerateImports() {
         // TODO: use frida json
-        return G.r2.callj("iij");
+        return r2pipe_js_1.r2.callj("iij");
     }
     enumerateRanges() {
         // TODO: use frida json
-        return G.r2.callj("isj");
+        return r2pipe_js_1.r2.callj("isj");
     }
     enumerateSymbols() {
         // TODO: use frida json
-        return G.r2.callj("isj");
+        return r2pipe_js_1.r2.callj("isj");
     }
 }
 G.ModuleClass = ModuleClass;
@@ -77,12 +78,12 @@ class ProcessClass {
     enumerateRanges() {
     }
     enumerateThreads() {
-        return G.r2.call("dptj");
+        return r2pipe_js_1.r2.call("dptj");
     }
     enumerateModules() {
-        G.r2.call("cfg.json.num=string"); // to handle 64bit values properly
-        if (G.r2.callj("e cfg.debug")) {
-            const modules = G.r2.callj("dmmj");
+        r2pipe_js_1.r2.call("cfg.json.num=string"); // to handle 64bit values properly
+        if (r2pipe_js_1.r2.callj("e cfg.debug")) {
+            const modules = r2pipe_js_1.r2.callj("dmmj");
             const res = [];
             for (const mod of modules) {
                 const entry = {
@@ -100,7 +101,7 @@ class ProcessClass {
                 const y = x.split("/");
                 return y[y.length - 1];
             };
-            const bobjs = G.r2.callj("obj");
+            const bobjs = r2pipe_js_1.r2.callj("obj");
             const res = [];
             for (const obj of bobjs) {
                 const entry = {
@@ -111,7 +112,7 @@ class ProcessClass {
                 };
                 res.push(entry);
             }
-            const libs = G.r2.callj("ilj");
+            const libs = r2pipe_js_1.r2.callj("ilj");
             for (const lib of libs) {
                 const entry = {
                     base: 0,
@@ -163,7 +164,7 @@ class ProcessClass {
         return this.r2.callj("dpq");
     }
     pointerSize() {
-        return G.r2.callj("e asm.bits") / 8;
+        return r2pipe_js_1.r2.callj("e asm.bits") / 8;
     }
 }
 G.ProcessClass = ProcessClass;
@@ -174,7 +175,7 @@ class Assembler {
         this.endian = false;
         this.pc = 0;
         this.r2 = null;
-        this.r2 = (typeof myr2 === 'undefined') ? G.r2 : myr2;
+        this.r2 = (typeof myr2 === 'undefined') ? r2pipe_js_1.r2 : myr2;
         this.program = '';
         this.labels = {};
     }
@@ -696,10 +697,10 @@ class NativePointer {
         return this.readPointer().compare(0);
     }
     toJSON() {
-        return this.api.cmd('?vi ' + this.addr.trim());
+        return this.api.cmd('?vi ' + this.addr.trim()).trim();
     }
     toString() {
-        return this.api.cmd('?v ' + this.addr.trim());
+        return this.api.cmd('?v ' + this.addr.trim()).trim();
     }
     toNumber() {
         return parseInt(this.toString());
@@ -856,6 +857,9 @@ class NativePointer {
     }
 }
 G.NativePointer = NativePointer;
+Object.defineProperty(G, "__esModule", { value: true });
+Object.defineProperty(G, "__esModule", { value: true });
+G.Base64 = void 0;
 class Base64 {
     static encode(x) {
         return (0, G.b64)(x);
@@ -865,14 +869,16 @@ class Base64 {
     }
 }
 G.Base64 = Base64;
+Object.defineProperty(G, "__esModule", { value: true });
+G.R2AI = void 0;
 class R2AI {
     constructor(num, model) {
         this.available = false;
         this.model = "";
-        this.available = G.r2.cmd('r2ai -h').trim() !== "";
+        this.available = r2pipe_js_1.r2.cmd('r2ai -h').trim() !== "";
         if (this.available) {
             if (num) {
-                G.r2.call(`r2ai -n ${num}`);
+                r2pipe_js_1.r2.call(`r2ai -n ${num}`);
             }
             // r2.call('r2ai -e DEBUG=1')
             if (model) {
@@ -880,33 +886,33 @@ class R2AI {
             }
         }
         else {
-            console.error("ERROR: r2ai is not installed");
+            throw new Error("ERROR: r2ai is not installed");
         }
     }
     reset() {
         if (this.available) {
-            G.r2.call('r2ai -R');
+            r2pipe_js_1.r2.call('r2ai -R');
         }
     }
     setRole(msg) {
         if (this.available) {
-            G.r2.call(`r2ai -r ${msg}`);
+            r2pipe_js_1.r2.call(`r2ai -r ${msg}`);
         }
     }
     setModel(modelName) {
         if (this.available) {
-            G.r2.call(`r2ai -m ${this.model}`);
+            r2pipe_js_1.r2.call(`r2ai -m ${this.model}`);
         }
     }
     getModel() {
         if (this.available) {
-            return G.r2.call("r2ai -m");
+            return r2pipe_js_1.r2.call("r2ai -m");
         }
         return this.model;
     }
     listModels() {
         if (this.available) {
-            return G.r2.call("r2ai -M").trim().split(/\n/g);
+            return r2pipe_js_1.r2.call("r2ai -M").trim().split(/\n/g);
         }
         return [];
     }
@@ -915,9 +921,10 @@ class R2AI {
             return '';
         }
         const fmsg = msg.trim().replace(/\n/g, '.');
-        return G.r2.call(`r2ai ${fmsg}`);
+        return r2pipe_js_1.r2.call(`r2ai ${fmsg}`);
     }
 }
+G.R2AI = R2AI;
 // shell utilities on top of r2pipe
 Object.defineProperty(G, "__esModule", { value: true });
 G.R2PapiShell = void 0;
@@ -1500,3 +1507,4 @@ class EsilParser {
     }
 }
 G.EsilParser = EsilParser;
+const r2pipe_js_1 = G;
