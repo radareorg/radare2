@@ -104,6 +104,7 @@ static RCore *opencore(RadiffOptions *ro, const char *f) {
 			switch (ro->anal_all) {
 			case 1: cmd = "aaa"; break;
 			case 2: cmd = "aaaa"; break;
+			case 3: cmd = "aaaaa"; break;
 			}
 			r_core_cmd0 (c, cmd);
 		}
