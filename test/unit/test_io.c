@@ -97,7 +97,8 @@ bool test_r_io_mapsplit2 (void) {
 bool test_r_io_mapsplit3 (void) {
 	RIO *io = r_io_new ();
 	io->va = true;
-	r_io_open_at (io, "null://2", R_PERM_R, 0LL, UT64_MAX - 1);
+	const int fd = r_io_fd_open (io, "null://3", R_PERM_R, 0);
+	r_io_map_add (io, fd, R_PERM_R, 0LL, UT64_MAX - 1, 2);
 	mu_assert_true (r_io_map_is_mapped (io, UT64_MAX - 1), "UT64_MAX - 1 not mapped");
 	mu_assert_true (r_io_map_is_mapped (io, UT64_MAX), "UT64_MAX not mapped");
 	r_io_map_resize (io, r_io_map_get_at (io, UT64_MAX)->id, 3);
