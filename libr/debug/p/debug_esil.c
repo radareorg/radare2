@@ -121,7 +121,7 @@ static bool __esil_kill(RDebug *dbg, int pid, int tid, int sig) {
 	return true;
 }
 
-static int __esil_stop(RDebug *dbg) {
+static bool __esil_stop(RDebug *dbg) {
 	eprintf ("ESIL: stop\n");
 	return true;
 }

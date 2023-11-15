@@ -296,14 +296,15 @@ R_API RDebugMap *r_debug_map_new(char *name, ut64 addr, ut64 addr_end, int perm,
 }
 
 R_API RList *r_debug_modules_list(RDebug *dbg) {
-	return (dbg && dbg->current && dbg->current->plugin.modules_get)?
-		dbg->current->plugin.modules_get (dbg): NULL;
+	RDebugPlugin *ds = R_UNWRAP3 (dbg, current, plugin);
+	return (ds && ds->modules_get)?  ds->modules_get (dbg): NULL;
 }
 
 R_API bool r_debug_map_sync(RDebug *dbg) {
 	bool ret = false;
-	if (dbg && dbg->current && dbg->current->plugin.map_get) {
-		RList *newmaps = dbg->current->plugin.map_get (dbg);
+	RDebugPlugin *ds = R_UNWRAP3 (dbg, current, plugin);
+	if (ds && ds->map_get) {
+		RList *newmaps = ds->map_get (dbg);
 		if (newmaps) {
 			r_list_free (dbg->maps);
 			dbg->maps = newmaps;
@@ -314,17 +315,19 @@ R_API bool r_debug_map_sync(RDebug *dbg) {
 }
 
 R_API RDebugMap* r_debug_map_alloc(RDebug *dbg, ut64 addr, int size, bool thp) {
-	if (dbg && dbg->current && dbg->current->plugin.map_alloc) {
-		return dbg->current->plugin.map_alloc (dbg, addr, size, thp);
+	RDebugPlugin *ds = R_UNWRAP3 (dbg, current, plugin);
+	if (ds && ds->map_alloc) {
+		return ds->map_alloc (dbg, addr, size, thp);
 	}
 	return NULL;
 }
 
 R_API int r_debug_map_dealloc(RDebug *dbg, RDebugMap *map) {
+	RDebugPlugin *ds = R_UNWRAP3 (dbg, current, plugin);
 	bool ret = false;
 	ut64 addr = map->addr;
-	if (dbg && dbg->current && dbg->current->plugin.map_dealloc) {
-		if (dbg->current->plugin.map_dealloc (dbg, addr, map->size)) {
+	if (ds->map_dealloc) {
+		if (ds->map_dealloc (dbg, addr, map->size)) {
 			ret = true;
 		}
 	}
@@ -353,9 +356,5 @@ R_API void r_debug_map_free(RDebugMap *map) {
 }
 
 R_API RList *r_debug_map_list_new(void) {
-	RList *list = r_list_new ();
-	if (list) {
-		list->free = (RListFree)r_debug_map_free;
-	}
-	return list;
+	return r_list_newf ((RListFree)r_debug_map_free);
 }

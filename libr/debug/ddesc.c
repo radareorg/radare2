@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2010-2021 - pancake */
+/* radare - LGPL - Copyright 2010-2023 - pancake */
 
 #include <r_debug.h>
 
@@ -21,56 +21,62 @@ R_API void r_debug_desc_free(RDebugDesc *p) {
 	}
 }
 
+#define BOILERPLATE \
+	r_return_val_if_fail (dbg, -1); \
+	RDebugPlugin *plugin = R_UNWRAP2 (dbg->current, plugin); \
+	if (plugin) if
+
 R_API int r_debug_desc_open(RDebug *dbg, const char *path) {
-	r_return_val_if_fail (dbg && dbg->current, -1);
-	if (dbg && dbg->current && dbg->current->plugin.desc.open) {
-		return dbg->current->plugin.desc.open (path);
+	BOILERPLATE (plugin->desc.open) {
+		return plugin->desc.open (path);
 	}
 	return -1;
 }
 
 R_API int r_debug_desc_close(RDebug *dbg, int fd) {
-	if (dbg && dbg->current && dbg->current->plugin.desc.close) {
-		return dbg->current->plugin.desc.close (fd);
+	BOILERPLATE (plugin->desc.close) {
+		return plugin->desc.close (fd);
 	}
 	return false;
 }
 
 R_API int r_debug_desc_dup(RDebug *dbg, int fd, int newfd) {
-	if (dbg && dbg->current && dbg->current->plugin.desc.dup) {
-		return dbg->current->plugin.desc.dup (fd, newfd);
+	BOILERPLATE (plugin->desc.dup) {
+		return plugin->desc.dup (fd, newfd);
 	}
 	return false;
 }
 
 R_API int r_debug_desc_read(RDebug *dbg, int fd, ut64 addr, int len) {
-	if (dbg && dbg->current && dbg->current->plugin.desc.read) {
-		return dbg->current->plugin.desc.read (fd, addr, len);
+	BOILERPLATE (plugin->desc.read) {
+		return plugin->desc.read (fd, addr, len);
 	}
 	return false;
 }
 
 R_API int r_debug_desc_seek(RDebug *dbg, int fd, ut64 addr) {
-	if (dbg && dbg->current && dbg->current->plugin.desc.seek) {
-		return dbg->current->plugin.desc.seek (fd, addr);
+	BOILERPLATE (plugin->desc.seek) {
+		return plugin->desc.seek (fd, addr);
 	}
 	return false;
 }
 
 R_API int r_debug_desc_write(RDebug *dbg, int fd, ut64 addr, int len) {
-	if (dbg && dbg->current && dbg->current->plugin.desc.write) {
-		return dbg->current->plugin.desc.write (fd, addr, len);
+	BOILERPLATE (plugin->desc.write) {
+		return plugin->desc.write (fd, addr, len);
 	}
 	return false;
 }
 
 R_API int r_debug_desc_list(RDebug *dbg, bool show_commands) {
+	r_return_val_if_fail (dbg, 0);
 	RListIter *iter;
 	RDebugDesc *p;
 	int count = 0;
 
-	if (dbg && dbg->current && dbg->current->plugin.desc.list) {
-		RList *list = dbg->current->plugin.desc.list (dbg->pid);
+	RDebugPlugin *plugin = R_UNWRAP2 (dbg->current, plugin);
+	if (plugin && plugin->desc.list) {
+		RList *list = plugin->desc.list (dbg->pid);
 		r_list_foreach (list, iter, p) {
 			if (show_commands) {
 				// Skip over std streams
