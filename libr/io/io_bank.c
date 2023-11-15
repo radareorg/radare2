@@ -1,5 +1,7 @@
 /* radare2 - LGPL - Copyright 2021-2023 - condret */
 
+#define R_LOG_ORIGIN "io.bank"
+
 #include <r_io.h>
 
 R_API RIOBank *r_io_bank_new(const char *name) {
@@ -809,7 +811,17 @@ R_API bool r_io_bank_read_at(RIO *io, const ut32 bankid, ut64 addr, ut8 *buf, in
 			const int read_len = R_MIN (r_io_submap_to ((&fake_sm)),
 						     r_io_submap_to (sm)) - (addr + buf_off) + 1;
 			const ut64 paddr = addr + buf_off - r_io_map_from (map) + map->delta;
-			ret &= (r_io_fd_read_at (io, map->fd, paddr, buf + buf_off, read_len) == read_len);
+			int res = r_io_fd_read_at (io, map->fd, paddr, buf + buf_off, read_len);
+			if (res < 1) {
+				R_LOG_DEBUG ("map reads %d bytes outside the physical data at 0x%08"PFMT64x, read_len, paddr);
+				ret = false;
+				break;
+			}
+			if (res != read_len) {
+				// partial read because the fd data is truncated
+				R_LOG_DEBUG ("partial read, filling with zeroes");
+				memset (buf + buf_off + res, io->Oxff, read_len - res);
+			}
 			if (io->overlay) {
 				r_io_map_read_from_overlay (map, addr + buf_off, buf + buf_off, read_len);
 			}
@@ -825,7 +837,7 @@ R_API bool r_io_bank_write_at(RIO *io, const ut32 bankid, ut64 addr, const ut8 *
 	r_return_val_if_fail (io, false);
 	RIOBank *bank = r_io_bank_get (io, bankid);
 	if (!bank) {
-		R_LOG_WARN ("Tfw no bank(id %u) in the io", bankid);
+		R_LOG_WARN ("iobank.write no bank(id %u) in the io", bankid);
 		return false;
 	}
 	RIOSubMap fake_sm = {{0}};
