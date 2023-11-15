@@ -10,7 +10,8 @@ R_IPI bool io_bank_has_map(RIO *io, const ut32 bankid, const ut32 mapid);
 
 static RIOMap *io_map_new(RIO* io, int fd, int perm, ut64 delta, ut64 addr, ut64 size) {
 	r_return_val_if_fail (io && io->maps, NULL);
-	if (!size) {
+	const ut64 fd_size = r_io_fd_size (io, fd);
+	if ((!size) || (fd_size <= delta)) {
 		return NULL;
 	}
 	RIOMap* map = R_NEW0 (RIOMap);
@@ -23,9 +24,8 @@ static RIOMap *io_map_new(RIO* io, int fd, int perm, ut64 delta, ut64 addr, ut64
 	map->ts = io->mts++;
 	// RIOMap describes an interval of addresses
 	// r_io_map_from (map) -> r_io_map_to (map)
-	map->itv = (RInterval){ addr, size };
+	map->itv = (RInterval){ addr, R_MIN (size, fd_size - delta) };
 	map->perm = perm;
-	map->delta = delta;
 	return map;
 }
 
