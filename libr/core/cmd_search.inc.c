@@ -4091,7 +4091,7 @@ reread:
 				RListIter *iter;
 				RIOMap *map;
 				r_list_foreach (param.boundaries, iter, map) {
-					eprintf ("-- 0x%"PFMT64x" 0x%"PFMT64x"\n", r_io_map_begin (map), r_io_map_end (map));
+					R_LOG_DEBUG ("-- 0x%"PFMT64x" 0x%"PFMT64x, r_io_map_begin (map), r_io_map_end (map));
 					r_core_anal_search (core, r_io_map_begin (map), r_io_map_end (map), n, 0);
 				}
 			}
@@ -4101,7 +4101,7 @@ reread:
 				RListIter *iter;
 				RIOMap *map;
 				r_list_foreach (param.boundaries, iter, map) {
-					eprintf ("-- 0x%"PFMT64x" 0x%"PFMT64x"\n", r_io_map_begin (map), r_io_map_end (map));
+					R_LOG_DEBUG ("-- 0x%"PFMT64x" 0x%"PFMT64x, r_io_map_begin (map), r_io_map_end (map));
 					r_core_anal_search (core, r_io_map_begin (map), r_io_map_end (map), n, 'c');
 				}
 			}
@@ -4111,7 +4111,7 @@ reread:
 				RListIter *iter;
 				RIOMap *map;
 				r_list_foreach (param.boundaries, iter, map) {
-					eprintf ("-- 0x%"PFMT64x" 0x%"PFMT64x"\n", r_io_map_begin (map), r_io_map_end (map));
+					R_LOG_DEBUG ("-- 0x%"PFMT64x" 0x%"PFMT64x, r_io_map_begin (map), r_io_map_end (map));
 					ut64 refptr = r_num_math (core->num, input + 2);
 					ut64 curseek = core->offset;
 					r_core_seek (core, r_io_map_begin (map), true);
@@ -4145,7 +4145,7 @@ reread:
 				RListIter *iter;
 				RIOMap *map;
 				r_list_foreach (param.boundaries, iter, map) {
-					eprintf ("-- 0x%"PFMT64x" 0x%"PFMT64x"\n", r_io_map_begin (map), r_io_map_end (map));
+					R_LOG_DEBUG ("-- 0x%"PFMT64x" 0x%"PFMT64x, r_io_map_begin (map), r_io_map_end (map));
 					r_core_anal_search (core, r_io_map_begin (map), r_io_map_end (map), n, input[1]);
 				}
 			}
@@ -4159,8 +4159,7 @@ reread:
 					ut64 from = r_io_map_begin (map);
 					ut64 to = r_io_map_end (map);
 					if (input[param_offset - 1] == ' ') {
-						r_core_anal_search (core, from, to,
-								r_num_math (core->num, input + 2), 0);
+						r_core_anal_search (core, from, to, r_num_math (core->num, input + 2), 0);
 						do_ref_search (core, r_num_math (core->num, input + 2), from, to, &param);
 					} else {
 						r_core_anal_search (core, from, to, core->offset, 0);

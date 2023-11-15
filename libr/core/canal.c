@@ -4160,6 +4160,11 @@ static bool opiscall(RCore *core, RAnalOp *aop, ut64 addr, const ut8* buf, int l
 // TODO(maskray) RAddrInterval API
 #define OPSZ 8
 R_API int r_core_anal_search(RCore *core, ut64 from, ut64 to, ut64 ref, int mode) {
+	r_return_val_if_fail (core, -1);
+	if (!ref) {
+		R_LOG_ERROR ("Null reference search is not supported");
+		return -1;
+	}
 	ut8 *buf = (ut8 *)malloc (core->blocksize);
 	if (!buf) {
 		return -1;
@@ -4182,11 +4187,6 @@ R_API int r_core_anal_search(RCore *core, ut64 from, ut64 to, ut64 ref, int mode
 	// ???
 	// XXX must read bytes correctly
 	do_bckwrd_srch = bckwrds = core->search->bckwrds;
-	if (!ref) {
-		R_LOG_ERROR ("Null reference search is not supported");
-		free (buf);
-		return -1;
-	}
 	r_cons_break_push (NULL, NULL);
 	if (core->blocksize > OPSZ) {
 		if (bckwrds) {
@@ -4200,7 +4200,7 @@ R_API int r_core_anal_search(RCore *core, ut64 from, ut64 to, ut64 ref, int mode
 			at = from;
 		}
 		while ((!bckwrds && at < to) || bckwrds) {
-			eprintf ("\r[0x%08"PFMT64x"-0x%08"PFMT64x"] ", at, to);
+			R_LOG_DEBUG ("[0x%08"PFMT64x"-0x%08"PFMT64x"]", at, to);
 			if (r_cons_is_breaked ()) {
 				break;
 			}
