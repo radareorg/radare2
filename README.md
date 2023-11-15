@@ -172,8 +172,8 @@ MCORE, mcs96, RSP, SuperH-4, VAX, KVX, Am29000, LOONGARCH, JDH8, s390x.
 ## File Formats
 
 ELF, Mach-O, Fatmach-O, PE, PE+, MZ, COFF, XCOFF, OMF, TE, XBE, SEP64, BIOS/UEFI, 
-Dyldcache, DEX, ART, CGC, Java class, Android boot image, Plan9 executables,
-ZIMG, MBN/SBL bootloader, ELF coredump, MDMP (Windows minidump), PDP11, XTAC,
+Dyldcache, DEX, ART, Java class, Android boot image, Plan9 executables, Amiga HUNK,
+ZIMG, MBN/SBL bootloader, ELF coredump, MDMP (Windows minidump), PDP11, XTAC, CGC,
 WASM (WebAssembly binary), Commodore VICE emulator, QNX, WAD, OFF, TIC-80,
 GB/GBA, NDS and N3DS, and mount several filesystems like NTFS, FAT, HFS+, EXT,...
 

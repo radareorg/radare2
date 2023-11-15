@@ -174,6 +174,7 @@ extern RBreakpointPlugin r_bp_plugin_mips;
 extern RBreakpointPlugin r_bp_plugin_ppc;
 extern RBreakpointPlugin r_bp_plugin_sh;
 extern RBreakpointPlugin r_bp_plugin_bf;
+extern RBreakpointPlugin r_bp_plugin_null;
 extern RBreakpointPlugin r_bp_plugin_riscv;
 #endif
 #ifdef __cplusplus
