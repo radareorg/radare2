@@ -938,10 +938,8 @@ R_API RIODesc *r_core_file_open(RCore *r, const char *file, int flags, ut64 load
 
 	r_esil_setup (r->anal->esil, r->anal, 0, 0, false);
 	if (r_config_get_b (r->config, "cfg.debug")) {
-		bool swstep = true;
-		if (r->dbg->current && r->dbg->current->plugin.canstep) {
-			swstep = false;
-		}
+		RDebugPlugin *plugin = R_UNWRAP3 (r->dbg, current, plugin);
+		const bool swstep = (plugin && plugin->canstep)? false: true;
 		r_config_set_b (r->config, "dbg.swstep", swstep);
 		// Set the correct debug handle
 		if (fd->plugin && fd->plugin->isdbg) {

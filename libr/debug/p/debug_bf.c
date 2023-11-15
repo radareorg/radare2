@@ -199,7 +199,7 @@ static RList *r_debug_native_map_get(RDebug *dbg) {
 	return list;
 }
 
-static int r_debug_bf_stop(RDebug *dbg) {
+static bool r_debug_bf_stop(RDebug *dbg) {
 	if (!is_io_bf (dbg)) {
 		return false;
 	}

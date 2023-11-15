@@ -311,7 +311,7 @@ typedef struct r_debug_plugin_t {
 	RList *(*tids)(RDebug *dbg, int pid);
 	RList (*backtrace)(RDebug *dbg, int count);
 	/* flow */
-	int (*stop)(RDebug *dbg);
+	bool (*stop)(RDebug *dbg);
 	bool (*step)(RDebug *dbg);
 	bool (*step_over)(RDebug *dbg);
 	bool (*cont)(RDebug *dbg, int pid, int tid, int sig);
@@ -341,11 +341,11 @@ typedef struct r_debug_plugin_t {
 
 typedef struct r_debug_plugin_session_t {
 	RDebug *dbg;
-	RDebugPlugin plugin;
+	RDebugPlugin *plugin;
 	void *plugin_data;
 } RDebugPluginSession;
 
-R_VEC_FORWARD_DECLARE(RVecDebugPluginSession);
+R_VEC_FORWARD_DECLARE (RVecDebugPluginSession);
 
 typedef struct r_debug_t {
 	// R2_590 use RArchConfig instead
@@ -486,6 +486,7 @@ R_API int r_debug_continue_kill(RDebug *dbg, int signal);
 R_API int r_debug_continue_with_signal(RDebug *dbg);
 
 /* process/thread handling */
+R_API bool r_debug_contsc(RDebug *dbg, int num);
 R_API bool r_debug_select(RDebug *dbg, int pid, int tid);
 //R_API int r_debug_pid_add(RDebug *dbg);
 //R_API int r_debug_pid_add_thread(RDebug *dbg);
@@ -514,7 +515,7 @@ R_API const char *r_debug_signal_resolve_i(RDebug *dbg, int signum);
 R_API void r_debug_signal_setup(RDebug *dbg, int num, int opt);
 R_API int r_debug_signal_set(RDebug *dbg, int num, ut64 addr);
 R_API void r_debug_signal_list(RDebug *dbg, int mode);
-R_API int r_debug_kill(RDebug *dbg, int pid, int tid, int sig);
+R_API bool r_debug_kill(RDebug *dbg, int pid, int tid, int sig);
 R_API RList *r_debug_kill_list(RDebug *dbg);
 // XXX: must be uint64 action
 R_API int r_debug_kill_setup(RDebug *dbg, int sig, int action);
@@ -560,7 +561,7 @@ R_API ut64 r_debug_reg_get_err(RDebug *dbg, const char *name, int *err, utX *val
 R_API bool r_debug_execute(RDebug *dbg, const ut8 *buf, int len, R_OUT ut64 *ret, bool restore, bool ignore_stack);
 R_API bool r_debug_map_sync(RDebug *dbg);
 
-R_API int r_debug_stop(RDebug *dbg);
+R_API bool r_debug_stop(RDebug *dbg);
 
 /* backtrace */
 R_API RList *r_debug_frames(RDebug *dbg, ut64 at);
@@ -595,7 +596,8 @@ R_API int r_debug_child_fork(RDebug *dbg);
 R_API int r_debug_child_clone(RDebug *dbg);
 
 R_API void r_debug_drx_list(RDebug *dbg);
-R_API int r_debug_drx_set(RDebug *dbg, int idx, ut64 addr, int len, int rwx, int g);
+R_API bool r_debug_drx_set(RDebug *dbg, int idx, ut64 addr, int len, int rwx, int g);
+R_API int r_debug_drx_get(RDebug *dbg, ut64 addr);
 R_API int r_debug_drx_unset(RDebug *dbg, int idx);
 
 /* esil */

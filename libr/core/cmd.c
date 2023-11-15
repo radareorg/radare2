@@ -5192,14 +5192,17 @@ static RList *foreach3list(RCore *core, char type, const char *glob) {
 		}
 		break;
 	case 't': // @@@t
-		// iterate over all threads
-		if (core->dbg && core->dbg->current && core->dbg->current->plugin.threads) {
-			RDebugPid *p;
-			RList *thlist = core->dbg->current->plugin.threads (core->dbg, core->dbg->pid);
-			r_list_foreach (thlist, iter, p) {
-				append_item (list, NULL, (ut64)p->pid, UT64_MAX);
+		{
+			RDebugPlugin *plugin = R_UNWRAP3 (core->dbg, current, plugin);
+			// iterate over all threads
+			if (plugin && plugin->threads) {
+				RDebugPid *p;
+				RList *thlist = plugin->threads (core->dbg, core->dbg->pid);
+				r_list_foreach (thlist, iter, p) {
+					append_item (list, NULL, (ut64)p->pid, UT64_MAX);
+				}
+				r_list_free (thlist);
 			}
-			r_list_free (thlist);
 		}
 		break;
 	case 'i': // @@@i
@@ -5423,7 +5426,7 @@ R_API int r_core_cmd_foreach3(RCore *core, const char *cmd, char *each) { // "@@
 		break;
 	case 't':
 		// TODO: generalize like the rest, just call dp before and after
-		if (core->dbg && core->dbg->current && core->dbg->current->plugin.threads) {
+		{
 			int origpid = core->dbg->pid;
 			r_list_foreach (list, iter, item) {
 				int curpid = (int) item->addr;
@@ -5727,8 +5730,9 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 		{
 			RDebugPid *p;
 			int pid = core->dbg->pid;
-			if (core->dbg->current && core->dbg->current->plugin.pids) {
-				RList *list = core->dbg->current->plugin.pids (core->dbg, R_MAX (0, pid));
+			RDebugPlugin *plugin = R_UNWRAP3 (core->dbg, current, plugin);
+			if (plugin && plugin->pids) {
+				RList *list = plugin->pids (core->dbg, R_MAX (0, pid));
 				r_list_foreach (list, iter, p) {
 					r_cons_printf ("# PID %d\n", p->pid);
 					r_debug_select (core->dbg, p->pid, p->pid);

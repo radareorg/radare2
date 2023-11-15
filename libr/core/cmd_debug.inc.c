@@ -1136,8 +1136,11 @@ static void cmd_debug_pid(RCore *core, const char *input) {
 			}
 		}
 		r_debug_select (core->dbg, core->dbg->pid, core->dbg->tid);
-		r_config_set_i (core->config, "dbg.swstep",
-				(core->dbg->current && !core->dbg->current->plugin.canstep));
+		{
+			RDebugPlugin *plugin = R_UNWRAP3 (core->dbg, current, plugin);
+			const bool canstep = (plugin && plugin->canstep);
+			r_config_set_i (core->config, "dbg.swstep", canstep);
+		}
 		r_core_cmdf (core, ":pid %d", core->dbg->pid);
 		break;
 	case 'f': // "dpf"
@@ -2193,9 +2196,9 @@ static void cmd_reg_profile(RCore *core, char from, const char *str) { // "arp" 
 	const bool cfg_debug = r_config_get_b (core->config, "cfg.debug");
 	if (cfg_debug) {
 		// XXX bas practice
-		char* (*reg_profile)(RDebug *dbg) = R_UNWRAP2 (core->dbg->current, plugin.reg_profile);
-		if (reg_profile) {
-			char *rp = reg_profile (core->dbg);
+		RDebugPlugin *plugin = R_UNWRAP3 (core->dbg, current, plugin);
+		if (plugin && plugin->reg_profile) {
+			char *rp = plugin->reg_profile (core->dbg);
 			r_reg_set_profile_string (core->dbg->reg, rp);
 			free (rp);
 		}
@@ -5866,7 +5869,7 @@ static int cmd_debug(void *data, const char *input) {
 		r_core_debug_esil (core, input + 1);
 		break;
 	case 'g': // "dg"
-		if (core->dbg->current && core->dbg->current->plugin.gcore) {
+		if (core->dbg->current && core->dbg->current->plugin && core->dbg->current->plugin->gcore) {
 			if (core->dbg->pid == -1) {
 				R_LOG_ERROR ("Not debugging, can't write core");
 				break;
@@ -5876,7 +5879,7 @@ static int cmd_debug(void *data, const char *input) {
 			r_file_rm (corefile);
 			RBuffer *dst = r_buf_new_file (corefile, O_RDWR | O_CREAT, 0644);
 			if (dst) {
-				if (!core->dbg->current->plugin.gcore (core->dbg, dst)) {
+				if (!core->dbg->current->plugin->gcore (core->dbg, dst)) {
 					R_LOG_ERROR ("dg: coredump failed");
 				}
 				r_buf_free (dst);
@@ -5941,8 +5944,9 @@ static int cmd_debug(void *data, const char *input) {
 				core->dbg->session = NULL;
 			}
 			// Kill debugee and all child processes
-			if (core->dbg && core->dbg->current && core->dbg->current->plugin.pids && core->dbg->pid != -1) {
-				list = core->dbg->current->plugin.pids (core->dbg, core->dbg->pid);
+			RDebugPlugin *plugin = R_UNWRAP3 (core->dbg, current, plugin);
+			if (plugin && plugin->pids && core->dbg->pid != -1) {
+				list = plugin->pids (core->dbg, core->dbg->pid);
 				if (list) {
 					r_list_foreach (list, iter, p) {
 						r_debug_kill (core->dbg, p->pid, p->pid, SIGKILL);

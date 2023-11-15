@@ -11,11 +11,12 @@ R_LIB_VERSION(r_debug);
 #define DBG_BUF_SIZE 512
 
 R_API RDebugInfo *r_debug_info(RDebug *dbg, const char *arg) {
-	r_return_val_if_fail (dbg && dbg->current, NULL);
+	r_return_val_if_fail (dbg, NULL);
 	if (dbg->pid < 0) {
 		return NULL;
 	}
-	return dbg->current->plugin.info? dbg->current->plugin.info (dbg, arg): NULL;
+	RDebugPlugin *plugin = R_UNWRAP3 (dbg, current, plugin);
+	return plugin->info? plugin->info (dbg, arg): NULL;
 }
 
 R_API void r_debug_info_free(RDebugInfo *rdi) {
@@ -40,14 +41,13 @@ R_API void r_debug_bp_update(RDebug *dbg) {
 	}
 }
 
-#if __i386__ || __x86_64__
-static int r_debug_drx_at(RDebug *dbg, ut64 addr) {
-	if (dbg && dbg->current && dbg->current->plugin.drx) {
-		return dbg->current->plugin.drx (dbg, 0, addr, 0, 0, 0, DRX_API_GET_BP);
+R_API int r_debug_drx_get(RDebug *dbg, ut64 addr) {
+	RDebugPlugin *plugin = R_UNWRAP3 (dbg, current, plugin);
+	if (plugin && plugin->drx) {
+		return plugin->drx (dbg, 0, addr, 0, 0, 0, DRX_API_GET_BP);
 	}
 	return -1;
 }
-#endif
 
 /*
  * Recoiling after a breakpoint has two stages:
@@ -104,7 +104,7 @@ static bool r_debug_bp_hit(RDebug *dbg, RRegItem *pc_ri, ut64 pc, RBreakpointIte
 #if __i386__ || __x86_64__
 			if (!b) {
 				/* handle the case of hw breakpoints - notify the user */
-				int drx_reg_idx = r_debug_drx_at (dbg, pc);
+				int drx_reg_idx = r_debug_drx_get (dbg, pc);
 				if (drx_reg_idx != -1) {
 					R_LOG_INFO ("hit hardware breakpoint %d at: %" PFMT64x,
 						drx_reg_idx, pc);
@@ -452,8 +452,9 @@ R_API bool r_debug_attach(RDebug *dbg, int pid) {
 		return false;
 	}
 	bool ret = false;
-	if (dbg->current && dbg->current->plugin.attach) {
-		ret = dbg->current->plugin.attach (dbg, pid);
+	RDebugPlugin *plugin = R_UNWRAP3 (dbg, current, plugin);
+	if (plugin && plugin->attach) {
+		ret = plugin->attach (dbg, pid);
 		if (ret) {
 			dbg->tid = pid;
 			// dbg->pid = pid;
@@ -466,51 +467,54 @@ R_API bool r_debug_attach(RDebug *dbg, int pid) {
 }
 
 /* stop execution of child process */
-R_API int r_debug_stop(RDebug *dbg) {
-	if (dbg && dbg->current && dbg->current->plugin.stop) {
-		return dbg->current->plugin.stop (dbg);
+R_API bool r_debug_stop(RDebug *dbg) {
+	RDebugPlugin *plugin = R_UNWRAP3 (dbg, current, plugin);
+	if (plugin->stop) {
+		return plugin->stop (dbg);
 	}
 	return false;
 }
 
 R_API bool r_debug_set_arch(RDebug *dbg, const char *arch, int bits) {
-	if (arch && dbg && dbg->current) {
-		switch (bits) {
-		case 16:
-			if (dbg->current->plugin.bits == 16) {
-				dbg->bits = R_SYS_BITS_16;
-			}
-			break;
-		case 27:
-			if (dbg->current->plugin.bits == 27) {
-				dbg->bits = R_SYS_BITS_27;
-			}
-			break;
-		case 32:
-			if (dbg->current->plugin.bits & R_SYS_BITS_32) {
-				dbg->bits = R_SYS_BITS_32;
-			}
-			break;
-		case 64:
-			dbg->bits = R_SYS_BITS_64;
-			break;
-		}
-		if (!dbg->current->plugin.bits) {
-			dbg->bits = dbg->current->plugin.bits;
-		} else if (!(dbg->current->plugin.bits & dbg->bits)) {
-			dbg->bits = dbg->current->plugin.bits & R_SYS_BITS_64;
-			if (!dbg->bits) {
-				dbg->bits = dbg->current->plugin.bits & R_SYS_BITS_32;
-			}
-			if (!dbg->bits) {
-				dbg->bits = R_SYS_BITS_32;
-			}
-		}
-		free (dbg->arch);
-		dbg->arch = strdup (arch);
-		return true;
+	r_return_val_if_fail (dbg && arch, false);
+	RDebugPlugin *plugin = R_UNWRAP3 (dbg, current, plugin);
+	if (!plugin) {
+		return false;
 	}
-	return false;
+	switch (bits) {
+	case 16:
+		if (plugin->bits == 16) {
+			dbg->bits = R_SYS_BITS_16;
+		}
+		break;
+	case 27:
+		if (plugin->bits == 27) {
+			dbg->bits = R_SYS_BITS_27;
+		}
+		break;
+	case 32:
+		if (plugin->bits & R_SYS_BITS_32) {
+			dbg->bits = R_SYS_BITS_32;
+		}
+		break;
+	case 64:
+		dbg->bits = R_SYS_BITS_64;
+		break;
+	}
+	if (!plugin->bits) {
+		dbg->bits = plugin->bits;
+	} else if (!(plugin->bits & dbg->bits)) {
+		dbg->bits = plugin->bits & R_SYS_BITS_64;
+		if (!dbg->bits) {
+			dbg->bits = plugin->bits & R_SYS_BITS_32;
+		}
+		if (!dbg->bits) {
+			dbg->bits = R_SYS_BITS_32;
+		}
+	}
+	free (dbg->arch);
+	dbg->arch = strdup (arch);
+	return true;
 }
 
 /* Inject and execute shellcode
@@ -619,8 +623,9 @@ R_API bool r_debug_start(RDebug *dbg, const char *cmd) {
 R_API bool r_debug_detach(RDebug *dbg, int pid) {
 	r_return_val_if_fail (dbg, false);
 	bool ret = false;
-	if (dbg->current && dbg->current->plugin.detach) {
-		ret = dbg->current->plugin.detach (dbg, pid);
+	RDebugPlugin *plugin = R_UNWRAP3 (dbg, current, plugin);
+	if (plugin && plugin->detach) {
+		ret = -plugin->detach (dbg, pid);
 		if (dbg->pid == pid) {
 			dbg->pid = -1;
 			dbg->tid = -1;
@@ -649,8 +654,9 @@ R_API bool r_debug_select(RDebug *dbg, int pid, int tid) {
 	if (pid < 0 || tid < 0) {
 		return false;
 	}
-	if (dbg->current && dbg->current->plugin.select) {
-		if (!dbg->current->plugin.select (dbg, pid, tid)) {
+	RDebugPlugin *plugin = R_UNWRAP3 (dbg, current, plugin);
+	if (plugin && plugin->select) {
+		if (!plugin->select (dbg, pid, tid)) {
 			return false;
 		}
 	}
@@ -744,8 +750,9 @@ R_API RDebugReasonType r_debug_wait(RDebug *dbg, RBreakpointItem **bp) {
 	}
 
 	/* if our debugger plugin has wait */
-	if (dbg->current && dbg->current->plugin.wait) {
-		reason = dbg->current->plugin.wait (dbg, dbg->pid);
+	RDebugPlugin *plugin = R_UNWRAP3 (dbg, current, plugin);
+	if (plugin && plugin->wait) {
+		reason = plugin->wait (dbg, dbg->pid);
 		if (reason == R_DEBUG_REASON_DEAD) {
 			R_LOG_INFO ("==> Process finished");
 			REventDebugProcessFinished event = {
@@ -958,8 +965,8 @@ R_API int r_debug_step_hard(RDebug *dbg, RBreakpointItem **pb) {
 			return true;
 		}
 	}
-
-	if (!dbg->current->plugin.step (dbg)) {
+	RDebugPlugin *plugin = R_UNWRAP3 (dbg, current, plugin);
+	if (plugin && !plugin->step (dbg)) {
 		return false;
 	}
 
@@ -991,16 +998,13 @@ R_API int r_debug_step_hard(RDebug *dbg, RBreakpointItem **pb) {
 }
 
 R_API int r_debug_step(RDebug *dbg, int steps) {
+	r_return_val_if_fail (dbg, 0);
 	RBreakpointItem *bp = NULL;
 	int ret, steps_taken = 0;
 
 	/* who calls this without giving a positive number? */
 	if (steps < 1) {
 		steps = 1;
-	}
-
-	if (!dbg || !dbg->current) {
-		return steps_taken;
 	}
 
 	if (r_debug_is_dead (dbg)) {
@@ -1080,14 +1084,15 @@ R_API int r_debug_step_over(RDebug *dbg, int steps) {
 		steps = 1;
 	}
 
-	if (dbg->current && dbg->current->plugin.step_over) {
+	RDebugPlugin *plugin = R_UNWRAP3 (dbg, current, plugin);
+	if (plugin && plugin->step_over) {
 		for (; steps_taken < steps; steps_taken++) {
 			if (dbg->session && dbg->recoil_mode == R_DBG_RECOIL_NONE) {
 				dbg->session->cnum++;
 				dbg->session->maxcnum++;
 				r_debug_trace_ins_before (dbg);
 			}
-			if (!dbg->current->plugin.step_over (dbg)) {
+			if (!plugin->step_over (dbg)) {
 				return steps_taken;
 			}
 			if (dbg->session && dbg->recoil_mode == R_DBG_RECOIL_NONE) {
@@ -1210,6 +1215,7 @@ repeat:
 	if (r_debug_is_dead (dbg)) {
 		return 0;
 	}
+	RDebugPlugin *plugin = R_UNWRAP3 (dbg, current, plugin);
 	if (dbg->session && dbg->trace_continue) {
 		while (!r_cons_is_breaked ()) {
 			if (r_debug_step (dbg, 1) != 1) {
@@ -1221,13 +1227,13 @@ repeat:
 		}
 		reason = dbg->session->reasontype;
 		bp = dbg->session->bp;
-	} else if (dbg->current && dbg->current->plugin.cont) {
+	} else if (plugin && plugin->cont) {
 		/* handle the stage-2 of breakpoints */
 		if (!r_debug_recoil (dbg, R_DBG_RECOIL_CONTINUE)) {
 			return 0;
 		}
 		/* tell the inferior to go! */
-		ret = dbg->current->plugin.cont (dbg, dbg->pid, dbg->tid, sig);
+		ret = plugin->cont (dbg, dbg->pid, dbg->tid, sig);
 		//XXX(jjd): why? //dbg->reason.signum = 0;
 		reason = r_debug_wait (dbg, &bp);
 	} else {
@@ -1556,7 +1562,8 @@ R_API int r_debug_continue_syscalls(RDebug *dbg, int *sc, int n_sc) {
 	if (!dbg->current || r_debug_is_dead (dbg)) {
 		return -1;
 	}
-	if (!dbg->current->plugin.contsc) {
+	RDebugPlugin *plugin = R_UNWRAP3 (dbg, current, plugin);
+	if (plugin && !plugin->contsc) {
 		/* user-level syscall tracing */
 		r_debug_continue_until_optype (dbg, R_ANAL_OP_TYPE_SWI, 0);
 		return show_syscall (dbg, "A0");
@@ -1584,7 +1591,7 @@ R_API int r_debug_continue_syscalls(RDebug *dbg, int *sc, int n_sc) {
 		 * return value after... */
 		r_debug_step (dbg, 1);
 #endif
-		dbg->current->plugin.contsc (dbg, dbg->pid, 0); // TODO handle return value
+		r_debug_contsc (dbg, 0); // TODO handle return value
 		// wait until continuation
 		reason = r_debug_wait (dbg, NULL);
 		if (reason == R_DEBUG_REASON_DEAD || r_debug_is_dead (dbg)) {
@@ -1626,24 +1633,26 @@ R_API int r_debug_continue_syscall(RDebug *dbg, int sc) {
 	return r_debug_continue_syscalls (dbg, &sc, 1);
 }
 
-// TODO: remove from here? this is code injection!
-R_API int r_debug_syscall(RDebug *dbg, int num) {
-	bool ret = true;
-	if (dbg->current->plugin.contsc) {
-		ret = dbg->current->plugin.contsc (dbg, dbg->pid, num);
+// TODO: bad name, contsc wtf
+R_API bool r_debug_contsc(RDebug *dbg, int num) {
+	RDebugPlugin *plugin = R_UNWRAP3 (dbg, current, plugin);
+	bool ret = true; // false?
+	if (plugin && plugin->contsc) {
+		ret = plugin->contsc (dbg, dbg->pid, num);
 	}
 	R_LOG_TODO ("show syscall information");
 	/* r2rc task? ala inject? */
-	return (int)ret;
+	return ret;
 }
 
-R_API int r_debug_kill(RDebug *dbg, int pid, int tid, int sig) {
+R_API bool r_debug_kill(RDebug *dbg, int pid, int tid, int sig) {
 	if (r_debug_is_dead (dbg)) {
 		return false;
 	}
-	if (dbg->current && dbg->current->plugin.kill) {
+	RDebugPlugin *plugin = R_UNWRAP3 (dbg, current, plugin);
+	if (plugin && plugin->kill) {
 		if (pid > 0) {
-			return dbg->current->plugin.kill (dbg, pid, tid, sig);
+			return plugin->kill (dbg, pid, tid, sig);
 		}
 		return -1;
 	}
@@ -1652,8 +1661,9 @@ R_API int r_debug_kill(RDebug *dbg, int pid, int tid, int sig) {
 }
 
 R_API RList *r_debug_frames(RDebug *dbg, ut64 at) {
-	if (dbg && dbg->current && dbg->current->plugin.frames) {
-		return dbg->current->plugin.frames (dbg, at);
+	RDebugPlugin *plugin = R_UNWRAP3 (dbg, current, plugin);
+	if (plugin && plugin->frames) {
+		return plugin->frames (dbg, at);
 	}
 	return NULL;
 }
@@ -1672,16 +1682,17 @@ R_API int r_debug_child_clone(RDebug *dbg) {
 }
 
 R_API bool r_debug_is_dead(RDebug *dbg) {
-	if (!dbg->current) {
+	RDebugPlugin *plugin = R_UNWRAP3 (dbg, current, plugin);
+	if (!plugin) {
 		return false;
 	}
 	// workaround for debug.io.. should be generic
-	if (!strcmp (dbg->current->plugin.meta.name, "io")) {
+	if (!strcmp (plugin->meta.name, "io")) {
 		return false;
 	}
-	bool is_dead = (dbg->pid < 0 && strncmp (dbg->current->plugin.meta.name, "gdb", 3)) || (dbg->reason.type == R_DEBUG_REASON_DEAD);
-	if (dbg->pid > 0 && dbg->current && dbg->current->plugin.kill) {
-		is_dead = !dbg->current->plugin.kill (dbg, dbg->pid, false, 0);
+	bool is_dead = (dbg->pid < 0 && strncmp (plugin->meta.name, "gdb", 3)) || (dbg->reason.type == R_DEBUG_REASON_DEAD);
+	if (dbg->pid > 0 && plugin && plugin->kill) {
+		is_dead = !plugin->kill (dbg, dbg->pid, false, 0);
 	}
 #if 0
 	if (!is_dead && dbg->current && dbg->current->plugin.kill) {
@@ -1695,28 +1706,32 @@ R_API bool r_debug_is_dead(RDebug *dbg) {
 }
 
 R_API int r_debug_map_protect(RDebug *dbg, ut64 addr, int size, int perms) {
-	if (dbg && dbg->current && dbg->current->plugin.map_protect) {
-		return dbg->current->plugin.map_protect (dbg, addr, size, perms);
+	RDebugPlugin *plugin = R_UNWRAP3 (dbg, current, plugin);
+	if (plugin && plugin->map_protect) {
+		return plugin->map_protect (dbg, addr, size, perms);
 	}
 	return false;
 }
 
 R_API void r_debug_drx_list(RDebug *dbg) {
-	if (dbg && dbg->current && dbg->current->plugin.drx) {
-		dbg->current->plugin.drx (dbg, 0, 0, 0, 0, 0, DRX_API_LIST);
+	RDebugPlugin *plugin = R_UNWRAP3 (dbg, current, plugin);
+	if (plugin && plugin->drx) {
+		plugin->drx (dbg, 0, 0, 0, 0, 0, DRX_API_LIST);
 	}
 }
 
-R_API int r_debug_drx_set(RDebug *dbg, int idx, ut64 addr, int len, int rwx, int g) {
-	if (dbg && dbg->current && dbg->current->plugin.drx) {
-		return dbg->current->plugin.drx (dbg, idx, addr, len, rwx, g, DRX_API_SET_BP);
+R_API bool r_debug_drx_set(RDebug *dbg, int idx, ut64 addr, int len, int rwx, int g) {
+	RDebugPlugin *plugin = R_UNWRAP3 (dbg, current, plugin);
+	if (plugin && plugin->drx) {
+		return plugin->drx (dbg, idx, addr, len, rwx, g, DRX_API_SET_BP);
 	}
 	return false;
 }
 
 R_API int r_debug_drx_unset(RDebug *dbg, int idx) {
-	if (dbg && dbg->current && dbg->current->plugin.drx) {
-		return dbg->current->plugin.drx (dbg, idx, 0, -1, 0, 0, DRX_API_REMOVE_BP);
+	RDebugPlugin *plugin = R_UNWRAP3 (dbg, current, plugin);
+	if (plugin && plugin->drx) {
+		return plugin->drx (dbg, idx, 0, -1, 0, 0, DRX_API_REMOVE_BP);
 	}
 	return false;
 }
@@ -1779,8 +1794,9 @@ R_API ut64 r_debug_get_baddr(RDebug *dbg, const char *file) {
 }
 
 R_API int r_debug_cmd(RDebug *dbg, const char *s) {
-	if (dbg->current && dbg->current->plugin.cmd) {
-		return dbg->current->plugin.cmd (dbg, s);
+	RDebugPlugin *plugin = R_UNWRAP3 (dbg, current, plugin);
+	if (plugin && plugin->cmd) {
+		return plugin->cmd (dbg, s);
 	}
 	return 0;
 }

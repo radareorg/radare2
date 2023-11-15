@@ -389,26 +389,29 @@ static int r_core_rtr_gdb_cb(libgdbr_t *g, void *core_ptr, const char *cmd,
 			case 't':
 				switch (cmd[3]) {
 				case '\0': // dpt
-					if (!core->dbg->current->plugin.threads) {
-						return -1;
-					}
-					if (!(list = core->dbg->current->plugin.threads(core->dbg, core->dbg->pid))) {
-						return -1;
-					}
-					memset (out_buf, 0, max_len);
-					out_buf[0] = 'm';
-					ret = 1;
-					r_list_foreach (list, iter, dbgpid) {
-						// Max length of a hex pid = 8?
-						if (ret >= max_len - 9) {
-							break;
+					{
+						RDebugPlugin *plugin = R_UNWRAP3 (core->dbg, current, plugin);
+						if (!plugin || !plugin->threads) {
+							return -1;
 						}
-						snprintf (out_buf + ret, max_len - ret - 1, "%x,", dbgpid->pid);
-						ret = strlen (out_buf);
-					}
-					if (ret > 1) {
-						ret--;
-						out_buf[ret] = '\0';
+						if (!(list = plugin->threads (core->dbg, core->dbg->pid))) {
+							return -1;
+						}
+						memset (out_buf, 0, max_len);
+						out_buf[0] = 'm';
+						ret = 1;
+						r_list_foreach (list, iter, dbgpid) {
+							// Max length of a hex pid = 8?
+							if (ret >= max_len - 9) {
+								break;
+							}
+							snprintf (out_buf + ret, max_len - ret - 1, "%x,", dbgpid->pid);
+							ret = strlen (out_buf);
+						}
+						if (ret > 1) {
+							ret--;
+							out_buf[ret] = '\0';
+						}
 					}
 					return 0;
 				case 'r': // dptr -> return current tid as int

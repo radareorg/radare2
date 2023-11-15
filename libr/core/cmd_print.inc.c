@@ -8078,22 +8078,24 @@ static int cmd_print(void *data, const char *input) {
 	case 'k': // "pk"
 		if (input[1] == '?') {
 			r_core_cmd_help_contains (core, help_msg_p, "pk");
-		} else if (!strncmp (input, "kill", 4)) {
+		} else if (r_str_startswith (input, "kill")) {
 			RListIter *iter;
 			RDebugPid *pid;
 			const char *arg = strchr (input, ' ');
-			RList *pids = (core->dbg->current && core->dbg->current->plugin.pids)
-				? core->dbg->current->plugin.pids (core->dbg, 0): NULL;
-			if (R_STR_ISNOTEMPTY (arg)) {
-				arg++;
-				r_list_foreach (pids, iter, pid) {
-					if (strstr (pid->path, arg)) {
-						r_cons_printf ("dk 9 %d\n", pid->pid);
+			RDebugPlugin *plugin = R_UNWRAP3 (core->dbg, current, plugin);
+			if (plugin && plugin->pids) {
+				RList *pids = plugin->pids (core->dbg, 0);
+				if (pids && R_STR_ISNOTEMPTY (arg)) {
+					arg++;
+					r_list_foreach (pids, iter, pid) {
+						if (strstr (pid->path, arg)) {
+							r_cons_printf ("dk 9 %d\n", pid->pid);
+						}
+						// r_debug_kill (core->dbg, pid->pid, pid->pid, 9); // kill -9
 					}
-					// r_debug_kill (core->dbg, pid->pid, pid->pid, 9); // kill -9
 				}
+				r_list_free (pids);
 			}
-			r_list_free (pids);
 		} else if (l > 0) {
 			len = len > core->blocksize? core->blocksize: len;
 			char *s = r_print_randomart (block, len, core->offset);

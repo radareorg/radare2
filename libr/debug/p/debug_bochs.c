@@ -348,7 +348,7 @@ static RDebugReasonType r_debug_bochs_wait(RDebug *dbg, int pid) {
 	return R_DEBUG_REASON_NONE;
 }
 
-static int r_debug_bochs_stop(RDebug *dbg) {
+static bool r_debug_bochs_stop(RDebug *dbg) {
 	//eprintf("bochs_stop:\n");
 	//RIOBdescbg *o = dbg->iob.io->desc->data;
 	//BfvmCPU *c = o->bfvm;

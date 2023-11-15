@@ -202,7 +202,7 @@ static void interrupt_process(RDebug *dbg) {
 }
 #endif
 
-static int r_debug_native_stop(RDebug *dbg) {
+static bool r_debug_native_stop(RDebug *dbg) {
 #if __linux__
 	// Stop all running threads except the thread reported by waitpid
 	return linux_stop_threads (dbg, dbg->reason.tid);
@@ -1260,7 +1260,7 @@ static bool r_debug_native_kill(RDebug *dbg, int pid, int tid, int sig) {
 }
 
 static bool r_debug_native_init(RDebug *dbg) {
-	dbg->current->plugin.desc = r_debug_desc_plugin_native;
+	dbg->current->plugin->desc = r_debug_desc_plugin_native;
 #if R2__WINDOWS__
 	r_w32_init ();
 	if (!dbg->user && dbg->iob.io->dbgwrap) {

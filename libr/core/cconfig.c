@@ -963,7 +963,8 @@ static bool cb_asmbits(void *user, void *data) {
 	r_debug_set_arch (core->dbg, core->anal->config->arch, bits);
 	const bool load_from_debug = r_config_get_b (core->config, "cfg.debug");
 	if (load_from_debug) {
-		if (core->dbg->current && core->dbg->current->plugin.reg_profile) {
+		RDebugPlugin *plugin = R_UNWRAP3 (core->dbg, current, plugin);
+		if (plugin && plugin->reg_profile) {
 // XXX. that should depend on the plugin, not the host os
 #if R2__WINDOWS__
 #if !defined(_WIN64)
@@ -972,7 +973,7 @@ static bool cb_asmbits(void *user, void *data) {
 			core->dbg->bits = R_SYS_BITS_64;
 #endif
 #endif
-			char *rp = core->dbg->current->plugin.reg_profile (core->dbg);
+			char *rp = plugin->reg_profile (core->dbg);
 			if (rp) {
 				r_reg_set_profile_string (core->dbg->reg, rp);
 				r_reg_set_profile_string (core->anal->reg, rp);

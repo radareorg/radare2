@@ -5,12 +5,15 @@
 
 R_API bool r_debug_reg_sync(RDebug *dbg, int type, int must_write) {
 	r_return_val_if_fail (dbg && dbg->reg, false);
-	// if dbg->current is null means that we didnt selected any debug plugin
-	// this function is only needed to sync the local regstate into the target process
 	if (dbg->current == NULL) {
 		return true;
 	}
-	RDebugPlugin *plugin = &(dbg->current->plugin);
+	RDebugPlugin *plugin = R_UNWRAP3 (dbg, current, plugin);
+	if (!plugin) {
+		// if dbg->current is null means that we didnt selected any debug plugin
+		// this function is only needed to sync the local regstate into the target process
+		return true;
+	}
 	int n, size;
 	if (r_debug_is_dead (dbg)) {
 		return false;
@@ -34,7 +37,7 @@ R_API bool r_debug_reg_sync(RDebug *dbg, int type, int must_write) {
 			// get regset mask
 			int mask = dbg->reg->regset[n].maskregstype;
 			// convert request arena to mask value
-			int v = ((int)1 << i);
+			ut32 v = ((ut32)1 << i);
 			// skip checks on same request arena and check if this arena have inside the request arena type
 			if (n != i && (mask & v)) {
 				// eprintf(" req = %i arena = %i mask = %x search = %x \n", i, n, mask, v);

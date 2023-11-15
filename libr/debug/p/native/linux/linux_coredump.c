@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2016 - Oscar Salvador */
+/* radare - LGPL - Copyright 2016-2023 - Oscar Salvador */
 
 #include <r_debug.h>
 
@@ -1038,14 +1038,14 @@ void write_note_hdr (note_type_t type, ut8 **note_data) {
 
 static int *get_unique_thread_id(RDebug *dbg, int n_threads) {
 	RListIter *it;
-	RList *list;
 	RDebugPid *th;
 	int *thread_id = NULL;
 	int i = 0;
 	bool found = false;
 
-	if (dbg->current) {
-		list = dbg->current->plugin.threads (dbg, dbg->pid);
+	RDebugPlugin *plugin = R_UNWRAP3 (dbg, current, plugin);
+	if (plugin != NULL) {
+		RList *list = plugin->threads (dbg, dbg->pid);
 		if (!list) {
 			return NULL;
 		}
