@@ -251,7 +251,7 @@ if no_user_plugins
     'xbe',
     'xcoff64',
     'xnu_kernelcache',
-    'xtac'
+    'xtac',
     'z64',
     'zimg',
   ]
