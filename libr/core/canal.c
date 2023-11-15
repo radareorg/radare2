@@ -4204,15 +4204,18 @@ R_API int r_core_anal_search(RCore *core, ut64 from, ut64 to, ut64 ref, int mode
 			if (r_cons_is_breaked ()) {
 				break;
 			}
+			size_t left = R_MIN (to - at, core->blocksize);
 			// TODO: this can be probably enhanced
-			if (!r_io_read_at (core->io, at, buf, core->blocksize)) {
-				R_LOG_ERROR ("Failed to read at 0x%08" PFMT64x, at);
+			if (!r_io_read_at (core->io, at, buf, left)) {
+				R_LOG_ERROR ("Failed to read %d bytes at 0x%08" PFMT64x, left, at);
 				break;
+			}
+			if (left < core->blocksize) {
+				memset (buf + left, 0, core->blocksize - left);
 			}
 			for (i = bckwrds ? (core->blocksize - OPSZ - 1) : 0;
 				 (!bckwrds && i < core->blocksize - OPSZ) ||
-				 (bckwrds && i > 0);
-				 bckwrds ? i-- : i++) {
+				 (bckwrds && i > 0); bckwrds ? i-- : i++) {
 				// TODO: honor anal.align
 				if (r_cons_is_breaked ()) {
 					break;
@@ -4251,7 +4254,7 @@ R_API int r_core_anal_search(RCore *core, ut64 from, ut64 to, ut64 ref, int mode
 				case R_ANAL_OP_TYPE_CCALL:
 					if (op.jump != UT64_MAX &&
 						core_anal_followptr (core, R_ANAL_REF_TYPE_CALL, at + i, op.jump, ref, true, 0)) {
-						count ++;
+						count++;
 					}
 					break;
 				case R_ANAL_OP_TYPE_UCJMP:
@@ -4262,7 +4265,7 @@ R_API int r_core_anal_search(RCore *core, ut64 from, ut64 to, ut64 ref, int mode
 				case R_ANAL_OP_TYPE_MJMP:
 					if (op.ptr != UT64_MAX &&
 						core_anal_followptr (core, R_ANAL_REF_TYPE_JUMP, at + i, op.ptr, ref, true ,1)) {
-						count ++;
+						count++;
 					}
 					break;
 				case R_ANAL_OP_TYPE_UCALL:
@@ -4272,7 +4275,7 @@ R_API int r_core_anal_search(RCore *core, ut64 from, ut64 to, ut64 ref, int mode
 				case R_ANAL_OP_TYPE_UCCALL:
 					if (op.ptr != UT64_MAX &&
 						core_anal_followptr (core, R_ANAL_REF_TYPE_CALL, at + i, op.ptr, ref, true ,1)) {
-						count ++;
+						count++;
 					}
 					break;
 				default:
@@ -4285,7 +4288,7 @@ R_API int r_core_anal_search(RCore *core, ut64 from, ut64 to, ut64 ref, int mode
 					}
 					if (op.ptr != UT64_MAX &&
 						core_anal_followptr (core, 'd', at + i, op.ptr, ref, false, ptrdepth)) {
-						count ++;
+						count++;
 					}
 					break;
 				}
