@@ -8,7 +8,7 @@ CFLAGS+=-DR2__UNIX__
 all: ${ALL_TARGETS}
 
 ALL_TARGETS=
-ARCHS=x86.mk arm.mk
+ARCHS=bp.mk x86.mk arm.mk
 include $(ARCHS)
 
 clean:
