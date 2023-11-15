@@ -27,7 +27,7 @@ R_API RDebugPid *r_debug_pid_free(RDebugPid *pid) {
 R_API RList *r_debug_pids(RDebug *dbg, int pid) {
 	RDebugPlugin *plugin = R_UNWRAP3 (dbg, current, plugin);
 	if (plugin && plugin->pids) {
-		return plugin && plugin->pids (dbg, pid);
+		return plugin->pids (dbg, pid);
 	}
 	return NULL;
 }
