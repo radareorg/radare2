@@ -1,53 +1,10 @@
 use_gpl = not get_option('nogpl')
 user_plugins = get_option('plugins').split(',')
-no_user_plugins = get_option('plugins') == ''
 
 esil_plugins = [ 'dummy' ]
 asm_plugins = [ 'null' ]
 anal_plugins = [ 'null' ]
-arch_plugins = [ 'null',
-  # 'arc',
-  'pyc',
-  'lh5801',
-  'ebc',
-  'msp430',
-  'h8300',
-  'sh',
-  'sh_cs',
-  'x86_nz',
-  'alpha',
-  'pic',
-  'bpf',
-  'bpf_cs',
-  'lm32',
-  'mcs96',
-  'ws',
-  'arm',
-  '6502',
-  'or1k',
-  'dis',
-  'evm',
-  'nios2',
-  'snes',
-  'v850',
-  'any_as',
-  'any_vasm',
-  'jdh8',
-  'kvx',
-  'xap',
-  'mcore',
-  'riscv',
-  'riscv_cs',
-  'i4004',
-  'rsp',
-  'propeller',
-  'amd29k',
-  'vax',
-  'tricore',
-  'tricore_cs',
-  'cris',
-  'cr16',
-]
+arch_plugins = [ 'null' ]
 bin_plugins = [ 'any' ]
 bin_ldr_plugins = [ 'ldr_linux' ]
 bin_xtr_plugins = [ 'xtr_sep64' ]
@@ -58,7 +15,7 @@ crypto_plugins = [ 'xor', 'punycode' ]
 core_plugins = [ 'a2f', 'agD' ]
 egg_plugins = [ 'xor' ]
 debug_plugins = [ 'null', 'io', 'esil', 'rap' ]
-lang_plugins = [ 'lib', 'pipe' ]
+lang_plugins = [ 'lib', 'pipe', 'qjs', 'tsc', 'spp' ]
 parse_plugins = [ 'att2intel' ]
 
 if get_option('nogpl')
@@ -108,7 +65,8 @@ if user_plugins.contains('web')
   io_plugins += [ 'r2web' ]
 endif
 if user_plugins.contains('arm')
-  anal_plugins += [] # sixref should go here
+  anal_plugins += [] # sixref should be an analysis plugin
+  core_plugins += [ 'sixref' ]
   arch_plugins += [ 'arm', 'arm_cs'  ]
   bp_plugins += [ 'arm' ]
   parse_plugins += [ 'arm_pseudo' ]
@@ -152,29 +110,69 @@ if user_plugins.contains('pe')
 endif
 
 # default plugins if none is defined
-if no_user_plugins
+if get_option('plugins') == ''
   arch_plugins += [
-    '8051',
-    'bf',
-    'avr',
-    'dalvik',
-    'arm_cs',
-    'java',
-    'chip8',
-    'wasm',
-    'i8080',
-    'mips_cs',
+    # 'arc',
+    '6502',
     '6502_cs',
-    'loongarch_gnu',
-    's390_cs',
-    'm68k_cs',
-    'm680x_cs',
-    'xcore_cs',
-    'tms320',
-    'sparc_cs',
-    'ppc_cs',
+    '8051',
+    'alpha',
+    'amd29k',
+    'any_as',
+    'any_vasm',
+    'arm',
+    'arm_cs',
+    'avr',
+    'bf',
+    'bpf',
+    'bpf_cs',
+    'chip8',
+    'cr16',
+    'cris',
+    'dalvik',
+    'dis',
+    'ebc',
+    'evm',
     'gb',
+    'h8300',
+    'i4004',
+    'i8080',
+    'java',
+    'jdh8',
+    'kvx',
+    'lh5801',
+    'lm32',
+    'm680x_cs',
+    'm68k_cs',
+    'mcore',
+    'mcs96',
+    'mips_cs',
+    'msp430',
+    'nios2',
+    'or1k',
+    'pic',
+    'ppc_cs',
+    'propeller',
+    'pyc',
+    'riscv',
+    'riscv_cs',
+    'rsp',
+    's390_cs',
+    'sh',
+    'sh_cs',
+    'snes',
+    'sparc_cs',
+    'tms320',
+    'tricore',
+    'tricore_cs',
+    'v850',
+    'vax',
+    'wasm',
+    'ws',
     'x86_cs',
+    'x86_nz',
+    'xap',
+    'xcore_cs',
   ]
 
   if use_gpl
@@ -194,6 +192,8 @@ if no_user_plugins
     # 'hppa_gnu',
     ]
   endif
+
+  core_plugins += [ 'sixref' ]
 
   if get_option('use_v35')
     arch_plugins += ['arm_v35']
@@ -304,6 +304,7 @@ if no_user_plugins
     'bf',
     'bochs',
     'gdb',
+    'sysgdb',
     'native',
     'qnx',
     'winkd'
@@ -314,11 +315,7 @@ if no_user_plugins
     #'shya',
   ]
 
-  fs_plugins += [
-    'io',
-    'posix',
-    'r2',
-  ]
+  fs_plugins += [ ]
 
   if not get_option('nogpl')
     fs_plugins += [
@@ -369,16 +366,16 @@ if no_user_plugins
   endif
 
   lang_plugins += [
-    'v',
-    'lib',
-    'spp',
-    'rust',
-    'go',
-    'zig',
-    's',
     'asm',
     'c',
-    'vala'
+    'go',
+    'lib',
+    'rust',
+    's',
+    'nim',
+    'v',
+    'vala',
+    'zig',
   ]
 
   if host_machine.system() != 'windows'
