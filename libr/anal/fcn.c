@@ -1082,7 +1082,7 @@ repeat:
 				// if page have exec perms
 				ut64 da = (ut64)r_read_ble32 (dd, R_ARCH_CONFIG_IS_BIG_ENDIAN (anal->config));
 				if (da != UT32_MAX && da != UT64_MAX && anal->iob.is_valid_offset (anal->iob.io, da, 0)) {
-					/// R2_590 - this must be CODE | READ , not CODE|DATA, but raises 10 fails
+					/// TODO: this must be CODE | READ , not CODE|DATA, but raises 10 fails
 					// r_anal_xrefs_set (anal, op->addr, da, R_ANAL_REF_TYPE_CODE | R_ANAL_REF_TYPE_DATA);
 					r_anal_xrefs_set (anal, op->addr, da, R_ANAL_REF_TYPE_ICOD | R_ANAL_REF_TYPE_EXEC);
 				} else {
@@ -1705,28 +1705,6 @@ R_API int r_anal_function(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, 
 	}
 	return ret;
 }
-
-#if 0
-// XXX R2_590 - deprecate
-R_API int r_anal_function_del_locs(RAnal *anal, ut64 addr) {
-	RListIter *iter, *iter2;
-	RAnalFunction *fcn, *f = r_anal_get_fcn_in (anal, addr, R_ANAL_FCN_TYPE_ROOT);
-	if (!f) {
-		return false;
-	}
-	r_list_foreach_safe (anal->fcns, iter, iter2, fcn) {
-		if (fcn->type != R_ANAL_FCN_TYPE_LOC) {
-			continue;
-		}
-		if (r_anal_function_contains (fcn, addr)) {
-			r_anal_function_delete (fcn);
-			break;
-		}
-	}
-	r_anal_function_del (anal, addr);
-	return true;
-}
-#endif
 
 R_API int r_anal_function_del(RAnal *a, ut64 addr) {
 	RAnalFunction *fcn = r_anal_get_function_at (a, addr);
