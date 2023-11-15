@@ -304,7 +304,6 @@ if get_option('plugins') == ''
     'bf',
     'bochs',
     'gdb',
-    'sysgdb',
     'native',
     'qnx',
     'winkd'
@@ -363,6 +362,10 @@ if get_option('plugins') == ''
       'w32',
     ]
     debug_plugins += 'windbg'
+  else
+    io_plugins += [
+      'sysgdb',
+    ]
   endif
 
   lang_plugins += [

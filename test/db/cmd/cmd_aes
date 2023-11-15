@@ -122,6 +122,7 @@ ae dummy_op
 EOF
 EXPECT=<<EOF
 dummy
+null
 --
 --
 EOF

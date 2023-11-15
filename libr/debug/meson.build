@@ -15,6 +15,7 @@ r_debug_sources = [
   'p/debug_bf.c',
   'p/debug_bochs.c',
   'p/debug_esil.c',
+  #'p/debug_rv32ima.c',
   'p/debug_gdb.c',
   'p/debug_io.c',
   'p/debug_native.c',
