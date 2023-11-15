@@ -1044,7 +1044,7 @@ static int *get_unique_thread_id(RDebug *dbg, int n_threads) {
 	bool found = false;
 
 	RDebugPlugin *plugin = R_UNWRAP3 (dbg, current, plugin);
-	if (plugin != NULL);
+	if (plugin != NULL) {
 		RList *list = plugin->threads (dbg, dbg->pid);
 		if (!list) {
 			return NULL;
