@@ -639,6 +639,10 @@ R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 	bool is_io_load = false;
 	if (desc && desc->plugin) {
 		is_io_load = true;
+		if (r_str_startswith (filenameuri, "frida://")) {
+			// dont try to guess the bin file in the address 0 if we are using r2frida
+			is_io_load = false;
+		}
 	//	r_io_use_fd (r->io, desc->fd);
 	}
 	r->bin->minstrlen = r_config_get_i (r->config, "bin.str.min");
