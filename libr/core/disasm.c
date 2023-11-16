@@ -7090,11 +7090,7 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 		{
 			int line, colu;
 			char file[1024];
-			bool ret = r_bin_addr2line (core->bin, at, file, sizeof (file) - 1, &line, &colu);
-			if (!ret) {
-				ret = r_bin_addr2line2 (core->bin, at, file, sizeof (file) - 1, &line, &colu);
-			}
-			if (ret) {
+			if (r_bin_addr2line (core->bin, at, file, sizeof (file) - 1, &line, &colu)) {
 				pj_ko (pj, "addrline");
 				pj_ks (pj, "file", file);
 				pj_kn (pj, "line", line);
