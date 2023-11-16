@@ -2092,7 +2092,7 @@ R_API void r_core_autocomplete(R_NULLABLE RCore *core, RLineCompletion *completi
 			ADDARG ("gui.cflow");
 			ADDARG ("gui.dataoffset");
 			ADDARG ("gui.background");
-			ADDARG ("gui.alt_background");
+			ADDARG ("gui.background2");
 			ADDARG ("gui.border");
 			ADDARG ("diff.unknown");
 			ADDARG ("diff.new");
