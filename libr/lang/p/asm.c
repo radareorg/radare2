@@ -53,6 +53,6 @@ static RLangPlugin r_lang_plugin_asm = {
 #else
 
 #pragma message("Warning: C RLangPlugin is not implemented on this platform")
-static RLangPlugin r_lang_plugin_asm = {NULL};
+static RLangPlugin r_lang_plugin_asm = { 0 };
 
 #endif
