@@ -6520,7 +6520,7 @@ R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr,
 				}
 				r_reg_setv (core->anal->reg, pcname, op.addr + op.size);
 				r_reg_setv (core->dbg->reg, pcname, op.addr + op.size);
-				ret = op.size;
+				ret = 0;
 			}
 		}
 		if (r2wars) {
