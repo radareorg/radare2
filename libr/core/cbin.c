@@ -2280,9 +2280,8 @@ typedef struct {
 	char *methflag;  // methods flag sym.[class].[method]
 } SymName;
 
-static void snInit(RCore *r, SymName *sn, RBinSymbol *sym, const char *lang) {
-	bool bin_demangle = !!lang;
-	bool keep_lib = r_config_get_b (r->config, "bin.demangle.libs");
+static void snInit(RCore *r, SymName *sn, RBinSymbol *sym, const char *lang, bool bin_demangle) {
+	bin_demangle &= !!lang;
 	if (!r || !sym || !sym->name) {
 		return;
 	}
@@ -2297,7 +2296,7 @@ static void snInit(RCore *r, SymName *sn, RBinSymbol *sym, const char *lang) {
 	}
 	sn->nameflag = construct_symbol_flagname (pfx, sym->libname, symname, MAXFLAG_LEN_DEFAULT);
 	free (resymname);
-	if (sym->classname && sym->classname[0]) {
+	if (R_STR_ISNOTEMPTY (sym->classname)) {
 		sn->classname = strdup (sym->classname);
 		sn->classflag = r_str_newf ("sym.%s.%s", sn->classname, sn->name);
 		r_name_filter (sn->classflag, MAXFLAG_LEN_DEFAULT);
@@ -2314,6 +2313,7 @@ static void snInit(RCore *r, SymName *sn, RBinSymbol *sym, const char *lang) {
 	sn->demname = NULL;
 	sn->demflag = NULL;
 	if (bin_demangle && sym->paddr) {
+		const bool keep_lib = r_config_get_b (r->config, "bin.demangle.libs");
 		sn->demname = r_bin_demangle (r->bin->cur, lang, sn->name, sym->vaddr, keep_lib);
 		if (sn->demname) {
 			sn->demflag = construct_symbol_flagname (pfx, sym->libname, sn->demname, -1);
@@ -2477,7 +2477,7 @@ static bool bin_symbols(RCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at,
 			}
 		}
 		SymName sn = {0};
-		snInit (r, &sn, symbol, lang);
+		snInit (r, &sn, symbol, lang, bin_demangle);
 		char *r_symbol_name = r_str_escape_utf8 (sn.name, false, true);
 
 		if (IS_MODE_SET (mode) && (is_section_symbol (symbol) || is_file_symbol (symbol))) {
