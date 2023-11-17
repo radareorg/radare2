@@ -3227,11 +3227,11 @@ static inline bool is_debug_segment(const RBinSection *s, const void *user) {
 	return strstr (s->name, "DWARF.__debug_line") != NULL;
 }
 
-static inline bool _check_if_debug_build(RBinFile *bf, struct MACH0_(obj_t) *mo) {
+static inline bool is_debug_build(RBinFile *bf, struct MACH0_(obj_t) *mo) {
 	return RVecSegment_find (mo->segments_vec, NULL, is_debug_segment) != NULL;
 }
 #else
-static bool _check_if_debug_build(RBinFile *bf, struct MACH0_(obj_t) *mo) {
+static bool is_debug_build(RBinFile *bf, struct MACH0_(obj_t) *mo) {
 	RList *sections = MACH0_(get_segments) (bf, mo);
 	if (!sections) {
 		return false;
@@ -3267,8 +3267,7 @@ const bool MACH0_(load_symbols)(struct MACH0_(obj_t) *mo) {
 		ht_pp_free (symcache);
 	}
 
-	const bool is_debug = _check_if_debug_build (mo->options.bf, mo);
-	if (is_debug) {
+	if (is_debug_build (mo->options.bf, mo)) {
 		mo->dbg_info |= R_BIN_DBG_LINENUMS;
 	}
 	return !RVecRBinSymbol_empty (mo->symbols_vec);

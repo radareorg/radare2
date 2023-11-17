@@ -955,7 +955,6 @@ static void create_initterm_syms_vec(RVecRBinSymbol *symbols, RBinFile *bf, RKex
 		sym->type = "FUNC";
 
 		RVecRBinSymbol_push_back (symbols, sym);
-		// r_list_append (ret, sym);
 	}
 }
 
@@ -1072,11 +1071,25 @@ static void process_constructors_vec(RVecRBinSymbol *symbols, RBinFile *bf, RKer
 				sym->bind = "GLOBAL";
 				sym->type = "FUNC";
 				RVecRBinSymbol_push_back (symbols, sym);
-				// r_list_append (ret, sym);
 			}
 		}
 		free (buf);
 	}
+}
+
+static void bin_symbol_copy(RBinSymbol *dst, const RBinSymbol *src) {
+	memcpy (dst, src, sizeof (RBinSymbol));
+	dst->name = strdup (src->name);
+	if (src->dname) {
+		dst->dname = strdup (src->dname);
+	}
+	if (src->libname) {
+		dst->libname = strdup (src->libname);
+	}
+	if (src->classname) {
+		dst->classname = strdup (src->classname);
+	}
+	// TODO bname / cname
 }
 
 static RBinAddr *newEntry(ut64 haddr, ut64 vaddr, int type) {
@@ -1125,7 +1138,7 @@ static RList *sections(RBinFile *bf) {
 			sections_from_mach0 (ret, kext->mach0, bf, kext->range.offset, kext->name, kobj);
 			break;
 		default:
-			eprintf ("Unknown sub-bin\n");
+			R_LOG_ERROR ("Unknown sub-bin");
 			break;
 		}
 	}
@@ -1228,7 +1241,7 @@ static bool symbols_vec(RBinFile *bf) {
 	RVecRBinSymbol symbols;
 	RVecRBinSymbol_init (&symbols);
 	if (MACH0_(load_symbols) (mo)) {
-		RVecRBinSymbol_append (&symbols, mo->symbols_vec, NULL);
+		RVecRBinSymbol_append (&symbols, mo->symbols_vec, &bin_symbol_copy);
 		RVecRBinSymbol_fini (mo->symbols_vec);
 	}
 
@@ -1299,13 +1312,16 @@ static bool symbols_vec(RBinFile *bf) {
 		case MH_MAGIC_64:
 			if (MACH0_(load_symbols) (kext->mach0)) {
 				R_LOG_DEBUG ("--> %d / %d", RVecRBinSymbol_length (kext->mach0->symbols_vec), RVecRBinSymbol_length (&symbols));
-				RVecRBinSymbol_append (&symbols, kext->mach0->symbols_vec, NULL);
+				RVecRBinSymbol_append (&symbols, kext->mach0->symbols_vec, &bin_symbol_copy);
 				process_constructors_vec (&symbols, bf, obj, kext->mach0, kext->range.offset, false, R_K_CONSTRUCTOR_TO_SYMBOL, kext_short_name (kext));
-				int last_ordinal = RVecRBinSymbol_length (&(bf->bo->symbols_vec));
+				const ut32 last_ordinal = RVecRBinSymbol_length (&(bf->bo->symbols_vec));
 				symbols_from_stubs_vec (&symbols, bf, kernel_syms_by_addr, kext, last_ordinal);
 				process_kmod_init_term_vec (&symbols, bf, kext, &inits, &terms);
 				RVecRBinSymbol_fini (kext->mach0->symbols_vec);
+				kext->mach0->symbols_loaded = false;
 #if 0
+				// causes UAF, because symbols name is not copied in an ownery way, so better leak than crash
+				// freeing this makes us lose the sections
 				MACH0_(mach0_free)(kext->mach0);
 				kext->mach0 = NULL;
 #endif
@@ -1322,7 +1338,8 @@ static bool symbols_vec(RBinFile *bf) {
 	R_FREE (terms);
 
 	sdb_ht_free (kernel_syms_by_addr);
-	memcpy (kext->mach0->symbols_vec, &symbols, sizeof (symbols));
+	// memcpy (kext->mach0->symbols_vec, &symbols, sizeof (symbols));
+	memcpy (&(bf->bo->symbols_vec), &symbols, sizeof (symbols));
 
 	return true;
 }
@@ -1698,19 +1715,17 @@ static void symbols_from_stubs_vec(RVecRBinSymbol *symbols, RBinFile *bf, HtPP *
 
 			if (found) {
 				RBinSymbol *sym = R_NEW0 (RBinSymbol);
-				if (!sym) {
-					break;
+				if (R_LIKELY (sym)) {
+					sym->name = r_str_newf ("stub.%s", name);
+					sym->vaddr = vaddr;
+					sym->paddr = stubs_cursor;
+					sym->size = 12;
+					sym->forwarder = "NONE";
+					sym->bind = "LOCAL";
+					sym->type = "FUNC";
+					sym->ordinal = ordinal ++;
+					RVecRBinSymbol_push_back (symbols, sym);
 				}
-				sym->name = r_str_newf ("stub.%s", name);
-				sym->vaddr = vaddr;
-				sym->paddr = stubs_cursor;
-				sym->size = 12;
-				sym->forwarder = "NONE";
-				sym->bind = "LOCAL";
-				sym->type = "FUNC";
-				sym->ordinal = ordinal ++;
-				RVecRBinSymbol_push_back (symbols, sym);
-				// r_list_append (ret, sym);
 				break;
 			}
 
@@ -2070,7 +2085,7 @@ static int kernelcache_io_read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 		}
 		if (fd->plugin->read == kernelcache_io_read) {
 			if (core->bin->verbose) {
-				eprintf ("Avoid recursive reads\n");
+				R_LOG_ERROR ("Avoid recursive reads");
 			}
 			return -1;
 		}
@@ -2234,7 +2249,7 @@ static void rebase_buffer_fixup(RKernelCacheObj *kobj, ut64 off, RIODesc *fd, ut
 							ptr_value += obj->baddr;
 						}
 					} else {
-						eprintf ("Unsupported pointer format: %u\n", obj->chained_starts[i]->pointer_format);
+						R_LOG_ERROR ("Unsupported pointer format: %u", obj->chained_starts[i]->pointer_format);
 					}
 					ut64 in_buf = cursor - off;
 					if (cursor >= off && cursor <= eob - 8) {
@@ -2254,7 +2269,8 @@ static void rebase_buffer_fixup(RKernelCacheObj *kobj, ut64 off, RIODesc *fd, ut
 RBinPlugin r_bin_plugin_xnu_kernelcache = {
 	.meta = {
 		.name = "kernelcache",
-		.desc = "kernelcache bin plugin",
+		.desc = "iOS/macOS kernelcache parser",
+		.author = "mrmacete",
 		.license = "LGPL3",
 	},
 	.destroy = &destroy,
