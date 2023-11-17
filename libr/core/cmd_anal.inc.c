@@ -6337,7 +6337,7 @@ void cmd_anal_reg(RCore *core, const char *str) {
 				}
 			}
 			if (size < 32 && r_str_startswith (r_config_get (core->config, "asm.arch"), "arm")) {
-				size = 32;
+				size = r_config_get_i (core->config, "asm.bits");
 			}
 			__anal_reg_list (core, type, size, str[0]);
 			if (!r_list_empty (core->dbg->q_regs)) {
