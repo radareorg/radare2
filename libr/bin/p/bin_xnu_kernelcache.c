@@ -146,9 +146,10 @@ static RList *kexts_from_load_commands(RKernelCacheObj *obj, RBinFile *bf);
 static void sections_from_mach0(RList *ret, struct MACH0_(obj_t) *mach0, RBinFile *bf, ut64 paddr, char *prefix, RKernelCacheObj *obj);
 static void handle_data_sections(RBinSection *sect);
 static void symbols_from_mach0(RList *ret, struct MACH0_(obj_t) *mach0, RBinFile *bf, ut64 paddr, int ordinal);
+static void symbols_vec_from_mach0(RBinFile *bf, struct MACH0_(obj_t) *mach0, ut64 paddr, int ordinal);
 static RList *resolve_syscalls(RKernelCacheObj *obj, ut64 enosys_addr);
 static RList *resolve_mig_subsystem(RKernelCacheObj *obj);
-static void symbols_from_stubs(RList *ret, HtPP *kernel_syms_by_addr, RKernelCacheObj *obj, RBinFile *bf, RKext *kext, int ordinal);
+static void symbols_from_stubs_vec(RBinFile *bf, HtPP *kernel_syms_by_addr, RKext *kext, int ordinal);
 static RStubsInfo *get_stubs_info(struct MACH0_(obj_t) *mach0, ut64 paddr, RKernelCacheObj *obj);
 static int prot2perm(int x);
 
@@ -165,9 +166,10 @@ static RKextIndex *r_kext_index_new(RList *kexts);
 static void r_kext_index_free(RKextIndex *index);
 static RKext *r_kext_index_vget(RKextIndex *index, ut64 vaddr);
 
-static void process_kmod_init_term(RKernelCacheObj *obj, RKext *kext, RList *ret, ut64 **inits, ut64 **terms);
-static void create_initterm_syms(RKext *kext, RList *ret, int type, ut64 *pointers);
+static void process_kmod_init_term_vec(RBinFile *bf, RKext *kext, ut64 **inits, ut64 **terms);
+static void create_initterm_syms_vec(RBinFile *bf, RKext *kext, int type, ut64 *pointers);
 static void process_constructors(RKernelCacheObj *obj, struct MACH0_(obj_t) *mach0, RList *ret, ut64 paddr, bool is_first, int mode, const char *prefix);
+static void process_constructors_vec(RBinFile *bf, RKernelCacheObj *obj, struct MACH0_(obj_t) *mach0, ut64 paddr, bool is_first, int mode, const char *prefix);
 static RBinAddr *newEntry(ut64 haddr, ut64 vaddr, int type);
 static void ensure_kexts_initialized(RKernelCacheObj *obj, RBinFile *bf);
 
@@ -676,7 +678,7 @@ static RList *kexts_from_load_commands(RKernelCacheObj *obj, RBinFile *bf) {
 			continue;
 		}
 
-		r_kext_fill_text_range (kext);
+		// r_kext_fill_text_range (kext);
 		kext->vaddr = K_PPTR (kext->vaddr);
 		kext->pa2va_exec = obj->pa2va_exec;
 		kext->pa2va_data = obj->pa2va_data;
@@ -853,7 +855,8 @@ static RList *entries(RBinFile *bf) {
 	return ret;
 }
 
-static void process_kmod_init_term(RKernelCacheObj *obj, RKext *kext, RList *ret, ut64 **inits, ut64 **terms) {
+static void process_kmod_init_term_vec(RBinFile *bf, RKext *kext, ut64 **inits, ut64 **terms) {
+	RKernelCacheObj *obj = (RKernelCacheObj*) bf->bo->bin_obj;
 	if (!*inits || !*terms) {
 		const RVector *sections = MACH0_(load_sections) (obj->mach0);
 		if (!sections) {
@@ -905,10 +908,10 @@ static void process_kmod_init_term(RKernelCacheObj *obj, RKext *kext, RList *ret
 	}
 
 	if (*inits) {
-		create_initterm_syms (kext, ret, R_BIN_ENTRY_TYPE_INIT, *inits);
+		create_initterm_syms_vec (bf, kext, R_BIN_ENTRY_TYPE_INIT, *inits);
 	}
 	if (*terms) {
-		create_initterm_syms (kext, ret, R_BIN_ENTRY_TYPE_FINI, *terms);
+		create_initterm_syms_vec (bf, kext, R_BIN_ENTRY_TYPE_FINI, *terms);
 	}
 }
 
@@ -923,7 +926,8 @@ static const char *kext_short_name(RKext *kext) {
 	return sn ? sn + 1 : kext->name;
 }
 
-static void create_initterm_syms(RKext *kext, RList *ret, int type, ut64 *pointers) {
+static void create_initterm_syms_vec(RBinFile *bf, RKext *kext, int type, ut64 *pointers) {
+	// RKernelCacheObj *obj = (RKernelCacheObj*) bf->bo->bin_obj;
 	int i = 0;
 	int count = 0;
 	for (; pointers[i]; i++) {
@@ -952,11 +956,13 @@ static void create_initterm_syms(RKext *kext, RList *ret, int type, ut64 *pointe
 		sym->bind = "GLOBAL";
 		sym->type = "FUNC";
 
-		r_list_append (ret, sym);
+		RVecRBinSymbol_push_back (&(bf->bo->symbols_vec), sym);
+		// r_list_append (ret, sym);
 	}
 }
 
 static void process_constructors(RKernelCacheObj *obj, struct MACH0_(obj_t) *mach0, RList *ret, ut64 paddr, bool is_first, int mode, const char *prefix) {
+// TODO: derpecate and use only a vector
 	const RVector *sections = MACH0_(load_sections) (mach0);
 	if (!sections) {
 		return;
@@ -992,7 +998,9 @@ static void process_constructors(RKernelCacheObj *obj, struct MACH0_(obj_t) *mac
 			ut64 paddr64 = section->paddr + paddr + j;
 			if (mode == R_K_CONSTRUCTOR_TO_ENTRY) {
 				RBinAddr *ba = newEntry (paddr64, addr64, type);
-				r_list_append (ret, ba);
+				r_list_append (ret, ba); // XXX rbinaddr != rbinsymbol
+				// eprintf ("entry point is wrong here.. \n");
+				// XXX RVecRBinSymbol_push_back (&(bf->bo->symbols_vec), ba);
 			} else if (mode == R_K_CONSTRUCTOR_TO_SYMBOL) {
 				RBinSymbol *sym = R_NEW0 (RBinSymbol);
 				if (!sym) {
@@ -1006,8 +1014,67 @@ static void process_constructors(RKernelCacheObj *obj, struct MACH0_(obj_t) *mac
 				sym->forwarder = "NONE";
 				sym->bind = "GLOBAL";
 				sym->type = "FUNC";
-
 				r_list_append (ret, sym);
+			}
+		}
+		free (buf);
+	}
+}
+
+static void process_constructors_vec(RBinFile *bf, RKernelCacheObj *obj, struct MACH0_(obj_t) *mach0, ut64 paddr, bool is_first, int mode, const char *prefix) {
+	const RVector *sections = MACH0_(load_sections) (mach0);
+	if (!sections) {
+		return;
+	}
+	int type;
+	struct section_t *section;
+	r_vector_foreach (sections, section) {
+		if (section->size == 0) {
+			continue;
+		}
+
+		if (strstr (section->name, "_mod_fini_func") || strstr (section->name, "_mod_term_func")) {
+			type  = R_BIN_ENTRY_TYPE_FINI;
+		} else if (strstr (section->name, "_mod_init_func")) {
+			type  = is_first ? 0 : R_BIN_ENTRY_TYPE_INIT;
+			is_first = false;
+		} else {
+			continue;
+		}
+
+		ut8 *buf = calloc (section->size, 1);
+		if (!buf) {
+			break;
+		}
+		if (r_buf_read_at (obj->cache_buf, section->paddr + paddr, buf, section->size) < section->size) {
+			free (buf);
+			break;
+		}
+		int j;
+		int count = 0;
+		for (j = 0; j + 7 < section->size; j += 8) {
+			ut64 addr64 = K_RPTR (buf + j);
+			ut64 paddr64 = section->paddr + paddr + j;
+			if (mode == R_K_CONSTRUCTOR_TO_ENTRY) {
+				RBinAddr *ba = newEntry (paddr64, addr64, type);
+				// r_list_append (ret, ba);
+				R_LOG_WARN ("wrong entrypoint entry not registered");
+				// XXX RVecRBinSymbol_push_back (&(bf->bo->symbols_vec), ba);
+			} else if (mode == R_K_CONSTRUCTOR_TO_SYMBOL) {
+				RBinSymbol *sym = R_NEW0 (RBinSymbol);
+				if (!sym) {
+					break;
+				}
+
+				sym->name = r_str_newf ("%s.%s.%d", prefix, (type == R_BIN_ENTRY_TYPE_INIT) ? "init" : "fini", count++);
+				sym->vaddr = addr64;
+				sym->paddr = paddr64;
+				sym->size = 0;
+				sym->forwarder = "NONE";
+				sym->bind = "GLOBAL";
+				sym->type = "FUNC";
+				RVecRBinSymbol_push_back (&(bf->bo->symbols_vec), sym);
+				// r_list_append (ret, sym);
 			}
 		}
 		free (buf);
@@ -1156,26 +1223,20 @@ static void handle_data_sections(RBinSection *sect) {
 	}
 }
 
-static RList *symbols(RBinFile *bf) {
-	RList *ret = r_list_newf (r_bin_symbol_free);
-	if (!ret) {
-		return NULL;
-	}
-
+static bool symbols_vec(RBinFile *bf) {
 	RKernelCacheObj *obj = (RKernelCacheObj*) bf->bo->bin_obj;
 
-	symbols_from_mach0 (ret, obj->mach0, bf, 0, 0);
+	symbols_vec_from_mach0 (bf, obj->mach0, 0, 0);
 
 	HtPP *kernel_syms_by_addr = sdb_ht_new ();
 	if (!kernel_syms_by_addr) {
-		r_list_free (ret);
-		return NULL;
+		return false;
 	}
 
-	RListIter *iter;
 	RBinSymbol *sym;
 	ut64 enosys_addr = 0;
-	r_list_foreach (ret, iter, sym) {
+	R_VEC_FOREACH (&(bf->bo->symbols_vec), sym) {
+	// r_list_foreach (ret, iter, sym) {
 		r_strf_var (key, 64, "%"PFMT64x, sym->vaddr);
 		sdb_ht_insert (kernel_syms_by_addr, key, sym->dname ? sym->dname : sym->name);
 		if (!enosys_addr && strstr (sym->name, "enosys")) {
@@ -1185,10 +1246,12 @@ static RList *symbols(RBinFile *bf) {
 
 	RList *syscalls = resolve_syscalls (obj, enosys_addr);
 	if (syscalls) {
+		RListIter *iter;
 		r_list_foreach (syscalls, iter, sym) {
 			r_strf_var (key, 32, "%"PFMT64x, sym->vaddr);
 			sdb_ht_insert (kernel_syms_by_addr, key, sym->name);
-			r_list_append (ret, sym);
+			RVecRBinSymbol_push_back (&(bf->bo->symbols_vec), sym);
+			// r_list_append (ret, sym);
 		}
 		syscalls->free = NULL;
 		r_list_free (syscalls);
@@ -1196,10 +1259,12 @@ static RList *symbols(RBinFile *bf) {
 
 	RList *subsystem = resolve_mig_subsystem (obj);
 	if (subsystem) {
+		RListIter *iter;
 		r_list_foreach (subsystem, iter, sym) {
 			r_strf_var (key, 64, "%"PFMT64x, sym->vaddr);
 			sdb_ht_insert (kernel_syms_by_addr, key, sym->name);
-			r_list_append (ret, sym);
+			RVecRBinSymbol_push_back (&(bf->bo->symbols_vec), sym);
+			// r_list_append (ret, sym);
 		}
 		subsystem->free = NULL;
 		r_list_free (subsystem);
@@ -1222,14 +1287,20 @@ static RList *symbols(RBinFile *bf) {
 		ut8 magicbytes[4];
 		r_buf_read_at (obj->cache_buf, kext->range.offset, magicbytes, 4);
 		// TODO: add a filter by name
-		R_LOG_DEBUG ("Loading kEXT %s", kext->name);
+		R_LOG_INFO ("Loading kEXT %s", kext->name);
 		ut32 magic = r_read_le32 (magicbytes);
 		switch (magic) {
 		case MH_MAGIC_64:
-			symbols_from_mach0 (ret, kext->mach0, bf, kext->range.offset, r_list_length (ret));
-			symbols_from_stubs (ret, kernel_syms_by_addr, obj, bf, kext, r_list_length (ret));
-			process_constructors (obj, kext->mach0, ret, kext->range.offset, false, R_K_CONSTRUCTOR_TO_SYMBOL, kext_short_name (kext));
-			process_kmod_init_term (obj, kext, ret, &inits, &terms);
+		{
+			int curlen = RVecRBinSymbol_length (&(bf->bo->symbols_vec));
+			symbols_vec_from_mach0 (bf, kext->mach0, kext->range.offset, curlen);
+			process_constructors_vec (bf, obj, kext->mach0, kext->range.offset, false, R_K_CONSTRUCTOR_TO_SYMBOL, kext_short_name (kext));
+			curlen = RVecRBinSymbol_length (&(bf->bo->symbols_vec));
+			symbols_from_stubs_vec (bf, kernel_syms_by_addr, kext, curlen);
+			process_kmod_init_term_vec (bf, kext, &inits, &terms);
+			MACH0_(mach0_free)(kext->mach0);
+			kext->mach0 = NULL;
+		}
 			break;
 		default:
 			R_LOG_WARN ("Unknown sub-bin");
@@ -1242,23 +1313,25 @@ static RList *symbols(RBinFile *bf) {
 
 	sdb_ht_free (kernel_syms_by_addr);
 
-	return ret;
+	return true;
 }
 
-static void symbols_from_mach0(RList *ret, struct MACH0_(obj_t) *mo, RBinFile *bf, ut64 paddr, int ordinal) {
+static void symbols_vec_from_mach0(RBinFile *bf, struct MACH0_(obj_t) *mo, ut64 paddr, int ordinal) {
 	if (!MACH0_(load_symbols) (mo)) {
 		return;
 	}
+	RVecRBinSymbol_append (&(bf->bo->symbols_vec), mo->symbols_vec, NULL);
+#if 0
 	RVecRBinSymbol *symbols = mo->symbols_vec;
-
-	int i = 0;
+	ut32 count = 0;
 	RBinSymbol *sym;
 	R_VEC_FOREACH (symbols, sym) {
+R_LOG_INFO ("This is fine %d", RVecRBinSymbol_length (symbols));
+break;
 		RBinSymbol *ret_sym = R_NEW0 (RBinSymbol);
-		if (!sym) {
+		if (!sym || !ret_sym) {
 			break;
 		}
-
 		ret_sym->name = strdup (sym->name);
 		if (ret_sym->name[0] == '_') {
 			if (sym->dname) {
@@ -1274,11 +1347,48 @@ static void symbols_from_mach0(RList *ret, struct MACH0_(obj_t) *mo, RBinFile *b
 		ret_sym->bind = sym->bind;
 		ret_sym->type = R_BIN_TYPE_FUNC_STR;
 		ret_sym->size = sym->size;
-		ret_sym->ordinal = i;
+		ret_sym->ordinal = count++;
 		r_list_append (ret, ret_sym);
-		i++;
+	}
+#endif
+}
+
+#if 0
+static void symbols_from_mach0(RList *ret, struct MACH0_(obj_t) *mo, RBinFile *bf, ut64 paddr, int ordinal) {
+	if (!MACH0_(load_symbols) (mo)) {
+		return;
+	}
+	RVecRBinSymbol *symbols = mo->symbols_vec;
+
+	ut32 count = 0;
+	RBinSymbol *sym;
+	R_VEC_FOREACH (symbols, sym) {
+R_LOG_INFO ("This is fine %d", RVecRBinSymbol_length (symbols));
+break;
+		RBinSymbol *ret_sym = R_NEW0 (RBinSymbol);
+		if (!sym || !ret_sym) {
+			break;
+		}
+		ret_sym->name = strdup (sym->name);
+		if (ret_sym->name[0] == '_') {
+			if (sym->dname) {
+				ret_sym->dname = strdup (sym->dname);
+			}
+			if (sym->classname) {
+				ret_sym->classname = strdup (sym->classname);
+			}
+		}
+		ret_sym->vaddr = sym->vaddr;
+		ret_sym->paddr = sym->paddr + paddr;
+		ret_sym->forwarder = "NONE";
+		ret_sym->bind = sym->bind;
+		ret_sym->type = R_BIN_TYPE_FUNC_STR;
+		ret_sym->size = sym->size;
+		ret_sym->ordinal = count++;
+		r_list_append (ret, ret_sym);
 	}
 }
+#endif
 
 #define IS_KERNEL_ADDR(x) ((x & 0xfffffff000000000L) == 0xfffffff000000000L)
 
@@ -1612,8 +1722,9 @@ static ut64 extract_addr_from_code(ut8 *arm64_code, ut64 vaddr) {
 	return addr;
 }
 
-static void symbols_from_stubs(RList *ret, HtPP *kernel_syms_by_addr, RKernelCacheObj *obj, RBinFile *bf, RKext *kext, int ordinal) {
-	RStubsInfo *stubs_info = get_stubs_info(kext->mach0, kext->range.offset, obj);
+static void symbols_from_stubs_vec(RBinFile *bf, HtPP *kernel_syms_by_addr, RKext *kext, int ordinal) {
+	RKernelCacheObj *obj = (RKernelCacheObj*) bf->bo->bin_obj;
+	RStubsInfo *stubs_info = get_stubs_info (kext->mach0, kext->range.offset, obj);
 	if (!stubs_info) {
 		return;
 	}
@@ -1661,7 +1772,8 @@ static void symbols_from_stubs(RList *ret, HtPP *kernel_syms_by_addr, RKernelCac
 				sym->bind = "LOCAL";
 				sym->type = "FUNC";
 				sym->ordinal = ordinal ++;
-				r_list_append (ret, sym);
+				RVecRBinSymbol_push_back (&(bf->bo->symbols_vec), sym);
+				// r_list_append (ret, sym);
 				break;
 			}
 
@@ -1691,7 +1803,7 @@ static void symbols_from_stubs(RList *ret, HtPP *kernel_syms_by_addr, RKernelCac
 		remote_sym->bind = "GLOBAL";
 		remote_sym->type = "FUNC";
 		remote_sym->ordinal = ordinal ++;
-		r_list_append (ret, remote_sym);
+		RVecRBinSymbol_push_back (&(bf->bo->symbols_vec), remote_sym);
 
 		RBinSymbol *local_sym = R_NEW0 (RBinSymbol);
 		if (!local_sym) {
@@ -1706,11 +1818,12 @@ static void symbols_from_stubs(RList *ret, HtPP *kernel_syms_by_addr, RKernelCac
 		local_sym->bind = "GLOBAL";
 		local_sym->type = "FUNC";
 		local_sym->ordinal = ordinal ++;
-		r_list_append (ret, local_sym);
+		RVecRBinSymbol_push_back (&(bf->bo->symbols_vec), local_sym);
 	}
 
 	R_FREE (stubs_info);
 }
+
 
 static RStubsInfo *get_stubs_info(struct MACH0_(obj_t) *mach0, ut64 paddr, RKernelCacheObj *obj) {
 	const RVector *sections = MACH0_(load_sections) (mach0);
@@ -2211,7 +2324,8 @@ RBinPlugin r_bin_plugin_xnu_kernelcache = {
 	.load = &load,
 	.entries = &entries,
 	.baddr = &baddr,
-	.symbols = &symbols,
+	// .symbols = &symbols,
+	.symbols_vec = &symbols_vec,
 	.sections = &sections,
 	.check = &check,
 	.info = &info

@@ -1599,6 +1599,7 @@ static bool parse_chained_fixups(struct MACH0_(obj_t) *mo, ut32 offset, ut32 siz
 }
 
 static bool reconstruct_chained_fixup(struct MACH0_(obj_t) *mo) {
+	R_LOG_DEBUG ("reconstructing chained fixups");
 	if (!mo->dyld_info) {
 		return false;
 	}
@@ -1611,10 +1612,10 @@ static bool reconstruct_chained_fixup(struct MACH0_(obj_t) *mo) {
 	}
 	size_t wordsize = get_word_size (mo);
 	ut8 *p = NULL;
-	size_t j, count, skip, bind_size;
+	size_t j, count, skip;
 	int seg_idx = 0;
 	ut64 seg_off = 0;
-	bind_size = mo->dyld_info->bind_size;
+	size_t bind_size = mo->dyld_info->bind_size;
 	if (!bind_size || bind_size < 1) {
 		return false;
 	}
@@ -2172,9 +2173,7 @@ static int init_items(struct MACH0_(obj_t) *mo) {
 		}
 	}
 
-	if (!has_chained_fixups && mo->hdr.cputype == CPU_TYPE_ARM64 &&
-		(mo->hdr.cpusubtype & ~CPU_SUBTYPE_MASK) == CPU_SUBTYPE_ARM64E) {
-		R_LOG_DEBUG ("reconstructing chained fixups");
+	if (!has_chained_fixups && mo->hdr.cputype == CPU_TYPE_ARM64 && (mo->hdr.cpusubtype & ~CPU_SUBTYPE_MASK) == CPU_SUBTYPE_ARM64E) {
 		reconstruct_chained_fixup (mo);
 	}
 	return true;
