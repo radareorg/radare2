@@ -1745,6 +1745,10 @@ static void visual_textlogs(RCore *core) {
 		s = r_str_wrap (s, w);
 		r_cons_printf ("%s\n", s);
 		free (s);
+		const char *vi2 = r_config_get (core->config, "cmd.vprompt2");
+		if (R_STR_ISNOTEMPTY (vi2)) {
+			r_core_cmd0 (core, vi2);
+		}
 		r_cons_visual_flush ();
 		char ch = (ut8)r_cons_readchar ();
 		ch = r_cons_arrow_to_hjkl (ch);
@@ -4365,6 +4369,10 @@ R_IPI void visual_refresh(RCore *core) {
 		r_core_cmd0 (core, vi);
 	}
 	r_core_visual_title (core, core->visual.color);
+	const char *vi2 = r_config_get (core->config, "cmd.vprompt2");
+	if (R_STR_ISNOTEMPTY (vi2)) {
+		r_core_cmd0 (core, vi2);
+	}
 	const char *vcmd = r_config_get (core->config, "cmd.visual");
 	if (R_STR_ISNOTEMPTY (vcmd)) {
 		// disable screen bounds when it's a user-defined command
