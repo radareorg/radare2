@@ -6,8 +6,8 @@
 
 #define UPDATE_TIME(a) (r->times->file_open_time = r_time_now_mono () - (a))
 
-static int r_core_file_do_load_for_debug(RCore *r, ut64 loadaddr, const char *filenameuri);
-static int r_core_file_do_load_for_io_plugin(RCore *r, ut64 baseaddr, ut64 loadaddr);
+static int r_core_file_load_for_debug(RCore *r, ut64 loadaddr, const char *filenameuri);
+static int r_core_file_load_for_io_plugin(RCore *r, ut64 baseaddr, ut64 loadaddr);
 
 static bool close_but_cb(void *user, void *data, ut32 id) {
 	RCore *core = (RCore *)user;
@@ -349,7 +349,7 @@ static bool setbpint(RCore *r, const char *mode, const char *sym) {
 #endif
 
 // XXX - need to handle index selection during debugging
-static int r_core_file_do_load_for_debug(RCore *r, ut64 baseaddr, R_NULLABLE const char *filenameuri) {
+static int r_core_file_load_for_debug(RCore *r, ut64 baseaddr, R_NULLABLE const char *filenameuri) {
 	RIODesc *desc = r->io->desc;
 	RBinFile *binfile = NULL;
 	RBinPlugin *plugin;
@@ -427,7 +427,7 @@ static int r_core_file_do_load_for_debug(RCore *r, ut64 baseaddr, R_NULLABLE con
 	return true;
 }
 
-static int r_core_file_do_load_for_io_plugin(RCore *r, ut64 baseaddr, ut64 loadaddr) {
+static int r_core_file_load_for_io_plugin(RCore *r, ut64 baseaddr, ut64 loadaddr) {
 	RIODesc *cd = r->io->desc;
 	int fd = cd ? cd->fd : -1;
 	int xtr_idx = 0; // if 0, load all if xtr is used
@@ -652,9 +652,9 @@ R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 		// TODO? necessary to restore the desc back?
 		// Fix to select pid before trying to load the binary
 		if ((desc->plugin && desc->plugin->isdbg) || r_config_get_b (r->config, "cfg.debug")) {
-			r_core_file_do_load_for_debug (r, baddr, filenameuri);
+			r_core_file_load_for_debug (r, baddr, filenameuri);
 		} else {
-			r_core_file_do_load_for_io_plugin (r, baddr, 0LL);
+			r_core_file_load_for_io_plugin (r, baddr, 0LL);
 		}
 		r_io_use_fd (r->io, desc->fd);
 		// Restore original desc
