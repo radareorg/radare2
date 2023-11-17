@@ -1849,11 +1849,21 @@ static bool cb_dbgbackend(void *user, void *data) {
 		r_debug_plugin_list (core->dbg, 'q');
 		return false;
 	}
+	// TODO: probably not necessary
 	if (!strcmp (node->value, "bf")) {
-		// hack
 		r_config_set (core->config, "asm.arch", "bf");
 	}
-	r_debug_use (core->dbg, node->value);
+	if (r_debug_use (core->dbg, node->value)) {
+		RDebugPlugin *plugin = R_UNWRAP3 (core->dbg, current, plugin);
+		if (plugin) {
+			const char *name = plugin->meta.name;
+			r_core_cmd0 (core, "aei");
+			free (node->value);
+			node->value = strdup (name);
+		}
+	} else {
+		R_LOG_ERROR ("Cannot find a valid debug plugin");
+	}
 	return true;
 }
 

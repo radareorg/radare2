@@ -36,9 +36,14 @@ static inline int find_plugin_by_name(const RDebugPluginSession *ds, const void 
 
 R_API bool r_debug_use(RDebug *dbg, const char *str) {
 	r_return_val_if_fail (dbg, false);
-	RDebugPluginSession *ds = NULL;
 	if (R_STR_ISNOTEMPTY (str)) {
-		ds = RVecDebugPluginSession_find (dbg->plugins, (void*)str, find_plugin_by_name);
+		RDebugPluginSession *ds = RVecDebugPluginSession_find (dbg->plugins, (void*)str, find_plugin_by_name);
+		if (!ds) {
+			ds = RVecDebugPluginSession_find (dbg->plugins, (void*)"esil", find_plugin_by_name);
+			if (!ds) {
+				ds = RVecDebugPluginSession_find (dbg->plugins, (void*)"null", find_plugin_by_name);
+			}
+		}
 		if (ds) {
 			dbg->current = ds;
 			if (dbg->anal && dbg->anal->cur) {
