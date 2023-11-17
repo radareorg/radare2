@@ -1812,7 +1812,7 @@ static void do_esil_search(RCore *core, struct search_parameters *param, const c
 	const int stats = r_config_get_i (core->config, "esil.stats");
 	if (!core->anal->esil) {
 		// initialize esil vm
-		r_core_cmd_call (core, "aei");
+		cmd_aei (core);
 		if (!core->anal->esil) {
 			core->anal->esil = r_esil_new (stacksize, iotrap, addrsize);
 			R_LOG_ERROR ("Cannot initialize the ESIL vm");
@@ -2037,8 +2037,7 @@ static void do_syscall_search(RCore *core, struct search_parameters *param) {
 		return;
 	}
 
-	r_core_cmd0 (core, "aei"); // requied to have core->anal->esil initialized.. imho esil should never be NULL!
-	// r_core_cmd0 (core, "aeim");
+	cmd_aei (core);// requied to have core->anal->esil initialized.. imho esil should never be NULL!
 	ut64 oldoff = core->offset;
 #if !USE_EMULATION
 	int syscallNumber = 0;
@@ -2420,7 +2419,7 @@ static void do_unkjmp_search(RCore *core, struct search_parameters *param, bool 
 	}
 	if (!core->anal->esil) {
 		// initialize esil vm
-		r_core_cmd_call (core, "aei");
+		cmd_aei (core);
 		if (!core->anal->esil) {
 			R_LOG_ERROR ("Cannot initialize the ESIL vm");
 			return;

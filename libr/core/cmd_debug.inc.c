@@ -4280,7 +4280,7 @@ static void r_core_debug_esil(RCore *core, const char *input) {
 		if (r_debug_esil_watch_empty (core->dbg)) {
 			R_LOG_ERROR ("no esil watchpoints defined");
 		} else {
-			r_core_cmd_call (core, "aei");
+			cmd_aei (core);
 			r_debug_esil_prestep (core->dbg, r_config_get_i (core->config, "esil.prestep"));
 			r_debug_esil_continue (core->dbg);
 		}
@@ -4288,7 +4288,7 @@ static void r_core_debug_esil(RCore *core, const char *input) {
 	case 's': // "des"
 		if (input[1] == 'u' && input[2] == ' ') { // "desu"
 			ut64 addr, naddr, fin = r_num_math (core->num, input + 2);
-			r_core_cmd_call (core, "aei");
+			cmd_aei (core);
 			addr = r_debug_reg_get (core->dbg, "PC");
 			while (addr != fin) {
 				r_debug_esil_prestep (core->dbg, r_config_get_i (
@@ -4304,7 +4304,7 @@ static void r_core_debug_esil(RCore *core, const char *input) {
 		} else if (input[1] == '?' || !input[1]) {
 			r_core_cmd_help (core, help_msg_des);
 		} else {
-			r_core_cmd_call (core, "aei");
+			cmd_aei (core);
 			r_debug_esil_prestep (core->dbg, r_config_get_i (core->config, "esil.prestep"));
 			// continue
 			r_debug_esil_step (core->dbg, r_num_math (core->num, input + 1));

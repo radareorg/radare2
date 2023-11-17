@@ -1300,7 +1300,7 @@ static bool cmd_anal_aaft(RCore *core) {
 	seek = core->offset;
 	r_reg_arena_push (core->anal->reg);
 	r_reg_arena_zero (core->anal->reg);
-	r_core_cmd_call (core, "aei");
+	cmd_aei (core);
 	r_core_cmd_call (core, "aeim");
 	int saved_arena_size = 0;
 	ut8 *saved_arena = r_reg_arena_peek (core->anal->reg, &saved_arena_size);
@@ -7595,6 +7595,29 @@ static void cmd_debug_stack_init(RCore *core, int argc, char **argv, char **envp
 	r_buf_free (b);
 }
 
+R_IPI void cmd_aei(RCore *core) {
+	REsil *esil = esil_new_setup (core);
+	if (esil) {
+		r_esil_free (core->anal->esil);
+		core->anal->esil = esil;
+		r_esil_reset (esil);
+		const char *pc = r_reg_get_name (core->anal->reg, R_REG_NAME_PC);
+		if (pc && r_reg_getv (core->anal->reg, pc) == 0LL) {
+			reg_name_roll_set (core, "PC", core->offset);
+		}
+	}
+	/* restore user settings for interrupt handling */
+	{
+		const char *s = r_config_get (core->config, "cmd.esil.intr");
+		if (s) {
+			char *my = strdup (s);
+			if (my) {
+				r_config_set (core->config, "cmd.esil.intr", my);
+				free (my);
+			}
+		}
+	}
+}
 R_IPI int core_type_by_addr(RCore *core, ut64 addr) {
 	const RList *list = r_flag_get_list (core->flags, addr);
 	RListIter *iter;
@@ -8255,27 +8278,7 @@ static void cmd_anal_esil(RCore *core, const char *input, bool verbose) {
 			r_esil_reset (esil);
 			break;
 		case 0: // "aei"
-			esil = esil_new_setup (core);
-			if (esil) {
-				r_esil_free (core->anal->esil);
-				core->anal->esil = esil;
-				r_esil_reset (esil);
-				const char *pc = r_reg_get_name (core->anal->reg, R_REG_NAME_PC);
-				if (pc && r_reg_getv (core->anal->reg, pc) == 0LL) {
-					reg_name_roll_set (core, "PC", core->offset);
-				}
-			}
-			/* restore user settings for interrupt handling */
-			{
-				const char *s = r_config_get (core->config, "cmd.esil.intr");
-				if (s) {
-					char *my = strdup (s);
-					if (my) {
-						r_config_set (core->config, "cmd.esil.intr", my);
-						free (my);
-					}
-				}
-			}
+			cmd_aei (core);
 			break;
 		default:
 			cmd_esil_mem (core, "?");
