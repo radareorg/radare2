@@ -997,7 +997,8 @@ CWISS_INLINE_NEVER static void CWISS_ConvertDeletedToEmptyAndFullToDeleted( CWIS
 	CWISS_DCHECK(ctrl[capacity] == CWISS_kSentinel, "bad ctrl value at %zu: %02x", capacity, ctrl[capacity]);
 	CWISS_DCHECK(CWISS_IsValidCapacity(capacity), "invalid capacity: %zu", capacity);
 
-	for (CWISS_ControlByte* pos = ctrl; pos < ctrl + capacity; pos += CWISS_Group_kWidth) {
+	CWISS_ControlByte* pos;
+	for (pos = ctrl; pos < ctrl + capacity; pos += CWISS_Group_kWidth) {
 		CWISS_Group g = CWISS_Group_new(pos);
 		CWISS_Group_ConvertSpecialToEmptyAndFullToDeleted(&g, pos);
 	}
@@ -2342,7 +2343,8 @@ static inline CWISS_RawTable CWISS_RawTable_dup(const CWISS_Policy* policy,
 	// `CWISS_RawTable_rehash_and_grow_if_necessary()` because we are already
 	// big enough (since `self` is a priori) and tombstones cannot be created
 	// during this process.
-	for (CWISS_RawIter iter = CWISS_RawTable_citer(policy, self);
+	CWISS_RawIter iter;
+	for (iter = CWISS_RawTable_citer(policy, self);
 			CWISS_RawIter_get(policy, &iter); CWISS_RawIter_next(policy, &iter)) {
 		void* v = CWISS_RawIter_get(policy, &iter);
 		size_t hash = policy->key->hash(v);
