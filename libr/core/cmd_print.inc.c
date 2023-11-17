@@ -1138,7 +1138,7 @@ R_API void r_core_set_asm_configs(RCore *core, char *arch, ut32 bits, int segoff
 static int cmd_pdu(RCore *core, const char *input) {
 	int ret = 0;
 	const char *sep = strchr (input, ' ');
-	const char *arg = sep? sep+1: NULL;
+	const char *arg = sep? r_str_trim_head_ro (sep): NULL;
 
 	ut64 addr = core->offset;
 	int len = core->blocksize;
@@ -1157,7 +1157,7 @@ static int cmd_pdu(RCore *core, const char *input) {
 			r_core_cmd_help_match (core, help_msg_pdu, "pdua");
 			break;
 		}
-		ut64 to = r_num_get (core->num, arg);
+		ut64 to = r_num_math (core->num, arg);
 		if (!to) {
 			R_LOG_ERROR ("Couldn't parse address \"%s\"", arg);
 			ret = 1;
@@ -1182,19 +1182,19 @@ static int cmd_pdu(RCore *core, const char *input) {
 			r_core_cmd_help_match (core, help_msg_pdu, "pduc");
 			break;
 		}
-
 		ret = r_core_print_disasm (core, addr, buf, len, 0, pdu_opcode, "call", false,
 				input[1] == 'j', NULL, NULL);
 		break;
-	/*case 'e': // "pdue"
+#if 0
+	case 'e': // "pdue"
 		if (input[1] == '?' || input[2] == '?' || !arg) {
 			r_core_cmd_help_match (core, help_msg_pdu, "pdue");
 			break;
 		}
-
 		ret = r_core_print_disasm (core, addr, buf, len, 0, esil, arg, false,
 				input[1] == 'j', NULL, NULL);
-		break;*/
+		break;
+#endif
 	case 'i': // "pdui"
 		if (input[1] == '?' || (input[1] && input[2] == '?') || !arg) {
 			r_core_cmd_help_match (core, help_msg_pdu, "pdui");
