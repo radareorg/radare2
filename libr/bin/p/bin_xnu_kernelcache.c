@@ -1229,7 +1229,7 @@ static bool symbols_vec(RBinFile *bf) {
 	RVecRBinSymbol_init (&symbols);
 	if (MACH0_(load_symbols) (mo)) {
 		RVecRBinSymbol_append (&symbols, mo->symbols_vec, NULL);
-		// TODO RVecRBinSymbol_fini (mo->symbols_vec);
+		RVecRBinSymbol_fini (mo->symbols_vec);
 	}
 
 	HtPP *kernel_syms_by_addr = sdb_ht_new ();
@@ -1304,8 +1304,8 @@ static bool symbols_vec(RBinFile *bf) {
 				int last_ordinal = RVecRBinSymbol_length (&(bf->bo->symbols_vec));
 				symbols_from_stubs_vec (&symbols, bf, kernel_syms_by_addr, kext, last_ordinal);
 				process_kmod_init_term_vec (&symbols, bf, kext, &inits, &terms);
-#if 0
 				RVecRBinSymbol_fini (kext->mach0->symbols_vec);
+#if 0
 				MACH0_(mach0_free)(kext->mach0);
 				kext->mach0 = NULL;
 #endif
