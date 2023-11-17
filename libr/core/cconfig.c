@@ -1857,7 +1857,7 @@ static bool cb_dbgbackend(void *user, void *data) {
 		RDebugPlugin *plugin = R_UNWRAP3 (core->dbg, current, plugin);
 		if (plugin) {
 			const char *name = plugin->meta.name;
-			r_core_cmd0 (core, "aei");
+			// cmd_aei (core);
 			free (node->value);
 			node->value = strdup (name);
 		}
@@ -3922,6 +3922,46 @@ R_API int r_core_config_init(RCore *core) {
 	SETI ("stack.size", 64,  "size in bytes of stack hexdump in visual debug");
 	SETI ("stack.delta", 0,  "delta for the stack dump");
 
+	/* cmd */
+	SETCB ("cmd.demangle", "false", &cb_bdc, "run xcrun swift-demangle and similar if available (SLOW)");
+	SETICB ("cmd.depth", 10, &cb_cmddepth, "maximum command depth");
+	SETPREF ("cmd.undo", "true", "stack `uc` undo commands when running some commands like w, af, CC, ..");
+	SETPREF ("cmd.bp", "", "run when a breakpoint is hit");
+	SETPREF ("cmd.onsyscall", "", "run when a syscall is hit");
+	SETICB ("cmd.hitinfo", 1, &cb_debug_hitinfo, "show info when a tracepoint/breakpoint is hit");
+	SETPREF ("cmd.stack", "", "command to display the stack in visual debug mode");
+	SETPREF ("cmd.cprompt", "", "column visual prompt commands");
+	SETPREF ("cmd.gprompt", "", "graph visual prompt commands");
+	SETPREF ("cmd.hit", "", "run when a search hit is found");
+#if R2__UNIX__
+	SETPREF ("cmd.usr1", "", "run when SIGUSR1 signal is received");
+	SETPREF ("cmd.usr2", "", "run when SIGUSR2 signal is received");
+#endif
+	SETPREF ("cmd.open", "", "run when file is opened");
+	SETPREF ("cmd.load", "", "run when binary is loaded");
+	SETPREF ("cmd.bbgraph", "", "show the output of this command in the graph basic blocks");
+	RConfigNode *cmdpdc = NODECB ("cmd.pdc", "", &cb_cmdpdc);
+	SETDESC (cmdpdc, "select pseudo-decompiler command to run after pdc");
+	update_cmdpdc_options (core, cmdpdc);
+	SETCB ("cmd.log", "", &cb_cmdlog, "every time a new T log is added run this command");
+	SETPREF ("cmd.prompt", "", "prompt commands");
+	SETCB ("cmd.repeat", "false", &cb_cmdrepeat, "empty command an alias for '..' (repeat last command)");
+	SETPREF ("cmd.fcn.new", "", "run when new function is analyzed");
+	SETPREF ("cmd.fcn.delete", "", "run when a function is deleted");
+	SETPREF ("cmd.fcn.rename", "", "run when a function is renamed");
+	SETPREF ("cmd.visual", "", "replace current print mode");
+	SETPREF ("cmd.vprompt", "", "visual prompt commands");
+	SETPREF ("cmd.step", "", "run command on every debugger step");
+
+	SETCB ("cmd.esil.pin", "", &cb_cmd_esil_pin, "command to execute everytime a pin is hit by the program counter");
+	SETCB ("cmd.esil.step", "", &cb_cmd_esil_step, "command to run before performing a step in the emulator");
+	SETCB ("cmd.esil.stepout", "", &cb_cmd_esil_step_out, "command to run after performing a step in the emulator");
+	SETCB ("cmd.esil.mdev", "", &cb_cmd_esil_mdev, "command to run when memory device address is accessed");
+	SETCB ("cmd.esil.intr", "", &cb_cmd_esil_intr, "command to run when an esil interrupt happens");
+	SETCB ("cmd.esil.trap", "", &cb_cmd_esil_trap, "command to run when an esil trap happens");
+	SETCB ("cmd.esil.todo", "", &cb_cmd_esil_todo, "command to run when the esil instruction contains TODO");
+	SETCB ("cmd.esil.ioer", "", &cb_cmd_esil_ioer, "command to run when esil fails to IO (invalid read/write)");
+
 	SETCB ("dbg.maxsnapsize", "32M", &cb_dbg_maxsnapsize, "dont make snapshots of maps bigger than a specific size");
 	SETCB ("dbg.wrap", "false", &cb_dbg_wrap, "enable the ptrace-wrap abstraction layer (needed for debugging from iaito)");
 	SETCB ("dbg.libs", "", &cb_dbg_libs, "If set stop when loading matching libname");
@@ -3989,45 +4029,6 @@ R_API int r_core_config_init(RCore *core) {
 	SETICB ("dbg.btdepth", 128, &cb_dbgbtdepth, "depth of backtrace");
 
 
-	/* cmd */
-	SETCB ("cmd.demangle", "false", &cb_bdc, "run xcrun swift-demangle and similar if available (SLOW)");
-	SETICB ("cmd.depth", 10, &cb_cmddepth, "maximum command depth");
-	SETPREF ("cmd.undo", "true", "stack `uc` undo commands when running some commands like w, af, CC, ..");
-	SETPREF ("cmd.bp", "", "run when a breakpoint is hit");
-	SETPREF ("cmd.onsyscall", "", "run when a syscall is hit");
-	SETICB ("cmd.hitinfo", 1, &cb_debug_hitinfo, "show info when a tracepoint/breakpoint is hit");
-	SETPREF ("cmd.stack", "", "command to display the stack in visual debug mode");
-	SETPREF ("cmd.cprompt", "", "column visual prompt commands");
-	SETPREF ("cmd.gprompt", "", "graph visual prompt commands");
-	SETPREF ("cmd.hit", "", "run when a search hit is found");
-#if R2__UNIX__
-	SETPREF ("cmd.usr1", "", "run when SIGUSR1 signal is received");
-	SETPREF ("cmd.usr2", "", "run when SIGUSR2 signal is received");
-#endif
-	SETPREF ("cmd.open", "", "run when file is opened");
-	SETPREF ("cmd.load", "", "run when binary is loaded");
-	SETPREF ("cmd.bbgraph", "", "show the output of this command in the graph basic blocks");
-	RConfigNode *cmdpdc = NODECB ("cmd.pdc", "", &cb_cmdpdc);
-	SETDESC (cmdpdc, "select pseudo-decompiler command to run after pdc");
-	update_cmdpdc_options (core, cmdpdc);
-	SETCB ("cmd.log", "", &cb_cmdlog, "every time a new T log is added run this command");
-	SETPREF ("cmd.prompt", "", "prompt commands");
-	SETCB ("cmd.repeat", "false", &cb_cmdrepeat, "empty command an alias for '..' (repeat last command)");
-	SETPREF ("cmd.fcn.new", "", "run when new function is analyzed");
-	SETPREF ("cmd.fcn.delete", "", "run when a function is deleted");
-	SETPREF ("cmd.fcn.rename", "", "run when a function is renamed");
-	SETPREF ("cmd.visual", "", "replace current print mode");
-	SETPREF ("cmd.vprompt", "", "visual prompt commands");
-	SETPREF ("cmd.step", "", "run command on every debugger step");
-
-	SETCB ("cmd.esil.pin", "", &cb_cmd_esil_pin, "command to execute everytime a pin is hit by the program counter");
-	SETCB ("cmd.esil.step", "", &cb_cmd_esil_step, "command to run before performing a step in the emulator");
-	SETCB ("cmd.esil.stepout", "", &cb_cmd_esil_step_out, "command to run after performing a step in the emulator");
-	SETCB ("cmd.esil.mdev", "", &cb_cmd_esil_mdev, "command to run when memory device address is accessed");
-	SETCB ("cmd.esil.intr", "", &cb_cmd_esil_intr, "command to run when an esil interrupt happens");
-	SETCB ("cmd.esil.trap", "", &cb_cmd_esil_trap, "command to run when an esil trap happens");
-	SETCB ("cmd.esil.todo", "", &cb_cmd_esil_todo, "command to run when the esil instruction contains TODO");
-	SETCB ("cmd.esil.ioer", "", &cb_cmd_esil_ioer, "command to run when esil fails to IO (invalid read/write)");
 
 	/* filesystem */
 	n = NODECB ("fs.view", "normal", &cb_fsview);
