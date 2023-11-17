@@ -1223,9 +1223,11 @@ R_API int r_main_r2pm(int argc, const char **argv) {
 	}
 	{
 		char *dbdir = r2pm_dbdir ();
-		if (!r_file_exists (dbdir)) {
+		char *readme = r_file_new (dbdir, "..", "README.md", NULL);
+		if (!r_file_exists (readme)) {
 			r2pm.init = true;
 		}
+		free (readme);
 		free (dbdir);
 	}
 	if (r2pm.init) {
