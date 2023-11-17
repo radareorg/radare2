@@ -285,11 +285,10 @@ static void ensure_kexts_initialized(RKernelCacheObj *obj, RBinFile *bf) {
 		kexts = kexts_from_load_commands (obj, bf);
 	}
 
-	if (kexts && !r_list_length (kexts)) {
+	if (kexts && r_list_empty (kexts)) {
 		r_list_free (kexts);
 		kexts = NULL;
 	}
-
 	if (!kexts) {
 		kexts = carve_kexts (obj, bf);
 	}
@@ -1206,6 +1205,10 @@ static RList *symbols(RBinFile *bf) {
 		r_list_free (subsystem);
 	}
 
+	char *filter = r_sys_getenv ("R_KERNELCACHE_FILTER");
+	if (R_STR_ISEMPTY (filter)) {
+		R_FREE (filter);
+	}
 	ensure_kexts_initialized (obj, bf);
 
 	RKext *kext;
@@ -1213,19 +1216,23 @@ static RList *symbols(RBinFile *bf) {
 	ut64 *inits = NULL;
 	ut64 *terms = NULL;
 	r_kext_index_foreach (obj->kexts, kiter, kext) {
+		if (filter && !strstr (kext->name, filter)) {
+			continue;
+		}
 		ut8 magicbytes[4];
 		r_buf_read_at (obj->cache_buf, kext->range.offset, magicbytes, 4);
-		int magic = r_read_le32 (magicbytes);
+		// TODO: add a filter by name
+		R_LOG_DEBUG ("Loading kEXT %s", kext->name);
+		ut32 magic = r_read_le32 (magicbytes);
 		switch (magic) {
 		case MH_MAGIC_64:
 			symbols_from_mach0 (ret, kext->mach0, bf, kext->range.offset, r_list_length (ret));
 			symbols_from_stubs (ret, kernel_syms_by_addr, obj, bf, kext, r_list_length (ret));
 			process_constructors (obj, kext->mach0, ret, kext->range.offset, false, R_K_CONSTRUCTOR_TO_SYMBOL, kext_short_name (kext));
 			process_kmod_init_term (obj, kext, ret, &inits, &terms);
-
 			break;
 		default:
-			eprintf ("Unknown sub-bin\n");
+			R_LOG_WARN ("Unknown sub-bin");
 			break;
 		}
 	}
