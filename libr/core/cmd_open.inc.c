@@ -627,11 +627,11 @@ static void r_core_cmd_omt(RCore *core, const char *arg) {
 			R_LOG_WARN ("Cannot find mapid %d", mapid);
 			break;
 		}
-		ut64 va = r_itv_begin (m->itv);
-		ut64 va_end = r_itv_end (m->itv);
+		ut64 va = r_io_map_from (m);
+		ut64 va_end = r_io_map_to (m);
 		ut64 pa = m->delta;
 		ut64 pa_size = r_itv_size (m->itv);
-		ut64 pa_end = pa + pa_size;
+		ut64 pa_end = pa + pa_size - 1;
 		const char *name = r_str_get (m->name);
 		r_table_add_rowf (t, "ddxxxxxss",
 			m->id, m->fd, pa, pa_end, pa_size,

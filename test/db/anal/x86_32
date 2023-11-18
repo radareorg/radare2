@@ -3593,7 +3593,7 @@ e asm.bits=32
 e io.cache=true
 $orig_end=?e `om,va_end/cols~[0]:3`
 omr 1 `om,size/cols~[0]:3`+2
-s `$orig_end`
+s `$orig_end`+1
 wa jmp entry0
 aF
 aae
