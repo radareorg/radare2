@@ -916,7 +916,7 @@ RList *linux_thread_list(RDebug *dbg, int pid, RList *list) {
 		closedir (dh);
 		// Return to the original thread
 		linux_attach_single_pid (dbg, prev_tid);
-		dbg->pid = pid;
+		dbg->pid = prev_pid;
 		dbg->tid = prev_tid;
 		r_debug_reg_sync (dbg, R_REG_TYPE_GPR, false);
 	} else {
