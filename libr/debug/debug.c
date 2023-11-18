@@ -456,6 +456,7 @@ R_API bool r_debug_attach(RDebug *dbg, int pid) {
 	if (plugin && plugin->attach) {
 		ret = plugin->attach (dbg, pid);
 		if (ret) {
+			dbg->pid = pid;
 			dbg->tid = pid;
 			// dbg->pid = pid;
 			// r_debug_select (dbg, pid, ret);
