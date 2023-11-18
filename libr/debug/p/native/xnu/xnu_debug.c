@@ -447,8 +447,10 @@ char *xnu_reg_profile(RDebug *dbg) {
 //is not implemented yet i don't care so much
 bool xnu_reg_write(RDebug *dbg, int type, const ut8 *buf, int size) {
 	bool ret;
+	eprintf ("reg write\n");
 	xnu_thread_t *th = get_xnu_thread (dbg, getcurthread (dbg));
 	if (!th) {
+		R_LOG_DEBUG ("Failed to get xnu thread");
 		return false;
 	}
 	switch (type) {
@@ -484,6 +486,9 @@ bool xnu_reg_write(RDebug *dbg, int type, const ut8 *buf, int size) {
 #endif
 		}
 		ret = xnu_thread_set_gpr (dbg, th);
+		if (!ret) {
+			R_LOG_DEBUG ("Failed set gpr");
+		}
 		break;
 	}
 	return ret;

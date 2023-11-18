@@ -134,6 +134,7 @@ static bool xnu_thread_set_gpr(RDebug *dbg, xnu_thread_t *thread) {
 	kern_return_t rc;
 	R_REG_T *regs = (R_REG_T *)&thread->gpr;
 	if (!regs) {
+		R_LOG_ERROR ("Cannot retrieve gpr regs from thread");
 		return false;
 	}
 #if __i386__ || __x86_64__
@@ -172,9 +173,9 @@ static bool xnu_thread_set_gpr(RDebug *dbg, xnu_thread_t *thread) {
 	thread->state_size = sizeof (arm_thread_state_t);
 
 #endif
-	rc = thread_set_state (thread->port, thread->flavor,
-			       (thread_state_t)regs, thread->count);
+	rc = thread_set_state (thread->port, thread->flavor, (thread_state_t)regs, thread->count);
 	if (rc != KERN_SUCCESS) {
+		R_LOG_ERROR ("thread_set_state port: %d flavour %d count %d", thread->port, thread->flavor, thread->count);
 		r_sys_perror (__FUNCTION__);
 		thread->count = 0;
 		return false;

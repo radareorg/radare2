@@ -2257,7 +2257,9 @@ static const char *symbol_flag_prefix(RBinSymbol *sym) {
 #define MAXFLAG_LEN_DEFAULT 128
 
 static char *construct_symbol_flagname(const char *pfx, const char *libname, const char *symname, int len) {
-	char *r = r_str_newf ("%s.%s%s%s", pfx, r_str_get (libname), libname ? "_" : "", symname);
+	char *r = libname
+		? r_str_newf ("%s.%s_%s", pfx, libname, symname)
+		: r_str_newf ("%s.%s", pfx, symname);
 	if (r) {
 		r_name_filter (r, len); // maybe unnecessary..
 		char *R = r_name_filter_quoted_shell (r);
