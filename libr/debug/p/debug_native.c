@@ -1174,6 +1174,7 @@ static RList *r_debug_native_map_get(RDebug *dbg) {
 }
 
 static RList *r_debug_native_modules_get(RDebug *dbg) {
+R_LOG_INFO ("modules.get");
 	char *lastname = NULL;
 	RDebugMap *map;
 	RListIter *iter, *iter2;
