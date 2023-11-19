@@ -1940,6 +1940,17 @@ static int cmd_open(void *data, const char *input) {
 		}
 		return 0;
 		break;
+	case 'r': // "or"
+		ptr = input + 1;
+		argv = r_str_argv (ptr, &argc);
+		if (argc > 1) {
+			const int fd = (int)r_num_math (core->num, argv[0]);
+			const ut64 size = r_num_math (core->num, argv[1]);
+			r_io_fd_resize (core->io, fd, size);
+		}
+		r_str_argv_free (argv);
+		return 0;
+		break;
 	case '+': // "o+"
 		if (input[1] == '?' || (input[1] && input[2] == '?')) {
 			r_core_cmd_help_contains (core, help_msg_o, "o+");
