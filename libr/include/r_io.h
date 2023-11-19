@@ -231,6 +231,7 @@ typedef struct r_io_map_t {
 	ut64 delta; // paddr = vaddr - itv.addr + delta
 	RRBTree *overlay;
 	char *name;
+	bool tie; // tie size to fd size; TODO: move this to perm
 } RIOMap;
 
 typedef struct r_io_map_ref_t {
