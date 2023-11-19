@@ -3218,13 +3218,21 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 					r_cons_printf ("0x%08"PFMT64x"\n",
 							r_reg_get_value (core->dbg->reg, r));
 				} else {
-					r_cons_printf ("0x%08"PFMT64x" ->",
-							r_reg_get_value (core->dbg->reg, r));
-					r_reg_set_value (core->dbg->reg, r,
-							r_num_math (core->num, arg+1));
-					r_debug_reg_sync (core->dbg, R_REG_TYPE_ALL, true);
-					r_cons_printf ("0x%08"PFMT64x"\n",
-							r_reg_get_value (core->dbg->reg, r));
+					ut64 oval = r_reg_get_value (core->dbg->reg, r);
+					ut64 wval = r_num_math (core->num, arg + 1);
+
+					r_reg_set_value (core->dbg->reg, r, wval);
+					bool sync_works = r_debug_reg_sync (core->dbg, R_REG_TYPE_ALL, true);
+					if (!sync_works) {
+						// read them back
+						r_debug_reg_sync (core->dbg, R_REG_TYPE_ALL, false);
+					}
+					ut64 nval = r_reg_get_value (core->dbg->reg, r);
+					if (nval == wval) {
+						r_cons_printf ("0x%08"PFMT64x" -> 0x%08"PFMT64x"\n", oval, nval);
+					} else {
+						r_cons_printf ("0x%08"PFMT64x" -> 0x%08"PFMT64x" -> 0x%08"PFMT64x"\n", oval, wval, nval);
+					}
 				}
 			} else {
 				R_LOG_ERROR ("unknown register '%s'", string);
