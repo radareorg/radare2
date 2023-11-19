@@ -1451,15 +1451,16 @@ R_API int r_main_radare2(int argc, const char **argv) {
 						if (mr.iod && mr.perms & R_PERM_X) {
 							mr.iod->perm |= R_PERM_X;
 						}
+						if (r_str_startswith (mr.pfile, "frida://")) {
+							r_core_cmd0 (r, ".:init");
+							mr.load_bin = 0;
+						}
 						if (mr.load_bin == LOAD_BIN_ALL) {
 							const char *filepath = NULL;
 							if (mr.debug) {
 								// XXX: incorrect for PIE binaries
 								filepath = mr.file? strstr (mr.file, "://"): NULL;
 								filepath = filepath ? filepath + 3 : mr.pfile;
-							}
-							if (r_str_startswith (mr.pfile, "frida://")) {
-								r_core_cmd0 (r, ".:init");
 							}
 							if (r->io->desc && mr.iod && (mr.iod->fd == r->io->desc->fd) && mr.iod->name) {
 								filepath = mr.iod->name;
