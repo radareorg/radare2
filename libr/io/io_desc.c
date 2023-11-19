@@ -230,6 +230,7 @@ R_API ut64 r_io_desc_size(RIODesc* desc) {
 typedef struct desc_map_resize_t {
 	RIO *io;
 	RQueue *del;
+	ut64 osize;
 	ut64 size;
 	int fd;
 } DescMapResize;
@@ -242,7 +243,10 @@ static bool _resize_affected_maps (void *user, void *data, ut32 id) {
 			r_queue_enqueue (dmr->del, map);
 			return true;
 		}
-		if ((map->delta + r_io_map_size (map)) > dmr->size) {
+		if (map->tie) {
+			const double ratio = ((double)dmr->size) / ((double)dmr->osize);
+			r_io_map_resize (dmr->io, id, (ut64)(((double)r_io_map_size (map)) * ratio));
+		} else if ((map->delta + r_io_map_size (map)) > dmr->size) {
 			r_io_map_resize (dmr->io, id, dmr->size - map->delta);
 		}
 	}
@@ -255,13 +259,10 @@ R_API bool r_io_desc_resize(RIODesc *desc, ut64 newsize) {
 		if (!desc->plugin->resize (desc->io, desc, newsize)) {
 			return false;
 		}
-		if (osize < newsize) {
-			return true;
-		}
-		if (desc->io && desc->io->p_cache) {
+		if (osize > newsize && desc->io && desc->io->p_cache) {
 			r_io_desc_cache_cleanup (desc);
 		}
-		DescMapResize dmr = {desc->io, r_queue_new (1), newsize, desc->fd};
+		DescMapResize dmr = {desc->io, r_queue_new (1), osize, newsize, desc->fd};
 		if (desc->io->maps) {
 			r_id_storage_foreach (desc->io->maps, _resize_affected_maps, &dmr);
 			while (!r_queue_is_empty (dmr.del)) {

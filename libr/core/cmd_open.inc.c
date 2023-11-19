@@ -614,6 +614,19 @@ static void cmd_omf(RCore *core, int argc, char *argv[]) {
 }
 
 static void r_core_cmd_omt(RCore *core, const char *arg) {
+	int argc;
+	char **argv = r_str_argv (arg, &argc);
+	if (!argc) {
+		return;
+	}
+	RIOMap *map = r_io_map_get (core->io, r_num_math (NULL, argv[0]));
+	r_str_argv_free (argv);
+	if (map) {
+		map->tie ^= true;
+	}
+}
+
+static void r_core_cmd_om_tab(RCore *core, const char *arg) {
 	RTable *t = r_table_new ("iomaps");
 	if (!t) {
 		return;
@@ -1012,11 +1025,10 @@ static void cmd_open_map(RCore *core, const char *input) {
 		}
 		break;
 	case 't': // "omt"
-		R_LOG_WARN ("Deprecated. use 'om,' instead of 'omt'")
 		r_core_cmd_omt (core, input + 2);
 		break;
 	case ',': // "om,"
-		r_core_cmd_omt (core, input + 2);
+		r_core_cmd_om_tab (core, input + 2);
 		break;
 	case ' ': // "om"
 		cmd_om (core, input, 0);
