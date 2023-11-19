@@ -103,6 +103,10 @@ int main(int argc, const char **argv) {
 	}
 	char *ea = r_sys_getenv ("R2_ARGS");
 	if (R_STR_ISNOTEMPTY (ea)) {
+		R_LOG_INFO ("Using R2_ARGS: \"%s\"", ea);
+		if (!r_str_startswith (ea, argv[0])) {
+			R_LOG_WARN ("R2_ARGS should start with argv[0]=%s", argv[0]);
+		}
 		char **argv = r_str_argv (ea, &argc);
 		r_sys_setenv ("R2_ARGS", NULL);
 		int res = r_main_radare2 (argc, (const char **)argv);
