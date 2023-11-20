@@ -378,19 +378,7 @@ R_API char *r_io_system(RIO* io, const char* cmd) {
 
 R_API bool r_io_resize(RIO* io, ut64 newsize) {
 	r_return_val_if_fail (io, false);
-	RList *maps = r_io_map_get_by_fd (io, io->desc->fd);
-	RIOMap *current_map;
-	RListIter *iter;
-	ut64 fd_size = r_io_fd_size (io, io->desc->fd);
-	const bool ret = r_io_desc_resize (io->desc, newsize);
-	r_list_foreach (maps, iter, current_map) {
-		// we just resize map of the same size of its fd
-		if (r_io_map_size (current_map) == fd_size) {
-			r_io_map_resize (io, current_map->id, newsize);
-		}
-	}
-	r_list_free (maps);
-	return ret;
+	return r_io_desc_resize (io->desc, newsize);
 }
 
 R_API bool r_io_close(RIO *io) {

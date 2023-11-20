@@ -243,11 +243,11 @@ static bool _resize_affected_maps (void *user, void *data, ut32 id) {
 			r_queue_enqueue (dmr->del, map);
 			return true;
 		}
-		if (map->tie) {
+		if (map->tie_flags & R_IO_MAP_TIE_FLG_BACK) {
 			const double ratio = ((double)dmr->size) / ((double)dmr->osize);
-			r_io_map_resize (dmr->io, id, (ut64)(((double)r_io_map_size (map)) * ratio));
+			io_map_resize (dmr->io, id, (ut64)(((double)r_io_map_size (map)) * ratio));
 		} else if ((map->delta + r_io_map_size (map)) > dmr->size) {
-			r_io_map_resize (dmr->io, id, dmr->size - map->delta);
+			io_map_resize (dmr->io, id, dmr->size - map->delta);
 		}
 	}
 	return true;
@@ -256,6 +256,9 @@ static bool _resize_affected_maps (void *user, void *data, ut32 id) {
 R_API bool r_io_desc_resize(RIODesc *desc, ut64 newsize) {
 	if (desc && desc->plugin && desc->plugin->resize && desc->plugin->seek) {
 		const ut64 osize = r_io_desc_size (desc);
+		if (osize == newsize) {
+			return true;
+		}
 		if (!desc->plugin->resize (desc->io, desc, newsize)) {
 			return false;
 		}
