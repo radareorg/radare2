@@ -425,7 +425,7 @@ RUN
 NAME=wen
 FILE=malloc://4
 CMDS=<<EOF
-
+omt 1
 wx 01020304
 wen 2 @ 1
 wen 1 @ 6

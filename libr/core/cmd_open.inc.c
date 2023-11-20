@@ -151,6 +151,9 @@ static RCoreHelpMessage help_msg_om = {
 	"omq", "", "list all maps and their fds",
 	"omqq", "", "list all maps addresses (See $MM to get the size)",
 	"omr", " [mapid newsize]", "resize map with corresponding id",
+	"omt", " mapid", "toggle map backwards tying (same as omtb)",
+	"omtb", " mapid", "toggle map backwards tying",
+	"omtf", " mapid", "toggle map forwards tying",
 	NULL
 };
 
@@ -614,15 +617,27 @@ static void cmd_omf(RCore *core, int argc, char *argv[]) {
 }
 
 static void r_core_cmd_omt(RCore *core, const char *arg) {
+	ut32 toggle;
+	switch (arg[0]) {
+	case ' ':	//'omt'
+	case 'b':	//'omtb'
+		toggle = R_IO_MAP_TIE_FLG_BACK;
+		break;
+	case 'f':
+		toggle = R_IO_MAP_TIE_FLG_FORTH;
+		break;
+	default:
+		return;
+	}
 	int argc;
-	char **argv = r_str_argv (arg, &argc);
+	char **argv = r_str_argv (arg + 1, &argc);
 	if (!argc) {
 		return;
 	}
 	RIOMap *map = r_io_map_get (core->io, r_num_math (NULL, argv[0]));
 	r_str_argv_free (argv);
 	if (map) {
-		map->tie ^= true;
+		map->tie_flags ^= toggle;
 	}
 }
 
