@@ -389,6 +389,7 @@ R_API void r_cons_break_clear(void) {
 }
 
 R_API void r_cons_context_break_push(RConsContext *context, RConsBreak cb, void *user, bool sig) {
+#if WANT_DEBUGSTUFF
 	if (!context || !context->break_stack) {
 		return;
 	}
@@ -414,9 +415,11 @@ R_API void r_cons_context_break_push(RConsContext *context, RConsBreak cb, void 
 	// configure break
 	context->event_interrupt = cb;
 	context->event_interrupt_data = user;
+#endif
 }
 
 R_API void r_cons_context_break_pop(RConsContext *context, bool sig) {
+#if WANT_DEBUGSTUFF
 	if (!context || !context->break_stack) {
 		return;
 	}
@@ -439,28 +442,12 @@ R_API void r_cons_context_break_pop(RConsContext *context, bool sig) {
 		C->was_breaked = C->breaked;
 		context->breaked = false;
 	}
+#endif
 }
-
-#if RADARE2_5_7_X
-
-// ABI break
-R_API void r_cons_break_push(void) {
-	r_cons_context_break_push (C, NULL, NULL, true);
-}
-
-R_API void r_cons_break_popa(void) {
-	while (!r_stack_is_empty (C->break_stack)) {
-		r_cons_context_break_pop ();
-	}
-}
-
-#else
 
 R_API void r_cons_break_push(RConsBreak cb, void *user) {
 	r_cons_context_break_push (C, cb, user, true);
 }
-
-#endif
 
 R_API void r_cons_break_pop(void) {
 	r_cons_context_break_pop (C, true);
@@ -475,13 +462,18 @@ R_API bool r_cons_default_context_is_interactive(void) {
 }
 
 R_API bool r_cons_was_breaked(void) {
+#if WANT_DEBUGSTUFF
 	const bool res = r_cons_is_breaked () || C->was_breaked;
 	C->breaked = false;
 	C->was_breaked = false;
 	return res;
+#else
+	return false;
+#endif
 }
 
 R_API bool r_cons_is_breaked(void) {
+#if WANT_DEBUGSTUFF
 	if (R_UNLIKELY (I->cb_break)) {
 		I->cb_break (I->user);
 	}
@@ -497,6 +489,9 @@ R_API bool r_cons_is_breaked(void) {
 		C->was_breaked = C->breaked;
 	}
 	return R_UNLIKELY (C && C->breaked);
+#else
+	return false;
+#endif
 }
 
 R_API void r_cons_line(int x, int y, int x2, int y2, int ch) {

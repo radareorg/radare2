@@ -7,6 +7,7 @@ extern "C" {
 
 #include "r_version.h"
 
+#define WANT_DEBUGSTUFF @WANT_DEBUGSTUFF@
 #define R_CHECKS_LEVEL @R_CHECKS_LEVEL@
 #define R_CRITICAL_ENABLED @R_CRITICAL_ENABLED@
 #define DEBUGGER @DEBUGGER@
