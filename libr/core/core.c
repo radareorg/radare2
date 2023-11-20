@@ -3553,7 +3553,7 @@ static void set_prompt(RCore *r) {
 	const char *END = "";
 	const char *remote = "";
 
-	if (cmdprompt && *cmdprompt) {
+	if (R_STR_ISNOTEMPTY (cmdprompt)) {
 		r_core_cmd (r, cmdprompt, 0);
 	}
 

@@ -2769,7 +2769,7 @@ static int cmd_resize(void *data, const char *input) {
 	RCore *core = (RCore *)data;
 	ut64 newsize = 0;
 	st64 delta = 0;
-	int grow, ret;
+	int ret;
 
 	if (cmd_r2cmd (core, input)) {
 		return true;
@@ -2823,7 +2823,7 @@ static int cmd_resize(void *data, const char *input) {
 			free (s);
 			return true;
 		}
-	case 'h':
+	case 'h': // "rh"
 		if (core->io->desc) {
 			if (oldsize != -1) {
 				char humansz[8];
@@ -2837,8 +2837,8 @@ static int cmd_resize(void *data, const char *input) {
 		delta = (st64)r_num_math (core->num, input);
 		newsize = oldsize + delta;
 		break;
-	case '0':
-		if (input[1] == 'x') {
+	case '0': // "r0"
+		if (input[1] == 'x') { // "r0x"
 			newsize = r_num_math (core->num, input);
 		} else {
 			r_core_cmd_help (core, help_msg_r);
@@ -2861,7 +2861,7 @@ static int cmd_resize(void *data, const char *input) {
 			}
 		}
 		break;
-	case 'e':
+	case 'e': // "re"
 		{
 			int rc = write (1, Color_RESET_TERMINAL, strlen (Color_RESET_TERMINAL));
 			if (rc == -1) {
@@ -2875,7 +2875,7 @@ static int cmd_resize(void *data, const char *input) {
 		return true;
 	}
 
-	grow = (newsize > oldsize);
+	bool grow = (newsize > oldsize);
 	if (grow) {
 		ret = r_io_resize (core->io, newsize);
 		if (ret < 1) {
@@ -4463,11 +4463,7 @@ next2:
 				goto fail;
 			}
 			if (str) {
-				for (i = 0; str[i]; i++) {
-					if (str[i] == '\n') {
-						str[i] = ' ';
-					}
-				}
+				r_str_replace_ch (str, '\n', ' ', true);
 			}
 			str = r_str_append (str, ptr2 + 1);
 			cmd = r_str_append (strdup (cmd), str);
@@ -5364,13 +5360,13 @@ R_API int r_core_cmd_foreach3(RCore *core, const char *cmd, char *each) { // "@@
 	RList *list = foreach3list (core, ch, glob);
 
 	switch (ch) {
-	case '=':
+	case '=': // "@@@="
 		foreach_pairs (core, cmd, each + 1);
 		break;
-	case '?':
+	case '?': // "@@@?"
 		r_core_cmd_help (core, help_msg_at_at_at);
 		break;
-	case 'c':
+	case 'c': // "@@@c"
 		if (glob) {
 			char *arg = r_core_cmd_str (core, glob);
 			if (arg) {
@@ -5443,7 +5439,7 @@ R_API int r_core_cmd_foreach3(RCore *core, const char *cmd, char *each) { // "@@
 	case 0:
 		R_LOG_INFO ("Nothing to repeat. Check @@@?");
 		break;
-	case '@':
+	case '@': // "@@@@"
 		R_LOG_WARN ("I can't iterate that much!");
 		break;
 	default:
@@ -6423,12 +6419,10 @@ R_API int r_core_cmd_task_sync(RCore *core, const char *cmd, bool log) {
 	return res;
 }
 
-static int cmd_ox(void *data, const char *input) {
-	// return r_core_cmdf ((RCore*)data, "s 0%s", input);
+static int cmd_ox(void *data, const char *input) { // "0x"
 	RCore *core = (RCore*)data;
-	char *s = r_str_newf ("0%s", input);
-	ut64 at = r_num_get (NULL, s);
-	int ret = r_core_seek (core, at, 1);
+	char *s = r_str_newf ("s 0%s", input);
+	int ret = r_core_cmd_call (core, s);
 	free (s);
 	return ret;
 }
