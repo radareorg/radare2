@@ -686,6 +686,7 @@ static RCoreHelpMessage help_msg_afn = {
 	"afn", " [name]", "rename the function",
 	"afn", " base64:encodedname", "rename the function",
 	"afn.", "", "same as afn without arguments. show the function name in current offset",
+	"afn*", "", "show r2 commands to set function signature, flag and function name",
 	"afna", "", "construct a function name for the current offset",
 	"afns", "", "list all strings associated with the current function",
 	"afnsj", "", "list all strings associated with the current function in JSON format",
@@ -5616,6 +5617,21 @@ static int cmd_af(RCore *core, const char *input) {
 			} else {
 				free (r_core_anal_fcn_autoname (core, core->offset, 1, 0));
 			}
+			break;
+		case '*': // "afn*"
+			{
+				ut64 addr = core->offset;
+				RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, addr, -1);
+				if (fcn) {
+					r_cons_printf ("f %s=0x%08"PFMT64x"\n", fcn->name, addr);
+					r_cons_printf ("afn %s @ 0x%08"PFMT64x"\n", fcn->name, addr);
+					char *sig = r_core_cmd_str (core, "afs");
+					r_str_trim (sig);
+					r_str_replace_char (sig, ',', 0);
+					r_cons_printf ("afs %s @ 0x%08"PFMT64x"\n", sig, addr);
+					free (sig);
+				}
+				}
 			break;
 		case 'a': // "afna"
 			if (input[3] == '?') {
