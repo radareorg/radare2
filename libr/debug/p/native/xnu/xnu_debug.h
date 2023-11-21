@@ -78,7 +78,7 @@ int ptrace(int _request, pid_t _pid, caddr_t _addr, int _data);
 // iPhone
 #elif __arm
 #include <mach/arm/thread_status.h>
-#elif __arm64
+#elif __arm64 || __arm64e
 #include <mach/arm/thread_status.h>
 #else
 // iMac

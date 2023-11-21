@@ -111,7 +111,7 @@ static bool modify_trace_bit(RDebug *dbg, xnu_thread_t *th, int enable) {
 		R_LOG_ERROR ("to get drx registers modificy_trace_bit arm");
 		return false;
 	}
-#if __arm64 || __arm64__ || __aarch64 || __aarch64__
+#if __arm64 || __arm64__ || __aarch64 || __aarch64__ || __arm64e__
 	if (th->flavor == ARM_DEBUG_STATE32) {
 		arm_debug_state32_t *state = &th->debug.drx32;
 		if (enable) {
