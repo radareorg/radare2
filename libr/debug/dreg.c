@@ -28,16 +28,16 @@ R_API bool r_debug_reg_sync(RDebug *dbg, int type, int must_write) {
 		}
 	}
 	// Sync all the types sequentially if asked
-	int i = (type == R_REG_TYPE_ALL)? R_REG_TYPE_GPR: type;
+	ut32 i = (type == R_REG_TYPE_ALL)? R_REG_TYPE_GPR: type;
 	// Check to get the correct arena when using @ into reg profile (arena!=type)
 	// if request type is positive and the request regset don't have regs
 	if (i >= R_REG_TYPE_GPR && dbg->reg->regset[i].regs && !dbg->reg->regset[i].regs->length) {
 		// seek into the other arena for redirections.
 		for (n = R_REG_TYPE_GPR; n < R_REG_TYPE_LAST; n++) {
 			// get regset mask
-			int mask = dbg->reg->regset[n].maskregstype;
+			const ut32 mask = dbg->reg->regset[n].maskregstype;
 			// convert request arena to mask value
-			ut32 v = ((ut32)1 << i);
+			const ut32 v = ((ut32)1 << i);
 			// skip checks on same request arena and check if this arena have inside the request arena type
 			if (n != i && (mask & v)) {
 				// eprintf(" req = %i arena = %i mask = %x search = %x \n", i, n, mask, v);
@@ -82,14 +82,12 @@ R_API bool r_debug_reg_sync(RDebug *dbg, int type, int must_write) {
 }
 
 static bool is_mandatory(RRegItem *item, const char *pcname, const char *spname) {
-	if (!item || !pcname || !spname) {
-		return true;
-	}
+	r_return_val_if_fail (item, true);
 	// if regname is PC or SP should return false, otherwise return true
-	if (!strcmp (item->name, pcname)) {
+	if (pcname && !strcmp (item->name, pcname)) {
 		return false;
 	}
-	if (!strcmp (item->name, spname)) {
+	if (spname && !strcmp (item->name, spname)) {
 		return false;
 	}
 	return true;
@@ -122,14 +120,12 @@ R_API bool r_debug_reg_list(RDebug *dbg, int type, int size, PJ *pj, int rad, co
 		}
 	}
 	if (dbg->bits & R_SYS_BITS_64) {
-		//fmt = "%s = 0x%08"PFMT64x"%s";
 		fmt = "%s = %s%s";
 		fmt2 = "%s%6s%s %s%s";
 		kwhites = "         ";
 		colwidth = dbg->regcols? 30: 25;
 		cols = 3;
 	} else {
-		//fmt = "%s = 0x%08"PFMT64x"%s";
 		fmt = "%s = %s%s";
 		fmt2 = "%s%7s%s %s%s";
 		kwhites = "    ";
@@ -156,12 +152,11 @@ R_API bool r_debug_reg_list(RDebug *dbg, int type, int size, PJ *pj, int rad, co
 	}
 	const char *pcname = r_reg_get_name_by_type (dbg->reg, "PC");
 	const char *spname = r_reg_get_name_by_type (dbg->reg, "SP");
-#define IS_MANDATORY(x) is_mandatory ((x), pcname, spname)
 	bool isfirst = true;
 	r_list_foreach (list, iter, item) {
 		ut64 value;
 		utX valueBig;
-		if (type != -1 && IS_MANDATORY (item)) {
+		if (type != -1 && is_mandatory (item, pcname, spname)) {
 			if (type != item->type && R_REG_TYPE_FLG != item->type) {
 				continue;
 			}

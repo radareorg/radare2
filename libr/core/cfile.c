@@ -658,7 +658,7 @@ R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 		}
 		r_io_use_fd (r->io, desc->fd);
 		// Restore original desc
-	} else {
+	} else if (desc != NULL) {
 		r_io_use_fd (r->io, desc->fd);
 		r_io_map_add (r->io, desc->fd, R_PERM_RWX, 0LL, 0, r_io_desc_size (desc));
 	}
