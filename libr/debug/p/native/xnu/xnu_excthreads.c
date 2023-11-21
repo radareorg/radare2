@@ -105,12 +105,6 @@ static bool modify_trace_bit(RDebug *dbg, xnu_thread *th, int enable) {
 // (SS bit in the MDSCR_EL1 register)
 #define SS_ENABLE ((uint32_t)(1u))
 
-#if __arm || __arm__ || __armv7 || __armv7__
-static bool is_thumb_32(ut16 op) {
-	return (((op & 0xE000) == 0xE000) && (op & 0x1800));
-}
-#endif
-
 static bool modify_trace_bit(RDebug *dbg, xnu_thread_t *th, int enable) {
 	int ret = xnu_thread_get_drx (dbg, th);
 	if (!ret) {
@@ -134,6 +128,7 @@ static bool modify_trace_bit(RDebug *dbg, xnu_thread_t *th, int enable) {
 		}
 	} else // {
 #elif __arm || __arm__ || __armv7 || __armv7__
+#define IS_THUMB32(op) (((op & 0xE000) == 0xE000) && (op & 0x1800))
 	int i = 0;
 	if (th->flavor == ARM_DEBUG_STATE) {
 		arm_debug_state_t *state = &th->debug.drx;
@@ -173,7 +168,7 @@ static bool modify_trace_bit(RDebug *dbg, xnu_thread_t *th, int enable) {
 					R_LOG_ERROR ("Failed to read opcode modify_trace_bit");
 					return false;
 				}
-				if (is_thumb_32 (op)) {
+				if (IS_THUMB32 (op)) {
 					chained_address = regs->ts_32.__pc + 2;
 				} else {
 					// Extend the number of bits to ignore for the mismatch
