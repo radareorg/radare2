@@ -12,8 +12,6 @@ BUNDLE=org.radare.radare2
 MACSDK=macosx10.10
 ENTITL=radare2.xcent
 #ENTITL=radare2_ios.xml
-#CFLAGS+=-flto
-#LDFLAGS+=-flto
 
 CFLAGS_INCLUDES+=-I$(SHLR)/sdb/src
 CFLAGS_INCLUDES+=-I$(LIBR)/include
