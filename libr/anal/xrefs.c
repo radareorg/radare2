@@ -347,8 +347,8 @@ static void r_anal_xrefs_list_table(RAnal *anal, RVecAnalRef *anal_refs, const c
 
 		char *fromname = anal->coreb.getNameDelta (anal->coreb.core, ref->addr);
 		char *toname = anal->coreb.getNameDelta (anal->coreb.core, ref->at);
-		r_table_add_rowf (table, "ddssss",
-				ref->at, ref->addr,
+		r_table_add_rowf (table, "xxnssss",
+				ref->at, ref->addr, ref->size,
 				r_anal_ref_type_tostring (t),
 				r_anal_ref_perm_tostring (ref),
 				toname, fromname
