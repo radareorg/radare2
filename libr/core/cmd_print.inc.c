@@ -292,7 +292,9 @@ static RCoreHelpMessage help_msg_pd = {
 	"pdr", "", "recursive disassemble across the function graph",
 	"pdr.", "", "recursive disassemble across the function graph (from current basic block)",
 	"pdR", "", "recursive disassemble block size bytes without analyzing functions",
-	"pds", "[bf] [N]", "disassemble summary: strings, calls, jumps, refs (b=N bytes f=function)",
+	"pds", "[?]", "print disasm summary, showing referenced names",
+	"pdsb", " [N]", "basic block summary",
+	"pdsf", "[q]", "show function summary of strings, calls, variables, references..",
 	"pdu", "[aceios?]", "disassemble instructions until condition",
 	"pd,", " [n] [query]", "disassemble N instructions in a table (see dtd for debug traces)",
 	"pdx", " [hex]", "alias for pad or pix",
@@ -3042,6 +3044,7 @@ static void disasm_strings(RCore *core, const char *input, RAnalFunction *fcn) {
 	int i, count, use_color = r_config_get_i (core->config, "scr.color");
 	bool show_comments = r_config_get_b (core->config, "asm.comments");
 	bool show_offset = r_config_get_b (core->config, "asm.offset");
+	bool orig_show_offset = show_offset;
 	int asm_tabs = r_config_get_i (core->config, "asm.tabs");
 	bool scr_html = r_config_get_b (core->config, "scr.html");
 	bool asm_dwarf = r_config_get_b (core->config, "asm.dwarf");
@@ -3053,16 +3056,20 @@ static void disasm_strings(RCore *core, const char *input, RAnalFunction *fcn) {
 	RConsPrintablePalette *pal = &core->cons->context->pal;
 	// force defaults
 	r_config_set_i (core->config, "scr.color", COLOR_MODE_DISABLED);
-	r_config_set_b (core->config, "asm.offset", true);
 	r_config_set_b (core->config, "asm.dwarf", true);
 	r_config_set_i (core->config, "asm.tabs", 0);
 	r_config_set_b (core->config, "scr.html", false);
 	r_config_set_b (core->config, "asm.cmt.right", true);
+	r_config_set_b (core->config, "asm.offset", true);
+
+	if (strchr (input, 'q')) {
+		show_offset = false;
+	}
 
 	r_cons_push ();
 	line = NULL;
 	s = NULL;
-	if (!strncmp (input, "dsb", 3)) {
+	if (r_str_startswith (input, "dsb")) {
 		RAnalBlock *bb = r_anal_bb_from_offset (core->anal, core->offset);
 		if (bb) {
 			line = s = r_core_cmd_strf (core, "pD %"PFMT64u" @ 0x%08"PFMT64x, bb->size, bb->addr);
@@ -3250,8 +3257,7 @@ static void disasm_strings(RCore *core, const char *input, RAnalFunction *fcn) {
 							}
 							r_cons_printf ("%s%s\n", use_color? pal->comment: "", comment);
 						}
-					}
-					else {
+					} else {
 						if (show_offset) {
 							r_cons_printf ("%s0x%08"PFMT64x" ", use_color? pal->offset: "", addr);
 						}
@@ -3356,7 +3362,7 @@ static void disasm_strings(RCore *core, const char *input, RAnalFunction *fcn) {
 	R_FREE (s);
 	R_FREE (switchcmp);
 restore_conf:
-	r_config_set_b (core->config, "asm.offset", show_offset);
+	r_config_set_b (core->config, "asm.offset", orig_show_offset);
 	r_config_set_b (core->config, "asm.dwarf", asm_dwarf);
 	r_config_set_i (core->config, "asm.tabs", asm_tabs);
 	r_config_set_b (core->config, "scr.html", scr_html);
@@ -6462,10 +6468,10 @@ static int cmd_print(void *data, const char *input) {
 		case 's': // "pds"
 			processed_cmd = true;
 			if (input[2] == '?') {
-				r_core_cmd_help_match (core, help_msg_pd, "pds");
+				r_core_cmd_help_contains (core, help_msg_pd, "pds");
 			} else {
 				if (input[2] && input[3] == '?') {
-					r_core_cmd_help_match (core, help_msg_pd, "pds");
+					r_core_cmd_help_contains (core, help_msg_pd, "pds");
 				} else {
 					disasm_strings (core, input, NULL);
 				}
