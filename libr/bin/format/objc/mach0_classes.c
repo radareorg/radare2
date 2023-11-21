@@ -71,7 +71,7 @@ static void metadata_sections_fini(MetaSections *ms) {
 
 #define PARSECTION(x,y) parse_section (bf, x, section, y)
 static MetaSections metadata_sections_init(RBinFile *bf) {
-	MetaSections ms = {0};
+	MetaSections ms = {{0}};
 	const RVector *sections = MACH0_(load_sections) (bf->bo->bin_obj);
 	if (!sections) {
 		return ms;
@@ -186,7 +186,7 @@ static bool read_ptr_va(RBinFile *bf, ut64 vaddr, mach0_ut *out);
 static char *read_str(RBinFile *bf, mach0_ut p, ut32 *offset, ut32 *left);
 static char *get_class_name(mach0_ut p, RBinFile *bf);
 
-static inline bool is_thumb(RBinFile * restrict bf) {
+static inline bool is_thumb(RBinFile *bf) {
 	struct MACH0_(obj_t) *bin = (struct MACH0_(obj_t) *)bf->bo->bin_obj;
 	return (bin->hdr.cputype == 12 && bin->hdr.cpusubtype == 9);
 }
