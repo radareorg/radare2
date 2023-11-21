@@ -216,7 +216,7 @@ static bool cmd_load_theme(RCore *core, const char *_arg) {
 		while (theme && theme->name) {
 			if (!strcmp (theme->name, arg)) {
 				r_core_cmd0 (core, theme->script);
-				free (arg);
+				R_FREE (arg);
 				failed = false;
 				break;
 			}
