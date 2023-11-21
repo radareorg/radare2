@@ -10073,7 +10073,50 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 				}
 				r_list_free (ufuncs);
 			} else if (input[1] == ',') { // "axt,"
-				R_LOG_TODO ("table for xrefs");
+				RAnalRef *ref;
+				RTable *table = r_table_new ("bbs");
+				RTableColumnType *s = r_table_type ("string");
+				RTableColumnType *n = r_table_type ("number");
+				r_table_add_column (table, n, "fcn", 0);
+				r_table_add_column (table, s, "fcname", 0);
+				r_table_add_column (table, n, "addr", 0);
+				r_table_add_column (table, n, "to", 0);
+				r_table_add_column (table, n, "size", 0);
+				r_table_add_column (table, s, "type", 0);
+				r_table_add_column (table, s, "perm", 0);
+				char *fcn_name = NULL;
+				ut64 fcn_addr = 0;
+				R_VEC_FOREACH (list, ref) {
+					fcn_name = NULL;
+					fcn_addr = 0;
+					fcn = r_anal_get_fcn_in (core->anal, ref->addr, 0);
+					if (fcn) {
+						fcn_name = fcn->name;
+						fcn_addr = fcn->addr;
+					}
+					const char *typestr = r_anal_ref_type_tostring (ref->type);
+					const char *permstr = r_anal_ref_perm_tostring (ref);
+					r_table_add_rowf (table, "sxxxnss",
+							fcn_name,
+							fcn_addr,
+							ref->addr,
+							addr,
+							ref->size,
+							typestr,
+							permstr
+							);
+				}
+				const char *q = input + 2;
+				if (*q) {
+					r_table_query (table, q);
+				}
+				if (true) {
+					char *s = r_table_tofancystring (table);
+					r_str_trim (s);
+					r_cons_println (s);
+					free (s);
+				}
+				r_table_free (table);
 			} else if (input[1] == 'q') { // "axtq"
 				RAnalRef *ref;
 				R_VEC_FOREACH (list, ref) {

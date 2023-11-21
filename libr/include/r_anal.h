@@ -646,6 +646,7 @@ typedef struct r_anal_ref_t {
 	ut64 at;
 	ut64 addr;
 	RAnalRefType type;
+	ut8 size;
 } RAnalRef;
 
 typedef struct r_vec_RVecAnalRef_t RVecAnalRef;
