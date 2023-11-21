@@ -683,13 +683,11 @@ static RCoreHelpMessage help_msg_afll = {
 
 static RCoreHelpMessage help_msg_afn = {
 	"Usage:", "afn[sa]", " Analyze function names",
-	"afn", " [name]", "rename the function",
-	"afn", " base64:encodedname", "rename the function",
+	"afn", " [name]", "rename the function (name can start with base64:)",
 	"afn.", "", "same as afn without arguments. show the function name in current offset",
 	"afn*", "", "show r2 commands to set function signature, flag and function name",
-	"afna", "", "construct a function name for the current offset",
-	"afns", "", "list all strings associated with the current function",
-	"afnsj", "", "list all strings associated with the current function in JSON format",
+	"afna", "[j]", "construct a function name for the current offset",
+	"afns", "[j]", "list all strings associated with the current function",
 	NULL
 };
 
@@ -5613,9 +5611,9 @@ static int cmd_af(RCore *core, const char *input) {
 		switch (input[2]) {
 		case 's': // "afns"
 			if (input[3] == 'j') { // "afnsj"
-				free (r_core_anal_fcn_autoname (core, core->offset, 1, input[3]));
+				free (r_core_anal_fcn_autoname (core, core->offset, 'j'));
 			} else {
-				free (r_core_anal_fcn_autoname (core, core->offset, 1, 0));
+				free (r_core_anal_fcn_autoname (core, core->offset, 's'));
 			}
 			break;
 		case '*': // "afn*"
@@ -5638,7 +5636,7 @@ static int cmd_af(RCore *core, const char *input) {
 				r_core_cmd_help (core, help_msg_afna);
 				break;
 			}
-			char *name = r_core_anal_fcn_autoname (core, core->offset, 0, 0);
+			char *name = r_core_anal_fcn_autoname (core, core->offset, 'v');
 			if (name) {
 				r_cons_printf ("afn %s 0x%08" PFMT64x "\n", name, core->offset);
 				free (name);
@@ -13222,6 +13220,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 		case 'f': // "aanf" same as "aan" but more friendly
 		default: // "aan"
 			r_core_anal_autoname_all_fcns (core);
+			break;
 		}
 		break;
 	case 'p': // "aap"

@@ -349,7 +349,22 @@ R_API ut64 r_core_anal_address(RCore *core, ut64 addr) {
 }
 
 static bool blacklisted_word(const char* name) {
+	if (!*name) {
+		return true;
+	}
+	if (*name == ';') {
+		return true;
+	}
+	if (r_str_startswith (name, "arg")) {
+		return true;
+	}
 	const char * list[] = {
+		"0x",
+		"*",
+		"func.",
+		"\\",
+		"fcn.0",
+		"assert",
 		"__stack_chk_guard",
 		"__stderrp",
 		"__stdinp",
@@ -358,96 +373,87 @@ static bool blacklisted_word(const char* name) {
 	};
 	int i;
 	for (i = 0; i < sizeof (list) / sizeof (list[0]); i++) {
-		if (strstr (name, list[i])) { return true; }
+		if (strstr (name, list[i])) {
+			return true;
+		}
 	}
 	return false;
 }
 
-static char *anal_fcn_autoname(RCore *core, RAnalFunction *fcn, int dump, int mode) {
-	int use_getopt = 0;
-	int use_isatty = 0;
+static inline ut64 cmpstrings(const void *a) {
+	return r_str_hash64 (a);
+}
+
+static char *anal_fcn_autoname(RCore *core, RAnalFunction *fcn, int mode) {
 	PJ *pj = NULL;
-	char *do_call = NULL;
-	RAnalRef *ref;
 	if (mode == 'j') {
 		// start a new JSON object
 		pj = r_core_pj_new (core);
 		pj_a (pj);
 	}
 
-	RVecAnalRef *refs = r_anal_function_get_refs (fcn);
-	if (refs) {
-		R_VEC_FOREACH (refs, ref) {
-			RFlagItem *f = r_flag_get_i (core->flags, ref->addr);
-			if (f) {
-				// If dump is true, print all strings referenced by the function
-				if (dump) {
-					// take only strings flags
-					if (!strncmp (f->name, "str.", 4)) {
-						if (mode == 'j') {
-							// add new json item
-							pj_o (pj);
-							pj_kn (pj, "addr", ref->at);
-							pj_kn (pj, "ref", ref->addr);
-							pj_ks (pj, "flag", f->name);
-							pj_end (pj);
-						} else {
-							r_cons_printf ("0x%08"PFMT64x" 0x%08"PFMT64x" %s\n", ref->at, ref->addr, f->name);
-						}
-					}
-				} else if (do_call) { // break if a proper autoname found and not in dump mode
-					break;
-				}
-				// enter only if a candidate name hasn't found yet
-				if (!do_call) {
-					const char *name = f->name;
-					if (blacklisted_word (name)) {
-						continue;
-					}
-					if (*name == '.') {
-						if (strstr (name, ".isatty")) {
-							use_isatty = 1;
-						}
-						// XXX else if
-						if (strstr (name, ".getopt")) {
-							use_getopt = 1;
-						}
-					}
-					if (!strncmp (name, "method.", 7)) {
-						free (do_call);
-						do_call = strdup (name + 7);
-						continue;
-					}
-					if (!strncmp (name, "str.", 4)) {
-						free (do_call);
-						do_call = strdup (name + 4);
-						continue;
-					}
-					if (!strncmp (name, "dbg.", 4)) {
-						free (do_call);
-						do_call = strdup (name + 4);
-						continue;
-					}
-					if (!strncmp (name, "rsym.", 5)) {
-						free (do_call);
-						do_call = strdup (name + 5);
-						continue;
-					}
-					if (!strncmp (name, "sym.imp.", 8)) {
-						free (do_call);
-						do_call = strdup (name + 8);
-						continue;
-					}
-					if (!strncmp (name, "reloc.", 6)) {
-						free (do_call);
-						do_call = strdup (name + 6);
-						continue;
-					}
-				}
+	RList *names = r_list_newf (free);
+	if (!blacklisted_word (fcn->name)) {
+		r_list_append (names, strdup (fcn->name));
+	}
+
+	// TODO: check if import, if its in plt, by name, by rbin...
+	int scr_color = r_config_get_i (core->config, "scr.color");
+	r_config_set_i (core->config, "scr.color", 0);
+	char *pdsfq = r_core_cmd_strf (core, "pdsfq @ 0x%08"PFMT64x, fcn->addr);
+	r_config_set_i (core->config, "scr.color", scr_color);
+	RList *strings = r_str_split_list (pdsfq, "\n", 0);
+	char *name;
+	RListIter *iter;
+	r_list_foreach (strings, iter, name) {
+		r_str_trim (name);
+		if (blacklisted_word (name)) {
+			continue;
+		}
+		char *dot = strchr (name, '.');
+		if (dot) {
+			name = dot + 1;
+		}
+		if (*name == '"') {
+			r_str_replace_char (name, '"', '_');
+		}
+		r_str_replace_char (name, ';', '_');
+		char *sp = strchr (name, ' ');
+		if (sp) {
+			name = sp + 1;
+			char *sp2 = strchr (name, ' ');
+			if (sp2) {
+				*sp2 = 0;
 			}
+			r_list_append (names, strdup (name));
+		} else {
+			r_list_append (names, strdup (name));
 		}
 	}
-	RVecAnalRef_free (refs);
+	free (pdsfq);
+	char *bestname = NULL;
+	bool use_getopt = false;
+	r_list_uniq_inplace (names, cmpstrings);
+	r_list_foreach (names, iter, name) {
+		if (strstr (name, "getopt") || strstr (name, "optind")) {
+			use_getopt = true;
+		} else if (r_str_startswith (name, "sym.imp.")) {
+			name += 4;
+		} else if (r_str_startswith (name, "sym.")) {
+			name += 4;
+		} else if (r_str_startswith (name, "imp.")) {
+			name += 4;
+		}
+		if (!bestname) {
+			bestname = strdup (name);
+		}
+		if (mode == 's') {
+			r_cons_printf ("%s\n", name);
+		} else if (pj) {
+			pj_s (pj, name);
+		}
+	}
+	r_list_free (names);
 
 	if (mode ==  'j') {
 		pj_end (pj);
@@ -458,24 +464,24 @@ static char *anal_fcn_autoname(RCore *core, RAnalFunction *fcn, int dump, int mo
 	}
 	// TODO: append counter if name already exists
 	if (use_getopt) {
-		RFlagItem *item = r_flag_get (core->flags, "main");
-		free (do_call);
-		// if referenced from entrypoint. this should be main
-		if (item && item->offset == fcn->addr) {
-			return strdup ("main"); // main?
+		if (!strcmp (bestname, "main")) {
+			free (bestname);
+			return strdup ("main");
 		}
-		return strdup ("parse_args"); // main?
+		free (bestname);
+		return strdup ("main_args");
 	}
-	if (use_isatty) {
-		char *ret = r_str_newf ("sub.setup_tty_%s_%"PFMT64x, do_call, fcn->addr);
-		free (do_call);
+	if (bestname) {
+		if (r_str_startswith (bestname, "imp.")) {
+			char *bn = r_str_newf ("sym.%s", bestname);
+			free (bestname);
+			return bn;
+		}
+		char *ret = r_str_newf ("sub.%s_%"PFMT64x, bestname, fcn->addr);
+		free (bestname);
 		return ret;
 	}
-	if (do_call) {
-		char *ret = r_str_newf ("sub.%s_%"PFMT64x, do_call, fcn->addr);
-		free (do_call);
-		return ret;
-	}
+	free (bestname);
 	return NULL;
 }
 
@@ -488,7 +494,7 @@ R_API void r_core_anal_autoname_all_fcns(RCore *core) {
 		if (!strncmp (fcn->name, "fcn.", 4) || !strncmp (fcn->name, "sym.func.", 9)) {
 			RFlagItem *item = r_flag_get (core->flags, fcn->name);
 			if (item) {
-				char *name = anal_fcn_autoname (core, fcn, 0, 0);
+				char *name = anal_fcn_autoname (core, fcn, 0);
 				if (name) {
 					r_flag_rename (core->flags, item, name);
 					free (fcn->name);
@@ -568,11 +574,13 @@ R_API void r_core_anal_autoname_all_golang_fcns(RCore *core) {
 	}
 }
 
-/* suggest a name for the function at the address 'addr'.
- * If dump is true, every strings associated with the function is printed */
-R_API char *r_core_anal_fcn_autoname(RCore *core, ut64 addr, int dump, int mode) {
+// suggest a name for the function at the address 'addr'
+R_API char *r_core_anal_fcn_autoname(RCore *core, ut64 addr, int mode) {
 	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, addr, 0);
-	return fcn? anal_fcn_autoname (core, fcn, dump, mode): NULL;
+	if (fcn) {
+		return anal_fcn_autoname (core, fcn, mode);
+	}
+	return NULL;
 }
 
 static ut64 *next_append(ut64 *next, int *nexti, ut64 v) {
