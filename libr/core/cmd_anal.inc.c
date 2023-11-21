@@ -10096,12 +10096,13 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 					}
 					const char *typestr = r_anal_ref_type_tostring (ref->type);
 					const char *permstr = r_anal_ref_perm_tostring (ref);
+					int size = r_anal_ref_size (ref);
 					r_table_add_rowf (table, "sxxxnss",
 							fcn_name,
 							fcn_addr,
 							ref->addr,
 							addr,
-							ref->size,
+							size,
 							typestr,
 							permstr
 							);
