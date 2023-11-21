@@ -10058,7 +10058,25 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 		}
 		RVecAnalRef *list = r_anal_xrefs_get (core->anal, addr);
 		if (list) {
-			if (input[1] == 'q') { // "axtq"
+			if (input[1] == 'f') { // "axtf"
+				RAnalRef *ref;
+				RList *ufuncs = r_list_newf (free);
+				R_VEC_FOREACH (list, ref) {
+					fcn = r_anal_get_fcn_in (core->anal, ref->addr, 0);
+					if (fcn) {
+						r_list_append (ufuncs, ut64_new (fcn->addr));
+					}
+				}
+				r_list_uniq_inplace (ufuncs, sort64val);
+				ut64 *v;
+				RListIter *iter;
+				r_list_foreach (ufuncs, iter, v) {
+					r_cons_printf ("0x%08"PFMT64x"\n", *v);
+				}
+				r_list_free (ufuncs);
+			} else if (input[1] == ',') { // "axt,"
+				R_LOG_TODO ("table for xrefs");
+			} else if (input[1] == 'q') { // "axtq"
 				RAnalRef *ref;
 				R_VEC_FOREACH (list, ref) {
 					r_cons_printf ("0x%" PFMT64x "\n", ref->addr);
