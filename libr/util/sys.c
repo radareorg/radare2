@@ -171,12 +171,9 @@ R_API int r_sys_sigaction(int *sig, void(*handler)(int)) {
 R_API int r_sys_sigaction(int *sig, void(*handler)(int)) {
 	return 0;
 }
-#elif WANT_DEBUGSTUFF
-R_API int r_sys_sigaction(int *sig, void(*handler)(int)) {
-	return 0;
-}
 #elif HAVE_SIGACTION
 R_API int r_sys_sigaction(int *sig, void(*handler)(int)) {
+#if WANT_DEBUGSTUFF
 	struct sigaction sigact = { };
 	int ret, i;
 	if (unsignable) {
@@ -201,6 +198,7 @@ R_API int r_sys_sigaction(int *sig, void(*handler)(int)) {
 			return ret;
 		}
 	}
+#endif
 	return 0;
 }
 #else
