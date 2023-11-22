@@ -2645,6 +2645,8 @@ repeat:
 	switch (fmt) {
 	case R_GRAPH_FORMAT_GML:
 	case R_GRAPH_FORMAT_GMLFCN:
+		r_cons_printf ("]\n");
+		break;
 	case R_GRAPH_FORMAT_JSON:
 		pj_end (pj);
 		r_cons_println (pj_string (pj));
