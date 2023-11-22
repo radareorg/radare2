@@ -3576,7 +3576,7 @@ static void classdump_cxx(RCore *r, RBinClass *c) {
 }
 
 static void classdump_objc(RCore *r, RBinClass *c) {
-	const int pref = r_config_get_b (r->config, "asm.demangle")? 'd': 0;
+	const int pref = 0; // r_config_get_b (r->config, "asm.demangle")? 'd': 0;
 	if (c->super) {
 		int n = 0;
 		r_cons_printf ("@interface %s :", c->name);
@@ -3604,9 +3604,13 @@ static void classdump_objc(RCore *r, RBinClass *c) {
 	r_list_foreach (c->fields, iter2, f) {
 		if (f->name) { //  && r_regex_match ("ivar","e", f->name)) {
 			const char *ks = r_bin_field_kindstr (f);
-			const char *ft = r_bin_name_tostring2 (f->type, pref);
 			const char *fn = r_bin_name_tostring2 (f->name, pref);
-			r_cons_printf ("  %s %s::(%s)%s\n", ft, c->name, ks, fn);
+			if (f->type) {
+				const char *ft = r_bin_name_tostring2 (f->type, pref);
+				r_cons_printf ("  %s %s::(%s)%s\n", ft, c->name, ks, fn);
+			} else {
+				r_cons_printf ("  isa %s::(%s)%s\n", c->name, ks, fn);
+			}
 		}
 	}
 	r_cons_printf ("}\n");
@@ -3649,7 +3653,7 @@ static void classdump_swift(RCore *r, RBinClass *c) {
 	if (!r_list_empty (c->super)) {
 		RBinName *bn;
 		r_list_foreach (c->super, iter, bn) {
-			r_cons_printf (": %s", r_bin_name_tostring2 (bn, pref));
+			r_cons_printf (": %s", r_bin_name_tostring2 (bn, 'd')); // TODO pref));
 		}
 		r_cons_printf (" ");
 	}
@@ -3661,8 +3665,8 @@ static void classdump_swift(RCore *r, RBinClass *c) {
 		}
 		const char *var = r_bin_field_kindstr (f);
 		const char *fname = r_bin_name_tostring2 (f->name, pref);
-		if (f->type) {
-			const char *ftype = r_bin_name_tostring2 (f->type, pref);
+		const char *ftype = r_bin_name_tostring2 (f->type, pref);
+		if (R_STR_ISNOTEMPTY (ftype)) {
 			r_cons_printf ("  %s %s : %s;\n", var, fname, ftype);
 		} else {
 			r_cons_printf ("  %s %s;\n", var, fname);
@@ -3906,7 +3910,7 @@ static bool bin_classes(RCore *r, PJ *pj, int mode) {
 			} else {
 				r_list_foreach (c->fields, iter2, f) {
 					const char *fn = r_bin_name_tostring (f->name);
-					const char *tn = r_bin_name_tostring (f->type);
+					const char *tn = f->type? r_bin_name_tostring (f->type): NULL;
 					char *n = objc_name_toc (fn);
 					char *t = objc_type_toc (tn);
 					if (R_STR_ISEMPTY (t)) {
@@ -3986,8 +3990,8 @@ static bool bin_classes(RCore *r, PJ *pj, int mode) {
 					pj_o (pj);
 					pj_ks (pj, "name", r_bin_name_tostring2 (f->name, pref));
 					pj_ks (pj, "kind", r_bin_field_kindstr (f));
-					if (f->type) {
-						const char *type = r_bin_name_tostring2 (f->type, pref);
+					const char *type = f->type? r_bin_name_tostring2 (f->type, pref): NULL;
+					if (R_STR_ISNOTEMPTY (type)) {
 						pj_ks (pj, "type", type);
 					}
 					if (f->attr) {

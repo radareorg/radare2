@@ -18,10 +18,10 @@ EXPECT=<<EOF
   @"NSString" Employee::(var)_username
   @"NSString" Employee::(var)_firstName
   Q Employee::(var)_wideWord
-  (null) Employee::(property)username
-  (null) Employee::(property)firstName
-  (null) Employee::(property)shortWord
-  (null) Employee::(property)wideWord
+  isa Employee::(property)username
+  isa Employee::(property)firstName
+  isa Employee::(property)shortWord
+  isa Employee::(property)wideWord
 }
 + (void) helloWorld
 + (id) sayHello
@@ -267,10 +267,10 @@ EXPECT=<<EOF
   @"NSString" Employee::(var)_username
   @"NSString" Employee::(var)_firstName
   Q Employee::(var)_wideWord
-  (null) Employee::(property)username
-  (null) Employee::(property)firstName
-  (null) Employee::(property)shortWord
-  (null) Employee::(property)wideWord
+  isa Employee::(property)username
+  isa Employee::(property)firstName
+  isa Employee::(property)shortWord
+  isa Employee::(property)wideWord
 }
 + (void) sayHello
 + (void) helloWorld
@@ -519,10 +519,10 @@ EXPECT=<<EOF
   @"NSString" Employee::(var)_username
   @"NSString" Employee::(var)_firstName
   Q Employee::(var)_wideWord
-  (null) Employee::(property)username
-  (null) Employee::(property)firstName
-  (null) Employee::(property)shortWord
-  (null) Employee::(property)wideWord
+  isa Employee::(property)username
+  isa Employee::(property)firstName
+  isa Employee::(property)shortWord
+  isa Employee::(property)wideWord
 }
 + (void) sayHello
 + (void) helloWorld

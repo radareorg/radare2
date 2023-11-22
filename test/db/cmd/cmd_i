@@ -115,59 +115,59 @@ FILE=bins/elf/analysis/x86-helloworld-gcc
 CMDS=ih*
 EXPECT=<<EOF
 fs header
-"f header.ELF 1 0x00000000"
+'f header.ELF 1 0x00000000
 CCu MHg0NjRjNDU3Zg== @ 0x0
 Cf 4 x @ 0x0
 pf.ELF x
-"f header.Type 1 0x00000010"
+'f header.Type 1 0x00000010
 CCu MHgwMDAwMDAwMg== @ 0x10
 Cf 2 x @ 0x10
 pf.Type x
-"f header.Machine 1 0x00000012"
+'f header.Machine 1 0x00000012
 CCu MHgwMDAwMDAwMw== @ 0x12
 Cf 2 x @ 0x12
 pf.Machine x
-"f header.Version 1 0x00000014"
+'f header.Version 1 0x00000014
 CCu MHgwMDAwMDAwMQ== @ 0x14
 Cf 4 x @ 0x14
 pf.Version x
-"f header.Entrypoint 1 0x00000018"
+'f header.Entry point 1 0x00000018
 CCu MHgwODA0ODMwMA== @ 0x18
 Cf 4 x @ 0x18
-pf.Entrypoint x
-"f header.PhOff 1 0x0000001c"
+pf.Entry point x
+'f header.PhOff 1 0x0000001c
 CCu MHgwMDAwMDAzNA== @ 0x1c
 Cf 4 x @ 0x1c
 pf.PhOff x
-"f header.ShOff 1 0x00000020"
+'f header.ShOff 1 0x00000020
 CCu MHgwMDAwMDdjYw== @ 0x20
 Cf 4 x @ 0x20
 pf.ShOff x
-"f header.Flags 1 0x00000024"
+'f header.Flags 1 0x00000024
 CCu MHgwMDAwMDAwMA== @ 0x24
 Cf 4 x @ 0x24
 pf.Flags x
-"f header.EhSize 1 0x00000028"
+'f header.EhSize 1 0x00000028
 CCu MHgwMDAwMDAzNA== @ 0x28
 Cf 2 x @ 0x28
 pf.EhSize x
-"f header.PhentSize 1 0x0000002a"
+'f header.PhentSize 1 0x0000002a
 CCu MHgwMDAwMDAyMA== @ 0x2a
 Cf 2 x @ 0x2a
 pf.PhentSize x
-"f header.PhNum 1 0x0000002c"
+'f header.PhNum 1 0x0000002c
 CCu MHgwMDAwMDAwOA== @ 0x2c
 Cf 2 x @ 0x2c
 pf.PhNum x
-"f header.ShentSize 1 0x0000002e"
+'f header.ShentSize 1 0x0000002e
 CCu MHgwMDAwMDAyOA== @ 0x2e
 Cf 2 x @ 0x2e
 pf.ShentSize x
-"f header.ShNum 1 0x00000030"
+'f header.ShNum 1 0x00000030
 CCu MHgwMDAwMDAxZQ== @ 0x30
 Cf 2 x @ 0x30
 pf.ShNum x
-"f header.ShrStrndx 1 0x00000032"
+'f header.ShrStrndx 1 0x00000032
 CCu MHgwMDAwMDAxYg== @ 0x32
 Cf 2 x @ 0x32
 pf.ShrStrndx x

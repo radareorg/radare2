@@ -430,7 +430,7 @@ static void get_ivar_list(RBinFile *bf, RBinClass *klass, mach0_ut p) {
 		isa->name = r_bin_name_new ("isa");
 		isa->size = sizeof (mach0_ut);
 		isa->type = r_bin_name_new ("struct objc_class *");
-		r_bin_name_demangled (isa->type, "ObjC.Class*");
+		// TODO r_bin_name_demangled (isa->type, "ObjC.Class*");
 		isa->kind = R_BIN_FIELD_KIND_VARIABLE;
 		isa->vaddr = 0;
 		isa->offset = 0;
