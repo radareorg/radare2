@@ -1088,9 +1088,9 @@ static void parse_dex_class_fields(RBinFile *bf, RBinDexClass *c, RBinClass *cls
 		r_list_append (dex->methods_list, sym);
 
 		RBinField *field = R_NEW0 (RBinField);
-		if (field) {
+		if (R_LIKELY (field)) {
 			field->vaddr = field->paddr = sym->paddr;
-			field->name = strdup (sym->name);
+			field->name = r_bin_name_new (sym->name);
 			field->attr = get_method_attr (accessFlags);
 			r_list_append (cls->fields, field);
 		}

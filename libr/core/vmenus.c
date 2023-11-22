@@ -1060,12 +1060,14 @@ R_API bool r_core_visual_hudclasses(RCore *core) {
 	if (!list) {
 		return false;
 	}
+	const int pref = r_config_get_b (core->config, "asm.demangle")? 'd': 0;
 	list->free = free;
 	RList *classes = r_bin_get_classes (core->bin);
 	r_list_foreach (classes, iter, c) {
 		r_list_foreach (c->fields, iter2, f) {
+			const char *fname = r_bin_name_tostring2 (f->name, pref);
 			r_list_append (list, r_str_newf ("0x%08"PFMT64x"  %s %s",
-				f->vaddr, c->name, f->name));
+				f->vaddr, c->name, fname));
 		}
 		r_list_foreach (c->methods, iter2, m) {
 			const char *name = m->dname? m->dname: m->name;
@@ -1230,7 +1232,7 @@ static void *show_class(RCore *core, int mode, int *idx, RBinClass *_c, const ch
 		// show fields
 		r_cons_printf ("[hjkl_/cFm]> fields of %s:\n\n", _c->name);
 		r_list_foreach (_c->fields, iter, f) {
-			const char *name = f->name;
+			const char *name = r_bin_name_tostring2 (f->name, 'f');
 			if (grep) {
 				if (!r_str_casestr (name, grep)) {
 					i++;

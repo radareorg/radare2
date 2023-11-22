@@ -11504,21 +11504,21 @@ R_API void r_core_agraph_print(RCore *core, int use_utf, const char *input) {
 		r_agraph_foreach_edge (core->graph, agraph_print_edge, core);
 		break;
 	case 'J':
-	case 'j': {
-		PJ *pj = r_core_pj_new (core);
-		if (!pj) {
-			return;
+	case 'j': // "agj"
+		{
+			PJ *pj = r_core_pj_new (core);
+			if (R_LIKELY (pj)) {
+				pj_o (pj);
+				pj_k (pj, "nodes");
+				pj_a (pj);
+				r_agraph_print_json (core->graph, pj);
+				pj_end (pj);
+				pj_end (pj);
+				r_cons_println (pj_string (pj));
+				pj_free (pj);
+			}
 		}
-		pj_o (pj);
-		pj_k (pj, "nodes");
-		pj_a (pj);
-		r_agraph_print_json (core->graph, pj);
-		pj_end (pj);
-		pj_end (pj);
-		r_cons_println (pj_string (pj));
-		pj_free (pj);
-	break;
-		}
+		break;
 	case 'g':
 		r_cons_printf ("graph\n[\n"
 			       "hierarchic 1\n"
@@ -11616,14 +11616,15 @@ static void r_core_graph_print(RCore *core, RGraph /*<RGraphNodeInfo>*/ *graph, 
 				r_config_get (core->config, "graph.title"));
 			r_agraph_print (agraph);
 			break;
-		case 't': { // "ag_t" - tiny graph
-			agraph->is_tiny = true;
-			int e = r_config_get_i (core->config, "graph.edges");
-			r_config_set_i (core->config, "graph.edges", 0);
-			r_core_visual_graph (core, agraph, NULL, false);
-			r_config_set_i (core->config, "graph.edges", e);
+		case 't': // "ag_t" - tiny graph
+			{
+				agraph->is_tiny = true;
+				int e = r_config_get_i (core->config, "graph.edges");
+				r_config_set_i (core->config, "graph.edges", 0);
+				r_core_visual_graph (core, agraph, NULL, false);
+				r_config_set_i (core->config, "graph.edges", e);
+			}
 			break;
-		}
 		case 'k': // "ag_k"
 		{
 			Sdb *db = r_agraph_get_sdb (agraph);
@@ -11660,27 +11661,30 @@ static void r_core_graph_print(RCore *core, RGraph /*<RGraphNodeInfo>*/ *graph, 
 		}
 		break;
 	}
-	case 'd': { // "ag_d" - dot format
-		char *dot_text = print_graph_dot (core, graph);
-		if (dot_text) {
-			r_cons_print (dot_text);
-			free (dot_text);
+	case 'd': // "ag_d" - dot format
+		{
+			char *dot_text = print_graph_dot (core, graph);
+			if (dot_text) {
+				r_cons_print (dot_text);
+				free (dot_text);
+			}
 		}
 		break;
-	}
 	case '*': // "ag_*" -
 		print_graph_agg (graph);
 		break;
 	case 'J':
-	case 'j': {
-		PJ *pj = r_core_pj_new (core);
-		if (pj) {
-			r_graph_drawable_to_json (graph, pj, use_offset);
-			r_cons_println (pj_string (pj));
-			pj_free (pj);
+	case 'j': // "ag_j"
+		{
+			PJ *pj = r_core_pj_new (core);
+			if (pj) {
+				r_graph_drawable_to_json (graph, pj, use_offset);
+				r_cons_println (pj_string (pj));
+				pj_free (pj);
+			}
 		}
-	} break;
-	case 'g':
+		break;
+	case 'g': // "ag_j"
 		r_cons_printf ("graph\n[\n"
 			       "hierarchic 1\n"
 			       "label \"\"\n"
@@ -11765,9 +11769,8 @@ static inline bool fcn_siwtch_mermaid(RAnalBlock *b, RStrBuf *buf) {
 		RListIter *itt;
 		RAnalCaseOp *c;
 		r_list_foreach (b->switch_op->cases, itt, c) {
-			if (!r_strbuf_appendf (buf, "  _0x%" PFMT64x " --> _0x%" PFMT64x ": Case %" PFMT64d "\n", b->addr, c->addr, c->value)) {
-				return false;
-			}
+			r_strbuf_appendf (buf, "  _0x%" PFMT64x " --> _0x%" PFMT64x ": Case %" PFMT64d "\n",
+					b->addr, c->addr, c->value);
 		}
 	}
 	return true;
@@ -11853,11 +11856,16 @@ static void cmd_anal_graph(RCore *core, const char *input) {
 		case 'm': /// "agfm" // mermaid
 			cmd_graph_mermaid (core, input[2] == 'a');
 			break;
-		case ' ': { // "agf "
-			RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, 0);
-			r_core_visual_graph (core, NULL, fcn, false);
+		case ' ': // "agf "
+			{
+				RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, 0);
+				if (fcn) {
+					r_core_visual_graph (core, NULL, fcn, false);
+				} else {
+					R_LOG_ERROR ("No function at 0x%08"PFMT64x, core->offset);
+				}
+			}
 			break;
-		}
 		case 'v': // "agfv"
 		{
 			RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, R_ANAL_FCN_TYPE_ROOT);
@@ -11908,7 +11916,7 @@ static void cmd_anal_graph(RCore *core, const char *input) {
 			break;
 			}
 		case 'k':{ // "agfk"
-			r_core_cmdf (core, "ag-; .agf* @ %"PFMT64u"; aggk", core->offset);
+			r_core_cmdf (core, "ag-;.agf*@0x%"PFMT64x";aggk", core->offset);
 			break;
 			}
 		case '*':{// "agf*"
@@ -11918,7 +11926,7 @@ static void cmd_anal_graph(RCore *core, const char *input) {
 			}
 		case 'w': // "agfw"
 			 {
-				char *cmdargs = r_str_newf ("agfd @ 0x%"PFMT64x, core->offset);
+				char *cmdargs = r_str_newf ("agfd@0x%"PFMT64x, core->offset);
 				convert_dotcmd_to_image (core, cmdargs, input + 2);
 				free (cmdargs);
 			}
@@ -11985,33 +11993,35 @@ static void cmd_anal_graph(RCore *core, const char *input) {
 			break;
 		default:
 			core->graph->is_callgraph = true;
-			r_core_cmdf (core, "ag-; .agr* @ %"PFMT64u";", core->offset);
-			r_core_agraph_print(core, -1, input + 1);
+			r_core_cmdf (core, "ag-;.agr* @ %"PFMT64u";", core->offset);
+			r_core_agraph_print (core, -1, input + 1);
 			core->graph->is_callgraph = false;
 			break;
 		}
 		break;
 	case 'R': // "agR" global refs
 		switch (input[1]) {
-		case '*': {
-			ut64 from = r_config_get_i (core->config, "graph.from");
-			ut64 to = r_config_get_i (core->config, "graph.to");
-			RListIter *it;
-			RAnalFunction *fcn;
-			r_list_foreach (core->anal->fcns, it, fcn) {
-				if ((from == UT64_MAX && to == UT64_MAX) || R_BETWEEN (from, fcn->addr, to)) {
-					r_core_anal_coderefs (core, fcn->addr);
+		case '*':
+			{
+				ut64 from = r_config_get_i (core->config, "graph.from");
+				ut64 to = r_config_get_i (core->config, "graph.to");
+				RListIter *it;
+				RAnalFunction *fcn;
+				r_list_foreach (core->anal->fcns, it, fcn) {
+					if ((from == UT64_MAX && to == UT64_MAX) || R_BETWEEN (from, fcn->addr, to)) {
+						r_core_anal_coderefs (core, fcn->addr);
+					}
 				}
 			}
 			break;
+		default:
+			{
+				core->graph->is_callgraph = true;
+				r_core_cmdf (core, "ag-;.agR*;");
+				r_core_agraph_print(core, -1, input + 1);
+				core->graph->is_callgraph = false;
 			}
-		default: {
-			core->graph->is_callgraph = true;
-			r_core_cmdf (core, "ag-; .agR*;");
-			r_core_agraph_print(core, -1, input + 1);
-			core->graph->is_callgraph = false;
 			break;
-			}
 		}
 		break;
 	case 'x': {// "agx" cross refs
