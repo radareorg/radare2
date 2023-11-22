@@ -534,8 +534,9 @@ static void get_objc_property_list(RBinFile *bf, RBinClass *klass, mach0_ut p) {
 			}
 			if (bin->has_crypto) {
 				// TODO: better + shorter name
-				property->name = r_bin_name_new ("some_encrypted_data");
-				left = strlen (name) + 1;
+				const char k[] = "some_encrypted_data";
+				property->name = r_bin_name_new (k);
+				left = strlen (k) + 1;
 			} else {
 				char lname[MAX_CLASS_NAME_LEN];
 				size_t name_len = R_MIN (MAX_CLASS_NAME_LEN, left);
