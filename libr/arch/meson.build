@@ -166,6 +166,7 @@ r_arch_sources = [
   'p/avr/assemble.c',
   'p/8051/plugin.c',
   'p/dalvik/plugin.c',
+  'p/fslsp/plugin.c',
 ]
 
 if arch_plugins.contains('x86_nz')
