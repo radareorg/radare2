@@ -2413,7 +2413,8 @@ static inline ut64 fieldattr_j2r(ut32 ja) {
 R_API RBinField *r_bin_java_create_new_rbinfield_from_field(RBinJavaField *fm_type, ut64 baddr) {
 	RBinField *field = R_NEW0 (RBinField);
 	if (field) {
-		field->name = strdup (fm_type->name);
+		field->name = R_NEW0 (RBinName);
+		field->name->name = strdup (fm_type->name);
 		field->paddr = fm_type->file_offset + baddr;
 		field->attr = fieldattr_j2r (fm_type->flags);
 	}
