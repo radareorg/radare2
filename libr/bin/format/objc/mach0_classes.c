@@ -538,8 +538,8 @@ static void get_objc_property_list(RBinFile *bf, RBinClass *klass, mach0_ut p) {
 				property->name = r_bin_name_new (k);
 				left = strlen (k) + 1;
 			} else {
-				char lname[MAX_CLASS_NAME_LEN];
-				size_t name_len = R_MIN (MAX_CLASS_NAME_LEN, left);
+				char lname[MAX_CLASS_NAME_LEN] = {0};
+				size_t name_len = R_MIN (MAX_CLASS_NAME_LEN - 1, left);
 				if (r_buf_read_at (bf->buf, r, (ut8 *)lname, name_len) != name_len) {
 					goto error;
 				}
