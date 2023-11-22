@@ -108,7 +108,7 @@ static void classdump_keys(RCore *core, RBinObject *bo) {
 		r_list_foreach (k->fields, iter2, f) {
 			const char *kind = r_bin_field_kindstr (f);
 			r_cons_printf ("klass.%s.field.%s.%s=0x%"PFMT64x"\n",
-					k->name, kind, f->name,
+					k->name, kind, r_bin_name_tostring2 (f->name, 'f'),
 					iova? f->vaddr: f->paddr);
 		}
 		r_list_foreach (k->methods, iter2, m) {

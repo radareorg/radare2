@@ -776,19 +776,23 @@ static ut8 *get_classes(RCore *c, int *len) {
 }
 
 static ut8 *get_fields(RCore *c, int *len) {
-	RListIter *iter, *iter2;
+	r_return_val_if_fail (c, NULL);
+	const int pref = r_config_get_b (c->config, "asm.demangle")? 'd': 0;
 
-	if (!c || !len) {
+	if (!len) {
+		// uh?
 		return NULL;
 	}
 
 	RBinClass *klass;
 	const RList *list = r_bin_get_classes (c->bin);
 	RList *reslist = r_list_newf (free);
+	RListIter *iter, *iter2;
 	r_list_foreach (list, iter, klass) {
 		RBinField *field;
 		r_list_foreach (klass->fields, iter2, field) {
-			r_list_append (reslist, r_str_newf ("%s.%s", klass->name, field->name));
+			const char *fname = r_bin_name_tostring2 (field->name, pref);
+			r_list_append (reslist, r_str_newf ("%s.%s", klass->name, fname));
 		}
 	}
 	r_list_sort (reslist, (RListComparator)strcmp);

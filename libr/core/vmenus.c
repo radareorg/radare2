@@ -1230,7 +1230,7 @@ static void *show_class(RCore *core, int mode, int *idx, RBinClass *_c, const ch
 		// show fields
 		r_cons_printf ("[hjkl_/cFm]> fields of %s:\n\n", _c->name);
 		r_list_foreach (_c->fields, iter, f) {
-			const char *name = f->name;
+			const char *name = r_bin_name_tostring2 (f->name, 'f');
 			if (grep) {
 				if (!r_str_casestr (name, grep)) {
 					i++;

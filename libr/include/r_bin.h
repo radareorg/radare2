@@ -591,7 +591,9 @@ typedef void (*RBinSymbollCallback)(RBinObject *obj, void *symbol);
 
 typedef struct r_bin_class_t {
 	char *name; // must be deprecated and use bname only
-	RBinName *bname; // R2_590
+#if R2_590
+	RBinName *name;
+#endif
 	RList *super; // list of RBinName
 	char *visibility_str; // XXX R2_590 - only used by dex+java should be ut32 or bitfield.. should be usable for swift too
 	int index; // should be unsigned?
@@ -657,9 +659,9 @@ typedef struct r_bin_field_t {
 	int size;
 	int offset;
 	// ut32 visibility; // R2_590 - deprecate we have attr!
-#if 0
-	RBinName *type;
+#if 1
 	RBinName *name;
+	RBinName *type;
 #else
 	char *name;
 	char *type;
@@ -891,6 +893,7 @@ R_API RBinName *r_bin_name_new(const char *name);
 R_API char *r_bin_name_tostring(RBinName *bn);
 R_API char *r_bin_name_tostring2(RBinName *bn, int type);
 R_API void r_bin_name_demangled(RBinName *bn, const char *dname);
+R_API void r_bin_name_filtered(RBinName *bn, const char *fname);
 R_API void r_bin_name_free(RBinName *bn);
 
 R_API char *r_bin_attr_tostring(ut64 attr, bool singlechar);

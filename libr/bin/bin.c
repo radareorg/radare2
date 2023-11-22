@@ -1383,7 +1383,7 @@ R_API void r_bin_load_filter(RBin *bin, ut64 rules) {
 R_API RBinField *r_bin_field_new(ut64 paddr, ut64 vaddr, int size, const char *name, const char *comment, const char *format, bool format_named) {
 	RBinField *ptr = R_NEW0 (RBinField);
 	if (ptr) {
-		ptr->name = strdup (name);
+		ptr->name = r_bin_name_new (name);
 		ptr->comment = R_STR_ISNOTEMPTY (comment)? strdup (comment): NULL;
 		ptr->format = R_STR_ISNOTEMPTY (format)? strdup (format): NULL;
 		ptr->format_named = format_named;
@@ -1482,9 +1482,16 @@ R_API const char *r_bin_field_kindstr(RBinField *f) {
 R_API RBinName *r_bin_name_new(const char *name) {
 	r_return_val_if_fail (name, NULL);
 	RBinName *bn = R_NEW0 (RBinName);
-	bn->oname = strdup (name);
-	// oname and dname
+	if (R_LIKELY (bn)) {
+		bn->oname = strdup (name);
+	}
 	return bn;
+}
+
+R_API void r_bin_name_filtered(RBinName *bn, const char *fname) {
+	r_return_if_fail (bn && fname);
+	free (bn->fname);
+	bn->fname = strdup (fname);
 }
 
 R_API void r_bin_name_demangled(RBinName *bn, const char *dname) {
@@ -1513,11 +1520,14 @@ R_API char *r_bin_name_tostring2(RBinName *bn, int type) {
 	r_return_val_if_fail (bn, NULL);
 	if (type == 'd' && bn->name) {
 		return bn->name;
-	}
-	if (type == 'f' && bn->fname) {
-		return bn->fname;
-	}
-	if (type == 'o' && bn->oname) {
+	} else if (type == 'f' && bn->fname) {
+		if (bn->fname) {
+			return bn->fname;
+		}
+		// is this the best way to flaggify a string?
+		bn->fname = r_name_filter_quoted_shell (r_bin_name_tostring (bn));
+		r_name_filter (bn->fname, -1);
+	} else if (type == 'o' && bn->oname) {
 		return bn->oname;
 	}
 	return r_bin_name_tostring (bn);
