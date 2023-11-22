@@ -5535,6 +5535,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 		xrefs_only = true;
 		ntarget = core->offset;
 		refptr = 0LL;
+		target = NULL;
 	} else if (target) {
 		const char *expr = r_str_trim_head_ro (target);
 		if (*expr) {

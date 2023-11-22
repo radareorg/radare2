@@ -13620,35 +13620,43 @@ static int cmd_anal_all(RCore *core, const char *input) {
 		} else {
 			const bool only_xrefs = input[1] == 'x';
 			ut64 at = core->offset;
-			RIOMap *map;
-			RListIter *iter;
-			RList *list = r_core_get_boundaries_prot (core, -1, NULL, "anal");
-			if (!list) {
-				break;
-			}
-			const char *target = only_xrefs? "+x": NULL;
-			const char *anal_in = r_config_get (core->config, "anal.in");
-			if (!strcmp ("range", anal_in) || !strcmp ("raw", anal_in)) {
-				ut64 from = r_config_get_i (core->config, "anal.from");
-				ut64 to = r_config_get_i (core->config, "anal.to");
-				if (to > from) {
-					char *len = r_str_newf (" 0x%"PFMT64x, to - from);
-					r_core_seek (core, from, true);
-					r_core_anal_esil (core, len, target);
-					free (len);
-				} else {
-					R_LOG_ERROR ("anal.from can't be past anal.to");
-				}
+			if (only_xrefs && input[2] == ' ') { // "aaex len"
+				char *arg = r_str_trim_dup (input + 2);
+				const char *len = (char *)arg;
+				r_core_cmd0 (core, "aeim");
+				r_core_anal_esil (core, len, "+x");
+				free (arg);
 			} else {
-				r_list_foreach (list, iter, map) {
-					if (map->perm & R_PERM_X) {
-						char *ss = r_str_newf (" 0x%"PFMT64x, r_io_map_size (map));
-						r_core_seek (core, r_io_map_begin (map), true);
-						r_core_anal_esil (core, ss, target);
-						free (ss);
-					}
+				RIOMap *map;
+				RListIter *iter;
+				RList *list = r_core_get_boundaries_prot (core, -1, NULL, "anal");
+				if (!list) {
+					break;
 				}
-				r_list_free (list);
+				const char *target = only_xrefs? "+x": NULL;
+				const char *anal_in = r_config_get (core->config, "anal.in");
+				if (!strcmp ("range", anal_in) || !strcmp ("raw", anal_in)) {
+					ut64 from = r_config_get_i (core->config, "anal.from");
+					ut64 to = r_config_get_i (core->config, "anal.to");
+					if (to > from) {
+						char *len = r_str_newf (" 0x%"PFMT64x, to - from);
+						r_core_seek (core, from, true);
+						r_core_anal_esil (core, len, target);
+						free (len);
+					} else {
+						R_LOG_ERROR ("anal.from can't be past anal.to");
+					}
+				} else {
+					r_list_foreach (list, iter, map) {
+						if (map->perm & R_PERM_X) {
+							char *ss = r_str_newf (" 0x%"PFMT64x, r_io_map_size (map));
+							r_core_seek (core, r_io_map_begin (map), true);
+							r_core_anal_esil (core, ss, target);
+							free (ss);
+						}
+					}
+					r_list_free (list);
+				}
 			}
 			r_core_seek (core, at, true);
 		}
