@@ -98,6 +98,12 @@ R_API char *r_str_trim_dup(const char *str) {
 	return a;
 }
 
+R_API char *r_str_trim_ndup(const char *str, size_t n) {
+	char *a = r_str_ndup (str, n);
+	r_str_trim (a);
+	return a;
+}
+
 // Returns a pointer to the first non-whitespace character of str.
 // TODO: Find a better name: to r_str_trim_head_ro(), r_str_skip_head or so
 R_API const char *r_str_trim_head_ro(const char *str) {

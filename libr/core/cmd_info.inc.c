@@ -799,7 +799,7 @@ static int cmd_info(void *data, const char *input) {
 			cmd_info (core, cmd);
 			cmd[1] = arg;
 			cmd[2] = 0;
-			const char *subcmds = "iIeEcsSmz";
+			const char *subcmds = "ieEcsSmz";
 			while (*subcmds) {
 				cmd[0] = *subcmds;
 				if (mode == R_MODE_JSON) {
@@ -1271,7 +1271,7 @@ static int cmd_info(void *data, const char *input) {
 				RBININFO ("dwarf", R_CORE_BIN_ACC_DWARF, NULL, -1);
 			}
 			break;
-		case 'I': // "iI"
+		case 'I': // "iI" -- dupe of "i"
 			  {
 				  RList *objs = r_core_bin_files (core);
 				  RListIter *iter;

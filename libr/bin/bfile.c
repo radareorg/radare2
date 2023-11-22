@@ -401,6 +401,8 @@ static int string_scan_range(RList *list, RBinFile *bf, int min, const ut64 from
 			bs->string = r_str_ndup ((const char *)tmp, i); // Use stringviews to save memory
 			if (strings_nofp) {
 				r_str_trim (bs->string); // trim spaces to ease readability
+			} else {
+				r_str_trim_tail (bs->string);
 			}
 			if (list) {
 				r_list_append (list, bs);

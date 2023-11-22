@@ -182,6 +182,7 @@ R_API void r_str_trim_emptylines(char *str);
 R_API int r_str_ntrim(char *str, int n);
 R_API char *r_str_wrap(const char *str, int w);
 R_API char *r_str_trim_dup(const char *str);
+R_API char *r_str_trim_ndup(const char *str, size_t n);
 R_API char *r_str_trim_lines(char *str);
 R_API void r_str_trim_head(char *str);
 R_API const char *r_str_trim_head_ro(const char *str);
