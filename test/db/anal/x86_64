@@ -2209,10 +2209,10 @@ e anal.arch = x86
 e scr.color=false
 e scr.wheel = false
 aa
-axt @ str.Password:_
+axt @ str.Password:
 EOF
 EXPECT=<<EOF
-main 0x804843c [DATA:-w-] mov dword [esp], str.Password:_
+main 0x804843c [DATA:-w-] mov dword [esp], str.Password:
 EOF
 RUN
 
@@ -2404,7 +2404,7 @@ axt 0x00001e09
 EOF
 EXPECT=<<EOF
 main 0x1457 [STRN:r--] lea eax, str._Take_the_Red_Pill____n
-main 0x148e [STRN:r--] lea eax, str._use:_._exploit1_PILL_
+main 0x148e [STRN:r--] lea eax, str._use:_._exploit1_PILL
 main 0x14eb [STRN:r--] lea eax, str._____Red_Pill__0x50444552
 main 0x1502 [STRN:r--] lea eax, str._____Your_Pill_0x_08x_n
 main 0x1523 [STRN:r--] lea eax, str._n__Red_Pill

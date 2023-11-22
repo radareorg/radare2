@@ -280,7 +280,7 @@ EXPECT=<<EOF
 0x1000053e0    3     20 sub.err_1000053e0
 0x1000053f4    1     16 sym.func.1000053f4
 0x100005404   12    212 sub.total__qu_n_100005404
-0x1000054d8   13    292 sub._ju__1000054d8
+0x1000054d8   13    292 sub._ju_1000054d8
 0x1000055fc    5     60 sym.func.1000055fc
 0x100005638   82   1840 sub.total__qu_n_100005638
 0x100005d68    6    156 sub.humanize_number_100005d68
@@ -425,7 +425,7 @@ EXPECT=<<EOF
 0x1000053e0    3     20 sub.err_1000053e0
 0x1000053f4    1     16 sym.func.1000053f4
 0x100005404   12    212 sub.total__qu_n_100005404
-0x1000054d8   13    292 sub._ju__1000054d8
+0x1000054d8   13    292 sub._ju_1000054d8
 0x1000055fc    5     60 sym.func.1000055fc
 0x100005638   82   1840 sub.total__qu_n_100005638
 0x100005d68    6    156 sub.humanize_number_100005d68

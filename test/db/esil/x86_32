@@ -1205,7 +1205,7 @@ pd 1 @ 0x1523
 EOF
 EXPECT=<<EOF
             0x00001557      lea eax, [esi - 0x220c]                    ; "  fwhibbit{" str.__fwhibbit
-            0x000011c0      lea eax, [ebx - 0x2448]                    ; "   -os--/sosdmmNNMMNy         .+// " str.____os___sosdmmNNMMNy_________.___
+            0x000011c0      lea eax, [ebx - 0x2448]                    ; "   -os--/sosdmmNNMMNy         .+// " str.____os___sosdmmNNMMNy_________.__
             0x00001523      lea eax, [esi - 0x2218]                    ; "\n  Red Pill" str._n__Red_Pill
 EOF
 RUN
