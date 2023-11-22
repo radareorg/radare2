@@ -754,6 +754,37 @@ static int cmd_info(void *data, const char *input) {
 	if (space && (*space == ' ' || *space == ',')) {
 		core->table_query = r_str_trim_dup (space + 1);
 	}
+
+#define RBININFO(n,x,y,z)\
+	if (is_array) {\
+		pj_k (pj, n);\
+	}\
+	if (z) { playMsg (core, n, z);}\
+	r_core_bin_info (core, x, pj, mode, va, NULL, y);
+
+	switch (input[0]) {
+	case 'i': // "ii"
+		if (input[1] == 'c') { // "iic"
+			cmd_iic (core, 0); // TODO: support json, etc
+			return true;
+		} else {
+			RList *objs = r_core_bin_files (core);
+			RListIter *iter;
+			RBinFile *bf;
+			RBinFile *cur = core->bin->cur;
+			r_list_foreach (objs, iter, bf) {
+				RBinObject *obj = bf->bo;
+				core->bin->cur = bf;
+				int amount = (obj && obj->imports)? r_list_length (obj->imports): 0;
+				RBININFO ("imports", R_CORE_BIN_ACC_IMPORTS, NULL, amount);
+			}
+			core->bin->cur = cur;
+			r_list_free (objs);
+		}
+		goto done;
+		break;
+	}
+	// TODO: slowly deprecate the loopy subcommands in here
 	while (*input) {
 		const char ch = *input;
 		if (ch == ' ') {
@@ -825,12 +856,6 @@ static int cmd_info(void *data, const char *input) {
 			r_core_bin_load (core, fn, baddr);
 		}
 		break;
-#define RBININFO(n,x,y,z)\
-	if (is_array) {\
-		pj_k (pj, n);\
-	}\
-	if (z) { playMsg (core, n, z);}\
-	r_core_bin_info (core, x, pj, mode, va, NULL, y);
 		case 'A': // "iA"
 			if (input[1] == 'j') {
 				pj_o (pj);
@@ -1213,25 +1238,6 @@ static int cmd_info(void *data, const char *input) {
 				input++;
 			} else { // "id"
 				RBININFO ("dwarf", R_CORE_BIN_ACC_DWARF, NULL, -1);
-			}
-			break;
-		case 'i': // "ii"
-			if (input[1] == 'c') { // "iic"
-				cmd_iic (core, 0); // TODO: support json, etc
-				return true;
-			} else {
-				RList *objs = r_core_bin_files (core);
-				RListIter *iter;
-				RBinFile *bf;
-				RBinFile *cur = core->bin->cur;
-				r_list_foreach (objs, iter, bf) {
-					RBinObject *obj = bf->bo;
-					core->bin->cur = bf;
-					int amount = (obj && obj->imports)? r_list_length (obj->imports): 0;
-					RBININFO ("imports", R_CORE_BIN_ACC_IMPORTS, NULL, amount);
-				}
-				core->bin->cur = cur;
-				r_list_free (objs);
 			}
 			break;
 		case 'I': // "iI"
