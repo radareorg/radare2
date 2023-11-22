@@ -27,6 +27,7 @@ static RCoreHelpMessage help_detail_tilde = {
 	" &",        "", "all words must match to grep the line",
 	" $[n]",     "", "sort numerically / alphabetically the Nth column",
 	" $",        "", "sort in alphabetic order",
+	" $$",       "", "sort + uniq",
 	" $!",       "", "inverse alphabetical sort",
 	" $!!",      "", "reverse the lines (like the `tac` tool)",
 	" ,",        "", "token to define another keyword",
@@ -199,6 +200,8 @@ R_API void r_cons_grep_expression(const char *str) {
 					}
 					grep->sort_invert = true;
 					ptr++;
+				} else if (*ptr == '$') {
+					grep->sort_uniq = true;
 				} else {
 					grep->sort_invert = false;
 				}
@@ -559,6 +562,10 @@ static bool gron(RStrBuf *sb, RJson *node, const char *root) {
 	return true;
 }
 
+static inline ut64 cmpstrings(const void *a) {
+	return r_str_hash64 (a);
+}
+
 R_API void r_cons_grepbuf(void) {
 	RCons *cons = r_cons_singleton ();
 	const char *buf = cons->context->buffer;
@@ -885,7 +892,7 @@ continuation:
 
 	if (grep->sort != -1 || grep->sort_invert) {
 #define INSERT_LINES(list)\
-		do {\
+		if (list) {\
 			r_list_foreach (list, iter, str) {\
 				int slen = strlen (str);\
 				memcpy (ptr, str, slen);\
@@ -893,8 +900,7 @@ continuation:
 				ptr += slen + 1;\
 				nl++;\
 			}\
-		}\
-		while (false)
+		}
 
 		RListIter *iter;
 		int nl = 0;
@@ -909,8 +915,16 @@ continuation:
 		if (grep->sort_invert) {
 			r_list_reverse (ctx->sorted_lines);
 		}
+		if (grep->sort_uniq) {
+			r_list_uniq_inplace (ctx->sorted_lines, cmpstrings);
+			r_list_free (ctx->unsorted_lines);
+			ctx->unsorted_lines = NULL;
+			nl = 0;
+		}
+		cons->context->buffer_len = 0;
 		INSERT_LINES (ctx->unsorted_lines);
 		INSERT_LINES (ctx->sorted_lines);
+		cons->context->buffer_len = (ptr - cons->context->buffer);
 		cons->lines = nl;
 		r_list_free (ctx->sorted_lines);
 		ctx->sorted_lines = NULL;
