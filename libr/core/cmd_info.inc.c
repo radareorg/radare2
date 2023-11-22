@@ -98,22 +98,24 @@ static void pair(const char *a, const char *b) {
 }
 
 static void classdump_keys(RCore *core, RBinObject *bo) {
+	const int pref = r_config_get_b (r->config, "asm.demangle")? 'd': 0;
 	const bool iova = r_config_get_b (core->config, "io.va");
 	RBinClass *k;
 	RBinField *f;
 	RBinSymbol *m;
 	RListIter *iter, *iter2;
 	r_list_foreach (bo->classes, iter, k) {
+		const char *kname = r_bin_name_tostring (k->name, pref);
 		r_list_foreach (k->fields, iter2, f) {
 			const char *kind = r_bin_field_kindstr (f);
 			r_cons_printf ("klass.%s.field.%s.%s=0x%"PFMT64x"\n",
-					k->name, kind, r_bin_name_tostring2 (f->name, 'f'),
+					kname, kind, r_bin_name_tostring2 (f->name, 'f'),
 					iova? f->vaddr: f->paddr);
 		}
 		r_list_foreach (k->methods, iter2, m) {
 			char *attr = r_bin_attr_tostring (m->attr, true);
 			r_cons_printf ("klass.%s.method.%s.%s=0x%"PFMT64x"\n",
-					k->name, r_str_get (attr), m->name,
+					kname, r_str_get (attr), m->name,
 					iova? m->vaddr: m->paddr);
 			free (attr);
 		}

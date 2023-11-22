@@ -931,7 +931,7 @@ static void findMethodBounds(RList *methods, ut64 *min, ut64 *max) {
 	ut64 at_max = 0LL;
 
 	r_list_foreach (methods, iter, sym) {
-		if (sym->vaddr) {
+		if (sym->vaddr && sym->vaddr != UT64_MAX) {
 			if (sym->vaddr < at_min) {
 				at_min = sym->vaddr;
 			}
@@ -950,9 +950,6 @@ static ut64 findClassBounds(RCore *core, const char *input, int *len) {
 	RBinClass *c;
 	RList *cs = r_bin_get_classes (core->bin);
 	r_list_foreach (cs, iter, c) {
-		if (!c || !c->name || !c->name[0]) {
-			continue;
-		}
 		findMethodBounds (c->methods, &min, &max);
 		if (len) {
 			*len = (max - min);
@@ -963,8 +960,7 @@ static ut64 findClassBounds(RCore *core, const char *input, int *len) {
 }
 
 static void cmd_pCD(RCore *core, const char *input) {
-	int h, w = r_cons_get_size (&h);
-	int i;
+	int i, h, w = r_cons_get_size (&h);
 	int rows = h - 2;
 	int obsz = core->blocksize;
 	int user_rows = r_num_math (core->num, input);
