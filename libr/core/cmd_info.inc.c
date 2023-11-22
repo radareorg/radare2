@@ -766,7 +766,6 @@ static int cmd_info(void *data, const char *input) {
 	case 'i': // "ii"
 		if (input[1] == 'c') { // "iic"
 			cmd_iic (core, 0); // TODO: support json, etc
-			return true;
 		} else {
 			RList *objs = r_core_bin_files (core);
 			RListIter *iter;
@@ -780,6 +779,38 @@ static int cmd_info(void *data, const char *input) {
 			}
 			core->bin->cur = cur;
 			r_list_free (objs);
+		}
+		goto done;
+		break;
+	case 'a': // "ia"
+		{
+			int arg = 0;
+			switch (mode) {
+			case R_MODE_RADARE: arg = '*'; break;
+			case R_MODE_SIMPLE: arg = 'q'; break;
+			case R_MODE_JSON:
+				r_cons_printf ("{\"i\":");
+				arg = 'j';
+				break;
+			}
+			char cmd[8];
+			cmd[0] = arg;
+			cmd[1] = 0;
+			cmd_info (core, cmd);
+			cmd[1] = arg;
+			cmd[2] = 0;
+			const char *subcmds = "iIeEcsSmz";
+			while (*subcmds) {
+				cmd[0] = *subcmds;
+				if (mode == R_MODE_JSON) {
+					r_cons_printf (",\"i%c\":", *subcmds);
+				}
+				cmd_info (core, cmd);
+				subcmds++;
+			}
+			if (mode == R_MODE_JSON) {
+				r_cons_println ("}");
+			}
 		}
 		goto done;
 		break;
@@ -1711,14 +1742,6 @@ static int cmd_info(void *data, const char *input) {
 				r_core_cmd_help_match (core, help_msg_i, "iD");
 			}
 			return 0;
-		case 'a': // "ia"
-			switch (mode) {
-			case R_MODE_RADARE: cmd_info (core, "IieEcsSmz*"); break;
-			case R_MODE_JSON: cmd_info (core, "IieEcsSmzj"); break;
-			case R_MODE_SIMPLE: cmd_info (core, "IieEcsSmzq"); break;
-			default: cmd_info (core, "IiEecsSmz"); break;
-			}
-			break;
 		case '?': // "i?"
 			if (input[1] == 'j') {
 				r_cons_cmd_help_json (help_msg_i);
