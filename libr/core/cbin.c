@@ -3516,7 +3516,7 @@ static void classdump_c(RCore *r, RBinClass *c) {
 	r_list_foreach (c->fields, iter2, f) {
 		if (f->name) {
 			const char *fn = r_bin_name_tostring2 (f->name, pref);
-			const char *ft = r_bin_name_tostring2 (f->type, pref);
+			const char *ft = f->type? r_bin_name_tostring2 (f->type, pref): NULL;
 			char *n = objc_name_toc (fn);
 			char *t = ft? objc_type_toc (ft): NULL;
 			if (f->offset < 32 && !t) {

@@ -274,12 +274,15 @@ typedef struct r_bin_info_t {
 
 typedef struct r_bin_symbol_t {
 	/* heap-allocated */
+#if R2_590
+	RBinName *name; // R2_590
+	RBinName *classname; // R2_590
+#else
 	char *name; // deprecate and use bname
 	char *dname; // deprecate and use bname
-	char *libname;
 	char *classname;
-	RBinName *bname; // R2_590
-	RBinName *cname; // R2_590
+#endif
+	char *libname;
 	/* const-unique-strings */
 	const char *forwarder;
 	const char *bind; // tied to attr already
