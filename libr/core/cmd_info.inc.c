@@ -729,7 +729,7 @@ static void cmd_icg(RCore *core, RBinObject *obj, const char *arg) { // "icg"
 	r_core_bin_info (core, x, pj, mode, va, NULL, y);
 
 static void cmd_ic(RCore *core, const char *input, PJ *pj, int is_array, bool va) {
-	const int cmd = input[0];
+	int cmd = input[0];
 	int mode = 0;
 	const char *arg = input + 2;
 	const char *lastchar = strchr (input, ' ');
@@ -748,10 +748,16 @@ static void cmd_ic(RCore *core, const char *input, PJ *pj, int is_array, bool va
 	case 'Q': // quieter
 	case ',':
 		mode = *lastchar;
+		if (cmd == *lastchar) {
+			cmd = 0;
+		}
 		break;
 	default:
 		mode = 0;
 		break;
+	}
+	if (mode == ',') {
+		cmd_ic_comma (core, input);
 	}
 	bool is_superquiet = strstr (input, "qq");
 	bool is_doublerad = strstr (input, "**");
@@ -773,11 +779,11 @@ static void cmd_ic(RCore *core, const char *input, PJ *pj, int is_array, bool va
 	case '.': // "ic."
 	case 's': // "ics"
 	case 'g': // "icg"
-	case 'q': // "icq"
 	case 'j': // "icj"
 	case 'l': // "icl"
 	case 'c': // "icc"
 	case '*': // "ic*"
+	case 0: // "ic" "icq"
 		{
 			const bool iova = r_config_get_b (core->config, "io.va");
 			RListIter *objs_iter;
@@ -909,6 +915,7 @@ static void cmd_ic(RCore *core, const char *input, PJ *pj, int is_array, bool va
 				case 0: // "ic"
 				default:
 					{
+						eprintf ("pea\n");
 					int count = 0;
 					r_list_foreach (obj->classes, iter, cls) {
 						if ((idx >= 0 && idx != count++) || (R_STR_ISNOTEMPTY (cls_name) && strcmp (cls_name, cls->name))) {
@@ -964,6 +971,24 @@ static void cmd_ic(RCore *core, const char *input, PJ *pj, int is_array, bool va
 							}
 							pj_end (pj);
 							break;
+						case 'q':
+							{
+								RList *objs = r_core_bin_files (core);
+								RListIter *iter;
+								RBinFile *bf;
+								RBinFile *cur = core->bin->cur;
+								r_list_foreach (objs, iter, bf) {
+									core->bin->cur = bf;
+									RBinObject *obj = bf->bo;
+									if (obj && obj->classes) {
+										size_t len = r_list_length (obj->classes);
+										int mode = R_MODE_SIMPLE;
+										RBININFO ("classes", R_CORE_BIN_ACC_CLASSES, NULL, len);
+									}
+								}
+								core->bin->cur = cur;
+							}
+							break;
 						default:
 							r_cons_printf ("class %s\n", cls->name);
 							r_list_foreach (cls->methods, iter2, sym) {
@@ -982,30 +1007,6 @@ static void cmd_ic(RCore *core, const char *input, PJ *pj, int is_array, bool va
 				core->bin->cur = cur;
 			}
 			break;
-		case 0:
-			eprintf ("ZERO\n");
-			switch (mode) {
-			case ',':
-				cmd_ic_comma (core, input);
-				break;
-			default:
-				{
-				RList *objs = r_core_bin_files (core);
-				RListIter *iter;
-				RBinFile *bf;
-				RBinFile *cur = core->bin->cur;
-				r_list_foreach (objs, iter, bf) {
-					core->bin->cur = bf;
-					RBinObject *obj = bf->bo;
-					if (obj && obj->classes) {
-						int len = r_list_length (obj->classes);
-						RBININFO ("classes", R_CORE_BIN_ACC_CLASSES, NULL, len);
-					}
-				}
-				core->bin->cur = cur;
-				}
-				break;
-			}
 		}
 	}
 }
@@ -1029,6 +1030,7 @@ static int cmd_info(void *data, const char *input) {
 	}
 	int mode = 0;
 #if 1
+	// advance input until theres a space.. maybe not needed
 	for (i = 0; input[i] && input[i] != ' '; i++)
 		;
 	if (i > 0) {
@@ -1036,6 +1038,7 @@ static int cmd_info(void *data, const char *input) {
 		case '*': mode = R_MODE_RADARE; break;
 		case 'j': mode = R_MODE_JSON; break;
 		case 'q': mode = R_MODE_SIMPLE; break;
+		case 'k': mode = R_MODE_KV; break;
 		}
 	}
 #endif

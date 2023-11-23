@@ -28,8 +28,9 @@
 #define R_MODE_JSON 0x008
 #define R_MODE_ARRAY 0x010
 #define R_MODE_SIMPLEST 0x020
-#define R_MODE_CLASSDUMP 0x040
+#define R_MODE_CLASSDUMP 0x040 /* deprecate maybe */
 #define R_MODE_EQUAL 0x080
+#define R_MODE_KV 0x100
 
 #define R_IN /* do not use, implicit */
 #define R_OUT /* parameter is written, not read */

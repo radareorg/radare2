@@ -4145,7 +4145,10 @@ RUN
 
 NAME=ibk use after free
 FILE=bins/elf/analysis/x86-helloworld-gcc
-CMDS=ibk info/*~?elf.relro
+CMDS=<<EOF
+ib
+ik info/*~?elf.relro
+EOF
 EXPECT=<<EOF
 1
 EOF
@@ -4829,7 +4832,7 @@ NAME=icq (file Java)
 FILE=bins/java/Hello.class
 CMDS=icq
 EXPECT=<<EOF
-Hello
+0x00000000 [0x0000022b - 0x000002aa] java Hello java/lang/Object
 EOF
 RUN
 
