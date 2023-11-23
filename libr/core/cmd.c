@@ -4270,6 +4270,29 @@ escape_pipe:
 
 	ptr = strstr (cmd, "?*");
 	if (ptr && (ptr == cmd || ptr[-1] != '~')) {
+		char *pipechar = strchr (ptr, '>');
+		if (pipechar) {
+			*pipechar++ = 0;
+			const bool appendResult = *pipechar == '>';
+			const char *pipefile = r_str_trim_head_ro (appendResult? pipechar + 1: pipechar);
+			int pipefd = r_cons_pipe_open (pipefile, 1, appendResult);
+			if (pipefd != -1) {
+				int scr_color = -1;
+				bool pipecolor = r_config_get_b (core->config, "scr.color.pipe");
+				if (!pipecolor) {
+					scr_color = r_config_get_i (core->config, "scr.color");
+					r_config_set_i (core->config, "scr.color", COLOR_MODE_DISABLED);
+				}
+				ret = r_core_cmd_subst (core, cmd);
+				r_cons_flush ();
+				close (pipefd);
+				r_cons_pipe_close (pipefd);
+				if (!pipecolor) {
+					r_config_set_i (core->config, "scr.color", scr_color);
+				}
+			}
+			return ret;
+		}
 		ptr[0] = 0;
 		if (*cmd != '#') {
 			int detail = 0;

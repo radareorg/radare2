@@ -39,7 +39,7 @@ R_API int r_cons_pipe_open(const char *file, int fdn, int append) {
 	const int fd_flags = O_BINARY | O_RDWR | O_CREAT | (append? O_APPEND: O_TRUNC);
 	int fd = r_sandbox_open (targetFile, fd_flags, 0644);
 	if (fd == -1) {
-		R_LOG_ERROR ("Cannot open file '%s'", file);
+		R_LOG_ERROR ("ConsPipe cannot open file '%s'", file);
 		free (targetFile);
 		return -1;
 	}
