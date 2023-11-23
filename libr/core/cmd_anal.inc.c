@@ -4,7 +4,8 @@
 
 #define MAX_SCAN_SIZE 0x7ffffff
 
-R_VEC_TYPE(RVecUT64, ut64);
+R_VEC_TYPE (RVecUT64, ut64);
+R_VEC_TYPE (RVecAddr, ut64); // DUPE
 
 static RCoreHelpMessage help_msg_af_plus = {
 	"Usage:", "af+", " [addr] ([name] ([type] [diff]))",
@@ -645,6 +646,7 @@ static RCoreHelpMessage help_msg_afl = {
 	"afl.", "", "display function in current offset (see afi.)",
 	"afl+", "", "display sum all function sizes",
 	"afl=", "", "display ascii-art bars with function ranges",
+	"afla", "", "reverse call order (useful for afna and noret, also see afba)",
 	"aflc", "", "count of functions",
 	"aflj", "", "list functions in json",
 	"aflt", " [query]", "list functions in table format",
@@ -1941,8 +1943,8 @@ static int var_cmd(RCore *core, const char *str) {
 			return false;
 		}
 	case 'b': // "afvb"
-	case 's': // "afbs"
-	case 'r': // "afbr"
+	case 'r': // "afvr"
+	case 's': // "afvs"
 		break;
 	default:
 		if (str[0]) {
@@ -4025,6 +4027,99 @@ static void abo(RCore *core) {
 	}
 }
 
+#if 0
+typedef struct {
+	RCore *core;
+	RVecAddr *togo;
+	bool inloop;
+} ReverseCallData;
+
+static bool afba_leafs(void *user, const ut64 addr, const void *data) {
+	ReverseCallData *rcd = (ReverseCallData*)user;
+	RVecAddr *va = (RVecAddr *)data;
+	if (RVecAddr_empty (va)) {
+		r_cons_printf ("0x%08"PFMT64x"\n", addr);
+		RVecAddr_push_back (rcd->togo, &addr);
+	}
+	return true;
+}
+
+static bool afba_purge(void *user, const ut64 key, const void *val) {
+	ut64 *v, *v2;
+	ReverseCallData *rcd = (ReverseCallData*)user;
+	RVecAddr *va = (RVecAddr *)val;
+	rcd->inloop = true;
+	int index = 0;
+repeat:
+	index = 0;
+	R_VEC_FOREACH (va, v) {
+		R_VEC_FOREACH (rcd->togo, v2) {
+			if (*v == *v2) {
+				RVecAddr_remove (va, index);
+				goto repeat;
+			}
+		}
+		index++;
+	}
+	return true;
+}
+
+static void cmd_afba(RCore *core, const char *input) {
+	RListIter *iter;
+	RAnalRef *xref;
+	RAnalFunction *fcn;
+	HtUP *ht = ht_up_new0 ();
+	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, xref->addr, 0);
+	RVecAddr *unrefed = RVecAddr_new ();
+	RAnalBlock *bb;
+	r_list_foreach (fcn->bbs, iter, bb) {
+		RVecAnalRef *xrefs = r_anal_xrefs_get (core->anal, fcn->addr);
+		if (!xrefs) {
+			RVecAddr_push_back (unrefed, &fcn->addr);
+			continue;
+		}
+		R_VEC_FOREACH (xrefs, xref) {
+			RAnalFunction *ff = r_anal_get_fcn_in (core->anal, xref->addr, 0);
+			if (!ff) {
+				R_LOG_DEBUG ("unknown function for ref");
+				continue;
+			}
+			const ut64 k = ff->addr;
+			const ut64 v = fcn->addr;
+			RVecAddr *va0 = ht_up_find (ht, v, NULL);
+			if (!va0) {
+				va0 = RVecAddr_new ();
+				ht_up_insert (ht, v, va0);
+			}
+			RVecAddr *va = ht_up_find (ht, k, NULL);
+			if (!va) {
+				va = RVecAddr_new ();
+				ht_up_insert (ht, k, va);
+			}
+			RVecAddr_push_back (va, &v);
+		}
+	}
+	// first entries that have no xrefs .. wtf .. maybe this must be ignored? its main?
+	ut64 *v;
+	RVecAddr_free (unrefed);
+	ReverseCallData rcd = {
+		.core = core,
+		.togo = RVecAddr_new (),
+		.inloop = true
+	};
+	do {
+		ht_up_foreach (ht, afba_leafs, &rcd);
+		rcd.inloop = false;
+		ht_up_foreach (ht, afba_purge, &rcd);
+		R_VEC_FOREACH (rcd.togo, v) {
+			ht_up_delete (ht, *v);
+		}
+		RVecAddr_free (rcd.togo);
+		rcd.togo = RVecAddr_new ();
+	} while (rcd.inloop);
+}
+#endif
+
 static void afbo(RCore *core) {
 	RAnalFunction *f = r_anal_get_function_at (core->anal, core->offset);
 	if (f) {
@@ -4729,6 +4824,95 @@ fin:
 	free (s);
 }
 
+typedef struct {
+	RCore *core;
+	RVecAddr *togo;
+	bool inloop;
+} ReverseCallData;
+
+static bool afla_leafs(void *user, const ut64 addr, const void *data) {
+	ReverseCallData *rcd = (ReverseCallData*)user;
+	RVecAddr *va = (RVecAddr *)data;
+	if (RVecAddr_empty (va)) {
+		r_cons_printf ("0x%08"PFMT64x"\n", addr);
+		RVecAddr_push_back (rcd->togo, &addr);
+	}
+	return true;
+}
+
+static bool afla_purge(void *user, const ut64 key, const void *val) {
+	ut64 *v, *v2;
+	ReverseCallData *rcd = (ReverseCallData*)user;
+	RVecAddr *va = (RVecAddr *)val;
+	rcd->inloop = true;
+	int index = 0;
+repeat:
+	index = 0;
+	R_VEC_FOREACH (va, v) {
+		R_VEC_FOREACH (rcd->togo, v2) {
+			if (*v == *v2) {
+				RVecAddr_remove (va, index);
+				goto repeat;
+			}
+		}
+		index++;
+	}
+	return true;
+}
+
+static void cmd_afla(RCore *core, const char *input) {
+	RListIter *iter;
+	RAnalRef *xref;
+	RAnalFunction *fcn;
+	HtUP *ht = ht_up_new0 ();
+	RVecAddr *unrefed = RVecAddr_new ();
+	r_list_foreach (core->anal->fcns, iter, fcn) {
+		RVecAnalRef *xrefs = r_anal_xrefs_get (core->anal, fcn->addr);
+		if (!xrefs) {
+			RVecAddr_push_back (unrefed, &fcn->addr);
+			continue;
+		}
+		R_VEC_FOREACH (xrefs, xref) {
+			RAnalFunction *ff = r_anal_get_fcn_in (core->anal, xref->addr, 0);
+			if (!ff) {
+				R_LOG_DEBUG ("unknown function for ref");
+				continue;
+			}
+			const ut64 k = ff->addr;
+			const ut64 v = fcn->addr;
+			RVecAddr *va0 = ht_up_find (ht, v, NULL);
+			if (!va0) {
+				va0 = RVecAddr_new ();
+				ht_up_insert (ht, v, va0);
+			}
+			RVecAddr *va = ht_up_find (ht, k, NULL);
+			if (!va) {
+				va = RVecAddr_new ();
+				ht_up_insert (ht, k, va);
+			}
+			RVecAddr_push_back (va, &v);
+		}
+	}
+	// first entries that have no xrefs .. wtf .. maybe this must be ignored? its main?
+	ut64 *v;
+	RVecAddr_free (unrefed);
+	ReverseCallData rcd = {
+		.core = core,
+		.togo = RVecAddr_new (),
+		.inloop = true
+	};
+	do {
+		ht_up_foreach (ht, afla_leafs, &rcd);
+		rcd.inloop = false;
+		ht_up_foreach (ht, afla_purge, &rcd);
+		R_VEC_FOREACH (rcd.togo, v) {
+			ht_up_delete (ht, *v);
+		}
+		RVecAddr_free (rcd.togo);
+		rcd.togo = RVecAddr_new ();
+	} while (rcd.inloop);
+}
+
 static int cmd_af(RCore *core, const char *input) {
 	r_cons_break_timeout (r_config_get_i (core->config, "anal.timeout"));
 	switch (input[1]) {
@@ -5190,6 +5374,9 @@ static int cmd_af(RCore *core, const char *input) {
 				break;
 			}
 			break;
+		case 'a': // listing in analysis order
+			cmd_afla (core, input);
+			break;
 		case 'l': // "afll"
 			if (input[3] == '?') {
 				r_core_cmd_help (core, help_msg_afll);
@@ -5553,6 +5740,9 @@ static int cmd_af(RCore *core, const char *input) {
 		switch (input[2]) {
 		case '-': // "afb-"
 			anal_fcn_del_bb (core, r_str_trim_head_ro (input + 3));
+			break;
+		case 'a':
+			afba (core, input + 2);
 			break;
 		case 'o': // "afbo"
 			afbo (core);
