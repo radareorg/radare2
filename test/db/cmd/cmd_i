@@ -4776,7 +4776,7 @@ FILE=malloc://512
 CMDS=ic?~List
 EXPECT=<<EOF
 | ic                 List classes, methods and fields (icj for json)
-| icc                List classes, methods and fields in Header Format
+| icc [lang]         List classes, methods and fields in Header Format (see bin.lang=swift,java,objc,cxx)
 | icg [str]          List classes as agn/age commands to create class hierarchy graphs (matches str if provided)
 | icq                List classes, in quiet mode (just the classname)
 | icqq               List classes, in quieter mode (only show non-system classnames)
@@ -4787,7 +4787,7 @@ NAME=ic?~ (match one)
 FILE=malloc://512
 CMDS=ic?~Header
 EXPECT=<<EOF
-| icc                List classes, methods and fields in Header Format
+| icc [lang]         List classes, methods and fields in Header Format (see bin.lang=swift,java,objc,cxx)
 EOF
 RUN
 
@@ -4829,7 +4829,7 @@ NAME=icq (file Java)
 FILE=bins/java/Hello.class
 CMDS=icq
 EXPECT=<<EOF
-0x00000000 [0x0000022b - 0x000002aa] java Hello java/lang/Object
+Hello
 EOF
 RUN
 

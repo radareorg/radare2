@@ -669,16 +669,15 @@ void cmd_ic_add(RCore *core, const char *input) {
 	}
 }
 
-static void cmd_icg(RCore *core, RBinObject *obj, const char *input) { // "icg"
-	const bool asm_demangle = r_config_get_b (core->config, "asm.demangle");
-	const int pref = asm_demangle? 0: 'o';
+static void cmd_icg(RCore *core, RBinObject *obj, const char *arg) { // "icg"
+	const int pref = r_config_get_b (core->config, "asm.demangle")? 0: 'o';
 	RBinClass *cls;
 	RListIter *iter, *iter2;
 	if (!obj) {
 		return;
 	}
 	bool fullGraph = true;
-	const char *match = r_str_trim_head_ro (input + 2);
+	const char *match = r_str_trim_head_ro (arg);
 	if (R_STR_ISNOTEMPTY (match)) {
 		r_list_foreach (obj->classes, iter, cls) {
 			if (!match || !strstr (cls->name, match)) {
