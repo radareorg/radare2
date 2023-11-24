@@ -1,4 +1,4 @@
-!/usr/bin/env python
+#!/usr/bin/env python
 
 """ Portable python script to convert Intel hex file to rapatch """
 
