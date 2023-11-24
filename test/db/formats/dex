@@ -88,7 +88,6 @@ NAME=DEX Hello.dex single class (ic LHello)
 FILE=bins/dex/Hello.dex
 CMDS=ic LHello
 EXPECT=<<EOF
-class LHello
 0x000001a4 method LHello pC   LHello.method.<init>(Ljava/lang/String;)V
 0x000001c0 method LHello ps   LHello.method.main([Ljava/lang/String;)V
 0x000001e8 method LHello p    LHello.method.say()V
@@ -1915,7 +1914,6 @@ NAME=DEX radare2installer.dex classes (ic command with name)
 FILE=bins/dex/org.radare.radare2installer.dex
 CMDS=ic  Lcom/stericson/RootTools/Installer
 EXPECT=<<EOF
-class Lcom/stericson/RootTools/Installer
 0x00011410 method Lcom/stericson/RootTools/Installer pC   Lcom/stericson/RootTools/Installer.method.<init>(Landroid/content/Context;)V
 0x00011440 method Lcom/stericson/RootTools/Installer r    Lcom/stericson/RootTools/Installer.method.installBinary(ILjava/lang/String;Ljava/lang/String;)Z
 0x00011814 method Lcom/stericson/RootTools/Installer r    Lcom/stericson/RootTools/Installer.method.isBinaryInstalled(Ljava/lang/String;)Z
@@ -1926,7 +1924,6 @@ NAME=DEX radare2installer.dex classes (ic command with index)
 FILE=bins/dex/org.radare.radare2installer.dex
 CMDS=ic 17
 EXPECT=<<EOF
-class Lcom/stericson/RootTools/Installer
 0x00011410 method Lcom/stericson/RootTools/Installer pC   Lcom/stericson/RootTools/Installer.method.<init>(Landroid/content/Context;)V
 0x00011440 method Lcom/stericson/RootTools/Installer r    Lcom/stericson/RootTools/Installer.method.installBinary(ILjava/lang/String;Ljava/lang/String;)Z
 0x00011814 method Lcom/stericson/RootTools/Installer r    Lcom/stericson/RootTools/Installer.method.isBinaryInstalled(Ljava/lang/String;)Z

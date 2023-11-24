@@ -790,10 +790,26 @@ static void cmd_ic(RCore *core, const char *input, PJ *pj, int is_array, bool va
 			RBinFile *bf;
 			RBinFile *cur = core->bin->cur;
 			RList *objs = r_core_bin_files (core);
+			int count = 0;
+			bool filtered = false;
+			int idx = -1;
+			const char *cls_name = NULL;
+			if (r_num_is_valid_input (core->num, arg)) {
+				idx = r_num_math (core->num, arg);
+			} else {
+				const char *first_char = arg;
+				int not_space = strspn (first_char, " ");
+				if (first_char[not_space]) {
+					cls_name = first_char + not_space;
+				}
+			}
 			r_list_foreach (objs, objs_iter, bf) {
 				RBinObject *obj = bf->bo;
 				if (!obj || !obj->classes) {
 					continue;
+				}
+				if (filtered) {
+					break;
 				}
 				RBinClass *cls;
 				RBinSymbol *sym;
@@ -807,17 +823,6 @@ static void cmd_ic(RCore *core, const char *input, PJ *pj, int is_array, bool va
 						}
 					}
 					break;
-				}
-				int idx = -1;
-				const char *cls_name = NULL;
-				if (r_num_is_valid_input (core->num, arg)) {
-					idx = r_num_math (core->num, arg);
-				} else {
-					const char *first_char = arg;
-					int not_space = strspn (first_char, " ");
-					if (first_char[not_space]) {
-						cls_name = first_char + not_space;
-					}
 				}
 				tts_say (core, "classes", r_list_length (obj->classes));
 				switch (cmd) {
@@ -915,7 +920,6 @@ static void cmd_ic(RCore *core, const char *input, PJ *pj, int is_array, bool va
 				case 0: // "ic"
 				default:
 					{
-					int count = 0;
 					r_list_foreach (obj->classes, iter, cls) {
 						if ((idx >= 0 && idx != count++) || (R_STR_ISNOTEMPTY (cls_name) && strcmp (cls_name, cls->name))) {
 							continue;
@@ -926,18 +930,28 @@ static void cmd_ic(RCore *core, const char *input, PJ *pj, int is_array, bool va
 								r_cons_printf ("ac %s %s 0x%08"PFMT64x"\n", cls->name,
 										sym->name, iova? sym->vaddr: sym->paddr);
 							}
+							eprintf ("doble rad quit\n");
+							continue;
+						}
+						bool listed_classes = false;
+						if (idx != -1 || R_STR_ISNOTEMPTY (cls_name)) {
+							filtered = true;
+							r_list_foreach (cls->methods, iter2, sym) {
+								char *flags = r_core_bin_attr_tostring (sym->attr, true);
+								r_cons_printf ("0x%08"PFMT64x " method %s %-4s %s\n",
+										iova? sym->vaddr: sym->paddr,
+										cls->name, flags, sym->name);
+								free (flags);
+							}
 							continue;
 						}
 
-						const char *kls_name = cls->name; // r_bin_name_tostring (cls->name);
-						if ((idx >= 0 && idx != count++) || (R_STR_ISNOTEMPTY (cls_name) && strcmp (cls_name, kls_name))) {
-							continue;
-						}
 						switch (mode) {
 						case '*':
 							{
-							int mode = R_MODE_RADARE;
-							RBININFO ("classes", R_CORE_BIN_ACC_CLASSES, NULL, r_list_length (obj->classes));
+								listed_classes = true;
+								int mode = R_MODE_RADARE;
+								RBININFO ("classes", R_CORE_BIN_ACC_CLASSES, NULL, r_list_length (obj->classes));
 							}
 #if 0
 							r_list_foreach (cls->methods, iter2, sym) {
@@ -959,6 +973,7 @@ static void cmd_ic(RCore *core, const char *input, PJ *pj, int is_array, bool va
 							{
 								int mode = R_MODE_JSON; // (oldmode == 'q')? R_MODE_SIMPLE: 0;
 								int len = r_list_length (obj->classes);
+								listed_classes = true;
 								RBININFO ("classes", R_CORE_BIN_ACC_CLASSES, NULL, len);
 							}
 #if 0
@@ -985,21 +1000,11 @@ static void cmd_ic(RCore *core, const char *input, PJ *pj, int is_array, bool va
 						case 0:
 						case 'q':
 							{
-								RList *objs = r_core_bin_files (core);
-								RListIter *iter;
-								RBinFile *bf;
-								RBinFile *cur = core->bin->cur;
-								r_list_foreach (objs, iter, bf) {
-									core->bin->cur = bf;
-									RBinObject *obj = bf->bo;
-									if (obj && obj->classes) {
-										size_t len = r_list_length (obj->classes);
-										int oldmode = mode;
-										int mode = (oldmode == 'q')? R_MODE_SIMPLE: 0;
-										RBININFO ("classes", R_CORE_BIN_ACC_CLASSES, NULL, len);
-									}
-								}
-								core->bin->cur = cur;
+								size_t len = r_list_length (obj->classes);
+								int oldmode = mode;
+								int mode = (oldmode == 'q')? R_MODE_SIMPLE: 0;
+								RBININFO ("classes", R_CORE_BIN_ACC_CLASSES, NULL, len);
+								listed_classes = true;
 							}
 							break;
 						default:
@@ -1011,6 +1016,9 @@ static void cmd_ic(RCore *core, const char *input, PJ *pj, int is_array, bool va
 										cls->name, flags, sym->name);
 								free (flags);
 							}
+							break;
+						}
+						if (listed_classes) {
 							break;
 						}
 					}
