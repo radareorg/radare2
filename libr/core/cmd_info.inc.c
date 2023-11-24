@@ -915,7 +915,6 @@ static void cmd_ic(RCore *core, const char *input, PJ *pj, int is_array, bool va
 				case 0: // "ic"
 				default:
 					{
-						eprintf ("pea\n");
 					int count = 0;
 					r_list_foreach (obj->classes, iter, cls) {
 						if ((idx >= 0 && idx != count++) || (R_STR_ISNOTEMPTY (cls_name) && strcmp (cls_name, cls->name))) {
@@ -936,11 +935,16 @@ static void cmd_ic(RCore *core, const char *input, PJ *pj, int is_array, bool va
 						}
 						switch (mode) {
 						case '*':
+							{
+							int mode = R_MODE_RADARE;
+							RBININFO ("classes", R_CORE_BIN_ACC_CLASSES, NULL, r_list_length (obj->classes));
+							}
+#if 0
 							r_list_foreach (cls->methods, iter2, sym) {
 								r_cons_printf ("f sym.%s @ 0x%"PFMT64x "\n",
 										sym->name, iova? sym->vaddr: sym->paddr);
 							}
-							input++;
+#endif
 							break;
 						case 'l': // "icl"
 							r_list_foreach (cls->methods, iter2, sym) {
@@ -952,6 +956,12 @@ static void cmd_ic(RCore *core, const char *input, PJ *pj, int is_array, bool va
 							input++;
 							break;
 						case 'j':
+							{
+								int mode = R_MODE_JSON; // (oldmode == 'q')? R_MODE_SIMPLE: 0;
+								int len = r_list_length (obj->classes);
+								RBININFO ("classes", R_CORE_BIN_ACC_CLASSES, NULL, len);
+							}
+#if 0
 							input++;
 							pj_ks (pj, "class", cls->name);
 							pj_ka (pj, "methods");
@@ -970,7 +980,9 @@ static void cmd_ic(RCore *core, const char *input, PJ *pj, int is_array, bool va
 								pj_end (pj);
 							}
 							pj_end (pj);
+#endif
 							break;
+						case 0:
 						case 'q':
 							{
 								RList *objs = r_core_bin_files (core);
@@ -982,7 +994,8 @@ static void cmd_ic(RCore *core, const char *input, PJ *pj, int is_array, bool va
 									RBinObject *obj = bf->bo;
 									if (obj && obj->classes) {
 										size_t len = r_list_length (obj->classes);
-										int mode = R_MODE_SIMPLE;
+										int oldmode = mode;
+										int mode = (oldmode == 'q')? R_MODE_SIMPLE: 0;
 										RBININFO ("classes", R_CORE_BIN_ACC_CLASSES, NULL, len);
 									}
 								}
