@@ -813,7 +813,6 @@ static void cmd_ic(RCore *core, const char *input, PJ *pj, int is_array, bool va
 					first = false;
 					continue;
 				}
-				
 				first = false;
 				if (filtered) {
 					break;
