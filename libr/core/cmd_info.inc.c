@@ -803,19 +803,17 @@ static void cmd_ic(RCore *core, const char *input, PJ *pj, int is_array, bool va
 					cls_name = first_char + not_space;
 				}
 			}
-			if (mode == 'j') {
-				r_cons_print ("[");
-			}
 			bool first = true;
 			r_list_foreach (objs, objs_iter, bf) {
 				RBinObject *obj = bf->bo;
-				if (!obj || !obj->classes) {
+				if (!obj || !obj->classes || r_list_empty (obj->classes)) {
 					if (mode == 'j') {
 						r_cons_printf ("%s{}", first? "": ",");
 					}
 					first = false;
 					continue;
 				}
+				
 				first = false;
 				if (filtered) {
 					break;
@@ -1036,9 +1034,6 @@ static void cmd_ic(RCore *core, const char *input, PJ *pj, int is_array, bool va
 					break;
 				}
 				core->bin->cur = cur;
-			}
-			if (mode == 'j') {
-				r_cons_print ("]");
 			}
 			break;
 		}
