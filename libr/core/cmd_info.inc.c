@@ -936,6 +936,7 @@ static void cmd_ic(RCore *core, const char *input, PJ *pj, int is_array, bool va
 						bool listed_classes = false;
 						if (idx != -1 || R_STR_ISNOTEMPTY (cls_name)) {
 							filtered = true;
+							r_cons_printf ("class %s\n", cls->name);
 							r_list_foreach (cls->methods, iter2, sym) {
 								char *flags = r_core_bin_attr_tostring (sym->attr, true);
 								r_cons_printf ("0x%08"PFMT64x " method %s %-4s %s\n",
