@@ -13725,8 +13725,11 @@ static int cmd_anal_all(RCore *core, const char *input) {
 					logline (core, 96, "Enable anal.types.constraint for experimental type propagation");
 					r_config_set_b (core->config, "anal.types.constraint", true);
 					if (input[2] == 'a') { // "aaaa"
-						logline (core, 99, "Reanalizing graph references to improve function count (aarr)");
+						logline (core, 98, "Reanalizing graph references to improve function count (aarr)");
 						r_core_cmd_call (core, "aarr");
+
+						logline (core, 99, "Autoname all functions");
+						r_core_cmd0 (core, ".afna@@c:afla");
 					}
 				} else {
 					R_LOG_INFO ("Use -AA or aaaa to perform additional experimental analysis");
