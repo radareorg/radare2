@@ -803,11 +803,20 @@ static void cmd_ic(RCore *core, const char *input, PJ *pj, int is_array, bool va
 					cls_name = first_char + not_space;
 				}
 			}
+			if (mode == 'j') {
+				r_cons_print ("[");
+			}
+			bool first = true;
 			r_list_foreach (objs, objs_iter, bf) {
 				RBinObject *obj = bf->bo;
 				if (!obj || !obj->classes) {
+					if (mode == 'j') {
+						r_cons_printf ("%s{}", first? "": ",");
+					}
+					first = false;
 					continue;
 				}
+				first = false;
 				if (filtered) {
 					break;
 				}
@@ -1028,6 +1037,9 @@ static void cmd_ic(RCore *core, const char *input, PJ *pj, int is_array, bool va
 				}
 				core->bin->cur = cur;
 			}
+			if (mode == 'j') {
+				r_cons_print ("]");
+			}
 			break;
 		}
 	}
@@ -1143,12 +1155,12 @@ static int cmd_info(void *data, const char *input) {
 		goto done;
 		break;
 	case 'a': // "ia"
-		{
+		if (r_bin_cur_object (core->bin)) {
 			int narg = 0;
 			switch (mode) {
 			case R_MODE_RADARE: narg = '*'; break;
 			case R_MODE_SIMPLE: narg = 'q'; break;
-			case R_MODE_JSON:
+			case R_MODE_JSON: // "iaj"
 				r_cons_printf ("{\"i\":");
 				narg = 'j';
 				break;
@@ -1171,6 +1183,8 @@ static int cmd_info(void *data, const char *input) {
 			if (mode == R_MODE_JSON) {
 				r_cons_println ("}");
 			}
+		} else {
+			r_cons_println ("{}");
 		}
 		goto done;
 		break;
