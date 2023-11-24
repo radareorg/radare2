@@ -202,9 +202,9 @@ static char *readstr(RBinFile *bf, ut64 addr);
 static mach0_ut va2pa(mach0_ut p, ut32 *offset, ut32 *left, RBinFile *bf);
 static void get_ivar_list(RBinFile *bf, RBinClass *klass, mach0_ut p);
 static void get_objc_property_list(RBinFile *bf, RBinClass *klass, mach0_ut p);
-static void get_method_list(RBinFile *bf, const char *class_name, RBinClass *klass, bool is_static, objc_cache_opt_info *oi, mach0_ut p);
+static void get_method_list(RBinFile *bf, RBinClass *klass, const char *class_name, bool is_static, objc_cache_opt_info *oi, mach0_ut p);
 static void get_objc_property_list_of_lists(RBinFile *bf, RBinClass *klass, mach0_ut p);
-static void get_method_list_of_lists(RBinFile *bf, const char *class_name, RBinClass *klass, bool is_static, objc_cache_opt_info *oi, mach0_ut p);
+static void get_method_list_of_lists(RBinFile *bf, RBinClass *klass, const char *class_name, bool is_static, objc_cache_opt_info *oi, mach0_ut p);
 static void get_protocol_list_of_lists(RBinFile *bf, RBinClass *klass, objc_cache_opt_info *oi, mach0_ut p);
 static void get_class_ro_t(RBinFile *bf, bool *is_meta_class, RBinClass *klass, objc_cache_opt_info *oi, mach0_ut p);
 static RList *MACH0_(parse_categories)(RBinFile *bf, MetaSections *ms, const RSkipList *relocs, objc_cache_opt_info *oi);
@@ -706,7 +706,7 @@ static void get_method_list(RBinFile *bf, RBinClass *klass, const char *class_na
 
 	RBinSymbol *method = NULL;
 	if (!bf || !bf->bo || !bf->bo->bin_obj || !bf->bo->info) {
-		R_LOG_WARN ("incorrect RBinFile pointer");
+		R_LOG_WARN ("Incorrect RBinFile pointer");
 		return;
 	}
 	const bool bigendian = bf->bo->info->big_endian;
@@ -1063,11 +1063,10 @@ static void get_objc_property_list_of_lists(RBinFile *bf, RBinClass *klass, mach
 
 static void on_method_list(mach0_ut p, void * _ctx) {
 	MethodListOfListsCtx * ctx = _ctx;
-
-	get_method_list (ctx->bf, ctx->class_name, ctx->klass, ctx->is_static, ctx->oi, p);
+	get_method_list (ctx->bf, ctx->klass, ctx->class_name, ctx->is_static, ctx->oi, p);
 }
 
-static void get_method_list_of_lists(RBinFile *bf, const char *class_name, RBinClass *klass, bool is_static, objc_cache_opt_info *oi, mach0_ut p) {
+static void get_method_list_of_lists(RBinFile *bf, RBinClass *klass, const char *class_name, bool is_static, objc_cache_opt_info *oi, mach0_ut p) {
 	MethodListOfListsCtx ctx;
 
 	ctx.bf = bf;

@@ -1443,13 +1443,9 @@ static RList *classes(RBinFile *bf) {
 					if (bf->rbin->verbose) {
 						R_LOG_ERROR ("KLASS failed at 0x%"PFMT64x", is_classlist %d", pointer_to_class, is_classlist);
 					}
-					klass->name = r_str_newf ("UnnamedClass%u", num_of_unnamed_class);
-					if (!klass->name) {
-						R_FREE (klass);
-						R_FREE (pointers);
-						MACH0_(mach0_free) (mach0);
-						goto beach;
-					}
+					char *kname = r_str_newf ("UnnamedClass%u", num_of_unnamed_class);
+					klass->name = r_bin_name_new (kname);
+					free (kname);
 					num_of_unnamed_class++;
 				}
 				r_list_append (ret, klass);

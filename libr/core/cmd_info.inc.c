@@ -98,14 +98,14 @@ static void pair(const char *a, const char *b) {
 }
 
 static void classdump_keys(RCore *core, RBinObject *bo) {
-	const int pref = r_config_get_b (r->config, "asm.demangle")? 'd': 0;
+	const int pref = r_config_get_b (core->config, "asm.demangle")? 'd': 0;
 	const bool iova = r_config_get_b (core->config, "io.va");
 	RBinClass *k;
 	RBinField *f;
 	RBinSymbol *m;
 	RListIter *iter, *iter2;
 	r_list_foreach (bo->classes, iter, k) {
-		const char *kname = r_bin_name_tostring (k->name, pref);
+		const char *kname = r_bin_name_tostring2 (k->name, pref);
 		r_list_foreach (k->fields, iter2, f) {
 			const char *kind = r_bin_field_kindstr (f);
 			r_cons_printf ("klass.%s.field.%s.%s=0x%"PFMT64x"\n",
@@ -583,6 +583,7 @@ static void cmd_ic_comma(RCore *core, const char *input) {
 }
 
 static void cmd_ic_sub(RCore *core, const char *input) {
+	const int pref = r_config_get_b (core->config, "asm.demangle")? 0: 'o';
 	RListIter *iter;
 	RBinClass *k;
 	RBinSymbol *m;
@@ -603,7 +604,8 @@ static void cmd_ic_sub(RCore *core, const char *input) {
 	RBinClass *klass = NULL;
 	RList *klasses = r_bin_get_classes (core->bin);
 	r_list_foreach (klasses, iter, k) {
-		if (!strcmp (k->name, klass_name)) {
+		const char *kname = r_bin_name_tostring2 (k->name, pref);
+		if (!strcmp (kname, klass_name)) {
 			if (method_name) {
 				klass = k;
 			} else {
@@ -638,14 +640,15 @@ void cmd_ic_add(RCore *core, const char *input) {
 	char *method_name = r_str_after (klass_name, '.');
 	RBinClass *klass = NULL;
 	r_list_foreach (klasses, iter, k) {
-		if (!strcmp (k->name, klass_name)) {
+		const char *kname = r_bin_name_tostring (k->name);
+		if (!strcmp (kname, klass_name)) {
 			klass = k;
 			break;
 		}
 	}
 	if (!klass) {
 		klass = R_NEW0 (RBinClass);
-		klass->name = strdup (klass_name);
+		klass->name = r_bin_name_new (klass_name);
 		r_list_append (klasses, klass);
 	}
 	if (method_name == NULL) {
@@ -682,33 +685,36 @@ static void cmd_icg(RCore *core, RBinObject *obj, const char *arg) { // "icg"
 	const char *match = r_str_trim_head_ro (arg);
 	if (R_STR_ISNOTEMPTY (match)) {
 		r_list_foreach (obj->classes, iter, cls) {
-			if (!match || !strstr (cls->name, match)) {
+			const char *kname = r_bin_name_tostring2 (cls->name, pref);
+			if (!match || !strstr (kname, match)) {
 				continue;
 			}
-			r_cons_printf ("agn %s\n", cls->name);
+			r_cons_printf ("agn %s\n", kname);
 			if (cls->super) {
 				RBinName *bn;
 				r_list_foreach (cls->super, iter2, bn) {
 					const char *sk = r_bin_name_tostring2 (bn, pref);
 					if (match && strstr (sk, match)) {
 						r_cons_printf ("agn %s\n", sk);
-						r_cons_printf ("age %s %s\n", sk, cls->name);
+						r_cons_printf ("age %s %s\n", sk, kname);
 					}
 				}
 			}
 		}
 	} else if (fullGraph) {
 		r_list_foreach (obj->classes, iter, cls) {
+			const char *kname = r_bin_name_tostring2 (cls->name, pref);
 			RBinName *bn;
-			r_cons_printf ("agn %s\n", cls->name);
+			r_cons_printf ("agn %s\n", kname);
 			r_list_foreach (cls->super, iter2, bn) {
 				const char *sk = r_bin_name_tostring2 (bn, pref);
 				r_cons_printf ("agn %s\n", sk);
-				r_cons_printf ("age %s %s\n", sk, cls->name);
+				r_cons_printf ("age %s %s\n", sk, kname);
 			}
 		}
 	} else {
 		r_list_foreach (obj->classes, iter, cls) {
+			const char *kname = r_bin_name_tostring2 (cls->name, pref);
 			char *sk;
 			RListIter *iter;
 			r_list_foreach (cls->super, iter, sk) {
@@ -716,8 +722,8 @@ static void cmd_icg(RCore *core, RBinObject *obj, const char *arg) { // "icg"
 					continue;
 				}
 				r_cons_printf ("agn %s\n", sk);
-				r_cons_printf ("agn %s\n", cls->name);
-				r_cons_printf ("age %s %s\n", sk, cls->name);
+				r_cons_printf ("agn %s\n", kname);
+				r_cons_printf ("age %s %s\n", sk, kname);
 			}
 		}
 	}
@@ -731,6 +737,7 @@ static void cmd_icg(RCore *core, RBinObject *obj, const char *arg) { // "icg"
 	r_core_bin_info (core, x, pj, mode, va, NULL, y);
 
 static void cmd_ic(RCore *core, const char *input, PJ *pj, int is_array, bool va) {
+	const int pref = r_config_get_b (core->config, "asm.demangle")? 'd': 0;
 	int cmd = input[0];
 	int mode = 0;
 	const char *arg = input + 2;
@@ -826,8 +833,9 @@ static void cmd_ic(RCore *core, const char *input, PJ *pj, int is_array, bool va
 
 				if (is_superquiet) {
 					r_list_foreach (obj->classes, iter, cls) {
-						if (!isKnownPackage (cls->name)) {
-							r_cons_printf ("%s\n", cls->name);
+						const char *kname = r_bin_name_tostring (cls->name);
+						if (!isKnownPackage (kname)) {
+							r_cons_printf ("%s\n", kname);
 						}
 					}
 					break;
@@ -839,13 +847,14 @@ static void cmd_ic(RCore *core, const char *input, PJ *pj, int is_array, bool va
 					break;
 				case 's': // "ics"
 					r_list_foreach (obj->classes, iter, cls) {
+						const char *kname = r_bin_name_tostring (cls->name);
 						r_list_foreach (cls->methods, iter2, sym) {
 							ut64 addr = iova? sym->vaddr: sym->paddr;
 							if (addr == 0 || addr == UT64_MAX) {
 								continue;
 							}
 							r_cons_printf ("0x%"PFMT64x" [%s] %s\n",
-									addr, cls->name, sym->name);
+									addr, kname, sym->name);
 						}
 					}
 					break;
@@ -885,10 +894,11 @@ static void cmd_ic(RCore *core, const char *input, PJ *pj, int is_array, bool va
 							}
 						}
 						if (addr >= min && addr < max) {
+							const char *kname = r_bin_name_tostring (cls->name);
 							if (method) {
-								r_cons_printf ("%s::%s\n", cls->name, method);
+								r_cons_printf ("%s::%s\n", kname, method);
 							} else {
-								r_cons_printf ("%s\n", cls->name);
+								r_cons_printf ("%s\n", kname);
 							}
 						}
 						min = UT64_MAX;
@@ -929,27 +939,27 @@ static void cmd_ic(RCore *core, const char *input, PJ *pj, int is_array, bool va
 				default:
 					{
 					r_list_foreach (obj->classes, iter, cls) {
-						if ((idx >= 0 && idx != count++) || (R_STR_ISNOTEMPTY (cls_name) && strcmp (cls_name, cls->name))) {
+						const char *kname = r_bin_name_tostring2 (cls->name, pref);
+						if ((idx >= 0 && idx != count++) || (R_STR_ISNOTEMPTY (cls_name) && strcmp (cls_name, kname))) {
 							continue;
 						}
 						if (is_doublerad) {
-							r_cons_printf ("ac %s\n", cls->name);
+							r_cons_printf ("ac %s\n", kname);
 							r_list_foreach (cls->methods, iter2, sym) {
-								r_cons_printf ("ac %s %s 0x%08"PFMT64x"\n", cls->name,
+								r_cons_printf ("ac %s %s 0x%08"PFMT64x"\n", kname,
 										sym->name, iova? sym->vaddr: sym->paddr);
 							}
-							eprintf ("doble rad quit\n");
 							continue;
 						}
 						bool listed_classes = false;
-						if (idx != -1 || R_STR_ISNOTEMPTY (cls_name)) {
+						if (idx != -1 || R_STR_ISNOTEMPTY (kname)) {
 							filtered = true;
-							r_cons_printf ("class %s\n", cls->name);
+							r_cons_printf ("class %s\n", kname);
 							r_list_foreach (cls->methods, iter2, sym) {
 								char *flags = r_core_bin_attr_tostring (sym->attr, true);
 								r_cons_printf ("0x%08"PFMT64x " method %s %-4s %s\n",
 										iova? sym->vaddr: sym->paddr,
-										cls->name, flags, sym->name);
+										kname, flags, sym->name);
 								free (flags);
 							}
 							continue;
@@ -987,7 +997,7 @@ static void cmd_ic(RCore *core, const char *input, PJ *pj, int is_array, bool va
 							}
 #if 0
 							input++;
-							pj_ks (pj, "class", cls->name);
+							pj_ks (pj, "class", cls_name);
 							pj_ka (pj, "methods");
 							r_list_foreach (cls->methods, iter2, sym) {
 								pj_o (pj);
@@ -1017,12 +1027,12 @@ static void cmd_ic(RCore *core, const char *input, PJ *pj, int is_array, bool va
 							}
 							break;
 						default:
-							r_cons_printf ("class %s\n", cls->name);
+							r_cons_printf ("class %s\n", kname);
 							r_list_foreach (cls->methods, iter2, sym) {
 								char *flags = r_core_bin_attr_tostring (sym->attr, true);
 								r_cons_printf ("0x%08"PFMT64x " method %s %-4s %s\n",
 										iova? sym->vaddr: sym->paddr,
-										cls->name, flags, sym->name);
+										kname, flags, sym->name);
 								free (flags);
 							}
 							break;

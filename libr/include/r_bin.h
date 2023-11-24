@@ -891,6 +891,7 @@ R_API RList *r_bin_get_mem(RBin *bin);
 
 R_API RBinName *r_bin_name_new(const char *name);
 R_API RBinName *r_bin_name_clone(RBinName *bn);
+R_API void r_bin_name_update(RBinName *bn, const char *name);
 R_API char *r_bin_name_tostring(RBinName *bn);
 R_API char *r_bin_name_tostring2(RBinName *bn, int type);
 R_API void r_bin_name_demangled(RBinName *bn, const char *dname);

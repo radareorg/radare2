@@ -345,7 +345,7 @@ out_error:
 // XXX. this is using binfile->buf directly :(
 // https://github.com/android/platform_dalvik/blob/0641c2b4836fae3ee8daf6c0af45c316c84d5aeb/libdex/DexDebugInfo.cpp#L312
 // https://github.com/android/platform_dalvik/blob/0641c2b4836fae3ee8daf6c0af45c316c84d5aeb/libdex/DexDebugInfo.cpp#L141
-static void dex_parse_debug_item(RBinFile *bf, RBinDexClass *c, int MI, int MA, int paddr, int ins_size, int insns_size, char *class_name, int regsz, int debug_info_off) {
+static void dex_parse_debug_item(RBinFile *bf, RBinDexClass *c, int MI, int MA, int paddr, int ins_size, int insns_size, const char *class_name, int regsz, int debug_info_off) {
 	RBin *rbin = bf->rbin;
 	RBinDexObj *dex = bf->bo->bin_obj; //  bin .. unnecessary arg
 	// runtime error: pointer index expression with base 0x000000004402 overflowed to 0xffffffffff0043fc
@@ -1062,11 +1062,12 @@ static void parse_dex_class_fields(RBinFile *bf, RBinDexClass *c, RBinClass *cls
 		if (!sym) {
 			break;
 		}
+		const char *cls_name = r_bin_name_tostring (cls->name);
 		if (is_sfield) {
-			sym->name = r_str_newf ("%s.sfield_%s:%s", cls->name, fieldName, type_str);
+			sym->name = r_str_newf ("%s.sfield_%s:%s", cls_name, fieldName, type_str);
 			sym->type = "STATIC";
 		} else {
-			sym->name = r_str_newf ("%s.ifield_%s:%s", cls->name, fieldName, type_str);
+			sym->name = r_str_newf ("%s.ifield_%s:%s", cls_name, fieldName, type_str);
 			sym->type = "FIELD";
 		}
 		sym->name = r_str_replace (sym->name, "method.", "", 0);
@@ -1078,7 +1079,7 @@ static void parse_dex_class_fields(RBinFile *bf, RBinDexClass *c, RBinClass *cls
 
 		if (dex->dexdump) {
 			char *accessStr = createAccessFlagStr (accessFlags, kAccessForField);
-			bin->cb_printf ("    #%u              : (in %s;)\n", (unsigned int)i, cls->name);
+			bin->cb_printf ("    #%u              : (in %s;)\n", (unsigned int)i, cls_name);
 			bin->cb_printf ("      name          : '%s'\n", fieldName);
 			bin->cb_printf ("      type          : '%s'\n", type_str);
 			bin->cb_printf ("      access        : 0x%04x (%s)\n",
@@ -1119,6 +1120,7 @@ static void parse_dex_class_method(RBinFile *bf, RBinDexClass *c, RBinClass *cls
 	ut64 encoded_method_addr;
 	bool err = false;
 	ut64 MI, MA, MC;
+	const char *cls_name = r_bin_name_tostring (cls->name);
 	ut64 i;
 	for (i = 0; i < DM; i++) {
 		err = false;
@@ -1154,7 +1156,7 @@ static void parse_dex_class_method(RBinFile *bf, RBinDexClass *c, RBinClass *cls
 			continue;
 		}
 		char *signature = dex_method_signature (dex, MI);
-		char *flag_name = r_str_newf ("%s.method.%s%s", cls->name, method_name, signature);
+		char *flag_name = r_str_newf ("%s.method.%s%s", cls_name, method_name, signature);
 		if (!flag_name || !*flag_name) {
 			R_FREE (flag_name);
 			R_FREE (signature);
@@ -1206,7 +1208,7 @@ static void parse_dex_class_method(RBinFile *bf, RBinDexClass *c, RBinClass *cls
 		}
 		if (dex->dexdump) {
 			char* accessStr = createAccessFlagStr (MA, kAccessForMethod);
-			cb_printf ("    #%" PFMT64d "              : (in %s;)\n", i, cls->name);
+			cb_printf ("    #%" PFMT64d "              : (in %s;)\n", i, cls_name);
 			cb_printf ("      name          : '%s'\n", method_name);
 			cb_printf ("      type          : '%s'\n", signature);
 			cb_printf ("      access        : 0x%04x (%s)\n", (ut32)MA, accessStr);
@@ -1419,7 +1421,7 @@ static void parse_dex_class_method(RBinFile *bf, RBinDexClass *c, RBinClass *cls
 				if (bin_dbginfo) {
 					ut64 addr = r_buf_tell (bf->buf);
 					dex_parse_debug_item (bf, c, MI, MA, sym->paddr, ins_size,
-							insns_size, cls->name, regsz, debug_info_off);
+							insns_size, cls_name, regsz, debug_info_off);
 					r_buf_seek (bf->buf, addr, R_BUF_SET);
 				}
 			} else if (MC > 0) {
@@ -1442,15 +1444,13 @@ static void parse_class(RBinFile *bf, RBinDexClass *c, int class_index, int *met
 	RBin *rbin = bf->rbin;
 	int z;
 	RBinClass *cls = R_NEW0 (RBinClass);
-	if (!cls) {
-		goto beach;
-	}
-	cls->name = dex_class_name (dex, c);
 	cls->lang = R_BIN_LANG_JAVA;
-	if (!cls->name) {
+	char *cls_name = dex_class_name (dex, c);
+	if (!cls_name) {
 		goto beach;
 	}
-	r_str_replace_char (cls->name, ';', 0);
+	r_str_replace_char (cls_name, ';', 0);
+	cls->name = r_bin_name_new (cls_name);
 	cls->index = class_index;
 	cls->addr = dex->header.class_offset + (class_index * DEX_CLASS_SIZE);
 	cls->methods = r_list_newf ((RListFree)r_bin_symbol_free);
@@ -1472,7 +1472,7 @@ static void parse_class(RBinFile *bf, RBinDexClass *c, int class_index, int *met
 	cls->visibility_str = createAccessFlagStr (c->access_flags, kAccessForClass);
 	r_list_append (dex->classes_list, cls);
 	if (dex->dexdump) {
-		rbin->cb_printf ("  Class descriptor  : '%s;'\n", cls->name);
+		rbin->cb_printf ("  Class descriptor  : '%s;'\n", cls_name);
 		rbin->cb_printf ("  Access flags      : 0x%04x (%s)\n", c->access_flags,
 				r_str_get (cls->visibility_str));
 		if (cls->super) {
@@ -1562,18 +1562,17 @@ static void parse_class(RBinFile *bf, RBinDexClass *c, int class_index, int *met
 
 	if (dex->dexdump) {
 		const char *source_file = getstr (dex, c->source_file);
-		if (!source_file) {
-			rbin->cb_printf (
-				"  source_file_idx   : %d (unknown)\n\n",
-				c->source_file);
-		} else {
+		if (source_file) {
 			rbin->cb_printf ("  source_file_idx   : %d (%s)\n\n",
-					 c->source_file, source_file);
+					c->source_file, source_file);
+		} else {
+			rbin->cb_printf ("  source_file_idx   : %d (unknown)\n\n",
+					c->source_file);
 		}
 	}
 	cls = NULL;
 beach:
-	return;
+	R_FREE (cls_name);
 }
 
 static bool is_class_idx_in_code_classes(RBinDexObj *dex, int class_idx) {

@@ -3535,7 +3535,7 @@ static void classdump_c(RCore *r, RBinClass *c) {
 			free (n);
 		}
 	}
-	const char *klass_name = c->name; // r_bin_name_tostring2 (c->name, pref);
+	const char *klass_name = r_bin_name_tostring2 (c->name, pref);
 	if (is_objc) {
 		r_cons_printf ("} objc_class_%s;\n", klass_name);
 	} else {
@@ -3545,7 +3545,7 @@ static void classdump_c(RCore *r, RBinClass *c) {
 
 static void classdump_cxx(RCore *r, RBinClass *c) {
 	const int pref = r_config_get_b (r->config, "asm.demangle")? 'd': 0;
-	const char *klass_name = c->name; // r_bin_name_tostring2 (c->name, pref);
+	const char *klass_name = r_bin_name_tostring2 (c->name, pref);
 	r_cons_printf ("class %s {\n", klass_name);
 	RListIter *iter2;
 	RBinField *f;
@@ -3576,10 +3576,11 @@ static void classdump_cxx(RCore *r, RBinClass *c) {
 }
 
 static void classdump_objc(RCore *r, RBinClass *c) {
-	const int pref = 0; // r_config_get_b (r->config, "asm.demangle")? 'd': 0;
+	const int pref = r_config_get_b (r->config, "asm.demangle")? 'd': 0;
+	const char *cname = r_bin_name_tostring2 (c->name, pref);
 	if (c->super) {
 		int n = 0;
-		r_cons_printf ("@interface %s :", c->name);
+		r_cons_printf ("@interface %s :", cname);
 		RBinName *bn;
 		RListIter *iter;
 		r_list_foreach (c->super, iter, bn) {
@@ -3596,7 +3597,7 @@ static void classdump_objc(RCore *r, RBinClass *c) {
 			r_cons_printf ("\n{\n");
 		}
 	} else {
-		r_cons_printf ("@interface %s\n{\n", c->name);
+		r_cons_printf ("@interface %s\n{\n", cname);
 	}
 	RListIter *iter2, *iter3;
 	RBinField *f;
@@ -3607,9 +3608,9 @@ static void classdump_objc(RCore *r, RBinClass *c) {
 			const char *fn = r_bin_name_tostring2 (f->name, pref);
 			if (f->type) {
 				const char *ft = r_bin_name_tostring2 (f->type, pref);
-				r_cons_printf ("  %s %s::(%s)%s\n", ft, c->name, ks, fn);
+				r_cons_printf ("  %s %s::(%s)%s\n", ft, cname, ks, fn);
 			} else {
-				r_cons_printf ("  isa %s::(%s)%s\n", c->name, ks, fn);
+				r_cons_printf ("  isa %s::(%s)%s\n", cname, ks, fn);
 			}
 		}
 	}
@@ -3635,7 +3636,8 @@ static void classdump_swift(RCore *r, RBinClass *c) {
 	RBinField *f;
 	RListIter *iter;
 	RBinSymbol *sym;
-	char *pn = strdup (c->name);
+	const char *cname = r_bin_name_tostring2 (c->name, pref);
+	char *pn = strdup (cname);
 	char *cn = (char *)r_str_rchr (pn, NULL, '/');
 	if (cn) {
 		*cn = 0;
@@ -3688,11 +3690,12 @@ static void classdump_swift(RCore *r, RBinClass *c) {
 }
 
 static void classdump_java(RCore *r, RBinClass *c) {
-	const int pref = r_config_get_b (r->config, "asm.demangle")? 'd': 0;
 	RBinField *f;
 	RListIter *iter;
 	RBinSymbol *sym;
-	char *pn = strdup (c->name);
+	const int pref = r_config_get_b (r->config, "asm.demangle")? 'd': 0;
+	const char *cname = r_bin_name_tostring2 (c->name, pref);
+	char *pn = strdup (cname);
 	char *cn = (char *)r_str_rchr (pn, NULL, '/');
 	if (cn) {
 		*cn = 0;
@@ -3765,10 +3768,11 @@ static bool bin_classes(RCore *r, PJ *pj, int mode) {
 	}
 	const bool bin_filter = r_config_get_b (r->config, "bin.filter");
 	r_list_foreach (cs, iter, c) {
-		if (!c || R_STR_ISEMPTY (c->name)) {
+		const char *cname = r_bin_name_tostring2 (c->name, pref);
+		if (!c || R_STR_ISEMPTY (cname)) {
 			continue;
 		}
-		char *name = strdup (c->name);
+		char *name = strdup (cname);
 		r_name_filter (name, -1);
 		ut64 at_min = UT64_MAX;
 		ut64 at_max = 0LL;
@@ -3796,7 +3800,7 @@ static bool bin_classes(RCore *r, PJ *pj, int mode) {
 				char *mflags = r_bin_attr_tostring (sym->attr, false);
 				r_str_replace_char (mflags, ' ', '.');
 				// XXX probably access flags should not be part of the flag name
-				r_strf_var (method, 256, "method%s%s.%s.%s", R_STR_ISEMPTY (mflags)? "":".", mflags, c->name, sym->name);
+				r_strf_var (method, 256, "method%s%s.%s.%s", R_STR_ISEMPTY (mflags)? "":".", mflags, cname, sym->name);
 				R_FREE (mflags);
 				r_name_filter (method, -1);
 				r_flag_set (r->flags, method, sym->vaddr, 1);
@@ -3811,11 +3815,11 @@ static bool bin_classes(RCore *r, PJ *pj, int mode) {
 				free (fn);
 			}
 		} else if (IS_MODE_SIMPLEST (mode)) {
-			r_cons_printf ("%s\n", c->name);
+			r_cons_printf ("%s\n", cname);
 		} else if (IS_MODE_SIMPLE (mode)) {
 			char *supers = csv_supers (c->super);
 			r_cons_printf ("0x%08"PFMT64x" [0x%08"PFMT64x" - 0x%08"PFMT64x"] %s %s%s%s\n",
-				c->addr, at_min, at_max, r_bin_lang_tostring (c->lang), c->name, *supers ? " " : "", supers);
+				c->addr, at_min, at_max, r_bin_lang_tostring (c->lang), cname, *supers ? " " : "", supers);
 			free (supers);
 		} else if (IS_MODE_CLASSDUMP (mode)) {
 			if (c) {
@@ -3858,7 +3862,7 @@ static bool bin_classes(RCore *r, PJ *pj, int mode) {
 			char *n = r_name_filter_shell (name);
 			r_cons_printf ("\"f class.%s = 0x%"PFMT64x"\"\n", n, at_min);
 			if (c->super) {
-				char *cn = c->name;
+				const char *cn = cname;
 				RListIter *iter;
 				RBinName *bn;
 				r_list_foreach (c->super, iter, bn) {
@@ -3871,7 +3875,7 @@ static bool bin_classes(RCore *r, PJ *pj, int mode) {
 			r_list_foreach (c->methods, iter2, sym) {
 				char *mflags = r_bin_attr_tostring (sym->attr, false);
 				r_str_replace_char (mflags, ' ', '.');
-				char *n = c->name; //  r_name_filter_shell (c->name);
+				const char *n = cname; //  r_name_filter_shell (cname);
 				char *sn = sym->name; //r_name_filter_shell (sym->name); // symbol contains classname
 				const char *predot = R_STR_ISNOTEMPTY (mflags)? ".": "";
 				// char *cmd = r_str_newf ("\"f method%s.%s.%s = 0x%"PFMT64x"\"\n", mflags, n, sn, sym->vaddr);
@@ -3897,7 +3901,7 @@ static bool bin_classes(RCore *r, PJ *pj, int mode) {
 			r_list_foreach (c->fields, iter2, f) {
 				const char *kind = r_bin_field_kindstr (f);
 				const char *fname = r_bin_name_tostring2 (f->name, pref);
-				char *fn = r_str_newf ("field.%s.%s.%s", c->name, kind, fname);
+				char *fn = r_str_newf ("field.%s.%s.%s", cname, kind, fname);
 				r_name_filter (fn, -1);
 				ut64 at = f->vaddr; //  sym->vaddr + (f->vaddr &  0xffff);
 				r_cons_printf ("\"f %s = 0x%08"PFMT64x"\"\n", fn, at);
@@ -3905,7 +3909,7 @@ static bool bin_classes(RCore *r, PJ *pj, int mode) {
 			}
 
 			// C struct
-			r_cons_printf ("\"\"td struct %s {", c->name);
+			r_cons_printf ("\"\"td struct %s {", cname);
 			if (r_list_empty (c->fields)) {
 				// XXX workaround because we cant register empty structs yet
 				// XXX https://github.com/radareorg/radare2/issues/16342
@@ -3928,7 +3932,7 @@ static bool bin_classes(RCore *r, PJ *pj, int mode) {
 			free (n);
 		} else if (IS_MODE_JSON (mode)) {
 			pj_o (pj);
-			pj_ks (pj, "classname", c->name);
+			pj_ks (pj, "classname", cname);
 			pj_kN (pj, "addr", c->addr);
 			const char *lang = r_bin_lang_tostring (c->lang);
 			if (lang && *lang != '?') {
@@ -4013,7 +4017,7 @@ static bool bin_classes(RCore *r, PJ *pj, int mode) {
 			int m = 0;
 			const char *cl = r_bin_lang_tostring (c->lang);
 			r_cons_printf ("0x%08"PFMT64x" [0x%08"PFMT64x" - 0x%08"PFMT64x"] %6"PFMT64d" %s class %d %s",
-				c->addr, at_min, at_max, (at_max - at_min), cl, c->index, c->name);
+				c->addr, at_min, at_max, (at_max - at_min), cl, c->index, cname);
 			if (r_list_empty (c->super)) {
 				r_cons_newline ();
 			} else {
