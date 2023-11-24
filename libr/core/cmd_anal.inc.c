@@ -14599,9 +14599,9 @@ static bool match_prelude_internal(RCore *core, const char *input, ut64 *fcnaddr
 	r_mem_reverse (buf, bufsz);
 	//r_print_hexdump (NULL, off, buf, bufsz, 16, -16);
 	const ut8 *pos = r_mem_mem (buf, bufsz, prelude, prelude_sz);
-	free (buf);
 	if (pos) {
 		const int delta = (size_t)(pos - buf);
+		free (buf);
 		*fcnaddr = off - delta;
 		if (*fcnaddr % 4) {
 			// ignore unaligned hits
@@ -14609,6 +14609,7 @@ static bool match_prelude_internal(RCore *core, const char *input, ut64 *fcnaddr
 		}
 		return true;
 	}
+	free (buf);
 	return false;
 }
 
