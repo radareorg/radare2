@@ -4,6 +4,7 @@
 
 #include <math.h>
 #include "class.h"
+#define R_BIN_CLASSNAME(x) (x)->name? (x)->name: (x)->oname
 
 static inline RBinName *__bin_name_new(const char *name) {
 	r_return_val_if_fail (name, NULL);
@@ -708,7 +709,7 @@ R_API void r_bin_java_get_class_info_json(RBinJavaObj *bin, PJ *pj) {
 		pj_ki (pj, "is_synthetic", ((klass->attr & R_BIN_JAVA_CLASS_ACC_SYNTHETIC) != 0));
 		pj_ki (pj, "is_annotation", ((klass->attr & R_BIN_JAVA_CLASS_ACC_ANNOTATION) != 0));
 		pj_ki (pj, "is_enum", ((klass->attr & R_BIN_JAVA_CLASS_ACC_ENUM) != 0));
-		pj_ks (pj, "name", klass->name);
+		pj_ks (pj, "name", R_BIN_CLASSNAME (klass->name));
 		if (klass->super) {
 			RBinName *bn;
 			RListIter *iter;
@@ -731,7 +732,7 @@ R_API void r_bin_java_get_class_info_json(RBinJavaObj *bin, PJ *pj) {
 			}
 			// enumerate all interface classes and append them to the interfaces
 			if ((klassv->attr & R_BIN_ATTR_INTERFACE) != 0) {
-				pj_s (pj, klassv->name);
+				pj_s (pj, R_BIN_CLASSNAME (klassv->name));
 			}
 		}
 		pj_end (pj);
@@ -2792,7 +2793,9 @@ R_API RList *r_bin_java_get_classes(RBinJavaObj *bin) {
 #endif
 	k->methods = r_bin_java_enum_class_methods (bin, bin->cf2.this_class);
 	k->fields = r_bin_java_enum_class_fields (bin, bin->cf2.this_class);
-	k->name = r_bin_java_get_this_class_name (bin);
+	char *kname = r_bin_java_get_this_class_name (bin);
+	k->name = __bin_name_new (kname);
+	free (kname);
 	char *n = r_bin_java_get_name_from_bin_cp_list (bin, bin->cf2.super_class);
 	if (R_STR_ISNOTEMPTY (n)) {
 		k->super = r_list_newf ((void*)__bin_name_free);
@@ -2809,7 +2812,9 @@ R_API RList *r_bin_java_get_classes(RBinJavaObj *bin) {
 			k->methods = r_bin_java_enum_class_methods (bin, cp_obj->info.cp_class.name_idx);
 			k->fields = r_bin_java_enum_class_fields (bin, cp_obj->info.cp_class.name_idx);
 			k->index = idx;
-			k->name = r_bin_java_get_item_name_from_bin_cp_list (bin, cp_obj);
+			char *name = r_bin_java_get_item_name_from_bin_cp_list (bin, cp_obj);
+			k->name = __bin_name_new (name);
+			free (name);
 			r_list_append (classes, k);
 			idx++;
 		}
