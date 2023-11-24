@@ -378,6 +378,10 @@ static void r2pm_setenv(void) {
 	r_sys_setenv ("R2PM_BINDIR", bindir);
 	free (bindir);
 
+	char *libdir = r_str_newf ("%s/bin", r2_prefix);
+	r_sys_setenv ("R2PM_LIBDIR", libdir);
+	free (libdir);
+
 	char *oldpath = r_sys_getenv ("PATH");
 	if (!oldpath) {
 		oldpath = strdup ("/bin");
@@ -1011,6 +1015,7 @@ static void r2pm_envhelp(bool verbose) {
 	if (verbose) {
 		char *r2pm_plugdir = r_sys_getenv ("R2PM_PLUGDIR");
 		char *r2pm_bindir = r_sys_getenv ("R2PM_BINDIR");
+		char *r2pm_libdir = r_sys_getenv ("R2PM_LIBDIR");
 		char *r2pm_dbdir = r_sys_getenv ("R2PM_DBDIR");
 		char *r2pm_prefix = r_sys_getenv ("R2PM_PREFIX");
 		char *r2pm_gitdir = r_sys_getenv ("R2PM_GITDIR");
@@ -1022,6 +1027,7 @@ static void r2pm_envhelp(bool verbose) {
 			"R2PM_PLUGDIR=%s\n"
 			"R2PM_PREFIX=%s\n"
 			"R2PM_BINDIR=%s\n"
+			"R2PM_LIBDIR=%s\n"
 			"R2PM_OFFLINE=%d         # don't git pull\n"
 			"R2PM_LEGACY=0\n"
 			"R2PM_DBDIR=%s\n"
@@ -1029,6 +1035,7 @@ static void r2pm_envhelp(bool verbose) {
 			r2pm_plugdir,
 			r2pm_prefix,
 			r2pm_bindir,
+			r2pm_libdir,
 			r2pm_offline,
 			r2pm_dbdir,
 			r2pm_gitdir);
@@ -1042,6 +1049,7 @@ static void r2pm_envhelp(bool verbose) {
 			"R2PM_TIME\n"
 			"R2PM_PLUGDIR\n"
 			"R2PM_BINDIR\n"
+			"R2PM_LIBDIR\n"
 			"R2PM_OFFLINE\n"
 			"R2PM_PREFIX\n"
 			"R2PM_LEGACY\n"
