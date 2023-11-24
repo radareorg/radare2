@@ -216,8 +216,10 @@ static void filter_classes(RBinFile *bf, RList *list) {
 	r_list_foreach (list, iter, cls) {
 		const char *kname = r_bin_name_tostring (cls->name);
 		char *fname = r_bin_filter_name (bf, db, cls->index, kname);
-		r_bin_name_update (cls->name, fname);
-		free (fname);
+		if (fname) {
+			r_bin_name_update (cls->name, fname);
+			free (fname);
+		}
 		r_list_foreach (cls->methods, iter2, sym) {
 			r_bin_filter_sym (bf, ht, sym->vaddr, sym);
 		}

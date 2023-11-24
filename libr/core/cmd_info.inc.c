@@ -952,17 +952,19 @@ static void cmd_ic(RCore *core, const char *input, PJ *pj, int is_array, bool va
 							continue;
 						}
 						bool listed_classes = false;
-						if (idx != -1 || R_STR_ISNOTEMPTY (kname)) {
-							filtered = true;
-							r_cons_printf ("class %s\n", kname);
-							r_list_foreach (cls->methods, iter2, sym) {
-								char *flags = r_core_bin_attr_tostring (sym->attr, true);
-								r_cons_printf ("0x%08"PFMT64x " method %s %-4s %s\n",
-										iova? sym->vaddr: sym->paddr,
-										kname, flags, sym->name);
-								free (flags);
+						if (mode != 'j') {
+							if (idx != -1 || R_STR_ISNOTEMPTY (kname)) {
+								filtered = true;
+								r_cons_printf ("class %s\n", kname);
+								r_list_foreach (cls->methods, iter2, sym) {
+									char *flags = r_core_bin_attr_tostring (sym->attr, true);
+									r_cons_printf ("0x%08"PFMT64x " method %s %-4s %s\n",
+											iova? sym->vaddr: sym->paddr,
+											kname, flags, sym->name);
+									free (flags);
+								}
+								continue;
 							}
-							continue;
 						}
 
 						switch (mode) {
