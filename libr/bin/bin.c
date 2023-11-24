@@ -1505,7 +1505,9 @@ R_API void r_bin_name_demangled(RBinName *bn, const char *dname) {
 }
 
 R_API char *r_bin_name_tostring(RBinName *bn) {
-	r_return_val_if_fail (bn, NULL);
+	if (!bn) {
+		return NULL;
+	}
 	if (bn->name) {
 		return bn->name;
 	}
@@ -1517,7 +1519,9 @@ R_API char *r_bin_name_tostring(RBinName *bn) {
 
 // prefered type
 R_API char *r_bin_name_tostring2(RBinName *bn, int type) {
-	r_return_val_if_fail (bn, NULL);
+	if (!bn) {
+		return NULL;
+	}
 	if (type == 'd' && bn->name) {
 		return bn->name;
 	} else if (type == 'f' && bn->fname) {

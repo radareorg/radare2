@@ -3698,6 +3698,9 @@ static void classdump_java(RCore *r, RBinClass *c) {
 		*cn = 0;
 		cn++;
 		r_str_replace_char (pn, '/', '.');
+	} else {
+		char *dot = (char *)r_str_rchr (pn, NULL, '.');
+		cn = dot? dot + 1: pn;
 	}
 	r_cons_printf ("package %s;\n\n", pn);
 	r_cons_printf ("public class %s {\n", cn);
@@ -3706,7 +3709,7 @@ static void classdump_java(RCore *r, RBinClass *c) {
 		if (f->name && f->kind == R_BIN_FIELD_KIND_VARIABLE) {
 			const char *fname = r_bin_name_tostring2 (f->name, pref);
 			const char *tp = r_bin_name_tostring2 (f->type, pref);
-			r_cons_printf ("  public %s %s\n", tp? tp: "int", fname);
+			r_cons_printf ("  public %s %s\n", R_STR_ISNOTEMPTY (tp)? tp: "Object", fname);
 		}
 	}
 	r_list_foreach (c->methods, iter, sym) {
