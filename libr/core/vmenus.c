@@ -638,7 +638,7 @@ R_API bool r_core_visual_bit_editor(RCore *core) {
 		case 'k':
 		case 10:
 		case ' ':
-			//togglebit();
+			// togglebit();
 			{
 				const int nbyte = x / 8;
 				const int nbit = 7 - (x - (nbyte * 8));
@@ -1064,15 +1064,16 @@ R_API bool r_core_visual_hudclasses(RCore *core) {
 	list->free = free;
 	RList *classes = r_bin_get_classes (core->bin);
 	r_list_foreach (classes, iter, c) {
+		const char *cname = r_bin_name_tostring2 (c->name, pref);
 		r_list_foreach (c->fields, iter2, f) {
 			const char *fname = r_bin_name_tostring2 (f->name, pref);
 			r_list_append (list, r_str_newf ("0x%08"PFMT64x"  %s %s",
-				f->vaddr, c->name, fname));
+				f->vaddr, cname, fname));
 		}
 		r_list_foreach (c->methods, iter2, m) {
 			const char *name = m->dname? m->dname: m->name;
 			r_list_append (list, r_str_newf ("0x%08"PFMT64x"  %s %s",
-				m->vaddr, c->name, name));
+				m->vaddr, cname, name));
 		}
 	}
 	res = r_cons_hud (list, NULL);
@@ -1182,12 +1183,14 @@ static void *show_class(RCore *core, int mode, int *idx, RBinClass *_c, const ch
 	int skip = *idx - 10;
 	bool found = false;
 
+	const char *_cname = r_bin_name_tostring (_c->name);
 	switch (mode) {
 	case 'c':
 		r_cons_printf ("[hjkl_/Cfm]> classes:\n\n");
 		r_list_foreach (list, iter, c) {
+			const char *cname = r_bin_name_tostring (c->name);
 			if (grep) {
-				if (!r_str_casestr (c->name, grep)) {
+				if (!r_str_casestr (cname, grep)) {
 					i++;
 					continue;
 				}
@@ -1205,14 +1208,14 @@ static void *show_class(RCore *core, int mode, int *idx, RBinClass *_c, const ch
 					const char *clr = Color_BLUE;
 					r_cons_printf (Color_GREEN ">>" Color_RESET " %02d %s0x%08"
 							PFMT64x Color_YELLOW "  %s\n" Color_RESET,
-						i, clr, c->addr, c->name);
+						i, clr, c->addr, cname);
 				} else {
 					r_cons_printf ("-  %02d %s0x%08"PFMT64x Color_RESET"  %s\n",
-						i, core->cons->context->pal.offset, c->addr, c->name);
+						i, core->cons->context->pal.offset, c->addr, cname);
 				}
 			} else {
 				r_cons_printf ("%s %02d 0x%08"PFMT64x"  %s\n",
-					(i==*idx)?">>":"- ", i, c->addr, c->name);
+					(i==*idx)?">>":"- ", i, c->addr, cname);
 			}
 			if (i++ == *idx) {
 				cur = c;
@@ -1230,7 +1233,7 @@ static void *show_class(RCore *core, int mode, int *idx, RBinClass *_c, const ch
 		return cur;
 	case 'f':
 		// show fields
-		r_cons_printf ("[hjkl_/cFm]> fields of %s:\n\n", _c->name);
+		r_cons_printf ("[hjkl_/cFm]> fields of %s:\n\n", _cname);
 		r_list_foreach (_c->fields, iter, f) {
 			const char *name = r_bin_name_tostring2 (f->name, 'f');
 			if (grep) {
@@ -1250,8 +1253,8 @@ static void *show_class(RCore *core, int mode, int *idx, RBinClass *_c, const ch
 
 			char *mflags = strdup ("");
 
-			if (r_str_startswith (name, _c->name)) {
-				name += strlen (_c->name);
+			if (r_str_startswith (name, _cname)) {
+				name += strlen (_cname);
 			}
 			if (show_color) {
 				if (i == *idx) {
@@ -1290,7 +1293,7 @@ static void *show_class(RCore *core, int mode, int *idx, RBinClass *_c, const ch
 			R_LOG_WARN ("No class selected");
 			return mur;
 		}
-		r_cons_printf ("[hjkl_/cfM]> methods of %s\n\n", _c->name);
+		r_cons_printf ("[hjkl_/cfM]> methods of %s\n\n", _cname);
 		r_list_foreach (_c->methods, iter, m) {
 			const char *name = m->dname? m->dname: m->name;
 			if (grep) {
@@ -1310,8 +1313,8 @@ static void *show_class(RCore *core, int mode, int *idx, RBinClass *_c, const ch
 
 			char *mflags = r_core_bin_attr_tostring (m->attr, false);
 			if (show_color) {
-				if (r_str_startswith (name, _c->name)) {
-					name += strlen (_c->name);
+				if (r_str_startswith (name, _cname)) {
+					name += strlen (_cname);
 				}
 				if (i == *idx) {
 					const char *clr = Color_BLUE;

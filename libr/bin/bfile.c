@@ -1057,10 +1057,10 @@ R_API RBinClass *r_bin_class_new(const char *name, const char *super, ut64 attr)
 	r_return_val_if_fail (name, NULL);
 	RBinClass *c = R_NEW0 (RBinClass);
 	if (c) {
-		c->name = strdup (name);
+		c->name = r_bin_name_new (name);
 		if (R_STR_ISNOTEMPTY (super)) {
 			c->super = r_list_newf (free);
-			r_list_append (c->super, strdup (super));
+			r_list_append (c->super, r_bin_name_new (super));
 		}
 		// TODO: use vectors!
 		c->methods = r_list_newf (r_bin_symbol_free);

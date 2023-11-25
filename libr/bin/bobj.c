@@ -214,26 +214,14 @@ static void filter_classes(RBinFile *bf, RList *list) {
 	RBinClass *cls;
 	RBinSymbol *sym;
 	r_list_foreach (list, iter, cls) {
-		if (!cls->name) {
-			continue;
+		const char *kname = r_bin_name_tostring (cls->name);
+		char *fname = r_bin_filter_name (bf, db, cls->index, kname);
+		if (fname) {
+			r_bin_name_update (cls->name, fname);
+			free (fname);
 		}
-		int namepad_len = strlen (cls->name) + 32;
-		char *namepad = malloc (namepad_len + 1);
-		if (namepad) {
-			char *p;
-			strcpy (namepad, cls->name);
-			p = r_bin_filter_name (bf, db, cls->index, namepad);
-			if (p) {
-				free (namepad);
-				namepad = p;
-			}
-			free (cls->name);
-			cls->name = namepad;
-			r_list_foreach (cls->methods, iter2, sym) {
-				if (sym->name) {
-					r_bin_filter_sym (bf, ht, sym->vaddr, sym);
-				}
-			}
+		r_list_foreach (cls->methods, iter2, sym) {
+			r_bin_filter_sym (bf, ht, sym->vaddr, sym);
 		}
 	}
 	ht_su_free (db);
@@ -265,9 +253,9 @@ static void r_bin_object_rebuild_classes_ht(RBinObject *bo) {
 	r_list_foreach (bo->classes, it, klass) {
 		if (klass->name) {
 			ht_pp_insert (bo->classes_ht, klass->name, klass);
-
 			r_list_foreach (klass->methods, it2, method) {
-				char *name = r_str_newf ("%s::%s", klass->name, method->name);
+				const char *klass_name = r_bin_name_tostring (klass->name);
+				char *name = r_str_newf ("%s::%s", klass_name, method->name);
 				ht_pp_insert (bo->methods_ht, name, method);
 				free (name);
 			}

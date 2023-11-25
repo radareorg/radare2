@@ -200,20 +200,17 @@ struct MACH0_(SCategory) {
 
 static char *readstr(RBinFile *bf, ut64 addr);
 static mach0_ut va2pa(mach0_ut p, ut32 *offset, ut32 *left, RBinFile *bf);
-static void copy_sym_name_with_namespace(const char *class_name, char *read_name, RBinSymbol *sym);
 static void get_ivar_list(RBinFile *bf, RBinClass *klass, mach0_ut p);
 static void get_objc_property_list(RBinFile *bf, RBinClass *klass, mach0_ut p);
-static void get_method_list(RBinFile *bf, const char *class_name, RBinClass *klass, bool is_static, objc_cache_opt_info *oi, mach0_ut p);
-static void get_protocol_list(RBinFile *bf, RBinClass *klass, objc_cache_opt_info *oi, mach0_ut p);
+static void get_method_list(RBinFile *bf, RBinClass *klass, const char *class_name, bool is_static, objc_cache_opt_info *oi, mach0_ut p);
 static void get_objc_property_list_of_lists(RBinFile *bf, RBinClass *klass, mach0_ut p);
-static void get_method_list_of_lists(RBinFile *bf, const char *class_name, RBinClass *klass, bool is_static, objc_cache_opt_info *oi, mach0_ut p);
+static void get_method_list_of_lists(RBinFile *bf, RBinClass *klass, const char *class_name, bool is_static, objc_cache_opt_info *oi, mach0_ut p);
 static void get_protocol_list_of_lists(RBinFile *bf, RBinClass *klass, objc_cache_opt_info *oi, mach0_ut p);
 static void get_class_ro_t(RBinFile *bf, bool *is_meta_class, RBinClass *klass, objc_cache_opt_info *oi, mach0_ut p);
 static RList *MACH0_(parse_categories)(RBinFile *bf, MetaSections *ms, const RSkipList *relocs, objc_cache_opt_info *oi);
 static bool read_ptr_pa(RBinFile *bf, ut64 paddr, mach0_ut *out);
 static bool read_ptr_va(RBinFile *bf, ut64 vaddr, mach0_ut *out);
 static char *read_str(RBinFile *bf, mach0_ut p, ut32 *offset, ut32 *left);
-static char *get_class_name(mach0_ut p, RBinFile *bf);
 
 static inline bool is_thumb(RBinFile *bf) {
 	struct MACH0_(obj_t) *bin = (struct MACH0_(obj_t) *)bf->bo->bin_obj;
@@ -237,8 +234,8 @@ static mach0_ut va2pa(mach0_ut p, ut32 *offset, ut32 *left, RBinFile *bf) {
 		return bin->va2pa (p, offset, left, bf);
 	}
 	mach0_ut addr = p;
-	RVecSegment *sections = MACH0_(get_segments_vec) (bf, bin);  // don't free, cached by bin
 	RBinSection *s;
+	RVecSegment *sections = MACH0_(get_segments_vec) (bf, bin);  // don't free, cached by bin
 	R_VEC_FOREACH (sections, s) {
 		if (addr >= s->vaddr && addr < s->vaddr + s->vsize) {
 			if (offset) {
@@ -254,7 +251,7 @@ static mach0_ut va2pa(mach0_ut p, ut32 *offset, ut32 *left, RBinFile *bf) {
 	return r;
 }
 
-static void copy_sym_name_with_namespace(const char *class_name, char *read_name, RBinSymbol *sym) {
+static inline void copy_sym_name_with_namespace(RBinSymbol *sym, const char *class_name, char *read_name) {
 	sym->classname = strdup (class_name? class_name: "");
 	sym->name = strdup (read_name);
 }
@@ -697,23 +694,22 @@ static void iterate_list_of_lists(RBinFile *bf, OnList cb, void * ctx, mach0_ut 
 }
 
 // TODO: remove class_name, because it's already in klass->name
-static void get_method_list(RBinFile *bf, const char *class_name, RBinClass *klass, bool is_static, objc_cache_opt_info *oi, mach0_ut p) {
+static void get_method_list(RBinFile *bf, RBinClass *klass, const char *class_name, bool is_static, objc_cache_opt_info *oi, mach0_ut p) {
 	struct MACH0_(SMethodList) ml;
 	mach0_ut r;
 	ut32 offset, left, i;
 	char *name = NULL;
 	char *rtype = NULL;
 	int len;
-	bool bigendian;
 	ut8 sml[sizeof (struct MACH0_(SMethodList))] = {0};
 	ut8 sm[sizeof (struct MACH0_(SMethod))] = {0};
 
 	RBinSymbol *method = NULL;
 	if (!bf || !bf->bo || !bf->bo->bin_obj || !bf->bo->info) {
-		R_LOG_WARN ("incorrect RBinFile pointer");
+		R_LOG_WARN ("Incorrect RBinFile pointer");
 		return;
 	}
-	bigendian = bf->bo->info->big_endian;
+	const bool bigendian = bf->bo->info->big_endian;
 	r = va2pa (p, &offset, &left, bf);
 	if (!r) {
 		return;
@@ -840,7 +836,7 @@ static void get_method_list(RBinFile *bf, const char *class_name, RBinClass *kla
 					goto error;
 				}
 			}
-			copy_sym_name_with_namespace (class_name, name, method);
+			copy_sym_name_with_namespace (method, class_name, name); // XXX r_bin_name_tostring (klass->name), name);
 			R_FREE (name);
 		}
 
@@ -901,15 +897,14 @@ error:
 	return;
 }
 
-///////////////////////////////////////////////////////////////////////////////
 static void get_protocol_list(RBinFile *bf, RBinClass *klass, objc_cache_opt_info *oi, mach0_ut p) {
 	struct MACH0_(SProtocolList) pl = {0};
 	struct MACH0_(SProtocol) pc;
-	char *class_name = NULL;
 	ut32 offset, left, i, j;
 	mach0_ut q, r;
 	int len;
 	bool bigendian;
+	char *class_name = NULL;
 	ut8 spl[sizeof (struct MACH0_(SProtocolList))] = {0};
 	ut8 spc[sizeof (struct MACH0_(SProtocol))] = {0};
 	ut8 sptr[sizeof (mach0_ut)] = {0};
@@ -1034,15 +1029,16 @@ static void get_protocol_list(RBinFile *bf, RBinClass *klass, objc_cache_opt_inf
 				}
 				name[name_len] = 0;
 			}
-			class_name = r_str_newf ("%s::%s%s", klass->name, "(protocol)", name);
+			const char *cname = r_bin_name_tostring2 (klass->name, 'd');
+			class_name = r_str_newf ("%s::(protocol)%s", cname, name);
 			R_FREE (name);
 		}
 
 		if (pc.instanceMethods > 0) {
-			get_method_list (bf, class_name, klass, false, oi, pc.instanceMethods);
+			get_method_list (bf, klass, class_name, false, oi, pc.instanceMethods);
 		}
 		if (pc.classMethods > 0) {
-			get_method_list (bf, class_name, klass, true, oi, pc.classMethods);
+			get_method_list (bf, klass, class_name, true, oi, pc.classMethods);
 		}
 		R_FREE (class_name);
 		p += sizeof (ut32);
@@ -1067,11 +1063,10 @@ static void get_objc_property_list_of_lists(RBinFile *bf, RBinClass *klass, mach
 
 static void on_method_list(mach0_ut p, void * _ctx) {
 	MethodListOfListsCtx * ctx = _ctx;
-
-	get_method_list (ctx->bf, ctx->class_name, ctx->klass, ctx->is_static, ctx->oi, p);
+	get_method_list (ctx->bf, ctx->klass, ctx->class_name, ctx->is_static, ctx->oi, p);
 }
 
-static void get_method_list_of_lists(RBinFile *bf, const char *class_name, RBinClass *klass, bool is_static, objc_cache_opt_info *oi, mach0_ut p) {
+static void get_method_list_of_lists(RBinFile *bf, RBinClass *klass, const char *class_name, bool is_static, objc_cache_opt_info *oi, mach0_ut p) {
 	MethodListOfListsCtx ctx;
 
 	ctx.bf = bf;
@@ -1307,23 +1302,26 @@ static void get_class_ro_t(RBinFile *bf, bool *is_meta_class, RBinClass *klass, 
 			return;
 		}
 		if (bin->has_crypto) {
-			klass->name = strdup ("some_encrypted_data");
-			left = strlen (klass->name) + 1;
+			const char *kn = "some_encrypted_data";
+			klass->name = r_bin_name_new (kn);
+			// klass->name = strdup ("some_encrypted_data");
+			left = strlen (kn) + 1;
 		} else {
-			int name_len = R_MIN (MAX_CLASS_NAME_LEN, left);
-			char *name = malloc (name_len + 1);
-			if (name) {
-				int rc = r_buf_read_at (bf->buf, r, (ut8 *)name, name_len);
-				if (rc != name_len) {
-					rc = 0;
-				}
-				name[rc] = 0;
-				klass->name = demangle_classname (name);
-				free (name);
+			char name[MAX_CLASS_NAME_LEN];
+			int name_len = R_MIN (MAX_CLASS_NAME_LEN - 1, left);
+			int rc = r_buf_read_at (bf->buf, r, (ut8 *)name, name_len);
+			if (rc != name_len) {
+				rc = 0;
 			}
+			name[rc] = 0;
+			klass->name = r_bin_name_new (name);
+			char *dn = demangle_classname (name);
+			r_bin_name_demangled (klass->name, dn);
+			free (dn);
 		}
 		//eprintf ("0x%x  %s\n", s, klass->name);
-		char *k = r_str_newf ("objc_class_%s.offset", klass->name);
+		const char *klass_name = r_bin_name_tostring2 (klass->name, 'd');
+		char *k = r_str_newf ("objc_class_%s.offset", klass_name);
 		sdb_num_set (bin->kv, k, s, 0);
 		free (k);
 	}
@@ -1334,10 +1332,11 @@ static void get_class_ro_t(RBinFile *bf, bool *is_meta_class, RBinClass *klass, 
 #endif
 
 	if (cro.baseMethods > 0) {
+		const char *klass_name = r_bin_name_tostring2 (klass->name, 'd');
 		if (cro.baseMethods & 1) {
-			get_method_list_of_lists (bf, klass->name, klass, (cro.flags & RO_META) ? true : false, oi, cro.baseMethods & ~1);
+			get_method_list_of_lists (bf, klass, klass_name, (cro.flags & RO_META) ? true : false, oi, cro.baseMethods & ~1);
 		} else {
-			get_method_list (bf, klass->name, klass, (cro.flags & RO_META) ? true : false, oi, cro.baseMethods);
+			get_method_list (bf, klass, klass_name, (cro.flags & RO_META) ? true : false, oi, cro.baseMethods);
 		}
 	}
 	if (cro.baseProtocols > 0) {
@@ -1825,10 +1824,9 @@ RList *MACH0_(parse_classes)(RBinFile *bf, objc_cache_opt_info *oi) {
 		p = r_read_ble (&pp[0], bigendian, 8 * sizeof (mach0_ut));
 		MACH0_(get_class_t) (p, bf, klass, false, relocs, oi);
 		if (!klass->name) {
-			klass->name = r_str_newf ("UnnamedClass%" PFMT64d, num_of_unnamed_class);
-			if (!klass->name) {
-				goto get_classes_error;
-			}
+			char *klass_name = r_str_newf ("UnnamedClass%" PFMT64d, num_of_unnamed_class);
+			klass->name = r_bin_name_new (klass_name);
+			free (klass_name);
 			num_of_unnamed_class++;
 		}
 		r_list_append (ret, klass);
@@ -1877,10 +1875,11 @@ static RList *MACH0_(parse_categories)(RBinFile *bf, MetaSections *ms, const RSk
 			continue;
 		}
 		klass->lang = R_BIN_LANG_OBJC;
-		char *par = strchr (klass->name, '(');
+		const char *klass_name = r_bin_name_tostring (klass->name);
+		char *par = strchr (klass_name, '(');
 		if (par) {
-			size_t idx = par - klass->name;
-			char *super = strdup (klass->name);
+			size_t idx = par - klass_name;
+			char *super = strdup (klass_name);
 			super[idx++] = 0;
 			char *cpar = strchr (super + idx, ')');
 			if (cpar) {
@@ -1981,7 +1980,9 @@ void MACH0_(get_category_t)(mach0_ut p, RBinFile *bf, RBinClass *klass, const RS
 			return;
 		}
 		target_class_name += _objc_class_len;
-		klass->name = r_str_newf ("%s(%s)", target_class_name, category_name);
+		char *kname = r_str_newf ("%s(%s)", target_class_name, category_name);
+		klass->name = r_bin_name_new (kname);
+		free (kname);
 	} else {
 		mach0_ut ro_data_field = c.targetClass + 4 * ptr_size;
 		mach0_ut ro_data;
@@ -2000,24 +2001,30 @@ void MACH0_(get_category_t)(mach0_ut p, RBinFile *bf, RBinClass *klass, const RS
 		}
 
 		target_class_name = read_str (bf, name_at, &offset, &left);
-		char *demangled = NULL;
 		if (target_class_name) {
-			demangled = demangle_classname (target_class_name);
+			char *kname = r_str_newf ("%s(%s)", target_class_name, category_name);
+			klass->name = r_bin_name_new (kname);
+			char *demangled = demangle_classname (target_class_name);
+			if (demangled) {
+				char *dname = r_str_newf ("%s(%s)", demangled, category_name);
+				r_bin_name_demangled (klass->name, dname);
+				free (dname);
+				free (demangled);
+			}
+			free (kname);
 		}
-		klass->name = r_str_newf ("%s(%s)", r_str_getf (demangled), category_name);
-		R_FREE (target_class_name);
-		R_FREE (demangled);
 	}
 
 	klass->addr = p;
 
 	R_FREE (category_name);
 
+	const char *klass_name = r_bin_name_tostring (klass->name);
 	if (c.instanceMethods > 0) {
-		get_method_list (bf, klass->name, klass, false, oi, c.instanceMethods);
+		get_method_list (bf, klass, klass_name, false, oi, c.instanceMethods);
 	}
 	if (c.classMethods > 0) {
-		get_method_list (bf, klass->name, klass, true, oi, c.classMethods);
+		get_method_list (bf, klass, klass_name, true, oi, c.classMethods);
 	}
 	if (c.protocols > 0) {
 		get_protocol_list (bf, klass, oi, c.protocols);

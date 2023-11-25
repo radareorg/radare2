@@ -1150,6 +1150,7 @@ static int cmd_meta_others(RCore *core, const char *input) {
 		// r_meta_cleanup (core->anal->meta, 0LL, UT64_MAX);
 		break;
 	default:
+		eprintf ("((((%s))))\n", input);
 		R_LOG_ERROR ("Missing space after CC");
 		break;
 	}

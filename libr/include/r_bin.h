@@ -273,10 +273,9 @@ typedef struct r_bin_info_t {
 } RBinInfo;
 
 typedef struct r_bin_symbol_t {
-	/* heap-allocated */
 #if R2_590
-	RBinName *name; // R2_590
-	RBinName *classname; // R2_590
+	RBinName *name;
+	RBinName *classname;
 #else
 	char *name; // deprecate and use bname
 	char *dname; // deprecate and use bname
@@ -287,6 +286,7 @@ typedef struct r_bin_symbol_t {
 	const char *forwarder;
 	const char *bind; // tied to attr already
 	const char *type; // typed to attr already
+	// RBinName *type;
   	const char *rtype;
 	bool is_imported;
 	/* only used by java */
@@ -593,10 +593,7 @@ typedef struct r_bin_plugin_t {
 typedef void (*RBinSymbollCallback)(RBinObject *obj, void *symbol);
 
 typedef struct r_bin_class_t {
-	char *name; // must be deprecated and use bname only
-#if R2_590
 	RBinName *name;
-#endif
 	RList *super; // list of RBinName
 	char *visibility_str; // XXX R2_590 - only used by dex+java should be ut32 or bitfield.. should be usable for swift too
 	int index; // should be unsigned?
@@ -893,6 +890,8 @@ R_API const char *r_bin_lang_tostring(int type);
 R_API RList *r_bin_get_mem(RBin *bin);
 
 R_API RBinName *r_bin_name_new(const char *name);
+R_API RBinName *r_bin_name_clone(RBinName *bn);
+R_API void r_bin_name_update(RBinName *bn, const char *name);
 R_API char *r_bin_name_tostring(RBinName *bn);
 R_API char *r_bin_name_tostring2(RBinName *bn, int type);
 R_API void r_bin_name_demangled(RBinName *bn, const char *dname);

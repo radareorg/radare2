@@ -1488,6 +1488,26 @@ R_API RBinName *r_bin_name_new(const char *name) {
 	return bn;
 }
 
+R_API void r_bin_name_update(RBinName *bn, const char *name) {
+	r_return_if_fail (bn && name);
+	free (bn->oname);
+	bn->oname = strdup (name);
+}
+
+R_API RBinName *r_bin_name_clone(RBinName *bn) {
+	RBinName *nn = R_NEW0 (RBinName);
+	if (bn->name) {
+		nn->name = strdup (bn->name);
+	}
+	if (bn->oname) {
+		nn->oname = strdup (bn->oname);
+	}
+	if (bn->fname) {
+		nn->oname = strdup (bn->fname);
+	}
+	return nn;
+}
+
 R_API void r_bin_name_filtered(RBinName *bn, const char *fname) {
 	r_return_if_fail (bn && fname);
 	free (bn->fname);

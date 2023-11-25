@@ -766,7 +766,8 @@ static ut8 *get_classes(RCore *c, int *len) {
 	const RList *list = r_bin_get_classes (c->bin);
 	RList *reslist = r_list_newf (free);
 	r_list_foreach (list, iter, klass) {
-		r_list_append (reslist, strdup (klass->name));
+		const char *kname = r_bin_name_tostring (klass->name);
+		r_list_append (reslist, strdup (kname));
 	}
 	r_list_sort (reslist, (RListComparator)strcmp);
 	char *buf = r_str_list_join (reslist, "\n");
@@ -789,10 +790,11 @@ static ut8 *get_fields(RCore *c, int *len) {
 	RList *reslist = r_list_newf (free);
 	RListIter *iter, *iter2;
 	r_list_foreach (list, iter, klass) {
+		const char *kname = r_bin_name_tostring (klass->name);
 		RBinField *field;
 		r_list_foreach (klass->fields, iter2, field) {
 			const char *fname = r_bin_name_tostring2 (field->name, pref);
-			r_list_append (reslist, r_str_newf ("%s.%s", klass->name, fname));
+			r_list_append (reslist, r_str_newf ("%s.%s", kname, fname));
 		}
 	}
 	r_list_sort (reslist, (RListComparator)strcmp);
@@ -814,8 +816,9 @@ static ut8 *get_methods(RCore *c, int *len) {
 	const RList *list = r_bin_get_classes (c->bin);
 	RList *reslist = r_list_newf (free);
 	r_list_foreach (list, iter, klass) {
+		const char *kname = r_bin_name_tostring (klass->name);
 		r_list_foreach (klass->methods, iter2, sym) {
-			r_list_append (reslist, r_str_newf ("%s.%s", klass->name, sym->name));
+			r_list_append (reslist, r_str_newf ("%s.%s", kname, sym->name));
 		}
 	}
 	r_list_sort (reslist, (RListComparator)strcmp);
