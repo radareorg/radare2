@@ -535,8 +535,8 @@ static bool isKnownPackage(const char *cn) {
 }
 
 static void cmd_ic_comma(RCore *core, const char *input) {
-	r_return_if_fail (core && input[0] == 'c' && input[1] == ',');
-	const char *q = input + 2;
+	r_return_if_fail (core && input[0] == ',');
+	const char *q = input + 1;
 	RList *bfiles = r_core_bin_files (core);
 	RListIter *objs_iter;
 	RBinFile *bf;
@@ -555,19 +555,17 @@ static void cmd_ic_comma(RCore *core, const char *input) {
 		RListIter *iter, *iter2;
 		core->bin->cur = bf;
 		r_list_foreach (obj->classes, iter, klass) {
-			if (!klass->name) {
-				continue;
-			}
+			const char *kname = r_bin_name_tostring (klass->name);
 			RBinSymbol *method;
 			r_list_foreach (klass->methods, iter2, method) {
 				char *addr = r_str_newf ("0x%08"PFMT64x, iova? method->vaddr: method->paddr);
-				r_table_add_row (t, addr, "method", klass->name, method->name, NULL);
+				r_table_add_row (t, addr, "method", kname, method->name, NULL);
 				free (addr);
 			}
 			RBinField *field;
 			r_list_foreach (klass->fields, iter2, field) {
 				char *addr = r_str_newf ("0x%08"PFMT64x, iova? field->vaddr: field->paddr);
-				r_table_add_row (t, addr, "field", klass->name, field->name, NULL);
+				r_table_add_row (t, addr, "field", kname, field->name, NULL);
 				free (addr);
 			}
 		}
@@ -749,6 +747,11 @@ static void cmd_ic(RCore *core, const char *input, PJ *pj, int is_array, bool va
 		arg = "";
 		lastchar = input + strlen (input) - 1;
 	}
+	bool show_help = false;
+	if (*lastchar == '?') {
+		show_help = true;
+		lastchar--;
+	}
 	switch (*lastchar) {
 	case 'j':
 	case 'k':
@@ -764,9 +767,6 @@ static void cmd_ic(RCore *core, const char *input, PJ *pj, int is_array, bool va
 	default:
 		mode = 0;
 		break;
-	}
-	if (mode == ',') {
-		cmd_ic_comma (core, input);
 	}
 	bool is_superquiet = strstr (input, "qq");
 	bool is_doublerad = strstr (input, "**");
@@ -793,7 +793,13 @@ static void cmd_ic(RCore *core, const char *input, PJ *pj, int is_array, bool va
 	case 'c': // "icc"
 	case '*': // "ic*"
 	case 0: // "ic" "icq"
-		{
+		if (mode == ',') {
+			cmd_ic_comma (core, input);
+		} else {
+			if (show_help) {
+				r_core_cmd_help_contains (core, help_msg_i, "ic");
+				break;
+			}
 			const bool iova = r_config_get_b (core->config, "io.va");
 			RListIter *objs_iter;
 			RBinFile *bf;
@@ -932,6 +938,7 @@ static void cmd_ic(RCore *core, const char *input, PJ *pj, int is_array, bool va
 					if (mode == 'j') {
 						mode = R_MODE_JSON;
 					}
+					// TODO add the ability to filter by name
 					RBININFO ("classes", R_CORE_BIN_ACC_CLASSES, NULL, r_list_length (obj->classes));
 					break;
 				case ' ': // "ic"
@@ -952,20 +959,6 @@ static void cmd_ic(RCore *core, const char *input, PJ *pj, int is_array, bool va
 							continue;
 						}
 						bool listed_classes = false;
-						if (mode != 'j') {
-							if (idx != -1 || R_STR_ISNOTEMPTY (kname)) {
-								filtered = true;
-								r_cons_printf ("class %s\n", kname);
-								r_list_foreach (cls->methods, iter2, sym) {
-									char *flags = r_core_bin_attr_tostring (sym->attr, true);
-									r_cons_printf ("0x%08"PFMT64x " method %s %-4s %s\n",
-											iova? sym->vaddr: sym->paddr,
-											kname, flags, sym->name);
-									free (flags);
-								}
-								continue;
-							}
-						}
 
 						switch (mode) {
 						case '*':
@@ -988,7 +981,6 @@ static void cmd_ic(RCore *core, const char *input, PJ *pj, int is_array, bool va
 										iova? sym->vaddr: sym->paddr);
 							}
 							r_cons_newline ();
-							input++;
 							break;
 						case 'j':
 							{
@@ -997,28 +989,24 @@ static void cmd_ic(RCore *core, const char *input, PJ *pj, int is_array, bool va
 								listed_classes = true;
 								RBININFO ("classes", R_CORE_BIN_ACC_CLASSES, NULL, len);
 							}
-#if 0
-							input++;
-							pj_ks (pj, "class", cls_name);
-							pj_ka (pj, "methods");
-							r_list_foreach (cls->methods, iter2, sym) {
-								pj_o (pj);
-								pj_ks (pj, "name", sym->name);
-								if (sym->attr) {
-									// TODO: must be an array of strings
-									char *flags = r_core_bin_attr_tostring (sym->attr, false);
-									pj_k (pj, "flags");
-									pj_j (pj, flags);
-									free (flags);
-								}
-								pj_kN (pj, "vaddr", sym->vaddr);
-								pj_kN (pj, "paddr", sym->paddr);
-								pj_end (pj);
-							}
-							pj_end (pj);
-#endif
 							break;
 						case 0:
+							filtered = true;
+							if (true) {
+								size_t len = r_list_length (obj->classes);
+								int mode = 0;
+								RBININFO ("classes", R_CORE_BIN_ACC_CLASSES, NULL, len);
+							} else {
+								r_cons_printf ("class %s\n", kname);
+								r_list_foreach (cls->methods, iter2, sym) {
+									char *flags = r_core_bin_attr_tostring (sym->attr, true);
+									r_cons_printf ("0x%08"PFMT64x " method %s %-4s %s\n",
+											iova? sym->vaddr: sym->paddr,
+											kname, flags, sym->name);
+									free (flags);
+								}
+							}
+							break;
 						case 'q':
 							{
 								size_t len = r_list_length (obj->classes);
@@ -1122,26 +1110,6 @@ static int cmd_info(void *data, const char *input) {
 	if (!space && question) {
 		space = question + 1;
 	}
-	if (question < space && question > input) {
-		question--;
-		char *prefix = strdup (input);
-		char *tmp = strchr (prefix, '?');
-		if (tmp) {
-			*tmp = 0;
-		}
-		if (*prefix == 'd') {
-			r_core_cmd_help (core, help_msg_id);
-		} else {
-			r_core_cmdf (core, "i?~& i%s", prefix);
-		}
-		free (prefix);
-		goto done;
-	}
-	R_FREE (core->table_query);
-	if (space && (*space == ' ' || *space == ',')) {
-		core->table_query = r_str_trim_dup (space + 1);
-	}
-
 	switch (input[0]) {
 	case 'i': // "ii"
 		if (input[1] == 'c') { // "iic"
@@ -1217,6 +1185,26 @@ static int cmd_info(void *data, const char *input) {
 		goto done;
 		break;
 	}
+	if (question < space && question > input) {
+		question--;
+		char *prefix = strdup (input);
+		char *tmp = strchr (prefix, '?');
+		if (tmp) {
+			*tmp = 0;
+		}
+		if (*prefix == 'd') {
+			r_core_cmd_help (core, help_msg_id);
+		} else {
+			r_core_cmdf (core, "i?~& i%s", prefix);
+		}
+		free (prefix);
+		goto done;
+	}
+	R_FREE (core->table_query);
+	if (space && (*space == ' ' || *space == ',')) {
+		core->table_query = r_str_trim_dup (space + 1);
+	}
+
 	// TODO: slowly deprecate the loopy subcommands in here
 	while (*input) {
 		const char ch = *input;
