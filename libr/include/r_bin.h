@@ -273,20 +273,13 @@ typedef struct r_bin_info_t {
 } RBinInfo;
 
 typedef struct r_bin_symbol_t {
-#if R2_590
 	RBinName *name;
 	RBinName *classname;
-#else
-	char *name; // deprecate and use bname
-	char *dname; // deprecate and use bname
-	char *classname;
-#endif
 	char *libname;
 	/* const-unique-strings */
 	const char *forwarder;
 	const char *bind; // tied to attr already
-	const char *type; // typed to attr already
-	// RBinName *type;
+	RBinName *type;
   	const char *rtype;
 	bool is_imported;
 	/* only used by java */
@@ -660,14 +653,8 @@ typedef struct r_bin_field_t {
 	int size;
 	int offset;
 	// ut32 visibility; // R2_590 - deprecate we have attr!
-#if 1
 	RBinName *name;
 	RBinName *type;
-#else
-	char *name;
-	char *type;
-#endif
-//	char *realname;
 	RBinFieldKind kind;
 	char *comment;
 	char *format;
