@@ -823,7 +823,7 @@ static void cmd_ic(RCore *core, const char *input, PJ *pj, int is_array, bool va
 				RBinObject *obj = bf->bo;
 				if (!obj || !obj->classes || r_list_empty (obj->classes)) {
 					if (mode == 'j') {
-						r_cons_printf ("%s{}", first? "": ",");
+						r_cons_printf ("%s[]", first? "": ",");
 					}
 					first = false;
 					continue;
