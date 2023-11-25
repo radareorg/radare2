@@ -1064,7 +1064,7 @@ R_API bool r_core_visual_hudclasses(RCore *core) {
 	list->free = free;
 	RList *classes = r_bin_get_classes (core->bin);
 	r_list_foreach (classes, iter, c) {
-		const char *cname = r_bin_name_tostring2 (f->name, pref);
+		const char *cname = r_bin_name_tostring2 (c->name, pref);
 		r_list_foreach (c->fields, iter2, f) {
 			const char *fname = r_bin_name_tostring2 (f->name, pref);
 			r_list_append (list, r_str_newf ("0x%08"PFMT64x"  %s %s",

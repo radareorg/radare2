@@ -806,7 +806,6 @@ static void cmd_ic(RCore *core, const char *input, PJ *pj, int is_array, bool va
 			RBinFile *cur = core->bin->cur;
 			RList *objs = r_core_bin_files (core);
 			int count = 0;
-			bool filtered = false;
 			int idx = -1;
 			const char *cls_name = NULL;
 			if (r_num_is_valid_input (core->num, arg)) {
@@ -829,9 +828,6 @@ static void cmd_ic(RCore *core, const char *input, PJ *pj, int is_array, bool va
 					continue;
 				}
 				first = false;
-				if (filtered) {
-					break;
-				}
 				RBinClass *cls;
 				RBinSymbol *sym;
 				RListIter *iter, *iter2;
@@ -991,7 +987,6 @@ static void cmd_ic(RCore *core, const char *input, PJ *pj, int is_array, bool va
 							}
 							break;
 						case 0:
-							filtered = true;
 							if (idx == -1 && R_STR_ISEMPTY (cls_name)) {
 								size_t len = r_list_length (obj->classes);
 								int mode = 0;
