@@ -996,6 +996,7 @@ static void cmd_ic(RCore *core, const char *input, PJ *pj, int is_array, bool va
 								size_t len = r_list_length (obj->classes);
 								int mode = 0;
 								RBININFO ("classes", R_CORE_BIN_ACC_CLASSES, NULL, len);
+								listed_classes = true;
 							} else {
 								r_cons_printf ("class %s\n", kname);
 								r_list_foreach (cls->methods, iter2, sym) {
