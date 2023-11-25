@@ -992,7 +992,7 @@ static void cmd_ic(RCore *core, const char *input, PJ *pj, int is_array, bool va
 							break;
 						case 0:
 							filtered = true;
-							if (true) {
+							if (idx == -1 && R_STR_ISEMPTY (cls_name)) {
 								size_t len = r_list_length (obj->classes);
 								int mode = 0;
 								RBININFO ("classes", R_CORE_BIN_ACC_CLASSES, NULL, len);
