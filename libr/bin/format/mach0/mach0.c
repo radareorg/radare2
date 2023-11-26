@@ -4803,7 +4803,7 @@ RList *MACH0_(mach_fields)(RBinFile *bf) {
 	ut64 addr = pa2va (bf, 0);
 	ut64 paddr = 0;
 
-	r_list_append (ret, r_bin_field_new (paddr, addr, 1, "header", "mach0_header", "mach0_header", true));
+	r_list_append (ret, r_bin_field_new (paddr, addr, -1, 1, "header", "mach0_header", "mach0_header", true));
 	addr += 0x20 - 4;
 	paddr += 0x20 - 4;
 	bool is64 = mh->cputype >> 16;
@@ -4840,7 +4840,7 @@ RList *MACH0_(mach_fields)(RBinFile *bf) {
 		const char *pf_definition = cmd_to_pf_definition (lcType);
 		if (pf_definition) {
 			snprintf (load_command_flagname, sizeof (load_command_flagname), "load_command_%d_%s", n, cmd_tostring (lcType));
-			r_list_append (ret, r_bin_field_new (paddr, addr, 1, load_command_flagname, pf_definition, pf_definition, true));
+			r_list_append (ret, r_bin_field_new (paddr, addr, 1, -1, load_command_flagname, pf_definition, pf_definition, true));
 		}
 		switch (lcType) {
 		case LC_BUILD_VERSION: {
@@ -4856,7 +4856,7 @@ RList *MACH0_(mach_fields)(RBinFile *bf) {
 					break;
 				}
 				snprintf (tool_flagname, sizeof (tool_flagname), "tool_%d", j++);
-				RBinField *f = r_bin_field_new (at, addr + off, 1,
+				RBinField *f = r_bin_field_new (at, addr + off, 1, -1,
 					tool_flagname, "mach0_build_version_tool", "mach0_build_version_tool", true);
 				r_list_append (ret, f);
 				off += 8;
@@ -4872,7 +4872,9 @@ RList *MACH0_(mach_fields)(RBinFile *bf) {
 			for (i = 0; i < nsects && (addr + off) < length && off < lcSize; i++) {
 				const char *sname = is64? "mach0_section64": "mach0_section";
 				snprintf (section_flagname, sizeof (section_flagname), "section_%u", (ut32)j++);
-				RBinField *f = r_bin_field_new (paddr + off, addr + off, 1, section_flagname, sname, sname, true);
+				ut64 va = addr + off;
+				ut64 pa = paddr + off;
+				RBinField *f = r_bin_field_new (pa, va, -1, 1, section_flagname, sname, sname, true);
 				r_list_append (ret, f);
 				off += is64? 80: 68;
 			}

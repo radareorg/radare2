@@ -656,6 +656,7 @@ typedef enum {
 typedef struct r_bin_field_t {
 	ut64 vaddr;
 	ut64 paddr;
+	ut64 value;
 	int size;
 	int offset;
 	// ut32 visibility; // R2_590 - deprecate we have attr!
@@ -676,7 +677,7 @@ typedef struct r_bin_field_t {
 } RBinField;
 
 R_API const char *r_bin_field_kindstr(RBinField *f);
-R_API RBinField *r_bin_field_new(ut64 paddr, ut64 vaddr, int size, const char *name, const char *comment, const char *format, bool format_named);
+R_API RBinField *r_bin_field_new(ut64 paddr, ut64 vaddr, ut64 value, int size, const char *name, const char *comment, const char *format, bool format_named);
 R_API void r_bin_field_free(void *);
 
 typedef struct r_bin_mem_t {
