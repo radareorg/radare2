@@ -2813,6 +2813,10 @@ R_API RList *r_bin_java_get_classes(RBinJavaObj *bin) {
 			k->fields = r_bin_java_enum_class_fields (bin, cp_obj->info.cp_class.name_idx);
 			k->index = idx;
 			char *name = r_bin_java_get_item_name_from_bin_cp_list (bin, cp_obj);
+			if (name == NULL) {
+				R_LOG_WARN ("Unnamed class");
+				name = r_str_newf ("Unnamed$%04x", (ut32)(((size_t)k) & 0xffff));
+			}
 			k->name = __bin_name_new (name);
 			free (name);
 			r_list_append (classes, k);
