@@ -48,7 +48,7 @@ RUN
 
 NAME=get header info
 FILE=bins/qnx/test.x
-CMDS=iH
+CMDS=iHH
 EXPECT=<<EOF
 QNX file header:
 version : 0x190H

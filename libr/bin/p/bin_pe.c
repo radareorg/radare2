@@ -122,7 +122,6 @@ static RList *fields(RBinFile *bf) {
 		return NULL;
 	}
 
-	r_strf_buffer (16);
 	#define ROWL(nam,siz,val,fmt) \
 	r_list_append (ret, r_bin_field_new (addr, addr, val, siz, nam, NULL, fmt, false));
 

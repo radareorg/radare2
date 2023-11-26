@@ -1,6 +1,6 @@
 NAME=mach0 headers
 FILE=bins/mach0/hello-osx-i386
-CMDS=iH
+CMDS=iHH
 EXPECT=<<EOF
 pf.mach0_header @ 0x00001000
 0x00001000  Magic       0xfeedface
@@ -65,7 +65,7 @@ RUN
 
 NAME=mach0 headers big-endian
 FILE=bins/mach0/ppc-ls
-CMDS=iH
+CMDS=iHH
 EXPECT=<<EOF
 pf.mach0_header @ 0x00001000
 0x00001000  Magic       0xfeedface
@@ -137,7 +137,7 @@ RUN
 NAME=mach0 headers2
 FILE=bins/mach0/ired
 ARGS=-aarm -b32
-CMDS=iH
+CMDS=iHH
 EXPECT=<<EOF
 pf.mach0_header @ 0x00004000
 0x00004000  Magic       0xfeedface
@@ -313,7 +313,7 @@ RUN
 
 NAME=mach0 aot
 FILE=bins/mach0/libswiftCoreImage.dylib.aot
-CMDS=ih
+CMDS=ihh
 EXPECT_ERR=<<EOF
 INFO: AOT: Image path offset: 0x00000970
 INFO: AOT: Image path length: 0x00000089

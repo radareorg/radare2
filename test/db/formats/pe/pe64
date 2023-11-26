@@ -8,8 +8,12 @@ RUN
 
 NAME=pe64 header
 FILE=bins/pe/tls64.exe
-CMDS=ih~?Signature : 0x4550
+CMDS=<<EOF
+ih~4550
+ih~?Signature
+EOF
 EXPECT=<<EOF
+0x00000040 0x00000040 0x00004550 Signature
 1
 EOF
 RUN

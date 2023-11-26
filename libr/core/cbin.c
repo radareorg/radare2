@@ -3319,6 +3319,11 @@ static bool bin_fields(RCore *r, PJ *pj, int mode, int va) {
 		r_cons_println ("[Header fields]");
 	}
 	r_list_foreach (fields, iter, field) {
+		const bool haveComment = R_STR_ISNOTEMPTY (field->comment);
+		ut64 v = field->value;
+		if (v == UT64_MAX) {
+			v = 0;
+		}
 		ut64 addr = rva (bin, field->paddr, field->vaddr, va);
 
 		if (IS_MODE_RAD (mode)) {
@@ -3343,6 +3348,9 @@ static bool bin_fields(RCore *r, PJ *pj, int mode, int va) {
 			pj_ks (pj, "name", r_bin_name_tostring2 (field->name, pref));
 			pj_kN (pj, "vaddr", field->vaddr);
 			pj_kN (pj, "paddr", field->paddr);
+			if (v) {
+				pj_kN (pj, "value", v);
+			}
 			if (field->comment && *field->comment) {
 				// TODO: filter comment before json
 				pj_ks (pj, "comment", field->comment);
@@ -3361,11 +3369,17 @@ static bool bin_fields(RCore *r, PJ *pj, int mode, int va) {
 			free (o);
 			pj_end (pj);
 		} else if (IS_MODE_NORMAL (mode)) {
-			const bool haveComment = R_STR_ISNOTEMPTY (field->comment);
-			r_cons_printf ("0x%08"PFMT64x" 0x%08"PFMT64x" %s%s%s\n",
-				field->vaddr, field->paddr, r_bin_name_tostring2 (field->name, pref),
+			r_cons_printf ("0x%08"PFMT64x" 0x%08"PFMT64x" 0x%08"PFMT64x" %s%s%s",
+				field->vaddr, field->paddr, v, r_bin_name_tostring2 (field->name, pref),
 				haveComment? "; ": "",
 				haveComment? field->comment: "");
+			r_cons_newline ();
+		} else if (IS_MODE_SET (mode)) {
+			// nothing
+		} else {
+			// quiet
+			r_cons_printf ("0x%08"PFMT64x" 0x%08"PFMT64x" %s\n",
+				field->vaddr, v, r_bin_name_tostring2 (field->name, pref));
 		}
 		i++;
 	}
@@ -4642,20 +4656,6 @@ static bool bin_signature(RCore *r, PJ *pj, int mode) {
 	return have_signature;
 }
 
-static bool bin_header(RCore *r, int mode) {
-	r_return_val_if_fail (r, false);
-	RBinFile *cur = r_bin_cur (r->bin);
-	if (!cur) {
-		return false;
-	}
-	RBinPlugin *plg = r_bin_file_cur_plugin (cur);
-	if (plg && plg->header) {
-		plg->header (cur);
-		return true;
-	}
-	return false;
-}
-
 R_API bool r_core_bin_info(RCore *core, int action, PJ *pj, int mode, int va, RCoreBinFilter *filter, const char *chksum) {
 	r_return_val_if_fail (core, false);
 	const char *name = (filter && filter->name)? filter->name : NULL;
@@ -4749,17 +4749,15 @@ R_API bool r_core_bin_info(RCore *core, int action, PJ *pj, int mode, int va, RC
 	}
 	if ((action & R_CORE_BIN_ACC_FIELDS)) {
 		if (IS_MODE_SIMPLE (mode)) {
-			if ((action & R_CORE_BIN_ACC_HEADER) || action & R_CORE_BIN_ACC_FIELDS) {
-				/* ignore mode, just for quiet/simple here */
-				ret &= bin_fields (core, NULL, 0, va);
-			}
+			// ret &= bin_fields (core, NULL, mode, va);
+			ret &= bin_fields (core, NULL, mode, va);
+			// ret &= bin_header (core, mode);
+		} else if (IS_MODE_NORMAL (mode)) {
+			// ret &= bin_header (core, mode);
+			ret &= bin_fields (core, NULL, mode, va);
 		} else {
-			if (IS_MODE_NORMAL (mode)) {
-				ret &= bin_header (core, mode);
-			} else {
-				if ((action & R_CORE_BIN_ACC_HEADER) || action & R_CORE_BIN_ACC_FIELDS) {
-					ret &= bin_fields (core, pj, mode, va);
-				}
+			if ((action & R_CORE_BIN_ACC_HEADER) || action & R_CORE_BIN_ACC_FIELDS) {
+				ret &= bin_fields (core, pj, mode, va);
 			}
 		}
 	}

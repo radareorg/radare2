@@ -60,7 +60,6 @@ static RList *off_fields(RBinFile *bf) {
 	if (!ret) {
 		return NULL;
 	}
-	r_strf_buffer (32);
 	ut64 addr = 0;
 #define ROW(nam,siz,val,fmt) \
 	r_list_append (ret, r_bin_field_new (addr, addr, val, siz, nam, NULL, fmt, false)); \
