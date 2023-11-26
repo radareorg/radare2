@@ -326,15 +326,65 @@ static const char *dwarf_unit_types[] = {
 	[DW_UT_hi_user] = "DW_UT_hi_user",
 };
 
+enum {
+	DWARF_SN_ABBREV,
+	DWARF_SN_INFO,
+	DWARF_SN_FRAME,
+	DWARF_SN_LINE,
+	DWARF_SN_LOC,
+	DWARF_SN_STR,
+	DWARF_SN_LINE_STR,
+	DWARF_SN_RANGES,
+	DWARF_SN_ARANGES,
+	DWARF_SN_PUBNAMES,
+	DWARF_SN_PUBTYPES,
+
+	DWARF_SN_MAX
+};
+
+static const char *dwarf_sn_elf[DWARF_SN_MAX] = {
+	[DWARF_SN_ABBREV] = "debug_abbrev",
+	[DWARF_SN_INFO] = "debug_info",
+	[DWARF_SN_FRAME] = "debug_frame",
+	[DWARF_SN_LINE] = "debug_line",
+	[DWARF_SN_LOC] = "debug_loc",
+	[DWARF_SN_STR] = "debug_str",
+	[DWARF_SN_LINE_STR] = "debug_line_str",
+	[DWARF_SN_RANGES] = "debug_ranges",
+	[DWARF_SN_ARANGES] = "debug_aranges",
+	[DWARF_SN_PUBNAMES] = "debug_pubnames",
+	[DWARF_SN_PUBTYPES] = "debug_pubtypes",
+};
+
+/* XXX: xcoff64 discovers DWARF sections by SSUBTYP_DW{...}, not by name */
+static const char *dwarf_sn_xcoff64[DWARF_SN_MAX] = {
+	[DWARF_SN_ABBREV] = "dwabrev",
+	[DWARF_SN_INFO] = "dwinfo",
+	[DWARF_SN_FRAME] = "dwframe",
+	[DWARF_SN_LINE] = "dwline",
+	[DWARF_SN_LOC] = "dwloc",
+	[DWARF_SN_RANGES] = "dwrnges",
+	[DWARF_SN_ARANGES] = "dwarnge",
+	[DWARF_SN_STR] = "dwstr", /* XXX: unverified */
+	[DWARF_SN_PUBNAMES] = "dwpbnms",
+	[DWARF_SN_PUBTYPES] = "dwpbtyp"
+};
+
 // 1 of 20s spent in this non-mnemonized function
-static RBinSection *getsection(RBin *a, const char *sn) {
+static RBinSection *getsection(RBin *bin, int sn) {
 	RListIter *iter;
 	RBinSection *section = NULL;
-	RBinFile *binfile = a ? a->cur: NULL;
-	RBinObject *o = binfile ? binfile->bo : NULL;
+	RBinObject *o = R_UNWRAP3 (bin, cur, bo);
+	char const *rclass = R_UNWRAP3 (o, info, rclass);
+	r_return_val_if_fail (sn >= 0 && sn < DWARF_SN_MAX, NULL);
 	if (R_LIKELY (o && o->sections)) {
+		/* XXX: xcoff64 specific hack */
+		const char * const *name_tab = rclass && !strcmp (o->info->rclass, "xcoff64")
+			? dwarf_sn_xcoff64
+			: dwarf_sn_elf;
+		const char *name_str = name_tab[sn];
 		r_list_foreach (o->sections, iter, section) {
-			if (strstr (section->name, sn)) {
+			if (strstr (section->name, name_str)) {
 				if (strstr (section->name, "zdebug")) {
 					R_LOG_WARN ("Compressed dwarf sections not yet supported");
 					return NULL;
@@ -347,8 +397,8 @@ static RBinSection *getsection(RBin *a, const char *sn) {
 }
 
 // XXX this is not optimal. we can use rbuf apis everywhere and avoid boundary checks and full section reads
-static ut8 *get_section_bytes(RBin *bin, const char *sect_name, size_t *len) {
-	r_return_val_if_fail (bin && sect_name && len, NULL);
+static ut8 *get_section_bytes(RBin *bin, int sect_name, size_t *len) {
+	r_return_val_if_fail (bin && len, NULL);
 	RBinSection *section = getsection (bin, sect_name);
 	RBinFile *binfile = bin ? bin->cur: NULL;
 	if (!section || !binfile) {
@@ -726,8 +776,8 @@ static const ut8 *parse_line_header_source_dwarf5(RBin *bin, RBinFile *bf, const
 					{
 					ut64 section_offset = dwarf_read_offset (hdr->is_64bit, &buf, buf_end, be);
 					RBinSection *section = (form_code == DW_FORM_strp)
-						? getsection (bin, "debug_str")
-						: getsection (bin, "debug_line_str");
+						? getsection (bin, DWARF_SN_STR)
+						: getsection (bin, DWARF_SN_LINE_STR);
 					name = get_section_string (bin, section, section_offset);
 					if (name) {
 						r_str_ansi_strip (name);
@@ -1942,9 +1992,9 @@ static const ut8 *parse_attr_value(RBin *bin, const ut8 *obuf, int obuf_len, RBi
 	case DW_FORM_line_strp:
 		value->kind = DW_AT_KIND_STRING;
 		value->string.offset = dwarf_read_offset (hdr->is_64bit, &buf, buf_end, be);
-		// const char *section_name = def->attr_form == DW_FORM_strp? "debug_str": "debug_line_str";
+		// int section_name = def->attr_form == DW_FORM_strp? DWARF_SN_STR: DWARF_SN_LINE_STR;
 		RBinSection *section = (def->attr_form == DW_FORM_strp)
-			? getsection (bin, "debug_str") : getsection (bin, "debug_line_str");
+			? getsection (bin, DWARF_SN_STR) : getsection (bin, DWARF_SN_LINE_STR);
 		char *str = get_section_string (bin, section, value->string.offset);
 		if (str) {
 			r_str_ansi_strip (str);
@@ -2432,7 +2482,7 @@ static RBinDwarfDebugAbbrev *parse_abbrev_raw(const ut8 *obuf, size_t len) {
 R_API RBinDwarfDebugInfo *r_bin_dwarf_parse_info(RBinDwarfDebugAbbrev *da, RBin *bin, int mode) {
 	r_return_val_if_fail (da && bin, NULL);
 	RBinDwarfDebugInfo *info = NULL;
-	RBinSection *section = getsection (bin, "debug_info");
+	RBinSection *section = getsection (bin, DWARF_SN_INFO);
 	RBinFile *binfile = bin->cur;
 
 	ut64 debug_str_len = 0;
@@ -2440,7 +2490,7 @@ R_API RBinDwarfDebugInfo *r_bin_dwarf_parse_info(RBinDwarfDebugAbbrev *da, RBin 
 
 	const bool be = r_bin_is_big_endian (bin);
 	if (binfile && section) {
-		RBinSection *debug_str = getsection (bin, "debug_str");
+		RBinSection *debug_str = getsection (bin, DWARF_SN_STR);
 		if (debug_str) {
 			debug_str_len = debug_str->size;
 			debug_str_buf = calloc (1, debug_str_len + 1);
@@ -2518,7 +2568,7 @@ R_API RList *r_bin_dwarf_parse_line(RBin *bin, int mode) {
 	RList *list = NULL;
 	int len, ret;
 	const bool be = r_bin_is_big_endian (bin);
-	RBinSection *section = getsection (bin, "debug_line");
+	RBinSection *section = getsection (bin, DWARF_SN_LINE);
 	RBinFile *binfile = bin->cur;
 	if (binfile && section) {
 		len = section->size;
@@ -2582,7 +2632,7 @@ R_API RList *r_bin_dwarf_parse_line(RBin *bin, int mode) {
 }
 
 R_API void r_bin_dwarf_parse_aranges(RBin *bin, int mode) {
-	RBinSection *section = getsection (bin, "debug_aranges");
+	RBinSection *section = getsection (bin, DWARF_SN_ARANGES);
 	RBinFile *binfile = bin ? bin->cur: NULL;
 	if (binfile && section) {
 		size_t len = section->size;
@@ -2606,7 +2656,7 @@ R_API void r_bin_dwarf_parse_aranges(RBin *bin, int mode) {
 
 R_API RBinDwarfDebugAbbrev *r_bin_dwarf_parse_abbrev(RBin *bin, int mode) {
 	size_t len = 0;
-	ut8 *buf = get_section_bytes (bin, "debug_abbrev", &len);
+	ut8 *buf = get_section_bytes (bin, DWARF_SN_ABBREV, &len);
 	if (!buf) {
 		return NULL;
 	}
@@ -2720,7 +2770,7 @@ R_API HtUP/*<offset, RBinDwarfLocList*/ *r_bin_dwarf_parse_loc(RBin *bin, int ad
 	/* The standarparse_loc_raw_frame, not sure why is that */
 	size_t len = 0;
 	const bool be = r_bin_is_big_endian (bin);
-	ut8 *buf = get_section_bytes (bin, "debug_loc", &len);
+	ut8 *buf = get_section_bytes (bin, DWARF_SN_LOC, &len);
 	if (!buf) {
 		return NULL;
 	}
