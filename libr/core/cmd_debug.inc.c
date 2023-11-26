@@ -4776,6 +4776,11 @@ static int cmd_debug_continue(RCore *core, const char *input) {
 		r_core_cmd_help (core, help_msg_dc);
 		return 0;
 	}
+
+	if (strchr (input, '?')) {
+		return 0;
+	}
+
 	return 1;
 }
 
@@ -5340,7 +5345,7 @@ R_VEC_TYPE(RVecDebugTracepoint, RDebugTracepoint);
 static int cmd_debug(void *data, const char *input) {
 	RCore *core = (RCore *)data;
 	RDebugTracepoint *t;
-	int follow = 0;
+	bool do_follow = false;
 	const char *ptr;
 	ut64 addr;
 	int min;
@@ -5653,7 +5658,7 @@ static int cmd_debug(void *data, const char *input) {
 		break;
 	case 's': // "ds"
 		if (cmd_debug_step (core, input)) {
-			follow = r_config_get_i (core->config, "dbg.follow");
+			do_follow = true;
 		}
 		break;
 	case 'b': // "db"
@@ -5664,8 +5669,9 @@ static int cmd_debug(void *data, const char *input) {
 		break;
 	case 'c': // "dc"
 		r_cons_break_push (static_debug_stop, core->dbg);
-		(void)cmd_debug_continue (core, input);
-		follow = r_config_get_i (core->config, "dbg.follow");
+		if (cmd_debug_continue (core, input)) {
+			do_follow = true;
+		}
 		r_cons_break_pop ();
 		break;
 	case 'm': // "dm"
@@ -6126,7 +6132,8 @@ static int cmd_debug(void *data, const char *input) {
 		r_core_seek (core, old_seek, false);
 	}
 
-	if (follow > 0) {
+	if (do_follow) {
+		int follow = r_config_get_i (core->config, "dbg.follow");
 		ut64 pc = r_debug_reg_get (core->dbg, "PC");
 		// Is PC before offset or after the follow cutoff?
 		if (!R_BETWEEN (core->offset, pc, core->offset + follow)) {
