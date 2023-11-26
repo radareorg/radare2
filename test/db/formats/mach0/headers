@@ -63,6 +63,7 @@ EXPECT=<<EOF
     "name": "load_command_0_LC_SEGMENT_64",
     "vaddr": 4294967328,
     "paddr": 32,
+    "value": 1,
     "comment": "mach0_segment64",
     "format": "mach0_segment64",
     "pf": [
@@ -140,6 +141,7 @@ EXPECT=<<EOF
     "name": "load_command_1_LC_SEGMENT_64",
     "vaddr": 4294967400,
     "paddr": 104,
+    "value": 1,
     "comment": "mach0_segment64",
     "format": "mach0_segment64",
     "pf": [
@@ -217,6 +219,7 @@ EXPECT=<<EOF
     "name": "load_command_2_LC_SEGMENT_64",
     "vaddr": 4294967952,
     "paddr": 656,
+    "value": 1,
     "comment": "mach0_segment64",
     "format": "mach0_segment64",
     "pf": [
@@ -294,6 +297,7 @@ EXPECT=<<EOF
     "name": "load_command_3_LC_SEGMENT_64",
     "vaddr": 4294968584,
     "paddr": 1288,
+    "value": 1,
     "comment": "mach0_segment64",
     "format": "mach0_segment64",
     "pf": [
@@ -371,6 +375,7 @@ EXPECT=<<EOF
     "name": "load_command_4_LC_DYLD_INFO_ONLY",
     "vaddr": 4294968656,
     "paddr": 1360,
+    "value": 1,
     "comment": "mach0_dyld_info_only_command",
     "format": "mach0_dyld_info_only_command",
     "pf": [
@@ -454,6 +459,7 @@ EXPECT=<<EOF
     "name": "load_command_5_LC_SYMTAB",
     "vaddr": 4294968704,
     "paddr": 1408,
+    "value": 1,
     "comment": "mach0_symtab_command",
     "format": "mach0_symtab_command",
     "pf": [
@@ -501,6 +507,7 @@ EXPECT=<<EOF
     "name": "load_command_6_LC_DYSYMTAB",
     "vaddr": 4294968728,
     "paddr": 1432,
+    "value": 1,
     "comment": "mach0_dysymtab_command",
     "format": "mach0_dysymtab_command",
     "pf": [
@@ -632,6 +639,7 @@ EXPECT=<<EOF
     "name": "load_command_7_LC_LOAD_DYLINKER",
     "vaddr": 4294968808,
     "paddr": 1512,
+    "value": 1,
     "comment": "mach0_load_dylinker_command",
     "format": "mach0_load_dylinker_command",
     "pf": [
@@ -667,6 +675,7 @@ EXPECT=<<EOF
     "name": "load_command_8_LC_UUID",
     "vaddr": 4294968840,
     "paddr": 1544,
+    "value": 1,
     "comment": "mach0_uuid_command",
     "format": "mach0_uuid_command",
     "pf": [
@@ -713,6 +722,7 @@ EXPECT=<<EOF
     "name": "load_command_9_LC_VERSION_MIN_MACOSX",
     "vaddr": 4294968864,
     "paddr": 1568,
+    "value": 1,
     "comment": "mach0_version_min_command",
     "format": "mach0_version_min_command",
     "pf": [
@@ -748,6 +758,7 @@ EXPECT=<<EOF
     "name": "load_command_10_LC_SOURCE_VERSION",
     "vaddr": 4294968880,
     "paddr": 1584,
+    "value": 1,
     "comment": "mach0_source_version_command",
     "format": "mach0_source_version_command",
     "pf": [
@@ -777,6 +788,7 @@ EXPECT=<<EOF
     "name": "load_command_11_LC_MAIN",
     "vaddr": 4294968896,
     "paddr": 1600,
+    "value": 1,
     "comment": "mach0_entry_point_command",
     "format": "mach0_entry_point_command",
     "pf": [
@@ -812,6 +824,7 @@ EXPECT=<<EOF
     "name": "load_command_12_LC_LOAD_DYLIB",
     "vaddr": 4294968920,
     "paddr": 1624,
+    "value": 1,
     "comment": "mach0_dylib_command",
     "format": "mach0_dylib_command",
     "pf": [
@@ -872,6 +885,7 @@ EXPECT=<<EOF
     "name": "load_command_13_LC_LOAD_DYLIB",
     "vaddr": 4294968968,
     "paddr": 1672,
+    "value": 1,
     "comment": "mach0_dylib_command",
     "format": "mach0_dylib_command",
     "pf": [
@@ -932,6 +946,7 @@ EXPECT=<<EOF
     "name": "load_command_14_LC_LOAD_DYLIB",
     "vaddr": 4294969024,
     "paddr": 1728,
+    "value": 1,
     "comment": "mach0_dylib_command",
     "format": "mach0_dylib_command",
     "pf": [
@@ -992,6 +1007,7 @@ EXPECT=<<EOF
     "name": "load_command_15_LC_FUNCTION_STARTS",
     "vaddr": 4294969080,
     "paddr": 1784,
+    "value": 1,
     "comment": "mach0_function_starts_command",
     "format": "mach0_function_starts_command",
     "pf": [
@@ -1027,6 +1043,7 @@ EXPECT=<<EOF
     "name": "load_command_16_LC_DATA_IN_CODE",
     "vaddr": 4294969096,
     "paddr": 1800,
+    "value": 1,
     "comment": "mach0_data_in_code_command",
     "format": "mach0_data_in_code_command",
     "pf": [
@@ -1062,6 +1079,7 @@ EXPECT=<<EOF
     "name": "load_command_18_LC_CODE_SIGNATURE",
     "vaddr": 4294969128,
     "paddr": 1832,
+    "value": 1,
     "comment": "mach0_code_signature_command",
     "format": "mach0_code_signature_command",
     "pf": [

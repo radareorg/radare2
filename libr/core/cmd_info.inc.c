@@ -4,6 +4,15 @@
 
 #include "../bin/format/pdb/pdb_downloader.h"
 
+static RCoreHelpMessage help_msg_ih = {
+	"Usage: ih", "[hjq]", "Display header information",
+	"ih", "", "normal output to display binary headers",
+	"ih*", "", "same as above, but in r2 commands",
+	"ihj", "", "in json format",
+	"ihh", "", "call RBinPlugin.field callback to render custom",
+	NULL
+};
+
 static RCoreHelpMessage help_msg_i = {
 	"Usage: i", "", "Get info from opened file (see rabin2's manpage)",
 	"Output mode:", "", "",
@@ -33,8 +42,8 @@ static RCoreHelpMessage help_msg_i = {
 	"iE", "", "exports (global symbols)",
 	"iE,", "[table-query]", "exported symbols using the table query",
 	"iE.", "", "current export",
-	"ih", "", "headers (alias for iH)",
-	"iHH", "", "verbose Headers in raw text",
+	"ih", "[?]", "show binary headers (same as iH/-H to avoid conflict with -h in rabin2)",
+	"iH", "", "verbose Headers in raw text", // XXX
 	"ii", "[?][cj*,]", "imports",
 	"iI", "", "binary info",
 	"ik", " [query]", "key-value database from RBinObject",
@@ -1037,6 +1046,20 @@ static void cmd_ic(RCore *core, const char *input, PJ *pj, int is_array, bool va
 	}
 }
 
+static bool bin_header(RCore *r, int mode) {
+	r_return_val_if_fail (r, false);
+	RBinFile *cur = r_bin_cur (r->bin);
+	if (!cur) {
+		return false;
+	}
+	RBinPlugin *plg = r_bin_file_cur_plugin (cur);
+	if (plg && plg->header) {
+		plg->header (cur);
+		return true;
+	}
+	return false;
+}
+
 static int cmd_info(void *data, const char *input) {
 	RCore *core = (RCore *) data;
 	int fd = r_io_fd_get_current (core->io);
@@ -1173,6 +1196,37 @@ static int cmd_info(void *data, const char *input) {
 			// TODO: Might be nice to reload a bin at a specified offset?
 			__r_core_bin_reload (core, NULL, baddr);
 			r_core_block_read (core);
+		}
+		goto done;
+		break;
+	case 'h': // "ih"
+		if (question) {
+			r_core_cmd_help (core, help_msg_ih);
+		} else if (input[1] == 'h') {
+			bin_header (core, mode);
+		} else {
+			RBININFO ("fields", R_CORE_BIN_ACC_FIELDS, NULL, 0);
+		}
+		goto done;
+		break;
+	case 'H': // "iH"
+		if (input[1] == 'H') { // "iHH"
+			// alias for ihh
+			tts_say (core, "header", -1);
+			if (!bin_header (core, mode)) {
+				/// XXX header vs fields wtf
+				if (!r_core_bin_info (core, R_CORE_BIN_ACC_HEADER, pj, mode, va, NULL, NULL)) {
+					R_LOG_ERROR ("No header fields found");
+				}
+			}
+		} else {
+			// alias for ih
+			tts_say (core, "fields", -1);
+			if (!r_core_bin_info (core, R_CORE_BIN_ACC_FIELDS, pj, mode, va, NULL, NULL)) {
+				if (!bin_header (core, mode)) {
+					R_LOG_ERROR ("No header fields found");
+				}
+			}
 		}
 		goto done;
 		break;
@@ -1423,24 +1477,7 @@ static int cmd_info(void *data, const char *input) {
 
 
 			}
-			input = input + strlen (input) - 1;
-			break;
-		case 'H': // "iH"
-			if (input[1] == 'H') { // "iHH"
-				tts_say (core, "header", -1);
-				if (!r_core_bin_info (core, R_CORE_BIN_ACC_HEADER, pj, mode, va, NULL, NULL)) {
-					R_LOG_ERROR ("No header fields found");
-				}
-				break;
-			} else {
-				tts_say (core, "fields", -1);
-				if (!r_core_bin_info (core, R_CORE_BIN_ACC_FIELDS, pj, mode, va, NULL, NULL)) {
-					R_LOG_ERROR ("No header fields found");
-				}
-			}
-			break;
-		case 'h': // "ih"
-			RBININFO ("fields", R_CORE_BIN_ACC_FIELDS, NULL, 0);
+			input += strlen (input) - 1;
 			break;
 		case 'l': { // "il"
 			RList *objs = r_core_bin_files (core);

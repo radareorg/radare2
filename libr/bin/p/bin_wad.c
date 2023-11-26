@@ -126,7 +126,6 @@ static RList *wad_fields(RBinFile *bf) {
 		return NULL;
 	}
 	ut64 addr = 0;
-	r_strf_buffer (32);
 #define ROW(nam,siz,val,fmt) \
 	r_list_append (ret, r_bin_field_new (addr, addr, val, siz, nam, NULL, fmt, false)); \
 	addr += siz;
