@@ -1126,51 +1126,53 @@ static RList* fields(RBinFile *bf) {
 	if (!ret) {
 		return NULL;
 	}
-	r_strf_buffer (32);
-	#define ROW(nam, siz, val, fmt) \
-		r_list_append (ret, r_bin_field_new (addr, addr, siz, nam, r_strf ("0x%08"PFMT64x, (ut64)val), fmt, false));
+	#define ROW(nam, siz, val, fmt, cmt) \
+		r_list_append (ret, r_bin_field_new (addr, addr, val, siz, nam, cmt, fmt, false));
 	if (r_buf_size (bf->buf) < sizeof (Elf_ (Ehdr))) {
 		return ret;
 	}
 	ut64 addr = 0;
-	ROW ("ELF", 4, r_buf_read_le32_at (bf->buf, addr), "x");
+	ROW ("ELF", 4, r_buf_read_le32_at (bf->buf, addr), "x", NULL);
 	addr += 0x10;
-	ROW ("Type", 2, r_buf_read_le16_at (bf->buf, addr), "w");
+	ROW ("Type", 2, r_buf_read_le16_at (bf->buf, addr), "w", NULL);
 	addr += 0x2;
-	ROW ("Machine", 2, r_buf_read_le16_at (bf->buf, addr), "w");
+	ROW ("Machine", 2, r_buf_read_le16_at (bf->buf, addr), "w", NULL);
 	addr += 0x2;
-	ROW ("Version", 4, r_buf_read_le32_at (bf->buf, addr), "x");
+	ROW ("Version", 4, r_buf_read_le32_at (bf->buf, addr), "x", NULL);
 	addr += 0x4;
 
 	if (r_buf_read8_at (bf->buf, 0x04) == 1) {
-		ROW ("Entry point", 4, r_buf_read_le32_at (bf->buf, addr), "x");
+		ROW ("Entry point", 4, r_buf_read_le32_at (bf->buf, addr), "x", NULL);
 		addr += 0x4;
-		ROW ("PhOff", 4, r_buf_read_le32_at (bf->buf, addr), "x");
+		ROW ("PhOff", 4, r_buf_read_le32_at (bf->buf, addr), "x", NULL);
 		addr += 0x4;
-		ROW ("ShOff", 4, r_buf_read_le32_at (bf->buf, addr), "x");
+		ut32 shoff = r_buf_read_le32_at (bf->buf, addr);
+		ROW ("ShOff", 4, shoff, "x", NULL);
 		addr += 0x4;
 	} else {
-		ROW ("Entry point", 8, r_buf_read_le64_at (bf->buf, addr), "q");
+		ROW ("EntryPoint", 8, r_buf_read_le64_at (bf->buf, addr), "q", NULL);
 		addr += 0x8;
-		ROW ("PhOff", 8, r_buf_read_le64_at (bf->buf, addr), "q");
+		ut64 phoff = r_buf_read_le64_at (bf->buf, addr);
+		ROW ("PhOff", 8, phoff, "q", NULL);
 		addr += 0x8;
-		ROW ("ShOff", 8, r_buf_read_le64_at (bf->buf, addr), "q");
+		ut64 shoff = r_buf_read_le64_at (bf->buf, addr);
+		ROW ("ShOff", 8, shoff, "q", NULL);
 		addr += 0x8;
 	}
 
-	ROW ("Flags", 4, r_buf_read_le32_at (bf->buf, addr), "x");
+	ROW ("Flags", 4, r_buf_read_le32_at (bf->buf, addr), "x", NULL);
 	addr += 0x4;
-	ROW ("EhSize", 2, r_buf_read_le16_at (bf->buf, addr), "w");
+	ROW ("EhSize", 2, r_buf_read_le16_at (bf->buf, addr), "w", NULL);
 	addr += 0x2;
-	ROW ("PhentSize", 2, r_buf_read_le16_at (bf->buf, addr), "w");
+	ROW ("PhentSize", 2, r_buf_read_le16_at (bf->buf, addr), "w", NULL);
 	addr += 0x2;
-	ROW ("PhNum", 2, r_buf_read_le16_at (bf->buf, addr), "w");
+	ROW ("PhNum", 2, r_buf_read_le16_at (bf->buf, addr), "w", NULL);
 	addr += 0x2;
-	ROW ("ShentSize", 2, r_buf_read_le16_at (bf->buf, addr), "w");
+	ROW ("ShentSize", 2, r_buf_read_le16_at (bf->buf, addr), "w", NULL);
 	addr += 0x2;
-	ROW ("ShNum", 2, r_buf_read_le16_at (bf->buf, addr), "w");
+	ROW ("ShNum", 2, r_buf_read_le16_at (bf->buf, addr), "w", NULL);
 	addr += 0x2;
-	ROW ("ShrStrndx", 2, r_buf_read_le16_at (bf->buf, addr), "w");
+	ROW ("ShrStrndx", 2, r_buf_read_le16_at (bf->buf, addr), "w", NULL);
 
 	return ret;
 }

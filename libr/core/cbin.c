@@ -3314,7 +3314,7 @@ static bool bin_fields(RCore *r, PJ *pj, int mode, int va) {
 		r_core_bin_export_info (r, R_MODE_SET);
 		pj_a (pj);
 	} else if (IS_MODE_RAD (mode)) {
-		r_cons_println ("fs header");
+		r_cons_println ("fs+header");
 	} else if (IS_MODE_NORMAL (mode)) {
 		r_cons_println ("[Header fields]");
 	}
@@ -3324,9 +3324,12 @@ static bool bin_fields(RCore *r, PJ *pj, int mode, int va) {
 		if (IS_MODE_RAD (mode)) {
 			const char *fname = r_bin_name_tostring2 (field->name, 'f');
 			r_cons_printf ("'f header.%s 1 0x%08"PFMT64x"\n", fname, addr);
+			if (field->value != 0 && field->value != UT64_MAX) {
+				r_cons_printf ("'f header.%s.value 1 0x%08"PFMT64x"\n", fname, field->value);
+			}
 			if (field->comment && *field->comment) {
 				char *e = sdb_encode ((const ut8*)field->comment, -1);
-				r_cons_printf ("CCu %s @ 0x%"PFMT64x"\n", e, addr);
+				r_cons_printf ("CCu base64:%s @ 0x%"PFMT64x"\n", e, addr);
 				free (e);
 				char *f = r_name_filter_shell (field->format);
 				r_cons_printf ("Cf %d %s @ 0x%"PFMT64x"\n", field->size, f, addr);
@@ -3368,6 +3371,8 @@ static bool bin_fields(RCore *r, PJ *pj, int mode, int va) {
 	}
 	if (IS_MODE_JSON (mode)) {
 		pj_end (pj);
+	} else if (IS_MODE_RAD (mode)) {
+		r_cons_println ("fs-");
 	} else if (IS_MODE_NORMAL (mode)) {
 		r_cons_printf ("\n%i fields\n", i);
 	}

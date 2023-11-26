@@ -1380,17 +1380,18 @@ R_API void r_bin_load_filter(RBin *bin, ut64 rules) {
 }
 
 /* RBinField */
-R_API RBinField *r_bin_field_new(ut64 paddr, ut64 vaddr, int size, const char *name, const char *comment, const char *format, bool format_named) {
+R_API RBinField *r_bin_field_new(ut64 paddr, ut64 vaddr, ut64 value, int size, const char *name, R_NULLABLE const char *comment, R_NULLABLE const char *format, bool format_named) {
 	RBinField *ptr = R_NEW0 (RBinField);
 	if (ptr) {
 		ptr->name = r_bin_name_new (name);
 		ptr->comment = R_STR_ISNOTEMPTY (comment)? strdup (comment): NULL;
 		ptr->format = R_STR_ISNOTEMPTY (format)? strdup (format): NULL;
 		ptr->format_named = format_named;
+		ptr->vaddr = vaddr;
 		ptr->paddr = paddr;
 		ptr->size = size;
+		ptr->value = value;
 	//	ptr->attr = default attributes for fields?
-		ptr->vaddr = vaddr;
 	}
 	return ptr;
 }

@@ -115,7 +115,7 @@ static RList *classes_from_symbols(RBinFile *bf) {
 			char *dn = sym->dname;
 			char *fn = swiftField (dn, cn);
 			if (fn) {
-				RBinField *f = r_bin_field_new (sym->paddr, sym->vaddr, sym->size, fn, NULL, NULL, false);
+				RBinField *f = r_bin_field_new (sym->paddr, sym->vaddr, -1, sym->size, fn, NULL, NULL, false);
 				r_list_append (c->fields, f);
 				free (fn);
 			} else {
