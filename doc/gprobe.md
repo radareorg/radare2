@@ -52,7 +52,7 @@ radare2 -n -w gprobe://i2c-4
 
 Setup for Turbo186 processor core:
 - e asm.bits=16
-- e asm.seggrn=8
+- e asm.offset.segment.bits=8
 
 Now enjoy all the great stuff that r2 offers, like:
 - run grobe commands with =!?
