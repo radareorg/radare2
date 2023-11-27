@@ -34,126 +34,144 @@
 #include <r_arch.h>
 
 static bool fslsp_ancmd(RArchSession *s, RAnalOp *op, RArchDecodeMask mask) {
-	char buf_asm[128];
-	ut8 cmd = (r_read_ble32 (op->bytes, R_ARCH_CONFIG_IS_BIG_ENDIAN (s->config)) >> 16) & 0xff;
+	RStrBuf buf_asm;
+	r_strbuf_init (&buf_asm);
+	const bool be = R_ARCH_CONFIG_IS_BIG_ENDIAN (s->config);
+	const bool disasm = mask & R_ARCH_OP_MASK_DISASM;
+	ut8 cmd = (r_read_ble32 (op->bytes, be) >> 16) & 0xff;
 
 	switch (cmd) {
 	case 0x00:
-		sprintf (buf_asm, "Block Copy src 0x%x, from 0x%x, to 0x%x, size 0x%x",
-			r_read_ble32 (op->bytes, R_ARCH_CONFIG_IS_BIG_ENDIAN (s->config)) & 0xffff,
-			r_read_ble32 (op->bytes + 4, R_ARCH_CONFIG_IS_BIG_ENDIAN (s->config)),
-			r_read_ble32 (op->bytes + 8, R_ARCH_CONFIG_IS_BIG_ENDIAN (s->config)),
-			r_read_ble32 (op->bytes + 12, R_ARCH_CONFIG_IS_BIG_ENDIAN (s->config)));
+		if (disasm)
+			r_strbuf_setf (&buf_asm, "Block Copy src 0x%x, from 0x%x, to 0x%x, size 0x%x",
+				r_read_ble32 (op->bytes, be) & 0xffff,
+				r_read_ble32 (op->bytes + 4, be),
+				r_read_ble32 (op->bytes + 8, be),
+				r_read_ble32 (op->bytes + 12, be));
 		op->type = R_ANAL_OP_TYPE_MOV;
 		op->size = 16;
 		break;
 
 	case 0x02:
-		sprintf (buf_asm, "CCSR Write from Address word type %d, from 0x%x, to 0x%x, size 0x%x",
-			r_read_ble32 (op->bytes, R_ARCH_CONFIG_IS_BIG_ENDIAN (s->config)) & 3,
-			r_read_ble32 (op->bytes + 4, R_ARCH_CONFIG_IS_BIG_ENDIAN (s->config)),
-			r_read_ble32 (op->bytes + 8, R_ARCH_CONFIG_IS_BIG_ENDIAN (s->config)),
-			r_read_ble32 (op->bytes + 12, R_ARCH_CONFIG_IS_BIG_ENDIAN (s->config)));
+		if (disasm)
+			r_strbuf_setf (&buf_asm, "CCSR Write from Address word type %d, from 0x%x, to 0x%x, size 0x%x",
+				r_read_ble32 (op->bytes, be) & 3,
+				r_read_ble32 (op->bytes + 4, be),
+				r_read_ble32 (op->bytes + 8, be),
+				r_read_ble32 (op->bytes + 12, be));
 		op->type = R_ANAL_OP_TYPE_MOV;
 		op->size = 16;
 		break;
 
 	case 0x10:
-		sprintf (buf_asm, "Load RCW with Checksum");
+		if (disasm)
+			r_strbuf_set (&buf_asm, "Load RCW with Checksum");
 		op->type = R_ANAL_OP_TYPE_MOV;
 		op->size = 136;
 		break;
 
 	case 0x11:
-		sprintf (buf_asm, "Load RCW w/o Checksum");
+		if (disasm)
+			r_strbuf_set (&buf_asm, "Load RCW w/o Checksum");
 		op->type = R_ANAL_OP_TYPE_MOV;
 		op->size = 136;
 		break;
 
 	case 0x12:
-		sprintf (buf_asm, "Load Alternate Config Window %d",
-			(r_read_ble32 (op->bytes, R_ARCH_CONFIG_IS_BIG_ENDIAN (s->config)) >> 1) & 0x3fff);
+		if (disasm)
+			r_strbuf_setf (&buf_asm, "Load Alternate Config Window %d",
+				(r_read_ble32 (op->bytes, be) >> 1) & 0x3fff);
 		op->type = R_ANAL_OP_TYPE_MOV;
 		op->size = 4;
 		break;
 
 	case 0x14:
-		sprintf (buf_asm, "Load Condition from 0x%x, mask 0x%x",
-			r_read_ble32 (op->bytes + 4, R_ARCH_CONFIG_IS_BIG_ENDIAN (s->config)),
-			r_read_ble32 (op->bytes + 8, R_ARCH_CONFIG_IS_BIG_ENDIAN (s->config)));
+		if (disasm)
+			r_strbuf_setf (&buf_asm, "Load Condition from 0x%x, mask 0x%x",
+				r_read_ble32 (op->bytes + 4, be),
+				r_read_ble32 (op->bytes + 8, be));
 		op->type = R_ANAL_OP_TYPE_MOV;
 		op->size = 12;
 		break;
 
 	case 0x20:
-		sprintf (buf_asm, "Load Security Header");
+		if (disasm)
+			r_strbuf_set (&buf_asm, "Load Security Header");
 		op->type = R_ANAL_OP_TYPE_MOV;
 		op->size = 84;
 		break;
 
 	case 0x22:
-		sprintf (buf_asm, "Load Boot 1 CSF Header Ptr %08x",
-			r_read_ble32 (op->bytes + 4, R_ARCH_CONFIG_IS_BIG_ENDIAN (s->config)));
+		if (disasm)
+			r_strbuf_setf (&buf_asm, "Load Boot 1 CSF Header Ptr %08x",
+				r_read_ble32 (op->bytes + 4, be));
 		op->type = R_ANAL_OP_TYPE_MOV;
 		op->size = 8;
 		break;
 
 	case 0x42:
-		sprintf (buf_asm, "CCSR Read, Modify and Write from Address ops type %d, mask type %d, CCSR 0x%x, mask 0x%x, data 0x%x",
-			(r_read_ble32 (op->bytes, R_ARCH_CONFIG_IS_BIG_ENDIAN (s->config)) >> 2) & 3,
-			r_read_ble32 (op->bytes, R_ARCH_CONFIG_IS_BIG_ENDIAN (s->config)) & 3,
-			r_read_ble32 (op->bytes + 4, R_ARCH_CONFIG_IS_BIG_ENDIAN (s->config)),
-			r_read_ble32 (op->bytes + 8, R_ARCH_CONFIG_IS_BIG_ENDIAN (s->config)),
-			r_read_ble32 (op->bytes + 12, R_ARCH_CONFIG_IS_BIG_ENDIAN (s->config)));
+		if (disasm)
+			r_strbuf_setf (&buf_asm, "CCSR Read, Modify and Write from Address ops type %d, mask type %d, CCSR 0x%x, mask 0x%x, data 0x%x",
+				(r_read_ble32 (op->bytes, be) >> 2) & 3,
+				r_read_ble32 (op->bytes, be) & 3,
+				r_read_ble32 (op->bytes + 4, be),
+				r_read_ble32 (op->bytes + 8, be),
+				r_read_ble32 (op->bytes + 12, be));
 		op->type = R_ANAL_OP_TYPE_MOV;
 		op->size = 16;
 		break;
 
 	case 0x80:
 	case 0x81:
-		sprintf (buf_asm, "Poll %s addr 0x%x, mask 0x%x, condition 0x%x",
-			(cmd == 0x80)? "Short": "Long",
-			r_read_ble32 (op->bytes + 4, R_ARCH_CONFIG_IS_BIG_ENDIAN (s->config)),
-			r_read_ble32 (op->bytes + 8, R_ARCH_CONFIG_IS_BIG_ENDIAN (s->config)),
-			r_read_ble32 (op->bytes + 12, R_ARCH_CONFIG_IS_BIG_ENDIAN (s->config)));
+		if (disasm)
+			r_strbuf_setf (&buf_asm, "Poll %s addr 0x%x, mask 0x%x, condition 0x%x",
+				(cmd == 0x80)? "Short": "Long",
+				r_read_ble32 (op->bytes + 4, be),
+				r_read_ble32 (op->bytes + 8, be),
+				r_read_ble32 (op->bytes + 12, be));
 		op->type = R_ANAL_OP_TYPE_NOP;
 		op->size = 16;
 		break;
 
 	case 0x82:
-		sprintf (buf_asm, "Wait %d cycles",
-			r_read_ble32 (op->bytes, R_ARCH_CONFIG_IS_BIG_ENDIAN (s->config)) & 0xffff);
+		if (disasm)
+			r_strbuf_setf (&buf_asm, "Wait %d cycles",
+				r_read_ble32 (op->bytes, be) & 0xffff);
 		op->type = R_ANAL_OP_TYPE_NOP;
 		op->size = 4;
 		break;
 
 	case 0x84:
-		sprintf (buf_asm, "Jump offset 0x%x",
-			r_read_ble32 (op->bytes + 4, R_ARCH_CONFIG_IS_BIG_ENDIAN (s->config)));
+		if (disasm)
+			r_strbuf_setf (&buf_asm, "Jump offset 0x%x",
+				r_read_ble32 (op->bytes + 4, be));
 		op->type = R_ANAL_OP_TYPE_JMP;
 		op->size = 8;
-		op->jump = r_read_ble32 (op->bytes + 4, R_ARCH_CONFIG_IS_BIG_ENDIAN (s->config));
+		op->jump = r_read_ble32 (op->bytes + 4, be);
 		break;
 
 	case 0x85:
-		sprintf (buf_asm, "Jump Conditional offset 0x%x, condition %x",
-			r_read_ble32 (op->bytes + 4, R_ARCH_CONFIG_IS_BIG_ENDIAN (s->config)),
-			r_read_ble32 (op->bytes + 8, R_ARCH_CONFIG_IS_BIG_ENDIAN (s->config)));
+		if (disasm)
+			r_strbuf_setf (&buf_asm, "Jump Conditional offset 0x%x, condition %x",
+				r_read_ble32 (op->bytes + 4, be),
+				r_read_ble32 (op->bytes + 8, be));
 		op->type = R_ANAL_OP_TYPE_CJMP;
 		op->size = 12;
-		op->jump = r_read_ble32 (op->bytes + 4, R_ARCH_CONFIG_IS_BIG_ENDIAN (s->config));
+		op->jump = r_read_ble32 (op->bytes + 4, be);
 		break;
 
 	case 0x8F:
-		sprintf (buf_asm, "CRC and Stop crc 0x%x",
-			r_read_ble32 (op->bytes + 4, R_ARCH_CONFIG_IS_BIG_ENDIAN (s->config)));
+		if (disasm)
+			r_strbuf_setf (&buf_asm, "CRC and Stop crc 0x%x",
+				r_read_ble32 (op->bytes + 4, be));
 		op->type = R_ANAL_OP_TYPE_TRAP;
 		op->size = 8;
-		op->jump = r_read_ble32 (op->bytes + 4, R_ARCH_CONFIG_IS_BIG_ENDIAN (s->config));
+		op->jump = r_read_ble32 (op->bytes + 4, be);
 		break;
 
 	case 0xFF:
-		sprintf (buf_asm, "Stop");
+		if (disasm)
+			r_strbuf_set (&buf_asm, "Stop");
 		op->type = R_ANAL_OP_TYPE_TRAP;
 		op->size = 8;
 		break;
@@ -164,48 +182,53 @@ static bool fslsp_ancmd(RArchSession *s, RAnalOp *op, RArchDecodeMask mask) {
 
 	op->nopcode = 2;
 
-	if (mask & R_ARCH_OP_MASK_DISASM) {
-		op->mnemonic = strdup (buf_asm);
-	}
+	if (disasm)
+		op->mnemonic = r_strbuf_tostring (&buf_asm);
 
 	return true;
 }
 
 static bool fslsp_anop(RArchSession *s, RAnalOp *op, RArchDecodeMask mask) {
-	char buf_asm[128];
-	ut32 word = r_read_ble32 (op->bytes, R_ARCH_CONFIG_IS_BIG_ENDIAN (s->config));
+	RStrBuf buf_asm;
+	r_strbuf_init (&buf_asm);
+	const bool be = R_ARCH_CONFIG_IS_BIG_ENDIAN (s->config);
+	const bool disasm = mask & R_ARCH_OP_MASK_DISASM;
+	ut32 word = r_read_ble32 (op->bytes, be);
 	ut8 header = word >> 24;
 
 	if (header == 0x80) {
 		return fslsp_ancmd (s, op, mask);
 	} else if ((header & 0xc0) == 0) {
-		ut8 len = (header >> 4) & 0x03;
-		ut32 mask;
-		switch (len) {
-		case 1:
-			mask = 0x000000ff;
-			break;
-		case 3:
-			mask = 0xffffffff;
-			break;
-		default:
-			return false;
+		if (disasm) {
+			ut8 len = (header >> 4) & 0x03;
+			ut32 mask;
+			switch (len) {
+			case 1:
+				mask = 0x000000ff;
+				break;
+			case 3:
+				mask = 0xffffffff;
+				break;
+			default:
+				return false;
+			}
+			r_strbuf_setf (&buf_asm, "CCSR Write sys_addr 0x%07x, data 0x%x",
+				word & 0xfffffff,
+				r_read_ble32 (op->bytes + 4, be) & mask);
 		}
-		sprintf (buf_asm, "CCSR Write sys_addr 0x%07x, data 0x%x",
-			word & 0xfffffff,
-			r_read_ble32 (op->bytes + 4, R_ARCH_CONFIG_IS_BIG_ENDIAN (s->config)) & mask);
 		op->type = R_ANAL_OP_TYPE_MOV;
 		op->size = 8;
 	} else if (((header & 0xc0) == 0x80) && (header & 0x3c)) {
-		sprintf (buf_asm, "Alternate Configuration Write");
+		if (disasm)
+			r_strbuf_set (&buf_asm, "Alternate Configuration Write");
 		op->type = R_ANAL_OP_TYPE_MOV;
 		op->size = 8;
 	} else {
 		return false;
 	}
 
-	if (mask & R_ARCH_OP_MASK_DISASM) {
-		op->mnemonic = strdup (buf_asm);
+	if (disasm) {
+		op->mnemonic = r_strbuf_tostring (&buf_asm);
 	}
 	return true;
 }
