@@ -630,7 +630,7 @@ static void iterate_list_of_lists(RBinFile *bf, OnList cb, void * ctx, mach0_ut 
 		return;
 	}
 
-	ut32 entsize, count;
+	ut32 count;
 	ut8 tmp[sizeof (ut32) * 2];
 
 	if (r + left < r || r + sizeof (tmp) < r) {
@@ -650,7 +650,7 @@ static void iterate_list_of_lists(RBinFile *bf, OnList cb, void * ctx, mach0_ut 
 		return;
 	}
 
-	entsize = r_read_ble (&tmp[0], bigendian, 32);
+	ut32 entsize = r_read_ble (&tmp[0], bigendian, 32);
 	count = r_read_ble (&tmp[4], bigendian, 32);
 	if (count < 1 || count > ST32_MAX) {
 		return;
@@ -682,7 +682,14 @@ static void iterate_list_of_lists(RBinFile *bf, OnList cb, void * ctx, mach0_ut 
 		if (left < entsize) {
 			break;
 		}
-		if (r_buf_read_at (bf->buf, r, (ut8*)&entry, entsize) != entsize) {
+		size_t mines = R_MIN (entsize, sizeof (entry));
+		if (entsize < sizeof (entry)) {
+			R_LOG_WARN ("wrong lole size, breaking, not enough to read");
+			break;
+		} else if (entsize != sizeof (entry)) {
+			R_LOG_WARN ("wrong lole size. fuzzed blob?");
+		}
+		if (r_buf_read_at (bf->buf, r, (ut8*)&entry, mines) != mines) {
 			break;
 		}
 
