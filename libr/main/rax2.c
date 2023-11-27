@@ -389,7 +389,7 @@ dotherax:
 		}
 		return true;
 	} else if (flags & (1 << 17)) { // -B (bin -> str)
-    r_print_bin_from_str (NULL, str);
+		r_print_bin_from_str (NULL, str);
 		return true;
 	} else if (flags & (1 << 16)) { // -w
 		ut64 n = r_num_calc (num, str, &errstr);

@@ -2577,7 +2577,7 @@ R_API void r_print_bin_from_str(RPrint *p, char *str) {
 		ut8 ch = str[i];
 		if (p) {
 			p->cb_eprintf ("%d%d%d%d"
-				"%d%d%d%d",
+				       "%d%d%d%d",
 				ch & 128? 1: 0,
 				ch & 64? 1: 0,
 				ch & 32? 1: 0,
