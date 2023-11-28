@@ -33,6 +33,16 @@ static RCoreHelpMessage help_msg_psp = {
 	"psp2", "", "same as psp, but taking 2 byte for length",
 	"psp4", "", "same as psp, but using 4 byte dword (honoring cfg.bigendian) for length",
 	"pspj", "", "print pascal string in JSON",
+	"pspw", "", "print zero-terminated 16bit wide string, taking length in bytes defined by the first byte (pspw1)",
+	"pspw1", "", "same as pspw",
+	"pspw2", "", "same as pspw, but taking 2 byte for length",
+	"pspw4", "", "same as pspW, but using 4 byte dword (honoring cfg.bigendian) for length",
+	"pspwj", "", "print pascal 16bit wide string in JSON",
+	"pspW", "", "print zero-terminated 32bit wide string, taking length in bytes defined by the first byte (pspW1)",
+	"pspW1", "", "same as pspW",
+	"pspW2", "", "same as pspW, but taking 2 byte for length",
+	"pspW4", "", "same as pspW, but using 4 byte dword (honoring cfg.bigendian) for length",
+	"pspWj", "", "print pascal 32bit wide string in JSON",
 	NULL
 };
 
@@ -5696,7 +5706,18 @@ static void cmd_psa(RCore *core, const char *_) {
 static void print_pascal_string(RCore *core, const char *input, int len) {
 	int disp = 1;
 	int slen = -1;
+	int options = R_PRINT_STRING_ZEROEND;
 	bool dojson = false;
+	switch (input[0]) {
+	case 'w': //pspw
+		options |= R_PRINT_STRING_WIDE;
+		input++;
+		break;
+	case 'W': //pspW
+		options |= R_PRINT_STRING_WIDE32;
+		input++;
+		break;
+	}
 	switch (input[0]) {
 	case 'j': // "pspj"
 		dojson = true;
@@ -5745,11 +5766,11 @@ static void print_pascal_string(RCore *core, const char *input, int len) {
 	}
 	if (slen + disp < core->blocksize) {
 		if (dojson) {
-			print_json_string (core, (const char *) core->block + disp, slen, NULL);
+			print_json_string (core, (const char *) core->block + disp, slen,
+				((options & R_PRINT_STRING_WIDE) == R_PRINT_STRING_WIDE)? "wide":
+				((options & R_PRINT_STRING_WIDE32) == R_PRINT_STRING_WIDE32)? "wide32": NULL);
 		} else {
-			r_print_string (core->print, core->offset,
-					core->block + disp, slen,
-					R_PRINT_STRING_ZEROEND);
+			r_print_string (core->print, core->offset, core->block + disp, slen, options);
 		}
 		core->num->value = slen;
 	} else {
