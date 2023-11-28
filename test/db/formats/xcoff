@@ -1,0 +1,29 @@
+NAME=ppc xcoff
+FILE=bins/xcoff/file-xcoff-aix51
+CMDS=<<EOF
+i~^format
+e asm.arch
+e asm.bits
+EOF
+EXPECT=<<EOF
+format   coff
+ppc
+32
+EOF
+RUN
+
+NAME=xcoff sections
+FILE=bins/xcoff/file-xcoff-aix51
+CMDS=iS
+EXPECT=<<EOF
+[Sections]
+
+nth paddr         size vaddr        vsize perm type name
+--------------------------------------------------------
+0   0x00000128  0x3722 0x00000000  0x3722 ---- TEXT .text-0
+1   0x0000384a   0x4ba 0x00003730   0x4ba ---- DATA .data-1
+2   0x00000000    0x1c 0x00003bf0    0x1c ---- MAP  .bss-2
+3   0x00003d04   0xc73 0x00003c10   0xc73 ---- MAP  .loader-3
+
+EOF
+RUN
