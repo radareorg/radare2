@@ -92,6 +92,9 @@ static int r_coff_rebase_sym(RBinCoffObj *obj, RBinAddr *addr, struct coff_symbo
 /* Try to get a valid entrypoint using the methods outlined in
  * http://ftp.gnu.org/old-gnu/Manuals/ld-2.9.1/html_mono/ld.html#SEC24 */
 R_IPI RBinAddr *r_coff_get_entry(RBinCoffObj *obj) {
+	if (obj->xcoff) {
+		return NULL;
+	}
 	RBinAddr *addr = R_NEW0 (RBinAddr);
 	if (!addr) {
 		return NULL;
@@ -165,6 +168,7 @@ static bool r_bin_coff_init_hdr(RBinCoffObj *obj) {
 			return false;
 		}
 	}
+	obj->xcoff = obj->hdr.f_opthdr == sizeof (struct coff_opt_hdr) + sizeof (struct xcoff32_opt_hdr);
 	return true;
 }
 
@@ -176,6 +180,16 @@ static bool r_bin_coff_init_opt_hdr(RBinCoffObj *obj) {
 	ret = r_buf_fread_at (obj->b, sizeof (struct coff_hdr),
 						 (ut8 *)&obj->opt_hdr, obj->endian? "2S6I": "2s6i", 1);
 	if (ret != sizeof (struct coff_opt_hdr)) {
+		return false;
+	}
+	return true;
+}
+
+static bool r_bin_xcoff_init_opt_hdr(RBinCoffObj *obj) {
+	int ret;
+	ret = r_buf_fread_at (obj->b, sizeof (struct coff_hdr) + sizeof (struct coff_opt_hdr),
+						 (ut8 *)&obj->xcoff_opt_hdr, "1I8S4c3I4c2S", 1);
+	if (ret != sizeof (struct xcoff32_opt_hdr)) {
 		return false;
 	}
 	return true;
@@ -264,13 +278,18 @@ static bool r_bin_coff_init(RBinCoffObj *obj, RBuffer *buf, bool verbose) {
 		return false;
 	}
 	r_bin_coff_init_opt_hdr (obj);
+	if (obj->xcoff) {
+		r_bin_xcoff_init_opt_hdr (obj);
+	}
 	if (!r_bin_coff_init_scn_hdr (obj)) {
 		R_LOG_WARN ("failed to init section header");
 		return false;
 	}
-	if (!r_bin_coff_init_scn_va (obj)) {
-		R_LOG_WARN ("failed to init section VA table");
-		return false;
+	if (!obj->xcoff) {
+		if (!r_bin_coff_init_scn_va (obj)) {
+			R_LOG_WARN ("failed to init section VA table");
+			return false;
+		}
 	}
 	if (!r_bin_coff_init_symtable (obj)) {
 		R_LOG_WARN ("failed to init symtable");

@@ -257,7 +257,7 @@ struct coff_opt_hdr {
 
 /* XCOFF32 extended auxiliary header */
 R_PACKED (
-struct coff_opt_hdr_ext {
+struct xcoff32_opt_hdr {
 	ut32 o_toc;
 	ut16 o_snentry;		/* Section number of entry point    */
 	ut16 o_sntext;		/* Section number of text section   */
