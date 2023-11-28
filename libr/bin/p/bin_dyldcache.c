@@ -496,16 +496,16 @@ static void carve_deps_at_address(RDyldCache *cache, cache_img_t *img, HtSU *pat
 			size_t dep_index = (size_t)ht_su_find (path_to_idx, key, &found);
 			if (!found || dep_index >= cache->hdr->imagesCount) {
 				R_LOG_WARN ("alien dep '%s'", key);
-				continue;
+				goto nextcmd;
 			}
 			deps[dep_index]++;
 			if (printing) {
 				eprintf ("-> %s\n", key);
 			}
 		}
+nextcmd:
 		cursor += cmdsize;
 	}
-
 beach:
 	free (cmds);
 }
