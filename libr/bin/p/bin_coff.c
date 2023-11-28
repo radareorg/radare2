@@ -607,8 +607,7 @@ static RBinInfo *info(RBinFile *bf) {
 		ret->arch = strdup ("h8300");
 		ret->bits = 16;
 		break;
-	case COFF_FILE_MACHINE_AMD29KBE:
-	case COFF_FILE_MACHINE_AMD29KLE:
+	case COFF_FILE_MACHINE_AMD29K:
 		ret->cpu = strdup ("29000");
 		ret->machine = strdup ("amd29k");
 		ret->arch = strdup ("amd29k");
@@ -646,11 +645,28 @@ static RBinInfo *info(RBinFile *bf) {
 			break;
 		}
 		break;
+	case COFF_FILE_MACHINE_ALPHA:
+		ret->machine = strdup ("alpha");
+		ret->arch = strdup ("alpha");
+		ret->bits = 64;
+		break;
 	case COFF_FILE_MACHINE_POWERPC:
-		ret->machine = strdup ("ppc");
+		ret->machine = strdup ("RS/6000");
+		ret->cpu = strdup ("ppc");
 		ret->arch = strdup ("ppc");
-		ret->big_endian = true;
 		ret->bits = 32;
+		break;
+	case XCOFF32_FILE_MACHINE_U800WR:
+	case XCOFF32_FILE_MACHINE_U800RO:
+	case XCOFF32_FILE_MACHINE_U800TOC:
+	case XCOFF32_FILE_MACHINE_U802WR:
+	case XCOFF32_FILE_MACHINE_U802RO:
+	case XCOFF32_FILE_MACHINE_U802TOC:
+		ret->machine = strdup ("RS/6000");
+		ret->cpu = strdup ("ppc");
+		ret->arch = strdup ("ppc");
+		ret->bits = 32;
+		ret->os = strdup ("AIX");
 		break;
 	default:
 		ret->machine = strdup ("unknown");

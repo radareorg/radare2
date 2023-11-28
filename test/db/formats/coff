@@ -154,3 +154,73 @@ EXPECT=<<EOF
             0x0000000d      488d152b00..   lea rdx, [0x0000003f]       ; str.Coffee_time_ ; "Coffee time!"; RELOC 32 .data @ 0x00000030 + 0xf
 EOF
 RUN
+
+NAME=MS Visual C++ 4.0 Alpha object
+ARGS=-e bin.relocs.apply=1
+FILE=bins/coff/VC40AALPHA_SETARGV.OBJ
+CMDS=<<EOF
+i~^format
+e asm.arch
+e asm.bits
+pi 6 @ 0
+EOF
+EXPECT=<<EOF
+format   coff
+alpha
+64
+lda sp, -16(sp)
+stq ra, 0(sp)
+bsr ra, 0x0000000c
+ldq ra, 0(sp)
+lda sp, 16(sp)
+ret
+EOF
+RUN
+
+NAME=MS Visual C++ 4.0 MIPS object
+ARGS=-e bin.relocs.apply=1
+FILE=bins/coff/VC40AMIPS_SETARGV.OBJ
+CMDS=<<EOF
+i~^format
+e asm.arch
+e asm.bits
+pi 7 @ 0
+EOF
+EXPECT=<<EOF
+format   coff
+mips
+32
+addiu sp, sp, -0x18
+sw ra, 0x14(sp)
+jal sym._setargv
+nop
+lw ra, 0x14(sp)
+jr ra
+addiu sp, sp, 0x18
+EOF
+RUN
+
+NAME=MS Visual C++ 4.0 PowerPC object
+ARGS=-e bin.relocs.apply=1
+FILE=bins/coff/VC40APPC_SETARGV.OBJ
+CMDS=<<EOF
+i~^format
+e asm.arch
+e asm.bits
+pi 9 @ 0
+EOF
+EXPECT=<<EOF
+format   coff
+ppc
+32
+stw r31, -4(r1)
+stwu r1, -0x40(r1)
+mflr r31
+bl sym..._setargv
+nop
+mtlr r31
+addi r1, r1, 0x40
+lwz r31, -4(r1)
+blr
+EOF
+RUN
