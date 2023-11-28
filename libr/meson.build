@@ -134,6 +134,7 @@ if get_option('plugins') == ''
     'dis',
     'ebc',
     'evm',
+    'fslsp',
     'gb',
     'h8300',
     'i4004',
