@@ -152,7 +152,7 @@ static RList *entries(RBinFile *bf) {
 }
 
 // XXX the string must be heap allocated because these are bitfields
-static const char *section_type_tostring(int i) {
+static const char *coff_section_type_tostring(int i) {
 	if (i & COFF_STYP_TEXT) {
 		return "TEXT";
 	}
@@ -187,6 +187,64 @@ static const char *section_type_tostring(int i) {
 	return "MAP";
 }
 
+static const char *xcoff_section_type_tostring(int i) {
+	switch (i & 0xFFFF) {
+	case XCOFF_SCN_TYPE_DWARF:
+		return "DWARF";
+	case XCOFF_SCN_TYPE_TEXT:
+		return "TEXT";
+	case XCOFF_SCN_TYPE_DATA:
+		return "DATA";
+	case XCOFF_SCN_TYPE_BSS:
+		return "BSS";
+	case XCOFF_SCN_TYPE_EXCEPT:
+		return "EXCEPT";
+	}
+	return NULL;
+}
+
+static void coff_section(RBinSection *ptr, const struct r_bin_coff_obj *obj, size_t i) {
+	if (strstr (ptr->name, "data")) {
+		ptr->is_data = true;
+	}
+	ptr->size = obj->scn_hdrs[i].s_size;
+	ptr->vsize = obj->scn_hdrs[i].s_size;
+	ptr->paddr = obj->scn_hdrs[i].s_scnptr;
+	ptr->type = coff_section_type_tostring (obj->scn_hdrs[i].s_flags);
+	if (obj->scn_va) {
+		ptr->vaddr = obj->scn_va[i];
+	}
+	ptr->add = true;
+	ptr->perm = 0;
+	if (obj->scn_hdrs[i].s_flags & COFF_SCN_MEM_READ) {
+		ptr->perm |= R_PERM_R;
+	}
+	if (obj->scn_hdrs[i].s_flags & COFF_SCN_MEM_WRITE) {
+		ptr->perm |= R_PERM_W;
+	}
+	if (obj->scn_hdrs[i].s_flags & COFF_SCN_MEM_EXECUTE) {
+		ptr->perm |= R_PERM_X;
+	}
+}
+
+static void xcoff_section(RBinSection *ptr, const struct r_bin_coff_obj *obj, size_t i) {
+	ptr->size = obj->scn_hdrs[i].s_size;
+	ptr->vsize = obj->scn_hdrs[i].s_size;
+	ptr->paddr = obj->scn_hdrs[i].s_scnptr;
+	ptr->vaddr = obj->scn_hdrs[i].s_vaddr;
+	ptr->type = xcoff_section_type_tostring (obj->scn_hdrs[i].s_flags & 0xFFFF);
+	ptr->add = true;
+	switch (obj->scn_hdrs[i].s_flags & 0xFFFF) {
+	case XCOFF_SCN_TYPE_TEXT:
+		ptr->perm = R_PERM_R | R_PERM_X;
+		break;
+	case XCOFF_SCN_TYPE_DATA:
+	case XCOFF_SCN_TYPE_BSS:
+		ptr->perm = R_PERM_R | R_PERM_W;
+		break;
+	}
+}
+
 static RList *sections(RBinFile *bf) {
 	char *tmp = NULL;
 	size_t i;
@@ -213,26 +271,10 @@ static RList *sections(RBinFile *bf) {
 			}
 			ptr->name = r_str_newf ("%s-%u", tmp, (unsigned int)i);
 			free (tmp);
-			if (strstr (ptr->name, "data")) {
-				ptr->is_data = true;
-			}
-			ptr->size = obj->scn_hdrs[i].s_size;
-			ptr->vsize = obj->scn_hdrs[i].s_size;
-			ptr->paddr = obj->scn_hdrs[i].s_scnptr;
-			ptr->type = section_type_tostring (obj->scn_hdrs[i].s_flags);
-			if (obj->scn_va) {
-				ptr->vaddr = obj->scn_va[i];
-			}
-			ptr->add = true;
-			ptr->perm = 0;
-			if (obj->scn_hdrs[i].s_flags & COFF_SCN_MEM_READ) {
-				ptr->perm |= R_PERM_R;
-			}
-			if (obj->scn_hdrs[i].s_flags & COFF_SCN_MEM_WRITE) {
-				ptr->perm |= R_PERM_W;
-			}
-			if (obj->scn_hdrs[i].s_flags & COFF_SCN_MEM_EXECUTE) {
-				ptr->perm |= R_PERM_X;
+			if (obj->xcoff) {
+				xcoff_section(ptr, obj, i);
+			} else {
+				coff_section(ptr, obj, i);
 			}
 			r_list_append (ret, ptr);
 		}
@@ -607,8 +649,7 @@ static RBinInfo *info(RBinFile *bf) {
 		ret->arch = strdup ("h8300");
 		ret->bits = 16;
 		break;
-	case COFF_FILE_MACHINE_AMD29KBE:
-	case COFF_FILE_MACHINE_AMD29KLE:
+	case COFF_FILE_MACHINE_AMD29K:
 		ret->cpu = strdup ("29000");
 		ret->machine = strdup ("amd29k");
 		ret->arch = strdup ("amd29k");
@@ -646,11 +687,28 @@ static RBinInfo *info(RBinFile *bf) {
 			break;
 		}
 		break;
+	case COFF_FILE_MACHINE_ALPHA:
+		ret->machine = strdup ("alpha");
+		ret->arch = strdup ("alpha");
+		ret->bits = 64;
+		break;
 	case COFF_FILE_MACHINE_POWERPC:
-		ret->machine = strdup ("ppc");
+		ret->machine = strdup ("RS/6000");
+		ret->cpu = strdup ("ppc");
 		ret->arch = strdup ("ppc");
-		ret->big_endian = true;
 		ret->bits = 32;
+		break;
+	case XCOFF32_FILE_MACHINE_U800WR:
+	case XCOFF32_FILE_MACHINE_U800RO:
+	case XCOFF32_FILE_MACHINE_U800TOC:
+	case XCOFF32_FILE_MACHINE_U802WR:
+	case XCOFF32_FILE_MACHINE_U802RO:
+	case XCOFF32_FILE_MACHINE_U802TOC:
+		ret->machine = strdup ("RS/6000");
+		ret->cpu = strdup ("ppc");
+		ret->arch = strdup ("ppc");
+		ret->bits = 32;
+		ret->os = strdup ("AIX");
 		break;
 	default:
 		ret->machine = strdup ("unknown");

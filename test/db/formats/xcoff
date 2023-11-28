@@ -1,0 +1,54 @@
+NAME=ppc xcoff
+FILE=bins/xcoff/file-xcoff-aix51
+CMDS=<<EOF
+i~^format
+e asm.arch
+e asm.bits
+s
+EOF
+EXPECT=<<EOF
+format   coff
+ppc
+32
+0x10000128
+EOF
+RUN
+
+NAME=xcoff sections
+FILE=bins/xcoff/file-xcoff-aix51
+CMDS=iS
+EXPECT=<<EOF
+[Sections]
+
+nth paddr         size vaddr        vsize perm type name
+--------------------------------------------------------
+0   0x00000128  0x3722 0x10000128  0x3722 -r-x TEXT .text-0
+1   0x0000384a   0x4ba 0x2000084a   0x4ba -rw- DATA .data-1
+2   0x00000000    0x1c 0x20000d04    0x1c -rw- BSS  .bss-2
+3   0x00003d04   0xc73 0x00000000   0xc73 ---- ---- .loader-3
+
+EOF
+RUN
+
+NAME=xcoff disassemble
+FILE=bins/xcoff/file-xcoff-aix51
+CMDS=pi 16
+EXPECT=<<EOF
+lwz r17, 0x28(r2)
+mr r14, r3
+mr r15, r4
+mr r16, r5
+cmpw r30, r31
+stw r14, 0(r2)
+stw r15, 4(r2)
+lwz r17, 0(r17)
+lwz r10, 0x2c(r2)
+li r9, 0
+oris r9, r9, 0x403
+cmpwi cr2, r17, 0
+stw r9, 0(r10)
+bne 0x1000016c
+bl 0x100001f0
+nop
+EOF
+RUN
