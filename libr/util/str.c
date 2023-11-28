@@ -201,10 +201,12 @@ R_API ut64 r_str_bits_from_string(const char *buf, const char *bitz) {
 	return out;
 }
 
-R_API int r_str_binstr2bin(const char *str, ut8 *out, int outlen) {
-	int n, i, j, k, ret, len;
+R_API char* r_str_binstr2str(const char *str) {
+  RStrBuf *buf = r_strbuf_new (NULL);
+	int i, j, k, ret, len;
 	len = strlen (str);
-	for (n = i = 0; i < len; i += 8) {
+
+	for (i = 0; i < len; i += 8) {
 		ret = 0;
 		while (str[i] == ' ') {
 			str++;
@@ -217,16 +219,34 @@ R_API int r_str_binstr2bin(const char *str, ut8 *out, int outlen) {
 				if (str[j] == '1') {
 					ret |= (1 << k);
 				} else if (str[j] != '0') {
-					return n;
+          return r_strbuf_drain (buf);
 				}
 			}
 		}
-		out[n++] = ret;
-		if (n == outlen) {
-			return n;
-		}
+    r_strbuf_appendf(buf, "%c", ret);
 	}
-	return n;
+
+	return r_strbuf_drain (buf);
+}
+
+R_API char* r_str_str2binstr(const char *str){
+	RStrBuf *buf = r_strbuf_new (NULL);
+  int i = 0;
+	int len = strlen (str);
+
+	for (i = 0; i < len; i++) {
+		ut8 ch = str[i];
+    r_strbuf_appendf(buf, "%c", ch & 128? '1': '0');
+    r_strbuf_appendf(buf, "%c", ch & 64? '1': '0');
+    r_strbuf_appendf(buf, "%c", ch & 32? '1': '0');
+    r_strbuf_appendf(buf, "%c", ch & 16? '1': '0');
+    r_strbuf_appendf(buf, "%c", ch & 8? '1': '0');
+    r_strbuf_appendf(buf, "%c", ch & 4? '1': '0');
+    r_strbuf_appendf(buf, "%c", ch & 2? '1': '0');
+    r_strbuf_appendf(buf, "%c", ch & 1? '1': '0');
+	}
+
+	return r_strbuf_drain (buf);
 }
 
 // Returns the permissions as in integer given an input in the form of rwx, rx,
