@@ -383,6 +383,9 @@ static RBinSection *getsection(RBin *bin, int sn) {
 			? dwarf_sn_xcoff64
 			: dwarf_sn_elf;
 		const char *name_str = name_tab[sn];
+		if (!name_str) {
+			return NULL;
+		}
 		r_list_foreach (o->sections, iter, section) {
 			if (strstr (section->name, name_str)) {
 				if (strstr (section->name, "zdebug")) {
