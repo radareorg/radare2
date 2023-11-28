@@ -167,9 +167,10 @@ R_API void r_bin_import_free(RBinImport *imp) {
 }
 
 R_API RBinSymbol *r_bin_symbol_new(const char *name, ut64 paddr, ut64 vaddr) {
+	r_return_val_if_fail (name, NULL);
 	RBinSymbol *sym = R_NEW0 (RBinSymbol);
 	if (sym) {
-		sym->name = name? strdup (name): NULL;
+		sym->name = r_bin_name_new (name);
 		sym->paddr = paddr;
 		sym->vaddr = vaddr;
 	}
@@ -180,15 +181,12 @@ R_API RBinSymbol *r_bin_symbol_clone(RBinSymbol *bs) {
 	r_return_val_if_fail (bs, NULL);
 	RBinSymbol *nbs = r_mem_dup (bs, sizeof (RBinSymbol));
 	if (nbs) {
-		nbs->name = strdup (nbs->name);
-		if (nbs->dname) {
-			nbs->dname = strdup (nbs->dname);
+		nbs->name = r_bin_name_clone (bs->name);
+		if (bs->libname) {
+			nbs->libname = strdup (bs->libname);
 		}
-		if (nbs->libname) {
-			nbs->libname = strdup (nbs->libname);
-		}
-		if (nbs->classname) {
-			nbs->classname = strdup (nbs->classname);
+		if (bs->classname) {
+			nbs->classname = strdup (bs->classname);
 		}
 	}
 	return nbs;
