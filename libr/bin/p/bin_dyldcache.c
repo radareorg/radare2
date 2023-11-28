@@ -106,44 +106,27 @@ static cache_img_t *read_cache_images(RBuffer *cache_buf, cache_hdr_t *hdr, ut64
 	return images;
 }
 
-static void match_bin_entries(RDyldCache *cache, void *entries) {
-	r_return_if_fail (cache && cache->bins && entries);
-
-	cache_img_t *imgs = read_cache_images (cache->buf, cache->hdr, 0);
-	if (!imgs) {
-		return;
-	}
-
-	RDyldBinImage *bin = NULL;
-	RListIter *it = r_list_iterator (cache->bins);
-
-	bool has_large_entries = cache->n_hdr > 1;
+static void match_bin_entries(RDyldCache *cache, void *entries, ut64 entries_count, bool has_large_entries) {
+	r_return_if_fail (cache && cache->bin_by_pa && entries);
 
 	ut32 i;
-	for (i = 0; i < cache->hdr->imagesCount; i++) {
-		cache_img_t *img = &imgs[i];
-		if (!it) {
-			break;
-		}
-		bin = it->data;
-		if (!bin) {
-			break;
-		}
-		if (bin && bin->va == img->address) {
-			if (has_large_entries) {
-				cache_locsym_entry_large_t *e = &((cache_locsym_entry_large_t *) entries)[i];
-				bin->nlist_start_index = e->nlistStartIndex;
-				bin->nlist_count = e->nlistCount;
-			} else {
-				cache_locsym_entry_t *e = &((cache_locsym_entry_t *) entries)[i];
+	for (i = 0; i < entries_count; i++) {
+		if (has_large_entries) {
+			cache_locsym_entry_large_t *e = &((cache_locsym_entry_large_t *) entries)[i];
+			RDyldBinImage *bin = ht_up_find (cache->bin_by_pa, e->dylibOffset, NULL);
+			if (bin) {
 				bin->nlist_start_index = e->nlistStartIndex;
 				bin->nlist_count = e->nlistCount;
 			}
-			it = it->n;
+		} else {
+			cache_locsym_entry_t *e = &((cache_locsym_entry_t *) entries)[i];
+			RDyldBinImage *bin = ht_up_find (cache->bin_by_pa, e->dylibOffset, NULL);
+			if (bin) {
+				bin->nlist_start_index = e->nlistStartIndex;
+				bin->nlist_count = e->nlistCount;
+			}
 		}
 	}
-
-	R_FREE (imgs);
 }
 
 static RDyldLocSym *r_dyld_locsym_new(RDyldCache *cache) {
@@ -165,14 +148,10 @@ static RDyldLocSym *r_dyld_locsym_new(RDyldCache *cache) {
 			goto beach;
 		}
 		if (r_buf_fread_at (cache->buf, hdr->localSymbolsOffset, (ut8*) info, "6i", 1) != info_size) {
-			eprintf ("locsym err 01\n");
+			R_LOG_ERROR ("incomplete local symbol info");
 			goto beach;
 		}
-		if (info->entriesCount != cache->hdr->imagesCount) {
-			eprintf ("locsym err 02\n");
-			goto beach;
-		}
-
+		ut64 entries_count = info->entriesCount;
 		bool has_large_entries = cache->n_hdr > 1;
 		if (has_large_entries) {
 			ut64 entries_size = sizeof (cache_locsym_entry_large_t) * info->entriesCount;
@@ -182,7 +161,7 @@ static RDyldLocSym *r_dyld_locsym_new(RDyldCache *cache) {
 			}
 			if (r_buf_fread_at (cache->buf, hdr->localSymbolsOffset + info->entriesOffset, (ut8*) large_entries, "lii",
 					info->entriesCount) != entries_size) {
-				eprintf ("locsym err 03\n");
+				R_LOG_ERROR ("incomplete local symbol (large) entries");
 				goto beach;
 			}
 			entries = large_entries;
@@ -194,7 +173,7 @@ static RDyldLocSym *r_dyld_locsym_new(RDyldCache *cache) {
 			}
 			if (r_buf_fread_at (cache->buf, hdr->localSymbolsOffset + info->entriesOffset, (ut8*) regular_entries, "iii",
 					info->entriesCount) != entries_size) {
-				eprintf ("locsym err 04\n");
+				R_LOG_ERROR ("incomplete local symbol entries");
 				goto beach;
 			}
 			entries = regular_entries;
@@ -204,7 +183,7 @@ static RDyldLocSym *r_dyld_locsym_new(RDyldCache *cache) {
 			goto beach;
 		}
 
-		match_bin_entries (cache, entries);
+		match_bin_entries (cache, entries, entries_count, has_large_entries);
 
 		locsym->local_symbols_offset = hdr->localSymbolsOffset;
 		locsym->nlists_offset = info->nlistOffset;
@@ -216,12 +195,11 @@ static RDyldLocSym *r_dyld_locsym_new(RDyldCache *cache) {
 		free (entries);
 
 		return locsym;
-
 beach:
 		free (info);
 		free (entries);
 
-		eprintf ("dyldcache: malformed local symbols metadata\n");
+		R_LOG_ERROR ("something went wrong parsing local symbols");
 		break;
 	}
 	return NULL;
