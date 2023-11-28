@@ -13,6 +13,7 @@
 typedef struct r_bin_coff_obj {
 	struct coff_hdr	hdr;
 	struct coff_opt_hdr opt_hdr;
+	struct xcoff32_opt_hdr xcoff_opt_hdr;
 	struct coff_scn_hdr *scn_hdrs;
 	struct coff_symbol *symbols;
 
@@ -20,6 +21,7 @@ typedef struct r_bin_coff_obj {
 
 	RBuffer *b;
 	size_t size;
+	bool xcoff;
 	ut8 endian;
 	Sdb *kv;
 	bool verbose;
