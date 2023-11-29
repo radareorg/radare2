@@ -128,26 +128,28 @@ static bool is_bin_etrel(ELFOBJ *eo) {
 	return eo->ehdr.e_type == ET_REL;
 }
 
-static bool __is_valid_ident(ELFOBJ *eo) {
-	return !strncmp ((char *)eo->ehdr.e_ident, ELFMAG, SELFMAG) ||
-		!strncmp ((char *)eo->ehdr.e_ident, CGCMAG, SCGCMAG);
+static bool __is_valid_ident(ut8 *e_ident) {
+	return !strncmp ((char*)e_ident, ELFMAG, SELFMAG) ||
+		!strncmp ((char*)e_ident, CGCMAG, SCGCMAG);
 }
 
 static bool init_ehdr(ELFOBJ *eo) {
-	ut8 e_ident[EI_NIDENT];
+	ut8 *e_ident;
 	ut8 ehdr[sizeof (Elf_(Ehdr))] = {0};
 	int i, len;
+
+	e_ident = (ut8*)&eo->ehdr.e_ident;
 
 	if (r_buf_read_at (eo->b, 0, e_ident, EI_NIDENT) != EI_NIDENT) {
 		R_LOG_DEBUG ("read (magic)");
 		return false;
 	}
 
-	eo->endian = (e_ident[EI_DATA] == ELFDATA2MSB)? 1: 0;
-	memset (&eo->ehdr, 0, sizeof (Elf_(Ehdr)));
+	if (!__is_valid_ident (e_ident)) {
+		return false;
+	}
 
-	sdb_num_set (eo->kv, "elf_header.offset", 0, 0);
-	sdb_num_set (eo->kv, "elf_header.size", sizeof (Elf_(Ehdr)), 0);
+	eo->endian = (e_ident[EI_DATA] == ELFDATA2MSB)? 1: 0;
 
 	len = r_buf_read_at (eo->b, 0, ehdr, sizeof (ehdr));
 	if (len < 32) { // tinyelf != sizeof (Elf_(Ehdr))) {
@@ -155,11 +157,8 @@ static bool init_ehdr(ELFOBJ *eo) {
 		return false;
 	}
 
-	// XXX no need to check twice
-	memcpy (&eo->ehdr.e_ident, ehdr, 16);
-	if (!__is_valid_ident (eo)) {
-		return false;
-	}
+	sdb_num_set (eo->kv, "elf_header.offset", 0, 0);
+	sdb_num_set (eo->kv, "elf_header.size", sizeof (Elf_(Ehdr)), 0);
 
 	i = 16;
 	eo->ehdr.e_type = READ16 (ehdr, i);
