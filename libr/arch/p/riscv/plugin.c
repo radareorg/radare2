@@ -715,7 +715,7 @@ static bool riscv_decode(RArchSession *s, RAnalOp *op, RArchDecodeMask mask) {
 		op->type = R_ANAL_OP_TYPE_OR;
 	} else if (is_any ("not")) {
 		op->type = R_ANAL_OP_TYPE_NOT;
-	} else if (is_any ("c.nop")) {
+	} else if (is_any ("c.nop", "nop", "cnop")) {
 		op->type = R_ANAL_OP_TYPE_NOP;
 	} else if (is_any ("mul", "mulh", "mulhu", "mulhsu", "mulw")) {
 		op->type = R_ANAL_OP_TYPE_MUL;

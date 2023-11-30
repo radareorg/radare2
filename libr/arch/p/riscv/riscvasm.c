@@ -93,6 +93,7 @@ static struct {
 	int n;
 	int x;
 } ops[] = {
+	{ 0x1, "c.nop", 'N', 0, 0, 0 }, // c.nop
 	{ 0x13, "nop", 'N', 0, 0, 0 }, // addi x0, x0, 0 // 13010100 (mov sp, sp)
 	{ 0x37, "lui", 'I', 2, 0, 0 }, // lui x0, 33
 	// TODO { 0x37, "li", 'I', 2, 0, 0 }, // lui x0, 33
@@ -230,6 +231,9 @@ R_IPI int riscv_assemble(const char *str, ut64 pc, ut8 *out) {
 				memset (out, 0, 4);
 				out[0] = ops[i].op;
 				free (s);
+				if (r_str_startswith (ops[i].name, "c.")) {
+					return 2;
+				}
 				return 4;
 			default:
 				R_LOG_ERROR ("Unknown type");
