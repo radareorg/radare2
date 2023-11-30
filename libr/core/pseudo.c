@@ -546,6 +546,7 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 		if (!r_list_contains (visited, bb)) {
 			char *s = r_core_cmd_strf (core, "pdb@0x%08"PFMT64x"@e:asm.offset=0", bb->addr);
 			s = r_str_replace (s, ";", "//", true);
+			s = r_str_replace (s, "goto ", "goto loc_", true);
 			char *os = r_str_prefix_all (s, indentstr);
 			free (s);
 			s = os;
