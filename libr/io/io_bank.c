@@ -134,12 +134,10 @@ static RIOMapRef *_mapref_from_map(RIOMap *map) {
 // cb for finding sm by lower boundary vaddr
 static int _find_sm_by_from_vaddr_cb(void *incoming, void *in, void *user) {
 	RIOSubMap *bd = (RIOSubMap *)incoming, *sm = (RIOSubMap *)in;
-	ut64 a = r_io_submap_from (bd);
-	ut64 b = r_io_submap_from (sm);
-	if (a < b) {
+	if (r_io_submap_from (bd) < r_io_submap_from (sm)) {
 		return -1;
 	}
-	if (a > b) {
+	if (r_io_submap_from (bd) > r_io_submap_from (sm)) {
 		return 1;
 	}
 	return 0;
@@ -804,15 +802,18 @@ R_API bool r_io_bank_read_at(RIO *io, const ut32 bankid, ut64 addr, ut8 *buf, in
 			// mapref doesn't belong to map
 			return false;
 		}
-		if (map->perm & R_PERM_R) {
-			const ut64 buf_off = R_MAX (addr, r_io_submap_from (sm)) - addr;
-			const int read_len = R_MIN (r_io_submap_to ((&fake_sm)),
-						     r_io_submap_to (sm)) - (addr + buf_off) + 1;
-			const ut64 paddr = addr + buf_off - r_io_map_from (map) + map->delta;
-			ret &= (r_io_fd_read_at (io, map->fd, paddr, buf + buf_off, read_len) == read_len);
-			if (io->overlay) {
-				r_io_map_read_from_overlay (map, addr + buf_off, buf + buf_off, read_len);
-			}
+		if (!(map->perm & R_PERM_R)) {
+			node = r_rbnode_next (node);
+			sm = node ? (RIOSubMap *)node->data : NULL;
+			continue;
+		}
+		const ut64 buf_off = R_MAX (addr, r_io_submap_from (sm)) - addr;
+		const int read_len = R_MIN (r_io_submap_to ((&fake_sm)),
+					     r_io_submap_to (sm)) - (addr + buf_off) + 1;
+		const ut64 paddr = addr + buf_off - r_io_map_from (map) + map->delta;
+		ret &= (r_io_fd_read_at (io, map->fd, paddr, buf + buf_off, read_len) == read_len);
+		if (io->overlay) {
+			r_io_map_read_from_overlay (map, addr + buf_off, buf + buf_off, read_len);
 		}
 		// check return value here?
 		node = r_rbnode_next (node);
@@ -1059,7 +1060,7 @@ R_API void r_io_bank_del_map(RIO *io, const ut32 bankid, const ut32 mapid) {
 	r_return_if_fail (io);
 	// no need to check for mapref here, since this is "just" deleting
 	RIOBank *bank = r_io_bank_get (io, bankid);
-	RIOMap *map = r_io_map_get (io, mapid);	// is this needed?
+	RIOMap *map = r_io_map_get (io, mapid);	//is this needed?
 	if (!bank || !map) {
 		return;
 	}
