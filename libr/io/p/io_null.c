@@ -92,10 +92,6 @@ static RIODesc* __open(RIO* io, const char* pathname, int rw, int mode) {
 			RIONull *null = R_NEW0 (RIONull);
 			if (null) {
 				null->size = r_num_math (NULL, pathname + 7) + 1;
-				if (null->size > ST32_MAX) {
-					R_LOG_ERROR ("Large null allocation is not valid");
-					return NULL;
-				}
 				null->offset = 0LL;
 				return r_io_desc_new (io, &r_io_plugin_null, pathname, rw & R_PERM_RWX, mode, null);
 			}
