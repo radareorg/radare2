@@ -2290,6 +2290,7 @@ typedef struct {
 } SymName;
 
 static void snInit(RCore *r, SymName *sn, RBinSymbol *sym, const char *lang, bool bin_demangle) {
+	const int pref = r_config_get_b (r->config, "asm.demangle")? 'd': 0;
 	bin_demangle &= !!lang;
 	if (!r || !sym || !sym->name) {
 		return;
@@ -2309,7 +2310,7 @@ static void snInit(RCore *r, SymName *sn, RBinSymbol *sym, const char *lang, boo
 		sn->classname = strdup (sym->classname);
 		sn->classflag = r_str_newf ("sym.%s.%s", sn->classname, sn->name);
 		r_name_filter (sn->classflag, MAXFLAG_LEN_DEFAULT);
-		const char *name = sym->dname? sym->dname: sym->name;
+		const char *name = r_bin_name_tostring2 (sym->name, pref);
 		sn->methname = r_str_newf ("%s::%s", sn->classname, name);
 		sn->methflag = r_str_newf ("sym.%s.%s", sn->classname, name);
 		r_name_filter (sn->methflag, strlen (sn->methflag));
@@ -3642,18 +3643,19 @@ static void classdump_objc(RCore *r, RBinClass *c) {
 			}
 		}
 	}
-	r_cons_printf ("}\n");
+	r_cons_println ("}");
 	r_list_foreach (c->methods, iter3, sym) {
+		const char *sname = r_bin_name_tostring2 (sym->name, pref);
+		char *rp = NULL;
 		if (sym->rtype && sym->rtype[0] != '@') {
-			char *rp = get_rp (sym->rtype);
-			r_cons_printf ("%s (%s) %s\n",
-					r_str_startswith (sym->type, R_BIN_TYPE_METH_STR)? "+": "-",
-					rp, sym->dname? sym->dname: sym->name);
-			free (rp);
+			rp = get_rp (sym->rtype);
 		} else if (sym->type) {
-			r_cons_printf ("%s (id) %s\n",
-					r_str_startswith (sym->type, R_BIN_TYPE_METH_STR)? "+": "-",
-					sym->dname? sym->dname: sym->name);
+			rp = strdup ("id");
+		}
+		if (rp) {
+			const char *sign = r_str_startswith (sym->type, R_BIN_TYPE_METH_STR)? "+": "-";
+			r_cons_printf ("%s (%s) %s\n", sign, rp, sname);
+			free (rp);
 		}
 	}
 	r_cons_printf ("@end\n");
@@ -3703,7 +3705,7 @@ static void classdump_swift(RCore *r, RBinClass *c) {
 		}
 	}
 	r_list_foreach (c->methods, iter, sym) {
-		const char *mn = sym->dname? sym->dname: sym->name;
+		const char *mn = r_bin_name_tostring2 (sym->name, pref);
 		const char *ms = strstr (mn, "method.");
 		if (ms) {
 			mn = ms + strlen ("method.");
@@ -3744,7 +3746,7 @@ static void classdump_java(RCore *r, RBinClass *c) {
 		}
 	}
 	r_list_foreach (c->methods, iter, sym) {
-		const char *mn = sym->dname? sym->dname: sym->name;
+		const char *mn = r_bin_name_tostring2 (sym->name, pref);
 		const char *ms = strstr (mn, "method.");
 		if (ms) {
 			mn = ms + strlen ("method.");
@@ -3994,8 +3996,8 @@ static bool bin_classes(RCore *r, PJ *pj, int mode) {
 				pj_ka (pj, "methods");
 				r_list_foreach (c->methods, iter2, sym) {
 					pj_o (pj);
-					pj_ks (pj, "name", sym->name);
-					// eprintf ("%s /// %s\n", sym->name, sym->dname);
+					const char *sname = r_bin_name_tostring (sym->name);
+					pj_ks (pj, "name", sname);
 					RFlagItem *fi = r_flag_get_at (r->flags, sym->vaddr, false);
 					if (fi) {
 						pj_ks (pj, "flag", fi->realname? fi->realname: fi->name);
@@ -4064,8 +4066,9 @@ static bool bin_classes(RCore *r, PJ *pj, int mode) {
 			r_list_foreach (c->methods, iter2, sym) {
 				char *mflags = r_core_bin_attr_tostring (sym->attr, mode);
 				const char *ls = r_bin_lang_tostring (sym->lang);
+				const char *sname = r_bin_name_tostring2 (sym->name, pref);
 				r_cons_printf ("0x%08"PFMT64x" %s %8s %3d %s %s\n",
-					sym->vaddr, ls? ls: "?", "method", m, mflags, sym->dname? sym->dname: sym->name);
+					sym->vaddr, ls? ls: "?", "method", m, mflags, sname);
 				R_FREE (mflags);
 				m++;
 			}

@@ -311,7 +311,11 @@ typedef struct r_bin_section_t {
 } RBinSection;
 
 typedef struct r_bin_import_t {
+#if R2_590
+	RBinName name;
+#else
 	char *name;
+#endif
 	char *libname;
 	const char *bind;
 	const char *type;

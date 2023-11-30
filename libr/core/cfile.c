@@ -607,7 +607,8 @@ static bool linkcb(void *user, void *data, ut32 id) {
 		RBinSymbol *sym;
 		RVecRBinSymbol *symbols = r_bin_file_get_symbols_vec (bf);
 		R_VEC_FOREACH (symbols, sym) {
-			if (!strcmp (sym->name, ld->name)) {
+			const char *sname = r_bin_name_tostring (sym->name);
+			if (!strcmp (sname, ld->name)) {
 				ld->addr = sym->vaddr;
 				return false;
 			}

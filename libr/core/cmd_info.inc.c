@@ -864,8 +864,8 @@ static void cmd_ic(RCore *core, const char *input, PJ *pj, int is_array, bool va
 							if (addr == 0 || addr == UT64_MAX) {
 								continue;
 							}
-							r_cons_printf ("0x%"PFMT64x" [%s] %s\n",
-									addr, kname, sym->name);
+							const char *sname = r_bin_name_tostring2 (sym->name, pref);
+							r_cons_printf ("0x%"PFMT64x" [%s] %s\n", addr, kname, sname);
 						}
 					}
 					break;
