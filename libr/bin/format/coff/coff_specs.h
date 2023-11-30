@@ -181,6 +181,16 @@
 #define COFF_SYM_CLASS_WEAK_EXTERNAL	105
 #define COFF_SYM_CLASS_CLR_TOKEN	107
 
+/* XCOFF32 loader */
+#define XCOFF_LDSYM_FLAGS(x) ((x)&0xF8)
+#define XCOFF_LDSYM_FLAG_EXPORT		0x10
+#define XCOFF_LDSYM_FLAG_ENTRYPOINT	0x20
+#define XCOFF_LDSYM_FLAG_IMPORT		0x40
+
+#define XCOFF_LDSYM_TYPE(x) ((x)&0x07)
+
+#define XCOFF_LDSYM_CLASS_FUNCTION	0x0a
+
 /* XCOFF64 auxiliary entry type */
 #define XCOFF_AUX_EXCEPT	255
 #define XCOFF_AUX_FCN		254
@@ -460,7 +470,7 @@ struct xcoff64_ldhdr {
 /* XCOFF32 loader symbol */
 R_PACKED (
 struct xcoff32_ldsym {
-	ut8  l_name[8];
+	char l_name[8];
 	ut32 l_value;
 	ut16 l_scnum;
 	ut8  l_smtype;

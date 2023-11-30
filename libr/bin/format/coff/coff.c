@@ -89,15 +89,72 @@ static int r_coff_rebase_sym(RBinCoffObj *obj, RBinAddr *addr, struct coff_symbo
 	return 1;
 }
 
-/* Try to get a valid entrypoint using the methods outlined in
- * http://ftp.gnu.org/old-gnu/Manuals/ld-2.9.1/html_mono/ld.html#SEC24 */
-R_IPI RBinAddr *r_coff_get_entry(RBinCoffObj *obj) {
-	if (obj->xcoff) {
+/* In XCOFF32, the entrypoint seems to be indirect.
+	At the entrypoint address, we find a pointer in .data,
+	that resolves to the actual entrypoint. */
+
+static RBinAddr *r_xcoff_get_entry(RBinCoffObj *obj) {
+	/* Scan XCOFF loader symbol table */
+	int ptr_scnum = 0;
+	ut64 ptr_vaddr;
+	if (obj->x_ldsyms) {
+		int i;
+		for (i = 0; i < obj->x_ldhdr.l_nsyms; i++) {
+			if (!strcmp (obj->x_ldsyms[i].l_name, "__start")) {
+				ptr_scnum = obj->x_ldsyms[i].l_scnum;
+				ptr_vaddr = obj->x_ldsyms[i].l_value;
+				break;
+			}
+		}
+	}
+	if (!ptr_scnum) {
 		return NULL;
 	}
+	/* Translate the pointer to a file offset */
+	if (ptr_scnum < 1 || ptr_scnum > obj->hdr.f_nscns) {
+		R_LOG_WARN ("__start l_scnum invalid (%d)", ptr_scnum);
+		return NULL;
+	}
+	ut64 ptr_offset = obj->scn_hdrs[ptr_scnum - 1].s_scnptr + ptr_vaddr - obj->scn_hdrs[ptr_scnum - 1].s_vaddr;
+
+	/* Read the actual entrypoint */
+	ut32 entry_vaddr = r_buf_read_be32_at (obj->b, ptr_offset);
+	if (entry_vaddr == UT32_MAX) {
+		R_LOG_WARN ("__start vaddr invalid (vaddr=%#x off=%#x)", ptr_vaddr, ptr_offset);
+		return NULL;
+	}
+
+	/* Double check that the entrypoint is in .text */
+	int sntext = obj->x_opt_hdr.o_sntext;
+	if (sntext < 1 || sntext > obj->hdr.f_nscns) {
+		R_LOG_WARN ("o_sntext invalid (%d)", sntext);
+		return NULL;
+	}
+	ut32 text_vaddr = obj->scn_hdrs[sntext - 1].s_vaddr;
+	ut32 text_size = obj->scn_hdrs[sntext - 1].s_size;
+	if (entry_vaddr < text_vaddr || entry_vaddr >= text_vaddr + text_size) {
+		R_LOG_WARN ("*__start OOB (vaddr=%#lx text=%#lx..%#lx)", entry_vaddr, text_vaddr, text_vaddr + text_size);
+		return NULL;
+	}
+
 	RBinAddr *addr = R_NEW0 (RBinAddr);
 	if (!addr) {
 		return NULL;
+	}
+	addr->vaddr = entry_vaddr;
+	return addr;
+}
+
+/* Try to get a valid entrypoint using the methods outlined in
+ * http://ftp.gnu.org/old-gnu/Manuals/ld-2.9.1/html_mono/ld.html#SEC24 */
+R_IPI RBinAddr *r_coff_get_entry(RBinCoffObj *obj) {
+	RBinAddr *addr = R_NEW0 (RBinAddr);
+	if (!addr) {
+		return NULL;
+	}
+	/* Special case for XCOFF */
+	if (obj->xcoff) {
+		return r_xcoff_get_entry (obj);
 	}
 	/* Simplest case, the header provides the entrypoint address */
 	if (obj->hdr.f_opthdr) {
@@ -188,7 +245,7 @@ static bool r_bin_coff_init_opt_hdr(RBinCoffObj *obj) {
 static bool r_bin_xcoff_init_opt_hdr(RBinCoffObj *obj) {
 	int ret;
 	ret = r_buf_fread_at (obj->b, sizeof (struct coff_hdr) + sizeof (struct coff_opt_hdr),
-						 (ut8 *)&obj->xcoff_opt_hdr, "1I8S4c3I4c2S", 1);
+				(ut8 *)&obj->x_opt_hdr, "1I8S4c3I4c2S", 1);
 	if (ret != sizeof (struct xcoff32_opt_hdr)) {
 		return false;
 	}
@@ -212,6 +269,57 @@ static bool r_bin_coff_init_scn_hdr(RBinCoffObj *obj) {
 	ret = r_buf_fread_at (obj->b, offset, (ut8 *)obj->scn_hdrs, obj->endian? "8c6I2S1I": "8c6i2s1i", obj->hdr.f_nscns);
 	if (ret != size) {
 		R_FREE (obj->scn_hdrs);
+		return false;
+	}
+	return true;
+}
+
+/* init_ldhdr reads the XCOFF32 loader header, which is at the beginning of the .loader section */
+
+static bool r_bin_xcoff_init_ldhdr(RBinCoffObj *obj) {
+	int ret;
+	ut16 loader_idx = obj->x_opt_hdr.o_snloader;
+	if (!loader_idx) {
+		return true;
+	}
+	if (loader_idx > obj->hdr.f_nscns) {
+		R_LOG_WARN ("invalid loader section number (%d > %d)", loader_idx, obj->hdr.f_nscns);
+		return false;
+	}
+	ut64 offset = obj->scn_hdrs[loader_idx-1].s_scnptr;  // section numbers start at 1
+	ret = r_buf_fread_at (obj->b, offset, (ut8 *)&obj->x_ldhdr, "8I", 1);
+	if (ret != sizeof (struct xcoff32_ldhdr)) {
+		R_LOG_WARN ("failed to read loader header");
+		return false;
+	}
+	if (obj->x_ldhdr.l_version != 1) {
+		R_LOG_WARN ("unsupported loader version (%u)", obj->x_ldhdr.l_version);
+		return false;
+	}
+	return true;
+}
+
+static bool r_bin_xcoff_init_ldsyms(RBinCoffObj *obj) {
+	int ret;
+	size_t size;
+	ut64 offset = obj->scn_hdrs[obj->x_opt_hdr.o_snloader-1].s_scnptr + sizeof (struct xcoff32_ldhdr);
+	if (!obj->x_ldhdr.l_nsyms) {
+		return true;
+	}
+	if (obj->x_ldhdr.l_nsyms >= 0xffff) { // too much symbols, probably not allocatable
+		R_LOG_DEBUG ("too many loader symbols (%u)", obj->x_ldhdr.l_nsyms);
+		return false;
+	}
+	// USHORT_MAX * 24UL cannot overflow size_t
+	size = obj->x_ldhdr.l_nsyms * sizeof (struct xcoff32_ldsym);
+	obj->x_ldsyms = calloc (1, size);
+	if (!obj->x_ldsyms) {
+		return false;
+	}
+	ret = r_buf_fread_at (obj->b, offset, (ut8 *)obj->x_ldsyms, "8cIS2c2I", obj->x_ldhdr.l_nsyms);
+	if (ret != size) {
+		R_LOG_DEBUG ("failed to read loader symbol table (%lu, %lu)", ret, size);
+		R_FREE (obj->x_ldsyms);
 		return false;
 	}
 	return true;
@@ -290,6 +398,15 @@ static bool r_bin_coff_init(RBinCoffObj *obj, RBuffer *buf, bool verbose) {
 			R_LOG_WARN ("failed to init section VA table");
 			return false;
 		}
+	} else {
+		if (!r_bin_xcoff_init_ldhdr (obj)) {
+			R_LOG_WARN ("failed to init xcoff loader header");
+			return false;
+		}
+		if (!r_bin_xcoff_init_ldsyms (obj)) {
+			R_LOG_WARN ("failed to init xcoff loader symbol table");
+			return false;
+		}
 	}
 	if (!r_bin_coff_init_symtable (obj)) {
 		R_LOG_WARN ("failed to init symtable");
@@ -304,6 +421,7 @@ R_IPI void r_bin_coff_free(RBinCoffObj *obj) {
 		ht_up_free (obj->imp_ht);
 		free (obj->scn_va);
 		free (obj->scn_hdrs);
+		free (obj->x_ldsyms);
 		free (obj->symbols);
 		r_buf_free (obj->b);
 		free (obj);

@@ -13,9 +13,13 @@
 typedef struct r_bin_coff_obj {
 	struct coff_hdr	hdr;
 	struct coff_opt_hdr opt_hdr;
-	struct xcoff32_opt_hdr xcoff_opt_hdr;
 	struct coff_scn_hdr *scn_hdrs;
 	struct coff_symbol *symbols;
+
+	/* XCOFF specific */
+	struct xcoff32_opt_hdr x_opt_hdr;
+	struct xcoff32_ldhdr x_ldhdr;
+	struct xcoff32_ldsym *x_ldsyms;
 
 	ut16 target_id; /* TI COFF specific */
 
