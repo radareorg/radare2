@@ -28,6 +28,11 @@ static bool __resize(RIO* io, RIODesc* fd, ut64 count) {
 		if (null->offset >= count) {
 			null->offset = (count != 0)? count - 1: 0LL;
 		}
+		char *uri = r_str_newf ("null://%"PFMT64u, count);
+		if (uri) {
+			free (fd->uri);
+			fd->uri = uri;
+		}
 		return true;
 	}
 	return false;
