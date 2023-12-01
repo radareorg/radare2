@@ -38,7 +38,7 @@ static RCoreHelpMessage help_msg_i = {
 	"iC", "[j]", "show signature info (entitlements, ...)",
 	"id", "[?]", "show DWARF source lines information",
 	"iD", " lang sym", "demangle symbolname for given language",
-	"ie", "[?]e[e]", "entrypoint (iee to list constructors and destructors)",
+	"ie", "[?]e[e]", "entrypoint (iee to list constructors and destructors, ieee = entries+constructors)",
 	"iE", "", "exports (global symbols)",
 	"iE,", "[table-query]", "exported symbols using the table query",
 	"iE.", "", "current export",
