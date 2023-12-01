@@ -3991,6 +3991,7 @@ static bool bin_classes(RCore *r, PJ *pj, int mode) {
 				r_list_foreach (c->methods, iter2, sym) {
 					pj_o (pj);
 					pj_ks (pj, "name", sym->name);
+					// eprintf ("%s /// %s\n", sym->name, sym->dname);
 					RFlagItem *fi = r_flag_get_at (r->flags, sym->vaddr, false);
 					if (fi) {
 						pj_ks (pj, "flag", fi->realname? fi->realname: fi->name);

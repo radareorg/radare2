@@ -5,7 +5,7 @@
 #include "../bin/format/pdb/pdb_downloader.h"
 
 static RCoreHelpMessage help_msg_ih = {
-	"Usage: ih", "[hjq]", "Display header information",
+	"Usage: ih", "[*hjq]", "Display header information",
 	"ih", "", "normal output to display binary headers",
 	"ih*", "", "same as above, but in r2 commands",
 	"ihj", "", "in json format",
@@ -92,11 +92,11 @@ static RCoreHelpMessage help_msg_id = {
 #define PAIR_WIDTH 9
 // TODO: reuse implementation in core/bin.c
 static void pair(const char *a, const char *b) {
-	char ws[16];
-	int al = strlen (a);
 	if (!b) {
 		return;
 	}
+	char ws[16];
+	int al = strlen (a);
 	memset (ws, ' ', sizeof (ws));
 	al = PAIR_WIDTH - al;
 	if (al < 0) {
@@ -982,8 +982,7 @@ static void cmd_ic(RCore *core, const char *input, PJ *pj, int is_array, bool va
 						case 'l': // "icl"
 							r_list_foreach (cls->methods, iter2, sym) {
 								const char *comma = iter2->p? " ": "";
-								r_cons_printf ("%s0x%"PFMT64x, comma,
-										iova? sym->vaddr: sym->paddr);
+								r_cons_printf ("%s0x%"PFMT64x, comma, iova? sym->vaddr: sym->paddr);
 							}
 							r_cons_newline ();
 							break;
@@ -1770,7 +1769,7 @@ static int cmd_info(void *data, const char *input) {
 			break;
 		case 'V': // "iV"
 			  {
-				  RList *bfiles= r_core_bin_files (core);
+				  RList *bfiles = r_core_bin_files (core);
 				  RListIter *iter;
 				  RBinFile *bf;
 				  RBinFile *cur = core->bin->cur;

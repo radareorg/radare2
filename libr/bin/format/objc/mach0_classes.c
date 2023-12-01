@@ -1147,22 +1147,24 @@ static char *demangle_classname(const char *s) {
 	return ret;
 }
 
-static char *get_class_name(mach0_ut p, RBinFile *bf) {
+static char *get_class_name(RBinFile *bf, mach0_ut p) {
+	r_return_val_if_fail (bf && bf->bo, NULL);
+	RBinObject *bo = bf->bo;
 	ut32 offset, left;
 	ut64 r;
 	int len;
 	ut8 sc[sizeof (mach0_ut)] = {0};
 	const ut32 ptr_size = sizeof (mach0_ut);
 
-	if (!bf || !bf->bo || !bf->bo->bin_obj || !bf->bo->info) {
+	if (!bo->bin_obj || !bo->info) {
 		R_LOG_WARN ("Invalid RBinFile pointer");
 		return NULL;
 	}
 	if (!p) {
 		return NULL;
 	}
-	bool bigendian = bf->bo->info->big_endian;
-	struct MACH0_(obj_t) *bin = (struct MACH0_(obj_t) *)bf->bo->bin_obj;
+	bool bigendian = bo->info->big_endian;
+	struct MACH0_(obj_t) *bin = (struct MACH0_(obj_t) *)bo->bin_obj;
 
 	if (!(r = va2pa (p, &offset, &left, bf))) {
 		return NULL;
@@ -1228,8 +1230,7 @@ static char *get_class_name(mach0_ut p, RBinFile *bf) {
 				rc = 0;
 			}
 			name[sizeof (name) - 1] = 0;
-			char *result = demangle_classname (name);
-			return result;
+			return demangle_classname (name);
 		}
 	}
 	return NULL;
@@ -1422,7 +1423,7 @@ void MACH0_(get_class_t)(mach0_ut p, RBinFile *bf, RBinClass *klass, bool dupe, 
 
 	klass->addr = c.isa;
 	if (c.superclass) {
-		const char *klass_name = get_class_name (c.superclass, bf);
+		const char *klass_name = get_class_name (bf, c.superclass);
 		if (klass_name) {
 			if (klass->super == NULL) {
 				klass->super = r_list_newf ((void *)r_bin_name_free);
