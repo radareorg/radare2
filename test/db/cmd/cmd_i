@@ -135,7 +135,6 @@ fs imports
 [Entrypoints]
 
 0 entrypoints
-fs symbols
 [Symbols]
 nth paddr vaddr bind type size lib name demangled
 -------------------------------------------------
@@ -215,7 +214,6 @@ EXPECT=<<EOF
 [Entrypoints]
 
 0 entrypoints
-fs symbols
 [Symbols]
 nth paddr vaddr bind type size lib name demangled
 -------------------------------------------------
