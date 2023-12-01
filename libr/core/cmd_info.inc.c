@@ -38,7 +38,7 @@ static RCoreHelpMessage help_msg_i = {
 	"iC", "[j]", "show signature info (entitlements, ...)",
 	"id", "[?]", "show DWARF source lines information",
 	"iD", " lang sym", "demangle symbolname for given language",
-	"ie", "[?]e", "entrypoint (iee to list constructors and destructors)",
+	"ie", "[?]e[e]", "entrypoint (iee to list constructors and destructors)",
 	"iE", "", "exports (global symbols)",
 	"iE,", "[table-query]", "exported symbols using the table query",
 	"iE.", "", "current export",
@@ -1205,11 +1205,20 @@ static int cmd_info(void *data, const char *input) {
 			  RListIter *iter;
 			  RBinFile *bf;
 			  RBinFile *cur = core->bin->cur;
+			  // ie = show entries
+			  // iee = show constructors
+			  // ieee = show entries and constructors
+			  bool show_entries = r_str_startswith (input, "eee");
+			  bool show_constructors = r_str_startswith (input, "ee");
+			  if (!show_entries && !show_constructors) {
+				  show_entries = true;
+			  }
 			  r_list_foreach (objs, iter, bf) {
 				  core->bin->cur = bf;
-				  if (input[1] == 'e') {
+				  if (show_constructors) {
 					  RBININFO ("initfini", R_CORE_BIN_ACC_INITFINI, NULL, 0);
-				  } else {
+				  }
+				  if (show_entries) {
 					  RBININFO ("entries", R_CORE_BIN_ACC_ENTRIES, NULL, 0);
 				  }
 			  }
