@@ -30,12 +30,7 @@ static RCoreHelpMessage help_msg_ic = {
 
 static RCoreHelpMessage help_msg_i = {
 	"Usage: i", "", "Get info from opened file (see rabin2's manpage)",
-	"Output mode:", "", "",
-	"'*'", "", "output in radare commands",
-	"'j'", "", "output in json",
-	"'q'", "", "simple quiet output",
-	"Actions:", "", "",
-	"i|ij", "", "show info of current file (in JSON)",
+	"i", "[*jq]", "show info of current file (in JSON)",
 	"iA", "", "list archs",
 	"ia", "", "show all info (imports, exports, sections..)",
 	"ib", "", "reload the current buffer for setting of the bin (use once only)",
@@ -43,8 +38,7 @@ static RCoreHelpMessage help_msg_i = {
 	"iC", "[j]", "show signature info (entitlements, ...)",
 	"id", "[?]", "show DWARF source lines information",
 	"iD", " lang sym", "demangle symbolname for given language",
-	"ie", "", "entrypoint",
-	"iee", "", "show Entry and Exit (preinit, init and fini)",
+	"ie", "[?]e", "entrypoint (iee to list constructors and destructors)",
 	"iE", "", "exports (global symbols)",
 	"iE,", "[table-query]", "exported symbols using the table query",
 	"iE.", "", "current export",
@@ -1205,6 +1199,25 @@ static int cmd_info(void *data, const char *input) {
 		}
 		goto done;
 		break;
+	case 'e': // "ie"
+		{
+			  RList *objs = r_core_bin_files (core);
+			  RListIter *iter;
+			  RBinFile *bf;
+			  RBinFile *cur = core->bin->cur;
+			  r_list_foreach (objs, iter, bf) {
+				  core->bin->cur = bf;
+				  if (input[1] == 'e') {
+					  RBININFO ("initfini", R_CORE_BIN_ACC_INITFINI, NULL, 0);
+				  } else {
+					  RBININFO ("entries", R_CORE_BIN_ACC_ENTRIES, NULL, 0);
+				  }
+			  }
+			  core->bin->cur = cur;
+			  r_list_free (objs);
+		}
+		goto done;
+		break;
 	case 'h': // "ih"
 		if (question) {
 			r_core_cmd_help (core, help_msg_ih);
@@ -1703,25 +1716,6 @@ static int cmd_info(void *data, const char *input) {
 				  core->bin->cur = cur;
 				  r_list_free (objs);
 			  }
-			break;
-		case 'e': // "ie"
-			{
-				  RList *objs = r_core_bin_files (core);
-				  RListIter *iter;
-				  RBinFile *bf;
-				  RBinFile *cur = core->bin->cur;
-				  r_list_foreach (objs, iter, bf) {
-					  core->bin->cur = bf;
-					  if (input[1] == 'e') {
-						  RBININFO ("initfini", R_CORE_BIN_ACC_INITFINI, NULL, 0);
-						  input++;
-					  } else {
-						  RBININFO ("entries", R_CORE_BIN_ACC_ENTRIES, NULL, 0);
-					  }
-				  }
-				  core->bin->cur = cur;
-				  r_list_free (objs);
-			}
 			break;
 		case 'M': // "iM"
 			  {
