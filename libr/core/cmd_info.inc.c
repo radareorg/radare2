@@ -13,6 +13,21 @@ static RCoreHelpMessage help_msg_ih = {
 	NULL
 };
 
+static RCoreHelpMessage help_msg_ic = {
+	"Usage: ic", "[.-+clgjsq][jq]", "Display class information",
+	"ic", "", "List classes, methods and fields (icj for json)",
+	"ic.", "", "show class and method name in current seek",
+	"ic-", "[klass.method]", "delete given klass or klass.name",
+	"ic+", "[klass.method]", "add new symbol in current seek for a given klass and method name",
+	"icc", " [lang]", "List classes, methods and fields in Header Format (see bin.lang=swift,java,objc,cxx)",
+	"icg", " [str]", "List classes hirearchy graph with agn/age (match str if provided)",
+	"icq", "", "List classes, in quiet mode (just the classname)",
+	"icqq", "", "List classes, in quieter mode (only show non-system classnames)",
+	"icl", "", "Show addresses of class and it methods, without names",
+	"ics", "", "Show class symbols in an easy to parse format",
+	NULL
+};
+
 static RCoreHelpMessage help_msg_i = {
 	"Usage: i", "", "Get info from opened file (see rabin2's manpage)",
 	"Output mode:", "", "",
@@ -24,16 +39,7 @@ static RCoreHelpMessage help_msg_i = {
 	"iA", "", "list archs",
 	"ia", "", "show all info (imports, exports, sections..)",
 	"ib", "", "reload the current buffer for setting of the bin (use once only)",
-	"ic", "", "List classes, methods and fields (icj for json)",
-	"ic.", "", "show class and method name in current seek",
-	"ic-", "[klass.method]", "delete given klass or klass.name",
-	"ic+", "[klass.method]", "add new symbol in current seek for a given klass and method name",
-	"icc", " [lang]", "List classes, methods and fields in Header Format (see bin.lang=swift,java,objc,cxx)",
-	"icg", " [str]", "List classes as agn/age commands to create class hierarchy graphs (matches str if provided)",
-	"icq", "", "List classes, in quiet mode (just the classname)",
-	"icqq", "", "List classes, in quieter mode (only show non-system classnames)",
-	"icl", "", "Show addresses of class and it methods, without names",
-	"ics", "", "Show class symbols in an easy to parse format",
+	"ic", "[?]", "List classes, methods and fields (icj for json)",
 	"iC", "[j]", "show signature info (entitlements, ...)",
 	"id", "[?]", "show DWARF source lines information",
 	"iD", " lang sym", "demangle symbolname for given language",
@@ -777,13 +783,13 @@ static void cmd_ic(RCore *core, const char *input, PJ *pj, int is_array, bool va
 		mode = 0;
 		break;
 	}
-	bool is_superquiet = strstr (input, "qq");
-	bool is_doublerad = strstr (input, "**");
+	const bool is_superquiet = strstr (input, "qq");
+	const bool is_doublerad = strstr (input, "**");
 	///
 	switch (cmd) {
 	// help message
 	case '?': // "ic?"
-		r_core_cmd_help_contains (core, help_msg_i, "ic");
+		r_core_cmd_help (core, help_msg_ic);
 		break;
 	case '-': // "ic-"
 		cmd_ic_sub (core, input);

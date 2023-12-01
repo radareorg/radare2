@@ -874,7 +874,7 @@ CMDS=ic?~List
 EXPECT=<<EOF
 | ic                 List classes, methods and fields (icj for json)
 | icc [lang]         List classes, methods and fields in Header Format (see bin.lang=swift,java,objc,cxx)
-| icg [str]          List classes as agn/age commands to create class hierarchy graphs (matches str if provided)
+| icg [str]          List classes hirearchy graph with agn/age (match str if provided)
 | icq                List classes, in quiet mode (just the classname)
 | icqq               List classes, in quieter mode (only show non-system classnames)
 EOF
