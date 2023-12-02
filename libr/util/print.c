@@ -844,11 +844,10 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 	int use_sparse = 0;
 	bool use_header = true;
 	bool use_hdroff = true;
-	bool use_pair = true;
 	bool use_offset = true;
 	bool compact = false;
 	bool use_segoff = false;
-	bool pairs = false;
+	bool pairs = false; // shuold default to true i think
 	const char *bytefmt = "%02x";
 	const char *pre = "";
 	int last_sparse = 0;
@@ -1001,14 +1000,10 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 						}
 					}
 					if  (use_hdroff) {
-						if (use_pair) {
-							if ((((i + k) >> 4) + K) % 16) {
-								printfmt ("%c%c",
-									hex[(((i+k) >> 4) + K) % 16],
-									hex[(i + k) % 16]);
-							} else {
-								printfmt (" %c", hex[(i + k) % 16]);
-							}
+						if ((((i + k) >> 4) + K) % 16) {
+							printfmt ("%c%c",
+								hex[(((i+k) >> 4) + K) % 16],
+								hex[(i + k) % 16]);
 						} else {
 							printfmt (" %c", hex[(i + k) % 16]);
 						}
@@ -1182,7 +1177,7 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 							}
 							printValue = false;
 						}
-					 }
+					}
 					if (printValue) {
 						if (use_offset && !hasNull && isPxr) {
 							r_print_section (p, at);
@@ -1330,11 +1325,7 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 						ut8 input[2] = {ch, 0};
 						ut8 output[32];
 						size_t len = r_charset_encode_str (p->charset, output, sizeof (output), input, 1);
-						if (len > 0) {
-							ch = *output;
-						} else {
-							ch = '?';
-						}
+						ch = (len > 0)? *output: '?';
 					}
 					r_print_byte (p, addr + j, "%c", j, ch);
 					bytes++;
@@ -1365,21 +1356,25 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 				}
 				if (p->hasrefs && off != UT64_MAX) {
 					char *rstr = p->hasrefs (p->user, addr + i, false);
-					if (rstr && *rstr) {
+					if (R_STR_ISNOTEMPTY (rstr)) {
 						printfmt (" @ %s", rstr);
 					}
 					free (rstr);
 					rstr = p->hasrefs (p->user, off, true);
-					if (rstr && *rstr) {
+					if (R_STR_ISNOTEMPTY (rstr)) {
 						printfmt (" %s", rstr);
 					}
 					free (rstr);
 				}
 			}
 			bool first = true;
-			if (!eol && p && p->use_comments) {
-				for (; j < i + inc; j++) {
-					print (" ");
+			if (eol) {
+				// do nothing
+			} else if (p && p->use_comments) {
+				if (!pairs) {
+					for (; j < i + inc; j++) {
+						print (" ");
+					}
 				}
 				for (j = i; j < i + inc; j++) {
 					if (use_align && (j-i) >= rowbytes) {
@@ -1442,7 +1437,7 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 		}
 		rows++;
 		bytes = 0;
-		if (p && p->cfmt && *p->cfmt) {
+		if (p && R_STR_ISNOTEMPTY (p->cfmt)) {
 			if (row_have_cursor != -1) {
 				int i = 0;
 				print (" _________");
