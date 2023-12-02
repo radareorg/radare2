@@ -847,7 +847,7 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 	bool use_offset = true;
 	bool compact = false;
 	bool use_segoff = false;
-	bool pairs = false; // shuold default to true i think
+	bool pairs = false; // should default to true i think
 	const char *bytefmt = "%02x";
 	const char *pre = "";
 	int last_sparse = 0;
