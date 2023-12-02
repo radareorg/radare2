@@ -949,38 +949,37 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 			print (color_title);
 		}
 		if (base < 32) {
-			{ // XXX: use r_print_addr_header
-				int i, delta = 0;
-				char soff[32];
-				if (use_offset) {
-					if (hex_style) {
-						print ("..offset..");
-					} else {
-						print ("- offset -");
-						if (p && p->wide_offsets) {
-							print ("       ");
-						}
+			// XXX: use r_print_addr_header
+			int i, delta = 0;
+			char soff[32];
+			if (use_offset) {
+				if (hex_style) {
+					print ("..offset..");
+				} else {
+					print ("- offset -");
+					if (p && p->wide_offsets) {
+						print ("       ");
 					}
-				} else {
-					delta--;
 				}
-				if (use_segoff) {
-					int seggrn = (p && p->config)? p->config->seggrn: 4;
-					ut32 s, a;
-					a = addr & 0xffff;
-					s = ((addr - a) >> seggrn) & 0xffff;
-					snprintf (soff, sizeof (soff), "%04x:%04x ", s, a);
-					delta += strlen (soff) - 10;
-				} else {
-					snprintf (soff, sizeof (soff), "0x%08" PFMT64x, addr);
-					delta += strlen (soff) - 9;
-				}
-				if (compact) {
-					delta--;
-				}
-				for (i = 0; i < delta; i++) {
-					print (space);
-				}
+			} else {
+				delta--;
+			}
+			if (use_segoff) {
+				int seggrn = (p && p->config)? p->config->seggrn: 4;
+				ut32 s, a;
+				a = addr & 0xffff;
+				s = ((addr - a) >> seggrn) & 0xffff;
+				snprintf (soff, sizeof (soff), "%04x:%04x ", s, a);
+				delta += strlen (soff) - 10;
+			} else {
+				snprintf (soff, sizeof (soff), "0x%08" PFMT64x, addr);
+				delta += strlen (soff) - 9;
+			}
+			if (compact) {
+				delta--;
+			}
+			for (i = 0; i < delta; i++) {
+				print (space);
 			}
 			/* column after number, before hex data */
 			print ((col == 1)? "|": space);
@@ -999,7 +998,7 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 							print (space);
 						}
 					}
-					if  (use_hdroff) {
+					if (use_hdroff) {
 						if ((((i + k) >> 4) + K) % 16) {
 							printfmt ("%c%c",
 								hex[(((i+k) >> 4) + K) % 16],
@@ -1304,6 +1303,14 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 				}
 			} else {
 				print ((col == 2)? "|": " ");
+			}
+			if (!pairs) {
+				if (i + inc > len) {
+					const int done = ((i + inc) - len) / 2;
+					for (j = 0; j < done; j++) {
+						print (" ");
+					}
+				}
 			}
 			if (!p || !(p->flags & R_PRINT_FLAGS_NONASCII)) {
 				bytes = 0;
