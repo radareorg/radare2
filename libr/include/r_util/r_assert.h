@@ -124,4 +124,9 @@ R_API void r_assert_log(RLogLevel level, const char *origin, const char *fmt, ..
 }
 #endif
 
+#define R_RETURN_IF_FAIL(x) r_return_if_fail(x)
+#define R_RETURN_VAL_IF_FAIL(x,y) r_return_val_if_fail(x,y)
+#define R_RETURN_IF_REACHED() r_return_if_reached()
+#define R_RETURN_VAL_IF_REACHED(x) r_return_val_if_reached(x)
+
 #endif
