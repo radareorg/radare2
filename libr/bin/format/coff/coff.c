@@ -302,10 +302,11 @@ static bool r_bin_xcoff_init_ldhdr(RBinCoffObj *obj) {
 static bool r_bin_xcoff_init_ldsyms(RBinCoffObj *obj) {
 	int ret;
 	size_t size;
-	ut64 offset = obj->scn_hdrs[obj->x_opt_hdr.o_snloader-1].s_scnptr + sizeof (struct xcoff32_ldhdr);
+	ut64 offset;
 	if (!obj->x_ldhdr.l_nsyms) {
 		return true;
 	}
+	offset = obj->scn_hdrs[obj->x_opt_hdr.o_snloader-1].s_scnptr + sizeof (struct xcoff32_ldhdr);
 	if (obj->x_ldhdr.l_nsyms >= 0xffff) { // too much symbols, probably not allocatable
 		R_LOG_DEBUG ("too many loader symbols (%u)", obj->x_ldhdr.l_nsyms);
 		return false;

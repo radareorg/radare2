@@ -238,6 +238,25 @@ static const char *xcoff_section_type_tostring(int i) {
 	return NULL;
 }
 
+// XXX: This should probably be generic
+static void truncate_section(RBinSection *ptr, const struct r_bin_coff_obj *obj) {
+	// The section size might exceed the binary size, which causes
+	// DoS problems via unbounded memory allocations.  Thus, truncate
+	// section size.
+	ut64 file_start = (ut64)ptr->paddr;
+	ut64 file_end = file_start + (ut64)ptr->size;
+	// file_end in [0,2^33) as both arguments in [0,2^32), thus no overflow.
+	if (R_UNLIKELY (file_start > obj->size)) {
+		R_LOG_WARN ("File range of section \"%s\" is fully out of bounds (%#" PRIx64 "..%#" PRIx64 "), but file size is %#" PRIx64 ")",
+			    ptr->name, file_start, file_end);
+		ptr->size = 0;
+	} else if (R_UNLIKELY (file_end > obj->size)) {
+		R_LOG_WARN ("File range of section \"%s\" is partially out of bounds (%#" PRIx64 "..%#" PRIx64 "), but file size is %#" PRIx64 ")",
+			    ptr->name, file_start, file_end, obj->size);
+		ptr->size = obj->size - file_start;
+	}
+}
+
 static void coff_section(RBinSection *ptr, const struct r_bin_coff_obj *obj, size_t i) {
 	if (strstr (ptr->name, "data")) {
 		ptr->is_data = true;
@@ -307,10 +326,11 @@ static RList *sections(RBinFile *bf) {
 			ptr->name = r_str_newf ("%s-%u", tmp, (unsigned int)i);
 			free (tmp);
 			if (obj->xcoff) {
-				xcoff_section(ptr, obj, i);
+				xcoff_section (ptr, obj, i);
 			} else {
-				coff_section(ptr, obj, i);
+				coff_section (ptr, obj, i);
 			}
+			truncate_section (ptr, obj);
 			r_list_append (ret, ptr);
 		}
 	}
