@@ -3039,8 +3039,13 @@ static bool cbcore(void *user, int type, const char *origin, const char *msg) {
 	if (!msg) {
 		return false;
 	}
+	if (!origin) {
+		origin = "*";
+	}
 	RCore *core = (RCore*)user;
-	char *s = R_STR_ISNOTEMPTY (msg)? r_str_newf ("%s %s", origin? origin: "*", msg): strdup (origin);
+	char *s = R_STR_ISNOTEMPTY (msg)
+		? r_str_newf ("%s %s", origin, msg)
+		: strdup (origin);
 	r_core_log_add (core, s);
 	free (s);
 	return false;
