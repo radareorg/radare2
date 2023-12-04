@@ -2722,8 +2722,12 @@ static bool cmd_r2cmd(RCore *core, const char *_input) {
 		rc = __runMain (core->r_main_radiff2, input);
 	} else if (r_str_startswith (input, "r2.")) {
 		r_core_cmdf (core, "\"\"js console.log(r2.%s)", input + 3);
-	} else if (r_str_startswith (input, "r2") && (!input[2] || input[2] == ' ')) {
-		r_sys_cmdf ("%s", input);
+	} else if (r_str_startswith (input, "r2")) {
+		if (input[2] == ' ' || input[2] == 0) {
+			r_sys_cmdf ("%s", input);
+		} else {
+			R_LOG_ERROR ("Invalid command");
+		}
 		// rc = __runMain (core->r_main_radare2, input);
 	} else {
 		const char *r2cmds[] = {
