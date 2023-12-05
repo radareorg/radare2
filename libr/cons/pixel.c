@@ -109,17 +109,17 @@ R_API char *r_cons_pixel_drain(RConsPixel *p) {
 static int pixel_get(RConsPixel *p, int x, int y) {
 	ut8 *X = p->buf + (x + (y * p->w));
 	int u = 0;
-	u |= (X[0]?$00:0);
-	u |= (X[1]?$01:0);
+	u |= (X[0]?_BR00:0);
+	u |= (X[1]?_BR01:0);
 	X = p->buf + (x + ((y + 1) * p->w));
-	u |= (X[0]?$10:0);
-	u |= (X[1]?$11:0);
+	u |= (X[0]?_BR10:0);
+	u |= (X[1]?_BR11:0);
 	X = p->buf + (x + ((y + 2) * p->w));
-	u |= (X[0]?$20:0);
-	u |= (X[1]?$21:0);
+	u |= (X[0]?_BR20:0);
+	u |= (X[1]?_BR21:0);
 	X = p->buf + (x + ((y + 3) * p->w));
-	u |= (X[0]?$30:0);
-	u |= (X[1]?$31:0);
+	u |= (X[0]?_BR30:0);
+	u |= (X[1]?_BR31:0);
 	return u;
 }
 

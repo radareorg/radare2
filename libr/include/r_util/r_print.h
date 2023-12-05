@@ -45,23 +45,23 @@ extern "C" {
 
 */
 
-#define $00 1
-#define $01 8
-#define $10 2
-#define $11 16
-#define $20 4
-#define $21 32
-#define $30 (1 << 8)
-#define $31 (2 << 8)
-#define BRAILE_ONE $00+$01+$11+$21+$31
-#define BRAILE_TWO $00+$01+$11+$20+$30+$31
-#define BRAILE_TRI $00+$01+$11+$21+$30+$31
-#define BRAILE_FUR $00+$10+$11+$21+$31
-#define BRAILE_FIV $00+$01+$10+$21+$30
-#define BRAILE_SIX $01+$10+$20+$21+$30+$31
-#define BRAILE_SEV $00+$01+$11+$20+$30
-#define BRAILE_EIG $00+$01+$10+$11+$20+$21+$30+$31
-#define BRAILE_NIN $00+$01+$10+$11+$21+$30
+#define _BR00 1
+#define _BR01 8
+#define _BR10 2
+#define _BR11 16
+#define _BR20 4
+#define _BR21 32
+#define _BR30 (1 << 8)
+#define _BR31 (2 << 8)
+#define _BRAILE_ONE _BR00+_BR01+_BR11+_BR21+_BR31
+#define _BRAILE_TWO _BR00+_BR01+_BR11+_BR20+_BR30+_BR31
+#define _BRAILE_TRI _BR00+_BR01+_BR11+_BR21+_BR30+_BR31
+#define _BRAILE_FUR _BR00+_BR10+_BR11+_BR21+_BR31
+#define _BRAILE_FIV _BR00+_BR01+_BR10+_BR21+_BR30
+#define _BRAILE_SIX _BR01+_BR10+_BR20+_BR21+_BR30+_BR31
+#define _BRAILE_SEV _BR00+_BR01+_BR11+_BR20+_BR30
+#define _BRAILE_EIG _BR00+_BR01+_BR10+_BR11+_BR20+_BR21+_BR30+_BR31
+#define _BRAILE_NIN _BR00+_BR01+_BR10+_BR11+_BR21+_BR30
 
 typedef struct {
 	char str[4];
