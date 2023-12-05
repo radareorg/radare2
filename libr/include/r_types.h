@@ -185,7 +185,7 @@
 #define HAVE_PTY R2__UNIX__ && LIBC_HAVE_FORK && !__sun
 #endif
 
-#if defined(EMSCRIPTEN) || defined(__wasi__) || defined(__linux__) || defined(__APPLE__) || defined(__GNU__) || defined(__ANDROID__) || defined(__QNX__) || defined(__sun) || defined(__HAIKU__) || defined(__serenity__) || defined(__vinix__)
+#if defined(EMSCRIPTEN) || defined(__wasi__) || defined(__linux__) || defined(__APPLE__) || defined(__GNU__) || defined(__ANDROID__) || defined(__QNX__) || defined(__sun) || defined(__HAIKU__) || defined(__serenity__) || defined(__vinix__) || defined(_AIX)
   #define R2__BSD__ 0
   #define R2__UNIX__ 1
 #endif
@@ -672,7 +672,7 @@ typedef enum {
 
 
 #define HAS_CLOCK_NANOSLEEP 0
-#if defined(__wasi__)
+#if defined(__wasi__) || defined(_AIX)
 # define HAS_CLOCK_MONOTONIC 0
 #elif CLOCK_MONOTONIC && MONOTONIC_UNIX
 # define HAS_CLOCK_MONOTONIC 1
