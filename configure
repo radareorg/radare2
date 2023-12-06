@@ -903,7 +903,7 @@ pcgen() {
 	PCNAME="${1}" ; shift
 	REQUIRES="$@"
 
-	echo "generating ${PCFILE}" > /dev/stderr
+	echo "generating ${PCFILE}" >&2
 	echo "prefix=${PREFIX}" > ${PCFILE}
 	echo "exec_prefix=\${prefix}" >> ${PCFILE}
 	echo "libdir=${PKGCFG_LIBDIR}" >> ${PCFILE}

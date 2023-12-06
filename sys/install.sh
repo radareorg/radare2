@@ -34,8 +34,8 @@ fi
 
 echo "$PWD" | grep -q " "
 if [ $? = 0 ]; then
-	echo "You can't build radare from a directory with spaces with make" > /dev/stderr
-	echo "To solve this you must 'meson' instead" > /dev/stderr
+	echo "You can't build radare from a directory with spaces with make" >&2
+	echo "To solve this you must 'meson' instead" >&2
 	exit 1
 fi
 
