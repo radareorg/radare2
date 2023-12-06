@@ -3552,7 +3552,7 @@ R_API int r_core_config_init(RCore *core) {
 #endif
 	SETDESC (n, "choose malloc structure parser");
 	SETOPTIONS (n, "glibc", "jemalloc", NULL);
-	SETBPREF ("dbg.glibc.path", "", "if not empty, use the given path to resolve the libc");
+	SETPREF ("dbg.glibc.path", "", "if not empty, use the given path to resolve the libc");
 #if __GLIBC_MINOR__ > 25
 	SETBPREF ("dbg.glibc.tcache", "true", "parse the tcache (glibc.minor > 2.25.x)");
 #else
