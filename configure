@@ -861,7 +861,10 @@ if [ "$HOST_OS" = "darwin" ]; then
 USEROSTYPE="darwin"
 else
 if [ "$HOST_OS" = "haiku" ]; then
-USEROSTYPE="haiku"; fi; fi; fi; fi; fi; fi; fi; fi; fi; fi; fi; fi; fi; fi
+USEROSTYPE="haiku"
+else
+if [ "$HOST_OS" = "aix" ]; then
+USEROSTYPE="aix"; fi; fi; fi; fi; fi; fi; fi; fi; fi; fi; fi; fi; fi; fi; fi
 if [ "$LIBVERSION" = "xxx" ]; then
 LIBVERSION="$VERSION"; fi
 if [ "$USEROSTYPE" = "gnulinux" ]; then
@@ -892,8 +895,12 @@ if [ "$USEROSTYPE" = "haiku" ]; then
 HAVE_PTRACE="0"
 USE_PTRACE_WRAP="0"
 else
+if [ "$USEROSTYPE" = "aix" ]; then
+HAVE_PTRACE="0"
+USE_PTRACE_WRAP="0"
+else
 HAVE_PTRACE="1"
-USE_PTRACE_WRAP="0"; fi; fi; fi; fi; fi; fi
+USE_PTRACE_WRAP="0"; fi; fi; fi; fi; fi; fi; fi
 if [ "$DEBUGGER" = "0" ]; then
 HAVE_PTRACE="0"; fi
 if [ "$WANT_PTRACE_WRAP" = "0" ]; then
@@ -903,7 +910,7 @@ pcgen() {
 	PCNAME="${1}" ; shift
 	REQUIRES="$@"
 
-	echo "generating ${PCFILE}" >&2
+	echo "generating ${PCFILE}" > /dev/stderr
 	echo "prefix=${PREFIX}" > ${PCFILE}
 	echo "exec_prefix=\${prefix}" >> ${PCFILE}
 	echo "libdir=${PKGCFG_LIBDIR}" >> ${PCFILE}
