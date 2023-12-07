@@ -198,8 +198,9 @@ static inline char *name_from_export(RBinWasmObj *bin, int type, int ord) {
 }
 
 static inline void set_sym_name(RBinWasmObj *bin, int type, RBinSymbol *sym) {
-	sym->name = r_bin_name_new_from (name_from_export (bin, type, sym->ordinal));
-	if (sym->name) {
+	char *s = name_from_export (bin, type, sym->ordinal);
+	if (s) {
+		sym->name = r_bin_name_new_from (s);
 		sym->bind = R_BIN_BIND_GLOBAL_STR;
 	} else {
 		const char *typestr = NULL;
