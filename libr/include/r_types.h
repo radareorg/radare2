@@ -705,6 +705,8 @@ typedef enum {
 #define R_SYS_OS "freebsd"
 #elif defined (__HAIKU__)
 #define R_SYS_OS "haiku"
+#elif defined (_AIX)
+#define R_SYS_OS "aix"
 #else
 #define R_SYS_OS "unknown"
 #endif
