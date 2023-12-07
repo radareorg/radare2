@@ -5511,10 +5511,10 @@ static bool cmd_pi(RCore *core, const char *input, int len, int l, ut8 *block) {
 						RAnalOp *op = r_core_anal_op (core, refi->addr, R_ARCH_OP_MASK_BASIC);
 						RBinReloc *rel = r_core_getreloc (core, refi->addr, op->size);
 						if (rel) {
-							if (rel && rel->import && rel->import->name) {
-								dst2 = rel->import->name;
-							} else if (rel && rel->symbol && rel->symbol->name) {
-								dst2 = rel->symbol->name;
+							if (rel && rel->import) {
+								dst2 = r_bin_name_tostring (rel->import->name);
+							} else if (rel && rel->symbol) {
+								dst2 = r_bin_name_tostring (rel->symbol->name);
 							}
 						} else {
 							dst2 = dst;

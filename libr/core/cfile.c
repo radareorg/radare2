@@ -759,7 +759,7 @@ R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 		const RList *imports = r_bin_get_imports (r->bin);
 		r_list_foreach (imports, iter, imp) {
 			// PLT finding
-			char *flagname = r_str_newf ("sym.imp.%s", imp->name);
+			char *flagname = r_str_newf ("sym.imp.%s", r_bin_name_tostring2 (imp->name, 'f'));
 			RFlagItem *impsym = r_flag_get (r->flags, flagname);
 			free (flagname);
 			if (!impsym) {
@@ -767,8 +767,9 @@ R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 				continue;
 			}
 			ut64 imp_addr = impsym->offset;
-			eprintf ("Resolving %s... ", imp->name);
-			RCoreLinkData linkdata = {imp->name, UT64_MAX, r->bin};
+			const char *imp_name = r_bin_name_tostring2 (imp->name, 'o');
+			eprintf ("Resolving %s... ", imp_name);
+			RCoreLinkData linkdata = {imp_name, UT64_MAX, r->bin};
 			r_id_storage_foreach (r->io->files, linkcb, &linkdata);
 			if (linkdata.addr != UT64_MAX) {
 				eprintf ("0x%08"PFMT64x, linkdata.addr);

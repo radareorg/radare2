@@ -818,7 +818,8 @@ static ut8 *get_methods(RCore *c, int *len) {
 	r_list_foreach (list, iter, klass) {
 		const char *kname = r_bin_name_tostring (klass->name);
 		r_list_foreach (klass->methods, iter2, sym) {
-			r_list_append (reslist, r_str_newf ("%s.%s", kname, sym->name));
+			const char *name = r_bin_name_tostring (sym->name);
+			r_list_append (reslist, r_str_newf ("%s.%s", kname, name));
 		}
 	}
 	r_list_sort (reslist, (RListComparator)strcmp);
@@ -839,7 +840,8 @@ static ut8 *get_symbols(RCore *c, int *len) {
 	const RList *list = r_bin_get_symbols (c->bin);
 	RList *reslist = r_list_newf (free);
 	r_list_foreach (list, iter, sym) {
-		r_list_append (reslist, strdup (sym->name));
+		const char *name = r_bin_name_tostring (sym->name);
+		r_list_append (reslist, strdup (name));
 	}
 	char *buf = r_str_list_join (reslist, "\n");
 	*len = strlen (buf);

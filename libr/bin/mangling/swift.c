@@ -13,14 +13,16 @@ R_IPI bool r_bin_lang_swift(RBinFile *bf) {
 	if (info) {
 		if (bo->symbols) {
 			r_list_foreach (bo->symbols, iter, sym) {
-				if (sym->name && strstr (sym->name, "swift_once")) {
+				const char *name = r_bin_name_tostring2 (sym->name, 'o');
+				if (name && strstr (name, "swift_once")) {
 					info->lang = "swift";
 					return true;
 				}
 			}
 		} else {
 			R_VEC_FOREACH (&bo->symbols_vec, sym) {
-				if (sym->name && strstr (sym->name, "swift_once")) {
+				const char *name = r_bin_name_tostring2 (sym->name, 'o');
+				if (name && strstr (name, "swift_once")) {
 					info->lang = "swift";
 					return true;
 				}

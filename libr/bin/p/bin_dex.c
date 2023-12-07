@@ -1799,10 +1799,10 @@ static RList *entries(RBinFile *bf) {
 
 	// STEP 1. ".onCreate(Landroid/os/Bundle;)V"
 	r_list_foreach (bin->methods_list, iter, m) {
-		if (strlen (m->name) > 30 && m->bind &&
-			(!strcmp (m->bind, R_BIN_BIND_LOCAL_STR) || !strcmp (m->bind, R_BIN_BIND_GLOBAL_STR)) &&
-		    !strcmp (m->name + strlen (m->name) - 31,
-			     ".onCreate(Landroid/os/Bundle;)V")) {
+		const char *oname = r_bin_name_tostring2 (m->name, 'o');
+		if (strlen (oname) > 30 && m->bind \
+				&& (!strcmp (m->bind, R_BIN_BIND_LOCAL_STR) || !strcmp (m->bind, R_BIN_BIND_GLOBAL_STR)) \
+				&& !strcmp (oname + strlen (oname) - 31, ".onCreate(Landroid/os/Bundle;)V")) {
 			if (!already_entry (ret, m->paddr)) {
 				if ((ptr = R_NEW0 (RBinAddr))) {
 					ptr->paddr = ptr->vaddr = m->paddr;
@@ -1815,9 +1815,8 @@ static RList *entries(RBinFile *bf) {
 	// STEP 2. ".main([Ljava/lang/String;)V"
 	if (r_list_empty (ret)) {
 		r_list_foreach (bin->methods_list, iter, m) {
-			if (strlen (m->name) > 26 &&
-			    !strcmp (m->name + strlen (m->name) - 27,
-				     ".main([Ljava/lang/String;)V")) {
+			const char *oname = r_bin_name_tostring2 (m->name, 'o');
+			if (strlen (oname) > 26 && !strcmp (oname + strlen (oname) - 27, ".main([Ljava/lang/String;)V")) {
 				if (!already_entry (ret, m->paddr)) {
 					if ((ptr = R_NEW0 (RBinAddr))) {
 						ptr->paddr = m->paddr;

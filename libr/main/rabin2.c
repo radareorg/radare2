@@ -257,7 +257,8 @@ static int rabin_dump_symbols(RBin *bin, int len) {
 		}
 		if (r_buf_read_at (bin->cur->buf, symbol->paddr, buf, len) == len) {
 			r_hex_bin2str (buf, len, ret);
-			printf ("%s %s\n", symbol->name, ret);
+			const char *name = r_bin_name_tostring (symbol->name);
+			printf ("%s %s\n", name, ret);
 		} else {
 			R_LOG_ERROR ("Cannot read from buffer");
 		}

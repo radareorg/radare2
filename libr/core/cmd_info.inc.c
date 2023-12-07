@@ -123,8 +123,9 @@ static void classdump_keys(RCore *core, RBinObject *bo) {
 		}
 		r_list_foreach (k->methods, iter2, m) {
 			char *attr = r_bin_attr_tostring (m->attr, true);
+			const char *mname = r_bin_name_tostring2 (m->name, 'f');
 			r_cons_printf ("klass.%s.method.%s.%s=0x%"PFMT64x"\n",
-					kname, r_str_get (attr), m->name,
+					kname, r_str_get (attr), mname,
 					iova? m->vaddr: m->paddr);
 			free (attr);
 		}
@@ -257,14 +258,15 @@ static void cmd_iic(RCore *r, int mode) {
 		first = true;
 		const char *typ = type[i];
 		r_list_foreach (imports, iter, imp) {
-			const char *un = r_bin_symbol_unsafe (r->bin, imp->name);
+			const char *name = r_bin_name_tostring2 (imp->name, 'o');
+			const char *un = r_bin_symbol_unsafe (r->bin, name);
 			if (un && !strcmp (un, typ)) {
 				if (first) {
 					r_cons_printf ("|- %s:\n", typ);
 					first = false;
 				}
-				r_cons_printf ("|  |- %s\n", imp->name);
-				char *fname = r_str_newf ("sym.imp.%s", imp->name);
+				r_cons_printf ("|  |- %s\n", name);
+				char *fname = r_str_newf ("sym.imp.%s", name);
 				RFlagItem *item = r_flag_get (r->flags, fname);
 				free (fname);
 				RVecAnalRef *xrefs = r_anal_xrefs_get (r->anal, item->offset);
@@ -290,13 +292,14 @@ static void cmd_iic(RCore *r, int mode) {
 	return;
 	first = true;
 	r_list_foreach (imports, iter, imp) {
-		const char *un = r_bin_symbol_unsafe (r->bin, imp->name);
+		const char *name = r_bin_name_tostring2 (imp->name, 'o');
+		const char *un = r_bin_symbol_unsafe (r->bin, name);
 		if (!un) {
 			if (first) {
 				r_cons_printf ("unclassified:\n");
 				first = false;
 			}
-			r_cons_printf (" + %s\n", imp->name);
+			r_cons_printf (" + %s\n", name);
 		}
 	}
 }
@@ -625,7 +628,8 @@ static void cmd_ic_sub(RCore *core, const char *input) {
 	}
 	if (klass && method_name) {
 		r_list_foreach (klass->methods, iter, m) {
-			if (!strcmp (method_name, m->name)) {
+			const char *mname = r_bin_name_tostring2 (m->name, 'o');
+			if (!strcmp (method_name, mname)) {
 				r_list_delete (klass->methods, iter);
 				return;
 			}
@@ -666,7 +670,8 @@ void cmd_ic_add(RCore *core, const char *input) {
 		RBinSymbol *m;
 		bool found = false;
 		r_list_foreach (klass->methods, iter, m) {
-			if (!strcmp (m->name, method_name)) {
+			const char *mname = r_bin_name_tostring2 (m->name, 'o');
+			if (!strcmp (mname, method_name)) {
 				found = true;
 				break;
 			}
@@ -901,7 +906,7 @@ static void cmd_ic(RCore *core, const char *input, PJ *pj, int is_array, bool va
 								max = at + sym->size;
 							}
 							if (addr >= at && addr <= at + sym->size) {
-								method = sym->name;
+								method = r_bin_name_tostring (sym->name);
 							}
 						}
 						if (addr >= min && addr < max) {
@@ -958,8 +963,9 @@ static void cmd_ic(RCore *core, const char *input, PJ *pj, int is_array, bool va
 						if (is_doublerad) {
 							r_cons_printf ("ac %s\n", kname);
 							r_list_foreach (cls->methods, iter2, sym) {
+								const char *name = r_bin_name_tostring2 (sym->name, pref);
 								r_cons_printf ("ac %s %s 0x%08"PFMT64x"\n", kname,
-										sym->name, iova? sym->vaddr: sym->paddr);
+										name, iova? sym->vaddr: sym->paddr);
 							}
 							continue;
 						}
@@ -1004,9 +1010,10 @@ static void cmd_ic(RCore *core, const char *input, PJ *pj, int is_array, bool va
 								r_cons_printf ("class %s\n", kname);
 								r_list_foreach (cls->methods, iter2, sym) {
 									char *flags = r_core_bin_attr_tostring (sym->attr, true);
+									const char *name = r_bin_name_tostring (sym->name);
 									r_cons_printf ("0x%08"PFMT64x " method %s %-4s %s\n",
 											iova? sym->vaddr: sym->paddr,
-											kname, flags, sym->name);
+											kname, flags, name);
 									free (flags);
 								}
 							}
@@ -1024,9 +1031,10 @@ static void cmd_ic(RCore *core, const char *input, PJ *pj, int is_array, bool va
 							r_cons_printf ("class %s\n", kname);
 							r_list_foreach (cls->methods, iter2, sym) {
 								char *flags = r_core_bin_attr_tostring (sym->attr, true);
+								const char *name = r_bin_name_tostring (sym->name);
 								r_cons_printf ("0x%08"PFMT64x " method %s %-4s %s\n",
 										iova? sym->vaddr: sym->paddr,
-										kname, flags, sym->name);
+										kname, flags, name);
 								free (flags);
 							}
 							break;

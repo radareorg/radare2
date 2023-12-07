@@ -256,10 +256,12 @@ static void symbols_from_locsym(RDyldCache *cache, RDyldBinImage *bin, RBinFile 
 
 		char *symstr = r_buf_get_string (cache->buf, locsym->local_symbols_offset + locsym->strings_offset + nlist->n_strx);
 		if (symstr) {
-			sym->name = symstr;
+			sym->name = r_bin_name_new (symstr);
 		} else {
 			static R_TH_LOCAL ut32 k = 0;
-			sym->name = r_str_newf ("unk_local%d", k++);
+			char *s = r_str_newf ("unk_local%d", k++);
+			sym->name = r_bin_name_new (s);
+			free (s);
 		}
 	}
 

@@ -55,7 +55,8 @@ static bool check_cxx(RBinSymbol *sym) {
 }
 
 static bool check_msvc(RBinSymbol *sym) {
-	return *sym->name == '?';
+	const char *oname = r_bin_name_tostring2 (sym->name, 'o');
+	return *oname == '?';
 }
 
 static inline bool check_kotlin(RBinSymbol *sym) {
@@ -69,10 +70,11 @@ static inline bool check_dart(RBinSymbol *sym) {
 }
 
 static inline bool check_pascal(RBinSymbol *sym) {
-	if (strstr (sym->name, "$_$")) {
+	const char *name = r_bin_name_tostring2 (sym, 'o');
+	if (strstr (name, "$_$")) {
 		return true;
 	}
-	return strstr (sym->name, "_$$_");
+	return strstr (name, "_$$_");
 }
 
 typedef struct {

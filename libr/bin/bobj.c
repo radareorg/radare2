@@ -102,7 +102,8 @@ static RList *classes_from_symbols(RBinFile *bf) {
 	RBinSymbol *sym;
 	RListIter *iter;
 	r_list_foreach (bf->bo->symbols, iter, sym) {
-		if (!sym->name || sym->name[0] != '_') {
+		const char *oname = r_bin_name_tostring2 (sym->name, 'o');
+		if (!oname || oname[0] != '_') {
 			continue;
 		}
 		const char *cn = sym->classname;
@@ -112,7 +113,7 @@ static RList *classes_from_symbols(RBinFile *bf) {
 				continue;
 			}
 			// swift specific
-			char *dn = sym->dname;
+			char *dn = r_bin_name_tostring2 (sym->name, 'd');
 			char *fn = swiftField (dn, cn);
 			if (fn) {
 				RBinField *f = r_bin_field_new (sym->paddr, sym->vaddr, -1, sym->size, fn, NULL, NULL, false);
@@ -255,7 +256,8 @@ static void r_bin_object_rebuild_classes_ht(RBinObject *bo) {
 			ht_pp_insert (bo->classes_ht, klass->name, klass);
 			r_list_foreach (klass->methods, it2, method) {
 				const char *klass_name = r_bin_name_tostring (klass->name);
-				char *name = r_str_newf ("%s::%s", klass_name, method->name);
+				const char *method_name = r_bin_name_tostring (method->name);
+				char *name = r_str_newf ("%s::%s", klass_name, method_name);
 				ht_pp_insert (bo->methods_ht, name, method);
 				free (name);
 			}

@@ -1071,7 +1071,7 @@ R_API bool r_core_visual_hudclasses(RCore *core) {
 				f->vaddr, cname, fname));
 		}
 		r_list_foreach (c->methods, iter2, m) {
-			const char *name = m->dname? m->dname: m->name;
+			const char *name = r_bin_name_tostring2 (m->name, pref);
 			r_list_append (list, r_str_newf ("0x%08"PFMT64x"  %s %s",
 				m->vaddr, cname, name));
 		}
@@ -1174,6 +1174,7 @@ static bool r_core_visual_config_hud(RCore *core) {
 // TODO: Add support to show class fields too
 // Segfaults - stack overflow, because of recursion
 static void *show_class(RCore *core, int mode, int *idx, RBinClass *_c, const char *grep, RList *list) {
+	const int pref = r_config_get_b (core->config, "asm.demangle")? 'd': 0;
 	bool show_color = r_config_get_i (core->config, "scr.color");
 	RListIter *iter;
 	RBinClass *c, *cur = NULL;
@@ -1295,7 +1296,7 @@ static void *show_class(RCore *core, int mode, int *idx, RBinClass *_c, const ch
 		}
 		r_cons_printf ("[hjkl_/cfM]> methods of %s\n\n", _cname);
 		r_list_foreach (_c->methods, iter, m) {
-			const char *name = m->dname? m->dname: m->name;
+			const char *name = r_bin_name_tostring2 (m->name, pref);
 			if (grep) {
 				if (!r_str_casestr (name, grep)) {
 					i++;

@@ -274,12 +274,13 @@ typedef struct r_bin_info_t {
 
 typedef struct r_bin_symbol_t {
 	RBinName *name;
-	RBinName *classname;
+	char *classname;
 	char *libname;
 	/* const-unique-strings */
 	const char *forwarder;
 	const char *bind; // tied to attr already
-	RBinName *type;
+	// RBinName *type;
+	const char *type;
   	const char *rtype;
 	bool is_imported;
 	/* only used by java */
@@ -311,11 +312,8 @@ typedef struct r_bin_section_t {
 } RBinSection;
 
 typedef struct r_bin_import_t {
-#if R2_590
-	RBinName name;
-#else
-	char *name;
-#endif
+	RBinName *name;
+// 	char *name;
 	char *libname;
 	const char *bind;
 	const char *type;

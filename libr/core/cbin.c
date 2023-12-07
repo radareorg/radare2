@@ -1629,10 +1629,10 @@ static char *construct_reloc_name(R_NONNULL RBinReloc *reloc, R_NULLABLE const c
 	// actual name
 	if (name) {
 		r_strbuf_append (buf, name);
-	} else if (reloc->import && R_STR_ISNOTEMPTY (reloc->import->name)) {
-		r_strbuf_append (buf, reloc->import->name);
-	} else if (reloc->symbol && R_STR_ISNOTEMPTY (reloc->symbol->name)) {
-		r_strbuf_appendf (buf, "%s", reloc->symbol->name);
+	} else if (reloc->import) {
+		r_strbuf_append (buf, r_bin_name_tostring (reloc->import->name));
+	} else if (reloc->symbol) {
+		r_strbuf_append (buf, r_bin_name_tostring (reloc->symbol->name));
 	} else if (reloc->is_ifunc) {
 		// addend is the function pointer for the resolving ifunc
 		r_strbuf_appendf (buf, "ifunc_%"PFMT64x, reloc->addend);
@@ -1668,8 +1668,8 @@ static void set_bin_relocs(RelocInfo *ri, RBinReloc *reloc, ut64 addr, Sdb **db,
 	RCore *r = ri->core;
 	r_strf_buffer (64);
 
-	if (ri->is_pe && reloc->import && reloc->import->name && reloc->import->libname
-			&& r_str_startswith (reloc->import->name, "Ordinal_")) {
+	const char *name = reloc->import? r_bin_name_tostring (reloc->import->name): NULL;
+	if (ri->is_pe && name && reloc->import->libname && r_str_startswith (name, "Ordinal_")) {
 		char *module = strdup (reloc->import->libname);
 		r_str_case (module, false);
 
@@ -1679,7 +1679,7 @@ static void set_bin_relocs(RelocInfo *ri, RBinReloc *reloc, ut64 addr, Sdb **db,
 			module[module_len - 4] = '\0';
 		}
 
-		const char *import = reloc->import->name + strlen ("Ordinal_");
+		const char *import = name + strlen ("Ordinal_");
 		if (import) {
 			char *filename = NULL;
 			int ordinal = atoi (import);
@@ -1705,13 +1705,15 @@ static void set_bin_relocs(RelocInfo *ri, RBinReloc *reloc, ut64 addr, Sdb **db,
 				// ordinal-1 because we enumerate starting at 0
 				char *symname = resolveModuleOrdinal (*db, module, ordinal - 1);  // uses sdb_get
 				if (symname) {
+					char *s;
 					if (r->bin->prefix) {
-						reloc->import->name = r_str_newf
-							("%s.%s", r->bin->prefix, symname);
+						s = r_str_newf ("%s.%s", r->bin->prefix, symname);
 						R_FREE (symname);
 					} else {
-						reloc->import->name = symname;
+						s = symname;
 					}
+					r_bin_name_demangled (reloc->import->name, s);
+					free (s);
 				}
 			}
 		}
@@ -1782,28 +1784,25 @@ static void add_metadata(RCore *r, RBinReloc *reloc, ut64 addr, int mode) {
 	}
 }
 
-static bool is_section_symbol(RBinSymbol *s) {
+static inline bool is_section_symbol(RBinSymbol *s) {
 	/* workaround for some bin plugs (e.g. ELF) */
-	if (!s || *s->name) {
-		return false;
-	}
-	return (s->type && !strcmp (s->type, R_BIN_TYPE_SECTION_STR));
+	return (s && s->type && !strcmp (s->type, R_BIN_TYPE_SECTION_STR));
 }
 
-static bool is_special_symbol(RBinSymbol *s) {
-	return s->type && !strcmp (s->type, R_BIN_TYPE_SPECIAL_SYM_STR);
+static inline bool is_special_symbol(RBinSymbol *s) {
+	return s && s->type && !strcmp (s->type, R_BIN_TYPE_SPECIAL_SYM_STR);
 }
 
-static bool is_section_reloc(RBinReloc *r) {
+static inline bool is_section_reloc(RBinReloc *r) {
 	return is_section_symbol (r->symbol);
 }
 
-static bool is_file_symbol(RBinSymbol *s) {
+static inline bool is_file_symbol(RBinSymbol *s) {
 	/* workaround for some bin plugs (e.g. ELF) */
 	return (s && s->type && !strcmp (s->type, R_BIN_TYPE_FILE_STR));
 }
 
-static bool is_file_reloc(RBinReloc *r) {
+static inline bool is_file_reloc(RBinReloc *r) {
 	return is_file_symbol (r->symbol);
 }
 
@@ -1884,11 +1883,14 @@ static bool bin_relocs(RCore *r, PJ *pj, int mode, int va) {
 			set_bin_relocs (&ri, reloc, addr, &db, &sdb_module);
 			add_metadata (r, reloc, addr, mode);
 		} else if (IS_MODE_SIMPLE (mode)) {
-			r_cons_printf ("0x%08"PFMT64x"  %s\n", addr, reloc->import ? reloc->import->name : "");
+			if (reloc->import) {
+				const char *name = r_bin_name_tostring (reloc->import->name);
+				r_cons_printf ("0x%08"PFMT64x"  %s\n", addr, name);
+			}
 		} else if (IS_MODE_RAD (mode)) {
 			char *name = reloc->import
-				? strdup (reloc->import->name)
-				: (reloc->symbol ? strdup (reloc->symbol->name) : NULL);
+				? strdup (r_bin_name_tostring (reloc->import->name))
+				: (reloc->symbol ? strdup (r_bin_name_tostring (reloc->symbol->name)) : NULL);
 			if (name) {
 				if (bin_demangle) {
 					char *mn = r_bin_demangle (r->bin->cur, NULL, name, addr, keep_lib);
@@ -1921,11 +1923,13 @@ static bool bin_relocs(RCore *r, PJ *pj, int mode, int va) {
 			char *relname = NULL;
 
 			if (reloc->import) {
-				mn = r_bin_demangle (r->bin->cur, lang, reloc->import->name, addr, keep_lib);
-				relname = strdup (reloc->import->name);
+				const char *iname = r_bin_name_tostring (reloc->import->name);
+				mn = r_bin_demangle (r->bin->cur, lang, iname, addr, keep_lib);
+				relname = strdup (iname);
 			} else if (reloc->symbol) {
-				mn = r_bin_demangle (r->bin->cur, lang, reloc->symbol->name, addr, keep_lib);
-				relname = strdup (reloc->symbol->name);
+				const char *sname = r_bin_name_tostring (reloc->symbol->name);
+				mn = r_bin_demangle (r->bin->cur, lang, sname, addr, keep_lib);
+				relname = strdup (sname);
 			}
 
 			// check if name is available
@@ -1956,9 +1960,9 @@ static bool bin_relocs(RCore *r, PJ *pj, int mode, int va) {
 			}
 
 			char *name = reloc->import
-				? strdup (reloc->import->name)
+				? strdup (r_bin_name_tostring (reloc->import->name))
 					: reloc->symbol
-					? strdup (reloc->symbol->name)
+					? strdup (r_bin_name_tostring (reloc->symbol->name))
 				: NULL;
 			if (bin_demangle) {
 				char *mn = r_bin_demangle (r->bin->cur, NULL, name, addr, keep_lib);
@@ -2048,7 +2052,7 @@ R_DEPRECATE static RBinSymbol *get_import(RBin *bin, RVecRBinSymbol *symbols, co
 				continue;
 			}
 			/* ${name}=${ptrToSymbol} */
-			if (!sdb_num_add (mydb, r_strf ("%x", sdb_hash (symbol->name)), (ut64)(size_t)symbol, 0)) {
+			if (!sdb_num_add (mydb, r_strf ("%x", sdb_hash (r_bin_name_tostring (symbol->name))), (ut64)(size_t)symbol, 0)) {
 			//	eprintf ("DUP (%s)\n", symbol->name);
 			}
 			/* 0x${vaddr}=${ptrToSymbol} */
@@ -2056,7 +2060,7 @@ R_DEPRECATE static RBinSymbol *get_import(RBin *bin, RVecRBinSymbol *symbols, co
 			//	eprintf ("DUP (%s)\n", symbol->name);
 			}
 			if (name) {
-				if (!res && !strcmp (symbol->name, name)) {
+				if (!res && !strcmp (r_bin_name_tostring (symbol->name), name)) {
 					res = symbol;
 				}
 			} else {
@@ -2147,10 +2151,11 @@ static bool bin_imports(RCore *r, PJ *pj, int mode, int va, const char *name) {
 		r_table_set_columnsf (table, "nXssss", "nth", "vaddr", "bind", "type", "lib", "name");
 	}
 	r_list_foreach (imports, iter, import) {
-		if (name && strcmp (import->name, name)) {
+		const char *iname = r_bin_name_tostring (import->name);
+		if (name && strcmp (iname, name)) {
 			continue;
 		}
-		char *symname = strdup (import->name);
+		char *symname = strdup (iname);
 		char *libname = import->libname ? strdup (import->libname) : NULL;
 		ut64 addr = lit ? r_core_bin_impaddr (r->bin, va, symname): 0;
 		if (bin_demangle) {
@@ -2290,18 +2295,18 @@ typedef struct {
 } SymName;
 
 static void snInit(RCore *r, SymName *sn, RBinSymbol *sym, const char *lang, bool bin_demangle) {
-	const int pref = r_config_get_b (r->config, "asm.demangle")? 'd': 0;
 	bin_demangle &= !!lang;
 	if (!r || !sym || !sym->name) {
 		return;
 	}
-	sn->name = r_str_newf ("%s%s", sym->is_imported ? "imp." : "", sym->name);
+	const char *sym_name = r_bin_name_tostring (sym->name);
+	sn->name = r_str_newf ("%s%s", sym->is_imported ? "imp." : "", sym_name);
 	sn->libname = sym->libname ? strdup (sym->libname) : NULL;
 	const char *pfx = symbol_flag_prefix (sym);
-	const char *symname = sym->name;
+	const char *symname = sym_name;
 	char *resymname = NULL;
 	if (sym->dup_count > 0) {
-		resymname = r_str_newf ("%s_%d", sym->name, sym->dup_count);
+		resymname = r_str_newf ("%s_%d", sym_name, sym->dup_count);
 		symname = resymname;
 	}
 	sn->nameflag = construct_symbol_flagname (pfx, sym->libname, symname, MAXFLAG_LEN_DEFAULT);
@@ -2310,9 +2315,8 @@ static void snInit(RCore *r, SymName *sn, RBinSymbol *sym, const char *lang, boo
 		sn->classname = strdup (sym->classname);
 		sn->classflag = r_str_newf ("sym.%s.%s", sn->classname, sn->name);
 		r_name_filter (sn->classflag, MAXFLAG_LEN_DEFAULT);
-		const char *name = r_bin_name_tostring2 (sym->name, pref);
-		sn->methname = r_str_newf ("%s::%s", sn->classname, name);
-		sn->methflag = r_str_newf ("sym.%s.%s", sn->classname, name);
+		sn->methname = r_str_newf ("%s::%s", sn->classname, sym_name);
+		sn->methflag = r_str_newf ("sym.%s.%s", sn->classname, sym_name);
 		r_name_filter (sn->methflag, strlen (sn->methflag));
 	} else {
 		sn->classname = NULL;
@@ -2357,19 +2361,20 @@ static ut64 compute_addr(RBin *bin, ut64 paddr, ut64 vaddr, int va) {
 
 static void handle_arm_special_symbol(RCore *core, RBinSymbol *symbol, int va) {
 	ut64 addr = compute_addr (core->bin, symbol->paddr, symbol->vaddr, va);
-	if (!strcmp (symbol->name, "$a")) {
+	const char *oname = r_bin_name_tostring2 (symbol->name, 'o');
+	if (!strcmp (oname, "$a")) {
 		r_anal_hint_set_bits (core->anal, addr, 32);
-	} else if (!strcmp (symbol->name, "$x")) {
+	} else if (!strcmp (oname, "$x")) {
 		r_anal_hint_set_bits (core->anal, addr, 64);
-	} else if (!strcmp (symbol->name, "$t")) {
+	} else if (!strcmp (oname, "$t")) {
 		r_anal_hint_set_bits (core->anal, addr, 16);
-	} else if (!strcmp (symbol->name, "$d")) {
+	} else if (!strcmp (oname, "$d")) {
 		// TODO: we could add data meta type at addr, but sometimes $d
 		// is in the middle of the code and it would make the code less
 		// readable.
 	} else {
 		if (core->bin->verbose) {
-			R_LOG_WARN ("Special symbol %s not handled", symbol->name);
+			R_LOG_WARN ("Special symbol %s not handled", oname);
 		}
 	}
 }
@@ -2466,13 +2471,14 @@ static bool bin_symbols(RCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at,
 
 	RBinSymbol *symbol;
 	R_VEC_FOREACH (symbols, symbol) {
-		if (!symbol->name) {
+		const char *name = r_bin_name_tostring (symbol->name);
+		if (!name) {
 			continue;
 		}
 		if (exponly && !its_an_export (symbol)) {
 			continue;
 		}
-		if (name && strcmp (symbol->name, name)) {
+		if (name && strcmp (name, name)) {
 			continue;
 		}
 		ut64 addr = compute_addr (r->bin, symbol->paddr, symbol->vaddr, va);
@@ -2529,7 +2535,7 @@ static bool bin_symbols(RCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at,
 					}
 				}
 			} else {
-				const char *n = sn.demname ? sn.demname : symbol->name;
+				const char *n = sn.demname ? sn.demname : name;
 				const char *fn = sn.demflag ? sn.demflag : sn.nameflag;
 				char *fnp = (r->bin->prefix) ?
 					r_str_newf ("%s.%s", r->bin->prefix, fn):
@@ -2562,11 +2568,11 @@ static bool bin_symbols(RCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at,
 				pj_ks (pj, "demname", sn.demname);
 			}
 			pj_ks (pj, "flagname", sn.nameflag);
-			pj_ks (pj, "realname", symbol->name);
+			pj_ks (pj, "realname", name);
 			pj_ki (pj, "ordinal", symbol->ordinal);
 			pj_ks (pj, "bind", symbol->bind);
 			pj_kn (pj, "size", (ut64)symbol->size);
-			const char *safetyName = r_bin_symbol_unsafe (r->bin, symbol->name);
+			const char *safetyName = r_bin_symbol_unsafe (r->bin, name);
 			if (safetyName) {
 				pj_ks (pj, "unsafe", safetyName);
 			}
@@ -3826,11 +3832,12 @@ static bool bin_classes(RCore *r, PJ *pj, int mode) {
 			r_strf_var (classname, 256, "class.%s", name);
 			r_flag_set (r->flags, classname, c->addr, 1);
 			r_list_foreach (c->methods, iter2, sym) {
+				const char *sym_name = r_bin_name_tostring (sym->name);
 				// char *mflags = r_core_bin_attr_tostring (sym->attr, mode);
 				char *mflags = r_bin_attr_tostring (sym->attr, false);
 				r_str_replace_char (mflags, ' ', '.');
 				// XXX probably access flags should not be part of the flag name
-				r_strf_var (method, 256, "method%s%s.%s.%s", R_STR_ISEMPTY (mflags)? "":".", mflags, cname, sym->name);
+				r_strf_var (method, 256, "method%s%s.%s.%s", R_STR_ISEMPTY (mflags)? "":".", mflags, cname, sym_name);
 				R_FREE (mflags);
 				r_name_filter (method, -1);
 				r_flag_set (r->flags, method, sym->vaddr, 1);
@@ -3906,7 +3913,7 @@ static bool bin_classes(RCore *r, PJ *pj, int mode) {
 				char *mflags = r_bin_attr_tostring (sym->attr, false);
 				r_str_replace_char (mflags, ' ', '.');
 				const char *n = cname; //  r_name_filter_shell (cname);
-				char *sn = sym->name; //r_name_filter_shell (sym->name); // symbol contains classname
+				char *sn = r_bin_name_tostring (sym->name); //r_name_filter_shell (sym->name); // symbol contains classname
 				const char *predot = R_STR_ISNOTEMPTY (mflags)? ".": "";
 				// char *cmd = r_str_newf ("\"f method%s.%s.%s = 0x%"PFMT64x"\"\n", mflags, n, sn, sym->vaddr);
 				char *cmd = r_str_newf ("\"f method.%s%s%s.%s = 0x%"PFMT64x"\"\n", n, predot, mflags, sn, sym->vaddr);

@@ -1079,17 +1079,13 @@ static void process_constructors_vec(RVecRBinSymbol *symbols, RBinFile *bf, RKer
 
 static void bin_symbol_copy(RBinSymbol *dst, const RBinSymbol *src) {
 	memcpy (dst, src, sizeof (RBinSymbol));
-	dst->name = strdup (src->name);
-	if (src->dname) {
-		dst->dname = strdup (src->dname);
-	}
+	dst->name = r_bin_name_clone (src->name);
 	if (src->libname) {
 		dst->libname = strdup (src->libname);
 	}
 	if (src->classname) {
 		dst->classname = strdup (src->classname);
 	}
-	// TODO bname / cname
 }
 
 static RBinAddr *newEntry(ut64 haddr, ut64 vaddr, int type) {
@@ -1254,8 +1250,9 @@ static bool symbols_vec(RBinFile *bf) {
 	ut64 enosys_addr = 0;
 	R_VEC_FOREACH (&symbols, sym) {
 		r_strf_var (key, 64, "%"PFMT64x, sym->vaddr);
-		sdb_ht_insert (kernel_syms_by_addr, key, sym->dname ? sym->dname : sym->name);
-		if (!enosys_addr && strstr (sym->name, "enosys")) {
+		const char *oname = r_bin_name_tostring (sym->name);
+		sdb_ht_insert (kernel_syms_by_addr, key, oname);
+		if (!enosys_addr && strstr (oname, "enosys")) {
 			enosys_addr = sym->vaddr;
 		}
 	}
@@ -1264,8 +1261,9 @@ static bool symbols_vec(RBinFile *bf) {
 	if (syscalls) {
 		RListIter *iter;
 		r_list_foreach (syscalls, iter, sym) {
+			const char *oname = r_bin_name_tostring (sym->name);
 			r_strf_var (key, 32, "%"PFMT64x, sym->vaddr);
-			sdb_ht_insert (kernel_syms_by_addr, key, sym->name);
+			sdb_ht_insert (kernel_syms_by_addr, key, oname);
 			RVecRBinSymbol_push_back (&symbols, sym);
 		}
 		syscalls->free = NULL;
