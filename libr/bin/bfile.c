@@ -1116,7 +1116,7 @@ R_API RBinSymbol *r_bin_file_add_method(RBinFile *bf, const char *klass, const c
 	if (!sym) {
 		sym = R_NEW0 (RBinSymbol);
 		if (sym) {
-			sym->name = strdup (method);
+			sym->name = r_bin_name_new (method);
 			sym->lang = lang;
 			char *name = r_str_newf ("%s::%s", klass, method);
 			ht_pp_insert (bf->bo->methods_ht, name, sym);

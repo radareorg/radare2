@@ -141,7 +141,7 @@ RList *r_bin_ne_get_symbols(r_bin_ne_obj_t *bin) {
 		if (!sym) {
 			break;
 		}
-		sym->name = name;
+		sym->name = r_bin_name_new_from (name);
 		if (!first) {
 			sym->bind = R_BIN_BIND_GLOBAL_STR;
 		}
@@ -166,7 +166,7 @@ RList *r_bin_ne_get_symbols(r_bin_ne_obj_t *bin) {
 			if (!sym) {
 				break;
 			}
-			sym->name = r_str_newf ("entry%d", i - 1);
+			sym->name = r_bin_name_new_from (r_str_newf ("entry%d", i - 1));
 			sym->paddr = en->paddr;
 			sym->bind = R_BIN_BIND_GLOBAL_STR;
 			sym->ordinal = i;
@@ -341,7 +341,7 @@ RList *r_bin_ne_get_imports(r_bin_ne_obj_t *bin) {
 		}
 		r_buf_read_at (bin->buf, off, (ut8 *)name, sz);
 		name[sz] = '\0';
-		imp->name = name;
+		imp->name = r_bin_name_new_from (name);
 		imp->ordinal = i + 1;
 		r_list_append (imports, imp);
 		off += sz;
@@ -523,12 +523,12 @@ RList *r_bin_ne_get_relocs(r_bin_ne_obj_t *bin) {
 				if (rel.flags & IMPORTED_ORD) {
 					imp->ordinal = rel.func_ord;
 					char *fname = __func_name_from_ord (name, rel.func_ord);
-					imp->name = r_str_newf ("%s.%s", name, fname);
+					imp->name = r_bin_name_new_from (r_str_newf ("%s.%s", name, fname));
 					free (fname);
 				} else {
 					offset = bin->header_offset + bin->ne_header->ImportNameTable + rel.name_off;
 					char *func = __read_nonnull_str_at (bin->buf, offset);
-					imp->name = r_str_newf ("%s.%s", name, func);
+					imp->name = r_bin_name_new_from (r_str_newf ("%s.%s", name, func));
 					free (func);
 				}
 				free (name);

@@ -1155,7 +1155,7 @@ static bool extract_sections_symbols(pyc_object *obj, RList *sections, RList *sy
 		goto fail;
 	}
 	// start building symbol
-	symbol->name = strdup (prefix);
+	symbol->name = r_bin_name_new (prefix);
 	//symbol->bind;
 	symbol->type = R_BIN_TYPE_FUNC_STR;
 	symbol->size = cobj->end_offset - cobj->start_offset;

@@ -253,7 +253,7 @@ static mach0_ut va2pa(mach0_ut p, ut32 *offset, ut32 *left, RBinFile *bf) {
 
 static inline void copy_sym_name_with_namespace(RBinSymbol *sym, const char *class_name, char *read_name) {
 	sym->classname = strdup (class_name? class_name: "");
-	sym->name = strdup (read_name);
+	sym->name = r_bin_name_new (read_name);
 }
 
 static int sort_by_offset(const void *_a , const void *_b) {
@@ -1609,9 +1609,11 @@ static void parse_type(RList *list, RBinFile *bf, SwiftType st, HtUP *symbols_ht
 			RBinSymbol *sym;
 			char *method_name;
 			if (symbols_ht && (sym = ht_up_find (symbols_ht, method_addr, NULL))) {
-				method_name = r_name_filter_dup (sym->name);
+				method_name = r_name_filter_dup (r_bin_name_tostring (sym->name));
+				r_bin_name_filtered (sym->name, method_name);
 				char *dname = r_bin_demangle_swift (method_name, 0, false);
 				if (dname) {
+					r_bin_name_demangled (sym->name, dname);
 					free (method_name);
 					method_name = dname;
 				}

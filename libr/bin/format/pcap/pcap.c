@@ -303,8 +303,8 @@ static void pcaprec_tcp_sym_add(RList *list, pcaprec_t* rec, ut64 paddr, int siz
 		return;
 	}
 	int datasz = size - ((tcp->hdr_len & 0xF0) >> 2);
-	ptr->name = r_str_newf ("0x%"PFMT64x": Transmission Control Protocol, Src Port: %d, Dst"
-		" port: %d, Len: %d", paddr, tcp->src_port, tcp->dst_port, datasz);
+	ptr->name = r_bin_name_new_from (r_str_newf ("0x%"PFMT64x": Transmission Control Protocol, Src Port: %d, Dst"
+		" port: %d, Len: %d", paddr, tcp->src_port, tcp->dst_port, datasz));
 	ptr->paddr = ptr->vaddr = paddr;
 	r_list_append (list, ptr);
 }
@@ -315,12 +315,12 @@ static void pcaprec_ipv4_sym_add(RList *list, pcaprec_t* rec, ut64 paddr) {
 		return;
 	}
 	pcaprec_ipv4_t *ipv4 = rec->net.ipv4_hdr;
-	ptr->name = r_str_newf ("0x%"PFMT64x": IPV%d, Src: %d.%d.%d.%d, Dst: %d.%d.%d.%d",
+	ptr->name = r_bin_name_new_from (r_str_newf ("0x%"PFMT64x": IPV%d, Src: %d.%d.%d.%d, Dst: %d.%d.%d.%d",
 		paddr, (ipv4->ver_len >> 4) & 0x0F,
 	(ipv4->src >> 24) & 0xFF, (ipv4->src >> 16) & 0xFF,
 	(ipv4->src >> 8) & 0xFF, ipv4->src & 0xFF,
 	(ipv4->dst >> 24) & 0xFF, (ipv4->dst >> 16) & 0xFF,
-	(ipv4->dst >> 8) & 0xFF, ipv4->dst & 0xFF);
+	(ipv4->dst >> 8) & 0xFF, ipv4->dst & 0xFF));
 	ptr->paddr = ptr->vaddr = paddr;
 	r_list_append (list, ptr);
 
@@ -349,7 +349,7 @@ static void pcaprec_ipv6_sym_add(RList *list, pcaprec_t* rec, ut64 paddr) {
 	pcaprec_ipv6_t *ipv6 = rec->net.ipv6_hdr;
 	const char *src = ipv6_addr_string (ipv6->src);
 	const char *dst = ipv6_addr_string (ipv6->dst);
-	ptr->name = r_str_newf ("0x%"PFMT64x": IPV6, Src: %s, Dst: %s", paddr, src, dst);
+	ptr->name = r_bin_name_new_from (r_str_newf ("0x%"PFMT64x": IPV6, Src: %s, Dst: %s", paddr, src, dst));
 	ptr->paddr = ptr->vaddr = paddr;
 	r_list_append (list, ptr);
 	free ((char *)src);
@@ -378,11 +378,11 @@ void pcaprec_ether_sym_add(RList *list, pcaprec_t *rec, ut64 paddr) {
 	if (!ether) {
 		return;
 	}
-	ptr->name = r_str_newf ("0x%"PFMT64x": Ethernet, Src: %02"PFMT32x ":%02"PFMT32x ":%02"PFMT32x
+	ptr->name = r_bin_name_new_from (r_str_newf ("0x%"PFMT64x": Ethernet, Src: %02"PFMT32x ":%02"PFMT32x ":%02"PFMT32x
 		":%02"PFMT32x ":%02"PFMT32x ":%02"PFMT32x ", Dst: %02"PFMT32x
 		":%02"PFMT32x ":%02"PFMT32x ":%02"PFMT32x ":%02"PFMT32x ":%02"PFMT32x,
 		paddr, ether->src[0], ether->src[1], ether->src[2], ether->src[3], ether->src[4], ether->src[5],
-		ether->dst[0], ether->dst[1], ether->dst[2], ether->dst[3], ether->dst[4], ether->dst[5]);
+		ether->dst[0], ether->dst[1], ether->dst[2], ether->dst[3], ether->dst[4], ether->dst[5]));
 	ptr->paddr = ptr->vaddr = paddr;
 	r_list_append (list, ptr);
 

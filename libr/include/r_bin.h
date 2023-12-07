@@ -880,6 +880,7 @@ R_API const char *r_bin_lang_tostring(int type);
 R_API RList *r_bin_get_mem(RBin *bin);
 
 R_API RBinName *r_bin_name_new(const char *name);
+R_API RBinName *r_bin_name_new_from(R_OWN char *name);
 R_API RBinName *r_bin_name_clone(RBinName *bn);
 R_API void r_bin_name_update(RBinName *bn, const char *name);
 R_API char *r_bin_name_tostring(RBinName *bn);

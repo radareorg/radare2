@@ -153,18 +153,18 @@ static void addString(const ut8 *buf, ut64 offset, ut64 length, ParseStruct *par
 }
 
 static void addSymbol(RList *list, char *name, ut64 addr, ut32 size, const char *type) {
-	RBinSymbol *binSymbol = R_NEW0 (RBinSymbol);
-	if (binSymbol) {
-		binSymbol->name = strdup (name);
-		if (!binSymbol->name) {
-			free (binSymbol);
+	RBinSymbol *sym = R_NEW0 (RBinSymbol);
+	if (sym) {
+		sym->name = r_bin_name_new (name);
+		if (!sym->name) {
+			free (sym);
 			return;
 		}
-		binSymbol->vaddr = binSymbol->paddr = addr;
-		binSymbol->size = size;
-		binSymbol->ordinal = 0;
-		binSymbol->type = type;
-		r_list_append (list, binSymbol);
+		sym->vaddr = sym->paddr = addr;
+		sym->size = size;
+		sym->ordinal = 0;
+		sym->type = type;
+		r_list_append (list, sym);
 	}
 }
 

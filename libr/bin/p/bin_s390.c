@@ -132,7 +132,7 @@ static void add_symbol(RList *ret, char *name, ut64 addr) {
 	if (!ptr) {
 		return;
 	}
-	ptr->name = name;
+	ptr->name = r_bin_name_new_from (name);
 	ptr->paddr = ptr->vaddr = addr;
 	ptr->size = 0;
 	ptr->ordinal = 0;
@@ -155,7 +155,8 @@ static RList *symbols(RBinFile *bf) {
 	}
 	r_list_free (sections (bf));
 	r_list_foreach (su->symbols, iter, sym) {
-		add_symbol (ret, r_str_trim_dup (sym->name), sym->vaddr + su->text0 + S390_BADDR);
+		char *name = r_str_trim_dup (r_bin_name_tostring (sym->name));
+		add_symbol (ret, name, sym->vaddr + su->text0 + S390_BADDR);
 	}
 	return ret;
 }

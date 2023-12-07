@@ -494,7 +494,8 @@ static RList* symbols(RBinFile *bf) {
 		if (!ptr->name) {
 			ptr->name = calloc(1, R_BIN_SIZEOF_STRINGS);
 		}
-		strncpy (ptr->name, _symbols[i].symbol_name, R_BIN_SIZEOF_STRINGS);
+		char *name = r_str_ndup (_symbols[i].symbol_name, R_BIN_SIZEOF_STRINGS);
+		ptr->name = r_bin_name_new_from (name);
 		ptr->vaddr = _symbols[i].address;
 		ptr->size = 2;
 		ptr->paddr = vsf_obj->mem + offset + _symbols[i].address;

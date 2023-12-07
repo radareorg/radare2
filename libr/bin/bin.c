@@ -94,7 +94,7 @@ R_API RList *r_bin_dump_strings(RBinFile *bf, int min, int raw) {
 }
 
 R_API void r_bin_file_options_init(RBinFileOptions *opt, int fd, ut64 baseaddr, ut64 loadaddr, int rawstr) {
-	r_return_if_fail (opt);
+	R_RETURN_IF_FAIL (opt);
 	memset (opt, 0, sizeof (*opt));
 	opt->baseaddr = baseaddr;
 	opt->loadaddr = loadaddr;
@@ -103,7 +103,7 @@ R_API void r_bin_file_options_init(RBinFileOptions *opt, int fd, ut64 baseaddr, 
 }
 
 R_API void r_bin_arch_options_init(RBinArchOptions *opt, R_NULLABLE const char *arch, int bits) {
-	r_return_if_fail (opt);
+	R_RETURN_IF_FAIL (opt);
 	opt->arch = arch? arch: R_SYS_ARCH;
 	opt->bits = bits? bits: R_SYS_BITS;
 }
@@ -680,7 +680,7 @@ R_API ut64 r_bin_get_laddr(RBin *bin) {
 
 // TODO: should be RBinFile specific imho
 R_API void r_bin_set_baddr(RBin *bin, ut64 baddr) {
-	r_return_if_fail (bin);
+	R_RETURN_IF_FAIL (bin);
 	RBinFile *bf = r_bin_cur (bin);
 	RBinObject *o = r_bin_cur_object (bin);
 	if (o) {
@@ -1046,7 +1046,7 @@ static char *get_arch_string(const char *arch, int bits, RBinInfo *info) {
 }
 
 R_API void r_bin_list_archs(RBin *bin, PJ *pj, int mode) {
-	r_return_if_fail (bin);
+	R_RETURN_IF_FAIL (bin);
 
 	char unk[128];
 	char archline[256];
@@ -1350,7 +1350,7 @@ R_API RBinObject *r_bin_cur_object(RBin *bin) {
 }
 
 R_API void r_bin_force_plugin(RBin *bin, const char *name) {
-	r_return_if_fail (bin);
+	R_RETURN_IF_FAIL (bin);
 	free (bin->force);
 	bin->force = (name && *name) ? strdup (name) : NULL;
 }
@@ -1478,6 +1478,15 @@ R_API const char *r_bin_field_kindstr(RBinField *f) {
 	}
 }
 
+R_API RBinName *r_bin_name_new_from(R_OWN char *name) {
+	R_RETURN_VAL_IF_FAIL (name, NULL);
+	RBinName *bn = R_NEW0 (RBinName);
+	if (R_LIKELY (bn)) {
+		bn->oname = name;
+	}
+	return bn;
+}
+
 R_API RBinName *r_bin_name_new(const char *name) {
 	R_RETURN_VAL_IF_FAIL (name, NULL);
 	RBinName *bn = R_NEW0 (RBinName);
@@ -1488,7 +1497,7 @@ R_API RBinName *r_bin_name_new(const char *name) {
 }
 
 R_API void r_bin_name_update(RBinName *bn, const char *name) {
-	r_return_if_fail (bn && name);
+	R_RETURN_IF_FAIL (bn && name);
 	free (bn->oname);
 	bn->oname = strdup (name);
 }
@@ -1508,13 +1517,13 @@ R_API RBinName *r_bin_name_clone(RBinName *bn) {
 }
 
 R_API void r_bin_name_filtered(RBinName *bn, const char *fname) {
-	r_return_if_fail (bn && fname);
+	R_RETURN_IF_FAIL (bn && fname);
 	free (bn->fname);
 	bn->fname = strdup (fname);
 }
 
 R_API void r_bin_name_demangled(RBinName *bn, const char *dname) {
-	r_return_if_fail (bn && dname);
+	R_RETURN_IF_FAIL (bn && dname);
 	if (bn->name && !bn->oname) {
 		bn->oname = bn->name;
 	} else {
