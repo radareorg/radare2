@@ -180,6 +180,12 @@ else
 fi
 
 if [ "$NEED_CAPSTONE" = 1 ]; then
+	if [ ! -d shlr/capstone/.git -a ! -d .git ]; then
+		NEED_CAPSTONE=0
+	fi
+fi
+
+if [ "$NEED_CAPSTONE" = 1 ]; then
 	if [ -d shlr/capstone ]; then
 		${MAKE} -C shlr headsup 2> /dev/null || rm -rf shlr/capstone
 	fi
