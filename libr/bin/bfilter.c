@@ -71,8 +71,7 @@ R_API void r_bin_filter_sym(RBinFile *bf, HtPP *ht, ut64 vaddr, RBinSymbol *sym)
 	const char *name = r_bin_name_tostring (sym->name);
 	if (bf && bf->bo && bf->bo->lang) {
 		const char *lang = r_bin_lang_tostring (bf->bo->lang);
-		const char *oname = r_bin_name_tostring (sym->name);
-		char *dn = r_bin_demangle (bf, lang, oname, sym->vaddr, false);
+		char *dn = r_bin_demangle (bf, lang, name, sym->vaddr, false);
 		if (R_STR_ISNOTEMPTY (dn)) {
 			r_bin_name_demangled (sym->name, dn);
 			// extract class information from demangled symbol name
