@@ -201,10 +201,9 @@ R_API ut64 r_str_bits_from_string(const char *buf, const char *bitz) {
 	return out;
 }
 
-R_API char *r_str_binstr2str(const char *str) {
+R_API char *r_str_binstr2str(const ut8* str, size_t len) {
 	RStrBuf *buf = r_strbuf_new (NULL);
-	int i, j, k, ret, len;
-	len = strlen (str);
+	int i, j, k, ret;
 
 	for (i = 0; i < len; i += 8) {
 		ret = 0;
@@ -229,10 +228,9 @@ R_API char *r_str_binstr2str(const char *str) {
 	return r_strbuf_drain (buf);
 }
 
-R_API char *r_str_str2binstr(const char *str) {
+R_API char *r_str_str2binstr(const ut8* str, size_t len) {
 	RStrBuf *buf = r_strbuf_new (NULL);
 	int i = 0;
-	int len = strlen (str);
 
 	for (i = 0; i < len; i++) {
 		ut8 ch = str[i];
