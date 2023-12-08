@@ -1433,7 +1433,10 @@ static bool bin_entry(RCore *r, PJ *pj, int mode, ut64 laddr, int va, bool inifi
 	ut64 baddr = r_bin_get_baddr (r->bin);
 
 	if (IS_MODE_RAD (mode)) {
-		r_cons_printf ("fs symbols\n");
+		if (r_list_empty (entries)) {
+			return true;
+		}
+		r_cons_printf ("fs+symbols\n");
 	} else if (IS_MODE_JSON (mode)) {
 		pj_a (pj);
 	} else if (IS_MODE_NORMAL (mode)) {
@@ -1552,6 +1555,8 @@ static bool bin_entry(RCore *r, PJ *pj, int mode, ut64 laddr, int va, bool inifi
 			ut64 at = rva (r->bin, entry->paddr, entry->vaddr, va);
 			r_core_seek (r, at, false);
 		}
+	} else if (IS_MODE_RAD (mode)) {
+		r_cons_printf ("fs-\n");
 	} else if (IS_MODE_JSON (mode)) {
 		pj_end (pj);
 	} else if (IS_MODE_NORMAL (mode)) {
@@ -3986,6 +3991,7 @@ static bool bin_classes(RCore *r, PJ *pj, int mode) {
 				r_list_foreach (c->methods, iter2, sym) {
 					pj_o (pj);
 					pj_ks (pj, "name", sym->name);
+					// eprintf ("%s /// %s\n", sym->name, sym->dname);
 					RFlagItem *fi = r_flag_get_at (r->flags, sym->vaddr, false);
 					if (fi) {
 						pj_ks (pj, "flag", fi->realname? fi->realname: fi->name);

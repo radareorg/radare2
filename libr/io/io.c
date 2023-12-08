@@ -462,8 +462,7 @@ R_API ut64 r_io_v2p(RIO *io, ut64 va) {
 	r_return_val_if_fail (io, 0);
 	RIOMap *map = r_io_map_get_at (io, va);
 	if (map) {
-		st64 delta = va - r_io_map_begin (map);
-		return r_io_map_begin (map) + map->delta + delta;
+		return va - r_io_map_begin (map) + map->delta;
 	}
 	return UT64_MAX;
 }

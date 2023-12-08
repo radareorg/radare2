@@ -5,7 +5,7 @@
 #include "../bin/format/pdb/pdb_downloader.h"
 
 static RCoreHelpMessage help_msg_ih = {
-	"Usage: ih", "[hjq]", "Display header information",
+	"Usage: ih", "[*hjq]", "Display header information",
 	"ih", "", "normal output to display binary headers",
 	"ih*", "", "same as above, but in r2 commands",
 	"ihj", "", "in json format",
@@ -13,32 +13,32 @@ static RCoreHelpMessage help_msg_ih = {
 	NULL
 };
 
-static RCoreHelpMessage help_msg_i = {
-	"Usage: i", "", "Get info from opened file (see rabin2's manpage)",
-	"Output mode:", "", "",
-	"'*'", "", "output in radare commands",
-	"'j'", "", "output in json",
-	"'q'", "", "simple quiet output",
-	"Actions:", "", "",
-	"i|ij", "", "show info of current file (in JSON)",
-	"iA", "", "list archs",
-	"ia", "", "show all info (imports, exports, sections..)",
-	"ib", "", "reload the current buffer for setting of the bin (use once only)",
+static RCoreHelpMessage help_msg_ic = {
+	"Usage: ic", "[.-+clgjsq][jq]", "Display class information",
 	"ic", "", "List classes, methods and fields (icj for json)",
 	"ic.", "", "show class and method name in current seek",
 	"ic-", "[klass.method]", "delete given klass or klass.name",
 	"ic+", "[klass.method]", "add new symbol in current seek for a given klass and method name",
 	"icc", " [lang]", "List classes, methods and fields in Header Format (see bin.lang=swift,java,objc,cxx)",
-	"icg", " [str]", "List classes as agn/age commands to create class hierarchy graphs (matches str if provided)",
+	"icg", " [str]", "List classes hirearchy graph with agn/age (match str if provided)",
 	"icq", "", "List classes, in quiet mode (just the classname)",
 	"icqq", "", "List classes, in quieter mode (only show non-system classnames)",
 	"icl", "", "Show addresses of class and it methods, without names",
 	"ics", "", "Show class symbols in an easy to parse format",
+	NULL
+};
+
+static RCoreHelpMessage help_msg_i = {
+	"Usage: i", "", "Get info from opened file (see rabin2's manpage)",
+	"i", "[*jq]", "show info of current file (in JSON)",
+	"iA", "", "list archs",
+	"ia", "", "show all info (imports, exports, sections..)",
+	"ib", "", "reload the current buffer for setting of the bin (use once only)",
+	"ic", "[?]", "List classes, methods and fields (icj for json)",
 	"iC", "[j]", "show signature info (entitlements, ...)",
 	"id", "[?]", "show DWARF source lines information",
 	"iD", " lang sym", "demangle symbolname for given language",
-	"ie", "", "entrypoint",
-	"iee", "", "show Entry and Exit (preinit, init and fini)",
+	"ie", "[?]e[e]", "entrypoint (iee to list constructors and destructors, ieee = entries+constructors)",
 	"iE", "", "exports (global symbols)",
 	"iE,", "[table-query]", "exported symbols using the table query",
 	"iE.", "", "current export",
@@ -92,11 +92,11 @@ static RCoreHelpMessage help_msg_id = {
 #define PAIR_WIDTH 9
 // TODO: reuse implementation in core/bin.c
 static void pair(const char *a, const char *b) {
-	char ws[16];
-	int al = strlen (a);
 	if (!b) {
 		return;
 	}
+	char ws[16];
+	int al = strlen (a);
 	memset (ws, ' ', sizeof (ws));
 	al = PAIR_WIDTH - al;
 	if (al < 0) {
@@ -777,13 +777,13 @@ static void cmd_ic(RCore *core, const char *input, PJ *pj, int is_array, bool va
 		mode = 0;
 		break;
 	}
-	bool is_superquiet = strstr (input, "qq");
-	bool is_doublerad = strstr (input, "**");
+	const bool is_superquiet = strstr (input, "qq");
+	const bool is_doublerad = strstr (input, "**");
 	///
 	switch (cmd) {
 	// help message
 	case '?': // "ic?"
-		r_core_cmd_help_contains (core, help_msg_i, "ic");
+		r_core_cmd_help (core, help_msg_ic);
 		break;
 	case '-': // "ic-"
 		cmd_ic_sub (core, input);
@@ -982,8 +982,7 @@ static void cmd_ic(RCore *core, const char *input, PJ *pj, int is_array, bool va
 						case 'l': // "icl"
 							r_list_foreach (cls->methods, iter2, sym) {
 								const char *comma = iter2->p? " ": "";
-								r_cons_printf ("%s0x%"PFMT64x, comma,
-										iova? sym->vaddr: sym->paddr);
+								r_cons_printf ("%s0x%"PFMT64x, comma, iova? sym->vaddr: sym->paddr);
 							}
 							r_cons_newline ();
 							break;
@@ -1196,6 +1195,34 @@ static int cmd_info(void *data, const char *input) {
 			// TODO: Might be nice to reload a bin at a specified offset?
 			__r_core_bin_reload (core, NULL, baddr);
 			r_core_block_read (core);
+		}
+		goto done;
+		break;
+	case 'e': // "ie"
+		{
+			  RList *objs = r_core_bin_files (core);
+			  RListIter *iter;
+			  RBinFile *bf;
+			  RBinFile *cur = core->bin->cur;
+			  // ie = show entries
+			  // iee = show constructors
+			  // ieee = show entries and constructors
+			  bool show_entries = r_str_startswith (input, "eee");
+			  bool show_constructors = r_str_startswith (input, "ee");
+			  if (!show_entries && !show_constructors) {
+				  show_entries = true;
+			  }
+			  r_list_foreach (objs, iter, bf) {
+				  core->bin->cur = bf;
+				  if (show_constructors) {
+					  RBININFO ("initfini", R_CORE_BIN_ACC_INITFINI, NULL, 0);
+				  }
+				  if (show_entries) {
+					  RBININFO ("entries", R_CORE_BIN_ACC_ENTRIES, NULL, 0);
+				  }
+			  }
+			  core->bin->cur = cur;
+			  r_list_free (objs);
 		}
 		goto done;
 		break;
@@ -1698,25 +1725,6 @@ static int cmd_info(void *data, const char *input) {
 				  r_list_free (objs);
 			  }
 			break;
-		case 'e': // "ie"
-			{
-				  RList *objs = r_core_bin_files (core);
-				  RListIter *iter;
-				  RBinFile *bf;
-				  RBinFile *cur = core->bin->cur;
-				  r_list_foreach (objs, iter, bf) {
-					  core->bin->cur = bf;
-					  if (input[1] == 'e') {
-						  RBININFO ("initfini", R_CORE_BIN_ACC_INITFINI, NULL, 0);
-						  input++;
-					  } else {
-						  RBININFO ("entries", R_CORE_BIN_ACC_ENTRIES, NULL, 0);
-					  }
-				  }
-				  core->bin->cur = cur;
-				  r_list_free (objs);
-			}
-			break;
 		case 'M': // "iM"
 			  {
 				  RList *objs = r_core_bin_files (core);
@@ -1761,7 +1769,7 @@ static int cmd_info(void *data, const char *input) {
 			break;
 		case 'V': // "iV"
 			  {
-				  RList *bfiles= r_core_bin_files (core);
+				  RList *bfiles = r_core_bin_files (core);
 				  RListIter *iter;
 				  RBinFile *bf;
 				  RBinFile *cur = core->bin->cur;

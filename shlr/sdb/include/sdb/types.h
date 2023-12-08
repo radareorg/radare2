@@ -42,6 +42,10 @@ extern "C" {
 #define __MINGW__ 1
 #endif
 
+#ifndef INT32_MAX
+#define INT32_MAX (0x7fffffff)
+#endif
+
 #if defined __WIN32__ || __MINGW__ > 0 || R2__WINDOWS__ || __WINDOWS__ > 0 || _MSC_VER > 0
 #define __SDB_WINDOWS__ 1
 #undef DIRSEP

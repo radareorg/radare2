@@ -43,3 +43,6 @@ LINK+=-lm
 endif
 endif
 
+ifeq (${OSTYPE},aix)
+LINK+=-pthread
+endif

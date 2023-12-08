@@ -28,6 +28,11 @@ static bool __resize(RIO* io, RIODesc* fd, ut64 count) {
 		if (null->offset >= count) {
 			null->offset = (count != 0)? count - 1: 0LL;
 		}
+		char *uri = r_str_newf ("null://%"PFMT64u, count);
+		if (uri) {
+			free (fd->uri);
+			fd->uri = uri;
+		}
 		return true;
 	}
 	return false;
@@ -87,10 +92,6 @@ static RIODesc* __open(RIO* io, const char* pathname, int rw, int mode) {
 			RIONull *null = R_NEW0 (RIONull);
 			if (null) {
 				null->size = r_num_math (NULL, pathname + 7) + 1;
-				if (null->size > ST32_MAX) {
-					R_LOG_ERROR ("Large null allocation is not valid");
-					return NULL;
-				}
 				null->offset = 0LL;
 				return r_io_desc_new (io, &r_io_plugin_null, pathname, rw & R_PERM_RWX, mode, null);
 			}

@@ -63,8 +63,8 @@ static int on_fcn_rename(RAnal *_anal, void* _user, RAnalFunction *fcn, const ch
 
 static void r_core_debug_breakpoint_hit(RCore *core, RBreakpointItem *bpi) {
 	const char *cmdbp = r_config_get (core->config, "cmd.bp");
-	const bool cmdbp_exists = (cmdbp && *cmdbp);
-	const bool bpcmd_exists = (bpi->data && bpi->data[0]);
+	const bool cmdbp_exists = R_STR_ISNOTEMPTY (cmdbp);
+	const bool bpcmd_exists = R_STR_ISNOTEMPTY (bpi->data);
 	const bool may_output = (cmdbp_exists || bpcmd_exists);
 	if (may_output) {
 		r_cons_push ();
@@ -3039,8 +3039,13 @@ static bool cbcore(void *user, int type, const char *origin, const char *msg) {
 	if (!msg) {
 		return false;
 	}
+	if (!origin) {
+		origin = "*";
+	}
 	RCore *core = (RCore*)user;
-	char *s = R_STR_ISNOTEMPTY (msg)? r_str_newf ("%s %s", origin? origin: "*", msg): strdup (origin);
+	char *s = R_STR_ISNOTEMPTY (msg)
+		? r_str_newf ("%s %s", origin, msg)
+		: strdup (origin);
 	r_core_log_add (core, s);
 	free (s);
 	return false;

@@ -1,5 +1,6 @@
 #include <r_util.h>
 #include <r_util/r_ref.h>
+#include <r_core.h>
 #include "minunit.h"
 
 static Sdb *setup_sdb(void) {
@@ -227,6 +228,18 @@ bool test_references(void) {
 	mu_end;
 }
 
+bool test_log(void) {
+	// Stand up a semi-realistic log environment with an RCore
+	RCore *core = r_core_new ();
+	r_log_set_quiet (true);
+
+	// https://github.com/radareorg/radare2/issues/22468
+	R_LOG_INFO ("%s", "");
+
+	r_core_free (core);
+	mu_end;
+}
+
 int all_tests() {
 	mu_run_test (test_ignore_prefixes);
 	mu_run_test (test_remove_r2_prefixes);
@@ -236,6 +249,7 @@ int all_tests() {
 	mu_run_test (test_file_slurp);
 	mu_run_test (test_initial_underscore);
 	mu_run_test (test_tagged_pointers);
+	mu_run_test (test_log);
 	return tests_passed != tests_run;
 }
 

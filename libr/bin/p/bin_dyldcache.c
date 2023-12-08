@@ -19,12 +19,14 @@ typedef struct {
 typedef struct _r_dyldcache {
 	cache_hdr_t *hdr;
 	ut64 *hdr_offset;
+	ut64 *hdr_overhead;
 	ut32 *maps_index;
 	ut32 n_hdr;
 	cache_map_t *maps;
 	ut32 n_maps;
 
 	RList *bins;
+	HtUP *bin_by_pa;
 	RBuffer *buf;
 	int (*original_io_read)(RIO *io, RIODesc *fd, ut8 *buf, int count);
 	cache_accel_t *accel;
@@ -104,44 +106,27 @@ static cache_img_t *read_cache_images(RBuffer *cache_buf, cache_hdr_t *hdr, ut64
 	return images;
 }
 
-static void match_bin_entries(RDyldCache *cache, void *entries) {
-	r_return_if_fail (cache && cache->bins && entries);
-
-	cache_img_t *imgs = read_cache_images (cache->buf, cache->hdr, 0);
-	if (!imgs) {
-		return;
-	}
-
-	RDyldBinImage *bin = NULL;
-	RListIter *it = r_list_iterator (cache->bins);
-
-	bool has_large_entries = cache->n_hdr > 1;
+static void match_bin_entries(RDyldCache *cache, void *entries, ut64 entries_count, bool has_large_entries) {
+	r_return_if_fail (cache && cache->bin_by_pa && entries);
 
 	ut32 i;
-	for (i = 0; i < cache->hdr->imagesCount; i++) {
-		cache_img_t *img = &imgs[i];
-		if (!it) {
-			break;
-		}
-		bin = it->data;
-		if (!bin) {
-			break;
-		}
-		if (bin && bin->va == img->address) {
-			if (has_large_entries) {
-				cache_locsym_entry_large_t *e = &((cache_locsym_entry_large_t *) entries)[i];
-				bin->nlist_start_index = e->nlistStartIndex;
-				bin->nlist_count = e->nlistCount;
-			} else {
-				cache_locsym_entry_t *e = &((cache_locsym_entry_t *) entries)[i];
+	for (i = 0; i < entries_count; i++) {
+		if (has_large_entries) {
+			cache_locsym_entry_large_t *e = &((cache_locsym_entry_large_t *) entries)[i];
+			RDyldBinImage *bin = ht_up_find (cache->bin_by_pa, e->dylibOffset, NULL);
+			if (bin) {
 				bin->nlist_start_index = e->nlistStartIndex;
 				bin->nlist_count = e->nlistCount;
 			}
-			it = it->n;
+		} else {
+			cache_locsym_entry_t *e = &((cache_locsym_entry_t *) entries)[i];
+			RDyldBinImage *bin = ht_up_find (cache->bin_by_pa, e->dylibOffset, NULL);
+			if (bin) {
+				bin->nlist_start_index = e->nlistStartIndex;
+				bin->nlist_count = e->nlistCount;
+			}
 		}
 	}
-
-	R_FREE (imgs);
 }
 
 static RDyldLocSym *r_dyld_locsym_new(RDyldCache *cache) {
@@ -163,14 +148,10 @@ static RDyldLocSym *r_dyld_locsym_new(RDyldCache *cache) {
 			goto beach;
 		}
 		if (r_buf_fread_at (cache->buf, hdr->localSymbolsOffset, (ut8*) info, "6i", 1) != info_size) {
-			eprintf ("locsym err 01\n");
+			R_LOG_ERROR ("incomplete local symbol info");
 			goto beach;
 		}
-		if (info->entriesCount != cache->hdr->imagesCount) {
-			eprintf ("locsym err 02\n");
-			goto beach;
-		}
-
+		ut64 entries_count = info->entriesCount;
 		bool has_large_entries = cache->n_hdr > 1;
 		if (has_large_entries) {
 			ut64 entries_size = sizeof (cache_locsym_entry_large_t) * info->entriesCount;
@@ -180,7 +161,7 @@ static RDyldLocSym *r_dyld_locsym_new(RDyldCache *cache) {
 			}
 			if (r_buf_fread_at (cache->buf, hdr->localSymbolsOffset + info->entriesOffset, (ut8*) large_entries, "lii",
 					info->entriesCount) != entries_size) {
-				eprintf ("locsym err 03\n");
+				R_LOG_ERROR ("incomplete local symbol (large) entries");
 				goto beach;
 			}
 			entries = large_entries;
@@ -192,7 +173,7 @@ static RDyldLocSym *r_dyld_locsym_new(RDyldCache *cache) {
 			}
 			if (r_buf_fread_at (cache->buf, hdr->localSymbolsOffset + info->entriesOffset, (ut8*) regular_entries, "iii",
 					info->entriesCount) != entries_size) {
-				eprintf ("locsym err 04\n");
+				R_LOG_ERROR ("incomplete local symbol entries");
 				goto beach;
 			}
 			entries = regular_entries;
@@ -202,7 +183,7 @@ static RDyldLocSym *r_dyld_locsym_new(RDyldCache *cache) {
 			goto beach;
 		}
 
-		match_bin_entries (cache, entries);
+		match_bin_entries (cache, entries, entries_count, has_large_entries);
 
 		locsym->local_symbols_offset = hdr->localSymbolsOffset;
 		locsym->nlists_offset = info->nlistOffset;
@@ -214,12 +195,11 @@ static RDyldLocSym *r_dyld_locsym_new(RDyldCache *cache) {
 		free (entries);
 
 		return locsym;
-
 beach:
 		free (info);
 		free (entries);
 
-		eprintf ("dyldcache: malformed local symbols metadata\n");
+		R_LOG_ERROR ("something went wrong parsing local symbols");
 		break;
 	}
 	return NULL;
@@ -291,6 +271,7 @@ static void r_dyldcache_free(RDyldCache *cache) {
 		return;
 	}
 
+	ht_up_free (cache->bin_by_pa);
 	r_list_free (cache->bins);
 	cache->bins = NULL;
 	r_buf_free (cache->buf);
@@ -299,6 +280,7 @@ static void r_dyldcache_free(RDyldCache *cache) {
 	R_FREE (cache->maps);
 	R_FREE (cache->maps_index);
 	R_FREE (cache->hdr_offset);
+	R_FREE (cache->hdr_overhead);
 	R_FREE (cache->accel);
 	R_FREE (cache->locsym);
 	R_FREE (cache->oi);
@@ -496,16 +478,16 @@ static void carve_deps_at_address(RDyldCache *cache, cache_img_t *img, HtSU *pat
 			size_t dep_index = (size_t)ht_su_find (path_to_idx, key, &found);
 			if (!found || dep_index >= cache->hdr->imagesCount) {
 				R_LOG_WARN ("alien dep '%s'", key);
-				continue;
+				goto nextcmd;
 			}
 			deps[dep_index]++;
 			if (printing) {
 				eprintf ("-> %s\n", key);
 			}
 		}
+nextcmd:
 		cursor += cmdsize;
 	}
-
 beach:
 	free (cmds);
 }
@@ -566,29 +548,34 @@ static ut64 resolve_symbols_off(RDyldCache *cache, ut64 pa) {
 	return 0;
 }
 
-static RList *create_cache_bins(RBinFile *bf, RDyldCache *cache) {
+static void create_cache_bins(RBinFile *bf, RDyldCache *cache) {
 	RList *bins = r_list_newf ((RListFree)free_bin);
 	ut16 *depArray = NULL;
-	cache_imgxtr_t *extras = NULL;
-	if (!bins) {
-		return NULL;
-	}
-
+	int *deps = NULL;
 	char *target_libs = NULL;
 	RList *target_lib_names = NULL;
-	int *deps = NULL;
+
+	cache_imgxtr_t *extras = NULL;
+	if (!bins) {
+		return;
+	}
+	HtUP *bin_by_pa = ht_up_new0 ();
+	if (!bin_by_pa) {
+		goto end;
+	}
+
 	target_libs = r_sys_getenv ("R_DYLDCACHE_FILTER");
 	if (target_libs) {
 		target_lib_names = r_str_split_list (target_libs, ":", 0);
 		if (!target_lib_names) {
 			r_list_free (bins);
-			return NULL;
+			return;
 		}
 		deps = R_NEWS0 (int, cache->hdr->imagesCount);
 		if (!deps) {
 			r_list_free (bins);
 			r_list_free (target_lib_names);
-			return NULL;
+			return;
 		}
 	} else {
 		eprintf ("bin.dyldcache: Use R_DYLDCACHE_FILTER to specify a colon ':' separated\n");
@@ -599,6 +586,7 @@ static RList *create_cache_bins(RBinFile *bf, RDyldCache *cache) {
 	for (i = 0; i < cache->n_hdr; i++) {
 		cache_hdr_t *hdr = &cache->hdr[i];
 		ut64 hdr_offset = cache->hdr_offset[i];
+		ut64 hdr_overhead = cache->hdr_overhead[i];
 		ut32 maps_index = cache->maps_index[i];
 		cache_img_t *img = read_cache_images (cache->buf, hdr, hdr_offset);
 		if (!img) {
@@ -684,6 +672,11 @@ static RList *create_cache_bins(RBinFile *bf, RDyldCache *cache) {
 			if (pa == UT64_MAX) {
 				continue;
 			}
+			bool already_loaded = false;
+			ht_up_find (bin_by_pa, pa - hdr_overhead, &already_loaded);
+			if (already_loaded) {
+				continue;
+			}
 			ut8 magicbytes[4];
 			r_buf_read_at (cache->buf, pa, magicbytes, 4);
 			int magic = r_read_le32 (magicbytes);
@@ -721,6 +714,7 @@ static RList *create_cache_bins(RBinFile *bf, RDyldCache *cache) {
 					}
 				}
 				r_list_append (bins, bin);
+				ht_up_insert (bin_by_pa, pa - hdr_overhead, bin);
 				break;
 			}
 			default:
@@ -735,14 +729,19 @@ next:
 		R_FREE (extras);
 		R_FREE (img);
 	}
+end:
 	if (r_list_empty (bins)) {
 		r_list_free (bins);
 		bins = NULL;
+		ht_up_free (bin_by_pa);
+		bin_by_pa = NULL;
 	}
 	R_FREE (deps);
 	R_FREE (target_libs);
 	r_list_free (target_lib_names);
-	return bins;
+
+	cache->bins = bins;
+	cache->bin_by_pa = bin_by_pa;
 }
 
 static cache_hdr_t *read_cache_header(RBuffer *cache_buf, ut64 offset) {
@@ -781,10 +780,12 @@ static void populate_cache_headers(RDyldCache *cache) {
 
 	cache_hdr_t *h;
 	ut64 offsets[MAX_N_HDR];
-	ut64 offset = 0;
+	ut64 overheads[MAX_N_HDR];
+	ut64 offset = 0, overhead = 0;
 	ut64 buf_size = r_buf_size (cache->buf);
 	do {
 		offsets[cache->n_hdr] = offset;
+		overheads[cache->n_hdr] = overhead;
 		h = read_cache_header (cache->buf, offset);
 		if (!h) {
 			break;
@@ -811,27 +812,31 @@ static void populate_cache_headers(RDyldCache *cache) {
 		SHIFT_MAYBE (h->imagesTextOffset);
 
 		offset += size;
+		overhead += h->codeSignatureSize;
 		cache->n_hdr++;
 	} while (cache->n_hdr < MAX_N_HDR);
 
 	if (!cache->n_hdr) {
-		goto beach;
+		goto error;
 	}
 
 	cache->hdr = R_NEWS0 (cache_hdr_t, cache->n_hdr);
 	if (!cache->hdr) {
-		cache->n_hdr = 0;
-		goto beach;
+		goto error;
 	}
 
 	cache->hdr_offset = R_NEWS0 (ut64, cache->n_hdr);
 	if (!cache->hdr_offset) {
-		cache->n_hdr = 0;
-		R_FREE (cache->hdr);
-		goto beach;
+		goto error;
+	}
+
+	cache->hdr_overhead = R_NEWS0 (ut64, cache->n_hdr);
+	if (!cache->hdr_overhead) {
+		goto error;
 	}
 
 	memcpy (cache->hdr_offset, offsets, cache->n_hdr * sizeof (ut64));
+	memcpy (cache->hdr_overhead, overheads, cache->n_hdr * sizeof (ut64));
 
 	ut32 i = 0;
 	RListIter *iter;
@@ -845,6 +850,15 @@ static void populate_cache_headers(RDyldCache *cache) {
 
 beach:
 	r_list_free (hdrs);
+	return;
+
+error:
+	cache->n_hdr = 0;
+	R_FREE (cache->hdr);
+	R_FREE (cache->hdr_offset);
+
+	goto beach;
+
 }
 
 static void populate_cache_maps(RDyldCache *cache) {
@@ -1093,7 +1107,7 @@ static bool load(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
 		return false;
 	}
 	cache->accel = read_cache_accel (cache->buf, cache->hdr, cache->maps, cache->n_maps);
-	cache->bins = create_cache_bins (bf, cache);
+	create_cache_bins (bf, cache);
 	if (!cache->bins) {
 		r_dyldcache_free (cache);
 		return false;

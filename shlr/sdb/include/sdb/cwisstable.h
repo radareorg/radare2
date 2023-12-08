@@ -351,6 +351,24 @@
 #include <sanitizer/msan_interface.h>
 #endif
 
+/// Maximally careful endianness detection.
+/// Assume LITTLE_ENDIAN by default.
+#if defined(_AIX)
+# define CWISS_IS_BIG_ENDIAN 1
+#elif defined(__has_include)
+# if __has_include(<endian.h>)
+#   include <endian.h>
+#   if defined(__BYTE_ORDER) && (__BYTE_ORDER == __BIG_ENDIAN)
+#     define CWISS_IS_BIG_ENDIAN 1
+#   endif
+# endif
+#else
+# warning "Cannot detect endianness; assuming little-endian."
+#endif
+#ifndef CWISS_IS_BIG_ENDIAN
+# define CWISS_IS_BIG_ENDIAN 0
+#endif
+
 CWISS_BEGIN
 CWISS_BEGIN_EXTERN
 /// Informs a sanitizer runtime that this memory is invalid.
@@ -852,10 +870,12 @@ typedef uint64_t CWISS_Group;
 #define CWISS_Group_kWidth ((size_t)8)
 #define CWISS_Group_kShift 3
 
-// NOTE: Endian-hostile.
 static inline CWISS_Group CWISS_Group_new(const CWISS_ControlByte* pos) {
 	CWISS_Group val;
 	memcpy(&val, pos, sizeof(val));
+#if CWISS_IS_BIG_ENDIAN
+	val = __builtin_bswap64(val);
+#endif
 	return val;
 }
 

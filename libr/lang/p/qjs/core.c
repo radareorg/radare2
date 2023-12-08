@@ -61,6 +61,9 @@
 static int r_cmd_qjs_call(void *c, const char *input) {
 	RCore *core = c;
 	QjsPluginManager *pm = R_UNWRAP4 (core, lang, session, plugin_data);
+	if (pm == NULL) {
+		return false;
+	}
 
 	// Iterate over plugins until one returns "true" (meaning the plugin handled the input)
 	QjsCorePlugin *plugin;

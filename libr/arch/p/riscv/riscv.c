@@ -33,7 +33,7 @@ const char * const * const riscv_fpr_names = riscv_fpr_names_abi;
 
 static void arg_p(char *buf, unsigned long val, const char* const* array, size_t size) {
 	const char *s = (val >= size || array[val]) ? array[val] : "unknown";
-	sprintf (buf+strlen (buf), "%s", s);
+	sprintf (buf + strlen (buf), "%s", s);
 }
 
 /* Print insn arguments for 32/64-bit code.  */
@@ -43,7 +43,7 @@ static void get_insn_args(char *buf, const char *d, insn_t l, uint64_t pc) {
 	uint64_t target;
 
 	if (*d != '\0') {
-		sprintf (buf+strlen (buf), " ");
+		sprintf (buf + strlen (buf), " ");
 	}
 
 	for (; *d != '\0'; d++) {

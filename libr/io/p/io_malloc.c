@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2008-2022 - pancake */
+/* radare - LGPL - Copyright 2008-2023 - pancake, condret */
 
 #include <r_io.h>
 #include <r_lib.h>
@@ -75,6 +75,56 @@ static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 	return NULL;
 }
 
+static int __write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
+	const int ret = io_memory_write (io, fd, buf, count);
+	if (ret == -1 || !r_str_startswith (fd->uri, "hex://")) {
+		return ret;
+	}
+	RIOMalloc *mal = (RIOMalloc *)fd->data;
+	char *hex = r_hex_bin2strdup (mal->buf, mal->size);
+	if (!hex) {
+		return ret;
+	}
+	char *uri = r_str_newf ("hex://%s", hex);
+	free (hex);
+	if (uri) {
+		free (fd->uri);
+		fd->uri = uri;
+	}
+	return ret;
+}
+
+static bool __resize(RIO *io, RIODesc *fd, ut64 count) {
+	if (!io_memory_resize (io, fd, count)) {
+		return false;
+	}
+	if (!fd->uri) {
+		return true;
+	}
+	if (r_str_startswith (fd->uri, "malloc://")) {
+		char *uri = r_str_newf ("malloc://%"PFMT64u, count);
+		if (uri) {
+			free (fd->uri);
+			fd->uri = uri;
+		}
+		return true;
+	}
+	if (r_str_startswith (fd->uri, "hex://")) {
+		RIOMalloc *mal = (RIOMalloc *)fd->data;
+		char *hex = r_hex_bin2strdup (mal->buf, mal->size);
+		if (!hex) {
+			return true;
+		}
+		char *uri = r_str_newf ("hex://%s", hex);
+		free (hex);
+		if (uri) {
+			free (fd->uri);
+			fd->uri = uri;
+		}
+	}
+	return true;
+}
+
 RIOPlugin r_io_plugin_malloc = {
 	.meta = {
 		.name = "malloc",
@@ -87,8 +137,8 @@ RIOPlugin r_io_plugin_malloc = {
 	.read = io_memory_read,
 	.check = __check,
 	.seek = io_memory_lseek,
-	.write = io_memory_write,
-	.resize = io_memory_resize,
+	.write = __write,
+	.resize = __resize,
 };
 
 #ifndef R2_PLUGIN_INCORE

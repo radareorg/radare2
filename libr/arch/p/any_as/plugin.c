@@ -3,7 +3,7 @@
 #include <r_arch.h>
 #include "binutils_as.c"
 
-static const char *mycpu(RArchSession *s) {
+static const char *_mycpu(RArchSession *s) {
 	const char *cpu = s->config->cpu;
 	return cpu? cpu: R_SYS_ARCH;
 }
@@ -17,7 +17,7 @@ static bool as_encode(RArchSession *s, RAnalOp *op, RArchEncodeMask mask) {
 		// TODO: find in PATH
 		gas = strdup ("as");
 	}
-	const char *cpu = mycpu (s);
+	const char *cpu = _mycpu (s);
 	if (!strcmp (cpu, "ppc")) {
 		char cmd_opt[4096];
 		snprintf (cmd_opt, sizeof (cmd_opt), "-mregnames -a%d %s", s->config->bits,

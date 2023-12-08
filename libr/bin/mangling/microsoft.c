@@ -56,7 +56,7 @@ typedef enum ETCState { // TC - type code
 	eTCStateX,
 	eTCStateZ,
 	eTCState_,
-	eTCState$,
+	eTCStateDollar,
 	eTCStateMax
 } ETCState;
 
@@ -120,7 +120,7 @@ DECL_STATE_ACTION(W)
 DECL_STATE_ACTION(X)
 DECL_STATE_ACTION(Z)
 DECL_STATE_ACTION(_)
-DECL_STATE_ACTION($)
+DECL_STATE_ACTION(Dollar)
 #undef DECL_STATE_ACTION
 
 #define NAME(action) tc_state_##action
@@ -152,7 +152,7 @@ static state_func const state_table[eTCStateMax] = {
 	NAME(X),
 	NAME(Z),
 	NAME(_),
-	NAME($),
+	NAME(Dollar),
 };
 #undef NAME
 ///////////////////////////////////////////////////////////////////////////////
@@ -813,7 +813,7 @@ get_namespace_and_name_err:
 	return read_len;
 }
 
-#define SINGLEQUOTED_$ '$'
+#define SINGLEQUOTED_Dollar '$'
 #define SINGLEQUOTED_A 'A'
 #define SINGLEQUOTED_B 'B'
 #define SINGLEQUOTED_C 'C'
@@ -1391,7 +1391,7 @@ DEF_STATE_ACTION(B) {
 	PARSE_POINTER ("& volatile");
 }
 
-DEF_STATE_ACTION($) {
+DEF_STATE_ACTION(Dollar) {
 	if (*(state->buff_for_parsing++) != '$') {
 		state->err = eTCStateMachineErrUncorrectTypeCode;
 		return;
@@ -1478,7 +1478,7 @@ static void tc_state_start(SDemangler *sd, SStateInfo *state, STypeCodeStr *type
 	ONE_LETTER_STATE (X)
 	ONE_LETTER_STATE (Z)
 	ONE_LETTER_STATE (_)
-	ONE_LETTER_STATE ($)
+	ONE_LETTER_STATE (Dollar)
 	default:
 		R_LOG_DEBUG ("Invalid TCState type '%c' (0x%02x)", ch, ch);
 		state->state = eTCStateEnd;

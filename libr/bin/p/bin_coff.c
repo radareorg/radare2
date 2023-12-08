@@ -138,6 +138,39 @@ static RBinImport *_fill_bin_import(struct r_bin_coff_obj *bin, int idx) {
 	return ptr;
 }
 
+static bool xcoff_is_imported_symbol(struct xcoff32_ldsym *s) {
+	return XCOFF_LDSYM_FLAGS (s->l_smtype) == XCOFF_LDSYM_FLAG_IMPORT;
+}
+
+static RBinImport *_xcoff_fill_bin_import(struct r_bin_coff_obj *bin, int idx) {
+	RBinImport *ptr = R_NEW0 (RBinImport);
+	if (!ptr || idx < 0 || idx > bin->x_ldhdr.l_nsyms) {
+		free (ptr);
+		return NULL;
+	}
+	struct xcoff32_ldsym *s = &bin->x_ldsyms[idx];
+	if (!xcoff_is_imported_symbol (s)) {
+		free (ptr);
+		return NULL;
+	}
+	if (strnlen (s->l_name, 8)) {
+		ptr->name = r_str_ndup (s->l_name, 8);
+	}
+	if (!ptr->name) {
+		free (ptr);
+		return NULL;
+	}
+	switch (s->l_smclas) {
+	case XCOFF_LDSYM_CLASS_FUNCTION:
+		ptr->type = R_BIN_TYPE_FUNC_STR;
+		break;
+	default:
+		ptr->type = R_BIN_TYPE_UNKNOWN_STR;
+		break;
+	}
+	return ptr;
+}
+
 static RList *entries(RBinFile *bf) {
 	struct r_bin_coff_obj *obj = (struct r_bin_coff_obj*)bf->bo->bin_obj;
 	RList *ret;
@@ -199,8 +232,29 @@ static const char *xcoff_section_type_tostring(int i) {
 		return "BSS";
 	case XCOFF_SCN_TYPE_EXCEPT:
 		return "EXCEPT";
+	case XCOFF_SCN_TYPE_LOADER:
+		return "LOADER";
 	}
 	return NULL;
+}
+
+// XXX: This should probably be generic
+static void truncate_section(RBinSection *ptr, const struct r_bin_coff_obj *obj) {
+	// The section size might exceed the binary size, which causes
+	// DoS problems via unbounded memory allocations.  Thus, truncate
+	// section size.
+	ut64 file_start = (ut64)ptr->paddr;
+	ut64 file_end = file_start + (ut64)ptr->size;
+	// file_end in [0,2^33) as both arguments in [0,2^32), thus no overflow.
+	if (R_UNLIKELY (file_start > obj->size)) {
+		R_LOG_WARN ("File range of section \"%s\" is fully out of bounds (%#" PRIx64 "..%#" PRIx64 "), but file size is %#" PRIx64 ")",
+			    ptr->name, file_start, file_end);
+		ptr->size = 0;
+	} else if (R_UNLIKELY (file_end > obj->size)) {
+		R_LOG_WARN ("File range of section \"%s\" is partially out of bounds (%#" PRIx64 "..%#" PRIx64 "), but file size is %#" PRIx64 ")",
+			    ptr->name, file_start, file_end, obj->size);
+		ptr->size = obj->size - file_start;
+	}
 }
 
 static void coff_section(RBinSection *ptr, const struct r_bin_coff_obj *obj, size_t i) {
@@ -272,10 +326,11 @@ static RList *sections(RBinFile *bf) {
 			ptr->name = r_str_newf ("%s-%u", tmp, (unsigned int)i);
 			free (tmp);
 			if (obj->xcoff) {
-				xcoff_section(ptr, obj, i);
+				xcoff_section (ptr, obj, i);
 			} else {
-				coff_section(ptr, obj, i);
+				coff_section (ptr, obj, i);
 			}
+			truncate_section (ptr, obj);
 			r_list_append (ret, ptr);
 		}
 	}
@@ -315,8 +370,17 @@ static RList *imports(RBinFile *bf) {
 	if (!ret) {
 		return NULL;
 	}
-	if (obj->symbols) {
-		int ord = 0;
+	int ord = 0;
+	if (obj->x_ldsyms) {
+		for (i = 0; i < obj->x_ldhdr.l_nsyms; i++) {
+			RBinImport *ptr = _xcoff_fill_bin_import (obj, i);
+			if (ptr) {
+				ptr->ordinal = ord++;
+				r_list_append (ret, ptr);
+				ht_up_insert (obj->imp_ht, (ut64)i, ptr);
+			}
+		}
+	} else if (obj->symbols) {
 		for (i = 0; i < obj->hdr.f_nsyms; i++) {
 			RBinImport *ptr = _fill_bin_import (obj, i);
 			if (ptr) {
@@ -586,9 +650,34 @@ static RBinInfo *info(RBinFile *bf) {
 	struct r_bin_coff_obj *obj = (struct r_bin_coff_obj*)bf->bo->bin_obj;
 
 	ret->file = bf->file? strdup (bf->file): NULL;
+	/* XXX also set bclass or class to xcoff? */
 	ret->rclass = strdup ("coff");
 	ret->bclass = strdup ("coff");
-	ret->type = strdup ("COFF (Executable file)");
+	switch (obj->hdr.f_magic) {
+	case COFF_FILE_MACHINE_ALPHA:
+	case COFF_FILE_MACHINE_POWERPC:
+	case COFF_FILE_MACHINE_R4000:
+		ret->type = strdup ("COFF (Object file)");
+		break;
+	case XCOFF32_FILE_MACHINE_U800WR:
+	case XCOFF32_FILE_MACHINE_U800RO:
+	case XCOFF32_FILE_MACHINE_U800TOC:
+	case XCOFF32_FILE_MACHINE_U802WR:
+	case XCOFF32_FILE_MACHINE_U802RO:
+		ret->type = strdup ("XCOFF32");
+		break;
+	case XCOFF32_FILE_MACHINE_U802TOC:
+		ret->type = strdup ("XCOFF32 (Executable file, RO text, TOC)");
+		break;
+	case XCOFF64_FILE_MACHINE_U803TOC:
+	case XCOFF64_FILE_MACHINE_U803XTOC:
+	case XCOFF64_FILE_MACHINE_U64:
+		ret->type = strdup ("XCOFF64");
+		break;
+	default:
+		ret->type = strdup ("COFF (Executable file)");
+		break;
+	}
 	ret->os = strdup ("any");
 	ret->subsystem = strdup ("any");
 	ret->big_endian = obj->endian;

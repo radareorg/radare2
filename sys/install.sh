@@ -34,8 +34,8 @@ fi
 
 echo "$PWD" | grep -q " "
 if [ $? = 0 ]; then
-	echo "You can't build radare from a directory with spaces with make" > /dev/stderr
-	echo "To solve this you must 'meson' instead" > /dev/stderr
+	echo "You can't build radare from a directory with spaces with make" >&2
+	echo "To solve this you must 'meson' instead" >&2
 	exit 1
 fi
 
@@ -177,6 +177,12 @@ if [ $? = 0 ]; then
 	fi
 else
 	echo "Warning: Cannot find system wide capstone"
+fi
+
+if [ "$NEED_CAPSTONE" = 1 ]; then
+	if [ ! -d shlr/capstone/.git -a ! -d .git ]; then
+		NEED_CAPSTONE=0
+	fi
 fi
 
 if [ "$NEED_CAPSTONE" = 1 ]; then

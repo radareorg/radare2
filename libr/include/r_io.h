@@ -197,7 +197,6 @@ typedef struct r_io_plugin_t {
 	const char *uris;
 	int (*listener)(RIODesc *io);
 	bool (*init)(void);
-	RIOUndo undo;
 	bool isdbg;
 	// int (*is_file_opened)(RIO *io, RIODesc *fd, const char *);
 	char *(*system)(RIO *io, RIODesc *fd, const char *); // Rename to call? or cmd? unify with anal and core

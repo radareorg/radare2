@@ -268,6 +268,7 @@ else
 
 capstone: capstone-sync
 
+patch-capstone capstone-patch:
 
 capstone-sync:
 ifeq ($(WITHOUT_PULL),1)

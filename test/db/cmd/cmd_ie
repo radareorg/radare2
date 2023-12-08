@@ -35,7 +35,7 @@ NAME=iee* preinit
 FILE=bins/elf/before-after-main
 CMDS=iee*
 EXPECT=<<EOF
-fs symbols
+fs+symbols
 "f entry.preinit0 1 0x08048486"
 "f entry.preinit0_hpaddr 1 0x00000ed4"
 "s entry.preinit0"
@@ -72,6 +72,7 @@ fs symbols
 "f entry.fini4 1 0x080485e7"
 "f entry.fini4_hpaddr 1 0x00000f00"
 "s entry.fini4"
+fs-
 EOF
 RUN
 
