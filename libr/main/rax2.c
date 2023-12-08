@@ -313,8 +313,9 @@ dotherax:
 		}
 		return true;
 	} else if (flags & (1 << 3)) { // -b
-		char *newstr = r_str_binstr2str (str);
+		char *newstr = r_str_binstr2str (str, strlen(str));
 		printf ("%s", newstr);
+    free(newstr);
 		return true;
 	} else if (flags & (1 << 4)) { // -x
 		int h = r_str_hash (str);
@@ -385,8 +386,9 @@ dotherax:
 		}
 		return true;
 	} else if (flags & (1 << 17)) { // -B (bin -> str)
-		char *binstr = r_str_str2binstr (str);
+		char *binstr = r_str_str2binstr (str, strlen(str));
 		printf ("%s", binstr);
+    free(binstr);
 		return true;
 	} else if (flags & (1 << 16)) { // -w
 		ut64 n = r_num_calc (num, str, &errstr);
