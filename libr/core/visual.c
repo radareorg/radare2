@@ -2363,8 +2363,7 @@ static bool insert_mode_enabled(RCore *core) {
 
 R_API void r_core_visual_browse(RCore *core, const char *input) {
 	const char *browsemsg = \
-		"Browse stuff:\n"
-		"-------------\n"
+		"# Browse stuff:\n"
 		" _  hud mode (V_)\n"
 		" 1  bit editor (vd1)\n"
 		" b  blocks\n"
@@ -2379,7 +2378,8 @@ R_API void r_core_visual_browse(RCore *core, const char *input) {
 		" g  graph\n"
 		" h  history\n"
 		" i  imports\n"
-		" l  chat logs (previously VT)\n"
+		" l  same as VT\n"
+		" L  same as TT\n"
 		" m  maps\n"
 		" M  mountpoints\n"
 		" p  pids/threads\n"
@@ -2463,7 +2463,10 @@ R_API void r_core_visual_browse(RCore *core, const char *input) {
 		case 'T': // "vbT"
 			r_core_cmd0 (core, "eco $(eco~...)");
 			break;
-		case 'l': // previously VT
+		case 'l': // previously VT "vbl"
+			r_core_cmd0 (core, "VT");
+			break;
+		case 'L': // "vbL" - alias for TT
 			if (r_sandbox_enable (0)) {
 				R_LOG_WARN ("sandbox not enabled");
 			} else {
