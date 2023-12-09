@@ -220,11 +220,15 @@ static int log_callback_all(RCore *log, int count, const char *line) {
 	return 0;
 }
 
-R_API void r_core_log_view(RCore *core, int num) {
+R_API void r_core_log_view(RCore *core, int num, int shift) {
 	if (num < 1) {
 		num = 1;
 	}
 	int i;
+	int cons_width = r_cons_get_size (NULL);
+	if (cons_width < 1) {
+		cons_width = 60;
+	}
 	for (i = num - 3; i < num + 3; i++) {
 		r_cons_printf ("%s", (num == i)? "* ": "  ");
 		if (i < 1) {
@@ -241,7 +245,11 @@ R_API void r_core_log_view(RCore *core, int num) {
 		}
 		const char *msg = r_strpool_get_i (core->log->sp, i);
 		if (msg) {
-			char *m = r_str_ndup (msg, 60);
+			size_t msglen = strlen (msg);
+			if (shift < msglen) {
+				msg += shift;
+			}
+			char *m = r_str_ndup (msg, cons_width);
 			char *nl = strchr (m, '\n');
 			if (nl) {
 				*nl = 0;
@@ -289,7 +297,18 @@ static int cmd_log(void *data, const char *input) {
 		}
 		break;
 	case 'v': // "Tv"
-		r_core_log_view (core, (int)r_num_math (core->num, input + 2));
+		{
+			char *args = strdup (input + 2);
+			char *arg = strchr (args, ' ');
+			int shift = 0;
+			if (arg) {
+				*arg++ = 0;
+				shift = r_num_math (core->num, arg);
+			}
+			int index = (int)r_num_math (core->num, args);
+			r_core_log_view (core, index, shift);
+			free (args);
+		}
 		break;
 	case 'l': // "Tl"
 		r_cons_printf ("%.2d\n", core->log->last - 1);
