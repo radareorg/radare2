@@ -1715,6 +1715,7 @@ char *getcommapath(RCore *core) {
 }
 
 static void visual_textlogs(RCore *core) {
+	int shift = 0;
 	int index = 1;
 	while (true) {
 		int log_level = r_log_get_level ();
@@ -1733,7 +1734,7 @@ static void visual_textlogs(RCore *core) {
 		} else {
 			r_cons_printf (TEXTLOGS_TITLE "\n", index, log_level);
 		}
-		r_core_cmdf (core, "Tv %d", index);
+		r_core_cmdf (core, "Tv %d %d", index, shift);
 		r_cons_printf ("--\n");
 		char *s = r_core_cmd_strf (core, "Tm %d~{}", index);
 		r_str_trim (s);
@@ -1763,6 +1764,12 @@ static void visual_textlogs(RCore *core) {
 			break;
 		case 'J':
 			index += 10;
+			break;
+		case '[':
+			shift --;
+			break;
+		case ']':
+			shift ++;
 			break;
 		case '+':
 			if (log_level <= R_LOGLVL_LAST) {
@@ -3005,13 +3012,13 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 				}
 			}
 			break;
-		case 'T':
+		case 'T': // "VT"
 			visual_textlogs (core);
 			break;
-		case 'n':
+		case 'n': // "Vn"
 			r_core_seek_next (core, r_config_get (core->config, "scr.nkey"));
 			break;
-		case 'N':
+		case 'N': // "VN"
 			r_core_seek_previous (core, r_config_get (core->config, "scr.nkey"));
 			break;
 		case 'i':

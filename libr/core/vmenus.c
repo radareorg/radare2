@@ -2058,7 +2058,7 @@ R_API int r_core_visual_view_rop(RCore *core) {
 	return false;
 }
 
-R_API int r_core_visual_trackflags(RCore *core) {
+R_API int r_core_visual_trackflags(RCore *core) { // "vbf"
 	RCoreVisual *v = &core->visual;
 	const char *fs = NULL, *fs2 = NULL;
 	int hit, i, j, ch;
@@ -2091,7 +2091,7 @@ R_API int r_core_visual_trackflags(RCore *core) {
 					fs2 = fi->name;
 					hit = 1;
 				}
-				if ((i >= option-delta) && ((i < option + delta)||((option<delta)&&(i < (delta << 1))))) {
+				if ((i >= option-delta) && ((i < option + delta) || ((option<delta)&&(i < (delta << 1))))) {
 					bool cur = option == i;
 					if (cur && hasColor) {
 						r_cons_printf (Color_INVERT);
