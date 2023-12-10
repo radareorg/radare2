@@ -389,6 +389,7 @@ dotherax:
 		char *binstr = r_str_str2binstr (str, strlen(str));
 		printf ("%s", binstr);
 		free (binstr);
+		free (binstr);
 		return true;
 	} else if (flags & (1 << 16)) { // -w
 		ut64 n = r_num_calc (num, str, &errstr);
