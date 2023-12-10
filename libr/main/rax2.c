@@ -314,7 +314,7 @@ dotherax:
 		return true;
 	} else if (flags & (1 << 3)) { // -b
 		char *newstr = r_str_binstr2str (str, strlen(str));
-		printf ("%s", newstr);
+		printf ("%s\n", newstr);
 		free (newstr);
 		return true;
 	} else if (flags & (1 << 4)) { // -x
