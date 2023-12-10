@@ -213,7 +213,6 @@ static RBinAddr *r_xcoff_get_entry(RBinCoffObj *obj) {
 }
 
 static bool r_coff_get_entry_helper(RBinCoffObj *obj, RBinAddr *address) {
-
 	void *symbols = NULL;
 	size_t symbol_size;
 	size_t symbol_count;
@@ -227,11 +226,10 @@ static bool r_coff_get_entry_helper(RBinCoffObj *obj, RBinAddr *address) {
 		symbol_count = obj->hdr.f_nsyms;
 	}
 
-	char *name;
 	int i;
 
 	for (i = 0; i < symbol_count; i++) {
-		name = (char *)symbols + i * symbol_size;
+		const char *name = (const char *)symbols + (i * symbol_size);
 		if ((!strcmp (name, "_start") || !strcmp (name, "start")) &&
 			r_coff_rebase_sym (obj, address, i)) {
 			return true;
