@@ -1766,7 +1766,9 @@ static void visual_textlogs(RCore *core) {
 			index += 10;
 			break;
 		case '[':
-			shift --;
+			if (shift > 0) {
+				shift --;
+			}
 			break;
 		case ']':
 			shift ++;
