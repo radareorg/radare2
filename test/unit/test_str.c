@@ -644,7 +644,7 @@ bool test_r_str_binstr2str(void) {
 	mu_end;
 }
 
-bool test_r_str_str2binstr (void) {
+bool test_r_str_str2binstr(void) {
 	const char *one = r_str_str2binstr ("Hello there", 11);
 	char *two = r_str_str2binstr ("super cool message", 18);
 	char *three = r_str_str2binstr ("     starts with space", 22);
