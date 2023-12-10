@@ -315,7 +315,7 @@ dotherax:
 	} else if (flags & (1 << 3)) { // -b
 		char *newstr = r_str_binstr2str (str, strlen(str));
 		printf ("%s", newstr);
-    free(newstr);
+		free (newstr);
 		return true;
 	} else if (flags & (1 << 4)) { // -x
 		int h = r_str_hash (str);
