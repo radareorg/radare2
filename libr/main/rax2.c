@@ -313,7 +313,7 @@ dotherax:
 		}
 		return true;
 	} else if (flags & (1 << 3)) { // -b
-		char *newstr = r_str_binstr2str (str, strlen(str));
+		char *newstr = r_str_binstr2str ((const ut8*)str, strlen(str));
 		printf ("%s\n", newstr);
 		free (newstr);
 		return true;
@@ -386,8 +386,8 @@ dotherax:
 		}
 		return true;
 	} else if (flags & (1 << 17)) { // -B (bin -> str)
-		char *binstr = r_str_str2binstr (str, strlen (str));
-		printf ("%s", binstr);
+		char *binstr = r_str_str2binstr ((const ut8*)str, strlen (str));
+		printf ("%s\n", binstr);
 		free (binstr);
 		return true;
 	} else if (flags & (1 << 16)) { // -w

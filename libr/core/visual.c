@@ -1715,8 +1715,12 @@ char *getcommapath(RCore *core) {
 }
 
 static void visual_textlogs(RCore *core) {
+	int shiftbody = 0;
 	int shift = 0;
 	int index = 1;
+	int skiplines = 0;
+	bool showhelp = false;
+	bool inbody = false;
 	while (true) {
 		int log_level = r_log_get_level ();
 		r_cons_clear00 ();
@@ -1728,50 +1732,119 @@ static void visual_textlogs(RCore *core) {
 		if (R_STR_ISNOTEMPTY (vi)) {
 			r_core_cmd0 (core, vi);
 		}
-#define TEXTLOGS_TITLE "[q] [visual-text-logs] Move with [jk] `i` to insert `-` trim logs [+-] idx %d log.level = %d"
+#define TEXTLOGS_TITLE "[visual-text-logs] Press '?' for help. idx %d log.level=%d"
 		if (r_config_get_i (core->config, "scr.color") > 0) {
 			r_cons_printf (Color_YELLOW "" TEXTLOGS_TITLE "\n"Color_RESET, index, log_level);
 		} else {
 			r_cons_printf (TEXTLOGS_TITLE "\n", index, log_level);
 		}
-		r_core_cmdf (core, "Tv %d %d", index, shift);
-		r_cons_printf ("--\n");
-		char *s = r_core_cmd_strf (core, "Tm %d~{}", index);
-		r_str_trim (s);
-		if (R_STR_ISEMPTY (s)) {
+		if (showhelp) {
+			r_cons_printf (" <tab>   - toggle between list and log body\n");
+			r_cons_printf (" 0       - jump to index 0\n");
+			r_cons_printf (" =       - edit visual prompt\n");
+			r_cons_printf (" !       - edit current message with cfg.editor\n");
+			r_cons_printf (" :       - run a radare command\n");
+			r_cons_printf (" +-      - change log level\n");
+			r_cons_printf (" []      - adjust scroll of message in list\n");
+			r_cons_printf (" i       - insert a new message\n");
+			r_cons_printf (" q       - quit this viewer mode\n");
+			r_cons_printf (" jk      - scroll up and down\n");
+			r_cons_printf (" JK      - faster scroll up and down (10x)\n");
+		} else {
+			r_core_cmdf (core, "Tv %d %d", index, shift);
+			if (inbody) {
+				r_cons_printf ("--v--\n");
+			} else {
+				r_cons_printf ("--^--\n");
+			}
+			char *s = r_core_cmd_strf (core, "Tm %d~{}", index);
+			r_str_trim (s);
+			if (R_STR_ISEMPTY (s)) {
+				free (s);
+				s = r_core_cmd_strf (core, "Tm %d", index);
+			}
+			int w = r_cons_get_size (NULL);
+			s = r_str_wrap (s, w);
+			if (shiftbody) {
+				char *r = s;
+				int sh = shiftbody;
+				while (*r && sh > 0) {
+					sh--;
+					r++;
+				}
+				r = strdup (r);
+				free (s);
+				s = r;
+			}
+			if (skiplines > 0) {
+				char *r = s;
+				int w = r_cons_get_size (NULL);
+				int line = skiplines;
+				int col = 0;
+				while (*r) {
+					if (*r == '\n') {
+						col = 0;
+						line--;
+					}
+					if (col >= w) {
+						line--;
+						col = 0;
+					}
+					if (line < 1) {
+						break;
+					}
+					col++;
+					r++;
+				}
+				r = strdup (r);
+				free (s);
+				s = r;
+			}
+			r_cons_printf ("%s\n", s);
 			free (s);
-			s = r_core_cmd_strf (core, "Tm %d", index);
-		}
-		int w = r_cons_get_size (NULL);
-		s = r_str_wrap (s, w);
-		r_cons_printf ("%s\n", s);
-		free (s);
-		const char *vi2 = r_config_get (core->config, "cmd.vprompt2");
-		if (R_STR_ISNOTEMPTY (vi2)) {
-			r_core_cmd0 (core, vi2);
+			const char *vi2 = r_config_get (core->config, "cmd.vprompt2");
+			if (R_STR_ISNOTEMPTY (vi2)) {
+				r_core_cmd0 (core, vi2);
+			}
 		}
 		r_cons_visual_flush ();
 		char ch = (ut8)r_cons_readchar ();
 		ch = r_cons_arrow_to_hjkl (ch);
+		if (showhelp) {
+			showhelp = false;
+			continue;
+		}
 		switch (ch) {
 		case 'q':
 			return;
 		case 'i':
 			r_core_cmdf (core, "T `?ie message`");
 			break;
-		case 'j':
-			index++;
+		case '?':
+			showhelp = true;
 			break;
-		case 'J':
-			index += 10;
+		case 9: // tab
+			inbody = !inbody;
 			break;
+		case 'h':
 		case '[':
-			if (shift > 0) {
-				shift --;
+			if (inbody) {
+				if (shiftbody > 0) {
+					shiftbody--;
+				}
+			} else {
+				if (shift > 0) {
+					shift --;
+				}
 			}
 			break;
+		case 'l':
 		case ']':
-			shift ++;
+			if (inbody) {
+				shiftbody++;
+			} else {
+				shift ++;
+			}
 			break;
 		case '+':
 			if (log_level <= R_LOGLVL_LAST) {
@@ -1800,21 +1873,49 @@ static void visual_textlogs(RCore *core) {
 		case '!':
 			r_core_cmdf (core, "T-%d", index);
 			break;
-		case 'k':
-			if (index > 1) {
-				index--;
-			} else {
-				index = 1;
-			}
-			break;
 		case '0':
 			index = 0;
 			break;
-		case 'K':
-			if (index > 10) {
-				index -= 10;
+		case 'j':
+			if (inbody) {
+				skiplines++;
 			} else {
-				index = 1;
+				index++;
+				skiplines = 0;
+				shiftbody = 0;
+			}
+			break;
+		case 'J':
+			if (inbody) {
+				skiplines += 2;
+			} else {
+				index += 10;
+				skiplines = 0;
+				shiftbody = 0;
+			}
+			break;
+		case 'k':
+			if (inbody) {
+				skiplines--;
+			} else {
+				skiplines = 0;
+				if (index > 1) {
+					index--;
+				} else {
+					index = 1;
+				}
+			}
+			break;
+		case 'K':
+			if (inbody) {
+				skiplines -= 2;
+			} else {
+				skiplines = 0;
+				if (index > 10) {
+					index -= 10;
+				} else {
+					index = 1;
+				}
 			}
 			break;
 		case ':':

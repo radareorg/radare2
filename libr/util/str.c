@@ -3355,15 +3355,15 @@ R_API char *r_str_crop(const char *str, unsigned int x, unsigned int y,
 
 // TODO: improve loop to wrap by words
 R_API char *r_str_wrap(const char *str, int w) {
-	char *r, *ret;
 	if (w < 1 || !str) {
 		return strdup ("");
 	}
 	size_t r_size = 8 * strlen (str);
-	r = ret = malloc (r_size);
+	char *r = malloc (r_size);
 	if (!r) {
 		return NULL;
 	}
+	char *ret = r;
 	char *end = r + r_size;
 	int cw = 0;
 	while (*str && r + 1 < end) {
