@@ -3,7 +3,6 @@
 #include <r_util.h>
 #include "coff.h"
 
-#ifndef R_BIN_COFF_BIGOBJ
 static bool r_coff_supported_arch_be(const ut8 *buf) {
 	ut16 arch = r_read_be16 (buf);
 	switch (arch) {
@@ -20,9 +19,7 @@ static bool r_coff_supported_arch_be(const ut8 *buf) {
 		return false;
 	}
 }
-#endif
 
-#ifndef R_BIN_COFF_BIGOBJ
 static bool r_coff_supported_arch_le(const ut8 *buf) {
 	ut16 arch = r_read_le16 (buf);
 	switch (arch) {
@@ -50,13 +47,10 @@ static bool r_coff_supported_arch_le(const ut8 *buf) {
 		return false;
 	}
 }
-#endif
 
-#ifndef R_BIN_COFF_BIGOBJ
 R_IPI bool r_coff_supported_arch(const ut8 *buf) {
 	return r_coff_supported_arch_le (buf) || r_coff_supported_arch_be (buf);
 }
-#endif
 
 // copied from bfd
 static bool r_coff_decode_base64(const char *str, ut32 len, ut32 *res) {
@@ -93,7 +87,7 @@ static bool r_coff_decode_base64(const char *str, ut32 len, ut32 *res) {
 	return true;
 }
 
-R_IPI char *r_coff_(symbol_name)(RBinCoffObj *obj, void *ptr) {
+R_IPI char *r_coff_symbol_name(RBinCoffObj *obj, void *ptr) {
 	char n[256] = {0};
 	int len = 0;
 	ut32 offset = 0; // offset into the string table.
@@ -123,7 +117,12 @@ R_IPI char *r_coff_(symbol_name)(RBinCoffObj *obj, void *ptr) {
 	}
 
 	// Calculate the actual pointer to the symbol/section name we're interested in.
-	ut64 name_ptr = obj->hdr.f_symptr + (obj->hdr.f_nsyms * sizeof (struct coff_symbol) + offset);
+	ut64 name_ptr;
+	if (obj->type == COFF_TYPE_BIGOBJ) {
+		name_ptr = obj->bigobj_hdr.f_symptr + (obj->bigobj_hdr.f_nsyms * sizeof (struct coff_bigobj_symbol) + offset);
+	} else {
+		name_ptr = obj->hdr.f_symptr + (obj->hdr.f_nsyms * sizeof (struct coff_symbol) + offset);
+	}
 	if (name_ptr > obj->size) {
 		return NULL;
 	}
@@ -136,11 +135,24 @@ R_IPI char *r_coff_(symbol_name)(RBinCoffObj *obj, void *ptr) {
 	return strdup (n);
 }
 
-static int r_coff_rebase_sym(RBinCoffObj *obj, RBinAddr *addr, struct coff_symbol *sym) {
-	if (sym->n_scnum < 1 || sym->n_scnum > obj->hdr.f_nscns) {
+static int r_coff_rebase_sym(RBinCoffObj *obj, RBinAddr *addr, int symbol_index) {
+	ut32 n_scnum = 0;
+	ut32 n_value = 0;
+	ut32 f_nscns = 0;
+	if (obj->type == COFF_TYPE_BIGOBJ) {
+		n_scnum = obj->bigobj_symbols[symbol_index].n_scnum;
+		n_value = obj->bigobj_symbols[symbol_index].n_value;
+		f_nscns = obj->bigobj_hdr.f_nscns;
+	} else {
+		n_scnum = obj->symbols[symbol_index].n_scnum;
+		n_value = obj->symbols[symbol_index].n_value;
+		f_nscns = obj->hdr.f_nscns;
+	}
+
+	if (n_scnum < 1 || n_scnum > f_nscns) {
 		return 0;
 	}
-	addr->paddr = obj->scn_hdrs[sym->n_scnum - 1].s_scnptr + sym->n_value;
+	addr->paddr = obj->scn_hdrs[n_scnum - 1].s_scnptr + n_value;
 	return 1;
 }
 
@@ -200,41 +212,64 @@ static RBinAddr *r_xcoff_get_entry(RBinCoffObj *obj) {
 	return addr;
 }
 
+static bool r_coff_get_entry_helper(RBinCoffObj *obj, RBinAddr *address) {
+
+	void *symbols = NULL;
+	size_t symbol_size;
+	size_t symbol_count;
+	if (obj->type == COFF_TYPE_BIGOBJ) {
+		symbols = (void *)obj->bigobj_symbols;
+		symbol_size = sizeof (struct coff_bigobj_symbol);
+		symbol_count = obj->bigobj_hdr.f_nsyms;
+	} else {
+		symbols = (void *)obj->symbols;
+		symbol_size = sizeof (struct coff_symbol);
+		symbol_count = obj->hdr.f_nsyms;
+	}
+
+	char *name;
+	int i;
+
+	for (i = 0; i < symbol_count; i++) {
+		name = (char *)symbols + i * symbol_size;
+		if ((!strcmp (name, "_start") || !strcmp (name, "start")) &&
+			r_coff_rebase_sym (obj, address, i)) {
+			return true;
+		}
+	}
+
+	for (i = 0; i < symbol_count; i++) {
+		name = (char *)symbols + i * symbol_size;
+		if ((!strcmp (name, "_main") || !strcmp (name, "main")) &&
+			r_coff_rebase_sym (obj, address, i)) {
+			return true;
+		}
+	}
+	return false;
+}
+
 /* Try to get a valid entrypoint using the methods outlined in
  * http://ftp.gnu.org/old-gnu/Manuals/ld-2.9.1/html_mono/ld.html#SEC24 */
-R_IPI RBinAddr *r_coff_(get_entry)(RBinCoffObj *obj) {
+R_IPI RBinAddr *r_coff_get_entry(RBinCoffObj *obj) {
 	RBinAddr *addr = R_NEW0 (RBinAddr);
 	if (!addr) {
 		return NULL;
 	}
 	/* Special case for XCOFF */
-	if (obj->xcoff) {
+	if (obj->type == COFF_TYPE_XCOFF) {
 		return r_xcoff_get_entry (obj);
 	}
-#ifndef R_BIN_COFF_BIGOBJ
 	/* Simplest case, the header provides the entrypoint address */
-	if (obj->hdr.f_opthdr) {
+	if (obj->type == COFF_TYPE_REGULAR && obj->hdr.f_opthdr) {
 		addr->paddr = obj->opt_hdr.entry;
 		return addr;
 	}
-#endif
+
 	/* No help from the header eh? Use the address of the symbols '_start'
 	 * or 'main' if present */
-	if (obj->symbols) {
-		int i;
-		for (i = 0; i < obj->hdr.f_nsyms; i++) {
-			if ((!strcmp (obj->symbols[i].n_name, "_start") ||
-				    !strcmp (obj->symbols[i].n_name, "start")) &&
-				r_coff_rebase_sym (obj, addr, &obj->symbols[i])) {
-				return addr;
-			}
-		}
-		for (i = 0; i < obj->hdr.f_nsyms; i++) {
-			if ((!strcmp (obj->symbols[i].n_name, "_main") ||
-				    !strcmp (obj->symbols[i].n_name, "main")) &&
-				r_coff_rebase_sym (obj, addr, &obj->symbols[i])) {
-				return addr;
-			}
+	if ((obj->type == COFF_TYPE_BIGOBJ && obj->bigobj_symbols) || (obj->symbols)) {
+		if (r_coff_get_entry_helper (obj, addr)) {
+			return addr;
 		}
 	}
 #if 0
@@ -256,11 +291,15 @@ R_IPI RBinAddr *r_coff_(get_entry)(RBinCoffObj *obj) {
 }
 
 static bool r_bin_coff_init_hdr(RBinCoffObj *obj) {
-#if R_BIN_COFF_BIGOBJ
-	ut16 magic = r_buf_read_le16_at (obj->b, 6);
-#else
-	ut16 magic = r_buf_read_le16_at (obj->b, 0);
-#endif
+	ut8 buf[16];
+	int result = r_buf_read_at (obj->b, 12, buf, sizeof (buf));
+	if (result >= sizeof (buf) && memcmp (coff_bigobj_magic, buf, 16) == 0) {
+		obj->type = COFF_TYPE_BIGOBJ;
+	}
+
+	ut64 offset = obj->type == COFF_TYPE_BIGOBJ? 6: 0;
+	ut16 magic = r_buf_read_le16_at (obj->b, offset);
+
 	switch (r_swap_ut16 (magic)) {
 	case COFF_FILE_MACHINE_H8300:
 	case COFF_FILE_MACHINE_AMD29K:
@@ -275,28 +314,33 @@ static bool r_bin_coff_init_hdr(RBinCoffObj *obj) {
 	default:
 		obj->endian = COFF_IS_LITTLE_ENDIAN;
 	}
+
 	int ret = 0;
-#if R_BIN_COFF_BIGOBJ
-	ret = r_buf_fread_at (obj->b, 0, (ut8 *)&obj->hdr, obj->endian? "4S12I": "4s12i", 1);
-#else
-	ret = r_buf_fread_at (obj->b, 0, (ut8 *)&obj->hdr, obj->endian? "2S3I2S": "2s3i2s", 1);
-#endif
-	if (ret != sizeof (struct coff_hdr)) {
+	int expected = obj->type == COFF_TYPE_BIGOBJ? sizeof (struct coff_bigobj_hdr): sizeof (struct coff_hdr);
+
+	if (obj->type == COFF_TYPE_BIGOBJ) {
+		ret = r_buf_fread_at (obj->b, 0, (ut8 *)&obj->bigobj_hdr, obj->endian? "4S12I": "4s12i", 1);
+	} else {
+		ret = r_buf_fread_at (obj->b, 0, (ut8 *)&obj->hdr, obj->endian? "2S3I2S": "2s3i2s", 1);
+	}
+	if (ret != expected) {
 		return false;
 	}
-	if (obj->hdr.f_magic == COFF_FILE_TI_COFF) {
+
+	if (magic == COFF_FILE_TI_COFF) {
 		ret = r_buf_fread (obj->b, (ut8 *)&obj->target_id, obj->endian? "S": "s", 1);
 		if (ret != sizeof (ut16)) {
 			return false;
 		}
 	}
-#ifndef R_BIN_COFF_BIGOBJ
-	obj->xcoff = obj->hdr.f_opthdr == sizeof (struct coff_opt_hdr) + sizeof (struct xcoff32_opt_hdr);
-#endif
+
+	if (obj->type != COFF_TYPE_BIGOBJ &&
+		obj->hdr.f_opthdr == sizeof (struct coff_opt_hdr) + sizeof (struct xcoff32_opt_hdr)) {
+		obj->type = COFF_TYPE_XCOFF;
+	}
 	return true;
 }
 
-#ifndef R_BIN_COFF_BIGOBJ
 static bool r_bin_coff_init_opt_hdr(RBinCoffObj *obj) {
 	int ret;
 	if (!obj->hdr.f_opthdr) {
@@ -309,7 +353,6 @@ static bool r_bin_coff_init_opt_hdr(RBinCoffObj *obj) {
 	}
 	return true;
 }
-#endif
 
 #ifndef R_BIN_COFF_BIGOBJ
 static bool r_bin_xcoff_init_opt_hdr(RBinCoffObj *obj) {
@@ -324,18 +367,24 @@ static bool r_bin_xcoff_init_opt_hdr(RBinCoffObj *obj) {
 #endif
 
 static bool r_bin_coff_init_scn_hdr(RBinCoffObj *obj) {
-	int ret, size;
+	int ret, size, f_nscns;
 
-#if R_BIN_COFF_BIGOBJ
-	ut64 offset = sizeof (struct coff_hdr);
-#else
-	ut64 offset = sizeof (struct coff_hdr) + obj->hdr.f_opthdr;
-#endif
+	ut64 offset = 0;
+	ut16 f_magic;
+	if (obj->type == COFF_TYPE_BIGOBJ) {
+		offset = sizeof (struct coff_bigobj_hdr);
+		f_nscns = obj->bigobj_hdr.f_nscns;
+		f_magic = obj->bigobj_hdr.f_magic;
+	} else {
+		offset = sizeof (struct coff_hdr) + obj->hdr.f_opthdr;
+		f_nscns = obj->hdr.f_nscns;
+		f_magic = obj->hdr.f_magic;
+	}
 
-	if (obj->hdr.f_magic == COFF_FILE_TI_COFF) {
+	if (f_magic == COFF_FILE_TI_COFF) {
 		offset += 2;
 	}
-	size = obj->hdr.f_nscns * sizeof (struct coff_scn_hdr);
+	size = f_nscns * sizeof (struct coff_scn_hdr);
 	if (offset > obj->size || offset + size > obj->size || size < 0) {
 		return false;
 	}
@@ -343,7 +392,7 @@ static bool r_bin_coff_init_scn_hdr(RBinCoffObj *obj) {
 	if (!obj->scn_hdrs) {
 		return false;
 	}
-	ret = r_buf_fread_at (obj->b, offset, (ut8 *)obj->scn_hdrs, obj->endian? "8c6I2S1I": "8c6i2s1i", obj->hdr.f_nscns);
+	ret = r_buf_fread_at (obj->b, offset, (ut8 *)obj->scn_hdrs, obj->endian? "8c6I2S1I": "8c6i2s1i", f_nscns);
 	if (ret != size) {
 		R_FREE (obj->scn_hdrs);
 		return false;
@@ -405,48 +454,53 @@ static bool r_bin_xcoff_init_ldsyms(RBinCoffObj *obj) {
 
 static bool r_bin_coff_init_symtable(RBinCoffObj *obj) {
 	int ret, size;
-	ut64 offset = obj->hdr.f_symptr;
-#if R_BIN_COFF_BIGOBJ
-	if (!obj->hdr.f_nsyms) {
-#else
-	if (!obj->hdr.f_nsyms) {
+	ut32 f_symptr = obj->type == COFF_TYPE_BIGOBJ? obj->bigobj_hdr.f_symptr: obj->hdr.f_symptr;
+	ut32 f_nsyms = obj->type == COFF_TYPE_BIGOBJ? obj->bigobj_hdr.f_nsyms: obj->hdr.f_nsyms;
+	ut64 offset = f_symptr;
+	ut32 symbol_size = obj->type == COFF_TYPE_BIGOBJ? sizeof (struct coff_bigobj_symbol): sizeof (struct coff_symbol);
+	void *symbols = obj->type == COFF_TYPE_BIGOBJ? (void *)obj->bigobj_symbols: (void *)obj->symbols;
+
+	if (!f_nsyms) {
 		return true;
 	}
-	if (obj->hdr.f_nsyms >= 0xffff) { // too much symbols, probably not allocatable
-#endif
+
+	if (obj->type != COFF_TYPE_BIGOBJ && f_nsyms >= 0xffff) { // too much symbols, probably not allocatable
 		return false;
 	}
-	size = obj->hdr.f_nsyms * sizeof (struct coff_symbol);
+	size = f_nsyms * symbol_size;
 	if (size < 0 ||
 		size > obj->size ||
 		offset > obj->size ||
 		offset + size > obj->size) {
 		return false;
 	}
-	obj->symbols = calloc (1, size + sizeof (struct coff_symbol));
-	if (!obj->symbols) {
+	symbols = calloc (1, size + symbol_size);
+	if (!symbols) {
 		return false;
 	}
-#if R_BIN_COFF_BIGOBJ
-	ret = r_buf_fread_at (obj->b, offset, (ut8 *)obj->symbols, obj->endian? "8c2I1S2c": "8c2i1s2c", obj->hdr.f_nsyms);
-#else
-	ret = r_buf_fread_at (obj->b, offset, (ut8 *)obj->symbols, obj->endian? "8c1I2S2c": "8c1i2s2c", obj->hdr.f_nsyms);
-#endif
+	if (obj->type == COFF_TYPE_BIGOBJ) {
+		obj->bigobj_symbols = symbols;
+		ret = r_buf_fread_at (obj->b, offset, (ut8 *)obj->bigobj_symbols, obj->endian? "8c2I1S2c": "8c2i1s2c", f_nsyms);
+	} else {
+		obj->symbols = symbols;
+		ret = r_buf_fread_at (obj->b, offset, (ut8 *)obj->symbols, obj->endian? "8c1I2S2c": "8c1i2s2c", f_nsyms);
+	}
 	if (ret != size) {
-		R_FREE (obj->symbols);
+		R_FREE (symbols);
 		return false;
 	}
 	return true;
 }
 
 static bool r_bin_coff_init_scn_va(RBinCoffObj *obj) {
-	obj->scn_va = R_NEWS (ut64, obj->hdr.f_nscns);
+	int f_nscns = obj->type == COFF_TYPE_BIGOBJ? obj->bigobj_hdr.f_nscns: obj->hdr.f_nscns;
+	obj->scn_va = R_NEWS (ut64, f_nscns);
 	if (!obj->scn_va) {
 		return false;
 	}
 	int i;
 	ut64 va = 0;
-	for (i = 0; i < obj->hdr.f_nscns; i++) {
+	for (i = 0; i < f_nscns; i++) {
 		ut64 sz = obj->scn_hdrs[i].s_size;
 		if (sz < 16) {
 			sz = 16;
@@ -467,23 +521,27 @@ static bool r_bin_coff_init(RBinCoffObj *obj, RBuffer *buf, bool verbose) {
 	obj->verbose = verbose;
 	obj->sym_ht = ht_up_new0 ();
 	obj->imp_ht = ht_up_new0 ();
+
+	// Assume we're dealing with regular coff
+	// The init functions will change the type if necessary.
+	obj->type = COFF_TYPE_REGULAR;
 	if (!r_bin_coff_init_hdr (obj)) {
 		R_LOG_ERROR ("failed to init coff header");
 		return false;
 	}
 
-#ifndef R_BIN_COFF_BIGOBJ
-	r_bin_coff_init_opt_hdr (obj);
-	if (obj->xcoff) {
-		r_bin_xcoff_init_opt_hdr (obj);
+	if (obj->type != COFF_TYPE_BIGOBJ) {
+		r_bin_coff_init_opt_hdr (obj);
+		if (obj->type == COFF_TYPE_XCOFF) {
+			r_bin_xcoff_init_opt_hdr (obj);
+		}
 	}
-#endif
 
 	if (!r_bin_coff_init_scn_hdr (obj)) {
 		R_LOG_WARN ("failed to init section header");
 		return false;
 	}
-	if (!obj->xcoff) {
+	if (obj->type != COFF_TYPE_XCOFF) {
 		if (!r_bin_coff_init_scn_va (obj)) {
 			R_LOG_WARN ("failed to init section VA table");
 			return false;
@@ -505,20 +563,24 @@ static bool r_bin_coff_init(RBinCoffObj *obj, RBuffer *buf, bool verbose) {
 	return true;
 }
 
-R_IPI void r_bin_coff_(free)(RBinCoffObj *obj) {
+R_IPI void r_bin_coff_free(RBinCoffObj *obj) {
 	if (obj) {
 		ht_up_free (obj->sym_ht);
 		ht_up_free (obj->imp_ht);
 		free (obj->scn_va);
 		free (obj->scn_hdrs);
 		free (obj->x_ldsyms);
-		free (obj->symbols);
+		if (obj->type == COFF_TYPE_BIGOBJ) {
+			free (obj->bigobj_symbols);
+		} else {
+			free (obj->symbols);
+		}
 		r_buf_free (obj->b);
 		free (obj);
 	}
 }
 
-R_IPI RBinCoffObj *r_bin_coff_(new_buf)(RBuffer *buf, bool verbose) {
+R_IPI RBinCoffObj *r_bin_coff_new_buf(RBuffer *buf, bool verbose) {
 	RBinCoffObj* bin = R_NEW0 (RBinCoffObj);
 	r_bin_coff_init (bin, buf, verbose);
 	return bin;

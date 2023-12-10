@@ -4,9 +4,6 @@
 
 #include <r_types_base.h>
 
-#undef r_bin_coff_
-#undef r_coff_
-
 /* COFF magic numbers */
 #define COFF_FILE_MACHINE_UNKNOWN	0x0
 #define COFF_FILE_MACHINE_AM33		0x1d3
@@ -231,22 +228,31 @@
 #define COFF_IS_BIG_ENDIAN 1
 #define COFF_IS_LITTLE_ENDIAN 0
 
-#if R_BIN_COFF_BIGOBJ
+typedef enum {
+	COFF_TYPE_REGULAR,
+	COFF_TYPE_XCOFF,
+	COFF_TYPE_BIGOBJ,
+} coff_type;
+
 static const char coff_bigobj_magic[16] = {
 	0xC7, 0xA1, 0xBA, 0xD1, 0xEE, 0xBA, 0xa9, 0x4b,
 	0xAF, 0x20, 0xFA, 0xF6, 0x6A, 0xA4, 0xDC, 0xB8
 };
 
-#define r_bin_coff_(name) r_bin_coff_bigobj_##name
-#define r_coff_(name)     r_coff_bigobj_##name
-#else
-#define r_bin_coff_(name) r_bin_coff_##name
-#define r_coff_(name)     r_coff_##name
-#endif
-
-#if R_BIN_COFF_BIGOBJ
 R_PACKED (
+	/* COFF/XCOFF32 file header */
 	struct coff_hdr {
+		ut16 f_magic; /* Magic number */
+		ut16 f_nscns; /* Number of Sections */
+		ut32 f_timdat; /* Time & date stamp */
+		ut32 f_symptr; /* File pointer to Symbol Table */
+		ut32 f_nsyms; /* Number of Symbols */
+		ut16 f_opthdr; /* sizeof (Optional Header) */
+		ut16 f_flags; /* Flags */
+	}); // __attribute__ ((packed));
+
+R_PACKED (
+	struct coff_bigobj_hdr {
 		ut16 sig1; /* 0x0 */
 		ut16 sig2; /* 0xffff */
 		ut16 version; /* 0x2 */
@@ -261,19 +267,6 @@ R_PACKED (
 		ut32 f_symptr; /* File pointer to Symbol Table */
 		ut32 f_nsyms; /* Number of Symbols */
 	}); // __attribute__ ((packed));
-#else
-R_PACKED (
-	/* COFF/XCOFF32 file header */
-	struct coff_hdr {
-		ut16 f_magic; /* Magic number */
-		ut16 f_nscns; /* Number of Sections */
-		ut32 f_timdat; /* Time & date stamp */
-		ut32 f_symptr; /* File pointer to Symbol Table */
-		ut32 f_nsyms; /* Number of Symbols */
-		ut16 f_opthdr; /* sizeof (Optional Header) */
-		ut16 f_flags; /* Flags */
-	}); // __attribute__ ((packed));
-#endif
 
 /* XCOFF64 file header */
 R_PACKED (
@@ -287,7 +280,6 @@ struct xcoff64_hdr {
 	ut32 f_nsyms;	/* Number of Symbols */
 });
 
-#ifndef R_BIN_COFF_BIGOBJ
 /* COFF auxiliary header */
 R_PACKED (
 struct coff_opt_hdr {
@@ -300,7 +292,6 @@ struct coff_opt_hdr {
 	ut32 text_start;	/* Base of Text used for this file */
 	ut32 data_start;	/* Base of Data used for this file */
 });
-#endif
 
 /* XCOFF32 extended auxiliary header */
 R_PACKED (
@@ -396,19 +387,6 @@ struct xcoff64_scn_hdr {
 	char pad44[4];
 });
 
-#if R_BIN_COFF_BIGOBJ
-// Only change here vs regular coff is that
-// the section number is 4 bytes
-R_PACKED (
-	struct coff_symbol {
-		char n_name[8]; /* Symbol Name */
-		ut32 n_value; /* Value of Symbol */
-		ut32 n_scnum; /* Section Number */
-		ut16 n_type; /* Symbol Type */
-		ut8 n_sclass; /* Storage Class */
-		ut8 n_numaux; /* Auxiliary Count */
-	});
-#else
 /* COFF/XCOFF32 symbol */
 R_PACKED (
 struct coff_symbol {
@@ -419,7 +397,18 @@ struct coff_symbol {
 	ut8 n_sclass;	/* Storage Class */
 	ut8 n_numaux;	/* Auxiliary Count */
 });
-#endif
+
+// Only change here vs regular coff is that
+// the section number is 4 bytes
+R_PACKED (
+	struct coff_bigobj_symbol {
+		char n_name[8]; /* Symbol Name */
+		ut32 n_value; /* Value of Symbol */
+		ut32 n_scnum; /* Section Number */
+		ut16 n_type; /* Symbol Type */
+		ut8 n_sclass; /* Storage Class */
+		ut8 n_numaux; /* Auxiliary Count */
+	});
 
 #define COFF_SYM_GET_DTYPE(type) (((type) >> 4) & 3)
 
