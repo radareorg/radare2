@@ -386,7 +386,7 @@ dotherax:
 		}
 		return true;
 	} else if (flags & (1 << 17)) { // -B (bin -> str)
-		char *binstr = r_str_str2binstr (str, strlen(str));
+		char *binstr = r_str_str2binstr (str, strlen (str));
 		printf ("%s", binstr);
 		free (binstr);
 		free (binstr);
