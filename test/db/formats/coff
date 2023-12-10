@@ -224,3 +224,36 @@ lwz r31, -4(r1)
 blr
 EOF
 RUN
+
+NAME=coff bigobj
+FILE=bins/coff/coff_bigobj.obj
+CMDS=<<EOF
+s 0x00001180
+iS.
+s 0x00138820
+iS.
+s 0x100
+iS.
+EOF
+EXPECT=<<EOF
+Current section
+
+nth paddr       size vaddr       vsize perm type name
+-----------------------------------------------------
+0   0x00000000   0x4 0x00001180    0x4 -rw- MAP  .bss$aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa277-280
+
+Current section
+
+nth paddr       size vaddr       vsize perm type name
+-----------------------------------------------------
+0   0x00000000   0x4 0x00138820    0x4 -rw- MAP  .bss$aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa79999-80002
+
+Current section
+
+nth paddr       size vaddr       vsize perm type name
+-----------------------------------------------------
+0   0x00000000   0x4 0x00000100    0x4 -rw- MAP  .bss$aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa13-16
+
+EOF
+RUN
+

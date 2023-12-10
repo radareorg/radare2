@@ -228,17 +228,45 @@
 #define COFF_IS_BIG_ENDIAN 1
 #define COFF_IS_LITTLE_ENDIAN 0
 
-/* COFF/XCOFF32 file header */
-R_PACKED(
-struct coff_hdr {
-	ut16 f_magic;	/* Magic number */
-	ut16 f_nscns;	/* Number of Sections */
-	ut32 f_timdat;	/* Time & date stamp */
-	ut32 f_symptr;	/* File pointer to Symbol Table */
-	ut32 f_nsyms;	/* Number of Symbols */
-	ut16 f_opthdr;	/* sizeof (Optional Header) */
-	ut16 f_flags;	/* Flags */
-});// __attribute__ ((packed));
+typedef enum {
+	COFF_TYPE_REGULAR,
+	COFF_TYPE_XCOFF,
+	COFF_TYPE_BIGOBJ,
+} coff_type;
+
+static const char coff_bigobj_magic[16] = {
+	0xC7, 0xA1, 0xBA, 0xD1, 0xEE, 0xBA, 0xa9, 0x4b,
+	0xAF, 0x20, 0xFA, 0xF6, 0x6A, 0xA4, 0xDC, 0xB8
+};
+
+R_PACKED (
+	/* COFF/XCOFF32 file header */
+	struct coff_hdr {
+		ut16 f_magic; /* Magic number */
+		ut16 f_nscns; /* Number of Sections */
+		ut32 f_timdat; /* Time & date stamp */
+		ut32 f_symptr; /* File pointer to Symbol Table */
+		ut32 f_nsyms; /* Number of Symbols */
+		ut16 f_opthdr; /* sizeof (Optional Header) */
+		ut16 f_flags; /* Flags */
+	}); // __attribute__ ((packed));
+
+R_PACKED (
+	struct coff_bigobj_hdr {
+		ut16 sig1; /* 0x0 */
+		ut16 sig2; /* 0xffff */
+		ut16 version; /* 0x2 */
+		ut16 f_magic; /* Magic number */
+		ut32 f_timdat; /* Time & date stamp */
+		ut8 uuid[16]; /* see coff_bigobj_magic */
+		ut32 unused1; /* 0x0 (sizeofdata?)*/
+		ut32 f_flags; /* 0x0 (flags?)*/
+		ut32 unused3; /* 0x0 (metadatasize?)*/
+		ut32 unused4; /* 0x0 (metadataoffset?)*/
+		ut32 f_nscns; /* Number of Sections */
+		ut32 f_symptr; /* File pointer to Symbol Table */
+		ut32 f_nsyms; /* Number of Symbols */
+	}); // __attribute__ ((packed));
 
 /* XCOFF64 file header */
 R_PACKED (
@@ -369,6 +397,18 @@ struct coff_symbol {
 	ut8 n_sclass;	/* Storage Class */
 	ut8 n_numaux;	/* Auxiliary Count */
 });
+
+// Only change here vs regular coff is that
+// the section number is 4 bytes
+R_PACKED (
+	struct coff_bigobj_symbol {
+		char n_name[8]; /* Symbol Name */
+		ut32 n_value; /* Value of Symbol */
+		ut32 n_scnum; /* Section Number */
+		ut16 n_type; /* Symbol Type */
+		ut8 n_sclass; /* Storage Class */
+		ut8 n_numaux; /* Auxiliary Count */
+	});
 
 #define COFF_SYM_GET_DTYPE(type) (((type) >> 4) & 3)
 
