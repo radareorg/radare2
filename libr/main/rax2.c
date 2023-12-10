@@ -313,12 +313,9 @@ dotherax:
 		}
 		return true;
 	} else if (flags & (1 << 3)) { // -b
-		int i;
-		ut8 buf[4096];
-		const int n = r_str_binstr2bin (str, buf, sizeof (buf));
-		for (i = 0; i < n; i++) {
-			printf ("%c", buf[i]);
-		}
+		char *newstr = r_str_binstr2str (str, strlen(str));
+		printf ("%s\n", newstr);
+		free (newstr);
 		return true;
 	} else if (flags & (1 << 4)) { // -x
 		int h = r_str_hash (str);
@@ -389,21 +386,9 @@ dotherax:
 		}
 		return true;
 	} else if (flags & (1 << 17)) { // -B (bin -> str)
-		int i = 0;
-		// TODO: move to r_util
-		for (i = 0; i < strlen (str); i++) {
-			ut8 ch = str[i];
-			printf ("%d%d%d%d"
-				"%d%d%d%d",
-				ch & 128? 1: 0,
-				ch & 64? 1: 0,
-				ch & 32? 1: 0,
-				ch & 16? 1: 0,
-				ch & 8? 1: 0,
-				ch & 4? 1: 0,
-				ch & 2? 1: 0,
-				ch & 1? 1: 0);
-		}
+		char *binstr = r_str_str2binstr (str, strlen (str));
+		printf ("%s", binstr);
+		free (binstr);
 		return true;
 	} else if (flags & (1 << 16)) { // -w
 		ut64 n = r_num_calc (num, str, &errstr);
