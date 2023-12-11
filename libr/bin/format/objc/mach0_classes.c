@@ -884,10 +884,6 @@ static void get_method_list(RBinFile *bf, RBinClass *klass, const char *class_na
 				//eprintf ("0x%08llx METHOD %s\n", method->vaddr, method->name);
 			}
 		}
-#if 0
-		method->name->oname = strdup ("PENE");
-		method->name->name = strdup ("PENE demangled");
-#endif
 		r_list_append (klass->methods, method);
 next:
 		p += read_size;
@@ -1097,7 +1093,7 @@ static void get_protocol_list_of_lists(RBinFile *bf, RBinClass *klass, objc_cach
 	iterate_list_of_lists (bf, on_protocol_list, &ctx, p);
 }
 
-static const char *skipnum(const char *s) {
+static inline const char *skipnum(const char *s) {
 	while (IS_DIGIT (*s)) {
 		s++;
 	}
@@ -1111,6 +1107,7 @@ static char *demangle_classname(const char *s) {
 	char *ret, *klass, *module;
 	if (r_str_startswith (s, "_TtC")) {
 		int off = 4;
+		// TODO while (s[off] && !isdigit(s[off]))
 		while (s[off] && (s[off] < '0' || s[off] > '9')) {
 			off++;
 		}
@@ -1120,11 +1117,11 @@ static char *demangle_classname(const char *s) {
 			return strdup (s);
 		}
 		module = r_str_ndup (skipnum (s + off), len);
-		int skip = (skipnum (s + off) - s) + len;
+		int skip = skipnum (s + off) - s + len;
 		if (s[skip] == 'P') {
 			skip++;
 			len = atoi (s + skip);
-			skip = (skipnum (s + skip) - s) + len;
+			skip = skipnum (s + skip) - s + len;
 		}
 		kstr = s + skip;
 		len = atoi (kstr);
@@ -1569,7 +1566,7 @@ static inline HtUP *_load_symbol_by_vaddr_hashtable(RBinFile *bf) {
 	return ht;
 }
 
-static void parse_type(RList *list, RBinFile *bf, SwiftType st, HtUP *symbols_ht) {
+static void parse_type(RBinFile *bf, RList *list, SwiftType st, HtUP *symbols_ht) {
 	char *otypename = readstr (bf, st.name_addr);
 	if (R_STR_ISEMPTY (otypename)) {
 		R_LOG_DEBUG ("swift-type-parse missing name");
@@ -1603,7 +1600,6 @@ static void parse_type(RList *list, RBinFile *bf, SwiftType st, HtUP *symbols_ht
 		if (res != sizeof (buf)) {
 			R_LOG_DEBUG ("Partial read on st.members");
 		}
-		RBinName *oname = NULL;
 		ut32 count = R_MIN (MAX_SWIFT_MEMBERS, r_read_le32 (buf + 3));
 		for (i = 0; i < count; i++) {
 			int pos = (i * 8) + 3 + 8 + 8;
@@ -1616,16 +1612,15 @@ static void parse_type(RList *list, RBinFile *bf, SwiftType st, HtUP *symbols_ht
 			RBinSymbol *sym = NULL;
 			char *method_name;
 			char *rawname = NULL;
-			oname = NULL;
 			if (symbols_ht && (sym = ht_up_find (symbols_ht, method_addr, NULL))) {
 				rawname = strdup (r_bin_name_tostring (sym->name));
-				oname = sym->name;
 				method_name = r_name_filter_dup (r_bin_name_tostring (sym->name));
 				r_bin_name_filtered (sym->name, method_name);
 				char *dname = r_bin_demangle_swift (method_name, 0, false);
 				if (dname) {
 					r_bin_name_demangled (sym->name, dname);
-			eprintf ("   `- > %s\n", dname); // r_bin_name_tostring (sym->name));
+					free (sym->name->oname);
+					sym->name->oname = strdup (rawname);
 					free (method_name);
 					method_name = dname;
 				}
@@ -1643,15 +1638,11 @@ static void parse_type(RList *list, RBinFile *bf, SwiftType st, HtUP *symbols_ht
 					free (p);
 				}
 			}
-			eprintf ("    (m)> %s\n", method_name);
-			sym = r_bin_symbol_new (rawname? rawname: method_name, method_addr, method_addr);
-			if (oname) {
-				char *a = strdup (sym->name->oname);
-				// sym->name->name = method_name;
-				// char *b = strdup (sym->name->name);
+			if (rawname) {
+				sym = r_bin_symbol_new (rawname, method_addr, method_addr);
 				r_bin_name_demangled (sym->name, method_name);
-				sym->name->oname = a;
-				// free (b);
+			} else {
+				sym = r_bin_symbol_new (method_name, method_addr, method_addr);
 			}
 #if 0
 			if (oname) {
@@ -1814,7 +1805,7 @@ RList *MACH0_(parse_classes)(RBinFile *bf, objc_cache_opt_info *oi) {
 					st.fieldmd.size = aligned_fieldmd_size;
 					R_LOG_DEBUG ("Name address 0x%"PFMT64x" for 0x%"PFMT64x, st.name_addr, ms.fieldmd.addr);
 					if (st.fields != UT64_MAX) {
-						parse_type (ret, bf, st, symbols_ht);
+						parse_type (bf, ret, st, symbols_ht);
 					}
 				}
 				ht_up_free (symbols_ht);

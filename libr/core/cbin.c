@@ -4004,7 +4004,7 @@ static bool bin_classes(RCore *r, PJ *pj, int mode) {
 						pj_ks (pj, "name", bn->name);
 					}
 					if (bn->oname) {
-						pj_ks (pj, "oname", bn->oname);
+						pj_ks (pj, "rawname", bn->oname);
 					}
 					pj_end (pj);
 #else
@@ -4017,9 +4017,9 @@ static bool bin_classes(RCore *r, PJ *pj, int mode) {
 				pj_ka (pj, "methods");
 				r_list_foreach (c->methods, iter2, sym) {
 					pj_o (pj);
-					const char *rname = r_bin_name_tostring (sym->name);
+					const char *rname = r_bin_name_tostring2 (sym->name, 'o');
 					const char *sname = r_bin_name_tostring2 (sym->name, 'd');
-					if (sname == rname) {
+					if (sname == rname || !strcmp (sname, rname)) {
 						rname = NULL;
 					}
 					pj_ks (pj, "name", sname);

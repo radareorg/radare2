@@ -1511,7 +1511,7 @@ R_API RBinName *r_bin_name_clone(RBinName *bn) {
 		nn->oname = strdup (bn->oname);
 	}
 	if (bn->fname) {
-		nn->oname = strdup (bn->fname);
+		nn->fname = strdup (bn->fname);
 	}
 	return nn;
 }
