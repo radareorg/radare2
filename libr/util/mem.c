@@ -400,22 +400,26 @@ R_API void *r_mem_mmap_resize(RMmap *m, ut64 newsize) {
 R_API int r_mem_fromstring_bin(const char* str, ut8 *buf, size_t len) {
 	int i, j, k, ret;
 
+	int str_len = strlen (str);
 	ut8 *b = buf;
 	ut8 *e = buf + len;
-	for (i = 0; i < len && b < e; i += 8) {
+	for (i = 0; i < str_len && b < e; i += 8) {
 		ret = 0;
 		str = r_str_trim_head_ro (str);
-		if (i + 7 < len) {
-			for (k = 0, j = i + 7; j >= i; j--, k++) {
-				if (str[j] == ' ') {
-					continue;
-				}
-				if (str[j] == '1') {
-					ret |= (1 << k);
-				} else if (str[j] != '0') {
-					b[0] = 0; // null terminate if possible
-					return -1;
-				}
+		if (i + 7 >= str_len) {
+			b[0] = 0; // null terminate if possible
+			// missing bytes
+			return -1;
+		}
+		for (k = 0, j = i + 7; j >= i; j--, k++) {
+			if (str[j] == ' ') {
+				continue;
+			}
+			if (str[j] == '1') {
+				ret |= (1 << k);
+			} else if (str[j] != '0') {
+				b[0] = 0; // null terminate if possible
+				return -1;
 			}
 		}
 		*b++ = ret;
