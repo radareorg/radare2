@@ -107,8 +107,7 @@ NAME=demangle obj in pd
 FILE=bins/elf/ch25.bin
 CMDS=pd 1 @0x08048aac
 EXPECT=<<EOF
-            0x08048aac      c7042460b0..   mov dword [esp], obj.std::cerr ; sym..bss
-                                                                       ; [0x804b060:4]=0
+            0x08048aac      c7042460b0..   mov dword [esp], obj.std::cerr ; [0x804b060:4]=0
 EOF
 RUN
 

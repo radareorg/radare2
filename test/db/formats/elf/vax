@@ -7,7 +7,6 @@ pdf
 EOF
 EXPECT=<<EOF
             ;-- section..text:
-            ;-- .text:
             ;-- __start:
             ;-- _start:
             ;-- r15:

@@ -79,7 +79,7 @@ EXPECT=<<EOF
 0x0001019c add ip, pc, 0, 12
 0x000101a0 add ip, ip, 16, 20
 0x000101a4 ldr pc, [ip, 0x118]!
-0x00010188   sym..plt:
+0x00010188   section..plt:
 0x00010188 str lr, [sp, -4]!
 0x0001018c ldr lr, [pc, 4]
 0x00010190 add lr, pc, lr
@@ -149,7 +149,6 @@ pde
 EOF
 EXPECT=<<EOF
 ;-- section..text:
-;-- .text:
 ;-- entry0:
 ;-- _start:
 ;-- pc:
