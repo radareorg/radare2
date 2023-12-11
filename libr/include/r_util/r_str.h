@@ -266,8 +266,6 @@ R_API void r_str_trim_path(char *s);
 R_API ut8 r_str_contains_macro(const char *input_value);
 R_API void r_str_truncate_cmd(char *string);
 R_API bool r_str_glob(const char *str, const char *glob);
-R_API char *r_str_binstr2str(const ut8* str, size_t len);
-R_API char *r_str_str2binstr(const ut8* str, size_t len);
 R_API char *r_str_between(const char *str, const char *prefix, const char *suffix);
 #undef r_str_startswith
 static inline size_t r_str_ncpy(char *dst, const char *src, size_t n) {

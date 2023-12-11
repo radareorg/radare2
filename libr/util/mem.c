@@ -396,3 +396,52 @@ R_API void *r_mem_mmap_resize(RMmap *m, ut64 newsize) {
 	r_file_mmap_arch (m, m->filename, m->fd);
 	return m->buf;
 }
+
+R_API int r_mem_fromstring_bin(const char* str, ut8 *buf, size_t len) {
+	int i, j, k, ret;
+
+	ut8 *b = buf;
+	ut8 *e = buf + len;
+	for (i = 0; i < len && b < e; i += 8) {
+		ret = 0;
+		str = r_str_trim_head_ro (str);
+		if (i + 7 < len) {
+			for (k = 0, j = i + 7; j >= i; j--, k++) {
+				if (str[j] == ' ') {
+					continue;
+				}
+				if (str[j] == '1') {
+					ret |= (1 << k);
+				} else if (str[j] != '0') {
+					b[0] = 0; // null terminate if possible
+					return -1;
+				}
+			}
+		}
+		*b++ = ret;
+	}
+	b[1] = 0; // null terminate if possible
+	return b - buf;
+}
+
+R_API char *r_mem_tostring_bin(const ut8* str, int len) {
+	if (len < 0) {
+		len = strlen ((const char *)str);
+	}
+	RStrBuf *buf = r_strbuf_new (NULL);
+	int i = 0;
+
+	for (i = 0; i < len; i++) {
+		ut8 ch = str[i];
+		r_strbuf_appendf (buf, "%c", ch & 128? '1': '0');
+		r_strbuf_appendf (buf, "%c", ch & 64? '1': '0');
+		r_strbuf_appendf (buf, "%c", ch & 32? '1': '0');
+		r_strbuf_appendf (buf, "%c", ch & 16? '1': '0');
+		r_strbuf_appendf (buf, "%c", ch & 8? '1': '0');
+		r_strbuf_appendf (buf, "%c", ch & 4? '1': '0');
+		r_strbuf_appendf (buf, "%c", ch & 2? '1': '0');
+		r_strbuf_appendf (buf, "%c", ch & 1? '1': '0');
+	}
+
+	return r_strbuf_drain (buf);
+}

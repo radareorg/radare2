@@ -313,9 +313,12 @@ dotherax:
 		}
 		return true;
 	} else if (flags & (1 << 3)) { // -b
-		char *newstr = r_str_binstr2str ((const ut8*)str, strlen(str));
-		printf ("%s\n", newstr);
-		free (newstr);
+		ut8 out[256] = {0};
+		if (r_mem_fromstring_bin (str, out, sizeof (out) - 1)) {
+			printf ("%s\n", out); // TODO accept non null terminated strings
+		} else {
+			eprintf ("Invalid binary input string\n");
+		}
 		return true;
 	} else if (flags & (1 << 4)) { // -x
 		int h = r_str_hash (str);
@@ -386,9 +389,9 @@ dotherax:
 		}
 		return true;
 	} else if (flags & (1 << 17)) { // -B (bin -> str)
-		char *binstr = r_str_str2binstr ((const ut8*)str, strlen (str));
-		printf ("%s\n", binstr);
-		free (binstr);
+		char *newstr = r_mem_tostring_bin ((const ut8*)str, strlen (str));
+		printf ("%s\n", newstr);
+		free (newstr);
 		return true;
 	} else if (flags & (1 << 16)) { // -w
 		ut64 n = r_num_calc (num, str, &errstr);
