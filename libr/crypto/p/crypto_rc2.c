@@ -224,6 +224,7 @@ static bool update(RCryptoJob *cj, const ut8 *buf, int len) {
 	}
 	struct rc2_state *state = cj->data;
 	if (!state) {
+		free (obuf);
 		return false;
 	}
 	if (cj->flag == 0) {
