@@ -2471,9 +2471,13 @@ static bool bin_symbols(RCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at,
 
 	RBinSymbol *symbol;
 	R_VEC_FOREACH (symbols, symbol) {
+		const char *rawname = r_bin_name_tostring2 (symbol->name, 'o');
 		const char *name = r_bin_name_tostring (symbol->name);
 		if (!name) {
 			continue;
+		}
+		if (rawname == name) {
+			rawname = NULL;
 		}
 		if (exponly && !its_an_export (symbol)) {
 			continue;
@@ -2556,7 +2560,7 @@ static bool bin_symbols(RCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at,
 				free (fnp);
 			}
 			if (sn.demname) {
-				ut64 size = symbol->size? symbol->size: 1;
+				ut64 size = symbol->size > 0? symbol->size: 1;
 				r_meta_set (r->anal, R_META_TYPE_COMMENT, addr, size, sn.demname);
 			}
 			r_flag_space_pop (r->flags);
@@ -2569,6 +2573,12 @@ static bool bin_symbols(RCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at,
 			}
 			pj_ks (pj, "flagname", sn.nameflag);
 			pj_ks (pj, "realname", name);
+			if (rawname) {
+				pj_ks (pj, "rawname", rawname);
+			}
+			if (symbol->classname) {
+				pj_ks (pj, "classname", symbol->classname);
+			}
 			pj_ki (pj, "ordinal", symbol->ordinal);
 			pj_ks (pj, "bind", symbol->bind);
 			pj_kn (pj, "size", (ut64)symbol->size);
@@ -3805,6 +3815,7 @@ static bool bin_classes(RCore *r, PJ *pj, int mode) {
 	const bool bin_filter = r_config_get_b (r->config, "bin.filter");
 	r_list_foreach (cs, iter, c) {
 		const char *cname = r_bin_name_tostring2 (c->name, pref);
+		const char *rname = r_bin_name_tostring2 (c->name, 'o');
 		if (!c || R_STR_ISEMPTY (cname)) {
 			continue;
 		}
@@ -3970,6 +3981,9 @@ static bool bin_classes(RCore *r, PJ *pj, int mode) {
 		} else if (IS_MODE_JSON (mode)) {
 			pj_o (pj);
 			pj_ks (pj, "classname", cname);
+			if (rname && rname != cname && strcmp (cname, rname)) {
+				pj_ks (pj, "rawclassname", rname);
+			}
 			pj_kN (pj, "addr", c->addr);
 			const char *lang = r_bin_lang_tostring (c->lang);
 			if (lang && *lang != '?') {
@@ -3984,7 +3998,7 @@ static bool bin_classes(RCore *r, PJ *pj, int mode) {
 				pj_ka (pj, "super");
 				RBinName *bn;
 				r_list_foreach (c->super, iter, bn) {
-#if 0
+#if 1
 					pj_o (pj);
 					if (bn->name) {
 						pj_ks (pj, "name", bn->name);
@@ -4003,7 +4017,11 @@ static bool bin_classes(RCore *r, PJ *pj, int mode) {
 				pj_ka (pj, "methods");
 				r_list_foreach (c->methods, iter2, sym) {
 					pj_o (pj);
-					const char *sname = r_bin_name_tostring (sym->name);
+					const char *rname = r_bin_name_tostring (sym->name);
+					const char *sname = r_bin_name_tostring2 (sym->name, 'd');
+					if (sname == rname) {
+						rname = NULL;
+					}
 					pj_ks (pj, "name", sname);
 					RFlagItem *fi = r_flag_get_at (r->flags, sym->vaddr, false);
 					if (fi) {
@@ -4023,6 +4041,13 @@ static bool bin_classes(RCore *r, PJ *pj, int mode) {
 						pj_k (pj, "flags");
 						pj_j (pj, mflags);
 						free (mflags);
+					}
+					if (rname) {
+						pj_ks (pj, "rawname", rname);
+					}
+					const char *lang = r_bin_lang_tostring (sym->lang);
+					if (lang) {
+						pj_ks (pj, "lang", lang);
 					}
 					pj_kN (pj, "addr", sym->vaddr);
 					pj_end (pj);

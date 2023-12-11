@@ -325,23 +325,23 @@ agf
 EOF
 EXPECT=<<EOF
 [0x0008049c]>  # super_mario_fix ();
- --------------------------------------------.
-|  0x8049c                                   |
-| 8: super_mario_fix ();                     |
-|    ; segment.ehdr                          |
-| lui v0, 8                                  |
-|    ; "\u00a2\u00a2\u00a2World" sym..rodata |
-| addiu a0, v0, 0x510                        |
-`--------------------------------------------'
+ ------------------------------------------------.
+|  0x8049c                                       |
+| 8: super_mario_fix ();                         |
+|    ; segment.ehdr                              |
+| lui v0, 8                                      |
+|    ; "\u00a2\u00a2\u00a2World" section..rodata |
+| addiu a0, v0, 0x510                            |
+`------------------------------------------------'
 [0x0008049c]>  # super_mario_fix ();
- -----------------------------.
-|  0x8049c                    |
-| 8: super_mario_fix ();      |
-|    ; segment.ehdr           |
-| lui v0, 8                   |
-|    ; "...World" sym..rodata |
-| addiu a0, v0, 0x510         |
-`-----------------------------'
+ ---------------------------------.
+|  0x8049c                        |
+| 8: super_mario_fix ();          |
+|    ; segment.ehdr               |
+| lui v0, 8                       |
+|    ; "...World" section..rodata |
+| addiu a0, v0, 0x510             |
+`---------------------------------'
 EOF
 RUN
 
