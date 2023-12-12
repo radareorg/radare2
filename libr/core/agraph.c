@@ -3501,9 +3501,6 @@ static bool check_changes(RAGraph *g, bool is_interactive, RCore *core, RAnalFun
 			return false;
 		}
 	}
-	if (fcn) {
-		agraph_update_title (core, g, fcn);
-	}
 	if (core && core->config) {
 		if (r_config_get_b (core->config, "graph.trace")) {
 			// fold all bbs not traced
@@ -3542,6 +3539,9 @@ static bool check_changes(RAGraph *g, bool is_interactive, RCore *core, RAnalFun
 		if (n) {
 			update_seek (g->can, n, g->force_update_seek);
 		}
+	}
+	if (fcn) {
+		agraph_update_title (core, g, fcn);
 	}
 	if (oldpos[0] || oldpos[1]) {
 		g->can->sx = oldpos[0];
