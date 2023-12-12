@@ -1,20 +1,20 @@
-NAME=drm xmm registers
+NAME=drv xmm registers
 FILE=bins/elf/sse2-add
 ARGS=-d
 CMDS=<<EOF
 dcu main
 4ds
-drm xmm1 0 8
-drm xmm1 15 8
-drm xmm1 0 32
-drm xmm1 3 32
-drm xmm1 0 64
-drm xmm1 1 64
-drm xmm0
-drm xmm1 * 8
-drm xmm1 * 16
-drm xmm1 * 32
-drm xmm1 * 64
+drv xmm1 0 8
+drv xmm1 15 8
+drv xmm1 0 32
+drv xmm1 3 32
+drv xmm1 0 64
+drv xmm1 1 64
+drv xmm0
+drv xmm1 * 8
+drv xmm1 * 16
+drv xmm1 * 32
+drv xmm1 * 64
 EOF
 EXPECT=<<EOF
 0x00000001
@@ -38,16 +38,16 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=drm xmm registers - shorthand commands
+NAME=drv xmm registers - shorthand commands
 FILE=bins/elf/sse2-add
 ARGS=-d
 CMDS=<<EOF
 dcu main
 4ds
-drmb xmm1
-drmw xmm1
-drmd xmm1
-drmq xmm1
+drvb xmm1
+drvw xmm1
+drvd xmm1
+drvq xmm1
 EOF
 EXPECT=<<EOF
 0x01 0x02 0x03 0x04 0x05 0x06 0x07 0x08 0x09 0x0a 0x0b 0x0c 0x0d 0x0e 0x0f 0x10
@@ -57,16 +57,16 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=drm xmm registers - explicit packing all regs
+NAME=drv xmm registers - explicit packing all regs
 FILE=bins/elf/allxmm
 ARGS=-d
 CMDS=<<EOF
 16ds
-drm
-drmq
-drmd
-drmw
-drmb
+drv
+drvq
+drvd
+drvw
+drvb
 EOF
 EXPECT=<<EOF
 xmm0 = 0x408ccccd40533333400ccccd3f8ccccd
@@ -152,41 +152,41 @@ xmm15 = 0xcd 0xcc 0x80 0x41 0x9a 0x99 0x81 0x41 0x66 0x66 0x82 0x41 0x33 0x33 0x
 EOF
 RUN
 
-NAME=drm set xmm registers
+NAME=drv set xmm registers
 FILE=bins/elf/allxmm
 ARGS=-d
 CMDS=<<EOF
-drm xmm0 1 64 = 0x0001020304050607
-drm xmm0 0 64 = 0x08090a0b0c0d0e0f
-drm xmm1 3 32 = 0x00010203
-drm xmm1 2 32 = 0x04050607
-drm xmm1 1 32 = 0x08090a0b
-drm xmm1 0 32 = 0x0c0d0e0f
-drm xmm2 7 16 = 0x0001
-drm xmm2 6 16 = 0x0203
-drm xmm2 5 16 = 0x0405
-drm xmm2 4 16 = 0x0607
-drm xmm2 3 16 = 0x0809
-drm xmm2 2 16 = 0x0a0b
-drm xmm2 1 16 = 0x0c0d
-drm xmm2 0 16 = 0x0e0f
-drm xmm3 15 8 = 0x0
-drm xmm3 14 8 = 0x1
-drm xmm3 13 8 = 0x2
-drm xmm3 12 8 = 0x3
-drm xmm3 11 8 = 0x4
-drm xmm3 10 8 = 0x5
-drm xmm3 9 8 = 0x6
-drm xmm3 8 8 = 0x7
-drm xmm3 7 8 = 0x8
-drm xmm3 6 8 = 0x9
-drm xmm3 5 8 = 0xa
-drm xmm3 4 8 = 0xb
-drm xmm3 3 8 = 0xc
-drm xmm3 2 8 = 0xd
-drm xmm3 1 8 = 0xe
-drm xmm3 0 8 = 0xf
-drm~:0..3
+drv xmm0 1 64 = 0x0001020304050607
+drv xmm0 0 64 = 0x08090a0b0c0d0e0f
+drv xmm1 3 32 = 0x00010203
+drv xmm1 2 32 = 0x04050607
+drv xmm1 1 32 = 0x08090a0b
+drv xmm1 0 32 = 0x0c0d0e0f
+drv xmm2 7 16 = 0x0001
+drv xmm2 6 16 = 0x0203
+drv xmm2 5 16 = 0x0405
+drv xmm2 4 16 = 0x0607
+drv xmm2 3 16 = 0x0809
+drv xmm2 2 16 = 0x0a0b
+drv xmm2 1 16 = 0x0c0d
+drv xmm2 0 16 = 0x0e0f
+drv xmm3 15 8 = 0x0
+drv xmm3 14 8 = 0x1
+drv xmm3 13 8 = 0x2
+drv xmm3 12 8 = 0x3
+drv xmm3 11 8 = 0x4
+drv xmm3 10 8 = 0x5
+drv xmm3 9 8 = 0x6
+drv xmm3 8 8 = 0x7
+drv xmm3 7 8 = 0x8
+drv xmm3 6 8 = 0x9
+drv xmm3 5 8 = 0xa
+drv xmm3 4 8 = 0xb
+drv xmm3 3 8 = 0xc
+drv xmm3 2 8 = 0xd
+drv xmm3 1 8 = 0xe
+drv xmm3 0 8 = 0xf
+drv~:0..3
 EOF
 EXPECT=<<EOF
 xmm0 = 0x000102030405060708090a0b0c0d0e0f
@@ -196,13 +196,13 @@ EOF
 RUN
 
 
-NAME=drm xmm registers - double and float print
+NAME=drv xmm registers - double and float print
 FILE=bins/elf/allxmm
 ARGS=-d
 CMDS=<<EOF
 16ds
-drmf
-drml
+drvf
+drvl
 EOF
 EXPECT=<<EOF
 xmm0  = 1.100000 2.200000 3.300000 4.400000
@@ -241,22 +241,22 @@ EOF
 RUN
 
 
-NAME=drm ymm registers
+NAME=drv ymm registers
 FILE=bins/elf/ymm
 ARGS=-d
 CMDS=<<EOF
 16ds
-drmy
-drm ymm0
-drmy ymm0
-drmyq
-drmyd
-drmyw
-drmyb
-drmyf
-drmyl
-drmyl ymm0~[3]
-drmyf ymm0~[7]
+drvy
+drv ymm0
+drvy ymm0
+drvyq
+drvyd
+drvyw
+drvyb
+drvyf
+drvyl
+drvyl ymm0~[3]
+drvyf ymm0~[7]
 dr ymm0
 EOF
 EXPECT=<<EOF
