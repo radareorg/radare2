@@ -3,7 +3,7 @@
 #include "minunit.h"
 
 static bool test_r2pipe(void) {
-	R2Pipe *r = r2pipe_open ("radare2 -q0 -");
+	R2Pipe *r = r2pipe_open ("radare2 -N -q0 -");
 	mu_assert ("r2pipe can spawn", r);
 	char *hello = r2pipe_cmd (r, "?e hello world");
 	if (hello) {
@@ -15,12 +15,14 @@ static bool test_r2pipe(void) {
 }
 
 static bool test_r2pipe_404(void) {
-	R2Pipe *r = r2pipe_open ("rodoro2 -q0 -");
-	mu_assert ("r2pipe can spawn", !r);
+	R2Pipe *r = r2pipe_open ("rodoro2 -N -q0 -");
+	mu_assert_eq (r, NULL, "r2pipe can spawn");
+	// mu_assert ("r2pipe can spawn", !r);
 	mu_end;
 }
 
 static int all_tests() {
+	r_sys_setenv ("R2_NOPLUGINS", "1");
 	mu_run_test (test_r2pipe);
 	mu_run_test (test_r2pipe_404);
 	return tests_passed != tests_run;
