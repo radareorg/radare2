@@ -302,7 +302,7 @@ R_API bool r_asm_use(RAsm *a, const char *name) {
 			// a->acur = NULL;
 			return true;
 		}
-		R_LOG_ERROR ("Cannot find '%s' asm/arch/anal plugin. See rasm2 -L or -LL", name);
+		R_LOG_ERROR ("Cannot find '%s' arch plugin. See rasm2 -L or -LL", name);
 	}
 	if (strcmp (name, "null")) {
 		return r_asm_use (a, "null");

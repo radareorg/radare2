@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2022 - pancake */
+/* radare - LGPL - Copyright 2009-2023 - pancake */
 
 #include <r_reg.h>
 
@@ -203,6 +203,9 @@ R_API bool r_reg_set_value(RReg *reg, RRegItem *item, ut64 value) {
 		break;
 	case 16:
 		r_write_ble16 (src, value, be);
+		break;
+	case 24:
+		r_write_ble24 (src, value, be);
 		break;
 	case 4:
 		// read from buffer fill the gaps
