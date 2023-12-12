@@ -477,7 +477,7 @@ R_API int r_debug_step(RDebug *dbg, int steps);
 R_API int r_debug_step_over(RDebug *dbg, int steps);
 R_API int r_debug_continue_until(RDebug *dbg, ut64 addr);
 R_API int r_debug_continue_until_nonblock(RDebug *dbg, ut64 addr);
-R_API int r_debug_continue_until_optype(RDebug *dbg, int type, int over);
+R_API bool r_debug_continue_until_optype(RDebug *dbg, int type, bool over);
 R_API int r_debug_continue_until_nontraced(RDebug *dbg);
 R_API int r_debug_continue_syscall(RDebug *dbg, int sc);
 R_API int r_debug_continue_syscalls(RDebug *dbg, int *sc, int n_sc);
