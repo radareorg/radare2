@@ -134,6 +134,7 @@ static RCoreHelpMessage help_msg_dc = {
 	"dc", "[-pid]", "stop execution of pid",
 	"dcb", "", "continue back until breakpoint",
 	"dcc", "", "continue until call (use step into)",
+	"dcco", "", "continue until call (use step over)",
 	"dccu", "", "continue until unknown call (call reg)",
 	"dce", "", "continue execution (pass exception to program)",
 	"dcf", "", "continue until fork (TODO)",
@@ -4662,15 +4663,23 @@ static int cmd_debug_continue(RCore *core, const char *input) {
 		}
 		break;
 	case 'c': // "dcc"
-		if (input[2] == '?') {
-			r_core_cmd_help_match (core, help_msg_dc, "dcc");
-		} else {
+		switch (input[2]) {
+		case 'o':
+			// dcco
 			r_reg_arena_swap (core->dbg->reg, true);
-			if (input[2] == 'u') {
-				r_debug_continue_until_optype (core->dbg, R_ANAL_OP_TYPE_UCALL, 0);
-			} else {
-				r_debug_continue_until_optype (core->dbg, R_ANAL_OP_TYPE_CALL, 0);
-			}
+			r_debug_continue_until_optype (core->dbg, R_ANAL_OP_TYPE_CALL, 1);
+			break;
+		case 'u':
+			r_reg_arena_swap (core->dbg->reg, true);
+			r_debug_continue_until_optype (core->dbg, R_ANAL_OP_TYPE_UCALL, 0);
+			break;
+		case 0:
+			r_reg_arena_swap (core->dbg->reg, true);
+			r_debug_continue_until_optype (core->dbg, R_ANAL_OP_TYPE_CALL, 0);
+			break;
+		default:
+			r_core_cmd_help_match (core, help_msg_dc, "dcc");
+			break;
 		}
 		break;
 	case 'r': // "dcr"
