@@ -95,7 +95,27 @@ static char *socket_http_answer(RSocket *s, int *code, int *rlen, ut32 redirecti
 	} else {
 		len = olen - (dn - buf);
 	}
+	if (len == 0 || 1) {
+		char *res = calloc (olen, 1);
+		int total = 0;
+		do {
+			r_socket_block_time (s, true, 0, 0);
+			ret = r_socket_read (s, (ut8*) res + total, olen - total);
+			if (ret == -1) {
+				R_LOG_ERROR ("-1");
+				break;
+			}
+			if (ret == 0) {
+				continue;
+			}
+			total += ret;
+		} while (total < olen);
+		eprintf ("%d\n", total);
+		return res;
+	}
+	eprintf ("LEN I%d\n", len);
 	if (len > 0) {
+				eprintf ("READING %d\n", len);
 		if (len > olen) {
 			res = malloc (len + 2);
 			if (!res) {
@@ -330,10 +350,10 @@ R_API char *r_socket_http_post(const char *url, const char *data, int *code, int
 			"POST /%s HTTP/1.0\r\n"
 			"User-Agent: radare2 "R2_VERSION"\r\n"
 			"Accept: */*\r\n"
-			"Host: %s\r\n"
+			"Host: %s:%d\r\n"
 			"Content-Length: %i\r\n"
 			"Content-Type: application/x-www-form-urlencoded\r\n"
-			"\r\n", path, host, (int)strlen (data));
+			"\r\n", path, host, atoi(port), (int)strlen (data));
 	free (uri);
 	r_socket_write (s, (void *)data, strlen (data));
 	return socket_http_answer (s, code, rlen, 0);
