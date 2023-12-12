@@ -314,7 +314,7 @@ dotherax:
 		return true;
 	} else if (flags & (1 << 3)) { // -b
 		ut8 out[256] = {0};
-		if (r_mem_fromstring_bin (str, out, sizeof (out) - 1)) {
+		if (r_mem_from_binstring (str, out, sizeof (out) - 1)) {
 			printf ("%s\n", out); // TODO accept non null terminated strings
 		} else {
 			eprintf ("Invalid binary input string\n");
@@ -389,7 +389,7 @@ dotherax:
 		}
 		return true;
 	} else if (flags & (1 << 17)) { // -B (bin -> str)
-		char *newstr = r_mem_tostring_bin ((const ut8*)str, strlen (str));
+		char *newstr = r_mem_to_binstring((const ut8*)str, strlen (str));
 		printf ("%s\n", newstr);
 		free (newstr);
 		return true;
