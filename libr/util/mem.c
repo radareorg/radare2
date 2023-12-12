@@ -397,7 +397,7 @@ R_API void *r_mem_mmap_resize(RMmap *m, ut64 newsize) {
 	return m->buf;
 }
 
-R_API int r_mem_fromstring_bin(const char* str, ut8 *buf, size_t len) {
+R_API int r_mem_from_binstring(const char* str, ut8 *buf, size_t len) {
 	int i, j, k, ret;
 
 	int str_len = strlen (str);
@@ -424,11 +424,11 @@ R_API int r_mem_fromstring_bin(const char* str, ut8 *buf, size_t len) {
 		}
 		*b++ = ret;
 	}
-	b[1] = 0; // null terminate if possible
+	b[0] = 0;
 	return b - buf;
 }
 
-R_API char *r_mem_tostring_bin(const ut8* str, int len) {
+R_API char *r_mem_to_binstring(const ut8* str, int len) {
 	if (len < 0) {
 		len = strlen ((const char *)str);
 	}
