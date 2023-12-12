@@ -4664,20 +4664,19 @@ static int cmd_debug_continue(RCore *core, const char *input) {
 		break;
 	case 'c': // "dcc"
 		switch (input[2]) {
-		case 'o':
-			// dcco
+		case 'o': // "dcco"
 			r_reg_arena_swap (core->dbg->reg, true);
 			r_debug_continue_until_optype (core->dbg, R_ANAL_OP_TYPE_CALL, 1);
 			break;
-		case 'u':
+		case 'u': // "dccu"
 			r_reg_arena_swap (core->dbg->reg, true);
 			r_debug_continue_until_optype (core->dbg, R_ANAL_OP_TYPE_UCALL, 0);
 			break;
-		case 0:
+		case 0: // "dcc"
 			r_reg_arena_swap (core->dbg->reg, true);
 			r_debug_continue_until_optype (core->dbg, R_ANAL_OP_TYPE_CALL, 0);
 			break;
-		default:
+		default: // "dcc?"
 			r_core_cmd_help_match (core, help_msg_dc, "dcc");
 			break;
 		}

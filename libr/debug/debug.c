@@ -1072,6 +1072,7 @@ static bool isStepOverable(ut64 opType) {
 }
 
 R_API int r_debug_step_over(RDebug *dbg, int steps) {
+	R_RETURN_VAL_IF_FAIL (dbg, -1);
 	RAnalOp op;
 	ut64 buf_pc, pc, ins_size;
 	ut8 buf[DBG_BUF_SIZE];
@@ -1174,9 +1175,7 @@ R_API int r_debug_step_cnum(RDebug *dbg, int steps) {
 	if (steps > dbg->session->maxcnum - dbg->session->cnum) {
 		steps = dbg->session->maxcnum - dbg->session->cnum;
 	}
-
 	r_debug_goto_cnum (dbg, dbg->session->cnum + steps);
-
 	return steps;
 }
 
@@ -1392,9 +1391,8 @@ R_API int r_debug_continue_until_nontraced(RDebug *dbg) {
 	return false;
 }
 
-R_API int r_debug_continue_until_optype(RDebug *dbg, int type, int over) {
-	int ret, n = 0;
-	ut64 pc, buf_pc = 0;
+R_API bool r_debug_continue_until_optype(RDebug *dbg, int type, bool over) {
+	int n = 0;
 	RAnalOp op;
 	ut8 buf[DBG_BUF_SIZE];
 
@@ -1411,7 +1409,7 @@ R_API int r_debug_continue_until_optype(RDebug *dbg, int type, int over) {
 	r_debug_reg_sync (dbg, R_REG_TYPE_GPR, false);
 
 	// Initial refill
-	buf_pc = r_debug_reg_get (dbg, dbg->reg->name[R_REG_NAME_PC]);
+	ut64 buf_pc = r_debug_reg_get (dbg, dbg->reg->name[R_REG_NAME_PC]);
 	dbg->iob.read_at (dbg->iob.io, buf_pc, buf, sizeof (buf));
 
 	// step first, we don't want to check current optype
@@ -1420,7 +1418,7 @@ R_API int r_debug_continue_until_optype(RDebug *dbg, int type, int over) {
 			break;
 		}
 
-		pc = r_debug_reg_get (dbg, dbg->reg->name[R_REG_NAME_PC]);
+		ut64 pc = r_debug_reg_get (dbg, dbg->reg->name[R_REG_NAME_PC]);
 		// Try to keep the buffer full
 		if (pc - buf_pc > sizeof (buf)) {
 			buf_pc = pc;
@@ -1432,10 +1430,18 @@ R_API int r_debug_continue_until_optype(RDebug *dbg, int type, int over) {
 			return false;
 		}
 		if (op.type == type) {
+			switch (type) {
+			case R_ANAL_OP_TYPE_CALL:
+			case R_ANAL_OP_TYPE_UCALL:
+				if (over) {
+					r_debug_step_over (dbg, 1);
+				}
+				break;
+			}
 			break;
 		}
 		// Step over and repeat
-		ret = over
+		int ret = over
 			? r_debug_step_over (dbg, 1)
 			: r_debug_step (dbg, 1);
 
@@ -1445,7 +1451,6 @@ R_API int r_debug_continue_until_optype(RDebug *dbg, int type, int over) {
 		}
 		n++;
 	}
-
 	return n;
 }
 
