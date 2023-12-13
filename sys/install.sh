@@ -63,6 +63,9 @@ while : ; do
 	"--without-pull")
 		export WITHOUT_PULL=1
 		;;
+	'--prefix='*)
+		PREFIX=`echo "$1" | cut -d = -f 2`
+		;;
 	-*)
 		# just for the penguin face case
 		ARGS="${ARGS} $1"
