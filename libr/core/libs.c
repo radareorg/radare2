@@ -157,7 +157,7 @@ R_API bool r_core_loadlibs(RCore *core, int where, const char *path) {
 			// r_core_cmdf (core, "\"\". %s/%s", homeplugindir, file);
 			char *script_file = r_str_newf ("%s/%s", homeplugindir, file);
 			if (!r_core_run_script (core, script_file)) {
-				R_LOG_ERROR ("Error running script '%s'", script_file);
+				R_LOG_ERROR ("Failed to run script '%s'", script_file);
 			}
 			free (script_file);
 		}
