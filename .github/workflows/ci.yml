@@ -148,6 +148,10 @@ jobs:
       run: |
         export LD_LIBRARY_PATH=/usr/local/lib
         make tests
+    - uses: actions/upload-artifact@v3
+      with:
+        name: results.json
+        path: test/results.json
   linux-static-meson:
     if: contains(github.ref, 'master') || contains(github.ref, 'ci-')
     continue-on-error: true

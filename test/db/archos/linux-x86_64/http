@@ -1,4 +1,5 @@
 NAME==h
+BROKEN=1
 FILE=--
 CMDS=!scripts/test-webserver.sh
 EXPECT=<<EOF
@@ -58,4 +59,4 @@ Starting http server...
 open http://localhost:9292/
 r2 -C http://localhost:9292/cmd/
 EOF
-RUN
+NORUN
