@@ -906,7 +906,7 @@ static char *get_unique_name(Sdb *sdb, const char *name, const RSpace *sp) {
 	ut32 i;
 	for (i = 2; i < UT32_MAX; i++) {
 		char *unique = r_str_newf ("%s_%d", name, i);
-		if (!unique || !name_exists (sdb, unique, sp)) {
+		if (!name_exists (sdb, unique, sp)) {
 			return unique;
 		}
 		free (unique);
@@ -1415,7 +1415,7 @@ R_API RList *r_sign_find_closest_fcn(RAnal *a, RSignItem *it, int count, double 
 			r_sign_addto_item (a, fsig, fcn, R_SIGN_GRAPH);
 		}
 		r_sign_addto_item (a, fsig, fcn, R_SIGN_OFFSET);
-		fsig->name = r_str_new (fcn->name);
+		fsig->name = strdup (fcn->name);
 
 		// maybe add signature item to output list
 		closest_match_update (fsig, &data);
@@ -3027,7 +3027,7 @@ static int signdb_type(const char *file) {
 }
 
 static bool sign_load_r2(RAnal *a, const char *path) {
-	char *cmd = r_str_newf (". %s", path);
+	char *cmd = r_str_newf ("'. %s", path);
 	a->coreb.cmd (a->coreb.core, cmd);
 	free (cmd);
 	return true;

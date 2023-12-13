@@ -2410,6 +2410,7 @@ static void select_flag_space(RCore *core, RBinSymbol *symbol) {
 	if (symbol->is_imported) {
 		r_flag_space_push (core->flags, R_FLAGS_FS_IMPORTS);
 	} else if (symbol->type && !strcmp (symbol->type, R_BIN_TYPE_SECTION_STR)) {
+		// TODO get rid of this R2_590
 		r_flag_space_push (core->flags, R_FLAGS_FS_SYMBOLS_SECTIONS);
 	} else {
 		r_flag_space_push (core->flags, R_FLAGS_FS_SYMBOLS);
@@ -2693,7 +2694,7 @@ next:
 		free (s);
 	}
 
-	//handle thumb and arm for entry point since they are not present in symbols
+	// handle thumb and arm for entry point since they are not present in symbols
 	if (is_arm) {
 		r_list_foreach (entries, iter, entry) {
 			if (IS_MODE_SET (mode)) {
