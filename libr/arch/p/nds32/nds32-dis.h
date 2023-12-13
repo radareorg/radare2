@@ -103,13 +103,13 @@ static const char *mnemonic_alu21[] =
 static const char *mnemonic_br2[] =
 {
   "ifcall", "01", "beqz", "bnez", "bgez",   "bltz",   "bgtz", "blez",
-  "10",     "11", "12",   "13",   "bgezal", "bltzal", "b16"
+  "10",     "11", "12",   "13",   "bgezal", "bltzal", "b16", "?"
 };
 
 static const char *mnemonic_misc[] =
 {
   "standby", "cctl", "mfsr",  "mtsr",    "iret",  "trap",  "teqz", "tnez",
-  "dsb",     "isb",  "break", "syscall", "msync", "isync", "tlbop"
+  "dsb",     "isb",  "break", "syscall", "msync", "isync", "tlbop", "?"
 };
 
 static const char *mnemonic_hwgp[] =
