@@ -116,19 +116,21 @@ R_API void r_core_loadlibs_init(RCore *core) {
 	core->times->loadlibs_init_time = r_time_now_mono () - prev;
 }
 
-static bool __isScriptFilename(const char *name) {
+static bool is_script(const char *name) {
 	const char *ext = r_file_extension (name);
 	if (ext) {
 		if (0
 		|| !strcmp (ext, "c")
 		|| !strcmp (ext, "go")
+		|| !strcmp (ext, "ts")
 		|| !strcmp (ext, "js")
+		|| !strcmp (ext, "qjs")
 		|| !strcmp (ext, "lua")
 		|| !strcmp (ext, "pl")
 		|| !strcmp (ext, "py")
-		|| !strcmp (ext, "qjs")
 		|| !strcmp (ext, "rs")
 		|| !strcmp (ext, "v")
+		|| !strcmp (ext, "nim")
 		|| !strcmp (ext, "vala")
 		|| !strcmp (ext, "wren")) {
 			return true;
@@ -151,8 +153,13 @@ R_API bool r_core_loadlibs(RCore *core, int where, const char *path) {
 	RListIter *iter;
 	char *file;
 	r_list_foreach (files, iter, file) {
-		if (__isScriptFilename (file)) {
-			r_core_cmdf (core, "\"\". %s/%s", homeplugindir, file);
+		if (is_script (file)) {
+			// r_core_cmdf (core, "\"\". %s/%s", homeplugindir, file);
+			char *script_file = r_str_newf ("%s/%s", homeplugindir, file);
+			if (!r_core_run_script (core, script_file)) {
+				R_LOG_ERROR ("Failed to run script '%s'", script_file);
+			}
+			free (script_file);
 		}
 	}
 	r_list_free (files);
