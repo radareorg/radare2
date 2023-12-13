@@ -234,6 +234,12 @@ s 0x00138820
 iS.
 s 0x100
 iS.
+s 0x00138830
+is.
+s 0x00000030
+iE.
+s 0x00075740
+iE.
 EOF
 EXPECT=<<EOF
 Current section
@@ -254,6 +260,15 @@ nth paddr       size vaddr       vsize perm type name
 -----------------------------------------------------
 0   0x00000000   0x4 0x00000100    0x4 -rw- MAP  .bss$aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa13-16
 
+nth paddr      vaddr      bind  type size lib name          demangled
+---------------------------------------------------------------------
+0   0x0030d4d8 0x00138830 LOCAL UNK  4        .llvm_addrsig
+nth paddr      vaddr      bind   type size lib name                                                                                                                              demangled
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+0   0x00000000 0x00000030 GLOBAL UNK  4        aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa0
+nth paddr      vaddr      bind   type size lib name                                                                                                                                  demangled
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+0   0x00000000 0x00075740 GLOBAL UNK  4        aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa30065
 EOF
 RUN
 
