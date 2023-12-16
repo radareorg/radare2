@@ -1768,7 +1768,6 @@ za sym.foo_int_ N sym.foo_int__int_
 EOF
 RUN
 
-
 NAME=Saves and loads sdb zignatures without sdb extension
 FILE=-
 CMDS=<<EOF
