@@ -1767,3 +1767,54 @@ za main N sym.imp.atoi
 za sym.foo_int_ N sym.foo_int__int_
 EOF
 RUN
+
+
+NAME=Saves and loads sdb zignatures without sdb extension
+FILE=-
+CMDS=<<EOF
+rm .tmp_file
+za s1 x xref1
+za s2 r ref1
+za s3 n sym1
+za s4 n sym2
+zos .tmp_file
+z-*
+zo .tmp_file
+z~s1
+z~s2
+z~s3
+z~s4
+rm .tmp_file
+EOF
+EXPECT=<<EOF
+s1:
+s2:
+s3:
+s4:
+EOF
+RUN
+
+NAME=Saves and loads r2 zignatures without r2 extension
+FILE=-
+CMDS=<<EOF
+rm .tmp_file
+za s1 x xref1
+za s2 r ref1
+za s3 n sym1
+za s4 n sym2
+z* > .tmp_file
+z-*
+zo .tmp_file
+z~s1
+z~s2
+z~s3
+z~s4
+rm .tmp_file
+EOF
+EXPECT=<<EOF
+s1:
+s2:
+s3:
+s4:
+EOF
+RUN
