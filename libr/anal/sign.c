@@ -3010,7 +3010,7 @@ static int signdb_type(const char *file) {
 				continue;
 			}
 		}
-		if (is_sdb == 0) {
+		if (is_sdb < 0) {
 			t = SIGNDB_TYPE_SDB;
 		} else if (is_r2 < 0) {
 			t = SIGNDB_TYPE_R2;
