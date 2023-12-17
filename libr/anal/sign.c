@@ -2990,38 +2990,27 @@ static int signdb_type(const char *file) {
 	sz = R_MIN (sz, 0x200);
 	int is_sdb = 16;
 	int is_kv = 4;
-	int is_r2 = 4;
+	int is_r2 = 2;
 	int t = SIGNDB_TYPE_INVALID;
 	if (r_str_startswith (data, "[{\"name\":")) {
 		t = SIGNDB_TYPE_JSON;
 	} else {
 		for (i = 0; i < sz; i++) {
-			if (!strncmp (data + i, "\nza ", sz - i)) {
+			if (!strncmp (data + i, "\nza ", 4)) {
 				is_r2--;
-				i++;
+				i += 3;
 				continue;
 			}
-			switch (i) {
-			case 3:
-			case 7:
-			case 0xb:
-			case 0xf:
-				if (data[i] == 0) {
-					is_sdb--;
-				}
-				break;
-			case '=':
-			case '\n':
+			if ((i & 3) == 3 && data[i] == 0) {
+				is_sdb--;
+				continue;
+			}
+			if (data[i] == '=' || data[i] == '\n') {
 				is_kv--;
-				break;
-			default:
-				if (data[i] != 0) {
-					is_sdb--;
-				}
-				break;
+				continue;
 			}
 		}
-		if (is_sdb == 0) {
+		if (is_sdb < 0) {
 			t = SIGNDB_TYPE_SDB;
 		} else if (is_r2 < 0) {
 			t = SIGNDB_TYPE_R2;
