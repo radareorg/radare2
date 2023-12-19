@@ -256,7 +256,7 @@ static void striptrim(RList *list) {
 
 static void r2pm_upgrade(bool force) {
 #if R2__UNIX__
-	char *s = r_sys_cmd_str ("radare2 -qcq -- 2>&1 | grep r2pm | sed -e 's,$,;,g'", NULL, 0);
+	char *s = r_sys_cmd_str ("radare2 -NNqcq -- 2>&1 | grep r2pm | sed -e 's,$,;,g'", NULL, 0);
 	r_str_trim (s);
 	RList *list = r_str_split_list (s, "\n", -1);
 	striptrim (list);
@@ -343,7 +343,7 @@ static void r2pm_setenv(void) {
 	r_sys_setenv ("R2PM_GITDIR", gdir);
 	free (gdir);
 
-	char *pd = r_sys_cmd_str ("radare2 -H R2_USER_PLUGINS", NULL, NULL);
+	char *pd = r_sys_cmd_str ("radare2 -NN -H R2_USER_PLUGINS", NULL, NULL);
 	if (pd) {
 		if (R_STR_ISNOTEMPTY (pd)) {
 			r_str_trim (pd);
@@ -427,7 +427,7 @@ static void r2pm_setenv(void) {
 		free (ldpath);
 		ldpath = newpath;
 	}
-	char *gr2_prefix = r_sys_cmd_str ("radare2 -H R2_PREFIX", NULL, NULL);
+	char *gr2_prefix = r_sys_cmd_str ("radare2 -NN -H R2_PREFIX", NULL, NULL);
 	if (gr2_prefix) {
 		r_str_trim (gr2_prefix);
 		if (R_STR_ISNOTEMPTY (gr2_prefix)) {
@@ -825,7 +825,7 @@ static int r2pm_install(RList *targets, bool uninstall, bool clean, bool force, 
 	RListIter *iter;
 	const char *t;
 	int rc = 0;
-	char *r2v = r_sys_cmd_str ("radare2 -qv", NULL, NULL);
+	char *r2v = r_sys_cmd_str ("radare2 -NNqv", NULL, NULL);
 	if (R_STR_ISEMPTY (r2v)) {
 		R_LOG_ERROR ("Cannot run radare2 -qv");
 		free (r2v);
