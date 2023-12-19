@@ -378,9 +378,13 @@ static void r2pm_setenv(void) {
 	r_sys_setenv ("R2PM_BINDIR", bindir);
 	free (bindir);
 
-	char *libdir = r_str_newf ("%s/bin", r2_prefix);
+	char *libdir = r_str_newf ("%s/lib", r2_prefix);
 	r_sys_setenv ("R2PM_LIBDIR", libdir);
 	free (libdir);
+
+	char *incdir = r_str_newf ("%s/include", r2_prefix);
+	r_sys_setenv ("R2PM_INCDIR", incdir);
+	free (incdir);
 
 	char *oldpath = r_sys_getenv ("PATH");
 	if (!oldpath) {
@@ -1049,6 +1053,7 @@ static void r2pm_envhelp(bool verbose) {
 			"R2PM_TIME\n"
 			"R2PM_PLUGDIR\n"
 			"R2PM_BINDIR\n"
+			"R2PM_INCDIR\n"
 			"R2PM_LIBDIR\n"
 			"R2PM_OFFLINE\n"
 			"R2PM_PREFIX\n"
