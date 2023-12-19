@@ -706,6 +706,30 @@ static int r2pm_install_pkg(const char *pkg, bool clean, bool global) {
 			return -1;
 		}
 	}
+	char *conflict = r2pm_get (pkg, "\nR2PM_CONFLICT ", TT_TEXTLINE);
+	if (conflict) {
+		RListIter *iter, *iter2;
+		RList *l = r_str_split_list (conflict, " ", 0); // conflictive packages
+		char *pkgdir = r2pm_pkgdir (); // installed packages
+		RList *files = r_sys_dir (pkgdir);
+		free (pkgdir);
+		if (!files) {
+			return -1;
+		}
+		const char *file, *dep;
+		r_list_foreach (files, iter, file) {
+			if (*file != '.') {
+				r_list_foreach (l, iter2, dep) {
+					if (!strcmp (dep, file)) {
+						R_LOG_ERROR ("This package conflicts with %s", file);
+						return -1;
+					}
+				}
+			}
+		}
+		r_list_free (files);
+		r_list_free (l);
+	}
 	char *deps = r2pm_get (pkg, "\nR2PM_DEPS ", TT_TEXTLINE);
 	if (deps) {
 		char *dep;
