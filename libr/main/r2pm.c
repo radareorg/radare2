@@ -803,7 +803,7 @@ static int r2pm_install_pkg(const char *pkg, bool clean, bool global) {
 #else
 	char *script = r2pm_get (pkg, "\nR2PM_INSTALL() {\n", TT_CODEBLOCK);
 	if (!script) {
-		R_LOG_ERROR ("Cannot find the R2PM_INSTALL() {} script block for '%s'", pkg);
+		R_LOG_ERROR ("Cannot find '%s' package or missing R2PM_INSTALL block", pkg);
 		free (srcdir);
 		return 1;
 	}
