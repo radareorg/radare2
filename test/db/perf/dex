@@ -18,14 +18,14 @@ EXPECT=<<EOF
 |                                                                      ; 0x44c8 ; "f"
 |           0x000155c6      22043d00       new-instance v4, Landroid/widget/TextView; ; SanityCheckRootTools.java:52 ; 0x2828
 |           0x000155ca      702082008400   invoke-direct {v4, v8}, Landroid/widget/TextView.<init>(Landroid/content/Context;)V ; 0x82
-|           0x000155d0      5b84d300       iput-object v4, v8, Lcom/stericson/RootTools/SanityCheckRootTools;->mTextView Landroid/widget/TextView; ; field.class.Lcom_stericson_RootTools_SanityCheckRootTools.var.Lcom_stericson_RootTools_SanityCheckRootTools.ifield_mTextView:Landroid_widget_TextView
+|           0x000155d0      5b84d300       iput-object v4, v8, Lcom/stericson/RootTools/SanityCheckRootTools;->mTextView Landroid/widget/TextView; ; field.class.Lcom_stericson_RootTools_SanityCheckRootTools.var.Lcom_stericson_RootTools_SanityCheckRootTools.ifield_mTextView:Landroid_widget_TextView_
 |                                                                      ; 0x4590 ; u"n=\u0724"
 |           0x000155d4      5484d300       iget-object v4, v8, Lcom/stericson/RootTools/SanityCheckRootTools;->mTextView Landroid/widget/TextView; ; SanityCheckRootTools.java:54
 |           0x000155d8      1a050000       const-string v5, 0x2b120
 |           0x000155dc      6e2085005400   invoke-virtual {v4, v5}, Landroid/widget/TextView.setText(Ljava/lang/CharSequence;)V ; 0x85
 |           0x000155e2      22043b00       new-instance v4, Landroid/widget/ScrollView; ; SanityCheckRootTools.java:61 ; 0x2820
 |           0x000155e6      70207d008400   invoke-direct {v4, v8}, Landroid/widget/ScrollView.<init>(Landroid/content/Context;)V ; 0x7d
-|           0x000155ec      5b84d200       iput-object v4, v8, Lcom/stericson/RootTools/SanityCheckRootTools;->mScrollView Landroid/widget/ScrollView; ; field.class.Lcom_stericson_RootTools_SanityCheckRootTools.var.Lcom_stericson_RootTools_SanityCheckRootTools.ifield_mScrollView:Landroid_widget_ScrollView
+|           0x000155ec      5b84d200       iput-object v4, v8, Lcom/stericson/RootTools/SanityCheckRootTools;->mScrollView Landroid/widget/ScrollView; ; field.class.Lcom_stericson_RootTools_SanityCheckRootTools.var.Lcom_stericson_RootTools_SanityCheckRootTools.ifield_mScrollView:Landroid_widget_ScrollView_
 |                                                                      ; 0x4588 ; u"n;\u0723"
 |           0x000155f0      5484d200       iget-object v4, v8, Lcom/stericson/RootTools/SanityCheckRootTools;->mScrollView Landroid/widget/ScrollView;
 |           0x000155f4      5485d300       iget-object v5, v8, Lcom/stericson/RootTools/SanityCheckRootTools;->mTextView Landroid/widget/TextView;
@@ -66,7 +66,7 @@ EXPECT=<<EOF
 |    :|     ; CODE XREF from entry0 @ 0x15668(x)
 |    :`---> 0x000156a4      22040b00       new-instance v4, Landroid/app/ProgressDialog; ; 0x2760
 |    :      0x000156a8      702012008400   invoke-direct {v4, v8}, Landroid/app/ProgressDialog.<init>(Landroid/content/Context;)V ; 0x12
-|    :      0x000156ae      5b84d100       iput-object v4, v8, Lcom/stericson/RootTools/SanityCheckRootTools;->mPDialog Landroid/app/ProgressDialog; ; field.class.Lcom_stericson_RootTools_SanityCheckRootTools.var.Lcom_stericson_RootTools_SanityCheckRootTools.ifield_mPDialog:Landroid_app_ProgressDialog
+|    :      0x000156ae      5b84d100       iput-object v4, v8, Lcom/stericson/RootTools/SanityCheckRootTools;->mPDialog Landroid/app/ProgressDialog; ; field.class.Lcom_stericson_RootTools_SanityCheckRootTools.var.Lcom_stericson_RootTools_SanityCheckRootTools.ifield_mPDialog:Landroid_app_ProgressDialog_
 |    :                                                                 ; 0x4580 ; u"n\v\u0722"
 |    :      0x000156b2      5484d100       iget-object v4, v8, Lcom/stericson/RootTools/SanityCheckRootTools;->mPDialog Landroid/app/ProgressDialog;
 |    :      0x000156b6      6e2014007400   invoke-virtual {v4, v7}, Landroid/app/ProgressDialog.setCancelable(Z)V ; 0x14
