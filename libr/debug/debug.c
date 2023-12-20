@@ -1561,7 +1561,17 @@ static int show_syscall(RDebug *dbg, const char *sysreg) {
 	return reg;
 }
 
-// continue execution until a syscall is found, then return its syscall number or -1 on error
+/* Continue execution until a syscall is found.
+ *
+ * If no plugin is selected, read the x86 sn register in order to determine the syscall. See https://www2.lauterbach.com/pdf/debugger_x86.pdf.
+ * In case of bug, it is recommended to use a debugger plugin such as -d "windbg://file.exe" on Windows.
+ *
+ * first argument, RDebug: debugger configuration structure.
+ * second argument, int sc: register value.
+ * third argument, int n_sc: syscall number (eg: sys_read = 0 in x64).
+ *
+ * return the syscall number or -1 on error.
+*/
 R_API int r_debug_continue_syscalls(RDebug *dbg, int *sc, int n_sc) {
 	r_return_val_if_fail (dbg, false);
 	int i, err, reg;
