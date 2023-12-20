@@ -83,7 +83,7 @@ R_API RConfigNode *r_config_set_i_cb(RConfig *cfg, const char *name, int ivalue,
 R_API RConfigNode *r_config_set_b_cb(RConfig *cfg, const char *name, bool bvalue, RConfigCallback cb);
 
 R_API RConfigNode *r_config_set(RConfig *cfg, const char *name, const char *value);
-R_API bool r_config_rm(RConfig *cfg, const char *name);
+R_API bool r_config_rm(RConfig *cfg, const char *name); // rename to unset
 R_API ut64 r_config_get_i(RConfig *cfg, const char *name);
 R_API const char *r_config_get(RConfig *cfg, const char *name);
 R_API RConfigNode *r_config_desc(RConfig *cfg, const char *name, const char *desc);
