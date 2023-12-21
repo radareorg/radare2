@@ -140,6 +140,10 @@ R_API RPVector *r2r_load_cmd_test_file(const char *file) {
 		}
 
 		// RUN is the only cmd without value
+		if (!strcmp (line, "NORUN")) {
+			// dont run this test, like if it was commented out
+			continue;
+		}
 		if (!strcmp (line, "RUN")) {
 			test->run_line = linenum;
 			if (!test->cmds.value) {
