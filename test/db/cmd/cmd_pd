@@ -1515,13 +1515,13 @@ pd 2
 EOF
 EXPECT=<<EOF
             0x0008049c      0800023c       lui v0, 8                   ; segment.ehdr
-            0x000804a0      10054424       addiu a0, v0, 0x510         ; "Hello World" sym..rodata
+            0x000804a0      10054424       addiu a0, v0, 0x510         ; "Hello World" section..rodata
 ----
             0x0008049c      0800023c       lui v0, 8                   ; segment.ehdr
-            0x000804a0      10054424       addiu a0, v0, 0x510         ; 0x80510 "Hello World" sym..rodata
+            0x000804a0      10054424       addiu a0, v0, 0x510         ; 0x80510 "Hello World" section..rodata
 ----
             0x0008049c      0800023c       lui v0, 8                   ; segment.ehdr
-            0x000804a0      10054424       addiu a0, v0, 0x510         ; sym..rodata
+            0x000804a0      10054424       addiu a0, v0, 0x510         ; section..rodata
 EOF
 RUN
 
@@ -1536,8 +1536,8 @@ pd 1
 pd 1  # should print the same as above
 EOF
 EXPECT=<<EOF
-            0x000804a0      10054424       addiu a0, v0, 0x510         ; "Hello World" sym..rodata
-            0x000804a0      10054424       addiu a0, v0, 0x510         ; "Hello World" sym..rodata
+            0x000804a0      10054424       addiu a0, v0, 0x510         ; "Hello World" section..rodata
+            0x000804a0      10054424       addiu a0, v0, 0x510         ; "Hello World" section..rodata
 EOF
 RUN
 

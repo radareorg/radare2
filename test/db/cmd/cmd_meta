@@ -193,7 +193,6 @@ EXPECT=<<EOF
     "flags": [
       "entry0",
       "section..text",
-      "sym..text",
       "sym._start"
     ],
     "comment": "WzEyXSAtci14IHNlY3Rpb24gc2l6ZSA3NTYgbmFtZWQgLnRleHQ="

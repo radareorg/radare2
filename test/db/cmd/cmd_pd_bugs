@@ -219,7 +219,6 @@ pi 2
 EOF
 EXPECT=<<EOF
             ;-- section..text:
-            ;-- .text:
             ;-- entry0:
             ;-- _start:
             0x004005c0      31ed           xor ebp, ebp                ; [14] -r-x section size 584 named .text

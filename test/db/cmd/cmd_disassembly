@@ -66,7 +66,6 @@ pd 1
 EOF
 EXPECT=<<EOF
             ;-- section..text:
-            ;-- .text:
             ;-- entry0:
             ;-- _start:
             0x000006a0      31ed           xor ebp, ebp                ; [14] -r-x section size 546 named .text

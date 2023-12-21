@@ -1508,7 +1508,7 @@ EXPECT=<<EOF
 ┌ 6: int sym.imp.puts (const char *s);
 └       ╎   0x004003f0      jmp qword [reloc.puts]                     ; [0x601018:8]=0x4003f6
         ╎   0x004003f6      push 0
-        └─< 0x004003fb      jmp sym..plt
+        └─< 0x004003fb      jmp section..plt
 EOF
 RUN
 

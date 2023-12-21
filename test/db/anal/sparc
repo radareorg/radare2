@@ -596,7 +596,6 @@ pd 4
 EOF
 EXPECT=<<EOF
 ;-- section..text:
-;-- .text:
 ;-- entry0:
 ;-- _start:
 0x000100f0      bc100000       mov g0, fp                              ; [02] -r-x section size 50552 named .text
