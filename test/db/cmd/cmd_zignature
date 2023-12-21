@@ -1796,19 +1796,19 @@ RUN
 NAME=Saves and loads r2 zignatures without r2 extension
 FILE=-
 CMDS=<<EOF
-rm .tmp_file
+rm .tmp_file2
 za s1 x xref1
 za s2 r ref1
 za s3 n sym1
 za s4 n sym2
-z* > .tmp_file
+z* > .tmp_file2
 z-*
-zo .tmp_file
+zo .tmp_file2
 z~s1
 z~s2
 z~s3
 z~s4
-rm .tmp_file
+rm .tmp_file2
 EOF
 EXPECT=<<EOF
 s1:
