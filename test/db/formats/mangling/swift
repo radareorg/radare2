@@ -46,11 +46,18 @@ EXPECT=<<EOF
 0x100008288 [0x100008288 - 0x100008288]      0 objc class 0 klass.SuperKlass :: Swift._SwiftObject
 0x00000000 objc      var   0      isa
 0x100003d30 objc      var   1      superfield
-0x00000000 [0x100002b70 - 0x100008568]  23032 c++ class 4 swift
-0x100002b70 c++   method   0      getRootSuperclass()
-0x100002bb0 c++   method   1      swift51override_conformsToSwiftProtocol(swift::TargetMetadata<swift::InProcess> const*, swift::TargetProtocolDescriptor<swift::InProcess> const*, llvm::StringRef, swift::TargetProtocolConformanceDescriptor<swift::InProcess> const* (*)(swift::TargetMetadata<swift::InProcess> const*, swift::TargetProtocolDescriptor<swift::InProcess> const*, llvm::StringRef))
-0x1000031f0 c++   method   2      Lazy<(anonymous namespace)::ConformanceState>::defaultInitCallback(void*)
-0x100003650 c++   method   3      getRootSuperclass()::$_0::operator()() const::{lambda(void*)#1}::__invoke(void*)
-0x100008568 c++   method   4      getRootSuperclass()::$_0::operator()() const::TheLazy
+0x100002b70 [0x100002b70 - 0x100008568]  23032 ? class 4 swift
+0x100002b70 ?   method   0      getRootSuperclass()
+0x100002bb0 ?   method   1      swift51override_conformsToSwiftProtocol(swift::TargetMetadata<swift::InProcess> const*, swift::TargetProtocolDescriptor<swift::InProcess> const*, llvm::StringRef, swift::TargetProtocolConformanceDescriptor<swift::InProcess> const* (*)(swift::TargetMetadata<swift::InProcess> const*, swift::TargetProtocolDescriptor<swift::InProcess> const*, llvm::StringRef))
+0x1000031f0 ?   method   2      Lazy<(anonymous namespace)::ConformanceState>::defaultInitCallback(void*)
+0x100003650 ?   method   3      getRootSuperclass()::$_0::operator()() const::{lambda(void*)#1}::__invoke(void*)
+0x100008568 ?   method   4      getRootSuperclass()::$_0::operator()() const::TheLazy
+0x100003270 [0x100003270 - 0x1000084d0]  21088 ? class 5 (anonymous namespace)
+0x100003270 ?   method   0      searchInConformanceCache(swift::TargetMetadata<swift::InProcess> const*, swift::TargetProtocolDescriptor<swift::InProcess> const*)
+0x100003530 ?   method   1      ConformanceState::cacheFailure(void const*, swift::TargetProtocolDescriptor<swift::InProcess> const*, unsigned long)
+0x1000036e0 ?   method   2      override_equalContexts(swift::TargetContextDescriptor<swift::InProcess> const*, swift::TargetContextDescriptor<swift::InProcess> const*)
+0x1000038c0 ?   method   3      addImageCallback(mach_header const*)
+0x100003ad0 ?   method   4      addImageCallback(mach_header const*, long)
+0x1000084d0 ?   method   5      Conformances
 EOF
 RUN

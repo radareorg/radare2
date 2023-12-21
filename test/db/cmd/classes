@@ -76,10 +76,10 @@ class main.Employer : main.Employee {
     "lang": "objc",
     "index": 0,
     "super": [
-      {
-        "name": "Swift._SwiftObject",
-        "rawname": "_OBJC_CLASS_$__TtCs12_SwiftObject"
-      }
+      "Swift._SwiftObject"
+    ],
+    "rawsuper": [
+      "_OBJC_CLASS_$__TtCs12_SwiftObject"
     ],
     "fields": [
       {
@@ -101,10 +101,10 @@ class main.Employer : main.Employee {
     "lang": "objc",
     "index": 0,
     "super": [
-      {
-        "name": "main.Employee",
-        "rawname": "_TtC4main8Employee"
-      }
+      "main.Employee"
+    ],
+    "rawsuper": [
+      "_TtC4main8Employee"
     ]
   }
 ]
