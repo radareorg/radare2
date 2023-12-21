@@ -716,10 +716,14 @@ R_API void r_core_anal_type_init(RCore *core) {
 R_API void r_core_anal_cc_init(RCore *core) {
 	r_return_if_fail (core);
 	char *anal_arch = strdup (r_config_get (core->config, "anal.arch"));
-	const int bits = core->anal->config->bits;
+	if (anal_arch && !strcmp (anal_arch, "r2ghidra")) {
+		free (anal_arch);
+		anal_arch = strdup (r_config_get (core->config, "asm.cpu"));
+	}
 	if (!anal_arch) {
 		return;
 	}
+	const int bits = core->anal->config->bits;
 	r_str_after (anal_arch, '.');
 	if (old_bits != -1) {
 		if (old_bits == bits) {
