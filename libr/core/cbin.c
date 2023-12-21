@@ -3999,7 +3999,7 @@ static bool bin_classes(RCore *r, PJ *pj, int mode) {
 				pj_ka (pj, "super");
 				RBinName *bn;
 				r_list_foreach (c->super, iter, bn) {
-#if 1
+#if 0
 					pj_o (pj);
 					if (bn->name) {
 						pj_ks (pj, "name", bn->name);
@@ -4011,6 +4011,12 @@ static bool bin_classes(RCore *r, PJ *pj, int mode) {
 #else
 					pj_s (pj, r_bin_name_tostring (bn));
 #endif
+				}
+				pj_end (pj);
+
+				pj_ka (pj, "rawsuper");
+				r_list_foreach (c->super, iter, bn) {
+					pj_s (pj, bn->oname);
 				}
 				pj_end (pj);
 			}
@@ -4047,7 +4053,7 @@ static bool bin_classes(RCore *r, PJ *pj, int mode) {
 						pj_ks (pj, "rawname", rname);
 					}
 					const char *lang = r_bin_lang_tostring (sym->lang);
-					if (lang) {
+					if (lang && *lang != '?') {
 						pj_ks (pj, "lang", lang);
 					}
 					pj_kN (pj, "addr", sym->vaddr);

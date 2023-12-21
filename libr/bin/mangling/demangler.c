@@ -10,29 +10,21 @@ typedef enum EManglingType {
 	eManglingTypeMax
 } EManglingType;
 
-///////////////////////////////////////////////////////////////////////////////
-static EManglingType get_mangling_type(char *sym)
-{
+static EManglingType get_mangling_type(const char *sym) {
 	EManglingType mangling_type = eManglingUnsupported;
 	if (sym == 0) {
 		mangling_type = eManglingUnknown;
 		goto get_mangling_type_err;
 	}
-
-	switch (*sym) {
-	case '.':
-	case '?':
+	const char sym0 = *sym;
+	if (sym0 == '.' || sym0 == '?') {
 		mangling_type = eManglingMicrosoft;
-		break;
-	default:
-		break;
 	}
 
 get_mangling_type_err:
 	return mangling_type;
 }
 
-///////////////////////////////////////////////////////////////////////////////
 EDemanglerErr create_demangler(SDemangler **demangler) {
 	EDemanglerErr err = eDemanglerErrOK;
 	SDemangler *sd = R_NEW0 (SDemangler);
@@ -45,7 +37,6 @@ EDemanglerErr create_demangler(SDemangler **demangler) {
 	sd->symbol = 0;
 	sd->abbr_types = r_list_newf (free);
 	sd->abbr_names = r_list_newf (free);
-
 create_demagler_err:
 	return err;
 }
@@ -90,7 +81,6 @@ init_demangler_err:
 	return err;
 }
 
-///////////////////////////////////////////////////////////////////////////////
 void free_demangler(SDemangler *sd) {
 	r_list_free (sd->abbr_types);
 	r_list_free (sd->abbr_names);

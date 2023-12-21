@@ -41,11 +41,12 @@ static bool check_golang(RBinSymbol *sym) {
 
 static inline bool is_cxx_symbol(const char *name) {
 	r_return_val_if_fail (name, false);
-	if (r_str_startswith (name, "_Z")) {
-		return true;
-	}
-	if (r_str_startswith (name, "__Z")) {
-		return true;
+	if (*name == '_') {
+		name++;
+		if (*name == '_') {
+			name++;
+		}
+		return *name == 'Z';
 	}
 	return false;
 }

@@ -22,9 +22,15 @@ R_IPI bool r_bin_lang_swift(RBinFile *bf) {
 		} else {
 			R_VEC_FOREACH (&bo->symbols_vec, sym) {
 				const char *name = r_bin_name_tostring2 (sym->name, 'o');
-				if (name && strstr (name, "swift_once")) {
-					info->lang = "swift";
-					return true;
+				if (name) {
+					if (r_str_startswith (name, "_$s")) {
+						info->lang = "swift";
+						return true;
+					}
+					if (strstr (name, "swift_once")) {
+						info->lang = "swift";
+						return true;
+					}
 				}
 			}
 		}
