@@ -33,7 +33,7 @@ typedef enum {
 static inline bool is_word_break_char(char ch, bool mode) {
 	int i;
 	if (mode == MAJOR_BREAK) {
-		return ch == ' ';
+		return ch == ' ' || ch == '\t';
 	}
 	int len =
 		sizeof (word_break_characters) /
@@ -44,6 +44,132 @@ static inline bool is_word_break_char(char ch, bool mode) {
 		}
 	}
 	return false;
+}
+
+static void backward_skip_major_word_break_chars(int *cursor) {
+        while (*cursor >= 0 && is_word_break_char (I.buffer.data[*cursor], MAJOR_BREAK)) {
+                *cursor -= 1;
+        }
+}
+
+static void skip_major_word_break_chars(int *cursor) {
+        while (*cursor < I.buffer.length && is_word_break_char (I.buffer.data[*cursor], MAJOR_BREAK)) {
+                *cursor += 1;
+        }
+}
+
+static void goto_word_start(int *cursor, BreakMode break_mode) {
+        if (!is_word_break_char (I.buffer.data[*cursor], break_mode)) {
+                /* move cursor backwards to the next word-break char */
+                while (*cursor >= 0 && !is_word_break_char (I.buffer.data[*cursor], break_mode)) {
+                        *cursor -= 1;
+                }
+        } else if (is_word_break_char (I.buffer.data[*cursor], MINOR_BREAK)) {
+                /* move cursor backwards to the next non-word-break char OR MAJOR break char */
+                while (*cursor >= 0 && is_word_break_char (I.buffer.data[*cursor], MINOR_BREAK)
+                        && !is_word_break_char (I.buffer.data[*cursor], MAJOR_BREAK)) {
+                        *cursor -= 1;
+                }
+        }
+        /* increment cursor to go to the start of current word */
+        if (*cursor < I.buffer.length - 1) {
+                *cursor += 1;
+        }
+}
+
+static void goto_word_end(int *cursor, BreakMode break_mode) {
+        if (!is_word_break_char (I.buffer.data[*cursor], break_mode)) {
+                /* move cursor forward to the next word-break char */
+                while (*cursor < I.buffer.length && !is_word_break_char (I.buffer.data[*cursor], break_mode)) {
+                        *cursor += 1;
+                }
+        } else if (is_word_break_char (I.buffer.data[*cursor], MINOR_BREAK)) {
+                /* move cursor forward to the next non-word-break char or MAJOR break char */
+                while (*cursor < I.buffer.length && is_word_break_char (I.buffer.data[*cursor], MINOR_BREAK)
+                        && !is_word_break_char (I.buffer.data[*cursor], MAJOR_BREAK)) {
+                        *cursor += 1;
+                }
+        }
+        /* decrement cursor to go to the end of current word */
+        if (*cursor > 0) {
+                *cursor -= 1;
+        }
+}
+
+static void goto_next_word(int *cursor, BreakMode break_mode) {
+        goto_word_end (cursor, break_mode);
+        if (*cursor < I.buffer.length) {
+                *cursor += 1;
+        }
+        if (is_word_break_char (I.buffer.data[*cursor], MAJOR_BREAK)) {
+                skip_major_word_break_chars (cursor);
+        }
+}
+
+static int vi_end_word_motion(BreakMode break_mode) {
+        int cursor;
+        if (I.buffer.index < I.buffer.length - 1) {
+                cursor = I.buffer.index;
+                if (is_word_break_char (I.buffer.data[cursor], MAJOR_BREAK)) {
+                        skip_major_word_break_chars (&cursor);
+                        goto_word_end (&cursor, break_mode);
+                } else {
+                        if (is_word_break_char (I.buffer.data[cursor + 1], MAJOR_BREAK)) {
+                                cursor++;
+                                skip_major_word_break_chars (&cursor);
+                                goto_word_end (&cursor, break_mode);
+                        } else {
+                                cursor++;
+                                goto_word_end (&cursor, break_mode);
+                        }
+                }
+                return cursor;
+        }
+        return I.buffer.index;
+}
+
+static int vi_backward_word_motion(BreakMode break_mode) {
+        int cursor;
+	if (I.buffer.index > 0) {
+                cursor = I.buffer.index;
+                if (is_word_break_char (I.buffer.data[cursor], MAJOR_BREAK)) {
+                        backward_skip_major_word_break_chars (&cursor);
+                        goto_word_start (&cursor, break_mode);
+                } else {
+                        if (is_word_break_char (I.buffer.data[cursor - 1], MAJOR_BREAK)) {
+                                cursor--;
+                                backward_skip_major_word_break_chars (&cursor);
+                                goto_word_start (&cursor, break_mode);
+                        } else {
+                                cursor--;
+                                goto_word_start (&cursor, break_mode);
+                        }
+                }
+                return cursor;
+        }
+        return I.buffer.index;
+}
+
+static int vi_next_word_motion(BreakMode break_mode) {
+        int cursor;
+        if (I.buffer.index < I.buffer.length) {
+                cursor = I.buffer.index;
+                if (is_word_break_char (I.buffer.data[cursor], MAJOR_BREAK)) {
+                        skip_major_word_break_chars (&cursor);
+                } else {
+                        if (is_word_break_char (I.buffer.data[cursor + 1], MAJOR_BREAK)) {
+                                cursor++;
+                                skip_major_word_break_chars (&cursor);
+                        } else {
+                                goto_next_word (&cursor, break_mode);
+                        }
+                }
+                if (cursor == I.buffer.length) {
+                        cursor--;
+                }
+                return cursor;
+        }
+        return I.buffer.index;
 }
 
 /* https://www.gnu.org/software/bash/manual/html_node/Commands-For-Killing.html */
@@ -1042,96 +1168,6 @@ static inline void __move_cursor_left(void) {
 		: 0;
 }
 
-static inline void vi_cmd_b(void) {
-	int i;
-	for (i = I.buffer.index - 2; i >= 0; i--) {
-		if ((is_word_break_char (I.buffer.data[i], MINOR_BREAK)
-		 && !is_word_break_char (I.buffer.data[i], MAJOR_BREAK))
-		 || (is_word_break_char (I.buffer.data[i - 1], MINOR_BREAK)
-		 && !is_word_break_char (I.buffer.data[i], MINOR_BREAK))) {
-			I.buffer.index = i;
-			break;
-		}
-	}
-	if (i < 0) {
-		I.buffer.index = 0;
-	}
-}
-
-static inline void vi_cmd_B(void) {
-	int i;
-	for (i = I.buffer.index - 2; i >= 0; i--) {
-		if ((!is_word_break_char (I.buffer.data[i], MAJOR_BREAK)
-		 && is_word_break_char (I.buffer.data[i-1], MAJOR_BREAK))) {
-			I.buffer.index = i;
-			break;
-		}
-	}
-	if (i < 0) {
-		I.buffer.index = 0;
-	}
-}
-
-static inline void vi_cmd_W(void) {
-	int i;
-	for (i = I.buffer.index + 1; i < I.buffer.length; i++) {
-		if ((!is_word_break_char (I.buffer.data[i], MAJOR_BREAK)
-		 && is_word_break_char (I.buffer.data[i-1], MAJOR_BREAK))) {
-			I.buffer.index = i;
-			break;
-		}
-	}
-	if (i >= I.buffer.length) {
-		I.buffer.index = I.buffer.length - 1;
-	}
-}
-
-static inline void vi_cmd_w(void) {
-	int i;
-	for (i = I.buffer.index + 1; i < I.buffer.length; i++) {
-		if ((!is_word_break_char (I.buffer.data[i], MINOR_BREAK)
-		 && is_word_break_char (I.buffer.data[i - 1], MINOR_BREAK))
-		 || (is_word_break_char (I.buffer.data[i], MINOR_BREAK)
-		 && !is_word_break_char (I.buffer.data[i], MAJOR_BREAK))) {
-			I.buffer.index = i;
-			break;
-		}
-	}
-	if (i >= I.buffer.length) {
-		I.buffer.index = I.buffer.length - 1;
-	}
-}
-
-static inline void vi_cmd_E(void) {
-	int i;
-	for (i = I.buffer.index + 1; i < I.buffer.length; i++) {
-		if ((!is_word_break_char (I.buffer.data[i], MAJOR_BREAK)
-		 && is_word_break_char (I.buffer.data[i+1], MAJOR_BREAK))) {
-			I.buffer.index = i;
-			break;
-		}
-	}
-	if (i >= I.buffer.length) {
-		I.buffer.index = I.buffer.length - 1;
-	}
-}
-
-static inline void vi_cmd_e(void) {
-	int i;
-	for (i = I.buffer.index + 1; i < I.buffer.length; i++) {
-		if ((!is_word_break_char (I.buffer.data[i], MINOR_BREAK)
-		 && is_word_break_char (I.buffer.data[i+1], MINOR_BREAK))
-		 || (is_word_break_char (I.buffer.data[i], MINOR_BREAK)
-		 && !is_word_break_char (I.buffer.data[i], MAJOR_BREAK))) {
-			I.buffer.index = i;
-			break;
-		}
-	}
-	if (i >= I.buffer.length) {
-		I.buffer.index = I.buffer.length - 1;
-	}
-}
-
 static void __update_prompt_color(void) {
 	RCons *cons = r_cons_singleton ();
 	const char *BEGIN = "", *END = "";
@@ -1334,32 +1370,32 @@ static void __vi_mode(void) {
 			break;
 		case 'E':
 			while (rep--) {
-				vi_cmd_E ();
+				I.buffer.index = vi_end_word_motion (MAJOR_BREAK);
 			}
 			break;
 		case 'e':
 			while (rep--) {
-				vi_cmd_e ();
+				I.buffer.index = vi_end_word_motion (MINOR_BREAK);
 			}
 			break;
 		case 'B':
 			while (rep--) {
-				vi_cmd_B ();
+				I.buffer.index = vi_backward_word_motion (MAJOR_BREAK);
 			}
 			break;
 		case 'b':
 			while (rep--) {
-				vi_cmd_b ();
+				I.buffer.index = vi_backward_word_motion (MINOR_BREAK);
 			}
 			break;
 		case 'W':
 			while (rep--) {
-				vi_cmd_W ();
+				I.buffer.index = vi_next_word_motion (MAJOR_BREAK);
 			}
 			break;
 		case 'w':
 			while (rep--) {
-				vi_cmd_w ();
+				I.buffer.index = vi_next_word_motion (MINOR_BREAK);
 			}
 			break;
 		default:					// escape key
