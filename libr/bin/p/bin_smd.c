@@ -129,14 +129,13 @@ static RBinInfo *info(RBinFile *bf) {
 
 static void addsym(RList *ret, const char *name, ut64 addr) {
 	RBinSymbol *ptr = R_NEW0 (RBinSymbol);
-	if (!ptr) {
-		return;
+	if (R_LIKELY (ptr)) {
+		ptr->name = r_bin_name_new (r_str_get (name));
+		ptr->paddr = ptr->vaddr = addr;
+		ptr->size = 0;
+		ptr->ordinal = 0;
+		r_list_append (ret, ptr);
 	}
-	ptr->name = strdup (r_str_get (name));
-	ptr->paddr = ptr->vaddr = addr;
-	ptr->size = 0;
-	ptr->ordinal = 0;
-	r_list_append (ret, ptr);
 }
 
 static void showstr(const char *str, const ut8 *s, size_t len) {

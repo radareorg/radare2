@@ -52,6 +52,7 @@ typedef struct r_sign_hash_t {
 } RSignHash;
 
 typedef struct r_sign_item_t {
+	// use RBinName maybe?
 	char *name;
 	char *realname;
 	char *next;

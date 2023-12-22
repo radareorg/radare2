@@ -498,7 +498,7 @@ static RList *symbols(RBinFile *bf) {
 			goto error;
 		}
 
-		bin_sym->name = sym.name;
+		bin_sym->name = r_bin_name_new (sym.name);
 		bin_sym->paddr = sym.value - baddr (bf);
 		// for kernels the header is not mapped
 		if (o->is_kernel) {

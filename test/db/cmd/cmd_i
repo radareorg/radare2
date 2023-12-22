@@ -2636,7 +2636,6 @@ EOF
 EXPECT=<<EOF
             ;-- section..dynamic:
             ;-- segment.DYNAMIC:
-            ;-- .dynamic:
             ;-- _DYNAMIC:
             0x080495a8      .dword 0x00000001                          ; [21] -rw- section size 232 named .dynamic
 EOF
@@ -2647,7 +2646,6 @@ FILE=bins/elf/analysis/x86-helloworld-gcc
 CMDS=pd 3 @ section..bss
 EXPECT=<<EOF
             ;-- section..bss:
-            ;-- .bss:
             ;-- completed.5979:
             ;-- _edata:
             ;-- __bss_start:
@@ -3431,14 +3429,12 @@ EXPECT=<<EOF
             ;-- section..preinit_array:
             ;-- segment.LOAD1:
             ;-- segment.GNU_RELRO:
-            ;-- .preinit_array:
             ;-- __preinit:
             0x08049ed4      .dword 0x08048486 ; entry.preinit0 ; sym.preinit ; [18] -rw- section size 8 named .preinit_array
             ;-- __preinit2:
             0x08049ed8      .dword 0x0804849f ; entry.preinit1 ; sym.preinit2
 
             ;-- section..init_array:
-            ;-- .init_array:
             ;-- __frame_dummy_init_array_entry:
             ;-- __init_array_start:
             0x08049edc      .dword 0x08048480 ; entry.init0 ; sym.frame_dummy ; [19] -rw- section size 20 named .init_array
@@ -3450,7 +3446,6 @@ EXPECT=<<EOF
             0x08049eec      .dword 0x08048503 ; entry.init4 ; sym.constructor2
 
             ;-- section..fini_array:
-            ;-- .fini_array:
             ;-- __do_global_dtors_aux_fini_array_entry:
             ;-- __init_array_end:
             0x08049ef0      .dword 0x08048450 ; entry.fini0 ; sym.__do_global_dtors_aux ; [20] -rw- section size 20 named .fini_array

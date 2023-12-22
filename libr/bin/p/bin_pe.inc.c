@@ -134,7 +134,8 @@ static RList* sections(RBinFile *bf) {
 		if (R_STR_ISNOTEMPTY (sections[i].name)) {
 			ptr->name = strdup ((const char*)sections[i].name);
 		} else {
-			ptr->name = strdup ("");
+			R_LOG_WARN ("oops");
+			// ptr->name = strdup ("");
 		}
 		ptr->size = sections[i].size;
 		if (ptr->size > pe->size) {
@@ -205,7 +206,7 @@ static RList* symbols(RBinFile *bf) {
 			if (!(ptr = R_NEW0 (RBinSymbol))) {
 				break;
 			}
-			ptr->name = strdup ((char *)symbols[i].name);
+			ptr->name = r_bin_name_new ((char *)symbols[i].name);
 			ptr->libname = *symbols[i].libname ? strdup ((char *)symbols[i].libname) : NULL;
 			ptr->forwarder = r_str_constpool_get (&bf->rbin->constpool, (char *)symbols[i].forwarder);
 			//strncpy (ptr->bind, "NONE", R_BIN_SIZEOF_STRINGS);
@@ -225,8 +226,7 @@ static RList* symbols(RBinFile *bf) {
 			if (!(ptr = R_NEW0 (RBinSymbol))) {
 				break;
 			}
-			//strncpy (ptr->name, (char*)symbols[i].name, R_BIN_SIZEOF_STRINGS);
-			ptr->name = strdup ((const char *)imports[i].name);
+			ptr->name = r_bin_name_new ((const char *)imports[i].name);
 			ptr->libname = strdup ((const char *)imports[i].libname);
 			ptr->is_imported = true;
 			//strncpy (ptr->forwarder, (char*)imports[i].forwarder, R_BIN_SIZEOF_STRINGS);
@@ -286,7 +286,7 @@ static RList* imports(RBinFile *bf) {
 			break;
 		}
 		filter_import (imports[i].name);
-		ptr->name = strdup ((char*)imports[i].name);
+		ptr->name = r_bin_name_new ((char*)imports[i].name);
 		ptr->libname = strdup ((char*)imports[i].libname);
 		ptr->bind = "NONE";
 		ptr->type = "FUNC";
@@ -502,8 +502,11 @@ static bool has_canary(RBinFile *bf) {
 		RBinReloc *rel;
 		if (relocs_list) {
 			r_list_foreach (relocs_list, iter, rel) {
-				if (!strcmp (rel->import->name, "__security_init_cookie")) {
-					return true;
+				if (rel->import) {
+					const char *name = r_bin_name_tostring2 (rel->import->name, 'o');
+					if (!strcmp (name, "__security_init_cookie")) {
+						return true;
+					}
 				}
 			}
 		}
@@ -512,7 +515,8 @@ static bool has_canary(RBinFile *bf) {
 		RBinImport *imp;
 		if (imports_list) {
 			r_list_foreach (imports_list, iter, imp) {
-				if (!strcmp (imp->name, "__security_init_cookie")) {
+				const char *name = r_bin_name_tostring2 (imp->name, 'o');
+				if (!strcmp (name, "__security_init_cookie")) {
 					return true;
 				}
 			}

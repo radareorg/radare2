@@ -3664,11 +3664,11 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 			if (symbol->type && !strcmp (symbol->type, R_BIN_TYPE_FUNC_STR)) {
 				if (r_anal_noreturn_at (core->anal, symbol->vaddr)) {
 					bpi = r_debug_bp_add (core->dbg, symbol->vaddr, hwbp, false, 0, NULL, 0);
+					const char *name = r_bin_name_tostring (symbol->name);
 					if (bpi) {
-						bpi->name = r_str_newf ("%s.%s", "sym", symbol->name);
+						bpi->name = r_str_newf ("%s.%s", "sym", name);
 					} else {
-						R_LOG_ERROR ("Unable to add a breakpoint into a noreturn function %s at addr 0x%"PFMT64x,
-									symbol->name, symbol->vaddr);
+						R_LOG_ERROR ("Failed to breakpoint on a noreturn function %s at addr 0x%"PFMT64x, name, symbol->vaddr);
 					}
 				}
 			}

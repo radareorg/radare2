@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2022 - pancake */
+/* radare - LGPL - Copyright 2009-2023 - pancake */
 
 #if R_INCLUDE_BEGIN
 
@@ -918,23 +918,27 @@ static void _core_cmp_info_imports(RCore *core, int id0, int id1) {
 		return;
 	}
 	r_list_foreach (s0, iter, s) {
+		const char *s_name = r_bin_name_tostring (s->name);
 		bool found = false;
 		r_list_foreach (s1, iter2, s2) {
-			if (!strcmp (s->name, s2->name)) {
+			const char *s2_name = r_bin_name_tostring (s2->name);
+			if (!strcmp (s_name, s2_name)) {
 				found = true;
 			}
 		}
-		r_cons_printf ("%s%s\n", found? " ": "-", s->name);
+		r_cons_printf ("%s%s\n", found? " ": "-", s_name);
 	}
 	r_list_foreach (s1, iter, s) {
+		const char *s_name = r_bin_name_tostring (s->name);
 		bool found = false;
 		r_list_foreach (s0, iter2, s2) {
-			if (!strcmp (s->name, s2->name)) {
+			const char *s2_name = r_bin_name_tostring (s2->name);
+			if (!strcmp (s_name, s2_name)) {
 				found = true;
 			}
 		}
 		if (!found) {
-			r_cons_printf ("+%s\n", s->name);
+			r_cons_printf ("+%s\n", s_name);
 		}
 	}
 	// r_list_free (s0);
@@ -955,23 +959,27 @@ static void _core_cmp_info_symbols(RCore *core, int id0, int id1) {
 		return;
 	}
 	r_list_foreach (s0, iter, s) {
+		const char *sname = r_bin_name_tostring (s->name);
 		bool found = false;
 		r_list_foreach (s1, iter2, s2) {
-			if (!strcmp (s->name, s2->name)) {
+			const char *s2name = r_bin_name_tostring (s2->name);
+			if (!strcmp (sname, s2name)) {
 				found = true;
 			}
 		}
-		r_cons_printf ("%s%s\n", found? " ": "-", s->name);
+		r_cons_printf ("%s%s\n", found? " ": "-", sname);
 	}
 	r_list_foreach (s1, iter, s) {
 		bool found = false;
+		const char *sname = r_bin_name_tostring (s->name);
 		r_list_foreach (s0, iter2, s2) {
-			if (!strcmp (s->name, s2->name)) {
+			const char *s2name = r_bin_name_tostring (s2->name);
+			if (!strcmp (sname, s2name)) {
 				found = true;
 			}
 		}
 		if (!found) {
-			r_cons_printf ("+%s\n", s->name);
+			r_cons_printf ("+%s\n", sname);
 		}
 	}
 }

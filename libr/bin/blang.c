@@ -12,19 +12,17 @@ typedef struct {
 } Langs;
 
 static inline bool check_rust(RBinSymbol *sym) {
-	return sym->name && strstr (sym->name, "_$LT$");
+	const char *oname = r_bin_name_tostring2 (sym->name, 'o');
+	return oname && strstr (oname, "_$LT$");
 }
 
 static inline bool check_objc(RBinSymbol *sym) {
-	if (sym->name && r_str_startswith (sym->name, "_OBJC_")) {
-		// free (r_bin_demangle_objc (binfile, sym->name));
-		return true;
-	}
-	return false;
+	const char *sym_name = r_bin_name_tostring2 (sym->name, 'o');
+	return (sym_name && r_str_startswith (sym_name, "_OBJC_"));
 }
 
 static bool check_dlang(RBinSymbol *sym) {
-	const char *name = sym->name;
+	const char *name = r_bin_name_tostring2 (sym->name, 'o');
 	if (r_str_startswith (name, "_D")) {
 		return isdigit (name[2]);
 	}
@@ -32,47 +30,56 @@ static bool check_dlang(RBinSymbol *sym) {
 }
 
 static bool check_swift(RBinSymbol *sym) {
-	return (sym->name && strstr (sym->name, "swift_once"));
+	const char *sym_name = r_bin_name_tostring2 (sym->name, 'o');
+	return (sym_name && strstr (sym_name, "swift_once"));
 }
 
 static bool check_golang(RBinSymbol *sym) {
-	return r_str_startswith (sym->name, "go.");
+	const char *sym_name = r_bin_name_tostring (sym->name);
+	return r_str_startswith (sym_name, "go.");
 }
 
 static inline bool is_cxx_symbol(const char *name) {
 	r_return_val_if_fail (name, false);
-	if (r_str_startswith (name, "_Z")) {
-		return true;
-	}
-	if (r_str_startswith (name, "__Z")) {
-		return true;
+	if (*name == '_') {
+		name++;
+		if (*name == '_') {
+			name++;
+		}
+		return *name == 'Z';
 	}
 	return false;
 }
 
 static bool check_cxx(RBinSymbol *sym) {
-	return is_cxx_symbol (sym->name);
+	const char *sym_name = r_bin_name_tostring2 (sym->name, 'o');
+	return is_cxx_symbol (sym_name);
 }
 
 static bool check_msvc(RBinSymbol *sym) {
-	return *sym->name == '?';
+	const char *oname = r_bin_name_tostring2 (sym->name, 'o');
+	return *oname == '?';
 }
 
 static inline bool check_kotlin(RBinSymbol *sym) {
-	return sym->name && strstr (sym->name, "kotlin_");
+	const char *name = r_bin_name_tostring2 (sym->name, 'o');
+	return name && strstr (name, "kotlin_");
 }
 static inline bool check_groovy(RBinSymbol *sym) {
-	return strstr (sym->name, "_groovy");
+	const char *name = r_bin_name_tostring2 (sym->name, 'o');
+	return strstr (name, "_groovy");
 }
 static inline bool check_dart(RBinSymbol *sym) {
-	return strstr (sym->name, "io_flutter_");
+	const char *name = r_bin_name_tostring2 (sym->name, 'o');
+	return strstr (name, "io_flutter_");
 }
 
 static inline bool check_pascal(RBinSymbol *sym) {
-	if (strstr (sym->name, "$_$")) {
+	const char *name = r_bin_name_tostring2 (sym->name, 'o');
+	if (strstr (name, "$_$")) {
 		return true;
 	}
-	return strstr (sym->name, "_$$_");
+	return strstr (name, "_$$_");
 }
 
 typedef struct {
@@ -219,7 +226,7 @@ R_API int r_bin_load_languages(RBinFile *bf) {
 	if (bo->imports) {
 		// R2_600 deprecate when all plugins use the imports vec
 		r_list_foreach (bo->imports, iter, imp) {
-			const char *name = imp->name;
+			const char *name = r_bin_name_tostring2 (imp->name, 'o');
 			if (!strcmp (name, "_NSConcreteGlobalBlock")) {
 				lc.isBlocks = true;
 			} else if (r_str_startswith (name, "objc_")) {
@@ -229,7 +236,7 @@ R_API int r_bin_load_languages(RBinFile *bf) {
 		}
 	} else {
 		R_VEC_FOREACH (&bo->imports_vec, imp) {
-			const char *name = imp->name;
+			const char *name = r_bin_name_tostring2 (imp->name, 'o');
 			if (!strcmp (name, "_NSConcreteGlobalBlock")) {
 				lc.isBlocks = true;
 			} else if (r_str_startswith (name, "objc_")) {

@@ -177,7 +177,7 @@ static inline bool symbols_add_import_kind(RBinWasmObj *bin, ut32 kind, RList *l
 			}
 			sym->ordinal = ordinal++;
 			sym->type = type;
-			sym->name = strdup (imp->field_str);
+			sym->name = r_bin_name_new (imp->field_str);
 			sym->libname = strdup (imp->module_str);
 			sym->is_imported = true;
 			sym->forwarder = "NONE";
@@ -198,8 +198,9 @@ static inline char *name_from_export(RBinWasmObj *bin, int type, int ord) {
 }
 
 static inline void set_sym_name(RBinWasmObj *bin, int type, RBinSymbol *sym) {
-	sym->name = name_from_export (bin, type, sym->ordinal);
-	if (sym->name) {
+	char *s = name_from_export (bin, type, sym->ordinal);
+	if (s) {
+		sym->name = r_bin_name_new_from (s);
 		sym->bind = R_BIN_BIND_GLOBAL_STR;
 	} else {
 		const char *typestr = NULL;
@@ -213,7 +214,8 @@ static inline void set_sym_name(RBinWasmObj *bin, int type, RBinSymbol *sym) {
 			typestr = "global";
 			break;
 		}
-		sym->name = name? strdup (name): r_str_newf ("%s.%d", typestr, sym->ordinal);
+		char *s = name? strdup (name): r_str_newf ("%s.%d", typestr, sym->ordinal);
+		sym->name = r_bin_name_new_from (s);
 	}
 }
 
@@ -362,7 +364,7 @@ static RList *get_imports(RBinFile *bf) {
 			if (!ptr) {
 				goto bad_alloc;
 			}
-			ptr->name = strdup (import->field_str);
+			ptr->name = r_bin_name_new (import->field_str);
 			ptr->classname = strdup (import->module_str);
 			ptr->type = type;
 			ptr->bind = "NONE";

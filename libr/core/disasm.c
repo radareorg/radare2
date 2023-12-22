@@ -4916,9 +4916,9 @@ static void ds_print_relocs(RDisasmState *ds) {
 		return;
 	}
 	RCore *core = ds->core;
-	const char *lang = r_config_get (core->config, "bin.lang");
+	// const char *lang = r_config_get (core->config, "bin.lang");
 	bool demangle = r_config_get_i (core->config, "asm.demangle");
-	bool keep_lib = r_config_get_i (core->config, "bin.demangle.libs");
+	// bool keep_lib = r_config_get_i (core->config, "bin.demangle.libs");
 	RBinReloc *rel = r_core_getreloc (core, ds->at, ds->analop.size);
 #if 0
 	if (!rel) {
@@ -4939,18 +4939,18 @@ static void ds_print_relocs(RDisasmState *ds) {
 		int cells = utf8len - (cstrlen - ansilen);
 		int len = ds->cmtcol - cells;
 		r_cons_memset (' ', len);
+		int pref = demangle? 'd': 0;
+		// if (demangle) { demname = r_bin_demangle (core->bin->cur, lang, rel->import->name, rel->vaddr, keep_lib); }
+		// demname = r_bin_demangle (core->bin->cur, lang, rel->symbol->name, rel->symbol->vaddr, keep_lib);
+		// demname ? demname : rel->symbol->name,
 		if (rel->import) {
-			if (demangle) {
-				demname = r_bin_demangle (core->bin->cur, lang, rel->import->name, rel->vaddr, keep_lib);
-			}
-			r_cons_printf ("%s RELOC %d %s", ds->cmtoken, rel->type, demname ? demname : rel->import->name);
+			const char *rel_imp_name = r_bin_name_tostring2 (rel->import->name, pref);
+			r_cons_printf ("%s RELOC %d %s", ds->cmtoken, rel->type, rel_imp_name);
 		} else if (rel->symbol) {
-			if (demangle) {
-				demname = r_bin_demangle (core->bin->cur, lang, rel->symbol->name, rel->symbol->vaddr, keep_lib);
-			}
+			const char *rel_sym_name = r_bin_name_tostring2 (rel->symbol->name, pref);
 			r_cons_printf ("%s RELOC %d %s @ 0x%08" PFMT64x,
 					ds->cmtoken,
-					rel->type, demname ? demname : rel->symbol->name,
+					rel->type, rel_sym_name,
 					rel->symbol->vaddr);
 			if (rel->addend) {
 				if (rel->addend > 0) {
@@ -5870,9 +5870,9 @@ static char *ds_sub_jumps(RDisasmState *ds, char *str) {
 		}
 		if (rel) {
 			if (rel && rel->import && rel->import->name) {
-				name = rel->import->name;
+				name = r_bin_name_tostring (rel->import->name);
 			} else if (rel && rel->symbol && rel->symbol->name) {
-				name = rel->symbol->name;
+				name = r_bin_name_tostring (rel->symbol->name);
 			}
 		} else {
 			if (!set_jump_realname (ds, addr, &kw, &name)) {

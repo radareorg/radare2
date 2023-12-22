@@ -87,7 +87,7 @@ static void addsym(RList *ret, char *name, ut64 addr, ut32 size) {
 	if (!ptr) {
 		return;
 	}
-	ptr->name = name;
+	ptr->name = r_bin_name_new_from (name);
 	ptr->paddr = ptr->vaddr = addr;
 	ptr->size = size;
 	ptr->ordinal = 0;

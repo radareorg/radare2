@@ -394,15 +394,14 @@ static void register_header_symbol(RBinFile *bf, RList *syms, const char *name, 
 		return;
 	}
 	RBinSymbol *ret = R_NEW0 (RBinSymbol);
-	if (!ret) {
-		return;
+	if (R_LIKELY (ret)) {
+		ret->type = R_BIN_TYPE_FUNC_STR;
+		ret->libname = strdup (rel->libname);
+		ret->name = r_bin_name_new (name);
+		ret->paddr = rel_section_paddr (&rel->sections[section]) + offset;
+		ret->vaddr = bf->bo->baddr + ret->paddr;
+		r_list_append (syms, ret);
 	}
-	ret->type = R_BIN_TYPE_FUNC_STR;
-	ret->libname = strdup (rel->libname);
-	ret->name = strdup (name);
-	ret->paddr = rel_section_paddr (&rel->sections[section]) + offset;
-	ret->vaddr = bf->bo->baddr + ret->paddr;
-	r_list_append (syms, ret);
 }
 
 static RList *symbols(RBinFile *bf) {

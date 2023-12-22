@@ -43,7 +43,8 @@ static GHT GH(je_get_va_symbol)(RCore *core, const char *path, const char *sym_n
  	}
 	RVecRBinSymbol *syms = r_bin_get_symbols_vec (core->bin);
 	R_VEC_FOREACH (syms, s) {
- 		if (!strcmp (s->name, sym_name)) {
+		const char *sname = r_bin_name_tostring (s->name);
+		if (!strcmp (sname, sym_name)) {
  			vaddr = s->vaddr;
  			break;
 		}

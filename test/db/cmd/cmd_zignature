@@ -952,7 +952,6 @@ za sym.bcopy b f30f1efa4887fee92479f9ff:ffffffffffffffff00000000
 za sym.bcopy g cc=1 nbbs=2 edges=1 ebbs=1 bbsum=23
 za sym.bcopy o 0x0008a900
 za sym.bcopy t void sym.bcopy (int64_t arg1)
-za sym.bcopy r sym..plt.sec
 za sym.bcopy v tr83:arg1:int64_t
 za sym.bcopy h 7549556f94a4c26907f0304da9892c797a73e6c44907dc2030389392a9df8f69
 EOF
@@ -1756,10 +1755,10 @@ zg
 z*~N
 EOF
 EXPECT=<<EOF
-za __Z3fooi N __Z3fooii
-za __Z3foov N __Z3fooi
 za _main N imp.atoi
-za __Z3fooii N _main
+za foo__ N foo(int)
+za foo_int__int_ N _main
+za foo_int_ N foo(int, int)
 --
 za sym.foo_int__int_ N main
 za sym.foo__ N sym.foo_int_

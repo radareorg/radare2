@@ -2894,7 +2894,7 @@ beach:
 
 static void _update_main_addr_if_needed(struct MACH0_(obj_t) *mo, const RBinSymbol *sym) {
 	if (!mo->main_addr || mo->main_addr == UT64_MAX) {
-		const char *name = sym->name;
+		const char *name = r_bin_name_tostring2 (sym->name, 'o');
 		if (!strcmp (name, "__Dmain")) {
 			mo->main_addr = sym->vaddr;
 		} else if (strstr (name, "4main") && !strstr (name, "STATIC")) {
@@ -2918,20 +2918,23 @@ static void _handle_arm_thumb(RBinSymbol *sym) {
 static void _enrich_symbol(RBinFile *bf, struct MACH0_(obj_t) *bin, HtPP *symcache, RBinSymbol *sym) {
 	int wordsize = MACH0_(get_bits) (bin);
 
-	if (sym->name[0] == '_' && !sym->is_imported) {
-		char *demangled = r_bin_demangle (bf, sym->name, sym->name, sym->vaddr, false);
-		if (demangled) {
-			sym->dname = demangled;
-			char *p = strchr (demangled, '.');
-			if (p) {
-				if (IS_UPPER (sym->name[0])) {
-					sym->classname = strdup (sym->name);
-					sym->classname[p - sym->name] = 0;
-				} else if (IS_UPPER (p[1])) {
-					sym->classname = strdup (p + 1);
-					p = strchr (sym->classname, '.');
-					if (p) {
-						*p = 0;
+	const char *oname = r_bin_name_tostring2 (sym->name, 'o');
+	if (oname) {
+		bin->dbg_info = r_str_startswith (oname, "radr://");
+	       	if (*oname == '_' && !sym->is_imported) {
+			char *demangled = r_bin_demangle (bf, oname, oname, sym->vaddr, false);
+			if (demangled) {
+				r_bin_name_demangled (sym->name, demangled);
+				char *p = strchr (demangled, '.');
+				if (p) {
+					if (IS_UPPER (*demangled)) {
+						sym->classname = r_str_ndup (demangled, (p - demangled));
+					} else if (IS_UPPER (p[1])) {
+						sym->classname = strdup (p + 1);
+						p = strchr (sym->classname, '.');
+						if (p) {
+							*p = 0;
+						}
 					}
 				}
 			}
@@ -2946,7 +2949,6 @@ static void _enrich_symbol(RBinFile *bf, struct MACH0_(obj_t) *bin, HtPP *symcac
 		_handle_arm_thumb (sym);
 	}
 
-	bin->dbg_info = r_str_startswith (sym->name, "radr://");
 	r_strf_var (k, 32, "sym0x%"PFMT64x, sym->vaddr);
 	ht_pp_insert (symcache, k, "found");
 }
@@ -2971,7 +2973,7 @@ static void _fill_exports(struct MACH0_(obj_t) *mo, const char *name, ut64 flags
 	sym->vaddr = vaddr;
 	sym->paddr = offset + context->boffset;
 	sym->type = "EXT";
-	sym->name = strdup (name);
+	sym->name = r_bin_name_new (name);
 	sym->bind = R_BIN_BIND_GLOBAL_STR;
 	sym->ordinal = (*context->ordinal)++;
 	_enrich_symbol (context->bf, mo, context->symcache, sym);
@@ -3072,7 +3074,8 @@ static void _parse_symbols(RBinFile *bf, struct MACH0_(obj_t) *mo, HtPP *symcach
 				sym->bits = mo->symtab[i].n_desc & N_ARM_THUMB_DEF ? 16 : bits;
 				sym->is_imported = false;
 				sym->type = mo->symtab[i].n_type & N_EXT ? "EXT" : "LOCAL";
-				sym->name = sym_name;
+				sym->name = r_bin_name_new (sym_name);
+				R_FREE (sym_name);
 				sym->ordinal = ordinal++;
 				_update_main_addr_if_needed (mo, sym);
 				_enrich_symbol (bf, mo, symcache, sym);
@@ -3103,10 +3106,9 @@ static void _parse_symbols(RBinFile *bf, struct MACH0_(obj_t) *mo, HtPP *symcach
 			sym->lang = R_BIN_LANG_C;
 			sym->vaddr = symbol.addr;
 			sym->paddr = symbol.offset + obj->boffset;
-			sym->name = symbol.name;
-			if (!sym->name) {
-				sym->name = r_str_newf ("entry%u", (ut32)i);
-			}
+			char *name = symbol.name? strdup (symbol.name): r_str_newf ("entry%u", (ut32)i);
+			sym->name = r_bin_name_new (name);
+			free (name);
 			sym->type = symbol.type == R_BIN_MACH0_SYMBOL_TYPE_LOCAL? "LOCAL": "EXT";
 			sym->is_imported = symbol.is_imported;
 			sym->ordinal = ordinal++;
@@ -3147,7 +3149,7 @@ static void _parse_symbols(RBinFile *bf, struct MACH0_(obj_t) *mo, HtPP *symcach
 			}
 			RBinSymbol *sym = RVecRBinSymbol_emplace_back (mo->symbols_vec);
 			memset (sym, 0, sizeof (RBinSymbol));
-			sym->name = sym_name;
+			sym->name = r_bin_name_new (sym_name);
 			sym->vaddr = vaddr;
 			sym->paddr = addr_to_offset (mo, vaddr) + obj->boffset;
 			sym->type = (st->n_type & N_EXT)? "EXT": "LOCAL";
@@ -3191,7 +3193,9 @@ static void _parse_function_start_symbols(RBinFile *bf, struct MACH0_(obj_t) *mo
 			sym->vaddr = mo->baddr + address;
 			sym->paddr = address + obj->boffset;
 			sym->size = 0;
-			sym->name = r_str_newf ("func.%08"PFMT64x, sym->vaddr);
+			char *n = r_str_newf ("func.%08"PFMT64x, sym->vaddr);
+			sym->name = r_bin_name_new (n);
+			free (n);
 			sym->type = R_BIN_TYPE_FUNC_STR;
 			sym->forwarder = "NONE";
 			sym->bind = R_BIN_BIND_LOCAL_STR;
@@ -3340,14 +3344,16 @@ static RBinImport *import_from_name(RBin *rbin, const char *orig_name) {
 	if (*name == '_') {
 		name++;
 	}
-	ptr->name = r_str_ndup (name, R_BIN_MACH0_STRING_LENGTH - 1);
+	char *s = r_str_ndup (name, R_BIN_MACH0_STRING_LENGTH - 1);
+	ptr->name = r_bin_name_new (s);
+	free (s);
 	ptr->bind = "NONE";
 	ptr->type = r_str_constpool_get (&rbin->constpool, type);
 	return ptr;
 }
 
 static void check_for_special_import_names(struct MACH0_(obj_t) *bin, RBinImport *import) {
-	const char *name = import->name;
+	const char *name = r_bin_name_tostring (import->name);
 	if (*name == '_') {
 		if (!strcmp (name, "__stack_chk_fail") ) {
 			bin->has_canary = true;

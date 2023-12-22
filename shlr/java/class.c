@@ -23,6 +23,19 @@ static inline void __bin_name_free(RBinName *bn) {
 		free (bn);
 	}
 }
+static inline RBinName *__bin_name_clone(RBinName *bn) {
+	RBinName *nn = R_NEW0 (RBinName);
+	if (bn->name) {
+		nn->name = strdup (bn->name);
+	}
+	if (bn->oname) {
+		nn->oname = strdup (bn->oname);
+	}
+	if (bn->fname) {
+		nn->oname = strdup (bn->fname);
+	}
+	return nn;
+}
 
 #ifdef IFDBG
 #undef IFDBG
@@ -2428,7 +2441,7 @@ R_API RBinSymbol *r_bin_java_create_new_symbol_from_field(RBinJavaField *fm_type
 		R_FREE (sym);
 	}
 	if (sym) {
-		sym->name = strdup (fm_type->name);
+		sym->name = __bin_name_new (fm_type->name);
 		// strncpy (sym->type, fm_type->descriptor, R_BIN_SIZEOF_STRINGS);
 		if (fm_type->type == R_BIN_JAVA_FIELD_TYPE_METHOD) {
 			sym->type = R_BIN_TYPE_FUNC_STR;
@@ -2473,7 +2486,9 @@ R_API RBinSymbol *r_bin_java_create_new_symbol_from_fm_type_meta(RBinJavaField *
 	}
 	// ut32 new_name_len = strlen (fm_type->name) + strlen ("_meta") + 1;
 	// char *new_name = malloc (new_name_len);
-	sym->name = r_str_newf ("meta_%s", fm_type->name);
+	char *s = r_str_newf ("meta_%s", fm_type->name);
+	sym->name = __bin_name_new (s);
+	free (s);
 	if (fm_type->type == R_BIN_JAVA_FIELD_TYPE_METHOD) {
 		sym->type = "FUNC_META";
 	} else {
@@ -2521,7 +2536,7 @@ R_API RBinSymbol *r_bin_java_create_new_symbol_from_ref(RBinJavaObj *bin, RBinJa
 	}
 	char *name = r_bin_java_get_name_from_bin_cp_list (bin, obj->info.cp_method.name_and_type_idx);
 	if (name) {
-		sym->name = name;
+		sym->name = __bin_name_new (name);
 		name = NULL;
 	}
 	char *type_name = r_bin_java_get_name_from_bin_cp_list (bin, obj->info.cp_method.name_and_type_idx);
@@ -2680,7 +2695,7 @@ R_API RList *r_bin_java_enum_class_methods(RBinJavaObj *bin, ut16 class_idx) {
 			if (!sym) {
 				break;
 			}
-			sym->name = strdup (field->name);
+			sym->name = __bin_name_new (field->name);
 			sym->lang = R_BIN_LANG_JAVA;
 			// func defintion
 			// sym->paddr = field->file_offset + bin->loadaddr;
@@ -2875,7 +2890,8 @@ static void add_import(RBinJavaObj *bin, RBinJavaCPTypeObj *obj, const char *typ
 	name = name ? name : strdup ("InvalidNameIndex");
 	descriptor = descriptor ? descriptor : strdup ("INVALID DESCRIPTOR INDEX");
 	imp->classname = class_name;
-	imp->name = name;
+	imp->name = __bin_name_new (name);
+	free (name);
 	imp->bind = "NONE";
 	imp->type = r_str_constpool_get (&bin->constpool, type);
 	imp->descriptor = descriptor;
@@ -2972,7 +2988,7 @@ R_API RList *r_bin_java_get_symbols(RBinJavaObj *bin) {
 		if (imp->classname && !strncmp (imp->classname, "kotlin/jvm", 10)) {
 			bin->lang = "kotlin";
 		}
-		sym->name = strdup (imp->name);
+		sym->name = __bin_name_clone (imp->name);
 		sym->is_imported = true;
 		if (!sym->name) {
 			free (sym);

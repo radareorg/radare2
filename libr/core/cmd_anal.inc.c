@@ -13243,14 +13243,15 @@ static bool isValidSymbol(RBinSymbol *symbol) {
 
 static bool isSkippable(RBinSymbol *s) {
 	if (s && s->name && s->bind) {
-		if (r_str_startswith (s->name, "radr://")) {
+		const char *name = r_bin_name_tostring2 (s->name, 'o');
+		if (r_str_startswith (name, "radr://")) {
 			return true;
 		}
-		if (!strcmp (s->name, "__mh_execute_header")) {
+		if (!strcmp (name, "__mh_execute_header")) {
 			return true;
 		}
 		if (!strcmp (s->bind, "NONE")) {
-			if (s->is_imported && s->libname && strstr(s->libname, ".dll")) {
+			if (s->is_imported && s->libname && strstr (s->libname, ".dll")) {
 				return true;
 			}
 		}

@@ -98,36 +98,87 @@ static char *swiftField(const char *dn, const char *cn) {
 	return NULL;
 }
 
+static void classes_from_symbols2(RBinFile *bf, RBinSymbol *sym) {
+	const char *dname = r_bin_name_tostring2 (sym->name, 'd');
+	if (strstr (dname, "::")) {
+		char *klass = strdup (dname);
+		char *par = strchr (klass, '(');
+		char *method = strstr (klass, "::");
+		bool check = (*klass != '(' && par && method > par);
+		if (check) {
+#if 1
+			char *method2 = strstr (method + 2, "::");
+			if (method2 && (par && method2 < par)) {
+				*method2 = 0;
+				method = method2 + 2;
+			} else {
+				*method = 0;
+				method += 2;
+			}
+#else
+			*method = 0;
+			method += 2;
+#endif
+			// eprintf ("(%s) = (%s)\n", klass, method);
+			RBinClass *c = r_bin_file_add_class (bf, klass, NULL, 0);
+			if (c) {
+				RBinSymbol *bs = r_bin_symbol_clone (sym);
+				if (c->addr == 0) {
+					c->addr = sym->vaddr;
+				}
+				r_bin_name_demangled (bs->name, method);
+				r_list_append (c->methods, bs);
+			}
+			free (klass);
+			return;
+		}
+		free (klass);
+	}
+	const char *oname = r_bin_name_tostring2 (sym->name, 'o');
+	if (!oname || oname[0] != '_') {
+		return;
+	}
+	const char *cn = sym->classname;
+	if (!cn) {
+		return;
+	}
+	// swift specific
+	char *dn = r_bin_name_tostring2 (sym->name, 'd');
+	char *fn = swiftField (dn, cn);
+	if (fn) {
+		RBinField *f = r_bin_field_new (sym->paddr, sym->vaddr, -1, sym->size, fn, NULL, NULL, false);
+		if (f) {
+			RBinClass *c = r_bin_file_add_class (bf, sym->classname, NULL, 0);
+			if (c) {
+				r_list_append (c->fields, f);
+			}
+		}
+		free (fn);
+	} else {
+		char *mn = strstr (dn, "..");
+		if (!mn) {
+			mn = strstr (dn, cn);
+			if (mn && mn[strlen (cn)] == '.') {
+				RBinClass *c = r_bin_file_add_class (bf, sym->classname, NULL, 0);
+				if (c) {
+					r_list_append (c->methods, r_bin_symbol_clone (sym));
+				}
+			}
+		}
+	}
+}
+
 static RList *classes_from_symbols(RBinFile *bf) {
 	RBinSymbol *sym;
 	RListIter *iter;
-	r_list_foreach (bf->bo->symbols, iter, sym) {
-		if (!sym->name || sym->name[0] != '_') {
-			continue;
+	// TODO: Use rvec here
+	if (bf->bo->symbols) {
+		r_list_foreach (bf->bo->symbols, iter, sym) {
+			classes_from_symbols2 (bf, sym);
 		}
-		const char *cn = sym->classname;
-		if (cn) {
-			RBinClass *c = r_bin_file_add_class (bf, sym->classname, NULL, 0);
-			if (!c) {
-				continue;
-			}
-			// swift specific
-			char *dn = sym->dname;
-			char *fn = swiftField (dn, cn);
-			if (fn) {
-				RBinField *f = r_bin_field_new (sym->paddr, sym->vaddr, -1, sym->size, fn, NULL, NULL, false);
-				r_list_append (c->fields, f);
-				free (fn);
-			} else {
-				char *mn = strstr (dn, "..");
-				if (!mn) {
-					mn = strstr (dn, cn);
-					if (mn && mn[strlen (cn)] == '.') {
-						RBinSymbol *dsym = r_bin_symbol_clone (sym);
-						r_list_append (c->methods, dsym);
-					}
-				}
-			}
+	} else {
+		R_VEC_FOREACH (&bf->bo->symbols_vec, sym) {
+			classes_from_symbols2 (bf, sym);
 		}
 	}
 	return bf->bo->classes;
@@ -255,7 +306,8 @@ static void r_bin_object_rebuild_classes_ht(RBinObject *bo) {
 			ht_pp_insert (bo->classes_ht, klass->name, klass);
 			r_list_foreach (klass->methods, it2, method) {
 				const char *klass_name = r_bin_name_tostring (klass->name);
-				char *name = r_str_newf ("%s::%s", klass_name, method->name);
+				const char *method_name = r_bin_name_tostring (method->name);
+				char *name = r_str_newf ("%s::%s", klass_name, method_name);
 				ht_pp_insert (bo->methods_ht, name, method);
 				free (name);
 			}

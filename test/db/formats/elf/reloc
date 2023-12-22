@@ -113,7 +113,7 @@ EXPECT=<<EOF
 call __fentry__
 push ebp
 mov ebp, esp
-push reloc..rodata.str1.1
+push str.8D___n
 call printk
 xor eax, eax
 leave
@@ -351,7 +351,6 @@ vaddr      paddr      type   name
 
 122 relocations
 ;-- section..plt:
-;-- .plt:
 ;-- _PROCEDURE_LINKAGE_TABLE_:
 0x0003f95c      unimp 0                                                ; [17] -rwx section size 1420 named .plt
 0x0003f960      unimp 0

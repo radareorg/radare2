@@ -95,7 +95,8 @@ static char *get_function_name(RCore *core, ut64 addr) {
 	if (bf && bf->bo) {
 		RBinSymbol *sym = ht_up_find (bf->bo->addr2klassmethod, addr, NULL);
 		if (sym && sym->classname && sym->name) {
-			return r_str_newf ("method.%s.%s", sym->classname, sym->name);
+			const char *sym_name = r_bin_name_tostring (sym->name);
+			return r_str_newf ("method.%s.%s", sym->classname, sym_name);
 		}
 	}
 	RFlagItem *flag = r_core_flag_get_by_spaces (core->flags, addr);
@@ -902,7 +903,8 @@ static bool __core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int de
 					R_VEC_FOREACH (syms, sym) {
 						if (sym->type && (sym->paddr + baddr) == fcn->addr && !strcmp (sym->type, R_BIN_TYPE_FUNC_STR)) {
 							free (new_name);
-							new_name = r_str_newf ("sym.%s", sym->name);
+							const char *sym_name = r_bin_name_tostring2 (sym->name, 'f');
+							new_name = r_str_newf ("sym.%s", sym_name);
 							break;
 						}
 					}
@@ -2414,11 +2416,12 @@ R_API RGraph *r_core_anal_importxrefs(RCore *core) {
 		return NULL;
 	}
 	r_list_foreach (obj->imports, iter, imp) {
-		ut64 addr = lit ? r_core_bin_impaddr (core->bin, va, imp->name): 0;
+		const char *imp_name = r_bin_name_tostring (imp->name);
+		ut64 addr = lit ? r_core_bin_impaddr (core->bin, va, imp_name): 0;
 		if (addr) {
 			add_single_addr_xrefs (core, addr, graph);
 		} else {
-			r_graph_add_node_info (graph, imp->name, NULL, 0);
+			r_graph_add_node_info (graph, imp_name, NULL, 0);
 		}
 	}
 	return graph;

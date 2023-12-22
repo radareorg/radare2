@@ -78,6 +78,9 @@ class main.Employer : main.Employee {
     "super": [
       "Swift._SwiftObject"
     ],
+    "rawsuper": [
+      "_OBJC_CLASS_$__TtCs12_SwiftObject"
+    ],
     "fields": [
       {
         "name": "isa",
@@ -99,6 +102,9 @@ class main.Employer : main.Employee {
     "index": 0,
     "super": [
       "main.Employee"
+    ],
+    "rawsuper": [
+      "_TtC4main8Employee"
     ]
   }
 ]
