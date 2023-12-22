@@ -2665,7 +2665,8 @@ static bool bin_symbols(RCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at,
 		} else {
 			const char *bind = r_str_get_fail (symbol->bind, "NONE");
 			const char *type = r_str_get_fail (symbol->type, "NONE");
-			const char *n = r_str_getf (sn.demname? sn.demname: sn.name);
+			// const char *n = r_str_getf (sn.demname? sn.demname: sn.name);
+			const char *n = r_bin_name_tostring2 (symbol->name, 'o'); // r_str_getf (sn.demname? sn.demname: sn.name);
 			// const char *fwd = r_str_getf (symbol->forwarder);
 			r_table_add_rowf (table, "dXXssdsss",
 					symbol->ordinal,
