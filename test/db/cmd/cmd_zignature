@@ -1755,10 +1755,10 @@ zg
 z*~N
 EOF
 EXPECT=<<EOF
-za __Z3fooi N __Z3fooii
-za __Z3foov N __Z3fooi
 za _main N imp.atoi
-za __Z3fooii N _main
+za foo__ N foo(int)
+za foo_int__int_ N _main
+za foo_int_ N foo(int, int)
 --
 za sym.foo_int__int_ N main
 za sym.foo__ N sym.foo_int_
