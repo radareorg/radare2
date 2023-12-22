@@ -20,7 +20,7 @@ static int r_line_readchar_win(ut8 *s, int slen);
 #define USE_UTF8 1
 #endif
 
-static const char word_break_characters[] = "\t\n ~`!@#$%^&*()-_=+[]{}\\|;:\"'<>,./";
+static const char word_break_characters[] = "\t\n ~`!@#$%^&*()-=+[]{}\\|;:\"'<>,./";
 
 // TODO: remove global variables
 static R_TH_LOCAL bool enable_yank_pop = false;
@@ -1031,9 +1031,9 @@ static void __print_prompt(void) {
 }
 
 static inline void __move_cursor_right(void) {
-	I.buffer.index = I.buffer.index < I.buffer.length
+	I.buffer.index = I.buffer.index < I.buffer.length - 1
 		? I.buffer.index + r_str_utf8_charsize (I.buffer.data + I.buffer.index)
-		: I.buffer.length;
+		: I.buffer.length - 1;
 }
 
 static inline void __move_cursor_left(void) {
@@ -1151,7 +1151,7 @@ static void __update_prompt_color(void) {
 		}
 	//	END = cons->context->pal.reset;
 	}
-	char *prompt = r_str_escape (I.prompt);		// remote the color
+	char *prompt = r_str_escape (I.prompt);		// remove the color
 	free (I.prompt);
 	I.prompt = r_str_newf ("%s%s%s", BEGIN, prompt, END);
 }
@@ -1162,6 +1162,8 @@ static void __vi_mode(void) {
 	__update_prompt_color ();
 	const char *gcomp_line = "";
 	static R_TH_LOCAL int gcomp = 0;
+        /* mimic vim's behaviour when entering normal mode */
+        __move_cursor_left ();
 	for (;;) {
 		int rep = 0;
 		if (I.echo) {
@@ -1281,9 +1283,6 @@ static void __vi_mode(void) {
 			I.buffer.index = 0;
 			break;
 		case 'A':
-			I.vi_mode = INSERT_MODE;
-			/* fall through */
-		case '$':
 			if (gcomp) {
 				strcpy (I.buffer.data, gcomp_line);
 				I.buffer.index = strlen (I.buffer.data);
@@ -1292,6 +1291,20 @@ static void __vi_mode(void) {
 			} else {
 				I.buffer.index = I.buffer.length;
 			}
+			if (I.hud) {
+				I.hud->vi = false;
+			}
+			I.vi_mode = INSERT_MODE;
+			break;
+		case '$':
+			if (gcomp) {
+				strcpy (I.buffer.data, gcomp_line);
+				I.buffer.index = strlen (I.buffer.data);
+				I.buffer.length = I.buffer.index;
+				gcomp = false;
+			} else {
+				I.buffer.index = I.buffer.length - 1;
+			}
 			break;
 		case 'p':
 			while (rep--) {
@@ -1299,13 +1312,15 @@ static void __vi_mode(void) {
 			}
 			break;
 		case 'a':
-			__move_cursor_right ();
-			break;
+                        I.buffer.index = I.buffer.index < I.buffer.length
+                                ? I.buffer.index + r_str_utf8_charsize (I.buffer.data + I.buffer.index)
+                                : I.buffer.length;
+			/* fall through */
 		case 'i':
-			I.vi_mode = INSERT_MODE;
 			if (I.hud) {
 				I.hud->vi = false;
 			}
+			I.vi_mode = INSERT_MODE;
 			break;
 		case 'h':
 			while (rep--) {
