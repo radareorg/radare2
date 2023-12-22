@@ -104,36 +104,35 @@ static void classes_from_symbols2(RBinFile *bf, RBinSymbol *sym) {
 		char *klass = strdup (dname);
 		char *par = strchr (klass, '(');
 		char *method = strstr (klass, "::");
-		if (*klass != '(' && par && method > par) {
-			free (klass);
-			goto next;
-		}
+		bool check = (*klass != '(' && par && method > par);
+		if (check) {
 #if 1
-		char *method2 = strstr (method + 2, "::");
-		if (method2 && (par && method2 < par)) {
-			*method2 = 0;
-			method = method2 + 2;
-		} else {
+			char *method2 = strstr (method + 2, "::");
+			if (method2 && (par && method2 < par)) {
+				*method2 = 0;
+				method = method2 + 2;
+			} else {
+				*method = 0;
+				method += 2;
+			}
+#else
 			*method = 0;
 			method += 2;
-		}
-#else
-		*method = 0;
-		method += 2;
 #endif
-		// eprintf ("(%s) = (%s)\n", klass, method);
-		RBinClass *c = r_bin_file_add_class (bf, klass, NULL, 0);
-		if (c) {
-			RBinSymbol *bs = r_bin_symbol_clone (sym);
-			if (c->addr == 0) {
-				c->addr = sym->vaddr;
+			// eprintf ("(%s) = (%s)\n", klass, method);
+			RBinClass *c = r_bin_file_add_class (bf, klass, NULL, 0);
+			if (c) {
+				RBinSymbol *bs = r_bin_symbol_clone (sym);
+				if (c->addr == 0) {
+					c->addr = sym->vaddr;
+				}
+				r_bin_name_demangled (bs->name, method);
+				r_list_append (c->methods, bs);
 			}
-			r_bin_name_demangled (bs->name, method);
-			r_list_append (c->methods, bs);
+			free (klass);
+			return;
 		}
 		free (klass);
-		return;
-next:
 	}
 	const char *oname = r_bin_name_tostring2 (sym->name, 'o');
 	if (!oname || oname[0] != '_') {
