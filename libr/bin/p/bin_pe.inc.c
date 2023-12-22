@@ -110,7 +110,6 @@ static RList* entries(RBinFile *bf) {
 }
 
 static RList* sections(RBinFile *bf) {
-	RBinSection *ptr = NULL;
 	ut64 ba = baddr (bf);
 	int i;
 
@@ -128,54 +127,54 @@ static RList* sections(RBinFile *bf) {
 
 	PE_(r_bin_pe_check_sections) (pe, &sections);
 	for (i = 0; !sections[i].last; i++) {
-		if (!(ptr = R_NEW0 (RBinSection))) {
+		RBinSection *sec = R_NEW0 (RBinSection);
+		if (!sec) {
 			break;
 		}
 		if (R_STR_ISNOTEMPTY (sections[i].name)) {
-			ptr->name = strdup ((const char*)sections[i].name);
+			sec->name = strdup ((const char*)sections[i].name);
 		} else {
-			R_LOG_WARN ("oops");
-			// ptr->name = strdup ("");
+			R_LOG_WARN ("Missing name for section");
+			sec->name = r_str_newf ("noname%d", i);
 		}
-		ptr->size = sections[i].size;
-		if (ptr->size > pe->size) {
+		sec->size = sections[i].size;
+		if (sec->size > pe->size) {
 			if (sections[i].vsize < pe->size) {
-				ptr->size = sections[i].vsize;
+				sec->size = sections[i].vsize;
 			} else {
 				//hack give it page size
-				ptr->size = 4096;
+				sec->size = 4096;
 			}
 		}
-		ptr->vsize = sections[i].vsize;
-		if (!ptr->vsize && ptr->size) {
-			ptr->vsize = ptr->size;
+		sec->vsize = sections[i].vsize;
+		if (!sec->vsize && sec->size) {
+			sec->vsize = sec->size;
 		}
-		ptr->paddr = sections[i].paddr;
-		ptr->vaddr = sections[i].vaddr + ba;
-		ptr->add = true;
-		ptr->perm = 0;
+		sec->paddr = sections[i].paddr;
+		sec->vaddr = sections[i].vaddr + ba;
+		sec->add = true;
+		sec->perm = 0;
 		if (R_BIN_PE_SCN_IS_EXECUTABLE (sections[i].perm)) {
-			ptr->perm |= R_PERM_X;
-			ptr->perm |= R_PERM_R; // implicit
+			sec->perm |= R_PERM_X;
+			sec->perm |= R_PERM_R; // implicit
 		}
 		if (R_BIN_PE_SCN_IS_WRITABLE (sections[i].perm)) {
-			ptr->perm |= R_PERM_W;
+			sec->perm |= R_PERM_W;
 		}
 		if (R_BIN_PE_SCN_IS_READABLE (sections[i].perm)) {
-			ptr->perm |= R_PERM_R;
+			sec->perm |= R_PERM_R;
 		}
 		// this is causing may tests to fail because rx != srx
 		if (R_BIN_PE_SCN_IS_SHAREABLE (sections[i].perm)) {
-			ptr->perm |= R_PERM_SHAR;
+			sec->perm |= R_PERM_SHAR;
 		}
-		if ((ptr->perm & R_PERM_RW) && !(ptr->perm & R_PERM_X) && ptr->size > 0) {
-			if (!strcmp (ptr->name, ".rsrc") ||
-			  	!strcmp (ptr->name, ".data") ||
-				!strcmp (ptr->name, ".rdata")) {
-					ptr->is_data = true;
-				}
+		if ((sec->perm & R_PERM_RW) && !(sec->perm & R_PERM_X) && sec->size > 0) {
+			const char *name = sec->name;
+			if (name && (!strcmp (name, ".rsrc") || !strcmp (name, ".data") || !strcmp (name, ".rdata"))) {
+				sec->is_data = true;
+			}
 		}
-		r_list_append (ret, ptr);
+		r_list_append (ret, sec);
 	}
 	return ret;
 }

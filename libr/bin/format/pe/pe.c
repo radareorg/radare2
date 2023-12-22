@@ -4269,12 +4269,9 @@ void PE_(r_bin_pe_check_sections)(RBinPEObj* pe, struct r_bin_pe_section_t* * se
 	*sects = sections;
 out_function:
 	free (entry);
-	return;
-
 }
 
 static struct r_bin_pe_section_t* PE_(r_bin_pe_get_sections)(RBinPEObj* pe) {
-	struct r_bin_pe_section_t* sections = NULL;
 	int i, j, section_count = 0;
 
 	if (!pe || !pe->nt_headers) {
@@ -4287,7 +4284,7 @@ static struct r_bin_pe_section_t* PE_(r_bin_pe_get_sections)(RBinPEObj* pe) {
 			section_count++;
 		}
 	}
-	sections = calloc (section_count + 1, sizeof (struct r_bin_pe_section_t));
+	struct r_bin_pe_section_t* sections = calloc (section_count + 1, sizeof (struct r_bin_pe_section_t));
 	if (!sections) {
 		r_sys_perror ("malloc (sections)");
 		return NULL;
@@ -4340,15 +4337,14 @@ static struct r_bin_pe_section_t* PE_(r_bin_pe_get_sections)(RBinPEObj* pe) {
 					sections[j].vsize += sa - diff;
 				}
 				if (sections[j].vaddr % sa) {
-					pe_printf ("Warning: section %s not aligned to SectionAlignment.\n",
-							sections[j].name);
+					R_LOG_WARN ("section %s not aligned to SectionAlignment", sections[j].name);
 				}
 			}
 			const ut32 fa = pe->optional_header->FileAlignment;
 			if (fa) {
 				const ut64 diff = sections[j].paddr % fa;
-				if (diff) {
-					pe_printf ("Warning: section %s not aligned to FileAlignment.\n", sections[j].name);
+				if (diff != 0) {
+					R_LOG_WARN ("section %s not aligned to FileAlignment", sections[j].name);
 					sections[j].paddr -= diff;
 					sections[j].size += diff;
 				}
