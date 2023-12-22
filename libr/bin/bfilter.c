@@ -131,6 +131,9 @@ R_API void r_bin_filter_sections(RBinFile *bf, RList *list) {
 	HtSU *db = ht_su_new0 ();
 	RListIter *iter;
 	r_list_foreach (list, iter, sec) {
+		if (!sec->name) {
+			continue;
+		}
 		char *p = r_bin_filter_name (bf, db, sec->vaddr, sec->name);
 		if (p) {
 			free (sec->name);

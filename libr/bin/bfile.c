@@ -434,7 +434,7 @@ static int string_scan_range(RList *list, RBinFile *bf, int min, const ut64 from
 	return count;
 }
 
-static bool __isDataSection(RBinFile *a, RBinSection *s) {
+static bool is_data_section(RBinFile *a, RBinSection *s) {
 	if (s->has_strings || s->is_data) {
 		return true;
 	}
@@ -866,16 +866,16 @@ R_API RBinPlugin *r_bin_file_cur_plugin(RBinFile *bf) {
 
 // TODO: searchStrings() instead
 R_IPI RList *r_bin_file_get_strings(RBinFile *bf, int min, int dump, int raw) {
+	R_RETURN_VAL_IF_FAIL (bf, NULL);
+	RBinObject *o = bf->bo;
 	const bool nofp = bf->rbin->strings_nofp;
-	r_return_val_if_fail (bf, NULL);
 	RListIter *iter;
 	RBinSection *section;
 	RList *ret = dump? NULL: r_list_newf (r_bin_string_free);
 
-	if (!raw && bf && bf->bo && bf->bo->sections && !r_list_empty (bf->bo->sections)) {
-		RBinObject *o = bf->bo;
+	if (!raw && o && o->sections && !r_list_empty (o->sections)) {
 		r_list_foreach (o->sections, iter, section) {
-			if (__isDataSection (bf, section)) {
+			if (is_data_section (bf, section)) {
 				get_strings_range (bf, ret, min, raw, nofp, section->paddr,
 						section->paddr + section->size, section);
 			}
