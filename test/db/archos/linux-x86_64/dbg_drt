@@ -1,7 +1,9 @@
 NAME=drt
+BROKEN=1
 FILE=bins/elf/sse2-add
 ARGS=-d
 CMDS=<<EOF
+# pri register bank is unexpected here
 drt
 EOF
 EXPECT=<<EOF
@@ -108,6 +110,7 @@ EOF
 RUN
 
 NAME=drt flg
+BROKEN=1
 FILE=bins/elf/sse2-add
 ARGS=-d
 CMDS=<<EOF

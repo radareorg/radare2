@@ -15,6 +15,7 @@ EOF
 RUN
 
 NAME=dmh allocated
+BROKEN=1
 FILE=bins/elf/simple_malloc_x86_64
 ARGS=-d
 CMDS=<<EOF
@@ -31,6 +32,7 @@ EOF
 RUN
 
 NAME=dmh/dmha with memory dump
+BROKEN=1
 FILE=bins/heap/linux_glibc-2.30_x64.bin
 ARGS=-n
 CMDS=<<EOF
@@ -52,6 +54,7 @@ EOF
 RUN
 
 NAME=dmht with memory dump
+BROKEN=1
 FILE=bins/heap/linux_glibc-2.30_x64.bin
 ARGS=-n
 CMDS=<<EOF

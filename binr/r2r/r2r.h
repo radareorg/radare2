@@ -5,7 +5,13 @@
 
 #include <r_util.h>
 
+#if R_SYS_BITS & R_SYS_BITS_64
+#define R2R_ARCH_OS R_SYS_OS "-"R_SYS_ARCH "_64"
+#elif R_SYS_BITS & R_SYS_BITS_32
+#define R2R_ARCH_OS R_SYS_OS "-"R_SYS_ARCH "_32"
+#elif
 #define R2R_ARCH_OS R_SYS_OS "-"R_SYS_ARCH
+#endif
 
 typedef struct r2r_cmd_test_string_record {
 	char *value;
