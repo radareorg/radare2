@@ -98,9 +98,7 @@ static void goto_word_end(int *cursor, BreakMode break_mode) {
 
 static void goto_next_word(int *cursor, BreakMode break_mode) {
         goto_word_end (cursor, break_mode);
-        if (*cursor < I.buffer.length) {
-                *cursor += 1;
-        }
+        *cursor += 1;
         if (is_word_break_char (I.buffer.data[*cursor], MAJOR_BREAK)) {
                 skip_major_word_break_chars (cursor);
         }
@@ -164,79 +162,59 @@ static int vi_next_word_motion(BreakMode break_mode) {
                                 goto_next_word (&cursor, break_mode);
                         }
                 }
-                if (cursor == I.buffer.length) {
-                        cursor--;
-                }
                 return cursor;
         }
         return I.buffer.index;
 }
 
+static inline void __delete_next_char(void) {
+	if (I.buffer.index < I.buffer.length) {
+		int len = r_str_utf8_charsize (I.buffer.data + I.buffer.index);
+		memmove (I.buffer.data + I.buffer.index,
+			I.buffer.data + I.buffer.index + len,
+			strlen (I.buffer.data + I.buffer.index + 1) + 1);
+		I.buffer.length -= len;
+                if (I.buffer.index > 0 && I.buffer.index == I.buffer.length) {
+                        I.buffer.index--;
+                }
+	}
+}
+
 /* https://www.gnu.org/software/bash/manual/html_node/Commands-For-Killing.html */
-static void backward_kill_word(void) {
+static void backward_kill_word(BreakMode break_mode) {
 	int i, len;
-	if (I.buffer.index > 0) {
-		for (i = I.buffer.index; i > 0 && is_word_break_char (I.buffer.data[i], MINOR_BREAK); i--) {
-			/* Move the cursor index back until we hit a non-word-break-character */
-		}
-		for (; i > 0 && !is_word_break_char (I.buffer.data[i], MINOR_BREAK); i--) {
-			/* Move the cursor index back until we hit a word-break-character */
-		}
-		if (i > 0) {
-			i++;
-		} else if (i < 0) {
-			i = 0;
-		}
-		if (I.buffer.index > I.buffer.length) {
-			I.buffer.length = I.buffer.index;
-		}
-		len = I.buffer.index - i + 1;
-		free (I.clipboard);
-		I.clipboard = r_str_ndup (I.buffer.data + i, len);
-		r_line_clipboard_push (I.clipboard);
-		memmove (I.buffer.data + i, I.buffer.data + I.buffer.index,
-				I.buffer.length - I.buffer.index + 1);
-		I.buffer.length = strlen (I.buffer.data);
-		I.buffer.index = i;
-	}
+        i = vi_backward_word_motion (break_mode);
+        if (i == I.buffer.index) {
+                return;
+        }
+        if (I.buffer.index > I.buffer.length) {
+                I.buffer.length = I.buffer.index;
+        }
+        len = I.buffer.index - i + 1;
+        free (I.clipboard);
+        I.clipboard = r_str_ndup (I.buffer.data + i, len);
+        r_line_clipboard_push (I.clipboard);
+        memmove (I.buffer.data + i, I.buffer.data + I.buffer.index, I.buffer.length + I.buffer.index);
+        /* resize buffer to take into account the word we deleted */
+        I.buffer.data[I.buffer.length - len + 1] = '\0';
+        I.buffer.length = strlen (I.buffer.data);
+        I.buffer.index = i;
 }
 
-static void backward_kill_Word(void) {
+static void kill_word(BreakMode break_mode, char motion) {
 	int i, len;
-	if (I.buffer.index > 0) {
-		for (i = I.buffer.index; i > 0 && is_word_break_char (I.buffer.data[i], MAJOR_BREAK); i--) {
-			/* Move the cursor index back until we hit a non-word-break-character */
-		}
-		for (; i > 0 && !is_word_break_char (I.buffer.data[i], MAJOR_BREAK); i--) {
-			/* Move the cursor index back until we hit a word-break-character */
-		}
-		if (i > 0) {
-			i++;
-		} else if (i < 0) {
-			i = 0;
-		}
-		if (I.buffer.index > I.buffer.length) {
-			I.buffer.length = I.buffer.index;
-		}
-		len = I.buffer.index - i + 1;
-		free (I.clipboard);
-		I.clipboard = r_str_ndup (I.buffer.data + i, len);
-		r_line_clipboard_push (I.clipboard);
-		memmove (I.buffer.data + i, I.buffer.data + I.buffer.index,
-				I.buffer.length - I.buffer.index + 1);
-		I.buffer.length = strlen (I.buffer.data);
-		I.buffer.index = i;
-	}
-}
-
-static void kill_word(void) {
-	int i, len;
-	for (i = I.buffer.index; i < I.buffer.length && is_word_break_char (I.buffer.data[i], MINOR_BREAK); i++) {
-		/* Move the cursor index forward until we hit a non-word-break-character */
-	}
-	for (; i < I.buffer.length && !is_word_break_char (I.buffer.data[i], MINOR_BREAK); i++) {
-		/* Move the cursor index forward we hit a word-break-character */
-	}
+        if (I.buffer.index == I.buffer.length - 1) {
+                __delete_next_char ();
+                return;
+        }
+        switch (motion) {
+        case 'w':
+                i = vi_next_word_motion (break_mode);
+                break;
+        case 'e':
+                i = vi_end_word_motion (break_mode) + 1;
+                break;
+        }
 	if (I.buffer.index >= I.buffer.length) {
 		I.buffer.length = I.buffer.index;
 	}
@@ -244,27 +222,13 @@ static void kill_word(void) {
 	free (I.clipboard);
 	I.clipboard = r_str_ndup (I.buffer.data + I.buffer.index, len);
 	r_line_clipboard_push (I.clipboard);
-	memmove (I.buffer.data + I.buffer.index, I.buffer.data + i, len);
+	memmove (I.buffer.data + I.buffer.index, I.buffer.data + i, I.buffer.length - i);
+	/* resize buffer to take into account the word we deleted */
+	I.buffer.data[I.buffer.length - len + 1] = '\0';
 	I.buffer.length = strlen (I.buffer.data);
-}
-
-static void kill_Word(void) {
-	int i, len;
-	for (i = I.buffer.index; i < I.buffer.length && is_word_break_char (I.buffer.data[i], MAJOR_BREAK); i++) {
-		/* Move the cursor index forward until we hit a non-word-break-character */
-	}
-	for (; i < I.buffer.length && !is_word_break_char (I.buffer.data[i], MAJOR_BREAK); i++) {
-		/* Move the cursor index forward we hit a word-break-character */
-	}
-	if (I.buffer.index >= I.buffer.length) {
-		I.buffer.length = I.buffer.index;
-	}
-	len = i - I.buffer.index + 1;
-	free (I.clipboard);
-	I.clipboard = r_str_ndup (I.buffer.data + I.buffer.index, len);
-	r_line_clipboard_push (I.clipboard);
-	memmove (I.buffer.data + I.buffer.index, I.buffer.data + i, len);
-	I.buffer.length = strlen (I.buffer.data);
+        if (I.buffer.index > 0 && I.buffer.index == I.buffer.length) {
+                I.buffer.index--;
+        }
 }
 
 static void paste(void) {
@@ -1042,16 +1006,6 @@ static inline void rotate_kill_ring(void) {
 	}
 }
 
-static inline void __delete_next_char(void) {
-	if (I.buffer.index < I.buffer.length) {
-		int len = r_str_utf8_charsize (I.buffer.data + I.buffer.index);
-		memmove (I.buffer.data + I.buffer.index,
-			I.buffer.data + I.buffer.index + len,
-			strlen (I.buffer.data + I.buffer.index + 1) + 1);
-		I.buffer.length -= len;
-	}
-}
-
 static inline void __delete_prev_char(void) {
 	if (I.buffer.index < I.buffer.length) {
 		if (I.buffer.index > 0) {
@@ -1259,28 +1213,34 @@ static void __vi_mode(void) {
 				case 'i': {
 					char t = r_cons_readchar ();
 					if (t == 'w') {		// diw
-						kill_word ();
-						backward_kill_word ();
+						kill_word (MINOR_BREAK, 'w');
+						backward_kill_word (MINOR_BREAK);
 					} else if (t == 'W') {  // diW
-						kill_Word ();
-						backward_kill_word ();
+						kill_word (MAJOR_BREAK, 'w');
+						backward_kill_word (MAJOR_BREAK);
 					}
 					if (I.hud) {
 						I.hud->vi = false;
 					}
 					break;
 				}
+				case 'E':
+					kill_word (MAJOR_BREAK, 'e');
+					break;
+				case 'e':
+					kill_word (MINOR_BREAK, 'e');
+					break;
 				case 'W':
-					kill_Word ();
+					kill_word (MAJOR_BREAK, 'w');
 					break;
 				case 'w':
-					kill_word ();
+					kill_word (MINOR_BREAK, 'w');
 					break;
 				case 'B':
-					backward_kill_Word ();
+					backward_kill_word (MAJOR_BREAK);
 					break;
 				case 'b':
-					backward_kill_word ();
+					backward_kill_word (MINOR_BREAK);
 					break;
 				case 'h':
 					__delete_prev_char ();
@@ -1711,10 +1671,10 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 			yank_flag = enable_yank_pop ? 1 : 0;
 			break;
 		case 20:  // ^t Kill from point to the end of the current word,
-			kill_word ();
+			kill_word (MINOR_BREAK, 'w');
 			break;
 		case 15: // ^o kill backward
-			backward_kill_word ();
+			backward_kill_word (MINOR_BREAK);
 			break;
 		case 14:// ^n
 			if (I.hud) {
@@ -1771,7 +1731,7 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 #endif
 			switch (buf[0]) {
 			case 127: // alt+bkspace
-				backward_kill_word ();
+				backward_kill_word (MINOR_BREAK);
 				break;
 			case -1:  // escape key, goto vi mode
 				if (I.enable_vi_mode) {
@@ -1805,7 +1765,7 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 				break;
 			case 'D':
 			case 'd':
-				kill_word ();
+				kill_word (MINOR_BREAK, 'w');
 				break;
 			case 'F':
 			case 'f':
