@@ -2,9 +2,9 @@ NAME==h
 FILE=--
 CMDS=!scripts/test-webserver.sh
 EXPECT=<<EOF
+0x000006a0
             ; [14] -r-x section size 594 named .text
             ;-- section..text:
-            ;-- .text:
             ;-- entry0:
             ;-- _start:
             0x000006a0      xor ebp, ebp
@@ -33,9 +33,7 @@ EXPECT=<<EOF
 	<script type="text/javascript" src="m/vendors/jquery.min.js"></script>
 	<script type="text/javascript" src="m/r2.js"></script>
 EOF
-EXPECT_ERR=<<EOF
-
-EOF
+EXPECT_ERR=
 RUN
 
 NAME=r2 remote webserver two
@@ -52,7 +50,7 @@ EXPECT=<<EOF
 hello remote world
 EOF
 EXPECT_ERR=<<EOF
-Cannot find http.root or http.homeroot
+ERROR: Cannot find http.root or http.homeroot
 Starting http server...
 open http://localhost:9292/
 r2 -C http://localhost:9292/cmd/
