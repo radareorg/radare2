@@ -193,6 +193,52 @@ static inline void __delete_current_char(void) {
 	}
 }
 
+static inline int indexof(int c, int offset) {
+        char *ptr;
+        ptr = strchr (I.buffer.data + offset, c);
+        if (ptr != NULL) {
+                return ptr - I.buffer.data;
+        }
+        return -1;
+}
+
+static inline int vi_motion_seek_to_char(int c) {
+        int i;
+        if (I.buffer.index < I.buffer.length) {
+                i = indexof (c, I.buffer.index + 1);
+                if (i != -1) {
+                        return i;
+                }
+        }
+        return I.buffer.index;
+}
+
+static inline int vi_motion_seek_to_char_backward(int c) {
+        int i;
+        if (I.buffer.index > 0) {
+                i = I.buffer.index - 1;
+                while (i >= 0) {
+                        if (I.buffer.data[i] == c) {
+                                return i;
+                        }
+                        i--;
+                }
+        }
+        return I.buffer.index;
+}
+
+static inline void shift_buffer(int start, int end) {
+        int len;
+	len = end - start + 1;
+	free (I.clipboard);
+	I.clipboard = r_str_ndup (I.buffer.data + start, len);
+	r_line_clipboard_push (I.clipboard);
+	memmove (I.buffer.data + start, I.buffer.data + end, I.buffer.length - end);
+	/* resize buffer to take into account the word we deleted */
+	I.buffer.data[I.buffer.length - len + 1] = '\0';
+	I.buffer.length = strlen (I.buffer.data);
+}
+
 /* https://www.gnu.org/software/bash/manual/html_node/Commands-For-Killing.html */
 static void backward_kill_word(BreakMode break_mode) {
 	int i, len;
@@ -200,30 +246,8 @@ static void backward_kill_word(BreakMode break_mode) {
         if (i == I.buffer.index) {
                 return;
         }
-        len = I.buffer.index - i + 1;
-        free (I.clipboard);
-        I.clipboard = r_str_ndup (I.buffer.data + i, len);
-        r_line_clipboard_push (I.clipboard);
-        memmove (I.buffer.data + i, I.buffer.data + I.buffer.index, I.buffer.length + I.buffer.index);
-        /* resize buffer to take into account the word we deleted */
-        I.buffer.data[I.buffer.length - len + 1] = '\0';
-        I.buffer.length = strlen (I.buffer.data);
+        shift_buffer (i, I.buffer.index);
         I.buffer.index = i;
-}
-
-static inline void shift_buffer(int delete_cursor) {
-        int len;
-	len = delete_cursor - I.buffer.index + 1;
-	free (I.clipboard);
-	I.clipboard = r_str_ndup (I.buffer.data + I.buffer.index, len);
-	r_line_clipboard_push (I.clipboard);
-	memmove (I.buffer.data + I.buffer.index, I.buffer.data + delete_cursor, I.buffer.length - delete_cursor);
-	/* resize buffer to take into account the word we deleted */
-	I.buffer.data[I.buffer.length - len + 1] = '\0';
-	I.buffer.length = strlen (I.buffer.data);
-        if (I.buffer.index > 0 && I.buffer.index == I.buffer.length) {
-                I.buffer.index--;
-        }
 }
 
 static void kill_word(BreakMode break_mode, char motion) {
@@ -240,7 +264,10 @@ static void kill_word(BreakMode break_mode, char motion) {
                 i = vi_end_word_motion (break_mode) + 1;
                 break;
         }
-        shift_buffer (i);
+        shift_buffer (I.buffer.index, i);
+        if (I.buffer.index > 0 && I.buffer.index == I.buffer.length) {
+                I.buffer.index--;
+        }
 }
 
 /*
@@ -283,8 +310,24 @@ static void delete_in_word(BreakMode break_mode) {
                         __delete_current_char ();
                         return;
                 }
-                shift_buffer (i);
+                shift_buffer (I.buffer.index, i);
         }
+}
+
+static inline int delete_between(int start, int end) {
+        int i, stop;
+        i = vi_motion_seek_to_char_backward (start);
+        if (i == I.buffer.index) {
+                i = vi_motion_seek_to_char (start);
+        }
+        if (i != I.buffer.index) {
+                stop = indexof (end, i + 1);
+                if (stop != -1) {
+                    shift_buffer (i + 1, stop);
+                    return i; 
+            }
+        }
+        return -1;
 }
 
 static void paste(void) {
@@ -1167,22 +1210,108 @@ static void __print_prompt(void) {
 }
 
 static inline void vi_delete_commands(int rep) {
-        char c, t;
+        char c, t, e;
+        int i;
         c = r_cons_readchar ();
         while (rep--) {
                 switch (c) {
-                case 'i': {
+                case 'i':
                         t = r_cons_readchar ();
-                        if (t == 'w') {		// diw
+                        switch (t) {
+                        case 'w':
                                 delete_in_word (MINOR_BREAK);
-                        } else if (t == 'W') {  // diW
+                                break;
+                        case 'W':
                                 delete_in_word (MINOR_BREAK);
+                                break;
+                        case 'b':
+                                t = '(';
+                                e = ')';
+                                i = delete_between (t, e);
+                                if (i != -1) {
+                                        I.buffer.index = i;
+                                }
+                                break;
+                        case '"':
+                                e = '"';
+                                i = delete_between (t, e);
+                                if (i != -1) {
+                                        I.buffer.index = i;
+                                }
+                                break;
+                        case '\'':
+                                e = '\'';
+                                i = delete_between (t, e);
+                                if (i != -1) {
+                                        I.buffer.index = i;
+                                }
+                                break;
+                        case '(':
+                                e = ')';
+                                i = delete_between (t, e);
+                                if (i != -1) {
+                                        I.buffer.index = i;
+                                }
+                                break;
+                        case '[':
+                                e = ']';
+                                i = delete_between (t, e);
+                                if (i != -1) {
+                                        I.buffer.index = i;
+                                }
+                                break;
+                        case '<':
+                                e = '>';
+                                i = delete_between (t, e);
+                                if (i != -1) {
+                                        I.buffer.index = i;
+                                }
+                                break;
+                        case '{':
+                                e = '}';
+                                i = delete_between (t, e);
+                                if (i != -1) {
+                                        I.buffer.index = i;
+                                }
+                                break;
                         }
                         if (I.hud) {
                                 I.hud->vi = false;
                         }
                         break;
-                }
+                case 'f':
+                        t = r_cons_readchar ();
+                        i = vi_motion_seek_to_char (t);
+                        if (i != I.buffer.index) {
+                                shift_buffer (I.buffer.index, i + 1);
+                        }
+                        break;
+                case 'F':
+                        t = r_cons_readchar ();
+                        i = vi_motion_seek_to_char_backward (t);
+                        if (i != I.buffer.index) {
+                                shift_buffer (i, I.buffer.index);
+                                I.buffer.index = i;
+                        }
+                        break;
+                case 't':
+                        t = r_cons_readchar ();
+                        i = vi_motion_seek_to_char (t);
+                        if (i != I.buffer.index) {
+                                shift_buffer (I.buffer.index, i);
+                        }
+                        break;
+                case 'T':
+                        t = r_cons_readchar ();
+                        i = vi_motion_seek_to_char_backward (t);
+                        if (i != I.buffer.index) {
+                                if (i < I.buffer.length) {
+                                        i++;
+                                }
+                                shift_buffer (i, I.buffer.index);
+                                I.buffer.index = i;
+                        }
+                        break;
                 case 'E':
                         kill_word (MAJOR_BREAK, 'e');
                         break;
@@ -1326,13 +1455,12 @@ static void __vi_mode(void) {
 				__delete_current_char ();
 			}
 			break;
-		case 'c': {
+		case 'c':
 			if (I.hud) {
 				I.hud->vi = false;
 			}
 			I.vi_mode = INSERT_MODE;
 			/* fall through */
-		}
 		case 'd':
                         vi_delete_commands (rep);
                         break;
@@ -1442,6 +1570,36 @@ static void __vi_mode(void) {
                         while (rep--) {
                                 swap_case (I.buffer.index);
                                 __move_cursor_right ();
+                        }
+                        break;
+                case 'f':
+                        ch =  r_cons_readchar ();
+                        while (rep--) {
+                                I.buffer.index = vi_motion_seek_to_char (ch);
+                        }
+                        break;
+                case 'F':
+                        ch =  r_cons_readchar ();
+                        while (rep--) {
+                                I.buffer.index = vi_motion_seek_to_char_backward (ch);
+                        }
+                        break;
+                case 't':
+                        ch =  r_cons_readchar ();
+                        while (rep--) {
+                                I.buffer.index = vi_motion_seek_to_char (ch);
+                                if (I.buffer.index > 0) {
+                                        I.buffer.index--;
+                                }
+                        }
+                        break;
+                case 'T':
+                        ch =  r_cons_readchar ();
+                        while (rep--) {
+                                I.buffer.index = vi_motion_seek_to_char_backward (ch);
+                                if (I.buffer.index < I.buffer.length - 1) {
+                                        I.buffer.index++;
+                                }
                         }
                         break;
 		default:					// escape key
