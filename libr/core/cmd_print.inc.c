@@ -1724,8 +1724,7 @@ static void r_core_cmd_print_binformat(RCore *core, const char *arg, int mode) {
 						pad?pad:"", pad2,
 						la->name?la->name: "",
 						la->value, la->value, la->value,
-						la->pos, la->sz
-					      );
+						la->pos, la->sz);
 			}
 			free (pad);
 			free (pad2);
@@ -1739,7 +1738,13 @@ static void r_core_cmd_print_binformat(RCore *core, const char *arg, int mode) {
 
 static void cmd_print_format(RCore *core, const char *_input, const ut8* block, int len) {
 	char *input = NULL;
+	bool v2 = false;
 	int mode = R_PRINT_MUSTSEE;
+	if (_input[1] == '2') {
+		// "pf2"
+		_input++;
+		v2 = true;
+	}
 	switch (_input[1]) {
 	case '*': // "pf*"
 		_input++;
@@ -2042,8 +2047,13 @@ static void cmd_print_format(RCore *core, const char *_input, const ut8* block, 
 			r_core_cmd_help_match (core, help_msg_pf, "pf");
 			goto err_arg1;
 		}
-		r_print_format (core->print, core->offset,
-			buf, size, fmt, mode, NULL, NULL);
+		if (v2) {
+			r_print_format2 (core->print, core->offset,
+				buf, size, fmt, mode, NULL, NULL);
+		} else {
+			r_print_format (core->print, core->offset,
+				buf, size, fmt, mode, NULL, NULL);
+		}
 	err_arg1:
 		free (args);
 	err_args:

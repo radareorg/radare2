@@ -45,6 +45,7 @@ r_util_sources = [
   'name.c',
   'new_rbtree.c',
   'format.c',
+  'format2.c',
   'pie.c',
   'seven.c',
   'print.c',

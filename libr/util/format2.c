@@ -1596,10 +1596,7 @@ static void r_print_format_num(RPrintFormat *pf, const char *setval, ut64 seeki,
 	}
 }
 
-R_API const char *r_print_format_byname(RPrint *p, const char *name) {
-	return sdb_const_get (p->formats, name, NULL);
-}
-
+#if 0
 // XXX: this is somewhat incomplete. must be updated to handle all format chars
 R_API int r_print_format_struct_size(RPrint *p, const char *f, int mode, int n) {
 	char *end, *args, *fmt;
@@ -1874,6 +1871,7 @@ R_API int r_print_format_struct_size(RPrint *p, const char *f, int mode, int n) 
 	free (args);
 	return (mode & R_PRINT_UNIONMODE)? biggest : size;
 }
+#endif
 
 static int r_print_format_struct(RPrintFormat *pf, ut64 seek, const ut8* b, int len, const char *name, const char *setval, const char *field, int anon) {
 	const int mode = pf->mode;
@@ -2898,6 +2896,6 @@ beach:
 	return i;
 }
 
-R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len, const char *formatname, int mode, const char *setval, const char *ofield) {
+R_API int r_print_format2(RPrint *p, ut64 seek, const ut8* b, const int len, const char *formatname, int mode, const char *setval, const char *ofield) {
 	return r_print_format_internal (p, NULL, seek, b, len, formatname, mode, setval, ofield);
 }
