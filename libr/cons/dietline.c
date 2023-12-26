@@ -1,6 +1,7 @@
 /* radare - LGPL - Copyright 2007-2023 - pancake */
 /* dietline is a lightweight and portable library similar to GNU readline */
 
+#include "r_util/r_str_util.h"
 #include <r_cons.h>
 #include <r_core.h>
 #include <string.h>
@@ -44,6 +45,14 @@ static inline bool is_word_break_char(char ch, BreakMode mode) {
 		}
 	}
 	return false;
+}
+
+static inline void swap_case(int index) {
+        if (IS_UPPER(I.buffer.data[index])) {
+                I.buffer.data[index] += 32;
+        } else if (IS_LOWER(I.buffer.data[index])) {
+                I.buffer.data[index] -= 32;
+        }
 }
 
 static void backward_skip_major_word_break_chars(int *cursor) {
@@ -1231,7 +1240,7 @@ static inline void __move_cursor_left(void) {
 
 static void __update_prompt_color(void) {
 	RCons *cons = r_cons_singleton ();
-	const char *BEGIN = "", *END = "";
+	const char *BEGIN = "", *END = Color_RESET;
 	if (cons->context->color_mode) {
 		if (I.prompt_mode) {
 			switch (I.vi_mode) {
@@ -1297,11 +1306,13 @@ static void __vi_mode(void) {
 			gcomp = 0;
 			return;
 		case 'C':
+			delete_till_end ();
+                        I.buffer.index++;
 			if (I.hud) {
 				I.hud->vi = false;
 			}
 			I.vi_mode = INSERT_MODE;
-			/* fall through */
+                        break;
 		case 'D':
 			delete_till_end ();
 			break;
@@ -1427,6 +1438,12 @@ static void __vi_mode(void) {
                                 }
 			}
 			break;
+                case '~':
+                        while (rep--) {
+                                swap_case (I.buffer.index);
+                                __move_cursor_right ();
+                        }
+                        break;
 		default:					// escape key
 			ch = tolower (r_cons_arrow_to_hjkl (ch));
 			switch (ch) {
