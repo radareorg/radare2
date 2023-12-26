@@ -153,7 +153,7 @@ R_API RList *r_regex_match_list(RRegex *rx, const char *text) {
 	match.rm_so = 0;
 	match.rm_eo = strlen (text);
 	while (!r_regex_exec (rx, text, 1, &match, rx->re_flags | R_REGEX_STARTEND)) {
-		size_t entry_len = match.rm_eo - match.rm_so + 1;
+		size_t entry_len = match.rm_eo - match.rm_so;
 		char *entry = r_str_ndup (text + match.rm_so, entry_len);
 		r_list_append (list, entry);
 		/* Update the boundaries for R_REGEX_STARTEND */

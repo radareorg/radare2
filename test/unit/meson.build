@@ -63,7 +63,8 @@ if get_option('enable_tests')
     'util',
     'vec',
     'vector',
-    'crbtree'
+    'crbtree',
+    'glibc_version'
   ]
 
   foreach test : tests

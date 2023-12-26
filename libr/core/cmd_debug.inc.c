@@ -1393,6 +1393,48 @@ beach:
 	r_list_free (list);
 }
 
+R_API double get_glibc_version(RCore *core, const char *libc_path) {
+	double version = 0.0f;
+	RBin *bin = r_bin_new ();
+	RIO *io = r_io_new ();
+	r_io_bind (io, &bin->iob);
+	RBinFileOptions opt = { 0 };
+
+	if (r_bin_open (bin, libc_path, &opt)) {
+		RBinString *string;
+		RList *strings = r_bin_get_strings (bin);
+		RListIter *iterator;
+
+		// I feel like this regex might miss some cases
+		// but it seems to be the same one used by GEF/pwndbg
+		RRegex *glibc_version_regex = r_regex_new ("[0-9]+[0-9]*\\.[0-9]+[0-9]*", "e");
+		r_list_foreach (strings, iterator, string) {
+
+			/*
+			  This logic is to search for the following two strings in glibc
+			  and parse out the version:
+			  1) "glibc <version>"
+			  2) "GNU C Library (GNU libc) stable release version <version>."
+			*/
+			if ((strstr (string->string, "glibc") || strstr (string->string, "GNU C Library"))) {
+				RList *matches = r_regex_match_list (glibc_version_regex, string->string);
+
+				// We only care about the first match
+				const char *first_match = r_list_first (matches);
+				version = r_num_get_double (core->num, first_match);
+				r_list_free (matches);
+				if (version) {
+					break;
+				}
+			}
+		}
+		r_regex_free (glibc_version_regex);
+	}
+	r_bin_free (bin);
+	r_io_free (io);
+	return version;
+}
+
 #if __linux__ && __GNU_LIBRARY__ && __GLIBC__ && __GLIBC_MINOR__
 
 static int dmh_glibc_32(RCore *core, const char *input);

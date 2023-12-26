@@ -269,6 +269,8 @@ typedef struct r_heap_info_64 {
 	/* char pad[NPAD * SZ & MALLOC_ALIGN_MASK]; */
 } RHeapInfo_64;
 
+R_API double get_glibc_version(RCore *core, const char *libc_path);
+
 #ifdef __cplusplus
 }
 #endif
