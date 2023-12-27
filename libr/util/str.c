@@ -1246,6 +1246,7 @@ R_API char *r_str_sanitize_sdb_key(const char *s) {
 }
 
 R_API void r_str_byte_escape(const char *p, char **dst, int dot_nl, bool default_dot, bool esc_bslash) {
+	r_return_if_fail (p && dst);
 	char *q = *dst;
 	switch (*p) {
 	case '\n':
