@@ -1577,8 +1577,7 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 		case 6:	// ^f // emacs right
 			__move_cursor_right ();
 			break;
-		case 12:// ^L -- right
-			__move_cursor_right ();
+		case 12:// ^L -- clear screen
 			if (I.echo) {
 				eprintf ("\x1b[2J\x1b[0;0H");
 			}
@@ -1783,6 +1782,9 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 					buf[1] = r_cons_readchar_timeout (50);
 				}
 #endif
+				if (buf[0] == 'O' && strchr("ABCDFH", buf[1]) != NULL) { // O
+					buf[0] = '[';
+				}
 				if (buf[0] == '[') { // [
 					switch (buf[1]) {
 					case '3': // supr or mouse click
