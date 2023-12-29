@@ -4,7 +4,7 @@ CMDS=<<EOF
 iI~machine
 EOF
 EXPECT=<<EOF
-machine  Python v3.9.0 VM (rev 123)
+machine  Python 3.9.0 VM (rev unkown)
 EOF
 RUN
 
@@ -35,7 +35,7 @@ CMDS=<<EOF
 iI~machine
 EOF
 EXPECT=<<EOF
-machine  Python v3.8.0 VM (rev 5d714034866ce1e9f89dc141fe4cc0b50cf20a8e)
+machine  Python 3.8.0 VM (rev 5d714034866ce1e9f89dc141fe4cc0b50cf20a8e)
 EOF
 EXPECT_ERR=
 RUN
@@ -46,7 +46,7 @@ CMDS=<<EOF
 iI~machine
 EOF
 EXPECT=<<EOF
-machine  Python v3.7.0 VM (rev ae1f6af15f3e4110616801e235873e47fd7d1977)
+machine  Python 3.7.0 VM (rev ae1f6af15f3e4110616801e235873e47fd7d1977)
 EOF
 EXPECT_ERR=
 RUN
@@ -57,7 +57,7 @@ CMDS=<<EOF
 iI~machine
 EOF
 EXPECT=<<EOF
-machine  Python v3.6.0 VM (rev 5c4568a05a0a62b5947c55f68f9f2ecfb90a4f12)
+machine  Python 3.6.0 VM (rev 5c4568a05a0a62b5947c55f68f9f2ecfb90a4f12)
 EOF
 EXPECT_ERR=
 RUN
