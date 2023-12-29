@@ -1452,7 +1452,9 @@ R_API int r_main_radare2(int argc, const char **argv) {
 							mr.iod->perm |= R_PERM_X;
 						}
 						if (r_str_startswith (mr.pfile, "frida://")) {
-							r_core_cmd0 (r, ".:init");
+							if (r_config_get_b (r->config, "file.info")) {
+								r_core_cmd0 (r, ".:init");
+							}
 							mr.load_bin = 0;
 						}
 						if (mr.load_bin == LOAD_BIN_ALL) {
