@@ -262,17 +262,17 @@ static bool GH(resolve_glibc_version)(RCore *core) {
 
 	// Next up we try to read version from banner in .rodata section
 	// also inspired by pwndbg
-	ut8 *rodata_bytes = GH (get_section_bytes) (core, map->file, ".rodata");
+	const ut8 *rodata_bytes = GH (get_section_bytes) (core, map->file, ".rodata");
 	GHT rodata_size = GH (get_section_size) (core, map->file, ".rodata");
-	ut8 *banner_start = NULL;
+	const ut8 *banner_start = NULL;
 	if (rodata_bytes != NULL) {
-		banner_start = r_mem_mem (rodata_bytes, rodata_size, "GNU C Library", strlen ("GNU C Library"));
+		banner_start = r_mem_mem (rodata_bytes, rodata_size, (const ut8 *)"GNU C Library", strlen ("GNU C Library"));
 	}
 	char *version_buffer;
 	if (banner_start != NULL) {
 		// eprintf("banner found: %s\n", banner_start);
 		RRegex *rx = r_regex_new ("release version (\\d.\\d\\d)", "en");
-		RList *matches = r_regex_match_list (rx, banner_start);
+		RList *matches = r_regex_match_list (rx, (const char *)banner_start);
 		RListIter *iter;
 		char *item;
 		char *version_end;
