@@ -240,7 +240,7 @@ static bool GH(resolve_glibc_version)(RCore *core) {
 		// eprintf ("found __libc_version symbol in %s: %#08x\n", map->file, version_symbol);
 		FILE *libc_file = fopen (map->file, "r ");
 		if (libc_file == NULL) {
-			R_LOG_WARN ("resolve_glibc_version: Failed to open %s\n", map->file);
+			R_LOG_WARN ("resolve_glibc_version: Failed to open %s", map->file);
 			return false;
 		}
 		char version_buffer[4]; // 4 bytes should be enough for everybody
@@ -248,7 +248,7 @@ static bool GH(resolve_glibc_version)(RCore *core) {
 		fread (version_buffer, 1, 4, libc_file);
 		fclose (libc_file);
 		if (!r_regex_match ("\\d.\\d\\d", "e", version_buffer)) {
-			R_LOG_WARN ("resolve_glibc_version: Unexpected version format: %s\n", version_buffer);
+			R_LOG_WARN ("resolve_glibc_version: Unexpected version format: %s", version_buffer);
 			return false;
 		}
 		version = strtod (version_buffer, NULL);
@@ -296,7 +296,7 @@ static bool GH(resolve_glibc_version)(RCore *core) {
 		return true;
 	}
 
-	R_LOG_WARN ("get_glibc_version failed\n");
+	R_LOG_WARN ("get_glibc_version failed");
 	return false;
 }
 
@@ -588,7 +588,7 @@ static bool GH(r_resolve_main_arena)(RCore *core, GHT *m_arena) {
 
 	// R_LOG_INFO ("Resolving libc version");
 	if (!GH (resolve_glibc_version) (core)) {
-		R_LOG_WARN ("Could not determine libc version\n");
+		R_LOG_WARN ("Could not determine libc version");
 		// TODO: maybe add config setting to hardcode libc version?
 		return false;
 	}
