@@ -104,7 +104,6 @@ static GHT GH(get_section_size)(RCore *core, const char *path, const char *secti
 	RBinFile *bf = r_bin_cur (bin);
 	GHT size = GHT_MAX;
 
-	eprintf ("get_section_size start\n");
 	RBinFileOptions opt;
 	r_bin_file_options_init (&opt, -1, 0, 0, false);
 	if (!r_bin_open (bin, path, &opt)) {
@@ -135,7 +134,6 @@ static ut8 *GH(get_section_bytes)(RCore *core, const char *path, const char *sec
 	GHT paddr, size;
 	ut8 *buf = NULL;
 
-	eprintf ("get_section_bytes start\n");
 	RBinFileOptions opt;
 	r_bin_file_options_init (&opt, -1, 0, 0, false);
 	if (!r_bin_open (bin, path, &opt)) {
@@ -157,11 +155,11 @@ static ut8 *GH(get_section_bytes)(RCore *core, const char *path, const char *sec
 	}
 
 	if (found_section == false) {
-		eprintf ("get_section_bytes: section %s not found\n", section_name);
+		R_LOG_WARN ("get_section_bytes: section %s not found", section_name);
 		goto cleanup_exit;
 	}
 
-	eprintf ("get_section_bytes: section found: %s size: %#08x  paddr: %#08x\n", section_name, size, paddr);
+	// eprintf ("get_section_bytes: section found: %s size: %#08x  paddr: %#08x\n", section_name, size, paddr);
 
 	buf = calloc (size, 1);
 	if (!buf) {
@@ -195,7 +193,26 @@ static bool GH(resolve_glibc_version)(RCore *core) {
 		return true;
 	}
 
-	eprintf ("get_glibc_version start\n--------\n");
+	const char *dbg_glibc_version = r_config_get (core->config, "dbg.glibc.version");
+	if (R_STR_ISEMPTY (dbg_glibc_version)) {
+		dbg_glibc_version = NULL;
+	}
+
+	if (dbg_glibc_version)	{
+		// TODO: use ^ and $ which appear to be broken
+		if (!r_regex_match ("\\d.\\d\\d", "e", dbg_glibc_version)) {
+			R_LOG_WARN ("resolve_glibc_version: Unexpected version format in dbg.glibc.version: %s"
+						" (expected format \"\\d.\\d\\d\")", dbg_glibc_version);
+		} else {
+			version = strtod(dbg_glibc_version, NULL);
+			core->dbg->glibc_version = (int) (100 * version);
+			core->dbg->glibc_version_d = version;
+			core->dbg->glibc_version_resolved = true;
+			R_LOG_INFO("libc version %.2f set from dbg.glibc.version", core->dbg->glibc_version_d);
+			return true;
+		}
+	}
+
 	r_return_val_if_fail (core && core->dbg && core->dbg->maps, false);
 	r_debug_map_sync (core->dbg);
 
@@ -216,13 +233,11 @@ static bool GH(resolve_glibc_version)(RCore *core) {
 		return false;
 	}
 
-	eprintf ("found libc path: %s\n", map->name);
-
 	// First see if there is a "__libc_version" symbol
 	// If yes read version from there
 	GHT version_symbol = GH (get_va_symbol) (core, map->file, "__libc_version");
 	if (version_symbol != GHT_MAX) {
-		eprintf ("found __libc_version symbol in %s: %#08x\n", map->file, version_symbol);
+		// eprintf ("found __libc_version symbol in %s: %#08x\n", map->file, version_symbol);
 		FILE *libc_file = fopen (map->file, "r ");
 		if (libc_file == NULL) {
 			R_LOG_WARN ("resolve_glibc_version: Failed to open %s\n", map->file);
@@ -236,12 +251,12 @@ static bool GH(resolve_glibc_version)(RCore *core) {
 			R_LOG_WARN ("resolve_glibc_version: Unexpected version format: %s\n", version_buffer);
 			return false;
 		}
-		eprintf ("version found from symbol\n");
 		version = strtod (version_buffer, NULL);
 		core->dbg->glibc_version = (int)(100 * version);
 		core->dbg->glibc_version_d = version;
 		core->dbg->glibc_version_resolved = true;
-		eprintf ("version string: %s converted: %.2f inted: %d\n", version_buffer, version, core->dbg->glibc_version);
+		r_config_set (core->config, "dbg.glibc.version", version_buffer);
+		R_LOG_INFO ("libc version %.2f identified from symbol", core->dbg->glibc_version_d);
 		return true;
 	}
 
@@ -251,34 +266,37 @@ static bool GH(resolve_glibc_version)(RCore *core) {
 	GHT rodata_size = GH (get_section_size) (core, map->file, ".rodata");
 	ut8 *banner_start = NULL;
 	if (rodata_bytes != NULL) {
-		eprintf ("Got .rodata bytes, size: %d!\n", rodata_size);
-		// r_print_hexdump (core->print, 0ll, rodata_bytes, 0x25d80, 64, 8, 1);
-		banner_start = memmem (rodata_bytes, rodata_size, "GNU C Library", strlen ("GNU C Library"));
+		banner_start = r_mem_mem (rodata_bytes, rodata_size, "GNU C Library", strlen ("GNU C Library"));
 	}
+	char *version_buffer;
 	if (banner_start != NULL) {
 		// eprintf("banner found: %s\n", banner_start);
 		RRegex *rx = r_regex_new ("release version (\\d.\\d\\d)", "en");
 		RList *matches = r_regex_match_list (rx, banner_start);
 		RListIter *iter;
 		char *item;
+		char *version_end;
+		char *version_start;
 		r_list_foreach (matches, iter, item) {
-			eprintf ("version string found: \"%s\"\n", item + strlen ("release version "));
-			version = strtod (item + strlen ("release version "), NULL);
+			version_start = item + strlen ("release version ");
+			version = strtod (version_start, &version_end);
+			version_buffer = strndup (version_start, version_end - version_start);
 		}
 		r_list_free (matches);
 		r_regex_free (rx);
 	}
 
 	if (version != 0) {
-		eprintf ("version found from .rodata banner\n");
 		core->dbg->glibc_version = (int)(100 * version);
 		core->dbg->glibc_version_d = version;
-		eprintf ("version converted: %.2f inted: %d\n", version, core->dbg->glibc_version);
 		core->dbg->glibc_version_resolved = true;
+		r_config_set (core->config, "dbg.glibc.version", version_buffer);
+		free (version_buffer);
+		R_LOG_INFO ("libc version %.2f identified from .rodata banner", core->dbg->glibc_version_d);
 		return true;
 	}
 
-	eprintf ("---------\nget_glibc_version failed\n");
+	R_LOG_WARN ("get_glibc_version failed\n");
 	return false;
 }
 
@@ -568,7 +586,7 @@ static bool GH(r_resolve_main_arena)(RCore *core, GHT *m_arena) {
 		return true;
 	}
 
-	R_LOG_INFO ("Resolving libc version\n");
+	// R_LOG_INFO ("Resolving libc version");
 	if (!GH (resolve_glibc_version) (core)) {
 		R_LOG_WARN ("Could not determine libc version\n");
 		// TODO: maybe add config setting to hardcode libc version?
