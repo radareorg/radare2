@@ -478,7 +478,7 @@ R_API int r_num_is_float(RNum *num, const char *str) {
 	return (IS_DIGIT (*str) && (strchr (str, '.') || str[strlen (str) - 1] == 'f'));
 }
 
-R_API double r_num_get_float(RNum *num, const char *str) {
+R_API double r_num_get_double(RNum *num, const char *str) {
 	double d = 0.0f;
 	(void) sscanf (str, "%lf", &d);
 	return d;

@@ -3271,8 +3271,8 @@ R_API RSignOptions *r_sign_options_new(const char *bytes_thresh, const char *gra
 		return NULL;
 	}
 
-	options->bytes_diff_threshold = r_num_get_float (NULL, bytes_thresh);
-	options->graph_diff_threshold = r_num_get_float (NULL, graph_thresh);
+	options->bytes_diff_threshold = r_num_get_double (NULL, bytes_thresh);
+	options->graph_diff_threshold = r_num_get_double (NULL, graph_thresh);
 
 	if (options->bytes_diff_threshold > 1.0) {
 		options->bytes_diff_threshold = 1.0;
