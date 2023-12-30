@@ -117,7 +117,7 @@ static bool GH(is_tcache)(RCore *core) {
 			}
 			fp = strstr (map->name, "libc.");
 			if (fp) {
-				v = r_num_get_float (core->num, fp + 5);
+				v = r_num_get_double (core->num, fp + 5);
 				core->dbg->glibc_version = (int) round((v * 100));
 				return (v > 2.25);
 			}

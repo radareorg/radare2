@@ -800,7 +800,7 @@ static RSignItem *item_frm_signame(RAnal *a, const char *signame) {
 
 static double get_zb_threshold(RCore *core) {
 	const char *th = r_config_get (core->config, "zign.threshold");
-	double thresh = r_num_get_float (NULL, th);
+	double thresh = r_num_get_double (NULL, th);
 	if (thresh < 0.0 || thresh > 1.0) {
 		R_LOG_ERROR ("Invalid zign.threshold %s, using 0.0", th);
 		thresh = 0.0;
