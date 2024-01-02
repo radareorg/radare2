@@ -39,14 +39,20 @@ static void *_r_th_launcher(void *_th) {
 	}
 	r_th_lock_enter (th->lock);
 	do {
-		r_th_set_running (th, true);
+//		r_th_set_running (th, true);
+// th->lock is already, so no need to call r_th_set_running
+		th->running = true;
 		ret = th->fun (th);
 		if (ret < 0) {
 			th->ready = false;
+//			r_th_set_running (th, false);
+// don't call r_th_set_running, as it would unlock th->lock
+			th->running = false;
 			r_th_lock_leave (th->lock);
 			return 0;
 		}
-		r_th_set_running (th, false);
+//		r_th_set_running (th, false);
+		th->running = false;
 	} while (ret);
 	th->ready = false;
 	r_th_lock_leave (th->lock);
