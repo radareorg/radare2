@@ -220,7 +220,7 @@ static inline void shift_buffer(int start, int end) {
 
 /* https://www.gnu.org/software/bash/manual/html_node/Commands-For-Killing.html */
 static void backward_kill_word(BreakMode break_mode) {
-	int i, len;
+	int i;
 	i = vi_backward_word_motion (break_mode);
 	if (i == I.buffer.index) {
 		return;
@@ -1445,8 +1445,8 @@ static bool __vi_mode(void) {
 			delete_till_end ();
 			break;
 		case 'r':
-			char c = r_cons_readchar ();
-			I.buffer.data[I.buffer.index] = c;
+			ch = r_cons_readchar ();
+			I.buffer.data[I.buffer.index] = ch;
 			break;
 		case 'x':
 			while (rep--) {
