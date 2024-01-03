@@ -230,7 +230,7 @@ static void backward_kill_word(BreakMode break_mode) {
 }
 
 static void kill_word(BreakMode break_mode, char motion) {
-	int i;
+	int i = 0;
 	if (I.buffer.index == I.buffer.length - 1) {
 		__delete_current_char ();
 		return;
