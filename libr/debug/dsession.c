@@ -196,24 +196,16 @@ R_API void r_debug_session_list_memory(RDebug *dbg) {
 			if (!snap) {
 				return;
 			}
-
 			ut8 *hash = r_debug_snap_get_hash (snap);
-			if (!hash) {
-				r_debug_snap_free (snap);
-				return;
-			}
-
-			char *hexstr = r_hex_bin2strdup (hash, R_HASH_SIZE_SHA256);
-			if (!hexstr) {
+			if (hash) {
+				char *hexstr = r_hex_bin2strdup (hash, R_HASH_SIZE_SHA256);
+				if (hexstr) {
+					dbg->cb_printf ("%s: %s\n", snap->name, hexstr);
+					free (hexstr);
+				}
 				free (hash);
-				r_debug_snap_free (snap);
-				return;
 			}
-			dbg->cb_printf ("%s: %s\n", snap->name, hexstr);
-
-			free (hexstr);
-			free (hash);
-			r_debug_snap_free (snap);
+		// 	r_debug_snap_free (snap);
 		}
 	}
 }

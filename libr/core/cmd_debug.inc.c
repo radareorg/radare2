@@ -5617,33 +5617,45 @@ static int cmd_debug(void *data, const char *input) {
 				}
 				if (core->dbg->session) {
 					R_LOG_INFO ("Session already started");
-					break;
+				} else {
+					core->dbg->session = r_debug_session_new ();
+					r_debug_add_checkpoint (core->dbg);
 				}
-				core->dbg->session = r_debug_session_new ();
-				r_debug_add_checkpoint (core->dbg);
 				break;
 			case '-': // "dts-"
-				if (!core->dbg->session) {
+				if (core->dbg->session) {
+					r_debug_session_free (core->dbg->session);
+					core->dbg->session = NULL;
+				} else {
 					R_LOG_INFO ("No session started");
-					break;
 				}
-				r_debug_session_free (core->dbg->session);
-				core->dbg->session = NULL;
 				break;
 			case 't': // "dtst"
-				if (!core->dbg->session) {
+				if (core->dbg->session) {
+					const char *sname = r_str_trim_head_ro (input + 3);
+					if (R_STR_ISNOTEMPTY (sname)) {
+						r_debug_session_save (core->dbg->session, sname);
+					} else {
+						R_LOG_ERROR ("Missing argument");
+					}
+				} else {
 					R_LOG_INFO ("No session started");
-					break;
 				}
-				r_debug_session_save (core->dbg->session, input + 4);
 				break;
 			case 'f': // "dtsf"
 				if (core->dbg->session) {
 					r_debug_session_free (core->dbg->session);
 					core->dbg->session = NULL;
 				}
-				core->dbg->session = r_debug_session_new ();
-				r_debug_session_load (core->dbg, input + 4);
+				{
+					const char *sname = r_str_trim_head_ro (input + 3);
+					if (R_STR_ISNOTEMPTY (sname)) {
+						core->dbg->session = r_debug_session_new ();
+						r_debug_session_load (core->dbg, sname);
+					} else {
+						R_LOG_ERROR ("Missing argument");
+					}
+				}
 				break;
 			case 'm': // "dtsm"
 				if (core->dbg->session) {
