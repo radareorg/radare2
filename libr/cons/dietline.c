@@ -57,13 +57,13 @@ static inline void swap_case(int index) {
 
 static void backward_skip_major_word_break_chars(int *cursor) {
 	while (*cursor >= 0 && is_word_break_char (I.buffer.data[*cursor], MAJOR_BREAK)) {
-		*cursor -= 1;
+		(*cursor)--;
 	}
 }
 
 static void skip_major_word_break_chars(int *cursor) {
 	while (*cursor < I.buffer.length && is_word_break_char (I.buffer.data[*cursor], MAJOR_BREAK)) {
-		*cursor += 1;
+		(*cursor)++;
 	}
 }
 
@@ -71,47 +71,48 @@ static void goto_word_start(int *cursor, BreakMode break_mode) {
 	if (!is_word_break_char (I.buffer.data[*cursor], break_mode)) {
 		/* move cursor backwards to the next word-break char */
 		while (*cursor >= 0 && !is_word_break_char (I.buffer.data[*cursor], break_mode)) {
-			*cursor -= 1;
+			(*cursor)--;
 		}
-	} else if (is_word_break_char (I.buffer.data[*cursor], MINOR_BREAK)
-		   && !is_word_break_char (I.buffer.data[*cursor], MAJOR_BREAK)) {
+	} else if (is_word_break_char (I.buffer.data[*cursor], MINOR_BREAK)) {
 		/* move cursor backwards to the next non-word-break char OR MAJOR break char */
 		while (*cursor >= 0 && is_word_break_char (I.buffer.data[*cursor], MINOR_BREAK)
 		       && !is_word_break_char (I.buffer.data[*cursor], MAJOR_BREAK)) {
-			*cursor -= 1;
+			(*cursor)--;
 		}
 	} else {
 		/* move cursor backwards to the next MINOR word-break char OR non-word-break char */
 		while (*cursor >= 0 && is_word_break_char (I.buffer.data[*cursor], MAJOR_BREAK)) {
-			*cursor -= 1;
+			(*cursor)--;
 		}
 	}
 	/* increment cursor to go to the start of current word */
-	*cursor += 1;
+	if (*cursor < I.buffer.length - 1) {
+		(*cursor)++;
+	}
 }
 
 static void goto_word_end(int *cursor, BreakMode break_mode) {
 	if (!is_word_break_char (I.buffer.data[*cursor], break_mode)) {
 		/* move cursor forward to the next word-break char */
 		while (*cursor < I.buffer.length && !is_word_break_char (I.buffer.data[*cursor], break_mode)) {
-			*cursor += 1;
+			(*cursor)++;
 		}
 	} else if (is_word_break_char (I.buffer.data[*cursor], MINOR_BREAK)) {
 		/* move cursor forward to the next non-word-break char or MAJOR break char */
 		while (*cursor < I.buffer.length && is_word_break_char (I.buffer.data[*cursor], MINOR_BREAK)
 		       && !is_word_break_char (I.buffer.data[*cursor], MAJOR_BREAK)) {
-			*cursor += 1;
+			(*cursor)++;
 		}
 	}
 	/* decrement cursor to go to the end of current word */
 	if (*cursor > 0) {
-		*cursor -= 1;
+		(*cursor)--;
 	}
 }
 
 static void goto_next_word(int *cursor, BreakMode break_mode) {
 	goto_word_end (cursor, break_mode);
-	*cursor += 1;
+	(*cursor)++;
 	if (is_word_break_char (I.buffer.data[*cursor], MAJOR_BREAK)) {
 		skip_major_word_break_chars (cursor);
 	}
@@ -1180,7 +1181,7 @@ static void __print_prompt(void) {
 		free (b);
 		free (rb);
 		free (c);
-		count += 1;
+		count++;
 		if (count > strlen (I.prompt)) {
 			count = 0;
 		}

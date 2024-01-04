@@ -60,7 +60,7 @@ static void open_plugins_at(RCore *core, const char *arg, const char *user_path)
 	}
 }
 
-static void __loadSystemPlugins(RCore *core, int where, const char *path) {
+static void load_system_plugins(RCore *core, int where, const char *path) {
 #if R2_LOADLIBS
 	if (!where) {
 		where = -1;
@@ -139,7 +139,7 @@ static bool is_script(const char *name) {
 
 R_API bool r_core_loadlibs(RCore *core, int where, const char *path) {
 	ut64 prev = r_time_now_mono ();
-	__loadSystemPlugins (core, where, path);
+	load_system_plugins (core, where, path);
 	/* TODO: all those default plugin paths should be defined in r_lib */
 	if (!r_config_get_b (core->config, "cfg.plugins")) {
 		core->times->loadlibs_time = 0;
