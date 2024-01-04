@@ -494,8 +494,9 @@ static RCoreHelpMessage help_msg_dt = {
 	"dtg", "", "graph call/ret trace",
 	"dtg*", "", "graph in agn/age commands. use .dtg*;aggi for visual",
 	"dtgi", "", "interactive debug trace",
-	"dts", "[?]", "trace sessions",
+	"dts", "[?]", "manage trace sessions, used for step back (EXPERIMENTAL)",
 	"dtt", " [tag]", "select trace tag (no arg unsets)",
+	"dtt.", "", "show current tag",
 	NULL
 };
 
@@ -5423,7 +5424,9 @@ static int cmd_debug(void *data, const char *input) {
 			}
 			break;
 		case 't': // "dtt"
-			if (input[2]) {
+			if (input[2] == '.') {
+				r_cons_printf ("%d\n", core->dbg->trace->tag);
+			} else if (input[2]) {
 				r_debug_trace_tag (core->dbg, atoi (input + 3));
 			} else {
 				r_debug_trace_tag (core->dbg, 0);
@@ -5669,7 +5672,6 @@ static int cmd_debug(void *data, const char *input) {
 		case '?':
 		default:
 			r_core_cmd_help (core, help_msg_dt);
-			r_cons_printf ("Current Tag: %d\n", core->dbg->trace->tag);
 			break;
 		}
 		break;
