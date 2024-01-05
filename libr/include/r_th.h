@@ -160,7 +160,7 @@ typedef struct r_th_t {
 	void *user;    // user pointer
 	bool running;
 	int breaked;   // thread aims to be interrupted
-	int delay;     // delay the startup of the thread N seconds
+	ut32 delay;    // delay the startup of the thread for at least N seconds
 	int ready;     // thread is properly setup
 } RThread;
 
@@ -208,7 +208,7 @@ R_API RThreadChannelPromise *r_th_channel_promise_new(RThreadChannel *tc);
 R_API RThreadChannelMessage *r_th_channel_promise_wait(RThreadChannelPromise *promise);
 R_API void r_th_channel_promise_free(RThreadChannelPromise *cp);
 
-R_API RThread *r_th_new(RThreadFunction fun, void *user, int delay);
+R_API RThread *r_th_new(RThreadFunction fun, void *user, ut32 delay);
 R_API bool r_th_start(RThread *th, int enable);
 R_API int r_th_wait(RThread *th);
 R_API int r_th_wait_async(RThread *th);
