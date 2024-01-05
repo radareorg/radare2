@@ -1483,7 +1483,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 									td->baddr = mr.baddr;
 									td->core = r;
 									mr.th_bin = r_th_new (th_binload, td, false);
-									r_th_start (mr.th_bin, true);
+									r_th_start (mr.th_bin);
 								} else {
 									binload (r, filepath, mr.baddr);
 								}
@@ -1727,7 +1727,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 			td->core = r;
 			R_LOG_INFO ("Running analysis level %d in background", mr.do_analysis);
 			mr.th_ana = r_th_new (th_analysis, td, false);
-			r_th_start (mr.th_ana, false);
+			r_th_start (mr.th_ana);
 			mr.th_bin = NULL;
 		} else {
 			perform_analysis (r, mr.do_analysis);

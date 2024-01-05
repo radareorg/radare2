@@ -499,6 +499,7 @@ R_API void r_core_task_enqueue(RCoreTaskScheduler *scheduler, RCoreTask *task) {
 	}
 	r_list_append (scheduler->tasks, task);
 	task->thread = r_th_new (task_run_thread, task, 0);
+	r_th_start (task->thread);
 
 	tasks_lock_leave (scheduler, &old_sigset);
 }

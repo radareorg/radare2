@@ -610,7 +610,7 @@ R_API int r_core_rtr_http(RCore *core, int launch, int browse, const char *path)
 			if (httpthread) {
 				r_th_setname (httpthread, "httpthread");
 			}
-			r_th_start (httpthread, false);
+			r_th_start (httpthread);
 			eprintf ("Background http server started.\n");
 		}
 		return 0;

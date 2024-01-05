@@ -1002,7 +1002,7 @@ R_API void r_core_rtr_cmd(RCore *core, const char *input) {
 				r_th_setaffinity (rapthread, cpuaff);
 #endif
 				r_th_setname (rapthread, "rapthread");
-				r_th_start (rapthread, false);
+				r_th_start (rapthread);
 				R_LOG_INFO ("Background rap server started");
 			}
 		}

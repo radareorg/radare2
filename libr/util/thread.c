@@ -29,31 +29,39 @@ static DWORD WINAPI _r_th_launcher(void *_th) {
 #else
 static void *_r_th_launcher(void *_th) {
 #endif
-	int ret;
+	int ret = R_TH_REPEAT;
 	RThread *th = _th;
-	th->ready = true;
-	if (th->delay) {
-		r_sys_sleep (th->delay);
-	}
-	r_th_lock_enter (th->lock);
-	do {
-//		r_th_set_running (th, true);
-// th->lock is already, so no need to call r_th_set_running
-		th->running = true;
+	while (ret == R_TH_REPEAT && !th->breaked) {
+		while (!th->ready) {
+			// spinlock
+#ifdef	__GNUC__
+			asm volatile ("nop");
+#else
+	//		r_sys_usleep (1);
+#endif
+			if (th->breaked) {
+				th->running = false;
+				return 0;
+			}
+		}
+		r_th_lock_enter (th->lock);
+		if (th->delay) {
+			r_sys_sleep (th->delay);
+			th->delay = 0;
+		}
 		ret = th->fun (th);
 		if (ret < 0) {
 			th->ready = false;
-//			r_th_set_running (th, false);
-// don't call r_th_set_running, as it would unlock th->lock
-			th->running = false;
 			r_th_lock_leave (th->lock);
+			th->running = false;
+#if HAVE_PTHREAD
+			pthread_exit (&ret);
+#endif
 			return 0;
 		}
-//		r_th_set_running (th, false);
-		th->running = false;
-	} while (ret);
-	th->ready = false;
-	r_th_lock_leave (th->lock);
+		r_th_lock_leave (th->lock);
+	}
+	th->running = false;
 #if HAVE_PTHREAD
 	pthread_exit (&ret);
 #endif
@@ -244,6 +252,7 @@ R_API RThread *r_th_new(RThreadFunction fun, void *user, ut32 delay) {
 #elif R2__WINDOWS__
 		th->tid = CreateThread (NULL, 0, _r_th_launcher, th, 0, 0);
 #endif
+		th->running = true;
 	}
 	return th;
 }
@@ -272,29 +281,20 @@ R_API bool r_th_kill(RThread *th, bool force) {
 }
 
 // enable should be bool and th->ready must be protected with locks
-R_API bool r_th_start(RThread *th, int enable) {
-	bool ret = true;
-	enable = false;
-	if (enable) {
-		R_LOG_WARN ("r_th_start.enable should be removed");
-		if (!r_th_is_running (th)) {
-			// start thread
-			while (!th->ready) {
-				/* spinlock */
-			}
-			//r_th_lock_leave (th->lock);
-		}
-#if 0
-	} else {
-		if (r_th_is_running (th)) {
-			// stop thread
-			//r_th_kill (th, 0);
-			r_th_lock_enter (th->lock); // deadlock?
-		}
-#endif
+R_API bool r_th_start(RThread *th) {
+	r_return_val_if_fail (th, false);
+	if (!th->running) {
+		// thread already exited, cannot launch
+		return false;
 	}
-	r_th_set_running (th, enable);
-	return ret;
+	if (th->ready) {
+		//thread is currently running and has launched user function
+		return true;
+	}
+	r_th_lock_enter (th->lock);
+	th->ready = true;
+	r_th_lock_leave (th->lock);
+	return true;
 }
 
 R_API int r_th_wait(struct r_th_t *th) {
@@ -306,7 +306,6 @@ R_API int r_th_wait(struct r_th_t *th) {
 #elif R2__WINDOWS__
 		ret = WaitForSingleObject (th->tid, INFINITE);
 #endif
-		r_th_set_running (th, false);
 	}
 	return ret;
 }
