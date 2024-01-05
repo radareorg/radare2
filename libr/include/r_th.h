@@ -209,7 +209,7 @@ R_API RThreadChannelMessage *r_th_channel_promise_wait(RThreadChannelPromise *pr
 R_API void r_th_channel_promise_free(RThreadChannelPromise *cp);
 
 R_API RThread *r_th_new(RThreadFunction fun, void *user, ut32 delay);
-R_API bool r_th_start(RThread *th, int enable);
+R_API bool r_th_start(RThread *th);
 R_API int r_th_wait(RThread *th);
 R_API int r_th_wait_async(RThread *th);
 R_API void r_th_break(RThread *th);

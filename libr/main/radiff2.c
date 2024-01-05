@@ -1245,11 +1245,11 @@ R_API int r_main_radiff2(int argc, const char **argv) {
 			// spawn 1st thread
 			ThreadData t0d = { .core = &c, .file = ro.file, .ro = &ro };
 			RThread *t0 = r_th_new (thready_core, &t0d, false);
-			r_th_start (t0, false);
+			r_th_start (t0);
 			// spawn 2nd thread
 			ThreadData t1d = { .core = &c2, .file = ro.file2, .ro = &ro };
 			RThread *t1 = r_th_new (thready_core, &t1d, false);
-			r_th_start (t1, false);
+			r_th_start (t1);
 			// sync
 			r_th_wait (t0);
 			r_th_wait (t1);

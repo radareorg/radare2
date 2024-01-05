@@ -595,12 +595,19 @@ int main(int argc, char **argv) {
 
 	RPVector workers;
 	r_pvector_init (&workers, NULL);
+
 	int i;
 	for (i = 0; i < workers_count; i++) {
 		RThread *th = r_th_new (worker_th, &state, 0);
 		if (!th) {
+			R_LOG_ERROR ("Failed to setup thread");
+			r_th_lock_leave (state.lock);
+			exit (-1);
+		}
+		if (!r_th_start (th)) {
 			R_LOG_ERROR ("Failed to start thread");
 			r_th_lock_leave (state.lock);
+			r_th_free (th);
 			exit (-1);
 		}
 		r_pvector_push (&workers, th);

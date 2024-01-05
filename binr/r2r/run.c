@@ -486,7 +486,11 @@ R_API bool r2r_subprocess_init(void) {
 		return false;
 	}
 	sigchld_thread = r_th_new (sigchld_th, NULL, 0);
-	if (!sigchld_thread) {
+	if (!r_th_start (sigchld_thread)) {
+		if (sigchld_thread) {
+			r_th_free (sigchld_thread);
+			sigchld_thread = NULL;
+		}
 		close (sigchld_pipe [0]);
 		close (sigchld_pipe [1]);
 		r_th_lock_free (subprocs_mutex);
