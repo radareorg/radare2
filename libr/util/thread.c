@@ -282,14 +282,16 @@ R_API bool r_th_start(RThread *th, int enable) {
 			while (!th->ready) {
 				/* spinlock */
 			}
-			r_th_lock_leave (th->lock);
+			//r_th_lock_leave (th->lock);
 		}
+#if 0
 	} else {
 		if (r_th_is_running (th)) {
 			// stop thread
 			//r_th_kill (th, 0);
 			r_th_lock_enter (th->lock); // deadlock?
 		}
+#endif
 	}
 	r_th_set_running (th, enable);
 	return ret;
