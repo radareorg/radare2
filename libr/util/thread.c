@@ -32,10 +32,8 @@ static void *_r_th_launcher(void *_th) {
 	int ret;
 	RThread *th = _th;
 	th->ready = true;
-	if (th->delay > 0) {
+	if (th->delay) {
 		r_sys_sleep (th->delay);
-	} else if (th->delay < 0) {
-		r_th_lock_wait (th->lock);
 	}
 	r_th_lock_enter (th->lock);
 	do {
@@ -222,7 +220,7 @@ R_API bool r_th_setaffinity(RThread *th, int cpuid) {
 }
 #endif
 
-R_API RThread *r_th_new(RThreadFunction fun, void *user, int delay) {
+R_API RThread *r_th_new(RThreadFunction fun, void *user, ut32 delay) {
 	RThread *th = R_NEW0 (RThread);
 	if (th) {
 		th->lock = r_th_lock_new (true);
