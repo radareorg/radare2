@@ -105,7 +105,10 @@ static bool load(RBinFile *bf, RBuffer *b, ut64 loadaddr) {
 				res->maincpu = R_NEW (struct vsf_maincpu);
 				r_buf_read_at (bf->buf, offset + read, (ut8 *)res->maincpu, sizeof (*res->maincpu));
 			} else {
-				R_LOG_TODO ("Ignoring unsupported module: %s", module.module_name);
+				char safe_name[sizeof (module.module_name) + 1];
+				memcpy (safe_name, module.module_name, sizeof (module.module_name));
+				safe_name[sizeof (module.module_name)] = 0;
+				R_LOG_TODO ("Ignoring unsupported module: %s", safe_name);
 			}
 #undef CMP_MODULE
 			offset += module.length;
