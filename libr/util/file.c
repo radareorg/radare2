@@ -233,7 +233,7 @@ R_API char *r_file_abspath_rel(const char *cwd, const char *file) {
 	if (strstr (file, "://")) {
 		return strdup (file);
 	}
-	if (!strncmp (file, "~/", 2) || !strncmp (file, "~\\", 2)) {
+	if (r_str_startswith (file, "~/") || r_str_startswith (file, "~\\")) {
 		ret = r_file_home (file + 2);
 	} else {
 #if R2__UNIX__

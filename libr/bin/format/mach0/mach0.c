@@ -5,9 +5,6 @@
 #include <r_hash.h>
 #include "mach0.h"
 
-// R2_590 - deprecate bprintf
-#define bprintf if (mo->verbose) eprintf
-
 #define MACHO_MAX_SECTIONS 4096
 // Microsoft C++: 2048 characters; Intel C++: 2048 characters; g++: No limit
 // see -e bin.maxsymlen (honor bin.limit too?)
@@ -1174,11 +1171,11 @@ static int parse_thread(struct MACH0_(obj_t) *mo, struct load_command *lc, ut64 
 	if (arw_ptr && arw_sz > 0) {
 		int i;
 		ut8 *p = arw_ptr;
-		bprintf ("arw ");
+		eprintf ("arw ");
 		for (i = 0; i < arw_sz; i++) {
-			bprintf ("%02x", 0xff & p[i]);
+			eprintf ("%02x", 0xff & p[i]);
 		}
-		bprintf ("\n");
+		eprintf ("\n");
 	}
 
 	if (is_first_thread) {
@@ -1760,7 +1757,7 @@ static int init_items(struct MACH0_(obj_t) *mo) {
 	if (mo->hdr.sizeofcmds > mo->size) {
 		R_LOG_WARN ("chopping hdr.sizeofcmds because it's larger than the file size");
 		mo->hdr.sizeofcmds = mo->size - 128;
-		//return false;
+		// return false;
 	}
 	bool noFuncStarts = mo->nofuncstarts;
 	//bprintf ("Commands: %d\n", mo->hdr.ncmds);
