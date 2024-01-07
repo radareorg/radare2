@@ -93,7 +93,7 @@ static bool load(RBinFile *bf, RBuffer *b, ut64 loadaddr) {
 				return false;
 			}
 #define CMP_MODULE(x) memcmp (module.module_name, x, sizeof (x) - 1)
-			if (!CMP_MODULE (VICE_C64MEM) && CMP_MODULE (VICE_C64MEMHACKS) &&!module.major) {
+			if (!CMP_MODULE (VICE_C64MEM) && CMP_MODULE (VICE_C64MEMHACKS) && !module.major) {
 				res->mem = offset + read;
 			} else if (!CMP_MODULE (VICE_C64ROM) && !module.major) {
 				res->rom = offset + read;
@@ -106,8 +106,7 @@ static bool load(RBinFile *bf, RBuffer *b, ut64 loadaddr) {
 				r_buf_read_at (bf->buf, offset + read, (ut8 *)res->maincpu, sizeof (*res->maincpu));
 			} else {
 				char safe_name[sizeof (module.module_name) + 1];
-				memcpy (safe_name, module.module_name, sizeof (module.module_name));
-				safe_name[sizeof (module.module_name)] = 0;
+				r_str_ncpy (safe_name, module.module_name, sizeof (safe_name));
 				R_LOG_TODO ("Ignoring unsupported module: %s", safe_name);
 			}
 #undef CMP_MODULE
