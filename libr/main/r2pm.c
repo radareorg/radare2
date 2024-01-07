@@ -860,6 +860,7 @@ static int r2pm_install(RList *targets, bool uninstall, bool clean, bool force, 
 	free (r2v);
 	if (global) {
 		r_sys_setenv ("GLOBAL", "1");
+		r_sys_setenv ("R2PM_GLOBAL", "1");
 		char *sudo = r_sys_getenv ("SUDO");
 		if (R_STR_ISEMPTY (sudo)) {
 			free (sudo);
@@ -870,6 +871,7 @@ static int r2pm_install(RList *targets, bool uninstall, bool clean, bool force, 
 		free (sudo);
 	} else {
 		r_sys_setenv ("GLOBAL", "0");
+		r_sys_setenv ("R2PM_GLOBAL", "0");
 		r_sys_setenv ("R2PM_SUDO", "");
 		r_sys_setenv ("SUDO", "");
 	}
