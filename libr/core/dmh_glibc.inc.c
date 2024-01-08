@@ -280,7 +280,7 @@ static bool GH(resolve_glibc_version)(RCore *core) {
 		r_list_foreach (matches, iter, item) {
 			version_start = item + strlen ("release version ");
 			version = strtod (version_start, &version_end);
-			version_buffer = strndup (version_start, version_end - version_start);
+			version_buffer = r_str_ndup (version_start, version_end - version_start);
 		}
 		r_list_free (matches);
 		r_regex_free (rx);
