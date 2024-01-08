@@ -239,34 +239,6 @@ R_API void r_str_case(char *str, bool up) {
 	}
 }
 
-R_API R_MUSTUSE char *r_file_home(const char *str) {
-	char *dst, *home = r_sys_getenv (R_SYS_HOME);
-	size_t length;
-	if (!home) {
-		home = r_file_tmpdir ();
-		if (!home) {
-			return NULL;
-		}
-	}
-	length = strlen (home) + 1;
-	if (R_STR_ISNOTEMPTY (str)) {
-		length += strlen (R_SYS_DIR) + strlen (str);
-	}
-	dst = (char *)calloc (1, length);
-	if (!dst) {
-		goto fail;
-	}
-	int home_len = strlen (home);
-	memcpy (dst, home, home_len + 1);
-	if (R_STR_ISNOTEMPTY (str)) {
-		dst[home_len] = R_SYS_DIR[0];
-		strcpy (dst + home_len + 1, str);
-	}
-fail:
-	free (home);
-	return dst;
-}
-
 R_API R_MUSTUSE char *r_str_r2_prefix(const char *str) {
 	return r_str_newf ("%s%s%s", r_sys_prefix (NULL), R_SYS_DIR, str);
 }

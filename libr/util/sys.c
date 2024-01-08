@@ -1474,3 +1474,40 @@ R_API void r_sys_info_free(RSysInfo *si) {
 
 // R2_590 r_sys_endian_tostring() // endian == R_SYS_ENDIAN_BIG "big" .. R_ARCH_CONFIG_IS_BIG_ENDIAN (core->rasm->config)? "big": "little"
 
+R_API R_MUSTUSE char *r_file_home(const char *str) {
+	char *dst, *home = r_sys_getenv (R_SYS_HOME);
+	size_t length;
+	if (!home) {
+		home = r_file_tmpdir ();
+		if (!home) {
+			return NULL;
+		}
+	}
+	length = strlen (home) + 1;
+	if (R_STR_ISNOTEMPTY (str)) {
+		length += strlen (R_SYS_DIR) + strlen (str);
+	}
+	dst = (char *)calloc (1, length);
+	if (!dst) {
+		goto fail;
+	}
+	int home_len = strlen (home);
+	memcpy (dst, home, home_len + 1);
+	if (R_STR_ISNOTEMPTY (str)) {
+		dst[home_len] = R_SYS_DIR[0];
+		strcpy (dst + home_len + 1, str);
+	}
+fail:
+	free (home);
+	return dst;
+}
+
+R_API R_MUSTUSE char *r_file_homef(const char *fmt, ...) {
+	va_list ap;
+	va_start (ap, fmt);
+	char *r = r_str_newvf (fmt, ap);
+	char *s = r_file_home (r);
+	free (r);
+	va_end (ap);
+	return s;
+}
