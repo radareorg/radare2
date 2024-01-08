@@ -1167,8 +1167,7 @@ static int parse_thread(struct MACH0_(obj_t) *mo, struct load_command *lc, ut64 
 		return false;
 	}
 
-	// TODO: this shouldnt be an bprintf...
-	if (arw_ptr && arw_sz > 0) {
+	if (mo->verbose && arw_ptr && arw_sz > 0) {
 		int i;
 		ut8 *p = arw_ptr;
 		eprintf ("arw ");
@@ -1830,7 +1829,7 @@ static int init_items(struct MACH0_(obj_t) *mo) {
 			break;
 		case LC_DYLIB_CODE_SIGN_DRS:
 			sdb_set (mo->kv, cmd_flagname, "dylib_code_sign_drs", 0);
-			// bprintf ("[mach0] code is signed\n");
+			R_LOG_DEBUG ("[mach0] code is signed");
 			break;
 		case LC_VERSION_MIN_MACOSX:
 			sdb_set (mo->kv, cmd_flagname, "version_min_macosx", 0);
