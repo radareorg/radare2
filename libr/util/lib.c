@@ -448,7 +448,7 @@ R_API bool r_lib_opendir(RLib *lib, const char *path) {
 			R_LOG_DEBUG ("Loading %s", file);
 			r_lib_open (lib, file);
 		} else {
-			R_LOG_DEBUG ("Cannot open %s", file);
+			R_LOG_DEBUG ("Skip/Ignore %s", file);
 		}
 	}
 	closedir (dh);
