@@ -295,10 +295,10 @@ extern "C" {
 	static inline R_MAYBE_UNUSED bool R_VEC_FUNC(vec_type, reserve)(vec_type *vec, ut64 new_capacity) { \
 		r_return_val_if_fail (vec, false); \
 		if (new_capacity > R_VEC_CAPACITY (vec)) { \
+			const ut64 num_elems = R_VEC_FUNC (vec_type, length) (vec); \
 			type *buf = (type *)realloc (vec->_start, new_capacity * sizeof (type)); \
 			const bool is_success = buf != NULL; \
 			if (R_LIKELY (is_success)) { \
-				const ut64 num_elems = R_VEC_FUNC(vec_type, length) (vec); \
 				vec->_start = buf; \
 				vec->_end = buf + num_elems; \
 				vec->_capacity = new_capacity; \
@@ -309,7 +309,7 @@ extern "C" {
 	} \
 	static inline R_MAYBE_UNUSED void R_VEC_FUNC(vec_type, shrink_to_fit)(vec_type *vec) { \
 		r_return_if_fail (vec); \
-		const ut64 num_elems = R_VEC_FUNC(vec_type, length) (vec); \
+		const ut64 num_elems = R_VEC_FUNC (vec_type, length) (vec); \
 		const ut64 capacity = R_VEC_CAPACITY (vec); \
 		if (num_elems != capacity) { \
 			if (num_elems == 0) { \
