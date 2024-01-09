@@ -61,6 +61,7 @@ extern "C" {
 #if R2__WINDOWS__ || _MSC_VER
 #define R2_PREFIX "."
 #define R2_ETCDIR "etc"
+#define R2_BINDIR "bin"
 #define R2_LIBDIR "lib"
 #define R2_INCDIR "include\\libr"
 #define R2_DATDIR "share"
