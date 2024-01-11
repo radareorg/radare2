@@ -250,13 +250,12 @@ static RCoreHelpMessage help_msg_dm = {
 	"dml", " <file>", "load contents of file into the current map region",
 	"dmm", "[?][j*]", "list modules (libraries, binaries loaded in memory)",
 	"dmp", "[?] <address> <size> <perms>", "change page at <address> with <size>, protection <perms> (perm)",
-	"dms", "[?] <id> <mapaddr>", "take memory snapshot",
-	"dms-", " <id> <mapaddr>", "Restore memory snapshot",
-	"dmS", " [addr|libname] [sectname]", "list sections of target lib",
-	"dmS*", " [addr|libname] [sectname]", "list sections of target lib in radare commands",
+	"dms", "[?] <id> <mapaddr>", "take/store memory snapshot",
+	"dms-", " <id> <mapaddr>", "restore memory snapshot",
+	"dmS", "[*] [addr|libname] [sectname]", "list sections of target lib",
 	"dmL", " address size", "allocate <size> bytes at <address> and promote to huge page",
 	//"dm, " rw- esp 9K", "set 9KB of the stack as read+write (no exec)",
-	"TODO:", "", "map files in process memory. (dmf file @ [addr])",
+	// "TODO:", "", "map files in process memory. (dmf file @ [addr])",
 	NULL
 };
 
