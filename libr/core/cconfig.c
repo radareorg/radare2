@@ -2638,8 +2638,11 @@ static bool cb_scrnkey(void *user, void *data) {
 
 static bool cb_scr_demo(void *user, void *data) {
 	RConfigNode *node = (RConfigNode *) data;
-	r_cons_singleton ()->context->demo = node->i_value;
-	r_cons_singleton ()->line->demo = node->i_value;
+	RCons *cons = r_cons_singleton ();
+	cons->context->demo = node->i_value;
+	if (cons->line) {
+		cons->line->demo = node->i_value;
+	}
 	return true;
 }
 
