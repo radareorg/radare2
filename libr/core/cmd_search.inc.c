@@ -2280,6 +2280,10 @@ static void cmd_search_aF(RCore *core, const char *input) {
 			// eprintf ("0x08%"PFMT64x"%c", bb->addr, 10);
 			int i;
 			for (i = 0; i < bb->ninstr; i++) {
+				if (i >= bb->op_pos_size) {
+					R_LOG_ERROR ("Prevent op_pos overflow on large basic block at 0x%08"PFMT64x, bb->addr);
+					break;
+				}
 				ut64 addr = bb->addr + bb->op_pos[i];
 				ut8 *idata = bbdata + bb->op_pos[i];
 				RAnalOp asmop;

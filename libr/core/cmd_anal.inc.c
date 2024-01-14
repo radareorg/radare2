@@ -2844,6 +2844,10 @@ static RVecUT64 *get_xrefs(RAnalBlock *block) {
 
 	size_t i;
 	for (i = 0; i < block->ninstr; i++) {
+		if (i >= bb->op_pos_size) {
+			R_LOG_ERROR ("Prevent op_pos overflow on large basic block at 0x%08"PFMT64x, bb->addr);
+			break;
+		}
 		const ut64 ia = block->addr + block->op_pos[i];
 		RVecAnalRef *xrefs = r_anal_xrefs_get (block->anal, ia);
 		if (xrefs) {
