@@ -2839,17 +2839,17 @@ static ut64 __opaddr(const RAnalBlock *b, ut64 addr) {
 	return UT64_MAX;
 }
 
-static RVecUT64 *get_xrefs(RAnalBlock *block) {
+static RVecUT64 *get_xrefs(RAnalBlock *bb) {
 	RVecUT64 *result = RVecUT64_new ();
 
 	size_t i;
-	for (i = 0; i < block->ninstr; i++) {
+	for (i = 0; i < bb->ninstr; i++) {
 		if (i >= bb->op_pos_size) {
 			R_LOG_ERROR ("Prevent op_pos overflow on large basic block at 0x%08"PFMT64x, bb->addr);
 			break;
 		}
-		const ut64 ia = block->addr + block->op_pos[i];
-		RVecAnalRef *xrefs = r_anal_xrefs_get (block->anal, ia);
+		const ut64 ia = bb->addr + bb->op_pos[i];
+		RVecAnalRef *xrefs = r_anal_xrefs_get (bb->anal, ia);
 		if (xrefs) {
 			RAnalRef *ref;
 			R_VEC_FOREACH (xrefs, ref) {
@@ -2858,11 +2858,9 @@ static RVecUT64 *get_xrefs(RAnalBlock *block) {
 					RVecUT64_free (result);
 					return NULL;
 				}
-
 				*addr = ref->addr;
 			}
 		}
-
 		RVecAnalRef_free (xrefs);
 	}
 
