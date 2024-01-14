@@ -3808,6 +3808,10 @@ static bool anal_block_cb(RAnalBlock *bb, BlockRecurseCtx *ctx) {
 	int pos;
 	int i = 0;
 	for (i = 0; i < bb->ninstr; i++) {
+		if (i >= bb->op_pos_size) {
+			R_LOG_ERROR ("Prevent op_pos overflow on large basic block at 0x%08"PFMT64x, bb->addr);
+			break;
+		}
 		pos = i? bb->op_pos[i - 1]: 0;
 		ut64 addr = bb->addr + pos;
 		if (addr != opaddr) {

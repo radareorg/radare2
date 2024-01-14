@@ -6080,6 +6080,10 @@ toro:
 				if (ds->addr != bb->addr) {
 					int i;
 					for (i = 0; i < bb->ninstr; i++) {
+						if (i >= bb->op_pos_size) {
+							R_LOG_ERROR ("Prevent op_pos overflow on large basic block at 0x%08"PFMT64x, bb->addr);
+							break;
+						}
 						ut64 addr = bb->addr + (i > 0? bb->op_pos[i - 1]: 0);
 						if (ds->addr == addr) {
 							break;
