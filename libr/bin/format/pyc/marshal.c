@@ -850,7 +850,7 @@ static pyc_object *get_code_object(RBuffer *buffer) {
 	bool v15_to_22 = magic_int_within (ver, "1.5a1", "2.2a1", &error);
 	bool v13_to_20 = magic_int_within (ver, "1.3b1", "2.0b1", &error);
 	// bool v21_to_27 = (!v13_to_20) && magic_int_within (ver,  "2.1a1", "2.7a2", &error);
-	bool has_posonlyargcount = py_version_cmp (ver, "v3.8.0a4", &error) <= 0? true: false;
+	bool has_posonlyargcount = py_version_cmp (ver, "v3.8.0a4", &error) > 0? true: false;
 	if (error) {
 		free (ret);
 		free (cobj);
