@@ -649,10 +649,10 @@ int py_version_cmp(char *va, char *vb, bool *err) {
 	return 0;
 }
 
-bool magic_int_within (char *ver, char *lower, char *uppper, bool *error) {
+bool magic_int_within(char *ver, char *lower, char *uppper, bool *error) {
 	// Most people are probably reversing modern Python, so upper comparison should be done first.
-	if (py_version_cmp (ver, uppper, error) >= 0 || py_version_cmp (ver, lower, error) <= 0) {
-		return true;
+	if (py_version_cmp (ver, uppper, error) > 0 || py_version_cmp (ver, lower, error) < 0) {
+		return false;
 	}
-	return false;
+	return true;
 }
