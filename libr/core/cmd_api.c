@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2022 - pancake */
+/* radare - LGPL - Copyright 2009-2023 - pancake */
 
 #define R_LOG_ORIGIN "cmdapi"
 #include <r_core.h>
@@ -314,7 +314,7 @@ R_API int r_cmd_alias_set_raw(RCmd *cmd, const char *k, const ut8 *v, int sz) {
 		}
 
 		/* Non-ascii character -> not string */
-		if (!IS_PRINTABLE(v[i]) && !IS_WHITECHAR(v[i])) {
+		if (!IS_PRINTABLE (v[i]) && !IS_WHITECHAR (v[i])) {
 			is_binary = true;
 			break;
 		}
