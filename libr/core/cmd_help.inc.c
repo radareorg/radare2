@@ -90,6 +90,13 @@ static RCoreHelpMessage help_msg_at_at = {
 	NULL
 };
 
+static RCoreHelpMessage help_msg_single_quote = {
+	"'", "# run a command without evaluating any special character", "",
+	"'", "?e hello @ world", "print the given string, including the @ sign and the rest (r2.call)",
+	"'", "0x123'?v $$", "run the '?v $$' command in the 0x123 offset (same as r2.callAt)",
+	NULL
+};
+
 static RCoreHelpMessage help_msg_at_at_at = {
 	"@@@", "", " # foreach offset+size iterator command:",
 	"x", " @@@=", "[addr] [size] ([addr] [size] ...)",
@@ -266,6 +273,7 @@ static RCoreHelpMessage help_msg_question = {
 	"Usage: ?[?[?]] expression", "", "",
 	"?!", " [cmd]", "run cmd if $? == 0",
 	"?", " eip-0x804800", "show all representation result for this math expr",
+	"?'", "", "show help for the single quote (do not evaluate special characters in command)",
 	"?$", "", "show value all the variables ($)",
 	"?+", " [cmd]", "run cmd if $? > 0",
 	"?-", " [cmd]", "run cmd if $? < 0",
@@ -706,8 +714,11 @@ static int cmd_help(void *data, const char *input) {
 		r_cons_printf ("0x%"PFMT64x"\n", n);
 		}
 		break;
+	case '\'': // "?'"
+		r_core_cmd_help (core, help_msg_single_quote);
+		break;
 	case 'a': // "?a"
-		r_cons_printf ("%s", ret_ascii_table());
+		r_cons_printf ("%s", ret_ascii_table ());
 		break;
 	case 'b': // "?b"
 		if (input[1] == '6' && input[2] == '4') {
@@ -1479,17 +1490,18 @@ static int cmd_help(void *data, const char *input) {
 		}
 		r_cons_set_raw (0);
 		break;
-	case 'w': { // "?w"
-		ut64 addr = r_num_math (core->num, input + 1);
-		char *rstr = core->print->hasrefs (core->print->user, addr, true);
-		if (!rstr) {
-			R_LOG_ERROR ("Cannot get refs at 0x%08"PFMT64x, addr);
-			break;
+	case 'w': // "?w"
+		{
+			  ut64 addr = r_num_math (core->num, input + 1);
+			  char *rstr = core->print->hasrefs (core->print->user, addr, true);
+			  if (!rstr) {
+				  R_LOG_ERROR ("Cannot get refs at 0x%08"PFMT64x, addr);
+				  break;
+			  }
+			  r_cons_println (rstr);
+			  free (rstr);
 		}
-		r_cons_println (rstr);
-		free (rstr);
 		break;
-	}
 	case '?': // "??"
 		if (input[1] == '?') {
 			if (input[2] == '?') { // "???"
