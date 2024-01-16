@@ -6,6 +6,7 @@ static RCoreHelpMessage help_message_ci = {
 	"Usage: ci", "[sil] ([obid])", "Compare two bin objects",
 	"cis", " 0", "compare symbols with current `ob 1` with given obid (0)",
 	"cii", " 0", "compare imports",
+	"ciE", " 0", "compare exports",
 	"cil", " 0", "compare libraries",
 	NULL
 };
@@ -858,6 +859,31 @@ static const RList *imports_of(RCore *core, int id0) {
 	return list;
 }
 
+static bool its_an_export(RBinSymbol *s) {
+	/* workaround for some bin plugs */
+	if (s->is_imported) {
+		return false;
+	}
+	return (s->bind && !strcmp (s->bind, R_BIN_BIND_GLOBAL_STR));
+}
+
+static RList *exports_of(RCore *core, int id0) {
+	RBinFile *bf = r_bin_file_find_by_id (core->bin, id0);
+	RBinFile *old_bf = core->bin->cur;
+	r_bin_file_set_cur_binfile (core->bin, bf);
+	const RList *list = bf? r_bin_get_symbols (core->bin): NULL;
+	RList *nlist = r_list_newf (NULL);
+	RListIter *iter;
+	RBinSymbol *sym;
+	r_list_foreach (list, iter, sym) {
+		if (its_an_export (sym)) {
+			r_list_append (nlist, sym);
+		}
+	}
+	r_bin_file_set_cur_binfile (core->bin, old_bf);
+	return nlist;
+}
+
 static const RList *libs_of(RCore *core, int id0) {
 	RBinFile *bf = r_bin_file_find_by_id (core->bin, id0);
 	RBinFile *old_bf = core->bin->cur;
@@ -945,6 +971,47 @@ static void _core_cmp_info_imports(RCore *core, int id0, int id1) {
 	// r_list_free (s1);
 }
 
+static void _core_cmp_info_exports(RCore *core, int id0, int id1) {
+	RList *s0 = exports_of (core, id0);
+	RList *s1 = exports_of (core, id1);
+	if (!s0 || !s1) {
+		R_LOG_ERROR ("Missing bin object");
+		return;
+	}
+	RListIter *iter, *iter2;
+	RBinImport *s, *s2;
+	if (id0 == id1) {
+		eprintf ("%d == %d\n", id0, id1);
+		return;
+	}
+	r_list_foreach (s0, iter, s) {
+		const char *s_name = r_bin_name_tostring (s->name);
+		bool found = false;
+		r_list_foreach (s1, iter2, s2) {
+			const char *s2_name = r_bin_name_tostring (s2->name);
+			if (!strcmp (s_name, s2_name)) {
+				found = true;
+			}
+		}
+		r_cons_printf ("%s%s\n", found? " ": "-", s_name);
+	}
+	r_list_foreach (s1, iter, s) {
+		const char *s_name = r_bin_name_tostring (s->name);
+		bool found = false;
+		r_list_foreach (s0, iter2, s2) {
+			const char *s2_name = r_bin_name_tostring (s2->name);
+			if (!strcmp (s_name, s2_name)) {
+				found = true;
+			}
+		}
+		if (!found) {
+			r_cons_printf ("+%s\n", s_name);
+		}
+	}
+	r_list_free (s0);
+	r_list_free (s1);
+}
+
 static void _core_cmp_info_symbols(RCore *core, int id0, int id1) {
 	const RList *s0 = symbols_of (core, id0);
 	const RList *s1 = symbols_of (core, id1);
@@ -990,14 +1057,17 @@ static void _core_cmp_info(RCore *core, const char *input) {
 	int id1 = atoi (input + 1);
 	// do the magic
 	switch (input[0]) {
-	case 's':
+	case 's': // "cis"
 		_core_cmp_info_symbols (core, id0, id1);
 		break;
-	case 'l':
+	case 'l': // "cil"
 		_core_cmp_info_libs (core, id0, id1);
 		break;
-	case 'i':
+	case 'i': // "cii"
 		_core_cmp_info_imports (core, id0, id1);
+		break;
+	case 'E': // "ciE"
+		_core_cmp_info_exports (core, id0, id1);
 		break;
 	default:
 		r_core_cmd_help (core, help_message_ci);
