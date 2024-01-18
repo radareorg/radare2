@@ -1536,11 +1536,11 @@ R_API char *r_bin_name_tostring(RBinName *bn) {
 	if (!bn) {
 		return NULL;
 	}
-	if (bn->name) {
-		return bn->name;
-	}
 	if (bn->oname) {
 		return bn->oname;
+	}
+	if (bn->name) {
+		return bn->name;
 	}
 	return bn->fname;
 }
