@@ -236,6 +236,7 @@ static int string_scan_range(RList *list, RBinFile *bf, int min, const ut64 from
 		runes = 0;
 		str_start = needle;
 
+		r_strbuf_set (sb, "");
 		/* Eat a whole C string */
 		for (i = 0; i < maxstr && needle < to; i += rc) {
 			RRune r = {0};
