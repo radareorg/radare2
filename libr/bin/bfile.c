@@ -108,7 +108,7 @@ static int string_scan_range(RList *list, RBinFile *bf, int min, const ut64 from
 	ut8 tmp[64]; // temporal buffer to encode characters in utf8 form
 	RStrBuf *sb = r_strbuf_new ("");
 	ut64 str_start, needle = from;
-	int count = 0, i, rc, runes;
+	int i, rc, runes;
 	int str_type = R_STRING_TYPE_DETECT;
 	const int limit = bf->rbin->limit;
 	int minstr = bin->minstrlen;
@@ -374,8 +374,8 @@ static int string_scan_range(RList *list, RBinFile *bf, int min, const ut64 from
 			bs->type = str_type;
 			bs->length = runes;
 			bs->size = needle - str_start;
-			bs->ordinal = count++;
-			if (limit > 0 && count > limit) {
+			bs->ordinal = bf->string_count++;
+			if (limit > 0 && bf->string_count > limit) {
 				R_LOG_WARN ("el.limit for strings");
 				break;
 			}
@@ -447,7 +447,7 @@ static int string_scan_range(RList *list, RBinFile *bf, int min, const ut64 from
 		pj_free (pj);
 	}
 	r_strbuf_free (sb);
-	return count;
+	return bf->string_count;
 }
 
 static bool is_data_section(RBinFile *a, RBinSection *s) {
@@ -889,6 +889,7 @@ R_IPI RList *r_bin_file_get_strings(RBinFile *bf, int min, int dump, int raw) {
 	RBinSection *section;
 	RList *ret = dump? NULL: r_list_newf (r_bin_string_free);
 
+	bf->string_count = 0;
 	if (!raw && o && o->sections && !r_list_empty (o->sections)) {
 		r_list_foreach (o->sections, iter, section) {
 			if (is_data_section (bf, section)) {

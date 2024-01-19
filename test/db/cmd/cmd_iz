@@ -57,11 +57,12 @@ nth paddr      vaddr      len size section type  string
 [Strings]
 nth paddr      vaddr      len size section type  string
 -------------------------------------------------------
-0   0x000004b0 0x080484b0 12  13   .rodata ascii Hello world!
+0   0x000004b0 0x080484b0 12  12   .rodata ascii Hello world!
 -- leq 11 --
 [Strings]
-nth paddr vaddr len size section type string
---------------------------------------------
+nth paddr      vaddr      len size section type  string
+-------------------------------------------------------
+0   0x000004b0 0x080484b0 11  11   .rodata ascii Hello world
 -- no limit --
 [Strings]
 nth paddr      vaddr      len size section type  string
