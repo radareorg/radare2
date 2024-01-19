@@ -8,7 +8,7 @@
 
 HEAPTYPE (ut64);
 
-R_VEC_TYPE(RVecAnalRef, RAnalRef);
+R_VEC_TYPE (RVecAnalRef, RAnalRef);
 
 static R_TH_LOCAL RCore *mycore = NULL;
 static R_TH_LOCAL bool esil_anal_stop = false;
@@ -385,19 +385,103 @@ static inline ut64 cmpstrings(const void *a) {
 	return r_str_hash64 (a);
 }
 
-static char *anal_fcn_autoname(RCore *core, RAnalFunction *fcn, int mode) {
+static char *autoname_basic(RCore *core, RAnalFunction *fcn, int mode) {
+	RList *names = r_list_newf (free);
 	PJ *pj = NULL;
 	if (mode == 'j') {
 		// start a new JSON object
 		pj = r_core_pj_new (core);
 		pj_a (pj);
 	}
+	RAnalRef *ref;
+	bool dump = false;
+	RVecAnalRef *refs = r_anal_function_get_refs (fcn);
+	if (refs) {
+		R_VEC_FOREACH (refs, ref) {
+			RFlagItem *f = r_flag_get_i (core->flags, ref->addr);
+			if (!f) {
+				continue;
+			}
+			const int type = ref->type & R_ANAL_REF_TYPE_MASK;
+			switch (type) {
+			case R_ANAL_REF_TYPE_CODE:
+			case R_ANAL_REF_TYPE_CALL:
+			case R_ANAL_REF_TYPE_ICOD:
+			case R_ANAL_REF_TYPE_JUMP:
+				break;
+			default:
+				continue;
+			}
 
-	RList *names = r_list_newf (free);
+			// If dump is true, print all strings referenced by the function
+			if (dump) {
+				// take only strings flags
+				if (!strncmp (f->name, "str.", 4)) {
+					if (mode == 'j') {
+						// add new json item
+						pj_o (pj);
+						pj_kn (pj, "addr", ref->at);
+						pj_kn (pj, "ref", ref->addr);
+						pj_ks (pj, "flag", f->name);
+						pj_end (pj);
+					} else {
+						r_cons_printf ("0x%08"PFMT64x" 0x%08"PFMT64x" %s\n", ref->at, ref->addr, f->name);
+					}
+				}
+			}
+			const char *name = f->name;
+			if (blacklisted_word (name)) {
+				continue;
+			}
+			const char *last_dot = r_str_rchr (name, NULL, '.');
+			if (last_dot) {
+				r_list_append (names, r_str_newf ("auto.sub.%s", last_dot + 1));
+			} else {
+				r_list_append (names, r_str_newf ("auto.sub.%s", name));
+			}
+		}
+	}
 	if (!blacklisted_word (fcn->name)) {
 		r_list_append (names, strdup (fcn->name));
 	}
 
+	RVecAnalRef_free (refs);
+	RListIter *iter;
+	char *n;
+	char *final_name = NULL;
+	r_list_uniq_inplace (names, cmpstrings);
+	if (mode == 'l') {
+		r_list_foreach (names, iter, n) {
+			r_cons_printf ("%s\n", n);
+		}
+	} else {
+		r_list_foreach (names, iter, n) {
+			/// XXX: improve guessing here
+			final_name = strdup (n);
+			break;
+		}
+	}
+	r_list_free (names);
+	if (pj) {
+		pj_end (pj);
+		r_cons_printf ("%s\n", pj_string (pj));
+		pj_free (pj);
+	}
+	return final_name;
+}
+
+// uses emulation to resolve more strings to get better names
+static char *autoname_slow(RCore *core, RAnalFunction *fcn, int mode) {
+	RList *names = r_list_newf (free);
+	if (!blacklisted_word (fcn->name)) {
+		r_list_append (names, strdup (fcn->name));
+	}
+	PJ *pj = NULL;
+	if (mode == 'j') {
+		// start a new JSON object
+		pj = r_core_pj_new (core);
+		pj_a (pj);
+	}
 	// TODO: check if import, if its in plt, by name, by rbin...
 	int scr_color = r_config_get_i (core->config, "scr.color");
 	r_config_set_i (core->config, "scr.color", 0);
@@ -426,16 +510,17 @@ static char *anal_fcn_autoname(RCore *core, RAnalFunction *fcn, int mode) {
 			if (sp2) {
 				*sp2 = 0;
 			}
-			r_list_append (names, strdup (name));
-		} else {
-			r_list_append (names, strdup (name));
 		}
+		r_list_append (names, strdup (name));
 	}
 	free (pdsfq);
 	char *bestname = NULL;
 	bool use_getopt = false;
 	r_list_uniq_inplace (names, cmpstrings);
 	r_list_foreach (names, iter, name) {
+		if (mode == 'l') {
+			r_cons_printf ("%s\n", name);
+		}
 		if (strstr (name, "getopt") || strstr (name, "optind")) {
 			use_getopt = true;
 		} else if (r_str_startswith (name, "sym.imp.")) {
@@ -486,7 +571,15 @@ static char *anal_fcn_autoname(RCore *core, RAnalFunction *fcn, int mode) {
 	return NULL;
 }
 
-/*this only autoname those function that start with fcn.* or sym.func.* */
+R_API char *r_core_anal_fcn_autoname(RCore *core, RAnalFunction *fcn, int mode) {
+	r_return_val_if_fail (core && fcn, NULL);
+	if (r_config_get_b (core->config, "anal.slow")) {
+		return autoname_slow (core, fcn, mode);
+	}
+	return autoname_basic (core, fcn, mode);
+}
+
+/* this only autoname those function that start with fcn.* or sym.func.* */
 R_API void r_core_anal_autoname_all_fcns(RCore *core) {
 	RListIter *it;
 	RAnalFunction *fcn;
@@ -495,7 +588,7 @@ R_API void r_core_anal_autoname_all_fcns(RCore *core) {
 		if (!strncmp (fcn->name, "fcn.", 4) || !strncmp (fcn->name, "sym.func.", 9)) {
 			RFlagItem *item = r_flag_get (core->flags, fcn->name);
 			if (item) {
-				char *name = anal_fcn_autoname (core, fcn, 0);
+				char *name = r_core_anal_fcn_autoname (core, fcn, 0);
 				if (name) {
 					r_flag_rename (core->flags, item, name);
 					free (fcn->name);
@@ -573,15 +666,6 @@ R_API void r_core_anal_autoname_all_golang_fcns(RCore *core) {
 	} else {
 		R_LOG_ERROR ("Found no symbols");
 	}
-}
-
-// suggest a name for the function at the address 'addr'
-R_API char *r_core_anal_fcn_autoname(RCore *core, ut64 addr, int mode) {
-	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, addr, 0);
-	if (fcn) {
-		return anal_fcn_autoname (core, fcn, mode);
-	}
-	return NULL;
 }
 
 static ut64 *next_append(ut64 *next, int *nexti, ut64 v) {
