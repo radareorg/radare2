@@ -1031,8 +1031,7 @@ static void list_xtr_archs(RBin *bin, PJ *pj, int mode) {
 }
 
 static char *get_arch_string(const char *arch, int bits, RBinInfo *info) {
-	RStrBuf *sb = r_strbuf_new ("");
-	r_strbuf_appendf (sb, "%s_%d", arch, bits);
+	RStrBuf *sb = r_strbuf_newf ("%s_%d", arch, bits);
 	if (R_STR_ISNOTEMPTY (info->cpu)) {
 		r_strbuf_appendf (sb, " cpu=%s", info->cpu);
 	}
