@@ -972,12 +972,12 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, R_UNUSED int perm, const ch
 	} else if (r_str_startswith (mode, "bin.ormaps")) {
 		// int mask = (mode[len - 1] == '.')? r_str_rwx (mode + len): 0;
 		r_list_free (list);
-		RBinObject *obj = r_bin_cur_object (core->bin);
-		bool have_sections = obj && !r_list_empty (obj->sections);
-		if (have_sections) {
-			return r_core_get_boundaries_prot (core, perm, "bin.sections.x", prefix);
+		list = r_core_get_boundaries_prot (core, perm, "bin.sections.x", prefix);
+		if (r_list_length (list) == 0) {
+			r_list_free (list);
+			return r_core_get_boundaries_prot (core, perm, "io.maps.x", prefix);
 		}
-		return r_core_get_boundaries_prot (core, perm, "io.maps.x", prefix);
+		return list;
 	} else if (r_str_startswith (mode, "bin.sections")) {
 		const int len = strlen ("bin.sections");
 		const char *sperm = mode + len;
