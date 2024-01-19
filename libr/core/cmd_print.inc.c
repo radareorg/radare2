@@ -3078,7 +3078,7 @@ static void disasm_strings(RCore *core, const char *input, RAnalFunction *fcn) {
 	r_config_set_b (core->config, "asm.cmt.right", true);
 	r_config_set_b (core->config, "asm.offset", true);
 
-	if (strchr (input, 'q')) {
+	if (strchr (input, 'q')) { // "pdsfq"
 		show_offset = false;
 	}
 

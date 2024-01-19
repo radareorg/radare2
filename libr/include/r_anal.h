@@ -383,6 +383,7 @@ typedef struct r_anal_options_t {
 	bool retpoline;
 	bool propagate_noreturn;
 	bool recursive_noreturn; // anal.rnr
+	bool slow;
 } RAnalOptions;
 
 typedef enum {
