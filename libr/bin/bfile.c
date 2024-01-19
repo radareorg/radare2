@@ -105,7 +105,7 @@ static void print_string(RBinFile *bf, RBinString *string, int raw, PJ *pj) {
 static int string_scan_range(RList *list, RBinFile *bf, int min, const ut64 from, const ut64 to, int type, int raw, RBinSection *section) {
 	RBin *bin = bf->rbin;
 	const bool strings_nofp = bin->strings_nofp;
-	ut8 tmp[32]; // temporal buffer to encode characters in utf8 form
+	ut8 tmp[64]; // temporal buffer to encode characters in utf8 form
 	RStrBuf *sb = r_strbuf_new ("");
 	ut64 str_start, needle = from;
 	int count = 0, i, rc, runes;
@@ -280,9 +280,7 @@ static int string_scan_range(RList *list, RBinFile *bf, int min, const ut64 from
 				if (strings_nofp) {
 					rc = 2;
 					if (r && r < 0x100 && strchr ("\n\r\t\033\\", (char)r)) {
-						// eprintf ("is special\n");
-						runes++;
-						// accept it as it is
+						runes++; // accept it as it is
 						rc = 1;
 					} else {
 						rc = 1;
@@ -290,9 +288,9 @@ static int string_scan_range(RList *list, RBinFile *bf, int min, const ut64 from
 						break;
 					}
 				} else {
-					if ((i + 32) < sizeof (tmp) && r < 93) {
-						tmp[i + 0] = '\\';
-						tmp[i + 1] = "       abtnvfr             e  "
+					if (r < 93) {
+						tmp[0] = '\\';
+						tmp[1] = "       abtnvfr             e  "
 							"                              "
 							"                              "
 							"  \\"[r];
@@ -505,7 +503,7 @@ static void get_strings_range(RBinFile *bf, RList *list, int min, int raw, bool 
 	}
 	int type;
 	const char *enc = bf->rbin->strenc;
-	if (!enc) {
+	if (enc == NULL) {
 		type = R_STRING_TYPE_DETECT;
 	} else if (!strcmp (enc, "latin1")) {
 		type = R_STRING_TYPE_ASCII;
