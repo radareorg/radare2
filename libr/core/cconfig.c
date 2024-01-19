@@ -2943,7 +2943,7 @@ static bool cb_binmaxstr(void *user, void *data) {
 	if (core->bin) {
 		int v = node->i_value;
 		if (v < 1) {
-			v = 4; // HACK
+			v = 0; // HACK
 		}
 		core->bin->maxstrlen = v;
 		r_bin_reset_strings (core->bin);

@@ -13739,7 +13739,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 					if (input[2] == 'a') { // "aaaa"
 						logline (core, 98, "Reanalizing graph references to adjust functions count (aarr)");
 						r_core_cmd_call (core, "aarr");
-						// cconst char *mode = core->anal->opt.slow? "slow": "fast";
+						// const char *mode = core->anal->opt.slow? "slow": "fast";
 						logline (core, 99, "Autoname all functions (.afna@@c:afla)");
 						r_core_cmd0 (core, ".afna@@c:afla");
 					}

@@ -5,7 +5,7 @@
 #include "i/private.h"
 
 // maybe too big sometimes? 2KB of stack eaten here..
-#define R_STRING_SCAN_BUFFER_SIZE 2048
+#define R_STRING_SCAN_BUFFER_SIZE 4096
 #define R_STRING_MAX_UNI_BLOCKS 4
 
 static RBinClass *__getClass(RBinFile *bf, const char *name) {
@@ -105,11 +105,20 @@ static void print_string(RBinFile *bf, RBinString *string, int raw, PJ *pj) {
 static int string_scan_range(RList *list, RBinFile *bf, int min, const ut64 from, const ut64 to, int type, int raw, RBinSection *section) {
 	RBin *bin = bf->rbin;
 	const bool strings_nofp = bin->strings_nofp;
-	ut8 tmp[R_STRING_SCAN_BUFFER_SIZE];
+	ut8 tmp[32]; // temporal buffer to encode characters in utf8 form
+	RStrBuf *sb = r_strbuf_new ("");
 	ut64 str_start, needle = from;
 	int count = 0, i, rc, runes;
 	int str_type = R_STRING_TYPE_DETECT;
 	const int limit = bf->rbin->limit;
+	int minstr = bin->minstrlen;
+	if (minstr < 1) {
+		minstr = 1;
+	}
+	int maxstr = bin->maxstrlen;
+	if (maxstr < 1) {
+		maxstr = R_STRING_SCAN_BUFFER_SIZE;
+	}
 
 	// if list is null it means its gonna dump
 	r_return_val_if_fail (bf, -1);
@@ -146,7 +155,7 @@ static int string_scan_range(RList *list, RBinFile *bf, int min, const ut64 from
 	}
 	r_buf_read_at (bf->buf, from, buf, len);
 	char *charset = r_sys_getenv ("RABIN2_CHARSET");
-	if (!R_STR_ISEMPTY (charset)) {
+	if (R_STR_ISNOTEMPTY (charset)) {
 		RCharset *ch = r_charset_new ();
 		if (r_charset_use (ch, charset)) {
 			int outlen = len * 4;
@@ -177,21 +186,21 @@ static int string_scan_range(RList *list, RBinFile *bf, int min, const ut64 from
 		}
 		// smol optimization
 		if (to > 4 && needle < to - 4) {
-			ut32 n1 = r_read_le32 (buf + (needle - from));
+			ut32 n1 = r_read_le32 (buf + needle - from);
 			if (!n1) {
 				needle += 4;
 				continue;
 			}
 		}
-		rc = r_utf8_decode (buf + (needle - from), to - needle, NULL);
+		rc = r_utf8_decode (buf + needle - from, to - needle, NULL);
 		if (!rc) {
 			needle++;
 			continue;
 		}
-		bool addr_aligned = !(needle % 4);
+		const bool addr_aligned = !(needle % 4);
 
 		if (type == R_STRING_TYPE_DETECT) {
-			char *w = (char *)buf + (needle + rc - from);
+			char *w = (char *)buf + needle + rc - from;
 			if (((to - needle) > 8 + rc)) {
 				// TODO: support le and be
 				bool is_wide32le = (needle + rc + 2 < to) && (!w[0] && !w[1] && !w[2] && w[3] && !w[4]);
@@ -205,7 +214,7 @@ static int string_scan_range(RList *list, RBinFile *bf, int min, const ut64 from
 					is_wide32le = false;
 				}
 				///is_wide32be &= (n1 < 0xff && n11 < 0xff); // false; // n11 < 0xff;
-				if (is_wide32le  && addr_aligned) {
+				if (is_wide32le && addr_aligned) {
 					str_type = R_STRING_TYPE_WIDE32; // asume big endian,is there little endian w32?
 				} else {
 					// bool is_wide = (n1 && n2 && n1 < 0xff && (!n2 || n2 < 0xff));
@@ -228,7 +237,7 @@ static int string_scan_range(RList *list, RBinFile *bf, int min, const ut64 from
 		str_start = needle;
 
 		/* Eat a whole C string */
-		for (i = 0; i < sizeof (tmp) - 4 && needle < to; i += rc) {
+		for (i = 0; i < maxstr && needle < to; i += rc) {
 			RRune r = {0};
 			if (str_type == R_STRING_TYPE_WIDE32) {
 				rc = r_utf32le_decode (buf + needle - from, to - needle, &r);
@@ -241,7 +250,7 @@ static int string_scan_range(RList *list, RBinFile *bf, int min, const ut64 from
 					rc = 2;
 				}
 			} else {
-				rc = r_utf8_decode (buf + (needle - from), to - needle, &r);
+				rc = r_utf8_decode (buf + needle - from, to - needle, &r);
 				if (rc > 1) {
 					str_type = R_STRING_TYPE_UTF8;
 				}
@@ -261,7 +270,9 @@ static int string_scan_range(RList *list, RBinFile *bf, int min, const ut64 from
 						r = 0;
 					}
 				}
-				rc = r_utf8_encode (tmp + i, r);
+				rc = r_utf8_encode (tmp, r);
+				tmp[rc] = 0;
+				r_strbuf_append (sb, (const char *)tmp);
 				runes++;
 			} else if (r && r < 0x100 && strchr ("\b\v\f\n\r\t\a\033\\", (char)r)) {
 				/* Print the escape code */
@@ -289,6 +300,8 @@ static int string_scan_range(RList *list, RBinFile *bf, int min, const ut64 from
 						break;
 					}
 					rc = 2;
+					tmp[rc] = 0;
+					r_strbuf_append (sb, (const char *)tmp);
 					runes++;
 				}
 			} else {
@@ -297,21 +310,23 @@ static int string_scan_range(RList *list, RBinFile *bf, int min, const ut64 from
 			}
 		}
 
-		tmp[i++] = '\0';
+		i++;
 
 		if (runes < min && runes >= 2 && str_type == R_STRING_TYPE_ASCII && needle < to) {
 			// back up past the \0 to the last char just in case it starts a wide string
 			needle -= 2;
 		}
 		if (runes >= min) {
+			const char *tmpstr = r_strbuf_get (sb);
+			size_t tmplen = r_strbuf_length (sb);
 			// reduce false positives
 			int j, num_blocks, *block_list;
 			int *freq_list = NULL, expected_ascii, actual_ascii, num_chars;
 			if (str_type == R_STRING_TYPE_ASCII) {
-				for (j = 0; j < i; j++) {
-					char ch = tmp[j];
+				for (j = 0; j < tmplen; j++) {
+					char ch = tmpstr[j];
 					if (ch != '\n' && ch != '\r' && ch != '\t') {
-						if (!IS_PRINTABLE (tmp[j])) {
+						if (!IS_PRINTABLE (ch)) {
 							continue;
 						}
 					}
@@ -322,7 +337,7 @@ static int string_scan_range(RList *list, RBinFile *bf, int min, const ut64 from
 			case R_STRING_TYPE_WIDE:
 			case R_STRING_TYPE_WIDE32:
 				num_blocks = 0;
-				block_list = r_utf_block_list ((const ut8*)tmp, i - 1,
+				block_list = r_utf_block_list ((const ut8*)tmpstr, tmplen - 1,
 						str_type == R_STRING_TYPE_WIDE? &freq_list: NULL);
 				if (block_list) {
 					for (j = 0; block_list[j] != -1; j++) {
@@ -398,7 +413,8 @@ static int string_scan_range(RList *list, RBinFile *bf, int min, const ut64 from
 			ut64 baddr = bf->loadaddr && bf->bo? bf->bo->baddr: bf->loadaddr;
 			bs->paddr = str_start + baddr;
 			bs->vaddr = str_start - pdelta + vdelta + baddr;
-			bs->string = r_str_ndup ((const char *)tmp, i); // Use stringviews to save memory
+			bs->string = r_strbuf_drain (sb);
+			sb = r_strbuf_new ("");
 			if (strings_nofp) {
 				r_str_trim (bs->string); // trim spaces to ease readability
 			} else {
@@ -431,6 +447,7 @@ static int string_scan_range(RList *list, RBinFile *bf, int min, const ut64 from
 		}
 		pj_free (pj);
 	}
+	r_strbuf_free (sb);
 	return count;
 }
 
