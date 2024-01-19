@@ -402,6 +402,7 @@ typedef struct r_bin_file_t {
 	Sdb *sdb_info;
 	Sdb *sdb_addrinfo;
 	struct r_bin_t *rbin;
+	int string_count;
 } RBinFile;
 
 typedef struct r_bin_file_options_t {
