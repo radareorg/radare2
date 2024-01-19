@@ -52,6 +52,13 @@ class getExistentialTypeMetadata(swift {
   func ProtocolClassConstraint, swift::TargetMetadata<swift::InProcess> const*, unsigned long, swift::TargetProtocolDescriptorRef<swift::InProcess> const*)::$_3::operator()() const::{lambda(void*)#1}::__invoke(void*) {}  // 0x1000036b0
   func ProtocolClassConstraint, swift::TargetMetadata<swift::InProcess> const*, unsigned long, swift::TargetProtocolDescriptorRef<swift::InProcess> const*)::$_3::operator()() const::TheLazy {}  // 0x100008588
 }
+class swift {
+  func getRootSuperclass() {}  // 0x100002b70
+  func swift51override_conformsToSwiftProtocol(swift::TargetMetadata<swift::InProcess> const*, swift::TargetProtocolDescriptor<swift::InProcess> const*, llvm::StringRef, swift::TargetProtocolConformanceDescriptor<swift::InProcess> const* (*)(swift::TargetMetadata<swift::InProcess> const*, swift::TargetProtocolDescriptor<swift::InProcess> const*, llvm::StringRef)) {}  // 0x100002bb0
+  func Lazy<(anonymous namespace)::ConformanceState>::defaultInitCallback(void*) {}  // 0x1000031f0
+  func getRootSuperclass()::$_0::operator()() const::{lambda(void*)#1}::__invoke(void*) {}  // 0x100003650
+  func getRootSuperclass()::$_0::operator()() const::TheLazy {}  // 0x100008568
+}
 EOF
 RUN
 
