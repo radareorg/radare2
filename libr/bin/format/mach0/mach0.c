@@ -2917,10 +2917,10 @@ static void _enrich_symbol(RBinFile *bf, struct MACH0_(obj_t) *bin, HtPP *symcac
 	const char *oname = r_bin_name_tostring2 (sym->name, 'o');
 	if (oname) {
 		bin->dbg_info = r_str_startswith (oname, "radr://");
-	       	if (*oname == '_' && !sym->is_imported) {
+		if (*oname == '_' && !sym->is_imported) {
 			char *demangled = r_bin_demangle (bf, oname, oname, sym->vaddr, false);
 			if (demangled) {
-				r_bin_name_demangled (sym->name, demangled);
+				// r_bin_name_demangled (sym->name, demangled);
 				char *p = strchr (demangled, '.');
 				if (p) {
 					if (IS_UPPER (*demangled)) {
