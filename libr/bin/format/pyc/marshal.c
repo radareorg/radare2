@@ -843,7 +843,7 @@ static pyc_object *get_code_object(RBuffer *buffer) {
 	// support start from v1.0
 	ret->data = cobj;
 
-	char *ver = get_pyc_version (magic_int).version;
+	const char *ver = get_pyc_version (magic_int).version;
 	bool v10_to_12 = magic_int_within (ver, "1.0.1", "1.2", &error);
 	bool v13_to_22 = magic_int_within (ver, "1.3b1", "2.2a1", &error);
 	bool v11_to_14 = magic_int_within (ver, "1.0.1", "1.4", &error);

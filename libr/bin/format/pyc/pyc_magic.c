@@ -552,7 +552,7 @@ enum {
 	DOT
 };
 
-static inline int septype (char **s, bool *err) {
+static inline int septype(const char **s, bool *err) {
 	switch (**s) {
 	case '.':
 		(*s)++;
@@ -560,7 +560,7 @@ static inline int septype (char **s, bool *err) {
 		if (!strtol (*s, &bookmark, 10)) {
 			// .0 is special b/c version.parse('3.0a1') == version.parse('3.000000a1') == version.parse('3a1') == version.parse('3.a1')
 			// So is this .0 isnignificant? Not if it's the .0 in 3.0.1, since 3.0.1 != 3.1
-			int ret = septype (&bookmark, err);
+			int ret = septype ((const char **)&bookmark, err);
 			if (*err || ret != DOT) {
 				*s = bookmark;
 				return ret;
@@ -589,7 +589,7 @@ static inline int septype (char **s, bool *err) {
 	return INVALID;
 }
 
-static inline int py_vint_diff (char **va, char **vb, bool *err) {
+static inline int py_vint_diff(const char **va, const char **vb, bool *err) {
 	char *holda, *holdb;
 	long ma = strtol (*va, &holda, 10);
 	long mb = strtol (*vb, &holdb, 10);
@@ -609,7 +609,7 @@ static inline int py_vint_diff (char **va, char **vb, bool *err) {
  * work with `dev` or `+` versions since we only care about versions with
  * unique pyc magic.
  */
-int py_version_cmp(char *va, char *vb, bool *err) {
+int py_version_cmp(const char *va, const char *vb, bool *err) {
 	// skip v
 	if (*va == 'v') {
 		va++;
@@ -650,7 +650,7 @@ int py_version_cmp(char *va, char *vb, bool *err) {
 	return 0;
 }
 
-bool magic_int_within(char *ver, char *lower, char *uppper, bool *error) {
+bool magic_int_within(const char *ver, const char *lower, const char *uppper, bool *error) {
 	// Most people are probably reversing modern Python, so upper comparison should be done first.
 	if (py_version_cmp (ver, uppper, error) > 0 || py_version_cmp (ver, lower, error) < 0) {
 		return false;
