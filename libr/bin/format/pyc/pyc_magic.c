@@ -609,7 +609,7 @@ static inline int py_vint_diff(const char **va, const char **vb, bool *err) {
  * work with `dev` or `+` versions since we only care about versions with
  * unique pyc magic.
  */
-int py_version_cmp(const char *va, const char *vb, bool *err) {
+R_IPI int py_version_cmp(const char *va, const char *vb, bool *err) {
 	// skip v
 	if (*va == 'v') {
 		va++;
@@ -650,7 +650,7 @@ int py_version_cmp(const char *va, const char *vb, bool *err) {
 	return 0;
 }
 
-bool magic_int_within(const char *ver, const char *lower, const char *uppper, bool *error) {
+R_IPI bool magic_int_within(const char *ver, const char *lower, const char *uppper, bool *error) {
 	// Most people are probably reversing modern Python, so upper comparison should be done first.
 	if (py_version_cmp (ver, uppper, error) > 0 || py_version_cmp (ver, lower, error) < 0) {
 		return false;
