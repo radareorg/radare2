@@ -29,7 +29,7 @@ cd "$(dirname $0)"/..
 # validated and ready to go lintings
 (git grep -e '0x%"PFMT64d' -e '0x%d' libr | grep c:) && exit 1
 (git grep -e 'R_MIN(' -e 'R_MAX(' libr | grep c:) && exit 1
-(git grep -n 'cmp(' libr | grep -v "R_API\|R_IPI" | grep -v static | grep c:) && exit 1
+(git grep -n 'cmp(' libr | grep -v "R_API" | grep -v "R_IPI" |grep -v static | grep c:) && exit 1
 # (git grep -n 'len(' libr | grep -v R_API | grep -v static | grep c:) && exit 1
 # (git grep -n ',"' libr | grep -v R_API | grep -v static | grep c:) && exit 1
 (git grep -n 'for(' libr | grep -v _for | grep -v colorfor) && exit 1
