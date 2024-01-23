@@ -1405,6 +1405,7 @@ R_API RList *r_sign_find_closest_fcn(RAnal *a, RSignItem *it, int count, double 
 		// turn function into signature item
 		RSignItem *fsig = r_sign_item_new ();
 		if (!fsig) {
+			free (data.bytes_combined);
 			r_list_free (output);
 			return NULL;
 		}
