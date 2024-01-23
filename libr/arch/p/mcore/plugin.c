@@ -11,8 +11,8 @@ static bool decode(RArchSession *session, RAnalOp *op, RArchDecodeMask mask) {
 	mcore_t* instr = NULL;
 
 	if (mcore_init (&handle, buf, len)) {
-		R_LOG_ERROR ("mcore: bad or invalid data");
-		return -1;
+		// R_LOG_ERROR ("mcore: bad or invalid data");
+		return false;
 	}
 
 	op->size = 2;
@@ -46,7 +46,7 @@ static bool decode(RArchSession *session, RAnalOp *op, RArchDecodeMask mask) {
 		}
 		mcore_free (instr);
 	}
-	return op->size;
+	return true;
 }
 
 static char *regs(RArchSession *as) {
