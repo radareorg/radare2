@@ -843,13 +843,14 @@ static pyc_object *get_code_object(RBuffer *buffer) {
 	// support start from v1.0
 	ret->data = cobj;
 
-	bool v10_to_12 = magic_int_within (magic_int, 39170, 16679, &error); // 1.0.1 - 1.2
-	bool v13_to_22 = magic_int_within (magic_int, 11913, 60718, &error); // 1.3b1 - 2.2a1
-	bool v11_to_14 = magic_int_within (magic_int, 39170, 20117, &error); // 1.0.1 - 1.4
-	bool v15_to_22 = magic_int_within (magic_int, 20121, 60718, &error); // 1.5a1 - 2.2a1
-	bool v13_to_20 = magic_int_within (magic_int, 11913, 50824, &error); // 1.3b1 - 2.0b1
-	//bool v21_to_27 = (!v13_to_20) && magic_int_within (magic_int, 60124, 62212, &error);
-	bool has_posonlyargcount = magic_int_within (magic_int, 3410, 3424, &error); // v3.8.0a4 - latest
+	const char *ver = get_pyc_version (magic_int).version;
+	bool v10_to_12 = magic_int_within (ver, "1.0.1", "1.2", &error);
+	bool v13_to_22 = magic_int_within (ver, "1.3b1", "2.2a1", &error);
+	bool v11_to_14 = magic_int_within (ver, "1.0.1", "1.4", &error);
+	bool v15_to_22 = magic_int_within (ver, "1.5a1", "2.2a1", &error);
+	bool v13_to_20 = magic_int_within (ver, "1.3b1", "2.0b1", &error);
+	// bool v21_to_27 = (!v13_to_20) && magic_int_within (ver,  "2.1a1", "2.7a2", &error);
+	bool has_posonlyargcount = py_version_cmp (ver, "v3.8.0a4", &error) > 0? true: false;
 	if (error) {
 		free (ret);
 		free (cobj);
