@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2023 - pancake, nibble, maijin */
+/* radare - LGPL - Copyright 2009-2024 - pancake, nibble, maijin */
 
 #define R_LOG_ORIGIN "rasm2"
 
@@ -190,7 +190,7 @@ static void rarch2_list(RAsmState *as, const char *arch) {
 		} else {
 			feat = "_de";
 		}
-		const ut64 bits = h->bits;
+		ut64 bits = h->bits;
 		RList *bitslist = r_list_newf (NULL);
 		for (i = 0; i < 8; i++) {
 			ut8 bit = (bits & 0xFF); // TODO: use the macros

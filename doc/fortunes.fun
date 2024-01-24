@@ -337,3 +337,4 @@ Rise and shine beyond the Black wall
 Relic malfunction detected
 It's now safe to turn off your computer.
 No newline at end of file
+Display output is not active.
