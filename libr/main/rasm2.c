@@ -178,20 +178,19 @@ static void rarch2_list(RAsmState *as, const char *arch) {
 	int i;
 	RArchPlugin *h;
 	RListIter *iter, *iter2;
-	const char *feat;
 	PJ *pj = NULL;
 	if (as->json) {
 		pj = pj_new ();
 		pj_a (pj);
 	}
 	r_list_foreach (as->anal->arch->plugins, iter, h) {
-		feat = "___";
+		const char *feat = "___";
 		if (h->encode) {
 			feat = h->decode? "ade": "a__";
 		} else {
 			feat = "_de";
 		}
-		ut64 bits = h->bits;
+		const ut64 bits = h->bits;
 		RList *bitslist = r_list_newf (NULL);
 		for (i = 0; i < 8; i++) {
 			ut8 bit = (bits & 0xFF); // TODO: use the macros
