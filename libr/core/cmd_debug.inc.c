@@ -5743,7 +5743,7 @@ static int cmd_debug(void *data, const char *input) {
 			RDebugReasonType stop = r_debug_stop_reason (core->dbg);
 			switch (input[1]) {
 			case '\0': // "di"
-				if (r_config_get_b (core->config, "cfg.debug")) {
+				if (!r_config_get_b (core->config, "cfg.debug")) {
 					R_LOG_WARN ("No debugee information available when not using the debugger");
 				} else {
 #define P r_cons_printf
