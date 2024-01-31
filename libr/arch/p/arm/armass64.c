@@ -1904,6 +1904,32 @@ static ut32 irg (ArmOp *op) {
 	return to_le (instruction);
 }
 
+static ut32 addg (ArmOp *op) {
+
+	int sf = 0b1;
+	int opcode = 0b0;
+	int s = 0b01000110;
+	int uimm6 = op->operands[2].immediate;
+	int opcode3 = 0b00;
+	int uimm4 = op->operands[3].immediate;
+	int xn = op->operands[1].reg;
+	int xd = op->operands[0].reg;
+
+	ut32 data = 0;
+	data |= sf << 31;
+	data |= opcode << 30;
+	data |= s << 22;
+	// data |= uimm6 << 17;
+	// data |= opcode3 << 14;
+	// data |= uimm4 << 9;
+	// data |= xn << 5;
+	// data |= xd;
+
+	R_LOG ("ADDG (%x) Info:\n\txd: %d\n\txn: %d\n\timm6: %d\n\timm4: %d", data, xd, xn, uimm6, uimm4);
+
+	return to_le (data);
+}
+
 bool arm64ass (const char *str, ut64 addr, ut32 *op) {
 	ArmOp ops = { 0 };
 	if (!parseOpcode (str, &ops)) {
@@ -2033,6 +2059,8 @@ bool arm64ass (const char *str, ut64 addr, ut32 *op) {
 		return true;
 	} else if (r_str_startswith (str, "irg")) { // mte
 		*op = irg (&ops);
+	} else if (r_str_startswith (str, "addg")) {
+		*op = addg (&ops);
 	} else if (!strcmp (str, "nop")) {
 		*op = 0x1f2003d5;
 	} else if (!strcmp (str, "ret")) {
