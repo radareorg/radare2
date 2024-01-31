@@ -721,20 +721,20 @@ colu: 12
 addr: 0x00001149
 EOF
 EXPECT_ERR=<<EOF
-DEBUG: [cbin.c:3299] (section .dynstr) Css 141 @ 0x480
-DEBUG: [cbin.c:3299] (section .rela.dyn) Cd 8[24] @ 0x550
-DEBUG: [cbin.c:3299] (section .rela.plt) Cd 8[3] @ 0x610
-DEBUG: [cbin.c:3299] (section .init_array) Cd 8[1] @ 0x3db8
-DEBUG: [cbin.c:3299] (section .fini_array) Cd 8[1] @ 0x3dc0
-DEBUG: [cbin.c:3299] (section .dynamic) Cd 8[62] @ 0x3dc8
-DEBUG: [cbin.c:3299] (section .got) Cd 8[9] @ 0x3fb8
-DEBUG: [cbin.c:3299] (section .dynstr) Css 141 @ 0x480
-DEBUG: [cbin.c:3299] (section .rela.dyn) Cd 8[24] @ 0x550
-DEBUG: [cbin.c:3299] (section .rela.plt) Cd 8[3] @ 0x610
-DEBUG: [cbin.c:3299] (section .init_array) Cd 8[1] @ 0x3db8
-DEBUG: [cbin.c:3299] (section .fini_array) Cd 8[1] @ 0x3dc0
-DEBUG: [cbin.c:3299] (section .dynamic) Cd 8[62] @ 0x3dc8
-DEBUG: [cbin.c:3299] (section .got) Cd 8[9] @ 0x3fb8
+DEBUG: [cbin.c:3301] (section .dynstr) Css 141 @ 0x480
+DEBUG: [cbin.c:3301] (section .rela.dyn) Cd 8[24] @ 0x550
+DEBUG: [cbin.c:3301] (section .rela.plt) Cd 8[3] @ 0x610
+DEBUG: [cbin.c:3301] (section .init_array) Cd 8[1] @ 0x3db8
+DEBUG: [cbin.c:3301] (section .fini_array) Cd 8[1] @ 0x3dc0
+DEBUG: [cbin.c:3301] (section .dynamic) Cd 8[62] @ 0x3dc8
+DEBUG: [cbin.c:3301] (section .got) Cd 8[9] @ 0x3fb8
+DEBUG: [cbin.c:3301] (section .dynstr) Css 141 @ 0x480
+DEBUG: [cbin.c:3301] (section .rela.dyn) Cd 8[24] @ 0x550
+DEBUG: [cbin.c:3301] (section .rela.plt) Cd 8[3] @ 0x610
+DEBUG: [cbin.c:3301] (section .init_array) Cd 8[1] @ 0x3db8
+DEBUG: [cbin.c:3301] (section .fini_array) Cd 8[1] @ 0x3dc0
+DEBUG: [cbin.c:3301] (section .dynamic) Cd 8[62] @ 0x3dc8
+DEBUG: [cbin.c:3301] (section .got) Cd 8[9] @ 0x3fb8
 WARN: [cbin.c:1848] Relocs has not been applied. Please use `-e bin.relocs.apply=true` or `-e bin.cache=true` next time
 DEBUG: [cbin.c:2555] Cannot resolve symbol address __libc_start_main
 DEBUG: [cbin.c:2555] Cannot resolve symbol address _ITM_deregisterTMCloneTable
