@@ -1886,13 +1886,11 @@ static ut32 irg (ArmOp *op) {
 	int s = 0b011010110;
 	int opcode = 0b000100;
 	// encode the destination register (Xd) for the tag
-	int xd = op->operands[0].reg & 0x1f;
+	int xd = op->operands[0].reg;
 	// encode the first source register (Xn)
-	int xn = op->operands[1].reg & 0x1f;
+	int xn = op->operands[1].reg;
 	// Xm is optional, if it is not there, then defaults to XZR
-	int xm = (op->operands[2].type == ARM_GPR) ? (op->operands[2].reg & 0x1f) : 0;
-
-	R_LOG ("IRG Info:\n\txd: x%d\n\txn: x%d\n\txm: x%d", xd, xn, xm);
+	int xm = op->operands[2].type == ARM_GPR ? op->operands[2].reg : 31;
 
 	instruction |= sf << 30;
 	instruction |= s << 21;
@@ -1900,6 +1898,9 @@ static ut32 irg (ArmOp *op) {
 	instruction |= xm << 16;
 	instruction |= xn << 5;
 	instruction |= xd;
+
+	R_LOG ("IRG (%x) Info:\n\txd: x%d\n\txn: x%d\n\txm: x%d", instruction, xd, xn, xm);
+
 	return to_le (instruction);
 }
 
