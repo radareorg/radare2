@@ -812,7 +812,7 @@ static RList * r_io_dsc_slice_get_rebase_infos_by_range(RIODscSlice * slice, ut6
 			trimmed_info->info = info;
 
 			ut64 trimmed_end = (ffo >= end) ? slice->end : ffo;
-			ut64 trimmed_start = (off_local <= start) ? slice->start : off_local;
+			ut64 trimmed_start = (off_local < start) ? slice->start : off_local;
 
 			trimmed_info->off_local = trimmed_start;
 			trimmed_info->count = trimmed_end - trimmed_start;
