@@ -1,5 +1,7 @@
 /* radare - LGPL - Copyright 2015-2023 - pancake */
 
+#include "r_types_base.h"
+#include "r_util/r_log.h"
 #include <stdio.h>
 #include <string.h>
 #include <ctype.h>
@@ -1859,34 +1861,46 @@ static bool handlePAC (ut32 *op, const char *str) {
 	return false;
 }
 
+// Function to convert a 32-bit unsigned integer to little-endian format.
+ut32 to_le (ut32 value) {
+	return ((value >> 24) & 0x000000FF) | // Move the most significant byte to the least significant byte
+		((value >> 8) & 0x0000FF00) | // Move the 2nd byte to the 3rd byte position
+		((value << 8) & 0x00FF0000) | // Move the 3rd byte to the 2nd byte position
+		((value << 24) & 0xFF000000); // Move the least significant byte to the most significant byte
+}
+
 static ut32 irg (ArmOp *op) {
-	ut32 data = UT32_MAX;
-
-	if (op->operands[0].type == ARM_GPR && op->operands[1].type == ARM_GPR) {
-		// this instruction is only available for 64-bit regs
-		if (op->operands[0].reg_type && ARM_REG64) {
-			data = 0x9AC00000;
-
-			// encode the destination register (Xd) for the tag
-			data |= op->operands[0].reg << 0;
-
-			// encode the first source register (Xn)
-			data |= op->operands[1].reg << 5;
-
-			// Xm is optional, if it is not there, then defaults to XZR
-			int xm_reg = (op->operands[2].type == ARM_GPR) ? op->operands[2].reg : 0;
-			data |= xm_reg << 16;
-
-		} else {
-			// missing or incorrect source source register
-			return UT32_MAX;
-		}
-	} else {
-		// incorrect operand (types) for the first two registers
-		return UT32_MAX;
+	if (op->operands[0].type != ARM_GPR || op->operands[1].type != ARM_GPR) {
+		R_LOG_ERROR ("IRG: Invalid operand types");
+		return UT32_MAX; // invalid operand types
 	}
 
-	return data;
+	if (!(op->operands[0].reg_type && ARM_REG64)) {
+		R_LOG ("IRG: Only available on arm64 registers");
+		return UT32_MAX; // instruction only available on arm64
+	}
+
+	ut32 instruction = 0;
+
+	int sf = 0b10;
+	int s = 0b011010110;
+	int opcode = 0b000100;
+	// encode the destination register (Xd) for the tag
+	int xd = op->operands[0].reg & 0x1f;
+	// encode the first source register (Xn)
+	int xn = op->operands[1].reg & 0x1f;
+	// Xm is optional, if it is not there, then defaults to XZR
+	int xm = (op->operands[2].type == ARM_GPR) ? (op->operands[2].reg & 0x1f) : 0;
+
+	R_LOG ("IRG Info:\n\txd: x%d\n\txn: x%d\n\txm: x%d", xd, xn, xm);
+
+	instruction |= sf << 30;
+	instruction |= s << 21;
+	instruction |= opcode << 10;
+	instruction |= xm << 16;
+	instruction |= xn << 5;
+	instruction |= xd;
+	return to_le (instruction);
 }
 
 bool arm64ass (const char *str, ut64 addr, ut32 *op) {
