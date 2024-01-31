@@ -981,17 +981,27 @@ static objc_cache_opt_info *get_objc_opt_info(RBinFile *bf, RDyldCache *cache) {
 
 		ut64 scoffs_offset = 0;
 		ut64 scoffs_size = 0;
+		ut64 optro_offset = 0;
+		ut64 optro_size = 0;
 		ut64 selrefs_offset = 0;
 		ut64 selrefs_size = 0;
 		ut64 const_selrefs_offset = 0;
 		ut64 const_selrefs_size = 0;
-		ut8 remaining = 3;
+		ut8 remaining = 4;
 		ut64 slide = rebase_infos_get_slide (cache);
 
 		struct section_t *section;
 		r_vector_foreach (sections, section) {
 			if (section->size == 0) {
 				continue;
+			}
+			if (strstr (section->name, "__objc_opt_ro")) {
+				optro_offset = va2pa (section->vaddr, cache->n_maps, cache->maps, cache->buf, slide, NULL, NULL);
+				optro_size = section->size;
+				remaining--;
+				if (remaining == 0) {
+					break;
+				}
 			}
 			if (strstr (section->name, "__objc_scoffs")) {
 				scoffs_offset = va2pa (section->vaddr, cache->n_maps, cache->maps, cache->buf, slide, NULL, NULL);
@@ -1026,9 +1036,17 @@ static objc_cache_opt_info *get_objc_opt_info(RBinFile *bf, RDyldCache *cache) {
 			selrefs_size = const_selrefs_size;
 		}
 
+		ut32 opt_version = 0;
+		if (optro_offset && optro_size > 4) {
+			opt_version = r_buf_read_le32_at (cache->buf, optro_offset);
+			if (opt_version == UT32_MAX) {
+				opt_version = 0;
+			}
+		}
+
 		ut64 sel_string_base = 0;
 		if (!scoffs_offset || scoffs_size < 40) {
-			if (!selrefs_offset || !selrefs_size || cache->n_hdr == 1) {
+			if (!selrefs_offset || !selrefs_size || opt_version < 16) {
 				break;
 			}
 			ut64 cursor = selrefs_offset;
@@ -1457,7 +1475,8 @@ static RList *classes(RBinFile *bf) {
 
 				if (!klass->name) {
 					if (bf->rbin->verbose) {
-						R_LOG_ERROR ("KLASS failed at 0x%"PFMT64x", is_classlist %d", pointer_to_class, is_classlist);
+						R_LOG_ERROR ("KLASS failed at 0x%"PFMT64x" [pa 0x%"PFMT64x" va 0x%"PFMT64x"], is_classlist %d",
+								pointer_to_class, cursor - pointers + offset, cursor - pointers + section->vaddr,  is_classlist);
 					}
 					char *kname = r_str_newf ("UnnamedClass%u", num_of_unnamed_class);
 					klass->name = r_bin_name_new (kname);
