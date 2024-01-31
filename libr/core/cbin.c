@@ -2299,7 +2299,9 @@ static void snInit(RCore *r, SymName *sn, RBinSymbol *sym, const char *lang, boo
 	if (!r || !sym || !sym->name) {
 		return;
 	}
+	sym->name->name = NULL;
 	const char *sym_name = r_bin_name_tostring (sym->name);
+
 	sn->name = r_str_newf ("%s%s", sym->is_imported ? "imp." : "", sym_name);
 	sn->libname = sym->libname ? strdup (sym->libname) : NULL;
 	const char *pfx = symbol_flag_prefix (sym);
@@ -2576,8 +2578,8 @@ static bool bin_symbols(RCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at,
 			if (sn.demname) {
 				pj_ks (pj, "demname", sn.demname);
 			}
-			pj_ks (pj, "flagname", sn.nameflag);
-			pj_ks (pj, "realname", name);
+			pj_ks (pj, "flagname", (bin_demangle && sn.demflag) ? sn.demflag : sn.nameflag);
+			pj_ks (pj, "realname", (bin_demangle && sn.demname) ? sn.demname : name);
 			if (rawname) {
 				pj_ks (pj, "rawname", rawname);
 			}
@@ -4040,13 +4042,15 @@ static bool bin_classes(RCore *r, PJ *pj, int mode) {
 						pj_ks (pj, "flag", fi->realname? fi->realname: fi->name);
 					}
 					if (bin_filter) {
-						// XXX SUPER SLOW and probably unnecessary
-						char *s = r_core_cmd_strf (r, "isqq.@0x%08"PFMT64x"@e:bin.demangle=false", sym->vaddr);
-						r_str_trim (s);
-						if (R_STR_ISNOTEMPTY (s)) {
-							pj_ks (pj, "realname", s);
-						}
-						free (s);
+						#if 0
+							// XXX SUPER SLOW and probably unnecessary
+							char *s = r_core_cmd_strf (r, "isqq.@0x%08"PFMT64x"@e:bin.demangle=%d", sym->vaddr, r_config_get_b (r->config, "bin.demangle"));
+							r_str_trim (s);
+							if (R_STR_ISNOTEMPTY (s)) {
+								pj_ks (pj, "realname", s);
+							}
+							free (s);
+						#endif
 					}
 					if (sym->attr) {
 						char *mflags = r_core_bin_attr_tostring (sym->attr, mode);
