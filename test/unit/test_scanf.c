@@ -55,6 +55,23 @@ bool test_r_str_scanf_scanset(void) {
 	mu_assert_streq (msg1, "ITS OVER", "the rest until newline");
 	mu_assert_eq (res, 2, "return value for scanf failed");
 
+	const char ptr[] = "map0 map1 8048 tmp0 tmp1 thename\n";
+	char name[32];
+	char perms[32];
+	char region1[32];
+	ut64 offset;
+	strcpy (region1, "0x");
+	res = r_str_scanf (ptr, "%.s %.s %Lx %*s %*s %.[^\n]",
+			sizeof (region1) - 2, region1 + 2,
+			sizeof (perms), perms,
+			&offset,
+			sizeof (name), name);
+	mu_assert_streq (name, "thename", "name fails");
+	mu_assert_streq (perms, "map1", "2nd arg");
+	mu_assert_streq (region1, "0xmap0", "1st arg");
+	mu_assert_eq (offset, 0x8048, "return value for scanf failed");
+	mu_assert_eq (res, 4, "return value for scanf failed");
+
 	mu_end;
 }
 

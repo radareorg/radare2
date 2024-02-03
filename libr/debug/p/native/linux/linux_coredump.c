@@ -1,6 +1,7 @@
 /* radare - LGPL - Copyright 2016-2023 - Oscar Salvador */
 
 #include <r_debug.h>
+#include <r_util.h>
 
 #if DEBUGGER
 
@@ -157,9 +158,7 @@ static proc_per_thread_t *get_proc_thread_content(int pid, int tid) {
 		int no_num;
 		char no_char;
 		ut32 no_ui;
-		sscanf (buff,  "%d %s %c %d %d %d %d %d %u %lu %lu %lu %lu"
-			"%"PFMT64x" %"PFMT64x" %ld %lu",
-			&no_num, no_str, &no_char, &no_num, &no_num, &no_num,
+		r_str_scanf (buff, "%d %.s %c %d %d %d %d %d %u %lu %lu %lu %Lx %Lx %ld %lu", &no_num, sizeof (no_str), no_str, &no_char, &no_num, &no_num, &no_num,
 			&no_num, &no_num, &no_ui, &no_lui, &no_lui, &no_lui,
 			&no_lui, &t->utime, &t->stime, &t->cutime, &t->cstime);
 		free (buff);
@@ -809,16 +808,13 @@ static proc_per_process_t *get_proc_process_content(RDebug *dbg) {
 	/* /proc/[pid]/stat */
 	/* we only need few fields which are process-wide */
 	{
-		char no_str[128];
-		long unsigned int no_lui;
-		long int no_li;
-		int no_num;
-		sscanf (buff, "%d %s %c %d %d %d %d %d %u %lu %lu %lu %lu"
-				"%lu %lu %ld %ld %ld %ld %ld",
-			&p->pid, no_str, &p->s_name, &p->ppid, &p->pgrp, &no_num,
-			&no_num, &p->sid, &p->flag, &no_lui, &no_lui, &no_lui,
-			&no_lui, &no_lui, &no_lui, &no_li, &no_li,
-			&no_li, &p->nice, &p->num_threads);
+		if (r_str_scanf (buff, "%d %*s %c %d %d %*d %*d %lu %ld",
+			&p->pid, &p->s_name, &p->ppid, &p->pgrp,
+			&p->sid, &p->flag,
+			&p->nice, &p->num_threads) < 6) {
+				free (buff);
+				return NULL;
+			}
 		free (buff);
 	}
 	if (!p->num_threads || p->num_threads < 1) {
@@ -869,7 +865,11 @@ static proc_per_process_t *get_proc_process_content(RDebug *dbg) {
 	file = r_strf ("/proc/%d/coredump_filter", dbg->pid);
 	buff = r_file_slurp (file, &size);
 	if (buff) {
-		sscanf (buff, "%hx", &filter_flags);
+		if (r_str_scanf (buff, "%hx", &filter_flags) != 1) {
+			free (p);
+			free (buff);
+			return NULL;
+		}
 		p->coredump_filter = filter_flags;
 		free (buff);
 	} else {
