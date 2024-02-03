@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2023 - pancake */
+/* radare - LGPL - Copyright 2009-2024 - pancake */
 
 #if R_INCLUDE_BEGIN
 
@@ -1244,6 +1244,50 @@ static int cmd_info(void *data, const char *input) {
 		}
 		goto done;
 		break;
+	case 'k': // "ik"
+		{
+			RBinObject *o = r_bin_cur_object (core->bin);
+			db = o? o->kv: NULL;
+			switch (input[1]) {
+			case 'v':
+				if (db) {
+					char *o = sdb_querys (db, NULL, 0, input + 3);
+					if (R_STR_ISNOTEMPTY (o)) {
+						r_cons_print (o);
+					}
+					free (o);
+				}
+				break;
+			case '*':
+				r_core_bin_export_info (core, R_MODE_RADARE);
+				break;
+			case '.':
+			case ' ':
+				if (db) {
+					char *o = sdb_querys (db, NULL, 0, input + 2);
+					if (R_STR_ISNOTEMPTY (o)) {
+						r_cons_print (o);
+					}
+					free (o);
+				}
+				break;
+			case '\0':
+				if (db) {
+					char *o = sdb_querys (db, NULL, 0, "*");
+					if (R_STR_ISNOTEMPTY (o)) {
+						r_cons_print (o);
+					}
+					free (o);
+				}
+				break;
+			case '?':
+			default:
+				r_core_cmd_help_contains (core, help_msg_i, "ik");
+				break;
+			}
+			goto done;
+		}
+		break;
 	case 'H': // "iH"
 		if (input[1] == 'H') { // "iHH"
 			// alias for ihh
@@ -1297,50 +1341,6 @@ static int cmd_info(void *data, const char *input) {
 			break;
 		}
 		switch (*input) {
-		break;
-		case 'k': // "ik"
-		{
-			RBinObject *o = r_bin_cur_object (core->bin);
-			db = o? o->kv: NULL;
-			switch (input[1]) {
-			case 'v':
-				if (db) {
-					char *o = sdb_querys (db, NULL, 0, input + 3);
-					if (o && *o) {
-						r_cons_print (o);
-					}
-					free (o);
-				}
-				break;
-			case '*':
-				r_core_bin_export_info (core, R_MODE_RADARE);
-				break;
-			case '.':
-			case ' ':
-				if (db) {
-					char *o = sdb_querys (db, NULL, 0, input + 2);
-					if (o && *o) {
-						r_cons_print (o);
-					}
-					free (o);
-				}
-				break;
-			case '\0':
-				if (db) {
-					char *o = sdb_querys (db, NULL, 0, "*");
-					if (o && *o) {
-						r_cons_print (o);
-					}
-					free (o);
-				}
-				break;
-			case '?':
-			default:
-				r_core_cmd_help_contains (core, help_msg_i, "ik");
-			}
-			goto done;
-		}
-		break;
 		case 'o': // "io"
 		{
 			if (!desc) {
