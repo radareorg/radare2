@@ -829,26 +829,26 @@ static bool esil_weak_eq(REsil *esil) {
 }
 
 static bool esil_eq(REsil *esil) {
-	r_return_val_if_fail (esil, false);
+	R_RETURN_VAL_IF_FAIL (esil, false);
 	bool ret = false;
 	ut64 num, num2;
 	char *dst = r_esil_pop (esil);
 	char *src = r_esil_pop (esil);
 	if (!src || !dst) {
-		R_LOG_DEBUG ("Missing elements in the esil stack for '=' at 0x%08"PFMT64x, esil->addr);
+		R_LOG_DEBUG ("esil_eq cant pop two values from stack at 0x%08"PFMT64x, esil->addr);
 		free (src);
 		free (dst);
 		return false;
 	}
 	bool is128reg = false;
 	bool ispacked = false;
-	if (dst) {
-		RRegItem *ri = r_reg_get (esil->anal->reg, dst, -1);
-		if (ri) {
-			is128reg = ri->size == 128;
-			ispacked = ri->packed_size > 0;
-			r_unref (ri);
-		}
+	RRegItem *ri = r_reg_get (esil->anal->reg, dst, -1);
+	if (ri) {
+		is128reg = ri->size == 128;
+		ispacked = ri->packed_size > 0;
+		r_unref (ri);
+	} else {
+		R_LOG_DEBUG ("esil_eq: %s is not a register", dst);
 	}
 	if (is128reg && esil->stackptr > 0) {
 		char *src2 = r_esil_pop (esil); // pop the higher 64bit value
