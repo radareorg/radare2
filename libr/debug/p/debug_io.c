@@ -47,8 +47,9 @@ static RList *__io_maps(RDebug *dbg) {
 			if (_s_) {
 				memmove (_s_, _s_ + 2, strlen (_s_));
 			}
-			sscanf (str, "0x%"PFMT64x" - 0x%"PFMT64x" %s %s",
-				&map_start, &map_end, perm, name);
+			if (r_str_scanf (str, "0x%Lx - 0x%Lx %.s %.s", &map_start, &map_end, sizeof (perm), perm, sizeof (name), name) > 4) {
+				break;
+			}
 			if (map_end != 0LL) {
 				RDebugMap *map = r_debug_map_new (name, map_start, map_end, r_str_rwx (perm), 0);
 				r_list_append (list, map);

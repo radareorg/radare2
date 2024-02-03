@@ -4,9 +4,9 @@
 
 #include <r_util.h>
 
-#define _BSCANF_CONSUME_WSPACE() while (isspace(*buf_ptr)) {buf_ptr++;}
+#define _BSCANF_CONSUME_WSPACE() while (isspace (*buf_ptr)) { buf_ptr++; }
 #define _BSCANF_CHECK(x) if (!(x)) goto beach;
-#define _BSCANF_MATCH() _BSCANF_CHECK(*buf_ptr == *fmt_ptr);
+#define _BSCANF_MATCH() _BSCANF_CHECK (*buf_ptr == *fmt_ptr);
 #define _BSCANF_CHECK_NULL(ptr) _BSCANF_CHECK(NULL != ptr);
 #define _BSCANF_CHECK_STRING() _BSCANF_CHECK(0 != max_width);
 #define _BSCANF_CHECK_BUFFER() _BSCANF_CHECK('\0' != *buffer);
@@ -361,11 +361,11 @@ R_API int r_str_scanf(const char *buffer, const char *format, ...) {
 					strtod(buf_ptr, &end_ptr);
 				} else if ('l' == length_mod) {
 					double_ptr = va_arg (args, double*);
-					_BSCANF_CHECK_NULL(double_ptr);
+					_BSCANF_CHECK_NULL (double_ptr);
 					*double_ptr = (double) (strtod(buf_ptr, &end_ptr));
 				} else {
 					float_ptr = va_arg (args, float*);
-					_BSCANF_CHECK_NULL(float_ptr);
+					_BSCANF_CHECK_NULL (float_ptr);
 					*float_ptr = (float) (strtod(buf_ptr, &end_ptr));
 				}
 
@@ -401,12 +401,12 @@ R_API int r_str_scanf(const char *buffer, const char *format, ...) {
 					strtoul (buf_ptr, &end_ptr, base);
 				} else if ('l' == length_mod) {
 					ulong_ptr = va_arg (args, unsigned long*);
-					_BSCANF_CHECK_NULL(ulong_ptr);
+					_BSCANF_CHECK_NULL (ulong_ptr);
 					*ulong_ptr = (unsigned long) strtoul (buf_ptr, &end_ptr, base);
 				} else if ('L' == length_mod) {
 					// R2SCANF portable %llx
 					ut64_ptr = va_arg (args, ut64*);
-					_BSCANF_CHECK_NULL(ut64_ptr);
+					_BSCANF_CHECK_NULL (ut64_ptr);
 					*ut64_ptr = (ut64) strtoull (buf_ptr, &end_ptr, base);
 				} else if ('h' == length_mod) {
 					ushort_ptr = va_arg (args, unsigned short*);
