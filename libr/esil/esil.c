@@ -4019,16 +4019,18 @@ R_API bool r_esil_setup(REsil *esil, RAnal *anal, bool romem, bool stats, bool n
 }
 
 R_API void r_esil_reset(REsil *esil) {
+	R_RETURN_IF_FAIL (esil);
 	esil->trap = 0;
-	r_return_if_fail (esil);
 	sdb_reset (esil->stats);
 }
 
 R_API bool r_esil_use(REsil *esil, const char *name) {
-	r_return_val_if_fail (esil && name, false);
+	R_RETURN_VAL_IF_FAIL (esil && name, false);
 	RListIter *it;
 	REsilPlugin *h;
-
+	if (esil->curplug && !strcmp (name, esil->curplug->meta.name)) {
+		return true;
+	}
 	r_list_foreach (esil->plugins, it, h) {
 		if (!h->meta.name || strcmp (h->meta.name, name)) {
 			continue;
