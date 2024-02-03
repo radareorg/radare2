@@ -3758,21 +3758,19 @@ R_API bool r_esil_runword(REsil *esil, const char *word) {
 	return false;
 }
 
-//frees all elements from the stack, not the stack itself
-//rename to stack_empty() ?
+// TODO rename to clearstack() or reset_stack()
 R_API void r_esil_stack_free(REsil *esil) {
-	if (esil) {
-		int i;
-		for (i = 0; i < esil->stackptr; i++) {
-			free_ornot (esil->stack[i]);
-			esil->stack[i] = NULL;
-		}
-		esil->stackptr = 0;
+	R_RETURN_IF_FAIL (esil);
+	int i;
+	for (i = 0; i < esil->stackptr; i++) {
+		R_TAG_FREE (esil->stack[i]);
+		esil->stack[i] = NULL;
 	}
+	esil->stackptr = 0;
 }
 
 R_API int r_esil_condition(REsil *esil, const char *str) {
-	r_return_val_if_fail (esil, -1);
+	R_RETURN_VAL_IF_FAIL (esil, -1);
 	int ret = -1;
 	str = r_str_trim_head_ro (str);
 	(void) r_esil_parse (esil, str);
