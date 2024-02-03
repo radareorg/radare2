@@ -293,4 +293,7 @@ static inline void *untagged_pointer_check(void *x) {
 }
 #endif
 
+#define RZ_STR_DEF(s) RZ_STR(s)
+#define RZ_STR(s)     #s
+
 #endif // R2_TYPES_BASE_H
