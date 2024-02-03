@@ -84,6 +84,7 @@ return strdup (
 "gpr	w29	.32	232	0\n" // w0
 "gpr	wzr	.32	?	0\n" // w0
 "gpr	zr	.64	?	0\n" // w0
+"gpr	tmp	.64	?	0\n" // tmp - imaginary register used by esil
 // special registers
 "gpr	fp	.64	232	0\n" // FP
 "gpr	lr	.64	240	0\n" // LR X30
