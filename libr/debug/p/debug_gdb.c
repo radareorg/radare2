@@ -237,7 +237,7 @@ static RList *r_debug_gdb_map_get(RDebug* dbg) { // TODO
 		r_list_free (words);
 		free (wordstr);
 #else
-		ret = sscanf(ptr, "%" RZ_STR_DEF(98) "s %" RZ_STR_DEF(5) "s %" PFMT64x " %*s %*s %" RZ_STR_DEF(1024) "[^\n]", &region1[2], perms, &offset, name);
+		ret = sscanf (ptr, "%" RZ_STR_DEF(98) "s %" RZ_STR_DEF(5) "s %" PFMT64x " %*s %*s %" RZ_STR_DEF(1024) "[^\n]", &region1[2], perms, &offset, name);
 #endif
 		// eprintf ("RET = %d (%s)\n", ret, ptr);
 		if (ret == 3) {
