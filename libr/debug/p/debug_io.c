@@ -3,9 +3,6 @@
 #include <r_debug.h>
 #include <r_asm.h>
 
-#define IO_MAPS_PERM_SZ 32
-#define IO_MAPS_NAME_SZ 512
-
 static bool __io_step(RDebug *dbg) {
 	free (dbg->iob.system (dbg->iob.io, "ds"));
 	return true;
@@ -25,8 +22,8 @@ static RList *__io_maps(RDebug *dbg) {
 	}
 	char *ostr = str;
 	ut64 map_start, map_end;
-	char perm[IO_MAPS_PERM_SZ + 1];
-	char name[IO_MAPS_NAME_SZ + 1];
+	char perm[33];
+	char name[513];
 	for (;;) {
 		char *nl = strchr (str, '\n');
 		if (nl) {
