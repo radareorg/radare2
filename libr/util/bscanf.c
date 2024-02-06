@@ -187,7 +187,6 @@ R_API int r_str_scanf(const char *buffer, const char *format, ...) {
 					_BSCANF_CHECK_NULL(char_ptr);
 					*char_ptr = 0; // null byte the first char before failing
 					if (max_width < 1) {
-						num_args_set--;
 						R_LOG_DEBUG ("Missing length specifier for string");
 					} else {
 						for (; max_width > 0; max_width--) {
