@@ -1,4 +1,5 @@
 // Copyright 2022 Google LLC
+// Copyright 2024 radare2
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -28,9 +29,18 @@
 #ifndef CWISSTABLE_H_
 #define CWISSTABLE_H_
 
+#if defined(__APPLE__) && (defined(__ppc__) || defined(__powerpc__))
+#define CWISS_IS_MACPPC 1
+#define CWISS_THREAD_LOCAL
+#else
+#define CWISS_IS_MACPPC 0
+#endif
+
 #include <assert.h>
 #include <limits.h>
+#if !CWISS_IS_MACPPC
 #include <stdalign.h>
+#endif
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -131,7 +141,7 @@
 #include <atomic>
 #define CWISS_ATOMIC_T(Type_) volatile std::atomic<Type_>
 #define CWISS_ATOMIC_INC(val_) (val_).fetch_add(1, std::memory_order_relaxed)
-#elif CWISS_IS_MSVC
+#elif CWISS_IS_MSVC || CWISS_IS_MACPPC
 #define CWISS_ATOMIC_T(Type_) volatile Type_
 #define CWISS_ATOMIC_INC(val_) (val_ += 1)
 #else
@@ -216,7 +226,9 @@
 #define CWISS_alignas(align_) __declspec(align(align_))
 
 #else
+#if !CWISS_IS_MACPPC
 #include <stdalign.h>
+#endif
 
 #ifdef alignas
 #define CWISS_alignas(align_) alignas(align_)
@@ -265,7 +277,7 @@
 
 /// `CWISS_THREAD_LOCAL` expands to the appropriate TLS annotation, if one is
 /// available.
-#if CWISS_IS_GCCISH
+#if CWISS_IS_GCCISH && !CWISS_IS_MACPPC
 #define CWISS_THREAD_LOCAL __thread
 #elif CWISS_IS_MSVC
 #define CWISS_THREAD_LOCAL

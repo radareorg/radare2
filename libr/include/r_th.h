@@ -12,6 +12,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+
 #ifndef WANT_THREADS
 #define WANT_THREADS 1
 #endif
@@ -19,12 +20,17 @@
 #if !WANT_THREADS
 # define HAVE_TH_LOCAL 0
 # define R_TH_LOCAL
-
 # define HAVE_STDATOMIC_H 0
 # define R_ATOMIC_BOOL int
+
+#elif defined(__APPLE__) && (defined(__ppc__) || defined (__powerpc__))
+# define HAVE_TH_LOCAL 0
+# define R_TH_LOCAL
+# define HAVE_STDATOMIC_H 0
+# define R_ATOMIC_BOOL int
+
 #elif defined (__GNUC__) && !__TINYC__
 # define R_TH_LOCAL __thread
-
 # define HAVE_STDATOMIC_H 0
 # define R_ATOMIC_BOOL int
 
