@@ -3784,10 +3784,12 @@ static void ds_print_bytes(RDisasmState *ds) {
 			// R2R db/cmd/cmd_disassembly
 			nstr = r_print_hexpair (ds->print, str, n);
 			if (r_str_ansi_len (nstr) > nb) {
-				if (nb % 2) {
-					nb--;
-					if (ds->show_bytes_align) {
-						r_cons_printf (" ");
+				if (!core->print->bytespace && !ds->show_bytes_align) {
+					if (nb % 2) {
+						nb--;
+						if (ds->show_bytes_align) {
+							r_cons_printf (" ");
+						}
 					}
 				}
 				char *p = (char *)r_str_ansi_chrn (nstr, nb);
@@ -3796,18 +3798,16 @@ static void ds_print_bytes(RDisasmState *ds) {
 					if (!core->print->bytespace) {
 						p--;
 					}
+				//	eprintf ("PP(%s)=(%s) %d\n", nstr, p, r_str_ansi_len (p));
 					p[0] = '.';
 					p[1] = '.';
 					if (ds->show_bytes_align) {
 						p[2] = '\0';
 					} else {
 						if (core->print->bytespace) {
-							p[2] = ' ';
-							p[3] = ' ';
-							p[4] = ' ';
-							p[5] = ' ';
-							p[6] = '\0';
-							p++;
+							int pos = ds->nbytes + 2;
+							memset (p + 2, ' ', pos - 2);
+							p[pos] = 0;
 						} else {
 							p[2] = ' ';
 							p[3] = '\0';
