@@ -59,7 +59,7 @@ else
 		p=0
 		while : ; do
 			p=$(($p+1))
-			[ $p -gt $# ] && break
+			[ "$p" -gt $# ] && break
 			a=`eval echo "\$\{$p\}"`
 			par="$par\"$a\" "
 		done
