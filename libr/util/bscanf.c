@@ -240,7 +240,7 @@ R_API int r_str_scanf(const char *buffer, const char *format, ...) {
 				} else if ('L' == length_mod) {
 					ut64_ptr = va_arg(args, ut64*);
 					_BSCANF_CHECK_NULL(long_ptr);
-					*long_ptr = (ut64) strtoll(buf_ptr, &end_ptr, base);
+					*ut64_ptr = (ut64) strtoll(buf_ptr, &end_ptr, base);
 				} else if ('h' == length_mod) {
 					short_ptr = va_arg(args, short*);
 					_BSCANF_CHECK_NULL(short_ptr);
