@@ -149,9 +149,39 @@ R_API int r_str_scanf(const char *buffer, const char *format, ...) {
 
 				} else if ('l' == length_mod) {
 					wchar_ptr = va_arg(args, wchar_t*);
-					_BSCANF_CHECK_NULL(char_ptr);
-					/* TODO: Implementation. */
-					_BSCANF_CHECK(0);
+					wchar_t *wbuf_ptr = (wchar_t *) buf_ptr;
+					_BSCANF_CHECK_NULL(wchar_ptr);
+					// ckl_BSCANF_CHECK(0);
+					*wchar_ptr = 0; // null byte the first char before failing
+					if (max_width < 1) {
+						R_LOG_DEBUG ("Missing length specifier for string");
+					} else {
+						for (; max_width > 0; max_width--) {
+							*wchar_ptr = *wbuf_ptr;
+							if (*wbuf_ptr == '\0' || (isspace (*wbuf_ptr) && 's' == *fmt_ptr)) {
+								break;
+							}
+							wchar_ptr++;
+							wbuf_ptr++;
+						}
+						if (max_width == 0 && *fmt_ptr == 's') {
+							R_LOG_DEBUG ("Truncated string in scanf");
+							while (*wbuf_ptr) {
+								if (isspace (*wbuf_ptr)) {
+									break;
+								}
+								wbuf_ptr++;
+							}
+						}
+						/* Strings are null-terminated. */
+						if ('s' == *fmt_ptr) {
+							*wchar_ptr = '\0';
+						}
+						buf_ptr = (char *)wbuf_ptr;
+						num_args_set++;
+					}
+					// reset max width value
+					max_width = 0;
 				} else {
 					char_ptr = va_arg(args, char*);
 					_BSCANF_CHECK_NULL(char_ptr);
@@ -177,15 +207,14 @@ R_API int r_str_scanf(const char *buffer, const char *format, ...) {
 								buf_ptr++;
 							}
 						}
+						/* Strings are null-terminated. */
+						if ('s' == *fmt_ptr) {
+							*char_ptr = '\0';
+						}
+						num_args_set++;
 					}
 					// reset max width value
 					max_width = 0;
-
-					/* Strings are null-terminated. */
-					if ('s' == *fmt_ptr) {
-						*char_ptr = '\0';
-					}
-					num_args_set++;
 				}
 
 			} else if ('[' == *fmt_ptr) {
