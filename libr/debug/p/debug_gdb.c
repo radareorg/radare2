@@ -1,6 +1,7 @@
 /* radare - LGPL - Copyright 2009-2023 - pancake, defragger */
 
 #include <r_core.h>
+#include <r_util.h>
 #include <libgdbr.h>
 #include <gdbclient/commands.h>
 
@@ -195,7 +196,7 @@ static RList *r_debug_gdb_map_get(RDebug* dbg) { // TODO
 	int unk = 0, perm, i;
 	char *ptr, *pos_1;
 	size_t line_len;
-	char name[1025], region1[101], region2[101], perms[6];
+	char name[1024], region1[256], region2[100], perms[5];
 	region1[0] = region2[0] = '0';
 	region1[1] = region2[1] = 'x';
 	char *save_ptr = NULL;
@@ -237,7 +238,9 @@ static RList *r_debug_gdb_map_get(RDebug* dbg) { // TODO
 		r_list_free (words);
 		free (wordstr);
 #else
-		ret = sscanf (ptr, "%" RZ_STR_DEF(98) "s %" RZ_STR_DEF(5) "s %" PFMT64x " %*s %*s %" RZ_STR_DEF(1024) "[^\n]", &region1[2], perms, &offset, name);
+		char format[64];
+		r_strf_var (format, 64, "%%%ds %%%ds %%PFMT64x %%*s %%*s %%%d [^\\n]", (int)sizeof (region1[2]), (int)sizeof (perms), (int)sizeof (offset), (int)sizeof (name));
+		ret = sscanf (ptr, format, &region1[2], perms, &offset, name);
 #endif
 		// eprintf ("RET = %d (%s)\n", ret, ptr);
 		if (ret == 3) {

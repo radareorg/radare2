@@ -2,6 +2,7 @@
 
 #include <r_debug.h>
 #include <r_asm.h>
+#include <r_util.h>
 
 static bool __io_step(RDebug *dbg) {
 	free (dbg->iob.system (dbg->iob.io, "ds"));
@@ -22,8 +23,8 @@ static RList *__io_maps(RDebug *dbg) {
 	}
 	char *ostr = str;
 	ut64 map_start, map_end;
-	char perm[33];
-	char name[513];
+	char perm[32];
+	char name[512];
 	for (;;) {
 		char *nl = strchr (str, '\n');
 		if (nl) {
@@ -47,8 +48,9 @@ static RList *__io_maps(RDebug *dbg) {
 			if (_s_) {
 				memmove (_s_, _s_ + 2, strlen (_s_));
 			}
-			sscanf (str, "0x%"PFMT64x" - 0x%"PFMT64x" %"RZ_STR_DEF(32)"s %"RZ_STR_DEF(512)"s",
-				&map_start, &map_end, perm, name);
+			char format[64];
+			r_strf_var (format, 64, "0x%%PFMT64x - 0x%%PFMT64x %%%ds %%%ds", (int)sizeof (perm), (int)sizeof (name));
+			sscanf (str, format, &map_start, &map_end, perm, name);
 			if (map_end != 0LL) {
 				RDebugMap *map = r_debug_map_new (name, map_start, map_end, r_str_rwx (perm), 0);
 				r_list_append (list, map);

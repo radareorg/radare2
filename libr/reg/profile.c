@@ -2,10 +2,7 @@
 
 #include <r_reg.h>
 #include <r_lib.h>
-
-#define GDB_NAME_SZ   16
-#define GDB_TYPE_SZ   16
-#define GDB_GROUPS_SZ 128
+#include <r_util.h>
 
 static const char *parse_alias(RReg *reg, char **tok, const int n) {
 	if (n == 2) {
@@ -324,7 +321,7 @@ static char *gdb_to_r2_profile(const char *gdb) {
 		return NULL;
 	}
 	char *ptr1, *gptr, *gptr1;
-	char name[GDB_NAME_SZ + 1], groups[GDB_GROUPS_SZ + 1], type[GDB_TYPE_SZ + 1];
+	char name[16], groups[128], type[16];
 	const int all = 1, gpr = 2, save = 4, restore = 8, float_ = 16,
 		  sse = 32, vector = 64, system = 128, mmx = 256;
 	int number, rel, offset, size, type_bits, ret;
@@ -354,7 +351,9 @@ static char *gdb_to_r2_profile(const char *gdb) {
 			r_strbuf_free (sb);
 			return false;
 		}
-		ret = sscanf(ptr, " %" RZ_STR_DEF(GDB_NAME_SZ) "s %d %d %d %d %" RZ_STR_DEF(GDB_TYPE_SZ) "s %" RZ_STR_DEF(GDB_GROUPS_SZ) "s",
+		char format[64];
+		r_strf_var (format, 64, " %%%ds %%d %%d %%d %%d %%%ds %%%ds", (int)sizeof (name), (int)sizeof (type), (int)sizeof (groups));
+		ret = sscanf(ptr, format,
 			name, &number, &rel, &offset, &size, type, groups);
 		// Groups is optional, others not
 		if (ret < 6) {
