@@ -11,7 +11,11 @@ IOS_SDK_VERSION="9.0"
 
 else
 
-ifeq ($(shell test "$(XCODE_VERSION_MAJOR)" -gt 10;echo $$?),0)
+ifeq ($(XCODE_VERSION_MAJOR),)
+XCODE_VERSION_MAJOR=0
+endif
+
+ifeq ($(shell test $(XCODE_VERSION_MAJOR) -gt 10;echo $$?),0)
 MACOS_VERSION="10.5"
 MACOS_SDK_VERSION="10.5"
 PARTIALLD+=-arch ${ARCH} -platform_version macos $(MACOS_VERSION) $(MACOS_SDK_VERSION)
