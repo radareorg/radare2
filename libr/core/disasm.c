@@ -3784,7 +3784,7 @@ static void ds_print_bytes(RDisasmState *ds) {
 			// R2R db/cmd/cmd_disassembly
 			nstr = r_print_hexpair (ds->print, str, n);
 			if (r_str_ansi_len (nstr) > nb) {
-				if (!core->print->bytespace && !ds->show_bytes_align) {
+				if (!core->print->bytespace) { //  && !ds->show_bytes_align) {
 					if (nb % 2) {
 						nb--;
 						if (ds->show_bytes_align) {
