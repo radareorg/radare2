@@ -314,6 +314,8 @@ R_API char *r_str_version(const char *program);
 R_API char *r_str_ss(const char* msg, const char *nl, int cs);
 
 R_API char *r_str_after(char *s, char c);
+R_API int r_str_scanf(R_NONNULL const char *buffer, R_NONNULL const char *format, ...);
+  /// __attribute__ ((format (scanf, 2, 3)));
 
 // rstr
 

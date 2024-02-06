@@ -41,6 +41,7 @@ r_util_sources = [
   'lib.c',
   'list.c',
   'log.c',
+  'bscanf.c',
   'mem.c',
   'name.c',
   'new_rbtree.c',
