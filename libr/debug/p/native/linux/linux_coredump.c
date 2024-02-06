@@ -158,7 +158,7 @@ static proc_per_thread_t *get_proc_thread_content(int pid, int tid) {
 		int no_num;
 		char no_char;
 		ut32 no_ui;
-		r_strf_var (format, 64, "%%d %%%ds %%c %%d %%d %%d %%d %%d %%u %%lu %%lu %%lu %%lu %%PFMT64x %%PFMT64x %%ld %%lu", (int)sizeof (no_str));
+		r_strf_var (format, 128, "%%d %%%ds %%c %%d %%d %%d %%d %%d %%u %%lu %%lu %%lu %%lu %%PFMT64x %%PFMT64x %%ld %%lu", (int)sizeof (no_str));
 		sscanf (buff, format,
 			&no_num, no_str, &no_char, &no_num, &no_num, &no_num,
 			&no_num, &no_num, &no_ui, &no_lui, &no_lui, &no_lui,
@@ -814,7 +814,7 @@ static proc_per_process_t *get_proc_process_content(RDebug *dbg) {
 		long unsigned int no_lui;
 		long int no_li;
 		int no_num;
-		r_strf_var (format, 64, "%d %%%ds %c %d %d %d %d %d %u %lu %lu %lu %lu %lu %lu %ld %ld %ld %ld %ld", (int)sizeof (no_str));
+		r_strf_var (format, 128, "%d %%%ds %c %d %d %d %d %d %u %lu %lu %lu %lu %lu %lu %ld %ld %ld %ld %ld", (int)sizeof (no_str));
 		sscanf (buff, format,
 			&p->pid, no_str, &p->s_name, &p->ppid, &p->pgrp, &no_num,
 			&no_num, &p->sid, &p->flag, &no_lui, &no_lui, &no_lui,

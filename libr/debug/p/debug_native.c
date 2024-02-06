@@ -1109,7 +1109,7 @@ static RList *r_debug_native_map_get(RDebug *dbg) {
 #else
 		ut64 offset = 0;
 		// 7fc8124c4000-7fc81278d000 r--p 00000000 fc:00 17043921 /usr/lib/locale/locale-archive
-		r_strf_var (format, 64, "%%%ds %%%ds %08PFMT64x %%*s %%*s %%%d[^\n]", (int)sizeof (region[2]), (int)sizeof (perms), (int)sizeof (name));
+		r_strf_var (format, 64, "%%%ds %%%ds %%08PFMT64x %%*s %%*s %%%d[^\n]", (int)sizeof (region[2]), (int)sizeof (perms), (int)sizeof (name));
 		i = sscanf (line, format, &region[2], perms, &offset, name);
 		if (i == 3) {
 			name[0] = '\0';
