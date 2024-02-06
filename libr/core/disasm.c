@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2023 - nibble, pancake, dso, lazula */
+/* radare - LGPL - Copyright 2009-2024 - nibble, pancake, dso, lazula */
 
 #define R_LOG_ORIGIN "disasm"
 
@@ -3801,8 +3801,17 @@ static void ds_print_bytes(RDisasmState *ds) {
 					if (ds->show_bytes_align) {
 						p[2] = '\0';
 					} else {
-						p[2] = ' ';
-						p[3] = '\0';
+						if (core->print->bytespace) {
+							p[2] = ' ';
+							p[3] = ' ';
+							p[4] = ' ';
+							p[5] = ' ';
+							p[6] = '\0';
+							p++;
+						} else {
+							p[2] = ' ';
+							p[3] = '\0';
+						}
 					}
 				}
 			}

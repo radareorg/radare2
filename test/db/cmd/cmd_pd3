@@ -1,3 +1,22 @@
+NAME=bytes.space
+FILE=bins/elf/intof_mod
+CMDS=<<EOF
+-e asm.nbytes=3
+-e asm.bytes.space=1
+pd 5
+EOF
+EXPECT=<<EOF
+            ;-- section..text:
+            ;-- entry0:
+            ;-- _start:
+            0x00001060      f3 0f..      endbr64                       ; [16] -r-x section size 4384 named .text
+            0x00001064      31 ed        xor ebp, ebp
+            0x00001066      49 89..      mov r9, rdx
+            0x00001069      5e           pop rsi
+            0x0000106a      48 89..      mov rdx, rsp
+EOF
+RUN
+
 NAME=Cd4middle
 FILE=bins/elf/before-after-main
 CMDS=<<EOF
