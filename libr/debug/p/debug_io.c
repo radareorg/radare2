@@ -48,7 +48,6 @@ static RList *__io_maps(RDebug *dbg) {
 			if (_s_) {
 				memmove (_s_, _s_ + 2, strlen (_s_));
 			}
-			char format[64];
 			r_strf_var (format, 64, "0x%%PFMT64x - 0x%%PFMT64x %%%ds %%%ds", (int)sizeof (perm), (int)sizeof (name));
 			sscanf (str, format, &map_start, &map_end, perm, name);
 			if (map_end != 0LL) {

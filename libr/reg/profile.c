@@ -351,7 +351,6 @@ static char *gdb_to_r2_profile(const char *gdb) {
 			r_strbuf_free (sb);
 			return false;
 		}
-		char format[64];
 		r_strf_var (format, 64, " %%%ds %%d %%d %%d %%d %%%ds %%%ds", (int)sizeof (name), (int)sizeof (type), (int)sizeof (groups));
 		ret = sscanf(ptr, format,
 			name, &number, &rel, &offset, &size, type, groups);

@@ -1092,7 +1092,6 @@ static RList *r_debug_native_map_get(RDebug *dbg) {
 		}
 #if __KFBSD__
 		// 0x8070000 0x8072000 2 0 0xc1fde948 rw- 1 0 0x2180 COW NC vnode /usr/bin/gcc
-		char format[64];
 		r_strf_var (format, 64, "%%%ds %%%ds %%d %%d 0x%%%ds %%%ds %%d %%d", (int)sizeof (region1[2]), (int)sizeof (region2[2]), (int)sizeof (unkstr), (int)sizeof (perms));
 		if (sscanf (line, format, &region[2], &region2[2], &ign, &ign, unkstr, perms, &ign, &ign) != 8) {
 			R_LOG_ERROR ("%s: Unable to parse \"%s\"", __func__, path);
@@ -1110,7 +1109,6 @@ static RList *r_debug_native_map_get(RDebug *dbg) {
 #else
 		ut64 offset = 0;
 		// 7fc8124c4000-7fc81278d000 r--p 00000000 fc:00 17043921 /usr/lib/locale/locale-archive
-		char format[64];
 		r_strf_var (format, 64, "%%%ds %%%ds %08PFMT64x %%*s %%*s %%%d[^\n]", (int)sizeof (region[2]), (int)sizeof (perms), (int)sizeof (name));
 		i = sscanf (line, format, &region[2], perms, &offset, name);
 		if (i == 3) {

@@ -238,7 +238,6 @@ static RList *r_debug_gdb_map_get(RDebug* dbg) { // TODO
 		r_list_free (words);
 		free (wordstr);
 #else
-		char format[64];
 		r_strf_var (format, 64, "%%%ds %%%ds %%PFMT64x %%*s %%*s %%%d [^\\n]", (int)sizeof (region1[2]), (int)sizeof (perms), (int)sizeof (offset), (int)sizeof (name));
 		ret = sscanf (ptr, format, &region1[2], perms, &offset, name);
 #endif
