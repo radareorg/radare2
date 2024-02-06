@@ -129,7 +129,7 @@ R_API int r_str_scanf(const char *buffer, const char *format, ...) {
 			} else if ('c' == *fmt_ptr || 's' == *fmt_ptr) {
 				/* 'c'/'s': match a character sequence/string. */
 				/* String conversion requires a width. */
-				// _BSCANF_CHECK_STRING(); -- we want to actually *str=0 instead of early fail
+				// _BSCANF_CHECK_STRING(); -- we want to actually *str = 0 instead of early fail
 
 				/* 'c' conversion specifiers DO NOT consume whitespace. */
 				if ('c' != *fmt_ptr) {
