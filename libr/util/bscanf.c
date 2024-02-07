@@ -12,6 +12,64 @@
 #define _BSCANF_CHECK_BUFFER() _BSCANF_CHECK('\0' != *buffer);
 #define _BSCANF_CHECK_STRTONUM() _BSCANF_CHECK(buf_ptr != end_ptr);
 
+static bool scanset_check(const char *scanset, char ch) {
+	bool negated = false;
+	if (*scanset == '^') {
+		scanset++;
+		negated = true;
+	}
+	const char *ss = scanset;
+	while (*ss) {
+		bool found = false;
+		if (ss[1] == '-') {
+			const char min = ss[0];
+			const char max = ss[2];
+			if (ch >= min && ch <= max) {
+				found = true;
+			}
+			ss += 2;
+		} else {
+			found = (*ss == ch);
+			ss++;
+		}
+		if (negated) {
+			if (found) {
+				return false;
+			}
+		} else {
+			if (!found) {
+				return false;
+			}
+		}
+	}
+	if (negated) {
+		return true;
+	}
+	return false;
+}
+
+static const char *scanset_parse(const char *fmt_ptr, char *scanset, size_t scanset_size) {
+	char *scanset_last = scanset + sizeof (scanset);
+	char *scanset_cur = scanset;
+	*scanset_cur = 0;
+	fmt_ptr++;
+	while (*fmt_ptr) {
+		if (scanset_cur >= scanset_last) {
+			R_LOG_ERROR ("Too large scanset found");
+			return NULL;
+		}
+		if (*fmt_ptr == ']') {
+			fmt_ptr ++;
+			break;
+		}
+		*scanset_cur = *fmt_ptr;
+		scanset_cur++;
+		*scanset_cur = 0;
+		fmt_ptr++;
+	}
+	return fmt_ptr;
+}
+
 R_API int r_str_scanf(const char *buffer, const char *format, ...) {
 	R_RETURN_VAL_IF_FAIL (buffer && format, -1);
 	/* Our return value. On a conversion error, we return this immediately. */
@@ -49,7 +107,7 @@ R_API int r_str_scanf(const char *buffer, const char *format, ...) {
 
 	while (*fmt_ptr) {
 		/* We ignore spaces before specifiers. */
-		if (isspace(*fmt_ptr)) {
+		if (isspace (*fmt_ptr)) {
 			/* Any whitespace in the format consumes all of the whitespace in the buffer. */
 			_BSCANF_CONSUME_WSPACE();
 			fmt_ptr++;
@@ -114,12 +172,12 @@ R_API int r_str_scanf(const char *buffer, const char *format, ...) {
 			}
 
 			/* All other specifiers move the buffer pointer, so check that it's not NUL. */
-			_BSCANF_CHECK_BUFFER();
+			_BSCANF_CHECK_BUFFER ();
 
 			if ('%' == *fmt_ptr) {
 				/* '%': match literal %. */
-				_BSCANF_CONSUME_WSPACE();
-				_BSCANF_MATCH();
+				_BSCANF_CONSUME_WSPACE ();
+				_BSCANF_MATCH ();
 				buf_ptr++;
 			} else if ('c' == *fmt_ptr || 's' == *fmt_ptr) {
 				/* 'c'/'s': match a character sequence/string. */
@@ -128,14 +186,18 @@ R_API int r_str_scanf(const char *buffer, const char *format, ...) {
 
 				/* 'c' conversion specifiers DO NOT consume whitespace. */
 				if ('c' != *fmt_ptr) {
-					_BSCANF_CONSUME_WSPACE();
+					_BSCANF_CONSUME_WSPACE ();
 				}
 
 				if (is_suppressed) {
 					/* Consume the character (string) and ignore it in this case. */
-					for (; max_width > 0; max_width--) {
+					while (true) {
 						buf_ptr++;
-						if (*buf_ptr == '\0' || (isspace(*buf_ptr) && 's' == *fmt_ptr)) {
+						if (*buf_ptr == '\0') {
+							break;
+						}
+						if ((isspace (*buf_ptr) && 's' == *fmt_ptr)) {
+							buf_ptr++;
 							break;
 						}
 					}
@@ -212,17 +274,45 @@ R_API int r_str_scanf(const char *buffer, const char *format, ...) {
 				}
 
 			} else if ('[' == *fmt_ptr) {
-				/* TODO: '[': match a non-empty sequence of characters from a set. */
-				_BSCANF_CHECK(0);
-
+				char scanset[32] = {0};
+				// https://cplusplus.com/reference/cstdio/scanf/
+				/* '[': match a non-empty sequence of characters from a scanset. */
+				fmt_ptr = scanset_parse (fmt_ptr, scanset, sizeof (scanset));
+				if (!fmt_ptr) {
+					// error invalid scanset
+					goto beach;
+				}
+				// process scanset and fill the string
 				/* String conversion requires a width. */
-				_BSCANF_CHECK_STRING();
+				_BSCANF_CHECK_STRING ();
 				/* '[' conversion specifiers DO NOT consume whitespace. */
+				char_ptr = va_arg (args, char*);
+				_BSCANF_CHECK_NULL (char_ptr);
+				*char_ptr = 0; // null byte the first char before failing
+				if (max_width < 1) {
+					R_LOG_DEBUG ("Missing length specifier for string");
+				} else {
+					for (; *buf_ptr && max_width > 0; max_width--) {
+						if (!scanset_check (scanset, *buf_ptr)) {
+							break;
+						}
+						*char_ptr = *buf_ptr;
+						char_ptr++;
+						buf_ptr++;
+					}
+					if (max_width == 0) {
+						R_LOG_DEBUG ("Truncated string in scanf");
+					}
+					/* Strings must be null-terminated. */
+					*char_ptr = '\0';
+					num_args_set++;
+				}
+				// reset max width value
+				max_width = 0;
 
 			} else if ('i' == *fmt_ptr || 'd' == *fmt_ptr) {
 				/* 'i'/'d': match a integer/decimal integer. */
-
-				_BSCANF_CONSUME_WSPACE();
+				_BSCANF_CONSUME_WSPACE ();
 				base = ('d' == *fmt_ptr) * 10;
 
 				if (is_suppressed) {
@@ -234,7 +324,7 @@ R_API int r_str_scanf(const char *buffer, const char *format, ...) {
 					*long_ptr = (long) strtol (buf_ptr, &end_ptr, base);
 				} else if ('L' == length_mod) {
 					ut64_ptr = va_arg (args, ut64*);
-					_BSCANF_CHECK_NULL(long_ptr);
+					_BSCANF_CHECK_NULL (long_ptr);
 					*ut64_ptr = (ut64) strtoll (buf_ptr, &end_ptr, base);
 				} else if ('h' == length_mod) {
 					short_ptr = va_arg (args, short*);
@@ -242,11 +332,11 @@ R_API int r_str_scanf(const char *buffer, const char *format, ...) {
 					*short_ptr = (short) (strtol (buf_ptr, &end_ptr, base));
 				} else {
 					int_ptr = va_arg (args, int*);
-					_BSCANF_CHECK_NULL(int_ptr);
+					_BSCANF_CHECK_NULL (int_ptr);
 					*int_ptr = (int) (strtol (buf_ptr, &end_ptr, base));
 				}
 
-				_BSCANF_CHECK_STRTONUM();
+				_BSCANF_CHECK_STRTONUM ();
 				buf_ptr = end_ptr;
 				num_args_set++;
 
@@ -275,8 +365,7 @@ R_API int r_str_scanf(const char *buffer, const char *format, ...) {
 				num_args_set++;
 
 			} else if ('p' == *fmt_ptr) {
-
-				_BSCANF_CONSUME_WSPACE();
+				_BSCANF_CONSUME_WSPACE ();
 				base = 16;
 
 				if (is_suppressed) {
@@ -294,8 +383,7 @@ R_API int r_str_scanf(const char *buffer, const char *format, ...) {
 				num_args_set++;
 			} else if ('u' == *fmt_ptr || 'o' == *fmt_ptr || 'x' == *fmt_ptr || 'X' == *fmt_ptr) {
 				/* 'u'/'o'/'x': match a unsigned decimal/octal/hexadecimal integer */
-
-				_BSCANF_CONSUME_WSPACE();
+				_BSCANF_CONSUME_WSPACE ();
 				base = ('u' == *fmt_ptr) * 10 + ('o' == *fmt_ptr) * 8 +
 					('x' == *fmt_ptr || 'X' == *fmt_ptr) * 16;
 
