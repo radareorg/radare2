@@ -154,7 +154,7 @@ static ut8 *GH(get_section_bytes)(RCore *core, const char *path, const char *sec
 		}
 	}
 
-	if (found_section == false) {
+	if (!found_section) {
 		R_LOG_WARN ("get_section_bytes: section %s not found", section_name);
 		goto cleanup_exit;
 	}
@@ -179,6 +179,65 @@ cleanup_exit:
 	r_bin_file_delete (bin, libc_bf->id);
 	r_bin_file_set_cur_binfile (bin, bf);
 	return buf;
+}
+
+R_API double GH(get_glibc_version)(RCore *core, const char *libc_path) {
+	double version = 0.0;
+
+	// First see if there is a "__libc_version" symbol
+	// If yes read version from there
+	GHT version_symbol = GH (get_va_symbol) (core, libc_path, "__libc_version");
+	if (version_symbol != GHT_MAX) {
+		FILE *libc_file = fopen (libc_path, "r ");
+		if (libc_file == NULL) {
+			R_LOG_WARN ("resolve_glibc_version: Failed to open %s", libc_path);
+			return false;
+		}
+		// TODO: futureproof this
+		char version_buffer[5];
+		fseek (libc_file, version_symbol, SEEK_SET);
+		fread (version_buffer, 1, 4, libc_file);
+		fclose (libc_file);
+		if (!r_regex_match ("\\d.\\d\\d", "e", version_buffer)) {
+			R_LOG_WARN ("resolve_glibc_version: Unexpected version format: %s", version_buffer);
+			return false;
+		}
+		version = strtod (version_buffer, NULL);
+		R_LOG_INFO ("libc version %.2f identified from symbol", version);
+		return version;
+	}
+
+	// Next up we try to read version from banner in .rodata section
+	// also inspired by pwndbg
+	const ut8 *rodata_bytes = GH (get_section_bytes) (core, libc_path, ".rodata");
+	GHT rodata_size = GH (get_section_size) (core, libc_path, ".rodata");
+	const ut8 *banner_start = NULL;
+	if (rodata_bytes != NULL) {
+		banner_start = r_mem_mem (rodata_bytes, rodata_size, (const ut8 *)"GNU C Library", strlen ("GNU C Library"));
+	}
+
+	if (banner_start != NULL) {
+		// eprintf("banner found: %s\n", banner_start);
+		RRegex *rx = r_regex_new ("release version (\\d.\\d\\d)", "en");
+		RList *matches = r_regex_match_list (rx, (const char *)banner_start);
+		const char *version_start;
+		// We only care about the first match
+		const char *first_match = r_list_first (matches);
+		if (first_match)	{
+			version_start = first_match + strlen ("release version ");
+			version = strtod (version_start, NULL);
+		}
+		r_list_free (matches);
+		r_regex_free (rx);
+	}
+
+	if (version != 0) {
+		R_LOG_INFO ("libc version %.2f identified from .rodata banner", version);
+		return version;
+	}
+
+	R_LOG_WARN ("get_glibc_version failed");
+	return version;
 }
 
 static bool GH(resolve_glibc_version)(RCore *core) {
@@ -217,7 +276,7 @@ static bool GH(resolve_glibc_version)(RCore *core) {
 	r_debug_map_sync (core->dbg);
 
 	// Search for binary in memory maps named *libc-* or *libc.*
-	// This is very brittle, other bin names or LD_PRELOAD could be a problem
+	// TODO: This is very brittle, other bin names or LD_PRELOAD could be a problem
 	r_list_foreach (core->dbg->maps, iter, map) {
 		if (strncmp (map->name, core->bin->file, strlen (map->name)) == 0) {
 			continue;
@@ -229,74 +288,23 @@ static bool GH(resolve_glibc_version)(RCore *core) {
 	}
 	// TODO: handle static binaries
 	if (!found_glibc_map) {
-		R_LOG_WARN ("resolve_glibc_version cannot handle static binaries");
+		R_LOG_WARN ("resolve_glibc_version: no libc found in memory maps (cannot handle static binaries)");
 		return false;
 	}
-
-	// First see if there is a "__libc_version" symbol
-	// If yes read version from there
-	GHT version_symbol = GH (get_va_symbol) (core, map->file, "__libc_version");
-	if (version_symbol != GHT_MAX) {
-		// eprintf ("found __libc_version symbol in %s: %#08x\n", map->file, version_symbol);
-		FILE *libc_file = fopen (map->file, "r ");
-		if (libc_file == NULL) {
-			R_LOG_WARN ("resolve_glibc_version: Failed to open %s", map->file);
-			return false;
-		}
-		char version_buffer[4]; // 4 bytes should be enough for everybody
-		fseek (libc_file, version_symbol, SEEK_SET);
-		fread (version_buffer, 1, 4, libc_file);
-		fclose (libc_file);
-		if (!r_regex_match ("\\d.\\d\\d", "e", version_buffer)) {
-			R_LOG_WARN ("resolve_glibc_version: Unexpected version format: %s", version_buffer);
-			return false;
-		}
-		version = strtod (version_buffer, NULL);
-		core->dbg->glibc_version = (int)(100 * version);
+	// At this point we found a map in memory that _should_ be libc
+	version = GH (get_glibc_version) (core, map->file);
+	if (version != 0)	{
+		core->dbg->glibc_version = (int)round ((version * 100));
 		core->dbg->glibc_version_d = version;
 		core->dbg->glibc_version_resolved = true;
+		char version_buffer[315];
+		// TODO: better way snprintf to 4 chars warns
+		// note: ‘snprintf’ output between 4 and 314 bytes into a destination of size 4
+		snprintf(version_buffer, 314, "%.2f", version);
 		r_config_set (core->config, "dbg.glibc.version", version_buffer);
-		R_LOG_INFO ("libc version %.2f identified from symbol", core->dbg->glibc_version_d);
 		return true;
 	}
 
-	// Next up we try to read version from banner in .rodata section
-	// also inspired by pwndbg
-	const ut8 *rodata_bytes = GH (get_section_bytes) (core, map->file, ".rodata");
-	GHT rodata_size = GH (get_section_size) (core, map->file, ".rodata");
-	const ut8 *banner_start = NULL;
-	if (rodata_bytes != NULL) {
-		banner_start = r_mem_mem (rodata_bytes, rodata_size, (const ut8 *)"GNU C Library", strlen ("GNU C Library"));
-	}
-	char *version_buffer;
-	if (banner_start != NULL) {
-		// eprintf("banner found: %s\n", banner_start);
-		RRegex *rx = r_regex_new ("release version (\\d.\\d\\d)", "en");
-		RList *matches = r_regex_match_list (rx, (const char *)banner_start);
-		RListIter *iter;
-		char *item;
-		char *version_end;
-		char *version_start;
-		r_list_foreach (matches, iter, item) {
-			version_start = item + strlen ("release version ");
-			version = strtod (version_start, &version_end);
-			version_buffer = r_str_ndup (version_start, version_end - version_start);
-		}
-		r_list_free (matches);
-		r_regex_free (rx);
-	}
-
-	if (version != 0) {
-		core->dbg->glibc_version = (int)(100 * version);
-		core->dbg->glibc_version_d = version;
-		core->dbg->glibc_version_resolved = true;
-		r_config_set (core->config, "dbg.glibc.version", version_buffer);
-		free (version_buffer);
-		R_LOG_INFO ("libc version %.2f identified from .rodata banner", core->dbg->glibc_version_d);
-		return true;
-	}
-
-	R_LOG_WARN ("get_glibc_version failed");
 	return false;
 }
 
