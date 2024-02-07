@@ -5,7 +5,7 @@
 #include "minunit.h"
 // Copied from https://github.com/radareorg/radare2/pull/22516/commits/d59c813cc4fc574c85aa210aed4aa0636fac3184 by MewtR
 
-bool test_GH (get_glibc_version) (void) {
+bool test_get_glibc_version (void) {
 	RCore *core = r_core_new ();
 
 	double version = 0.0f;
@@ -40,7 +40,7 @@ bool test_GH (get_glibc_version) (void) {
 }
 
 bool all_tests () {
-	mu_run_test (test_glibc_version);
+	mu_run_test (test_get_glibc_version);
 	return tests_passed != tests_run;
 }
 
