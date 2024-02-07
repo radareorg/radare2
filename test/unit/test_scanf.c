@@ -23,9 +23,22 @@ bool test_r_str_scanf(void) {
 	mu_end;
 }
 
+bool test_r_str_scanf_pointer(void) {
+	size_t a;
+	void *b;
+	char *s = r_str_newf ("%p %p\n", &test_r_str_scanf, &test_r_str_scanf_pointer);
+	int res = r_str_scanf (s, "%p %p", &a, &b);
+	free (s);
+	mu_assert_eq (a, &test_r_str_scanf, "sizet pointer comparison");
+	mu_assert_eq (b, &test_r_str_scanf_pointer, "second sizet pointer comparison");
+	mu_assert_eq (res, 2, "return value for scanf failed");
+
+	mu_end;
+}
 
 bool all_tests(void) {
 	mu_run_test (test_r_str_scanf);
+	mu_run_test (test_r_str_scanf_pointer);
 	return tests_passed != tests_run;
 }
 
