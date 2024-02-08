@@ -1,6 +1,6 @@
 BINDIR := bin
 BINS=$(patsubst %.c,$(BINDIR)/%,$(wildcard *.c))
-LDFLAGS+=$(shell pkg-config --libs r_core)
+LDFLAGS+=$(shell pkg-config --libs r_core) -lm
 CFLAGS+=-I../../libr/include
 CFLAGS+=-I../../shlr/sdb/include
 CFLAGS+=-g

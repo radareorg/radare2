@@ -294,7 +294,7 @@ static bool GH(resolve_glibc_version)(RCore *core) {
 	// At this point we found a map in memory that _should_ be libc
 	version = GH (get_glibc_version) (core, map->file);
 	if (version != 0)	{
-		core->dbg->glibc_version = (int)round ((version * 100));
+		core->dbg->glibc_version = (int) round((version * 100));
 		core->dbg->glibc_version_d = version;
 		core->dbg->glibc_version_resolved = true;
 		char version_buffer[315];
