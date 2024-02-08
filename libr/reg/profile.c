@@ -351,7 +351,7 @@ static char *gdb_to_r2_profile(const char *gdb) {
 			r_strbuf_free (sb);
 			return false;
 		}
-		ret = r_str_scanf (ptr, "%.s %%d %%d %%d %%d %.s %.s", sizeof (name), name, &number, &rel, &offset, &size, sizeof (type), type, sizeof (groups), groups);
+		ret = r_str_scanf (ptr, "%.s %d %d %d %d %.s %.s", sizeof (name), name, &number, &rel, &offset, &size, sizeof (type), type, sizeof (groups), groups);
 		// Groups is optional, others not
 		if (ret < 6) {
 			if (*ptr != '*') {
