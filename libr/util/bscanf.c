@@ -184,7 +184,7 @@ R_API int r_str_scanf(const char *buffer, const char *format, ...) {
 					wchar_ptr = va_arg (args, wchar_t*);
 					wchar_t *wbuf_ptr = (wchar_t *) buf_ptr;
 					*wchar_ptr = *wbuf_ptr;
-					buf_ptr = wbuf_ptr + 1;
+					buf_ptr = (char *) (wbuf_ptr + 1);
 					fmt_ptr++;
 				} else {
 					_BSCANF_CONSUME_WSPACE ();

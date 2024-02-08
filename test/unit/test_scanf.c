@@ -100,12 +100,37 @@ bool test_r_str_scanf_procstat(void) {
 	mu_end;
 }
 
+bool test_r_str_scanf_iomaps(void) {
+	ut64 addr0, addr1;
+	char perm[8];
+	char name[32];
+	const char fmt[] = "0x%Lx - 0x%Lx %.s %.s";
+	const char str[] = "0x8048000 - 0x9284955085 r-x hello";
+	int res = r_str_scanf (str, fmt, &addr0, &addr1, sizeof (perm), perm, sizeof (name), name);
+	mu_assert_eq (res, 4, "return value for scanf failed");
+	mu_assert_eq (addr0, 0x8048000, "addr0 fail");
+	mu_assert_eq (addr1, 0x9284955085, "addr1 fail");
+	mu_assert_streq (perm, "r-x", "perm fail");
+	mu_assert_streq (name, "hello", "name fail");
+
+	const char fmt2[] = "0x%"PFMT64x" - 0x%"PFMT64x" %s %s";
+	res = sscanf (str, fmt2, &addr0, &addr1, perm, name);
+	mu_assert_eq (res, 4, "return value for scanf failed");
+	mu_assert_eq (addr0, 0x8048000, "addr0 fail");
+	mu_assert_eq (addr1, 0x9284955085, "addr1 fail");
+	mu_assert_streq (perm, "r-x", "perm fail");
+	mu_assert_streq (name, "hello", "name fail");
+
+	mu_end;
+}
+
 bool all_tests(void) {
 	mu_run_test (test_r_str_scanf);
 	mu_run_test (test_r_str_scanf_pointer);
 	mu_run_test (test_r_str_scanf_scanset);
 	mu_run_test (test_r_str_scanf_other);
 	mu_run_test (test_r_str_scanf_procstat);
+	mu_run_test (test_r_str_scanf_iomaps);
 	return tests_passed != tests_run;
 }
 
