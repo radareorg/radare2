@@ -478,6 +478,7 @@ dotherax:
 		r_list_free (split);
 		return true;
 	} else if (flags & (1 << 12)) { // -E
+		// TODO: use the dynamic b64 encoder so we dont have to manually calloc here
 		/* http://stackoverflow.com/questions/4715415/base64-what-is-the-worst-possible-increase-in-space-usage */
 		char *out = calloc (1, (len + 2) / 3 * 4 + 1); // ceil(n/3)*4 plus 1 for NUL
 		if (out) {
@@ -497,6 +498,9 @@ dotherax:
 			n = r_base64_decode (out, str, n);
 			if (n > 0) {
 				fwrite (out, n, 1, stdout);
+				if (flags & (1 << 24)) {
+					puts ("");
+				}
 				fflush (stdout);
 			} else {
 				R_LOG_ERROR ("Cannot decode");
