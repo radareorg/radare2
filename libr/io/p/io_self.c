@@ -213,8 +213,7 @@ static int update_self_regions(RIO *io, int pid) {
 		}
 		path[0]='\0';
 		strcpy (region, "0x");
-		r_strf_var (format, 64, "%%%ds %%%ds %%*s %%*s %%*s %%[^\n]", (int)sizeof (region[2]), (int)sizeof (perms));
-		sscanf (line, format, region + 2, perms, path);
+		r_str_scanf (line, "%.s %.s %*s %*s %*s %.[^\n]", sizeof (region[2]), region + 2, sizeof (perms), perms, sizeof (path), path);
 		pos_c = strchr (region + 2, '-');
 		if (pos_c) {
 			*pos_c++ = 0;
