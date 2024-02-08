@@ -13,10 +13,9 @@
 #define _BSCANF_CHECK_STRTONUM() _BSCANF_CHECK(buf_ptr != end_ptr);
 
 static bool scanset_check(const char *scanset, char ch) {
-	bool negated = false;
-	if (*scanset == '^') {
+	const bool negated = (*scanset == '^');
+	if (negated) {
 		scanset++;
-		negated = true;
 	}
 	const char *ss = scanset;
 	while (*ss) {
@@ -27,7 +26,7 @@ static bool scanset_check(const char *scanset, char ch) {
 			if (ch >= min && ch <= max) {
 				found = true;
 			}
-			ss += 2;
+			ss += 3;
 		} else {
 			found = (*ss == ch);
 			ss++;
@@ -42,10 +41,7 @@ static bool scanset_check(const char *scanset, char ch) {
 			}
 		}
 	}
-	if (negated) {
-		return true;
-	}
-	return false;
+	return negated;
 }
 
 static const char *scanset_parse(const char *fmt_ptr, char *scanset, size_t scanset_size) {
@@ -109,7 +105,7 @@ R_API int r_str_scanf(const char *buffer, const char *format, ...) {
 		/* We ignore spaces before specifiers. */
 		if (isspace (*fmt_ptr)) {
 			/* Any whitespace in the format consumes all of the whitespace in the buffer. */
-			_BSCANF_CONSUME_WSPACE();
+			_BSCANF_CONSUME_WSPACE ();
 			fmt_ptr++;
 			continue;
 		}
@@ -182,7 +178,7 @@ R_API int r_str_scanf(const char *buffer, const char *format, ...) {
 			} else if ('c' == *fmt_ptr || 's' == *fmt_ptr) {
 				/* 'c'/'s': match a character sequence/string. */
 				/* String conversion requires a width. */
-				// _BSCANF_CHECK_STRING(); -- we want to actually *str = 0 instead of early fail
+				// _BSCANF_CHECK_STRING (); -- we want to actually *str = 0 instead of early fail
 
 				/* 'c' conversion specifiers DO NOT consume whitespace. */
 				if ('c' != *fmt_ptr) {
@@ -345,7 +341,7 @@ R_API int r_str_scanf(const char *buffer, const char *format, ...) {
 				/* 'g'/'e'/'f': match a float in strtod form. */
 				/* TODO: 'a': match a float in C99 binary floating-point form. */
 
-				_BSCANF_CONSUME_WSPACE();
+				_BSCANF_CONSUME_WSPACE ();
 
 				if (is_suppressed) {
 					/* Consume the float and ignore it in this case. */
@@ -360,7 +356,7 @@ R_API int r_str_scanf(const char *buffer, const char *format, ...) {
 					*float_ptr = (float) (strtod(buf_ptr, &end_ptr));
 				}
 
-				_BSCANF_CHECK_STRTONUM();
+				_BSCANF_CHECK_STRTONUM ();
 				buf_ptr = end_ptr;
 				num_args_set++;
 
@@ -372,7 +368,7 @@ R_API int r_str_scanf(const char *buffer, const char *format, ...) {
 					/* Consume the unsigned integer and ignore it in this case. */
 					strtoul (buf_ptr, &end_ptr, base);
 				} else {
-					// R2SCANF portable %llx
+					// R2SCANF portable %p
 					sizet_ptr = va_arg (args, size_t*);
 					_BSCANF_CHECK_NULL (sizet_ptr);
 					*sizet_ptr = (size_t) strtoull (buf_ptr, &end_ptr, base);
@@ -417,9 +413,6 @@ R_API int r_str_scanf(const char *buffer, const char *format, ...) {
 				/* Unknown conversion specifier. */
 				_BSCANF_CHECK (0);
 			}
-
-			/* TODO: 'p': match a (implementation-defined) pointer. */
-
 		} else {
 			/* Match character with that in buffer. */
 			_BSCANF_MATCH ();
