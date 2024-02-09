@@ -105,9 +105,26 @@ static int test_begin(void) {
 	return 0;
 }
 
+static int test_libc_match(void) {
+	const char *needle_libname = ".*libc[.-]";
+	const char *needle_version = "\\d.\\d\\d";
+	const char *haystack_libname = "/usr/lib/libc.so.6";
+	const char *haystack_version = "2.38";
+	int res;
+
+	res = r_regex_match (needle_libname, "e", haystack_libname);
+	mu_assert_eq (res, 1, "regex lib name failed");
+	res = r_regex_match (needle_version, "e", haystack_version);
+    mu_assert_eq (res, 1, "regex lib version failed");
+
+	mu_end;
+	return 0;
+}
+
 int main(int argc, char **argv) {
 	mu_run_test (test_regex);
 	mu_run_test (test_or);
 	mu_run_test (test_begin);
+	mu_run_test (test_libc_match);
 	return 0;
 }
