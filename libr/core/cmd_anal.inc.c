@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2023 - pancake, maijin */
+/* radare - LGPL - Copyright 2009-2024 - pancake, maijin */
 
 #if R_INCLUDE_BEGIN
 
@@ -579,7 +579,7 @@ static RCoreHelpMessage help_msg_afb = {
 	".afbr-*", "", "remove breakpoint on every return address of the function",
 	"afb", " [addr]", "list basic blocks of function",
 	"afb.", " [addr]", "show info of current basic block",
-	"afb,", "", "show basic blocks of current function in a table (previously known as afbt)",
+	"afb,", "", "show basic blocks of current function in a table",
 	"afb=", "", "display ascii-art bars for basic block regions",
 	"afb+", " fcn_at bbat bbsz [jump] [fail] ([diff])", "add basic block by hand",
 	"afba", "[!]", "list basic blocks of current offset in analysis order (EXPERIMENTAL, see afla)",
@@ -3264,7 +3264,7 @@ static bool anal_fcn_list_bb(RCore *core, const char *input, bool one) {
 	}
 
 	RTable *t = NULL;
-	if (mode == 't') {
+	if (mode == ',') {
 		t = r_table_new ("fcnbbs");
 		r_table_set_columnsf (t, "xdxx", "addr", "size", "jump", "fail");
 	}
@@ -3275,7 +3275,7 @@ static bool anal_fcn_list_bb(RCore *core, const char *input, bool one) {
 			}
 		}
 		switch (mode) {
-		case ',': // "afb," "afbt"
+		case ',': // "afb,"
 			r_table_add_rowf (t, "xdxx", b->addr, b->size, b->jump, b->fail);
 			break;
 		case 'r': // "afbr"
@@ -3338,7 +3338,7 @@ static bool anal_fcn_list_bb(RCore *core, const char *input, bool one) {
 			break;
 		}
 	}
-	if (mode == 't') {
+	if (mode == ',') {
 		const char *arg = input;
 		if (r_table_query (t, arg)) {
 			char *ts = r_table_tofancystring (t);
@@ -5791,7 +5791,7 @@ static int cmd_af(RCore *core, const char *input) {
 		case '=': // "afb="
 		case '*': // "afb*"
 		case 'j': // "afbj"
-		case 't': // "afbt"
+		case ',': // "afb,"
 			anal_fcn_list_bb (core, input + 2, false);
 			break;
 		case 'i': // "afbi"
