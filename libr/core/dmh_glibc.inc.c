@@ -132,7 +132,6 @@ static ut8 *GH(get_section_bytes)(RCore *core, const char *path, const char *sec
 	RBinFile *bf = r_bin_cur (bin);
 	bool found_section = false;
 	GHT paddr, size;
-	ut8 *buf = NULL;
 
 	RBinFileOptions opt;
 	r_bin_file_options_init (&opt, -1, 0, 0, false);
@@ -160,8 +159,7 @@ static ut8 *GH(get_section_bytes)(RCore *core, const char *path, const char *sec
 	}
 
 	// eprintf ("get_section_bytes: section found: %s size: %#08x  paddr: %#08x\n", section_name, size, paddr);
-
-	buf = calloc (size, 1);
+	ut8 *buf = calloc (size, 1);
 	if (!buf) {
 		R_LOG_ERROR ("get_section_bytes: calloc failed");
 		goto cleanup_exit;
@@ -196,7 +194,11 @@ R_API double GH(get_glibc_version)(RCore *core, const char *libc_path) {
 		// TODO: futureproof this
 		char version_buffer[5] = {0};
 		fseek (libc_file, version_symbol, SEEK_SET);
-		fread (version_buffer, 1, 4, libc_file);
+		if (fread (version_buffer, 1, 4, libc_file) != 4)	{
+			R_LOG_WARN ("resolve_glibc_version: Failed to read 4 bytes of version symbol");
+			return false;
+		};
+
 		fclose (libc_file);
 		if (!r_regex_match ("\\d.\\d\\d", "e", version_buffer)) {
 			R_LOG_WARN ("resolve_glibc_version: Unexpected version format: %s", version_buffer);
@@ -264,7 +266,7 @@ static bool GH(resolve_glibc_version)(RCore *core) {
 						" (expected format \"\\d.\\d\\d\")", dbg_glibc_version);
 		} else {
 			version = strtod(dbg_glibc_version, NULL);
-			core->dbg->glibc_version = (int) (100 * version);
+			core->dbg->glibc_version = (int) round((version * 100));
 			core->dbg->glibc_version_d = version;
 			core->dbg->glibc_version_resolved = true;
 			R_LOG_INFO ("libc version %.2f set from dbg.glibc.version", core->dbg->glibc_version_d);
@@ -297,10 +299,10 @@ static bool GH(resolve_glibc_version)(RCore *core) {
 		core->dbg->glibc_version = (int) round((version * 100));
 		core->dbg->glibc_version_d = version;
 		core->dbg->glibc_version_resolved = true;
-		char version_buffer[315];
+		char version_buffer[315] = {0};
 		// TODO: better way snprintf to 4 chars warns
 		// note: ‘snprintf’ output between 4 and 314 bytes into a destination of size 4
-		snprintf (version_buffer, sizeof (version_buffer), "%.2f", version);
+		snprintf (version_buffer, sizeof (version_buffer)-1, "%.2f", version);
 		r_config_set (core->config, "dbg.glibc.version", version_buffer);
 		return true;
 	}
@@ -313,21 +315,13 @@ static bool GH(is_tcache)(RCore *core) {
 	if (!r_config_get_b (core->config, "cfg.debug")) {
 		return r_config_get_b (core->config, "dbg.glibc.tcache");
 	}
-	RDebugMap *map;
-	RListIter *iter;
-	r_debug_map_sync (core->dbg);
-	r_list_foreach (core->dbg->maps, iter, map) {
-		// In case the binary is named *libc*
-		if (strncmp (map->name, core->bin->file, strlen (map->name)) != 0) {
-			char *fp = strstr (map->name, "libc");
-			if (fp) {
-				v = r_num_get_float (core->num, fp + 5);
-				core->dbg->glibc_version = (int) round((v * 100));
-				return (v > 2.25);
-			}
-		}
+
+	if (core->dbg->glibc_version_resolved || GH (resolve_glibc_version) (core))	{
+		return core->dbg->glibc_version_d > 2.25;
+	} else {
+		R_LOG_WARN ("is_tcache: glibc_version could not be resolved");
+		return false;
 	}
-	return false;
 }
 
 static GHT GH(tcache_chunk_size)(RCore *core, GHT brk_start) {
