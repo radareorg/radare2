@@ -50,8 +50,9 @@ typedef struct {
 	size_t curr_op;
 } RIOEvm;
 
-static RIOEvm *rio = NULL;
-static RIOEvmState *rios = NULL;
+// XXX remove those globals
+static R_TH_LOCAL RIOEvm *rio = NULL;
+static R_TH_LOCAL RIOEvmState *rios = NULL;
 
 static bool r_debug_evm_step(RDebug *dbg) {
 	if (!rio->ops_size || rios->curr_instruction >= rio->ops_size) {
@@ -142,11 +143,9 @@ static RDebugReasonType r_debug_evm_wait(RDebug *dbg, int pid) {
 
 static bool r_debug_evm_attach(RDebug *dbg, int pid) {
 	RIODesc *d = dbg->iob.io->desc;
-
 	if (!rios) {
 		rios = R_NEW0 (RIOEvmState);
-
-		rios->breakpoints = (ut64*)malloc(sizeof(ut64) * DEFAULT_BPT_AR_CAPACITY);
+		rios->breakpoints = (ut64 *)calloc (sizeof (ut64), DEFAULT_BPT_AR_CAPACITY);
 		rios->breakpoints_length = 0;
 		rios->breakpoints_capacity = DEFAULT_BPT_AR_CAPACITY;
 	}
@@ -199,22 +198,17 @@ static int r_debug_evm_breakpoint (struct r_bp_t *bp, RBreakpointItem *b, bool s
 
 	if (set) {
 		ssize_t idx = find_breakpoint(b->addr, rios->breakpoints, rios->breakpoints_length);
-
 		if (idx >= 0) {
 			return true;
 		}
-
 		if (rios->breakpoints_length >= rios->breakpoints_capacity) {
 			rios->breakpoints = realloc(rios->breakpoints,
 					rios->breakpoints_capacity + 64);
 			rios->breakpoints_capacity += 64;
 		}
-
 		rios->breakpoints[rios->breakpoints_length] = b->addr;
 		rios->breakpoints_length++;
-
-		qsort(rios->breakpoints, rios->breakpoints_length, sizeof(ut64), compare_addrs);
-
+		qsort (rios->breakpoints, rios->breakpoints_length, sizeof (ut64), compare_addrs);
 	} else {
 		size_t i;
 		ssize_t idx = find_breakpoint(b->addr, rios->breakpoints, rios->breakpoints_length);
