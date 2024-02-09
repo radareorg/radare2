@@ -24,7 +24,6 @@ bool test_get_glibc_version (void) {
 	version = GH (get_glibc_version) (core, "bins/elf/libc.so.6");
 	glibc_version = (int)round ((version * 100));
 	mu_assert_eq (glibc_version, 228, "Incorrect libc version, expected 2.28");
-	printf("SECOND PASS\n");
 
 	// 2.31
 	version = GH (get_glibc_version) (core, "bins/elf/libc-2.31.so");

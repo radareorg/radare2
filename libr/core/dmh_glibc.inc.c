@@ -188,13 +188,13 @@ R_API double GH(get_glibc_version)(RCore *core, const char *libc_path) {
 	// If yes read version from there
 	GHT version_symbol = GH (get_va_symbol) (core, libc_path, "__libc_version");
 	if (version_symbol != GHT_MAX) {
-		FILE *libc_file = fopen (libc_path, "r ");
+		FILE *libc_file = fopen (libc_path, "rb");
 		if (libc_file == NULL) {
 			R_LOG_WARN ("resolve_glibc_version: Failed to open %s", libc_path);
 			return false;
 		}
 		// TODO: futureproof this
-		char version_buffer[5];
+		char version_buffer[5] = {0};
 		fseek (libc_file, version_symbol, SEEK_SET);
 		fread (version_buffer, 1, 4, libc_file);
 		fclose (libc_file);
@@ -267,7 +267,7 @@ static bool GH(resolve_glibc_version)(RCore *core) {
 			core->dbg->glibc_version = (int) (100 * version);
 			core->dbg->glibc_version_d = version;
 			core->dbg->glibc_version_resolved = true;
-			R_LOG_INFO("libc version %.2f set from dbg.glibc.version", core->dbg->glibc_version_d);
+			R_LOG_INFO ("libc version %.2f set from dbg.glibc.version", core->dbg->glibc_version_d);
 			return true;
 		}
 	}
@@ -300,7 +300,7 @@ static bool GH(resolve_glibc_version)(RCore *core) {
 		char version_buffer[315];
 		// TODO: better way snprintf to 4 chars warns
 		// note: ‘snprintf’ output between 4 and 314 bytes into a destination of size 4
-		snprintf(version_buffer, 314, "%.2f", version);
+		snprintf (version_buffer, sizeof (version_buffer), "%.2f", version);
 		r_config_set (core->config, "dbg.glibc.version", version_buffer);
 		return true;
 	}
