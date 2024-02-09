@@ -250,13 +250,12 @@ static RCoreHelpMessage help_msg_dm = {
 	"dml", " <file>", "load contents of file into the current map region",
 	"dmm", "[?][j*]", "list modules (libraries, binaries loaded in memory)",
 	"dmp", "[?] <address> <size> <perms>", "change page at <address> with <size>, protection <perms> (perm)",
-	"dms", "[?] <id> <mapaddr>", "take memory snapshot",
-	"dms-", " <id> <mapaddr>", "Restore memory snapshot",
-	"dmS", " [addr|libname] [sectname]", "list sections of target lib",
-	"dmS*", " [addr|libname] [sectname]", "list sections of target lib in radare commands",
+	"dms", "[?] <id> <mapaddr>", "take/store memory snapshot",
+	"dms-", " <id> <mapaddr>", "restore memory snapshot",
+	"dmS", "[*] [addr|libname] [sectname]", "list sections of target lib",
 	"dmL", " address size", "allocate <size> bytes at <address> and promote to huge page",
 	//"dm, " rw- esp 9K", "set 9KB of the stack as read+write (no exec)",
-	"TODO:", "", "map files in process memory. (dmf file @ [addr])",
+	// "TODO:", "", "map files in process memory. (dmf file @ [addr])",
 	NULL
 };
 
@@ -494,8 +493,9 @@ static RCoreHelpMessage help_msg_dt = {
 	"dtg", "", "graph call/ret trace",
 	"dtg*", "", "graph in agn/age commands. use .dtg*;aggi for visual",
 	"dtgi", "", "interactive debug trace",
-	"dts", "[?]", "trace sessions",
+	"dts", "[?]", "manage trace sessions, used for step back (EXPERIMENTAL)",
 	"dtt", " [tag]", "select trace tag (no arg unsets)",
+	"dtt.", "", "show current tag",
 	NULL
 };
 
@@ -3664,11 +3664,11 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 			if (symbol->type && !strcmp (symbol->type, R_BIN_TYPE_FUNC_STR)) {
 				if (r_anal_noreturn_at (core->anal, symbol->vaddr)) {
 					bpi = r_debug_bp_add (core->dbg, symbol->vaddr, hwbp, false, 0, NULL, 0);
+					const char *name = r_bin_name_tostring (symbol->name);
 					if (bpi) {
-						bpi->name = r_str_newf ("%s.%s", "sym", symbol->name);
+						bpi->name = r_str_newf ("%s.%s", "sym", name);
 					} else {
-						R_LOG_ERROR ("Unable to add a breakpoint into a noreturn function %s at addr 0x%"PFMT64x,
-									symbol->name, symbol->vaddr);
+						R_LOG_ERROR ("Failed to breakpoint on a noreturn function %s at addr 0x%"PFMT64x, name, symbol->vaddr);
 					}
 				}
 			}
@@ -5423,7 +5423,9 @@ static int cmd_debug(void *data, const char *input) {
 			}
 			break;
 		case 't': // "dtt"
-			if (input[2]) {
+			if (input[2] == '.') {
+				r_cons_printf ("%d\n", core->dbg->trace->tag);
+			} else if (input[2]) {
 				r_debug_trace_tag (core->dbg, atoi (input + 3));
 			} else {
 				r_debug_trace_tag (core->dbg, 0);
@@ -5617,33 +5619,45 @@ static int cmd_debug(void *data, const char *input) {
 				}
 				if (core->dbg->session) {
 					R_LOG_INFO ("Session already started");
-					break;
+				} else {
+					core->dbg->session = r_debug_session_new ();
+					r_debug_add_checkpoint (core->dbg);
 				}
-				core->dbg->session = r_debug_session_new ();
-				r_debug_add_checkpoint (core->dbg);
 				break;
 			case '-': // "dts-"
-				if (!core->dbg->session) {
+				if (core->dbg->session) {
+					r_debug_session_free (core->dbg->session);
+					core->dbg->session = NULL;
+				} else {
 					R_LOG_INFO ("No session started");
-					break;
 				}
-				r_debug_session_free (core->dbg->session);
-				core->dbg->session = NULL;
 				break;
 			case 't': // "dtst"
-				if (!core->dbg->session) {
+				if (core->dbg->session) {
+					const char *sname = r_str_trim_head_ro (input + 3);
+					if (R_STR_ISNOTEMPTY (sname)) {
+						r_debug_session_save (core->dbg->session, sname);
+					} else {
+						R_LOG_ERROR ("Missing argument");
+					}
+				} else {
 					R_LOG_INFO ("No session started");
-					break;
 				}
-				r_debug_session_save (core->dbg->session, input + 4);
 				break;
 			case 'f': // "dtsf"
 				if (core->dbg->session) {
 					r_debug_session_free (core->dbg->session);
 					core->dbg->session = NULL;
 				}
-				core->dbg->session = r_debug_session_new ();
-				r_debug_session_load (core->dbg, input + 4);
+				{
+					const char *sname = r_str_trim_head_ro (input + 3);
+					if (R_STR_ISNOTEMPTY (sname)) {
+						core->dbg->session = r_debug_session_new ();
+						r_debug_session_load (core->dbg, sname);
+					} else {
+						R_LOG_ERROR ("Missing argument");
+					}
+				}
 				break;
 			case 'm': // "dtsm"
 				if (core->dbg->session) {
@@ -5657,7 +5671,6 @@ static int cmd_debug(void *data, const char *input) {
 		case '?':
 		default:
 			r_core_cmd_help (core, help_msg_dt);
-			r_cons_printf ("Current Tag: %d\n", core->dbg->trace->tag);
 			break;
 		}
 		break;
@@ -5730,7 +5743,7 @@ static int cmd_debug(void *data, const char *input) {
 			RDebugReasonType stop = r_debug_stop_reason (core->dbg);
 			switch (input[1]) {
 			case '\0': // "di"
-				if (r_config_get_b (core->config, "cfg.debug")) {
+				if (!r_config_get_b (core->config, "cfg.debug")) {
 					R_LOG_WARN ("No debugee information available when not using the debugger");
 				} else {
 #define P r_cons_printf

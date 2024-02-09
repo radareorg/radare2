@@ -4250,22 +4250,23 @@ static void setsymord(ELFOBJ* eobj, ut32 ord, RBinSymbol *ptr) {
 	}
 }
 
-static void _set_arm_thumb_bits(struct Elf_(obj_t) *eo, RBinSymbol **sym) {
+static void _set_arm_thumb_bits(struct Elf_(obj_t) *eo, RBinSymbol **symp) {
 	int bin_bits = Elf_(get_bits) (eo);
-	RBinSymbol *ptr = *sym;
-	int len = strlen (ptr->name);
-	if (ptr->name[0] == '$' && (len >= 2 && !ptr->name[2])) {
-		switch (ptr->name[1]) {
+	RBinSymbol *sym = *symp;
+	const char *name = r_bin_name_tostring2 (sym->name, 'o');
+	int len = strlen (name);
+	if (name[0] == '$' && (len >= 2 && !name[2])) {
+		switch (name[1]) {
 		case 'a' : // arm
-			ptr->bits = 32;
+			sym->bits = 32;
 			return;
 		case 't': // thumb
-			ptr->bits = 16;
-			if (ptr->vaddr & 1) {
-				ptr->vaddr--;
+			sym->bits = 16;
+			if (sym->vaddr & 1) {
+				sym->vaddr--;
 			}
-			if (ptr->paddr & 1) {
-				ptr->paddr--;
+			if (sym->paddr & 1) {
+				sym->paddr--;
 			}
 			return;
 		case 'd': // data
@@ -4274,24 +4275,24 @@ static void _set_arm_thumb_bits(struct Elf_(obj_t) *eo, RBinSymbol **sym) {
 			break;
 		}
 	}
-	ptr->bits = bin_bits;
+	sym->bits = bin_bits;
 	if (bin_bits != 64) {
-		ptr->bits = 32;
-		if (ptr->paddr != UT64_MAX) {
-			if (ptr->vaddr & 1) {
-				ptr->vaddr--;
-				ptr->bits = 16;
+		sym->bits = 32;
+		if (sym->paddr != UT64_MAX) {
+			if (sym->vaddr & 1) {
+				sym->vaddr--;
+				sym->bits = 16;
 			}
-			if (ptr->paddr & 1) {
-				ptr->paddr--;
-				ptr->bits = 16;
+			if (sym->paddr & 1) {
+				sym->paddr--;
+				sym->bits = 16;
 			}
 		}
 	}
 }
 
 // XXX this is slow because we can directly use RBinSymbol instead of RBinElfSymbol imho
-RBinSymbol *Elf_(convert_symbol)(ELFOBJ *eo, RBinElfSymbol *symbol, const char *namefmt) {
+RBinSymbol *Elf_(convert_symbol)(ELFOBJ *eo, RBinElfSymbol *symbol) {
 	ut64 paddr, vaddr;
 	if (symbol->is_vaddr) {
 		paddr = UT64_MAX;
@@ -4301,10 +4302,9 @@ RBinSymbol *Elf_(convert_symbol)(ELFOBJ *eo, RBinElfSymbol *symbol, const char *
 		vaddr = Elf_(p2v_new) (eo, paddr);
 	}
 
-	// unnecessary alo
 	RBinSymbol *ptr = R_NEW0 (RBinSymbol);
 	if (R_LIKELY (ptr)) {
-		ptr->name = symbol->name[0] ? r_str_newf (namefmt, &symbol->name[0]) : strdup ("");
+		ptr->name = r_bin_name_new (symbol->name);
 		ptr->forwarder = "NONE";
 		ptr->bind = symbol->bind;
 		ptr->type = symbol->type;
@@ -4314,7 +4314,7 @@ RBinSymbol *Elf_(convert_symbol)(ELFOBJ *eo, RBinElfSymbol *symbol, const char *
 		ptr->size = symbol->size;
 		ptr->ordinal = symbol->ordinal;
 		// detect thumb
-		if (eo->ehdr.e_machine == EM_ARM && *ptr->name) {
+		if (eo->ehdr.e_machine == EM_ARM) {
 			_set_arm_thumb_bits (eo, &ptr);
 		}
 	}
@@ -4325,10 +4325,10 @@ static RBinElfSection *getsection_byname(ELFOBJ *eo, const char *name, size_t *_
 	RBinElfSection *s;
 	size_t i = 0;
 	r_vector_foreach (&eo->g_sections, s) {
-		if (!strcmp (s->name, ".gnu_debugdata")) {
+		if (!strcmp (s->name, name)) {
 			return s;
-			i++;
 		}
+		i++;
 	}
 	*_i = i;
 	return NULL;
@@ -4462,7 +4462,7 @@ static RVecRBinElfSymbol *_load_additional_imported_symbols(ELFOBJ *eo, ImportIn
 	const int limit = eo->limit;
 	int count = 0;
 	R_VEC_FOREACH (ii->memory.symbols_vec, symbol) {
-		RBinSymbol *isym = Elf_(convert_symbol) (eo, symbol, "%s");
+		RBinSymbol *isym = Elf_(convert_symbol) (eo, symbol);
 		if (!isym) {
 			continue;
 		}

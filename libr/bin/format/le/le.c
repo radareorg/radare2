@@ -79,7 +79,7 @@ static RBinSymbol *__get_symbol(RBinLEObj *bin, ut64 *offset) {
 		r_bin_symbol_free (sym);
 		return NULL;
 	}
-	sym->name = name;
+	sym->name = r_bin_name_new (name);
 	ut16 entry_idx = r_buf_read_le16_at (bin->buf, *offset);
 	*offset += 2;
 	sym->ordinal = entry_idx;
@@ -206,7 +206,12 @@ R_IPI RList *r_bin_le_get_imports(RBinLEObj *bin) {
 		if (!imp) {
 			break;
 		}
-		imp->name = __read_nonnull_str_at (bin->buf, &offset);
+		const char *name = __read_nonnull_str_at (bin->buf, &offset);
+		if (!name) {
+			r_bin_import_free (imp);
+			break;
+		}
+		imp->name = r_bin_name_new (name);
 		if (!imp->name) {
 			r_bin_import_free (imp);
 			break;
@@ -215,7 +220,6 @@ R_IPI RList *r_bin_le_get_imports(RBinLEObj *bin) {
 		r_list_append (l, imp);
 	}
 	return l;
-
 }
 
 R_IPI RList *r_bin_le_get_entrypoints(RBinLEObj *bin) {
@@ -572,7 +576,7 @@ R_IPI RList *r_bin_le_get_relocs(RBinLEObj *bin) {
 				ordinal = r_buf_read_ble16_at (bin->buf, offset, h->worder);
 				offset += sizeof (ut16);
 			}
-			imp->name = r_str_newf ("%s.%u", mod_name, ordinal);
+			imp->name = r_bin_name_new_from (r_str_newf ("%s.%u", mod_name, ordinal));
 			imp->ordinal = ordinal;
 			rel->import = imp;
 			free (mod_name);
@@ -595,7 +599,7 @@ R_IPI RList *r_bin_le_get_relocs(RBinLEObj *bin) {
 			ut64 off = (ut64)h->impproc + nameoff + bin->headerOff;
 			char *proc_name = __read_nonnull_str_at (bin->buf, &off);
 			char *mod_name = __get_modname_by_ord (bin, ordinal);
-			imp->name = r_str_newf ("%s.%s", r_str_get (mod_name), r_str_get (proc_name));
+			imp->name = r_bin_name_new_from (r_str_newf ("%s.%s", r_str_get (mod_name), r_str_get (proc_name)));
 			rel->import = imp;
 			break;
 		}

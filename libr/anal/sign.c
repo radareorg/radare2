@@ -868,6 +868,9 @@ static RSignItem *item_from_func(RAnal *a, RAnalFunction *fcn, const char *name)
 	}
 	RSignItem *it = item_new_named (a, name? name: fcn->name);
 	if (it) {
+		if (name && strcmp (name, fcn->name)) {
+			it->realname = strdup (name);
+		}
 		r_sign_addto_item (a, it, fcn, R_SIGN_GRAPH);
 		r_sign_addto_item (a, it, fcn, R_SIGN_BYTES);
 		r_sign_addto_item (a, it, fcn, R_SIGN_XREFS);
@@ -906,7 +909,7 @@ static char *get_unique_name(Sdb *sdb, const char *name, const RSpace *sp) {
 	ut32 i;
 	for (i = 2; i < UT32_MAX; i++) {
 		char *unique = r_str_newf ("%s_%d", name, i);
-		if (!unique || !name_exists (sdb, unique, sp)) {
+		if (!name_exists (sdb, unique, sp)) {
 			return unique;
 		}
 		free (unique);
@@ -914,41 +917,51 @@ static char *get_unique_name(Sdb *sdb, const char *name, const RSpace *sp) {
 	return NULL;
 }
 
-static char *real_function_name(RAnal *a, ut64 addr, const char *name) {
+static char *real_function_name(RAnal *a, RAnalFunction *fcn) {
 	RCore *core = a->coreb.core;
-	if (a->coreb.cfggeti (core, "zign.mangled")) {
-		// resolve the manged name
-		char *res = a->coreb.cmdstrf (core, "is,vaddr/eq/0x%"PFMT64x",name/cols,a/head/1,:quiet", addr);
-		if (res) {
-			r_str_trim (res);
-			if (*res) {
-				return res;
-			}
+#if 0
+	if (fcn->realname) {
+	//	return strdup (fcn->realname); // r_bin_name_tostring2 (fcn->name, 'o'));
+	}
+	return strdup (fcn->name); // r_bin_name_tostring2 (fcn->name, 'o'));
+#endif
+#if 1
+	ut64 addr = fcn->addr;
+	const char *name = fcn->name;
+	// resolve the manged name
+	char *res = a->coreb.cmdstrf (core, "is,vaddr/eq/0x%"PFMT64x",demangled/cols,a/head/1,:quiet", addr);
+	if (res) {
+		r_str_trim (res);
+		if (*res) {
+			return res;
 		}
 	}
 	return strdup (name);
+#endif
 }
 
 R_API int r_sign_all_functions(RAnal *a, bool merge) {
-	RAnalFunction *fcni = NULL;
+	RAnalFunction *fcn = NULL;
 	RListIter *iter = NULL;
 	int count = 0;
 	r_list_sort (a->fcns, fcn_sort);
 	const RSpace *sp = r_spaces_current (&a->zign_spaces);
 	char *prev_name = NULL;
 	r_cons_break_push (NULL, NULL);
-	r_list_foreach_prev (a->fcns, iter, fcni) {
+	RCore *core = a->coreb.core;
+	bool do_mangled = a->coreb.cfggeti (core, "zign.mangled");
+	r_list_foreach_prev (a->fcns, iter, fcn) {
 		if (r_cons_is_breaked ()) {
 			break;
 		}
-		char *realname = real_function_name (a, fcni->addr, fcni->name);
+		char *realname = do_mangled? strdup (fcn->name): real_function_name (a, fcn);
 		RSignItem *it = NULL;
 		if (merge || !name_exists (a->sdb_zigns, realname, sp)) {
-			it = item_from_func (a, fcni, realname);
+			it = item_from_func (a, fcn, realname);
 		} else {
-			char *name = get_unique_name (a->sdb_zigns, fcni->name, sp);
+			char *name = get_unique_name (a->sdb_zigns, fcn->name, sp);
 			if (name) {
-				it = item_from_func (a, fcni, name);
+				it = item_from_func (a, fcn, name);
 			}
 			free (name);
 			free (realname);
@@ -1405,6 +1418,7 @@ R_API RList *r_sign_find_closest_fcn(RAnal *a, RSignItem *it, int count, double 
 		// turn function into signature item
 		RSignItem *fsig = r_sign_item_new ();
 		if (!fsig) {
+			free (data.bytes_combined);
 			r_list_free (output);
 			return NULL;
 		}
@@ -1415,7 +1429,7 @@ R_API RList *r_sign_find_closest_fcn(RAnal *a, RSignItem *it, int count, double 
 			r_sign_addto_item (a, fsig, fcn, R_SIGN_GRAPH);
 		}
 		r_sign_addto_item (a, fsig, fcn, R_SIGN_OFFSET);
-		fsig->name = r_str_new (fcn->name);
+		fsig->name = strdup (fcn->name);
 
 		// maybe add signature item to output list
 		closest_match_update (fsig, &data);
@@ -3027,7 +3041,7 @@ static int signdb_type(const char *file) {
 }
 
 static bool sign_load_r2(RAnal *a, const char *path) {
-	char *cmd = r_str_newf (". %s", path);
+	char *cmd = r_str_newf ("'. %s", path);
 	a->coreb.cmd (a->coreb.core, cmd);
 	free (cmd);
 	return true;
@@ -3040,11 +3054,28 @@ static bool load_json_signature(RAnal *a, const RJson *child) {
 	}
 	RSignItem *it = r_sign_item_new ();
 
+#if 1
 	const RJson *name = r_json_get (child, "name");
 	if (name && name->type == R_JSON_STRING) {
 		it->name = strdup (name->str_value);
 	}
-	const RJson *rname = r_json_get (child, "realname");
+	const RJson *rname = r_json_get (child, "rawname");
+	if (!rname) {
+		rname = r_json_get (child, "realname");
+	}
+#else
+	const RJson *name = r_json_get (child, "flagname");
+	if (!name) {
+		name = r_json_get (child, "name");
+	}
+	if (name && name->type == R_JSON_STRING) {
+		it->name = strdup (name->str_value);
+	}
+	const RJson *rname = r_json_get (child, "rawname");
+	if (!rname) {
+		rname = r_json_get (child, "realname");
+	}
+#endif
 	if (rname && rname->type == R_JSON_STRING) {
 		it->realname = strdup (rname->str_value);
 	}
@@ -3271,8 +3302,8 @@ R_API RSignOptions *r_sign_options_new(const char *bytes_thresh, const char *gra
 		return NULL;
 	}
 
-	options->bytes_diff_threshold = r_num_get_float (NULL, bytes_thresh);
-	options->graph_diff_threshold = r_num_get_float (NULL, graph_thresh);
+	options->bytes_diff_threshold = r_num_get_double (NULL, bytes_thresh);
+	options->graph_diff_threshold = r_num_get_double (NULL, graph_thresh);
 
 	if (options->bytes_diff_threshold > 1.0) {
 		options->bytes_diff_threshold = 1.0;

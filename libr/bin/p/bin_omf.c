@@ -117,7 +117,7 @@ static RList *symbols(RBinFile *bf) {
 			return ret;
 		}
 		sym_omf = ((r_bin_omf_obj *) bf->bo->bin_obj)->symbols[ct_sym++];
-		sym->name = strdup (sym_omf->name);
+		sym->name = r_bin_name_new (sym_omf->name);
 		sym->forwarder = "NONE";
 		sym->paddr = r_bin_omf_get_paddr_sym (bf->bo->bin_obj, sym_omf);
 		sym->vaddr = r_bin_omf_get_vaddr_sym (bf->bo->bin_obj, sym_omf);

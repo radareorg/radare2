@@ -371,7 +371,7 @@ static bool symbols_vec(RBinFile *bf) {
 			// add it to the list of symbols only if it doesn't point to SHT_NULL
 			continue;
 		}
-		RBinSymbol *ptr = Elf_(convert_symbol) (eo, symbol, "%s");
+		RBinSymbol *ptr = Elf_(convert_symbol) (eo, symbol);
 		if (!ptr) {
 			break;
 		}
@@ -391,7 +391,7 @@ static bool symbols_vec(RBinFile *bf) {
 			continue;
 		}
 
-		RBinSymbol *ptr = Elf_(convert_symbol) (eo, symbol, "%s");
+		RBinSymbol *ptr = Elf_(convert_symbol) (eo, symbol);
 		if (!ptr) {
 			break;
 		}
@@ -428,7 +428,7 @@ static RList* imports(RBinFile *bf) {
 		if (!ptr) {
 			break;
 		}
-		ptr->name = strdup (is->name);
+		ptr->name = r_bin_name_new (is->name);
 		ptr->bind = is->bind;
 		ptr->type = is->type;
 		ptr->ordinal = is->ordinal;
@@ -972,15 +972,16 @@ static void lookup_symbols(RBinFile *bf, RBinInfo *ret) {
 			if (ret->has_canary && is_rust) {
 				break;
 			}
-			if (!strcmp (symbol->name, "_NSConcreteGlobalBlock")) {
+			const char *oname = r_bin_name_tostring2 (symbol->name, 'o');
+			if (!strcmp (oname, "_NSConcreteGlobalBlock")) {
 				ret->lang = (ret->lang && !strcmp (ret->lang, "c++"))? "c++ blocks ext.": "c blocks ext.";
 			}
 			if (!ret->has_canary) {
-				if (strstr (symbol->name, "__stack_chk_fail") || strstr (symbol->name, "__stack_smash_handler")) {
+				if (strstr (oname, "__stack_chk_fail") || strstr (oname, "__stack_smash_handler")) {
 					ret->has_canary = true;
 				}
 			}
-			if (!is_rust && !strcmp (symbol->name, "__rust_oom")) {
+			if (!is_rust && !strcmp (oname, "__rust_oom")) {
 				is_rust = true;
 				ret->lang = "rust";
 			}
@@ -1029,7 +1030,7 @@ static bool has_sanitizers(RBinFile *bf) {
 	RListIter *iter;
 	RBinImport *import;
 	r_list_foreach (imports_list, iter, import) {
-		const char *iname = import->name;
+		const char *iname = r_bin_name_tostring2 (import->name, 'o');
 		if (*iname == '_' && (strstr (iname, "__sanitizer") || strstr (iname, "__ubsan"))) {
 			ret = true;
 			break;

@@ -117,7 +117,6 @@ EXPECT=<<EOF
 0   0x00000d8f 0x00000c20 LOCAL  SECT 4        .text$mn
 0   0x00000ec2 0x00000d30 LOCAL  SECT 4        .text$mn
             ;-- section..text_mn_5:
-            ;-- .text$mn:
             ;-- ??1FooBar@@QAE@XZ:
             0x00000d30      55             push ebp                    ; [05] -r-x section size 42 named .text$mn-5
             0x00000d31      8bec           mov ebp, esp
@@ -150,7 +149,7 @@ ARGS=-e bin.relocs.apply=1
 FILE=bins/coff/coff.obj
 CMDS=pd 2 @ sym.main+6
 EXPECT=<<EOF
-            0x00000006      4c8d052300..   lea r8, [0x00000030]        ; sym..data ; "Win64 assembly"; RELOC 32 .data @ 0x00000030
+            0x00000006      4c8d052300..   lea r8, [0x00000030]        ; section..data_1 ; "Win64 assembly"; RELOC 32 .data @ 0x00000030
             0x0000000d      488d152b00..   lea rdx, [0x0000003f]       ; str.Coffee_time_ ; "Coffee time!"; RELOC 32 .data @ 0x00000030 + 0xf
 EOF
 RUN

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2014-2023 - pancake, condret */
+/* radare - LGPL - Copyright 2014-2024 - pancake, condret */
 
 #define R_LOG_ORIGIN "esil"
 
@@ -8,18 +8,13 @@
 #define FE_OVERFLOW 0
 #define feclearexcept(x)
 #endif
-// should these be here?
 #include <math.h>
 #include <float.h>
 #include <fenv.h>
 
 #define ESIL_MACRO 0
 // TODO: replace esil->verbose with R_LOG_DEBUG
-#define IFDBG if (esil && esil->verbose > 1)
-
-static inline void free_ornot(void *p) {
-	R_TAG_FREE (p);
-}
+#define IFDBG if (esil->verbose > 1)
 
 /* Returns the number that has bits + 1 least significant bits set. */
 static inline ut64 genmask(int bits) {
@@ -34,7 +29,7 @@ static inline ut64 genmask(int bits) {
 }
 
 static bool isnum(REsil *esil, const char *str, ut64 *num) {
-	r_return_val_if_fail (esil && str, false);
+	R_RETURN_VAL_IF_FAIL (esil && str, false);
 	if (IS_DIGIT (*str)) {
 		if (num) {
 			*num = r_num_get (NULL, str);
@@ -49,13 +44,13 @@ static bool isnum(REsil *esil, const char *str, ut64 *num) {
 
 static bool r_esil_runpending(REsil *esil, char *pending) {
 	if (pending) {
-		free_ornot (esil->pending);
+		R_TAG_FREE (esil->pending);
 		esil->pending = pending;
 	} else if (esil->pending) {
 		char *expr = esil->pending;
 		esil->pending = NULL;
 		r_esil_parse (esil, R_TAG_NOP (expr));
-		free_ornot (expr);
+		R_TAG_FREE (expr);
 		return true;
 	}
 	return false;
@@ -80,8 +75,6 @@ static bool popRN(REsil *esil, ut64 *n) {
 	}
 	return false;
 }
-
-/* R_ESIL API */
 
 static void esil_ops_free(HtPPKv *kv) {
 	if (R_LIKELY (kv)) {
@@ -120,7 +113,7 @@ R_API REsil *r_esil_new(int stacksize, int iotrap, unsigned int addrsize) {
 }
 
 R_API bool r_esil_set_op(REsil *esil, const char *op, REsilOpCb code, ut32 push, ut32 pop, ut32 type) {
-	r_return_val_if_fail (code && R_STR_ISNOTEMPTY (op) && esil && esil->ops, false);
+	R_RETURN_VAL_IF_FAIL (code && R_STR_ISNOTEMPTY (op) && esil && esil->ops, false);
 	REsilOp *eop = ht_pp_find (esil->ops, op, NULL);
 	if (!eop) {
 		eop = R_NEW (REsilOp);
@@ -141,17 +134,17 @@ R_API bool r_esil_set_op(REsil *esil, const char *op, REsilOpCb code, ut32 push,
 }
 
 R_API REsilOp *r_esil_get_op(REsil *esil, const char *op) {
-	r_return_val_if_fail (esil && esil->ops && R_STR_ISNOTEMPTY (op), NULL);
+	R_RETURN_VAL_IF_FAIL (esil && esil->ops && R_STR_ISNOTEMPTY (op), NULL);
 	return (REsilOp *) ht_pp_find (esil->ops, op, NULL);
 }
 
 R_API void r_esil_del_op(REsil *esil, const char *op) {
-	r_return_if_fail (esil && esil->ops && R_STR_ISNOTEMPTY (op));
+	R_RETURN_IF_FAIL (esil && esil->ops && R_STR_ISNOTEMPTY (op));
 	ht_pp_delete (esil->ops, op);
 }
 
 static bool r_esil_fire_trap(REsil *esil, int trap_type, int trap_code) {
-	r_return_val_if_fail (esil, false);
+	R_RETURN_VAL_IF_FAIL (esil, false);
 	if (esil->cmd && R_STR_ISNOTEMPTY (esil->cmd_trap)) {
 		if (esil->cmd (esil, esil->cmd_trap, trap_type, trap_code)) {
 			return true;
@@ -166,7 +159,7 @@ static bool r_esil_fire_trap(REsil *esil, int trap_type, int trap_code) {
 }
 
 R_API void r_esil_set_pc(REsil *esil, ut64 addr) {
-	r_return_if_fail (esil);
+	R_RETURN_IF_FAIL (esil);
 	// r_reg_set_value_by_role (esil->anal->reg, R_REG_NAME_PC, addr);
 	esil->addr = addr;
 }
@@ -212,7 +205,7 @@ R_API void r_esil_free(REsil *esil) {
 }
 
 static ut8 esil_internal_sizeof_reg(REsil *esil, const char *r) {
-	r_return_val_if_fail (esil && esil->anal && esil->anal->reg && r, 0);
+	R_RETURN_VAL_IF_FAIL (esil && esil->anal && esil->anal->reg && r, 0);
 	RRegItem *ri = r_reg_get (esil->anal->reg, r, -1);
 	if (ri) {
 		ut8 reg_size = ri->size; // why a reg size cant be > 256 bits?
@@ -223,12 +216,14 @@ static ut8 esil_internal_sizeof_reg(REsil *esil, const char *r) {
 }
 
 static bool alignCheck(REsil *esil, ut64 addr) {
-	const int da = esil->data_align; // r_anal_archinfo (esil->anal, R_ANAL_ARCHINFO_DATA_ALIGN);
+	// r_anal_archinfo (esil->anal, R_ANAL_ARCHINFO_DATA_ALIGN);
+	const unsigned int da = esil->data_align;
 	return !(da > 0 && addr % da);
 }
 
 static bool internal_esil_mem_read(REsil *esil, ut64 addr, ut8 *buf, int len) {
-	r_return_val_if_fail (esil && esil->anal, false);
+	R_RETURN_VAL_IF_FAIL (esil && esil->anal, false);
+
 	RIOBind *iob = &esil->anal->iob;
 	RIO *io = iob->io;
 	if (!io || addr == UT64_MAX) {
@@ -248,7 +243,7 @@ static bool internal_esil_mem_read(REsil *esil, ut64 addr, ut8 *buf, int len) {
 			}
 		}
 	}
-	//TODO: Check if error return from read_at.(on previous version of r2 this call always return len)
+	// TODO: Check if read_at fails
 	(void)esil->anal->iob.read_at (io, addr, buf, len);
 	// check if request address is mapped , if don't fire trap and esil ioer callback
 	// now with siol, read_at return true/false can't be used to check error vs len
@@ -265,7 +260,7 @@ static bool internal_esil_mem_read(REsil *esil, ut64 addr, ut8 *buf, int len) {
 }
 
 static bool internal_esil_mem_read_no_null(REsil *esil, ut64 addr, ut8 *buf, int len) {
-	r_return_val_if_fail (esil && esil->anal, false);
+	R_RETURN_VAL_IF_FAIL (esil && esil->anal, false);
 	RIOBind *iob = &esil->anal->iob;
 	RIO *io = iob->io;
 	if (!io || addr == UT64_MAX) {
@@ -292,7 +287,7 @@ static bool internal_esil_mem_read_no_null(REsil *esil, ut64 addr, ut8 *buf, int
 }
 
 R_API bool r_esil_mem_read(REsil *esil, ut64 addr, ut8 *buf, int len) {
-	r_return_val_if_fail (buf && esil, 0);
+	R_RETURN_VAL_IF_FAIL (buf && esil, 0);
 	bool ret = false;
 	addr &= esil->addrmask;
 	if (esil->cb.hook_mem_read) {
@@ -324,7 +319,7 @@ R_API bool r_esil_mem_read(REsil *esil, ut64 addr, ut8 *buf, int len) {
 }
 
 static bool internal_esil_mem_write(REsil *esil, ut64 addr, const ut8 *buf, int len) {
-	r_return_val_if_fail (esil && esil->anal, false);
+	R_RETURN_VAL_IF_FAIL (esil && esil->anal, false);
 	bool ret = false;
 	if (esil->nowrite) {
 		return false;
@@ -365,7 +360,7 @@ static bool internal_esil_mem_write(REsil *esil, ut64 addr, const ut8 *buf, int 
 }
 
 static bool internal_esil_mem_write_no_null(REsil *esil, ut64 addr, const ut8 *buf, int len) {
-	r_return_val_if_fail (esil && esil->anal, false);
+	R_RETURN_VAL_IF_FAIL (esil && esil->anal, false);
 	RIOBind *iob = &esil->anal->iob;
 	RIO *io = iob->io;
 	bool ret = false;
@@ -391,7 +386,7 @@ static bool internal_esil_mem_write_no_null(REsil *esil, ut64 addr, const ut8 *b
 }
 
 R_API bool r_esil_mem_write(REsil *esil, ut64 addr, const ut8 *buf, int len) {
-	r_return_val_if_fail (esil && buf, false);
+	R_RETURN_VAL_IF_FAIL (esil && buf, false);
 	bool ret = false;
 	addr &= esil->addrmask;
 	IFDBG {
@@ -412,7 +407,7 @@ R_API bool r_esil_mem_write(REsil *esil, ut64 addr, const ut8 *buf, int len) {
 }
 
 static bool internal_esil_reg_read(REsil *esil, const char *regname, ut64 *num, int *size) {
-	r_return_val_if_fail (esil && esil->anal, false);
+	R_RETURN_VAL_IF_FAIL (esil && esil->anal, false);
 	RRegItem *ri = r_reg_get (esil->anal->reg, regname, -1);
 	if (ri) {
 		if (size) {
@@ -431,7 +426,13 @@ static bool internal_esil_reg_read(REsil *esil, const char *regname, ut64 *num, 
 }
 
 static bool internal_esil_reg_write(REsil *esil, const char *regname, ut64 num) {
-	r_return_val_if_fail (esil && esil->anal, false);
+	R_RETURN_VAL_IF_FAIL (esil && esil->anal, false);
+#if 1
+	if (r_reg_setv (esil->anal->reg, regname, num)) {
+		return true;
+	}
+	R_LOG_DEBUG ("Register %s does not exist", regname);
+#else
 	RRegItem *ri = r_reg_get (esil->anal->reg, regname, -1);
 	if (ri) {
 		r_reg_set_value (esil->anal->reg, ri, num);
@@ -439,6 +440,7 @@ static bool internal_esil_reg_write(REsil *esil, const char *regname, ut64 num) 
 		r_unref (ri);
 		return true;
 	}
+#endif
 	return false;
 }
 
@@ -447,7 +449,7 @@ static bool internal_esil_reg_write(REsil *esil, const char *regname, ut64 num) 
 //WHY?
 //	- condret
 static bool internal_esil_reg_write_no_null(REsil *esil, const char *regname, ut64 num) {
-	r_return_val_if_fail (esil && esil->anal && esil->anal->reg, false);
+	R_RETURN_VAL_IF_FAIL (esil && esil->anal && esil->anal->reg, false);
 	RReg *reg = esil->anal->reg;
 
 	const char *pc = r_reg_get_name (reg, R_REG_NAME_PC);
@@ -472,6 +474,8 @@ static bool internal_esil_reg_write_no_null(REsil *esil, const char *regname, ut
 		r_unref (ri);
 		return true;
 	}
+	R_LOG_DEBUG ("Register %s does not exist", regname);
+	// assert trap in esil
 	r_unref (ri);
 	return false;
 }
@@ -483,7 +487,7 @@ R_API bool r_esil_pushnum(REsil *esil, ut64 num) {
 }
 
 R_API bool r_esil_push(REsil *esil, const char *str) {
-	r_return_val_if_fail (esil && R_STR_ISNOTEMPTY (str), false);
+	R_RETURN_VAL_IF_FAIL (esil && R_STR_ISNOTEMPTY (str), false);
 	if (esil->stackptr > (esil->stacksize - 1)) {
 		return false;
 	}
@@ -492,7 +496,7 @@ R_API bool r_esil_push(REsil *esil, const char *str) {
 }
 
 R_API char *r_esil_pop(REsil *esil) {
-	r_return_val_if_fail (esil, NULL);
+	R_RETURN_VAL_IF_FAIL (esil, NULL);
 	if (esil->stackptr < 1) {
 		return NULL;
 	}
@@ -509,7 +513,7 @@ static int not_a_number(REsil *esil, const char *str) {
 }
 
 R_API int r_esil_get_parm_type(REsil *esil, const char *str) {
-	r_return_val_if_fail (esil && str, R_ESIL_PARM_INVALID);
+	R_RETURN_VAL_IF_FAIL (esil && str, R_ESIL_PARM_INVALID);
 	if (R_STR_ISEMPTY (str)) {
 		return R_ESIL_PARM_INVALID;
 	}
@@ -529,7 +533,7 @@ R_API int r_esil_get_parm_type(REsil *esil, const char *str) {
 }
 
 static bool get_parm_size(REsil *esil, const char *str, ut64 *num, int *size) {
-	r_return_val_if_fail (esil && num, false);
+	R_RETURN_VAL_IF_FAIL (esil && num, false);
 	if (size) {
 		*size = 0;
 	}
@@ -558,7 +562,7 @@ R_API int r_esil_get_parm(REsil *esil, const char *str, ut64 *num) {
 }
 
 R_API bool r_esil_reg_write(REsil *esil, const char *dst, ut64 num) {
-	r_return_val_if_fail (esil && dst, false);
+	R_RETURN_VAL_IF_FAIL (esil && dst, false);
 	bool ret = false;
 	R_LOG_DEBUG ("%s=0x%" PFMT64x, dst, num);
 	if (esil->cb.hook_reg_write) {
@@ -579,7 +583,7 @@ R_API bool r_esil_reg_read_nocallback(REsil *esil, const char *regname, ut64 *nu
 }
 
 R_API bool r_esil_reg_read(REsil *esil, const char *regname, ut64 *num, int *size) {
-	r_return_val_if_fail (esil && regname, false);
+	R_RETURN_VAL_IF_FAIL (esil && regname, false);
 	bool ret = false;
 	ut64 localnum = 0LL; // XXX why is this necessary?
 	if (!num) {
@@ -694,7 +698,7 @@ static bool esil_cf(REsil *esil) {
 
 // checks if there was a borrow from bit x (x,$b)
 static bool esil_bf(REsil *esil) {
-	r_return_val_if_fail (esil, false);
+	R_RETURN_VAL_IF_FAIL (esil, false);
 	char *src = r_esil_pop (esil);
 	if (!src) {
 		return false;
@@ -757,7 +761,7 @@ static bool esil_of(REsil *esil) {
 
 //checks sign bit at x (x,$s)
 static bool esil_sf(REsil *esil) {
-	r_return_val_if_fail (esil, false);
+	R_RETURN_VAL_IF_FAIL (esil, false);
 
 	char *p_size = r_esil_pop (esil);
 	if (!p_size) {
@@ -782,17 +786,17 @@ static bool esil_sf(REsil *esil) {
 }
 
 static bool esil_ds(REsil *esil) {
-	r_return_val_if_fail (esil, false);
+	R_RETURN_VAL_IF_FAIL (esil, false);
 	return r_esil_pushnum (esil, esil->delay);
 }
 
 static bool esil_jt(REsil *esil) {
-	r_return_val_if_fail (esil, false);
+	R_RETURN_VAL_IF_FAIL (esil, false);
 	return r_esil_pushnum (esil, esil->jump_target);
 }
 
 static bool esil_js(REsil *esil) {
-	r_return_val_if_fail (esil, false);
+	R_RETURN_VAL_IF_FAIL (esil, false);
 	return r_esil_pushnum (esil, esil->jump_target_set);
 }
 
@@ -802,13 +806,13 @@ static bool esil_js(REsil *esil) {
 // YES PLS KILL IT
 static bool esil_address(REsil *esil) {
 	R_LOG_WARN ("Support for esil operation $$ is about to end soon, avoid using it!");
-	r_return_val_if_fail (esil, false);
+	R_RETURN_VAL_IF_FAIL (esil, false);
 	// esil->address = r_reg_getv (esil->anal->reg, "pc");
 	return r_esil_pushnum (esil, esil->addr);
 }
 
 static bool esil_weak_eq(REsil *esil) {
-	r_return_val_if_fail (esil && esil->anal, false);
+	R_RETURN_VAL_IF_FAIL (esil && esil->anal, false);
 	char *dst = r_esil_pop (esil);
 	char *src = r_esil_pop (esil);
 
@@ -832,26 +836,26 @@ static bool esil_weak_eq(REsil *esil) {
 }
 
 static bool esil_eq(REsil *esil) {
-	r_return_val_if_fail (esil, false);
+	R_RETURN_VAL_IF_FAIL (esil, false);
 	bool ret = false;
 	ut64 num, num2;
 	char *dst = r_esil_pop (esil);
 	char *src = r_esil_pop (esil);
 	if (!src || !dst) {
-		R_LOG_DEBUG ("Missing elements in the esil stack for '=' at 0x%08"PFMT64x, esil->addr);
+		R_LOG_DEBUG ("esil_eq cant pop two values from stack at 0x%08"PFMT64x, esil->addr);
 		free (src);
 		free (dst);
 		return false;
 	}
 	bool is128reg = false;
 	bool ispacked = false;
-	if (dst) {
-		RRegItem *ri = r_reg_get (esil->anal->reg, dst, -1);
-		if (ri) {
-			is128reg = ri->size == 128;
-			ispacked = ri->packed_size > 0;
-			r_unref (ri);
-		}
+	RRegItem *ri = r_reg_get (esil->anal->reg, dst, -1);
+	if (ri) {
+		is128reg = ri->size == 128;
+		ispacked = ri->packed_size > 0;
+		r_unref (ri);
+	} else {
+		R_LOG_DEBUG ("esil_eq: %s is not a register", dst);
 	}
 	if (is128reg && esil->stackptr > 0) {
 		char *src2 = r_esil_pop (esil); // pop the higher 64bit value
@@ -1124,7 +1128,7 @@ static int signed_compare_gt(ut64 a, ut64 b, ut64 size) {
 }
 
 static void pushnums(REsil *esil, const char *src, ut64 num2, const char *dst, ut64 num) {
-	r_return_if_fail (esil);
+	R_RETURN_IF_FAIL (esil);
 	esil->old = num;
 	esil->cur = num - num2;
 	RReg *reg = esil->anal->reg;
@@ -1146,7 +1150,7 @@ static void pushnums(REsil *esil, const char *src, ut64 num2, const char *dst, u
 
 // This function also sets internal vars which is used in flag calculations.
 static bool esil_cmp(REsil *esil) {
-	r_return_val_if_fail (esil, false);
+	R_RETURN_VAL_IF_FAIL (esil, false);
 	ut64 num, num2;
 	bool ret = false;
 	char *dst = r_esil_pop (esil);
@@ -1603,7 +1607,7 @@ R_API const char *r_esil_trapstr(int type) {
 }
 
 R_API bool r_esil_dumpstack(REsil *esil) {
-	r_return_val_if_fail (esil, false);
+	R_RETURN_VAL_IF_FAIL (esil, false);
 	int i;
 	if (esil->trap) {
 		R_LOG_INFO ("ESIL TRAP type %d code 0x%08x %s",
@@ -1694,7 +1698,7 @@ static bool esil_signed_mod(REsil *esil) {
 			ret = true;
 		}
 	} else {
-		R_LOG_DEBUG ("esil_mod: invalid parameters");
+		R_LOG_DEBUG ("esil_smod: invalid parameters");
 	}
 	free (dst);
 	free (src);
@@ -2905,7 +2909,7 @@ static bool esil_num(REsil *esil) {
 
 /* duplicate the last element in the stack */
 static bool esil_dup(REsil *esil) {
-	r_return_val_if_fail (esil, false);
+	R_RETURN_VAL_IF_FAIL (esil, false);
 	const int stackptr = esil->stackptr;
 	if (!esil->stack || stackptr < 1 || stackptr > (esil->stacksize - 1)) {
 		R_LOG_WARN ("Nothing to dup");
@@ -2920,7 +2924,7 @@ static bool esil_dup(REsil *esil) {
 }
 
 static bool esil_swap(REsil *esil) {
-	r_return_val_if_fail (esil, false);
+	R_RETURN_VAL_IF_FAIL (esil, false);
 	const int stackptr = esil->stackptr;
 	if (!esil->stack || stackptr < 2) {
 		return false;
@@ -3610,7 +3614,7 @@ static const char *gotoWord(const char *str, int n) {
  * 3: normal continuation
  */
 static int eval_word(REsil *esil, const char *ostr, const char **str) {
-	r_return_val_if_fail (esil && str, 0);
+	R_RETURN_VAL_IF_FAIL (esil && str, 0);
 	if (!*str) {
 		return 0;
 	}
@@ -3652,7 +3656,7 @@ static bool __stepOut(REsil *esil, const char *cmd) {
 }
 
 R_API bool r_esil_parse(REsil *esil, const char *str) {
-	r_return_val_if_fail (esil, false);
+	R_RETURN_VAL_IF_FAIL (esil, false);
 #if 0
 	if (strstr (str, "(null)")) {
 		R_LOG_WARN ("-> 0x%"PFMT64x" %s", esil->address, str);
@@ -3761,21 +3765,19 @@ R_API bool r_esil_runword(REsil *esil, const char *word) {
 	return false;
 }
 
-//frees all elements from the stack, not the stack itself
-//rename to stack_empty() ?
+// TODO rename to clearstack() or reset_stack()
 R_API void r_esil_stack_free(REsil *esil) {
-	if (esil) {
-		int i;
-		for (i = 0; i < esil->stackptr; i++) {
-			free_ornot (esil->stack[i]);
-			esil->stack[i] = NULL;
-		}
-		esil->stackptr = 0;
+	R_RETURN_IF_FAIL (esil);
+	int i;
+	for (i = 0; i < esil->stackptr; i++) {
+		R_TAG_FREE (esil->stack[i]);
+		esil->stack[i] = NULL;
 	}
+	esil->stackptr = 0;
 }
 
 R_API int r_esil_condition(REsil *esil, const char *str) {
-	r_return_val_if_fail (esil, -1);
+	R_RETURN_VAL_IF_FAIL (esil, -1);
 	int ret = -1;
 	str = r_str_trim_head_ro (str);
 	(void) r_esil_parse (esil, str);
@@ -3806,7 +3808,7 @@ R_API int r_esil_condition(REsil *esil, const char *str) {
 #define	OT_TRAP R_ESIL_OP_TYPE_TRAP
 
 R_API void r_esil_setup_macros(REsil *esil) {
-	r_return_if_fail (esil);
+	R_RETURN_IF_FAIL (esil);
 #if ESIL_MACRO
 	OP ("++", esil_inc_macro, 1, 1, OT_MATH);
 	OP ("++=", esil_inceq_macro, 1, 1, OT_MATH);
@@ -3823,7 +3825,7 @@ R_API void r_esil_setup_macros(REsil *esil) {
 }
 
 R_API void r_esil_setup_ops(REsil *esil) {
-	r_return_if_fail (esil);
+	R_RETURN_IF_FAIL (esil);
 	OP ("$", esil_interrupt, 0, 1, OT_UNK); // hm, type seems a bit wrong
 	OP ("#!", esil_cmd, 0, 1, OT_UNK); // hm, type seems a bit wrong
 	OP ("()", esil_syscall, 0, 1, OT_UNK); // same as trap?
@@ -3863,7 +3865,6 @@ R_API void r_esil_setup_ops(REsil *esil) {
 	OP ("!", esil_neg, 1, 1, OT_MATH);
 	OP ("!=", esil_negeq, 0, 1, OT_MATH | OT_REGW);
 	OP ("=", esil_eq, 0, 2, OT_REGW);
-	OP ("= ", esil_eq, 0, 2, OT_REGW);
 	OP (":=", esil_weak_eq, 0, 2, OT_REGW);
 	OP (":= ", esil_weak_eq, 0, 2, OT_REGW);
 	OP ("L*", esil_long_mul, 2, 2, OT_MATH);
@@ -3984,13 +3985,13 @@ R_API void r_esil_setup_ops(REsil *esil) {
 
 /* register callbacks using this anal module. */
 R_API bool r_esil_setup(REsil *esil, RAnal *anal, bool romem, bool stats, bool nonull) {
-	r_return_val_if_fail (esil, false);
-	//esil->debug = 0;
+	R_RETURN_VAL_IF_FAIL (esil, false);
 	esil->anal = anal;
 	esil->parse_goto_count = anal->esil_goto_limit;
 	esil->trap = 0;
 	esil->trap_code = 0;
-	//esil->user = NULL;
+	// esil->user = NULL;
+	// esil->debug = 0;
 	esil->cb.reg_read = internal_esil_reg_read;
 	if (nonull) {
 		// this is very questionable, most platforms allow accessing NULL
@@ -4023,16 +4024,18 @@ R_API bool r_esil_setup(REsil *esil, RAnal *anal, bool romem, bool stats, bool n
 }
 
 R_API void r_esil_reset(REsil *esil) {
+	R_RETURN_IF_FAIL (esil);
 	esil->trap = 0;
-	r_return_if_fail (esil);
 	sdb_reset (esil->stats);
 }
 
 R_API bool r_esil_use(REsil *esil, const char *name) {
-	r_return_val_if_fail (esil && name, false);
+	R_RETURN_VAL_IF_FAIL (esil && name, false);
 	RListIter *it;
 	REsilPlugin *h;
-
+	if (esil->curplug && !strcmp (name, esil->curplug->meta.name)) {
+		return true;
+	}
 	r_list_foreach (esil->plugins, it, h) {
 		if (!h->meta.name || strcmp (h->meta.name, name)) {
 			continue;

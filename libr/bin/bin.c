@@ -84,17 +84,17 @@ R_API void r_bin_xtrdata_free(void /*RBinXtrData*/ *data_) {
 }
 
 R_API RList *r_bin_raw_strings(RBinFile *bf, int min) {
-	r_return_val_if_fail (bf, NULL);
+	R_RETURN_VAL_IF_FAIL (bf, NULL);
 	return r_bin_file_get_strings (bf, min, 0, 2);
 }
 
 R_API RList *r_bin_dump_strings(RBinFile *bf, int min, int raw) {
-	r_return_val_if_fail (bf, NULL);
+	R_RETURN_VAL_IF_FAIL (bf, NULL);
 	return r_bin_file_get_strings (bf, min, 1, raw);
 }
 
 R_API void r_bin_file_options_init(RBinFileOptions *opt, int fd, ut64 baseaddr, ut64 loadaddr, int rawstr) {
-	r_return_if_fail (opt);
+	R_RETURN_IF_FAIL (opt);
 	memset (opt, 0, sizeof (*opt));
 	opt->baseaddr = baseaddr;
 	opt->loadaddr = loadaddr;
@@ -103,7 +103,7 @@ R_API void r_bin_file_options_init(RBinFileOptions *opt, int fd, ut64 baseaddr, 
 }
 
 R_API void r_bin_arch_options_init(RBinArchOptions *opt, R_NULLABLE const char *arch, int bits) {
-	r_return_if_fail (opt);
+	R_RETURN_IF_FAIL (opt);
 	opt->arch = arch? arch: R_SYS_ARCH;
 	opt->bits = bits? bits: R_SYS_BITS;
 }
@@ -145,11 +145,11 @@ R_API void r_bin_info_free(RBinInfo *rb) {
 }
 
 R_API RBinImport *r_bin_import_clone(RBinImport *o) {
-	r_return_val_if_fail (o, NULL);
+	R_RETURN_VAL_IF_FAIL (o, NULL);
 
 	RBinImport *res = r_mem_dup (o, sizeof (*o));
 	if (res) {
-		res->name = R_STR_DUP (o->name);
+		res->name = r_bin_name_clone (o->name);
 		res->classname = R_STR_DUP (o->classname);
 		res->descriptor = R_STR_DUP (o->descriptor);
 	}
@@ -167,9 +167,10 @@ R_API void r_bin_import_free(RBinImport *imp) {
 }
 
 R_API RBinSymbol *r_bin_symbol_new(const char *name, ut64 paddr, ut64 vaddr) {
+	R_RETURN_VAL_IF_FAIL (name, NULL);
 	RBinSymbol *sym = R_NEW0 (RBinSymbol);
 	if (sym) {
-		sym->name = name? strdup (name): NULL;
+		sym->name = r_bin_name_new (name);
 		sym->paddr = paddr;
 		sym->vaddr = vaddr;
 	}
@@ -177,18 +178,15 @@ R_API RBinSymbol *r_bin_symbol_new(const char *name, ut64 paddr, ut64 vaddr) {
 }
 
 R_API RBinSymbol *r_bin_symbol_clone(RBinSymbol *bs) {
-	r_return_val_if_fail (bs, NULL);
+	R_RETURN_VAL_IF_FAIL (bs, NULL);
 	RBinSymbol *nbs = r_mem_dup (bs, sizeof (RBinSymbol));
 	if (nbs) {
-		nbs->name = strdup (nbs->name);
-		if (nbs->dname) {
-			nbs->dname = strdup (nbs->dname);
+		nbs->name = r_bin_name_clone (bs->name);
+		if (bs->libname) {
+			nbs->libname = strdup (bs->libname);
 		}
-		if (nbs->libname) {
-			nbs->libname = strdup (nbs->libname);
-		}
-		if (nbs->classname) {
-			nbs->classname = strdup (nbs->classname);
+		if (bs->classname) {
+			nbs->classname = strdup (bs->classname);
 		}
 	}
 	return nbs;
@@ -237,7 +235,7 @@ R_API void r_bin_string_free(void *_str) {
 }
 
 R_API bool r_bin_open(RBin *bin, const char *file, RBinFileOptions *opt) {
-	r_return_val_if_fail (bin && bin->iob.io && opt, false);
+	R_RETURN_VAL_IF_FAIL (bin && bin->iob.io && opt, false);
 
 	RIOBind *iob = &(bin->iob);
 	if (!iob->desc_get (iob->io, opt->fd)) {
@@ -253,7 +251,7 @@ R_API bool r_bin_open(RBin *bin, const char *file, RBinFileOptions *opt) {
 }
 
 R_API bool r_bin_reload(RBin *bin, ut32 bf_id, ut64 baseaddr) {
-	r_return_val_if_fail (bin, false);
+	R_RETURN_VAL_IF_FAIL (bin, false);
 
 	RBinFile *bf = r_bin_file_find_by_id (bin, bf_id);
 	if (!bf) {
@@ -273,7 +271,7 @@ R_API bool r_bin_reload(RBin *bin, ut32 bf_id, ut64 baseaddr) {
 }
 
 R_API bool r_bin_open_buf(RBin *bin, RBuffer *buf, RBinFileOptions *opt) {
-	r_return_val_if_fail (bin && opt, false);
+	R_RETURN_VAL_IF_FAIL (bin && opt, false);
 
 	RListIter *it;
 	RBinXtrPlugin *xtr;
@@ -325,8 +323,8 @@ R_API bool r_bin_open_buf(RBin *bin, RBuffer *buf, RBinFileOptions *opt) {
 }
 
 R_API bool r_bin_open_io(RBin *bin, RBinFileOptions *opt) {
-	r_return_val_if_fail (bin && opt && bin->iob.io, false);
-	r_return_val_if_fail (opt->fd >= 0 && (st64)opt->sz >= 0, false);
+	R_RETURN_VAL_IF_FAIL (bin && opt && bin->iob.io, false);
+	R_RETURN_VAL_IF_FAIL (opt->fd >= 0 && (st64)opt->sz >= 0, false);
 
 	RIOBind *iob = &(bin->iob);
 	RIO *io = iob? iob->io: NULL;
@@ -379,7 +377,7 @@ R_API bool r_bin_open_io(RBin *bin, RBinFileOptions *opt) {
 }
 
 R_IPI RBinPlugin *r_bin_get_binplugin_by_name(RBin *bin, const char *name) {
-	r_return_val_if_fail (bin && name, NULL);
+	R_RETURN_VAL_IF_FAIL (bin && name, NULL);
 
 	RBinPlugin *plugin;
 	RListIter *it;
@@ -395,7 +393,7 @@ R_API RBinPlugin *r_bin_get_binplugin_by_buffer(RBin *bin, RBinFile *bf, RBuffer
 	RBinPlugin *plugin;
 	RListIter *it;
 
-	r_return_val_if_fail (bin && buf, NULL);
+	R_RETURN_VAL_IF_FAIL (bin && buf, NULL);
 
 	r_list_foreach (bin->plugins, it, plugin) {
 		if (plugin->check) {
@@ -411,7 +409,7 @@ R_IPI RBinXtrPlugin *r_bin_get_xtrplugin_by_name(RBin *bin, const char *name) {
 	RBinXtrPlugin *xtr;
 	RListIter *it;
 
-	r_return_val_if_fail (bin && name, NULL);
+	R_RETURN_VAL_IF_FAIL (bin && name, NULL);
 
 	// TODO: use a hashtable here
 	r_list_foreach (bin->binxtrs, it, xtr) {
@@ -426,7 +424,7 @@ R_API bool r_bin_plugin_add(RBin *bin, RBinPlugin *foo) {
 	RListIter *it;
 	RBinPlugin *plugin;
 
-	r_return_val_if_fail (bin && foo, false);
+	R_RETURN_VAL_IF_FAIL (bin && foo, false);
 	if (foo->init) {
 		foo->init (bin);
 	}
@@ -443,7 +441,7 @@ R_API bool r_bin_plugin_add(RBin *bin, RBinPlugin *foo) {
 }
 
 R_API bool r_bin_plugin_remove(RBin *bin, RBinPlugin *plugin) {
-	r_return_val_if_fail (bin && bin->plugins && plugin, false);
+	R_RETURN_VAL_IF_FAIL (bin && bin->plugins && plugin, false);
 	RListIter *iter;
 	RBinPlugin *plug;
 	// this loop is necessary because r_bin_plugin_add dups the passed RBinPlugin
@@ -465,7 +463,7 @@ R_API bool r_bin_ldr_add(RBin *bin, RBinLdrPlugin *foo) {
 	RListIter *it;
 	RBinLdrPlugin *ldr;
 
-	r_return_val_if_fail (bin && foo, false);
+	R_RETURN_VAL_IF_FAIL (bin && foo, false);
 
 	// avoid duplicates
 	r_list_foreach (bin->binldrs, it, ldr) {
@@ -481,7 +479,7 @@ R_API bool r_bin_xtr_add(RBin *bin, RBinXtrPlugin *foo) {
 	RListIter *it;
 	RBinXtrPlugin *xtr;
 
-	r_return_val_if_fail (bin && foo, false);
+	R_RETURN_VAL_IF_FAIL (bin && foo, false);
 
 	// avoid duplicates
 	r_list_foreach (bin->binxtrs, it, xtr) {
@@ -574,7 +572,7 @@ R_API bool r_bin_list_plugin(RBin *bin, const char* name, PJ *pj, int json) {
 	RBinPlugin *bp;
 	RBinXtrPlugin *bx;
 
-	r_return_val_if_fail (bin && name, false);
+	R_RETURN_VAL_IF_FAIL (bin && name, false);
 
 	r_list_foreach (bin->plugins, it, bp) {
 		if (r_str_startswith (bp->meta.name, name)) {
@@ -669,20 +667,20 @@ R_API void r_bin_list(RBin *bin, PJ *pj, int format) {
 
 /* returns the base address of bin or UT64_MAX in case of errors */
 R_API ut64 r_bin_get_baddr(RBin *bin) {
-	r_return_val_if_fail (bin, UT64_MAX);
+	R_RETURN_VAL_IF_FAIL (bin, UT64_MAX);
 	return r_bin_file_get_baddr (bin->cur);
 }
 
 /* returns the load address of bin or UT64_MAX in case of errors */
 R_API ut64 r_bin_get_laddr(RBin *bin) {
-	r_return_val_if_fail (bin, UT64_MAX);
+	R_RETURN_VAL_IF_FAIL (bin, UT64_MAX);
 	RBinObject *o = r_bin_cur_object (bin);
 	return o ? o->loadaddr : UT64_MAX;
 }
 
 // TODO: should be RBinFile specific imho
 R_API void r_bin_set_baddr(RBin *bin, ut64 baddr) {
-	r_return_if_fail (bin);
+	R_RETURN_IF_FAIL (bin);
 	RBinFile *bf = r_bin_cur (bin);
 	RBinObject *o = r_bin_cur_object (bin);
 	if (o) {
@@ -707,7 +705,7 @@ R_API void r_bin_set_baddr(RBin *bin, ut64 baddr) {
 }
 
 R_API RBinAddr *r_bin_get_sym(RBin *bin, int sym) {
-	r_return_val_if_fail (bin, NULL);
+	R_RETURN_VAL_IF_FAIL (bin, NULL);
 	RBinObject *o = r_bin_cur_object (bin);
 	if (sym < 0 || sym >= R_BIN_SYM_LAST) {
 		return NULL;
@@ -717,49 +715,49 @@ R_API RBinAddr *r_bin_get_sym(RBin *bin, int sym) {
 
 // XXX: R2_600 - those accessors are redundant
 R_API const RList *r_bin_get_entries(RBin *bin) {
-	r_return_val_if_fail (bin, NULL);
+	R_RETURN_VAL_IF_FAIL (bin, NULL);
 	RBinObject *o = r_bin_cur_object (bin);
 	return o ? o->entries : NULL;
 }
 
 R_API const RList *r_bin_get_imports(RBin *bin) {
-	r_return_val_if_fail (bin, NULL);
+	R_RETURN_VAL_IF_FAIL (bin, NULL);
 	RBinObject *o = r_bin_cur_object (bin);
 	return o ? o->imports : NULL;
 }
 
 R_API RBinInfo *r_bin_get_info(RBin *bin) {
-	r_return_val_if_fail (bin, NULL);
+	R_RETURN_VAL_IF_FAIL (bin, NULL);
 	RBinObject *o = r_bin_cur_object (bin);
 	return o ? o->info : NULL;
 }
 
 R_API RList *r_bin_get_libs(RBin *bin) {
-	r_return_val_if_fail (bin, NULL);
+	R_RETURN_VAL_IF_FAIL (bin, NULL);
 	RBinObject *o = r_bin_cur_object (bin);
 	return o ? o->libs : NULL;
 }
 
 R_API RRBTree *r_bin_patch_relocs(RBinFile *bf) {
-	r_return_val_if_fail (bf && bf->rbin, NULL);
+	R_RETURN_VAL_IF_FAIL (bf && bf->rbin, NULL);
 	RBinObject *o = r_bin_cur_object (bf->rbin);
 	return o? r_bin_object_patch_relocs (bf, o): NULL;
 }
 
 R_API RRBTree *r_bin_get_relocs(RBin *bin) {
-	r_return_val_if_fail (bin, NULL);
+	R_RETURN_VAL_IF_FAIL (bin, NULL);
 	RBinObject *o = r_bin_cur_object (bin);
 	return o ? o->relocs : NULL;
 }
 
 R_API RList *r_bin_get_sections(RBin *bin) {
-	r_return_val_if_fail (bin, NULL);
+	R_RETURN_VAL_IF_FAIL (bin, NULL);
 	RBinObject *o = r_bin_cur_object (bin);
 	return o ? o->sections : NULL;
 }
 
 R_API RBinSection *r_bin_get_section_at(RBinObject *o, ut64 off, int va) {
-	r_return_val_if_fail (o, NULL);
+	R_RETURN_VAL_IF_FAIL (o, NULL);
 	RBinSection *section;
 	RListIter *iter;
 	// TODO: must be O(1) .. use sdb here
@@ -805,7 +803,7 @@ R_API RList *r_bin_reset_strings(RBin *bin) {
 }
 
 R_API RList *r_bin_get_strings(RBin *bin) {
-	r_return_val_if_fail (bin, NULL);
+	R_RETURN_VAL_IF_FAIL (bin, NULL);
 	RBinObject *o = r_bin_cur_object (bin);
 	return o ? o->strings : NULL;
 }
@@ -813,32 +811,32 @@ R_API RList *r_bin_get_strings(RBin *bin) {
 // TODO: Deprecate because we must use the internal representation
 R_API RList *r_bin_get_symbols(RBin *bin) {
 	R_LOG_WARN ("Dont use RBin.getSymbols() use getSymbolsVec() instead");
-	r_return_val_if_fail (bin, NULL);
+	R_RETURN_VAL_IF_FAIL (bin, NULL);
 	RBinFile *bf = bin->cur;
 	return bf? r_bin_file_get_symbols (bf): NULL;
 }
 
 R_API RVecRBinSymbol *r_bin_get_symbols_vec(RBin *bin) {
-	r_return_val_if_fail (bin, NULL);
+	R_RETURN_VAL_IF_FAIL (bin, NULL);
 	RBinFile *bf = bin->cur;
 	return bf? r_bin_file_get_symbols_vec (bf): NULL;
 }
 
 R_API RList *r_bin_get_mem(RBin *bin) {
-	r_return_val_if_fail (bin, NULL);
+	R_RETURN_VAL_IF_FAIL (bin, NULL);
 	RBinObject *o = r_bin_cur_object (bin);
 	return o ? o->mem : NULL;
 }
 
 // XXX R2_590 badly designed api, should not exist, aka DEPRECATE
 R_API int r_bin_is_big_endian(RBin *bin) {
-	r_return_val_if_fail (bin, -1);
+	R_RETURN_VAL_IF_FAIL (bin, -1);
 	RBinObject *o = r_bin_cur_object (bin);
 	return (o && o->info) ? o->info->big_endian : -1;
 }
 
 R_API bool r_bin_is_static(RBin *bin) {
-	r_return_val_if_fail (bin, false);
+	R_RETURN_VAL_IF_FAIL (bin, false);
 	RBinObject *o = r_bin_cur_object (bin);
 	if (o && o->libs && r_list_length (o->libs) > 0) {
 		return R_BIN_DBG_STATIC & o->info->dbg_info;
@@ -931,7 +929,7 @@ trashbin:
 }
 
 R_API bool r_bin_use_arch(RBin *bin, const char *arch, int bits, const char *name) {
-	r_return_val_if_fail (bin && arch, false);
+	R_RETURN_VAL_IF_FAIL (bin && arch, false);
 
 	RBinFile *binfile = r_bin_file_find_by_arch_bits (bin, arch, bits);
 	if (!binfile) {
@@ -954,7 +952,7 @@ R_API bool r_bin_use_arch(RBin *bin, const char *arch, int bits, const char *nam
 }
 
 R_API bool r_bin_select(RBin *bin, const char *arch, int bits, const char *name) {
-	r_return_val_if_fail (bin, false);
+	R_RETURN_VAL_IF_FAIL (bin, false);
 
 	if (!arch) {
 		return false;
@@ -970,14 +968,14 @@ R_API bool r_bin_select(RBin *bin, const char *arch, int bits, const char *name)
 }
 
 R_API int r_bin_select_object(RBinFile *binfile, const char *arch, int bits, const char *name) {
-	r_return_val_if_fail (binfile, false);
+	R_RETURN_VAL_IF_FAIL (binfile, false);
 	RBinObject *obj = r_bin_object_find_by_arch_bits (binfile, arch, bits, name);
 	return r_bin_file_set_obj (binfile->rbin, binfile, obj);
 }
 
 // NOTE: this functiona works as expected, but  we need to merge bfid and boid
 R_API bool r_bin_select_bfid(RBin *bin, ut32 bf_id) {
-	r_return_val_if_fail (bin, false);
+	R_RETURN_VAL_IF_FAIL (bin, false);
 	RBinFile *bf = r_bin_file_find_by_id (bin, bf_id);
 	return bf? r_bin_file_set_obj (bin, bf, NULL): false;
 }
@@ -1033,8 +1031,7 @@ static void list_xtr_archs(RBin *bin, PJ *pj, int mode) {
 }
 
 static char *get_arch_string(const char *arch, int bits, RBinInfo *info) {
-	RStrBuf *sb = r_strbuf_new ("");
-	r_strbuf_appendf (sb, "%s_%d", arch, bits);
+	RStrBuf *sb = r_strbuf_newf ("%s_%d", arch, bits);
 	if (R_STR_ISNOTEMPTY (info->cpu)) {
 		r_strbuf_appendf (sb, " cpu=%s", info->cpu);
 	}
@@ -1048,7 +1045,7 @@ static char *get_arch_string(const char *arch, int bits, RBinInfo *info) {
 }
 
 R_API void r_bin_list_archs(RBin *bin, PJ *pj, int mode) {
-	r_return_if_fail (bin);
+	R_RETURN_IF_FAIL (bin);
 
 	char unk[128];
 	char archline[256];
@@ -1204,7 +1201,7 @@ R_API void r_bin_set_user_ptr(RBin *bin, void *user) {
 }
 
 static RBinSection* __get_vsection_at(RBin *bin, ut64 vaddr) {
-	r_return_val_if_fail (bin, NULL);
+	R_RETURN_VAL_IF_FAIL (bin, NULL);
 	if (!bin->cur || !bin->cur->bo) {
 		return NULL;
 	}
@@ -1227,7 +1224,7 @@ R_API RBuffer *r_bin_create(RBin *bin, const char *p,
 	const ut8 *data, int datalen,
 	RBinArchOptions *opt) {
 
-	r_return_val_if_fail (bin && p && opt, NULL);
+	R_RETURN_VAL_IF_FAIL (bin && p && opt, NULL);
 
 	RBinPlugin *plugin = r_bin_get_binplugin_by_name (bin, p);
 	if (!plugin) {
@@ -1307,14 +1304,14 @@ R_API RBuffer *r_bin_package(RBin *bin, const char *type, const char *file, RLis
 }
 
 R_API RList* /*<RBinClass>*/ r_bin_get_classes(RBin *bin) {
-	r_return_val_if_fail (bin, NULL);
+	R_RETURN_VAL_IF_FAIL (bin, NULL);
 	RBinObject *bo = r_bin_cur_object (bin);
 	return bo ? bo->classes : NULL;
 }
 
 /* returns vaddr, rebased with the baseaddr of bin, if va is enabled for bin, * paddr otherwise */
 R_API ut64 r_bin_get_vaddr(RBin *bin, ut64 paddr, ut64 vaddr) {
-	r_return_val_if_fail (bin && paddr != UT64_MAX, UT64_MAX);
+	R_RETURN_VAL_IF_FAIL (bin && paddr != UT64_MAX, UT64_MAX);
 
 	if (!bin->cur) {
 		return paddr;
@@ -1335,24 +1332,24 @@ R_API ut64 r_bin_get_vaddr(RBin *bin, ut64 paddr, ut64 vaddr) {
 }
 
 R_API ut64 r_bin_get_size(RBin *bin) {
-	r_return_val_if_fail (bin, UT64_MAX);
+	R_RETURN_VAL_IF_FAIL (bin, UT64_MAX);
 	RBinObject *o = r_bin_cur_object (bin);
 	return o ? o->size : 0;
 }
 
 R_API RBinFile *r_bin_cur(RBin *bin) {
-	r_return_val_if_fail (bin, NULL);
+	R_RETURN_VAL_IF_FAIL (bin, NULL);
 	return bin->cur;
 }
 
 R_API RBinObject *r_bin_cur_object(RBin *bin) {
-	r_return_val_if_fail (bin, NULL);
+	R_RETURN_VAL_IF_FAIL (bin, NULL);
 	RBinFile *bf = r_bin_cur (bin);
 	return bf ? bf->bo : NULL;
 }
 
 R_API void r_bin_force_plugin(RBin *bin, const char *name) {
-	r_return_if_fail (bin);
+	R_RETURN_IF_FAIL (bin);
 	free (bin->force);
 	bin->force = (name && *name) ? strdup (name) : NULL;
 }
@@ -1469,7 +1466,7 @@ R_API void r_bin_trycatch_free(RBinTrycatch *tc) {
 }
 
 R_API const char *r_bin_field_kindstr(RBinField *f) {
-	r_return_val_if_fail (f, NULL);
+	R_RETURN_VAL_IF_FAIL (f, NULL);
 	switch (f->kind) {
 	case R_BIN_FIELD_KIND_PROPERTY:
 		return "property";
@@ -1480,8 +1477,17 @@ R_API const char *r_bin_field_kindstr(RBinField *f) {
 	}
 }
 
+R_API RBinName *r_bin_name_new_from(R_OWN char *name) {
+	R_RETURN_VAL_IF_FAIL (name, NULL);
+	RBinName *bn = R_NEW0 (RBinName);
+	if (R_LIKELY (bn)) {
+		bn->oname = name;
+	}
+	return bn;
+}
+
 R_API RBinName *r_bin_name_new(const char *name) {
-	r_return_val_if_fail (name, NULL);
+	R_RETURN_VAL_IF_FAIL (name, NULL);
 	RBinName *bn = R_NEW0 (RBinName);
 	if (R_LIKELY (bn)) {
 		bn->oname = strdup (name);
@@ -1490,7 +1496,7 @@ R_API RBinName *r_bin_name_new(const char *name) {
 }
 
 R_API void r_bin_name_update(RBinName *bn, const char *name) {
-	r_return_if_fail (bn && name);
+	R_RETURN_IF_FAIL (bn && name);
 	free (bn->oname);
 	bn->oname = strdup (name);
 }
@@ -1504,19 +1510,19 @@ R_API RBinName *r_bin_name_clone(RBinName *bn) {
 		nn->oname = strdup (bn->oname);
 	}
 	if (bn->fname) {
-		nn->oname = strdup (bn->fname);
+		nn->fname = strdup (bn->fname);
 	}
 	return nn;
 }
 
 R_API void r_bin_name_filtered(RBinName *bn, const char *fname) {
-	r_return_if_fail (bn && fname);
+	R_RETURN_IF_FAIL (bn && fname);
 	free (bn->fname);
 	bn->fname = strdup (fname);
 }
 
 R_API void r_bin_name_demangled(RBinName *bn, const char *dname) {
-	r_return_if_fail (bn && dname);
+	R_RETURN_IF_FAIL (bn && dname);
 	if (bn->name && !bn->oname) {
 		bn->oname = bn->name;
 	} else {

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2023 - pancake, nibble, maijin */
+/* radare - LGPL - Copyright 2009-2024 - pancake, nibble, maijin */
 
 #define R_LOG_ORIGIN "rasm2"
 
@@ -178,14 +178,13 @@ static void rarch2_list(RAsmState *as, const char *arch) {
 	int i;
 	RArchPlugin *h;
 	RListIter *iter, *iter2;
-	const char *feat;
 	PJ *pj = NULL;
 	if (as->json) {
 		pj = pj_new ();
 		pj_a (pj);
 	}
 	r_list_foreach (as->anal->arch->plugins, iter, h) {
-		feat = "___";
+		const char *feat = "___";
 		if (h->encode) {
 			feat = h->decode? "ade": "a__";
 		} else {

@@ -35,7 +35,11 @@ R_API void *r_lib_dl_open(const char *libname) {
 #if R2__UNIX__
 	if (libname) {
 #if __linux__
-		ret = dlopen (libname, RTLD_NOW);
+		if (strstr (libname, "python")) {
+			ret = dlopen (libname, RTLD_GLOBAL | RTLD_NOW);
+		} else {
+			ret = dlopen (libname, RTLD_NOW);
+		}
 #endif
 		if (!ret) {
 			ret = dlopen (libname, RTLD_GLOBAL | RTLD_LAZY);
@@ -444,7 +448,7 @@ R_API bool r_lib_opendir(RLib *lib, const char *path) {
 			R_LOG_DEBUG ("Loading %s", file);
 			r_lib_open (lib, file);
 		} else {
-			R_LOG_DEBUG ("Cannot open %s", file);
+			R_LOG_DEBUG ("Skip/Ignore %s", file);
 		}
 	}
 	closedir (dh);

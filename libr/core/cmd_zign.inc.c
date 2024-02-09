@@ -435,7 +435,7 @@ static void apply_name(RCore *core, RAnalFunction *fcn, RSignItem *it, bool rad)
 	if (rad) {
 		char *tmp = r_name_filter_dup (name);
 		if (tmp) {
-			r_cons_printf ("\"\"@0x%08"PFMT64x"\"\"afn %s\n", fcn->addr, tmp);
+			r_cons_printf ("'@0x%08"PFMT64x"'afn %s\n", fcn->addr, tmp);
 			free (tmp);
 		}
 		return;
@@ -800,7 +800,7 @@ static RSignItem *item_frm_signame(RAnal *a, const char *signame) {
 
 static double get_zb_threshold(RCore *core) {
 	const char *th = r_config_get (core->config, "zign.threshold");
-	double thresh = r_num_get_float (NULL, th);
+	double thresh = r_num_get_double (NULL, th);
 	if (thresh < 0.0 || thresh > 1.0) {
 		R_LOG_ERROR ("Invalid zign.threshold %s, using 0.0", th);
 		thresh = 0.0;

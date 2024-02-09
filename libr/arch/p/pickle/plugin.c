@@ -675,7 +675,7 @@ static inline int assemble_float(const char *str, ut8 *outbuf, int outsz) {
 	}
 	RNum *num = r_num_new (NULL, NULL, NULL);
 	if (num) {
-		*((double *)outbuf) = r_num_get_float (num, str);
+		*((double *)outbuf) = r_num_get_double (num, str);
 		r_mem_swap (outbuf, sizeof (double));
 		r_num_free (num);
 		return sizeof (double);

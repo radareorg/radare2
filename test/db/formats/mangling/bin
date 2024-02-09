@@ -28,6 +28,36 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=binsym no demangling
+FILE=bins/mach0/hellocxx-osx-i386
+CMDS=!RABIN2_DEMANGLE=0 rabin2 -qs bins/mach0/hellocxx-osx-i386
+EXPECT=<<EOF
+0x00001000 0 __mh_execute_header
+0x00001d9a 0 __ZSt3minImERKT_S2_S2_
+0x00002060 0 ___progname
+0x00001d52 0 _main
+0x00002054 0 _NXArgc
+0x00002058 0 _NXArgv
+0x0000205c 0 _environ
+0x00001c10 0 start
+0x00001ba0 0 __Z41__static_initialization_and_destruction_0ii
+0x00001bf2 0 __GLOBAL__I_main
+0x00001c4e 0 __ZStL17__verify_groupingPKcmRKSs
+0x00001dc1 0 ___tcf_0
+0x00001e24 0  stub helpers
+0x00002000 0 _pvars
+0x00002064 0 __ZStL8__ioinit
+0x00001dee 0 imp._ZNKSs4sizeEv
+0x00001df4 0 imp._ZNKSsixEm
+0x00001dfa 0 imp._ZNSolsEPFRSoS_E
+0x00001e00 0 imp._ZNSt8ios_base4InitC1Ev
+0x00001e06 0 imp._ZNSt8ios_base4InitD1Ev
+0x00001e12 0 imp._ZStlsISt11char_traitsIcEERSt13basic_ostreamIcT_ES5_PKc
+0x00001e18 0 imp.__cxa_atexit
+0x00001e1e 0 imp.exit
+EOF
+RUN
+
 NAME=binsym without demangling
 FILE=bins/mach0/hellocxx-osx-i386
 ARGS=-M
@@ -107,8 +137,7 @@ NAME=demangle obj in pd
 FILE=bins/elf/ch25.bin
 CMDS=pd 1 @0x08048aac
 EXPECT=<<EOF
-            0x08048aac      c7042460b0..   mov dword [esp], obj.std::cerr ; sym..bss
-                                                                       ; [0x804b060:4]=0
+            0x08048aac      c7042460b0..   mov dword [esp], obj.std::cerr ; [0x804b060:4]=0
 EOF
 RUN
 

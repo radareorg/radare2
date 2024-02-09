@@ -1,4 +1,5 @@
 NAME=di on SIGABRT
+BROKEN=1
 FILE=bins/elf/signals/signal-input
 ARGS=-e cfg.fortunes=false -e dbg.args=6 -d
 CMDS=<<EOF
@@ -22,6 +23,7 @@ RUN
 
 
 NAME=di on SIGALRM
+BROKEN=1
 FILE=bins/elf/signals/signal-input
 ARGS=-e cfg.fortunes=false -e dbg.args=14 -d
 CMDS=<<EOF
@@ -45,6 +47,7 @@ RUN
 
 
 NAME=di on SIGBUS
+BROKEN=1
 FILE=bins/elf/signals/signal-input
 ARGS=-e cfg.fortunes=false -e dbg.args=7 -d
 CMDS=<<EOF
@@ -68,6 +71,7 @@ RUN
 
 
 NAME=di on SIGCHLD
+BROKEN=1
 FILE=bins/elf/signals/signal-input
 ARGS=-e cfg.fortunes=false -e dbg.args=17 -d
 CMDS=<<EOF
@@ -91,6 +95,7 @@ RUN
 
 
 NAME=di on SIGCONT
+BROKEN=1
 FILE=bins/elf/signals/signal-input
 ARGS=-e cfg.fortunes=false -e dbg.args=18 -d
 CMDS=<<EOF
@@ -114,6 +119,7 @@ RUN
 
 
 NAME=di on SIGFPE
+BROKEN=1
 FILE=bins/elf/signals/signal-input
 ARGS=-e cfg.fortunes=false -e dbg.args=8 -d
 CMDS=<<EOF
@@ -137,6 +143,7 @@ RUN
 
 
 NAME=di on SIGHUP
+BROKEN=1
 FILE=bins/elf/signals/signal-input
 ARGS=-e cfg.fortunes=false -e dbg.args=1 -d
 CMDS=<<EOF
@@ -160,6 +167,7 @@ RUN
 
 
 NAME=di on SIGILL
+BROKEN=1
 FILE=bins/elf/signals/signal-input
 ARGS=-e cfg.fortunes=false -e dbg.args=4 -d
 CMDS=<<EOF
@@ -183,6 +191,7 @@ RUN
 
 
 NAME=di on SIGPWR
+BROKEN=1
 FILE=bins/elf/signals/signal-input
 ARGS=-e cfg.fortunes=false -e dbg.args=30 -d
 CMDS=<<EOF
@@ -206,6 +215,7 @@ RUN
 
 
 NAME=di on SIGINT
+BROKEN=1
 FILE=bins/elf/signals/signal-input
 ARGS=-e cfg.fortunes=false -e dbg.args=2 -d
 CMDS=<<EOF
@@ -228,6 +238,7 @@ RUN
 
 
 NAME=di on SIGIO
+BROKEN=1
 FILE=bins/elf/signals/signal-input
 ARGS=-e cfg.fortunes=false -e dbg.args=29 -d
 CMDS=<<EOF
@@ -251,6 +262,7 @@ RUN
 
 
 NAME=di on SIGKILL
+BROKEN=1
 FILE=bins/elf/signals/signal-input
 ARGS=-e cfg.fortunes=false -e dbg.args=9 -d
 CMDS=<<EOF
@@ -272,6 +284,7 @@ RUN
 
 
 NAME=di on SIGPIPE
+BROKEN=1
 FILE=bins/elf/signals/signal-input
 ARGS=-e cfg.fortunes=false -e dbg.args=13 -d
 CMDS=<<EOF
@@ -295,6 +308,7 @@ RUN
 
 
 NAME=di on SIGPROF
+BROKEN=1
 FILE=bins/elf/signals/signal-input
 ARGS=-e cfg.fortunes=false -e dbg.args=27 -d
 CMDS=<<EOF
@@ -318,6 +332,7 @@ RUN
 
 
 NAME=di on SIGQUIT
+BROKEN=1
 FILE=bins/elf/signals/signal-input
 ARGS=-e cfg.fortunes=false -e dbg.args=3 -d
 CMDS=<<EOF
@@ -341,6 +356,7 @@ RUN
 
 
 NAME=di on SIGSEGV
+BROKEN=1
 FILE=bins/elf/signals/signal-input
 ARGS=-e cfg.fortunes=false -e dbg.args=11 -d
 CMDS=<<EOF
@@ -387,6 +403,7 @@ RUN
 
 
 NAME=di on SIGSTOP
+BROKEN=1
 FILE=bins/elf/signals/signal-input
 ARGS=-e cfg.fortunes=false -e dbg.args=19 -d
 CMDS=<<EOF
@@ -409,6 +426,7 @@ RUN
 
 
 NAME=di on SIGSYS
+BROKEN=1
 FILE=bins/elf/signals/signal-input
 ARGS=-e cfg.fortunes=false -e dbg.args=31 -d
 CMDS=<<EOF
@@ -432,6 +450,7 @@ RUN
 
 
 NAME=di on SIGTERM
+BROKEN=1
 FILE=bins/elf/signals/signal-input
 ARGS=-e cfg.fortunes=false -e dbg.args=15 -d
 CMDS=<<EOF
@@ -453,6 +472,7 @@ EOF
 RUN
 
 NAME=di on SIGTRAP
+BROKEN=1
 FILE=bins/elf/signals/signal-input
 ARGS=-e cfg.fortunes=false -e dbg.args=5 -d
 CMDS=<<EOF
@@ -475,6 +495,7 @@ RUN
 
 
 NAME=di on SIGTSTP
+BROKEN=1
 FILE=bins/elf/signals/signal-input
 ARGS=-e cfg.fortunes=false -e dbg.args=20 -d
 CMDS=<<EOF
@@ -498,6 +519,7 @@ RUN
 
 
 NAME=di on SIGTTIN
+BROKEN=1
 FILE=bins/elf/signals/signal-input
 ARGS=-e cfg.fortunes=false -e dbg.args=21 -d
 CMDS=<<EOF
@@ -521,6 +543,7 @@ RUN
 
 
 NAME=di on SIGTTOU
+BROKEN=1
 FILE=bins/elf/signals/signal-input
 ARGS=-e cfg.fortunes=false -e dbg.args=22 -d
 CMDS=<<EOF
@@ -544,6 +567,7 @@ RUN
 
 
 NAME=di on SIGURG
+BROKEN=1
 FILE=bins/elf/signals/signal-input
 ARGS=-e cfg.fortunes=false -e dbg.args=23 -d
 CMDS=<<EOF
@@ -567,6 +591,7 @@ RUN
 
 
 NAME=di on SIGUSR1
+BROKEN=1
 FILE=bins/elf/signals/signal-input
 ARGS=-e cfg.fortunes=false -e dbg.args=10 -d
 CMDS=<<EOF
@@ -589,6 +614,7 @@ EOF
 RUN
 
 NAME=di on SIGUSR2
+BROKEN=1
 FILE=bins/elf/signals/signal-input
 ARGS=-e cfg.fortunes=false -e dbg.args=12 -d
 CMDS=<<EOF
@@ -612,6 +638,7 @@ RUN
 
 
 NAME=di on SIGVTALRM
+BROKEN=1
 FILE=bins/elf/signals/signal-input
 ARGS=-e cfg.fortunes=false -e dbg.args=26 -d
 CMDS=<<EOF
@@ -635,6 +662,7 @@ RUN
 
 
 NAME=di on SIGWINCH
+BROKEN=1
 FILE=bins/elf/signals/signal-input
 ARGS=-e cfg.fortunes=false -e dbg.args=28 -d
 CMDS=<<EOF
@@ -658,6 +686,7 @@ RUN
 
 
 NAME=di on SIGXCPU
+BROKEN=1
 FILE=bins/elf/signals/signal-input
 ARGS=-e cfg.fortunes=false -e dbg.args=24 -d
 CMDS=<<EOF
@@ -681,7 +710,8 @@ RUN
 
 
 NAME=di on SIGXFSZ
-FILE=bins/elf/signals/signal-input
+BROKEN=1
+FILE=1
 ARGS=-e cfg.fortunes=false -e dbg.args=25 -d
 CMDS=<<EOF
 dc

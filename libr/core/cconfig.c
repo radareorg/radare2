@@ -2638,8 +2638,11 @@ static bool cb_scrnkey(void *user, void *data) {
 
 static bool cb_scr_demo(void *user, void *data) {
 	RConfigNode *node = (RConfigNode *) data;
-	r_cons_singleton ()->context->demo = node->i_value;
-	r_cons_singleton ()->line->demo = node->i_value;
+	RCons *cons = r_cons_singleton ();
+	cons->context->demo = node->i_value;
+	if (cons->line) {
+		cons->line->demo = node->i_value;
+	}
 	return true;
 }
 
@@ -2940,7 +2943,7 @@ static bool cb_binmaxstr(void *user, void *data) {
 	if (core->bin) {
 		int v = node->i_value;
 		if (v < 1) {
-			v = 4; // HACK
+			v = 0; // HACK
 		}
 		core->bin->maxstrlen = v;
 		r_bin_reset_strings (core->bin);
@@ -3089,6 +3092,12 @@ static bool cb_anal_limits(void *user, RConfigNode *node) {
 static bool cb_anal_noret_refs(void *user, RConfigNode *node) {
 	RCore *core = (RCore*)user;
 	core->anal->opt.recursive_noreturn = node->i_value;
+	return 1;
+}
+
+static bool cb_anal_slow(void *user, RConfigNode *node) {
+	RCore *core = (RCore*)user;
+	core->anal->opt.slow = node->i_value;
 	return 1;
 }
 
@@ -3446,6 +3455,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETBPREF ("anal.gpfixed", "true", "set gp register to anal.gp before emulating each instruction in aae");
 	SETCB ("anal.limits", "false", (RConfigCallback)&cb_anal_limits, "restrict analysis to address range [anal.from:anal.to]");
 	SETCB ("anal.noret.refs", "false", (RConfigCallback)&cb_anal_noret_refs, "recursive no return checks (EXPERIMENTAL)");
+	SETCB ("anal.slow", "true", (RConfigCallback)&cb_anal_slow, "uses emulation and deeper analysis for better results");
 	SETCB ("anal.noret", "true", (RConfigCallback)&cb_anal_noret, "propagate noreturn attributes (EXPERIMENTAL)");
 	SETCB ("anal.limits", "false", (RConfigCallback)&cb_anal_limits, "restrict analysis to address range [anal.from:anal.to]");
 	SETICB ("anal.from", -1, (RConfigCallback)&cb_anal_from, "lower limit on the address range for analysis");

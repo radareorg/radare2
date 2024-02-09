@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2023 - nibble, pancake, dso, lazula */
+/* radare - LGPL - Copyright 2009-2024 - nibble, pancake, dso, lazula */
 
 #define R_LOG_ORIGIN "disasm"
 
@@ -3784,10 +3784,12 @@ static void ds_print_bytes(RDisasmState *ds) {
 			// R2R db/cmd/cmd_disassembly
 			nstr = r_print_hexpair (ds->print, str, n);
 			if (r_str_ansi_len (nstr) > nb) {
-				if (nb % 2) {
-					nb--;
-					if (ds->show_bytes_align) {
-						r_cons_printf (" ");
+				if (!core->print->bytespace) { //  && !ds->show_bytes_align) {
+					if (nb % 2) {
+						nb--;
+						if (ds->show_bytes_align) {
+							r_cons_printf (" ");
+						}
 					}
 				}
 				char *p = (char *)r_str_ansi_chrn (nstr, nb);
@@ -3796,13 +3798,20 @@ static void ds_print_bytes(RDisasmState *ds) {
 					if (!core->print->bytespace) {
 						p--;
 					}
+				//	eprintf ("PP(%s)=(%s) %d\n", nstr, p, r_str_ansi_len (p));
 					p[0] = '.';
 					p[1] = '.';
 					if (ds->show_bytes_align) {
 						p[2] = '\0';
 					} else {
-						p[2] = ' ';
-						p[3] = '\0';
+						if (core->print->bytespace) {
+							int pos = ds->nbytes + 2;
+							memset (p + 2, ' ', pos - 2);
+							p[pos] = 0;
+						} else {
+							p[2] = ' ';
+							p[3] = '\0';
+						}
 					}
 				}
 			}
@@ -4916,9 +4925,9 @@ static void ds_print_relocs(RDisasmState *ds) {
 		return;
 	}
 	RCore *core = ds->core;
-	const char *lang = r_config_get (core->config, "bin.lang");
+	// const char *lang = r_config_get (core->config, "bin.lang");
 	bool demangle = r_config_get_i (core->config, "asm.demangle");
-	bool keep_lib = r_config_get_i (core->config, "bin.demangle.libs");
+	// bool keep_lib = r_config_get_i (core->config, "bin.demangle.libs");
 	RBinReloc *rel = r_core_getreloc (core, ds->at, ds->analop.size);
 #if 0
 	if (!rel) {
@@ -4939,18 +4948,18 @@ static void ds_print_relocs(RDisasmState *ds) {
 		int cells = utf8len - (cstrlen - ansilen);
 		int len = ds->cmtcol - cells;
 		r_cons_memset (' ', len);
+		int pref = demangle? 'd': 0;
+		// if (demangle) { demname = r_bin_demangle (core->bin->cur, lang, rel->import->name, rel->vaddr, keep_lib); }
+		// demname = r_bin_demangle (core->bin->cur, lang, rel->symbol->name, rel->symbol->vaddr, keep_lib);
+		// demname ? demname : rel->symbol->name,
 		if (rel->import) {
-			if (demangle) {
-				demname = r_bin_demangle (core->bin->cur, lang, rel->import->name, rel->vaddr, keep_lib);
-			}
-			r_cons_printf ("%s RELOC %d %s", ds->cmtoken, rel->type, demname ? demname : rel->import->name);
+			const char *rel_imp_name = r_bin_name_tostring2 (rel->import->name, pref);
+			r_cons_printf ("%s RELOC %d %s", ds->cmtoken, rel->type, rel_imp_name);
 		} else if (rel->symbol) {
-			if (demangle) {
-				demname = r_bin_demangle (core->bin->cur, lang, rel->symbol->name, rel->symbol->vaddr, keep_lib);
-			}
+			const char *rel_sym_name = r_bin_name_tostring2 (rel->symbol->name, pref);
 			r_cons_printf ("%s RELOC %d %s @ 0x%08" PFMT64x,
 					ds->cmtoken,
-					rel->type, demname ? demname : rel->symbol->name,
+					rel->type, rel_sym_name,
 					rel->symbol->vaddr);
 			if (rel->addend) {
 				if (rel->addend > 0) {
@@ -5870,9 +5879,9 @@ static char *ds_sub_jumps(RDisasmState *ds, char *str) {
 		}
 		if (rel) {
 			if (rel && rel->import && rel->import->name) {
-				name = rel->import->name;
+				name = r_bin_name_tostring (rel->import->name);
 			} else if (rel && rel->symbol && rel->symbol->name) {
-				name = rel->symbol->name;
+				name = r_bin_name_tostring (rel->symbol->name);
 			}
 		} else {
 			if (!set_jump_realname (ds, addr, &kw, &name)) {
@@ -6080,6 +6089,10 @@ toro:
 				if (ds->addr != bb->addr) {
 					int i;
 					for (i = 0; i < bb->ninstr; i++) {
+						if (i >= bb->op_pos_size) {
+							R_LOG_ERROR ("Prevent op_pos overflow on large basic block at 0x%08"PFMT64x, bb->addr);
+							break;
+						}
 						ut64 addr = bb->addr + (i > 0? bb->op_pos[i - 1]: 0);
 						if (ds->addr == addr) {
 							break;

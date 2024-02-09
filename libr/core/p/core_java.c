@@ -1318,9 +1318,7 @@ static int r_cmd_java_handle_flags_str(RCore *core, const char *cmd) {
 }
 
 static int r_cmd_java_handle_flags_str_at(RCore *core, const char *cmd) {
-
 	int res = false;
-	ut64 flag_value_addr = -1;
 	ut32 flag_value = -1;
 	const char f_type = cmd? *r_cmd_java_consumetok (cmd, ' ', -1): 0;
 	const char *p = cmd? cmd + 2: NULL;
@@ -1330,7 +1328,8 @@ static int r_cmd_java_handle_flags_str_at(RCore *core, const char *cmd) {
 	if (p) {
 		flag_value = 0;
 		ut64 cur_offset = core->offset;
-		flag_value_addr = r_cmd_java_is_valid_input_num_value (core, p)? r_cmd_java_get_input_num_value (core, p): (ut32)-1;
+		ut64 flag_value_addr = r_cmd_java_is_valid_input_num_value (core, p)
+			? r_cmd_java_get_input_num_value (core, p): UT64_MAX;
 		r_io_read_at (core->io, flag_value_addr, (ut8 *)&flag_value, 2);
 		IFDBG r_cons_printf ("r_cmd_java_handle_flags_str_at: read = 0x%04x\n", flag_value);
 		if (cur_offset != core->offset) {

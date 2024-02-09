@@ -110,7 +110,6 @@ static RList* entries(RBinFile *bf) {
 }
 
 static RList* sections(RBinFile *bf) {
-	RBinSection *ptr = NULL;
 	ut64 ba = baddr (bf);
 	int i;
 
@@ -128,53 +127,54 @@ static RList* sections(RBinFile *bf) {
 
 	PE_(r_bin_pe_check_sections) (pe, &sections);
 	for (i = 0; !sections[i].last; i++) {
-		if (!(ptr = R_NEW0 (RBinSection))) {
+		RBinSection *sec = R_NEW0 (RBinSection);
+		if (!sec) {
 			break;
 		}
 		if (R_STR_ISNOTEMPTY (sections[i].name)) {
-			ptr->name = strdup ((const char*)sections[i].name);
+			sec->name = strdup ((const char*)sections[i].name);
 		} else {
-			ptr->name = strdup ("");
+			R_LOG_WARN ("Missing name for section");
+			sec->name = r_str_newf ("noname%d", i);
 		}
-		ptr->size = sections[i].size;
-		if (ptr->size > pe->size) {
+		sec->size = sections[i].size;
+		if (sec->size > pe->size) {
 			if (sections[i].vsize < pe->size) {
-				ptr->size = sections[i].vsize;
+				sec->size = sections[i].vsize;
 			} else {
 				//hack give it page size
-				ptr->size = 4096;
+				sec->size = 4096;
 			}
 		}
-		ptr->vsize = sections[i].vsize;
-		if (!ptr->vsize && ptr->size) {
-			ptr->vsize = ptr->size;
+		sec->vsize = sections[i].vsize;
+		if (!sec->vsize && sec->size) {
+			sec->vsize = sec->size;
 		}
-		ptr->paddr = sections[i].paddr;
-		ptr->vaddr = sections[i].vaddr + ba;
-		ptr->add = true;
-		ptr->perm = 0;
+		sec->paddr = sections[i].paddr;
+		sec->vaddr = sections[i].vaddr + ba;
+		sec->add = true;
+		sec->perm = 0;
 		if (R_BIN_PE_SCN_IS_EXECUTABLE (sections[i].perm)) {
-			ptr->perm |= R_PERM_X;
-			ptr->perm |= R_PERM_R; // implicit
+			sec->perm |= R_PERM_X;
+			sec->perm |= R_PERM_R; // implicit
 		}
 		if (R_BIN_PE_SCN_IS_WRITABLE (sections[i].perm)) {
-			ptr->perm |= R_PERM_W;
+			sec->perm |= R_PERM_W;
 		}
 		if (R_BIN_PE_SCN_IS_READABLE (sections[i].perm)) {
-			ptr->perm |= R_PERM_R;
+			sec->perm |= R_PERM_R;
 		}
 		// this is causing may tests to fail because rx != srx
 		if (R_BIN_PE_SCN_IS_SHAREABLE (sections[i].perm)) {
-			ptr->perm |= R_PERM_SHAR;
+			sec->perm |= R_PERM_SHAR;
 		}
-		if ((ptr->perm & R_PERM_RW) && !(ptr->perm & R_PERM_X) && ptr->size > 0) {
-			if (!strcmp (ptr->name, ".rsrc") ||
-			  	!strcmp (ptr->name, ".data") ||
-				!strcmp (ptr->name, ".rdata")) {
-					ptr->is_data = true;
-				}
+		if ((sec->perm & R_PERM_RW) && !(sec->perm & R_PERM_X) && sec->size > 0) {
+			const char *name = sec->name;
+			if (name && (!strcmp (name, ".rsrc") || !strcmp (name, ".data") || !strcmp (name, ".rdata"))) {
+				sec->is_data = true;
+			}
 		}
-		r_list_append (ret, ptr);
+		r_list_append (ret, sec);
 	}
 	return ret;
 }
@@ -205,7 +205,7 @@ static RList* symbols(RBinFile *bf) {
 			if (!(ptr = R_NEW0 (RBinSymbol))) {
 				break;
 			}
-			ptr->name = strdup ((char *)symbols[i].name);
+			ptr->name = r_bin_name_new ((char *)symbols[i].name);
 			ptr->libname = *symbols[i].libname ? strdup ((char *)symbols[i].libname) : NULL;
 			ptr->forwarder = r_str_constpool_get (&bf->rbin->constpool, (char *)symbols[i].forwarder);
 			//strncpy (ptr->bind, "NONE", R_BIN_SIZEOF_STRINGS);
@@ -225,8 +225,7 @@ static RList* symbols(RBinFile *bf) {
 			if (!(ptr = R_NEW0 (RBinSymbol))) {
 				break;
 			}
-			//strncpy (ptr->name, (char*)symbols[i].name, R_BIN_SIZEOF_STRINGS);
-			ptr->name = strdup ((const char *)imports[i].name);
+			ptr->name = r_bin_name_new ((const char *)imports[i].name);
 			ptr->libname = strdup ((const char *)imports[i].libname);
 			ptr->is_imported = true;
 			//strncpy (ptr->forwarder, (char*)imports[i].forwarder, R_BIN_SIZEOF_STRINGS);
@@ -286,7 +285,7 @@ static RList* imports(RBinFile *bf) {
 			break;
 		}
 		filter_import (imports[i].name);
-		ptr->name = strdup ((char*)imports[i].name);
+		ptr->name = r_bin_name_new ((char*)imports[i].name);
 		ptr->libname = strdup ((char*)imports[i].libname);
 		ptr->bind = "NONE";
 		ptr->type = "FUNC";
@@ -502,8 +501,11 @@ static bool has_canary(RBinFile *bf) {
 		RBinReloc *rel;
 		if (relocs_list) {
 			r_list_foreach (relocs_list, iter, rel) {
-				if (!strcmp (rel->import->name, "__security_init_cookie")) {
-					return true;
+				if (rel->import) {
+					const char *name = r_bin_name_tostring2 (rel->import->name, 'o');
+					if (!strcmp (name, "__security_init_cookie")) {
+						return true;
+					}
 				}
 			}
 		}
@@ -512,7 +514,8 @@ static bool has_canary(RBinFile *bf) {
 		RBinImport *imp;
 		if (imports_list) {
 			r_list_foreach (imports_list, iter, imp) {
-				if (!strcmp (imp->name, "__security_init_cookie")) {
+				const char *name = r_bin_name_tostring2 (imp->name, 'o');
+				if (!strcmp (name, "__security_init_cookie")) {
 					return true;
 				}
 			}

@@ -305,8 +305,12 @@ static bool r_io_dsc_object_dig_slices(RIODscObject * dsc) {
 		ut8 sym_uuid[16];
 		bool has_symbols_file = dsc_header_get_field (header, "symbolFileUUID", sym_uuid, 16) && !is_null_uuid (sym_uuid);
 		if (subCacheArrayCount == 0 && !has_symbols_file) {
-			R_LOG_ERROR ("Please open the first file of the cache");
-			goto error;
+			const char * slash = strrchr (dsc->filename, '/');
+			const char * dot = strrchr (dsc->filename, '.');
+			if (dot && slash && dot > slash) {
+				R_LOG_WARN ("Please open the first file of the cache");
+				goto error;
+			}
 		}
 
 		if (lseek (fd, next_or_end, SEEK_SET) >= 0) {
@@ -323,13 +327,17 @@ static bool r_io_dsc_object_dig_slices(RIODscObject * dsc) {
 		ut64 sc_entry_size;
 		RDscSubcacheFormat sc_format = SUBCACHE_FORMAT_UNDEFINED;
 
-		if (!r_io_dsc_detect_subcache_format(fd, subCacheArrayOffset, subCacheArrayCount, next_or_end, &sc_entry_size, &sc_format)) {
-			R_LOG_ERROR ("Could not detect subcache entry format");
-			goto error;
-		}
-		if (sc_format == SUBCACHE_FORMAT_UNDEFINED) {
-			R_LOG_ERROR ("Ambiguous or unsupported subcache entry format");
-			goto error;
+		if (subCacheArrayCount) {
+			if (!r_io_dsc_detect_subcache_format(fd, subCacheArrayOffset, subCacheArrayCount, next_or_end, &sc_entry_size, &sc_format)) {
+				R_LOG_ERROR ("Could not detect subcache entry format");
+				goto error;
+			}
+			if (sc_format == SUBCACHE_FORMAT_UNDEFINED) {
+				R_LOG_ERROR ("Ambiguous or unsupported subcache entry format");
+				goto error;
+			}
+		} else {
+			sc_entry_size = 0;
 		}
 
 		ut64 cursor = 0;
@@ -804,7 +812,7 @@ static RList * r_io_dsc_slice_get_rebase_infos_by_range(RIODscSlice * slice, ut6
 			trimmed_info->info = info;
 
 			ut64 trimmed_end = (ffo >= end) ? slice->end : ffo;
-			ut64 trimmed_start = (off_local <= start) ? slice->start : off_local;
+			ut64 trimmed_start = (off_local < start) ? slice->start : off_local;
 
 			trimmed_info->off_local = trimmed_start;
 			trimmed_info->count = trimmed_end - trimmed_start;

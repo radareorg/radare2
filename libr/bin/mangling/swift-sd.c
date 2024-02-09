@@ -87,7 +87,6 @@ static const char *getnum(const char* n, int *num) {
 		n++;
 	}
 	return n;
-	//return numpos (n);
 }
 
 static const char *numpos(const char* n) {
@@ -624,6 +623,9 @@ static char *my_swift_demangler(const char *s) {
 }
 
 R_API char *r_bin_demangle_swift(const char *s, bool syscmd, bool trylib) {
+	if (r_str_startswith (s, "_$")) {
+		s += 2;
+	}
 #if 0
 	if (strstr (s, "UITableViewHeaderFoote")) {
 		eprintf ("==> (%s)\n", s);

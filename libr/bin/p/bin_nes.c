@@ -40,7 +40,7 @@ static RBinInfo *info(RBinFile *bf) {
 static void addsym(RList *ret, const char *name, ut64 addr, ut32 size) {
 	RBinSymbol *ptr = R_NEW0 (RBinSymbol);
 	if (R_LIKELY (ptr)) {
-		ptr->name = strdup (r_str_get (name));
+		ptr->name = r_bin_name_new (r_str_get (name));
 		ptr->paddr = ptr->vaddr = addr;
 		ptr->size = size;
 		ptr->ordinal = 0;

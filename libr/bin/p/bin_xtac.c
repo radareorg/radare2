@@ -589,7 +589,7 @@ static RList *symbols(RBinFile *bf) {
 		if (arm_vaddr == UT32_MAX || x86_vaddr == UT32_MAX) {
 			continue;
 		}
-		ptr->name = r_str_newf ("x86.%08x", x86_vaddr);
+		ptr->name = r_bin_name_new_from (r_str_newf ("x86.%08x", x86_vaddr));
 		ptr->bind = "NONE";
 		ptr->type = R_BIN_TYPE_FUNC_STR;
 		ptr->size = 0;

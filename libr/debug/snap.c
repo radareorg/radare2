@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2015-2021 - pancake, rkx1209 */
+/* radare - LGPL - Copyright 2015-2023 - pancake, rkx1209 */
 
 #include <r_debug.h>
 #include <r_hash.h>
@@ -7,7 +7,7 @@ R_API void r_debug_snap_free(RDebugSnap *snap) {
 	if (snap) {
 		free (snap->name);
 		free (snap->data);
-		R_FREE (snap);
+		free (snap);
 	}
 }
 

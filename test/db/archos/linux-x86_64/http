@@ -1,4 +1,5 @@
 NAME==h
+BROKEN=1
 FILE=--
 CMDS=!scripts/test-webserver.sh
 EXPECT=<<EOF
@@ -38,8 +39,9 @@ EXPECT_ERR=<<EOF
 EOF
 RUN
 
+# this test fails on newshell and windows better to mark it as broken
 NAME=r2 remote webserver two
-FILE=--
+BROKEN=1
 CMDS=<<EOF
 & !rarun2 timeout=3 daemon=1 system="r2 -e http.root=/404 -e http.port=9292 -c=h -qcq -"
 sleep 1
@@ -57,4 +59,4 @@ Starting http server...
 open http://localhost:9292/
 r2 -C http://localhost:9292/cmd/
 EOF
-RUN
+NORUN

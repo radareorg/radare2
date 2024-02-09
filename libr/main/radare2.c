@@ -261,6 +261,7 @@ static int main_help(int line) {
 		" R2_LOG_FILE     dump all logs to a file\n"
 		"Paths:\n"
 		" R2_INCDIR    "R2_INCDIR"\n"
+		" R2_BINDIR    "R2_BINDIR"\n"
 		" R2_LIBDIR    "R2_LIBDIR"\n"
 		" R2_LIBEXT    "R_LIB_EXT"\n"
 		" R2_PREFIX    "R2_PREFIX"\n"
@@ -281,9 +282,11 @@ static int main_print_var(const char *var_name) {
 #ifdef R2__WINDOWS__
 	char *incdir = r_str_r2_prefix (R2_INCDIR);
 	char *libdir = r_str_r2_prefix (R2_LIBDIR);
+	char *bindir = r_str_r2_prefix (R2_BINDIR);
 #else
 	char *incdir = strdup (R2_INCDIR);
 	char *libdir = strdup (R2_LIBDIR);
+	char *bindir = strdup (R2_BINDIR);
 #endif
 	char *confighome = r_xdg_configdir (NULL);
 	char *datahome = r_xdg_datadir (NULL);
@@ -302,6 +305,7 @@ static int main_print_var(const char *var_name) {
 		{ "R2_PREFIX", r2prefix },
 		{ "R2_MAGICPATH", magicpath },
 		{ "R2_INCDIR", incdir },
+		{ "R2_BINDIR", bindir },
 		{ "R2_LIBDIR", libdir },
 		{ "R2_LIBEXT", R_LIB_EXT },
 		{ "R2_RDATAHOME", datahome },
@@ -1452,7 +1456,9 @@ R_API int r_main_radare2(int argc, const char **argv) {
 							mr.iod->perm |= R_PERM_X;
 						}
 						if (r_str_startswith (mr.pfile, "frida://")) {
-							r_core_cmd0 (r, ".:init");
+							if (r_config_get_b (r->config, "file.info")) {
+								r_core_cmd0 (r, ".:init");
+							}
 							mr.load_bin = 0;
 						}
 						if (mr.load_bin == LOAD_BIN_ALL) {

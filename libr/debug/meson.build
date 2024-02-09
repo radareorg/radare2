@@ -18,6 +18,7 @@ r_debug_sources = [
   #'p/debug_rv32ima.c',
   'p/debug_gdb.c',
   'p/debug_io.c',
+  'p/debug_evm.c',
   'p/debug_native.c',
   'p/debug_null.c',
   'p/debug_qnx.c',

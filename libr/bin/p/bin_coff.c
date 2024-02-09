@@ -75,7 +75,7 @@ static bool _fill_bin_symbol(RBin *rbin, struct r_bin_coff_obj *bin, int idx, RB
 	if (!coffname) {
 		return false;
 	}
-	ptr->name = coffname;
+	ptr->name = r_bin_name_new_from (coffname);
 	ptr->forwarder = "NONE";
 	ptr->bind = R_BIN_BIND_LOCAL_STR;
 	ptr->is_imported = false;
@@ -114,11 +114,11 @@ static bool _fill_bin_symbol(RBin *rbin, struct r_bin_coff_obj *bin, int idx, RB
 		if (n_scnum == COFF_SYM_SCNUM_ABS) {
 			ptr->type = "ABS";
 			ptr->paddr = ptr->vaddr = UT64_MAX;
-			ptr->name = r_str_newf ("%s-0x%08x", coffname, n_value);
+			ptr->name = r_bin_name_new_from (r_str_newf ("%s-0x%08x", coffname, n_value));
 			if (ptr->name) {
 				R_FREE (coffname);
 			} else {
-				ptr->name = coffname;
+				ptr->name = r_bin_name_new_from (coffname);
 			}
 		} else if (sc_hdr && !memcmp (sc_hdr->s_name, n_name, 8)) {
 			ptr->type = R_BIN_TYPE_SECTION_STR;
@@ -171,7 +171,7 @@ static RBinImport *_fill_bin_import(struct r_bin_coff_obj *bin, int idx) {
 		free (ptr);
 		return NULL;
 	}
-	ptr->name = coffname;
+	ptr->name = r_bin_name_new_from (coffname);
 	ptr->bind = "NONE";
 	ptr->type = DTYPE_IS_FUNCTION (n_type)
 		? R_BIN_TYPE_FUNC_STR
@@ -194,9 +194,11 @@ static RBinImport *_xcoff_fill_bin_import(struct r_bin_coff_obj *bin, int idx) {
 		free (ptr);
 		return NULL;
 	}
-	if (strnlen (s->l_name, 8)) {
-		ptr->name = r_str_ndup (s->l_name, 8);
+	char *sn = r_str_ndup (s->l_name, 8);
+	if (R_STR_ISNOTEMPTY (sn)) {
+		ptr->name = r_bin_name_new (sn);
 	}
+	free (sn);
 	if (!ptr->name) {
 		free (ptr);
 		return NULL;

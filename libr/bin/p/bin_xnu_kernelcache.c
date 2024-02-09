@@ -946,7 +946,9 @@ static void create_initterm_syms_vec(RVecRBinSymbol *symbols, RBinFile *bf, RKex
 			break;
 		}
 
-		sym->name = r_str_newf ("%s.%s.%d", kext_short_name (kext), (type == R_BIN_ENTRY_TYPE_INIT) ? "init" : "fini", count++);
+		sym->name = r_bin_name_new_from (
+				r_str_newf ("%s.%s.%d", kext_short_name (kext), (type == R_BIN_ENTRY_TYPE_INIT) ? "init" : "fini", count++)
+			);
 		sym->vaddr = func_vaddr;
 		sym->paddr = func_vaddr - kext->pa2va_exec;
 		sym->size = 0;
@@ -1004,7 +1006,9 @@ static void process_constructors(RKernelCacheObj *obj, struct MACH0_(obj_t) *mac
 					break;
 				}
 
-				sym->name = r_str_newf ("%s.%s.%d", prefix, (type == R_BIN_ENTRY_TYPE_INIT) ? "init" : "fini", count++);
+				sym->name = r_bin_name_new_from (
+						r_str_newf ("%s.%s.%d", prefix, (type == R_BIN_ENTRY_TYPE_INIT) ? "init" : "fini", count++)
+					);
 				sym->vaddr = addr64;
 				sym->paddr = paddr64;
 				sym->size = 0;
@@ -1063,7 +1067,9 @@ static void process_constructors_vec(RVecRBinSymbol *symbols, RBinFile *bf, RKer
 					break;
 				}
 
-				sym->name = r_str_newf ("%s.%s.%d", prefix, (type == R_BIN_ENTRY_TYPE_INIT) ? "init" : "fini", count++);
+				sym->name = r_bin_name_new_from (
+							r_str_newf ("%s.%s.%d", prefix, (type == R_BIN_ENTRY_TYPE_INIT) ? "init" : "fini", count++)
+						);
 				sym->vaddr = addr64;
 				sym->paddr = paddr64;
 				sym->size = 0;
@@ -1079,17 +1085,13 @@ static void process_constructors_vec(RVecRBinSymbol *symbols, RBinFile *bf, RKer
 
 static void bin_symbol_copy(RBinSymbol *dst, const RBinSymbol *src) {
 	memcpy (dst, src, sizeof (RBinSymbol));
-	dst->name = strdup (src->name);
-	if (src->dname) {
-		dst->dname = strdup (src->dname);
-	}
+	dst->name = r_bin_name_clone (src->name);
 	if (src->libname) {
 		dst->libname = strdup (src->libname);
 	}
 	if (src->classname) {
 		dst->classname = strdup (src->classname);
 	}
-	// TODO bname / cname
 }
 
 static RBinAddr *newEntry(ut64 haddr, ut64 vaddr, int type) {
@@ -1254,8 +1256,9 @@ static bool symbols_vec(RBinFile *bf) {
 	ut64 enosys_addr = 0;
 	R_VEC_FOREACH (&symbols, sym) {
 		r_strf_var (key, 64, "%"PFMT64x, sym->vaddr);
-		sdb_ht_insert (kernel_syms_by_addr, key, sym->dname ? sym->dname : sym->name);
-		if (!enosys_addr && strstr (sym->name, "enosys")) {
+		const char *oname = r_bin_name_tostring (sym->name);
+		sdb_ht_insert (kernel_syms_by_addr, key, oname);
+		if (!enosys_addr && strstr (oname, "enosys")) {
 			enosys_addr = sym->vaddr;
 		}
 	}
@@ -1264,8 +1267,9 @@ static bool symbols_vec(RBinFile *bf) {
 	if (syscalls) {
 		RListIter *iter;
 		r_list_foreach (syscalls, iter, sym) {
+			const char *oname = r_bin_name_tostring (sym->name);
 			r_strf_var (key, 32, "%"PFMT64x, sym->vaddr);
-			sdb_ht_insert (kernel_syms_by_addr, key, sym->name);
+			sdb_ht_insert (kernel_syms_by_addr, key, oname);
 			RVecRBinSymbol_push_back (&symbols, sym);
 		}
 		syscalls->free = NULL;
@@ -1277,7 +1281,8 @@ static bool symbols_vec(RBinFile *bf) {
 		RListIter *iter;
 		r_list_foreach (subsystem, iter, sym) {
 			r_strf_var (key, 64, "%"PFMT64x, sym->vaddr);
-			sdb_ht_insert (kernel_syms_by_addr, key, sym->name);
+			const char *sym_name = r_bin_name_tostring (sym->name);
+			sdb_ht_insert (kernel_syms_by_addr, key, sym_name);
 			RVecRBinSymbol_push_back (&symbols, sym);
 		}
 		subsystem->free = NULL;
@@ -1442,8 +1447,7 @@ static RList *resolve_syscalls(RKernelCacheObj *obj, ut64 enosys_addr) {
 	if (!sym) {
 		goto beach;
 	}
-
-	sym->name = r_str_newf ("sysent");
+	sym->name = r_bin_name_new ("sysent");
 	sym->vaddr = sysent_vaddr;
 	sym->paddr = cursor - data_const + data_const_offset;
 	sym->size = 0;
@@ -1465,7 +1469,7 @@ static RList *resolve_syscalls(RKernelCacheObj *obj, ut64 enosys_addr) {
 				goto beach;
 			}
 
-			sym->name = r_str_newf ("syscall.%d.%s", i, item->name);
+			sym->name = r_bin_name_new_from (r_str_newf ("syscall.%d.%s", i, item->name));
 			sym->vaddr = addr;
 			sym->paddr = addr;
 			sym->size = 0;
@@ -1626,9 +1630,9 @@ static RList *resolve_mig_subsystem(RKernelCacheObj *obj) {
 				r_strf_var (key, 32, "%d", num);
 				const char *name = sdb_ht_find (mig_hash, key, &found);
 				if (found && name && *name) {
-					sym->name = r_str_newf ("mig.%d.%s", num, name);
+					sym->name = r_bin_name_new_from (r_str_newf ("mig.%d.%s", num, name));
 				} else {
-					sym->name = r_str_newf ("mig.%d", num);
+					sym->name = r_bin_name_new_from (r_str_newf ("mig.%d", num));
 				}
 
 				sym->vaddr = routine_p;
@@ -1716,7 +1720,7 @@ static void symbols_from_stubs_vec(RVecRBinSymbol *symbols, RBinFile *bf, HtPP *
 			if (found) {
 				RBinSymbol *sym = R_NEW0 (RBinSymbol);
 				if (R_LIKELY (sym)) {
-					sym->name = r_str_newf ("stub.%s", name);
+					sym->name = r_bin_name_new_from (r_str_newf ("stub.%s", name));
 					sym->vaddr = vaddr;
 					sym->paddr = stubs_cursor;
 					sym->size = 12;
@@ -1747,7 +1751,9 @@ static void symbols_from_stubs_vec(RVecRBinSymbol *symbols, RBinFile *bf, HtPP *
 			break;
 		}
 
-		remote_sym->name = r_str_newf ("exp.%s.0x%"PFMT64x, kext_short_name (remote_kext), target_addr);
+		remote_sym->name = r_bin_name_new_from (
+				r_str_newf ("exp.%s.0x%"PFMT64x, kext_short_name (remote_kext), target_addr)
+			);
 		remote_sym->vaddr = target_addr;
 		remote_sym->paddr = target_addr - obj->pa2va_exec;
 		remote_sym->size = 0;
@@ -1762,7 +1768,7 @@ static void symbols_from_stubs_vec(RVecRBinSymbol *symbols, RBinFile *bf, HtPP *
 			break;
 		}
 
-		local_sym->name = r_str_newf ("stub.%s.0x%"PFMT64x, kext_short_name (remote_kext), target_addr);
+		local_sym->name = r_bin_name_new_from (r_str_newf ("stub.%s.0x%"PFMT64x, kext_short_name (remote_kext), target_addr));
 		local_sym->vaddr = vaddr;
 		local_sym->paddr = stubs_cursor;
 		local_sym->size = 12;

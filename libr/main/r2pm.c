@@ -320,7 +320,7 @@ static int r2pm_update(bool force) {
 	return rc;
 }
 
-static void r2pm_setenv(void) {
+static void r2pm_setenv(bool global) {
 	char *gmake = r_file_path ("gmake");
 	if (gmake) {
 		r_sys_setenv ("MAKE", gmake);
@@ -329,9 +329,16 @@ static void r2pm_setenv(void) {
 	}
 	free (gmake);
 
-	char *r2_plugdir = r_xdg_datadir ("plugins");
-	r_sys_setenv ("R2PM_PLUGDIR", r2_plugdir);
-	free (r2_plugdir);
+	if (global) {
+		// the r2pm_plugdir changes when using -g
+		char *r2_plugdir = r_str_newf (R2_LIBDIR "/radare2/" R2_VERSION);
+		r_sys_setenv ("R2PM_PLUGDIR", r2_plugdir);
+		free (r2_plugdir);
+	} else {
+		char *r2_plugdir = r_xdg_datadir ("plugins");
+		r_sys_setenv ("R2PM_PLUGDIR", r2_plugdir);
+		free (r2_plugdir);
+	}
 
 	char *dbdir = r2pm_dbdir ();
 	r_sys_setenv ("R2PM_DBDIR", dbdir);
@@ -529,10 +536,10 @@ static bool r2pm_have_builddir(const char *pkg) {
 }
 
 // looks copypaste with r2pm_install_pkg()
-static int r2pm_uninstall_pkg(const char *pkg) {
+static int r2pm_uninstall_pkg(const char *pkg, bool global) {
 	R_LOG_INFO ("Uninstalling %s", pkg);
 	char *srcdir = r2pm_gitdir ();
-	r2pm_setenv ();
+	r2pm_setenv (global);
 	const bool have_builddir = r2pm_have_builddir (pkg);
 #if R2__WINDOWS__
 	char *script = r2pm_get (pkg, "\nR2PM_UNINSTALL_WINDOWS() {\n", TT_CODEBLOCK);
@@ -756,7 +763,7 @@ static int r2pm_install_pkg(const char *pkg, bool clean, bool global) {
 		free (pkgdir);
 	}
 	char *srcdir = r2pm_gitdir ();
-	r2pm_setenv ();
+	r2pm_setenv (global);
 	R_LOG_DEBUG ("Entering %s", srcdir);
 	char *qjs_script = r2pm_get (pkg, "\nR2PM_INSTALL_QJS() {\n", TT_CODEBLOCK);
 	if (qjs_script) {
@@ -860,6 +867,7 @@ static int r2pm_install(RList *targets, bool uninstall, bool clean, bool force, 
 	free (r2v);
 	if (global) {
 		r_sys_setenv ("GLOBAL", "1");
+		r_sys_setenv ("R2PM_GLOBAL", "1");
 		char *sudo = r_sys_getenv ("SUDO");
 		if (R_STR_ISEMPTY (sudo)) {
 			free (sudo);
@@ -870,6 +878,7 @@ static int r2pm_install(RList *targets, bool uninstall, bool clean, bool force, 
 		free (sudo);
 	} else {
 		r_sys_setenv ("GLOBAL", "0");
+		r_sys_setenv ("R2PM_GLOBAL", "0");
 		r_sys_setenv ("R2PM_SUDO", "");
 		r_sys_setenv ("SUDO", "");
 	}
@@ -882,7 +891,7 @@ static int r2pm_install(RList *targets, bool uninstall, bool clean, bool force, 
 			continue;
 		}
 		if (uninstall) {
-			r2pm_uninstall_pkg (t);
+			r2pm_uninstall_pkg (t, global);
 		}
 		if (clean) {
 			r2pm_clean_pkg (t);
@@ -950,12 +959,12 @@ static int r2pm_clean(RList *targets) {
 	return rc;
 }
 
-static int r2pm_uninstall(RList *targets) {
+static int r2pm_uninstall(RList *targets, bool global) {
 	RListIter *iter;
 	const char *t;
 	int rc = 0;
 	r_list_foreach (targets, iter, t) {
-		rc |= r2pm_uninstall_pkg (t);
+		rc |= r2pm_uninstall_pkg (t, global);
 	}
 	return rc;
 }
@@ -1048,26 +1057,30 @@ static void r2pm_envhelp(bool verbose) {
 		char *r2pm_prefix = r_sys_getenv ("R2PM_PREFIX");
 		char *r2pm_gitdir = r_sys_getenv ("R2PM_GITDIR");
 		bool r2pm_offline = r_sys_getenv_asbool ("R2PM_OFFLINE");
+		char *r2pm_plugdir2 = r_str_newf (R2_LIBDIR "/radare2/" R2_VERSION);
 		printf ("R2_LOG_LEVEL=2         # define log.level for r2pm\n"
 			"SUDO=sudo              # path to the SUDO executable\n"
 			"MAKE=make              # path to the GNU MAKE executable\n"
+			"R2PM_OFFLINE=%d         # don't git pull\n"
+			"R2PM_LEGACY=0\n"
 			"R2PM_TIME=YYYY-MM-DD\n"
+			"R2PM_PLUGDIR=%s\n"
 			"R2PM_PLUGDIR=%s\n"
 			"R2PM_PREFIX=%s\n"
 			"R2PM_BINDIR=%s\n"
 			"R2PM_LIBDIR=%s\n"
-			"R2PM_OFFLINE=%d         # don't git pull\n"
-			"R2PM_LEGACY=0\n"
 			"R2PM_DBDIR=%s\n"
 			"R2PM_GITDIR=%s\n",
+			r2pm_offline,
 			r2pm_plugdir,
+			r2pm_plugdir2,
 			r2pm_prefix,
 			r2pm_bindir,
 			r2pm_libdir,
-			r2pm_offline,
 			r2pm_dbdir,
 			r2pm_gitdir);
 		free (r2pm_plugdir);
+		free (r2pm_plugdir2);
 		free (r2pm_prefix);
 		free (r2pm_bindir);
 		free (r2pm_dbdir);
@@ -1135,7 +1148,7 @@ R_API int r_main_r2pm(int argc, const char **argv) {
 	RGetopt opt;
 	r_getopt_init (&opt, argc, argv, "aqecdiIhH:flgrpst:uUv");
 	int i, c;
-	r2pm_setenv ();
+	r2pm_setenv (false);
 	bool action = false;
 	while ((c = r_getopt_next (&opt)) != -1) {
 		switch (c) {
@@ -1219,6 +1232,7 @@ R_API int r_main_r2pm(int argc, const char **argv) {
 			break;
 		}
 	}
+	r2pm_setenv (r2pm.global);
 	if (!action && opt.ind < argc) {
 		r2pm.help = true;
 		r2pm.rc = 1;
@@ -1320,7 +1334,7 @@ R_API int r_main_r2pm(int argc, const char **argv) {
 	} else if (r2pm.install) {
 		res = r2pm_install (targets, r2pm.uninstall, r2pm.clean, r2pm.force, r2pm.global);
 	} else if (r2pm.uninstall) {
-		res = r2pm_uninstall (targets);
+		res = r2pm_uninstall (targets, r2pm.global);
 	} else if (r2pm.clean) {
 		res = r2pm_clean (targets);
 	} else if (r2pm.list) {

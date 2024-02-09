@@ -1,3 +1,60 @@
+NAME=bytes.space
+FILE=bins/elf/intof_mod
+CMDS=<<EOF
+-e asm.nbytes=3
+-e asm.bytes.space=1
+pd 5
+EOF
+EXPECT=<<EOF
+            ;-- section..text:
+            ;-- entry0:
+            ;-- _start:
+            0x00001060      f3 0f ..     endbr64                       ; [16] -r-x section size 4384 named .text
+            0x00001064      31 ed        xor ebp, ebp
+            0x00001066      49 89 ..     mov r9, rdx
+            0x00001069      5e           pop rsi
+            0x0000106a      48 89 ..     mov rdx, rsp
+EOF
+RUN
+
+NAME=bytes.space 2
+FILE=bins/elf/intof_mod
+CMDS=<<EOF
+-e asm.nbytes=2
+-e asm.bytes.space=1
+pd 5
+EOF
+EXPECT=<<EOF
+            ;-- section..text:
+            ;-- entry0:
+            ;-- _start:
+            0x00001060      f3 0..    endbr64                          ; [16] -r-x section size 4384 named .text
+            0x00001064      31 e..    xor ebp, ebp
+            0x00001066      49 8..    mov r9, rdx
+            0x00001069      5e        pop rsi
+            0x0000106a      48 8..    mov rdx, rsp
+EOF
+RUN
+
+NAME=bytes.space 1
+FILE=bins/elf/intof_mod
+CMDS=<<EOF
+-e asm.nbytes=1
+-e asm.bytes.space=1
+pd 5
+EOF
+EXPECT=<<EOF
+            ;-- section..text:
+            ;-- entry0:
+            ;-- _start:
+            0x00001060      f3..   endbr64                             ; [16] -r-x section size 4384 named .text
+            0x00001064      31..   xor ebp, ebp
+            0x00001066      49..   mov r9, rdx
+            0x00001069      5e     pop rsi
+            0x0000106a      48..   mov rdx, rsp
+EOF
+RUN
+
 NAME=Cd4middle
 FILE=bins/elf/before-after-main
 CMDS=<<EOF
@@ -8,13 +65,12 @@ pd 2
 EOF
 EXPECT=<<EOF
             ;-- section..text:
-            ;-- .text:
             ;-- entry0:
             ;-- _start:
             0x08048370      31ed           xor ebp, ebp                ; [13] -r-x section size 805 named .text
             0x08048372      5e             pop esi
 --
-            0x08048370      31ed           xor ebp, ebp                ;-- entry0, section..text, sym..text, sym._start 
+            0x08048370      31ed           xor ebp, ebp                ;-- entry0, section..text, sym._start 
             0x08048372      5e             pop esi
 EOF
 RUN
@@ -59,13 +115,13 @@ pd 10
 EOF
 EXPECT=<<EOF
             0x0804838c                    50  push eax
-            0x0804838d           8d 83 00 ..  lea eax, [ebx - 0x1a00]
+            0x0804838d          8d 83 00 e..  lea eax, [ebx - 0x1a00]
             0x08048393                    50  push eax
             0x08048394                    51  push ecx
             0x08048395                    56  push esi
-            0x08048396           c7 c0 4e ..  mov eax, main            ; 0x804854e
+            0x08048396          c7 c0 4e 8..  mov eax, main            ; 0x804854e
             0x0804839c                    50  push eax
-            0x0804839d           e8 be ff ..  call sym.imp.__libc_start_main
+            0x0804839d          e8 be ff f..  call sym.imp.__libc_start_main
             0x080483a2                    f4  hlt
             0x080483a3              8b 1c 24  mov ebx, dword [esp]
 --

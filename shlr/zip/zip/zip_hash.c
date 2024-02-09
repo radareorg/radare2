@@ -84,7 +84,7 @@ hash_string(const zip_uint8_t *name) {
     }
 
     while (*name != 0) {
-        value = (zip_uint64_t)(((value * HASH_MULTIPLIER) + (zip_uint8_t)*name) % 0x100000000ul);
+        value = (zip_uint64_t)(((value * HASH_MULTIPLIER) + (zip_uint8_t)*name) % 0x100000000ULL);
         name++;
     }
 

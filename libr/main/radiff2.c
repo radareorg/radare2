@@ -752,7 +752,9 @@ static ut8 *slurp(RadiffOptions *ro, RCore **c, const char *file, size_t *sz) {
 }
 
 static int import_cmp(const RBinImport *a, const RBinImport *b) {
-	return strcmp (a->name, b->name);
+	const char *aname = r_bin_name_tostring (a->name);
+	const char *bname = r_bin_name_tostring (b->name);
+	return strcmp (aname, bname);
 }
 
 static ut8 *get_classes(RCore *c, int *len) {
@@ -818,7 +820,8 @@ static ut8 *get_methods(RCore *c, int *len) {
 	r_list_foreach (list, iter, klass) {
 		const char *kname = r_bin_name_tostring (klass->name);
 		r_list_foreach (klass->methods, iter2, sym) {
-			r_list_append (reslist, r_str_newf ("%s.%s", kname, sym->name));
+			const char *name = r_bin_name_tostring (sym->name);
+			r_list_append (reslist, r_str_newf ("%s.%s", kname, name));
 		}
 	}
 	r_list_sort (reslist, (RListComparator)strcmp);
@@ -839,7 +842,8 @@ static ut8 *get_symbols(RCore *c, int *len) {
 	const RList *list = r_bin_get_symbols (c->bin);
 	RList *reslist = r_list_newf (free);
 	r_list_foreach (list, iter, sym) {
-		r_list_append (reslist, strdup (sym->name));
+		const char *name = r_bin_name_tostring (sym->name);
+		r_list_append (reslist, strdup (name));
 	}
 	char *buf = r_str_list_join (reslist, "\n");
 	*len = strlen (buf);
@@ -850,7 +854,6 @@ static ut8 *get_symbols(RCore *c, int *len) {
 static ut8 *get_imports(RCore *c, int *len) {
 	RListIter *iter;
 	RBinImport *str, *old = NULL;
-	ut8 *buf, *ptr;
 
 	if (!c || !len) {
 		return NULL;
@@ -862,33 +865,18 @@ static ut8 *get_imports(RCore *c, int *len) {
 
 	*len = 0;
 
-	r_list_foreach (list, iter, str) {
-		if (!old || (old && import_cmp (old, str) != 0)) {
-			*len += strlen (str->name) + 1;
-			old = str;
-		}
-	}
-	ptr = buf = malloc (*len + 1);
-	if (!ptr) {
-		return NULL;
-	}
-
-	old = NULL;
-
+	RStrBuf *sb = r_strbuf_new ("");
 	r_list_foreach (list, iter, str) {
 		if (old && !import_cmp (old, str)) {
 			continue;
 		}
-		int namelen = strlen (str->name);
-		memcpy (ptr, str->name, namelen);
-		ptr += namelen;
-		*ptr++ = '\n';
+		const char *symname = r_bin_name_tostring (str->name);
+		r_strbuf_appendf (sb, "%s\n", symname);
 		old = str;
 	}
-	*ptr = 0;
 
-	*len = strlen ((const char *) buf);
-	return buf;
+	*len = r_strbuf_length (sb);
+	return (ut8*)r_strbuf_drain (sb);
 }
 
 static int bs_cmp(const RBinString *a, const RBinString *b) {

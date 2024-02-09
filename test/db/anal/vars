@@ -153,7 +153,6 @@ afvj~{}
 EOF
 EXPECT=<<EOF
             ;-- section..text:
-            ;-- .text:
 / 22: sym.sub (int64_t arg1, int64_t arg2);
 |           ; arg int64_t arg1 @ rdi
 |           ; arg int64_t arg2 @ rsi

@@ -9,7 +9,6 @@ pdf
 EOF
 EXPECT=<<EOF
             ;-- section..text:
-            ;-- .text:
             ;-- _start:
 / 41: entry0 (int64_t arg3, void *stack_end);
 |           ; arg int64_t arg3 @ rdx

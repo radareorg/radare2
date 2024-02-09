@@ -1492,9 +1492,13 @@ static bool init_die(RBinDwarfDie *die, ut64 abbr_code, ut64 attr_count) {
 	if (!die) {
 		return false;
 	}
-	die->attr_values = calloc (sizeof (RBinDwarfAttrValue), attr_count);
-	if (!die->attr_values) {
-		return false;
+	if (attr_count) {
+		die->attr_values = calloc (sizeof (RBinDwarfAttrValue), attr_count);
+		if (!die->attr_values) {
+			return false;
+		}
+	} else {
+		die->attr_values = NULL;
 	}
 	die->abbrev_code = abbr_code;
 	die->capacity = attr_count;
@@ -2176,30 +2180,32 @@ static const ut8 *parse_die(RBin *bin, const ut8 *buf, const ut8 *buf_end, RBinD
 	for (i = 0; i < die->count; i++) {
 		memset (&die->attr_values[i], 0, sizeof (RBinDwarfDie));
 	}
-	for (i = 0; i < abbrev->count && i < die->capacity; i++) {
-		memset (&die->attr_values[i], 0, sizeof (die->attr_values[i]));
-		// debug_str_len = r_str_nlen (debug_str, buf_end - buf);
-		const ut8 *nbuf = parse_attr_value (bin, buf, buf_end - buf,
-			&abbrev->defs[i], &die->attr_values[i], hdr, be);
-		if (!nbuf) {
-			break;
-		}
-		buf = nbuf;
-		RBinDwarfAttrValue *attribute = &die->attr_values[i];
+	if (abbrev->count) {
+		for (i = 0; i < abbrev->count && i < die->capacity; i++) {
+			memset (&die->attr_values[i], 0, sizeof (die->attr_values[i]));
+			// debug_str_len = r_str_nlen (debug_str, buf_end - buf);
+			const ut8 *nbuf = parse_attr_value (bin, buf, buf_end - buf,
+				&abbrev->defs[i], &die->attr_values[i], hdr, be);
+			if (!nbuf) {
+				break;
+			}
+			buf = nbuf;
+			RBinDwarfAttrValue *attribute = &die->attr_values[i];
 
-		bool is_string = (attribute->attr_form == DW_FORM_strp || attribute->attr_form == DW_FORM_string ||
-			attribute->attr_form == DW_FORM_line_strp);
-		bool is_valid_string_form = is_string && attribute->string.content;
-		if (attribute->attr_name == DW_AT_stmt_list) {
-			debug_line_offset = attribute->reference;
+			bool is_string = (attribute->attr_form == DW_FORM_strp || attribute->attr_form == DW_FORM_string ||
+				attribute->attr_form == DW_FORM_line_strp);
+			bool is_valid_string_form = is_string && attribute->string.content;
+			if (attribute->attr_name == DW_AT_stmt_list) {
+				debug_line_offset = attribute->reference;
+			}
+			if (attribute->attr_name == DW_AT_comp_dir && is_valid_string_form) {
+				comp_dir = strdup (attribute->string.content);
+				r_str_ansi_strip (comp_dir);
+				r_str_replace_ch (comp_dir, '\n', 0, true);
+				r_str_replace_ch (comp_dir, '\t', 0, true);
+			}
+			die->count++;
 		}
-		if (attribute->attr_name == DW_AT_comp_dir && is_valid_string_form) {
-			comp_dir = strdup (attribute->string.content);
-			r_str_ansi_strip (comp_dir);
-			r_str_replace_ch (comp_dir, '\n', 0, true);
-			r_str_replace_ch (comp_dir, '\t', 0, true);
-		}
-		die->count++;
 	}
 	comp_dir_key = get_compilation_directory_key (debug_line_offset);
 	if (!comp_dir_key) {

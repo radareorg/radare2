@@ -1724,8 +1724,7 @@ static void r_core_cmd_print_binformat(RCore *core, const char *arg, int mode) {
 						pad?pad:"", pad2,
 						la->name?la->name: "",
 						la->value, la->value, la->value,
-						la->pos, la->sz
-					      );
+						la->pos, la->sz);
 			}
 			free (pad);
 			free (pad2);
@@ -1739,7 +1738,13 @@ static void r_core_cmd_print_binformat(RCore *core, const char *arg, int mode) {
 
 static void cmd_print_format(RCore *core, const char *_input, const ut8* block, int len) {
 	char *input = NULL;
+	bool v2 = false;
 	int mode = R_PRINT_MUSTSEE;
+	if (_input[1] == '2') {
+		// "pf2"
+		_input++;
+		v2 = true;
+	}
 	switch (_input[1]) {
 	case '*': // "pf*"
 		_input++;
@@ -2042,8 +2047,13 @@ static void cmd_print_format(RCore *core, const char *_input, const ut8* block, 
 			r_core_cmd_help_match (core, help_msg_pf, "pf");
 			goto err_arg1;
 		}
-		r_print_format (core->print, core->offset,
-			buf, size, fmt, mode, NULL, NULL);
+		if (v2) {
+			r_print_format2 (core->print, core->offset,
+				buf, size, fmt, mode, NULL, NULL);
+		} else {
+			r_print_format (core->print, core->offset,
+				buf, size, fmt, mode, NULL, NULL);
+		}
 	err_arg1:
 		free (args);
 	err_args:
@@ -3068,7 +3078,7 @@ static void disasm_strings(RCore *core, const char *input, RAnalFunction *fcn) {
 	r_config_set_b (core->config, "asm.cmt.right", true);
 	r_config_set_b (core->config, "asm.offset", true);
 
-	if (strchr (input, 'q')) {
+	if (strchr (input, 'q')) { // "pdsfq"
 		show_offset = false;
 	}
 
@@ -5511,10 +5521,10 @@ static bool cmd_pi(RCore *core, const char *input, int len, int l, ut8 *block) {
 						RAnalOp *op = r_core_anal_op (core, refi->addr, R_ARCH_OP_MASK_BASIC);
 						RBinReloc *rel = r_core_getreloc (core, refi->addr, op->size);
 						if (rel) {
-							if (rel && rel->import && rel->import->name) {
-								dst2 = rel->import->name;
-							} else if (rel && rel->symbol && rel->symbol->name) {
-								dst2 = rel->symbol->name;
+							if (rel && rel->import) {
+								dst2 = r_bin_name_tostring (rel->import->name);
+							} else if (rel && rel->symbol) {
+								dst2 = r_bin_name_tostring (rel->symbol->name);
 							}
 						} else {
 							dst2 = dst;

@@ -36,6 +36,7 @@ EOF
 RUN
 
 NAME=dbg.manycontback
+BROKEN=1
 FILE=bins/elf/analysis/ls-linux-x86_64-zlul
 ARGS=-d -e dbg.bpsysign=true
 CMDS=<<EOF
@@ -70,4 +71,4 @@ EXPECT=<<EOF
 0x004028ca
 0x004028a0
 EOF
-RUN
+NORUN

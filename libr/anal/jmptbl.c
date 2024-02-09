@@ -58,9 +58,8 @@ static inline void analyze_new_case(RAnal *anal, RAnalFunction *fcn, RAnalBlock 
 					R_LOG_WARN ("Cannot find basic block for switch case at 0x%08"PFMT64x" bbdelta = %d", ip, (int)R_ABS (d));
 					block = NULL;
 					return;
-				} else {
-					R_LOG_WARN ("Inconsistent basicblock storage issue at 0x%08"PFMT64x, ip);
 				}
+				R_LOG_WARN ("Inconsistent basicblock storage issue at 0x%08"PFMT64x, ip);
 			} else {
 				R_LOG_ERROR ("Major disaster at 0x%08"PFMT64x, ip);
 				return;

@@ -1606,12 +1606,11 @@ static void __fix_cursor_down(RCore *core) {
 	RPrint *print = core->print;
 	bool cur_is_visible = core->offset + print->cur + 32 < print->screen_bounds;
 	if (!cur_is_visible) {
-		int i = 0;
-		//XXX: ugly hack
+		int i;
+		// XXX: ugly hack
 		for (i = 0; i < 2; i++) {
 			RAnalOp op;
-			int sz = r_asm_disassemble (core->rasm,
-					&op, core->block, 32);
+			int sz = r_asm_disassemble (core->rasm, &op, core->block, 32);
 			if (sz < 1) {
 				sz = 1;
 			}
@@ -1682,7 +1681,7 @@ static void __cursor_down(RCore *core) {
 	} else {
 		print->cur += 4;
 	}
-	__fix_cursor_down (core);
+	// __fix_cursor_down (core);
 }
 
 static void __save_panel_pos(RPanel* panel) {

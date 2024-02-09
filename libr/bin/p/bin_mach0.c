@@ -223,7 +223,7 @@ static RBinImport *import_from_name(RBin *rbin, const char *orig_name, HtPP *imp
 	if (*name == '_') {
 		name++;
 	}
-	ptr->name = strdup (name);
+	ptr->name = r_bin_name_new (name);
 	ptr->bind = "NONE";
 	ptr->type = r_str_constpool_get (&rbin->constpool, type);
 

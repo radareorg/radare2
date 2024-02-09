@@ -273,20 +273,14 @@ typedef struct r_bin_info_t {
 } RBinInfo;
 
 typedef struct r_bin_symbol_t {
-#if R2_590
 	RBinName *name;
-	RBinName *classname;
-#else
-	char *name; // deprecate and use bname
-	char *dname; // deprecate and use bname
 	char *classname;
-#endif
 	char *libname;
 	/* const-unique-strings */
 	const char *forwarder;
 	const char *bind; // tied to attr already
-	const char *type; // typed to attr already
 	// RBinName *type;
+	const char *type;
   	const char *rtype;
 	bool is_imported;
 	/* only used by java */
@@ -318,7 +312,8 @@ typedef struct r_bin_section_t {
 } RBinSection;
 
 typedef struct r_bin_import_t {
-	char *name;
+	RBinName *name;
+// 	char *name;
 	char *libname;
 	const char *bind;
 	const char *type;
@@ -407,6 +402,7 @@ typedef struct r_bin_file_t {
 	Sdb *sdb_info;
 	Sdb *sdb_addrinfo;
 	struct r_bin_t *rbin;
+	int string_count;
 } RBinFile;
 
 typedef struct r_bin_file_options_t {
@@ -660,14 +656,8 @@ typedef struct r_bin_field_t {
 	int size;
 	int offset;
 	// ut32 visibility; // R2_590 - deprecate we have attr!
-#if 1
 	RBinName *name;
 	RBinName *type;
-#else
-	char *name;
-	char *type;
-#endif
-//	char *realname;
 	RBinFieldKind kind;
 	char *comment;
 	char *format;
@@ -891,6 +881,7 @@ R_API const char *r_bin_lang_tostring(int type);
 R_API RList *r_bin_get_mem(RBin *bin);
 
 R_API RBinName *r_bin_name_new(const char *name);
+R_API RBinName *r_bin_name_new_from(R_OWN char *name);
 R_API RBinName *r_bin_name_clone(RBinName *bn);
 R_API void r_bin_name_update(RBinName *bn, const char *name);
 R_API char *r_bin_name_tostring(RBinName *bn);

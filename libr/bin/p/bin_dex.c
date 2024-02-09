@@ -1063,15 +1063,18 @@ static void parse_dex_class_fields(RBinFile *bf, RBinDexClass *c, RBinClass *cls
 			break;
 		}
 		const char *cls_name = r_bin_name_tostring (cls->name);
+		const char *ftype = is_sfield ? "sfield": "ifield";
+		char *s = r_str_newf ("%s.%s_%s:%s", cls_name, ftype, fieldName, type_str);
+		sym->name = r_bin_name_new (s);
 		if (is_sfield) {
-			sym->name = r_str_newf ("%s.sfield_%s:%s", cls_name, fieldName, type_str);
 			sym->type = "STATIC";
 		} else {
-			sym->name = r_str_newf ("%s.ifield_%s:%s", cls_name, fieldName, type_str);
 			sym->type = "FIELD";
 		}
-		sym->name = r_str_replace (sym->name, "method.", "", 0);
-		r_str_replace_char (sym->name, ';', 0);
+		s = r_str_replace (s, "method.", "", 0);
+		r_str_replace_char (s, ';', 0);
+		r_bin_name_filtered (sym->name, s);
+		free (s);
 		sym->paddr = total;
 		sym->vaddr = sym->paddr; //  + baddr;
 		sym->lang = R_BIN_LANG_JAVA;
@@ -1091,7 +1094,7 @@ static void parse_dex_class_fields(RBinFile *bf, RBinDexClass *c, RBinClass *cls
 		RBinField *field = R_NEW0 (RBinField);
 		if (R_LIKELY (field)) {
 			field->vaddr = field->paddr = sym->paddr;
-			field->name = r_bin_name_new (sym->name);
+			field->name = r_bin_name_clone (sym->name);
 			field->attr = get_method_attr (accessFlags);
 			r_list_append (cls->fields, field);
 		}
@@ -1340,7 +1343,8 @@ static void parse_dex_class_method(RBinFile *bf, RBinDexClass *c, RBinClass *cls
 				R_FREE (flag_name);
 				break;
 			}
-			sym->name = flag_name;
+			sym->name = r_bin_name_new (flag_name);
+			R_FREE (flag_name);
 			// is_direct is no longer used
 			// if method has code *addr points to code
 			// otherwise it points to the encoded method
@@ -1701,7 +1705,9 @@ static bool dex_loadcode(RBinFile *bf) {
 					free (class_name);
 					return false;
 				}
-				imp->name  = r_str_newf ("%s.method.%s%s", class_name, method_name, signature);
+				char *s = r_str_newf ("%s.method.%s%s", class_name, method_name, signature);
+				imp->name = r_bin_name_new (s);
+				free (s);
 				imp->type = "FUNC";
 				imp->bind = "NONE";
 				imp->ordinal = import_count++;
@@ -1714,7 +1720,7 @@ static bool dex_loadcode(RBinFile *bf) {
 					free (class_name);
 					return false;
 				}
-				sym->name = strdup (imp->name);
+				sym->name = r_bin_name_clone (imp->name);
 				sym->is_imported = true;
 				sym->type = R_BIN_TYPE_FUNC_STR;
 				sym->bind = "NONE";
@@ -1799,10 +1805,10 @@ static RList *entries(RBinFile *bf) {
 
 	// STEP 1. ".onCreate(Landroid/os/Bundle;)V"
 	r_list_foreach (bin->methods_list, iter, m) {
-		if (strlen (m->name) > 30 && m->bind &&
-			(!strcmp (m->bind, R_BIN_BIND_LOCAL_STR) || !strcmp (m->bind, R_BIN_BIND_GLOBAL_STR)) &&
-		    !strcmp (m->name + strlen (m->name) - 31,
-			     ".onCreate(Landroid/os/Bundle;)V")) {
+		const char *oname = r_bin_name_tostring2 (m->name, 'o');
+		if (strlen (oname) > 30 && m->bind \
+				&& (!strcmp (m->bind, R_BIN_BIND_LOCAL_STR) || !strcmp (m->bind, R_BIN_BIND_GLOBAL_STR)) \
+				&& !strcmp (oname + strlen (oname) - 31, ".onCreate(Landroid/os/Bundle;)V")) {
 			if (!already_entry (ret, m->paddr)) {
 				if ((ptr = R_NEW0 (RBinAddr))) {
 					ptr->paddr = ptr->vaddr = m->paddr;
@@ -1815,9 +1821,8 @@ static RList *entries(RBinFile *bf) {
 	// STEP 2. ".main([Ljava/lang/String;)V"
 	if (r_list_empty (ret)) {
 		r_list_foreach (bin->methods_list, iter, m) {
-			if (strlen (m->name) > 26 &&
-			    !strcmp (m->name + strlen (m->name) - 27,
-				     ".main([Ljava/lang/String;)V")) {
+			const char *oname = r_bin_name_tostring2 (m->name, 'o');
+			if (strlen (oname) > 26 && !strcmp (oname + strlen (oname) - 27, ".main([Ljava/lang/String;)V")) {
 				if (!already_entry (ret, m->paddr)) {
 					if ((ptr = R_NEW0 (RBinAddr))) {
 						ptr->paddr = m->paddr;
