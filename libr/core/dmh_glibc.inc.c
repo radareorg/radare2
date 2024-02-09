@@ -312,7 +312,6 @@ static bool GH(resolve_glibc_version)(RCore *core) {
 }
 
 static bool GH(is_tcache)(RCore *core) {
-	double v = 0;
 	if (!r_config_get_b (core->config, "cfg.debug")) {
 		return r_config_get_b (core->config, "dbg.glibc.tcache");
 	}
