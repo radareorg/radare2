@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <ctype.h>
+#include <math.h>
 #include <stdlib.h>
 #include <r_util.h>
 
@@ -240,12 +241,27 @@ static inline ut32 encode3regs (ArmOp *op) {
 	return data;
 }
 
-static inline ut32 encodeUimm4 (ut32 n) {
-	return (n & 0xf) << 13;
+static inline ut32 encodeUimm4 (ArmOp *op) {
+	int ui4 = op->operands[3].immediate;
+	R_LOG ("uimm4: %d", ui4);
+
+	ut32 data = ui4;
+	return data << 18;
 }
 
-static inline ut32 encodeUimm6 (ut32 n) {
-	return (n & 0x3F) << 21;
+static inline ut32 encodeUimm6 (ArmOp *op) {
+	int ui6 = op->operands[2].immediate;
+	R_LOG ("uimm6: %d", ui6);
+	ut32 data;
+
+	if (!(ui6 % 16)) {
+		data = ui6 / 16;
+	} else {
+		return 0;
+	}
+
+	R_LOG ("Encoded uimm6: %d", data);
+	return data << 8;
 }
 
 static inline ut32 encodeImm9 (ut32 n) {
@@ -1910,28 +1926,14 @@ static ut32 addg (ArmOp *op) {
 	ut32 data = UT32_MAX;
 
 	// check for instruction and register constraints
-	int sf = 0b1;
-	int opcode = 0b0;
-	int s = 0b01000110;
-	int uimm6 = op->operands[2].immediate;
-	int opcode3 = 0b00;
-	int uimm4 = op->operands[3].immediate;
-	int xn = op->operands[1].reg;
-	int xd = op->operands[0].reg;
 
-	data = 0;
-	data |= sf << 31;
-	data |= opcode << 30;
-	data |= s << 22;
-	data |= uimm6 << 16;
-	data |= opcode3 << 14;
-	data |= uimm4 << 10;
-	data |= xn << 5;
-	data |= xd;
+	data = 0x008091;
 
-	R_LOG ("ADDG (%x) Info:\n\txd: %d\n\txn: %d\n\timm6: %d\n\timm4: %d", data, xd, xn, uimm6, uimm4);
+	data |= encodeUimm6 (op);
+	data |= encodeUimm4 (op);
+	data |= encode2regs (op);
 
-	return to_le (data);
+	return data;
 }
 
 bool arm64ass (const char *str, ut64 addr, ut32 *op) {
