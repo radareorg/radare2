@@ -799,20 +799,17 @@ typedef struct {
 	RBinDwarfAbbrevDecl *decls;
 } RBinDwarfDebugAbbrev;
 
-#define		DWARF_FALSE	0
-#define		DWARF_TRUE	1
-
 typedef struct {
 	ut64 address;
 	ut64 op_index;
 	ut64 file;
 	ut64 line;
 	ut64 column;
-	ut8 is_stmt;
-	ut8 basic_block;
-	ut8 end_sequence;
-	ut8 prologue_end;
-	ut8 epilogue_begin;
+	bool is_stmt;
+	bool basic_block;
+	bool end_sequence;
+	bool prologue_end;
+	bool epilogue_begin;
 	ut64 isa;
 	ut64 discriminator;
 } RBinDwarfSMRegisters;
