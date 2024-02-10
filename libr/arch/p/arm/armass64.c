@@ -240,6 +240,14 @@ static inline ut32 encode3regs (ArmOp *op) {
 	return data;
 }
 
+static inline ut32 encodeUimm4 (ut32 n) {
+	return (n & 0xf) << 13;
+}
+
+static inline ut32 encodeUimm6 (ut32 n) {
+	return (n & 0x3F) << 21;
+}
+
 static inline ut32 encodeImm9 (ut32 n) {
 	return (n & 0x1f0) << 4 | (n & 0xf) << 20;
 }
@@ -1880,32 +1888,28 @@ static ut32 irg (ArmOp *op) {
 		return UT32_MAX; // instruction only available on arm64
 	}
 
-	ut32 instruction = 0;
+	// sf = 0b10
+	// s = 0b011010110;
+	int data = 0x0000c09a;
+	// opcode is 6 bit field
+	data |= (4 & 63) << 18;
+	// this instruction always has at least two registers
+	data |= encode2regs (op);
+	// if there is an optional third register, encode it
+	if (op->operands[2].type == ARM_GPR) {
+		data |= op->operands[2].reg << 8;
+	} else {
+		// otherwise, use the zero register by default
+		data |= 31 << 8;
+	}
 
-	int sf = 0b10;
-	int s = 0b011010110;
-	int opcode = 0b000100;
-	// encode the destination register (Xd) for the tag
-	int xd = op->operands[0].reg;
-	// encode the first source register (Xn)
-	int xn = op->operands[1].reg;
-	// Xm is optional, if it is not there, then defaults to XZR
-	int xm = op->operands[2].type == ARM_GPR ? op->operands[2].reg : 31;
-
-	instruction |= sf << 30;
-	instruction |= s << 21;
-	instruction |= opcode << 10;
-	instruction |= xm << 16;
-	instruction |= xn << 5;
-	instruction |= xd;
-
-	R_LOG ("IRG (%x) Info:\n\txd: x%d\n\txn: x%d\n\txm: x%d", instruction, xd, xn, xm);
-
-	return to_le (instruction);
+	return data;
 }
 
 static ut32 addg (ArmOp *op) {
+	ut32 data = UT32_MAX;
 
+	// check for instruction and register constraints
 	int sf = 0b1;
 	int opcode = 0b0;
 	int s = 0b01000110;
@@ -1915,15 +1919,15 @@ static ut32 addg (ArmOp *op) {
 	int xn = op->operands[1].reg;
 	int xd = op->operands[0].reg;
 
-	ut32 data = 0;
+	data = 0;
 	data |= sf << 31;
 	data |= opcode << 30;
 	data |= s << 22;
-	// data |= uimm6 << 17;
-	// data |= opcode3 << 14;
-	// data |= uimm4 << 9;
-	// data |= xn << 5;
-	// data |= xd;
+	data |= uimm6 << 16;
+	data |= opcode3 << 14;
+	data |= uimm4 << 10;
+	data |= xn << 5;
+	data |= xd;
 
 	R_LOG ("ADDG (%x) Info:\n\txd: %d\n\txn: %d\n\timm6: %d\n\timm4: %d", data, xd, xn, uimm6, uimm4);
 
