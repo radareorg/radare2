@@ -6,7 +6,6 @@
 #include <stdio.h>
 #include <string.h>
 #include <ctype.h>
-#include <math.h>
 #include <stdlib.h>
 #include <r_util.h>
 
@@ -1939,6 +1938,23 @@ static ut32 addg (ArmOp *op) {
 	return data;
 }
 
+static ut32 subg (ArmOp *op) {
+	ut32 data = UT32_MAX;
+
+	// check for instruction and register constraints
+	if (!is_valid_mte (op)) {
+		return UT32_MAX; // instruction only available on arm64
+	}
+
+	data = 0x0080d1;
+
+	data |= encodeUimm6 (op);
+	data |= encodeUimm4 (op);
+	data |= encode2regs (op);
+
+	return data;
+}
+
 static ut32 stg (ArmOp *op) {
 	ut32 data = UT32_MAX;
 
@@ -2031,7 +2047,7 @@ bool arm64ass (const char *str, ut64 addr, ut32 *op) {
 		*op = stp (&ops, 0x000000a9);
 	} else if (!strncmp (str, "ldp", 3)) {
 		*op = stp (&ops, 0x000040a9);
-	} else if (!strncmp (str, "sub", 3)) { // w
+	} else if (!strncmp (str, "sub", 3) && strncmp (str, "subg", 4)) { // w, skip this for subg ins
 		*op = arithmetic (&ops, 0xd1);
 	} else if (!strncmp (str, "madd x", 6)) {
 		*op = math (&ops, 0x9b, true);
@@ -2076,8 +2092,10 @@ bool arm64ass (const char *str, ut64 addr, ut32 *op) {
 		*op = irg (&ops);
 	} else if (r_str_startswith (str, "addg")) {
 		*op = addg (&ops);
-	} else if (r_str_startswith (std, "stg")) {
-		op * = stg (&ops);
+	} else if (r_str_startswith (str, "subg")) {
+		*op = subg (&ops);
+	} else if (r_str_startswith (str, "stg")) {
+		*op = stg (&ops);
 	} else if (!strcmp (str, "nop")) {
 		*op = 0x1f2003d5;
 	} else if (!strcmp (str, "ret")) {
