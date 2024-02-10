@@ -1055,7 +1055,7 @@ static const ut8 *parse_ext_opcode(RBin *bin, const ut8 *obuf, size_t len, const
 
 	switch (opcode) {
 	case DW_LNE_end_sequence:
-		regs->end_sequence = DWARF_TRUE;
+		regs->end_sequence = true;
 
 		if (binfile && binfile->sdb_addrinfo && hdr->file_names) {
 			int fnidx = regs->file - 1;
@@ -1158,9 +1158,9 @@ static const ut8 *parse_spec_opcode(
 					regs->line, regs->column, mode, print);
 		}
 	}
-	regs->basic_block = DWARF_FALSE;
-	regs->prologue_end = DWARF_FALSE;
-	regs->epilogue_begin = DWARF_FALSE;
+	regs->basic_block = false; // XXX cant we just use true and false here??
+	regs->prologue_end = false;
+	regs->epilogue_begin = false;
 	regs->discriminator = 0;
 
 	return buf;
@@ -1197,7 +1197,7 @@ static const ut8 *parse_std_opcode(RBin *bin, const ut8 *obuf, size_t len, const
 					regs->line, regs->column, mode, print);
 			}
 		}
-		regs->basic_block = DWARF_FALSE;
+		regs->basic_block = false;
 		break;
 	case DW_LNS_advance_pc:
 		buf = r_uleb128 (buf, buf_end - buf, &addr, NULL);
@@ -1229,7 +1229,7 @@ static const ut8 *parse_std_opcode(RBin *bin, const ut8 *obuf, size_t len, const
 		regs->column = addr;
 		break;
 	case DW_LNS_negate_stmt:
-		regs->is_stmt = regs->is_stmt ? DWARF_FALSE : DWARF_TRUE;
+		regs->is_stmt = regs->is_stmt ? false: true;
 		if (mode == R_MODE_PRINT) {
 			print ("Set is_stmt to %d\n", regs->is_stmt);
 		}
@@ -1238,7 +1238,7 @@ static const ut8 *parse_std_opcode(RBin *bin, const ut8 *obuf, size_t len, const
 		if (mode == R_MODE_PRINT) {
 			print ("set_basic_block\n");
 		}
-		regs->basic_block = DWARF_TRUE;
+		regs->basic_block = true;
 		break;
 	case DW_LNS_const_add_pc:
 		adj_opcode = 255 - hdr->opcode_base;
@@ -1294,10 +1294,10 @@ static void set_regs_default(const RBinDwarfLineHeader *hdr, RBinDwarfSMRegister
 	regs->line = 1;
 	regs->column = 0;
 	regs->is_stmt = hdr->default_is_stmt;
-	regs->basic_block = DWARF_FALSE;
-	regs->end_sequence = DWARF_FALSE;
-	regs->prologue_end = DWARF_FALSE;
-	regs->epilogue_begin = DWARF_FALSE;
+	regs->basic_block = false;
+	regs->end_sequence = false;
+	regs->prologue_end = false;
+	regs->epilogue_begin = false;
 	regs->isa = 0;
 }
 
