@@ -169,7 +169,7 @@ static Sym *struct_find(TCCState *s1, int v) {
 /* find an identifier */
 ST_INLN Sym *sym_find(TCCState *s1, AttributeDef v) {
 	ut32 nv = v.value - TOK_IDENT;
-	if (nv >= (size_t) (s1->tok_ident - TOK_IDENT)) {
+	if (nv >= (ut32) (s1->tok_ident - TOK_IDENT)) {
 		return NULL;
 	}
 	return s1->table_ident[nv]->sym_identifier;
@@ -233,27 +233,27 @@ void dump_type(TCCState *s1, CType *type, int depth) {
 #endif
 
 /* push a given symbol on the symbol stack */
-ST_FUNC Sym *sym_push(TCCState *s1, AttributeDef v, CType *type, int r, long long c) {
+ST_FUNC Sym *sym_push(TCCState *s1, AttributeDef ad, CType *type, int r, long long c) {
 	Sym **ps = s1->local_stack? &s1->local_stack: &s1->global_stack;
-	// dump_type(type, 5);
-	Sym *s = sym_push2 (s1, ps, v, type->t, c);
+	// dump_type (type, 5);
+	Sym *s = sym_push2 (s1, ps, ad, type->t, c);
 	if (!s) {
 		return NULL;
 	}
 	s->type.ref = type->ref;
 	s->r = r;
-	AttributeDefValue vv = v.value;
+	AttributeDefValue v = ad.value;
 	/* don't record fields or anonymous symbols */
 	/* XXX: simplify */
-	if (!(vv & SYM_FIELD) && (vv & ~SYM_STRUCT) < SYM_FIRST_ANOM) {
-		int i = (vv & ~SYM_STRUCT);
+	if (!(v & SYM_FIELD) && (v & ~SYM_STRUCT) < SYM_FIRST_ANOM) {
+		int i = (v & ~SYM_STRUCT);
 		if (i < TOK_IDENT) {
 			return NULL;
 		}
 		// ts = table_ident[i - TOK_IDENT];
 		/* record symbol in token array */
-		TokenSym *ts = s1->table_ident[(vv & ~SYM_STRUCT) - TOK_IDENT];
-		if (vv & SYM_STRUCT) {
+		TokenSym *ts = s1->table_ident[(v & ~SYM_STRUCT) - TOK_IDENT];
+		if (v & SYM_STRUCT) {
 			ps = &ts->sym_struct;
 		} else {
 			ps = &ts->sym_identifier;
@@ -290,12 +290,12 @@ ST_FUNC Sym *global_identifier_push(TCCState *s1, AttributeDef v, int t, long lo
 
 /* pop symbols until top reaches 'b' */
 ST_FUNC void sym_pop(TCCState *s1, Sym **ptop, Sym *b) {
-	Sym *ss, **ps;
-	TokenSym *ts;
-	AttributeDef v;
 	if (!b) {
 		return;
 	}
+	Sym *ss, **ps;
+	TokenSym *ts;
+	AttributeDef v;
 
 	Sym *s = *ptop;
 	while (s != b) {
@@ -1559,7 +1559,7 @@ old_proto:
 		if (s1->tok == TOK_RESTRICT1) {
 			next (s1);
 		}
-		n.value = UT32_MAX;
+		n.svalue = -1; // UT32_MAX;
 		t1 = 0;
 		if (s1->tok != ']') {
 			if (!s1->local_stack || s1->nocode_wanted) {

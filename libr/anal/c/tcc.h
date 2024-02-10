@@ -101,6 +101,7 @@ typedef UINT_PTR uintptr_t;
 
 /* GNUC attribute definition */
 typedef ut32 AttributeDefValue;
+typedef int AttributeDefSValue;
 typedef union AttributeDef {
 	AttributeDefValue
 		func_call     : 3, /* calling convention (0..5), see below */
@@ -112,6 +113,7 @@ typedef union AttributeDef {
 		mode          : 4,
 		weak          : 1,
 		fill          : 11;
+	AttributeDefSValue svalue;
 	AttributeDefValue value;
 	// ut32 alias_target;    /* token */
 } AttributeDef;
@@ -366,7 +368,7 @@ struct TCCState {
 
 	/* used by main and tcc_parse_args only */
 	char *deps_outfile; /* option -MF */
-	// === previously globals ====
+	// previously globals 
 	bool const_wanted;	/* true if constant wanted */
 	bool global_expr;	/* true if compound literals must be allocated globally (used during initializers parsing */
 	size_t arraysize;
