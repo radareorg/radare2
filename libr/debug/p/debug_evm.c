@@ -1,6 +1,5 @@
-/* 2017 - montekki */
+/* 2017 - montekki - LGPL3 */
 
-// #include <r_asm.h>
 #include <r_debug.h>
 
 typedef struct {
@@ -41,8 +40,8 @@ typedef struct {
 	ut8 *code;
 	size_t code_size;
 
-	char *response;
-	size_t curr_resp_size;
+	// char *response;
+	// size_t curr_resp_size;
 
 	RIOEvmOp *ops;
 	size_t ops_size;
@@ -58,10 +57,8 @@ static bool r_debug_evm_step(RDebug *dbg) {
 	if (!rio->ops_size || rios->curr_instruction >= rio->ops_size) {
 		return false;
 	}
-
 	rios->curr_instruction++;
 	rio->curr_op = rios->curr_instruction;
-
 	return true;
 }
 
@@ -79,14 +76,12 @@ static bool r_debug_evm_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 }
 
 static RList *r_debug_evm_map_get(RDebug *dbg) {
-	RList *list;
-	RDebugMap *map;
-
 	if (rio && !rio->ops_size) {
 		return NULL;
 	}
 
-	list = r_list_new();
+	RList *list = r_list_new();
+	RDebugMap *map;
 
 	map = r_debug_map_new ("code", 0x0000, 0x7FFF, r_str_rwx("rwx"), 0);
 	r_list_append (list, map);
@@ -104,30 +99,26 @@ static bool r_debug_evm_reg_write(RDebug *dbg, int type, const ut8 *buf, int siz
 	return false;
 }
 
-static ssize_t find_breakpoint(ut64 addr, ut64 *addrs, size_t addrs_len);
+static st64 find_breakpoint(ut64 addr, ut64 *addrs, size_t addrs_len);
 
 static bool r_debug_evm_continue(RDebug *dbg, int pid, int tid, int sig) {
-	size_t i;
-	ssize_t bpt_addr;
-
 	if (!rio->ops_size) {
 		return false;
 	}
 
-	bpt_addr = find_breakpoint(rio->ops[rios->curr_instruction].pc,
+	st64 bpt_addr = find_breakpoint (rio->ops[rios->curr_instruction].pc,
 			rios->breakpoints, rios->breakpoints_length);
 
 	if (bpt_addr >= 0 && rio->ops[rios->curr_instruction].pc == rios->breakpoints[bpt_addr]) {
 		rios->curr_instruction++;
 	}
 
+	size_t i;
 	for (i = rios->curr_instruction; i < rio->ops_size; i++) {
-		bpt_addr = find_breakpoint(rio->ops[i].pc, rios->breakpoints, rios->breakpoints_length);
-
+		bpt_addr = find_breakpoint (rio->ops[i].pc, rios->breakpoints, rios->breakpoints_length);
 		if (bpt_addr >= 0) {
 			rios->curr_instruction = i;
 			rio->curr_op = rios->curr_instruction;
-
 			return true;
 		}
 	}
@@ -172,11 +163,11 @@ static const char *r_debug_evm_reg_profile(RDebug *dbg, int pid) {
 		      );
 }
 
-static ssize_t find_breakpoint(ut64 addr, ut64 *addrs, size_t addrs_len) {
+static st64 find_breakpoint(ut64 addr, ut64 *addrs, size_t addrs_len) {
 	if (addrs_len <= 0) {
 		return -1;
 	}
-	size_t middle = addrs_len / 2;
+	st64 middle = addrs_len / 2;
 
 	if (addrs[middle] == addr) {
 		return middle;
@@ -197,13 +188,12 @@ static int r_debug_evm_breakpoint (struct r_bp_t *bp, RBreakpointItem *b, bool s
 	}
 
 	if (set) {
-		ssize_t idx = find_breakpoint(b->addr, rios->breakpoints, rios->breakpoints_length);
+		st64 idx = find_breakpoint (b->addr, rios->breakpoints, rios->breakpoints_length);
 		if (idx >= 0) {
 			return true;
 		}
 		if (rios->breakpoints_length >= rios->breakpoints_capacity) {
-			rios->breakpoints = realloc(rios->breakpoints,
-					rios->breakpoints_capacity + 64);
+			rios->breakpoints = realloc (rios->breakpoints, rios->breakpoints_capacity + 64);
 			rios->breakpoints_capacity += 64;
 		}
 		rios->breakpoints[rios->breakpoints_length] = b->addr;
@@ -211,16 +201,13 @@ static int r_debug_evm_breakpoint (struct r_bp_t *bp, RBreakpointItem *b, bool s
 		qsort (rios->breakpoints, rios->breakpoints_length, sizeof (ut64), compare_addrs);
 	} else {
 		size_t i;
-		ssize_t idx = find_breakpoint(b->addr, rios->breakpoints, rios->breakpoints_length);
-
+		st64 idx = find_breakpoint (b->addr, rios->breakpoints, rios->breakpoints_length);
 		if (idx < 0) {
 			return false;
 		}
-
 		for (i = idx; i < rios->breakpoints_length - 1; i++) {
 			rios->breakpoints[i] = rios->breakpoints[i + 1];
 		}
-
 		rios->breakpoints_length -= 1;
 	}
 
