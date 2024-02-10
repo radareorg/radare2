@@ -145,6 +145,7 @@ static ut8 *GH(get_section_bytes)(RCore *core, const char *path, const char *sec
 	RList *sections = r_bin_get_sections (bin);
 	RBinSection *section;
 	RListIter *iter;
+	ut8 *buf = NULL;
 	r_list_foreach (sections, iter, section) {
 		if (!strcmp (section->name, section_name)) {
 			found_section = true;
@@ -160,7 +161,7 @@ static ut8 *GH(get_section_bytes)(RCore *core, const char *path, const char *sec
 	}
 
 	// eprintf ("get_section_bytes: section found: %s size: %#08x  paddr: %#08x\n", section_name, size, paddr);
-	ut8 *buf = calloc (size, 1);
+	buf = calloc (size, 1);
 	if (!buf) {
 		R_LOG_ERROR ("get_section_bytes: calloc failed");
 		goto cleanup_exit;
