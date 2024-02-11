@@ -181,7 +181,7 @@ static RCoreHelpMessage help_msg_p = {
 	"p6", "[de] [len]", "base64 decode/encode",
 	"p8", "[?][dfjx] [len]", "8bit hexpair list of bytes",
 	"p=", "[?][bep] [N] [L] [b]", "show entropy/printable chars/chars bars",
-	"pa", "[edD] [arg]", "pa:assemble  pa[dD]:disasm or pae: esil from hex",
+	"pa", "[?][edD] [arg]", "pa:assemble  pa[dD]:disasm or pae: esil from hex",
 	"pA", "[n_ops]", "show n_ops address and type",
 	"pb", "[?] [n]", "bitstream of N bits",
 	"pB", "[?] [n]", "bitstream of N bytes",
@@ -4151,6 +4151,10 @@ static ut8 *analBars(RCore *core, size_t type, size_t nblocks, size_t blocksize,
 }
 
 static void cmd_print_bars(RCore *core, const char *input) {
+	if (r_str_endswith (input, "?")) {
+		r_core_cmd_help (core, help_msg_p_equal);
+		return;
+	}
 	bool print_bars = false;
 	ut8 *ptr = NULL;
 	// p=e [nblocks] [totalsize] [skip]
