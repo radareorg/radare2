@@ -1,0 +1,26 @@
+NAME=tenum ut64
+FILE=--
+CMDS=<<EOF
+td enum test{ullnum=0x800000ULL }
+te test
+EOF
+EXPECT_ERR=<<EOF
+EOF
+EXPECT=<<EOF
+ullnum = 0x800000
+EOF
+RUN
+
+NAME=tenum ut64 second edition
+FILE=--
+CMDS=<<EOF
+td enum test{ullnum=0x800000ULL,ullnum2=0x8000123480000000ULL }
+te test
+EOF
+EXPECT_ERR=
+EXPECT=<<EOF
+ullnum = 0x800000
+ullnum2 = 0x8000123480000000
+EOF
+RUN
+
