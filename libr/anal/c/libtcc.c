@@ -191,7 +191,7 @@ static void error1(TCCState *s1, int is_warning, const char *fmt, va_list ap) {
 
 typedef void (*TccErrorCallback)(void *opaque, const char *msg);
 
-LIBTCCAPI void tcc_set_error_func(TCCState *s, void *error_opaque, TccErrorCallback error_func) {
+R_API void tcc_set_error_func(TCCState *s, void *error_opaque, TccErrorCallback error_func) {
 	s->error_opaque = error_opaque;
 	s->error_func = error_func;
 }
@@ -358,7 +358,7 @@ static int tcc_compile(TCCState *s1) {
 	return s1->nb_errors != 0? -1: 0;
 }
 
-LIBTCCAPI int tcc_compile_string(TCCState *s1, const char *str) {
+R_API int tcc_compile_string(TCCState *s1, const char *str) {
 	int len = strlen (str);
 	if (!tcc_open_bf (s1, "<string>", len)) {
 		return false;
@@ -370,7 +370,7 @@ LIBTCCAPI int tcc_compile_string(TCCState *s1, const char *str) {
 }
 
 /* define a preprocessor symbol. A value can also be provided with the '=' operator */
-LIBTCCAPI void tcc_define_symbol(TCCState *s1, const char *sym, const char *value) {
+R_API void tcc_define_symbol(TCCState *s1, const char *sym, const char *value) {
 	/* default value */
 	if (!value) {
 		value = "1";
@@ -393,7 +393,7 @@ LIBTCCAPI void tcc_define_symbol(TCCState *s1, const char *sym, const char *valu
 }
 
 /* undefine a preprocessor symbol */
-LIBTCCAPI void tcc_undefine_symbol(TCCState *s1, const char *sym) {
+R_API void tcc_undefine_symbol(TCCState *s1, const char *sym) {
 	TokenSym *ts = tok_alloc (s1, sym, strlen (sym));
 	Sym *s = define_find (s1, ts->tok);
 	/* undefine symbol by putting an invalid name */
@@ -548,7 +548,7 @@ static void tcc_init_defines(TCCState *s) {
 #endif
 }
 
-LIBTCCAPI TCCState *tcc_new(const char *arch, int bits, const char *os) {
+R_API TCCState *tcc_new(const char *arch, int bits, const char *os) {
 	if (!arch || !os) {
 		return NULL;
 	}
@@ -567,7 +567,7 @@ LIBTCCAPI TCCState *tcc_new(const char *arch, int bits, const char *os) {
 }
 
 // TODO: rename to tcc_free
-LIBTCCAPI void tcc_delete(TCCState *s1) {
+R_API void tcc_delete(TCCState *s1) {
 	tcc_cleanup (s1);
 
 	/* free include paths */
@@ -585,12 +585,12 @@ LIBTCCAPI void tcc_delete(TCCState *s1) {
 	free (s1);
 }
 
-LIBTCCAPI int tcc_add_include_path(TCCState *s, const char *pathname) {
+R_API int tcc_add_include_path(TCCState *s, const char *pathname) {
 	tcc_split_path (s, (void ***) &s->include_paths, &s->nb_include_paths, pathname);
 	return 0;
 }
 
-LIBTCCAPI int tcc_add_sysinclude_path(TCCState *s, const char *pathname) {
+R_API int tcc_add_sysinclude_path(TCCState *s, const char *pathname) {
 	tcc_split_path (s, (void ***) &s->sysinclude_paths, &s->nb_sysinclude_paths, pathname);
 	return 0;
 }
@@ -633,7 +633,7 @@ the_end:
 	return ret;
 }
 
-LIBTCCAPI int tcc_add_file(TCCState *s1, const char *filename, const char *directory) {
+R_API int tcc_add_file(TCCState *s1, const char *filename, const char *directory) {
 	if (directory) {
 		free (s1->dir_name);
 		s1->dir_name = strdup (directory);

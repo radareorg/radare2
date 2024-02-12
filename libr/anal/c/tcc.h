@@ -66,10 +66,6 @@ typedef UINT_PTR uintptr_t;
 # endif
 # define inline __inline
 # define inp next_inp
-# ifdef LIBTCC_AS_DLL
-#  define LIBTCCAPI __declspec(dllexport)
-#  define R_API LIBTCCAPI
-# endif
 #endif
 
 #ifndef O_BINARY
