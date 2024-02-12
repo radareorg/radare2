@@ -89,13 +89,11 @@ static void cstr_realloc(CString *cstr, int new_size) {
 		size = size * 2;
 	}
 	void *data = realloc (cstr->data_allocated, size);
-	if (!data) {
-		eprintf ("Assert\n");
-		return;
+	if (data) {
+		cstr->data_allocated = data;
+		cstr->size_allocated = size;
+		cstr->data = data;
 	}
-	cstr->data_allocated = data;
-	cstr->size_allocated = size;
-	cstr->data = data;
 }
 
 /* add a byte */
