@@ -4264,8 +4264,8 @@ R_API int r_core_config_init(RCore *core) {
 	SETI ("scr.notch", 0, "force console row count (height) (duplicate?)");
 	SETICB ("scr.rows", 0, &cb_rows, "force console row count (height) (duplicate?)");
 	SETCB ("scr.fps", "false", &cb_fps, "show FPS in Visual");
-	SETICB ("scr.fix.rows", 0, &cb_fixrows, "Workaround for Linux TTY");
-	SETICB ("scr.fix.cols", 0, &cb_fixcolumns, "workaround for Prompt iOS SSH client");
+	SETICB ("scr.rows.fix", 0, &cb_fixrows, "Workaround for Linux TTY");
+	SETICB ("scr.cols.fix", 0, &cb_fixcolumns, "workaround for Prompt iOS SSH client");
 	SETCB ("scr.highlight", "", &cb_scrhighlight, "highlight that word at RCons level");
 #if __EMSCRIPTEN__ || __wasi__
 	SETCB ("scr.interactive", "false", &cb_scrint, "start in interactive mode");
