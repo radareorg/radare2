@@ -714,7 +714,7 @@ static inline bool isoct(int c) {
 }
 
 // TODO: deprecate, we have toupper()
-static inline bool toup(int c) {
+static inline int toup(int c) {
 	return (c >= 'a' && c <= 'z') ? c - 'a' + 'A' : c;
 }
 
