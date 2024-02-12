@@ -115,7 +115,7 @@ static int test_libc_match(void) {
 	res = r_regex_match (needle_libname, "e", haystack_libname);
 	mu_assert_eq (res, 1, "regex lib name failed");
 	res = r_regex_match (needle_version, "e", haystack_version);
-    mu_assert_eq (res, 1, "regex lib version failed");
+    	mu_assert_eq (res, 1, "regex lib version failed");
 
 	mu_end;
 	return 0;
