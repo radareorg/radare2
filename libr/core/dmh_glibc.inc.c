@@ -267,7 +267,7 @@ static bool GH(resolve_glibc_version)(RCore *core) {
 			R_LOG_WARN ("resolve_glibc_version: Unexpected version format in dbg.glibc.version: %s"
 						" (expected format \"\\d.\\d\\d\")", dbg_glibc_version);
 		} else {
-			version = strtod(dbg_glibc_version, NULL);
+			version = strtod (dbg_glibc_version, NULL);
 			core->dbg->glibc_version = (int) round ((version * 100));
 			core->dbg->glibc_version_d = version;
 			core->dbg->glibc_version_resolved = true;
