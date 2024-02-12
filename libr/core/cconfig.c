@@ -4257,7 +4257,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB ("scr.gadgets", "true", &cb_scr_gadgets, "run pg in prompt, visual and panels");
 	SETBPREF ("scr.panelborder", "false", "specify panels border active area (0 by default)");
 	SETCB ("scr.theme", "default", &cb_scrtheme, "specify the theme name to load on startup (See 'ec?')");
-	SETICB ("scr.columns", 0, &cb_scrcolumns, "force console column count (width)");
+	SETICB ("scr.cols", 0, &cb_scrcolumns, "force console column count (width)");
 	SETICB ("scr.optimize", 0, &cb_scroptimize, "optimize the amount of ansi escapes and spaces (0, 1, 2 passes)");
 	SETBPREF ("scr.dumpcols", "false", "prefer pC commands before p ones");
 	SETCB ("scr.rows", "0", &cb_scrrows, "force console row count (height) ");
@@ -4265,7 +4265,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETICB ("scr.rows", 0, &cb_rows, "force console row count (height) (duplicate?)");
 	SETCB ("scr.fps", "false", &cb_fps, "show FPS in Visual");
 	SETICB ("scr.fix.rows", 0, &cb_fixrows, "Workaround for Linux TTY");
-	SETICB ("scr.fix.columns", 0, &cb_fixcolumns, "workaround for Prompt iOS SSH client");
+	SETICB ("scr.fix.cols", 0, &cb_fixcolumns, "workaround for Prompt iOS SSH client");
 	SETCB ("scr.highlight", "", &cb_scrhighlight, "highlight that word at RCons level");
 #if __EMSCRIPTEN__ || __wasi__
 	SETCB ("scr.interactive", "false", &cb_scrint, "start in interactive mode");
