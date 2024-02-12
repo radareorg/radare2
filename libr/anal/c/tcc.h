@@ -23,6 +23,8 @@
 
 #include "r_types.h"
 #include <r_util/r_str.h>
+#include <r_th.h>
+#include <r_vector.h>
 #ifndef _GNU_SOURCE
 #define _GNU_SOURCE
 #endif
@@ -770,6 +772,7 @@ ST_FUNC int tcc_open(TCCState *s1, const char *filename);
 ST_FUNC void tcc_close(TCCState *s1);
 ST_FUNC int tcc_add_file_internal(TCCState *s1, const char *filename, int flags);
 R_API int tcc_parse_args(TCCState *s, int argc, char **argv);
+R_API int tcc_decl0(TCCState *s1, int l, int is_for_loop_init);
 
 /* ------------ tccpp.c ------------ */
 
@@ -797,7 +800,7 @@ ST_INLN void define_push(TCCState *s1, int v, int macro_type, int *str, Sym *fir
 ST_FUNC void define_undef(TCCState *s1, Sym *s);
 ST_INLN Sym *define_find(TCCState *s1, int v);
 ST_FUNC void free_defines(TCCState *s1, Sym *b);
-// ST_FUNC void parse_define(void);
+R_API void tcc_parse_define(TCCState *s1);
 ST_FUNC void preprocess(TCCState *s1, bool is_bof);
 ST_FUNC void next_nomacro(TCCState *s1);
 ST_INLN void unget_tok(TCCState *s1, int last_tok);

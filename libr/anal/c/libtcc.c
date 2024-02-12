@@ -189,8 +189,6 @@ static void error1(TCCState *s1, int is_warning, const char *fmt, va_list ap) {
 	}
 }
 
-typedef void (*TccErrorCallback)(void *opaque, const char *msg);
-
 R_API void tcc_set_error_func(TCCState *s, void *error_opaque, TccErrorCallback error_func) {
 	s->error_opaque = error_opaque;
 	s->error_func = error_func;
@@ -336,7 +334,7 @@ static int tcc_compile(TCCState *s1) {
 		// parse_flags = PARSE_FLAG_TOK_NUM;
 		// pvtop = vtop;
 		next (s1);
-		decl0 (s1, VT_CONST, 0);
+		tcc_decl0 (s1, VT_CONST, 0);
 		if (s1->tok != TOK_EOF) {
 			expect (s1, "declaration");
 		}
@@ -387,7 +385,7 @@ R_API void tcc_define_symbol(TCCState *s1, const char *sym, const char *value) {
 	/* parse with define parser */
 	s1->ch = s1->file->buf_ptr[0];
 	next_nomacro (s1);
-	parse_define (s1);
+	tcc_parse_define (s1);
 
 	tcc_close (s1);
 }

@@ -1107,7 +1107,7 @@ static void tok_print(int *str) {
 #endif
 
 /* parse after #define */
-static void parse_define(TCCState *s1) {
+R_API void tcc_parse_define(TCCState *s1) {
 	Sym *s, *first, **ps;
 	int t, varg, is_vaargs, spc;
 	TokenString str;
@@ -1295,7 +1295,7 @@ redo:
 	switch (s1->tok) {
 	case TOK_DEFINE:
 		next_nomacro (s1);
-		parse_define (s1);
+		tcc_parse_define (s1);
 		break;
 	case TOK_UNDEF:
 		next_nomacro (s1);

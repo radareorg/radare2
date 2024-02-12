@@ -19,8 +19,8 @@ R_API void tcc_delete(TCCState *s);
 R_API void tcc_set_lib_path(TCCState *s, const char *path);
 
 /* set error/warning display callback */
-R_API void tcc_set_error_func(TCCState *s, void *error_opaque,
-    void (*error_func)(void *opaque, const char *msg));
+typedef void (*TccErrorCallback)(void *opaque, const char *msg);
+R_API void tcc_set_error_func(TCCState *s, void *error_opaque, TccErrorCallback error_func);
 
 /* set options as from command line (multiple supported) */
 R_API int tcc_set_options(TCCState *s, const char *str);
@@ -90,7 +90,7 @@ R_API int tcc_relocate(TCCState *s1, void *ptr);
 R_API void *tcc_get_symbol(TCCState *s, const char *name);
 
 
-void tcc_set_callback (TCCState *s, void (*cb)(const char *,char**), char **p);
+R_API void tcc_set_callback(TCCState *s, void (*cb)(const char *,char**), char **p);
 
 #ifdef __cplusplus
 }

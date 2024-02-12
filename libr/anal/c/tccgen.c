@@ -33,7 +33,6 @@ static int parse_btype(TCCState *s1, CType *type, AttributeDef *ad);
 static void type_decl(TCCState *s1, CType *type, AttributeDef *ad, int *v, int td);
 static void decl_initializer(TCCState *s1, CType *type, unsigned long c, int first, int size_only);
 static void decl_initializer_alloc(TCCState *s1, CType *type, AttributeDef *ad, int r, int has_init, int v, char *asm_label, int scope);
-static int decl0(TCCState *s1, int l, int is_for_loop_init);
 static void expr_eq(TCCState *s1);
 static void unary_type(TCCState *s1, CType *type);
 static bool is_compatible_parameter_types(CType *type1, CType *type2);
@@ -2934,7 +2933,7 @@ static void func_decl_list(TCCState *s1, Sym *func_sym) {
 
 /* 'l' is VT_LOCAL or VT_CONST to define default storage type */
 // TODO: must return bool
-static int decl0(TCCState *s1, int l, int is_for_loop_init) {
+R_API int tcc_decl0(TCCState *s1, int l, int is_for_loop_init) {
 	int v, has_init, r;
 	CType type = {.t = 0, .ref = NULL}, btype = {.t = 0, .ref = NULL};
 	Sym *sym = NULL;
