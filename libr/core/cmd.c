@@ -4331,6 +4331,8 @@ escape_pipe:
 			ptr = NULL;
 		}
 	}
+	int fdn = 1;
+	char *next_redirect = NULL;
 	if (ptr) {
 		if (ptr > cmd) {
 			char *ch = ptr - 1;
@@ -4344,21 +4346,25 @@ escape_pipe:
 			r_list_free (tmpenvs);
 			return true;
 		}
-		int fdn = 1;
 		bool pipecolor = r_config_get_b (core->config, "scr.color.pipe");
-		int use_editor = false;
+		bool use_editor = false;
 		int ocolor = r_config_get_i (core->config, "scr.color");
 		*ptr = '\0';
+		r_cons_set_interactive (false);
+repeat:;
 		str = ptr + 1 + (ptr[1] == '>');
 		r_str_trim (str);
 		if (!*str) {
 			R_LOG_ERROR ("No output?");
 			goto next2;
 		}
+		fdn = 1;
 		/* r_cons_flush() handles interactive output (to the terminal)
 		 * differently (e.g. asking about too long output). This conflicts
 		 * with piping to a file. Disable it while piping. */
-		if (ptr > (cmd + 1) && IS_WHITECHAR (ptr[-2])) {
+		if (ptr > (cmd + 1)) { //  && (next_redirect || IS_WHITECHAR (ptr[-2])))
+			R_LOG_DEBUG ("FD FROM (%s)", ptr - 1 );
+		//	eprintf ("COMPUTE FD (%s) (ptr=%s)\n", ptr -1, ptr-1);
 			char *fdnum = ptr - 1;
 			if (*fdnum == 'H') { // "H>"
 				scr_html = r_cons_context ()->is_html;
@@ -4372,19 +4378,42 @@ escape_pipe:
 				*fdnum = 0;
 			}
 		}
-		r_cons_set_interactive (false);
+		R_LOG_DEBUG ("FD %d", fdn);
 		if (!strcmp (str, "-")) {
 			use_editor = true;
 			str = r_file_temp ("dumpedit");
 			r_config_set_i (core->config, "scr.color", COLOR_MODE_DISABLED);
 		}
+
+		char *nextgt = strchr (r_str_trim_head_ro (ptr + 1), '>');
+		if (nextgt) {
+			R_LOG_DEBUG ("CHUM!");
+			char *back = ptr + 1;
+			while (nextgt > back) {
+				if (!isdigit (*nextgt) && *nextgt != 'H') {
+					break;
+				}
+				nextgt--;
+			}
+			next_redirect = nextgt;
+			while (nextgt > back) {
+				if (*nextgt == ' ') {
+					*nextgt = 0;
+					break;
+				}
+				nextgt--;
+			}
+		} else {
+			next_redirect = NULL;
+		}
+		// eprintf ("---> (%s)\n", ptr + 1);
+		// eprintf ("next (%s)\n", next_redirect);
 		const bool appendResult = (ptr[1] == '>');
 		if (*str == '$' && !str[1]) {
 			R_LOG_ERROR ("No alias name given");
 		} else if (*str == '$') {
 			// pipe to alias variable
 			// register output of command as an alias
-
 			r_config_set_i (core->config, "scr.color", COLOR_MODE_DISABLED);
 			RBuffer *cmd_out = r_core_cmd_tobuf (core, cmd);
 			int alias_len;
@@ -4406,22 +4435,28 @@ escape_pipe:
 		} else if (fdn > 0) {
 			// pipe to file (or append)
 			pipefd = r_cons_pipe_open (str, fdn, appendResult);
-			if (pipefd != -1) {
-				if (!pipecolor) {
-					r_config_set_i (core->config, "scr.color", COLOR_MODE_DISABLED);
-				}
-				ret = r_core_cmd_subst (core, cmd);
-				r_cons_flush ();
-				r_cons_pipe_close (pipefd);
+			if (pipefd == -1) {
+				R_LOG_ERROR ("Cannot open pipe with fd %d", fdn);
+				// goto errorout;
 			}
+			if (next_redirect) {
+				ptr = next_redirect;
+				*next_redirect = ' ';
+				next_redirect = NULL;
+				goto repeat;
+			}
+			if (!pipecolor) {
+				r_config_set_i (core->config, "scr.color", COLOR_MODE_DISABLED);
+			}
+			ret = r_core_cmd_subst (core, cmd);
+			r_cons_flush ();
 		}
-		r_cons_set_last_interactive ();
 		if (!pipecolor) {
 			r_config_set_i (core->config, "scr.color", ocolor);
 		}
 		if (use_editor) {
 			const char *editor = r_config_get (core->config, "cfg.editor");
-			if (editor && *editor) {
+			if (R_STR_ISNOTEMPTY (editor)) {
 				r_sys_cmdf ("%s '%s'", editor, str);
 				r_file_rm (str);
 			} else {
@@ -4438,6 +4473,8 @@ escape_pipe:
 		}
 		core->cons->context->use_tts = false;
 		r_list_free (tmpenvs);
+		r_cons_pipe_close_all ();
+		r_cons_set_last_interactive ();
 		return ret;
 	}
 escape_redir:
