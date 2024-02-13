@@ -4436,7 +4436,7 @@ repeat:;
 			// pipe to file (or append)
 			pipefd = r_cons_pipe_open (str, fdn, appendResult);
 			if (pipefd == -1) {
-				R_LOG_ERROR ("Cannot open pipe with fd %d", fdn);
+				// R_LOG_ERROR ("Cannot open pipe with fd %d", fdn);
 				// goto errorout;
 			}
 			if (next_redirect) {

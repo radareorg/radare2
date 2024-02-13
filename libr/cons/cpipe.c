@@ -28,6 +28,7 @@ static bool mydup(const int fd, const int fdn) {
 }
 #endif
 
+#define HONOR_LAST_REDIRECT 0
 R_API int r_cons_pipe_open(const char *file, int fd_src, int append) {
 #if __wasi__
 	return -1;
@@ -37,13 +38,16 @@ R_API int r_cons_pipe_open(const char *file, int fd_src, int append) {
 	}
 	RCons *ci = r_cons_singleton ();
 	RConsFdPair *pair;
+#if !HONOR_LAST_REDIRECT
 	// prevent redirecting the same fd twice in the same line
 	R_VEC_FOREACH (&ci->fds, pair) {
 		if (fd_src == pair->fd_src) {
+			R_LOG_WARN ("cannot redirect the same fd twice");
 			// do not permit redirecting output to more than one file
 			return -1;
 		}
 	}
+#endif
 	char *targetFile = (r_str_startswith (file, "~/") || r_str_startswith (file, "~\\"))
 		? r_file_home (file + 2): strdup (file);
 	const int fd_flags = O_BINARY | O_RDWR | O_CREAT | (append? O_APPEND: O_TRUNC);
@@ -56,21 +60,13 @@ R_API int r_cons_pipe_open(const char *file, int fd_src, int append) {
 	R_LOG_DEBUG ("open (%s) = %d", targetFile, fd_new);
 	int fd_bak = fd_src + 32; // XXX wrong assumptions
 	bool is_dual = false;
-#if 0
+#if HONOR_LAST_REDIRECT
 	R_VEC_FOREACH (&ci->fds, pair) {
 		if (fd_src == pair->fd_src) {
 			// do not permit redirecting output to more than one file
-			return -1;
-#if 1
 			int fd_new2 = pair->fd_new + 64;
 			dup2 (pair->fd_bak, fd_new2);
-			eprintf ("TUAIS from %d to %d (aka %d)\n", fd_src, pair->fd_bak, fd_new2);
 			fd_bak = fd_new2;
-			fd_src = fd_new2;
-			is_dual = true;
-#else
-			fd_src = pair->fd_new;
-#endif
 			break;
 		}
 	}
