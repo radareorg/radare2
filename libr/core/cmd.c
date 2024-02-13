@@ -875,7 +875,7 @@ static int cmd_alias(void *data, const char *input) {
 						free (n);
 					}
 				} else if (*def == '$') {
-					char *s = strdup (def+1);
+					char *s = strdup (def + 1);
 					int l = r_str_unescape (s);
 					r_cmd_alias_set_raw (core->rcmd, buf, (ut8 *)s, l);
 					free (s);
@@ -4362,7 +4362,9 @@ repeat:;
 		/* r_cons_flush() handles interactive output (to the terminal)
 		 * differently (e.g. asking about too long output). This conflicts
 		 * with piping to a file. Disable it while piping. */
-		if (ptr > (cmd + 1)) { //  && (next_redirect || IS_WHITECHAR (ptr[-2])))
+		// note that 'x>a' is not working .. but 'x > a' or 'x >a' is valid
+		bool redirect_check = (ptr > cmd && (!ptr[-1] || !ptr[-2] || IS_WHITECHAR (ptr[-2])));
+		if (redirect_check) { // R2R db/cmd/cmd_macros
 			R_LOG_DEBUG ("FD FROM (%s)", ptr - 1 );
 		//	eprintf ("COMPUTE FD (%s) (ptr=%s)\n", ptr -1, ptr-1);
 			char *fdnum = ptr - 1;
