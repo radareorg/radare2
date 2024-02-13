@@ -7,6 +7,9 @@
 #define O_BINARY 0
 #endif
 
+#define HONOR_LAST_REDIRECT 0
+#define USE_HACK 0
+
 #if 0
 static bool mydup(const int fd, const int fdn) {
 	if (fd == fdn) {
@@ -28,7 +31,6 @@ static bool mydup(const int fd, const int fdn) {
 }
 #endif
 
-#define HONOR_LAST_REDIRECT 0
 R_API int r_cons_pipe_open(const char *file, int fd_src, int append) {
 #if __wasi__
 	return -1;
@@ -64,8 +66,12 @@ R_API int r_cons_pipe_open(const char *file, int fd_src, int append) {
 	R_VEC_FOREACH (&ci->fds, pair) {
 		if (fd_src == pair->fd_src) {
 			// do not permit redirecting output to more than one file
+#if USE_HACK
 			int fd_new2 = pair->fd_new + 64;
 			dup2 (pair->fd_bak, fd_new2);
+#else
+			int fd_new2 = dup (pair->fd_bak);
+#endif
 			fd_bak = fd_new2;
 			break;
 		}
@@ -74,7 +80,11 @@ R_API int r_cons_pipe_open(const char *file, int fd_src, int append) {
 	// int res = dup2 (fdn, rfd);
 	int res;
 	if (!is_dual) {
+#if USE_HACK
 		res = dup2 (fd_src, fd_bak);
+#else
+		res = fd_bak = dup (fd_src);
+#endif
 		R_LOG_DEBUG ("dup2 %d %d = %d", fd_src, fd_bak, res);
 		close (fd_src);
 		res = dup2 (fd_new, fd_src);
