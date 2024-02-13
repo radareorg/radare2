@@ -553,8 +553,6 @@ typedef struct r_cons_t {
 	RThreadLock *lock;
 	RConsCursorPos cpos;
 	RVecFdPairs fds;
-	// int backup_fd;
-	// int backup_fdn[10];
 } RCons;
 
 #define R_CONS_KEY_F1 0xf1

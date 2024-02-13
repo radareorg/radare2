@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2023 - nibble, pancake */
+/* radare - LGPL - Copyright 2009-2024 - nibble, pancake */
 
 #define INTERACTIVE_MAX_REP 1024
 
@@ -6317,7 +6317,7 @@ R_API char *r_core_cmd_str_pipe(RCore *core, const char *cmd) {
 	r_cons_reset ();
 	r_sandbox_disable (true);
 	if (r_file_mkstemp ("cmd", &tmp) != -1) {
-		int pipefd = r_cons_pipe_open (tmp, 1, 0);
+		int pipefd = r_cons_pipe_open (tmp, 1, false);
 		if (pipefd == -1) {
 			r_file_rm (tmp);
 			r_sandbox_disable (false);
