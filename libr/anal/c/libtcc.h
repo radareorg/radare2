@@ -89,8 +89,9 @@ R_API int tcc_relocate(TCCState *s1, void *ptr);
 /* return symbol value or NULL if not found */
 R_API void *tcc_get_symbol(TCCState *s, const char *name);
 
+typedef void (*TccCallback)(const char *, char **);
 
-R_API void tcc_set_callback(TCCState *s, void (*cb)(const char *,char**), char **p);
+R_API void tcc_set_callback(TCCState *s, TccCallback cb, char **p);
 
 #ifdef __cplusplus
 }

@@ -3927,15 +3927,14 @@ static char *find_eoq(char *p) {
 
 static char* findSeparator(char *p) {
 	char *q = strchr (p, '+');
-	if (q) {
-		return q;
-	}
-	return strchr (p, '-');
+	return q? q: strchr (p, '-');
 }
 
 static void tmpenvs_free(void *item) {
-	r_sys_setenv (item, NULL);
-	free (item);
+	if (item) {
+		r_sys_setenv (item, NULL);
+		free (item);
+	}
 }
 
 static bool set_tmp_arch(RCore *core, char *arch, char **tmparch) {
@@ -3947,7 +3946,7 @@ static bool set_tmp_arch(RCore *core, char *arch, char **tmparch) {
 }
 
 static bool set_tmp_bits(RCore *core, int bits, char **tmpbits, int *cmd_ignbithints) {
-	r_return_val_if_fail (tmpbits, false);
+	R_RETURN_VAL_IF_FAIL (tmpbits, false);
 	*tmpbits = strdup (r_config_get (core->config, "asm.bits"));
 	r_config_set_i (core->config, "asm.bits", bits);
 	core->fixedbits = true;
@@ -3958,6 +3957,7 @@ static bool set_tmp_bits(RCore *core, int bits, char **tmpbits, int *cmd_ignbith
 }
 
 static char *r_core_cmd_find_subcmd_begin(char *cmd) {
+	R_RETURN_VAL_IF_FAIL (cmd, NULL);
 	int quote = 0;
 	char *p;
 	for (p = cmd; *p; p++) {
