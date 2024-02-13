@@ -100,85 +100,58 @@ static GHT GH(get_main_arena_with_symbol)(RCore *core, RDebugMap *map) {
 	return main_arena;
 }
 
-static GHT GH(get_section_size)(RCore *core, const char *path, const char *section_name) {
-	RBin *bin = core->bin;
-	RBinFile *bf = r_bin_cur (bin);
-	GHT size = GHT_MAX;
-
-	RBinFileOptions opt;
-	r_bin_file_options_init (&opt, -1, 0, 0, false);
-	if (!r_bin_open (bin, path, &opt)) {
-		R_LOG_ERROR ("get_section_size: r_bin_open failed on path %s", path);
-		return size;
-	}
-
-	RList *sections = r_bin_get_sections (bin);
-	RBinSection *section;
-	RListIter *iter;
-	r_list_foreach (sections, iter, section) {
-		if (!strcmp (section->name, section_name)) {
-			size = section->size;
-			break;
-		}
-	}
-
-	RBinFile *libc_bf = r_bin_cur (bin);
-	r_bin_file_delete (bin, libc_bf->id);
-	r_bin_file_set_cur_binfile (bin, bf);
-	return size;
-}
-
-static ut8 *GH(get_section_bytes)(RCore *core, const char *path, const char *section_name) {
+static GH(section_content) GH(get_section_content)(RCore *core, const char *path, const char *section_name) {
 	RBin *bin = core->bin;
 	RBinFile *bf = r_bin_cur (bin);
 	bool found_section = false;
-	GHT paddr, size;
+	GHT paddr;
+	GH(section_content) content = {.size = GHT_MAX, .buf = NULL};
 
 	RBinFileOptions opt;
 	r_bin_file_options_init (&opt, -1, 0, 0, false);
 	if (!r_bin_open (bin, path, &opt)) {
-		R_LOG_ERROR ("get_section_bytes: r_bin_open failed on path %s", path);
-		return NULL;
+		R_LOG_ERROR ("section_content: r_bin_open failed on path %s", path);
+		return content;
 	}
 
 	RBinFile *libc_bf = r_bin_cur (bin);
 	RList *sections = r_bin_get_sections (bin);
 	RBinSection *section;
 	RListIter *iter;
-	ut8 *buf = NULL;
+
 	r_list_foreach (sections, iter, section) {
 		if (!strcmp (section->name, section_name)) {
 			found_section = true;
 			paddr = section->paddr;
-			size = section->size;
+			content.size = section->size;
 			break;
 		}
 	}
 
 	if (!found_section) {
-		R_LOG_WARN ("get_section_bytes: section %s not found", section_name);
+		R_LOG_WARN ("section_content: section %s not found", section_name);
 		goto cleanup_exit;
 	}
 
-	// eprintf ("get_section_bytes: section found: %s size: %#08x  paddr: %#08x\n", section_name, size, paddr);
-	buf = calloc (size, 1);
-	if (!buf) {
-		R_LOG_ERROR ("get_section_bytes: calloc failed");
+	// eprintf ("get_section_bytes: section found: %s content.size: %#08x  paddr: %#08x\n", section_name, content.size, paddr);
+	content.buf = calloc (content.size, 1);
+	if (!content.buf) {
+		R_LOG_ERROR ("section_content: calloc failed");
 		goto cleanup_exit;
 	}
 
-	st64 read_size = r_buf_read_at (libc_bf->buf, paddr, buf, size);
+	st64 read_size = r_buf_read_at (libc_bf->buf, paddr, content.buf, content.size);
 
-	if (read_size != size) {
-		R_LOG_ERROR ("get_section_bytes: section read unexpected size: %#08x  (section->size: %d)", read_size, size);
-		free (buf);
-		buf = NULL;
+	if (read_size != content.size) {
+		R_LOG_ERROR ("section_content: section read unexpected content.size: %#08x  (section->size: %d)", read_size, content.size);
+		free (content.buf);
+		content.buf = NULL;
 	}
 
 cleanup_exit:
 	r_bin_file_delete (bin, libc_bf->id);
 	r_bin_file_set_cur_binfile (bin, bf);
-	return buf;
+	return content;
 }
 
 R_API double GH(get_glibc_version)(RCore *core, const char *libc_path) {
@@ -213,15 +186,13 @@ R_API double GH(get_glibc_version)(RCore *core, const char *libc_path) {
 
 	// Next up we try to read version from banner in .rodata section
 	// also inspired by pwndbg
-	const ut8 *rodata_bytes = GH (get_section_bytes) (core, libc_path, ".rodata");
-	GHT rodata_size = GH (get_section_size) (core, libc_path, ".rodata");
-	const ut8 *banner_start = NULL;
-	if (rodata_bytes != NULL) {
-		banner_start = r_mem_mem (rodata_bytes, rodata_size, (const ut8 *)"GNU C Library", strlen ("GNU C Library"));
-	}
+	GH(section_content)  rodata = GH (get_section_content) (core, libc_path, ".rodata");
 
+	const ut8 *banner_start = NULL;
+	if (rodata.buf != NULL) {
+		banner_start = r_mem_mem (rodata.buf, rodata.size, (const ut8 *)"GNU C Library", strlen ("GNU C Library"));
+	}
 	if (banner_start != NULL) {
-		// eprintf("banner found: %s\n", banner_start);
 		RRegex *rx = r_regex_new ("release version (\\d.\\d\\d)", "en");
 		RList *matches = r_regex_match_list (rx, (const char *)banner_start);
 		const char *version_start;
@@ -234,7 +205,8 @@ R_API double GH(get_glibc_version)(RCore *core, const char *libc_path) {
 		r_list_free (matches);
 		r_regex_free (rx);
 	}
-
+	if (rodata.buf != NULL)
+		free (rodata.buf);
 	if (version != 0) {
 		R_LOG_INFO ("libc version %.2f identified from .rodata banner", version);
 		return version;

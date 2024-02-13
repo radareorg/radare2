@@ -269,6 +269,17 @@ typedef struct r_heap_info_64 {
 	/* char pad[NPAD * SZ & MALLOC_ALIGN_MASK]; */
 } RHeapInfo_64;
 
+typedef struct _section_content_32 {
+	ut32 size;
+	ut8 *buf;
+} section_content_32;
+
+
+typedef struct _section_content_64 {
+	ut64 size;
+	ut8 *buf;
+} section_content_64;
+
 #ifdef __cplusplus
 }
 #endif
