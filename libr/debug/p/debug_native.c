@@ -1108,7 +1108,7 @@ static RList *r_debug_native_map_get(RDebug *dbg) {
 #else
 		ut64 offset = 0;
 		// 7fc8124c4000-7fc81278d000 r--p 00000000 fc:00 17043921 /usr/lib/locale/locale-archive
-		i = r_str_scanf (line, "%.s %.s %08Lx %*s %*s %.[^\n]", sizeof (region[2]), &region[2], sizeof (perms), perms, &offset, sizeof (name), name);
+		i = r_str_scanf (line, "%.s %.s %Lx %*s %*s %.[^\n]", sizeof (region[2]), &region[2], sizeof (perms), perms, &offset, sizeof (name), name);
 		if (i == 3) {
 			name[0] = '\0';
 		} else if (i != 4) {

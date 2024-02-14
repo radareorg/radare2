@@ -12,7 +12,6 @@ typedef struct {
 #define UNSUPPORTED 0
 #define SUPPORTED 1
 
-
 typedef struct plugin_data_t {
 	RIOGdb ** origriogdb;
 	libgdbr_t *desc;
