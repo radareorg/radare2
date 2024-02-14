@@ -1160,7 +1160,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 		if (strstr (uri, "://")) {
 			r_core_cmdf (r, "=+ %s", uri);
 		} else {
-			argv[opt.ind] = r_str_newf ("https://%s/cmd/", argv[opt.ind]);
+			argv[opt.ind] = r_str_newf ("http://%s/cmd/", argv[opt.ind]);
 			r_core_cmdf (r, "=+ %s", argv[opt.ind]);
 		}
 		r_core_cmd0 (r, "=!=0");
