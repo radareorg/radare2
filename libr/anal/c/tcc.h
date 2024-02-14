@@ -183,7 +183,7 @@ typedef struct AttributeDef {
 			      mode          : 4,
 			      weak          : 1,
 			      fill          : 11;
-	int alias_target;    /* token */
+	// int alias_target;    /* token */
 } AttributeDef;
 
 /* gr: wrappers for casting sym->r for other purposes */
@@ -365,17 +365,17 @@ struct TCCState {
 
 	/* used by main and tcc_parse_args only */
 	char *deps_outfile; /* option -MF */
-	// === previously globals ====
+	// previously globals
 	bool const_wanted;	/* true if constant wanted */
 	bool global_expr;	/* true if compound literals must be allocated globally (used during initializers parsing */
 	size_t arraysize;
 
 	/* loc : local variable index
-ind : output code index
-rsym: return symbol
-anon_sym: anonymous symbol index
+         * ind : output code index
+         * rsym: return symbol
+         * anon_sym: anonymous symbol index
 	 */
-	int anon_sym; //  = SYM_FIRST_ANOM;
+	int anon_sym; // = SYM_FIRST_ANOM;
 	int loc;
 	int ch, tok;
 	CValue tokc;

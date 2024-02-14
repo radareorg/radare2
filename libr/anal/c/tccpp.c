@@ -2020,7 +2020,7 @@ float_frac_parse:
 		}
 
 		/* XXX: not exactly ANSI compliant */
-		if ((n & 0xffffffff00000000LL) != 0) {
+		if ((n & 0xffffffff00000000ULL) != 0) {
 			if ((n >> 63) != 0) {
 				s1->tok = TOK_CULLONG;
 			} else {
