@@ -809,8 +809,6 @@ static proc_per_process_t *get_proc_process_content(RDebug *dbg) {
 	/* we only need few fields which are process-wide */
 	{
 		char no_str[128];
-		long unsigned int no_lui;
-		long int no_li;
 		int no_num;
 		if (r_str_scanf (buff, "%d %*s %c %d %d %*d %*d %lu %ld",
 			&p->pid, &p->s_name, &p->ppid, &p->pgrp,
