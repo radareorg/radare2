@@ -236,7 +236,7 @@ static RList *r_debug_gdb_map_get(RDebug* dbg) { // TODO
 		r_list_free (words);
 		free (wordstr);
 #else
-		ret = r_str_scanf (ptr, "%.s %.s %Lx %*s %*s %.[^\n]", sizeof (region1[2]), &region1[2], sizeof (perms), perms, offset, sizeof (name), name);
+		ret = r_str_scanf (ptr, "%.s %.s %Lx %*s %*s %.[^\n]", sizeof (region1)-2, &region1[2], sizeof (perms), perms, offset, sizeof (name), name);
 #endif
 		// eprintf ("RET = %d (%s)\n", ret, ptr);
 		if (ret == 3) {
