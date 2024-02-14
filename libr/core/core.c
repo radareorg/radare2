@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2009-2023 - pancake */
+/* radare2 - LGPL - Copyright 2009-2024 - pancake */
 
 #define R_LOG_ORIGIN "core"
 
@@ -11,8 +11,7 @@
 #define DB core->sdb
 
 R_LIB_VERSION (r_core);
-
-R_VEC_TYPE(RVecAnalRef, RAnalRef);
+R_VEC_TYPE (RVecAnalRef, RAnalRef);
 
 static ut64 letter_divs[R_CORE_ASMQJMPS_LEN_LETTERS - 1] = {
 	R_CORE_ASMQJMPS_LETTERS * R_CORE_ASMQJMPS_LETTERS * R_CORE_ASMQJMPS_LETTERS * R_CORE_ASMQJMPS_LETTERS,
