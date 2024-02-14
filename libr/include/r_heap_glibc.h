@@ -274,7 +274,6 @@ typedef struct _section_content_32 {
 	ut8 *buf;
 } section_content_32;
 
-
 typedef struct _section_content_64 {
 	ut64 size;
 	ut8 *buf;

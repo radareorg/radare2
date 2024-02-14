@@ -205,8 +205,7 @@ R_API double GH(get_glibc_version)(RCore *core, const char *libc_path) {
 		r_list_free (matches);
 		r_regex_free (rx);
 	}
-	if (rodata.buf != NULL)
-		free (rodata.buf);
+	free (rodata.buf);
 	if (version != 0) {
 		R_LOG_INFO ("libc version %.2f identified from .rodata banner", version);
 		return version;
@@ -254,7 +253,7 @@ static bool GH(resolve_glibc_version)(RCore *core) {
 	// Search for binary in memory maps named *libc-* or *libc.*
 	// TODO: This is very brittle, other bin names or LD_PRELOAD could be a problem
 	r_list_foreach (core->dbg->maps, iter, map) {
-		if (strncmp (map->name, core->bin->file, strlen (map->name)) == 0) {
+		if (r_str_startswith (core->bin->file, map->name)) {
 			continue;
 		}
 		if (r_regex_match (".*libc[.-]", "e", map->name)) {
@@ -291,10 +290,8 @@ static bool GH(is_tcache)(RCore *core) {
 
 	if (core->dbg->glibc_version_resolved || GH (resolve_glibc_version) (core))	{
 		return core->dbg->glibc_version_d > 2.25;
-	} else {
-		R_LOG_WARN ("is_tcache: glibc_version could not be resolved");
-		return false;
-	}
+	R_LOG_WARN ("is_tcache: glibc_version could not be resolved");
+	return false;
 }
 
 static GHT GH(tcache_chunk_size)(RCore *core, GHT brk_start) {
