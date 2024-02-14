@@ -310,6 +310,7 @@ R_API bool r_asm_use(RAsm *a, const char *name) {
 	return false;
 }
 
+// R2_600
 // XXX this is r_arch
 R_DEPRECATE R_API void r_asm_set_cpu(RAsm *a, const char *cpu) {
 	r_return_if_fail (a);
@@ -366,8 +367,8 @@ static bool is_invalid(RAnalOp *op) {
 }
 
 R_API int r_asm_disassemble(RAsm *a, RAnalOp *op, const ut8 *buf, int len) {
+	R_RETURN_VAL_IF_FAIL (a && buf && op, -1);
 	r_asm_op_init (op);
-	r_return_val_if_fail (a && buf && op, -1);
 	if (len < 1) {
 		return 0;
 	}
