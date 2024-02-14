@@ -870,6 +870,7 @@ static proc_per_process_t *get_proc_process_content(RDebug *dbg) {
 	if (buff) {
 		if (r_str_scanf (buff, "%hx", &filter_flags) != 1) {
 			free (p);
+			free (buff);
 			return NULL;
 		}
 		p->coredump_filter = filter_flags;
