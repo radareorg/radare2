@@ -20,7 +20,7 @@ static int usage(int v) {
 	"  -d        run in daemon mode (background)\n"
 	"  -h        show this help message\n"
 	"  -s        run in sandbox mode\n"
-	"  -u        enable http Authorization access\n"
+	"  -u        enable http authorization access\n"
 	"  -t        user:password authentication file\n"
 	"  -p [port] specify listening port (defaults to 8080)\n");
 	return !v;

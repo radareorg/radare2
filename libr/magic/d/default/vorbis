@@ -28,7 +28,7 @@
 ##>4		byte		0		revision 0
 >4		byte		0
 ##>>14		lelong		x		(Serial %lX)
-# non-Vorbis content: FLAC (Free Lossless Audio Codec, http://flac.sourceforge.net)
+# non-Vorbis content: FLAC (Free Lossless Audio Codec, https://flac.sourceforge.net)
 >>28		string		\x7fFLAC	\b, FLAC audio
 # non-Vorbis content: Theora
 >>28		string		\x80theora	\b, Theora video

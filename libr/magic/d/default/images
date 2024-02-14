@@ -169,7 +169,7 @@
 
 # Simon Walton <simonw@matteworld.com>
 # Kodak Cineon format for scanned negatives
-# http://www.kodak.com/US/en/motion/support/dlad/
+# https://www.kodak.com/US/en/motion/support/dlad/
 # 0	lelong  0xd75f2a80	Cineon image data
 # >200	belong  >0		\b, %ld x
 # >204	belong  >0		%ld
