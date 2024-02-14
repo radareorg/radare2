@@ -183,7 +183,7 @@ typedef struct AttributeDef {
 			      mode          : 4,
 			      weak          : 1,
 			      fill          : 11;
-	// int alias_target;    /* token */
+	int alias_target;    /* token */
 } AttributeDef;
 
 /* gr: wrappers for casting sym->r for other purposes */

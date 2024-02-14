@@ -442,6 +442,34 @@ static int cmd_eval(void *data, const char *input) {
 		if (strchr (input, '?')) {
 			r_core_cmd_help_contains (core, help_msg_e, "en");
 			break;
+		} else if (!strcmp (input + 1, "vj")) {
+			char **e = r_sys_get_environ ();
+			PJ *pj = pj_new ();
+			pj_o (pj);
+			if (e != NULL) {
+				while (*e) {
+					char *s = strdup (*e);
+					char *q = strchr (s, '=');
+					if (q) {
+						*q = 0;
+						pj_ks (pj, s, q + 1);
+					}
+					free (s);
+					e++;
+				}
+			}
+			pj_end (pj);
+			char *s = pj_drain (pj);
+			r_cons_println (s);
+			free (s);
+		} else if (!strcmp (input + 1, "v*")) {
+			char **e = r_sys_get_environ ();
+			if (e != NULL) {
+				while (*e) {
+					r_cons_printf ("%%%s\n", *e);
+					e++;
+				}
+			}
 		} else if (!strchr (input, '=')) {
 			const char *var = strchr (input, ' ');
 			if (var) {

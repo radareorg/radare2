@@ -3096,6 +3096,10 @@ static int cmd_env(void *data, const char *input) {
 	RCore *core = (RCore*)data;
 	int ret = 1;
 	switch (*input) {
+	case 'j':
+	case '*':
+		ret = r_core_cmdf (core, "env%c", *input);
+		break;
 	case '?':
 		cmd_help_percent (core);
 		break;
