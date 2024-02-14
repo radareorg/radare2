@@ -1806,6 +1806,14 @@ static inline bool is_file_reloc(RBinReloc *r) {
 	return is_file_symbol (r->symbol);
 }
 
+static void warn_if_uri(RCore *r) {
+	int fd = r_io_fd_get_current (r->io);
+	RIODesc *desc = r_io_desc_get (r->io, fd);
+	if (desc->uri && strstr (desc->uri, "://")) {
+		R_LOG_ERROR ("bin.relocs and io.cache should not be used with the current io plugin");
+	}
+}
+
 static bool bin_relocs(RCore *r, PJ *pj, int mode, int va) {
 	bool bin_demangle = r_config_get_b (r->config, "bin.demangle");
 	bool keep_lib = r_config_get_i (r->config, "bin.demangle.libs");
@@ -1824,6 +1832,7 @@ static bool bin_relocs(RCore *r, PJ *pj, int mode, int va) {
 	const bool apply_relocs = r_config_get_b (r->config, "bin.relocs.apply");
 	const bool bc = r_config_get_b (r->config, "bin.cache");
 	if (apply_relocs) {
+		warn_if_uri (r);
 		//TODO: remove the bin.cache crap
 		if (bc) {
 			if (!(r->io->cachemode & R_PERM_W)) {
@@ -1839,6 +1848,7 @@ static bool bin_relocs(RCore *r, PJ *pj, int mode, int va) {
 		}
 	} else {
 		if (bc) {
+			warn_if_uri (r);
 			if (!(r->io->cachemode & R_PERM_W)) {
 				r_config_set_b (r->config, "io.cache", true);
 			}

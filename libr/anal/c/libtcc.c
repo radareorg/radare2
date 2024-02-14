@@ -2,6 +2,7 @@
  *  TCC - Tiny C Compiler
  *
  *  Copyright (c) 2001-2004 Fabrice Bellard
+ *  Copyright (c) 2016-2024 pancake
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -42,7 +43,7 @@ static char *normalize_slashes(char *path) {
 #endif
 
 /* strcat and truncate. */
-PUB_FUNC char *strcat2(char *buf, int buf_size, const char *s) {
+R_API char *strcat2(char *buf, int buf_size, const char *s) {
 	int len = strlen (buf);
 	if (len < buf_size) {
 		r_str_ncpy (buf + len, s, buf_size - len);
@@ -50,17 +51,17 @@ PUB_FUNC char *strcat2(char *buf, int buf_size, const char *s) {
 	return buf;
 }
 
-PUB_FUNC char *pstrncpy(char *out, const char *in, size_t num) {
+R_API char *pstrncpy(char *out, const char *in, size_t num) {
 	memcpy (out, in, num);
 	out[num] = '\0';
 	return out;
 }
 
 /* extract the basename of a file */
-PUB_FUNC char *tcc_basename(const char *name) {
+R_API char *tcc_basename(const char *name) {
 	char *p = strchr (name, 0);
 	while (p && p > name && !IS_DIRSEP (p[-1])) {
-		--p;
+		p--;
 	}
 	return p;
 }
@@ -69,7 +70,7 @@ PUB_FUNC char *tcc_basename(const char *name) {
  *
  * (if no extension, return pointer to end-of-string)
  */
-PUB_FUNC char *tcc_fileextension(const char *name) {
+R_API char *tcc_fileextension(const char *name) {
 	char *b = tcc_basename (name);
 	char *e = strrchr (b, '.');
 	return e? e: strchr (b, 0);
@@ -79,13 +80,10 @@ PUB_FUNC char *tcc_fileextension(const char *name) {
 /********************************************************/
 /* dynarrays */
 
-ST_FUNC void dynarray_add(void ***ptab, int *nb_ptr, void *data)
-{
-	int nb, nb_alloc;
-	void **pp;
-
-	nb = *nb_ptr;
-	pp = *ptab;
+ST_FUNC void dynarray_add(void ***ptab, int *nb_ptr, void *data) {
+	int nb_alloc;
+	int nb = *nb_ptr;
+	void **pp = *ptab;
 	/* every power of two we double array size */
 	if ((nb & (nb - 1)) == 0) {
 		if (!nb) {
@@ -100,8 +98,7 @@ ST_FUNC void dynarray_add(void ***ptab, int *nb_ptr, void *data)
 	*nb_ptr = nb;
 }
 
-ST_FUNC void dynarray_reset(void *pp, int *n)
-{
+ST_FUNC void dynarray_reset(void *pp, int *n) {
 	void **p;
 	for (p = *(void ***) pp; *n; p++, --*n) {
 		if (*p) {
@@ -143,7 +140,7 @@ static void strcat_vprintf(char *buf, int buf_size, const char *fmt, va_list ap)
 	vsnprintf (buf + len, buf_size - len, fmt, ap);
 }
 
-PUB_FUNC void strcat_printf(char *buf, int buf_size, const char *fmt, ...) {
+R_API void strcat_printf(char *buf, int buf_size, const char *fmt, ...) {
 	va_list ap;
 	va_start (ap, fmt);
 	strcat_vprintf (buf, buf_size, fmt, ap);
@@ -192,15 +189,13 @@ static void error1(TCCState *s1, int is_warning, const char *fmt, va_list ap) {
 	}
 }
 
-LIBTCCAPI void tcc_set_error_func(TCCState *s, void *error_opaque,
-				  void (*error_func)(void *opaque, const char *msg))
-{
+R_API void tcc_set_error_func(TCCState *s, void *error_opaque, TccErrorCallback error_func) {
 	s->error_opaque = error_opaque;
 	s->error_func = error_func;
 }
 
 /* error without aborting current compilation */
-PUB_FUNC void tcc_error(TCCState *s1, const char *fmt, ...) {
+R_API void tcc_error(TCCState *s1, const char *fmt, ...) {
 	va_list ap;
 
 	va_start (ap, fmt);
@@ -208,7 +203,7 @@ PUB_FUNC void tcc_error(TCCState *s1, const char *fmt, ...) {
 	va_end (ap);
 }
 
-PUB_FUNC void tcc_warning(TCCState *s1, const char *fmt, ...) {
+R_API void tcc_warning(TCCState *s1, const char *fmt, ...) {
 	va_list ap;
 
 	if (s1->warn_none) {
@@ -339,7 +334,7 @@ static int tcc_compile(TCCState *s1) {
 		// parse_flags = PARSE_FLAG_TOK_NUM;
 		// pvtop = vtop;
 		next (s1);
-		decl0 (s1, VT_CONST, 0);
+		tcc_decl0 (s1, VT_CONST, 0);
 		if (s1->tok != TOK_EOF) {
 			expect (s1, "declaration");
 		}
@@ -361,7 +356,7 @@ static int tcc_compile(TCCState *s1) {
 	return s1->nb_errors != 0? -1: 0;
 }
 
-LIBTCCAPI int tcc_compile_string(TCCState *s1, const char *str) {
+R_API int tcc_compile_string(TCCState *s1, const char *str) {
 	int len = strlen (str);
 	if (!tcc_open_bf (s1, "<string>", len)) {
 		return false;
@@ -373,8 +368,7 @@ LIBTCCAPI int tcc_compile_string(TCCState *s1, const char *str) {
 }
 
 /* define a preprocessor symbol. A value can also be provided with the '=' operator */
-LIBTCCAPI void tcc_define_symbol(TCCState *s1, const char *sym, const char *value)
-{
+R_API void tcc_define_symbol(TCCState *s1, const char *sym, const char *value) {
 	/* default value */
 	if (!value) {
 		value = "1";
@@ -391,13 +385,13 @@ LIBTCCAPI void tcc_define_symbol(TCCState *s1, const char *sym, const char *valu
 	/* parse with define parser */
 	s1->ch = s1->file->buf_ptr[0];
 	next_nomacro (s1);
-	parse_define (s1);
+	tcc_parse_define (s1);
 
 	tcc_close (s1);
 }
 
 /* undefine a preprocessor symbol */
-LIBTCCAPI void tcc_undefine_symbol(TCCState *s1, const char *sym) {
+R_API void tcc_undefine_symbol(TCCState *s1, const char *sym) {
 	TokenSym *ts = tok_alloc (s1, sym, strlen (sym));
 	Sym *s = define_find (s1, ts->tok);
 	/* undefine symbol by putting an invalid name */
@@ -552,27 +546,26 @@ static void tcc_init_defines(TCCState *s) {
 #endif
 }
 
-LIBTCCAPI TCCState *tcc_new(const char *arch, int bits, const char *os) {
+R_API TCCState *tcc_new(const char *arch, int bits, const char *os) {
 	if (!arch || !os) {
 		return NULL;
 	}
 	// tcc_cleanup (NULL); // wtf no globals anymore
-	TCCState *s = calloc (sizeof (TCCState), 1);
-	if (!s) {
-		return NULL;
+	TCCState *s = R_NEW0 (TCCState);
+	if (s) {
+		s->arch = strdup (arch);
+		s->bits = bits;
+		s->os = strdup (os);
+		s->anon_sym = SYM_FIRST_ANOM;
+		s->output_type = TCC_OUTPUT_MEMORY;
+		preprocess_new (s);
+		s->include_stack_ptr = s->include_stack;
 	}
-	s->arch = strdup (arch);
-	s->bits = bits;
-	s->os = strdup (os);
-	s->anon_sym = SYM_FIRST_ANOM;
-	s->output_type = TCC_OUTPUT_MEMORY;
-	preprocess_new (s);
-	s->include_stack_ptr = s->include_stack;
-
 	return s;
 }
 
-LIBTCCAPI void tcc_delete(TCCState *s1) {
+// TODO: rename to tcc_free
+R_API void tcc_delete(TCCState *s1) {
 	tcc_cleanup (s1);
 
 	/* free include paths */
@@ -587,18 +580,15 @@ LIBTCCAPI void tcc_delete(TCCState *s1) {
 	/* target config */
 	free (s1->arch);
 	free (s1->os);
-
 	free (s1);
 }
 
-LIBTCCAPI int tcc_add_include_path(TCCState *s, const char *pathname)
-{
+R_API int tcc_add_include_path(TCCState *s, const char *pathname) {
 	tcc_split_path (s, (void ***) &s->include_paths, &s->nb_include_paths, pathname);
 	return 0;
 }
 
-LIBTCCAPI int tcc_add_sysinclude_path(TCCState *s, const char *pathname)
-{
+R_API int tcc_add_sysinclude_path(TCCState *s, const char *pathname) {
 	tcc_split_path (s, (void ***) &s->sysinclude_paths, &s->nb_sysinclude_paths, pathname);
 	return 0;
 }
@@ -641,7 +631,7 @@ the_end:
 	return ret;
 }
 
-LIBTCCAPI int tcc_add_file(TCCState *s1, const char *filename, const char *directory) {
+R_API int tcc_add_file(TCCState *s1, const char *filename, const char *directory) {
 	if (directory) {
 		free (s1->dir_name);
 		s1->dir_name = strdup (directory);
@@ -663,7 +653,7 @@ typedef struct FlagDef {
 	const char *name;
 } FlagDef;
 
-PUB_FUNC void tcc_set_callback(TCCState *s, void (*cb)(const char *, char **), char **p) {
+R_API void tcc_set_callback(TCCState *s, TccCallback cb, char **p) {
 	if (cb) {
 		s->cb = cb;
 		s->cb_user_data = p;
@@ -671,7 +661,7 @@ PUB_FUNC void tcc_set_callback(TCCState *s, void (*cb)(const char *, char **), c
 	}
 }
 
-PUB_FUNC void tcc_appendf(TCCState *s, const char *fmt, ...) {
+R_API void tcc_appendf(TCCState *s, const char *fmt, ...) {
 	char b[1024];
 	va_list ap;
 	va_start (ap, fmt);
@@ -684,7 +674,7 @@ PUB_FUNC void tcc_appendf(TCCState *s, const char *fmt, ...) {
 	va_end (ap);
 }
 
-PUB_FUNC void tcc_typedef_appendf(TCCState *s, const char *fmt, ...) {
+R_API void tcc_typedef_appendf(TCCState *s, const char *fmt, ...) {
 	if (!s->typedefs) {
 		s->typedefs = r_pvector_new ((RPVectorFree) free);
 	}
@@ -697,7 +687,7 @@ PUB_FUNC void tcc_typedef_appendf(TCCState *s, const char *fmt, ...) {
 	va_end (ap);
 }
 
-PUB_FUNC void tcc_typedef_alias_fields(TCCState *s, const char *alias) {
+R_API void tcc_typedef_alias_fields(TCCState *s, const char *alias) {
 	if (s->typedefs) {
 		void **it;
 		r_pvector_foreach (s->typedefs, it) {

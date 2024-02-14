@@ -867,13 +867,18 @@ static bool test_vec_foreach_prev(void) {
 	RVecUT32 v;
 	RVecUT32_init (&v);
 
+	ut32 *y;
+	ut32 sum = 0;
+
+	// check for crash
+	R_VEC_FOREACH_PREV (&v, y) {
+		sum += *y;
+	}
 	ut32 x;
 	for (x = 0; x < 10; x++) {
 		RVecUT32_push_back (&v, &x);
 	}
 
-	ut32 sum = 0;
-	ut32 *y;
 	R_VEC_FOREACH_PREV (&v, y) {
 		sum += *y;
 	}

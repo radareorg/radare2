@@ -33,7 +33,6 @@ static int parse_btype(TCCState *s1, CType *type, AttributeDef *ad);
 static void type_decl(TCCState *s1, CType *type, AttributeDef *ad, int *v, int td);
 static void decl_initializer(TCCState *s1, CType *type, unsigned long c, int first, int size_only);
 static void decl_initializer_alloc(TCCState *s1, CType *type, AttributeDef *ad, int r, int has_init, int v, char *asm_label, int scope);
-static int decl0(TCCState *s1, int l, int is_for_loop_init);
 static void expr_eq(TCCState *s1);
 static void unary_type(TCCState *s1, CType *type);
 static bool is_compatible_parameter_types(CType *type1, CType *type2);
@@ -65,7 +64,6 @@ static void gexpr(TCCState *s1) {
 	}
 }
 
-
 ST_INLN bool is_float(int t) {
 	int bt;
 	bt = t & VT_BTYPE;
@@ -96,15 +94,14 @@ ST_FUNC void test_lvalue(TCCState *s1) {
 /* ------------------------------------------------------------------------- */
 /* symbol allocator */
 static Sym *__sym_malloc(TCCState *s1) {
-	Sym *sym_pool, *sym, *last_sym;
-	int i;
-	int sym_pool_size = SYM_POOL_NB * sizeof (Sym);
-	sym_pool = malloc (sym_pool_size);
-	memset (sym_pool, 0, sym_pool_size);
+	Sym *sym_pool = calloc (SYM_POOL_NB, sizeof (Sym));
+	if (!sym_pool) {
+		return NULL;
+	}
 	dynarray_add (&s1->sym_pools, &s1->nb_sym_pools, sym_pool);
-
-	last_sym = s1->sym_free_first;
-	sym = sym_pool;
+	Sym *last_sym = s1->sym_free_first;
+	Sym *sym = sym_pool;
+	int i;
 	for (i = 0; i < SYM_POOL_NB; i++) {
 		sym->next = last_sym;
 		last_sym = sym;
@@ -145,18 +142,17 @@ ST_FUNC Sym *sym_push2(TCCState *s1, Sym **ps, int v, int t, long long c) {
 	// printf (" %d %ld set symbol '%s'\n", t, c, get_tok_str(v, NULL));
 	// s = *ps;
 	Sym *s = sym_malloc (s1);
-	if (!s) {
-		return NULL;
+	if (s) {
+		s->asm_label = NULL;
+		s->v = v;
+		s->type.t = t;
+		s->type.ref = NULL;
+		s->c = c;
+		s->next = NULL;
+		/* add in stack */
+		s->prev = *ps;
+		*ps = s;
 	}
-	s->asm_label = NULL;
-	s->v = v;
-	s->type.t = t;
-	s->type.ref = NULL;
-	s->c = c;
-	s->next = NULL;
-	/* add in stack */
-	s->prev = *ps;
-	*ps = s;
 	return s;
 }
 
@@ -464,20 +460,15 @@ ST_FUNC int type_size(TCCState *s1, CType *type, int *a) {
 		return s->c;
 	} else if (bt == VT_PTR) {
 		if (type->t & VT_ARRAY) {
-			int ts;
-
 			s = type->ref;
-			ts = type_size (s1, &s->type, a);
-
+			int ts = type_size (s1, &s->type, a);
 			if (ts < 0 && s->c < 0) {
 				ts = -ts;
 			}
-
 			return ts * s->c;
-		} else {
-			*a = PTR_SIZE;
-			return PTR_SIZE;
 		}
+		*a = PTR_SIZE;
+		return PTR_SIZE;
 	} else if (bt == VT_LDOUBLE) {
 		*a = LDOUBLE_ALIGN;
 		return LDOUBLE_SIZE;
@@ -488,6 +479,7 @@ ST_FUNC int type_size(TCCState *s1, CType *type, int *a) {
 			} else {
 				*a = 4;
 			}
+#if 0
 		} else if (!strncmp (s1->arch, "arm", 3)) {
 			/* It was like originally:
 			#ifdef TCC_ARM_EABI
@@ -498,6 +490,7 @@ ST_FUNC int type_size(TCCState *s1, CType *type, int *a) {
 			FIXME: Determine EABI then too
 			*/
 			*a = 8;
+#endif
 		} else {
 			*a = 8;
 		}
@@ -2940,7 +2933,7 @@ static void func_decl_list(TCCState *s1, Sym *func_sym) {
 
 /* 'l' is VT_LOCAL or VT_CONST to define default storage type */
 // TODO: must return bool
-static int decl0(TCCState *s1, int l, int is_for_loop_init) {
+R_API int tcc_decl0(TCCState *s1, int l, int is_for_loop_init) {
 	int v, has_init, r;
 	CType type = {.t = 0, .ref = NULL}, btype = {.t = 0, .ref = NULL};
 	Sym *sym = NULL;
