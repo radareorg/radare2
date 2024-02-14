@@ -1091,7 +1091,8 @@ static RList *r_debug_native_map_get(RDebug *dbg) {
 		}
 #if __KFBSD__
 		// 0x8070000 0x8072000 2 0 0xc1fde948 rw- 1 0 0x2180 COW NC vnode /usr/bin/gcc
-		if (r_str_scanf (line, "%.s %.s %d %d 0x%.s %.s %d %d", sizeof (region[2]), &region[2], sizeof (region2[2]), &region2[2], &ign, &ign, sizeof (unkstr), unkstr, sizeof (perms) perms, &ign, &ign) != 8) {
+		if (r_str_scanf (line, "%.s %.s %*d %*d %*s %.s %*d %*d",
+			sizeof (region)-2, &region[2], sizeof (region2)-2, &region2[2], sizeof (perms), perms) != 3) {
 			R_LOG_ERROR ("%s: Unable to parse \"%s\"", __func__, path);
 			r_list_free (list);
 			return NULL;
