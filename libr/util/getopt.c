@@ -37,7 +37,7 @@ R_API int r_getopt_next(RGetopt *opt) {
 			opt->ind++;
 			if (place[1]) {
 				// any --WHATEVER will be an alias to -h
-				return 'h';
+				return 0;
 			}
 			place = EMSG;
 			return -1;
