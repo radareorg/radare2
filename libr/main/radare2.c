@@ -191,7 +191,7 @@ static int main_help(int line) {
 		" -b [bits]    set asm.bits\n"
 		" -B [baddr]   set base address for PIE binaries\n"
 		" -c 'cmd..'   execute radare command\n"
-		" -C           file is host:port (alias for -c+=https://%%s/cmd/)\n"
+		" -C           file is host:port (alias for -c+=http://%%s/cmd/)\n"
 		" -d           debug the executable 'file' or running process 'pid'\n"
 		" -D [backend] enable debug mode (e cfg.debug=true)\n"
 		" -e k=v       evaluate config var\n"
